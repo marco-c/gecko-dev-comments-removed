@@ -174,11 +174,11 @@ TEST(VP8VideoTrackEncoder, SingleFrameEncode)
   const size_t oneElement = 1;
   ASSERT_EQ(oneElement, frames.Length());
 
-  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[0]->GetFrameType())
+  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[0]->mFrameType)
       << "We only have one frame, so it should be a keyframe";
 
   const uint64_t halfSecond = PR_USEC_PER_SEC / 2;
-  EXPECT_EQ(halfSecond, frames[0]->GetDuration());
+  EXPECT_EQ(halfSecond, frames[0]->mDuration);
 }
 
 
@@ -211,7 +211,7 @@ TEST(VP8VideoTrackEncoder, SameFrameEncode)
   
   uint64_t totalDuration = 0;
   for (auto& frame : frames) {
-    totalDuration += frame->GetDuration();
+    totalDuration += frame->mDuration;
   }
   const uint64_t oneAndAHalf = (PR_USEC_PER_SEC / 2) * 3;
   EXPECT_EQ(oneAndAHalf, totalDuration);
@@ -247,7 +247,7 @@ TEST(VP8VideoTrackEncoder, SkippedFrames)
   
   uint64_t totalDuration = 0;
   for (auto& frame : frames) {
-    totalDuration += frame->GetDuration();
+    totalDuration += frame->mDuration;
   }
   const uint64_t hundredMillis = PR_USEC_PER_SEC / 10;
   EXPECT_EQ(hundredMillis, totalDuration);
@@ -289,7 +289,7 @@ TEST(VP8VideoTrackEncoder, RoundingErrorFramesEncode)
   
   uint64_t totalDuration = 0;
   for (auto& frame : frames) {
-    totalDuration += frame->GetDuration();
+    totalDuration += frame->mDuration;
   }
   const uint64_t oneSecond = PR_USEC_PER_SEC;
   EXPECT_EQ(oneSecond, totalDuration);
@@ -331,8 +331,8 @@ TEST(VP8VideoTrackEncoder, TimestampFrameEncode)
   uint64_t totalDuration = 0;
   size_t i = 0;
   for (auto& frame : frames) {
-    EXPECT_EQ(expectedDurations[i++], frame->GetDuration());
-    totalDuration += frame->GetDuration();
+    EXPECT_EQ(expectedDurations[i++], frame->mDuration);
+    totalDuration += frame->mDuration;
   }
   const uint64_t pointThree = (PR_USEC_PER_SEC / 10) * 3;
   EXPECT_EQ(pointThree, totalDuration);
@@ -380,8 +380,8 @@ TEST(VP8VideoTrackEncoder, DriftingFrameEncode)
   uint64_t totalDuration = 0;
   size_t i = 0;
   for (auto& frame : frames) {
-    EXPECT_EQ(expectedDurations[i++], frame->GetDuration());
-    totalDuration += frame->GetDuration();
+    EXPECT_EQ(expectedDurations[i++], frame->mDuration);
+    totalDuration += frame->mDuration;
   }
   const uint64_t pointSix = (PR_USEC_PER_SEC / 10) * 6;
   EXPECT_EQ(pointSix, totalDuration);
@@ -443,7 +443,7 @@ TEST(VP8VideoTrackEncoder, Suspended)
 
   uint64_t totalDuration = 0;
   for (auto& frame : frames) {
-    totalDuration += frame->GetDuration();
+    totalDuration += frame->mDuration;
   }
   const uint64_t pointTwo = (PR_USEC_PER_SEC / 10) * 2;
   EXPECT_EQ(pointTwo, totalDuration);
@@ -493,7 +493,7 @@ TEST(VP8VideoTrackEncoder, SuspendedUntilEnd)
 
   uint64_t totalDuration = 0;
   for (auto& frame : frames) {
-    totalDuration += frame->GetDuration();
+    totalDuration += frame->mDuration;
   }
   const uint64_t pointOne = PR_USEC_PER_SEC / 10;
   EXPECT_EQ(pointOne, totalDuration);
@@ -576,7 +576,7 @@ TEST(VP8VideoTrackEncoder, SuspendedBeginning)
 
   uint64_t totalDuration = 0;
   for (auto& frame : frames) {
-    totalDuration += frame->GetDuration();
+    totalDuration += frame->mDuration;
   }
   const uint64_t half = PR_USEC_PER_SEC / 2;
   EXPECT_EQ(half, totalDuration);
@@ -627,9 +627,9 @@ TEST(VP8VideoTrackEncoder, SuspendedOverlap)
   const uint64_t two = 2;
   ASSERT_EQ(two, frames.Length());
   const uint64_t pointFive = (PR_USEC_PER_SEC / 10) * 5;
-  EXPECT_EQ(pointFive, frames[0]->GetDuration());
+  EXPECT_EQ(pointFive, frames[0]->mDuration);
   const uint64_t pointSeven = (PR_USEC_PER_SEC / 10) * 7;
-  EXPECT_EQ(pointSeven, frames[1]->GetDuration());
+  EXPECT_EQ(pointSeven, frames[1]->mDuration);
 }
 
 
@@ -657,7 +657,7 @@ TEST(VP8VideoTrackEncoder, PrematureEnding)
 
   uint64_t totalDuration = 0;
   for (auto& frame : frames) {
-    totalDuration += frame->GetDuration();
+    totalDuration += frame->mDuration;
   }
   const uint64_t half = PR_USEC_PER_SEC / 2;
   EXPECT_EQ(half, totalDuration);
@@ -689,7 +689,7 @@ TEST(VP8VideoTrackEncoder, DelayedStart)
 
   uint64_t totalDuration = 0;
   for (auto& frame : frames) {
-    totalDuration += frame->GetDuration();
+    totalDuration += frame->mDuration;
   }
   const uint64_t half = PR_USEC_PER_SEC / 2;
   EXPECT_EQ(half, totalDuration);
@@ -722,7 +722,7 @@ TEST(VP8VideoTrackEncoder, DelayedStartOtherEventOrder)
 
   uint64_t totalDuration = 0;
   for (auto& frame : frames) {
-    totalDuration += frame->GetDuration();
+    totalDuration += frame->mDuration;
   }
   const uint64_t half = PR_USEC_PER_SEC / 2;
   EXPECT_EQ(half, totalDuration);
@@ -754,7 +754,7 @@ TEST(VP8VideoTrackEncoder, VeryDelayedStart)
 
   uint64_t totalDuration = 0;
   for (auto& frame : frames) {
-    totalDuration += frame->GetDuration();
+    totalDuration += frame->mDuration;
   }
   const uint64_t half = PR_USEC_PER_SEC / 2;
   EXPECT_EQ(half, totalDuration);
@@ -790,7 +790,7 @@ TEST(VP8VideoTrackEncoder, LongFramesReEncoded)
 
     uint64_t totalDuration = 0;
     for (auto& frame : frames) {
-      totalDuration += frame->GetDuration();
+      totalDuration += frame->mDuration;
     }
     const uint64_t oneSec = PR_USEC_PER_SEC;
     EXPECT_EQ(oneSec, totalDuration);
@@ -807,7 +807,7 @@ TEST(VP8VideoTrackEncoder, LongFramesReEncoded)
 
     uint64_t totalDuration = 0;
     for (auto& frame : frames) {
-      totalDuration += frame->GetDuration();
+      totalDuration += frame->mDuration;
     }
     const uint64_t tenSec = PR_USEC_PER_SEC * 10;
     EXPECT_EQ(tenSec, totalDuration);
@@ -860,28 +860,28 @@ TEST(VP8VideoTrackEncoder, ShortKeyFrameInterval)
   ASSERT_EQ(6UL, frames.Length());
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 400UL, frames[0]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[0]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 400UL, frames[0]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[0]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 200UL, frames[1]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[1]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 200UL, frames[1]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[1]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 150UL, frames[2]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[2]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 150UL, frames[2]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[2]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 150UL, frames[3]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[3]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 150UL, frames[3]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[3]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 200UL, frames[4]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[4]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 200UL, frames[4]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[4]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[5]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[5]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[5]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[5]->mFrameType);
 }
 
 
@@ -929,28 +929,28 @@ TEST(VP8VideoTrackEncoder, LongKeyFrameInterval)
   ASSERT_EQ(6UL, frames.Length());
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 600UL, frames[0]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[0]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 600UL, frames[0]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[0]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 300UL, frames[1]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[1]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 300UL, frames[1]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[1]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 200UL, frames[2]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[2]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 200UL, frames[2]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[2]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 800UL, frames[3]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[3]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 800UL, frames[3]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[3]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 200UL, frames[4]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[4]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 200UL, frames[4]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[4]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[5]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[5]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[5]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[5]->mFrameType);
 }
 
 
@@ -996,28 +996,28 @@ TEST(VP8VideoTrackEncoder, DefaultKeyFrameInterval)
   ASSERT_EQ(6UL, frames.Length());
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 600UL, frames[0]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[0]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 600UL, frames[0]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[0]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 300UL, frames[1]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[1]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 300UL, frames[1]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[1]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 200UL, frames[2]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[2]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 200UL, frames[2]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[2]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 800UL, frames[3]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[3]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 800UL, frames[3]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[3]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 200UL, frames[4]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[4]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 200UL, frames[4]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[4]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[5]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[5]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[5]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[5]->mFrameType);
 }
 
 
@@ -1133,60 +1133,60 @@ TEST(VP8VideoTrackEncoder, DynamicKeyFrameIntervalChanges)
   ASSERT_EQ(14UL, frames.Length());
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[0]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[0]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[0]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[0]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 20UL, frames[1]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[1]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 20UL, frames[1]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[1]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 10UL, frames[2]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[2]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 10UL, frames[2]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[2]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 70UL, frames[3]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[3]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 70UL, frames[3]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[3]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[4]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[4]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[4]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[4]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 200UL, frames[5]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[5]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 200UL, frames[5]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[5]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 800UL, frames[6]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[6]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 800UL, frames[6]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[6]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[7]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[7]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[7]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[7]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 1000UL, frames[8]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[8]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 1000UL, frames[8]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[8]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[9]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[9]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[9]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[9]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[10]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[10]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[10]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[10]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 200UL, frames[11]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[11]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 200UL, frames[11]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[11]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[12]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[12]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[12]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_I_FRAME, frames[12]->mFrameType);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[13]->GetDuration());
-  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[13]->GetFrameType());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[13]->mDuration);
+  EXPECT_EQ(EncodedFrame::VP8_P_FRAME, frames[13]->mFrameType);
 }
 
 
@@ -1227,10 +1227,10 @@ TEST(VP8VideoTrackEncoder, DisableOnFrameTime)
   ASSERT_EQ(2UL, frames.Length());
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[0]->GetDuration());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[0]->mDuration);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[1]->GetDuration());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[1]->mDuration);
 }
 
 
@@ -1268,13 +1268,13 @@ TEST(VP8VideoTrackEncoder, DisableBetweenFrames)
   ASSERT_EQ(3UL, frames.Length());
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 50UL, frames[0]->GetDuration());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 50UL, frames[0]->mDuration);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 50UL, frames[1]->GetDuration());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 50UL, frames[1]->mDuration);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[2]->GetDuration());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[2]->mDuration);
 }
 
 
@@ -1317,10 +1317,10 @@ TEST(VP8VideoTrackEncoder, EnableOnFrameTime)
   ASSERT_EQ(2UL, frames.Length());
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[0]->GetDuration());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[0]->mDuration);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[1]->GetDuration());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[1]->mDuration);
 }
 
 
@@ -1360,13 +1360,13 @@ TEST(VP8VideoTrackEncoder, EnableBetweenFrames)
   ASSERT_EQ(3UL, frames.Length());
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 50UL, frames[0]->GetDuration());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 50UL, frames[0]->mDuration);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 50UL, frames[1]->GetDuration());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 50UL, frames[1]->mDuration);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[2]->GetDuration());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[2]->mDuration);
 }
 
 
@@ -1428,16 +1428,16 @@ TEST(VP8VideoTrackEncoder, BackwardsTimeResets)
   ASSERT_EQ(4UL, frames.Length());
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[0]->GetDuration());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[0]->mDuration);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 50UL, frames[1]->GetDuration());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 50UL, frames[1]->mDuration);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[2]->GetDuration());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[2]->mDuration);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 50UL, frames[3]->GetDuration());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 50UL, frames[3]->mDuration);
 }
 
 
@@ -1500,13 +1500,13 @@ TEST(VP8VideoTrackEncoder, NullImageResets)
   ASSERT_EQ(3UL, frames.Length());
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[0]->GetDuration());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 100UL, frames[0]->mDuration);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 150UL, frames[1]->GetDuration());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 150UL, frames[1]->mDuration);
 
   
-  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 50UL, frames[2]->GetDuration());
+  EXPECT_EQ(PR_USEC_PER_SEC / 1000 * 50UL, frames[2]->mDuration);
 }
 
 
