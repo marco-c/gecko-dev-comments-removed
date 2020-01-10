@@ -165,6 +165,35 @@ const PREF_BLOCKLIST_ADDONS_CHECKED_SECONDS =
   "services.blocklist.addons.checked";
 const PREF_BLOCKLIST_ADDONS_SIGNER = "services.blocklist.addons.signer";
 
+const BlocklistTelemetry = {
+  
+
+
+
+
+
+
+
+
+  recordXMLBlocklistLastModified(xmlDoc) {
+    const lastUpdate =
+      xmlDoc && xmlDoc.documentElement.getAttribute("lastupdate");
+    if (lastUpdate) {
+      Services.telemetry.scalarSet(
+        "blocklist.lastModified_xml",
+        
+        
+        new Date(parseInt(lastUpdate, 10)).toUTCString()
+      );
+    } else {
+      Services.telemetry.scalarSet(
+        "blocklist.lastModified_xml",
+        "Missing Date"
+      );
+    }
+  },
+};
+
 const Utils = {
   
 
@@ -2137,6 +2166,10 @@ var BlocklistXML = {
         "Blocklist::_loadBlocklistFromXML: Error constructing blocklist " + e
       );
     }
+
+    
+    BlocklistTelemetry.recordXMLBlocklistLastModified(doc);
+
     
     
     
