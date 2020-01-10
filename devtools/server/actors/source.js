@@ -240,7 +240,16 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       (this._contentType.includes("javascript") ||
         this._contentType === "text/wasm")
     ) {
-      return toResolvedContent(this._source.text);
+      
+      
+      
+      
+      
+      
+      const padding = this._source.startLine
+        ? "\n".repeat(this._source.startLine - 1)
+        : "";
+      return toResolvedContent(padding + this._source.text);
     }
 
     const result = await this.sources.htmlFileContents(
@@ -305,13 +314,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
   },
 
   _calculateStartLineColumnDisplacement(fileContents) {
-    const scripts = this._findDebuggeeScripts();
-    if (!scripts.length) {
-      return {};
-    }
-
-    const sorted = scripts.sort((a, b) => b.startLine < a.startLine);
-    const startLine = sorted[0].startLine;
+    const startLine = this._source.startLine;
 
     const lineBreak = /\r\n?|\n|\u2028|\u2029/;
     const fileStartLine =
