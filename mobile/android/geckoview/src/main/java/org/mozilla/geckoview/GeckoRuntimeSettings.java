@@ -419,6 +419,17 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             getSettings().mAboutConfig.set(flag);
             return this;
         }
+
+        
+
+
+
+
+
+        public @NonNull Builder forceUserScalableEnabled(final boolean flag) {
+            getSettings().mForceUserScalable.set(flag);
+            return this;
+        }
     }
 
     private GeckoRuntime mRuntime;
@@ -465,6 +476,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             "devtools.console.stdout.chrome", true);
      final Pref<Boolean> mAboutConfig = new Pref<>(
             "general.aboutConfig.enable", false);
+     final Pref<Boolean> mForceUserScalable = new Pref<>(
+            "browser.ui.zoom.force-user-scalable", false);
 
      boolean mDebugPause;
      boolean mUseMaxScreenDepth;
@@ -1059,6 +1072,26 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
     public @NonNull GeckoRuntimeSettings setAboutConfigEnabled(final boolean flag) {
         mAboutConfig.commit(flag);
+        return this;
+    }
+
+    
+
+
+
+
+    public boolean getForceUserScalableEnabled() {
+        return mForceUserScalable.get();
+    }
+
+    
+
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setForceUserScalableEnabled(final boolean flag) {
+        mForceUserScalable.commit(flag);
         return this;
     }
 
