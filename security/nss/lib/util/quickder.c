@@ -759,6 +759,13 @@ DecodeItem(void* dest,
                         case SEC_ASN1_BIT_STRING: {
                             
 
+                            if (temp.data[0] >= 8 || (temp.data[0] > 0 && temp.len == 1)) {
+                                PORT_SetError(SEC_ERROR_BAD_DER);
+                                rv = SECFailure;
+                                break;
+                            }
+                            
+
                             temp.len = (temp.len - 1) * 8 - (temp.data[0] & 0x7);
                             temp.data++;
                             break;
