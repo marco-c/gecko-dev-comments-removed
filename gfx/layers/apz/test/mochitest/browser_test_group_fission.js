@@ -11,6 +11,7 @@ add_task(async function test_main() {
   
   var test_urls = [
     httpURL("helper_fission_basic.html"),
+    httpURL("helper_fission_tap.html"),
     
   ];
   if (isWebRender) {
