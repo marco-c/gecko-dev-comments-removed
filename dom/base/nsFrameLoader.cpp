@@ -89,7 +89,6 @@
 #include "mozilla/dom/SessionStoreListener.h"
 #include "mozilla/gfx/CrossProcessPaint.h"
 #include "mozilla/jsipc/CrossProcessObjectWrappers.h"
-#include "mozilla/layout/RenderFrame.h"
 #include "mozilla/ServoCSSParser.h"
 #include "mozilla/ServoStyleSet.h"
 #include "nsGenericHTMLFrameElement.h"
@@ -2782,13 +2781,7 @@ BrowserBridgeChild* nsFrameLoader::GetBrowserBridgeChild() const {
 
 mozilla::layers::LayersId nsFrameLoader::GetLayersId() const {
   MOZ_ASSERT(mIsRemoteFrame);
-  if (auto* browserParent = GetBrowserParent()) {
-    return browserParent->GetRenderFrame()->GetLayersId();
-  }
-  if (auto* browserBridgeChild = GetBrowserBridgeChild()) {
-    return browserBridgeChild->GetLayersId();
-  }
-  return mozilla::layers::LayersId{};
+  return mRemoteBrowser->GetLayersId();
 }
 
 void nsFrameLoader::ActivateRemoteFrame(ErrorResult& aRv) {

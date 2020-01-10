@@ -3863,9 +3863,6 @@ pref("layout.word_select.eat_space_to_next_word", true);
 pref("slider.snapMultiplier", 6);
 
 
-pref("print.extend_native_print_dialog", true);
-
-
 
 pref("plugin.scan.plid.all", true);
 
