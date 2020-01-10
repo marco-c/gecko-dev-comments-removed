@@ -5121,6 +5121,13 @@ nsCSSFrameConstructor::FindSVGData(const Element& aElement,
   if (aIsWithinSVGText) {
     
     
+    
+    
+    
+    
+    if (aParentFrame && aParentFrame->GetContent() != aElement.GetParent()) {
+      return nullptr;
+    }
 
     
     
@@ -5529,11 +5536,15 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
     MOZ_ASSERT(!aContent->AsElement()->IsRootOfNativeAnonymousSubtree(),
                "display:contents on anonymous content is unsupported");
 
-    if (!withinSVGText) {
-      CreateGeneratedContentItem(aState, aParentFrame, *aContent->AsElement(),
-                                 *aComputedStyle, PseudoStyleType::before,
-                                 aItems);
+    
+    
+    if (withinSVGText) {
+      return;
     }
+
+    CreateGeneratedContentItem(aState, aParentFrame, *aContent->AsElement(),
+                               *aComputedStyle, PseudoStyleType::before,
+                               aItems);
 
     FlattenedChildIterator iter(aContent);
     InsertionPoint insertion(aParentFrame, aContent);
@@ -5544,11 +5555,9 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
     }
     aItems.SetParentHasNoXBLChildren(!iter.XBLInvolved());
 
-    if (!withinSVGText) {
-      CreateGeneratedContentItem(aState, aParentFrame, *aContent->AsElement(),
-                                 *aComputedStyle, PseudoStyleType::after,
-                                 aItems);
-    }
+    CreateGeneratedContentItem(aState, aParentFrame, *aContent->AsElement(),
+                               *aComputedStyle, PseudoStyleType::after,
+                               aItems);
     return;
   }
 
