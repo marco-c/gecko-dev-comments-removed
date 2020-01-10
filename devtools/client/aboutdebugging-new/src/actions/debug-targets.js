@@ -140,13 +140,32 @@ function installTemporaryExtension() {
   };
 }
 
-function pushServiceWorker(id) {
+function pushServiceWorker(id, registrationFront) {
   return async (_, getState) => {
-    const clientWrapper = getCurrentClient(getState().runtimes);
-
     try {
-      const workerActor = await clientWrapper.getServiceWorkerFront({ id });
-      await workerActor.push();
+      const clientWrapper = getCurrentClient(getState().runtimes);
+      const deviceFront = await clientWrapper.getFront("device");
+
+      
+      
+      const { isParentInterceptEnabled } = await deviceFront.getDescription();
+
+      
+
+
+
+
+
+
+
+
+
+      if (registrationFront.push && isParentInterceptEnabled) {
+        await registrationFront.push();
+      } else {
+        const workerActor = await clientWrapper.getServiceWorkerFront({ id });
+        await workerActor.push();
+      }
     } catch (e) {
       console.error(e);
     }
