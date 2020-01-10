@@ -187,7 +187,7 @@ add_task(async function test() {
   Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk");
 
   
-  for (let permission of Services.perms.all) {
+  for (let permission of Services.perms.enumerator) {
     let isExpected = false;
 
     expected.forEach((it, i) => {

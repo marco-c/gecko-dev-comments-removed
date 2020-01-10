@@ -330,7 +330,7 @@ var gSitePermissionsManager = {
 
   _loadPermissions() {
     
-    for (let nextPermission of Services.perms.all) {
+    for (let nextPermission of Services.perms.enumerator) {
       this._addPermissionToList(nextPermission);
     }
   },
