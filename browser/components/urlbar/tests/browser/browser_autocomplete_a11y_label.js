@@ -100,8 +100,9 @@ add_task(async function searchSuggestions() {
   );
   
   
+  let searchTerm = "foo";
   let expectedSearches = [
-    "foo",
+    searchTerm,
     
     "foofoo ",
     "foo bar",
@@ -114,7 +115,7 @@ add_task(async function searchSuggestions() {
         0,
         "Should still have expected searches remaining"
       );
-      let suggestion = expectedSearches.shift();
+
       let element = await UrlbarTestUtils.waitForAutocompleteResultAt(
         window,
         i
@@ -124,12 +125,21 @@ add_task(async function searchSuggestions() {
         
         element.toggleAttribute("selected", true);
       }
-      Assert.equal(
-        await getResultText(element),
-        suggestion +
-          "— Search with browser_searchSuggestionEngine searchSuggestionEngine.xml",
-        "Result label should be: <search term>— Search with <engine name>"
-      );
+      if (result.searchParams.inPrivateWindow) {
+        Assert.equal(
+          await getResultText(element),
+          searchTerm + "— Search in a Private Window",
+          "Check result label"
+        );
+      } else {
+        let suggestion = expectedSearches.shift();
+        Assert.equal(
+          await getResultText(element),
+          suggestion +
+            "— Search with browser_searchSuggestionEngine searchSuggestionEngine.xml",
+          "Check result label"
+        );
+      }
       if (!selected) {
         element.toggleAttribute("selected", false);
       }
