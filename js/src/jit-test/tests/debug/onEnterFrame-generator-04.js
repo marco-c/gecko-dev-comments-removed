@@ -34,7 +34,7 @@ function test(mode, expected) {
             log += x;
     `);
     assertEq(g.log, expected);
-    dbg.removeDebuggee(g);
+    dbg.enabled = false;
 }
 
 
