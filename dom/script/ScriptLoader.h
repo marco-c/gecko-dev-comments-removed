@@ -272,8 +272,20 @@ class ScriptLoader final : public nsISupports {
 
   void BeginDeferringScripts() {
     mDeferEnabled = true;
-    if (mDocument) {
-      mDocument->BlockOnload();
+    if (mDocumentParsingDone) {
+      
+      
+      
+      
+      
+      
+      
+      
+      mDocumentParsingDone = false;
+    } else {
+      if (mDocument) {
+        mDocument->BlockOnload();
+      }
     }
   }
 
