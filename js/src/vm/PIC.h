@@ -64,20 +64,7 @@ class PICChain {
  public:
   CatStub* stubs() const { return stubs_; }
 
-  void addStub(CatStub* stub) {
-    MOZ_ASSERT(stub);
-    MOZ_ASSERT(!stub->next());
-    if (!stubs_) {
-      stubs_ = stub;
-      return;
-    }
-
-    CatStub* cur = stubs_;
-    while (cur->next()) {
-      cur = cur->next();
-    }
-    cur->append(stub);
-  }
+  void addStub(JSObject* obj, CatStub* stub);
 
   unsigned numStubs() const {
     unsigned count = 0;
@@ -85,17 +72,6 @@ class PICChain {
       count++;
     }
     return count;
-  }
-
-  void removeStub(CatStub* stub, CatStub* previous) {
-    if (previous) {
-      MOZ_ASSERT(previous->next() == stub);
-      previous->next_ = stub->next();
-    } else {
-      MOZ_ASSERT(stub == stubs_);
-      stubs_ = stub->next();
-    }
-    js_delete(stub);
   }
 };
 
@@ -159,6 +135,9 @@ struct ForOfPIC {
   class Chain : public BaseChain {
    private:
     
+    GCPtrObject picObject_;
+
+    
     GCPtrNativeObject arrayProto_;
     GCPtrNativeObject arrayIteratorProto_;
 
@@ -184,8 +163,9 @@ struct ForOfPIC {
     static const unsigned MAX_STUBS = 10;
 
    public:
-    Chain()
+    explicit Chain(JSObject* picObject)
         : BaseChain(),
+          picObject_(picObject),
           arrayProto_(nullptr),
           arrayIteratorProto_(nullptr),
           arrayProtoShape_(nullptr),
@@ -207,7 +187,7 @@ struct ForOfPIC {
     bool tryOptimizeArrayIteratorNext(JSContext* cx, bool* optimized);
 
     void trace(JSTracer* trc);
-    void sweep(FreeOp* fop);
+    void finalize(FreeOp* fop, JSObject* obj);
 
    private:
     
@@ -226,10 +206,12 @@ struct ForOfPIC {
     bool hasMatchingStub(ArrayObject* obj);
 
     
-    void reset();
+    void reset(JSContext* cx);
 
     
-    void eraseChain();
+    void eraseChain(JSContext* cx);
+
+    void freeAllStubs(FreeOp* fop);
   };
 
   
