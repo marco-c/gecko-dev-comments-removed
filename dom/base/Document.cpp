@@ -4287,7 +4287,6 @@ bool Document::ExecCommand(const nsAString& commandID, bool doShowUI,
   }
 
   
-  
   if (commandData.IsCutOrCopyCommand()) {
     if (!nsContentUtils::IsCutCopyAllowed(&aSubjectPrincipal)) {
       
@@ -4298,7 +4297,16 @@ bool Document::ExecCommand(const nsAString& commandID, bool doShowUI,
                                       "ExecCommandCutCopyDeniedNotInputDriven");
       return false;
     }
+  } else if (commandData.IsPasteCommand()) {
+    if (!nsContentUtils::PrincipalHasPermission(&aSubjectPrincipal,
+                                                nsGkAtoms::clipboardRead)) {
+      return false;
+    }
+  }
 
+  
+  
+  if (commandData.IsCutOrCopyCommand()) {
     
     
     
@@ -4315,12 +4323,6 @@ bool Document::ExecCommand(const nsAString& commandID, bool doShowUI,
       }
       return NS_SUCCEEDED(res);
     }
-    return false;
-  }
-
-  if (commandData.IsPasteCommand() &&
-      !nsContentUtils::PrincipalHasPermission(&aSubjectPrincipal,
-                                              nsGkAtoms::clipboardRead)) {
     return false;
   }
 
