@@ -132,7 +132,8 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   
   
   
-  virtual void postSeverDelegate(GCMarker* marker, gc::Cell* key) = 0;
+  virtual void postSeverDelegate(GCMarker* marker, gc::Cell* key,
+                                 Compartment* comp) = 0;
 
   virtual bool markEntries(GCMarker* marker) = 0;
 
@@ -287,7 +288,8 @@ class WeakMap
                  gc::Cell* origKey) override;
 
   
-  void postSeverDelegate(GCMarker* marker, gc::Cell* key) override;
+  void postSeverDelegate(GCMarker* marker, gc::Cell* key,
+                         Compartment* comp) override;
 
   void trace(JSTracer* trc) override;
 
