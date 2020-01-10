@@ -57,6 +57,7 @@
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
 #include "nsStringFwd.h"
+#include "nsTextFragment.h"
 #include "nsTextNode.h"
 #include "nsUnicharUtils.h"
 #include "nsXPCOM.h"
@@ -2251,19 +2252,42 @@ nsresult TextEditor::SetUnmaskRangeInternal(uint32_t aStart, uint32_t aLength,
   if (NS_WARN_IF(!rootElement)) {
     return NS_ERROR_NOT_INITIALIZED;
   }
-  nsIContent* firstChild = rootElement->GetFirstChild();
-  if (!firstChild || firstChild->IsElement()) {
+  Text* text = Text::FromNodeOrNull(rootElement->GetFirstChild());
+  if (!text) {
     
     return aStart > 0 ? NS_ERROR_INVALID_ARG : NS_OK;
   }
 
   if (aStart < UINT32_MAX) {
-    uint32_t valueLength = firstChild->Length();
+    uint32_t valueLength = text->Length();
     if (aStart >= valueLength) {
       return NS_ERROR_INVALID_ARG;  
     }
-    mUnmaskedStart = aStart;
+    
+    
+    
+    const nsTextFragment* textFragment = text->GetText();
+    if (aStart > 0 && NS_IS_LOW_SURROGATE(textFragment->CharAt(aStart)) &&
+        NS_IS_HIGH_SURROGATE(textFragment->CharAt(aStart - 1))) {
+      mUnmaskedStart = aStart - 1;
+      
+      if (aLength > 0) {
+        ++aLength;
+      }
+    } else {
+      mUnmaskedStart = aStart;
+    }
     mUnmaskedLength = std::min(valueLength - mUnmaskedStart, aLength);
+    
+    
+    
+    if (mUnmaskedLength > 0 && mUnmaskedStart + mUnmaskedLength < valueLength &&
+        NS_IS_HIGH_SURROGATE(
+            textFragment->CharAt(mUnmaskedStart + mUnmaskedLength - 1)) &&
+        NS_IS_LOW_SURROGATE(
+            textFragment->CharAt(mUnmaskedStart + mUnmaskedLength))) {
+      ++mUnmaskedLength;
+    }
     
     
     if (!mMaskTimer && aLength && aTimeout && mUnmaskedLength) {
@@ -2288,9 +2312,10 @@ nsresult TextEditor::SetUnmaskRangeInternal(uint32_t aStart, uint32_t aLength,
     }
     
     if (PresShell* presShell = document->GetObservingPresShell()) {
-      CharacterDataChangeInfo changeInfo = {false, 0, firstChild->Length(),
-                                            firstChild->Length(), nullptr};
-      presShell->CharacterDataChanged(firstChild, changeInfo);
+      uint32_t valueLength = text->Length();
+      CharacterDataChangeInfo changeInfo = {false, 0, valueLength, valueLength,
+                                            nullptr};
+      presShell->CharacterDataChanged(text, changeInfo);
     }
 
     

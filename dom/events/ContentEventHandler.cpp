@@ -547,20 +547,10 @@ static void MaskString(nsString& aString, Text* aText,
 
   const char16_t kPasswordMask = TextEditor::PasswordMask();
   for (uint32_t i = aStartOffsetInString; i < aString.Length(); ++i) {
-    
-    
-    
-    
-    
     bool isSurrogatePair = NS_IS_HIGH_SURROGATE(aString.CharAt(i)) &&
                            i < aString.Length() - 1 &&
                            NS_IS_LOW_SURROGATE(aString.CharAt(i + 1));
-    bool mask = i < unmaskStart || i >= unmaskStart + unmaskLength;
-    if (mask && isSurrogatePair) {
-      mask = i + 1 < unmaskStart || i + 1 >= unmaskStart + unmaskLength;
-    }
-
-    if (mask) {
+    if (i < unmaskStart || i >= unmaskStart + unmaskLength) {
       if (isSurrogatePair) {
         aString.SetCharAt(kPasswordMask, i);
         aString.SetCharAt(kPasswordMask, i + 1);
