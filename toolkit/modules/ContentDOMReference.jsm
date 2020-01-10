@@ -18,10 +18,22 @@ var EXPORTED_SYMBOLS = ["ContentDOMReference"];
 
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
+XPCOMUtils.defineLazyServiceGetter(this, "finalizationService",
+                                   "@mozilla.org/toolkit/finalizationwitness;1",
+                                   "nsIFinalizationWitnessService");
 
 
 
 
+
+
+const FINALIZATION_TOPIC = "content-dom-reference-finalized";
+
+
+
+
+
+const finalizerRoots = new WeakMap();
 
 
 
@@ -37,6 +49,20 @@ const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm")
 var gRegistry = new WeakMap();
 
 var ContentDOMReference = {
+  _init() {
+    const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+    Services.obs.addObserver(this, FINALIZATION_TOPIC);
+  },
+
+  observe(subject, topic, data) {
+    if (topic !== FINALIZATION_TOPIC) {
+      throw new Error("Unexpected observer topic");
+    }
+
+    let identifier = JSON.parse(data);
+    this.revoke(identifier);
+  },
+
   
 
 
@@ -71,7 +97,14 @@ var ContentDOMReference = {
     mappings.elementToID.set(element, id);
     mappings.IDToElement.set(id, Cu.getWeakReference(element));
 
-    return { browsingContextId: browsingContext.id, id };
+    let identifier = { browsingContextId: browsingContext.id, id };
+
+    finalizerRoots.set(
+        element,
+        finalizationService.make(FINALIZATION_TOPIC,
+                                 JSON.stringify(identifier)));
+
+    return identifier;
   },
 
   
@@ -110,6 +143,7 @@ var ContentDOMReference = {
     let element = this._resolveIDToElement(browsingContext, id);
     if (element) {
       mappings.elementToID.delete(element);
+      finalizerRoots.delete(element);
     }
 
     mappings.IDToElement.delete(id);
@@ -140,3 +174,5 @@ var ContentDOMReference = {
     return weakReference.get();
   },
 };
+
+ContentDOMReference._init();
