@@ -244,10 +244,6 @@ using namespace mozilla::net;
 static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);
 
 
-
-static bool gAddedPreferencesVarCache = false;
-
-
 static int32_t gNumberOfDocumentsLoading = 0;
 
 
@@ -270,8 +266,6 @@ extern mozilla::LazyLogModule gPageCacheLog;
 const char kBrandBundleURL[] = "chrome://branding/locale/brand.properties";
 const char kAppstringsBundleURL[] =
     "chrome://global/locale/appstrings.properties";
-
-bool nsDocShell::sUseErrorPages = false;
 
 
 nsIURIFixup* nsDocShell::sURIFixup = nullptr;
@@ -2088,6 +2082,7 @@ nsDocShell::GetUseErrorPages(bool* aUseErrorPages) {
 
 NS_IMETHODIMP
 nsDocShell::SetUseErrorPages(bool aUseErrorPages) {
+  
   
   if (mObserveErrorPages) {
     mObserveErrorPages = false;
@@ -4949,14 +4944,7 @@ nsDocShell::Create() {
       "security.strict_security_checks.enabled", mUseStrictSecurityChecks);
 
   
-  mUseErrorPages =
-      Preferences::GetBool("browser.xul.error_pages.enabled", mUseErrorPages);
-
-  if (!gAddedPreferencesVarCache) {
-    Preferences::AddBoolVarCache(
-        &sUseErrorPages, "browser.xul.error_pages.enabled", mUseErrorPages);
-    gAddedPreferencesVarCache = true;
-  }
+  mUseErrorPages = StaticPrefs::browser_xul_error_pages_enabled();
 
   mDisableMetaRefreshWhenInactive =
       Preferences::GetBool("browser.meta_refresh_when_inactive.disabled",

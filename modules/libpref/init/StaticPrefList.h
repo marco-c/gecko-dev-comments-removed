@@ -976,6 +976,14 @@ VARCACHE_PREF(
 PREF("browser.visited_color", String, "")
 
 
+VARCACHE_PREF(
+  Live,
+  "browser.xul.error_pages.enabled",
+   browser_xul_error_pages_enabled,
+  bool, true
+)
+
+
 
 
 
