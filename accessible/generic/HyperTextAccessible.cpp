@@ -300,7 +300,7 @@ uint32_t HyperTextAccessible::TransformOffset(Accessible* aDescendant,
       
       
       
-      if (offset == 0 && descendant->Parent()->IsHTMLListItem() &&
+      if (offset == 0 && parent && parent->IsHTMLListItem() &&
           descendant->PrevSibling() && descendant->PrevSibling()->GetFrame() &&
           descendant->PrevSibling()->GetFrame()->IsBulletFrame()) {
         offset = 0;
