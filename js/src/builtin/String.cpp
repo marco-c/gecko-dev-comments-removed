@@ -18,6 +18,7 @@
 
 #include <limits>
 #include <string.h>
+#include <type_traits>
 
 #include "jsapi.h"
 #include "jsnum.h"
@@ -2761,9 +2762,13 @@ static bool AppendDollarReplacement(StringBuffer& newReplaceChars,
                                     size_t matchLimit, JSLinearString* text,
                                     const CharT* repChars, size_t repLength) {
   MOZ_ASSERT(firstDollarIndex < repLength);
+  MOZ_ASSERT(matchStart <= matchLimit);
+  MOZ_ASSERT(matchLimit <= text->length());
 
   
-  newReplaceChars.infallibleAppend(repChars, firstDollarIndex);
+  if (!newReplaceChars.append(repChars, firstDollarIndex)) {
+    return false;
+  }
 
   
   const CharT* repLimit = repChars + repLength;
@@ -3040,6 +3045,255 @@ JSString* js::str_replace_string_raw(JSContext* cx, HandleString string,
     return BuildFlatRopeReplacement(cx, string, repl, match, patternLength);
   }
   return BuildFlatReplacement(cx, string, repl, match, patternLength);
+}
+
+
+
+
+
+
+template <typename StrChar, typename RepChar>
+static JSString* ReplaceAll(JSContext* cx, JSLinearString* string,
+                            JSLinearString* searchString,
+                            JSLinearString* replaceString) {
+  
+  const size_t stringLength = string->length();
+  const size_t searchLength = searchString->length();
+  const size_t replaceLength = replaceString->length();
+
+  MOZ_ASSERT(stringLength > 0);
+  MOZ_ASSERT(searchLength > 0);
+  MOZ_ASSERT(stringLength >= searchLength);
+
+  
+
+  
+
+  
+  
+  int32_t position = StringMatch(string, searchString, 0);
+
+  
+  if (position < 0) {
+    return string;
+  }
+
+  
+
+  
+  uint32_t endOfLastMatch = 0;
+
+  
+  JSStringBuilder result(cx);
+  if (std::is_same<StrChar, char16_t>::value ||
+      std::is_same<RepChar, char16_t>::value) {
+    if (!result.ensureTwoByteChars()) {
+      return nullptr;
+    }
+  }
+
+  {
+    AutoCheckCannotGC nogc;
+    const StrChar* strChars = string->chars<StrChar>(nogc);
+    const RepChar* repChars = replaceString->chars<RepChar>(nogc);
+
+    uint32_t dollarIndex = FindDollarIndex(repChars, replaceLength);
+
+    
+    
+    if (replaceLength >= searchLength) {
+      if (!result.reserve(stringLength)) {
+        return nullptr;
+      }
+    }
+
+    do {
+      
+      
+      if (!result.append(strChars + endOfLastMatch,
+                         position - endOfLastMatch)) {
+        return nullptr;
+      }
+
+      
+      
+      if (dollarIndex != UINT32_MAX) {
+        size_t matchLimit = position + searchLength;
+        if (!AppendDollarReplacement(result, dollarIndex, position, matchLimit,
+                                     string, repChars, replaceLength)) {
+          return nullptr;
+        }
+      } else {
+        if (!result.append(repChars, replaceLength)) {
+          return nullptr;
+        }
+      }
+
+      
+      endOfLastMatch = position + searchLength;
+
+      
+      
+      position = StringMatch(string, searchString, endOfLastMatch);
+    } while (position >= 0);
+
+    
+    
+    if (!result.append(strChars + endOfLastMatch,
+                       stringLength - endOfLastMatch)) {
+      return nullptr;
+    }
+  }
+
+  
+  return result.finishString();
+}
+
+
+
+
+
+
+
+template <typename StrChar, typename RepChar>
+static JSString* ReplaceAllInterleave(JSContext* cx, JSLinearString* string,
+                                      JSLinearString* replaceString) {
+  
+  const size_t stringLength = string->length();
+  const size_t replaceLength = replaceString->length();
+
+  
+
+  
+
+  
+  JSStringBuilder result(cx);
+  if (std::is_same<StrChar, char16_t>::value ||
+      std::is_same<RepChar, char16_t>::value) {
+    if (!result.ensureTwoByteChars()) {
+      return nullptr;
+    }
+  }
+
+  {
+    AutoCheckCannotGC nogc;
+    const StrChar* strChars = string->chars<StrChar>(nogc);
+    const RepChar* repChars = replaceString->chars<RepChar>(nogc);
+
+    uint32_t dollarIndex = FindDollarIndex(repChars, replaceLength);
+
+    if (dollarIndex != UINT32_MAX) {
+      if (!result.reserve(stringLength)) {
+        return nullptr;
+      }
+    } else {
+      
+      CheckedInt<uint32_t> strLength(stringLength);
+      CheckedInt<uint32_t> repLength(replaceLength);
+      CheckedInt<uint32_t> length = strLength + (strLength + 1) * repLength;
+      if (!length.isValid()) {
+        ReportAllocationOverflow(cx);
+        return nullptr;
+      }
+
+      if (!result.reserve(length.value())) {
+        return nullptr;
+      }
+    }
+
+    auto appendReplacement = [&](size_t match) {
+      if (dollarIndex != UINT32_MAX) {
+        return AppendDollarReplacement(result, dollarIndex, match, match,
+                                       string, repChars, replaceLength);
+      }
+      return result.append(repChars, replaceLength);
+    };
+
+    for (size_t index = 0; index < stringLength; index++) {
+      
+      
+      if (!appendReplacement(index)) {
+        return nullptr;
+      }
+
+      
+      if (!result.append(strChars[index])) {
+        return nullptr;
+      }
+    }
+
+    
+    
+    if (!appendReplacement(stringLength)) {
+      return nullptr;
+    }
+
+    
+  }
+
+  
+  return result.finishString();
+}
+
+
+
+
+
+
+
+JSString* js::str_replaceAll_string_raw(JSContext* cx, HandleString string,
+                                        HandleString searchString,
+                                        HandleString replaceString) {
+  const size_t stringLength = string->length();
+  const size_t searchLength = searchString->length();
+
+  
+  if (searchLength > stringLength) {
+    return string;
+  }
+
+  RootedLinearString str(cx, string->ensureLinear(cx));
+  if (!str) {
+    return nullptr;
+  }
+
+  RootedLinearString repl(cx, replaceString->ensureLinear(cx));
+  if (!repl) {
+    return nullptr;
+  }
+
+  RootedLinearString search(cx, searchString->ensureLinear(cx));
+  if (!search) {
+    return nullptr;
+  }
+
+  
+  
+  if (searchLength == 0) {
+    if (str->hasTwoByteChars()) {
+      if (repl->hasTwoByteChars()) {
+        return ReplaceAllInterleave<char16_t, char16_t>(cx, str, repl);
+      }
+      return ReplaceAllInterleave<char16_t, Latin1Char>(cx, str, repl);
+    }
+    if (repl->hasTwoByteChars()) {
+      return ReplaceAllInterleave<Latin1Char, char16_t>(cx, str, repl);
+    }
+    return ReplaceAllInterleave<Latin1Char, Latin1Char>(cx, str, repl);
+  }
+
+  MOZ_ASSERT(stringLength > 0);
+
+  if (str->hasTwoByteChars()) {
+    if (repl->hasTwoByteChars()) {
+      return ReplaceAll<char16_t, char16_t>(cx, str, search, repl);
+    }
+    return ReplaceAll<char16_t, Latin1Char>(cx, str, search, repl);
+  }
+  if (repl->hasTwoByteChars()) {
+    return ReplaceAll<Latin1Char, char16_t>(cx, str, search, repl);
+  }
+  return ReplaceAll<Latin1Char, Latin1Char>(cx, str, search, repl);
 }
 
 static ArrayObject* NewFullyAllocatedStringArray(JSContext* cx,
@@ -3397,6 +3651,9 @@ static const JSFunctionSpec string_methods[] = {
     JS_SELF_HOSTED_FN("matchAll", "String_matchAll", 1, 0),
     JS_SELF_HOSTED_FN("search", "String_search", 1, 0),
     JS_SELF_HOSTED_FN("replace", "String_replace", 2, 0),
+#ifdef NIGHTLY_BUILD
+    JS_SELF_HOSTED_FN("replaceAll", "String_replaceAll", 2, 0),
+#endif
     JS_SELF_HOSTED_FN("split", "String_split", 2, 0),
     JS_SELF_HOSTED_FN("substr", "String_substr", 2, 0),
 

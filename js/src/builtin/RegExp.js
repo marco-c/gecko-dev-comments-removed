@@ -1310,3 +1310,23 @@ function RegExpStringIteratorNext() {
     result.value = match;
     return result;
 }
+
+
+
+function IsRegExp(argument) {
+    
+    if (!IsObject(argument)) {
+        return false;
+    }
+
+    
+    var matcher = argument[std_match];
+
+    
+    if (matcher !== undefined) {
+        return !!matcher;
+    }
+
+    
+    return IsPossiblyWrappedRegExpObject(argument);
+}
