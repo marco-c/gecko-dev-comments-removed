@@ -2,7 +2,6 @@
 
 
 
-use bincode;
 use euclid::SideOffsets2D;
 use peek_poke::{ensure_red_zone, peek_from_slice, poke_extend_vec};
 use peek_poke::{poke_inplace_slice, poke_into_vec, Poke};
@@ -11,10 +10,10 @@ use serde::de::Deserializer;
 #[cfg(feature = "serialize")]
 use serde::ser::{Serializer, SerializeSeq};
 use serde::{Deserialize, Serialize};
-use std::io::{Read, stdout, Write};
+use std::io::{stdout, Write};
 use std::marker::PhantomData;
 use std::ops::Range;
-use std::{io, mem, ptr, slice};
+use std::mem;
 use std::collections::HashMap;
 use time::precise_time_ns;
 
@@ -750,149 +749,6 @@ impl<'de> Deserialize<'de> for BuiltDisplayList {
                 total_spatial_nodes,
             },
         })
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-struct UnsafeVecWriter(*mut u8);
-
-impl Write for UnsafeVecWriter {
-    #[inline(always)]
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        unsafe {
-            ptr::copy_nonoverlapping(buf.as_ptr(), self.0, buf.len());
-            self.0 = self.0.add(buf.len());
-        }
-        Ok(buf.len())
-    }
-
-    #[inline(always)]
-    fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
-        unsafe {
-            ptr::copy_nonoverlapping(buf.as_ptr(), self.0, buf.len());
-            self.0 = self.0.add(buf.len());
-        }
-        Ok(())
-    }
-
-    #[inline(always)]
-    fn flush(&mut self) -> io::Result<()> { Ok(()) }
-}
-
-struct SizeCounter(usize);
-
-impl<'a> Write for SizeCounter {
-    #[inline(always)]
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.0 += buf.len();
-        Ok(buf.len())
-    }
-
-    #[inline(always)]
-    fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
-        self.0 += buf.len();
-        Ok(())
-    }
-
-    #[inline(always)]
-    fn flush(&mut self) -> io::Result<()> { Ok(()) }
-}
-
-
-
-
-
-struct UnsafeReader<'a: 'b, 'b> {
-    start: *const u8,
-    end: *const u8,
-    slice: &'b mut &'a [u8],
-}
-
-impl<'a, 'b> UnsafeReader<'a, 'b> {
-    #[inline(always)]
-    fn new(buf: &'b mut &'a [u8]) -> UnsafeReader<'a, 'b> {
-        unsafe {
-            let end = buf.as_ptr().add(buf.len());
-            let start = buf.as_ptr();
-            UnsafeReader { start, end, slice: buf }
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline(always)]
-    fn read_internal(&mut self, buf: &mut [u8]) {
-        
-        unsafe {
-            assert!(self.start.add(buf.len()) <= self.end, "UnsafeReader: read past end of target");
-            ptr::copy_nonoverlapping(self.start, buf.as_mut_ptr(), buf.len());
-            self.start = self.start.add(buf.len());
-        }
-    }
-}
-
-impl<'a, 'b> Drop for UnsafeReader<'a, 'b> {
-    
-    #[inline(always)]
-    fn drop(&mut self) {
-        
-        unsafe {
-            *self.slice = slice::from_raw_parts(self.start, (self.end as usize) - (self.start as usize));
-        }
-    }
-}
-
-impl<'a, 'b> Read for UnsafeReader<'a, 'b> {
-    
-    
-    #[inline(always)]
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.read_internal(buf);
-        Ok(buf.len())
-    }
-    #[inline(always)]
-    fn read_exact(&mut self, buf: &mut [u8]) -> io::Result<()> {
-        self.read_internal(buf);
-        Ok(())
     }
 }
 
