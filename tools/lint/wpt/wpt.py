@@ -4,6 +4,8 @@
 
 
 
+from __future__ import absolute_import, print_function
+
 import json
 import os
 import platform
@@ -31,8 +33,8 @@ def lint(files, config, **kwargs):
         results.append(result.from_config(config, **data))
 
     if files == [tests_dir]:
-        print >> sys.stderr, ("No specific files specified, running the full wpt lint"
-                              " (this is slow)")
+        print("No specific files specified, running the full wpt lint"
+              " (this is slow)", file=sys.stderr)
         files = ["--all"]
     cmd = [os.path.join(tests_dir, 'wpt'), 'lint', '--json'] + files
     if platform.system() == 'Windows':

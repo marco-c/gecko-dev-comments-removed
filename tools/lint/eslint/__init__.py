@@ -4,13 +4,17 @@
 
 
 
+from __future__ import absolute_import, print_function
+
 import json
 import os
 import re
 import signal
 import sys
+
 sys.path.append(os.path.join(os.path.dirname(__file__), "eslint"))
-import setup_helper
+from eslint import setup_helper
+
 from mozbuild.nodeutil import find_node_executable
 
 from mozprocess import ProcessHandler
