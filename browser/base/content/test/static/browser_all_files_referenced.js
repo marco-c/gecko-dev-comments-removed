@@ -141,9 +141,6 @@ var whitelist = [
   {file: "chrome://mozapps/skin/downloads/buttons.png", platforms: ["macosx"]},
   {file: "chrome://mozapps/skin/downloads/downloadButtons.png", platforms: ["linux", "win"]},
   
-  {file: "chrome://mozapps/skin/update/downloadButtons.png",
-   platforms: ["linux"]},
-  
   {file: "chrome://pippki/content/resetpassword.xul"},
   
   {file: "resource://gre/modules/Manifest.jsm"},

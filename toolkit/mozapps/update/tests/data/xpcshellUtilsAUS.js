@@ -771,9 +771,6 @@ function setupTestCommon(aAppUpdateAutoEnabled = false, aAllowBits = false) {
 
   setDefaultPrefs();
 
-  
-  Services.prefs.setBoolPref(PREF_APP_UPDATE_SILENT, true);
-
   gGREDirOrig = getGREDir();
   gGREBinDirOrig = getGREBinDir();
 

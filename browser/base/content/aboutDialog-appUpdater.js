@@ -45,16 +45,6 @@ function appUpdater(options = {}) {
   this.updateDeck = document.getElementById("updateDeck");
   this.promiseAutoUpdateSetting = null;
 
-  
-  
-  
-  
-  if (Services.wm.getMostRecentWindow("Update:Wizard") &&
-      !this.isReadyForRestart) {
-    this.updateDeck.hidden = true;
-    return;
-  }
-
   this.bundle = Services.strings.
                 createBundle("chrome://browser/locale/browser.properties");
 

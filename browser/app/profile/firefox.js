@@ -110,11 +110,6 @@ pref("app.update.timerFirstInterval", 30000);
 
 
 
-
-
-pref("app.update.altwindowtype", "Browser:About");
-
-
 pref("app.update.log", false);
 
 
@@ -126,9 +121,6 @@ pref("app.update.log.file", false);
 
 
 pref("app.update.backgroundMaxErrors", 10);
-
-
-pref("app.update.doorhanger", true);
 
 
 pref("app.update.link.updateAvailableWhatsNew", "update-available-whats-new");
@@ -153,11 +145,6 @@ pref("app.update.auto", true);
 #endif
 
 
-pref("app.update.silent", false);
-
-
-
-
 
 pref("app.update.staging.enabled", true);
 
@@ -169,8 +156,6 @@ pref("app.update.url", "https://aus5.mozilla.org/update/6/%PRODUCT%/%VERSION%/%B
 
 
 
-
-pref("app.update.idletime", 60);
 
 
 #ifdef MOZ_MAINTENANCE_SERVICE

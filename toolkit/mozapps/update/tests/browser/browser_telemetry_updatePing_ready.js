@@ -1,6 +1,7 @@
 
 
 
+"use strict";
 
 ChromeUtils.import("resource://testing-common/TelemetryArchiveTesting.jsm", this);
 
