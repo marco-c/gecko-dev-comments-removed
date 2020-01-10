@@ -13,6 +13,7 @@
 #include "builtin/MapObject.h"
 #include "debugger/DebugAPI.h"
 #include "frontend/BytecodeCompiler.h"
+#include "gc/ClearEdgesTracer.h"
 #include "gc/GCInternals.h"
 #include "gc/Marking.h"
 #include "jit/MacroAssembler.h"
@@ -270,12 +271,6 @@ void js::gc::GCRuntime::traceRuntimeForMajorGC(JSTracer* trc,
                                                AutoGCSession& session) {
   MOZ_ASSERT(!TlsContext.get()->suppressGC);
 
-  
-  
-  if (rt->isBeingDestroyed()) {
-    return;
-  }
-
   gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK_ROOTS);
   if (atomsZone->isCollecting()) {
     traceRuntimeAtoms(trc, session.checkAtomsAccess());
@@ -391,39 +386,50 @@ void js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc,
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK_EMBEDDING);
 
     
-    JS::AutoSuppressGCAnalysis nogc;
+
+
+
+
+
+
+    traceEmbeddingBlackRoots(trc);
 
     
-
-
-
-
-
-
-    for (size_t i = 0; i < blackRootTracers.ref().length(); i++) {
-      const Callback<JSTraceDataOp>& e = blackRootTracers.ref()[i];
-      (*e.op)(trc, e.data);
+    if (traceOrMark == TraceRuntime) {
+      traceEmbeddingGrayRoots(trc);
     }
+  }
+}
 
-    
-    if (JSTraceDataOp op = grayRootTracer.op) {
-      if (traceOrMark == TraceRuntime) {
-        (*op)(trc, grayRootTracer.data);
-      }
-    }
+void GCRuntime::traceEmbeddingBlackRoots(JSTracer* trc) {
+  
+  JS::AutoSuppressGCAnalysis nogc;
+
+  for (size_t i = 0; i < blackRootTracers.ref().length(); i++) {
+    const Callback<JSTraceDataOp>& e = blackRootTracers.ref()[i];
+    (*e.op)(trc, e.data);
+  }
+}
+
+void GCRuntime::traceEmbeddingGrayRoots(JSTracer* trc) {
+  
+  JS::AutoSuppressGCAnalysis nogc;
+
+  if (JSTraceDataOp op = grayRootTracer.op) {
+    (*op)(trc, grayRootTracer.data);
   }
 }
 
 #ifdef DEBUG
 class AssertNoRootsTracer final : public JS::CallbackTracer {
   bool onChild(const JS::GCCellPtr& thing) override {
-    MOZ_CRASH("There should not be any roots after finishRoots");
+    MOZ_CRASH("There should not be any roots during runtime shutdown");
     return true;
   }
 
  public:
-  AssertNoRootsTracer(JSRuntime* rt, WeakMapTraceKind weakTraceKind)
-      : JS::CallbackTracer(rt, weakTraceKind) {}
+  explicit AssertNoRootsTracer(JSRuntime* rt)
+      : JS::CallbackTracer(rt, TraceWeakMapKeysValues) {}
 };
 #endif  
 
@@ -442,20 +448,18 @@ void js::gc::GCRuntime::finishRoots() {
     r->finishRoots();
   }
 
+  
+  
+  ClearEdgesTracer trc(rt);
+  traceEmbeddingBlackRoots(&trc);
+  traceEmbeddingGrayRoots(&trc);
+  clearBlackAndGrayRootTracers();
+}
+
+void js::gc::GCRuntime::checkNoRuntimeRoots(AutoGCSession& session) {
 #ifdef DEBUG
-  
-  
-  auto prior = grayRootTracer;
-  grayRootTracer = Callback<JSTraceDataOp>(nullptr, nullptr);
-
-  AssertNoRootsTracer trc(rt, TraceWeakMapKeysValues);
-  AutoTraceSession session(rt);
-  gcstats::AutoPhase ap(rt->gc.stats(), gcstats::PhaseKind::TRACE_HEAP);
-  traceRuntime(&trc, session);
-
-  
-  
-  grayRootTracer = prior;
+  AssertNoRootsTracer trc(rt);
+  traceRuntimeForMajorGC(&trc, session);
 #endif  
 }
 

@@ -24,6 +24,9 @@ class TenuredHeap;
 
 JS_FRIEND_API const char* GCTraceKindToAscii(JS::TraceKind kind);
 
+
+JS_FRIEND_API size_t GCTraceKindSize(JS::TraceKind kind);
+
 }  
 
 enum WeakMapTraceKind {
@@ -477,6 +480,15 @@ template <typename T>
 bool IsAboutToBeFinalizedUnbarriered(T* thingp);
 
 }  
+
+#ifdef DEBUG
+
+
+
+
+extern JS_FRIEND_API bool RuntimeIsBeingDestroyed();
+#endif
+
 }  
 
 #endif 

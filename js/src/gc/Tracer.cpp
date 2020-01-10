@@ -54,7 +54,10 @@ bool DoCallback(JS::CallbackTracer* trc, T* thingp, const char* name) {
   
   bool ret = true;
   auto thing = MapGCThingTyped(*thingp, [trc, name, &ret](auto t) {
-    ret = DoCallback(trc, &t, name);
+    if (!DoCallback(trc, &t, name)) {
+      ret = false;
+      return TaggedPtr<T>::empty();
+    }
     return TaggedPtr<T>::wrap(t);
   });
   

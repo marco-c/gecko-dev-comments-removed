@@ -1136,9 +1136,8 @@ void XPCJSRuntime::Shutdown(JSContext* cx) {
   
   
   
+  
   JS_RemoveFinalizeCallback(cx, FinalizeCallback);
-  JS_RemoveWeakPointerZonesCallback(cx, WeakPointerZonesCallback);
-  JS_RemoveWeakPointerCompartmentCallback(cx, WeakPointerCompartmentCallback);
   xpc_DelocalizeRuntime(JS_GetRuntime(cx));
 
   JS::SetGCSliceCallback(cx, mPrevGCSliceCallback);
@@ -1148,10 +1147,7 @@ void XPCJSRuntime::Shutdown(JSContext* cx) {
   gHelperThreads = nullptr;
 
   
-  mWrappedJSMap->ShutdownMarker();
-  delete mWrappedJSMap;
-  mWrappedJSMap = nullptr;
-
+  
   delete mIID2NativeInterfaceMap;
   mIID2NativeInterfaceMap = nullptr;
 
@@ -1172,6 +1168,7 @@ void XPCJSRuntime::Shutdown(JSContext* cx) {
 
 XPCJSRuntime::~XPCJSRuntime() {
   MOZ_COUNT_DTOR_INHERITED(XPCJSRuntime, CycleCollectedJSRuntime);
+  delete mWrappedJSMap;
 }
 
 

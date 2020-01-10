@@ -268,13 +268,13 @@ void JSRuntime::destroyRuntime() {
     CancelOffThreadCompressions(this);
 
     
-    gc.finishRoots();
-
-    
 
 
 
     beingDestroyed_ = true;
+
+    
+    gc.finishRoots();
 
     
     profilingScripts = false;
