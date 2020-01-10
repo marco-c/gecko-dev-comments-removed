@@ -11080,10 +11080,8 @@ nsresult Document::CloneDocHelper(Document* clone) const {
     
     
     
-    nsCOMPtr<nsIContentViewer> contentViewer;
-    mDocumentContainer->GetContentViewer(getter_AddRefs(contentViewer));
-    MOZ_ASSERT(contentViewer);
-    contentViewer->SetDocument(clone);
+    
+    clone->mHasHadScriptHandlingObject = true;
   } else if (scriptObject) {
     clone->SetScriptHandlingObject(scriptObject);
   } else {
