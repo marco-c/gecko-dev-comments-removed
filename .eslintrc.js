@@ -40,24 +40,10 @@ module.exports = {
     "plugin:mozilla/recommended"
   ],
   "plugins": [
-    "html",
     "mozilla"
   ],
-  
-  
-  
-  "settings": {
-    "html/xml-extensions": [ ".xhtml" ]
-  },
 
   "overrides": [{
-    
-    
-    "files": "**/*.*html",
-    "rules": {
-      "eol-last": "off",
-    }
-  }, {
     
     
     
@@ -88,7 +74,6 @@ module.exports = {
     
     
     "files": xpcshellTestPaths.map(path => `${path}head*.js`),
-
     "rules": {
       "no-unused-vars": ["error", {
         "args": "none",

@@ -52,6 +52,13 @@ module.exports = {
   "overrides": [{
     
     
+    "files": "**/*.*html",
+    "rules": {
+      "eol-last": "off",
+    },
+  }, {
+    
+    
     "files": "**/*.xml",
     "rules": {
       "mozilla/use-services": "off",
@@ -81,6 +88,7 @@ module.exports = {
 
   
   "plugins": [
+    "html",
     "fetch-options",
     "no-unsanitized",
     "prettier",
@@ -388,5 +396,12 @@ module.exports = {
 
     
     "spaced-comment": ["error", "always", { "markers": ["#"] }],
+  },
+
+  
+  
+  
+  "settings": {
+    "html/xml-extensions": [ ".xhtml" ],
   },
 };
