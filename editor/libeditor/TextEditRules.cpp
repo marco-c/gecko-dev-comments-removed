@@ -250,8 +250,7 @@ nsresult TextEditRules::AfterEdit(EditSubAction aEditSubAction,
     
     mCachedSelectionNode = nullptr;
 
-    
-    rv = RemoveRedundantTrailingBR();
+    rv = TextEditorRef().MaybeChangePaddingBRElementForEmptyEditor();
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -1220,47 +1219,6 @@ nsresult TextEditRules::WillOutputText(const nsAString* aOutputFormat,
   text->GetData(*aOutString);
 
   *aHandled = true;
-  return NS_OK;
-}
-
-nsresult TextEditRules::RemoveRedundantTrailingBR() {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  
-  if (TextEditorRef().mPaddingBRElementForEmptyEditor) {
-    return NS_OK;
-  }
-
-  
-  if (IsSingleLineEditor()) {
-    return NS_OK;
-  }
-
-  Element* rootElement = TextEditorRef().GetRoot();
-  if (NS_WARN_IF(!rootElement)) {
-    return NS_ERROR_NULL_POINTER;
-  }
-
-  if (rootElement->GetChildCount() > 1) {
-    
-    return NS_OK;
-  }
-
-  RefPtr<HTMLBRElement> brElement =
-      HTMLBRElement::FromNodeOrNull(rootElement->GetFirstChild());
-  if (!brElement ||
-      !EditorBase::IsPaddingBRElementForEmptyLastLine(*brElement)) {
-    return NS_OK;
-  }
-
-  
-  
-  TextEditorRef().mPaddingBRElementForEmptyEditor = std::move(brElement);
-  TextEditorRef().mPaddingBRElementForEmptyEditor->UnsetFlags(
-      NS_PADDING_FOR_EMPTY_LAST_LINE);
-  TextEditorRef().mPaddingBRElementForEmptyEditor->SetFlags(
-      NS_PADDING_FOR_EMPTY_EDITOR);
-
   return NS_OK;
 }
 

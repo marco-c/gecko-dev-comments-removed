@@ -584,6 +584,13 @@ class TextEditor : public EditorBase,
   MOZ_CAN_RUN_SCRIPT
   nsresult EndEditorInit();
 
+  
+
+
+
+
+  nsresult MaybeChangePaddingBRElementForEmptyEditor();
+
  protected:  
   virtual ~TextEditor();
 
