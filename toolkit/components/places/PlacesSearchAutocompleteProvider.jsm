@@ -275,10 +275,14 @@ var PlacesSearchAutocompleteProvider = Object.freeze({
 
 
 
-  async currentEngine() {
+
+
+  async currentEngine(inPrivateWindow) {
     await this.ensureInitialized();
 
-    return Services.search.defaultEngine;
+    return inPrivateWindow
+      ? Services.search.defaultPrivateEngine
+      : Services.search.defaultEngine;
   },
 
   
