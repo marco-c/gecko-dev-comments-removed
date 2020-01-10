@@ -391,25 +391,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult PopListItem(nsIContent& aListItem,
-                                    bool* aOutOfList = nullptr);
-
-  
-
-
-
-
-
-
-
-
-
-
-
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult RemoveListStructure(Element& aListElement);
 

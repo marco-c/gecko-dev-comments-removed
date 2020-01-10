@@ -2274,6 +2274,32 @@ class HTMLEditor final : public TextEditor,
   HandleDeleteSelection(nsIEditor::EDirection aDirectionAndAmount,
                         nsIEditor::EStripWrappers aStripWrappers);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  enum class LiftUpFromAllParentListElements { Yes, No };
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult LiftUpListItemElement(
+      dom::Element& aListItemElement,
+      LiftUpFromAllParentListElements aLiftUpFromAllParentListElements);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
