@@ -181,6 +181,14 @@ class SharedIntlData {
 
 
 
+
+
+
+
+
+
+
+#if DEBUG || MOZ_SYSTEM_ICU
   using Locale = JSAtom*;
 
   struct LocaleHasher {
@@ -202,6 +210,7 @@ class SharedIntlData {
 
 
   bool ensureUpperCaseFirstLocales(JSContext* cx);
+#endif
 
  public:
   
