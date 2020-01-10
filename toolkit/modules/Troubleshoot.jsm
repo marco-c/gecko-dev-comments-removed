@@ -118,7 +118,12 @@ PREFS_GETTERS[Ci.nsIPrefBranch.PREF_INT] = (prefs, name) =>
 PREFS_GETTERS[Ci.nsIPrefBranch.PREF_BOOL] = (prefs, name) =>
   prefs.getBoolPref(name);
 
-const kURLDecorationPref = "privacy.restrict3rdpartystorage.url_decorations";
+
+
+const PREFS_UNIMPORTANT_LOCKED = [
+  "dom.postMessage.sharedArrayBuffer.bypassCOOP_COEP.insecure.enabled",
+  "privacy.restrict3rdpartystorage.url_decorations",
+];
 
 
 
@@ -392,11 +397,11 @@ var dataProviders = {
   },
 
   lockedPreferences: function lockedPreferences(done) {
-    
-    
     done(
       getPrefList(
-        name => name != kURLDecorationPref && Services.prefs.prefIsLocked(name)
+        name =>
+          !PREFS_UNIMPORTANT_LOCKED.includes(name) &&
+          Services.prefs.prefIsLocked(name)
       )
     );
   },
