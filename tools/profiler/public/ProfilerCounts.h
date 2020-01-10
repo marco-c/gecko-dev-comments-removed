@@ -92,11 +92,14 @@ class BaseProfilerCount {
 #  endif
     
   }
-#  ifdef DEBUG
-  ~BaseProfilerCount() { mCanary = 0; }
-#  endif
 
-  void Sample(int64_t& aCounter, uint64_t& aNumber) {
+  virtual ~BaseProfilerCount() {
+#  ifdef DEBUG
+    mCanary = 0;
+#  endif
+  }
+
+  virtual void Sample(int64_t& aCounter, uint64_t& aNumber) {
     MOZ_ASSERT(mCanary == COUNTER_CANARY);
 
     aCounter = *mCounter;
