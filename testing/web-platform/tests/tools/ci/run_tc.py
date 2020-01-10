@@ -42,6 +42,8 @@ import re
 import subprocess
 import sys
 import tempfile
+from socket import error as SocketError  
+import errno
 try:
     from urllib2 import urlopen
 except ImportError:
@@ -161,15 +163,41 @@ def install_webkitgtk_from_apt_repository(channel):
     run(["sudo", "apt-get", "-qqy", "-t", "bionic-wpt-webkit-updates", "install", "webkit2gtk-driver"])
 
 
+
+
+
+def download_url_to_descriptor(fd, url, max_retries=3):
+    download_succeed = False
+    if max_retries < 0:
+        max_retries = 0
+    for current_retry in range(max_retries+1):
+        try:
+            resp = urlopen(url)
+            
+            fd.seek(0)
+            fd.truncate(0)
+            while True:
+                chunk = resp.read(16*1024)
+                if not chunk:
+                    break  
+                fd.write(chunk)
+            fd.flush()
+            download_succeed = True
+            break  
+        except SocketError as e:
+            if e.errno != errno.ECONNRESET:
+                raise  
+            if current_retry < max_retries:
+                print("ERROR: Connection reset by peer. Retrying ...")
+                continue  
+    return download_succeed
+
+
 def install_webkitgtk_from_tarball_bundle(channel):
     with tempfile.NamedTemporaryFile(suffix=".tar.xz") as temp_tarball:
-        resp = urlopen("https://webkitgtk.org/built-products/nightly/webkitgtk-nightly-build-last.tar.xz")
-        while True:
-            chunk = resp.read(16*1024)
-            if not chunk:
-                break
-            temp_tarball.write(chunk)
-        temp_tarball.flush()
+        download_url = "https://webkitgtk.org/built-products/nightly/webkitgtk-nightly-build-last.tar.xz"
+        if not download_url_to_descriptor(temp_tarball, download_url):
+            raise RuntimeError("Can't download %s. Aborting" % download_url)
         run(["sudo", "tar", "xfa", temp_tarball.name, "-C", "/"])
     
     run(["sudo", "apt-get", "-qqy", "update"])
