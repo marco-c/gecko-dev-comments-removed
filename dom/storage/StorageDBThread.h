@@ -378,7 +378,7 @@ class StorageDBThread final {
   virtual bool ShouldPreloadOrigin(const nsACString& aOrigin);
 
   
-  void GetOriginsHavingData(InfallibleTArray<nsCString>* aOrigins);
+  void GetOriginsHavingData(nsTArray<nsCString>* aOrigins);
 
  private:
   nsCOMPtr<nsIFile> mDatabaseFile;
