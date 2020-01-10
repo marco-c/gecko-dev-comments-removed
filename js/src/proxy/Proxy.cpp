@@ -687,7 +687,7 @@ void ProxyObject::trace(JSTracer* trc, JSObject* obj) {
 
 
 
-      WrapperMap::Ptr p = proxy->compartment()->lookupWrapper(referent);
+      ObjectWrapperMap::Ptr p = proxy->compartment()->lookupWrapper(referent);
       MOZ_ASSERT(p);
       MOZ_ASSERT(*p->value().unsafeGet() == ObjectValue(*proxy));
     }

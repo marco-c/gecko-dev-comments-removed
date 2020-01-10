@@ -844,7 +844,7 @@ JSObject* WrapObjectPure(JSContext* cx, JSObject* obj) {
 
   
   
-  if (WrapperMap::Ptr p = cx->compartment()->lookupWrapper(obj)) {
+  if (ObjectWrapperMap::Ptr p = cx->compartment()->lookupWrapper(obj)) {
     JSObject* wrapped = &p->value().get().toObject();
 
     

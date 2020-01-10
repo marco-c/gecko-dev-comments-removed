@@ -548,7 +548,7 @@ void js::RemapWrapper(JSContext* cx, JSObject* wobjArg,
 
   
   
-  WrapperMap::Ptr p = wcompartment->lookupWrapper(origTarget);
+  ObjectWrapperMap::Ptr p = wcompartment->lookupWrapper(origTarget);
   MOZ_ASSERT(&p->value().unsafeGet()->toObject() == wobj);
   wcompartment->removeWrapper(p);
 
@@ -609,7 +609,7 @@ JS_FRIEND_API bool js::RemapAllWrappersForObject(JSContext* cx,
   AutoWrapperVector toTransplant(cx);
 
   for (CompartmentsIter c(cx->runtime()); !c.done(); c.next()) {
-    if (WrapperMap::Ptr wp = c->lookupWrapper(oldTarget)) {
+    if (ObjectWrapperMap::Ptr wp = c->lookupWrapper(oldTarget)) {
       
       if (!toTransplant.append(WrapperValue(wp))) {
         return false;
@@ -636,7 +636,8 @@ JS_FRIEND_API bool js::RecomputeWrappers(
       continue;
     }
 
-    if (!evictedNursery && c->hasNurseryAllocatedWrapperEntries(targetFilter)) {
+    if (!evictedNursery &&
+        c->hasNurseryAllocatedObjectWrapperEntries(targetFilter)) {
       cx->runtime()->gc.evictNursery();
       evictedNursery = true;
     }
