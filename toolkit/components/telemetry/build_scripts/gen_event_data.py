@@ -162,6 +162,7 @@ def generate_JSON_definitions(output, *filenames):
             
             'expires': event.expiry_version,
             'expired': False,
+            'products': event.products,
         })
 
     json.dump(event_definitions, output)
