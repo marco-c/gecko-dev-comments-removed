@@ -25,6 +25,7 @@
 #include "nsIPipe.h"
 #include "nsCRT.h"
 #include "mozilla/Tokenizer.h"
+#include "mozilla/Move.h"
 #include "TCPFastOpenLayer.h"
 
 #include "nsISeekableStream.h"
@@ -2368,8 +2369,17 @@ void nsHttpTransaction::Refused0RTT() {
 void nsHttpTransaction::SetHttpTrailers(nsCString& aTrailers) {
   LOG(("nsHttpTransaction::SetHttpTrailers %p", this));
   LOG(("[\n    %s\n]", aTrailers.BeginReading()));
-  if (!mForTakeResponseTrailers) {
-    mForTakeResponseTrailers = new nsHttpHeaderArray();
+
+  
+  nsAutoPtr<nsHttpHeaderArray> httpTrailers(new nsHttpHeaderArray());
+  
+  if (mForTakeResponseTrailers) {
+    MutexAutoLock lock(*nsHttp::GetLock());
+    if (mForTakeResponseTrailers) {
+      
+      
+      *httpTrailers = *mForTakeResponseTrailers;
+    }
   }
 
   int32_t cur = 0;
@@ -2386,21 +2396,24 @@ void nsHttpTransaction::SetHttpTrailers(nsCString& aTrailers) {
     nsHttpAtom hdr = {nullptr};
     nsAutoCString hdrNameOriginal;
     nsAutoCString val;
-    if (NS_SUCCEEDED(mForTakeResponseTrailers->ParseHeaderLine(
-            line, &hdr, &hdrNameOriginal, &val))) {
+    if (NS_SUCCEEDED(httpTrailers->ParseHeaderLine(line, &hdr, &hdrNameOriginal,
+                                                   &val))) {
       if (hdr == nsHttp::Server_Timing) {
-        Unused << mForTakeResponseTrailers->SetHeaderFromNet(
-            hdr, hdrNameOriginal, val, true);
+        Unused << httpTrailers->SetHeaderFromNet(hdr, hdrNameOriginal, val,
+                                                 true);
       }
     }
 
     cur = newline + 1;
   }
 
-  if (mForTakeResponseTrailers->Count() == 0) {
+  if (httpTrailers->Count() == 0) {
     
-    mForTakeResponseTrailers = nullptr;
+    httpTrailers = nullptr;
   }
+
+  MutexAutoLock lock(*nsHttp::GetLock());
+  Swap(mForTakeResponseTrailers, httpTrailers);
 }
 
 bool nsHttpTransaction::IsWebsocketUpgrade() {
