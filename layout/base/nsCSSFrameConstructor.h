@@ -1919,6 +1919,19 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   
+  
+  bool WipeInsertionParent(nsContainerFrame* aFrame);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool WipeContainingBlock(nsFrameConstructorState& aState,
                            nsIFrame* aContainingBlock, nsIFrame* aFrame,
                            FrameConstructionItemList& aItems, bool aIsAppend,
