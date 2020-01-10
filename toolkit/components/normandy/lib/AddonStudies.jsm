@@ -350,6 +350,20 @@ var AddonStudies = {
 
 
 
+  removeUnenrollListener(id, listener) {
+    let listeners = this._unenrollListeners.get(id);
+    if (listeners) {
+      listeners.delete(listener);
+    }
+  },
+
+  
+
+
+
+
+
+
 
 
   onUnenroll(id, reason) {
