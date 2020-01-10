@@ -695,7 +695,7 @@ ArrayObject* NumberFormatFields::toArray(JSContext* cx,
   
   
   size_t fieldsLen = fields_.length();
-  if (!fields_.resizeUninitialized(fieldsLen * 2)) {
+  if (!fields_.growByUninitialized(fieldsLen)) {
     return nullptr;
   }
 
@@ -710,9 +710,7 @@ ArrayObject* NumberFormatFields::toArray(JSContext* cx,
       }));
 
   
-  if (!fields_.resize(fieldsLen)) {
-    return nullptr;
-  }
+  fields_.shrinkBy(fieldsLen);
 
   
   
