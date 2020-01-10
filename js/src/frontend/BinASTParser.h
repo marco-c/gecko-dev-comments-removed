@@ -125,6 +125,9 @@ class BinASTParser : public BinASTParserPerTokenizer<Tok> {
 
   using Base::forceStrictIfNecessary;
 
+  using Base::isInvalidKindPossible;
+  using Base::isInvalidVariantPossible;
+
  public:
   
   

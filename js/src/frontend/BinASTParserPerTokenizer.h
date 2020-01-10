@@ -199,6 +199,16 @@ class BinASTParserPerTokenizer : public BinASTParserBase,
   
   void forceStrictIfNecessary(SharedContext* sc, ListNode* directives);
 
+  
+  
+  
+  static constexpr bool isInvalidKindPossible() {
+    return mozilla::IsSame<Tok, BinASTTokenReaderMultipart>::value;
+  }
+  static constexpr bool isInvalidVariantPossible() {
+    return mozilla::IsSame<Tok, BinASTTokenReaderMultipart>::value;
+  }
+
  protected:
   
   const JS::ReadOnlyCompileOptions& options_;
