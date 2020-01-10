@@ -168,6 +168,9 @@ class WidgetRenderingContext;
   BOOL mNeedsGLUpdate;
 
   
+  BOOL mIsUpdatingLayer;
+
+  
   
   
   
