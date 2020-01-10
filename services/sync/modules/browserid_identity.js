@@ -80,98 +80,6 @@ const OBSERVER_TOPICS = [
 
 
 
-var telemetryHelper = {
-  
-  
-  STATES: {
-    SUCCESS: "SUCCESS",
-    NOTVERIFIED: "NOTVERIFIED",
-    REJECTED: "REJECTED",
-  },
-
-  PREFS: {
-    REJECTED_AT: "identity.telemetry.loginRejectedAt",
-    APPEARS_PERMANENTLY_REJECTED:
-      "identity.telemetry.loginAppearsPermanentlyRejected",
-    LAST_RECORDED_STATE: "identity.telemetry.lastRecordedState",
-  },
-
-  
-  
-  
-  NUM_MINUTES_TO_RECORD_REJECTED_TELEMETRY: 20160, 
-
-  SCALAR: "services.sync.sync_login_state_transitions", 
-
-  maybeRecordLoginState(status) {
-    try {
-      this._maybeRecordLoginState(status);
-    } catch (ex) {
-      log.error("Failed to record login telemetry", ex);
-    }
-  },
-
-  _maybeRecordLoginState(status) {
-    let key = this.STATES[status];
-    if (!key) {
-      throw new Error(`invalid state ${status}`);
-    }
-
-    let when = Svc.Prefs.get(this.PREFS.REJECTED_AT);
-    let howLong = when ? this.nowInMinutes() - when : 0; 
-    let isNewState = Svc.Prefs.get(this.PREFS.LAST_RECORDED_STATE) != status;
-
-    if (status == this.STATES.SUCCESS) {
-      if (isNewState) {
-        Services.telemetry.keyedScalarSet(this.SCALAR, key, true);
-        Svc.Prefs.set(this.PREFS.LAST_RECORDED_STATE, status);
-      }
-      
-      
-      if (when) {
-        
-        
-        if (!Svc.Prefs.get(this.PREFS.APPEARS_PERMANENTLY_REJECTED)) {
-          Services.telemetry
-            .getHistogramById("WEAVE_LOGIN_FAILED_FOR")
-            .add(howLong);
-        }
-      }
-      Svc.Prefs.reset(this.PREFS.REJECTED_AT);
-      Svc.Prefs.reset(this.PREFS.APPEARS_PERMANENTLY_REJECTED);
-    } else {
-      
-      if (Svc.Prefs.get(this.PREFS.APPEARS_PERMANENTLY_REJECTED)) {
-        return; 
-      }
-      if (isNewState) {
-        Services.telemetry.keyedScalarSet(this.SCALAR, key, true);
-        Svc.Prefs.set(this.PREFS.LAST_RECORDED_STATE, status);
-      }
-      if (howLong > this.NUM_MINUTES_TO_RECORD_REJECTED_TELEMETRY) {
-        
-        
-        Services.telemetry
-          .getHistogramById("WEAVE_LOGIN_FAILED_FOR")
-          .add(howLong);
-        Svc.Prefs.set(this.PREFS.APPEARS_PERMANENTLY_REJECTED, true);
-      }
-      if (!Svc.Prefs.has(this.PREFS.REJECTED_AT)) {
-        Svc.Prefs.set(this.PREFS.REJECTED_AT, this.nowInMinutes());
-      }
-    }
-  },
-
-  
-  nowInMinutes() {
-    return Math.floor(Date.now() / 1000 / 60);
-  },
-};
-
-
-
-
-
 
 
 
@@ -415,7 +323,6 @@ this.BrowserIDManager.prototype = {
       
       
       log.debug("unlockAndVerifyAuthState has an unverified user");
-      telemetryHelper.maybeRecordLoginState(telemetryHelper.STATES.NOTVERIFIED);
       return LOGIN_FAILED_LOGIN_REJECTED;
     }
     this._updateSignedInUser(data);
@@ -423,7 +330,6 @@ this.BrowserIDManager.prototype = {
       log.debug(
         "unlockAndVerifyAuthState already has (or can fetch) sync keys"
       );
-      telemetryHelper.maybeRecordLoginState(telemetryHelper.STATES.SUCCESS);
       return STATUS_OK;
     }
     
@@ -442,10 +348,8 @@ this.BrowserIDManager.prototype = {
     
     let result;
     if (await this._fxaService.keys.canGetKeys()) {
-      telemetryHelper.maybeRecordLoginState(telemetryHelper.STATES.SUCCESS);
       result = STATUS_OK;
     } else {
-      telemetryHelper.maybeRecordLoginState(telemetryHelper.STATES.REJECTED);
       result = LOGIN_FAILED_LOGIN_REJECTED;
     }
     log.debug(
@@ -554,7 +458,6 @@ this.BrowserIDManager.prototype = {
           this._signedInUser.kSync
         );
       }
-      telemetryHelper.maybeRecordLoginState(telemetryHelper.STATES.SUCCESS);
       Weave.Status.login = LOGIN_SUCCEEDED;
       this._token = token;
       return token;
@@ -580,7 +483,6 @@ this.BrowserIDManager.prototype = {
         this._log.error("Authentication error in _fetchTokenForUser", err);
         
         Weave.Status.login = LOGIN_FAILED_LOGIN_REJECTED;
-        telemetryHelper.maybeRecordLoginState(telemetryHelper.STATES.REJECTED);
       } else {
         this._log.error("Non-authentication error in _fetchTokenForUser", err);
         
