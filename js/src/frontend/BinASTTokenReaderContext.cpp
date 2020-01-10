@@ -65,7 +65,7 @@ const uint8_t MAX_PREFIX_BIT_LENGTH = 32;
 
 
 
-const uint8_t MAX_BIT_LENGTH_IN_SATURATED_TABLE = 8;
+const uint8_t MAX_BIT_LENGTH_IN_SATURATED_TABLE = 10;
 
 
 const uint8_t BIT_BUFFER_SIZE = 64;
@@ -1785,7 +1785,8 @@ JS::Result<Ok> HuffmanTableImplementationGeneric<T>::init(
     JSContext* cx, size_t numberOfSymbols, uint8_t maxBitLength) {
   MOZ_ASSERT(this->implementation.template is<
              HuffmanTableUnreachable>());  
-  if (maxBitLength > MAX_BIT_LENGTH_IN_SATURATED_TABLE) {
+  if (maxBitLength > MAX_BIT_LENGTH_IN_SATURATED_TABLE ||
+      numberOfSymbols > 256) {
     this->implementation = {
         mozilla::VariantType<HuffmanTableImplementationMap<T>>{}, cx};
     MOZ_TRY(this->implementation.template as<HuffmanTableImplementationMap<T>>()
@@ -2032,8 +2033,7 @@ JS::Result<Ok> HuffmanTableImplementationSaturated<T>::init(
   
   for (size_t i = 0; i < saturatedLength; ++i) {
     
-    saturated.infallibleAppend(
-        size_t(-1));  
+    saturated.infallibleAppend(uint8_t(-1));
   }
   return Ok();
 }
@@ -2041,9 +2041,8 @@ JS::Result<Ok> HuffmanTableImplementationSaturated<T>::init(
 #ifdef DEBUG
 template <typename T>
 void HuffmanTableImplementationSaturated<T>::selfCheck() {
-  MOZ_ASSERT(
-      this->maxBitLength <=
-      MAX_CODE_BIT_LENGTH);  
+  
+  MOZ_ASSERT(this->maxBitLength <= MAX_CODE_BIT_LENGTH);
 
   bool foundMaxBitLength = false;
   for (size_t i = 0; i < saturated.length(); ++i) {
@@ -2051,8 +2050,8 @@ void HuffmanTableImplementationSaturated<T>::selfCheck() {
     
     
     
-    const size_t index = saturated[i];
-    MOZ_ASSERT(index != size_t(-1));
+    const uint8_t index = saturated[i];
+    MOZ_ASSERT(index < values.length());
     if (values[index].key.bitLength == maxBitLength) {
       foundMaxBitLength = true;
     }
@@ -2075,7 +2074,8 @@ JS::Result<Ok> HuffmanTableImplementationSaturated<T>::addSymbol(
 
   
   if (!values.emplaceBack(bits, bitLength, std::move(value))) {
-    MOZ_CRASH();  
+    
+    MOZ_CRASH();
   }
 
   
@@ -2091,12 +2091,13 @@ JS::Result<Ok> HuffmanTableImplementationSaturated<T>::addSymbol(
   
   
   const uint8_t padding = maxBitLength - bitLength;
-  const size_t begin = bits << padding;  
+
+  
+  const size_t begin = bits << padding;
+
+  
   const size_t length =
-      ((padding != 0)  
-           ? size_t(-1) >> (8 * sizeof(size_t) - padding)
-           : 0) +
-      1;
+      ((padding != 0) ? size_t(-1) >> (8 * sizeof(size_t) - padding) : 0) + 1;
   for (size_t i = begin; i < begin + length; ++i) {
     saturated[i] = index;
   }
@@ -2111,11 +2112,13 @@ HuffmanEntry<const T*> HuffmanTableImplementationSaturated<T>::lookup(
   
   
   const uint32_t bits = key.leadingBits(maxBitLength);
-  const size_t index =
-      saturated[bits];  
-                        
-  const auto& entry =
-      values[index];  
+
+  
+  
+  const size_t index = saturated[bits];
+
+  
+  const auto& entry = values[index];
   return HuffmanEntry<const T*>(entry.key.bits, entry.key.bitLength,
                                 &entry.value);
 }
