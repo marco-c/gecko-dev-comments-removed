@@ -1154,12 +1154,6 @@ pref("privacy.popups.maxReported", 100);
 pref("privacy.trackingprotection.origin_telemetry.enabled", true);
 #endif
 
-pref("privacy.firstparty.isolate",                        false);
-
-
-
-pref("privacy.firstparty.isolate.restrict_opener_access", true);
-
 
 
 

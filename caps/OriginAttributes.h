@@ -9,6 +9,7 @@
 
 #include "mozilla/dom/ChromeUtils.h"
 #include "mozilla/dom/ChromeUtilsBinding.h"
+#include "mozilla/StaticPrefs_privacy.h"
 #include "nsIScriptSecurityManager.h"
 
 namespace mozilla {
@@ -83,7 +84,9 @@ class OriginAttributes : public dom::OriginAttributesDictionary {
   void SyncAttributesWithPrivateBrowsing(bool aInPrivateBrowsing);
 
   
-  static inline bool IsFirstPartyEnabled() { return sFirstPartyIsolation; }
+  static inline bool IsFirstPartyEnabled() {
+    return StaticPrefs::privacy_firstparty_isolate();
+  }
 
   
   
@@ -91,25 +94,20 @@ class OriginAttributes : public dom::OriginAttributesDictionary {
   static inline bool IsRestrictOpenerAccessForFPI() {
     
     
-    return !sFirstPartyIsolation || sRestrictedOpenerAccess;
+    return !StaticPrefs::privacy_firstparty_isolate() ||
+           StaticPrefs::privacy_firstparty_isolate_restrict_opener_access();
   }
 
   
   
   static inline MOZ_MUST_USE bool IsBlockPostMessageForFPI() {
-    return sFirstPartyIsolation && sBlockPostMessageForFPI;
+    return StaticPrefs::privacy_firstparty_isolate() &&
+           StaticPrefs::privacy_firstparty_isolate_block_post_message();
   }
 
   
   
   static bool IsPrivateBrowsing(const nsACString& aOrigin);
-
-  static void InitPrefs();
-
- private:
-  static bool sFirstPartyIsolation;
-  static bool sRestrictedOpenerAccess;
-  static bool sBlockPostMessageForFPI;
 };
 
 class OriginAttributesPattern : public dom::OriginAttributesPatternDictionary {
