@@ -16,6 +16,10 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
 
+namespace Json {
+class Value;
+}
+
 namespace mozilla {
 
 class ContentPrincipal final : public BasePrincipal {
@@ -52,6 +56,20 @@ class ContentPrincipal final : public BasePrincipal {
 
   nsCOMPtr<nsIURI> mDomain;
   nsCOMPtr<nsIURI> mCodebase;
+
+  virtual nsresult PopulateJSONObject(Json::Value& aObject) override;
+  
+  enum SerializableKeys { eCodebase = 0, eDomain, eSuffix, eMax = eSuffix };
+  
+  
+  
+  struct KeyVal {
+    bool valueWasSerialized;
+    nsCString value;
+    SerializableKeys key;
+  };
+  static already_AddRefed<BasePrincipal> FromProperties(
+      nsTArray<ContentPrincipal::KeyVal>& aFields);
 
  protected:
   virtual ~ContentPrincipal();

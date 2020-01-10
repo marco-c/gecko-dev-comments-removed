@@ -85,5 +85,6 @@ SystemPrincipal::Read(nsIObjectInputStream* aStream) {
 NS_IMETHODIMP
 SystemPrincipal::Write(nsIObjectOutputStream* aStream) {
   
+  MOZ_RELEASE_ASSERT(false, "Old style serialization is removed");
   return NS_OK;
 }

@@ -21,6 +21,9 @@
 
 class nsIDocShell;
 class nsIURI;
+namespace Json {
+class Value;
+}
 
 #define NS_NULLPRINCIPAL_CID                         \
   {                                                  \
@@ -79,6 +82,21 @@ class NullPrincipal final : public BasePrincipal {
     aSite.Init(this);
     return NS_OK;
   }
+
+  virtual nsresult PopulateJSONObject(Json::Value& aObject) override;
+
+  
+  enum SerializableKeys { eSpec = 0, eSuffix, eMax = eSuffix };
+  
+  
+  
+  struct KeyVal {
+    bool valueWasSerialized;
+    nsCString value;
+    SerializableKeys key;
+  };
+  static already_AddRefed<BasePrincipal> FromProperties(
+      nsTArray<NullPrincipal::KeyVal>& aFields);
 
  protected:
   virtual ~NullPrincipal() = default;

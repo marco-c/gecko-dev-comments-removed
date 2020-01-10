@@ -36,6 +36,12 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/HashFunctions.h"
 
+#include "nsSerializationHelper.h"
+#include "json/json.h"
+
+#include "nsSerializationHelper.h"
+#include "json/json.h"
+
 using namespace mozilla;
 
 static inline ExtensionPolicyService& EPS() {
@@ -607,23 +613,14 @@ ContentPrincipal::Read(nsIObjectInputStream* aStream) {
 
 NS_IMETHODIMP
 ContentPrincipal::Write(nsIObjectOutputStream* aStream) {
-  NS_ENSURE_STATE(mCodebase);
-  nsresult rv = NS_WriteOptionalCompoundObject(aStream, mCodebase,
-                                               NS_GET_IID(nsIURI), true);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  
+  MOZ_RELEASE_ASSERT(false, "Old style serialization is removed");
+  return NS_OK;
+}
 
-  rv = NS_WriteOptionalCompoundObject(aStream, mDomain, NS_GET_IID(nsIURI),
-                                      true);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  nsAutoCString suffix;
-  OriginAttributesRef().CreateSuffix(suffix);
-
-  rv = aStream->WriteStringZ(suffix.get());
+nsresult ContentPrincipal::PopulateJSONObject(Json::Value& aObject) {
+  nsAutoCString codebase;
+  nsresult rv = mCodebase->GetSpec(codebase);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -632,11 +629,101 @@ ContentPrincipal::Write(nsIObjectOutputStream* aStream) {
   
   
   
-  rv = NS_WriteOptionalCompoundObject(
-      aStream, nullptr, NS_GET_IID(nsIContentSecurityPolicy), true);
-  if (NS_FAILED(rv)) {
-    return rv;
+  
+  
+  
+  
+  
+  
+  
+  aObject[std::to_string(eCodebase)] = codebase.get();
+
+  if (mDomain) {
+    nsAutoCString domainStr;
+    rv = mDomain->GetSpec(domainStr);
+    NS_ENSURE_SUCCESS(rv, rv);
+    aObject[std::to_string(eDomain)] = domainStr.get();
+  }
+
+  nsAutoCString suffix;
+  OriginAttributesRef().CreateSuffix(suffix);
+  if (suffix.Length() > 0) {
+    aObject[std::to_string(eSuffix)] = suffix.get();
   }
 
   return NS_OK;
+}
+
+already_AddRefed<BasePrincipal> ContentPrincipal::FromProperties(
+    nsTArray<ContentPrincipal::KeyVal>& aFields) {
+  MOZ_ASSERT(aFields.Length() == eMax + 1, "Must have all the keys");
+  nsresult rv;
+  nsCOMPtr<nsIURI> codebaseURI;
+  nsCOMPtr<nsIURI> domain;
+  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  OriginAttributes attrs;
+
+  
+  
+  for (const auto& field : aFields) {
+    switch (field.key) {
+      case ContentPrincipal::eCodebase:
+        if (!field.valueWasSerialized) {
+          MOZ_ASSERT(
+              false,
+              "Content principals require a codebase URI in serialized JSON");
+          return nullptr;
+        }
+        rv = NS_NewURI(getter_AddRefs(codebaseURI), field.value.get());
+        NS_ENSURE_SUCCESS(rv, nullptr);
+
+        {
+          
+          
+          bool isAbout =
+              NS_SUCCEEDED(codebaseURI->SchemeIs("about", &isAbout)) && isAbout;
+          if (isAbout) {
+            nsAutoCString spec;
+            codebaseURI->GetSpec(spec);
+            if (NS_FAILED(NS_NewURI(getter_AddRefs(codebaseURI), spec))) {
+              return nullptr;
+            }
+          }
+        }
+        break;
+      case ContentPrincipal::eDomain:
+        if (field.valueWasSerialized) {
+          rv = NS_NewURI(getter_AddRefs(domain), field.value.get());
+          NS_ENSURE_SUCCESS(rv, nullptr);
+        }
+        break;
+      case ContentPrincipal::eSuffix:
+        if (field.valueWasSerialized) {
+          bool ok = attrs.PopulateFromSuffix(field.value);
+          if (!ok) {
+            return nullptr;
+          }
+        }
+        break;
+    }
+  }
+  nsAutoCString originNoSuffix;
+  rv = ContentPrincipal::GenerateOriginNoSuffixFromURI(codebaseURI,
+                                                       originNoSuffix);
+  if (NS_FAILED(rv)) {
+    return nullptr;
+  }
+
+  RefPtr<ContentPrincipal> codebase = new ContentPrincipal();
+  rv = codebase->Init(codebaseURI, attrs, originNoSuffix);
+  if (NS_FAILED(rv)) {
+    return nullptr;
+  }
+
+  codebase->mDomain = domain;
+  if (codebase->mDomain) {
+    codebase->SetHasExplicitDomain();
+  }
+
+  return codebase.forget();
 }

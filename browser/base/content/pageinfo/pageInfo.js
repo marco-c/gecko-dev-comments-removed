@@ -9,6 +9,10 @@
 
 
 
+XPCOMUtils.defineLazyModuleGetters(this, {
+  E10SUtils: "resource://gre/modules/E10SUtils.jsm",
+});
+
 
 function pageInfoTreeView(treeid, copycol) {
   
@@ -807,9 +811,7 @@ function makePreview(row) {
     var physWidth = 0, physHeight = 0;
     var width = 0, height = 0;
 
-    let serial = Cc["@mozilla.org/network/serialization-helper;1"]
-                   .getService(Ci.nsISerializationHelper);
-    let triggeringPrinStr = serial.serializeToString(gDocInfo.principal);
+    let triggeringPrinStr = E10SUtils.serializePrincipal(gDocInfo.principal);
     if ((item.HTMLLinkElement || item.HTMLInputElement ||
          item.HTMLImageElement || item.SVGImageElement ||
          (item.HTMLObjectElement && mimeType && mimeType.startsWith("image/")) ||
