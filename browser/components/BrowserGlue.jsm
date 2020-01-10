@@ -653,6 +653,7 @@ const listeners = {
     "PictureInPicture:Close": ["PictureInPicture"],
     "PictureInPicture:Playing": ["PictureInPicture"],
     "PictureInPicture:Paused": ["PictureInPicture"],
+    "PictureInPicture:OpenToggleContextMenu": ["PictureInPicture"],
     "Reader:FaviconRequest": ["ReaderParent"],
     "Reader:UpdateReaderButton": ["ReaderParent"],
     
