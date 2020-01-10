@@ -109,7 +109,7 @@
       <hbox class="ac-separator" align="center">
         <description class="ac-separator-text" value="—"/>
       </hbox>
-      <hbox class="ac-url" align="center">
+      <hbox class="ac-url" align="center" aria-hidden="true">
         <description class="ac-text-overflow-container">
           <description class="ac-url-text"/>
         </description>
@@ -148,23 +148,6 @@
 
     get _actionText() {
       return this.querySelector(".ac-action-text");
-    }
-
-    get label() {
-      
-      
-
-      let parts = [this.getAttribute("title"), this.getAttribute("displayurl")];
-      let label = parts.filter(str => str).join(" ");
-
-      
-      
-      let panel = this.parentNode.parentNode;
-      if (panel.createResultLabel) {
-        return panel.createResultLabel(this, label);
-      }
-
-      return label;
     }
 
     get _stringBundle() {
