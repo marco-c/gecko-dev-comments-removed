@@ -3,8 +3,11 @@
 
 
 
-var pngspec = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAADCAIAAADZSiLoAAAAEUlEQVQImWP4z8AAQTAamQkAhpcI+DeMzFcAAAAASUVORK5CYII=";
-var ioService = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
+var pngspec =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAADCAIAAADZSiLoAAAAEUlEQVQImWP4z8AAQTAamQkAhpcI+DeMzFcAAAAASUVORK5CYII=";
+var ioService = Cc["@mozilla.org/network/io-service;1"].getService(
+  Ci.nsIIOService
+);
 var uri = ioService.newURI(pngspec);
 
-load('async_load_tests.js');
+load("async_load_tests.js");

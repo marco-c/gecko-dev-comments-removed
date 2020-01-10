@@ -1,14 +1,16 @@
 waitForExplicitFinish();
 
 var pageSource =
-  '<html><body>' +
-    '<img id="testImg" src="' + TESTROOT + 'big.png">' +
-  '</body></html>';
+  "<html><body>" +
+  '<img id="testImg" src="' +
+  TESTROOT +
+  'big.png">' +
+  "</body></html>";
 
 var oldDiscardingPref, oldTab, newTab;
 var prefBranch = Cc["@mozilla.org/preferences-service;1"]
-                   .getService(Ci.nsIPrefService)
-                   .getBranch('image.mem.');
+  .getService(Ci.nsIPrefService)
+  .getBranch("image.mem.");
 
 var gWaitingForDiscard = false;
 var gScriptedObserver;
@@ -17,81 +19,83 @@ var gClonedRequest;
 function ImageObserver(decodeCallback, discardCallback) {
   this.decodeComplete = function onDecodeComplete(aRequest) {
     decodeCallback();
-  }
+  };
 
-  this.discard = function onDiscard(request)
-  {
+  this.discard = function onDiscard(request) {
     if (!gWaitingForDiscard) {
       return;
     }
 
     this.synchronous = false;
     discardCallback();
-  }
+  };
 
   this.synchronous = true;
 }
 
 function currentRequest() {
-  let img = gBrowser.getBrowserForTab(newTab).contentWindow
-            .document.getElementById('testImg');
+  let img = gBrowser
+    .getBrowserForTab(newTab)
+    .contentWindow.document.getElementById("testImg");
   return img.getRequest(Ci.nsIImageLoadingContent.CURRENT_REQUEST);
 }
 
 function isImgDecoded() {
   let request = currentRequest();
-  return request.imageStatus & Ci.imgIRequest.STATUS_DECODE_COMPLETE ? true : false;
+  return request.imageStatus & Ci.imgIRequest.STATUS_DECODE_COMPLETE
+    ? true
+    : false;
 }
 
 
 function forceDecodeImg() {
   let doc = gBrowser.getBrowserForTab(newTab).contentWindow.document;
-  let img = doc.getElementById('testImg');
-  let canvas = doc.createElement('canvas');
-  let ctx = canvas.getContext('2d');
+  let img = doc.getElementById("testImg");
+  let canvas = doc.createElement("canvas");
+  let ctx = canvas.getContext("2d");
   ctx.drawImage(img, 0, 0);
 }
 
 function runAfterAsyncEvents(aCallback) {
   function handlePostMessage(aEvent) {
-    if (aEvent.data == 'next') {
-      window.removeEventListener('message', handlePostMessage);
+    if (aEvent.data == "next") {
+      window.removeEventListener("message", handlePostMessage);
       aCallback();
     }
   }
 
-  window.addEventListener('message', handlePostMessage);
+  window.addEventListener("message", handlePostMessage);
 
   
   
   
   
-  window.postMessage('next', '*');
+  window.postMessage("next", "*");
 }
 
 function test() {
   
-  oldDiscardingPref = prefBranch.getBoolPref('discardable');
-  prefBranch.setBoolPref('discardable', true);
+  oldDiscardingPref = prefBranch.getBoolPref("discardable");
+  prefBranch.setBoolPref("discardable", true);
 
   
   oldTab = gBrowser.selectedTab;
-  newTab = BrowserTestUtils.addTab(gBrowser, 'data:text/html,' + pageSource);
+  newTab = BrowserTestUtils.addTab(gBrowser, "data:text/html," + pageSource);
   gBrowser.selectedTab = newTab;
 
   
-  gBrowser.getBrowserForTab(newTab)
-          .addEventListener("pageshow", step2);
+  gBrowser.getBrowserForTab(newTab).addEventListener("pageshow", step2);
 }
 
 function step2() {
   
-  var observer =
-    new ImageObserver(() => runAfterAsyncEvents(step3),   
-                      () => runAfterAsyncEvents(step5));  
+  var observer = new ImageObserver(
+    () => runAfterAsyncEvents(step3), 
+    () => runAfterAsyncEvents(step5)
+  ); 
   gScriptedObserver = Cc["@mozilla.org/image/tools;1"]
-                        .getService(Ci.imgITools)
-                        .createScriptedObserver(observer);
+    .getService(Ci.imgITools)
+    .createScriptedObserver(observer);
 
   
   var request = currentRequest();
@@ -105,7 +109,7 @@ function step2() {
 }
 
 function step3() {
-  ok(isImgDecoded(), 'Image should initially be decoded.');
+  ok(isImgDecoded(), "Image should initially be decoded.");
 
   
   
@@ -118,20 +122,21 @@ function step3() {
 function step4() {
   gWaitingForDiscard = true;
 
-  var os = Cc["@mozilla.org/observer-service;1"]
-             .getService(Ci.nsIObserverService);
-  os.notifyObservers(null, 'memory-pressure', 'heap-minimize');
+  var os = Cc["@mozilla.org/observer-service;1"].getService(
+    Ci.nsIObserverService
+  );
+  os.notifyObservers(null, "memory-pressure", "heap-minimize");
 
   
   
 }
 
 function step5() {
-  ok(true, 'Image should be discarded.');
+  ok(true, "Image should be discarded.");
 
   
   gBrowser.removeTab(newTab);
-  prefBranch.setBoolPref('discardable', oldDiscardingPref);
+  prefBranch.setBoolPref("discardable", oldDiscardingPref);
 
   gClonedRequest.cancelAndForgetObserver(0);
 

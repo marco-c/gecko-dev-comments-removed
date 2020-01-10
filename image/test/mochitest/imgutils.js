@@ -5,50 +5,47 @@
 
 
 
-function clearAllImageCaches()
-{
-  var tools = SpecialPowers.Cc["@mozilla.org/image/tools;1"]
-                             .getService(SpecialPowers.Ci.imgITools);
+function clearAllImageCaches() {
+  var tools = SpecialPowers.Cc["@mozilla.org/image/tools;1"].getService(
+    SpecialPowers.Ci.imgITools
+  );
   var imageCache = tools.getImgCacheForDocument(window.document);
-  imageCache.clearCache(true);  
+  imageCache.clearCache(true); 
   imageCache.clearCache(false); 
 }
 
 
-function clearImageCache()
-{
-  var tools = SpecialPowers.Cc["@mozilla.org/image/tools;1"]
-                             .getService(SpecialPowers.Ci.imgITools);
+function clearImageCache() {
+  var tools = SpecialPowers.Cc["@mozilla.org/image/tools;1"].getService(
+    SpecialPowers.Ci.imgITools
+  );
   var imageCache = tools.getImgCacheForDocument(window.document);
   imageCache.clearCache(false); 
 }
 
 
-function isFrameDecoded(id)
-{
-  return (getImageStatus(id) &
-          SpecialPowers.Ci.imgIRequest.STATUS_FRAME_COMPLETE)
-         ? true : false;
+function isFrameDecoded(id) {
+  return getImageStatus(id) & SpecialPowers.Ci.imgIRequest.STATUS_FRAME_COMPLETE
+    ? true
+    : false;
 }
 
 
-function isImageLoaded(id)
-{
-  return (getImageStatus(id) &
-          SpecialPowers.Ci.imgIRequest.STATUS_LOAD_COMPLETE)
-         ? true : false;
+function isImageLoaded(id) {
+  return getImageStatus(id) & SpecialPowers.Ci.imgIRequest.STATUS_LOAD_COMPLETE
+    ? true
+    : false;
 }
 
 
-function getImageStatus(id)
-{
+function getImageStatus(id) {
   
   var img = SpecialPowers.wrap(document.getElementById(id));
 
   
-  var request = img.getRequest(SpecialPowers.Ci
-                                         .nsIImageLoadingContent
-                                         .CURRENT_REQUEST);
+  var request = img.getRequest(
+    SpecialPowers.Ci.nsIImageLoadingContent.CURRENT_REQUEST
+  );
 
   
   return request.imageStatus;
@@ -56,8 +53,7 @@ function getImageStatus(id)
 
 
 
-function forceDecode(id)
-{
+function forceDecode(id) {
   
   var img = document.getElementById(id);
 
@@ -76,18 +72,29 @@ function forceDecode(id)
 
 
 
+const DISCARD_ENABLED_PREF = {
+  name: "discardable",
+  branch: "image.mem.",
+  type: "bool",
+};
+const DECODEONDRAW_ENABLED_PREF = {
+  name: "decodeondraw",
+  branch: "image.mem.",
+  type: "bool",
+};
+const DISCARD_TIMEOUT_PREF = {
+  name: "min_discard_timeout_ms",
+  branch: "image.mem.",
+  type: "int",
+};
 
-const DISCARD_ENABLED_PREF = {name: "discardable", branch: "image.mem.", type: "bool"};
-const DECODEONDRAW_ENABLED_PREF = {name: "decodeondraw", branch: "image.mem.", type: "bool"};
-const DISCARD_TIMEOUT_PREF = {name: "min_discard_timeout_ms", branch: "image.mem.", type: "int"};
-
-function setImagePref(pref, val)
-{
-  var prefService = SpecialPowers.Cc["@mozilla.org/preferences-service;1"]
-                                 .getService(SpecialPowers.Ci.nsIPrefService);
+function setImagePref(pref, val) {
+  var prefService = SpecialPowers.Cc[
+    "@mozilla.org/preferences-service;1"
+  ].getService(SpecialPowers.Ci.nsIPrefService);
   var branch = prefService.getBranch(pref.branch);
   if (val != null) {
-    switch(pref.type) {
+    switch (pref.type) {
       case "bool":
         branch.setBoolPref(pref.name, val);
         break;
@@ -97,15 +104,15 @@ function setImagePref(pref, val)
       default:
         throw new Error("Unknown pref type");
     }
-  }
-  else if (branch.prefHasUserValue(pref.name))
+  } else if (branch.prefHasUserValue(pref.name)) {
     branch.clearUserPref(pref.name);
+  }
 }
 
-function getImagePref(pref)
-{
-  var prefService = SpecialPowers.Cc["@mozilla.org/preferences-service;1"]
-                                 .getService(SpecialPowers.Ci.nsIPrefService);
+function getImagePref(pref) {
+  var prefService = SpecialPowers.Cc[
+    "@mozilla.org/preferences-service;1"
+  ].getService(SpecialPowers.Ci.nsIPrefService);
   var branch = prefService.getBranch(pref.branch);
   if (branch.prefHasUserValue(pref.name)) {
     switch (pref.type) {
@@ -116,20 +123,19 @@ function getImagePref(pref)
       default:
         throw new Error("Unknown pref type");
     }
-  }
-  else
+  } else {
     return null;
+  }
 }
 
 
-function ImageDecoderObserverStub()
-{
-  this.sizeAvailable = function sizeAvailable(aRequest)     {}
-  this.frameComplete = function frameComplete(aRequest)     {}
-  this.decodeComplete = function decodeComplete(aRequest)   {}
-  this.loadComplete = function loadComplete(aRequest)       {}
-  this.frameUpdate = function frameUpdate(aRequest)         {}
-  this.discard = function discard(aRequest)                 {}
-  this.isAnimated = function isAnimated(aRequest)           {}
-  this.hasTransparency = function hasTransparency(aRequest) {}
+function ImageDecoderObserverStub() {
+  this.sizeAvailable = function sizeAvailable(aRequest) {};
+  this.frameComplete = function frameComplete(aRequest) {};
+  this.decodeComplete = function decodeComplete(aRequest) {};
+  this.loadComplete = function loadComplete(aRequest) {};
+  this.frameUpdate = function frameUpdate(aRequest) {};
+  this.discard = function discard(aRequest) {};
+  this.isAnimated = function isAnimated(aRequest) {};
+  this.hasTransparency = function hasTransparency(aRequest) {};
 }
