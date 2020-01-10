@@ -906,11 +906,8 @@ bool DebugEpilogue(JSContext* cx, BaselineFrame* frame, jsbytecode* pc,
   ok = DebugAPI::onLeaveFrame(cx, frame, pc, ok);
 
   
-  
   EnvironmentIter ei(cx, frame, pc);
   UnwindAllEnvironmentsInFrame(cx, ei);
-  JSScript* script = frame->script();
-  frame->setOverridePc(script->offsetToPC(0));
 
   if (!ok) {
     
@@ -920,10 +917,6 @@ bool DebugEpilogue(JSContext* cx, BaselineFrame* frame, jsbytecode* pc,
     return false;
   }
 
-  
-  
-  
-  frame->clearOverridePc();
   return true;
 }
 
