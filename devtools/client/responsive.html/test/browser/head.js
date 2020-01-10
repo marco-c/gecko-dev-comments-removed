@@ -193,6 +193,18 @@ var setViewportSize = async function(ui, manager, width, height) {
   }
 };
 
+
+
+var setViewportSizeAndAwaitReflow = async function(ui, manager, width, height) {
+  await setViewportSize(ui, manager, width, height);
+  const reflowed = ContentTask.spawn(ui.getViewportBrowser(), {}, async function() {
+    return new Promise(resolve => {
+      content.requestAnimationFrame(resolve);
+    });
+  });
+  await reflowed;
+};
+
 function getViewportDevicePixelRatio(ui) {
   return ContentTask.spawn(ui.getViewportBrowser(), {}, async function() {
     return content.devicePixelRatio;
