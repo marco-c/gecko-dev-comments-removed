@@ -820,7 +820,7 @@ PrototypeDocumentContentSink::OnStreamComplete(nsIStreamLoader* aLoader,
 
     MOZ_ASSERT(!mOffThreadCompiling && (mOffThreadCompileStringLength == 0 &&
                                         !mOffThreadCompileStringBuf),
-               "XULDocument can't load multiple scripts at once");
+               "PrototypeDocument can't load multiple scripts at once");
 
     rv = ScriptLoader::ConvertToUTF16(channel, string, stringLen, EmptyString(),
                                       mDocument, mOffThreadCompileStringBuf,

@@ -84,6 +84,7 @@ class nsXULPrototypeDocument final : public nsISerializable {
 
 
 
+
   nsresult NotifyLoadDone();
 
   nsNodeInfoManager* GetNodeInfoManager();
