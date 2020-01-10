@@ -249,6 +249,17 @@ void IMEStateManager::WidgetDestroyed(nsIWidget* aWidget) {
 }
 
 
+void IMEStateManager::WidgetOnQuit(nsIWidget* aWidget) {
+  if (sFocusedIMEWidget == aWidget) {
+    
+    IMEStateManager::WidgetDestroyed(aWidget);
+  }
+  
+  nsCOMPtr<nsIWidget> quittingWidget(aWidget);
+  quittingWidget->NotifyIME(IMENotification(NOTIFY_IME_OF_BLUR));
+}
+
+
 void IMEStateManager::StopIMEStateManagement() {
   MOZ_ASSERT(XRE_IsContentProcess());
   MOZ_LOG(sISMLog, LogLevel::Info, ("StopIMEStateManagement()"));

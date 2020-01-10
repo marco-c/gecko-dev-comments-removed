@@ -77,12 +77,6 @@ class IMEStateManager {
 
 
 
-  static void OnBrowserParentDestroying(BrowserParent* aBrowserParent);
-
-  
-
-
-
   static void OnFocusMovedBetweenBrowsers(BrowserParent* aBlur,
                                           BrowserParent* aFocus);
 
@@ -90,6 +84,11 @@ class IMEStateManager {
 
 
   static void WidgetDestroyed(nsIWidget* aWidget);
+
+  
+
+
+  static void WidgetOnQuit(nsIWidget* aWidget);
 
   
 
