@@ -13,8 +13,9 @@ add_task(async function() {
   );
 
   
-  let dragSrcElement = document.getElementById("downloads-button");
-  ok(dragSrcElement, "Downloads button exists");
+  
+  let dragSrcElement = document.getElementById("sidebar-button");
+  ok(dragSrcElement, "Sidebar button exists");
   let homeButton = document.getElementById("home-button");
   ok(homeButton, "home button present");
 
