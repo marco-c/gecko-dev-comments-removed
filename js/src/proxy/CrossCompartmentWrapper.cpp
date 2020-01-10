@@ -438,8 +438,6 @@ JS_FRIEND_API bool js::NukeCrossCompartmentWrappers(
     
     
     
-    
-    
     mozilla::Maybe<Compartment::ObjectWrapperEnum> e;
     if (MOZ_LIKELY(!nukeAll)) {
       e.emplace(c, target->compartment());
@@ -448,19 +446,13 @@ JS_FRIEND_API bool js::NukeCrossCompartmentWrappers(
       c.get()->nukedOutgoingWrappers = true;
     }
     for (; !e->empty(); e->popFront()) {
-      
-      
-      
-      const CrossCompartmentKey& k = e->front().key();
-      if (!k.is<JSObject*>()) {
-        continue;
-      }
+      JSObject* key = e->front().key();
 
       AutoWrapperRooter wobj(cx, WrapperValue(*e));
 
       
       
-      JSObject* wrapped = UncheckedUnwrap(k.as<JSObject*>());
+      JSObject* wrapped = UncheckedUnwrap(key);
 
       
       
@@ -645,12 +637,6 @@ JS_FRIEND_API bool js::RecomputeWrappers(
     
     for (Compartment::ObjectWrapperEnum e(c, targetFilter); !e.empty();
          e.popFront()) {
-      
-      CrossCompartmentKey& k = e.front().mutableKey();
-      if (!k.is<JSObject*>()) {
-        continue;
-      }
-
       
       if (!toRecompute.append(WrapperValue(e))) {
         return false;
