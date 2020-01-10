@@ -375,23 +375,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             getSettings().mGlMsaaLevel.set(level);
             return this;
         }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-        public @NonNull Builder desktopViewportWidth(final int width) {
-            getSettings().mDesktopViewportWidth.set(width);
-            return this;
-        }
     }
 
     private GeckoRuntime mRuntime;
@@ -428,8 +411,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             "apz.allow_double_tap_zooming", true);
      final Pref<Integer> mGlMsaaLevel = new Pref<>(
             "gl.msaa-level", 0);
-     final Pref<Integer> mDesktopViewportWidth = new Pref<>(
-            "browser.viewport.desktopWidth", 980);
 
      boolean mDebugPause;
      boolean mUseMaxScreenDepth;
@@ -995,42 +976,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
     public @NonNull GeckoRuntimeSettings setGlMsaaLevel(final int level) {
         mGlMsaaLevel.commit(level);
-        return this;
-    }
-
-    
-
-
-    public static final int DESKTOP_VIEWPORT_WIDTH_PHONE = 980;
-    
-
-
-    public static final int DESKTOP_VIEWPORT_WIDTH_TABLET = 1280;
-
-    
-
-
-
-    public int getDesktopViewportWidth() {
-        return mDesktopViewportWidth.get();
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setDesktopViewportWidth(final int width) {
-        mDesktopViewportWidth.commit(width);
         return this;
     }
 
