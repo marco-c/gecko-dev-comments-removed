@@ -695,14 +695,6 @@ pref("gfx.downloadable_fonts.disable_cache", false);
   pref("gfx.downloadable_fonts.otl_validation", true);
 #endif
 
-
-
-
-pref("gfx.downloadable_fonts.keep_color_bitmaps", false);
-
-
-pref("gfx.downloadable_fonts.validate_variation_tables", true);
-
 #ifdef ANDROID
   pref("gfx.bundled_fonts.enabled", true);
   pref("gfx.bundled_fonts.force-enabled", false);
@@ -732,25 +724,15 @@ pref("gfx.font_rendering.wordcache.maxentries", 10000);
 
 pref("gfx.font_rendering.graphite.enabled", true);
 
-#ifdef XP_MACOSX
-  
-  
-  pref("gfx.font_rendering.coretext.enabled", false);
-#endif
-
 #ifdef XP_WIN
   pref("gfx.font_rendering.directwrite.use_gdi_table_loading", true);
 #endif
-
-
-pref("gfx.font_rendering.ahem_antialias_none", false);
 
 #if defined(XP_WIN)
   
   
   pref("gfx.canvas.azure.backends", "direct2d1.1,skia");
   pref("gfx.content.azure.backends", "direct2d1.1,skia");
-  pref("gfx.canvas.remote", false);
 #elif defined(XP_MACOSX)
   pref("gfx.content.azure.backends", "skia");
   pref("gfx.canvas.azure.backends", "skia");
@@ -758,12 +740,6 @@ pref("gfx.font_rendering.ahem_antialias_none", false);
   pref("gfx.canvas.azure.backends", "skia");
   pref("gfx.content.azure.backends", "skia");
 #endif
-
-pref("gfx.draw-color-bars", false);
-
-pref("gfx.logging.painted-pixel-count.enabled", false);
-
-pref("gfx.ycbcr.accurate-conversion", false);
 
 #ifdef XP_WIN
   pref("gfx.webrender.force-angle", true);
@@ -775,12 +751,6 @@ pref("gfx.ycbcr.accurate-conversion", false);
 #if defined(XP_WIN) || defined(MOZ_WIDGET_ANDROID)
   pref("gfx.webrender.program-binary-disk", true);
 #endif
-
-#ifdef XP_MACOSX
-  pref("gfx.compositor.glcontext.opaque", false);
-#endif
-
-pref("gfx.webrender.highlight-painted-layers", false);
 
 
 pref("gfx.webrender.debug.texture-cache", false);
