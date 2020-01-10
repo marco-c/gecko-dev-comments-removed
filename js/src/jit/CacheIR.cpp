@@ -6004,6 +6004,42 @@ AttachDecision CompareIRGenerator::tryAttachPrimitiveSymbol(
   return AttachDecision::Attach;
 }
 
+AttachDecision CompareIRGenerator::tryAttachBoolStringOrNumber(
+    ValOperandId lhsId, ValOperandId rhsId) {
+  
+  if (!(lhsVal_.isBoolean() && (rhsVal_.isString() || rhsVal_.isNumber())) &&
+      !(rhsVal_.isBoolean() && (lhsVal_.isString() || lhsVal_.isNumber()))) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  MOZ_ASSERT(op_ != JSOP_STRICTEQ && op_ != JSOP_STRICTNE);
+
+  
+  MOZ_ASSERT(!lhsVal_.isInt32() && !rhsVal_.isInt32());
+
+  auto createGuards = [&](HandleValue v, ValOperandId vId) {
+    if (v.isBoolean()) {
+      Int32OperandId boolId = writer.guardToBoolean(vId);
+      return writer.guardAndGetNumberFromBoolean(boolId);
+    }
+    if (v.isString()) {
+      StringOperandId strId = writer.guardToString(vId);
+      return writer.guardAndGetNumberFromString(strId);
+    }
+    MOZ_ASSERT(v.isNumber());
+    return writer.guardIsNumber(vId);
+  };
+
+  NumberOperandId lhsGuardedId = createGuards(lhsVal_, lhsId);
+  NumberOperandId rhsGuardedId = createGuards(rhsVal_, rhsId);
+  writer.compareDoubleResult(op_, lhsGuardedId, rhsGuardedId);
+  writer.returnFromIC();
+
+  trackAttached("BoolStringOrNumber");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CompareIRGenerator::tryAttachStub() {
   MOZ_ASSERT(cacheKind_ == CacheKind::Compare);
   MOZ_ASSERT(IsEqualityOp(op_) || IsRelationalOp(op_));
@@ -6063,6 +6099,7 @@ AttachDecision CompareIRGenerator::tryAttachStub() {
   TRY_ATTACH(tryAttachString(lhsId, rhsId));
 
   TRY_ATTACH(tryAttachStringNumber(lhsId, rhsId));
+  TRY_ATTACH(tryAttachBoolStringOrNumber(lhsId, rhsId));
 
   trackAttached(IRGenerator::NotAttached);
   return AttachDecision::NoAction;
