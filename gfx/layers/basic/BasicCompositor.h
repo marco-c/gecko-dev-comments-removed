@@ -123,15 +123,23 @@ class BasicCompositor : public Compositor {
 
   void ClearRect(const gfx::Rect& aRect) override;
 
-  Maybe<gfx::IntRect> BeginFrameForWindow(const nsIntRegion& aInvalidRegion,
-                                          const Maybe<gfx::IntRect>& aClipRect,
-                                          const gfx::IntRect& aRenderBounds,
-                                          const nsIntRegion& aOpaqueRegion,
-                                          NativeLayer* aNativeLayer) override;
+  Maybe<gfx::IntRect> BeginFrameForWindow(
+      const nsIntRegion& aInvalidRegion, const Maybe<gfx::IntRect>& aClipRect,
+      const gfx::IntRect& aRenderBounds,
+      const nsIntRegion& aOpaqueRegion) override;
+
   Maybe<gfx::IntRect> BeginFrameForTarget(
       const nsIntRegion& aInvalidRegion, const Maybe<gfx::IntRect>& aClipRect,
       const gfx::IntRect& aRenderBounds, const nsIntRegion& aOpaqueRegion,
       gfx::DrawTarget* aTarget, const gfx::IntRect& aTargetBounds) override;
+
+  void BeginFrameForNativeLayers() override;
+
+  Maybe<gfx::IntRect> BeginRenderingToNativeLayer(
+      const nsIntRegion& aInvalidRegion, const Maybe<gfx::IntRect>& aClipRect,
+      const nsIntRegion& aOpaqueRegion, NativeLayer* aNativeLayer) override;
+
+  void EndRenderingToNativeLayer() override;
 
   void NormalDrawingDone() override;
   void EndFrame() override;
@@ -224,13 +232,23 @@ class BasicCompositor : public Compositor {
   bool mRecordFrames;
 
   
-  
-  bool mFrameIsForTarget = false;
+  enum class FrameDestination : uint8_t {
+    NO_CURRENT_FRAME,  
+    WINDOW,            
+    TARGET,            
+    NATIVE_LAYERS      
+  };
+  FrameDestination mCurrentFrameDest = FrameDestination::NO_CURRENT_FRAME;
 
   
   
   
   RefPtr<BasicCompositingRenderTarget> mFullWindowRenderTarget;
+
+  
+  
+  
+  RefPtr<CompositingRenderTarget> mNativeLayersReferenceRT;
 };
 
 BasicCompositor* AssertBasicCompositor(Compositor* aCompositor);

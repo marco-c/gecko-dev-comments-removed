@@ -328,6 +328,11 @@ class CompositorOGL final : public Compositor {
   
   RefPtr<CompositingRenderTargetOGL> mCurrentRenderTarget;
 
+  
+  
+  
+  RefPtr<CompositingRenderTarget> mNativeLayersReferenceRT;
+
   CompositingRenderTargetOGL* mWindowRenderTarget;
 
   
@@ -366,22 +371,28 @@ class CompositorOGL final : public Compositor {
 
   
 
-  Maybe<gfx::IntRect> BeginFrameForWindow(const nsIntRegion& aInvalidRegion,
-                                          const Maybe<gfx::IntRect>& aClipRect,
-                                          const gfx::IntRect& aRenderBounds,
-                                          const nsIntRegion& aOpaqueRegion,
-                                          NativeLayer* aNativeLayer) override;
+  Maybe<gfx::IntRect> BeginFrameForWindow(
+      const nsIntRegion& aInvalidRegion, const Maybe<gfx::IntRect>& aClipRect,
+      const gfx::IntRect& aRenderBounds,
+      const nsIntRegion& aOpaqueRegion) override;
 
   Maybe<gfx::IntRect> BeginFrameForTarget(
       const nsIntRegion& aInvalidRegion, const Maybe<gfx::IntRect>& aClipRect,
       const gfx::IntRect& aRenderBounds, const nsIntRegion& aOpaqueRegion,
       gfx::DrawTarget* aTarget, const gfx::IntRect& aTargetBounds) override;
 
+  void BeginFrameForNativeLayers() override;
+
+  Maybe<gfx::IntRect> BeginRenderingToNativeLayer(
+      const nsIntRegion& aInvalidRegion, const Maybe<gfx::IntRect>& aClipRect,
+      const nsIntRegion& aOpaqueRegion, NativeLayer* aNativeLayer) override;
+
+  void EndRenderingToNativeLayer() override;
+
   Maybe<gfx::IntRect> BeginFrame(const nsIntRegion& aInvalidRegion,
                                  const Maybe<gfx::IntRect>& aClipRect,
                                  const gfx::IntRect& aRenderBounds,
-                                 const nsIntRegion& aOpaqueRegion,
-                                 NativeLayer* aNativeLayer);
+                                 const nsIntRegion& aOpaqueRegion);
 
   ShaderConfigOGL GetShaderConfigFor(
       Effect* aEffect, TextureSourceOGL* aSourceMask = nullptr,

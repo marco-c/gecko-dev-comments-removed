@@ -396,12 +396,15 @@ class Compositor : public TextureSourceProvider {
 
 
 
+
+
   virtual Maybe<gfx::IntRect> BeginFrameForWindow(
       const nsIntRegion& aInvalidRegion, const Maybe<gfx::IntRect>& aClipRect,
-      const gfx::IntRect& aRenderBounds, const nsIntRegion& aOpaqueRegion,
-      NativeLayer* aNativeLayer) = 0;
+      const gfx::IntRect& aRenderBounds, const nsIntRegion& aOpaqueRegion) = 0;
 
   
+
+
 
 
 
@@ -428,6 +431,65 @@ class Compositor : public TextureSourceProvider {
       gfx::DrawTarget* aTarget, const gfx::IntRect& aTargetBounds) = 0;
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual void BeginFrameForNativeLayers() = 0;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual Maybe<gfx::IntRect> BeginRenderingToNativeLayer(
+      const nsIntRegion& aInvalidRegion, const Maybe<gfx::IntRect>& aClipRect,
+      const nsIntRegion& aOpaqueRegion, NativeLayer* aNativeLayer) = 0;
+
+  
+
+
+
+
+
+  virtual void EndRenderingToNativeLayer() = 0;
+
+  
+
+
+
+
 
 
 
