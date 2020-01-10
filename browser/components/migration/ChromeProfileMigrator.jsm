@@ -383,8 +383,8 @@ async function GetWindowsPasswordsResource(aProfileFolder) {
             password: crypto.
                       decryptData(crypto.arrayToString(row.getResultByName("password_value")),
                                                        null),
-            hostname: origin_url.prePath,
-            formSubmitURL: null,
+            origin: origin_url.prePath,
+            formActionOrigin: null,
             httpRealm: null,
             usernameElement: row.getResultByName("username_element"),
             passwordElement: row.getResultByName("password_element"),
@@ -399,20 +399,20 @@ async function GetWindowsPasswordsResource(aProfileFolder) {
               if (!action_url) {
                 
                 
-                loginInfo.formSubmitURL = "";
+                loginInfo.formActionOrigin = "";
                 break;
               }
               let action_uri = NetUtil.newURI(action_url);
               if (!kValidSchemes.has(action_uri.scheme)) {
                 continue; 
               }
-              loginInfo.formSubmitURL = action_uri.prePath;
+              loginInfo.formActionOrigin = action_uri.prePath;
               break;
             case AUTH_TYPE.SCHEME_BASIC:
             case AUTH_TYPE.SCHEME_DIGEST:
               
               loginInfo.httpRealm = row.getResultByName("signon_realm")
-                                       .substring(loginInfo.hostname.length + 1);
+                                       .substring(loginInfo.origin.length + 1);
               break;
             default:
               throw new Error("Login data scheme type not supported: " +
