@@ -139,8 +139,15 @@ def resolve_tests_by_suite(paths):
     _, run_tests = resolver.resolve_metadata(paths)
 
     suite_to_tests = defaultdict(list)
+
     for test in run_tests:
         key, _ = get_suite_definition(test['flavor'], test.get('subsuite'), strict=True)
-        suite_to_tests[key].append(test['srcdir_relpath'])
+
+        
+        if test.get('dir_relpath') in paths and test['dir_relpath'] not in suite_to_tests[key]:
+            suite_to_tests[key].append(test['dir_relpath'])
+        elif (test.get('srcdir_relpath') in paths and
+              test['srcdir_relpath'] not in suite_to_tests[key]):
+            suite_to_tests[key].append(test['srcdir_relpath'])
 
     return suite_to_tests
