@@ -213,7 +213,7 @@ class RenderThread final {
   void UnregisterExternalImageDuringShutdown(uint64_t aExternalImageId);
 
   
-  RenderTextureHost* GetRenderTexture(WrExternalImageId aExternalImageId);
+  RenderTextureHost* GetRenderTexture(ExternalImageId aExternalImageId);
 
   
   bool IsDestroyed(wr::WindowId aWindowId);

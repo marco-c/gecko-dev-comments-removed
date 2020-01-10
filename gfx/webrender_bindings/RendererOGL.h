@@ -47,10 +47,10 @@ class RenderTextureHost;
 
 class RendererOGL {
   friend wr::WrExternalImage LockExternalImage(void* aObj,
-                                               wr::WrExternalImageId aId,
+                                               wr::ExternalImageId aId,
                                                uint8_t aChannelIndex,
                                                wr::ImageRendering);
-  friend void UnlockExternalImage(void* aObj, wr::WrExternalImageId aId,
+  friend void UnlockExternalImage(void* aObj, wr::ExternalImageId aId,
                                   uint8_t aChannelIndex);
 
  public:
@@ -97,7 +97,7 @@ class RendererOGL {
 
   RefPtr<WebRenderPipelineInfo> FlushPipelineInfo();
 
-  RenderTextureHost* GetRenderTexture(wr::WrExternalImageId aExternalImageId);
+  RenderTextureHost* GetRenderTexture(wr::ExternalImageId aExternalImageId);
 
   void AccumulateMemoryReport(MemoryReport* aReport);
 
