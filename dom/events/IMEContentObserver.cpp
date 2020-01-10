@@ -1680,23 +1680,26 @@ IMEContentObserver::IMENotificationSender::Run() {
   if (observer->mNeedsToNotifyIMEOfTextChange) {
     observer->mNeedsToNotifyIMEOfTextChange = false;
     SendTextChange();
+    
+    
+    
+    
+    
+    
+    
+    observer->mNeedsToNotifyIMEOfSelectionChange = true;
   }
 
-  
-  
-  
-  
-  
-  
-  
   
   
   if (!observer->mNeedsToNotifyIMEOfTextChange) {
     
     
     
-    observer->mNeedsToNotifyIMEOfSelectionChange = false;
-    SendSelectionChange();
+    if (observer->mNeedsToNotifyIMEOfSelectionChange) {
+      observer->mNeedsToNotifyIMEOfSelectionChange = false;
+      SendSelectionChange();
+    }
   }
 
   
