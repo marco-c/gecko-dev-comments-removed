@@ -6332,6 +6332,8 @@ void nsGlobalWindowOuter::FinalClose() {
   
   mIsClosed = true;
 
+  GetBrowsingContext()->SetClosed(true);
+
   
   
   if (XRE_GetProcessType() == GeckoProcessType_Content) {
