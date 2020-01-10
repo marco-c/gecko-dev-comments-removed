@@ -635,11 +635,12 @@ a.learn-more-link.webconsole-learn-more-link {
 
 .webconsole-filteringbar-wrapper {
   display: grid;
-  grid-row: 1 / 2;
   grid-template-columns: 1fr max-content auto auto;
-  
-  flex-wrap: wrap;
   --primary-toolbar-height: 29px;
+}
+
+.webconsole-filteringbar-wrapper .devtools-toolbar {
+  background-color: var(--theme-body-background);
 }
 
 .webconsole-filterbar-primary {
@@ -685,12 +686,15 @@ a.learn-more-link.webconsole-learn-more-link {
   background-image: url(chrome://devtools/skin/images/close.svg);
 }
 
-
 .webconsole-filterbar-primary .devtools-searchbox {
   align-self: stretch;
+  
   height: unset;
   flex: 1 1 100%;
   margin-inline-start: 1px;
+  
+
+  min-width: 150px;
 }
 
 .webconsole-filterbar-primary .filter-checkbox {
