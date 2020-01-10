@@ -405,6 +405,20 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             getSettings().mGeckoViewLogLevel.set(enable ? "Debug" : "Fatal");
             return this;
         }
+
+        
+
+
+
+
+
+
+
+
+        public @NonNull Builder aboutConfigEnabled(final boolean flag) {
+            getSettings().mAboutConfig.set(flag);
+            return this;
+        }
     }
 
     private GeckoRuntime mRuntime;
@@ -449,6 +463,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             "consoleservice.logcat", true);
      final Pref<Boolean> mDevToolsConsoleToLogcat = new Pref<>(
             "devtools.console.stdout.chrome", true);
+     final Pref<Boolean> mAboutConfig = new Pref<>(
+            "general.aboutConfig.enable", false);
 
      boolean mDebugPause;
      boolean mUseMaxScreenDepth;
@@ -1021,6 +1037,29 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
     public @Nullable RuntimeTelemetry.Delegate getTelemetryDelegate() {
         return mTelemetryProxy.getDelegate();
+    }
+
+    
+
+
+
+
+    public boolean getAboutConfigEnabled() {
+        return mAboutConfig.get();
+    }
+
+    
+
+
+
+
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setAboutConfigEnabled(final boolean flag) {
+        mAboutConfig.commit(flag);
+        return this;
     }
 
     @Override 
