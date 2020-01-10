@@ -7416,8 +7416,6 @@ nsresult nsDocShell::CaptureState() {
     mOSHE->AddChildShell(childShell);
   }
 
-  mBrowsingContext->CacheChildren();
-
   return NS_OK;
 }
 
@@ -7803,6 +7801,10 @@ nsresult nsDocShell::RestoreFromHistory() {
 
   
   mContentViewer = nullptr;
+
+  
+  
+  mBrowsingContext->CacheChildren();
 
   
   
@@ -8509,6 +8511,10 @@ nsresult nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer) {
   }
 
   mContentViewer = nullptr;
+
+  
+  
+  mBrowsingContext->CacheChildren();
 
   
   
