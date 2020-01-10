@@ -31,6 +31,12 @@ form {
   display: none;
 }
 
+input[type="password"],
+input[type="text"],
+input[type="url"] {
+  text-align: match-parent !important; 
+}
+
 input[type="password"][readOnly],
 input[type="text"][readOnly],
 input[type="url"][readOnly] {
@@ -41,10 +47,19 @@ input[type="url"][readOnly] {
   background-color: transparent !important; 
   text-overflow: ellipsis;
   overflow: hidden;
-  text-align: match-parent;
 }
 
-.detail-cell input:not([type="checkbox"]),
+
+
+
+.detail-cell:dir(ltr) input:not([type="checkbox"]) {
+  margin-left: 0;
+}
+
+.detail-cell:dir(rtl) input:not([type="checkbox"]) {
+  margin-right: 0;
+}
+
 .save-changes-button {
   margin-inline-start: 0; 
 }
@@ -186,8 +201,8 @@ input[type="url"][readOnly]:hover:active {
   width: 40px;
 }
 
-:host(:not([editing])) input[name='password'] {
-  font-family: monospace;
+input[name="password"] {
+  font-family: monospace !important; 
 }
 
 .reveal-password-checkbox {
