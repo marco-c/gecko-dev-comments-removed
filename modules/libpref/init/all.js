@@ -4793,12 +4793,6 @@ pref("dom.push.http2.retryInterval", 5000);
 #endif
 
 
-
-#if defined(XP_WIN)
-  pref("dom.w3c_pointer_events.dispatch_by_pointer_messages", false);
-#endif
-
-
 pref("dom.w3c_pointer_events.implicit_capture", false);
 
 
