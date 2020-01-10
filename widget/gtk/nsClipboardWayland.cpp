@@ -195,6 +195,12 @@ void WaylandDataOffer::SetDragStatus(GdkDragAction aAction, uint32_t aTime) {
   uint32_t all_actions = WL_DATA_DEVICE_MANAGER_DND_ACTION_COPY |
                          WL_DATA_DEVICE_MANAGER_DND_ACTION_MOVE;
 
+  
+
+  if (dnd_actions == 0) {
+    all_actions = WL_DATA_DEVICE_MANAGER_DND_ACTION_MOVE;
+  }
+
   wl_data_offer_set_actions(mWaylandDataOffer, all_actions, dnd_actions);
 
   
