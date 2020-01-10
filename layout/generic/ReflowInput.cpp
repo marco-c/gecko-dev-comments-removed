@@ -1409,7 +1409,7 @@ void ReflowInput::CalculateHypotheticalPosition(
       
       LogicalRect lineBounds = lineBox->GetBounds().ConvertTo(
           wm, lineBox->mWritingMode, lineBox->mContainerSize);
-      if (mStyleDisplay->IsOriginalDisplayInlineOutsideStyle()) {
+      if (mStyleDisplay->IsOriginalDisplayInlineOutside()) {
         
         
         aHypotheticalPos.mBStart = lineBounds.BStart(wm) + blockOffset.B(wm);
@@ -1476,7 +1476,7 @@ void ReflowInput::CalculateHypotheticalPosition(
   
   
   
-  if (mStyleDisplay->IsOriginalDisplayInlineOutsideStyle() ||
+  if (mStyleDisplay->IsOriginalDisplayInlineOutside() ||
       mFlags.mIOffsetsNeedCSSAlign) {
     
     
