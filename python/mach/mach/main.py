@@ -429,6 +429,17 @@ To see more help for a specific command, run:
                                                  ' '.join(e.arguments)))
             return 1
 
+        if not hasattr(args, 'mach_handler'):
+            raise MachError('ArgumentParser result missing mach handler info.')
+
+        handler = getattr(args, 'mach_handler')
+
+        
+        
+        if args.print_command:
+            print(handler.name)
+            sys.exit(0)
+
         
         if args.logfile:
             self.log_manager.add_json_handler(args.logfile)
@@ -454,11 +465,6 @@ To see more help for a specific command, run:
             
             
             self.load_settings(args.settings_file)
-
-        if not hasattr(args, 'mach_handler'):
-            raise MachError('ArgumentParser result missing mach handler info.')
-
-        handler = getattr(args, 'mach_handler')
 
         
         
@@ -623,6 +629,8 @@ To see more help for a specific command, run:
         global_group.add_argument('--settings', dest='settings_file',
                                   metavar='FILENAME', default=None,
                                   help='Path to settings file.')
+        global_group.add_argument('--print-command', action='store_true',
+                                  help=argparse.SUPPRESS)
 
         for args, kwargs in self.global_arguments:
             global_group.add_argument(*args, **kwargs)
