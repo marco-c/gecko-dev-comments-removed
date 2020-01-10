@@ -84,9 +84,11 @@ add_task(async function test_observe_uncaught() {
   };
 
   let resolveLater = function(delay = 20) {
+    
     return new Promise((resolve, reject) => setTimeout(resolve, delay));
   };
   let rejectLater = function(delay = 20) {
+    
     return new Promise((resolve, reject) => setTimeout(reject, delay));
   };
   let makeSamples = function* () {
@@ -119,6 +121,8 @@ add_task(async function test_observe_uncaught() {
 
     
     let p = Promise.reject("Reject now, consume later");
+
+    
     setTimeout(() => p.catch(() => {
       info("Consumed promise");
     }), 200);
@@ -261,6 +265,7 @@ add_task(async function test_uninstall_observer() {
   let wait = new Observer();
   Promise.reject("I am another uncaught rejection.");
   await wait.blocker;
+  
   await new Promise(resolve => setTimeout(resolve, 100));
   
   wait.active = false;
