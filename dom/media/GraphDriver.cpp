@@ -11,6 +11,7 @@
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Unused.h"
+#include "mozilla/MathAlgorithms.h"
 #include "CubebDeviceEnumerator.h"
 #include "Tracing.h"
 
@@ -550,9 +551,6 @@ bool IsMacbookOrMacbookAir() {
         return true;
       }
     }
-    
-    
-    return true;
   }
 #endif
   return false;
@@ -627,6 +625,19 @@ bool AudioCallbackDriver::Init() {
   if (IsMacbookOrMacbookAir()) {
     latency_frames = std::max((uint32_t)512, latency_frames);
   }
+
+  
+  
+  
+  
+#if defined(XP_MACOSX)
+  if (mInputDevicePreference == CUBEB_DEVICE_PREF_VOICE) {
+    if (latency_frames < mSampleRate / 100) {
+      latency_frames = mozilla::RoundUpPow2(mSampleRate / 100);
+    }
+  }
+#endif
+  LOG(LogLevel::Debug, ("Effective latency in frames: %d", latency_frames));
 
   input = output;
   input.channels = mInputChannelCount;
