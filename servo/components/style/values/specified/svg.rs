@@ -200,7 +200,7 @@ impl Parse for SVGPaintOrder {
 
         
         for i in pos..PAINT_ORDER_COUNT {
-            for paint in 0..PAINT_ORDER_COUNT {
+            for paint in 1..(PAINT_ORDER_COUNT + 1) {
                 
                 if (seen & (1 << paint)) == 0 {
                     seen |= 1 << paint;
