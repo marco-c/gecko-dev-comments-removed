@@ -805,6 +805,14 @@ var E10SUtils = {
 
 
 
+  remoteTypePrefix(aRemoteType) {
+    return aRemoteType.split("=")[0];
+  },
+
+  
+
+
+
   isWebRemoteType(aBrowser) {
     if (aBrowser.ownerGlobal.docShell.nsILoadContext.useRemoteSubframes) {
       return aBrowser.remoteType.startsWith(FISSION_WEB_REMOTE_TYPE_PREFIX);
