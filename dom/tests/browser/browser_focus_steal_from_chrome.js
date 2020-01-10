@@ -142,7 +142,7 @@ add_task(async function() {
         }
 
         
-        document.getElementById("urlbar").focus();
+        gURLBar.focus();
         let originalFocus = Services.focus.focusedElement;
 
         
