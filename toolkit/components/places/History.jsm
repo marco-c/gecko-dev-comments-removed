@@ -830,10 +830,13 @@ function convertForUpdatePlaces(pageInfo) {
 
 
 
-function sqlList(list, prefix = "", suffix = "") {
-  return list.map(str => `${prefix}"${str}"${suffix}`).join();
-}
 
+
+
+
+function sqlBindPlaceholders(values, prefix = "", suffix = "") {
+  return new Array(values.length).fill(prefix + "?" + suffix).join(",");
+}
 
 
 
@@ -847,18 +850,19 @@ var invalidateFrecencies = async function(db, idList) {
   if (idList.length == 0) {
     return;
   }
-  let ids = sqlList(idList);
   await db.execute(
     `UPDATE moz_places
      SET frecency = NOTIFY_FRECENCY(
        CALCULATE_FRECENCY(id), url, guid, hidden, last_visit_date
-     ) WHERE id in (${ids})`
+     ) WHERE id in (${sqlBindPlaceholders(idList)})`,
+    idList
   );
   await db.execute(
     `UPDATE moz_places
      SET hidden = 0
-     WHERE id in (${ids})
-     AND frecency <> 0`
+     WHERE id in (${sqlBindPlaceholders(idList)})
+     AND frecency <> 0`,
+    idList
   );
   
   await db.execute(`DELETE FROM moz_updateoriginsupdate_temp`);
@@ -946,26 +950,39 @@ var cleanupPages = async function(db, pages) {
     return;
   }
 
-  let idsList = sqlList(pagesToRemove.map(p => p.id));
+  let idsToRemove = pagesToRemove.map(p => p.id);
   
   
   
-  await db.execute(`DELETE FROM moz_places WHERE id IN ( ${idsList} )
-                    AND foreign_count = 0 AND last_visit_date ISNULL`);
+  await db.execute(
+    `DELETE FROM moz_places
+     WHERE id IN ( ${sqlBindPlaceholders(idsToRemove)} )
+       AND foreign_count = 0 AND last_visit_date ISNULL`,
+    idsToRemove
+  );
   
   
   await db.executeCached(`DELETE FROM moz_updateoriginsdelete_temp`);
 
   
   let hashesToRemove = pagesToRemove.map(p => p.hash);
-  await db.executeCached(`DELETE FROM moz_pages_w_icons
-                          WHERE page_url_hash IN (${sqlList(hashesToRemove)})`);
+  await db.executeCached(
+    `DELETE FROM moz_pages_w_icons
+     WHERE page_url_hash IN (${sqlBindPlaceholders(hashesToRemove)})`,
+    hashesToRemove
+  );
   await removeOrphanIcons(db);
 
-  await db.execute(`DELETE FROM moz_annos
-                    WHERE place_id IN ( ${idsList} )`);
-  await db.execute(`DELETE FROM moz_inputhistory
-                    WHERE place_id IN ( ${idsList} )`);
+  await db.execute(
+    `DELETE FROM moz_annos
+     WHERE place_id IN ( ${sqlBindPlaceholders(idsToRemove)} )`,
+    idsToRemove
+  );
+  await db.execute(
+    `DELETE FROM moz_inputhistory
+     WHERE place_id IN ( ${sqlBindPlaceholders(idsToRemove)} )`,
+    idsToRemove
+  );
 };
 
 
@@ -1264,17 +1281,21 @@ var removeVisitsByFilter = async function(db, filter, onResult = null) {
     let pages = [];
     await db.executeTransaction(async function() {
       
-      await db.execute(`DELETE FROM moz_historyvisits
-                        WHERE id IN (${sqlList(visitsToRemove)} )`);
+      await db.execute(
+        `DELETE FROM moz_historyvisits
+         WHERE id IN (${sqlBindPlaceholders(visitsToRemove)})`,
+        visitsToRemove
+      );
 
       
+      pagesToInspect = [...pagesToInspect];
       await db.execute(
         `SELECT id, url, url_hash, guid,
           (foreign_count != 0) AS has_foreign,
           (last_visit_date NOTNULL) as has_visits
          FROM moz_places
-         WHERE id IN (${sqlList([...pagesToInspect])})`,
-        null,
+         WHERE id IN (${sqlBindPlaceholders(pagesToInspect)})`,
+        pagesToInspect,
         row => {
           let page = {
             id: row.getResultByName("id"),
@@ -1391,8 +1412,12 @@ var removeByFilter = async function(db, filter, onResult = null) {
   try {
     await db.executeTransaction(async function() {
       
-      await db.execute(`DELETE FROM moz_historyvisits
-                        WHERE place_id IN(${sqlList(pages.map(p => p.id))})`);
+      let pageIds = pages.map(p => p.id);
+      await db.execute(
+        `DELETE FROM moz_historyvisits
+         WHERE place_id IN(${sqlBindPlaceholders(pageIds)})`,
+        pageIds
+      );
       
       await cleanupPages(db, pages);
     });
@@ -1411,15 +1436,15 @@ var remove = async function(db, { guids, urls }, onResult = null) {
   
   let query = `SELECT id, url, url_hash, guid, foreign_count, title, frecency
      FROM moz_places
-     WHERE guid IN (${sqlList(guids)})
-        OR (url_hash IN (${sqlList(urls, "hash(", ")")})
-            AND url IN (${sqlList(urls)}))
+     WHERE guid IN (${sqlBindPlaceholders(guids)})
+        OR (url_hash IN (${sqlBindPlaceholders(urls, "hash(", ")")})
+            AND url IN (${sqlBindPlaceholders(urls)}))
     `;
-
+  let params = guids.concat(urls).concat(urls);
   let onResultData = onResult ? [] : null;
   let pages = [];
   let hasPagesToRemove = false;
-  await db.execute(query, null, function(row) {
+  await db.execute(query, params, function(row) {
     let hasForeign = row.getResultByName("foreign_count") != 0;
     if (!hasForeign) {
       hasPagesToRemove = true;
@@ -1454,9 +1479,12 @@ var remove = async function(db, { guids, urls }, onResult = null) {
 
     await db.executeTransaction(async function() {
       
-      await db.execute(`DELETE FROM moz_historyvisits
-                        WHERE place_id IN (${sqlList(pages.map(p => p.id))})
-                       `);
+      let pageIds = pages.map(p => p.id);
+      await db.execute(
+        `DELETE FROM moz_historyvisits
+         WHERE place_id IN (${sqlBindPlaceholders(pageIds)})`,
+        pageIds
+      );
 
       
       await cleanupPages(db, pages);

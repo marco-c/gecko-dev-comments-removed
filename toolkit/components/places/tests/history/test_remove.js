@@ -331,3 +331,17 @@ add_task(async function test_remove_backslash() {
     "The page should not be found"
   );
 });
+
+add_task(async function test_url_with_apices() {
+  
+  
+  
+  const url = `http://mozilla.org/\u0022\u0027`;
+  await PlacesTestUtils.addVisits(url);
+  Assert.ok(await PlacesUtils.history.remove(url), "A page should be removed");
+  Assert.deepEqual(
+    await PlacesUtils.history.fetch(url),
+    null,
+    "The page should not be found"
+  );
+});

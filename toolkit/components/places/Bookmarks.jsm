@@ -3014,8 +3014,7 @@ function validateBookmarkObject(name, input, behavior) {
 
 
 var updateFrecency = async function(db, urls, collapseNotifications = false) {
-  let urlQuery = 'hash("' + urls.map(url => url.href).join('"), hash("') + '")';
-
+  let hrefs = urls.map(url => url.href);
   let frecencyClause = "CALCULATE_FRECENCY(id)";
   if (!collapseNotifications) {
     frecencyClause =
@@ -3028,8 +3027,8 @@ var updateFrecency = async function(db, urls, collapseNotifications = false) {
     `UPDATE moz_places
      SET hidden = (url_hash BETWEEN hash("place", "prefix_lo") AND hash("place", "prefix_hi")),
          frecency = ${frecencyClause}
-     WHERE url_hash IN ( ${urlQuery} )
-    `
+     WHERE url_hash IN (${sqlBindPlaceholders(hrefs, "hash(", ")")})`,
+    hrefs
   );
 
   
@@ -3075,9 +3074,11 @@ var removeOrphanAnnotations = async function(db) {
 
 var removeAnnotationsForItems = async function(db, items) {
   
-  let ids = sqlList(items.map(item => item._id));
+  let itemIds = items.map(item => item._id);
   await db.executeCached(
-    `DELETE FROM moz_items_annos WHERE item_id IN (${ids})`
+    `DELETE FROM moz_items_annos
+     WHERE item_id IN (${sqlBindPlaceholders(itemIds)})`,
+    itemIds
   );
   await db.executeCached(
     `DELETE FROM moz_anno_attributes
@@ -3404,6 +3405,10 @@ function* chunkArray(array, chunkLength) {
 
 
 
-function sqlList(list) {
-  return list.map(JSON.stringify).join();
+
+
+
+
+function sqlBindPlaceholders(values, prefix = "", suffix = "") {
+  return new Array(values.length).fill(prefix + "?" + suffix).join(",");
 }
