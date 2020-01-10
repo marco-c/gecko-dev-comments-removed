@@ -1166,7 +1166,8 @@ def enable_fission_on_central(config, tests):
 
         
         exceptions = ('gpu', 'remote', 'screenshots')
-        if (test['attributes']['unittest_category'] != 'mochitest' or
+        if (test['attributes']['unittest_category'] not in
+                ('mochitest', 'web-platform-tests') or
                 any(s in test['attributes']['unittest_suite'] for s in exceptions)):
             yield test
             continue
@@ -1182,10 +1183,15 @@ def enable_fission_on_central(config, tests):
             test['run-on-projects'].append('mozilla-central')
 
         
-        if platform == 'linux64' and btype == 'debug' and (test['webrender'] or
-           'mochitest-browser-chrome' in test['attributes']['unittest_suite']):
+        if (test['attributes']['unittest_category'] == "mochitest" and
+            platform == 'linux64' and btype == 'debug' and (test['webrender'] or
+           'mochitest-browser-chrome' in test['attributes']['unittest_suite'])):
             test['tier'] = 1
             test['run-on-projects'] = ['ash', 'try', 'trunk']
+        elif test['attributes']['unittest_category'] == "web-platform-tests":
+            test['tier'] = 3
+            if platform == 'linux64' and btype == 'debug' and test['webrender']:
+                test['run-on-projects'] = ['ash', 'try', 'trunk']
         yield test
 
 
