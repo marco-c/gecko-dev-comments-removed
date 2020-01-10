@@ -77,6 +77,12 @@ bool BaseProfilerLogTest(int aLevelToTest);
     }                                                              \
   } while (0)
 
+namespace mozilla {
+
+class JSONWriter;
+
+namespace baseprofiler {
+
 
 
 class PSMutex : private mozilla::detail::MutexImpl {
@@ -98,8 +104,7 @@ struct PlatformDataDestructor {
   void operator()(PlatformData*);
 };
 
-typedef mozilla::UniquePtr<PlatformData, PlatformDataDestructor>
-    UniquePlatformData;
+typedef UniquePtr<PlatformData, PlatformDataDestructor> UniquePlatformData;
 UniquePlatformData AllocPlatformData(int aThreadId);
 
 
@@ -123,6 +128,9 @@ void profiler_received_exit_profile(const std::string& aExitProfile);
 
 
 
-mozilla::Vector<std::string> profiler_move_exit_profiles();
+Vector<std::string> profiler_move_exit_profiles();
+
+}  
+}  
 
 #endif 

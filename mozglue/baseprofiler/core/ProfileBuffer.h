@@ -11,6 +11,9 @@
 
 #include "mozilla/Maybe.h"
 
+namespace mozilla {
+namespace baseprofiler {
+
 
 
 
@@ -40,11 +43,11 @@ class ProfileBuffer final {
   
   uint64_t AddThreadIdEntry(int aThreadId);
 
-  void CollectCodeLocation(
-      const char* aLabel, const char* aStr, uint32_t aFrameFlags,
-      const mozilla::Maybe<uint32_t>& aLineNumber,
-      const mozilla::Maybe<uint32_t>& aColumnNumber,
-      const mozilla::Maybe<JS::ProfilingCategoryPair>& aCategoryPair);
+  void CollectCodeLocation(const char* aLabel, const char* aStr,
+                           uint32_t aFrameFlags,
+                           const Maybe<uint32_t>& aLineNumber,
+                           const Maybe<uint32_t>& aColumnNumber,
+                           const Maybe<ProfilingCategoryPair>& aCategoryPair);
 
   
   static const size_t kMaxFrameKeyLength = 512;
@@ -58,28 +61,27 @@ class ProfileBuffer final {
                            UniqueStacks& aUniqueStacks) const;
 
   void StreamMarkersToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
-                           const mozilla::TimeStamp& aProcessStartTime,
+                           const TimeStamp& aProcessStartTime,
                            double aSinceTime,
                            UniqueStacks& aUniqueStacks) const;
   void StreamPausedRangesToJSON(SpliceableJSONWriter& aWriter,
                                 double aSinceTime) const;
   void StreamProfilerOverheadToJSON(SpliceableJSONWriter& aWriter,
-                                    const mozilla::TimeStamp& aProcessStartTime,
+                                    const TimeStamp& aProcessStartTime,
                                     double aSinceTime) const;
   void StreamCountersToJSON(SpliceableJSONWriter& aWriter,
-                            const mozilla::TimeStamp& aProcessStartTime,
+                            const TimeStamp& aProcessStartTime,
                             double aSinceTime) const;
   void StreamMemoryToJSON(SpliceableJSONWriter& aWriter,
-                          const mozilla::TimeStamp& aProcessStartTime,
+                          const TimeStamp& aProcessStartTime,
                           double aSinceTime) const;
 
   
   
   
   
-  bool DuplicateLastSample(int aThreadId,
-                           const mozilla::TimeStamp& aProcessStartTime,
-                           mozilla::Maybe<uint64_t>& aLastSample);
+  bool DuplicateLastSample(int aThreadId, const TimeStamp& aProcessStartTime,
+                           Maybe<uint64_t>& aLastSample);
 
   void DiscardSamplesBeforeTime(double aTime);
 
@@ -93,14 +95,14 @@ class ProfileBuffer final {
     return mEntries[aPosition & mEntryIndexMask];
   }
 
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
  private:
   
   
   
   
-  mozilla::UniquePtr<ProfileBufferEntry[]> mEntries;
+  UniquePtr<ProfileBufferEntry[]> mEntries;
 
   
   uint32_t mEntryIndexMask;
@@ -143,22 +145,23 @@ class ProfileBufferCollector final : public ProfilerStackCollector {
                          uint64_t aSamplePos)
       : mBuf(aBuf), mSamplePositionInBuffer(aSamplePos), mFeatures(aFeatures) {}
 
-  mozilla::Maybe<uint64_t> SamplePositionInBuffer() override {
-    return mozilla::Some(mSamplePositionInBuffer);
+  Maybe<uint64_t> SamplePositionInBuffer() override {
+    return Some(mSamplePositionInBuffer);
   }
 
-  mozilla::Maybe<uint64_t> BufferRangeStart() override {
-    return mozilla::Some(mBuf.mRangeStart);
-  }
+  Maybe<uint64_t> BufferRangeStart() override { return Some(mBuf.mRangeStart); }
 
   virtual void CollectNativeLeafAddr(void* aAddr) override;
   virtual void CollectProfilingStackFrame(
-      const js::ProfilingStackFrame& aFrame) override;
+      const ProfilingStackFrame& aFrame) override;
 
  private:
   ProfileBuffer& mBuf;
   uint64_t mSamplePositionInBuffer;
   uint32_t mFeatures;
 };
+
+}  
+}  
 
 #endif

@@ -19,6 +19,9 @@
 
 using namespace std;
 
+namespace mozilla {
+namespace baseprofiler {
+
 VTuneProfiler* VTuneProfiler::mInstance = nullptr;
 
 void VTuneProfiler::Initialize() {
@@ -88,5 +91,8 @@ void VTuneProfiler::RegisterThreadInternal(const char* aName) {
   
   
 }
+
+}  
+}  
 
 #endif  

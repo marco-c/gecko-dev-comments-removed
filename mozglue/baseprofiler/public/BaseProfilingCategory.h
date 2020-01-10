@@ -17,6 +17,9 @@
 
 #include <cstdint>
 
+namespace mozilla {
+namespace baseprofiler {
+
 
 
 
@@ -81,8 +84,6 @@
     SUBCATEGORY(DOM, DOM, "Other")                                             \
   END_CATEGORY
 
-namespace JS {
-
 
 
 
@@ -124,9 +125,10 @@ struct ProfilingCategoryPairInfo {
   const char* mLabel;
 };
 
-MFBT_API const ProfilingCategoryPairInfo& GetBaseProfilingCategoryPairInfo(
+MFBT_API const ProfilingCategoryPairInfo& GetProfilingCategoryPairInfo(
     ProfilingCategoryPair aCategoryPair);
 
+}  
 }  
 
 #endif 
