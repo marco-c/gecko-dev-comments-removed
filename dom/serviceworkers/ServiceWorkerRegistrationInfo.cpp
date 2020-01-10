@@ -709,8 +709,14 @@ uint64_t ServiceWorkerRegistrationInfo::Version() const {
   return mDescriptor.Version();
 }
 
-uint32_t ServiceWorkerRegistrationInfo::GetUpdateDelay() {
+uint32_t ServiceWorkerRegistrationInfo::GetUpdateDelay(
+    const bool aWithMultiplier) {
   uint32_t delay = Preferences::GetInt("dom.serviceWorkers.update_delay", 1000);
+
+  if (!aWithMultiplier) {
+    return delay;
+  }
+
   
   
   if (mDelayMultiplier >= INT_MAX / (delay ? delay : 1)) {
