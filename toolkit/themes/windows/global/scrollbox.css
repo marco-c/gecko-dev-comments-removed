@@ -13,6 +13,12 @@ arrowscrollbox[notoverflowing=true]::part(scrollbutton-down) {
 
 
 
+arrowscrollbox.in-bookmarks-menu::part(scrollbox) {
+  padding-top: 4px;
+}
+
+
+
 
 
 

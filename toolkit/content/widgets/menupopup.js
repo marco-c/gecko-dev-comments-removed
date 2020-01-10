@@ -45,26 +45,27 @@
       }
     }
 
+    initShadowDOM() {
+      
+      this.scrollBox.addEventListener("scroll", ev =>
+        this.dispatchEvent(new Event("scroll"))
+      );
+      this.scrollBox.addEventListener("overflow", ev =>
+        this.dispatchEvent(new Event("overflow"))
+      );
+      this.scrollBox.addEventListener("underflow", ev =>
+        this.dispatchEvent(new Event("underflow"))
+      );
+      this.scrollBox._scrollButtonUp.classList.add("menupopup-scrollbutton");
+      this.scrollBox._scrollButtonDown.classList.add("menupopup-scrollbutton");
+    }
+
     get shadowRoot() {
       
       
       if (!super.shadowRoot.firstElementChild) {
         super.shadowRoot.appendChild(this.fragment);
-
-        
-        this.scrollBox.addEventListener("scroll", ev =>
-          this.dispatchEvent(new Event("scroll"))
-        );
-        this.scrollBox.addEventListener("overflow", ev =>
-          this.dispatchEvent(new Event("overflow"))
-        );
-        this.scrollBox.addEventListener("underflow", ev =>
-          this.dispatchEvent(new Event("underflow"))
-        );
-        this.scrollBox._scrollButtonUp.classList.add("menupopup-scrollbutton");
-        this.scrollBox._scrollButtonDown.classList.add(
-          "menupopup-scrollbutton"
-        );
+        this.initShadowDOM();
       }
       return super.shadowRoot;
     }
