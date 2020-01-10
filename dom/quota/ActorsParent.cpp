@@ -95,9 +95,11 @@
 #define QM_LOG_TEST() MOZ_LOG_TEST(GetQuotaManagerLogger(), LogLevel::Info)
 #define QM_LOG(_args) MOZ_LOG(GetQuotaManagerLogger(), LogLevel::Info, _args)
 
-#define UNKNOWN_FILE_WARNING(_leafName)                              \
-  QM_WARNING("Something (%s) in the directory that doesn't belong!", \
-             NS_ConvertUTF16toUTF8(_leafName).get())
+#define UNKNOWN_FILE_WARNING(_leafName)                                       \
+  NS_WARNING(                                                                 \
+      nsPrintfCString("Something (%s) in the directory that doesn't belong!", \
+                      NS_ConvertUTF16toUTF8(_leafName).get())                 \
+          .get())
 
 
 
@@ -2240,6 +2242,8 @@ int64_t GetLastModifiedTime(nsIFile* aFile, bool aPersistent) {
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
+
+        
 
         if (IsOriginMetadata(leafName) || IsTempMetadata(leafName) ||
             IsDotFile(leafName)) {
@@ -5159,10 +5163,12 @@ nsresult QuotaManager::InitializeOrigin(PersistenceType aPersistenceType,
         continue;
       }
 
+      
+      
       UNKNOWN_FILE_WARNING(leafName);
-      REPORT_TELEMETRY_INIT_ERR(kQuotaInternalError, Ori_UnexpectedFile);
-      RECORD_IN_NIGHTLY(statusKeeper, NS_ERROR_UNEXPECTED);
-      CONTINUE_IN_NIGHTLY_RETURN_IN_OTHERS(NS_ERROR_UNEXPECTED);
+      
+      
+      continue;
     }
 
     Client::Type clientType;
@@ -8873,10 +8879,9 @@ nsresult QuotaUsageRequestBase::GetUsageForOrigin(
           continue;
         }
 
+        
+        
         UNKNOWN_FILE_WARNING(leafName);
-        if (!initialized) {
-          return NS_ERROR_UNEXPECTED;
-        }
         continue;
       }
 
