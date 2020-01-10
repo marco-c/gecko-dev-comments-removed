@@ -123,7 +123,11 @@ class CallbackObject : public nsISupports {
 
 
 
+
+
+
   JS::Handle<JSObject*> CallbackPreserveColor() const {
+    
     
     
     return JS::Handle<JSObject*>::fromMarkedLocation(mCallback.address());
@@ -222,6 +226,7 @@ class CallbackObject : public nsISupports {
     mozilla::HoldJSObjects(this);
   }
 
+  
   
   
   
