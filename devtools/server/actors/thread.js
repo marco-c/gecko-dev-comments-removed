@@ -104,7 +104,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this._activeEventBreakpoints = new Set();
     this._activeEventPause = null;
     this._pauseOverlay = null;
-
     this._priorPause = null;
 
     this._options = {
@@ -742,11 +741,17 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       if (!packet) {
         return undefined;
       }
-      packet.why = reason;
 
       const { sourceActor, line, column } = this.sources.getFrameLocation(
         frame
       );
+
+      packet.why = reason;
+
+      if (this.suspendedFrame) {
+        this.suspendedFrame.waitingOnStep = false;
+        this.suspendedFrame = undefined;
+      }
 
       if (!sourceActor) {
         
@@ -833,6 +838,13 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       const url = sourceActor.url;
 
       if (thread.sources.isBlackBoxed(url)) {
+        return undefined;
+      }
+
+      
+      if (completion.await || completion.yield) {
+        thread.suspendedFrame = this;
+        this.waitingOnStep = true;
         return undefined;
       }
 
@@ -959,6 +971,14 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     const thread = this;
     return function() {
       
+      
+      
+      if (this.hasOwnProperty("waitingOnStep") && !this.waitingOnStep) {
+        delete this.waitingOnStep;
+        this.onStep = undefined;
+        this.onPop = undefined;
+        return undefined;
+      }
       const location = thread.sources.getFrameLocation(this);
 
       
@@ -1138,7 +1158,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
               );
               stepFrame.setReplayingOnStep(onStep, offsets);
             } else {
+              stepFrame.waitingOnStep = true;
               stepFrame.onStep = onStep;
+              stepFrame.onPop = onPop;
             }
           }
         

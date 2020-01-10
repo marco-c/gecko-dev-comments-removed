@@ -29,7 +29,7 @@ const { NetUtil } = require("resource://gre/modules/NetUtil.jsm");
 const Services = require("Services");
 
 
-Services.prefs.setBoolPref("devtools.debugger.log", true);
+Services.prefs.setBoolPref("devtools.debugger.log", false);
 
 Services.prefs.setBoolPref("devtools.debugger.remote-enabled", true);
 
