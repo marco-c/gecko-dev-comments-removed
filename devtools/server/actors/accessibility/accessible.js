@@ -529,9 +529,34 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
     
     
     
-    this._auditing = Promise.all(
-      auditTypes.map(auditType => this._getAuditByType(auditType))
-    )
+    
+    
+    
+    
+    let keyboardAuditResult;
+    const keyboardAuditIndex = auditTypes.indexOf(AUDIT_TYPE.KEYBOARD);
+    if (keyboardAuditIndex > -1) {
+      
+      
+      auditTypes.splice(keyboardAuditIndex, 1);
+      keyboardAuditResult = this._getAuditByType(AUDIT_TYPE.KEYBOARD);
+    }
+
+    this._auditing = Promise.resolve(keyboardAuditResult)
+      .then(keyboardResult => {
+        const audits = auditTypes.map(auditType =>
+          this._getAuditByType(auditType)
+        );
+
+        
+        
+        if (keyboardAuditIndex > -1) {
+          auditTypes.splice(keyboardAuditIndex, 0, AUDIT_TYPE.KEYBOARD);
+          audits.splice(keyboardAuditIndex, 0, keyboardResult);
+        }
+
+        return Promise.all(audits);
+      })
       .then(results => {
         if (this.isDefunct || this.isDestroyed) {
           return null;
