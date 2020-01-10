@@ -7,6 +7,7 @@
 #ifndef jit_BaselineJIT_h
 #define jit_BaselineJIT_h
 
+#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 
 #include "ds/LifoAlloc.h"
@@ -459,38 +460,43 @@ void ToggleBaselineTraceLoggerEngine(JSRuntime* runtime, bool enable);
 
 struct BaselineBailoutInfo {
   
-  uint8_t* incomingStack;
+  uint8_t* incomingStack = nullptr;
 
   
   
-  uint8_t* copyStackTop;
-  uint8_t* copyStackBottom;
+  uint8_t* copyStackTop = nullptr;
+  uint8_t* copyStackBottom = nullptr;
 
   
-  void* resumeFramePtr;
+  void* resumeFramePtr = nullptr;
 
   
-  void* resumeAddr;
-
-  
-  
-  jsbytecode* monitorPC;
-
-  
-  jsbytecode* tryPC;
-  jsbytecode* faultPC;
-
-  
-  uint32_t numFrames;
+  void* resumeAddr = nullptr;
 
   
   
-  
-  
-  bool checkGlobalDeclarationConflicts;
+  jsbytecode* monitorPC = nullptr;
 
   
-  BailoutKind bailoutKind;
+  jsbytecode* tryPC = nullptr;
+  jsbytecode* faultPC = nullptr;
+
+  
+  uint32_t numFrames = 0;
+
+  
+  
+  
+  
+  bool checkGlobalDeclarationConflicts = false;
+
+  
+  mozilla::Maybe<BailoutKind> bailoutKind = {};
+
+  BaselineBailoutInfo() = default;
+  BaselineBailoutInfo(const BaselineBailoutInfo&) = default;
+
+  void operator=(const BaselineBailoutInfo&) = delete;
 };
 
 MOZ_MUST_USE bool BailoutIonToBaseline(

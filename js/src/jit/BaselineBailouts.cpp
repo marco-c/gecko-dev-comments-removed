@@ -125,17 +125,10 @@ struct BaselineStackBuilder {
     bufferAvail_ = bufferTotal_ - HeaderSize();
     bufferUsed_ = 0;
 
-    header_ = reinterpret_cast<BaselineBailoutInfo*>(buffer_);
+    header_ = new (buffer_) BaselineBailoutInfo();
     header_->incomingStack = reinterpret_cast<uint8_t*>(frame_);
     header_->copyStackTop = buffer_ + bufferTotal_;
     header_->copyStackBottom = header_->copyStackTop;
-    header_->resumeFramePtr = nullptr;
-    header_->resumeAddr = nullptr;
-    header_->monitorPC = nullptr;
-    header_->tryPC = nullptr;
-    header_->faultPC = nullptr;
-    header_->numFrames = 0;
-    header_->checkGlobalDeclarationConflicts = false;
     return true;
   }
 
@@ -152,13 +145,11 @@ struct BaselineStackBuilder {
     }
     memcpy((newBuffer + newSize) - bufferUsed_, header_->copyStackBottom,
            bufferUsed_);
-    memcpy(newBuffer, header_, sizeof(BaselineBailoutInfo));
+    header_ = new (newBuffer) BaselineBailoutInfo(*header_);
     js_free(buffer_);
     buffer_ = newBuffer;
     bufferTotal_ = newSize;
     bufferAvail_ = newSize - (HeaderSize() + bufferUsed_);
-
-    header_ = reinterpret_cast<BaselineBailoutInfo*>(buffer_);
     header_->copyStackTop = buffer_ + bufferTotal_;
     header_->copyStackBottom = header_->copyStackTop - bufferUsed_;
     return true;
@@ -1690,7 +1681,7 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
   
   info = builder.takeBuffer();
   info->numFrames = frameNo + 1;
-  info->bailoutKind = bailoutKind;
+  info->bailoutKind.emplace(bailoutKind);
   *bailoutInfo = info;
   guardRemoveRematerializedFramesFromDebugger.release();
   return true;
@@ -1829,7 +1820,7 @@ static bool CopyFromRematerializedFrame(JSContext* cx, JitActivation* act,
   return true;
 }
 
-bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo) {
+bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
   
   
   JSContext* cx = TlsContext.get();
@@ -1837,21 +1828,15 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo) {
 
   JitSpew(JitSpew_BaselineBailouts, "  Done restoring frames");
 
+  
+  UniquePtr<BaselineBailoutInfo> bailoutInfo(bailoutInfoArg);
+  bailoutInfoArg = nullptr;
+
   BaselineFrame* topFrame = GetTopBaselineFrame(cx);
 
-  jsbytecode* faultPC = bailoutInfo->faultPC;
-  jsbytecode* tryPC = bailoutInfo->tryPC;
-  uint32_t numFrames = bailoutInfo->numFrames;
-  MOZ_ASSERT(numFrames > 0);
-  BailoutKind bailoutKind = bailoutInfo->bailoutKind;
-  bool checkGlobalDeclarationConflicts =
-      bailoutInfo->checkGlobalDeclarationConflicts;
+  
+  
   uint8_t* incomingStack = bailoutInfo->incomingStack;
-
-  jsbytecode* monitorPC = bailoutInfo->monitorPC;
-
-  
-  
   auto guardRemoveRematerializedFramesFromDebugger =
       mozilla::MakeScopeExit([&] {
         JitActivation* act = cx->activation()->asJit();
@@ -1859,16 +1844,12 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo) {
       });
 
   
-  js_free(bailoutInfo);
-  bailoutInfo = nullptr;
-
-  
   if (!EnsureHasEnvironmentObjects(cx, topFrame)) {
     return false;
   }
 
   
-  if (checkGlobalDeclarationConflicts) {
+  if (bailoutInfo->checkGlobalDeclarationConflicts) {
     Rooted<LexicalEnvironmentObject*> lexicalEnv(
         cx, &cx->global()->lexicalEnvironment());
     RootedScript script(cx, topFrame->script());
@@ -1879,7 +1860,7 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo) {
   }
 
   
-  if (monitorPC) {
+  if (jsbytecode* monitorPC = bailoutInfo->monitorPC) {
     MOZ_ASSERT(CodeSpec[*monitorPC].format & JOF_TYPESET);
     MOZ_ASSERT(GetNextPc(monitorPC) == topFrame->interpreterPC());
 
@@ -1916,6 +1897,9 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo) {
           cx->runtime())) {
     cx->jitActivation->setLastProfilingFrame(iter.prevFp());
   }
+
+  uint32_t numFrames = bailoutInfo->numFrames;
+  MOZ_ASSERT(numFrames > 0);
 
   uint32_t frameno = 0;
   while (frameno < numFrames) {
@@ -2001,9 +1985,9 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo) {
 
   
   
-  if (cx->isExceptionPending() && faultPC) {
-    EnvironmentIter ei(cx, topFrame, faultPC);
-    UnwindEnvironment(cx, ei, tryPC);
+  if (cx->isExceptionPending() && bailoutInfo->faultPC) {
+    EnvironmentIter ei(cx, topFrame, bailoutInfo->faultPC);
+    UnwindEnvironment(cx, ei, bailoutInfo->tryPC);
   }
 
   
@@ -2014,6 +1998,7 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo) {
     }
   }
 
+  BailoutKind bailoutKind = *bailoutInfo->bailoutKind;
   JitSpew(JitSpew_BaselineBailouts,
           "  Restored outerScript=(%s:%u:%u,%u) innerScript=(%s:%u:%u,%u) "
           "(bailoutKind=%u)",

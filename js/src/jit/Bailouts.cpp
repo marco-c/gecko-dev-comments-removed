@@ -218,7 +218,7 @@ bool jit::ExceptionHandlerBailout(JSContext* cx,
     
     
     if (excInfo.propagatingIonExceptionForDebugMode()) {
-      bailoutInfo->bailoutKind = Bailout_IonExceptionDebugMode;
+      bailoutInfo->bailoutKind = mozilla::Some(Bailout_IonExceptionDebugMode);
     }
 
     rfe->kind = ResumeFromException::RESUME_BAILOUT;
