@@ -17,6 +17,11 @@ const {
 const KeyShortcuts = require("devtools/client/shared/key-shortcuts");
 const { l10n } = require("devtools/client/webconsole/utils/messages");
 
+var ChromeUtils = require("ChromeUtils");
+const { BrowserLoader } = ChromeUtils.import(
+  "resource://devtools/client/shared/browser-loader.js"
+);
+
 loader.lazyRequireGetter(
   this,
   "AppConstants",
@@ -232,7 +237,14 @@ class WebConsoleUI {
 
     const toolbox = gDevTools.getToolbox(this.hud.target);
 
-    this.wrapper = new this.window.WebConsoleWrapper(
+    
+    
+    const WebConsoleWrapper = BrowserLoader({
+      baseURI: "resource://devtools/client/webconsole/",
+      window: this.window,
+    }).require("./webconsole-wrapper");
+
+    this.wrapper = new WebConsoleWrapper(
       this.outputNode,
       this,
       toolbox,
