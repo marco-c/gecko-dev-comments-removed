@@ -2551,9 +2551,14 @@ class nsIFrame : public nsQueryFrame {
     NoMoveFrame = (1 << 1) | NoMoveView,
     NoSizeView = 1 << 2,
     NoVisibility = 1 << 3,
+
     
     
-    NoDeleteNextInFlowChild = 1 << 4
+    NoDeleteNextInFlowChild = 1 << 4,
+
+    
+    
+    ApplyRelativePositioning = 1 << 5
   };
 
   
