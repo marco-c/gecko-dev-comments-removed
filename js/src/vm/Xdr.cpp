@@ -65,7 +65,7 @@ XDRResult XDRState<mode>::codeChars(Utf8Unit* units, size_t count) {
   }
 
   if (mode == XDR_ENCODE) {
-    uint8_t* ptr = buf.write(count);
+    uint8_t* ptr = buf->write(count);
     if (!ptr) {
       return fail(JS::TranscodeResult_Throw);
     }
@@ -73,7 +73,7 @@ XDRResult XDRState<mode>::codeChars(Utf8Unit* units, size_t count) {
     std::transform(units, units + count, ptr,
                    [](const Utf8Unit& unit) { return unit.toUint8(); });
   } else {
-    const uint8_t* ptr = buf.read(count);
+    const uint8_t* ptr = buf->read(count);
     if (!ptr) {
       return fail(JS::TranscodeResult_Failure_BadDecode);
     }
@@ -93,7 +93,7 @@ XDRResult XDRState<mode>::codeChars(char16_t* chars, size_t nchars) {
 
   size_t nbytes = nchars * sizeof(char16_t);
   if (mode == XDR_ENCODE) {
-    uint8_t* ptr = buf.write(nbytes);
+    uint8_t* ptr = buf->write(nbytes);
     if (!ptr) {
       return fail(JS::TranscodeResult_Throw);
     }
@@ -101,7 +101,7 @@ XDRResult XDRState<mode>::codeChars(char16_t* chars, size_t nchars) {
     
     mozilla::NativeEndian::copyAndSwapToLittleEndian(ptr, chars, nchars);
   } else {
-    const uint8_t* ptr = buf.read(nbytes);
+    const uint8_t* ptr = buf->read(nbytes);
     if (!ptr) {
       return fail(JS::TranscodeResult_Failure_BadDecode);
     }
@@ -213,6 +213,39 @@ static XDRResult VersionCheck(XDRState<mode>* xdr) {
 }
 
 template <XDRMode mode>
+static XDRResult AtomTableCheck(XDRState<mode>* xdr) {
+  uint8_t atomHeader = false;
+  uint32_t atomCount;
+  if (mode == XDR_ENCODE) {
+    if (xdr->atomMap()) {
+      atomHeader = true;
+    }
+  }
+
+  MOZ_TRY(xdr->codeUint8(&atomHeader));
+
+  if (mode == XDR_DECODE) {
+    if (atomHeader) {
+      MOZ_TRY(xdr->codeUint32(&atomCount));
+      MOZ_ASSERT(!xdr->hasAtomTable);
+
+      for (uint32_t i = 0; i < atomCount; i++) {
+        RootedAtom atom(xdr->cx());
+        MOZ_TRY(XDRAtom(xdr, &atom));
+        if (!xdr->atomTable.append(atom)) {
+          ReportOutOfMemory(xdr->cx());
+          return xdr->fail(JS::TranscodeResult_Throw);
+        }
+      }
+
+      xdr->hasAtomTable = true;
+    }
+  }
+
+  return Ok();
+}
+
+template <XDRMode mode>
 XDRResult XDRState<mode>::codeFunction(MutableHandleFunction funp,
                                        HandleScriptSourceObject sourceObject) {
   TraceLoggerThread* logger = TraceLoggerForCurrentThread(cx());
@@ -265,7 +298,16 @@ XDRResult XDRState<mode>::codeScript(MutableHandleScript scriptp) {
     MOZ_ASSERT(!scriptp->enclosingScope());
   }
 
+  
+  if (this->atomMap()) {
+    switchToHeaderBuf();
+  }
   MOZ_TRY(VersionCheck(this));
+  MOZ_TRY(AtomTableCheck(this));
+  if (this->atomMap()) {
+    switchToMainBuf();
+  }
+  MOZ_ASSERT(buf == &this->mainBuf);
   MOZ_TRY(XDRScript(this, nullptr, nullptr, nullptr, scriptp));
 
   guard.release();
@@ -382,7 +424,7 @@ void XDRIncrementalEncoder::createOrReplaceSubTree(AutoXDRTree* child) {
     return;
   }
 
-  size_t cursor = buf.cursor();
+  size_t cursor = buf->cursor();
 
   
   if (parent) {
@@ -424,7 +466,7 @@ void XDRIncrementalEncoder::endSubTree() {
     return;
   }
 
-  size_t cursor = buf.cursor();
+  size_t cursor = buf->cursor();
 
   
   Slice& last = node_->back();
@@ -459,6 +501,12 @@ XDRResult XDRIncrementalEncoder::linearize(JS::TranscodeBuffer& buffer) {
 
   
   
+  switchToHeaderBuf();
+  MOZ_TRY(this->codeUint32(&natoms_));
+  switchToMainBuf();
+
+  
+  
   
   DepthFirstSliceIterator dfs(cx(), tree_);
 
@@ -473,10 +521,15 @@ XDRResult XDRIncrementalEncoder::linearize(JS::TranscodeBuffer& buffer) {
     return fail(JS::TranscodeResult_Throw);
   };
 
+  
+  
+  totalLength += header_.length() + atoms_.length();
   if (!buffer.reserve(totalLength)) {
     ReportOutOfMemory(cx());
     return fail(JS::TranscodeResult_Throw);
   }
+  buffer.infallibleAppend(header_.begin(), header_.length());
+  buffer.infallibleAppend(atoms_.begin(), atoms_.length());
 
   auto sliceCopier = [&](const Slice& slice) -> bool {
     
@@ -497,4 +550,10 @@ XDRResult XDRIncrementalEncoder::linearize(JS::TranscodeBuffer& buffer) {
   tree_.clearAndCompact();
   slices_.clearAndFree();
   return Ok();
+}
+
+void XDRIncrementalEncoder::trace(JSTracer* trc) {
+  if (atomMap()) {
+    atomMap()->trace(trc);
+  }
 }
