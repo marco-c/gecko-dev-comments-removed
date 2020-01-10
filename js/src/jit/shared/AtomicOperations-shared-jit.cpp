@@ -877,7 +877,7 @@ bool InitializeJittedAtomics() {
   masm.executableCopy(code,  false);
 
   
-  ExecutableAllocator::cacheFlush(code, roundedCodeLength);
+  jit::FlushICache(code, roundedCodeLength);
 
   
   if (!ExecutableAllocator::makeExecutable(code, roundedCodeLength)) {

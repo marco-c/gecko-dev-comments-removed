@@ -378,7 +378,7 @@ bool ModuleSegment::initialize(const CodeTier& codeTier,
     return false;
   }
 
-  ExecutableAllocator::cacheFlush(base(), RoundupCodeLength(length()));
+  jit::FlushICache(base(), RoundupCodeLength(length()));
 
   
   if (!ExecutableAllocator::makeExecutable(base(),
@@ -724,7 +724,7 @@ bool LazyStubTier::createMany(const Uint32Vector& funcExportIndices,
     Assembler::Bind(codePtr, label);
   }
 
-  ExecutableAllocator::cacheFlush(codePtr, codeLength);
+  jit::FlushICache(codePtr, codeLength);
   if (!ExecutableAllocator::makeExecutable(codePtr, codeLength)) {
     return false;
   }

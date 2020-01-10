@@ -720,7 +720,7 @@ static inline bool UseHardFpABI() {
 }
 #endif
 
-bool ForceDoubleCacheFlush();
+void FlushICache(void* code, size_t size);
 
 
 

@@ -28,6 +28,7 @@
 #include "gc/FreeOp.h"
 #include "jit/AtomicOperations.h"
 #include "jit/JitOptions.h"
+#include "jit/Simulator.h"
 #include "js/Printf.h"
 #include "js/PropertySpec.h"  
 #include "util/StringBuffer.h"

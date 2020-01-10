@@ -29,6 +29,10 @@
 #include "jit/arm64/vixl/Utils-vixl.h"
 #include "util/Windows.h"
 
+#if defined(XP_IOS)
+#  include <libkern/OSCacheControl.h>
+#endif
+
 namespace vixl {
 
 
@@ -82,7 +86,7 @@ uint32_t CPU::GetCacheType() {
 
 
 void CPU::EnsureIAndDCacheCoherency(void *address, size_t length) {
-#ifdef JS_CACHE_SIMULATOR_ARM64
+#if defined(JS_SIMULATOR_ARM64) && defined(JS_CACHE_SIMULATOR_ARM64)
   
   
   
@@ -101,6 +105,8 @@ void CPU::EnsureIAndDCacheCoherency(void *address, size_t length) {
   }
 #elif defined(_MSC_VER) && defined(_M_ARM64)
   FlushInstructionCache(GetCurrentProcess(), address, length);
+#elif defined(XP_IOS)
+  sys_icache_invalidate(code, size);
 #elif defined(__aarch64__)
   
   
