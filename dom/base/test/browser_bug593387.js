@@ -9,13 +9,18 @@
 add_task(async function test() {
   
   
-  await SpecialPowers.pushPrefEnv({ set: [["security.csp.enable", false]] });
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["security.csp.enable", false],
+      ["csp.skip_about_page_has_csp_assert", true],
+    ],
+  });
 
   await BrowserTestUtils.withNewTab(
-    { gBrowser, url: "chrome://global/content/mozilla.xhtml" },
+    { gBrowser, url: "about:plugins" },
     async function(newBrowser) {
       
-      await testXFOFrameInChrome(newBrowser);
+      await ContentTask.spawn(newBrowser, null, testXFOFrameInChrome);
 
       
       await BrowserTestUtils.loadURI(newBrowser, "http://example.com/");
@@ -26,7 +31,7 @@ add_task(async function test() {
   );
 });
 
-function testXFOFrameInChrome(newBrowser) {
+function testXFOFrameInChrome() {
   
   
   var deferred = {};
@@ -34,9 +39,9 @@ function testXFOFrameInChrome(newBrowser) {
     deferred.resolve = resolve;
   });
 
-  var frame = newBrowser.contentDocument.createElement("iframe");
+  var frame = content.document.createElement("iframe");
   frame.src =
-    "http://mochi.test:8888/tests/dom/base/test/file_x-frame-options_page.sjs?testid=deny&xfo=deny";
+    "http://mochi.test:8888/browser/dom/base/test/file_x-frame-options_page.sjs?testid=deny&xfo=deny";
   frame.addEventListener(
     "load",
     function() {
@@ -49,11 +54,11 @@ function testXFOFrameInChrome(newBrowser) {
     { capture: true, once: true }
   );
 
-  newBrowser.contentDocument.body.appendChild(frame);
+  content.document.body.appendChild(frame);
   return deferred.promise;
 }
 
-function testXFOFrameInContent(newBrowser) {
+function testXFOFrameInContent() {
   
   
   var deferred = {};
@@ -63,7 +68,7 @@ function testXFOFrameInContent(newBrowser) {
 
   var frame = content.document.createElement("iframe");
   frame.src =
-    "http://mochi.test:8888/tests/dom/base/test/file_x-frame-options_page.sjs?testid=deny&xfo=deny";
+    "http://mochi.test:8888/browser/dom/base/test/file_x-frame-options_page.sjs?testid=deny&xfo=deny";
   frame.addEventListener(
     "load",
     function() {

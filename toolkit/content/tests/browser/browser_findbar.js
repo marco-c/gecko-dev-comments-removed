@@ -4,7 +4,8 @@ ChromeUtils.import("resource://gre/modules/Timer.jsm", this);
 const TEST_PAGE_URI = "data:text/html;charset=utf-8,The letter s.";
 
 
-const E10S_PARENT_TEST_PAGE_URI = "javascript:document.write('The letter s.');";
+const E10S_PARENT_TEST_PAGE_URI =
+  getRootDirectory(gTestPath) + "file_empty.html";
 
 
 
@@ -172,8 +173,16 @@ add_task(async function test_reinitialization_at_remoteness_change() {
   
   ok(browser.isRemoteBrowser, "Browser should be remote now.");
   await promiseRemotenessChange(tab, false);
-  await BrowserTestUtils.loadURI(browser, E10S_PARENT_TEST_PAGE_URI);
+  let docLoaded = BrowserTestUtils.browserLoaded(
+    browser,
+    false,
+    E10S_PARENT_TEST_PAGE_URI
+  );
+  BrowserTestUtils.loadURI(browser, E10S_PARENT_TEST_PAGE_URI);
+  await docLoaded;
   ok(!browser.isRemoteBrowser, "Browser should not be remote any more.");
+  browser.contentDocument.body.append("The letter s.");
+  browser.contentDocument.body.clientHeight; 
 
   
   await promiseFindFinished("z", false);
