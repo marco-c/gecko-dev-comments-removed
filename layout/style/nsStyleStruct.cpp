@@ -2904,7 +2904,7 @@ nsChangeHint nsStyleDisplay::CalcDifference(
       
       
       
-      hint |= nsChangeHint_RepaintFrame;
+      hint |= nsChangeHint_UpdateOverflow | nsChangeHint_RepaintFrame;
     }
   }
 
