@@ -18,37 +18,7 @@ loader.lazyRequireGetter(
   true
 );
 
-const { Toolbox } = require("devtools/client/framework/toolbox");
-const { gDevTools } = require("devtools/client/framework/devtools");
-
 const { PREFERENCES } = require("../constants");
-
-let addonToolbox = null;
-
-
-
-
-
-
-
-
-
-exports.debugAddon = async function(id, client) {
-  const addonFront = await client.mainRoot.getAddon({ id });
-
-  const target = await addonFront.connect();
-
-  
-  if (addonToolbox) {
-    addonToolbox.destroy();
-  }
-
-  const hostType = Toolbox.HostType.WINDOW;
-  addonToolbox = await gDevTools.showToolbox(target, null, hostType);
-  addonToolbox.once("destroy", () => {
-    addonToolbox = null;
-  });
-};
 
 
 
