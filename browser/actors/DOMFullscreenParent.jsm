@@ -12,6 +12,13 @@ class DOMFullscreenParent extends JSWindowActorParent {
   receiveMessage(aMessage) {
     let topBrowsingContext = this.browsingContext.top;
     let browser = topBrowsingContext.embedderElement;
+
+    if (!browser) {
+      
+      
+      return;
+    }
+
     let window = browser.ownerGlobal;
     switch (aMessage.name) {
       case "DOMFullscreen:Request": {
@@ -51,8 +58,7 @@ class DOMFullscreenParent extends JSWindowActorParent {
   }
 
   handleEvent(aEvent) {
-    let topBrowsingContext = this.browsingContext.top;
-    let window = topBrowsingContext.embedderElement.ownerGlobal;
+    let window = aEvent.currentTarget.ownerGlobal;
     switch (aEvent.type) {
       case "MozDOMFullscreen:Entered": {
         
