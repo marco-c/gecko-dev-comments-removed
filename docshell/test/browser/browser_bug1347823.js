@@ -11,7 +11,7 @@ add_task(async function testValidCache() {
   });
 
   await BrowserTestUtils.withNewTab(
-    {gBrowser, url: "data:text/html;charset=utf-8,page1"},
+    { gBrowser, url: "data:text/html;charset=utf-8,page1" },
     async function(browser) {
       
       await ContentTask.spawn(browser, null, () => {
@@ -23,13 +23,17 @@ add_task(async function testValidCache() {
       await BrowserTestUtils.browserLoaded(browser);
 
       
-      let awaitPageShow = BrowserTestUtils.waitForContentEvent(browser, "pageshow");
+      let awaitPageShow = BrowserTestUtils.waitForContentEvent(
+        browser,
+        "pageshow"
+      );
       browser.goBack();
       await awaitPageShow;
       await ContentTask.spawn(browser, null, () => {
         is(content.document.body.textContent, "modified");
       });
-    });
+    }
+  );
 });
 
 
@@ -40,7 +44,7 @@ add_task(async function testExpiredCache() {
   });
 
   await BrowserTestUtils.withNewTab(
-    {gBrowser, url: "data:text/html;charset=utf-8,page1"},
+    { gBrowser, url: "data:text/html;charset=utf-8,page1" },
     async function(browser) {
       
       await ContentTask.spawn(browser, null, () => {
@@ -59,11 +63,15 @@ add_task(async function testExpiredCache() {
       });
 
       
-      let awaitPageShow = BrowserTestUtils.waitForContentEvent(browser, "pageshow");
+      let awaitPageShow = BrowserTestUtils.waitForContentEvent(
+        browser,
+        "pageshow"
+      );
       browser.goBack();
       await awaitPageShow;
       await ContentTask.spawn(browser, null, () => {
         is(content.document.body.textContent, "page1");
       });
-    });
+    }
+  );
 });

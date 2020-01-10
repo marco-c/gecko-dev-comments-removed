@@ -8,11 +8,15 @@ const kSearchEngineURL = "http://example.com/?search={searchTerms}";
 
 add_task(async function setup() {
   
-  await Services.search.addEngineWithDetails(kSearchEngineID,
-    {method: "get", template: kSearchEngineURL});
+  await Services.search.addEngineWithDetails(kSearchEngineID, {
+    method: "get",
+    template: kSearchEngineURL,
+  });
 
   let oldDefaultEngine = await Services.search.getDefault();
-  await Services.search.setDefault(Services.search.getEngineByName(kSearchEngineID));
+  await Services.search.setDefault(
+    Services.search.getEngineByName(kSearchEngineID)
+  );
 
   
   registerCleanupFunction(async () => {
@@ -42,8 +46,11 @@ add_task(async function test() {
     
     let escapedParams = encodeURIComponent(searchParams).replace("%20", "+");
     let expectedURL = kSearchEngineURL.replace("{searchTerms}", escapedParams);
-    is(gBrowser.selectedBrowser.currentURI.spec, expectedURL,
-       "New tab should have loaded with expected url.");
+    is(
+      gBrowser.selectedBrowser.currentURI.spec,
+      expectedURL,
+      "New tab should have loaded with expected url."
+    );
 
     
     gBrowser.removeCurrentTab();

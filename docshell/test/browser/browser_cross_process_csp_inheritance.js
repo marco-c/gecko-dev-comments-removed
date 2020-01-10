@@ -3,9 +3,13 @@
 
 "use strict";
 
-const TEST_PATH = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "http://example.com");
+const TEST_PATH = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "http://example.com"
+);
 const TEST_URI = TEST_PATH + "file_cross_process_csp_inheritance.html";
-const DATA_URI = "data:text/html,<html>test-same-diff-process-csp-inhertiance</html>";
+const DATA_URI =
+  "data:text/html,<html>test-same-diff-process-csp-inhertiance</html>";
 
 function getCurrentPID(aBrowser) {
   return ContentTask.spawn(aBrowser, null, () => {
@@ -21,26 +25,38 @@ function getCurrentURI(aBrowser) {
 }
 
 function verifyResult(aTestName, aBrowser, aDataURI, aPID, aSamePID) {
-  return ContentTask.spawn(aBrowser, {aTestName, aDataURI, aPID, aSamePID}, async function({aTestName, aDataURI, aPID, aSamePID}) {
-    
-    let channel = content.docShell.currentDocumentChannel;
-    is(channel.URI.asciiSpec, aDataURI, aTestName + ": correct data uri loaded");
+  return ContentTask.spawn(
+    aBrowser,
+    { aTestName, aDataURI, aPID, aSamePID },
+    async function({ aTestName, aDataURI, aPID, aSamePID }) {
+      
+      let channel = content.docShell.currentDocumentChannel;
+      is(
+        channel.URI.asciiSpec,
+        aDataURI,
+        aTestName + ": correct data uri loaded"
+      );
 
-    
-    let pid = Services.appinfo.processID;
-    if (aSamePID) {
-      is(pid, aPID, aTestName + ": process ID needs to be identical");
-    } else {
-      isnot(pid, aPID, aTestName + ": process ID needs to be different");
+      
+      let pid = Services.appinfo.processID;
+      if (aSamePID) {
+        is(pid, aPID, aTestName + ": process ID needs to be identical");
+      } else {
+        isnot(pid, aPID, aTestName + ": process ID needs to be different");
+      }
+
+      
+      let cspOBJ = JSON.parse(content.document.cspJSON);
+      let policies = cspOBJ["csp-policies"];
+      is(policies.length, 1, "should be one policy");
+      let policy = policies[0];
+      is(
+        policy["script-src"],
+        "'none'",
+        aTestName + ": script-src directive matches"
+      );
     }
-
-    
-    let cspOBJ = JSON.parse(content.document.cspJSON);
-    let policies = cspOBJ["csp-policies"];
-    is(policies.length, 1, "should be one policy");
-    let policy = policies[0];
-    is(policy["script-src"], "'none'", aTestName + ": script-src directive matches");
-  });
+  );
 }
 
 async function simulateCspInheritanceForNewTab(aTestName, aSamePID) {
@@ -52,11 +68,20 @@ async function simulateCspInheritanceForNewTab(aTestName, aSamePID) {
     let pid = await getCurrentPID(gBrowser.selectedBrowser);
     let loadPromise = BrowserTestUtils.waitForNewTab(gBrowser, DATA_URI);
     
-    BrowserTestUtils.synthesizeMouseAtCenter("#testLink", {},
-                                             gBrowser.selectedBrowser);
+    BrowserTestUtils.synthesizeMouseAtCenter(
+      "#testLink",
+      {},
+      gBrowser.selectedBrowser
+    );
     let tab = await loadPromise;
     gBrowser.selectTabAtIndex(2);
-    await verifyResult(aTestName, gBrowser.selectedBrowser, DATA_URI, pid, aSamePID);
+    await verifyResult(
+      aTestName,
+      gBrowser.selectedBrowser,
+      DATA_URI,
+      pid,
+      aSamePID
+    );
     await BrowserTestUtils.removeTab(tab);
   });
 }
@@ -64,13 +89,17 @@ async function simulateCspInheritanceForNewTab(aTestName, aSamePID) {
 add_task(async function test_csp_inheritance_diff_process() {
   
   
-  await SpecialPowers.pushPrefEnv({"set": [["dom.noopener.newprocess.enabled", true]]});
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.noopener.newprocess.enabled", true]],
+  });
   await simulateCspInheritanceForNewTab("diff-process-inheritance", false);
 });
 
 add_task(async function test_csp_inheritance_same_process() {
   
   
-  await SpecialPowers.pushPrefEnv({"set": [["dom.noopener.newprocess.enabled", false]]});
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.noopener.newprocess.enabled", false]],
+  });
   await simulateCspInheritanceForNewTab("same-process-inheritance", true);
 });

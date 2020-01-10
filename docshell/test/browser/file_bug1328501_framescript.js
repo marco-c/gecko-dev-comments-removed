@@ -2,8 +2,12 @@
 
 
 
-addEventListener("frames-loaded",
-  e => sendAsyncMessage("test:frames-loaded"), true, true);
+addEventListener(
+  "frames-loaded",
+  e => sendAsyncMessage("test:frames-loaded"),
+  true,
+  true
+);
 
 let requestObserver = {
   observe(subject, topic, data) {
@@ -11,15 +15,13 @@ let requestObserver = {
       
       
       getChildDocShells().map(ds => {
-        ds.QueryInterface(Ci.nsIInterfaceRequestor)
-          .getInterface(Ci.nsILoadContext)
-          .associatedWindow;
+        ds
+          .QueryInterface(Ci.nsIInterfaceRequestor)
+          .getInterface(Ci.nsILoadContext).associatedWindow;
       });
     }
   },
-  QueryInterface: ChromeUtils.generateQI([
-    Ci.nsIObserver,
-  ]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
 };
 Services.obs.addObserver(requestObserver, "http-on-opening-request");
 addEventListener("unload", e => {

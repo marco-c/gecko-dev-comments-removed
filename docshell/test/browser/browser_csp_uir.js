@@ -1,11 +1,18 @@
 "use strict";
 
-const TEST_PATH = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "http://example.com");
+const TEST_PATH = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "http://example.com"
+);
 const TEST_URI = TEST_PATH + "file_csp_uir.html"; 
-const RESULT_URI = TEST_PATH.replace("http://", "https://") + "file_csp_uir_dummy.html";
+const RESULT_URI =
+  TEST_PATH.replace("http://", "https://") + "file_csp_uir_dummy.html";
 
 function verifyCSP(aTestName, aBrowser, aResultURI) {
-  return ContentTask.spawn(aBrowser, {aTestName, aResultURI}, async function({aTestName, aResultURI}) {
+  return ContentTask.spawn(aBrowser, { aTestName, aResultURI }, async function({
+    aTestName,
+    aResultURI,
+  }) {
     let channel = content.docShell.currentDocumentChannel;
     is(channel.URI.asciiSpec, aResultURI, "testing CSP for " + aTestName);
   });
@@ -13,10 +20,17 @@ function verifyCSP(aTestName, aBrowser, aResultURI) {
 
 add_task(async function test_csp_inheritance_regular_click() {
   await BrowserTestUtils.withNewTab(TEST_URI, async function(browser) {
-    let loadPromise = BrowserTestUtils.browserLoaded(browser, false, RESULT_URI);
+    let loadPromise = BrowserTestUtils.browserLoaded(
+      browser,
+      false,
+      RESULT_URI
+    );
     
-    BrowserTestUtils.synthesizeMouseAtCenter("#testlink", {},
-                                             gBrowser.selectedBrowser);
+    BrowserTestUtils.synthesizeMouseAtCenter(
+      "#testlink",
+      {},
+      gBrowser.selectedBrowser
+    );
     await loadPromise;
     await verifyCSP("click()", gBrowser.selectedBrowser, RESULT_URI);
   });
@@ -26,9 +40,11 @@ add_task(async function test_csp_inheritance_ctrl_click() {
   await BrowserTestUtils.withNewTab(TEST_URI, async function(browser) {
     let loadPromise = BrowserTestUtils.waitForNewTab(gBrowser, RESULT_URI);
     
-    BrowserTestUtils.synthesizeMouseAtCenter("#testlink",
-                                             { ctrlKey: true, metaKey: true },
-                                             gBrowser.selectedBrowser);
+    BrowserTestUtils.synthesizeMouseAtCenter(
+      "#testlink",
+      { ctrlKey: true, metaKey: true },
+      gBrowser.selectedBrowser
+    );
     let tab = await loadPromise;
     gBrowser.selectTabAtIndex(2);
     await verifyCSP("ctrl-click()", gBrowser.selectedBrowser, RESULT_URI);
@@ -36,23 +52,31 @@ add_task(async function test_csp_inheritance_ctrl_click() {
   });
 });
 
-add_task(async function test_csp_inheritance_right_click_open_link_in_new_tab() {
-  await BrowserTestUtils.withNewTab(TEST_URI, async function(browser) {
-    let loadPromise = BrowserTestUtils.waitForNewTab(gBrowser, RESULT_URI);
-    
-    BrowserTestUtils.waitForEvent(document, "popupshown", false, event => {
+add_task(
+  async function test_csp_inheritance_right_click_open_link_in_new_tab() {
+    await BrowserTestUtils.withNewTab(TEST_URI, async function(browser) {
+      let loadPromise = BrowserTestUtils.waitForNewTab(gBrowser, RESULT_URI);
       
-      document.getElementById("context-openlinkintab").doCommand();
-      event.target.hidePopup();
-      return true;
-    });
-    BrowserTestUtils.synthesizeMouseAtCenter("#testlink",
-                                             { type: "contextmenu", button: 2 },
-                                             gBrowser.selectedBrowser);
+      BrowserTestUtils.waitForEvent(document, "popupshown", false, event => {
+        
+        document.getElementById("context-openlinkintab").doCommand();
+        event.target.hidePopup();
+        return true;
+      });
+      BrowserTestUtils.synthesizeMouseAtCenter(
+        "#testlink",
+        { type: "contextmenu", button: 2 },
+        gBrowser.selectedBrowser
+      );
 
-    let tab = await loadPromise;
-    gBrowser.selectTabAtIndex(2);
-    await verifyCSP("right-click-open-in-new-tab()", gBrowser.selectedBrowser, RESULT_URI);
-    await BrowserTestUtils.removeTab(tab);
-  });
-});
+      let tab = await loadPromise;
+      gBrowser.selectTabAtIndex(2);
+      await verifyCSP(
+        "right-click-open-in-new-tab()",
+        gBrowser.selectedBrowser,
+        RESULT_URI
+      );
+      await BrowserTestUtils.removeTab(tab);
+    });
+  }
+);

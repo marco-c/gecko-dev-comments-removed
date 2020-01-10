@@ -6,20 +6,26 @@ add_task(async function test_BrowsingContext_structured_clone() {
   let frame = browser.document.createElement("iframe");
   browser.document.body.appendChild(frame);
 
-  let {browsingContext} = frame;
+  let { browsingContext } = frame;
 
-  let sch = new StructuredCloneHolder({browsingContext});
+  let sch = new StructuredCloneHolder({ browsingContext });
 
   let deserialize = () => sch.deserialize({}, true);
 
   
   
-  equal(deserialize().browsingContext, browsingContext,
-        "Got correct browsing context from StructuredClone deserialize");
+  equal(
+    deserialize().browsingContext,
+    browsingContext,
+    "Got correct browsing context from StructuredClone deserialize"
+  );
 
   
-  equal(deserialize().browsingContext, browsingContext,
-        "Got correct browsing context from second StructuredClone deserialize");
+  equal(
+    deserialize().browsingContext,
+    browsingContext,
+    "Got correct browsing context from second StructuredClone deserialize"
+  );
 
   
   
@@ -57,6 +63,9 @@ add_task(async function test_BrowsingContext_structured_clone() {
   
   
   
-  Assert.throws(deserialize, e => e.name === "DataCloneError",
-                "Should get a DataCloneError when trying to decode a dead BrowsingContext");
+  Assert.throws(
+    deserialize,
+    e => e.name === "DataCloneError",
+    "Should get a DataCloneError when trying to decode a dead BrowsingContext"
+  );
 });
