@@ -2,6 +2,8 @@
 
 
 
+import { recordTelemetryEvent } from "./aboutLoginsUtils.js";
+
 
 
 const gElements = {
@@ -18,8 +20,42 @@ const gElements = {
 
 let numberOfLogins = 0;
 
-let { searchParams } = new URL(document.location);
-if (searchParams.get("filter")) {
+let searchParamsChanged = false;
+let { protocol, pathname, searchParams } = new URL(document.location);
+
+recordTelemetryEvent({
+  method: "open_management",
+  object: searchParams.get("entryPoint") || "direct",
+});
+
+if (searchParams.has("entryPoint")) {
+  
+  
+  
+  searchParams.delete("entryPoint");
+  searchParamsChanged = true;
+}
+
+if (searchParams.has("filter")) {
+  let filter = searchParams.get("filter");
+  if (!filter) {
+    
+    
+    searchParams.delete("filter");
+    searchParamsChanged = true;
+  }
+}
+
+if (searchParamsChanged) {
+  let newURL = protocol + pathname;
+  let params = searchParams.toString();
+  if (params) {
+    newURL += "?" + params;
+  }
+  window.location.replace(newURL);
+} else if (searchParams.has("filter")) {
+  
+  
   gElements.loginFilter.value = searchParams.get("filter");
 }
 
