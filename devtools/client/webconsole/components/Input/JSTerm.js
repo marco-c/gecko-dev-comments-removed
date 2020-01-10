@@ -795,6 +795,10 @@ class JSTerm extends Component {
 
 
 
+
+
+
+
   requestEvaluation(str, options = {}) {
     
     
@@ -802,7 +806,9 @@ class JSTerm extends Component {
       lines: str.split(/\n/).length,
     });
 
-    const { frameActor, client } = this.props.serviceContainer.getFrameActor();
+    const { frameActor, client } = this.props.serviceContainer.getFrameActor(
+      options.frame
+    );
 
     return client.evaluateJSAsync(str, {
       frameActor,

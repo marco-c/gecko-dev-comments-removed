@@ -97,6 +97,8 @@ function isObject(value) {
 
 
 
+
+
 exports.evalWithDebugger = function(string, options = {}, webConsole) {
   const evalString = getEvalInput(string);
   const { frame, dbg } = getFrameDbg(options, webConsole);
@@ -311,11 +313,13 @@ function getDbgWindow(options, dbg, webConsole) {
 
   
   
-  if (!options.selectedObjectActor) {
+  if (!options.bindObjectActor && !options.selectedObjectActor) {
     return { bindSelf: null, dbgWindow };
   }
 
-  const objActor = webConsole.getActorByID(options.selectedObjectActor);
+  const objActor = webConsole.getActorByID(
+    options.bindObjectActor || options.selectedObjectActor
+  );
 
   if (!objActor) {
     return { bindSelf: null, dbgWindow };
@@ -332,6 +336,15 @@ function getDbgWindow(options, dbg, webConsole) {
   
   
   const bindSelf = dbgWindow.makeDebuggeeValue(jsVal);
+  if (options.bindObjectActor) {
+    const global = Cu.getGlobalForObject(jsVal);
+    try {
+      const _dbgWindow = dbg.makeGlobalObjectReference(global);
+      return { bindSelf, dbgWindow: _dbgWindow };
+    } catch (err) {
+      
+    }
+  }
   return { bindSelf, dbgWindow };
 }
 
