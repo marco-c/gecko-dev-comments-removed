@@ -590,8 +590,7 @@ class Selection final : public nsSupportsWeakReference,
 
   MOZ_CAN_RUN_SCRIPT nsresult DoAutoScroll(nsIFrame* aFrame, nsPoint aPoint);
 
-  
-  bool HasSameRoot(nsINode& aNode);
+  bool HasSameRootOrSameComposedDoc(const nsINode& aNode);
 
   
   
