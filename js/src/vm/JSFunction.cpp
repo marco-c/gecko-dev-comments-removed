@@ -1215,23 +1215,19 @@ const JSClass JSFunction::class_ = {js_Function_str,
 const JSClass* const js::FunctionClassPtr = &JSFunction::class_;
 
 bool JSFunction::isDerivedClassConstructor() {
-  bool derived;
-  if (isInterpretedLazy()) {
+  bool derived = false;
+  if (hasSelfHostedLazyScript()) {
     
     
-    if (isSelfHostedBuiltin()) {
-      JSAtom* name = GetClonedSelfHostedFunctionName(this);
+    JSAtom* name = GetClonedSelfHostedFunctionName(this);
 
-      
-      
-      derived = name == compartment()
-                            ->runtimeFromAnyThread()
-                            ->commonNames->DefaultDerivedClassConstructor;
-    } else {
-      derived = lazyScript()->isDerivedClassConstructor();
-    }
-  } else {
-    derived = nonLazyScript()->isDerivedClassConstructor();
+    
+    
+    derived = name == compartment()
+                          ->runtimeFromAnyThread()
+                          ->commonNames->DefaultDerivedClassConstructor;
+  } else if (hasBaseScript()) {
+    derived = baseScript()->isDerivedClassConstructor();
   }
   MOZ_ASSERT_IF(derived, isClassConstructor());
   return derived;
