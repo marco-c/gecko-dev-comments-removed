@@ -200,8 +200,8 @@ class Expression:
             if tok[1].value == '!=':
                 rv = not rv
             return rv
-        
 
+        
         def eval_logical_op(tok):
             left = opmap[tok[0].type](tok[0])
             right = opmap[tok[2].type](tok[2])
@@ -609,8 +609,8 @@ class Preprocessor:
             raise Preprocessor.Error(self, 'SYNTAX_DEF', args)
         if args in self.context:
             del self.context[args]
-    
 
+    
     def ensure_not_else(self):
         if len(self.ifStates) == 0 or self.ifStates[-1] == 2:
             sys.stderr.write('WARNING: bad nesting of #else in %s\n' % self.context['FILE'])
@@ -706,8 +706,8 @@ class Preprocessor:
             self.disableLevel -= 1
         if self.disableLevel == 0:
             self.ifStates.pop()
-    
 
+    
     def do_expand(self, args):
         lst = re.split('__(\w+)__', args, re.U)
 
@@ -745,18 +745,16 @@ class Preprocessor:
         filterNames.sort()
         self.filters = [(fn, current[fn]) for fn in filterNames]
         return
-    
-    
-    
-    
 
+    
+    
+    
     def filter_emptyLines(self, aLine):
         if aLine == '\n':
             return ''
         return aLine
-    
-    
 
+    
     def filter_slashslash(self, aLine):
         if (aLine.find('//') == -1):
             return aLine
@@ -764,14 +762,12 @@ class Preprocessor:
         if rest:
             aLine += '\n'
         return aLine
-    
-    
 
+    
     def filter_spaces(self, aLine):
         return re.sub(' +', ' ', aLine).strip(' ')
-    
-    
 
+    
     def filter_substitution(self, aLine, fatal=True):
         def repl(matchobj):
             varname = matchobj.group('VAR')
@@ -782,10 +778,12 @@ class Preprocessor:
             return matchobj.group(0)
         return self.varsubst.sub(repl, aLine)
 
+    
+    
     def filter_attemptSubstitution(self, aLine):
         return self.filter_substitution(aLine, fatal=False)
-    
 
+    
     def do_include(self, args, filters=True):
         """
         Preprocess a given file.
