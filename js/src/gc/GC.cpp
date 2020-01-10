@@ -6226,12 +6226,13 @@ IncrementalProgress GCRuntime::performSweepActions(SliceBudget& budget) {
 
   
   
+  
   MOZ_ASSERT(initialState <= State::Sweep);
-  if (initialState != State::Sweep) {
-    MOZ_ASSERT(marker.isDrained());
-  } else {
-    MOZ_ASSERT(!sweepMarkTask.isRunning());
+  MOZ_ASSERT_IF(initialState != State::Sweep, marker.isDrained());
+  MOZ_ASSERT(!sweepMarkTaskStarted);
+  if (initialState == State::Sweep && !marker.isDrained()) {
     AutoLockHelperThreadState lock;
+    MOZ_ASSERT(!sweepMarkTask.isRunningWithLockHeld(lock));
     sweepMarkTask.setBudget(budget);
     sweepMarkTask.startOrRunIfIdle(lock);
     sweepMarkTaskStarted = true;
