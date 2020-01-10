@@ -51,9 +51,9 @@ add_task(async function test_proc_info() {
       }
       
       if (!MAC) {
-        Assert.ok(cpuThreads > 0, "Got some cpu time in the threads");
+        Assert.greater(cpuThreads, 0, "Got some cpu time in the threads");
       }
-      Assert.ok(cpuUser > 0, "Got some cpu time");
+      Assert.greater(cpuUser, 0, "Got some cpu time");
     }
   );
 });
