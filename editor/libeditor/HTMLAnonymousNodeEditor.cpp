@@ -92,28 +92,18 @@ NS_IMPL_ISUPPORTS(ElementDeletionObserver, nsIMutationObserver)
 void ElementDeletionObserver::ParentChainChanged(nsIContent* aContent) {
   
   
-  if (aContent == mObservedElement && mNativeAnonNode &&
-      mNativeAnonNode->GetParentNode() == aContent) {
-    
-    
-    
-    if (mNativeAnonNode->OwnerDoc() != mObservedElement->OwnerDoc()) {
-      mObservedElement->RemoveMutationObserver(this);
-      mObservedElement = nullptr;
-      mNativeAnonNode->RemoveMutationObserver(this);
-      mNativeAnonNode->UnbindFromTree();
-      mNativeAnonNode = nullptr;
-      NS_RELEASE_THIS();
-      return;
-    }
-
-    
-    
-    mNativeAnonNode->UnbindFromTree();
-
-    BindContext context(*mObservedElement, BindContext::ForNativeAnonymous);
-    mNativeAnonNode->BindToTree(context, *mObservedElement);
+  if (aContent != mObservedElement || !mNativeAnonNode ||
+      mNativeAnonNode->GetParent() != aContent) {
+    return;
   }
+
+  ManualNACPtr::RemoveContentFromNACArray(mNativeAnonNode);
+
+  mObservedElement->RemoveMutationObserver(this);
+  mObservedElement = nullptr;
+  mNativeAnonNode->RemoveMutationObserver(this);
+  mNativeAnonNode = nullptr;
+  NS_RELEASE_THIS();
 }
 
 void ElementDeletionObserver::NodeWillBeDestroyed(const nsINode* aNode) {
