@@ -274,7 +274,7 @@ PROT_ListManager.prototype.setUpdateCheckTimer = function(updateUrl, delay) {
 
 
 
-PROT_ListManager.prototype.kickoffUpdate_ = function(onDiskTableData) {
+PROT_ListManager.prototype.kickoffUpdate_ = function() {
   this.startingUpdate_ = false;
   var initialUpdateDelay = 3000;
   
@@ -359,7 +359,7 @@ PROT_ListManager.prototype.maybeToggleUpdateChecking = function() {
     if (!this.startingUpdate_) {
       this.startingUpdate_ = true;
       
-      this.dbService_.getTables(this.kickoffUpdate_.bind(this));
+      this.kickoffUpdate_();
     }
   } else {
     log("Stopping managing lists (if currently active)");
