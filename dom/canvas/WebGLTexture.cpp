@@ -56,9 +56,6 @@ Maybe<ImageInfo> ImageInfo::NextMip(const GLenum target) const {
       return {};
     }
   }
-  if (next.mUninitializedSlices) {
-    next.mUninitializedSlices = Some(std::vector<bool>(next.mDepth, true));
-  }
 
   next.mWidth = std::max(uint32_t(1), next.mWidth / 2);
   next.mHeight = std::max(uint32_t(1), next.mHeight / 2);
@@ -135,7 +132,8 @@ void WebGLTexture::PopulateMipChain(const uint32_t maxLevel) {
 
 static bool ZeroTextureData(const WebGLContext* webgl, GLuint tex,
                             TexImageTarget target, uint32_t level,
-                            const webgl::ImageInfo& info);
+                            const webgl::FormatUsageInfo* usage, uint32_t width,
+                            uint32_t height, uint32_t depth);
 
 bool WebGLTexture::IsMipAndCubeComplete(const uint32_t maxLevel,
                                         const bool ensureInit,
@@ -166,17 +164,18 @@ bool WebGLTexture::IsMipAndCubeComplete(const uint32_t maxLevel,
         return false;
       }
 
-      if (MOZ_UNLIKELY(ensureInit && cur.mUninitializedSlices)) {
+      if (MOZ_UNLIKELY(ensureInit && !cur.mHasData)) {
         auto imageTarget = mTarget.get();
         if (imageTarget == LOCAL_GL_TEXTURE_CUBE_MAP) {
           imageTarget = LOCAL_GL_TEXTURE_CUBE_MAP_POSITIVE_X + face;
         }
-        if (!ZeroTextureData(mContext, mGLName, imageTarget, level, cur)) {
+        if (!ZeroTextureData(mContext, mGLName, imageTarget, level, cur.mFormat,
+                             cur.mWidth, cur.mHeight, cur.mDepth)) {
           mContext->ErrorOutOfMemory("Failed to zero tex image data.");
           *out_initFailed = true;
           return false;
         }
-        cur.mUninitializedSlices = {};
+        cur.mHasData = true;
       }
     }
 
@@ -462,27 +461,27 @@ bool WebGLTexture::EnsureImageDataInitialized(const TexImageTarget target,
   auto& imageInfo = ImageInfoAt(target, level);
   if (!imageInfo.IsDefined()) return true;
 
-  if (!imageInfo.mUninitializedSlices) return true;
+  if (imageInfo.mHasData) return true;
 
-  if (!ZeroTextureData(mContext, mGLName, target, level, imageInfo)) {
+  if (!ZeroTextureData(mContext, mGLName, target, level, imageInfo.mFormat,
+                       imageInfo.mWidth, imageInfo.mHeight, imageInfo.mDepth)) {
     return false;
   }
-  imageInfo.mUninitializedSlices = {};
+  imageInfo.mHasData = true;
   return true;
 }
 
 static bool ClearDepthTexture(const WebGLContext& webgl, const GLuint tex,
                               const TexImageTarget imageTarget,
                               const uint32_t level,
-                              const webgl::ImageInfo& info) {
-  const auto& gl = webgl.gl;
-  const auto& usage = info.mFormat;
-  const auto& format = usage->format;
-
+                              const webgl::FormatUsageInfo* const usage,
+                              const uint32_t depth) {
   
   
   MOZ_ASSERT(usage->IsRenderable());
-  MOZ_ASSERT(info.mUninitializedSlices);
+
+  const auto& gl = webgl.gl;
+  const auto& format = usage->format;
 
   GLenum attachPoint = LOCAL_GL_DEPTH_ATTACHMENT;
   GLbitfield clearBits = LOCAL_GL_DEPTH_BUFFER_BIT;
@@ -521,11 +520,9 @@ static bool ClearDepthTexture(const WebGLContext& webgl, const GLuint tex,
     }
   };
 
-  for (const auto& z : IntegerRange(info.mDepth)) {
-    if ((*info.mUninitializedSlices)[z]) {
-      fnAttach(z);
-      gl->fClear(clearBits);
-    }
+  for (uint32_t z = 0; z < depth; ++z) {
+    fnAttach(z);
+    gl->fClear(clearBits);
   }
   const auto& status = gl->fCheckFramebufferStatus(LOCAL_GL_FRAMEBUFFER);
   const bool isComplete = (status == LOCAL_GL_FRAMEBUFFER_COMPLETE);
@@ -535,7 +532,9 @@ static bool ClearDepthTexture(const WebGLContext& webgl, const GLuint tex,
 
 static bool ZeroTextureData(const WebGLContext* webgl, GLuint tex,
                             TexImageTarget target, uint32_t level,
-                            const webgl::ImageInfo& info) {
+                            const webgl::FormatUsageInfo* usage, uint32_t width,
+                            uint32_t height, uint32_t depth) {
+  
   
   
   
@@ -544,18 +543,12 @@ static bool ZeroTextureData(const WebGLContext* webgl, GLuint tex,
   
 
   
-  MOZ_ASSERT(info.mUninitializedSlices);
-
   const auto targetStr = EnumString(target.get());
-  webgl->GenerateWarning(
+  webgl->GeneratePerfWarning(
       "Tex image %s level %u is incurring lazy initialization.",
       targetStr.c_str(), level);
 
   gl::GLContext* gl = webgl->GL();
-  const auto& width = info.mWidth;
-  const auto& height = info.mHeight;
-  const auto& depth = info.mDepth;
-  const auto& usage = info.mFormat;
 
   GLenum scopeBindTarget;
   switch (target.get()) {
@@ -588,27 +581,22 @@ static bool ZeroTextureData(const WebGLContext* webgl, GLuint tex,
     CheckedUint32 checkedByteCount = compression->bytesPerBlock;
     checkedByteCount *= widthBlocks;
     checkedByteCount *= heightBlocks;
+    checkedByteCount *= depth;
 
     if (!checkedByteCount.isValid()) return false;
 
-    const size_t sliceByteCount = checkedByteCount.value();
+    const size_t byteCount = checkedByteCount.value();
 
-    UniqueBuffer zeros = calloc(1u, sliceByteCount);
+    UniqueBuffer zeros = calloc(1u, byteCount);
     if (!zeros) return false;
 
     ScopedUnpackReset scopedReset(webgl);
     gl->fPixelStorei(LOCAL_GL_UNPACK_ALIGNMENT, 1);  
                                                      
 
-    GLenum error = 0;
-    for (const auto& z : IntegerRange(depth)) {
-      if ((*info.mUninitializedSlices)[z]) {
-        error = DoCompressedTexSubImage(gl, target.get(), level, 0, 0, z, width,
-                                        height, 1, sizedFormat, sliceByteCount,
-                                        zeros.get());
-        if (error) break;
-      }
-    }
+    const auto error =
+        DoCompressedTexSubImage(gl, target.get(), level, 0, 0, 0, width, height,
+                                depth, sizedFormat, byteCount, zeros.get());
     return !error;
   }
 
@@ -620,7 +608,7 @@ static bool ZeroTextureData(const WebGLContext* webgl, GLuint tex,
     
     
     
-    return ClearDepthTexture(*webgl, tex, target, level, info);
+    return ClearDepthTexture(*webgl, tex, target, level, usage, depth);
   }
 
   const webgl::PackingInfo packing = driverUnpackInfo->ToPacking();
@@ -630,26 +618,20 @@ static bool ZeroTextureData(const WebGLContext* webgl, GLuint tex,
   CheckedUint32 checkedByteCount = bytesPerPixel;
   checkedByteCount *= width;
   checkedByteCount *= height;
+  checkedByteCount *= depth;
 
   if (!checkedByteCount.isValid()) return false;
 
-  const size_t sliceByteCount = checkedByteCount.value();
+  const size_t byteCount = checkedByteCount.value();
 
-  UniqueBuffer zeros = calloc(1u, sliceByteCount);
+  UniqueBuffer zeros = calloc(1u, byteCount);
   if (!zeros) return false;
 
   ScopedUnpackReset scopedReset(webgl);
   gl->fPixelStorei(LOCAL_GL_UNPACK_ALIGNMENT,
                    1);  
-
-  GLenum error = 0;
-  for (const auto& z : IntegerRange(depth)) {
-    if ((*info.mUninitializedSlices)[z]) {
-      error = DoTexSubImage(gl, target, level, 0, 0, z, width, height, 1,
-                            packing, zeros.get());
-      if (error) break;
-    }
-  }
+  const auto error = DoTexSubImage(gl, target, level, 0, 0, 0, width, height,
+                                   depth, packing, zeros.get());
   return !error;
 }
 
