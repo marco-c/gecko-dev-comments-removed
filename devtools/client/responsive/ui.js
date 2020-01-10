@@ -210,6 +210,13 @@ class ResponsiveUI {
     if (!this.isBrowserUIEnabled) {
       
       
+      
+      const bc = this.toolWindow.docShell.browsingContext;
+      const zoomActor = bc.currentWindowGlobal.getActor("Zoom");
+      zoomActor.sendAsyncMessage("FullZoom", { value: 1.0 });
+
+      
+      
       rdmContent.fullZoom = fullZoom;
       rdmContent.textZoom = textZoom;
     }
