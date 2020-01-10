@@ -8,6 +8,7 @@
 
 #include "ContainerWriter.h"
 #include "CubebUtils.h"
+#include "MediaQueue.h"
 #include "MediaStreamGraph.h"
 #include "MediaStreamListener.h"
 #include "mozilla/DebugOnly.h"
@@ -288,9 +289,9 @@ class MediaEncoder {
   RefPtr<dom::VideoStreamTrack> mVideoTrack;
 
   
-  nsTArray<RefPtr<EncodedFrame>> mEncodedAudioFrames;
+  MediaQueue<EncodedFrame> mEncodedAudioFrames;
   
-  nsTArray<RefPtr<EncodedFrame>> mEncodedVideoFrames;
+  MediaQueue<EncodedFrame> mEncodedVideoFrames;
 
   
   
