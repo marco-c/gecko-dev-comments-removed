@@ -271,6 +271,9 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory() {
   policy->AddDir(rdwr, "/dev/dri");
 
   
+  policy->AddPath(rdwr, "/dev/null");
+
+  
   policy->AddPath(rdonly, "/dev/urandom");
   policy->AddPath(rdonly, "/proc/cpuinfo");
   policy->AddPath(rdonly, "/proc/meminfo");
