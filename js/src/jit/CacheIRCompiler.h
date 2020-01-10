@@ -131,6 +131,10 @@ class IonCacheIRCompiler;
   _(CallNumberToString)                   \
   _(BooleanToString)                      \
   _(CallIsSuspendedGeneratorResult)       \
+  _(CallNativeGetElementResult)           \
+  _(CallProxyHasPropResult)               \
+  _(CallProxyGetByValueResult)            \
+  _(CallGetSparseElementResult)           \
   _(MetaTwoByte)                          \
   _(WrapResult)
 
@@ -708,6 +712,9 @@ class AutoOutputRegister;
 class MOZ_RAII CacheIRCompiler {
  protected:
   friend class AutoOutputRegister;
+  friend class AutoStubFrame;
+  friend class AutoSaveLiveRegisters;
+  friend class AutoCallVM;
 
   enum class Mode { Baseline, Ion };
 
@@ -715,8 +722,8 @@ class MOZ_RAII CacheIRCompiler {
 
   bool isBaseline();
   bool isIon();
-  BaselineCacheIRCompiler& asBaseline();
-  IonCacheIRCompiler& asIon();
+  BaselineCacheIRCompiler* asBaseline();
+  IonCacheIRCompiler* asIon();
 
   JSContext* cx_;
   CacheIRReader reader;
@@ -946,6 +953,46 @@ class MOZ_RAII AutoOutputRegister {
   operator TypedOrValueRegister() const { return output_; }
 };
 
+enum class CallCanGC { CanGC, CanNotGC };
+
+
+
+
+
+class MOZ_RAII AutoStubFrame {
+  BaselineCacheIRCompiler& compiler;
+#ifdef DEBUG
+  uint32_t framePushedAtEnterStubFrame_;
+#endif
+
+  AutoStubFrame(const AutoStubFrame&) = delete;
+  void operator=(const AutoStubFrame&) = delete;
+
+ public:
+  explicit AutoStubFrame(BaselineCacheIRCompiler& compiler);
+
+  void enter(MacroAssembler& masm, Register scratch,
+             CallCanGC canGC = CallCanGC::CanGC);
+  void leave(MacroAssembler& masm, bool calledIntoIon = false);
+
+#ifdef DEBUG
+  ~AutoStubFrame();
+#endif
+};
+
+
+
+class MOZ_RAII AutoSaveLiveRegisters {
+  IonCacheIRCompiler& compiler_;
+
+  AutoSaveLiveRegisters(const AutoSaveLiveRegisters&) = delete;
+  void operator=(const AutoSaveLiveRegisters&) = delete;
+
+ public:
+  explicit AutoSaveLiveRegisters(IonCacheIRCompiler& compiler);
+
+  ~AutoSaveLiveRegisters();
+};
 
 class MOZ_RAII AutoScratchRegisterMaybeOutput {
   mozilla::Maybe<AutoScratchRegister> scratch_;
@@ -967,6 +1014,65 @@ class MOZ_RAII AutoScratchRegisterMaybeOutput {
   }
 
   operator Register() const { return scratchReg_; }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MOZ_RAII AutoCallVM {
+  MacroAssembler& masm_;
+  CacheIRCompiler* compiler_;
+  CacheRegisterAllocator& allocator_;
+
+  
+  mozilla::Maybe<AutoStubFrame> stubFrame_;
+  mozilla::Maybe<AutoScratchRegister> scratch_;
+
+  
+  mozilla::Maybe<AutoOutputRegister> output_;
+  mozilla::Maybe<AutoSaveLiveRegisters> save_;
+
+ public:
+  AutoCallVM(MacroAssembler& masm, CacheIRCompiler* compiler,
+             CacheRegisterAllocator& allocator);
+
+  void prepare();
+
+  ~AutoCallVM();
 };
 
 
