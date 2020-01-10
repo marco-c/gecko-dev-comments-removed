@@ -19,9 +19,6 @@ const QUERYTYPE_AUTOFILL_URL = 2;
 const QUERYTYPE_ADAPTIVE = 3;
 
 
-const TELEMETRY_1ST_RESULT = "PLACES_AUTOCOMPLETE_1ST_RESULT_TIME_MS";
-const TELEMETRY_6_FIRST_RESULTS = "PLACES_AUTOCOMPLETE_6_FIRST_RESULTS_TIME_MS";
-
 const FRECENCY_DEFAULT = 1000;
 
 
@@ -652,7 +649,6 @@ function Search(
   this._disablePrivateActions = params.has("disable-private-actions");
   this._inPrivateWindow = params.has("private-window");
   this._prohibitAutoFill = params.has("prohibit-autofill");
-  this._disableTelemetry = params.has("disable-telemetry");
 
   
   let maxResults = searchParam.match(REGEXP_MAX_RESULTS);
@@ -927,11 +923,6 @@ Search.prototype = {
         conn.interrupt();
       }
     };
-
-    if (!this._disableTelemetry) {
-      TelemetryStopwatch.start(TELEMETRY_1ST_RESULT, this);
-      TelemetryStopwatch.start(TELEMETRY_6_FIRST_RESULTS, this);
-    }
 
     
     
@@ -2144,14 +2135,6 @@ Search.prototype = {
     this._currentMatchCount++;
     this._counts[match.type]++;
 
-    if (!this._disableTelemetry) {
-      if (this._currentMatchCount == 1) {
-        TelemetryStopwatch.finish(TELEMETRY_1ST_RESULT, this);
-      }
-      if (this._currentMatchCount == 6) {
-        TelemetryStopwatch.finish(TELEMETRY_6_FIRST_RESULTS, this);
-      }
-    }
     this.notifyResult(true, match.type == UrlbarUtils.RESULT_GROUP.HEURISTIC);
   },
 
@@ -2950,10 +2933,6 @@ UnifiedComplete.prototype = {
 
 
   finishSearch(notify = false) {
-    if (!this._disableTelemetry) {
-      TelemetryStopwatch.cancel(TELEMETRY_1ST_RESULT, this);
-      TelemetryStopwatch.cancel(TELEMETRY_6_FIRST_RESULTS, this);
-    }
     
     let search = this._currentSearch;
     if (!search) {
