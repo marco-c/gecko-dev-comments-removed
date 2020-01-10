@@ -575,6 +575,14 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void ReceiveUSVS(DOMString&);
 
   
+  void PassJSString(JSContext*, JS::Handle<JSString*>);
+  void PassOptionalJSStringWithDefaultValue(JSContext*, JS::Handle<JSString*>);
+  void ReceiveJSString(JSContext*, JS::MutableHandle<JSString*>);
+  void GetReadonlyJSStringAttr(JSContext*, JS::MutableHandle<JSString*>);
+  void GetJsStringAttr(JSContext*, JS::MutableHandle<JSString*>);
+  void SetJsStringAttr(JSContext*, JS::Handle<JSString*>);
+
+  
   void PassEnum(TestEnum);
   void PassNullableEnum(const Nullable<TestEnum>&);
   void PassOptionalEnum(const Optional<TestEnum>&);
