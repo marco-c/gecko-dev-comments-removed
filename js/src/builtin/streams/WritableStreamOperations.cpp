@@ -15,16 +15,21 @@
 
 #include "builtin/streams/WritableStream.h"  
 #include "builtin/streams/WritableStreamDefaultController.h"  
-#include "js/RootingAPI.h"  
-#include "js/Value.h"       
+#include "js/Promise.h"      
+#include "js/RootingAPI.h"   
+#include "js/Value.h"        
+#include "vm/Compartment.h"  
+#include "vm/JSContext.h"    
 
-#include "vm/JSObject-inl.h"  
-#include "vm/List-inl.h"      
+#include "vm/Compartment-inl.h"  
+#include "vm/JSObject-inl.h"     
+#include "vm/List-inl.h"         
 
 using js::WritableStream;
 
 using JS::Handle;
 using JS::ObjectValue;
+using JS::ResolvePromise;
 using JS::Rooted;
 using JS::Value;
 
@@ -201,6 +206,44 @@ MOZ_MUST_USE bool js::WritableStreamFinishErroring(
   return false;
 }
 
+
+
+
+
+MOZ_MUST_USE bool js::WritableStreamFinishInFlightWrite(
+    JSContext* cx, Handle<WritableStream*> unwrappedStream) {
+  
+  MOZ_ASSERT(unwrappedStream->haveInFlightWriteRequest());
+
+  
+  Rooted<JSObject*> writeRequest(
+      cx, &unwrappedStream->inFlightWriteRequest().toObject());
+  if (!cx->compartment()->wrap(cx, &writeRequest)) {
+    return false;
+  }
+  if (!ResolvePromise(cx, writeRequest, UndefinedHandleValue)) {
+    return false;
+  }
+
+  
+  unwrappedStream->clearInFlightWriteRequest(cx);
+  MOZ_ASSERT(!unwrappedStream->haveInFlightWriteRequest());
+
+  return true;
+}
+
+
+
+
+
+bool js::WritableStreamCloseQueuedOrInFlight(
+    const WritableStream* unwrappedStream) {
+  
+  
+  
+  return unwrappedStream->haveCloseRequestOrInFlightCloseRequest();
+}
+
 #ifdef DEBUG
 
 
@@ -215,6 +258,23 @@ bool WritableStreamHasOperationMarkedInFlight(
          unwrappedStream->haveInFlightCloseRequest();
 }
 #endif  
+
+
+
+
+
+void js::WritableStreamMarkCloseRequestInFlight(
+    WritableStream* unwrappedStream) {
+  
+  MOZ_ASSERT(!unwrappedStream->haveInFlightCloseRequest());
+
+  
+  MOZ_ASSERT(!unwrappedStream->closeRequest().isUndefined());
+
+  
+  
+  unwrappedStream->convertCloseRequestToInFlightCloseRequest();
+}
 
 
 
