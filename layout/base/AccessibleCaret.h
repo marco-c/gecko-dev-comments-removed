@@ -12,6 +12,7 @@
 #include "mozilla/dom/Element.h"
 #include "nsCOMPtr.h"
 #include "nsIDOMEventListener.h"
+#include "nsIFrame.h"
 #include "nsISupportsBase.h"
 #include "nsISupportsImpl.h"
 #include "nsLiteralString.h"
@@ -134,6 +135,8 @@ class AccessibleCaret {
   
   void EnsureApzAware();
 
+  bool IsInPositionFixedSubtree() const;
+
  protected:
   
   void SetCaretElementStyle(const nsRect& aRect, float aZoomLevel);
@@ -205,6 +208,10 @@ class AccessibleCaret {
   
   
   nsRect mImaginaryCaretRectInContainerFrame;
+
+  
+  
+  WeakFrame mImaginaryCaretReferenceFrame;
 
   
   float mZoomLevel = 0.0f;

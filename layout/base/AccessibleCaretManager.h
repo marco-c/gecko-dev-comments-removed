@@ -117,6 +117,9 @@ class AccessibleCaretManager {
   
   void SetLastInputSource(uint16_t aInputSource);
 
+  
+  bool ShouldDisableApz() const { return mShouldDisableApz; }
+
  protected:
   
   enum class CaretMode : uint8_t {
@@ -168,6 +171,9 @@ class AccessibleCaretManager {
 
   MOZ_CAN_RUN_SCRIPT
   void UpdateCaretsForSelectionMode(const UpdateCaretsHintSet& aHints);
+
+  
+  void UpdateShouldDisableApz();
 
   
   void ProvideHapticFeedback();
@@ -326,6 +332,12 @@ class AccessibleCaretManager {
   
   
   bool mAllowFlushingLayout = true;
+
+  
+  bool mIsCaretPositionChanged = false;
+
+  
+  bool mShouldDisableApz = false;
 
   static const int32_t kAutoScrollTimerDelay = 30;
 

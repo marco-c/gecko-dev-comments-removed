@@ -960,6 +960,7 @@ bool nsLayoutUtils::ShouldDisableApzForElement(nsIContent* aContent) {
       
       
       
+      
       if (aContent != rootContent && HasVisibleAnonymousContents(rootDoc)) {
         return true;
       }
@@ -969,6 +970,17 @@ bool nsLayoutUtils::ShouldDisableApzForElement(nsIContent* aContent) {
   if (!doc) {
     return false;
   }
+
+  if (PresShell* presShell = doc->GetPresShell()) {
+    if (RefPtr<AccessibleCaretEventHub> eventHub =
+            presShell->GetAccessibleCaretEventHub()) {
+      
+      if (eventHub->ShouldDisableApz()) {
+        return true;
+      }
+    }
+  }
+
   return StaticPrefs::apz_disable_for_scroll_linked_effects() &&
          doc->HasScrollLinkedEffect();
 }
