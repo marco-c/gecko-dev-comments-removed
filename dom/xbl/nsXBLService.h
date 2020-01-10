@@ -52,6 +52,10 @@ class nsXBLService final : public nsSupportsWeakReference {
   nsresult BindingReady(nsIContent* aBoundElement, nsIURI* aURI,
                         bool* aIsReady);
 
+ private:
+  nsXBLService();
+  virtual ~nsXBLService();
+
   
   
   
@@ -61,10 +65,6 @@ class nsXBLService final : public nsSupportsWeakReference {
                                    nsIPrincipal* aOriginPrincipal,
                                    bool aForceSyncLoad,
                                    nsXBLDocumentInfo** aResult);
-
- private:
-  nsXBLService();
-  virtual ~nsXBLService();
 
  protected:
   

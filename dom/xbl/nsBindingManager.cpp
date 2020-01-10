@@ -251,24 +251,6 @@ nsresult nsBindingManager::ClearBinding(Element* aElement) {
   return NS_OK;
 }
 
-nsresult nsBindingManager::LoadBindingDocument(Document* aBoundDoc,
-                                               nsIURI* aURL,
-                                               nsIPrincipal* aOriginPrincipal) {
-  MOZ_ASSERT(aURL, "Must have a URI to load!");
-
-  
-  nsXBLService* xblService = nsXBLService::GetInstance();
-  if (!xblService) return NS_ERROR_FAILURE;
-
-  
-  RefPtr<nsXBLDocumentInfo> info;
-  xblService->LoadBindingDocumentInfo(
-      nullptr, aBoundDoc, aURL, aOriginPrincipal, true, getter_AddRefs(info));
-  if (!info) return NS_ERROR_FAILURE;
-
-  return NS_OK;
-}
-
 void nsBindingManager::RemoveFromAttachedQueue(nsXBLBinding* aBinding) {
   
   
