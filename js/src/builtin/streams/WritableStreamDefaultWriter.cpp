@@ -14,6 +14,7 @@
 #include "jsapi.h"        
 #include "jsfriendapi.h"  
 
+#include "builtin/Promise.h"                 
 #include "builtin/streams/ClassSpecMacro.h"  
 #include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/WritableStream.h"           
@@ -28,6 +29,9 @@
 #include "vm/JSContext.h"     
 
 #include "vm/Compartment-inl.h"  
+#include "vm/JSObject-inl.h"      
+#include "vm/NativeObject-inl.h"  
+#include "vm/Realm-inl.h"         
 
 using JS::CallArgs;
 using JS::CallArgsFromVp;
@@ -38,6 +42,7 @@ using JS::Value;
 using js::ClassSpec;
 using js::GetErrorMessage;
 using js::ReturnPromiseRejectedWithPendingError;
+using js::UnwrapAndTypeCheckArgument;
 using js::UnwrapAndTypeCheckThis;
 using js::WritableStream;
 using js::WritableStreamCloseQueuedOrInFlight;
@@ -48,11 +53,159 @@ using js::WritableStreamDefaultWriterWrite;
 
 
 
+
+
+
+
 MOZ_MUST_USE WritableStreamDefaultWriter* js::CreateWritableStreamDefaultWriter(
-    JSContext* cx, Handle<WritableStream*> unwrappedStream) {
+    JSContext* cx, Handle<WritableStream*> unwrappedStream,
+    Handle<JSObject*> proto ) {
+  Rooted<WritableStreamDefaultWriter*> writer(
+      cx, NewObjectWithClassProto<WritableStreamDefaultWriter>(cx, proto));
+  if (!writer) {
+    return nullptr;
+  }
+
   
-  JS_ReportErrorASCII(cx, "epic fail");
-  return nullptr;
+  {
+    Rooted<JSObject*> stream(cx, unwrappedStream);
+    if (!cx->compartment()->wrap(cx, &stream)) {
+      return nullptr;
+    }
+    writer->setStream(stream);
+  }
+
+  
+
+  
+  
+  if (unwrappedStream->writable()) {
+    
+    
+    
+    JSObject* promise;
+    if (!WritableStreamCloseQueuedOrInFlight(unwrappedStream) &&
+        unwrappedStream->backpressure()) {
+      promise = PromiseObject::createSkippingExecutor(cx);
+    }
+    
+    
+    else {
+      promise = PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
+    }
+    if (!promise) {
+      return nullptr;
+    }
+    writer->setReadyPromise(promise);
+
+    
+    promise = PromiseObject::createSkippingExecutor(cx);
+    if (!promise) {
+      return nullptr;
+    }
+
+    writer->setClosedPromise(promise);
+  }
+  
+  else if (unwrappedStream->closed()) {
+    
+    JSObject* readyPromise =
+        PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
+    if (!readyPromise) {
+      return nullptr;
+    }
+
+    writer->setReadyPromise(readyPromise);
+
+    
+    
+    JSObject* closedPromise =
+        PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
+    if (!closedPromise) {
+      return nullptr;
+    }
+
+    writer->setClosedPromise(closedPromise);
+  } else {
+    
+    Rooted<Value> storedError(cx, unwrappedStream->storedError());
+    if (!cx->compartment()->wrap(cx, &storedError)) {
+      return nullptr;
+    }
+
+    
+    if (unwrappedStream->erroring()) {
+      
+      
+      JSObject* promise = PromiseObject::unforgeableReject(cx, storedError);
+      if (!promise) {
+        return nullptr;
+      }
+
+      writer->setReadyPromise(promise);
+
+      
+      Rooted<PromiseObject*> readyPromise(cx, &promise->as<PromiseObject>());
+      readyPromise->setHandled();
+      cx->runtime()->removeUnhandledRejectedPromise(cx, readyPromise);
+
+      
+      JSObject* closedPromise = PromiseObject::createSkippingExecutor(cx);
+      if (!closedPromise) {
+        return nullptr;
+      }
+
+      writer->setClosedPromise(closedPromise);
+    }
+    
+    else {
+      
+      MOZ_ASSERT(unwrappedStream->errored());
+
+      Rooted<JSObject*> promise(cx);
+
+      
+      
+      
+      promise = PromiseObject::unforgeableReject(cx, storedError);
+      if (!promise) {
+        return nullptr;
+      }
+
+      writer->setReadyPromise(promise);
+
+      
+      promise->as<PromiseObject>().setHandled();
+      cx->runtime()->removeUnhandledRejectedPromise(cx, promise);
+
+      
+      
+      promise = PromiseObject::unforgeableReject(cx, storedError);
+      if (!promise) {
+        return nullptr;
+      }
+
+      writer->setClosedPromise(promise);
+
+      
+      promise->as<PromiseObject>().setHandled();
+      cx->runtime()->removeUnhandledRejectedPromise(cx, promise);
+    }
+  }
+
+  
+  
+  
+  {
+    AutoRealm ar(cx, unwrappedStream);
+    Rooted<JSObject*> wrappedWriter(cx, writer);
+    if (!cx->compartment()->wrap(cx, &wrappedWriter)) {
+      return nullptr;
+    }
+    unwrappedStream->setWriter(wrappedWriter);
+  }
+
+  return writer;
 }
 
 
@@ -61,9 +214,47 @@ MOZ_MUST_USE WritableStreamDefaultWriter* js::CreateWritableStreamDefaultWriter(
 
 bool WritableStreamDefaultWriter::constructor(JSContext* cx, unsigned argc,
                                               Value* vp) {
+  MOZ_ASSERT(cx->realm()->creationOptions().getWritableStreamsEnabled(),
+             "WritableStream should be enabled in this realm if we reach here");
+
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  if (!ThrowIfNotConstructing(cx, args, "WritableStreamDefaultWriter")) {
+    return false;
+  }
+
   
-  JS_ReportErrorASCII(cx, "epic fail");
-  return false;
+  
+  Rooted<WritableStream*> unwrappedStream(
+      cx, UnwrapAndTypeCheckArgument<WritableStream>(
+              cx, args, "WritableStreamDefaultWriter constructor", 0));
+  if (!unwrappedStream) {
+    return false;
+  }
+
+  
+  
+  if (unwrappedStream->isLocked()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_WRITABLESTREAM_ALREADY_LOCKED);
+    return false;
+  }
+
+  
+  Rooted<JSObject*> proto(cx);
+  if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_Null, &proto)) {
+    return false;
+  }
+
+  
+  Rooted<WritableStreamDefaultWriter*> writer(
+      cx, CreateWritableStreamDefaultWriter(cx, unwrappedStream, proto));
+  if (!writer) {
+    return false;
+  }
+
+  args.rval().setObject(*writer);
+  return true;
 }
 
 
