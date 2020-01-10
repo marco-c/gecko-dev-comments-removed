@@ -2081,7 +2081,8 @@ void Selection::AddRangeAndSelectFramesAndNotifyListeners(nsRange& aRange,
 
 
 
-void Selection::RemoveRange(nsRange& aRange, ErrorResult& aRv) {
+void Selection::RemoveRangeAndUnselectFramesAndNotifyListeners(
+    nsRange& aRange, ErrorResult& aRv) {
   nsresult rv = RemoveItem(&aRange);
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);

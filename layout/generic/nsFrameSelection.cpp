@@ -2244,7 +2244,8 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
 
             
             ErrorResult err;
-            mDomSelections[index]->RemoveRange(*range, err);
+            mDomSelections[index]
+                ->RemoveRangeAndUnselectFramesAndNotifyListeners(*range, err);
             return err.StealNSResult();
           }
         }
@@ -2324,7 +2325,8 @@ nsresult nsFrameSelection::UnselectCells(nsIContent* aTableContent,
       if (aRemoveOutsideOfCellRange) {
         if (curRowIndex < minRowIndex || curRowIndex > maxRowIndex ||
             curColIndex < minColIndex || curColIndex > maxColIndex) {
-          mDomSelections[index]->RemoveRange(*range, IgnoreErrors());
+          mDomSelections[index]->RemoveRangeAndUnselectFramesAndNotifyListeners(
+              *range, IgnoreErrors());
           
           mSelectedCellIndex--;
         }
@@ -2349,7 +2351,8 @@ nsresult nsFrameSelection::UnselectCells(nsIContent* aTableContent,
             maxColIndex >= 0 &&
             origColIndex + actualColSpan - 1 >=
                 static_cast<uint32_t>(minColIndex)) {
-          mDomSelections[index]->RemoveRange(*range, IgnoreErrors());
+          mDomSelections[index]->RemoveRangeAndUnselectFramesAndNotifyListeners(
+              *range, IgnoreErrors());
           
           mSelectedCellIndex--;
         }

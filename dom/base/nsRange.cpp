@@ -974,7 +974,8 @@ void nsRange::SetSelection(mozilla::dom::Selection* aSelection) {
   
   
   if (aSelection && mSelection) {
-    mSelection->RemoveRange(*this, IgnoreErrors());
+    mSelection->RemoveRangeAndUnselectFramesAndNotifyListeners(*this,
+                                                               IgnoreErrors());
   }
 
   mSelection = aSelection;
