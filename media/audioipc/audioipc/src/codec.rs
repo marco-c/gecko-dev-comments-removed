@@ -58,12 +58,8 @@ pub struct LengthDelimitedCodec<In, Out> {
 
 enum State {
     Length,
-    Data(usize),
+    Data(u16),
 }
-
-const MAX_MESSAGE_LEN: u64 = 1024 * 1024;
-const MESSAGE_LENGTH_SIZE: usize = std::mem::size_of::<u32>();
-
 
 impl<In, Out> Default for LengthDelimitedCodec<In, Out> {
     fn default() -> Self {
@@ -77,26 +73,27 @@ impl<In, Out> Default for LengthDelimitedCodec<In, Out> {
 
 impl<In, Out> LengthDelimitedCodec<In, Out> {
     
-    fn decode_length(&mut self, buf: &mut BytesMut) -> io::Result<Option<usize>> {
-        if buf.len() < MESSAGE_LENGTH_SIZE {
+    fn decode_length(&mut self, buf: &mut BytesMut) -> io::Result<Option<u16>> {
+        if buf.len() < 2 {
             
             return Ok(None);
         }
 
-        let n = LittleEndian::read_u32(buf.as_ref());
+        let n = LittleEndian::read_u16(buf.as_ref());
 
         
-        let _ = buf.split_to(MESSAGE_LENGTH_SIZE);
+        let _ = buf.split_to(2);
 
-        Ok(Some(n as usize))
+        Ok(Some(n))
     }
 
-    fn decode_data(&mut self, buf: &mut BytesMut, n: usize) -> io::Result<Option<Out>>
+    fn decode_data(&mut self, buf: &mut BytesMut, n: u16) -> io::Result<Option<Out>>
     where
         Out: DeserializeOwned + Debug,
     {
         
         
+        let n = n as usize;
         if buf.len() < n {
             return Ok(None);
         }
@@ -131,7 +128,7 @@ where
 
                         
                         
-                        buf.reserve(n);
+                        buf.reserve(n as usize);
 
                         n
                     }
@@ -147,7 +144,7 @@ where
                 self.state = State::Length;
 
                 
-                buf.reserve(MESSAGE_LENGTH_SIZE);
+                buf.reserve(2);
 
                 Ok(Some(data))
             }
@@ -158,17 +155,16 @@ where
     fn encode(&mut self, item: Self::In, buf: &mut BytesMut) -> io::Result<()> {
         trace!("Attempting to encode");
         let encoded_len = serialized_size(&item).unwrap();
-        if encoded_len > MAX_MESSAGE_LEN {
-            trace!("oversized message {}", encoded_len);
+        if encoded_len > 8 * 1024 {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "encoded message too big",
             ));
         }
 
-        buf.reserve((encoded_len as usize) + MESSAGE_LENGTH_SIZE);
+        buf.reserve((encoded_len + 2) as usize);
 
-        buf.put_u32_le(encoded_len as u32);
+        buf.put_u16_le(encoded_len as u16);
 
         if let Err(e) = bincode::config()
             .limit(encoded_len)
