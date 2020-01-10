@@ -91,8 +91,6 @@ static const char* ToCharPtr(const FcChar8* aStr) {
   return reinterpret_cast<const char*>(aStr);
 }
 
-FT_Library gfxFcPlatformFontList::sCairoFTLibrary = nullptr;
-
 
 
 static uint32_t FindCanonicalNameIndex(FcPattern* aFont,
@@ -1348,10 +1346,9 @@ gfxFontconfigFont::gfxFontconfigFont(
     cairo_scaled_font_t* aScaledFont, RefPtr<SharedFTFace>&& aFTFace,
     FcPattern* aPattern, gfxFloat aAdjustedSize, gfxFontEntry* aFontEntry,
     const gfxFontStyle* aFontStyle)
-    : gfxFT2FontBase(aUnscaledFont, aScaledFont, aFontEntry, aFontStyle),
-      mFTFace(std::move(aFTFace)),
+    : gfxFT2FontBase(aUnscaledFont, aScaledFont, std::move(aFTFace), aFontEntry,
+                     aFontStyle, aAdjustedSize),
       mPattern(aPattern) {
-  mAdjustedSize = aAdjustedSize;
 }
 
 gfxFontconfigFont::~gfxFontconfigFont() {}
@@ -2216,43 +2213,6 @@ void gfxFcPlatformFontList::ClearLangGroupPrefFonts() {
   ClearGenericMappings();
   gfxPlatformFontList::ClearLangGroupPrefFonts();
   mAlwaysUseFontconfigGenerics = PrefFontListsUseOnlyGenerics();
-}
-
-
-FT_Library gfxFcPlatformFontList::GetFTLibrary() {
-  if (!sCairoFTLibrary) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    FcPattern* pat =
-        FcPatternBuild(0, FC_FAMILY, FcTypeString, "serif", (char*)0);
-    cairo_font_face_t* face = cairo_ft_font_face_create_for_pattern(pat);
-    FcPatternDestroy(pat);
-
-    cairo_matrix_t identity;
-    cairo_matrix_init_identity(&identity);
-    cairo_font_options_t* options = cairo_font_options_create();
-    cairo_scaled_font_t* sf =
-        cairo_scaled_font_create(face, &identity, &identity, options);
-    cairo_font_options_destroy(options);
-    cairo_font_face_destroy(face);
-
-    FT_Face ft = cairo_ft_scaled_font_lock_face(sf);
-
-    sCairoFTLibrary = ft->glyph->library;
-
-    cairo_ft_scaled_font_unlock_face(sf);
-    cairo_scaled_font_destroy(sf);
-  }
-
-  return sCairoFTLibrary;
 }
 
 gfxPlatformFontList::PrefFontList* gfxFcPlatformFontList::FindGenericFamilies(

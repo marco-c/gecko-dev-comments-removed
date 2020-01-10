@@ -220,7 +220,6 @@ class gfxFontconfigFont : public gfxFT2FontBase {
  private:
   virtual ~gfxFontconfigFont();
 
-  RefPtr<mozilla::gfx::SharedFTFace> mFTFace;
   nsCountedRef<FcPattern> mPattern;
 };
 
@@ -285,8 +284,6 @@ class gfxFcPlatformFontList : public gfxPlatformFontList {
   
   void GetSampleLangForGroup(nsAtom* aLanguage, nsACString& aLangStr,
                              bool aForFontEnumerationThread = false);
-
-  static FT_Library GetFTLibrary();
 
  protected:
   virtual ~gfxFcPlatformFontList();
@@ -360,7 +357,7 @@ class gfxFcPlatformFontList : public gfxPlatformFontList {
   
   bool mAlwaysUseFontconfigGenerics;
 
-  static FT_Library sCairoFTLibrary;
+  static FT_Library sFTLibrary;
 };
 
 #endif 

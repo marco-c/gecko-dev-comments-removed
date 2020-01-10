@@ -795,14 +795,30 @@ class SharedFTFace : public external::AtomicRefCounted<SharedFTFace> {
   FT_Face GetFace() const { return mFace; }
   SharedFTFaceData* GetData() const { return mData; }
 
-  void Lock() { mLock.Lock(); }
-  bool TryLock() { return mLock.TryLock(); }
+  
+
+
+
+
+
+
+
+  bool Lock(void* aOwner = nullptr) {
+    mLock.Lock();
+    if (mLockOwner == aOwner || !aOwner) {
+      return true;
+    } else {
+      mLockOwner = aOwner;
+      return false;
+    }
+  }
   void Unlock() { mLock.Unlock(); }
 
  private:
   FT_Face mFace;
   SharedFTFaceData* mData;
   Mutex mLock;
+  void* mLockOwner;
 };
 #endif
 
