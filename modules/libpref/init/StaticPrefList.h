@@ -4916,17 +4916,6 @@ VARCACHE_PREF(
 )
 
 
-
-
-
-VARCACHE_PREF(
-  Live,
-  "layout.css.marker.restricted",
-   layout_css_marker_restricted,
-  bool, true
-)
-
-
 VARCACHE_PREF(
   Live,
   "layout.css.moz-document.content.enabled",
