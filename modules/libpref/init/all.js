@@ -1608,7 +1608,7 @@ pref("network.http.referer.XOriginPolicy", 0);
 
 
 
-pref("network.http.sendOriginHeader", 2);
+pref("network.http.sendOriginHeader", 0);
 
 
 pref("network.http.redirection-limit", 20);
