@@ -1014,10 +1014,8 @@ class ScriptSource {
   
   
   template <typename Unit>
-  MOZ_MUST_USE bool initializeWithCompressedSource(JSContext* cx,
-                                                   UniqueChars&& raw,
-                                                   size_t rawLength,
-                                                   size_t sourceLength);
+  MOZ_MUST_USE bool initializeWithUnretrievableCompressedSource(
+      JSContext* cx, UniqueChars&& raw, size_t rawLength, size_t sourceLength);
 
 #if defined(JS_BUILD_BINAST)
 
