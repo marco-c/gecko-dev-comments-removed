@@ -80,6 +80,10 @@
       this.mIconURL = null;
       this.lastURI = null;
 
+      
+      
+      this.progressListeners = [];
+
       this.addEventListener(
         "keypress",
         event => {
@@ -1059,11 +1063,40 @@
       if (!aNotifyMask) {
         aNotifyMask = Ci.nsIWebProgress.NOTIFY_ALL;
       }
+
+      this.progressListeners.push({
+        weakListener: Cu.getWeakReference(aListener),
+        mask: aNotifyMask,
+      });
+
       this.webProgress.addProgressListener(aListener, aNotifyMask);
     }
 
     removeProgressListener(aListener) {
       this.webProgress.removeProgressListener(aListener);
+
+      
+      
+      this.progressListeners = this.progressListeners.filter(
+        ({ weakListener }) =>
+          weakListener.get() && weakListener.get() !== aListener
+      );
+    }
+
+    
+
+
+
+    restoreProgressListeners() {
+      let listeners = this.progressListeners;
+      this.progressListeners = [];
+
+      for (let { weakListener, mask } of listeners) {
+        let listener = weakListener.get();
+        if (listener) {
+          this.addProgressListener(listener, mask);
+        }
+      }
     }
 
     onPageHide(aEvent) {
@@ -1268,6 +1301,13 @@
 
         this._remoteWebProgress = this._remoteWebProgressManager.topLevelWebProgress;
 
+        if (!oldManager) {
+          
+          
+          
+          this.restoreProgressListeners();
+        }
+
         this.messageManager.loadFrameScript(
           "chrome://global/content/browser-child.js",
           true
@@ -1334,8 +1374,10 @@
       if (!this.isRemoteBrowser) {
         
         
-        delete this._remoteWebProgressManager;
-        delete this._remoteWebProgress;
+        
+        this._remoteWebProgressManager = null;
+        this._remoteWebProgress = null;
+        this.restoreProgressListeners();
 
         this.addEventListener("pagehide", this.onPageHide, true);
       }
