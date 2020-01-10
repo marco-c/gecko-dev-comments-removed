@@ -151,6 +151,9 @@ MOZ_MUST_USE bool js::WritableStreamStartErroring(
   return false;
 }
 
+static bool WritableStreamHasOperationMarkedInFlight(
+    const WritableStream* unwrappedStream);
+
 
 
 
@@ -158,8 +161,55 @@ MOZ_MUST_USE bool js::WritableStreamStartErroring(
 MOZ_MUST_USE bool js::WritableStreamFinishErroring(
     JSContext* cx, Handle<WritableStream*> unwrappedStream) {
   
+  MOZ_ASSERT(unwrappedStream->erroring());
+
+  
+  
+  MOZ_ASSERT(!WritableStreamHasOperationMarkedInFlight(unwrappedStream));
+
+  
+  unwrappedStream->setErrored();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   JS_ReportErrorASCII(cx, "epic fail");
   return false;
+}
+
+
+
+
+
+bool WritableStreamHasOperationMarkedInFlight(
+    const WritableStream* unwrappedStream) {
+  
+  
+  
+  return unwrappedStream->haveInFlightWriteRequest() ||
+         unwrappedStream->haveInFlightCloseRequest();
 }
 
 
