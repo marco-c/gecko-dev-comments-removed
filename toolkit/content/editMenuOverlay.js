@@ -95,8 +95,6 @@ window.addEventListener(
 
 window.addEventListener("contextmenu", e => {
   const HTML_NS = "http://www.w3.org/1999/xhtml";
-  
-  
   let needsContextMenu =
     e.target.ownerDocument == document &&
     !e.defaultPrevented &&

@@ -441,13 +441,6 @@ const Preferences = (window.Preferences = (function() {
       }
       if (aElement.localName == "checkbox") {
         setValue(aElement, "checked", val);
-      } else if (aElement.localName == "textbox") {
-        
-        
-        
-        if (aElement.value !== val) {
-          setValue(aElement, "value", val);
-        }
       } else {
         setValue(aElement, "value", val);
       }
@@ -499,7 +492,6 @@ const Preferences = (window.Preferences = (function() {
         case "input":
         case "radiogroup":
         case "textarea":
-        case "textbox":
         case "menulist":
           return true;
       }

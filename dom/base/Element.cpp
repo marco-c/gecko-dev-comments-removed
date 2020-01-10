@@ -527,24 +527,8 @@ void Element::ClearStyleStateLocks() {
 
 #ifdef MOZ_XBL
 static bool MayNeedToLoadXBLBinding(const Element& aElement) {
-  if (!aElement.IsAnyOfXULElements(nsGkAtoms::textbox)) {
-    
-    
-    return false;
-  }
-  if (!aElement.IsInComposedDoc()) {
-    return false;
-  }
   
-  if (aElement.GetPrimaryFrame() || !aElement.OwnerDoc()->GetPresShell()) {
-    return false;
-  }
-  
-  if (aElement.GetXBLBinding()) {
-    return false;
-  }
-  
-  return true;
+  return false;
 }
 #endif
 
