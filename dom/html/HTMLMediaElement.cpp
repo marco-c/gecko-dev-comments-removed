@@ -4061,10 +4061,6 @@ nsresult HTMLMediaElement::BindToTree(BindContext& aContext, nsINode& aParent) {
     NotifyUAWidgetSetupOrChange();
   }
 
-  
-  
-  mUnboundFromTree = false;
-
   if (IsInUncomposedDoc()) {
     
     
@@ -4278,7 +4274,6 @@ void HTMLMediaElement::ReportTelemetry() {
 }
 
 void HTMLMediaElement::UnbindFromTree(bool aNullParent) {
-  mUnboundFromTree = true;
   mVisibilityState = Visibility::Untracked;
 
   if (IsInComposedDoc()) {
@@ -4290,14 +4285,21 @@ void HTMLMediaElement::UnbindFromTree(bool aNullParent) {
   MOZ_ASSERT(IsHidden());
   NotifyDecoderActivityChanges();
 
-  RefPtr<HTMLMediaElement> self(this);
-  nsCOMPtr<nsIRunnable> task =
-      NS_NewRunnableFunction("dom::HTMLMediaElement::UnbindFromTree", [self]() {
-        if (self->mUnboundFromTree) {
-          self->Pause();
-        }
-      });
-  RunInStableState(task);
+  
+  
+  
+  if (!mDispatchedTaskToPauseIfNotInDocument) {
+    mDispatchedTaskToPauseIfNotInDocument = true;
+    nsCOMPtr<nsIRunnable> task = NS_NewRunnableFunction(
+        "dom::HTMLMediaElement::UnbindFromTree",
+        [self = RefPtr<HTMLMediaElement>(this)]() {
+          self->mDispatchedTaskToPauseIfNotInDocument = false;
+          if (!self->IsInComposedDoc()) {
+            self->Pause();
+          }
+        });
+    RunInStableState(task);
+  }
 }
 
 
@@ -5696,7 +5698,7 @@ bool HTMLMediaElement::IsActive() const {
 }
 
 bool HTMLMediaElement::IsHidden() const {
-  return mUnboundFromTree || OwnerDoc()->Hidden();
+  return !IsInComposedDoc() || OwnerDoc()->Hidden();
 }
 
 VideoFrameContainer* HTMLMediaElement::GetVideoFrameContainer() {

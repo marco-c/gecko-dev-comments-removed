@@ -1674,7 +1674,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   
-  bool mUnboundFromTree = false;
+  
+  bool mDispatchedTaskToPauseIfNotInDocument = false;
 
   
   
