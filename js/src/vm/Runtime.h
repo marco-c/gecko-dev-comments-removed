@@ -69,10 +69,6 @@ class EnterDebuggeeNoExecute;
 class TraceLoggerThread;
 #endif
 
-namespace gc {
-class AutoHeapSession;
-}
-
 }  
 
 struct DtoaState;
@@ -510,11 +506,6 @@ struct JSRuntime {
                   mozilla::recordreplay::Behavior::DontPreserve>
       numActiveHelperThreadZones;
 
-  
-  mozilla::Atomic<JS::HeapState, mozilla::SequentiallyConsistent,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      heapState_;
-
   friend class js::AutoLockScriptData;
 
  public:
@@ -539,7 +530,7 @@ struct JSRuntime {
   }
 #endif
 
-  JS::HeapState heapState() const { return heapState_; }
+  JS::HeapState heapState() const { return gc.heapState(); }
 
   
   
@@ -970,10 +961,6 @@ struct JSRuntime {
     MOZ_ASSERT(format != js::StackFormat::Default);
     stackFormat_ = format;
   }
-
-  
-  friend class js::gc::AutoHeapSession;
-  friend class JS::AutoEnterCycleCollection;
 
  private:
   js::MainThreadData<js::RuntimeCaches> caches_;
