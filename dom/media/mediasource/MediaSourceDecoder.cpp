@@ -102,7 +102,7 @@ media::TimeIntervals MediaSourceDecoder::GetSeekable() {
       return seekable;
     }
 
-    if (buffered.Length()) {
+    if (!buffered.IsEmpty()) {
       seekable += media::TimeInterval(TimeUnit::Zero(), buffered.GetEnd());
     }
   } else {
@@ -143,7 +143,7 @@ media::TimeIntervals MediaSourceDecoder::GetBuffered() {
   buffered += media::TimeInterval(TimeUnit::Zero(), highestEndTime);
 
   for (auto& range : activeRanges) {
-    if (mEnded && range.Length()) {
+    if (mEnded && !range.IsEmpty()) {
       
       
       

@@ -2871,7 +2871,7 @@ void MediaFormatReader::UpdateBuffered() {
     intervals = mVideo.mTimeRanges;
   }
 
-  if (!intervals.Length() || intervals.GetStart() == TimeUnit::Zero()) {
+  if (intervals.IsEmpty() || intervals.GetStart() == TimeUnit::Zero()) {
     
     mBuffered = intervals;
   } else {
