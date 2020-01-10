@@ -2981,6 +2981,17 @@ void nsWindow::OnButtonReleaseEvent(GdkEventButton* aEvent) {
   if (StaticPrefs::ui_context_menus_after_mouseup()) {
     DispatchContextMenuEventFromMouseEvent(domButton, aEvent);
   }
+
+  
+  
+  if (mIsPIPWindow && aEvent->button == 3) {
+    static auto sGdkWindowShowWindowMenu =
+        (gboolean(*)(GdkWindow * window, GdkEvent*))
+            dlsym(RTLD_DEFAULT, "gdk_window_show_window_menu");
+    if (sGdkWindowShowWindowMenu) {
+      sGdkWindowShowWindowMenu(mGdkWindow, (GdkEvent*)aEvent);
+    }
+  }
 }
 
 void nsWindow::OnContainerFocusInEvent(GdkEventFocus* aEvent) {
