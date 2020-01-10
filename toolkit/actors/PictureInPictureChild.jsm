@@ -849,6 +849,12 @@ class PictureInPictureChild extends ActorChild {
 
 
   async togglePictureInPicture(video) {
+    
+    
+    if (video.srcObject) {
+      return;
+    }
+
     if (this.inPictureInPicture(video)) {
       
       
