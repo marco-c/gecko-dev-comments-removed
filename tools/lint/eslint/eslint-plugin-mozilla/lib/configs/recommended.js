@@ -70,6 +70,9 @@ module.exports = {
         "mozilla/mark-exported-symbols-as-used": "error",
         
         
+        "no-redeclare": ["error", { builtinGlobals: false }],
+        
+        
         "no-unused-vars": [
           "error",
           {
@@ -220,6 +223,13 @@ module.exports = {
     "no-new-wrappers": "error",
 
     
+    "no-prototype-builtins": "off",
+
+    
+    
+    "no-redeclare": ["error", { builtinGlobals: false }],
+
+    
     "no-restricted-globals": ["error", "event"],
 
     
@@ -280,6 +290,10 @@ module.exports = {
 
     
     "object-shorthand": ["error", "always", { avoidQuotes: true }],
+
+    
+    
+    "require-atomic-updates": "off",
 
     
     
