@@ -42,8 +42,16 @@ var ContentTaskUtils = {
     }
 
     
-    if (element.parentNode != element.ownerDocument) {
+    if (
+      element.parentNode != element.ownerDocument &&
+      element.parentNode.nodeType != Node.DOCUMENT_FRAGMENT_NODE
+    ) {
       return ContentTaskUtils.is_hidden(element.parentNode);
+    }
+
+    
+    if (element.parentNode.host) {
+      return ContentTaskUtils.is_hidden(element.parentNode.host);
     }
 
     return false;
@@ -58,20 +66,7 @@ var ContentTaskUtils = {
 
 
   is_visible(element) {
-    let style = element.ownerDocument.defaultView.getComputedStyle(element);
-    if (style.display == "none") {
-      return false;
-    }
-    if (style.visibility != "visible") {
-      return false;
-    }
-
-    
-    if (element.parentNode != element.ownerDocument) {
-      return ContentTaskUtils.is_visible(element.parentNode);
-    }
-
-    return true;
+    return !this.is_hidden(element);
   },
 
   
