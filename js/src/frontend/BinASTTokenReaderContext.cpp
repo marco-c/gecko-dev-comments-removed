@@ -1032,37 +1032,21 @@ BinASTTokenReaderContext::BitBuffer::BitBuffer() : bits(0), bitLength(0) {
 }
 
 template <Compression C>
-HuffmanLookup BinASTTokenReaderContext::BitBuffer::getHuffmanLookup() {
-  
-  const uint8_t bitLength =
-      std::min<uint8_t>(this->bitLength, MAX_PREFIX_BIT_LENGTH);
-  const uint32_t bitsPrefix = bits & (uint64_t)0x00000000FFFFFFFF;
-  return HuffmanLookup(bitsPrefix, bitLength);
-}
-
-template <>
-MOZ_MUST_USE JS::Result<Ok>
-BinASTTokenReaderContext::BitBuffer::advanceBitBuffer<Compression::No>(
-    BinASTTokenReaderContext& owner, const uint8_t bitLength) {
-  
-  
-  MOZ_ASSERT(bitLength <= this->bitLength);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+JS::Result<HuffmanLookup> BinASTTokenReaderContext::BitBuffer::getHuffmanLookup(
+    BinASTTokenReaderContext& owner) {
   
 
   
   
-  this->bitLength -= bitLength;
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   if (this->bitLength <= MAX_PREFIX_BIT_LENGTH) {
     
@@ -1103,7 +1087,21 @@ BinASTTokenReaderContext::BitBuffer::advanceBitBuffer<Compression::No>(
     }
   }
 
-  return Ok();
+  
+  const uint8_t bitLength =
+      std::min<uint8_t>(this->bitLength, MAX_PREFIX_BIT_LENGTH);
+  const uint32_t bitsPrefix = bits & (uint64_t)0x00000000FFFFFFFF;
+  return HuffmanLookup(bitsPrefix, bitLength);
+}
+
+template <>
+void BinASTTokenReaderContext::BitBuffer::advanceBitBuffer<Compression::No>(
+    const uint8_t bitLength) {
+  
+  
+  MOZ_ASSERT(bitLength <= this->bitLength);
+
+  this->bitLength -= bitLength;
 }
 
 void BinASTTokenReaderContext::traceMetadata(JSTracer* trc) {
@@ -1242,11 +1240,11 @@ JS::Result<Ok> BinASTTokenReaderContext::enterList(uint32_t& items,
   const auto identity =
       context.as<BinASTTokenReaderBase::ListContext>().content;
   const auto& table = dictionary.tableForListLength(identity);
+  MOZ_TRY(const auto bits = bitBuffer.getHuffmanLookup<Compression::No>(*this));
   const auto lookup =
-      table.as<HuffmanTableExplicitSymbolsListLength>().impl.lookup(
-          bitBuffer.getHuffmanLookup<Compression::No>());
-  MOZ_TRY(
-      bitBuffer.advanceBitBuffer<Compression::No>(*this, lookup.key.bitLength));
+      table.as<HuffmanTableExplicitSymbolsListLength>().impl.lookup(bits);
+  
+  bitBuffer.advanceBitBuffer<Compression::No>(lookup.key.bitLength);
   if (!lookup.value) {
     return raiseInvalidValue(context);
   }
