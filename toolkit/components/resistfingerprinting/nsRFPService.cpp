@@ -775,7 +775,9 @@ void nsRFPService::UpdateRFPPref() {
 
   UpdateTimers();
 
-  if (StaticPrefs::privacy_resistFingerprinting()) {
+  bool privacyResistFingerprinting =
+      StaticPrefs::privacy_resistFingerprinting();
+  if (privacyResistFingerprinting) {
     PR_SetEnv("TZ=UTC");
   } else if (sInitialized) {
     
@@ -810,13 +812,17 @@ void nsRFPService::UpdateRFPPref() {
 
   
   
+  if (privacyResistFingerprinting || sInitialized) {
+    
+    
 #if defined(XP_WIN)
-  _tzset();
+    _tzset();
 #else
-  tzset();
+    tzset();
 #endif
 
-  nsJSUtils::ResetTimeZone();
+    nsJSUtils::ResetTimeZone();
+  }
 }
 
 void nsRFPService::StartShutdown() {
