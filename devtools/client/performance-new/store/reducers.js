@@ -2,7 +2,20 @@
 
 
 "use strict";
+
 const { combineReducers } = require("devtools/client/shared/vendor/redux");
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -131,14 +144,6 @@ function objdirs(state = [], action) {
 
 
 
-
-
-
-
-
-
-
-
 function initializedValues(state = null, action) {
   switch (action.type) {
     case "INITIALIZE_STORE":
@@ -154,7 +159,14 @@ function initializedValues(state = null, action) {
   }
 }
 
+
+
+
+
 module.exports = combineReducers({
+  
+  
+  
   recordingState,
   recordingUnexpectedlyStopped,
   isSupportedPlatform,

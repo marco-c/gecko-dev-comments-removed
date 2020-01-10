@@ -3,6 +3,7 @@
 
 "use strict";
 
+
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 
@@ -12,15 +13,35 @@ loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 
 
+
+
+
+
+
+
 class PerformancePanel {
+  
+
+
+
   constructor(iframeWindow, toolbox) {
     this.panelWin = iframeWindow;
     this.toolbox = toolbox;
 
+    
     EventEmitter.decorate(this);
   }
 
   
+
+
+
+
+
+  emit(eventName) {}
+
+  
+
 
 
 
@@ -30,6 +51,10 @@ class PerformancePanel {
     }
     return this._opening;
   }
+
+  
+
+
 
   async _doOpen() {
     this.panelWin.gToolbox = this.toolbox;
@@ -48,6 +73,9 @@ class PerformancePanel {
 
   
 
+  
+
+
   get target() {
     return this.toolbox.target;
   }
@@ -62,4 +90,5 @@ class PerformancePanel {
     this._destroyed = true;
   }
 }
+
 exports.PerformancePanel = PerformancePanel;

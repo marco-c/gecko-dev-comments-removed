@@ -3,16 +3,53 @@
 
 "use strict";
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const getRecordingState = state => state.recordingState;
+
+
 const getRecordingUnexpectedlyStopped = state =>
   state.recordingUnexpectedlyStopped;
+
+
 const getIsSupportedPlatform = state => state.isSupportedPlatform;
+
+
 const getInterval = state => state.interval;
+
+
 const getEntries = state => state.entries;
+
+
 const getFeatures = state => state.features;
+
+
 const getThreads = state => state.threads;
+
+
 const getThreadsString = state => getThreads(state).join(",");
+
+
 const getObjdirs = state => state.objdirs;
+
+
+
+
+
+
 
 const getRecordingSettings = state => {
   return {
@@ -24,6 +61,7 @@ const getRecordingSettings = state => {
   };
 };
 
+
 const getInitializedValues = state => {
   const values = state.initializedValues;
   if (!values) {
@@ -32,11 +70,20 @@ const getInitializedValues = state => {
   return values;
 };
 
+
 const getPerfFront = state => getInitializedValues(state).perfFront;
+
+
 const getReceiveProfileFn = state => getInitializedValues(state).receiveProfile;
+
+
 const getSetRecordingPreferencesFn = state =>
   getInitializedValues(state).setRecordingPreferences;
+
+
 const getIsPopup = state => getInitializedValues(state).isPopup;
+
+
 const getSymbolTableGetter = state =>
   getInitializedValues(state).getSymbolTableGetter;
 

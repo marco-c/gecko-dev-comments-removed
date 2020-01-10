@@ -10,6 +10,20 @@ const selectors = require("devtools/client/performance-new/store/selectors");
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const changeRecordingState = (exports.changeRecordingState = (
   state,
   options = { didRecordingUnexpectedlyStopped: false }
@@ -25,11 +39,13 @@ const changeRecordingState = (exports.changeRecordingState = (
 
 
 
+
 exports.reportProfilerReady = (isSupportedPlatform, recordingState) => ({
   type: "REPORT_PROFILER_READY",
   isSupportedPlatform,
   recordingState,
 });
+
 
 
 
@@ -56,11 +72,13 @@ function _dispatchAndUpdatePreferences(action) {
 
 
 
+
 exports.changeInterval = interval =>
   _dispatchAndUpdatePreferences({
     type: "CHANGE_INTERVAL",
     interval,
   });
+
 
 
 
@@ -76,6 +94,7 @@ exports.changeEntries = entries =>
 
 
 
+
 exports.changeFeatures = features =>
   _dispatchAndUpdatePreferences({
     type: "CHANGE_FEATURES",
@@ -86,11 +105,13 @@ exports.changeFeatures = features =>
 
 
 
+
 exports.changeThreads = threads =>
   _dispatchAndUpdatePreferences({
     type: "CHANGE_THREADS",
     threads,
   });
+
 
 
 
@@ -107,10 +128,12 @@ exports.changeObjdirs = objdirs =>
 
 
 
+
 exports.initializeStore = values => ({
   type: "INITIALIZE_STORE",
   ...values,
 });
+
 
 
 
@@ -126,6 +149,7 @@ exports.startRecording = () => {
     perfFront.startProfiler(recordingSettings);
   };
 };
+
 
 
 
@@ -148,6 +172,7 @@ exports.getProfileAndStopProfiler = window => {
     dispatch(changeRecordingState("available-to-record"));
   };
 };
+
 
 
 
