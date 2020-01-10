@@ -2207,7 +2207,7 @@ pub struct PicturePrimitive {
 
     
     #[cfg_attr(feature = "capture", serde(skip))] 
-    pub tile_cache: Option<TileCache>,
+    pub tile_cache: Option<Box<TileCache>>,
 
     
     options: PictureOptions,
@@ -2315,7 +2315,7 @@ impl PicturePrimitive {
         requested_raster_space: RasterSpace,
         prim_list: PrimitiveList,
         spatial_node_index: SpatialNodeIndex,
-        tile_cache: Option<TileCache>,
+        tile_cache: Option<Box<TileCache>>,
         options: PictureOptions,
     ) -> Self {
         PicturePrimitive {
