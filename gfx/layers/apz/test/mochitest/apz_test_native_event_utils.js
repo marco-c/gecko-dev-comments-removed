@@ -28,20 +28,30 @@ function getPlatform() {
 
 function nativeVerticalWheelEventMsg() {
   switch (getPlatform()) {
-    case "windows": return 0x020A; 
-    case "mac": return 0; 
-    case "linux": return 4; 
+    case "windows":
+      return 0x020a; 
+    case "mac":
+      return 0; 
+    case "linux":
+      return 4; 
   }
-  throw new Error("Native wheel events not supported on platform " + getPlatform());
+  throw new Error(
+    "Native wheel events not supported on platform " + getPlatform()
+  );
 }
 
 function nativeHorizontalWheelEventMsg() {
   switch (getPlatform()) {
-    case "windows": return 0x020E; 
-    case "mac": return 0; 
-    case "linux": return 4; 
+    case "windows":
+      return 0x020e; 
+    case "mac":
+      return 0; 
+    case "linux":
+      return 4; 
   }
-  throw new Error("Native wheel events not supported on platform " + getPlatform());
+  throw new Error(
+    "Native wheel events not supported on platform " + getPlatform()
+  );
 }
 
 
@@ -72,7 +82,9 @@ function nativeScrollUnits(aTarget, aDimen) {
       
       var targetWindow = windowForTarget(aTarget);
       var targetElement = elementForTarget(aTarget);
-      var lineHeight = targetWindow.getComputedStyle(targetElement)["font-size"];
+      var lineHeight = targetWindow.getComputedStyle(targetElement)[
+        "font-size"
+      ];
       return aDimen / (parseInt(lineHeight) * 3);
     }
   }
@@ -81,38 +93,57 @@ function nativeScrollUnits(aTarget, aDimen) {
 
 function nativeMouseDownEventMsg() {
   switch (getPlatform()) {
-    case "windows": return 2; 
-    case "mac": return 1; 
-    case "linux": return 4; 
-    case "android": return 5; 
+    case "windows":
+      return 2; 
+    case "mac":
+      return 1; 
+    case "linux":
+      return 4; 
+    case "android":
+      return 5; 
   }
-  throw new Error("Native mouse-down events not supported on platform " + getPlatform());
+  throw new Error(
+    "Native mouse-down events not supported on platform " + getPlatform()
+  );
 }
 
 function nativeMouseMoveEventMsg() {
   switch (getPlatform()) {
-    case "windows": return 1; 
-    case "mac": return 5; 
-    case "linux": return 3; 
-    case "android": return 7; 
+    case "windows":
+      return 1; 
+    case "mac":
+      return 5; 
+    case "linux":
+      return 3; 
+    case "android":
+      return 7; 
   }
-  throw new Error("Native mouse-move events not supported on platform " + getPlatform());
+  throw new Error(
+    "Native mouse-move events not supported on platform " + getPlatform()
+  );
 }
 
 function nativeMouseUpEventMsg() {
   switch (getPlatform()) {
-    case "windows": return 4; 
-    case "mac": return 2; 
-    case "linux": return 7; 
-    case "android": return 6; 
+    case "windows":
+      return 4; 
+    case "mac":
+      return 2; 
+    case "linux":
+      return 7; 
+    case "android":
+      return 6; 
   }
-  throw new Error("Native mouse-up events not supported on platform " + getPlatform());
+  throw new Error(
+    "Native mouse-up events not supported on platform " + getPlatform()
+  );
 }
 
 function getBoundingClientRectRelativeToVisualViewport(aElement) {
   let utils = SpecialPowers.getDOMWindowUtils(window);
   var rect = aElement.getBoundingClientRect();
-  var offsetX = {}, offsetY = {};
+  var offsetX = {},
+    offsetY = {};
   
   
   
@@ -135,14 +166,19 @@ function coordinatesRelativeToScreen(aX, aY, aTarget) {
   var targetWindow = windowForTarget(aTarget);
   var deviceScale = targetWindow.devicePixelRatio;
   var resolution = getResolution();
-  var rect = (aTarget instanceof Window)
-    ? {left: 0, top: 0} 
-    : getBoundingClientRectRelativeToVisualViewport(aTarget);
+  var rect =
+    aTarget instanceof Window
+      ? { left: 0, top: 0 } 
+      : getBoundingClientRectRelativeToVisualViewport(aTarget);
   
   
   return {
-    x: (targetWindow.mozInnerScreenX + ((rect.left + aX) * resolution)) * deviceScale,
-    y: (targetWindow.mozInnerScreenY + ((rect.top + aY) * resolution)) * deviceScale,
+    x:
+      (targetWindow.mozInnerScreenX + (rect.left + aX) * resolution) *
+      deviceScale,
+    y:
+      (targetWindow.mozInnerScreenY + (rect.top + aY) * resolution) *
+      deviceScale,
   };
 }
 
@@ -155,8 +191,8 @@ function rectRelativeToScreen(aElement) {
   return {
     x: (targetWindow.mozInnerScreenX + rect.left) * scale,
     y: (targetWindow.mozInnerScreenY + rect.top) * scale,
-    w: (rect.width * scale),
-    h: (rect.height * scale),
+    w: rect.width * scale,
+    h: rect.height * scale,
   };
 }
 
@@ -169,14 +205,29 @@ function rectRelativeToScreen(aElement) {
 function synthesizeNativeWheel(aTarget, aX, aY, aDeltaX, aDeltaY, aObserver) {
   var pt = coordinatesRelativeToScreen(aX, aY, aTarget);
   if (aDeltaX && aDeltaY) {
-    throw new Error("Simultaneous wheeling of horizontal and vertical is not supported on all platforms.");
+    throw new Error(
+      "Simultaneous wheeling of horizontal and vertical is not supported on all platforms."
+    );
   }
   aDeltaX = nativeScrollUnits(aTarget, aDeltaX);
   aDeltaY = nativeScrollUnits(aTarget, aDeltaY);
-  var msg = aDeltaX ? nativeHorizontalWheelEventMsg() : nativeVerticalWheelEventMsg();
+  var msg = aDeltaX
+    ? nativeHorizontalWheelEventMsg()
+    : nativeVerticalWheelEventMsg();
   var utils = utilsForTarget(aTarget);
   var element = elementForTarget(aTarget);
-  utils.sendNativeMouseScrollEvent(pt.x, pt.y, msg, aDeltaX, aDeltaY, 0, 0, 0, element, aObserver);
+  utils.sendNativeMouseScrollEvent(
+    pt.x,
+    pt.y,
+    msg,
+    aDeltaX,
+    aDeltaY,
+    0,
+    0,
+    0,
+    element,
+    aObserver
+  );
   return true;
 }
 
@@ -184,7 +235,14 @@ function synthesizeNativeWheel(aTarget, aX, aY, aDeltaX, aDeltaY, aObserver) {
 
 
 
-function synthesizeNativeWheelAndWaitForObserver(aElement, aX, aY, aDeltaX, aDeltaY, aCallback) {
+function synthesizeNativeWheelAndWaitForObserver(
+  aElement,
+  aX,
+  aY,
+  aDeltaX,
+  aDeltaY,
+  aCallback
+) {
   var observer = {
     observe(aSubject, aTopic, aData) {
       if (aCallback && aTopic == "mousescrollevent") {
@@ -200,11 +258,22 @@ function synthesizeNativeWheelAndWaitForObserver(aElement, aX, aY, aDeltaX, aDel
 
 
 
-function synthesizeNativeWheelAndWaitForWheelEvent(aTarget, aX, aY, aDeltaX, aDeltaY, aCallback) {
+function synthesizeNativeWheelAndWaitForWheelEvent(
+  aTarget,
+  aX,
+  aY,
+  aDeltaX,
+  aDeltaY,
+  aCallback
+) {
   var targetWindow = windowForTarget(aTarget);
-  targetWindow.addEventListener("wheel", function(e) {
-    setTimeout(aCallback, 0);
-  }, {once: true});
+  targetWindow.addEventListener(
+    "wheel",
+    function(e) {
+      setTimeout(aCallback, 0);
+    },
+    { once: true }
+  );
   return synthesizeNativeWheel(aTarget, aX, aY, aDeltaX, aDeltaY);
 }
 
@@ -213,11 +282,22 @@ function synthesizeNativeWheelAndWaitForWheelEvent(aTarget, aX, aY, aDeltaX, aDe
 
 
 
-function synthesizeNativeWheelAndWaitForScrollEvent(aTarget, aX, aY, aDeltaX, aDeltaY, aCallback) {
+function synthesizeNativeWheelAndWaitForScrollEvent(
+  aTarget,
+  aX,
+  aY,
+  aDeltaX,
+  aDeltaY,
+  aCallback
+) {
   var targetWindow = windowForTarget(aTarget);
-  targetWindow.addEventListener("scroll", function() {
-    setTimeout(aCallback, 0);
-  }, {capture: true, once: true}); 
+  targetWindow.addEventListener(
+    "scroll",
+    function() {
+      setTimeout(aCallback, 0);
+    },
+    { capture: true, once: true }
+  ); 
   return synthesizeNativeWheel(aTarget, aX, aY, aDeltaX, aDeltaY);
 }
 
@@ -236,17 +316,33 @@ function synthesizeNativeMouseMove(aTarget, aX, aY) {
 
 
 
-function synthesizeNativeMouseMoveAndWaitForMoveEvent(aTarget, aX, aY, aCallback) {
+function synthesizeNativeMouseMoveAndWaitForMoveEvent(
+  aTarget,
+  aX,
+  aY,
+  aCallback
+) {
   var targetWindow = windowForTarget(aTarget);
-  targetWindow.addEventListener("mousemove", function(e) {
-    setTimeout(aCallback, 0);
-  }, {once: true});
+  targetWindow.addEventListener(
+    "mousemove",
+    function(e) {
+      setTimeout(aCallback, 0);
+    },
+    { once: true }
+  );
   return synthesizeNativeMouseMove(aTarget, aX, aY);
 }
 
 
 
-function synthesizeNativeTouch(aTarget, aX, aY, aType, aObserver = null, aTouchId = 0) {
+function synthesizeNativeTouch(
+  aTarget,
+  aX,
+  aY,
+  aType,
+  aObserver = null,
+  aTouchId = 0
+) {
   var pt = coordinatesRelativeToScreen(aX, aY, aTarget);
   var utils = utilsForTarget(aTarget);
   utils.sendNativeTouchPoint(aTouchId, aType, pt.x, pt.y, 1, 90, aObserver);
@@ -271,7 +367,12 @@ function synthesizeNativeTouch(aTarget, aX, aY, aType, aObserver = null, aTouchI
 
 
 
-function* synthesizeNativeTouchSequences(aTarget, aPositions, aObserver = null, aTouchIds = [0]) {
+function* synthesizeNativeTouchSequences(
+  aTarget,
+  aPositions,
+  aObserver = null,
+  aTouchIds = [0]
+) {
   
   
   var lastNonNullValue = -1;
@@ -284,12 +385,14 @@ function* synthesizeNativeTouchSequences(aTarget, aPositions, aObserver = null, 
     if (aPositions[i].length != aTouchIds.length) {
       throw new Error(
         `aPositions[${i}] did not have the expected number of positions; ` +
-        `expected ${aTouchIds.length} touch points but found ${aPositions[i].length}`
+          `expected ${aTouchIds.length} touch points but found ${
+            aPositions[i].length
+          }`
       );
     }
     for (let j = 0; j < aTouchIds.length; j++) {
       if (aPositions[i][j] != null) {
-        lastNonNullValue = ((i - yields) * aTouchIds.length) + j;
+        lastNonNullValue = (i - yields) * aTouchIds.length + j;
       }
     }
   }
@@ -328,13 +431,27 @@ function* synthesizeNativeTouchSequences(aTarget, aPositions, aObserver = null, 
         } else {
           
           
-          var thisIndex = ((i - yields) * aTouchIds.length) + j;
-          var observer = (lastSynthesizeCall == thisIndex) ? aObserver : null;
-          synthesizeNativeTouch(aTarget, currentPositions[j].x, currentPositions[j].y, SpecialPowers.DOMWindowUtils.TOUCH_REMOVE, observer, aTouchIds[j]);
+          var thisIndex = (i - yields) * aTouchIds.length + j;
+          var observer = lastSynthesizeCall == thisIndex ? aObserver : null;
+          synthesizeNativeTouch(
+            aTarget,
+            currentPositions[j].x,
+            currentPositions[j].y,
+            SpecialPowers.DOMWindowUtils.TOUCH_REMOVE,
+            observer,
+            aTouchIds[j]
+          );
           currentPositions[j] = null;
         }
       } else {
-        synthesizeNativeTouch(aTarget, aPositions[i][j].x, aPositions[i][j].y, SpecialPowers.DOMWindowUtils.TOUCH_CONTACT, null, aTouchIds[j]);
+        synthesizeNativeTouch(
+          aTarget,
+          aPositions[i][j].x,
+          aPositions[i][j].y,
+          SpecialPowers.DOMWindowUtils.TOUCH_CONTACT,
+          null,
+          aTouchIds[j]
+        );
         currentPositions[j] = aPositions[i][j];
       }
     }
@@ -345,7 +462,15 @@ function* synthesizeNativeTouchSequences(aTarget, aPositions, aObserver = null, 
 
 
 
-function synthesizeNativeTouchDrag(aTarget, aX, aY, aDeltaX, aDeltaY, aObserver = null, aTouchId = 0) {
+function synthesizeNativeTouchDrag(
+  aTarget,
+  aX,
+  aY,
+  aDeltaX,
+  aDeltaY,
+  aObserver = null,
+  aTouchId = 0
+) {
   var steps = Math.max(Math.abs(aDeltaX), Math.abs(aDeltaY));
   var positions = [[{ x: aX, y: aY }]];
   for (var i = 1; i < steps; i++) {
@@ -355,7 +480,12 @@ function synthesizeNativeTouchDrag(aTarget, aX, aY, aDeltaX, aDeltaY, aObserver 
     positions.push([pos]);
   }
   positions.push([{ x: aX + aDeltaX, y: aY + aDeltaY }]);
-  var continuation = synthesizeNativeTouchSequences(aTarget, positions, aObserver, [aTouchId]);
+  var continuation = synthesizeNativeTouchSequences(
+    aTarget,
+    positions,
+    aObserver,
+    [aTouchId]
+  );
   var yielded = continuation.next();
   while (!yielded.done) {
     yielded = continuation.next();
@@ -365,7 +495,9 @@ function synthesizeNativeTouchDrag(aTarget, aX, aY, aDeltaX, aDeltaY, aObserver 
 
 function synthesizeNativeTap(aElement, aX, aY, aObserver = null) {
   var pt = coordinatesRelativeToScreen(aX, aY, aElement);
-  var utils = SpecialPowers.getDOMWindowUtils(aElement.ownerDocument.defaultView);
+  var utils = SpecialPowers.getDOMWindowUtils(
+    aElement.ownerDocument.defaultView
+  );
   utils.sendNativeTouchTap(pt.x, pt.y, false, aObserver);
   return true;
 }
@@ -380,10 +512,26 @@ function synthesizeNativeMouseEvent(aTarget, aX, aY, aType, aObserver = null) {
 
 function synthesizeNativeClick(aElement, aX, aY, aObserver = null) {
   var pt = coordinatesRelativeToScreen(aX, aY, aElement);
-  var utils = SpecialPowers.getDOMWindowUtils(aElement.ownerDocument.defaultView);
-  utils.sendNativeMouseEvent(pt.x, pt.y, nativeMouseDownEventMsg(), 0, aElement, function() {
-    utils.sendNativeMouseEvent(pt.x, pt.y, nativeMouseUpEventMsg(), 0, aElement, aObserver);
-  });
+  var utils = SpecialPowers.getDOMWindowUtils(
+    aElement.ownerDocument.defaultView
+  );
+  utils.sendNativeMouseEvent(
+    pt.x,
+    pt.y,
+    nativeMouseDownEventMsg(),
+    0,
+    aElement,
+    function() {
+      utils.sendNativeMouseEvent(
+        pt.x,
+        pt.y,
+        nativeMouseUpEventMsg(),
+        0,
+        aElement,
+        aObserver
+      );
+    }
+  );
   return true;
 }
 
@@ -395,20 +543,50 @@ function synthesizeNativeClick(aElement, aX, aY, aObserver = null) {
 
 
 
-function moveMouseAndScrollWheelOver(target, dx, dy, testDriver, waitForScroll = true) {
-  return synthesizeNativeMouseMoveAndWaitForMoveEvent(target, dx, dy, function() {
-    if (waitForScroll) {
-      synthesizeNativeWheelAndWaitForScrollEvent(target, dx, dy, 0, -10, testDriver);
-    } else {
-      synthesizeNativeWheelAndWaitForWheelEvent(target, dx, dy, 0, -10, testDriver);
+function moveMouseAndScrollWheelOver(
+  target,
+  dx,
+  dy,
+  testDriver,
+  waitForScroll = true
+) {
+  return synthesizeNativeMouseMoveAndWaitForMoveEvent(
+    target,
+    dx,
+    dy,
+    function() {
+      if (waitForScroll) {
+        synthesizeNativeWheelAndWaitForScrollEvent(
+          target,
+          dx,
+          dy,
+          0,
+          -10,
+          testDriver
+        );
+      } else {
+        synthesizeNativeWheelAndWaitForWheelEvent(
+          target,
+          dx,
+          dy,
+          0,
+          -10,
+          testDriver
+        );
+      }
     }
-  });
+  );
 }
 
 
 
 
-function promiseMoveMouseAndScrollWheelOver(target, dx, dy, waitForScroll = true) {
+function promiseMoveMouseAndScrollWheelOver(
+  target,
+  dx,
+  dy,
+  waitForScroll = true
+) {
   return new Promise(resolve => {
     moveMouseAndScrollWheelOver(target, dx, dy, resolve, waitForScroll);
   });
@@ -425,9 +603,15 @@ function promiseMoveMouseAndScrollWheelOver(target, dx, dy, waitForScroll = true
 
 
 
-function* dragVerticalScrollbar(target, testDriver, distance = 20, increment = 5) {
+function* dragVerticalScrollbar(
+  target,
+  testDriver,
+  distance = 20,
+  increment = 5
+) {
   var targetElement = elementForTarget(target);
-  var w = {}, h = {};
+  var w = {},
+    h = {};
   utilsForTarget(target).getScrollbarSizes(targetElement, w, h);
   var verticalScrollbarWidth = w.value;
   if (verticalScrollbarWidth == 0) {
@@ -435,24 +619,62 @@ function* dragVerticalScrollbar(target, testDriver, distance = 20, increment = 5
   }
 
   var upArrowHeight = verticalScrollbarWidth; 
-  var mouseX = targetElement.clientWidth + (verticalScrollbarWidth / 2);
+  var mouseX = targetElement.clientWidth + verticalScrollbarWidth / 2;
   var mouseY = upArrowHeight + 5; 
 
-  dump("Starting drag at " + mouseX + ", " + mouseY + " from top-left of #" + targetElement.id + "\n");
+  dump(
+    "Starting drag at " +
+      mouseX +
+      ", " +
+      mouseY +
+      " from top-left of #" +
+      targetElement.id +
+      "\n"
+  );
 
   
-  yield synthesizeNativeMouseEvent(target, mouseX, mouseY, nativeMouseMoveEventMsg(), testDriver);
+  yield synthesizeNativeMouseEvent(
+    target,
+    mouseX,
+    mouseY,
+    nativeMouseMoveEventMsg(),
+    testDriver
+  );
   
-  yield synthesizeNativeMouseEvent(target, mouseX, mouseY, nativeMouseDownEventMsg(), testDriver);
+  yield synthesizeNativeMouseEvent(
+    target,
+    mouseX,
+    mouseY,
+    nativeMouseDownEventMsg(),
+    testDriver
+  );
   
   for (var y = increment; y < distance; y += increment) {
-    yield synthesizeNativeMouseEvent(target, mouseX, mouseY + y, nativeMouseMoveEventMsg(), testDriver);
+    yield synthesizeNativeMouseEvent(
+      target,
+      mouseX,
+      mouseY + y,
+      nativeMouseMoveEventMsg(),
+      testDriver
+    );
   }
-  yield synthesizeNativeMouseEvent(target, mouseX, mouseY + distance, nativeMouseMoveEventMsg(), testDriver);
+  yield synthesizeNativeMouseEvent(
+    target,
+    mouseX,
+    mouseY + distance,
+    nativeMouseMoveEventMsg(),
+    testDriver
+  );
 
   
-  return function* () {
+  return function*() {
     dump("Finishing drag of #" + targetElement.id + "\n");
-    yield synthesizeNativeMouseEvent(target, mouseX, mouseY + distance, nativeMouseUpEventMsg(), testDriver);
+    yield synthesizeNativeMouseEvent(
+      target,
+      mouseX,
+      mouseY + distance,
+      nativeMouseUpEventMsg(),
+      testDriver
+    );
   };
 }
