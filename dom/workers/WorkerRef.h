@@ -81,6 +81,23 @@ namespace dom {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class WorkerPrivate;
 class StrongWorkerRef;
 class ThreadSafeWorkerRef;
@@ -172,6 +189,37 @@ class ThreadSafeWorkerRef final {
   ~ThreadSafeWorkerRef();
 
   RefPtr<StrongWorkerRef> mRef;
+};
+
+class IPCWorkerRef final : public WorkerRef {
+ public:
+  static already_AddRefed<IPCWorkerRef> Create(
+      WorkerPrivate* aWorkerPrivate, const char* aName,
+      std::function<void()>&& aCallback = nullptr);
+
+  WorkerPrivate* Private() const;
+
+ private:
+  explicit IPCWorkerRef(WorkerPrivate* aWorkerPrivate);
+  ~IPCWorkerRef();
+};
+
+
+
+template <class ActorPtr>
+class IPCWorkerRefHelper final {
+ public:
+  NS_INLINE_DECL_REFCOUNTING(IPCWorkerRefHelper);
+
+  explicit IPCWorkerRefHelper(ActorPtr* aActor) : mActor(aActor) {}
+
+  ActorPtr* Actor() const { return mActor; }
+
+ private:
+  ~IPCWorkerRefHelper() = default;
+
+  
+  ActorPtr* mActor;
 };
 
 }  
