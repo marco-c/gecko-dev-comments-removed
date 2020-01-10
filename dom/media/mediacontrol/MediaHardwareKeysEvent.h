@@ -19,15 +19,15 @@ enum class MediaControlKeysEvent { ePlayPause, ePrev, eNext, eNone };
 
 
 
-class MediaHardwareKeysEventListener {
+class MediaControlKeysEventListener {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaHardwareKeysEventListener);
-  MediaHardwareKeysEventListener() = default;
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaControlKeysEventListener);
+  MediaControlKeysEventListener() = default;
 
   virtual void OnKeyPressed(MediaControlKeysEvent aKeyEvent);
 
  protected:
-  virtual ~MediaHardwareKeysEventListener() = default;
+  virtual ~MediaControlKeysEventListener() = default;
 };
 
 
@@ -35,20 +35,19 @@ class MediaHardwareKeysEventListener {
 
 
 
-
-class MediaHardwareKeysEventSource {
+class MediaControlKeysEventSource {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaHardwareKeysEventSource);
-  MediaHardwareKeysEventSource() = default;
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaControlKeysEventSource);
+  MediaControlKeysEventSource() = default;
 
-  virtual void AddListener(MediaHardwareKeysEventListener* aListener);
-  virtual void RemoveListener(MediaHardwareKeysEventListener* aListener);
+  virtual void AddListener(MediaControlKeysEventListener* aListener);
+  virtual void RemoveListener(MediaControlKeysEventListener* aListener);
   size_t GetListenersNum() const;
   void Close();
 
  protected:
-  virtual ~MediaHardwareKeysEventSource() = default;
-  nsTArray<RefPtr<MediaHardwareKeysEventListener>> mListeners;
+  virtual ~MediaControlKeysEventSource() = default;
+  nsTArray<RefPtr<MediaControlKeysEventListener>> mListeners;
 };
 
 }  

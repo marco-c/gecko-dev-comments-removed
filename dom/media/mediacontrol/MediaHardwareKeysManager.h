@@ -15,17 +15,17 @@ namespace dom {
 
 
 
-class MediaHardwareKeysManager final {
+class MediaControlKeysManager final {
  public:
-  MediaHardwareKeysManager();
-  ~MediaHardwareKeysManager();
+  MediaControlKeysManager();
+  ~MediaControlKeysManager();
 
-  void StartMonitoringHardwareKeys();
-  void StopMonitoringHardwareKeys();
+  void StartMonitoringControlKeys();
+  void StopMonitoringControlKeys();
 
  private:
   void CreateEventSource();
-  RefPtr<MediaHardwareKeysEventSource> mEventSource;
+  RefPtr<MediaControlKeysEventSource> mEventSource;
 };
 
 }  
