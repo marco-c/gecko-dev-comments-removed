@@ -882,12 +882,6 @@ class XPCWrappedNativeScope final
   
   
   
-  
-  JSObject* EnsureContentXBLScope(JSContext* cx);
-
-  
-  
-  
   bool XBLScopeStateMatches(nsIPrincipal* aPrincipal);
 
   XPCWrappedNativeScope(JS::Compartment* aCompartment,

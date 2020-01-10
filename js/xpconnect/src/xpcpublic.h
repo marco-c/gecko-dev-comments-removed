@@ -99,29 +99,9 @@ bool MightBeWebContentCompartment(JS::Compartment* compartment);
 
 void SetCompartmentChangedDocumentDomain(JS::Compartment* compartment);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-JSObject* GetXBLScope(JSContext* cx, JSObject* contentScope);
-
 JSObject* GetUAWidgetScope(JSContext* cx, nsIPrincipal* principal);
 
 JSObject* GetUAWidgetScope(JSContext* cx, JSObject* contentScope);
-
-inline JSObject* GetXBLScopeOrGlobal(JSContext* cx, JSObject* obj) {
-  MOZ_ASSERT(!js::IsCrossCompartmentWrapper(obj));
-  return GetXBLScope(cx, obj);
-}
 
 
 
