@@ -1085,8 +1085,6 @@ pref("dom.storage.client_validation", true);
 pref("dom.send_after_paint_to_content", false);
 
 
-pref("dom.min_background_timeout_value", 1000);
-
 
 pref("dom.min_tracking_timeout_value", 4);
 
