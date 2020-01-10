@@ -44,7 +44,7 @@ pub struct TopLevelRuleParser<'a> {
     
     pub shared_lock: &'a SharedRwLock,
     
-    pub loader: Option<&'a StylesheetLoader>,
+    pub loader: Option<&'a dyn StylesheetLoader>,
     
     
     

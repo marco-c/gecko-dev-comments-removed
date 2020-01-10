@@ -27,7 +27,7 @@ pub mod CssType {
 }
 
 
-pub type KeywordsCollectFn<'a> = &'a mut FnMut(&[&'static str]);
+pub type KeywordsCollectFn<'a> = &'a mut dyn FnMut(&[&'static str]);
 
 
 

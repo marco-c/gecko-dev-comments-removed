@@ -185,7 +185,7 @@ pub unsafe extern "C" fn sdp_add_media_section(session: *mut SdpSession,
     match addr_type {
       
       
-      1...2 => (),
+      1 | 2 => (),
       _ => {
           return NS_ERROR_INVALID_ARG;
       }

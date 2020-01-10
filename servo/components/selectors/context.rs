@@ -134,7 +134,7 @@ where
 
     
     
-    pub pseudo_element_matching_fn: Option<&'a Fn(&Impl::PseudoElement) -> bool>,
+    pub pseudo_element_matching_fn: Option<&'a dyn Fn(&Impl::PseudoElement) -> bool>,
 
     
     pub extra_data: Impl::ExtraMatchingData,

@@ -51,7 +51,7 @@ pub struct ParserContext<'a> {
     
     pub quirks_mode: QuirksMode,
     
-    error_reporter: Option<&'a ParseErrorReporter>,
+    error_reporter: Option<&'a dyn ParseErrorReporter>,
     
     pub namespaces: Option<&'a Namespaces>,
     
@@ -67,7 +67,7 @@ impl<'a> ParserContext<'a> {
         rule_type: Option<CssRuleType>,
         parsing_mode: ParsingMode,
         quirks_mode: QuirksMode,
-        error_reporter: Option<&'a ParseErrorReporter>,
+        error_reporter: Option<&'a dyn ParseErrorReporter>,
         use_counters: Option<&'a UseCounters>,
     ) -> Self {
         Self {
@@ -89,7 +89,7 @@ impl<'a> ParserContext<'a> {
         rule_type: Option<CssRuleType>,
         parsing_mode: ParsingMode,
         quirks_mode: QuirksMode,
-        error_reporter: Option<&'a ParseErrorReporter>,
+        error_reporter: Option<&'a dyn ParseErrorReporter>,
         use_counters: Option<&'a UseCounters>,
     ) -> Self {
         Self::new(
