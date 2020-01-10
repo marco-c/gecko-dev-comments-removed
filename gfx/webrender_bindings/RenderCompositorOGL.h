@@ -11,6 +11,11 @@
 
 namespace mozilla {
 
+namespace layers {
+class NativeLayerRoot;
+class NativeLayer;
+}  
+
 namespace wr {
 
 class RenderCompositorOGL : public RenderCompositor {
@@ -22,7 +27,7 @@ class RenderCompositorOGL : public RenderCompositor {
                       RefPtr<widget::CompositorWidget>&& aWidget);
   virtual ~RenderCompositorOGL();
 
-  bool BeginFrame(layers::NativeLayer* aNativeLayer) override;
+  bool BeginFrame() override;
   void EndFrame() override;
   bool WaitForGPU() override;
   void Pause() override;
@@ -40,9 +45,8 @@ class RenderCompositorOGL : public RenderCompositor {
   RefPtr<gl::GLContext> mGL;
 
   
-  
-  
-  RefPtr<layers::NativeLayer> mCurrentNativeLayer;
+  RefPtr<layers::NativeLayerRoot> mNativeLayerRoot;
+  RefPtr<layers::NativeLayer> mNativeLayerForEntireWindow;
 
   
   GLsync mPreviousFrameDoneSync;
