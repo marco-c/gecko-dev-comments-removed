@@ -125,7 +125,7 @@ void CompositorBridgeChild::AfterDestroy() {
 
 void CompositorBridgeChild::Destroy() {
   
-  mTexturesWaitingRecycled.clear();
+  mTexturesWaitingNotifyNotUsed.clear();
 
   
   
@@ -834,23 +834,23 @@ void CompositorBridgeChild::HoldUntilCompositableRefReleasedIfNecessary(
   }
 
   aClient->SetLastFwdTransactionId(GetFwdTransactionId());
-  mTexturesWaitingRecycled.emplace(aClient->GetSerial(), aClient);
+  mTexturesWaitingNotifyNotUsed.emplace(aClient->GetSerial(), aClient);
 }
 
 void CompositorBridgeChild::NotifyNotUsed(uint64_t aTextureId,
                                           uint64_t aFwdTransactionId) {
-  auto it = mTexturesWaitingRecycled.find(aTextureId);
-  if (it != mTexturesWaitingRecycled.end()) {
+  auto it = mTexturesWaitingNotifyNotUsed.find(aTextureId);
+  if (it != mTexturesWaitingNotifyNotUsed.end()) {
     if (aFwdTransactionId < it->second->GetLastFwdTransactionId()) {
       
       return;
     }
-    mTexturesWaitingRecycled.erase(it);
+    mTexturesWaitingNotifyNotUsed.erase(it);
   }
 }
 
-void CompositorBridgeChild::CancelWaitForRecycle(uint64_t aTextureId) {
-  mTexturesWaitingRecycled.erase(aTextureId);
+void CompositorBridgeChild::CancelWaitForNotifyNotUsed(uint64_t aTextureId) {
+  mTexturesWaitingNotifyNotUsed.erase(aTextureId);
 }
 
 TextureClientPool* CompositorBridgeChild::GetTexturePool(
