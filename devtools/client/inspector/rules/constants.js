@@ -8,6 +8,3 @@
 
 
 exports.ELEMENT_STYLE = 100;
-
-
-exports.PSEUDO_CLASSES = [":active", ":focus", ":focus-within", ":hover"];

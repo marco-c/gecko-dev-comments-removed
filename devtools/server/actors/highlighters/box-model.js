@@ -14,6 +14,7 @@ const {
   isNodeValid,
   moveInfobar,
 } = require("./utils/markup");
+const { PSEUDO_CLASSES } = require("devtools/shared/css/constants");
 const {
   getCurrentZoom,
   setIgnoreLayoutChanges,
@@ -27,8 +28,6 @@ const BOX_MODEL_REGIONS = ["margin", "border", "padding", "content"];
 const BOX_MODEL_SIDES = ["top", "right", "bottom", "left"];
 
 const GUIDE_STROKE_WIDTH = 1;
-
-const PSEUDO_CLASSES = [":hover", ":active", ":focus", ":focus-within"];
 
 
 
