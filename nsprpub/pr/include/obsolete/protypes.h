@@ -31,14 +31,6 @@ typedef PRIntn intn;
 
 
 
-#ifdef XP_BEOS
-#include <support/SupportDefs.h>
-#endif
-
-
-
-
-
 
 
 
@@ -56,7 +48,7 @@ typedef PRIntn intn;
 
 
 
-#if !defined(XP_BEOS) && !defined(XP_OS2) && !defined(XP_UNIX) || defined(NTO)
+#if !defined(XP_OS2) && !defined(XP_UNIX) || defined(NTO)
 typedef PRUintn uint;
 #endif
 
@@ -64,43 +56,35 @@ typedef PRUintn uint;
 
 
 
-#if !defined(XP_BEOS)
 typedef PRUint64 uint64;
-#endif
 
 
 
 
 
-#if !defined(XP_BEOS)
 #if !defined(_WIN32) && !defined(XP_OS2) && !defined(NTO)
 typedef PRUint32 uint32;
 #else
 typedef unsigned long uint32;
 #endif
-#endif
 
 
 
 
 
-#if !defined(XP_BEOS)
 typedef PRUint16 uint16;
-#endif
 
 
 
 
 
-#if !defined(XP_BEOS)
 typedef PRUint8 uint8;
-#endif
 
 
 
 
 
-#if !defined(XP_BEOS) && !defined(_PR_AIX_HAVE_BSD_INT_TYPES)
+#if !defined(_PR_AIX_HAVE_BSD_INT_TYPES)
 typedef PRInt64 int64;
 #endif
 
@@ -108,7 +92,7 @@ typedef PRInt64 int64;
 
 
 
-#if !defined(XP_BEOS) && !defined(_PR_AIX_HAVE_BSD_INT_TYPES) \
+#if !defined(_PR_AIX_HAVE_BSD_INT_TYPES) \
     && !defined(HPUX)
 #if !defined(_WIN32) && !defined(XP_OS2) && !defined(NTO)
 typedef PRInt32 int32;
@@ -121,7 +105,7 @@ typedef long int32;
 
 
 
-#if !defined(XP_BEOS) && !defined(_PR_AIX_HAVE_BSD_INT_TYPES) \
+#if !defined(_PR_AIX_HAVE_BSD_INT_TYPES) \
     && !defined(HPUX)
 typedef PRInt16 int16;
 #endif
@@ -130,7 +114,7 @@ typedef PRInt16 int16;
 
 
 
-#if !defined(XP_BEOS) && !defined(_PR_AIX_HAVE_BSD_INT_TYPES) \
+#if !defined(_PR_AIX_HAVE_BSD_INT_TYPES) \
     && !defined(HPUX)
 typedef PRInt8 int8;
 #endif

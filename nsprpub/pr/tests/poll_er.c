@@ -20,15 +20,6 @@
 
 
 
-#ifdef XP_BEOS
-#include <stdio.h>
-int main()
-{
-    printf( "This test is not ported to the BeOS\n" );
-    return 0;
-}
-#else
-
 
 
 
@@ -207,4 +198,3 @@ exit_now:
 		return 0;
 }
 
-#endif 

@@ -283,26 +283,6 @@ NSPR_API(PRMonitor*) PR_CTestAndEnterMonitor(void *address);
 
 
 
-#if defined(IRIX)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-NSPR_API(void) _PR_Irix_Set_Arena_Params(PRInt32 initusers, PRInt32 initsize);
-
-#endif 
-
 #if defined(XP_OS2)
 
 

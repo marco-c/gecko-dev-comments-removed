@@ -231,12 +231,7 @@ extern PRStatus _MD_DeleteSharedMemory( const char *name )
             ("_MD_DeleteSharedMemory(): ftok() failed on name: %s", ipcname));
     }
 
-#ifdef SYMBIAN
-    
-    id = shmget( key, 1, 0 );
-#else
     id = shmget( key, 0, 0 );
-#endif
     if ( -1 == id ) {
         _PR_MD_MAP_DEFAULT_ERROR( errno );
         PR_LOG( _pr_shm_lm, PR_LOG_DEBUG, 
@@ -488,11 +483,7 @@ extern PRFileMap* _md_OpenAnonFileMap(
 
 
     for ( incr = 0; incr < maxTries ; incr++ ) {
-#if defined(SYMBIAN)
-#define NSPR_AFM_FILENAME "%s\\NSPR-AFM-%d-%p.%d"
-#else
 #define NSPR_AFM_FILENAME "%s/.NSPR-AFM-%d-%p.%d"
-#endif
         genName = PR_smprintf( NSPR_AFM_FILENAME,
             dirName, (int) pid, tid, incr );
         if ( NULL == genName ) {
@@ -529,13 +520,7 @@ extern PRFileMap* _md_OpenAnonFileMap(
     }
 
     urc = unlink( genName );
-#if defined(SYMBIAN) && defined(__WINS__)
-    
-
-    if ( -1 == urc && EACCES != errno ) {
-#else
     if ( -1 == urc ) {
-#endif
         _PR_MD_MAP_UNLINK_ERROR( errno );
         PR_LOG( _pr_shma_lm, PR_LOG_DEBUG,
             ("_md_OpenAnonFileMap(): failed on unlink(), errno: %d", errno));

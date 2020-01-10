@@ -7,10 +7,6 @@
 
 #include <string.h>
 
-#ifdef XP_BEOS
-#include <image.h>
-#endif
-
 #if defined(XP_MACOSX) && defined(USE_MACH_DYLD)
 #include <Carbon/Carbon.h>
 #include <CoreFoundation/CoreFoundation.h>
@@ -37,10 +33,6 @@
 #ifndef L_IGNOREUNLOAD 
 #define L_IGNOREUNLOAD 0x10000000
 #endif
-#endif
-#ifdef OSF1
-#include <loader.h>
-#include <rld_interface.h>
 #endif
 #elif defined(USE_HPSHL)
 #include <dl.h>
@@ -96,10 +88,6 @@ struct PRLibrary {
 #endif 
 #endif 
 
-#ifdef XP_BEOS
-    void*                       dlh;
-    void*                       stub_dlh;
-#endif
 };
 
 static PRLibrary *pr_loadmap;
@@ -276,23 +264,16 @@ PR_GetLibraryPath(void)
     ev = strdup(ev);
 #endif
 
-#if defined(XP_UNIX) || defined(XP_BEOS)
-#if defined(USE_DLFCN) || defined(USE_MACH_DYLD) || defined(XP_BEOS)
+#if defined(XP_UNIX)
+#if defined(USE_DLFCN) || defined(USE_MACH_DYLD)
     {
     char *p=NULL;
     int len;
 
-#ifdef XP_BEOS
-    ev = getenv("LIBRARY_PATH");
-    if (!ev) {
-        ev = "%A/lib:/boot/home/config/lib:/boot/beos/system/lib";
-    }
-#else
     ev = getenv("LD_LIBRARY_PATH");
     if (!ev) {
         ev = "/usr/lib:/lib";
     }
-#endif
     len = strlen(ev) + 1;        
 
     p = (char*) malloc(len);
@@ -349,7 +330,7 @@ PR_GetLibraryName(const char *path, const char *lib)
         }
     }
 #endif 
-#if defined(XP_UNIX) || defined(XP_BEOS)
+#if defined(XP_UNIX)
     if (strstr(lib, PR_DLL_SUFFIX) == NULL)
     {
         if (path) {
@@ -842,96 +823,6 @@ pr_LoadLibraryByPathname(const char *name, PRIntn flags)
 
     lm->refCount = 1;
 
-#ifdef XP_BEOS
-    {
-        image_info info;
-        int32 cookie = 0;
-        image_id imageid = B_ERROR;
-        image_id stubid = B_ERROR;
-        PRLibrary *p;
-
-        for (p = pr_loadmap; p != NULL; p = p->next) {
-            
-
-            if (strcmp(name, p->name) == 0) {
-                
-                imageid = info.id;
-                lm->refCount++;
-                break;
-            }
-        }
-
-        if(imageid == B_ERROR) {
-            
-            char stubName [B_PATH_NAME_LENGTH + 1];
-
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            strcpy(stubName, name);
-            strcat(stubName, ".stub");
-
-            
-
-            if ((stubid = load_add_on(stubName)) > B_ERROR) {
-                
-                imageid = B_FILE_NOT_FOUND;
-
-                cookie = 0;
-                while (get_next_image_info(0, &cookie, &info) == B_OK) {
-                    const char *endOfSystemName = strrchr(info.name, '/');
-                    const char *endOfPassedName = strrchr(name, '/');
-                    if( 0 == endOfSystemName ) 
-                        endOfSystemName = info.name;
-                    else
-                        endOfSystemName++;
-                    if( 0 == endOfPassedName )
-                        endOfPassedName = name;
-                    else
-                        endOfPassedName++;
-                    if (strcmp(endOfSystemName, endOfPassedName) == 0) {
-                        
-                        imageid = info.id;
-                        break;
-                    }
-                }
-
-            } else {
-                
-
-                stubid = B_ERROR;
-                imageid = load_add_on(name);
-            }
-        }
-
-        if (imageid <= B_ERROR) {
-            oserr = imageid;
-            PR_DELETE( lm );
-            goto unlock;
-        }
-        lm->name = strdup(name);
-        lm->dlh = (void*)imageid;
-        lm->stub_dlh = (void*)stubid;
-        lm->next = pr_loadmap;
-        pr_loadmap = lm;
-    }
-#endif
-
     result = lm;    
     PR_LOG(_pr_linker_lm, PR_LOG_MIN, ("Loaded library %s (load lib)", lm->name));
 
@@ -978,13 +869,6 @@ PR_UnloadLibrary(PRLibrary *lib)
         lib->name, lib->refCount));
     goto done;
     }
-
-#ifdef XP_BEOS
-    if(((image_id)lib->stub_dlh) == B_ERROR)
-        unload_add_on( (image_id) lib->dlh );
-    else
-        unload_add_on( (image_id) lib->stub_dlh);
-#endif
 
 #ifdef XP_UNIX
 #ifdef HAVE_DLL
@@ -1082,7 +966,7 @@ pr_FindSymbolInLib(PRLibrary *lm, const char *name)
 
 
 
-#if !defined(WIN16) && !defined(XP_BEOS)
+#if !defined(WIN16)
         PR_SetError(PR_FIND_SYMBOL_ERROR, 0);
         return (void*)NULL;
 #endif
@@ -1148,12 +1032,6 @@ pr_FindSymbolInLib(PRLibrary *lm, const char *name)
     }
 #undef SYM_OFFSET
 #endif 
-
-#ifdef XP_BEOS
-    if( B_NO_ERROR != get_image_symbol( (image_id)lm->dlh, name, B_SYMBOL_TYPE_TEXT, &f ) ) {
-        f = NULL;
-    }
-#endif
 
 #ifdef XP_UNIX
 #ifdef HAVE_DLL
@@ -1425,74 +1303,6 @@ PR_GetLibraryFilePathname(const char *name, PRFuncPtr addr)
     }
     PR_Free(info);
     return result;
-#elif defined(OSF1)
-    
-    ldr_process_t process, ldr_my_process();
-    ldr_module_t mod_id;
-    ldr_module_info_t info;
-    ldr_region_t regno;
-    ldr_region_info_t reginfo;
-    size_t retsize;
-    int rv;
-    char *result;
-
-    
-
-    process = ldr_my_process();
-
-    
-
-    rv = ldr_xattach(process);
-    if (rv) {
-        
-        _PR_MD_MAP_DEFAULT_ERROR(_MD_ERRNO());
-        return NULL;
-    }
-
-    
-
-    mod_id = LDR_NULL_MODULE;
-
-    for (;;) {
-
-        
-
-        ldr_next_module(process, &mod_id);
-        if (ldr_inq_module(process, mod_id, &info, sizeof(info),
-                           &retsize) != 0) {
-            
-            break;
-        }
-        if (retsize < sizeof(info)) {
-            continue;
-        }
-
-        
-
-
-
-
-        for (regno = 0; ; regno++) {
-            if (ldr_inq_region(process, mod_id, regno, &reginfo,
-                               sizeof(reginfo), &retsize) != 0) {
-                
-                break;
-            }
-            if (((unsigned long)reginfo.lri_mapaddr <=
-                (unsigned long)addr) &&
-                (((unsigned long)reginfo.lri_mapaddr + reginfo.lri_size) >
-                (unsigned long)addr)) {
-                
-                result = PR_Malloc(strlen(info.lmi_name)+1);
-                if (result != NULL) {
-                    strcpy(result, info.lmi_name);
-                }
-                return result;
-            }
-        }
-    }
-    PR_SetError(PR_LIBRARY_NOT_LOADED_ERROR, 0);
-    return NULL;
 #elif defined(HPUX) && defined(USE_HPSHL)
     int index;
     struct shl_descriptor desc;

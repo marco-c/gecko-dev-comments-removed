@@ -145,21 +145,13 @@ typedef struct PRIPv6Addr PRIPv6Addr;
 union PRNetAddr {
     struct {
         PRUint16 family;                
-#ifdef XP_BEOS
-        char data[10];                  
-#else
         char data[14];                  
-#endif
     } raw;
     struct {
         PRUint16 family;                
         PRUint16 port;                  
         PRUint32 ip;                    
-#ifdef XP_BEOS
-        char pad[4];                    
-#else
         char pad[8];
-#endif
     } inet;
     struct {
         PRUint16 family;                

@@ -15,9 +15,6 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#ifdef SYMBIAN
-#include <getopt.h>
-#endif
 
 #define PORT_BASE 19000
 
@@ -33,19 +30,8 @@ typedef struct timer_slot_t {
 static long _iterations = 5;
 static long _client_data = 8192;
 
-#ifdef SYMBIAN
-
-
-
-
-
-
-static long _server_data = (8*1024);
-static long _threads_max = 10, _threads = 10;
-#else
 static long _server_data = (128*1024);
 static long _threads_max = 10, _threads = 10;
-#endif
 
 static int verbose=0;
 static PRMonitor *exit_cv;

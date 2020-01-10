@@ -32,7 +32,7 @@
 #ifndef prinet_h__
 #define prinet_h__
 
-#if defined(XP_UNIX) || defined(XP_OS2) || defined(XP_BEOS)
+#if defined(XP_UNIX) || defined(XP_OS2)
 #include <sys/types.h>
 #include <sys/socket.h>		
 #include <netinet/in.h>         
@@ -70,7 +70,7 @@ struct sockaddr_dl;
 
 
 
-#if defined(BSDI) || defined(OSF1)
+#if defined(BSDI)
 #include <machine/endian.h>
 #endif
 

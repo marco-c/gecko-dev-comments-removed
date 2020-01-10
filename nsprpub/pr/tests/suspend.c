@@ -3,15 +3,6 @@
 
 
 
-#ifdef XP_BEOS
-#include <stdio.h>
-int main()
-{
-    printf( "This test is not ported to the BeOS\n" );
-    return 0;
-}
-#else
-
 #include "nspr.h"
 #include "prpriv.h"
 #include "prinrval.h"
@@ -184,4 +175,3 @@ int main(int argc, char **argv)
     return 0;
 }
 
-#endif 

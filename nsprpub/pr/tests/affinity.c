@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef XP_BEOS
 
 
 
@@ -81,12 +80,3 @@ int main(int argc, char **argv)
 
     return 0;
 }
-
-#else 
-
-int main()
-{
-	printf( "This test is not supported on the BeOS\n" );
-	return 0;
-}
-#endif 

@@ -37,7 +37,6 @@ extern int h_errno;
 
 
 
-
 #if defined(_PR_NO_PREEMPT) || defined(_PR_HAVE_GETHOST_R) \
     || defined(_PR_HAVE_THREADSAFE_GETHOST)
 #define _PR_NO_DNS_LOCK
@@ -58,12 +57,6 @@ PRLock *_pr_dnsLock = NULL;
 
 
 
-#if defined(XP_BEOS) && defined(BONE_VERSION)
-#include <arpa/inet.h>  
-#include <sys/socket.h>
-#define _PR_HAVE_GETPROTO_R
-#define _PR_HAVE_GETPROTO_R_POINTER
-#endif
 
 #if defined(SOLARIS) || (defined(BSDI) && defined(_REENTRANT)) \
 	|| (defined(LINUX) && defined(_REENTRANT) \
@@ -72,8 +65,7 @@ PRLock *_pr_dnsLock = NULL;
 #define _PR_HAVE_GETPROTO_R_POINTER
 #endif
 
-#if defined(OSF1) \
-        || defined(AIX4_3_PLUS) || (defined(AIX) && defined(_THREAD_SAFE)) \
+#if defined(AIX4_3_PLUS) || (defined(AIX) && defined(_THREAD_SAFE)) \
 	|| (defined(HPUX10_10) && defined(_REENTRANT)) \
         || (defined(HPUX10_20) && defined(_REENTRANT)) \
         || defined(OPENBSD)
@@ -87,7 +79,7 @@ PRLock *_pr_dnsLock = NULL;
 #endif
 
 
-#if (defined(__GLIBC__) && __GLIBC__ >= 2 && !defined(XP_BEOS))
+#if (defined(__GLIBC__) && __GLIBC__ >= 2)
 #define _PR_HAVE_GETPROTO_R
 #define _PR_HAVE_5_ARG_GETPROTO_R
 #endif
@@ -567,25 +559,6 @@ static PRStatus CopyHostent(
 	to->h_addr_list[na] = 0;
 	return PR_SUCCESS;
 }
-
-#ifdef SYMBIAN
-
-static void AssignAliases(struct protoent *Protoent, char** aliases)
-{
-    if (NULL == Protoent->p_aliases) {
-        if (0 == strcmp(Protoent->p_name, "ip"))
-            aliases[0] = "IP";
-        else if (0 == strcmp(Protoent->p_name, "tcp"))
-            aliases[0] = "TCP";
-        else if (0 == strcmp(Protoent->p_name, "udp"))
-            aliases[0] = "UDP";
-        else
-            aliases[0] = "UNKNOWN";
-        aliases[1] = NULL;
-        Protoent->p_aliases = aliases;
-    }
-}
-#endif
 
 #if !defined(_PR_HAVE_GETPROTO_R)
 
@@ -1249,10 +1222,6 @@ PR_IMPLEMENT(PRStatus) PR_GetProtoByName(
         }
 		else
 		{
-#if defined(SYMBIAN)
-			char* aliases[2];
-			AssignAliases(staticBuf, aliases);
-#endif
 			rv = CopyProtoent(staticBuf, buffer, buflen, result);
 			if (PR_FAILURE == rv)
 			    PR_SetError(PR_INSUFFICIENT_RESOURCES_ERROR, 0);
@@ -1333,10 +1302,6 @@ PR_IMPLEMENT(PRStatus) PR_GetProtoByNumber(
         }
 		else
 		{
-#if defined(SYMBIAN)
-			char* aliases[2];
-			AssignAliases(staticBuf, aliases);
-#endif
 			rv = CopyProtoent(staticBuf, buffer, buflen, result);
 			if (PR_FAILURE == rv)
 			    PR_SetError(PR_INSUFFICIENT_RESOURCES_ERROR, 0);

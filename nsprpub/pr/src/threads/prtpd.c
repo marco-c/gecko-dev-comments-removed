@@ -32,7 +32,6 @@
 
 
 
-#ifndef XP_BEOS
 
 #include "primpl.h"
 
@@ -249,4 +248,3 @@ void _PR_DestroyThreadPrivate(PRThread* self)
     }
 }  
 
-#endif 
