@@ -6,41 +6,6 @@ var EXPORTED_SYMBOLS = ["PrivateBrowsingUtils"];
 
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-function PrivateBrowsingContentBlockingAllowList() {
-  Services.obs.addObserver(this, "last-pb-context-exited", true);
-}
-
-PrivateBrowsingContentBlockingAllowList.prototype = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver, Ci.nsISupportsWeakReference]),
-
-  
-
-
-
-
-
-  addToAllowList(uri) {
-    Services.perms.add(uri, "trackingprotection-pb", Ci.nsIPermissionManager.ALLOW_ACTION,
-                       Ci.nsIPermissionManager.EXPIRE_SESSION);
-  },
-
-  
-
-
-
-
-
-  removeFromAllowList(uri) {
-    Services.perms.remove(uri, "trackingprotection-pb");
-  },
-
-  observe(subject, topic, data) {
-    if (topic == "last-pb-context-exited") {
-      Services.perms.removeByType("trackingprotection-pb");
-    }
-  },
-};
-
 const kAutoStartPref = "browser.privatebrowsing.autostart";
 
 
@@ -84,19 +49,6 @@ var PrivateBrowsingUtils = {
 
   privacyContextFromWindow: function pbu_privacyContextFromWindow(aWindow) {
     return aWindow.docShell.QueryInterface(Ci.nsILoadContext);
-  },
-
-  get _pbCBAllowList() {
-    delete this._pbCBAllowList;
-    return this._pbCBAllowList = new PrivateBrowsingContentBlockingAllowList();
-  },
-
-  addToTrackingAllowlist(aURI) {
-    this._pbCBAllowList.addToAllowList(aURI);
-  },
-
-  removeFromTrackingAllowlist(aURI) {
-    this._pbCBAllowList.removeFromAllowList(aURI);
   },
 
   get permanentPrivateBrowsing() {
