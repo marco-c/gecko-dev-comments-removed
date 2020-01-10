@@ -37,7 +37,7 @@ class AudioChannelAgent : public nsIAudioChannelAgent {
   
   void PullInitialUpdate();
 
-  void WindowVolumeChanged();
+  void WindowVolumeChanged(float aVolume, bool aMuted);
   void WindowSuspendChanged(nsSuspendedTypes aSuspend);
   void WindowAudioCaptureChanged(uint64_t aInnerWindowID, bool aCapture);
 
