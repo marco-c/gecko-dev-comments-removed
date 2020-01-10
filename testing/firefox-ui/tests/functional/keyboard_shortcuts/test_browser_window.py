@@ -50,7 +50,6 @@ class TestBrowserWindowShortcuts(PuppeteerMixin, MarionetteTestCase):
 
         
         
-        
         def has_input_selected(mn):
             selection_name = mn.execute_script("""
                 return window.document.activeElement.localName;
