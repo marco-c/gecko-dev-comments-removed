@@ -1,0 +1,32 @@
+1; 
+
+
+
+
+var EXPORTED_SYMBOLS = ["RFPHelperParent"];
+
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+const kPrefLetterboxing = "privacy.resistFingerprinting.letterboxing";
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "isLetterboxingEnabled",
+  kPrefLetterboxing,
+  false
+);
+
+class RFPHelperParent extends JSWindowActorParent {
+  receiveMessage(aMessage) {
+    if (
+      isLetterboxingEnabled &&
+      aMessage.name == "Letterboxing:ContentSizeUpdated"
+    ) {
+      let browser = this.browsingContext.top.embedderElement;
+      let window = browser.ownerGlobal;
+      window.RFPHelper.contentSizeUpdated(window);
+    }
+  }
+}
