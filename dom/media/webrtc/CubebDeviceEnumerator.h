@@ -8,14 +8,14 @@
 #include "AudioDeviceInfo.h"
 #include "CubebUtils.h"
 #include "cubeb/cubeb.h"
-#include "mozilla/media/DeviceChangeCallback.h"
+#include "MediaEventSource.h"
 #include "mozilla/Mutex.h"
 #include "nsTArray.h"
 
 namespace mozilla {
 
 
-class CubebDeviceEnumerator final : public DeviceChangeNotifier {
+class CubebDeviceEnumerator final {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CubebDeviceEnumerator)
 
@@ -44,6 +44,15 @@ class CubebDeviceEnumerator final : public DeviceChangeNotifier {
   };
   already_AddRefed<AudioDeviceInfo> DeviceInfoFromName(const nsString& aName,
                                                        Side aSide);
+  
+  MediaEventSource<void>& OnAudioInputDeviceListChange() {
+    return mOnInputDeviceListChange;
+  }
+
+  
+  MediaEventSource<void>& OnAudioOutputDeviceListChange() {
+    return mOnOutputDeviceListChange;
+  }
 
  private:
   CubebDeviceEnumerator();
@@ -66,6 +75,8 @@ class CubebDeviceEnumerator final : public DeviceChangeNotifier {
   
   bool mManualInputInvalidation;
   bool mManualOutputInvalidation;
+  MediaEventProducer<void> mOnInputDeviceListChange;
+  MediaEventProducer<void> mOnOutputDeviceListChange;
   
   static StaticRefPtr<CubebDeviceEnumerator> sInstance;
 };

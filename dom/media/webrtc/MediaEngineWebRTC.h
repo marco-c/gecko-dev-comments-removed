@@ -52,7 +52,9 @@ class MediaEngineWebRTC : public MediaEngine {
  public:
   explicit MediaEngineWebRTC(MediaEnginePrefs& aPrefs);
 
-  virtual void SetFakeDeviceChangeEvents() override;
+  
+  
+  void SetFakeDeviceChangeEventsEnabled(bool aEnable) override;
 
   
   
@@ -64,6 +66,10 @@ class MediaEngineWebRTC : public MediaEngine {
   void EnumerateDevices(uint64_t aWindowId, dom::MediaSourceEnum, MediaSinkEnum,
                         nsTArray<RefPtr<MediaDevice>>*) override;
 
+  MediaEventSource<void>& DeviceListChangeEvent() override {
+    return mDeviceListChangeEvent;
+  }
+
  private:
   ~MediaEngineWebRTC() = default;
   void EnumerateVideoDevices(uint64_t aWindowId,
@@ -74,11 +80,20 @@ class MediaEngineWebRTC : public MediaEngine {
   void EnumerateSpeakerDevices(uint64_t aWindowId,
                                nsTArray<RefPtr<MediaDevice>>*);
 
+  void DeviceListChanged() { mDeviceListChangeEvent.Notify(); }
+
+  static void FakeDeviceChangeEventTimerTick(nsITimer* aTimer, void* aClosure);
+
   const bool mDelayAgnostic;
   const bool mExtendedFilter;
   
   
   bool mHasTabVideoSource;
+  MediaEventListener mCameraListChangeListener;
+  MediaEventListener mMicrophoneListChangeListener;
+  MediaEventListener mSpeakerListChangeListener;
+  MediaEventProducer<void> mDeviceListChangeEvent;
+  nsCOMPtr<nsITimer> mFakeDeviceChangeEventTimer;
 };
 
 }  
