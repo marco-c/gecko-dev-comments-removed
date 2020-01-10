@@ -171,13 +171,9 @@ void js::NumberFormatObject::finalize(JSFreeOp* fop, JSObject* obj) {
 
   if (nf) {
     unumf_close(nf);
-
-    intl::RemoveICUCellMemory(fop, obj, NumberFormatObject::EstimatedMemoryUse);
   }
   if (formatted) {
     unumf_closeResult(formatted);
-
-    
   }
 }
 
@@ -1517,9 +1513,6 @@ bool js::intl_FormatNumber(JSContext* cx, unsigned argc, Value* vp) {
       return false;
     }
     numberFormat->setNumberFormatter(nf);
-
-    intl::AddICUCellMemory(numberFormat,
-                           NumberFormatObject::EstimatedMemoryUse);
   }
 
   
@@ -1530,8 +1523,6 @@ bool js::intl_FormatNumber(JSContext* cx, unsigned argc, Value* vp) {
       return false;
     }
     numberFormat->setFormattedNumber(formatted);
-
-    
   }
 
   
