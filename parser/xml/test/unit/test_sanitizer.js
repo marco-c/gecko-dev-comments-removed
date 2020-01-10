@@ -1,4 +1,6 @@
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 if (AppConstants.platform != "android") {
   
   
@@ -20,16 +22,25 @@ function run_test() {
     
     
 
-    let {PlacesUtils} = ChromeUtils.import("resource://gre/modules/PlacesUtils.jsm");
-    Assert.ok(PlacesUtils.history.databaseStatus <= 1, "ensure places database is successfully initialized.");
+    let { PlacesUtils } = ChromeUtils.import(
+      "resource://gre/modules/PlacesUtils.jsm"
+    );
+    Assert.ok(
+      PlacesUtils.history.databaseStatus <= 1,
+      "ensure places database is successfully initialized."
+    );
   }
 
-  var ParserUtils =  Cc["@mozilla.org/parserutils;1"].getService(Ci.nsIParserUtils);
-  var sanitizeFlags = ParserUtils.SanitizerCidEmbedsOnly | ParserUtils.SanitizerDropForms | ParserUtils.SanitizerDropNonCSSPresentation;
+  var ParserUtils = Cc["@mozilla.org/parserutils;1"].getService(
+    Ci.nsIParserUtils
+  );
+  var sanitizeFlags =
+    ParserUtils.SanitizerCidEmbedsOnly |
+    ParserUtils.SanitizerDropForms |
+    ParserUtils.SanitizerDropNonCSSPresentation;
   
   
   
-
 
   for (var item in vectors) {
     var evil = vectors[item].data;
