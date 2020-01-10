@@ -107,7 +107,7 @@ class nsIFormControl : public nsISupports {
 
 
 
-  virtual mozilla::dom::Element* GetFormElement() = 0;
+  virtual mozilla::dom::HTMLFormElement* GetFormElement() = 0;
 
   
 
@@ -221,6 +221,16 @@ class nsIFormControl : public nsISupports {
   virtual bool IsDisabledForEvents(mozilla::WidgetEvent* aEvent) {
     return false;
   }
+
+  
+  
+  
+  
+  
+  
+  virtual int32_t GetParserInsertedControlNumberForStateKey() const {
+    return -1;
+  };
 
  protected:
   

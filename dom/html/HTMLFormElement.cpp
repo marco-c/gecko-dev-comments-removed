@@ -110,6 +110,7 @@ HTMLFormElement::HTMLFormElement(
       mPastNameLookupTable(FORM_CONTROL_LIST_HASHTABLE_LENGTH),
       mSubmitPopupState(PopupBlocker::openAbused),
       mInvalidElementsCount(0),
+      mFormNumber(-1),
       mGeneratingSubmit(false),
       mGeneratingReset(false),
       mIsSubmitting(false),
@@ -2310,6 +2311,27 @@ void HTMLFormElement::RemoveElementFromPastNamesMap(Element* aElement) {
 JSObject* HTMLFormElement::WrapNode(JSContext* aCx,
                                     JS::Handle<JSObject*> aGivenProto) {
   return HTMLFormElement_Binding::Wrap(aCx, this, aGivenProto);
+}
+
+int32_t HTMLFormElement::GetFormNumberForStateKey() {
+  if (mFormNumber == -1) {
+    mFormNumber = OwnerDoc()->GetNextFormNumber();
+  }
+  return mFormNumber;
+}
+
+void HTMLFormElement::NodeInfoChanged(Document* aOldDoc) {
+  nsGenericHTMLElement::NodeInfoChanged(aOldDoc);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  mFormNumber = -1;
 }
 
 }  

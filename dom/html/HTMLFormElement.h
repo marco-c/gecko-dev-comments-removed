@@ -520,6 +520,17 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
   nsresult GetActionURL(nsIURI** aActionURL, Element* aOriginatingElement);
 
+  
+  
+  
+  int32_t GetFormNumberForStateKey();
+
+  
+
+
+
+  void NodeInfoChanged(Document* aOldDoc) override;
+
  protected:
   
   
@@ -579,6 +590,9 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
 
   int32_t mInvalidElementsCount;
+
+  
+  int32_t mFormNumber;
 
   
   bool mGeneratingSubmit;
