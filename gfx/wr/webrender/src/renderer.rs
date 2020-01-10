@@ -6762,7 +6762,7 @@ impl CompositeState {
         
         
         
-        for tile in self.opaque_tiles.iter().chain(self.alpha_tiles.iter()) {
+        for tile in &self.native_tiles {
             
             let id = match tile.surface {
                 CompositeTileSurface::Texture { surface: ResolvedSurfaceTexture::NativeSurface { id, .. }, .. } => id,

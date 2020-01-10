@@ -137,9 +137,19 @@ struct Occluder {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CompositeState {
+    
+    
+    
+    
+    
+    pub native_tiles: Vec<CompositeTile>,
+    
     pub opaque_tiles: Vec<CompositeTile>,
+    
     pub alpha_tiles: Vec<CompositeTile>,
+    
     pub clear_tiles: Vec<CompositeTile>,
+    
     pub z_generator: ZBufferIdGenerator,
     
     
@@ -179,6 +189,7 @@ impl CompositeState {
         }
 
         CompositeState {
+            native_tiles: Vec::new(),
             opaque_tiles: Vec::new(),
             alpha_tiles: Vec::new(),
             clear_tiles: Vec::new(),
@@ -272,6 +283,48 @@ impl CompositeState {
 
         
         ref_area == cover_area
+    }
+
+    
+    pub fn push_tile(
+        &mut self,
+        tile: CompositeTile,
+        is_opaque: bool,
+    ) {
+        match (self.compositor_kind, &tile.surface) {
+            (CompositorKind::Draw { .. }, CompositeTileSurface::Color { .. }) => {
+                
+                
+                self.opaque_tiles.push(tile);
+            }
+            (CompositorKind::Draw { .. }, CompositeTileSurface::Clear) => {
+                
+                self.clear_tiles.push(tile);
+            }
+            (CompositorKind::Draw { .. }, CompositeTileSurface::Texture { .. }) => {
+                
+                
+                if is_opaque {
+                    self.opaque_tiles.push(tile);
+                } else {
+                    self.alpha_tiles.push(tile);
+                }
+            }
+            (CompositorKind::Native { .. }, CompositeTileSurface::Color { .. }) => {
+                
+                unreachable!();
+            }
+            (CompositorKind::Native { .. }, CompositeTileSurface::Clear) => {
+                
+                unreachable!();
+            }
+            (CompositorKind::Native { .. }, CompositeTileSurface::Texture { .. }) => {
+                
+                
+                
+                self.native_tiles.push(tile);
+            }
+        }
     }
 }
 
