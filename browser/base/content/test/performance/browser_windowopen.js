@@ -83,12 +83,7 @@ add_task(async function() {
             inRange(r.h, 13, 14) &&
             inRange(r.w, 14, 16) && 
             inRange(r.y1, 40, 80) && 
-            
-            
-            
-            AppConstants.MOZ_DEV_EDITION
-              ? inRange(r.x1, 100, 120)
-              : inRange(r.x1, 65, 100),
+            inRange(r.x1, 65, 100), 
         },
         {
           name: "bug 1555842 - the urlbar shouldn't flicker",
