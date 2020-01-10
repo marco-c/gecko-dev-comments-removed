@@ -8,16 +8,7 @@
 #ifndef BASE_WIN_WINDOWS_TYPES_H
 #define BASE_WIN_WINDOWS_TYPES_H
 
-
-#if defined(__MINGW32__)
-
-
-#define _Releases_exclusive_lock_(lock)
-
-#define _Post_equals_last_error_
-#else
 #include <concurrencysal.h>
-#endif
 #include <sal.h>
 #include <specstrings.h>
 
