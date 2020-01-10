@@ -77,9 +77,11 @@ enum class TextureFlags : uint32_t {
   NON_BLOCKING_READ_LOCK = 1 << 15,
   
   BLOCKING_READ_LOCK = 1 << 16,
+  
+  WAIT_HOST_USAGE_END = 1 << 17,
 
   
-  ALL_BITS = (1 << 17) - 1,
+  ALL_BITS = (1 << 18) - 1,
   
   DEFAULT = NO_FLAGS
 };

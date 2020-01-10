@@ -553,6 +553,17 @@ void D3D11TextureData::GetDXGIResource(IDXGIResource** aOutResource) {
   mTexture->QueryInterface(aOutResource);
 }
 
+TextureFlags D3D11TextureData::GetTextureFlags() const {
+  TextureFlags flags = TextureFlags::NO_FLAGS;
+  
+  
+  
+  if (gfx::gfxVars::UseWebRender()) {
+    flags |= TextureFlags::WAIT_HOST_USAGE_END;
+  }
+  return flags;
+}
+
 DXGIYCbCrTextureData* DXGIYCbCrTextureData::Create(
     IDirect3DTexture9* aTextureY, IDirect3DTexture9* aTextureCb,
     IDirect3DTexture9* aTextureCr, HANDLE aHandleY, HANDLE aHandleCb,
@@ -679,6 +690,17 @@ void DXGIYCbCrTextureData::Deallocate(LayersIPCChannel*) {
   mD3D11Textures[0] = nullptr;
   mD3D11Textures[1] = nullptr;
   mD3D11Textures[2] = nullptr;
+}
+
+TextureFlags DXGIYCbCrTextureData::GetTextureFlags() const {
+  TextureFlags flags = TextureFlags::DEALLOCATE_MAIN_THREAD;
+  
+  
+  
+  if (gfx::gfxVars::UseWebRender()) {
+    flags |= TextureFlags::WAIT_HOST_USAGE_END;
+  }
+  return flags;
 }
 
 already_AddRefed<TextureHost> CreateTextureHostD3D11(
