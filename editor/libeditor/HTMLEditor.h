@@ -1726,6 +1726,12 @@ class HTMLEditor final : public TextEditor,
   
 
 
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  InsertBRElementIfEmptyBlockElement(Element& aElement);
+
+  
+
+
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   InsertPaddingBRElementForEmptyLastLineIfNeeded(Element& aElement);
