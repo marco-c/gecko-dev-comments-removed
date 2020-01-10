@@ -258,12 +258,6 @@ struct TrackBound {
 
 
 
-
-
-#ifdef GetCurrentTime
-#  undef GetCurrentTime
-#endif
-
 class MediaStream : public mozilla::LinkedListElement<MediaStream> {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaStream)

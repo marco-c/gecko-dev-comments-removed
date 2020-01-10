@@ -10,12 +10,6 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/TypeTraits.h"
 
-
-
-#ifdef GetCurrentTime
-#  undef GetCurrentTime
-#endif
-
 namespace mozilla {
 
 

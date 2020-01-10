@@ -6,9 +6,6 @@
 
 #ifdef XP_WIN
 #  include "objbase.h"
-
-
-#  undef GetCurrentTime
 #endif
 
 #include "mozilla/dom/HTMLMediaElement.h"

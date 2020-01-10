@@ -44,6 +44,9 @@ extern "C++" {
 ${decls}
 
 } 
+
+#undef GetCurrentTime // Use GetTickCount() instead.
+
 #endif 
 
 #if defined(__GNUC__) || defined(__clang__)

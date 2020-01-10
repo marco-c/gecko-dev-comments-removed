@@ -43,13 +43,6 @@ using namespace mozilla::media;
 namespace mozilla {
 
 
-
-
-#ifdef GetCurrentTime
-#  undef GetCurrentTime
-#endif
-
-
 #undef LOG
 #undef DUMP
 

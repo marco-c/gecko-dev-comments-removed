@@ -89,12 +89,6 @@
 #endif
 
 
-
-#ifdef GetCurrentTime
-#  undef GetCurrentTime
-#endif
-
-
 template <>
 struct nsIMediaDevice::COMTypeInfo<mozilla::MediaDevice, void> {
   static const nsIID kIID;
