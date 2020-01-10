@@ -788,8 +788,6 @@ nsresult HTMLEditRules::WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
       return WillAbsolutePosition(aCancel, aHandled);
     case EditSubAction::eSetPositionToStatic:
       return WillRemoveAbsolutePosition(aCancel, aHandled);
-    case EditSubAction::eSetOrClearAlignment:
-      return WillAlign(*aInfo.alignType, aCancel, aHandled);
     case EditSubAction::eInsertElement:
     case EditSubAction::eInsertQuotedText: {
       nsresult rv = MOZ_KnownLive(HTMLEditorRef()).WillInsert(aCancel);
@@ -813,6 +811,7 @@ nsresult HTMLEditRules::WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
     case EditSubAction::eUndo:
     case EditSubAction::eRedo:
     case EditSubAction::eRemoveList:
+    case EditSubAction::eSetOrClearAlignment:
       MOZ_ASSERT_UNREACHABLE("This path should've been dead code");
       return NS_ERROR_UNEXPECTED;
     default:
@@ -835,9 +834,6 @@ nsresult HTMLEditRules::DidDoAction(EditSubActionInfo& aInfo,
       return NS_OK;
     case EditSubAction::eDeleteSelectedContent:
       return DidDeleteSelection();
-    case EditSubAction::eSetOrClearAlignment:
-      return MOZ_KnownLive(HTMLEditorRef())
-          .MaybeInsertPaddingBRElementForEmptyLastLineAtSelection();
     case EditSubAction::eSetPositionToAbsolute: {
       nsresult rv =
           MOZ_KnownLive(HTMLEditorRef())
@@ -860,6 +856,7 @@ nsresult HTMLEditRules::DidDoAction(EditSubActionInfo& aInfo,
     case EditSubAction::eUndo:
     case EditSubAction::eRedo:
     case EditSubAction::eRemoveList:
+    case EditSubAction::eSetOrClearAlignment:
       MOZ_ASSERT_UNREACHABLE("This path should've been dead code");
       return NS_ERROR_UNEXPECTED;
     default:
@@ -6273,54 +6270,61 @@ bool HTMLEditor::IsEmptyBlockElement(Element& aElement,
   return NS_SUCCEEDED(rv) && isEmpty;
 }
 
-nsresult HTMLEditRules::WillAlign(const nsAString& aAlignType, bool* aCancel,
-                                  bool* aHandled) {
-  MOZ_ASSERT(IsEditorDataAvailable());
-  MOZ_ASSERT(aCancel && aHandled);
+EditActionResult HTMLEditor::AlignAsSubAction(const nsAString& aAlignType) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
 
-  *aCancel = false;
-  *aHandled = false;
+  AutoPlaceholderBatch treatAsOneTransaction(*this);
+  AutoEditSubActionNotifier startToHandleEditSubAction(
+      *this, EditSubAction::eSetOrClearAlignment, nsIEditor::eNext);
+
+  EditActionResult result = CanHandleHTMLEditSubAction();
+  if (NS_WARN_IF(result.Failed()) || result.Canceled()) {
+    return result;
+  }
 
   
-  nsresult rv = MOZ_KnownLive(HTMLEditorRef()).WillInsert();
+  nsresult rv = WillInsert();
   if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-    return NS_ERROR_EDITOR_DESTROYED;
+    return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
   }
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "WillInsert() failed");
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "WillInsert() failed, but ignored");
 
   if (!SelectionRefPtr()->IsCollapsed()) {
-    nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                      .MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
+    nsresult rv = MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+      return EditActionResult(rv);
     }
   }
 
-  *aHandled = true;
+  
+  
+  
   rv = AlignContentsAtSelection(aAlignType);
-  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED) ||
-      NS_WARN_IF(!CanHandleEditAction())) {
-    return NS_ERROR_EDITOR_DESTROYED;
+  if (NS_WARN_IF(Destroyed())) {
+    return EditActionHandled(NS_ERROR_EDITOR_DESTROYED);
   }
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+    return EditActionHandled(rv);
   }
-  return NS_OK;
+
+  rv = MaybeInsertPaddingBRElementForEmptyLastLineAtSelection();
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "MaybeInsertPaddingBRElementForEmptyLastLineAtSelection() failed");
+  return EditActionHandled(rv);
 }
 
-nsresult HTMLEditRules::AlignContentsAtSelection(const nsAString& aAlignType) {
-  AutoSelectionRestorer restoreSelectionLater(HTMLEditorRef());
+nsresult HTMLEditor::AlignContentsAtSelection(const nsAString& aAlignType) {
+  AutoSelectionRestorer restoreSelectionLater(*this);
 
   
   
   
   
   AutoTArray<OwningNonNull<nsINode>, 64> nodeArray;
-  nsresult rv =
-      MOZ_KnownLive(HTMLEditorRef())
-          .SplitInlinesAndCollectEditTargetNodesInExtendedSelectionRanges(
-              nodeArray, EditSubAction::eSetOrClearAlignment,
-              HTMLEditor::CollectNonEditableNodes::Yes);
+  nsresult rv = SplitInlinesAndCollectEditTargetNodesInExtendedSelectionRanges(
+      nodeArray, EditSubAction::eSetOrClearAlignment,
+      CollectNonEditableNodes::Yes);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -6328,7 +6332,7 @@ nsresult HTMLEditRules::AlignContentsAtSelection(const nsAString& aAlignType) {
   
   
   
-  bool emptyDiv = nodeArray.IsEmpty();
+  bool createEmptyDivElement = nodeArray.IsEmpty();
   if (nodeArray.Length() == 1) {
     OwningNonNull<nsINode> node = nodeArray[0];
 
@@ -6337,15 +6341,16 @@ nsresult HTMLEditRules::AlignContentsAtSelection(const nsAString& aAlignType) {
       
       
       
-      nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                        .SetBlockElementAlign(
-                            MOZ_KnownLive(*node->AsElement()), aAlignType,
-                            HTMLEditor::EditTarget::OnlyDescendantsExceptTable);
+      nsresult rv =
+          SetBlockElementAlign(MOZ_KnownLive(*node->AsElement()), aAlignType,
+                               EditTarget::OnlyDescendantsExceptTable);
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "SetBlockElementAlign() failed");
       return rv;
     }
 
     if (TextEditUtils::IsBreak(node)) {
+      
+      
       
       
       
@@ -6367,116 +6372,128 @@ nsresult HTMLEditRules::AlignContentsAtSelection(const nsAString& aAlignType) {
         return NS_ERROR_FAILURE;
       }
       nsINode* parent = atStartOfSelection.Container();
-      emptyDiv = !HTMLEditUtils::IsTableElement(parent) ||
-                 HTMLEditUtils::IsTableCellOrCaption(*parent);
+      createEmptyDivElement = !HTMLEditUtils::IsTableElement(parent) ||
+                              HTMLEditUtils::IsTableCellOrCaption(*parent);
     }
   }
-  if (emptyDiv) {
-    nsRange* firstRange = SelectionRefPtr()->GetRangeAt(0);
-    if (NS_WARN_IF(!firstRange)) {
-      return NS_ERROR_FAILURE;
-    }
 
-    EditorDOMPoint atStartOfSelection(firstRange->StartRef());
-    if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
-      return NS_ERROR_FAILURE;
+  if (createEmptyDivElement) {
+    EditActionResult result =
+        AlignContentsAtSelectionWithEmptyDivElement(aAlignType);
+    NS_WARNING_ASSERTION(
+        result.Succeeded(),
+        "AlignContentsAtSelectionWithEmptyDivElement() failed");
+    if (result.Handled()) {
+      restoreSelectionLater.Abort();
     }
-
-    SplitNodeResult splitNodeResult =
-        MOZ_KnownLive(HTMLEditorRef())
-            .MaybeSplitAncestorsForInsertWithTransaction(*nsGkAtoms::div,
-                                                         atStartOfSelection);
-    if (NS_WARN_IF(splitNodeResult.Failed())) {
-      return splitNodeResult.Rv();
-    }
-
-    
-    
-    nsCOMPtr<nsIContent> brContent =
-        HTMLEditorRef().GetNextEditableHTMLNodeInBlock(
-            splitNodeResult.SplitPoint());
-    EditorDOMPoint pointToInsertDiv(splitNodeResult.SplitPoint());
-    if (brContent && TextEditUtils::IsBreak(brContent)) {
-      
-      
-      
-      nsCOMPtr<nsIContent> sibling;
-      if (pointToInsertDiv.GetChild()) {
-        sibling =
-            HTMLEditorRef().GetNextHTMLSibling(pointToInsertDiv.GetChild());
-      }
-      if (sibling && !HTMLEditor::NodeIsBlockStatic(*sibling)) {
-        AutoEditorDOMPointChildInvalidator lockOffset(pointToInsertDiv);
-        rv = MOZ_KnownLive(HTMLEditorRef())
-                 .DeleteNodeWithTransaction(*brContent);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
-        }
-      }
-    }
-    RefPtr<Element> div =
-        MOZ_KnownLive(HTMLEditorRef())
-            .CreateNodeWithTransaction(*nsGkAtoms::div, pointToInsertDiv);
-    if (NS_WARN_IF(!CanHandleEditAction())) {
-      return NS_ERROR_EDITOR_DESTROYED;
-    }
-    if (NS_WARN_IF(!div)) {
-      return NS_ERROR_FAILURE;
-    }
-    
-    HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement = div;
-    
-    rv = MOZ_KnownLive(HTMLEditorRef())
-             .SetBlockElementAlign(
-                 *div, aAlignType,
-                 HTMLEditor::EditTarget::OnlyDescendantsExceptTable);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-    
-    
-    CreateElementResult createPaddingBRResult =
-        MOZ_KnownLive(HTMLEditorRef())
-            .InsertPaddingBRElementForEmptyLastLineWithTransaction(
-                EditorDOMPoint(div, 0));
-    if (NS_WARN_IF(createPaddingBRResult.Failed())) {
-      return createPaddingBRResult.Rv();
-    }
-    EditorRawDOMPoint atStartOfDiv(div, 0);
-    
-    restoreSelectionLater.Abort();
-    ErrorResult error;
-    SelectionRefPtr()->Collapse(atStartOfDiv, error);
-    if (NS_WARN_IF(!CanHandleEditAction())) {
-      error.SuppressException();
-      return NS_ERROR_EDITOR_DESTROYED;
-    }
-    if (NS_WARN_IF(error.Failed())) {
-      return error.StealNSResult();
-    }
-    return NS_OK;
+    return rv;
   }
+
+  rv = AlignNodesAndDescendants(nodeArray, aAlignType);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "AlignNodesAndDescendants() failed");
+  return rv;
+}
+
+EditActionResult HTMLEditor::AlignContentsAtSelectionWithEmptyDivElement(
+    const nsAString& aAlignType) {
+  MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
+
+  nsRange* firstRange = SelectionRefPtr()->GetRangeAt(0);
+  if (NS_WARN_IF(!firstRange)) {
+    return EditActionResult(NS_ERROR_FAILURE);
+  }
+
+  EditorDOMPoint atStartOfSelection(firstRange->StartRef());
+  if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
+    return EditActionResult(NS_ERROR_FAILURE);
+  }
+
+  SplitNodeResult splitNodeResult = MaybeSplitAncestorsForInsertWithTransaction(
+      *nsGkAtoms::div, atStartOfSelection);
+  if (NS_WARN_IF(splitNodeResult.Failed())) {
+    return EditActionResult(splitNodeResult.Rv());
+  }
+
+  EditorDOMPoint pointToInsertDiv(splitNodeResult.SplitPoint());
 
   
   
+  if (nsCOMPtr<nsIContent> maybeBRContent =
+          GetNextEditableHTMLNodeInBlock(splitNodeResult.SplitPoint())) {
+    if (TextEditUtils::IsBreak(maybeBRContent) && pointToInsertDiv.GetChild()) {
+      
+      
+      
+      if (nsIContent* nextEditableSibling =
+              GetNextHTMLSibling(pointToInsertDiv.GetChild())) {
+        if (!HTMLEditor::NodeIsBlockStatic(*nextEditableSibling)) {
+          AutoEditorDOMPointChildInvalidator lockOffset(pointToInsertDiv);
+          nsresult rv = DeleteNodeWithTransaction(*maybeBRContent);
+          if (NS_WARN_IF(Destroyed())) {
+            return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+          }
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return EditActionResult(rv);
+          }
+        }
+      }
+    }
+  }
 
+  RefPtr<Element> divElement =
+      CreateNodeWithTransaction(*nsGkAtoms::div, pointToInsertDiv);
+  if (NS_WARN_IF(Destroyed())) {
+    return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+  }
+  if (NS_WARN_IF(!divElement)) {
+    return EditActionResult(NS_ERROR_FAILURE);
+  }
+  
+  TopLevelEditSubActionDataRef().mNewBlockElement = divElement;
+  
+  nsresult rv = SetBlockElementAlign(*divElement, aAlignType,
+                                     EditTarget::OnlyDescendantsExceptTable);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return EditActionResult(rv);
+  }
+  
+  
+  CreateElementResult createPaddingBRResult =
+      InsertPaddingBRElementForEmptyLastLineWithTransaction(
+          EditorDOMPoint(divElement, 0));
+  if (NS_WARN_IF(createPaddingBRResult.Failed())) {
+    return EditActionResult(createPaddingBRResult.Rv());
+  }
+  EditorRawDOMPoint atStartOfDiv(divElement, 0);
+  ErrorResult error;
+  SelectionRefPtr()->Collapse(atStartOfDiv, error);
+  if (NS_WARN_IF(Destroyed())) {
+    error.SuppressException();
+    return EditActionHandled(NS_ERROR_EDITOR_DESTROYED);
+  }
+  NS_WARNING_ASSERTION(!error.Failed(), "Selection::Collapse() failed");
+  return EditActionHandled(error.StealNSResult());
+}
+
+nsresult HTMLEditor::AlignNodesAndDescendants(
+    nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes,
+    const nsAString& aAlignType) {
+  
+  
   AutoTArray<bool, 64> transitionList;
-  HTMLEditor::MakeTransitionList(nodeArray, transitionList);
+  HTMLEditor::MakeTransitionList(aArrayOfNodes, transitionList);
 
   
   
 
-  nsCOMPtr<Element> curDiv;
-  bool useCSS = HTMLEditorRef().IsCSSEnabled();
+  RefPtr<Element> createdDivElement;
+  bool useCSS = IsCSSEnabled();
   int32_t indexOfTransitionList = -1;
-  for (OwningNonNull<nsINode>& curNode : nodeArray) {
+  for (OwningNonNull<nsINode>& curNode : aArrayOfNodes) {
     ++indexOfTransitionList;
 
     
-    if (!HTMLEditorRef().IsEditable(curNode)) {
+    if (!IsEditable(curNode)) {
       continue;
     }
 
@@ -6486,15 +6503,14 @@ nsresult HTMLEditRules::AlignContentsAtSelection(const nsAString& aAlignType) {
     
     if (HTMLEditUtils::SupportsAlignAttr(*curNode)) {
       nsresult rv =
-          MOZ_KnownLive(HTMLEditorRef())
-              .SetBlockElementAlign(
-                  MOZ_KnownLive(*curNode->AsElement()), aAlignType,
-                  HTMLEditor::EditTarget::NodeAndDescendantsExceptTable);
+          SetBlockElementAlign(MOZ_KnownLive(*curNode->AsElement()), aAlignType,
+                               EditTarget::NodeAndDescendantsExceptTable);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
       
-      curDiv = nullptr;
+      
+      createdDivElement = nullptr;
       continue;
     }
 
@@ -6506,12 +6522,11 @@ nsresult HTMLEditRules::AlignContentsAtSelection(const nsAString& aAlignType) {
     
     
     bool isEmptyTextNode = false;
-    if (curNode->GetAsText() &&
+    if (curNode->IsText() &&
         ((HTMLEditUtils::IsTableElement(atCurNode.GetContainer()) &&
           !HTMLEditUtils::IsTableCellOrCaption(*atCurNode.GetContainer())) ||
          HTMLEditUtils::IsList(atCurNode.GetContainer()) ||
-         (NS_SUCCEEDED(
-              HTMLEditorRef().IsEmptyNode(curNode, &isEmptyTextNode)) &&
+         (NS_SUCCEEDED(IsEmptyNode(curNode, &isEmptyTextNode)) &&
           isEmptyTextNode))) {
       continue;
     }
@@ -6521,74 +6536,73 @@ nsresult HTMLEditRules::AlignContentsAtSelection(const nsAString& aAlignType) {
     if (HTMLEditUtils::IsListItem(curNode) || HTMLEditUtils::IsList(curNode)) {
       Element* listOrListItemElement = curNode->AsElement();
       AutoEditorDOMPointOffsetInvalidator lockChild(atCurNode);
-      rv = MOZ_KnownLive(HTMLEditorRef())
-               .RemoveAlignFromDescendants(
-                   MOZ_KnownLive(*listOrListItemElement), aAlignType,
-                   HTMLEditor::EditTarget::OnlyDescendantsExceptTable);
+      nsresult rv = RemoveAlignFromDescendants(
+          MOZ_KnownLive(*listOrListItemElement), aAlignType,
+          EditTarget::OnlyDescendantsExceptTable);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
+
       if (useCSS) {
-        HTMLEditorRef().mCSSEditUtils->SetCSSEquivalentToHTMLStyle(
+        mCSSEditUtils->SetCSSEquivalentToHTMLStyle(
             MOZ_KnownLive(listOrListItemElement), nullptr, nsGkAtoms::align,
             &aAlignType, false);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
+        if (NS_WARN_IF(Destroyed())) {
           return NS_ERROR_EDITOR_DESTROYED;
         }
-        curDiv = nullptr;
+        createdDivElement = nullptr;
         continue;
       }
+
       if (HTMLEditUtils::IsList(atCurNode.GetContainer())) {
         
         
         
         
         
-        rv = MOZ_KnownLive(HTMLEditorRef())
-                 .AlignContentsInAllTableCellsAndListItems(
-                     MOZ_KnownLive(*listOrListItemElement), aAlignType);
+        nsresult rv = AlignContentsInAllTableCellsAndListItems(
+            MOZ_KnownLive(*listOrListItemElement), aAlignType);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
-        curDiv = nullptr;
+        createdDivElement = nullptr;
         continue;
       }
+
+      
       
     }
 
     
     
-    if (!curDiv || transitionList[indexOfTransitionList]) {
+    if (!createdDivElement || transitionList[indexOfTransitionList]) {
       
-      if (!HTMLEditorRef().CanContainTag(*atCurNode.GetContainer(),
-                                         *nsGkAtoms::div)) {
+      if (!CanContainTag(*atCurNode.GetContainer(), *nsGkAtoms::div)) {
+        
         
         return NS_OK;
       }
 
       SplitNodeResult splitNodeResult =
-          MOZ_KnownLive(HTMLEditorRef())
-              .MaybeSplitAncestorsForInsertWithTransaction(*nsGkAtoms::div,
-                                                           atCurNode);
+          MaybeSplitAncestorsForInsertWithTransaction(*nsGkAtoms::div,
+                                                      atCurNode);
       if (NS_WARN_IF(splitNodeResult.Failed())) {
         return splitNodeResult.Rv();
       }
-      curDiv = MOZ_KnownLive(HTMLEditorRef())
-                   .CreateNodeWithTransaction(*nsGkAtoms::div,
-                                              splitNodeResult.SplitPoint());
-      if (NS_WARN_IF(!CanHandleEditAction())) {
+      createdDivElement = CreateNodeWithTransaction(
+          *nsGkAtoms::div, splitNodeResult.SplitPoint());
+      if (NS_WARN_IF(Destroyed())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
-      if (NS_WARN_IF(!curDiv)) {
+      if (NS_WARN_IF(!createdDivElement)) {
         return NS_ERROR_FAILURE;
       }
       
-      HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement = curDiv;
+      TopLevelEditSubActionDataRef().mNewBlockElement = createdDivElement;
       
-      rv = MOZ_KnownLive(HTMLEditorRef())
-               .SetBlockElementAlign(
-                   *curDiv, aAlignType,
-                   HTMLEditor::EditTarget::OnlyDescendantsExceptTable);
+      nsresult rv =
+          SetBlockElementAlign(*createdDivElement, aAlignType,
+                               EditTarget::OnlyDescendantsExceptTable);
       if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
@@ -6597,10 +6611,9 @@ nsresult HTMLEditRules::AlignContentsAtSelection(const nsAString& aAlignType) {
     }
 
     
-    rv = MOZ_KnownLive(HTMLEditorRef())
-             .MoveNodeToEndWithTransaction(MOZ_KnownLive(*curNode->AsContent()),
-                                           *curDiv);
-    if (NS_WARN_IF(!CanHandleEditAction())) {
+    nsresult rv = MoveNodeToEndWithTransaction(
+        MOZ_KnownLive(*curNode->AsContent()), *createdDivElement);
+    if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
     if (NS_WARN_IF(NS_FAILED(rv))) {

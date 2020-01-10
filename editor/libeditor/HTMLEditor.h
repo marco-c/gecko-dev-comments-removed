@@ -259,8 +259,8 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT nsresult SetParagraphFormatAsAction(
       const nsAString& aParagraphFormat, nsIPrincipal* aPrincipal = nullptr);
 
-  nsresult AlignAsAction(const nsAString& aAlignType,
-                         nsIPrincipal* aPrincipal = nullptr);
+  MOZ_CAN_RUN_SCRIPT nsresult AlignAsAction(const nsAString& aAlignType,
+                                            nsIPrincipal* aPrincipal = nullptr);
 
   MOZ_CAN_RUN_SCRIPT nsresult RemoveListAsAction(
       const nsAString& aListType, nsIPrincipal* aPrincipal = nullptr);
@@ -2522,6 +2522,52 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   SetBlockElementAlign(Element& aBlockOrHRElement, const nsAString& aAlignType,
                        EditTarget aEditTarget);
+
+  
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  AlignContentsAtSelectionWithEmptyDivElement(const nsAString& aAlignType);
+
+  
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  AlignNodesAndDescendants(nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes,
+                           const nsAString& aAlignType);
+
+  
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  AlignContentsAtSelection(const nsAString& aAlignType);
+
+  
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  AlignAsSubAction(const nsAString& aAlignType);
 
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(

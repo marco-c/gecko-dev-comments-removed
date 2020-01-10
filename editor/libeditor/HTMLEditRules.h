@@ -123,19 +123,6 @@ class HTMLEditRules : public TextEditRules {
 
 
   MOZ_CAN_RUN_SCRIPT
-  nsresult WillAlign(const nsAString& aAlignType, bool* aCancel,
-                     bool* aHandled);
-
-  
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult WillRemoveAbsolutePosition(bool* aCancel,
                                                    bool* aHandled);
 
@@ -190,20 +177,6 @@ class HTMLEditRules : public TextEditRules {
 
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult DidAbsolutePosition();
-
-  
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult AlignContentsAtSelection(const nsAString& aAlignType);
 
   nsresult AppendInnerFormatNodes(nsTArray<OwningNonNull<nsINode>>& aArray,
                                   nsINode* aNode);
