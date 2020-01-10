@@ -26,17 +26,9 @@ function runTests(sw) {
   const sp = sw.Scratchpad;
 
   
-  const foo =
-    "" +
-    function main() {
-      console.log(1);
-    };
-  const bar =
-    "var bar = " +
-    (() => {
-      console.log(2);
-    });
+  const foo = "" + function main() { console.log(1); };
   
+  const bar = "var bar = " + (() => { console.log(2); });
 
   const fullText = foo + "\n" + "\n" + bar + "\n";
 
