@@ -57,6 +57,24 @@ this.LoginManagerStorage_json.prototype = {
     return this.__crypto;
   },
 
+  __decryptedPotentiallyVulnerablePasswords: null,
+  get _decryptedPotentiallyVulnerablePasswords() {
+    if (!this.__decryptedPotentiallyVulnerablePasswords) {
+      this._store.ensureDataReady();
+      this.__decryptedPotentiallyVulnerablePasswords = [];
+      for (const potentiallyVulnerablePassword of this._store.data
+        .potentiallyVulnerablePasswords) {
+        const decryptedPotentiallyVulnerablePassword = this._crypto.decrypt(
+          potentiallyVulnerablePassword.encryptedPassword
+        );
+        this.__decryptedPotentiallyVulnerablePasswords.push(
+          decryptedPotentiallyVulnerablePassword
+        );
+      }
+    }
+    return this.__decryptedPotentiallyVulnerablePasswords;
+  },
+
   initialize() {
     try {
       
@@ -553,6 +571,9 @@ this.LoginManagerStorage_json.prototype = {
 
     this.log("Removing all logins");
     this._store.data.logins = [];
+    this._store.data.potentiallyVulnerablePasswords = [];
+    this.__decryptedPotentiallyVulnerablePasswords = null;
+    this._store.data.dismissedBreachAlertsByLoginGUID = {};
     this._store.saveSoon();
 
     LoginHelper.notifyStorageChanged("removeAllLogins", null);
@@ -595,6 +616,26 @@ this.LoginManagerStorage_json.prototype = {
 
     this.log("_countLogins: counted logins:", logins.length);
     return logins.length;
+  },
+
+  addPotentiallyVulnerablePassword(login) {
+    this._store.ensureDataReady();
+    
+    if (this.isPotentiallyVulnerablePassword(login)) {
+      return;
+    }
+    this.__decryptedPotentiallyVulnerablePasswords.push(login.password);
+
+    this._store.data.potentiallyVulnerablePasswords.push({
+      encryptedPassword: this._crypto.encrypt(login.password),
+    });
+    this._store.saveSoon();
+  },
+
+  isPotentiallyVulnerablePassword(login) {
+    return this._decryptedPotentiallyVulnerablePasswords.includes(
+      login.password
+    );
   },
 
   get uiBusy() {
