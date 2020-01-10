@@ -132,7 +132,7 @@ class LoginManagerParent extends JSWindowActorParent {
 
 
 
-  _searchAndDedupeLogins(
+  static searchAndDedupeLogins(
     formOrigin,
     {
       acceptDifferentSubdomains,
@@ -361,7 +361,7 @@ class LoginManagerParent extends JSWindowActorParent {
         guid,
       });
     } else {
-      logins = this._searchAndDedupeLogins(formOrigin, {
+      logins = LoginManagerParent.searchAndDedupeLogins(formOrigin, {
         formActionOrigin: actionOrigin,
         ignoreActionAndRealm: true,
         acceptDifferentSubdomains: LoginHelper.includeOtherSubdomainsInLookup,
@@ -427,7 +427,7 @@ class LoginManagerParent extends JSWindowActorParent {
       log("Creating new autocomplete search result.");
 
       
-      logins = this._searchAndDedupeLogins(formOrigin, {
+      logins = LoginManagerParent.searchAndDedupeLogins(formOrigin, {
         formActionOrigin: actionOrigin,
         ignoreActionAndRealm: true,
         acceptDifferentSubdomains: LoginHelper.includeOtherSubdomainsInLookup,
@@ -617,7 +617,7 @@ class LoginManagerParent extends JSWindowActorParent {
 
     
     
-    let logins = this._searchAndDedupeLogins(origin, {
+    let logins = LoginManagerParent.searchAndDedupeLogins(origin, {
       formActionOrigin,
     });
 
@@ -865,7 +865,7 @@ class LoginManagerParent extends JSWindowActorParent {
       
       
       
-      let logins = this._searchAndDedupeLogins(formOrigin, {
+      let logins = LoginManagerParent.searchAndDedupeLogins(formOrigin, {
         acceptDifferentSubdomains: false,
         httpRealm: null,
         ignoreActionAndRealm: false,
