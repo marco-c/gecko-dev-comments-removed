@@ -231,17 +231,8 @@ assertErrorMessage(() => wasmEval(moduleWithSections([
 ).f(), RuntimeError, /unreachable/);
 
 
-for (var bad of [0xff, 1, 0x3f])
-    assertErrorMessage(() => wasmEval(moduleWithSections([sigSection([v2vSig]), declSection([0]), bodySection([funcBody({locals:[], body:[BlockCode, bad, EndCode]})])])), CompileError, /invalid .*block type/);
-
-if (wasmMultiValueEnabled()) {
-    
-    let binary = moduleWithSections([sigSection([v2vSig]), declSection([0]), bodySection([funcBody({locals:[], body:[BlockCode, 0, EndCode]})])]);
-    assertEq(WebAssembly.validate(binary), true);
-} else {
-    const bad = 0;
-    assertErrorMessage(() => wasmEval(moduleWithSections([sigSection([v2vSig]), declSection([0]), bodySection([funcBody({locals:[], body:[BlockCode, bad, EndCode]})])])), CompileError, /invalid .*block type/);
-}
+for (var bad of [0xff, 0, 1, 0x3f])
+    assertErrorMessage(() => wasmEval(moduleWithSections([sigSection([v2vSig]), declSection([0]), bodySection([funcBody({locals:[], body:[BlockCode, bad, EndCode]})])])), CompileError, /invalid inline block type/);
 
 
 for (let op of undefinedOpcodes) {

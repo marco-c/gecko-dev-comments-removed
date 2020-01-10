@@ -1,20 +1,20 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ *
+ * Copyright 2016 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "wasm/WasmDebug.h"
 
@@ -175,7 +175,7 @@ void DebugState::toggleBreakpointTrap(JSRuntime* rt, uint32_t offset,
   MOZ_ASSERT(codeRange);
 
   if (stepperCounters_.lookup(codeRange->funcIndex())) {
-    return;  
+    return;  // no need to toggle when step mode is enabled
   }
 
   AutoWritableJitCode awjc(rt, codeSegment.base(), codeSegment.length());
@@ -326,20 +326,19 @@ bool DebugState::debugGetLocalTypes(uint32_t funcIndex, ValTypeVector* locals,
     return false;
   }
 
-  
+  // Decode local var types from wasm binary function body.
   const CodeRange& range =
       codeRanges(Tier::Debug)[funcToCodeRangeIndex(funcIndex)];
-  
+  // In wasm, the Code points to the function start via funcLineOrBytecode.
   size_t offsetInModule = range.funcLineOrBytecode();
   Decoder d(bytecode().begin() + offsetInModule, bytecode().end(),
             offsetInModule,
-             nullptr);
+            /* error = */ nullptr);
   return DecodeValidatedLocalEntries(d, locals);
 }
 
-bool DebugState::debugGetResultTypes(uint32_t funcIndex,
-                                     ValTypeVector* results) {
-  return results->appendAll(metadata().debugFuncReturnTypes[funcIndex]);
+ExprType DebugState::debugGetResultType(uint32_t funcIndex) {
+  return metadata().debugFuncReturnTypes[funcIndex];
 }
 
 bool DebugState::getGlobal(Instance& instance, uint32_t globalIndex,
@@ -353,7 +352,7 @@ bool DebugState::getGlobal(Instance& instance, uint32_t globalIndex,
         vp.set(Int32Value(value.i32()));
         break;
       case ValType::I64:
-        
+        // Just display as a Number; it's ok if we lose some precision
         vp.set(NumberValue((double)value.i64()));
         break;
       case ValType::F32:
@@ -379,7 +378,7 @@ bool DebugState::getGlobal(Instance& instance, uint32_t globalIndex,
       break;
     }
     case ValType::I64: {
-      
+      // Just display as a Number; it's ok if we lose some precision
       vp.set(NumberValue((double)*static_cast<int64_t*>(dataPtr)));
       break;
     }
@@ -410,16 +409,16 @@ bool DebugState::getSourceMappingURL(JSContext* cx,
       continue;
     }
 
-    
+    // Parse found "SourceMappingURL" custom section.
     Decoder d(customSection.payload->begin(), customSection.payload->end(), 0,
-               nullptr);
+              /* error = */ nullptr);
     uint32_t nchars;
     if (!d.readVarU32(&nchars)) {
-      return true;  
+      return true;  // ignoring invalid section data
     }
     const uint8_t* chars;
     if (!d.readBytes(nchars, &chars) || d.currentPosition() != d.end()) {
-      return true;  
+      return true;  // ignoring invalid section data
     }
 
     UTF8Chars utf8Chars(reinterpret_cast<const char*>(chars), nchars);
@@ -431,7 +430,7 @@ bool DebugState::getSourceMappingURL(JSContext* cx,
     return true;
   }
 
-  
+  // Check presence of "SourceMap:" HTTP response header.
   char* sourceMapURL = metadata().sourceMapURL.get();
   if (sourceMapURL && strlen(sourceMapURL)) {
     UTF8Chars utf8Chars(sourceMapURL, strlen(sourceMapURL));
