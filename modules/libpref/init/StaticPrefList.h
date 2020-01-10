@@ -6795,6 +6795,16 @@ VARCACHE_PREF(
   preferences_check_once_policy,
   bool, false
 )
+
+
+
+
+VARCACHE_PREF(
+  Live,
+  "preferences.force-disable.check.once.policy",
+  preferences_force_disable_check_once_policy,
+  bool, false
+)
 #endif
 
 

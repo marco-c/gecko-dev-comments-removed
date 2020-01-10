@@ -2,6 +2,12 @@ const DEFAULT_HW_ACCEL_PREF = Services.prefs.getDefaultBranch(null).getBoolPref(
 const DEFAULT_PROCESS_COUNT = Services.prefs.getDefaultBranch(null).getIntPref("dom.ipc.processCount");
 
 add_task(async function() {
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({set: [
+    ["preferences.force-disable.check.once.policy", true],
+  ]});
   await SpecialPowers.pushPrefEnv({set: [
     ["layers.acceleration.disabled", DEFAULT_HW_ACCEL_PREF],
     ["dom.ipc.processCount", DEFAULT_PROCESS_COUNT],
