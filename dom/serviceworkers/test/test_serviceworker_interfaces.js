@@ -209,15 +209,15 @@ var interfaceNamesInGlobalScope = [
   
   "PromiseRejectionEvent",
   
-  { name: "PushEvent", fennecOrDesktop: true },
+  { name: "PushEvent" },
   
-  { name: "PushManager", fennecOrDesktop: true },
+  { name: "PushManager" },
   
-  { name: "PushMessageData", fennecOrDesktop: true },
+  { name: "PushMessageData" },
   
-  { name: "PushSubscription", fennecOrDesktop: true },
+  { name: "PushSubscription" },
   
-  { name: "PushSubscriptionOptions", fennecOrDesktop: true },
+  { name: "PushSubscriptionOptions" },
   
   "Request",
   
