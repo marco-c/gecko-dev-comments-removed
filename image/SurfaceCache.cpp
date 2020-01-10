@@ -1391,6 +1391,11 @@ void SurfaceCache::Initialize() {
   uint64_t surfaceCacheMaxSizeKB =
       StaticPrefs::image_mem_surfacecache_max_size_kb_AtStartup();
 
+  if (sizeof(uintptr_t) <= 4) {
+    
+    surfaceCacheMaxSizeKB = 1024 * 1024;
+  }
+
   
   
   
