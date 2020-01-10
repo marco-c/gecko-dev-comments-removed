@@ -3,6 +3,7 @@
 
 
 
+
 requestLongerTimeout(2);
 
 add_task(async function() {
@@ -12,7 +13,7 @@ add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html");
   const {
     selectors: { getSelectedSource },
-    getState
+    getState,
   } = dbg;
   const simple1 = findSource(dbg, "simple1.js");
   const simple2 = findSource(dbg, "simple2.js");
@@ -26,7 +27,6 @@ add_task(async function() {
   await waitForPaused(dbg);
   await waitForSelectedSource(dbg, "simple1");
   assertPausedLocation(dbg);
-
   
   
   await stepOver(dbg);
@@ -34,15 +34,14 @@ add_task(async function() {
   await waitForSelectedSource(dbg, "simple2");
   assertPausedLocation(dbg);
 
-  
-  await stepOut(dbg);
+  info("Step back out to the initial file.");
   await stepOut(dbg);
   assertPausedLocation(dbg);
   await resume(dbg);
 
   
   
-  let longSrc = findSource(dbg, "long.js");
+  const longSrc = findSource(dbg, "long.js");
   await selectSource(dbg, "long.js");
   await addBreakpoint(dbg, longSrc, 66);
 

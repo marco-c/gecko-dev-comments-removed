@@ -416,6 +416,11 @@ TabSources.prototype = {
     return !!range;
   },
 
+  isFrameBlackBoxed: function(frame) {
+    const location = this.getFrameLocation(frame);
+    return this.isBlackBoxed(location.url);
+  },
+
   
 
 
