@@ -68,8 +68,6 @@ namespace mozilla {
 
 
 
-
-
 class BlocksRingBuffer {
   
   using Index = uint64_t;
@@ -562,8 +560,6 @@ class BlocksRingBuffer {
     return std::forward<Callback>(aCallback)(std::move(maybeEntryReader));
   }
 
-  class EntryReserver;
-
   
   
   class MOZ_RAII EntryWriter : public BufferWriter {
@@ -635,7 +631,7 @@ class BlocksRingBuffer {
 
    private:
     
-    friend class EntryReserver;
+    friend class BlocksRingBuffer;
 
     
     
@@ -669,131 +665,54 @@ class BlocksRingBuffer {
 
   
   
-  class EntryReserver {
-   public:
-#ifdef DEBUG
-    ~EntryReserver() {
-      
-      mRing->mMutex.AssertCurrentThreadOwns();
-    }
-#endif  
-
-    
-    
-    
-    
-    template <typename Callback>
-    auto Reserve(Length aBytes, Callback&& aCallback) {
-      
-      
-      
-      MOZ_RELEASE_ASSERT(
-          aBytes <
-          mRing->mMaybeUnderlyingBuffer->mBuffer.BufferLength().Value() / 2);
-      
-      const Length blockBytes = EntryWriter::BlockSizeForEntrySize(aBytes);
-      
-      const BlockIndex blockIndex = mRing->mNextWriteIndex;
-      
-      const Index blockEnd = Index(blockIndex) + blockBytes;
-      
-      mRing->mNextWriteIndex = BlockIndex(blockEnd);
-      while (
-          blockEnd >
-          Index(mRing->mFirstReadIndex) +
-              mRing->mMaybeUnderlyingBuffer->mBuffer.BufferLength().Value()) {
+  
+  
+  
+  
+  
+  
+  template <typename CallbackBytes, typename Callback>
+  auto ReserveAndPut(CallbackBytes aCallbackBytes, Callback&& aCallback) {
+    {  
+      baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
+      if (MOZ_LIKELY(mMaybeUnderlyingBuffer)) {
+        Length bytes = std::forward<CallbackBytes>(aCallbackBytes)();
         
-        EntryReader reader = mRing->ReaderInBlockAt(mRing->mFirstReadIndex);
         
-        if (mRing->mMaybeUnderlyingBuffer->mEntryDestructor) {
-          mRing->mMaybeUnderlyingBuffer->mEntryDestructor(reader);
+        
+        MOZ_RELEASE_ASSERT(
+            bytes < mMaybeUnderlyingBuffer->mBuffer.BufferLength().Value() / 2);
+        
+        const Length blockBytes = EntryWriter::BlockSizeForEntrySize(bytes);
+        
+        const BlockIndex blockIndex = mNextWriteIndex;
+        
+        const Index blockEnd = Index(blockIndex) + blockBytes;
+        
+        mNextWriteIndex = BlockIndex(blockEnd);
+        while (blockEnd >
+               Index(mFirstReadIndex) +
+                   mMaybeUnderlyingBuffer->mBuffer.BufferLength().Value()) {
+          
+          EntryReader reader = ReaderInBlockAt(mFirstReadIndex);
+          
+          if (mMaybeUnderlyingBuffer->mEntryDestructor) {
+            mMaybeUnderlyingBuffer->mEntryDestructor(reader);
+          }
+          mMaybeUnderlyingBuffer->mClearedBlockCount += 1;
+          MOZ_ASSERT(reader.CurrentIndex() <= Index(reader.NextBlockIndex()));
+          
+          mFirstReadIndex = reader.NextBlockIndex();
         }
-        mRing->mMaybeUnderlyingBuffer->mClearedBlockCount += 1;
-        MOZ_ASSERT(reader.CurrentIndex() <= Index(reader.NextBlockIndex()));
+        mMaybeUnderlyingBuffer->mPushedBlockCount += 1;
         
-        mRing->mFirstReadIndex = reader.NextBlockIndex();
+        EntryWriter entryWriter(*this, blockIndex, bytes);
+        return std::forward<Callback>(aCallback)(&entryWriter);
       }
-      mRing->mMaybeUnderlyingBuffer->mPushedBlockCount += 1;
-      
-      return std::forward<Callback>(aCallback)(
-          EntryWriter(*mRing, blockIndex, aBytes));
-    }
-
-    
-    BlockIndex Write(const void* aSrc, Length aBytes) {
-      return Reserve(aBytes, [&](EntryWriter& aEW) {
-        aEW.Write(aSrc, aBytes);
-        return aEW.CurrentBlockIndex();
-      });
-    }
-
+    }  
     
     
-    
-    template <typename T>
-    BlockIndex WriteObject(const T& aOb) {
-      return Write(&aOb, sizeof(T));
-    }
-
-    
-    BlockIndex BufferRangeStart() const { return mRing->mFirstReadIndex; }
-
-    
-    BlockIndex BufferRangeEnd() const { return mRing->mNextWriteIndex; }
-
-    
-    
-    Maybe<EntryReader> GetEntryAt(BlockIndex aBlockIndex) {
-      
-      MOZ_ASSERT(aBlockIndex <= BufferRangeEnd());
-      if (aBlockIndex >= BufferRangeStart() && aBlockIndex < BufferRangeEnd()) {
-        
-        mRing->AssertBlockIndexIsValid(aBlockIndex);
-        return Some(EntryReader(*mRing, aBlockIndex));
-      }
-      
-      return Nothing();
-    }
-
-   private:
-    
-    friend class BlocksRingBuffer;
-
-    explicit EntryReserver(BlocksRingBuffer& aRing)
-        : mRing(WrapNotNull(&aRing)) {
-      
-      mRing->mMutex.AssertCurrentThreadOwns();
-    }
-
-    
-    
-    
-    NotNull<BlocksRingBuffer*> mRing;
-  };
-
-  
-  
-  
-  
-  
-  
-  template <typename Callback>
-  auto Put(Callback&& aCallback) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
-    Maybe<EntryReserver> maybeEntryReserver;
-    if (MOZ_LIKELY(mMaybeUnderlyingBuffer)) {
-      maybeEntryReserver.emplace(EntryReserver(*this));
-    }
-    return std::forward<Callback>(aCallback)(std::move(maybeEntryReserver));
+    return std::forward<Callback>(aCallback)(nullptr);
   }
 
   
@@ -801,30 +720,22 @@ class BlocksRingBuffer {
   
   
   template <typename Callback>
-  auto Put(Length aLength, Callback&& aCallback) {
-    return Put([&](Maybe<EntryReserver>&& aER) {
-      if (MOZ_LIKELY(aER)) {
-        
-        
-        
-        return aER->Reserve(aLength, [&](EntryWriter& aEW) {
-          return std::forward<Callback>(aCallback)(&aEW);
-        });
-      }
-      
-      return std::forward<Callback>(aCallback)(nullptr);
-    });
+  auto Put(Length aBytes, Callback&& aCallback) {
+    return ReserveAndPut([aBytes]() { return aBytes; },
+                         std::forward<Callback>(aCallback));
   }
 
   
   BlockIndex PutFrom(const void* aSrc, Length aBytes) {
-    return Put([&](Maybe<EntryReserver>&& aER) {
-      if (MOZ_LIKELY(aER)) {
-        return std::move(aER)->Write(aSrc, aBytes);
-      }
-      
-      return BlockIndex{};
-    });
+    return ReserveAndPut([aBytes]() { return aBytes; },
+                         [&](EntryWriter* aEntryWriter) {
+                           if (MOZ_LIKELY(aEntryWriter)) {
+                             aEntryWriter->Write(aSrc, aBytes);
+                             return aEntryWriter->CurrentBlockIndex();
+                           }
+                           
+                           return BlockIndex{};
+                         });
   }
 
   
@@ -832,13 +743,15 @@ class BlocksRingBuffer {
   
   template <typename T>
   BlockIndex PutObject(const T& aOb) {
-    return Put([&](Maybe<EntryReserver>&& aER) {
-      if (MOZ_LIKELY(aER)) {
-        return std::move(aER)->WriteObject<T>(aOb);
-      }
-      
-      return BlockIndex{};
-    });
+    return ReserveAndPut([]() { return sizeof(T); },
+                         [&](EntryWriter* aEntryWriter) {
+                           if (MOZ_LIKELY(aEntryWriter)) {
+                             aEntryWriter->WriteObject(aOb);
+                             return aEntryWriter->CurrentBlockIndex();
+                           }
+                           
+                           return BlockIndex{};
+                         });
   }
 
   

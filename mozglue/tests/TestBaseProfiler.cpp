@@ -525,10 +525,12 @@ void TestBlocksRingBufferAPI() {
     VERIFY_START_END_DESTROYED(1, 6, 0);
 
     
-    auto bi2 = rb.Put([](Maybe<BlocksRingBuffer::EntryReserver>&& aER) {
-      MOZ_RELEASE_ASSERT(aER.isSome());
-      return aER->WriteObject(uint32_t(2));
-    });
+    auto bi2 = rb.ReserveAndPut([]() { return sizeof(uint32_t); },
+                                [](BlocksRingBuffer::EntryWriter* aEW) {
+                                  MOZ_RELEASE_ASSERT(!!aEW);
+                                  aEW->WriteObject(uint32_t(2));
+                                  return aEW->CurrentBlockIndex();
+                                });
     static_assert(
         std::is_same<decltype(bi2), BlocksRingBuffer::BlockIndex>::value,
         "All index-returning functions should return a "
@@ -602,14 +604,12 @@ void TestBlocksRingBufferAPI() {
 
     
     
-    auto put3 = rb.Put([&](Maybe<BlocksRingBuffer::EntryReserver>&& aER) {
-      MOZ_RELEASE_ASSERT(aER.isSome());
-      return aER->Reserve(
-          sizeof(uint32_t), [&](BlocksRingBuffer::EntryWriter& aEW) {
-            aEW.WriteObject(uint32_t(3));
-            return float(ExtractBlockIndex(aEW.CurrentBlockIndex()));
-          });
-    });
+    auto put3 =
+        rb.Put(sizeof(uint32_t), [&](BlocksRingBuffer::EntryWriter* aEW) {
+          MOZ_RELEASE_ASSERT(!!aEW);
+          aEW->WriteObject(uint32_t(3));
+          return float(ExtractBlockIndex(aEW->CurrentBlockIndex()));
+        });
     static_assert(std::is_same<decltype(put3), float>::value,
                   "Expect float as returned by callback.");
     MOZ_RELEASE_ASSERT(put3 == 11.0);
@@ -670,19 +670,16 @@ void TestBlocksRingBufferAPI() {
     
     
     
-    auto bi5_6 = rb.Put([&](Maybe<BlocksRingBuffer::EntryReserver>&& aER) {
-      MOZ_RELEASE_ASSERT(aER.isSome());
-      return aER->Reserve(
-          sizeof(uint32_t), [&](BlocksRingBuffer::EntryWriter& aEW) {
-            aEW.WriteObject(uint32_t(5));
-            MOZ_RELEASE_ASSERT(aEW.GetEntryAt(bi2).isNothing());
-            MOZ_RELEASE_ASSERT(aEW.GetEntryAt(bi4).isSome());
-            MOZ_RELEASE_ASSERT(aEW.GetEntryAt(bi4)->CurrentBlockIndex() == bi4);
-            MOZ_RELEASE_ASSERT(aEW.GetEntryAt(bi4)->ReadObject<uint32_t>() ==
-                               4);
-            return MakePair(aEW.CurrentBlockIndex(), aEW.BlockEndIndex());
-          });
-    });
+    auto bi5_6 =
+        rb.Put(sizeof(uint32_t), [&](BlocksRingBuffer::EntryWriter* aEW) {
+          MOZ_RELEASE_ASSERT(!!aEW);
+          aEW->WriteObject(uint32_t(5));
+          MOZ_RELEASE_ASSERT(aEW->GetEntryAt(bi2).isNothing());
+          MOZ_RELEASE_ASSERT(aEW->GetEntryAt(bi4).isSome());
+          MOZ_RELEASE_ASSERT(aEW->GetEntryAt(bi4)->CurrentBlockIndex() == bi4);
+          MOZ_RELEASE_ASSERT(aEW->GetEntryAt(bi4)->ReadObject<uint32_t>() == 4);
+          return MakePair(aEW->CurrentBlockIndex(), aEW->BlockEndIndex());
+        });
     auto& bi5 = bi5_6.first();
     auto& bi6 = bi5_6.second();
     
@@ -798,12 +795,6 @@ void TestBlocksRingBufferUnderlyingBufferChanges() {
     MOZ_RELEASE_ASSERT(state.mClearedBlockCount == 0);
     
     int32_t ran = 0;
-    rb.Put([&](Maybe<BlocksRingBuffer::EntryReserver>&& aMaybeEntryReserver) {
-      MOZ_RELEASE_ASSERT(aMaybeEntryReserver.isNothing());
-      ++ran;
-    });
-    MOZ_RELEASE_ASSERT(ran == 1);
-    ran = 0;
     rb.Put(1, [&](BlocksRingBuffer::EntryWriter* aMaybeEntryWriter) {
       MOZ_RELEASE_ASSERT(!aMaybeEntryWriter);
       ++ran;
@@ -875,12 +866,6 @@ void TestBlocksRingBufferUnderlyingBufferChanges() {
       MOZ_RELEASE_ASSERT(state.mClearedBlockCount <= state.mPushedBlockCount);
     }
     int32_t ran = 0;
-    rb.Put([&](Maybe<BlocksRingBuffer::EntryReserver>&& aMaybeEntryReserver) {
-      MOZ_RELEASE_ASSERT(aMaybeEntryReserver.isSome());
-      ++ran;
-    });
-    MOZ_RELEASE_ASSERT(ran == 1);
-    ran = 0;
     
     bi = rb.Put(sizeof(ran),
                 [&](BlocksRingBuffer::EntryWriter* aMaybeEntryWriter) {
