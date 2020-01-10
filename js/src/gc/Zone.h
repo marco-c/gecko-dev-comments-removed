@@ -268,6 +268,10 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   }
 
   
+  bool wasCollected() const { return wasCollected_; }
+  void setWasCollected(bool v) { wasCollected_ = v; }
+
+  
   
   uint64_t gcNumber();
 
@@ -609,6 +613,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::MainThreadData<bool> gcScheduledSaved_;
   js::MainThreadData<bool> gcPreserveCode_;
   js::ZoneData<bool> keepShapeCaches_;
+  js::MainThreadData<bool> wasCollected_;
 
   
   friend class js::gc::ZoneList;

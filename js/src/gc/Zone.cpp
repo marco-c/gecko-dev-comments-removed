@@ -128,6 +128,7 @@ JS::Zone::Zone(JSRuntime* rt)
       gcScheduledSaved_(false),
       gcPreserveCode_(false),
       keepShapeCaches_(this, false),
+      wasCollected_(false),
       listNext_(NotOnList) {
   
   MOZ_ASSERT(reinterpret_cast<JS::shadow::Zone*>(this) ==
