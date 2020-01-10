@@ -76,60 +76,48 @@ struct OriginAttributesDictionary;
 
 
 
+
 class ArrayBufferBuilder {
- public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ArrayBufferBuilder);
-
-  ArrayBufferBuilder();
-
-  
-  bool SetCapacity(uint32_t aNewCap);
-
-  
-  
-  
-  
-  
-  
-  
-  bool Append(const uint8_t* aNewData, uint32_t aDataLen,
-              uint32_t aMaxGrowth = 0);
-
-  uint32_t Length();
-  uint32_t Capacity();
-
-  JSObject* TakeArrayBuffer(JSContext* aCx);
-
-  
-  
-  
-  
-  
-  
-  nsresult MapToFileInPackage(const nsCString& aFile, nsIFile* aJarFile);
-
- private:
-  ~ArrayBufferBuilder();
-
-  ArrayBufferBuilder(const ArrayBufferBuilder&) = delete;
-  ArrayBufferBuilder& operator=(const ArrayBufferBuilder&) = delete;
-  ArrayBufferBuilder& operator=(const ArrayBufferBuilder&&) = delete;
-
-  bool SetCapacityInternal(uint32_t aNewCap, const MutexAutoLock& aProofOfLock);
-
-  static bool AreOverlappingRegions(const uint8_t* aStart1, uint32_t aLength1,
-                                    const uint8_t* aStart2, uint32_t aLength2);
-
-  Mutex mMutex;
-
-  
   uint8_t* mDataPtr;
   uint32_t mCapacity;
   uint32_t mLength;
   void* mMapPtr;
 
+ public:
+  ArrayBufferBuilder();
+  ~ArrayBufferBuilder();
+
+  void reset();
+
   
-  bool mNeutered;
+  bool setCapacity(uint32_t aNewCap);
+
+  
+  
+  
+  
+  
+  
+  
+  bool append(const uint8_t* aNewData, uint32_t aDataLen,
+              uint32_t aMaxGrowth = 0);
+
+  uint32_t length() { return mLength; }
+  uint32_t capacity() { return mCapacity; }
+
+  JSObject* getArrayBuffer(JSContext* aCx);
+
+  
+  
+  
+  
+  
+  
+  nsresult mapToFileInPackage(const nsCString& aFile, nsIFile* aJarFile);
+
+ protected:
+  static bool areOverlappingRegions(const uint8_t* aStart1, uint32_t aLength1,
+                                    const uint8_t* aStart2, uint32_t aLength2);
 };
 
 class nsXMLHttpRequestXPCOMifier;
@@ -389,10 +377,6 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
   virtual void GetResponseText(DOMString& aResponseText,
                                ErrorResult& aRv) override;
 
-  
-  already_AddRefed<BlobImpl> GetResponseBlobImpl();
-  already_AddRefed<ArrayBufferBuilder> GetResponseArrayBufferBuilder();
-  nsresult GetResponseTextForJSON(nsAString& aString);
   void GetResponseText(XMLHttpRequestStringSnapshot& aSnapshot,
                        ErrorResult& aRv);
 
@@ -452,7 +436,7 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
   void BlobStoreCompleted(MutableBlobStorage* aBlobStorage, BlobImpl* aBlobImpl,
                           nsresult aResult) override;
 
-  void LocalFileToBlobCompleted(BlobImpl* aBlobImpl);
+  void LocalFileToBlobCompleted(Blob* aBlob);
 
  protected:
   nsresult DetectCharset();
@@ -613,12 +597,9 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
 
   XMLHttpRequestResponseType mResponseType;
 
-  RefPtr<BlobImpl> mResponseBlobImpl;
-
   
   
   RefPtr<Blob> mResponseBlob;
-
   
   RefPtr<MutableBlobStorage> mBlobStorage;
 
@@ -734,7 +715,7 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
 
   JS::Heap<JS::Value> mResultJSON;
 
-  RefPtr<ArrayBufferBuilder> mArrayBufferBuilder;
+  ArrayBufferBuilder mArrayBufferBuilder;
   JS::Heap<JSObject*> mResultArrayBuffer;
   bool mIsMappedArrayBuffer;
 
