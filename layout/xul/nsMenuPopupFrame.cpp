@@ -1773,14 +1773,6 @@ ConsumeOutsideClicksResult nsMenuPopupFrame::ConsumeOutsideClicks() {
       return ConsumeOutsideClicks_Never;
     }
 #endif
-    if (ni->Equals(nsGkAtoms::textbox, kNameSpaceID_XUL)) {
-      
-      if (parentContent->AsElement()->AttrValueIs(
-              kNameSpaceID_None, nsGkAtoms::type, nsGkAtoms::autocomplete,
-              eCaseMatters)) {
-        return ConsumeOutsideClicks_Never;
-      }
-    }
   }
 
   return ConsumeOutsideClicks_True;
