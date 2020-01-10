@@ -222,6 +222,9 @@ class DocAccessibleParent : public ProxyAccessible,
 
 
 
+
+
+
   void SendParentCOMProxy(Accessible* aOuterDoc);
 
   virtual mozilla::ipc::IPCResult RecvGetWindowedPluginIAccessible(
