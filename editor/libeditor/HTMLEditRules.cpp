@@ -397,7 +397,8 @@ nsresult HTMLEditRules::AfterEdit() {
   AutoSafeEditorData setData(*this, *mHTMLEditor);
 
   
-  nsresult rv = AfterEditInner();
+  nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                    .OnEndHandlingTopLevelEditSubActionInternal();
   
   
   
@@ -419,22 +420,23 @@ nsresult HTMLEditRules::AfterEdit() {
     }
   }
 
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "AfterEditInner() failed");
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "OnEndHandlingTopLevelEditSubActionInternal() failed");
   return rv;
 }
 
-nsresult HTMLEditRules::AfterEditInner() {
-  MOZ_ASSERT(IsEditorDataAvailable());
+nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
+  MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
 
-  nsresult rv =
-      MOZ_KnownLive(HTMLEditorRef()).EnsureSelectionInBodyOrDocumentElement();
+  nsresult rv = EnsureSelectionInBodyOrDocumentElement();
   if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
   NS_WARNING_ASSERTION(
       NS_SUCCEEDED(rv),
       "EnsureSelectionInBodyOrDocumentElement() failed, but ignored");
-  switch (HTMLEditorRef().GetTopLevelEditSubAction()) {
+
+  switch (GetTopLevelEditSubAction()) {
     case EditSubAction::eReplaceHeadWithHTMLSource:
     case EditSubAction::eCreatePaddingBRElementForEmptyEditor:
       return NS_OK;
@@ -442,16 +444,14 @@ nsresult HTMLEditRules::AfterEditInner() {
       break;
   }
 
-  if (HTMLEditorRef()
-          .TopLevelEditSubActionDataRef()
-          .mChangedRange->IsPositioned() &&
-      HTMLEditorRef().GetTopLevelEditSubAction() != EditSubAction::eUndo &&
-      HTMLEditorRef().GetTopLevelEditSubAction() != EditSubAction::eRedo) {
+  if (TopLevelEditSubActionDataRef().mChangedRange->IsPositioned() &&
+      GetTopLevelEditSubAction() != EditSubAction::eUndo &&
+      GetTopLevelEditSubAction() != EditSubAction::eRedo) {
     
     
-    AutoTransactionsConserveSelection dontChangeMySelection(HTMLEditorRef());
+    AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
-    switch (HTMLEditorRef().GetTopLevelEditSubAction()) {
+    switch (GetTopLevelEditSubAction()) {
       case EditSubAction::eInsertText:
       case EditSubAction::eInsertTextComingFromIME:
       case EditSubAction::eInsertLineBreak:
@@ -460,25 +460,25 @@ nsresult HTMLEditRules::AfterEditInner() {
         
         
         RefPtr<nsRange> extendedChangedRange =
-            HTMLEditorRef().CreateRangeIncludingAdjuscentWhiteSpaces(
-                *HTMLEditorRef().TopLevelEditSubActionDataRef().mChangedRange);
+            CreateRangeIncludingAdjuscentWhiteSpaces(
+                *TopLevelEditSubActionDataRef().mChangedRange);
         if (extendedChangedRange) {
           MOZ_ASSERT(extendedChangedRange->IsPositioned());
           
-          HTMLEditorRef().TopLevelEditSubActionDataRef().mChangedRange =
+          TopLevelEditSubActionDataRef().mChangedRange =
               std::move(extendedChangedRange);
         }
         break;
       }
       default: {
         RefPtr<nsRange> extendedChangedRange =
-            HTMLEditorRef().CreateRangeExtendedToHardLineStartAndEnd(
-                *HTMLEditorRef().TopLevelEditSubActionDataRef().mChangedRange,
-                HTMLEditorRef().GetTopLevelEditSubAction());
+            CreateRangeExtendedToHardLineStartAndEnd(
+                *TopLevelEditSubActionDataRef().mChangedRange,
+                GetTopLevelEditSubAction());
         if (extendedChangedRange) {
           MOZ_ASSERT(extendedChangedRange->IsPositioned());
           
-          HTMLEditorRef().TopLevelEditSubActionDataRef().mChangedRange =
+          TopLevelEditSubActionDataRef().mChangedRange =
               std::move(extendedChangedRange);
         }
         break;
@@ -494,53 +494,36 @@ nsresult HTMLEditRules::AfterEditInner() {
     
     
     
-    if (HTMLEditorRef().GetTopLevelEditSubAction() ==
-            EditSubAction::eDeleteSelectedContent &&
-        HTMLEditorRef()
-            .TopLevelEditSubActionDataRef()
-            .mDidDeleteNonCollapsedRange &&
-        !HTMLEditorRef()
-             .TopLevelEditSubActionDataRef()
-             .mDidDeleteEmptyParentBlocks) {
-      nsresult rv =
-          MOZ_KnownLive(HTMLEditorRef())
-              .InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
-                  EditorBase::GetStartPoint(*SelectionRefPtr()));
+    if (GetTopLevelEditSubAction() == EditSubAction::eDeleteSelectedContent &&
+        TopLevelEditSubActionDataRef().mDidDeleteNonCollapsedRange &&
+        !TopLevelEditSubActionDataRef().mDidDeleteEmptyParentBlocks) {
+      nsresult rv = InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
+          EditorBase::GetStartPoint(*SelectionRefPtr()));
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
     }
 
     
-    nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                      .InsertBRElementToEmptyListItemsAndTableCellsInRange(
-                          HTMLEditorRef()
-                              .TopLevelEditSubActionDataRef()
-                              .mChangedRange->StartRef()
-                              .AsRaw(),
-                          HTMLEditorRef()
-                              .TopLevelEditSubActionDataRef()
-                              .mChangedRange->EndRef()
-                              .AsRaw());
+    nsresult rv = InsertBRElementToEmptyListItemsAndTableCellsInRange(
+        TopLevelEditSubActionDataRef().mChangedRange->StartRef().AsRaw(),
+        TopLevelEditSubActionDataRef().mChangedRange->EndRef().AsRaw());
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "Failed to insert <br> elements to empty list items and table cells");
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "InsertBRElementToEmptyListItemsAndTableCellsInRange()"
+                         " failed, but ignored");
 
     
-    switch (HTMLEditorRef().GetTopLevelEditSubAction()) {
+    switch (GetTopLevelEditSubAction()) {
       case EditSubAction::eInsertText:
       case EditSubAction::eInsertTextComingFromIME:
         break;
       default: {
-        nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                          .CollapseAdjacentTextNodes(
-                              MOZ_KnownLive(HTMLEditorRef()
-                                                .TopLevelEditSubActionDataRef()
-                                                .mChangedRange));
-        if (NS_WARN_IF(!CanHandleEditAction())) {
+        nsresult rv = CollapseAdjacentTextNodes(
+            MOZ_KnownLive(TopLevelEditSubActionDataRef().mChangedRange));
+        if (NS_WARN_IF(Destroyed())) {
           return NS_ERROR_EDITOR_DESTROYED;
         }
         if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -551,17 +534,15 @@ nsresult HTMLEditRules::AfterEditInner() {
     }
 
     
-    rv =
-        MOZ_KnownLive(HTMLEditorRef())
-            .RemoveEmptyNodesIn(MOZ_KnownLive(
-                *HTMLEditorRef().TopLevelEditSubActionDataRef().mChangedRange));
+    rv = RemoveEmptyNodesIn(
+        MOZ_KnownLive(*TopLevelEditSubActionDataRef().mChangedRange));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
 
     
     
-    switch (HTMLEditorRef().GetTopLevelEditSubAction()) {
+    switch (GetTopLevelEditSubAction()) {
       case EditSubAction::eInsertText:
       case EditSubAction::eInsertTextComingFromIME:
       case EditSubAction::eDeleteSelectedContent:
@@ -575,8 +556,7 @@ nsresult HTMLEditRules::AfterEditInner() {
         
         
         
-        EditorRawDOMPoint pointToAdjust(
-            HTMLEditorRef().GetCompositionEndPoint());
+        EditorRawDOMPoint pointToAdjust(GetCompositionEndPoint());
         if (!pointToAdjust.IsSet()) {
           
           pointToAdjust = EditorBase::GetStartPoint(*SelectionRefPtr());
@@ -584,8 +564,8 @@ nsresult HTMLEditRules::AfterEditInner() {
             return NS_ERROR_FAILURE;
           }
         }
-        rv = WSRunObject(&HTMLEditorRef(), pointToAdjust).AdjustWhitespace();
-        if (NS_WARN_IF(!CanHandleEditAction())) {
+        rv = WSRunObject(this, pointToAdjust).AdjustWhitespace();
+        if (NS_WARN_IF(Destroyed())) {
           return NS_ERROR_EDITOR_DESTROYED;
         }
         if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -593,24 +573,29 @@ nsresult HTMLEditRules::AfterEditInner() {
         }
 
         
-        if (NS_WARN_IF(!HTMLEditorRef()
-                            .TopLevelEditSubActionDataRef()
-                            .mSelectedRange->IsSet())) {
+        
+        
+        if (NS_WARN_IF(
+                !TopLevelEditSubActionDataRef().mSelectedRange->IsSet())) {
           return NS_ERROR_FAILURE;
         }
-        WSRunObject(&HTMLEditorRef(), HTMLEditorRef()
-                                          .TopLevelEditSubActionDataRef()
-                                          .mSelectedRange->StartRawPoint())
+        WSRunObject(
+            this,
+            TopLevelEditSubActionDataRef().mSelectedRange->StartRawPoint())
             .AdjustWhitespace();
+        if (NS_WARN_IF(Destroyed())) {
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
         
         
-        if (HTMLEditorRef()
-                .TopLevelEditSubActionDataRef()
-                .mSelectedRange->IsCollapsed()) {
-          WSRunObject(&HTMLEditorRef(), HTMLEditorRef()
-                                            .TopLevelEditSubActionDataRef()
-                                            .mSelectedRange->EndRawPoint())
+        if (TopLevelEditSubActionDataRef().mSelectedRange->IsCollapsed()) {
+          WSRunObject(
+              this,
+              TopLevelEditSubActionDataRef().mSelectedRange->EndRawPoint())
               .AdjustWhitespace();
+          if (NS_WARN_IF(Destroyed())) {
+            return NS_ERROR_EDITOR_DESTROYED;
+          }
         }
         break;
       }
@@ -619,13 +604,10 @@ nsresult HTMLEditRules::AfterEditInner() {
     }
 
     
-    if (HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement &&
+    if (TopLevelEditSubActionDataRef().mNewBlockElement &&
         SelectionRefPtr()->IsCollapsed()) {
-      nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                        .EnsureCaretInBlockElement(
-                            MOZ_KnownLive(*HTMLEditorRef()
-                                               .TopLevelEditSubActionDataRef()
-                                               .mNewBlockElement));
+      nsresult rv = EnsureCaretInBlockElement(
+          MOZ_KnownLive(*TopLevelEditSubActionDataRef().mNewBlockElement));
       if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
@@ -638,11 +620,9 @@ nsresult HTMLEditRules::AfterEditInner() {
     
     
     
-    if (!HTMLEditorRef()
-             .TopLevelEditSubActionDataRef()
-             .mDidDeleteEmptyParentBlocks &&
+    if (!TopLevelEditSubActionDataRef().mDidDeleteEmptyParentBlocks &&
         SelectionRefPtr()->IsCollapsed()) {
-      switch (HTMLEditorRef().GetTopLevelEditSubAction()) {
+      switch (GetTopLevelEditSubAction()) {
         case EditSubAction::eInsertText:
         case EditSubAction::eInsertTextComingFromIME:
         case EditSubAction::eDeleteSelectedContent:
@@ -654,9 +634,8 @@ nsresult HTMLEditRules::AfterEditInner() {
           
           
           
-          rv = MOZ_KnownLive(HTMLEditorRef())
-                   .AdjustCaretPositionAndEnsurePaddingBRElement(
-                       HTMLEditorRef().GetDirectionOfTopLevelEditSubAction());
+          rv = AdjustCaretPositionAndEnsurePaddingBRElement(
+              GetDirectionOfTopLevelEditSubAction());
           if (NS_WARN_IF(NS_FAILED(rv))) {
             return rv;
           }
@@ -668,34 +647,30 @@ nsresult HTMLEditRules::AfterEditInner() {
 
     
     bool reapplyCachedStyle;
-    switch (HTMLEditorRef().GetTopLevelEditSubAction()) {
+    switch (GetTopLevelEditSubAction()) {
       case EditSubAction::eInsertText:
       case EditSubAction::eInsertTextComingFromIME:
       case EditSubAction::eDeleteSelectedContent:
         reapplyCachedStyle = true;
         break;
       default:
-        reapplyCachedStyle = IsStyleCachePreservingSubAction(
-            HTMLEditorRef().GetTopLevelEditSubAction());
+        reapplyCachedStyle =
+            IsStyleCachePreservingSubAction(GetTopLevelEditSubAction());
         break;
     }
     if (reapplyCachedStyle) {
-      HTMLEditorRef().mTypeInState->UpdateSelState(SelectionRefPtr());
-      rv = MOZ_KnownLive(HTMLEditorRef()).ReapplyCachedStyles();
+      mTypeInState->UpdateSelState(SelectionRefPtr());
+      rv = ReapplyCachedStyles();
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-      HTMLEditorRef()
-          .TopLevelEditSubActionDataRef()
-          .mCachedInlineStyles.Clear();
+      TopLevelEditSubActionDataRef().mCachedInlineStyles.Clear();
     }
   }
 
-  rv = HTMLEditorRef().HandleInlineSpellCheck(
-      HTMLEditorRef()
-          .TopLevelEditSubActionDataRef()
-          .mSelectedRange->StartPoint(),
-      HTMLEditorRef().TopLevelEditSubActionDataRef().mChangedRange);
+  rv = HandleInlineSpellCheck(
+      TopLevelEditSubActionDataRef().mSelectedRange->StartPoint(),
+      TopLevelEditSubActionDataRef().mChangedRange);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -704,18 +679,15 @@ nsresult HTMLEditRules::AfterEditInner() {
   
   
   
-  rv = MOZ_KnownLive(HTMLEditorRef())
-           .MaybeCreatePaddingBRElementForEmptyEditor();
+  rv = MaybeCreatePaddingBRElementForEmptyEditor();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
   
-  if (!HTMLEditorRef()
-           .TopLevelEditSubActionDataRef()
-           .mDidExplicitlySetInterLine &&
+  if (!TopLevelEditSubActionDataRef().mDidExplicitlySetInterLine &&
       SelectionRefPtr()->IsCollapsed()) {
-    HTMLEditorRef().SetSelectionInterlinePosition();
+    SetSelectionInterlinePosition();
   }
 
   return NS_OK;
