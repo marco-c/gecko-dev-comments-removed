@@ -20,37 +20,19 @@
 #include "nsThreadUtils.h"
 #include "nsIObserverService.h"
 #include "mozilla/Services.h"
-#include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/LocalStorageCommon.h"
-
-
-
-
-#define DEFAULT_QUOTA_LIMIT (5 * 1024)
 
 namespace mozilla {
 namespace dom {
 
 using namespace StorageUtils;
 
-namespace {
-
-int32_t gQuotaLimit = DEFAULT_QUOTA_LIMIT;
-
-}  
-
 LocalStorageManager* LocalStorageManager::sSelf = nullptr;
 
 
 uint32_t LocalStorageManager::GetQuota() {
-  static bool preferencesInitialized = false;
-  if (!preferencesInitialized) {
-    mozilla::Preferences::AddIntVarCache(
-        &gQuotaLimit, "dom.storage.default_quota", DEFAULT_QUOTA_LIMIT);
-    preferencesInitialized = true;
-  }
-
-  return gQuotaLimit * 1024;  
+  return StaticPrefs::dom_storage_default_quota() * 1024;  
 }
 
 NS_IMPL_ISUPPORTS(LocalStorageManager, nsIDOMStorageManager,
