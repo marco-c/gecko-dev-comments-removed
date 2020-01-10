@@ -18,11 +18,11 @@ addAccessibleTask("doc_treeupdate_removal.xhtml", async function(
 
   
   let onReorder = waitForEvent(EVENT_REORDER, "body");
-  await ContentTask.spawn(browser, {}, () =>
+  await SpecialPowers.spawn(browser, [], () => {
     content.document
       .getElementById("the_displaynone")
-      .appendChild(content.document.getElementById("the_table"))
-  );
+      .appendChild(content.document.getElementById("the_table"));
+  });
   await onReorder;
 
   ok(
@@ -35,11 +35,11 @@ addAccessibleTask("doc_treeupdate_removal.xhtml", async function(
   );
 
   
-  await ContentTask.spawn(browser, {}, () =>
+  await SpecialPowers.spawn(browser, [], () => {
     content.document.body.removeChild(
       content.document.getElementById("the_row")
-    )
-  );
+    );
+  });
 
   
   ok(

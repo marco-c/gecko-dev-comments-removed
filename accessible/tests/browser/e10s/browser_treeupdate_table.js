@@ -26,7 +26,7 @@ addAccessibleTask(
     testAccessibleTree(table, tree);
 
     let onReorder = waitForEvent(EVENT_REORDER, "table");
-    await ContentTask.spawn(browser, {}, () => {
+    await SpecialPowers.spawn(browser, [], () => {
       
       
       let doc = content.document;

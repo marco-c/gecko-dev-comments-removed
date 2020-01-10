@@ -21,15 +21,20 @@ add_task(async function() {
       </html>`,
     },
     async function(browser) {
-      await loadContentScripts(browser, "Common.jsm");
       info(
         "Creating a service in parent and waiting for service to be created " +
           "in content"
       );
+      await loadContentScripts(browser, "Common.jsm");
       
       
-      let parentA11yInit = initPromise();
-      let contentA11yInit = initPromise(browser);
+      const [parentA11yInitObserver, parentA11yInit] = initAccService();
+      const [contentA11yInitObserver, contentA11yInit] = initAccService(
+        browser
+      );
+
+      await Promise.all([parentA11yInitObserver, contentA11yInitObserver]);
+
       let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
         Ci.nsIAccessibilityService
       );
@@ -41,7 +46,7 @@ add_task(async function() {
           "process"
       );
       
-      await ContentTask.spawn(browser, {}, () => {
+      await SpecialPowers.spawn(browser, [], () => {
         content.CommonUtils.accService;
       });
 
@@ -53,8 +58,13 @@ add_task(async function() {
       
       
       
-      let contentA11yShutdown = new Promise((resolve, reject) =>
-        shutdownPromise(browser).then(flag =>
+      const [
+        contentA11yShutdownObserver,
+        contentA11yShutdownPromise,
+      ] = shutdownAccService(browser);
+      await contentA11yShutdownObserver;
+      const contentA11yShutdown = new Promise((resolve, reject) =>
+        contentA11yShutdownPromise.then(flag =>
           contentCanShutdown
             ? resolve()
             : reject("Accessible service was shut down incorrectly")
@@ -63,7 +73,7 @@ add_task(async function() {
       
       
       
-      await ContentTask.spawn(browser, {}, () => {
+      await SpecialPowers.spawn(browser, [], () => {
         content.CommonUtils.clearAccService();
       });
 
@@ -74,7 +84,12 @@ add_task(async function() {
       
       contentCanShutdown = true;
       
-      let parentA11yShutdown = shutdownPromise();
+      const [
+        parentA11yShutdownObserver,
+        parentA11yShutdown,
+      ] = shutdownAccService();
+      await parentA11yShutdownObserver;
+
       accService = null;
       ok(!accService, "Service is removed in parent");
       
