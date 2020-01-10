@@ -148,16 +148,11 @@ export function getColumnBreakpoints(
   positions: BreakpointPosition[],
   breakpoints: ?(Breakpoint[]),
   viewport: ?Range,
-  selectedSourceWithContent: ?SourceWithContent
+  selectedSource: ?SourceWithContent
 ) {
-  if (!positions || !selectedSourceWithContent) {
+  if (!positions || !selectedSource) {
     return [];
   }
-
-  const {
-    source: selectedSource,
-    content: selectedContent,
-  } = selectedSourceWithContent;
 
   
   
@@ -167,7 +162,7 @@ export function getColumnBreakpoints(
   const breakpointMap = groupBreakpoints(breakpoints, selectedSource);
   positions = filterByLineCount(positions, selectedSource);
   positions = filterVisible(positions, selectedSource, viewport);
-  positions = filterInLine(positions, selectedSource, selectedContent);
+  positions = filterInLine(positions, selectedSource, selectedSource.content);
   positions = filterByBreakpoints(positions, selectedSource, breakpointMap);
 
   return formatPositions(positions, selectedSource, breakpointMap);
