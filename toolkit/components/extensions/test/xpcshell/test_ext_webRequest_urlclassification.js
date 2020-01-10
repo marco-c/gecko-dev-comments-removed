@@ -20,7 +20,7 @@ add_task(async function test_webrequest_url_classification_enum() {
 
   let prefix = /^(?:CLASSIFIED_)/;
   let entries = 0;
-  for (let c of Object.keys(Ci.nsIHttpChannel).filter(name =>
+  for (let c of Object.keys(Ci.nsIClassifiedChannel).filter(name =>
     prefix.test(name)
   )) {
     let entry = c.replace(prefix, "").toLowerCase();

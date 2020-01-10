@@ -122,14 +122,15 @@ void CookieServiceParent::TrackCookieLoad(nsIChannel* aChannel) {
   bool isTrackingResource = false;
   bool storageAccessGranted = false;
   uint32_t rejectedReason = 0;
-  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
-  if (httpChannel) {
-    isTrackingResource = httpChannel->IsTrackingResource();
+  nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
+      do_QueryInterface(aChannel);
+  if (classifiedChannel) {
+    isTrackingResource = classifiedChannel->IsTrackingResource();
     
     
     
     if (AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
-            httpChannel, uri, &rejectedReason)) {
+            aChannel, uri, &rejectedReason)) {
       storageAccessGranted = true;
     }
   }
