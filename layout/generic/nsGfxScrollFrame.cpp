@@ -5859,10 +5859,11 @@ void ScrollFrameHelper::UpdateMinimumScaleSize(
 
   
   
-  
-  mMinimumScaleSize =
-      Min(mMinimumScaleSize,
-          nsSize(aScrollableOverflow.XMost(), aScrollableOverflow.YMost()));
+  if (!StaticPrefs::layout_viewport_contains_no_contents_area()) {
+    mMinimumScaleSize =
+        Min(mMinimumScaleSize,
+            nsSize(aScrollableOverflow.XMost(), aScrollableOverflow.YMost()));
+  }
 
   
   
