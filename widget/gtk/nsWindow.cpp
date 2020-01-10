@@ -1163,16 +1163,25 @@ bool IsPopupWithoutToplevelParent(nsMenuPopupFrame* aMenuPopupFrame) {
   
   
   nsAtom* popupId = aMenuPopupFrame->GetContent()->GetID();
-  if (popupId && popupId->Equals(NS_LITERAL_STRING("PopupAutoComplete"))) {
+  if (popupId &&
+      popupId->Equals(NS_LITERAL_STRING("editBMPanel_tagsAutocomplete"))) {
+    return true;
+  }
+
+  nsIFrame* parentFrame = aMenuPopupFrame->GetParent();
+  if (!parentFrame) {
+    return false;
+  }
+
+  
+  nsAtom* parentId = parentFrame->GetContent()->GetID();
+  if (parentId &&
+      parentId->Equals(NS_LITERAL_STRING("editBMPanel_folderMenuList"))) {
     return true;
   }
 
   
   
-  nsIFrame* parentFrame = aMenuPopupFrame->GetParent();
-  if (!parentFrame) {
-    return false;
-  }
   parentFrame = parentFrame->GetParent();
   if (parentFrame && parentFrame->GetContent()->NodeName().EqualsLiteral(
                          "popupnotificationcontent")) {
