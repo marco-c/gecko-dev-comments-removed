@@ -257,6 +257,16 @@
       Type.fsblkcnt_t = Type.uintn_t(Const.OSFILE_SIZEOF_FSBLKCNT_T).withName(
         "fsblkcnt_t"
       );
+      
+      
+      
+      
+      
+      
+      
+      Type.statvfs_f_frsize = Type.uintn_t(
+        Const.OSFILE_SIZEOF_STATVFS_F_FRSIZE
+      ).withName("statvfs_f_rsize");
 
       
       
@@ -269,7 +279,7 @@
         statvfs.add_field_at(
           Const.OSFILE_OFFSETOF_STATVFS_F_FRSIZE,
           "f_frsize",
-          Type.unsigned_long.implementation
+          Type.statvfs_f_frsize.implementation
         );
         statvfs.add_field_at(
           Const.OSFILE_OFFSETOF_STATVFS_F_BAVAIL,
