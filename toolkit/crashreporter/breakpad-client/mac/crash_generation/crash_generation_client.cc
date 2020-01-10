@@ -59,7 +59,9 @@ bool CrashGenerationClient::RequestDumpForException(
 
   
   
-  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+  
+  
+  if (mozilla::recordreplay::IsRecording()) {
     info.child_pid = mozilla::recordreplay::child::MiddlemanProcessId();
   }
 

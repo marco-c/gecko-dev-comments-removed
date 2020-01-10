@@ -692,7 +692,7 @@ bool ExceptionHandler::InstallHandler() {
 
   
   
-  if (mozilla::recordreplay::IsReplaying()) {
+  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
     return true;
   }
 
