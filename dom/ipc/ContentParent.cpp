@@ -5835,6 +5835,21 @@ mozilla::ipc::IPCResult ContentParent::RecvAttachBrowsingContext(
   return IPC_OK();
 }
 
+bool ContentParent::CheckBrowsingContextOwnership(
+    BrowsingContext* aBC, const char* aOperation) const {
+  if (!aBC->Canonical()->IsOwnedByProcess(ChildID())) {
+    MOZ_DIAGNOSTIC_ASSERT(false,
+                          "Attempt to modify a BrowsingContext from a child "
+                          "which doesn't own it");
+
+    MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Warning,
+            ("ParentIPC: Trying to %s out of process context 0x%08" PRIx64,
+             aOperation, aBC->Id()));
+    return false;
+  }
+  return true;
+}
+
 mozilla::ipc::IPCResult ContentParent::RecvDetachBrowsingContext(
     uint64_t aContextId, DetachBrowsingContextResolver&& aResolve) {
   
@@ -5850,16 +5865,11 @@ mozilla::ipc::IPCResult ContentParent::RecvDetachBrowsingContext(
     return IPC_OK();
   }
 
-  if (!context->Canonical()->IsOwnedByProcess(ChildID())) {
+  if (!CheckBrowsingContextOwnership(context, "detach")) {
     
     
     
     
-    MOZ_DIAGNOSTIC_ASSERT(false, "Trying to detach out of process context");
-
-    MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Warning,
-            ("ParentIPC: Trying to detach out of process context 0x%08" PRIx64,
-             context->Id()));
     return IPC_OK();
   }
 
@@ -5884,16 +5894,11 @@ mozilla::ipc::IPCResult ContentParent::RecvCacheBrowsingContextChildren(
     return IPC_OK();
   }
 
-  if (!aContext->Canonical()->IsOwnedByProcess(ChildID())) {
+  if (!CheckBrowsingContextOwnership(aContext, "cache")) {
     
     
     
     
-    MOZ_DIAGNOSTIC_ASSERT(false, "Trying to cache out of process context");
-
-    MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Warning,
-            ("ParentIPC: Trying to cache out of process context 0x%08" PRIx64,
-             aContext->Id()));
     return IPC_OK();
   }
 
@@ -5914,16 +5919,11 @@ mozilla::ipc::IPCResult ContentParent::RecvRestoreBrowsingContextChildren(
     return IPC_OK();
   }
 
-  if (!aContext->Canonical()->IsOwnedByProcess(ChildID())) {
+  if (!CheckBrowsingContextOwnership(aContext, "restore")) {
     
     
     
     
-    MOZ_DIAGNOSTIC_ASSERT(false, "Trying to restore out of process context");
-
-    MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Warning,
-            ("ParentIPC: Trying to restore out of process context 0x%08" PRIx64,
-             aContext->Id()));
     return IPC_OK();
   }
 
