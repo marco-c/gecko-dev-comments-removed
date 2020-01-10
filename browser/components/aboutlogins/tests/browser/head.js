@@ -95,6 +95,14 @@ add_task(async function setup() {
       
       return;
     }
+    if (
+      msg.errorMessage.includes(
+        "ReferenceError: MigrationWizard is not defined"
+      )
+    ) {
+      
+      return;
+    }
     if (msg.errorMessage.includes(EXPECTED_ERROR_MESSAGE)) {
       return;
     }
