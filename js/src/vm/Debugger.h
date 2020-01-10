@@ -21,14 +21,23 @@
 #include "js/GCVariant.h"
 #include "js/HashTable.h"
 #include "js/Promise.h"
+#include "js/RootingAPI.h"
 #include "js/Utility.h"
 #include "js/Wrapper.h"
 #include "proxy/DeadObjectProxy.h"
+#include "vm/GeneratorObject.h"
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"
 #include "vm/Realm.h"
 #include "vm/SavedStacks.h"
 #include "vm/Stack.h"
+
+
+
+
+
+
+#undef Yield
 
 namespace js {
 
@@ -85,6 +94,165 @@ enum class ResumeMode {
 
 
   Return,
+};
+
+
+
+
+
+
+
+
+
+
+class Completion {
+ public:
+  struct Return {
+    explicit Return(const Value& value) : value(value) {}
+    Value value;
+
+    void trace(JSTracer* trc) {
+      JS::UnsafeTraceRoot(trc, &value, "js::Completion::Return::value");
+    }
+  };
+
+  struct Throw {
+    Throw(const Value& exception, SavedFrame* stack)
+        : exception(exception), stack(stack) {}
+    Value exception;
+    SavedFrame* stack;
+
+    void trace(JSTracer* trc) {
+      JS::UnsafeTraceRoot(trc, &exception, "js::Completion::Throw::exception");
+      JS::UnsafeTraceRoot(trc, &stack, "js::Completion::Throw::stack");
+    }
+  };
+
+  struct Terminate {
+    void trace(JSTracer* trc) {}
+  };
+
+  struct InitialYield {
+    explicit InitialYield(AbstractGeneratorObject* generatorObject)
+        : generatorObject(generatorObject) {}
+    AbstractGeneratorObject* generatorObject;
+
+    void trace(JSTracer* trc) {
+      JS::UnsafeTraceRoot(trc, &generatorObject,
+                          "js::Completion::InitialYield::generatorObject");
+    }
+  };
+
+  struct Yield {
+    Yield(AbstractGeneratorObject* generatorObject, const Value& iteratorResult)
+        : generatorObject(generatorObject), iteratorResult(iteratorResult) {}
+    AbstractGeneratorObject* generatorObject;
+    Value iteratorResult;
+
+    void trace(JSTracer* trc) {
+      JS::UnsafeTraceRoot(trc, &generatorObject,
+                          "js::Completion::Yield::generatorObject");
+      JS::UnsafeTraceRoot(trc, &iteratorResult,
+                          "js::Completion::Yield::iteratorResult");
+    }
+  };
+
+  struct Await {
+    Await(AbstractGeneratorObject* generatorObject, const Value& awaitee)
+        : generatorObject(generatorObject), awaitee(awaitee) {}
+    AbstractGeneratorObject* generatorObject;
+    Value awaitee;
+
+    void trace(JSTracer* trc) {
+      JS::UnsafeTraceRoot(trc, &generatorObject,
+                          "js::Completion::Await::generatorObject");
+      JS::UnsafeTraceRoot(trc, &awaitee, "js::Completion::Await::awaitee");
+    }
+  };
+
+  
+  
+  Completion() : variant(Terminate()) {}
+
+  
+  
+  
+  
+  explicit Completion(Return&& variant)
+      : variant(std::forward<Return>(variant)) {}
+  explicit Completion(Throw&& variant)
+      : variant(std::forward<Throw>(variant)) {}
+  explicit Completion(Terminate&& variant)
+      : variant(std::forward<Terminate>(variant)) {}
+  explicit Completion(InitialYield&& variant)
+      : variant(std::forward<InitialYield>(variant)) {}
+  explicit Completion(Yield&& variant)
+      : variant(std::forward<Yield>(variant)) {}
+  explicit Completion(Await&& variant)
+      : variant(std::forward<Await>(variant)) {}
+
+  
+  
+  static Completion fromJSResult(JSContext* cx, bool ok, const Value& rv);
+
+  
+  
+  static Completion fromJSFramePop(JSContext* cx, AbstractFramePtr frame,
+                                   const jsbytecode* pc, bool ok);
+
+  template <typename V>
+  bool is() const {
+    return variant.template is<V>();
+  }
+
+  template <typename V>
+  V& as() {
+    return variant.template as<V>();
+  }
+
+  template <typename V>
+  const V& as() const {
+    return variant.template as<V>();
+  }
+
+  void trace(JSTracer* trc);
+
+  
+  bool suspending() const {
+    return variant.is<InitialYield>() || variant.is<Yield>() ||
+           variant.is<Await>();
+  }
+
+  
+
+
+
+  AbstractGeneratorObject* maybeGeneratorObject() const;
+
+  
+
+  bool buildCompletionValue(JSContext* cx, Debugger* dbg,
+                            MutableHandleValue result) const;
+
+  
+
+
+
+  void toResumeMode(ResumeMode& resumeMode, MutableHandleValue value,
+                    MutableHandleSavedFrame exnStack) const;
+  
+
+
+
+  void updateForNextHandler(ResumeMode resumeMode, HandleValue value);
+
+ private:
+  using Variant =
+      mozilla::Variant<Return, Throw, Terminate, InitialYield, Yield, Await>;
+  struct BuildValueMatcher;
+  struct ToResumeModeMatcher;
+
+  Variant variant;
 };
 
 typedef HashSet<WeakHeapPtrGlobalObject,
@@ -1395,9 +1563,10 @@ struct OnPopHandler : Handler {
 
 
 
+
   virtual bool onPop(JSContext* cx, HandleDebuggerFrame frame,
-                     ResumeMode& resumeMode, MutableHandleValue vp,
-                     HandleSavedFrame exnStack) = 0;
+                     const Completion& completion, ResumeMode& resumeMode,
+                     MutableHandleValue vp) = 0;
 };
 
 class ScriptedOnPopHandler final : public OnPopHandler {
@@ -1407,8 +1576,8 @@ class ScriptedOnPopHandler final : public OnPopHandler {
   virtual void drop() override;
   virtual void trace(JSTracer* tracer) override;
   virtual bool onPop(JSContext* cx, HandleDebuggerFrame frame,
-                     ResumeMode& resumeMode, MutableHandleValue vp,
-                     HandleSavedFrame exnStack) override;
+                     const Completion& completion, ResumeMode& resumeMode,
+                     MutableHandleValue vp) override;
 
  private:
   HeapPtr<JSObject*> object_;

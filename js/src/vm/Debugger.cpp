@@ -16,6 +16,7 @@
 #include "jsfriendapi.h"
 #include "jsnum.h"
 
+#include "builtin/Promise.h"
 #include "frontend/BytecodeCompilation.h"
 #include "frontend/Parser.h"
 #include "gc/FreeOp.h"
@@ -42,7 +43,6 @@
 #include "vm/AsyncIteration.h"
 #include "vm/DebuggerMemory.h"
 #include "vm/GeckoProfiler.h"
-#include "vm/GeneratorObject.h"
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
 #include "vm/Realm.h"
@@ -982,13 +982,18 @@ bool Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
 
   mozilla::DebugOnly<Handle<GlobalObject*>> debuggeeGlobal = cx->global();
 
-  bool suspending = false;
+  
+  
+  Rooted<Completion> completion(cx);
   bool success = false;
+
   auto frameMapsGuard = MakeScopeExit([&] {
     
     
     
-    removeFromFrameMapsAndClearBreakpointsIn(cx, frame, suspending && success);
+    
+    removeFromFrameMapsAndClearBreakpointsIn(
+        cx, frame, success && completion.get().suspending());
   });
 
   
@@ -1002,34 +1007,9 @@ bool Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
     return frameOk;
   }
 
-  
-  Rooted<AbstractGeneratorObject*> genObj(cx);
-  if (frame.isGeneratorFrame()) {
-    
-    
-    MOZ_ASSERT(!frame.isWasmDebugFrame());
-
-    
-    
-    
-    
-    
-    
-    
-    
-    genObj = GetGeneratorObjectForFrame(cx, frame);
-    suspending =
-        frameOk &&
-        (*pc == JSOP_INITIALYIELD || *pc == JSOP_YIELD || *pc == JSOP_AWAIT) &&
-        !genObj->isClosed();
-  }
-
-  
-  ResumeMode resumeMode;
-  RootedValue value(cx);
-  RootedSavedFrame exnStack(cx);
-  Debugger::resultToCompletion(cx, frameOk, frame.returnValue(), &resumeMode,
-                               &value, &exnStack);
+  completion = Completion::fromJSFramePop(cx, frame, pc, frameOk);
+  Rooted<AbstractGeneratorObject*> genObj(
+      cx, completion.get().maybeGeneratorObject());
 
   
   
@@ -1056,16 +1036,11 @@ bool Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
         Maybe<AutoRealm> ar;
         ar.emplace(cx, dbg->object);
 
-        RootedValue wrappedValue(cx, value);
-        RootedValue completion(cx);
-        if (!dbg->wrapDebuggeeValue(cx, &wrappedValue)) {
-          resumeMode = dbg->reportUncaughtException(ar);
-          break;
-        }
+        
+        ResumeMode nextResumeMode;
+        RootedValue nextValue(cx);
 
         
-        ResumeMode nextResumeMode = resumeMode;
-        RootedValue nextValue(cx, wrappedValue);
         bool success;
         {
           
@@ -1076,8 +1051,8 @@ bool Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
           
           
           AutoSetGeneratorRunning asgr(cx, genObj);
-          success = handler->onPop(cx, frameobj, nextResumeMode, &nextValue,
-                                   exnStack);
+          success = handler->onPop(cx, frameobj, completion, nextResumeMode,
+                                   &nextValue);
         }
         nextResumeMode = dbg->processParsedHandlerResult(
             ar, frame, pc, success, nextResumeMode, &nextValue);
@@ -1088,16 +1063,17 @@ bool Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
         MOZ_ASSERT(cx->compartment() == debuggeeGlobal->compartment());
         MOZ_ASSERT(!cx->isExceptionPending());
 
-        
-        if (nextResumeMode != ResumeMode::Continue) {
-          resumeMode = nextResumeMode;
-          value = nextValue;
-        }
+        completion.get().updateForNextHandler(nextResumeMode, nextValue);
       }
     }
   }
 
   
+  ResumeMode resumeMode;
+  RootedValue value(cx);
+  RootedSavedFrame exnStack(cx);
+  completion.get().toResumeMode(resumeMode, &value, &exnStack);
+
   switch (resumeMode) {
     case ResumeMode::Return:
       frame.setReturnValue(value);
@@ -1894,6 +1870,264 @@ ResumeMode Debugger::processHandlerResult(Maybe<AutoRealm>& ar, bool success,
 }
 
 
+
+
+Completion Completion::fromJSResult(JSContext* cx, bool ok, const Value& rv) {
+  MOZ_ASSERT_IF(ok, !cx->isExceptionPending());
+
+  if (ok) {
+    return Completion(Return(rv));
+  }
+
+  if (!cx->isExceptionPending()) {
+    return Completion(Terminate());
+  }
+
+  RootedValue exception(cx);
+  SavedFrame* stack = cx->getPendingExceptionStack();
+  MOZ_ALWAYS_TRUE(cx->getPendingException(&exception));
+
+  cx->clearPendingException();
+
+  return Completion(Throw(exception, stack));
+}
+
+
+Completion Completion::fromJSFramePop(JSContext* cx, AbstractFramePtr frame,
+                                      const jsbytecode* pc, bool ok) {
+  
+  MOZ_ASSERT_IF(!frame.isWasmDebugFrame(), pc);
+
+  
+  if (!ok || !frame.isGeneratorFrame()) {
+    return fromJSResult(cx, ok, frame.returnValue());
+  }
+
+  
+
+  
+  
+  MOZ_ASSERT(!frame.isWasmDebugFrame());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  Rooted<AbstractGeneratorObject*> generatorObj(
+      cx, GetGeneratorObjectForFrame(cx, frame));
+  switch (*pc) {
+    case JSOP_INITIALYIELD:
+      MOZ_ASSERT(!generatorObj->isClosed());
+      return Completion(InitialYield(generatorObj));
+
+    case JSOP_YIELD:
+      MOZ_ASSERT(!generatorObj->isClosed());
+      return Completion(Yield(generatorObj, frame.returnValue()));
+
+    case JSOP_AWAIT:
+      MOZ_ASSERT(!generatorObj->isClosed());
+      return Completion(Await(generatorObj, frame.returnValue()));
+
+    default:
+      return Completion(Return(frame.returnValue()));
+  }
+}
+
+void Completion::trace(JSTracer* trc) {
+  variant.match([=](auto& var) { var.trace(trc); });
+}
+
+struct MOZ_STACK_CLASS Completion::BuildValueMatcher {
+  JSContext* cx;
+  Debugger* dbg;
+  MutableHandleValue result;
+
+  BuildValueMatcher(JSContext* cx, Debugger* dbg, MutableHandleValue result)
+      : cx(cx), dbg(dbg), result(result) {
+    cx->check(dbg->toJSObject());
+  }
+
+  bool operator()(const Completion::Return& ret) {
+    RootedNativeObject obj(cx, newObject());
+    RootedValue retval(cx, ret.value);
+    if (!obj || !wrap(&retval) || !add(obj, cx->names().return_, retval)) {
+      return false;
+    }
+    result.setObject(*obj);
+    return true;
+  }
+
+  bool operator()(const Completion::Throw& thr) {
+    RootedNativeObject obj(cx, newObject());
+    RootedValue exc(cx, thr.exception);
+    if (!obj || !wrap(&exc) || !add(obj, cx->names().throw_, exc)) {
+      return false;
+    }
+    if (thr.stack) {
+      RootedValue stack(cx, ObjectValue(*thr.stack));
+      if (!wrapStack(&stack) || !add(obj, cx->names().stack, stack)) {
+        return false;
+      }
+    }
+    result.setObject(*obj);
+    return true;
+  }
+
+  bool operator()(const Completion::Terminate& term) {
+    result.setNull();
+    return true;
+  }
+
+  bool operator()(const Completion::InitialYield& initialYield) {
+    RootedNativeObject obj(cx, newObject());
+    RootedValue gen(cx, ObjectValue(*initialYield.generatorObject));
+    if (!obj || !wrap(&gen) || !add(obj, cx->names().return_, gen) ||
+        !add(obj, cx->names().yield, TrueHandleValue) ||
+        !add(obj, cx->names().initial, TrueHandleValue)) {
+      return false;
+    }
+    result.setObject(*obj);
+    return true;
+  }
+
+  bool operator()(const Completion::Yield& yield) {
+    RootedNativeObject obj(cx, newObject());
+    RootedValue iteratorResult(cx, yield.iteratorResult);
+    if (!obj || !wrap(&iteratorResult) ||
+        !add(obj, cx->names().return_, iteratorResult) ||
+        !add(obj, cx->names().yield, TrueHandleValue)) {
+      return false;
+    }
+    result.setObject(*obj);
+    return true;
+  }
+
+  bool operator()(const Completion::Await& await) {
+    RootedNativeObject obj(cx, newObject());
+    RootedValue awaitee(cx, await.awaitee);
+    if (!obj || !wrap(&awaitee) || !add(obj, cx->names().return_, awaitee) ||
+        !add(obj, cx->names().await, TrueHandleValue)) {
+      return false;
+    }
+    result.setObject(*obj);
+    return true;
+  }
+
+ private:
+  NativeObject* newObject() const {
+    return NewBuiltinClassInstance<PlainObject>(cx);
+  }
+
+  bool add(HandleNativeObject obj, PropertyName* name,
+           HandleValue value) const {
+    return NativeDefineDataProperty(cx, obj, name, value, JSPROP_ENUMERATE);
+  }
+
+  bool wrap(MutableHandleValue v) const {
+    return dbg->wrapDebuggeeValue(cx, v);
+  }
+
+  
+  bool wrapStack(MutableHandleValue stack) const {
+    return cx->compartment()->wrap(cx, stack);
+  }
+};
+
+bool Completion::buildCompletionValue(JSContext* cx, Debugger* dbg,
+                                      MutableHandleValue result) const {
+  return variant.match(BuildValueMatcher(cx, dbg, result));
+}
+
+AbstractGeneratorObject* Completion::maybeGeneratorObject() const {
+  if (variant.is<InitialYield>()) {
+    return variant.as<InitialYield>().generatorObject;
+  }
+
+  if (variant.is<Yield>()) {
+    return variant.as<Yield>().generatorObject;
+  }
+
+  if (variant.is<Await>()) {
+    return variant.as<Await>().generatorObject;
+  }
+
+  return nullptr;
+}
+
+void Completion::updateForNextHandler(ResumeMode resumeMode,
+                                      HandleValue value) {
+  switch (resumeMode) {
+    case ResumeMode::Continue:
+      
+      break;
+
+    case ResumeMode::Throw:
+      
+      
+      
+      variant = Variant(Throw(value, nullptr));
+      break;
+
+    case ResumeMode::Terminate:
+      variant = Variant(Terminate());
+      break;
+
+    case ResumeMode::Return:
+      variant = Variant(Return(value));
+      break;
+
+    default:
+      MOZ_CRASH("invalid resumeMode value");
+  }
+}
+
+struct MOZ_STACK_CLASS Completion::ToResumeModeMatcher {
+  MutableHandleValue value;
+  MutableHandleSavedFrame exnStack;
+  ToResumeModeMatcher(MutableHandleValue value,
+                      MutableHandleSavedFrame exnStack)
+      : value(value), exnStack(exnStack) {}
+
+  ResumeMode operator()(const Return& ret) {
+    value.set(ret.value);
+    return ResumeMode::Return;
+  }
+
+  ResumeMode operator()(const Throw& thr) {
+    value.set(thr.exception);
+    exnStack.set(thr.stack);
+    return ResumeMode::Throw;
+  }
+
+  ResumeMode operator()(const Terminate& term) {
+    value.setUndefined();
+    return ResumeMode::Terminate;
+  }
+
+  ResumeMode operator()(const InitialYield& initialYield) {
+    value.setObject(*initialYield.generatorObject);
+    return ResumeMode::Return;
+  }
+
+  ResumeMode operator()(const Yield& yield) {
+    value.set(yield.iteratorResult);
+    return ResumeMode::Return;
+  }
+
+  ResumeMode operator()(const Await& await) {
+    value.set(await.awaitee);
+    return ResumeMode::Return;
+  }
+};
+
+void Completion::toResumeMode(ResumeMode& resumeMode, MutableHandleValue value,
+                              MutableHandleSavedFrame exnStack) const {
+  resumeMode = variant.match(ToResumeModeMatcher(value, exnStack));
+}
 
 
 void Debugger::resultToCompletion(JSContext* cx, bool ok, const Value& rv,
@@ -8923,39 +9157,19 @@ void ScriptedOnPopHandler::trace(JSTracer* tracer) {
 }
 
 bool ScriptedOnPopHandler::onPop(JSContext* cx, HandleDebuggerFrame frame,
-                                 ResumeMode& resumeMode, MutableHandleValue vp,
-                                 HandleSavedFrame exnStack) {
-  Debugger* dbg = frame->owner();
+                                 const Completion& completion,
+                                 ResumeMode& resumeMode,
+                                 MutableHandleValue vp) {
+  Debugger* dbg = Debugger::fromChildJSObject(frame);
 
-  
-  
-  bool isAfterAwait = false;
-  AbstractFramePtr referent = DebuggerFrame::getReferent(frame);
-  if (resumeMode == ResumeMode::Return && referent &&
-      referent.isFunctionFrame() && referent.callee()->isAsync() &&
-      !referent.callee()->isGenerator()) {
-    AutoRealm ar(cx, referent.callee());
-    if (frame->hasGenerator()) {
-      AbstractGeneratorObject& genObj = frame->unwrappedGenerator();
-      isAfterAwait = !genObj.isClosed() && genObj.isRunning();
-    }
-  }
-
-  RootedValue completion(cx);
-  if (!dbg->newCompletionValue(cx, resumeMode, vp, exnStack, &completion)) {
+  RootedValue completionValue(cx);
+  if (!completion.buildCompletionValue(cx, dbg, &completionValue)) {
     return false;
-  }
-
-  if (isAfterAwait) {
-    RootedObject obj(cx, &completion.toObject());
-    if (!DefineDataProperty(cx, obj, cx->names().await, TrueHandleValue)) {
-      return false;
-    }
   }
 
   RootedValue fval(cx, ObjectValue(*object_));
   RootedValue rval(cx);
-  if (!js::Call(cx, fval, frame, completion, &rval)) {
+  if (!js::Call(cx, fval, frame, completionValue, &rval)) {
     return false;
   }
 
