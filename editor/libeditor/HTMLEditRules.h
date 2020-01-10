@@ -132,16 +132,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult WillOutdent(bool* aCancel, bool* aHandled);
-
-  
-
-
-
-
-
-
 
 
   MOZ_CAN_RUN_SCRIPT
