@@ -14,7 +14,6 @@
 #include "mozilla/dom/FrameLoaderBinding.h"
 #include "mozilla/dom/HTMLIFrameElement.h"
 #include "mozilla/dom/MozFrameLoaderOwnerBinding.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/EventStateManager.h"
 
@@ -72,23 +71,6 @@ void nsFrameLoaderOwner::ChangeRemoteness(
 
   
   
-  
-  RefPtr<Element> owner = do_QueryObject(this);
-  MOZ_ASSERT(owner);
-
-  
-  
-  
-  
-  
-  Document* doc = owner->OwnerDoc();
-  doc->BlockOnload();
-  auto cleanup = MakeScopeExit([&]() {
-    doc->UnblockOnload(false);
-  });
-
-  
-  
   if (mFrameLoader) {
     if (ShouldPreserveBrowsingContext(aOptions)) {
       bc = mFrameLoader->GetBrowsingContext();
@@ -102,6 +84,11 @@ void nsFrameLoaderOwner::ChangeRemoteness(
     mFrameLoader = nullptr;
   }
 
+  
+  
+  
+  RefPtr<Element> owner = do_QueryObject(this);
+  MOZ_ASSERT(owner);
   mFrameLoader =
       nsFrameLoader::Recreate(owner, bc, aOptions.mRemoteType, networkCreated);
 
