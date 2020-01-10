@@ -12,9 +12,6 @@ add_task(async function testCDP() {
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_DOC);
 
   
-  await RemoteAgent.listen(Services.io.newURI("http://localhost:9222"));
-
-  
   const CDP = await getCDP();
 
   
@@ -83,6 +80,4 @@ add_task(async function testCDP() {
   ok(true, "The client is closed");
 
   BrowserTestUtils.removeTab(tab);
-
-  await RemoteAgent.close();
 });
