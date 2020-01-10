@@ -2039,6 +2039,12 @@ class EditorBase : public nsIEditor,
   
 
 
+  void UndefineCaretBidiLevel() const;
+
+ protected:  
+  
+
+
 
 
 

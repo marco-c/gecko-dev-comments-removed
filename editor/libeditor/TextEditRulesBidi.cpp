@@ -82,22 +82,4 @@ nsresult TextEditRules::CheckBidiLevelForDeletion(
   return NS_OK;
 }
 
-void TextEditRules::UndefineCaretBidiLevel() {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  
-
-
-
-
-
-
-
-  RefPtr<nsFrameSelection> frameSelection =
-      SelectionRefPtr()->GetFrameSelection();
-  if (frameSelection) {
-    frameSelection->UndefineCaretBidiLevel();
-  }
-}
-
 }  

@@ -5211,6 +5211,23 @@ NS_IMETHODIMP EditorBase::GetPasswordMask(nsAString& aPasswordMask) {
   return NS_OK;
 }
 
+void EditorBase::UndefineCaretBidiLevel() const {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
+  
+
+
+
+
+
+
+
+  nsFrameSelection* frameSelection = SelectionRefPtr()->GetFrameSelection();
+  if (frameSelection) {
+    frameSelection->UndefineCaretBidiLevel();
+  }
+}
+
 
 
 
