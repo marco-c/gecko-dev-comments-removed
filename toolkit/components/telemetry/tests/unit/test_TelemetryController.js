@@ -165,7 +165,8 @@ add_task(async function test_disableDataUpload() {
   }
 
   
-  let snapshot = Telemetry.getSnapshotForScalars("main", false).parent;
+  
+  let snapshot = Telemetry.getSnapshotForScalars("main", false).parent || {};
   Assert.ok(
     !(OPTIN_PROBE in snapshot),
     "Data optin scalar should not be set at start"
@@ -191,7 +192,7 @@ add_task(async function test_disableDataUpload() {
   
   await TelemetrySend.testWaitOnOutgoingPings();
 
-  snapshot = Telemetry.getSnapshotForScalars("main", false).parent;
+  snapshot = Telemetry.getSnapshotForScalars("main", false).parent || {};
   Assert.ok(
     !(OPTIN_PROBE in snapshot),
     "Data optin scalar should not be set after optout"
@@ -209,7 +210,7 @@ add_task(async function test_disableDataUpload() {
     );
   });
 
-  snapshot = Telemetry.getSnapshotForScalars("main", false).parent;
+  snapshot = Telemetry.getSnapshotForScalars("main", false).parent || {};
   Assert.ok(
     snapshot[OPTIN_PROBE],
     "Enabling data upload should set optin probe"
