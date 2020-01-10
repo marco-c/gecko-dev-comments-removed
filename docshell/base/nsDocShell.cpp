@@ -5081,9 +5081,7 @@ nsDocShell::Destroy() {
 
   
   
-  if (mSkipBrowsingContextDetachOnDestroy) {
-    mBrowsingContext->PrepareForProcessChange();
-  } else {
+  if (!mSkipBrowsingContextDetachOnDestroy) {
     mBrowsingContext->Detach();
   }
 
