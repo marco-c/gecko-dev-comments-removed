@@ -134,11 +134,7 @@ static StorageAccess InternalStorageAllowedCheck(
   
   
   
-  nsCOMPtr<nsIURI> uri = aURI;
-  if (!uri) {
-    Unused << aPrincipal->GetURI(getter_AddRefs(uri));
-  }
-  if (uri && uri->SchemeIs("about")) {
+  if ((aURI && aURI->SchemeIs("about")) || aPrincipal->SchemeIs("about")) {
     return access;
   }
 

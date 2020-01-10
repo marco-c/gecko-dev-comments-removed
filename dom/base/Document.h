@@ -1806,10 +1806,8 @@ class Document : public nsINode,
   void DispatchContentLoadedEvents();
 
   void DispatchPageTransition(EventTarget* aDispatchTarget,
-                              const nsAString& aType,
-                              bool aInFrameSwap,
-                              bool aPersisted,
-                              bool aOnlySystemGroup);
+                              const nsAString& aType, bool aInFrameSwap,
+                              bool aPersisted, bool aOnlySystemGroup);
 
   
   
@@ -2779,17 +2777,11 @@ class Document : public nsINode,
 
     
     
-    nsCOMPtr<nsIURI> contentURI;
-    NodePrincipal()->GetURI(getter_AddRefs(contentURI));
 
-    if (!contentURI) {
-      return true;
-    }
-
-    nsAutoCString scheme;
-    contentURI->GetScheme(scheme);
-    return !scheme.EqualsLiteral("http") && !scheme.EqualsLiteral("https") &&
-           !scheme.EqualsLiteral("ftp") && !scheme.EqualsLiteral("file");
+    return !NodePrincipal()->SchemeIs("http") &&
+           !NodePrincipal()->SchemeIs("https") &&
+           !NodePrincipal()->SchemeIs("ftp") &&
+           !NodePrincipal()->SchemeIs("file");
   }
 
   bool IsLoadedAsData() { return mLoadedAsData; }
