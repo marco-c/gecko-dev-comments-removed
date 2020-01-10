@@ -42,6 +42,18 @@ struct LaunchError {};
 typedef mozilla::MozPromise<base::ProcessHandle, LaunchError, false>
     ProcessHandlePromise;
 
+struct LaunchResults {
+  base::ProcessHandle mHandle = 0;
+#ifdef XP_MACOSX
+  task_t mChildTask = MACH_PORT_NULL;
+#endif
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
+  RefPtr<AbstractSandboxBroker> mSandboxBroker;
+#endif
+};
+typedef mozilla::MozPromise<LaunchResults, LaunchError, false>
+    ProcessLaunchPromise;
+
 class GeckoChildProcessHost : public ChildProcessHost,
                               public LinkedListElement<GeckoChildProcessHost> {
  protected:
@@ -107,6 +119,7 @@ class GeckoChildProcessHost : public ChildProcessHost,
   virtual bool CanShutdown() override { return true; }
 
   IPC::Channel* GetChannel() { return channelp(); }
+  std::wstring GetChannelId() { return channel_id(); }
 
   
   
@@ -161,6 +174,8 @@ class GeckoChildProcessHost : public ChildProcessHost,
   
   static void GetAll(const GeckoProcessCallback& aCallback);
 
+  friend class ProcessLauncher;
+
  protected:
   ~GeckoChildProcessHost();
   GeckoProcessType mProcessType;
@@ -190,8 +205,6 @@ class GeckoChildProcessHost : public ChildProcessHost,
     PROCESS_ERROR
   } mProcessState;
 
-  static int32_t mChildCounter;
-
   void PrepareLaunch();
 
 #ifdef XP_WIN
@@ -210,7 +223,7 @@ class GeckoChildProcessHost : public ChildProcessHost,
 #if defined(OS_MACOSX)
   task_t mChildTask;
 #endif
-  RefPtr<ProcessHandlePromise::Private> mHandlePromise;
+  RefPtr<ProcessHandlePromise> mHandlePromise;
 
   bool OpenPrivilegedHandle(base::ProcessId aPid);
 
@@ -233,21 +246,6 @@ class GeckoChildProcessHost : public ChildProcessHost,
   DISALLOW_EVIL_CONSTRUCTORS(GeckoChildProcessHost);
 
   
-  
-  bool PerformAsyncLaunch(StringVector aExtraOpts);
-
-  
-  
-  void RunPerformAsyncLaunch(StringVector aExtraOpts);
-
-  static BinPathType GetPathToBinary(FilePath& exePath,
-                                     GeckoProcessType processType);
-
-  
-  
-  void GetChildLogName(const char* origLogName, nsACString& buffer);
-
-  
   void RemoveFromProcessList();
 
   
@@ -260,9 +258,7 @@ class GeckoChildProcessHost : public ChildProcessHost,
   std::queue<IPC::Message> mQueue;
 
   
-#if defined(OS_LINUX)
   nsCString mTmpDirName;
-#endif
 
   mozilla::Atomic<bool> mDestroying;
 
@@ -270,12 +266,6 @@ class GeckoChildProcessHost : public ChildProcessHost,
   static StaticAutoPtr<LinkedList<GeckoChildProcessHost>>
       sGeckoChildProcessHosts;
   static StaticMutex sMutex;
-#if defined(MOZ_WIDGET_ANDROID)
-  void LaunchAndroidService(
-      const char* type, const std::vector<std::string>& argv,
-      const base::file_handle_mapping_vector& fds_to_remap,
-      ProcessHandle* process_handle);
-#endif  
 };
 
 } 
