@@ -556,12 +556,11 @@
         ) {
           inputID = this.mInput.id;
           
+          
           if (!inputID) {
-            let bindingParent = this.mInput.ownerDocument.getBindingParent(
-              this.mInput
-            );
-            if (bindingParent) {
-              inputID = bindingParent.id;
+            let shadow = this.mInput.containingShadowRoot;
+            if (shadow) {
+              inputID = shadow.host.id;
             }
           }
         }
