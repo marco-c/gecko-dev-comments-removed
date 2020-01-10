@@ -412,7 +412,7 @@ HTMLFileInputAccessible::HTMLFileInputAccessible(nsIContent* aContent,
 role HTMLFileInputAccessible::NativeRole() const {
   
   
-  return roles::TEXT_CONTAINER;
+  return roles::GROUPING;
 }
 
 nsresult HTMLFileInputAccessible::HandleAccEvent(AccEvent* aEvent) {
