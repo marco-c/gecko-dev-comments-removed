@@ -1555,7 +1555,7 @@ bool JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx,
     
     
     bool isBinAST = lazy->scriptSource()->hasBinASTSource();
-    bool canRelazify = !lazy->numInnerFunctions() && !lazy->hasDirectEval();
+    bool canRelazify = !lazy->hasInnerFunctions() && !lazy->hasDirectEval();
 
     if (script) {
       
