@@ -218,7 +218,12 @@ bool PropOpEmitter::emitIncDec(JSAtom* prop) {
     return false;
   }
   if (isPostIncDec()) {
+    
     if (!bce_->emit1(JSOP_DUP)) {
+      
+      return false;
+    }
+    if (!bce_->emit2(JSOP_UNPICK, 2 + isSuper())) {
       
       return false;
     }
@@ -226,37 +231,6 @@ bool PropOpEmitter::emitIncDec(JSAtom* prop) {
   if (!bce_->emit1(incOp)) {
     
     return false;
-  }
-  if (isPostIncDec()) {
-    if (isSuper()) {
-      
-      if (!bce_->emit2(JSOP_PICK, 3)) {
-        
-        return false;
-      }
-      if (!bce_->emit1(JSOP_SWAP)) {
-        
-        return false;
-      }
-      if (!bce_->emit2(JSOP_PICK, 3)) {
-        
-        return false;
-      }
-      if (!bce_->emit1(JSOP_SWAP)) {
-        
-        return false;
-      }
-    } else {
-      
-      if (!bce_->emit2(JSOP_PICK, 2)) {
-        
-        return false;
-      }
-      if (!bce_->emit1(JSOP_SWAP)) {
-        
-        return false;
-      }
-    }
   }
 
   JSOp setOp =
