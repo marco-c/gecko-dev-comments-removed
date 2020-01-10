@@ -3198,14 +3198,16 @@ void ProfilerBacktraceDestructor::operator()(ProfilerBacktrace* aBacktrace) {
   delete aBacktrace;
 }
 
-static void racy_profiler_add_marker(
-    const char* aMarkerName, ProfilingCategoryPair aCategoryPair,
-    UniquePtr<ProfilerMarkerPayload> aPayload) {
+static void racy_profiler_add_marker(const char* aMarkerName,
+                                     ProfilingCategoryPair aCategoryPair,
+                                     const ProfilerMarkerPayload* aPayload) {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   
-  
-  
+  if (!RacyFeatures::IsActiveWithoutPrivacy()) {
+    return;
+  }
+
   
   
   
@@ -3228,27 +3230,20 @@ static void racy_profiler_add_marker(
 
 void profiler_add_marker(const char* aMarkerName,
                          ProfilingCategoryPair aCategoryPair,
-                         UniquePtr<ProfilerMarkerPayload> aPayload) {
-  MOZ_RELEASE_ASSERT(CorePS::Exists());
-
-  
-  if (!RacyFeatures::IsActiveWithoutPrivacy()) {
-    return;
-  }
-
-  racy_profiler_add_marker(aMarkerName, aCategoryPair, std::move(aPayload));
+                         const ProfilerMarkerPayload& aPayload) {
+  racy_profiler_add_marker(aMarkerName, aCategoryPair, &aPayload);
 }
 
 void profiler_add_marker(const char* aMarkerName,
                          ProfilingCategoryPair aCategoryPair) {
-  profiler_add_marker(aMarkerName, aCategoryPair, nullptr);
+  racy_profiler_add_marker(aMarkerName, aCategoryPair, nullptr);
 }
 
 
 
 void profiler_add_js_marker(const char* aMarkerName) {
   AUTO_PROFILER_STATS(base_add_marker);
-  profiler_add_marker(aMarkerName, ProfilingCategoryPair::JS, nullptr);
+  profiler_add_marker(aMarkerName, ProfilingCategoryPair::JS);
 }
 
 
@@ -3306,9 +3301,9 @@ void profiler_tracing(const char* aCategoryString, const char* aMarkerName,
   }
 
   AUTO_PROFILER_STATS(base_add_marker_with_TracingMarkerPayload);
-  auto payload = MakeUnique<TracingMarkerPayload>(
-      aCategoryString, aKind, aDocShellId, aDocShellHistoryId);
-  racy_profiler_add_marker(aMarkerName, aCategoryPair, std::move(payload));
+  profiler_add_marker(aMarkerName, aCategoryPair,
+                      TracingMarkerPayload(aCategoryString, aKind, aDocShellId,
+                                           aDocShellHistoryId));
 }
 
 void profiler_tracing(const char* aCategoryString, const char* aMarkerName,
@@ -3326,10 +3321,10 @@ void profiler_tracing(const char* aCategoryString, const char* aMarkerName,
   }
 
   AUTO_PROFILER_STATS(base_add_marker_with_TracingMarkerPayload);
-  auto payload =
-      MakeUnique<TracingMarkerPayload>(aCategoryString, aKind, aDocShellId,
-                                       aDocShellHistoryId, std::move(aCause));
-  racy_profiler_add_marker(aMarkerName, aCategoryPair, std::move(payload));
+  profiler_add_marker(
+      aMarkerName, aCategoryPair,
+      TracingMarkerPayload(aCategoryString, aKind, aDocShellId,
+                           aDocShellHistoryId, std::move(aCause)));
 }
 
 void profiler_add_text_marker(const char* aMarkerName, const std::string& aText,
@@ -3342,8 +3337,8 @@ void profiler_add_text_marker(const char* aMarkerName, const std::string& aText,
   AUTO_PROFILER_STATS(base_add_marker_with_TextMarkerPayload);
   profiler_add_marker(
       aMarkerName, aCategoryPair,
-      MakeUnique<TextMarkerPayload>(aText, aStartTime, aEndTime, aDocShellId,
-                                    aDocShellHistoryId, std::move(aCause)));
+      TextMarkerPayload(aText, aStartTime, aEndTime, aDocShellId,
+                        aDocShellHistoryId, std::move(aCause)));
 }
 
 
