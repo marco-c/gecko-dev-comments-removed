@@ -488,11 +488,16 @@ bool nsToolkitProfileService::IsProfileForCurrentInstall(
 
 #ifdef XP_WIN
 #  if defined(MOZ_THUNDERBIRD) || defined(MOZ_SUITE)
-  
-  
   mozilla::PathString lastGreDirPath, currentGreDirPath;
   lastGreDirPath = lastGreDir->NativePath();
   currentGreDirPath = currentGreDir->NativePath();
+  if (lastGreDirPath.Equals(currentGreDirPath,
+                            nsCaseInsensitiveStringComparator())) {
+    return true;
+  }
+
+  
+  
   PWSTR pathX86 = nullptr;
   HRESULT hres =
       SHGetKnownFolderPath(FOLDERID_ProgramFilesX86, 0, nullptr, &pathX86);
