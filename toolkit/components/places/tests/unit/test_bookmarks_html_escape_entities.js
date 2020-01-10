@@ -5,8 +5,6 @@
 
 
 
-const DESCRIPTION_ANNO = "bookmarkProperties/description";
-
 add_task(async function() {
   
   let HTMLFile = OS.Path.join(OS.Constants.Path.profileDir, "bookmarks.html");
@@ -28,9 +26,6 @@ add_task(async function() {
     url,
     annotations: new Map([[PlacesUtils.CHARSET_ANNO, unescaped]]),
   });
-  PlacesUtils.annotations.setItemAnnotation(
-    await PlacesUtils.promiseItemId(bm.guid),
-    DESCRIPTION_ANNO, unescaped, 0, PlacesUtils.annotations.EXPIRE_NEVER);
 
   
   await BookmarkHTMLUtils.exportToFile(HTMLFile);
@@ -55,7 +50,7 @@ add_task(async function() {
     xhr.send();
   });
 
-  let checksCount = 6;
+  let checksCount = 5;
   for (let current = xml; current;
     current = current.firstChild || current.nextSibling || current.parentNode.nextSibling) {
     switch (current.nodeType) {

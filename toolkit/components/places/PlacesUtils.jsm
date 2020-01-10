@@ -99,34 +99,6 @@ async function notifyKeywordChange(url, keyword, source) {
 
 
 
-
-
-
-
-
-function getAnnotationsForItem(aItemId) {
-  var annos = [];
-  var annoNames = PlacesUtils.annotations.getItemAnnotationNames(aItemId);
-  for (let name of annoNames) {
-    let value = {}, flags = {}, exp = {}, storageType = {};
-    PlacesUtils.annotations.getItemAnnotationInfo(aItemId, name, value,
-                                                  flags, exp, storageType);
-    annos.push({
-      name,
-      flags: flags.value,
-      expires: exp.value,
-      value: value.value,
-    });
-  }
-  return annos;
-}
-
-
-
-
-
-
-
 function serializeNode(aNode) {
   let data = {};
 
@@ -153,10 +125,6 @@ function serializeNode(aNode) {
 
     data.dateAdded = aNode.dateAdded;
     data.lastModified = aNode.lastModified;
-
-    let annos = getAnnotationsForItem(data.id);
-    if (annos.length > 0)
-      data.annos = annos;
   }
 
   if (PlacesUtils.nodeIsURI(aNode)) {
@@ -245,7 +213,6 @@ const BOOKMARK_VALIDATORS = Object.freeze({
   },
   source: simpleValidateFunc(v => Number.isInteger(v) &&
                                   Object.values(PlacesUtils.bookmarks.SOURCES).includes(v)),
-  annos: simpleValidateFunc(v => Array.isArray(v) && v.length),
   keyword: simpleValidateFunc(v => (typeof(v) == "string") && v.length),
   charset: simpleValidateFunc(v => (typeof(v) == "string") && v.length),
   postData: simpleValidateFunc(v => (typeof(v) == "string") && v.length),
@@ -1183,38 +1150,6 @@ var PlacesUtils = {
   },
 
   
-
-
-
-
-
-
-
-
-  async promiseAnnotationsForItem(itemId) {
-    let db =  await PlacesUtils.promiseDBConnection();
-    let rows = await db.executeCached(
-      `SELECT n.name, a.content, a.expiration, a.flags
-       FROM moz_items_annos a
-       JOIN moz_anno_attributes n ON a.anno_attribute_id = n.id
-       WHERE a.item_id = :itemId
-      `, { itemId });
-
-    let result = [];
-    for (let row of rows) {
-      let anno = {
-        name: row.getResultByName("name"),
-        value: row.getResultByName("content"),
-        expires: row.getResultByName("expiration"),
-        flags: row.getResultByName("flags"),
-      };
-      result.push(anno);
-    }
-
-    return result;
-  },
-
-  
   
   
   get placesRootId() {
@@ -1590,8 +1525,6 @@ var PlacesUtils = {
 
 
 
-
-
   async promiseBookmarksTree(aItemGuid = "", aOptions = {}) {
     let createItemInfoObject = async function(aRow, aIncludeParentGuid) {
       let item = {};
@@ -1617,15 +1550,6 @@ var PlacesUtils = {
       item.typeCode = type;
       if (type == Ci.nsINavBookmarksService.TYPE_BOOKMARK)
         copyProps("charset", "tags", "iconuri");
-
-      
-      if (aRow.getResultByName("has_annos")) {
-        try {
-          item.annos = await PlacesUtils.promiseAnnotationsForItem(itemId);
-        } catch (ex) {
-          Cu.reportError("Unexpected error while reading annotations " + ex);
-        }
-      }
 
       switch (type) {
         case PlacesUtils.bookmarks.TYPE_BOOKMARK:
@@ -1696,8 +1620,6 @@ var PlacesUtils = {
                JOIN moz_bookmarks t ON t.id = +b2.parent AND t.parent = :tags_folder
                WHERE b2.fk = h.id
               ) AS tags,
-              EXISTS (SELECT 1 FROM moz_items_annos
-                      WHERE item_id = d.id LIMIT 1) AS has_annos,
               (SELECT a.content FROM moz_annos a
                JOIN moz_anno_attributes n ON a.anno_attribute_id = n.id
                WHERE place_id = h.id AND n.name = :charset_anno
