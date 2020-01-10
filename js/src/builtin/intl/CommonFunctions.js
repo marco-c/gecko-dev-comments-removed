@@ -132,28 +132,6 @@ function IsASCIIAlphaString(s) {
     return true;
 }
 
-
-
-
-
-
-function lastDitchLocale() {
-    
-    
-    return "en-GB";
-}
-
-
-
-
-var oldStyleLanguageTagMappings = {
-    "pa-PK": "pa-Arab-PK",
-    "zh-CN": "zh-Hans-CN",
-    "zh-HK": "zh-Hant-HK",
-    "zh-SG": "zh-Hans-SG",
-    "zh-TW": "zh-Hant-TW",
-};
-
 var localeCache = {
     runtimeDefaultLocale: undefined,
     defaultLocale: undefined,
@@ -169,46 +147,8 @@ function DefaultLocale() {
         return localeCache.defaultLocale;
 
     
-    
-    
-    
     var runtimeDefaultLocale = RuntimeDefaultLocale();
-    var candidate = intl_TryValidateAndCanonicalizeLanguageTag(runtimeDefaultLocale);
-    if (candidate === null) {
-        candidate = lastDitchLocale();
-    } else {
-        
-        
-        
-        candidate = removeUnicodeExtensions(candidate);
-
-        if (hasOwn(candidate, oldStyleLanguageTagMappings))
-            candidate = oldStyleLanguageTagMappings[candidate];
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    var locale;
-    if (BestAvailableLocaleIgnoringDefault("Collator", candidate) &&
-        BestAvailableLocaleIgnoringDefault("NumberFormat", candidate) &&
-        BestAvailableLocaleIgnoringDefault("DateTimeFormat", candidate))
-    {
-        locale = candidate;
-    } else {
-        locale = lastDitchLocale();
-    }
+    var locale = intl_supportedLocaleOrFallback(runtimeDefaultLocale);
 
     assertIsValidAndCanonicalLanguageTag(locale, "the computed default locale");
     assert(startOfUnicodeExtensions(locale) < 0,

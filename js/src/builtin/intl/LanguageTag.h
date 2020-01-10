@@ -316,6 +316,11 @@ class MOZ_STACK_CLASS LanguageTag final {
   
 
 
+  void clearUnicodeExtension();
+
+  
+
+
 
   void setPrivateuse(JS::UniqueChars privateuse) {
     MOZ_ASSERT(!privateuse ||
