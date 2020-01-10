@@ -164,7 +164,8 @@ FunctionBox::FunctionBox(JSContext* cx, TraceListNode* traceListHead,
       isInterpreted_(fun->isInterpreted()),
       isInterpretedLazy_(fun->isInterpretedLazy()),
       kind_(fun->kind()),
-      explicitName_(fun->explicitName()) {
+      explicitName_(fun->explicitName()),
+      nargs_(0) {
   
   
   
