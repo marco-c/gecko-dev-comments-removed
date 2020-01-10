@@ -58,9 +58,6 @@ class IDBCursor final : public nsISupports, public nsWrapperCache {
 
   indexedDB::BackgroundCursorChild* mBackgroundActor;
 
-  
-  
-  
   RefPtr<IDBRequest> mRequest;
   RefPtr<IDBObjectStore> mSourceObjectStore;
   RefPtr<IDBIndex> mSourceIndex;
