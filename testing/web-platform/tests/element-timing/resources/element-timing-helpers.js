@@ -1,8 +1,9 @@
 
-function checkElementInternal(entry, expectedName, expectedIdentifier, expectedID, beforeRender,
+function checkElementInternal(entry, expectedUrl, expectedIdentifier, expectedID, beforeRender,
     expectedElement) {
   assert_equals(entry.entryType, 'element');
-  assert_equals(entry.name, expectedName);
+  assert_equals(entry.name, 'image-paint');
+  assert_equals(entry.url, expectedUrl);
   assert_equals(entry.identifier, expectedIdentifier);
   assert_equals(entry.duration, 0);
   assert_equals(entry.id, expectedID);
@@ -14,18 +15,18 @@ function checkElementInternal(entry, expectedName, expectedIdentifier, expectedI
 
 
 
-function checkElement(entry, expectedName, expectedIdentifier, expectedID, beforeRender,
+function checkElement(entry, expectedUrl, expectedIdentifier, expectedID, beforeRender,
     expectedElement) {
-  checkElementInternal(entry, expectedName, expectedIdentifier, expectedID, beforeRender,
+  checkElementInternal(entry, expectedUrl, expectedIdentifier, expectedID, beforeRender,
       expectedElement);
-  const rt_entries = performance.getEntriesByName(expectedName, 'resource');
+  const rt_entries = performance.getEntriesByName(expectedUrl, 'resource');
   assert_equals(rt_entries.length, 1);
   assert_equals(rt_entries[0].responseEnd, entry.responseEnd);
 }
 
-function checkElementWithoutResourceTiming(entry, expectedName, expectedIdentifier,
+function checkElementWithoutResourceTiming(entry, expectedUrl, expectedIdentifier,
     expectedID, beforeRender, expectedElement) {
-  checkElementInternal(entry, expectedName, expectedIdentifier, expectedID, beforeRender,
+  checkElementInternal(entry, expectedUrl, expectedIdentifier, expectedID, beforeRender,
       expectedElement);
   
   assert_equals(entry.responseEnd, 0);
