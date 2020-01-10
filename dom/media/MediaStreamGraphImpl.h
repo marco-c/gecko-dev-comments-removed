@@ -26,7 +26,7 @@
 namespace mozilla {
 
 namespace media {
-class ShutdownTicket;
+class ShutdownBlocker;
 }
 
 template <typename T>
@@ -172,7 +172,19 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
 
-  void ForceShutDown(media::ShutdownTicket* aShutdownTicket);
+  void ForceShutDown();
+
+  
+
+
+
+  void AddShutdownBlocker();
+
+  
+
+
+
+  void RemoveShutdownBlocker();
 
   
 
@@ -877,7 +889,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
 
-  RefPtr<media::ShutdownTicket> mForceShutdownTicket;
+  RefPtr<media::ShutdownBlocker> mShutdownBlocker;
 
   
 
