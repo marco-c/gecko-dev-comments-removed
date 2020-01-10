@@ -838,37 +838,35 @@ bool GLContext::InitImpl() {
   raw_fGetIntegerv(LOCAL_GL_MAX_VIEWPORT_DIMS, mMaxViewportDims);
 
   if (mWorkAroundDriverBugs) {
+    int maxTexSize = INT32_MAX;
+    int maxCubeSize = INT32_MAX;
 #ifdef XP_MACOSX
     if (!nsCocoaFeatures::IsAtLeastVersion(10, 12)) {
       if (mVendor == GLVendor::Intel) {
         
-        mMaxTextureSize = std::min(mMaxTextureSize, 4096);
-        mMaxCubeMapTextureSize = std::min(mMaxCubeMapTextureSize, 512);
-        
-        
-        mMaxRenderbufferSize = std::min(mMaxRenderbufferSize, 4096);
-        mNeedsTextureSizeChecks = true;
+        maxTexSize = 4096;
+        maxCubeSize = 512;
       } else if (mVendor == GLVendor::NVIDIA) {
         
-        mMaxTextureSize = std::min(mMaxTextureSize, 8191);
-        mMaxRenderbufferSize = std::min(mMaxRenderbufferSize, 8191);
-
-        
-        mNeedsTextureSizeChecks = true;
+        maxTexSize = 8191;
       }
+    } else {
+      
+      
+      
+      
+      
+      maxTexSize = 8192;
     }
 #endif
 #ifdef MOZ_X11
     if (mVendor == GLVendor::Nouveau) {
       
-      mMaxCubeMapTextureSize = std::min(mMaxCubeMapTextureSize, 2048);
-      mNeedsTextureSizeChecks = true;
+      maxCubeSize = 2048;
     } else if (mVendor == GLVendor::Intel) {
       
       
-      mMaxTextureSize /= 2;
-      mMaxRenderbufferSize /= 2;
-      mNeedsTextureSizeChecks = true;
+      maxTexSize = mMaxTextureSize / 2;
     }
     
     
@@ -902,6 +900,21 @@ bool GLContext::InitImpl() {
       mNeedsCheckAfterAttachTextureToFb = true;
     }
 #endif
+
+    
+
+    const auto fnLimit = [&](int* const driver, const int limit) {
+      if (*driver > limit) {
+        *driver = limit;
+        mNeedsTextureSizeChecks = true;
+      }
+    };
+
+    fnLimit(&mMaxTextureSize, maxTexSize);
+    fnLimit(&mMaxRenderbufferSize, maxTexSize);
+
+    maxCubeSize = std::min(maxCubeSize, maxTexSize);
+    fnLimit(&mMaxCubeMapTextureSize, maxCubeSize);
   }
 
   if (IsSupported(GLFeature::framebuffer_multisample)) {
