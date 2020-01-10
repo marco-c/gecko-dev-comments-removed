@@ -2752,16 +2752,26 @@ function loadOneOrMoreURIs(aURIString, aTriggeringPrincipal, aCsp) {
 
 
 
-function focusAndSelectUrlBar() {
+
+
+
+
+
+
+
+
+function focusAndSelectUrlBar(userInitiatedFocus = false) {
   
   
   
   
   
-  if (CustomizationHandler.isCustomizing()) {
+  if (CustomizationHandler.isExitingCustomizeMode) {
     gNavToolbox.addEventListener(
       "aftercustomization",
-      focusAndSelectUrlBar,
+      function() {
+        focusAndSelectUrlBar(userInitiatedFocus);
+      },
       { once: true }
     );
     return;
@@ -2771,12 +2781,14 @@ function focusAndSelectUrlBar() {
     FullScreen.showNavToolbox();
   }
 
+  gURLBar.userInitiatedFocus = userInitiatedFocus;
   gURLBar.select();
+  gURLBar.userInitiatedFocus = false;
 }
 
 function openLocation() {
   if (window.location.href == AppConstants.BROWSER_CHROME_URL) {
-    focusAndSelectUrlBar();
+    focusAndSelectUrlBar(true);
     if (gURLBar.openViewOnFocus && !gURLBar.view.isOpen) {
       gURLBar.startQuery();
     }
