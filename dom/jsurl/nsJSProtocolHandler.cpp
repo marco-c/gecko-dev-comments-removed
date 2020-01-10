@@ -39,7 +39,6 @@
 #include "nsThreadUtils.h"
 #include "nsIScriptChannel.h"
 #include "mozilla/dom/Document.h"
-#include "nsILoadInfo.h"
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
 #include "nsITextToSubURI.h"
@@ -49,9 +48,9 @@
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/PopupBlocker.h"
-#include "nsILoadInfo.h"
 #include "nsContentSecurityManager.h"
 
+#include "mozilla/LoadInfo.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ipc/URIUtils.h"
 
@@ -161,7 +160,9 @@ nsresult nsJSThunk::EvaluateScript(
 
   
   
-  nsCOMPtr<nsIContentSecurityPolicy> csp = loadInfo->GetCsp();
+  
+  nsCOMPtr<nsIContentSecurityPolicy> csp =
+      static_cast<mozilla::net::LoadInfo*>(loadInfo.get())->GetCSPToInherit();
   if (csp) {
     bool allowsInlineScript = true;
     rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_SCRIPT,
@@ -175,33 +176,26 @@ nsresult nsJSThunk::EvaluateScript(
                               &allowsInlineScript);
 
     
-    if (!allowsInlineScript) {
+    if (NS_FAILED(rv) || !allowsInlineScript) {
       return NS_ERROR_DOM_RETVAL_UNDEFINED;
     }
   }
 
   
-  csp = nullptr;
-  mozilla::dom::Document* prevDoc = aOriginalInnerWindow->GetExtantDoc();
-  if (prevDoc) {
-    csp = prevDoc->GetCsp();
-  }
-  if (csp) {
-    bool allowsInlineScript = true;
-    rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_SCRIPT,
-                              EmptyString(),  
-                              true,           
-                              nullptr,        
-                              nullptr,        
-                              EmptyString(),  
-                              0,              
-                              0,              
-                              &allowsInlineScript);
-    
-    if (!allowsInlineScript) {
-      return NS_ERROR_DOM_RETVAL_UNDEFINED;
-    }
-  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
   nsIScriptGlobalObject* global = GetGlobalObject(aChannel);
@@ -210,22 +204,23 @@ nsresult nsJSThunk::EvaluateScript(
   }
 
   
-  
-  mozilla::dom::Document* doc = aOriginalInnerWindow->GetExtantDoc();
-  if (doc && doc->HasScriptsBlockedBySandbox()) {
-    return NS_ERROR_DOM_RETVAL_UNDEFINED;
-  }
-
-  
-  AutoPopupStatePusher popupStatePusher(aPopupState);
-
-  
   nsCOMPtr<nsPIDOMWindowOuter> win = do_QueryInterface(global);
   nsPIDOMWindowInner* innerWin = win->GetCurrentInnerWindow();
 
   if (innerWin != aOriginalInnerWindow) {
     return NS_ERROR_UNEXPECTED;
   }
+
+  mozilla::dom::Document* targetDoc = innerWin->GetExtantDoc();
+
+  
+  
+  if (targetDoc && targetDoc->HasScriptsBlockedBySandbox()) {
+    return NS_ERROR_DOM_RETVAL_UNDEFINED;
+  }
+
+  
+  AutoPopupStatePusher popupStatePusher(aPopupState);
 
   nsCOMPtr<nsIScriptGlobalObject> innerGlobal = do_QueryInterface(innerWin);
 
