@@ -199,14 +199,30 @@ nsresult TextEditRules::BeforeEdit(EditSubAction aEditSubAction,
     
     mCachedSelectionNode = mTextEditor->GetRoot();
     mCachedSelectionOffset = 0;
-  } else {
-    Selection* selection = mTextEditor->GetSelection();
-    if (NS_WARN_IF(!selection)) {
-      return NS_ERROR_FAILURE;
-    }
-    mCachedSelectionNode = selection->GetAnchorNode();
-    mCachedSelectionOffset = selection->AnchorOffset();
+    return NS_OK;
   }
+
+  Selection* selection = mTextEditor->GetSelection();
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  if (aEditSubAction == EditSubAction::eInsertText ||
+      aEditSubAction == EditSubAction::eInsertTextComingFromIME) {
+    
+    
+    
+    EditorRawDOMPoint point = mTextEditor->FindBetterInsertionPoint(
+        EditorRawDOMPoint(selection->AnchorRef()));
+    if (point.IsSet()) {
+      mCachedSelectionNode = point.GetContainer();
+      mCachedSelectionOffset = point.Offset();
+      return NS_OK;
+    }
+  }
+
+  mCachedSelectionNode = selection->GetAnchorNode();
+  mCachedSelectionOffset = selection->AnchorOffset();
 
   return NS_OK;
 }
