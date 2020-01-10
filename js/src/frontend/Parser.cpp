@@ -8370,6 +8370,8 @@ static int Precedence(ParseNodeKind pnk) {
   return PrecedenceTable[size_t(pnk) - size_t(ParseNodeKind::BinOpFirst)];
 }
 
+enum class EnforcedParentheses : uint8_t { CoalesceExpr, AndOrExpr, None };
+
 template <class ParseHandler, typename Unit>
 MOZ_ALWAYS_INLINE typename ParseHandler::Node
 GeneralParser<ParseHandler, Unit>::orExpr(
@@ -8385,6 +8387,7 @@ GeneralParser<ParseHandler, Unit>::orExpr(
   ParseNodeKind kindStack[PRECEDENCE_CLASSES];
   int depth = 0;
   Node pn;
+  EnforcedParentheses unparenthesizedExpression = EnforcedParentheses::None;
   for (;;) {
     pn = unaryExpr(yieldHandling, tripledotHandling, possibleError, invoked);
     if (!pn) {
@@ -8406,12 +8409,45 @@ GeneralParser<ParseHandler, Unit>::orExpr(
       if (possibleError && !possibleError->checkForExpressionError()) {
         return null();
       }
-      
-      if (tok == TokenKind::Pow &&
-          handler_.isUnparenthesizedUnaryExpression(pn)) {
-        error(JSMSG_BAD_POW_LEFTSIDE);
-        return null();
+
+      switch (tok) {
+        
+        case TokenKind::Pow:
+          if (handler_.isUnparenthesizedUnaryExpression(pn)) {
+            error(JSMSG_BAD_POW_LEFTSIDE);
+            return null();
+          }
+          break;
+
+        case TokenKind::Or:
+        case TokenKind::And:
+          
+          
+          
+          if (unparenthesizedExpression == EnforcedParentheses::CoalesceExpr) {
+            error(JSMSG_BAD_COALESCE_MIXING);
+            return null();
+          }
+          
+          
+          unparenthesizedExpression = EnforcedParentheses::AndOrExpr;
+          break;
+
+        case TokenKind::Coalesce:
+          if (unparenthesizedExpression == EnforcedParentheses::AndOrExpr) {
+            error(JSMSG_BAD_COALESCE_MIXING);
+            return null();
+          }
+          
+          
+          unparenthesizedExpression = EnforcedParentheses::CoalesceExpr;
+          break;
+
+        default:
+          
+          break;
       }
+
       pnk = BinaryOpTokenKindToParseNodeKind(tok);
     } else {
       tok = TokenKind::Eof;
@@ -8432,6 +8468,7 @@ GeneralParser<ParseHandler, Unit>::orExpr(
       depth--;
       ParseNodeKind combiningPnk = kindStack[depth];
       pn = handler_.appendOrCreateList(combiningPnk, nodeStack[depth], pn, pc_);
+
       if (!pn) {
         return null();
       }
