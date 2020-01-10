@@ -5682,6 +5682,15 @@ JS::AutoDebuggerJobQueueInterruption::~AutoDebuggerJobQueueInterruption() {
 }
 
 bool JS::AutoDebuggerJobQueueInterruption::init(JSContext* cx) {
+  
+  
+  
+  
+  
+  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+    return true;
+  }
+
   MOZ_ASSERT(cx->jobQueue);
   this->cx = cx;
   saved = cx->jobQueue->saveJobQueue(cx);
@@ -5689,8 +5698,10 @@ bool JS::AutoDebuggerJobQueueInterruption::init(JSContext* cx) {
 }
 
 void JS::AutoDebuggerJobQueueInterruption::runJobs() {
-  JS::AutoSaveExceptionState ases(cx);
-  cx->jobQueue->runJobs(cx);
+  if (!mozilla::recordreplay::IsRecordingOrReplaying()) {
+    JS::AutoSaveExceptionState ases(cx);
+    cx->jobQueue->runJobs(cx);
+  }
 }
 
 const JSJitInfo promise_then_info = {
