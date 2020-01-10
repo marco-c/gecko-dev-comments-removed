@@ -1313,8 +1313,6 @@ nsresult nsPermissionManager::InitDB(bool aRemoveFile) {
         mDBConn->TableExists(NS_LITERAL_CSTRING("moz_hosts"),
                              &hostsTableExists);
         if (hostsTableExists) {
-          bool migrationError = false;
-
           
           
           
@@ -1367,12 +1365,10 @@ nsresult nsPermissionManager::InitDB(bool aRemoveFile) {
             
             rv = stmt->GetUTF8String(0, host);
             if (NS_WARN_IF(NS_FAILED(rv))) {
-              migrationError = true;
               continue;
             }
             rv = stmt->GetUTF8String(1, type);
             if (NS_WARN_IF(NS_FAILED(rv))) {
-              migrationError = true;
               continue;
             }
             permission = stmt->AsInt32(2);
@@ -1391,7 +1387,6 @@ nsresult nsPermissionManager::InitDB(bool aRemoveFile) {
               NS_WARNING(
                   "Unexpected failure when upgrading migrating permission "
                   "from host to origin");
-              migrationError = true;
             }
           }
 
@@ -1418,28 +1413,8 @@ nsresult nsPermissionManager::InitDB(bool aRemoveFile) {
                 NS_LITERAL_CSTRING("SELECT COUNT(*) FROM moz_perms"),
                 getter_AddRefs(countStmt));
             bool hasResult = false;
-            if (NS_SUCCEEDED(rv) &&
-                NS_SUCCEEDED(countStmt->ExecuteStep(&hasResult)) && hasResult) {
-              int32_t permsCount = countStmt->AsInt32(0);
-
-              
-              
-              uint32_t telemetryValue;
-              if (permsCount > id) {
-                telemetryValue = 3;  
-              } else if (permsCount == id) {
-                telemetryValue = 2;  
-              } else if (permsCount == 0) {
-                telemetryValue = 0;  
-              } else {
-                telemetryValue = 1;  
-              }
-
-              
-              mozilla::Telemetry::Accumulate(
-                  mozilla::Telemetry::PERMISSIONS_REMIGRATION_COMPARISON,
-                  telemetryValue);
-            } else {
+            if (NS_FAILED(rv) ||
+                NS_FAILED(countStmt->ExecuteStep(&hasResult)) || !hasResult) {
               NS_WARNING("Could not count the rows in moz_perms");
             }
 
@@ -1456,10 +1431,6 @@ nsresult nsPermissionManager::InitDB(bool aRemoveFile) {
 
           rv = mDBConn->CommitTransaction();
           NS_ENSURE_SUCCESS(rv, rv);
-
-          mozilla::Telemetry::Accumulate(
-              mozilla::Telemetry::PERMISSIONS_MIGRATION_7_ERROR,
-              NS_WARN_IF(migrationError));
         } else {
           
           
