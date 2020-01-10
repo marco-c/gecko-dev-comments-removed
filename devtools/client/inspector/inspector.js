@@ -549,13 +549,20 @@ Inspector.prototype = {
     this.searchboxShortcuts.on(key, event => {
       
       if (
-        event.target.closest("#sidebar-panel-ruleview") ||
-        event.target.closest("#sidebar-panel-computedview")
+        event.originalTarget.closest("#sidebar-panel-ruleview") ||
+        event.originalTarget.closest("#sidebar-panel-computedview")
       ) {
         return;
       }
-      event.preventDefault();
-      this.searchBox.focus();
+
+      const win = event.originalTarget.ownerGlobal;
+      
+      
+      
+      if (win === this.panelWin || win.parent === this.panelWin) {
+        event.preventDefault();
+        this.searchBox.focus();
+      }
     });
   },
 
