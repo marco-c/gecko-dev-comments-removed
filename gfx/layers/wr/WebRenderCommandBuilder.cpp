@@ -2050,19 +2050,8 @@ static bool PaintItemByDrawTarget(nsDisplayItem* aItem, gfx::DrawTarget* aDT,
   MOZ_ASSERT(context);
 
   switch (aItem->GetType()) {
-    case DisplayItemType::TYPE_SVG_WRAPPER: {
-      
-      context->SetMatrix(
-          context->CurrentMatrix().PreTranslate(-aOffset.x, -aOffset.y));
-      isInvalidated = PaintByLayer(
-          aItem, aDisplayListBuilder, aManager, context, aScale, [&]() {
-            aManager->EndTransaction(FrameLayerBuilder::DrawPaintedLayer,
-                                     aDisplayListBuilder);
-          });
-      break;
-    }
+    case DisplayItemType::TYPE_SVG_WRAPPER:
     case DisplayItemType::TYPE_MASK: {
-      
       
       MOZ_RELEASE_ASSERT(0);
       break;
