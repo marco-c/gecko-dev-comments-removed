@@ -448,7 +448,11 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
   if (prefName.EqualsLiteral("layout.css.dpi") ||
       prefName.EqualsLiteral("layout.css.devPixelsPerPx")) {
     int32_t oldAppUnitsPerDevPixel = mDeviceContext->AppUnitsPerDevPixel();
-    if (mDeviceContext->CheckDPIChange() && mPresShell) {
+    
+    
+    
+    Unused << mDeviceContext->CheckDPIChange();
+    if (mPresShell) {
       OwningNonNull<mozilla::PresShell> presShell(*mPresShell);
       
       
