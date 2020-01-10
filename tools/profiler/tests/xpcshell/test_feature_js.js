@@ -59,5 +59,5 @@ function functionB() {
 }
 
 async function functionC() {
-  return captureAtLeastOneJsSample();
+  return doAtLeastOnePeriodicSample();
 }

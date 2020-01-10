@@ -14,7 +14,6 @@
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/JSONWriter.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/PlatformMutex.h"
 #include "mozilla/ProfilerCounts.h"
 #include "mozilla/ThreadLocal.h"
 
@@ -98,155 +97,6 @@ static void EnsureBernoulliIsInstalled() {
 
 
 
-class InfallibleAllocWithoutHooksPolicy {
-  static void ExitOnFailure(const void* aP) {
-    if (!aP) {
-      MOZ_CRASH("Profiler memory hooks out of memory; aborting");
-    }
-  }
-
- public:
-  template <typename T>
-  static T* maybe_pod_malloc(size_t aNumElems) {
-    if (aNumElems & mozilla::tl::MulOverflowMask<sizeof(T)>::value) {
-      return nullptr;
-    }
-    return (T*)gMallocTable.malloc(aNumElems * sizeof(T));
-  }
-
-  template <typename T>
-  static T* maybe_pod_calloc(size_t aNumElems) {
-    return (T*)gMallocTable.calloc(aNumElems, sizeof(T));
-  }
-
-  template <typename T>
-  static T* maybe_pod_realloc(T* aPtr, size_t aOldSize, size_t aNewSize) {
-    if (aNewSize & mozilla::tl::MulOverflowMask<sizeof(T)>::value) {
-      return nullptr;
-    }
-    return (T*)gMallocTable.realloc(aPtr, aNewSize * sizeof(T));
-  }
-
-  template <typename T>
-  static T* pod_malloc(size_t aNumElems) {
-    T* p = maybe_pod_malloc<T>(aNumElems);
-    ExitOnFailure(p);
-    return p;
-  }
-
-  template <typename T>
-  static T* pod_calloc(size_t aNumElems) {
-    T* p = maybe_pod_calloc<T>(aNumElems);
-    ExitOnFailure(p);
-    return p;
-  }
-
-  template <typename T>
-  static T* pod_realloc(T* aPtr, size_t aOldSize, size_t aNewSize) {
-    T* p = maybe_pod_realloc(aPtr, aOldSize, aNewSize);
-    ExitOnFailure(p);
-    return p;
-  }
-
-  template <typename T>
-  static void free_(T* aPtr, size_t aSize = 0) {
-    gMallocTable.free(aPtr);
-  }
-
-  static void reportAllocOverflow() { ExitOnFailure(nullptr); }
-  bool checkSimulatedOOM() const { return true; }
-};
-
-
-
-class Mutex : private ::mozilla::detail::MutexImpl {
- public:
-  Mutex()
-      : ::mozilla::detail::MutexImpl(
-            ::mozilla::recordreplay::Behavior::DontPreserve) {}
-
-  void Lock() { ::mozilla::detail::MutexImpl::lock(); }
-  void Unlock() { ::mozilla::detail::MutexImpl::unlock(); }
-};
-
-class MutexAutoLock {
-  MutexAutoLock(const MutexAutoLock&) = delete;
-  void operator=(const MutexAutoLock&) = delete;
-
-  Mutex& mMutex;
-
- public:
-  explicit MutexAutoLock(Mutex& aMutex) : mMutex(aMutex) { mMutex.Lock(); }
-  ~MutexAutoLock() { mMutex.Unlock(); }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-class AllocationTracker {
-  
-  
-  
-  typedef mozilla::HashSet<const void*, mozilla::DefaultHasher<const void*>,
-                           InfallibleAllocWithoutHooksPolicy>
-      AllocationSet;
-
- public:
-  AllocationTracker() : mAllocations(), mMutex() {}
-
-  void AddMemoryAddress(const void* memoryAddress) {
-    MutexAutoLock lock(mMutex);
-    if (!mAllocations.put(memoryAddress)) {
-      MOZ_CRASH("Out of memory while tracking native allocations.");
-    };
-  }
-
-  void Reset() {
-    MutexAutoLock lock(mMutex);
-    mAllocations.clearAndCompact();
-  }
-
-  
-  
-  bool RemoveMemoryAddressIfFound(const void* memoryAddress) {
-    MutexAutoLock lock(mMutex);
-
-    auto ptr = mAllocations.lookup(memoryAddress);
-    if (ptr) {
-      
-      mAllocations.remove(ptr);
-      return true;
-    }
-
-    return false;
-  }
-
- private:
-  AllocationSet mAllocations;
-  Mutex mMutex;
-};
-
-static AllocationTracker* gAllocationTracker;
-
-static void EnsureAllocationTrackerIsInstalled() {
-  if (!gAllocationTracker) {
-    
-    gAllocationTracker = new AllocationTracker();
-  }
-}
-
-
-
-
 
 
 
@@ -269,12 +119,6 @@ class ThreadIntercept {
   static mozilla::Atomic<bool, mozilla::Relaxed,
                          mozilla::recordreplay::Behavior::DontPreserve>
       sAllocationsFeatureEnabled;
-
-  
-  
-  static mozilla::Atomic<int, mozilla::Relaxed,
-                         mozilla::recordreplay::Behavior::DontPreserve>
-      sMainThreadId;
 
   ThreadIntercept() = default;
 
@@ -322,25 +166,15 @@ class ThreadIntercept {
 
   bool IsBlocked() const { return ThreadIntercept::IsBlocked_(); }
 
-  static void EnableAllocationFeature(int aMainThreadId) {
-    sAllocationsFeatureEnabled = true;
-    sMainThreadId = aMainThreadId;
-  }
+  static void EnableAllocationFeature() { sAllocationsFeatureEnabled = true; }
 
   static void DisableAllocationFeature() { sAllocationsFeatureEnabled = false; }
-
-  static int MainThreadId() { return sMainThreadId; }
 };
 
 PROFILER_THREAD_LOCAL(bool) ThreadIntercept::tlsIsBlocked;
-
 mozilla::Atomic<bool, mozilla::Relaxed,
                 mozilla::recordreplay::Behavior::DontPreserve>
     ThreadIntercept::sAllocationsFeatureEnabled(false);
-
-mozilla::Atomic<int, mozilla::Relaxed,
-                mozilla::recordreplay::Behavior::DontPreserve>
-    ThreadIntercept::sMainThreadId(0);
 
 
 
@@ -394,19 +228,8 @@ static void AllocCallback(void* aPtr, size_t aReqSize) {
   
   MOZ_ASSERT(gBernoulli,
              "gBernoulli must be properly installed for the memory hooks.");
-  if (
-      
-      gBernoulli->trial(actualSize) &&
-      
-      profiler_add_native_allocation_marker(
-          ThreadIntercept::MainThreadId(), static_cast<int64_t>(actualSize),
-          reinterpret_cast<uintptr_t>(aPtr))) {
-    MOZ_ASSERT(gAllocationTracker,
-               "gAllocationTracker must be properly installed for the memory "
-               "hooks.");
-    
-    
-    gAllocationTracker->AddMemoryAddress(aPtr);
+  if (gBernoulli->trial(actualSize)) {
+    profiler_add_native_allocation_marker((int64_t)actualSize);
   }
 
   
@@ -419,7 +242,7 @@ static void FreeCallback(void* aPtr) {
 
   
   size_t unsignedSize = MallocSizeOf(aPtr);
-  int64_t signedSize = -(static_cast<int64_t>(unsignedSize));
+  int64_t signedSize = -((int64_t)unsignedSize);
   sCounter->Add(signedSize);
 
   auto threadIntercept = ThreadIntercept::MaybeGet();
@@ -437,14 +260,10 @@ static void FreeCallback(void* aPtr) {
   
   
   
-  MOZ_ASSERT(
-      gAllocationTracker,
-      "gAllocationTracker must be properly installed for the memory hooks.");
-  if (gAllocationTracker->RemoveMemoryAddressIfFound(aPtr)) {
-    
-    profiler_add_native_allocation_marker(ThreadIntercept::MainThreadId(),
-                                          signedSize,
-                                          reinterpret_cast<uintptr_t>(aPtr));
+  MOZ_ASSERT(gBernoulli,
+             "gBernoulli must be properly installed for the memory hooks.");
+  if (gBernoulli->trial(unsignedSize)) {
+    profiler_add_native_allocation_marker(signedSize);
   }
 }
 
@@ -579,7 +398,7 @@ void install_memory_hooks() {
 
 void remove_memory_hooks() { jemalloc_replace_dynamic(nullptr); }
 
-void enable_native_allocations(int aMainThreadId) {
+void enable_native_allocations() {
   
   
   
@@ -604,17 +423,13 @@ void enable_native_allocations(int aMainThreadId) {
   
   if (!PR_GetEnv("XPCOM_MEM_BLOAT_LOG")) {
     EnsureBernoulliIsInstalled();
-    EnsureAllocationTrackerIsInstalled();
-    ThreadIntercept::EnableAllocationFeature(aMainThreadId);
+    ThreadIntercept::EnableAllocationFeature();
   }
 }
 
 
 void disable_native_allocations() {
   ThreadIntercept::DisableAllocationFeature();
-  if (gAllocationTracker) {
-    gAllocationTracker->Reset();
-  }
 }
 
 }  
