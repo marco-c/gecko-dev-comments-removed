@@ -494,6 +494,9 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
     
     
     
+    
+    
+    
     if (GetTopLevelEditSubAction() == EditSubAction::eDeleteSelectedContent &&
         TopLevelEditSubActionDataRef().mDidDeleteNonCollapsedRange &&
         !TopLevelEditSubActionDataRef().mDidDeleteEmptyParentBlocks) {
@@ -833,8 +836,6 @@ nsresult HTMLEditRules::DidDoAction(EditSubActionInfo& aInfo,
     case EditSubAction::eInsertLineBreak:
     case EditSubAction::eInsertTextComingFromIME:
       return NS_OK;
-    case EditSubAction::eDeleteSelectedContent:
-      return DidDeleteSelection();
     case EditSubAction::eInsertElement:
     case EditSubAction::eInsertQuotedText:
       return NS_OK;
@@ -842,6 +843,7 @@ nsresult HTMLEditRules::DidDoAction(EditSubActionInfo& aInfo,
     case EditSubAction::eCreateOrChangeList:
     case EditSubAction::eCreateOrRemoveBlock:
     case EditSubAction::eDecreaseZIndex:
+    case EditSubAction::eDeleteSelectedContent:
     case EditSubAction::eIncreaseZIndex:
     case EditSubAction::eIndent:
     case EditSubAction::eInsertHTMLSource:
@@ -4058,57 +4060,48 @@ nsresult HTMLEditor::DeleteElementsExceptTableRelatedElements(nsINode& aNode) {
   return NS_OK;
 }
 
-nsresult HTMLEditRules::DidDeleteSelection() {
-  MOZ_ASSERT(IsEditorDataAvailable());
+nsresult HTMLEditor::DeleteMostAncestorMailCiteElementIfEmpty(
+    nsIContent& aContent) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
 
   
-  EditorDOMPoint atStartOfSelection(
-      EditorBase::GetStartPoint(*SelectionRefPtr()));
-  if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
-    return NS_ERROR_FAILURE;
+  
+  RefPtr<Element> mailCiteElement = GetMostAncestorMailCiteElement(aContent);
+  if (!mailCiteElement) {
+    return NS_OK;
   }
-
-  
-  RefPtr<Element> citeNode = HTMLEditorRef().GetMostAncestorMailCiteElement(
-      *atStartOfSelection.GetContainer());
-  if (citeNode) {
-    bool isEmpty = true, seenBR = false;
-    HTMLEditorRef().IsEmptyNodeImpl(citeNode, &isEmpty, true, true, false,
-                                    &seenBR);
-    if (isEmpty) {
-      EditorDOMPoint atCiteNode(citeNode);
-      {
-        AutoEditorDOMPointChildInvalidator lockOffset(atCiteNode);
-        nsresult rv =
-            MOZ_KnownLive(HTMLEditorRef()).DeleteNodeWithTransaction(*citeNode);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
-        }
-      }
-      if (atCiteNode.IsSet() && seenBR) {
-        RefPtr<Element> brElement =
-            MOZ_KnownLive(HTMLEditorRef())
-                .InsertBRElementWithTransaction(atCiteNode);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
-        if (NS_WARN_IF(!brElement)) {
-          return NS_ERROR_FAILURE;
-        }
-        IgnoredErrorResult error;
-        SelectionRefPtr()->Collapse(EditorRawDOMPoint(brElement), error);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
-        NS_WARNING_ASSERTION(
-            !error.Failed(),
-            "Failed to collapse selection at the new <br> element");
-      }
+  bool isEmpty = true, seenBR = false;
+  IsEmptyNodeImpl(mailCiteElement, &isEmpty, true, true, false, &seenBR);
+  EditorDOMPoint atEmptyMailCiteElement(mailCiteElement);
+  {
+    AutoEditorDOMPointChildInvalidator lockOffset(atEmptyMailCiteElement);
+    nsresult rv = DeleteNodeWithTransaction(*mailCiteElement);
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
   }
+
+  if (NS_WARN_IF(!atEmptyMailCiteElement.IsSet()) || !seenBR) {
+    return NS_OK;
+  }
+
+  RefPtr<Element> brElement =
+      InsertBRElementWithTransaction(atEmptyMailCiteElement);
+  if (NS_WARN_IF(Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  if (NS_WARN_IF(!brElement)) {
+    return NS_ERROR_FAILURE;
+  }
+  IgnoredErrorResult ignoredError;
+  SelectionRefPtr()->Collapse(EditorRawDOMPoint(brElement), ignoredError);
+  if (NS_WARN_IF(Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  NS_WARNING_ASSERTION(!ignoredError.Failed(), "Selection::Collapse() failed");
   return NS_OK;
 }
 
