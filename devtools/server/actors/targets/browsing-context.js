@@ -1133,17 +1133,14 @@ const browsingContextTargetPrototype = {
         docShell.document,
          true
       );
-      const promises = [];
       for (const sheet of sheets) {
         if (InspectorUtils.hasRulesModifiedByCSSOM(sheet)) {
           continue;
         }
         
-        promises.push(
-          getSheetText(sheet, this._consoleActor).then(text => {
-            InspectorUtils.parseStyleSheet(sheet, text,  false);
-          })
-        );
+        getSheetText(sheet, this._consoleActor).then(text => {
+          InspectorUtils.parseStyleSheet(sheet, text,  false);
+        });
       }
     }
 
