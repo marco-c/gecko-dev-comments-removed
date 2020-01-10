@@ -8,7 +8,6 @@
 
 const { Utils: WebConsoleUtils } = require("devtools/client/webconsole/utils");
 const EventEmitter = require("devtools/shared/event-emitter");
-const defer = require("devtools/shared/defer");
 const Services = require("Services");
 const { gDevTools } = require("devtools/client/framework/devtools");
 const {
@@ -65,7 +64,13 @@ class WebConsoleUI {
 
 
   get webConsoleClient() {
-    return this.proxy ? this.proxy.webConsoleClient : null;
+    const proxy = this.getProxy();
+
+    if (!proxy) {
+      return null;
+    }
+
+    return proxy.webConsoleClient;
   }
 
   
@@ -73,15 +78,49 @@ class WebConsoleUI {
 
 
 
-  async init() {
-    this._initUI();
-    await this._initConnection();
-    await this.wrapper.init();
 
-    const id = WebConsoleUtils.supportsString(this.hudId);
-    if (Services.obs) {
-      Services.obs.notifyObservers(id, "web-console-created");
+  getProxy() {
+    return this.proxy;
+  }
+
+  
+
+
+
+
+
+  getAllProxies() {
+    let proxies = [this.getProxy()];
+
+    if (this.additionalProxies) {
+      proxies = proxies.concat(this.additionalProxies);
     }
+
+    return proxies;
+  }
+
+  
+
+
+
+
+  init() {
+    if (this._initializer) {
+      return this._initializer;
+    }
+
+    this._initializer = (async () => {
+      this._initUI();
+      await this._initConnection();
+      await this.wrapper.init();
+
+      const id = WebConsoleUtils.supportsString(this.hudId);
+      if (Services.obs) {
+        Services.obs.notifyObservers(id, "web-console-created");
+      }
+    })();
+
+    return this._initializer;
   }
 
   destroy() {
@@ -115,10 +154,11 @@ class WebConsoleUI {
 
     this.window = this.hud = this.wrapper = null;
 
-    if (this.proxy) {
-      this.proxy.disconnect();
-      this.proxy = null;
+    for (const proxy of this.getAllProxies()) {
+      proxy.disconnect();
     }
+    this.proxy = null;
+    this.additionalProxies = null;
   }
 
   
@@ -139,11 +179,23 @@ class WebConsoleUI {
     if (this.wrapper) {
       this.wrapper.dispatchMessagesClear();
     }
-    this.webConsoleClient.clearNetworkRequests();
+    this.clearNetworkRequests();
     if (clearStorage) {
-      this.webConsoleClient.clearMessagesCache();
+      this.clearMessagesCache();
     }
     this.emit("messages-cleared");
+  }
+
+  clearNetworkRequests() {
+    for (const proxy of this.getAllProxies()) {
+      proxy.webConsoleClient.clearNetworkRequests();
+    }
+  }
+
+  clearMessagesCache() {
+    for (const proxy of this.getAllProxies()) {
+      proxy.webConsoleClient.clearMessagesCache();
+    }
   }
 
   
@@ -206,13 +258,7 @@ class WebConsoleUI {
 
 
 
-
-  _initConnection() {
-    if (this._initDefer) {
-      return this._initDefer.promise;
-    }
-
-    this._initDefer = defer();
+  async _initConnection() {
     this.proxy = new WebConsoleConnectionProxy(
       this,
       this.hud.target,
@@ -220,19 +266,44 @@ class WebConsoleUI {
       this.fissionSupport
     );
 
-    this.proxy.connect().then(
-      () => {
-        
-        this._initDefer.resolve(this);
-      },
-      reason => {
-        
-        
-        this._initDefer.reject(reason);
-      }
-    );
+    if (
+      this.fissionSupport &&
+      this.hud.target.chrome &&
+      !this.hud.target.isAddon
+    ) {
+      const { mainRoot } = this.hud.target.client;
+      const { processes } = await mainRoot.listProcesses();
 
-    return this._initDefer.promise;
+      this.additionalProxies = [];
+      for (const processDescriptor of processes) {
+        const targetFront = await processDescriptor.getTarget();
+
+        
+        
+        if (targetFront === this.hud.target) {
+          continue;
+        }
+
+        if (!targetFront) {
+          console.warn(
+            "Can't retrieve the target front for process",
+            processDescriptor
+          );
+          continue;
+        }
+
+        this.additionalProxies.push(
+          new WebConsoleConnectionProxy(
+            this,
+            targetFront,
+            this.isBrowserConsole,
+            this.fissionSupport
+          )
+        );
+      }
+    }
+
+    return Promise.all(this.getAllProxies().map(proxy => proxy.connect()));
   }
 
   _initUI() {
@@ -347,10 +418,25 @@ class WebConsoleUI {
 
 
 
-  _releaseObject(actor) {
-    if (this.proxy) {
-      this.proxy.releaseActor(actor);
+  releaseActor(actor) {
+    const proxy = this.getProxy();
+    if (!proxy) {
+      return null;
     }
+
+    return proxy.releaseActor(actor);
+  }
+
+  
+
+
+
+
+  evaluateJSAsync(expression, options) {
+    return this.getProxy().webConsoleClient.evaluateJSAsync(
+      expression,
+      options
+    );
   }
 
   
