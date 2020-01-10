@@ -521,6 +521,11 @@
     `,
           "application/xml"
         );
+
+        if (doc.documentElement.localName === "parsererror") {
+          throw new Error("not well-formed XML");
+        }
+
         
         
         
