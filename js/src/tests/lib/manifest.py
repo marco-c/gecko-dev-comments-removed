@@ -102,6 +102,7 @@ class XULInfoTester:
                 
                 
                 '--no-baseline',
+                '--no-blinterp',
                 '-e', self.js_prologue,
                 '-e', 'print(!!({}))'.format(cond)
             ]
