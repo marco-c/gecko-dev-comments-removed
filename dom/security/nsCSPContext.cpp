@@ -490,25 +490,21 @@ void nsCSPContext::reportInlineViolation(
             : NS_LITERAL_STRING(STYLE_HASH_VIOLATION_OBSERVER_TOPIC);
   }
 
-  
-  nsAutoCString sourceFile;
-  if (mSelfURI) {
-    mSelfURI->GetSpec(sourceFile);
-  }
-
-  uint32_t lineNumber = aLineNumber;
-  uint32_t columnNumber = aColumnNumber;
+  nsAutoString sourceFile;
+  uint32_t lineNumber;
+  uint32_t columnNumber;
 
   JSContext* cx = nsContentUtils::GetCurrentJSContext();
-  if (cx) {
-    if (!nsJSUtils::GetCallingLocation(cx, sourceFile, &lineNumber,
-                                       &columnNumber)) {
-      
-      
-      
-      lineNumber = aLineNumber;
-      columnNumber = aColumnNumber;
+  if (!cx || !nsJSUtils::GetCallingLocation(cx, sourceFile, &lineNumber,
+                                            &columnNumber)) {
+    
+    if (mSelfURI) {
+      nsAutoCString cSourceFile;
+      mSelfURI->GetSpec(cSourceFile);
+      sourceFile.Assign(NS_ConvertUTF8toUTF16(cSourceFile));
     }
+    lineNumber = aLineNumber;
+    columnNumber = aColumnNumber;
   }
 
   AsyncReportViolation(aTriggeringElement, aCSPEventListener,
@@ -518,10 +514,10 @@ void nsCSPContext::reportInlineViolation(
                        aViolatedDirective,             
                        aViolatedPolicyIndex,           
                        observerSubject,                
-                       NS_ConvertUTF8toUTF16(sourceFile),  
-                       aContent,                           
-                       lineNumber,                         
-                       columnNumber);                      
+                       sourceFile,                     
+                       aContent,                       
+                       lineNumber,                     
+                       columnNumber);                  
 }
 
 NS_IMETHODIMP
