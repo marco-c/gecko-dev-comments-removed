@@ -12,8 +12,8 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/net/StunAddrsRequestChild.h"
-#include "nsIProtocolProxyCallback.h"
 #include "MediaTransportHandler.h"
+#include "nsIHttpChannelInternal.h"
 
 #include "TransceiverImpl.h"
 
@@ -125,11 +125,10 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   }
 
   nsPIDOMWindowInner* GetWindow() const;
+  already_AddRefed<nsIHttpChannelInternal> GetChannel() const;
 
   void AlpnNegotiated_s(const std::string& aAlpn);
   void AlpnNegotiated_m(const std::string& aAlpn);
-
-  void ProxySettingReceived(bool aProxied);
 
   
   RefPtr<WebRtcCallWrapper> mCall;
@@ -139,7 +138,7 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
 
  private:
   void InitLocalAddrs();  
-  nsresult InitProxy();
+  bool ShouldForceProxy() const;
   std::unique_ptr<NrSocketProxyConfig> GetProxyConfig() const;
 
   class StunAddrsHandler : public net::StunAddrsListener {
@@ -185,9 +184,7 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   void OnCandidateFound_m(const std::string& aTransportId,
                           const CandidateInfo& aCandidateInfo);
 
-  bool IsIceCtxReady() const {
-    return !mWaitingOnProxyLookup && mLocalAddrsCompleted;
-  }
+  bool IsIceCtxReady() const { return mLocalAddrsCompleted; }
 
   
   PeerConnectionImpl* mParent;
@@ -210,8 +207,6 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   std::vector<nsCOMPtr<nsIRunnable>> mQueuedIceCtxOperations;
 
   
-  
-  bool mWaitingOnProxyLookup;
   bool mForceProxy;
 
   
