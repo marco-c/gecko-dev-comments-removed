@@ -2,7 +2,7 @@
 
 
 
-import {recordTelemetryEvent} from "../aboutLoginsUtils.js";
+import {recordTelemetryEvent} from "chrome://browser/content/aboutlogins/aboutLoginsUtils.js";
 
 export default class LoginListItem extends HTMLElement {
   constructor(login) {

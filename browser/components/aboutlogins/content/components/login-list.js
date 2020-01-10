@@ -2,8 +2,8 @@
 
 
 
-import LoginListItem from "./login-list-item.js";
-import ReflectedFluentElement from "./reflected-fluent-element.js";
+import LoginListItem from "chrome://browser/content/aboutlogins/components/login-list-item.js";
+import ReflectedFluentElement from "chrome://browser/content/aboutlogins/components/reflected-fluent-element.js";
 
 const collator = new Intl.Collator();
 const sortFnOptions = {
