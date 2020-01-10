@@ -432,6 +432,11 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
 
         
         
+        if self.app in self.firefox_android_browsers and not self.run_local:
+            kw_options['installerpath'] = self.installer_path
+
+        
+        
         kw_options['app'] = self.app
         if self.app == "firefox" or (self.app in self.firefox_android_browsers and
                                      not self.run_local):
