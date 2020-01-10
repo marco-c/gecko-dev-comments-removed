@@ -208,9 +208,6 @@ nsresult HTMLEditor::SetInlinePropertyInternal(
             MOZ_KnownLive(*startOfRange.GetContainerAsText()),
             startOfRange.Offset(), endOfRange.Offset(), aProperty, aAttribute,
             aAttributeValue);
-        if (NS_WARN_IF(Destroyed())) {
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -242,9 +239,6 @@ nsresult HTMLEditor::SetInlinePropertyInternal(
             MOZ_KnownLive(*startOfRange.GetContainerAsText()),
             startOfRange.Offset(), startOfRange.GetContainer()->Length(),
             aProperty, aAttribute, aAttributeValue);
-        if (NS_WARN_IF(Destroyed())) {
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -267,9 +261,6 @@ nsresult HTMLEditor::SetInlinePropertyInternal(
         nsresult rv = SetInlinePropertyOnTextNode(
             MOZ_KnownLive(*endOfRange.GetContainerAsText()), 0,
             endOfRange.Offset(), aProperty, aAttribute, aAttributeValue);
-        if (NS_WARN_IF(Destroyed())) {
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -349,7 +340,7 @@ bool HTMLEditor::IsSimpleModifiableNode(nsIContent* aContent, nsAtom* aProperty,
 }
 
 nsresult HTMLEditor::SetInlinePropertyOnTextNode(
-    Text& aText, int32_t aStartOffset, int32_t aEndOffset, nsAtom& aProperty,
+    Text& aText, uint32_t aStartOffset, uint32_t aEndOffset, nsAtom& aProperty,
     nsAtom* aAttribute, const nsAString& aValue) {
   if (!aText.GetParentNode() ||
       !CanContainTag(*aText.GetParentNode(), aProperty)) {
@@ -383,6 +374,9 @@ nsresult HTMLEditor::SetInlinePropertyOnTextNode(
     
     ErrorResult error;
     textNodeForTheRange = SplitNodeWithTransaction(atEnd, error);
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
     if (NS_WARN_IF(error.Failed())) {
       return error.StealNSResult();
     }
@@ -394,6 +388,9 @@ nsresult HTMLEditor::SetInlinePropertyOnTextNode(
     
     ErrorResult error;
     nsCOMPtr<nsIContent> newLeftNode = SplitNodeWithTransaction(atStart, error);
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
     if (NS_WARN_IF(error.Failed())) {
       return error.StealNSResult();
     }
@@ -405,19 +402,37 @@ nsresult HTMLEditor::SetInlinePropertyOnTextNode(
     nsCOMPtr<nsIContent> sibling = GetPriorHTMLSibling(textNodeForTheRange);
     if (IsSimpleModifiableNode(sibling, &aProperty, aAttribute, &aValue)) {
       
-      return MoveNodeToEndWithTransaction(*textNodeForTheRange, *sibling);
+      nsresult rv =
+          MoveNodeToEndWithTransaction(*textNodeForTheRange, *sibling);
+      if (NS_WARN_IF(Destroyed())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "MoveNodeToEndWithTransaction() failed");
+      return rv;
     }
     sibling = GetNextHTMLSibling(textNodeForTheRange);
     if (IsSimpleModifiableNode(sibling, &aProperty, aAttribute, &aValue)) {
       
-      return MoveNodeWithTransaction(*textNodeForTheRange,
-                                     EditorDOMPoint(sibling, 0));
+      nsresult rv = MoveNodeWithTransaction(*textNodeForTheRange,
+                                            EditorDOMPoint(sibling, 0));
+      if (NS_WARN_IF(Destroyed())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "MoveNodeWithTransaction() failed");
+      return rv;
     }
   }
 
   
-  return SetInlinePropertyOnNode(*textNodeForTheRange, aProperty, aAttribute,
-                                 aValue);
+  nsresult rv = SetInlinePropertyOnNode(*textNodeForTheRange, aProperty,
+                                        aAttribute, aValue);
+  if (NS_WARN_IF(Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "SetInlinePropertyOnNode() failed");
+  return rv;
 }
 
 nsresult HTMLEditor::SetInlinePropertyOnNodeImpl(nsIContent& aNode,
@@ -1636,36 +1651,27 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
             return rv;
           }
         }
-        
-        
-        if (!CSSEditUtils::IsCSSEditableProperty(content, aProperty,
-                                                 aAttribute)) {
+
+        if (!HTMLEditor::IsRemovableParentStyleWithNewSpanElement(
+                content, aProperty, aAttribute)) {
           continue;
         }
-        if (!CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(
-                content, aProperty, aAttribute, EmptyString(),
-                CSSEditUtils::eComputed)) {
-          continue;
-        }
-        
-        
-        
-        
-        
-        if (!CSSEditUtils::IsCSSInvertible(*aProperty, aAttribute)) {
-          continue;
-        }
+
         if (!content->IsText()) {
+          
+          
           DebugOnly<nsresult> rvIgnored = SetInlinePropertyOnNode(
               content, *aProperty, aAttribute,
               NS_LITERAL_STRING("-moz-editor-invert-value"));
           if (NS_WARN_IF(Destroyed())) {
             return NS_ERROR_EDITOR_DESTROYED;
           }
-          NS_WARNING_ASSERTION(NS_FAILED(rvIgnored),
-                               "SetInlinePropertyOnNode() failed, but ignored");
+          NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                               "SetInlinePropertyOnNode() "
+                               "failed, but ignored");
           continue;
         }
+
         
         
         
@@ -1680,11 +1686,33 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
             MOZ_KnownLive(*content->AsText()), startOffset, endOffset,
             *aProperty, aAttribute,
             NS_LITERAL_STRING("-moz-editor-invert-value"));
-        if (NS_WARN_IF(Destroyed())) {
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
+        }
+      }
+
+      
+      
+      if (aProperty && CSSEditUtils::IsCSSInvertible(*aProperty, aAttribute)) {
+        
+        
+        AutoTArray<OwningNonNull<Text>, 32> leafTextNodes;
+        for (auto& content : arrayOfContents) {
+          if (content->IsElement()) {
+            CollectEditableLeafTextNodes(*content->AsElement(), leafTextNodes);
+          }
+        }
+        for (auto& textNode : leafTextNodes) {
+          if (!HTMLEditor::IsRemovableParentStyleWithNewSpanElement(
+                  textNode, aProperty, aAttribute)) {
+            continue;
+          }
+          nsresult rv = SetInlinePropertyOnTextNode(
+              textNode, 0, textNode->TextLength(), *aProperty, aAttribute,
+              NS_LITERAL_STRING("-moz-editor-invert-value"));
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return rv;
+          }
         }
       }
     }
@@ -1692,6 +1720,50 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
 
   
   return NS_WARN_IF(Destroyed()) ? NS_ERROR_EDITOR_DESTROYED : NS_OK;
+}
+
+
+bool HTMLEditor::IsRemovableParentStyleWithNewSpanElement(nsIContent& aContent,
+                                                          nsAtom* aProperty,
+                                                          nsAtom* aAttribute) {
+  
+  if (!aProperty) {
+    return false;
+  }
+
+  
+  
+  if (!CSSEditUtils::IsCSSInvertible(*aProperty, aAttribute)) {
+    return false;
+  }
+
+  
+  
+  if (!CSSEditUtils::IsCSSEditableProperty(&aContent, aProperty, aAttribute)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  return CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(
+      &aContent, aProperty, aAttribute, EmptyString(), CSSEditUtils::eComputed);
+}
+
+void HTMLEditor::CollectEditableLeafTextNodes(
+    Element& aElement, nsTArray<OwningNonNull<Text>>& aLeafTextNodes) const {
+  for (nsIContent* child = aElement.GetFirstChild(); child;
+       child = child->GetNextSibling()) {
+    if (child->IsElement()) {
+      CollectEditableLeafTextNodes(*child->AsElement(), aLeafTextNodes);
+      continue;
+    }
+    if (child->IsText()) {
+      aLeafTextNodes.AppendElement(*child->AsText());
+    }
+  }
 }
 
 NS_IMETHODIMP

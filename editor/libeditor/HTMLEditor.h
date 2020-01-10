@@ -3955,11 +3955,9 @@ class HTMLEditor final : public TextEditor,
   
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult SetInlinePropertyOnTextNode(Text& aData, int32_t aStartOffset,
-                                       int32_t aEndOffset, nsAtom& aProperty,
-                                       nsAtom* aAttribute,
-                                       const nsAString& aValue);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult SetInlinePropertyOnTextNode(
+      Text& aData, uint32_t aStartOffset, uint32_t aEndOffset,
+      nsAtom& aProperty, nsAtom* aAttribute, const nsAString& aValue);
 
   nsresult PromoteInlineRange(nsRange& aRange);
   nsresult PromoteRangeIfStartsOrEndsInNamedAnchor(nsRange& aRange);
@@ -3971,6 +3969,22 @@ class HTMLEditor final : public TextEditor,
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   RemoveStyleInside(Element& aElement, nsAtom* aProperty, nsAtom* aAttribute);
+
+  
+
+
+  void CollectEditableLeafTextNodes(
+      Element& aElement, nsTArray<OwningNonNull<Text>>& aLeafTextNodes) const;
+
+  
+
+
+
+
+
+  static bool IsRemovableParentStyleWithNewSpanElement(nsIContent& aContent,
+                                                       nsAtom* aProperty,
+                                                       nsAtom* aAttribute);
 
   bool IsAtFrontOfNode(nsINode& aNode, int32_t aOffset);
   bool IsAtEndOfNode(nsINode& aNode, int32_t aOffset);
