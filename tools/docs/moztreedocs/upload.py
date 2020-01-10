@@ -137,7 +137,6 @@ def s3_upload(files, key_prefix=None):
     defined, key names will be ``<key_prefix>/<path>``.
     """
     s3, bucket = create_aws_session()
-    s3_delete_missing(files, key_prefix)
 
     def upload(f, path, bucket, key, extra_args):
         
@@ -165,6 +164,7 @@ def s3_upload(files, key_prefix=None):
             fs.append(e.submit(upload, io.BytesIO(f.read()), path, bucket, key,
                                extra_args))
 
+    s3_delete_missing(files, key_prefix)
     
     for f in fs:
         f.result()
