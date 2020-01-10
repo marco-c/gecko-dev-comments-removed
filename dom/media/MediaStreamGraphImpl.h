@@ -444,6 +444,10 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
   
 
 
+  void RemoveStream(MediaStream* aStream);
+  
+
+
   void DestroyPort(MediaInputPort* aPort);
   
 
@@ -648,6 +652,15 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
   const UniquePtr<GraphRunner> mGraphRunner;
+
+  
+
+
+
+
+
+
+  size_t mMainThreadStreamCount = 0;
 
   
 
