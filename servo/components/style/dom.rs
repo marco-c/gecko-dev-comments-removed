@@ -882,6 +882,13 @@ pub trait TElement:
         hints: &mut V,
     ) where
         V: Push<ApplicableDeclarationBlock>;
+
+    
+    fn local_name(&self) -> &<SelectorImpl as selectors::parser::SelectorImpl>::BorrowedLocalName;
+
+    
+    fn namespace(&self)
+        -> &<SelectorImpl as selectors::parser::SelectorImpl>::BorrowedNamespaceUrl;
 }
 
 
