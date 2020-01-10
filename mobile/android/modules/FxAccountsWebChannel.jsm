@@ -310,14 +310,7 @@ this.FxAccountsWebChannel.prototype = {
             
             Accounts.getFirefoxAccount()
               .then(account => {
-                
-                
-                
-                
-                
-                if (!data.hasOwnProperty("action")) {
-                  
-                  
+                if (!account) {
                   
                   
                   
@@ -326,9 +319,7 @@ this.FxAccountsWebChannel.prototype = {
                   } else {
                     data.action = "signin";
                   }
-                }
 
-                if (!account) {
                   return Accounts.createFirefoxAccountFromJSON(data).then(
                     success => {
                       if (!success) {
@@ -346,11 +337,8 @@ this.FxAccountsWebChannel.prototype = {
                 }
 
                 
-                
-                
-                
-                
-                
+                data.action = "reconnect";
+
                 return Accounts.updateFirefoxAccountFromJSON(data).then(
                   success => {
                     if (!success) {
@@ -394,15 +382,7 @@ this.FxAccountsWebChannel.prototype = {
                 }
 
                 
-                
-                
-                if (!data.hasOwnProperty("action")) {
-                  data.action = "passwordChange";
-                } else if (data.action != "passwordChange") {
-                  throw new Error(
-                    "Expected 'action' to be 'passwordChange', but saw " + data.action
-                  );
-                }
+                data.action = "passwordChange";
 
                 return Accounts.updateFirefoxAccountFromJSON(data);
               })

@@ -215,7 +215,7 @@ public class AccountsHelper implements BundleEventListener {
 
             
             
-            if (!action.equals("passwordChange")) {
+            if (action.equals("reconnect")) {
                 MmaDelegate.track(MmaDelegate.USER_RECONNECTED_TO_FXA);
             }
 
