@@ -44,16 +44,6 @@ TRANSFORMS = [
             'defaults/pref/channel-prefs.js',
             'Contents/Resources/defaults/pref/channel-prefs.js',
         ],
-        'channel_prefix': ['aurora', 'beta', 'release', 'esr'],
-        'side': 'target',
-        'deletion': '//',
-    },
-    {
-        
-        'files': [
-            'defaults/pref/channel-prefs.js',
-            'Contents/Resources/defaults/pref/channel-prefs.js',
-        ],
         'channel_prefix': ['beta'],
         'side': 'target',
         'substitution': [
@@ -73,6 +63,20 @@ TRANSFORMS = [
             'pref("app.update.channel", "release");\n',
             'pref("app.update.channel", "beta");\n',
         ],
+    },
+    {
+        
+        
+        
+        
+        
+        'files': [
+            'defaults/pref/channel-prefs.js',
+            'Contents/Resources/defaults/pref/channel-prefs.js',
+        ],
+        'channel_prefix': ['aurora', 'beta', 'release', 'esr'],
+        'side': 'target',
+        'deletion': '//',
     },
     
     {
