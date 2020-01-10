@@ -41,32 +41,27 @@ function test_black_box() {
   });
 
   
+  
   Cu.evalInSandbox(
-    "" +
-      function doStuff(k) {
-        
-        debugger; 
-        k(100); 
-      }, 
+    "" + function doStuff(k) { 
+      debugger;                
+      k(100);                  
+    },                         
     gDebuggee,
     "1.8",
     BLACK_BOXED_URL,
     1
   );
-
+  
   Cu.evalInSandbox(
-    "" +
-    function runTest() {
-      
-      doStuff(
-        
-        function(n) {
-          
-          Math.abs(n); 
-        } 
-      ); 
-    } + 
-      "\n debugger;", 
+    "" + function runTest() { 
+      doStuff(                
+        function(n) {        
+          Math.abs(n);        
+        }                     
+      );                      
+    }                         
+    + "\n debugger;",         
     gDebuggee,
     "1.8",
     SOURCE_URL,
