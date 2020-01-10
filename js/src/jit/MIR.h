@@ -4207,16 +4207,36 @@ class MTruncateToInt32 : public MUnaryInstruction, public ToInt32Policy::Data {
 
 
 class MToString : public MUnaryInstruction, public ToStringPolicy::Data {
-  explicit MToString(MDefinition* def) : MUnaryInstruction(classOpcode, def) {
+ public:
+  
+  
+  
+  
+  enum class SideEffectHandling { Bailout, Supported };
+
+ private:
+  SideEffectHandling sideEffects_;
+
+  MToString(MDefinition* def, SideEffectHandling sideEffects)
+      : MUnaryInstruction(classOpcode, def), sideEffects_(sideEffects) {
     setResultType(MIRType::String);
-    setMovable();
 
     
     
-    if (def->mightBeType(MIRType::Object) ||
-        def->mightBeType(MIRType::Symbol)) {
-      setGuard();
+    
+    if (!isEffectful()) {
+      setMovable();
+      
+      
+      if (conversionMightHaveSideEffects()) {
+        setGuard();
+      }
     }
+  }
+
+  bool conversionMightHaveSideEffects() const {
+    return input()->mightBeType(MIRType::Object) ||
+           input()->mightBeType(MIRType::Symbol);
   }
 
  public:
@@ -4226,14 +4246,29 @@ class MToString : public MUnaryInstruction, public ToStringPolicy::Data {
   MDefinition* foldsTo(TempAllocator& alloc) override;
 
   bool congruentTo(const MDefinition* ins) const override {
+    if (!ins->isToString()) {
+      return false;
+    }
+    if (sideEffects_ != ins->toToString()->sideEffects_) {
+      return false;
+    }
     return congruentIfOperandsEqual(ins);
   }
 
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
+  AliasSet getAliasSet() const override {
+    if (supportSideEffects() && conversionMightHaveSideEffects()) {
+      return AliasSet::Store(AliasSet::Any);
+    }
+    return AliasSet::None();
+  }
 
-  bool fallible() const {
-    return input()->mightBeType(MIRType::Object) ||
-           input()->mightBeType(MIRType::Symbol);
+  bool supportSideEffects() const {
+    return sideEffects_ == SideEffectHandling::Supported;
+  }
+
+  bool needsSnapshot() const {
+    return sideEffects_ == SideEffectHandling::Bailout &&
+           conversionMightHaveSideEffects();
   }
 
   ALLOW_CLONE(MToString)
