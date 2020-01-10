@@ -359,6 +359,18 @@ class TextDrawTarget : public DrawTarget {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool mHasUnsupportedFeatures = false;
 
   
