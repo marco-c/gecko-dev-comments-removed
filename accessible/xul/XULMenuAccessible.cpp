@@ -221,8 +221,10 @@ role XULMenuitemAccessible::NativeRole() const {
   nsCOMPtr<nsIDOMXULContainerElement> xulContainer = Elm()->AsXULContainer();
   if (xulContainer) return roles::PARENT_MENUITEM;
 
-  if (mParent && mParent->Role() == roles::COMBOBOX_LIST)
+  Accessible* widget = ContainerWidget();
+  if (widget && widget->Role() == roles::COMBOBOX_LIST) {
     return roles::COMBOBOX_OPTION;
+  }
 
   if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
                                          nsGkAtoms::radio, eCaseMatters))
@@ -287,11 +289,19 @@ Accessible* XULMenuitemAccessible::ContainerWidget() const {
   if (menuFrame) {
     nsMenuParent* menuParent = menuFrame->GetMenuParent();
     if (menuParent) {
-      if (menuParent->IsMenuBar())  
-        return mParent;
-
-      
-      if (menuParent->IsMenu()) return mParent;
+      nsBoxFrame* frame = nullptr;
+      if (menuParent->IsMenuBar()) {  
+        frame = static_cast<nsMenuBarFrame*>(menuParent);
+      } else if (menuParent->IsMenu()) {  
+        frame = static_cast<nsMenuPopupFrame*>(menuParent);
+      }
+      if (frame) {
+        nsIContent* content = frame->GetContent();
+        if (content) {
+          MOZ_ASSERT(mDoc);
+          return mDoc->GetAccessible(content);
+        }
+      }
 
       
       
