@@ -159,7 +159,8 @@ void VRProcessParent::InitAfterConnect(bool aSucceeded) {
 
     
     GPUChild* gpuChild = GPUProcessManager::Get()->GetGPUChild();
-    MOZ_ASSERT(gpuChild);
+    
+    MOZ_RELEASE_ASSERT(gpuChild, "gpuChild is null.");
 
     Endpoint<PVRGPUChild> vrGPUBridge;
     VRProcessManager* vpm = VRProcessManager::Get();
