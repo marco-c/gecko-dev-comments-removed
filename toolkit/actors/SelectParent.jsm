@@ -544,9 +544,7 @@ var SelectParentHelper = {
       element.childElementCount > SEARCH_MINIMUM_ELEMENTS
     ) {
       
-      let searchbox = element.ownerDocument.createXULElement("textbox", {
-        is: "search-textbox",
-      });
+      let searchbox = element.ownerDocument.createXULElement("search-textbox");
       searchbox.className = "contentSelectDropdown-searchbox";
       searchbox.addEventListener("input", this.onSearchInput);
       searchbox.inputField.addEventListener(

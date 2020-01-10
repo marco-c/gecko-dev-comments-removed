@@ -108,7 +108,7 @@ class HTMLTextFieldAccessible final : public HyperTextAccessibleWrap {
     }
     
     ErrorResult rv;
-    return Elm()->Closest(NS_LITERAL_STRING("textbox"), rv);
+    return Elm()->Closest(NS_LITERAL_STRING("search-textbox"), rv);
   }
 };
 

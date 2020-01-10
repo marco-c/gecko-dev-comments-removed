@@ -131,9 +131,6 @@
       
       this.searchButton = this.searchButton;
 
-      
-      this.setAttribute("is", "search-textbox");
-
       this.initializeAttributeInheritance();
     }
 
@@ -251,7 +248,5 @@
     }
   }
 
-  customElements.define("search-textbox", MozSearchTextbox, {
-    extends: "textbox",
-  });
+  customElements.define("search-textbox", MozSearchTextbox);
 }
