@@ -13,6 +13,7 @@
 #include "mozilla/net/ReferrerPolicy.h"
 #include "nsReadableUtils.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/HashFunctions.h"
 
 #define REFERRERINFOF_CONTRACTID "@mozilla.org/referrer-info;1"
 
@@ -31,6 +32,7 @@ class nsIPrincipal;
 
 namespace mozilla {
 class StyleSheet;
+class URLAndReferrerInfo;
 
 namespace net {
 class HttpBaseChannel;
@@ -186,6 +188,11 @@ class ReferrerInfo : public nsIReferrerInfo {
   static uint32_t GetDefaultReferrerPolicy(nsIHttpChannel* aChannel = nullptr,
                                            nsIURI* aURI = nullptr,
                                            bool privateBrowsing = false);
+
+  
+
+
+  PLDHashNumber Hash() const;
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIREFERRERINFO
@@ -347,6 +354,8 @@ class ReferrerInfo : public nsIReferrerInfo {
 
   void LogMessageToConsole(nsIHttpChannel* aChannel, const char* aMsg,
                            const nsTArray<nsString>& aParams) const;
+
+  friend class mozilla::URLAndReferrerInfo;
 
   nsCOMPtr<nsIURI> mOriginalReferrer;
 
