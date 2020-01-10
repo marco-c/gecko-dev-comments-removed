@@ -1794,7 +1794,8 @@ JS::Result<Ok> GenericHuffmanTable::initStart(JSContext* cx,
   
   
   if (largestBitLength <= SingleLookupHuffmanTable::MAX_BIT_LENGTH) {
-    implementation_ = {mozilla::VariantType<SingleLookupHuffmanTable>{}, cx};
+    implementation_ = {mozilla::VariantType<SingleLookupHuffmanTable>{}, cx,
+                       SingleLookupHuffmanTable::Use::ToplevelTable};
     return implementation_.template as<SingleLookupHuffmanTable>().initStart(
         cx, numberOfSymbols, largestBitLength);
   }
@@ -2009,10 +2010,17 @@ JS::Result<Ok> SingleLookupHuffmanTable::initComplete() {
     MOZ_ASSERT(largestBitLength_ == 0);
     return Ok();
   }
+
 #ifdef DEBUG
   bool foundMaxBitLength = false;
   for (size_t i = 0; i < saturated_.length(); ++i) {
     const uint8_t index = saturated_[i];
+    if (use_ != Use::ToplevelTable) {
+      
+      if (index >= values_.length()) {
+        continue;
+      }
+    }
     MOZ_ASSERT(values_[index].key().bitLength_ <= largestBitLength_);
     if (values_[index].key().bitLength_ == largestBitLength_) {
       foundMaxBitLength = true;
@@ -2020,6 +2028,7 @@ JS::Result<Ok> SingleLookupHuffmanTable::initComplete() {
   }
   MOZ_ASSERT(foundMaxBitLength);
 #endif  
+
   return Ok();
 }
 
@@ -2071,6 +2080,12 @@ HuffmanLookupResult SingleLookupHuffmanTable::lookup(HuffmanLookup key) const {
   
   
   const size_t index = saturated_[bits];
+  if (index >= values_.length()) {
+    
+    
+    MOZ_ASSERT(use_ == Use::ShortKeys);
+    return HuffmanLookupResult::notFound();
+  }
 
   
   const auto& entry = values_[index];
@@ -2118,12 +2133,12 @@ JS::Result<Ok> MultiLookupHuffmanTable<Subtable, PrefixBitLength>::initStart(
   static_assert(PrefixBitLength < MAX_CODE_BIT_LENGTH,
                 "Invalid PrefixBitLength");
   MOZ_ASSERT(values_.empty());  
-  MOZ_ASSERT(subTables_.empty());
+  MOZ_ASSERT(suffixTables_.empty());
   largestBitLength_ = largestBitLength;
   if (MOZ_UNLIKELY(!values_.initCapacity(numberOfSymbols))) {
     return cx->alreadyReportedError();
   }
-  if (MOZ_UNLIKELY(!subTables_.initCapacity(1 << PrefixBitLength))) {
+  if (MOZ_UNLIKELY(!suffixTables_.initCapacity(1 << PrefixBitLength))) {
     return cx->alreadyReportedError();
   }
   return Ok();
@@ -2151,11 +2166,24 @@ MultiLookupHuffmanTable<Subtable, PrefixBitLength>::initComplete() {
     Bucket() : largestBitLength_(0), numberOfSymbols_(0){};
     uint8_t largestBitLength_;
     uint32_t numberOfSymbols_;
+    void addSymbol(uint8_t bitLength) {
+      ++numberOfSymbols_;
+      if (bitLength > largestBitLength_) {
+        largestBitLength_ = bitLength;
+      }
+    }
   };
   Vector<Bucket> buckets{cx_};
   BINJS_TRY(buckets.resize(1 << PrefixBitLength));
+  Bucket shortKeysBucket;
 
   for (const auto& entry : values_) {
+    if (entry.key().bitLength_ <= SingleLookupHuffmanTable::MAX_BIT_LENGTH) {
+      
+      
+      shortKeysBucket.addSymbol(entry.key().bitLength_);
+      continue;
+    }
     const HuffmanLookup lookup(entry.key().bits_, entry.key().bitLength_);
     const auto split = lookup.split(PrefixBitLength);
     MOZ_ASSERT_IF(split.suffix_.bitLength_ != 32,
@@ -2167,26 +2195,38 @@ MultiLookupHuffmanTable<Subtable, PrefixBitLength>::initComplete() {
     
     for (const auto index : lookup.suffixes(PrefixBitLength)) {
       Bucket& bucket = buckets[index];
-      if (split.suffix_.bitLength_ >= bucket.largestBitLength_) {
-        bucket.largestBitLength_ = split.suffix_.bitLength_;
-      }
-      bucket.numberOfSymbols_++;
+      bucket.addSymbol(split.suffix_.bitLength_);
     }
   }
 
   
   for (auto& bucket : buckets) {
     Subtable sub(cx_);
-    MOZ_TRY(sub.initStart(cx_,
-                           bucket.numberOfSymbols_,
-                           bucket.largestBitLength_));
-    BINJS_TRY(subTables_.append(std::move(sub)));
+    if (bucket.numberOfSymbols_ != 0) {
+      
+      
+      
+      MOZ_TRY(sub.initStart(cx_,
+                             bucket.numberOfSymbols_,
+                             bucket.largestBitLength_));
+    }
+    BINJS_TRY(suffixTables_.append(std::move(sub)));
   }
+
+  
+  MOZ_TRY(shortKeys_.initStart(cx_, shortKeysBucket.numberOfSymbols_,
+                               shortKeysBucket.largestBitLength_));
 
   
   
   for (size_t i = 0; i < values_.length(); ++i) {
     const auto& entry = values_[i];
+    if (entry.key().bitLength_ <= SingleLookupHuffmanTable::MAX_BIT_LENGTH) {
+      
+      MOZ_TRY(shortKeys_.addSymbol(entry.key().bits_, entry.key().bitLength_,
+                                   BinASTSymbol::fromSubtableIndex(i)));
+      continue;
+    }
 
     
     const HuffmanLookup lookup(entry.key().bits_, entry.key().bitLength_);
@@ -2194,7 +2234,7 @@ MultiLookupHuffmanTable<Subtable, PrefixBitLength>::initComplete() {
     MOZ_ASSERT_IF(split.suffix_.bitLength_ != 32,
                   split.suffix_.bits_ >> split.suffix_.bitLength_ == 0);
     for (const auto index : lookup.suffixes(PrefixBitLength)) {
-      auto& sub = subTables_[index];
+      auto& sub = suffixTables_[index];
 
       
       MOZ_TRY(sub.addSymbol(split.suffix_.bits_, split.suffix_.bitLength_,
@@ -2203,7 +2243,13 @@ MultiLookupHuffmanTable<Subtable, PrefixBitLength>::initComplete() {
   }
 
   
-  for (auto& sub : subTables_) {
+  MOZ_TRY(shortKeys_.initComplete());
+  for (size_t i = 0; i < buckets.length(); ++i) {
+    if (buckets[i].numberOfSymbols_ == 0) {
+      
+      continue;
+    }
+    auto& sub = suffixTables_[i];
     MOZ_TRY(sub.initComplete());
   }
 
@@ -2213,11 +2259,22 @@ MultiLookupHuffmanTable<Subtable, PrefixBitLength>::initComplete() {
 template <typename Subtable, uint8_t PrefixBitLength>
 HuffmanLookupResult MultiLookupHuffmanTable<Subtable, PrefixBitLength>::lookup(
     HuffmanLookup key) const {
+  {
+    
+    auto subResult = shortKeys_.lookup(key);
+    if (subResult.isFound()) {
+      
+      const auto& result = values_[subResult.value().toSubtableIndex()];
+
+      return HuffmanLookupResult::found(result.key().bitLength_,
+                                        &result.value());
+    }
+  }
   const auto split = key.split(PrefixBitLength);
-  if (split.prefix_.bits_ >= subTables_.length()) {
+  if (split.prefix_.bits_ >= suffixTables_.length()) {
     return HuffmanLookupResult::notFound();
   }
-  const Subtable& subtable = subTables_[split.prefix_.bits_];
+  const Subtable& subtable = suffixTables_[split.prefix_.bits_];
 
   auto subResult = subtable.lookup(split.suffix_);
   if (!subResult.isFound()) {
