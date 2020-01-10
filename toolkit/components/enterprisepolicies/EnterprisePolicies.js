@@ -25,9 +25,6 @@ const POLICIES_FILENAME = "policies.json";
 
 
 
-const PREF_PER_USER_DIR = "toolkit.policies.perUserDir";
-
-
 
 const PREF_ALTERNATE_PATH = "browser.policies.alternatePath";
 
@@ -458,12 +455,7 @@ class JSONPoliciesProvider {
   _getConfigurationFile() {
     let configFile = null;
     try {
-      let perUserPath = Services.prefs.getBoolPref(PREF_PER_USER_DIR, false);
-      if (perUserPath) {
-        configFile = Services.dirsvc.get("XREUserRunTimeDir", Ci.nsIFile);
-      } else {
-        configFile = Services.dirsvc.get("XREAppDist", Ci.nsIFile);
-      }
+      configFile = Services.dirsvc.get("XREAppDist", Ci.nsIFile);
       configFile.append(POLICIES_FILENAME);
     } catch (ex) {
       

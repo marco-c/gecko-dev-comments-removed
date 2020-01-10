@@ -146,13 +146,6 @@
 
 
 
-#define XRE_USER_RUNTIME_DIR "XREUserRunTimeDir"
-
-
-
-
-
-
 
 
 
