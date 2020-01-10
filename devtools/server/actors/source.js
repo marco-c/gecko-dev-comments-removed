@@ -384,6 +384,29 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
 
     const scripts = this._findDebuggeeScripts();
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const isWasm = this._source.introductionType === "wasm";
+    if (!isWasm && !scripts.some(script => !script.isFunction)) {
+      scripts.length = 0;
+      function addScripts(script) {
+        scripts.push(script);
+        script.getChildScripts().forEach(addScripts);
+      }
+      addScripts(this._source.reparse());
+    }
+
     const positions = [];
     for (const script of scripts) {
       
