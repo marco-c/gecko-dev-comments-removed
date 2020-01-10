@@ -87,7 +87,8 @@ static const char* CSPStrDirectives[] = {
     "child-src",                  
     "block-all-mixed-content",    
     "sandbox",                    
-    "worker-src"                  
+    "worker-src",                 
+    "navigate-to"                 
 };
 
 inline const char* CSP_CSPDirectiveToString(CSPDirective aDir) {
@@ -108,14 +109,15 @@ inline CSPDirective CSP_StringToCSPDirective(const nsAString& aDir) {
   return nsIContentSecurityPolicy::NO_DIRECTIVE;
 }
 
-#define FOR_EACH_CSP_KEYWORD(MACRO)           \
-  MACRO(CSP_SELF, "'self'")                   \
-  MACRO(CSP_UNSAFE_INLINE, "'unsafe-inline'") \
-  MACRO(CSP_UNSAFE_EVAL, "'unsafe-eval'")     \
-  MACRO(CSP_NONE, "'none'")                   \
-  MACRO(CSP_NONCE, "'nonce-")                 \
-  MACRO(CSP_REPORT_SAMPLE, "'report-sample'") \
-  MACRO(CSP_STRICT_DYNAMIC, "'strict-dynamic'")
+#define FOR_EACH_CSP_KEYWORD(MACRO)             \
+  MACRO(CSP_SELF, "'self'")                     \
+  MACRO(CSP_UNSAFE_INLINE, "'unsafe-inline'")   \
+  MACRO(CSP_UNSAFE_EVAL, "'unsafe-eval'")       \
+  MACRO(CSP_NONE, "'none'")                     \
+  MACRO(CSP_NONCE, "'nonce-")                   \
+  MACRO(CSP_REPORT_SAMPLE, "'report-sample'")   \
+  MACRO(CSP_STRICT_DYNAMIC, "'strict-dynamic'") \
+  MACRO(CSP_UNSAFE_ALLOW_REDIRECTS, "'unsafe-allow-redirects'")
 
 enum CSPKeyword {
 #define KEYWORD_ENUM(id_, string_) id_,
@@ -661,6 +663,9 @@ class nsCSPPolicy {
   inline uint32_t getNumDirectives() const { return mDirectives.Length(); }
 
   bool visitDirectiveSrcs(CSPDirective aDir, nsCSPSrcVisitor* aVisitor) const;
+
+  bool allowsNavigateTo(nsIURI* aURI, bool aWasRedirected,
+                        bool aEnforceWhitelist) const;
 
  private:
   nsUpgradeInsecureDirective* mUpgradeInsecDir;
