@@ -612,12 +612,13 @@ MOZ_MUST_USE bool js::SetUpReadableStreamDefaultController(
   
   
   Rooted<JSObject*> onStartFulfilled(
-      cx, NewHandler(cx, ControllerStartHandler, controller));
+      cx, NewHandler(cx, ReadableStreamControllerStartHandler, controller));
   if (!onStartFulfilled) {
     return false;
   }
   Rooted<JSObject*> onStartRejected(
-      cx, NewHandler(cx, ControllerStartFailedHandler, controller));
+      cx,
+      NewHandler(cx, ReadableStreamControllerStartFailedHandler, controller));
   if (!onStartRejected) {
     return false;
   }

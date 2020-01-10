@@ -194,7 +194,7 @@ CreateReadableByteStreamController(JSContext* cx,
         return nullptr;
     }
 
-    RootedObject onStartFulfilled(cx, NewHandler(cx, ControllerStartHandler, controller));
+    RootedObject onStartFulfilled(cx, NewHandler(cx, ReadableStreamControllerStartHandler, controller));
     if (!onStartFulfilled) {
         return nullptr;
     }
@@ -325,12 +325,13 @@ MOZ_MUST_USE bool js::SetUpExternalReadableByteStreamController(
   
   
   RootedObject onStartFulfilled(
-      cx, NewHandler(cx, ControllerStartHandler, controller));
+      cx, NewHandler(cx, ReadableStreamControllerStartHandler, controller));
   if (!onStartFulfilled) {
     return false;
   }
   RootedObject onStartRejected(
-      cx, NewHandler(cx, ControllerStartFailedHandler, controller));
+      cx,
+      NewHandler(cx, ReadableStreamControllerStartFailedHandler, controller));
   if (!onStartRejected) {
     return false;
   }

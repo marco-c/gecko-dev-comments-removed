@@ -67,7 +67,8 @@ using JS::Value;
 
 
 
-bool js::ControllerStartHandler(JSContext* cx, unsigned argc, Value* vp) {
+bool js::ReadableStreamControllerStartHandler(JSContext* cx, unsigned argc,
+                                              Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   Rooted<ReadableStreamController*> controller(
       cx, TargetFromHandler<ReadableStreamController>(args));
@@ -97,8 +98,8 @@ bool js::ControllerStartHandler(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-bool js::ControllerStartFailedHandler(JSContext* cx, unsigned argc,
-                                      JS::Value* vp) {
+bool js::ReadableStreamControllerStartFailedHandler(JSContext* cx,
+                                                    unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   Rooted<ReadableStreamController*> controller(
       cx, TargetFromHandler<ReadableStreamController>(args));
