@@ -87,6 +87,22 @@ const INTERACTIVE_ROLES = new Set([
   Ci.nsIAccessibleRole.ROLE_RICH_OPTION,
 ]);
 
+const INTERACTIVE_IF_FOCUSABLE_ROLES = new Set([
+  
+  Ci.nsIAccessibleRole.ROLE_ARTICLE,
+  
+  Ci.nsIAccessibleRole.ROLE_COLUMNHEADER,
+  Ci.nsIAccessibleRole.ROLE_GRID_CELL,
+  Ci.nsIAccessibleRole.ROLE_MENUBAR,
+  Ci.nsIAccessibleRole.ROLE_MENUPOPUP,
+  Ci.nsIAccessibleRole.ROLE_PAGETABLIST,
+  
+  Ci.nsIAccessibleRole.ROLE_ROWHEADER,
+  Ci.nsIAccessibleRole.ROLE_SCROLLBAR,
+  Ci.nsIAccessibleRole.ROLE_SEPARATOR,
+  Ci.nsIAccessibleRole.ROLE_TOOLBAR,
+]);
+
 
 
 
@@ -102,6 +118,49 @@ function isInvalidNode(node) {
     Cu.isDeadWrapper(node) ||
     node.nodeType !== nodeConstants.ELEMENT_NODE ||
     !node.ownerGlobal
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+function getAriaRoles(accessible) {
+  try {
+    return accessible.attributes.getStringProperty("xml-roles");
+  } catch (e) {
+    
+    
+  }
+
+  return null;
+}
+
+
+
+
+
+
+
+
+
+
+function isKeyboardFocusable(accessible) {
+  const state = {};
+  accessible.getState(state, {});
+  
+  return (
+    state.value & Ci.nsIAccessibleStates.STATE_FOCUSABLE &&
+    
+    
+    
+    accessible.DOMNode.tabIndex > -1
   );
 }
 
@@ -245,9 +304,7 @@ function focusStyleRule(accessible) {
   }
 
   
-  const state = {};
-  accessible.getState(state, {});
-  if (!(state.value & Ci.nsIAccessibleStates.STATE_FOCUSABLE)) {
+  if (!isKeyboardFocusable(accessible)) {
     return null;
   }
 
@@ -314,21 +371,11 @@ function focusableRule(accessible) {
     return null;
   }
 
-  
-  if (
-    state.value & Ci.nsIAccessibleStates.STATE_FOCUSABLE &&
-    accessible.DOMNode.tabIndex > -1
-  ) {
+  if (isKeyboardFocusable(accessible)) {
     return null;
   }
 
-  let ariaRoles;
-  try {
-    ariaRoles = accessible.attributes.getStringProperty("xml-roles");
-  } catch (e) {
-    
-    
-  }
+  const ariaRoles = getAriaRoles(accessible);
   if (
     ariaRoles &&
     (ariaRoles.includes("combobox") || ariaRoles.includes("listbox"))
@@ -361,12 +408,24 @@ function semanticsRule(accessible) {
     return null;
   }
 
-  const state = {};
-  accessible.getState(state, {});
-  if (state.value & Ci.nsIAccessibleStates.STATE_FOCUSABLE) {
+  if (isKeyboardFocusable(accessible)) {
+    if (INTERACTIVE_IF_FOCUSABLE_ROLES.has(accessible.role)) {
+      return null;
+    }
+
+    
+    if (accessible.role === Ci.nsIAccessibleRole.ROLE_TABLE) {
+      const ariaRoles = getAriaRoles(accessible);
+      if (ariaRoles && ariaRoles.includes("grid")) {
+        return null;
+      }
+    }
+
     return { score: WARNING, issue: FOCUSABLE_NO_SEMANTICS };
   }
 
+  const state = {};
+  accessible.getState(state, {});
   if (
     
     accessible.role === Ci.nsIAccessibleRole.ROLE_TEXT_LEAF ||
@@ -412,9 +471,7 @@ function tabIndexRule(accessible) {
     return null;
   }
 
-  const state = {};
-  accessible.getState(state, {});
-  if (!(state.value & Ci.nsIAccessibleStates.STATE_FOCUSABLE)) {
+  if (!isKeyboardFocusable(accessible)) {
     return null;
   }
 
