@@ -3,7 +3,7 @@
 
 
 use api::{BuiltDisplayList, ColorF, DynamicProperties, Epoch};
-use api::{FilterOp, TempFilterData, FilterData, FilterPrimitive, ComponentTransferFuncType};
+use api::{FilterOp, TempFilterData, FilterData, ComponentTransferFuncType};
 use api::{PipelineId, PropertyBinding, PropertyBindingId, ItemRange, MixBlendMode, StackingContext};
 use api::units::{LayoutSize, LayoutTransform};
 use crate::internal_types::{FastHashMap, Filter};
@@ -206,10 +206,6 @@ pub trait StackingContextHelpers {
         &self,
         input_filter_datas: &[TempFilterData],
     ) -> Vec<FilterData>;
-    fn filter_primitives_for_compositing(
-        &self,
-        input_filter_primitives: ItemRange<FilterPrimitive>,
-    ) -> Vec<FilterPrimitive>;
 }
 
 impl StackingContextHelpers for StackingContext {
@@ -257,16 +253,5 @@ impl StackingContextHelpers for StackingContext {
             });
         }
         filter_datas
-    }
-
-    fn filter_primitives_for_compositing(
-        &self,
-        input_filter_primitives: ItemRange<FilterPrimitive>,
-    ) -> Vec<FilterPrimitive> {
-        
-        
-        
-        
-        input_filter_primitives.iter().map(|primitive| primitive.into()).collect()
     }
 }
