@@ -180,6 +180,24 @@ MFTDecoder::CreateInputSample(const uint8_t* aData, uint32_t aDataSize,
   hr = sample->SetSampleTime(UsecsToHNs(aTimestamp));
   NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
+  if (aDuration == 0) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    aDuration = 1;
+  }
   hr = sample->SetSampleDuration(UsecsToHNs(aDuration));
   NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
