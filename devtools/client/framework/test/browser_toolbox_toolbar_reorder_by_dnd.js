@@ -119,10 +119,6 @@ const TEST_DATA = [
 ];
 
 add_task(async function() {
-  
-  
-  await pushPref("devtools.whatsnew.enabled", false);
-
   const tab = await addTab("about:blank");
   const toolbox = await openToolboxForTab(
     tab,
