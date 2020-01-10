@@ -9987,6 +9987,152 @@ ComputedStyle* nsLayoutUtils::StyleForScrollbar(nsIFrame* aScrollbarPart) {
 }
 
 
+
+
+static CSSCoord ComputeSides(const CSSPoint& aInitialPosition,
+                             const CSSSize& aContainerSize,
+                             const StyleAngle& aAngle) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  double theta = aAngle.ToRadians();
+  double sint = sin(theta);
+  double cost = cos(theta);
+
+  double b = cost >= 0 ? aInitialPosition.y
+                       : aContainerSize.height - aInitialPosition.y;
+  double bPrime = sint >= 0 ? aContainerSize.width - aInitialPosition.x
+                            : aInitialPosition.x;
+  sint = std::fabs(sint);
+  cost = std::fabs(cost);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (b * sint > bPrime * cost) {
+    return bPrime / sint;
+  }
+  return b / cost;
+}
+
+static CSSCoord ComputeRayPathLength(const nsIFrame* aFrame,
+                                     const StyleRaySize aRaySizeType,
+                                     const StyleAngle& aAngle) {
+  
+  
+  
+  
+  
+  
+  
+  const nsIFrame* container = aFrame->GetContainingBlock();
+  if (!container) {
+    
+    
+    return 0.0;
+  }
+
+  
+  
+  
+  
+  
+  const CSSPoint initialPos =
+      CSSPixel::FromAppUnits(aFrame->GetOffsetTo(container));
+  
+  
+  
+  const CSSRect containerRect =
+      CSSPixel::FromAppUnits(container->GetRectRelativeToSelf());
+  if (aRaySizeType == StyleRaySize::Sides) {
+    
+    if (!containerRect.Contains(initialPos)) {
+      return 0.0;
+    }
+
+    return ComputeSides(initialPos, containerRect.Size(), aAngle);
+  }
+
+  
+  
+  
+  
+  CSSCoord left = std::abs(initialPos.x);
+  CSSCoord right = std::abs(containerRect.width - initialPos.x);
+  CSSCoord top = std::abs(initialPos.y);
+  CSSCoord bottom = std::abs(containerRect.height - initialPos.y);
+
+  switch (aRaySizeType) {
+    case StyleRaySize::ClosestSide:
+      return std::min({left, right, top, bottom});
+
+    case StyleRaySize::FarthestSide:
+      return std::max({left, right, top, bottom});
+
+    case StyleRaySize::ClosestCorner:
+    case StyleRaySize::FarthestCorner: {
+      CSSCoord h = 0;
+      CSSCoord v = 0;
+      if (aRaySizeType == StyleRaySize::ClosestCorner) {
+        h = std::min(left, right);
+        v = std::min(top, bottom);
+      } else {
+        h = std::max(left, right);
+        v = std::max(top, bottom);
+      }
+      return sqrt(h.value * h.value + v.value * v.value);
+    }
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unsupported ray size");
+  }
+
+  return 0.0;
+}
+
+static CSSCoord ComputeRayUsedDistance(const nsStyleDisplay* aDisplay,
+                                       const nsSize& aSize,
+                                       const CSSCoord& aPathLength) {
+  MOZ_ASSERT(aDisplay->mOffsetPath.IsRay());
+
+  CSSCoord usedDistance =
+      aDisplay->mOffsetDistance.ResolveToCSSPixels(aPathLength);
+
+  if (aDisplay->mOffsetPath.AsRay().contain) {
+    
+  }
+
+  return usedDistance;
+}
+
+
 Maybe<MotionPathData> nsLayoutUtils::ResolveMotionPath(const nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame);
 
@@ -10044,9 +10190,20 @@ Maybe<MotionPathData> nsLayoutUtils::ResolveMotionPath(const nsIFrame* aFrame) {
     Point tangent;
     point = gfxPath->ComputePointAtLength(usedDistance, &tangent);
     directionAngle = (double)atan2(tangent.y, tangent.x);  
-  } else {
+  } else if (display->mOffsetPath.IsRay()) {
+    const auto& ray = display->mOffsetPath.AsRay();
+    CSSCoord pathLength = ComputeRayPathLength(aFrame, ray.size, ray.angle);
+    CSSCoord usedDistance =
+        ComputeRayUsedDistance(display, aFrame->GetSize(), pathLength);
+
     
-    NS_WARNING("Unsupported offset-path value");
+    directionAngle = StyleAngle{ray.angle.ToDegrees() - 90.0f}.ToRadians();
+
+    point.x = usedDistance * cos(directionAngle);
+    point.y = usedDistance * sin(directionAngle);
+  } else {
+    MOZ_ASSERT_UNREACHABLE("Unsupported offset-path value");
+    return Nothing();
   }
 
   const StyleOffsetRotate& rotate = display->mOffsetRotate;

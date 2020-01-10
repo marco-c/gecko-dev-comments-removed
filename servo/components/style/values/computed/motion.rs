@@ -5,12 +5,11 @@
 
 
 use crate::values::computed::Angle;
+use crate::values::generics::motion::GenericOffsetPath;
 use crate::Zero;
 
 
-
-
-pub use crate::values::specified::motion::OffsetPath;
+pub type OffsetPath = GenericOffsetPath<Angle>;
 
 #[inline]
 fn is_auto_zero_angle(auto: &bool, angle: &Angle) -> bool {
