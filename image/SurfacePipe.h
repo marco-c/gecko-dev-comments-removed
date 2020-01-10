@@ -128,6 +128,19 @@ class SurfaceFilter {
   }
 
   
+
+
+
+
+
+
+  uint8_t* AdvanceRow(const uint8_t* aInputRow) {
+    mCol = 0;
+    mRowPointer = DoAdvanceRowFromBuffer(aInputRow);
+    return mRowPointer;
+  }
+
+  
   uint8_t* CurrentRowPointer() const { return mRowPointer; }
 
   
@@ -269,7 +282,22 @@ class SurfaceFilter {
 
   template <typename PixelType>
   WriteState WriteBuffer(const PixelType* aSource) {
-    return WriteBuffer(aSource, 0, mInputSize.width);
+    MOZ_ASSERT(mPixelSize == 1 || mPixelSize == 4);
+    MOZ_ASSERT_IF(mPixelSize == 1, sizeof(PixelType) == sizeof(uint8_t));
+    MOZ_ASSERT_IF(mPixelSize == 4, sizeof(PixelType) == sizeof(uint32_t));
+
+    if (IsSurfaceFinished()) {
+      return WriteState::FINISHED;  
+    }
+
+    if (MOZ_UNLIKELY(!aSource)) {
+      NS_WARNING("Passed a null pointer to WriteBuffer");
+      return WriteState::FAILURE;
+    }
+
+    AdvanceRow(reinterpret_cast<const uint8_t*>(aSource));
+    return IsSurfaceFinished() ? WriteState::FINISHED
+                               : WriteState::NEED_MORE_DATA;
   }
 
   
@@ -446,6 +474,16 @@ class SurfaceFilter {
 
 
 
+
+
+  virtual uint8_t* DoAdvanceRowFromBuffer(const uint8_t* aInputRow) = 0;
+
+  
+
+
+
+
+
   virtual uint8_t* DoAdvanceRow() = 0;
 
   
@@ -468,6 +506,20 @@ class SurfaceFilter {
     mPixelSize = aPixelSize;
 
     ResetToFirstRow();
+  }
+
+  
+
+
+
+
+
+
+
+  void CopyInputRow(const uint8_t* aInputRow) {
+    MOZ_ASSERT(aInputRow);
+    MOZ_ASSERT(mCol == 0);
+    memcpy(mRowPointer, aInputRow, mPixelSize * mInputSize.width);
   }
 
  private:
@@ -719,6 +771,7 @@ class AbstractSurfaceSink : public SurfaceFilter {
 
  protected:
   uint8_t* DoResetToFirstRow() final;
+  uint8_t* DoAdvanceRowFromBuffer(const uint8_t* aInputRow) final;
   uint8_t* DoAdvanceRow() final;
   virtual uint8_t* GetRowPointer() const = 0;
 
