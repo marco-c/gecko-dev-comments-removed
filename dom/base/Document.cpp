@@ -3375,9 +3375,8 @@ void Document::SetDocumentURI(nsIURI* aURI) {
 
   
   nsPIDOMWindowInner* inner = GetInnerWindow();
-  WindowGlobalChild* wgc = inner ? inner->GetWindowGlobalChild() : nullptr;
-  if (wgc) {
-    Unused << wgc->SendUpdateDocumentURI(mDocumentURI);
+  if (inner && inner->GetWindowGlobalChild()) {
+    inner->GetWindowGlobalChild()->SetDocumentURI(mDocumentURI);
   }
 }
 
