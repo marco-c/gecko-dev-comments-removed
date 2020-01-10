@@ -11593,28 +11593,21 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
   }
 
   NS_ENSURE_TRUE(aEntry, NS_ERROR_FAILURE);
-
-  nsCOMPtr<nsIURI> uri = aEntry->GetURI();
-  nsCOMPtr<nsIURI> originalURI = aEntry->GetOriginalURI();
-  nsCOMPtr<nsIURI> resultPrincipalURI = aEntry->GetResultPrincipalURI();
-  bool loadReplace = aEntry->GetLoadReplace();
-  nsCOMPtr<nsIInputStream> postData = aEntry->GetPostData();
-  nsAutoCString contentType;
-  aEntry->GetContentType(contentType);
-  nsCOMPtr<nsIPrincipal> triggeringPrincipal = aEntry->GetTriggeringPrincipal();
-  nsCOMPtr<nsIPrincipal> principalToInherit = aEntry->GetPrincipalToInherit();
-  nsCOMPtr<nsIPrincipal> storagePrincipalToInherit =
-      aEntry->GetStoragePrincipalToInherit();
-  nsCOMPtr<nsIContentSecurityPolicy> csp = aEntry->GetCsp();
-  nsCOMPtr<nsIReferrerInfo> referrerInfo = aEntry->GetReferrerInfo();
+  nsresult rv;
+  RefPtr<nsDocShellLoadState> loadState;
+  rv = aEntry->CreateLoadInfo(getter_AddRefs(loadState));
+  NS_ENSURE_SUCCESS(rv, rv);
+  
+  
+  loadState->SetLoadType(aLoadType);
 
   
   
   
   
   nsCOMPtr<nsISHEntry> kungFuDeathGrip(aEntry);
-  nsresult rv;
-  if (SchemeIsJavascript(uri)) {
+
+  if (SchemeIsJavascript(loadState->URI())) {
     
     
     
@@ -11622,9 +11615,9 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
     
     
     
-    rv = CreateAboutBlankContentViewer(principalToInherit,
-                                       storagePrincipalToInherit, nullptr,
-                                       nullptr, aEntry != mOSHE);
+    rv = CreateAboutBlankContentViewer(loadState->PrincipalToInherit(),
+                                       loadState->StoragePrincipalToInherit(),
+                                       nullptr, nullptr, aEntry != mOSHE);
 
     if (NS_FAILED(rv)) {
       
@@ -11633,11 +11626,12 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
       return NS_OK;
     }
 
-    if (!triggeringPrincipal) {
+    if (!loadState->TriggeringPrincipal()) {
       
       
       
-      triggeringPrincipal = NullPrincipal::CreateWithInheritedAttributes(this);
+      nsCOMPtr<nsIPrincipal> principal = NullPrincipal::CreateWithInheritedAttributes(this);
+      loadState->SetTriggeringPrincipal(principal);
     }
   }
 
@@ -11645,7 +11639,7 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
 
 
 
-  if ((aLoadType & LOAD_CMD_RELOAD) && postData) {
+  if ((aLoadType & LOAD_CMD_RELOAD) && loadState->PostDataStream()) {
     bool repost;
     rv = ConfirmRepost(&repost);
     if (NS_FAILED(rv)) {
@@ -11659,48 +11653,11 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
   }
 
   
-  uint32_t flags = INTERNAL_LOAD_FLAGS_NONE;
-
-  nsAutoString srcdoc;
-  nsCOMPtr<nsIURI> baseURI;
-  if (aEntry->GetIsSrcdocEntry()) {
-    aEntry->GetSrcdocData(srcdoc);
-    baseURI = aEntry->GetBaseURI();
-    flags |= INTERNAL_LOAD_FLAGS_IS_SRCDOC;
-  } else {
-    srcdoc = VoidString();
-  }
-
-  
-  MOZ_ASSERT(triggeringPrincipal,
+  MOZ_ASSERT(loadState->TriggeringPrincipal(),
              "need a valid triggeringPrincipal to load from history");
-  if (!triggeringPrincipal) {
+  if (!loadState->TriggeringPrincipal()) {
     return NS_ERROR_FAILURE;
   }
-
-  
-  
-  
-  
-  Maybe<nsCOMPtr<nsIURI>> emplacedResultPrincipalURI;
-  emplacedResultPrincipalURI.emplace(std::move(resultPrincipalURI));
-
-  RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(uri);
-  loadState->SetReferrerInfo(referrerInfo);
-  loadState->SetOriginalURI(originalURI);
-  loadState->SetMaybeResultPrincipalURI(emplacedResultPrincipalURI);
-  loadState->SetLoadReplace(loadReplace);
-  loadState->SetTriggeringPrincipal(triggeringPrincipal);
-  loadState->SetPrincipalToInherit(principalToInherit);
-  loadState->SetLoadFlags(flags);
-  loadState->SetTypeHint(contentType);
-  loadState->SetPostDataStream(postData);
-  loadState->SetLoadType(aLoadType);
-  loadState->SetSHEntry(aEntry);
-  loadState->SetFirstParty(true);
-  loadState->SetSrcdocData(srcdoc);
-  loadState->SetBaseURI(baseURI);
-  loadState->SetCsp(csp);
 
   rv = InternalLoad(loadState,
                     nullptr,   

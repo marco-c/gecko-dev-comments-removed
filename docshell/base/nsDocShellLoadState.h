@@ -76,6 +76,10 @@ class nsDocShellLoadState final {
 
   void SetPrincipalToInherit(nsIPrincipal* aPrincipalToInherit);
 
+  nsIPrincipal* StoragePrincipalToInherit() const;
+
+  void SetStoragePrincipalToInherit(nsIPrincipal* aStoragePrincipalToInherit);
+
   bool LoadReplace() const;
 
   void SetLoadReplace(bool aLoadReplace);
@@ -292,6 +296,8 @@ class nsDocShellLoadState final {
   
 
   nsCOMPtr<nsIPrincipal> mPrincipalToInherit;
+
+  nsCOMPtr<nsIPrincipal> mStoragePrincipalToInherit;
 
   
   
