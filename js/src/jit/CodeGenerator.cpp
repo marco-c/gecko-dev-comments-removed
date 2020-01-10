@@ -1717,28 +1717,34 @@ void CodeGenerator::visitValueToString(LValueToString* lir) {
   }
 
   
-  if (lir->mir()->input()->mightBeType(MIRType::Object)) {
-    if (lir->mir()->supportSideEffects()) {
-      masm.branchTestObject(Assembler::Equal, tag, ool->entry());
-    } else {
-      
-      MOZ_ASSERT(lir->mir()->needsSnapshot());
-      Label bail;
-      masm.branchTestObject(Assembler::Equal, tag, &bail);
-      bailoutFrom(&bail, lir->snapshot());
-    }
-  }
-
   
-  if (lir->mir()->input()->mightBeType(MIRType::Symbol)) {
-    if (lir->mir()->supportSideEffects()) {
-      masm.branchTestSymbol(Assembler::Equal, tag, ool->entry());
-    } else {
-      
-      MOZ_ASSERT(lir->mir()->needsSnapshot());
-      Label bail;
-      masm.branchTestSymbol(Assembler::Equal, tag, &bail);
-      bailoutFrom(&bail, lir->snapshot());
+  
+  
+  if (lir->mir()->mightHaveSideEffects()) {
+    
+    if (lir->mir()->input()->mightBeType(MIRType::Object)) {
+      if (lir->mir()->supportSideEffects()) {
+        masm.branchTestObject(Assembler::Equal, tag, ool->entry());
+      } else {
+        
+        MOZ_ASSERT(lir->mir()->needsSnapshot());
+        Label bail;
+        masm.branchTestObject(Assembler::Equal, tag, &bail);
+        bailoutFrom(&bail, lir->snapshot());
+      }
+    }
+
+    
+    if (lir->mir()->input()->mightBeType(MIRType::Symbol)) {
+      if (lir->mir()->supportSideEffects()) {
+        masm.branchTestSymbol(Assembler::Equal, tag, ool->entry());
+      } else {
+        
+        MOZ_ASSERT(lir->mir()->needsSnapshot());
+        Label bail;
+        masm.branchTestSymbol(Assembler::Equal, tag, &bail);
+        bailoutFrom(&bail, lir->snapshot());
+      }
     }
   }
 
@@ -1748,9 +1754,7 @@ void CodeGenerator::visitValueToString(LValueToString* lir) {
     masm.branchTestBigInt(Assembler::Equal, tag, ool->entry());
   }
 
-#ifdef DEBUG
   masm.assumeUnreachable("Unexpected type for LValueToString.");
-#endif
 
   masm.bind(&done);
   masm.bind(ool->rejoin());
