@@ -40,6 +40,9 @@ h1 {
 
 .tab.selected {
   border-bottom: 2px solid var(--in-content-link-color);
+  
+
+  padding-bottom: 11px;
   color: var(--in-content-link-color);
   text-overflow: unset;
   overflow: visible;
