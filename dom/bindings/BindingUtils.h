@@ -1388,7 +1388,8 @@ inline void ClearWrapper(T* p, nsWrapperCache* cache, JSObject* obj) {
   
   
   if (!recordreplay::IsReplaying()) {
-    MOZ_ASSERT(cache->GetWrapperMaybeDead() == obj);
+    MOZ_ASSERT(cache->GetWrapperMaybeDead() == obj ||
+               (js::RuntimeIsBeingDestroyed() && !cache->GetWrapperMaybeDead()));
     cache->ClearWrapper(obj);
   }
 }
