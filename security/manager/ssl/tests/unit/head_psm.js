@@ -503,13 +503,12 @@ function add_connection_test(aHost, aExpectedResult,
 }
 
 function _getBinaryUtil(binaryUtilName) {
-  let utilBin = Services.dirsvc.get("CurProcD", Ci.nsIFile);
+  let utilBin = Services.dirsvc.get("GreD", Ci.nsIFile);
   
   
   
-  if (Services.appinfo.OS === "Darwin" && binaryUtilName === "certutil") {
-    utilBin = utilBin.parent;
-    utilBin.append("MacOS");
+  if (binaryUtilName === "certutil") {
+    utilBin = Services.dirsvc.get("GreBinD", Ci.nsIFile);
   }
   utilBin.append(binaryUtilName + mozinfo.bin_suffix);
   
