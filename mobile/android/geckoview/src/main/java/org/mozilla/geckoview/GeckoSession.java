@@ -2760,7 +2760,8 @@ public class GeckoSession implements Parcelable {
                     return;
                 }
                 String[] mimeTypes = message.getStringArray("mimeTypes");
-                delegate.onFilePrompt(session, title, intMode, mimeTypes, cb);
+                int capture = message.getInt("capture");
+                delegate.onFilePrompt(session, title, intMode, mimeTypes, capture, cb);
                 break;
             }
             case "popup": {
@@ -4062,6 +4063,30 @@ public class GeckoSession implements Parcelable {
         static final int FILE_TYPE_MULTIPLE = 2;
 
         
+        
+
+
+        static final int CAPTURE_TYPE_NONE = 0;
+
+        
+
+
+        static final int CAPTURE_TYPE_ANY = 1;
+
+        
+
+
+        static final int CAPTURE_TYPE_USER = 2;
+
+        
+
+
+        static final int CAPTURE_TYPE_ENVIRONMENT = 3;
+
+        
+
+
+
 
 
 
@@ -4076,7 +4101,7 @@ public class GeckoSession implements Parcelable {
         @UiThread
         default void onFilePrompt(@NonNull GeckoSession session, @Nullable String title,
                                   @FileType int type, @Nullable String[] mimeTypes,
-                                  @NonNull FileCallback callback) {
+                                  @CaptureType int capture, @NonNull FileCallback callback) {
             callback.dismiss();
         }
 
@@ -4100,6 +4125,11 @@ public class GeckoSession implements Parcelable {
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({PromptDelegate.FILE_TYPE_SINGLE, PromptDelegate.FILE_TYPE_MULTIPLE})
              @interface FileType {}
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({PromptDelegate.CAPTURE_TYPE_NONE, PromptDelegate.CAPTURE_TYPE_ANY,
+            PromptDelegate.CAPTURE_TYPE_USER, PromptDelegate.CAPTURE_TYPE_ENVIRONMENT})
+     @interface CaptureType {}
 
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({PromptDelegate.DATETIME_TYPE_DATE, PromptDelegate.DATETIME_TYPE_MONTH,

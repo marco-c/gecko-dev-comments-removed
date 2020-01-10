@@ -27,6 +27,9 @@ pref("geckoview.logging", "Debug");
 #endif
 
 
+pref("dom.capture.enabled", true);
+
+
 pref("dom.push.enabled", false);
 
 
