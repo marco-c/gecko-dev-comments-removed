@@ -1219,7 +1219,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvShow(const ScreenIntSize& aSize,
     recordreplay::child::CreateCheckpoint();
   }
 
-  UpdateVisibility(false);
+  UpdateVisibility();
 
   return IPC_OK();
 }
@@ -2445,9 +2445,7 @@ void BrowserChild::RemovePendingDocShellBlocker() {
 }
 
 void BrowserChild::InternalSetDocShellIsActive(bool aIsActive) {
-  nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
-
-  if (docShell) {
+  if (nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation())) {
     docShell->SetIsActive(aIsActive);
   }
 }
@@ -2514,21 +2512,73 @@ mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(
 
   mRenderLayers = aEnabled;
 
-  if (aEnabled) {
-    if (!aForceRepaint && IsVisible()) {
+  if (aEnabled && IsVisible()) {
+    
+    if (!aForceRepaint) {
+      
+      
+      
       
       
       
       
       if (IPCOpen()) {
         Unused << SendPaintWhileInterruptingJSNoOp(mLayersObserverEpoch);
-        return IPC_OK();
       }
     }
+    return IPC_OK();
   }
 
-  UpdateVisibility(true);
+  
+  
+  UpdateVisibility();
 
+  if (!aEnabled) {
+    return IPC_OK();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
+  if (!docShell) {
+    return IPC_OK();
+  }
+
+  
+  
+  
+  
+  RefPtr<PresShell> presShell = docShell->GetPresShell();
+  if (!presShell) {
+    return IPC_OK();
+  }
+
+  if (nsIFrame* root = presShell->GetRootFrame()) {
+    FrameLayerBuilder::InvalidateAllLayersForFrame(
+        nsLayoutUtils::GetDisplayRootFrame(root));
+    root->SchedulePaint();
+  }
+
+  Telemetry::AutoTimer<Telemetry::TABCHILD_PAINT_TIME> timer;
+  
+  
+  
+  
+  presShell->SuppressDisplayport(true);
+  if (nsContentUtils::IsSafeToRunScript()) {
+    WebWidget()->PaintNowIfNeeded();
+  } else {
+    RefPtr<nsViewManager> vm = presShell->GetViewManager();
+    if (nsView* view = vm->GetRootView()) {
+      presShell->Paint(view, view->GetBounds(), PaintFlags::PaintLayers);
+    }
+  }
+  presShell->SuppressDisplayport(false);
   return IPC_OK();
 }
 
@@ -2753,7 +2803,7 @@ void BrowserChild::NotifyPainted() {
 
 IPCResult BrowserChild::RecvUpdateEffects(const EffectsInfo& aEffects) {
   mEffectsInfo = aEffects;
-  UpdateVisibility(false);
+  UpdateVisibility();
   return IPC_OK();
 }
 
@@ -2761,20 +2811,20 @@ bool BrowserChild::IsVisible() {
   return mPuppetWidget && mPuppetWidget->IsVisible();
 }
 
-void BrowserChild::UpdateVisibility(bool aForceRepaint) {
+void BrowserChild::UpdateVisibility() {
   bool shouldBeVisible = mIsTopLevel ? mRenderLayers : mEffectsInfo.IsVisible();
   bool isVisible = IsVisible();
 
   if (shouldBeVisible != isVisible) {
     if (shouldBeVisible) {
-      MakeVisible(aForceRepaint);
+      MakeVisible();
     } else {
       MakeHidden();
     }
   }
 }
 
-void BrowserChild::MakeVisible(bool aForceRepaint) {
+void BrowserChild::MakeVisible() {
   if (IsVisible()) {
     return;
   }
@@ -2797,40 +2847,22 @@ void BrowserChild::MakeVisible(bool aForceRepaint) {
   
   
   
-  if (RefPtr<PresShell> presShell = docShell->GetPresShell()) {
-    presShell->SetIsActive(true);
-  }
-
-  if (!aForceRepaint) {
-    return;
-  }
-
   
   
   
   
-  if (RefPtr<PresShell> presShell = docShell->GetPresShell()) {
-    if (nsIFrame* root = presShell->GetRootFrame()) {
-      FrameLayerBuilder::InvalidateAllLayersForFrame(
-          nsLayoutUtils::GetDisplayRootFrame(root));
-      root->SchedulePaint();
+  
+  
+  
+  
+  
+  
+  if (mIsTopLevel) {
+    if (RefPtr<PresShell> presShell = docShell->GetPresShell()) {
+      presShell->SetIsActive(true);
     }
-
-    Telemetry::AutoTimer<Telemetry::TABCHILD_PAINT_TIME> timer;
-    
-    
-    
-    
-    presShell->SuppressDisplayport(true);
-    if (nsContentUtils::IsSafeToRunScript()) {
-      WebWidget()->PaintNowIfNeeded();
-    } else {
-      RefPtr<nsViewManager> vm = presShell->GetViewManager();
-      if (nsView* view = vm->GetRootView()) {
-        presShell->Paint(view, view->GetBounds(), PaintFlags::PaintLayers);
-      }
-    }
-    presShell->SuppressDisplayport(false);
+  } else {
+    docShell->SetIsActive(true);
   }
 }
 
@@ -2854,8 +2886,7 @@ void BrowserChild::MakeHidden() {
     ClearCachedResources();
   }
 
-  nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
-  if (docShell) {
+  if (nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation())) {
     
     
     
@@ -2869,8 +2900,8 @@ void BrowserChild::MakeHidden() {
                                                       nullptr);
         rootPresContext->ApplyPluginGeometryUpdates();
       }
-      presShell->SetIsActive(false);
     }
+    docShell->SetIsActive(false);
   }
 
   if (mPuppetWidget) {
