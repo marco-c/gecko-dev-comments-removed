@@ -15,7 +15,8 @@ def main(output, input_asm, ffi_h, ffi_config_h, defines, includes):
     defines = shlex.split(defines)
     includes = shlex.split(includes)
     
-    cpp = buildconfig.substs['CPP'] + ['-EP']
+    
+    cpp = buildconfig.substs['CPP'] + ['-EP'] + ['-TC']
     input_asm = mozpath.relpath(input_asm, os.getcwd())
     args = cpp + defines + includes + [input_asm]
     print(' '.join(args))
