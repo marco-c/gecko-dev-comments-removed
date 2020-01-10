@@ -41,14 +41,20 @@ var ManifestObtainer = {
 
 
 
-  async browserObtainManifest(aBrowser) {
+
+
+
+  async browserObtainManifest(
+    aBrowser,
+    aOptions = { checkConformance: false }
+  ) {
     if (!isXULBrowser(aBrowser)) {
       throw new TypeError("Invalid input. Expected XUL browser.");
     }
     const mm = aBrowser.messageManager;
     const {
       data: { success, result },
-    } = await PromiseMessage.send(mm, "DOM:ManifestObtainer:Obtain");
+    } = await PromiseMessage.send(mm, "DOM:ManifestObtainer:Obtain", aOptions);
     if (!success) {
       const error = toError(result);
       throw error;
@@ -56,6 +62,7 @@ var ManifestObtainer = {
     return result;
   },
   
+
 
 
 

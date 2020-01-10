@@ -1,6 +1,7 @@
 
 
 "use strict";
+
 const { ManifestObtainer } = ChromeUtils.import(
   "resource://gre/modules/ManifestObtainer.jsm"
 );
@@ -155,6 +156,41 @@ add_task(async function() {
       }
     };
   }
+});
+
+add_task(async () => {
+  
+  const url = new URL(defaultURL);
+  
+  const body = `<link rel="manifest" href='resource.sjs?body={"name": "conformance check"}'>`;
+  url.searchParams.set("body", encodeURIComponent(body));
+
+  
+  const tabOpts = {
+    gBrowser,
+    url: url.href,
+  };
+  
+  await BrowserTestUtils.withNewTab(tabOpts, async aBrowser => {
+    const obtainerOpts = {
+      checkConformance: true, 
+    };
+    const manifest = await ManifestObtainer.browserObtainManifest(
+      aBrowser,
+      obtainerOpts
+    );
+    is(manifest.name, "conformance check");
+    ok("moz_manifest_url" in manifest, "Has a moz_manifest_url member");
+    const testString = defaultURL.origin + defaultURL.pathname;
+    ok(
+      manifest.moz_manifest_url.startsWith(testString),
+      `Expect to start with with the testString, but got ${
+        manifest.moz_manifest_url
+      } instead,`
+    );
+    
+    gBrowser.removeTab(gBrowser.getTabForBrowser(aBrowser));
+  });
 });
 
 
