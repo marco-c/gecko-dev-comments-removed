@@ -4,8 +4,8 @@
 
 
 
-#ifndef jit_BaselineCompiler_h
-#define jit_BaselineCompiler_h
+#ifndef jit_BaselineCodeGen_h
+#define jit_BaselineCodeGen_h
 
 #include "jit/BaselineFrameInfo.h"
 #include "jit/BaselineIC.h"

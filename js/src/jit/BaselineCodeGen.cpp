@@ -4,7 +4,7 @@
 
 
 
-#include "jit/BaselineCompiler.h"
+#include "jit/BaselineCodeGen.h"
 
 #include "mozilla/Casting.h"
 
@@ -268,16 +268,15 @@ MethodStatus BaselineCompiler::compile() {
   }
 
   UniquePtr<BaselineScript> baselineScript(
-      BaselineScript::New(script, bailoutPrologueOffset_.offset(),
-                          warmUpCheckPrologueOffset_.offset(),
-                          debugOsrPrologueOffset_.offset(),
-                          debugOsrEpilogueOffset_.offset(),
-                          profilerEnterFrameToggleOffset_.offset(),
-                          profilerExitFrameToggleOffset_.offset(),
-                          handler.retAddrEntries().length(),
-                          pcMappingIndexEntries.length(), pcEntries.length(),
-                          script->resumeOffsets().size(),
-                          traceLoggerToggleOffsets_.length()),
+      BaselineScript::New(
+          script, bailoutPrologueOffset_.offset(),
+          warmUpCheckPrologueOffset_.offset(), debugOsrPrologueOffset_.offset(),
+          debugOsrEpilogueOffset_.offset(),
+          profilerEnterFrameToggleOffset_.offset(),
+          profilerExitFrameToggleOffset_.offset(),
+          handler.retAddrEntries().length(), pcMappingIndexEntries.length(),
+          pcEntries.length(), script->resumeOffsets().size(),
+          traceLoggerToggleOffsets_.length()),
       JS::DeletePolicy<BaselineScript>(cx->runtime()));
   if (!baselineScript) {
     ReportOutOfMemory(cx);
