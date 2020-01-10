@@ -2996,6 +2996,16 @@ class nsLayoutUtils {
   static bool FrameIsMostlyScrolledOutOfViewInCrossProcess(
       const nsIFrame* aFrame, nscoord aMargin);
 
+  
+
+
+
+
+
+  template <typename SizeType>
+  static SizeType ExpandHeightForViewportUnits(nsPresContext* aPresContext,
+                                               const SizeType& aSize);
+
  private:
   
 
@@ -3046,6 +3056,23 @@ template <typename PointType, typename RectType, typename CoordType>
   }
 
   return false;
+}
+
+template <typename SizeType>
+ SizeType nsLayoutUtils::ExpandHeightForViewportUnits(
+    nsPresContext* aPresContext, const SizeType& aSize) {
+  nsSize sizeForViewportUnits = aPresContext->GetSizeForViewportUnits();
+
+  
+  
+  
+  
+  float ratio = (float)sizeForViewportUnits.height / sizeForViewportUnits.width;
+
+  MOZ_ASSERT(aSize.height <=
+             NSCoordSaturatingNonnegativeMultiply(aSize.width, ratio));
+  return SizeType(aSize.width,
+                  NSCoordSaturatingNonnegativeMultiply(aSize.width, ratio));
 }
 
 namespace mozilla {

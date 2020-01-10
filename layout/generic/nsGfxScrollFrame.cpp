@@ -3544,6 +3544,17 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       aBuilder->ShouldBuildAsyncZoomContainer() && isRootContent;
 
   nsRect scrollPortClip = mScrollPort + aBuilder->ToReferenceFrame(mOuter);
+  
+  
+  
+  
+  
+  
+  
+  if (isRootContent && mOuter->PresContext()->HasDynamicToolbar()) {
+    scrollPortClip.SizeTo(nsLayoutUtils::ExpandHeightForViewportUnits(
+        mOuter->PresContext(), scrollPortClip.Size()));
+  }
   nsRect clipRect = scrollPortClip;
   
   
