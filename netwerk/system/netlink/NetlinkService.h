@@ -87,7 +87,13 @@ class NetlinkService : public nsIRunnable {
   int mShutdownPipe[2];
 
   
+  
+  bool mDoRouteCheckIPv4;
   struct in_addr mRouteCheckIPv4;
+
+  
+  
+  bool mDoRouteCheckIPv6;
   struct in6_addr mRouteCheckIPv6;
 
   pid_t mPid;
@@ -113,7 +119,7 @@ class NetlinkService : public nsIRunnable {
 
     
     
-    bool UpdateStatus();
+    bool UpdateLinkStatus();
 
     
     nsAutoPtr<NetlinkLink> mLink;
