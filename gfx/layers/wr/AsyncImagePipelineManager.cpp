@@ -223,7 +223,8 @@ Maybe<TextureHost::ResourceUpdateOp> AsyncImagePipelineManager::UpdateImageKeys(
     return Nothing();
   }
 
-  if (!texture) {
+  if (!texture || texture->NumSubTextures() == 0) {
+    
     
     aKeys = aPipeline->mKeys;
     return Nothing();
@@ -243,6 +244,7 @@ Maybe<TextureHost::ResourceUpdateOp> AsyncImagePipelineManager::UpdateImageKeys(
   
   
   auto numKeys = useExternalImage ? texture->NumSubTextures() : 1;
+  MOZ_ASSERT(numKeys > 0);
 
   
   
