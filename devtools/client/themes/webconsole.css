@@ -154,13 +154,9 @@ a {
 
 
 
-.message * {
+
+.message:not(.network) * {
   overflow: hidden;
-}
-
-
-.message .network-info * {
-  overflow: unset;
 }
 
 .message.error {
@@ -833,6 +829,7 @@ a.learn-more-link.webconsole-learn-more-link {
 .network .message-flex-body > .message-body {
   display: flex;
   flex-wrap: wrap;
+  align-items: baseline;
 }
 
 
