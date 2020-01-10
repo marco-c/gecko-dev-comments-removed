@@ -2685,6 +2685,12 @@ extern JS_FRIEND_API void LogDtor(void* self, const char* type, uint32_t sz);
 
 extern JS_FRIEND_API uint64_t GetGCHeapUsageForObjectZone(JSObject* obj);
 
+
+
+
+
+extern JS_FRIEND_API bool GlobalHasInstrumentation(JSObject* global);
+
 } 
 
 #endif 
