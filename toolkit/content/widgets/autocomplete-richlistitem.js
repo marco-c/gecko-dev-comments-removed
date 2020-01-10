@@ -459,36 +459,16 @@
     }
 
     _reuseAcItem() {
-      let action = this._parseActionUrl(this.getAttribute("url"));
-      let popup = this.parentNode.parentNode;
+      this.collapsed = false;
 
       
       
-      
-      if (
-        !action ||
-        action.type != "searchengine" ||
-        !popup.overrideSearchEngineName ||
-        action.params.engineName == popup.overrideSearchEngineName
-      ) {
-        this.collapsed = false;
-
-        
-        
-        let dwu = window.windowUtils;
-        let popupWidth = dwu.getBoundsWithoutFlushing(this.parentNode).width;
-        if (
-          !this._previousPopupWidth ||
-          this._previousPopupWidth != popupWidth
-        ) {
-          this._previousPopupWidth = popupWidth;
-          this.handleOverUnderflow();
-        }
-
-        return true;
+      let dwu = window.windowUtils;
+      let popupWidth = dwu.getBoundsWithoutFlushing(this.parentNode).width;
+      if (!this._previousPopupWidth || this._previousPopupWidth != popupWidth) {
+        this._previousPopupWidth = popupWidth;
+        this.handleOverUnderflow();
       }
-
-      return false;
     }
 
     _adjustAcItem() {
@@ -533,8 +513,7 @@
       );
 
       
-      if (initialTypes.has("action") || action) {
-        action = action || this._parseActionUrl(originalUrl);
+      if (action) {
         this.setAttribute("actiontype", action.type);
 
         switch (action.type) {
@@ -854,36 +833,6 @@
     handleOverUnderflow() {
       this._removeMaxWidths();
       this._handleOverflow();
-    }
-
-    _parseActionUrl(aUrl) {
-      if (!aUrl.startsWith("moz-action:")) {
-        return null;
-      }
-
-      
-      
-      let [, type, params] = aUrl.match(/^moz-action:([^,]+),(.*)$/);
-
-      let action = {
-        type,
-      };
-
-      try {
-        action.params = JSON.parse(params);
-        for (let key in action.params) {
-          action.params[key] = decodeURIComponent(action.params[key]);
-        }
-      } catch (e) {
-        
-        
-        
-        action.params = {
-          url: params,
-        };
-      }
-
-      return action;
     }
   };
 

@@ -41,7 +41,6 @@ const TAB_RESTORING_TOPIC = "SSTabRestoring";
 const TELEMETRY_SUBSESSIONSPLIT_TOPIC =
   "internal-telemetry-after-subsession-split";
 const DOMWINDOW_OPENED_TOPIC = "domwindowopened";
-const AUTOCOMPLETE_ENTER_TEXT_TOPIC = "autocomplete-did-enter-text";
 
 
 const MAX_TAB_COUNT_SCALAR_NAME = "browser.engagement.max_concurrent_tab_count";
@@ -337,104 +336,11 @@ let URICountListener = {
   ]),
 };
 
-let urlbarListener = {
-  
-  selectedIndex: -1,
-
-  init() {
-    Services.obs.addObserver(this, AUTOCOMPLETE_ENTER_TEXT_TOPIC, true);
-  },
-
-  uninit() {
-    Services.obs.removeObserver(this, AUTOCOMPLETE_ENTER_TEXT_TOPIC);
-  },
-
-  observe(subject, topic, data) {
-    switch (topic) {
-      case AUTOCOMPLETE_ENTER_TEXT_TOPIC:
-        this._handleURLBarTelemetry(
-          subject.QueryInterface(Ci.nsIAutoCompleteInput)
-        );
-        break;
-    }
-  },
-
-  
-
-
-
-
-
-  _handleURLBarTelemetry(input) {
-    if (!input || input.id != "urlbar") {
-      return;
-    }
-    if (input.inPrivateContext || input.popup.selectedIndex < 0) {
-      this.selectedIndex = -1;
-      return;
-    }
-
-    
-    
-    
-    this.selectedIndex =
-      input.popup.selectedIndex > 0 || !input.popup._isFirstResultHeuristic
-        ? input.popup.selectedIndex
-        : -1;
-
-    let controller = input.popup.view.QueryInterface(
-      Ci.nsIAutoCompleteController
-    );
-    let idx = input.popup.selectedIndex;
-    let value = controller.getValueAt(idx);
-    let action = input._parseActionUrl(value);
-    let actionType;
-    if (action) {
-      actionType =
-        action.type == "searchengine" && action.params.searchSuggestion
-          ? "searchsuggestion"
-          : action.type;
-    }
-    if (!actionType) {
-      let styles = new Set(controller.getStyleAt(idx).split(/\s+/));
-      let style = ["preloaded-top-site", "autofill", "tag", "bookmark"].find(
-        s => styles.has(s)
-      );
-      actionType = style || "history";
-    }
-
-    Services.telemetry
-      .getHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX")
-      .add(idx);
-
-    
-    
-    if (actionType in URLBAR_SELECTED_RESULT_TYPES) {
-      Services.telemetry
-        .getHistogramById("FX_URLBAR_SELECTED_RESULT_TYPE")
-        .add(URLBAR_SELECTED_RESULT_TYPES[actionType]);
-      Services.telemetry
-        .getKeyedHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX_BY_TYPE")
-        .add(actionType, idx);
-    } else {
-      Cu.reportError(
-        "Unknown FX_URLBAR_SELECTED_RESULT_TYPE type: " + actionType
-      );
-    }
-  },
-
-  QueryInterface: ChromeUtils.generateQI([
-    Ci.nsIObserver,
-    Ci.nsISupportsWeakReference,
-  ]),
-};
-
 let BrowserUsageTelemetry = {
   _inited: false,
 
   init() {
     this._lastRecordTabCount = 0;
-    urlbarListener.init();
     this._setupAfterRestore();
     this._inited = true;
   },
@@ -471,7 +377,6 @@ let BrowserUsageTelemetry = {
     }
     Services.obs.removeObserver(this, DOMWINDOW_OPENED_TOPIC);
     Services.obs.removeObserver(this, TELEMETRY_SUBSESSIONSPLIT_TOPIC);
-    urlbarListener.uninit();
   },
 
   observe(subject, topic, data) {
@@ -663,36 +568,6 @@ let BrowserUsageTelemetry = {
 
 
 
-  recordLegacyUrlbarSelectedResultMethod(
-    event,
-    userSelectionBehavior = "none"
-  ) {
-    
-    
-    
-    
-    
-    
-
-    this._recordUrlOrSearchbarSelectedResultMethod(
-      event,
-      urlbarListener.selectedIndex,
-      "FX_URLBAR_SELECTED_RESULT_METHOD",
-      userSelectionBehavior
-    );
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
 
 
   recordUrlbarSelectedResultMethod(
@@ -700,13 +575,6 @@ let BrowserUsageTelemetry = {
     index,
     userSelectionBehavior = "none"
   ) {
-    
-    
-    
-    
-    
-    
-
     this._recordUrlOrSearchbarSelectedResultMethod(
       event,
       index,

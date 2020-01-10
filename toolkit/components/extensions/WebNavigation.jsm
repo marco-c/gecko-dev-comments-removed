@@ -258,49 +258,16 @@ var Manager = {
         
         tabTransitionData.typed = true;
       } else {
-        let value = controller.getValueAt(idx);
-        let action = input._parseActionUrl(value);
+        
+        
+        let styles = new Set(controller.getStyleAt(idx).split(/\s+/));
 
-        if (action) {
-          
-          switch (action.type) {
-            case "keyword":
-              tabTransitionData.keyword = true;
-              break;
-            case "searchengine":
-            case "searchsuggestion":
-              tabTransitionData.generated = true;
-              break;
-            case "visiturl":
-              
-              
-              tabTransitionData.typed = true;
-              break;
-            case "remotetab":
-              
-              
-              tabTransitionData.typed = true;
-              break;
-            case "switchtab":
-              
-              
-              return;
-            default:
-              
-              tabTransitionData.typed = true;
-          }
+        if (styles.has("bookmark")) {
+          tabTransitionData.auto_bookmark = true;
         } else {
           
           
-          let styles = new Set(controller.getStyleAt(idx).split(/\s+/));
-
-          if (styles.has("bookmark")) {
-            tabTransitionData.auto_bookmark = true;
-          } else {
-            
-            
-            tabTransitionData.typed = true;
-          }
+          tabTransitionData.typed = true;
         }
       }
 
