@@ -166,6 +166,14 @@ class GeckoChildProcessHost : public ChildProcessHost,
   static MacSandboxType GetDefaultMacSandboxType() {
     return MacSandboxType_Utility;
   };
+
+  
+  
+  
+  
+  
+  
+  void DisableOSActivityMode();
 #endif
   typedef std::function<void(GeckoChildProcessHost*)> GeckoProcessCallback;
 
@@ -225,6 +233,10 @@ class GeckoChildProcessHost : public ChildProcessHost,
   task_t mChildTask;
 #endif
   RefPtr<ProcessHandlePromise> mHandlePromise;
+
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+  bool mDisableOSActivityMode;
+#endif
 
   bool OpenPrivilegedHandle(base::ProcessId aPid);
 
