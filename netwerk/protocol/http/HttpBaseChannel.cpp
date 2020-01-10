@@ -486,6 +486,7 @@ HttpBaseChannel::SetLoadFlags(nsLoadFlags aLoadFlags) {
 NS_IMETHODIMP
 HttpBaseChannel::SetDocshellUserAgentOverride() {
   
+  
   nsresult rv;
   nsCOMPtr<nsILoadContext> loadContext;
   NS_QueryNotificationCallbacks(this, loadContext);
