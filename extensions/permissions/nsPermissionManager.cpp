@@ -315,8 +315,10 @@ already_AddRefed<nsIPrincipal> GetNextSubDomainPrincipal(
   
   mozilla::OriginAttributes attrs = aPrincipal->OriginAttributesRef();
 
-  
-  attrs.StripAttributes(mozilla::OriginAttributes::STRIP_USER_CONTEXT_ID);
+  if (!StaticPrefs::permissions_isolateBy_userContext()) {
+    
+    attrs.StripAttributes(mozilla::OriginAttributes::STRIP_USER_CONTEXT_ID);
+  }
 
   nsCOMPtr<nsIPrincipal> principal =
       mozilla::BasePrincipal::CreateContentPrincipal(newURI, attrs);
