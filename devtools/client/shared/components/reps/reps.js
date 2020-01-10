@@ -8241,8 +8241,17 @@ class ObjectInspectorItem extends Component {
         const receiverGrip = getNonPrototypeParentGripValue(item);
 
         if (targetGrip && receiverGrip) {
+          let propertyName = item.name; 
+          
+
+          if (propertyName.startsWith(`"`) && propertyName.endsWith(`"`)) {
+            
+            
+            propertyName = propertyName.substring(1, propertyName.length - 1).replace(/\\\"/g, `\"`);
+          }
+
           Object.assign(repProps, {
-            onInvokeGetterButtonClick: () => this.props.invokeGetter(item, targetGrip, receiverGrip.actor, item.name)
+            onInvokeGetterButtonClick: () => this.props.invokeGetter(item, targetGrip, receiverGrip.actor, propertyName)
           });
         }
       }
