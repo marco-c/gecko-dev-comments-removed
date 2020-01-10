@@ -340,6 +340,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   
   
   bool NeedsToFlushStyle() const;
+  nsIFrame* GetOuterFrame() const;
 
   static ComputedStyleMap* GetComputedStyleMap();
 
