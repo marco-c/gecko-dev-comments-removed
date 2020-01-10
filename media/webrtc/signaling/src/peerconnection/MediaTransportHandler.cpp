@@ -233,6 +233,9 @@ MediaTransportHandlerSTS::MediaTransportHandlerSTS(
   if (!mStsThread) {
     MOZ_CRASH();
   }
+
+  RLogConnector::CreateInstance();
+
   CSFLogDebug(LOGTAG, "%s done", __func__);
 
   
@@ -1080,9 +1083,6 @@ void MediaTransportHandlerSTS::ClearIceLog() {
 }
 
 void MediaTransportHandlerSTS::EnterPrivateMode() {
-  
-  RLogConnector::CreateInstance();
-
   if (!mStsThread->IsOnCurrentThread()) {
     mStsThread->Dispatch(
         WrapRunnable(RefPtr<MediaTransportHandlerSTS>(this),
@@ -1095,9 +1095,6 @@ void MediaTransportHandlerSTS::EnterPrivateMode() {
 }
 
 void MediaTransportHandlerSTS::ExitPrivateMode() {
-  
-  RLogConnector::CreateInstance();
-
   if (!mStsThread->IsOnCurrentThread()) {
     mStsThread->Dispatch(
         WrapRunnable(RefPtr<MediaTransportHandlerSTS>(this),
