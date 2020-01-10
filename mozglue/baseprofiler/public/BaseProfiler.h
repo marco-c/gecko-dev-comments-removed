@@ -25,7 +25,7 @@
 #ifdef MOZ_GECKO_PROFILER
 
 
-#  if 0
+#  if defined(XP_MACOSX) || (defined(XP_LINUX) && !defined(ANDROID))
 #    define MOZ_BASE_PROFILER
 #  else
 
