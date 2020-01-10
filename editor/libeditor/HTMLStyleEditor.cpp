@@ -570,54 +570,54 @@ nsresult HTMLEditor::SetInlinePropertyOnNode(nsIContent& aNode,
   return NS_OK;
 }
 
-nsresult HTMLEditor::SplitStyleAboveRange(nsRange* aRange, nsAtom* aProperty,
-                                          nsAtom* aAttribute) {
+SplitRangeOffResult HTMLEditor::SplitAncestorStyledInlineElementsAtRangeEdges(
+    const EditorDOMPoint& aStartOfRange, const EditorDOMPoint& aEndOfRange,
+    nsAtom* aProperty, nsAtom* aAttribute) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  if (NS_WARN_IF(!aRange) || NS_WARN_IF(!aRange->IsPositioned())) {
-    return NS_ERROR_INVALID_ARG;
+  if (NS_WARN_IF(!aStartOfRange.IsSet()) || NS_WARN_IF(!aEndOfRange.IsSet())) {
+    return SplitRangeOffResult(NS_ERROR_INVALID_ARG);
   }
 
-  EditorDOMPoint startOfRange(aRange->StartRef());
-  EditorDOMPoint endOfRange(aRange->EndRef());
+  EditorDOMPoint startOfRange(aStartOfRange);
+  EditorDOMPoint endOfRange(aEndOfRange);
 
   
+  SplitNodeResult resultAtStart(NS_ERROR_NOT_INITIALIZED);
   {
     AutoTrackDOMPoint tracker(RangeUpdaterRef(), &endOfRange);
-    SplitNodeResult result = SplitAncestorStyledInlineElementsAt(
-        startOfRange, aProperty, aAttribute);
-    if (NS_WARN_IF(result.Failed())) {
-      return result.Rv();
+    resultAtStart = SplitAncestorStyledInlineElementsAt(startOfRange, aProperty,
+                                                        aAttribute);
+    if (NS_WARN_IF(resultAtStart.Failed())) {
+      return SplitRangeOffResult(resultAtStart.Rv());
     }
-    if (result.Handled()) {
-      startOfRange = result.SplitPoint();
+    if (resultAtStart.Handled()) {
+      startOfRange = resultAtStart.SplitPoint();
       if (NS_WARN_IF(!startOfRange.IsSet())) {
-        return NS_ERROR_FAILURE;
+        return SplitRangeOffResult(NS_ERROR_FAILURE);
       }
     }
   }
 
   
+  SplitNodeResult resultAtEnd(NS_ERROR_NOT_INITIALIZED);
   {
     AutoTrackDOMPoint tracker(RangeUpdaterRef(), &startOfRange);
-    SplitNodeResult result =
+    resultAtEnd =
         SplitAncestorStyledInlineElementsAt(endOfRange, aProperty, aAttribute);
-    if (NS_WARN_IF(result.Failed())) {
-      return result.Rv();
+    if (NS_WARN_IF(resultAtEnd.Failed())) {
+      return SplitRangeOffResult(resultAtEnd.Rv());
     }
-    if (result.Handled()) {
-      endOfRange = result.SplitPoint();
+    if (resultAtEnd.Handled()) {
+      endOfRange = resultAtEnd.SplitPoint();
       if (NS_WARN_IF(!endOfRange.IsSet())) {
-        return NS_ERROR_FAILURE;
+        return SplitRangeOffResult(NS_ERROR_FAILURE);
       }
     }
   }
 
-  
-  nsresult rv = aRange->SetStartAndEnd(startOfRange.ToRawRangeBoundary(),
-                                       endOfRange.ToRawRangeBoundary());
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "nsRange::SetStartAndEnd() failed");
-  return rv;
+  return SplitRangeOffResult(startOfRange, resultAtStart, endOfRange,
+                             resultAtEnd);
 }
 
 SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
@@ -1478,6 +1478,8 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
     
     
     
+    
+    
     AutoRangeArray arrayOfRanges(SelectionRefPtr());
     for (auto& range : arrayOfRanges.mRanges) {
       if (aProperty == nsGkAtoms::name) {
@@ -1498,19 +1500,34 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
 
       
       
-      
-      
-      
-      nsresult rv = SplitStyleAboveRange(range, aProperty, aAttribute);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
+      SplitRangeOffResult splitRangeOffResult =
+          SplitAncestorStyledInlineElementsAtRangeEdges(
+              EditorDOMPoint(range->StartRef()),
+              EditorDOMPoint(range->EndRef()), aProperty, aAttribute);
+      if (NS_WARN_IF(splitRangeOffResult.Failed())) {
+        return splitRangeOffResult.Rv();
       }
 
-      EditorDOMPoint startOfRange(range->StartRef());
-      EditorDOMPoint endOfRange(range->EndRef());
+      
+      
+      
+      
+      EditorDOMPoint startOfRange(splitRangeOffResult.SplitPointAtStart());
+      EditorDOMPoint endOfRange(splitRangeOffResult.SplitPointAtEnd());
       if (NS_WARN_IF(!startOfRange.IsSet()) ||
           NS_WARN_IF(!endOfRange.IsSet())) {
         continue;
+      }
+
+      nsresult rv = range->SetStartAndEnd(startOfRange.ToRawRangeBoundary(),
+                                          endOfRange.ToRawRangeBoundary());
+      
+      
+      if (NS_WARN_IF(Destroyed())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
       }
 
       if (startOfRange.GetContainer() == endOfRange.GetContainer() &&
