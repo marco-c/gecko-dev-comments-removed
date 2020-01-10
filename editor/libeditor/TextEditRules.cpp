@@ -1006,7 +1006,7 @@ nsresult TextEditRules::WillDeleteSelection(
 
   
   
-  if (TextEditorRef().mPaddingBRElementForEmptyEditor) {
+  if (TextEditorRef().HasPaddingBRElementForEmptyEditor()) {
     *aCancel = true;
     return NS_OK;
   }
@@ -1136,7 +1136,7 @@ nsresult TextEditRules::WillOutputText(const nsAString* aOutputFormat,
 
   
   
-  if (TextEditorRef().mPaddingBRElementForEmptyEditor) {
+  if (TextEditorRef().HasPaddingBRElementForEmptyEditor()) {
     aOutString->Truncate();
     *aHandled = true;
     return NS_OK;

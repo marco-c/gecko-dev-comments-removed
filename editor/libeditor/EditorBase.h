@@ -1471,6 +1471,15 @@ class EditorBase : public nsIEditor,
 
 
 
+
+  bool HasPaddingBRElementForEmptyEditor() const {
+    return !!mPaddingBRElementForEmptyEditor;
+  }
+
+  
+
+
+
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   EnsureNoPaddingBRElementForEmptyEditor();
 

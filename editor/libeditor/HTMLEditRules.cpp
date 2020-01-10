@@ -823,7 +823,9 @@ nsresult HTMLEditRules::DidDoAction(EditSubActionInfo& aInfo,
 }
 
 bool HTMLEditRules::DocumentIsEmpty() const {
-  return !!HTMLEditorRef().mPaddingBRElementForEmptyEditor;
+  
+  
+  return HTMLEditorRef().HasPaddingBRElementForEmptyEditor();
 }
 
 nsresult HTMLEditRules::GetListState(bool* aMixed, bool* aOL, bool* aUL,
@@ -2292,7 +2294,7 @@ nsresult HTMLEditRules::WillDeleteSelection(
 
   
   
-  if (HTMLEditorRef().mPaddingBRElementForEmptyEditor) {
+  if (HTMLEditorRef().HasPaddingBRElementForEmptyEditor()) {
     *aCancel = true;
     return NS_OK;
   }
