@@ -13,6 +13,17 @@
 #include "nsIBinaryOutputStream.h"
 #include <gtk/gtk.h>
 
+#undef LOG
+#ifdef MOZ_LOGGING
+#  include "mozilla/Logging.h"
+#  include "nsTArray.h"
+#  include "Units.h"
+extern mozilla::LazyLogModule gClipboardLog;
+#  define LOGCLIP(args) MOZ_LOG(gClipboardLog, mozilla::LogLevel::Debug, args)
+#else
+#  define LOGCLIP(args)
+#endif 
+
 class nsRetrievalContext {
  public:
   
@@ -76,5 +87,6 @@ class nsClipboard : public nsIClipboard, public nsIObserver {
 extern const int kClipboardTimeout;
 
 GdkAtom GetSelectionAtom(int32_t aWhichClipboard);
+int GetGeckoClipboardType(GtkClipboard* aGtkClipboard);
 
 #endif 
