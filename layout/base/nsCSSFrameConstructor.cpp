@@ -4371,55 +4371,6 @@ nsCSSFrameConstructor::FindDisplayData(const nsStyleDisplay& aDisplay,
                    !mPresShell->GetPresContext()->IsPaginated(),
                "Shouldn't propagate scroll in paginated contexts");
 
-  if (aDisplay.IsBlockInsideStyle()) {
-    
-    
-    
-    
-    
-    const uint32_t kCaptionCtorFlags =
-        FCDATA_IS_TABLE_PART | FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeTable);
-    bool caption = aDisplay.mDisplay == StyleDisplay::TableCaption;
-    bool suppressScrollFrame = false;
-    bool needScrollFrame =
-        aDisplay.IsScrollableOverflow() && !propagatedScrollToViewport;
-    if (needScrollFrame) {
-      suppressScrollFrame = mPresShell->GetPresContext()->IsPaginated() &&
-                            aDisplay.IsBlockOutsideStyle() &&
-                            !aElement.IsInNativeAnonymousSubtree();
-      if (!suppressScrollFrame) {
-        static const FrameConstructionData sScrollableBlockData[2] = {
-            FULL_CTOR_FCDATA(0,
-                             &nsCSSFrameConstructor::ConstructScrollableBlock),
-            FULL_CTOR_FCDATA(kCaptionCtorFlags,
-                             &nsCSSFrameConstructor::ConstructScrollableBlock)};
-        return &sScrollableBlockData[caption];
-      }
-
-      
-      
-      
-      
-      if (mPresShell->GetPresContext()->ElementWouldPropagateScrollStyles(
-              aElement)) {
-        suppressScrollFrame = false;
-      }
-    }
-
-    
-    static const FrameConstructionData sNonScrollableBlockData[2][2] = {
-        {FULL_CTOR_FCDATA(0,
-                          &nsCSSFrameConstructor::ConstructNonScrollableBlock),
-         FULL_CTOR_FCDATA(kCaptionCtorFlags,
-                          &nsCSSFrameConstructor::ConstructNonScrollableBlock)},
-        {FULL_CTOR_FCDATA(FCDATA_FORCED_NON_SCROLLABLE_BLOCK,
-                          &nsCSSFrameConstructor::ConstructNonScrollableBlock),
-         FULL_CTOR_FCDATA(
-             FCDATA_FORCED_NON_SCROLLABLE_BLOCK | kCaptionCtorFlags,
-             &nsCSSFrameConstructor::ConstructNonScrollableBlock)}};
-    return &sNonScrollableBlockData[suppressScrollFrame][caption];
-  }
-
   
   
   
@@ -4442,15 +4393,62 @@ nsCSSFrameConstructor::FindDisplayData(const nsStyleDisplay& aDisplay,
   switch (aDisplay.mDisplay) {
 #ifdef DEBUG
     case StyleDisplay::None:
-    case StyleDisplay::Block:
-    case StyleDisplay::InlineBlock:
-    case StyleDisplay::ListItem:
-    case StyleDisplay::TableCaption:
-    case StyleDisplay::FlowRoot:
     case StyleDisplay::Contents:
       MOZ_ASSERT_UNREACHABLE("should have been handled earlier");
       return nullptr;
 #endif
+    case StyleDisplay::Block:
+    case StyleDisplay::InlineBlock:
+    case StyleDisplay::ListItem:
+    case StyleDisplay::TableCaption:
+    case StyleDisplay::FlowRoot: {
+      
+      
+      
+      
+      
+      const uint32_t kCaptionCtorFlags =
+          FCDATA_IS_TABLE_PART | FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeTable);
+      bool caption = aDisplay.mDisplay == StyleDisplay::TableCaption;
+      bool suppressScrollFrame = false;
+      bool needScrollFrame =
+          aDisplay.IsScrollableOverflow() && !propagatedScrollToViewport;
+      if (needScrollFrame) {
+        suppressScrollFrame = mPresShell->GetPresContext()->IsPaginated() &&
+                              aDisplay.IsBlockOutsideStyle() &&
+                              !aElement.IsInNativeAnonymousSubtree();
+        if (!suppressScrollFrame) {
+          static const FrameConstructionData sScrollableBlockData[2] = {
+              FULL_CTOR_FCDATA(0,
+                               &nsCSSFrameConstructor::ConstructScrollableBlock),
+              FULL_CTOR_FCDATA(kCaptionCtorFlags,
+                               &nsCSSFrameConstructor::ConstructScrollableBlock)};
+          return &sScrollableBlockData[caption];
+        }
+
+        
+        
+        
+        
+        if (mPresShell->GetPresContext()->ElementWouldPropagateScrollStyles(
+                aElement)) {
+          suppressScrollFrame = false;
+        }
+      }
+
+      
+      static const FrameConstructionData sNonScrollableBlockData[2][2] = {
+          {FULL_CTOR_FCDATA(0,
+                            &nsCSSFrameConstructor::ConstructNonScrollableBlock),
+           FULL_CTOR_FCDATA(kCaptionCtorFlags,
+                            &nsCSSFrameConstructor::ConstructNonScrollableBlock)},
+          {FULL_CTOR_FCDATA(FCDATA_FORCED_NON_SCROLLABLE_BLOCK,
+                            &nsCSSFrameConstructor::ConstructNonScrollableBlock),
+           FULL_CTOR_FCDATA(
+               FCDATA_FORCED_NON_SCROLLABLE_BLOCK | kCaptionCtorFlags,
+               &nsCSSFrameConstructor::ConstructNonScrollableBlock)}};
+      return &sNonScrollableBlockData[suppressScrollFrame][caption];
+    }
     case StyleDisplay::Inline: {
       static const FrameConstructionData data =
         FULL_CTOR_FCDATA(FCDATA_IS_INLINE | FCDATA_IS_LINE_PARTICIPANT,
