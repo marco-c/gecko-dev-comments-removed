@@ -9153,7 +9153,7 @@ nsresult nsDocShell::MaybeHandleSameDocumentNavigation(
   } else {
     newURITriggeringPrincipal = aLoadState->TriggeringPrincipal();
     newURIPrincipalToInherit = doc->NodePrincipal();
-    newURIStoragePrincipalToInherit = doc->EffectiveStoragePrincipal();
+    newURIStoragePrincipalToInherit = doc->IntrinsicStoragePrincipal();
     newCsp = doc->GetCsp();
   }
   
@@ -9717,7 +9717,7 @@ nsIPrincipal* nsDocShell::GetInheritedPrincipal(
   
   if (document) {
     nsIPrincipal* docPrincipal = aConsiderStoragePrincipal
-                                     ? document->EffectiveStoragePrincipal()
+                                     ? document->IntrinsicStoragePrincipal()
                                      : document->NodePrincipal();
 
     

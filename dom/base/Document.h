@@ -560,6 +560,14 @@ class Document : public nsINode,
   }
 
   
+  
+  
+  
+  nsIPrincipal* IntrinsicStoragePrincipal() const {
+    return mIntrinsicStoragePrincipal;
+  }
+
+  
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
   EventListenerManager* GetOrCreateListenerManager() override;
   EventListenerManager* GetExistingListenerManager() const override;
