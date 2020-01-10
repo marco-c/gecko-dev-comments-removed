@@ -243,6 +243,13 @@ void IPCStreamSource::OnStreamReady(Callback* aCallback) {
   MOZ_ASSERT(aCallback == mCallback);
   mCallback->ClearSource();
   mCallback = nullptr;
+
+  
+  
+  if (mState == eClosed) {
+    return;
+  }
+
   DoRead();
 }
 
