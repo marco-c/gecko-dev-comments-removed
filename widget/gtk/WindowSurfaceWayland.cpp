@@ -704,7 +704,7 @@ WindowBackBuffer* WindowSurfaceWayland::GetWaylandBufferWithSwitch() {
   
   
   if (!mWaylandBuffer || mWaylandBuffer->IsAttached()) {
-    return SetNewWaylandBuffer(mUseDMABuf && mWaylandFullscreenDamage);
+    return SetNewWaylandBuffer(UseDMABufBackend() && mWaylandFullscreenDamage);
   }
 
   
