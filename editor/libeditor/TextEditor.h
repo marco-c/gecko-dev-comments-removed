@@ -9,8 +9,10 @@
 #include "mozilla/EditorBase.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsINamed.h"
 #include "nsIPlaintextEditor.h"
 #include "nsISupportsImpl.h"
+#include "nsITimer.h"
 #include "nscore.h"
 
 class nsIContent;
@@ -22,6 +24,8 @@ class nsITransferable;
 
 namespace mozilla {
 class AutoEditInitRulesTrigger;
+class DeleteNodeTransaction;
+class InsertNodeTransaction;
 enum class EditSubAction : int32_t;
 
 namespace dom {
@@ -33,7 +37,10 @@ class Selection;
 
 
 
-class TextEditor : public EditorBase, public nsIPlaintextEditor {
+class TextEditor : public EditorBase,
+                   public nsIPlaintextEditor,
+                   public nsITimerCallback,
+                   public nsINamed {
  public:
   
 
@@ -50,8 +57,9 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
 
   TextEditor();
 
-  
   NS_DECL_NSIPLAINTEXTEDITOR
+  NS_DECL_NSITIMERCALLBACK
+  NS_DECL_NSINAMED
 
   
   NS_IMETHOD GetDocumentIsEmpty(bool* aDocumentIsEmpty) override;
@@ -316,6 +324,38 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
 
   void SetWrapColumn(int32_t aWrapColumn) { mWrapColumn = aWrapColumn; }
 
+  
+
+
+
+
+  bool IsAllMasked() const {
+    MOZ_ASSERT(IsPasswordEditor());
+    return mUnmaskedStart == UINT32_MAX && mUnmaskedLength == 0;
+  }
+  uint32_t UnmaskedStart() const {
+    MOZ_ASSERT(IsPasswordEditor());
+    return mUnmaskedStart;
+  }
+  uint32_t UnmaskedLength() const {
+    MOZ_ASSERT(IsPasswordEditor());
+    return mUnmaskedLength;
+  }
+  uint32_t UnmaskedEnd() const {
+    MOZ_ASSERT(IsPasswordEditor());
+    return mUnmaskedStart + mUnmaskedLength;
+  }
+
+  
+
+
+
+
+  bool IsMaskingPassword() const {
+    MOZ_ASSERT(IsPasswordEditor());
+    return mIsMaskingPassword;
+  }
+
  protected:  
   
 
@@ -423,6 +463,95 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
 
   static void GetDefaultEditorPrefs(int32_t& aNewLineHandling,
                                     int32_t& aCaretStyle);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult SetUnmaskRange(
+      uint32_t aStart, uint32_t aLength = UINT32_MAX, uint32_t aTimeout = 0) {
+    return SetUnmaskRangeInternal(aStart, aLength, aTimeout, false, false);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult SetUnmaskRangeAndNotify(
+      uint32_t aStart, uint32_t aLength = UINT32_MAX, uint32_t aTimeout = 0) {
+    return SetUnmaskRangeInternal(aStart, aLength, aTimeout, true, false);
+  }
+
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult MaskAllCharacters() {
+    return SetUnmaskRangeInternal(UINT32_MAX, 0, 0, false, true);
+  }
+
+  
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult MaskAllCharactersAndNotify() {
+    return SetUnmaskRangeInternal(UINT32_MAX, 0, 0, true, true);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  void WillDeleteText(uint32_t aCurrentLength, uint32_t aRemoveStartOffset,
+                      uint32_t aRemoveLength);
+
+  
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult DidInsertText(
+      uint32_t aNewLength, uint32_t aInsertedOffset, uint32_t aInsertedLength);
 
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
@@ -587,16 +716,47 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
 
   virtual already_AddRefed<Element> GetInputEventTargetElement() override;
 
+  
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult SetUnmaskRangeInternal(uint32_t aStart,
+                                                     uint32_t aLength,
+                                                     uint32_t aTimeout,
+                                                     bool aNotify,
+                                                     bool aForceStartMasking);
+
  protected:
   mutable nsCOMPtr<nsIDocumentEncoder> mCachedDocumentEncoder;
+
+  
+  
+  nsCOMPtr<nsITimer> mMaskTimer;
+
   mutable nsString mCachedDocumentEncoderType;
+
   int32_t mWrapColumn;
   int32_t mMaxTextLength;
   int32_t mInitTriggerCounter;
   int32_t mNewlineHandling;
   int32_t mCaretStyle;
 
+  
+  
+  uint32_t mUnmaskedStart;
+  uint32_t mUnmaskedLength;
+
+  
+  
+  
+  bool mIsMaskingPassword;
+
   friend class AutoEditInitRulesTrigger;
+  friend class DeleteNodeTransaction;
+  friend class EditorBase;
+  friend class InsertNodeTransaction;
   friend class TextEditRules;
 };
 
