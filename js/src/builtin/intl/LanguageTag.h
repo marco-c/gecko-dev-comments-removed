@@ -24,6 +24,7 @@
 #include "js/AllocPolicy.h"
 #include "js/GCAPI.h"
 #include "js/Result.h"
+#include "js/RootingAPI.h"
 #include "js/Utility.h"
 #include "js/Vector.h"
 
@@ -681,6 +682,30 @@ class MOZ_STACK_CLASS LanguageTagParser final {
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(LanguageTagParser::TokenKind)
+
+
+
+
+
+
+MOZ_MUST_USE bool ParseStandaloneLanguagTag(JS::Handle<JSLinearString*> str,
+                                            LanguageSubtag& result);
+
+
+
+
+
+
+MOZ_MUST_USE bool ParseStandaloneScriptTag(JS::Handle<JSLinearString*> str,
+                                           ScriptSubtag& result);
+
+
+
+
+
+
+MOZ_MUST_USE bool ParseStandaloneRegionTag(JS::Handle<JSLinearString*> str,
+                                           RegionSubtag& result);
 
 }  
 
