@@ -461,7 +461,7 @@ void TestBlocksRingBufferAPI() {
   
   {
     BlocksRingBuffer rb(&buffer[MBSize], MakePowerOfTwo32<MBSize>(),
-                        [&](BlocksRingBuffer::EntryReader aReader) {
+                        [&](BlocksRingBuffer::EntryReader& aReader) {
                           lastDestroyed = aReader.ReadObject<uint32_t>();
                         });
 
@@ -634,7 +634,7 @@ void TestBlocksRingBufferAPI() {
 
     
     uint32_t count = 0;
-    rb.ReadEach([&](BlocksRingBuffer::EntryReader aReader) {
+    rb.ReadEach([&](BlocksRingBuffer::EntryReader& aReader) {
       MOZ_RELEASE_ASSERT(aReader.ReadObject<uint32_t>() == ++count);
     });
     MOZ_RELEASE_ASSERT(count == 3);
@@ -660,7 +660,7 @@ void TestBlocksRingBufferAPI() {
 
     
     count = 1;
-    rb.ReadEach([&](BlocksRingBuffer::EntryReader aReader) {
+    rb.ReadEach([&](BlocksRingBuffer::EntryReader& aReader) {
       MOZ_RELEASE_ASSERT(aReader.ReadObject<uint32_t>() == ++count);
     });
     MOZ_RELEASE_ASSERT(count == 4);
@@ -701,7 +701,7 @@ void TestBlocksRingBufferAPI() {
 
     
     count = 2;
-    rb.ReadEach([&](BlocksRingBuffer::EntryReader aReader) {
+    rb.ReadEach([&](BlocksRingBuffer::EntryReader& aReader) {
       MOZ_RELEASE_ASSERT(aReader.ReadObject<uint32_t>() == ++count);
     });
     MOZ_RELEASE_ASSERT(count == 5);
@@ -714,7 +714,7 @@ void TestBlocksRingBufferAPI() {
 
     
     count = 3;
-    rb.ReadEach([&](BlocksRingBuffer::EntryReader aReader) {
+    rb.ReadEach([&](BlocksRingBuffer::EntryReader& aReader) {
       MOZ_RELEASE_ASSERT(aReader.ReadObject<uint32_t>() == ++count);
     });
     MOZ_RELEASE_ASSERT(count == 5);
@@ -786,7 +786,7 @@ void TestBlocksRingBufferThreading() {
     buffer[i] = uint8_t('A' + i);
   }
   BlocksRingBuffer rb(&buffer[MBSize], MakePowerOfTwo32<MBSize>(),
-                      [&](BlocksRingBuffer::EntryReader aReader) {
+                      [&](BlocksRingBuffer::EntryReader& aReader) {
                         lastDestroyed = aReader.ReadObject<int>();
                       });
 

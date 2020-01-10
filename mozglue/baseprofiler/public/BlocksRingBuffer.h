@@ -213,13 +213,20 @@ class BlocksRingBuffer {
   
   class EntryReader : public BufferReader {
    public:
+    
+    EntryReader(EntryReader&& aOther) = default;
+    
+    EntryReader(const EntryReader& aOther) = delete;
+    EntryReader& operator=(const EntryReader& aOther) = delete;
+    EntryReader& operator=(EntryReader&& aOther) = delete;
+
 #ifdef DEBUG
     ~EntryReader() {
       
       MOZ_ASSERT(CurrentIndex() >= mEntryStart);
       MOZ_ASSERT(CurrentIndex() <= mEntryStart + mEntryBytes);
       
-      mRing->mMutex.AssertCurrentThreadOwns();
+      mRing.mMutex.AssertCurrentThreadOwns();
     }
 #endif  
 
@@ -252,10 +259,10 @@ class BlocksRingBuffer {
     }
 
     
-    BlockIndex BufferRangeStart() const { return mRing->mFirstReadIndex; }
+    BlockIndex BufferRangeStart() const { return mRing.mFirstReadIndex; }
 
     
-    BlockIndex BufferRangeEnd() const { return mRing->mNextWriteIndex; }
+    BlockIndex BufferRangeEnd() const { return mRing.mNextWriteIndex; }
 
     
     
@@ -265,8 +272,8 @@ class BlocksRingBuffer {
       MOZ_ASSERT(aBlockIndex <= BufferRangeEnd());
       if (aBlockIndex >= BufferRangeStart() && aBlockIndex < BufferRangeEnd()) {
         
-        mRing->AssertBlockIndexIsValid(aBlockIndex);
-        return Some(EntryReader(*mRing, aBlockIndex));
+        mRing.AssertBlockIndexIsValid(aBlockIndex);
+        return Some(EntryReader(mRing, aBlockIndex));
       }
       
       return Nothing();
@@ -276,7 +283,7 @@ class BlocksRingBuffer {
     Maybe<EntryReader> GetNextEntry() {
       const BlockIndex nextBlockIndex = NextBlockIndex();
       if (nextBlockIndex < BufferRangeEnd()) {
-        return Some(EntryReader(*mRing, nextBlockIndex));
+        return Some(EntryReader(mRing, nextBlockIndex));
       }
       return Nothing();
     }
@@ -287,19 +294,19 @@ class BlocksRingBuffer {
 
     explicit EntryReader(const BlocksRingBuffer& aRing, BlockIndex aBlockIndex)
         : BufferReader(aRing.mBuffer.ReaderAt(Index(aBlockIndex))),
-          mRing(WrapNotNull(&aRing)),
+          mRing(aRing),
           mEntryBytes(BufferReader::ReadULEB128<Length>()),
           mEntryStart(CurrentIndex()) {
       
-      mRing->mMutex.AssertCurrentThreadOwns();
+      mRing.mMutex.AssertCurrentThreadOwns();
     }
 
     
     
     
-    NotNull<const BlocksRingBuffer*> mRing;
-    Length mEntryBytes;
-    Index mEntryStart;
+    const BlocksRingBuffer& mRing;
+    const Length mEntryBytes;
+    const Index mEntryStart;
   };
 
   class Reader;
@@ -407,8 +414,8 @@ class BlocksRingBuffer {
     
     template <typename Callback>
     void ForEach(Callback&& aCallback) const {
-      for (auto it : *this) {
-        aCallback(it);
+      for (EntryReader reader : *this) {
+        aCallback(reader);
       }
     }
 
@@ -458,7 +465,7 @@ class BlocksRingBuffer {
     Maybe<EntryReader> maybeReader;
     if (aBlockIndex >= mFirstReadIndex && aBlockIndex < mNextWriteIndex) {
       AssertBlockIndexIsValid(aBlockIndex);
-      maybeReader = Some(ReaderInBlockAt(aBlockIndex));
+      maybeReader.emplace(ReaderInBlockAt(aBlockIndex));
     }
     return std::forward<Callback>(aCallback)(std::move(maybeReader));
   }
@@ -755,7 +762,8 @@ class BlocksRingBuffer {
       BlockIterator it = reader.begin();
       for (; it.CurrentBlockIndex() < aBlockIndex; ++it) {
         MOZ_ASSERT(it.CurrentBlockIndex() < reader.end().CurrentBlockIndex());
-        mEntryDestructor(*it);
+        EntryReader reader = *it;
+        mEntryDestructor(reader);
         mClearedBlockCount += 1;
       }
       MOZ_ASSERT(it.CurrentBlockIndex() == aBlockIndex);
@@ -839,7 +847,7 @@ class BlocksRingBuffer {
     if (mEntryDestructor) {
       
       Reader(*this).ForEach(
-          [this](EntryReader aReader) { mEntryDestructor(aReader); });
+          [this](EntryReader& aReader) { mEntryDestructor(aReader); });
     }
     mClearedBlockCount = mPushedBlockCount;
   }
@@ -867,7 +875,7 @@ class BlocksRingBuffer {
   
   BlockIndex mNextWriteIndex = BlockIndex(Index(1));
   
-  std::function<void(EntryReader)> mEntryDestructor;
+  std::function<void(EntryReader&)> mEntryDestructor;
 
   
   uint64_t mPushedBlockCount = 0;
