@@ -900,8 +900,6 @@ void nsPermissionManager::Startup() {
 #define PERMISSIONS_FILE_NAME "permissions.sqlite"
 #define HOSTS_SCHEMA_VERSION 10
 
-#define HOSTPERM_FILE_NAME "hostperm.1"
-
 
 
 static const char kDefaultsUrlPrefName[] = "permissions.manager.defaultsUrl";
@@ -1651,7 +1649,7 @@ nsresult nsPermissionManager::InitDB(bool aRemoveFile) {
   
   if (tableExists) return Read();
 
-  return Import();
+  return NS_OK;
 }
 
 
@@ -2862,33 +2860,6 @@ nsresult nsPermissionManager::Read() {
 
 static const char kMatchTypeHost[] = "host";
 static const char kMatchTypeOrigin[] = "origin";
-
-
-
-
-nsresult nsPermissionManager::Import() {
-  nsresult rv;
-
-  nsCOMPtr<nsIFile> permissionsFile;
-  rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
-                              getter_AddRefs(permissionsFile));
-  if (NS_FAILED(rv)) return rv;
-
-  rv = permissionsFile->AppendNative(NS_LITERAL_CSTRING(HOSTPERM_FILE_NAME));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<nsIInputStream> fileInputStream;
-  rv = NS_NewLocalFileInputStream(getter_AddRefs(fileInputStream),
-                                  permissionsFile);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = _DoImport(fileInputStream, mDBConn);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  permissionsFile->Remove(false);
-  return NS_OK;
-}
 
 
 
