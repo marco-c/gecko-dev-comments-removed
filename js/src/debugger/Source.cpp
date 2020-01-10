@@ -20,20 +20,20 @@
 #include "debugger/Debugger.h"  
 #include "debugger/Script.h"    
 #include "gc/Tracer.h"  
-#include "js/CompilationAndEvaluation.h" 
-#include "js/StableStringChars.h"  
-#include "vm/BytecodeUtil.h"       
-#include "vm/JSContext.h"          
-#include "vm/JSObject.h"           
-#include "vm/JSScript.h"           
-#include "vm/ObjectGroup.h"        
-#include "vm/StringType.h"         
-#include "vm/TypedArrayObject.h"   
-#include "wasm/WasmCode.h"         
-#include "wasm/WasmDebug.h"        
-#include "wasm/WasmInstance.h"     
-#include "wasm/WasmJS.h"           
-#include "wasm/WasmTypes.h"        
+#include "js/CompilationAndEvaluation.h"  
+#include "js/StableStringChars.h"         
+#include "vm/BytecodeUtil.h"              
+#include "vm/JSContext.h"                 
+#include "vm/JSObject.h"                  
+#include "vm/JSScript.h"          
+#include "vm/ObjectGroup.h"       
+#include "vm/StringType.h"        
+#include "vm/TypedArrayObject.h"  
+#include "wasm/WasmCode.h"        
+#include "wasm/WasmDebug.h"       
+#include "wasm/WasmInstance.h"    
+#include "wasm/WasmJS.h"          
+#include "wasm/WasmTypes.h"       
 
 #include "vm/JSObject-inl.h"      
 #include "vm/NativeObject-inl.h"  
@@ -184,7 +184,8 @@ struct MOZ_STACK_CLASS DebuggerSource::CallData {
 
 template <DebuggerSource::CallData::Method MyMethod>
 
-bool DebuggerSource::CallData::ToNative(JSContext* cx, unsigned argc, Value* vp) {
+bool DebuggerSource::CallData::ToNative(JSContext* cx, unsigned argc,
+                                        Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   RootedDebuggerSource obj(cx, DebuggerSource::check(cx, args.thisv()));
@@ -511,8 +512,8 @@ ScriptSourceObject* EnsureSourceObject(JSContext* cx,
                                        HandleDebuggerSource obj) {
   if (!obj->getReferent().is<ScriptSourceObject*>()) {
     RootedValue v(cx, ObjectValue(*obj));
-    ReportValueError(cx, JSMSG_DEBUG_BAD_REFERENT, JSDVG_SEARCH_STACK,
-                     v, nullptr, "a JS source");
+    ReportValueError(cx, JSMSG_DEBUG_BAD_REFERENT, JSDVG_SEARCH_STACK, v,
+                     nullptr, "a JS source");
     return nullptr;
   }
   return obj->getReferent().as<ScriptSourceObject*>();
@@ -676,5 +677,4 @@ const JSPropertySpec DebuggerSource::properties_[] = {
     JS_PS_END};
 
 const JSFunctionSpec DebuggerSource::methods_[] = {
-    JS_DEBUG_FN("reparse", reparse, 0),
-    JS_FS_END};
+    JS_DEBUG_FN("reparse", reparse, 0), JS_FS_END};

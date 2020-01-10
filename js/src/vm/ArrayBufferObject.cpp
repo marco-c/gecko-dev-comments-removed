@@ -734,7 +734,9 @@ static bool CreateSpecificWasmBuffer(
     
     
     
-    if (!useHugeMemory && clampedMaxSize.value() >= (UINT32_MAX - wasm::PageSize)) {
+    
+    if (!useHugeMemory &&
+        clampedMaxSize.value() >= (UINT32_MAX - wasm::PageSize)) {
       uint32_t clamp = (wasm::MaxMemoryMaximumPages - 2) * wasm::PageSize;
       MOZ_ASSERT(clamp < UINT32_MAX);
       MOZ_ASSERT(initialSize <= clamp);
@@ -808,7 +810,8 @@ static bool CreateSpecificWasmBuffer(
 
   
   
-  RootedArrayBufferObjectMaybeShared object(cx, ObjT::createFromNewRawBuffer(cx, buffer, initialSize));
+  RootedArrayBufferObjectMaybeShared object(
+      cx, ObjT::createFromNewRawBuffer(cx, buffer, initialSize));
   if (!object) {
     return false;
   }

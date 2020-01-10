@@ -31,7 +31,8 @@ class nsTArrayElementTraits<nsISupports*> {
   
   template <class... Args>
   static inline void Emplace(E* aE, Args&&... aArgs) {
-    new (mozilla::KnownNotNull, static_cast<void*>(aE)) E(std::forward<Args>(aArgs)...);
+    new (mozilla::KnownNotNull, static_cast<void*>(aE))
+        E(std::forward<Args>(aArgs)...);
   }
   
   static inline void Destruct(E* aE) { aE->~E(); }

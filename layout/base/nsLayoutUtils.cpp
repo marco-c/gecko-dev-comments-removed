@@ -9233,9 +9233,9 @@ Maybe<ScrollMetadata> nsLayoutUtils::GetRootMetadata(
 
   
   
-  bool ensureMetricsForRootId =
-      nsLayoutUtils::AsyncPanZoomEnabled(frame) &&
-      aBuilder->IsPaintingToWindow() && !presContext->GetParentPresContext();
+  bool ensureMetricsForRootId = nsLayoutUtils::AsyncPanZoomEnabled(frame) &&
+                                aBuilder->IsPaintingToWindow() &&
+                                !presContext->GetParentPresContext();
 
   nsIContent* content = nullptr;
   nsIFrame* rootScrollFrame = presShell->GetRootScrollFrame();

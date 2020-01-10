@@ -29,7 +29,7 @@
 #include "vm/ObjectOperations.h"  
 #include "vm/Realm.h"             
 
-#include "vm/Compartment-inl.h"  
+#include "vm/Compartment-inl.h"   
 #include "vm/JSObject-inl.h"      
 #include "vm/NativeObject-inl.h"  
 

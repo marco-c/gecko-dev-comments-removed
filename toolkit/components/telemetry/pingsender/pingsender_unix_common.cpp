@@ -42,10 +42,10 @@ class CurlWrapper {
   void (*global_cleanup)(void);
 
   CURLU* (*curl_url)();
-  CURLUcode (*curl_url_get)(CURLU *, CURLUPart, char **, unsigned int);
-  CURLUcode (*curl_url_set)(CURLU *, CURLUPart, const char *, unsigned int);
-  void (*curl_free)( char *);
-  void (*curl_url_cleanup)(CURLU *);
+  CURLUcode (*curl_url_get)(CURLU*, CURLUPart, char**, unsigned int);
+  CURLUcode (*curl_url_set)(CURLU*, CURLUPart, const char*, unsigned int);
+  void (*curl_free)(char*);
+  void (*curl_url_cleanup)(CURLU*);
 
  private:
   void* mLib;
@@ -175,7 +175,7 @@ bool FallbackIsValidDestination(const string& aUrl) {
   
   string url = aUrl;
   std::transform(url.begin(), url.end(), url.begin(),
-    [](unsigned char c){ return std::tolower(c); });
+                 [](unsigned char c) { return std::tolower(c); });
   
   if (url.find_first_of("http://") != std::string::npos) {
     url = url.substr(7);
@@ -208,7 +208,7 @@ bool CurlWrapper::IsValidDestination(const string& aUrl) {
   }
 
   bool ret = false;
-  CURLU *h = curl_url();
+  CURLU* h = curl_url();
   if (!h) {
     return FallbackIsValidDestination(aUrl);
   }
@@ -217,7 +217,7 @@ bool CurlWrapper::IsValidDestination(const string& aUrl) {
     goto cleanup;
   }
 
-  char *host;
+  char* host;
   if (CURLUE_OK != curl_url_get(h, CURLUPART_HOST, &host, 0)) {
     goto cleanup;
   }

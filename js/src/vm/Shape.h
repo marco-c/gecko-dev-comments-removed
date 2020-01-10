@@ -655,8 +655,8 @@ class BaseShape : public gc::TenuredCell {
 
  private:
   const JSClass* clasp_; 
-  uint32_t flags;      
-  uint32_t slotSpan_;  
+  uint32_t flags;        
+  uint32_t slotSpan_;    
 
 
   

@@ -77,7 +77,8 @@ nsresult ScriptLoadHandler::DecodeRawDataHelper(const uint8_t* aData,
   using namespace mozilla::Telemetry;
   if (aEndOfStream && haveRead) {
     
-    Accumulate(DOM_SCRIPT_LOAD_INCREMENTAL_RATIO, 100 * haveRead / (haveRead + written));
+    Accumulate(DOM_SCRIPT_LOAD_INCREMENTAL_RATIO,
+               100 * haveRead / (haveRead + written));
     
     
     auto streamingTime = TimeStamp::Now() - mFirstOnIncrementalData;

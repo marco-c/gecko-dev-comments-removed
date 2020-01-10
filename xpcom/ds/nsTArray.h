@@ -502,7 +502,8 @@ namespace detail {
 template <typename... T>
 struct ChooseFirst;
 
-template <> struct ChooseFirst<> {
+template <>
+struct ChooseFirst<> {
   
   
   typedef void Type;
@@ -513,7 +514,7 @@ struct ChooseFirst<A, Args...> {
   typedef A Type;
 };
 
-}
+}  
 
 
 
@@ -545,7 +546,8 @@ class nsTArrayElementTraits {
   template <class... Args>
   static inline void Emplace(E* aE, Args&&... aArgs) {
     typedef typename mozilla::RemoveCV<E>::Type E_NoCV;
-    typedef typename mozilla::RemoveCV<typename ::detail::ChooseFirst<Args...>::Type>::Type A_NoCV;
+    typedef typename mozilla::RemoveCV<
+        typename ::detail::ChooseFirst<Args...>::Type>::Type A_NoCV;
     static_assert(!mozilla::IsSame<E_NoCV*, A_NoCV>::value,
                   "For safety, we disallow constructing nsTArray<E> elements "
                   "from E* pointers. See bug 960591.");
@@ -1667,8 +1669,7 @@ class nsTArray_Impl
 
  public:
   template <class... Args>
-  MOZ_MUST_USE
-  elem_type* EmplaceBack(Args&&... aArgs, mozilla::fallible_t&) {
+  MOZ_MUST_USE elem_type* EmplaceBack(Args&&... aArgs, mozilla::fallible_t&) {
     return EmplaceBack<Args..., FallibleAlloc>(std::forward<Args>(aArgs)...);
   }
 

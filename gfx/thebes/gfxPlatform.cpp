@@ -599,8 +599,7 @@ static void WebRenderDebugPrefChangeCallback(const char* aPrefName, void*) {
   GFX_WEBRENDER_DEBUG(".disable-text-prims", wr::DebugFlags_DISABLE_TEXT_PRIMS)
   GFX_WEBRENDER_DEBUG(".disable-gradient-prims",
                       wr::DebugFlags_DISABLE_GRADIENT_PRIMS)
-  GFX_WEBRENDER_DEBUG(".obscure-images",
-                      wr::DebugFlags_OBSCURE_IMAGES)
+  GFX_WEBRENDER_DEBUG(".obscure-images", wr::DebugFlags_OBSCURE_IMAGES)
   GFX_WEBRENDER_DEBUG(".log-transactions", wr::DebugFlags_LOG_TRANSACTIONS)
 #undef GFX_WEBRENDER_DEBUG
 
@@ -2652,19 +2651,19 @@ static void UpdateWRQualificationForNvidia(FeatureState& aFeature,
   
   
 
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
   
   *aOutGuardedByQualifiedPref = false;
-#elif defined(NIGHTLY_BUILD)
+#  elif defined(NIGHTLY_BUILD)
   
   
   
-#else
+#  else
   
   aFeature.Disable(
       FeatureStatus::BlockedReleaseChannelNvidia, "Release channel and Nvidia",
       NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_NVIDIA"));
-#endif
+#  endif
 }
 
 static void UpdateWRQualificationForAMD(FeatureState& aFeature,
@@ -2689,19 +2688,19 @@ static void UpdateWRQualificationForAMD(FeatureState& aFeature,
 
   
 
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
   
   *aOutGuardedByQualifiedPref = false;
-#elif defined(NIGHTLY_BUILD)
+#  elif defined(NIGHTLY_BUILD)
   
   
   
-#else
+#  else
   
   aFeature.Disable(FeatureStatus::BlockedReleaseChannelAMD,
                    "Release channel and AMD",
                    NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_AMD"));
-#endif
+#  endif
 }
 
 static void UpdateWRQualificationForIntel(FeatureState& aFeature,
@@ -2806,20 +2805,20 @@ static void UpdateWRQualificationForIntel(FeatureState& aFeature,
   
   
   
-#if defined(XP_WIN) && defined(NIGHTLY_BUILD)
+#  if defined(XP_WIN) && defined(NIGHTLY_BUILD)
   
-#else
-  
-  
-  
-  
-#  if defined(XP_WIN)
-  
-  const int64_t kMaxPixels = 1920 * 1200;  
 #  else
   
+  
+  
+  
+#    if defined(XP_WIN)
+  
+  const int64_t kMaxPixels = 1920 * 1200;  
+#    else
+  
   const int64_t kMaxPixels = 3440 * 1440;  
-#  endif
+#    endif
   if (aScreenPixels > kMaxPixels) {
     aFeature.Disable(
         FeatureStatus::BlockedScreenTooLarge, "Screen size too large",
@@ -2831,21 +2830,21 @@ static void UpdateWRQualificationForIntel(FeatureState& aFeature,
                      NS_LITERAL_CSTRING("FEATURE_FAILURE_SCREEN_SIZE_UNKNOWN"));
     return;
   }
-#endif
+#  endif
 
-#if (defined(XP_WIN) || (defined(MOZ_WIDGET_GTK) && defined(NIGHTLY_BUILD)))
+#  if (defined(XP_WIN) || (defined(MOZ_WIDGET_GTK) && defined(NIGHTLY_BUILD)))
   
   
   
   
-#else
+#  else
   
   aFeature.Disable(FeatureStatus::BlockedReleaseChannelIntel,
                    "Release channel and Intel",
                    NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_INTEL"));
-#endif
+#  endif
 }
-#endif 
+#endif  
 
 static FeatureState& WebRenderHardwareQualificationStatus(
     int64_t aScreenPixels, bool aHasBattery, bool* aOutGuardedByQualifiedPref) {
@@ -2920,11 +2919,11 @@ static FeatureState& WebRenderHardwareQualificationStatus(
   
   
   if (aHasBattery) {
-#ifndef XP_WIN
+#  ifndef XP_WIN
     
     
     MOZ_ASSERT(false);
-#endif
+#  endif
     
     
     
@@ -2933,25 +2932,25 @@ static FeatureState& WebRenderHardwareQualificationStatus(
     
     const int64_t kMaxPixelsBattery = 1920 * 1200;  
     if (aScreenPixels > 0 && aScreenPixels <= kMaxPixelsBattery) {
-#ifndef NIGHTLY_BUILD
+#  ifndef NIGHTLY_BUILD
       featureWebRenderQualified.Disable(
           FeatureStatus::BlockedReleaseChannelBattery,
           "Release channel and battery",
           NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_BATTERY"));
-#endif  
+#  endif  
     } else {
       featureWebRenderQualified.Disable(
           FeatureStatus::BlockedHasBattery, "Has battery",
           NS_LITERAL_CSTRING("FEATURE_FAILURE_WR_HAS_BATTERY"));
     }
   }
-#else 
-#ifndef NIGHTLY_BUILD
+#else  
+#  ifndef NIGHTLY_BUILD
   featureWebRenderQualified.Disable(
-    FeatureStatus::BlockedReleaseChannelAndroid,
-    "Release channel and Android",
-    NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_ANDROID"));
-#endif
+      FeatureStatus::BlockedReleaseChannelAndroid,
+      "Release channel and Android",
+      NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_ANDROID"));
+#  endif
 #endif
   return featureWebRenderQualified;
 }

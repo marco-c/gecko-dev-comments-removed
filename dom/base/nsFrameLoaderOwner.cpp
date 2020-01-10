@@ -83,9 +83,7 @@ void nsFrameLoaderOwner::ChangeRemoteness(
   
   Document* doc = owner->OwnerDoc();
   doc->BlockOnload();
-  auto cleanup = MakeScopeExit([&]() {
-    doc->UnblockOnload(false);
-  });
+  auto cleanup = MakeScopeExit([&]() { doc->UnblockOnload(false); });
 
   
   

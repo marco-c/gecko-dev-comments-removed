@@ -5711,7 +5711,7 @@ void nsCSSFrameConstructor::ConstructFramesFromItem(
              "This may be a frame that was previously blockified "
              "but isn't any longer! It probably needs explicit "
              "'display:block' to preserve behavior");
-  Unused << disp; 
+  Unused << disp;  
 
   if (item.mIsText) {
     

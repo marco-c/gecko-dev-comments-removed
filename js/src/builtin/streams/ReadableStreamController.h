@@ -13,10 +13,10 @@
 
 #include <stdint.h>  
 
-#include "builtin/streams/ReadableStream.h"  
+#include "builtin/streams/ReadableStream.h"    
 #include "builtin/streams/StreamController.h"  
-#include "js/Class.h"                        
-#include "js/RootingAPI.h"                   
+#include "js/Class.h"                          
+#include "js/RootingAPI.h"                     
 #include "js/Stream.h"  
 #include "js/Value.h"  
 #include "vm/List.h"   

@@ -8,7 +8,7 @@
 
 #include "mozilla/ArrayUtils.h"  
 #include "mozilla/ScopeExit.h"
-#include "mozilla/Utf8.h"        
+#include "mozilla/Utf8.h"  
 
 #include "FuzzerDefs.h"
 #include "FuzzingInterface.h"
@@ -17,7 +17,7 @@
 
 #include "js/CompilationAndEvaluation.h"  
 #include "js/Equality.h"
-#include "js/SourceText.h"                
+#include "js/SourceText.h"  
 
 #include "vm/Interpreter.h"
 #include "vm/TypedArrayObject.h"

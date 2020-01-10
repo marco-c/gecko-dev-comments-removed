@@ -13,7 +13,7 @@
 
 #include "builtin/streams/ClassSpecMacro.h"  
 #include "builtin/streams/MiscellaneousOperations.h"  
-#include "builtin/streams/ReadableStream.h"           
+#include "builtin/streams/ReadableStream.h"  
 #include "builtin/streams/ReadableStreamReader.h"  
 #include "js/CallArgs.h"                           
 #include "js/Class.h"                              

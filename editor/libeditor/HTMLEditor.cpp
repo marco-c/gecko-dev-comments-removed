@@ -313,9 +313,8 @@ void HTMLEditor::PreDestroy(bool aDestroyingFrames) {
     
     RefPtr<HTMLEditor> self = this;
     nsContentUtils::AddScriptRunner(
-        NS_NewRunnableFunction("HTMLEditor::PreDestroy", [self]() {
-          self->HideAnonymousEditingUIs();
-        }));
+        NS_NewRunnableFunction("HTMLEditor::PreDestroy",
+                               [self]() { self->HideAnonymousEditingUIs(); }));
   } else {
     
     HideAnonymousEditingUIs();

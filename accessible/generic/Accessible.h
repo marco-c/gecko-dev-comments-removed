@@ -1041,7 +1041,7 @@ class Accessible : public nsISupports {
     eKidsMutating = 1 << 6,      
     eIgnoreDOMUIEvent = 1 << 7,  
     eRelocated = 1 << 8,         
-    eNoKidsFromDOM = 1 << 9,    
+    eNoKidsFromDOM = 1 << 9,     
     eHasTextKids = 1 << 10,      
 
     eLastStateFlag = eHasTextKids

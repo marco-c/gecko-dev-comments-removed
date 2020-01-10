@@ -46,11 +46,7 @@ extern JSObject* ValueToCallable(JSContext* cx, HandleValue v,
                                  MaybeConstruct construct = NO_CONSTRUCT);
 
 
-enum class CallReason {
-  Call,
-  Getter,
-  Setter
-};
+enum class CallReason { Call, Getter, Setter };
 
 
 

@@ -136,9 +136,7 @@ class nsWrapperCache {
 
 
 
-  JSObject* GetWrapperMaybeDead() const {
-    return mWrapper;
-  }
+  JSObject* GetWrapperMaybeDead() const { return mWrapper; }
 
 #ifdef DEBUG
  private:

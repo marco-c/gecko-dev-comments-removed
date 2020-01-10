@@ -33,6 +33,6 @@ class ThreadId {
   static ThreadId ThisThreadId();
 };
 
-} 
+}  
 
 #endif  

@@ -728,9 +728,7 @@ class MultiLookupHuffmanTable {
 
 template <typename T>
 using TwoLookupsHuffmanTable = MultiLookupHuffmanTable<
-    T,
-    SingleLookupHuffmanTable< size_t>,
-    6>;
+    T, SingleLookupHuffmanTable< size_t>, 6>;
 
 
 template <typename T>

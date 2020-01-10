@@ -100,6 +100,7 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver {
   mozilla::UniquePtr<mozilla::Decoder> mDecoder;
 
   
+  
   TimeStamp mFirstOnIncrementalData;
 };
 

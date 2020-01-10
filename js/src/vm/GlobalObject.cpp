@@ -22,7 +22,7 @@
 #include "builtin/SelfHostingDefines.h"
 #include "builtin/Stream.h"
 #include "builtin/streams/QueueingStrategies.h"  
-#include "builtin/streams/ReadableStream.h"      
+#include "builtin/streams/ReadableStream.h"  
 #include "builtin/streams/ReadableStreamController.h"  
 #include "builtin/streams/ReadableStreamReader.h"  
 #include "builtin/streams/WritableStream.h"        

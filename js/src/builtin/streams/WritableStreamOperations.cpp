@@ -15,11 +15,11 @@
 
 #include "builtin/streams/WritableStream.h"  
 #include "builtin/streams/WritableStreamDefaultController.h"  
-#include "js/RootingAPI.h"                   
-#include "js/Value.h"                        
+#include "js/RootingAPI.h"  
+#include "js/Value.h"       
 
-#include "vm/JSObject-inl.h"                 
-#include "vm/List-inl.h"                     
+#include "vm/JSObject-inl.h"  
+#include "vm/List-inl.h"      
 
 using js::WritableStream;
 

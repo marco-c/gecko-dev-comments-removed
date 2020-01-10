@@ -2134,7 +2134,8 @@ void nsDocShell::TriggerParentCheckDocShellIsEmpty() {
   if (RefPtr<nsDocShell> parent = GetInProcessParentDocshell()) {
     parent->DocLoaderIsEmpty(true);
   }
-  if (GetBrowsingContext()->IsContentSubframe() && !GetBrowsingContext()->GetParent()->IsInProcess()) {
+  if (GetBrowsingContext()->IsContentSubframe() &&
+      !GetBrowsingContext()->GetParent()->IsInProcess()) {
     if (BrowserChild* browserChild = BrowserChild::GetFrom(this)) {
       mozilla::Unused << browserChild->SendMaybeFireEmbedderLoadEvents(
            true,  false);
@@ -3966,7 +3967,8 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
   
   
   
-  if (GetBrowsingContext()->IsContentSubframe() && !GetBrowsingContext()->GetParent()->IsInProcess()) {
+  if (GetBrowsingContext()->IsContentSubframe() &&
+      !GetBrowsingContext()->GetParent()->IsInProcess()) {
     if (BrowserChild* browserChild = BrowserChild::GetFrom(this)) {
       mozilla::Unused << browserChild->SendMaybeFireEmbedderLoadEvents(
            true,  false);

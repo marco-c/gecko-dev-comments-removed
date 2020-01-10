@@ -1261,8 +1261,8 @@ nsresult nsNSSComponent::setEnabledTLSVersions() {
 
   
   
-  bool enableDeprecated = Preferences::GetBool("security.tls.version.enable-deprecated",
-                                              false);
+  bool enableDeprecated =
+      Preferences::GetBool("security.tls.version.enable-deprecated", false);
   if (enableDeprecated) {
     minFromPrefs = std::min(minFromPrefs, PSM_DEFAULT_MIN_TLS_VERSION);
   }

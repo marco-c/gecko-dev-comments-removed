@@ -103,6 +103,7 @@ class DataMutexBase {
 class StaticMutexNameless : public StaticMutexNotRecorded {
  public:
   explicit StaticMutexNameless(const char* aName) : StaticMutexNotRecorded() {}
+
  private:
   
 #ifdef DEBUG

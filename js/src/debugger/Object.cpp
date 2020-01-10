@@ -26,39 +26,39 @@
 #include "debugger/Source.h"     
 #include "gc/Barrier.h"          
 #include "gc/Rooting.h"          
-#include "gc/Tracer.h"       
-#include "js/CompilationAndEvaluation.h" 
-#include "js/Conversions.h"  
-#include "js/HeapAPI.h"      
-#include "js/Promise.h"      
-#include "js/Proxy.h"        
-#include "js/StableStringChars.h"        
-#include "proxy/ScriptedProxyHandler.h"  
-#include "vm/ArgumentsObject.h"          
-#include "vm/ArrayObject.h"              
-#include "vm/BytecodeUtil.h"             
-#include "vm/Compartment.h"              
-#include "vm/EnvironmentObject.h"        
-#include "vm/ErrorObject.h"              
-#include "vm/GlobalObject.h"             
-#include "vm/Instrumentation.h"          
-#include "vm/Interpreter.h"              
-#include "vm/JSAtom.h"                   
-#include "vm/JSContext.h"                
-#include "vm/JSFunction.h"               
-#include "vm/JSScript.h"                 
-#include "vm/NativeObject.h"             
-#include "vm/ObjectGroup.h"              
-#include "vm/ObjectOperations.h"         
-#include "vm/Realm.h"                    
-#include "vm/Runtime.h"                  
-#include "vm/SavedFrame.h"               
-#include "vm/Scope.h"                    
-#include "vm/SelfHosting.h"              
-#include "vm/Shape.h"                    
-#include "vm/Stack.h"                    
-#include "vm/StringType.h"               
-#include "vm/WrapperObject.h"            
+#include "gc/Tracer.h"  
+#include "js/CompilationAndEvaluation.h"  
+#include "js/Conversions.h"               
+#include "js/HeapAPI.h"                   
+#include "js/Promise.h"                   
+#include "js/Proxy.h"                     
+#include "js/StableStringChars.h"         
+#include "proxy/ScriptedProxyHandler.h"   
+#include "vm/ArgumentsObject.h"           
+#include "vm/ArrayObject.h"               
+#include "vm/BytecodeUtil.h"              
+#include "vm/Compartment.h"               
+#include "vm/EnvironmentObject.h"         
+#include "vm/ErrorObject.h"               
+#include "vm/GlobalObject.h"              
+#include "vm/Instrumentation.h"           
+#include "vm/Interpreter.h"               
+#include "vm/JSAtom.h"                    
+#include "vm/JSContext.h"                 
+#include "vm/JSFunction.h"                
+#include "vm/JSScript.h"                  
+#include "vm/NativeObject.h"              
+#include "vm/ObjectGroup.h"               
+#include "vm/ObjectOperations.h"          
+#include "vm/Realm.h"                     
+#include "vm/Runtime.h"                   
+#include "vm/SavedFrame.h"                
+#include "vm/Scope.h"                     
+#include "vm/SelfHosting.h"               
+#include "vm/Shape.h"                     
+#include "vm/Stack.h"                     
+#include "vm/StringType.h"                
+#include "vm/WrapperObject.h"             
 
 #include "vm/Compartment-inl.h"       
 #include "vm/JSAtom-inl.h"            
@@ -219,7 +219,8 @@ struct MOZ_STACK_CLASS DebuggerObject::CallData {
 
 template <DebuggerObject::CallData::Method MyMethod>
 
-bool DebuggerObject::CallData::ToNative(JSContext* cx, unsigned argc, Value* vp) {
+bool DebuggerObject::CallData::ToNative(JSContext* cx, unsigned argc,
+                                        Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   RootedDebuggerObject obj(cx, DebuggerObject_checkThis(cx, args));
@@ -1156,8 +1157,7 @@ static bool CopyStringToVector(JSContext* cx, JSString* str, Vector<T>& chars) {
 }
 
 bool DebuggerObject::CallData::createSource() {
-  if (!args.requireAtLeast(
-          cx, "Debugger.Object.prototype.createSource", 1)) {
+  if (!args.requireAtLeast(cx, "Debugger.Object.prototype.createSource", 1)) {
     return false;
   }
 
@@ -1228,7 +1228,7 @@ bool DebuggerObject::CallData::createSource() {
   if (!CopyStringToVector(cx, url, urlChars)) {
     return false;
   }
-  compileOptions.setFile((const char*) urlChars.begin());
+  compileOptions.setFile((const char*)urlChars.begin());
 
   Vector<char16_t> sourceMapURLChars(cx);
   if (sourceMapURL) {
@@ -1293,8 +1293,7 @@ bool DebuggerObject::CallData::makeDebuggeeNativeFunctionMethod() {
 }
 
 bool DebuggerObject::CallData::isSameNativeMethod() {
-  if (!args.requireAtLeast(
-          cx, "Debugger.Object.prototype.isSameNative", 1)) {
+  if (!args.requireAtLeast(cx, "Debugger.Object.prototype.isSameNative", 1)) {
     return false;
   }
 
@@ -1471,8 +1470,8 @@ const JSFunctionSpec DebuggerObject::methods_[] = {
                 executeInGlobalWithBindingsMethod, 2),
     JS_DEBUG_FN("createSource", createSource, 1),
     JS_DEBUG_FN("makeDebuggeeValue", makeDebuggeeValueMethod, 1),
-    JS_DEBUG_FN("makeDebuggeeNativeFunction",
-                makeDebuggeeNativeFunctionMethod, 1),
+    JS_DEBUG_FN("makeDebuggeeNativeFunction", makeDebuggeeNativeFunctionMethod,
+                1),
     JS_DEBUG_FN("isSameNative", isSameNativeMethod, 1),
     JS_DEBUG_FN("unsafeDereference", unsafeDereferenceMethod, 0),
     JS_DEBUG_FN("unwrap", unwrapMethod, 0),
@@ -2456,8 +2455,8 @@ bool DebuggerObject::isSameNative(JSContext* cx, HandleDebuggerObject object,
       return false;
     }
 
-    result.setBoolean(
-        selfHostedName == MaybeGetSelfHostedFunctionName(referentValue));
+    result.setBoolean(selfHostedName ==
+                      MaybeGetSelfHostedFunctionName(referentValue));
     return true;
   }
 

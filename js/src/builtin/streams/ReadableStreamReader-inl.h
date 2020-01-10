@@ -15,9 +15,9 @@
 #include "jsfriendapi.h"  
 
 #include "builtin/streams/ReadableStream.h"  
-#include "js/Proxy.h"         
-#include "js/RootingAPI.h"    
-#include "vm/NativeObject.h"  
+#include "js/Proxy.h"                        
+#include "js/RootingAPI.h"                   
+#include "vm/NativeObject.h"                 
 
 #include "vm/Compartment-inl.h"  
 

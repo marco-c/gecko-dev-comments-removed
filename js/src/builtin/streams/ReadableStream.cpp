@@ -22,7 +22,7 @@
 #include "builtin/streams/ReadableStreamInternals.h"  
 #include "builtin/streams/ReadableStreamOperations.h"  
 #include "builtin/streams/ReadableStreamReader.h"  
-#include "js/CallArgs.h"                           
+#include "js/CallArgs.h"  
 #include "js/Class.h"  
 #include "js/PropertySpec.h"  
 #include "js/RootingAPI.h"        

@@ -509,20 +509,22 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
              "about: page must not contain a CSP including 'unsafe-eval'");
 
   static nsLiteralCString sLegacyUnsafeInlineAllowList[] = {
-    
-    NS_LITERAL_CSTRING("about:preferences"),
-    
-    NS_LITERAL_CSTRING("about:addons"),
-    
-    
-    
-    
-    NS_LITERAL_CSTRING("about:newtab"),
-    NS_LITERAL_CSTRING("about:welcome"),
-    NS_LITERAL_CSTRING("about:home"),
+      
+      
+      NS_LITERAL_CSTRING("about:preferences"),
+      
+      NS_LITERAL_CSTRING("about:addons"),
+      
+      
+      
+      
+      NS_LITERAL_CSTRING("about:newtab"),
+      NS_LITERAL_CSTRING("about:welcome"),
+      NS_LITERAL_CSTRING("about:home"),
   };
 
-  for (const nsLiteralCString& aUnsafeInlineEntry : sLegacyUnsafeInlineAllowList) {
+  for (const nsLiteralCString& aUnsafeInlineEntry :
+       sLegacyUnsafeInlineAllowList) {
     
     
     
