@@ -7,6 +7,8 @@
 
 
 
+
+
 gczeal(0);
 
 var g2 = newGlobal({newCompartment: true});
