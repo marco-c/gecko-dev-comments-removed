@@ -60,15 +60,6 @@ static_assert(
 const uint8_t MAX_PREFIX_BIT_LENGTH = 32;
 
 
-
-
-
-
-
-
-const uint8_t MAX_BIT_LENGTH_IN_SATURATED_TABLE = 10;
-
-
 const uint8_t BIT_BUFFER_SIZE = 64;
 
 
@@ -2053,7 +2044,7 @@ JS::Result<Ok> SingleLookupHuffmanTable<T>::initWithSingleValue(JSContext* cx,
 template <typename T>
 JS::Result<Ok> SingleLookupHuffmanTable<T>::initStart(
     JSContext* cx, size_t numberOfSymbols, uint8_t largestBitLength) {
-  MOZ_ASSERT(largestBitLength <= MAX_BIT_LENGTH_IN_SATURATED_TABLE);
+  MOZ_ASSERT_IF(largestBitLength != 32, uint32_t(1) << largestBitLength - 1 <= mozilla::MaxValue<InternalIndex>::value);
   MOZ_ASSERT(values.empty());  
 
   this->largestBitLength = largestBitLength;

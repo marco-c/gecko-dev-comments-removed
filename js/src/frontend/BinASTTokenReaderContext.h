@@ -242,7 +242,10 @@ class NaiveHuffmanTable {
   
   
   
-  HuffmanEntry<const T*> lookup(HuffmanLookup key) const;
+  
+  
+  
+  HuffmanEntry<const T*> lookup(HuffmanLookup lookup) const;
 
   
   size_t length() const { return values.length(); }
@@ -465,6 +468,9 @@ class SingleLookupHuffmanTable {
   
   
   
+  
+  
+  
   HuffmanEntry<const T*> lookup(HuffmanLookup key) const;
 
   
@@ -660,6 +666,9 @@ class MultiLookupHuffmanTable {
   
   
   
+  
+  
+  
   HuffmanEntry<const T*> lookup(HuffmanLookup key) const;
 
   
@@ -784,6 +793,9 @@ struct GenericHuffmanTable {
   Iterator begin() const;
   Iterator end() const;
 
+  
+  
+  
   
   
   
