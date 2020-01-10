@@ -174,7 +174,6 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
       const groupMessage = createWarningGroupMessage(
         warningGroupMessageId, warningGroupType, newMessage);
       state = addMessage(groupMessage, state, filtersState, prefsState, uiState);
-      state.warningGroupsById.set(warningGroupMessageId, []);
     }
 
     
@@ -213,6 +212,11 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
         state.visibleMessages.splice(warningMessageIndex, 1, warningGroupMessageId);
       }
     }
+  }
+
+  
+  if (isWarningGroup(newMessage)) {
+    state.warningGroupsById.set(newMessage.id, []);
   }
 
   const addedMessage = Object.freeze(newMessage);
@@ -508,43 +512,116 @@ function messages(state = MessageState(), action, filtersState, prefsState, uiSt
         removedActors: [],
       };
 
+    case constants.WARNING_GROUPS_TOGGLE:
+      
+      
+      if (!prefsState.groupWarnings && state.warningGroupsById.size === 0) {
+        return state;
+      }
+
+      let needSort = false;
+      const messageEntries = state.messagesById.entries();
+      for (const [msgId, message] of messageEntries) {
+        const warningGroupType = getWarningGroupType(message);
+        if (warningGroupType) {
+          const warningGroupMessageId = getParentWarningGroupMessageId(message);
+
+          
+          if (!state.messagesById.has(warningGroupMessageId)) {
+            
+            const groupMessage = createWarningGroupMessage(
+              warningGroupMessageId, warningGroupType, message);
+            state = addMessage(groupMessage, state, filtersState, prefsState, uiState);
+          }
+
+          
+          const warningGroup = state.warningGroupsById.get(warningGroupMessageId);
+          if (warningGroup && !warningGroup.includes(msgId)) {
+            warningGroup.push(msgId);
+          }
+
+          needSort = true;
+        }
+      }
+
+      
+      
+      if (!needSort) {
+        return state;
+      }
+
+      return setVisibleMessages({
+        messagesState: state,
+        filtersState,
+        prefsState,
+        uiState,
+        
+        
+        forceTimestampSort: !prefsState.groupWarnings,
+      });
+
     case constants.FILTER_TOGGLE:
     case constants.FILTER_TEXT_SET:
     case constants.FILTERS_CLEAR:
     case constants.DEFAULT_FILTERS_RESET:
     case constants.SHOW_CONTENT_MESSAGES_TOGGLE:
-      const messagesToShow = [];
-      const filtered = getDefaultFiltersCounter();
-
-      messagesById.forEach((message, msgId) => {
-        const { visible, cause } = getMessageVisibility(message, {
-          messagesState: state,
-          filtersState,
-          prefsState,
-          uiState,
-        });
-
-        if (visible) {
-          messagesToShow.push(msgId);
-        } else if (DEFAULT_FILTERS.includes(cause)) {
-          filtered.global = filtered.global + 1;
-          filtered[cause] = filtered[cause] + 1;
-        }
+      return setVisibleMessages({
+        messagesState: state,
+        filtersState,
+        prefsState,
+        uiState,
       });
-
-      const filteredState = {
-        ...state,
-        visibleMessages: messagesToShow,
-        filteredMessagesCount: filtered,
-      };
-      maybeSortVisibleMessages(filteredState, true);
-
-      return filteredState;
   }
 
   return state;
 }
 
+
+function setVisibleMessages({
+  messagesState,
+  filtersState,
+  prefsState,
+  uiState,
+  forceTimestampSort = false,
+}) {
+  const {
+    messagesById,
+  } = messagesState;
+
+  const messagesToShow = [];
+  const filtered = getDefaultFiltersCounter();
+
+  messagesById.forEach((message, msgId) => {
+    const { visible, cause } = getMessageVisibility(message, {
+      messagesState,
+      filtersState,
+      prefsState,
+      uiState,
+    });
+
+    if (visible) {
+      messagesToShow.push(msgId);
+    } else if (DEFAULT_FILTERS.includes(cause)) {
+      filtered.global = filtered.global + 1;
+      filtered[cause] = filtered[cause] + 1;
+    }
+  });
+
+  const newState = {
+    ...messagesState,
+    visibleMessages: messagesToShow,
+    filteredMessagesCount: filtered,
+  };
+
+  maybeSortVisibleMessages(
+    newState,
+    
+    prefsState.groupWarnings,
+    forceTimestampSort
+  );
+
+  return newState;
+}
 
 
 
@@ -1295,7 +1372,12 @@ function messageCountSinceLastExecutionPoint(state, id) {
 
 
 
-function maybeSortVisibleMessages(state, sortWarningGroupMessage = false) {
+
+function maybeSortVisibleMessages(
+  state,
+  sortWarningGroupMessage = false,
+  timeStampSort = false,
+) {
   
   
   
@@ -1366,6 +1448,15 @@ function maybeSortVisibleMessages(state, sortWarningGroupMessage = false) {
       }
 
       return 0;
+    });
+  }
+
+  if (timeStampSort) {
+    state.visibleMessages.sort((a, b) => {
+      const messageA = state.messagesById.get(a);
+      const messageB = state.messagesById.get(b);
+
+      return messageA.timeStamp < messageB.timeStamp ? -1 : 1;
     });
   }
 }

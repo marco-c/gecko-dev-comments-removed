@@ -5,6 +5,10 @@
 
 "use strict";
 
+const {
+  WARNING_GROUPS_TOGGLE,
+} = require("devtools/client/webconsole/constants");
+
 const PrefState = (overrides) => Object.freeze(Object.assign({
   logLimit: 1000,
   sidebarToggle: false,
@@ -15,6 +19,12 @@ const PrefState = (overrides) => Object.freeze(Object.assign({
 }, overrides));
 
 function prefs(state = PrefState(), action) {
+  if (action.type === WARNING_GROUPS_TOGGLE) {
+    return {
+      ...state,
+      groupWarnings: action.value,
+    };
+  }
   return state;
 }
 
