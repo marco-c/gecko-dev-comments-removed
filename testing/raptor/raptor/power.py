@@ -110,6 +110,13 @@ def finish_android_power_test(raptor, test_name):
         batterystats = raptor.device.shell_output("dumpsys batterystats")
         output.write(batterystats)
     raptor.device._verbose = verbose
+
+    
+    android_version = raptor.device.shell_output(
+        "getprop ro.build.version.release"
+    ).strip()
+    major_android_version = int(android_version.split('.')[0])
+
     estimated_power = False
     uid = None
     total = cpu = wifi = smearing = screen = proportional = 0
@@ -190,9 +197,12 @@ def finish_android_power_test(raptor, test_name):
             "cpu": float(cpu),
             "wifi": float(wifi),
             "screen": float(screen),
-            "proportional": float(proportional),
         },
     }
+
+    
+    if major_android_version >= 8:
+        power_data['values']['proportional'] = float(proportional)
 
     raptor.log.info("submitting power data via control server directly")
     raptor.control_server.submit_supporting_data(power_data)
