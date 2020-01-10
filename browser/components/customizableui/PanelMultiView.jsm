@@ -434,7 +434,7 @@ var PanelMultiView = class extends AssociatedToNode {
     this._panel.removeEventListener("popuppositioned", this);
     this._panel.removeEventListener("popupshown", this);
     this._panel.removeEventListener("popuphidden", this);
-    this.window.removeEventListener("keydown", this, true);
+    this.document.documentElement.removeEventListener("keydown", this, true);
     this.node = this._openPopupPromise = this._openPopupCancelCallback = this._viewContainer = this._viewStack = this._transitionDetails = null;
   }
 
@@ -1206,7 +1206,7 @@ var PanelMultiView = class extends AssociatedToNode {
           
           
           
-          this.window.addEventListener("keydown", this, true);
+          this.document.documentElement.addEventListener("keydown", this, true);
           this._panel.addEventListener("mousemove", this);
         }
         break;
@@ -1235,7 +1235,11 @@ var PanelMultiView = class extends AssociatedToNode {
         this._transitioning = false;
         this._viewContainer.removeAttribute("panelopen");
         this._cleanupTransitionPhase();
-        this.window.removeEventListener("keydown", this, true);
+        this.document.documentElement.removeEventListener(
+          "keydown",
+          this,
+          true
+        );
         this._panel.removeEventListener("mousemove", this);
         this.closeAllViews();
 
