@@ -359,6 +359,16 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   struct FrameConstructionItem;
   class FrameConstructionItemList;
 
+  
+  
+  
+  
+  
+  
+  void SetRootElementFrameAndConstructCanvasAnonContent(
+      nsContainerFrame* aRootElementFrame, nsFrameConstructorState&,
+      nsFrameList&);
+
   nsContainerFrame* ConstructPageFrame(PresShell* aPresShell,
                                        nsContainerFrame* aParentFrame,
                                        nsIFrame* aPrevPageFrame,
@@ -2100,10 +2110,10 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   void QuotesDirty();
   void CountersDirty();
 
-  
   void ConstructAnonymousContentForCanvas(nsFrameConstructorState& aState,
                                           nsIFrame* aFrame,
-                                          nsIContent* aDocElement);
+                                          nsIContent* aDocElement,
+                                          nsFrameList&);
 
  public:
   friend class nsFrameConstructorState;
