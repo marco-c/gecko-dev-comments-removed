@@ -72,25 +72,35 @@ function promiseEvent(aTarget, aEventName, aPreventDefault) {
 
 
 
+
+
+
 async function promiseNewEngine(basename, options = {}) {
   
   let setAsCurrent =
     options.setAsCurrent == undefined ? true : options.setAsCurrent;
   info("Waiting for engine to be added: " + basename);
   let url = getRootDirectory(options.testPath || gTestPath) + basename;
-  let current = await Services.search.getDefault();
   let engine = await Services.search.addEngine(
     url,
     options.iconURL || "",
     false
   );
   info("Search engine added: " + basename);
+  const current = await Services.search.getDefault();
   if (setAsCurrent) {
     await Services.search.setDefault(engine);
+  }
+  const currentPrivate = await Services.search.getDefaultPrivate();
+  if (options.setAsCurrentPrivate) {
+    await Services.search.setDefaultPrivate(engine);
   }
   registerCleanupFunction(async () => {
     if (setAsCurrent) {
       await Services.search.setDefault(current);
+    }
+    if (options.setAsCurrentPrivate) {
+      await Services.search.setDefaultPrivate(currentPrivate);
     }
     await Services.search.removeEngine(engine);
     info("Search engine removed: " + basename);
