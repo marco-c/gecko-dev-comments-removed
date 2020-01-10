@@ -11,7 +11,6 @@
 #include "ClientManagerOpChild.h"
 #include "ClientPrefs.h"
 #include "ClientSource.h"
-#include "mozilla/dom/WorkerHolderToken.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
@@ -54,27 +53,12 @@ ClientManager::ClientManager() {
     return;
   }
 
-  RefPtr<WorkerHolderToken> workerHolderToken;
-  if (!NS_IsMainThread()) {
-    WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-    MOZ_DIAGNOSTIC_ASSERT(workerPrivate);
-
-    
-    
-    
-    
-    
-    
-    
-    workerHolderToken = WorkerHolderToken::Create(
-        workerPrivate, Canceling, WorkerHolderToken::AllowIdleShutdownStart);
-    if (NS_WARN_IF(!workerHolderToken)) {
-      Shutdown();
-      return;
-    }
+  ClientManagerChild* actor = ClientManagerChild::Create();
+  if (NS_WARN_IF(!actor)) {
+    Shutdown();
+    return;
   }
 
-  ClientManagerChild* actor = new ClientManagerChild(workerHolderToken);
   PClientManagerChild* sentActor =
       parentActor->SendPClientManagerConstructor(actor);
   if (NS_WARN_IF(!sentActor)) {
