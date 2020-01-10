@@ -2012,7 +2012,7 @@ nsEventStatus AsyncPanZoomController::OnKeyboard(const KeyboardInput& aEvent) {
       MaybeAdjustDestinationForScrollSnapping(aEvent, destination);
 
   
-  if (!StaticPrefs::SmoothScrollEnabled()) {
+  if (!StaticPrefs::general_smoothScroll()) {
     CancelAnimation();
 
     

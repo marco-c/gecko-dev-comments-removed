@@ -1991,7 +1991,7 @@ void ScrollFrameHelper::AsyncScroll::InitSmoothScroll(
   
   if (!mAnimationPhysics || aOrigin != mOrigin) {
     mOrigin = aOrigin;
-    if (StaticPrefs::SmoothScrollMSDPhysicsEnabled()) {
+    if (StaticPrefs::general_smoothScroll_msdPhysics_enabled()) {
       mAnimationPhysics =
           MakeUnique<ScrollAnimationMSDPhysics>(aInitialPosition);
     } else {
@@ -5376,13 +5376,8 @@ void ScrollFrameHelper::PostOverflowEvent() {
     return;
   }
 
-  nsRootPresContext* rpc = mOuter->PresContext()->GetRootPresContext();
-  if (!rpc) {
-    return;
-  }
-
   mAsyncScrollPortEvent = new AsyncScrollPortEvent(this);
-  rpc->AddWillPaintObserver(mAsyncScrollPortEvent.get());
+  nsContentUtils::AddScriptRunner(mAsyncScrollPortEvent.get());
 }
 
 nsIFrame* ScrollFrameHelper::GetFrameForDir() const {
@@ -5414,7 +5409,7 @@ nsIFrame* ScrollFrameHelper::GetFrameForDir() const {
   return frame;
 }
 
-nsIFrame* ScrollFrameHelper::GetFrameForStyle() const {
+nsIFrame* ScrollFrameHelper::GetFrameForScrollSnap() const {
   nsIFrame* styleFrame = nullptr;
   if (mIsRoot) {
     if (const Element* rootElement =
@@ -5430,7 +5425,7 @@ nsIFrame* ScrollFrameHelper::GetFrameForStyle() const {
 
 bool ScrollFrameHelper::NeedsScrollSnap() const {
   if (StaticPrefs::layout_css_scroll_snap_v1_enabled()) {
-    nsIFrame* scrollSnapFrame = GetFrameForStyle();
+    nsIFrame* scrollSnapFrame = GetFrameForScrollSnap();
     if (!scrollSnapFrame) {
       return false;
     }
@@ -6874,7 +6869,7 @@ static nsMargin ResolveScrollPaddingStyle(
 }
 
 nsMargin ScrollFrameHelper::GetScrollPadding() const {
-  nsIFrame* styleFrame = GetFrameForStyle();
+  nsIFrame* styleFrame = GetFrameForScrollSnap();
   if (!styleFrame) {
     return nsMargin();
   }
@@ -6891,7 +6886,7 @@ layers::ScrollSnapInfo ScrollFrameHelper::ComputeScrollSnapInfo(
 
   ScrollSnapInfo result;
 
-  nsIFrame* scrollSnapFrame = GetFrameForStyle();
+  nsIFrame* scrollSnapFrame = GetFrameForScrollSnap();
   if (!scrollSnapFrame) {
     return result;
   }
@@ -7132,11 +7127,4 @@ bool ScrollFrameHelper::SmoothScrollVisual(
                                       ? nsGkAtoms::restore
                                       : nsGkAtoms::other);
   return true;
-}
-
-bool ScrollFrameHelper::IsSmoothScroll(dom::ScrollBehavior aBehavior) const {
-  return aBehavior == dom::ScrollBehavior::Smooth ||
-         (aBehavior == dom::ScrollBehavior::Auto &&
-          GetFrameForStyle()->StyleDisplay()->mScrollBehavior ==
-              NS_STYLE_SCROLL_BEHAVIOR_SMOOTH);
 }
