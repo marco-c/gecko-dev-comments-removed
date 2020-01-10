@@ -326,6 +326,11 @@ nsUnknownDecoder::GetMIMETypeFromContent(nsIRequest* aRequest,
                                          nsACString& type) {
   
   
+  nsCOMPtr<nsIChannel> channel(do_QueryInterface(aRequest));
+  nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+  if (loadInfo->GetSkipContentSniffing()) {
+    return NS_OK;
+  }
 
   mBuffer = const_cast<char*>(reinterpret_cast<const char*>(aData));
   mBufferLen = aLength;
@@ -352,6 +357,11 @@ bool nsUnknownDecoder::AllowSniffing(nsIRequest* aRequest) {
 
   nsCOMPtr<nsIURI> uri;
   if (NS_FAILED(channel->GetURI(getter_AddRefs(uri))) || !uri) {
+    return false;
+  }
+
+  nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+  if (loadInfo->GetSkipContentSniffing()) {
     return false;
   }
 
@@ -401,10 +411,17 @@ void nsUnknownDecoder::DetermineContentType(nsIRequest* aRequest) {
     if (!mContentType.IsEmpty()) return;
   }
 
+  nsCOMPtr<nsIHttpChannel> channel(do_QueryInterface(aRequest));
+  if (channel) {
+    nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+    if (loadInfo->GetSkipContentSniffing()) {
+      return;
+    }
+  }
+
   const char* testData = mBuffer;
   uint32_t testDataLen = mBufferLen;
   
-  nsCOMPtr<nsIHttpChannel> channel(do_QueryInterface(aRequest));
   nsAutoCString decodedData;
 
   if (channel) {
@@ -575,6 +592,11 @@ bool nsUnknownDecoder::SniffForXML(nsIRequest* aRequest) {
 }
 
 bool nsUnknownDecoder::SniffURI(nsIRequest* aRequest) {
+  nsCOMPtr<nsIChannel> channel(do_QueryInterface(aRequest));
+  nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+  if (loadInfo->GetSkipContentSniffing()) {
+    return false;
+  }
   nsCOMPtr<nsIMIMEService> mimeService(do_GetService("@mozilla.org/mime;1"));
   if (mimeService) {
     nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
@@ -605,6 +627,12 @@ bool nsUnknownDecoder::SniffURI(nsIRequest* aRequest) {
 bool nsUnknownDecoder::LastDitchSniff(nsIRequest* aRequest) {
   
   
+
+  nsCOMPtr<nsIChannel> channel(do_QueryInterface(aRequest));
+  nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+  if (loadInfo->GetSkipContentSniffing()) {
+    return false;
+  }
 
   MutexAutoLock lock(mMutex);
 
@@ -827,6 +855,10 @@ void nsBinaryDetector::DetermineContentType(nsIRequest* aRequest) {
     return;
   }
 
+  nsCOMPtr<nsILoadInfo> loadInfo = httpChannel->LoadInfo();
+  if (loadInfo->GetSkipContentSniffing()) {
+    return;
+  }
   
   nsAutoCString contentTypeHdr;
   Unused << httpChannel->GetResponseHeader(NS_LITERAL_CSTRING("Content-Type"),

@@ -594,6 +594,11 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
 
 
   eParserMode mMode;
+
+  
+
+
+  bool mSkipContentSniffing;
 };
 
 #endif  
