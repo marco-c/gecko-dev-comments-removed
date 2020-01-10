@@ -23,7 +23,9 @@
   --list-line-height: 1.25;
 
  
-  --separator-color: var(--theme-text-color-alt);
+  --separator-color: var(--theme-splitter-color);
+  --bg-color: var(--theme-toolbar-background);
+  --highlight-color: var(--theme-toolbar-background-hover);
 
   
   --blue-50-a30: rgba(10, 132, 255, 0.3);
