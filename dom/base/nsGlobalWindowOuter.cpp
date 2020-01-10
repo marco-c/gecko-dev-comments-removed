@@ -3574,23 +3574,13 @@ nsIntSize nsGlobalWindowOuter::GetOuterSize(CallerType aCallerType,
     return nsIntSize(size.width, size.height);
   }
 
-  if (mDoc && mDoc->InRDMPane()) {
-    CSSIntSize size;
-    aError = GetInnerSize(size);
-
-    
-    
-    
-    
-    
-    
-    RefPtr<nsPresContext> presContext = mDocShell->GetPresContext();
-
-    if (presContext) {
-      float zoom = presContext->GetDeviceFullZoom();
-      int32_t width = std::round(size.width * zoom);
-      int32_t height = std::round(size.height * zoom);
-      return nsIntSize(width, height);
+  
+  
+  if (mDoc) {
+    Maybe<CSSIntSize> deviceSize = GetRDMDeviceSize(*mDoc);
+    if (deviceSize.isSome()) {
+      const CSSIntSize& size = deviceSize.value();
+      return nsIntSize(size.width, size.height);
     }
   }
 
@@ -3730,6 +3720,31 @@ nsRect nsGlobalWindowOuter::GetInnerScreenRect() {
   }
 
   return rootFrame->GetScreenRectInAppUnits();
+}
+
+Maybe<CSSIntSize> nsGlobalWindowOuter::GetRDMDeviceSize(
+    const Document& aDocument) {
+  
+  
+  
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  Maybe<CSSIntSize> deviceSize;
+
+  
+  const Document* topInProcessContentDoc =
+      aDocument.GetTopLevelContentDocument();
+  if (topInProcessContentDoc && topInProcessContentDoc->InRDMPane()) {
+    nsIDocShell* docShell = topInProcessContentDoc->GetDocShell();
+    if (docShell) {
+      nsCOMPtr<nsIBrowserChild> child = docShell->GetBrowserChild();
+      if (child) {
+        BrowserChild* bc = static_cast<BrowserChild*>(child.get());
+        deviceSize = Some(bc->GetUnscaledInnerSize());
+      }
+    }
+  }
+  return deviceSize;
 }
 
 float nsGlobalWindowOuter::GetMozInnerScreenXOuter(CallerType aCallerType) {
@@ -4037,7 +4052,8 @@ already_AddRefed<BrowsingContext> nsGlobalWindowOuter::GetChildWindow(
     const nsAString& aName) {
   NS_ENSURE_TRUE(mBrowsingContext, nullptr);
 
-  return do_AddRef(mBrowsingContext->FindChildWithName(aName, *mBrowsingContext));
+  return do_AddRef(
+      mBrowsingContext->FindChildWithName(aName, *mBrowsingContext));
 }
 
 bool nsGlobalWindowOuter::DispatchCustomEvent(const nsAString& aEventName) {
