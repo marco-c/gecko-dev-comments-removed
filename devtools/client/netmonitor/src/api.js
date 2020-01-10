@@ -20,11 +20,7 @@ const {
   getSortedRequests,
 } = require("./selectors/index");
 
-loader.lazyRequireGetter(
-  this,
-  "flags",
-  "devtools/shared/flags"
-);
+loader.lazyRequireGetter(this, "flags", "devtools/shared/flags");
 
 
 
