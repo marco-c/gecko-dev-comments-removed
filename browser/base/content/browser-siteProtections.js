@@ -1628,19 +1628,13 @@ var gProtectionsHandler = {
       if (["showing", "open"].includes(this._protectionsPopup.state)) {
         this.reorderCategoryItems();
 
-        if (!this._descriptionHeightWorkaroundCalled) {
-          
-          
-          
-          
-          
-          
-          
-          PanelMultiView.forNode(
-            this._protectionsPopupMainView
-          ).descriptionHeightWorkaround();
-          this._descriptionHeightWorkaroundCalled = true;
-        }
+        
+        
+        
+        
+        PanelMultiView.forNode(
+          this._protectionsPopupMainView
+        ).descriptionHeightWorkaround();
       }
     }
 
