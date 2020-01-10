@@ -137,7 +137,10 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
     RefPtr<nsDocShellLoadState> mLoadState;
   };
 
-  nsresult Reload(uint32_t aReloadFlags, LoadEntryResult& aLoadResult);
+  
+  
+  
+  nsresult Reload(uint32_t aReloadFlags, Maybe<LoadEntryResult>& aLoadResult);
   nsresult ReloadCurrentEntry(LoadEntryResult& aLoadResult);
   nsresult GotoIndex(int32_t aIndex, LoadEntryResult& aLoadResult);
 
