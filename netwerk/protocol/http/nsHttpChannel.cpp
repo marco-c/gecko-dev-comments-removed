@@ -7450,19 +7450,30 @@ nsHttpChannel::HasCrossOriginOpenerPolicyMismatch(bool* aMismatch) {
     LOG(("doc origin:%s - res origin: %s\n", docOrigin.get(), resOrigin.get()));
   }
 
-  if (!compareResult) {
-    
-    
-    
-    
-    
-    if (!documentOrigin->GetIsNullPrincipal() ||
-        !(documentPolicy &
-          nsILoadInfo::OPENER_POLICY_UNSAFE_ALLOW_OUTGOING_FLAG) ||
-        !(resultPolicy == nsILoadInfo::OPENER_POLICY_NULL)) {
-      *aMismatch = true;
-      return NS_OK;
-    }
+  if (compareResult) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  
+
+  if (!(documentPolicy &
+        nsILoadInfo::OPENER_POLICY_UNSAFE_ALLOW_OUTGOING_FLAG)) {
+    *aMismatch = true;
+    return NS_OK;
+  }
+
+  if (resultPolicy != nsILoadInfo::OPENER_POLICY_NULL) {
+    *aMismatch = true;
+    return NS_OK;
+  }
+
+  if (!ctx->Canonical()->GetCurrentWindowGlobal()->IsInitialDocument()) {
+    *aMismatch = true;
+    return NS_OK;
   }
 
   return NS_OK;
