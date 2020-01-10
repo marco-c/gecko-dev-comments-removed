@@ -2164,16 +2164,16 @@ History::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
       
       MOZ_DIAGNOSTIC_ASSERT(key == mObservers.GetEntry(aURI),
                             "The URIs hash mutated!");
+
       
       
       
       
       
       
-      key = mObservers.GetEntry(aURI);
-      if (key) {
-        mObservers.RemoveEntry(key);
-      }
+      
+      
+      mObservers.RemoveEntry(aURI);
       return rv;
     }
   }
