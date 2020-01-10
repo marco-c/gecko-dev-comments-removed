@@ -56,11 +56,15 @@ BaselineCompilerHandler::BaselineCompilerHandler(JSContext* cx,
     : frame_(script, masm),
       alloc_(alloc),
       analysis_(alloc, script),
+#ifdef DEBUG
+      masm_(masm),
+#endif
       script_(script),
       pc_(script->code()),
       icEntryIndex_(0),
       compileDebugInstrumentation_(script->isDebuggee()),
-      ionCompileable_(jit::IsIonEnabled() && CanIonCompileScript(cx, script)) {}
+      ionCompileable_(jit::IsIonEnabled() && CanIonCompileScript(cx, script)) {
+}
 
 BaselineInterpreterHandler::BaselineInterpreterHandler(JSContext* cx,
                                                        MacroAssembler& masm)
@@ -120,6 +124,29 @@ bool BaselineCompilerHandler::init(JSContext* cx) {
 
 bool BaselineCompiler::init() {
   if (!handler.init(cx)) {
+    return false;
+  }
+
+  return true;
+}
+
+bool BaselineCompilerHandler::appendRetAddrEntry(JSContext* cx,
+                                                 RetAddrEntry::Kind kind,
+                                                 uint32_t retOffset) {
+  uint32_t pcOffset = script_->pcToOffset(pc_);
+
+  
+  
+  MOZ_ASSERT_IF(!retAddrEntries_.empty(),
+                retAddrEntries_.back().pcOffset() <= pcOffset);
+
+  
+  
+  MOZ_ASSERT_IF(!retAddrEntries_.empty() && !masm_.oom(),
+                retAddrEntries_.back().returnOffset().offset() < retOffset);
+
+  if (!retAddrEntries_.emplaceBack(pcOffset, kind, CodeOffset(retOffset))) {
+    ReportOutOfMemory(cx);
     return false;
   }
 
