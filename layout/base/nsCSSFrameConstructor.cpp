@@ -6313,9 +6313,7 @@ nsIFrame* nsCSSFrameConstructor::GetInsertionPrevSibling(
   
   
   FlattenedChildIterator iter(aInsertion->mContainer);
-  bool xblCase = iter.XBLInvolved() || aInsertion->mParentFrame->GetContent() !=
-                                           aInsertion->mContainer;
-  if (xblCase || !aChild->IsRootOfAnonymousSubtree()) {
+  if (iter.XBLInvolved() || !aChild->IsRootOfAnonymousSubtree()) {
     
     
     
