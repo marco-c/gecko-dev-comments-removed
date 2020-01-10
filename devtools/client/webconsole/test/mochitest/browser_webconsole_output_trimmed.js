@@ -59,7 +59,7 @@ add_task(async function() {
   
   for (const { name, command, expected } of TEST_ITEMS) {
     hud.ui.clearOutput();
-    await executeAndWaitForMessage(hud, command, "", ".result");
+    await hud.jsterm.execute(command);
 
     const result = await waitFor(() => getDisplayedInput(hud));
 

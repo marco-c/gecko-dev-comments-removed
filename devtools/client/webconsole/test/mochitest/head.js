@@ -226,16 +226,6 @@ async function waitForMessage(hud, text, selector) {
 
 
 
-function execute(hud, input) {
-  return hud.ui.wrapper.dispatchEvaluateExpression(input);
-}
-
-
-
-
-
-
-
 
 
 
@@ -246,7 +236,7 @@ function executeAndWaitForMessage(
   selector = ".message"
 ) {
   const onMessage = waitForMessage(hud, matchingText, selector);
-  execute(hud, input);
+  hud.jsterm.execute(input);
   return onMessage;
 }
 
@@ -511,9 +501,7 @@ function getInputValue(hud) {
 
 
 function setInputValue(hud, value) {
-  const onValueSet = hud.jsterm.once("set-input-value");
-  hud.jsterm._setValue(value);
-  return onValueSet;
+  return hud.jsterm._setValue(value);
 }
 
 

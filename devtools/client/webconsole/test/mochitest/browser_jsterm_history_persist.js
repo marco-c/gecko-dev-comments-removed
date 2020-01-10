@@ -89,12 +89,7 @@ async function testHistory() {
   
   
   setInputValue(hud3, '"hello from third tab"');
-  await executeAndWaitForMessage(
-    hud3,
-    '"hello from third tab"',
-    '"hello from third tab"',
-    ".result"
-  );
+  await hud3.jsterm.execute();
 
   state1 = hud1.ui.wrapper.getStore().getState();
   is(
@@ -158,9 +153,12 @@ async function testHistory() {
 
 
 async function populateInputHistory(hud) {
+  const jsterm = hud.jsterm;
+
   for (let i = 0; i < INPUT_HISTORY_COUNT; i++) {
-    const input = i.toString();
-    await executeAndWaitForMessage(hud, input, input, ".result");
+    
+    setInputValue(hud, i.toString());
+    await jsterm.execute();
   }
 }
 

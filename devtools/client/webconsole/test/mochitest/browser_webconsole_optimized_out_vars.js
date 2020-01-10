@@ -30,8 +30,12 @@ add_task(async function() {
   await toolbox.selectTool("webconsole");
 
   
+  const onMessage = waitForMessage(hud, "optimized out");
+  hud.jsterm.execute("upvar");
+
   info("Waiting for optimized out message");
-  await executeAndWaitForMessage(hud, "upvar", "optimized out", ".result");
+  await onMessage;
+
   ok(true, "Optimized out message logged");
 
   info("Open the debugger");

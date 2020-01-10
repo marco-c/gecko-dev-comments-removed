@@ -7,7 +7,7 @@
 
 
 
-const TEST_URI = `data:text/html;charset=utf8,test autocompletion with $ or _`;
+const TEST_URI = "data:text/html;charset=utf8,test autocompletion with $ or _";
 
 add_task(async function() {
   
@@ -20,8 +20,9 @@ add_task(async function() {
 
 async function performTests() {
   const hud = await openNewTabAndConsole(TEST_URI);
+  const { jsterm } = hud;
 
-  execute(hud, "var testObject = {$$aaab: '', $$aaac: ''}");
+  await jsterm.execute("var testObject = {$$aaab: '', $$aaac: ''}");
 
   
   await testAutocomplete(hud, "Object.__d");
@@ -32,7 +33,7 @@ async function performTests() {
   await testAutocomplete(hud, "testObject.$$aa");
 
   
-  execute(hud, "let foobar = {a: ''}; const blargh = {a: 1};");
+  await jsterm.execute("let foobar = {a: ''}; const blargh = {a: 1};");
   await testAutocomplete(hud, "foobar");
   await testAutocomplete(hud, "blargh");
   await testAutocomplete(hud, "foobar.a");

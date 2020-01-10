@@ -11,7 +11,7 @@ add_task(async function() {
   
   const hud = await openNewTabAndConsole(TEST_URI);
   
-  execute(hud, "console.timeStamp('test')");
+  await hud.jsterm.execute("console.timeStamp('test')");
   info(`Checking size`);
   await waitFor(() => findMessages(hud, "").length == 2);
   const [first, second] = findMessages(hud, "").map(message =>

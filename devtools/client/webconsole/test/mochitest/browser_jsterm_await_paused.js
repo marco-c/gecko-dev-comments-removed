@@ -23,6 +23,7 @@ async function performTests() {
   
   await pushPref("devtools.toolbox.splitconsoleEnabled", false);
   const hud = await openNewTabAndConsole(TEST_URI);
+  const { jsterm } = hud;
 
   const pauseExpression = `(() => {
     var foo = ["bar"];
@@ -30,7 +31,7 @@ async function performTests() {
     debugger;
     return "pauseExpression-res";
   })()`;
-  execute(hud, pauseExpression);
+  jsterm.execute(pauseExpression);
 
   
   const target = await TargetFactory.forTab(gBrowser.selectedTab);
@@ -51,11 +52,11 @@ async function performTests() {
     `[ "res", "bar" ]`,
     ".message.result"
   );
-  execute(hud, awaitExpression);
+  jsterm.execute(awaitExpression);
   
   
   
-  await executeAndWaitForMessage(hud, `"smoke"`, `"smoke"`, ".result");
+  await jsterm.execute(`"smoke"`);
 
   
   await waitForTick();

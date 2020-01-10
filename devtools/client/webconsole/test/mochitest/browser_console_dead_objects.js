@@ -18,23 +18,25 @@ add_task(async function() {
   const hud = await HUDService.toggleBrowserConsole();
   ok(hud, "browser console opened");
 
-  
-  execute(
-    hud,
-    "window.nukedSandbox = Cu.Sandbox(null); Cu.nukeSandbox(nukedSandbox);"
-  );
-
-  await executeAndWaitForMessage(hud, "nukedSandbox", "DeadObject");
-  const msg = await executeAndWaitForMessage(
-    hud,
-    "nukedSandbox.hello",
-    "can't access dead object"
-  );
+  const jsterm = hud.jsterm;
 
   
+  await jsterm.execute(
+    "window.nukedSandbox = Cu.Sandbox(null);" + "Cu.nukeSandbox(nukedSandbox);"
+  );
+
+  await jsterm.execute("nukedSandbox");
+  await waitFor(() => findMessage(hud, "DeadObject", ".objectTitle"));
+
+  jsterm.execute("nukedSandbox.hello");
+  const msg = await waitFor(() => findMessage(hud, "can't access dead object"));
+
   
-  const anchor = msg.node.querySelector("a");
+  
+  
+  const anchor = msg.querySelector("a");
   is(anchor.textContent, "[Learn More]", "Link text is correct");
 
-  await executeAndWaitForMessage(hud, "delete window.nukedSandbox; 1 + 1", "2");
+  await jsterm.execute("delete window.nukedSandbox; 2013-26");
+  await waitFor(() => findMessage(hud, "1987"));
 });

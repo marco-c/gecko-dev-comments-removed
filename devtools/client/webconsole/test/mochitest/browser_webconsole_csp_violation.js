@@ -47,12 +47,9 @@ add_task(async function() {
     );
     
     hud.ui.clearOutput();
-    msg = await executeAndWaitForMessage(
-      hud,
-      "window.violate()",
-      CSP_VIOLATION
-    );
-    locationNode = msg.node.querySelector(".message-location");
+    hud.jsterm.execute("window.violate()");
+    msg = await waitFor(() => findMessage(hud, CSP_VIOLATION));
+    locationNode = msg.querySelector(".message-location");
     info(`EXPECT ${VIOLATION_LOCATION_JS} GOT: ${locationNode.textContent}`);
     ok(
       locationNode.textContent == VIOLATION_LOCATION_JS,
@@ -72,12 +69,9 @@ add_task(async function() {
     ok(msg, "Base-URI validation was Printed");
     
     hud.ui.clearOutput();
-    msg = await executeAndWaitForMessage(
-      hud,
-      "window.violate()",
-      CSP_VIOLATION
-    );
-    const locationNode = msg.node.querySelector(".message-location");
+    hud.jsterm.execute("window.violate()");
+    msg = await waitFor(() => findMessage(hud, CSP_VIOLATION));
+    const locationNode = msg.querySelector(".message-location");
     console.log(locationNode.textContent);
     ok(
       locationNode.textContent == VIOLATION_LOCATION,

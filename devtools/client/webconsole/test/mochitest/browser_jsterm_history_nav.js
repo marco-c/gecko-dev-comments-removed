@@ -33,25 +33,15 @@ async function testHistory() {
   };
   popup.on("popup-opened", onShown);
 
-  await executeAndWaitForMessage(
-    hud,
-    `window.foobarBug660806 = {
+  await jsterm.execute(`window.foobarBug660806 = {
     'location': 'value0',
     'locationbar': 'value1'
-  }`,
-    "",
-    ".result"
-  );
+  }`);
   ok(!popup.isOpen, "popup is not open");
 
   
   
-  await executeAndWaitForMessage(
-    hud,
-    "window.foobarBug660806.location",
-    "",
-    ".result"
-  );
+  await jsterm.execute("window.foobarBug660806.location");
 
   const onSetInputValue = jsterm.once("set-input-value");
   EventUtils.synthesizeKey("KEY_ArrowUp");
