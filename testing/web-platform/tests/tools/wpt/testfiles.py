@@ -185,7 +185,7 @@ def load_manifest(manifest_path=None, manifest_update=True):
     
     
     
-    from manifest import manifest
+    from manifest import manifest  
     if manifest_path is None:
         manifest_path = os.path.join(wpt_root, "MANIFEST.json")
     return manifest.load_and_update(wpt_root, manifest_path, "/",
