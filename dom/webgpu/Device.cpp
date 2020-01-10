@@ -24,7 +24,8 @@ Device::Device(Adapter* const aParent, RawId aId)
 }
 
 Device::~Device() {
-  if (mBridge->IsOpen()) {
+  
+  if (mBridge && mBridge->IsOpen()) {
     mBridge->SendDeviceDestroy(mId);
   }
 }
