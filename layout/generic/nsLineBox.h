@@ -525,7 +525,13 @@ class nsLineBox final : public nsLineLink {
 
   void AddSizeOfExcludingThis(nsWindowSizes& aSizes) const;
 
+  
   int32_t IndexOf(nsIFrame* aFrame) const;
+
+  
+  
+  
+  int32_t RIndexOf(nsIFrame* aFrame, nsIFrame* aLastFrameInLine) const;
 
   bool Contains(nsIFrame* aFrame) const {
     return MOZ_UNLIKELY(mFlags.mHasHashedFrames) ? mFrames->Contains(aFrame)
