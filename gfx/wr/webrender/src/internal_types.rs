@@ -30,7 +30,25 @@ pub type FastHashMap<K, V> = HashMap<K, V, BuildHasherDefault<FxHasher>>;
 pub type FastHashSet<K> = HashSet<K, BuildHasherDefault<FxHasher>>;
 
 
-pub type PlaneSplitter = BspSplitter<f64, WorldPixel>;
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct PlaneSplitAnchor {
+    
+    
+    
+    pub prim_instance_index: usize,
+}
+
+impl Default for PlaneSplitAnchor {
+    fn default() -> Self {
+        PlaneSplitAnchor {
+            prim_instance_index: 0,
+        }
+    }
+}
+
+
+pub type PlaneSplitter = BspSplitter<f64, WorldPixel, PlaneSplitAnchor>;
 
 
 const OPACITY_EPSILON: f32 = 0.001;

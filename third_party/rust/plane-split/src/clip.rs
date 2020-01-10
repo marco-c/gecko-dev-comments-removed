@@ -9,10 +9,10 @@ use std::{fmt, iter, mem, ops};
 
 
 #[derive(Debug)]
-pub struct Clipper<T, U> {
+pub struct Clipper<T, U, A> {
     clips: Vec<Plane<T, U>>,
-    results: Vec<Polygon<T, U>>,
-    temp: Vec<Polygon<T, U>>,
+    results: Vec<Polygon<T, U, A>>,
+    temp: Vec<Polygon<T, U, A>>,
 }
 
 impl<
@@ -21,7 +21,8 @@ impl<
         ops::Mul<T, Output=T> + ops::Div<T, Output=T> +
         Zero + One + Float,
     U: fmt::Debug,
-> Clipper<T, U> {
+    A: Copy + fmt::Debug,
+> Clipper<T, U, A> {
     
     pub fn new() -> Self {
         Clipper {
@@ -94,7 +95,7 @@ impl<
     }
 
     
-    pub fn clip(&mut self, polygon: Polygon<T, U>) -> &[Polygon<T, U>] {
+    pub fn clip(&mut self, polygon: Polygon<T, U, A>) -> &[Polygon<T, U, A>] {
         debug!("\tClipping {:?}", polygon);
         self.results.clear();
         self.results.push(polygon);
@@ -138,10 +139,10 @@ impl<
     
     pub fn clip_transformed<'a, V>(
         &'a mut self,
-        polygon: Polygon<T, U>,
+        polygon: Polygon<T, U, A>,
         transform: &'a Transform3D<T, U, V>,
         bounds: Option<Rect<T, V>>,
-    ) -> Result<impl 'a + Iterator<Item = Polygon<T, V>>, NegativeHemisphereError>
+    ) -> Result<impl 'a + Iterator<Item = Polygon<T, V, A>>, NegativeHemisphereError>
     where
         T: Trig,
         V: 'a + fmt::Debug,
