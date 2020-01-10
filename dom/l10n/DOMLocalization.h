@@ -1,3 +1,9 @@
+
+
+
+
+
+
 #ifndef mozilla_dom_l10n_DOMLocalization_h
 #define mozilla_dom_l10n_DOMLocalization_h
 
