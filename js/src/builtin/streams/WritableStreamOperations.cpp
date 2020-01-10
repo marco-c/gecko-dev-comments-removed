@@ -19,7 +19,7 @@
 #include "builtin/streams/WritableStreamWriterOperations.h"  
 #include "js/Promise.h"      
 #include "js/RootingAPI.h"   
-#include "js/Value.h"        
+#include "js/Value.h"  
 #include "vm/Compartment.h"  
 #include "vm/JSContext.h"    
 
@@ -40,6 +40,7 @@ using JS::ObjectValue;
 using JS::RejectPromise;
 using JS::ResolvePromise;
 using JS::Rooted;
+using JS::UndefinedHandleValue;
 using JS::Value;
 
 
@@ -103,6 +104,84 @@ void WritableStream::clearInFlightWriteRequest(JSContext* cx) {
 
   MOZ_ASSERT(!haveInFlightWriteRequest());
   MOZ_ASSERT(inFlightWriteRequest().isUndefined());
+}
+
+
+
+
+
+
+
+
+JSObject* js::WritableStreamAbort(JSContext* cx,
+                                  Handle<WritableStream*> unwrappedStream,
+                                  Handle<Value> reason) {
+  cx->check(reason);
+
+  
+  
+  
+  if (unwrappedStream->closed() || unwrappedStream->errored()) {
+    return PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
+  }
+
+  
+  
+  if (unwrappedStream->hasPendingAbortRequest()) {
+    Rooted<JSObject*> pendingPromise(
+        cx, unwrappedStream->pendingAbortRequestPromise());
+    if (!cx->compartment()->wrap(cx, &pendingPromise)) {
+      return nullptr;
+    }
+    return pendingPromise;
+  }
+
+  
+  MOZ_ASSERT(unwrappedStream->writable() ^ unwrappedStream->erroring());
+
+  
+  Rooted<PromiseObject*> promise(cx, PromiseObject::createSkippingExecutor(cx));
+  if (!promise) {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  bool wasAlreadyErroring = unwrappedStream->erroring();
+  Handle<Value> pendingReason =
+      wasAlreadyErroring ? UndefinedHandleValue : reason;
+
+  
+  
+  
+  {
+    AutoRealm ar(cx, unwrappedStream);
+
+    Rooted<JSObject*> wrappedPromise(cx, promise);
+    Rooted<Value> wrappedPendingReason(cx, pendingReason);
+
+    JS::Compartment* comp = cx->compartment();
+    if (!comp->wrap(cx, &wrappedPromise) ||
+        !comp->wrap(cx, &wrappedPendingReason)) {
+      return nullptr;
+    }
+
+    unwrappedStream->setPendingAbortRequest(
+        wrappedPromise, wrappedPendingReason, wasAlreadyErroring);
+  }
+
+  
+  
+  if (!wasAlreadyErroring) {
+    if (!WritableStreamStartErroring(cx, unwrappedStream, pendingReason)) {
+      return nullptr;
+    }
+  }
+
+  
+  return promise;
 }
 
 
