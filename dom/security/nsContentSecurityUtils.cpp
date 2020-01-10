@@ -24,46 +24,16 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
   
   
   
-  
-  
 
   
-  nsCOMPtr<nsIURI> documentURI = aDocument->GetDocumentURI();
-  if (!documentURI->SchemeIs("about") ||
-      Preferences::GetBool("csp.skip_about_page_has_csp_assert")) {
+  if (Preferences::GetBool("csp.skip_about_page_has_csp_assert")) {
     return;
   }
 
   
-  static StaticAutoPtr<nsTArray<nsCString>> sLegacyAboutPagesWithNoCSP;
-  if (!sLegacyAboutPagesWithNoCSP ||
-      Preferences::GetBool("csp.overrule_about_uris_without_csp_whitelist")) {
-    sLegacyAboutPagesWithNoCSP = new nsTArray<nsCString>();
-    nsAutoCString legacyAboutPages;
-    Preferences::GetCString("csp.about_uris_without_csp", legacyAboutPages);
-    for (const nsACString& hostString : legacyAboutPages.Split(',')) {
-      
-      
-      
-      nsCString aboutURI;
-      aboutURI.AppendLiteral("about:");
-      aboutURI.Append(hostString);
-      sLegacyAboutPagesWithNoCSP->AppendElement(aboutURI);
-    }
-    ClearOnShutdown(&sLegacyAboutPagesWithNoCSP);
-  }
-
-  
-  nsAutoCString aboutSpec;
-  documentURI->GetSpec(aboutSpec);
-  ToLowerCase(aboutSpec);
-  for (auto& legacyPageEntry : *sLegacyAboutPagesWithNoCSP) {
-    
-    
-    
-    if (aboutSpec.Find(legacyPageEntry) == 0) {
-      return;
-    }
+  nsCOMPtr<nsIURI> documentURI = aDocument->GetDocumentURI();
+  if (!documentURI->SchemeIs("about")) {
+    return;
   }
 
   nsCOMPtr<nsIContentSecurityPolicy> csp = aDocument->GetCsp();
@@ -80,10 +50,44 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
       }
     }
   }
-  if (Preferences::GetBool("csp.overrule_about_uris_without_csp_whitelist")) {
+
+  
+  
+  if (Preferences::GetBool("csp.skip_about_page_csp_allowlist_and_assert")) {
     NS_ASSERTION(foundDefaultSrc, "about: page must have a CSP");
     return;
   }
+
+  nsAutoCString aboutSpec;
+  documentURI->GetSpec(aboutSpec);
+  ToLowerCase(aboutSpec);
+
+  
+  
+  static nsLiteralCString sAllowedAboutPagesWithNoCSP[] = {
+      
+      NS_LITERAL_CSTRING("about:blank"),
+      
+      NS_LITERAL_CSTRING("about:srcdoc"),
+      
+      NS_LITERAL_CSTRING("about:sync-log"),
+      
+      NS_LITERAL_CSTRING("about:printpreview"),
+      
+      NS_LITERAL_CSTRING("about:downloads"),
+      
+      NS_LITERAL_CSTRING("about:preferences"),
+  };
+
+  for (const nsLiteralCString& allowlistEntry : sAllowedAboutPagesWithNoCSP) {
+    
+    
+    
+    if (StringBeginsWith(aboutSpec, allowlistEntry)) {
+      return;
+    }
+  }
+
   MOZ_ASSERT(foundDefaultSrc,
              "about: page must contain a CSP including default-src");
 }
