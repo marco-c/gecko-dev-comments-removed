@@ -225,6 +225,21 @@ function listenToIceConnected(pc) {
 }
 
 
+
+function waitForIceStateChange(pc, wantedStates) {
+  return new Promise((resolve) => {
+    if (wantedStates.includes(pc.iceConnectionState)) {
+      resolve();
+      return;
+    }
+    pc.addEventListener('iceconnectionstatechange', () => {
+      if (wantedStates.includes(pc.iceConnectionState))
+        resolve();
+    });
+  });
+}
+
+
 function listenToConnected(pc) {
   return new Promise((resolve) => {
     if (pc.connectionState == 'connected') {
