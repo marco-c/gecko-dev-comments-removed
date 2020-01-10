@@ -6,12 +6,14 @@
 
 #include "nsPrintJob.h"
 
+#include "nsDocShell.h"
 #include "nsIStringBundle.h"
 #include "nsReadableUtils.h"
 #include "nsCRT.h"
 
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/ComputedStyleInlines.h"
+#include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/CustomEvent.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -456,6 +458,40 @@ static void MapContentToWebShells(const UniquePtr<nsPrintObject>& aRootPO,
 
 
 
+static void BuildDocTree(BrowsingContext* aBrowsingContext,
+                         const UniquePtr<nsPrintObject>& aPO,
+                         nsTArray<nsPrintObject*>* aDocList) {
+  MOZ_ASSERT(aBrowsingContext, "Pointer is null!");
+  MOZ_ASSERT(aDocList, "Pointer is null!");
+  MOZ_ASSERT(aPO, "Pointer is null!");
+
+  for (auto& childBC : aBrowsingContext->GetChildren()) {
+    auto window = childBC->GetDOMWindow();
+    if (!window) {
+      
+      continue;
+    }
+    auto childPO = MakeUnique<nsPrintObject>();
+    childPO->mParent = aPO.get();
+    nsresult rv = childPO->Init(childBC->GetDocShell(), window->GetExtantDoc(),
+                                aPO->mPrintPreview);
+    if (NS_FAILED(rv)) {
+      MOZ_ASSERT_UNREACHABLE("Init failed?");
+    }
+    aPO->mKids.AppendElement(std::move(childPO));
+    aDocList->AppendElement(aPO->mKids.LastElement().get());
+    BuildDocTree(childBC, aPO->mKids.LastElement(), aDocList);
+  }
+}
+
+
+
+
+
+
+
+
+
 static nsresult EnsureSettingsHasPrinterNameSet(
     nsIPrintSettings* aPrintSettings) {
 #if defined(XP_MACOSX) || defined(ANDROID)
@@ -816,8 +852,9 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
         printData->mIsParentAFrameSet ? eFrameSet : eDoc;
 
     
-    BuildDocTree(printData->mPrintObject->mDocShell, &printData->mPrintDocList,
-                 printData->mPrintObject);
+    BuildDocTree(nsDocShell::Cast(printData->mPrintObject->mDocShell)
+                     ->GetBrowsingContext(),
+                 printData->mPrintObject, &printData->mPrintDocList);
   }
 
   
@@ -1239,40 +1276,6 @@ bool nsPrintJob::IsThereARangeSelection(nsPIDOMWindowOuter* aDOMWin) {
 
   
   return selection->GetRangeAt(0) && !selection->IsCollapsed();
-}
-
-
-
-
-void nsPrintJob::BuildDocTree(nsIDocShell* aParentNode,
-                              nsTArray<nsPrintObject*>* aDocList,
-                              const UniquePtr<nsPrintObject>& aPO) {
-  NS_ASSERTION(aParentNode, "Pointer is null!");
-  NS_ASSERTION(aDocList, "Pointer is null!");
-  NS_ASSERTION(aPO, "Pointer is null!");
-
-  int32_t childWebshellCount;
-  aParentNode->GetChildCount(&childWebshellCount);
-  if (childWebshellCount > 0) {
-    for (int32_t i = 0; i < childWebshellCount; i++) {
-      nsCOMPtr<nsIDocShellTreeItem> child;
-      aParentNode->GetChildAt(i, getter_AddRefs(child));
-      nsCOMPtr<nsIDocShell> childAsShell(do_QueryInterface(child));
-
-      nsCOMPtr<nsIContentViewer> viewer;
-      childAsShell->GetContentViewer(getter_AddRefs(viewer));
-      if (viewer) {
-        nsCOMPtr<Document> doc = do_GetInterface(childAsShell);
-        auto po = MakeUnique<nsPrintObject>();
-        po->mParent = aPO.get();
-        nsresult rv = po->Init(childAsShell, doc, aPO->mPrintPreview);
-        if (NS_FAILED(rv)) MOZ_ASSERT_UNREACHABLE("Init failed?");
-        aPO->mKids.AppendElement(std::move(po));
-        aDocList->AppendElement(aPO->mKids.LastElement().get());
-        BuildDocTree(childAsShell, aDocList, aPO->mKids.LastElement());
-      }
-    }
-  }
 }
 
 
@@ -2704,32 +2707,21 @@ already_AddRefed<nsPIDOMWindowOuter> nsPrintJob::FindFocusedDOMWindow() const {
 
 
 bool nsPrintJob::IsWindowsInOurSubTree(nsPIDOMWindowOuter* window) const {
-  bool found = false;
-
-  
   if (window) {
-    nsCOMPtr<nsIDocShell> docShell = window->GetDocShell();
-
-    if (docShell) {
-      
-      nsCOMPtr<nsIDocShell> thisDVDocShell(do_QueryReferent(mDocShell));
-      while (!found) {
-        if (docShell) {
-          if (docShell == thisDVDocShell) {
-            found = true;
-            break;
-          }
-        } else {
-          break;  
+    nsCOMPtr<nsIDocShell> ourDocShell(do_QueryReferent(mDocShell));
+    if (ourDocShell) {
+      BrowsingContext* ourBC =
+          nsDocShell::Cast(ourDocShell)->GetBrowsingContext();
+      BrowsingContext* bc = window->GetBrowsingContext();
+      while (bc) {
+        if (bc == ourBC) {
+          return true;
         }
-        nsCOMPtr<nsIDocShellTreeItem> docShellItemParent;
-        docShell->GetSameTypeParent(getter_AddRefs(docShellItemParent));
-        docShell = do_QueryInterface(docShellItemParent);
-      }  
+        bc = bc->GetParent();
+      }
     }
-  }  
-
-  return found;
+  }
+  return false;
 }
 
 
