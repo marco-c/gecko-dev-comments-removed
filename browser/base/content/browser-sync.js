@@ -944,8 +944,12 @@ var gSync = {
   },
 
   _appendSendTabUnconfigured(fragment, createDeviceNodeFn) {
-    const notConnected = this.fxaStrings.GetStringFromName(
-      "sendTabToDevice.unconfigured.status"
+    const brandProductName = this.brandStrings.GetStringFromName(
+      "brandProductName"
+    );
+    const notConnected = this.fxaStrings.formatStringFromName(
+      "sendTabToDevice.unconfigured.label",
+      [brandProductName]
     );
     const learnMore = this.fxaStrings.GetStringFromName(
       "sendTabToDevice.unconfigured"
@@ -961,12 +965,13 @@ var gSync = {
     );
 
     
-    const signInToSync = this.fxaStrings.GetStringFromName(
-      "sendTabToDevice.signintosync"
+    const signInToFxA = this.fxaStrings.formatStringFromName(
+      "sendTabToDevice.signintofxa",
+      [brandProductName]
     );
-    let signInItem = createDeviceNodeFn(null, signInToSync, null);
+    let signInItem = createDeviceNodeFn(null, signInToFxA, null);
     signInItem.classList.add("sync-menuitem");
-    signInItem.setAttribute("label", signInToSync);
+    signInItem.setAttribute("label", signInToFxA);
     
     if (signInItem.classList.contains("subviewbutton")) {
       signInItem.classList.add("subviewbutton-iconic", "signintosync");
