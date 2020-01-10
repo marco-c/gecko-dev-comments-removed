@@ -113,29 +113,6 @@ void nsRubyFrame::Reflow(nsPresContext* aPresContext,
   mLeadings.Reset();
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  for (nsIFrame* child : PrincipalChildList()) {
-    if (child->HasAnyStateBits(NS_FRAME_IS_DIRTY) &&
-        child->IsRubyTextContainerFrame()) {
-      for (nsIFrame* grandchild : child->PrincipalChildList()) {
-        grandchild->AddStateBits(NS_FRAME_IS_DIRTY);
-      }
-      
-      
-      
-      child->RemoveStateBits(NS_FRAME_IS_DIRTY);
-      child->AddStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
-    }
-  }
-
-  
   WritingMode frameWM = aReflowInput.GetWritingMode();
   WritingMode lineWM = aReflowInput.mLineLayout->GetWritingMode();
   LogicalMargin borderPadding = aReflowInput.ComputedLogicalBorderPadding();

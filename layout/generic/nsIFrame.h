@@ -2162,6 +2162,12 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+  void MarkSubtreeDirty();
+
+  
+
+
+
 
 
 

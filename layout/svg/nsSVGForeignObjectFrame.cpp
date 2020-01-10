@@ -337,7 +337,7 @@ void nsSVGForeignObjectFrame::ReflowSVG() {
   
   
   nsIFrame* kid = PrincipalChildList().FirstChild();
-  kid->AddStateBits(NS_FRAME_IS_DIRTY);
+  kid->MarkSubtreeDirty();
 
   
   nsPresContext::InterruptPreventer noInterrupts(PresContext());

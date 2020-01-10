@@ -1878,8 +1878,9 @@ nsresult nsOverflowContinuationTracker::Insert(nsIFrame* aOverflowCont,
   }
 
   
-  if (aReflowStatus.NextInFlowNeedsReflow())
-    aOverflowCont->AddStateBits(NS_FRAME_IS_DIRTY);
+  if (aReflowStatus.NextInFlowNeedsReflow()) {
+    aOverflowCont->MarkSubtreeDirty();
+  }
 
   
   StepForward();

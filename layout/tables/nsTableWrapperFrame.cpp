@@ -153,7 +153,7 @@ void nsTableWrapperFrame::RemoveFrame(ChildListID aListID,
   if (HasSideCaption()) {
     
     
-    InnerTableFrame()->AddStateBits(NS_FRAME_IS_DIRTY);
+    InnerTableFrame()->MarkSubtreeDirty();
   }
 
   

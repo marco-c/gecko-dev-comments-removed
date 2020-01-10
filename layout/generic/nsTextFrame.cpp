@@ -4749,7 +4749,7 @@ void nsTextFrame::NotifyNativeAnonymousTextnodeChange(uint32_t aOldLength) {
 
   
   for (nsTextFrame* f = this; f; f = f->GetNextContinuation()) {
-    f->AddStateBits(NS_FRAME_IS_DIRTY);
+    f->MarkSubtreeDirty();
     f->mReflowRequestedForCharDataChange = true;
   }
 
@@ -4828,7 +4828,7 @@ nsresult nsTextFrame::CharacterDataChanged(
         
         
         
-        textFrame->AddStateBits(NS_FRAME_IS_DIRTY);
+        textFrame->MarkSubtreeDirty();
       }
     }
     textFrame->InvalidateFrame();

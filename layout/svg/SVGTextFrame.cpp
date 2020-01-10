@@ -2967,7 +2967,7 @@ void SVGTextFrame::ReflowSVGNonDisplayText() {
 
   
   
-  AddStateBits(NS_FRAME_IS_DIRTY);
+  this->MarkSubtreeDirty();
 
   
   
@@ -5030,7 +5030,7 @@ void SVGTextFrame::MaybeReflowAnonymousBlockChild() {
       
       
       
-      kid->AddStateBits(NS_FRAME_IS_DIRTY);
+      kid->MarkSubtreeDirty();
     }
 
     

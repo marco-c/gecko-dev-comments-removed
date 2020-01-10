@@ -310,36 +310,9 @@ void ReflowInput::SetComputedHeight(nscoord aComputedHeight) {
   }
 }
 
-
-void ReflowInput::MarkFrameChildrenDirty(nsIFrame* aFrame) {
-  if (aFrame->IsXULBoxFrame()) {
-    return;
-  }
-  
-  
-  
-  
-  for (nsIFrame::ChildListIterator childLists(aFrame); !childLists.IsDone();
-       childLists.Next()) {
-    for (nsIFrame* childFrame : childLists.CurrentList()) {
-      if (!childFrame->IsTableColGroupFrame()) {
-        childFrame->AddStateBits(NS_FRAME_IS_DIRTY);
-      }
-    }
-  }
-}
-
 void ReflowInput::Init(nsPresContext* aPresContext,
                        const Maybe<LogicalSize>& aContainingBlockSize,
                        const nsMargin* aBorder, const nsMargin* aPadding) {
-  if ((mFrame->GetStateBits() & NS_FRAME_IS_DIRTY)) {
-    
-    
-    
-    
-    MarkFrameChildrenDirty(mFrame);
-  }
-
   if (AvailableISize() == NS_UNCONSTRAINEDSIZE) {
     
     
@@ -586,12 +559,10 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
         mFrame->AddStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
         nsIFrame* kid = mFrame->PrincipalChildList().FirstChild();
         if (kid) {
-          kid->AddStateBits(NS_FRAME_IS_DIRTY);
-          MarkFrameChildrenDirty(kid);
+          kid->MarkSubtreeDirty();
         }
       } else {
-        mFrame->AddStateBits(NS_FRAME_IS_DIRTY);
-        MarkFrameChildrenDirty(mFrame);
+        mFrame->MarkSubtreeDirty();
       }
 
       
