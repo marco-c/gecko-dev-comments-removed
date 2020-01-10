@@ -19,7 +19,6 @@
 
 
 
-
 "use strict";
 
 const { XPCOMUtils } = ChromeUtils.import(
@@ -44,7 +43,6 @@ const orientationTypes = new Set([
 ]);
 const textDirections = new Set(["ltr", "rtl", "auto"]);
 
-const { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
@@ -80,11 +78,19 @@ var ManifestProcessor = {
   
   
   
+  
+  
   process(aOptions) {
-    const { jsonText, manifestURL: aManifestURL, docURL: aDocURL } = aOptions;
-    const console = new ConsoleAPI({
-      prefix: "Web Manifest",
-    });
+    const {
+      jsonText,
+      manifestURL: aManifestURL,
+      docURL: aDocURL,
+      checkConformance,
+    } = aOptions;
+
+    
+    const errors = [];
+
     let rawManifest = {};
     try {
       rawManifest = JSON.parse(jsonText);
@@ -93,13 +99,18 @@ var ManifestProcessor = {
       return null;
     }
     if (typeof rawManifest !== "object") {
-      console.warn(domBundle.GetStringFromName("ManifestShouldBeObject"));
+      const warn = domBundle.GetStringFromName("ManifestShouldBeObject");
+      errors.push({ warn });
       rawManifest = {};
     }
     const manifestURL = new URL(aManifestURL);
     const docURL = new URL(aDocURL);
-    const extractor = new ValueExtractor(console, domBundle);
-    const imgObjProcessor = new ImageObjectProcessor(console, extractor);
+    const extractor = new ValueExtractor(errors, domBundle);
+    const imgObjProcessor = new ImageObjectProcessor(
+      errors,
+      extractor,
+      domBundle
+    );
     const processedManifest = {
       dir: processDirMember.call(this),
       lang: processLangMember(),
@@ -113,6 +124,9 @@ var ManifestProcessor = {
       background_color: processBackgroundColorMember(),
     };
     processedManifest.scope = processScopeMember();
+    if (checkConformance) {
+      processedManifest.moz_validation = errors;
+    }
     return processedManifest;
 
     function processDirMember() {
@@ -207,19 +221,22 @@ var ManifestProcessor = {
       try {
         scopeURL = new URL(value, manifestURL);
       } catch (e) {
-        console.warn(domBundle.GetStringFromName("ManifestScopeURLInvalid"));
+        const warn = domBundle.GetStringFromName("ManifestScopeURLInvalid");
+        errors.push({ warn });
         return undefined;
       }
       if (scopeURL.origin !== docURL.origin) {
-        console.warn(domBundle.GetStringFromName("ManifestScopeNotSameOrigin"));
+        const warn = domBundle.GetStringFromName("ManifestScopeNotSameOrigin");
+        errors.push({ warn });
         return undefined;
       }
       
       let isSameOrigin = startURL && startURL.origin !== scopeURL.origin;
       if (isSameOrigin || !startURL.pathname.startsWith(scopeURL.pathname)) {
-        console.warn(
-          domBundle.GetStringFromName("ManifestStartURLOutsideScope")
+        const warn = domBundle.GetStringFromName(
+          "ManifestStartURLOutsideScope"
         );
+        errors.push({ warn });
         return undefined;
       }
       return scopeURL.href;
@@ -242,13 +259,15 @@ var ManifestProcessor = {
       try {
         potentialResult = new URL(value, manifestURL);
       } catch (e) {
-        console.warn(domBundle.GetStringFromName("ManifestStartURLInvalid"));
+        const warn = domBundle.GetStringFromName("ManifestStartURLInvalid");
+        errors.push({ warn });
         return result;
       }
       if (potentialResult.origin !== docURL.origin) {
-        console.warn(
-          domBundle.GetStringFromName("ManifestStartURLShouldBeSameOrigin")
+        const warn = domBundle.GetStringFromName(
+          "ManifestStartURLShouldBeSameOrigin"
         );
+        errors.push({ warn });
       } else {
         result = potentialResult.href;
       }
