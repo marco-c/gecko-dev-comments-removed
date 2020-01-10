@@ -465,6 +465,9 @@ pref("media.getusermedia.audiocapture.enabled", false);
 pref("media.webvtt.pseudo.enabled", true);
 
 
+pref("media.webvtt.debug.logging", false);
+
+
 pref("media.mediasource.enabled", true);
 
 pref("media.mediasource.mp4.enabled", true);
