@@ -33,6 +33,13 @@ XPCOMUtils.defineLazyServiceGetters(this, {
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
+  "gSeparatePrivateDefault",
+  SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
   "gGeoSpecificDefaultsEnabled",
   SearchUtils.BROWSER_SEARCH_PREF + "geoSpecificDefaults",
   false
@@ -629,6 +636,12 @@ SearchService.prototype = {
   
 
 
+
+  _searchPrivateDefault: null,
+
+  
+
+
   _searchOrder: [],
 
   
@@ -654,6 +667,22 @@ SearchService.prototype = {
 
 
   _metaData: {},
+
+  
+
+
+
+  _resetLocalData() {
+    this._engines.clear();
+    this.__sortedEngines = null;
+    this._currentEngine = null;
+    this._privateEngine = null;
+    this._visibleDefaultEngines = [];
+    this._searchDefault = null;
+    this._searchPrivateDefault = null;
+    this._searchOrder = [];
+    this._metaData = {};
+  },
 
   
   
@@ -866,23 +895,31 @@ SearchService.prototype = {
   },
 
   
-  
-  get originalDefaultEngine() {
-    let defaultEngineName = this.getVerifiedGlobalAttr("searchDefault");
+
+
+
+
+
+
+
+
+
+  _originalDefaultEngine(privateMode = false) {
+    let defaultEngineName = this.getVerifiedGlobalAttr(
+      privateMode ? "searchDefaultPrivate" : "searchDefault"
+    );
     if (!defaultEngineName) {
       
       
       
-      if (distroID) {
+      if (distroID && !privateMode) {
         let defaultPrefB = Services.prefs.getDefaultBranch(
           SearchUtils.BROWSER_SEARCH_PREF
         );
-        let nsIPLS = Ci.nsIPrefLocalizedString;
-
         try {
           defaultEngineName = defaultPrefB.getComplexValue(
             "defaultenginename",
-            nsIPLS
+            Ci.nsIPrefLocalizedString
           ).data;
         } catch (ex) {
           
@@ -893,8 +930,15 @@ SearchService.prototype = {
           defaultEngineName = this._searchDefault;
         }
       } else {
-        defaultEngineName = this._searchDefault;
+        defaultEngineName = privateMode
+          ? this._searchPrivateDefault
+          : this._searchDefault;
       }
+    }
+
+    if (!defaultEngineName && privateMode) {
+      
+      return this._originalDefaultEngine(false);
     }
 
     let defaultEngine = this.getEngineByName(defaultEngineName);
@@ -905,6 +949,26 @@ SearchService.prototype = {
     }
 
     return defaultEngine;
+  },
+
+  
+
+
+
+
+  get originalDefaultEngine() {
+    return this._originalDefaultEngine();
+  },
+
+  
+
+
+
+
+
+
+  get originalPrivateDefaultEngine() {
+    return this._originalDefaultEngine(gSeparatePrivateDefault);
   },
 
   resetToOriginalDefaultEngine() {
@@ -1211,13 +1275,7 @@ SearchService.prototype = {
         }
 
         
-        this._engines.clear();
-        this.__sortedEngines = null;
-        this._currentEngine = null;
-        this._visibleDefaultEngines = [];
-        this._searchDefault = null;
-        this._searchOrder = [];
-        this._metaData = {};
+        this._resetLocalData();
 
         
         
@@ -1278,13 +1336,10 @@ SearchService.prototype = {
 
   reset() {
     gInitialized = false;
+    this._resetLocalData();
     this._initObservers = PromiseUtils.defer();
-    this._initStarted = this.__sortedEngines = this._currentEngine = this._searchDefault = null;
+    this._initStarted = null;
     this._startupExtensions = new Set();
-    this._engines.clear();
-    this._visibleDefaultEngines = [];
-    this._searchOrder = [];
-    this._metaData = {};
   },
 
   
@@ -1740,6 +1795,24 @@ SearchService.prototype = {
     if (
       searchRegion &&
       searchRegion in searchSettings &&
+      "searchPrivateDefault" in searchSettings[searchRegion]
+    ) {
+      this._searchPrivateDefault =
+        searchSettings[searchRegion].searchPrivateDefault;
+    } else if ("searchPrivateDefault" in searchSettings.default) {
+      this._searchPrivateDefault = searchSettings.default.searchPrivateDefault;
+    } else {
+      this._searchPrivateDefault = json.default.searchPrivateDefault;
+    }
+
+    if (!this._searchPrivateDefault) {
+      
+      this._searchPrivateDefault = this._searchDefault;
+    }
+
+    if (
+      searchRegion &&
+      searchRegion in searchSettings &&
       "searchOrder" in searchSettings[searchRegion]
     ) {
       this._searchOrder = searchSettings[searchRegion].searchOrder;
@@ -2052,6 +2125,14 @@ SearchService.prototype = {
     });
     return engines;
   },
+
+  
+
+
+
+
+
+
 
   getEngineByName(engineName) {
     this._ensureInitialized();

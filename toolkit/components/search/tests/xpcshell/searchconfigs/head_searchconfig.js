@@ -11,6 +11,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   SearchTestUtils: "resource://testing-common/SearchTestUtils.jsm",
+  SearchUtils: "resource://gre/modules/SearchUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
 
@@ -96,6 +97,13 @@ class SearchConfigTest {
     
     Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
     Services.prefs.setCharPref("browser.search.geoip.url", "");
+
+    
+    
+    Services.prefs.setBoolPref(
+      SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+      true
+    );
 
     await AddonTestUtils.promiseStartupManager();
     await Services.search.init();
@@ -323,6 +331,14 @@ class SearchConfigTest {
   _assertDefaultEngines(region, locale) {
     this._assertEngineRules(
       [Services.search.originalDefaultEngine],
+      region,
+      locale,
+      "default"
+    );
+    
+    
+    this._assertEngineRules(
+      [Services.search.originalPrivateDefaultEngine],
       region,
       locale,
       "default"

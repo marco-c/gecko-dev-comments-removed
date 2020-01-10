@@ -177,24 +177,47 @@ const kDefaultenginenamePref = "browser.search.defaultenginename";
 const kTestEngineName = "Test search engine";
 const TOPIC_LOCALES_CHANGE = "intl:app-locales-changed";
 
-function getDefaultEngineName(isUS) {
+
+
+
+
+
+
+
+function useTestEngineConfig(url = "resource://test/data/") {
+  const resProt = Services.io
+    .getProtocolHandler("resource")
+    .QueryInterface(Ci.nsIResProtocolHandler);
+  resProt.setSubstitution("search-extensions", Services.io.newURI(url));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function getDefaultEngineName(isUS = false, privateMode = false) {
   
   let chan = NetUtil.newChannel({
     uri: "resource://search-extensions/list.json",
     loadUsingSystemPrincipal: true,
   });
+  const settingName = privateMode ? "searchPrivateDefault" : "searchDefault";
   let searchSettings = parseJsonFromStream(chan.open());
-  let defaultEngineName = searchSettings.default.searchDefault;
+  let defaultEngineName = searchSettings.default[settingName];
 
-  if (isUS === undefined) {
+  if (!isUS) {
     isUS = Services.locale.requestedLocale == "en-US" && isUSTimezone();
   }
 
-  if (
-    isUS &&
-    ("US" in searchSettings && "searchDefault" in searchSettings.US)
-  ) {
-    defaultEngineName = searchSettings.US.searchDefault;
+  if (isUS && ("US" in searchSettings && settingName in searchSettings.US)) {
+    defaultEngineName = searchSettings.US[settingName];
   }
   return defaultEngineName;
 }
