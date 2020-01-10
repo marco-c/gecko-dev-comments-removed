@@ -2660,7 +2660,7 @@ GeckoDriver.prototype.clearElement = async function(cmd) {
     case Context.Chrome:
       
       let el = this.curBrowser.seenEls.get(webEl);
-      if (el.nodeName == "textbox") {
+      if (el.nodeName == "input" && el.type == "text") {
         el.value = "";
       } else if (el.nodeName == "checkbox") {
         el.checked = false;
