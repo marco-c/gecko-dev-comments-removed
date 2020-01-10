@@ -883,7 +883,7 @@ class GCRuntime {
   MainThreadData<uint64_t> sliceNumber;
 
   
-  MainThreadData<bool> isIncremental;
+  MainThreadOrGCTaskData<bool> isIncremental;
 
   
   MainThreadData<bool> isFull;
@@ -904,7 +904,7 @@ class GCRuntime {
   MainThreadOrGCTaskData<State> incrementalState;
 
   
-  MainThreadData<State> initialState;
+  MainThreadOrGCTaskData<State> initialState;
 
 #ifdef JS_GC_ZEAL
   

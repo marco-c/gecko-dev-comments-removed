@@ -186,13 +186,13 @@ class MarkStack {
   MOZ_MUST_USE bool pushTaggedPtr(Tag tag, Cell* ptr);
 
   
-  MainThreadData<size_t> topIndex_;
+  MainThreadOrGCTaskData<size_t> topIndex_;
 
   
-  MainThreadData<size_t> maxCapacity_;
+  MainThreadOrGCTaskData<size_t> maxCapacity_;
 
   
-  MainThreadData<StackVector> stack_;
+  MainThreadOrGCTaskData<StackVector> stack_;
 
 #ifdef DEBUG
   mutable size_t iteratorCount_;
@@ -402,13 +402,13 @@ class GCMarker : public JSTracer {
   gc::MarkStack stack;
 
   
-  MainThreadData<size_t> grayPosition;
+  MainThreadOrGCTaskData<size_t> grayPosition;
 
   
-  MainThreadData<gc::MarkColor> color;
+  MainThreadOrGCTaskData<gc::MarkColor> color;
 
   
-  MainThreadData<js::gc::Arena*> delayedMarkingList;
+  MainThreadOrGCTaskData<js::gc::Arena*> delayedMarkingList;
 
   
   MainThreadData<bool> delayedMarkingWorkAdded;
@@ -427,7 +427,7 @@ class GCMarker : public JSTracer {
   MainThreadData<size_t> markLaterArenas;
 
   
-  MainThreadData<bool> started;
+  MainThreadOrGCTaskData<bool> started;
 
   
   mozilla::Maybe<js::gc::MarkColor> queueMarkColor;
@@ -436,7 +436,7 @@ class GCMarker : public JSTracer {
 
 
 
-  MainThreadData<bool> strictCompartmentChecking;
+  MainThreadOrGCTaskData<bool> strictCompartmentChecking;
 
  public:
   
