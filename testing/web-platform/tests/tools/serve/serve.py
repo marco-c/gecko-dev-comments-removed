@@ -575,13 +575,11 @@ def start_http2_server(host, port, paths, routes, bind_address, config, **kwargs
 
 
 class WebSocketDaemon(object):
-    def __init__(self, host, port, doc_root, handlers_root, log_level, bind_address,
-                 ssl_config):
+    def __init__(self, host, port, doc_root, handlers_root, bind_address, ssl_config):
         self.host = host
         cmd_args = ["-p", port,
                     "-d", doc_root,
-                    "-w", handlers_root,
-                    "--log-level", log_level]
+                    "-w", handlers_root]
 
         if ssl_config is not None:
             
@@ -605,20 +603,6 @@ class WebSocketDaemon(object):
         opts, args = pywebsocket._parse_args_and_config(cmd_args)
         opts.cgi_directories = []
         opts.is_executable_method = None
-
-        
-        
-        
-        
-        
-        
-        
-        reload_module(logging)
-        release_mozlog_lock()
-        
-        
-        
-        
 
         self.server = pywebsocket.WebSocketServer(opts)
         ports = [item[0].getsockname()[1] for item in self.server._sockets]
@@ -666,21 +650,27 @@ def release_mozlog_lock():
 
 
 def start_ws_server(host, port, paths, routes, bind_address, config, **kwargs):
+    
+    
+    reload_module(logging)
+    release_mozlog_lock()
     return WebSocketDaemon(host,
                            str(port),
                            repo_root,
                            config.paths["ws_doc_root"],
-                           config.log_level.lower(),
                            bind_address,
                            ssl_config=None)
 
 
 def start_wss_server(host, port, paths, routes, bind_address, config, **kwargs):
+    
+    
+    reload_module(logging)
+    release_mozlog_lock()
     return WebSocketDaemon(host,
                            str(port),
                            repo_root,
                            config.paths["ws_doc_root"],
-                           config.log_level.lower(),
                            bind_address,
                            config.ssl_config)
 
@@ -853,6 +843,8 @@ def run(**kwargs):
         global logger
         logger = config.logger
         set_logger(logger)
+        
+        logging.getLogger().setLevel(config.log_level)
 
         def handle_signal(signum, frame):
             logger.debug("Received signal %s. Shutting down.", signum)
