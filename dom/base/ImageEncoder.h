@@ -16,7 +16,6 @@
 #include "nsSize.h"
 
 class nsICanvasRenderingContextInternal;
-class nsIThreadPool;
 
 namespace mozilla {
 
@@ -96,11 +95,6 @@ class ImageEncoder {
   
   
   static already_AddRefed<imgIEncoder> GetImageEncoder(nsAString& aType);
-
-  static nsresult EnsureThreadPool();
-
-  
-  static StaticRefPtr<nsIThreadPool> sThreadPool;
 
   friend class EncodingRunnable;
   friend class EncoderThreadPoolTerminator;
