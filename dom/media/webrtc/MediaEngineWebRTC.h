@@ -74,8 +74,6 @@ class MediaEngineWebRTC : public MediaEngine {
   void EnumerateSpeakerDevices(uint64_t aWindowId,
                                nsTArray<RefPtr<MediaDevice>>*);
 
-  
-  Mutex mMutex;
   const bool mDelayAgnostic;
   const bool mExtendedFilter;
   
