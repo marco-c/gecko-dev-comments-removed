@@ -362,6 +362,9 @@ void Classifier::ResetTables(ClearType aType,
   }
 }
 
+
+
+
 void Classifier::DeleteTables(nsIFile* aDirectory,
                               const nsTArray<nsCString>& aTables) {
   nsCOMPtr<nsIDirectoryEnumerator> entries;
@@ -1566,7 +1569,8 @@ RefPtr<LookupCache> Classifier::GetLookupCache(const nsACString& aTable,
     
     LOG(("Failed to get prefixes from file for table %s, delete on-disk data!",
          aTable.BeginReading()));
-    ResetTables(Clear_All, nsTArray<nsCString>{nsCString(aTable)});
+
+    DeleteTables(mRootStoreDirectory, nsTArray<nsCString>{nsCString(aTable)});
   }
   return nullptr;
 }
