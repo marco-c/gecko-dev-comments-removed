@@ -1346,25 +1346,6 @@ const browsingContextTargetPrototype = {
       isTopLevel: isTopLevel,
       id: getWindowID(window),
     });
-
-    
-    
-    const threadActor = this.threadActor;
-    if (isTopLevel && threadActor.state != "detached") {
-      this.sources.reset();
-      threadActor.clearDebuggees();
-      threadActor.dbg.enable();
-      threadActor.maybePauseOnExceptions();
-      
-      
-      threadActor.global = window;
-    }
-
-    
-    
-    if (threadActor.attached) {
-      threadActor.dbg.addDebuggees();
-    }
   },
 
   _windowDestroyed(window, id = null, isFrozen = false) {
@@ -1417,16 +1398,6 @@ const browsingContextTargetPrototype = {
       return;
     }
 
-    
-    
-    
-    const threadActor = this.threadActor;
-    if (threadActor.state == "paused") {
-      threadActor.unsafeSynchronize(Promise.resolve(threadActor.doResume()));
-      threadActor.dbg.disable();
-    }
-    threadActor.disableAllBreakpoints();
-
     this.emit("tabNavigated", {
       url: newURI,
       nativeConsoleAPI: true,
@@ -1459,12 +1430,6 @@ const browsingContextTargetPrototype = {
     
     if (!isTopLevel) {
       return;
-    }
-
-    
-    const threadActor = this.threadActor;
-    if (threadActor.state == "running") {
-      threadActor.dbg.enable();
     }
 
     this.emit("tabNavigated", {
