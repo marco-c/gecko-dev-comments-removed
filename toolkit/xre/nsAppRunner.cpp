@@ -2685,6 +2685,30 @@ static void RestoreStateForAppInitiatedRestart() {
   }
 }
 
+
+
+
+
+static void MakeOrSetMinidumpPath(nsIFile* profD) {
+  nsCOMPtr<nsIFile> dumpD;
+  profD->Clone(getter_AddRefs(dumpD));
+
+  if (dumpD) {
+    bool fileExists;
+    
+    dumpD->Append(NS_LITERAL_STRING("minidumps"));
+    dumpD->Exists(&fileExists);
+    if (!fileExists) {
+      nsresult rv = dumpD->Create(nsIFile::DIRECTORY_TYPE, 0700);
+      NS_ENSURE_SUCCESS_VOID(rv);
+    }
+
+    nsAutoString pathStr;
+    if (NS_SUCCEEDED(dumpD->GetPath(pathStr)))
+      CrashReporter::SetMinidumpPath(pathStr);
+  }
+}
+
 const XREAppData* gAppData = nullptr;
 
 #ifdef MOZ_WIDGET_GTK
@@ -4177,6 +4201,10 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   
 
   mozilla::Telemetry::SetProfileDir(mProfD);
+
+  if (mAppData->flags & NS_XRE_ENABLE_CRASH_REPORTER) {
+    MakeOrSetMinidumpPath(mProfD);
+  }
 
   CrashReporter::SetProfileDirectory(mProfD);
 
