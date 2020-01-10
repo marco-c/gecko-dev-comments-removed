@@ -2986,6 +2986,14 @@ bool GCRuntime::maybeMallocTriggerZoneGC(Zone* zone, const HeapSize& heap,
   }
 
   
+  
+  
+  if (zone->wasGCStarted()) {
+    MOZ_ASSERT(isIncrementalGCInProgress());
+    return false;
+  }
+
+  
   triggerZoneGC(zone, reason, usedBytes, thresholdBytes);
   return true;
 }
