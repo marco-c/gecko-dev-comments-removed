@@ -3038,3 +3038,5 @@ void MediaFormatReader::OnFirstDemuxFailed(TrackInfo::TrackType aType,
 }  
 
 #undef NS_DispatchToMainThread
+#undef LOGV
+#undef LOG
