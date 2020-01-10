@@ -77,13 +77,9 @@
         ".ac-site-icon": "src=image,selected,type",
         ".ac-title": "selected",
         ".ac-title-text": "selected",
-        ".ac-tags": "selected",
-        ".ac-tags-text": "selected",
-        ".ac-separator": "selected,actiontype,type",
-        ".ac-url": "selected,actiontype",
+        ".ac-separator": "selected,type",
+        ".ac-url": "selected",
         ".ac-url-text": "selected",
-        ".ac-action": "selected,actiontype",
-        ".ac-action-text": "selected",
       };
     }
 
@@ -96,22 +92,12 @@
           <description class="ac-title-text"/>
         </description>
       </hbox>
-      <hbox class="ac-tags" align="center">
-        <description class="ac-text-overflow-container">
-          <description class="ac-tags-text"/>
-        </description>
-      </hbox>
       <hbox class="ac-separator" align="center">
         <description class="ac-separator-text" value="—"/>
       </hbox>
       <hbox class="ac-url" align="center" aria-hidden="true">
         <description class="ac-text-overflow-container">
           <description class="ac-url-text"/>
-        </description>
-      </hbox>
-      <hbox class="ac-action" align="center">
-        <description class="ac-text-overflow-container">
-          <description class="ac-action-text"/>
         </description>
       </hbox>
     `;
@@ -125,24 +111,12 @@
       return this.querySelector(".ac-title-text");
     }
 
-    get _tags() {
-      return this.querySelector(".ac-tags");
-    }
-
-    get _tagsText() {
-      return this.querySelector(".ac-tags-text");
-    }
-
     get _separator() {
       return this.querySelector(".ac-separator");
     }
 
     get _urlText() {
       return this.querySelector(".ac-url-text");
-    }
-
-    get _actionText() {
-      return this.querySelector(".ac-action-text");
     }
 
     get _stringBundle() {
@@ -246,19 +220,13 @@
       return search.split(/\s+/);
     }
 
-    _setUpDescription(aDescriptionElement, aText, aNoEmphasis) {
+    _setUpDescription(aDescriptionElement, aText) {
       
       if (!aDescriptionElement) {
         return;
       }
       while (aDescriptionElement.hasChildNodes()) {
         aDescriptionElement.firstChild.remove();
-      }
-
-      
-      if (aNoEmphasis) {
-        aDescriptionElement.appendChild(document.createTextNode(aText));
-        return;
       }
 
       
@@ -303,58 +271,14 @@
       }
     }
 
-    _setUpTags(tags) {
-      while (this._tagsText.hasChildNodes()) {
-        this._tagsText.firstChild.remove();
-      }
-
-      let anyTagsMatch = false;
-
-      
-      for (let tag of tags) {
-        
-        let search = this.getAttribute("text");
-        let tokens = this._getSearchTokens(search);
-        let indices = this._getBoundaryIndices(tag, tokens);
-
-        if (
-          indices.length == 2 &&
-          indices[0] == 0 &&
-          indices[1] == tag.length
-        ) {
-          
-          continue;
-        }
-
-        anyTagsMatch = true;
-
-        let tagSpan = document.createElementNS(
-          "http://www.w3.org/1999/xhtml",
-          "span"
-        );
-        tagSpan.classList.add("ac-tag");
-        this._tagsText.appendChild(tagSpan);
-
-        this._appendDescriptionSpans(indices, tag, tagSpan, this._tagsText);
-      }
-
-      return anyTagsMatch;
-    }
-
     _setUpEmphasisSpan(aSpan, aDescriptionElement) {
       aSpan.classList.add("ac-emphasize-text");
       switch (aDescriptionElement) {
         case this._titleText:
           aSpan.classList.add("ac-emphasize-text-title");
           break;
-        case this._tagsText:
-          aSpan.classList.add("ac-emphasize-text-tag");
-          break;
         case this._urlText:
           aSpan.classList.add("ac-emphasize-text-url");
-          break;
-        case this._actionText:
-          aSpan.classList.add("ac-emphasize-text-action");
           break;
       }
     }
@@ -482,162 +406,20 @@
       let popup = this.parentNode.parentNode;
       let titleLooksLikeUrl = false;
       let displayUrl = originalUrl;
-      let emphasiseUrl = true;
-      let trimDisplayUrl = true;
 
       let type = this.getAttribute("originaltype");
       let types = new Set(type.split(/\s+/));
-      let initialTypes = new Set(types);
       
-      types.delete("action");
       types.delete("autofill");
-      types.delete("heuristic");
       type = [...types][0] || "";
+      this.setAttribute("type", type);
 
-      let action;
-
-      if (initialTypes.has("autofill") && !initialTypes.has("action")) {
-        
-        
-        action = {
-          type: "visiturl",
-          params: { url: title },
-        };
+      let input = popup.input;
+      if (typeof input.trimValue == "function") {
+        displayUrl = input.trimValue(displayUrl);
       }
+      displayUrl = this._unescapeUrl(displayUrl);
 
-      this.removeAttribute("actiontype");
-      this.classList.remove(
-        "overridable-action",
-        "emptySearchQuery",
-        "aliasOffer"
-      );
-
-      
-      if (action) {
-        this.setAttribute("actiontype", action.type);
-
-        switch (action.type) {
-          case "switchtab": {
-            this.classList.add("overridable-action");
-            displayUrl = action.params.url;
-            let desc = this._stringBundle.GetStringFromName("switchToTab2");
-            this._setUpDescription(this._actionText, desc, true);
-            break;
-          }
-          case "remotetab": {
-            displayUrl = action.params.url;
-            let desc = action.params.deviceName;
-            this._setUpDescription(this._actionText, desc, true);
-            break;
-          }
-          case "searchengine": {
-            emphasiseUrl = false;
-
-            
-            
-            
-            
-            
-            let {
-              engineName,
-              searchSuggestion,
-              searchQuery,
-              alias,
-            } = action.params;
-
-            
-            let override = popup.overrideSearchEngineName;
-            if (override && override != engineName) {
-              engineName = override;
-              action.params.engineName = override;
-              let newURL = PlacesUtils.mozActionURI(action.type, action.params);
-              this.setAttribute("url", newURL);
-            }
-
-            let engineStr = this._stringBundle.formatStringFromName(
-              "searchWithEngine",
-              [engineName]
-            );
-            this._setUpDescription(this._actionText, engineStr, true);
-
-            
-            
-            
-            let pairs;
-            if (searchSuggestion) {
-              
-              
-              
-              let idx = searchSuggestion.indexOf(searchQuery);
-              if (idx >= 0) {
-                pairs = [
-                  [searchSuggestion.substring(0, idx), ""],
-                  [searchQuery, "match"],
-                  [searchSuggestion.substring(idx + searchQuery.length), ""],
-                ];
-              } else {
-                pairs = [[searchSuggestion, ""]];
-              }
-            } else if (
-              alias &&
-              !searchQuery.trim() &&
-              !initialTypes.has("heuristic")
-            ) {
-              
-              
-              
-              
-              
-              
-              this.classList.add("aliasOffer");
-              pairs = [[alias, ""]];
-            } else {
-              
-              
-              if (!searchQuery.trim()) {
-                this.classList.add("emptySearchQuery");
-              }
-              pairs = [[searchQuery, ""]];
-            }
-            let interpStr = pairs.map((pair, i) => `%${i + 1}$S`).join("");
-            title = this._generateEmphasisPairs(interpStr, pairs);
-
-            
-            
-            
-            
-            
-            
-            if (!action.params.alias && !initialTypes.has("favicon")) {
-              this.removeAttribute("image");
-            }
-            break;
-          }
-          case "visiturl": {
-            emphasiseUrl = false;
-            displayUrl = action.params.url;
-            titleLooksLikeUrl = true;
-            let visitStr = this._stringBundle.GetStringFromName("visit");
-            this._setUpDescription(this._actionText, visitStr, true);
-            break;
-          }
-          case "extension": {
-            let content = action.params.content;
-            displayUrl = content;
-            trimDisplayUrl = false;
-            this._setUpDescription(this._actionText, content, true);
-            break;
-          }
-        }
-      }
-
-      if (trimDisplayUrl) {
-        let input = popup.input;
-        if (typeof input.trimValue == "function") {
-          displayUrl = input.trimValue(displayUrl);
-        }
-        displayUrl = this._unescapeUrl(displayUrl);
-      }
       
       if (popup.textRunsMaxLen && displayUrl) {
         displayUrl = displayUrl.substr(0, popup.textRunsMaxLen);
@@ -658,50 +440,6 @@
           title = displayUrl;
         }
       }
-
-      this._tags.setAttribute("empty", "true");
-
-      if (type == "tag" || type == "bookmark-tag") {
-        
-        let tags;
-        [, title, tags] = title.match(/^(.+) \u2013 (.+)$/);
-
-        
-        let sortedTags = tags.split(/\s*,\s*/).sort((a, b) => {
-          return a.localeCompare(a);
-        });
-
-        let anyTagsMatch = this._setUpTags(sortedTags);
-        if (anyTagsMatch) {
-          this._tags.removeAttribute("empty");
-        }
-        if (type == "bookmark-tag") {
-          type = "bookmark";
-        }
-      } else if (type == "keyword") {
-        
-        emphasiseUrl = false;
-        let keywordArg = this.getAttribute("text").replace(/^[^\s]+\s*/, "");
-        if (!keywordArg) {
-          
-          type = "visiturl";
-          this.setAttribute("actiontype", "visiturl");
-          let visitStr = this._stringBundle.GetStringFromName("visit");
-          this._setUpDescription(this._actionText, visitStr, true);
-        } else {
-          let pairs = [[title, ""], [keywordArg, "match"]];
-          let interpStr = this._stringBundle.GetStringFromName(
-            "bookmarkKeywordSearch"
-          );
-          title = this._generateEmphasisPairs(interpStr, pairs);
-          
-          
-          
-          this._setUpDescription(this._actionText, "", false);
-        }
-      }
-
-      this.setAttribute("type", type);
 
       if (titleLooksLikeUrl) {
         this._titleText.setAttribute("lookslikeurl", "true");
@@ -725,9 +463,9 @@
         if (popup.textRunsMaxLen && title) {
           title = title.substr(0, popup.textRunsMaxLen);
         }
-        this._setUpDescription(this._titleText, title, false);
+        this._setUpDescription(this._titleText, title);
       }
-      this._setUpDescription(this._urlText, displayUrl, !emphasiseUrl);
+      this._setUpDescription(this._urlText, displayUrl);
 
       
       
@@ -745,9 +483,7 @@
     _removeMaxWidths() {
       if (this._hasMaxWidths) {
         this._titleText.style.removeProperty("max-width");
-        this._tagsText.style.removeProperty("max-width");
         this._urlText.style.removeProperty("max-width");
-        this._actionText.style.removeProperty("max-width");
         this._hasMaxWidths = false;
       }
     }
@@ -758,12 +494,9 @@
     _handleOverflow() {
       let itemRect = this.parentNode.getBoundingClientRect();
       let titleRect = this._titleText.getBoundingClientRect();
-      let tagsRect = this._tagsText.getBoundingClientRect();
       let separatorRect = this._separator.getBoundingClientRect();
       let urlRect = this._urlText.getBoundingClientRect();
-      let actionRect = this._actionText.getBoundingClientRect();
-      let separatorURLActionWidth =
-        separatorRect.width + Math.max(urlRect.width, actionRect.width);
+      let separatorURLWidth = separatorRect.width + urlRect.width;
 
       
       
@@ -782,50 +515,22 @@
         popup.overflowPadding -
         (popup.margins ? popup.margins.end : 0);
 
-      if (this._tags.hasAttribute("empty")) {
+      let titleWidth = titleRect.width;
+      if (titleWidth + separatorURLWidth > itemWidth) {
         
-        tagsRect.width = 0;
-      }
+        let titlePct = 0.66;
 
-      let titleTagsWidth = titleRect.width + tagsRect.width;
-      if (titleTagsWidth + separatorURLActionWidth > itemWidth) {
-        
-
-        
-        let titleTagsPct = 0.66;
-
-        let titleTagsAvailable = itemWidth - separatorURLActionWidth;
-        let titleTagsMaxWidth = Math.max(
-          titleTagsAvailable,
-          itemWidth * titleTagsPct
-        );
-        if (titleTagsWidth > titleTagsMaxWidth) {
-          
-
-          
-          
-          let titlePct = 0.33;
-
-          let titleAvailable = titleTagsMaxWidth - tagsRect.width;
-          let titleMaxWidth = Math.max(
-            titleAvailable,
-            titleTagsMaxWidth * titlePct
-          );
-          let tagsAvailable = titleTagsMaxWidth - titleRect.width;
-          let tagsMaxWidth = Math.max(
-            tagsAvailable,
-            titleTagsMaxWidth * (1 - titlePct)
-          );
+        let titleAvailable = itemWidth - separatorURLWidth;
+        let titleMaxWidth = Math.max(titleAvailable, itemWidth * titlePct);
+        if (titleWidth > titleMaxWidth) {
           this._titleText.style.maxWidth = titleMaxWidth + "px";
-          this._tagsText.style.maxWidth = tagsMaxWidth + "px";
         }
-        let urlActionMaxWidth = Math.max(
-          itemWidth - titleTagsWidth,
-          itemWidth * (1 - titleTagsPct)
+        let urlMaxWidth = Math.max(
+          itemWidth - titleWidth,
+          itemWidth * (1 - titlePct)
         );
-        urlActionMaxWidth -= separatorRect.width;
-        this._urlText.style.maxWidth = urlActionMaxWidth + "px";
-        this._actionText.style.maxWidth = urlActionMaxWidth + "px";
+        urlMaxWidth -= separatorRect.width;
+        this._urlText.style.maxWidth = urlMaxWidth + "px";
         this._hasMaxWidths = true;
       }
     }
@@ -877,12 +582,9 @@
         ".ac-type-icon": "selected,current,type",
         ".ac-site-icon": "src=image,selected,type",
         ".ac-title-text": "selected",
-        ".ac-tags-text": "selected",
-        ".ac-separator": "selected,actiontype,type",
-        ".ac-url": "selected,actiontype",
+        ".ac-separator": "selected,type",
+        ".ac-url": "selected",
         ".ac-url-text": "selected",
-        ".ac-action": "selected,actiontype",
-        ".ac-action-text": "selected",
       };
     }
 
@@ -895,22 +597,12 @@
           <description class="ac-title-text"/>
         </description>
       </vbox>
-      <hbox class="ac-tags" align="center">
-        <description class="ac-text-overflow-container">
-          <description class="ac-tags-text"/>
-        </description>
-      </hbox>
       <hbox class="ac-separator" align="center">
         <description class="ac-separator-text" value="—"/>
       </hbox>
       <hbox class="ac-url" align="center">
         <description class="ac-text-overflow-container">
           <description class="ac-url-text"/>
-        </description>
-      </hbox>
-      <hbox class="ac-action" align="center">
-        <description class="ac-text-overflow-container">
-          <description class="ac-action-text"/>
         </description>
       </hbox>
     `;
