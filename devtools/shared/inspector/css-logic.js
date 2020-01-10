@@ -26,6 +26,11 @@ loader.lazyImporter(
 );
 loader.lazyImporter(
   this,
+  "findAllCssSelectors",
+  "resource://gre/modules/css-selector.js"
+);
+loader.lazyImporter(
+  this,
   "getCssPath",
   "resource://gre/modules/css-selector.js"
 );
@@ -496,6 +501,16 @@ exports.prettifyCSS = prettifyCSS;
 
 
 exports.findCssSelector = findCssSelector;
+
+
+
+
+
+
+
+
+
+exports.findAllCssSelectors = findAllCssSelectors;
 
 
 

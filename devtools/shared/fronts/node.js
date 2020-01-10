@@ -142,6 +142,8 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
       form.nodeValue = form.incompleteValue ? null : form.shortValue;
     }
 
+    this.traits = form.traits || {};
+
     
     
     this._form = Object.assign({}, form);
@@ -532,6 +534,17 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
     );
     this._remoteFrameTarget = await descriptor.getTarget();
     return this._remoteFrameTarget;
+  }
+
+  async getAllSelectors() {
+    if (!this.traits.supportsGetAllSelectors) {
+      
+      
+      
+      const selector = await super.getUniqueSelector();
+      return [selector];
+    }
+    return super.getAllSelectors();
   }
 }
 

@@ -491,7 +491,15 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
       }
       nodeFront = await this.querySelector(nodeFront, selector);
       if (nodeSelectors.length > 0) {
+        if (nodeFront.traits.supportsWaitForFrameLoad) {
+          
+          
+          
+          await nodeFront.waitForFrameLoad();
+        }
+
         const { nodes } = await this.children(nodeFront);
+
         
         
         
