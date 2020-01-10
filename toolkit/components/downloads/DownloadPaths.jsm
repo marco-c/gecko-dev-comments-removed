@@ -25,8 +25,6 @@ ChromeUtils.defineModuleGetter(
 
 XPCOMUtils.defineLazyGetter(this, "gConvertToSpaceRegExp", () => {
   
-  
-  
   switch (AppConstants.platform) {
     
     
@@ -34,8 +32,10 @@ XPCOMUtils.defineLazyGetter(this, "gConvertToSpaceRegExp", () => {
       return /[\x00-\x1f\x7f-\x9f:*?|"<>;,+=\[\]]+/g;
     case "win":
       return /[\x00-\x1f\x7f-\x9f:*?|]+/g;
-    default:
+    case "macosx":
       return /[\x00-\x1f\x7f-\x9f:]+/g;
+    default:
+      return /[\x00-\x1f\x7f-\x9f]+/g;
   }
   
 });
