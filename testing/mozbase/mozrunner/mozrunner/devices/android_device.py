@@ -423,11 +423,14 @@ class AndroidEmulator(object):
            Returns True if the Android emulator is running.
         """
         for proc in psutil.process_iter():
-            name = proc.name()
-            
-            
-            if name and name.startswith('emulator'):
-                return True
+            try:
+                name = proc.name()
+                
+                
+                if name and name.startswith('emulator'):
+                    return True
+            except Exception as e:
+                _log_debug("failed to get process name: %s" % str(e))
         return False
 
     def is_available(self):
