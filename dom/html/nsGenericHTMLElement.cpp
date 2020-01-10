@@ -1398,6 +1398,29 @@ uint32_t nsGenericHTMLElement::GetUnsignedIntAttr(nsAtom* aAttr,
   return attrVal->GetIntegerValue();
 }
 
+uint32_t nsGenericHTMLElement::GetDimensionAttrAsUnsignedInt(
+    nsAtom* aAttr, uint32_t aDefault) const {
+  const nsAttrValue* attrVal = mAttrs.GetAttr(aAttr);
+  if (!attrVal) {
+    return aDefault;
+  }
+
+  if (attrVal->Type() == nsAttrValue::eInteger) {
+    return attrVal->GetIntegerValue();
+  }
+
+  if (attrVal->Type() == nsAttrValue::ePercent) {
+    
+    
+    
+    
+    
+    return uint32_t(attrVal->GetPercentValue() * 100.0f);
+  }
+
+  return aDefault;
+}
+
 void nsGenericHTMLElement::GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr,
                                       nsAString& aResult) const {
   nsCOMPtr<nsIURI> uri;

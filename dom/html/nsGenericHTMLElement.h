@@ -793,6 +793,18 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
 
 
+
+
+  uint32_t GetDimensionAttrAsUnsignedInt(nsAtom* aAttr,
+                                         uint32_t aDefault) const;
+
+  
+
+
+
+
+
+
   void SetDoubleAttr(nsAtom* aAttr, double aValue, mozilla::ErrorResult& aRv) {
     nsAutoString value;
     value.AppendFloat(aValue);
