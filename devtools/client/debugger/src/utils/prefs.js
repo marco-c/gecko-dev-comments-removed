@@ -11,8 +11,7 @@ import { asyncStoreHelper } from "./asyncStoreHelper";
 
 
 
-
-const prefsSchemaVersion = "1.0.11";
+const prefsSchemaVersion = 11;
 const pref = Services.pref;
 
 if (isDevelopment()) {
@@ -100,7 +99,7 @@ export const prefs = new PrefsHelper("devtools", {
   fileSearchCaseSensitive: ["Bool", "debugger.file-search-case-sensitive"],
   fileSearchWholeWord: ["Bool", "debugger.file-search-whole-word"],
   fileSearchRegexMatch: ["Bool", "debugger.file-search-regex-match"],
-  debuggerPrefsSchemaVersion: ["Char", "debugger.prefs-schema-version"],
+  debuggerPrefsSchemaVersion: ["Int", "debugger.prefs-schema-version"],
   projectDirectoryRoot: ["Char", "debugger.project-directory-root", ""],
   skipPausing: ["Bool", "debugger.skip-pausing"],
   mapScopes: ["Bool", "debugger.map-scopes-enabled"],
@@ -137,9 +136,12 @@ export const asyncStore = asyncStoreHelper("debugger", {
   eventListenerBreakpoints: ["event-listener-breakpoints", undefined],
 });
 
+export function resetSchemaVersion() {
+  prefs.debuggerPrefsSchemaVersion = prefsSchemaVersion;
+}
+
 export function verifyPrefSchema() {
-  if (prefs.debuggerPrefsSchemaVersion !== prefsSchemaVersion) {
-    
+  if (prefs.debuggerPrefsSchemaVersion < prefsSchemaVersion) {
     asyncStore.pendingBreakpoints = {};
     asyncStore.tabs = [];
     asyncStore.xhrBreakpoints = [];
