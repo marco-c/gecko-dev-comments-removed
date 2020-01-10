@@ -1,12 +1,7 @@
-
-
-
-
-
-#include "gtest/gtest.h"
-#include "HashStore.h"
 #include "LookupCache.h"
 #include "LookupCacheV4.h"
+#include "HashStore.h"
+#include "gtest/gtest.h"
 #include "nsAppDirectoryServiceDefs.h"
 
 namespace mozilla {
@@ -23,11 +18,14 @@ class PerProviderDirectoryTestUtils {
 }  
 }  
 
+using namespace mozilla;
+using namespace mozilla::safebrowsing;
+
 template <typename T>
-static void VerifyPrivateStorePath(T* target, const nsCString& aTableName,
-                                   const nsCString& aProvider,
-                                   const nsCOMPtr<nsIFile>& aRootDir,
-                                   bool aUsePerProviderStore) {
+void VerifyPrivateStorePath(T* target, const nsCString& aTableName,
+                            const nsCString& aProvider,
+                            nsCOMPtr<nsIFile> aRootDir,
+                            bool aUsePerProviderStore) {
   nsString rootStorePath;
   nsresult rv = aRootDir->GetPath(rootStorePath);
   EXPECT_EQ(rv, NS_OK);

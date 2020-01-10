@@ -1,19 +1,23 @@
 
 
 
-
-
 #include "Common.h"
 #include "Classifier.h"
-#include "gtest/gtest.h"
 #include "HashStore.h"
-#include "mozilla/Components.h"
-#include "mozilla/Unused.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsIFile.h"
 #include "nsIThread.h"
-#include "nsThreadUtils.h"
 #include "string.h"
+#include "gtest/gtest.h"
+#include "nsThreadUtils.h"
+#include "mozilla/Components.h"
+#include "mozilla/Unused.h"
+
+using namespace mozilla;
+using namespace mozilla::safebrowsing;
+
+typedef nsCString _Prefix;
+typedef nsTArray<_Prefix> _PrefixArray;
 
 #define GTEST_SAFEBROWSING_DIR NS_LITERAL_CSTRING("safebrowsing")
 #define GTEST_TABLE NS_LITERAL_CSTRING("gtest-malware-proto")

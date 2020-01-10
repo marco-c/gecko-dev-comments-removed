@@ -1,43 +1,34 @@
-
-
-
-
-
-#include "string.h"
-
-#include "gtest/gtest.h"
 #include "HashStore.h"
-#include "mozilla/Unused.h"
 #include "nsPrintfCString.h"
+#include "string.h"
+#include "gtest/gtest.h"
+#include "mozilla/Unused.h"
+
+using namespace mozilla;
+using namespace mozilla::safebrowsing;
 
 static const char* kFilesInV2[] = {".vlpset", ".sbstore"};
 static const char* kFilesInV4[] = {".vlpset", ".metadata"};
 
-#define GTEST_MALWARE_TABLE_V4 NS_LITERAL_CSTRING("goog-malware-proto")
-#define GTEST_PHISH_TABLE_V4 NS_LITERAL_CSTRING("goog-phish-proto")
+#define V2_TABLE "gtest-malware-simple"
+#define V4_TABLE1 "goog-malware-proto"
+#define V4_TABLE2 "goog-phish-proto"
 
 #define ROOT_DIR NS_LITERAL_STRING("safebrowsing")
 #define SB_FILE(x, y) NS_ConvertUTF8toUTF16(nsPrintfCString("%s%s", x, y))
 
 template <typename T, size_t N>
-static void CheckFileExist(const nsCString& aTable, const T (&aFiles)[N],
-                           bool aExpectExists, const char* aMsg = nullptr) {
+void CheckFileExist(const char* table, const T (&files)[N], bool expectExists) {
   for (uint32_t i = 0; i < N; i++) {
     
-    NS_ConvertUTF8toUTF16 SUB_DIR(strstr(aTable.get(), "-proto") ? "google4"
-                                                                 : "");
-    nsCOMPtr<nsIFile> file = GetFile(nsTArray<nsString>{
-        ROOT_DIR, SUB_DIR, SB_FILE(aTable.get(), aFiles[i])});
+    NS_ConvertUTF8toUTF16 SUB_DIR(strstr(table, "-proto") ? "google4" : "");
+    nsCOMPtr<nsIFile> file = GetFile(
+        nsTArray<nsString>{ROOT_DIR, SUB_DIR, SB_FILE(table, files[i])});
 
     bool exists;
     file->Exists(&exists);
 
-    if (aMsg) {
-      ASSERT_EQ(aExpectExists, exists)
-          << file->HumanReadablePath().get() << " " << aMsg;
-    } else {
-      ASSERT_EQ(aExpectExists, exists) << file->HumanReadablePath().get();
-    }
+    ASSERT_EQ(expectExists, exists) << file->HumanReadablePath().get();
   }
 }
 
@@ -48,14 +39,14 @@ TEST(UrlClassifierFailUpdate, CheckTableReset)
 
   
   {
-    RefPtr<TableUpdateV2> update = new TableUpdateV2(GTEST_TABLE_V2);
+    RefPtr<TableUpdateV2> update =
+        new TableUpdateV2(NS_LITERAL_CSTRING(V2_TABLE));
     Unused << update->NewAddChunk(1);
 
     ApplyUpdate(update);
 
     
-    CheckFileExist(GTEST_TABLE_V2, kFilesInV2, true,
-                   "V2 update doesn't create vlpset or sbstore");
+    CheckFileExist(V2_TABLE, kFilesInV2, true);
   }
 
   
@@ -67,43 +58,41 @@ TEST(UrlClassifierFailUpdate, CheckTableReset)
 
   
   {
-    RefPtr<TableUpdateV4> update = new TableUpdateV4(GTEST_MALWARE_TABLE_V4);
+    RefPtr<TableUpdateV4> update =
+        new TableUpdateV4(NS_LITERAL_CSTRING(V4_TABLE1));
     func(update, FULL_UPDATE, "test_prefix");
 
     ApplyUpdate(update);
 
     
-    CheckFileExist(GTEST_MALWARE_TABLE_V4, kFilesInV4, true,
-                   "v4 update doesn't create vlpset or metadata");
+    CheckFileExist(V4_TABLE1, kFilesInV4, true);
   }
 
   
   {
-    RefPtr<TableUpdateV4> update = new TableUpdateV4(GTEST_PHISH_TABLE_V4);
+    RefPtr<TableUpdateV4> update =
+        new TableUpdateV4(NS_LITERAL_CSTRING(V4_TABLE2));
     func(update, FULL_UPDATE, "test_prefix");
 
     ApplyUpdate(update);
 
-    CheckFileExist(GTEST_PHISH_TABLE_V4, kFilesInV4, true,
-                   "v4 update doesn't create vlpset or metadata");
+    CheckFileExist(V4_TABLE2, kFilesInV4, true);
   }
 
   
   
   {
-    RefPtr<TableUpdateV4> update = new TableUpdateV4(GTEST_MALWARE_TABLE_V4);
+    RefPtr<TableUpdateV4> update =
+        new TableUpdateV4(NS_LITERAL_CSTRING(V4_TABLE1));
     func(update, PARTIAL_UPDATE, "test_prefix");
 
     ApplyUpdate(update);
 
     
-    CheckFileExist(GTEST_MALWARE_TABLE_V4, kFilesInV4, false,
-                   "a fail v4 update doesn't remove the tables");
+    CheckFileExist(V4_TABLE1, kFilesInV4, false);
 
     
-    CheckFileExist(GTEST_TABLE_V2, kFilesInV2, true,
-                   "a fail v4 update removes a v2 table");
-    CheckFileExist(GTEST_PHISH_TABLE_V4, kFilesInV4, true,
-                   "a fail v4 update removes the other v4 table");
+    CheckFileExist(V2_TABLE, kFilesInV2, true);
+    CheckFileExist(V4_TABLE2, kFilesInV4, true);
   }
 }

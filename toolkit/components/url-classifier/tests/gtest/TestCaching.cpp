@@ -2,16 +2,10 @@
 
 
 
-
 #include "Common.h"
 
 #define EXPIRED_TIME_SEC (PR_Now() / PR_USEC_PER_SEC - 3600)
 #define NOTEXPIRED_TIME_SEC (PR_Now() / PR_USEC_PER_SEC + 3600)
-
-#define CACHED_URL NS_LITERAL_CSTRING("cache.com/")
-#define NEG_CACHE_EXPIRED_URL NS_LITERAL_CSTRING("cache.negExpired.com/")
-#define POS_CACHE_EXPIRED_URL NS_LITERAL_CSTRING("cache.posExpired.com/")
-#define BOTH_CACHE_EXPIRED_URL NS_LITERAL_CSTRING("cache.negAndposExpired.com/")
 
 static void SetupCacheEntry(LookupCacheV2* aLookupCache,
                             const nsCString& aCompletion,
@@ -51,16 +45,16 @@ static void SetupCacheEntry(LookupCacheV4* aLookupCache,
   response->negativeCacheExpirySec =
       aNegExpired ? EXPIRED_TIME_SEC : NOTEXPIRED_TIME_SEC;
   response->fullHashes.Put(
-      CreatePrefixFromURL(aCompletion, COMPLETE_SIZE),
+      GeneratePrefix(aCompletion, COMPLETE_SIZE),
       aPosExpired ? EXPIRED_TIME_SEC : NOTEXPIRED_TIME_SEC);
 
   aLookupCache->AddFullHashResponseToCache(map);
 }
 
 template <typename T>
-static void TestCache(const Completion aCompletion, bool aExpectedHas,
-                      bool aExpectedConfirmed, bool aExpectedInCache,
-                      T* aCache = nullptr) {
+void TestCache(const Completion aCompletion, bool aExpectedHas,
+               bool aExpectedConfirmed, bool aExpectedInCache,
+               T* aCache = nullptr) {
   bool has, inCache, confirmed;
   uint32_t matchLength;
 
@@ -68,17 +62,17 @@ static void TestCache(const Completion aCompletion, bool aExpectedHas,
     aCache->Has(aCompletion, &has, &matchLength, &confirmed);
     inCache = aCache->IsInCache(aCompletion.ToUint32());
   } else {
-    _PrefixArray array = {CreatePrefixFromURL("cache.notexpired.com/", 10),
-                          CreatePrefixFromURL("cache.expired.com/", 8),
-                          CreatePrefixFromURL("gound.com/", 5),
-                          CreatePrefixFromURL("small.com/", 4)};
+    _PrefixArray array = {
+        GeneratePrefix(_Fragment("cache.notexpired.com/"), 10),
+        GeneratePrefix(_Fragment("cache.expired.com/"), 8),
+        GeneratePrefix(_Fragment("gound.com/"), 5),
+        GeneratePrefix(_Fragment("small.com/"), 4)};
 
     RefPtr<T> cache = SetupLookupCache<T>(array);
 
     
-    SetupCacheEntry(cache, NS_LITERAL_CSTRING("cache.notexpired.com/"));
-    SetupCacheEntry(cache, NS_LITERAL_CSTRING("cache.expired.com/"), true,
-                    true);
+    SetupCacheEntry(cache, _Fragment("cache.notexpired.com/"));
+    SetupCacheEntry(cache, _Fragment("cache.expired.com/"), true, true);
 
     cache->Has(aCompletion, &has, &matchLength, &confirmed);
     inCache = cache->IsInCache(aCompletion.ToUint32());
@@ -90,11 +84,11 @@ static void TestCache(const Completion aCompletion, bool aExpectedHas,
 }
 
 template <typename T>
-static void TestCache(const nsCString& aURL, bool aExpectedHas,
-                      bool aExpectedConfirmed, bool aExpectedInCache,
-                      T* aCache = nullptr) {
+void TestCache(const _Fragment& aFragment, bool aExpectedHas,
+               bool aExpectedConfirmed, bool aExpectedInCache,
+               T* aCache = nullptr) {
   Completion lookupHash;
-  lookupHash.FromPlaintext(aURL);
+  lookupHash.FromPlaintext(aFragment);
 
   TestCache<T>(lookupHash, aExpectedHas, aExpectedConfirmed, aExpectedInCache,
                aCache);
@@ -104,40 +98,34 @@ static void TestCache(const nsCString& aURL, bool aExpectedHas,
 
 TEST(UrlClassifierCaching, NotFound)
 {
-  TestCache<LookupCacheV2>(NS_LITERAL_CSTRING("nomatch.com/"), false, false,
-                           false);
-  TestCache<LookupCacheV4>(NS_LITERAL_CSTRING("nomatch.com/"), false, false,
-                           false);
+  TestCache<LookupCacheV2>(_Fragment("nomatch.com/"), false, false, false);
+  TestCache<LookupCacheV4>(_Fragment("nomatch.com/"), false, false, false);
 }
 
 
 
 TEST(UrlClassifierCaching, NotInCache)
 {
-  TestCache<LookupCacheV2>(NS_LITERAL_CSTRING("gound.com/"), true, false,
-                           false);
-  TestCache<LookupCacheV4>(NS_LITERAL_CSTRING("gound.com/"), true, false,
-                           false);
+  TestCache<LookupCacheV2>(_Fragment("gound.com/"), true, false, false);
+  TestCache<LookupCacheV4>(_Fragment("gound.com/"), true, false, false);
 }
 
 
 
 TEST(UrlClassifierCaching, InPositiveCacheNotExpired)
 {
-  TestCache<LookupCacheV2>(NS_LITERAL_CSTRING("cache.notexpired.com/"), true,
-                           true, true);
-  TestCache<LookupCacheV4>(NS_LITERAL_CSTRING("cache.notexpired.com/"), true,
-                           true, true);
+  TestCache<LookupCacheV2>(_Fragment("cache.notexpired.com/"), true, true,
+                           true);
+  TestCache<LookupCacheV4>(_Fragment("cache.notexpired.com/"), true, true,
+                           true);
 }
 
 
 
 TEST(UrlClassifierCaching, InPositiveCacheExpired)
 {
-  TestCache<LookupCacheV2>(NS_LITERAL_CSTRING("cache.expired.com/"), true,
-                           false, true);
-  TestCache<LookupCacheV4>(NS_LITERAL_CSTRING("cache.expired.com/"), true,
-                           false, true);
+  TestCache<LookupCacheV2>(_Fragment("cache.expired.com/"), true, false, true);
+  TestCache<LookupCacheV4>(_Fragment("cache.expired.com/"), true, false, true);
 }
 
 
@@ -148,10 +136,10 @@ TEST(UrlClassifierCaching, InNegativeCacheNotExpired)
   
 
   Completion prefix;
-  prefix.FromPlaintext(NS_LITERAL_CSTRING("cache.notexpired.com/"));
+  prefix.FromPlaintext(_Fragment("cache.notexpired.com/"));
 
   Completion fullhash;
-  fullhash.FromPlaintext(NS_LITERAL_CSTRING("firefox.com/"));
+  fullhash.FromPlaintext(_Fragment("firefox.com/"));
 
   
   
@@ -170,16 +158,21 @@ TEST(UrlClassifierCaching, InNegativeCacheExpired)
   
 
   Completion prefix;
-  prefix.FromPlaintext(NS_LITERAL_CSTRING("cache.expired.com/"));
+  prefix.FromPlaintext(_Fragment("cache.expired.com/"));
 
   Completion fullhash;
-  fullhash.FromPlaintext(NS_LITERAL_CSTRING("firefox.com/"));
+  fullhash.FromPlaintext(_Fragment("firefox.com/"));
 
   memcpy(fullhash.buf, prefix.buf, 10);
 
   TestCache<LookupCacheV2>(fullhash, true, false, true);
   TestCache<LookupCacheV4>(fullhash, true, false, true);
 }
+
+#define CACHED_URL _Fragment("cache.com/")
+#define NEG_CACHE_EXPIRED_URL _Fragment("cache.negExpired.com/")
+#define POS_CACHE_EXPIRED_URL _Fragment("cache.posExpired.com/")
+#define BOTH_CACHE_EXPIRED_URL _Fragment("cache.negAndposExpired.com/")
 
 
 
@@ -191,10 +184,10 @@ TEST(UrlClassifierCaching, InNegativeCacheExpired)
 
 template <typename T>
 void TestInvalidateExpiredCacheEntry() {
-  _PrefixArray array = {CreatePrefixFromURL(CACHED_URL, 10),
-                        CreatePrefixFromURL(NEG_CACHE_EXPIRED_URL, 8),
-                        CreatePrefixFromURL(POS_CACHE_EXPIRED_URL, 5),
-                        CreatePrefixFromURL(BOTH_CACHE_EXPIRED_URL, 4)};
+  _PrefixArray array = {GeneratePrefix(CACHED_URL, 10),
+                        GeneratePrefix(NEG_CACHE_EXPIRED_URL, 8),
+                        GeneratePrefix(POS_CACHE_EXPIRED_URL, 5),
+                        GeneratePrefix(BOTH_CACHE_EXPIRED_URL, 4)};
   RefPtr<T> cache = SetupLookupCache<T>(array);
 
   SetupCacheEntry(cache, CACHED_URL, false, false);
@@ -233,7 +226,7 @@ TEST(UrlClassifierCaching, InvalidateExpiredCacheEntryV4)
 
 TEST(UrlClassifierCaching, NegativeCacheExpireV2)
 {
-  _PrefixArray array = {CreatePrefixFromURL(NEG_CACHE_EXPIRED_URL, 8)};
+  _PrefixArray array = {GeneratePrefix(NEG_CACHE_EXPIRED_URL, 8)};
   RefPtr<LookupCacheV2> cache = SetupLookupCache<LookupCacheV2>(array);
 
   nsCOMPtr<nsICryptoHash> cryptoHash =
@@ -256,7 +249,7 @@ TEST(UrlClassifierCaching, NegativeCacheExpireV2)
 
 TEST(UrlClassifierCaching, NegativeCacheExpireV4)
 {
-  _PrefixArray array = {CreatePrefixFromURL(NEG_CACHE_EXPIRED_URL, 8)};
+  _PrefixArray array = {GeneratePrefix(NEG_CACHE_EXPIRED_URL, 8)};
   RefPtr<LookupCacheV4> cache = SetupLookupCache<LookupCacheV4>(array);
 
   FullHashResponseMap map;

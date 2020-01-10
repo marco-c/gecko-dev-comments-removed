@@ -1,8 +1,3 @@
-
-
-
-
-
 #include "Entries.h"
 #include "mozilla/EndianUtils.h"
 
