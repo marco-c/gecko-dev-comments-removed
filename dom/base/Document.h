@@ -1550,6 +1550,68 @@ class Document : public nsINode,
   
   void SetCachedSizes(nsTabSizes* aSizes);
 
+  
+
+
+
+
+
+
+
+
+  nsresult ChangeContentEditableCount(nsIContent* aElement, int32_t aChange);
+  void DeferredContentEditableCountChange(nsIContent* aElement);
+
+  enum class EditingState : int8_t {
+    eTearingDown = -2,
+    eSettingUp = -1,
+    eOff = 0,
+    eDesignMode,
+    eContentEditable
+  };
+
+  
+
+
+
+  EditingState GetEditingState() const { return mEditingState; }
+
+  
+
+
+  bool IsEditingOn() const {
+    return GetEditingState() == EditingState::eDesignMode ||
+           GetEditingState() == EditingState::eContentEditable;
+  }
+
+  class MOZ_STACK_CLASS nsAutoEditingState {
+   public:
+    nsAutoEditingState(Document* aDoc, EditingState aState)
+        : mDoc(aDoc), mSavedState(aDoc->mEditingState) {
+      aDoc->mEditingState = aState;
+    }
+    ~nsAutoEditingState() { mDoc->mEditingState = mSavedState; }
+
+   private:
+    RefPtr<Document> mDoc;
+    EditingState mSavedState;
+  };
+  friend class nsAutoEditingState;
+
+  
+
+
+
+
+  nsresult SetEditingState(EditingState aState);
+
+  
+
+
+  void TearingDownEditor();
+
+  void SetKeyPressEventModel(uint16_t aKeyPressEventModel);
+
  protected:
   friend class nsUnblockOnloadEvent;
 
@@ -1608,6 +1670,32 @@ class Document : public nsINode,
 
 
   void DisconnectNodeTree();
+
+  
+
+
+  bool IsEditingOnAfterFlush();
+
+  
+
+
+
+
+
+
+  void MaybeDispatchCheckKeyPressEventModelEvent();
+
+  
+  nsCommandManager* GetMidasCommandManager();
+
+  nsresult TurnEditingOff();
+
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult EditingStateChanged();
+
+  void MaybeEditingStateChanged();
 
  private:
   class SelectorCacheKey {
@@ -2040,10 +2128,10 @@ class Document : public nsINode,
   
   
   void BeginUpdate();
-  virtual void EndUpdate();
+  void EndUpdate();
   uint32_t UpdateNestingLevel() { return mUpdateNestLevel; }
 
-  virtual void BeginLoad();
+  void BeginLoad();
   virtual void EndLoad();
 
   enum ReadyState {
@@ -2344,7 +2432,7 @@ class Document : public nsINode,
 
 
 
-  virtual void RemovedFromDocShell();
+  void RemovedFromDocShell();
 
   
 
@@ -2539,7 +2627,7 @@ class Document : public nsINode,
 
   bool MayStartLayout() { return mMayStartLayout; }
 
-  virtual void SetMayStartLayout(bool aMayStartLayout);
+  void SetMayStartLayout(bool aMayStartLayout);
 
   already_AddRefed<nsIDocumentEncoder> GetCachedEncoder();
 
@@ -3333,6 +3421,28 @@ class Document : public nsINode,
   Nullable<WindowProxyHolder> GetDefaultView() const;
   Element* GetActiveElement();
   bool HasFocus(ErrorResult& rv) const;
+  void GetDesignMode(nsAString& aDesignMode);
+  void SetDesignMode(const nsAString& aDesignMode,
+                     nsIPrincipal& aSubjectPrincipal, mozilla::ErrorResult& rv);
+  void SetDesignMode(const nsAString& aDesignMode,
+                     const mozilla::Maybe<nsIPrincipal*>& aSubjectPrincipal,
+                     mozilla::ErrorResult& rv);
+  MOZ_CAN_RUN_SCRIPT
+  bool ExecCommand(const nsAString& aCommandID, bool aDoShowUI,
+                   const nsAString& aValue, nsIPrincipal& aSubjectPrincipal,
+                   mozilla::ErrorResult& rv);
+  bool QueryCommandEnabled(const nsAString& aCommandID,
+                           nsIPrincipal& aSubjectPrincipal,
+                           mozilla::ErrorResult& rv);
+  bool QueryCommandIndeterm(const nsAString& aCommandID,
+                            mozilla::ErrorResult& rv);
+  bool QueryCommandState(const nsAString& aCommandID, mozilla::ErrorResult& rv);
+  bool QueryCommandSupported(const nsAString& aCommandID,
+                             mozilla::dom::CallerType aCallerType,
+                             mozilla::ErrorResult& rv);
+  MOZ_CAN_RUN_SCRIPT
+  void QueryCommandValue(const nsAString& aCommandID, nsAString& aValue,
+                         mozilla::ErrorResult& rv);
   nsIHTMLCollection* Applets();
   nsIHTMLCollection* Anchors();
   TimeStamp LastFocusTime() const;
@@ -4444,6 +4554,16 @@ class Document : public nsINode,
   
   bool mTooDeepWriteRecursion : 1;
 
+  
+
+
+
+  bool mPendingMaybeEditingStateChanged : 1;
+
+  
+  
+  bool mHasBeenEditable : 1;
+
   uint8_t mPendingFullscreenRequests;
 
   uint8_t mXMLDeclarationBits;
@@ -4459,6 +4579,9 @@ class Document : public nsINode,
   
   
   uint32_t mWriteLevel;
+
+  uint32_t mContentEditableCount;
+  EditingState mEditingState;
 
   
   nsCompatibility mCompatMode;
@@ -4656,6 +4779,8 @@ class Document : public nsINode,
   TimeStamp mPageUnloadingEventTimeStamp;
 
   RefPtr<DocGroup> mDocGroup;
+
+  RefPtr<nsCommandManager> mMidasCommandManager;
 
   
   
