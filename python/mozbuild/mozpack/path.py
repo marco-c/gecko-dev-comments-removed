@@ -37,7 +37,21 @@ def normsep(path):
     return path
 
 
+def cargo_workaround(path):
+    unc = '//?/'
+    if path.startswith(unc):
+        return path[len(unc):]
+    return path
+
+
 def relpath(path, start):
+    path = normsep(path)
+    start = normsep(start)
+    if sys.platform == 'win32':
+        
+        
+        path = cargo_workaround(path)
+        start = cargo_workaround(start)
     rel = normsep(os.path.relpath(path, start))
     return '' if rel == '.' else rel
 
