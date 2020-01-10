@@ -468,6 +468,9 @@ class ConfigureSandbox(dict):
                            implied_option.caller[2]))
                 
                 
+                if (implied_option.when and
+                        not self._value_for(implied_option.when)):
+                    continue
                 option_value = self._value_for_option(option)
                 if value != option_value:
                     reason = implied_option.reason
