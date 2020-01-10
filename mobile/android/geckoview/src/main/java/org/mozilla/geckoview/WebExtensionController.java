@@ -37,6 +37,7 @@ public class WebExtensionController {
 
 
 
+
         @UiThread
         @NonNull
         default GeckoResult<AllowOrDeny> onCloseTab(@Nullable WebExtension source, @NonNull GeckoSession session)  {
