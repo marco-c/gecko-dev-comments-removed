@@ -298,9 +298,12 @@ var TestRunner = {
 
       
       let elementRect = element.getBoundingClientRect();
+      
+      
+      let win = element.ownerDocument.defaultView;
       let rect = new Rect(
-        element.screenX * scale,
-        element.screenY * scale,
+        (win.mozInnerScreenX + elementRect.left) * scale,
+        (win.mozInnerScreenY + elementRect.top) * scale,
         elementRect.width * scale,
         elementRect.height * scale
       );
