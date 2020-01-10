@@ -128,6 +128,13 @@ class AsyncCompositionManager final {
 
   typedef std::map<Layer*, ClipParts> ClipPartsCache;
 
+  
+
+
+
+  static ScreenPoint ComputeFixedMarginsOffset(
+      const ScreenMargin& aFixedMargins, SideBits eFixedSides);
+
  private:
   
   
