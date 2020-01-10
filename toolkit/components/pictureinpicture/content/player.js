@@ -38,7 +38,7 @@ async function setupPlayer(originatingBrowser, videoData) {
   
   
   browser.addEventListener("oop-browser-crashed", () => {
-    window.close();
+    PictureInPicture.closePipWindow({ reason: "browser-crash" });
   });
 
   window.addEventListener("unload", () => {
@@ -47,7 +47,7 @@ async function setupPlayer(originatingBrowser, videoData) {
 
   let close = document.getElementById("close");
   close.addEventListener("click", () => {
-    window.close();
+    PictureInPicture.closePipWindow({ reason: "close-button" });
   });
 
   document.getElementById("controls").setAttribute("showing", true);

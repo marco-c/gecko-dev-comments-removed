@@ -17,6 +17,14 @@ const WINDOW_TYPE = "Toolkit:PictureInPicture";
 
 
 
+
+let gCloseReasons = new WeakMap();
+
+
+
+
+
+
 var PictureInPicture = {
   
   receiveMessage(aMessage) {
@@ -32,7 +40,8 @@ var PictureInPicture = {
         
 
 
-        this.closePipWindow();
+        let reason = aMessage.data.reason;
+        this.closePipWindow({ reason });
         break;
       }
       case "PictureInPicture:Playing": {
@@ -56,7 +65,7 @@ var PictureInPicture = {
     let gBrowser = this.browser.ownerGlobal.gBrowser;
     let tab = gBrowser.getTabForBrowser(this.browser);
     gBrowser.selectedTab = tab;
-    await this.closePipWindow();
+    await this.closePipWindow({ reason: "unpip" });
   },
 
   
@@ -73,7 +82,7 @@ var PictureInPicture = {
   
 
 
-  async closePipWindow() {
+  async closePipWindow({ reason }) {
     
     
     for (let win of Services.wm.getEnumerator(WINDOW_TYPE)) {
@@ -83,6 +92,7 @@ var PictureInPicture = {
       let closedPromise = new Promise(resolve => {
         win.addEventListener("unload", resolve, {once: true});
       });
+      gCloseReasons.set(win, reason);
       win.close();
       await closedPromise;
     }
@@ -110,7 +120,7 @@ var PictureInPicture = {
 
   async handlePictureInPictureRequest(browser, videoData) {
     
-    await this.closePipWindow();
+    await this.closePipWindow({ reason: "new-pip" });
 
     let parentWin = browser.ownerGlobal;
     this.browser = browser;
@@ -132,6 +142,10 @@ var PictureInPicture = {
 
   unload(window) {
     TelemetryStopwatch.finish("FX_PICTURE_IN_PICTURE_WINDOW_OPEN_DURATION", window);
+
+    let reason = gCloseReasons.get(window) || "other";
+    Services.telemetry.keyedScalarAdd("pictureinpicture.closed_method", reason, 1);
+
     this.clearPipTabIcon();
     delete this.weakPipControls;
     delete this.browser;

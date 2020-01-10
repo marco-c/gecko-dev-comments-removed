@@ -340,6 +340,9 @@ class PictureInPictureToggleChild extends ActorChild {
       state.isClickingToggle = true;
       state.clickedElement = Cu.getWeakReference(event.originalTarget);
       event.stopImmediatePropagation();
+
+      Services.telemetry.keyedScalarAdd("pictureinpicture.opened_method", "toggle", 1);
+
       let pipEvent =
         new this.content.CustomEvent("MozTogglePictureInPicture", {
           bubbles: true,
@@ -558,7 +561,7 @@ class PictureInPictureChild extends ActorChild {
       case "pagehide": {
         
         
-        this.closePictureInPicture();
+        this.closePictureInPicture({ reason: "pagehide" });
         break;
       }
       case "play": {
@@ -601,13 +604,17 @@ class PictureInPictureChild extends ActorChild {
 
   async togglePictureInPicture(video) {
     if (this.inPictureInPicture(video)) {
-      await this.closePictureInPicture();
+      
+      
+      
+      
+      await this.closePictureInPicture({ reason: "contextmenu" });
     } else {
       if (this.weakVideo) {
         
         
         
-        await this.closePictureInPicture();
+        await this.closePictureInPicture({ reason: "new-pip" });
       }
 
       gWeakVideo = Cu.getWeakReference(video);
@@ -640,13 +647,14 @@ class PictureInPictureChild extends ActorChild {
 
 
 
-  async closePictureInPicture() {
+  async closePictureInPicture({ reason }) {
     if (this.weakVideo) {
       this.untrackOriginatingVideo(this.weakVideo);
     }
 
     this.mm.sendAsyncMessage("PictureInPicture:Close", {
       browingContextId: this.docShell.browsingContext.id,
+      reason,
     });
 
     if (this.weakPlayerContent) {
@@ -728,7 +736,7 @@ class PictureInPictureChild extends ActorChild {
       
       
       
-      await this.closePictureInPicture();
+      await this.closePictureInPicture({ reason: "setup-failure" });
       return;
     }
 
