@@ -1337,7 +1337,7 @@ pref("browser.newtabpage.activity-stream.discoverystream.spocs-endpoint", "");
 pref("trailhead.firstrun.branches", "join-supercharge");
 
 
-pref("browser.messaging-system.whatsNewPanel.enabled", false);
+pref("browser.messaging-system.whatsNewPanel.enabled", true);
 
 pref("browser.messaging-system.fxatoolbarbadge.enabled", true);
 
