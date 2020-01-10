@@ -7,14 +7,19 @@
 #ifndef jit_Bailouts_h
 #define jit_Bailouts_h
 
+#include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
+
 #include <stddef.h>  
 #include <stdint.h>  
 
 #include "jstypes.h"
 
-#include "jit/JitFrames.h"
-#include "jit/JSJitFrameIter.h"
-#include "wasm/WasmFrameIter.h"  
+#include "jit/IonTypes.h"  
+#include "jit/JSJitFrameIter.h"  
+#include "jit/Registers.h"       
+#include "js/TypeDecls.h"        
+#include "vm/Stack.h"            
 
 namespace js {
 namespace jit {
@@ -132,21 +137,13 @@ static const uint32_t BAILOUT_TABLE_SIZE = 16;
 
 
 
-static const uint32_t FAKE_EXITFP_FOR_BAILOUT_ADDR = 0xba2;
-static uint8_t* const FAKE_EXITFP_FOR_BAILOUT =
-    reinterpret_cast<uint8_t*>(FAKE_EXITFP_FOR_BAILOUT_ADDR);
-
-static_assert(!(FAKE_EXITFP_FOR_BAILOUT_ADDR & wasm::ExitOrJitEntryFPTag),
-              "FAKE_EXITFP_FOR_BAILOUT could be mistaken as a low-bit tagged "
-              "wasm exit fp");
-
-
-
 class BailoutStack;
 class InvalidationBailoutStack;
 
+struct IonScript;
 class JitActivation;
 class JitActivationIterator;
+struct ResumeFromException;
 
 
 

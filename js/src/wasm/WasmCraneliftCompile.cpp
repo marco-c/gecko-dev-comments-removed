@@ -25,6 +25,7 @@
 
 #include "wasm/cranelift/baldrapi.h"
 #include "wasm/cranelift/clifapi.h"
+#include "wasm/WasmFrameIter.h"  
 #include "wasm/WasmGenerator.h"
 
 #include "jit/MacroAssembler-inl.h"
