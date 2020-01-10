@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#ifndef mozilla_StaticPrefs_accessibility_h
+#define mozilla_StaticPrefs_accessibility_h
+
+
+
+#include "mozilla/StaticPrefListBegin.h"
+#include "mozilla/StaticPrefList_accessibility.h"
+#include "mozilla/StaticPrefListEnd.h"
+
+#endif  

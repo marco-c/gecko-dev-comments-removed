@@ -107,29 +107,20 @@
 
 
 
+
+
+
+
+
+
+
+
+
 #ifdef RELEASE_OR_BETA
 # define NOT_IN_RELEASE_OR_BETA_VALUE false
 #else
 # define NOT_IN_RELEASE_OR_BETA_VALUE true
 #endif
-
-
-
-
-
-VARCACHE_PREF(
-  Live,
-  "accessibility.monoaudio.enable",
-   accessibility_monoaudio_enable,
-  RelaxedAtomicBool, false
-)
-
-VARCACHE_PREF(
-  Live,
-  "accessibility.browsewithcaret",
-   accessibility_browsewithcaret,
-  RelaxedAtomicBool, false
-)
 
 
 
