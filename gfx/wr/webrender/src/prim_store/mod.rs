@@ -15,7 +15,7 @@ use crate::clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, ClipScrollTree, Coordinat
 use crate::clip::{ClipDataStore, ClipNodeFlags, ClipChainId, ClipChainInstance, ClipItemKind};
 use crate::debug_colors;
 use crate::debug_render::DebugItem;
-use crate::display_list_flattener::{CreateShadow, IsVisible};
+use crate::scene_building::{CreateShadow, IsVisible};
 use euclid::{SideOffsets2D, Transform3D, Rect, Scale, Size2D, Point2D};
 use euclid::approxeq::ApproxEq;
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureContext, PictureState};
@@ -1840,7 +1840,7 @@ impl PrimitiveStore {
     
     
     pub fn destroy(
-        mut self,
+        &mut self,
         retained_tiles: &mut RetainedTiles,
     ) {
         for pic in &mut self.pictures {
