@@ -278,8 +278,8 @@ IPCResult WindowGlobalParent::RecvDidEmbedBrowsingContext(
 already_AddRefed<Promise> WindowGlobalParent::ChangeFrameRemoteness(
     dom::BrowsingContext* aBc, const nsAString& aRemoteType,
     uint64_t aPendingSwitchId, ErrorResult& aRv) {
-  RefPtr<BrowserParent> browserParent = GetBrowserParent();
-  if (NS_WARN_IF(!browserParent)) {
+  RefPtr<BrowserParent> embedderBrowserParent = GetBrowserParent();
+  if (NS_WARN_IF(!embedderBrowserParent)) {
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
   }
@@ -289,6 +289,9 @@ already_AddRefed<Promise> WindowGlobalParent::ChangeFrameRemoteness(
   if (aRv.Failed()) {
     return nullptr;
   }
+
+  RefPtr<CanonicalBrowsingContext> browsingContext =
+      CanonicalBrowsingContext::Cast(aBc);
 
   
   auto resolve =
@@ -304,12 +307,28 @@ already_AddRefed<Promise> WindowGlobalParent::ChangeFrameRemoteness(
         
         
         
+        RefPtr<BrowserParent> browserParent;
         if (bridge) {
-          promise->MaybeResolve(
-              bridge->GetBrowserParent()->Manager()->ChildID());
+          browserParent = bridge->GetBrowserParent();
         } else {
-          promise->MaybeResolve(browserParent->Manager()->ChildID());
+          browserParent = embedderBrowserParent;
         }
+        MOZ_ASSERT(browserParent);
+
+        if (!browserParent || !browserParent->CanSend()) {
+          promise->MaybeReject(NS_ERROR_FAILURE);
+          return;
+        }
+
+        
+        
+        
+        
+        uint64_t childId = browserParent->Manager()->ChildID();
+        MOZ_ASSERT_IF(bridge, browsingContext->IsOwnedByProcess(childId));
+        browsingContext->SetOwnerProcessId(childId);
+
+        promise->MaybeResolve(childId);
       };
 
   auto reject = [=](ResponseRejectReason aReason) {

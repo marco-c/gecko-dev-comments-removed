@@ -203,8 +203,12 @@ static nsresult ChangeFrameRemoteness(WindowGlobalChild* aWgc,
 
   
   RemotenessOptions options;
-  options.mRemoteType.Construct(aRemoteType);
   options.mPendingSwitchID.Construct(aPendingSwitchId);
+
+  
+  if (!ContentChild::GetSingleton()->GetRemoteType().Equals(aRemoteType)) {
+    options.mRemoteType.Construct(aRemoteType);
+  }
 
   ErrorResult error;
   flo->ChangeRemoteness(options, error);
