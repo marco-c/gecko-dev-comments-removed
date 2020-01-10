@@ -563,6 +563,8 @@ ContentPermissionRequestBase::ContentPermissionRequestBase(
     return;
   }
 
+  mPermissionHandler = doc->GetPermissionDelegateHandler();
+
   mUserHadInteractedWithDocument = doc->UserHasInteracted();
 
   nsDOMNavigationTiming* navTiming = doc->GetNavigationTiming();
@@ -655,8 +657,25 @@ ContentPermissionRequestBase::CheckPromptPrefs() {
   return PromptResult::Pending;
 }
 
+bool ContentPermissionRequestBase::CheckPermissionDelegate() {
+  
+  
+  
+  if (mPermissionHandler &&
+      !mPermissionHandler->HasPermissionDelegated(mType)) {
+    return false;
+  }
+
+  return true;
+}
+
 nsresult ContentPermissionRequestBase::ShowPrompt(
     ContentPermissionRequestBase::PromptResult& aResult) {
+  if (!CheckPermissionDelegate()) {
+    aResult = PromptResult::Denied;
+    return NS_OK;
+  }
+
   aResult = CheckPromptPrefs();
 
   if (aResult != PromptResult::Pending) {

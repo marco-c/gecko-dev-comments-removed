@@ -286,6 +286,8 @@ already_AddRefed<Promise> ExecuteOpOnMainOrWorkerThread(
         
         if (nsContentUtils::IsInPrivateBrowsing(doc)) {
           aRv = request->Cancel();
+        } else if (!request->CheckPermissionDelegate()) {
+          aRv = request->Cancel();
         } else {
           aRv = request->Start();
         }
