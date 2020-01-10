@@ -2071,8 +2071,6 @@ class JSScript : public js::gc::TenuredCell {
     ShouldDeclareArguments = 1 << 25,
 
     
-    
-    IsBinAST = 1 << 26,
 
     
     HasDirectEval = 1 << 27,
@@ -3522,8 +3520,7 @@ class LazyScript : public gc::TenuredCell {
     return frontend::ParseGoal::Script;
   }
 
-  bool isBinAST() const { return hasFlag(ImmutableFlags::IsBinAST); }
-  void setIsBinAST() { setFlag(ImmutableFlags::IsBinAST); }
+  bool isBinAST() const { return scriptSource()->hasBinASTSource(); }
 
   bool strict() const { return hasFlag(ImmutableFlags::Strict); }
   void setStrict() { setFlag(ImmutableFlags::Strict); }
