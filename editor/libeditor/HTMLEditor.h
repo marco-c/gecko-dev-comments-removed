@@ -2014,6 +2014,30 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE MoveNodeResult
   MoveChildren(Element& aElement, const EditorDOMPoint& aPointToInsert);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  enum class MoveToEndOfContainer { Yes, No };
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE MoveNodeResult MoveOneHardLineContents(
+      const EditorDOMPoint& aPointInHardLine,
+      const EditorDOMPoint& aPointToInsert,
+      MoveToEndOfContainer aMoveToEndOfContainer = MoveToEndOfContainer::No);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;

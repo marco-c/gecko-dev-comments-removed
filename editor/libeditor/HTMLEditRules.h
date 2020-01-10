@@ -183,21 +183,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE EditActionResult MoveBlock(Element& aLeftBlock,
-                                          Element& aRightBlock,
-                                          int32_t aLeftOffset,
-                                          int32_t aRightOffset);
-
-  
-
-
-
-
-
-
-
-
 
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult

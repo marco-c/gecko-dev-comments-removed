@@ -3515,16 +3515,21 @@ EditActionResult HTMLEditRules::TryToJoinBlocksWithTransaction(
       ret.MarkAsHandled();
     } else {
       
-      EditActionResult retMoveBlock =
-          MoveBlock(*leftBlock, *rightBlock, -1, atRightBlockChild.Offset());
-      if (NS_WARN_IF(retMoveBlock.Rv() == NS_ERROR_EDITOR_DESTROYED)) {
-        return ret;
+      NS_WARNING_ASSERTION(rightBlock == atRightBlockChild.GetContainer(),
+                           "The relation is not guaranteed but assumed");
+      MoveNodeResult moveNodeResult =
+          MOZ_KnownLive(HTMLEditorRef())
+              .MoveOneHardLineContents(
+                  EditorDOMPoint(rightBlock, atRightBlockChild.Offset()),
+                  EditorDOMPoint(leftBlock, 0),
+                  HTMLEditor::MoveToEndOfContainer::Yes);
+      if (NS_WARN_IF(moveNodeResult.EditorDestroyed())) {
+        return ret.SetResult(NS_ERROR_EDITOR_DESTROYED);
       }
-      NS_WARNING_ASSERTION(
-          retMoveBlock.Succeeded(),
-          "Failed to move contents of the right block to the left block");
-      if (retMoveBlock.Handled()) {
-        ret.MarkAsHandled();
+      NS_WARNING_ASSERTION(moveNodeResult.Succeeded(),
+                           "MoveOneHardLineContents() failed, but ignored");
+      if (moveNodeResult.Succeeded()) {
+        ret |= moveNodeResult;
       }
       
       
@@ -3672,8 +3677,9 @@ EditActionResult HTMLEditRules::TryToJoinBlocksWithTransaction(
         return EditActionIgnored(NS_ERROR_NULL_POINTER);
       }
 
-      ret |= MoveBlock(MOZ_KnownLive(*previousContent.GetContainerAsElement()),
-                       *rightBlock, previousContent.Offset(), 0);
+      ret |= MOZ_KnownLive(HTMLEditorRef())
+                 .MoveOneHardLineContents(EditorDOMPoint(rightBlock, 0),
+                                          previousContent);
       if (NS_WARN_IF(ret.Failed())) {
         return ret;
       }
@@ -3738,7 +3744,10 @@ EditActionResult HTMLEditRules::TryToJoinBlocksWithTransaction(
     ret.MarkAsHandled();
   } else {
     
-    ret |= MoveBlock(*leftBlock, *rightBlock, -1, 0);
+    ret |= MOZ_KnownLive(HTMLEditorRef())
+               .MoveOneHardLineContents(EditorDOMPoint(rightBlock, 0),
+                                        EditorDOMPoint(leftBlock, 0),
+                                        HTMLEditor::MoveToEndOfContainer::Yes);
     if (NS_WARN_IF(ret.Failed())) {
       return ret;
     }
@@ -3760,81 +3769,74 @@ EditActionResult HTMLEditRules::TryToJoinBlocksWithTransaction(
   return ret;
 }
 
-EditActionResult HTMLEditRules::MoveBlock(Element& aLeftBlock,
-                                          Element& aRightBlock,
-                                          int32_t aLeftOffset,
-                                          int32_t aRightOffset) {
-  MOZ_ASSERT(IsEditorDataAvailable());
+MoveNodeResult HTMLEditor::MoveOneHardLineContents(
+    const EditorDOMPoint& aPointInHardLine,
+    const EditorDOMPoint& aPointToInsert,
+    MoveToEndOfContainer
+        aMoveToEndOfContainer ) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
 
   AutoTArray<OwningNonNull<nsINode>, 64> arrayOfNodes;
-  nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                    .SplitInlinesAndCollectEditTargetNodesInOneHardLine(
-                        EditorDOMPoint(&aRightBlock, aRightOffset),
-                        arrayOfNodes, EditSubAction::eMergeBlockContents,
-                        HTMLEditor::CollectNonEditableNodes::Yes);
+  nsresult rv = SplitInlinesAndCollectEditTargetNodesInOneHardLine(
+      aPointInHardLine, arrayOfNodes, EditSubAction::eMergeBlockContents,
+      HTMLEditor::CollectNonEditableNodes::Yes);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return EditActionIgnored(rv);
+    return MoveNodeResult(rv);
+  }
+  if (arrayOfNodes.IsEmpty()) {
+    return MoveNodeIgnored(aPointToInsert);
   }
 
-  uint32_t offset = static_cast<uint32_t>(aLeftOffset);
-  EditActionResult ret(NS_OK);
+  uint32_t offset = aPointToInsert.Offset();
+  MoveNodeResult result;
   for (auto& node : arrayOfNodes) {
-    if (aLeftOffset == -1) {
+    if (aMoveToEndOfContainer == MoveToEndOfContainer::Yes) {
       
       
-      offset = aLeftBlock.Length();
+      offset = aPointToInsert.GetContainer()->Length();
     }
     
     if (HTMLEditor::NodeIsBlockStatic(node)) {
       
-      MoveNodeResult moveNodeResult =
-          MOZ_KnownLive(HTMLEditorRef())
-              .MoveChildren(MOZ_KnownLive(*node->AsElement()),
-                            EditorDOMPoint(&aLeftBlock, offset));
-      if (NS_WARN_IF(moveNodeResult.Failed())) {
-        return ret.SetResult(moveNodeResult.Rv());
+      result |=
+          MoveChildren(MOZ_KnownLive(*node->AsElement()),
+                       EditorDOMPoint(aPointToInsert.GetContainer(), offset));
+      if (NS_WARN_IF(result.Failed())) {
+        return result;
       }
-      offset = moveNodeResult.NextInsertionPointRef().Offset();
-      ret |= moveNodeResult;
-
-      DebugOnly<nsresult> rvIgnored =
-          MOZ_KnownLive(HTMLEditorRef()).DeleteNodeWithTransaction(*node);
-      if (NS_WARN_IF(!CanHandleEditAction())) {
-        return ret.SetResult(NS_ERROR_EDITOR_DESTROYED);
+      offset = result.NextInsertionPointRef().Offset();
+      DebugOnly<nsresult> rvIgnored = DeleteNodeWithTransaction(*node);
+      if (NS_WARN_IF(Destroyed())) {
+        return MoveNodeResult(NS_ERROR_EDITOR_DESTROYED);
       }
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                            "DeleteNodeWithTransaction() failed, but ignored");
-      ret.MarkAsHandled();
-      if (HTMLEditorRef().HasMutationEventListeners()) {
+      result.MarkAsHandled();
+      if (HasMutationEventListeners()) {
         
         
         
-        offset = std::min(offset, aLeftBlock.Length());
+        offset = std::min(offset, aPointToInsert.GetContainer()->Length());
       }
-    } else {
-      
-      MoveNodeResult moveNodeResult =
-          MOZ_KnownLive(HTMLEditorRef())
-              .MoveNodeOrChildren(MOZ_KnownLive(*node->AsContent()),
-                                  EditorDOMPoint(&aLeftBlock, offset));
-      if (NS_WARN_IF(moveNodeResult.EditorDestroyed())) {
-        return ret.SetResult(NS_ERROR_EDITOR_DESTROYED);
-      }
-      NS_WARNING_ASSERTION(moveNodeResult.Succeeded(),
-                           "MoveNodeOrChildren() failed, but ignored");
-      if (moveNodeResult.Succeeded()) {
-        offset = moveNodeResult.NextInsertionPointRef().Offset();
-        ret |= moveNodeResult;
-      }
+      continue;
+    }
+    
+    MoveNodeResult moveNodeResult = MoveNodeOrChildren(
+        MOZ_KnownLive(*node->AsContent()),
+        EditorDOMPoint(aPointToInsert.GetContainer(), offset));
+    if (NS_WARN_IF(moveNodeResult.EditorDestroyed())) {
+      return MoveNodeResult(NS_ERROR_EDITOR_DESTROYED);
+    }
+    NS_WARNING_ASSERTION(moveNodeResult.Succeeded(),
+                         "MoveNodeOrChildren() failed, but ignored");
+    if (moveNodeResult.Succeeded()) {
+      offset = moveNodeResult.NextInsertionPointRef().Offset();
+      result |= moveNodeResult;
     }
   }
 
-  
-  if (NS_WARN_IF(ret.Failed())) {
-    return ret;
-  }
-
-  return ret;
+  NS_WARNING_ASSERTION(result.Succeeded(), "Last MoveNodeOrChildren() failed");
+  return result;
 }
 
 MoveNodeResult HTMLEditor::MoveNodeOrChildren(
