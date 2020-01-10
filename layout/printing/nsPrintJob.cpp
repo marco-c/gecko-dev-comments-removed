@@ -462,14 +462,29 @@ static void BuildNestedPrintObjects(BrowsingContext* aBrowsingContext,
   MOZ_ASSERT(aPO, "Pointer is null!");
 
   for (auto& childBC : aBrowsingContext->GetChildren()) {
+    
+    
+    nsCOMPtr<nsFrameLoaderOwner> flo =
+        do_QueryInterface(childBC->GetEmbedderElement());
+    RefPtr<nsFrameLoader> frameLoader = flo ? flo->GetFrameLoader() : nullptr;
+    if (!frameLoader) {
+      continue;
+    }
+
+    
+    nsresult rv = frameLoader->FinishStaticClone();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      continue;
+    }
+
     auto window = childBC->GetDOMWindow();
     if (!window) {
       
       continue;
     }
     auto childPO = MakeUnique<nsPrintObject>();
-    nsresult rv = childPO->InitAsNestedObject(
-        childBC->GetDocShell(), window->GetExtantDoc(), aPO.get());
+    rv = childPO->InitAsNestedObject(childBC->GetDocShell(),
+                                     window->GetExtantDoc(), aPO.get());
     if (NS_FAILED(rv)) {
       MOZ_ASSERT_UNREACHABLE("Init failed?");
     }

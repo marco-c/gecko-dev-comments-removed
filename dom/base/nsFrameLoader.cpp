@@ -155,7 +155,8 @@ typedef ScrollableLayerGuid::ViewID ViewID;
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(nsFrameLoader, mBrowsingContext,
                                       mMessageManager, mChildMessageManager,
-                                      mParentSHistory, mRemoteBrowser)
+                                      mParentSHistory, mRemoteBrowser,
+                                      mStaticCloneOf)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsFrameLoader)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsFrameLoader)
 
@@ -2804,23 +2805,42 @@ void nsFrameLoader::ActivateFrameEvent(const nsAString& aType, bool aCapture,
 }
 
 nsresult nsFrameLoader::CreateStaticClone(nsFrameLoader* aDest) {
-  aDest->MaybeCreateDocShell();
-  NS_ENSURE_STATE(aDest->GetDocShell());
+  if (NS_WARN_IF(IsRemoteFrame())) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
 
-  nsCOMPtr<Document> kungFuDeathGrip = aDest->GetDocShell()->GetDocument();
+  
+  aDest->mBrowsingContext->SetEmbedderElement(aDest->mOwnerContent);
+  aDest->mStaticCloneOf = this;
+  return NS_OK;
+}
+
+nsresult nsFrameLoader::FinishStaticClone() {
+  
+  
+  auto exitGuard = MakeScopeExit([&] { mStaticCloneOf = nullptr; });
+
+  if (NS_WARN_IF(!mStaticCloneOf || IsDead())) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  MaybeCreateDocShell();
+  NS_ENSURE_STATE(GetDocShell());
+
+  nsCOMPtr<Document> kungFuDeathGrip = GetDocShell()->GetDocument();
   Unused << kungFuDeathGrip;
 
   nsCOMPtr<nsIContentViewer> viewer;
-  aDest->GetDocShell()->GetContentViewer(getter_AddRefs(viewer));
+  GetDocShell()->GetContentViewer(getter_AddRefs(viewer));
   NS_ENSURE_STATE(viewer);
 
-  nsIDocShell* origDocShell = GetDocShell(IgnoreErrors());
+  nsIDocShell* origDocShell = mStaticCloneOf->GetDocShell(IgnoreErrors());
   NS_ENSURE_STATE(origDocShell);
 
   nsCOMPtr<Document> doc = origDocShell->GetDocument();
   NS_ENSURE_STATE(doc);
 
-  nsCOMPtr<Document> clonedDoc = doc->CreateStaticClone(aDest->GetDocShell());
+  nsCOMPtr<Document> clonedDoc = doc->CreateStaticClone(GetDocShell());
 
   viewer->SetDocument(clonedDoc);
   return NS_OK;

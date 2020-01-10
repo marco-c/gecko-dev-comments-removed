@@ -128,9 +128,20 @@ class nsFrameLoader final : public nsStubMutationObserver,
   GetBrowserChildMessageManager() const {
     return mChildMessageManager;
   }
-  nsresult CreateStaticClone(nsFrameLoader* aDest);
   nsresult UpdatePositionAndSize(nsSubDocumentFrame* aIFrame);
   void SendIsUnderHiddenEmbedderElement(bool aIsUnderHiddenEmbedderElement);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsresult CreateStaticClone(nsFrameLoader* aDest);
+  nsresult FinishStaticClone();
 
   
 
@@ -485,6 +496,10 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   
   RefPtr<Document> mContainerDocWhileDetached;
+
+  
+  
+  RefPtr<nsFrameLoader> mStaticCloneOf;
 
   
   
