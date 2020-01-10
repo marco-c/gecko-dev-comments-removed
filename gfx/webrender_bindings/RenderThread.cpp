@@ -678,10 +678,7 @@ void RenderThread::NotifyNotUsed(uint64_t aExternalImageId) {
   }
 
   auto it = mRenderTextures.find(aExternalImageId);
-#ifndef MOZ_WIDGET_ANDROID
-  
   MOZ_ASSERT(it != mRenderTextures.end());
-#endif
   if (it == mRenderTextures.end()) {
     return;
   }
