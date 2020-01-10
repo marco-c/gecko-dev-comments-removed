@@ -19,6 +19,27 @@
 #include "nsXULAppAPI.h"
 #include "private/prpriv.h"  
 
+static DWORD ToWin32ThreadId(nsIThread* aThread) {
+  MOZ_ASSERT(aThread);
+  if (!aThread) {
+    return 0UL;
+  }
+
+  PRThread* prThread;
+  nsresult rv = aThread->GetPRThread(&prThread);
+  if (NS_FAILED(rv)) {
+    
+    return 0UL;
+  }
+
+  PRUint32 tid = ::PR_GetThreadID(prThread);
+  if (!tid) {
+    return 0UL;
+  }
+
+  return DWORD(tid);
+}
+
 namespace mozilla {
 
 class MOZ_RAII BackgroundPriorityRegion final {
@@ -36,19 +57,10 @@ class MOZ_RAII BackgroundPriorityRegion final {
   }
 
   static void Clear(nsIThread* aThread) {
-    MOZ_ASSERT(aThread);
-    if (!aThread) {
+    DWORD tid = ToWin32ThreadId(aThread);
+    if (!tid) {
       return;
     }
-
-    PRThread* prThread;
-    nsresult rv = aThread->GetPRThread(&prThread);
-    if (NS_FAILED(rv)) {
-      
-      return;
-    }
-
-    PRUint32 tid = ::PR_GetThreadID(prThread);
 
     nsAutoHandle thread(
         ::OpenThread(THREAD_SET_LIMITED_INFORMATION, FALSE, tid));
@@ -221,6 +233,12 @@ void UntrustedModulesProcessor::Enqueue(
     return;
   }
 
+  DWORD bgThreadId = ToWin32ThreadId(mThread);
+  if (aModLoadInfo.mNtLoadInfo.mThreadId == bgThreadId) {
+    
+    return;
+  }
+
   MutexAutoLock lock(mUnprocessedMutex);
 
   Unused << mUnprocessedModuleLoads.emplaceBack(std::move(aModLoadInfo));
@@ -232,6 +250,9 @@ void UntrustedModulesProcessor::Enqueue(ModuleLoadInfoVec&& aEvents) {
   if (!mAllowProcessing) {
     return;
   }
+
+  
+  
 
   MutexAutoLock lock(mUnprocessedMutex);
 
