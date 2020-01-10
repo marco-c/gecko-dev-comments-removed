@@ -131,6 +131,10 @@ class ChromeTooltipListener final : public nsIDOMEventListener {
   NS_IMETHOD AddChromeListeners();
   NS_IMETHOD RemoveChromeListeners();
 
+  NS_IMETHOD HideTooltip();
+
+  bool WebProgressShowedTooltip(nsIWebProgress* aWebProgress);
+
  private:
   
   enum {
@@ -144,7 +148,6 @@ class ChromeTooltipListener final : public nsIDOMEventListener {
   NS_IMETHOD ShowTooltip(int32_t aInXCoords, int32_t aInYCoords,
                          const nsAString& aInTipText,
                          const nsAString& aDirText);
-  NS_IMETHOD HideTooltip();
   nsITooltipTextProvider* GetTooltipTextProvider();
 
   nsWebBrowser* mWebBrowser;
@@ -176,6 +179,8 @@ class ChromeTooltipListener final : public nsIDOMEventListener {
 
   
   nsString mLastShownTooltipText;
+
+  nsWeakPtr mLastDocshell;
 
   
   
