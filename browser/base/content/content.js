@@ -43,7 +43,11 @@ function shouldIgnoreLoginManagerEvent(event) {
   let nodePrincipal = event.target.nodePrincipal;
   
   
-  return nodePrincipal.isNullPrincipal || nodePrincipal.URI.schemeIs("about");
+  return (
+    nodePrincipal.isSystemPrincipal ||
+    nodePrincipal.isNullPrincipal ||
+    nodePrincipal.URI.schemeIs("about")
+  );
 }
 
 addEventListener("DOMFormBeforeSubmit", function(event) {
