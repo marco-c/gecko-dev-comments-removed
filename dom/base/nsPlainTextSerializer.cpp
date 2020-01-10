@@ -749,7 +749,7 @@ nsresult nsPlainTextSerializer::DoOpenContainer(nsAtom* aTag) {
   
 
   
-  bool currentNodeIsConverted = IsCurrentNodeConverted();
+  const bool currentNodeIsConverted = IsCurrentNodeConverted();
 
   if (aTag == nsGkAtoms::h1 || aTag == nsGkAtoms::h2 || aTag == nsGkAtoms::h3 ||
       aTag == nsGkAtoms::h4 || aTag == nsGkAtoms::h5 || aTag == nsGkAtoms::h6) {
@@ -966,7 +966,7 @@ nsresult nsPlainTextSerializer::DoCloseContainer(nsAtom* aTag) {
   
 
   
-  bool currentNodeIsConverted = IsCurrentNodeConverted();
+  const bool currentNodeIsConverted = IsCurrentNodeConverted();
 
   if (aTag == nsGkAtoms::h1 || aTag == nsGkAtoms::h2 || aTag == nsGkAtoms::h3 ||
       aTag == nsGkAtoms::h4 || aTag == nsGkAtoms::h5 || aTag == nsGkAtoms::h6) {
@@ -1008,7 +1008,7 @@ nsresult nsPlainTextSerializer::DoCloseContainer(nsAtom* aTag) {
   return NS_OK;
 }
 
-bool nsPlainTextSerializer::MustSuppressLeaf() {
+bool nsPlainTextSerializer::MustSuppressLeaf() const {
   if (mIgnoredChildNodeLevel > 0) {
     return true;
   }
@@ -1704,7 +1704,7 @@ void nsPlainTextSerializer::Write(const nsAString& aStr) {
 
 
 nsresult nsPlainTextSerializer::GetAttributeValue(nsAtom* aName,
-                                                  nsString& aValueRet) {
+                                                  nsString& aValueRet) const {
   if (mElement) {
     if (mElement->GetAttr(kNameSpaceID_None, aName, aValueRet)) {
       return NS_OK;
@@ -1718,7 +1718,7 @@ nsresult nsPlainTextSerializer::GetAttributeValue(nsAtom* aName,
 
 
 
-bool nsPlainTextSerializer::IsCurrentNodeConverted() {
+bool nsPlainTextSerializer::IsCurrentNodeConverted() const {
   nsAutoString value;
   nsresult rv = GetAttributeValue(nsGkAtoms::_class, value);
   return (NS_SUCCEEDED(rv) && (value.EqualsIgnoreCase("moz-txt", 7) ||
@@ -1765,7 +1765,7 @@ bool nsPlainTextSerializer::IsCssBlockLevelElement(Element* aElement) {
 
 
 
-bool nsPlainTextSerializer::IsInOL() {
+bool nsPlainTextSerializer::IsInOL() const {
   int32_t i = mTagStackIndex;
   while (--i >= 0) {
     if (mTagStack[i] == nsGkAtoms::ol) return true;
