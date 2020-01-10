@@ -106,7 +106,6 @@ class TRRService : public nsIObserver,
 
   
   nsTHashtable<nsCStringHashKey> mExcludedDomains;
-  nsTHashtable<nsCStringHashKey> mDNSSuffixDomains;
 
   enum ConfirmationState {
     CONFIRM_INIT = 0,
