@@ -4,6 +4,8 @@
 
 "use strict";
 
+Cu.importGlobalProperties(["fetch"]);
+
 var EXPORTED_SYMBOLS = ["AboutProtectionsHandler"];
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -12,6 +14,7 @@ const { RemotePages } = ChromeUtils.import(
   "resource://gre/modules/remotepagemanager/RemotePageManagerParent.jsm"
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 ChromeUtils.defineModuleGetter(
   this,
   "fxAccounts",
@@ -31,6 +34,25 @@ let idToTextMap = new Map([
   [Ci.nsITrackingDBService.CRYPTOMINERS_ID, "cryptominer"],
   [Ci.nsITrackingDBService.FINGERPRINTERS_ID, "fingerprinter"],
 ]);
+
+const MONITOR_API_ENDPOINT = "https://monitor.firefox.com/user/breach-stats";
+
+
+
+const SCOPE_MONITOR = [
+  "profile:uid",
+  "https://identity.mozilla.com/apps/monitor",
+];
+
+
+const INVALID_OAUTH_TOKEN = "Invalid OAuth token";
+const USER_UNSUBSCRIBED_TO_MONITOR = "User is not subscribed to Monitor";
+const SERVICE_UNAVAILABLE = "Service unavailable";
+const UNEXPECTED_RESPONSE = "Unexpected response";
+const UNKNOWN_ERROR = "Unknown error";
+
+
+const MONITOR_RESPONSE_PROPS = ["monitoredEmails", "numBreaches", "passwords"];
 
 var AboutProtectionsHandler = {
   _inited: false,
@@ -76,6 +98,61 @@ var AboutProtectionsHandler = {
 
 
 
+  async fetchUserBreachStats(token) {
+    let monitorResponse = null;
+
+    
+    const headers = new Headers();
+    headers.append("Authorization", `Bearer ${token}`);
+    const request = new Request(MONITOR_API_ENDPOINT, { headers });
+    const response = await fetch(request);
+
+    if (response.ok) {
+      
+      const json = await response.json();
+
+      
+      let isValid = null;
+      for (let prop in json) {
+        isValid = MONITOR_RESPONSE_PROPS.includes(prop);
+
+        if (!isValid) {
+          break;
+        }
+      }
+
+      monitorResponse = isValid ? json : new Error(UNEXPECTED_RESPONSE);
+    } else {
+      
+      switch (response.status) {
+        case 400:
+          monitorResponse = new Error(INVALID_OAUTH_TOKEN);
+          break;
+        case 404:
+          monitorResponse = new Error(USER_UNSUBSCRIBED_TO_MONITOR);
+          break;
+        case 503:
+          monitorResponse = new Error(SERVICE_UNAVAILABLE);
+          break;
+        default:
+          monitorResponse = new Error(UNKNOWN_ERROR);
+          break;
+      }
+    }
+
+    if (monitorResponse instanceof Error) {
+      throw monitorResponse;
+    }
+
+    return monitorResponse;
+  },
+
+  
+
+
+
+
+
 
 
   async getLoginData() {
@@ -103,13 +180,43 @@ var AboutProtectionsHandler = {
 
 
   async getMonitorData() {
-    
+    let monitorData = {};
+    const hasFxa = await fxAccounts.accountStatus();
+
+    if (hasFxa) {
+      let token = await fxAccounts.getOAuthToken({ scope: SCOPE_MONITOR });
+
+      try {
+        monitorData = await this.fetchUserBreachStats(token);
+      } catch (e) {
+        Cu.reportError(e.message);
+        
+        
+        
+        if (e.message === INVALID_OAUTH_TOKEN) {
+          await fxAccounts.removeCachedOAuthToken({ token });
+          token = await fxAccounts.getOAuthToken({ scope: SCOPE_MONITOR });
+
+          try {
+            monitorData = await this.fetchUserBreachStats(token);
+          } catch (_) {
+            Cu.reportError(e.message);
+            monitorData.errorMessage = INVALID_OAUTH_TOKEN;
+          }
+        } else {
+          monitorData.errorMessage = e.message;
+        }
+      }
+    } else {
+      
+      monitorData = {
+        errorMessage: "No account",
+      };
+    }
+
     return {
-      monitoredEmails: 1,
-      numBreaches: 11,
-      passwords: 8,
-      lockwisePasswords: 2,
-      error: false,
+      ...monitorData,
+      error: !!monitorData.errorMessage,
     };
   },
 
