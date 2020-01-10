@@ -1094,19 +1094,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         this._clearSteppingHooks();
       }
 
-      
-      
-      if (this.dbg.replaying) {
-        if (resumeLimit && resumeLimit.type == "warp") {
-          this.dbg.replayTimeWarp(resumeLimit.target);
-        } else if (rewind) {
-          this.dbg.replayResumeBackward();
-        } else {
-          this.dbg.replayResumeForward();
-        }
-      }
-
-      this.doResume();
+      this.doResume({ resumeLimit, rewind });
       return {};
     } catch (error) {
       return error instanceof Error
@@ -1124,7 +1112,19 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
 
-  doResume() {
+  doResume({ resumeLimit, rewind } = {}) {
+    
+    
+    if (this.dbg.replaying) {
+      if (resumeLimit && resumeLimit.type == "warp") {
+        this.dbg.replayTimeWarp(resumeLimit.target);
+      } else if (rewind) {
+        this.dbg.replayResumeBackward();
+      } else {
+        this.dbg.replayResumeForward();
+      }
+    }
+
     this.maybePauseOnExceptions();
     this._state = "running";
 

@@ -16,6 +16,8 @@ add_task(async function() {
 
   const {threadClient, tab, toolbox, target} = dbg;
 
+  await threadClient.interrupt();
+
   
   await rewindToLine(threadClient, undefined);
 
