@@ -247,20 +247,6 @@ var TabModalPrompt = class {
     this.onResize();
   }
 
-  
-  
-  
-  ensureXBLBindingAttached() {
-    for (let key in this.ui) {
-      if (this.ui[key] instanceof this.win.XULElement) {
-        if (this.ui[key].hidden) {
-          continue;
-        }
-        this.ui[key].clientTop;
-      }
-    }
-  }
-
   shutdownPrompt() {
     
     try {

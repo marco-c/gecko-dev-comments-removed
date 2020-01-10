@@ -177,11 +177,6 @@ CommonDialog.prototype = {
 
     if (!this.ui.promptContainer || !this.ui.promptContainer.hidden) {
       
-      if (!xulDialog) {
-        this.ui.prompt.ensureXBLBindingAttached();
-      }
-
-      
       this.setDefaultFocus(true);
     }
 
