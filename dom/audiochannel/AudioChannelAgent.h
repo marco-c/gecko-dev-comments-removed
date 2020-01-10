@@ -30,6 +30,13 @@ class AudioChannelAgent : public nsIAudioChannelAgent {
 
   AudioChannelAgent();
 
+  
+  
+  
+  
+  
+  void PullInitialUpdate();
+
   void WindowVolumeChanged();
   void WindowSuspendChanged(nsSuspendedTypes aSuspend);
   void WindowAudioCaptureChanged(uint64_t aInnerWindowID, bool aCapture);
