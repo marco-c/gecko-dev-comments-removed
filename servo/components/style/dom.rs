@@ -349,7 +349,7 @@ pub trait TShadowRoot: Sized + Copy + Clone + PartialEq {
     
     fn parts<'a>(&self) -> &[<Self::ConcreteNode as TNode>::ConcreteElement]
     where
-        Self: 'a
+        Self: 'a,
     {
         &[]
     }
@@ -534,7 +534,7 @@ pub trait TElement:
     
     fn each_part<F>(&self, _callback: F)
     where
-        F: FnMut(&Atom)
+        F: FnMut(&Atom),
     {
     }
 

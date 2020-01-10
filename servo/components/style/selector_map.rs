@@ -258,7 +258,7 @@ impl SelectorMap<Rule> {
     }
 
     
-    pub (crate) fn get_matching_rules<E, F>(
+    pub(crate) fn get_matching_rules<E, F>(
         element: E,
         rules: &[Rule],
         matching_rules: &mut ApplicableDeclarationList,

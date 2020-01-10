@@ -110,10 +110,7 @@ impl<Impl: SelectorImpl> SelectorBuilder<Impl> {
         if parsed_part {
             flags |= SelectorFlags::HAS_PART;
         }
-        self.build_with_specificity_and_flags(SpecificityAndFlags {
-            specificity,
-            flags,
-        })
+        self.build_with_specificity_and_flags(SpecificityAndFlags { specificity, flags })
     }
 
     
@@ -208,9 +205,9 @@ bitflags! {
 pub struct SpecificityAndFlags {
     
     
-    pub (crate) specificity: u32,
+    pub(crate) specificity: u32,
     
-    pub (crate) flags: SelectorFlags,
+    pub(crate) flags: SelectorFlags,
 }
 
 impl SpecificityAndFlags {
