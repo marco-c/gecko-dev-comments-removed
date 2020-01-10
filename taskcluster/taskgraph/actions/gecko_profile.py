@@ -10,6 +10,7 @@ import logging
 
 import requests
 from requests.exceptions import HTTPError
+from six import string_types
 
 from .registry import register_callback_action
 from .util import create_tasks, combine_task_graph_files
@@ -85,7 +86,7 @@ def geckoprofile_action(parameters, graph_config, input, task_group_id, task_id)
                     return task
 
                 cmd = task.task['payload']['command']
-                task.task['payload']['command'] = add_args_to_command(cmd, ['--geckoProfile'])
+                task.task['payload']['command'] = add_args_to_perf_command(cmd, ['--geckoProfile'])
                 task.task['extra']['treeherder']['symbol'] += '-p'
                 return task
 
@@ -97,27 +98,28 @@ def geckoprofile_action(parameters, graph_config, input, task_group_id, task_id)
     combine_task_graph_files(backfill_pushes)
 
 
-def add_args_to_command(cmd_parts, extra_args=[]):
+def add_args_to_perf_command(payload_commands, extra_args=[]):
     """
         Add custom command line args to a given command.
         args:
-          cmd_parts: the raw command as seen by taskcluster
-          extra_args: array of args we want to add
+          payload_commands: the raw command as seen by taskcluster
+          extra_args: array of args we want to inject
     """
-    cmd_type = 'default'
-    if len(cmd_parts) == 1 and isinstance(cmd_parts[0], dict):
-        
-        cmd_parts = cmd_parts[0]['task-reference'].split(' ')
-        cmd_type = 'dict'
-    elif len(cmd_parts) == 1 and isinstance(cmd_parts[0], list):
-        
-        cmd_parts = cmd_parts[0]
-        cmd_type = 'subarray'
+    perf_command_idx = -1  
+    perf_command = payload_commands[perf_command_idx]
 
-    cmd_parts.extend(extra_args)
+    command_form = 'default'
+    if isinstance(perf_command, string_types):
+        
+        perf_command = perf_command.split(' ')
+        command_form = 'string'
+    
 
-    if cmd_type == 'dict':
-        cmd_parts = [{'task-reference': ' '.join(cmd_parts)}]
-    elif cmd_type == 'subarray':
-        cmd_parts = [cmd_parts]
-    return cmd_parts
+    perf_command.extend(extra_args)
+
+    if command_form == 'string':
+        
+        perf_command = ' '.join(perf_command)
+
+    payload_commands[perf_command_idx] = perf_command
+    return payload_commands
