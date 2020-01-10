@@ -60,16 +60,16 @@ class WebConsole {
 
 
   constructor(
-    toolbox,
+    target,
     iframeWindow,
     chromeWindow,
     isBrowserConsole = false,
     fissionSupport = false
   ) {
-    this.toolbox = toolbox;
     this.iframeWindow = iframeWindow;
     this.chromeWindow = chromeWindow;
     this.hudId = "hud_" + ++gHudId;
+    this.target = target;
     this.browserWindow = this.chromeWindow.top;
     this.isBrowserConsole = isBrowserConsole;
     this.fissionSupport = fissionSupport;
@@ -84,10 +84,6 @@ class WebConsole {
     this._destroyer = null;
 
     EventEmitter.decorate(this);
-  }
-
-  get currentTarget() {
-    return this.toolbox.target;
   }
 
   
@@ -197,7 +193,7 @@ class WebConsole {
 
 
   viewSourceInStyleEditor(sourceURL, sourceLine) {
-    const toolbox = this.toolbox;
+    const toolbox = gDevTools.getToolbox(this.target);
     if (!toolbox) {
       this.viewSource(sourceURL, sourceLine);
       return;
@@ -220,7 +216,7 @@ class WebConsole {
 
 
   viewSourceInDebugger(sourceURL, sourceLine, sourceColumn) {
-    const toolbox = this.toolbox;
+    const toolbox = gDevTools.getToolbox(this.target);
     if (!toolbox) {
       this.viewSource(sourceURL, sourceLine, sourceColumn);
       return;
@@ -257,7 +253,7 @@ class WebConsole {
 
 
   getDebuggerFrames() {
-    const toolbox = this.toolbox;
+    const toolbox = gDevTools.getToolbox(this.target);
     if (!toolbox) {
       return null;
     }
@@ -286,7 +282,7 @@ class WebConsole {
 
 
   getMappedExpression(expression) {
-    const toolbox = this.toolbox;
+    const toolbox = gDevTools.getToolbox(this.target);
 
     
     
@@ -341,7 +337,7 @@ class WebConsole {
 
 
   getInspectorSelection() {
-    const toolbox = this.toolbox;
+    const toolbox = gDevTools.getToolbox(this.target);
     if (!toolbox) {
       return null;
     }

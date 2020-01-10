@@ -65,11 +65,7 @@ WebConsolePanel.prototype = {
       const chromeWindow = iframe.ownerDocument.defaultView;
 
       
-      this.hud = new WebConsole(
-        this._toolbox,
-        webConsoleUIWindow,
-        chromeWindow
-      );
+      this.hud = new WebConsole(this.target, webConsoleUIWindow, chromeWindow);
       await this.hud.init();
 
       
@@ -89,7 +85,7 @@ WebConsolePanel.prototype = {
     return this;
   },
 
-  get currentTarget() {
+  get target() {
     return this._toolbox.target;
   },
 

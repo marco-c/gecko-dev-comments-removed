@@ -7,6 +7,7 @@
 const { Utils: WebConsoleUtils } = require("devtools/client/webconsole/utils");
 const EventEmitter = require("devtools/shared/event-emitter");
 const Services = require("Services");
+const { gDevTools } = require("devtools/client/framework/devtools");
 const {
   WebConsoleConnectionProxy,
 } = require("devtools/client/webconsole/webconsole-connection-proxy");
@@ -142,21 +143,20 @@ class WebConsoleUI {
       this.wrapper.destroy();
     }
 
-    const toolbox = this.hud.toolbox;
+    const toolbox = gDevTools.getToolbox(this.hud.target);
     if (toolbox) {
       toolbox.off("webconsole-selected", this._onPanelSelected);
       toolbox.off("split-console", this._onChangeSplitConsoleState);
       toolbox.off("select", this._onChangeSplitConsoleState);
     }
 
+    this.window = this.hud = this.wrapper = null;
+
     for (const proxy of this.getAllProxies()) {
       proxy.disconnect();
     }
     this.proxy = null;
     this.additionalProxies = null;
-
-    
-    this.window = this.hud = this.wrapper = null;
   }
 
   
@@ -222,7 +222,7 @@ class WebConsoleUI {
   }
 
   logWarningAboutReplacedAPI() {
-    return this.hud.currentTarget.logWarningInPage(
+    return this.hud.target.logWarningInPage(
       l10n.getStr("ConsoleAPIDisabled"),
       "ConsoleAPIDisabled"
     );
@@ -257,11 +257,19 @@ class WebConsoleUI {
 
 
   async _initConnection() {
-    this.proxy = new WebConsoleConnectionProxy(this, this.hud.currentTarget);
+    this.proxy = new WebConsoleConnectionProxy(
+      this,
+      this.hud.target,
+      this.isBrowserConsole,
+      this.fissionSupport
+    );
 
-    const target = this.hud.currentTarget;
-    if (this.fissionSupport && target.chrome && !target.isAddon) {
-      const { mainRoot } = target.client;
+    if (
+      this.fissionSupport &&
+      this.hud.target.chrome &&
+      !this.hud.target.isAddon
+    ) {
+      const { mainRoot } = this.hud.target.client;
       const { processes } = await mainRoot.listProcesses();
 
       this.additionalProxies = [];
@@ -270,7 +278,7 @@ class WebConsoleUI {
 
         
         
-        if (targetFront === target) {
+        if (targetFront === this.hud.target) {
           continue;
         }
 
@@ -283,7 +291,12 @@ class WebConsoleUI {
         }
 
         this.additionalProxies.push(
-          new WebConsoleConnectionProxy(this, targetFront)
+          new WebConsoleConnectionProxy(
+            this,
+            targetFront,
+            this.isBrowserConsole,
+            this.fissionSupport
+          )
         );
       }
     }
@@ -297,7 +310,7 @@ class WebConsoleUI {
 
     this.outputNode = this.document.getElementById("app-wrapper");
 
-    const toolbox = this.hud.toolbox;
+    const toolbox = gDevTools.getToolbox(this.hud.target);
 
     
     

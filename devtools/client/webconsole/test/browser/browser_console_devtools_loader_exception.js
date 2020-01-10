@@ -17,7 +17,7 @@ add_task(async function() {
   ok(bcHud, "browser console opened");
 
   
-  const toolbox = wcHud.toolbox;
+  const toolbox = gDevTools.getToolbox(wcHud.target);
   const oldPanels = toolbox._toolPanels;
   
   toolbox._toolPanels = {};
