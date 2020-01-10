@@ -10,7 +10,7 @@
 #define mozilla_ReflowInput_h
 
 #include "nsMargin.h"
-#include "nsStyleCoord.h"
+#include "nsStyleConsts.h"
 #include "nsIFrame.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"

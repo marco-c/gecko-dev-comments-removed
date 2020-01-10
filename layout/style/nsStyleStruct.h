@@ -22,7 +22,6 @@
 #include "nsMargin.h"
 #include "nsFont.h"
 #include "nsStyleAutoArray.h"
-#include "nsStyleCoord.h"
 #include "nsStyleConsts.h"
 #include "nsChangeHint.h"
 #include "nsTimingFunction.h"
@@ -946,11 +945,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList {
   mozilla::StyleMozListReversed
       mMozListReversed;  
 };
-
-
-
-
-
 
 
 
