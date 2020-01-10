@@ -3374,22 +3374,20 @@ nsresult nsFocusManager::GetNextTabbableContent(
       } else {
         currentTopLevelScopeOwner = currentContent;
       }
-      if (currentTopLevelScopeOwner) {
-        if (currentTopLevelScopeOwner == oldTopLevelScopeOwner) {
+      if (currentTopLevelScopeOwner &&
+          currentTopLevelScopeOwner == oldTopLevelScopeOwner) {
+        
+        do {
+          if (aForward) {
+            frameTraversal->Next();
+          } else {
+            frameTraversal->Prev();
+          }
+          frame = static_cast<nsIFrame*>(frameTraversal->CurrentItem());
           
-          do {
-            if (aForward) {
-              frameTraversal->Next();
-            } else {
-              frameTraversal->Prev();
-            }
-            frame = static_cast<nsIFrame*>(frameTraversal->CurrentItem());
-            
-            
-          } while (frame && frame->GetPrevContinuation());
-          continue;
-        }
-        currentContent = currentTopLevelScopeOwner;
+          
+        } while (frame && frame->GetPrevContinuation());
+        continue;
       }
 
       
@@ -3441,18 +3439,18 @@ nsresult nsFocusManager::GetNextTabbableContent(
       
       
       
-      if (IsHostOrSlot(currentContent)) {
+      if (IsHostOrSlot(currentTopLevelScopeOwner)) {
         bool focusableHostSlot;
-        int32_t tabIndex =
-            HostOrSlotTabIndexValue(currentContent, &focusableHostSlot);
+        int32_t tabIndex = HostOrSlotTabIndexValue(currentTopLevelScopeOwner,
+                                                   &focusableHostSlot);
         
         
         if ((!aForward || !focusableHostSlot) && tabIndex >= 0 &&
             (aIgnoreTabIndex || aCurrentTabIndex == tabIndex)) {
           nsIContent* contentToFocus = GetNextTabbableContentInScope(
-              currentContent, currentContent, aOriginalStartContent, aForward,
-              aForward ? 1 : 0, aIgnoreTabIndex, aForDocumentNavigation,
-              true );
+              currentTopLevelScopeOwner, currentTopLevelScopeOwner,
+              aOriginalStartContent, aForward, aForward ? 1 : 0,
+              aIgnoreTabIndex, aForDocumentNavigation, true );
           if (contentToFocus) {
             NS_ADDREF(*aResultContent = contentToFocus);
             return NS_OK;
