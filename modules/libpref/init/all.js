@@ -5794,3 +5794,18 @@ pref("marionette.prefs.recommended", true);
 
 
 pref("marionette.contentListener", false);
+
+
+
+pref("remote.enabled", false);
+
+
+
+pref("remote.force-local", true);
+
+
+
+
+
+
+pref("remote.log.level", "Info");
