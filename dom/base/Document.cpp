@@ -3034,25 +3034,14 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
   
   
   
-  nsCOMPtr<nsIDocShellTreeItem> treeItem = this->GetDocShell();
-  if (treeItem) {
-    nsCOMPtr<nsIDocShellTreeItem> sameTypeParent;
-    treeItem->GetInProcessSameTypeParent(getter_AddRefs(sameTypeParent));
-    if (sameTypeParent) {
-      Document* doc = sameTypeParent->GetDocument();
-      mBlockAllMixedContent = doc->GetBlockAllMixedContent(false);
-      
-      
-      mBlockAllMixedContentPreloads =
-          mBlockAllMixedContent || doc->GetBlockAllMixedContent(true);
-
-      mUpgradeInsecureRequests = doc->GetUpgradeInsecureRequests(false);
-      
-      
-      mUpgradeInsecurePreloads =
-          mUpgradeInsecureRequests || doc->GetUpgradeInsecureRequests(true);
-    }
-  }
+  
+  
+  
+  
+  mUpgradeInsecureRequests = loadInfo->GetUpgradeInsecureRequests();
+  mUpgradeInsecurePreloads = mUpgradeInsecureRequests;
+  mBlockAllMixedContent = loadInfo->GetBlockAllMixedContent();
+  mBlockAllMixedContentPreloads = mBlockAllMixedContent;
 
   nsresult rv = InitReferrerInfo(aChannel);
   NS_ENSURE_SUCCESS(rv, rv);
