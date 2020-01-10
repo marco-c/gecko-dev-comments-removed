@@ -191,7 +191,7 @@ function insertTrustAnchorsFromDatabase() {
   const TRUST_TYPE = Ci.nsIX509CertDB.TRUSTED_SSL;
 
   
-  for (let cert of CertDb.getCerts().getEnumerator()) {
+  for (let cert of CertDb.getCerts()) {
     
     
 
