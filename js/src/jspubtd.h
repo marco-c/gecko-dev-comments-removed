@@ -46,7 +46,7 @@ enum JSType {
 
 
 enum JSProtoKey {
-#define PROTOKEY_AND_INITIALIZER(name, init, clasp) JSProto_##name,
+#define PROTOKEY_AND_INITIALIZER(name, clasp) JSProto_##name,
   JS_FOR_EACH_PROTOTYPE(PROTOKEY_AND_INITIALIZER)
 #undef PROTOKEY_AND_INITIALIZER
       JSProto_LIMIT
