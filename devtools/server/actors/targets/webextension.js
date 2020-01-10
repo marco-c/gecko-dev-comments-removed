@@ -33,8 +33,8 @@ loader.lazyRequireGetter(
   "devtools/server/actors/thread",
   true
 );
-const FALLBACK_DOC_MESSAGE =
-  "Your addon does not have any document opened yet.";
+const FALLBACK_DOC_URL =
+  "chrome://devtools/content/shared/webextension-fallback.html";
 
 
 
@@ -182,7 +182,7 @@ webExtensionTargetPrototype._searchFallbackWindow = function() {
   
   
   this.fallbackWindow = this.chromeGlobal.content;
-  this.fallbackWindow.location = "data:text/html,<h1>" + FALLBACK_DOC_MESSAGE;
+  this.fallbackWindow.document.location.href = FALLBACK_DOC_URL;
 
   return this.fallbackWindow;
 };
