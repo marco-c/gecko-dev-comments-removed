@@ -92,10 +92,7 @@ bool WeakMapObject::get(JSContext* cx, unsigned argc, Value* vp) {
   if (ObjectValueMap* map =
           args.thisv().toObject().as<WeakMapObject>().getMap()) {
     JSObject* key = &args[0].toObject();
-    
-    
-    
-    if (ObjectValueMap::Ptr ptr = map->unbarrieredLookup(key)) {
+    if (ObjectValueMap::Ptr ptr = map->lookup(key)) {
       map->remove(ptr);
       args.rval().setBoolean(true);
       return true;

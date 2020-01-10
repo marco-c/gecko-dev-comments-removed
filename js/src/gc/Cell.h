@@ -439,34 +439,6 @@ static MOZ_ALWAYS_INLINE void AssertValidToSkipBarrier(TenuredCell* thing) {
   AssertValidToSkipBarrier(next);
 }
 
-
-
-
-enum class CellColor : uint8_t { White = 0, Gray = 1, Black = 2 };
-
-inline CellColor GetCellColor(Cell* cell) {
-  if (cell->isMarkedBlack()) {
-    return CellColor::Black;
-  }
-
-  if (cell->isMarkedGray()) {
-    return CellColor::Gray;
-  }
-
-  return CellColor::White;
-}
-
-static inline CellColor GetCellColor(MarkColor color) {
-  return color == MarkColor::Black ? CellColor::Black : CellColor::Gray;
-}
-
-static inline MarkColor GetMarkColor(CellColor color) {
-  MOZ_ASSERT(color != CellColor::White);
-  return color == CellColor::Black ? MarkColor::Black : MarkColor::Gray;
-}
-
-static inline bool IsMarked(CellColor c) { return c != CellColor::White; }
-
 #ifdef DEBUG
 
  void Cell::assertThingIsNotGray(Cell* cell) {

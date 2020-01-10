@@ -488,8 +488,6 @@ class JS::Realm : public JS::shadow::Realm {
   
   JSRuntime* runtimeFromAnyThread() const { return runtime_; }
 
-  void removeWrapper(js::WrapperMap::Ptr p);
-
   const JS::RealmCreationOptions& creationOptions() const {
     return creationOptions_;
   }
