@@ -171,9 +171,10 @@ add_task(async function test_keyword_result() {
 
     let details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
 
+    
     assertElementsDisplayed(details, {
       separator: true,
-      title: "example.com",
+      title: TEST_URL + "?q=",
       type: UrlbarUtils.RESULT_TYPE.KEYWORD,
     });
 

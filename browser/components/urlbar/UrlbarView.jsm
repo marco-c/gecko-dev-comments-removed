@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 "use strict";
 
@@ -16,18 +16,18 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
-// Stale rows are removed on a timer with this timeout.  Tests can override this
-// by setting UrlbarView.removeStaleRowsTimeout.
+
+
 const DEFAULT_REMOVE_STALE_ROWS_TIMEOUT = 400;
 
-/**
- * Receives and displays address bar autocomplete results.
- */
+
+
+
 class UrlbarView {
-  /**
-   * @param {UrlbarInput} input
-   *   The UrlbarInput instance belonging to this UrlbarView instance.
-   */
+  
+
+
+
   constructor(input) {
     this.input = input;
     this.panel = input.panel;
@@ -45,8 +45,8 @@ class UrlbarView {
     this._rows.addEventListener("mousedown", this);
     this._rows.addEventListener("mouseup", this);
 
-    // For the horizontal fade-out effect, set the overflow attribute on result
-    // rows when they overflow.
+    
+    
     this._rows.addEventListener("overflow", this);
     this._rows.addEventListener("underflow", this);
 
@@ -54,36 +54,36 @@ class UrlbarView {
     this.controller.addQueryListener(this);
   }
 
-  /**
-   * Sets the icon, title, button's title, and link's title
-   * for the contextual tip. If a contextual tip has not
-   * been created, then it will be created.
-   *
-   * @param {object} details
-   * @param {string} details.title
-   *   Main title displayed by the contextual tip.
-   * @param {string} [details.buttonTitle]
-   *   Title of the button on the contextual tip.
-   *   If omitted then the button will be hidden.
-   * @param {string} [details.linkTitle]
-   *   Title of the link on the contextual tip.
-   *   If omitted then the link will be hidden.
-   * @param {string} [details.iconStyle]
-   *   A non-empty string of styles to add to the icon's style attribute.
-   *   These styles set CSS variables to URLs of images;
-   *   the CSS variables responsible for the icon's background image are
-   *   the variable names containing `--webextension-contextual-tip-icon`
-   *   in `browser/base/content/browser.css`.
-   *   If ommited, no changes are made to the icon.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   setContextualTip(details) {
     if (!this.contextualTip) {
       this.contextualTip = new UrlbarContextualTip(this);
     }
     this.contextualTip.set(details);
 
-    // Disable one off search buttons from appearing if
-    // the contextual tip is the only item in the urlbar view.
+    
+    
     if (this.visibleRowCount == 0) {
       this._enableOrDisableOneOffSearches(false);
     }
@@ -91,15 +91,15 @@ class UrlbarView {
     this._openPanel();
   }
 
-  /**
-   * Hides the contextual tip.
-   */
+  
+
+
   hideContextualTip() {
     if (this.contextualTip) {
       this.contextualTip.hide();
 
-      // When the pending query has finished and there's 0 results then
-      // close the urlbar view.
+      
+      
       this.input.lastQueryContextPromise.then(() => {
         if (this.visibleRowCount == 0) {
           this.close();
@@ -108,9 +108,9 @@ class UrlbarView {
     }
   }
 
-  /**
-   * Removes the contextual tip from the DOM.
-   */
+  
+
+
   removeContextualTip() {
     if (!this.contextualTip) {
       return;
@@ -132,10 +132,10 @@ class UrlbarView {
     return this._oneOffSearchButtons;
   }
 
-  /**
-   * @returns {boolean}
-   *   Whether the panel is open.
-   */
+  
+
+
+
   get isOpen() {
     return !this.panel.hasAttribute("hidden");
   }
@@ -217,10 +217,10 @@ class UrlbarView {
     return val;
   }
 
-  /**
-   * @returns {UrlbarResult}
-   *   The currently selected result.
-   */
+  
+
+
+
   get selectedResult() {
     if (!this.isOpen) {
       return null;
@@ -235,10 +235,10 @@ class UrlbarView {
     return selectedRow.result;
   }
 
-  /**
-   * @returns {Element}
-   *   The currently selected element.
-   */
+  
+
+
+
   get selectedElement() {
     if (!this.isOpen) {
       return null;
@@ -247,12 +247,12 @@ class UrlbarView {
     return this._selectedElement;
   }
 
-  /**
-   * @returns {number}
-   *   The number of visible results in the view.  Note that this may be larger
-   *   than the number of results in the current query context since the view
-   *   may be showing stale results.
-   */
+  
+
+
+
+
+
   get visibleRowCount() {
     let sum = 0;
     for (let row of this._rows.children) {
@@ -261,10 +261,10 @@ class UrlbarView {
     return sum;
   }
 
-  /**
-   * @returns {number}
-   *   The number of selectable elements in the view.
-   */
+  
+
+
+
   get visibleElementCount() {
     let sum = 0;
     let element = this._getFirstSelectableElement();
@@ -277,13 +277,13 @@ class UrlbarView {
     return sum;
   }
 
-  /**
-   * @param {Element} element
-   *   An element in the view.
-   * @returns {UrlbarResult}
-   *   The result attached to parameter `element`, if `element` is a row or a
-   *   decendant of a row.
-   */
+  
+
+
+
+
+
+
   getResultFromElement(element) {
     if (!this.isOpen) {
       return null;
@@ -298,15 +298,15 @@ class UrlbarView {
     return row.result;
   }
 
-  /**
-   * Moves the view selection forward or backward.
-   *
-   * @param {number} amount
-   *   The number of steps to move.
-   * @param {boolean} options.reverse
-   *   Set to true to select the previous item. By default the next item
-   *   will be selected.
-   */
+  
+
+
+
+
+
+
+
+
   selectBy(amount, { reverse = false } = {}) {
     if (!this.isOpen) {
       throw new Error(
@@ -314,16 +314,16 @@ class UrlbarView {
       );
     }
 
-    // Freeze results as the user is interacting with them.
+    
     this.controller.cancelQuery();
 
     let selectedElement = this._selectedElement;
 
-    // We cache the first and last rows since they will not change while
-    // selectBy is running.
+    
+    
     let firstSelectableElement = this._getFirstSelectableElement();
-    // _getLastSelectableElement will not return an element that is over
-    // maxResults and thus may be hidden and not selectable.
+    
+    
     let lastSelectableElement = this._getLastSelectableElement();
 
     if (!selectedElement) {
@@ -366,9 +366,9 @@ class UrlbarView {
     this._setAccessibleFocus(null);
   }
 
-  /**
-   * Closes the view, cancelling the query if necessary.
-   */
+  
+
+
   close() {
     this.controller.cancelQuery();
 
@@ -394,7 +394,7 @@ class UrlbarView {
     }
   }
 
-  // UrlbarController listener methods.
+  
   onQueryStarted(queryContext) {
     this._queryWasCancelled = false;
     this._startRemoveStaleRowsTimer();
@@ -407,7 +407,7 @@ class UrlbarView {
 
   onQueryFinished(queryContext) {
     this._cancelRemoveStaleRowsTimer();
-    // If the query has not been canceled, remove stale rows immediately.
+    
     if (!this._queryWasCancelled) {
       this._removeStaleRows();
     }
@@ -427,14 +427,14 @@ class UrlbarView {
           setAccessibleFocus: this.controller._userSelectionBehavior == "arrow",
         });
       } else {
-        // Clear the selection when we get a new set of results.
+        
         this._selectElement(null, {
           updateInput: false,
         });
       }
-      // Hide the one-off search buttons if the search string is empty, or
-      // starts with a potential @ search alias or the search restriction
-      // character.
+      
+      
+      
       let trimmedValue = queryContext.searchString.trim();
       this._enableOrDisableOneOffSearches(
         trimmedValue &&
@@ -442,26 +442,30 @@ class UrlbarView {
           (trimmedValue[0] != UrlbarTokenizer.RESTRICT.SEARCH ||
             trimmedValue.length != 1)
       );
+
+      
+      
+      this.input.maybeClearAutofillPlaceholder(queryContext.results[0]);
     }
 
     this._openPanel();
 
     if (isFirstPreselectedResult) {
-      // The first, preselected result may be a search alias result, so apply
-      // formatting if necessary.  Conversely, the first result of the previous
-      // query may have been an alias, so remove formatting if necessary.
+      
+      
+      
       this.input.formatValue();
     }
   }
 
-  /**
-   * Handles removing a result from the view when it is removed from the query,
-   * and attempts to select the new result on the same row.
-   *
-   * This assumes that the result rows are in index order.
-   *
-   * @param {number} index The index of the result that has been removed.
-   */
+  
+
+
+
+
+
+
+
   onQueryResultRemoved(index) {
     let rowToRemove = this._rows.children[index];
     rowToRemove.remove();
@@ -472,7 +476,7 @@ class UrlbarView {
       return;
     }
 
-    // Select the row at the same index, if possible.
+    
     let newSelectionIndex = index;
     if (index >= this._queryContext.results.length) {
       newSelectionIndex = this._queryContext.results.length - 1;
@@ -482,11 +486,11 @@ class UrlbarView {
     }
   }
 
-  /**
-   * Passes DOM events for the view to the _on_<event type> methods.
-   * @param {Event} event
-   *   DOM event from the <view>.
-   */
+  
+
+
+
+
   handleEvent(event) {
     let methodName = "_on_" + event.type;
     if (methodName in this) {
@@ -496,19 +500,19 @@ class UrlbarView {
     }
   }
 
-  /**
-   * This is called when a one-off is clicked and when "search in new tab"
-   * is selected from a one-off context menu.
-   * @param {Event} event
-   * @param {nsISearchEngine} engine
-   * @param {string} where
-   * @param {object} params
-   */
+  
+
+
+
+
+
+
+
   handleOneOffSearch(event, engine, where, params) {
     this.input.handleCommand(event, where, params);
   }
 
-  // Private methods below.
+  
 
   _createElement(name) {
     return this.document.createElementNS("http://www.w3.org/1999/xhtml", name);
@@ -528,16 +532,16 @@ class UrlbarView {
       let px = number => number.toFixed(2) + "px";
       let inputRect = getBoundsWithoutFlushing(this.input.textbox);
 
-      // Make the panel span the width of the window.
+      
       let documentRect = getBoundsWithoutFlushing(
         this.document.documentElement
       );
       let width = documentRect.right - documentRect.left;
 
-      // Keep the popup items' site icons aligned with the input's identity
-      // icon if it's not too far from the edge of the window.  We define
-      // "too far" as "more than 30% of the window's width AND more than
-      // 250px".
+      
+      
+      
+      
       let boundToCheck = this.window.RTL_UI ? "right" : "left";
       let startOffset = Math.abs(
         inputRect[boundToCheck] - documentRect[boundToCheck]
@@ -545,20 +549,20 @@ class UrlbarView {
       let alignSiteIcons = startOffset / width <= 0.3 || startOffset <= 250;
 
       if (alignSiteIcons) {
-        // Calculate the end margin if we have a start margin.
+        
         let boundToCheckEnd = this.window.RTL_UI ? "left" : "right";
         let endOffset = Math.abs(
           inputRect[boundToCheckEnd] - documentRect[boundToCheckEnd]
         );
         if (endOffset > startOffset * 2) {
-          // Provide more space when aligning would result in an unbalanced
-          // margin. This allows the location bar to be moved to the start
-          // of the navigation toolbar to reclaim space for results.
+          
+          
+          
           endOffset = startOffset;
         }
 
-        // Align the view's icons with the tracking protection or identity icon,
-        // whichever is visible.
+        
+        
         let alignRect;
         for (let id of ["tracking-protection-icon-box", "identity-icon"]) {
           alignRect = getBoundsWithoutFlushing(
@@ -579,7 +583,7 @@ class UrlbarView {
         this.panel.style.removeProperty("--item-padding-end");
       }
 
-      // Align the panel with the parent toolbar.
+      
       this.panel.style.top = px(
         getBoundsWithoutFlushing(this.input.textbox.closest("toolbar")).bottom
       );
@@ -599,11 +603,11 @@ class UrlbarView {
     this.controller.notify(this.controller.NOTIFICATIONS.VIEW_OPEN);
   }
 
-  /**
-   * Whether a result is a search suggestion.
-   * @param {UrlbarResult} result The result to examine.
-   * @returns {boolean} Whether the result is a search suggestion.
-   */
+  
+
+
+
+
   _resultIsSearchSuggestion(result) {
     return Boolean(
       result &&
@@ -612,55 +616,55 @@ class UrlbarView {
     );
   }
 
-  /**
-   * Checks whether the given row index can be update to the result we want
-   * to apply. This is used in _updateResults to avoid flickering of results, by
-   * reusing existing rows.
-   * @param {number} rowIndex Index of the row to examine.
-   * @param {UrlbarResult} result The result we'd like to apply.
-   * @param {number} firstSearchSuggestionIndex Index of the first search suggestion.
-   * @param {number} lastSearchSuggestionIndex Index of the last search suggestion.
-   * @returns {boolean} Whether the row can be updated to this result.
-   */
+  
+
+
+
+
+
+
+
+
+
   _rowCanUpdateToResult(
     rowIndex,
     result,
     firstSearchSuggestionIndex,
     lastSearchSuggestionIndex
   ) {
-    // The heuristic result must always be current, thus it's always compatible.
+    
     if (result.heuristic) {
       return true;
     }
     let row = this._rows.children[rowIndex];
     let resultIsSearchSuggestion = this._resultIsSearchSuggestion(result);
-    // If the row is same type, just update it.
+    
     if (
       resultIsSearchSuggestion == this._resultIsSearchSuggestion(row.result)
     ) {
       return true;
     }
-    // If the row has a different type, update it if we are in a compatible
-    // index range.
-    // In practice we don't want to overwrite a search suggestion with a non
-    // search suggestion, but we allow the opposite.
+    
+    
+    
+    
     return resultIsSearchSuggestion && rowIndex >= firstSearchSuggestionIndex;
   }
 
   _updateResults(queryContext) {
-    // TODO: For now this just compares search suggestions to the rest, in the
-    // future we should make it support any type of result. Or, even better,
-    // results should be grouped, thus we can directly update groups.
+    
+    
+    
 
-    // Find where are existing search suggestions.
+    
     let firstSearchSuggestionIndex = -1;
     let lastSearchSuggestionIndex = -1;
     for (let i = 0; i < this._rows.children.length; ++i) {
       let row = this._rows.children[i];
-      // Mark every row as stale, _updateRow will unmark them later.
+      
       row.setAttribute("stale", "true");
-      // Skip any row that isn't a search suggestion, or is non-visible because
-      // over maxResults.
+      
+      
       if (
         row.result.heuristic ||
         i >= queryContext.maxResults ||
@@ -674,12 +678,12 @@ class UrlbarView {
       lastSearchSuggestionIndex = i;
     }
 
-    // Walk rows and find an insertion index for results. To avoid flicker, we
-    // skip rows until we find one compatible with the result we want to apply.
-    // If we couldn't find a compatible range, we'll just update.
+    
+    
+    
     let results = queryContext.results;
     let resultIndex = 0;
-    // We can have more rows than the visible ones.
+    
     for (
       let rowIndex = 0;
       rowIndex < this._rows.children.length && resultIndex < results.length;
@@ -699,12 +703,12 @@ class UrlbarView {
         resultIndex++;
       }
     }
-    // Add remaining results, if we have fewer rows than results.
+    
     for (; resultIndex < results.length; ++resultIndex) {
       let row = this._createRow(results[resultIndex].type);
       this._updateRow(row, results[resultIndex]);
-      // Due to stale rows, we may have more rows than maxResults, thus we must
-      // hide them, and we'll revert this when stale rows are removed.
+      
+      
       if (this._rows.children.length >= queryContext.maxResults) {
         this._setRowVisibility(row, false);
       }
@@ -818,8 +822,8 @@ class UrlbarView {
         result.payload.buttonText,
         []
       );
-      // Tips are dissimilar to other types of results and don't need the rest
-      // of this markup. We return early.
+      
+      
       return;
     }
 
@@ -926,22 +930,22 @@ class UrlbarView {
   _setRowVisibility(row, visible) {
     row.style.display = visible ? "" : "none";
     if (!visible) {
-      // Reset the overflow state of elements that can overflow in case their
-      // content changes while they're hidden. When making the row visible
-      // again, we'll get new overflow events if needed.
+      
+      
+      
       this._setElementOverflowing(row._elements.get("title"), false);
       this._setElementOverflowing(row._elements.get("url"), false);
     }
   }
 
-  /**
-   * Returns true if a row or a descendant in the view is visible.
-   *
-   * @param {Element} element
-   *   A row in the view or a descendant of the row.
-   * @returns {boolean}
-   *   True if `element` or `element`'s ancestor row is visible in the view.
-   */
+  
+
+
+
+
+
+
+
   _isElementVisible(element) {
     if (!element.classList.contains("urlbarView-row")) {
       element = element.closest(".urlbarView-row");
@@ -999,11 +1003,11 @@ class UrlbarView {
     }
   }
 
-  /**
-   * Returns the first selectable element in the view.
-   *
-   * @returns {Element} The first selectable element in the view.
-   */
+  
+
+
+
+
   _getFirstSelectableElement() {
     let firstElementChild = this._rows.firstElementChild;
     if (
@@ -1017,15 +1021,15 @@ class UrlbarView {
     return firstElementChild;
   }
 
-  /**
-   * Returns the last selectable element in the view.
-   *
-   * @returns {Element} The last selectable element in the view.
-   */
+  
+
+
+
+
   _getLastSelectableElement() {
     let lastElementChild = this._rows.lastElementChild;
 
-    // We are only interested in visible elements.
+    
     while (lastElementChild && !this._isElementVisible(lastElementChild)) {
       lastElementChild = this._getPreviousSelectableElement(lastElementChild);
     }
@@ -1040,11 +1044,11 @@ class UrlbarView {
     return lastElementChild;
   }
 
-  /**
-   * Returns the next selectable element after the parameter `element`.
-   * @param {Element} element A selectable element in the view.
-   * @returns {Element} The next selectable element after the parameter `element`.
-   */
+  
+
+
+
+
   _getNextSelectableElement(element) {
     let next;
     if (element.classList.contains("urlbarView-tip-button")) {
@@ -1068,11 +1072,11 @@ class UrlbarView {
     return next;
   }
 
-  /**
-   * Returns the previous selectable element before the parameter `element`.
-   * @param {Element} element A selectable element in the view.
-   * @returns {Element} The previous selectable element before the parameter `element`.
-   */
+  
+
+
+
+
   _getPreviousSelectableElement(element) {
     let previous;
     if (element.classList.contains("urlbarView-tip-button")) {
@@ -1099,14 +1103,14 @@ class UrlbarView {
     return previous;
   }
 
-  /**
-   * Returns the currently selected row. Useful when this._selectedElement may be a
-   * non-row element, such as a descendant element of RESULT_TYPE.TIP.
-   *
-   * @returns {Element}
-   *   The currently selected row, or ancestor row of the currently selected item.
-   *
-   */
+  
+
+
+
+
+
+
+
   _getSelectedRow() {
     if (!this.isOpen || !this._selectedElement) {
       return null;
@@ -1114,19 +1118,19 @@ class UrlbarView {
     let selected = this._selectedElement;
 
     if (!selected.classList.contains("urlbarView-row")) {
-      // selected may be an element in a result group, like RESULT_TYPE.TIP.
+      
       selected = selected.closest(".urlbarView-row");
     }
 
     return selected;
   }
 
-  /**
-   * @param {Element} element
-   *   An element that is potentially a row or descendant of a row.
-   * @returns {Element}
-   *   The row containing `element`, or `element` itself if it is a row.
-   */
+  
+
+
+
+
+
   _getRowFromElement(element) {
     if (!this.isOpen || !element) {
       return null;
@@ -1147,17 +1151,17 @@ class UrlbarView {
     }
   }
 
-  /**
-   * Adds text content to a node, placing substrings that should be highlighted
-   * inside <em> nodes.
-   *
-   * @param {Node} parentNode
-   *   The text content will be added to this node.
-   * @param {string} textContent
-   *   The text content to give the node.
-   * @param {array} highlights
-   *   The matches to highlight in the text.
-   */
+  
+
+
+
+
+
+
+
+
+
+
   _addTextContentWithHighlights(parentNode, textContent, highlights) {
     parentNode.textContent = "";
     if (!textContent) {
@@ -1208,15 +1212,15 @@ class UrlbarView {
     }
   }
 
-  // Event handlers below.
+  
 
   _on_SelectedOneOffButtonChanged() {
     if (!this.isOpen || !this._queryContext) {
       return;
     }
 
-    // Update all search suggestion results to use the newly selected engine, or
-    // if no engine is selected, revert to their original engines.
+    
+    
     let engine =
       this.oneOffSearchButtons.selectedButton &&
       this.oneOffSearchButtons.selectedButton.engine;
@@ -1243,10 +1247,10 @@ class UrlbarView {
         "searchWithEngine",
         [(engine && engine.name) || result.payload.engine]
       );
-      // If we just changed the engine from the original engine and it had an
-      // icon, then make sure the result now uses the new engine's icon or
-      // failing that the default icon.  If we changed it back to the original
-      // engine, go back to the original or default icon.
+      
+      
+      
+      
       let favicon = item.querySelector(".urlbarView-favicon");
       if (engine && result.payload.icon) {
         favicon.src =
@@ -1260,7 +1264,7 @@ class UrlbarView {
 
   _on_mousedown(event) {
     if (event.button == 2) {
-      // Ignore right clicks.
+      
       return;
     }
     let row = event.target;
@@ -1277,7 +1281,7 @@ class UrlbarView {
 
   _on_mouseup(event) {
     if (event.button == 2) {
-      // Ignore right clicks.
+      
       return;
     }
     this.input.pickElement(event.target, event);
@@ -1309,15 +1313,15 @@ class UrlbarView {
     }
 
     if (this._windowOuterWidth == this.window.outerWidth) {
-      // Sometimes a resize event is fired when the window's size doesn't
-      // actually change; at least, browser_tabMatchesInAwesomebar.js triggers
-      // it intermittently, which causes that test to hang or fail.  Ignore
-      // those events.
+      
+      
+      
+      
       return;
     }
 
-    // Close the popup as it would be wrongly sized. This can
-    // happen when using special OS resize functions like Win+Arrow.
+    
+    
     this.close();
   }
 }
