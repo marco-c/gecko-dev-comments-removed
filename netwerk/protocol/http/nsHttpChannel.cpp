@@ -7975,7 +7975,6 @@ nsHttpChannel::OnStopRequest(nsIRequest* request, nsresult status) {
     }
 
     mTransferSize = mTransaction->GetTransferSize();
-    mRequestSize = mTransaction->GetRequestSize();
 
     
     
