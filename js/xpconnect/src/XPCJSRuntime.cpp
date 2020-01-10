@@ -14,6 +14,7 @@
 #include "xpcpublic.h"
 #include "XPCWrapper.h"
 #include "XPCJSMemoryReporter.h"
+#include "XPCJSThreadPool.h"
 #include "XrayWrapper.h"
 #include "WrapperFactory.h"
 #include "mozJSComponentLoader.h"
@@ -31,6 +32,7 @@
 #include "nsIPlatformInfo.h"
 #include "nsPIDOMWindow.h"
 #include "nsPrintfCString.h"
+#include "nsThreadPool.h"
 #include "nsWindowSizes.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Telemetry.h"
@@ -1123,6 +1125,14 @@ void XPCJSRuntime::SystemIsBeingShutDown() {
   mWrappedJSRoots = nullptr;
 }
 
+StaticAutoPtr<HelperThreadPool> gHelperThreads;
+
+void InitializeHelperThreadPool() { gHelperThreads = new HelperThreadPool(); }
+
+void DispatchOffThreadTask(RunnableTask* task) {
+  gHelperThreads->Dispatch(MakeAndAddRef<HelperThreadTaskHandler>(task));
+}
+
 void XPCJSRuntime::Shutdown(JSContext* cx) {
   
   
@@ -1134,6 +1144,10 @@ void XPCJSRuntime::Shutdown(JSContext* cx) {
   xpc_DelocalizeRuntime(JS_GetRuntime(cx));
 
   JS::SetGCSliceCallback(cx, mPrevGCSliceCallback);
+
+  
+  gHelperThreads->Shutdown();
+  gHelperThreads = nullptr;
 
   
   mWrappedJSMap->ShutdownMarker();
@@ -3072,6 +3086,9 @@ void XPCJSRuntime::Initialize(JSContext* cx) {
   JS::SetProcessBuildIdOp(GetBuildId);
 
   
+  InitializeHelperThreadPool();
+
+  
   
   
   
@@ -3330,3 +3347,25 @@ JSObject* XPCJSRuntime::LoaderGlobal() {
   }
   return mLoaderGlobal;
 }
+
+uint32_t GetAndClampCPUCount() {
+  
+  int32_t proc = GetNumberOfProcessors();
+  if (proc < 2) {
+    return 2;
+  }
+  return std::min(proc, 8);
+}
+nsresult HelperThreadPool::Dispatch(
+    already_AddRefed<HelperThreadTaskHandler> aRunnable) {
+  mPool->Dispatch(std::move(aRunnable), NS_DISPATCH_NORMAL);
+  return NS_OK;
+}
+
+HelperThreadPool::HelperThreadPool() {
+  mPool = new nsThreadPool();
+  mPool->SetName(NS_LITERAL_CSTRING("JSHelperThreads"));
+  mPool->SetThreadLimit(GetAndClampCPUCount());
+}
+
+void HelperThreadPool::Shutdown() { mPool->Shutdown(); }
