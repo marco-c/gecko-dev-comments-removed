@@ -12,12 +12,12 @@
 #include <algorithm>  
 
 #include "jstypes.h"  
-#include "jsutil.h"  
 
 #include "frontend/BytecodeEmitter.h"  
 #include "frontend/SharedContext.h"    
 #include "frontend/SourceNotes.h"      
 #include "js/TypeDecls.h"              
+#include "util/BitArray.h"
 #include "vm/BytecodeUtil.h"  
 #include "vm/Opcodes.h"       
 #include "vm/Runtime.h"       
