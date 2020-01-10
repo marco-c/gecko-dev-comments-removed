@@ -79,9 +79,6 @@ extern "C" {
 
 
 
-
-
-
 #ifndef LZ4LIB_VISIBILITY
 #  if defined(__GNUC__) && (__GNUC__ >= 4)
 #    define LZ4LIB_VISIBILITY __attribute__ ((visibility ("default")))
@@ -100,7 +97,7 @@ extern "C" {
 
 #define LZ4_VERSION_MAJOR    1    /* for breaking interface changes  */
 #define LZ4_VERSION_MINOR    9    /* for new (non-breaking) interface capabilities */
-#define LZ4_VERSION_RELEASE  2    /* for tweaks, bug-fixes, or development */
+#define LZ4_VERSION_RELEASE  1    /* for tweaks, bug-fixes, or development */
 
 #define LZ4_VERSION_NUMBER (LZ4_VERSION_MAJOR *100*100 + LZ4_VERSION_MINOR *100 + LZ4_VERSION_RELEASE)
 
@@ -146,12 +143,6 @@ LZ4LIB_API const char* LZ4_versionString (void);
 
 
 LZ4LIB_API int LZ4_compress_default(const char* src, char* dst, int srcSize, int dstCapacity);
-
-
-
-
-
-
 
 
 
@@ -397,7 +388,6 @@ LZ4LIB_API int LZ4_decompress_safe_continue (LZ4_streamDecode_t* LZ4_streamDecod
 
 LZ4LIB_API int LZ4_decompress_safe_usingDict (const char* src, char* dst, int srcSize, int dstCapcity, const char* dictStart, int dictSize);
 
-#endif 
 
 
 
@@ -422,18 +412,14 @@ LZ4LIB_API int LZ4_decompress_safe_usingDict (const char* src, char* dst, int sr
 
 
 
-
-
-#ifdef LZ4_STATIC_LINKING_ONLY
-
-#ifndef LZ4_STATIC_3504398509
-#define LZ4_STATIC_3504398509
 
 #ifdef LZ4_PUBLISH_STATIC_FUNCTIONS
 #define LZ4LIB_STATIC_API LZ4LIB_API
 #else
 #define LZ4LIB_STATIC_API
 #endif
+
+#ifdef LZ4_STATIC_LINKING_ONLY
 
 
 
@@ -476,75 +462,8 @@ LZ4LIB_STATIC_API int LZ4_compress_fast_extState_fastReset (void* state, const c
 
 LZ4LIB_STATIC_API void LZ4_attach_dictionary(LZ4_stream_t* workingStream, const LZ4_stream_t* dictionaryStream);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define LZ4_DECOMPRESS_INPLACE_MARGIN(compressedSize)          (((compressedSize) >> 8) + 32)
-#define LZ4_DECOMPRESS_INPLACE_BUFFER_SIZE(decompressedSize)   ((decompressedSize) + LZ4_DECOMPRESS_INPLACE_MARGIN(decompressedSize))  /**< note: presumes that compressedSize < decompressedSize. note2: margin is overestimated a bit, since it could use compressedSize instead */
-
-#ifndef LZ4_DISTANCE_MAX   
-#  define LZ4_DISTANCE_MAX 65535   /* set to maximum value by default */
 #endif
 
-#define LZ4_COMPRESS_INPLACE_MARGIN                           (LZ4_DISTANCE_MAX + 32)   /* LZ4_DISTANCE_MAX can be safely replaced by srcSize when it's smaller */
-#define LZ4_COMPRESS_INPLACE_BUFFER_SIZE(maxCompressedSize)   ((maxCompressedSize) + LZ4_COMPRESS_INPLACE_MARGIN)  /**< maxCompressedSize is generally LZ4_COMPRESSBOUND(inputSize), but can be set to any lower value, with the risk that compression can fail (return code 0(zero)) */
-
-#endif   
-#endif   
-
-
-
-#ifndef LZ4_H_98237428734687
-#define LZ4_H_98237428734687
 
 
 
@@ -663,7 +582,6 @@ union LZ4_streamDecode_u {
 
 
 
-
 #ifdef LZ4_DISABLE_DEPRECATE_WARNINGS
 #  define LZ4_DEPRECATED(message)
 #else
@@ -683,8 +601,8 @@ union LZ4_streamDecode_u {
 #endif 
 
 
-LZ4_DEPRECATED("use LZ4_compress_default() instead")       LZ4LIB_API int LZ4_compress               (const char* src, char* dest, int srcSize);
-LZ4_DEPRECATED("use LZ4_compress_default() instead")       LZ4LIB_API int LZ4_compress_limitedOutput (const char* src, char* dest, int srcSize, int maxOutputSize);
+LZ4_DEPRECATED("use LZ4_compress_default() instead")       LZ4LIB_API int LZ4_compress               (const char* source, char* dest, int sourceSize);
+LZ4_DEPRECATED("use LZ4_compress_default() instead")       LZ4LIB_API int LZ4_compress_limitedOutput (const char* source, char* dest, int sourceSize, int maxOutputSize);
 LZ4_DEPRECATED("use LZ4_compress_fast_extState() instead") LZ4LIB_API int LZ4_compress_withState               (void* state, const char* source, char* dest, int inputSize);
 LZ4_DEPRECATED("use LZ4_compress_fast_extState() instead") LZ4LIB_API int LZ4_compress_limitedOutput_withState (void* state, const char* source, char* dest, int inputSize, int maxOutputSize);
 LZ4_DEPRECATED("use LZ4_compress_fast_continue() instead") LZ4LIB_API int LZ4_compress_continue                (LZ4_stream_t* LZ4_streamPtr, const char* source, char* dest, int inputSize);
