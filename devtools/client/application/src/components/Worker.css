@@ -62,7 +62,7 @@
 .worker__data {
   display: grid;
   grid-template-columns: auto 1fr;
-  grid-column-gap: 1rem;
+  grid-gap: 1rem;
 }
 
 .worker__data > * {

@@ -5,6 +5,8 @@
 :root {
   
   
+  --caption-10-font-size: 11px;
+  --caption-10-font-weight: 400;
   --body-10-font-size: 13px;
   --body-10-font-weight: 400;
   --body-20-font-size: 15px;
@@ -27,11 +29,18 @@
 
   
   --base-unit: 4px;
+
+  
+  --blue-50-a30: rgba(10, 132, 255, 0.3);
 }
 
 
 
 
+
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
