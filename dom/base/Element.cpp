@@ -1109,7 +1109,7 @@ bool Element::CanAttachShadowDOM() const {
 
 
   if (!IsHTMLElement() &&
-      !(XRE_IsParentProcess() && IsXULElement() &&
+      !(IsXULElement() &&
         nsContentUtils::AllowXULXBLForPrincipal(NodePrincipal()))) {
     return false;
   }
