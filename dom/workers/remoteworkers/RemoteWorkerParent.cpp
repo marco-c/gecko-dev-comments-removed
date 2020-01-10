@@ -53,12 +53,14 @@ RemoteWorkerParent::~RemoteWorkerParent() {
   MOZ_ASSERT(XRE_IsParentProcess());
 }
 
-void RemoteWorkerParent::Initialize() {
+void RemoteWorkerParent::Initialize(bool aAlreadyRegistered) {
   RefPtr<ContentParent> parent = BackgroundParent::GetContentParent(Manager());
 
   
   if (parent) {
-    parent->RegisterRemoteWorkerActor();
+    if (!aAlreadyRegistered) {
+      parent->RegisterRemoteWorkerActor();
+    }
 
     nsCOMPtr<nsIEventTarget> target =
         SystemGroup::EventTargetFor(TaskCategory::Other);
