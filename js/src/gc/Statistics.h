@@ -358,8 +358,8 @@ struct Statistics {
   } allocsSinceMinorGC;
 
   
-  size_t preHeapSize;
-  size_t postHeapSize;
+  size_t preTotalHeapBytes;
+  size_t postTotalHeapBytes;
 
   
 
@@ -424,6 +424,9 @@ struct Statistics {
 
   void beginGC(JSGCInvocationKind kind, const TimeStamp& currentTime);
   void endGC();
+
+  void sendGCTelemetry();
+  void sendSliceTelemetry(const SliceData& slice);
 
   void recordPhaseBegin(Phase phase);
   void recordPhaseEnd(Phase phase);
