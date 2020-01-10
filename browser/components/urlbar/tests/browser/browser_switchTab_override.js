@@ -34,6 +34,17 @@ add_task(async function test_switchtab_override() {
     UrlbarTestUtils.getSelectedIndex(window));
   Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.TAB_SWITCH);
 
+  
+  
+  const allLabels = document.getElementById("urlbar-display-box").children;
+  for (let label of allLabels) {
+    if (label.id == "switchtab") {
+      Assert.ok(BrowserTestUtils.is_visible(label));
+    } else {
+      Assert.ok(BrowserTestUtils.is_hidden(label));
+    }
+  }
+
   info("Override switch-to-tab");
   let deferred = PromiseUtils.defer();
   
@@ -48,6 +59,12 @@ add_task(async function test_switchtab_override() {
   BrowserTestUtils.browserLoaded(secondTab.linkedBrowser).then(deferred.resolve);
 
   EventUtils.synthesizeKey("KEY_Shift", {type: "keydown"});
+
+  
+  for (let label of allLabels) {
+    Assert.ok(BrowserTestUtils.is_hidden(label));
+  }
+
   registerCleanupFunction(() => {
     
     EventUtils.synthesizeKey("KEY_Shift", {type: "keyup"});
