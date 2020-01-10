@@ -15,6 +15,7 @@
 
 #include "builtin/streams/WritableStream.h"  
 #include "vm/JSObject-inl.h"                 
+#include "vm/List-inl.h"                     
 
 using js::WritableStream;
 
@@ -46,10 +47,41 @@ MOZ_MUST_USE
   stream->initWritableState();
 
   
-  
   MOZ_ASSERT(stream->writable());
-  MOZ_ASSERT(!stream->backpressure());
 
   
+  
+  
+  
+  
+  MOZ_ASSERT(stream->storedError().isUndefined());
+  MOZ_ASSERT(!stream->hasWriter());
+  MOZ_ASSERT(!stream->hasController());
+  MOZ_ASSERT(!stream->haveInFlightWriteRequest());
+  MOZ_ASSERT(stream->inFlightWriteRequest().isUndefined());
+  MOZ_ASSERT(stream->closeRequest().isUndefined());
+  MOZ_ASSERT(stream->inFlightCloseRequest().isUndefined());
+  MOZ_ASSERT(!stream->hasPendingAbortRequest());
+
+  
+  if (!StoreNewListInFixedSlot(cx, stream,
+                               WritableStream::Slot_WriteRequests)) {
+    return nullptr;
+  }
+
+  
+  MOZ_ASSERT(!stream->backpressure());
+
   return stream;
+}
+
+void WritableStream::clearInFlightWriteRequest(JSContext* cx) {
+  MOZ_ASSERT(stateIsInitialized());
+  MOZ_ASSERT(haveInFlightWriteRequest());
+
+  writeRequests()->popFirst(cx);
+  setFlag(HaveInFlightWriteRequest, false);
+
+  MOZ_ASSERT(!haveInFlightWriteRequest());
+  MOZ_ASSERT(inFlightWriteRequest().isUndefined());
 }

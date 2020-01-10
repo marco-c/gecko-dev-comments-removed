@@ -19,11 +19,14 @@
 #include "js/Class.h"         
 #include "js/RootingAPI.h"    
 #include "js/Value.h"         
+#include "vm/List.h"          
 #include "vm/NativeObject.h"  
 
 struct JSContext;
 
 namespace js {
+
+class WritableStreamDefaultController;
 
 class WritableStream : public NativeObject {
  public:
@@ -36,7 +39,55 @@ class WritableStream : public NativeObject {
 
 
 
-  enum Slots { Slot_State, SlotCount };
+  enum Slots {
+    
+
+
+
+    Slot_Controller,
+    Slot_Writer,
+    Slot_State,
+    Slot_StoredError,
+
+    
+
+
+
+
+
+
+
+
+    Slot_WriteRequests,
+
+    
+
+
+
+
+
+
+
+    Slot_CloseRequest,
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    Slot_PendingAbortRequestPromise,
+    Slot_PendingAbortRequestReason,
+
+    SlotCount
+  };
 
  private:
   enum State : uint32_t {
@@ -48,7 +99,11 @@ class WritableStream : public NativeObject {
     StateMask = 0x0000'00ff,
 
     Backpressure = 0x0000'0100,
-    FlagBits = Backpressure,
+    HaveInFlightWriteRequest = 0x0000'0200,
+    HaveInFlightCloseRequest = 0x0000'0400,
+    PendingAbortRequestWasAlreadyErroring = 0x0000'0800,
+    FlagBits = Backpressure | HaveInFlightWriteRequest |
+               HaveInFlightCloseRequest | PendingAbortRequestWasAlreadyErroring,
     FlagMask = 0x0000'ff00,
 
     SettableBits = uint32_t(StateBits | FlagBits)
@@ -132,6 +187,114 @@ class WritableStream : public NativeObject {
   bool errored() const { return state() == Errored; }
 
   bool backpressure() const { return flags() & Backpressure; }
+
+  bool haveInFlightWriteRequest() const {
+    return flags() & HaveInFlightWriteRequest;
+  }
+  bool haveInFlightCloseRequest() const {
+    return flags() & HaveInFlightCloseRequest;
+  }
+
+  bool hasController() const {
+    return !getFixedSlot(Slot_Controller).isUndefined();
+  }
+  inline WritableStreamDefaultController* controller() const;
+  inline void setController(WritableStreamDefaultController* controller);
+  void clearController() {
+    setFixedSlot(Slot_Controller, JS::UndefinedValue());
+  }
+
+  bool hasWriter() const { return !getFixedSlot(Slot_Writer).isUndefined(); }
+  void setWriter(JSObject* writer) {
+    setFixedSlot(Slot_Writer, JS::ObjectValue(*writer));
+  }
+  void clearWriter() { setFixedSlot(Slot_Writer, JS::UndefinedValue()); }
+
+  JS::Value storedError() const { return getFixedSlot(Slot_StoredError); }
+  void setStoredError(JS::Handle<JS::Value> value) {
+    setFixedSlot(Slot_StoredError, value);
+  }
+
+  JS::Value inFlightWriteRequest() const {
+    MOZ_ASSERT(stateIsInitialized());
+
+    
+    
+    if (haveInFlightWriteRequest()) {
+      MOZ_ASSERT(writeRequests()->length() > 0);
+      return writeRequests()->get(0);
+    }
+
+    return JS::UndefinedValue();
+  }
+
+  void clearInFlightWriteRequest(JSContext* cx);
+
+  JS::Value closeRequest() const {
+    JS::Value v = getFixedSlot(Slot_CloseRequest);
+    if (v.isUndefined()) {
+      
+      
+      
+      
+      
+      MOZ_ASSERT(!haveInFlightCloseRequest());
+      return JS::UndefinedValue();
+    }
+
+    if (!haveInFlightCloseRequest()) {
+      return v;
+    }
+
+    return JS::UndefinedValue();
+  }
+
+  JS::Value inFlightCloseRequest() const {
+    JS::Value v = getFixedSlot(Slot_CloseRequest);
+    if (v.isUndefined()) {
+      
+      
+      
+      
+      
+      MOZ_ASSERT(!haveInFlightCloseRequest());
+      return JS::UndefinedValue();
+    }
+
+    if (haveInFlightCloseRequest()) {
+      return v;
+    }
+
+    return JS::UndefinedValue();
+  }
+
+  ListObject* writeRequests() const {
+    return &getFixedSlot(Slot_WriteRequests).toObject().as<ListObject>();
+  }
+  void clearWriteRequests() {
+    MOZ_ASSERT(stateIsInitialized());
+    MOZ_ASSERT(!haveInFlightWriteRequest(),
+               "must clear the in-flight request flag before clearing "
+               "requests");
+    setFixedSlot(Slot_WriteRequests, JS::UndefinedValue());
+  }
+
+  bool hasPendingAbortRequest() const {
+    MOZ_ASSERT(stateIsInitialized());
+    return !getFixedSlot(Slot_PendingAbortRequestPromise).isUndefined();
+  }
+  JSObject* pendingAbortRequestPromise() const {
+    MOZ_ASSERT(hasPendingAbortRequest());
+    return &getFixedSlot(Slot_PendingAbortRequestPromise).toObject();
+  }
+  JS::Value pendingAbortRequestReason() const {
+    MOZ_ASSERT(hasPendingAbortRequest());
+    return getFixedSlot(Slot_PendingAbortRequestReason);
+  }
+  bool pendingAbortRequestWasAlreadyErroring() const {
+    MOZ_ASSERT(hasPendingAbortRequest());
+    return flags() & PendingAbortRequestWasAlreadyErroring;
+  }
 
   static MOZ_MUST_USE WritableStream* create(
       JSContext* cx, void* nsISupportsObject_alreadyAddreffed = nullptr,
