@@ -159,7 +159,6 @@ var ClientIDImpl = {
 
 
   async _doLoadClientID() {
-    this._log.trace(`_doLoadClientID`);
     
     await this._removeClientIdTask;
 
@@ -170,7 +169,6 @@ var ClientIDImpl = {
         this._wasCanary = state.wasCanary;
       }
       if (state && this.updateClientID(state.clientID)) {
-        this._log.trace(`_doLoadClientID: Client id loaded from state.`);
         return this._clientID;
       }
     } catch (e) {
@@ -187,7 +185,6 @@ var ClientIDImpl = {
     
     await this._saveClientIdTask;
 
-    this._log.trace("_doLoadClientID: New client id loaded and persisted.");
     return this._clientID;
   },
 
@@ -197,7 +194,6 @@ var ClientIDImpl = {
 
 
   async _saveClientID() {
-    this._log.trace(`_saveClientID`);
     let obj = { clientID: this._clientID };
     
     if (AppConstants.platform == "android" && this._wasCanary) {
@@ -295,7 +291,6 @@ var ClientIDImpl = {
   },
 
   async setClientID(id) {
-    this._log.trace("setClientID");
     if (!this.updateClientID(id)) {
       throw new Error("Invalid client ID: " + id);
     }
@@ -306,8 +301,6 @@ var ClientIDImpl = {
   },
 
   async _doRemoveClientID() {
-    this._log.trace("_doRemoveClientID");
-
     
     this._clientID = null;
     this._clientIDHash = null;
@@ -316,14 +309,10 @@ var ClientIDImpl = {
     Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
 
     
-    await this._saveClientIdTask;
-
-    
     await OS.File.remove(gStateFilePath, { ignoreAbsent: true });
   },
 
   async resetClientID() {
-    this._log.trace("resetClientID");
     let oldClientId = this._clientID;
 
     

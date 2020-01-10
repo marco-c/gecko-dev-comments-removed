@@ -25,7 +25,7 @@ const { Preferences } = ChromeUtils.import(
 ChromeUtils.import("resource://testing-common/ContentTaskUtils.jsm", this);
 
 const PING_FORMAT_VERSION = 4;
-const DELETION_REQUEST_PING_TYPE = "deletion-request";
+const OPTOUT_PING_TYPE = "optout";
 const TEST_PING_TYPE = "test-ping-type";
 
 const PLATFORM_VERSION = "1.9.2";
@@ -160,6 +160,7 @@ add_task(async function test_disableDataUpload() {
   const isUnified = Preferences.get(TelemetryUtils.Preferences.Unified, false);
   if (!isUnified) {
     
+    
     return;
   }
 
@@ -187,14 +188,14 @@ add_task(async function test_disableDataUpload() {
   Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, false);
 
   ping = await PingServer.promiseNextPing();
-  checkPingFormat(ping, DELETION_REQUEST_PING_TYPE, true, false);
+  checkPingFormat(ping, OPTOUT_PING_TYPE, false, false);
   
   await TelemetrySend.testWaitOnOutgoingPings();
 
   snapshot = Telemetry.getSnapshotForScalars("main", false).parent || {};
   Assert.ok(
     !(OPTIN_PROBE in snapshot),
-    "Data optin scalar should not be set after opt out"
+    "Data optin scalar should not be set after optout"
   );
 
   
@@ -213,14 +214,6 @@ add_task(async function test_disableDataUpload() {
   Assert.ok(
     snapshot[OPTIN_PROBE],
     "Enabling data upload should set optin probe"
-  );
-
-  
-  let secondClientId = TelemetryController.getCurrentPingData().clientId;
-  Assert.notEqual(
-    firstClientId,
-    secondClientId,
-    "The client id must have changed"
   );
 
   
@@ -244,10 +237,9 @@ add_task(async function test_disableDataUpload() {
   let pendingPings = await TelemetryStorage.loadPendingPingList();
   Assert.equal(
     pendingPings.length,
-    1,
-    "All the pending pings should have been deleted, except the deletion-request ping"
+    0,
+    "All the pending pings should have been deleted, including the optout ping"
   );
-  Assert.ok(true, JSON.stringify(PingServer._defers) + "\n\n\n");
 
   
   PingServer.start();
@@ -283,15 +275,6 @@ add_task(async function test_disableDataUpload() {
     firstClientId,
     ping.clientId,
     "Client ID should be different from the previous value"
-  );
-
-  
-  ping = await PingServer.promiseNextPing();
-  checkPingFormat(ping, DELETION_REQUEST_PING_TYPE, true, false);
-  Assert.equal(
-    secondClientId,
-    ping.clientId,
-    "Deletion must be requested for correct client id"
   );
 
   
@@ -422,9 +405,10 @@ add_task(async function test_archivePings() {
   Preferences.set(uploadPref, false);
 
   
+  
   if (isUnified) {
     let ping = await PingServer.promiseNextPing();
-    checkPingFormat(ping, DELETION_REQUEST_PING_TYPE, true, false);
+    checkPingFormat(ping, OPTOUT_PING_TYPE, false, false);
   }
 
   

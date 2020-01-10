@@ -3,11 +3,11 @@
 
 
 from telemetry_harness.testcase import TelemetryTestCase
-from telemetry_harness.ping_filters import ANY_PING, DELETION_REQUEST_PING, MAIN_SHUTDOWN_PING
+from telemetry_harness.ping_filters import ANY_PING, OPTOUT_PING, MAIN_SHUTDOWN_PING
 
 
-class TestDeletionRequestPing(TelemetryTestCase):
-    """Tests for "deletion-request" ping."""
+class TestOptoutPing(TelemetryTestCase):
+    """Tests for "optout" ping."""
 
     def disable_telemetry(self):
         self.marionette.instance.profile.set_persistent_preferences(
@@ -20,18 +20,18 @@ class TestDeletionRequestPing(TelemetryTestCase):
         self.marionette.set_pref("datareporting.healthreport.uploadEnabled", True)
 
     def test_optout_ping_across_sessions(self):
-        """Test the "deletion-request" ping behaviour across sessions."""
+        """Test the "optout" ping behaviour across sessions."""
 
         
         client_id = self.wait_for_ping(self.install_addon, ANY_PING)["clientId"]
         self.assertIsValidUUID(client_id)
 
         
-        ping = self.wait_for_ping(self.disable_telemetry, DELETION_REQUEST_PING)
+        optout_ping = self.wait_for_ping(self.disable_telemetry, OPTOUT_PING)
 
-        self.assertIn("clientId", ping)
-        self.assertIn("payload", ping)
-        self.assertNotIn("environment", ping["payload"])
+        self.assertNotIn("clientId", optout_ping)
+        self.assertIn("payload", optout_ping)
+        self.assertNotIn("environment", optout_ping["payload"])
 
         
         self.marionette.quit(in_app=True)
@@ -45,7 +45,7 @@ class TestDeletionRequestPing(TelemetryTestCase):
         self.install_addon()
 
         
-        self.assertEqual(self.ping_server.pings[-1], ping)
+        self.assertEqual(self.ping_server.pings[-1], optout_ping)
 
         
         self.enable_telemetry()
