@@ -91,8 +91,6 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   void EndLine(bool softlinebreak, bool aBreakBySpace = false);
   void EnsureVerticalSpace(int32_t noOfRows);
 
-  void FlushLine();
-
   void Output(nsString& aString);
   void Write(const nsAString& aString);
 
@@ -248,6 +246,16 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
     void AppendLineBreak();
 
+    
+
+
+
+
+
+
+
+    void Flush(CurrentLine& aCurrentLine);
+
     bool IsAtFirstColumn() const { return mAtFirstColumn; }
 
     uint32_t GetOutputLength() const;
@@ -257,6 +265,9 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
 
     void Append(const nsAString& aString);
+
+    
+    const int32_t mFlags;
 
     nsAString& mOutput;
 

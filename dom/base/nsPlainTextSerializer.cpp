@@ -120,10 +120,10 @@ void nsPlainTextSerializer::CurrentLine::ResetContentAndIndentationHeader() {
 
 nsPlainTextSerializer::OutputManager::OutputManager(const int32_t aFlags,
                                                     nsAString& aOutput)
-    : mOutput{aOutput}, mAtFirstColumn{true} {
+    : mFlags{aFlags}, mOutput{aOutput}, mAtFirstColumn{true} {
   MOZ_ASSERT(aOutput.IsEmpty());
 
-  DetermineLineBreak(aFlags, mLineBreak);
+  DetermineLineBreak(mFlags, mLineBreak);
 }
 
 void nsPlainTextSerializer::OutputManager::Append(
@@ -473,7 +473,9 @@ nsPlainTextSerializer::AppendElementEnd(Element* aElement,
 
 NS_IMETHODIMP
 nsPlainTextSerializer::FlushAndFinish() {
-  FlushLine();
+  MOZ_ASSERT(mOutputManager);
+
+  mOutputManager->Flush(mCurrentLine);
   return Finish();
 }
 
@@ -855,6 +857,8 @@ nsresult nsPlainTextSerializer::DoCloseContainer(nsAtom* aTag) {
     return NS_OK;
   }
 
+  MOZ_ASSERT(mOutputManager);
+
   
   if ((aTag == nsGkAtoms::body) || (aTag == nsGkAtoms::html)) {
     
@@ -864,7 +868,7 @@ nsresult nsPlainTextSerializer::DoCloseContainer(nsAtom* aTag) {
     if (mSettings.HasFlag(nsIDocumentEncoder::OutputFormatted)) {
       EnsureVerticalSpace(0);
     } else {
-      FlushLine();
+      mOutputManager->Flush(mCurrentLine);
     }
     
     
@@ -890,14 +894,15 @@ nsresult nsPlainTextSerializer::DoCloseContainer(nsAtom* aTag) {
     mFloatingLines = GetLastBool(mIsInCiteBlockquote) ? 0 : 1;
     mLineBreakDue = true;
   } else if (aTag == nsGkAtoms::ul) {
-    FlushLine();
+    mOutputManager->Flush(mCurrentLine);
     mCurrentLine.mIndentation.mWidth -= kIndentSizeList;
     if (--mULCount + mOLStackIndex == 0) {
       mFloatingLines = 1;
       mLineBreakDue = true;
     }
   } else if (aTag == nsGkAtoms::ol) {
-    FlushLine();  
+    mOutputManager->Flush(mCurrentLine);  
+                                          
     mCurrentLine.mIndentation.mWidth -= kIndentSizeList;
     NS_ASSERTION(mOLStackIndex, "Wrong OLStack level!");
     mOLStackIndex--;
@@ -909,7 +914,7 @@ nsresult nsPlainTextSerializer::DoCloseContainer(nsAtom* aTag) {
     mFloatingLines = 1;
     mLineBreakDue = true;
   } else if (aTag == nsGkAtoms::dd) {
-    FlushLine();
+    mOutputManager->Flush(mCurrentLine);
     mCurrentLine.mIndentation.mWidth -= kIndentSizeDD;
   } else if (aTag == nsGkAtoms::span) {
     NS_ASSERTION(mSpanLevel, "Span level will be negative!");
@@ -918,7 +923,7 @@ nsresult nsPlainTextSerializer::DoCloseContainer(nsAtom* aTag) {
     if (mFloatingLines < 0) mFloatingLines = 0;
     mLineBreakDue = true;
   } else if (aTag == nsGkAtoms::blockquote) {
-    FlushLine();  
+    mOutputManager->Flush(mCurrentLine);  
 
     
     bool isInCiteBlockquote = PopBool(mIsInCiteBlockquote);
@@ -1147,24 +1152,13 @@ void nsPlainTextSerializer::EnsureVerticalSpace(int32_t noOfRows) {
   mFloatingLines = -1;
 }
 
+void nsPlainTextSerializer::OutputManager::Flush(CurrentLine& aCurrentLine) {
+  if (!aCurrentLine.mContent.mValue.IsEmpty()) {
+    aCurrentLine.mContent.MaybeReplaceNbsps(mFlags);
 
+    Append(aCurrentLine, StripTrailingWhitespaces::kNo);
 
-
-
-
-
-
-
-void nsPlainTextSerializer::FlushLine() {
-  if (!mCurrentLine.mContent.mValue.IsEmpty()) {
-    MOZ_ASSERT(mOutputManager);
-
-    mCurrentLine.mContent.MaybeReplaceNbsps(mSettings.GetFlags());
-
-    mOutputManager->Append(mCurrentLine,
-                           OutputManager::StripTrailingWhitespaces::kNo);
-
-    mCurrentLine.ResetContentAndIndentationHeader();
+    aCurrentLine.ResetContentAndIndentationHeader();
   }
 }
 
@@ -1525,8 +1519,10 @@ void nsPlainTextSerializer::Write(const nsAString& aStr) {
     NS_ASSERTION(mCurrentLine.mContent.mValue.IsEmpty() ||
                      (IsElementPreformatted() && !mPreFormattedMail),
                  "Mixed wrapping data and nonwrapping data on the same line");
+    MOZ_ASSERT(mOutputManager);
+
     if (!mCurrentLine.mContent.mValue.IsEmpty()) {
-      FlushLine();
+      mOutputManager->Flush(mCurrentLine);
     }
 
     int32_t newline{0};
@@ -1535,8 +1531,6 @@ void nsPlainTextSerializer::Write(const nsAString& aStr) {
     
     int32_t bol = 0;
     while (bol < totLen) {
-      MOZ_ASSERT(mOutputManager);
-
       bool outputLineBreak = false;
       bool spacesOnly = true;
 
