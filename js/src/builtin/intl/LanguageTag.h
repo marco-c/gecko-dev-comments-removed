@@ -394,6 +394,12 @@ class MOZ_STACK_CLASS LanguageTag final {
 
 
 
+  JS::UniqueChars toStringZ(JSContext* cx) const;
+
+  
+
+
+
 
   bool addLikelySubtags(JSContext* cx);
 
@@ -665,6 +671,9 @@ class MOZ_STACK_CLASS LanguageTagParser final {
       JSContext* cx, mozilla::Span<const char> extension,
       AttributesVector& attributes, KeywordsVector& keywords);
 
+  static JS::Result<bool> tryParse(JSContext* cx, LocaleChars& localeChars,
+                                   size_t localeLength, LanguageTag& tag);
+
  public:
   
   
@@ -672,8 +681,20 @@ class MOZ_STACK_CLASS LanguageTagParser final {
 
   
   
+  static bool parse(JSContext* cx, mozilla::Span<const char> locale,
+                    LanguageTag& tag);
+
+  
+  
   
   static JS::Result<bool> tryParse(JSContext* cx, JSLinearString* locale,
+                                   LanguageTag& tag);
+
+  
+  
+  
+  static JS::Result<bool> tryParse(JSContext* cx,
+                                   mozilla::Span<const char> locale,
                                    LanguageTag& tag);
 
   
