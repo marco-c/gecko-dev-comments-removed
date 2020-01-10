@@ -130,35 +130,6 @@ class TextEditRules {
 
 
 
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult WillDeleteSelection(
-      nsIEditor::EDirection aCollapsedAction, bool* aCancel, bool* aHandled);
-
-  
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult DeleteSelectionWithTransaction(
-      nsIEditor::EDirection aCollapsedAction, bool* aCancel, bool* aHandled);
-
-  
-
-
-
-
-
-
-
   nsresult WillOutputText(const nsAString* aInFormat, nsAString* aOutText,
                           uint32_t aFlags, bool* aOutCancel, bool* aHandled);
 
