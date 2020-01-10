@@ -74,15 +74,6 @@ nsresult ChildDNSService::AsyncResolveInternal(
   }
 
   
-  uint32_t originalFlags = flags;
-
-  
-  
-  if (GetOffline()) {
-    flags |= RESOLVE_OFFLINE;
-  }
-
-  
   nsIDNSListener* originalListener = listener;
 
   
@@ -103,7 +94,7 @@ nsresult ChildDNSService::AsyncResolveInternal(
   {
     MutexAutoLock lock(mPendingRequestsLock);
     nsCString key;
-    GetDNSRecordHashKey(hostname, type, aOriginAttributes, originalFlags,
+    GetDNSRecordHashKey(hostname, type, aOriginAttributes, flags,
                         originalListener, key);
     auto entry = mPendingRequests.LookupForAdd(key);
     if (entry) {
@@ -372,15 +363,6 @@ NS_IMETHODIMP
 ChildDNSService::SetPrefetchEnabled(bool inVal) {
   mDisablePrefetch = !inVal;
   return NS_OK;
-}
-
-bool ChildDNSService::GetOffline() const {
-  bool offline = false;
-  nsCOMPtr<nsIIOService> io = do_GetService(NS_IOSERVICE_CONTRACTID);
-  if (io) {
-    io->GetOffline(&offline);
-  }
-  return offline;
 }
 
 
