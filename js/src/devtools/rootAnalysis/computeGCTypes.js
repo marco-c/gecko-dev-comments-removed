@@ -165,6 +165,16 @@ for (const typename of extraRootedPointers())
 
 
 
+var basework = Object.keys(typeInfo.RootedBases);
+while (basework.length) {
+    const base = basework.pop();
+    typeInfo.RootedPointers[base] = true;
+    if (base in subClasses)
+        basework.push(...subClasses[base]);
+}
+
+
+
 for (const csu of typeInfo.GCThings)
     addGCType(csu);
 for (const csu of typeInfo.GCPointers)
@@ -209,16 +219,6 @@ for (const csu of inheritors) {
         if (core_type in gcPointers)
             markGCType(csu, paramDesc, why, ptrdness + 1, 0, "");
     }
-}
-
-
-
-var basework = Object.keys(typeInfo.RootedBases);
-while (basework.length) {
-    const base = basework.pop();
-    typeInfo.RootedPointers[base] = true;
-    if (base in subClasses)
-        basework.push(...subClasses[base]);
 }
 
 
