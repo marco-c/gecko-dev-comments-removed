@@ -520,6 +520,14 @@ impl<'a> Tokenizer<'a> {
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Copy)]
 pub struct SourcePosition(pub(crate) usize);
 
+impl SourcePosition {
+    
+    #[inline]
+    pub fn byte_index(&self) -> usize {
+        self.0
+    }
+}
+
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub struct SourceLocation {
