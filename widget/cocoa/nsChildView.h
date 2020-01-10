@@ -223,6 +223,9 @@ class WidgetRenderingContext;
   
   
   
+  
+  
+  
   PixelHostingView* mPixelHostingView;
 
   
@@ -457,6 +460,7 @@ class nsChildView final : public nsBaseWidget {
                                const mozilla::gfx::IntSize& aSurfaceSize);
   bool PaintWindowInContext(CGContextRef aContext, const LayoutDeviceIntRegion& aRegion,
                             mozilla::gfx::IntSize aSurfaceSize);
+  void HandleMainThreadCATransaction();
 
 #ifdef ACCESSIBILITY
   already_AddRefed<mozilla::a11y::Accessible> GetDocumentAccessible();
