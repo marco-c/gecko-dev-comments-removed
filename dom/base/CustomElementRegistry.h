@@ -137,7 +137,8 @@ struct CustomElementDefinition {
                           int32_t aNamespaceID,
                           CustomElementConstructor* aConstructor,
                           nsTArray<RefPtr<nsAtom>>&& aObservedAttributes,
-                          UniquePtr<LifecycleCallbacks>&& aCallbacks);
+                          UniquePtr<LifecycleCallbacks>&& aCallbacks,
+                          bool aDisableInternals);
 
   
   
@@ -157,6 +158,9 @@ struct CustomElementDefinition {
 
   
   UniquePtr<LifecycleCallbacks> mCallbacks;
+
+  
+  bool mDisableInternals = false;
 
   
   
@@ -457,6 +461,10 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
 
  private:
   ~CustomElementRegistry();
+
+  bool JSObjectToAtomArray(JSContext* aCx, JS::Handle<JSObject*> aConstructor,
+                           const char16_t* aName,
+                           nsTArray<RefPtr<nsAtom>>& aArray, ErrorResult& aRv);
 
   static UniquePtr<CustomElementCallback> CreateCustomElementCallback(
       Document::ElementCallbackType aType, Element* aCustomElement,
