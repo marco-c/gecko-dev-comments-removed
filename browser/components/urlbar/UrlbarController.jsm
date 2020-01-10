@@ -223,16 +223,6 @@ class UrlbarController {
 
 
 
-  viewContextChanged() {
-    this.cancelQuery();
-  }
-
-  
-
-
-
-
-
 
 
 
