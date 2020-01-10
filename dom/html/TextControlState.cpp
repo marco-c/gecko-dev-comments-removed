@@ -1062,18 +1062,121 @@ nsresult TextInputListener::UpdateTextInputCommands(
 
 
 
+
+
+
+enum class TextControlAction {
+  PrepareEditor,
+  CommitComposition,
+  SetValue,
+};
+
+class MOZ_STACK_CLASS AutoTextControlHandlingState {
+ public:
+  AutoTextControlHandlingState() = delete;
+  explicit AutoTextControlHandlingState(const AutoTextControlHandlingState&) =
+      delete;
+  AutoTextControlHandlingState(AutoTextControlHandlingState&&) = delete;
+  void operator=(AutoTextControlHandlingState&) = delete;
+  void operator=(const AutoTextControlHandlingState&) = delete;
+
+  
+
+
+
+  AutoTextControlHandlingState(TextControlState& aTextControlState,
+                               TextControlAction aTextControlAction)
+      : mParent(aTextControlState.mHandlingState),
+        mTextControlState(aTextControlState),
+        mTextControlAction(aTextControlAction) {
+    MOZ_ASSERT(aTextControlAction != TextControlAction::SetValue,
+               "Use specific constructor");
+    mTextControlState.mHandlingState = this;
+  }
+
+  
+
+
+
+
+  AutoTextControlHandlingState(TextControlState& aTextControlState,
+                               TextControlAction aTextControlAction,
+                               const nsAString& aSettingValue, ErrorResult& aRv)
+      : mParent(aTextControlState.mHandlingState),
+        mTextControlState(aTextControlState),
+        mTextControlAction(aTextControlAction) {
+    MOZ_ASSERT(aTextControlAction == TextControlAction::SetValue,
+               "Use generic constructor");
+    mTextControlState.mHandlingState = this;
+    
+    nsString settingValue(aSettingValue);
+    if (!nsContentUtils::PlatformToDOMLineBreaks(settingValue, fallible)) {
+      aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+      return;
+    }
+    
+    
+    UpdateSettingValue(settingValue);
+  }
+
+  ~AutoTextControlHandlingState() {
+    if (!mTextControlStateDestroyed) {
+      mTextControlState.mHandlingState = mParent;
+    }
+  }
+
+  void OnDestroyTextControlState() {
+    mTextControlStateDestroyed = true;
+    if (mParent) {
+      mParent->OnDestroyTextControlState();
+    }
+  }
+
+  bool IsHandling(TextControlAction aTextControlAction) const {
+    if (mTextControlAction == aTextControlAction) {
+      return true;
+    }
+    return mParent ? mParent->IsHandling(aTextControlAction) : false;
+  }
+  const nsString& GetSettingValue() const {
+    MOZ_ASSERT(IsHandling(TextControlAction::SetValue));
+    if (mTextControlAction == TextControlAction::SetValue) {
+      return mSettingValue;
+    }
+    return mParent->GetSettingValue();
+  }
+
+ private:
+  void UpdateSettingValue(const nsString& aSettingValue) {
+    if (mTextControlAction == TextControlAction::SetValue) {
+      mSettingValue = aSettingValue;
+    }
+    if (mParent) {
+      mParent->UpdateSettingValue(aSettingValue);
+    }
+  }
+
+  AutoTextControlHandlingState* mParent;
+  TextControlState& mTextControlState;
+  nsString mSettingValue;
+  TextControlAction mTextControlAction;
+  bool mTextControlStateDestroyed = false;
+};
+
+
+
+
+
 TextControlState::TextControlState(nsITextControlElement* aOwningElement)
     : mTextCtrlElement(aOwningElement),
       mBoundFrame(nullptr),
       mEverInited(false),
       mEditorInitialized(false),
-      mInitializing(false),
       mValueTransferInProgress(false),
       mSelectionCached(true),
       mSelectionRestoreEagerInit(false),
       mPlaceholderVisibility(false),
-      mPreviewVisibility(false),
-      mIsCommittingComposition(false)
+      mPreviewVisibility(false)
 
 
 {
@@ -1084,7 +1187,7 @@ TextControlState::TextControlState(nsITextControlElement* aOwningElement)
 
 TextControlState* TextControlState::Construct(
     nsITextControlElement* aOwningElement, TextControlState** aReusedState) {
-  if (*aReusedState) {
+  if (*aReusedState && !(*aReusedState)->IsBusy()) {
     TextControlState* state = *aReusedState;
     *aReusedState = nullptr;
     state->mTextCtrlElement = aOwningElement;
@@ -1092,13 +1195,11 @@ TextControlState* TextControlState::Construct(
     state->mSelectionProperties = SelectionProperties();
     state->mEverInited = false;
     state->mEditorInitialized = false;
-    state->mInitializing = false;
     state->mValueTransferInProgress = false;
     state->mSelectionCached = true;
     state->mSelectionRestoreEagerInit = false;
     state->mPlaceholderVisibility = false;
     state->mPreviewVisibility = false;
-    state->mIsCommittingComposition = false;
     
     
     return state;
@@ -1123,6 +1224,11 @@ Element* TextControlState::GetPreviewNode() {
 void TextControlState::Clear() {
   if (mTextEditor) {
     mTextEditor->SetTextInputListener(nullptr);
+  }
+
+  if (mHandlingState) {
+    mHandlingState->OnDestroyTextControlState();
+    mHandlingState = nullptr;
   }
 
   if (mBoundFrame) {
@@ -1316,10 +1422,12 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
   AutoHideSelectionChanges hideSelectionChanges(GetConstFrameSelection());
 
   
-  InitializationGuard guard(*this);
-  if (guard.IsInitializingRecursively()) {
+  if (mHandlingState &&
+      mHandlingState->IsHandling(TextControlAction::PrepareEditor)) {
     return NS_ERROR_NOT_INITIALIZED;
   }
+  AutoTextControlHandlingState preparingEditor(
+      *this, TextControlAction::PrepareEditor);
 
   
   
@@ -2146,8 +2254,12 @@ void TextControlState::GetValue(nsAString& aValue, bool aIgnoreWrap) const {
   
   
   
-  if (mIsCommittingComposition) {
-    aValue = mValueBeingSet;
+  
+  
+  
+  if (mHandlingState &&
+      mHandlingState->IsHandling(TextControlAction::CommitComposition)) {
+    aValue = mHandlingState->GetSettingValue();
     return;
   }
 
@@ -2221,17 +2333,16 @@ bool AreFlagsNotDemandingContradictingMovements(uint32_t aFlags) {
 
 bool TextControlState::SetValue(const nsAString& aValue,
                                 const nsAString* aOldValue, uint32_t aFlags) {
-  nsAutoString newValue(aValue);
+  ErrorResult error;
+  AutoTextControlHandlingState handlingSetValue(
+      *this, TextControlAction::SetValue, aValue, error);
+  if (error.Failed()) {
+    MOZ_ASSERT(error.ErrorCodeIs(NS_ERROR_OUT_OF_MEMORY));
+    error.SuppressException();
+    return false;
+  }
 
-  
-  
-  
-  
-  
-  
-  
-  if (mIsCommittingComposition) {
-    mValueBeingSet = aValue;
+  if (handlingSetValue.IsHandling(TextControlAction::CommitComposition)) {
     
     
     aOldValue = nullptr;
@@ -2243,7 +2354,8 @@ bool TextControlState::SetValue(const nsAString& aValue,
   if (aFlags & (eSetValue_BySetUserInput | eSetValue_ByContent)) {
     if (EditorHasComposition()) {
       
-      if (NS_WARN_IF(mIsCommittingComposition)) {
+      if (NS_WARN_IF(handlingSetValue.IsHandling(
+              TextControlAction::CommitComposition))) {
         
         
         
@@ -2264,7 +2376,7 @@ bool TextControlState::SetValue(const nsAString& aValue,
         } else {
           mBoundFrame->GetText(currentValue);
         }
-        if (newValue == currentValue) {
+        if (handlingSetValue.GetSettingValue() == currentValue) {
           
           
           
@@ -2287,37 +2399,26 @@ bool TextControlState::SetValue(const nsAString& aValue,
         
         
         
-        mValueBeingSet = aValue;
-        mIsCommittingComposition = true;
+        AutoTextControlHandlingState handlingCommitComposition(
+            *this, TextControlAction::CommitComposition);
         RefPtr<TextEditor> textEditor = mTextEditor;
         nsresult rv = textEditor->CommitComposition();
         if (!self.get()) {
           return true;
         }
-        mIsCommittingComposition = false;
-        
-        
-        
-        newValue = mValueBeingSet;
-        
-        
-        mValueBeingSet.Truncate();
         if (NS_FAILED(rv)) {
           NS_WARNING("TextControlState failed to commit composition");
           return true;
         }
+        
+        
+        
       } else {
         NS_WARNING(
             "SetValue() is called when there is composition but "
             "it's not safe to request to commit the composition");
       }
     }
-  }
-
-  
-  
-  if (!nsContentUtils::PlatformToDOMLineBreaks(newValue, fallible)) {
-    return false;
   }
 
   
@@ -2334,7 +2435,8 @@ bool TextControlState::SetValue(const nsAString& aValue,
 
 #ifdef DEBUG
     if (IsSingleLineTextControl()) {
-      NS_ASSERTION(mEditorInitialized || mInitializing,
+      NS_ASSERTION(mEditorInitialized || handlingSetValue.IsHandling(
+                                             TextControlAction::PrepareEditor),
                    "We should never try to use the editor if we're not "
                    "initialized unless we're being initialized");
     }
@@ -2354,7 +2456,7 @@ bool TextControlState::SetValue(const nsAString& aValue,
     AutoWeakFrame weakFrame(mBoundFrame);
 
     
-    if (!currentValue.Equals(newValue)) {
+    if (currentValue != handlingSetValue.GetSettingValue()) {
       RefPtr<TextEditor> textEditor = mTextEditor;
 
       nsCOMPtr<Document> document = textEditor->GetDocument();
@@ -2393,8 +2495,8 @@ bool TextControlState::SetValue(const nsAString& aValue,
             
             
             
-            DebugOnly<nsresult> rv =
-                textEditor->ReplaceTextAsAction(newValue, nullptr, nullptr);
+            DebugOnly<nsresult> rv = textEditor->ReplaceTextAsAction(
+                handlingSetValue.GetSettingValue(), nullptr, nullptr);
             NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                                  "Failed to set the new value");
           } else {
@@ -2421,8 +2523,10 @@ bool TextControlState::SetValue(const nsAString& aValue,
               
               nsCOMPtr<nsISelectionController> kungFuDeathGrip = mSelCon.get();
               uint32_t currentLength = currentValue.Length();
-              uint32_t newlength = newValue.Length();
-              if (!currentLength || !StringBeginsWith(newValue, currentValue)) {
+              uint32_t newlength = handlingSetValue.GetSettingValue().Length();
+              if (!currentLength ||
+                  !StringBeginsWith(handlingSetValue.GetSettingValue(),
+                                    currentValue)) {
                 
                 currentLength = 0;
                 kungFuDeathGrip->SelectAll();
@@ -2431,7 +2535,8 @@ bool TextControlState::SetValue(const nsAString& aValue,
                 mBoundFrame->SelectAllOrCollapseToEndOfText(false);
               }
               const nsAString& insertValue =
-                  StringTail(newValue, newlength - currentLength);
+                  StringTail(handlingSetValue.GetSettingValue(),
+                             newlength - currentLength);
 
               if (insertValue.IsEmpty()) {
                 
@@ -2466,7 +2571,8 @@ bool TextControlState::SetValue(const nsAString& aValue,
 
               
               
-              textEditor->SetTextAsAction(newValue, nullptr);
+              textEditor->SetTextAsAction(handlingSetValue.GetSettingValue(),
+                                          nullptr);
 
               
               
@@ -2492,14 +2598,16 @@ bool TextControlState::SetValue(const nsAString& aValue,
           
           
           if (!mBoundFrame) {
-            return SetValue(newValue, aFlags & eSetValue_Notify);
+            return SetValue(handlingSetValue.GetSettingValue(),
+                            aFlags & eSetValue_Notify);
           }
           return true;
         }
 
         
         
-        if (!mBoundFrame->CacheValue(newValue, fallible)) {
+        if (!mBoundFrame->CacheValue(handlingSetValue.GetSettingValue(),
+                                     fallible)) {
           return false;
         }
       }
@@ -2511,9 +2619,9 @@ bool TextControlState::SetValue(const nsAString& aValue,
 
     
     
-    if (!mValue->Equals(newValue) ||
+    if (!mValue->Equals(handlingSetValue.GetSettingValue()) ||
         !StaticPrefs::dom_input_skip_cursor_move_for_same_value_set()) {
-      if (!mValue->Assign(newValue, fallible)) {
+      if (!mValue->Assign(handlingSetValue.GetSettingValue(), fallible)) {
         return false;
       }
 
@@ -2523,8 +2631,8 @@ bool TextControlState::SetValue(const nsAString& aValue,
 
         SelectionProperties& props = GetSelectionProperties();
         if (aFlags & eSetValue_MoveCursorToEndIfValueChanged) {
-          props.SetStart(newValue.Length());
-          props.SetEnd(newValue.Length());
+          props.SetStart(handlingSetValue.GetSettingValue().Length());
+          props.SetEnd(handlingSetValue.GetSettingValue().Length());
           props.SetDirection(nsITextControlFrame::eForward);
         } else if (aFlags &
                    eSetValue_MoveCursorToBeginSetSelectionDirectionForward) {
@@ -2534,8 +2642,10 @@ bool TextControlState::SetValue(const nsAString& aValue,
         } else {
           
           
-          props.SetStart(std::min(props.GetStart(), newValue.Length()));
-          props.SetEnd(std::min(props.GetEnd(), newValue.Length()));
+          props.SetStart(std::min(props.GetStart(),
+                                  handlingSetValue.GetSettingValue().Length()));
+          props.SetEnd(std::min(props.GetEnd(),
+                                handlingSetValue.GetSettingValue().Length()));
         }
       }
 
@@ -2551,10 +2661,11 @@ bool TextControlState::SetValue(const nsAString& aValue,
       if (aFlags & eSetValue_BySetUserInput) {
         nsCOMPtr<Element> element = do_QueryInterface(textControlElement);
         MOZ_ASSERT(element);
-        MOZ_ASSERT(!newValue.IsVoid());
+        MOZ_ASSERT(!handlingSetValue.GetSettingValue().IsVoid());
         DebugOnly<nsresult> rvIgnored = nsContentUtils::DispatchInputEvent(
             element, EditorInputType::eInsertReplacementText, nullptr,
-            nsContentUtils::InputEventOptions(newValue));
+            nsContentUtils::InputEventOptions(
+                handlingSetValue.GetSettingValue()));
         NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                              "Failed to dispatch input event");
       }
@@ -2589,7 +2700,8 @@ bool TextControlState::HasNonEmptyValue() {
   
   
   if (mTextEditor && mBoundFrame && mEditorInitialized &&
-      !mIsCommittingComposition) {
+      !(mHandlingState &&
+        mHandlingState->IsHandling(TextControlAction::CommitComposition))) {
     return !mTextEditor->IsEmpty();
   }
 

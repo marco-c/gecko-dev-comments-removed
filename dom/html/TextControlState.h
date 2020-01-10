@@ -28,6 +28,7 @@ class nsFrame;
 
 namespace mozilla {
 
+class AutoTextControlHandlingState;
 class ErrorResult;
 class TextInputListener;
 class TextInputSelectionController;
@@ -157,10 +158,11 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
   void Traverse(nsCycleCollectionTraversalCallback& cb);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void Unlink();
 
+  bool IsBusy() const { return !!mHandlingState; }
+
   void PrepareForReuse() {
     Unlink();
     mValue.reset();
-    mValueBeingSet.Truncate();
     mTextCtrlElement = nullptr;
   }
 
@@ -392,26 +394,10 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
 
   bool EditorHasComposition();
 
-  class InitializationGuard {
-   public:
-    explicit InitializationGuard(TextControlState& aState)
-        : mState(aState), mGuardSet(false) {
-      if (!mState.mInitializing) {
-        mGuardSet = true;
-        mState.mInitializing = true;
-      }
-    }
-    ~InitializationGuard() {
-      if (mGuardSet) {
-        mState.mInitializing = false;
-      }
-    }
-    bool IsInitializingRecursively() const { return !mGuardSet; }
-
-   private:
-    TextControlState& mState;
-    bool mGuardSet;
-  };
+  
+  
+  
+  AutoTextControlHandlingState* mHandlingState = nullptr;
 
   
   
@@ -422,15 +408,9 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
   nsTextControlFrame* mBoundFrame;
   RefPtr<TextInputListener> mTextListener;
   Maybe<nsString> mValue;
-  
-  
-  
-  
-  nsString mValueBeingSet;
   SelectionProperties mSelectionProperties;
   bool mEverInited;  
   bool mEditorInitialized;
-  bool mInitializing;  
   bool mValueTransferInProgress;  
                                   
   bool mSelectionCached;          
@@ -438,8 +418,8 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
                                             
   bool mPlaceholderVisibility;
   bool mPreviewVisibility;
-  bool mIsCommittingComposition;
 
+  friend class AutoTextControlHandlingState;
   friend class PrepareEditorEvent;
   friend class RestoreSelectionState;
 };
