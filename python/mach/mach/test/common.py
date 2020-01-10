@@ -4,9 +4,14 @@
 
 from __future__ import unicode_literals
 
-from StringIO import StringIO
 import os
 import unittest
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    
+    from io import StringIO
 
 from mach.main import Mach
 
