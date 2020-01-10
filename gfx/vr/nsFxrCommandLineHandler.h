@@ -17,6 +17,8 @@
     }                                                \
   }
 
+
+
 class nsFxrCommandLineHandler : public nsICommandLineHandler {
  public:
   nsFxrCommandLineHandler() = default;
