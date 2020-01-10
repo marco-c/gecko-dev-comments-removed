@@ -122,24 +122,14 @@ class MockVRService {
     }
   }
 
-  
-  requestDevice() {
-    if (this.runtimes_.length > 0) {
-      let devicePtr = new device.mojom.XRDevicePtr();
-      new mojo.Binding(
-          device.mojom.XRDevice, this, mojo.makeRequest(devicePtr));
-
-      return Promise.resolve({device: devicePtr});
-    } else {
-      return Promise.resolve({device: null});
-    }
-  }
-
   setClient(client) {
+    if (this.client_) {
+      throw new Error("setClient should only be called once");
+    }
+
     this.client_ = client;
   }
 
-  
   requestSession(sessionOptions, was_activation) {
     let requests = [];
     
