@@ -296,6 +296,10 @@ JS_PUBLIC_API size_t GetDeflatedUTF8StringLength(JSFlatString* s);
 
 
 
+
+
+
+
 JS_PUBLIC_API void DeflateStringToUTF8Buffer(JSFlatString* src,
                                              mozilla::RangedPtr<char> dst,
                                              size_t* dstlenp = nullptr,

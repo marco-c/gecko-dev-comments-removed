@@ -11,6 +11,7 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Range.h"
 #include "mozilla/RangedPtr.h"
@@ -2434,6 +2435,34 @@ MOZ_MUST_USE JS_PUBLIC_API bool JS_EncodeStringToBuffer(JSContext* cx,
                                                         JSString* str,
                                                         char* buffer,
                                                         size_t length);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JS_PUBLIC_API mozilla::Maybe<mozilla::Tuple<size_t, size_t> >
+JS_EncodeStringToUTF8BufferPartial(JSContext* cx, JSString* str,
+                                   mozilla::Span<char> buffer);
 
 namespace JS {
 

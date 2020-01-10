@@ -7,6 +7,7 @@
 #ifndef vm_StringType_h
 #define vm_StringType_h
 
+#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Range.h"
 #include "mozilla/TextUtils.h"
@@ -551,6 +552,26 @@ class JSString : public js::gc::CellWithLengthAndFlags<js::gc::Cell> {
   
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  mozilla::Maybe<mozilla::Tuple<size_t, size_t> > encodeUTF8Partial(
+      const JS::AutoRequireNoGC& nogc, mozilla::Span<char> buffer) const;
 
   
   using Base::offsetOfFlags;
