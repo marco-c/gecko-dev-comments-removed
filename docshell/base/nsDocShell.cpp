@@ -313,7 +313,6 @@ static void DecreasePrivateDocShellCount() {
 nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
                        uint64_t aContentWindowID)
     : nsDocLoader(),
-      mHistoryID(aBrowsingContext->GetHistoryID()),
       mContentWindowID(aContentWindowID),
       mBrowsingContext(aBrowsingContext),
       mForcedCharset(nullptr),
@@ -392,7 +391,12 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
       mSkipBrowsingContextDetachOnDestroy(false),
       mWatchedByDevtools(false),
       mIsNavigating(false) {
+  mHistoryID.m0 = 0;
+  mHistoryID.m1 = 0;
+  mHistoryID.m2 = 0;
   AssertOriginAttributesMatchPrivateBrowsing();
+
+  nsContentUtils::GenerateUUIDInPlace(mHistoryID);
 
   
   if (aContentWindowID == 0) {
@@ -429,7 +433,7 @@ nsDocShell::~nsDocShell() {
   Destroy();
 
   if (mSessionHistory) {
-    mSessionHistory->LegacySHistory()->ClearRootBrowsingContext();
+    mSessionHistory->LegacySHistory()->ClearRootDocShell();
   }
 
   if (--gDocShellCount == 0) {
@@ -835,14 +839,15 @@ void nsDocShell::MaybeHandleSubframeHistory(nsDocShellLoadState* aLoadState) {
   bool dynamicallyAddedChild = mDynamicallyCreated;
 
   if (!dynamicallyAddedChild && !oshe && currentSH) {
+    currentSH->HasDynamicallyAddedChild(&dynamicallyAddedChild);
+  }
+
+  if (!dynamicallyAddedChild) {
     
     
     nsCOMPtr<nsISHEntry> shEntry;
-    currentSH->GetChildSHEntryIfHasNoDynamicallyAddedChild(
-        mChildOffset, getter_AddRefs(shEntry));
-    if (shEntry) {
-      aLoadState->SetSHEntry(shEntry);
-    }
+    parentDS->GetChildSHEntry(mChildOffset, getter_AddRefs(shEntry));
+    aLoadState->SetSHEntry(shEntry);
   }
 
   
@@ -3276,6 +3281,52 @@ nsDocShell::FindChildWithName(const nsAString& aName, bool aRecurse,
 }
 
 NS_IMETHODIMP
+nsDocShell::GetChildSHEntry(int32_t aChildOffset, nsISHEntry** aResult) {
+  nsresult rv = NS_OK;
+
+  NS_ENSURE_ARG_POINTER(aResult);
+  *aResult = nullptr;
+
+  
+  
+
+  if (mLSHE) {
+    
+
+
+
+
+    bool parentExpired = mLSHE->GetExpirationStatus();
+
+    
+
+
+    uint32_t loadType = mLSHE->GetLoadType();
+    
+    
+    if (IsForceReloadType(loadType) || loadType == LOAD_REFRESH) {
+      return rv;
+    }
+
+    
+
+
+    if (parentExpired && (loadType == LOAD_RELOAD_NORMAL)) {
+      
+      *aResult = nullptr;
+      return rv;
+    }
+
+    
+    rv = mLSHE->GetChildAt(aChildOffset, aResult);
+    if (*aResult) {
+      (*aResult)->SetLoadType(loadType);
+    }
+  }
+  return rv;
+}
+
+NS_IMETHODIMP
 nsDocShell::AddChildSHEntry(nsISHEntry* aCloneRef, nsISHEntry* aNewEntry,
                             int32_t aChildOffset, uint32_t aLoadType,
                             bool aCloneChildren) {
@@ -3540,7 +3591,17 @@ void nsDocShell::ClearFrameHistory(nsISHEntry* aEntry) {
     return;
   }
 
-  rootSH->LegacySHistory()->RemoveFrameEntries(aEntry);
+  int32_t count = aEntry->GetChildCount();
+  AutoTArray<nsID, 16> ids;
+  for (int32_t i = 0; i < count; ++i) {
+    nsCOMPtr<nsISHEntry> child;
+    aEntry->GetChildAt(i, getter_AddRefs(child));
+    if (child) {
+      ids.AppendElement(child->DocshellID());
+    }
+  }
+  int32_t index = rootSH->Index();
+  rootSH->LegacySHistory()->RemoveEntries(ids, index);
 }
 
 
@@ -8836,9 +8897,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   if (mOSHE) {
     
     mOSHE->SetScrollPosition(scrollPos.x, scrollPos.y);
-    DebugOnly<nsresult> rv =
-        mOSHE->GetScrollRestorationIsManual(&scrollRestorationIsManual);
-    MOZ_ASSERT(NS_SUCCEEDED(rv), "Didn't expect this to fail.");
+    scrollRestorationIsManual = mOSHE->GetScrollRestorationIsManual();
     
     
     
@@ -8865,10 +8924,8 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
 
   
   if (aLoadState->SHEntry()) {
-    DebugOnly<nsresult> rv =
-        aLoadState->SHEntry()->GetScrollRestorationIsManual(
-            &scrollRestorationIsManual);
-    MOZ_ASSERT(NS_SUCCEEDED(rv), "Didn't expect this to fail.");
+    scrollRestorationIsManual =
+        aLoadState->SHEntry()->GetScrollRestorationIsManual();
   }
 
   
@@ -9344,8 +9401,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     if (aLoadState->SHEntry()) {
       
       
-      aLoadState->SHEntry()->GetDocshellID(mHistoryID);
-      mBrowsingContext->SetHistoryID(mHistoryID);
+      mHistoryID = aLoadState->SHEntry()->DocshellID();
     }
   }
 
@@ -10808,8 +10864,16 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
   } else if (mSessionHistory && mLSHE && mURIResultedInDocument) {
     
     
-
-    mSessionHistory->LegacySHistory()->EnsureCorrectEntryAtCurrIndex(mLSHE);
+    int32_t index = mSessionHistory->LegacySHistory()->GetRequestedIndex();
+    if (index == -1) {
+      index = mSessionHistory->Index();
+    }
+    nsCOMPtr<nsISHEntry> currentSH;
+    mSessionHistory->LegacySHistory()->GetEntryAtIndex(
+        index, getter_AddRefs(currentSH));
+    if (currentSH != mLSHE) {
+      mSessionHistory->LegacySHistory()->ReplaceEntry(index, mLSHE);
+    }
   }
 
   
@@ -11103,19 +11167,15 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
     nsPoint scrollPos = GetCurScrollPos();
     mOSHE->SetScrollPosition(scrollPos.x, scrollPos.y);
 
-    bool scrollRestorationIsManual;
-    nsresult rv =
-        mOSHE->GetScrollRestorationIsManual(&scrollRestorationIsManual);
-    MOZ_ASSERT(NS_SUCCEEDED(rv), "Didn't expect this to fail.");
-
+    bool scrollRestorationIsManual = mOSHE->GetScrollRestorationIsManual();
     nsCOMPtr<nsIContentSecurityPolicy> csp = aDocument->GetCsp();
 
     
     
-    rv = AddToSessionHistory(aNewURI, nullptr,
-                             aDocument->NodePrincipal(),  
-                             nullptr, nullptr, csp, true,
-                             getter_AddRefs(newSHEntry));
+    nsresult rv = AddToSessionHistory(
+        aNewURI, nullptr,
+        aDocument->NodePrincipal(),  
+        nullptr, nullptr, csp, true, getter_AddRefs(newSHEntry));
     NS_ENSURE_SUCCESS(rv, rv);
 
     NS_ENSURE_TRUE(newSHEntry, NS_ERROR_FAILURE);
@@ -11182,8 +11242,19 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
   
   RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
   if (rootSH) {
-    rootSH->LegacySHistory()->EvictContentViewersOrReplaceEntry(newSHEntry,
-                                                                aReplace);
+    if (!aReplace) {
+      int32_t curIndex = rootSH->Index();
+      if (curIndex > -1) {
+        rootSH->LegacySHistory()->EvictOutOfRangeContentViewers(curIndex);
+      }
+    } else {
+      nsCOMPtr<nsISHEntry> rootSHEntry = nsSHistory::GetRootSHEntry(newSHEntry);
+
+      int32_t index = rootSH->LegacySHistory()->GetIndexOfEntry(rootSHEntry);
+      if (index > -1) {
+        rootSH->LegacySHistory()->ReplaceEntry(index, rootSHEntry);
+      }
+    }
   }
 
   
@@ -11233,7 +11304,7 @@ NS_IMETHODIMP
 nsDocShell::GetCurrentScrollRestorationIsManual(bool* aIsManual) {
   *aIsManual = false;
   if (mOSHE) {
-    return mOSHE->GetScrollRestorationIsManual(aIsManual);
+    *aIsManual = mOSHE->GetScrollRestorationIsManual();
   }
 
   return NS_OK;
@@ -11323,19 +11394,24 @@ nsresult nsDocShell::AddToSessionHistory(
     
     entry = mOSHE;
     if (entry) {
-      entry->ClearEntry();
+      int32_t childCount = entry->GetChildCount();
+      
+      for (int32_t i = childCount - 1; i >= 0; i--) {
+        nsCOMPtr<nsISHEntry> child;
+        entry->GetChildAt(i, getter_AddRefs(child));
+        entry->RemoveChild(child);
+      }
+      entry->AbandonBFCacheEntry();
     }
   }
 
   
   if (!entry) {
-    nsCOMPtr<nsIWebNavigation> webnav = do_QueryInterface(root);
-    NS_ENSURE_TRUE(webnav, NS_ERROR_FAILURE);
+    entry = components::SHEntry::Create();
 
-    RefPtr<ChildSHistory> shistory = webnav->GetSessionHistory();
-    entry = CreateSHEntryForDocShell(shistory ? shistory->LegacySHistory()
-                                              : nullptr);
-    NS_ENSURE_TRUE(entry, NS_ERROR_FAILURE);
+    if (!entry) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
   }
 
   
@@ -11349,7 +11425,7 @@ nsresult nsDocShell::AddToSessionHistory(
   nsCOMPtr<nsIPrincipal> principalToInherit = aPrincipalToInherit;
   nsCOMPtr<nsIPrincipal> storagePrincipalToInherit = aStoragePrincipalToInherit;
   nsCOMPtr<nsIContentSecurityPolicy> csp = aCsp;
-  bool expired = false;  
+  bool expired = false;
   bool discardLayoutState = false;
   nsCOMPtr<nsICacheInfoChannel> cacheChannel;
   if (aChannel) {
@@ -11418,28 +11494,41 @@ nsresult nsDocShell::AddToSessionHistory(
     }
   }
 
-  nsAutoString srcdoc;
-  bool srcdocEntry = false;
-  nsCOMPtr<nsIURI> baseURI;
+  
+  entry->Create(aURI,                 
+                EmptyString(),        
+                inputStream,          
+                nullptr,              
+                cacheKey,             
+                mContentTypeHint,     
+                triggeringPrincipal,  
+                principalToInherit, storagePrincipalToInherit, csp, mHistoryID,
+                mDynamicallyCreated);
 
+  entry->SetOriginalURI(originalURI);
+  entry->SetResultPrincipalURI(resultPrincipalURI);
+  entry->SetLoadReplace(loadReplace);
+  entry->SetReferrerInfo(referrerInfo);
   nsCOMPtr<nsIInputStreamChannel> inStrmChan = do_QueryInterface(aChannel);
   if (inStrmChan) {
     bool isSrcdocChannel;
     inStrmChan->GetIsSrcdocChannel(&isSrcdocChannel);
     if (isSrcdocChannel) {
+      nsAutoString srcdoc;
       inStrmChan->GetSrcdocData(srcdoc);
-      srcdocEntry = true;
+      entry->SetSrcdocData(srcdoc);
+      nsCOMPtr<nsIURI> baseURI;
       inStrmChan->GetBaseURI(getter_AddRefs(baseURI));
-    } else {
-      srcdoc.SetIsVoid(true);
+      entry->SetBaseURI(baseURI);
     }
   }
   
 
 
 
-  bool saveLayoutState = !discardLayoutState;
-
+  if (discardLayoutState) {
+    entry->SetSaveLayoutStateFlag(false);
+  }
   if (cacheChannel) {
     
     uint32_t expTime = 0;
@@ -11449,18 +11538,9 @@ nsresult nsDocShell::AddToSessionHistory(
       expired = true;
     }
   }
-
-  
-  entry->Create(aURI,                 
-                EmptyString(),        
-                inputStream,          
-                cacheKey,             
-                mContentTypeHint,     
-                triggeringPrincipal,  
-                principalToInherit, storagePrincipalToInherit, csp, HistoryID(),
-                mDynamicallyCreated, originalURI, resultPrincipalURI,
-                loadReplace, referrerInfo, srcdoc, srcdocEntry, baseURI,
-                saveLayoutState, expired);
+  if (expired) {
+    entry->SetExpirationStatus(true);
+  }
 
   if (root == static_cast<nsIDocShellTreeItem*>(this) && mSessionHistory) {
     
@@ -11530,21 +11610,28 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
   }
 
   NS_ENSURE_TRUE(aEntry, NS_ERROR_FAILURE);
-  nsresult rv;
-  RefPtr<nsDocShellLoadState> loadState;
-  rv = aEntry->CreateLoadInfo(getter_AddRefs(loadState));
-  NS_ENSURE_SUCCESS(rv, rv);
-  
-  
-  loadState->SetLoadType(aLoadType);
+
+  nsCOMPtr<nsIURI> uri = aEntry->GetURI();
+  nsCOMPtr<nsIURI> originalURI = aEntry->GetOriginalURI();
+  nsCOMPtr<nsIURI> resultPrincipalURI = aEntry->GetResultPrincipalURI();
+  bool loadReplace = aEntry->GetLoadReplace();
+  nsCOMPtr<nsIInputStream> postData = aEntry->GetPostData();
+  nsAutoCString contentType;
+  aEntry->GetContentType(contentType);
+  nsCOMPtr<nsIPrincipal> triggeringPrincipal = aEntry->GetTriggeringPrincipal();
+  nsCOMPtr<nsIPrincipal> principalToInherit = aEntry->GetPrincipalToInherit();
+  nsCOMPtr<nsIPrincipal> storagePrincipalToInherit =
+      aEntry->GetStoragePrincipalToInherit();
+  nsCOMPtr<nsIContentSecurityPolicy> csp = aEntry->GetCsp();
+  nsCOMPtr<nsIReferrerInfo> referrerInfo = aEntry->GetReferrerInfo();
 
   
   
   
   
   nsCOMPtr<nsISHEntry> kungFuDeathGrip(aEntry);
-
-  if (SchemeIsJavascript(loadState->URI())) {
+  nsresult rv;
+  if (SchemeIsJavascript(uri)) {
     
     
     
@@ -11552,9 +11639,9 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
     
     
     
-    rv = CreateAboutBlankContentViewer(loadState->PrincipalToInherit(),
-                                       loadState->StoragePrincipalToInherit(),
-                                       nullptr, nullptr, aEntry != mOSHE);
+    rv = CreateAboutBlankContentViewer(principalToInherit,
+                                       storagePrincipalToInherit, nullptr,
+                                       nullptr, aEntry != mOSHE);
 
     if (NS_FAILED(rv)) {
       
@@ -11563,13 +11650,11 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
       return NS_OK;
     }
 
-    if (!loadState->TriggeringPrincipal()) {
+    if (!triggeringPrincipal) {
       
       
       
-      nsCOMPtr<nsIPrincipal> principal =
-          NullPrincipal::CreateWithInheritedAttributes(this);
-      loadState->SetTriggeringPrincipal(principal);
+      triggeringPrincipal = NullPrincipal::CreateWithInheritedAttributes(this);
     }
   }
 
@@ -11577,7 +11662,7 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
 
 
 
-  if ((aLoadType & LOAD_CMD_RELOAD) && loadState->PostDataStream()) {
+  if ((aLoadType & LOAD_CMD_RELOAD) && postData) {
     bool repost;
     rv = ConfirmRepost(&repost);
     if (NS_FAILED(rv)) {
@@ -11591,11 +11676,48 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
   }
 
   
-  MOZ_ASSERT(loadState->TriggeringPrincipal(),
+  uint32_t flags = INTERNAL_LOAD_FLAGS_NONE;
+
+  nsAutoString srcdoc;
+  nsCOMPtr<nsIURI> baseURI;
+  if (aEntry->GetIsSrcdocEntry()) {
+    aEntry->GetSrcdocData(srcdoc);
+    baseURI = aEntry->GetBaseURI();
+    flags |= INTERNAL_LOAD_FLAGS_IS_SRCDOC;
+  } else {
+    srcdoc = VoidString();
+  }
+
+  
+  MOZ_ASSERT(triggeringPrincipal,
              "need a valid triggeringPrincipal to load from history");
-  if (!loadState->TriggeringPrincipal()) {
+  if (!triggeringPrincipal) {
     return NS_ERROR_FAILURE;
   }
+
+  
+  
+  
+  
+  Maybe<nsCOMPtr<nsIURI>> emplacedResultPrincipalURI;
+  emplacedResultPrincipalURI.emplace(std::move(resultPrincipalURI));
+
+  RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(uri);
+  loadState->SetReferrerInfo(referrerInfo);
+  loadState->SetOriginalURI(originalURI);
+  loadState->SetMaybeResultPrincipalURI(emplacedResultPrincipalURI);
+  loadState->SetLoadReplace(loadReplace);
+  loadState->SetTriggeringPrincipal(triggeringPrincipal);
+  loadState->SetPrincipalToInherit(principalToInherit);
+  loadState->SetLoadFlags(flags);
+  loadState->SetTypeHint(contentType);
+  loadState->SetPostDataStream(postData);
+  loadState->SetLoadType(aLoadType);
+  loadState->SetSHEntry(aEntry);
+  loadState->SetFirstParty(true);
+  loadState->SetSrcdocData(srcdoc);
+  loadState->SetBaseURI(baseURI);
+  loadState->SetCsp(csp);
 
   rv = InternalLoad(loadState,
                     nullptr,   
@@ -11607,8 +11729,7 @@ nsresult nsDocShell::PersistLayoutHistoryState() {
   nsresult rv = NS_OK;
 
   if (mOSHE) {
-    bool scrollRestorationIsManual;
-    Unused << mOSHE->GetScrollRestorationIsManual(&scrollRestorationIsManual);
+    bool scrollRestorationIsManual = mOSHE->GetScrollRestorationIsManual();
     nsCOMPtr<nsILayoutHistoryState> layoutState;
     if (RefPtr<PresShell> presShell = GetPresShell()) {
       rv = presShell->CaptureHistoryState(getter_AddRefs(layoutState));
@@ -11646,7 +11767,7 @@ void nsDocShell::SetHistoryEntry(nsCOMPtr<nsISHEntry>* aPtr,
   
   
 
-  nsCOMPtr<nsISHEntry> newRootEntry = nsSHistory::GetRootSHEntry(aEntry);
+  nsISHEntry* newRootEntry = nsSHistory::GetRootSHEntry(aEntry);
   if (newRootEntry) {
     
     
@@ -13236,35 +13357,6 @@ already_AddRefed<nsIBrowserChild> nsDocShell::GetBrowserChild() {
 nsCommandManager* nsDocShell::GetCommandManager() {
   NS_ENSURE_SUCCESS(EnsureCommandHandler(), nullptr);
   return mCommandManager;
-}
-
-NS_IMETHODIMP
-nsDocShell::GetIsOnlyToplevelInTabGroup(bool* aResult) {
-  MOZ_ASSERT(aResult);
-
-  nsPIDOMWindowOuter* outer = GetWindow();
-  MOZ_ASSERT(outer);
-
-  
-  
-  if (outer->GetInProcessScriptableParentOrNull()) {
-    *aResult = false;
-    return NS_OK;
-  }
-
-  
-  
-  nsTArray<nsPIDOMWindowOuter*> toplevelWindows =
-      outer->TabGroup()->GetTopLevelWindows();
-  if (toplevelWindows.Length() > 1) {
-    *aResult = false;
-    return NS_OK;
-  }
-  MOZ_ASSERT(toplevelWindows.Length() == 1);
-  MOZ_ASSERT(toplevelWindows[0] == outer);
-
-  *aResult = true;
-  return NS_OK;
 }
 
 NS_IMETHODIMP
