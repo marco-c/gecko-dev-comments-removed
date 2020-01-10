@@ -6,6 +6,7 @@
 
 #include "WaylandDMABUFTextureHostOGL.h"
 #include "mozilla/widget/WaylandDMABufSurface.h"
+#include "mozilla/webrender/RenderWaylandDMABUFTextureHostOGL.h"
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "GLContextEGL.h"
@@ -92,12 +93,10 @@ gl::GLContext* WaylandDMABUFTextureHostOGL::gl() const {
 
 void WaylandDMABUFTextureHostOGL::CreateRenderTexture(
     const wr::ExternalImageId& aExternalImageId) {
-  
-
-
-
-
-
+  RefPtr<wr::RenderTextureHost> texture =
+      new wr::RenderWaylandDMABUFTextureHostOGL(mSurface);
+  wr::RenderThread::Get()->RegisterExternalImage(wr::AsUint64(aExternalImageId),
+                                                 texture.forget());
 }
 
 void WaylandDMABUFTextureHostOGL::PushResourceUpdates(
