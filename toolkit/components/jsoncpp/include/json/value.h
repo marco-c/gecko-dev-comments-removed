@@ -9,9 +9,11 @@
 #if !defined(JSON_IS_AMALGAMATION)
 #include "forwards.h"
 #endif 
+#include <array>
+#include <exception>
+#include <memory>
 #include <string>
 #include <vector>
-#include <exception>
 
 #ifndef JSON_USE_CPPTL_SMALLMAP
 #include <map>
@@ -26,13 +28,13 @@
 
 
 #if !defined(JSONCPP_NORETURN)
-#  if defined(_MSC_VER)
-#    define JSONCPP_NORETURN __declspec(noreturn)
-#  elif defined(__GNUC__)
-#    define JSONCPP_NORETURN __attribute__ ((__noreturn__))
-#  else
-#    define JSONCPP_NORETURN
-#  endif
+#if defined(_MSC_VER)
+#define JSONCPP_NORETURN __declspec(noreturn)
+#elif defined(__GNUC__)
+#define JSONCPP_NORETURN __attribute__((__noreturn__))
+#else
+#define JSONCPP_NORETURN
+#endif
 #endif
 
 
@@ -48,17 +50,19 @@
 
 namespace Json {
 
+#if JSON_USE_EXCEPTION
 
 
 
 
 class JSON_API Exception : public std::exception {
 public:
-  Exception(JSONCPP_STRING const& msg);
-  ~Exception() JSONCPP_NOEXCEPT JSONCPP_OVERRIDE;
-  char const* what() const JSONCPP_NOEXCEPT JSONCPP_OVERRIDE;
+  Exception(String msg);
+  ~Exception() JSONCPP_NOEXCEPT override;
+  char const* what() const JSONCPP_NOEXCEPT override;
+
 protected:
-  JSONCPP_STRING msg_;
+  String msg_;
 };
 
 
@@ -69,7 +73,7 @@ protected:
 
 class JSON_API RuntimeError : public Exception {
 public:
-  RuntimeError(JSONCPP_STRING const& msg);
+  RuntimeError(String const& msg);
 };
 
 
@@ -80,13 +84,14 @@ public:
 
 class JSON_API LogicError : public Exception {
 public:
-  LogicError(JSONCPP_STRING const& msg);
+  LogicError(String const& msg);
 };
+#endif
 
 
-JSONCPP_NORETURN void throwRuntimeError(JSONCPP_STRING const& msg);
+JSONCPP_NORETURN void throwRuntimeError(String const& msg);
 
-JSONCPP_NORETURN void throwLogicError(JSONCPP_STRING const& msg);
+JSONCPP_NORETURN void throwLogicError(String const& msg);
 
 
 
@@ -107,6 +112,13 @@ enum CommentPlacement {
   commentAfter, 
   
   numberOfCommentPlacement
+};
+
+
+
+enum PrecisionType {
+  significantDigits = 0, 
+  decimalPlaces          
 };
 
 
@@ -176,8 +188,9 @@ private:
 
 class JSON_API Value {
   friend class ValueIteratorBase;
+
 public:
-  typedef std::vector<JSONCPP_STRING> Members;
+  typedef std::vector<String> Members;
   typedef ValueIterator iterator;
   typedef ValueConstIterator const_iterator;
   typedef Json::UInt UInt;
@@ -190,8 +203,13 @@ public:
   typedef Json::LargestUInt LargestUInt;
   typedef Json::ArrayIndex ArrayIndex;
 
-  static const Value& null;  
-  static const Value& nullRef;  
+  
+  typedef std::string value_type;
+
+  static const Value& null; 
+                            
+  static const Value& nullRef; 
+                               
   static Value const& nullSingleton(); 
 
   
@@ -217,23 +235,29 @@ public:
   static const UInt64 maxUInt64;
 #endif 
 
+  
+  static const UInt defaultRealPrecision;
+
+
+
+
+#ifdef __NVCC__
+public:
+#else
 private:
+#endif
 #ifndef JSONCPP_DOC_EXCLUDE_IMPLEMENTATION
   class CZString {
   public:
-    enum DuplicationPolicy {
-      noDuplication = 0,
-      duplicate,
-      duplicateOnCopy
-    };
+    enum DuplicationPolicy { noDuplication = 0, duplicate, duplicateOnCopy };
     CZString(ArrayIndex index);
     CZString(char const* str, unsigned length, DuplicationPolicy allocate);
     CZString(CZString const& other);
-#if JSON_HAS_RVALUE_REFERENCES
     CZString(CZString&& other);
-#endif
     ~CZString();
-    CZString& operator=(CZString other);
+    CZString& operator=(const CZString& other);
+    CZString& operator=(CZString&& other);
+
     bool operator<(CZString const& other) const;
     bool operator==(CZString const& other) const;
     ArrayIndex index() const;
@@ -246,11 +270,11 @@ private:
     void swap(CZString& other);
 
     struct StringStorage {
-      unsigned policy_: 2;
-      unsigned length_: 30; 
+      unsigned policy_ : 2;
+      unsigned length_ : 30; 
     };
 
-    char const* cstr_;  
+    char const* cstr_; 
     union {
       ArrayIndex index_;
       StringStorage storage_;
@@ -307,26 +331,30 @@ public:
 
 
   Value(const StaticString& value);
-  Value(const JSONCPP_STRING& value); 
+  Value(const String& value); 
+                              
 #ifdef JSON_USE_CPPTL
   Value(const CppTL::ConstString& value);
 #endif
   Value(bool value);
-  
   Value(const Value& other);
-#if JSON_HAS_RVALUE_REFERENCES
-  
   Value(Value&& other);
-#endif
   ~Value();
 
   
   
-  Value& operator=(Value other);
+  Value& operator=(const Value& other);
+  Value& operator=(Value&& other);
+
   
   void swap(Value& other);
   
   void swapPayload(Value& other);
+
+  
+  void copy(const Value& other);
+  
+  void copyPayload(const Value& other);
 
   ValueType type() const;
 
@@ -342,13 +370,13 @@ public:
   const char* asCString() const; 
 #if JSONCPP_USING_SECURE_MEMORY
   unsigned getCStringLength() const; 
+                                     
 #endif
-  JSONCPP_STRING asString() const; 
+  String asString() const; 
   
 
 
-  bool getString(
-      char const** begin, char const** end) const;
+  bool getString(char const** begin, char const** end) const;
 #ifdef JSON_USE_CPPTL
   CppTL::ConstString asConstString() const;
 #endif
@@ -387,7 +415,7 @@ public:
   bool empty() const;
 
   
-  bool operator!() const;
+  JSONCPP_OP_EXPLICIT operator bool() const;
 
   
   
@@ -399,7 +427,7 @@ public:
   
   
   
-  void resize(ArrayIndex size);
+  void resize(ArrayIndex newSize);
 
   
   
@@ -437,6 +465,7 @@ public:
   
   
   Value& append(const Value& value);
+  Value& append(Value&& value);
 
   
   
@@ -447,12 +476,13 @@ public:
   const Value& operator[](const char* key) const;
   
   
-  Value& operator[](const JSONCPP_STRING& key);
+  Value& operator[](const String& key);
   
   
   
-  const Value& operator[](const JSONCPP_STRING& key) const;
+  const Value& operator[](const String& key) const;
   
+
 
 
 
@@ -478,11 +508,12 @@ public:
   
   
   
-  Value get(const char* begin, const char* end, const Value& defaultValue) const;
+  Value
+  get(const char* begin, const char* end, const Value& defaultValue) const;
   
   
   
-  Value get(const JSONCPP_STRING& key, const Value& defaultValue) const;
+  Value get(const String& key, const Value& defaultValue) const;
 #ifdef JSON_USE_CPPTL
   
   
@@ -495,19 +526,16 @@ public:
   
   
   
-  Value const* demand(char const* begin, char const* end);
+  Value* demand(char const* begin, char const* end);
   
   
   
   
   
+  void removeMember(const char* key);
   
   
-  Value removeMember(const char* key);
-  
-  
-  
-  Value removeMember(const JSONCPP_STRING& key);
+  void removeMember(const String& key);
   
   
   bool removeMember(const char* key, Value* removed);
@@ -517,7 +545,7 @@ public:
 
 
 
-  bool removeMember(JSONCPP_STRING const& key, Value* removed);
+  bool removeMember(String const& key, Value* removed);
   
   bool removeMember(const char* begin, const char* end, Value* removed);
   
@@ -526,14 +554,14 @@ public:
 
 
 
-  bool removeIndex(ArrayIndex i, Value* removed);
+  bool removeIndex(ArrayIndex index, Value* removed);
 
   
   
   bool isMember(const char* key) const;
   
   
-  bool isMember(const JSONCPP_STRING& key) const;
+  bool isMember(const String& key) const;
   
   bool isMember(const char* begin, const char* end) const;
 #ifdef JSON_USE_CPPTL
@@ -554,17 +582,21 @@ public:
   
 
   
-  JSONCPP_DEPRECATED("Use setComment(JSONCPP_STRING const&) instead.")
-  void setComment(const char* comment, CommentPlacement placement);
+  JSONCPP_DEPRECATED("Use setComment(String const&) instead.")
+  void setComment(const char* comment, CommentPlacement placement) {
+    setComment(String(comment, strlen(comment)), placement);
+  }
   
-  void setComment(const char* comment, size_t len, CommentPlacement placement);
+  void setComment(const char* comment, size_t len, CommentPlacement placement) {
+    setComment(String(comment, len), placement);
+  }
   
-  void setComment(const JSONCPP_STRING& comment, CommentPlacement placement);
+  void setComment(String comment, CommentPlacement placement);
   bool hasComment(CommentPlacement placement) const;
   
-  JSONCPP_STRING getComment(CommentPlacement placement) const;
+  String getComment(CommentPlacement placement) const;
 
-  JSONCPP_STRING toStyledString() const;
+  String toStyledString() const;
 
   const_iterator begin() const;
   const_iterator end() const;
@@ -580,19 +612,19 @@ public:
   ptrdiff_t getOffsetLimit() const;
 
 private:
+  void setType(ValueType v) {
+    bits_.value_type_ = static_cast<unsigned char>(v);
+  }
+  bool isAllocated() const { return bits_.allocated_; }
+  void setIsAllocated(bool v) { bits_.allocated_ = v; }
+
   void initBasic(ValueType type, bool allocated = false);
+  void dupPayload(const Value& other);
+  void releasePayload();
+  void dupMeta(const Value& other);
 
   Value& resolveReference(const char* key);
   Value& resolveReference(const char* key, const char* end);
-
-  struct CommentInfo {
-    CommentInfo();
-    ~CommentInfo();
-
-    void setComment(const char* text, size_t len);
-
-    char* comment_;
-  };
 
   
   
@@ -608,13 +640,33 @@ private:
     LargestUInt uint_;
     double real_;
     bool bool_;
-    char* string_;  
+    char* string_; 
     ObjectValues* map_;
   } value_;
-  ValueType type_ : 8;
-  unsigned int allocated_ : 1; 
-                               
-  CommentInfo* comments_;
+
+  struct {
+    
+    unsigned int value_type_ : 8;
+    
+    unsigned int allocated_ : 1;
+  } bits_;
+
+  class Comments {
+  public:
+    Comments() = default;
+    Comments(const Comments& that);
+    Comments(Comments&& that);
+    Comments& operator=(const Comments& that);
+    Comments& operator=(Comments&& that);
+    bool has(CommentPlacement slot) const;
+    String get(CommentPlacement slot) const;
+    void set(CommentPlacement slot, String s);
+
+  private:
+    using Array = std::array<String, numberOfCommentPlacement>;
+    std::unique_ptr<Array> ptr_;
+  };
+  Comments comments_;
 
   
   
@@ -632,17 +684,13 @@ public:
   PathArgument();
   PathArgument(ArrayIndex index);
   PathArgument(const char* key);
-  PathArgument(const JSONCPP_STRING& key);
+  PathArgument(const String& key);
 
 private:
-  enum Kind {
-    kindNone = 0,
-    kindIndex,
-    kindKey
-  };
-  JSONCPP_STRING key_;
-  ArrayIndex index_;
-  Kind kind_;
+  enum Kind { kindNone = 0, kindIndex, kindKey };
+  String key_;
+  ArrayIndex index_{};
+  Kind kind_{kindNone};
 };
 
 
@@ -658,7 +706,7 @@ private:
 
 class JSON_API Path {
 public:
-  Path(const JSONCPP_STRING& path,
+  Path(const String& path,
        const PathArgument& a1 = PathArgument(),
        const PathArgument& a2 = PathArgument(),
        const PathArgument& a3 = PathArgument(),
@@ -675,12 +723,12 @@ private:
   typedef std::vector<const PathArgument*> InArgs;
   typedef std::vector<PathArgument> Args;
 
-  void makePath(const JSONCPP_STRING& path, const InArgs& in);
-  void addPathInArg(const JSONCPP_STRING& path,
+  void makePath(const String& path, const InArgs& in);
+  void addPathInArg(const String& path,
                     const InArgs& in,
                     InArgs::const_iterator& itInArg,
                     PathArgument::Kind kind);
-  void invalidPath(const JSONCPP_STRING& path, int location);
+  static void invalidPath(const String& path, int location);
 
   Args args_;
 };
@@ -708,13 +756,15 @@ public:
   Value key() const;
 
   
+  
   UInt index() const;
 
   
   
   
-  JSONCPP_STRING name() const;
+  String name() const;
 
+  
   
   
   
@@ -741,7 +791,7 @@ protected:
 private:
   Value::ObjectValues::iterator current_;
   
-  bool isNull_;
+  bool isNull_{true};
 
 public:
   
@@ -768,9 +818,10 @@ public:
   ValueConstIterator(ValueIterator const& other);
 
 private:
-
+  
 
   explicit ValueConstIterator(const Value::ObjectValues::iterator& current);
+
 public:
   SelfType& operator=(const ValueIteratorBase& other);
 
@@ -819,9 +870,10 @@ public:
   ValueIterator(const ValueIterator& other);
 
 private:
-
+  
 
   explicit ValueIterator(const Value::ObjectValues::iterator& current);
+
 public:
   SelfType& operator=(const SelfType& other);
 
@@ -852,14 +904,9 @@ public:
   pointer operator->() const { return &deref(); }
 };
 
+inline void swap(Value& a, Value& b) { a.swap(b); }
+
 } 
-
-
-namespace std {
-
-template<>
-inline void swap(Json::Value& a, Json::Value& b) { a.swap(b); }
-}
 
 #pragma pack(pop)
 
@@ -867,4 +914,4 @@ inline void swap(Json::Value& a, Json::Value& b) { a.swap(b); }
 #pragma warning(pop)
 #endif 
 
-#endif 
+#endif

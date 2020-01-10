@@ -5,9 +5,14 @@
 
 #ifndef JSON_CONFIG_H_INCLUDED
 #define JSON_CONFIG_H_INCLUDED
-#include <stddef.h>
-#include <string> 
-#include <stdint.h> 
+#include <cstddef>
+#include <cstdint>
+#include <istream>
+#include <memory>
+#include <ostream>
+#include <sstream>
+#include <string>
+#include <type_traits>
 
 
 
@@ -43,6 +48,8 @@
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #define JSON_API __declspec(dllexport)
 #define JSONCPP_DISABLE_DLL_INTERFACE_WARNING
+#elif defined(__GNUC__) || defined(__clang__)
+#define JSON_API __attribute__((visibility("default")))
 #endif 
 #elif defined(JSON_DLL)
 #if defined(_MSC_VER) || defined(__MINGW32__)
@@ -54,78 +61,57 @@
 #define JSON_API
 #endif
 
+#if defined(_MSC_VER) && _MSC_VER < 1800
+#error                                                                         \
+    "ERROR:  Visual Studio 12 (2013) with _MSC_VER=1800 is the oldest supported compiler with sufficient C++11 capabilities"
+#endif
+
+#if defined(_MSC_VER) && _MSC_VER < 1900
+
+
+extern JSON_API int
+msvc_pre1900_c99_snprintf(char* outBuf, size_t size, const char* format, ...);
+#define jsoncpp_snprintf msvc_pre1900_c99_snprintf
+#else
+#define jsoncpp_snprintf std::snprintf
+#endif
 
 
 
 
 
-#if defined(_MSC_VER) 
-#  if _MSC_VER <= 1200 
-    
-    
-#    define JSON_USE_INT64_DOUBLE_CONVERSION 1
-    
-    
-    
-    
-#    pragma warning(disable : 4786)
-#  endif 
-
-#  if _MSC_VER >= 1500 
-    
-#    define JSONCPP_DEPRECATED(message) __declspec(deprecated(message))
-#  endif
-
-#endif 
 
 
 
+#define JSONCPP_OVERRIDE override
 
 #if __cplusplus >= 201103L
-# define JSONCPP_OVERRIDE override
-# define JSONCPP_NOEXCEPT noexcept
-#elif defined(_MSC_VER) && _MSC_VER > 1600 && _MSC_VER < 1900
-# define JSONCPP_OVERRIDE override
-# define JSONCPP_NOEXCEPT throw()
+#define JSONCPP_NOEXCEPT noexcept
+#define JSONCPP_OP_EXPLICIT explicit
+#elif defined(_MSC_VER) && _MSC_VER < 1900
+#define JSONCPP_NOEXCEPT throw()
+#define JSONCPP_OP_EXPLICIT explicit
 #elif defined(_MSC_VER) && _MSC_VER >= 1900
-# define JSONCPP_OVERRIDE override
-# define JSONCPP_NOEXCEPT noexcept
+#define JSONCPP_NOEXCEPT noexcept
+#define JSONCPP_OP_EXPLICIT explicit
 #else
-# define JSONCPP_OVERRIDE
-# define JSONCPP_NOEXCEPT throw()
-#endif
-
-#ifndef JSON_HAS_RVALUE_REFERENCES
-
-#if defined(_MSC_VER) && _MSC_VER >= 1600 
-#define JSON_HAS_RVALUE_REFERENCES 1
-#endif 
-
-#ifdef __clang__
-#if __has_feature(cxx_rvalue_references)
-#define JSON_HAS_RVALUE_REFERENCES 1
-#endif  
-
-#elif defined __GNUC__ 
-#if defined(__GXX_EXPERIMENTAL_CXX0X__) || (__cplusplus >= 201103L)
-#define JSON_HAS_RVALUE_REFERENCES 1
-#endif  
-
-#endif 
-
-#endif 
-
-#ifndef JSON_HAS_RVALUE_REFERENCES
-#define JSON_HAS_RVALUE_REFERENCES 0
+#define JSONCPP_NOEXCEPT throw()
+#define JSONCPP_OP_EXPLICIT
 #endif
 
 #ifdef __clang__
+#if __has_extension(attribute_deprecated_with_message)
+#define JSONCPP_DEPRECATED(message) __attribute__((deprecated(message)))
+#endif
 #elif defined __GNUC__ 
-#  if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5))
-#    define JSONCPP_DEPRECATED(message)  __attribute__ ((deprecated(message)))
-#  elif (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
-#    define JSONCPP_DEPRECATED(message)  __attribute__((__deprecated__))
-#  endif  
+#if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5))
+#define JSONCPP_DEPRECATED(message) __attribute__((deprecated(message)))
+#elif (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
+#define JSONCPP_DEPRECATED(message) __attribute__((__deprecated__))
+#endif                  
+#elif defined(_MSC_VER) 
+                        
+#define JSONCPP_DEPRECATED(message) __declspec(deprecated(message))
 #endif 
 
 #if !defined(JSONCPP_DEPRECATED)
@@ -133,16 +119,13 @@
 #endif 
 
 #if __GNUC__ >= 6
-#  define JSON_USE_INT64_DOUBLE_CONVERSION 1
+#define JSON_USE_INT64_DOUBLE_CONVERSION 1
 #endif
 
 #if !defined(JSON_IS_AMALGAMATION)
 
-# include "version.h"
-
-# if JSONCPP_USING_SECURE_MEMORY
-#  include "allocator.h" 
-# endif
+#include "allocator.h"
+#include "version.h"
 
 #endif 
 
@@ -161,24 +144,32 @@ typedef unsigned __int64 UInt64;
 #else                 
 typedef int64_t Int64;
 typedef uint64_t UInt64;
-#endif 
+#endif                
 typedef Int64 LargestInt;
 typedef UInt64 LargestUInt;
 #define JSON_HAS_INT64
 #endif 
-#if JSONCPP_USING_SECURE_MEMORY
-#define JSONCPP_STRING        std::basic_string<char, std::char_traits<char>, Json::SecureAllocator<char> >
-#define JSONCPP_OSTRINGSTREAM std::basic_ostringstream<char, std::char_traits<char>, Json::SecureAllocator<char> >
-#define JSONCPP_OSTREAM       std::basic_ostream<char, std::char_traits<char>>
-#define JSONCPP_ISTRINGSTREAM std::basic_istringstream<char, std::char_traits<char>, Json::SecureAllocator<char> >
-#define JSONCPP_ISTREAM       std::istream
-#else
-#define JSONCPP_STRING        std::string
-#define JSONCPP_OSTRINGSTREAM std::ostringstream
-#define JSONCPP_OSTREAM       std::ostream
-#define JSONCPP_ISTRINGSTREAM std::istringstream
-#define JSONCPP_ISTREAM       std::istream
-#endif 
+
+template <typename T>
+using Allocator = typename std::conditional<JSONCPP_USING_SECURE_MEMORY,
+                                            SecureAllocator<T>,
+                                            std::allocator<T>>::type;
+using String = std::basic_string<char, std::char_traits<char>, Allocator<char>>;
+using IStringStream = std::basic_istringstream<String::value_type,
+                                               String::traits_type,
+                                               String::allocator_type>;
+using OStringStream = std::basic_ostringstream<String::value_type,
+                                               String::traits_type,
+                                               String::allocator_type>;
+using IStream = std::istream;
+using OStream = std::ostream;
 } 
+
+
+using JSONCPP_STRING = Json::String;
+using JSONCPP_ISTRINGSTREAM = Json::IStringStream;
+using JSONCPP_OSTRINGSTREAM = Json::OStringStream;
+using JSONCPP_ISTREAM = Json::IStream;
+using JSONCPP_OSTREAM = Json::OStream;
 
 #endif 

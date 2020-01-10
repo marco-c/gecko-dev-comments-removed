@@ -41,17 +41,17 @@ public:
   Features();
 
   
-  bool allowComments_;
+  bool allowComments_{true};
 
   
   
-  bool strictRoot_;
+  bool strictRoot_{false};
 
   
-  bool allowDroppedNullPlaceholders_;
+  bool allowDroppedNullPlaceholders_{false};
 
   
-  bool allowNumericKeys_;
+  bool allowNumericKeys_{false};
 };
 
 } 

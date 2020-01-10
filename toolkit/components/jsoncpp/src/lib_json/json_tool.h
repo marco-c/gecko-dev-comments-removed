@@ -6,6 +6,9 @@
 #ifndef LIB_JSONCPP_JSON_TOOL_H_INCLUDED
 #define LIB_JSONCPP_JSON_TOOL_H_INCLUDED
 
+#if !defined(JSON_IS_AMALGAMATION)
+#include <json/config.h>
+#endif
 
 
 #ifdef NO_LOCALE_SUPPORT
@@ -23,7 +26,7 @@
 
 
 namespace Json {
-static char getDecimalPoint() {
+static inline char getDecimalPoint() {
 #ifdef JSONCPP_NO_LOCALE_SUPPORT
   return '\0';
 #else
@@ -33,8 +36,8 @@ static char getDecimalPoint() {
 }
 
 
-static inline JSONCPP_STRING codePointToUTF8(unsigned int cp) {
-  JSONCPP_STRING result;
+static inline String codePointToUTF8(unsigned int cp) {
+  String result;
 
   
 
@@ -60,9 +63,6 @@ static inline JSONCPP_STRING codePointToUTF8(unsigned int cp) {
 
   return result;
 }
-
-
-static inline bool isControlCharacter(char ch) { return ch > 0 && ch <= 0x1F; }
 
 enum {
   
@@ -91,25 +91,42 @@ static inline void uintToString(LargestUInt value, char*& current) {
 
 
 
-static inline void fixNumericLocale(char* begin, char* end) {
-  while (begin < end) {
+template <typename Iter> Iter fixNumericLocale(Iter begin, Iter end) {
+  for (; begin != end; ++begin) {
     if (*begin == ',') {
       *begin = '.';
     }
-    ++begin;
+  }
+  return begin;
+}
+
+template <typename Iter> void fixNumericLocaleInput(Iter begin, Iter end) {
+  char decimalPoint = getDecimalPoint();
+  if (decimalPoint == '\0' || decimalPoint == '.') {
+    return;
+  }
+  for (; begin != end; ++begin) {
+    if (*begin == '.') {
+      *begin = decimalPoint;
+    }
   }
 }
 
-static inline void fixNumericLocaleInput(char* begin, char* end) {
-  char decimalPoint = getDecimalPoint();
-  if (decimalPoint != '\0' && decimalPoint != '.') {
-    while (begin < end) {
-      if (*begin == '.') {
-        *begin = decimalPoint;
-      }
-      ++begin;
+
+
+
+
+template <typename Iter> Iter fixZerosInTheEnd(Iter begin, Iter end) {
+  for (; begin != end; --end) {
+    if (*(end - 1) != '0') {
+      return end;
+    }
+    
+    if (begin != (end - 1) && *(end - 2) == '.') {
+      return end;
     }
   }
+  return end;
 }
 
 } 

@@ -13,11 +13,17 @@
 namespace Json {
 
 
+class StreamWriter;
+class StreamWriterBuilder;
+class Writer;
 class FastWriter;
 class StyledWriter;
+class StyledStreamWriter;
 
 
 class Reader;
+class CharReader;
+class CharReaderBuilder;
 
 
 class Features;

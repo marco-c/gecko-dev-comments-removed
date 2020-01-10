@@ -9,13 +9,13 @@
 #if !defined(JSON_IS_AMALGAMATION)
 #include "value.h"
 #endif 
-#include <vector>
-#include <string>
 #include <ostream>
+#include <string>
+#include <vector>
 
 
 
-#if defined(JSONCPP_DISABLE_DLL_INTERFACE_WARNING)
+#if defined(JSONCPP_DISABLE_DLL_INTERFACE_WARNING) && defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable : 4251)
 #endif 
@@ -41,7 +41,7 @@ class Value;
 
 class JSON_API StreamWriter {
 protected:
-  JSONCPP_OSTREAM* sout_;  
+  OStream* sout_; 
 public:
   StreamWriter();
   virtual ~StreamWriter();
@@ -51,7 +51,7 @@ public:
 
 
 
-  virtual int write(Value const& root, JSONCPP_OSTREAM* sout) = 0;
+  virtual int write(Value const& root, OStream* sout) = 0;
 
   
 
@@ -62,14 +62,14 @@ public:
 
 
     virtual StreamWriter* newStreamWriter() const = 0;
-  };  
-};  
+  }; 
+};   
 
 
 
 
-JSONCPP_STRING JSON_API writeString(StreamWriter::Factory const& factory, Value const& root);
-
+String JSON_API writeString(StreamWriter::Factory const& factory,
+                            Value const& root);
 
 
 
@@ -111,15 +111,20 @@ public:
 
 
 
+
+
+
+
+
   Json::Value settings_;
 
   StreamWriterBuilder();
-  ~StreamWriterBuilder() JSONCPP_OVERRIDE;
+  ~StreamWriterBuilder() override;
 
   
 
 
-  StreamWriter* newStreamWriter() const JSONCPP_OVERRIDE;
+  StreamWriter* newStreamWriter() const override;
 
   
 
@@ -127,7 +132,7 @@ public:
   bool validate(Json::Value* invalid) const;
   
 
-  Value& operator[](JSONCPP_STRING key);
+  Value& operator[](const String& key);
 
   
 
@@ -140,11 +145,11 @@ public:
 
 
 
-class JSON_API Writer {
+class JSONCPP_DEPRECATED("Use StreamWriter instead") JSON_API Writer {
 public:
   virtual ~Writer();
 
-  virtual JSONCPP_STRING write(const Value& root) = 0;
+  virtual String write(const Value& root) = 0;
 };
 
 
@@ -156,11 +161,15 @@ public:
 
 
 
-class JSON_API FastWriter : public Writer {
-
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4996) // Deriving from deprecated class
+#endif
+class JSONCPP_DEPRECATED("Use StreamWriterBuilder instead") JSON_API FastWriter
+    : public Writer {
 public:
   FastWriter();
-  ~FastWriter() JSONCPP_OVERRIDE {}
+  ~FastWriter() override = default;
 
   void enableYAMLCompatibility();
 
@@ -174,16 +183,19 @@ public:
   void omitEndingLineFeed();
 
 public: 
-  JSONCPP_STRING write(const Value& root) JSONCPP_OVERRIDE;
+  String write(const Value& root) override;
 
 private:
   void writeValue(const Value& value);
 
-  JSONCPP_STRING document_;
-  bool yamlCompatiblityEnabled_;
-  bool dropNullPlaceholders_;
-  bool omitEndingLineFeed_;
+  String document_;
+  bool yamlCompatibilityEnabled_{false};
+  bool dropNullPlaceholders_{false};
+  bool omitEndingLineFeed_{false};
 };
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 
 
@@ -209,41 +221,49 @@ private:
 
 
 
-class JSON_API StyledWriter : public Writer {
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4996) // Deriving from deprecated class
+#endif
+class JSONCPP_DEPRECATED("Use StreamWriterBuilder instead") JSON_API
+    StyledWriter : public Writer {
 public:
   StyledWriter();
-  ~StyledWriter() JSONCPP_OVERRIDE {}
+  ~StyledWriter() override = default;
 
 public: 
   
 
 
 
-  JSONCPP_STRING write(const Value& root) JSONCPP_OVERRIDE;
+  String write(const Value& root) override;
 
 private:
   void writeValue(const Value& value);
   void writeArrayValue(const Value& value);
-  bool isMultineArray(const Value& value);
-  void pushValue(const JSONCPP_STRING& value);
+  bool isMultilineArray(const Value& value);
+  void pushValue(const String& value);
   void writeIndent();
-  void writeWithIndent(const JSONCPP_STRING& value);
+  void writeWithIndent(const String& value);
   void indent();
   void unindent();
   void writeCommentBeforeValue(const Value& root);
   void writeCommentAfterValueOnSameLine(const Value& root);
-  bool hasCommentForValue(const Value& value);
-  static JSONCPP_STRING normalizeEOL(const JSONCPP_STRING& text);
+  static bool hasCommentForValue(const Value& value);
+  static String normalizeEOL(const String& text);
 
-  typedef std::vector<JSONCPP_STRING> ChildValues;
+  typedef std::vector<String> ChildValues;
 
   ChildValues childValues_;
-  JSONCPP_STRING document_;
-  JSONCPP_STRING indentString_;
-  unsigned int rightMargin_;
-  unsigned int indentSize_;
-  bool addChildValues_;
+  String document_;
+  String indentString_;
+  unsigned int rightMargin_{74};
+  unsigned int indentSize_{3};
+  bool addChildValues_{false};
 };
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 
 
@@ -270,11 +290,18 @@ private:
 
 
 
-
-class JSON_API StyledStreamWriter {
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4996) // Deriving from deprecated class
+#endif
+class JSONCPP_DEPRECATED("Use StreamWriterBuilder instead") JSON_API
+    StyledStreamWriter {
 public:
-  StyledStreamWriter(JSONCPP_STRING indentation = "\t");
-  ~StyledStreamWriter() {}
+  
+
+
+  StyledStreamWriter(String indentation = "\t");
+  ~StyledStreamWriter() = default;
 
 public:
   
@@ -283,46 +310,52 @@ public:
 
 
 
-  void write(JSONCPP_OSTREAM& out, const Value& root);
+  void write(OStream& out, const Value& root);
 
 private:
   void writeValue(const Value& value);
   void writeArrayValue(const Value& value);
-  bool isMultineArray(const Value& value);
-  void pushValue(const JSONCPP_STRING& value);
+  bool isMultilineArray(const Value& value);
+  void pushValue(const String& value);
   void writeIndent();
-  void writeWithIndent(const JSONCPP_STRING& value);
+  void writeWithIndent(const String& value);
   void indent();
   void unindent();
   void writeCommentBeforeValue(const Value& root);
   void writeCommentAfterValueOnSameLine(const Value& root);
-  bool hasCommentForValue(const Value& value);
-  static JSONCPP_STRING normalizeEOL(const JSONCPP_STRING& text);
+  static bool hasCommentForValue(const Value& value);
+  static String normalizeEOL(const String& text);
 
-  typedef std::vector<JSONCPP_STRING> ChildValues;
+  typedef std::vector<String> ChildValues;
 
   ChildValues childValues_;
-  JSONCPP_OSTREAM* document_;
-  JSONCPP_STRING indentString_;
-  unsigned int rightMargin_;
-  JSONCPP_STRING indentation_;
+  OStream* document_;
+  String indentString_;
+  unsigned int rightMargin_{74};
+  String indentation_;
   bool addChildValues_ : 1;
   bool indented_ : 1;
 };
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 #if defined(JSON_HAS_INT64)
-JSONCPP_STRING JSON_API valueToString(Int value);
-JSONCPP_STRING JSON_API valueToString(UInt value);
+String JSON_API valueToString(Int value);
+String JSON_API valueToString(UInt value);
 #endif 
-JSONCPP_STRING JSON_API valueToString(LargestInt value);
-JSONCPP_STRING JSON_API valueToString(LargestUInt value);
-JSONCPP_STRING JSON_API valueToString(double value);
-JSONCPP_STRING JSON_API valueToString(bool value);
-JSONCPP_STRING JSON_API valueToQuotedString(const char* value);
+String JSON_API valueToString(LargestInt value);
+String JSON_API valueToString(LargestUInt value);
+String JSON_API
+valueToString(double value,
+              unsigned int precision = Value::defaultRealPrecision,
+              PrecisionType precisionType = PrecisionType::significantDigits);
+String JSON_API valueToString(bool value);
+String JSON_API valueToQuotedString(const char* value);
 
 
 
-JSON_API JSONCPP_OSTREAM& operator<<(JSONCPP_OSTREAM&, const Value& root);
+JSON_API OStream& operator<<(OStream&, const Value& root);
 
 } 
 

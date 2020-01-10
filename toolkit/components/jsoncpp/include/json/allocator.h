@@ -12,83 +12,74 @@
 #pragma pack(push, 8)
 
 namespace Json {
-template<typename T>
-class SecureAllocator {
-	public:
-		
-		using value_type      = T;
-		using pointer         = T*;
-		using const_pointer   = const T*;
-		using reference       = T&;
-		using const_reference = const T&;
-		using size_type       = std::size_t;
-		using difference_type = std::ptrdiff_t;
+template <typename T> class SecureAllocator {
+public:
+  
+  using value_type = T;
+  using pointer = T*;
+  using const_pointer = const T*;
+  using reference = T&;
+  using const_reference = const T&;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
 
-		
+  
 
 
-		pointer allocate(size_type n) {
-			
-			return static_cast<pointer>(::operator new(n * sizeof(T)));
-		}
+  pointer allocate(size_type n) {
+    
+    return static_cast<pointer>(::operator new(n * sizeof(T)));
+  }
 
-		
-
+  
 
 
 
 
 
-		void deallocate(volatile pointer p, size_type n) {
-			std::memset(p, 0, n * sizeof(T));
-			
-			::operator delete(p);
-		}
 
-		
+  void deallocate(volatile pointer p, size_type n) {
+    std::memset(p, 0, n * sizeof(T));
+    
+    ::operator delete(p);
+  }
 
-
-		template<typename... Args>
-		void construct(pointer p, Args&&... args) {
-			
-			::new (static_cast<void*>(p)) T(std::forward<Args>(args)...);
-		}
-
-		size_type max_size() const {
-			return size_t(-1) / sizeof(T);
-		}
-
-		pointer address( reference x ) const {
-			return std::addressof(x);
-		}
-
-		const_pointer address( const_reference x ) const {
-			return std::addressof(x);
-		}
-
-		
+  
 
 
-		void destroy(pointer p) {
-			
-			p->~T();
-		}
+  template <typename... Args> void construct(pointer p, Args&&... args) {
+    
+    ::new (static_cast<void*>(p)) T(std::forward<Args>(args)...);
+  }
 
-		
-		SecureAllocator() {}
-		template<typename U> SecureAllocator(const SecureAllocator<U>&) {}
-		template<typename U> struct rebind { using other = SecureAllocator<U>; };
+  size_type max_size() const { return size_t(-1) / sizeof(T); }
+
+  pointer address(reference x) const { return std::addressof(x); }
+
+  const_pointer address(const_reference x) const { return std::addressof(x); }
+
+  
+
+
+  void destroy(pointer p) {
+    
+    p->~T();
+  }
+
+  
+  SecureAllocator() {}
+  template <typename U> SecureAllocator(const SecureAllocator<U>&) {}
+  template <typename U> struct rebind { using other = SecureAllocator<U>; };
 };
 
-
-template<typename T, typename U>
+template <typename T, typename U>
 bool operator==(const SecureAllocator<T>&, const SecureAllocator<U>&) {
-	return true;
+  return true;
 }
 
-template<typename T, typename U>
+template <typename T, typename U>
 bool operator!=(const SecureAllocator<T>&, const SecureAllocator<U>&) {
-	return false;
+  return false;
 }
 
 } 
