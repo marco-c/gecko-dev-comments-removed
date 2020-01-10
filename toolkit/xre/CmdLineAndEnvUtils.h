@@ -88,7 +88,7 @@ inline bool strimatch(const wchar_t* lowerstr, const wchar_t* mixedstr) {
   return internal::strimatch(&towlower, lowerstr, mixedstr);
 }
 
-enum class FlagLiteral { osint, safemode, url };
+enum class FlagLiteral { osint, safemode };
 
 template <typename CharT, FlagLiteral Literal>
 inline const CharT* GetLiteral();
@@ -106,7 +106,6 @@ inline const CharT* GetLiteral();
 
 DECLARE_FLAG_LITERAL(osint, "osint")
 DECLARE_FLAG_LITERAL(safemode, "safe-mode")
-DECLARE_FLAG_LITERAL(url, "url")
 
 enum class CheckArgFlag : uint32_t {
   None = 0,
@@ -193,7 +192,10 @@ inline ArgResult CheckArg(int& aArgc, CharT** aArgv, const CharT* aArg,
 }
 
 template <typename CharT>
-inline void EnsureCommandlineSafe(int& aArgc, CharT** aArgv) {
+inline void EnsureCommandlineSafe(int& aArgc, CharT** aArgv,
+                                  const CharT** aAcceptableArgs) {
+  
+  
   
   
   
@@ -203,6 +205,7 @@ inline void EnsureCommandlineSafe(int& aArgc, CharT** aArgv) {
 
   if (CheckArg(aArgc, aArgv, osintLit, static_cast<const CharT**>(nullptr),
                CheckArgFlag::None) == ARG_FOUND) {
+    
     
     if (aArgc != 4) {
       exit(127);
@@ -240,7 +243,16 @@ inline void EnsureCommandlineSafe(int& aArgc, CharT** aArgv) {
     if (*arg == '-') {
       ++arg;
     }
-    if (!strimatch(GetLiteral<CharT, FlagLiteral::url>(), arg)) {
+    bool haveAcceptableArg = false;
+    const CharT** acceptableArg = aAcceptableArgs;
+    while (*acceptableArg) {
+      if (strimatch(*acceptableArg, arg)) {
+        haveAcceptableArg = true;
+        break;
+      }
+      acceptableArg++;
+    }
+    if (!haveAcceptableArg) {
       exit(127);
     }
     
