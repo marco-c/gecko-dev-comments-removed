@@ -196,13 +196,12 @@ impl<
         
         let w = self.normal.dot(other.normal);
         let divisor = T::one() - w * w;
-        if divisor < T::approx_epsilon() {
+        if divisor < T::approx_epsilon() * T::approx_epsilon() {
             return None
         }
-        let factor = T::one() / divisor;
         let origin = Point3D::origin() +
-            self.normal * ((other.offset * w - self.offset) * factor) -
-            other.normal* ((other.offset - self.offset * w) * factor);
+            self.normal * ((other.offset * w - self.offset) / divisor) -
+            other.normal* ((other.offset - self.offset * w) / divisor);
 
         let cross_dir = self.normal.cross(other.normal);
         
