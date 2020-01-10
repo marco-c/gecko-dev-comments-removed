@@ -1407,6 +1407,14 @@ pref("network.http.spdy.websockets", true);
 pref("network.http.spdy.enable-hpack-dump", false);
 
 
+pref("network.http.http3.enabled", false);
+
+pref("network.http.http3.default-qpack-table-size", 65536); 
+
+
+pref("network.http.http3.default-max-stream-blocked", 10);
+
+
 
 pref("network.http.altsvc.enabled", true);
 pref("network.http.altsvc.oe", true);
