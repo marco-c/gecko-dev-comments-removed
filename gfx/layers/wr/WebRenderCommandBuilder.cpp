@@ -2184,8 +2184,14 @@ WebRenderCommandBuilder::GenerateFallbackData(
   if (visibleSize.IsEmpty()) {
     return nullptr;
   }
-  
-  aImageRect = visibleRect / layerScale;
+
+  if (useBlobImage) {
+    
+    aImageRect = visibleRect / layerScale;
+  } else {
+    
+    aImageRect = dtRect / layerScale;
+  }
 
   
   
@@ -2328,7 +2334,7 @@ WebRenderCommandBuilder::GenerateFallbackData(
 
       {
         UpdateImageHelper helper(imageContainer, imageClient,
-                                 visibleSize.ToUnknownSize(), format);
+                                 dtRect.Size().ToUnknownSize(), format);
         {
           RefPtr<gfx::DrawTarget> dt = helper.GetDrawTarget();
           if (!dt) {
