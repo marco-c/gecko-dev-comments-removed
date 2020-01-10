@@ -463,16 +463,15 @@ class UrlbarView {
 
         
         
-        
-        let alignIcon;
-        if (this.input.getAttribute("pageproxystate") === "valid") {
-          alignIcon = this.document.getElementById(
-            "tracking-protection-icon-box"
+        let alignRect;
+        for (let id of ["tracking-protection-icon-box", "identity-icon"]) {
+          alignRect = getBoundsWithoutFlushing(
+            this.document.getElementById(id)
           );
-        } else {
-          alignIcon = this.document.getElementById("identity-icon");
+          if (alignRect.width > 0) {
+            break;
+          }
         }
-        let alignRect = getBoundsWithoutFlushing(alignIcon);
         let start = this.window.RTL_UI
           ? documentRect.right - alignRect.right
           : alignRect.left;
