@@ -3279,7 +3279,7 @@ Toolbox.prototype = {
         
         
         
-        this._inspector = await this.target.getFront("inspector");
+        this._inspector = await this.target.getInspector();
         this._walker = this.inspectorFront.walker;
         this._highlighter = this.inspectorFront.highlighter;
         this._selection = this.inspectorFront.selection;

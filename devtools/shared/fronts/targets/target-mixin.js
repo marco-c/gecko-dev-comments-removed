@@ -67,6 +67,10 @@ function TargetMixin(parentClass) {
       
       
       this.fronts = new Map();
+      
+      
+      
+      this._inspector = null;
 
       this._setupRemoteListeners();
     }
@@ -185,6 +189,24 @@ function TargetMixin(parentClass) {
     
     get root() {
       return this.client.mainRoot.rootForm;
+    }
+
+    
+    
+    
+    async getInspector() {
+      
+      if (this._inspector && this._inspector.actorID) {
+        return this._inspector;
+      }
+      this._inspector = await getFront(
+        this.client,
+        "inspector",
+        this.targetForm,
+        this
+      );
+      this.emit("inspector", this._inspector);
+      return this._inspector;
     }
 
     
