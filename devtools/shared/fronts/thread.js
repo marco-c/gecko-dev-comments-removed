@@ -9,11 +9,9 @@ const {
   FrontClassWithSpec,
   registerFront,
 } = require("devtools/shared/protocol");
-
 const { threadSpec } = require("devtools/shared/specs/thread");
 
 loader.lazyRequireGetter(this, "ObjectFront", "devtools/shared/fronts/object");
-loader.lazyRequireGetter(this, "FrameFront", "devtools/shared/fronts/frame");
 loader.lazyRequireGetter(
   this,
   "SourceFront",
@@ -65,10 +63,6 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
         command + " command sent while not paused. Currently " + this._state
       );
     }
-  }
-
-  getFrames(start, count) {
-    return super.frames(start, count);
   }
 
   
@@ -220,6 +214,19 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
   
 
 
+
+
+
+
+
+
+
+  getFrames(start, count) {
+    return super.frames(start, count);
+  }
+  
+
+
   async attach(options) {
     let response;
     try {
@@ -240,6 +247,15 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
     await super.detach();
     await onDetached;
     await this.destroy();
+  }
+
+  
+
+
+
+
+  getEnvironment(frameId) {
+    return this.client.request({ to: frameId, type: "getEnvironment" });
   }
 
   
@@ -269,14 +285,6 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
       this[gripCacheName][id].valid = false;
     }
     this[gripCacheName] = {};
-  }
-
-  _clearFrameFronts() {
-    for (const front of this.poolChildren()) {
-      if (front instanceof FrameFront) {
-        this.unmanage(front);
-      }
-    }
   }
 
   
@@ -320,7 +328,6 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
     
     this._lastPausePacket = packet;
     this._clearPauseGrips();
-    this._clearFrameFronts();
   }
 
   getLastPausePacket() {
