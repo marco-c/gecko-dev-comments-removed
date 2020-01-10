@@ -697,15 +697,6 @@ class ContentChild final : public PContentChild,
   void HoldBrowsingContextGroup(BrowsingContextGroup* aBCG);
   void ReleaseBrowsingContextGroup(BrowsingContextGroup* aBCG);
 
-  
-  uint64_t GetBrowsingContextFieldEpoch() const {
-    return mBrowsingContextFieldEpoch;
-  }
-  uint64_t NextBrowsingContextFieldEpoch() {
-    mBrowsingContextFieldEpoch++;
-    return mBrowsingContextFieldEpoch;
-  }
-
 #ifdef NIGHTLY_BUILD
   
   
@@ -757,7 +748,7 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvCommitBrowsingContextTransaction(
       BrowsingContext* aContext, BrowsingContext::Transaction&& aTransaction,
-      uint64_t aEpoch);
+      BrowsingContext::FieldEpochs&& aEpochs);
 
 #ifdef NIGHTLY_BUILD
   virtual PContentChild::Result OnMessageReceived(const Message& aMsg) override;
@@ -848,9 +839,6 @@ class ContentChild final : public PContentChild,
   uint32_t mNetworkLinkType = 0;
 
   nsTArray<RefPtr<BrowsingContextGroup>> mBrowsingContextGroupHolder;
-
-  
-  uint64_t mBrowsingContextFieldEpoch = 0;
 
   DISALLOW_EVIL_CONSTRUCTORS(ContentChild);
 };
