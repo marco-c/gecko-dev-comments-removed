@@ -322,6 +322,12 @@ static void DecommitPages(void* addr, size_t bytes) {
 #  endif
 
 static void* ComputeRandomAllocationAddress() {
+#ifdef __OpenBSD__
+  
+  
+  
+  return nullptr;
+#else
   uint64_t rand = js::GenerateRandomSeed();
 
 #  ifdef HAVE_64BIT_BUILD
@@ -341,6 +347,7 @@ static void* ComputeRandomAllocationAddress() {
   
   uintptr_t mask = ~uintptr_t(gc::SystemPageSize() - 1);
   return (void*)uintptr_t(rand & mask);
+#endif
 }
 
 static void* ReserveProcessExecutableMemory(size_t bytes) {
