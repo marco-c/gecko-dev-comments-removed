@@ -71,6 +71,7 @@ export default class LoginList extends HTMLElement {
   async render() {
     let visibleLoginGuids = this._applyFilter();
     this._updateVisibleLoginCount(visibleLoginGuids.size);
+    this.classList.toggle("empty-search", visibleLoginGuids.size == 0);
 
     
     let fragment = document.createDocumentFragment();
