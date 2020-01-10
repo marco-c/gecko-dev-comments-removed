@@ -629,10 +629,10 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID) {
     case ColorID::MozButtondefault:
       result = NS_RGB(0x69, 0x69, 0x69);
       break;
-    case ColorID::Field:
+    case ColorID::MozField:
       result = NS_RGB(0xFF, 0xFF, 0xFF);
       break;
-    case ColorID::Fieldtext:
+    case ColorID::MozFieldtext:
       result = NS_RGB(0x00, 0x00, 0x00);
       break;
     case ColorID::MozDialog:
@@ -837,8 +837,8 @@ nsresult nsXPLookAndFeel::GetColorImpl(ColorID aID,
         
         
 
-      case ColorID::Field:
-      case ColorID::Fieldtext:
+      case ColorID::MozField:
+      case ColorID::MozFieldtext:
         aResult = NS_RGB(0xff, 0x00, 0xff);
         break;
 

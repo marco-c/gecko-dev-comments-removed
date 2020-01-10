@@ -28,7 +28,7 @@ nsresult HeadlessLookAndFeel::NativeGetColor(ColorID aID, nscolor& aColor) {
   switch (aID) {
     
     
-    case ColorID::Fieldtext:
+    case ColorID::MozFieldtext:
       aColor = NS_RGB(0x21, 0x21, 0x21);
       break;
 
