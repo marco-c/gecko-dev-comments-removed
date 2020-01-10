@@ -909,15 +909,10 @@ class Rule {
         url,
         line,
         column,
-        (enabled, sourceUrl, sourceLine, sourceColumn, sourceId) => {
+        (enabled, sourceUrl, sourceLine, sourceColumn) => {
           if (enabled) {
             
-            this.updateSourceLocation(
-              sourceUrl,
-              sourceLine,
-              sourceColumn,
-              sourceId
-            );
+            this.updateSourceLocation(sourceUrl, sourceLine, sourceColumn);
           }
         }
       );
@@ -937,14 +932,11 @@ class Rule {
 
 
 
-
-
-  updateSourceLocation(url, line, column, sourceId) {
+  updateSourceLocation(url, line, column) {
     this._sourceLocation = {
       column,
       line,
       url,
-      sourceId,
     };
     this.store.dispatch(
       updateSourceLink(this.domRule.actorID, this.sourceLink)
