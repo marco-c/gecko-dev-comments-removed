@@ -188,14 +188,15 @@ void MediaTransportHandlerIPC::EnsureProvisionalTransport(
 
 
 void MediaTransportHandlerIPC::StartIceGathering(
-    bool aDefaultRouteOnly,
+    bool aDefaultRouteOnly, const std::string& aRemoteIp, uint16_t aRemotePort,
     
     const nsTArray<NrIceStunAddr>& aStunAddrs) {
   mInitPromise->Then(
       mCallbackThread, __func__,
       [=, self = RefPtr<MediaTransportHandlerIPC>(this)](bool ) {
         if (mChild) {
-          mChild->SendStartIceGathering(aDefaultRouteOnly, aStunAddrs);
+          mChild->SendStartIceGathering(aDefaultRouteOnly, aRemoteIp,
+                                        aRemotePort, aStunAddrs);
         }
       },
       [](const nsCString& aError) {});

@@ -83,7 +83,8 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
   
   
   
-  void StartIceGathering(bool aDefaultRouteOnly,
+  void StartIceGathering(bool aDefaultRouteOnly, const std::string& aRemoteIp,
+                         uint16_t aRemotePort,
                          
                          
                          
@@ -641,7 +642,8 @@ void MediaTransportHandlerSTS::ActivateTransport(
 }
 
 void MediaTransportHandlerSTS::StartIceGathering(
-    bool aDefaultRouteOnly, const nsTArray<NrIceStunAddr>& aStunAddrs) {
+    bool aDefaultRouteOnly, const std::string& aRemoteIp, uint16_t aRemotePort,
+    const nsTArray<NrIceStunAddr>& aStunAddrs) {
   mInitPromise->Then(
       mStsThread, __func__,
       [=, self = RefPtr<MediaTransportHandlerSTS>(this)]() {
@@ -650,6 +652,8 @@ void MediaTransportHandlerSTS::StartIceGathering(
         
         
         mIceCtx->SetCtxFlags(aDefaultRouteOnly, mProxyOnly);
+          
+        mIceCtx->SetRemoteAddr(aRemoteIp, aRemotePort);
 
         if (aStunAddrs.Length()) {
           mIceCtx->SetStunAddrs(aStunAddrs);
