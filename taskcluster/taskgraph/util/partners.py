@@ -415,3 +415,20 @@ def get_partners_to_be_published(config):
             if sub_config.get("publish_to_releases"):
                 partners.append((partner, sub_config_name, sub_config['platforms']))
     return partners
+
+
+def apply_partner_priority(config, jobs):
+    priority = None
+    
+    
+    
+    
+    
+    
+    if (config.kind.startswith('release-partner-repack') and
+            config.params.release_level() == "production"):
+        priority = 'medium'
+    for job in jobs:
+        if priority:
+            job['priority'] = priority
+        yield job

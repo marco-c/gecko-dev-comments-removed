@@ -65,6 +65,9 @@ signing_description_schema = schema.extend({
 
     
     Optional('repacks-per-chunk'): int,
+
+    
+    Optional('priority'): task_description_schema['priority'],
 })
 
 
@@ -196,6 +199,9 @@ def make_task_description(config, jobs):
             task['treeherder'] = treeherder
         if job.get('extra'):
             task['extra'] = job['extra']
+        
+        if job.get('priority'):
+            task['priority'] = job['priority']
 
         yield task
 

@@ -66,7 +66,10 @@ packaging_description_schema = schema.extend({
         
         
         Required('comm-checkout', default=False): bool,
-    }
+    },
+
+    
+    Optional('priority'): task_description_schema['priority'],
 })
 
 transforms = TransformSequence()
@@ -213,6 +216,9 @@ def make_job_description(config, jobs):
                                                  repack_stub_installer=repack_stub_installer),
         }
 
+        
+        if job.get('priority'):
+            task['priority'] = job['priority']
         if build_platform.startswith('macosx'):
             task.setdefault('fetches', {}).setdefault('toolchain', []).extend([
                 'linux64-libdmg',

@@ -67,6 +67,7 @@ job_description_schema = Schema({
     Exclusive('optimization', 'optimization'): task_description_schema['optimization'],
     Optional('needs-sccache'): task_description_schema['needs-sccache'],
     Optional('release-artifacts'): task_description_schema['release-artifacts'],
+    Optional('priority'): task_description_schema['priority'],
 
     
     
