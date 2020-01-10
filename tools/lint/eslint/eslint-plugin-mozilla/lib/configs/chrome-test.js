@@ -2,30 +2,30 @@
 "use strict";
 
 module.exports = {
-  "env": {
-    "browser": true,
+  env: {
+    browser: true,
     "mozilla/browser-window": true,
   },
 
   
-  "globals": {
+  globals: {
     
-    "SpecialPowers": false,
+    SpecialPowers: false,
   },
 
-  "overrides": [{
-    "env": {
-      
-      
-      
-      "mozilla/simpletest": true,
+  overrides: [
+    {
+      env: {
+        
+        
+        
+        "mozilla/simpletest": true,
+      },
+      files: ["*.js"],
     },
-    "files": ["*.js"],
-  }],
-
-  "plugins": [
-    "mozilla",
   ],
+
+  plugins: ["mozilla"],
 
   rules: {
     "mozilla/import-content-task-globals": "error",

@@ -11,53 +11,73 @@ add_task(async function test_profile_feature_jsallocations() {
   if (!AppConstants.MOZ_GECKO_PROFILER) {
     return;
   }
-  Assert.ok(!Services.profiler.IsActive(), "The profiler is not currently active");
+  Assert.ok(
+    !Services.profiler.IsActive(),
+    "The profiler is not currently active"
+  );
 
   startProfiler({ features: ["threads", "js", "jsallocations"] });
 
   const url = BASE_URL + "do_work_500ms.html";
-  await BrowserTestUtils.withNewTab(url, async (contentBrowser) => {
-    const contentPid = await ContentTask.spawn(contentBrowser, null,
-      () => Services.appinfo.processID);
+  await BrowserTestUtils.withNewTab(url, async contentBrowser => {
+    const contentPid = await ContentTask.spawn(
+      contentBrowser,
+      null,
+      () => Services.appinfo.processID
+    );
 
-      
-      await wait(500);
+    
+    await wait(500);
 
-      
-      {
-        const { parentThread, contentThread } = await stopProfilerAndGetThreads(contentPid);
-        Assert.greater(getPayloadsOfType(parentThread, "JS allocation").length, 0,
-          "Allocations were recorded for the parent process' main thread when the " +
-            "JS Allocation feature was turned on.");
-        Assert.greater(getPayloadsOfType(contentThread, "JS allocation").length, 0,
-          "Allocations were recorded for the content process' main thread when the " +
-            "JS Allocation feature was turned on.");
-      }
+    
+    {
+      const { parentThread, contentThread } = await stopProfilerAndGetThreads(
+        contentPid
+      );
+      Assert.greater(
+        getPayloadsOfType(parentThread, "JS allocation").length,
+        0,
+        "Allocations were recorded for the parent process' main thread when the " +
+          "JS Allocation feature was turned on."
+      );
+      Assert.greater(
+        getPayloadsOfType(contentThread, "JS allocation").length,
+        0,
+        "Allocations were recorded for the content process' main thread when the " +
+          "JS Allocation feature was turned on."
+      );
+    }
 
-      
-      
-      startProfiler({ features: ["threads", "js"] });
-      await stopProfilerAndGetThreads(contentPid);
+    
+    
+    startProfiler({ features: ["threads", "js"] });
+    await stopProfilerAndGetThreads(contentPid);
 
-      
-      gBrowser.reload();
-      await wait(500);
-      startProfiler({ features: ["threads", "js"] });
+    
+    gBrowser.reload();
+    await wait(500);
+    startProfiler({ features: ["threads", "js"] });
 
-      
-      
-      {
-        const { parentThread, contentThread } = await stopProfilerAndGetThreads(contentPid);
-        Assert.equal(
-          getPayloadsOfType(parentThread, "JS allocation").length, 0,
-          "No allocations were recorded for the parent processes' main thread when " +
-            "JS allocation was not turned on.");
+    
+    
+    {
+      const { parentThread, contentThread } = await stopProfilerAndGetThreads(
+        contentPid
+      );
+      Assert.equal(
+        getPayloadsOfType(parentThread, "JS allocation").length,
+        0,
+        "No allocations were recorded for the parent processes' main thread when " +
+          "JS allocation was not turned on."
+      );
 
-        Assert.equal(
-          getPayloadsOfType(contentThread, "JS allocation").length, 0,
-          "No allocations were recorded for the content processes' main thread when " +
-            "JS allocation was not turned on.");
-      }
+      Assert.equal(
+        getPayloadsOfType(contentThread, "JS allocation").length,
+        0,
+        "No allocations were recorded for the content processes' main thread when " +
+          "JS allocation was not turned on."
+      );
+    }
   });
 });
 
@@ -74,7 +94,7 @@ async function doAtLeastOnePeriodicSample() {
   const sampleCount = await getProfileSampleCount();
   
   while (true) {
-    if (sampleCount < await getProfileSampleCount()) {
+    if (sampleCount < (await getProfileSampleCount())) {
       return;
     }
   }
@@ -87,7 +107,9 @@ async function stopProfilerAndGetThreads(contentPid) {
   Services.profiler.StopProfiler();
 
   const parentThread = profile.threads[0];
-  const contentProcess = profile.processes.find(p => p.threads[0].pid == contentPid);
+  const contentProcess = profile.processes.find(
+    p => p.threads[0].pid == contentPid
+  );
   if (!contentProcess) {
     throw new Error("Could not find the content process.");
   }

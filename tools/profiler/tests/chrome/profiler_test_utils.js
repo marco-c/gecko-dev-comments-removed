@@ -1,59 +1,63 @@
 "use strict";
 
 (function() {
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
-function startProfiler(settings) {
-  Services.profiler.StartProfiler(
-    settings.entries,
-    settings.interval,
-    settings.features,
-    settings.threads,
-    settings.duration
+  const { Services } = ChromeUtils.import(
+    "resource://gre/modules/Services.jsm"
   );
 
-  info("Profiler has started");
-}
+  function startProfiler(settings) {
+    Services.profiler.StartProfiler(
+      settings.entries,
+      settings.interval,
+      settings.features,
+      settings.threads,
+      settings.duration
+    );
 
-function getProfile() {
-  const profile = Services.profiler.getProfileData();
-  info("We got a profile, run the mochitest with `--keep-open true` to see the logged profile in the Web Console.");
-
-  
-  
-  console.log(profile);
-
-  return profile;
-}
-
-function stopProfiler() {
-  Services.profiler.StopProfiler();
-  info("Profiler has stopped");
-}
-
-function end(error) {
-  if (error) {
-    ok(false, `We got an error: ${error}`);
-  } else {
-    ok(true, "We ran the whole process");
+    info("Profiler has started");
   }
-  SimpleTest.finish();
-}
 
-async function runTest(settings, workload) {
-  SimpleTest.waitForExplicitFinish();
-  try {
-    await startProfiler(settings);
-    await workload();
-    await getProfile();
-    await stopProfiler();
-    await end();
-  } catch (e) {
+  function getProfile() {
+    const profile = Services.profiler.getProfileData();
+    info(
+      "We got a profile, run the mochitest with `--keep-open true` to see the logged profile in the Web Console."
+    );
+
     
     
-    await end(e);
-  }
-}
+    console.log(profile);
 
-window.runTest = runTest;
+    return profile;
+  }
+
+  function stopProfiler() {
+    Services.profiler.StopProfiler();
+    info("Profiler has stopped");
+  }
+
+  function end(error) {
+    if (error) {
+      ok(false, `We got an error: ${error}`);
+    } else {
+      ok(true, "We ran the whole process");
+    }
+    SimpleTest.finish();
+  }
+
+  async function runTest(settings, workload) {
+    SimpleTest.waitForExplicitFinish();
+    try {
+      await startProfiler(settings);
+      await workload();
+      await getProfile();
+      await stopProfiler();
+      await end();
+    } catch (e) {
+      
+      
+      await end(e);
+    }
+  }
+
+  window.runTest = runTest;
 })();

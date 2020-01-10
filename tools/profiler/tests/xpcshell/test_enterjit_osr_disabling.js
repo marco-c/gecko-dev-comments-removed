@@ -11,7 +11,7 @@ function run_test() {
   (function() {
     Services.profiler.StopProfiler();
     let n = 10000;
-    while (--n); 
+    while (--n) {} 
     
     
   })();

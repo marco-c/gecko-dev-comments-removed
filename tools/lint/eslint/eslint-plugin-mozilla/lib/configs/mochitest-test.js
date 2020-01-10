@@ -2,32 +2,32 @@
 "use strict";
 
 module.exports = {
-  "env": {
-    "browser": true,
+  env: {
+    browser: true,
   },
 
   
-  "globals": {
+  globals: {
     
-    "SpecialPowers": false,
-    "XPCNativeWrapper": false,
+    SpecialPowers: false,
+    XPCNativeWrapper: false,
   },
 
-  "overrides": [{
-    "env": {
-      
-      
-      
-      "mozilla/simpletest": true,
+  overrides: [
+    {
+      env: {
+        
+        
+        
+        "mozilla/simpletest": true,
+      },
+      files: ["*.js"],
     },
-    "files": ["*.js"],
-  }],
-
-  "plugins": [
-    "mozilla",
   ],
 
-  "rules": {
+  plugins: ["mozilla"],
+
+  rules: {
     "mozilla/import-content-task-globals": "error",
     "mozilla/import-headjs-globals": "error",
     "mozilla/mark-test-function-used": "error",

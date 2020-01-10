@@ -9,16 +9,16 @@
 "use strict";
 
 module.exports = {
-  "globals": {
+  globals: {
     
     
-    "atob": false,
-    "btoa": false,
-    "debug": false,
-    "dump": false,
+    atob: false,
+    btoa: false,
+    debug: false,
+    dump: false,
     
     
     
-    "WebAssembly": false,
+    WebAssembly: false,
   },
 };

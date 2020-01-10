@@ -24,7 +24,9 @@ add_task(async function test_profile_replacestate_page_info() {
 
   let foundPage = 0;
   
-  let contentProcess = profile.processes.find(p => p.threads[0].pid == contentPid);
+  let contentProcess = profile.processes.find(
+    p => p.threads[0].pid == contentPid
+  );
   for (const page of contentProcess.pages) {
     
     if (page.url == url) {

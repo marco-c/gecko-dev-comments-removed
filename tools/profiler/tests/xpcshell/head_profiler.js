@@ -2,9 +2,11 @@
 
 
 
-var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-var {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-var {setTimeout} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+var { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 
 
@@ -15,7 +17,7 @@ var {setTimeout} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 
 function getAllPayloadsOfType(profile, type, payloadTarget = []) {
-  for (const {markers} of profile.threads) {
+  for (const { markers } of profile.threads) {
     for (const markerTuple of markers.data) {
       const payload = markerTuple[markers.schema.data];
       if (payload && payload.type === type) {
@@ -30,7 +32,6 @@ function getAllPayloadsOfType(profile, type, payloadTarget = []) {
 
   return payloadTarget;
 }
-
 
 
 

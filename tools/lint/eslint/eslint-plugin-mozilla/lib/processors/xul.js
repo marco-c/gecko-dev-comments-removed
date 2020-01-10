@@ -51,8 +51,12 @@ function dealWithIfdefs(text, filename) {
       if (!line.startsWith("#")) {
         outputLines.push(shouldSkip ? "" : line);
       } else {
-        if (line.startsWith("# ") || line.startsWith("#filter") ||
-            line == "#" || line.startsWith("#define")) {
+        if (
+          line.startsWith("# ") ||
+          line.startsWith("#filter") ||
+          line == "#" ||
+          line.startsWith("#define")
+        ) {
           outputLines.push("");
           continue;
         }
@@ -86,7 +90,7 @@ function dealWithIfdefs(text, filename) {
           if (!shouldSkip) {
             let fileToInclude = line.substr("#include ".length).trim();
             let subpath = path.join(path.dirname(innerFile), fileToInclude);
-            let contents = fs.readFileSync(subpath, {encoding: "utf-8"});
+            let contents = fs.readFileSync(subpath, { encoding: "utf-8" });
             contents = contents.split(/\n/);
             
             contents = stripIfdefsFromLines(contents, subpath);
@@ -188,7 +192,7 @@ module.exports = {
       "/* eslint-disable quotes */",
       "/* eslint-disable no-undef */",
     ];
-    lineMap = scriptLines.map(() => ({line: 0}));
+    lineMap = scriptLines.map(() => ({ line: 0 }));
     includedRanges = [];
     
     text = dealWithIfdefs(text, filename);
@@ -225,17 +229,22 @@ module.exports = {
         let mapped = lineMap[message.line - 1];
         
         let target = mapped.line;
-        let includedRange = includedRanges.find(r => (target >= r.start && target <= r.end));
+        let includedRange = includedRanges.find(
+          r => target >= r.start && target <= r.end
+        );
         
         if (includedRange) {
           target = includedRange.start;
-          message.message += " (from included file " + path.basename(includedRange.filename) + ")";
+          message.message +=
+            " (from included file " +
+            path.basename(includedRange.filename) +
+            ")";
         }
         
-        let includeBallooning =
-          includedRanges.filter(r => (target >= r.end))
-                        .map(r => r.end - r.start)
-                        .reduce((acc, next) => acc + next, 0);
+        let includeBallooning = includedRanges
+          .filter(r => target >= r.end)
+          .map(r => r.end - r.start)
+          .reduce((acc, next) => acc + next, 0);
         target -= includeBallooning;
         
         message.line = target + 1;
@@ -250,4 +259,3 @@ module.exports = {
     return errors;
   },
 };
-

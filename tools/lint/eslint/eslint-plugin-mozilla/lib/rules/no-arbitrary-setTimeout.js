@@ -13,10 +13,7 @@
 
 
 var helpers = require("../helpers");
-var testTypes = new Set([
-  "browser",
-  "xpcshell",
-]);
+var testTypes = new Set(["browser", "xpcshell"]);
 
 module.exports = {
   meta: {
@@ -33,7 +30,7 @@ module.exports = {
 
   create(context) {
     return {
-      "CallExpression": function(node) {
+      CallExpression(node) {
         
         
         
@@ -44,14 +41,15 @@ module.exports = {
 
         let callee = node.callee;
         if (callee.type === "MemberExpression") {
-          if (callee.property.name !== "setTimeout" ||
-              callee.object.name !== "window" ||
-              node.arguments.length < 2) {
+          if (
+            callee.property.name !== "setTimeout" ||
+            callee.object.name !== "window" ||
+            node.arguments.length < 2
+          ) {
             return;
           }
         } else if (callee.type === "Identifier") {
-          if (callee.name !== "setTimeout" ||
-              node.arguments.length < 2) {
+          if (callee.name !== "setTimeout" || node.arguments.length < 2) {
             return;
           }
         } else {
@@ -60,8 +58,11 @@ module.exports = {
 
         let timeout = node.arguments[1];
         if (timeout.type !== "Literal" || timeout.value > 0) {
-          context.report(node, "listen for events instead of setTimeout() " +
-                               "with arbitrary delay");
+          context.report(
+            node,
+            "listen for events instead of setTimeout() " +
+              "with arbitrary delay"
+          );
         }
       },
     };

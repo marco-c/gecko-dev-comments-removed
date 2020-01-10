@@ -8,89 +8,88 @@
 
 
 module.exports = {
-  "env": {
-    "browser": true,
-    "es6": true,
+  env: {
+    browser: true,
+    es6: true,
     "mozilla/privileged": true,
   },
 
-  "extends": [
-    "eslint:recommended",
-    "plugin:prettier/recommended",
-  ],
+  extends: ["eslint:recommended", "plugin:prettier/recommended"],
 
-  "globals": {
-    "Cc": false,
+  globals: {
+    Cc: false,
     
-    "ChromeUtils": false,
-    "Ci": false,
-    "Components": false,
-    "Cr": false,
-    "Cu": false,
-    "Debugger": false,
-    "InstallTrigger": false,
-    
-    
-    "InternalError": true,
-    "Intl": false,
-    "SharedArrayBuffer": false,
-    "StopIteration": false,
-    "dump": true,
+    ChromeUtils: false,
+    Ci: false,
+    Components: false,
+    Cr: false,
+    Cu: false,
+    Debugger: false,
+    InstallTrigger: false,
     
     
+    InternalError: true,
+    Intl: false,
+    SharedArrayBuffer: false,
+    StopIteration: false,
+    dump: true,
     
-    "location": true,
-    "openDialog": false,
-    "saveStack": false,
-    "sizeToContent": false,
     
     
-    "uneval": false,
+    location: true,
+    openDialog: false,
+    saveStack: false,
+    sizeToContent: false,
+    
+    
+    uneval: false,
   },
 
-  "overrides": [{
-    
-    
-    "files": "**/*.xml",
-    "rules": {
-      "mozilla/use-services": "off",
-    },
-  }, {
-    
-    
-    "env": {
-      "browser": false,
-      "mozilla/jsm": true,
-    },
-    "files": "**/*.jsm",
-    "rules": {
-      "mozilla/mark-exported-symbols-as-used": "error",
+  overrides: [
+    {
       
       
-      "no-unused-vars": ["error", {
-        "args": "none",
-        "vars": "all",
-      }],
+      files: "**/*.xml",
+      rules: {
+        "mozilla/use-services": "off",
+      },
     },
-  }],
+    {
+      
+      
+      env: {
+        browser: false,
+        "mozilla/jsm": true,
+      },
+      files: "**/*.jsm",
+      rules: {
+        "mozilla/mark-exported-symbols-as-used": "error",
+        
+        
+        "no-unused-vars": [
+          "error",
+          {
+            args: "none",
+            vars: "all",
+          },
+        ],
+      },
+    },
+  ],
 
-  "parserOptions": {
-    "ecmaVersion": 9,
+  parserOptions: {
+    ecmaVersion: 9,
   },
 
   
-  "plugins": [
-    "html",
-    "fetch-options",
-    "no-unsanitized",
-  ],
+  plugins: ["html", "fetch-options", "no-unsanitized"],
 
   
   
-  "rules": {
+  rules: {
     
     
-    "complexity": ["error", 34],
+    complexity: ["error", 34],
 
     
     "consistent-return": "error",
@@ -100,7 +99,7 @@ module.exports = {
     "constructor-super": "off",
 
     
-    "curly": ["error", "all"],
+    curly: ["error", "all"],
 
     
     "dot-notation": "error",
@@ -164,7 +163,7 @@ module.exports = {
     "no-else-return": "error",
 
     
-    "no-empty": ["error", {"allowEmptyCatch": true}],
+    "no-empty": ["error", { allowEmptyCatch: true }],
 
     
     "no-eval": "error",
@@ -189,7 +188,7 @@ module.exports = {
     
     "no-iterator": "error",
 
-     
+    
     "no-labels": "error",
 
     
@@ -238,10 +237,13 @@ module.exports = {
     "no-unsanitized/property": "error",
 
     
-    "no-unused-vars": ["error", {
-      "args": "none",
-      "vars": "local",
-    }],
+    "no-unused-vars": [
+      "error",
+      {
+        args: "none",
+        vars: "local",
+      },
+    ],
 
     
     
@@ -264,7 +266,7 @@ module.exports = {
     "no-with": "error",
 
     
-    "object-shorthand": ["error", "always", { "avoidQuotes": true }],
+    "object-shorthand": ["error", "always", { avoidQuotes: true }],
 
     
     
@@ -274,7 +276,7 @@ module.exports = {
   
   
   
-  "settings": {
-    "html/xml-extensions": [ ".xhtml" ],
+  settings: {
+    "html/xml-extensions": [".xhtml"],
   },
 };

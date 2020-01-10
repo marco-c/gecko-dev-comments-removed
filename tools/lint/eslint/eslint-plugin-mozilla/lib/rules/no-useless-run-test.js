@@ -19,12 +19,14 @@ module.exports = function(context) {
 
   return {
     "Program > FunctionDeclaration": function(node) {
-      if (node.id.name === "run_test" &&
-          node.body.type === "BlockStatement" &&
-          node.body.body.length === 1 &&
-          node.body.body[0].type === "ExpressionStatement" &&
-          node.body.body[0].expression.type === "CallExpression" &&
-          node.body.body[0].expression.callee.name === "run_next_test") {
+      if (
+        node.id.name === "run_test" &&
+        node.body.type === "BlockStatement" &&
+        node.body.body.length === 1 &&
+        node.body.body[0].type === "ExpressionStatement" &&
+        node.body.body[0].expression.type === "CallExpression" &&
+        node.body.body[0].expression.callee.name === "run_next_test"
+      ) {
         context.report({
           node,
           fix: fixer => {
@@ -51,7 +53,7 @@ module.exports = function(context) {
             return fixer.removeRange([
               
               
-              startNode ? (startNode.end + 1) : 0,
+              startNode ? startNode.end + 1 : 0,
               
               
               
@@ -59,7 +61,8 @@ module.exports = function(context) {
               node.end + 1,
             ]);
           },
-          message: "Useless run_test function - only contains run_next_test; whole function can be removed",
+          message:
+            "Useless run_test function - only contains run_next_test; whole function can be removed",
         });
       }
     },
