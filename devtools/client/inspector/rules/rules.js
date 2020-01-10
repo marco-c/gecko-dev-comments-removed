@@ -53,12 +53,6 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "COLOR_SCHEMES",
-  "devtools/client/inspector/rules/constants",
-  true
-);
-loader.lazyRequireGetter(
-  this,
   "StyleInspectorMenu",
   "devtools/client/inspector/shared/style-inspector-menu"
 );
@@ -162,9 +156,6 @@ function CssRuleView(inspector, document, store) {
   this._onTogglePseudoClassPanel = this._onTogglePseudoClassPanel.bind(this);
   this._onTogglePseudoClass = this._onTogglePseudoClass.bind(this);
   this._onToggleClassPanel = this._onToggleClassPanel.bind(this);
-  this._onToggleColorSchemeSimulation = this._onToggleColorSchemeSimulation.bind(
-    this
-  );
   this._onTogglePrintSimulation = this._onTogglePrintSimulation.bind(this);
   this.highlightElementRule = this.highlightElementRule.bind(this);
   this.highlightProperty = this.highlightProperty.bind(this);
@@ -179,12 +170,9 @@ function CssRuleView(inspector, document, store) {
   this.pseudoClassToggle = doc.getElementById("pseudo-class-panel-toggle");
   this.classPanel = doc.getElementById("ruleview-class-panel");
   this.classToggle = doc.getElementById("class-panel-toggle");
-  this.colorSchemeSimulationButton = doc.getElementById(
-    "color-scheme-simulation-toggle"
-  );
   this.printSimulationButton = doc.getElementById("print-simulation-toggle");
 
-  this._initSimulationFeatures();
+  this._initPrintSimulation();
 
   this.searchClearButton.hidden = true;
 
@@ -412,7 +400,6 @@ CssRuleView.prototype = {
     
     
     
-    
     this._emulationFront = await this.currentTarget.getFront("emulation");
 
     if (!this.currentTarget.chrome) {
@@ -420,25 +407,6 @@ CssRuleView.prototype = {
       this.printSimulationButton.addEventListener(
         "click",
         this._onTogglePrintSimulation
-      );
-    }
-
-    
-    
-    
-    if (
-      Services.prefs.getBoolPref(
-        "devtools.inspector.color-scheme-simulation.enabled"
-      ) &&
-      (await this.currentTarget.actorHasMethod(
-        "emulation",
-        "getEmulatedColorScheme"
-      ))
-    ) {
-      this.colorSchemeSimulationButton.removeAttribute("hidden");
-      this.colorSchemeSimulationButton.addEventListener(
-        "click",
-        this._onToggleColorSchemeSimulation
       );
     }
   },
@@ -849,10 +817,6 @@ CssRuleView.prototype = {
 
     
     if (this._emulationFront) {
-      this.colorSchemeSimulationButton.removeEventListener(
-        "click",
-        this._onToggleColorSchemeSimulation
-      );
       this.printSimulationButton.removeEventListener(
         "click",
         this._onTogglePrintSimulation
@@ -860,7 +824,6 @@ CssRuleView.prototype = {
 
       this._emulationFront.destroy();
 
-      this.colorSchemeSimulationButton = null;
       this.printSimulationButton = null;
       this._emulationFront = null;
     }
@@ -1738,21 +1701,6 @@ CssRuleView.prototype = {
       event.preventDefault();
       event.stopPropagation();
     }
-  },
-
-  async _onToggleColorSchemeSimulation() {
-    const currentState = await this.emulationFront.getEmulatedColorScheme();
-    const index = COLOR_SCHEMES.indexOf(currentState);
-    const nextState = COLOR_SCHEMES[(index + 1) % COLOR_SCHEMES.length];
-
-    if (nextState) {
-      this.colorSchemeSimulationButton.setAttribute("state", nextState);
-    } else {
-      this.colorSchemeSimulationButton.removeAttribute("state");
-    }
-
-    await this.emulationFront.setEmulatedColorScheme(nextState);
-    this.refreshPanel();
   },
 
   async _onTogglePrintSimulation() {
