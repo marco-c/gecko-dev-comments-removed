@@ -192,7 +192,6 @@ HTMLEditRules::HTMLEditRules()
       mInitialized(false),
       mListenerEnabled(false),
       mReturnInEmptyLIKillsList(false),
-      mDidRangedDelete(false),
       mDidEmptyParentBlocksRemoved(false),
       mRestoreContentEditableCount(false),
       mJoinOffset(0) {
@@ -204,7 +203,6 @@ void HTMLEditRules::InitFields() {
   mHTMLEditor = nullptr;
   mDocChangeRange = nullptr;
   mReturnInEmptyLIKillsList = true;
-  mDidRangedDelete = false;
   mDidEmptyParentBlocksRemoved = false;
   mRestoreContentEditableCount = false;
   mUtilRange = nullptr;
@@ -328,9 +326,6 @@ nsresult HTMLEditRules::BeforeEdit() {
 #ifdef DEBUG
   mIsHandling = true;
 #endif  
-
-  
-  mDidRangedDelete = false;
 
   AutoSafeEditorData setData(*this, *mHTMLEditor);
 
@@ -499,7 +494,10 @@ nsresult HTMLEditRules::AfterEditInner() {
     
     if (HTMLEditorRef().GetTopLevelEditSubAction() ==
             EditSubAction::eDeleteSelectedContent &&
-        mDidRangedDelete && !mDidEmptyParentBlocksRemoved) {
+        HTMLEditorRef()
+            .TopLevelEditSubActionDataRef()
+            .mDidDeleteNonCollapsedRange &&
+        !mDidEmptyParentBlocksRemoved) {
       nsresult rv = InsertBRIfNeeded();
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
@@ -2549,7 +2547,9 @@ nsresult HTMLEditRules::WillDeleteSelection(
 
       
       
-      mDidRangedDelete = true;
+      HTMLEditorRef()
+          .TopLevelEditSubActionDataRef()
+          .mDidDeleteNonCollapsedRange = true;
 
       return NS_OK;
     }
@@ -2938,7 +2938,8 @@ nsresult HTMLEditRules::WillDeleteSelection(
   }
 
   
-  mDidRangedDelete = true;
+  HTMLEditorRef().TopLevelEditSubActionDataRef().mDidDeleteNonCollapsedRange =
+      true;
 
   
   nsRange* firstRange = SelectionRefPtr()->GetRangeAt(0);

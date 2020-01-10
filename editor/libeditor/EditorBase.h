@@ -619,10 +619,18 @@ class EditorBase : public nsIEditor,
     
     bool mDidExplicitlySetInterLine;
 
+    
+    
+    
+    
+    
+    bool mDidDeleteNonCollapsedRange;
+
    private:
     void Clear() {
       mDidDeleteSelection = false;
       mDidExplicitlySetInterLine = false;
+      mDidDeleteNonCollapsedRange = false;
     }
 
     TopLevelEditSubActionData() = default;
