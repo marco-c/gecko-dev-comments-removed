@@ -521,9 +521,9 @@ enum NodeColor { black, white, grey };
 
 
 
-
 class PtrInfo final {
  public:
+  
   void* mPointer;
   nsCycleCollectionParticipant* mParticipant;
   uint32_t mColor : 2;
