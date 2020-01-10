@@ -326,7 +326,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
   virtual void ReadSystemFontList(
-      InfallibleTArray<mozilla::dom::SystemFontListEntry>* aFontList) {}
+      nsTArray<mozilla::dom::SystemFontListEntry>* aFontList) {}
 
   
 

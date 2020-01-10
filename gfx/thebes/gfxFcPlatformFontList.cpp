@@ -1640,7 +1640,7 @@ nsresult gfxFcPlatformFontList::InitFontListForPlatform() {
 }
 
 void gfxFcPlatformFontList::ReadSystemFontList(
-    InfallibleTArray<SystemFontListEntry>* retValue) {
+    nsTArray<SystemFontListEntry>* retValue) {
   
   
   

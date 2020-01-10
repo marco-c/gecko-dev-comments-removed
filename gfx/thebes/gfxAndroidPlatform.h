@@ -33,7 +33,7 @@ class gfxAndroidPlatform : public gfxPlatform {
   gfxImageFormat GetOffscreenFormat() override { return mOffscreenFormat; }
 
   
-  void GetSystemFontList(InfallibleTArray<FontListEntry>* retValue);
+  void GetSystemFontList(nsTArray<FontListEntry>* retValue);
 
   
   gfxPlatformFontList* CreatePlatformFontList() override;
