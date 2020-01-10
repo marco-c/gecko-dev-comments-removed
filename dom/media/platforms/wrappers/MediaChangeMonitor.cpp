@@ -35,10 +35,20 @@ class H264ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
   }
 
   bool CanBeInstantiated() const override {
+    
+    if ((mTrackInfo && (*mTrackInfo)->mCrypto.IsEncrypted()) ||
+        mGotEncryptedContent) {
+      return true;
+    }
     return H264::HasSPS(mCurrentConfig.mExtraData);
   }
 
   MediaResult CheckForChange(MediaRawData* aSample) override {
+    
+    if (aSample->mCrypto.IsEncrypted()) {
+      mGotEncryptedContent = true;
+      return NS_OK;
+    }
     
     if (!AnnexB::ConvertSampleToAVCC(aSample)) {
       
@@ -141,6 +151,7 @@ class H264ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
   uint32_t mStreamID = 0;
   const bool mFullParsing;
   bool mGotSPS = false;
+  bool mGotEncryptedContent = false;
   RefPtr<TrackInfoSharedPtr> mTrackInfo;
   RefPtr<MediaByteBuffer> mPreviousExtraData;
 };
