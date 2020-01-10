@@ -9,7 +9,6 @@ Services.scriptloader.loadSubScript(
 
 
 
-
 const PAGE =
   "http://mochi.test:8888/browser/browser/components/extensions/test/browser/context.html";
 

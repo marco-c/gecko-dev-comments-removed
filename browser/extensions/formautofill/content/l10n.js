@@ -10,8 +10,6 @@
 
 
 
-
-
 const { FormAutofillUtils } = ChromeUtils.import(
   "resource://formautofill/FormAutofillUtils.jsm"
 );

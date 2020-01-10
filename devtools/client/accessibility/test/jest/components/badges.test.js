@@ -4,8 +4,6 @@
 
 "use strict";
 
-
-
 const { mount } = require("enzyme");
 
 const { createFactory } = require("devtools/client/shared/vendor/react");

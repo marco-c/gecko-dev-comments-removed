@@ -12,10 +12,8 @@ const { XPCOMUtils } = ChromeUtils.import(
 const { AddonManager, AddonManagerPrivate } = ChromeUtils.import(
   "resource://gre/modules/AddonManager.jsm"
 );
-
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-
 const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
 
 

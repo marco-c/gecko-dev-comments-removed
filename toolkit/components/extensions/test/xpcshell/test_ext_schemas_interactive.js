@@ -57,7 +57,6 @@ let experimentFiles = {
     };
   },
 
-  
   "child.js": () => {
     this.userinputtest = class extends ExtensionAPI {
       getAPI(context) {

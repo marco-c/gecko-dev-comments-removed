@@ -31,14 +31,11 @@ const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["XMLHttpRequest"]);
 
-
 ChromeUtils.defineModuleGetter(
   this,
   "GMPPrefs",
   "resource://gre/modules/GMPUtils.jsm"
 );
-
-
 
 ChromeUtils.defineModuleGetter(
   this,

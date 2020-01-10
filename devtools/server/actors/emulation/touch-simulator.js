@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { Services } = require("resource://gre/modules/Services.jsm");

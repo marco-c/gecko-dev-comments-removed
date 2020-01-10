@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 const { ManifestProcessor } = SpecialPowers.Cu.import(
   "resource://gre/modules/ManifestProcessor.jsm"

@@ -552,7 +552,6 @@ if (runningInParent) {
   );
 
   
-  
   registerCleanupFunction(() => TelemetrySend.shutdown());
 }
 

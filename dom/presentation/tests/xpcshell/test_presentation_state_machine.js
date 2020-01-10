@@ -2,19 +2,14 @@
 
 
 
-
-
 "use strict";
-
 
 const { ControllerStateMachine } = ChromeUtils.import(
   "resource://gre/modules/presentation/ControllerStateMachine.jsm"
 );
-
 const { ReceiverStateMachine } = ChromeUtils.import(
   "resource://gre/modules/presentation/ReceiverStateMachine.jsm"
 );
-
 const { State } = ChromeUtils.import(
   "resource://gre/modules/presentation/StateMachineHelper.jsm"
 );

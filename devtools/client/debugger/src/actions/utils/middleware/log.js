@@ -4,7 +4,6 @@
 
 
 
-
 import { isTesting } from "devtools-environment";
 import type { ThunkArgs } from "../../types";
 import { prefs } from "../../../utils/prefs";

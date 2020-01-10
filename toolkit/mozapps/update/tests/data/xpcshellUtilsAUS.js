@@ -4020,6 +4020,7 @@ function start_httpserver() {
   gTestserver.registerPathHandler("/" + gHTTPHandlerPath, pathHandler);
   gTestserver.start(-1);
   let testserverPort = gTestserver.identity.primaryPort;
+  
   gURLData = URL_HOST + ":" + testserverPort + "/";
   debugDump("http server port = " + testserverPort);
 }

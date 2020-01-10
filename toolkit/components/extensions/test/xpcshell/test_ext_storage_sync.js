@@ -29,9 +29,6 @@ AddonTestUtils.init(this);
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "69");
 
-
-
-
 function handleCannedResponse(cannedResponse, request, response) {
   response.setStatusLine(
     null,

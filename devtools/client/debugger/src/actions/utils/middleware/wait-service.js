@@ -24,7 +24,6 @@
 
 
 
-
 export const NAME = "@@service/waitUntil";
 import type { ThunkArgs } from "../../types";
 

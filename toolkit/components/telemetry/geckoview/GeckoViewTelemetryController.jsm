@@ -24,8 +24,6 @@ const { debug, warn } = GeckoViewUtils.initLogging(
 var EXPORTED_SYMBOLS = ["GeckoViewTelemetryController"];
 
 
-
-
 const LOAD_COMPLETE_TOPIC = "internal-telemetry-geckoview-load-complete";
 
 const GeckoViewTelemetryController = {

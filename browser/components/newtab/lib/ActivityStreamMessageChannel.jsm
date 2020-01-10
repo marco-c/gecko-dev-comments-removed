@@ -6,8 +6,8 @@
 
 const { AboutNewTab } = ChromeUtils.import(
   "resource:///modules/AboutNewTab.jsm"
-); 
- const { RemotePages } = ChromeUtils.import(
+);
+const { RemotePages } = ChromeUtils.import(
   "resource://gre/modules/remotepagemanager/RemotePageManagerParent.jsm"
 );
 

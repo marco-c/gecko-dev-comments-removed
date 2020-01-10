@@ -9,8 +9,6 @@
 
 
 
-
-
 const mark =
   window.performance && window.performance.mark
     ? window.performance.mark.bind(window.performance)

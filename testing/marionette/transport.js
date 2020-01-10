@@ -4,8 +4,6 @@
 
 "use strict";
 
-
-
 const CC = Components.Constructor;
 
 const { EventEmitter } = ChromeUtils.import(

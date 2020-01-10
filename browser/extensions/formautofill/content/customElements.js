@@ -258,7 +258,6 @@
     }
 
     _adjustAcItem() {
-      
       this._adjustAutofillItemLayout();
       this.setAttribute("formautofillattached", "true");
 

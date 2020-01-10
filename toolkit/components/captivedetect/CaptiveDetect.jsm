@@ -528,13 +528,14 @@ CaptivePortalDetector.prototype = {
   },
 };
 
-
 var debug;
 if (DEBUG) {
+  
   debug = function(s) {
     dump("-*- CaptivePortalDetector component: " + s + "\n");
   };
 } else {
+  
   debug = function(s) {};
 }
 

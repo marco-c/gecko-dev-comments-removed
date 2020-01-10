@@ -2,8 +2,6 @@
 
 
 
-
-
 add_task(async function test_default_additional_backgrounds_alignment() {
   const RIGHT_TOP = "100% 0%";
 

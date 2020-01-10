@@ -4,8 +4,6 @@
 
 "use strict";
 
-
-
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 loader.lazyRequireGetter(

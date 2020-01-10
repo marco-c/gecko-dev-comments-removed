@@ -4,12 +4,9 @@
 
 
 
-
-
 "use strict";
 
 var EXPORTED_SYMBOLS = ["ControllerStateMachine"]; 
-
 
 const { CommandType, State } = ChromeUtils.import(
   "resource://gre/modules/presentation/StateMachineHelper.jsm"

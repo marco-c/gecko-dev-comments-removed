@@ -20,7 +20,7 @@ const Cm = Components.manager;
 const { updateAppInfo } = ChromeUtils.import(
   "resource://testing-common/AppInfo.jsm"
 ); 
- updateAppInfo();
+updateAppInfo();
 
 
 do_get_profile();

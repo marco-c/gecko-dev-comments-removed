@@ -53,11 +53,6 @@ const { nsIBlocklistService } = Ci;
 
 
 
-
-
-
-
-
 for (let sym of [
   "BOOTSTRAP_REASONS",
   "DB_SCHEMA",
