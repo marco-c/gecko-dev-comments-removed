@@ -128,7 +128,7 @@ def validate(spec_json, details):
     
     details['object'] = test_expansion_schema
     assert_contains_only_fields(test_expansion_schema, [
-        'expansion', 'delivery_method', 'redirection', 'origin',
+        'expansion', 'delivery_type', 'redirection', 'origin',
         'source_protocol', 'target_protocol', 'subresource', 'expectation'
     ])
     
