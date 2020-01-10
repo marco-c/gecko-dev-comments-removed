@@ -52,11 +52,11 @@ class TPSFirefoxRunner(object):
             os.remove(pathToBuild)
 
         
-        print 'downloading build'
+        print('downloading build')
         self.download_url(self.url, pathToBuild)
 
         
-        print 'installing %s' % pathToBuild
+        print('installing {}'.format(pathToBuild))
         mozfile.remove(self.installdir, True)
         binary = mozinstall.install(src=pathToBuild, dest=self.installdir)
 
