@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -11,15 +11,15 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
 });
 
-/**
- * Executes a XUL command on the top window. Called by the callbacks in each
- * TouchBarInput.
- * @param {string} commandName
- *        A XUL command.
- * @param {string} telemetryKey
- *        A string describing the command, sent for telemetry purposes.
- *        Intended to be shorter and more readable than the XUL command.
- */
+
+
+
+
+
+
+
+
+
 function execCommand(commandName, telemetryKey) {
   let win = BrowserWindowTracker.getTopWindow();
   let command = win.document.getElementById(commandName);
@@ -30,12 +30,12 @@ function execCommand(commandName, telemetryKey) {
   telemetry.add(telemetryKey);
 }
 
-/**
- * Static helper function to convert a hexadecimal string to its integer
- * value. Used to convert colours to a format accepted by Apple's NSColor code.
- * @param {string} hexString
- *        A hexadecimal string, optionally beginning with '#'.
- */
+
+
+
+
+
+
 function hexToInt(hexString) {
   if (!hexString) {
     return null;
@@ -47,9 +47,9 @@ function hexToInt(hexString) {
   return isNaN(val) ? null : val;
 }
 
-/**
- * An object containing all implemented TouchBarInput objects.
- */
+
+
+
 const kBuiltInInputs = {
   Back: {
     title: "back",
@@ -73,12 +73,7 @@ const kBuiltInInputs = {
     title: "home",
     image: "home.pdf",
     type: "button",
-    callback: () => {
-      let win = BrowserWindowTracker.getTopWindow();
-      win.BrowserHome();
-      let telemetry = Services.telemetry.getHistogramById("TOUCHBAR_BUTTON_PRESSES");
-      telemetry.add("Home");
-    },
+    callback: () => execCommand("Browser:Home", "Home"),
   },
   Fullscreen: {
     title: "fullscreen",
@@ -99,15 +94,10 @@ const kBuiltInInputs = {
     callback: () => execCommand("cmd_newNavigatorTabNoEvent", "NewTab"),
   },
   Sidebar: {
-    title: "open-sidebar",
+    title: "open-bookmarks-sidebar",
     image: "sidebar-left.pdf",
     type: "button",
-    callback: () => {
-      let win = BrowserWindowTracker.getTopWindow();
-      win.SidebarUI.toggle();
-      let telemetry = Services.telemetry.getHistogramById("TOUCHBAR_BUTTON_PRESSES");
-      telemetry.add("Sidebar");
-    },
+    callback: () => execCommand("viewBookmarksSidebar", "Sidebar"),
   },
   AddBookmark: {
     title: "add-bookmark",
@@ -120,7 +110,7 @@ const kBuiltInInputs = {
     image: "reader-mode.pdf",
     type: "button",
     callback: () => execCommand("View:ReaderView", "ReaderView"),
-    disabled: true,  // Updated when the page is found to be Reader View-able.
+    disabled: true,  
   },
   OpenLocation: {
     title: "open-location",
@@ -128,9 +118,9 @@ const kBuiltInInputs = {
     type: "mainButton",
     callback: () => execCommand("Browser:OpenLocation", "OpenLocation"),
   },
-  // This is a special-case `type: "scrubber"` element.
-  // Scrubbers are not yet generally implemented.
-  // See follow-up bug 1502539.
+  
+  
+  
   Share: {
     title: "share",
     type: "scrubber",
@@ -142,15 +132,18 @@ const kBuiltInInputs = {
 const kHelperObservers = new Set(["bookmark-icon-updated", "reader-mode-available",
   "touchbar-location-change", "quit-application", "intl:app-locales-changed"]);
 
-/**
- * JS-implemented TouchBarHelper class.
- * Provides services to the Mac Touch Bar.
- */
+
+
+
+
 class TouchBarHelper {
   constructor() {
     for (let topic of kHelperObservers) {
       Services.obs.addObserver(this, topic);
     }
+
+    XPCOMUtils.defineLazyPreferenceGetter(this, "_touchBarLayout",
+      "ui.touchbar.layout", "Back,Forward,Reload,OpenLocation,NewTab,Share");
   }
 
   destructor() {
@@ -168,9 +161,11 @@ class TouchBarHelper {
     return activeTitle;
   }
 
-  get allItems() {
+  get layout() {
+    let prefArray = this.storedLayout;
     let layoutItems = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
-    for (let inputName of Object.keys(kBuiltInInputs)) {
+
+    for (let inputName of prefArray) {
       if (typeof kBuiltInInputs[inputName].context == "function") {
         inputName = kBuiltInInputs[inputName].context();
       }
@@ -192,13 +187,30 @@ class TouchBarHelper {
     return this.window.BookmarkingUI;
   }
 
+  
+
+
+
+  get storedLayout() {
+    let prefArray = this._touchBarLayout.split(",");
+    prefArray = prefArray.map(str => str.trim());
+    
+    prefArray = Array.from(new Set(prefArray));
+
+    
+    prefArray = prefArray.filter(input =>
+      Object.keys(kBuiltInInputs).includes(input));
+    this._storedLayout = prefArray;
+    return this._storedLayout;
+  }
+
   getTouchBarInput(inputName) {
-    // inputName might be undefined if an input's context() returns undefined.
+    
     if (!inputName || !kBuiltInInputs.hasOwnProperty(inputName)) {
       return null;
     }
 
-    // context() may specify that one named input "point" to another.
+    
     if (typeof kBuiltInInputs[inputName].context == "function") {
       inputName = kBuiltInInputs[inputName].context();
     }
@@ -210,16 +222,17 @@ class TouchBarHelper {
     let inputData = kBuiltInInputs[inputName];
 
     let item = new TouchBarInput(inputData);
-    // Skip localization if there is already a cached localized title.
+
+    
     if (kBuiltInInputs[inputName].hasOwnProperty("localTitle")) {
       return item;
     }
 
-    // Async l10n fills in the localized input labels after the initial load.
+    
     this._l10n.formatValue(item.key).then((result) => {
       item.title = result;
-      kBuiltInInputs[inputName].localTitle = result; // Cache result.
-      // Checking this.window since this callback can fire after all windows are closed.
+      kBuiltInInputs[inputName].localTitle = result; 
+      
       if (this.window) {
         let baseWindow = this.window.docShell.treeOwner.QueryInterface(Ci.nsIBaseWindow);
         let updater = Cc["@mozilla.org/widget/touchbarupdater;1"]
@@ -231,13 +244,13 @@ class TouchBarHelper {
     return item;
   }
 
-  /**
-   * Fetches a specific Touch Bar Input by name and updates it on the Touch Bar.
-   * @param {string} inputName
-   *        A key to a value in the kBuiltInInputs object in this file.
-   * @param {...*} [otherInputs] (optional)
-   *        Additional keys to values in the kBuiltInInputs object in this file.
-   */
+  
+
+
+
+
+
+
   _updateTouchBarInputs(...inputNames) {
     if (!this.window) {
       return;
@@ -245,6 +258,12 @@ class TouchBarHelper {
 
     let inputs = [];
     for (let inputName of inputNames) {
+      
+      
+      if (!this._storedLayout.includes(inputName)) {
+        continue;
+      }
+
       let input = this.getTouchBarInput(inputName);
       if (!input) {
         continue;
@@ -262,8 +281,8 @@ class TouchBarHelper {
     switch (topic) {
       case "touchbar-location-change":
         this.activeUrl = data;
-        // ReaderView button is disabled on every location change since
-        // Reader View must determine if the new page can be Reader Viewed.
+        
+        
         kBuiltInInputs.ReaderView.disabled = !data.startsWith("about:reader");
         kBuiltInInputs.Back.disabled = !this.window.gBrowser.canGoBack;
         kBuiltInInputs.Forward.disabled = !this.window.gBrowser.canGoForward;
@@ -280,11 +299,11 @@ class TouchBarHelper {
         this._updateTouchBarInputs("ReaderView");
         break;
       case "intl:app-locales-changed":
-        // On locale change, refresh all inputs after loading new localTitle.
-        for (let input in kBuiltInInputs) {
-          delete input.localTitle;
+        
+        for (let inputName of this._storedLayout) {
+          delete kBuiltInInputs[inputName].localTitle;
         }
-        this._updateTouchBarInputs(...kBuiltInInputs.keys());
+        this._updateTouchBarInputs(...this._storedLayout);
         break;
       case "quit-application":
         this.destructor();
@@ -300,28 +319,28 @@ helperProto.contractID = "@mozilla.org/widget/touchbarhelper;1";
 helperProto.QueryInterface = ChromeUtils.generateQI([Ci.nsITouchBarHelper]);
 helperProto._l10n = new Localization(["browser/touchbar/touchbar.ftl"]);
 
-/**
- * A representation of a Touch Bar input.
- * Uses async update() in lieu of a constructor to accomodate async l10n code.
- *     @param {object} input
- *            An object representing a Touch Bar Input.
- *            Contains listed properties.
- *     @param {string} input.title
- *            The lookup key for the button's localized text title.
- *     @param {string} input.image
- *            The name of a icon file added to
- *            /widget/cocoa/resources/touchbar_icons.
- *     @param {string} input.type
- *            The type of Touch Bar input represented by the object.
- *            One of `button`, `mainButton`.
- *     @param {Function} input.callback
- *            A callback invoked when a touchbar item is touched.
- *     @param {string} input.color (optional)
- *            A string in hex format specifying the button's background color.
- *            If omitted, the default background color is used.
- *     @param {bool} input.disabled (optional)
- *            If `true`, the Touch Bar input is greyed out and inoperable.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class TouchBarInput {
   constructor(input) {
     this._key = input.title;
