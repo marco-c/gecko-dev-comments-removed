@@ -246,7 +246,7 @@ namespace {
 void PopulateBufferForBinaryString(char16_t* aDest, const char* aSource,
                                    uint32_t aCount) {
   
-  ConvertLatin1toUTF16(MakeSpan(aSource, aCount), MakeSpan(aDest, aCount));
+  ConvertLatin1toUtf16(MakeSpan(aSource, aCount), MakeSpan(aDest, aCount));
 }
 
 nsresult ReadFuncBinaryString(nsIInputStream* aInputStream, void* aClosure,

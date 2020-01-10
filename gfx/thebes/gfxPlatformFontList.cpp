@@ -36,6 +36,7 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/ipc/FileDescriptorUtils.h"
 #include "mozilla/ResultExtensions.h"
+#include "mozilla/TextUtils.h"
 #include "mozilla/Unused.h"
 
 #include "base/eintr_wrapper.h"
@@ -944,7 +945,7 @@ bool gfxPlatformFontList::FindAndAddFamilies(
     
     
     
-    if (!mOtherFamilyNamesInitialized && !IsASCII(aFamily)) {
+    if (!mOtherFamilyNamesInitialized && !IsAscii(aFamily)) {
       InitOtherFamilyNames(
           !(aFlags & FindFamiliesFlags::eForceOtherFamilyNamesLoading));
       family = SharedFontList()->FindFamily(key);
@@ -981,7 +982,7 @@ bool gfxPlatformFontList::FindAndAddFamilies(
   
   
   
-  if (!familyEntry && !mOtherFamilyNamesInitialized && !IsASCII(aFamily)) {
+  if (!familyEntry && !mOtherFamilyNamesInitialized && !IsAscii(aFamily)) {
     InitOtherFamilyNames(
         !(aFlags & FindFamiliesFlags::eForceOtherFamilyNamesLoading));
     familyEntry = mOtherFamilyNames.GetWeak(key);

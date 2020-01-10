@@ -9,6 +9,7 @@
 #include "nsEscape.h"
 #include "nsIFile.h"
 #include <windows.h>
+#include "mozilla/Utf8.h"
 
 nsresult net_GetURLSpecFromActualFile(nsIFile* aFile, nsACString& result) {
   nsresult rv;
@@ -92,7 +93,8 @@ nsresult net_GetFileFromURLSpec(const nsACString& aURL, nsIFile** result) {
   
   if (path.CharAt(0) == '\\') path.Cut(0, 1);
 
-  if (IsUTF8(path)) rv = localFile->InitWithPath(NS_ConvertUTF8toUTF16(path));
+  if (mozilla::IsUtf8(path))
+    rv = localFile->InitWithPath(NS_ConvertUTF8toUTF16(path));
   
   
   

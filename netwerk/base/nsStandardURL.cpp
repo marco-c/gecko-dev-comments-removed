@@ -27,6 +27,7 @@
 #include "nsReadableUtils.h"
 #include "mozilla/net/MozURL_ffi.h"
 #include "mozilla/TextUtils.h"
+#include "mozilla/Utf8.h"
 
 
 
@@ -120,7 +121,7 @@ int32_t nsStandardURL::nsSegmentEncoder::EncodeSegmentCount(
       auto encoder = mEncoding->NewEncoder();
 
       nsAutoCString valid;  
-      if (MOZ_UNLIKELY(!IsUTF8(span.From(upTo)))) {
+      if (MOZ_UNLIKELY(!IsUtf8(span.From(upTo)))) {
         MOZ_ASSERT_UNREACHABLE("Invalid UTF-8 passed to nsStandardURL.");
         
         

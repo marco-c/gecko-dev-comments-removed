@@ -261,7 +261,7 @@ bool XPCConvert::NativeData2JS(JSContext* cx, MutableHandleValue d,
       
       
 
-      if (IsUTF8Latin1(*utf8String)) {
+      if (IsUtf8Latin1(*utf8String)) {
         using UniqueLatin1Chars =
             js::UniquePtr<JS::Latin1Char[], JS::FreePolicy>;
 
@@ -271,7 +271,7 @@ bool XPCConvert::NativeData2JS(JSContext* cx, MutableHandleValue d,
           return false;
         }
 
-        size_t written = LossyConvertUTF8toLatin1(
+        size_t written = LossyConvertUtf8toLatin1(
             *utf8String, MakeSpan(reinterpret_cast<char*>(buffer.get()), len));
         buffer[written] = 0;
 
@@ -310,7 +310,7 @@ bool XPCConvert::NativeData2JS(JSContext* cx, MutableHandleValue d,
       
       
       
-      size_t written = ConvertUTF8toUTF16(
+      size_t written = ConvertUtf8toUtf16(
           *utf8String, MakeSpan(buffer.get(), allocLen.value()));
       MOZ_RELEASE_ASSERT(written <= len);
       buffer[written] = 0;

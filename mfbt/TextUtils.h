@@ -10,35 +10,86 @@
 #define mozilla_TextUtils_h
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Latin1.h"
 #include "mozilla/TypeTraits.h"
 
 namespace mozilla {
 
-namespace detail {
-
-template <typename Char>
-class MakeUnsignedChar : public MakeUnsigned<Char> {};
-
-template <>
-class MakeUnsignedChar<char16_t> {
- public:
-  using Type = char16_t;
-};
-
-template <>
-class MakeUnsignedChar<char32_t> {
- public:
-  using Type = char32_t;
-};
-
-}  
 
 
-template <typename Char>
-constexpr bool IsAscii(Char aChar) {
-  using UnsignedChar = typename detail::MakeUnsignedChar<Char>::Type;
-  auto uc = static_cast<UnsignedChar>(aChar);
-  return uc < 0x80;
+
+
+
+
+
+
+
+constexpr bool IsAscii(unsigned char aChar) { return aChar < 0x80; }
+
+
+constexpr bool IsAscii(signed char aChar) {
+  return IsAscii(static_cast<unsigned char>(aChar));
+}
+
+
+constexpr bool IsAscii(char aChar) {
+  return IsAscii(static_cast<unsigned char>(aChar));
+}
+
+
+constexpr bool IsAscii(char16_t aChar) { return aChar < 0x80; }
+
+
+constexpr bool IsAscii(char32_t aChar) { return aChar < 0x80; }
+
+
+
+
+
+
+
+inline bool IsAscii(mozilla::Span<const char> aString) {
+#if MOZ_HAS_JSRUST()
+  size_t length = aString.Length();
+  const char* ptr = aString.Elements();
+  
+  
+  if (length < 16) {
+    const uint8_t* uptr = reinterpret_cast<const uint8_t*>(ptr);
+    uint8_t accu = 0;
+    for (size_t i = 0; i < length; i++) {
+      accu |= uptr[i];
+    }
+    return accu < 0x80;
+  }
+  return encoding_mem_is_ascii(ptr, length);
+#else
+  for (char c : aString) {
+    if (!IsAscii(c)) {
+      return false;
+    }
+  }
+  return true;
+#endif
+}
+
+
+
+
+
+
+
+inline bool IsAscii(mozilla::Span<const char16_t> aString) {
+#if MOZ_HAS_JSRUST()
+  return encoding_mem_is_basic_latin(aString.Elements(), aString.Length());
+#else
+  for (char16_t c : aString) {
+    if (!IsAscii(c)) {
+      return false;
+    }
+  }
+  return true;
+#endif
 }
 
 
@@ -55,16 +106,39 @@ constexpr bool IsAsciiNullTerminated(const Char* aChar) {
   return true;
 }
 
+#if MOZ_HAS_JSRUST()
 
 
 
 
-template <typename Char>
-constexpr bool IsNonAsciiLatin1(Char aChar) {
-  using UnsignedChar = typename detail::MakeUnsignedChar<Char>::Type;
-  auto uc = static_cast<UnsignedChar>(aChar);
-  return uc >= 0x80 && uc <= 0xFF;
+inline size_t Utf16ValidUpTo(mozilla::Span<const char16_t> aString) {
+  return encoding_mem_utf16_valid_up_to(aString.Elements(), aString.Length());
 }
+
+
+
+
+
+
+
+
+inline void EnsureUtf16ValiditySpan(mozilla::Span<char16_t> aString) {
+  encoding_mem_ensure_utf16_validity(aString.Elements(), aString.Length());
+}
+
+
+
+
+
+
+
+inline void ConvertAsciitoUtf16(mozilla::Span<const char> aSource,
+                                mozilla::Span<char16_t> aDest) {
+  MOZ_ASSERT(IsAscii(aSource));
+  ConvertLatin1toUtf16(aSource, aDest);
+}
+
+#endif  
 
 
 

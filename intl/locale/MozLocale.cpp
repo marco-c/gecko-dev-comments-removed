@@ -3,6 +3,7 @@
 
 
 
+#include "mozilla/TextUtils.h"
 #include "mozilla/intl/MozLocale.h"
 
 #include "nsReadableUtils.h"
@@ -11,13 +12,14 @@
 #include "unicode/uloc.h"
 
 using namespace mozilla::intl;
+using mozilla::IsAscii;
 
 
 
 
 
 Locale::Locale(const nsACString& aLocale) {
-  if (aLocale.IsEmpty() || !IsASCII(aLocale)) {
+  if (aLocale.IsEmpty() || !IsAscii(aLocale)) {
     mIsWellFormed = false;
     return;
   }

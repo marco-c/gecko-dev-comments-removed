@@ -15,12 +15,29 @@
 #include "mozilla/Casting.h"    
 #include "mozilla/Likely.h"     
 #include "mozilla/Maybe.h"      
+#include "mozilla/Span.h"       
 #include "mozilla/TextUtils.h"  
+                                
+#include "mozilla/Tuple.h"      
 #include "mozilla/Types.h"      
 
 #include <limits.h>  
 #include <stddef.h>  
 #include <stdint.h>  
+
+#if MOZ_HAS_JSRUST()
+
+extern "C" {
+
+size_t encoding_utf8_valid_up_to(uint8_t const* buffer, size_t buffer_len);
+}
+#else
+namespace mozilla {
+namespace detail {
+extern MFBT_API bool IsValidUtf8(const void* aCodeUnits, size_t aCount);
+};  
+};  
+#endif  
 
 namespace mozilla {
 
@@ -224,9 +241,50 @@ inline const unsigned char* Utf8AsUnsignedChars(const Utf8Unit* aUnits) {
 }
 
 
-template <>
-inline bool IsAscii<Utf8Unit>(Utf8Unit aUnit) {
-  return IsAscii(aUnit.toUint8());
+constexpr bool IsAscii(Utf8Unit aUnit) {
+  return IsAscii(aUnit.toUnsignedChar());
+}
+
+
+
+
+
+
+
+inline bool IsUtf8(mozilla::Span<const char> aString) {
+#if MOZ_HAS_JSRUST()
+  size_t length = aString.Length();
+  const uint8_t* ptr = reinterpret_cast<const uint8_t*>(aString.Elements());
+  
+  
+  if (length < 16) {
+    for (size_t i = 0; i < length; i++) {
+      if (ptr[i] >= 0x80U) {
+        ptr += i;
+        length -= i;
+        goto end;
+      }
+    }
+    return true;
+  }
+end:
+  return length == encoding_utf8_valid_up_to(ptr, length);
+#else
+  return detail::IsValidUtf8(aString.Elements(), aString.Length());
+#endif
+}
+
+#if MOZ_HAS_JSRUST()
+
+
+
+
+
+
+
+inline size_t Utf8ValidUpTo(mozilla::Span<const char> aString) {
+  return encoding_utf8_valid_up_to(
+      reinterpret_cast<const uint8_t*>(aString.Elements()), aString.Length());
 }
 
 
@@ -237,7 +295,73 @@ inline bool IsAscii<Utf8Unit>(Utf8Unit aUnit) {
 
 
 
-extern MFBT_API bool IsValidUtf8(const void* aCodeUnits, size_t aCount);
+inline size_t ConvertUtf16toUtf8(mozilla::Span<const char16_t> aSource,
+                                 mozilla::Span<char> aDest) {
+  return encoding_mem_convert_utf16_to_utf8(
+      aSource.Elements(), aSource.Length(), aDest.Elements(), aDest.Length());
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+inline mozilla::Tuple<size_t, size_t> ConvertUtf16toUtf8Partial(
+    mozilla::Span<const char16_t> aSource, mozilla::Span<char> aDest) {
+  size_t srcLen = aSource.Length();
+  size_t dstLen = aDest.Length();
+  encoding_mem_convert_utf16_to_utf8_partial(aSource.Elements(), &srcLen,
+                                             aDest.Elements(), &dstLen);
+  return mozilla::MakeTuple(srcLen, dstLen);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+inline size_t ConvertUtf8toUtf16(mozilla::Span<const char> aSource,
+                                 mozilla::Span<char16_t> aDest) {
+  return encoding_mem_convert_utf8_to_utf16(
+      aSource.Elements(), aSource.Length(), aDest.Elements(), aDest.Length());
+}
+
+
+
+
+
+
+
+
+
+inline size_t UnsafeConvertValidUtf8toUtf16(mozilla::Span<const char> aSource,
+                                            mozilla::Span<char16_t> aDest) {
+  return encoding_mem_convert_utf8_to_utf16(
+      aSource.Elements(), aSource.Length(), aDest.Elements(), aDest.Length());
+}
+
+#endif  
 
 
 

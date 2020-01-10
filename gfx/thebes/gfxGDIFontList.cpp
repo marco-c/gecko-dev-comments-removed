@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include "mozilla/Logging.h"
+#include "mozilla/TextUtils.h"
 #include "mozilla/Sprintf.h"
 
 #include "gfxGDIFontList.h"
@@ -638,7 +639,7 @@ int CALLBACK gfxGDIFontList::EnumFontFamExProc(ENUMLOGFONTEXW* lpelfe,
     
     
     
-    if (!IsASCII(faceName)) {
+    if (!IsAscii(faceName)) {
       family->ReadOtherFamilyNames(gfxPlatformFontList::PlatformFontList());
     }
 

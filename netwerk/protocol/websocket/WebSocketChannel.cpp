@@ -12,6 +12,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/MathAlgorithms.h"
+#include "mozilla/Utf8.h"
 #include "mozilla/net/WebSocketEventService.h"
 
 #include "nsIURI.h"
@@ -1654,7 +1655,7 @@ nsresult WebSocketChannel::ProcessInput(uint8_t* buffer, uint32_t count) {
         }
 
         
-        if (!IsUTF8(utf8Data)) {
+        if (!IsUtf8(utf8Data)) {
           LOG(("WebSocketChannel:: text frame invalid utf-8\n"));
           return NS_ERROR_CANNOT_CONVERT_DATA;
         }
@@ -1703,7 +1704,7 @@ nsresult WebSocketChannel::ProcessInput(uint8_t* buffer, uint32_t count) {
             
             
             
-            if (!IsUTF8(mServerCloseReason)) {
+            if (!IsUtf8(mServerCloseReason)) {
               LOG(("WebSocketChannel:: close frame invalid utf-8\n"));
               return NS_ERROR_CANNOT_CONVERT_DATA;
             }
