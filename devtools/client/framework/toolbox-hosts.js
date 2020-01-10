@@ -434,12 +434,16 @@ function focusTab(tab) {
 
 
 function createDevToolsFrame(doc, className) {
-  const frame = doc.createXULElement("iframe");
+  let frame;
+  if (Services.prefs.getBoolPref("devtools.toolbox.content-frame", false)) {
+    frame = doc.createXULElement("browser");
+    frame.setAttribute("type", "content");
+  } else {
+    frame = doc.createXULElement("iframe");
+  }
+
   frame.flex = 1; 
   frame.className = className;
-  if (Services.prefs.getBoolPref("devtools.toolbox.content-frame", false)) {
-    frame.setAttribute("type", "content");
-  }
   frame.tooltip = "aHTMLTooltip";
   return frame;
 }
