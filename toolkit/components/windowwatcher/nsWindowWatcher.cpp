@@ -728,8 +728,24 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   
   dom::AutoJSAPI jsapiChromeGuard;
 
+  nsCOMPtr<nsIDOMChromeWindow> chromeWin = do_QueryInterface(aParent);
+
   bool windowTypeIsChrome =
       chromeFlags & nsIWebBrowserChrome::CHROME_OPENAS_CHROME;
+
+  if (!aForceNoOpener) {
+    if (chromeWin && !windowTypeIsChrome) {
+      NS_WARNING(
+          "Content windows may never have chrome windows as their openers.");
+      return NS_ERROR_INVALID_ARG;
+    }
+    if (aParent && !chromeWin && windowTypeIsChrome) {
+      NS_WARNING(
+          "Chrome windows may never have content windows as their openers.");
+      return NS_ERROR_INVALID_ARG;
+    }
+  }
+
   if (isCallerChrome && !hasChromeParent && !windowTypeIsChrome) {
     
     
@@ -776,7 +792,6 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     
     
     
-    nsCOMPtr<nsIDOMChromeWindow> chromeWin = do_QueryInterface(aParent);
     if (!aDialog && !chromeWin &&
         !(chromeFlags & (nsIWebBrowserChrome::CHROME_MODAL |
                          nsIWebBrowserChrome::CHROME_OPENAS_DIALOG |
