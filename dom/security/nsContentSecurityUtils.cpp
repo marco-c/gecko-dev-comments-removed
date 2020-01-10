@@ -555,6 +555,8 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
     NS_LITERAL_CSTRING("about:sync-log"),
     
     NS_LITERAL_CSTRING("about:printpreview"),
+    
+    NS_LITERAL_CSTRING("about:logo"),
 #  if defined(ANDROID)
     NS_LITERAL_CSTRING("about:config"),
 #  endif
