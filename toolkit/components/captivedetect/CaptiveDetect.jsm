@@ -72,6 +72,8 @@ function URLFetcher(url, timeout) {
         
         
         self.onredirectorerror(300);
+        
+        xhr.onerror = null;
       }
     }
   };
