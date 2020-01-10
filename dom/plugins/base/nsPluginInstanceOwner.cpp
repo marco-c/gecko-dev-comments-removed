@@ -3163,7 +3163,7 @@ void nsPluginInstanceOwner::SetFrame(nsPluginFrame* aFrame) {
 
   
   if (mPluginFrame) {
-    if (content && content->OwnerDoc()->GetWindow()) {
+    if (content && content->OwnerDoc() && content->OwnerDoc()->GetWindow()) {
       nsCOMPtr<EventTarget> windowRoot =
           content->OwnerDoc()->GetWindow()->GetTopWindowRoot();
       if (windowRoot) {
