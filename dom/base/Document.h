@@ -3963,7 +3963,8 @@ class Document : public nsINode,
  private:
   void InitializeLocalization(nsTArray<nsString>& aResourceIds);
 
-  void ParseWidthAndHeightInMetaViewport(const nsAString& aWidthString,
+  
+  bool ParseWidthAndHeightInMetaViewport(const nsAString& aWidthString,
                                          const nsAString& aHeightString,
                                          bool aIsAutoScale);
 
@@ -3973,7 +3974,8 @@ class Document : public nsINode,
 
   
   
-  void ParseScalesInMetaViewport();
+  
+  bool ParseScalesInMetaViewport();
 
   FlashClassification DocumentFlashClassificationInternal();
 
@@ -5044,7 +5046,12 @@ class Document : public nsINode,
   
   uint32_t mUpdateNestLevel;
 
-  enum ViewportType : uint8_t { DisplayWidthHeight, Specified, Unknown, Empty };
+  enum ViewportType : uint8_t {
+    DisplayWidthHeight,
+    Specified,
+    Unknown,
+    NoValidContent,
+  };
 
   ViewportType mViewportType;
 

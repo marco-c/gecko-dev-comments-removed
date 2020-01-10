@@ -9458,7 +9458,7 @@ Maybe<LayoutDeviceToScreenScale> Document::ParseScaleInHeader(
   return ParseScaleString(scaleStr);
 }
 
-void Document::ParseScalesInMetaViewport() {
+bool Document::ParseScalesInMetaViewport() {
   Maybe<LayoutDeviceToScreenScale> scale;
 
   scale = ParseScaleInHeader(nsGkAtoms::viewport_initial_scale);
@@ -9481,9 +9481,10 @@ void Document::ParseScalesInMetaViewport() {
   if (mValidMaxScale && mValidMinScale) {
     mScaleMaxFloat = std::max(mScaleMinFloat, mScaleMaxFloat);
   }
+  return mValidScaleFloat || mValidMaxScale || mValidMinScale;
 }
 
-void Document::ParseWidthAndHeightInMetaViewport(const nsAString& aWidthString,
+bool Document::ParseWidthAndHeightInMetaViewport(const nsAString& aWidthString,
                                                  const nsAString& aHeightString,
                                                  bool aHasValidScale) {
   
@@ -9544,6 +9545,8 @@ void Document::ParseWidthAndHeightInMetaViewport(const nsAString& aWidthString,
       }
     }
   }
+
+  return !aWidthString.IsEmpty() || !aHeightString.IsEmpty();
 }
 
 nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
@@ -9598,8 +9601,7 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
       
       
       
-      bool viewportIsEmpty = viewport.IsEmpty();
-      if (viewportIsEmpty) {
+      if (viewport.IsEmpty()) {
         
         
         
@@ -9626,7 +9628,7 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
       }
 
       
-      ParseScalesInMetaViewport();
+      bool hasValidContents = ParseScalesInMetaViewport();
 
       nsAutoString widthStr, heightStr;
 
@@ -9635,7 +9637,10 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
 
       
       
-      ParseWidthAndHeightInMetaViewport(widthStr, heightStr, mValidScaleFloat);
+      if (ParseWidthAndHeightInMetaViewport(widthStr, heightStr,
+                                            mValidScaleFloat)) {
+        hasValidContents = true;
+      }
 
       mAllowZoom = true;
       nsAutoString userScalable;
@@ -9646,14 +9651,17 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
           (userScalable.EqualsLiteral("false"))) {
         mAllowZoom = false;
       }
+      if (!userScalable.IsEmpty()) {
+        hasValidContents = true;
+      }
 
       mWidthStrEmpty = widthStr.IsEmpty();
 
-      mViewportType = viewportIsEmpty ? Empty : Specified;
+      mViewportType = hasValidContents ? Specified : NoValidContent;
       MOZ_FALLTHROUGH;
     }
     case Specified:
-    case Empty:
+    case NoValidContent:
     default:
       LayoutDeviceToScreenScale effectiveMinScale = mScaleMinFloat;
       LayoutDeviceToScreenScale effectiveMaxScale = mScaleMaxFloat;
@@ -9764,7 +9772,7 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
           
           
           
-          if (mViewportType == Empty) {
+          if (mViewportType == NoValidContent) {
             
             
             
