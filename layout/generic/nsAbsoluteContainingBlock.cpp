@@ -736,6 +736,9 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
       !aDelegatingFrame->IsInlineFrame() &&
 
       
+      !aKidFrame->IsColumnSetWrapperFrame() &&
+
+      
       
       
       (aKidFrame->GetLogicalRect(aContainingBlock.Size()).BStart(wm) <=
