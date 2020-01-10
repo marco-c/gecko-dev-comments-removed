@@ -110,6 +110,9 @@ class StartupCache : public nsIMemoryReporter {
   
 
   
+  bool HasEntry(const char* id);
+
+  
   nsresult GetBuffer(const char* id, UniquePtr<char[]>* outbuf,
                      uint32_t* length);
 

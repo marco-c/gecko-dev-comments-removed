@@ -230,6 +230,21 @@ nsresult GetBufferFromZipArchive(nsZipArchive* zip, bool doCRC, const char* id,
 
 } 
 
+bool StartupCache::HasEntry(const char* id) {
+  AUTO_PROFILER_LABEL("StartupCache::HasEntry", OTHER);
+
+  MOZ_ASSERT(NS_IsMainThread(), "Startup cache only available on main thread");
+  WaitOnWriteThread();
+
+  if (!mStartupWriteInitiated) {
+    CacheEntry* entry;
+    mTable.Get(nsDependentCString(id), &entry);
+    return !!entry;
+  }
+
+  return mArchive && mArchive->GetItem(id);
+}
+
 
 
 nsresult StartupCache::GetBuffer(const char* id, UniquePtr<char[]>* outbuf,
