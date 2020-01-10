@@ -2,7 +2,7 @@
 
 
 
-class InfoItem extends HTMLElement {
+export class InfoItem extends HTMLElement {
   constructor(item) {
     super();
     this.item = item;
