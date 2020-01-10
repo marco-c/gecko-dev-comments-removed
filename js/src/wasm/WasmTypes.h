@@ -213,24 +213,26 @@ static_assert(std::is_pod<PackedTypeCode>::value,
               "must be POD to be simply serialized/deserialized");
 
 const uint32_t NoTypeCode = 0xFF;          
-const uint32_t NoRefTypeIndex = 0xFFFFFF;  
-
-static inline PackedTypeCode InvalidPackedTypeCode() {
-  return PackedTypeCode((NoRefTypeIndex << 8) | NoTypeCode);
-}
-
-static inline PackedTypeCode PackTypeCode(TypeCode tc) {
-  MOZ_ASSERT(uint32_t(tc) <= 0xFF);
-  MOZ_ASSERT(tc != TypeCode::Ref);
-  return PackedTypeCode((NoRefTypeIndex << 8) | uint32_t(tc));
-}
+const uint32_t NoRefTypeIndex = 0x3FFFFF;  
 
 static inline PackedTypeCode PackTypeCode(TypeCode tc, uint32_t refTypeIndex) {
   MOZ_ASSERT(uint32_t(tc) <= 0xFF);
   MOZ_ASSERT_IF(tc != TypeCode::Ref, refTypeIndex == NoRefTypeIndex);
   MOZ_ASSERT_IF(tc == TypeCode::Ref, refTypeIndex <= MaxTypes);
-  static_assert(MaxTypes < (1 << (32 - 8)), "enough bits");
+  
+  
+  
+  
+  static_assert(MaxTypes < (1 << (30 - 8)), "enough bits");
   return PackedTypeCode((refTypeIndex << 8) | uint32_t(tc));
+}
+
+static inline PackedTypeCode PackTypeCode(TypeCode tc) {
+  return PackTypeCode(tc, NoRefTypeIndex);
+}
+
+static inline PackedTypeCode InvalidPackedTypeCode() {
+  return PackedTypeCode(NoTypeCode);
 }
 
 static inline PackedTypeCode PackedTypeCodeFromBits(uint32_t bits) {

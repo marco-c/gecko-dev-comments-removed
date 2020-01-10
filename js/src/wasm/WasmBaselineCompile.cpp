@@ -163,7 +163,6 @@ using InvertBranch = bool;
 using IsKnownNotZero = bool;
 using IsUnsigned = bool;
 using NeedsBoundsCheck = bool;
-using PopStack = bool;
 using WantResult = bool;
 using ZeroOnOverflow = bool;
 
@@ -226,6 +225,7 @@ static_assert(RabaldrScratchF64 != ScratchDoubleReg, "Too busy");
 #endif
 
 #ifdef JS_CODEGEN_X86
+
 
 
 
@@ -484,6 +484,8 @@ class BaseCompilerInterface {
   
   
   virtual void sync() = 0;
+  virtual void saveTempPtr(RegPtr r) = 0;
+  virtual void restoreTempPtr(RegPtr r) = 0;
 };
 
 
@@ -767,6 +769,20 @@ class BaseRegAlloc {
     allocGPR(specific);
   }
 
+  
+  
+  MOZ_MUST_USE RegPtr needTempPtr(RegPtr fallback, bool* saved) {
+    if (hasGPR()) {
+      *saved = false;
+      return RegPtr(allocGPR());
+    }
+    *saved = true;
+    bc.saveTempPtr(fallback);
+    MOZ_ASSERT(isAvailablePtr(fallback));
+    allocGPR(fallback);
+    return RegPtr(fallback);
+  }
+
   MOZ_MUST_USE RegF32 needF32() {
     if (!hasFPU<MIRType::Float32>()) {
       bc.sync();
@@ -804,6 +820,14 @@ class BaseRegAlloc {
   void freeF64(RegF64 r) { freeFPU(r); }
 
   void freeF32(RegF32 r) { freeFPU(r); }
+
+  void freeTempPtr(RegPtr r, bool saved) {
+    freePtr(r);
+    if (saved) {
+      bc.restoreTempPtr(r);
+      MOZ_ASSERT(!isAvailablePtr(r));
+    }
+  }
 
 #ifdef JS_CODEGEN_ARM
   MOZ_MUST_USE RegI64 needI64Pair() {
@@ -1094,6 +1118,11 @@ class StackHeight {
   explicit StackHeight(uint32_t h) : height(h) {}
   static StackHeight Invalid() { return StackHeight(UINT32_MAX); }
   bool isValid() const { return height != UINT32_MAX; }
+  bool operator==(StackHeight rhs) const {
+    MOZ_ASSERT(isValid() && rhs.isValid());
+    return height == rhs.height;
+  }
+  bool operator!=(StackHeight rhs) const { return !(*this == rhs); }
 };
 
 
@@ -1243,6 +1272,13 @@ class BaseStackFrameAllocator {
 
   int32_t stackOffset(int32_t offset) { return masm.framePushed() - offset; }
 
+  uint32_t computeHeightWithStackResults(StackHeight stackBase,
+                                         uint32_t stackResultBytes) {
+    MOZ_ASSERT(stackResultBytes);
+    MOZ_ASSERT(currentStackHeight() >= stackBase.height);
+    return stackBase.height + stackResultBytes;
+  }
+
 #ifdef RABALDR_CHUNKY_STACK
   void pushChunkyBytes(uint32_t bytes) {
     MOZ_ASSERT(bytes <= ChunkSize);
@@ -1335,18 +1371,28 @@ class BaseStackFrameAllocator {
   
   
 
-  void popStackBeforeBranch(StackHeight destStackHeight) {
+  void popStackBeforeBranch(StackHeight destStackHeight,
+                            uint32_t stackResultBytes) {
     uint32_t framePushedHere = masm.framePushed();
-    uint32_t framePushedThere = framePushedForHeight(destStackHeight);
+    StackHeight heightThere =
+        StackHeight(destStackHeight.height + stackResultBytes);
+    uint32_t framePushedThere = framePushedForHeight(heightThere);
     if (framePushedHere > framePushedThere) {
       masm.addToStackPtr(Imm32(framePushedHere - framePushedThere));
     }
   }
 
-  bool willPopStackBeforeBranch(StackHeight destStackHeight) {
-    uint32_t framePushedHere = masm.framePushed();
-    uint32_t framePushedThere = framePushedForHeight(destStackHeight);
-    return framePushedHere > framePushedThere;
+  void popStackBeforeBranch(StackHeight destStackHeight, ResultType type) {
+    popStackBeforeBranch(destStackHeight,
+                         ABIResultIter::MeasureStackBytes(type));
+  }
+
+  
+  
+  
+
+  StackHeight stackResultsBase(uint32_t stackParamSize) {
+    return StackHeight(currentStackHeight() - stackParamSize);
   }
 
   
@@ -1355,26 +1401,21 @@ class BaseStackFrameAllocator {
   
   
   
+
+  void resetStackHeight(StackHeight destStackHeight, ResultType type) {
+    uint32_t height = destStackHeight.height;
+    height += ABIResultIter::MeasureStackBytes(type);
+    setStackHeight(StackHeight(height));
+  }
+
   
 
-  void popStackOnBlockExit(StackHeight destStackHeight, bool deadCode) {
-    uint32_t stackHeightHere = currentStackHeight();
-    uint32_t stackHeightThere = destStackHeight.height;
-    if (stackHeightHere > stackHeightThere) {
-#ifdef RABALDR_CHUNKY_STACK
-      if (deadCode) {
-        setStackHeight(destStackHeight);
-      } else {
-        popChunkyBytes(stackHeightHere - stackHeightThere);
-      }
-#else
-      if (deadCode) {
-        masm.setFramePushed(stackHeightThere);
-      } else {
-        masm.freeStack(stackHeightHere - stackHeightThere);
-      }
-#endif
-    }
+  uint32_t locateStackResult(const ABIResult& result, StackHeight stackBase,
+                             uint32_t stackResultBytes) {
+    MOZ_ASSERT(result.onStack());
+    MOZ_ASSERT(result.stackOffset() + result.size() <= stackResultBytes);
+    uint32_t end = computeHeightWithStackResults(stackBase, stackResultBytes);
+    return end - result.stackOffset();
   }
 
  public:
@@ -1616,22 +1657,10 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
   
   
 
-  
-  
-  
-  
-  
-  
-  
-
-  static const size_t StackSizeOfPtr = sizeof(intptr_t);
-  static const size_t StackSizeOfInt64 = sizeof(int64_t);
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32)
-  static const size_t StackSizeOfFloat = sizeof(float);
-#else
-  static const size_t StackSizeOfFloat = sizeof(double);
-#endif
-  static const size_t StackSizeOfDouble = sizeof(double);
+  static const size_t StackSizeOfPtr = ABIResult::StackSizeOfPtr;
+  static const size_t StackSizeOfInt64 = ABIResult::StackSizeOfInt64;
+  static const size_t StackSizeOfFloat = ABIResult::StackSizeOfFloat;
+  static const size_t StackSizeOfDouble = ABIResult::StackSizeOfDouble;
 
   uint32_t pushPtr(Register r) {
     DebugOnly<uint32_t> stackBefore = currentStackHeight();
@@ -1746,6 +1775,102 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
 
   void loadStackF32(int32_t offset, RegF32 dest) {
     masm.loadFloat32(Address(sp_, stackOffset(offset)), dest);
+  }
+
+  uint32_t prepareStackResultArea(StackHeight stackBase,
+                                  uint32_t stackResultBytes) {
+    uint32_t end = computeHeightWithStackResults(stackBase, stackResultBytes);
+    if (currentStackHeight() < end) {
+      uint32_t bytes = end - currentStackHeight();
+#ifdef RABALDR_CHUNKY_STACK
+      pushChunkyBytes(bytes);
+#else
+      masm.reserveStack(bytes);
+#endif
+      maxFramePushed_ = Max(maxFramePushed_, masm.framePushed());
+    }
+    return end;
+  }
+
+  void finishStackResultArea(StackHeight stackBase, uint32_t stackResultBytes) {
+    uint32_t end = computeHeightWithStackResults(stackBase, stackResultBytes);
+    MOZ_ASSERT(currentStackHeight() >= end);
+    popBytes(currentStackHeight() - end);
+  }
+
+  void shuffleStackResultsTowardFP(uint32_t srcHeight, uint32_t destHeight,
+                                   uint32_t bytes, Register temp) {
+    MOZ_ASSERT(destHeight < srcHeight);
+    MOZ_ASSERT(bytes % sizeof(uint32_t) == 0);
+    uint32_t destOffset = stackOffset(destHeight);
+    uint32_t srcOffset = stackOffset(srcHeight);
+    MOZ_ASSERT(destOffset >= bytes);
+    MOZ_ASSERT(srcOffset >= bytes);
+    while (bytes >= sizeof(intptr_t)) {
+      destOffset -= sizeof(intptr_t);
+      srcOffset -= sizeof(intptr_t);
+      bytes -= sizeof(intptr_t);
+      masm.loadPtr(Address(sp_, srcOffset), temp);
+      masm.storePtr(temp, Address(sp_, destOffset));
+    }
+    if (bytes) {
+      MOZ_ASSERT(bytes == sizeof(uint32_t));
+      destOffset -= sizeof(uint32_t);
+      srcOffset -= sizeof(uint32_t);
+      masm.load32(Address(sp_, srcOffset), temp);
+      masm.store32(temp, Address(sp_, destOffset));
+    }
+  }
+
+  void shuffleStackResultsTowardFP(StackHeight srcHeight,
+                                   StackHeight destHeight, uint32_t bytes,
+                                   Register temp) {
+    MOZ_ASSERT(srcHeight.isValid());
+    MOZ_ASSERT(destHeight.isValid());
+    uint32_t src = computeHeightWithStackResults(srcHeight, bytes);
+    uint32_t dest = computeHeightWithStackResults(destHeight, bytes);
+    MOZ_ASSERT(src <= currentStackHeight());
+    MOZ_ASSERT(dest <= currentStackHeight());
+    shuffleStackResultsTowardFP(src - bytes, dest - bytes, bytes, temp);
+  }
+
+  void shuffleStackResultsTowardSP(uint32_t srcHeight, uint32_t destHeight,
+                                   uint32_t bytes, Register temp) {
+    MOZ_ASSERT(destHeight > srcHeight);
+    MOZ_ASSERT(bytes % sizeof(uint32_t) == 0);
+    uint32_t destOffset = stackOffset(destHeight);
+    uint32_t srcOffset = stackOffset(srcHeight);
+    MOZ_ASSERT(destOffset >= bytes);
+    MOZ_ASSERT(srcOffset >= bytes);
+    while (bytes >= sizeof(intptr_t)) {
+      masm.loadPtr(Address(sp_, srcOffset - bytes), temp);
+      masm.storePtr(temp, Address(sp_, destOffset - bytes));
+      bytes -= sizeof(intptr_t);
+    }
+    if (bytes) {
+      MOZ_ASSERT(bytes == sizeof(uint32_t));
+      masm.load32(Address(sp_, srcOffset - bytes), temp);
+      masm.store32(temp, Address(sp_, destOffset - bytes));
+    }
+  }
+
+  void storeImmediateToStack(int32_t imm, uint32_t destHeight, Register temp) {
+    masm.move32(Imm32(imm), temp);
+    masm.store32(temp, Address(sp_, stackOffset(destHeight)));
+  }
+
+  void storeImmediateToStack(int64_t imm, uint32_t destHeight, Register temp) {
+#ifdef JS_PUNBOX64
+    masm.move64(Imm64(imm), Register64(temp));
+    masm.store64(Register64(temp), Address(sp_, stackOffset(destHeight)));
+#else
+    union {
+      int64_t i64;
+      int32_t i32[2];
+    } bits = {.i64 = imm};
+    storeImmediateToStack(bits.i32[0], destHeight, temp);
+    storeImmediateToStack(bits.i32[1], destHeight - sizeof(int32_t), temp);
+#endif
   }
 };
 
@@ -1924,6 +2049,33 @@ struct Stk {
     Stk s;
     s.kind_ = ConstRef;
     s.refval_ = v;
+    return s;
+  }
+  static Stk StackResult(ValType type, uint32_t offs) {
+    Kind k;
+    switch (type.code()) {
+      case ValType::I32:
+        k = Stk::MemI32;
+        break;
+      case ValType::I64:
+        k = Stk::MemI64;
+        break;
+      case ValType::F32:
+        k = Stk::MemF32;
+        break;
+      case ValType::F64:
+        k = Stk::MemF64;
+        break;
+      case ValType::FuncRef:
+      case ValType::AnyRef:
+      case ValType::Ref:
+        k = Stk::MemRef;
+        break;
+      case ValType::NullRef:
+        MOZ_CRASH("unexpected nullref stack result");
+    }
+    Stk s;
+    s.setOffs(k, offs);
     return s;
   }
 
@@ -2441,11 +2593,21 @@ class BaseCompiler final : public BaseCompilerInterface {
           deadThenBranch(false) {}
   };
 
+  class NothingVector {
+    Nothing unused_;
+
+   public:
+    bool resize(size_t length) { return true; }
+    Nothing& operator[](size_t) { return unused_; }
+    Nothing& back() { return unused_; }
+  };
+
   struct BaseCompilePolicy {
     
     
     
     using Value = Nothing;
+    using ValueVector = NothingVector;
 
     
     
@@ -2554,16 +2716,6 @@ class BaseCompiler final : public BaseCompilerInterface {
   
 
   SpecificRegs specific_;
-
-  
-  
-  
-
-  RegI32 joinRegI32_;
-  RegI64 joinRegI64_;
-  RegPtr joinRegPtr_;
-  RegF32 joinRegF32_;
-  RegF64 joinRegF64_;
 
   
 
@@ -2777,90 +2929,155 @@ class BaseCompiler final : public BaseCompilerInterface {
     }
   }
 
-  void maybeReserveJoinRegI(ExprType type) {
-    switch (type.code()) {
-      case ExprType::I32:
-        needI32(joinRegI32_);
-        break;
-      case ExprType::I64:
-        needI64(joinRegI64_);
-        break;
-      case ExprType::FuncRef:
-      case ExprType::AnyRef:
-      case ExprType::NullRef:
-      case ExprType::Ref:
-        needRef(joinRegPtr_);
-        break;
-      default:;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  enum class RegKind { All, OnlyGPRs };
+
+  inline void needResultRegisters(ResultType type, RegKind which) {
+    if (type.empty()) {
+      return;
+    }
+
+    for (ABIResultIter iter(type); !iter.done(); iter.next()) {
+      ABIResult result = iter.cur();
+      
+      
+      if (!result.inRegister()) {
+        return;
+      }
+      switch (result.type().code()) {
+        case ValType::I32:
+          needI32(RegI32(result.gpr()));
+          break;
+        case ValType::I64:
+          needI64(RegI64(result.gpr64()));
+          break;
+        case ValType::F32:
+          if (which == RegKind::All) {
+            needF32(RegF32(result.fpr()));
+          }
+          break;
+        case ValType::F64:
+          if (which == RegKind::All) {
+            needF64(RegF64(result.fpr()));
+          }
+          break;
+        case ValType::FuncRef:
+        case ValType::AnyRef:
+        case ValType::Ref:
+          needRef(RegPtr(result.gpr()));
+          break;
+        case ValType::NullRef:
+          MOZ_CRASH("unexpected nullref result");
+      }
     }
   }
 
-  void maybeUnreserveJoinRegI(ExprType type) {
-    switch (type.code()) {
-      case ExprType::I32:
-        freeI32(joinRegI32_);
-        break;
-      case ExprType::I64:
-        freeI64(joinRegI64_);
-        break;
-      case ExprType::FuncRef:
-      case ExprType::AnyRef:
-      case ExprType::NullRef:
-      case ExprType::Ref:
-        freeRef(joinRegPtr_);
-        break;
-      default:;
+  inline void freeResultRegisters(ResultType type, RegKind which) {
+    if (type.empty()) {
+      return;
+    }
+
+    for (ABIResultIter iter(type); !iter.done(); iter.next()) {
+      ABIResult result = iter.cur();
+      
+      
+      if (!result.inRegister()) {
+        return;
+      }
+      switch (result.type().code()) {
+        case ValType::I32:
+          freeI32(RegI32(result.gpr()));
+          break;
+        case ValType::I64:
+          freeI64(RegI64(result.gpr64()));
+          break;
+        case ValType::F32:
+          if (which == RegKind::All) {
+            freeF32(RegF32(result.fpr()));
+          }
+          break;
+        case ValType::F64:
+          if (which == RegKind::All) {
+            freeF64(RegF64(result.fpr()));
+          }
+          break;
+        case ValType::FuncRef:
+        case ValType::AnyRef:
+        case ValType::Ref:
+          freeRef(RegPtr(result.gpr()));
+          break;
+        case ValType::NullRef:
+          MOZ_CRASH("unexpected nullref result");
+      }
     }
   }
 
-  void maybeReserveJoinReg(ExprType type) {
-    switch (type.code()) {
-      case ExprType::I32:
-        needI32(joinRegI32_);
-        break;
-      case ExprType::I64:
-        needI64(joinRegI64_);
-        break;
-      case ExprType::F32:
-        needF32(joinRegF32_);
-        break;
-      case ExprType::F64:
-        needF64(joinRegF64_);
-        break;
-      case ExprType::Ref:
-      case ExprType::NullRef:
-      case ExprType::FuncRef:
-      case ExprType::AnyRef:
-        needRef(joinRegPtr_);
-        break;
-      default:
-        break;
-    }
+  void needIntegerResultRegisters(ResultType type) {
+    needResultRegisters(type, RegKind::OnlyGPRs);
+  }
+  void freeIntegerResultRegisters(ResultType type) {
+    freeResultRegisters(type, RegKind::OnlyGPRs);
   }
 
-  void maybeUnreserveJoinReg(ExprType type) {
-    switch (type.code()) {
-      case ExprType::I32:
-        freeI32(joinRegI32_);
-        break;
-      case ExprType::I64:
-        freeI64(joinRegI64_);
-        break;
-      case ExprType::F32:
-        freeF32(joinRegF32_);
-        break;
-      case ExprType::F64:
-        freeF64(joinRegF64_);
-        break;
-      case ExprType::Ref:
-      case ExprType::NullRef:
-      case ExprType::FuncRef:
-      case ExprType::AnyRef:
-        freeRef(joinRegPtr_);
-        break;
-      default:
-        break;
+  void needResultRegisters(ResultType type) {
+    needResultRegisters(type, RegKind::All);
+  }
+  void freeResultRegisters(ResultType type) {
+    freeResultRegisters(type, RegKind::All);
+  }
+
+  void assertResultRegistersAvailable(ResultType type) {
+#ifdef DEBUG
+    for (ABIResultIter iter(type); !iter.done(); iter.next()) {
+      ABIResult result = iter.cur();
+      if (!result.inRegister()) {
+        return;
+      }
+      switch (result.type().code()) {
+        case ValType::I32:
+          MOZ_ASSERT(isAvailableI32(RegI32(result.gpr())));
+          break;
+        case ValType::I64:
+          MOZ_ASSERT(isAvailableI64(RegI64(result.gpr64())));
+          break;
+        case ValType::F32:
+          MOZ_ASSERT(isAvailableF32(RegF32(result.fpr())));
+          break;
+        case ValType::F64:
+          MOZ_ASSERT(isAvailableF64(RegF64(result.fpr())));
+          break;
+        case ValType::FuncRef:
+        case ValType::AnyRef:
+        case ValType::Ref:
+          MOZ_ASSERT(isAvailableRef(RegPtr(result.gpr())));
+          break;
+        case ValType::NullRef:
+          MOZ_CRASH("unexpected nullref result");
+      }
     }
+#endif
+  }
+
+  void captureResultRegisters(ResultType type) {
+    assertResultRegistersAvailable(type);
+    needResultRegisters(type);
   }
 
   
@@ -3255,6 +3472,20 @@ class BaseCompiler final : public BaseCompilerInterface {
         }
       }
     }
+  }
+
+  void saveTempPtr(RegPtr r) final {
+    MOZ_ASSERT(!ra.isAvailablePtr(r));
+    fr.pushPtr(r);
+    ra.freePtr(r);
+    MOZ_ASSERT(ra.isAvailablePtr(r));
+  }
+
+  void restoreTempPtr(RegPtr r) final {
+    MOZ_ASSERT(ra.isAvailablePtr(r));
+    ra.needPtr(r);
+    fr.popPtr(r);
+    MOZ_ASSERT(!ra.isAvailablePtr(r));
   }
 
   
@@ -3744,141 +3975,295 @@ class BaseCompiler final : public BaseCompilerInterface {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
 
-  MOZ_MUST_USE Maybe<AnyReg> popJoinRegUnlessVoid(ExprType type) {
-    switch (type.code()) {
-      case ExprType::Void: {
-        return Nothing();
+  void popRegisterResults(ABIResultIter& iter) {
+    
+    
+    for (; !iter.done(); iter.next()) {
+      const ABIResult& result = iter.cur();
+      if (!result.inRegister()) {
+        
+        
+        
+        
+        sync();
+        break;
       }
-      case ExprType::I32: {
-        DebugOnly<Stk::Kind> k(stk_.back().kind());
-        MOZ_ASSERT(k == Stk::RegisterI32 || k == Stk::ConstI32 ||
-                   k == Stk::MemI32 || k == Stk::LocalI32);
-        return Some(AnyReg(popI32(joinRegI32_)));
-      }
-      case ExprType::I64: {
-        DebugOnly<Stk::Kind> k(stk_.back().kind());
-        MOZ_ASSERT(k == Stk::RegisterI64 || k == Stk::ConstI64 ||
-                   k == Stk::MemI64 || k == Stk::LocalI64);
-        return Some(AnyReg(popI64(joinRegI64_)));
-      }
-      case ExprType::F64: {
-        DebugOnly<Stk::Kind> k(stk_.back().kind());
-        MOZ_ASSERT(k == Stk::RegisterF64 || k == Stk::ConstF64 ||
-                   k == Stk::MemF64 || k == Stk::LocalF64);
-        return Some(AnyReg(popF64(joinRegF64_)));
-      }
-      case ExprType::F32: {
-        DebugOnly<Stk::Kind> k(stk_.back().kind());
-        MOZ_ASSERT(k == Stk::RegisterF32 || k == Stk::ConstF32 ||
-                   k == Stk::MemF32 || k == Stk::LocalF32);
-        return Some(AnyReg(popF32(joinRegF32_)));
-      }
-      case ExprType::Ref:
-      case ExprType::NullRef:
-      case ExprType::FuncRef:
-      case ExprType::AnyRef: {
-        DebugOnly<Stk::Kind> k(stk_.back().kind());
-        MOZ_ASSERT(k == Stk::RegisterRef || k == Stk::ConstRef ||
-                   k == Stk::MemRef || k == Stk::LocalRef);
-        return Some(AnyReg(popRef(joinRegPtr_)));
-      }
-      default: {
-        MOZ_CRASH("Compiler bug: unexpected expression type");
+      switch (result.type().code()) {
+        case ValType::I32:
+          popI32(RegI32(result.gpr()));
+          break;
+        case ValType::I64:
+          popI64(RegI64(result.gpr64()));
+          break;
+        case ValType::F32:
+          popF32(RegF32(result.fpr()));
+          break;
+        case ValType::F64:
+          popF64(RegF64(result.fpr()));
+          break;
+        case ValType::FuncRef:
+        case ValType::AnyRef:
+        case ValType::Ref:
+          popRef(RegPtr(result.gpr()));
+          break;
+        default:
+          MOZ_CRASH("bad result type");
       }
     }
   }
 
-  
-  
-  
-  
-  
+  void popStackResults(ABIResultIter& iter, StackHeight stackBase) {
+    MOZ_ASSERT(!iter.done());
 
-  MOZ_MUST_USE Maybe<AnyReg> captureJoinRegUnlessVoid(ExprType type) {
-    switch (type.code()) {
-      case ExprType::I32:
-        MOZ_ASSERT(isAvailableI32(joinRegI32_));
-        needI32(joinRegI32_);
-        return Some(AnyReg(joinRegI32_));
-      case ExprType::I64:
-        MOZ_ASSERT(isAvailableI64(joinRegI64_));
-        needI64(joinRegI64_);
-        return Some(AnyReg(joinRegI64_));
-      case ExprType::F32:
-        MOZ_ASSERT(isAvailableF32(joinRegF32_));
-        needF32(joinRegF32_);
-        return Some(AnyReg(joinRegF32_));
-      case ExprType::F64:
-        MOZ_ASSERT(isAvailableF64(joinRegF64_));
-        needF64(joinRegF64_);
-        return Some(AnyReg(joinRegF64_));
-      case ExprType::Ref:
-      case ExprType::NullRef:
-      case ExprType::FuncRef:
-      case ExprType::AnyRef:
-        MOZ_ASSERT(isAvailableRef(joinRegPtr_));
-        needRef(joinRegPtr_);
-        return Some(AnyReg(joinRegPtr_));
-      case ExprType::Void:
-        return Nothing();
-      default:
-        MOZ_CRASH("Compiler bug: unexpected type");
+    
+    
+    uint32_t alreadyPopped = iter.index();
+
+    
+    
+    for (; !iter.done(); iter.next()) {
+      MOZ_ASSERT(iter.cur().onStack());
     }
+
+    
+    uint32_t stackResultBytes = iter.stackBytesConsumedSoFar();
+    MOZ_ASSERT(stackResultBytes);
+
+    
+    
+    
+    
+    uint32_t endHeight = fr.prepareStackResultArea(stackBase, stackResultBytes);
+
+    
+    
+    bool saved = false;
+    RegPtr temp = ra.needTempPtr(RegPtr(ReturnReg), &saved);
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    for (iter.switchToPrev(); !iter.done(); iter.prev()) {
+      const ABIResult& result = iter.cur();
+      if (!result.onStack()) {
+        break;
+      }
+      MOZ_ASSERT(result.stackOffset() < stackResultBytes);
+      uint32_t destHeight = endHeight - result.stackOffset();
+      uint32_t stkBase = stk_.length() - (iter.count() - alreadyPopped);
+      Stk& v = stk_[stkBase + iter.index()];
+      if (v.isMem()) {
+        uint32_t srcHeight = v.offs();
+        if (srcHeight <= destHeight) {
+          break;
+        }
+        fr.shuffleStackResultsTowardFP(srcHeight, destHeight, result.size(),
+                                       temp);
+      }
+    }
+
+    
+    for (iter.reset(); !iter.done(); iter.next()) {
+      if (iter.cur().onStack()) {
+        break;
+      }
+    }
+
+    
+    
+    for (; !iter.done(); iter.next()) {
+      const ABIResult& result = iter.cur();
+      MOZ_ASSERT(result.onStack());
+      MOZ_ASSERT(result.stackOffset() < stackResultBytes);
+      uint32_t destHeight = endHeight - result.stackOffset();
+      Stk& v = stk_[stk_.length() - (iter.index() - alreadyPopped) - 1];
+      if (v.isMem()) {
+        uint32_t srcHeight = v.offs();
+        if (srcHeight >= destHeight) {
+          break;
+        }
+        fr.shuffleStackResultsTowardSP(srcHeight, destHeight, result.size(),
+                                       temp);
+      }
+    }
+
+    
+    
+    for (iter.reset(); !iter.done(); iter.next()) {
+      if (iter.cur().onStack()) {
+        break;
+      }
+    }
+
+    
+    for (; !iter.done(); iter.next()) {
+      const ABIResult& result = iter.cur();
+      uint32_t resultHeight = endHeight - result.stackOffset();
+      Stk& v = stk_.back();
+      switch (v.kind()) {
+        case Stk::ConstI32:
+        case Stk::ConstF32:
+          
+          
+          fr.storeImmediateToStack(v.i32val_, resultHeight, temp);
+          break;
+        case Stk::ConstI64:
+        case Stk::ConstF64:
+          
+          fr.storeImmediateToStack(v.i64val_, resultHeight, temp);
+          break;
+        case Stk::ConstRef:
+          
+          fr.storeImmediateToStack(v.refval_, resultHeight, temp);
+          break;
+        case Stk::MemRef:
+          
+          stackMapGenerator_.memRefsOnStk--;
+          break;
+        default:
+          MOZ_ASSERT(v.isMem());
+          break;
+      }
+      stk_.popBack();
+    }
+
+    ra.freeTempPtr(temp, saved);
+
+    
+    fr.finishStackResultArea(stackBase, stackResultBytes);
   }
 
-  void pushJoinRegUnlessVoid(const Maybe<AnyReg>& r) {
-    if (!r) {
+  enum class ContinuationKind { Fallthrough, Jump };
+
+  void popBlockResults(ResultType type, StackHeight stackBase,
+                       ContinuationKind kind) {
+    if (type.empty()) {
       return;
     }
-    switch (r->tag) {
-      case AnyReg::I32:
-        pushI32(r->i32());
-        break;
-      case AnyReg::I64:
-        pushI64(r->i64());
-        break;
-      case AnyReg::F64:
-        pushF64(r->f64());
-        break;
-      case AnyReg::F32:
-        pushF32(r->f32());
-        break;
-      case AnyReg::REF:
-        pushRef(r->ref());
-        break;
+
+    ABIResultIter iter(type);
+    popRegisterResults(iter);
+    if (!iter.done()) {
+      popStackResults(iter, stackBase);
+    } else if (kind == ContinuationKind::Jump) {
+      fr.popStackBeforeBranch(stackBase, type);
     }
   }
 
-  void freeJoinRegUnlessVoid(const Maybe<AnyReg>& r) {
-    if (!r) {
+  Stk captureStackResult(const ABIResult& result, uint32_t stackResultBytes) {
+    MOZ_ASSERT(result.onStack());
+    uint32_t offs = fr.locateStackResult(result, controlItem().stackHeight,
+                                         stackResultBytes);
+    return Stk::StackResult(result.type(), offs);
+  }
+
+  void pushBlockResults(ResultType type) {
+    if (type.empty()) {
       return;
     }
-    switch (r->tag) {
-      case AnyReg::I32:
-        freeI32(r->i32());
-        break;
-      case AnyReg::I64:
-        freeI64(r->i64());
-        break;
-      case AnyReg::F64:
-        freeF64(r->f64());
-        break;
-      case AnyReg::F32:
-        freeF32(r->f32());
-        break;
-      case AnyReg::REF:
-        freeRef(r->ref());
-        break;
+
+    
+    
+    ABIResultIter iter(type);
+    while (!iter.done()) {
+      iter.next();
     }
+    uint32_t stackResultBytes = iter.stackBytesConsumedSoFar();
+
+    for (iter.switchToPrev(); !iter.done(); iter.prev()) {
+      const ABIResult& result = iter.cur();
+      if (!result.onStack()) {
+        break;
+      }
+      Stk v = captureStackResult(result, stackResultBytes);
+      push(v);
+      if (v.kind() == Stk::MemRef) {
+        stackMapGenerator_.memRefsOnStk++;
+      }
+    }
+
+    for (; !iter.done(); iter.prev()) {
+      const ABIResult& result = iter.cur();
+      MOZ_ASSERT(result.inRegister());
+      switch (result.type().code()) {
+        case ValType::I32:
+          pushI32(RegI32(result.gpr()));
+          break;
+        case ValType::I64:
+          pushI64(RegI64(result.gpr64()));
+          break;
+        case ValType::F32:
+          pushF32(RegF32(result.fpr()));
+          break;
+        case ValType::F64:
+          pushF64(RegF64(result.fpr()));
+          break;
+        case ValType::FuncRef:
+        case ValType::AnyRef:
+        case ValType::Ref:
+          pushRef(RegPtr(result.gpr()));
+          break;
+        case ValType::NullRef:
+          MOZ_CRASH("unexpected nullref result");
+      }
+    }
+  }
+
+  
+  
+  StackHeight topBlockResults(ResultType type) {
+    if (type.empty()) {
+      return fr.stackHeight();
+    }
+    StackHeight base = fr.stackResultsBase(stackConsumed(type.length()));
+    popBlockResults(type, base, ContinuationKind::Fallthrough);
+    pushBlockResults(type);
+    return base;
+  }
+
+  
+  
+  
+  
+  void shuffleStackResultsBeforeBranch(StackHeight srcHeight,
+                                       StackHeight destHeight,
+                                       ResultType type) {
+    uint32_t stackResultBytes = 0;
+
+    if (ABIResultIter::HasStackResults(type)) {
+      MOZ_ASSERT(stk_.length() >= type.length());
+      ABIResultIter iter(type);
+      for (ABIResultIter iter(type); !iter.done(); iter.next()) {
+#ifdef DEBUG
+        const ABIResult& result = iter.cur();
+        const Stk& v = stk_[stk_.length() - iter.index() - 1];
+        MOZ_ASSERT(v.isMem() == result.onStack());
+#endif
+      }
+      stackResultBytes = iter.stackBytesConsumedSoFar();
+
+      if (stackResultBytes) {
+        
+        
+        bool saved = false;
+        RegPtr temp = ra.needTempPtr(RegPtr(ReturnReg), &saved);
+        fr.shuffleStackResultsTowardFP(srcHeight, destHeight, stackResultBytes,
+                                       temp);
+        ra.freeTempPtr(temp, saved);
+      }
+    }
+
+    fr.popStackBeforeBranch(destHeight, stackResultBytes);
   }
 
   
@@ -4023,12 +4408,14 @@ class BaseCompiler final : public BaseCompilerInterface {
   
   
 
-  void initControl(Control& item) {
+  void initControl(Control& item, ResultType params) {
     
     MOZ_ASSERT(!item.stackHeight.isValid() && item.stackSize == UINT32_MAX);
 
-    item.stackHeight = fr.stackHeight();
-    item.stackSize = stk_.length();
+    uint32_t paramCount = deadCode_ ? 0 : params.length();
+    uint32_t stackParamSize = stackConsumed(paramCount);
+    item.stackHeight = fr.stackResultsBase(stackParamSize);
+    item.stackSize = stk_.length() - paramCount;
     item.deadOnArrival = deadCode_;
     item.bceSafeOnEntry = bceSafe_;
   }
@@ -4821,13 +5208,6 @@ class BaseCompiler final : public BaseCompilerInterface {
     MOZ_ASSERT(isAvailableRef(r));
     needRef(r);
     return r;
-  }
-
-  void returnCleanup(bool popStack) {
-    if (popStack) {
-      fr.popStackBeforeBranch(controlOutermost().stackHeight);
-    }
-    masm.jump(&returnLabel_);
   }
 
   void checkDivideByZeroI32(RegI32 rhs) {
@@ -6570,30 +6950,30 @@ class BaseCompiler final : public BaseCompilerInterface {
     Label* const label;             
     const StackHeight stackHeight;  
                                     
+                                    
     const bool invertBranch;        
-    const ExprType
-        resultType;  
+    const ResultType resultType;    
 
     explicit BranchState(Label* label)
         : label(label),
           stackHeight(StackHeight::Invalid()),
           invertBranch(false),
-          resultType(ExprType::Void) {}
+          resultType(ResultType::Empty()) {}
 
     BranchState(Label* label, bool invertBranch)
         : label(label),
           stackHeight(StackHeight::Invalid()),
           invertBranch(invertBranch),
-          resultType(ExprType::Void) {}
+          resultType(ResultType::Empty()) {}
 
     BranchState(Label* label, StackHeight stackHeight, bool invertBranch,
-                ExprType resultType)
+                ResultType resultType)
         : label(label),
           stackHeight(stackHeight),
           invertBranch(invertBranch),
           resultType(resultType) {}
 
-    bool hasPop() const { return stackHeight.isValid(); }
+    bool hasBlockResults() const { return stackHeight.isValid(); }
   };
 
   void setLatentCompare(Assembler::Condition compareOp, ValType operandType) {
@@ -6653,22 +7033,25 @@ class BaseCompiler final : public BaseCompilerInterface {
   
 
   template <typename Cond, typename Lhs, typename Rhs>
-  void jumpConditionalWithJoinReg(BranchState* b, Cond cond, Lhs lhs, Rhs rhs) {
-    Maybe<AnyReg> r = popJoinRegUnlessVoid(b->resultType);
+  void jumpConditionalWithResults(BranchState* b, Cond cond, Lhs lhs, Rhs rhs) {
+    if (b->hasBlockResults()) {
+      StackHeight resultsBase = topBlockResults(b->resultType);
+      if (b->stackHeight != resultsBase) {
+        Label notTaken;
+        branchTo(b->invertBranch ? cond : Assembler::InvertCondition(cond), lhs,
+                 rhs, &notTaken);
 
-    if (b->hasPop() && fr.willPopStackBeforeBranch(b->stackHeight)) {
-      Label notTaken;
-      branchTo(b->invertBranch ? cond : Assembler::InvertCondition(cond), lhs,
-               rhs, &notTaken);
-      fr.popStackBeforeBranch(b->stackHeight);
-      masm.jump(b->label);
-      masm.bind(&notTaken);
-    } else {
-      branchTo(b->invertBranch ? Assembler::InvertCondition(cond) : cond, lhs,
-               rhs, b->label);
+        
+        shuffleStackResultsBeforeBranch(resultsBase, b->stackHeight,
+                                        b->resultType);
+        masm.jump(b->label);
+        masm.bind(&notTaken);
+        return;
+      }
     }
 
-    pushJoinRegUnlessVoid(r);
+    branchTo(b->invertBranch ? Assembler::InvertCondition(cond) : cond, lhs,
+             rhs, b->label);
   }
 
   
@@ -6719,11 +7102,11 @@ class BaseCompiler final : public BaseCompilerInterface {
   template <bool isSetLocal>
   MOZ_MUST_USE bool emitSetOrTeeLocal(uint32_t slot);
 
-  void endBlock(ExprType type);
-  void endIfThen();
-  void endIfThenElse(ExprType type);
+  void endBlock(ResultType type);
+  void endIfThen(ResultType type);
+  void endIfThenElse(ResultType type);
 
-  void doReturn(bool popStack);
+  void doReturn(ContinuationKind kind);
   void pushReturnValueOfCall(const FunctionCall& call, ValType type);
   void pushReturnValueOfCall(const FunctionCall& call, MIRType type);
 
@@ -7994,7 +8377,10 @@ bool BaseCompiler::sniffConditionalControlEqz(ValType operandType) {
 }
 
 void BaseCompiler::emitBranchSetup(BranchState* b) {
-  maybeReserveJoinReg(b->resultType);
+  
+  if (b->hasBlockResults()) {
+    needResultRegisters(b->resultType);
+  }
 
   
   switch (latentOp_) {
@@ -8061,17 +8447,19 @@ void BaseCompiler::emitBranchSetup(BranchState* b) {
     }
   }
 
-  maybeUnreserveJoinReg(b->resultType);
+  if (b->hasBlockResults()) {
+    freeResultRegisters(b->resultType);
+  }
 }
 
 void BaseCompiler::emitBranchPerform(BranchState* b) {
   switch (latentType_.code()) {
     case ValType::I32: {
       if (b->i32.rhsImm) {
-        jumpConditionalWithJoinReg(b, latentIntCmp_, b->i32.lhs,
+        jumpConditionalWithResults(b, latentIntCmp_, b->i32.lhs,
                                    Imm32(b->i32.imm));
       } else {
-        jumpConditionalWithJoinReg(b, latentIntCmp_, b->i32.lhs, b->i32.rhs);
+        jumpConditionalWithResults(b, latentIntCmp_, b->i32.lhs, b->i32.rhs);
         freeI32(b->i32.rhs);
       }
       freeI32(b->i32.lhs);
@@ -8079,23 +8467,23 @@ void BaseCompiler::emitBranchPerform(BranchState* b) {
     }
     case ValType::I64: {
       if (b->i64.rhsImm) {
-        jumpConditionalWithJoinReg(b, latentIntCmp_, b->i64.lhs,
+        jumpConditionalWithResults(b, latentIntCmp_, b->i64.lhs,
                                    Imm64(b->i64.imm));
       } else {
-        jumpConditionalWithJoinReg(b, latentIntCmp_, b->i64.lhs, b->i64.rhs);
+        jumpConditionalWithResults(b, latentIntCmp_, b->i64.lhs, b->i64.rhs);
         freeI64(b->i64.rhs);
       }
       freeI64(b->i64.lhs);
       break;
     }
     case ValType::F32: {
-      jumpConditionalWithJoinReg(b, latentDoubleCmp_, b->f32.lhs, b->f32.rhs);
+      jumpConditionalWithResults(b, latentDoubleCmp_, b->f32.lhs, b->f32.rhs);
       freeF32(b->f32.lhs);
       freeF32(b->f32.rhs);
       break;
     }
     case ValType::F64: {
-      jumpConditionalWithJoinReg(b, latentDoubleCmp_, b->f64.lhs, b->f64.rhs);
+      jumpConditionalWithResults(b, latentDoubleCmp_, b->f64.lhs, b->f64.rhs);
       freeF64(b->f64.lhs);
       freeF64(b->f64.rhs);
       break;
@@ -8121,7 +8509,8 @@ void BaseCompiler::emitBranchPerform(BranchState* b) {
 
 
 bool BaseCompiler::emitBlock() {
-  if (!iter_.readBlock()) {
+  ResultType params;
+  if (!iter_.readBlock(&params)) {
     return false;
   }
 
@@ -8129,46 +8518,45 @@ bool BaseCompiler::emitBlock() {
     sync();  
   }
 
-  initControl(controlItem());
+  initControl(controlItem(), params);
 
   return true;
 }
 
-void BaseCompiler::endBlock(ExprType type) {
+void BaseCompiler::endBlock(ResultType type) {
   Control& block = controlItem();
 
-  
-  Maybe<AnyReg> r;
-  if (!deadCode_) {
-    r = popJoinRegUnlessVoid(type);
+  if (deadCode_) {
+    
+    fr.resetStackHeight(block.stackHeight, type);
+    popValueStackTo(block.stackSize);
+  } else {
+    
+    
+    
+    MOZ_ASSERT(stk_.length() == block.stackSize + type.length());
+    if (block.label.used()) {
+      popBlockResults(type, block.stackHeight, ContinuationKind::Fallthrough);
+    }
     block.bceSafeOnExit &= bceSafe_;
   }
 
   
-  fr.popStackOnBlockExit(block.stackHeight, deadCode_);
-  popValueStackTo(block.stackSize);
-
-  
   if (block.label.used()) {
     masm.bind(&block.label);
-    
-    
     if (deadCode_) {
-      r = captureJoinRegUnlessVoid(type);
+      captureResultRegisters(type);
+      deadCode_ = false;
     }
-    deadCode_ = false;
+    pushBlockResults(type);
   }
 
   bceSafe_ = block.bceSafeOnExit;
-
-  
-  if (!deadCode_) {
-    pushJoinRegUnlessVoid(r);
-  }
 }
 
 bool BaseCompiler::emitLoop() {
-  if (!iter_.readLoop()) {
+  ResultType params;
+  if (!iter_.readLoop(&params)) {
     return false;
   }
 
@@ -8176,10 +8564,13 @@ bool BaseCompiler::emitLoop() {
     sync();  
   }
 
-  initControl(controlItem());
+  initControl(controlItem(), params);
   bceSafe_ = 0;
 
   if (!deadCode_) {
+    
+    
+    topBlockResults(params);
     masm.nopAlign(CodeAlignment);
     masm.bind(&controlItem(0).label);
     if (!addInterruptCheck()) {
@@ -8205,8 +8596,9 @@ bool BaseCompiler::emitLoop() {
 
 
 bool BaseCompiler::emitIf() {
+  ResultType params;
   Nothing unused_cond;
-  if (!iter_.readIf(&unused_cond)) {
+  if (!iter_.readIf(&params, &unused_cond)) {
     return false;
   }
 
@@ -8214,11 +8606,15 @@ bool BaseCompiler::emitIf() {
   if (!deadCode_) {
     emitBranchSetup(&b);
     sync();
+    
+    
+    
+    topBlockResults(params);
   } else {
     resetLatentOp();
   }
 
-  initControl(controlItem());
+  initControl(controlItem(), params);
 
   if (!deadCode_) {
     emitBranchPerform(&b);
@@ -8227,11 +8623,28 @@ bool BaseCompiler::emitIf() {
   return true;
 }
 
-void BaseCompiler::endIfThen() {
+void BaseCompiler::endIfThen(ResultType type) {
   Control& ifThen = controlItem();
 
-  fr.popStackOnBlockExit(ifThen.stackHeight, deadCode_);
-  popValueStackTo(ifThen.stackSize);
+  
+  
+  
+  
+
+  if (deadCode_) {
+    
+    fr.resetStackHeight(ifThen.stackHeight, type);
+    popValueStackTo(ifThen.stackSize);
+    if (!ifThen.deadOnArrival) {
+      captureResultRegisters(type);
+    }
+  } else {
+    MOZ_ASSERT(stk_.length() == ifThen.stackSize + type.length());
+    
+    
+    popBlockResults(type, ifThen.stackHeight, ContinuationKind::Fallthrough);
+    MOZ_ASSERT(!ifThen.deadOnArrival);
+  }
 
   if (ifThen.otherLabel.used()) {
     masm.bind(&ifThen.otherLabel);
@@ -8246,15 +8659,18 @@ void BaseCompiler::endIfThen() {
   }
 
   deadCode_ = ifThen.deadOnArrival;
+  if (!deadCode_) {
+    pushBlockResults(type);
+  }
 
   bceSafe_ = ifThen.bceSafeOnExit & ifThen.bceSafeOnEntry;
 }
 
 bool BaseCompiler::emitElse() {
-  ExprType thenType;
-  Nothing unused_thenValue;
+  ResultType params, results;
+  NothingVector unused_thenValues;
 
-  if (!iter_.readElse(&thenType, &unused_thenValue)) {
+  if (!iter_.readElse(&params, &results, &unused_thenValues)) {
     return false;
   }
 
@@ -8266,13 +8682,15 @@ bool BaseCompiler::emitElse() {
 
   ifThenElse.deadThenBranch = deadCode_;
 
-  Maybe<AnyReg> r;
-  if (!deadCode_) {
-    r = popJoinRegUnlessVoid(thenType);
+  if (deadCode_) {
+    fr.resetStackHeight(ifThenElse.stackHeight, results);
+    popValueStackTo(ifThenElse.stackSize);
+  } else {
+    MOZ_ASSERT(stk_.length() == ifThenElse.stackSize + results.length());
+    popBlockResults(results, ifThenElse.stackHeight, ContinuationKind::Jump);
+    freeResultRegisters(results);
+    MOZ_ASSERT(!ifThenElse.deadOnArrival);
   }
-
-  fr.popStackOnBlockExit(ifThenElse.stackHeight, deadCode_);
-  popValueStackTo(ifThenElse.stackSize);
 
   if (!deadCode_) {
     masm.jump(&ifThenElse.label);
@@ -8285,17 +8703,22 @@ bool BaseCompiler::emitElse() {
   
 
   if (!deadCode_) {
-    freeJoinRegUnlessVoid(r);
     ifThenElse.bceSafeOnExit &= bceSafe_;
   }
 
   deadCode_ = ifThenElse.deadOnArrival;
   bceSafe_ = ifThenElse.bceSafeOnEntry;
 
+  fr.resetStackHeight(ifThenElse.stackHeight, params);
+
+  if (!deadCode_) {
+    pushBlockResults(params);
+  }
+
   return true;
 }
 
-void BaseCompiler::endIfThenElse(ExprType type) {
+void BaseCompiler::endIfThenElse(ResultType type) {
   Control& ifThenElse = controlItem();
 
   
@@ -8304,14 +8727,19 @@ void BaseCompiler::endIfThenElse(ExprType type) {
   
   
 
-  Maybe<AnyReg> r;
-  if (!deadCode_) {
-    r = popJoinRegUnlessVoid(type);
+  if (deadCode_) {
+    
+    fr.resetStackHeight(ifThenElse.stackHeight, type);
+    popValueStackTo(ifThenElse.stackSize);
+  } else {
+    MOZ_ASSERT(stk_.length() == ifThenElse.stackSize + type.length());
+    
+    
+    popBlockResults(type, ifThenElse.stackHeight,
+                    ContinuationKind::Fallthrough);
     ifThenElse.bceSafeOnExit &= bceSafe_;
+    MOZ_ASSERT(!ifThenElse.deadOnArrival);
   }
-
-  fr.popStackOnBlockExit(ifThenElse.stackHeight, deadCode_);
-  popValueStackTo(ifThenElse.stackSize);
 
   if (ifThenElse.label.used()) {
     masm.bind(&ifThenElse.label);
@@ -8325,7 +8753,7 @@ void BaseCompiler::endIfThenElse(ExprType type) {
     
     
     if (deadCode_) {
-      r = captureJoinRegUnlessVoid(type);
+      captureResultRegisters(type);
     }
     deadCode_ = false;
   }
@@ -8333,24 +8761,24 @@ void BaseCompiler::endIfThenElse(ExprType type) {
   bceSafe_ = ifThenElse.bceSafeOnExit;
 
   if (!deadCode_) {
-    pushJoinRegUnlessVoid(r);
+    pushBlockResults(type);
   }
 }
 
 bool BaseCompiler::emitEnd() {
   LabelKind kind;
-  ExprType type;
-  Nothing unused_value;
-  if (!iter_.readEnd(&kind, &type, &unused_value)) {
+  ResultType type;
+  NothingVector unused_values;
+  if (!iter_.readEnd(&kind, &type, &unused_values)) {
     return false;
   }
 
   switch (kind) {
     case LabelKind::Body:
       endBlock(type);
+      doReturn(ContinuationKind::Fallthrough);
       iter_.popEnd();
       MOZ_ASSERT(iter_.controlStackEmpty());
-      doReturn(PopStack(false));
       return iter_.readFunctionEnd(iter_.end());
     case LabelKind::Block:
       endBlock(type);
@@ -8360,7 +8788,7 @@ bool BaseCompiler::emitEnd() {
       
       break;
     case LabelKind::Then:
-      endIfThen();
+      endIfThen(type);
       break;
     case LabelKind::Else:
       endIfThenElse(type);
@@ -8374,9 +8802,9 @@ bool BaseCompiler::emitEnd() {
 
 bool BaseCompiler::emitBr() {
   uint32_t relativeDepth;
-  ExprType type;
-  Nothing unused_value;
-  if (!iter_.readBr(&relativeDepth, &type, &unused_value)) {
+  ResultType type;
+  NothingVector unused_values;
+  if (!iter_.readBr(&relativeDepth, &type, &unused_values)) {
     return false;
   }
 
@@ -8390,15 +8818,13 @@ bool BaseCompiler::emitBr() {
   
   
 
-  Maybe<AnyReg> r = popJoinRegUnlessVoid(type);
-
-  fr.popStackBeforeBranch(target.stackHeight);
+  popBlockResults(type, target.stackHeight, ContinuationKind::Jump);
   masm.jump(&target.label);
 
   
   
 
-  freeJoinRegUnlessVoid(r);
+  freeResultRegisters(type);
 
   deadCode_ = true;
 
@@ -8407,9 +8833,10 @@ bool BaseCompiler::emitBr() {
 
 bool BaseCompiler::emitBrIf() {
   uint32_t relativeDepth;
-  ExprType type;
-  Nothing unused_value, unused_condition;
-  if (!iter_.readBrIf(&relativeDepth, &type, &unused_value,
+  ResultType type;
+  NothingVector unused_values;
+  Nothing unused_condition;
+  if (!iter_.readBrIf(&relativeDepth, &type, &unused_values,
                       &unused_condition)) {
     return false;
   }
@@ -8432,10 +8859,17 @@ bool BaseCompiler::emitBrIf() {
 bool BaseCompiler::emitBrTable() {
   Uint32Vector depths;
   uint32_t defaultDepth;
-  ExprType branchValueType;
-  Nothing unused_value, unused_index;
-  if (!iter_.readBrTable(&depths, &defaultDepth, &branchValueType,
-                         &unused_value, &unused_index)) {
+  ResultType branchParams;
+  NothingVector unused_values;
+  Nothing unused_index;
+  
+  
+  
+  
+  
+  
+  if (!iter_.readBrTable(&depths, &defaultDepth, &branchParams, &unused_values,
+                         &unused_index)) {
     return false;
   }
 
@@ -8444,21 +8878,22 @@ bool BaseCompiler::emitBrTable() {
   }
 
   
-  maybeReserveJoinRegI(branchValueType);
+  needIntegerResultRegisters(branchParams);
 
   
   RegI32 rc = popI32();
 
-  maybeUnreserveJoinRegI(branchValueType);
+  freeIntegerResultRegisters(branchParams);
 
-  Maybe<AnyReg> r = popJoinRegUnlessVoid(branchValueType);
+  StackHeight resultsBase = topBlockResults(branchParams);
 
   Label dispatchCode;
   masm.branch32(Assembler::Below, rc, Imm32(depths.length()), &dispatchCode);
 
   
 
-  fr.popStackBeforeBranch(controlItem(defaultDepth).stackHeight);
+  shuffleStackResultsBeforeBranch(
+      resultsBase, controlItem(defaultDepth).stackHeight, branchParams);
   controlItem(defaultDepth).bceSafeOnExit &= bceSafe_;
   masm.jump(&controlItem(defaultDepth).label);
 
@@ -8478,7 +8913,8 @@ bool BaseCompiler::emitBrTable() {
   for (uint32_t depth : depths) {
     stubs.infallibleEmplaceBack(NonAssertingLabel());
     masm.bind(&stubs.back());
-    fr.popStackBeforeBranch(controlItem(depth).stackHeight);
+    shuffleStackResultsBeforeBranch(resultsBase, controlItem(depth).stackHeight,
+                                    branchParams);
     controlItem(depth).bceSafeOnExit &= bceSafe_;
     masm.jump(&controlItem(depth).label);
   }
@@ -8497,7 +8933,7 @@ bool BaseCompiler::emitBrTable() {
   
 
   freeI32(rc);
-  freeJoinRegUnlessVoid(r);
+  popValueStackBy(branchParams.length());
 
   return true;
 }
@@ -8515,58 +8951,21 @@ bool BaseCompiler::emitDrop() {
   return true;
 }
 
-void BaseCompiler::doReturn(bool popStack) {
+void BaseCompiler::doReturn(ContinuationKind kind) {
   if (deadCode_) {
     return;
   }
-  Maybe<ValType> type = funcType().ret();
-  if (!type) {
-    returnCleanup(popStack);
-    return;
-  }
-  switch (type.ref().code()) {
-    case ValType::I32: {
-      RegI32 rv = popI32(RegI32(ReturnReg));
-      returnCleanup(popStack);
-      freeI32(rv);
-      break;
-    }
-    case ValType::I64: {
-      RegI64 rv = popI64(RegI64(ReturnReg64));
-      returnCleanup(popStack);
-      freeI64(rv);
-      break;
-    }
-    case ValType::F64: {
-      RegF64 rv = popF64(RegF64(ReturnDoubleReg));
-      returnCleanup(popStack);
-      freeF64(rv);
-      break;
-    }
-    case ValType::F32: {
-      RegF32 rv = popF32(RegF32(ReturnFloat32Reg));
-      returnCleanup(popStack);
-      freeF32(rv);
-      break;
-    }
-    case ValType::Ref:
-    case ValType::NullRef:
-    case ValType::FuncRef:
-    case ValType::AnyRef: {
-      RegPtr rv = popRef(RegPtr(ReturnReg));
-      returnCleanup(popStack);
-      freeRef(rv);
-      break;
-    }
-    default: {
-      MOZ_CRASH("Function return type");
-    }
-  }
+
+  StackHeight height = controlOutermost().stackHeight;
+  ResultType type = ResultType::Vector(funcType().results());
+  popBlockResults(type, height, kind);
+  masm.jump(&returnLabel_);
+  freeResultRegisters(type);
 }
 
 bool BaseCompiler::emitReturn() {
-  Nothing unused_value;
-  if (!iter_.readReturn(&unused_value)) {
+  NothingVector unused_values;
+  if (!iter_.readReturn(&unused_values)) {
     return false;
   }
 
@@ -8574,7 +8973,7 @@ bool BaseCompiler::emitReturn() {
     return true;
   }
 
-  doReturn(PopStack(true));
+  doReturn(ContinuationKind::Jump);
   deadCode_ = true;
 
   return true;
@@ -8653,7 +9052,7 @@ bool BaseCompiler::emitCall() {
   uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
 
   uint32_t funcIndex;
-  BaseOpIter::ValueVector args_;
+  NothingVector args_;
   if (!iter_.readCall(&funcIndex, &args_)) {
     return false;
   }
@@ -8707,7 +9106,7 @@ bool BaseCompiler::emitCallIndirect() {
   uint32_t funcTypeIndex;
   uint32_t tableIndex;
   Nothing callee_;
-  BaseOpIter::ValueVector args_;
+  NothingVector args_;
   if (!iter_.readCallIndirect(&funcTypeIndex, &tableIndex, &callee_, &args_)) {
     return false;
   }
@@ -8812,7 +9211,6 @@ bool BaseCompiler::emitUnaryMathBuiltinCall(SymbolicAddress callee,
 
   popValueStackBy(numArgs);
 
-  
   pushReturnValueOfCall(baselineCall, retType);
 
   return true;
@@ -10441,7 +10839,7 @@ bool BaseCompiler::emitStructNew() {
   uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
 
   uint32_t typeIndex;
-  BaseOpIter::ValueVector args;
+  NothingVector args;
   if (!iter_.readStructNew(&typeIndex, &args)) {
     return false;
   }
@@ -10461,10 +10859,6 @@ bool BaseCompiler::emitStructNew() {
   if (!emitInstanceCall(lineOrBytecode, SASigStructNew)) {
     return false;
   }
-
-  
-
-  MOZ_ASSERT(args.length() == structType.fields_.length());
 
   
   
@@ -10806,7 +11200,7 @@ bool BaseCompiler::emitBody() {
     return false;
   }
 
-  initControl(controlItem());
+  initControl(controlItem(), ResultType::Empty());
 
   uint32_t overhead = 0;
 
@@ -11865,11 +12259,6 @@ BaseCompiler::BaseCompiler(const ModuleEnvironment& env,
       fr(*masm),
       stackMapGenerator_(stackMaps, trapExitLayout, trapExitLayoutNumWords,
                          *masm),
-      joinRegI32_(RegI32(ReturnReg)),
-      joinRegI64_(RegI64(ReturnReg64)),
-      joinRegPtr_(RegPtr(ReturnReg)),
-      joinRegF32_(RegF32(ReturnFloat32Reg)),
-      joinRegF64_(RegF64(ReturnDoubleReg)),
       stkSource_(stkSource) {
   
   
