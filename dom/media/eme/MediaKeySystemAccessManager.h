@@ -17,6 +17,59 @@ namespace dom {
 class DetailedPromise;
 class TestGMPVideoDecoder;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MediaKeySystemAccessManager final : public nsIObserver {
  public:
   explicit MediaKeySystemAccessManager(nsPIDOMWindowInner* aWindow);
@@ -26,48 +79,76 @@ class MediaKeySystemAccessManager final : public nsIObserver {
                                            nsIObserver)
   NS_DECL_NSIOBSERVER
 
+  
   void Request(DetailedPromise* aPromise, const nsAString& aKeySystem,
                const Sequence<MediaKeySystemConfiguration>& aConfig);
 
   void Shutdown();
 
+ private:
+  
+  
   struct PendingRequest {
-    PendingRequest(DetailedPromise* aPromise, const nsAString& aKeySystem,
-                   const Sequence<MediaKeySystemConfiguration>& aConfig,
-                   nsITimer* aTimer);
-    PendingRequest(const PendingRequest& aOther);
-    ~PendingRequest();
-    void CancelTimer();
-    void RejectPromise(const nsCString& aReason);
+    enum class RequestType { Initial, Subsequent };
 
+    PendingRequest(DetailedPromise* aPromise, const nsAString& aKeySystem,
+                   const Sequence<MediaKeySystemConfiguration>& aConfigs);
+    ~PendingRequest();
+
+    
     RefPtr<DetailedPromise> mPromise;
+    
     const nsString mKeySystem;
+    
     const Sequence<MediaKeySystemConfiguration> mConfigs;
-    nsCOMPtr<nsITimer> mTimer;
+    
+    
+    
+    
+    RequestType mRequestType = RequestType::Initial;
+
+    
+    
+    
+    nsCOMPtr<nsITimer> mTimer = nullptr;
+
+    
+    void RejectPromiseWithInvalidAccessError(const nsAString& aReason);
+    void RejectPromiseWithNotSupportedError(const nsAString& aReason);
+    void RejectPromiseWithTypeError(const nsAString& aReason);
+
+    void CancelTimer();
   };
 
- private:
-  enum RequestType { Initial, Subsequent };
+  
+  
+  void CheckDoesWindowSupportProtectedMedia(UniquePtr<PendingRequest> aRequest);
 
-  void Request(DetailedPromise* aPromise, const nsAString& aKeySystem,
-               const Sequence<MediaKeySystemConfiguration>& aConfig,
-               RequestType aType);
+  
+  
+  
+  
+  void OnDoesWindowSupportProtectedMedia(bool aIsSupportedInWindow,
+                                         UniquePtr<PendingRequest> aRequest);
 
-  void RequestCallback(bool aIsSupportedInWindow, DetailedPromise* aPromise,
-                       const nsAString& aKeySystem,
-                       const Sequence<MediaKeySystemConfiguration>& aConfigs,
-                       RequestType aType);
+  
+  
+  
+  
+  
+  
+  void RequestMediaKeySystemAccess(UniquePtr<PendingRequest> aRequest);
 
   ~MediaKeySystemAccessManager();
 
   bool EnsureObserversAdded();
 
-  bool AwaitInstall(DetailedPromise* aPromise, const nsAString& aKeySystem,
-                    const Sequence<MediaKeySystemConfiguration>& aConfig);
+  bool AwaitInstall(UniquePtr<PendingRequest> aRequest);
 
-  void RetryRequest(PendingRequest& aRequest);
+  void RetryRequest(UniquePtr<PendingRequest> aRequest);
 
-  nsTArray<PendingRequest> mRequests;
+  
+  nsTArray<UniquePtr<PendingRequest>> mPendingInstallRequests;
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   bool mAddedObservers;
