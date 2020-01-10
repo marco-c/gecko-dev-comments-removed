@@ -235,7 +235,7 @@ struct SelfHostedLazyScript {
 
 }  
 
-struct JSRuntime : public js::MallocProvider<JSRuntime> {
+struct JSRuntime {
  private:
   friend class js::Activation;
   friend class js::ActivationIterator;
@@ -527,7 +527,7 @@ struct JSRuntime : public js::MallocProvider<JSRuntime> {
 #ifdef DEBUG
   bool currentThreadHasScriptDataAccess() const {
     if (!hasHelperThreadZones()) {
-      return CurrentThreadCanAccessRuntime(this) &&
+      return js::CurrentThreadCanAccessRuntime(this) &&
              activeThreadHasScriptDataAccess;
     }
 
@@ -535,7 +535,7 @@ struct JSRuntime : public js::MallocProvider<JSRuntime> {
   }
 
   bool currentThreadHasAtomsTableAccess() const {
-    return CurrentThreadCanAccessRuntime(this) &&
+    return js::CurrentThreadCanAccessRuntime(this) &&
            atoms_->mainThreadHasAllLocks();
   }
 #endif
@@ -853,16 +853,6 @@ struct JSRuntime : public js::MallocProvider<JSRuntime> {
   JSRuntime* thisFromCtor() { return this; }
 
  public:
-  
-
-
-
-
-
-
-
-  void updateMallocCounter(size_t nbytes);
-
   void reportAllocationOverflow() { js::ReportAllocationOverflow(nullptr); }
 
   
