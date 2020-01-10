@@ -222,7 +222,9 @@ export class Popup extends Component<Props> {
   }
 }
 
-function addHighlightToTargetSiblings(target: Element, props: Object) {
+export function addHighlightToTargetSiblings(target: Element, props: Object) {
+  
+  
   
   
   
@@ -235,28 +237,48 @@ function addHighlightToTargetSiblings(target: Element, props: Object) {
     previewExpression &&
     target.innerHTML !== previewExpression
   ) {
-    let nextSibling = target.nextElementSibling;
-    while (
-      nextSibling &&
-      nextSibling.className.includes(tokenType) &&
-      previewExpression.includes(nextSibling.innerHTML)
-    ) {
-      nextSibling.classList.add("preview-token");
-      nextSibling = nextSibling.nextElementSibling;
+    let nextSibling = target.nextSibling;
+    let nextElementSibling = target.nextElementSibling;
+    
+    
+    
+
+    while (nextSibling && nextElementSibling && nextSibling.nodeType === 1) {
+      if (
+        nextElementSibling.className.includes(tokenType) &&
+        previewExpression.includes(nextElementSibling.innerHTML)
+      ) {
+        
+        nextElementSibling.classList.add("preview-token");
+
+        nextSibling = nextSibling.nextSibling;
+        nextElementSibling = nextElementSibling.nextElementSibling;
+      }
     }
-    let previousSibling = target.previousElementSibling;
+
+    let previousSibling = target.previousSibling;
+    let previousElementSibling = target.previousElementSibling;
+
     while (
       previousSibling &&
-      previousSibling.className.includes(tokenType) &&
-      previewExpression.includes(previousSibling.innerHTML)
+      previousElementSibling &&
+      previousSibling.nodeType === 1
     ) {
-      previousSibling.classList.add("preview-token");
-      previousSibling = previousSibling.previousElementSibling;
+      if (
+        previousElementSibling.className.includes(tokenType) &&
+        previewExpression.includes(previousElementSibling.innerHTML)
+      ) {
+        
+        previousElementSibling.classList.add("preview-token");
+
+        previousSibling = previousSibling.previousSibling;
+        previousElementSibling = previousElementSibling.previousElementSibling;
+      }
     }
   }
 }
 
-function removeHighlightForTargetSiblings(target: Element) {
+export function removeHighlightForTargetSiblings(target: Element) {
   
   
   
