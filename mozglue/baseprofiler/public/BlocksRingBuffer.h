@@ -291,6 +291,15 @@ class BlocksRingBuffer {
   }
 
   
+  
+  
+  template <typename Callback>
+  auto LockAndRun(Callback&& aCallback) const {
+    baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
+    return std::forward<Callback>(aCallback)();
+  }
+
+  
   Maybe<PowerOfTwo<Length>> BufferLength() const {
     baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
     return mMaybeUnderlyingBuffer.map([](const UnderlyingBuffer& aBuffer) {
