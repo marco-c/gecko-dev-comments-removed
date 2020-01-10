@@ -65,13 +65,13 @@ add_task(async function test() {
   tabs.forEach(gBrowser.removeTab, gBrowser);
 
   
-  let hs = Services.telemetry.getKeyedHistogramById("SEARCH_COUNTS").snapshot();
-  Assert.ok(histogramKey in hs, "The histogram must contain the correct key");
-  Assert.equal(
-    hs[histogramKey].sum,
-    numSearchesBefore + 2,
-    "The histogram must contain the correct search count"
-  );
+  
+  await TestUtils.waitForCondition(() => {
+    let hs = Services.telemetry
+      .getKeyedHistogramById("SEARCH_COUNTS")
+      .snapshot();
+    return histogramKey in hs && hs[histogramKey].sum == numSearchesBefore + 2;
+  }, "The histogram must contain the correct search count");
 });
 
 function Deferred() {
