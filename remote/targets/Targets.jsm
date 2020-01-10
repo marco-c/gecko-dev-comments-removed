@@ -18,6 +18,9 @@ const { TabTarget } = ChromeUtils.import(
 const { MainProcessTarget } = ChromeUtils.import(
   "chrome://remote/content/targets/MainProcessTarget.jsm"
 );
+const { TabObserver } = ChromeUtils.import(
+  "chrome://remote/content/targets/TabObserver.jsm"
+);
 
 class Targets {
   constructor() {
@@ -28,34 +31,78 @@ class Targets {
   }
 
   
-  async connect(browser) {
-    
-    
-    
-    
-    if (!browser.browsingContext) {
-      await new MessagePromise(browser.messageManager, "Browser:Init");
-    }
 
-    const target = new TabTarget(this, browser);
-    target.connect();
-    this._targets.set(target.id, target);
-    this.emit("connect", target);
+
+  async watchForTargets() {
+    await this.watchForTabs();
+  }
+
+  unwatchForTargets() {
+    this.unwatchForTabs();
   }
 
   
-  disconnect(browser) {
-    
-    if (!browser.browsingContext) {
-      return;
-    }
 
-    const target = this._targets.get(browser.browsingContext.id);
-    if (target) {
-      this.emit("disconnect", target);
-      target.destructor();
-      this._targets.delete(target.id);
+
+
+
+  async watchForTabs() {
+    if (this.tabObserver) {
+      throw new Error("Targets is already watching for new tabs");
     }
+    this.tabObserver = new TabObserver({ registerExisting: true });
+    this.tabObserver.on("open", async (eventName, tab) => {
+      const browser = tab.linkedBrowser;
+      
+      
+      
+      
+      if (!browser.browsingContext) {
+        await new MessagePromise(browser.messageManager, "Browser:Init");
+      }
+      const target = new TabTarget(this, browser);
+      this.registerTarget(target);
+    });
+    this.tabObserver.on("close", (eventName, tab) => {
+      const browser = tab.linkedBrowser;
+      
+      if (!browser.browsingContext) {
+        return;
+      }
+      const target = this.getById(browser.browsingContext.id);
+      if (target) {
+        this.destroyTarget(target);
+      }
+    });
+    await this.tabObserver.start();
+  }
+
+  unwatchForTabs() {
+    if (this.tabObserver) {
+      this.tabObserver.stop();
+      this.tabObserver = null;
+    }
+  }
+
+  
+
+
+
+
+  registerTarget(target) {
+    this._targets.set(target.id, target);
+    this.emit("target-created", target);
+  }
+
+  
+
+
+
+
+  destroyTarget(target) {
+    target.destructor();
+    this._targets.delete(target.id);
+    this.emit("target-destroyed", target);
   }
 
   
@@ -64,17 +111,14 @@ class Targets {
 
   destructor() {
     for (const target of this) {
-      
-      
-      if (target != this.mainProcessTarget) {
-        this.disconnect(target.browser);
-      }
+      this.destroyTarget(target);
     }
     this._targets.clear();
     if (this.mainProcessTarget) {
-      this.mainProcessTarget.destructor();
       this.mainProcessTarget = null;
     }
+
+    this.unwatchForTargets();
   }
 
   get size() {
@@ -97,8 +141,7 @@ class Targets {
   getMainProcessTarget() {
     if (!this.mainProcessTarget) {
       this.mainProcessTarget = new MainProcessTarget(this);
-      this._targets.set(this.mainProcessTarget.id, this.mainProcessTarget);
-      this.emit("connect", this.mainProcessTarget);
+      this.registerTarget(this.mainProcessTarget);
     }
     return this.mainProcessTarget;
   }

@@ -110,7 +110,7 @@ async function setupTestForUri(uri) {
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, uri);
 
   
-  RemoteAgent.listen(Services.io.newURI("http://localhost:9222"));
+  await RemoteAgent.listen(Services.io.newURI("http://localhost:9222"));
 
   
   const CDP = await getCDP();
