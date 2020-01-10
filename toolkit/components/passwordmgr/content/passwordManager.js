@@ -702,10 +702,10 @@ function CopySiteUrl() {
   clipboard.copyString(url);
 }
 
-function CopyPassword() {
+async function CopyPassword() {
   
   
-  if (!showingPasswords && !masterPasswordLogin()) {
+  if (!showingPasswords && !(await masterPasswordLogin())) {
     return;
   }
   
