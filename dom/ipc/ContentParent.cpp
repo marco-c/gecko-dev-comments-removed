@@ -4699,7 +4699,8 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
   
   const uint32_t badFlags = nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW |
                             nsIWebBrowserChrome::CHROME_NON_PRIVATE_WINDOW |
-                            nsIWebBrowserChrome::CHROME_PRIVATE_LIFETIME;
+                            nsIWebBrowserChrome::CHROME_PRIVATE_LIFETIME |
+                            nsIWebBrowserChrome::CHROME_REMOTE_WINDOW;
   if (!!(aChromeFlags & badFlags)) {
     return IPC_FAIL(this, "Forbidden aChromeFlags passed");
   }
@@ -4708,20 +4709,6 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
   BrowserHost* thisBrowserHost =
       thisBrowserParent ? thisBrowserParent->GetBrowserHost() : nullptr;
   MOZ_ASSERT(!thisBrowserParent == !thisBrowserHost);
-
-  
-  
-  if (thisBrowserHost) {
-    nsCOMPtr<nsILoadContext> context = thisBrowserHost->GetLoadContext();
-
-    if (context->UseRemoteTabs() !=
-            !!(aChromeFlags & nsIWebBrowserChrome::CHROME_REMOTE_WINDOW) ||
-        context->UseRemoteSubframes() !=
-            !!(aChromeFlags & nsIWebBrowserChrome::CHROME_FISSION_WINDOW)) {
-      return IPC_FAIL(this, "Unexpected aChromeFlags passed");
-    }
-  }
-
   nsCOMPtr<nsIContent> frame;
   if (thisBrowserParent) {
     frame = thisBrowserParent->GetOwnerElement();
