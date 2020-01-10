@@ -2433,6 +2433,14 @@ bool CheckCompatVersions(const nsACString& aOldCompatVersion,
   
   
 
+  
+  
+  
+  if (aOldCompatVersion.EqualsLiteral("Safe Mode")) {
+    *aIsDowngrade = false;
+    return false;
+  }
+
   nsCString oldVersion;
   nsCString oldAppBuildID;
   nsCString oldPlatformBuildID;
