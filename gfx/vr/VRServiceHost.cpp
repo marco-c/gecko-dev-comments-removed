@@ -181,7 +181,7 @@ void VRServiceHost::ShutdownVRProcess() {
 
 #endif  
 
-void VRServiceHost::PuppetSubmit(const InfallibleTArray<uint64_t>& aBuffer) {
+void VRServiceHost::PuppetSubmit(const nsTArray<uint64_t>& aBuffer) {
   if (mVRProcessEnabled) {
     mPuppetActive = true;
     
