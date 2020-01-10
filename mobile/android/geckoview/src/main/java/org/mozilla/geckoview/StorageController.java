@@ -160,4 +160,24 @@ public final class StorageController {
 
         return result;
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+    @AnyThread
+    public void clearDataForSessionContext(final @NonNull String contextId) {
+        final GeckoBundle bundle = new GeckoBundle(1);
+        bundle.putString("contextId", contextId);
+
+        EventDispatcher.getInstance().dispatch(
+            "GeckoView:ClearSessionContextData", bundle);
+    }
 }
