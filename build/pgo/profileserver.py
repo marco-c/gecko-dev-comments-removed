@@ -8,7 +8,6 @@ import json
 import os
 import sys
 
-from buildconfig import substs
 from mozbuild.base import MozbuildObject
 from mozfile import TemporaryDirectory
 from mozhttpd import MozHttpd
@@ -91,17 +90,6 @@ if __name__ == '__main__':
 
         
         env["LLVM_PROFILE_FILE"] = "default_%p_random_%m.profraw"
-
-        
-        if not substs.get('HAVE_64BIT_BUILD'):
-            for e in ('VS140COMNTOOLS', 'VS120COMNTOOLS'):
-                if e not in env:
-                    continue
-
-                vcdir = os.path.abspath(os.path.join(env[e], '../../VC/bin'))
-                if os.path.exists(vcdir):
-                    env['PATH'] = '%s;%s' % (vcdir, env['PATH'])
-                    break
 
         
         process_args = {}
