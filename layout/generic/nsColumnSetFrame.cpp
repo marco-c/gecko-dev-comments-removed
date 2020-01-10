@@ -724,7 +724,9 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
     } else {
       LogicalSize availSize(wm, aConfig.mColISize, aConfig.mColMaxBSize);
       if (isMeasuringFeasibleContentBSize) {
-        availSize.BSize(wm) = GetAvailableContentBSize(aReflowInput);
+        availSize.BSize(wm) = StaticPrefs::layout_css_column_span_enabled()
+                                  ? NS_UNCONSTRAINEDSIZE
+                                  : GetAvailableContentBSize(aReflowInput);
 
         COLUMN_SET_LOG(
             "%s: Measuring content block-size, change available block-size "
@@ -1079,6 +1081,7 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
     } else {
       aConfig.mKnownInfeasibleBSize =
           std::max(aConfig.mKnownInfeasibleBSize, mLastBalanceBSize);
+
       
       
       
@@ -1090,6 +1093,11 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
         
         aConfig.mKnownFeasibleBSize =
             std::min(aConfig.mKnownFeasibleBSize, aColData.mMaxBSize);
+
+        NS_ASSERTION(!StaticPrefs::layout_css_column_span_enabled() ||
+                         mLastFrameStatus.IsComplete(),
+                     "Last column should be complete if the available "
+                     "block-size is unconstrained!");
       }
     }
 
@@ -1166,10 +1174,7 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
     if (aConfig.mKnownInfeasibleBSize >= availableContentBSize) {
       aConfig.mColMaxBSize = availableContentBSize;
       if (mLastBalanceBSize == availableContentBSize) {
-        if (StaticPrefs::layout_css_column_span_enabled() &&
-            aUnboundedLastColumn &&
-            !aReflowInput.mCBReflowInput->mFrame->HasAnyStateBits(
-                NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
+        if (StaticPrefs::layout_css_column_span_enabled()) {
           
           
           
@@ -1178,14 +1183,26 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
           
           
           
-          
-          
-          
-          
-          
-          
-          
-          aConfig = ChooseColumnStrategy(aReflowInput, true);
+
+          if (aReflowInput.mFlags.mColumnSetWrapperHasNoBSizeLeft) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            aConfig = ChooseColumnStrategy(aReflowInput, true);
+          }
         } else {
           skip = true;
         }

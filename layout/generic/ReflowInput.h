@@ -240,6 +240,12 @@ struct SizeComputationInput {
 
     
     
+    
+    
+    bool mColumnSetWrapperHasNoBSizeLeft : 1;
+
+    
+    
     bool mIsFlexContainerMeasuringBSize : 1;
 
     

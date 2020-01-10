@@ -3541,6 +3541,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
     Maybe<ReflowInput> childReflowInput;
     Maybe<LogicalSize> cbSize;
     LogicalSize availSize = availSpace.Size(wm);
+    bool columnSetWrapperHasNoBSizeLeft = false;
     if (Style()->GetPseudoType() == PseudoStyleType::columnContent) {
       
       
@@ -3593,8 +3594,10 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
           
           const nscoord availContentBSize = std::max(
               0, contentBSize - (aState.mBCoord - aState.ContentBStart()));
-          availSize.BSize(wm) =
-              std::min(availSize.BSize(wm), availContentBSize);
+          if (availSize.BSize(wm) >= availContentBSize) {
+            availSize.BSize(wm) = availContentBSize;
+            columnSetWrapperHasNoBSizeLeft = true;
+          }
         }
       }
     }
@@ -3602,6 +3605,9 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
     childReflowInput.emplace(aState.mPresContext, aState.mReflowInput, frame,
                              availSize.ConvertTo(frame->GetWritingMode(), wm),
                              cbSize);
+
+    childReflowInput->mFlags.mColumnSetWrapperHasNoBSizeLeft =
+        columnSetWrapperHasNoBSizeLeft;
 
     if (aLine->MovedFragments()) {
       
