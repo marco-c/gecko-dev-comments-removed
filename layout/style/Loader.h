@@ -199,17 +199,9 @@ class Loader final {
 
 
 
-
-  nsresult LoadSheetSync(nsIURI* aURL, SheetParsingMode aParsingMode,
-                         bool aUseSystemPrincipal, RefPtr<StyleSheet>* aSheet);
-
-  
-
-
-
-  nsresult LoadSheetSync(nsIURI* aURL, RefPtr<StyleSheet>* aSheet) {
-    return LoadSheetSync(aURL, eAuthorSheetFeatures, false, aSheet);
-  }
+  Result<RefPtr<StyleSheet>, nsresult> LoadSheetSync(
+      nsIURI*, SheetParsingMode = eAuthorSheetFeatures,
+      bool aUseSystemPrincipal = false);
 
   
 
@@ -232,21 +224,18 @@ class Loader final {
 
 
 
-  nsresult LoadSheet(nsIURI* aURL, SheetParsingMode aParsingMode,
-                     bool aUseSystemPrincipal, nsICSSLoaderObserver* aObserver,
-                     RefPtr<StyleSheet>* aSheet);
+  Result<RefPtr<StyleSheet>, nsresult> LoadSheet(
+      nsIURI* aURI, bool aIsPreLoad, nsIPrincipal* aOriginPrincipal,
+      const Encoding* aPreloadEncoding, nsIReferrerInfo* aReferrerInfo,
+      nsICSSLoaderObserver* aObserver, CORSMode aCORSMode = CORS_NONE,
+      const nsAString& aIntegrity = EmptyString());
 
   
 
 
-
-  nsresult LoadSheet(nsIURI* aURL, bool aIsPreload,
-                     nsIPrincipal* aOriginPrincipal,
-                     const Encoding* aPreloadEncoding,
-                     nsIReferrerInfo* aReferrerInfo,
-                     nsICSSLoaderObserver* aObserver,
-                     CORSMode aCORSMode = CORS_NONE,
-                     const nsAString& aIntegrity = EmptyString());
+  Result<RefPtr<StyleSheet>, nsresult> LoadSheet(nsIURI*, SheetParsingMode,
+                                                 bool aUseSystemPrincipal,
+                                                 nsICSSLoaderObserver*);
 
   
 
@@ -369,13 +358,12 @@ class Loader final {
   
   void InsertChildSheet(StyleSheet& aSheet, StyleSheet& aParentSheet);
 
-  nsresult InternalLoadNonDocumentSheet(
+  Result<RefPtr<StyleSheet>, nsresult> InternalLoadNonDocumentSheet(
       nsIURI* aURL, bool aIsPreload, SheetParsingMode aParsingMode,
       bool aUseSystemPrincipal, nsIPrincipal* aOriginPrincipal,
-      const Encoding* aPreloadEncoding, RefPtr<StyleSheet>* aSheet,
-      nsIReferrerInfo* aReferrerInfo, nsICSSLoaderObserver* aObserver,
-      CORSMode aCORSMode = CORS_NONE,
-      const nsAString& aIntegrity = EmptyString());
+      const Encoding* aPreloadEncoding, nsIReferrerInfo* aReferrerInfo,
+      nsICSSLoaderObserver* aObserver, CORSMode aCORSMode,
+      const nsAString& aIntegrity);
 
   
   

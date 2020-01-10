@@ -3107,17 +3107,15 @@ nsresult HTMLEditor::AddOverrideStyleSheetInternal(const nsAString& aURL) {
   
   
   
-  RefPtr<StyleSheet> sheet;
   
-  DebugOnly<nsresult> ignoredRv =
-      presShell->GetDocument()->CSSLoader()->LoadSheetSync(
-          uaURI, css::eAgentSheetFeatures, true, &sheet);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(ignoredRv), "LoadSheetSync() failed");
-
+  auto result = presShell->GetDocument()->CSSLoader()->LoadSheetSync(
+      uaURI, css::eAgentSheetFeatures, true);
   
-  if (NS_WARN_IF(!sheet)) {
-    return NS_ERROR_FAILURE;
+  if (NS_WARN_IF(result.isErr())) {
+    return result.unwrapErr();
   }
+
+  RefPtr<StyleSheet> sheet = result.unwrap();
 
   
   
