@@ -265,11 +265,8 @@ void MessagePort::Initialize(const nsID& aUUID, const nsID& aDestinationUUID,
   
   UpdateMustKeepAlive();
 
-  if (!NS_IsMainThread()) {
+  if (WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate()) {
     RefPtr<MessagePort> self = this;
-
-    WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-    MOZ_ASSERT(workerPrivate);
 
     
     

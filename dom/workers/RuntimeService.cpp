@@ -2469,7 +2469,9 @@ WorkerPrivate* GetWorkerPrivateFromContext(JSContext* aCx) {
 }
 
 WorkerPrivate* GetCurrentThreadWorkerPrivate() {
-  MOZ_ASSERT(!NS_IsMainThread());
+  if (NS_IsMainThread()) {
+    return nullptr;
+  }
 
   CycleCollectedJSContext* ccjscx = CycleCollectedJSContext::Get();
   if (!ccjscx) {
