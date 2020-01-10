@@ -21,6 +21,32 @@ const gTokenPasswordDialogs = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsITokenPasswordDialogs]),
 };
 
+let gMockPrompter = {
+  promptPassword(dialogTitle, text, password, checkMsg, checkValue) {
+    
+    return false;
+  },
+
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIPrompt]),
+};
+
+
+
+let gWindowWatcher = {
+  getNewPrompter: () => gMockPrompter,
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIWindowWatcher]),
+};
+
+add_task(function setup() {
+  let windowWatcherCID = MockRegistrar.register(
+    "@mozilla.org/embedcomp/window-watcher;1",
+    gWindowWatcher
+  );
+  registerCleanupFunction(() => {
+    MockRegistrar.unregister(windowWatcherCID);
+  });
+});
+
 add_task(function testEncryptString() {
   let sdr = Cc["@mozilla.org/security/sdr;1"].getService(
     Ci.nsISecretDecoderRing
