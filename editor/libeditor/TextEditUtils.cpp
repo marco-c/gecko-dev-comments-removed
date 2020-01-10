@@ -30,14 +30,6 @@ using namespace dom;
 
 
 
-bool TextEditUtils::IsBody(nsINode* aNode) {
-  MOZ_ASSERT(aNode);
-  return aNode->IsHTMLElement(nsGkAtoms::body);
-}
-
-
-
-
 bool TextEditUtils::IsBreak(nsINode* aNode) {
   MOZ_ASSERT(aNode);
   return aNode->IsHTMLElement(nsGkAtoms::br);
