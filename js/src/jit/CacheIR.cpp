@@ -295,6 +295,8 @@ AttachDecision GetPropIRGenerator::tryAttachStub() {
       return AttachDecision::NoAction;
     }
 
+    TRY_ATTACH(tryAttachTypedArrayNonInt32Index(obj, objId));
+
     trackAttached(IRGenerator::NotAttached);
     return AttachDecision::NoAction;
   }
@@ -2275,8 +2277,11 @@ AttachDecision GetPropIRGenerator::tryAttachTypedElement(
     writer.guardShapeForClass(objId, obj->as<TypedArrayObject>().shape());
   }
 
+  
+  
   writer.loadTypedElementResult(objId, indexId, layout,
-                                TypedThingElementType(obj));
+                                TypedThingElementType(obj),
+                                 false);
 
   
   
@@ -2287,6 +2292,34 @@ AttachDecision GetPropIRGenerator::tryAttachTypedElement(
   }
 
   trackAttached("TypedElement");
+  return AttachDecision::Attach;
+}
+
+AttachDecision GetPropIRGenerator::tryAttachTypedArrayNonInt32Index(
+    HandleObject obj, ObjOperandId objId) {
+  if (!obj->is<TypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  if (!idVal_.isNumber()) {
+    return AttachDecision::NoAction;
+  }
+
+  ValOperandId keyId = getElemKeyValueId();
+  Int32OperandId indexId = writer.guardToTypedArrayIndex(keyId);
+
+  TypedThingLayout layout = GetTypedThingLayout(obj->getClass());
+
+  writer.guardShapeForClass(objId, obj->as<TypedArrayObject>().shape());
+
+  writer.loadTypedElementResult(objId, indexId, layout,
+                                TypedThingElementType(obj),
+                                 true);
+
+  
+  writer.typeMonitorResult();
+
+  trackAttached("TypedArrayNonInt32Index");
   return AttachDecision::Attach;
 }
 
