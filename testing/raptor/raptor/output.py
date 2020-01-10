@@ -293,7 +293,8 @@ class PerftestOutput(object):
             
             
             if len(results) != 380:
-                raise Exception("StyleBench has 380 entries, found: %s instead" % len(results))
+                raise Exception("StyleBench requires 380 entries, found: %s instead"
+                                % len(results))
             results = results[75::76]
             return 60 * 1000 / filters.geometric_mean(results) / correctionFactor
 
