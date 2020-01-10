@@ -5973,16 +5973,6 @@ AbortReasonOr<bool> PrototypeHasIndexedProperty(IonBuilder* builder,
 }
 
 
-
-AbortReasonOr<bool> jit::ArrayPrototypeHasIndexedProperty(IonBuilder* builder,
-                                                          JSScript* script) {
-  if (JSObject* proto = script->global().maybeGetArrayPrototype()) {
-    return PrototypeHasIndexedProperty(builder, proto);
-  }
-  return true;
-}
-
-
 AbortReasonOr<bool> jit::TypeCanHaveExtraIndexedProperties(
     IonBuilder* builder, TemporaryTypeSet* types) {
   const Class* clasp = types->getKnownClass(builder->constraints());
