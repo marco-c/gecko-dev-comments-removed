@@ -917,9 +917,14 @@ input[type=range]::-moz-range-track {
   position: static !important;
   writing-mode: unset !important;
   direction: unset !important;
-  block-size: 0.2em;
+  block-size: 0.2em; 
   
   user-select: none !important;
+}
+
+input[type=range][orient=vertical]::-moz-range-track {
+  inline-size: 0.2em; 
+  block-size: 100%;
 }
 
 
