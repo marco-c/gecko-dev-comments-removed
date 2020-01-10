@@ -238,8 +238,15 @@ panelview[mainview] > .panel-header {
   pointer-events: auto;
 }
 
+
+
+
+#nav-bar:not([urlbar-exceeds-toolbar-bounds]),
+
+
+
 toolbar[overflowable][customizing] > .customization-target {
-  overflow: hidden;
+  overflow: -moz-hidden-unscrollable;
 }
 
 toolbar:not([overflowing]) > .overflow-button,
