@@ -641,7 +641,7 @@ var SpecialPowers = {
       function scheduledGCCallback() {
         Cu.forceCC();
 
-        if (++count < 2) {
+        if (++count < 3) {
           doPreciseGCandCC();
         } else {
           callback();
