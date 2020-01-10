@@ -312,11 +312,6 @@ TEST_F(APZCBasicTester, OverScroll_Bug1152051a) {
   
   SCOPED_GFX_PREF_FLOAT("apz.fling_friction", 0);
 
-  
-  
-  
-  SCOPED_GFX_PREF_FLOAT("apz.overscroll.spring_stiffness", 0.01225f);
-
   TestOverscroll();
 }
 
