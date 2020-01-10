@@ -1741,9 +1741,14 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
       
       if (addrRec->mFirstTRR) {
         if (NS_SUCCEEDED(status)) {
+          LOG(("Merging responses"));
           merge_rrset(newRRSet, addrRec->mFirstTRR);
         } else {
+          LOG(("Will use previous response"));
           newRRSet.swap(addrRec->mFirstTRR);  
+          
+          
+          status = addrRec->mFirstTRRresult;
         }
         addrRec->mFirstTRR = nullptr;
       }
