@@ -1,3 +1,20 @@
+import urllib
+
+def redirect_response(request, response, visited_count):
+  
+  
+  location = 'empty.js'
+  if 'Redirect' in request.GET:
+      location = urllib.unquote(request.GET['Redirect'])
+  return (301,
+  [
+    ('Cache-Control', 'no-cache, must-revalidate'),
+    ('Pragma', 'no-cache'),
+    ('Content-Type', 'application/javascript'),
+    ('Location', location),
+  ],
+  '/* %s */' % str(visited_count))
+
 def ok_response(request, response, visited_count,
                 extra_body='', mime_type='application/javascript'):
   
@@ -28,6 +45,8 @@ def main(request, response):
       return ok_response(request, response, visited_count)
     if mode == 'bad_mime_type':
       return ok_response(request, response, visited_count, mime_type='text/html')
+    if mode == 'redirect':
+      return redirect_response(request, response, visited_count)
     if mode == 'syntax_error':
       return ok_response(request, response, visited_count, extra_body='badsyntax(isbad;')
     if mode == 'throw_install':
