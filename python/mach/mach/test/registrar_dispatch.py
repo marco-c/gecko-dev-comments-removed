@@ -1,3 +1,4 @@
 
 
+from __future__ import absolute_import
 self._mach_context.commands.dispatch('uuid', self._mach_context)  

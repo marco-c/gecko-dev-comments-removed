@@ -2,6 +2,7 @@
 
 
 
+from __future__ import absolute_import
 try:
     from setuptools import setup
 except ImportError:

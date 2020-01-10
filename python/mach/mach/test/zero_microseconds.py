@@ -1,5 +1,6 @@
 
 
+from __future__ import absolute_import
 old = self._mach_context.post_dispatch_handler  
 
 
