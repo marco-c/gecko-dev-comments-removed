@@ -949,21 +949,24 @@ class Type {
   bool isCanonicalValType() const { return !isVoid() && isCanonical(); }
 
   
-  ValType canonicalToValType() const {
+  ExprType canonicalToExprType() const {
     switch (which()) {
       case Int:
-        return ValType::I32;
+        return ExprType::I32;
       case Float:
-        return ValType::F32;
+        return ExprType::F32;
       case Double:
-        return ValType::F64;
+        return ExprType::F64;
+      case Void:
+        return ExprType::Void;
       default:
         MOZ_CRASH("Need canonical type");
     }
   }
 
-  Maybe<ValType> canonicalToReturnType() const {
-    return isVoid() ? Nothing() : Some(canonicalToValType());
+  
+  ValType canonicalToValType() const {
+    return NonVoidToValType(canonicalToExprType());
   }
 
   
@@ -2350,7 +2353,7 @@ class MOZ_STACK_CLASS FunctionValidatorShared {
   uint32_t blockDepth_;
 
   bool hasAlreadyReturned_;
-  Maybe<ValType> ret_;
+  ExprType ret_;
 
  private:
   FunctionValidatorShared(ModuleValidatorShared& m, ParseNode* fn,
@@ -2362,7 +2365,8 @@ class MOZ_STACK_CLASS FunctionValidatorShared {
         breakLabels_(cx),
         continueLabels_(cx),
         blockDepth_(0),
-        hasAlreadyReturned_(false) {}
+        hasAlreadyReturned_(false),
+        ret_(ExprType::Limit) {}
 
  protected:
   template <typename Unit>
@@ -2414,10 +2418,9 @@ class MOZ_STACK_CLASS FunctionValidatorShared {
 
   bool hasAlreadyReturned() const { return hasAlreadyReturned_; }
 
-  Maybe<ValType> returnedType() const { return ret_; }
+  ExprType returnedType() const { return ret_; }
 
-  void setReturnedType(const Maybe<ValType>& ret) {
-    MOZ_ASSERT(!hasAlreadyReturned_);
+  void setReturnedType(ExprType ret) {
     ret_ = ret;
     hasAlreadyReturned_ = true;
   }
@@ -3237,12 +3240,12 @@ static bool CheckFinalReturn(FunctionValidatorShared& f,
   }
 
   if (!f.hasAlreadyReturned()) {
-    f.setReturnedType(Nothing());
+    f.setReturnedType(ExprType::Void);
     return true;
   }
 
   if (!lastNonEmptyStmt->isKind(ParseNodeKind::ReturnStmt) &&
-      f.returnedType()) {
+      !IsVoid(f.returnedType())) {
     return f.fail(lastNonEmptyStmt,
                   "void incompatible with previous return type");
   }
@@ -3938,9 +3941,27 @@ static bool CheckCallArgs(FunctionValidator<Unit>& f, ParseNode* callNode,
 static bool CheckSignatureAgainstExisting(ModuleValidatorShared& m,
                                           ParseNode* usepn, const FuncType& sig,
                                           const FuncType& existing) {
-  if (sig != existing) {
-    return m.failf(usepn, "incompatible argument types to function");
+  if (sig.args().length() != existing.args().length()) {
+    return m.failf(usepn,
+                   "incompatible number of arguments (%zu"
+                   " here vs. %zu before)",
+                   sig.args().length(), existing.args().length());
   }
+
+  for (unsigned i = 0; i < sig.args().length(); i++) {
+    if (sig.arg(i) != existing.arg(i)) {
+      return m.failf(
+          usepn, "incompatible type for argument %u: (%s here vs. %s before)",
+          i, ToCString(sig.arg(i)), ToCString(existing.arg(i)));
+    }
+  }
+
+  if (sig.ret() != existing.ret()) {
+    return m.failf(usepn, "%s incompatible with previous return of type %s",
+                   ToCString(sig.ret()), ToCString(existing.ret()));
+  }
+
+  MOZ_ASSERT(sig == existing);
   return true;
 }
 
@@ -3990,13 +4011,7 @@ static bool CheckInternalCall(FunctionValidator<Unit>& f, ParseNode* callNode,
     return false;
   }
 
-  ValTypeVector results;
-  Maybe<ValType> retType = ret.canonicalToReturnType();
-  if (retType && !results.append(retType.ref())) {
-    return false;
-  }
-
-  FuncType sig(std::move(args), std::move(results));
+  FuncType sig(std::move(args), ret.canonicalToExprType());
 
   ModuleValidatorShared::Func* callee;
   if (!CheckFunctionSignature(f.m(), callNode, std::move(sig), calleeName,
@@ -4106,13 +4121,7 @@ static bool CheckFuncPtrCall(FunctionValidator<Unit>& f, ParseNode* callNode,
     return false;
   }
 
-  ValTypeVector results;
-  Maybe<ValType> retType = ret.canonicalToReturnType();
-  if (retType && !results.append(retType.ref())) {
-    return false;
-  }
-
-  FuncType sig(std::move(args), std::move(results));
+  FuncType sig(std::move(args), ret.canonicalToExprType());
 
   uint32_t tableIndex;
   if (!CheckFuncPtrTableAgainstExisting(f.m(), tableNode, name, std::move(sig),
@@ -4157,13 +4166,7 @@ static bool CheckFFICall(FunctionValidator<Unit>& f, ParseNode* callNode,
     return false;
   }
 
-  ValTypeVector results;
-  Maybe<ValType> retType = ret.canonicalToReturnType();
-  if (retType && !results.append(retType.ref())) {
-    return false;
-  }
-
-  FuncType sig(std::move(args), std::move(results));
+  FuncType sig(std::move(args), ret.canonicalToExprType());
 
   uint32_t importIndex;
   if (!f.m().declareImport(calleeName, std::move(sig), ffiIndex,
@@ -5864,16 +5867,14 @@ static bool CheckSwitch(FunctionValidator<Unit>& f, ParseNode* switchStmt) {
 
 static bool CheckReturnType(FunctionValidatorShared& f, ParseNode* usepn,
                             Type ret) {
-  Maybe<ValType> type = ret.canonicalToReturnType();
-
   if (!f.hasAlreadyReturned()) {
-    f.setReturnedType(type);
+    f.setReturnedType(ret.canonicalToExprType());
     return true;
   }
 
-  if (f.returnedType() != type) {
+  if (f.returnedType() != ret.canonicalToExprType()) {
     return f.failf(usepn, "%s incompatible with previous return of type %s",
-                   ToCString(type), ToCString(f.returnedType()));
+                   Type::ret(ret).toChars(), ToCString(f.returnedType()));
   }
 
   return true;
@@ -6107,16 +6108,9 @@ static bool CheckFunction(ModuleValidator<Unit>& m) {
     return false;
   }
 
-  ValTypeVector results;
-  if (f.returnedType()) {
-    if (!results.append(f.returnedType().ref())) {
-      return false;
-    }
-  }
-
   ModuleValidatorShared::Func* func = nullptr;
   if (!CheckFunctionSignature(m, funNode,
-                              FuncType(std::move(args), std::move(results)),
+                              FuncType(std::move(args), f.returnedType()),
                               FunctionName(funNode), &func)) {
     return false;
   }
