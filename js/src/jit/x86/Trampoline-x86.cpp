@@ -17,6 +17,7 @@
 #endif
 #include "jit/VMFunctions.h"
 #include "jit/x86/SharedICHelpers-x86.h"
+#include "vm/JitActivation.h"  
 #include "vm/Realm.h"
 #ifdef MOZ_VTUNE
 #  include "vtune/VTuneWrapper.h"

@@ -17,6 +17,7 @@
 #include "jit/MoveEmitter.h"
 #include "jit/SharedICRegisters.h"
 #include "util/Memory.h"
+#include "vm/JitActivation.h"  
 
 #include "jit/MacroAssembler-inl.h"
 

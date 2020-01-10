@@ -18,6 +18,7 @@
 
 #include "wasm/WasmFrameIter.h"
 
+#include "vm/JitActivation.h"  
 #include "wasm/WasmInstance.h"
 #include "wasm/WasmStubs.h"
 

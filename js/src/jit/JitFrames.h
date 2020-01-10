@@ -7,7 +7,7 @@
 #ifndef jit_JitFrames_h
 #define jit_JitFrames_h
 
-#include <stdint.h>
+#include <stdint.h>  
 
 #include "jit/JSJitFrameIter.h"
 #include "vm/JSContext.h"

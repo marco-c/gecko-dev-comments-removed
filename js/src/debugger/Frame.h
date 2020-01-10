@@ -21,6 +21,7 @@
 #include "debugger/Debugger.h"  
 #include "gc/Barrier.h"         
 #include "gc/Rooting.h"         
+#include "vm/FrameIter.h"       
 #include "vm/JSObject.h"        
 #include "vm/NativeObject.h"    
 #include "vm/Stack.h"           

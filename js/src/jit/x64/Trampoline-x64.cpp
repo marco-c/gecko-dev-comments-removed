@@ -16,6 +16,7 @@
 #ifdef MOZ_VTUNE
 #  include "vtune/VTuneWrapper.h"
 #endif
+#include "vm/JitActivation.h"  
 
 #include "jit/MacroAssembler-inl.h"
 
