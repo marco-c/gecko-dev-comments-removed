@@ -20,6 +20,7 @@ add_task(async function() {
     "addons",
     
     "credits",
+    "logins",
     
     
     "telemetry",

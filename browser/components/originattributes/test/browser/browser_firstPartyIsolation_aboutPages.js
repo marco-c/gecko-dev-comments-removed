@@ -168,7 +168,7 @@ add_task(async function test_aboutURL() {
   let aboutURLs = [];
 
   
-  let networkURLs = ["credits"];
+  let networkURLs = ["credits", "logins"];
 
   for (let cid in Cc) {
     let result = cid.match(
