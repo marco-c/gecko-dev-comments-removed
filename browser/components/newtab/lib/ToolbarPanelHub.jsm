@@ -13,11 +13,6 @@ ChromeUtils.defineModuleGetter(
   "EveryWindow",
   "resource:///modules/EveryWindow.jsm"
 );
-ChromeUtils.defineModuleGetter(
-  this,
-  "PrivateBrowsingUtils",
-  "resource://gre/modules/PrivateBrowsingUtils.jsm"
-);
 
 const WHATSNEW_ENABLED_PREF = "browser.messaging-system.whatsNewPanel.enabled";
 
@@ -29,16 +24,14 @@ const BUTTON_STRING_ID = "cfr-whatsnew-button";
 
 class _ToolbarPanelHub {
   constructor() {
-    this.triggerId = "whatsNewPanelOpened";
     this._showAppmenuButton = this._showAppmenuButton.bind(this);
     this._hideAppmenuButton = this._hideAppmenuButton.bind(this);
     this._showToolbarButton = this._showToolbarButton.bind(this);
     this._hideToolbarButton = this._hideToolbarButton.bind(this);
   }
 
-  async init(waitForInitialized, { getMessages, dispatch }) {
+  async init(waitForInitialized, { getMessages }) {
     this._getMessages = getMessages;
-    this._dispatch = dispatch;
     
     
     await waitForInitialized;
@@ -139,36 +132,19 @@ class _ToolbarPanelHub {
 
     if (messages && !container.querySelector(".whatsNew-message")) {
       let previousDate = 0;
-      for (let message of messages) {
+      for (let { content } of messages) {
         container.appendChild(
-          this._createMessageElements(win, doc, message, previousDate)
+          this._createMessageElements(win, doc, content, previousDate)
         );
-        previousDate = message.content.published_date;
+        previousDate = content.published_date;
       }
     }
 
+    
     this._onPanelHidden(win);
-
-    
-    
-    
-    const eventId = {
-      id: messages
-        .map(({ id }) => id)
-        .sort()
-        .join(","),
-    };
-    
-    
-    
-    const mainview = win.PanelUI.whatsNewPanel.hasAttribute("mainview");
-    this.sendUserEventTelemetry(win, "IMPRESSION", eventId, {
-      value: { view: mainview ? "toolbar_dropdown" : "application_menu" },
-    });
   }
 
-  _createMessageElements(win, doc, message, previousDate) {
-    const { content } = message;
+  _createMessageElements(win, doc, content, previousDate) {
     const messageEl = this._createElement(doc, "div");
     messageEl.classList.add("whatsNew-message");
 
@@ -191,7 +167,7 @@ class _ToolbarPanelHub {
         csp: null,
       });
 
-      this.sendUserEventTelemetry(win, "CLICK", message);
+      
     });
 
     if (content.icon_url) {
@@ -284,30 +260,6 @@ class _ToolbarPanelHub {
 
   _hideElement(document, id) {
     document.getElementById(id).setAttribute("hidden", true);
-  }
-
-  _sendTelemetry(ping) {
-    this._dispatch({
-      type: "TOOLBAR_PANEL_TELEMETRY",
-      data: { action: "cfr_user_event", source: "CFR", ...ping },
-    });
-  }
-
-  sendUserEventTelemetry(win, event, message, options = {}) {
-    
-    if (
-      win &&
-      !PrivateBrowsingUtils.isBrowserPrivate(
-        win.ownerGlobal.gBrowser.selectedBrowser
-      )
-    ) {
-      this._sendTelemetry({
-        message_id: message.id,
-        bucket_id: message.id,
-        event,
-        value: options.value,
-      });
-    }
   }
 }
 

@@ -93,15 +93,15 @@
 __webpack_require__.r(__webpack_exports__);
 (function(global) { var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var content_src_components_Base_Base__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
- var content_src_lib_detect_user_session_start__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(51);
+ var content_src_lib_detect_user_session_start__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(49);
  var content_src_lib_init_store__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
- var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(27);
+ var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(24);
  var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
  var react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_5__);
- var react_dom__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(12);
+ var react_dom__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(14);
  var react_dom__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_6__);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(56);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(54);
 
 
 
@@ -562,15 +562,15 @@ __webpack_require__.r(__webpack_exports__);
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var content_src_components_ASRouterAdmin_ASRouterAdmin__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4);
  var _asrouter_asrouter_content__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
- var content_src_components_ConfirmDialog_ConfirmDialog__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(29);
- var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(27);
+ var content_src_components_ConfirmDialog_ConfirmDialog__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(27);
+ var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(24);
  var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
- var content_src_components_DiscoveryStreamBase_DiscoveryStreamBase__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(52);
- var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(34);
+ var content_src_components_DiscoveryStreamBase_DiscoveryStreamBase__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(50);
+ var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(32);
  var react__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_7___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_7__);
- var content_src_components_Search_Search__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(50);
- var content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(39);
+ var content_src_components_Search_Search__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(48);
+ var content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(37);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -758,12 +758,12 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "ASRouterAdmin", function() { return ASRouterAdmin; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var _asrouter_asrouter_content__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
- var react_redux__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(27);
+ var react_redux__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(24);
  var react_redux__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_2__);
- var _asrouter_components_ModalOverlay_ModalOverlay__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(21);
+ var _asrouter_components_ModalOverlay_ModalOverlay__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(13);
  var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_4__);
- var _SimpleHashRouter__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(28);
+ var _SimpleHashRouter__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(26);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -1719,17 +1719,23 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "ASRouterUISurface", function() { return ASRouterUISurface; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var content_src_lib_init_store__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6);
- var _rich_text_strings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(55);
+ var _rich_text_strings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(53);
  var _components_ImpressionsWrapper_ImpressionsWrapper__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8);
- var fluent_react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(53);
+ var fluent_react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(51);
  var content_src_lib_constants__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(11);
- var react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(9);
- var react__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_6__);
- var react_dom__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(12);
- var react_dom__WEBPACK_IMPORTED_MODULE_7___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_7__);
- var _templates_template_manifest__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(54);
- var _templates_FirstRun_FirstRun__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(58);
+ var _templates_OnboardingMessage_OnboardingMessage__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(12);
+ var react__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_7___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_7__);
+ var react_dom__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(14);
+ var react_dom__WEBPACK_IMPORTED_MODULE_8___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_8__);
+ var _templates_ReturnToAMO_ReturnToAMO__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(15);
+ var _templates_template_manifest__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(52);
+ var _templates_StartupOverlay_StartupOverlay__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(23);
+ var _templates_Trailhead_Trailhead__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(25);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
+
+
+
 
 
 
@@ -1746,8 +1752,7 @@ function _extends() { _extends = Object.assign || function (target) { for (var i
 
 const INCOMING_MESSAGE_NAME = "ASRouter:parent-to-child";
 const OUTGOING_MESSAGE_NAME = "ASRouter:child-to-parent";
-const TEMPLATES_ABOVE_PAGE = ["trailhead", "fxa_overlay", "return_to_amo_overlay"];
-const FIRST_RUN_TEMPLATES = TEMPLATES_ABOVE_PAGE;
+const TEMPLATES_ABOVE_PAGE = ["trailhead"];
 const TEMPLATES_BELOW_SEARCH = ["simple_below_search_snippet"];
 const ASRouterUtils = {
   addListener(listener) {
@@ -1783,6 +1788,15 @@ const ASRouterUtils = {
       type: "DISMISS_MESSAGE_BY_ID",
       data: {
         id
+      }
+    });
+  },
+
+  dismissBundle(bundle) {
+    ASRouterUtils.sendMessage({
+      type: "DISMISS_BUNDLE",
+      data: {
+        bundle
       }
     });
   },
@@ -1855,7 +1869,7 @@ function shouldSendImpressionOnUpdate(nextProps, prevProps) {
   return nextProps.message.id && (!prevProps.message || prevProps.message.id !== nextProps.message.id);
 }
 
-class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.PureComponent {
+class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_7___default.a.PureComponent {
   constructor(props) {
     super(props);
     this.onMessageFromParent = this.onMessageFromParent.bind(this);
@@ -1863,7 +1877,8 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
     this.sendImpression = this.sendImpression.bind(this);
     this.sendUserActionTelemetry = this.sendUserActionTelemetry.bind(this);
     this.state = {
-      message: {}
+      message: {},
+      bundle: {}
     };
 
     if (props.document) {
@@ -1874,11 +1889,18 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
 
   sendUserActionTelemetry(extraProps = {}) {
     const {
-      message
+      message,
+      bundle
     } = this.state;
-    const eventType = `${message.provider}_user_event`;
+
+    if (!message && !extraProps.message_id) {
+      throw new Error(`You must provide a message_id for bundled messages`);
+    } 
+
+
+    const eventType = `${message.provider || bundle.provider}_user_event`;
     ASRouterUtils.sendTelemetry({
-      message_id: message.id,
+      message_id: message.id || extraProps.message_id,
       source: extraProps.id,
       action: eventType,
       ...extraProps
@@ -1941,6 +1963,30 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
     return () => ASRouterUtils.dismissById(id);
   }
 
+  dismissBundle(bundle) {
+    return () => {
+      ASRouterUtils.dismissBundle(bundle);
+      this.sendUserActionTelemetry({
+        event: "DISMISS",
+        id: "onboarding-cards",
+        message_id: bundle.map(m => m.id).join(","),
+        
+        action: "onboarding_user_event"
+      });
+    };
+  }
+
+  triggerOnboarding() {
+    ASRouterUtils.sendMessage({
+      type: "TRIGGER",
+      data: {
+        trigger: {
+          id: "showOnboarding"
+        }
+      }
+    });
+  }
+
   clearMessage(id) {
     if (id === this.state.message.id) {
       this.setState({
@@ -1961,6 +2007,12 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
         });
         break;
 
+      case "SET_BUNDLED_MESSAGES":
+        this.setState({
+          bundle: action.data
+        });
+        break;
+
       case "CLEAR_MESSAGE":
         this.clearMessage(action.data.id);
         break;
@@ -1974,9 +2026,19 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
 
         break;
 
+      case "CLEAR_BUNDLE":
+        if (this.state.bundle.bundle) {
+          this.setState({
+            bundle: {}
+          });
+        }
+
+        break;
+
       case "CLEAR_ALL":
         this.setState({
-          message: {}
+          message: {},
+          bundle: {}
         });
         break;
 
@@ -2023,28 +2085,24 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
   }
 
   renderSnippets() {
-    const {
-      message
-    } = this.state;
-
-    if (!_templates_template_manifest__WEBPACK_IMPORTED_MODULE_8__["SnippetsTemplates"][message.template]) {
+    if (this.state.bundle.template === "onboarding" || ["fxa_overlay", "return_to_amo_overlay", "trailhead", "whatsnew_panel_message"].includes(this.state.message.template)) {
       return null;
     }
 
-    const SnippetComponent = _templates_template_manifest__WEBPACK_IMPORTED_MODULE_8__["SnippetsTemplates"][message.template];
+    const SnippetComponent = _templates_template_manifest__WEBPACK_IMPORTED_MODULE_10__["SnippetsTemplates"][this.state.message.template];
     const {
       content
     } = this.state.message;
-    return react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_components_ImpressionsWrapper_ImpressionsWrapper__WEBPACK_IMPORTED_MODULE_3__["ImpressionsWrapper"], {
+    return react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_components_ImpressionsWrapper_ImpressionsWrapper__WEBPACK_IMPORTED_MODULE_3__["ImpressionsWrapper"], {
       id: "NEWTAB_FOOTER_BAR",
       message: this.state.message,
       sendImpression: this.sendImpression,
       shouldSendImpressionOnUpdate: shouldSendImpressionOnUpdate 
       ,
       document: this.props.document
-    }, react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(fluent_react__WEBPACK_IMPORTED_MODULE_4__["LocalizationProvider"], {
+    }, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(fluent_react__WEBPACK_IMPORTED_MODULE_4__["LocalizationProvider"], {
       bundles: Object(_rich_text_strings__WEBPACK_IMPORTED_MODULE_2__["generateBundles"])(content)
-    }, react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(SnippetComponent, _extends({}, this.state.message, {
+    }, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(SnippetComponent, _extends({}, this.state.message, {
       UISurface: "NEWTAB_FOOTER_BAR",
       onBlock: this.onBlockById(this.state.message.id),
       onDismiss: this.onDismissById(this.state.message.id),
@@ -2054,31 +2112,62 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
     }))));
   }
 
-  renderPreviewBanner() {
-    if (this.state.message.provider !== "preview") {
-      return null;
+  renderOnboarding() {
+    if (this.state.bundle.template === "onboarding") {
+      return react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_templates_OnboardingMessage_OnboardingMessage__WEBPACK_IMPORTED_MODULE_6__["OnboardingMessage"], _extends({}, this.state.bundle, {
+        UISurface: "NEWTAB_OVERLAY",
+        onAction: ASRouterUtils.executeAction,
+        onDismissBundle: this.dismissBundle(this.state.bundle.bundle),
+        sendUserActionTelemetry: this.sendUserActionTelemetry
+      }));
     }
 
-    return react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", {
-      className: "snippets-preview-banner"
-    }, react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("span", {
-      className: "icon icon-small-spacer icon-info"
-    }), react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("span", null, "Preview Purposes Only"));
+    return null;
   }
 
-  renderFirstRun() {
+  renderFirstRunOverlay() {
     const {
       message
     } = this.state;
 
-    if (FIRST_RUN_TEMPLATES.includes(message.template)) {
-      return react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_templates_FirstRun_FirstRun__WEBPACK_IMPORTED_MODULE_9__["FirstRun"], {
+    if (message.template === "fxa_overlay") {
+      global.document.body.classList.add("fxa");
+      return react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_templates_StartupOverlay_StartupOverlay__WEBPACK_IMPORTED_MODULE_11__["StartupOverlay"], {
+        onReady: this.triggerOnboarding,
+        onBlock: this.onDismissById(message.id),
+        dispatch: this.props.dispatch
+      });
+    } else if (message.template === "return_to_amo_overlay") {
+      global.document.body.classList.add("amo");
+      return react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(fluent_react__WEBPACK_IMPORTED_MODULE_4__["LocalizationProvider"], {
+        bundles: Object(_rich_text_strings__WEBPACK_IMPORTED_MODULE_2__["generateBundles"])({
+          amo_html: message.content.text
+        })
+      }, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_templates_ReturnToAMO_ReturnToAMO__WEBPACK_IMPORTED_MODULE_9__["ReturnToAMO"], _extends({}, message, {
+        UISurface: "NEWTAB_OVERLAY",
+        onReady: this.triggerOnboarding,
+        onBlock: this.onDismissById(message.id),
+        onAction: ASRouterUtils.executeAction,
+        sendUserActionTelemetry: this.sendUserActionTelemetry
+      })));
+    }
+
+    return null;
+  }
+
+  renderTrailhead() {
+    const {
+      message
+    } = this.state;
+
+    if (message.template === "trailhead") {
+      return react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_templates_Trailhead_Trailhead__WEBPACK_IMPORTED_MODULE_12__["Trailhead"], {
         document: this.props.document,
         message: message,
+        onAction: ASRouterUtils.executeAction,
+        onDismissBundle: this.dismissBundle(this.state.message.bundle),
         sendUserActionTelemetry: this.sendUserActionTelemetry,
-        executeAction: ASRouterUtils.executeAction,
         dispatch: this.props.dispatch,
-        onDismiss: this.onDismissById(this.state.message.id),
         fxaEndpoint: this.props.fxaEndpoint
       });
     }
@@ -2086,23 +2175,36 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
     return null;
   }
 
+  renderPreviewBanner() {
+    if (this.state.message.provider !== "preview") {
+      return null;
+    }
+
+    return react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", {
+      className: "snippets-preview-banner"
+    }, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("span", {
+      className: "icon icon-small-spacer icon-info"
+    }), react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("span", null, "Preview Purposes Only"));
+  }
+
   render() {
     const {
-      message
+      message,
+      bundle
     } = this.state;
 
-    if (!message.id) {
+    if (!message.id && !bundle.template) {
       return null;
     }
 
     const shouldRenderBelowSearch = TEMPLATES_BELOW_SEARCH.includes(message.template);
     const shouldRenderInHeader = TEMPLATES_ABOVE_PAGE.includes(message.template);
     return shouldRenderBelowSearch ? 
-    react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", {
+    react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", {
       className: "below-search-snippet"
     }, this.renderSnippets()) : 
     
-    react_dom__WEBPACK_IMPORTED_MODULE_7___default.a.createPortal(react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_6___default.a.Fragment, null, this.renderPreviewBanner(), this.renderFirstRun(), this.renderSnippets()), shouldRenderInHeader ? this.headerPortal : this.footerPortal);
+    react_dom__WEBPACK_IMPORTED_MODULE_8___default.a.createPortal(react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_7___default.a.Fragment, null, this.renderPreviewBanner(), this.renderTrailhead(), this.renderFirstRunOverlay(), this.renderOnboarding(), this.renderSnippets()), shouldRenderInHeader ? this.headerPortal : this.footerPortal);
   }
 
 }
@@ -2415,29 +2517,15 @@ const NEWTAB_DARK_THEME = {
 
  }),
 
- (function(module, exports) {
-
-module.exports = ReactDOM;
-
- }),
-
- (function(module) {
-
-module.exports = {"title":"EOYSnippet","description":"Fundraising Snippet","version":"1.1.0","type":"object","definitions":{"plainText":{"description":"Plain text (no HTML allowed)","type":"string"},"richText":{"description":"Text with HTML subset allowed: i, b, u, strong, em, br","type":"string"},"link_url":{"description":"Target for links or buttons","type":"string","format":"uri"}},"properties":{"donation_form_url":{"type":"string","description":"Url to the donation form."},"currency_code":{"type":"string","description":"The code for the currency. Examle gbp, cad, usd.","default":"usd"},"locale":{"type":"string","description":"String for the locale code.","default":"en-US"},"text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"text_color":{"type":"string","description":"Modify the text message color"},"background_color":{"type":"string","description":"Snippet background color."},"highlight_color":{"type":"string","description":"Paragraph em highlight color."},"donation_amount_first":{"type":"number","description":"First button amount."},"donation_amount_second":{"type":"number","description":"Second button amount."},"donation_amount_third":{"type":"number","description":"Third button amount."},"donation_amount_fourth":{"type":"number","description":"Fourth button amount."},"selected_button":{"type":"string","description":"Default donation_amount_second. Donation amount button that's selected by default.","default":"donation_amount_second"},"icon":{"type":"string","description":"Snippet icon. 64x64px. SVG or PNG preferred."},"icon_dark_theme":{"type":"string","description":"Snippet icon. Dark theme variant. 64x64px. SVG or PNG preferred."},"icon_alt_text":{"type":"string","description":"Alt text for accessibility","default":""},"title":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Snippet title displayed before snippet text"}]},"title_icon":{"type":"string","description":"Small icon that shows up before the title / text. 16x16px. SVG or PNG preferred. Grayscale."},"title_icon_dark_theme":{"type":"string","description":"Small icon that shows up before the title / text. Dark theme variant. 16x16px. SVG or PNG preferred. Grayscale."},"button_label":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Text for a button next to main snippet text that links to button_url. Requires button_url."}]},"button_color":{"type":"string","description":"The text color of the button. Valid CSS color."},"button_background_color":{"type":"string","description":"The background color of the button. Valid CSS color."},"block_button_text":{"type":"string","description":"Tooltip text used for dismiss button."},"monthly_checkbox_label_text":{"type":"string","description":"Label text for monthly checkbox.","default":"Make my donation monthly"},"test":{"type":"string","description":"Different styles for the snippet. Options are bold and takeover."},"do_not_autoblock":{"type":"boolean","description":"Used to prevent blocking the snippet after the CTA (link or button) has been clicked"},"links":{"additionalProperties":{"url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"The url where the link points to."}]},"metric":{"type":"string","description":"Custom event name sent with telemetry event."},"args":{"type":"string","description":"Additional parameters for link action, example which specific menu the button should open"}}}},"additionalProperties":false,"required":["text","donation_form_url","donation_amount_first","donation_amount_second","donation_amount_third","donation_amount_fourth","button_label","currency_code"],"dependencies":{"button_color":["button_label"],"button_background_color":["button_label"]}};
-
- }),
-
  (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "convertLinks", function() { return convertLinks; });
- __webpack_require__.d(__webpack_exports__, "RichText", function() { return RichText; });
- var fluent_react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(53);
+ __webpack_require__.d(__webpack_exports__, "OnboardingCard", function() { return OnboardingCard; });
+ __webpack_require__.d(__webpack_exports__, "OnboardingMessage", function() { return OnboardingMessage; });
+ var _components_ModalOverlay_ModalOverlay__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(13);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
- var _rich_text_strings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(55);
- var _template_utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(15);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -2445,243 +2533,60 @@ function _extends() { _extends = Object.assign || function (target) { for (var i
 
 
 
-
- 
-
-const ALLOWED_TAGS = {
-  b: react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("b", null),
-  i: react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("i", null),
-  u: react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("u", null),
-  strong: react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("strong", null),
-  em: react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("em", null),
-  br: react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("br", null)
-};
-
-
-
-
-
-function convertLinks(links, sendClick, doNotAutoBlock, openNewWindow = false) {
-  if (links) {
-    return Object.keys(links).reduce((acc, linkTag) => {
-      const {
-        action
-      } = links[linkTag]; 
-
-      const url = action ? false : Object(_template_utils__WEBPACK_IMPORTED_MODULE_3__["safeURI"])(links[linkTag].url);
-      acc[linkTag] = 
-      
-      
-      react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("a", {
-        href: url,
-        target: openNewWindow ? "_blank" : "",
-        "data-metric": links[linkTag].metric,
-        "data-action": action,
-        "data-args": links[linkTag].args,
-        "data-do_not_autoblock": doNotAutoBlock,
-        onClick: sendClick
-      });
-      return acc;
-    }, {});
-  }
-
-  return null;
-}
-
-
-
-
-function RichText(props) {
-  if (!_rich_text_strings__WEBPACK_IMPORTED_MODULE_2__["RICH_TEXT_KEYS"].includes(props.localization_id)) {
-    throw new Error(`ASRouter: ${props.localization_id} is not a valid rich text property. If you want it to be processed, you need to add it to asrouter/rich-text-strings.js`);
-  }
-
-  return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(fluent_react__WEBPACK_IMPORTED_MODULE_0__["Localized"], _extends({
-    id: props.localization_id
-  }, ALLOWED_TAGS, props.customElements, convertLinks(props.links, props.sendClick, props.doNotAutoBlock, props.openNewWindow)), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("span", null, props.text));
-}
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "safeURI", function() { return safeURI; });
-
-
-
-function safeURI(url) {
-  if (!url) {
-    return "";
-  }
-
-  const {
-    protocol
-  } = new URL(url);
-  const isAllowed = ["http:", "https:", "data:", "resource:", "chrome:"].includes(protocol);
-
-  if (!isAllowed) {
-    console.warn(`The protocol ${protocol} is not allowed for template URLs.`); 
-  }
-
-  return isAllowed ? url : "";
-}
-
- }),
-
- (function(module) {
-
-module.exports = {"title":"SimpleSnippet","description":"A simple template with an icon, text, and optional button.","version":"1.1.1","type":"object","definitions":{"plainText":{"description":"Plain text (no HTML allowed)","type":"string"},"richText":{"description":"Text with HTML subset allowed: i, b, u, strong, em, br","type":"string"},"link_url":{"description":"Target for links or buttons","type":"string","format":"uri"}},"properties":{"title":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Snippet title displayed before snippet text"}]},"text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"icon":{"type":"string","description":"Snippet icon. 64x64px. SVG or PNG preferred."},"icon_dark_theme":{"type":"string","description":"Snippet icon, dark theme variant. 64x64px. SVG or PNG preferred."},"icon_alt_text":{"type":"string","description":"Alt text describing icon for screen readers","default":""},"title_icon":{"type":"string","description":"Small icon that shows up before the title / text. 16x16px. SVG or PNG preferred. Grayscale."},"title_icon_dark_theme":{"type":"string","description":"Small icon that shows up before the title / text. Dark theme variant. 16x16px. SVG or PNG preferred. Grayscale."},"title_icon_alt_text":{"type":"string","description":"Alt text describing title icon for screen readers","default":""},"button_action":{"type":"string","description":"The type of action the button should trigger."},"button_url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"A url, button_label links to this"}]},"button_action_args":{"type":"string","description":"Additional parameters for button action, example which specific menu the button should open"},"button_label":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Text for a button next to main snippet text that links to button_url. Requires button_url."}]},"button_color":{"type":"string","description":"The text color of the button. Valid CSS color."},"button_background_color":{"type":"string","description":"The background color of the button. Valid CSS color."},"block_button_text":{"type":"string","description":"Tooltip text used for dismiss button.","default":"Remove this"},"tall":{"type":"boolean","description":"To be used by fundraising only, increases height to roughly 120px. Defaults to false."},"do_not_autoblock":{"type":"boolean","description":"Used to prevent blocking the snippet after the CTA (link or button) has been clicked"},"links":{"additionalProperties":{"url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"The url where the link points to."}]},"metric":{"type":"string","description":"Custom event name sent with telemetry event."},"args":{"type":"string","description":"Additional parameters for link action, example which specific menu the button should open"}}},"section_title_icon":{"type":"string","description":"Section title icon. 16x16px. SVG or PNG preferred. section_title_text must also be specified to display."},"section_title_icon_dark_theme":{"type":"string","description":"Section title icon, dark theme variant. 16x16px. SVG or PNG preferred. section_title_text must also be specified to display."},"section_title_text":{"type":"string","description":"Section title text. section_title_icon must also be specified to display."},"section_title_url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"A url, section_title_text links to this"}]}},"additionalProperties":false,"required":["text"],"dependencies":{"button_action":["button_label"],"button_url":["button_label"],"button_color":["button_label"],"button_background_color":["button_label"],"section_title_url":["section_title_text"]}};
-
- }),
-
- (function(module) {
-
-module.exports = {"title":"FXASignupSnippet","description":"A snippet template for FxA sign up/sign in","version":"1.1.0","type":"object","definitions":{"plainText":{"description":"Plain text (no HTML allowed)","type":"string"},"richText":{"description":"Text with HTML subset allowed: i, b, u, strong, em, br","type":"string"},"link_url":{"description":"Target for links or buttons","type":"string","format":"uri"}},"properties":{"scene1_title":{"allof":[{"$ref":"#/definitions/plainText"},{"description":"snippet title displayed before snippet text"}]},"scene1_text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"scene2_title":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Title displayed before text in scene 2. Should be plain text."}]},"scene2_text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"scene1_icon":{"type":"string","description":"Snippet icon. 64x64px. SVG or PNG preferred."},"scene1_icon_dark_theme":{"type":"string","description":"Snippet icon. Dark theme variant. 64x64px. SVG or PNG preferred."},"scene1_title_icon":{"type":"string","description":"Small icon that shows up before the title / text. 16x16px. SVG or PNG preferred. Grayscale."},"scene1_title_icon_dark_theme":{"type":"string","description":"Small icon that shows up before the title / text. Dark theme variant. 16x16px. SVG or PNG preferred. Grayscale."},"scene2_email_placeholder_text":{"type":"string","description":"Value to show while input is empty.","default":"Your email here"},"scene2_button_label":{"type":"string","description":"Label for form submit button","default":"Sign me up"},"scene2_dismiss_button_text":{"type":"string","description":"Label for the dismiss button when the sign-up form is expanded.","default":"Dismiss"},"hidden_inputs":{"type":"object","description":"Each entry represents a hidden input, key is used as value for the name property.","properties":{"action":{"type":"string","enum":["email"]},"context":{"type":"string","enum":["fx_desktop_v3"]},"entrypoint":{"type":"string","enum":["snippets"]},"service":{"type":"string","enum":["sync"]},"utm_content":{"type":"number","description":"Firefox version number"},"utm_source":{"type":"string","enum":["snippet"]},"utm_campaign":{"type":"string","description":"(fxa) Value to pass through to GA as utm_campaign."},"utm_term":{"type":"string","description":"(fxa) Value to pass through to GA as utm_term."},"additionalProperties":false}},"scene1_button_label":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Text for a button next to main snippet text that links to button_url. Requires button_url."}],"default":"Learn more"},"scene1_button_color":{"type":"string","description":"The text color of the button. Valid CSS color."},"scene1_button_background_color":{"type":"string","description":"The background color of the button. Valid CSS color."},"do_not_autoblock":{"type":"boolean","description":"Used to prevent blocking the snippet after the CTA (link or button) has been clicked","default":false},"utm_campaign":{"type":"string","description":"(fxa) Value to pass through to GA as utm_campaign."},"utm_term":{"type":"string","description":"(fxa) Value to pass through to GA as utm_term."},"links":{"additionalProperties":{"url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"The url where the link points to."}]},"metric":{"type":"string","description":"Custom event name sent with telemetry event."}}}},"additionalProperties":false,"required":["scene1_text","scene2_text","scene1_button_label"],"dependencies":{"scene1_button_color":["scene1_button_label"],"scene1_button_background_color":["scene1_button_label"]}};
-
- }),
-
- (function(module) {
-
-module.exports = {"title":"NewsletterSnippet","description":"A snippet template for send to device mobile download","version":"1.1.0","type":"object","definitions":{"plainText":{"description":"Plain text (no HTML allowed)","type":"string"},"richText":{"description":"Text with HTML subset allowed: i, b, u, strong, em, br","type":"string"},"link_url":{"description":"Target for links or buttons","type":"string","format":"uri"}},"properties":{"locale":{"type":"string","description":"Two to five character string for the locale code","default":"en-US"},"scene1_title":{"allof":[{"$ref":"#/definitions/plainText"},{"description":"snippet title displayed before snippet text"}]},"scene1_text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"scene2_title":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Title displayed before text in scene 2. Should be plain text."}]},"scene2_text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"scene1_icon":{"type":"string","description":"Snippet icon. 64x64px. SVG or PNG preferred."},"scene1_icon_dark_theme":{"type":"string","description":"Snippet icon. Dark theme variant. 64x64px. SVG or PNG preferred."},"scene1_title_icon":{"type":"string","description":"Small icon that shows up before the title / text. 16x16px. SVG or PNG preferred. Grayscale."},"scene1_title_icon_dark_theme":{"type":"string","description":"Small icon that shows up before the title / text. Dark theme variant. 16x16px. SVG or PNG preferred. Grayscale."},"scene2_email_placeholder_text":{"type":"string","description":"Value to show while input is empty.","default":"Your email here"},"scene2_button_label":{"type":"string","description":"Label for form submit button","default":"Sign me up"},"scene2_privacy_html":{"type":"string","description":"(send to device) Html for disclaimer and link underneath input box."},"scene2_dismiss_button_text":{"type":"string","description":"Label for the dismiss button when the sign-up form is expanded.","default":"Dismiss"},"hidden_inputs":{"type":"object","description":"Each entry represents a hidden input, key is used as value for the name property.","properties":{"fmt":{"type":"string","description":"","default":"H"}}},"scene1_button_label":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Text for a button next to main snippet text that links to button_url. Requires button_url."}],"default":"Learn more"},"scene1_button_color":{"type":"string","description":"The text color of the button. Valid CSS color."},"scene1_button_background_color":{"type":"string","description":"The background color of the button. Valid CSS color."},"do_not_autoblock":{"type":"boolean","description":"Used to prevent blocking the snippet after the CTA (link or button) has been clicked","default":false},"success_text":{"type":"string","description":"Message shown on successful registration."},"error_text":{"type":"string","description":"Message shown if registration failed."},"scene2_newsletter":{"type":"string","description":"Newsletter/basket id user is subscribing to.","default":"mozilla-foundation"},"links":{"additionalProperties":{"url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"The url where the link points to."}]},"metric":{"type":"string","description":"Custom event name sent with telemetry event."}}}},"additionalProperties":false,"required":["scene1_text","scene2_text","scene1_button_label"],"dependencies":{"scene1_button_color":["scene1_button_label"],"scene1_button_background_color":["scene1_button_label"]}};
-
- }),
-
- (function(module) {
-
-module.exports = {"title":"SendToDeviceSnippet","description":"A snippet template for send to device mobile download","version":"1.1.0","type":"object","definitions":{"plainText":{"description":"Plain text (no HTML allowed)","type":"string"},"richText":{"description":"Text with HTML subset allowed: i, b, u, strong, em, br","type":"string"},"link_url":{"description":"Target for links or buttons","type":"string","format":"uri"}},"properties":{"locale":{"type":"string","description":"Two to five character string for the locale code","default":"en-US"},"country":{"type":"string","description":"Two character string for the country code (used for SMS)","default":"us"},"scene1_title":{"allof":[{"$ref":"#/definitions/plainText"},{"description":"snippet title displayed before snippet text"}]},"scene1_text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"scene2_title":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Title displayed before text in scene 2. Should be plain text."}]},"scene2_text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"scene1_icon":{"type":"string","description":"Snippet icon. 64x64px. SVG or PNG preferred."},"scene1_icon_dark_theme":{"type":"string","description":"Snippet icon. Dark theme variant. 64x64px. SVG or PNG preferred."},"scene2_icon":{"type":"string","description":"(send to device) Image to display above the form. Dark theme variant. 98x98px. SVG or PNG preferred."},"scene2_icon_dark_theme":{"type":"string","description":"(send to device) Image to display above the form. 98x98px. SVG or PNG preferred."},"scene1_title_icon":{"type":"string","description":"Small icon that shows up before the title / text. 16x16px. SVG or PNG preferred. Grayscale."},"scene1_title_icon_dark_theme":{"type":"string","description":"Small icon that shows up before the title / text. Dark theme variant. 16x16px. SVG or PNG preferred. Grayscale."},"scene2_button_label":{"type":"string","description":"Label for form submit button","default":"Send"},"scene2_input_placeholder":{"type":"string","description":"(send to device) Value to show while input is empty.","default":"Your email here"},"scene2_disclaimer_html":{"type":"string","description":"(send to device) Html for disclaimer and link underneath input box."},"scene2_dismiss_button_text":{"type":"string","description":"Label for the dismiss button when the sign-up form is expanded.","default":"Dismiss"},"hidden_inputs":{"type":"object","description":"Each entry represents a hidden input, key is used as value for the name property.","properties":{"action":{"type":"string","enum":["email"]},"context":{"type":"string","enum":["fx_desktop_v3"]},"entrypoint":{"type":"string","enum":["snippets"]},"service":{"type":"string","enum":["sync"]},"utm_content":{"type":"string","description":"Firefox version number"},"utm_source":{"type":"string","enum":["snippet"]},"utm_campaign":{"type":"string","description":"(fxa) Value to pass through to GA as utm_campaign."},"utm_term":{"type":"string","description":"(fxa) Value to pass through to GA as utm_term."},"additionalProperties":false}},"scene1_button_label":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Text for a button next to main snippet text that links to button_url. Requires button_url."}],"default":"Learn more"},"scene1_button_color":{"type":"string","description":"The text color of the button. Valid CSS color."},"scene1_button_background_color":{"type":"string","description":"The background color of the button. Valid CSS color."},"do_not_autoblock":{"type":"boolean","description":"Used to prevent blocking the snippet after the CTA (link or button) has been clicked","default":false},"success_title":{"type":"string","description":"(send to device) Title shown before text on successful registration."},"success_text":{"type":"string","description":"Message shown on successful registration."},"error_text":{"type":"string","description":"Message shown if registration failed."},"include_sms":{"type":"boolean","description":"(send to device) Allow users to send an SMS message with the form?","default":false},"message_id_sms":{"type":"string","description":"(send to device) Newsletter/basket id representing the SMS message to be sent."},"message_id_email":{"type":"string","description":"(send to device) Newsletter/basket id representing the email message to be sent. Must be a value from the 'Slug' column here: https://basket.mozilla.org/news/."},"utm_campaign":{"type":"string","description":"(fxa) Value to pass through to GA as utm_campaign."},"utm_term":{"type":"string","description":"(fxa) Value to pass through to GA as utm_term."},"links":{"additionalProperties":{"url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"The url where the link points to."}]},"metric":{"type":"string","description":"Custom event name sent with telemetry event."}}}},"additionalProperties":false,"required":["scene1_text","scene2_text","scene1_button_label"],"dependencies":{"scene1_button_color":["scene1_button_label"],"scene1_button_background_color":["scene1_button_label"]}};
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-(function(global) { __webpack_require__.d(__webpack_exports__, "Trailhead", function() { return Trailhead; });
- var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var _components_ModalOverlay_ModalOverlay__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(21);
- var _FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(22);
- var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
- var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
-
-
-
-
-
-
- 
-
-const FOCUSABLE_SELECTOR = ["a[href]:not([tabindex='-1'])", "button:not([disabled]):not([tabindex='-1'])", "iframe:not([tabindex='-1'])", "input:not([disabled]):not([tabindex='-1'])", "select:not([disabled]):not([tabindex='-1'])", "textarea:not([disabled]):not([tabindex='-1'])", "[tabindex]:not([tabindex='-1'])"].join(", ");
-class Trailhead extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponent {
+const FLUENT_FILES = ["branding/brand.ftl", "browser/branding/sync-brand.ftl", "browser/newtab/onboarding.ftl"];
+class OnboardingCard extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
   constructor(props) {
     super(props);
-    this.closeModal = this.closeModal.bind(this);
-    this.onInputChange = this.onInputChange.bind(this);
-    this.onStartBlur = this.onStartBlur.bind(this);
-    this.onSubmit = this.onSubmit.bind(this);
-    this.onInputInvalid = this.onInputInvalid.bind(this);
-    this.state = {
-      emailInput: ""
-    };
+    this.onClick = this.onClick.bind(this);
   }
 
-  get dialog() {
-    return this.props.document.getElementById("trailheadDialog");
-  }
-
-  componentDidMount() {
-    
-    this.props.document.body.classList.remove("hide-main"); 
-
-    this.props.document.getElementById("root").setAttribute("aria-hidden", "true"); 
-
-    const input = this.dialog.querySelector("input[name=email]");
-
-    if (input) {
-      input.focus();
-    }
-  }
-
-  onInputChange(e) {
-    let error = e.target.previousSibling;
-    this.setState({
-      emailInput: e.target.value
-    });
-    error.classList.remove("active");
-    e.target.classList.remove("invalid");
-  }
-
-  onStartBlur(event) {
-    
+  onClick() {
     const {
-      dialog
+      props
     } = this;
-
-    if (event.relatedTarget && !(dialog.compareDocumentPosition(event.relatedTarget) & dialog.DOCUMENT_POSITION_CONTAINED_BY)) {
-      dialog.querySelector(FOCUSABLE_SELECTOR).focus();
-    }
+    const ping = {
+      event: "CLICK_BUTTON",
+      message_id: props.id,
+      id: props.UISurface
+    };
+    props.sendUserActionTelemetry(ping);
+    props.onAction(props.content.primary_button.action);
   }
 
-  onSubmit(event) {
-    
-    
+  render() {
     const {
-      email
-    } = event.target.elements;
-
-    if (!email.value.length) {
-      email.required = true;
-      email.checkValidity();
-      event.preventDefault();
-      return;
-    }
-
-    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({
-      event: "SUBMIT_EMAIL",
-      ...this._getFormInfo()
-    }));
-    global.addEventListener("visibilitychange", this.closeModal);
+      content
+    } = this.props;
+    const className = this.props.className || "onboardingMessage";
+    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
+      className: className
+    }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
+      className: `onboardingMessageImage ${content.icon}`
+    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
+      className: "onboardingContent"
+    }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("span", null, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("h3", {
+      className: "onboardingTitle",
+      "data-l10n-id": content.title.string_id
+    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("p", {
+      className: "onboardingText",
+      "data-l10n-id": content.text.string_id
+    })), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("span", {
+      className: "onboardingButtonContainer"
+    }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("button", {
+      "data-l10n-id": content.primary_button.label.string_id,
+      className: "button onboardingButton",
+      onClick: this.onClick
+    }))));
   }
 
-  closeModal(ev) {
-    global.removeEventListener("visibilitychange", this.closeModal);
-    this.props.document.body.classList.remove("welcome");
-    this.props.document.getElementById("root").removeAttribute("aria-hidden");
-    this.props.onNextScene(); 
-    
-
-    if (!ev || ev.type !== "visibilitychange") {
-      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({
-        event: "SKIPPED_SIGNIN",
-        ...this._getFormInfo()
-      }));
-    } 
-
-
-    this.props.document.activeElement.blur();
-  }
-  
-
-
-
-
-  _getFormInfo() {
-    const value = {
-      has_flow_params: this.props.flowParams.flowId.length > 0
-    };
-    return {
-      value
-    };
-  }
-
-  onInputInvalid(e) {
-    let error = e.target.previousSibling;
-    error.classList.add("active");
-    e.target.classList.add("invalid");
-    e.preventDefault(); 
-
-    e.target.focus();
+}
+class OnboardingMessage extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
+  componentWillMount() {
+    FLUENT_FILES.forEach(file => {
+      const link = document.head.appendChild(document.createElement("link"));
+      link.href = file;
+      link.rel = "localization";
+    });
   }
 
   render() {
@@ -2689,144 +2594,23 @@ class Trailhead extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureCompone
       props
     } = this;
     const {
-      UTMTerm
-    } = props;
-    const {
-      content
-    } = props.message;
-    const innerClassName = ["trailhead", content && content.className].filter(v => v).join(" ");
-    return react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_components_ModalOverlay_ModalOverlay__WEBPACK_IMPORTED_MODULE_1__["ModalOverlayWrapper"], {
-      innerClassName: innerClassName,
-      onClose: this.closeModal,
-      id: "trailheadDialog",
-      headerId: "trailheadHeader"
-    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
-      className: "trailheadInner"
-    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
-      className: "trailheadContent"
-    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("h1", {
-      "data-l10n-id": content.title.string_id,
-      id: "trailheadHeader"
-    }), content.subtitle && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("p", {
-      "data-l10n-id": content.subtitle.string_id
-    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("ul", {
-      className: "trailheadBenefits"
-    }, content.benefits.map(item => react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("li", {
-      key: item.id,
-      className: item.id
-    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("h3", {
-      "data-l10n-id": item.title.string_id
-    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("p", {
-      "data-l10n-id": item.text.string_id
-    })))), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("a", {
-      className: "trailheadLearn",
-      "data-l10n-id": content.learn.text.string_id,
-      href: Object(_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_2__["addUtmParams"])(content.learn.url, UTMTerm),
-      target: "_blank",
-      rel: "noopener noreferrer"
-    })), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
-      role: "group",
-      "aria-labelledby": "joinFormHeader",
-      "aria-describedby": "joinFormBody",
-      className: "trailheadForm"
-    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("h3", {
-      id: "joinFormHeader",
-      "data-l10n-id": content.form.title.string_id
-    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("p", {
-      id: "joinFormBody",
-      "data-l10n-id": content.form.text.string_id
-    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("form", {
-      method: "get",
-      action: this.props.fxaEndpoint,
-      target: "_blank",
-      rel: "noopener noreferrer",
-      onSubmit: this.onSubmit
-    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
-      name: "service",
-      type: "hidden",
-      value: "sync"
-    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
-      name: "action",
-      type: "hidden",
-      value: "email"
-    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
-      name: "context",
-      type: "hidden",
-      value: "fx_desktop_v3"
-    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
-      name: "entrypoint",
-      type: "hidden",
-      value: "activity-stream-firstrun"
-    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
-      name: "utm_source",
-      type: "hidden",
-      value: "activity-stream"
-    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
-      name: "utm_campaign",
-      type: "hidden",
-      value: "firstrun"
-    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
-      name: "utm_term",
-      type: "hidden",
-      value: UTMTerm
-    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
-      name: "device_id",
-      type: "hidden",
-      value: this.props.flowParams.deviceId
-    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
-      name: "flow_id",
-      type: "hidden",
-      value: this.props.flowParams.flowId
-    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
-      name: "flow_begin_time",
-      type: "hidden",
-      value: this.props.flowParams.flowBeginTime
-    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
-      name: "style",
-      type: "hidden",
-      value: "trailhead"
-    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("p", {
-      "data-l10n-id": "onboarding-join-form-email-error",
-      className: "error"
-    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
-      "data-l10n-id": content.form.email.string_id,
-      name: "email",
-      type: "email",
-      onInvalid: this.onInputInvalid,
-      onChange: this.onInputChange
-    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("p", {
-      className: "trailheadTerms",
-      "data-l10n-id": "onboarding-join-form-legal"
-    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("a", {
-      "data-l10n-name": "terms",
-      target: "_blank",
-      rel: "noopener noreferrer",
-      href: Object(_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_2__["addUtmParams"])("https://accounts.firefox.com/legal/terms", UTMTerm)
-    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("a", {
-      "data-l10n-name": "privacy",
-      target: "_blank",
-      rel: "noopener noreferrer",
-      href: Object(_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_2__["addUtmParams"])("https://accounts.firefox.com/legal/privacy", UTMTerm)
-    })), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("button", {
-      "data-l10n-id": content.form.button.string_id,
-      type: "submit"
-    })))), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("button", {
-      className: "trailheadStart",
-      "data-l10n-id": content.skipButton.string_id,
-      onBlur: this.onStartBlur,
-      onClick: this.closeModal
-    }));
+      button_label,
+      header
+    } = props.extraTemplateStrings;
+    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(_components_ModalOverlay_ModalOverlay__WEBPACK_IMPORTED_MODULE_0__["ModalOverlay"], _extends({}, props, {
+      button_label: button_label,
+      title: header
+    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
+      className: "onboardingMessageContainer"
+    }, props.bundle.map(message => react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(OnboardingCard, _extends({
+      key: message.id,
+      sendUserActionTelemetry: props.sendUserActionTelemetry,
+      onAction: props.onAction,
+      UISurface: props.UISurface
+    }, message)))));
   }
 
 }
-Trailhead.defaultProps = {
-  flowParams: {
-    deviceId: "",
-    flowId: "",
-    flowBeginTime: ""
-  }
-};
-}.call(this, __webpack_require__(1)))
 
  }),
 
@@ -2923,39 +2707,9 @@ class ModalOverlay extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComp
 
  }),
 
- (function(module, __webpack_exports__, __webpack_require__) {
+ (function(module, exports) {
 
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "addUtmParams", function() { return addUtmParams; });
-
-
-
-const BASE_PARAMS = {
-  utm_source: "activity-stream",
-  utm_campaign: "firstrun",
-  utm_medium: "referral"
-};
-
-
-
-
-
-
-
-function addUtmParams(url, utmTerm) {
-  let returnUrl = url;
-
-  if (typeof returnUrl === "string") {
-    returnUrl = new URL(url);
-  }
-
-  Object.keys(BASE_PARAMS).forEach(key => {
-    returnUrl.searchParams.append(key, BASE_PARAMS[key]);
-  });
-  returnUrl.searchParams.append("utm_term", utmTerm);
-  return returnUrl;
-}
+module.exports = ReactDOM;
 
  }),
 
@@ -2963,10 +2717,10 @@ function addUtmParams(url, utmTerm) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-(function(global) { __webpack_require__.d(__webpack_exports__, "ReturnToAMO", function() { return ReturnToAMO; });
+ __webpack_require__.d(__webpack_exports__, "ReturnToAMO", function() { return ReturnToAMO; });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
- var _components_RichText_RichText__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(14);
+ var _components_RichText_RichText__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(16);
 
 
 
@@ -2981,11 +2735,8 @@ class ReturnToAMO extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCompo
     this.onBlockButton = this.onBlockButton.bind(this);
   }
 
-  componentWillMount() {
-    global.document.body.classList.add("amo");
-  }
-
   componentDidMount() {
+    this.props.onReady();
     this.props.sendUserActionTelemetry({
       event: "IMPRESSION",
       id: this.props.UISurface
@@ -3051,7 +2802,6 @@ class ReturnToAMO extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCompo
   }
 
 }
-}.call(this, __webpack_require__(1)))
 
  }),
 
@@ -3059,41 +2809,234 @@ class ReturnToAMO extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCompo
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-(function(global) { __webpack_require__.d(__webpack_exports__, "StartupOverlay", function() { return StartupOverlay; });
- var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ __webpack_require__.d(__webpack_exports__, "convertLinks", function() { return convertLinks; });
+ __webpack_require__.d(__webpack_exports__, "RichText", function() { return RichText; });
+ var fluent_react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(51);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
+ var _rich_text_strings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(53);
+ var _template_utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(17);
+function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
 
 
 
-class StartupOverlay extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
+
+
+ 
+
+const ALLOWED_TAGS = {
+  b: react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("b", null),
+  i: react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("i", null),
+  u: react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("u", null),
+  strong: react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("strong", null),
+  em: react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("em", null),
+  br: react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("br", null)
+};
+
+
+
+
+
+function convertLinks(links, sendClick, doNotAutoBlock, openNewWindow = false) {
+  if (links) {
+    return Object.keys(links).reduce((acc, linkTag) => {
+      const {
+        action
+      } = links[linkTag]; 
+
+      const url = action ? false : Object(_template_utils__WEBPACK_IMPORTED_MODULE_3__["safeURI"])(links[linkTag].url);
+      acc[linkTag] = 
+      
+      
+      react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("a", {
+        href: url,
+        target: openNewWindow ? "_blank" : "",
+        "data-metric": links[linkTag].metric,
+        "data-action": action,
+        "data-args": links[linkTag].args,
+        "data-do_not_autoblock": doNotAutoBlock,
+        onClick: sendClick
+      });
+      return acc;
+    }, {});
+  }
+
+  return null;
+}
+
+
+
+
+function RichText(props) {
+  if (!_rich_text_strings__WEBPACK_IMPORTED_MODULE_2__["RICH_TEXT_KEYS"].includes(props.localization_id)) {
+    throw new Error(`ASRouter: ${props.localization_id} is not a valid rich text property. If you want it to be processed, you need to add it to asrouter/rich-text-strings.js`);
+  }
+
+  return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(fluent_react__WEBPACK_IMPORTED_MODULE_0__["Localized"], _extends({
+    id: props.localization_id
+  }, ALLOWED_TAGS, props.customElements, convertLinks(props.links, props.sendClick, props.doNotAutoBlock, props.openNewWindow)), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("span", null, props.text));
+}
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "safeURI", function() { return safeURI; });
+
+
+
+function safeURI(url) {
+  if (!url) {
+    return "";
+  }
+
+  const {
+    protocol
+  } = new URL(url);
+  const isAllowed = ["http:", "https:", "data:", "resource:", "chrome:"].includes(protocol);
+
+  if (!isAllowed) {
+    console.warn(`The protocol ${protocol} is not allowed for template URLs.`); 
+  }
+
+  return isAllowed ? url : "";
+}
+
+ }),
+
+ (function(module) {
+
+module.exports = {"title":"EOYSnippet","description":"Fundraising Snippet","version":"1.1.0","type":"object","definitions":{"plainText":{"description":"Plain text (no HTML allowed)","type":"string"},"richText":{"description":"Text with HTML subset allowed: i, b, u, strong, em, br","type":"string"},"link_url":{"description":"Target for links or buttons","type":"string","format":"uri"}},"properties":{"donation_form_url":{"type":"string","description":"Url to the donation form."},"currency_code":{"type":"string","description":"The code for the currency. Examle gbp, cad, usd.","default":"usd"},"locale":{"type":"string","description":"String for the locale code.","default":"en-US"},"text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"text_color":{"type":"string","description":"Modify the text message color"},"background_color":{"type":"string","description":"Snippet background color."},"highlight_color":{"type":"string","description":"Paragraph em highlight color."},"donation_amount_first":{"type":"number","description":"First button amount."},"donation_amount_second":{"type":"number","description":"Second button amount."},"donation_amount_third":{"type":"number","description":"Third button amount."},"donation_amount_fourth":{"type":"number","description":"Fourth button amount."},"selected_button":{"type":"string","description":"Default donation_amount_second. Donation amount button that's selected by default.","default":"donation_amount_second"},"icon":{"type":"string","description":"Snippet icon. 64x64px. SVG or PNG preferred."},"icon_dark_theme":{"type":"string","description":"Snippet icon. Dark theme variant. 64x64px. SVG or PNG preferred."},"icon_alt_text":{"type":"string","description":"Alt text for accessibility","default":""},"title":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Snippet title displayed before snippet text"}]},"title_icon":{"type":"string","description":"Small icon that shows up before the title / text. 16x16px. SVG or PNG preferred. Grayscale."},"title_icon_dark_theme":{"type":"string","description":"Small icon that shows up before the title / text. Dark theme variant. 16x16px. SVG or PNG preferred. Grayscale."},"button_label":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Text for a button next to main snippet text that links to button_url. Requires button_url."}]},"button_color":{"type":"string","description":"The text color of the button. Valid CSS color."},"button_background_color":{"type":"string","description":"The background color of the button. Valid CSS color."},"block_button_text":{"type":"string","description":"Tooltip text used for dismiss button."},"monthly_checkbox_label_text":{"type":"string","description":"Label text for monthly checkbox.","default":"Make my donation monthly"},"test":{"type":"string","description":"Different styles for the snippet. Options are bold and takeover."},"do_not_autoblock":{"type":"boolean","description":"Used to prevent blocking the snippet after the CTA (link or button) has been clicked"},"links":{"additionalProperties":{"url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"The url where the link points to."}]},"metric":{"type":"string","description":"Custom event name sent with telemetry event."},"args":{"type":"string","description":"Additional parameters for link action, example which specific menu the button should open"}}}},"additionalProperties":false,"required":["text","donation_form_url","donation_amount_first","donation_amount_second","donation_amount_third","donation_amount_fourth","button_label","currency_code"],"dependencies":{"button_color":["button_label"],"button_background_color":["button_label"]}};
+
+ }),
+
+ (function(module) {
+
+module.exports = {"title":"SimpleSnippet","description":"A simple template with an icon, text, and optional button.","version":"1.1.1","type":"object","definitions":{"plainText":{"description":"Plain text (no HTML allowed)","type":"string"},"richText":{"description":"Text with HTML subset allowed: i, b, u, strong, em, br","type":"string"},"link_url":{"description":"Target for links or buttons","type":"string","format":"uri"}},"properties":{"title":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Snippet title displayed before snippet text"}]},"text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"icon":{"type":"string","description":"Snippet icon. 64x64px. SVG or PNG preferred."},"icon_dark_theme":{"type":"string","description":"Snippet icon, dark theme variant. 64x64px. SVG or PNG preferred."},"icon_alt_text":{"type":"string","description":"Alt text describing icon for screen readers","default":""},"title_icon":{"type":"string","description":"Small icon that shows up before the title / text. 16x16px. SVG or PNG preferred. Grayscale."},"title_icon_dark_theme":{"type":"string","description":"Small icon that shows up before the title / text. Dark theme variant. 16x16px. SVG or PNG preferred. Grayscale."},"title_icon_alt_text":{"type":"string","description":"Alt text describing title icon for screen readers","default":""},"button_action":{"type":"string","description":"The type of action the button should trigger."},"button_url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"A url, button_label links to this"}]},"button_action_args":{"type":"string","description":"Additional parameters for button action, example which specific menu the button should open"},"button_label":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Text for a button next to main snippet text that links to button_url. Requires button_url."}]},"button_color":{"type":"string","description":"The text color of the button. Valid CSS color."},"button_background_color":{"type":"string","description":"The background color of the button. Valid CSS color."},"block_button_text":{"type":"string","description":"Tooltip text used for dismiss button.","default":"Remove this"},"tall":{"type":"boolean","description":"To be used by fundraising only, increases height to roughly 120px. Defaults to false."},"do_not_autoblock":{"type":"boolean","description":"Used to prevent blocking the snippet after the CTA (link or button) has been clicked"},"links":{"additionalProperties":{"url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"The url where the link points to."}]},"metric":{"type":"string","description":"Custom event name sent with telemetry event."},"args":{"type":"string","description":"Additional parameters for link action, example which specific menu the button should open"}}},"section_title_icon":{"type":"string","description":"Section title icon. 16x16px. SVG or PNG preferred. section_title_text must also be specified to display."},"section_title_icon_dark_theme":{"type":"string","description":"Section title icon, dark theme variant. 16x16px. SVG or PNG preferred. section_title_text must also be specified to display."},"section_title_text":{"type":"string","description":"Section title text. section_title_icon must also be specified to display."},"section_title_url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"A url, section_title_text links to this"}]}},"additionalProperties":false,"required":["text"],"dependencies":{"button_action":["button_label"],"button_url":["button_label"],"button_color":["button_label"],"button_background_color":["button_label"],"section_title_url":["section_title_text"]}};
+
+ }),
+
+ (function(module) {
+
+module.exports = {"title":"FXASignupSnippet","description":"A snippet template for FxA sign up/sign in","version":"1.1.0","type":"object","definitions":{"plainText":{"description":"Plain text (no HTML allowed)","type":"string"},"richText":{"description":"Text with HTML subset allowed: i, b, u, strong, em, br","type":"string"},"link_url":{"description":"Target for links or buttons","type":"string","format":"uri"}},"properties":{"scene1_title":{"allof":[{"$ref":"#/definitions/plainText"},{"description":"snippet title displayed before snippet text"}]},"scene1_text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"scene2_title":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Title displayed before text in scene 2. Should be plain text."}]},"scene2_text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"scene1_icon":{"type":"string","description":"Snippet icon. 64x64px. SVG or PNG preferred."},"scene1_icon_dark_theme":{"type":"string","description":"Snippet icon. Dark theme variant. 64x64px. SVG or PNG preferred."},"scene1_title_icon":{"type":"string","description":"Small icon that shows up before the title / text. 16x16px. SVG or PNG preferred. Grayscale."},"scene1_title_icon_dark_theme":{"type":"string","description":"Small icon that shows up before the title / text. Dark theme variant. 16x16px. SVG or PNG preferred. Grayscale."},"scene2_email_placeholder_text":{"type":"string","description":"Value to show while input is empty.","default":"Your email here"},"scene2_button_label":{"type":"string","description":"Label for form submit button","default":"Sign me up"},"scene2_dismiss_button_text":{"type":"string","description":"Label for the dismiss button when the sign-up form is expanded.","default":"Dismiss"},"hidden_inputs":{"type":"object","description":"Each entry represents a hidden input, key is used as value for the name property.","properties":{"action":{"type":"string","enum":["email"]},"context":{"type":"string","enum":["fx_desktop_v3"]},"entrypoint":{"type":"string","enum":["snippets"]},"service":{"type":"string","enum":["sync"]},"utm_content":{"type":"number","description":"Firefox version number"},"utm_source":{"type":"string","enum":["snippet"]},"utm_campaign":{"type":"string","description":"(fxa) Value to pass through to GA as utm_campaign."},"utm_term":{"type":"string","description":"(fxa) Value to pass through to GA as utm_term."},"additionalProperties":false}},"scene1_button_label":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Text for a button next to main snippet text that links to button_url. Requires button_url."}],"default":"Learn more"},"scene1_button_color":{"type":"string","description":"The text color of the button. Valid CSS color."},"scene1_button_background_color":{"type":"string","description":"The background color of the button. Valid CSS color."},"do_not_autoblock":{"type":"boolean","description":"Used to prevent blocking the snippet after the CTA (link or button) has been clicked","default":false},"utm_campaign":{"type":"string","description":"(fxa) Value to pass through to GA as utm_campaign."},"utm_term":{"type":"string","description":"(fxa) Value to pass through to GA as utm_term."},"links":{"additionalProperties":{"url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"The url where the link points to."}]},"metric":{"type":"string","description":"Custom event name sent with telemetry event."}}}},"additionalProperties":false,"required":["scene1_text","scene2_text","scene1_button_label"],"dependencies":{"scene1_button_color":["scene1_button_label"],"scene1_button_background_color":["scene1_button_label"]}};
+
+ }),
+
+ (function(module) {
+
+module.exports = {"title":"NewsletterSnippet","description":"A snippet template for send to device mobile download","version":"1.1.0","type":"object","definitions":{"plainText":{"description":"Plain text (no HTML allowed)","type":"string"},"richText":{"description":"Text with HTML subset allowed: i, b, u, strong, em, br","type":"string"},"link_url":{"description":"Target for links or buttons","type":"string","format":"uri"}},"properties":{"locale":{"type":"string","description":"Two to five character string for the locale code","default":"en-US"},"scene1_title":{"allof":[{"$ref":"#/definitions/plainText"},{"description":"snippet title displayed before snippet text"}]},"scene1_text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"scene2_title":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Title displayed before text in scene 2. Should be plain text."}]},"scene2_text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"scene1_icon":{"type":"string","description":"Snippet icon. 64x64px. SVG or PNG preferred."},"scene1_icon_dark_theme":{"type":"string","description":"Snippet icon. Dark theme variant. 64x64px. SVG or PNG preferred."},"scene1_title_icon":{"type":"string","description":"Small icon that shows up before the title / text. 16x16px. SVG or PNG preferred. Grayscale."},"scene1_title_icon_dark_theme":{"type":"string","description":"Small icon that shows up before the title / text. Dark theme variant. 16x16px. SVG or PNG preferred. Grayscale."},"scene2_email_placeholder_text":{"type":"string","description":"Value to show while input is empty.","default":"Your email here"},"scene2_button_label":{"type":"string","description":"Label for form submit button","default":"Sign me up"},"scene2_privacy_html":{"type":"string","description":"(send to device) Html for disclaimer and link underneath input box."},"scene2_dismiss_button_text":{"type":"string","description":"Label for the dismiss button when the sign-up form is expanded.","default":"Dismiss"},"hidden_inputs":{"type":"object","description":"Each entry represents a hidden input, key is used as value for the name property.","properties":{"fmt":{"type":"string","description":"","default":"H"}}},"scene1_button_label":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Text for a button next to main snippet text that links to button_url. Requires button_url."}],"default":"Learn more"},"scene1_button_color":{"type":"string","description":"The text color of the button. Valid CSS color."},"scene1_button_background_color":{"type":"string","description":"The background color of the button. Valid CSS color."},"do_not_autoblock":{"type":"boolean","description":"Used to prevent blocking the snippet after the CTA (link or button) has been clicked","default":false},"success_text":{"type":"string","description":"Message shown on successful registration."},"error_text":{"type":"string","description":"Message shown if registration failed."},"scene2_newsletter":{"type":"string","description":"Newsletter/basket id user is subscribing to.","default":"mozilla-foundation"},"links":{"additionalProperties":{"url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"The url where the link points to."}]},"metric":{"type":"string","description":"Custom event name sent with telemetry event."}}}},"additionalProperties":false,"required":["scene1_text","scene2_text","scene1_button_label"],"dependencies":{"scene1_button_color":["scene1_button_label"],"scene1_button_background_color":["scene1_button_label"]}};
+
+ }),
+
+ (function(module) {
+
+module.exports = {"title":"SendToDeviceSnippet","description":"A snippet template for send to device mobile download","version":"1.1.0","type":"object","definitions":{"plainText":{"description":"Plain text (no HTML allowed)","type":"string"},"richText":{"description":"Text with HTML subset allowed: i, b, u, strong, em, br","type":"string"},"link_url":{"description":"Target for links or buttons","type":"string","format":"uri"}},"properties":{"locale":{"type":"string","description":"Two to five character string for the locale code","default":"en-US"},"country":{"type":"string","description":"Two character string for the country code (used for SMS)","default":"us"},"scene1_title":{"allof":[{"$ref":"#/definitions/plainText"},{"description":"snippet title displayed before snippet text"}]},"scene1_text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"scene2_title":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Title displayed before text in scene 2. Should be plain text."}]},"scene2_text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"scene1_icon":{"type":"string","description":"Snippet icon. 64x64px. SVG or PNG preferred."},"scene1_icon_dark_theme":{"type":"string","description":"Snippet icon. Dark theme variant. 64x64px. SVG or PNG preferred."},"scene2_icon":{"type":"string","description":"(send to device) Image to display above the form. Dark theme variant. 98x98px. SVG or PNG preferred."},"scene2_icon_dark_theme":{"type":"string","description":"(send to device) Image to display above the form. 98x98px. SVG or PNG preferred."},"scene1_title_icon":{"type":"string","description":"Small icon that shows up before the title / text. 16x16px. SVG or PNG preferred. Grayscale."},"scene1_title_icon_dark_theme":{"type":"string","description":"Small icon that shows up before the title / text. Dark theme variant. 16x16px. SVG or PNG preferred. Grayscale."},"scene2_button_label":{"type":"string","description":"Label for form submit button","default":"Send"},"scene2_input_placeholder":{"type":"string","description":"(send to device) Value to show while input is empty.","default":"Your email here"},"scene2_disclaimer_html":{"type":"string","description":"(send to device) Html for disclaimer and link underneath input box."},"scene2_dismiss_button_text":{"type":"string","description":"Label for the dismiss button when the sign-up form is expanded.","default":"Dismiss"},"hidden_inputs":{"type":"object","description":"Each entry represents a hidden input, key is used as value for the name property.","properties":{"action":{"type":"string","enum":["email"]},"context":{"type":"string","enum":["fx_desktop_v3"]},"entrypoint":{"type":"string","enum":["snippets"]},"service":{"type":"string","enum":["sync"]},"utm_content":{"type":"string","description":"Firefox version number"},"utm_source":{"type":"string","enum":["snippet"]},"utm_campaign":{"type":"string","description":"(fxa) Value to pass through to GA as utm_campaign."},"utm_term":{"type":"string","description":"(fxa) Value to pass through to GA as utm_term."},"additionalProperties":false}},"scene1_button_label":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Text for a button next to main snippet text that links to button_url. Requires button_url."}],"default":"Learn more"},"scene1_button_color":{"type":"string","description":"The text color of the button. Valid CSS color."},"scene1_button_background_color":{"type":"string","description":"The background color of the button. Valid CSS color."},"do_not_autoblock":{"type":"boolean","description":"Used to prevent blocking the snippet after the CTA (link or button) has been clicked","default":false},"success_title":{"type":"string","description":"(send to device) Title shown before text on successful registration."},"success_text":{"type":"string","description":"Message shown on successful registration."},"error_text":{"type":"string","description":"Message shown if registration failed."},"include_sms":{"type":"boolean","description":"(send to device) Allow users to send an SMS message with the form?","default":false},"message_id_sms":{"type":"string","description":"(send to device) Newsletter/basket id representing the SMS message to be sent."},"message_id_email":{"type":"string","description":"(send to device) Newsletter/basket id representing the email message to be sent. Must be a value from the 'Slug' column here: https://basket.mozilla.org/news/."},"utm_campaign":{"type":"string","description":"(fxa) Value to pass through to GA as utm_campaign."},"utm_term":{"type":"string","description":"(fxa) Value to pass through to GA as utm_term."},"links":{"additionalProperties":{"url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"The url where the link points to."}]},"metric":{"type":"string","description":"Custom event name sent with telemetry event."}}}},"additionalProperties":false,"required":["scene1_text","scene2_text","scene1_button_label"],"dependencies":{"scene1_button_color":["scene1_button_label"],"scene1_button_background_color":["scene1_button_label"]}};
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "_StartupOverlay", function() { return _StartupOverlay; });
+ __webpack_require__.d(__webpack_exports__, "StartupOverlay", function() { return StartupOverlay; });
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(24);
+ var react_redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_1__);
+ var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
+
+
+
+
+
+
+const FLUENT_FILES = ["branding/brand.ftl", "browser/branding/sync-brand.ftl", "browser/newtab/onboarding.ftl"];
+class _StartupOverlay extends react__WEBPACK_IMPORTED_MODULE_2___default.a.PureComponent {
   constructor(props) {
     super(props);
     this.onInputChange = this.onInputChange.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
     this.clickSkip = this.clickSkip.bind(this);
+    this.initScene = this.initScene.bind(this);
     this.removeOverlay = this.removeOverlay.bind(this);
     this.onInputInvalid = this.onInputInvalid.bind(this);
     this.utmParams = "utm_source=activity-stream&utm_campaign=firstrun&utm_medium=referral&utm_term=trailhead-control";
     this.state = {
-      show: false,
-      emailInput: ""
+      emailInput: "",
+      overlayRemoved: false,
+      deviceId: "",
+      flowId: "",
+      flowBeginTime: 0
     };
+    this.didFetch = false;
   }
 
-  componentWillMount() {
-    global.document.body.classList.add("fxa");
+  async componentWillUpdate() {
+    if (this.props.fxa_endpoint && !this.didFetch) {
+      try {
+        this.didFetch = true;
+        const fxaParams = "entrypoint=activity-stream-firstrun&form_type=email";
+        const response = await fetch(`${this.props.fxa_endpoint}/metrics-flow?${fxaParams}&${this.utmParams}`, {
+          credentials: "omit"
+        });
+
+        if (response.status === 200) {
+          const {
+            deviceId,
+            flowId,
+            flowBeginTime
+          } = await response.json();
+          this.setState({
+            deviceId,
+            flowId,
+            flowBeginTime
+          });
+        } else {
+          this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+            type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TELEMETRY_UNDESIRED_EVENT,
+            data: {
+              event: "FXA_METRICS_FETCH_ERROR",
+              value: response.status
+            }
+          }));
+        }
+      } catch (error) {
+        this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+          type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TELEMETRY_UNDESIRED_EVENT,
+          data: {
+            event: "FXA_METRICS_ERROR"
+          }
+        }));
+      }
+    }
+  }
+
+  async componentWillMount() {
+    FLUENT_FILES.forEach(file => {
+      const link = document.head.appendChild(document.createElement("link"));
+      link.href = file;
+      link.rel = "localization";
+    });
+    await this.componentWillUpdate(this.props);
   }
 
   componentDidMount() {
+    this.initScene();
+  }
+
+  initScene() {
     
     
     setTimeout(() => {
       this.setState({
         show: true
       });
+      this.props.onReady();
     }, 10);
   }
 
@@ -3103,10 +3046,13 @@ class StartupOverlay extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureCo
     this.setState({
       show: false
     });
+    this.props.onBlock();
     setTimeout(() => {
       
-      this.props.onBlock();
       document.body.classList.remove("welcome");
+      this.setState({
+        overlayRemoved: true
+      });
     }, 400);
   }
 
@@ -3141,7 +3087,7 @@ class StartupOverlay extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureCo
 
   _getFormInfo() {
     const value = {
-      has_flow_params: this.props.flowParams.flowId.length > 0
+      has_flow_params: this.state.flowId.length > 0
     };
     return {
       value
@@ -3158,117 +3104,123 @@ class StartupOverlay extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureCo
   }
 
   render() {
-    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
+    
+    
+    if (this.state.overlayRemoved) {
+      return null;
+    }
+
+    return react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
       className: `overlay-wrapper ${this.state.show ? "show" : ""}`
-    }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
+    }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
       className: "background"
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
+    }), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
       className: "firstrun-scene"
-    }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
+    }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
       className: "fxaccounts-container"
-    }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
+    }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
       className: "firstrun-left-divider"
-    }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("h1", {
+    }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("h1", {
       className: "firstrun-title",
       "data-l10n-id": "onboarding-sync-welcome-header"
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("p", {
+    }), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("p", {
       className: "firstrun-content",
       "data-l10n-id": "onboarding-sync-welcome-content"
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("a", {
+    }), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("a", {
       className: "firstrun-link",
       href: `https://www.mozilla.org/firefox/features/sync/?${this.utmParams}`,
       target: "_blank",
       rel: "noopener noreferrer",
       "data-l10n-id": "onboarding-sync-welcome-learn-more-link"
-    })), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
+    })), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
       className: "firstrun-sign-in"
-    }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("p", {
+    }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("p", {
       className: "form-header"
-    }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("span", {
+    }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("span", {
       "data-l10n-id": "onboarding-sync-form-header"
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("span", {
+    }), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("span", {
       className: "sub-header",
       "data-l10n-id": "onboarding-sync-form-sub-header"
-    })), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("form", {
+    })), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("form", {
       method: "get",
       action: this.props.fxa_endpoint,
       target: "_blank",
       rel: "noopener noreferrer",
       onSubmit: this.onSubmit
-    }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("input", {
+    }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("input", {
       name: "service",
       type: "hidden",
       value: "sync"
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("input", {
+    }), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("input", {
       name: "action",
       type: "hidden",
       value: "email"
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("input", {
+    }), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("input", {
       name: "context",
       type: "hidden",
       value: "fx_desktop_v3"
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("input", {
+    }), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("input", {
       name: "entrypoint",
       type: "hidden",
       value: "activity-stream-firstrun"
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("input", {
+    }), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("input", {
       name: "utm_source",
       type: "hidden",
       value: "activity-stream"
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("input", {
+    }), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("input", {
       name: "utm_campaign",
       type: "hidden",
       value: "firstrun"
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("input", {
+    }), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("input", {
       name: "utm_medium",
       type: "hidden",
       value: "referral"
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("input", {
+    }), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("input", {
       name: "utm_term",
       type: "hidden",
       value: "trailhead-control"
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("input", {
+    }), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("input", {
       name: "device_id",
       type: "hidden",
-      value: this.props.flowParams.deviceId
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("input", {
+      value: this.state.deviceId
+    }), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("input", {
       name: "flow_id",
       type: "hidden",
-      value: this.props.flowParams.flowId
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("input", {
+      value: this.state.flowId
+    }), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("input", {
       name: "flow_begin_time",
       type: "hidden",
-      value: this.props.flowParams.flowBeginTime
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("span", {
+      value: this.state.flowBeginTime
+    }), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("span", {
       className: "error",
       "data-l10n-id": "onboarding-sync-form-invalid-input"
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("input", {
+    }), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("input", {
       className: "email-input",
       name: "email",
       type: "email",
-      required: true,
+      required: "true",
       onInvalid: this.onInputInvalid,
       onChange: this.onInputChange,
       "data-l10n-id": "onboarding-sync-form-input"
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
+    }), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
       className: "extra-links"
-    }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("p", {
+    }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("p", {
       "data-l10n-id": "onboarding-sync-legal-notice"
-    }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("a", {
+    }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("a", {
       "data-l10n-name": "terms",
       target: "_blank",
       rel: "noopener noreferrer",
       href: `${this.props.fxa_endpoint}/legal/terms?${this.utmParams}`
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("a", {
+    }), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("a", {
       "data-l10n-name": "privacy",
       target: "_blank",
       rel: "noopener noreferrer",
       href: `${this.props.fxa_endpoint}/legal/privacy?${this.utmParams}`
-    }))), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("button", {
+    }))), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("button", {
       className: "continue-button",
       type: "submit",
       "data-l10n-id": "onboarding-sync-form-continue-button"
-    })), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("button", {
+    })), react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("button", {
       className: "skip-button",
       disabled: !!this.state.emailInput,
       onClick: this.clickSkip,
@@ -3277,14 +3229,18 @@ class StartupOverlay extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureCo
   }
 
 }
-StartupOverlay.defaultProps = {
-  flowParams: {
-    deviceId: "",
-    flowId: "",
-    flowBeginTime: ""
-  }
-};
-}.call(this, __webpack_require__(1)))
+
+const getState = state => ({
+  fxa_endpoint: state.Prefs.values.fxa_endpoint
+});
+
+const StartupOverlay = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect"])(getState)(_StartupOverlay);
+
+ }),
+
+ (function(module, exports) {
+
+module.exports = ReactRedux;
 
  }),
 
@@ -3292,11 +3248,12 @@ StartupOverlay.defaultProps = {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-(function(global) { __webpack_require__.d(__webpack_exports__, "Triplets", function() { return Triplets; });
- var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
- var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
- var _templates_OnboardingMessage_OnboardingMessage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(26);
- var _addUtmParams__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(22);
+(function(global) { __webpack_require__.d(__webpack_exports__, "Trailhead", function() { return Trailhead; });
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ var _components_ModalOverlay_ModalOverlay__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(13);
+ var _OnboardingMessage_OnboardingMessage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(12);
+ var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -3305,41 +3262,246 @@ function _extends() { _extends = Object.assign || function (target) { for (var i
 
 
 
-class Triplets extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
+
+const FLUENT_FILES = ["branding/brand.ftl", "browser/branding/brandings.ftl", "browser/branding/sync-brand.ftl", "browser/newtab/onboarding.ftl"]; 
+
+const FOCUSABLE_SELECTOR = ["a[href]:not([tabindex='-1'])", "button:not([disabled]):not([tabindex='-1'])", "iframe:not([tabindex='-1'])", "input:not([disabled]):not([tabindex='-1'])", "select:not([disabled]):not([tabindex='-1'])", "textarea:not([disabled]):not([tabindex='-1'])", "[tabindex]:not([tabindex='-1'])"].join(", ");
+class Trailhead extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponent {
   constructor(props) {
     super(props);
+    this.closeModal = this.closeModal.bind(this);
+    this.hideCardPanel = this.hideCardPanel.bind(this);
+    this.onInputChange = this.onInputChange.bind(this);
+    this.onStartBlur = this.onStartBlur.bind(this);
+    this.onSubmit = this.onSubmit.bind(this);
+    this.onInputInvalid = this.onInputInvalid.bind(this);
     this.onCardAction = this.onCardAction.bind(this);
-    this.onHideContainer = this.onHideContainer.bind(this);
+    this.state = {
+      emailInput: "",
+      isModalOpen: true,
+      showCardPanel: true,
+      showCards: false,
+      
+      deviceId: "",
+      flowId: "",
+      flowBeginTime: 0
+    };
+    this.fxaMetricsInitialized = false;
   }
 
-  componentWillMount() {
-    global.document.body.classList.add("inline-onboarding");
+  get dialog() {
+    return this.props.document.getElementById("trailheadDialog");
+  }
+
+  async componentWillMount() {
+    FLUENT_FILES.forEach(file => {
+      const link = document.head.appendChild(document.createElement("link"));
+      link.href = file;
+      link.rel = "localization";
+    });
+    await this.componentWillUpdate(this.props);
+  } 
+
+
+  async componentWillUpdate(props) {
+    if (props.fxaEndpoint && !this.fxaMetricsInitialized) {
+      try {
+        this.fxaMetricsInitialized = true;
+        const url = new URL(`${props.fxaEndpoint}/metrics-flow?entrypoint=activity-stream-firstrun&form_type=email`);
+        this.addUtmParams(url);
+        const response = await fetch(url, {
+          credentials: "omit"
+        });
+
+        if (response.status === 200) {
+          const {
+            deviceId,
+            flowId,
+            flowBeginTime
+          } = await response.json();
+          this.setState({
+            deviceId,
+            flowId,
+            flowBeginTime
+          });
+        } else {
+          props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+            type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TELEMETRY_UNDESIRED_EVENT,
+            data: {
+              event: "FXA_METRICS_FETCH_ERROR",
+              value: response.status
+            }
+          }));
+        }
+      } catch (error) {
+        props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+          type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TELEMETRY_UNDESIRED_EVENT,
+          data: {
+            event: "FXA_METRICS_ERROR"
+          }
+        }));
+      }
+    }
+  }
+
+  componentDidMount() {
+    
+    this.props.document.body.classList.remove("hide-main"); 
+
+    this.props.document.body.classList.add("inline-onboarding"); 
+
+    if (this.props.message.content) {
+      this.props.document.getElementById("root").setAttribute("aria-hidden", "true"); 
+
+      this.dialog.querySelector("input[name=email]").focus();
+    } else {
+      
+      this.props.document.body.classList.remove("welcome");
+
+      if (this.props.message.includeBundle || this.props.message.cards) {
+        this.revealCards();
+      }
+    }
   }
 
   componentWillUnmount() {
     this.props.document.body.classList.remove("inline-onboarding");
   }
 
+  onInputChange(e) {
+    let error = e.target.previousSibling;
+    this.setState({
+      emailInput: e.target.value
+    });
+    error.classList.remove("active");
+    e.target.classList.remove("invalid");
+  }
+
+  onStartBlur(event) {
+    
+    const {
+      dialog
+    } = this;
+
+    if (event.relatedTarget && !(dialog.compareDocumentPosition(event.relatedTarget) & dialog.DOCUMENT_POSITION_CONTAINED_BY)) {
+      dialog.querySelector(FOCUSABLE_SELECTOR).focus();
+    }
+  }
+
+  onSubmit(event) {
+    
+    
+    const {
+      email
+    } = event.target.elements;
+
+    if (!email.value.length) {
+      email.required = true;
+      email.checkValidity();
+      event.preventDefault();
+      return;
+    }
+
+    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({
+      event: "SUBMIT_EMAIL",
+      ...this._getFormInfo()
+    }));
+    global.addEventListener("visibilitychange", this.closeModal);
+  }
+
+  closeModal(ev) {
+    global.removeEventListener("visibilitychange", this.closeModal);
+    this.props.document.body.classList.remove("welcome");
+    this.props.document.getElementById("root").removeAttribute("aria-hidden");
+    this.setState({
+      isModalOpen: false
+    });
+    this.revealCards(); 
+    
+
+    if (!ev || ev.type !== "visibilitychange") {
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({
+        event: "SKIPPED_SIGNIN",
+        ...this._getFormInfo()
+      }));
+    } 
+
+
+    this.props.document.activeElement.blur();
+  }
+  
+
+
+
+
+  _getFormInfo() {
+    const value = {
+      has_flow_params: this.state.flowId.length > 0
+    };
+    return {
+      value
+    };
+  }
+
+  onInputInvalid(e) {
+    let error = e.target.previousSibling;
+    error.classList.add("active");
+    e.target.classList.add("invalid");
+    e.preventDefault(); 
+
+    e.target.focus();
+  }
+
+  hideCardPanel() {
+    this.setState({
+      showCardPanel: false
+    });
+    this.props.onDismissBundle();
+  }
+
+  revealCards() {
+    this.setState({
+      showCards: true
+    });
+  }
+  
+
+
+
+
+
+
+
+  addUtmParams(url, isCard = false) {
+    let returnUrl = url;
+
+    if (typeof returnUrl === "string") {
+      returnUrl = new URL(url);
+    }
+
+    returnUrl.searchParams.append("utm_source", "activity-stream");
+    returnUrl.searchParams.append("utm_campaign", "firstrun");
+    returnUrl.searchParams.append("utm_medium", "referral");
+    returnUrl.searchParams.append("utm_term", `${this.props.message.utm_term}${isCard ? "-card" : ""}`);
+    return returnUrl;
+  }
+
   onCardAction(action) {
     let actionUpdates = {};
-    const {
-      flowParams,
-      UTMTerm
-    } = this.props;
 
     if (action.type === "OPEN_URL") {
       let url = new URL(action.data.args);
-      Object(_addUtmParams__WEBPACK_IMPORTED_MODULE_2__["addUtmParams"])(url, UTMTerm);
+      this.addUtmParams(url, true);
 
       if (action.addFlowParams) {
-        url.searchParams.append("device_id", flowParams.deviceId);
-        url.searchParams.append("flow_id", flowParams.flowId);
-        url.searchParams.append("flow_begin_time", flowParams.flowBeginTime);
+        url.searchParams.append("device_id", this.state.deviceId);
+        url.searchParams.append("flow_id", this.state.flowId);
+        url.searchParams.append("flow_begin_time", this.state.flowBeginTime);
       }
 
       actionUpdates = {
         data: { ...action.data,
-          args: url.toString()
+          args: url
         }
       };
     }
@@ -3349,118 +3511,160 @@ class Triplets extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponen
     });
   }
 
-  onHideContainer() {
-    const {
-      sendUserActionTelemetry,
-      cards,
-      hideContainer
-    } = this.props;
-    hideContainer();
-    sendUserActionTelemetry({
-      event: "DISMISS",
-      id: "onboarding-cards",
-      message_id: cards.map(m => m.id).join(","),
-      action: "onboarding_user_event"
-    });
-  }
-
   render() {
     const {
-      cards,
-      showCardPanel,
-      showContent,
-      sendUserActionTelemetry
-    } = this.props;
-    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
-      className: `trailheadCards ${showCardPanel ? "expanded" : "collapsed"}`
-    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      props
+    } = this;
+    const {
+      bundle: cards,
+      content,
+      utm_term
+    } = props.message;
+    const innerClassName = ["trailhead", content && content.className].filter(v => v).join(" ");
+    return react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_3___default.a.Fragment, null, this.state.isModalOpen && content ? react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_components_ModalOverlay_ModalOverlay__WEBPACK_IMPORTED_MODULE_1__["ModalOverlayWrapper"], {
+      innerClassName: innerClassName,
+      onClose: this.closeModal,
+      id: "trailheadDialog",
+      headerId: "trailheadHeader"
+    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
+      className: "trailheadInner"
+    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
+      className: "trailheadContent"
+    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("h1", {
+      "data-l10n-id": content.title.string_id,
+      id: "trailheadHeader"
+    }), content.subtitle && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("p", {
+      "data-l10n-id": content.subtitle.string_id
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("ul", {
+      className: "trailheadBenefits"
+    }, content.benefits.map(item => react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("li", {
+      key: item.id,
+      className: item.id
+    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("h3", {
+      "data-l10n-id": item.title.string_id
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("p", {
+      "data-l10n-id": item.text.string_id
+    })))), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("a", {
+      className: "trailheadLearn",
+      "data-l10n-id": content.learn.text.string_id,
+      href: this.addUtmParams(content.learn.url),
+      target: "_blank",
+      rel: "noopener noreferrer"
+    })), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
+      role: "group",
+      "aria-labelledby": "joinFormHeader",
+      "aria-describedby": "joinFormBody",
+      className: "trailheadForm"
+    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("h3", {
+      id: "joinFormHeader",
+      "data-l10n-id": content.form.title.string_id
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("p", {
+      id: "joinFormBody",
+      "data-l10n-id": content.form.text.string_id
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("form", {
+      method: "get",
+      action: this.props.fxaEndpoint,
+      target: "_blank",
+      rel: "noopener noreferrer",
+      onSubmit: this.onSubmit
+    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
+      name: "service",
+      type: "hidden",
+      value: "sync"
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
+      name: "action",
+      type: "hidden",
+      value: "email"
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
+      name: "context",
+      type: "hidden",
+      value: "fx_desktop_v3"
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
+      name: "entrypoint",
+      type: "hidden",
+      value: "activity-stream-firstrun"
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
+      name: "utm_source",
+      type: "hidden",
+      value: "activity-stream"
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
+      name: "utm_campaign",
+      type: "hidden",
+      value: "firstrun"
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
+      name: "utm_term",
+      type: "hidden",
+      value: utm_term
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
+      name: "device_id",
+      type: "hidden",
+      value: this.state.deviceId
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
+      name: "flow_id",
+      type: "hidden",
+      value: this.state.flowId
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
+      name: "flow_begin_time",
+      type: "hidden",
+      value: this.state.flowBeginTime
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
+      name: "style",
+      type: "hidden",
+      value: "trailhead"
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("p", {
+      "data-l10n-id": "onboarding-join-form-email-error",
+      className: "error"
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("input", {
+      "data-l10n-id": content.form.email.string_id,
+      name: "email",
+      type: "email",
+      onInvalid: this.onInputInvalid,
+      onChange: this.onInputChange
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("p", {
+      className: "trailheadTerms",
+      "data-l10n-id": "onboarding-join-form-legal"
+    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("a", {
+      "data-l10n-name": "terms",
+      target: "_blank",
+      rel: "noopener noreferrer",
+      href: this.addUtmParams("https://accounts.firefox.com/legal/terms")
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("a", {
+      "data-l10n-name": "privacy",
+      target: "_blank",
+      rel: "noopener noreferrer",
+      href: this.addUtmParams("https://accounts.firefox.com/legal/privacy")
+    })), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("button", {
+      "data-l10n-id": content.form.button.string_id,
+      type: "submit"
+    })))), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("button", {
+      className: "trailheadStart",
+      "data-l10n-id": content.skipButton.string_id,
+      onBlur: this.onStartBlur,
+      onClick: this.closeModal
+    })) : null, cards && cards.length ? react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
+      className: `trailheadCards ${this.state.showCardPanel ? "expanded" : "collapsed"}`
+    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
       className: "trailheadCardsInner",
-      "aria-hidden": !showContent
-    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h1", {
+      "aria-hidden": !this.state.showCards
+    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("h1", {
       "data-l10n-id": "onboarding-welcome-header"
-    }), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
-      className: `trailheadCardGrid${showContent ? " show" : ""}`
-    }, cards.map(card => react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_templates_OnboardingMessage_OnboardingMessage__WEBPACK_IMPORTED_MODULE_1__["OnboardingCard"], _extends({
+    }), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
+      className: `trailheadCardGrid${this.state.showCards ? " show" : ""}`
+    }, cards.map(card => react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_OnboardingMessage_OnboardingMessage__WEBPACK_IMPORTED_MODULE_2__["OnboardingCard"], _extends({
       key: card.id,
       className: "trailheadCard",
-      sendUserActionTelemetry: sendUserActionTelemetry,
+      sendUserActionTelemetry: props.sendUserActionTelemetry,
       onAction: this.onCardAction,
       UISurface: "TRAILHEAD"
-    }, card)))), showCardPanel && react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
+    }, card)))), this.state.showCardPanel && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("button", {
       className: "icon icon-dismiss",
-      onClick: this.onHideContainer,
+      onClick: this.hideCardPanel,
       "data-l10n-id": "onboarding-cards-dismiss"
-    })));
+    }))) : null);
   }
 
 }
 }.call(this, __webpack_require__(1)))
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "OnboardingCard", function() { return OnboardingCard; });
- var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
- var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
-
-
-
-
-class OnboardingCard extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.onClick = this.onClick.bind(this);
-  }
-
-  onClick() {
-    const {
-      props
-    } = this;
-    const ping = {
-      event: "CLICK_BUTTON",
-      message_id: props.id,
-      id: props.UISurface
-    };
-    props.sendUserActionTelemetry(ping);
-    props.onAction(props.content.primary_button.action);
-  }
-
-  render() {
-    const {
-      content
-    } = this.props;
-    const className = this.props.className || "onboardingMessage";
-    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
-      className: className
-    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
-      className: `onboardingMessageImage ${content.icon}`
-    }), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
-      className: "onboardingContent"
-    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h3", {
-      className: "onboardingTitle",
-      "data-l10n-id": content.title.string_id
-    }), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("p", {
-      className: "onboardingText",
-      "data-l10n-id": content.text.string_id
-    })), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", {
-      className: "onboardingButtonContainer"
-    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
-      "data-l10n-id": content.primary_button.label.string_id,
-      className: "button onboardingButton",
-      onClick: this.onClick
-    }))));
-  }
-
-}
-
- }),
-
- (function(module, exports) {
-
-module.exports = ReactRedux;
 
  }),
 
@@ -3520,7 +3724,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_ConfirmDialog", function() { return _ConfirmDialog; });
  __webpack_require__.d(__webpack_exports__, "ConfirmDialog", function() { return ConfirmDialog; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(27);
+ var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(24);
  var react_redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_1__);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
@@ -3670,21 +3874,21 @@ class ContextMenu extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCompo
     
     return (
       react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", {
-        className: "context-menu"
-      }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("ul", {
         role: "menu",
+        className: "context-menu",
         onClick: this.onClick,
-        onKeyDown: this.onClick,
+        onKeyDown: this.onClick
+      }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("ul", {
         className: "context-menu-list"
       }, this.props.options.map((option, i) => option.type === "separator" ? react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("li", {
         key: i,
-        className: "separator",
-        role: "separator"
+        className: "separator"
       }) : option.type !== "empty" && react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(ContextMenuItem, {
         key: i,
         option: option,
         hideContext: this.hideContext,
-        keyboardAccess: this.props.keyboardAccess
+        keyboardAccess: this.props.keyboardAccess,
+        tabIndex: "0"
       }))))
     );
   }
@@ -3695,7 +3899,6 @@ class ContextMenuItem extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureC
     super(props);
     this.onClick = this.onClick.bind(this);
     this.onKeyDown = this.onKeyDown.bind(this);
-    this.onKeyUp = this.onKeyUp.bind(this);
     this.focusFirst = this.focusFirst.bind(this);
   }
 
@@ -3750,8 +3953,6 @@ class ContextMenuItem extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureC
         break;
 
       case "Enter":
-      case " ":
-        event.preventDefault();
         this.props.hideContext();
         option.onClick();
         break;
@@ -3760,14 +3961,6 @@ class ContextMenuItem extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureC
         this.props.hideContext();
         break;
     }
-  } 
-  
-
-
-  onKeyUp(event) {
-    if (event.key === " ") {
-      event.preventDefault();
-    }
   }
 
   render() {
@@ -3775,14 +3968,13 @@ class ContextMenuItem extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureC
       option
     } = this.props;
     return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("li", {
-      role: "presentation",
+      role: "menuitem",
       className: "context-menu-item"
     }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
       className: option.disabled ? "disabled" : "",
-      role: "menuitem",
+      tabIndex: "0",
       onClick: this.onClick,
       onKeyDown: this.onKeyDown,
-      onKeyUp: this.onKeyUp,
       ref: option.first ? this.focusFirst : null
     }, option.icon && react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", {
       className: `icon icon-spacer icon-${option.icon}`
@@ -3836,7 +4028,7 @@ class ContextMenuButton extends react__WEBPACK_IMPORTED_MODULE_0___default.a.Pur
   }
 
   onKeyDown(event) {
-    if (event.key === "Enter" || event.key === " ") {
+    if (event.key === "Enter") {
       event.preventDefault();
       this.openContextMenu(true, event);
     }
@@ -4114,13 +4306,13 @@ ImpressionStats.defaultProps = {
 __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "CollapsibleSection", function() { return CollapsibleSection; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(34);
- var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(36);
+ var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(32);
+ var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(34);
  var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
- var content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(37);
- var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(38);
- var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(31);
+ var content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(35);
+ var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(36);
+ var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(29);
 
 
 
@@ -4225,7 +4417,6 @@ class CollapsibleSection extends react__WEBPACK_IMPORTED_MODULE_3___default.a.Pu
 
   onKeyPress(event) {
     if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
       this.onHeaderClick();
     }
   }
@@ -4345,8 +4536,13 @@ class CollapsibleSection extends react__WEBPACK_IMPORTED_MODULE_3___default.a.Pu
       onClick: this.onHeaderClick
     }, this.renderIcon(), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__["FluentOrText"], {
       message: title
-    }), isCollapsible && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
-      "data-l10n-id": collapsed ? "newtab-section-expand-section-label" : "newtab-section-collapse-section-label",
+    })), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
+      className: "click-target",
+      role: "button",
+      tabIndex: "0",
+      onKeyPress: this.onKeyPress,
+      onClick: this.onHeaderClick
+    }, isCollapsible && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
       className: `collapsible-arrow icon ${collapsed ? "icon-arrowhead-forward-small" : "icon-arrowhead-down-small"}`
     })), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
       className: "learn-more-link-wrapper"
@@ -4403,7 +4599,7 @@ CollapsibleSection.defaultProps = {
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "ErrorBoundaryFallback", function() { return ErrorBoundaryFallback; });
  __webpack_require__.d(__webpack_exports__, "ErrorBoundary", function() { return ErrorBoundary; });
- var content_src_components_A11yLinkButton_A11yLinkButton__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(35);
+ var content_src_components_A11yLinkButton_A11yLinkButton__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(33);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
 
@@ -4567,10 +4763,10 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_SectionMenu", function() { return _SectionMenu; });
  __webpack_require__.d(__webpack_exports__, "SectionMenu", function() { return SectionMenu; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(30);
+ var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(28);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
- var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(38);
+ var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(36);
 
 
 
@@ -4805,18 +5001,18 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_Sections", function() { return _Sections; });
  __webpack_require__.d(__webpack_exports__, "Sections", function() { return Sections; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var content_src_components_Card_Card__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(57);
- var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(33);
- var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(41);
- var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(36);
- var react_redux__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(27);
+ var content_src_components_Card_Card__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(55);
+ var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(31);
+ var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(39);
+ var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(34);
+ var react_redux__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(24);
  var react_redux__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_5__);
- var content_src_components_MoreRecommendations_MoreRecommendations__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(43);
- var content_src_components_PocketLoggedInCta_PocketLoggedInCta__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(44);
+ var content_src_components_MoreRecommendations_MoreRecommendations__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(41);
+ var content_src_components_PocketLoggedInCta_PocketLoggedInCta__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(42);
  var react__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_8___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_8__);
- var content_src_components_Topics_Topics__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(45);
- var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(46);
+ var content_src_components_Topics_Topics__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(43);
+ var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(44);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -5242,7 +5438,7 @@ const ScreenshotUtils = {
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "ComponentPerfTimer", function() { return ComponentPerfTimer; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(42);
+ var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(40);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
 
@@ -5586,7 +5782,7 @@ class MoreRecommendations extends react__WEBPACK_IMPORTED_MODULE_0___default.a.P
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_PocketLoggedInCta", function() { return _PocketLoggedInCta; });
  __webpack_require__.d(__webpack_exports__, "PocketLoggedInCta", function() { return PocketLoggedInCta; });
- var react_redux__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(27);
+ var react_redux__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(24);
  var react_redux__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_0__);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
@@ -5675,18 +5871,18 @@ __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "_TopSites", function() { return _TopSites; });
  __webpack_require__.d(__webpack_exports__, "TopSites", function() { return TopSites; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(47);
- var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(33);
- var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(41);
- var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(27);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(45);
+ var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(31);
+ var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(39);
+ var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(24);
  var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
- var _asrouter_components_ModalOverlay_ModalOverlay__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(21);
+ var _asrouter_components_ModalOverlay_ModalOverlay__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(13);
  var react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_6__);
- var _SearchShortcutsForm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(48);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(56);
- var _TopSiteForm__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(59);
- var _TopSite__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(49);
+ var _SearchShortcutsForm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(46);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(54);
+ var _TopSiteForm__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(56);
+ var _TopSite__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(47);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -5926,7 +6122,7 @@ __webpack_require__.r(__webpack_exports__);
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(47);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(45);
 
 
 
@@ -6117,13 +6313,13 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "TopSitePlaceholder", function() { return TopSitePlaceholder; });
  __webpack_require__.d(__webpack_exports__, "TopSiteList", function() { return TopSiteList; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(47);
- var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(60);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(45);
+ var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(57);
  var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
- var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(40);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(56);
- var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(31);
+ var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(38);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(54);
+ var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(29);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -6758,7 +6954,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_Search", function() { return _Search; });
  __webpack_require__.d(__webpack_exports__, "Search", function() { return Search; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(27);
+ var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(24);
  var react_redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_1__);
  var content_src_lib_constants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(11);
  var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
@@ -6945,7 +7141,7 @@ const Search = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect"])()(_Se
 __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "DetectUserSessionStart", function() { return DetectUserSessionStart; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(42);
+ var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(40);
 
 
 
@@ -7034,7 +7230,7 @@ var external_React_ = __webpack_require__(9);
 var external_React_default = __webpack_require__.n(external_React_);
 
 
-var external_ReactDOM_ = __webpack_require__(12);
+var external_ReactDOM_ = __webpack_require__(14);
 var external_ReactDOM_default = __webpack_require__.n(external_ReactDOM_);
 
 
@@ -7163,10 +7359,10 @@ DSImage_DSImage.defaultProps = {
 
 };
 
-var LinkMenu = __webpack_require__(60);
+var LinkMenu = __webpack_require__(57);
 
 
-var ContextMenuButton = __webpack_require__(31);
+var ContextMenuButton = __webpack_require__(29);
 
 
 
@@ -7245,7 +7441,7 @@ class DSLinkMenu_DSLinkMenu extends external_React_default.a.PureComponent {
 
 }
 
-var ImpressionStats = __webpack_require__(32);
+var ImpressionStats = __webpack_require__(30);
 
 
 
@@ -7590,10 +7786,10 @@ CardGrid_CardGrid.defaultProps = {
 
 };
 
-var CollapsibleSection = __webpack_require__(33);
+var CollapsibleSection = __webpack_require__(31);
 
 
-var external_ReactRedux_ = __webpack_require__(27);
+var external_ReactRedux_ = __webpack_require__(24);
 
 
 
@@ -7963,7 +8159,7 @@ Hero_Hero.defaultProps = {
 
 };
 
-var Sections = __webpack_require__(39);
+var Sections = __webpack_require__(37);
 
 
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
@@ -8274,7 +8470,7 @@ const selectLayoutRender = (state, prefs, rickRollCache) => {
   };
 };
 
-var TopSites = __webpack_require__(46);
+var TopSites = __webpack_require__(44);
 
 
 
@@ -9411,7 +9607,7 @@ var external_React_ = __webpack_require__(9);
 var external_React_default = __webpack_require__.n(external_React_);
 
 
-var EOYSnippet_schema = __webpack_require__(13);
+var EOYSnippet_schema = __webpack_require__(18);
 
 
 
@@ -9450,13 +9646,13 @@ const ConditionalWrapper = ({
   children
 }) => condition ? wrap(children) : children;
 
-var RichText = __webpack_require__(14);
+var RichText = __webpack_require__(16);
 
 
-var template_utils = __webpack_require__(15);
+var template_utils = __webpack_require__(17);
 
 
-var SimpleSnippet_schema = __webpack_require__(16);
+var SimpleSnippet_schema = __webpack_require__(19);
 
 
 
@@ -9913,7 +10109,7 @@ const EOYSnippet = props => {
   }));
 };
 
-var FXASignupSnippet_schema = __webpack_require__(17);
+var FXASignupSnippet_schema = __webpack_require__(20);
 
 
 function SubmitFormSnippet_extends() { SubmitFormSnippet_extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return SubmitFormSnippet_extends.apply(this, arguments); }
@@ -10261,7 +10457,7 @@ const FXASignupSnippet = props => {
   }));
 };
 
-var NewsletterSnippet_schema = __webpack_require__(18);
+var NewsletterSnippet_schema = __webpack_require__(21);
 
 
 function NewsletterSnippet_extends() { NewsletterSnippet_extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return NewsletterSnippet_extends.apply(this, arguments); }
@@ -10341,7 +10537,7 @@ function isEmailOrPhoneNumber(val, content) {
   return "";
 }
 
-var SendToDeviceSnippet_schema = __webpack_require__(19);
+var SendToDeviceSnippet_schema = __webpack_require__(22);
 
 
 function SendToDeviceSnippet_extends() { SendToDeviceSnippet_extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return SendToDeviceSnippet_extends.apply(this, arguments); }
@@ -12803,20 +12999,20 @@ const cardContextTypes = {
   }
 };
 
-var external_ReactRedux_ = __webpack_require__(27);
+var external_ReactRedux_ = __webpack_require__(24);
 
 
-var ContextMenuButton = __webpack_require__(31);
+var ContextMenuButton = __webpack_require__(29);
 
 
-var LinkMenu = __webpack_require__(60);
+var LinkMenu = __webpack_require__(57);
 
 
 var external_React_ = __webpack_require__(9);
 var external_React_default = __webpack_require__.n(external_React_);
 
 
-var screenshot_utils = __webpack_require__(40);
+var screenshot_utils = __webpack_require__(38);
 
 
  __webpack_require__.d(__webpack_exports__, "_Card", function() { return Card_Card; });
@@ -13157,345 +13353,17 @@ const PlaceholderCard = props => external_React_default.a.createElement(Card, {
 __webpack_require__.r(__webpack_exports__);
 
 
-var external_React_ = __webpack_require__(9);
-var external_React_default = __webpack_require__.n(external_React_);
-
-
-var Trailhead = __webpack_require__(20);
-
-
-var ReturnToAMO = __webpack_require__(23);
-
-
-var StartupOverlay = __webpack_require__(24);
-
-
-var src = __webpack_require__(53);
-
-
-var rich_text_strings = __webpack_require__(55);
-
-
-function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
-
-
-
-
-
-
-
-
-
-
-class Interrupt_Interrupt extends external_React_default.a.PureComponent {
-  render() {
-    const {
-      onDismiss,
-      onNextScene,
-      message,
-      sendUserActionTelemetry,
-      executeAction,
-      dispatch,
-      fxaEndpoint,
-      UTMTerm,
-      flowParams
-    } = this.props;
-
-    switch (message.template) {
-      case "return_to_amo_overlay":
-        return external_React_default.a.createElement(src["LocalizationProvider"], {
-          bundles: Object(rich_text_strings["generateBundles"])({
-            amo_html: message.content.text
-          })
-        }, external_React_default.a.createElement(ReturnToAMO["ReturnToAMO"], _extends({}, message, {
-          UISurface: "NEWTAB_OVERLAY",
-          onBlock: onDismiss,
-          onAction: executeAction,
-          sendUserActionTelemetry: sendUserActionTelemetry
-        })));
-
-      case "fxa_overlay":
-        return external_React_default.a.createElement(StartupOverlay["StartupOverlay"], {
-          onBlock: onDismiss,
-          dispatch: dispatch,
-          fxa_endpoint: fxaEndpoint
-        });
-
-      case "trailhead":
-        return external_React_default.a.createElement(Trailhead["Trailhead"], {
-          document: this.props.document,
-          message: message,
-          onNextScene: onNextScene,
-          onAction: executeAction,
-          sendUserActionTelemetry: sendUserActionTelemetry,
-          dispatch: dispatch,
-          fxaEndpoint: fxaEndpoint,
-          UTMTerm: UTMTerm,
-          flowParams: flowParams
-        });
-
-      default:
-        throw new Error(`${message.template} is not a valid FirstRun message`);
-    }
-  }
-
-}
-
-var Triplets = __webpack_require__(25);
-
-
 var Actions = __webpack_require__(2);
 
 
-var addUtmParams = __webpack_require__(22);
-
-
- __webpack_require__.d(__webpack_exports__, "FLUENT_FILES", function() { return FLUENT_FILES; });
- __webpack_require__.d(__webpack_exports__, "helpers", function() { return helpers; });
- __webpack_require__.d(__webpack_exports__, "FirstRun", function() { return FirstRun_FirstRun; });
-
-
-
-
-
-
-
-
-const FLUENT_FILES = ["branding/brand.ftl", "browser/branding/brandings.ftl", "browser/branding/sync-brand.ftl", "browser/newtab/onboarding.ftl"];
-const helpers = {
-  selectInterruptAndTriplets(message = {}) {
-    const hasInterrupt = Boolean(message.content);
-    const hasTriplets = Boolean(message.bundle && message.bundle.length);
-    const UTMTerm = message.utm_term || "";
-    return {
-      hasTriplets,
-      hasInterrupt,
-      interrupt: hasInterrupt ? message : null,
-      triplets: hasTriplets ? message.bundle : null,
-      UTMTerm
-    };
-  },
-
-  addFluent(document) {
-    FLUENT_FILES.forEach(file => {
-      const link = document.head.appendChild(document.createElement("link"));
-      link.href = file;
-      link.rel = "localization";
-    });
-  },
-
-  async fetchFlowParams({
-    fxaEndpoint,
-    UTMTerm,
-    dispatch,
-    setFlowParams
-  }) {
-    try {
-      const url = new URL(`${fxaEndpoint}/metrics-flow?entrypoint=activity-stream-firstrun&form_type=email`);
-      Object(addUtmParams["addUtmParams"])(url, UTMTerm);
-      const response = await fetch(url, {
-        credentials: "omit"
-      });
-
-      if (response.status === 200) {
-        const {
-          deviceId,
-          flowId,
-          flowBeginTime
-        } = await response.json();
-        setFlowParams({
-          deviceId,
-          flowId,
-          flowBeginTime
-        });
-      } else {
-        dispatch(Actions["actionCreators"].OnlyToMain({
-          type: Actions["actionTypes"].TELEMETRY_UNDESIRED_EVENT,
-          data: {
-            event: "FXA_METRICS_FETCH_ERROR",
-            value: response.status
-          }
-        }));
-      }
-    } catch (error) {
-      dispatch(Actions["actionCreators"].OnlyToMain({
-        type: Actions["actionTypes"].TELEMETRY_UNDESIRED_EVENT,
-        data: {
-          event: "FXA_METRICS_ERROR"
-        }
-      }));
-    }
-  }
-
-};
-class FirstRun_FirstRun extends external_React_default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.didLoadFlowParams = false;
-    this.state = {
-      prevMessage: undefined,
-      hasInterrupt: false,
-      hasTriplets: false,
-      interrupt: undefined,
-      triplets: undefined,
-      isInterruptVisible: false,
-      isTripletsContainerVisible: false,
-      isTripletsContentVisible: false,
-      UTMTerm: "",
-      flowParams: undefined
-    };
-    this.closeInterrupt = this.closeInterrupt.bind(this);
-    this.closeTriplets = this.closeTriplets.bind(this);
-    helpers.addFluent(this.props.document);
-  }
-
-  static getDerivedStateFromProps(props, state) {
-    const {
-      message
-    } = props;
-
-    if (message && message.id !== state.prevMessageId) {
-      const {
-        hasTriplets,
-        hasInterrupt,
-        interrupt,
-        triplets,
-        UTMTerm
-      } = helpers.selectInterruptAndTriplets(message);
-      return {
-        prevMessageId: message.id,
-        hasInterrupt,
-        hasTriplets,
-        interrupt,
-        triplets,
-        isInterruptVisible: hasInterrupt,
-        isTripletsContainerVisible: hasTriplets,
-        isTripletsContentVisible: !(hasInterrupt || !hasTriplets),
-        UTMTerm
-      };
-    }
-
-    return null;
-  }
-
-  fetchFlowParams() {
-    const {
-      fxaEndpoint,
-      dispatch
-    } = this.props;
-    const {
-      UTMTerm
-    } = this.state;
-
-    if (fxaEndpoint && UTMTerm && !this.didLoadFlowParams) {
-      this.didLoadFlowParams = true;
-      helpers.fetchFlowParams({
-        fxaEndpoint,
-        UTMTerm,
-        dispatch,
-        setFlowParams: flowParams => this.setState({
-          flowParams
-        })
-      });
-    }
-  }
-
-  removeHideMain() {
-    if (!this.state.hasInterrupt) {
-      
-      this.props.document.body.classList.remove("hide-main", "welcome");
-    }
-  }
-
-  componentDidMount() {
-    this.fetchFlowParams();
-    this.removeHideMain();
-  }
-
-  componentDidUpdate() {
-    
-    this.fetchFlowParams();
-    this.removeHideMain();
-  }
-
-  closeInterrupt() {
-    this.setState(prevState => ({
-      isInterruptVisible: false,
-      isTripletsContainerVisible: prevState.hasTriplets,
-      isTripletsContentVisible: prevState.hasTriplets
-    }));
-  }
-
-  closeTriplets() {
-    this.setState({
-      isTripletsContainerVisible: false
-    });
-  }
-
-  render() {
-    const {
-      props
-    } = this;
-    const {
-      sendUserActionTelemetry,
-      fxaEndpoint,
-      dispatch,
-      executeAction
-    } = props;
-    const {
-      interrupt,
-      triplets,
-      isInterruptVisible,
-      isTripletsContainerVisible,
-      isTripletsContentVisible,
-      hasTriplets,
-      UTMTerm,
-      flowParams
-    } = this.state;
-    return external_React_default.a.createElement(external_React_default.a.Fragment, null, isInterruptVisible ? external_React_default.a.createElement(Interrupt_Interrupt, {
-      document: props.document,
-      message: interrupt,
-      onNextScene: this.closeInterrupt,
-      UTMTerm: UTMTerm,
-      sendUserActionTelemetry: sendUserActionTelemetry,
-      dispatch: dispatch,
-      flowParams: flowParams,
-      onDismiss: this.closeInterrupt,
-      fxaEndpoint: fxaEndpoint
-    }) : null, hasTriplets ? external_React_default.a.createElement(Triplets["Triplets"], {
-      document: props.document,
-      cards: triplets,
-      showCardPanel: isTripletsContainerVisible,
-      showContent: isTripletsContentVisible,
-      hideContainer: this.closeTriplets,
-      sendUserActionTelemetry: sendUserActionTelemetry,
-      UTMTerm: `${UTMTerm}-card`,
-      flowParams: flowParams,
-      onAction: executeAction
-    }) : null);
-  }
-
-}
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-
-
-var Actions = __webpack_require__(2);
-
-
-var A11yLinkButton = __webpack_require__(35);
+var A11yLinkButton = __webpack_require__(33);
 
 
 var external_React_ = __webpack_require__(9);
 var external_React_default = __webpack_require__.n(external_React_);
 
 
-var TopSitesConstants = __webpack_require__(47);
+var TopSitesConstants = __webpack_require__(45);
 
 
 
@@ -13610,7 +13478,7 @@ TopSiteFormInput_TopSiteFormInput.defaultProps = {
   validationError: false
 };
 
-var TopSite = __webpack_require__(49);
+var TopSite = __webpack_require__(47);
 
 
  __webpack_require__.d(__webpack_exports__, "TopSiteForm", function() { return TopSiteForm_TopSiteForm; });
@@ -13917,10 +13785,10 @@ __webpack_require__.r(__webpack_exports__);
 var Actions = __webpack_require__(2);
 
 
-var external_ReactRedux_ = __webpack_require__(27);
+var external_ReactRedux_ = __webpack_require__(24);
 
 
-var ContextMenu = __webpack_require__(30);
+var ContextMenu = __webpack_require__(28);
 
 
 
