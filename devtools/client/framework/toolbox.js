@@ -33,6 +33,8 @@ var Startup = Cc["@mozilla.org/devtools/startup-clh;1"].getService(
   Ci.nsISupports
 ).wrappedJSObject;
 
+const { TargetList } = require("devtools/shared/resources/target-list");
+
 const { BrowserLoader } = ChromeUtils.import(
   "resource://devtools/client/shared/browser-loader.js"
 );
@@ -208,11 +210,12 @@ function Toolbox(
   frameId,
   msSinceProcessStart
 ) {
-  this._target = target;
   this._win = contentWindow;
   this.frameId = frameId;
   this.selection = new Selection();
   this.telemetry = new Telemetry();
+
+  this.targetList = new TargetList(target.client.mainRoot, target);
 
   
   
@@ -288,6 +291,9 @@ function Toolbox(
   this.toggleDragging = this.toggleDragging.bind(this);
   this._onPausedState = this._onPausedState.bind(this);
   this._onResumedState = this._onResumedState.bind(this);
+  this._onTargetAvailable = this._onTargetAvailable.bind(this);
+  this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
+
   this.isPaintFlashing = false;
 
   if (!selectedTool) {
@@ -488,15 +494,17 @@ Toolbox.prototype = {
 
   async switchToTarget(newTarget) {
     
-    this.detachTarget();
-
-    this._target = newTarget;
-
-    
     this.emit("switch-target", newTarget);
 
     
-    await this._attachTargets(newTarget);
+    
+    
+    
+    const onAttached = this.once("top-target-attached");
+    await this.targetList.switchToTarget(newTarget);
+    await onAttached;
+
+    
     await this._listFrames();
     await this.initPerformance();
 
@@ -516,10 +524,8 @@ Toolbox.prototype = {
   
 
 
-
-
   get target() {
-    return this._target;
+    return this.targetList.targetFront;
   },
 
   get threadFront() {
@@ -612,45 +618,31 @@ Toolbox.prototype = {
 
 
 
+  async _onTargetAvailable(type, targetFront, isTopLevel) {
+    if (isTopLevel) {
+      
+      
+      targetFront.on("will-navigate", this._onWillNavigate);
+      targetFront.on("navigate", this._refreshHostTitle);
+      targetFront.on("frame-update", this._updateFrames);
+      targetFront.on("inspect-object", this._onInspectObject);
 
-  async _attachTargets(target) {
-    
-    this._target.on("will-navigate", this._onWillNavigate);
-    this._target.on("navigate", this._refreshHostTitle);
-    this._target.on("frame-update", this._updateFrames);
-    this._target.on("inspect-object", this._onInspectObject);
+      targetFront.onFront("inspector", async inspectorFront => {
+        registerWalkerListeners(this.store, inspectorFront.walker);
+      });
 
-    this._target.onFront("inspector", async inspectorFront => {
-      registerWalkerListeners(this.store, inspectorFront.walker);
-    });
+      this._threadFront = await this._attachTarget(targetFront);
+      this.emit("top-target-attached");
+    } else {
+      return this._attachTarget(targetFront);
+    }
+  },
 
-    this._threadFront = await this._attachTarget(target);
-
-    const fissionSupport = Services.prefs.getBoolPref(
-      "devtools.browsertoolbox.fission"
-    );
-
-    if (fissionSupport && target.isParentProcess && !target.isAddon) {
-      const { mainRoot } = target.client;
-      const { processes } = await mainRoot.listProcesses();
-
-      for (const processDescriptor of processes) {
-        const targetFront = await processDescriptor.getTarget();
-
-        
-        if (targetFront === target) {
-          continue;
-        }
-
-        if (!targetFront) {
-          console.warn(
-            "Can't retrieve the target front for process",
-            processDescriptor
-          );
-          continue;
-        }
-        await this._attachTarget(targetFront);
-      }
+  _onTargetDestroyed(type, targetFront, isTopLevel) {
+    if (isTopLevel) {
+      this.detachTarget();
+    } else {
+      this._stopThreadFrontListeners(targetFront.threadFront);
     }
   },
 
@@ -680,9 +672,9 @@ Toolbox.prototype = {
     threadFront.on("resumed", this._onResumedState);
   },
 
-  _stopThreadFrontListeners: function() {
-    this.threadFront.off("paused", this._onPausedState);
-    this.threadFront.off("resumed", this._onResumedState);
+  _stopThreadFrontListeners: function(threadFront) {
+    threadFront.off("paused", this._onPausedState);
+    threadFront.off("resumed", this._onResumedState);
   },
 
   _attachAndResumeThread: async function(target) {
@@ -737,9 +729,15 @@ Toolbox.prototype = {
         );
       });
 
+      await this.targetList.startListening(TargetList.ALL_TYPES);
+
       
       
-      await this._attachTargets(this.target);
+      await this.targetList.watchTargets(
+        TargetList.ALL_TYPES,
+        this._onTargetAvailable,
+        this._onTargetDestroyed
+      );
 
       await domReady;
 
@@ -807,7 +805,7 @@ Toolbox.prototype = {
       
       
       const toolDef = gDevTools.getToolDefinition(this._defaultToolId);
-      if (!toolDef || !toolDef.isTargetSupported(this._target)) {
+      if (!toolDef || !toolDef.isTargetSupported(this.target)) {
         this._defaultToolId = "webconsole";
       }
 
@@ -892,13 +890,13 @@ Toolbox.prototype = {
   },
 
   detachTarget() {
-    this._target.off("inspect-object", this._onInspectObject);
-    this._target.off("will-navigate", this._onWillNavigate);
-    this._target.off("navigate", this._refreshHostTitle);
-    this._target.off("frame-update", this._updateFrames);
+    this.target.off("inspect-object", this._onInspectObject);
+    this.target.off("will-navigate", this._onWillNavigate);
+    this.target.off("navigate", this._refreshHostTitle);
+    this.target.off("frame-update", this._updateFrames);
 
     
-    this._stopThreadFrontListeners();
+    this._stopThreadFrontListeners(this._threadFront);
     this._threadFront = null;
   },
 
@@ -1661,7 +1659,7 @@ Toolbox.prototype = {
 
 
   _buildDockOptions: function() {
-    if (!this._target.isLocalTab) {
+    if (!this.target.isLocalTab) {
       this.component.setDockOptionsEnabled(false);
       this.component.setCanCloseToolbox(false);
       return;
@@ -1720,8 +1718,7 @@ Toolbox.prototype = {
     
     this.panelDefinitions = definitions.filter(
       definition =>
-        definition.isTargetSupported(this._target) &&
-        definition.id !== "options"
+        definition.isTargetSupported(this.target) && definition.id !== "options"
     );
 
     
@@ -2163,7 +2160,7 @@ Toolbox.prototype = {
 
 
   _buildPanelForTool: function(toolDefinition) {
-    if (!toolDefinition.isTargetSupported(this._target)) {
+    if (!toolDefinition.isTargetSupported(this.target)) {
       return;
     }
 
@@ -3023,7 +3020,7 @@ Toolbox.prototype = {
 
   
   get disableAutohideAvailable() {
-    return this._target.chrome;
+    return this.target.chrome;
   },
 
   async toggleNoAutohide() {
@@ -3214,7 +3211,7 @@ Toolbox.prototype = {
 
 
   switchHost: function(hostType) {
-    if (hostType == this.hostType || !this._target.isLocalTab) {
+    if (hostType == this.hostType || !this.target.isLocalTab) {
       return null;
     }
 
@@ -3386,7 +3383,7 @@ Toolbox.prototype = {
       isAdditionalTool = true;
     }
 
-    if (definition.isTargetSupported(this._target)) {
+    if (definition.isTargetSupported(this.target)) {
       if (isAdditionalTool) {
         this.visibleAdditionalTools = [...this.visibleAdditionalTools, toolId];
         this._combineAndSortPanelDefinitions();
@@ -3636,7 +3633,13 @@ Toolbox.prototype = {
     
     outstanding.push(this.resetPreference());
 
-    this.detachTarget();
+    this.targetList.unwatchTargets(
+      TargetList.ALL_TYPES,
+      this._onTargetAvailable,
+      this._onTargetDestroyed
+    );
+
+    this.targetList.stopListening(TargetList.ALL_TYPES);
 
     
     this.toolbarButtons.forEach(button => {
@@ -3709,12 +3712,7 @@ Toolbox.prototype = {
             
             
             
-            if (!this._target) {
-              return null;
-            }
-            const target = this._target;
-            this._target = null;
-            return target.destroy();
+            return this.target.destroy();
           }, console.error)
           .then(() => {
             this.emit("destroyed");
