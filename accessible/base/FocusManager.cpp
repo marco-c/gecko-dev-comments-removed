@@ -266,6 +266,7 @@ void FocusManager::ProcessFocusEvent(AccEvent* aEvent) {
   
   
   Accessible* target = aEvent->GetAccessible();
+  MOZ_ASSERT(!target->IsDefunct());
   if (target != mActiveItem) {
     
     
@@ -281,6 +282,7 @@ void FocusManager::ProcessFocusEvent(AccEvent* aEvent) {
     if (activeItem) {
       mActiveItem = activeItem;
       target = activeItem;
+      MOZ_ASSERT(!target->IsDefunct());
     }
   }
 
@@ -349,7 +351,9 @@ void FocusManager::ProcessFocusEvent(AccEvent* aEvent) {
   
   
   
+  MOZ_ASSERT(!target->IsDefunct());
   DocAccessible* targetDocument = target->Document();
+  MOZ_ASSERT(targetDocument);
   Accessible* anchorJump = targetDocument->AnchorJump();
   if (anchorJump) {
     if (target == targetDocument) {
