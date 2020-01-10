@@ -410,7 +410,7 @@ impl CodeGenerator for Module {
                     utils::prepend_objc_header(ctx, &mut *result);
                 }
                 if result.saw_bitfield_unit {
-                    utils::prepend_bitfield_unit_type(&mut *result);
+                    utils::prepend_bitfield_unit_type(ctx, &mut *result);
                 }
             }
         };
@@ -2170,7 +2170,10 @@ impl MethodCodegen for Method {
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum EnumVariation {
     
-    Rust,
+    Rust {
+        
+        non_exhaustive: bool
+    },
     
     Bitfield,
     
@@ -2182,14 +2185,7 @@ pub enum EnumVariation {
 impl EnumVariation {
     fn is_rust(&self) -> bool {
         match *self {
-            EnumVariation::Rust => true,
-            _ => false
-        }
-    }
-
-    fn is_bitfield(&self) -> bool {
-        match *self {
-            EnumVariation::Bitfield {..} => true,
+            EnumVariation::Rust{ .. } => true,
             _ => false
         }
     }
@@ -2216,13 +2212,14 @@ impl std::str::FromStr for EnumVariation {
     
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "rust" => Ok(EnumVariation::Rust),
+            "rust" => Ok(EnumVariation::Rust{ non_exhaustive: false }),
+            "rust_non_exhaustive" => Ok(EnumVariation::Rust{ non_exhaustive: true }),
             "bitfield" => Ok(EnumVariation::Bitfield),
             "consts" => Ok(EnumVariation::Consts),
             "moduleconsts" => Ok(EnumVariation::ModuleConsts),
             _ => Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,
                                          concat!("Got an invalid EnumVariation. Accepted values ",
-                                                 "are 'rust', 'bitfield', 'consts', and ",
+                                                 "are 'rust', 'rust_non_exhaustive', 'bitfield', 'consts', and ",
                                                  "'moduleconsts'."))),
         }
     }
@@ -2288,7 +2285,7 @@ impl<'a> EnumBuilder<'a> {
                 }
             }
 
-            EnumVariation::Rust => {
+            EnumVariation::Rust { .. } => {
                 let tokens = quote!();
                 EnumBuilder::Rust {
                     codegen_depth: enum_codegen_depth + 1,
@@ -2580,15 +2577,24 @@ impl CodeGenerator for Enum {
         let variation = self.computed_enum_variation(ctx, item);
 
         
-        if variation.is_rust() {
-            attrs.push(attributes::repr(repr_name));
-        } else if variation.is_bitfield() {
-            if ctx.options().rust_features.repr_transparent {
-                attrs.push(attributes::repr("transparent"));
-            } else {
-                attrs.push(attributes::repr("C"));
-            }
-        }
+        match variation {
+            EnumVariation::Rust { non_exhaustive } => {
+                attrs.push(attributes::repr(repr_name));
+                if non_exhaustive && ctx.options().rust_features().non_exhaustive {
+                    attrs.push(attributes::non_exhaustive());
+                } else if non_exhaustive && !ctx.options().rust_features().non_exhaustive {
+                    panic!("The rust target you're using doesn't seem to support non_exhaustive enums");
+                }
+            },
+            EnumVariation::Bitfield => {
+                if ctx.options().rust_features.repr_transparent {
+                    attrs.push(attributes::repr("transparent"));
+                } else {
+                    attrs.push(attributes::repr("C"));
+                }
+            },
+            _ => {},
+        };
 
         if let Some(comment) = item.comment(ctx) {
             attrs.push(attributes::doc(comment));
@@ -3591,11 +3597,21 @@ mod utils {
     use ir::item::{Item, ItemCanonicalPath};
     use ir::ty::TypeKind;
     use proc_macro2;
+    use std::borrow::Cow;
     use std::mem;
     use std::str::FromStr;
 
-    pub fn prepend_bitfield_unit_type(result: &mut Vec<proc_macro2::TokenStream>) {
-        let bitfield_unit_type = proc_macro2::TokenStream::from_str(include_str!("./bitfield_unit.rs")).unwrap();
+    pub fn prepend_bitfield_unit_type(
+        ctx: &BindgenContext,
+        result: &mut Vec<proc_macro2::TokenStream>
+    ) {
+        let bitfield_unit_src = include_str!("./bitfield_unit.rs");
+        let bitfield_unit_src = if ctx.options().rust_features().min_const_fn {
+            Cow::Borrowed(bitfield_unit_src)
+        } else {
+            Cow::Owned(bitfield_unit_src.replace("const fn ", "fn "))
+        };
+        let bitfield_unit_type = proc_macro2::TokenStream::from_str(&bitfield_unit_src).unwrap();
         let bitfield_unit_type = quote!(#bitfield_unit_type);
 
         let items = vec![bitfield_unit_type];
@@ -3655,6 +3671,14 @@ mod utils {
 
         
         
+        let const_fn = if ctx.options().rust_features().min_const_fn {
+            quote!{ const fn }
+        } else {
+            quote!{ fn }
+        };
+
+        
+        
         let union_field_decl = quote! {
             #[repr(C)]
             pub struct __BindgenUnionField<T>(::#prefix::marker::PhantomData<T>);
@@ -3663,7 +3687,7 @@ mod utils {
         let union_field_impl = quote! {
             impl<T> __BindgenUnionField<T> {
                 #[inline]
-                pub fn new() -> Self {
+                pub #const_fn new() -> Self {
                     __BindgenUnionField(::#prefix::marker::PhantomData)
                 }
 
@@ -3752,6 +3776,14 @@ mod utils {
     ) {
         let prefix = ctx.trait_prefix();
 
+        
+        
+        let const_fn = if ctx.options().rust_features().min_const_fn {
+            quote!{ const fn }
+        } else {
+            quote!{ fn }
+        };
+
         let incomplete_array_decl = quote! {
             #[repr(C)]
             #[derive(Default)]
@@ -3762,7 +3794,7 @@ mod utils {
         let incomplete_array_impl = quote! {
             impl<T> __IncompleteArrayField<T> {
                 #[inline]
-                pub fn new() -> Self {
+                pub #const_fn new() -> Self {
                     __IncompleteArrayField(::#prefix::marker::PhantomData, [])
                 }
 
@@ -3908,9 +3940,13 @@ mod utils {
             
             let arg_ty = match *arg_ty.canonical_type(ctx).kind() {
                 TypeKind::Array(t, _) => {
-                    t.to_rust_ty_or_opaque(ctx, &())
-                        .to_ptr(ctx.resolve_type(t).is_const())
-                },
+                    let stream = if ctx.options().array_pointers_in_arguments {
+                        arg_ty.to_rust_ty_or_opaque(ctx, &arg_item)
+                    } else {
+                        t.to_rust_ty_or_opaque(ctx, &())
+                    };
+                    stream.to_ptr(ctx.resolve_type(t).is_const())
+                }
                 TypeKind::Pointer(inner) => {
                     let inner = ctx.resolve_item(inner);
                     let inner_ty = inner.expect_type();

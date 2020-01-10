@@ -224,9 +224,10 @@ impl Builder {
         output_vector.push(self.options.rust_target.into());
 
         if self.options.default_enum_style != Default::default() {
-            output_vector.push("--default-enum-variant=".into());
+            output_vector.push("--default-enum-style=".into());
             output_vector.push(match self.options.default_enum_style {
-                codegen::EnumVariation::Rust => "rust",
+                codegen::EnumVariation::Rust { non_exhaustive: false } => "rust",
+                codegen::EnumVariation::Rust { non_exhaustive: true } => "rust_non_exhaustive",
                 codegen::EnumVariation::Bitfield => "bitfield",
                 codegen::EnumVariation::Consts => "consts",
                 codegen::EnumVariation::ModuleConsts => "moduleconsts",
@@ -249,6 +250,16 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--rustified-enum".into());
+                output_vector.push(item.to_owned());
+            })
+            .count();
+
+        self.options
+            .rustified_non_exhaustive_enums
+            .get_items()
+            .iter()
+            .map(|item| {
+                output_vector.push("--rustified-enum-non-exhaustive".into());
                 output_vector.push(item.to_owned());
             })
             .count();
@@ -442,6 +453,10 @@ impl Builder {
 
         if !self.options.prepend_enum_name {
             output_vector.push("--no-prepend-enum-name".into());
+        }
+
+        if self.options.array_pointers_in_arguments {
+            output_vector.push("--use-array-pointers-in-arguments".into());
         }
 
         self.options
@@ -809,9 +824,18 @@ impl Builder {
     
     
     
-    
     pub fn rustified_enum<T: AsRef<str>>(mut self, arg: T) -> Builder {
         self.options.rustified_enums.insert(arg);
+        self
+    }
+
+    
+    
+    
+    
+    
+    pub fn rustified_non_exhaustive_enum<T: AsRef<str>>(mut self, arg: T) -> Builder {
+        self.options.rustified_non_exhaustive_enums.insert(arg);
         self
     }
 
@@ -1310,6 +1334,12 @@ impl Builder {
         self.options.no_hash_types.insert(arg.into());
         self
     }
+
+    
+    pub fn array_pointers_in_arguments(mut self, doit: bool) -> Self {
+        self.options.array_pointers_in_arguments = doit;
+        self
+    }
 }
 
 
@@ -1356,6 +1386,8 @@ struct BindgenOptions {
 
     
     rustified_enums: RegexSet,
+
+    rustified_non_exhaustive_enums: RegexSet,
 
     
     constified_enum_modules: RegexSet,
@@ -1544,6 +1576,9 @@ struct BindgenOptions {
 
     
     no_hash_types: RegexSet,
+
+    
+    array_pointers_in_arguments: bool,
 }
 
 
@@ -1607,6 +1642,7 @@ impl Default for BindgenOptions {
             default_enum_style: Default::default(),
             bitfield_enums: Default::default(),
             rustified_enums: Default::default(),
+            rustified_non_exhaustive_enums: Default::default(),
             constified_enums: Default::default(),
             constified_enum_modules: Default::default(),
             builtins: false,
@@ -1656,6 +1692,7 @@ impl Default for BindgenOptions {
             no_partialeq_types: Default::default(),
             no_copy_types: Default::default(),
             no_hash_types: Default::default(),
+            array_pointers_in_arguments: false,
         }
     }
 }
