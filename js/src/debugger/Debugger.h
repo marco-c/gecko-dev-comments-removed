@@ -632,7 +632,8 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
-  typedef DebuggerWeakMap<JSObject, DebuggerFrame> GeneratorWeakMap;
+  typedef DebuggerWeakMap<AbstractGeneratorObject, DebuggerFrame>
+      GeneratorWeakMap;
   GeneratorWeakMap generatorFrames;
 
   
@@ -646,7 +647,8 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
   
   
-  typedef DebuggerWeakMap<JSObject, DebuggerSource, true> SourceWeakMap;
+  typedef DebuggerWeakMap<ScriptSourceObject, DebuggerSource, true>
+      SourceWeakMap;
   SourceWeakMap sources;
 
   
