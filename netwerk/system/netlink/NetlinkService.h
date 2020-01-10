@@ -70,7 +70,7 @@ class NetlinkService : public nsIRunnable {
   void OnNeighborMessage(struct nlmsghdr* aNlh);
   void OnRouteCheckResult(struct nlmsghdr* aNlh);
 
-  void CheckLinks();
+  void UpdateLinkStatus();
 
   void TriggerNetworkIDCalculation();
   int GetPollWait();
@@ -109,16 +109,33 @@ class NetlinkService : public nsIRunnable {
 
   nsCString mNetworkId;
 
-  
-  nsTArray<nsAutoPtr<NetlinkAddress> > mAddresses;
-  
-  nsClassHashtable<nsCStringHashKey, NetlinkNeighbor> mNeighbors;
-  
-  nsClassHashtable<nsUint32HashKey, NetlinkLink> mLinks;
-  
-  nsTArray<nsAutoPtr<NetlinkRoute> > mIPv4Routes;
-  
-  nsTArray<nsAutoPtr<NetlinkRoute> > mIPv6Routes;
+  class LinkInfo {
+   public:
+    explicit LinkInfo(NetlinkLink* aLink);
+    virtual ~LinkInfo();
+
+    
+    
+    bool UpdateLinkStatus();
+
+    
+    nsAutoPtr<NetlinkLink> mLink;
+
+    
+    nsTArray<nsAutoPtr<NetlinkAddress> > mAddresses;
+
+    
+    nsClassHashtable<nsCStringHashKey, NetlinkNeighbor> mNeighbors;
+
+    
+    nsTArray<nsAutoPtr<NetlinkRoute> > mDefaultRoutes;
+
+    
+    
+    bool mIsUp;
+  };
+
+  nsClassHashtable<nsUint32HashKey, LinkInfo> mLinks;
 
   
   nsAutoPtr<NetlinkRoute> mIPv4RouteCheckResult;
