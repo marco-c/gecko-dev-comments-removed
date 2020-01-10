@@ -781,8 +781,6 @@ pref("gfx.downloadable_fonts.fallback_delay_short", 100);
 
 pref("gfx.downloadable_fonts.disable_cache", false);
 
-pref("gfx.downloadable_fonts.woff2.enabled", true);
-
 
 #ifdef RELEASE_OR_BETA
 pref("gfx.downloadable_fonts.otl_validation", false);
