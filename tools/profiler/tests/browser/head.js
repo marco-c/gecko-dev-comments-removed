@@ -50,9 +50,9 @@ async function doAtLeastOnePeriodicSample() {
 
 
 
-async function stopProfilerAndGetThreads(contentPid) {
-  await doAtLeastOnePeriodicSample();
 
+
+async function stopProfilerNowAndGetThreads(contentPid) {
   const profile = await Services.profiler.getProfileDataAsync();
   Services.profiler.StopProfiler();
 
@@ -74,6 +74,21 @@ async function stopProfilerAndGetThreads(contentPid) {
   }
 
   return { parentThread, contentThread };
+}
+
+
+
+
+
+
+
+
+
+
+async function stopProfilerAndGetThreads(contentPid) {
+  await doAtLeastOnePeriodicSample();
+
+  return stopProfilerNowAndGetThreads(contentPid);
 }
 
 
