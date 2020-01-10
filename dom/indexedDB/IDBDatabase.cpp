@@ -732,8 +732,6 @@ void IDBDatabase::AbortTransactions(bool aShouldWarn) {
           aDatabase->mTransactions;
 
       if (!transactionTable.Count()) {
-        
-        
         return;
       }
 
@@ -756,8 +754,6 @@ void IDBDatabase::AbortTransactions(bool aShouldWarn) {
       MOZ_ASSERT(transactionsToAbort.Length() <= transactionTable.Count());
 
       if (transactionsToAbort.IsEmpty()) {
-        
-        
         return;
       }
 
@@ -772,10 +768,23 @@ void IDBDatabase::AbortTransactions(bool aShouldWarn) {
         MOZ_ASSERT(transaction);
         MOZ_ASSERT(!transaction->IsDone());
 
-        
-        
-        if (aShouldWarn && transaction->IsWriteAllowed()) {
-          transactionsThatNeedWarning.AppendElement(transaction);
+        if (aShouldWarn) {
+          switch (transaction->GetMode()) {
+            
+            case IDBTransaction::READ_ONLY:
+              break;
+
+            
+            case IDBTransaction::READ_WRITE:
+            case IDBTransaction::READ_WRITE_FLUSH:
+            case IDBTransaction::CLEANUP:
+            case IDBTransaction::VERSION_CHANGE:
+              transactionsThatNeedWarning.AppendElement(transaction);
+              break;
+
+            default:
+              MOZ_CRASH("Unknown mode!");
+          }
         }
 
         transaction->Abort(NS_ERROR_DOM_INDEXEDDB_ABORT_ERR);
