@@ -10,6 +10,7 @@
 
 from __future__ import absolute_import, print_function
 
+import distro
 import os
 import platform
 import re
@@ -98,25 +99,22 @@ elif system.startswith(('MINGW', 'MSYS_NT')):
     info['os'] = 'win'
     os_version = version = unknown
 elif system == "Linux":
-    if hasattr(platform, "linux_distribution"):
-        (distro, os_version, codename) = platform.linux_distribution()
-    else:
-        (distro, os_version, codename) = platform.dist()
+    (distribution, os_version, codename) = distro.linux_distribution()
     if not processor:
         processor = machine
-    version = "%s %s" % (distro, os_version)
+    version = "%s %s" % (distribution, os_version)
 
     
     
     
     
-    if not distro and not os_version and not codename:
-        distro = 'lfs'
-        version = release
-        os_version = release
+    
+    
+    
+    
 
     info['os'] = 'linux'
-    info['linux_distro'] = distro
+    info['linux_distro'] = distribution
 elif system in ['DragonFly', 'FreeBSD', 'NetBSD', 'OpenBSD']:
     info['os'] = 'bsd'
     version = os_version = sys.platform
