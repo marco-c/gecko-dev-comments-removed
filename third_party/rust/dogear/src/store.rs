@@ -12,16 +12,14 @@
 
 
 
-use std::{collections::HashMap, time::Duration, time::Instant};
+use std::{time::Duration, time::Instant};
 
 use crate::driver::{
-    AbortSignal, ContentsStats, DefaultAbortSignal, DefaultDriver, Driver, TelemetryEvent,
-    TreeStats,
+    AbortSignal, DefaultAbortSignal, DefaultDriver, Driver, TelemetryEvent, TreeStats,
 };
-use crate::error::{Error, ErrorKind};
-use crate::guid::Guid;
-use crate::merge::{Deletion, Merger};
-use crate::tree::{Content, MergedRoot, Tree};
+use crate::error::Error;
+use crate::merge::{MergedRoot, Merger};
+use crate::tree::Tree;
 
 
 
@@ -33,27 +31,13 @@ pub trait Store<E: From<Error>> {
 
     
     
-    
-    fn fetch_new_local_contents(&self) -> Result<HashMap<Guid, Content>, E>;
-
-    
-    
     fn fetch_remote_tree(&self) -> Result<Tree, E>;
 
     
     
     
-    fn fetch_new_remote_contents(&self) -> Result<HashMap<Guid, Content>, E>;
-
     
-    
-    
-    
-    fn apply<'t>(
-        &mut self,
-        root: MergedRoot<'t>,
-        deletions: impl Iterator<Item = Deletion<'t>>,
-    ) -> Result<(), E>;
+    fn apply<'t>(&mut self, root: MergedRoot<'t>) -> Result<(), E>;
 
     
     fn merge(&mut self) -> Result<(), E> {
@@ -69,78 +53,49 @@ pub trait Store<E: From<Error>> {
         signal: &impl AbortSignal,
     ) -> Result<(), E> {
         signal.err_if_aborted()?;
+        debug!(driver, "Building local tree");
         let (local_tree, time) = with_timing(|| self.fetch_local_tree())?;
         driver.record_telemetry_event(TelemetryEvent::FetchLocalTree(TreeStats {
             items: local_tree.size(),
             problems: local_tree.problems().counts(),
             time,
         }));
-        debug!(driver, "Built local tree from mirror\n{}", local_tree);
+        trace!(driver, "Built local tree from mirror\n{}", local_tree);
 
         signal.err_if_aborted()?;
-        let (new_local_contents, time) = with_timing(|| self.fetch_new_local_contents())?;
-        driver.record_telemetry_event(TelemetryEvent::FetchNewLocalContents(ContentsStats {
-            items: new_local_contents.len(),
-            time,
-        }));
-
-        signal.err_if_aborted()?;
+        debug!(driver, "Building remote tree");
         let (remote_tree, time) = with_timing(|| self.fetch_remote_tree())?;
         driver.record_telemetry_event(TelemetryEvent::FetchRemoteTree(TreeStats {
             items: remote_tree.size(),
             problems: remote_tree.problems().counts(),
             time,
         }));
-        debug!(driver, "Built remote tree from mirror\n{}", remote_tree);
+        trace!(driver, "Built remote tree from mirror\n{}", remote_tree);
 
         signal.err_if_aborted()?;
-        let (new_remote_contents, time) = with_timing(|| self.fetch_new_remote_contents())?;
-        driver.record_telemetry_event(TelemetryEvent::FetchNewRemoteContents(ContentsStats {
-            items: new_local_contents.len(),
-            time,
-        }));
-
-        let mut merger = Merger::with_driver(
-            driver,
-            signal,
-            &local_tree,
-            &new_local_contents,
-            &remote_tree,
-            &new_remote_contents,
-        );
+        debug!(driver, "Building merged tree");
+        let merger = Merger::with_driver(driver, signal, &local_tree, &remote_tree);
         let (merged_root, time) = with_timing(|| merger.merge())?;
-        driver.record_telemetry_event(TelemetryEvent::Merge(time, *merger.counts()));
-        debug!(
+        driver.record_telemetry_event(TelemetryEvent::Merge(time, *merged_root.counts()));
+        trace!(
             driver,
             "Built new merged tree\n{}\nDelete Locally: [{}]\nDelete Remotely: [{}]",
-            merged_root.to_ascii_string(),
-            merger
+            merged_root.node().to_ascii_string(),
+            merged_root
                 .local_deletions()
                 .map(|d| d.guid.as_str())
                 .collect::<Vec<_>>()
                 .join(", "),
-            merger
+            merged_root
                 .remote_deletions()
                 .map(|d| d.guid.as_str())
                 .collect::<Vec<_>>()
                 .join(", ")
         );
 
-        
-        
-        
-
         signal.err_if_aborted()?;
-        if !merger.subsumes(&local_tree) {
-            Err(E::from(ErrorKind::UnmergedLocalItems.into()))?;
-        }
-
-        signal.err_if_aborted()?;
-        if !merger.subsumes(&remote_tree) {
-            Err(E::from(ErrorKind::UnmergedRemoteItems.into()))?;
-        }
-
-        let ((), time) = with_timing(|| self.apply(merged_root, merger.deletions()))?;
+        debug!(driver, "Applying merged tree");
+        let ((), time) = with_timing(|| self.apply(merged_root))?;
         driver.record_telemetry_event(TelemetryEvent::Apply(time));
 
         Ok(())

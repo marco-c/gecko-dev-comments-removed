@@ -55,6 +55,9 @@ pub const UNFILED_GUID: Guid = Guid(Repr::Valid(*b"unfiled_____"));
 
 pub const MOBILE_GUID: Guid = Guid(Repr::Valid(*b"mobile______"));
 
+
+pub const TAGS_GUID: Guid = Guid(Repr::Valid(*b"tags________"));
+
 const VALID_GUID_BYTES: [u8; 255] = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
@@ -126,9 +129,14 @@ impl Guid {
     }
 
     
+    
     #[inline]
-    pub fn is_user_content_root(&self) -> bool {
-        self == TOOLBAR_GUID || self == MENU_GUID || self == UNFILED_GUID || self == MOBILE_GUID
+    pub fn is_built_in_root(&self) -> bool {
+        self == TOOLBAR_GUID
+            || self == MENU_GUID
+            || self == UNFILED_GUID
+            || self == MOBILE_GUID
+            || self == TAGS_GUID
     }
 }
 
