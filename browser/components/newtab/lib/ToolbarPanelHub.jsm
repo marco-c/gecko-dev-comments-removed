@@ -161,21 +161,6 @@ class _ToolbarPanelHub {
       
       this.state.contentArguments = await this._contentArguments();
       for (let message of messages) {
-        
-        if (message.content.published_date !== previousDate) {
-          container.appendChild(
-            this._createElement(doc, "p", {
-              classList: "whatsNew-message-date",
-              content: new Date(
-                message.content.published_date
-              ).toLocaleDateString("default", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-              }),
-            })
-          );
-        }
         container.appendChild(
           this._createMessageElements(win, doc, message, previousDate)
         );
@@ -228,6 +213,23 @@ class _ToolbarPanelHub {
     const messageEl = this._createElement(doc, "div");
     messageEl.classList.add("whatsNew-message");
 
+    
+    if (content.published_date !== previousDate) {
+      messageEl.appendChild(
+        this._createElement(doc, "p", {
+          classList: "whatsNew-message-date",
+          content: new Date(content.published_date).toLocaleDateString(
+            "default",
+            {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            }
+          ),
+        })
+      );
+    }
+
     const wrapperEl = this._createElement(doc, "button");
     
     wrapperEl.doCommand = () => {};
@@ -255,7 +257,7 @@ class _ToolbarPanelHub {
     }
 
     
-    this._attachClickListener(win, wrapperEl, message);
+    this._attachClickListener(win, messageEl, message);
 
     return messageEl;
   }
