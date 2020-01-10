@@ -106,34 +106,40 @@ const size_t gStackSize = 8192;
 
 
 
-static const uint32_t kCCDelay = 6000;  
+static const TimeDuration kCCDelay = TimeDuration::FromSeconds(6);
 
-static const int32_t kCCSkippableDelay = 250;  
-
-
-
-
-static const uint32_t kTimeBetweenForgetSkippableCycles = 2000;  
+static const TimeDuration kCCSkippableDelay =
+    TimeDuration::FromMilliseconds(250);
 
 
 
 
-static const int64_t kForgetSkippableSliceDuration = 2;
-
-
-static const int64_t kICCIntersliceDelay = 64;  
-
-
-static const int64_t kICCSliceBudget = 3;  
-
-static const int64_t kIdleICCSliceBudget = 2;  
-
-
-static const uint32_t kMaxICCDuration = 2000;  
+static const TimeDuration kTimeBetweenForgetSkippableCycles =
+    TimeDuration::FromSeconds(2);
 
 
 
-static const uint32_t kCCForced = (2 * 60 * PR_USEC_PER_SEC);  
+
+static const TimeDuration kForgetSkippableSliceDuration =
+    TimeDuration::FromMilliseconds(2);
+
+
+static const TimeDuration kICCIntersliceDelay =
+    TimeDuration::FromMilliseconds(64);
+
+
+static const TimeDuration kICCSliceBudget = TimeDuration::FromMilliseconds(3);
+
+static const TimeDuration kIdleICCSliceBudget =
+    TimeDuration::FromMilliseconds(2);
+
+
+static const TimeDuration kMaxICCDuration = TimeDuration::FromSeconds(2);
+
+
+
+static const TimeDuration kCCForced =
+    TimeDuration::FromSeconds(2 * 60);  
 static const uint32_t kCCForcedPurpleLimit = 10;
 
 
@@ -1138,6 +1144,10 @@ static void FinishAnyIncrementalGC() {
   }
 }
 
+static inline js::SliceBudget BudgetFromDuration(TimeDuration duration) {
+  return js::SliceBudget(js::TimeBudget(duration.ToMilliseconds()));
+}
+
 static void FireForgetSkippable(uint32_t aSuspected, bool aRemoveChildless,
                                 TimeStamp aDeadline) {
   AUTO_PROFILER_TRACING(
@@ -1177,11 +1187,10 @@ static void FireForgetSkippable(uint32_t aSuspected, bool aRemoveChildless,
   FinishAnyIncrementalGC();
   bool earlyForgetSkippable = sCleanupsSinceLastGC < kMajorForgetSkippableCalls;
 
-  int64_t budgetMs =
-      aDeadline.IsNull()
-          ? kForgetSkippableSliceDuration
-          : int64_t((aDeadline - TimeStamp::Now()).ToMilliseconds());
-  js::SliceBudget budget = js::SliceBudget(js::TimeBudget(budgetMs));
+  TimeDuration budgetTime = aDeadline ? (aDeadline - TimeStamp::Now())
+                                      : kForgetSkippableSliceDuration;
+
+  js::SliceBudget budget = BudgetFromDuration(budgetTime);
   nsCycleCollector_forgetSkippable(budget, aRemoveChildless,
                                    earlyForgetSkippable);
 
@@ -1223,16 +1232,26 @@ static void FireForgetSkippable(uint32_t aSuspected, bool aRemoveChildless,
 }
 
 MOZ_ALWAYS_INLINE
-static uint32_t TimeBetween(TimeStamp start, TimeStamp end) {
+static TimeDuration TimeBetween(TimeStamp start, TimeStamp end) {
   MOZ_ASSERT(end >= start);
-  return (uint32_t)((end - start).ToMilliseconds());
+  return end - start;
 }
 
-static uint32_t TimeUntilNow(TimeStamp start) {
+MOZ_ALWAYS_INLINE
+static uint32_t TimeBetweenInMillis(TimeStamp start, TimeStamp end) {
+  return uint32_t(TimeBetween(start, end).ToMilliseconds());
+}
+
+static TimeDuration TimeUntilNow(TimeStamp start) {
   if (start.IsNull()) {
-    return 0;
+    return TimeDuration();
   }
   return TimeBetween(start, TimeStamp::Now());
+}
+
+MOZ_ALWAYS_INLINE
+static uint32_t TimeUntilNowInMillis(TimeStamp start) {
+  return uint32_t(TimeUntilNow(start).ToMilliseconds());
 }
 
 struct CycleCollectorStats {
@@ -1315,7 +1334,7 @@ struct CycleCollectorStats {
                             percent);
     }
 
-    uint32_t sliceTime = TimeBetween(mBeginSliceTime, mEndSliceTime);
+    uint32_t sliceTime = TimeBetweenInMillis(mBeginSliceTime, mEndSliceTime);
     mMaxSliceTime = std::max(mMaxSliceTime, sliceTime);
     mMaxSliceTimeSinceClear = std::max(mMaxSliceTimeSinceClear, sliceTime);
     mTotalSliceTime += sliceTime;
@@ -1376,7 +1395,7 @@ void CycleCollectorStats::PrepareForCycleCollectionSlice(TimeStamp aDeadline) {
   if (sCCLockedOut) {
     mAnyLockedOut = true;
     FinishAnyIncrementalGC();
-    uint32_t gcTime = TimeBetween(mBeginSliceTime, TimeStamp::Now());
+    uint32_t gcTime = TimeBetweenInMillis(mBeginSliceTime, TimeStamp::Now());
     mMaxGCDuration = std::max(mMaxGCDuration, gcTime);
   }
 }
@@ -1392,8 +1411,8 @@ void CycleCollectorStats::RunForgetSkippable() {
   }
 
   if (ranSyncForgetSkippable) {
-    mMaxSkippableDuration =
-        std::max(mMaxSkippableDuration, TimeUntilNow(beginForgetSkippable));
+    mMaxSkippableDuration = std::max(
+        mMaxSkippableDuration, TimeUntilNowInMillis(beginForgetSkippable));
     mRanSyncForgetSkippable = true;
   }
 }
@@ -1429,44 +1448,44 @@ void nsJSContext::RunCycleCollectorSlice(TimeStamp aDeadline) {
   js::SliceBudget budget = js::SliceBudget::unlimited();
 
   if (sIncrementalCC) {
-    int64_t baseBudget = kICCSliceBudget;
+    TimeDuration baseBudget = kICCSliceBudget;
     if (!aDeadline.IsNull()) {
-      baseBudget = int64_t((aDeadline - TimeStamp::Now()).ToMilliseconds());
+      baseBudget = aDeadline - TimeStamp::Now();
     }
 
     if (gCCStats.mBeginTime.IsNull()) {
       
-      budget = js::SliceBudget(js::TimeBudget(baseBudget));
+      budget = BudgetFromDuration(baseBudget);
     } else {
       TimeStamp now = TimeStamp::Now();
 
       
-      uint32_t runningTime = TimeBetween(gCCStats.mBeginTime, now);
+      TimeDuration runningTime = TimeBetween(gCCStats.mBeginTime, now);
       if (runningTime < kMaxICCDuration) {
-        const float maxSlice = MainThreadIdlePeriod::GetLongIdlePeriod();
+        const TimeDuration maxSlice = TimeDuration::FromMilliseconds(
+            MainThreadIdlePeriod::GetLongIdlePeriod());
 
         
-        float sliceDelayMultiplier = TimeBetween(gCCStats.mEndSliceTime, now) /
-                                     (float)kICCIntersliceDelay;
-        float delaySliceBudget =
-            std::min(baseBudget * sliceDelayMultiplier, maxSlice);
+        double sliceDelayMultiplier =
+            TimeBetween(gCCStats.mEndSliceTime, now) / kICCIntersliceDelay;
+        TimeDuration delaySliceBudget =
+            std::min(baseBudget.MultDouble(sliceDelayMultiplier), maxSlice);
 
         
         
-        float percentToHalfDone =
-            std::min(2.0f * runningTime / kMaxICCDuration, 1.0f);
-        float laterSliceBudget = maxSlice * percentToHalfDone;
+        double percentToHalfDone =
+            std::min(2.0 * (runningTime / kMaxICCDuration), 1.0);
+        TimeDuration laterSliceBudget = maxSlice.MultDouble(percentToHalfDone);
 
-        budget = js::SliceBudget(js::TimeBudget(
-            std::max({delaySliceBudget, laterSliceBudget, (float)baseBudget})));
+        budget = BudgetFromDuration(
+            std::max({delaySliceBudget, laterSliceBudget, baseBudget}));
       }
     }
   }
 
   nsCycleCollector_collectSlice(
       budget,
-      aDeadline.IsNull() ||
-          (aDeadline - TimeStamp::Now()).ToMilliseconds() < kICCSliceBudget);
+      aDeadline.IsNull() || (aDeadline - TimeStamp::Now()) < kICCSliceBudget);
 
   gCCStats.FinishCycleCollectionSlice();
 }
@@ -1543,8 +1562,9 @@ void nsJSContext::BeginCycleCollectionCallback() {
   
   sICCRunner = IdleTaskRunner::Create(
       ICCRunnerFired, "BeginCycleCollectionCallback::ICCRunnerFired",
-      kICCIntersliceDelay, kIdleICCSliceBudget, true,
-      [] { return sShuttingDown; }, TaskCategory::GarbageCollection);
+      kICCIntersliceDelay.ToMilliseconds(),
+      kIdleICCSliceBudget.ToMilliseconds(), true, [] { return sShuttingDown; },
+      TaskCategory::GarbageCollection);
 }
 
 
@@ -1562,15 +1582,16 @@ void nsJSContext::EndCycleCollectionCallback(CycleCollectorResults& aResults) {
   sCCollectedZonesWaitingForGC += aResults.mFreedJSZones;
 
   TimeStamp endCCTimeStamp = TimeStamp::Now();
-  uint32_t ccNowDuration = TimeBetween(gCCStats.mBeginTime, endCCTimeStamp);
+  TimeDuration ccNowDuration = TimeBetween(gCCStats.mBeginTime, endCCTimeStamp);
 
   if (NeedsGCAfterCC()) {
-    MOZ_ASSERT(StaticPrefs::javascript_options_gc_delay() > kMaxICCDuration,
+    MOZ_ASSERT(StaticPrefs::javascript_options_gc_delay() >
+                   kMaxICCDuration.ToMilliseconds(),
                "A max duration ICC shouldn't reduce GC delay to 0");
 
     PokeGC(JS::GCReason::CC_WAITING, nullptr,
            StaticPrefs::javascript_options_gc_delay() -
-               std::min(ccNowDuration, kMaxICCDuration));
+               std::min(ccNowDuration, kMaxICCDuration).ToMilliseconds());
   }
 
   
@@ -1578,15 +1599,15 @@ void nsJSContext::EndCycleCollectionCallback(CycleCollectorResults& aResults) {
                         gCCStats.mAnyLockedOut);
   Telemetry::Accumulate(Telemetry::CYCLE_COLLECTOR_SYNC_SKIPPABLE,
                         gCCStats.mRanSyncForgetSkippable);
-  Telemetry::Accumulate(Telemetry::CYCLE_COLLECTOR_FULL, ccNowDuration);
+  Telemetry::Accumulate(Telemetry::CYCLE_COLLECTOR_FULL,
+                        ccNowDuration.ToMilliseconds());
   Telemetry::Accumulate(Telemetry::CYCLE_COLLECTOR_MAX_PAUSE,
                         gCCStats.mMaxSliceTime);
 
   if (!sLastCCEndTime.IsNull()) {
-    
-    uint32_t timeBetween =
-        TimeBetween(sLastCCEndTime, gCCStats.mBeginTime) / 1000;
-    Telemetry::Accumulate(Telemetry::CYCLE_COLLECTOR_TIME_BETWEEN, timeBetween);
+    TimeDuration timeBetween = TimeBetween(sLastCCEndTime, gCCStats.mBeginTime);
+    Telemetry::Accumulate(Telemetry::CYCLE_COLLECTOR_TIME_BETWEEN,
+                          timeBetween.ToSeconds());
   }
   sLastCCEndTime = endCCTimeStamp;
 
@@ -1643,7 +1664,7 @@ void nsJSContext::EndCycleCollectionCallback(CycleCollectorResults& aResults) {
   if (StaticPrefs::javascript_options_mem_notify()) {
     const char16_t* kJSONFmt =
         u"{ \"timestamp\": %llu, "
-        u"\"duration\": %lu, "
+        u"\"duration\": %.f, "
         u"\"max_slice_pause\": %lu, "
         u"\"total_slice_pause\": %lu, "
         u"\"max_finish_gc_duration\": %lu, "
@@ -1670,10 +1691,10 @@ void nsJSContext::EndCycleCollectionCallback(CycleCollectorResults& aResults) {
 
     nsString json;
     nsTextFormatter::ssprintf(
-        json, kJSONFmt, PR_Now(), ccNowDuration, gCCStats.mMaxSliceTime,
-        gCCStats.mTotalSliceTime, gCCStats.mMaxGCDuration,
-        gCCStats.mMaxSkippableDuration, gCCStats.mSuspected,
-        aResults.mVisitedRefCounted, aResults.mVisitedGCed,
+        json, kJSONFmt, PR_Now(), ccNowDuration.ToMilliseconds(),
+        gCCStats.mMaxSliceTime, gCCStats.mTotalSliceTime,
+        gCCStats.mMaxGCDuration, gCCStats.mMaxSkippableDuration,
+        gCCStats.mSuspected, aResults.mVisitedRefCounted, aResults.mVisitedGCed,
         aResults.mFreedRefCounted, aResults.mFreedGCed, sCCollectedWaitingForGC,
         sCCollectedZonesWaitingForGC, sLikelyShortLivingObjectsNeedingGC,
         aResults.mForcedGC, sForgetSkippableBeforeCC,
@@ -1798,9 +1819,9 @@ static bool CCRunnerFired(TimeStamp aDeadline) {
     return false;
   }
 
-  static uint32_t ccDelay = kCCDelay;
+  static TimeDuration ccDelay = kCCDelay;
   if (sCCLockedOut) {
-    ccDelay = kCCDelay / 3;
+    ccDelay = kCCDelay / int64_t(3);
 
     TimeStamp now = TimeStamp::Now();
     if (!sCCLockedOutTime) {
@@ -1827,7 +1848,7 @@ static bool CCRunnerFired(TimeStamp aDeadline) {
   
   
   int32_t numEarlyTimerFires =
-      std::max((int32_t)ccDelay / kCCSkippableDelay - 2, 1);
+      std::max(int32_t(ccDelay / kCCSkippableDelay) - 2, 1);
   bool isLateTimerFire = sCCRunnerFireCount > numEarlyTimerFires;
   uint32_t suspected = nsCycleCollector_suspectedCount();
   if (isLateTimerFire && ShouldTriggerCC(suspected)) {
@@ -2055,7 +2076,7 @@ void nsJSContext::MaybePokeCC() {
 
   
   if (sCleanupsSinceLastGC && !sLastCCEndTime.IsNull()) {
-    uint32_t sinceLastCCEnd = TimeUntilNow(sLastCCEndTime);
+    TimeDuration sinceLastCCEnd = TimeUntilNow(sLastCCEndTime);
     if (sinceLastCCEnd < kCCDelay) {
       return;
     }
@@ -2065,7 +2086,7 @@ void nsJSContext::MaybePokeCC() {
   
   if ((sCleanupsSinceLastGC > kMajorForgetSkippableCalls) &&
       !sLastForgetSkippableCycleEndTime.IsNull()) {
-    uint32_t sinceLastForgetSkippableCycle =
+    TimeDuration sinceLastForgetSkippableCycle =
         TimeUntilNow(sLastForgetSkippableCycleEndTime);
     if (sinceLastForgetSkippableCycle < kTimeBetweenForgetSkippableCycles) {
       return;
@@ -2079,9 +2100,10 @@ void nsJSContext::MaybePokeCC() {
     nsCycleCollector_dispatchDeferredDeletion();
 
     sCCRunner = IdleTaskRunner::Create(
-        CCRunnerFired, "MaybePokeCC::CCRunnerFired", kCCSkippableDelay,
-        kForgetSkippableSliceDuration, true, [] { return sShuttingDown; },
-        TaskCategory::GarbageCollection);
+        CCRunnerFired, "MaybePokeCC::CCRunnerFired",
+        kCCSkippableDelay.ToMilliseconds(),
+        kForgetSkippableSliceDuration.ToMilliseconds(), true,
+        [] { return sShuttingDown; }, TaskCategory::GarbageCollection);
   }
 }
 
@@ -2240,7 +2262,7 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
       }
 
       Telemetry::Accumulate(Telemetry::GC_IN_PROGRESS_MS,
-                            TimeBetween(sCurrentGCStartTime, TimeStamp::Now()));
+                            TimeUntilNow(sCurrentGCStartTime).ToMilliseconds());
       break;
     }
 
