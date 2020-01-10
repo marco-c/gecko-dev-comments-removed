@@ -117,7 +117,10 @@ class Selection final : public nsSupportsWeakReference,
     }
   }
 
+  
+  
   Document* GetParentObject() const;
+
   DocGroup* GetDocGroup() const;
 
   
