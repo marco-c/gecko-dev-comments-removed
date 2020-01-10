@@ -6,10 +6,18 @@
 #ifndef mozilla_layers_NativeLayer_h
 #define mozilla_layers_NativeLayer_h
 
+#include "mozilla/Maybe.h"
+
+#include "GLTypes.h"
 #include "nsISupportsImpl.h"
 #include "nsRegion.h"
 
 namespace mozilla {
+
+namespace gl {
+class GLContext;
+}  
+
 namespace layers {
 
 class NativeLayer;
@@ -89,6 +97,34 @@ class NativeLayer {
   
   virtual RefPtr<gfx::DrawTarget> NextSurfaceAsDrawTarget(
       gfx::BackendType aBackendType) = 0;
+
+  
+  
+  
+  
+  
+  
+  virtual void SetGLContext(gl::GLContext* aGLContext) = 0;
+  virtual gl::GLContext* GetGLContext() = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual Maybe<GLuint> NextSurfaceAsFramebuffer(bool aNeedsDepth) = 0;
 
   
   
