@@ -480,6 +480,13 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
+  nsIContent* GetFirstChildOfTemplateOrNode();
+
+  
+
+
+
+
   virtual nsINode* GetScopeChainParent() const;
 
   MOZ_CAN_RUN_SCRIPT mozilla::dom::Element* GetParentFlexElement();

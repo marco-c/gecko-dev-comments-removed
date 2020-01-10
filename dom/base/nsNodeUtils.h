@@ -237,15 +237,6 @@ class nsNodeUtils {
   static already_AddRefed<nsINode> CloneNodeImpl(nsINode* aNode, bool aDeep,
                                                  mozilla::ErrorResult& aError);
 
-  
-
-
-
-
-
-
-  static nsIContent* GetFirstChildOfTemplateOrNode(nsINode* aNode);
-
  private:
   
 

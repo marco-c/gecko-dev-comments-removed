@@ -8578,9 +8578,8 @@ bool nsContentUtils::SerializeNodeToMarkup(nsINode* aRoot,
   
   MOZ_ASSERT(aDescendentsOnly || aRoot->NodeType() != nsINode::DOCUMENT_NODE);
 
-  nsINode* current = aDescendentsOnly
-                         ? nsNodeUtils::GetFirstChildOfTemplateOrNode(aRoot)
-                         : aRoot;
+  nsINode* current =
+      aDescendentsOnly ? aRoot->GetFirstChildOfTemplateOrNode() : aRoot;
 
   if (!current) {
     return true;
@@ -8595,8 +8594,7 @@ bool nsContentUtils::SerializeNodeToMarkup(nsINode* aRoot,
         Element* elem = current->AsElement();
         StartElement(elem, builder);
         isVoid = IsVoidTag(elem);
-        if (!isVoid &&
-            (next = nsNodeUtils::GetFirstChildOfTemplateOrNode(current))) {
+        if (!isVoid && (next = current->GetFirstChildOfTemplateOrNode())) {
           current = next;
           continue;
         }
