@@ -316,9 +316,18 @@ class OSXBootstrapper(BaseBootstrapper):
     def _ensure_homebrew_casks(self, casks):
         self._ensure_homebrew_found()
 
+        known_taps = self.check_output([self.brew, 'tap'])
+
+        
+        if b'homebrew/cask-versions' not in known_taps:
+            self.check_output([self.brew, 'tap', 'homebrew/cask-versions'])
+
         
         
-        self.check_output([self.brew, 'tap', 'homebrew/cask-versions'])
+        
+        
+        if b'caskroom/versions' in known_taps:
+            self.check_output([self.brew, 'untap', 'caskroom/versions'])
 
         
         return self._ensure_homebrew_packages(casks, extra_brew_args=['cask'])
