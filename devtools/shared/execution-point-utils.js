@@ -68,7 +68,9 @@ function pointPrecedes(pointA, pointB) {
   
   
   
-  assert(!!posA == !!posB);
+  if (!!posA != !!posB) {
+    return !!posB;
+  }
   if (!posA || positionEquals(posA, posB)) {
     return false;
   }
@@ -191,7 +193,6 @@ function positionToString(pos) {
 
 function assert(v) {
   if (!v) {
-    dump(`Assertion failed: ${Error().stack}\n`);
     throw new Error(`Assertion failed! ${Error().stack}`);
   }
 }
