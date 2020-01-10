@@ -49,7 +49,7 @@ function run_test() {
   Services.obs.addObserver(networkActivity, 'network-activity');
 
   
-  Services.obs.notifyObservers(null, "profile-initial-state", null);
+  Services.obs.notifyObservers(null, "profile-initial-state");
 
   do_test_pending();
   httpserver.registerPathHandler("/ok", handler);

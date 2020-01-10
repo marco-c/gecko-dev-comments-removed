@@ -89,8 +89,3 @@ add_test(function test_LoadContextRegular() {
 
 
 
-
-
-function run_test() {
-    run_next_test();
-}

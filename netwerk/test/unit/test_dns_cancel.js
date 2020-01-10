@@ -17,7 +17,7 @@ var requestList2Canceled;
 var requestList2NotCanceled;
 
 var listener1 = {
-  onLookupComplete: function(inRequest, inRecord, inStatus) {
+  onLookupComplete(inRequest, inRecord, inStatus) {
     
     if (inRequest == requestList1NotCanceled) {
       
@@ -26,17 +26,11 @@ var listener1 = {
       do_test_finished();
     }
   },
-  QueryInterface: function(aIID) {
-    if (aIID.equals(Ci.nsIDNSListener) ||
-        aIID.equals(Ci.nsISupports)) {
-      return this;
-    }
-    throw Cr.NS_ERROR_NO_INTERFACE;
-  }
+  QueryInterface: ChromeUtils.generateQI(["nsIDNSListener"])
 };
 
 var listener2 = {
-  onLookupComplete: function(inRequest, inRecord, inStatus) {
+  onLookupComplete(inRequest, inRecord, inStatus) {
     
     if (inRequest == requestList2NotCanceled) {
       
@@ -45,13 +39,7 @@ var listener2 = {
       do_test_finished();
     }
   },
-  QueryInterface: function(aIID) {
-    if (aIID.equals(Ci.nsIDNSListener) ||
-        aIID.equals(Ci.nsISupports)) {
-      return this;
-    }
-    throw Cr.NS_ERROR_NO_INTERFACE;
-  }
+  QueryInterface: ChromeUtils.generateQI(["nsIDNSListener"])
 };
 
 const defaultOriginAttributes = {};

@@ -176,7 +176,7 @@ function run_test() {
   
   
   if (mozinfo.os == "win") {
-    return;
+    
   }
 
   httpserv = new HttpServer();

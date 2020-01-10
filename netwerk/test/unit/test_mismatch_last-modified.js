@@ -19,13 +19,7 @@ var listener_3 = {
     
     
 
-    QueryInterface: function(iid) {
-	if (iid.equals(Ci.nsIStreamListener) ||
-            iid.equals(Ci.nsIRequestObserver) ||
-            iid.equals(Ci.nsISupports))
-	    return this;
-	throw Cr.NS_ERROR_NO_INTERFACE;
-    },
+    QueryInterface: ChromeUtils.generateQI(["nsIStreamListener", "nsIRequestObserver"]),
 
     onStartRequest: function test_onStartR(request) {},
     
@@ -46,13 +40,7 @@ XPCOMUtils.defineLazyGetter(this, "listener_2", function() {
     
     
 
-    QueryInterface: function(iid) {
-	if (iid.equals(Ci.nsIStreamListener) ||
-            iid.equals(Ci.nsIRequestObserver) ||
-            iid.equals(Ci.nsISupports))
-	    return this;
-	throw Cr.NS_ERROR_NO_INTERFACE;
-    },
+    QueryInterface: ChromeUtils.generateQI(["nsIStreamListener", "nsIRequestObserver"]),
 
     onStartRequest: function test_onStartR(request) {},
     
@@ -82,13 +70,7 @@ XPCOMUtils.defineLazyGetter(this, "listener_1", function() {
     
     
 
-    QueryInterface: function(iid) {
-	if (iid.equals(Ci.nsIStreamListener) ||
-            iid.equals(Ci.nsIRequestObserver) ||
-            iid.equals(Ci.nsISupports))
-	    return this;
-	throw Cr.NS_ERROR_NO_INTERFACE;
-    },
+    QueryInterface: ChromeUtils.generateQI(["nsIStreamListener", "nsIRequestObserver"]),
 
     onStartRequest: function test_onStartR(request) {},
     
