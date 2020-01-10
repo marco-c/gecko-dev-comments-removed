@@ -117,10 +117,6 @@ using namespace mozilla;
 using base::Thread;
 
 
-
-bool gDisableNativeTheme = false;
-
-
 #define TOUCH_INJECT_PUMP_TIMER_MSEC 50
 #define TOUCH_INJECT_LONG_TAP_DEFAULT_MSEC 1500
 int32_t nsIWidget::sPointerIdCounter = 0;
@@ -386,14 +382,6 @@ nsBaseWidget::~nsBaseWidget() {
 
 
 void nsBaseWidget::BaseCreate(nsIWidget* aParent, nsWidgetInitData* aInitData) {
-  static bool gDisableNativeThemeCached = false;
-  if (!gDisableNativeThemeCached) {
-    Preferences::AddBoolVarCache(&gDisableNativeTheme,
-                                 "mozilla.widget.disable-native-theme",
-                                 gDisableNativeTheme);
-    gDisableNativeThemeCached = true;
-  }
-
   
   if (nullptr != aInitData) {
     mWindowType = aInitData->mWindowType;

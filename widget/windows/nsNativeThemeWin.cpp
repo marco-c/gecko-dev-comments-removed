@@ -10,6 +10,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/RelativeLuminanceUtils.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/gfx/Types.h"  
 #include "nsColor.h"
@@ -4282,11 +4283,8 @@ nsresult nsNativeThemeWin::DrawCustomScrollbarPart(
 
 
 
-
-extern bool gDisableNativeTheme;
-
 already_AddRefed<nsITheme> do_GetNativeTheme() {
-  if (gDisableNativeTheme) return nullptr;
+  if (StaticPrefs::widget_disable_native_theme()) return nullptr;
 
   static nsCOMPtr<nsITheme> inst;
 
