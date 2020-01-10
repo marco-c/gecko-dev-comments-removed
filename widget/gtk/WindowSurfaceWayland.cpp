@@ -524,8 +524,7 @@ WindowSurfaceWayland::WindowSurfaceWayland(nsWindow* aWindow)
       mBufferPendingCommit(false),
       mBufferCommitAllowed(false),
       mBufferNeedsClear(false),
-      mIsMainThread(NS_IsMainThread()),
-      mNeedScaleFactorUpdate(true) {
+      mIsMainThread(NS_IsMainThread()) {
   for (int i = 0; i < BACK_BUFFER_NUM; i++) {
     mShmBackupBuffer[i] = nullptr;
     mDMABackupBuffer[i] = nullptr;
@@ -656,7 +655,6 @@ WindowBackBuffer* WindowSurfaceWayland::SetNewWaylandBuffer(
        (void*)this, mBufferScreenRect.width, mBufferScreenRect.height,
        aUseDMABufBackend));
 
-  mNeedScaleFactorUpdate = true;
   mWaylandBuffer = WaylandBufferFindAvailable(
       mBufferScreenRect.width, mBufferScreenRect.height, aUseDMABufBackend);
   if (!mWaylandBuffer) {
@@ -718,9 +716,6 @@ WindowBackBuffer* WindowSurfaceWayland::GetWaylandBufferWithSwitch() {
                               mBufferScreenRect.height)) {
     return nullptr;
   }
-  
-  
-  mNeedScaleFactorUpdate = true;
   return mWaylandBuffer;
 }
 
@@ -836,9 +831,6 @@ already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::Lock(
     
     mDelayedImageCommits.Clear();
     mWaylandBufferDamage.SetEmpty();
-
-    
-    mNeedScaleFactorUpdate = true;
 
     
     mWaylandFullscreenDamage = true;
@@ -1133,11 +1125,6 @@ void WindowSurfaceWayland::CommitWaylandBuffer() {
 
   mFrameCallback = wl_surface_frame(waylandSurface);
   wl_callback_add_listener(mFrameCallback, &frame_listener, this);
-
-  if (mNeedScaleFactorUpdate || mLastCommittedSurface != waylandSurface) {
-    wl_surface_set_buffer_scale(waylandSurface, mWindow->GdkScaleFactor());
-    mNeedScaleFactorUpdate = false;
-  }
 
   mWaylandBuffer->Attach(waylandSurface);
   mLastCommittedSurface = waylandSurface;

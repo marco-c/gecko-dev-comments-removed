@@ -324,10 +324,6 @@ class WindowSurfaceWayland : public WindowSurface {
   bool mIsMainThread;
 
   
-  
-  bool mNeedScaleFactorUpdate;
-
-  
   RenderingCacheMode mRenderingCacheMode;
 
   static bool UseDMABufBackend();
