@@ -41,6 +41,7 @@
 #include "wasm/WasmInstance.h"
 #include "wasm/WasmIonCompile.h"
 #include "wasm/WasmModule.h"
+#include "wasm/WasmProcess.h"
 #include "wasm/WasmSignalHandlers.h"
 #include "wasm/WasmStubs.h"
 #include "wasm/WasmValidate.h"
@@ -493,6 +494,10 @@ bool wasm::CompileAndSerialize(const ShareableBytes& bytecode,
   
   compileArgs->baselineEnabled = false;
   compileArgs->ionEnabled = true;
+
+  
+  
+  compileArgs->hugeMemory = wasm::IsHugeMemoryEnabled();
 
   SerializeListener listener(serialized);
 

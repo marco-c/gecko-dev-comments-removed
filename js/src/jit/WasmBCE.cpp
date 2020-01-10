@@ -48,11 +48,6 @@ bool jit::EliminateBoundsChecks(MIRGenerator* mir, MIRGraph& graph) {
           
           
 
-#ifndef WASM_HUGE_MEMORY
-          MOZ_ASSERT(wasm::MaxMemoryAccessSize < wasm::GuardSize,
-                     "Guard page handles partial out-of-bounds");
-#endif
-
           if (addr->isConstant() &&
               addr->toConstant()->type() == MIRType::Int32 &&
               uint32_t(addr->toConstant()->toInt32()) <
