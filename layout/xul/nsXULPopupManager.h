@@ -819,9 +819,6 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
   
   nsCOMPtr<nsIContent> mOpeningPopup;
-
-  
-  static bool sDevtoolsDisableAutoHide;
 };
 
 #endif

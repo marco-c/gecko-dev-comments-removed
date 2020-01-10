@@ -315,8 +315,6 @@ pref("ui.android.mouse_as_touch", 1);
 
 pref("ui.menu.incremental_search.timeout", 1000);
 
-pref("ui.popup.disable_autohide", false);
-
 pref("browser.display.force_inline_alttext", false); 
 
 
