@@ -573,7 +573,7 @@ class nsContentUtils {
   
 
 
-  static bool IsHTMLBlock(nsIContent* aContent);
+  static bool IsHTMLBlockLevelElement(nsIContent* aContent);
 
   enum ParseHTMLIntegerResultFlags {
     eParseHTMLInteger_NoFlags = 0,
