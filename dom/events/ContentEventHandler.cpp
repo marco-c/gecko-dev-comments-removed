@@ -634,8 +634,8 @@ static uint32_t ConvertToXPOffset(nsIContent* aContent,
   
   
   
-  return aNativeOffset - CountNewlinesInNativeLength(aContent->AsText(),
-                                                     aNativeOffset);
+  return aNativeOffset -
+         CountNewlinesInNativeLength(aContent->AsText(), aNativeOffset);
 #else
   
   return aNativeOffset;

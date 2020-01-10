@@ -19,10 +19,8 @@ namespace dom {
 
 
 class EffectsInfo {
-public:
-  EffectsInfo() {
-    *this = EffectsInfo::FullyHidden();
-  }
+ public:
+  EffectsInfo() { *this = EffectsInfo::FullyHidden(); }
   static EffectsInfo FullyVisible() { return EffectsInfo{true}; }
   static EffectsInfo FullyHidden() { return EffectsInfo{false}; }
 
@@ -37,8 +35,8 @@ public:
 
 
 
-private:
-  explicit EffectsInfo(bool aVisible) : mVisible(aVisible) { }
+ private:
+  explicit EffectsInfo(bool aVisible) : mVisible(aVisible) {}
 };
 
 }  

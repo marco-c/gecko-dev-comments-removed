@@ -11,8 +11,8 @@
 #include "client/ClientLayerManager.h"  
 #include "gfxContext.h"                 
 #include "gfx2DGlue.h"
-#include "gfxEnv.h"              
-#include "gfxRect.h"             
+#include "gfxEnv.h"   
+#include "gfxRect.h"  
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/gfx/2D.h"      

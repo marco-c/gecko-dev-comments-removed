@@ -5,10 +5,10 @@
 
 
 #include "mozilla/layers/ContentClient.h"
-#include "BasicLayers.h"            
-#include "gfxContext.h"             
-#include "gfxPlatform.h"            
-#include "gfxEnv.h"                 
+#include "BasicLayers.h"  
+#include "gfxContext.h"   
+#include "gfxPlatform.h"  
+#include "gfxEnv.h"       
 
 #include "gfxPoint.h"               
 #include "gfxUtils.h"               

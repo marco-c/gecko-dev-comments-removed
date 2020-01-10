@@ -1500,7 +1500,9 @@ void HostLayer::RecomputeShadowVisibleRegionFromChildren() {
   
   
   
-  NS_ASSERTION(!GetLayer()->Extend3DContext(), "Can't compute visible region for layers that extend a 3d context");
+  NS_ASSERTION(
+      !GetLayer()->Extend3DContext(),
+      "Can't compute visible region for layers that extend a 3d context");
   if (container && !GetLayer()->Extend3DContext()) {
     ComputeVisibleRegionForChildren(container, mShadowVisibleRegion);
   }

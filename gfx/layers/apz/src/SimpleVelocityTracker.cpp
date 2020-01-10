@@ -8,7 +8,7 @@
 
 #include "mozilla/ComputedTimingFunction.h"  
 #include "mozilla/StaticPrefs.h"
-#include "mozilla/StaticPtr.h"               
+#include "mozilla/StaticPtr.h"  
 
 #define SVT_LOG(...)
 
