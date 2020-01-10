@@ -152,6 +152,11 @@ fn make_shared_flags(
         if jump_tables_enabled { "true" } else { "false" },
     )?;
 
+    if cfg!(feature = "cranelift_x86") && cfg!(target_pointer_width = "64") {
+        sb.enable("enable_pinned_reg")?;
+        sb.enable("use_pinned_reg_as_heap_base")?;
+    }
+
     Ok(settings::Flags::new(sb))
 }
 
@@ -190,7 +195,6 @@ fn make_isa_specific(env: &StaticEnvironment) -> DashResult<isa::Builder> {
 
     Ok(ib)
 }
-
 
 #[cfg(not(feature = "cranelift_x86"))]
 fn make_isa_specific(_env: &StaticEnvironment) -> DashResult<isa::Builder> {

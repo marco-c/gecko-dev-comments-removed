@@ -96,13 +96,6 @@ static bool GenerateCraneliftCode(WasmMacroAssembler& masm,
   uint32_t codeEnd = masm.currentOffset();
 #endif
 
-  
-  
-  
-  
-  masm.loadWasmTlsRegFromFrame();
-  masm.loadWasmPinnedRegsFromTls();
-
   wasm::GenerateFunctionEpilogue(masm, func.framePushed, offsets);
 
   if (func.numRodataRelocs > 0) {
@@ -293,6 +286,7 @@ CraneliftStaticEnvironment::CraneliftStaticEnvironment()
 #endif
       staticMemoryBound(0),
       memoryGuardSize(0),
+      memoryBaseTlsOffset(offsetof(TlsData, memoryBase)),
       instanceTlsOffset(offsetof(TlsData, instance)),
       interruptTlsOffset(offsetof(TlsData, interrupt)),
       cxTlsOffset(offsetof(TlsData, cx)),
