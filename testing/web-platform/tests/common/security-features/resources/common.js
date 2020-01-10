@@ -192,6 +192,51 @@ function createHelperIframe(name, doBindEvents) {
                        doBindEvents);
 }
 
+function wrapResult(server_data) {
+  if (typeof(server_data) === "string") {
+    throw server_data;
+  }
+  return {
+    referrer: server_data.headers.referer,
+    headers: server_data.headers
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -383,8 +428,9 @@ function requestViaFetch(url) {
 function dedicatedWorkerUrlThatFetches(url) {
   return `data:text/javascript,
     fetch('${url}')
-      .then(() => postMessage(''),
-            () => postMessage(''));`;
+      .then(r => r.json())
+      .then(j => postMessage(j))
+      .catch((e) => postMessage(e.message));`;
 }
 
 function workerUrlThatImports(url) {
