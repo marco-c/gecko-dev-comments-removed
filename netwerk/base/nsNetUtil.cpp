@@ -2727,9 +2727,14 @@ void NS_SniffContent(const char* aSnifferType, nsIRequest* aRequest,
 
 
 
+
+
+
+
       nsAutoCString currentContentType;
       channel->GetContentType(currentContentType);
-      if (!StringBeginsWith(currentContentType,
+      if (!currentContentType.IsEmpty() &&
+          !StringBeginsWith(currentContentType,
                             NS_LITERAL_CSTRING("application/"))) {
         return;
       }
