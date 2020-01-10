@@ -702,7 +702,7 @@ class JSFunction : public js::NativeObject {
       
       
       js::LazyScript* lazy = lazyScript();
-      JSFunction* fun = lazy->functionNonDelazifying();
+      JSFunction* fun = lazy->function();
       MOZ_ASSERT(fun);
       return fun->nonLazyScript();
     }
@@ -731,7 +731,7 @@ class JSFunction : public js::NativeObject {
       return nonLazyScript()->function();
     }
     if (hasLazyScript()) {
-      return lazyScript()->functionNonDelazifying();
+      return lazyScript()->function();
     }
     return nullptr;
   }

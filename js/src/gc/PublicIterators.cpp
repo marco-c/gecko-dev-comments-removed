@@ -90,7 +90,7 @@ static void TraverseInnerLazyScriptsForLazyScript(
     
     
     
-    MOZ_ASSERT(fun != enclosingLazyScript->functionNonDelazifying());
+    MOZ_ASSERT(fun != enclosingLazyScript->function());
 
     if (!fun->isInterpretedLazy()) {
       return;

@@ -165,7 +165,7 @@ JS::Result<FunctionNode*> BinASTParserPerTokenizer<Tok>::parseLazyFunction(
   tokenizer_->seek(firstOffset);
 
   
-  RootedFunction func(cx_, lazyScript_->functionNonDelazifying());
+  RootedFunction func(cx_, lazyScript_->function());
   bool isExpr = func->isLambda();
   MOZ_ASSERT(func->kind() == FunctionFlags::FunctionKind::NormalFunction);
 
@@ -266,7 +266,7 @@ JS::Result<FunctionBox*> BinASTParserPerTokenizer<Tok>::buildFunctionBox(
     BINJS_TRY_VAR(fun, AllocNewFunction(cx_, fcd));
     MOZ_ASSERT(fun->explicitName() == atom);
   } else {
-    BINJS_TRY_VAR(fun, lazyScript_->functionNonDelazifying());
+    BINJS_TRY_VAR(fun, lazyScript_->function());
   }
 
   mozilla::Maybe<Directives> directives;
@@ -321,8 +321,7 @@ JS::Result<Ok> BinASTParserPerTokenizer<Tok>::finishEagerFunction(
     FunctionBox* funbox, uint32_t nargs) {
   
   
-  if (!lazyScript_ ||
-      lazyScript_->functionNonDelazifying() != funbox->function()) {
+  if (!lazyScript_ || lazyScript_->function() != funbox->function()) {
     funbox->setArgCount(nargs);
     funbox->synchronizeArgCount();
   } else {
