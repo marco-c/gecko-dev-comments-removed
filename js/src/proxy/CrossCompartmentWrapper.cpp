@@ -440,7 +440,7 @@ JS_FRIEND_API bool js::NukeCrossCompartmentWrappers(
     
     
     
-    mozilla::Maybe<Compartment::NonStringWrapperEnum> e;
+    mozilla::Maybe<Compartment::ObjectWrapperEnum> e;
     if (MOZ_LIKELY(!nukeAll)) {
       e.emplace(c, target->compartment());
     } else {
@@ -642,7 +642,7 @@ JS_FRIEND_API bool js::RecomputeWrappers(
     }
 
     
-    for (Compartment::NonStringWrapperEnum e(c, targetFilter); !e.empty();
+    for (Compartment::ObjectWrapperEnum e(c, targetFilter); !e.empty();
          e.popFront()) {
       
       CrossCompartmentKey& k = e.front().mutableKey();

@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jsfriendapi.h"
 
@@ -68,18 +68,18 @@ JS_FRIEND_API JSObject* JS_FindCompilationScope(JSContext* cx,
 
   RootedObject obj(cx, objArg);
 
-  
-
-
-
+  /*
+   * We unwrap wrappers here. This is a little weird, but it's what's being
+   * asked of us.
+   */
   if (obj->is<WrapperObject>()) {
     obj = UncheckedUnwrap(obj);
   }
 
-  
-
-
-
+  /*
+   * Get the Window if `obj` is a WindowProxy so that we compile in the
+   * correct (global) scope.
+   */
   return ToWindowIfWindowProxy(obj);
 }
 
@@ -92,19 +92,19 @@ JS_FRIEND_API JSFunction* JS_GetObjectFunction(JSObject* obj) {
 
 JS_FRIEND_API bool JS_SplicePrototype(JSContext* cx, HandleObject obj,
                                       HandleObject proto) {
-  
-
-
-
-
+  /*
+   * Change the prototype of an object which hasn't been used anywhere
+   * and does not share its type with another object. Unlike JS_SetPrototype,
+   * does not nuke type information for the object.
+   */
   CHECK_THREAD(cx);
   cx->check(obj, proto);
 
   if (!obj->isSingleton()) {
-    
-
-
-
+    /*
+     * We can see non-singleton objects when trying to splice prototypes
+     * due to mutable __proto__ (ugh).
+     */
     return JS_SetPrototype(cx, obj, proto);
   }
 
@@ -115,12 +115,12 @@ JS_FRIEND_API bool JS_SplicePrototype(JSContext* cx, HandleObject obj,
 JS_FRIEND_API JSObject* JS_NewObjectWithUniqueType(JSContext* cx,
                                                    const JSClass* clasp,
                                                    HandleObject proto) {
-  
-
-
-
-
-
+  /*
+   * Create our object with a null proto and then splice in the correct proto
+   * after we setSingleton, so that we don't pollute the default
+   * ObjectGroup attached to our proto with information about our object, since
+   * we're not going to be using that ObjectGroup anyway.
+   */
   RootedObject obj(cx, NewObjectWithGivenProto(cx, Valueify(clasp), nullptr,
                                                SingletonObject));
   if (!obj) {
@@ -153,27 +153,27 @@ JS_FRIEND_API JSPrincipals* JS::GetRealmPrincipals(JS::Realm* realm) {
 
 JS_FRIEND_API void JS::SetRealmPrincipals(JS::Realm* realm,
                                           JSPrincipals* principals) {
-  
+  // Short circuit if there's no change.
   if (principals == realm->principals()) {
     return;
   }
 
-  
-  
-  
-  
+  // We'd like to assert that our new principals is always same-origin
+  // with the old one, but JSPrincipals doesn't give us a way to do that.
+  // But we can at least assert that we're not switching between system
+  // and non-system.
   const JSPrincipals* trusted =
       realm->runtimeFromMainThread()->trustedPrincipals();
   bool isSystem = principals && principals == trusted;
   MOZ_RELEASE_ASSERT(realm->isSystem() == isSystem);
 
-  
+  // Clear out the old principals, if any.
   if (realm->principals()) {
     JS_DropPrincipals(TlsContext.get(), realm->principals());
     realm->setPrincipals(nullptr);
   }
 
-  
+  // Set up the new principals.
   if (principals) {
     JS_HoldPrincipals(principals);
     realm->setPrincipals(principals);
@@ -319,9 +319,9 @@ JS_FRIEND_API JS::Zone* js::GetRealmZone(JS::Realm* realm) {
 }
 
 JS_FRIEND_API bool js::IsSystemCompartment(JS::Compartment* comp) {
-  
-  
-  
+  // Realms in the same compartment must either all be system realms or
+  // non-system realms. We assert this in NewRealm and SetRealmPrincipals,
+  // but do an extra sanity check here.
   MOZ_ASSERT(comp->realms()[0]->isSystem() ==
              comp->realms().back()->isSystem());
   return comp->realms()[0]->isSystem();
@@ -536,7 +536,7 @@ JS_FRIEND_API void js::VisitGrayWrapperTargets(Zone* zone,
                                                GCThingCallback callback,
                                                void* closure) {
   for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next()) {
-    for (Compartment::WrapperEnum e(comp); !e.empty(); e.popFront()) {
+    for (Compartment::ObjectWrapperEnum e(comp); !e.empty(); e.popFront()) {
       e.front().mutableKey().applyToWrapped([callback, closure](auto tp) {
         if ((*tp)->isMarkedGray()) {
           callback(closure, JS::GCCellPtr(*tp));
@@ -563,7 +563,7 @@ JS_FRIEND_API void JS_SetSetUseCounterCallback(
 
 JS_FRIEND_API JSObject* JS_CloneObject(JSContext* cx, HandleObject obj,
                                        HandleObject protoArg) {
-  
+  // |obj| might be in a different compartment.
   cx->check(protoArg);
   Rooted<TaggedProto> proto(cx, TaggedProto(protoArg.get()));
   return CloneObject(cx, obj, proto);
@@ -571,8 +571,8 @@ JS_FRIEND_API JSObject* JS_CloneObject(JSContext* cx, HandleObject obj,
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
 
-
-
+// We don't want jsfriendapi.h to depend on GenericPrinter,
+// so these functions are declared directly in the cpp.
 
 namespace js {
 
@@ -593,7 +593,7 @@ extern JS_FRIEND_API void DumpId(jsid id, js::GenericPrinter& out);
 extern JS_FRIEND_API void DumpInterpreterFrame(
     JSContext* cx, js::GenericPrinter& out, InterpreterFrame* start = nullptr);
 
-}  
+}  // namespace js
 
 JS_FRIEND_API void js::DumpString(JSString* str, js::GenericPrinter& out) {
   str->dump(out);
@@ -731,7 +731,7 @@ static bool FormatFrame(JSContext* cx, const FrameIter& iter, Sprinter& sp,
     }
   }
 
-  
+  // print the frame number and function name
   if (funname) {
     UniqueChars funbytes = StringToNewUTF8CharsZ(cx, *funname);
     if (!funbytes) {
@@ -815,16 +815,16 @@ static bool FormatFrame(JSContext* cx, const FrameIter& iter, Sprinter& sp,
     }
   }
 
-  
+  // print filename, line number and column
   if (!sp.printf("%s [\"%s\":%d:%d]\n", fun ? ")" : "",
                  filename ? filename : "<unknown>", lineno, column)) {
     return false;
   }
 
-  
-  
+  // Note: Right now we don't dump the local variables anymore, because
+  // that is hard to support across all the JITs etc.
 
-  
+  // print the value of 'this'
   if (showLocals) {
     if (!thisVal.isUndefined()) {
       RootedString thisValStr(cx, ToString<CanGC>(cx, thisVal));
@@ -1137,22 +1137,22 @@ JS_FRIEND_API JS::Realm* js::GetAnyRealmInZone(JS::Zone* zone) {
 }
 
 JS_FRIEND_API bool js::IsSharableCompartment(JS::Compartment* comp) {
-  
-  
-  
+  // If this compartment has nuked outgoing wrappers (because all its globals
+  // got nuked), we won't be able to create any useful CCWs out of it in the
+  // future, and so we shouldn't use it for any new globals.
   if (comp->nukedOutgoingWrappers) {
     return false;
   }
 
-  
-  
-  
-  
+  // If this compartment has no live globals, it might be in the middle of being
+  // GCed.  Don't create any new Realms inside.  There's no point to doing that
+  // anyway, since the idea would be to avoid CCWs from existing Realms in the
+  // compartment to the new Realm, and there are no existing Realms.
   if (!CompartmentHasLiveGlobal(comp)) {
     return false;
   }
 
-  
+  // Good to go.
   return true;
 }
 
@@ -1331,9 +1331,9 @@ JS_FRIEND_API JSObject* js::detail::ToWindowProxyIfWindowSlow(JSObject* obj) {
 }
 
 JS_FRIEND_API bool js::IsWindowProxy(JSObject* obj) {
-  
-  
-  
+  // Note: simply checking `obj == obj->global().windowProxy()` is not
+  // sufficient: we may have transplanted the window proxy with a CCW.
+  // Check the Class to ensure we really have a window proxy.
   return obj->getClass() ==
          obj->runtimeFromAnyThread()->maybeWindowProxyClass();
 }
