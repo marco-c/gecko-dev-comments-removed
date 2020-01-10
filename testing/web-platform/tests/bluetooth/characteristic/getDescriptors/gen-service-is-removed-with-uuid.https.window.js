@@ -4,8 +4,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Service is removed. Reject with InvalidStateError.';
 const expected =

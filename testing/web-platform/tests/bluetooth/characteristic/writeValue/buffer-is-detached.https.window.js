@@ -1,8 +1,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'writeValue() fails when passed a detached buffer';
 

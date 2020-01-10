@@ -1,8 +1,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'A device disconnecting while connected should fire the ' +
     'gattserverdisconnected event.';

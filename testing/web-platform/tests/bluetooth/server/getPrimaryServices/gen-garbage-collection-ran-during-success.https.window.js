@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc =
     'Garbage Collection ran during a getPrimaryServices call that ' +

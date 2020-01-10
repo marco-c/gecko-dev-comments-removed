@@ -1,8 +1,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'If a site disconnects from a device while the platform is ' +
     'disconnecting that device, only one gattserverdisconnected event should ' +

@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'getPrimaryServices called before connecting. Reject with ' +
     'NetworkError.';

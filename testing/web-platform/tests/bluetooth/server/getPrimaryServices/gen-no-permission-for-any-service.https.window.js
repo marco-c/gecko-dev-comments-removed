@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Request for present service without permission to access ' +
     'any service. Reject with SecurityError.';

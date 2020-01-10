@@ -1,8 +1,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'getAvailability() is not affected by the powered state of ' +
     'the adapter.';

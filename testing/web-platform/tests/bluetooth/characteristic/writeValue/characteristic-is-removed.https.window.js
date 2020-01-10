@@ -1,8 +1,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Characteristic gets removed. Reject with InvalidStateError.';
 const expected = new DOMException(

@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Wrong Characteristic name. Reject with TypeError.';
 const expected = new DOMException(

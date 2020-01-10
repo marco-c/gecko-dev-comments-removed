@@ -1,8 +1,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'HeartRate device properties';
 

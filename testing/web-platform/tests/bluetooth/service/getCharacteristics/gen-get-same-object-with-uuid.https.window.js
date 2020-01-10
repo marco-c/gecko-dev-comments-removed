@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Calls to getCharacteristics should return the same object.';
 

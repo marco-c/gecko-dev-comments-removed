@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Calls on services after we disconnect and connect again. ' +
     'Should reject with InvalidStateError.';

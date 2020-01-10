@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'disconnect() and connect() called during ' +
     'getCharacteristic. Reject with NetworkError.';

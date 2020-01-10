@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Garbage Collection ran during getCharacteristics ' +
     'call that fails. Should not crash';

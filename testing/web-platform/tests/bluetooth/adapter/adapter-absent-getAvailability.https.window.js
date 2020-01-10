@@ -1,8 +1,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'getAvailability() resolves with false if the system does ' +
     'not have an adapter.';
