@@ -192,6 +192,20 @@ class nsDocShellLoadState final {
     return mPendingRedirectedChannel;
   }
 
+  void SetOriginalURIString(const nsCString& aOriginalURI) {
+    mOriginalURIString.emplace(aOriginalURI);
+  }
+  const Maybe<nsCString>& GetOriginalURIString() const {
+    return mOriginalURIString;
+  }
+
+  void SetCancelContentJSEpoch(int32_t aCancelEpoch) {
+    mCancelContentJSEpoch.emplace(aCancelEpoch);
+  }
+  const Maybe<int32_t>& GetCancelContentJSEpoch() const {
+    return mCancelContentJSEpoch;
+  }
+
   
   
   
@@ -338,6 +352,15 @@ class nsDocShellLoadState final {
   
   
   nsCOMPtr<nsIChildChannel> mPendingRedirectedChannel;
+
+  
+  
+  
+  Maybe<nsCString> mOriginalURIString;
+
+  
+  
+  Maybe<int32_t> mCancelContentJSEpoch;
 };
 
 #endif 
