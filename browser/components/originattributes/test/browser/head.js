@@ -16,8 +16,8 @@ const TEST_MODE_CONTAINERS = 2;
 const TEST_MODE_NAMES = ["first party isolation", "no isolation", "containers"];
 
 
-const TEST_TYPE_FRAME = 0;
-const TEST_TYPE_IFRAME = 1;
+const TEST_TYPE_FRAME = 1;
+const TEST_TYPE_IFRAME = 2;
 
 
 const DEFAULT_FRAME_SETTING = [TEST_TYPE_IFRAME];
@@ -36,14 +36,17 @@ let gFirstPartyBasicPage = TEST_URL_PATH + "file_firstPartyBasic.html";
 
 
 async function openTabInUserContext(aURL, aUserContextId) {
+  info(`Start to open tab in specific userContextID: ${aUserContextId}.`);
   let originAttributes = {
     userContextId: aUserContextId,
   };
+  info("Create triggeringPrincipal.");
   let triggeringPrincipal = Services.scriptSecurityManager.createContentPrincipal(
     makeURI(aURL),
     originAttributes
   );
   
+  info("Open the tab and wait for it to be loaded.");
   let tab = BrowserTestUtils.addTab(gBrowser, aURL, {
     userContextId: aUserContextId,
     triggeringPrincipal,
@@ -55,6 +58,8 @@ async function openTabInUserContext(aURL, aUserContextId) {
 
   let browser = gBrowser.getBrowserForTab(tab);
   await BrowserTestUtils.browserLoaded(browser);
+  info("Finished tab opening.");
+
   return { tab, browser };
 }
 
@@ -83,6 +88,7 @@ async function openTabInFirstParty(
   aFirstPartyDomain,
   aFrameSetting = DEFAULT_FRAME_SETTING
 ) {
+  info(`Start to open tab under first party domain "${aFirstPartyDomain}".`);
   
   if (aFirstPartyDomain.endsWith("/")) {
     aFirstPartyDomain = aFirstPartyDomain.slice(0, -1);
@@ -91,6 +97,7 @@ async function openTabInFirstParty(
   let basicPageURL = aFirstPartyDomain + gFirstPartyBasicPage;
 
   
+  info("Open the tab and then wait for it to be loaded.");
   let tab = BrowserTestUtils.addTab(gBrowser, basicPageURL);
 
   
@@ -100,84 +107,89 @@ async function openTabInFirstParty(
   let browser = gBrowser.getBrowserForTab(tab);
   await BrowserTestUtils.browserLoaded(browser);
 
-  let pageArgs = {
-    url: aURL,
-    frames: aFrameSetting,
-    typeFrame: TEST_TYPE_FRAME,
-    typeIFrame: TEST_TYPE_IFRAME,
-    basicFrameSrc: basicPageURL,
-  };
+  
+  let frameSetting = aFrameSetting.slice(0);
+  let frameType;
+  let targetBrowsingContext;
 
   
-  await ContentTask.spawn(browser, pageArgs, async function(arg) {
-    let typeFrame = arg.typeFrame;
-    let typeIFrame = arg.typeIFrame;
-
-    
-    
-    this.frameWindow = content;
-
-    Object.defineProperty(this, "content", {
-      get: () => this.frameWindow,
-    });
-
-    let frameElement;
-    let numOfLayers = 0;
-
-    for (let type of arg.frames) {
-      let document = content.document;
-      numOfLayers++;
-
-      if (type === typeFrame) {
-        
-        let frameSet = document.createElement("frameset");
-        frameSet.cols = "50%,50%";
-
-        let frame = document.createElement("frame");
-        let dummyFrame = document.createElement("frame");
-
-        frameSet.appendChild(frame);
-        frameSet.appendChild(dummyFrame);
-
-        document.body.appendChild(frameSet);
-
-        frameElement = frame;
-      } else if (type === typeIFrame) {
-        
-        let iframe = document.createElement("iframe");
-        document.body.appendChild(iframe);
-
-        frameElement = iframe;
-      } else {
-        ok(false, "Invalid frame type.");
-        break;
-      }
-
-      
-      await new Promise(done => {
-        frameElement.addEventListener(
-          "load",
-          function() {
-            done();
-          },
-          { capture: true, once: true }
-        );
-
-        
-        
-        if (numOfLayers === arg.frames.length) {
-          frameElement.setAttribute("src", arg.url);
-        } else {
-          frameElement.setAttribute("src", arg.basicFrameSrc);
-        }
-      });
-
-      
-      this.frameWindow = frameElement.contentWindow;
+  info("Create the frame structure.");
+  while ((frameType = frameSetting.shift())) {
+    if (!targetBrowsingContext) {
+      targetBrowsingContext = browser;
     }
-  });
 
-  return { tab, browser };
+    let frameURL = !frameSetting.length ? aURL : basicPageURL;
+
+    if (frameType == TEST_TYPE_FRAME) {
+      info("Add the frameset.");
+      targetBrowsingContext = await SpecialPowers.spawn(
+        targetBrowsingContext,
+        [frameURL],
+        async function(aFrameURL) {
+          
+          let frameSet = content.document.createElement("frameset");
+          frameSet.cols = "50%,50%";
+
+          let frame = content.document.createElement("frame");
+          let dummyFrame = content.document.createElement("frame");
+
+          frameSet.appendChild(frame);
+          frameSet.appendChild(dummyFrame);
+
+          content.document.body.appendChild(frameSet);
+
+          
+          await new Promise(done => {
+            frame.addEventListener(
+              "load",
+              function() {
+                done();
+              },
+              { capture: true, once: true }
+            );
+
+            frame.setAttribute("src", aFrameURL);
+          });
+
+          return frame.browsingContext;
+        }
+      );
+    } else if (frameType == TEST_TYPE_IFRAME) {
+      info("Add the iframe.");
+      targetBrowsingContext = await SpecialPowers.spawn(
+        targetBrowsingContext,
+        [frameURL],
+        async function(aFrameURL) {
+          
+          let frame = content.document.createElement("iframe");
+          content.document.body.appendChild(frame);
+
+          
+          await new Promise(done => {
+            frame.addEventListener(
+              "load",
+              function() {
+                done();
+              },
+              { capture: true, once: true }
+            );
+
+            frame.setAttribute("src", aFrameURL);
+          });
+
+          return frame.browsingContext;
+        }
+      );
+    } else {
+      ok(false, "Invalid frame type.");
+      break;
+    }
+    info("Successfully added a frame");
+  }
+  info("Finished the frame structure");
+
+  return { tab, browser: targetBrowsingContext };
 }
 
 this.IsolationTestTools = {
@@ -224,7 +236,7 @@ this.IsolationTestTools = {
     }
 
     add_task(async function() {
-      info("Starting the test for " + TEST_MODE_NAMES[aMode]);
+      info(`Starting the test for ${TEST_MODE_NAMES[aMode]}.`);
 
       
       await SpecialPowers.flushPrefEnv();
@@ -352,36 +364,63 @@ this.IsolationTestTools = {
       for (let tabSettingB of [0, 1]) {
         
         if (aBeforeFunc) {
-          await aBeforeFunc(aMode);
+          try {
+            await aBeforeFunc(aMode);
+          } catch (e) {
+            ok(false, `Caught error while doing testing setup: ${e}.`);
+          }
         }
-
         
+        info(`Create tab A for ${TEST_MODE_NAMES[aMode]} test.`);
         let tabInfoA = await IsolationTestTools._addTab(
           aMode,
           pageURL,
           tabSettings[tabSettingA],
           firstFrameSetting
         );
+        info(`Finished Create tab A for ${TEST_MODE_NAMES[aMode]} test.`);
         let resultsA = [];
         if (aGetResultImmediately) {
-          for (let getResultFunc of aGetResultFuncs) {
-            resultsA.push(await getResultFunc(tabInfoA.browser));
+          try {
+            info(
+              `Immediately get result from tab A for ${
+                TEST_MODE_NAMES[aMode]
+              } test`
+            );
+            for (let getResultFunc of aGetResultFuncs) {
+              resultsA.push(await getResultFunc(tabInfoA.browser));
+            }
+          } catch (e) {
+            ok(false, `Caught error while getting result from Tab A: ${e}.`);
           }
         }
+        info(`Create tab B for ${TEST_MODE_NAMES[aMode]}.`);
         let tabInfoB = await IsolationTestTools._addTab(
           aMode,
           pageURL,
           tabSettings[tabSettingB],
           secondFrameSetting
         );
+        info(`Finished Create tab B for ${TEST_MODE_NAMES[aMode]} test.`);
         let i = 0;
         for (let getResultFunc of aGetResultFuncs) {
           
-          let resultA = aGetResultImmediately
-            ? resultsA[i++]
-            : await getResultFunc(tabInfoA.browser);
-          let resultB = await getResultFunc(tabInfoB.browser);
-
+          info(`Fetching result from tab A for ${TEST_MODE_NAMES[aMode]}.`);
+          let resultA;
+          try {
+            resultA = aGetResultImmediately
+              ? resultsA[i++]
+              : await getResultFunc(tabInfoA.browser);
+          } catch (e) {
+            ok(false, `Caught error while getting result from Tab A: ${e}.`);
+          }
+          info(`Fetching result from tab B for ${TEST_MODE_NAMES[aMode]}.`);
+          let resultB;
+          try {
+            resultB = await getResultFunc(tabInfoB.browser);
+          } catch (e) {
+            ok(false, `Caught error while getting result from Tab B: ${e}.`);
+          }
           
           let result = false;
           let shouldIsolate =
@@ -393,7 +432,7 @@ this.IsolationTestTools = {
           }
 
           let msg =
-            `Testing ${TEST_MODE_NAMES[aMode]} for ` +
+            `Result of Testing ${TEST_MODE_NAMES[aMode]} for ` +
             `isolation ${shouldIsolate ? "on" : "off"} with TabSettingA ` +
             `${tabSettingA} and tabSettingB ${tabSettingB}` +
             `, resultA = ${resultA}, resultB = ${resultB}`;
