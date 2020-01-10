@@ -903,7 +903,6 @@ void CustomElementRegistry::Define(
 
 
 
-
     if (callbacksHolder->mAttributeChangedCallback.WasPassed()) {
       if (!JSObjectToAtomArray(aCx, constructor, u"observedAttributes",
                                observedAttributes, aRv)) {
