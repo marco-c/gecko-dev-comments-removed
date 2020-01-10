@@ -17,8 +17,11 @@
 #include "mozilla/WrappingOperations.h"
 
 #include <math.h>
+#include <stddef.h>  
+#include <stdint.h>  
 
 #include "jspubtd.h"
+#include "jstypes.h"  
 
 #include "js/RootingAPI.h"
 #include "js/Value.h"
@@ -553,6 +556,20 @@ inline int64_t ToInt64(double d) { return ToSignedInteger<int64_t>(d); }
 
 
 inline uint64_t ToUint64(double d) { return ToUnsignedInteger<uint64_t>(d); }
+
+
+
+
+
+
+static constexpr size_t MaximumNumberToStringLength = 24 + 1;
+
+
+
+
+
+extern JS_PUBLIC_API void NumberToString(
+    double d, char (&out)[MaximumNumberToStringLength]);
 
 }  
 
