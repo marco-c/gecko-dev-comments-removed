@@ -423,6 +423,21 @@ async function testFileAccess() {
     }
   }
 
+  
+  
+  if (isLinux()) {
+    let selfFdDir = GetDir("/proc/self/fd");
+
+    tests.push({
+      desc: "/proc/self/fd",
+      ok: false,
+      browser: webBrowser,
+      file: selfFdDir,
+      minLevel: isContentFileIOSandboxed(),
+      func: readDir,
+    });
+  }
+
   if (isMac()) {
     
     
