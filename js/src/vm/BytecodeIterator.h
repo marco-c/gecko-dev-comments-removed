@@ -56,6 +56,27 @@ class AllBytecodesIterable {
   BytecodeIterator end();
 };
 
+
+
+
+
+class BytecodeLocationRange {
+  BytecodeLocation beginLoc_;
+  BytecodeLocation endLoc_;
+
+ public:
+  explicit BytecodeLocationRange(BytecodeLocation beginLoc,
+                                 BytecodeLocation endLoc)
+      : beginLoc_(beginLoc), endLoc_(endLoc) {
+#ifdef DEBUG
+    MOZ_ASSERT(beginLoc.hasSameScript(endLoc));
+#endif
+  }
+
+  BytecodeIterator begin();
+  BytecodeIterator end();
+};
+
 }  
 
 #endif
