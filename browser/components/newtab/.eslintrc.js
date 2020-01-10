@@ -14,11 +14,11 @@ module.exports = {
   "plugins": [
     "import", 
     "react", 
-    "jsx-a11y" 
+    "jsx-a11y", 
 
     
     
-    
+    "fetch-options", 
   ],
   "settings": {
     "react": {
@@ -68,7 +68,7 @@ module.exports = {
   "rules": {
     
 
-    
+    "fetch-options/no-fetch-credentials": 2,
 
     "react/jsx-boolean-value": [2, "always"],
     "react/jsx-closing-bracket-location": [2, "after-props"],

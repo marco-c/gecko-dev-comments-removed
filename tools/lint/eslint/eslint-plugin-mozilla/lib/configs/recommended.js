@@ -81,6 +81,7 @@ module.exports = {
 
   
   "plugins": [
+    "fetch-options",
     "mozilla",
     "no-unsanitized",
   ],
@@ -133,6 +134,10 @@ module.exports = {
 
     
     "eol-last": "error",
+
+    
+    
+    "fetch-options/no-fetch-credentials": "off",
 
     
     "func-call-spacing": "error",
