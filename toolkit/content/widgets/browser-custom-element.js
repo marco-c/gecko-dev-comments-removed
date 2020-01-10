@@ -1445,7 +1445,7 @@ class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
     this.messageManager.sendAsyncMessage("Browser:PurgeSessionHistory");
   }
 
-  createAboutBlankContentViewer(aPrincipal) {
+  createAboutBlankContentViewer(aPrincipal, aStoragePrincipal) {
     if (this.isRemoteBrowser) {
       
       
@@ -1466,11 +1466,13 @@ class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
       
       
       this.messageManager.sendAsyncMessage("BrowserElement:CreateAboutBlank",
-                                           aPrincipal);
+                                           {principal: aPrincipal,
+                                            storagePrincipal: aStoragePrincipal});
       return;
     }
     let principal = BrowserUtils.principalWithMatchingOA(aPrincipal, this.contentPrincipal);
-    this.docShell.createAboutBlankContentViewer(principal);
+    let storagePrincipal = BrowserUtils.principalWithMatchingOA(aStoragePrincipal, this.contentStoragePrincipal);
+    this.docShell.createAboutBlankContentViewer(principal, storagePrincipal);
   }
 
   stopScroll() {
