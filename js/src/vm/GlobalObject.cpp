@@ -4,7 +4,6 @@
 
 
 
-
 #include "vm/GlobalObject.h"
 
 #include "jsdate.h"
@@ -65,19 +64,32 @@
 
 using namespace js;
 
+struct ProtoTableEntry {
+  const JSClass* clasp;
+  ClassInitializerOp init;
+};
+
 namespace js {
 
 extern const JSClass IntlClass;
 extern const JSClass JSONClass;
 extern const JSClass MathClass;
-extern const JSClass ReflectClass;
 extern const JSClass WebAssemblyClass;
+
+#define DECLARE_PROTOTYPE_CLASS_INIT(name, init, clasp) \
+  extern JSObject* init(JSContext* cx, Handle<GlobalObject*> global);
+JS_FOR_EACH_PROTOTYPE(DECLARE_PROTOTYPE_CLASS_INIT)
+#undef DECLARE_PROTOTYPE_CLASS_INIT
 
 }  
 
-static const JSClass* const protoTable[JSProto_LIMIT] = {
-#define INIT_FUNC(name, clasp) clasp,
-#define INIT_FUNC_DUMMY(name, clasp) nullptr,
+JSObject* js::InitViaClassSpec(JSContext* cx, Handle<GlobalObject*> global) {
+  MOZ_CRASH("InitViaClassSpec() should not be called.");
+}
+
+static const ProtoTableEntry protoTable[JSProto_LIMIT] = {
+#define INIT_FUNC(name, init, clasp) {clasp, init},
+#define INIT_FUNC_DUMMY(name, init, clasp) {nullptr, nullptr},
     JS_FOR_PROTOTYPES(INIT_FUNC, INIT_FUNC_DUMMY)
 #undef INIT_FUNC_DUMMY
 #undef INIT_FUNC
@@ -85,7 +97,7 @@ static const JSClass* const protoTable[JSProto_LIMIT] = {
 
 JS_FRIEND_API const JSClass* js::ProtoKeyToClass(JSProtoKey key) {
   MOZ_ASSERT(key < JSProto_LIMIT);
-  return protoTable[key];
+  return protoTable[key].clasp;
 }
 
 
@@ -164,8 +176,17 @@ bool GlobalObject::resolveConstructor(JSContext* cx,
 
   
   
+  
+  
+  ClassInitializerOp init = protoTable[key].init;
+  if (init == InitViaClassSpec) {
+    init = nullptr;
+  }
+
+  
+  
   const JSClass* clasp = ProtoKeyToClass(key);
-  if (!clasp || skipDeselectedConstructor(cx, key)) {
+  if ((!init && !clasp) || skipDeselectedConstructor(cx, key)) {
     if (mode == IfClassIsDisabled::Throw) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_CONSTRUCTOR_DISABLED,
@@ -176,9 +197,25 @@ bool GlobalObject::resolveConstructor(JSContext* cx,
   }
 
   
-  if (!clasp->specDefined()) {
+  
+  
+  
+  
+  
+  bool haveSpec = clasp && clasp->specDefined();
+  if (!init && !haveSpec) {
     return true;
   }
+
+  
+  if (init) {
+    MOZ_ASSERT(!haveSpec);
+    return init(cx, global);
+  }
+
+  
+  
+  
 
   bool isObjectOrFunction = key == JSProto_Function || key == JSProto_Object;
 
@@ -720,7 +757,7 @@ bool GlobalObject::initSelfHostingBuiltins(JSContext* cx,
          InitBareBuiltinCtor(cx, global, JSProto_TypedArray) &&
          InitBareBuiltinCtor(cx, global, JSProto_Uint8Array) &&
          InitBareBuiltinCtor(cx, global, JSProto_Int32Array) &&
-         InitBareBuiltinCtor(cx, global, JSProto_Symbol) &&
+         InitBareSymbolCtor(cx, global) &&
          DefineFunctions(cx, global, builtins, AsIntrinsic);
 }
 

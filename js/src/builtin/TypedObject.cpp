@@ -40,10 +40,8 @@ using mozilla::PointerRangeSize;
 using namespace js;
 
 const JSClass js::TypedObjectModuleObject::class_ = {
-    "TypedObject",
-    JSCLASS_HAS_RESERVED_SLOTS(SlotCount) |
-        JSCLASS_HAS_CACHED_PROTO(JSProto_TypedObject),
-    JS_NULL_CLASS_OPS, &classSpec_};
+    "TypedObject", JSCLASS_HAS_RESERVED_SLOTS(SlotCount) |
+                       JSCLASS_HAS_CACHED_PROTO(JSProto_TypedObject)};
 
 static const JSFunctionSpec TypedObjectMethods[] = {
     JS_SELF_HOSTED_FN("objectType", "TypeOfTypedObject", 1, 0), JS_FS_END};
@@ -1365,28 +1363,31 @@ static JSObject* DefineMetaTypeDescr(JSContext* cx, const char* name,
   return ctor;
 }
 
-static JSObject* CreateTypedObjectModuleObject(JSContext* cx, JSProtoKey key) {
-  Handle<GlobalObject*> global = cx->global();
+
+
+
+
+
+
+
+bool GlobalObject::initTypedObjectModule(JSContext* cx,
+                                         Handle<GlobalObject*> global) {
   RootedObject objProto(cx,
                         GlobalObject::getOrCreateObjectPrototype(cx, global));
   if (!objProto) {
-    return nullptr;
+    return false;
   }
 
-  return NewObjectWithGivenProto<TypedObjectModuleObject>(cx, objProto,
-                                                          SingletonObject);
-}
+  Rooted<TypedObjectModuleObject*> module(cx);
+  module = NewObjectWithGivenProto<TypedObjectModuleObject>(cx, objProto,
+                                                            SingletonObject);
+  if (!module) {
+    return false;
+  }
 
-
-
-
-
-
-
-static bool TypedObjectModuleObjectClassFinish(JSContext* cx, HandleObject ctor,
-                                               HandleObject proto) {
-  Handle<TypedObjectModuleObject*> module = ctor.as<TypedObjectModuleObject>();
-  Handle<GlobalObject*> global = cx->global();
+  if (!JS_DefineFunctions(cx, module, TypedObjectMethods)) {
+    return false;
+  }
 
   
 
@@ -1474,17 +1475,22 @@ static bool TypedObjectModuleObjectClassFinish(JSContext* cx, HandleObject ctor,
     return false;
   }
 
-  return true;
+  
+  RootedValue moduleValue(cx, ObjectValue(*module));
+  if (!DefineDataProperty(cx, global, cx->names().TypedObject, moduleValue,
+                          JSPROP_RESOLVING)) {
+    return false;
+  }
+
+  global->setConstructor(JSProto_TypedObject, moduleValue);
+
+  return module;
 }
 
-const ClassSpec TypedObjectModuleObject::classSpec_ = {
-    CreateTypedObjectModuleObject,
-    nullptr,
-    TypedObjectMethods,
-    nullptr,
-    nullptr,
-    nullptr,
-    TypedObjectModuleObjectClassFinish};
+JSObject* js::InitTypedObjectModuleObject(JSContext* cx,
+                                          Handle<GlobalObject*> global) {
+  return GlobalObject::getOrCreateTypedObjectModule(cx, global);
+}
 
 
 

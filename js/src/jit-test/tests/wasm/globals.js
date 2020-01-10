@@ -348,7 +348,7 @@ wasmAssert(`(module
         let s = "";
         for ( let i in x )
             s = s + i + ",";
-        assertEq(s, "valueOf,value,");
+        assertEq(s.substring(0,6), "value,");
     }
 
     
