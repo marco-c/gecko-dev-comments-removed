@@ -470,22 +470,27 @@ TaggingService.prototype = {
 };
 
 
-function TagAutoCompleteSearch() {}
-
-TagAutoCompleteSearch.prototype = {
-  _stopped: false,
-
-  
 
 
+class TagSearch {
+  constructor(searchString, autocompleteSearch, listener) {
+    
+    this._result = Cc[
+      "@mozilla.org/autocomplete/simple-result;1"
+    ].createInstance(Ci.nsIAutoCompleteSimpleResult);
+    this._result.setDefaultIndex(0);
+    this._result.setSearchString(searchString);
 
+    this._autocompleteSearch = autocompleteSearch;
+    this._listener = listener;
+  }
 
+  async start() {
+    if (this._canceled) {
+      throw new Error("Can't restart a canceled search");
+    }
 
-
-
-  startSearch(searchString, searchParam, previousResult, listener) {
-    this._stopped = false;
-
+    let searchString = this._result.searchString;
     
     let index = Math.max(
       searchString.lastIndexOf(","),
@@ -503,67 +508,81 @@ TagAutoCompleteSearch.prototype = {
       }
     }
 
-    
-    
-    let result = Cc["@mozilla.org/autocomplete/simple-result;1"].createInstance(
-      Ci.nsIAutoCompleteSimpleResult
-    );
-    result.setDefaultIndex(0);
-    result.setSearchString(searchString);
+    if (searchString.length) {
+      let tags = await PlacesUtils.bookmarks.fetchTags();
+      if (this._canceled) {
+        return;
+      }
 
-    let count = 0;
-    if (!searchString.length) {
-      this.notifyResult(result, count, listener, false);
-      return;
-    }
-
-    (async () => {
-      let tags = (await PlacesUtils.bookmarks.fetchTags())
-        .filter(t =>
-          t.name.toLowerCase().startsWith(searchString.toLowerCase())
-        )
+      let lcSearchString = searchString.toLowerCase();
+      let matchingTags = tags
+        .filter(t => t.name.toLowerCase().startsWith(lcSearchString))
         .map(t => t.name);
 
-      
-      let gen = function*() {
-        for (let i = 0; i < tags.length; ++i) {
-          if (this._stopped) {
-            yield false;
-          }
-
+      for (let i = 0; i < matchingTags.length; ++i) {
+        let tag = matchingTags[i];
+        
+        this._result.appendMatch(before + tag, tag);
+        
+        if (i % 10 == 0) {
+          this._notifyResult(true);
           
-          count++;
-          result.appendMatch(before + tags[i], tags[i]);
-
-          
-          if (i % 10 == 0) {
-            this.notifyResult(result, count, listener, true);
-            yield true;
+          await new Promise(resolve =>
+            Services.tm.dispatchToMainThread(resolve)
+          );
+          if (this._canceled) {
+            return;
           }
         }
-        yield false;
-      }.bind(this)();
+      }
+    }
 
-      
-      while (gen.next().value) {}
-      this.notifyResult(result, count, listener, false);
-    })();
+    
+    this._notifyResult(false);
+  }
+
+  cancel() {
+    this._canceled = true;
+  }
+
+  _notifyResult(searchOngoing) {
+    let resultCode = this._result.matchCount
+      ? "RESULT_SUCCESS"
+      : "RESULT_NOMATCH";
+    if (searchOngoing) {
+      resultCode += "_ONGOING";
+    }
+    this._result.setSearchResult(Ci.nsIAutoCompleteResult[resultCode]);
+    this._listener.onSearchResult(this._autocompleteSearch, this._result);
+  }
+}
+
+
+function TagAutoCompleteSearch() {}
+
+TagAutoCompleteSearch.prototype = {
+  
+
+
+
+
+
+
+
+  startSearch(searchString, searchParam, previousResult, listener) {
+    if (this._search) {
+      this._search.cancel();
+    }
+    this._search = new TagSearch(searchString, this, listener);
+    this._search.start().catch(Cu.reportError);
   },
 
   
 
 
-  stopSearch: function PTACS_stopSearch() {
-    this._stopped = true;
-  },
-
-  notifyResult(result, count, listener, searchOngoing) {
-    let resultCode = count ? "RESULT_SUCCESS" : "RESULT_NOMATCH";
-    if (searchOngoing) {
-      resultCode += "_ONGOING";
-    }
-    result.setSearchResult(Ci.nsIAutoCompleteResult[resultCode]);
-    listener.onSearchResult(this, result);
+  stopSearch() {
+    this._search.cancel();
+    this._search = null;
   },
 
   classID: Components.ID("{1dcc23b0-d4cb-11dc-9ad6-479d56d89593}"),
