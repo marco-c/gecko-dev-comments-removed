@@ -827,6 +827,7 @@ void NetlinkService::OnAddrMessage(struct nlmsghdr* aNlh) {
   
   
   
+  
   for (uint32_t i = 0; i < linkInfo->mAddresses.Length(); ++i) {
     if (linkInfo->mAddresses[i]->Equals(address)) {
       LOG(("Removing address [ifIdx=%u, addr=%s/%u]", ifIdx, addrStr.get(),
@@ -875,15 +876,7 @@ void NetlinkService::OnAddrMessage(struct nlmsghdr* aNlh) {
     }
   }
 
-  if (linkInfo->UpdateStatus()) {
-    TriggerNetworkIDCalculation();
-  } else {
-    
-    
-    if (linkInfo->mLink->IsUp()) {
-      TriggerNetworkIDCalculation();
-    }
-  }
+  TriggerNetworkIDCalculation();
 }
 
 void NetlinkService::OnRouteMessage(struct nlmsghdr* aNlh) {
@@ -1794,6 +1787,7 @@ void NetlinkService::CalculateNetworkID() {
       listener = mListener;
     }
     if (listener) {
+      listener->OnNetworkIDChanged();
       listener->OnNetworkChanged();
     }
   }
