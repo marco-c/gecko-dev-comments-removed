@@ -109,6 +109,13 @@ function testReload(shortcut, toolbox, toolID) {
       observer.isReady = () => true;
     }
 
+    
+    const jsdebugger = toolbox.getPanel("jsdebugger");
+    let onReloaded = Promise.resolve;
+    if (jsdebugger) {
+      onReloaded = jsdebugger.once("reloaded");
+    }
+
     const complete = async () => {
       mm.removeMessageListener("devtools:test:load", complete);
       
@@ -116,8 +123,10 @@ function testReload(shortcut, toolbox, toolID) {
       if (toolbox.walker) {
         toolbox.walker.off("mutations", observer.onMutation);
       }
+      await onReloaded;
       resolve();
     };
+
     mm.addMessageListener("devtools:test:load", complete);
 
     toolbox.win.focus();

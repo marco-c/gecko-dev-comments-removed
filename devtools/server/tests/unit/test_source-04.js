@@ -38,9 +38,10 @@ add_task(threadClientTest(async ({ threadClient, server }) => {
   
   
   let pausedOne = false;
+  let onResumed = null;
   threadClient.once("paused", function(packet) {
     pausedOne = true;
-    resume(threadClient);
+    onResumed = resume(threadClient);
   });
   Cu.evalInSandbox(
     "init()",
@@ -49,6 +50,7 @@ add_task(threadClientTest(async ({ threadClient, server }) => {
     "test.js",
     1
   );
+  await onResumed;
   Assert.equal(pausedOne, true);
 
   
@@ -67,7 +69,7 @@ add_task(threadClientTest(async ({ threadClient, server }) => {
   let pausedTwo = false;
   threadClient.once("paused", function(packet) {
     pausedTwo = true;
-    resume(threadClient);
+    onResumed = resume(threadClient);
   });
   Cu.evalInSandbox(
     "init()",
@@ -76,5 +78,6 @@ add_task(threadClientTest(async ({ threadClient, server }) => {
     "test.js",
     1
   );
+  await onResumed;
   Assert.equal(pausedTwo, true);
 }, { doNotRunWorker: true }));
