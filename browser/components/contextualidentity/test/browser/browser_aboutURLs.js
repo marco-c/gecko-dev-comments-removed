@@ -14,6 +14,11 @@ add_task(async function() {
   
   let skipURLs = [
     
+    
+    
+    
+    "addons",
+    
     "credits",
     
     
