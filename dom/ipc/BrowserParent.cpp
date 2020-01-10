@@ -675,7 +675,6 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
   
   
   RefPtr<nsFrameLoader> frameLoader = GetFrameLoader(true);
-  nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   if (frameLoader) {
     ReceiveMessage(CHILD_PROCESS_SHUTDOWN_MESSAGE, false, nullptr, nullptr,
                    nullptr);
@@ -694,10 +693,6 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
   }
 
   mFrameLoader = nullptr;
-  if (os && mBrowserHost) {
-    os->NotifyObservers(NS_ISUPPORTS_CAST(nsIRemoteTab*, mBrowserHost),
-                        "ipc:browser-destroyed", nullptr);
-  }
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvMoveFocus(
@@ -3713,19 +3708,17 @@ void BrowserParent::LiveResizeStopped() { SuppressDisplayport(false); }
 
 void BrowserParent::SetBrowserBridgeParent(BrowserBridgeParent* aBrowser) {
   
-  MOZ_ASSERT(!mBrowserBridgeParent);
-  MOZ_ASSERT(!mBrowserHost);
   
-  MOZ_ASSERT(!mFrameElement);
+  MOZ_ASSERT(!aBrowser ||
+             (!mBrowserBridgeParent && !mBrowserHost && !mFrameElement));
   mBrowserBridgeParent = aBrowser;
 }
 
 void BrowserParent::SetBrowserHost(BrowserHost* aBrowser) {
   
-  MOZ_ASSERT(!mBrowserBridgeParent);
-  MOZ_ASSERT(!mBrowserHost);
   
-  MOZ_ASSERT(!mFrameElement);
+  MOZ_ASSERT(!aBrowser ||
+             (!mBrowserBridgeParent && !mBrowserHost && !mFrameElement));
   mBrowserHost = aBrowser;
 }
 

@@ -760,7 +760,7 @@ static nsINode* FindChromeAccessOnlySubtreeOwner(nsINode* aNode) {
     aNode = aNode->GetParentNode();
   }
 
-  return aNode ? aNode->GetParentOrHostNode() : nullptr;
+  return aNode ? aNode->GetParentOrShadowHostNode() : nullptr;
 }
 
 already_AddRefed<nsINode> FindChromeAccessOnlySubtreeOwner(
@@ -991,8 +991,8 @@ void nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
           
           
           if (targetInKnownToBeHandledScope &&
-              nsContentUtils::ContentIsShadowIncludingDescendantOf(
-                  this, targetInKnownToBeHandledScope->SubtreeRoot())) {
+              IsShadowIncludingInclusiveDescendantOf(
+                  targetInKnownToBeHandledScope->SubtreeRoot())) {
             
             
             
