@@ -2751,6 +2751,17 @@ class HTMLEditor final : public TextEditor,
  protected:  
   virtual ~HTMLEditor();
 
+  
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE virtual nsresult
+  InitEditorContentAndSelection() override;
+
   MOZ_CAN_RUN_SCRIPT
   virtual nsresult SelectAllInternal() override;
 

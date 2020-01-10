@@ -76,40 +76,28 @@ const HTMLEditRules* TextEditRules::AsHTMLEditRules() const {
   return mIsHTMLEditRules ? static_cast<const HTMLEditRules*>(this) : nullptr;
 }
 
-nsresult TextEditRules::Init(TextEditor* aTextEditor) {
-  if (NS_WARN_IF(!aTextEditor)) {
-    return NS_ERROR_INVALID_ARG;
-  }
+nsresult TextEditor::InitEditorContentAndSelection() {
+  MOZ_ASSERT(IsEditActionDataAvailable());
 
-  Selection* selection = aTextEditor->GetSelection();
-  if (NS_WARN_IF(!selection)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  InitFields();
-
-  
-  mTextEditor = aTextEditor;
-  AutoSafeEditorData setData(*this, *mTextEditor);
-
-  nsresult rv = MOZ_KnownLive(TextEditorRef())
-                    .MaybeCreatePaddingBRElementForEmptyEditor();
+  nsresult rv = MaybeCreatePaddingBRElementForEmptyEditor();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
   
   
+  
+  
+  
   if (!SelectionRefPtr()->RangeCount()) {
-    rv = TextEditorRef().CollapseSelectionToEnd();
+    nsresult rv = CollapseSelectionToEnd();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
   }
 
   if (IsPlaintextEditor() && !IsSingleLineEditor()) {
-    nsresult rv = MOZ_KnownLive(TextEditorRef())
-                      .EnsurePaddingBRElementInMultilineEditor();
+    nsresult rv = EnsurePaddingBRElementInMultilineEditor();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }

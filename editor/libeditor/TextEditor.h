@@ -713,6 +713,14 @@ class TextEditor : public EditorBase,
  protected:  
   virtual ~TextEditor();
 
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE virtual nsresult
+  InitEditorContentAndSelection();
+
   int32_t WrapWidth() const { return mWrapColumn; }
 
   

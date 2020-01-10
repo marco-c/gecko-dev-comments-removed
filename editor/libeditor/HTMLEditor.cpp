@@ -459,8 +459,10 @@ nsresult HTMLEditor::InitRules() {
     
     mRules = new HTMLEditRules();
   }
-  RefPtr<TextEditRules> rules(mRules);
-  return rules->Init(this);
+  nsresult rv = InitEditorContentAndSelection();
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "InitEditorContentAndSelection() failed");
+  return rv;
 }
 
 NS_IMETHODIMP
