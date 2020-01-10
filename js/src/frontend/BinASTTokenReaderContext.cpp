@@ -2080,15 +2080,8 @@ JS::Result<Ok> SingleLookupHuffmanTable<T>::addSymbol(uint32_t bits,
   
   
   
-  const uint8_t padding = maxBitLength - bitLength;
-
-  
-  const size_t begin = bits << padding;
-
-  
-  const size_t length =
-      ((padding != 0) ? size_t(-1) >> (8 * sizeof(size_t) - padding) : 0) + 1;
-  for (size_t i = begin; i < begin + length; ++i) {
+  const HuffmanLookup base(bits, bitLength);
+  for (size_t i : base.suffixes(maxBitLength)) {
     saturated[i] = index;
   }
 
@@ -2596,6 +2589,24 @@ uint32_t HuffmanLookup::leadingBits(const uint8_t aBitLength) const {
       (aBitLength == 0) ? 0  
                         : this->bits >> uint32_t(this->bitLength - aBitLength);
   return result;
+}
+
+mozilla::detail::IntegerRange<size_t> HuffmanLookup::suffixes(
+    uint8_t expectedBitLength) const {
+  if (expectedBitLength <= bitLength) {
+    
+    
+    const uint8_t shearing = bitLength - expectedBitLength;
+    const size_t first = size_t(bits) >> shearing;
+    const size_t last = first;
+    return mozilla::IntegerRange<size_t>(first, last + 1);
+  }
+
+  
+  const uint8_t padding = expectedBitLength - bitLength;
+  const size_t first = bits << padding;
+  const size_t last = first + (size_t(-1) >> (8 * sizeof(size_t) - padding));
+  return mozilla::IntegerRange<size_t>(first, last + 1);
 }
 
 }  
