@@ -62,6 +62,9 @@ signing_description_schema = schema.extend({
     
     Optional('max-run-time'): int,
     Optional('extra'): {basestring: object},
+
+    
+    Optional('repacks-per-chunk'): int,
 })
 
 
