@@ -377,15 +377,10 @@ static bool ApplyUnicodeExtensionToTag(JSContext* cx, LanguageTag& tag,
   }
 
   
-  
-  const UniqueChars* existingUnicodeExtension =
-      std::find_if(tag.extensions().begin(), tag.extensions().end(),
-                   [](const auto& extension) { return extension[0] == 'u'; });
 
   const char* unicodeExtensionEnd = nullptr;
   const char* unicodeExtensionKeywords = nullptr;
-  if (existingUnicodeExtension != tag.extensions().end()) {
-    const char* unicodeExtension = existingUnicodeExtension->get();
+  if (const char* unicodeExtension = tag.unicodeExtension()) {
     unicodeExtensionEnd = unicodeExtension + strlen(unicodeExtension);
 
     SepKeywordIterator<char> iter(unicodeExtension, unicodeExtensionEnd);

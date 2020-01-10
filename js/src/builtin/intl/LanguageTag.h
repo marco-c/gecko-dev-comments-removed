@@ -243,6 +243,15 @@ class MOZ_STACK_CLASS LanguageTag final {
   
 
 
+  const char* unicodeExtension() const;
+
+ private:
+  ptrdiff_t unicodeExtensionIndex() const;
+
+ public:
+  
+
+
 
   template <size_t N>
   void setLanguage(const char (&language)[N]) {
