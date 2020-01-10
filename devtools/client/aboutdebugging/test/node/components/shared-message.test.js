@@ -7,14 +7,6 @@
 
 
 
-
-
-
-
-
-
-
-
 const { shallow } = require("enzyme");
 const React = require("react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
