@@ -9,6 +9,7 @@
 
 #include "nsCOMPtr.h"
 #include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/MozPromise.h"
 
 #define NOTIFICATION_CLICK_EVENT_NAME "notificationclick"
 #define NOTIFICATION_CLOSE_EVENT_NAME "notificationclose"
@@ -141,6 +142,8 @@ class ServiceWorkerPrivate final {
 
   bool IsIdle() const;
 
+  RefPtr<GenericPromise> GetIdlePromise();
+
   void SetHandlesFetch(bool aValue);
 
  private:
@@ -205,6 +208,18 @@ class ServiceWorkerPrivate final {
   
   
   nsTArray<RefPtr<WorkerRunnable>> mPendingFunctionalEvents;
+
+  
+  
+  
+  
+  
+  
+  MozPromiseHolder<GenericPromise> mIdlePromiseHolder;
+
+#ifdef DEBUG
+  bool mIdlePromiseObtained = false;
+#endif
 };
 
 }  

@@ -34,14 +34,6 @@ void ServiceWorkerRegisterJob::AsyncExecute() {
     bool sameUVC = GetUpdateViaCache() == registration->GetUpdateViaCache();
     registration->SetUpdateViaCache(GetUpdateViaCache());
 
-    if (registration->IsPendingUninstall()) {
-      registration->ClearPendingUninstall();
-      
-      
-      
-      
-      swm->CheckPendingReadyPromises();
-    }
     RefPtr<ServiceWorkerInfo> newest = registration->Newest();
     if (newest && mScriptSpec.Equals(newest->ScriptSpec()) && sameUVC) {
       SetRegistration(registration);

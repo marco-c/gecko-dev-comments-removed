@@ -76,6 +76,7 @@ void ServiceWorkerRegistrationInfo::Clear() {
 
   UpdateRegistrationState();
   NotifyChromeRegistrationListeners();
+  NotifyCleared();
 }
 
 void ServiceWorkerRegistrationInfo::ClearAsCorrupt() {
@@ -97,7 +98,7 @@ ServiceWorkerRegistrationInfo::ServiceWorkerRegistrationInfo(
       mCreationTime(PR_Now()),
       mCreationTimeStamp(TimeStamp::Now()),
       mLastUpdateTime(0),
-      mPendingUninstall(false),
+      mUnregistered(false),
       mCorrupt(false) {
   MOZ_ASSERT_IF(ServiceWorkerParentInterceptEnabled(),
                 XRE_GetProcessType() == GeckoProcessType_Default);
@@ -149,26 +150,23 @@ nsIPrincipal* ServiceWorkerRegistrationInfo::Principal() const {
   return mPrincipal;
 }
 
-bool ServiceWorkerRegistrationInfo::IsPendingUninstall() const {
-  return mPendingUninstall;
+bool ServiceWorkerRegistrationInfo::IsUnregistered() const {
+  return mUnregistered;
 }
 
-void ServiceWorkerRegistrationInfo::SetPendingUninstall() {
-  mPendingUninstall = true;
-}
+void ServiceWorkerRegistrationInfo::SetUnregistered() {
+#ifdef DEBUG
+  MOZ_ASSERT(!mUnregistered);
 
-void ServiceWorkerRegistrationInfo::ClearPendingUninstall() {
-  
-  
-  
-  
-  if (mPendingUninstall && mActiveWorker) {
-    RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-    if (swm) {
-      swm->StoreRegistration(mPrincipal, this);
-    }
-  }
-  mPendingUninstall = false;
+  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+  MOZ_ASSERT(swm);
+
+  RefPtr<ServiceWorkerRegistrationInfo> registration =
+      swm->GetRegistration(Principal(), Scope());
+  MOZ_ASSERT(registration != this);
+#endif
+
+  mUnregistered = true;
 }
 
 NS_IMPL_ISUPPORTS(ServiceWorkerRegistrationInfo,
@@ -354,7 +352,7 @@ void ServiceWorkerRegistrationInfo::Activate() {
 }
 
 void ServiceWorkerRegistrationInfo::FinishActivate(bool aSuccess) {
-  if (mPendingUninstall || !mActiveWorker ||
+  if (mUnregistered || !mActiveWorker ||
       mActiveWorker->State() != ServiceWorkerState::Activating) {
     return;
   }
@@ -729,13 +727,49 @@ void ServiceWorkerRegistrationInfo::FireUpdateFound() {
   }
 }
 
-void ServiceWorkerRegistrationInfo::NotifyRemoved() {
+void ServiceWorkerRegistrationInfo::NotifyCleared() {
   nsTObserverArray<ServiceWorkerRegistrationListener*>::ForwardIterator it(
       mInstanceList);
   while (it.HasMore()) {
     RefPtr<ServiceWorkerRegistrationListener> target = it.GetNext();
-    target->RegistrationRemoved();
+    target->RegistrationCleared();
   }
+}
+
+void ServiceWorkerRegistrationInfo::ClearWhenIdle() {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(IsUnregistered());
+  MOZ_ASSERT(!IsControllingClients());
+  MOZ_ASSERT(!IsIdle(), "Already idle!");
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  GetActive()->WorkerPrivate()->GetIdlePromise()->Then(
+      GetCurrentThreadSerialEventTarget(), __func__,
+      [self = RefPtr<ServiceWorkerRegistrationInfo>(this)](
+          const GenericPromise::ResolveOrRejectValue& aResult) {
+        MOZ_ASSERT(aResult.IsResolve());
+        
+        
+        
+        MOZ_ASSERT(!self->IsControllingClients());
+        MOZ_ASSERT(self->IsIdle());
+        self->Clear();
+      });
 }
 
 

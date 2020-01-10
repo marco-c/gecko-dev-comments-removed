@@ -56,7 +56,11 @@ class ServiceWorkerRegistrationInfo final
   
   
   
-  bool mPendingUninstall;
+  
+  
+  
+  
+  bool mUnregistered;
 
   bool mCorrupt;
 
@@ -77,11 +81,9 @@ class ServiceWorkerRegistrationInfo final
 
   nsIPrincipal* Principal() const;
 
-  bool IsPendingUninstall() const;
+  bool IsUnregistered() const;
 
-  void SetPendingUninstall();
-
-  void ClearPendingUninstall();
+  void SetUnregistered();
 
   already_AddRefed<ServiceWorkerInfo> Newest() const {
     RefPtr<ServiceWorkerInfo> newest;
@@ -199,7 +201,9 @@ class ServiceWorkerRegistrationInfo final
 
   void FireUpdateFound();
 
-  void NotifyRemoved();
+  void NotifyCleared();
+
+  void ClearWhenIdle();
 
  private:
   

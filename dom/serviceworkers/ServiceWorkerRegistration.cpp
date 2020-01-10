@@ -112,7 +112,7 @@ void ServiceWorkerRegistration::DisconnectFromOwner() {
   DOMEventTargetHelper::DisconnectFromOwner();
 }
 
-void ServiceWorkerRegistration::RegistrationRemoved() {
+void ServiceWorkerRegistration::RegistrationCleared() {
   
   
   

@@ -110,24 +110,25 @@ void ServiceWorkerUnregisterJob::Unregister() {
   
   
   
-  
-  
-  
-  if (mSendToParent && !registration->IsPendingUninstall()) {
+  if (mSendToParent) {
     swm->MaybeSendUnregister(mPrincipal, mScope);
   }
 
   
-  registration->SetPendingUninstall();
+  swm->RemoveRegistration(registration);
+  MOZ_ASSERT(registration->IsUnregistered());
 
   
   mResult = true;
   InvokeResultCallbacks(NS_OK);
 
   
-  if (!registration->IsControllingClients() && registration->IsIdle()) {
-    
-    swm->RemoveRegistration(registration);
+  if (!registration->IsControllingClients()) {
+    if (registration->IsIdle()) {
+      registration->Clear();
+    } else {
+      registration->ClearWhenIdle();
+    }
   }
 
   Finish(NS_OK);
