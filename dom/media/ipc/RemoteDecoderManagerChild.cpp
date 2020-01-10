@@ -8,7 +8,6 @@
 #include "base/task.h"
 
 #include "RemoteDecoderChild.h"
-#include "VideoDecoderChild.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/ipc/ProtocolUtils.h"
@@ -138,7 +137,9 @@ AbstractThread* RemoteDecoderManagerChild::GetManagerAbstractThread() {
 
 PRemoteDecoderChild* RemoteDecoderManagerChild::AllocPRemoteDecoderChild(
     const RemoteDecoderInfoIPDL& ,
-    const CreateDecoderParams::OptionSet& , bool* ,
+    const CreateDecoderParams::OptionSet& aOptions,
+    const layers::TextureFactoryIdentifier& aIdentifier, bool* aSuccess,
+    nsCString* , nsCString* ,
     nsCString* ) {
   
   
@@ -151,25 +152,6 @@ PRemoteDecoderChild* RemoteDecoderManagerChild::AllocPRemoteDecoderChild(
 bool RemoteDecoderManagerChild::DeallocPRemoteDecoderChild(
     PRemoteDecoderChild* actor) {
   RemoteDecoderChild* child = static_cast<RemoteDecoderChild*>(actor);
-  child->IPDLActorDestroyed();
-  return true;
-}
-
-PVideoDecoderChild* RemoteDecoderManagerChild::AllocPVideoDecoderChild(
-    const VideoInfo& aVideoInfo, const float& aFramerate,
-    const CreateDecoderParams::OptionSet& aOptions,
-    const layers::TextureFactoryIdentifier& aIdentifier, bool* aSuccess,
-    nsCString* , nsCString* ,
-    nsCString* ) {
-  MOZ_ASSERT(false,
-             "RemoteDecoderManagerChild cannot create "
-             "VideoDecoderChild classes");
-  return nullptr;
-}
-
-bool RemoteDecoderManagerChild::DeallocPVideoDecoderChild(
-    PVideoDecoderChild* actor) {
-  VideoDecoderChild* child = static_cast<VideoDecoderChild*>(actor);
   child->IPDLActorDestroyed();
   return true;
 }
