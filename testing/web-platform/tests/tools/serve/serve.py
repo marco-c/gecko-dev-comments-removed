@@ -607,12 +607,16 @@ class WebSocketDaemon(object):
 
         
         
-        pywebsocket._configure_logging(opts)
+        
+        
+        
         
         
         reload_module(logging)
         release_mozlog_lock()
-        pywebsocket._configure_logging(opts)
+        
+        
+        
         
 
         self.server = pywebsocket.WebSocketServer(opts)
