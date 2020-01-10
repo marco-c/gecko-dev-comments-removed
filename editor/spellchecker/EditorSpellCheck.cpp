@@ -616,12 +616,20 @@ EditorSpellCheck::UpdateCurrentDictionary(
   nsresult rv;
 
   RefPtr<EditorSpellCheck> kungFuDeathGrip = this;
+  uint32_t flags = 0;
+  mEditor->GetFlags(&flags);
 
   
   nsCOMPtr<nsIContent> rootContent;
   HTMLEditor* htmlEditor = mEditor->AsHTMLEditor();
   if (htmlEditor) {
-    rootContent = htmlEditor->GetFocusedContent();
+    if (flags & nsIPlaintextEditor::eEditorMailMask) {
+      
+      
+      rootContent = htmlEditor->GetActiveEditingHost();
+    } else {
+      rootContent = htmlEditor->GetFocusedContent();
+    }
   } else {
     rootContent = mEditor->GetRoot();
   }
@@ -631,8 +639,6 @@ EditorSpellCheck::UpdateCurrentDictionary(
   }
 
   
-  uint32_t flags = 0;
-  mEditor->GetFlags(&flags);
   if (flags & nsIPlaintextEditor::eEditorMailMask) {
     RefPtr<Document> ownerDoc = rootContent->OwnerDoc();
     Document* parentDoc = ownerDoc->GetInProcessParentDocument();
