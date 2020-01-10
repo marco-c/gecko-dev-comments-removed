@@ -440,7 +440,7 @@ class ImportHook(object):
         self._modules.add(resolved_name)
 
         
-        if not hasattr(module, '__file__'):
+        if not getattr(module, '__file__', None):
             return module
 
         
