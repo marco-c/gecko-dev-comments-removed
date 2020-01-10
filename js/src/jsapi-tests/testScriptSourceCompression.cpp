@@ -137,12 +137,19 @@ static void WriteFunctionOfSizeAtOffset(Source<Unit>& source,
                      "function must not extend past usable source");
 
   
-  std::copy_n(FunctionStart, FunctionStartLength, &source[offset]);
-  source[offset + FunctionNameOffset] = functionName;
+  
+  
+  auto TransformToUnit = [](char c) { return Unit(c); };
 
   
-  std::copy_n(FunctionEnd, FunctionEndLength,
-              &source[offset + functionLength - FunctionEndLength]);
+  std::transform(FunctionStart, FunctionStart + FunctionStartLength,
+                 &source[offset], TransformToUnit);
+  source[offset + FunctionNameOffset] = Unit(functionName);
+
+  
+  std::transform(FunctionEnd, FunctionEnd + FunctionEndLength,
+                 &source[offset + functionLength - FunctionEndLength],
+                 TransformToUnit);
 }
 
 static JSString* DecompressSource(JSContext* cx, JS::Handle<JSFunction*> fun) {
