@@ -707,24 +707,9 @@ void nsXULElement::UnregisterAccessKey(const nsAString& aOldValue) {
   
   Document* doc = GetComposedDoc();
   if (doc && !aOldValue.IsEmpty()) {
-    PresShell* presShell = doc->GetPresShell();
-
-    if (presShell) {
-      Element* element = this;
-
-      
-      if (mNodeInfo->Equals(nsGkAtoms::label)) {
-        
-        
-        
-        nsIContent* bindingParent = GetBindingParent();
-        element = bindingParent ? bindingParent->AsElement() : nullptr;
-      }
-
-      if (element) {
-        presShell->GetPresContext()->EventStateManager()->UnregisterAccessKey(
-            element, aOldValue.First());
-      }
+    if (PresShell* presShell = doc->GetPresShell()) {
+      presShell->GetPresContext()->EventStateManager()->UnregisterAccessKey(
+          this, aOldValue.First());
     }
   }
 }
