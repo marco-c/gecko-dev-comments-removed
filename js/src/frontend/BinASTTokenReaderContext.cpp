@@ -614,7 +614,7 @@ class HuffmanPreludeReader {
     
     HuffmanPreludeReader& owner;
 
-    NormalizedInterfaceAndField identity;
+    const NormalizedInterfaceAndField identity;
 
     PushEntryMatcher(JSContext* cx_, HuffmanPreludeReader& owner,
                      NormalizedInterfaceAndField identity)
@@ -649,6 +649,7 @@ class HuffmanPreludeReader {
       
 
       
+      
       switch (list.contents) {
 #define WRAP_LIST_2(_, CONTENT) CONTENT
 #define EMIT_CASE(LIST_NAME, _CONTENT_TYPE, _HUMAN_NAME, TYPE) \
@@ -666,6 +667,18 @@ class HuffmanPreludeReader {
     }
 
     MOZ_MUST_USE JS::Result<Ok> operator()(const Interface& interface) {
+      
+      
+      auto& table = owner.dictionary.tableForField(identity);
+      if (table.is<HuffmanTableUnreachable>()) {
+        
+        HuffmanTableIndexedSymbolsSum sum(cx_);
+        MOZ_TRY(sum.impl.initWithSingleValue(cx_, BinASTKind(interface.kind)));
+
+        table = {mozilla::VariantType<HuffmanTableIndexedSymbolsSum>{},
+                 std::move(sum)};
+      }
+
       
       
       
@@ -1202,14 +1215,24 @@ JS::Result<Ok> BinASTTokenReaderContext::enterTaggedTuple(
   js::frontend::BinASTTokenReaderBase::ContextPrinter::print("enterTaggedTuple",
                                                              context);
 
-  if (context.is<BinASTTokenReaderBase::RootContext>()) {
-    
-    tag = BinASTKind::Script;
-    return Ok();
-  }
-  MOZ_TRY_VAR(tag,
-              (readFieldFromTable<HuffmanTableIndexedSymbolsSum>(context)));
-  return Ok();
+  return context.match(
+      [&tag](const BinASTTokenReaderBase::RootContext&) -> JS::Result<Ok> {
+        
+        tag = BinASTKind::Script;
+        return Ok();
+      },
+      [](const BinASTTokenReaderBase::ListContext&) -> JS::Result<Ok> {
+        MOZ_CRASH(
+            "We shouldn't have generated a ListContext for enterTaggedTuple");
+        return Ok();
+      },
+      [this, context,
+       &tag](const BinASTTokenReaderBase::FieldContext& asFieldContext)
+          -> JS::Result<Ok> {
+        MOZ_TRY_VAR(
+            tag, (readFieldFromTable<HuffmanTableIndexedSymbolsSum>(context)));
+        return Ok();
+      });
 }
 
 JS::Result<Ok> BinASTTokenReaderContext::enterList(uint32_t& items,
