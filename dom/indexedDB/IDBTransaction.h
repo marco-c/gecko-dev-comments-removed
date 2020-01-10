@@ -86,8 +86,16 @@ class IDBTransaction final : public DOMEventTargetHelper, public nsIRunnable {
   int64_t mNextObjectStoreId;
   int64_t mNextIndexId;
 
-  nsresult mAbortCode;
-  uint32_t mPendingRequestCount;
+  nsresult mAbortCode;  
+                        
+                        
+                        
+                        
+                        
+  uint32_t mPendingRequestCount;  
+                                  
+                                  
+                                  
 
   const nsString mFilename;
   const uint32_t mLineNo;
@@ -96,8 +104,11 @@ class IDBTransaction final : public DOMEventTargetHelper, public nsIRunnable {
   ReadyState mReadyState;
   const Mode mMode;
 
-  bool mCreating;
-  bool mRegistered;
+  bool mCreating;    
+                     
+  bool mRegistered;  
+                     
+                     
   bool mAbortedByScript;
   bool mNotedActiveTransaction;
 
@@ -198,6 +209,7 @@ class IDBTransaction final : public DOMEventTargetHelper, public nsIRunnable {
 
   IDBDatabase* Db() const { return Database(); }
 
+  
   const nsTArray<nsString>& ObjectStoreNamesInternal() const {
     AssertIsOnOwningThread();
     return mObjectStoreNames;
@@ -262,8 +274,8 @@ class IDBTransaction final : public DOMEventTargetHelper, public nsIRunnable {
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(IDBTransaction, DOMEventTargetHelper)
 
   
-  virtual JSObject* WrapObject(JSContext* aCx,
-                               JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
