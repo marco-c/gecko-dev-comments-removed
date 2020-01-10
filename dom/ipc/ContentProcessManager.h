@@ -7,27 +7,15 @@
 #ifndef mozilla_dom_ContentProcessManager_h
 #define mozilla_dom_ContentProcessManager_h
 
-#include <map>
-#include <set>
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/TabContext.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "nsTArray.h"
+#include "nsDataHashtable.h"
 
 namespace mozilla {
 namespace dom {
 class ContentParent;
-
-struct RemoteFrameInfo {
-  ContentParentId mOpenerCpId;
-  TabId mOpenerTabId;
-  TabContext mContext;
-};
-
-struct ContentProcessInfo {
-  ContentParent* mCp;
-  std::map<TabId, RemoteFrameInfo> mRemoteFrames;
-};
 
 class ContentProcessManager final {
  public:
@@ -52,15 +40,7 @@ class ContentProcessManager final {
   
 
 
-
-
-
-
-  bool RegisterRemoteFrame(const TabId& aTabId,
-                           const ContentParentId& aOpenerCpId,
-                           const TabId& aOpenerTabId,
-                           const IPCTabContext& aContext,
-                           const ContentParentId& aChildCpId);
+  bool RegisterRemoteFrame(BrowserParent* aChildBp);
 
   
 
@@ -71,29 +51,13 @@ class ContentProcessManager final {
   
 
 
-  bool GetTabContextByProcessAndTabId(const ContentParentId& aChildCpId,
-                                      const TabId& aChildTabId,
-                                       TabContext* aTabContext);
-
-  
-
-
   nsTArray<TabContext> GetTabContextByContentProcess(
       const ContentParentId& aChildCpId);
 
   
 
 
-
-  bool GetRemoteFrameOpenerTabId(const ContentParentId& aChildCpId,
-                                 const TabId& aChildTabId,
-                                  ContentParentId* aOpenerCpId,
-                                  TabId* aOpenerTabId);
-
-  
-
-
-  ContentParentId GetTabProcessId(const TabId& aTabId);
+  ContentParentId GetTabProcessId(const TabId& aChildTabId);
 
   
 
@@ -113,14 +77,10 @@ class ContentProcessManager final {
 
 
 
-
   already_AddRefed<BrowserParent> GetBrowserParentByProcessAndTabId(
       const ContentParentId& aChildCpId, const TabId& aChildTabId);
 
   
-
-
-
 
 
 
@@ -133,8 +93,9 @@ class ContentProcessManager final {
 
  private:
   static StaticAutoPtr<ContentProcessManager> sSingleton;
-  std::map<ContentParentId, ContentProcessInfo> mContentParentMap;
-  std::map<TabId, ContentParentId> mTabProcessMap;
+
+  nsDataHashtable<nsUint64HashKey, ContentParent*> mContentParentMap;
+  nsDataHashtable<nsUint64HashKey, BrowserParent*> mBrowserParentMap;
 
   ContentProcessManager() { MOZ_COUNT_CTOR(ContentProcessManager); };
 };
