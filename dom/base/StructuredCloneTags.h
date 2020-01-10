@@ -51,7 +51,7 @@ enum StructuredCloneTags {
   
   
   
-  SCTAG_DOM_WEBCRYPTO_KEY,
+  SCTAG_DOM_CRYPTOKEY,
 
   
   

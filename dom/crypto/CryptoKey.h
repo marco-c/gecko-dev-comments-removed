@@ -164,8 +164,11 @@ class CryptoKey final : public nsISupports, public nsWrapperCache {
   static bool PublicKeyValid(SECKEYPublicKey* aPubKey);
 
   
-  bool WriteStructuredClone(JSStructuredCloneWriter* aWriter) const;
-  bool ReadStructuredClone(JSStructuredCloneReader* aReader);
+  bool WriteStructuredClone(JSContext* aCx,
+                            JSStructuredCloneWriter* aWriter) const;
+  static already_AddRefed<CryptoKey> ReadStructuredClone(
+      JSContext* aCx, nsIGlobalObject* aGlobal,
+      JSStructuredCloneReader* aReader);
 
  private:
   ~CryptoKey() {}
