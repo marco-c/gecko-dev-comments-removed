@@ -10,6 +10,7 @@
 #include "MainThreadUtils.h"          
 #include "mozilla/Assertions.h"       
 #include "mozilla/ClearOnShutdown.h"  
+#include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/CheckerboardReportServiceBinding.h"  
 #include "mozilla/gfx/GPUParent.h"

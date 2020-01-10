@@ -14,7 +14,7 @@
 #include "OverscrollHandoffState.h"
 #include "SimpleVelocityTracker.h"
 #include "ViewConfiguration.h"
-#include "mozilla/StaticPrefs.h"
+#include "mozilla/StaticPrefs_apz.h"
 
 #define ANDROID_APZ_LOG(...)
 

@@ -21,7 +21,7 @@
 #include "gfx2DGlue.h"
 #include "mozilla/DebugOnly.h"  
 #include "mozilla/IntegerPrintfMacros.h"
-#include "mozilla/StaticPrefs.h"
+#include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/Telemetry.h"  
 #include "mozilla/ToString.h"
 #include "mozilla/gfx/2D.h"        

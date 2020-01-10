@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/StaticPrefs.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/PaymentResponse.h"
 #include "mozilla/dom/BasicCardPaymentBinding.h"
 #include "mozilla/dom/PaymentRequestUpdateEvent.h"

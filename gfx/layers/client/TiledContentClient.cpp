@@ -14,6 +14,7 @@
 #include "gfxPlatform.h"              
 #include "gfxRect.h"                  
 #include "mozilla/MathAlgorithms.h"   
+#include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/gfx/Point.h"        
 #include "mozilla/gfx/Rect.h"         
 #include "mozilla/gfx/Tools.h"        
@@ -28,7 +29,8 @@
 #include "nsMathUtils.h"          
 #include "LayersLogging.h"
 #include "UnitTransforms.h"  
-#include "mozilla/StaticPrefs.h"
+#include "mozilla/StaticPrefs_apz.h"
+#include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/UniquePtr.h"
 
 #ifdef GFX_TILEDLAYER_DEBUG_OVERLAY

@@ -5,7 +5,7 @@
 
 
 #include "ContainerLayerMLGPU.h"
-#include "mozilla/StaticPrefs.h"
+#include "mozilla/StaticPrefs_layers.h"
 #include "LayersLogging.h"
 #include "LayerManagerMLGPU.h"
 #include "MLGDevice.h"

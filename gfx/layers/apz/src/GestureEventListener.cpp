@@ -11,7 +11,8 @@
 #include "InputBlockState.h"         
 #include "base/task.h"               
 #include "InputBlockState.h"         
-#include "mozilla/StaticPrefs.h"     
+#include "mozilla/StaticPrefs_apz.h"
+#include "mozilla/StaticPrefs_ui.h"
 #include "nsDebug.h"                 
 #include "nsMathUtils.h"             
 

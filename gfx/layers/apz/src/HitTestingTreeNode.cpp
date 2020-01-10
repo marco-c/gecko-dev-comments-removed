@@ -6,7 +6,7 @@
 
 #include "AsyncPanZoomController.h"  
 #include "LayersLogging.h"           
-#include "mozilla/StaticPrefs.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/gfx/Point.h"        
 #include "mozilla/layers/APZUtils.h"  
 #include "mozilla/layers/AsyncCompositionManager.h"  

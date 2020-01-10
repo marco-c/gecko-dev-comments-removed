@@ -29,6 +29,7 @@
 #include "gfxUtils.h"               
 #include "gfx2DGlue.h"              
 #include "mozilla/Assertions.h"     
+#include "mozilla/StaticPrefs_nglayout.h"
 #include "mozilla/WidgetUtils.h"    
 #include "mozilla/gfx/2D.h"         
 #include "mozilla/gfx/BasePoint.h"  

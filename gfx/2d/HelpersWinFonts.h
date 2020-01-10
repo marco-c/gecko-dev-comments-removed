@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/StaticPrefs.h"
+#include "mozilla/StaticPrefs_gfx.h"
 
 namespace mozilla {
 namespace gfx {

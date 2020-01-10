@@ -11,7 +11,10 @@
 #include "ScrollAnimationPhysics.h"  
 
 #include "mozilla/MouseEvents.h"
-#include "mozilla/StaticPrefs.h"
+#include "mozilla/StaticPrefs_apz.h"
+#include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/StaticPrefs_mousewheel.h"
+#include "mozilla/StaticPrefs_test.h"
 #include "mozilla/Telemetry.h"                
 #include "mozilla/layers/IAPZCTreeManager.h"  
 #include "OverscrollHandoffState.h"

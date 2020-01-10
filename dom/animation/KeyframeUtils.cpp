@@ -14,7 +14,7 @@
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/ServoCSSParser.h"
 #include "mozilla/StyleAnimationValue.h"
-#include "mozilla/StaticPrefs.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TimingParams.h"
 #include "mozilla/dom/BaseKeyframeTypesBinding.h"  
 #include "mozilla/dom/Document.h"  

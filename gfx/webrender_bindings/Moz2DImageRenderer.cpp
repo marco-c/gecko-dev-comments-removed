@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/StaticPrefs.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "gfxUtils.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Range.h"

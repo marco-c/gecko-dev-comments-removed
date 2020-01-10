@@ -10,6 +10,7 @@
 #include "InputData.h"           
 #include "mozilla/RefCounted.h"  
 #include "mozilla/RefPtr.h"      
+#include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/gfx/Matrix.h"  
 #include "mozilla/layers/APZUtils.h"
 #include "mozilla/layers/LayersTypes.h"  

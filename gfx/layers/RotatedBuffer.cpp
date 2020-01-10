@@ -24,7 +24,7 @@
 #include "mozilla/layers/ShadowLayers.h"   
 #include "mozilla/layers/TextureClient.h"  
 #include "mozilla/Move.h"                  
-#include "mozilla/StaticPrefs.h"           
+#include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/gfx/Point.h"             
 #include "gfx2DGlue.h"
 #include "nsLayoutUtils.h"  

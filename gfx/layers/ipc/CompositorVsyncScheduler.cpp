@@ -16,7 +16,8 @@
 #endif
 #include "mozilla/AutoRestore.h"  
 #include "mozilla/DebugOnly.h"    
-#include "mozilla/StaticPrefs.h"  
+#include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/gfx/2D.h"       
 #include "mozilla/gfx/Point.h"    
 #include "mozilla/gfx/Rect.h"     

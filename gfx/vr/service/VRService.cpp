@@ -5,7 +5,7 @@
 
 
 #include "VRService.h"
-#include "mozilla/StaticPrefs.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "../gfxVRMutex.h"
 #include "base/thread.h"  
 #include <cstring>        

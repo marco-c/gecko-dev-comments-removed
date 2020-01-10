@@ -10,6 +10,7 @@
 #include "AsyncPanZoomController.h"
 #include "Units.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/StaticPrefs_apz.h"
 
 #define FLING_PHYS_LOG(...)
 

@@ -8,7 +8,7 @@
 #include "base/thread.h"
 #include "mozilla/dom/ContentChild.h"  
 #include "mozilla/layers/SynchronousTask.h"
-#include "mozilla/StaticPrefs.h"
+#include "mozilla/StaticPrefs_media.h"
 #include "mozilla/SyncRunnable.h"
 
 #ifdef MOZ_AV1

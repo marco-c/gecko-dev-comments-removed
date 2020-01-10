@@ -1,26 +1,26 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "SimpleVelocityTracker.h"
 
-#include "mozilla/ComputedTimingFunction.h"  // for ComputedTimingFunction
-#include "mozilla/StaticPrefs.h"
-#include "mozilla/StaticPtr.h"  // for StaticAutoPtr
+#include "mozilla/ComputedTimingFunction.h"  
+#include "mozilla/StaticPrefs_apz.h"
+#include "mozilla/StaticPtr.h"  
 
 #define SVT_LOG(...)
-// #define SVT_LOG(...) printf_stderr("SimpleVelocityTracker: " __VA_ARGS__)
+
 
 namespace mozilla {
 namespace layers {
 
-// When we compute the velocity we do so by taking two input events and
-// dividing the distance delta over the time delta. In some cases the time
-// delta can be really small, which can make the velocity computation very
-// volatile. To avoid this we impose a minimum time delta below which we do
-// not recompute the velocity.
+
+
+
+
+
 const uint32_t MIN_VELOCITY_SAMPLE_TIME_MS = 5;
 
 extern StaticAutoPtr<ComputedTimingFunction> gVelocityCurveFunction;
@@ -38,12 +38,12 @@ void SimpleVelocityTracker::StartTracking(ParentLayerCoord aPos,
 Maybe<float> SimpleVelocityTracker::AddPosition(ParentLayerCoord aPos,
                                                 uint32_t aTimestampMs) {
   if (aTimestampMs <= mVelocitySampleTimeMs + MIN_VELOCITY_SAMPLE_TIME_MS) {
-    // See also the comment on MIN_VELOCITY_SAMPLE_TIME_MS.
-    // We still update mPos so that the positioning is correct (and we don't run
-    // into problems like bug 1042734) but the velocity will remain where it
-    // was. In particular we don't update either mVelocitySampleTimeMs or
-    // mVelocitySamplePos so that eventually when we do get an event with the
-    // required time delta we use the corresponding distance delta as well.
+    
+    
+    
+    
+    
+    
     SVT_LOG("%p|%s skipping velocity computation for small time delta %dms\n",
             mAxis->mAsyncPanZoomController, mAxis->Name(),
             (aTimestampMs - mVelocitySampleTimeMs));
@@ -70,9 +70,9 @@ float SimpleVelocityTracker::HandleDynamicToolbarMovement(
     ParentLayerCoord aDelta) {
   float timeDelta = aEndTimestampMs - aStartTimestampMs;
   MOZ_ASSERT(timeDelta != 0);
-  // Negate the delta to convert from spatial coordinates (e.g. toolbar
-  // has moved up --> negative delta) to scroll coordinates (e.g. toolbar
-  // has moved up --> scroll offset is increasing).
+  
+  
+  
   float velocity = -aDelta / timeDelta;
   velocity = ApplyFlingCurveToVelocity(velocity);
   mVelocitySampleTimeMs = aEndTimestampMs;
@@ -125,8 +125,8 @@ float SimpleVelocityTracker::ApplyFlingCurveToVelocity(float aVelocity) const {
       float curveThreshold = mAxis->ToLocalVelocity(
           StaticPrefs::apz_fling_curve_threshold_inches_per_ms());
       if (newVelocity > curveThreshold) {
-        // here, 0 < curveThreshold < newVelocity <= maxVelocity, so we apply
-        // the curve
+        
+        
         float scale = maxVelocity - curveThreshold;
         float funcInput = (newVelocity - curveThreshold) / scale;
         float funcOutput = gVelocityCurveFunction->GetValue(
@@ -147,5 +147,5 @@ float SimpleVelocityTracker::ApplyFlingCurveToVelocity(float aVelocity) const {
   return newVelocity;
 }
 
-}  // namespace layers
-}  // namespace mozilla
+}  
+}  

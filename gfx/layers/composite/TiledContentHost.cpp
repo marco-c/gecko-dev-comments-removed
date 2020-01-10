@@ -25,7 +25,7 @@
 #include "nsPoint.h"          
 #include "nsPrintfCString.h"  
 #include "nsRect.h"           
-#include "mozilla/StaticPrefs.h"
+#include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/layers/TextureClient.h"
 
 namespace mozilla {

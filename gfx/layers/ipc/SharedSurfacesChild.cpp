@@ -13,7 +13,7 @@
 #include "mozilla/layers/SourceSurfaceSharedData.h"
 #include "mozilla/layers/WebRenderBridgeChild.h"
 #include "mozilla/layers/RenderRootStateManager.h"
-#include "mozilla/StaticPrefs.h"  
+#include "mozilla/StaticPrefs_image.h"
 #include "mozilla/SystemGroup.h"  
 
 namespace mozilla {

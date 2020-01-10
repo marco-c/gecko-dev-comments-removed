@@ -3,6 +3,7 @@
 
 
 
+
 #ifdef XP_WIN
 #  include "WMF.h"
 #endif
@@ -15,7 +16,7 @@
 #include "GPUProcessManager.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/PerfStats.h"
-#include "mozilla/StaticPrefs.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/RemoteDecoderManagerChild.h"

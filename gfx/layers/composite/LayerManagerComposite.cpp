@@ -33,6 +33,8 @@
 #include "gfxUtils.h"                   
 #include "mozilla/Assertions.h"         
 #include "mozilla/RefPtr.h"             
+#include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/gfx/2D.h"             
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/gfx/Point.h"          

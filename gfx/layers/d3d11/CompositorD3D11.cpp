@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "CompositorD3D11.h"
 
@@ -29,14 +29,15 @@
 #include "mozilla/widget/WinCompositorWidget.h"
 
 #include "mozilla/EnumeratedArray.h"
-#include "mozilla/StaticPrefs.h"
+#include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/Telemetry.h"
 #include "BlendShaderConstants.h"
 
 #include "D3D11ShareHandleImage.h"
 #include "DeviceAttachmentsD3D11.h"
 
-#include <versionhelpers.h>  // For IsWindows8OrGreater
+#include <versionhelpers.h>  
 #include <winsdkver.h>
 
 namespace mozilla {
@@ -130,7 +131,7 @@ bool CompositorD3D11::UpdateDynamicVertexBuffer(
     const nsTArray<gfx::TexturedTriangle>& aTriangles) {
   HRESULT hr;
 
-  // Resize the dynamic vertex buffer if needed.
+  
   if (!mAttachments->EnsureTriangleBuffer(aTriangles.Length())) {
     return false;
   }
@@ -204,12 +205,12 @@ bool CompositorD3D11::Initialize(nsCString* const out_failureReason) {
 #if (_WIN32_WINDOWS_MAXVER >= 0x0A00)
     if (gfxVars::UseDoubleBufferingWithCompositor() && SUCCEEDED(hr) &&
         dxgiFactory2) {
-      // DXGI_SCALING_NONE is not available on Windows 7 with Platform Update.
-      // This looks awful for things like the awesome bar and browser window
-      // resizing so we don't use a flip buffer chain here. When using
-      // EFFECT_SEQUENTIAL it looks like windows doesn't stretch the surface
-      // when resizing. We chose not to run this before Windows 10 because it
-      // appears sometimes this breaks our ability to test ASAP compositing.
+      
+      
+      
+      
+      
+      
       RefPtr<IDXGISwapChain1> swapChain;
 
       DXGI_SWAP_CHAIN_DESC1 swapDesc;
@@ -226,11 +227,11 @@ bool CompositorD3D11::Initialize(nsCString* const out_failureReason) {
       mIsDoubleBuffered = true;
       swapDesc.Flags = 0;
 
-      /**
-       * Create a swap chain, this swap chain will contain the backbuffer for
-       * the window we draw to. The front buffer is the full screen front
-       * buffer.
-       */
+      
+
+
+
+
       hr = dxgiFactory2->CreateSwapChainForHwnd(mDevice, mHwnd, &swapDesc,
                                                 nullptr, nullptr,
                                                 getter_AddRefs(swapChain));
@@ -242,8 +243,8 @@ bool CompositorD3D11::Initialize(nsCString* const out_failureReason) {
       }
     }
 
-    // In some configurations double buffering may have failed with an
-    // ACCESS_DENIED error.
+    
+    
     if (!mSwapChain)
 #endif
     {
@@ -263,11 +264,11 @@ bool CompositorD3D11::Initialize(nsCString* const out_failureReason) {
       swapDesc.Flags = 0;
       swapDesc.SwapEffect = DXGI_SWAP_EFFECT_SEQUENTIAL;
 
-      /**
-       * Create a swap chain, this swap chain will contain the backbuffer for
-       * the window we draw to. The front buffer is the full screen front
-       * buffer.
-       */
+      
+
+
+
+
       hr = dxgiFactory->CreateSwapChain(dxgiDevice, &swapDesc,
                                         getter_AddRefs(mSwapChain));
       if (Failed(hr, "create swap chain")) {
@@ -276,7 +277,7 @@ bool CompositorD3D11::Initialize(nsCString* const out_failureReason) {
       }
     }
 
-    // We need this because we don't want DXGI to respond to Alt+Enter.
+    
     dxgiFactory->MakeWindowAssociation(mHwnd, DXGI_MWA_NO_WINDOW_CHANGES);
   }
 
@@ -307,7 +308,7 @@ bool CanUsePartialPresents(ID3D11Device* aDevice) {
     return false;
   }
 
-  // We have to disable partial presents on NVIDIA (bug 1189940).
+  
   if (desc.VendorId == 0x10de) {
     return false;
   }
@@ -475,12 +476,12 @@ CompositorD3D11::GetWindowRenderTarget() const {
   RefPtr<ID3D11Texture2D> rtTexture;
 
   if (!mWindowRTCopy || mWindowRTCopy->GetSize() != size) {
-    /*
-     * The compositor screenshots infrastructure is going to scale down the
-     * render target returned by this method. However, mDefaultRT does not
-     * contain a texture created wth the D3D11_BIND_SHADER_RESOURCE flag, so if
-     * we were to simply return mDefaultRT then scaling would fail.
-     */
+    
+
+
+
+
+
     CD3D11_TEXTURE2D_DESC desc(DXGI_FORMAT_B8G8R8A8_UNORM, size.width,
                                size.height, 1, 1, D3D11_BIND_SHADER_RESOURCE);
 
@@ -680,7 +681,7 @@ void CompositorD3D11::ClearRect(const gfx::Rect& aRect) {
 
   mContext->Draw(4, 0);
 
-  // Restore the default blend state.
+  
   mContext->OMSetBlendState(mAttachments->mPremulBlendState, sBlendFactor,
                             0xFFFFFFFF);
 }
@@ -883,8 +884,8 @@ void CompositorD3D11::DrawGeometry(const Geometry& aGeometry,
         aEffectChain.mSecondaryEffects[EffectTypes::BLEND_MODE].get());
     blendMode = blendEffect->mBlendMode;
 
-    // If the blend operation needs to read from the backdrop, copy the
-    // current render target into a new texture and bind it now.
+    
+    
     if (BlendOpIsMixBlendMode(blendMode)) {
       gfx::Matrix4x4 backdropTransform;
       gfx::IntRect rect = ComputeBackdropCopyRect(aRect, aClipRect, aTransform,
@@ -981,7 +982,7 @@ void CompositorD3D11::DrawGeometry(const Geometry& aGeometry,
                             sourceDesc.Format == DXGI_FORMAT_P010 ||
                             sourceDesc.Format == DXGI_FORMAT_P016);
 
-      // Might want to cache these for efficiency.
+      
       RefPtr<ID3D11ShaderResourceView> srViewY;
       RefPtr<ID3D11ShaderResourceView> srViewCbCr;
       D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc =
@@ -1027,8 +1028,8 @@ void CompositorD3D11::DrawGeometry(const Geometry& aGeometry,
 
       if (!source->GetSubSource(Y) || !source->GetSubSource(Cb) ||
           !source->GetSubSource(Cr)) {
-        // This can happen if we failed to upload the textures, most likely
-        // because of unsupported dimensions (we don't tile YCbCr textures).
+        
+        
         return;
       }
 
@@ -1037,7 +1038,7 @@ void CompositorD3D11::DrawGeometry(const Geometry& aGeometry,
       memcpy(&mPSConstants.yuvColorMatrix, yuvToRgb,
              sizeof(mPSConstants.yuvColorMatrix));
 
-      // Adjust range according to the bit depth.
+      
       mPSConstants.vCoefficient[0] =
           RescalingFactorForColorDepth(ycbcrEffect->mColorDepth);
 
@@ -1099,13 +1100,13 @@ void CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
                                  const nsIntRegion& aOpaqueRegion,
                                  IntRect* aClipRectOut,
                                  IntRect* aRenderBoundsOut) {
-  // Don't composite if we are minimised. Other than for the sake of efficency,
-  // this is important because resizing our buffers when mimised will fail and
-  // cause a crash when we're restored.
+  
+  
+  
   NS_ASSERTION(mHwnd, "Couldn't find an HWND when initialising?");
   if (mWidget->IsHidden()) {
-    // We are not going to render, and not going to call EndFrame so we have to
-    // read-unlock our textures to prevent them from accumulating.
+    
+    
     ReadUnlockTextures();
     *aRenderBoundsOut = IntRect();
     return;
@@ -1118,8 +1119,8 @@ void CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
     if (!mAttachments->IsDeviceReset()) {
       gfxCriticalNote << "GFX: D3D11 skip BeginFrame with device-removed.";
 
-      // If we are in the GPU process then the main process doesn't
-      // know that a device reset has happened and needs to be informed
+      
+      
       if (XRE_IsGPUProcess()) {
         GPUParent::GetSingleton()->NotifyDeviceReset();
       }
@@ -1133,7 +1134,7 @@ void CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
   EnsureSize();
 
   IntRect intRect = IntRect(IntPoint(0, 0), mSize.ToUnknownSize());
-  // Sometimes the invalid region is larger than we want to draw.
+  
   nsIntRegion invalidRegionSafe;
 
   if (mSize != oldSize) {
@@ -1164,8 +1165,8 @@ void CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
     mFrontBufferInvalid.Or(mFrontBufferInvalid, invalidRegionSafe);
   }
 
-  // We have to call UpdateRenderTarget after we've determined the invalid regi
-  // Failed to create a render target or the view.
+  
+  
   if (!UpdateRenderTarget() || !mDefaultRT || !mDefaultRT->mRTView ||
       mSize.width <= 0 || mSize.height <= 0) {
     ReadUnlockTextures();
@@ -1196,8 +1197,8 @@ void CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
 
   if (mAttachments->mSyncObject) {
     if (!mAttachments->mSyncObject->Synchronize()) {
-      // It's timeout here. Since the timeout is related to the driver-removed,
-      // clear the render-bounding size to skip this frame.
+      
+      
       *aRenderBoundsOut = IntRect();
       return;
     }
@@ -1255,12 +1256,12 @@ void CompositorD3D11::EndFrame() {
     mDiagnostics->Cancel();
   }
 
-  // Block until the previous frame's work has been completed.
+  
   if (mQuery) {
     BOOL result;
     WaitForFrameGPUQuery(mDevice, mContext, mQuery, &result);
   }
-  // Store the query for this frame so we can flush it next time.
+  
   mQuery = query;
 
   Compositor::EndFrame();
@@ -1277,14 +1278,14 @@ void CompositorD3D11::Present() {
 
   bool isWARP = DeviceManagerDx::Get()->IsWARP();
   if (isWARP) {
-    // When we're using WARP we cannot present immediately as it causes us
-    // to tear when rendering. When not using WARP it appears the DWM takes
-    // care of tearing for us.
+    
+    
+    
     presentInterval = 1;
   }
 
-  // This must be called before present so our back buffer has the validated
-  // window content.
+  
+  
   if (mTarget) {
     PaintToTarget();
   }
@@ -1363,16 +1364,16 @@ void CompositorD3D11::Present() {
 
 void CompositorD3D11::CancelFrame(bool aNeedFlush) {
   ReadUnlockTextures();
-  // Flush the context, otherwise the driver might hold some resources alive
-  // until the next flush or present.
+  
+  
   if (aNeedFlush) {
     mContext->Flush();
   }
 }
 
 void CompositorD3D11::PrepareViewport(const gfx::IntSize& aSize) {
-  // This view matrix translates coordinates from 0..width and 0..height to
-  // -1..1 on the X axis, and -1..1 on the Y axis (flips the Y coordinate)
+  
+  
   Matrix viewMatrix = Matrix::Translation(-1.0, 1.0);
   viewMatrix.PreScale(2.0f / float(aSize.width), 2.0f / float(aSize.height));
   viewMatrix.PreScale(1.0f, -1.0f);
@@ -1393,9 +1394,9 @@ void CompositorD3D11::ForcePresent() {
       desc.BufferDesc.Height == size.height) {
     mSwapChain->Present(0, 0);
     if (mIsDoubleBuffered) {
-      // Make sure we present what was the front buffer before that we know is
-      // completely valid. This non v-synced present should be pretty much
-      // 'free' for a flip chain.
+      
+      
+      
       mSwapChain->Present(0, 0);
     }
   }
@@ -1448,8 +1449,8 @@ bool CompositorD3D11::VerifyBufferSize() {
     RefPtr<ID3D11RenderTargetView> rtView = mDefaultRT->mRTView;
     RefPtr<ID3D11ShaderResourceView> srView = mDefaultRT->mSRV;
 
-    // Make sure the texture, which belongs to the swapchain, is destroyed
-    // before resizing the swapchain.
+    
+    
     if (mCurrentRT == mDefaultRT) {
       mCurrentRT = nullptr;
     }
@@ -1521,7 +1522,7 @@ bool CompositorD3D11::UpdateRenderTarget() {
   hr = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D),
                              (void**)backBuf.StartAssignment());
   if (hr == DXGI_ERROR_INVALID_CALL) {
-    // This happens on some GPUs/drivers when there's a TDR.
+    
     if (mDevice->GetDeviceRemovedReason() != S_OK) {
       gfxCriticalError() << "GetBuffer returned invalid call! " << mSize << ", "
                          << (int)mVerifyBuffersFailed;
@@ -1709,15 +1710,15 @@ void CompositorD3D11::HandleError(HRESULT hr, Severity aSeverity) {
     }
   }
 
-  // Device reset may not be an error on our side, but can mess things up so
-  // it's useful to see it in the reports.
+  
+  
   gfxCriticalError(CriticalLog::DefaultOptions(!deviceRemoved))
       << (deviceRemoved ? "[CompositorD3D11] device removed with error code: "
                         : "[CompositorD3D11] error code: ")
       << hexa(hr) << ", " << hexa(hrOnReset) << ", "
       << (int)mVerifyBuffersFailed;
 
-  // Crash if we are making invalid calls outside of device removal
+  
   if (hr == DXGI_ERROR_INVALID_CALL) {
     gfxDevCrash(deviceRemoved ? LogReason::D3D11InvalidCallDeviceRemoved
                               : LogReason::D3D11InvalidCall)
@@ -1729,5 +1730,5 @@ void CompositorD3D11::HandleError(HRESULT hr, Severity aSeverity) {
   }
 }
 
-}  // namespace layers
-}  // namespace mozilla
+}  
+}  

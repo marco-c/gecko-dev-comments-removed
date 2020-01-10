@@ -12,7 +12,7 @@
 #include "gfxContext.h"           
 #include "mozilla/Attributes.h"   
 #include "mozilla/LinkedList.h"   
-#include "mozilla/StaticPrefs.h"  
+#include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/WidgetUtils.h"  
 #include "mozilla/gfx/Rect.h"     
 #include "mozilla/layers/CompositorTypes.h"

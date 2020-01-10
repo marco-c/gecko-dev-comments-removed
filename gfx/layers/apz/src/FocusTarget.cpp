@@ -11,6 +11,7 @@
 #include "mozilla/dom/RemoteBrowser.h"       
 #include "mozilla/EventDispatcher.h"         
 #include "mozilla/PresShell.h"               
+#include "mozilla/StaticPrefs_apz.h"
 #include "nsIContentInlines.h"               
 #include "nsLayoutUtils.h"                   
 

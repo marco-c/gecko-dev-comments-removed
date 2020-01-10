@@ -2,7 +2,7 @@
 
 
 
-#include "mozilla/StaticPrefs.h"
+#include "mozilla/StaticPrefs_security.h"
 
 extern "C" {
 
