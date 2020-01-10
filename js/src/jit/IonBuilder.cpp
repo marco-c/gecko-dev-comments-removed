@@ -8219,10 +8219,11 @@ AbortReasonOr<Ok> IonBuilder::loadStaticSlot(JSObject* staticObject,
 
 
 bool IonBuilder::needsPostBarrier(MDefinition* value) {
-  CompileZone* zone = realm->zone();
-  if (!zone->nurseryExists()) {
+  
+  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
     return false;
   }
+  CompileZone* zone = realm->zone();
   if (value->mightBeType(MIRType::Object)) {
     return true;
   }
