@@ -7813,24 +7813,25 @@ void Debugger::removeFromFrameMapsAndClearBreakpointsIn(JSContext* cx,
   forEachDebuggerFrame(frame, [&](DebuggerFrame* frameobj) {
     FreeOp* fop = cx->runtime()->defaultFreeOp();
     frameobj->freeFrameIterData(fop);
-    if (!suspending) {
-      frameobj->maybeDecrementFrameScriptStepperCount(fop, frame);
-    }
 
     Debugger* dbg = Debugger::fromChildJSObject(frameobj);
     dbg->frames.remove(frame);
 
-    
-    
-    
-    if (!suspending && frameobj->hasGenerator()) {
+    if (frameobj->hasGenerator()) {
       
-      AbstractGeneratorObject& genObj = frameobj->unwrappedGenerator();
-      GeneratorWeakMap::Ptr p = dbg->generatorFrames.lookup(&genObj);
-      MOZ_ASSERT(p);
-      MOZ_ASSERT(p->value() == frameobj);
-      dbg->generatorFrames.remove(p);
-      frameobj->clearGenerator(fop);
+      
+      
+      if (!suspending) {
+        
+        AbstractGeneratorObject& genObj = frameobj->unwrappedGenerator();
+        GeneratorWeakMap::Ptr p = dbg->generatorFrames.lookup(&genObj);
+        MOZ_ASSERT(p);
+        MOZ_ASSERT(p->value() == frameobj);
+        dbg->generatorFrames.remove(p);
+        frameobj->clearGenerator(fop);
+      }
+    } else {
+      frameobj->maybeDecrementFrameScriptStepperCount(fop, frame);
     }
   });
 
@@ -9100,6 +9101,14 @@ void DebuggerFrame::clearGenerator(FreeOp* fop) {
     return;
   }
 
+  GeneratorInfo* info = generatorInfo();
+  if (!IsAboutToBeFinalized(&info->generatorScript())) {
+    bool isStepper = !getReservedSlot(ONSTEP_HANDLER_SLOT).isUndefined();
+    if (isStepper) {
+      info->generatorScript()->decrementStepperCount(fop);
+    }
+  }
+
   fop->delete_(generatorInfo());
   setReservedSlot(GENERATOR_INFO_SLOT, UndefinedValue());
 }
@@ -9698,6 +9707,10 @@ void DebuggerFrame::maybeDecrementFrameScriptStepperCount(
   } else {
     frame.script()->decrementStepperCount(fop);
   }
+
+  
+  
+  setReservedSlot(ONSTEP_HANDLER_SLOT, UndefinedValue());
 }
 
 
