@@ -1408,7 +1408,8 @@ void LUL::Unwind( uintptr_t* aFramePCs,
       continue;
     }
 
-#if defined(GP_PLAT_amd64_linux) || defined(GP_PLAT_x86_linux)
+#if defined(GP_PLAT_amd64_linux) || defined(GP_PLAT_x86_linux) || \
+    defined(GP_PLAT_amd64_android) || defined(GP_PLAT_x86_android)
     
     
 
@@ -1519,6 +1520,7 @@ void LUL::Unwind( uintptr_t* aFramePCs,
       }
     }
 #endif  
+        
 
     
     
