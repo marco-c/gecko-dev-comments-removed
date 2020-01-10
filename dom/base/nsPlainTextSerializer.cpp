@@ -1470,7 +1470,7 @@ void nsPlainTextSerializer::Write(const nsAString& aStr) {
   
   
   if ((mPreFormattedMail && !mWrapColumn) ||
-      (IsElementPreformatted() && !mPreFormattedMail && !MayWrap()) ||
+      (IsElementPreformatted() && !mPreFormattedMail) ||
       (mSpanLevel > 0 && mEmptyLines >= 0 && IsQuotedLine(str))) {
     
 
