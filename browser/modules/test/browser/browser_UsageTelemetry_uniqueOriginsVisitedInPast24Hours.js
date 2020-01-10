@@ -54,8 +54,10 @@ add_task(async function test_uniqueDomainsVisitedInPast24Hours() {
   );
 
   
+  
+  
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.engagement.recent_visited_origins.expiry", 1]],
+    set: [["browser.engagement.recent_visited_origins.expiry", 4]],
   });
 
   
@@ -71,13 +73,15 @@ add_task(async function test_uniqueDomainsVisitedInPast24Hours() {
 
   let countBefore = URICountListener.uniqueDomainsVisitedInPast24Hours;
 
-  await new Promise(resolve => {
-    setTimeout(_ => {
-      let countAfter = URICountListener.uniqueDomainsVisitedInPast24Hours;
-      is(countAfter, countBefore - 1, "The expiry should work correctly");
-      resolve();
-    }, 1100);
-  });
+  
+  await BrowserTestUtils.waitForCondition(() => {
+    return (
+      URICountListener.uniqueDomainsVisitedInPast24Hours == countBefore - 1
+    );
+  }, 250);
+
+  let countAfter = URICountListener.uniqueDomainsVisitedInPast24Hours;
+  is(countAfter, countBefore - 1, "The expiry should work correctly");
 
   BrowserTestUtils.removeTab(win.gBrowser.selectedTab);
   BrowserTestUtils.removeTab(win.gBrowser.selectedTab);
