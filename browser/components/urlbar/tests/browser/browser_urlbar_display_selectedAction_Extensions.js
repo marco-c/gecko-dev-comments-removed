@@ -39,12 +39,12 @@ add_task(async function testSwitchToTabTextDisplay() {
   EventUtils.synthesizeKey("KEY_ArrowUp");
 
   
-  const extensionText = document.getElementById("extension");
+  const extensionText = document.getElementById("urlbar-label-extension");
   Assert.ok(BrowserTestUtils.is_visible(extensionText));
   Assert.equal(extensionText.value, "Extension:");
 
   
-  const allLabels = document.getElementById("urlbar-display-box").children;
+  const allLabels = document.getElementById("urlbar-label-box").children;
   for (let label of allLabels) {
     if (label != extensionText) {
       Assert.ok(BrowserTestUtils.is_hidden(label));
