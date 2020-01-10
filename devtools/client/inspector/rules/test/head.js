@@ -932,3 +932,34 @@ function getPseudoClassCheckbox(view, pseudo) {
     checkbox => checkbox.value === pseudo
   )[0];
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function checkCSSVariableOutput(
+  view,
+  selector,
+  propertyName,
+  expectedClassName,
+  expectedDatasetValue
+) {
+  const target = getRuleViewProperty(
+    view,
+    selector,
+    propertyName
+  ).valueSpan.querySelector(`.${expectedClassName}`);
+
+  ok(target, "The target element should exist");
+  is(target.dataset.variable, expectedDatasetValue);
+}

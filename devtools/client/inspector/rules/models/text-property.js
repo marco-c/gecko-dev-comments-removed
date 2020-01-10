@@ -15,6 +15,13 @@ loader.lazyRequireGetter(
   true
 );
 
+loader.lazyRequireGetter(
+  this,
+  "hasCSSVariable",
+  "devtools/client/inspector/rules/utils/utils",
+  true
+);
+
 
 
 
@@ -283,8 +290,7 @@ class TextProperty {
 
 
   hasCSSVariable(name) {
-    const regex = new RegExp(`(^|\\W)var\\(${name}\\s*[,)]`);
-    return regex.test(this.value);
+    return hasCSSVariable(this.value, name);
   }
 }
 

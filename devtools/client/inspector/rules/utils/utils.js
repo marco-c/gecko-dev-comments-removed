@@ -1,0 +1,22 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+
+
+
+function hasCSSVariable(propertyValue, variableName) {
+  const regex = new RegExp(`(^|\\W)var\\(${variableName}\\s*[,)]`);
+  return regex.test(propertyValue);
+}
+
+module.exports = { hasCSSVariable };
