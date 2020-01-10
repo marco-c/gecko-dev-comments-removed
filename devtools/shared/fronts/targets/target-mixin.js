@@ -451,8 +451,12 @@ function TargetMixin(parentClass) {
         this.emit("close");
 
         for (let [, front] of this.fronts) {
-          front = await front;
-          await front.destroy();
+          
+          
+          if (front instanceof Promise) {
+            front = await front;
+          }
+          front.destroy();
         }
 
         this._teardownRemoteListeners();
