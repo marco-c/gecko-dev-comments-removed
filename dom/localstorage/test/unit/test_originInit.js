@@ -56,22 +56,6 @@ async function testSteps() {
     return bstream;
   }
 
-  async function readUsageFromUsageFile() {
-    let file = await File.createFromNsIFile(usageFile);
-
-    let buffer = await new Promise(resolve => {
-      let reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.readAsArrayBuffer(file);
-    });
-
-    
-    
-    
-    let view = new DataView(buffer, 8, 4);
-    return view.getUint32();
-  }
-
   async function initTestOrigin() {
     let request = initOrigin(principal, "default");
     await requestFinished(request);
@@ -96,7 +80,7 @@ async function testSteps() {
       return;
     }
 
-    let usage = await readUsageFromUsageFile();
+    let usage = await readUsageFromUsageFile(usageFile);
     ok(usage == data.usage, "Correct usage");
   }
 

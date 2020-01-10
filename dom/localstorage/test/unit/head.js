@@ -119,8 +119,12 @@ function initOrigin(principal, persistence) {
   return request;
 }
 
-function getOriginUsage(principal) {
-  let request = Services.qms.getUsageForPrincipal(principal, function() {});
+function getOriginUsage(principal, fromMemory = false) {
+  let request = Services.qms.getUsageForPrincipal(
+    principal,
+    function() {},
+    fromMemory
+  );
 
   return request;
 }
@@ -301,4 +305,20 @@ function loadSubscript(path) {
   let file = do_get_file(path, false);
   let uri = Services.io.newFileURI(file);
   Services.scriptloader.loadSubScript(uri.spec);
+}
+
+async function readUsageFromUsageFile(usageFile) {
+  let file = await File.createFromNsIFile(usageFile);
+
+  let buffer = await new Promise(resolve => {
+    let reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsArrayBuffer(file);
+  });
+
+  
+  
+  
+  let view = new DataView(buffer, 8, 4);
+  return view.getUint32();
 }
