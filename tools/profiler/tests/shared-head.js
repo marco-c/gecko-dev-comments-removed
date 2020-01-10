@@ -108,3 +108,15 @@ function captureAtLeastOneJsSample() {
     }
   }
 }
+
+
+
+
+
+
+async function stopAndGetProfile() {
+  Services.profiler.PauseSampling();
+  const profile = await Services.profiler.getProfileDataAsync();
+  Services.profiler.StopProfiler();
+  return profile;
+}
