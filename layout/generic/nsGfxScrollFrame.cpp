@@ -4445,6 +4445,9 @@ nsSize ScrollFrameHelper::GetLineScrollAmount() const {
 
 
 
+
+
+
 struct TopAndBottom {
   TopAndBottom(nscoord aTop, nscoord aBottom) : top(aTop), bottom(aBottom) {}
 
@@ -4466,20 +4469,46 @@ struct ReverseBottomComparator {
     return A.bottom > B.bottom;
   }
 };
+
+static void AddToListIfHeaderFooter(nsIFrame* aFrame,
+                                    nsIFrame* aScrollPortFrame,
+                                    const nsRect& aScrollPort,
+                                    nsTArray<TopAndBottom>& aList) {
+  nsRect r = aFrame->GetRectRelativeToSelf();
+  r = nsLayoutUtils::TransformFrameRectToAncestor(aFrame, r, aScrollPortFrame);
+  r = r.Intersect(aScrollPort);
+  if ((r.width >= aScrollPort.width / 2 ||
+       r.width >= NSIntPixelsToAppUnits(800, AppUnitsPerCSSPixel())) &&
+      r.height <= aScrollPort.height / 3) {
+    aList.AppendElement(TopAndBottom(r.y, r.YMost()));
+  }
+}
+
 static nsSize GetScrollPortSizeExcludingHeadersAndFooters(
-    nsIFrame* aViewportFrame, const nsRect& aScrollPort) {
-  AutoTArray<TopAndBottom, 50> list;
-  nsFrameList fixedFrames = aViewportFrame->GetChildList(nsIFrame::kFixedList);
-  for (nsFrameList::Enumerator iterator(fixedFrames); !iterator.AtEnd();
-       iterator.Next()) {
-    nsIFrame* f = iterator.get();
-    nsRect r = f->GetRectRelativeToSelf();
-    r = nsLayoutUtils::TransformFrameRectToAncestor(f, r, aViewportFrame);
-    r = r.Intersect(aScrollPort);
-    if ((r.width >= aScrollPort.width / 2 ||
-         r.width >= NSIntPixelsToAppUnits(800, AppUnitsPerCSSPixel())) &&
-        r.height <= aScrollPort.height / 3) {
-      list.AppendElement(TopAndBottom(r.y, r.YMost()));
+    nsIFrame* aScrollFrame, nsIFrame* aViewportFrame,
+    const nsRect& aScrollPort) {
+  AutoTArray<TopAndBottom, 10> list;
+  if (aViewportFrame) {
+    nsFrameList fixedFrames =
+        aViewportFrame->GetChildList(nsIFrame::kFixedList);
+    for (nsFrameList::Enumerator iterator(fixedFrames); !iterator.AtEnd();
+         iterator.Next()) {
+      AddToListIfHeaderFooter(iterator.get(), aViewportFrame, aScrollPort,
+                              list);
+    }
+  }
+
+  
+  StickyScrollContainer* ssc =
+      StickyScrollContainer::GetStickyScrollContainerForScrollFrame(
+          aScrollFrame);
+  if (ssc) {
+    const nsTArray<nsIFrame*>& stickyFrames = ssc->GetFrames();
+    for (nsIFrame* f : stickyFrames) {
+      
+      if (ssc->IsStuckInYDirection(f)) {
+        AddToListIfHeaderFooter(f, aScrollFrame, aScrollPort, list);
+      }
     }
   }
 
@@ -4507,16 +4536,13 @@ static nsSize GetScrollPortSizeExcludingHeadersAndFooters(
 
 nsSize ScrollFrameHelper::GetPageScrollAmount() const {
   nsSize lineScrollAmount = GetLineScrollAmount();
-  nsSize effectiveScrollPortSize;
-  if (mIsRoot) {
-    
-    
-    nsIFrame* root = mOuter->PresShell()->GetRootFrame();
-    effectiveScrollPortSize =
-        GetScrollPortSizeExcludingHeadersAndFooters(root, mScrollPort);
-  } else {
-    effectiveScrollPortSize = mScrollPort.Size();
-  }
+
+  
+  
+  nsSize effectiveScrollPortSize = GetScrollPortSizeExcludingHeadersAndFooters(
+      mOuter, mIsRoot ? mOuter->PresShell()->GetRootFrame() : nullptr,
+      mScrollPort);
+
   
   
   return nsSize(effectiveScrollPortSize.width -
