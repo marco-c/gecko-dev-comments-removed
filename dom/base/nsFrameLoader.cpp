@@ -2598,22 +2598,22 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
       
       
       
-      nsCOMPtr<nsIWebNavigation> parentWebNav;
-      nsCOMPtr<nsIURI> aboutAddons;
-      nsCOMPtr<nsIURI> parentURI;
-      bool equals;
-      if (!((parentWebNav = do_GetInterface(parentDocShell)) &&
-            NS_SUCCEEDED(
-                parentWebNav->GetCurrentURI(getter_AddRefs(parentURI))) &&
-            ((NS_SUCCEEDED(
-                  NS_NewURI(getter_AddRefs(aboutAddons), "about:addons")) &&
-              NS_SUCCEEDED(parentURI->EqualsExceptRef(aboutAddons, &equals)) &&
-              equals) ||
-             (NS_SUCCEEDED(NS_NewURI(
-                  getter_AddRefs(aboutAddons),
-                  "chrome://mozapps/content/extensions/aboutaddons.html")) &&
-              NS_SUCCEEDED(parentURI->EqualsExceptRef(aboutAddons, &equals)) &&
-              equals)))) {
+      
+      nsIURI* parentURI = parentWin->GetDocumentURI();
+      if (!parentURI) {
+        return false;
+      }
+
+      nsAutoCString specIgnoringRef;
+      if (NS_FAILED(parentURI->GetSpecIgnoringRef(specIgnoringRef))) {
+        return false;
+      }
+
+      if (!(specIgnoringRef.EqualsLiteral("about:addons") ||
+            specIgnoringRef.EqualsLiteral(
+                "chrome://mozapps/content/extensions/aboutaddons.html") ||
+            specIgnoringRef.EqualsLiteral(
+                "chrome://browser/content/webext-panels.xul"))) {
         return false;
       }
     }
