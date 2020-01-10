@@ -1949,6 +1949,7 @@ pub struct PictureUpdateState<'a> {
     surface_stack: Vec<SurfaceIndex>,
     picture_stack: Vec<PictureInfo>,
     are_raster_roots_assigned: bool,
+    composite_state: &'a CompositeState,
 }
 
 impl<'a> PictureUpdateState<'a> {
@@ -1960,6 +1961,7 @@ impl<'a> PictureUpdateState<'a> {
         gpu_cache: &mut GpuCache,
         clip_store: &ClipStore,
         data_stores: &mut DataStores,
+        composite_state: &CompositeState,
     ) {
         profile_marker!("UpdatePictures");
 
@@ -1968,6 +1970,7 @@ impl<'a> PictureUpdateState<'a> {
             surface_stack: vec![SurfaceIndex(0)],
             picture_stack: Vec::new(),
             are_raster_roots_assigned: true,
+            composite_state,
         };
 
         state.update(
@@ -3658,12 +3661,18 @@ impl PicturePrimitive {
             Some(PictureCompositeMode::TileCache { .. }) => {
                 
                 
-                
-                let spatial_node = &frame_context
-                    .clip_scroll_tree
-                    .spatial_nodes[self.spatial_node_index.0 as usize];
-                if spatial_node.coordinate_system_id == CoordinateSystemId::root() {
-                    Some(PictureCompositeMode::TileCache { })
+                if state.composite_state.picture_caching_is_enabled {
+                    
+                    
+                    
+                    let spatial_node = &frame_context
+                        .clip_scroll_tree
+                        .spatial_nodes[self.spatial_node_index.0 as usize];
+                    if spatial_node.coordinate_system_id == CoordinateSystemId::root() {
+                        Some(PictureCompositeMode::TileCache { })
+                    } else {
+                        None
+                    }
                 } else {
                     None
                 }
