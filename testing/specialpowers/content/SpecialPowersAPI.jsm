@@ -756,9 +756,6 @@ class SpecialPowersAPI extends JSWindowActorChild {
 
 
 
-
-
-
   registerObservers(topic) {
     var msg = {
       op: "add",
