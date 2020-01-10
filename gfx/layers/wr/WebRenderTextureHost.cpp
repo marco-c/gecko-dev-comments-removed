@@ -112,6 +112,8 @@ void WebRenderTextureHost::UnbindTextureSource() {
   if (mWrappedTextureHost && mWrappedTextureHost->AsBufferTextureHost()) {
     mWrappedTextureHost->UnbindTextureSource();
   }
+  
+  TextureHost::UnbindTextureSource();
 }
 
 void WebRenderTextureHost::SetTextureSourceProvider(

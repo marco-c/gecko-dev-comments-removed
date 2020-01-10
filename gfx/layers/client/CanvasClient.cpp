@@ -22,6 +22,7 @@
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/TextureClient.h"  
 #include "mozilla/layers/TextureClientOGL.h"
+#include "mozilla/layers/TextureClientRecycleAllocator.h"
 #include "nsDebug.h"      
 #include "nsXULAppAPI.h"  
 #include "TextureClientSharedSurface.h"
@@ -172,6 +173,15 @@ already_AddRefed<TextureClient> CanvasClient2D::CreateTextureClientForCanvas(
   }
 
 #ifdef XP_WIN
+  
+  
+  
+  
+  if (GetForwarder() &&
+      GetForwarder()->GetCompositorBackendType() == LayersBackend::LAYERS_WR) {
+    return GetTextureClientRecycler()->CreateOrRecycle(
+        aFormat, aSize, BackendSelector::Canvas, aFlags);
+  }
   return CreateTextureClientForDrawing(aFormat, aSize, BackendSelector::Canvas,
                                        aFlags);
 #else
