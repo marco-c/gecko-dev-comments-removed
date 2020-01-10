@@ -163,7 +163,7 @@ pref("app.update.url", "https://aus5.mozilla.org/update/6/%PRODUCT%/%VERSION%/%B
   pref("app.update.service.enabled", true);
 #endif
 
-#ifdef XP_WIN
+#ifdef MOZ_BITS_DOWNLOAD
   
   
   pref("app.update.BITS.enabled", true);

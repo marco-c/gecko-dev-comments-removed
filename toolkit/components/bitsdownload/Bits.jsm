@@ -27,7 +27,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 
 
-if (AppConstants.platform == "win") {
+if (AppConstants.MOZ_BITS_DOWNLOAD) {
   XPCOMUtils.defineLazyServiceGetter(
     this,
     "gBits",
