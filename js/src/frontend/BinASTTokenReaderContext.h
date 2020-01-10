@@ -426,12 +426,15 @@ class HuffmanTableImpl {
   HuffmanTableImpl(HuffmanTableImpl&& other) noexcept
       : values(std::move(other.values)) {}
 
+  
   JS::Result<Ok> initWithSingleValue(JSContext* cx, T&& value);
 
-  JS::Result<Ok> initBegin(JSContext* cx, size_t numberOfSymbols);
-  JS::Result<Ok> initSymbol(size_t index, T&& value);
-  JS::Result<Ok> initBitLength(size_t index, uint8_t bitLength);
-  JS::Result<Ok> initDone();
+  
+  
+  JS::Result<Ok> init(JSContext* cx, size_t numberOfSymbols);
+
+  
+  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bits_length, T&& value);
 
   HuffmanTableImpl() = delete;
   HuffmanTableImpl(HuffmanTableImpl&) = delete;
