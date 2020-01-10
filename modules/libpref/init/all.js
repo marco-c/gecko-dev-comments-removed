@@ -555,8 +555,6 @@ pref("media.av1.use-dav1d", false);
 #endif
 #endif
 
-pref("media.webaudio.audiocontextoptions-samplerate.enabled", true);
-
 
 pref("layers.geometry.opengl.enabled", true);
 
