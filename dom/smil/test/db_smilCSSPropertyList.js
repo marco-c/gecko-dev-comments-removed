@@ -28,7 +28,6 @@ var gPropList = {
     "feFlood"
   ),
   
-  
   cursor: new NonAdditiveAttribute("cursor", "CSS", "rect"),
   direction: new NonAnimatableAttribute("direction", "CSS", "text"),
   display: new NonAdditiveAttribute("display", "CSS", "rect"),

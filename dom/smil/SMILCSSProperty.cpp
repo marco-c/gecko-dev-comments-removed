@@ -116,7 +116,6 @@ bool SMILCSSProperty::IsPropertyAnimatable(nsCSSPropertyID aPropID) {
   
   
   
-  
 
   switch (aPropID) {
     case eCSSProperty_clip:
