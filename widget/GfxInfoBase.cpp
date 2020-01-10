@@ -1074,20 +1074,9 @@ GfxInfoBase::LogFailure(const nsACString& failure) {
       << "(LF) " << failure.BeginReading();
 }
 
-
-NS_IMETHODIMP GfxInfoBase::GetFailures(uint32_t* failureCount,
-                                       int32_t** indices, char*** failures) {
+NS_IMETHODIMP GfxInfoBase::GetFailures(nsTArray<int32_t>& indices,
+                                       nsTArray<nsCString>& failures) {
   MutexAutoLock lock(mMutex);
-
-  NS_ENSURE_ARG_POINTER(failureCount);
-  NS_ENSURE_ARG_POINTER(failures);
-
-  *failures = nullptr;
-  *failureCount = 0;
-
-  
-  
-  if (indices) *indices = nullptr;
 
   LogForwarder* logForwarder = Factory::GetLogForwarder();
   if (!logForwarder) {
@@ -1100,22 +1089,11 @@ NS_IMETHODIMP GfxInfoBase::GetFailures(uint32_t* failureCount,
   
   
   LoggingRecord loggedStrings = logForwarder->LoggingRecordCopy();
-  *failureCount = loggedStrings.size();
-
-  if (*failureCount != 0) {
-    *failures = (char**)moz_xmalloc(*failureCount * sizeof(char*));
-    if (indices) {
-      *indices = (int32_t*)moz_xmalloc(*failureCount * sizeof(int32_t));
-    }
-
-    
-    LoggingRecord::const_iterator it;
-    uint32_t i = 0;
-    for (it = loggedStrings.begin(); it != loggedStrings.end(); ++it, i++) {
-      (*failures)[i] =
-          (char*)moz_xmemdup(Get<1>(*it).c_str(), Get<1>(*it).size() + 1);
-      if (indices) (*indices)[i] = Get<0>(*it);
-    }
+  LoggingRecord::const_iterator it;
+  for (it = loggedStrings.begin(); it != loggedStrings.end(); ++it) {
+    failures.AppendElement(
+        nsDependentCSubstring(Get<1>(*it).c_str(), Get<1>(*it).size()));
+    indices.AppendElement(Get<0>(*it));
   }
 
   return NS_OK;
