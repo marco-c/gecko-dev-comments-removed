@@ -20,6 +20,7 @@
 namespace mozilla {
 
 class DriftCompensator;
+class Muxer;
 class Runnable;
 class TaskQueue;
 
@@ -44,14 +45,6 @@ class MediaEncoderListener {
  protected:
   virtual ~MediaEncoderListener() {}
 };
-
-
-
-
-
-
-
-
 
 
 
@@ -165,18 +158,6 @@ class MediaEncoder {
 
 
 
-
-
-  nsresult GetEncodedMetadata(nsTArray<nsTArray<uint8_t>>* aOutputBufs,
-                              nsAString& aMIMEType);
-  
-
-
-
-
-
-
-
   nsresult GetEncodedData(nsTArray<nsTArray<uint8_t>>* aOutputBufs);
 
   
@@ -196,6 +177,8 @@ class MediaEncoder {
 #ifdef MOZ_WEBM_ENCODER
   static bool IsWebMEncoderEnabled();
 #endif
+
+  const nsString& MimeType() const;
 
   
 
@@ -254,17 +237,10 @@ class MediaEncoder {
 
   void SetError();
 
-  
-  nsresult CopyMetadataToMuxer(TrackEncoder* aTrackEncoder);
-  
-  nsresult EncodeData();
-  
-  nsresult WriteEncodedDataToMuxer();
-
   const RefPtr<TaskQueue> mEncoderThread;
   const RefPtr<DriftCompensator> mDriftCompensator;
 
-  UniquePtr<ContainerWriter> mWriter;
+  UniquePtr<Muxer> mMuxer;
   RefPtr<AudioTrackEncoder> mAudioEncoder;
   RefPtr<AudioTrackListener> mAudioListener;
   RefPtr<VideoTrackEncoder> mVideoEncoder;
@@ -288,19 +264,9 @@ class MediaEncoder {
   
   RefPtr<dom::VideoStreamTrack> mVideoTrack;
 
-  
-  MediaQueue<EncodedFrame> mEncodedAudioFrames;
-  
-  MediaQueue<EncodedFrame> mEncodedVideoFrames;
-
-  
-  
-  uint64_t mAudioCodecDelay = 0;
-
   TimeStamp mStartTime;
-  nsString mMIMEType;
+  const nsString mMIMEType;
   bool mInitialized;
-  bool mMetadataEncoded;
   bool mCompleted;
   bool mError;
   bool mCanceled;
