@@ -1570,7 +1570,7 @@ class alignas(uintptr_t) PrivateScriptData final {
 
 
 
-class alignas(uint32_t) SharedScriptData final {
+class alignas(uint32_t) ImmutableScriptData final {
   
   using Offset = uint32_t;
 
@@ -1668,9 +1668,9 @@ class alignas(uint32_t) SharedScriptData final {
                           uint32_t numTryNotes);
 
   
-  SharedScriptData(uint32_t codeLength, uint32_t noteLength,
-                   uint32_t numResumeOffsets, uint32_t numScopeNotes,
-                   uint32_t numTryNotes);
+  ImmutableScriptData(uint32_t codeLength, uint32_t noteLength,
+                      uint32_t numResumeOffsets, uint32_t numScopeNotes,
+                      uint32_t numTryNotes);
 
   void setOptionalOffset(int index, Offset offset) {
     MOZ_ASSERT(index > 0);
@@ -1683,14 +1683,16 @@ class alignas(uint32_t) SharedScriptData final {
       return optArrayOffset_;
     }
 
-    SharedScriptData* this_ = const_cast<SharedScriptData*>(this);
+    ImmutableScriptData* this_ = const_cast<ImmutableScriptData*>(this);
     return this_->offsetToPointer<Offset>(optArrayOffset_)[-index];
   }
 
  public:
-  static SharedScriptData* new_(JSContext* cx, uint32_t codeLength,
-                                uint32_t noteLength, uint32_t numResumeOffsets,
-                                uint32_t numScopeNotes, uint32_t numTryNotes);
+  static ImmutableScriptData* new_(JSContext* cx, uint32_t codeLength,
+                                   uint32_t noteLength,
+                                   uint32_t numResumeOffsets,
+                                   uint32_t numScopeNotes,
+                                   uint32_t numTryNotes);
 
   
   
@@ -1717,7 +1719,7 @@ class alignas(uint32_t) SharedScriptData final {
 
   Flags& flagsRef() { return *offsetToPointer<Flags>(flagOffset()); }
   const Flags& flags() const {
-    return const_cast<SharedScriptData*>(this)->flagsRef();
+    return const_cast<ImmutableScriptData*>(this)->flagsRef();
   }
 
   uint32_t codeLength() const { return codeLength_; }
@@ -1740,21 +1742,21 @@ class alignas(uint32_t) SharedScriptData final {
   }
 
   static constexpr size_t offsetOfCode() {
-    return sizeof(SharedScriptData) + sizeof(Flags);
+    return sizeof(ImmutableScriptData) + sizeof(Flags);
   }
   static constexpr size_t offsetOfResumeOffsetsOffset() {
     
     
-    return offsetof(SharedScriptData, optArrayOffset_);
+    return offsetof(ImmutableScriptData, optArrayOffset_);
   }
   static constexpr size_t offsetOfNfixed() {
-    return offsetof(SharedScriptData, nfixed);
+    return offsetof(ImmutableScriptData, nfixed);
   }
   static constexpr size_t offsetOfNslots() {
-    return offsetof(SharedScriptData, nslots);
+    return offsetof(ImmutableScriptData, nslots);
   }
   static constexpr size_t offsetOfFunLength() {
-    return offsetof(SharedScriptData, funLength);
+    return offsetof(ImmutableScriptData, funLength);
   }
 
   template <XDRMode mode>
@@ -1766,8 +1768,8 @@ class alignas(uint32_t) SharedScriptData final {
                               uint32_t nslots);
 
   
-  SharedScriptData(const SharedScriptData&) = delete;
-  SharedScriptData& operator=(const SharedScriptData&) = delete;
+  ImmutableScriptData(const ImmutableScriptData&) = delete;
+  ImmutableScriptData& operator=(const ImmutableScriptData&) = delete;
 };
 
 struct RuntimeScriptDataHasher;
@@ -1783,13 +1785,13 @@ class RuntimeScriptData final {
 
   uint32_t natoms_ = 0;
 
-  js::UniquePtr<SharedScriptData> ssd_ = nullptr;
+  js::UniquePtr<ImmutableScriptData> isd_ = nullptr;
 
   
   
 
   friend class ::JSScript;
-  friend class js::SharedScriptData;
+  friend class js::ImmutableScriptData;
   friend struct js::RuntimeScriptDataHasher;
 
  private:
@@ -1814,7 +1816,7 @@ class RuntimeScriptData final {
     MOZ_ASSERT(refCount_ != 0);
     uint32_t remain = --refCount_;
     if (remain == 0) {
-      ssd_ = nullptr;
+      isd_ = nullptr;
       js_free(this);
     }
   }
@@ -1834,8 +1836,8 @@ class RuntimeScriptData final {
 
   static constexpr size_t offsetOfAtoms() { return sizeof(RuntimeScriptData); }
 
-  static constexpr size_t offsetOfSSD() {
-    return offsetof(RuntimeScriptData, ssd_);
+  static constexpr size_t offsetOfISD() {
+    return offsetof(RuntimeScriptData, isd_);
   }
 
   void traceChildren(JSTracer* trc);
@@ -1852,7 +1854,7 @@ class RuntimeScriptData final {
                               uint32_t nslots);
 
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
-    return mallocSizeOf(this) + mallocSizeOf(ssd_.get());
+    return mallocSizeOf(this) + mallocSizeOf(isd_.get());
   }
 
   
@@ -1866,7 +1868,7 @@ struct RuntimeScriptDataHasher {
   using Lookup = RefPtr<RuntimeScriptData>;
 
   static HashNumber hash(const Lookup& l) {
-    mozilla::Span<const uint8_t> immutableData = l->ssd_->immutableData();
+    mozilla::Span<const uint8_t> immutableData = l->isd_->immutableData();
 
     HashNumber h =
         mozilla::HashBytes(immutableData.data(), immutableData.size());
@@ -1876,7 +1878,7 @@ struct RuntimeScriptDataHasher {
 
   static bool match(RuntimeScriptData* entry, const Lookup& lookup) {
     return (entry->atomsSpan() == lookup->atomsSpan()) &&
-           (entry->ssd_->immutableData() == lookup->ssd_->immutableData());
+           (entry->isd_->immutableData() == lookup->isd_->immutableData());
   }
 };
 
@@ -2166,14 +2168,14 @@ class JSScript : public js::gc::TenuredCell {
                                                   js::HandleScript script);
 
   template <js::XDRMode mode>
-  friend js::XDRResult js::SharedScriptData::XDR(js::XDRState<mode>* xdr,
-                                                 js::HandleScript script);
+  friend js::XDRResult js::ImmutableScriptData::XDR(js::XDRState<mode>* xdr,
+                                                    js::HandleScript script);
 
   friend bool js::RuntimeScriptData::InitFromEmitter(
       JSContext* cx, js::HandleScript script,
       js::frontend::BytecodeEmitter* bce, uint32_t nslot);
 
-  friend bool js::SharedScriptData::InitFromEmitter(
+  friend bool js::ImmutableScriptData::InitFromEmitter(
       JSContext* cx, js::HandleScript script,
       js::frontend::BytecodeEmitter* bce, uint32_t nslot);
 
@@ -2281,8 +2283,8 @@ class JSScript : public js::gc::TenuredCell {
   JS::Realm* realm() const { return realm_; }
 
   js::RuntimeScriptData* scriptData() { return scriptData_; }
-  js::SharedScriptData* sharedScriptData() const {
-    return scriptData_->ssd_.get();
+  js::ImmutableScriptData* immutableScriptData() const {
+    return scriptData_->isd_.get();
   }
 
   
@@ -2290,7 +2292,7 @@ class JSScript : public js::gc::TenuredCell {
     if (!scriptData_) {
       return nullptr;
     }
-    return sharedScriptData()->code();
+    return immutableScriptData()->code();
   }
 
   bool hasForceInterpreterOp() const {
@@ -2313,7 +2315,7 @@ class JSScript : public js::gc::TenuredCell {
 
   size_t length() const {
     MOZ_ASSERT(scriptData_);
-    return sharedScriptData()->codeLength();
+    return immutableScriptData()->codeLength();
   }
 
   jsbytecode* codeEnd() const { return code() + length(); }
@@ -2342,7 +2344,7 @@ class JSScript : public js::gc::TenuredCell {
     return code() + offset;
   }
 
-  size_t mainOffset() const { return sharedScriptData()->mainOffset; }
+  size_t mainOffset() const { return immutableScriptData()->mainOffset; }
 
   uint32_t lineno() const { return lineno_; }
 
@@ -2352,7 +2354,7 @@ class JSScript : public js::gc::TenuredCell {
 
   
   
-  size_t nfixed() const { return sharedScriptData()->nfixed; }
+  size_t nfixed() const { return immutableScriptData()->nfixed; }
 
   
   
@@ -2369,7 +2371,7 @@ class JSScript : public js::gc::TenuredCell {
   
   size_t calculateLiveFixed(jsbytecode* pc);
 
-  size_t nslots() const { return sharedScriptData()->nslots; }
+  size_t nslots() const { return immutableScriptData()->nslots; }
 
   unsigned numArgs() const {
     if (bodyScope()->is<js::FunctionScope>()) {
@@ -2395,16 +2397,16 @@ class JSScript : public js::gc::TenuredCell {
   
   
   static constexpr size_t MaxBytecodeTypeSets = UINT16_MAX;
-  static_assert(sizeof(js::SharedScriptData::numBytecodeTypeSets) == 2,
+  static_assert(sizeof(js::ImmutableScriptData::numBytecodeTypeSets) == 2,
                 "MaxBytecodeTypeSets must match sizeof(numBytecodeTypeSets)");
 
   size_t numBytecodeTypeSets() const {
-    return sharedScriptData()->numBytecodeTypeSets;
+    return immutableScriptData()->numBytecodeTypeSets;
   }
 
-  size_t numICEntries() const { return sharedScriptData()->numICEntries; }
+  size_t numICEntries() const { return immutableScriptData()->numICEntries; }
 
-  size_t funLength() const { return sharedScriptData()->funLength; }
+  size_t funLength() const { return immutableScriptData()->funLength; }
 
   uint32_t sourceStart() const { return sourceStart_; }
 
@@ -2800,7 +2802,9 @@ class JSScript : public js::gc::TenuredCell {
   inline bool hasGlobal(const js::GlobalObject* global) const;
   js::GlobalObject& uninlinedGlobal() const;
 
-  uint32_t bodyScopeIndex() const { return sharedScriptData()->bodyScopeIndex; }
+  uint32_t bodyScopeIndex() const {
+    return immutableScriptData()->bodyScopeIndex;
+  }
 
   js::Scope* bodyScope() const { return getScope(bodyScopeIndex()); }
 
@@ -2856,9 +2860,9 @@ class JSScript : public js::gc::TenuredCell {
   bool createJitScript(JSContext* cx);
 
   bool createScriptData(JSContext* cx, uint32_t natoms);
-  bool createSharedScriptData(JSContext* cx, uint32_t codeLength,
-                              uint32_t noteLength, uint32_t numResumeOffsets,
-                              uint32_t numScopeNotes, uint32_t numTryNotes);
+  bool createImmutableScriptData(JSContext* cx, uint32_t codeLength,
+                                 uint32_t noteLength, uint32_t numResumeOffsets,
+                                 uint32_t numScopeNotes, uint32_t numTryNotes);
   bool shareScriptData(JSContext* cx);
   void freeScriptData();
 
@@ -2939,12 +2943,14 @@ class JSScript : public js::gc::TenuredCell {
 
   size_t dataSize() const { return dataSize_; }
 
-  bool hasTrynotes() const { return !sharedScriptData()->tryNotes().empty(); }
+  bool hasTrynotes() const {
+    return !immutableScriptData()->tryNotes().empty();
+  }
   bool hasScopeNotes() const {
-    return !sharedScriptData()->scopeNotes().empty();
+    return !immutableScriptData()->scopeNotes().empty();
   }
   bool hasResumeOffsets() const {
-    return !sharedScriptData()->resumeOffsets().empty();
+    return !immutableScriptData()->resumeOffsets().empty();
   }
 
   mozilla::Span<const JS::GCCellPtr> gcthings() const {
@@ -2952,15 +2958,15 @@ class JSScript : public js::gc::TenuredCell {
   }
 
   mozilla::Span<const JSTryNote> trynotes() const {
-    return sharedScriptData()->tryNotes();
+    return immutableScriptData()->tryNotes();
   }
 
   mozilla::Span<const js::ScopeNote> scopeNotes() const {
-    return sharedScriptData()->scopeNotes();
+    return immutableScriptData()->scopeNotes();
   }
 
   mozilla::Span<const uint32_t> resumeOffsets() const {
-    return sharedScriptData()->resumeOffsets();
+    return immutableScriptData()->resumeOffsets();
   }
 
   uint32_t tableSwitchCaseOffset(jsbytecode* pc, uint32_t caseIndex) const {
@@ -2977,11 +2983,11 @@ class JSScript : public js::gc::TenuredCell {
 
   uint32_t numNotes() const {
     MOZ_ASSERT(scriptData_);
-    return sharedScriptData()->noteLength();
+    return immutableScriptData()->noteLength();
   }
   jssrcnote* notes() const {
     MOZ_ASSERT(scriptData_);
-    return sharedScriptData()->notes();
+    return immutableScriptData()->notes();
   }
 
   size_t natoms() const {

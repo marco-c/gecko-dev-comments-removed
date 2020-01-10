@@ -13777,9 +13777,9 @@ void CodeGenerator::visitFinishBoundFunctionInit(
     
     masm.loadPtr(Address(target, JSFunction::offsetOfScript()), temp1);
     masm.loadPtr(Address(temp1, JSScript::offsetOfScriptData()), temp1);
-    masm.loadPtr(Address(temp1, RuntimeScriptData::offsetOfSSD()), temp1);
-    masm.load16ZeroExtend(Address(temp1, SharedScriptData::offsetOfFunLength()),
-                          temp1);
+    masm.loadPtr(Address(temp1, RuntimeScriptData::offsetOfISD()), temp1);
+    masm.load16ZeroExtend(
+        Address(temp1, ImmutableScriptData::offsetOfFunLength()), temp1);
   }
   masm.bind(&lengthLoaded);
 
