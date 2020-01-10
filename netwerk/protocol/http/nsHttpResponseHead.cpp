@@ -36,6 +36,7 @@ nsHttpResponseHead::nsHttpResponseHead(const nsHttpResponseHead& aOther)
   mContentLength = other.mContentLength;
   mContentType = other.mContentType;
   mContentCharset = other.mContentCharset;
+  mCacheControlPublic = other.mCacheControlPublic;
   mCacheControlPrivate = other.mCacheControlPrivate;
   mCacheControlNoStore = other.mCacheControlNoStore;
   mCacheControlNoCache = other.mCacheControlNoCache;
@@ -56,6 +57,7 @@ nsHttpResponseHead& nsHttpResponseHead::operator=(
   mContentLength = other.mContentLength;
   mContentType = other.mContentType;
   mContentCharset = other.mContentCharset;
+  mCacheControlPublic = other.mCacheControlPublic;
   mCacheControlPrivate = other.mCacheControlPrivate;
   mCacheControlNoStore = other.mCacheControlNoStore;
   mCacheControlNoCache = other.mCacheControlNoCache;
@@ -93,6 +95,11 @@ void nsHttpResponseHead::ContentType(nsACString& aContentType) {
 void nsHttpResponseHead::ContentCharset(nsACString& aContentCharset) {
   RecursiveMutexAutoLock monitor(mRecursiveMutex);
   aContentCharset = mContentCharset;
+}
+
+bool nsHttpResponseHead::Public() {
+  RecursiveMutexAutoLock monitor(mRecursiveMutex);
+  return mCacheControlPublic;
 }
 
 bool nsHttpResponseHead::Private() {
@@ -659,6 +666,20 @@ nsresult nsHttpResponseHead::ComputeFreshnessLifetime(uint32_t* result) {
   }
 
   
+  
+  
+  
+  
+  if ((mStatus == 302 || mStatus == 304 || mStatus == 307) &&
+      !mCacheControlPublic && !mCacheControlPrivate) {
+    LOG((
+        "nsHttpResponseHead::ComputeFreshnessLifetime [this = %p] "
+        "Do not calculate heuristic max-age for non-cacheable status code %u\n",
+        this, unsigned(mStatus)));
+    return NS_OK;
+  }
+
+  
   if (NS_SUCCEEDED(GetLastModifiedValue_locked(&date2))) {
     LOG(("using last-modified to determine freshness-lifetime\n"));
     LOG(("last-modified = %u, date = %u\n", date2, date));
@@ -709,6 +730,7 @@ bool nsHttpResponseHead::MustValidate() {
     case 407:
     case 412:
     case 416:
+    case 425:
     case 429:
     default:  
       LOG(("Must validate since response is an uncacheable error page\n"));
@@ -872,6 +894,7 @@ void nsHttpResponseHead::Reset() {
   mVersion = HttpVersion::v1_1;
   mStatus = 200;
   mContentLength = -1;
+  mCacheControlPublic = false;
   mCacheControlPrivate = false;
   mCacheControlNoStore = false;
   mCacheControlNoCache = false;
@@ -1018,6 +1041,7 @@ bool nsHttpResponseHead::operator==(const nsHttpResponseHead& aOther) const {
          mContentLength == aOther.mContentLength &&
          mContentType == aOther.mContentType &&
          mContentCharset == aOther.mContentCharset &&
+         mCacheControlPublic == aOther.mCacheControlPublic &&
          mCacheControlPrivate == aOther.mCacheControlPrivate &&
          mCacheControlNoCache == aOther.mCacheControlNoCache &&
          mCacheControlNoStore == aOther.mCacheControlNoStore &&
@@ -1099,11 +1123,17 @@ void nsHttpResponseHead::ParseVersion(const char* str) {
 void nsHttpResponseHead::ParseCacheControl(const char* val) {
   if (!(val && *val)) {
     
+    mCacheControlPublic = false;
     mCacheControlPrivate = false;
     mCacheControlNoCache = false;
     mCacheControlNoStore = false;
     mCacheControlImmutable = false;
     return;
+  }
+
+  
+  if (nsHttp::FindToken(val, "public", HTTP_HEADER_VALUE_SEPS)) {
+    mCacheControlPublic = true;
   }
 
   
