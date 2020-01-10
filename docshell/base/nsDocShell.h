@@ -331,12 +331,7 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  void TriggerParentCheckDocShellIsEmpty() {
-    RefPtr<nsDocShell> parent = GetInProcessParentDocshell();
-    if (parent) {
-      parent->DocLoaderIsEmpty(true);
-    }
-  }
+  void TriggerParentCheckDocShellIsEmpty();
 
   nsresult HistoryEntryRemoved(int32_t aIndex);
 

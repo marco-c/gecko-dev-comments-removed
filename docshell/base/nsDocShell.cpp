@@ -2130,6 +2130,16 @@ nsDocShell::HistoryPurged(int32_t aNumEntries) {
   return NS_OK;
 }
 
+void nsDocShell::TriggerParentCheckDocShellIsEmpty() {
+  if (RefPtr<nsDocShell> parent = GetInProcessParentDocshell()) {
+    parent->DocLoaderIsEmpty(true);
+  } else if (BrowserChild* browserChild = BrowserChild::GetFrom(this)) {
+    
+    mozilla::Unused << browserChild->SendMaybeFireEmbedderLoadEvents(
+         true,  false);
+  }
+}
+
 nsresult nsDocShell::HistoryEntryRemoved(int32_t aIndex) {
   
   
@@ -3949,6 +3959,16 @@ NS_IMETHODIMP
 nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
                              const char16_t* aURL, nsIChannel* aFailedChannel,
                              bool* aDisplayedErrorPage) {
+  
+  
+  
+  
+  
+  if (BrowserChild* browserChild = BrowserChild::GetFrom(this)) {
+    mozilla::Unused << browserChild->SendMaybeFireEmbedderLoadEvents(
+         true,  false);
+  }
+
   *aDisplayedErrorPage = false;
   
   nsCOMPtr<nsIPrompt> prompter;

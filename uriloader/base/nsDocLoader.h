@@ -31,6 +31,12 @@
 
 #include "mozilla/LinkedList.h"
 
+namespace mozilla {
+namespace dom {
+class BrowserBridgeChild;
+}  
+}  
+
 
 
 
@@ -51,6 +57,8 @@ class nsDocLoader : public nsIDocumentLoader,
                     public nsIChannelEventSink,
                     public nsISupportsPriority {
  public:
+  using BrowserBridgeChild = mozilla::dom::BrowserBridgeChild;
+
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_THIS_DOCLOADER_IMPL_CID)
 
   nsDocLoader();
@@ -135,6 +143,26 @@ class nsDocLoader : public nsIDocumentLoader,
     mTreatAsBackgroundLoad = false;
   };
 
+  
+  
+  
+  void OOPChildLoadStarted(BrowserBridgeChild* aChild) {
+    MOZ_DIAGNOSTIC_ASSERT(!mOOPChildrenLoading.Contains(aChild));
+    mOOPChildrenLoading.AppendElement(aChild);
+  }
+
+  
+  
+  
+  void OOPChildLoadDone(BrowserBridgeChild* aChild) {
+    
+    
+    
+    if (mOOPChildrenLoading.RemoveElement(aChild)) {
+      DocLoaderIsEmpty(true);
+    }
+  }
+
  protected:
   virtual ~nsDocLoader();
 
@@ -200,6 +228,8 @@ class nsDocLoader : public nsIDocumentLoader,
   void doStartURLLoad(nsIRequest* request, int32_t aExtraFlags);
   void doStopURLLoad(nsIRequest* request, nsresult aStatus);
   void doStopDocumentLoad(nsIRequest* request, nsresult aStatus);
+
+  void NotifyDoneWithOnload(nsDocLoader* aParent);
 
   
   
@@ -340,6 +370,10 @@ class nsDocLoader : public nsIDocumentLoader,
   
   
   nsCOMArray<nsIDocumentLoader> mChildrenInOnload;
+
+  
+  
+  nsTArray<const BrowserBridgeChild*> mOOPChildrenLoading;
 
   int64_t GetMaxTotalProgress();
 

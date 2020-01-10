@@ -4,6 +4,7 @@
 
 
 #include "nspr.h"
+#include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/Components.h"
@@ -52,6 +53,7 @@ using mozilla::eLoad;
 using mozilla::EventDispatcher;
 using mozilla::LogLevel;
 using mozilla::WidgetEvent;
+using mozilla::dom::BrowserChild;
 using mozilla::dom::Document;
 
 
@@ -243,6 +245,7 @@ nsDocLoader::Stop(void) {
   
   
   mChildrenInOnload.Clear();
+  mOOPChildrenLoading.Clear();
 
   
   
@@ -277,7 +280,8 @@ bool nsDocLoader::IsBusy() {
   
   
 
-  if (mChildrenInOnload.Count() || mIsFlushingLayout) {
+  if (!mChildrenInOnload.IsEmpty() || !mOOPChildrenLoading.IsEmpty() ||
+      mIsFlushingLayout) {
     return true;
   }
 
@@ -286,6 +290,7 @@ bool nsDocLoader::IsBusy() {
     return false;
   }
 
+  
   bool busy;
   rv = mLoadGroup->IsPending(&busy);
   if (NS_FAILED(rv)) {
@@ -725,9 +730,7 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout) {
         
         doStopDocumentLoad(docRequest, loadGroupStatus);
 
-        if (parent) {
-          parent->ChildDoneWithOnload(this);
-        }
+        NotifyDoneWithOnload(parent);
       }
     } else {
       MOZ_ASSERT(mDocumentOpenedButNotLoaded);
@@ -790,11 +793,21 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout) {
             }
           }
         }
-        if (parent) {
-          parent->ChildDoneWithOnload(this);
-        }
+        NotifyDoneWithOnload(parent);
       }
     }
+  }
+}
+
+void nsDocLoader::NotifyDoneWithOnload(nsDocLoader* aParent) {
+  if (aParent) {
+    
+    aParent->ChildDoneWithOnload(this);
+  } else if (BrowserChild* browserChild =
+                 BrowserChild::GetFrom(static_cast<nsDocShell*>(this))) {
+    
+    mozilla::Unused << browserChild->SendMaybeFireEmbedderLoadEvents(
+         true,  false);
   }
 }
 
