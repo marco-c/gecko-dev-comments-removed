@@ -322,7 +322,8 @@ class ServoStyleSet {
 
 
 
-  inline already_AddRefed<ComputedStyle> ResolveServoStyle(const dom::Element&);
+  static inline already_AddRefed<ComputedStyle> ResolveServoStyle(
+      const dom::Element&);
 
   bool GetKeyframesForName(const dom::Element&, const ComputedStyle&,
                            nsAtom* aName,

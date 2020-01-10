@@ -19,8 +19,7 @@ nscoord ServoStyleSet::EvaluateSourceSizeList(
 
 already_AddRefed<ComputedStyle> ServoStyleSet::ResolveServoStyle(
     const dom::Element& aElement) {
-  
-  return Servo_ResolveStyle(&aElement, mRawSet.get()).Consume();
+  return Servo_ResolveStyle(&aElement).Consume();
 }
 
 }  
