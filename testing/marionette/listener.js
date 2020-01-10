@@ -1650,27 +1650,20 @@ function switchToFrame(msg) {
 
 
 
-
-
-function takeScreenshot(format, opts = {}) {
-  let id = opts.id;
-  let full = !!opts.full;
-  let highlights = opts.highlights || [];
-  let scroll = !!opts.scroll;
-
+function takeScreenshot(
+  format,
+  { id, full = true, highlights = [], scroll = true } = {}
+) {
   let win = curContainer.frame;
 
-  let canvas;
   let highlightEls = highlights
     .map(ref => WebElement.fromUUID(ref, "content"))
     .map(webEl => seenEls.get(webEl, win));
 
-  
-  if (!id && !full) {
-    canvas = capture.viewport(win, highlightEls);
+  let canvas;
 
-    
-  } else {
+  
+  if (id || full) {
     let el;
     if (id) {
       let webEl = WebElement.fromUUID(id, "content");
@@ -1683,6 +1676,10 @@ function takeScreenshot(format, opts = {}) {
     }
 
     canvas = capture.element(el, highlightEls);
+
+    
+  } else {
+    canvas = capture.viewport(win, highlightEls);
   }
 
   switch (format) {

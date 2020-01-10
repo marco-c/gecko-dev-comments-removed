@@ -3021,13 +3021,18 @@ GeckoDriver.prototype.deleteSession = function() {
 
 
 
-
 GeckoDriver.prototype.takeScreenshot = function(cmd) {
   let win = assert.open(this.getCurrentWindow());
 
-  let { id, highlights, full, hash } = cmd.parameters;
-  highlights = highlights || [];
+  let { id, highlights, full, hash, scroll } = cmd.parameters;
   let format = hash ? capture.Format.Hash : capture.Format.Base64;
+
+  highlights = highlights || [];
+  full = typeof full == "undefined" ? true : full;
+  scroll = typeof scroll == "undefined" ? true : scroll;
+
+  
+  full = id ? false : full;
 
   switch (this.context) {
     case Context.Chrome:
@@ -3035,13 +3040,10 @@ GeckoDriver.prototype.takeScreenshot = function(cmd) {
         .map(ref => WebElement.fromUUID(ref, Context.Chrome))
         .map(webEl => this.curBrowser.seenEls.get(webEl));
 
-      
       let canvas;
-      if (!id && !full) {
-        canvas = capture.viewport(win, highlightEls);
 
-        
-      } else {
+      
+      if (id || full) {
         let node;
         if (id) {
           let webEl = WebElement.fromUUID(id, Context.Chrome);
@@ -3051,6 +3053,10 @@ GeckoDriver.prototype.takeScreenshot = function(cmd) {
         }
 
         canvas = capture.element(node, highlightEls);
+
+        
+      } else {
+        canvas = capture.viewport(win, highlightEls);
       }
 
       switch (format) {
@@ -3063,7 +3069,12 @@ GeckoDriver.prototype.takeScreenshot = function(cmd) {
       break;
 
     case Context.Content:
-      return this.listener.takeScreenshot(format, cmd.parameters);
+      return this.listener.takeScreenshot(format, {
+        id,
+        full,
+        highlights,
+        scroll,
+      });
   }
 
   throw new TypeError(`Unknown context: ${this.context}`);
