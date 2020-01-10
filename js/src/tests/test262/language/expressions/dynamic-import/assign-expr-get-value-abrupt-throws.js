@@ -22,7 +22,6 @@
 
 
 
-
 const obj = {
     get err() {
         throw new Test262Error('catpure this on evaluation')

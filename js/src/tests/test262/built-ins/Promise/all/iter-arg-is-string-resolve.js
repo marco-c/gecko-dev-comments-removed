@@ -22,6 +22,7 @@
 
 
 
+
 try {
   Promise.all("").then(function(v) {
     assert.sameValue(v.length, 0);

@@ -9,6 +9,7 @@
 
 
 
+
 async function foo() {
   throw 1;
 }

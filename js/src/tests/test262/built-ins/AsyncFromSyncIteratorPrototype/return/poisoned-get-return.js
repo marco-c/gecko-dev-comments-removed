@@ -18,6 +18,7 @@
 
 
 
+
 var thrownError = new Error("Catch me.");
 
 var obj = {

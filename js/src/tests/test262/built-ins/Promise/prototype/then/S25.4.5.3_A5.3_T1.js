@@ -12,6 +12,7 @@
 
 
 
+
 var sequence = [],
   pReject,
   p = new Promise(function(resolve, reject) {

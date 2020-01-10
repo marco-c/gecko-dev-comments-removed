@@ -17,6 +17,7 @@
 
 
 
+
 var value = {};
 var resolve;
 var poisonedThen = Object.defineProperty({}, 'then', {

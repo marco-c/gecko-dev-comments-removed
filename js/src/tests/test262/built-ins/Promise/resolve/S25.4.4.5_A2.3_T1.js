@@ -8,6 +8,7 @@
 
 
 
+
 var rejectP1,
   p1 = new Promise(function(resolve, reject) {
     rejectP1 = reject;

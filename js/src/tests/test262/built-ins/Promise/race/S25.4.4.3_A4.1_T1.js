@@ -9,6 +9,7 @@
 
 
 
+
 var iterThrows = {};
 var error = new Test262Error();
 iterThrows[Symbol.iterator] = function() {

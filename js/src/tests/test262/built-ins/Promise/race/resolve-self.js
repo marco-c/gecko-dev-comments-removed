@@ -24,6 +24,7 @@
 
 
 
+
 var self, resolve;
 var builtinResolve = Promise.resolve;
 var thenable = {

@@ -14,7 +14,6 @@
 
 
 
-
 assert.throws(TypeError, () => {
     import('./empty_FIXTURE.js')``;
 });

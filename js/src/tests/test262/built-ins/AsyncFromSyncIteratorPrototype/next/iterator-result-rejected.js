@@ -22,6 +22,7 @@
 
 
 
+
 var thrownError = new Error("Catch me.");
 
 function* g() {

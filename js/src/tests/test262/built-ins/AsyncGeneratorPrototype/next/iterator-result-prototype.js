@@ -33,6 +33,7 @@
 
 
 
+
 async function* g() {}
 
 g().next().then(function (result) {

@@ -34,6 +34,7 @@
 
 
 
+
 async function* g() {}
 
 g().return().then(function (result) {

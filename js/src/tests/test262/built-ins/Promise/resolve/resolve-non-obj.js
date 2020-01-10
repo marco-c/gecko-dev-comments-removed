@@ -16,6 +16,7 @@
 
 
 
+
 Promise.resolve(23).then(function(value) {
   if (value !== 23) {
     $DONE('The promise should be fulfilled with the provided value.');

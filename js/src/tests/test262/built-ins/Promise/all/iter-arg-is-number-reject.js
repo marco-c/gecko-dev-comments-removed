@@ -22,6 +22,7 @@
 
 
 
+
 try {
   Promise.all(1).then(function() {
     $DONE('The promise should be rejected, but was resolved');

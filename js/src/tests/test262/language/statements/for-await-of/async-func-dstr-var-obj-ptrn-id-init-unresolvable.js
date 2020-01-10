@@ -52,6 +52,7 @@
 
 
 
+
 async function fn() {
   for await (var { x = unresolvableReference } of [{}]) {
     return;

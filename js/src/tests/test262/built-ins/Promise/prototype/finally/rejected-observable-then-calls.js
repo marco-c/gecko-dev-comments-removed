@@ -8,6 +8,7 @@
 
 
 
+
 var sequence = [];
 var noReason = {};
 var no = Promise.reject(noReason);

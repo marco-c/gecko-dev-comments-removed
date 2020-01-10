@@ -26,6 +26,7 @@
 
 
 
+
 var nonThenable = {
   then: null
 };

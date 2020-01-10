@@ -22,6 +22,7 @@
 
 
 
+
 try {
   Promise.race(undefined).then(function() {
     $DONE('The promise should be rejected, but was resolved');

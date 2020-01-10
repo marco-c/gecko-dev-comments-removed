@@ -45,6 +45,7 @@
 
 
 
+
 async function * gen() {
   for await (let [x = (function() { throw new Test262Error(); })()] of [[undefined]]) {
     return;

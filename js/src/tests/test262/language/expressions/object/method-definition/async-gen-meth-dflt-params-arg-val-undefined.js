@@ -37,6 +37,7 @@
 
 
 
+
 var callCount = 0;
 var obj = {
   async *method(fromLiteral = 23, fromExpr = 45, fromHole = 99) {

@@ -35,6 +35,7 @@
 
 
 
+
 var AsyncIteratorPrototype = Object.getPrototypeOf(async function*(){}.constructor.prototype.prototype);
 
 Object.defineProperty(AsyncIteratorPrototype, Symbol.iterator, {

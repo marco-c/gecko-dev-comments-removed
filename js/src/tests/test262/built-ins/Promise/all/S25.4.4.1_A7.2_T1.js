@@ -12,6 +12,7 @@
 
 
 
+
 var sequence = [];
 
 var p1 = new Promise(function(resolve) {

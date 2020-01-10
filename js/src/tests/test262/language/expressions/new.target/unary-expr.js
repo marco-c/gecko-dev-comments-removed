@@ -17,6 +17,7 @@
 
 
 
+
 (function() { assert.sameValue(delete (new.target), true); })();
 (function() { assert.sameValue(void new.target, undefined); })();
 new function() { assert.sameValue(typeof new.target, 'function'); };

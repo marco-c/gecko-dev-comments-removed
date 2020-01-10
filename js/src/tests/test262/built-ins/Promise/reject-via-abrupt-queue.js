@@ -36,6 +36,7 @@
 
 
 
+
 var thenable = Promise.resolve();
 var p = new Promise(function() {
   throw thenable;

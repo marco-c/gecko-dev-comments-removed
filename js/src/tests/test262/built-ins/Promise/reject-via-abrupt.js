@@ -19,6 +19,7 @@
 
 
 
+
 var thenable = new Promise(function() {});
 var p = new Promise(function() {
   throw thenable;

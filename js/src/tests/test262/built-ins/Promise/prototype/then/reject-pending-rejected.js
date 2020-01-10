@@ -22,6 +22,7 @@
 
 
 
+
 var reject;
 var thenable = new Promise(function(resolve) {
   resolve();

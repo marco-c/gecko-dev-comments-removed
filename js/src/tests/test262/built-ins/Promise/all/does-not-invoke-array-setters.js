@@ -27,6 +27,7 @@
 
 
 
+
 Object.defineProperty(Array.prototype, 0, {
   set: function() {
     $ERROR("Setter on Array.prototype called");

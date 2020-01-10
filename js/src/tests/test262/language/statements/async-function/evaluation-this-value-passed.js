@@ -10,6 +10,7 @@
 
 
 
+
 async function foo(a) {
   assert.sameValue(this, a)
 }

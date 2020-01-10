@@ -28,6 +28,7 @@
 
 
 
+
 var value = {};
 var resolve;
 var thenable = new Promise(function(resolve) {

@@ -44,6 +44,7 @@
 
 
 
+
 async function * gen() {
   for await (var { w: { x, y, z } = undefined } of [{ }]) {
     return;

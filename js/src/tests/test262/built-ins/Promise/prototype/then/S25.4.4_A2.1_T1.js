@@ -13,6 +13,7 @@
 
 
 
+
 var resolveP1, rejectP2, sequence = [];
 
 (new Promise(function(resolve, reject) {

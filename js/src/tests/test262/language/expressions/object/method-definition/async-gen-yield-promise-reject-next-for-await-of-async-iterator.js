@@ -13,6 +13,7 @@
 
 
 
+
 let error = new Error();
 async function * readFile() {
   yield Promise.reject(error);

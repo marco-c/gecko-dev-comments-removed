@@ -12,6 +12,7 @@
 
 
 
+
 var nonIterable = 3;
 
 Promise.all(nonIterable).then(function() {

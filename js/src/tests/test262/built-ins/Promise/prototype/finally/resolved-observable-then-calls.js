@@ -8,6 +8,7 @@
 
 
 
+
 var sequence = [];
 var yesValue = {};
 var yes = Promise.resolve(yesValue);

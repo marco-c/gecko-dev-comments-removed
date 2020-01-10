@@ -10,6 +10,7 @@
 
 
 
+
 var obj = {};
 
 var p = Promise.reject(obj);

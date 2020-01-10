@@ -54,6 +54,7 @@
 
 
 
+
 async function * gen() {
   for await (var [[x]] of [[null]]) {
     return;

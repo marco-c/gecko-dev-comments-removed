@@ -22,6 +22,7 @@
 
 
 
+
 var thrownError = new Error("Don't catch me.")
 
 var obj = {

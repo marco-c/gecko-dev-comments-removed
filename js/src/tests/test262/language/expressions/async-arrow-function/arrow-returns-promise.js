@@ -9,6 +9,7 @@
 
 
 
+
 var p = (async () => await 1 + await 2)();
 assert(Object.getPrototypeOf(p) === Promise.prototype);
 p.then(function (v) {

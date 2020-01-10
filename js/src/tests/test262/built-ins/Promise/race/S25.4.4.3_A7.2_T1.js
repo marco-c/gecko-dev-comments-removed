@@ -9,6 +9,7 @@
 
 
 
+
 var sequence = [];
 
 var p1 = Promise.reject(1),

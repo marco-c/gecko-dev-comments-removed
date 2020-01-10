@@ -45,6 +45,7 @@
 
 
 
+
 async function fn() {
   for await (var [x = (function() { throw new Test262Error(); })()] of [[undefined]]) {
     return;

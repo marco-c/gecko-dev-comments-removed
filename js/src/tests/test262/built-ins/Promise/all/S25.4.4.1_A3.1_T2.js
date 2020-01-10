@@ -13,6 +13,7 @@
 
 
 
+
 Promise.all(new Error("abrupt")).then(function() {
   $ERROR('Promise unexpectedly resolved: Promise.all(abruptCompletion) should throw TypeError');
 }, function(err) {

@@ -11,6 +11,7 @@
 
 
 
+
 async function foo(a) {
   arguments[0] = 2;
   assert.sameValue(a, 2);

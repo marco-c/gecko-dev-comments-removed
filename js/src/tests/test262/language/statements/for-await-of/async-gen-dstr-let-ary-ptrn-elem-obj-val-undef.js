@@ -55,6 +55,7 @@
 
 
 
+
 async function * gen() {
   for await (let [{ x }] of [[]]) {
     return;

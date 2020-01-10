@@ -22,7 +22,6 @@
 
 
 
-
 with (import('')) {
     assert.sameValue(then, Promise.prototype.then);
     assert.sameValue(constructor, Promise);

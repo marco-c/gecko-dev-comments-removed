@@ -9,6 +9,7 @@
 
 
 
+
 Promise.race(new Error("abrupt")).then(function() {
   $ERROR('Promise unexpectedly resolved: Promise.race(abruptCompletion) should throw TypeError');
 }, function(err) {

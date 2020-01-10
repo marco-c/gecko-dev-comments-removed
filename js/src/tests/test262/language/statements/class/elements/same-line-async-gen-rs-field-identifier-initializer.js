@@ -57,6 +57,7 @@
 
 
 
+
 class C {
   async *m() { return 42; } $ = 1; _ = 1; \u{6F} = 1; \u2118 = 1; ZW_\u200C_NJ = 1; ZW_\u200D_J = 1;
   

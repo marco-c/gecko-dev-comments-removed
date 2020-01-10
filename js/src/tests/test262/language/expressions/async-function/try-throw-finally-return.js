@@ -10,6 +10,7 @@
 
 
 
+
 var f = async function() {
   try {
     throw "early-throw";

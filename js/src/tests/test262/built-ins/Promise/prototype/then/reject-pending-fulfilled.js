@@ -21,6 +21,7 @@
 
 
 
+
 var resolve;
 var thenable = new Promise(function(_resolve) {
   resolve = _resolve;

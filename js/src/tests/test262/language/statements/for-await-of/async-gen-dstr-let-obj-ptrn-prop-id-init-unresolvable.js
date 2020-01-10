@@ -52,6 +52,7 @@
 
 
 
+
 async function * gen() {
   for await (let { x: y = unresolvableReference } of [{}]) {
     return;

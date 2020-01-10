@@ -23,6 +23,7 @@
 
 
 
+
 var g = async function*() {};
 
 var iter = g();

@@ -8,6 +8,7 @@
 
 
 
+
 var resolveP1,
   p1 = new Promise(function(resolve) {
     resolveP1 = resolve;

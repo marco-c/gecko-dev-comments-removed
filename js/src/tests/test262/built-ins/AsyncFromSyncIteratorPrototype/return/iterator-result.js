@@ -24,6 +24,7 @@
 
 
 
+
 function* g() {
   yield 42;
   throw new Test262Error('return closes iter');

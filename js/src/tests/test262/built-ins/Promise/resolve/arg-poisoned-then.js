@@ -19,6 +19,7 @@
 
 
 
+
 var poisonedThen = {};
 var err = new Test262Error();
 Object.defineProperty(poisonedThen, 'then', {

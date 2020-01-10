@@ -25,7 +25,6 @@
 
 
 
-
 assert.throws(TypeError, () => {
     new (import(''))
 });

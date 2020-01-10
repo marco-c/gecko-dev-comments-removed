@@ -42,6 +42,7 @@
 
 
 
+
 async function fn() {
   for await (const {} of [undefined]) {
     return;

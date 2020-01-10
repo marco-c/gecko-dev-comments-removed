@@ -8,6 +8,7 @@
 
 
 
+
 var sequence = [];
 var obj = {};
 var p = Promise.resolve(obj);

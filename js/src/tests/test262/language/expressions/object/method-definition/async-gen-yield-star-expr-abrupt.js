@@ -20,6 +20,7 @@
 
 
 
+
 var obj = {};
 var abrupt = function() {
   throw obj;

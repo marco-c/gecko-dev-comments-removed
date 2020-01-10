@@ -10,6 +10,7 @@
 
 
 
+
 var AsyncGeneratorFunction = Object.getPrototypeOf(async function* () {}).constructor;
 
 var g = AsyncGeneratorFunction('yield 1;');

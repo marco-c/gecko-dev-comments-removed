@@ -15,6 +15,7 @@
 
 
 
+
 var returnValue = null;
 var promise = new Promise(function(resolve) {
   returnValue = resolve(45);

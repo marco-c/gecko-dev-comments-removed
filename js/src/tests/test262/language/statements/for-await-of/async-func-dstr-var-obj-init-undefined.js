@@ -42,6 +42,7 @@
 
 
 
+
 async function fn() {
   for await (var {} of [undefined]) {
     return;

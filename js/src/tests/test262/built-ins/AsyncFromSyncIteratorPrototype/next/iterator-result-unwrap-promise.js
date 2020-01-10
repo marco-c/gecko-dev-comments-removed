@@ -30,6 +30,7 @@
 
 
 
+
 function* g() {
   yield Promise.resolve(1);
 }

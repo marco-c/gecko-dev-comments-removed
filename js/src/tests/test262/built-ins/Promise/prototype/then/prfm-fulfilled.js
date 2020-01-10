@@ -19,6 +19,7 @@
 
 
 
+
 var value = {};
 var p = new Promise(function(resolve) {
   resolve(value);

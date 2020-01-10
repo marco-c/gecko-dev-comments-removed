@@ -22,6 +22,7 @@
 
 
 
+
 try {
   Promise.race({
     [Symbol.iterator]: 1

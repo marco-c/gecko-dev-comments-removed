@@ -12,6 +12,7 @@
 
 
 
+
 var expectedThis = this,
   obj = {};
 

@@ -23,6 +23,7 @@
 
 
 
+
 var thenable = {
   then: function(resolve) {
     resolve(23);

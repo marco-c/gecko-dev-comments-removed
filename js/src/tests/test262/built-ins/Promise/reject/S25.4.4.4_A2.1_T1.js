@@ -16,6 +16,7 @@
 
 
 
+
 var p = Promise.reject(3);
 
 if (!(p instanceof Promise)) {

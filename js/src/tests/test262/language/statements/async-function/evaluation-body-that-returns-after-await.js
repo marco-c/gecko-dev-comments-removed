@@ -9,6 +9,7 @@
 
 
 
+
 async function foo() {
   await Promise.resolve();
   return 42;

@@ -9,6 +9,7 @@
 
 
 
+
 var sequence = [];
 
 var p = Promise.race([1]);

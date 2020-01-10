@@ -22,6 +22,7 @@
 
 
 
+
 var thenable = {
   then: function(_, reject) {
     reject();

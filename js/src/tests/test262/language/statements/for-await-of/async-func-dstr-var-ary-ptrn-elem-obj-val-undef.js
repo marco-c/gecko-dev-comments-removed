@@ -55,6 +55,7 @@
 
 
 
+
 async function fn() {
   for await (var [{ x }] of [[]]) {
     return;

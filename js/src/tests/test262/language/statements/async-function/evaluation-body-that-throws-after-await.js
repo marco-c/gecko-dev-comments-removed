@@ -9,6 +9,7 @@
 
 
 
+
 async function foo() {
   await Promise.resolve();
   throw 1;

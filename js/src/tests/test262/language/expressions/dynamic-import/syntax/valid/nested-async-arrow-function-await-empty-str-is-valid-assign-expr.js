@@ -22,7 +22,6 @@
 
 
 
-
 (async () => {
   await import('')
 });

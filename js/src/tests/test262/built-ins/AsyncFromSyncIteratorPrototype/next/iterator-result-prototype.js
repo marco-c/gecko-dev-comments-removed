@@ -25,6 +25,7 @@
 
 
 
+
 function* g() {}
 
 async function* asyncg() {

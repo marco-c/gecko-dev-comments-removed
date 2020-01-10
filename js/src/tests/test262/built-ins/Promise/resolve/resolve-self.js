@@ -20,6 +20,7 @@
 
 
 
+
 var resolve, reject;
 var promise = new Promise(function(_resolve, _reject) {
   resolve = _resolve;

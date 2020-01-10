@@ -11,6 +11,7 @@
 
 
 
+
 var p1 = Promise.resolve(3);
 
 var pAll = Promise.all([p1]);

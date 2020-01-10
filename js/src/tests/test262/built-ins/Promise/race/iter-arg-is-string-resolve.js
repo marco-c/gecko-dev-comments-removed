@@ -22,6 +22,7 @@
 
 
 
+
 try {
   Promise.race("a").then(function(v) {
     assert.sameValue(v, "a");

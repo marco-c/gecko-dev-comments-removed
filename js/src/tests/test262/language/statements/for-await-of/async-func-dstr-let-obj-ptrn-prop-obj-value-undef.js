@@ -44,6 +44,7 @@
 
 
 
+
 async function fn() {
   for await (let { w: { x, y, z } = undefined } of [{ }]) {
     return;

@@ -17,6 +17,7 @@
 
 
 
+
 var AsyncGeneratorFunction = Object.getPrototypeOf(async function* () {}).constructor;
 
 

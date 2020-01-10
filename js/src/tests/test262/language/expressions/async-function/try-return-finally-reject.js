@@ -10,6 +10,7 @@
 
 
 
+
 var f = async function() {
   try {
     return "early-return";

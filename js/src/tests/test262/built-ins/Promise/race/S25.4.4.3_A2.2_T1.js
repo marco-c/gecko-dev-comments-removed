@@ -9,6 +9,7 @@
 
 
 
+
 var nonIterable = 3;
 
 Promise.race(nonIterable).then(function() {

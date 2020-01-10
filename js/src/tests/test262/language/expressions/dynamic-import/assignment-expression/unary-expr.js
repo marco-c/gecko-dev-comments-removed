@@ -18,7 +18,6 @@
 
 
 
-
 const obj = {
     prop: 42
 };
