@@ -436,6 +436,13 @@ add_task(async function test_execute() {
     let hostsInPermissionManager = getAllDisabledHostsFromPermissionManager();
 
     
+    disabledHosts = [
+      "http://disabled1.example.com",
+      "http://xn--pss.net",
+      "http://xn--19g.com",
+    ];
+
+    
     LoginTestUtils.assertDisabledHostsEqual(disabledHosts, hostsInPermissionManager);
 
     

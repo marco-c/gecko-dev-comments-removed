@@ -6,6 +6,7 @@
 
 
 
+const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const {LoginRecipesContent, LoginRecipesParent} = ChromeUtils.import("resource://gre/modules/LoginRecipes.jsm");
@@ -58,8 +59,10 @@ add_task(async function test_common_initialize() {
   
   
   
-  await OS.File.copy(do_get_file("data/key3.db").path,
-                     OS.Path.join(OS.Constants.Path.profileDir, "key3.db"));
+  const isAndroid = AppConstants.platform == "android";
+  const keyDBName = isAndroid ? "key4.db" : "key3.db";
+  await OS.File.copy(do_get_file(`data/${keyDBName}`).path,
+                     OS.Path.join(OS.Constants.Path.profileDir, keyDBName));
 
   
   await Services.logins.initializationPromise;
