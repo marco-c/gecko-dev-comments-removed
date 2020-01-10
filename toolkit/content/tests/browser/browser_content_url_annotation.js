@@ -41,33 +41,46 @@ function getMinidumpDirectory() {
 
 
 add_task(async function test_content_url_annotation() {
-  let url = "https://example.com/browser/toolkit/content/tests/browser/file_redirect.html";
-  let redirect_url = "https://example.com/browser/toolkit/content/tests/browser/file_redirect_to.html";
+  let url =
+    "https://example.com/browser/toolkit/content/tests/browser/file_redirect.html";
+  let redirect_url =
+    "https://example.com/browser/toolkit/content/tests/browser/file_redirect_to.html";
 
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-  }, async function(browser) {
-    ok(browser.isRemoteBrowser, "Should be a remote browser");
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+    },
+    async function(browser) {
+      ok(browser.isRemoteBrowser, "Should be a remote browser");
 
-    
-    let promise = ContentTask.spawn(browser, {}, async function() {
-      dump("ContentTask starting...\n");
-      await new Promise((resolve) => {
-        addEventListener("RedirectDone", function listener() {
-          dump("Got RedirectDone\n");
-          removeEventListener("RedirectDone", listener);
-          resolve();
-        }, true, true);
+      
+      let promise = ContentTask.spawn(browser, {}, async function() {
+        dump("ContentTask starting...\n");
+        await new Promise(resolve => {
+          addEventListener(
+            "RedirectDone",
+            function listener() {
+              dump("Got RedirectDone\n");
+              removeEventListener("RedirectDone", listener);
+              resolve();
+            },
+            true,
+            true
+          );
+        });
       });
-    });
-    BrowserTestUtils.loadURI(browser, url);
-    await promise;
+      BrowserTestUtils.loadURI(browser, url);
+      await promise;
 
-    
-    let annotations = await BrowserTestUtils.crashBrowser(browser);
+      
+      let annotations = await BrowserTestUtils.crashBrowser(browser);
 
-    ok("URL" in annotations, "annotated a URL");
-    is(annotations.URL, redirect_url,
-       "Should have annotated the URL after redirect");
-  });
+      ok("URL" in annotations, "annotated a URL");
+      is(
+        annotations.URL,
+        redirect_url,
+        "Should have annotated the URL after redirect"
+      );
+    }
+  );
 });

@@ -17,14 +17,14 @@
 
 
 
-      this.addEventListener("click", (event) => {
+      this.addEventListener("click", event => {
         if (event.button != 0) {
           return;
         }
         this._handleClick();
       });
 
-      this.addEventListener("keypress", (event) => {
+      this.addEventListener("keypress", event => {
         if (event.key != " ") {
           return;
         }
@@ -33,42 +33,55 @@
         event.preventDefault();
       });
 
-      this.addEventListener("keypress", (event) => {
+      this.addEventListener("keypress", event => {
         if (this.hasMenu()) {
-          if (this.open)
+          if (this.open) {
             return;
+          }
         } else {
-          if (event.keyCode == KeyEvent.DOM_VK_UP ||
-              (event.keyCode == KeyEvent.DOM_VK_LEFT &&
-               document.defaultView.getComputedStyle(this.parentNode)
-                       .direction == "ltr") ||
-              (event.keyCode == KeyEvent.DOM_VK_RIGHT &&
-               document.defaultView.getComputedStyle(this.parentNode)
-                       .direction == "rtl")) {
-                         event.preventDefault();
-                         window.document.commandDispatcher.rewindFocus();
-                         return;
+          if (
+            event.keyCode == KeyEvent.DOM_VK_UP ||
+            (event.keyCode == KeyEvent.DOM_VK_LEFT &&
+              document.defaultView.getComputedStyle(this.parentNode)
+                .direction == "ltr") ||
+            (event.keyCode == KeyEvent.DOM_VK_RIGHT &&
+              document.defaultView.getComputedStyle(this.parentNode)
+                .direction == "rtl")
+          ) {
+            event.preventDefault();
+            window.document.commandDispatcher.rewindFocus();
+            return;
           }
 
-          if (event.keyCode == KeyEvent.DOM_VK_DOWN ||
-              (event.keyCode == KeyEvent.DOM_VK_RIGHT &&
-               document.defaultView.getComputedStyle(this.parentNode)
-                       .direction == "ltr") ||
-              (event.keyCode == KeyEvent.DOM_VK_LEFT &&
-               document.defaultView.getComputedStyle(this.parentNode)
-                       .direction == "rtl")) {
-                         event.preventDefault();
-                         window.document.commandDispatcher.advanceFocus();
-                         return;
+          if (
+            event.keyCode == KeyEvent.DOM_VK_DOWN ||
+            (event.keyCode == KeyEvent.DOM_VK_RIGHT &&
+              document.defaultView.getComputedStyle(this.parentNode)
+                .direction == "ltr") ||
+            (event.keyCode == KeyEvent.DOM_VK_LEFT &&
+              document.defaultView.getComputedStyle(this.parentNode)
+                .direction == "rtl")
+          ) {
+            event.preventDefault();
+            window.document.commandDispatcher.advanceFocus();
+            return;
           }
         }
 
-        if (event.keyCode || event.charCode <= 32 || event.altKey ||
-            event.ctrlKey || event.metaKey)
-          return; 
+        if (
+          event.keyCode ||
+          event.charCode <= 32 ||
+          event.altKey ||
+          event.ctrlKey ||
+          event.metaKey
+        ) {
+          return;
+        } 
 
         
-        var charPressedLower = String.fromCharCode(event.charCode).toLowerCase();
+        var charPressedLower = String.fromCharCode(
+          event.charCode
+        ).toLowerCase();
 
         
         if (this.accessKey.toLowerCase() == charPressedLower) {
@@ -78,11 +91,18 @@
 
         
         
-        for (var frameCount = -1; frameCount < window.top.frames.length; frameCount++) {
-          var doc = (frameCount == -1) ? window.top.document :
-                    window.top.frames[frameCount].document;
-          if (this.fireAccessKeyButton(doc.documentElement, charPressedLower))
+        for (
+          var frameCount = -1;
+          frameCount < window.top.frames.length;
+          frameCount++
+        ) {
+          var doc =
+            frameCount == -1
+              ? window.top.document
+              : window.top.frames[frameCount].document;
+          if (this.fireAccessKeyButton(doc.documentElement, charPressedLower)) {
             return;
+          }
         }
 
         
@@ -112,7 +132,7 @@
     }
 
     get disabled() {
-      return (this.getAttribute("disabled") == "true");
+      return this.getAttribute("disabled") == "true";
     }
 
     set dlgType(val) {
@@ -152,14 +172,16 @@
     set checked(val) {
       if (this.type == "radio" && val) {
         var sibs = this.parentNode.getElementsByAttribute("group", this.group);
-        for (var i = 0; i < sibs.length; ++i)
+        for (var i = 0; i < sibs.length; ++i) {
           sibs[i].removeAttribute("checked");
+        }
       }
 
-      if (val)
+      if (val) {
         this.setAttribute("checked", "true");
-      else
+      } else {
         this.removeAttribute("checked");
+      }
 
       return val;
     }
@@ -179,22 +201,29 @@
         return NodeFilter.FILTER_REJECT;
       }
       
-      if (node.localName == "button" && node.accessKey && !node.disabled)
+      if (node.localName == "button" && node.accessKey && !node.disabled) {
         return NodeFilter.FILTER_ACCEPT;
+      }
       return NodeFilter.FILTER_SKIP;
     }
 
     fireAccessKeyButton(aSubtree, aAccessKeyLower) {
-      var iterator = aSubtree.ownerDocument.createTreeWalker(aSubtree,
-                                                             NodeFilter.SHOW_ELEMENT,
-                                                             this.filterButtons);
+      var iterator = aSubtree.ownerDocument.createTreeWalker(
+        aSubtree,
+        NodeFilter.SHOW_ELEMENT,
+        this.filterButtons
+      );
       while (iterator.nextNode()) {
         var test = iterator.currentNode;
-        if (test.accessKey.toLowerCase() == aAccessKeyLower &&
-            !test.disabled && !test.collapsed && !test.hidden) {
-              test.focus();
-              test.click();
-              return true;
+        if (
+          test.accessKey.toLowerCase() == aAccessKeyLower &&
+          !test.disabled &&
+          !test.collapsed &&
+          !test.hidden
+        ) {
+          test.focus();
+          test.click();
+          return true;
         }
       }
       return false;
@@ -211,7 +240,9 @@
     }
   }
 
-  MozXULElement.implementCustomInterface(MozButtonBase, [Ci.nsIDOMXULButtonElement]);
+  MozXULElement.implementCustomInterface(MozButtonBase, [
+    Ci.nsIDOMXULButtonElement,
+  ]);
 
   MozElements.ButtonBase = MozButtonBase;
 
@@ -230,30 +261,36 @@
     }
 
     static get buttonFragment() {
-      let frag = document.importNode(MozXULElement.parseXULToFragment(`
+      let frag = document.importNode(
+        MozXULElement.parseXULToFragment(`
         <hbox class="box-inherit button-box" align="center" pack="center" flex="1" anonid="button-box">
           <image class="button-icon"/>
           <label class="button-text"/>
-        </hbox>`), true);
-      Object.defineProperty(this, "buttonFragment", {value: frag});
+        </hbox>`),
+        true
+      );
+      Object.defineProperty(this, "buttonFragment", { value: frag });
       return frag;
     }
 
     static get menuFragment() {
-      let frag = document.importNode(MozXULElement.parseXULToFragment(`
+      let frag = document.importNode(
+        MozXULElement.parseXULToFragment(`
         <hbox class="box-inherit button-box" align="center" pack="center" flex="1">
           <hbox class="box-inherit" align="center" pack="center" flex="1">
             <image class="button-icon"/>
             <label class="button-text"/>
           </hbox>
           <dropmarker class="button-menu-dropmarker"/>
-        </hbox>`), true);
-      Object.defineProperty(this, "menuFragment", {value: frag});
+        </hbox>`),
+        true
+      );
+      Object.defineProperty(this, "menuFragment", { value: frag });
       return frag;
     }
 
     get _hasConnected() {
-      return (this.querySelector(":scope > .button-box") != null);
+      return this.querySelector(":scope > .button-box") != null;
     }
 
     connectedCallback() {
@@ -265,7 +302,7 @@
       if (this.type === "menu") {
         fragment = MozButton.menuFragment;
 
-        this.addEventListener("keypress", (event) => {
+        this.addEventListener("keypress", event => {
           if (event.keyCode != KeyEvent.DOM_VK_RETURN && event.key != " ") {
             return;
           }

@@ -7,89 +7,93 @@
 
 
 {
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.defineModuleGetter(this, "LoginHelper",
-                               "resource://gre/modules/LoginHelper.jsm");
+  const { Services } = ChromeUtils.import(
+    "resource://gre/modules/Services.jsm"
+  );
+  ChromeUtils.defineModuleGetter(
+    this,
+    "LoginHelper",
+    "resource://gre/modules/LoginHelper.jsm"
+  );
 
+  MozElements.MozAutocompleteRichlistitem = class MozAutocompleteRichlistitem extends MozElements.MozRichlistitem {
+    constructor() {
+      super();
 
-MozElements.MozAutocompleteRichlistitem = class MozAutocompleteRichlistitem extends MozElements.MozRichlistitem {
-  constructor() {
-    super();
-
-    
-
-
-
-    this.addEventListener("mousedown", (event) => {
       
-      let control = this.control;
-      if (!control || control.disabled) {
-        return;
-      }
-      if (!this.selected) {
-        control.selectItem(this);
-      }
-      control.currentItem = this;
-    });
 
-    this.addEventListener("mouseover", (event) => {
-      
-      
-      
-      
-      
-      let mouseDown = event.buttons & 0b111;
-      if (!mouseDown) {
-        return;
-      }
-      
-      let control = this.control;
-      if (!control || control.disabled) {
-        return;
-      }
-      if (!this.selected) {
-        control.selectItem(this);
-      }
-      control.currentItem = this;
-    });
 
-    this.addEventListener("overflow", () => this._onOverflow());
-    this.addEventListener("underflow", () => this._onUnderflow());
-  }
 
-  connectedCallback() {
-    if (this.delayConnectedCallback()) {
-      return;
+      this.addEventListener("mousedown", event => {
+        
+        let control = this.control;
+        if (!control || control.disabled) {
+          return;
+        }
+        if (!this.selected) {
+          control.selectItem(this);
+        }
+        control.currentItem = this;
+      });
+
+      this.addEventListener("mouseover", event => {
+        
+        
+        
+        
+        
+        let mouseDown = event.buttons & 0b111;
+        if (!mouseDown) {
+          return;
+        }
+        
+        let control = this.control;
+        if (!control || control.disabled) {
+          return;
+        }
+        if (!this.selected) {
+          control.selectItem(this);
+        }
+        control.currentItem = this;
+      });
+
+      this.addEventListener("overflow", () => this._onOverflow());
+      this.addEventListener("underflow", () => this._onUnderflow());
     }
 
-    this.textContent = "";
-    this.appendChild(MozXULElement.parseXULToFragment(this._markup));
-    this.initializeAttributeInheritance();
+    connectedCallback() {
+      if (this.delayConnectedCallback()) {
+        return;
+      }
 
-    this._boundaryCutoff = null;
-    this._inOverflow = false;
+      this.textContent = "";
+      this.appendChild(MozXULElement.parseXULToFragment(this._markup));
+      this.initializeAttributeInheritance();
 
-    this._adjustAcItem();
-  }
+      this._boundaryCutoff = null;
+      this._inOverflow = false;
 
-  static get inheritedAttributes() {
-    return {
-      ".ac-type-icon": "selected,current,type",
-      ".ac-site-icon": "src=image,selected,type",
-      ".ac-title": "selected",
-      ".ac-title-text": "selected",
-      ".ac-tags": "selected",
-      ".ac-tags-text": "selected",
-      ".ac-separator": "selected,actiontype,type",
-      ".ac-url": "selected,actiontype",
-      ".ac-url-text": "selected",
-      ".ac-action": "selected,actiontype",
-      ".ac-action-text": "selected",
-    };
-  }
+      this._adjustAcItem();
+    }
 
-  get _markup() {
-    return `
+    static get inheritedAttributes() {
+      return {
+        ".ac-type-icon": "selected,current,type",
+        ".ac-site-icon": "src=image,selected,type",
+        ".ac-title": "selected",
+        ".ac-title-text": "selected",
+        ".ac-tags": "selected",
+        ".ac-tags-text": "selected",
+        ".ac-separator": "selected,actiontype,type",
+        ".ac-url": "selected,actiontype",
+        ".ac-url-text": "selected",
+        ".ac-action": "selected,actiontype",
+        ".ac-action-text": "selected",
+      };
+    }
+
+    get _markup() {
+      return `
       <image class="ac-type-icon"></image>
       <image class="ac-site-icon"></image>
       <hbox class="ac-title" align="center">
@@ -116,440 +120,460 @@ MozElements.MozAutocompleteRichlistitem = class MozAutocompleteRichlistitem exte
         </description>
       </hbox>
     `;
-  }
-
-  get _typeIcon() {
-    return this.querySelector(".ac-type-icon");
-  }
-
-  get _titleText() {
-    return this.querySelector(".ac-title-text");
-  }
-
-  get _tags() {
-    return this.querySelector(".ac-tags");
-  }
-
-  get _tagsText() {
-    return this.querySelector(".ac-tags-text");
-  }
-
-  get _separator() {
-    return this.querySelector(".ac-separator");
-  }
-
-  get _urlText() {
-    return this.querySelector(".ac-url-text");
-  }
-
-  get _actionText() {
-    return this.querySelector(".ac-action-text");
-  }
-
-  get label() {
-    
-    
-
-    let parts = [
-      this.getAttribute("title"),
-      this.getAttribute("displayurl"),
-    ];
-    let label = parts.filter(str => str).join(" ");
-
-    
-    
-    let panel = this.parentNode.parentNode;
-    if (panel.createResultLabel) {
-      return panel.createResultLabel(this, label);
     }
 
-    return label;
-  }
-
-  get _stringBundle() {
-    if (!this.__stringBundle) {
-      this.__stringBundle = Services.strings.createBundle(
-        "chrome://global/locale/autocomplete.properties"
-      );
+    get _typeIcon() {
+      return this.querySelector(".ac-type-icon");
     }
-    return this.__stringBundle;
-  }
 
-  get boundaryCutoff() {
-    if (!this._boundaryCutoff) {
-      this._boundaryCutoff = Services.prefs.
-        getIntPref("toolkit.autocomplete.richBoundaryCutoff");
+    get _titleText() {
+      return this.querySelector(".ac-title-text");
     }
-    return this._boundaryCutoff;
-  }
 
-  _cleanup() {
-    this.removeAttribute("url");
-    this.removeAttribute("image");
-    this.removeAttribute("title");
-    this.removeAttribute("text");
-    this.removeAttribute("displayurl");
-  }
+    get _tags() {
+      return this.querySelector(".ac-tags");
+    }
 
-  _onOverflow() {
-    this._inOverflow = true;
-    this._handleOverflow();
-  }
+    get _tagsText() {
+      return this.querySelector(".ac-tags-text");
+    }
 
-  _onUnderflow() {
-    this._inOverflow = false;
-    this._handleOverflow();
-  }
+    get _separator() {
+      return this.querySelector(".ac-separator");
+    }
 
-  _getBoundaryIndices(aText, aSearchTokens) {
-    
-    if (aSearchTokens == "")
-      return [0, aText.length];
+    get _urlText() {
+      return this.querySelector(".ac-url-text");
+    }
 
-    
-    let regions = [];
-    for (let search of Array.prototype.slice.call(aSearchTokens)) {
-      let matchIndex = -1;
-      let searchLen = search.length;
+    get _actionText() {
+      return this.querySelector(".ac-action-text");
+    }
+
+    get label() {
+      
+      
+
+      let parts = [this.getAttribute("title"), this.getAttribute("displayurl")];
+      let label = parts.filter(str => str).join(" ");
 
       
-      let lowerText = aText.substr(0, this.boundaryCutoff).toLowerCase();
-      while ((matchIndex = lowerText.indexOf(search, matchIndex + 1)) >= 0) {
-        regions.push([matchIndex, matchIndex + searchLen]);
+      
+      let panel = this.parentNode.parentNode;
+      if (panel.createResultLabel) {
+        return panel.createResultLabel(this, label);
       }
+
+      return label;
     }
 
-    
-    regions = regions.sort((a, b) => {
-      let start = a[0] - b[0];
-      return (start == 0) ? a[1] - b[1] : start;
-    });
+    get _stringBundle() {
+      if (!this.__stringBundle) {
+        this.__stringBundle = Services.strings.createBundle(
+          "chrome://global/locale/autocomplete.properties"
+        );
+      }
+      return this.__stringBundle;
+    }
 
-    
-    let start = 0;
-    let end = 0;
-    let boundaries = [];
-    let len = regions.length;
-    for (let i = 0; i < len; i++) {
+    get boundaryCutoff() {
+      if (!this._boundaryCutoff) {
+        this._boundaryCutoff = Services.prefs.getIntPref(
+          "toolkit.autocomplete.richBoundaryCutoff"
+        );
+      }
+      return this._boundaryCutoff;
+    }
+
+    _cleanup() {
+      this.removeAttribute("url");
+      this.removeAttribute("image");
+      this.removeAttribute("title");
+      this.removeAttribute("text");
+      this.removeAttribute("displayurl");
+    }
+
+    _onOverflow() {
+      this._inOverflow = true;
+      this._handleOverflow();
+    }
+
+    _onUnderflow() {
+      this._inOverflow = false;
+      this._handleOverflow();
+    }
+
+    _getBoundaryIndices(aText, aSearchTokens) {
       
-      let region = regions[i];
-      if (region[0] > end) {
-        
-        boundaries.push(start);
-        
-        boundaries.push(end);
-
-        
-        start = region[0];
+      if (aSearchTokens == "") {
+        return [0, aText.length];
       }
 
       
-      end = Math.max(end, region[1]);
-    }
+      let regions = [];
+      for (let search of Array.prototype.slice.call(aSearchTokens)) {
+        let matchIndex = -1;
+        let searchLen = search.length;
 
-    
-    boundaries.push(start);
-    boundaries.push(end);
-
-    
-    if (end < aText.length)
-      boundaries.push(aText.length);
-
-    
-    return boundaries.slice(1);
-  }
-
-  _getSearchTokens(aSearch) {
-    let search = aSearch.toLowerCase();
-    return search.split(/\s+/);
-  }
-
-  _setUpDescription(aDescriptionElement, aText, aNoEmphasis) {
-    
-    if (!aDescriptionElement) {
-      return;
-    }
-    while (aDescriptionElement.hasChildNodes())
-      aDescriptionElement.firstChild.remove();
-
-    
-    if (aNoEmphasis) {
-      aDescriptionElement.appendChild(document.createTextNode(aText));
-      return;
-    }
-
-    
-    let search = this.getAttribute("text");
-    let tokens = this._getSearchTokens(search);
-    let indices = this._getBoundaryIndices(aText, tokens);
-
-    this._appendDescriptionSpans(indices, aText, aDescriptionElement,
-      aDescriptionElement);
-  }
-
-  _appendDescriptionSpans(indices, text, spansParentElement, descriptionElement) {
-    let next;
-    let start = 0;
-    let len = indices.length;
-    
-    for (let i = indices[0] == 0 ? 1 : 0; i < len; i++) {
-      next = indices[i];
-      let spanText = text.substr(start, next - start);
-      start = next;
-
-      if (i % 2 == 0) {
         
-        let span = spansParentElement.appendChild(
-          document.createElementNS("http://www.w3.org/1999/xhtml", "span"));
-        this._setUpEmphasisSpan(span, descriptionElement);
-        span.textContent = spanText;
-      } else {
-        
-        spansParentElement.appendChild(document.createTextNode(spanText));
+        let lowerText = aText.substr(0, this.boundaryCutoff).toLowerCase();
+        while ((matchIndex = lowerText.indexOf(search, matchIndex + 1)) >= 0) {
+          regions.push([matchIndex, matchIndex + searchLen]);
+        }
       }
+
+      
+      regions = regions.sort((a, b) => {
+        let start = a[0] - b[0];
+        return start == 0 ? a[1] - b[1] : start;
+      });
+
+      
+      let start = 0;
+      let end = 0;
+      let boundaries = [];
+      let len = regions.length;
+      for (let i = 0; i < len; i++) {
+        
+        let region = regions[i];
+        if (region[0] > end) {
+          
+          boundaries.push(start);
+          
+          boundaries.push(end);
+
+          
+          start = region[0];
+        }
+
+        
+        end = Math.max(end, region[1]);
+      }
+
+      
+      boundaries.push(start);
+      boundaries.push(end);
+
+      
+      if (end < aText.length) {
+        boundaries.push(aText.length);
+      }
+
+      
+      return boundaries.slice(1);
     }
-  }
 
-  _setUpTags(tags) {
-    while (this._tagsText.hasChildNodes()) {
-      this._tagsText.firstChild.remove();
+    _getSearchTokens(aSearch) {
+      let search = aSearch.toLowerCase();
+      return search.split(/\s+/);
     }
 
-    let anyTagsMatch = false;
+    _setUpDescription(aDescriptionElement, aText, aNoEmphasis) {
+      
+      if (!aDescriptionElement) {
+        return;
+      }
+      while (aDescriptionElement.hasChildNodes()) {
+        aDescriptionElement.firstChild.remove();
+      }
 
-    
-    for (let tag of tags) {
+      
+      if (aNoEmphasis) {
+        aDescriptionElement.appendChild(document.createTextNode(aText));
+        return;
+      }
+
       
       let search = this.getAttribute("text");
       let tokens = this._getSearchTokens(search);
-      let indices = this._getBoundaryIndices(tag, tokens);
+      let indices = this._getBoundaryIndices(aText, tokens);
 
-      if (indices.length == 2 &&
-        indices[0] == 0 &&
-        indices[1] == tag.length) {
-        
-        continue;
-      }
-
-      anyTagsMatch = true;
-
-      let tagSpan =
-        document.createElementNS("http://www.w3.org/1999/xhtml", "span");
-      tagSpan.classList.add("ac-tag");
-      this._tagsText.appendChild(tagSpan);
-
-      this._appendDescriptionSpans(indices, tag, tagSpan, this._tagsText);
+      this._appendDescriptionSpans(
+        indices,
+        aText,
+        aDescriptionElement,
+        aDescriptionElement
+      );
     }
 
-    return anyTagsMatch;
-  }
-
-  _setUpEmphasisSpan(aSpan, aDescriptionElement) {
-    aSpan.classList.add("ac-emphasize-text");
-    switch (aDescriptionElement) {
-      case this._titleText:
-        aSpan.classList.add("ac-emphasize-text-title");
-        break;
-      case this._tagsText:
-        aSpan.classList.add("ac-emphasize-text-tag");
-        break;
-      case this._urlText:
-        aSpan.classList.add("ac-emphasize-text-url");
-        break;
-      case this._actionText:
-        aSpan.classList.add("ac-emphasize-text-action");
-        break;
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _generateEmphasisPairs(aSourceString, aReplacements) {
-    let pairs = [];
-
-    
-    
-    
-    
-    
-    let parts = aSourceString.split(/(%(?:[0-9]+\$)?S)/);
-
-    for (let part of parts) {
+    _appendDescriptionSpans(
+      indices,
+      text,
+      spansParentElement,
+      descriptionElement
+    ) {
+      let next;
+      let start = 0;
+      let len = indices.length;
       
-      
-      
-      if (part.length === 0)
-        continue;
+      for (let i = indices[0] == 0 ? 1 : 0; i < len; i++) {
+        next = indices[i];
+        let spanText = text.substr(start, next - start);
+        start = next;
 
-      
-      
-      
-      let match = part.match(/^%(?:([0-9]+)\$)?S$/);
-
-      if (match) {
-        
-        
-        
-        let index = (match[1] || 1) - 1;
-
-        if (index >= 0 && index < aReplacements.length) {
-          pairs.push([...aReplacements[index]]);
+        if (i % 2 == 0) {
+          
+          let span = spansParentElement.appendChild(
+            document.createElementNS("http://www.w3.org/1999/xhtml", "span")
+          );
+          this._setUpEmphasisSpan(span, descriptionElement);
+          span.textContent = spanText;
+        } else {
+          
+          spansParentElement.appendChild(document.createTextNode(spanText));
         }
-      } else {
-        pairs.push([part]);
       }
     }
 
-    return pairs;
-  }
+    _setUpTags(tags) {
+      while (this._tagsText.hasChildNodes()) {
+        this._tagsText.firstChild.remove();
+      }
 
-  
+      let anyTagsMatch = false;
 
+      
+      for (let tag of tags) {
+        
+        let search = this.getAttribute("text");
+        let tokens = this._getSearchTokens(search);
+        let indices = this._getBoundaryIndices(tag, tokens);
 
-
-
-
-
-  _setUpEmphasisedSections(aDescriptionElement, aTextPairs) {
-    
-    while (aDescriptionElement.hasChildNodes())
-      aDescriptionElement.firstChild.remove();
-
-    for (let [text, emphasise] of aTextPairs) {
-      if (emphasise) {
-        let span = aDescriptionElement.appendChild(
-          document.createElementNS("http://www.w3.org/1999/xhtml", "span"));
-        span.textContent = text;
-        switch (emphasise) {
-          case "match":
-            this._setUpEmphasisSpan(span, aDescriptionElement);
-            break;
+        if (
+          indices.length == 2 &&
+          indices[0] == 0 &&
+          indices[1] == tag.length
+        ) {
+          
+          continue;
         }
-      } else {
-        aDescriptionElement.appendChild(document.createTextNode(text));
-      }
-    }
-  }
 
-  _unescapeUrl(url) {
-    return Services.textToSubURI.unEscapeURIForUI("UTF-8", url);
-  }
+        anyTagsMatch = true;
 
-  _reuseAcItem() {
-    let action = this._parseActionUrl(this.getAttribute("url"));
-    let popup = this.parentNode.parentNode;
+        let tagSpan = document.createElementNS(
+          "http://www.w3.org/1999/xhtml",
+          "span"
+        );
+        tagSpan.classList.add("ac-tag");
+        this._tagsText.appendChild(tagSpan);
 
-    
-    
-    
-    if (!action ||
-      action.type != "searchengine" ||
-      !popup.overrideSearchEngineName ||
-      action.params.engineName == popup.overrideSearchEngineName) {
-      this.collapsed = false;
-
-      
-      
-      let dwu = window.windowUtils;
-      let popupWidth = dwu.getBoundsWithoutFlushing(this.parentNode).width;
-      if (!this._previousPopupWidth || this._previousPopupWidth != popupWidth) {
-        this._previousPopupWidth = popupWidth;
-        this.handleOverUnderflow();
+        this._appendDescriptionSpans(indices, tag, tagSpan, this._tagsText);
       }
 
-      return true;
+      return anyTagsMatch;
     }
 
-    return false;
-  }
-
-  _adjustAcItem() {
-    let originalUrl = this.getAttribute("ac-value");
-    let title = this.getAttribute("ac-comment");
-    this.setAttribute("url", originalUrl);
-    this.setAttribute("image", this.getAttribute("ac-image"));
-    this.setAttribute("title", title);
-    this.setAttribute("text", this.getAttribute("ac-text"));
-
-    let popup = this.parentNode.parentNode;
-    let titleLooksLikeUrl = false;
-    let displayUrl = originalUrl;
-    let emphasiseUrl = true;
-    let trimDisplayUrl = true;
-
-    let type = this.getAttribute("originaltype");
-    let types = new Set(type.split(/\s+/));
-    let initialTypes = new Set(types);
-    
-    types.delete("action");
-    types.delete("autofill");
-    types.delete("heuristic");
-    type = [...types][0] || "";
-
-    let action;
-
-    if (initialTypes.has("autofill") && !initialTypes.has("action")) {
-      
-      
-      action = {
-        type: "visiturl",
-        params: { url: title },
-      };
+    _setUpEmphasisSpan(aSpan, aDescriptionElement) {
+      aSpan.classList.add("ac-emphasize-text");
+      switch (aDescriptionElement) {
+        case this._titleText:
+          aSpan.classList.add("ac-emphasize-text-title");
+          break;
+        case this._tagsText:
+          aSpan.classList.add("ac-emphasize-text-tag");
+          break;
+        case this._urlText:
+          aSpan.classList.add("ac-emphasize-text-url");
+          break;
+        case this._actionText:
+          aSpan.classList.add("ac-emphasize-text-action");
+          break;
+      }
     }
 
-    this.removeAttribute("actiontype");
-    this.classList.remove(
-      "overridable-action",
-      "emptySearchQuery",
-      "aliasOffer"
-    );
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    _generateEmphasisPairs(aSourceString, aReplacements) {
+      let pairs = [];
+
+      
+      
+      
+      
+      
+      let parts = aSourceString.split(/(%(?:[0-9]+\$)?S)/);
+
+      for (let part of parts) {
+        
+        
+        
+        if (part.length === 0) {
+          continue;
+        }
+
+        
+        
+        
+        let match = part.match(/^%(?:([0-9]+)\$)?S$/);
+
+        if (match) {
+          
+          
+          
+          let index = (match[1] || 1) - 1;
+
+          if (index >= 0 && index < aReplacements.length) {
+            pairs.push([...aReplacements[index]]);
+          }
+        } else {
+          pairs.push([part]);
+        }
+      }
+
+      return pairs;
+    }
 
     
-    if (initialTypes.has("action") || action) {
-      action = action || this._parseActionUrl(originalUrl);
-      this.setAttribute("actiontype", action.type);
 
-      switch (action.type) {
-        case "switchtab":
-          {
+
+
+
+
+
+    _setUpEmphasisedSections(aDescriptionElement, aTextPairs) {
+      
+      while (aDescriptionElement.hasChildNodes()) {
+        aDescriptionElement.firstChild.remove();
+      }
+
+      for (let [text, emphasise] of aTextPairs) {
+        if (emphasise) {
+          let span = aDescriptionElement.appendChild(
+            document.createElementNS("http://www.w3.org/1999/xhtml", "span")
+          );
+          span.textContent = text;
+          switch (emphasise) {
+            case "match":
+              this._setUpEmphasisSpan(span, aDescriptionElement);
+              break;
+          }
+        } else {
+          aDescriptionElement.appendChild(document.createTextNode(text));
+        }
+      }
+    }
+
+    _unescapeUrl(url) {
+      return Services.textToSubURI.unEscapeURIForUI("UTF-8", url);
+    }
+
+    _reuseAcItem() {
+      let action = this._parseActionUrl(this.getAttribute("url"));
+      let popup = this.parentNode.parentNode;
+
+      
+      
+      
+      if (
+        !action ||
+        action.type != "searchengine" ||
+        !popup.overrideSearchEngineName ||
+        action.params.engineName == popup.overrideSearchEngineName
+      ) {
+        this.collapsed = false;
+
+        
+        
+        let dwu = window.windowUtils;
+        let popupWidth = dwu.getBoundsWithoutFlushing(this.parentNode).width;
+        if (
+          !this._previousPopupWidth ||
+          this._previousPopupWidth != popupWidth
+        ) {
+          this._previousPopupWidth = popupWidth;
+          this.handleOverUnderflow();
+        }
+
+        return true;
+      }
+
+      return false;
+    }
+
+    _adjustAcItem() {
+      let originalUrl = this.getAttribute("ac-value");
+      let title = this.getAttribute("ac-comment");
+      this.setAttribute("url", originalUrl);
+      this.setAttribute("image", this.getAttribute("ac-image"));
+      this.setAttribute("title", title);
+      this.setAttribute("text", this.getAttribute("ac-text"));
+
+      let popup = this.parentNode.parentNode;
+      let titleLooksLikeUrl = false;
+      let displayUrl = originalUrl;
+      let emphasiseUrl = true;
+      let trimDisplayUrl = true;
+
+      let type = this.getAttribute("originaltype");
+      let types = new Set(type.split(/\s+/));
+      let initialTypes = new Set(types);
+      
+      types.delete("action");
+      types.delete("autofill");
+      types.delete("heuristic");
+      type = [...types][0] || "";
+
+      let action;
+
+      if (initialTypes.has("autofill") && !initialTypes.has("action")) {
+        
+        
+        action = {
+          type: "visiturl",
+          params: { url: title },
+        };
+      }
+
+      this.removeAttribute("actiontype");
+      this.classList.remove(
+        "overridable-action",
+        "emptySearchQuery",
+        "aliasOffer"
+      );
+
+      
+      if (initialTypes.has("action") || action) {
+        action = action || this._parseActionUrl(originalUrl);
+        this.setAttribute("actiontype", action.type);
+
+        switch (action.type) {
+          case "switchtab": {
             this.classList.add("overridable-action");
             displayUrl = action.params.url;
             let desc = this._stringBundle.GetStringFromName("switchToTab2");
             this._setUpDescription(this._actionText, desc, true);
             break;
           }
-        case "remotetab":
-          {
+          case "remotetab": {
             displayUrl = action.params.url;
             let desc = action.params.deviceName;
             this._setUpDescription(this._actionText, desc, true);
             break;
           }
-        case "searchengine":
-          {
+          case "searchengine": {
             emphasiseUrl = false;
 
             
@@ -569,13 +593,14 @@ MozElements.MozAutocompleteRichlistitem = class MozAutocompleteRichlistitem exte
             if (override && override != engineName) {
               engineName = override;
               action.params.engineName = override;
-              let newURL =
-                PlacesUtils.mozActionURI(action.type, action.params);
+              let newURL = PlacesUtils.mozActionURI(action.type, action.params);
               this.setAttribute("url", newURL);
             }
 
-            let engineStr =
-              this._stringBundle.formatStringFromName("searchWithEngine", [engineName]);
+            let engineStr = this._stringBundle.formatStringFromName(
+              "searchWithEngine",
+              [engineName]
+            );
             this._setUpDescription(this._actionText, engineStr, true);
 
             
@@ -594,13 +619,13 @@ MozElements.MozAutocompleteRichlistitem = class MozAutocompleteRichlistitem exte
                   [searchSuggestion.substring(idx + searchQuery.length), ""],
                 ];
               } else {
-                pairs = [
-                  [searchSuggestion, ""],
-                ];
+                pairs = [[searchSuggestion, ""]];
               }
-            } else if (alias &&
+            } else if (
+              alias &&
               !searchQuery.trim() &&
-              !initialTypes.has("heuristic")) {
+              !initialTypes.has("heuristic")
+            ) {
               
               
               
@@ -608,18 +633,14 @@ MozElements.MozAutocompleteRichlistitem = class MozAutocompleteRichlistitem exte
               
               
               this.classList.add("aliasOffer");
-              pairs = [
-                [alias, ""],
-              ];
+              pairs = [[alias, ""]];
             } else {
               
               
               if (!searchQuery.trim()) {
                 this.classList.add("emptySearchQuery");
               }
-              pairs = [
-                [searchQuery, ""],
-              ];
+              pairs = [[searchQuery, ""]];
             }
             let interpStr = pairs.map((pair, i) => `%${i + 1}$S`).join("");
             title = this._generateEmphasisPairs(interpStr, pairs);
@@ -635,8 +656,7 @@ MozElements.MozAutocompleteRichlistitem = class MozAutocompleteRichlistitem exte
             }
             break;
           }
-        case "visiturl":
-          {
+          case "visiturl": {
             emphasiseUrl = false;
             displayUrl = action.params.url;
             titleLooksLikeUrl = true;
@@ -644,295 +664,303 @@ MozElements.MozAutocompleteRichlistitem = class MozAutocompleteRichlistitem exte
             this._setUpDescription(this._actionText, visitStr, true);
             break;
           }
-        case "extension":
-          {
+          case "extension": {
             let content = action.params.content;
             displayUrl = content;
             trimDisplayUrl = false;
             this._setUpDescription(this._actionText, content, true);
             break;
           }
+        }
       }
-    }
 
-    if (trimDisplayUrl) {
-      let input = popup.input;
-      if (typeof input.trimValue == "function")
-        displayUrl = input.trimValue(displayUrl);
-      displayUrl = this._unescapeUrl(displayUrl);
-    }
-    
-    if (popup.textRunsMaxLen && displayUrl) {
-      displayUrl = displayUrl.substr(0, popup.textRunsMaxLen);
-    }
-    this.setAttribute("displayurl", displayUrl);
-
-    
-    if (!title) {
-      titleLooksLikeUrl = true;
-      try {
-        let uri = Services.io.newURI(originalUrl);
-        
-        if (uri.host)
-          title = uri.host;
-      } catch (e) {}
-      if (!title)
-        title = displayUrl;
-    }
-
-    this._tags.setAttribute("empty", "true");
-
-    if (type == "tag" || type == "bookmark-tag") {
+      if (trimDisplayUrl) {
+        let input = popup.input;
+        if (typeof input.trimValue == "function") {
+          displayUrl = input.trimValue(displayUrl);
+        }
+        displayUrl = this._unescapeUrl(displayUrl);
+      }
       
-      let tags;
-      [, title, tags] = title.match(/^(.+) \u2013 (.+)$/);
+      if (popup.textRunsMaxLen && displayUrl) {
+        displayUrl = displayUrl.substr(0, popup.textRunsMaxLen);
+      }
+      this.setAttribute("displayurl", displayUrl);
 
       
-      let sortedTags = tags.split(/\s*,\s*/).sort((a, b) => {
-        return a.localeCompare(a);
-      });
-
-      let anyTagsMatch = this._setUpTags(sortedTags);
-      if (anyTagsMatch) {
-        this._tags.removeAttribute("empty");
-      }
-      if (type == "bookmark-tag") {
-        type = "bookmark";
-      }
-    } else if (type == "keyword") {
-      
-      emphasiseUrl = false;
-      let keywordArg = this.getAttribute("text").replace(/^[^\s]+\s*/, "");
-      if (!keywordArg) {
-        
-        type = "visiturl";
-        this.setAttribute("actiontype", "visiturl");
-        let visitStr = this._stringBundle.GetStringFromName("visit");
-        this._setUpDescription(this._actionText, visitStr, true);
-      } else {
-        let pairs = [
-          [title, ""],
-          [keywordArg, "match"],
-        ];
-        let interpStr =
-          this._stringBundle.GetStringFromName("bookmarkKeywordSearch");
-        title = this._generateEmphasisPairs(interpStr, pairs);
-        
-        
-        
-        this._setUpDescription(this._actionText, "", false);
-      }
-    }
-
-    this.setAttribute("type", type);
-
-    if (titleLooksLikeUrl) {
-      this._titleText.setAttribute("lookslikeurl", "true");
-    } else {
-      this._titleText.removeAttribute("lookslikeurl");
-    }
-
-    if (Array.isArray(title)) {
-      
-      if (popup.textRunsMaxLen) {
-        title.forEach(t => {
+      if (!title) {
+        titleLooksLikeUrl = true;
+        try {
+          let uri = Services.io.newURI(originalUrl);
           
-          for (let i = 0; i < t.length; i += 2) {
-            t[i] = t[i].substr(0, popup.textRunsMaxLen);
+          if (uri.host) {
+            title = uri.host;
           }
+        } catch (e) {}
+        if (!title) {
+          title = displayUrl;
+        }
+      }
+
+      this._tags.setAttribute("empty", "true");
+
+      if (type == "tag" || type == "bookmark-tag") {
+        
+        let tags;
+        [, title, tags] = title.match(/^(.+) \u2013 (.+)$/);
+
+        
+        let sortedTags = tags.split(/\s*,\s*/).sort((a, b) => {
+          return a.localeCompare(a);
         });
+
+        let anyTagsMatch = this._setUpTags(sortedTags);
+        if (anyTagsMatch) {
+          this._tags.removeAttribute("empty");
+        }
+        if (type == "bookmark-tag") {
+          type = "bookmark";
+        }
+      } else if (type == "keyword") {
+        
+        emphasiseUrl = false;
+        let keywordArg = this.getAttribute("text").replace(/^[^\s]+\s*/, "");
+        if (!keywordArg) {
+          
+          type = "visiturl";
+          this.setAttribute("actiontype", "visiturl");
+          let visitStr = this._stringBundle.GetStringFromName("visit");
+          this._setUpDescription(this._actionText, visitStr, true);
+        } else {
+          let pairs = [[title, ""], [keywordArg, "match"]];
+          let interpStr = this._stringBundle.GetStringFromName(
+            "bookmarkKeywordSearch"
+          );
+          title = this._generateEmphasisPairs(interpStr, pairs);
+          
+          
+          
+          this._setUpDescription(this._actionText, "", false);
+        }
       }
-      this._setUpEmphasisedSections(this._titleText, title);
-    } else {
+
+      this.setAttribute("type", type);
+
+      if (titleLooksLikeUrl) {
+        this._titleText.setAttribute("lookslikeurl", "true");
+      } else {
+        this._titleText.removeAttribute("lookslikeurl");
+      }
+
+      if (Array.isArray(title)) {
+        
+        if (popup.textRunsMaxLen) {
+          title.forEach(t => {
+            
+            for (let i = 0; i < t.length; i += 2) {
+              t[i] = t[i].substr(0, popup.textRunsMaxLen);
+            }
+          });
+        }
+        this._setUpEmphasisedSections(this._titleText, title);
+      } else {
+        
+        if (popup.textRunsMaxLen && title) {
+          title = title.substr(0, popup.textRunsMaxLen);
+        }
+        this._setUpDescription(this._titleText, title, false);
+      }
+      this._setUpDescription(this._urlText, displayUrl, !emphasiseUrl);
+
       
-      if (popup.textRunsMaxLen && title) {
-        title = title.substr(0, popup.textRunsMaxLen);
+      
+      
+      
+      
+      
+      let wasInOverflow = this._inOverflow;
+      this._removeMaxWidths();
+      if (wasInOverflow && this._inOverflow) {
+        this._handleOverflow();
       }
-      this._setUpDescription(this._titleText, title, false);
     }
-    this._setUpDescription(this._urlText, displayUrl, !emphasiseUrl);
+
+    _removeMaxWidths() {
+      if (this._hasMaxWidths) {
+        this._titleText.style.removeProperty("max-width");
+        this._tagsText.style.removeProperty("max-width");
+        this._urlText.style.removeProperty("max-width");
+        this._actionText.style.removeProperty("max-width");
+        this._hasMaxWidths = false;
+      }
+    }
 
     
-    
-    
-    
-    
-    
-    let wasInOverflow = this._inOverflow;
-    this._removeMaxWidths();
-    if (wasInOverflow && this._inOverflow) {
+
+
+    _handleOverflow() {
+      let itemRect = this.parentNode.getBoundingClientRect();
+      let titleRect = this._titleText.getBoundingClientRect();
+      let tagsRect = this._tagsText.getBoundingClientRect();
+      let separatorRect = this._separator.getBoundingClientRect();
+      let urlRect = this._urlText.getBoundingClientRect();
+      let actionRect = this._actionText.getBoundingClientRect();
+      let separatorURLActionWidth =
+        separatorRect.width + Math.max(urlRect.width, actionRect.width);
+
+      
+      
+      
+      
+      let dir = this.getAttribute("dir");
+      let titleStart =
+        dir == "rtl"
+          ? itemRect.right - titleRect.right
+          : titleRect.left - itemRect.left;
+
+      let popup = this.parentNode.parentNode;
+      let itemWidth =
+        itemRect.width -
+        titleStart -
+        popup.overflowPadding -
+        (popup.margins ? popup.margins.end : 0);
+
+      if (this._tags.hasAttribute("empty")) {
+        
+        tagsRect.width = 0;
+      }
+
+      let titleTagsWidth = titleRect.width + tagsRect.width;
+      if (titleTagsWidth + separatorURLActionWidth > itemWidth) {
+        
+
+        
+        let titleTagsPct = 0.66;
+
+        let titleTagsAvailable = itemWidth - separatorURLActionWidth;
+        let titleTagsMaxWidth = Math.max(
+          titleTagsAvailable,
+          itemWidth * titleTagsPct
+        );
+        if (titleTagsWidth > titleTagsMaxWidth) {
+          
+
+          
+          
+          let titlePct = 0.33;
+
+          let titleAvailable = titleTagsMaxWidth - tagsRect.width;
+          let titleMaxWidth = Math.max(
+            titleAvailable,
+            titleTagsMaxWidth * titlePct
+          );
+          let tagsAvailable = titleTagsMaxWidth - titleRect.width;
+          let tagsMaxWidth = Math.max(
+            tagsAvailable,
+            titleTagsMaxWidth * (1 - titlePct)
+          );
+          this._titleText.style.maxWidth = titleMaxWidth + "px";
+          this._tagsText.style.maxWidth = tagsMaxWidth + "px";
+        }
+        let urlActionMaxWidth = Math.max(
+          itemWidth - titleTagsWidth,
+          itemWidth * (1 - titleTagsPct)
+        );
+        urlActionMaxWidth -= separatorRect.width;
+        this._urlText.style.maxWidth = urlActionMaxWidth + "px";
+        this._actionText.style.maxWidth = urlActionMaxWidth + "px";
+        this._hasMaxWidths = true;
+      }
+    }
+
+    handleOverUnderflow() {
+      this._removeMaxWidths();
       this._handleOverflow();
     }
-  }
 
-  _removeMaxWidths() {
-    if (this._hasMaxWidths) {
-      this._titleText.style.removeProperty("max-width");
-      this._tagsText.style.removeProperty("max-width");
-      this._urlText.style.removeProperty("max-width");
-      this._actionText.style.removeProperty("max-width");
-      this._hasMaxWidths = false;
-    }
-  }
-
-  
-
-
-  _handleOverflow() {
-    let itemRect = this.parentNode.getBoundingClientRect();
-    let titleRect = this._titleText.getBoundingClientRect();
-    let tagsRect = this._tagsText.getBoundingClientRect();
-    let separatorRect = this._separator.getBoundingClientRect();
-    let urlRect = this._urlText.getBoundingClientRect();
-    let actionRect = this._actionText.getBoundingClientRect();
-    let separatorURLActionWidth =
-      separatorRect.width + Math.max(urlRect.width, actionRect.width);
-
-    
-    
-    
-    
-    let dir = this.getAttribute("dir");
-    let titleStart = dir == "rtl" ? itemRect.right - titleRect.right :
-      titleRect.left - itemRect.left;
-
-    let popup = this.parentNode.parentNode;
-    let itemWidth = itemRect.width - titleStart - popup.overflowPadding -
-      (popup.margins ? popup.margins.end : 0);
-
-    if (this._tags.hasAttribute("empty")) {
-      
-      tagsRect.width = 0;
-    }
-
-    let titleTagsWidth = titleRect.width + tagsRect.width;
-    if (titleTagsWidth + separatorURLActionWidth > itemWidth) {
-      
-
-      
-      let titleTagsPct = 0.66;
-
-      let titleTagsAvailable = itemWidth - separatorURLActionWidth;
-      let titleTagsMaxWidth = Math.max(
-        titleTagsAvailable,
-        itemWidth * titleTagsPct
-      );
-      if (titleTagsWidth > titleTagsMaxWidth) {
-        
-
-        
-        
-        let titlePct = 0.33;
-
-        let titleAvailable = titleTagsMaxWidth - tagsRect.width;
-        let titleMaxWidth = Math.max(
-          titleAvailable,
-          titleTagsMaxWidth * titlePct
-        );
-        let tagsAvailable = titleTagsMaxWidth - titleRect.width;
-        let tagsMaxWidth = Math.max(
-          tagsAvailable,
-          titleTagsMaxWidth * (1 - titlePct)
-        );
-        this._titleText.style.maxWidth = titleMaxWidth + "px";
-        this._tagsText.style.maxWidth = tagsMaxWidth + "px";
+    _parseActionUrl(aUrl) {
+      if (!aUrl.startsWith("moz-action:")) {
+        return null;
       }
-      let urlActionMaxWidth = Math.max(
-        itemWidth - titleTagsWidth,
-        itemWidth * (1 - titleTagsPct)
-      );
-      urlActionMaxWidth -= separatorRect.width;
-      this._urlText.style.maxWidth = urlActionMaxWidth + "px";
-      this._actionText.style.maxWidth = urlActionMaxWidth + "px";
-      this._hasMaxWidths = true;
-    }
-  }
 
-  handleOverUnderflow() {
-    this._removeMaxWidths();
-    this._handleOverflow();
-  }
-
-  _parseActionUrl(aUrl) {
-    if (!aUrl.startsWith("moz-action:"))
-      return null;
-
-    
-    
-    let [, type, params] = aUrl.match(/^moz-action:([^,]+),(.*)$/);
-
-    let action = {
-      type,
-    };
-
-    try {
-      action.params = JSON.parse(params);
-      for (let key in action.params) {
-        action.params[key] = decodeURIComponent(action.params[key]);
-      }
-    } catch (e) {
       
       
-      
-      action.params = {
-        url: params,
+      let [, type, params] = aUrl.match(/^moz-action:([^,]+),(.*)$/);
+
+      let action = {
+        type,
       };
+
+      try {
+        action.params = JSON.parse(params);
+        for (let key in action.params) {
+          action.params[key] = decodeURIComponent(action.params[key]);
+        }
+      } catch (e) {
+        
+        
+        
+        action.params = {
+          url: params,
+        };
+      }
+
+      return action;
+    }
+  };
+
+  MozXULElement.implementCustomInterface(
+    MozElements.MozAutocompleteRichlistitem,
+    [Ci.nsIDOMXULSelectControlItemElement]
+  );
+
+  class MozAutocompleteRichlistitemInsecureWarning extends MozElements.MozAutocompleteRichlistitem {
+    constructor() {
+      super();
+
+      this.addEventListener("click", event => {
+        if (event.button != 0) {
+          return;
+        }
+
+        let baseURL = Services.urlFormatter.formatURLPref(
+          "app.support.baseURL"
+        );
+        window.openTrustedLinkIn(baseURL + "insecure-password", "tab", {
+          relatedToCurrent: true,
+        });
+      });
     }
 
-    return action;
-  }
-};
-
-MozXULElement.implementCustomInterface(
-  MozElements.MozAutocompleteRichlistitem,
-  [Ci.nsIDOMXULSelectControlItemElement]
-);
-
-class MozAutocompleteRichlistitemInsecureWarning extends MozElements.MozAutocompleteRichlistitem {
-  constructor() {
-    super();
-
-    this.addEventListener("click", (event) => {
-      if (event.button != 0) {
+    connectedCallback() {
+      if (this.delayConnectedCallback()) {
         return;
       }
 
-      let baseURL = Services.urlFormatter.formatURLPref("app.support.baseURL");
-      window.openTrustedLinkIn(baseURL + "insecure-password", "tab", {
-        relatedToCurrent: true,
-      });
-    });
-  }
+      super.connectedCallback();
 
-  connectedCallback() {
-    if (this.delayConnectedCallback()) {
-      return;
+      
+      
+      
+      this.classList.add("forceHandleUnderflow");
     }
 
-    super.connectedCallback();
+    static get inheritedAttributes() {
+      return {
+        ".ac-type-icon": "selected,current,type",
+        ".ac-site-icon": "src=image,selected,type",
+        ".ac-title-text": "selected",
+        ".ac-tags-text": "selected",
+        ".ac-separator": "selected,actiontype,type",
+        ".ac-url": "selected,actiontype",
+        ".ac-url-text": "selected",
+        ".ac-action": "selected,actiontype",
+        ".ac-action-text": "selected",
+      };
+    }
 
-    
-    
-    
-    this.classList.add("forceHandleUnderflow");
-  }
-
-  static get inheritedAttributes() {
-    return {
-      ".ac-type-icon": "selected,current,type",
-      ".ac-site-icon": "src=image,selected,type",
-      ".ac-title-text": "selected",
-      ".ac-tags-text": "selected",
-      ".ac-separator": "selected,actiontype,type",
-      ".ac-url": "selected,actiontype",
-      ".ac-url-text": "selected",
-      ".ac-action": "selected,actiontype",
-      ".ac-action-text": "selected",
-    };
-  }
-
-  get _markup() {
-    return `
+    get _markup() {
+      return `
       <image class="ac-type-icon"></image>
       <image class="ac-site-icon"></image>
       <vbox class="ac-title" align="left">
@@ -959,72 +987,70 @@ class MozAutocompleteRichlistitemInsecureWarning extends MozElements.MozAutocomp
         </description>
       </hbox>
     `;
-  }
-
-  get _learnMoreString() {
-    if (!this.__learnMoreString) {
-      this.__learnMoreString = Services.strings.createBundle(
-        "chrome://passwordmgr/locale/passwordmgr.properties"
-      ).
-      GetStringFromName("insecureFieldWarningLearnMore");
     }
-    return this.__learnMoreString;
+
+    get _learnMoreString() {
+      if (!this.__learnMoreString) {
+        this.__learnMoreString = Services.strings
+          .createBundle("chrome://passwordmgr/locale/passwordmgr.properties")
+          .GetStringFromName("insecureFieldWarningLearnMore");
+      }
+      return this.__learnMoreString;
+    }
+
+    
+
+
+    _getSearchTokens(aSearch) {
+      return [this._learnMoreString.toLowerCase()];
+    }
   }
 
-  
+  class MozAutocompleteRichlistitemLoginsFooter extends MozElements.MozAutocompleteRichlistitem {
+    constructor() {
+      super();
 
+      function handleEvent(event) {
+        if (event.button != 0) {
+          return;
+        }
 
-  _getSearchTokens(aSearch) {
-    return [this._learnMoreString.toLowerCase()];
+        
+        
+        let formHostname = this.getAttribute("ac-label");
+        LoginHelper.openPasswordManager(this.ownerGlobal, {
+          filterString: formHostname,
+          entryPoint: "autocomplete",
+        });
+      }
+
+      this.addEventListener("click", handleEvent);
+    }
   }
-}
 
-class MozAutocompleteRichlistitemLoginsFooter extends MozElements.MozAutocompleteRichlistitem {
-  constructor() {
-    super();
-
-    function handleEvent(event) {
-      if (event.button != 0) {
+  class MozAutocompleteTwoLineRichlistitem extends MozElements.MozRichlistitem {
+    connectedCallback() {
+      if (this.delayConnectedCallback()) {
         return;
       }
 
-      
-      
-      let formHostname = this.getAttribute("ac-label");
-      LoginHelper.openPasswordManager(this.ownerGlobal, {
-        filterString: formHostname,
-        entryPoint: "autocomplete",
-      });
+      this.textContent = "";
+      this.appendChild(MozXULElement.parseXULToFragment(this._markup));
+      this.initializeAttributeInheritance();
+      this._adjustAcItem();
     }
 
-    this.addEventListener("click", handleEvent);
-  }
-}
-
-class MozAutocompleteTwoLineRichlistitem extends MozElements.MozRichlistitem {
-  connectedCallback() {
-    if (this.delayConnectedCallback()) {
-      return;
+    static get inheritedAttributes() {
+      return {
+        
+        ".line1-label": "text=ac-value",
+        
+        ".line2-label": "text=ac-label",
+      };
     }
 
-    this.textContent = "";
-    this.appendChild(MozXULElement.parseXULToFragment(this._markup));
-    this.initializeAttributeInheritance();
-    this._adjustAcItem();
-  }
-
-
-  static get inheritedAttributes() {
-    return {
-      
-      ".line1-label": "text=ac-value",
-      
-      ".line2-label": "text=ac-label",
-    };
-  }
-
-  get _markup() {
-    return `
+    get _markup() {
+      return `
       <div xmlns="http://www.w3.org/1999/xhtml"
            xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
            class="two-line-wrapper">
@@ -1035,57 +1061,77 @@ class MozAutocompleteTwoLineRichlistitem extends MozElements.MozRichlistitem {
         </div>
       </div>
     `;
-  }
+    }
 
-  _adjustAcItem() {
-    let outerBoxRect = this.parentNode.getBoundingClientRect();
+    _adjustAcItem() {
+      let outerBoxRect = this.parentNode.getBoundingClientRect();
 
-    
-    
-    this.firstElementChild.style.width = outerBoxRect.width + "px";
-  }
-
-  _onOverflow() {}
-
-  _onUnderflow() {}
-
-  handleOverUnderflow() {}
-}
-
-class MozAutocompleteLoginRichlistitem extends MozAutocompleteTwoLineRichlistitem {
-  static get inheritedAttributes() {
-    return {
       
-      ".line1-label": "text=ac-value",
       
-    };
+      this.firstElementChild.style.width = outerBoxRect.width + "px";
+    }
+
+    _onOverflow() {}
+
+    _onUnderflow() {}
+
+    handleOverUnderflow() {}
   }
 
-  _adjustAcItem() {
-    super._adjustAcItem();
+  class MozAutocompleteLoginRichlistitem extends MozAutocompleteTwoLineRichlistitem {
+    static get inheritedAttributes() {
+      return {
+        
+        ".line1-label": "text=ac-value",
+        
+      };
+    }
 
-    let details = JSON.parse(this.getAttribute("ac-label"));
-    this.querySelector(".line2-label").textContent = details.comment;
+    _adjustAcItem() {
+      super._adjustAcItem();
+
+      let details = JSON.parse(this.getAttribute("ac-label"));
+      this.querySelector(".line2-label").textContent = details.comment;
+    }
   }
-}
 
-customElements.define("autocomplete-richlistitem", MozElements.MozAutocompleteRichlistitem, {
-  extends: "richlistitem",
-});
+  customElements.define(
+    "autocomplete-richlistitem",
+    MozElements.MozAutocompleteRichlistitem,
+    {
+      extends: "richlistitem",
+    }
+  );
 
-customElements.define("autocomplete-richlistitem-insecure-warning", MozAutocompleteRichlistitemInsecureWarning, {
-  extends: "richlistitem",
-});
+  customElements.define(
+    "autocomplete-richlistitem-insecure-warning",
+    MozAutocompleteRichlistitemInsecureWarning,
+    {
+      extends: "richlistitem",
+    }
+  );
 
-customElements.define("autocomplete-richlistitem-logins-footer", MozAutocompleteRichlistitemLoginsFooter, {
-  extends: "richlistitem",
-});
+  customElements.define(
+    "autocomplete-richlistitem-logins-footer",
+    MozAutocompleteRichlistitemLoginsFooter,
+    {
+      extends: "richlistitem",
+    }
+  );
 
-customElements.define("autocomplete-two-line-richlistitem", MozAutocompleteTwoLineRichlistitem, {
-  extends: "richlistitem",
-});
+  customElements.define(
+    "autocomplete-two-line-richlistitem",
+    MozAutocompleteTwoLineRichlistitem,
+    {
+      extends: "richlistitem",
+    }
+  );
 
-customElements.define("autocomplete-login-richlistitem", MozAutocompleteLoginRichlistitem, {
-  extends: "richlistitem",
-});
+  customElements.define(
+    "autocomplete-login-richlistitem",
+    MozAutocompleteLoginRichlistitem,
+    {
+      extends: "richlistitem",
+    }
+  );
 }

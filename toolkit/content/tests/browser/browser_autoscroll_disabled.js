@@ -2,7 +2,8 @@ add_task(async function() {
   const kPrefName_AutoScroll = "general.autoScroll";
   Services.prefs.setBoolPref(kPrefName_AutoScroll, false);
 
-  let dataUri = 'data:text/html,<html><body id="i" style="overflow-y: scroll"><div style="height: 2000px"></div>\
+  let dataUri =
+    'data:text/html,<html><body id="i" style="overflow-y: scroll"><div style="height: 2000px"></div>\
       <iframe id="iframe" style="display: none;"></iframe>\
 </body></html>';
 
@@ -10,56 +11,71 @@ add_task(async function() {
   BrowserTestUtils.loadURI(gBrowser, dataUri);
   await loadedPromise;
 
-  await BrowserTestUtils.synthesizeMouse("#i", 50, 50, { button: 1 },
-                                         gBrowser.selectedBrowser);
+  await BrowserTestUtils.synthesizeMouse(
+    "#i",
+    50,
+    50,
+    { button: 1 },
+    gBrowser.selectedBrowser
+  );
 
-  await ContentTask.spawn(gBrowser.selectedBrowser, { }, async function() {
+  await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
     var iframe = content.document.getElementById("iframe");
 
     if (iframe) {
-      var e = new iframe.contentWindow.PageTransitionEvent("pagehide",
-                                                           { bubbles: true,
-                                                             cancelable: true,
-                                                             persisted: false });
+      var e = new iframe.contentWindow.PageTransitionEvent("pagehide", {
+        bubbles: true,
+        cancelable: true,
+        persisted: false,
+      });
       iframe.contentDocument.dispatchEvent(e);
       iframe.contentDocument.documentElement.dispatchEvent(e);
     }
   });
 
-  await BrowserTestUtils.synthesizeMouse("#i", 100, 100,
-                                         { type: "mousemove", clickCount: "0" },
-                                         gBrowser.selectedBrowser);
+  await BrowserTestUtils.synthesizeMouse(
+    "#i",
+    100,
+    100,
+    { type: "mousemove", clickCount: "0" },
+    gBrowser.selectedBrowser
+  );
 
   
   
   await new Promise(resolve => window.requestAnimationFrame(resolve));
 
-  let msg = await ContentTask.spawn(gBrowser.selectedBrowser, { }, async function() {
-    
-    
-    return new Promise(resolve => {
-      function checkScroll() {
-        let msg = "";
-        let elem = content.document.getElementById("i");
-        if (elem.scrollTop != 0) {
-          msg += "element should not have scrolled vertically";
-        }
-        if (elem.scrollLeft != 0) {
-          msg += "element should not have scrolled horizontally";
+  let msg = await ContentTask.spawn(
+    gBrowser.selectedBrowser,
+    {},
+    async function() {
+      
+      
+      return new Promise(resolve => {
+        function checkScroll() {
+          let msg = "";
+          let elem = content.document.getElementById("i");
+          if (elem.scrollTop != 0) {
+            msg += "element should not have scrolled vertically";
+          }
+          if (elem.scrollLeft != 0) {
+            msg += "element should not have scrolled horizontally";
+          }
+
+          resolve(msg);
         }
 
-        resolve(msg);
-      }
-
-      content.requestAnimationFrame(checkScroll);
-    });
-  });
+        content.requestAnimationFrame(checkScroll);
+      });
+    }
+  );
 
   ok(!msg, "element scroll " + msg);
 
   
-  if (Services.prefs.prefHasUserValue(kPrefName_AutoScroll))
+  if (Services.prefs.prefHasUserValue(kPrefName_AutoScroll)) {
     Services.prefs.clearUserPref(kPrefName_AutoScroll);
+  }
 
   
   await SimpleTest.promiseFocus();

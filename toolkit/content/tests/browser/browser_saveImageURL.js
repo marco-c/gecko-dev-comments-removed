@@ -1,6 +1,7 @@
 "use strict";
 
-const IMAGE_PAGE = "https://example.com/browser/toolkit/content/tests/browser/image_page.html";
+const IMAGE_PAGE =
+  "https://example.com/browser/toolkit/content/tests/browser/image_page.html";
 const PREF_UNSAFE_FORBIDDEN = "dom.ipc.cpows.forbid-unsafe-from-browser";
 
 var MockFilePicker = SpecialPowers.MockFilePicker;
@@ -13,7 +14,7 @@ registerCleanupFunction(function() {
 });
 
 function waitForFilePicker() {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     MockFilePicker.showCallback = () => {
       MockFilePicker.showCallback = null;
       ok(true, "Saw the file picker");
@@ -27,31 +28,49 @@ function waitForFilePicker() {
 
 
 add_task(async function preferred_API() {
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: IMAGE_PAGE,
-  }, async function(browser) {
-    let url = await ContentTask.spawn(browser, null, async function() {
-      let image = content.document.getElementById("image");
-      return image.href;
-    });
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: IMAGE_PAGE,
+    },
+    async function(browser) {
+      let url = await ContentTask.spawn(browser, null, async function() {
+        let image = content.document.getElementById("image");
+        return image.href;
+      });
 
-    let filePickerPromise = waitForFilePicker();
-    saveImageURL(url, "image.jpg", null, true, false, null, null, null, null,
-      false, gBrowser.contentPrincipal);
-    await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
-      let channel = docShell.currentDocumentChannel;
-      if (channel) {
-        todo(channel.QueryInterface(Ci.nsIHttpChannelInternal)
-                    .channelIsForDownload);
+      let filePickerPromise = waitForFilePicker();
+      saveImageURL(
+        url,
+        "image.jpg",
+        null,
+        true,
+        false,
+        null,
+        null,
+        null,
+        null,
+        false,
+        gBrowser.contentPrincipal
+      );
+      await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
+        let channel = docShell.currentDocumentChannel;
+        if (channel) {
+          todo(
+            channel.QueryInterface(Ci.nsIHttpChannelInternal)
+              .channelIsForDownload
+          );
 
-        
-        todo(channel.QueryInterface(Ci.nsIClassOfService).classFlags ==
-             Ci.nsIClassOfService.Throttleable);
-      }
-    });
-    await filePickerPromise;
-  });
+          
+          todo(
+            channel.QueryInterface(Ci.nsIClassOfService).classFlags ==
+              Ci.nsIClassOfService.Throttleable
+          );
+        }
+      });
+      await filePickerPromise;
+    }
+  );
 });
 
 
@@ -61,36 +80,42 @@ add_task(async function preferred_API() {
 
 
 add_task(async function deprecated_API() {
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: IMAGE_PAGE,
-  }, async function(browser) {
-    await pushPrefs([PREF_UNSAFE_FORBIDDEN, false]);
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: IMAGE_PAGE,
+    },
+    async function(browser) {
+      await pushPrefs([PREF_UNSAFE_FORBIDDEN, false]);
 
-    let url = await ContentTask.spawn(browser, null, async function() {
-      let image = content.document.getElementById("image");
-      return image.href;
-    });
+      let url = await ContentTask.spawn(browser, null, async function() {
+        let image = content.document.getElementById("image");
+        return image.href;
+      });
 
-    
-    
-    
-    let doc = document;
+      
+      
+      
+      let doc = document;
 
+      await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
+        let channel = docShell.currentDocumentChannel;
+        if (channel) {
+          todo(
+            channel.QueryInterface(Ci.nsIHttpChannelInternal)
+              .channelIsForDownload
+          );
 
-    await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
-      let channel = docShell.currentDocumentChannel;
-      if (channel) {
-        todo(channel.QueryInterface(Ci.nsIHttpChannelInternal)
-                    .channelIsForDownload);
-
-        
-        todo(channel.QueryInterface(Ci.nsIClassOfService).classFlags ==
-             Ci.nsIClassOfService.Throttleable);
-      }
-    });
-    let filePickerPromise = waitForFilePicker();
-    saveImageURL(url, "image.jpg", null, true, false, null, doc, null, null);
-    await filePickerPromise;
-  });
+          
+          todo(
+            channel.QueryInterface(Ci.nsIClassOfService).classFlags ==
+              Ci.nsIClassOfService.Throttleable
+          );
+        }
+      });
+      let filePickerPromise = waitForFilePicker();
+      saveImageURL(url, "image.jpg", null, true, false, null, doc, null, null);
+      await filePickerPromise;
+    }
+  );
 });

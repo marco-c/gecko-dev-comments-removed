@@ -7,81 +7,83 @@
 
 
 {
-class MozCheckbox extends MozElements.BaseText {
-  constructor() {
-    super();
+  class MozCheckbox extends MozElements.BaseText {
+    constructor() {
+      super();
 
-    
-    
-    
-    this.addEventListener("click", (event) => {
-      if (event.button === 0 && !this.disabled) {
-        this.checked = !this.checked;
-      }
-    });
-    this.addEventListener("keypress", (event) => {
-      if (event.key == " ") {
-        this.checked = !this.checked;
-        
-        event.preventDefault();
-      }
-    });
-  }
-
-  static get inheritedAttributes() {
-    return {
-      ".checkbox-check": "disabled,checked",
-      ".checkbox-label": "text=label,accesskey",
-      ".checkbox-icon": "src",
-    };
-  }
-
-  connectedCallback() {
-    if (this.delayConnectedCallback()) {
-      return;
+      
+      
+      
+      this.addEventListener("click", event => {
+        if (event.button === 0 && !this.disabled) {
+          this.checked = !this.checked;
+        }
+      });
+      this.addEventListener("keypress", event => {
+        if (event.key == " ") {
+          this.checked = !this.checked;
+          
+          event.preventDefault();
+        }
+      });
     }
 
-    if (!MozCheckbox.contentFragment) {
-      let content = `
+    static get inheritedAttributes() {
+      return {
+        ".checkbox-check": "disabled,checked",
+        ".checkbox-label": "text=label,accesskey",
+        ".checkbox-icon": "src",
+      };
+    }
+
+    connectedCallback() {
+      if (this.delayConnectedCallback()) {
+        return;
+      }
+
+      if (!MozCheckbox.contentFragment) {
+        let content = `
         <image class="checkbox-check"/>
         <hbox class="checkbox-label-box" flex="1">
           <image class="checkbox-icon"/>
           <label class="checkbox-label" flex="1"/>
         </hbox>
       `;
-      MozCheckbox.contentFragment = MozXULElement.parseXULToFragment(content);
+        MozCheckbox.contentFragment = MozXULElement.parseXULToFragment(content);
+      }
+
+      this.textContent = "";
+      let fragment = this.ownerDocument.importNode(
+        MozCheckbox.contentFragment,
+        true
+      );
+      this.appendChild(fragment);
+
+      this.initializeAttributeInheritance();
     }
 
-    this.textContent = "";
-    let fragment =
-      this.ownerDocument.importNode(MozCheckbox.contentFragment, true);
-    this.appendChild(fragment);
+    set checked(val) {
+      let change = val != (this.getAttribute("checked") == "true");
+      if (val) {
+        this.setAttribute("checked", "true");
+      } else {
+        this.removeAttribute("checked");
+      }
 
-    this.initializeAttributeInheritance();
-  }
-
-  set checked(val) {
-    let change = (val != (this.getAttribute("checked") == "true"));
-    if (val) {
-      this.setAttribute("checked", "true");
-    } else {
-      this.removeAttribute("checked");
+      if (change) {
+        let event = document.createEvent("Events");
+        event.initEvent("CheckboxStateChange", true, true);
+        this.dispatchEvent(event);
+      }
+      return val;
     }
 
-    if (change) {
-      let event = document.createEvent("Events");
-      event.initEvent("CheckboxStateChange", true, true);
-      this.dispatchEvent(event);
+    get checked() {
+      return this.getAttribute("checked") == "true";
     }
-    return val;
   }
 
-  get checked() {
-    return this.getAttribute("checked") == "true";
-  }
-}
+  MozCheckbox.contentFragment = null;
 
-MozCheckbox.contentFragment = null;
-
-customElements.define("checkbox", MozCheckbox);
+  customElements.define("checkbox", MozCheckbox);
 }

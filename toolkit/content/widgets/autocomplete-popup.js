@@ -7,577 +7,621 @@
 
 
 {
-const MozPopupElement = MozElements.MozElementMixin(XULPopupElement);
-MozElements.MozAutocompleteRichlistboxPopup = class MozAutocompleteRichlistboxPopup extends MozPopupElement {
-  constructor() {
-    super();
+  const MozPopupElement = MozElements.MozElementMixin(XULPopupElement);
+  MozElements.MozAutocompleteRichlistboxPopup = class MozAutocompleteRichlistboxPopup extends MozPopupElement {
+    constructor() {
+      super();
 
-    this.mInput = null;
-    this.mPopupOpen = false;
-    this._currentIndex = 0;
+      this.mInput = null;
+      this.mPopupOpen = false;
+      this._currentIndex = 0;
 
-    this.setListeners();
-  }
-
-  initialize() {
-    this.setAttribute("ignorekeys", "true");
-    this.setAttribute("level", "top");
-    this.setAttribute("consumeoutsideclicks", "never");
-
-    this.textContent = "";
-    this.appendChild(MozXULElement.parseXULToFragment(this._markup));
-
-    
-
-
-
-
-    this.defaultMaxRows = 6;
-
-    
-
-
-
-
-
-
-
-
-
-
-    this._normalMaxRows = -1;
-    this._previousSelectedIndex = -1;
-    this.mLastMoveTime = Date.now();
-    this.mousedOverIndex = -1;
-    this._richlistbox = this.querySelector(".autocomplete-richlistbox");
-
-    if (!this.listEvents) {
-      this.listEvents = {
-        handleEvent: event => {
-          if (!this.parentNode) {
-            return;
-          }
-
-          switch (event.type) {
-            case "mouseup":
-              
-              
-              
-              if (event.target.closest("richlistbox,richlistitem")
-                .localName == "richlistitem") {
-                this.onPopupClick(event);
-              }
-              break;
-            case "mousemove":
-              if (Date.now() - this.mLastMoveTime <= 30) {
-                return;
-              }
-
-              let item = event.target.closest("richlistbox,richlistitem");
-
-              
-              
-              if (item.localName == "richlistbox") {
-                return;
-              }
-
-              let index = this.richlistbox.getIndexOfItem(item);
-
-              this.mousedOverIndex = index;
-
-              if (item.selectedByMouseOver) {
-                this.richlistbox.selectedIndex = index;
-              }
-
-              this.mLastMoveTime = Date.now();
-              break;
-          }
-        },
-      };
-      this.richlistbox.addEventListener("mouseup", this.listEvents);
-      this.richlistbox.addEventListener("mousemove", this.listEvents);
+      this.setListeners();
     }
-  }
 
-  get richlistbox() {
-    if (!this._richlistbox) {
-      this.initialize();
+    initialize() {
+      this.setAttribute("ignorekeys", "true");
+      this.setAttribute("level", "top");
+      this.setAttribute("consumeoutsideclicks", "never");
+
+      this.textContent = "";
+      this.appendChild(MozXULElement.parseXULToFragment(this._markup));
+
+      
+
+
+
+
+      this.defaultMaxRows = 6;
+
+      
+
+
+
+
+
+
+
+
+
+
+      this._normalMaxRows = -1;
+      this._previousSelectedIndex = -1;
+      this.mLastMoveTime = Date.now();
+      this.mousedOverIndex = -1;
+      this._richlistbox = this.querySelector(".autocomplete-richlistbox");
+
+      if (!this.listEvents) {
+        this.listEvents = {
+          handleEvent: event => {
+            if (!this.parentNode) {
+              return;
+            }
+
+            switch (event.type) {
+              case "mouseup":
+                
+                
+                
+                if (
+                  event.target.closest("richlistbox,richlistitem").localName ==
+                  "richlistitem"
+                ) {
+                  this.onPopupClick(event);
+                }
+                break;
+              case "mousemove":
+                if (Date.now() - this.mLastMoveTime <= 30) {
+                  return;
+                }
+
+                let item = event.target.closest("richlistbox,richlistitem");
+
+                
+                
+                if (item.localName == "richlistbox") {
+                  return;
+                }
+
+                let index = this.richlistbox.getIndexOfItem(item);
+
+                this.mousedOverIndex = index;
+
+                if (item.selectedByMouseOver) {
+                  this.richlistbox.selectedIndex = index;
+                }
+
+                this.mLastMoveTime = Date.now();
+                break;
+            }
+          },
+        };
+        this.richlistbox.addEventListener("mouseup", this.listEvents);
+        this.richlistbox.addEventListener("mousemove", this.listEvents);
+      }
     }
-    return this._richlistbox;
-  }
 
-  get _markup() {
-    return `
+    get richlistbox() {
+      if (!this._richlistbox) {
+        this.initialize();
+      }
+      return this._richlistbox;
+    }
+
+    get _markup() {
+      return `
       <richlistbox class="autocomplete-richlistbox" flex="1"></richlistbox>
     `;
-  }
-
-  
-
-
-  get input() {
-    return this.mInput;
-  }
-
-  get overrideValue() {
-    return null;
-  }
-
-  get popupOpen() {
-    return this.mPopupOpen;
-  }
-
-  get maxRows() {
-    return (this.mInput && this.mInput.maxRows) || this.defaultMaxRows;
-  }
-
-  set selectedIndex(val) {
-    if (val != this.richlistbox.selectedIndex) {
-      this._previousSelectedIndex = this.richlistbox.selectedIndex;
-    }
-    this.richlistbox.selectedIndex = val;
-    
-    
-    
-    
-    
-    if (this.mPopupOpen && this.maxResults > this.maxRows) {
-      
-      
-      this.richlistbox.ensureElementIsVisible(
-        this.richlistbox.selectedItem || this.richlistbox.firstElementChild);
-    }
-    return val;
-  }
-
-  get selectedIndex() {
-    return this.richlistbox.selectedIndex;
-  }
-
-  get maxResults() {
-    
-    
-    
-    
-    if (this.getAttribute("nomaxresults") == "true") {
-      return Infinity;
-    }
-    return 20;
-  }
-
-  get matchCount() {
-    return Math.min(this.mInput.controller.matchCount, this.maxResults);
-  }
-
-  get overflowPadding() {
-    return Number(this.getAttribute("overflowpadding"));
-  }
-
-  set view(val) {
-    return val;
-  }
-
-  get view() {
-    return this.mInput.controller;
-  }
-
-  closePopup() {
-    if (this.mPopupOpen) {
-      this.hidePopup();
-      this.removeAttribute("width");
-    }
-  }
-
-  getNextIndex(aReverse, aAmount, aIndex, aMaxRow) {
-    if (aMaxRow < 0)
-      return -1;
-
-    var newIdx = aIndex + (aReverse ? -1 : 1) * aAmount;
-    if (aReverse && aIndex == -1 || newIdx > aMaxRow && aIndex != aMaxRow)
-      newIdx = aMaxRow;
-    else if (!aReverse && aIndex == -1 || newIdx < 0 && aIndex != 0)
-      newIdx = 0;
-
-    if (newIdx < 0 && aIndex == 0 || newIdx > aMaxRow && aIndex == aMaxRow)
-      aIndex = -1;
-    else
-      aIndex = newIdx;
-
-    return aIndex;
-  }
-
-  onPopupClick(aEvent) {
-    this.input.controller.handleEnter(true, aEvent);
-  }
-
-  onSearchBegin() {
-    this.mousedOverIndex = -1;
-
-    if (typeof this._onSearchBegin == "function") {
-      this._onSearchBegin();
-    }
-  }
-
-  openAutocompletePopup(aInput, aElement) {
-    
-    
-    
-    this._openAutocompletePopup(aInput, aElement);
-  }
-
-  _openAutocompletePopup(aInput, aElement) {
-    if (!this._initialized) {
-      this.initialize();
-      this._initialized = true;
     }
 
-    if (!this.mPopupOpen) {
-      
-      
-      aInput.popup.hidden = false;
-
-      this.mInput = aInput;
-      
-      this.selectedIndex = -1;
-
-      var width = aElement.getBoundingClientRect().width;
-      this.setAttribute("width", width > 100 ? width : 100);
-      
-      this._invalidate();
-
-      this.openPopup(aElement, "after_start", 0, 0, false, false);
-    }
-  }
-
-  invalidate(reason) {
     
-    if (!this.mPopupOpen)
-      return;
 
-    this._invalidate(reason);
-  }
 
-  _invalidate(reason) {
-    
-    this.richlistbox.collapsed = (this.matchCount == 0);
-
-    
-    if (this._adjustHeightRAFToken) {
-      cancelAnimationFrame(this._adjustHeightRAFToken);
-      this._adjustHeightRAFToken = null;
+    get input() {
+      return this.mInput;
     }
 
-    if (this.mPopupOpen) {
-      delete this._adjustHeightOnPopupShown;
-      this._adjustHeightRAFToken = requestAnimationFrame(() => this.adjustHeight());
-    } else {
-      this._adjustHeightOnPopupShown = true;
+    get overrideValue() {
+      return null;
     }
 
-    this._currentIndex = 0;
-    if (this._appendResultTimeout) {
-      clearTimeout(this._appendResultTimeout);
+    get popupOpen() {
+      return this.mPopupOpen;
     }
-    this._appendCurrentResult(reason);
-  }
 
-  _collapseUnusedItems() {
-    let existingItemsCount = this.richlistbox.children.length;
-    for (let i = this.matchCount; i < existingItemsCount; ++i) {
-      let item = this.richlistbox.children[i];
+    get maxRows() {
+      return (this.mInput && this.mInput.maxRows) || this.defaultMaxRows;
+    }
 
-      item.collapsed = true;
-      if (typeof item._onCollapse == "function") {
-        item._onCollapse();
+    set selectedIndex(val) {
+      if (val != this.richlistbox.selectedIndex) {
+        this._previousSelectedIndex = this.richlistbox.selectedIndex;
       }
-    }
-  }
-
-  adjustHeight() {
-    
-    let rows = this.richlistbox.children;
-    let numRows = Math.min(this.matchCount, this.maxRows, rows.length);
-
-    
-    let height = 0;
-    if (numRows) {
-      let firstRowRect = rows[0].getBoundingClientRect();
-      if (this._rlbPadding == undefined) {
-        let style = window.getComputedStyle(this.richlistbox);
-        let paddingTop = parseInt(style.paddingTop) || 0;
-        let paddingBottom = parseInt(style.paddingBottom) || 0;
-        this._rlbPadding = paddingTop + paddingBottom;
-      }
-
+      this.richlistbox.selectedIndex = val;
       
       
       
-      for (let i = 0; i < numRows; i++) {
-        if (rows[i].classList.contains("forceHandleUnderflow")) {
-          rows[i].handleOverUnderflow();
-        }
-      }
-
-      let lastRowRect = rows[numRows - 1].getBoundingClientRect();
       
-      height = lastRowRect.bottom - firstRowRect.top +
-        this._rlbPadding;
-    }
-
-    let currentHeight = this.richlistbox.getBoundingClientRect().height;
-    if (height <= currentHeight) {
-      this._collapseUnusedItems();
-    }
-    this.richlistbox.style.removeProperty("height");
-    
-    
-    
-    
-    this.richlistbox.height = Math.ceil(height);
-  }
-
-  _appendCurrentResult(invalidateReason) {
-    var controller = this.mInput.controller;
-    var matchCount = this.matchCount;
-    var existingItemsCount = this.richlistbox.children.length;
-
-    
-    for (let i = 0; i < this.maxRows; i++) {
-      if (this._currentIndex >= matchCount) {
-        break;
-      }
-      let item;
-      let itemExists = this._currentIndex < existingItemsCount;
-
-      let originalValue, originalText, originalType;
-      let style = controller.getStyleAt(this._currentIndex);
-      let value =
-        style && style.includes("autofill") ?
-        controller.getFinalCompleteValueAt(this._currentIndex) :
-        controller.getValueAt(this._currentIndex);
-      let label = controller.getLabelAt(this._currentIndex);
-      let comment = controller.getCommentAt(this._currentIndex);
-      let image = controller.getImageAt(this._currentIndex);
       
-      let trimmedSearchString = controller.searchString.replace(/^\s+/, "").replace(/\s+$/, "");
-
-      let reusable = false;
-      if (itemExists) {
-        item = this.richlistbox.children[this._currentIndex];
-
-        
-        originalValue = item.getAttribute("url") || item.getAttribute("ac-value");
-        originalText = item.getAttribute("ac-text");
-        originalType = item.getAttribute("originaltype");
-
+      if (this.mPopupOpen && this.maxResults > this.maxRows) {
         
         
-        const UNREUSEABLE_STYLES = [
-          "autofill-profile",
-          "autofill-footer",
-          "autofill-clear-button",
-          "autofill-insecureWarning",
-          "generatedPassword",
-          "insecureWarning",
-          "loginsFooter",
-          "loginWithOrigin",
-        ];
-        
-        
-        reusable = originalType === style ||
-          !(UNREUSEABLE_STYLES.includes(style) || UNREUSEABLE_STYLES.includes(originalType));
+        this.richlistbox.ensureElementIsVisible(
+          this.richlistbox.selectedItem || this.richlistbox.firstElementChild
+        );
+      }
+      return val;
+    }
+
+    get selectedIndex() {
+      return this.richlistbox.selectedIndex;
+    }
+
+    get maxResults() {
+      
+      
+      
+      
+      if (this.getAttribute("nomaxresults") == "true") {
+        return Infinity;
+      }
+      return 20;
+    }
+
+    get matchCount() {
+      return Math.min(this.mInput.controller.matchCount, this.maxResults);
+    }
+
+    get overflowPadding() {
+      return Number(this.getAttribute("overflowpadding"));
+    }
+
+    set view(val) {
+      return val;
+    }
+
+    get view() {
+      return this.mInput.controller;
+    }
+
+    closePopup() {
+      if (this.mPopupOpen) {
+        this.hidePopup();
+        this.removeAttribute("width");
+      }
+    }
+
+    getNextIndex(aReverse, aAmount, aIndex, aMaxRow) {
+      if (aMaxRow < 0) {
+        return -1;
       }
 
-      
-      if (!reusable) {
-        let options = null;
-        switch (style) {
-          case "autofill-profile":
-            options = { is: "autocomplete-profile-listitem" };
-            break;
-          case "autofill-footer":
-            options = { is: "autocomplete-profile-listitem-footer" };
-            break;
-          case "autofill-clear-button":
-            options = { is: "autocomplete-profile-listitem-clear-button" };
-            break;
-          case "autofill-insecureWarning":
-            options = { is: "autocomplete-creditcard-insecure-field" };
-            break;
-          case "generatedPassword":
-            options = { is: "autocomplete-two-line-richlistitem" };
-            break;
-          case "insecureWarning":
-            options = { is: "autocomplete-richlistitem-insecure-warning" };
-            break;
-          case "loginsFooter":
-            options = { is: "autocomplete-richlistitem-logins-footer" };
-            break;
-          case "loginWithOrigin":
-            options = { is: "autocomplete-login-richlistitem" };
-            break;
-          default:
-            options = { is: "autocomplete-richlistitem" };
-        }
-        item = document.createXULElement("richlistitem", options);
-        item.className = "autocomplete-richlistitem";
+      var newIdx = aIndex + (aReverse ? -1 : 1) * aAmount;
+      if (
+        (aReverse && aIndex == -1) ||
+        (newIdx > aMaxRow && aIndex != aMaxRow)
+      ) {
+        newIdx = aMaxRow;
+      } else if ((!aReverse && aIndex == -1) || (newIdx < 0 && aIndex != 0)) {
+        newIdx = 0;
       }
 
-      item.setAttribute("dir", this.style.direction);
-      item.setAttribute("ac-image", image);
-      item.setAttribute("ac-value", value);
-      item.setAttribute("ac-label", label);
-      item.setAttribute("ac-comment", comment);
-      item.setAttribute("ac-text", trimmedSearchString);
-
-      
-      
-      
-      
-      let iface = Ci.nsIAutoCompletePopup;
-      if (reusable &&
-        originalText == trimmedSearchString &&
-        invalidateReason == iface.INVALIDATE_REASON_NEW_RESULT &&
-        (originalValue == value ||
-          this.mousedOverIndex === this._currentIndex)) {
-        
-        let reused = item._reuseAcItem();
-        if (reused) {
-          this._currentIndex++;
-          continue;
-        }
+      if (
+        (newIdx < 0 && aIndex == 0) ||
+        (newIdx > aMaxRow && aIndex == aMaxRow)
+      ) {
+        aIndex = -1;
       } else {
-        if (typeof item._cleanup == "function") {
-          item._cleanup();
-        }
-        item.setAttribute("originaltype", style);
+        aIndex = newIdx;
       }
 
-      if (reusable) {
+      return aIndex;
+    }
+
+    onPopupClick(aEvent) {
+      this.input.controller.handleEnter(true, aEvent);
+    }
+
+    onSearchBegin() {
+      this.mousedOverIndex = -1;
+
+      if (typeof this._onSearchBegin == "function") {
+        this._onSearchBegin();
+      }
+    }
+
+    openAutocompletePopup(aInput, aElement) {
+      
+      
+      
+      this._openAutocompletePopup(aInput, aElement);
+    }
+
+    _openAutocompletePopup(aInput, aElement) {
+      if (!this._initialized) {
+        this.initialize();
+        this._initialized = true;
+      }
+
+      if (!this.mPopupOpen) {
         
         
+        aInput.popup.hidden = false;
+
+        this.mInput = aInput;
         
+        this.selectedIndex = -1;
+
+        var width = aElement.getBoundingClientRect().width;
+        this.setAttribute("width", width > 100 ? width : 100);
         
-        
-        item._adjustAcItem();
-        item.collapsed = false;
-      } else if (itemExists) {
-        let oldItem = this.richlistbox.children[this._currentIndex];
-        this.richlistbox.replaceChild(item, oldItem);
+        this._invalidate();
+
+        this.openPopup(aElement, "after_start", 0, 0, false, false);
+      }
+    }
+
+    invalidate(reason) {
+      
+      if (!this.mPopupOpen) {
+        return;
+      }
+
+      this._invalidate(reason);
+    }
+
+    _invalidate(reason) {
+      
+      this.richlistbox.collapsed = this.matchCount == 0;
+
+      
+      if (this._adjustHeightRAFToken) {
+        cancelAnimationFrame(this._adjustHeightRAFToken);
+        this._adjustHeightRAFToken = null;
+      }
+
+      if (this.mPopupOpen) {
+        delete this._adjustHeightOnPopupShown;
+        this._adjustHeightRAFToken = requestAnimationFrame(() =>
+          this.adjustHeight()
+        );
       } else {
-        this.richlistbox.appendChild(item);
+        this._adjustHeightOnPopupShown = true;
       }
 
-      this._currentIndex++;
-    }
-
-    if (typeof this.onResultsAdded == "function") {
-      
-      
-      
-      Services.tm.dispatchToMainThread(() => this.onResultsAdded());
-    }
-
-    if (this._currentIndex < matchCount) {
-      
-      
-      this._appendResultTimeout = setTimeout(() => this._appendCurrentResult(), 0);
-    }
-  }
-
-  selectBy(aReverse, aPage) {
-    try {
-      var amount = aPage ? 5 : 1;
-
-      
-      this.selectedIndex = this.getNextIndex(aReverse, amount, this.selectedIndex, this.matchCount - 1);
-      if (this.selectedIndex == -1) {
-        this.input._focus();
+      this._currentIndex = 0;
+      if (this._appendResultTimeout) {
+        clearTimeout(this._appendResultTimeout);
       }
-    } catch (ex) {
-      
-      
-      
+      this._appendCurrentResult(reason);
     }
-  }
 
-  disconnectedCallback() {
-    if (this.listEvents) {
-      this.richlistbox.removeEventListener("mouseup", this.listEvents);
-      this.richlistbox.removeEventListener("mousemove", this.listEvents);
-      delete this.listEvents;
-    }
-  }
+    _collapseUnusedItems() {
+      let existingItemsCount = this.richlistbox.children.length;
+      for (let i = this.matchCount; i < existingItemsCount; ++i) {
+        let item = this.richlistbox.children[i];
 
-  setListeners() {
-    this.addEventListener("popupshowing", (event) => {
-      
-      
-
-      
-      if (this._normalMaxRows < 0 && this.mInput) {
-        this._normalMaxRows = this.mInput.maxRows;
+        item.collapsed = true;
+        if (typeof item._onCollapse == "function") {
+          item._onCollapse();
+        }
       }
+    }
+
+    adjustHeight() {
+      
+      let rows = this.richlistbox.children;
+      let numRows = Math.min(this.matchCount, this.maxRows, rows.length);
 
       
-      let inputID = "";
-      if (this.mInput && this.mInput.ownerDocument &&
-        this.mInput.ownerDocument.documentURIObject.schemeIs("chrome")) {
-        inputID = this.mInput.id;
+      let height = 0;
+      if (numRows) {
+        let firstRowRect = rows[0].getBoundingClientRect();
+        if (this._rlbPadding == undefined) {
+          let style = window.getComputedStyle(this.richlistbox);
+          let paddingTop = parseInt(style.paddingTop) || 0;
+          let paddingBottom = parseInt(style.paddingBottom) || 0;
+          this._rlbPadding = paddingTop + paddingBottom;
+        }
+
         
-        if (!inputID) {
-          let bindingParent = this.mInput.ownerDocument.getBindingParent(this.mInput);
-          if (bindingParent) {
-            inputID = bindingParent.id;
+        
+        
+        for (let i = 0; i < numRows; i++) {
+          if (rows[i].classList.contains("forceHandleUnderflow")) {
+            rows[i].handleOverUnderflow();
           }
         }
+
+        let lastRowRect = rows[numRows - 1].getBoundingClientRect();
+        
+        height = lastRowRect.bottom - firstRowRect.top + this._rlbPadding;
       }
-      this.setAttribute("autocompleteinput", inputID);
 
-      this.mPopupOpen = true;
-    });
-
-    this.addEventListener("popupshown", (event) => {
-       if (this._adjustHeightOnPopupShown) {
-        delete this._adjustHeightOnPopupShown;
-        this.adjustHeight();
+      let currentHeight = this.richlistbox.getBoundingClientRect().height;
+      if (height <= currentHeight) {
+        this._collapseUnusedItems();
       }
-    });
-
-    this.addEventListener("popuphiding", (event) => {
-      var isListActive = true;
-      if (this.selectedIndex == -1)
-        isListActive = false;
-      this.input.controller.stopSearch();
-
-      this.removeAttribute("autocompleteinput");
-      this.mPopupOpen = false;
-
+      this.richlistbox.style.removeProperty("height");
       
       
       
+      
+      this.richlistbox.height = Math.ceil(height);
+    }
+
+    _appendCurrentResult(invalidateReason) {
+      var controller = this.mInput.controller;
+      var matchCount = this.matchCount;
+      var existingItemsCount = this.richlistbox.children.length;
 
       
-      if (this.mInput && this._normalMaxRows > 0) {
-        this.mInput.maxRows = this._normalMaxRows;
+      for (let i = 0; i < this.maxRows; i++) {
+        if (this._currentIndex >= matchCount) {
+          break;
+        }
+        let item;
+        let itemExists = this._currentIndex < existingItemsCount;
+
+        let originalValue, originalText, originalType;
+        let style = controller.getStyleAt(this._currentIndex);
+        let value =
+          style && style.includes("autofill")
+            ? controller.getFinalCompleteValueAt(this._currentIndex)
+            : controller.getValueAt(this._currentIndex);
+        let label = controller.getLabelAt(this._currentIndex);
+        let comment = controller.getCommentAt(this._currentIndex);
+        let image = controller.getImageAt(this._currentIndex);
+        
+        let trimmedSearchString = controller.searchString
+          .replace(/^\s+/, "")
+          .replace(/\s+$/, "");
+
+        let reusable = false;
+        if (itemExists) {
+          item = this.richlistbox.children[this._currentIndex];
+
+          
+          originalValue =
+            item.getAttribute("url") || item.getAttribute("ac-value");
+          originalText = item.getAttribute("ac-text");
+          originalType = item.getAttribute("originaltype");
+
+          
+          
+          const UNREUSEABLE_STYLES = [
+            "autofill-profile",
+            "autofill-footer",
+            "autofill-clear-button",
+            "autofill-insecureWarning",
+            "generatedPassword",
+            "insecureWarning",
+            "loginsFooter",
+            "loginWithOrigin",
+          ];
+          
+          
+          reusable =
+            originalType === style ||
+            !(
+              UNREUSEABLE_STYLES.includes(style) ||
+              UNREUSEABLE_STYLES.includes(originalType)
+            );
+        }
+
+        
+        if (!reusable) {
+          let options = null;
+          switch (style) {
+            case "autofill-profile":
+              options = { is: "autocomplete-profile-listitem" };
+              break;
+            case "autofill-footer":
+              options = { is: "autocomplete-profile-listitem-footer" };
+              break;
+            case "autofill-clear-button":
+              options = { is: "autocomplete-profile-listitem-clear-button" };
+              break;
+            case "autofill-insecureWarning":
+              options = { is: "autocomplete-creditcard-insecure-field" };
+              break;
+            case "generatedPassword":
+              options = { is: "autocomplete-two-line-richlistitem" };
+              break;
+            case "insecureWarning":
+              options = { is: "autocomplete-richlistitem-insecure-warning" };
+              break;
+            case "loginsFooter":
+              options = { is: "autocomplete-richlistitem-logins-footer" };
+              break;
+            case "loginWithOrigin":
+              options = { is: "autocomplete-login-richlistitem" };
+              break;
+            default:
+              options = { is: "autocomplete-richlistitem" };
+          }
+          item = document.createXULElement("richlistitem", options);
+          item.className = "autocomplete-richlistitem";
+        }
+
+        item.setAttribute("dir", this.style.direction);
+        item.setAttribute("ac-image", image);
+        item.setAttribute("ac-value", value);
+        item.setAttribute("ac-label", label);
+        item.setAttribute("ac-comment", comment);
+        item.setAttribute("ac-text", trimmedSearchString);
+
+        
+        
+        
+        
+        let iface = Ci.nsIAutoCompletePopup;
+        if (
+          reusable &&
+          originalText == trimmedSearchString &&
+          invalidateReason == iface.INVALIDATE_REASON_NEW_RESULT &&
+          (originalValue == value ||
+            this.mousedOverIndex === this._currentIndex)
+        ) {
+          
+          let reused = item._reuseAcItem();
+          if (reused) {
+            this._currentIndex++;
+            continue;
+          }
+        } else {
+          if (typeof item._cleanup == "function") {
+            item._cleanup();
+          }
+          item.setAttribute("originaltype", style);
+        }
+
+        if (reusable) {
+          
+          
+          
+          
+          
+          item._adjustAcItem();
+          item.collapsed = false;
+        } else if (itemExists) {
+          let oldItem = this.richlistbox.children[this._currentIndex];
+          this.richlistbox.replaceChild(item, oldItem);
+        } else {
+          this.richlistbox.appendChild(item);
+        }
+
+        this._currentIndex++;
       }
-      this._normalMaxRows = -1;
-      
-      
 
-      
-      if (isListActive && this.mInput) {
-        this.mInput.mIgnoreFocus = true;
-        this.mInput._focus();
-        this.mInput.mIgnoreFocus = false;
+      if (typeof this.onResultsAdded == "function") {
+        
+        
+        
+        Services.tm.dispatchToMainThread(() => this.onResultsAdded());
       }
-    });
-  }
-};
 
-MozPopupElement.implementCustomInterface(MozElements.MozAutocompleteRichlistboxPopup, [Ci.nsIAutoCompletePopup]);
+      if (this._currentIndex < matchCount) {
+        
+        
+        this._appendResultTimeout = setTimeout(
+          () => this._appendCurrentResult(),
+          0
+        );
+      }
+    }
 
-customElements.define("autocomplete-richlistbox-popup", MozElements.MozAutocompleteRichlistboxPopup, {
-  extends: "panel",
-});
+    selectBy(aReverse, aPage) {
+      try {
+        var amount = aPage ? 5 : 1;
+
+        
+        this.selectedIndex = this.getNextIndex(
+          aReverse,
+          amount,
+          this.selectedIndex,
+          this.matchCount - 1
+        );
+        if (this.selectedIndex == -1) {
+          this.input._focus();
+        }
+      } catch (ex) {
+        
+        
+        
+      }
+    }
+
+    disconnectedCallback() {
+      if (this.listEvents) {
+        this.richlistbox.removeEventListener("mouseup", this.listEvents);
+        this.richlistbox.removeEventListener("mousemove", this.listEvents);
+        delete this.listEvents;
+      }
+    }
+
+    setListeners() {
+      this.addEventListener("popupshowing", event => {
+        
+        
+
+        
+        if (this._normalMaxRows < 0 && this.mInput) {
+          this._normalMaxRows = this.mInput.maxRows;
+        }
+
+        
+        let inputID = "";
+        if (
+          this.mInput &&
+          this.mInput.ownerDocument &&
+          this.mInput.ownerDocument.documentURIObject.schemeIs("chrome")
+        ) {
+          inputID = this.mInput.id;
+          
+          if (!inputID) {
+            let bindingParent = this.mInput.ownerDocument.getBindingParent(
+              this.mInput
+            );
+            if (bindingParent) {
+              inputID = bindingParent.id;
+            }
+          }
+        }
+        this.setAttribute("autocompleteinput", inputID);
+
+        this.mPopupOpen = true;
+      });
+
+      this.addEventListener("popupshown", event => {
+        if (this._adjustHeightOnPopupShown) {
+          delete this._adjustHeightOnPopupShown;
+          this.adjustHeight();
+        }
+      });
+
+      this.addEventListener("popuphiding", event => {
+        var isListActive = true;
+        if (this.selectedIndex == -1) {
+          isListActive = false;
+        }
+        this.input.controller.stopSearch();
+
+        this.removeAttribute("autocompleteinput");
+        this.mPopupOpen = false;
+
+        
+        
+        
+
+        
+        if (this.mInput && this._normalMaxRows > 0) {
+          this.mInput.maxRows = this._normalMaxRows;
+        }
+        this._normalMaxRows = -1;
+        
+        
+
+        
+        if (isListActive && this.mInput) {
+          this.mInput.mIgnoreFocus = true;
+          this.mInput._focus();
+          this.mInput.mIgnoreFocus = false;
+        }
+      });
+    }
+  };
+
+  MozPopupElement.implementCustomInterface(
+    MozElements.MozAutocompleteRichlistboxPopup,
+    [Ci.nsIAutoCompletePopup]
+  );
+
+  customElements.define(
+    "autocomplete-richlistbox-popup",
+    MozElements.MozAutocompleteRichlistboxPopup,
+    {
+      extends: "panel",
+    }
+  );
 }

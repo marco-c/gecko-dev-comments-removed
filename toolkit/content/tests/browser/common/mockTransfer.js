@@ -2,7 +2,10 @@
 
 
 
-Services.scriptloader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/MockObjects.js", this);
+Services.scriptloader.loadSubScript(
+  "chrome://mochikit/content/tests/SimpleTest/MockObjects.js",
+  this
+);
 
 var mockTransferCallback;
 
@@ -23,25 +26,38 @@ MockTransfer.prototype = {
   ]),
 
   
-  onStateChange: function MTFC_onStateChange(aWebProgress, aRequest,
-                                             aStateFlags, aStatus) {
+  onStateChange: function MTFC_onStateChange(
+    aWebProgress,
+    aRequest,
+    aStateFlags,
+    aStatus
+  ) {
     
-    if (!Components.isSuccessCode(aStatus))
+    if (!Components.isSuccessCode(aStatus)) {
       this._downloadIsSuccessful = false;
+    }
 
     
-    if ((aStateFlags & Ci.nsIWebProgressListener.STATE_STOP) &&
-        (aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK))
+    if (
+      aStateFlags & Ci.nsIWebProgressListener.STATE_STOP &&
+      aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK
+    ) {
       
       mockTransferCallback(this._downloadIsSuccessful);
+    }
   },
   onProgressChange() {},
   onLocationChange() {},
-  onStatusChange: function MTFC_onStatusChange(aWebProgress, aRequest, aStatus,
-                                               aMessage) {
+  onStatusChange: function MTFC_onStatusChange(
+    aWebProgress,
+    aRequest,
+    aStatus,
+    aMessage
+  ) {
     
-    if (!Components.isSuccessCode(aStatus))
+    if (!Components.isSuccessCode(aStatus)) {
       this._downloadIsSuccessful = false;
+    }
   },
   onSecurityChange() {},
   onContentBlockingEvent() {},
@@ -62,5 +78,7 @@ MockTransfer.prototype = {
 
 
 
-var mockTransferRegisterer =
-  new MockObjectRegisterer("@mozilla.org/transfer;1", MockTransfer);
+var mockTransferRegisterer = new MockObjectRegisterer(
+  "@mozilla.org/transfer;1",
+  MockTransfer
+);

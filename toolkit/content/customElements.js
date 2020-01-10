@@ -2,8 +2,8 @@
 
 
 
- 
- 
+
+
 
 
 "use strict";
@@ -11,673 +11,736 @@
 
 
 (() => {
-
-
-
-if (window.MozXULElement) {
-  return;
-}
-
-const MozElements = {};
-window.MozElements = MozElements;
-
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-const env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
-const instrumentClasses = env.get("MOZ_INSTRUMENT_CUSTOM_ELEMENTS");
-const instrumentedClasses = instrumentClasses ? new Set() : null;
-const instrumentedBaseClasses = instrumentClasses ? new WeakSet() : null;
-
-
-
-if (instrumentClasses) {
-  let define = window.customElements.define;
-  window.customElements.define = function(name, c, opts) {
-    instrumentCustomElementClass(c);
-    return define.call(this, name, c, opts);
-  };
-  window.addEventListener("load", () => {
-    MozElements.printInstrumentation(true);
-  }, { once: true, capture: true });
-}
-
-MozElements.printInstrumentation = function(collapsed) {
-  let summaries = [];
-  let totalCalls = 0;
-  let totalTime = 0;
-  for (let c of instrumentedClasses) {
-    
-    let includeClass = instrumentClasses == 1 ||
-        instrumentClasses.split(",").some(n => c.name.toLowerCase().includes(n.toLowerCase()));
-    let summary = c.__instrumentation_summary;
-    if (includeClass && summary) {
-      summaries.push(summary);
-      totalCalls += summary.totalCalls;
-      totalTime += summary.totalTime;
-    }
-  }
-  if (summaries.length) {
-    let groupName = `Instrumentation data for custom elements in ${document.documentURI}`;
-    console[collapsed ? "groupCollapsed" : "group"](groupName);
-    console.log(`Total function calls ${totalCalls} and total time spent inside ${totalTime.toFixed(2)}`);
-    for (let summary of summaries) {
-      console.log(`${summary.name} (# instances: ${summary.instances})`);
-      if (Object.keys(summary.data).length > 1) {
-        console.table(summary.data);
-      }
-    }
-    console.groupEnd(groupName);
-  }
-};
-
-function instrumentCustomElementClass(c) {
   
   
   
-  let inheritsFromBase = instrumentedBaseClasses.has(c);
-  let classesToInstrument = [c];
-  let proto = Object.getPrototypeOf(c);
-  while (proto) {
-    classesToInstrument.push(proto);
-    if (instrumentedBaseClasses.has(proto)) {
-      inheritsFromBase = true;
-      break;
-    }
-    proto = Object.getPrototypeOf(proto);
-  }
-
-  if (inheritsFromBase) {
-    for (let c of classesToInstrument.reverse()) {
-      instrumentIndividualClass(c);
-    }
-  }
-}
-
-function instrumentIndividualClass(c) {
-  if (instrumentedClasses.has((c))) {
+  if (window.MozXULElement) {
     return;
   }
 
-  instrumentedClasses.add((c));
-  let data = { instances: 0 };
+  const MozElements = {};
+  window.MozElements = MozElements;
 
-  function wrapFunction(name, fn) {
-    return function() {
-      if (!data[name]) {
-        data[name] = {time: 0, calls: 0};
-      }
-      data[name].calls++;
-      let n = performance.now();
-      let r = fn.apply(this, arguments);
-      data[name].time += performance.now() - n;
-      return r;
+  const { Services } = ChromeUtils.import(
+    "resource://gre/modules/Services.jsm"
+  );
+  const { AppConstants } = ChromeUtils.import(
+    "resource://gre/modules/AppConstants.jsm"
+  );
+  const env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
+  const instrumentClasses = env.get("MOZ_INSTRUMENT_CUSTOM_ELEMENTS");
+  const instrumentedClasses = instrumentClasses ? new Set() : null;
+  const instrumentedBaseClasses = instrumentClasses ? new WeakSet() : null;
+
+  
+  
+  if (instrumentClasses) {
+    let define = window.customElements.define;
+    window.customElements.define = function(name, c, opts) {
+      instrumentCustomElementClass(c);
+      return define.call(this, name, c, opts);
     };
-  }
-  function wrapPropertyDescriptor(obj, name) {
-    if (name == "constructor") {
-      return;
-    }
-    let prop = Object.getOwnPropertyDescriptor(obj, name);
-    if (prop.get) {
-      prop.get = wrapFunction(`<get> ${name}`, prop.get);
-    }
-    if (prop.set) {
-      prop.set = wrapFunction(`<set> ${name}`, prop.set);
-    }
-    if (prop.writable && prop.value && prop.value.apply) {
-      prop.value = wrapFunction(name, prop.value);
-    }
-    Object.defineProperty(obj, name, prop);
+    window.addEventListener(
+      "load",
+      () => {
+        MozElements.printInstrumentation(true);
+      },
+      { once: true, capture: true }
+    );
   }
 
-  
-  for (let name of Object.getOwnPropertyNames((c))) {
-    wrapPropertyDescriptor(c, name);
-  }
-
-  
-  for (let name of Object.getOwnPropertyNames(c.prototype)) {
-    wrapPropertyDescriptor(c.prototype, name);
-  }
-
-  c.__instrumentation_data = data;
-  Object.defineProperty(c, "__instrumentation_summary", {
-    enumerable: false,
-    configurable: false,
-    get() {
-      if (data.instances == 0) {
-        return null;
-      }
-
-      let clonedData = JSON.parse(JSON.stringify(data));
-      delete clonedData.instances;
-      let totalCalls = 0;
-      let totalTime = 0;
-      for (let d in clonedData) {
-        let {time, calls} = clonedData[d];
-        time = parseFloat(time.toFixed(2));
-        totalCalls += calls;
-        totalTime += time;
-        clonedData[d]["time (ms)"] = time;
-        delete clonedData[d].time;
-        clonedData[d].timePerCall = parseFloat((time / calls).toFixed(4));
-      }
-
-      let timePerCall =  parseFloat((totalTime / totalCalls).toFixed(4));
-      totalTime = parseFloat(totalTime.toFixed(2));
-
+  MozElements.printInstrumentation = function(collapsed) {
+    let summaries = [];
+    let totalCalls = 0;
+    let totalTime = 0;
+    for (let c of instrumentedClasses) {
       
-      clonedData["\ntotals"]  = { "time (ms)": `\n${totalTime}`, calls: `\n${totalCalls}`, timePerCall: `\n${timePerCall}` };
-      return {
-        instances: data.instances,
-        data: clonedData,
-        name: c.name,
-        totalCalls,
-        totalTime,
-      };
-    },
-  });
-}
-
-
-
-
-
-let gIsDOMContentLoaded = false;
-const gElementsPendingConnection = new Set();
-window.addEventListener("DOMContentLoaded", () => {
-  gIsDOMContentLoaded = true;
-  for (let element of gElementsPendingConnection) {
-    try {
-      if (element.isConnected) {
-        element.isRunningDelayedConnectedCallback = true;
-        element.connectedCallback();
-      }
-    } catch (ex) { console.error(ex); }
-    element.isRunningDelayedConnectedCallback = false;
-  }
-  gElementsPendingConnection.clear();
-}, { once: true, capture: true });
-
-const gXULDOMParser = new DOMParser();
-gXULDOMParser.forceEnableXULXBL();
-
-MozElements.MozElementMixin = Base => {
-  let MozElementBase = class extends Base {
-  constructor() {
-    super();
-
-    if (instrumentClasses) {
-      let proto = this.constructor;
-      while (proto && proto != Base) {
-        proto.__instrumentation_data.instances++;
-        proto = Object.getPrototypeOf(proto);
+      let includeClass =
+        instrumentClasses == 1 ||
+        instrumentClasses
+          .split(",")
+          .some(n => c.name.toLowerCase().includes(n.toLowerCase()));
+      let summary = c.__instrumentation_summary;
+      if (includeClass && summary) {
+        summaries.push(summary);
+        totalCalls += summary.totalCalls;
+        totalTime += summary.totalTime;
       }
     }
-  }
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static get inheritedAttributes() {
-    return null;
-  }
-
-  static get flippedInheritedAttributes() {
-    
-    
-    
-    
-    
-    
-    if (!this.hasOwnProperty("_flippedInheritedAttributes")) {
-      let {inheritedAttributes} = this;
-      if (!inheritedAttributes) {
-        this._flippedInheritedAttributes = null;
-      } else {
-        this._flippedInheritedAttributes = {};
-        for (let selector in inheritedAttributes) {
-          let attrRules = inheritedAttributes[selector].split(",");
-          for (let attrRule of attrRules) {
-            let attrName = attrRule;
-            let attrNewName = attrRule;
-            let split = attrName.split("=");
-            if (split.length == 2) {
-              attrName = split[1];
-              attrNewName = split[0];
-            }
-
-            if (!this._flippedInheritedAttributes[attrName]) {
-              this._flippedInheritedAttributes[attrName] = [];
-            }
-            this._flippedInheritedAttributes[attrName].push([selector, attrNewName]);
-          }
+    if (summaries.length) {
+      let groupName = `Instrumentation data for custom elements in ${
+        document.documentURI
+      }`;
+      console[collapsed ? "groupCollapsed" : "group"](groupName);
+      console.log(
+        `Total function calls ${totalCalls} and total time spent inside ${totalTime.toFixed(
+          2
+        )}`
+      );
+      for (let summary of summaries) {
+        console.log(`${summary.name} (# instances: ${summary.instances})`);
+        if (Object.keys(summary.data).length > 1) {
+          console.table(summary.data);
         }
       }
+      console.groupEnd(groupName);
     }
-
-    return this._flippedInheritedAttributes;
-  }
-  
-
-
-
-  static get observedAttributes() {
-    return Object.keys(this.flippedInheritedAttributes || {});
-  }
-
-  
-
-
-
-  attributeChangedCallback(name, oldValue, newValue) {
-    if (oldValue === newValue || !this.initializedAttributeInheritance) {
-      return;
-    }
-
-    let list = this.constructor.flippedInheritedAttributes[name];
-    if (list) {
-      this.inheritAttribute(list, name);
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  initializeAttributeInheritance() {
-    let {flippedInheritedAttributes} = this.constructor;
-    if (!flippedInheritedAttributes) {
-      return;
-    }
-
-    
-    this._inheritedElements = null;
-
-    this.initializedAttributeInheritance = true;
-    for (let attr in flippedInheritedAttributes) {
-      if (this.hasAttribute(attr)) {
-        this.inheritAttribute(flippedInheritedAttributes[attr], attr);
-      }
-    }
-  }
-
-  
-
-
-
-
-
-
-
-  inheritAttribute(list, attr) {
-    if (!this._inheritedElements) {
-      this._inheritedElements = {};
-    }
-
-    let hasAttr = this.hasAttribute(attr);
-    let attrValue = this.getAttribute(attr);
-
-    for (let [selector, newAttr] of list) {
-      if (!(selector in this._inheritedElements)) {
-        let parent = this.shadowRoot || this;
-        this._inheritedElements[selector] = parent.querySelector(selector);
-      }
-      let el = this._inheritedElements[selector];
-      if (el) {
-        if (newAttr == "text") {
-          el.textContent = hasAttr ? attrValue : "";
-        } else if (hasAttr) {
-          el.setAttribute(newAttr, attrValue);
-        } else {
-          el.removeAttribute(newAttr);
-        }
-      }
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  delayConnectedCallback() {
-    if (gIsDOMContentLoaded) {
-      return false;
-    }
-    gElementsPendingConnection.add(this);
-    return true;
-  }
-
-  get isConnectedAndReady() {
-    return gIsDOMContentLoaded && this.isConnected;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static parseXULToFragment(str, entities = []) {
-    let doc = gXULDOMParser.parseFromString(`
-      ${entities.length ? `<!DOCTYPE bindings [
-        ${entities.reduce((preamble, url, index) => {
-          return preamble + `<!ENTITY % _dtd-${index} SYSTEM "${url}">
-            %_dtd-${index};
-            `;
-        }, "")}
-      ]>` : ""}
-      <box xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-           xmlns:html="http://www.w3.org/1999/xhtml">
-        ${str}
-      </box>
-    `, "application/xml");
-    
-    
-    
-    let nodeIterator = doc.createNodeIterator(doc, NodeFilter.SHOW_TEXT);
-    let currentNode = nodeIterator.nextNode();
-    while (currentNode) {
-      
-      
-      if (!(/[^\t\n\r ]/.test(currentNode.textContent))) {
-        currentNode.remove();
-      }
-
-      currentNode = nodeIterator.nextNode();
-    }
-    
-    
-    let range = doc.createRange();
-    range.selectNodeContents(doc.querySelector("box"));
-    return range.extractContents();
-  }
-
-  
-
-
-
-
-
-
-
-
-  static insertFTLIfNeeded(path) {
-    let container = document.head || document.querySelector("linkset");
-    if (!container) {
-      if (document.contentType == "application/vnd.mozilla.xul+xml") {
-        container = document.createXULElement("linkset");
-        document.documentElement.appendChild(container);
-      } else if (document.documentURI == AppConstants.BROWSER_CHROME_URL) {
-        
-        
-        container = document.documentElement;
-      } else {
-        throw new Error("Attempt to inject localization link before document.head is available");
-      }
-    }
-
-    for (let link of container.querySelectorAll("link")) {
-      if (link.getAttribute("href") == path) {
-        return;
-      }
-    }
-
-    let link = document.createElementNS("http://www.w3.org/1999/xhtml",
-                                        "link");
-    link.setAttribute("rel", "localization");
-    link.setAttribute("href", path);
-
-    container.appendChild(link);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  static implementCustomInterface(cls, ifaces) {
-    if (cls.prototype.customInterfaces) {
-      ifaces.push(...cls.prototype.customInterfaces);
-    }
-    cls.prototype.customInterfaces = ifaces;
-
-    cls.prototype.QueryInterface = ChromeUtils.generateQI(ifaces);
-    cls.prototype.getCustomInterfaceCallback = function getCustomInterfaceCallback(ifaceToCheck) {
-      if (cls.prototype.customInterfaces.some(iface => iface.equals(ifaceToCheck))) {
-        return getInterfaceProxy(this);
-      }
-      return null;
-    };
-  }
   };
 
-  
-  Object.defineProperty(MozElementBase, "name", {value: `Moz${Base.name}`});
-  if (instrumentedBaseClasses) {
-    instrumentedBaseClasses.add(MozElementBase);
+  function instrumentCustomElementClass(c) {
+    
+    
+    
+    let inheritsFromBase = instrumentedBaseClasses.has(c);
+    let classesToInstrument = [c];
+    let proto = Object.getPrototypeOf(c);
+    while (proto) {
+      classesToInstrument.push(proto);
+      if (instrumentedBaseClasses.has(proto)) {
+        inheritsFromBase = true;
+        break;
+      }
+      proto = Object.getPrototypeOf(proto);
+    }
+
+    if (inheritsFromBase) {
+      for (let c of classesToInstrument.reverse()) {
+        instrumentIndividualClass(c);
+      }
+    }
   }
-  return MozElementBase;
-};
 
-const MozXULElement = MozElements.MozElementMixin(XULElement);
+  function instrumentIndividualClass(c) {
+    if (instrumentedClasses.has(c)) {
+      return;
+    }
 
+    instrumentedClasses.add(c);
+    let data = { instances: 0 };
 
-
-
-
-function getInterfaceProxy(obj) {
-  
-  if (!obj._customInterfaceProxy) {
-    obj._customInterfaceProxy = new Proxy(obj, {
-      get(target, prop, receiver) {
-        let propOrMethod = target[prop];
-        if (typeof propOrMethod == "function") {
-          if (propOrMethod instanceof MozQueryInterface) {
-            return Reflect.get(target, prop, receiver);
-          }
-          return function(...args) {
-            return propOrMethod.apply(target, args);
-          };
+    function wrapFunction(name, fn) {
+      return function() {
+        if (!data[name]) {
+          data[name] = { time: 0, calls: 0 };
         }
-        return propOrMethod;
+        data[name].calls++;
+        let n = performance.now();
+        let r = fn.apply(this, arguments);
+        data[name].time += performance.now() - n;
+        return r;
+      };
+    }
+    function wrapPropertyDescriptor(obj, name) {
+      if (name == "constructor") {
+        return;
+      }
+      let prop = Object.getOwnPropertyDescriptor(obj, name);
+      if (prop.get) {
+        prop.get = wrapFunction(`<get> ${name}`, prop.get);
+      }
+      if (prop.set) {
+        prop.set = wrapFunction(`<set> ${name}`, prop.set);
+      }
+      if (prop.writable && prop.value && prop.value.apply) {
+        prop.value = wrapFunction(name, prop.value);
+      }
+      Object.defineProperty(obj, name, prop);
+    }
+
+    
+    for (let name of Object.getOwnPropertyNames(c)) {
+      wrapPropertyDescriptor(c, name);
+    }
+
+    
+    for (let name of Object.getOwnPropertyNames(c.prototype)) {
+      wrapPropertyDescriptor(c.prototype, name);
+    }
+
+    c.__instrumentation_data = data;
+    Object.defineProperty(c, "__instrumentation_summary", {
+      enumerable: false,
+      configurable: false,
+      get() {
+        if (data.instances == 0) {
+          return null;
+        }
+
+        let clonedData = JSON.parse(JSON.stringify(data));
+        delete clonedData.instances;
+        let totalCalls = 0;
+        let totalTime = 0;
+        for (let d in clonedData) {
+          let { time, calls } = clonedData[d];
+          time = parseFloat(time.toFixed(2));
+          totalCalls += calls;
+          totalTime += time;
+          clonedData[d]["time (ms)"] = time;
+          delete clonedData[d].time;
+          clonedData[d].timePerCall = parseFloat((time / calls).toFixed(4));
+        }
+
+        let timePerCall = parseFloat((totalTime / totalCalls).toFixed(4));
+        totalTime = parseFloat(totalTime.toFixed(2));
+
+        
+        clonedData["\ntotals"] = {
+          "time (ms)": `\n${totalTime}`,
+          calls: `\n${totalCalls}`,
+          timePerCall: `\n${timePerCall}`,
+        };
+        return {
+          instances: data.instances,
+          data: clonedData,
+          name: c.name,
+          totalCalls,
+          totalTime,
+        };
       },
     });
   }
 
-  return obj._customInterfaceProxy;
-}
+  
+  
+  
+  
+  let gIsDOMContentLoaded = false;
+  const gElementsPendingConnection = new Set();
+  window.addEventListener(
+    "DOMContentLoaded",
+    () => {
+      gIsDOMContentLoaded = true;
+      for (let element of gElementsPendingConnection) {
+        try {
+          if (element.isConnected) {
+            element.isRunningDelayedConnectedCallback = true;
+            element.connectedCallback();
+          }
+        } catch (ex) {
+          console.error(ex);
+        }
+        element.isRunningDelayedConnectedCallback = false;
+      }
+      gElementsPendingConnection.clear();
+    },
+    { once: true, capture: true }
+  );
 
-MozElements.BaseControlMixin = Base => {
-  class BaseControl extends Base {
-    get disabled() {
-      return this.getAttribute("disabled") == "true";
+  const gXULDOMParser = new DOMParser();
+  gXULDOMParser.forceEnableXULXBL();
+
+  MozElements.MozElementMixin = Base => {
+    let MozElementBase = class extends Base {
+      constructor() {
+        super();
+
+        if (instrumentClasses) {
+          let proto = this.constructor;
+          while (proto && proto != Base) {
+            proto.__instrumentation_data.instances++;
+            proto = Object.getPrototypeOf(proto);
+          }
+        }
+      }
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      static get inheritedAttributes() {
+        return null;
+      }
+
+      static get flippedInheritedAttributes() {
+        
+        
+        
+        
+        
+        
+        if (!this.hasOwnProperty("_flippedInheritedAttributes")) {
+          let { inheritedAttributes } = this;
+          if (!inheritedAttributes) {
+            this._flippedInheritedAttributes = null;
+          } else {
+            this._flippedInheritedAttributes = {};
+            for (let selector in inheritedAttributes) {
+              let attrRules = inheritedAttributes[selector].split(",");
+              for (let attrRule of attrRules) {
+                let attrName = attrRule;
+                let attrNewName = attrRule;
+                let split = attrName.split("=");
+                if (split.length == 2) {
+                  attrName = split[1];
+                  attrNewName = split[0];
+                }
+
+                if (!this._flippedInheritedAttributes[attrName]) {
+                  this._flippedInheritedAttributes[attrName] = [];
+                }
+                this._flippedInheritedAttributes[attrName].push([
+                  selector,
+                  attrNewName,
+                ]);
+              }
+            }
+          }
+        }
+
+        return this._flippedInheritedAttributes;
+      }
+      
+
+
+
+      static get observedAttributes() {
+        return Object.keys(this.flippedInheritedAttributes || {});
+      }
+
+      
+
+
+
+      attributeChangedCallback(name, oldValue, newValue) {
+        if (oldValue === newValue || !this.initializedAttributeInheritance) {
+          return;
+        }
+
+        let list = this.constructor.flippedInheritedAttributes[name];
+        if (list) {
+          this.inheritAttribute(list, name);
+        }
+      }
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+      initializeAttributeInheritance() {
+        let { flippedInheritedAttributes } = this.constructor;
+        if (!flippedInheritedAttributes) {
+          return;
+        }
+
+        
+        this._inheritedElements = null;
+
+        this.initializedAttributeInheritance = true;
+        for (let attr in flippedInheritedAttributes) {
+          if (this.hasAttribute(attr)) {
+            this.inheritAttribute(flippedInheritedAttributes[attr], attr);
+          }
+        }
+      }
+
+      
+
+
+
+
+
+
+
+      inheritAttribute(list, attr) {
+        if (!this._inheritedElements) {
+          this._inheritedElements = {};
+        }
+
+        let hasAttr = this.hasAttribute(attr);
+        let attrValue = this.getAttribute(attr);
+
+        for (let [selector, newAttr] of list) {
+          if (!(selector in this._inheritedElements)) {
+            let parent = this.shadowRoot || this;
+            this._inheritedElements[selector] = parent.querySelector(selector);
+          }
+          let el = this._inheritedElements[selector];
+          if (el) {
+            if (newAttr == "text") {
+              el.textContent = hasAttr ? attrValue : "";
+            } else if (hasAttr) {
+              el.setAttribute(newAttr, attrValue);
+            } else {
+              el.removeAttribute(newAttr);
+            }
+          }
+        }
+      }
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+      delayConnectedCallback() {
+        if (gIsDOMContentLoaded) {
+          return false;
+        }
+        gElementsPendingConnection.add(this);
+        return true;
+      }
+
+      get isConnectedAndReady() {
+        return gIsDOMContentLoaded && this.isConnected;
+      }
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      static parseXULToFragment(str, entities = []) {
+        let doc = gXULDOMParser.parseFromString(
+          `
+      ${
+        entities.length
+          ? `<!DOCTYPE bindings [
+        ${entities.reduce((preamble, url, index) => {
+          return (
+            preamble +
+            `<!ENTITY % _dtd-${index} SYSTEM "${url}">
+            %_dtd-${index};
+            `
+          );
+        }, "")}
+      ]>`
+          : ""
+      }
+      <box xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+           xmlns:html="http://www.w3.org/1999/xhtml">
+        ${str}
+      </box>
+    `,
+          "application/xml"
+        );
+        
+        
+        
+        let nodeIterator = doc.createNodeIterator(doc, NodeFilter.SHOW_TEXT);
+        let currentNode = nodeIterator.nextNode();
+        while (currentNode) {
+          
+          
+          if (!/[^\t\n\r ]/.test(currentNode.textContent)) {
+            currentNode.remove();
+          }
+
+          currentNode = nodeIterator.nextNode();
+        }
+        
+        
+        let range = doc.createRange();
+        range.selectNodeContents(doc.querySelector("box"));
+        return range.extractContents();
+      }
+
+      
+
+
+
+
+
+
+
+
+      static insertFTLIfNeeded(path) {
+        let container = document.head || document.querySelector("linkset");
+        if (!container) {
+          if (document.contentType == "application/vnd.mozilla.xul+xml") {
+            container = document.createXULElement("linkset");
+            document.documentElement.appendChild(container);
+          } else if (document.documentURI == AppConstants.BROWSER_CHROME_URL) {
+            
+            
+            container = document.documentElement;
+          } else {
+            throw new Error(
+              "Attempt to inject localization link before document.head is available"
+            );
+          }
+        }
+
+        for (let link of container.querySelectorAll("link")) {
+          if (link.getAttribute("href") == path) {
+            return;
+          }
+        }
+
+        let link = document.createElementNS(
+          "http://www.w3.org/1999/xhtml",
+          "link"
+        );
+        link.setAttribute("rel", "localization");
+        link.setAttribute("href", path);
+
+        container.appendChild(link);
+      }
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+      static implementCustomInterface(cls, ifaces) {
+        if (cls.prototype.customInterfaces) {
+          ifaces.push(...cls.prototype.customInterfaces);
+        }
+        cls.prototype.customInterfaces = ifaces;
+
+        cls.prototype.QueryInterface = ChromeUtils.generateQI(ifaces);
+        cls.prototype.getCustomInterfaceCallback = function getCustomInterfaceCallback(
+          ifaceToCheck
+        ) {
+          if (
+            cls.prototype.customInterfaces.some(iface =>
+              iface.equals(ifaceToCheck)
+            )
+          ) {
+            return getInterfaceProxy(this);
+          }
+          return null;
+        };
+      }
+    };
+
+    
+    Object.defineProperty(MozElementBase, "name", { value: `Moz${Base.name}` });
+    if (instrumentedBaseClasses) {
+      instrumentedBaseClasses.add(MozElementBase);
+    }
+    return MozElementBase;
+  };
+
+  const MozXULElement = MozElements.MozElementMixin(XULElement);
+
+  
+
+
+
+  function getInterfaceProxy(obj) {
+    
+    if (!obj._customInterfaceProxy) {
+      obj._customInterfaceProxy = new Proxy(obj, {
+        get(target, prop, receiver) {
+          let propOrMethod = target[prop];
+          if (typeof propOrMethod == "function") {
+            if (propOrMethod instanceof MozQueryInterface) {
+              return Reflect.get(target, prop, receiver);
+            }
+            return function(...args) {
+              return propOrMethod.apply(target, args);
+            };
+          }
+          return propOrMethod;
+        },
+      });
     }
 
-    set disabled(val) {
-      if (val) {
-        this.setAttribute("disabled", "true");
-      } else {
-        this.removeAttribute("disabled");
+    return obj._customInterfaceProxy;
+  }
+
+  MozElements.BaseControlMixin = Base => {
+    class BaseControl extends Base {
+      get disabled() {
+        return this.getAttribute("disabled") == "true";
+      }
+
+      set disabled(val) {
+        if (val) {
+          this.setAttribute("disabled", "true");
+        } else {
+          this.removeAttribute("disabled");
+        }
+      }
+
+      get tabIndex() {
+        return parseInt(this.getAttribute("tabindex")) || 0;
+      }
+
+      set tabIndex(val) {
+        if (val) {
+          this.setAttribute("tabindex", val);
+        } else {
+          this.removeAttribute("tabindex");
+        }
       }
     }
 
-    get tabIndex() {
-      return parseInt(this.getAttribute("tabindex")) || 0;
-    }
+    MozXULElement.implementCustomInterface(BaseControl, [
+      Ci.nsIDOMXULControlElement,
+    ]);
+    return BaseControl;
+  };
+  MozElements.BaseControl = MozElements.BaseControlMixin(MozXULElement);
 
-    set tabIndex(val) {
-      if (val) {
-        this.setAttribute("tabindex", val);
-      } else {
-        this.removeAttribute("tabindex");
+  const BaseTextMixin = Base =>
+    class BaseText extends MozElements.BaseControlMixin(Base) {
+      set label(val) {
+        this.setAttribute("label", val);
+        return val;
       }
-    }
-  }
 
-  MozXULElement.implementCustomInterface(BaseControl,
-                                         [Ci.nsIDOMXULControlElement]);
-  return BaseControl;
-};
-MozElements.BaseControl = MozElements.BaseControlMixin(MozXULElement);
+      get label() {
+        return this.getAttribute("label");
+      }
 
-const BaseTextMixin = Base => class BaseText extends MozElements.BaseControlMixin(Base) {
-  set label(val) {
-    this.setAttribute("label", val);
-    return val;
-  }
+      set crop(val) {
+        this.setAttribute("crop", val);
+        return val;
+      }
 
-  get label() {
-    return this.getAttribute("label");
-  }
+      get crop() {
+        return this.getAttribute("crop");
+      }
 
-  set crop(val) {
-    this.setAttribute("crop", val);
-    return val;
-  }
+      set image(val) {
+        this.setAttribute("image", val);
+        return val;
+      }
 
-  get crop() {
-    return this.getAttribute("crop");
-  }
+      get image() {
+        return this.getAttribute("image");
+      }
 
-  set image(val) {
-    this.setAttribute("image", val);
-    return val;
-  }
+      set command(val) {
+        this.setAttribute("command", val);
+        return val;
+      }
 
-  get image() {
-    return this.getAttribute("image");
-  }
+      get command() {
+        return this.getAttribute("command");
+      }
 
-  set command(val) {
-    this.setAttribute("command", val);
-    return val;
-  }
+      set accessKey(val) {
+        
+        this.setAttribute("accesskey", val);
+        
+        
+        if (this.labelElement) {
+          this.labelElement.accessKey = val;
+        }
+        return val;
+      }
 
-  get command() {
-    return this.getAttribute("command");
-  }
+      get accessKey() {
+        return this.labelElement
+          ? this.labelElement.accessKey
+          : this.getAttribute("accesskey");
+      }
+    };
+  MozElements.BaseTextMixin = BaseTextMixin;
+  MozElements.BaseText = BaseTextMixin(MozXULElement);
 
-  set accessKey(val) {
-    
-    this.setAttribute("accesskey", val);
-    
-    
-    if (this.labelElement) {
-      this.labelElement.accessKey = val;
-    }
-    return val;
-  }
+  
+  window.MozXULElement = MozXULElement;
 
-  get accessKey() {
-    return this.labelElement ? this.labelElement.accessKey : this.getAttribute("accesskey");
-  }
-};
-MozElements.BaseTextMixin = BaseTextMixin;
-MozElements.BaseText = BaseTextMixin(MozXULElement);
+  customElements.setElementCreationCallback("browser", () => {
+    Services.scriptloader.loadSubScript(
+      "chrome://global/content/elements/browser-custom-element.js",
+      window
+    );
+  });
 
-
-window.MozXULElement = MozXULElement;
-
-customElements.setElementCreationCallback("browser", () => {
-  Services.scriptloader.loadSubScript("chrome://global/content/elements/browser-custom-element.js", window);
-});
-
-
-
-const isDummyDocument = document.documentURI == "chrome://extensions/content/dummy.xul";
-if (!isDummyDocument) {
-  for (let script of [
-    "chrome://global/content/elements/dialog.js",
-    "chrome://global/content/elements/general.js",
-    "chrome://global/content/elements/button.js",
-    "chrome://global/content/elements/checkbox.js",
-    "chrome://global/content/elements/menu.js",
-    "chrome://global/content/elements/menupopup.js",
-    "chrome://global/content/elements/notificationbox.js",
-    "chrome://global/content/elements/popupnotification.js",
-    "chrome://global/content/elements/radio.js",
-    "chrome://global/content/elements/richlistbox.js",
-    "chrome://global/content/elements/autocomplete-popup.js",
-    "chrome://global/content/elements/autocomplete-richlistitem.js",
-    "chrome://global/content/elements/textbox.js",
-    "chrome://global/content/elements/tabbox.js",
-    "chrome://global/content/elements/text.js",
-    "chrome://global/content/elements/toolbarbutton.js",
-    "chrome://global/content/elements/tree.js",
-    "chrome://global/content/elements/wizard.js",
-  ]) {
-    Services.scriptloader.loadSubScript(script, window);
-  }
-
-  for (let [tag, script] of [
-    ["findbar", "chrome://global/content/elements/findbar.js"],
-    ["menulist", "chrome://global/content/elements/menulist.js"],
-    ["search-textbox", "chrome://global/content/elements/search-textbox.js"],
-    ["stringbundle", "chrome://global/content/elements/stringbundle.js"],
-    ["printpreview-toolbar", "chrome://global/content/printPreviewToolbar.js"],
-    ["editor", "chrome://global/content/elements/editor.js"],
-  ]) {
-    customElements.setElementCreationCallback(tag, () => {
+  
+  
+  const isDummyDocument =
+    document.documentURI == "chrome://extensions/content/dummy.xul";
+  if (!isDummyDocument) {
+    for (let script of [
+      "chrome://global/content/elements/dialog.js",
+      "chrome://global/content/elements/general.js",
+      "chrome://global/content/elements/button.js",
+      "chrome://global/content/elements/checkbox.js",
+      "chrome://global/content/elements/menu.js",
+      "chrome://global/content/elements/menupopup.js",
+      "chrome://global/content/elements/notificationbox.js",
+      "chrome://global/content/elements/popupnotification.js",
+      "chrome://global/content/elements/radio.js",
+      "chrome://global/content/elements/richlistbox.js",
+      "chrome://global/content/elements/autocomplete-popup.js",
+      "chrome://global/content/elements/autocomplete-richlistitem.js",
+      "chrome://global/content/elements/textbox.js",
+      "chrome://global/content/elements/tabbox.js",
+      "chrome://global/content/elements/text.js",
+      "chrome://global/content/elements/toolbarbutton.js",
+      "chrome://global/content/elements/tree.js",
+      "chrome://global/content/elements/wizard.js",
+    ]) {
       Services.scriptloader.loadSubScript(script, window);
-    });
+    }
+
+    for (let [tag, script] of [
+      ["findbar", "chrome://global/content/elements/findbar.js"],
+      ["menulist", "chrome://global/content/elements/menulist.js"],
+      ["search-textbox", "chrome://global/content/elements/search-textbox.js"],
+      ["stringbundle", "chrome://global/content/elements/stringbundle.js"],
+      [
+        "printpreview-toolbar",
+        "chrome://global/content/printPreviewToolbar.js",
+      ],
+      ["editor", "chrome://global/content/elements/editor.js"],
+    ]) {
+      customElements.setElementCreationCallback(tag, () => {
+        Services.scriptloader.loadSubScript(script, window);
+      });
+    }
   }
-}
 })();

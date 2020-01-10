@@ -17,7 +17,8 @@ this.PluginProblemWidget = class {
 
   onsetup() {
     const parser = new this.window.DOMParser();
-    let parserDoc = parser.parseFromString(`
+    let parserDoc = parser.parseFromString(
+      `
       <!DOCTYPE bindings [
         <!ENTITY % pluginproblemDTD SYSTEM "chrome://pluginproblem/locale/pluginproblem.dtd">
         <!ENTITY % globalDTD SYSTEM "chrome://global/locale/global.dtd">
@@ -70,13 +71,20 @@ this.PluginProblemWidget = class {
       </div>
       <button class="closeIcon" id="closeIcon" title="&hidePluginBtn.label;"/>
     </div>
-    `, "application/xml");
-    this.shadowRoot.importNodeAndAppendChildAt(this.shadowRoot,
-                                               parserDoc.documentElement, true);
+    `,
+      "application/xml"
+    );
+    this.shadowRoot.importNodeAndAppendChildAt(
+      this.shadowRoot,
+      parserDoc.documentElement,
+      true
+    );
 
     
     
     
-    this.element.dispatchEvent(new this.window.CustomEvent("PluginBindingAttached"));
+    this.element.dispatchEvent(
+      new this.window.CustomEvent("PluginBindingAttached")
+    );
   }
 };

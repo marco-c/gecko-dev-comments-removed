@@ -1,37 +1,61 @@
 add_task(async function() {
-  await BrowserTestUtils.withNewTab({gBrowser, url: "about:preferences"}, async function(browser) {
-    let newTabURL = "http://www.example.com/";
-    await ContentTask.spawn(browser, newTabURL, async function(newTabURL) {
-      let doc = content.document;
-      let label = doc.createXULElement("label", {is: "text-link"});
-      label.href = newTabURL;
-      label.id = "textlink-test";
-      label.textContent = "click me";
-      doc.documentElement.append(label);
-    });
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:preferences" },
+    async function(browser) {
+      let newTabURL = "http://www.example.com/";
+      await ContentTask.spawn(browser, newTabURL, async function(newTabURL) {
+        let doc = content.document;
+        let label = doc.createXULElement("label", { is: "text-link" });
+        label.href = newTabURL;
+        label.id = "textlink-test";
+        label.textContent = "click me";
+        doc.documentElement.append(label);
+      });
 
-    
-    let awaitNewTab = BrowserTestUtils.waitForNewTab(gBrowser, newTabURL);
-    await BrowserTestUtils.synthesizeMouseAtCenter("#textlink-test", {}, browser);
-    let newTab = await awaitNewTab;
-    is(newTab.linkedBrowser, gBrowser.selectedBrowser, "selected tab should be example page");
-    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+      
+      let awaitNewTab = BrowserTestUtils.waitForNewTab(gBrowser, newTabURL);
+      await BrowserTestUtils.synthesizeMouseAtCenter(
+        "#textlink-test",
+        {},
+        browser
+      );
+      let newTab = await awaitNewTab;
+      is(
+        newTab.linkedBrowser,
+        gBrowser.selectedBrowser,
+        "selected tab should be example page"
+      );
+      BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
-    
-    awaitNewTab = BrowserTestUtils.waitForNewTab(gBrowser, newTabURL);
-    await BrowserTestUtils.synthesizeMouseAtCenter("#textlink-test",
-      {ctrlKey: true, metaKey: true, shiftKey: true},
-      browser);
-    await awaitNewTab;
-    is(gBrowser.selectedBrowser, browser, "selected tab should be original tab");
-    BrowserTestUtils.removeTab(gBrowser.tabs[gBrowser.tabs.length - 1]);
+      
+      awaitNewTab = BrowserTestUtils.waitForNewTab(gBrowser, newTabURL);
+      await BrowserTestUtils.synthesizeMouseAtCenter(
+        "#textlink-test",
+        { ctrlKey: true, metaKey: true, shiftKey: true },
+        browser
+      );
+      await awaitNewTab;
+      is(
+        gBrowser.selectedBrowser,
+        browser,
+        "selected tab should be original tab"
+      );
+      BrowserTestUtils.removeTab(gBrowser.tabs[gBrowser.tabs.length - 1]);
 
-    
-    awaitNewTab = BrowserTestUtils.waitForNewTab(gBrowser, newTabURL);
-    await BrowserTestUtils.synthesizeMouseAtCenter("#textlink-test",
-      {button: 1}, browser);
-    newTab = await awaitNewTab;
-    is(newTab.linkedBrowser, gBrowser.selectedBrowser, "selected tab should be example page");
-    BrowserTestUtils.removeTab(gBrowser.tabs[gBrowser.tabs.length - 1]);
-  });
+      
+      awaitNewTab = BrowserTestUtils.waitForNewTab(gBrowser, newTabURL);
+      await BrowserTestUtils.synthesizeMouseAtCenter(
+        "#textlink-test",
+        { button: 1 },
+        browser
+      );
+      newTab = await awaitNewTab;
+      is(
+        newTab.linkedBrowser,
+        gBrowser.selectedBrowser,
+        "selected tab should be example page"
+      );
+      BrowserTestUtils.removeTab(gBrowser.tabs[gBrowser.tabs.length - 1]);
+    }
+  );
 });

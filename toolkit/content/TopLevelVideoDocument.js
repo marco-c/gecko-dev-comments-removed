@@ -29,18 +29,24 @@
   setFocusToVideoElement();
 
   
-  let observer = new MutationObserver(
-    () => {
-      observer.disconnect();
-      document.removeEventListener("focus", setFocusToVideoElement, true);
-    });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  let observer = new MutationObserver(() => {
+    observer.disconnect();
+    document.removeEventListener("focus", setFocusToVideoElement, true);
+  });
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+  });
 
   
   document.addEventListener("keypress", ev => {
     
     
-    if (ev.key == "F11" && videoElement.videoWidth != 0 && videoElement.videoHeight != 0) {
+    if (
+      ev.key == "F11" &&
+      videoElement.videoWidth != 0 &&
+      videoElement.videoHeight != 0
+    ) {
       
       
       

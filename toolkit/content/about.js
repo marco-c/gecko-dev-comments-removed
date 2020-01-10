@@ -2,10 +2,12 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
-var releaseNotesURL = Services.urlFormatter.formatURLPref("app.releaseNotesURL");
+var releaseNotesURL = Services.urlFormatter.formatURLPref(
+  "app.releaseNotesURL"
+);
 if (releaseNotesURL != "about:blank") {
   var relnotes = document.getElementById("releaseNotesURL");
   relnotes.setAttribute("href", releaseNotesURL);

@@ -15,7 +15,10 @@ add_task(async function test_hotkey_event_propagation() {
   info("Ensure hotkeys are not affected by stopPropagation.");
 
   
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE_URI);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_PAGE_URI
+  );
   let browser = gBrowser.getBrowserForTab(tab);
   let findbar = await gBrowser.getFindBar();
 
@@ -60,24 +63,35 @@ add_task(async function test_hotkey_event_propagation() {
 add_task(async function test_not_found() {
   info("Check correct 'Phrase not found' on new tab");
 
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE_URI);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_PAGE_URI
+  );
 
   
   await promiseFindFinished("--- THIS SHOULD NEVER MATCH ---", false);
   let findbar = gBrowser.getCachedFindBar();
-  is(findbar._findStatusDesc.textContent, findbar._notFoundStr,
-     "Findbar status text should be 'Phrase not found'");
+  is(
+    findbar._findStatusDesc.textContent,
+    findbar._notFoundStr,
+    "Findbar status text should be 'Phrase not found'"
+  );
 
   gBrowser.removeTab(tab);
 });
 
 add_task(async function test_found() {
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE_URI);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_PAGE_URI
+  );
 
   
   await promiseFindFinished("S", true);
-  ok(!gBrowser.getCachedFindBar()._findStatusDesc.textContent,
-     "Findbar status should be empty");
+  ok(
+    !gBrowser.getCachedFindBar()._findStatusDesc.textContent,
+    "Findbar status should be empty"
+  );
 
   gBrowser.removeTab(tab);
 });
@@ -85,10 +99,16 @@ add_task(async function test_found() {
 
 
 add_task(async function test_tabwise_case_sensitive() {
-  let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE_URI);
+  let tab1 = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_PAGE_URI
+  );
   let findbar1 = await gBrowser.getFindBar();
 
-  let tab2 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE_URI);
+  let tab2 = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_PAGE_URI
+  );
   let findbar2 = await gBrowser.getFindBar();
 
   
@@ -98,8 +118,11 @@ add_task(async function test_tabwise_case_sensitive() {
 
   
   await promiseFindFinished("S", true);
-  is(findbar1._findStatusDesc.textContent, findbar1._notFoundStr,
-     "Findbar status text should be 'Phrase not found'");
+  is(
+    findbar1._findStatusDesc.textContent,
+    findbar1._notFoundStr,
+    "Findbar status text should be 'Phrase not found'"
+  );
 
   gBrowser.selectedTab = tab2;
 
@@ -128,14 +151,20 @@ add_task(async function test_reinitialization_at_remoteness_change() {
   info("Ensure findbar re-initialization at remoteness change.");
 
   
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE_URI);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_PAGE_URI
+  );
   let browser = gBrowser.getBrowserForTab(tab);
   let findbar = await gBrowser.getFindBar();
 
   
   await promiseFindFinished("z", false);
-  is(findbar._findStatusDesc.textContent, findbar._notFoundStr,
-     "Findbar status text should be 'Phrase not found'");
+  is(
+    findbar._findStatusDesc.textContent,
+    findbar._notFoundStr,
+    "Findbar status text should be 'Phrase not found'"
+  );
 
   await promiseFindFinished("s", false);
   ok(!findbar._findStatusDesc.textContent, "Findbar status should be empty");
@@ -148,8 +177,11 @@ add_task(async function test_reinitialization_at_remoteness_change() {
 
   
   await promiseFindFinished("z", false);
-  is(findbar._findStatusDesc.textContent, findbar._notFoundStr,
-     "Findbar status text should be 'Phrase not found'");
+  is(
+    findbar._findStatusDesc.textContent,
+    findbar._notFoundStr,
+    "Findbar status text should be 'Phrase not found'"
+  );
 
   await promiseFindFinished("s", false);
   ok(!findbar._findStatusDesc.textContent, "Findbar status should be empty");
@@ -168,7 +200,10 @@ add_task(async function e10sLostKeys() {
     return;
   }
 
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE_URI);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_PAGE_URI
+  );
 
   ok(!gFindBarInitialized, "findbar isn't initialized yet");
 
@@ -176,33 +211,48 @@ add_task(async function e10sLostKeys() {
   let findBar = gFindBar;
   let initialValue = findBar._findField.value;
 
-  await EventUtils.synthesizeAndWaitKey("f", { accelKey: true }, window, null, () => {
-    
-    
-    
-    isnot(document.activeElement, findBar._findField,
-      "findbar is not yet focused");
-    EventUtils.synthesizeKey("a");
-    EventUtils.synthesizeKey("b");
-    EventUtils.synthesizeKey("c");
-    is(findBar._findField.value, initialValue, "still has initial find query");
-  });
+  await EventUtils.synthesizeAndWaitKey(
+    "f",
+    { accelKey: true },
+    window,
+    null,
+    () => {
+      
+      
+      
+      isnot(
+        document.activeElement,
+        findBar._findField,
+        "findbar is not yet focused"
+      );
+      EventUtils.synthesizeKey("a");
+      EventUtils.synthesizeKey("b");
+      EventUtils.synthesizeKey("c");
+      is(
+        findBar._findField.value,
+        initialValue,
+        "still has initial find query"
+      );
+    }
+  );
 
-  await BrowserTestUtils.waitForCondition(() => findBar._findField.value.length == 3);
-  is(document.activeElement, findBar._findField,
-    "findbar is now focused");
+  await BrowserTestUtils.waitForCondition(
+    () => findBar._findField.value.length == 3
+  );
+  is(document.activeElement, findBar._findField, "findbar is now focused");
   is(findBar._findField.value, "abc", "abc fully entered as find query");
 
   BrowserTestUtils.removeTab(tab);
 });
 
 function promiseFindFinished(searchText, highlightOn) {
-  return new Promise(async (resolve) => {
+  return new Promise(async resolve => {
     let findbar = await gBrowser.getFindBar();
     findbar.startFind(findbar.FIND_NORMAL);
     let highlightElement = findbar.getElement("highlight");
-    if (highlightElement.checked != highlightOn)
+    if (highlightElement.checked != highlightOn) {
       highlightElement.click();
+    }
     executeSoon(() => {
       findbar._findField.value = searchText;
 
@@ -218,8 +268,9 @@ function promiseFindFinished(searchText, highlightOn) {
           waitMore = false;
           return;
         }
-        if (aData === null)
+        if (aData === null) {
           info("Result listener not called, timeout reached.");
+        }
         clearTimeout(findTimeout);
         findbar.browser.finder.removeResultListener(resultListener);
         resolve();
@@ -238,13 +289,18 @@ function promiseFindFinished(searchText, highlightOn) {
 }
 
 function promiseRemotenessChange(tab, shouldBeRemote) {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     let browser = gBrowser.getBrowserForTab(tab);
-    tab.addEventListener("TabRemotenessChange", function() {
-      resolve();
-    }, {once: true});
-    let remoteType = shouldBeRemote ?
-        E10SUtils.DEFAULT_REMOTE_TYPE : E10SUtils.NOT_REMOTE;
+    tab.addEventListener(
+      "TabRemotenessChange",
+      function() {
+        resolve();
+      },
+      { once: true }
+    );
+    let remoteType = shouldBeRemote
+      ? E10SUtils.DEFAULT_REMOTE_TYPE
+      : E10SUtils.NOT_REMOTE;
     gBrowser.updateBrowserRemoteness(browser, { remoteType });
   });
 }

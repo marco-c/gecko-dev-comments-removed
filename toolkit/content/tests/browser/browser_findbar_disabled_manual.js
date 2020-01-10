@@ -2,15 +2,18 @@ const TEST_PAGE_URI = "data:text/html;charset=utf-8,The letter s.";
 
 
 add_task(async function setup_test_preference() {
-  await SpecialPowers.pushPrefEnv({"set": [
-    ["accessibility.typeaheadfind.manual", false],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [["accessibility.typeaheadfind.manual", false]],
+  });
 });
 
 
 add_task(async function test_hotkey_disabled() {
   
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE_URI);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_PAGE_URI
+  );
   let browser = gBrowser.getBrowserForTab(tab);
   let findbar = await gBrowser.getFindBar();
 

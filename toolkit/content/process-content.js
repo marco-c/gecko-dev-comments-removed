@@ -7,13 +7,15 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-const gInContentProcess = Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;
+const gInContentProcess =
+  Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;
 
 Services.cpmm.addMessageListener("gmp-plugin-crash", msg => {
-  let gmpservice = Cc["@mozilla.org/gecko-media-plugin-service;1"]
-                     .getService(Ci.mozIGeckoMediaPluginService);
+  let gmpservice = Cc["@mozilla.org/gecko-media-plugin-service;1"].getService(
+    Ci.mozIGeckoMediaPluginService
+  );
 
   gmpservice.RunPluginCrashCallbacks(msg.data.pluginID, msg.data.pluginName);
 });
@@ -49,17 +51,21 @@ let ProcessObserver = {
         let window = subject;
         let url = window.document.documentURI.replace(/[\#|\?].*$/, "");
 
-        let registeredURLs = Services.cpmm.sharedData.get("RemotePageManager:urls");
+        let registeredURLs = Services.cpmm.sharedData.get(
+          "RemotePageManager:urls"
+        );
 
-        if (!registeredURLs || !registeredURLs.has(url))
+        if (!registeredURLs || !registeredURLs.has(url)) {
           return;
+        }
 
         
         
         let messageManager = window.docShell.messageManager;
 
-        let { ChildMessagePort } =
-          ChromeUtils.import("resource://gre/modules/remotepagemanager/RemotePageManagerChild.jsm");
+        let { ChildMessagePort } = ChromeUtils.import(
+          "resource://gre/modules/remotepagemanager/RemotePageManagerChild.jsm"
+        );
         
         new ChildMessagePort(messageManager, window);
         break;
@@ -68,10 +74,11 @@ let ProcessObserver = {
         
         
         
-        let innerWindowID =
-          subject.QueryInterface(Ci.nsISupportsPRUint64).data;
-        Services.cpmm.sendAsyncMessage("Toolkit:inner-window-destroyed",
-                                       innerWindowID);
+        let innerWindowID = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
+        Services.cpmm.sendAsyncMessage(
+          "Toolkit:inner-window-destroyed",
+          innerWindowID
+        );
         break;
       }
       case "xpcom-shutdown": {
