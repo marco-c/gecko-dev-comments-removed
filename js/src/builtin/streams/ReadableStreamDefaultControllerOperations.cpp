@@ -35,6 +35,7 @@
 #include "vm/SavedFrame.h"   
 
 #include "builtin/streams/HandlerFunction-inl.h"  
+#include "builtin/streams/MiscellaneousOperations-inl.h"  
 #include "vm/Compartment-inl.h"  
 #include "vm/JSContext-inl.h"    
 #include "vm/JSObject-inl.h"     

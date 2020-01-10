@@ -11,19 +11,55 @@
 
 #include "builtin/streams/MiscellaneousOperations.h"
 
+#include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
 
+#include "builtin/Promise.h"  
 #include "js/Promise.h"      
 #include "js/RootingAPI.h"   
 #include "js/Value.h"        
 #include "vm/Compartment.h"  
+#include "vm/Interpreter.h"  
 #include "vm/JSContext.h"    
 #include "vm/JSObject.h"     
 
 #include "vm/Compartment-inl.h"  
 #include "vm/JSContext-inl.h"    
+#include "vm/JSObject-inl.h"     
 
 namespace js {
+
+
+
+
+
+template <class... Args>
+inline MOZ_MUST_USE JSObject* PromiseCall(JSContext* cx,
+                                          JS::Handle<JS::Value> F,
+                                          JS::Handle<JS::Value> V,
+                                          Args&&... args) {
+  cx->check(F);
+  cx->check(V);
+  cx->check(args...);
+
+  
+  MOZ_ASSERT(IsCallable(F));
+
+  
+  MOZ_ASSERT(!V.isUndefined());
+
+  
+  
+  JS::Rooted<JS::Value> rval(cx);
+  if (!Call(cx, F, V, args..., &rval)) {
+    
+    
+    return PromiseRejectedWithPendingError(cx);
+  }
+
+  
+  return PromiseObject::unforgeableResolve(cx, rval);
+}
 
 
 

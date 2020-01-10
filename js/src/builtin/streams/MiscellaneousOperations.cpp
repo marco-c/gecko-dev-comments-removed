@@ -139,33 +139,6 @@ MOZ_MUST_USE bool js::InvokeOrNoop(JSContext* cx, Handle<Value> O,
 
 
 
-
-MOZ_MUST_USE JSObject* js::PromiseCall(JSContext* cx, Handle<Value> F,
-                                       Handle<Value> V, Handle<Value> arg) {
-  cx->check(F, V, arg);
-
-  
-  MOZ_ASSERT(IsCallable(F));
-
-  
-  MOZ_ASSERT(!V.isUndefined());
-
-  
-  
-  Rooted<Value> rval(cx);
-  if (!Call(cx, F, V, arg, &rval)) {
-    
-    
-    return PromiseRejectedWithPendingError(cx);
-  }
-
-  
-  return PromiseObject::unforgeableResolve(cx, rval);
-}
-
-
-
-
 MOZ_MUST_USE bool js::ValidateAndNormalizeHighWaterMark(
     JSContext* cx, Handle<Value> highWaterMarkVal, double* highWaterMark) {
   

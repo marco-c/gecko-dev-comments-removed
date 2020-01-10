@@ -64,15 +64,6 @@ extern MOZ_MUST_USE bool InvokeOrNoop(JSContext* cx, JS::Handle<JS::Value> O,
 
 
 
-
-extern MOZ_MUST_USE JSObject* PromiseCall(JSContext* cx,
-                                          JS::Handle<JS::Value> F,
-                                          JS::Handle<JS::Value> V,
-                                          JS::Handle<JS::Value> arg);
-
-
-
-
 extern MOZ_MUST_USE bool ValidateAndNormalizeHighWaterMark(
     JSContext* cx, JS::Handle<JS::Value> highWaterMarkVal,
     double* highWaterMark);
