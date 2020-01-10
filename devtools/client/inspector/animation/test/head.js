@@ -402,9 +402,9 @@ const mouseOutOnTargetNode = function(animationInspector, panel, index) {
 
 const selectAnimationInspector = async function(inspector) {
   await inspector.toolbox.selectTool("inspector");
-  const onUpdated = inspector.once("inspector-updated");
+  const onDispatched = waitForDispatch(inspector, "UPDATE_ANIMATIONS");
   inspector.sidebar.select("animationinspector");
-  await onUpdated;
+  await onDispatched;
   await waitForRendering(inspector.getPanel("animationinspector"));
 };
 
@@ -425,9 +425,8 @@ const selectAnimationInspector = async function(inspector) {
 const selectNodeAndWaitForAnimations = async function(data, inspector, reason = "test") {
   
   
-  const onUpdated = inspector.once("inspector-updated");
-  await selectNode(data, inspector, reason);
-  await onUpdated;
+  selectNode(data, inspector, reason);
+  await waitForDispatch(inspector, "UPDATE_ANIMATIONS");
   await waitForRendering(inspector.getPanel("animationinspector"));
 };
 
@@ -588,7 +587,7 @@ function _afterDispatchDone(store, type) {
 
 
 
-async function waitForDispatch(inspector, type, repeat) {
+async function waitForDispatch(inspector, type, repeat = () => 1) {
   let count = 0;
 
   while (count < repeat()) {
