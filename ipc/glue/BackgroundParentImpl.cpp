@@ -1106,7 +1106,7 @@ bool BackgroundParentImpl::DeallocPWebAuthnTransactionParent(
   return true;
 }
 
-net::PHttpBackgroundChannelParent*
+already_AddRefed<net::PHttpBackgroundChannelParent>
 BackgroundParentImpl::AllocPHttpBackgroundChannelParent(
     const uint64_t& aChannelId) {
   AssertIsInMainOrSocketProcess();
@@ -1114,9 +1114,7 @@ BackgroundParentImpl::AllocPHttpBackgroundChannelParent(
 
   RefPtr<net::HttpBackgroundChannelParent> actor =
       new net::HttpBackgroundChannelParent();
-
-  
-  return actor.forget().take();
+  return actor.forget();
 }
 
 mozilla::ipc::IPCResult
@@ -1134,19 +1132,6 @@ BackgroundParentImpl::RecvPHttpBackgroundChannelConstructor(
   }
 
   return IPC_OK();
-}
-
-bool BackgroundParentImpl::DeallocPHttpBackgroundChannelParent(
-    net::PHttpBackgroundChannelParent* aActor) {
-  MOZ_ASSERT(aActor);
-  AssertIsInMainOrSocketProcess();
-  AssertIsOnBackgroundThread();
-
-  
-  RefPtr<net::HttpBackgroundChannelParent> actor =
-      dont_AddRef(static_cast<net::HttpBackgroundChannelParent*>(aActor));
-
-  return true;
 }
 
 PMIDIPortParent* BackgroundParentImpl::AllocPMIDIPortParent(

@@ -27,7 +27,7 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
  public:
   explicit HttpBackgroundChannelChild();
 
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(HttpBackgroundChannelChild)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(HttpBackgroundChannelChild, final)
 
   
   
