@@ -984,11 +984,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList {
 
 
 
-
 struct nsStyleGridTemplate {
   nsTArray<nsTArray<RefPtr<nsAtom>>> mLineNameLists;
-  nsTArray<nsStyleCoord> mMinTrackSizingFunctions;
-  nsTArray<nsStyleCoord> mMaxTrackSizingFunctions;
+  nsTArray<mozilla::StyleTrackSize> mTrackSizingFunctions;
   nsTArray<RefPtr<nsAtom>> mRepeatAutoLineNameListBefore;
   nsTArray<RefPtr<nsAtom>> mRepeatAutoLineNameListAfter;
   int16_t mRepeatAutoIndex;  
@@ -1001,8 +999,7 @@ struct nsStyleGridTemplate {
   inline bool operator==(const nsStyleGridTemplate& aOther) const {
     return mIsSubgrid == aOther.mIsSubgrid &&
            mLineNameLists == aOther.mLineNameLists &&
-           mMinTrackSizingFunctions == aOther.mMinTrackSizingFunctions &&
-           mMaxTrackSizingFunctions == aOther.mMaxTrackSizingFunctions &&
+           mTrackSizingFunctions == aOther.mTrackSizingFunctions &&
            mIsAutoFill == aOther.mIsAutoFill &&
            mRepeatAutoIndex == aOther.mRepeatAutoIndex &&
            mRepeatAutoLineNameListBefore ==
@@ -1027,6 +1024,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   using StyleMaxSize = mozilla::StyleMaxSize;
   using StyleFlexBasis = mozilla::StyleFlexBasis;
   using WritingMode = mozilla::WritingMode;
+  using StyleTrackSize = mozilla::StyleTrackSize;
 
   explicit nsStylePosition(const mozilla::dom::Document&);
   nsStylePosition(const nsStylePosition& aOther);
@@ -1068,10 +1066,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   StyleSize mMinHeight;
   StyleMaxSize mMaxHeight;
   StyleFlexBasis mFlexBasis;
-  nsStyleCoord mGridAutoColumnsMin;  
-  nsStyleCoord mGridAutoColumnsMax;  
-  nsStyleCoord mGridAutoRowsMin;     
-  nsStyleCoord mGridAutoRowsMax;     
+  StyleTrackSize mGridAutoColumns;
+  StyleTrackSize mGridAutoRows;
   float mAspectRatio;
   uint8_t mGridAutoFlow;             
   mozilla::StyleBoxSizing mBoxSizing;
