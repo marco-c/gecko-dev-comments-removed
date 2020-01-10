@@ -6,6 +6,7 @@
 
 #include "jit/Ion.h"
 
+#include "mozilla/DebugOnly.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ThreadLocal.h"
@@ -67,6 +68,8 @@
 #if defined(ANDROID)
 #  include <sys/system_properties.h>
 #endif
+
+using mozilla::DebugOnly;
 
 using namespace js;
 using namespace js::jit;
@@ -2666,8 +2669,13 @@ void jit::InvalidateAll(JSFreeOp* fop, Zone* zone) {
 }
 
 static void ClearIonScriptAfterInvalidation(JSContext* cx, JSScript* script,
+                                            IonScript* ionScript,
                                             bool resetUses) {
-  script->jitScript()->clearIonScript(cx->defaultFreeOp(), script);
+  
+  
+  DebugOnly<IonScript*> clearedIonScript =
+      script->jitScript()->clearIonScript(cx->defaultFreeOp(), script);
+  MOZ_ASSERT(clearedIonScript == ionScript);
 
   
   
@@ -2730,7 +2738,7 @@ void jit::Invalidate(TypeZone& types, JSFreeOp* fop,
       
       
       
-      ClearIonScriptAfterInvalidation(cx, info.script(), resetUses);
+      ClearIonScriptAfterInvalidation(cx, info.script(), ionScript, resetUses);
     }
 
     ionScript->decrementInvalidationCount(fop);
@@ -2742,9 +2750,10 @@ void jit::Invalidate(TypeZone& types, JSFreeOp* fop,
   MOZ_ASSERT(!numInvalidations);
 
   
+  
   for (const RecompileInfo& info : invalid) {
-    if (info.maybeIonScriptToInvalidate(types)) {
-      ClearIonScriptAfterInvalidation(cx, info.script(), resetUses);
+    if (IonScript* ionScript = info.maybeIonScriptToInvalidate(types)) {
+      ClearIonScriptAfterInvalidation(cx, info.script(), ionScript, resetUses);
     }
   }
 }
@@ -2812,8 +2821,7 @@ void jit::FinishInvalidation(JSFreeOp* fop, JSScript* script) {
   }
 
   
-  IonScript* ion = script->ionScript();
-  script->jitScript()->clearIonScript(fop, script);
+  IonScript* ion = script->jitScript()->clearIonScript(fop, script);
 
   
   
