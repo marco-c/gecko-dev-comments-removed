@@ -957,10 +957,6 @@ void MediaStreamGraphImpl::DeviceChanged() {
     MediaStreamGraphImpl* mGraphImpl;
   };
 
-  
-  MOZ_ASSERT(NS_IsMainThread());
-  mAudioOutputLatency = 0.0;
-
   AppendMessage(MakeUnique<Message>(this));
 }
 
@@ -3196,8 +3192,7 @@ MediaStreamGraphImpl::MediaStreamGraphImpl(GraphDriverType aDriverRequested,
       mCanRunMessagesSynchronously(false)
 #endif
       ,
-      mMainThreadGraphTime(0, "MediaStreamGraphImpl::mMainThreadGraphTime"),
-      mAudioOutputLatency(0.0) {
+      mMainThreadGraphTime(0, "MediaStreamGraphImpl::mMainThreadGraphTime") {
   if (mRealtime) {
     if (aDriverRequested == AUDIO_THREAD_DRIVER) {
       
@@ -3799,29 +3794,6 @@ void MediaStreamGraph::ApplyAudioContextOperation(
   MediaStreamGraphImpl* graphImpl = static_cast<MediaStreamGraphImpl*>(this);
   graphImpl->AppendMessage(MakeUnique<AudioContextOperationControlMessage>(
       aDestinationStream, aStreams, aOperation, aPromise, aFlags));
-}
-
-double MediaStreamGraph::AudioOutputLatency() {
-  return static_cast<MediaStreamGraphImpl*>(this)->AudioOutputLatency();
-}
-
-double MediaStreamGraphImpl::AudioOutputLatency() {
-  MOZ_ASSERT(NS_IsMainThread());
-  if (mAudioOutputLatency != 0.0) {
-    return mAudioOutputLatency;
-  }
-  MonitorAutoLock lock(mMonitor);
-  if (CurrentDriver()->AsAudioCallbackDriver()) {
-    mAudioOutputLatency = CurrentDriver()
-                              ->AsAudioCallbackDriver()
-                              ->AudioOutputLatency()
-                              .ToSeconds();
-  } else {
-    
-    mAudioOutputLatency = 0.0;
-  }
-
-  return mAudioOutputLatency;
 }
 
 bool MediaStreamGraph::IsNonRealtime() const {

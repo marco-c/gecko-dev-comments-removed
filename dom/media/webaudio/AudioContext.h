@@ -9,7 +9,6 @@
 
 #include "AudioParamDescriptorMap.h"
 #include "mozilla/dom/OfflineAudioContextBinding.h"
-#include "mozilla/dom/AudioContextBinding.h"
 #include "MediaBufferDecoder.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
@@ -192,16 +191,6 @@ class AudioContext final : public DOMEventTargetHelper,
   AudioListener* Listener();
 
   AudioContextState State() const { return mAudioContextState; }
-
-  double BaseLatency() const {
-    
-    
-    return 0.0;
-  }
-
-  double OutputLatency();
-
-  void GetOutputTimestamp(AudioTimestamp& aTimeStamp);
 
   Worklet* GetAudioWorklet(ErrorResult& aRv);
 
