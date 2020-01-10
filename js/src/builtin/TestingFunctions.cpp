@@ -2851,6 +2851,8 @@ static bool testingFunc_inIon(JSContext* cx, unsigned argc, Value* vp) {
     
     if (iter.isIon()) {
       iter.script()->resetWarmUpResetCounter();
+    } else if (!iter.script()->canIonCompile()) {
+      return ReturnStringCopy(cx, args, "Unable to Ion-compile this script.");
     } else if (iter.script()->getWarmUpResetCount() >= JitWarmupResetLimit) {
       return ReturnStringCopy(
           cx, args, "Compilation is being repeatedly prevented. Giving up.");

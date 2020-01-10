@@ -1310,9 +1310,13 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
   masm.branch32(Assembler::LessThan, countReg, Imm32(warmUpThreshold),
                 &skipCall);
 
-  masm.branchPtr(Assembler::Equal,
-                 Address(scriptReg, JSScript::offsetOfIonScript()),
-                 ImmPtr(ION_COMPILING_SCRIPT), &skipCall);
+  
+  
+  masm.loadPtr(Address(scriptReg, JSScript::offsetOfIonScript()), scriptReg);
+  masm.branchPtr(Assembler::Equal, scriptReg, ImmPtr(ION_COMPILING_SCRIPT),
+                 &skipCall);
+  masm.branchPtr(Assembler::Equal, scriptReg, ImmPtr(ION_DISABLED_SCRIPT),
+                 &skipCall);
 
   
   if (JSOp(*pc) == JSOP_LOOPENTRY) {

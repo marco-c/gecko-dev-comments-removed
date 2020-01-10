@@ -2383,24 +2383,15 @@ static MethodStatus BaselineCanEnterAtBranch(JSContext* cx, HandleScript script,
 
 bool jit::IonCompileScriptForBaseline(JSContext* cx, BaselineFrame* frame,
                                       jsbytecode* pc) {
-  
-  if (!jit::IsIonEnabled()) {
-    return true;
-  }
+  MOZ_ASSERT(IsIonEnabled());
 
   RootedScript script(cx, frame->script());
   bool isLoopEntry = JSOp(*pc) == JSOP_LOOPENTRY;
 
   MOZ_ASSERT(!isLoopEntry || LoopEntryCanIonOsr(pc));
 
-  if (!script->canIonCompile()) {
-    
-    
-    
-    script->resetWarmUpCounterToDelayIonCompilation();
-    return true;
-  }
-
+  
+  MOZ_ASSERT(script->canIonCompile());
   MOZ_ASSERT(!script->isIonCompilingOffThread());
 
   
