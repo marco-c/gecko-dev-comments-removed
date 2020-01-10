@@ -17,10 +17,6 @@ async function openProtectionsPanel(toast) {
   let shieldIconContainer = document.getElementById(
     "tracking-protection-icon-container"
   );
-
-  
-  shieldIconContainer.focus();
-
   if (!toast) {
     EventUtils.synthesizeMouseAtCenter(shieldIconContainer, {});
   } else {

@@ -130,7 +130,7 @@ add_task(async function testSettingsButton() {
     gBrowser,
     "about:preferences#privacy"
   );
-  gProtectionsHandler._protectionsPopupSettingsButton.click();
+  gProtectionsHandler._protectionPopupSettingsButton.click();
 
   
   await popuphiddenPromise;
@@ -146,7 +146,7 @@ add_task(async function testSettingsButton() {
 
 
 
-add_task(async function testShowFullReportButton() {
+add_task(async function testShowFullReportLink() {
   
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -162,11 +162,11 @@ add_task(async function testShowFullReportButton() {
     gBrowser,
     "about:protections"
   );
-  let showFullReportButton = document.getElementById(
-    "protections-popup-show-report-button"
+  let showFullReportLink = document.getElementById(
+    "protections-popup-show-full-report-link"
   );
 
-  showFullReportButton.click();
+  showFullReportLink.click();
 
   
   await popuphiddenPromise;

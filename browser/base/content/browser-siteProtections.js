@@ -10,13 +10,6 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/ContentBlockingAllowList.jsm"
 );
 
-XPCOMUtils.defineLazyServiceGetter(
-  this,
-  "TrackingDBService",
-  "@mozilla.org/tracking-db-service;1",
-  "nsITrackingDBService"
-);
-
 var Fingerprinting = {
   PREF_ENABLED: "privacy.trackingprotection.fingerprinting.enabled",
   reportBreakageLabel: "fingerprinting",
@@ -980,27 +973,21 @@ var gProtectionsHandler = {
       "protections-popup-tp-switch"
     ));
   },
-  get _protectionsPopupSettingsButton() {
-    delete this._protectionsPopupSettingsButton;
-    return (this._protectionsPopupSettingsButton = document.getElementById(
+  get _protectionPopupSettingsButton() {
+    delete this._protectionPopupSettingsButton;
+    return (this._protectionPopupSettingsButton = document.getElementById(
       "protections-popup-settings-button"
     ));
   },
-  get _protectionsPopupFooter() {
-    delete this._protectionsPopupFooter;
-    return (this._protectionsPopupFooter = document.getElementById(
+  get _protectionPopupFooter() {
+    delete this._protectionPopupFooter;
+    return (this._protectionPopupFooter = document.getElementById(
       "protections-popup-footer"
     ));
   },
-  get _protectionsPopupTrackersCounterBox() {
-    delete this._protectionsPopupTrackersCounterBox;
-    return (this._protectionsPopupTrackersCounterBox = document.getElementById(
-      "protections-popup-trackers-blocked-counter-box"
-    ));
-  },
-  get _protectionsPopupTrackersCounterDescription() {
-    delete this._protectionsPopupTrackersCounterDescription;
-    return (this._protectionsPopupTrackersCounterDescription = document.getElementById(
+  get _protectionPopupTrackersCounterDescription() {
+    delete this._protectionPopupTrackersCounterDescription;
+    return (this._protectionPopupTrackersCounterDescription = document.getElementById(
       "protections-popup-trackers-blocked-counter-description"
     ));
   },
@@ -1130,12 +1117,6 @@ var gProtectionsHandler = {
 
     this.appMenuLabel.setAttribute("value", this.strings.appMenuTitle);
     this.appMenuLabel.setAttribute("tooltiptext", this.strings.appMenuTooltip);
-
-    
-    this.maybeUpdateEarliestRecordedDateTooltip();
-
-    
-    Services.obs.addObserver(this, "browser:purge-session-history");
   },
 
   uninit() {
@@ -1155,10 +1136,9 @@ var gProtectionsHandler = {
     openPreferences("privacy-trackingprotection", { origin });
   },
 
-  openProtections(relatedToCurrent = false) {
+  openProtections() {
     switchToTabHavingURI("about:protections", true, {
       replaceQueryString: true,
-      relatedToCurrent,
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     });
   },
@@ -1236,12 +1216,6 @@ var gProtectionsHandler = {
     if (event.target == this._protectionsPopup) {
       window.removeEventListener("focus", this, true);
       gIdentityHandler._trackingProtectionIconContainer.removeAttribute("open");
-
-      
-      this._protectionsPopupTrackersCounterBox.toggleAttribute(
-        "showing",
-        false
-      );
     }
   },
 
@@ -1254,25 +1228,6 @@ var gProtectionsHandler = {
       
       this.showProtectionsPopup({ event });
     }
-  },
-
-  async onTrackingProtectionIconHoveredOrFocused() {
-    
-    
-    if (this._updatingFooter) {
-      return;
-    }
-    this._updatingFooter = true;
-
-    
-    const trackerCount = await TrackingDBService.sumAllEvents();
-    this.setTrackersBlockedCounter(trackerCount);
-
-    
-    
-    await this.maybeUpdateEarliestRecordedDateTooltip();
-
-    this._updatingFooter = false;
   },
 
   
@@ -1429,17 +1384,6 @@ var gProtectionsHandler = {
     }
   },
 
-  observe(subject, topic, data) {
-    switch (topic) {
-      case "browser:purge-session-history":
-        
-        
-        this._hasEarliestRecord = false;
-        this.maybeUpdateEarliestRecordedDateTooltip();
-        break;
-    }
-  },
-
   refreshProtectionsPopup() {
     let host = gIdentityHandler.getHostForDisplay();
 
@@ -1473,7 +1417,10 @@ var gProtectionsHandler = {
     );
 
     
-    this.maybeUpdateEarliestRecordedDateTooltip();
+    
+    
+    
+    this.setTrackersBlockedCounter(244051);
   },
 
   disableForCurrentPage() {
@@ -1533,19 +1480,10 @@ var gProtectionsHandler = {
   },
 
   setTrackersBlockedCounter(trackerCount) {
-    let forms = gNavigatorBundle.getString(
-      "protections.footer.blockedTrackerCounter.description"
-    );
-    this._protectionsPopupTrackersCounterDescription.textContent = PluralForm.get(
-      trackerCount,
-      forms
-    ).replace("#1", trackerCount);
-
-    
-    this._protectionsPopupTrackersCounterBox.toggleAttribute(
-      "showing",
-      trackerCount != 0
-    );
+    this._protectionPopupTrackersCounterDescription.textContent =
+      
+      
+      `Trackers blocked this week: ${trackerCount.toLocaleString()}`;
   },
 
   
@@ -1748,36 +1686,5 @@ var gProtectionsHandler = {
   onSendReportClicked() {
     this._protectionsPopup.hidePopup();
     this.submitBreakageReport(this.reportURI);
-  },
-
-  async maybeUpdateEarliestRecordedDateTooltip() {
-    if (this._hasEarliestRecord) {
-      return;
-    }
-
-    let date = await TrackingDBService.getEarliestRecordedDate();
-
-    
-    
-    if (!date) {
-      return;
-    }
-    this._hasEarliestRecord = true;
-
-    const dateLocaleStr = new Date(date).toLocaleDateString("default", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
-
-    const tooltipStr = gNavigatorBundle.getFormattedString(
-      "protections.footer.blockedTrackerCounter.tooltip",
-      [dateLocaleStr]
-    );
-
-    this._protectionsPopupTrackersCounterDescription.setAttribute(
-      "tooltiptext",
-      tooltipStr
-    );
   },
 };
