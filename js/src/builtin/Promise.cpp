@@ -2907,6 +2907,47 @@ static JSFunction* NewPromiseCombinatorElementFunction(
 
 
 
+
+
+
+
+
+static bool PromiseCombinatorElementFunctionAlreadyCalled(
+    const CallArgs& args, MutableHandle<PromiseCombinatorDataHolder*> data,
+    uint32_t* index) {
+  
+  JSFunction* fn = &args.callee().as<JSFunction>();
+
+  
+  const Value& dataVal =
+      fn->getExtendedSlot(PromiseCombinatorElementFunctionSlot_Data);
+
+  
+  
+  
+  
+  if (dataVal.isUndefined()) {
+    return true;
+  }
+
+  data.set(&dataVal.toObject().as<PromiseCombinatorDataHolder>());
+
+  
+  fn->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data,
+                      UndefinedValue());
+
+  
+  int32_t idx =
+      fn->getExtendedSlot(PromiseCombinatorElementFunctionSlot_ElementIndex)
+          .toInt32();
+  MOZ_ASSERT(idx >= 0);
+  *index = uint32_t(idx);
+
+  return false;
+}
+
+
+
 static MOZ_MUST_USE bool PerformPromiseAll(
     JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
     Handle<PromiseCapability> resultCapability, bool* done) {
@@ -3037,35 +3078,15 @@ static MOZ_MUST_USE bool PerformPromiseAll(
 static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
                                              Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-
-  JSFunction* resolve = &args.callee().as<JSFunction>();
   RootedValue xVal(cx, args.get(0));
 
   
-  const Value& dataVal =
-      resolve->getExtendedSlot(PromiseCombinatorElementFunctionSlot_Data);
-
-  
-  
-  
-  
-  if (dataVal.isUndefined()) {
+  Rooted<PromiseCombinatorDataHolder*> data(cx);
+  uint32_t index;
+  if (PromiseCombinatorElementFunctionAlreadyCalled(args, &data, &index)) {
     args.rval().setUndefined();
     return true;
   }
-
-  Rooted<PromiseCombinatorDataHolder*> data(
-      cx, &dataVal.toObject().as<PromiseCombinatorDataHolder>());
-
-  
-  resolve->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data,
-                           UndefinedValue());
-
-  
-  int32_t index =
-      resolve
-          ->getExtendedSlot(PromiseCombinatorElementFunctionSlot_ElementIndex)
-          .toInt32();
 
   
   RootedValue valuesVal(cx, data->valuesArray());
@@ -3315,19 +3336,12 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
   HandleValue valueOrReason = args.get(0);
 
   
-  JSFunction* resolve = &args.callee().as<JSFunction>();
-  Rooted<PromiseCombinatorDataHolder*> data(
-      cx, &resolve->getExtendedSlot(PromiseCombinatorElementFunctionSlot_Data)
-               .toObject()
-               .as<PromiseCombinatorDataHolder>());
-
-  
-
-  
-  int32_t index =
-      resolve
-          ->getExtendedSlot(PromiseCombinatorElementFunctionSlot_ElementIndex)
-          .toInt32();
+  Rooted<PromiseCombinatorDataHolder*> data(cx);
+  uint32_t index;
+  if (PromiseCombinatorElementFunctionAlreadyCalled(args, &data, &index)) {
+    args.rval().setUndefined();
+    return true;
+  }
 
   
   RootedValue valuesVal(cx, data->valuesArray());
@@ -3347,6 +3361,9 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
   }
   HandleNativeObject values = valuesObj.as<NativeObject>();
 
+  
+  
+  
   
   
   
