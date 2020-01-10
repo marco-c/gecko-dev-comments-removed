@@ -143,14 +143,6 @@ const UIStateInternal = {
   async _refreshFxAState(newState) {
     let userData = await this._getUserData();
     await this._populateWithUserData(newState, userData);
-    if (newState.status != STATUS_SIGNED_IN) {
-      return;
-    }
-    let profile = await this._getProfile();
-    if (!profile) {
-      return;
-    }
-    this._populateWithProfile(newState, profile);
   },
 
   async _populateWithUserData(state, userData) {
@@ -181,15 +173,13 @@ const UIStateInternal = {
       }
       state.uid = userData.uid;
       state.email = userData.email;
+      state.displayName = userData.displayName;
+      
+      state.avatarURL = userData.avatar;
+      state.avatarIsDefault = userData.avatarDefault;
       state.syncEnabled = !!syncUserName;
     }
     state.status = status;
-  },
-
-  _populateWithProfile(state, profile) {
-    state.displayName = profile.displayName;
-    state.avatarURL = profile.avatar;
-    state.avatarIsDefault = profile.avatarDefault;
   },
 
   async _getUserData() {
@@ -201,15 +191,6 @@ const UIStateInternal = {
       
       
       Cu.reportError("Error updating FxA account info: " + e);
-      return null;
-    }
-  },
-
-  async _getProfile() {
-    try {
-      return await this.fxAccounts.getSignedInUserProfile();
-    } catch (e) {
-      
       return null;
     }
   },

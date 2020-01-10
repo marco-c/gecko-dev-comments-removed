@@ -565,11 +565,14 @@ class FxAccounts {
 
 
 
-  
-  
+
   getSignedInUser() {
+    
+    
+    const ACCT_DATA_FIELDS = ["email", "uid", "verified", "sessionToken"];
+    const PROFILE_FIELDS = ["displayName", "avatar", "avatarDefault"];
     return this._withCurrentAccountState(async currentState => {
-      const data = await currentState.getUserAccountData();
+      const data = await currentState.getUserAccountData(ACCT_DATA_FIELDS);
       if (!data) {
         return null;
       }
@@ -583,39 +586,26 @@ class FxAccounts {
         
         this._internal.startVerifiedCheck(data);
       }
-      return data;
-    });
-  }
 
-  
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  getSignedInUserProfile() {
-    return this._withCurrentAccountState(async currentState => {
-      try {
-        let profileData = await this._internal.profile.getProfile();
-        let profile = Cu.cloneInto(profileData, {});
-        return profile;
-      } catch (error) {
-        log.error("Could not retrieve profile data", error);
-        throw this._internal._errorToErrorClass(error);
+      let profileData = null;
+      if (data.sessionToken) {
+        delete data.sessionToken;
+        try {
+          profileData = await this._internal.profile.getProfile();
+        } catch (error) {
+          log.error("Could not retrieve profile data", error);
+        }
       }
+      for (let field of PROFILE_FIELDS) {
+        data[field] = profileData ? profileData[field] : null;
+      }
+      
+      
+      
+      if (profileData && profileData.email) {
+        data.email = profileData.email;
+      }
+      return data;
     });
   }
 
@@ -650,9 +640,11 @@ class FxAccounts {
 
 
 
-  async hasLocalSession() {
-    let data = await this.getSignedInUser();
-    return data && data.sessionToken;
+  hasLocalSession() {
+    return this._withCurrentAccountState(async state => {
+      let data = await state.getUserAccountData(["sessionToken"]);
+      return !!(data && data.sessionToken);
+    });
   }
 
   
