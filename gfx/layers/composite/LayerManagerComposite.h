@@ -183,6 +183,7 @@ class HostLayerManager : public LayerManager {
       mCompositeUntilTime = TimeStamp();
     }
   }
+
   void CompositeUntil(TimeStamp aTimeStamp) {
     if (mCompositeUntilTime.IsNull() || mCompositeUntilTime < aTimeStamp) {
       mCompositeUntilTime = aTimeStamp;
@@ -202,6 +203,13 @@ class HostLayerManager : public LayerManager {
   void SetCompositionRecorder(already_AddRefed<CompositionRecorder> aRecorder) {
     mCompositionRecorder = aRecorder;
   }
+
+  
+
+
+
+
+  void WriteCollectedFrames();
 
  protected:
   bool mDebugOverlayWantsNextFrame;
