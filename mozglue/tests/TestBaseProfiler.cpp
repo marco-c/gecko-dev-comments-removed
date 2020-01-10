@@ -571,9 +571,6 @@ void TestBlocksRingBufferAPI() {
   printf("TestBlocksRingBufferAPI...\n");
 
   
-  uint32_t lastDestroyed = 0;
-
-  
   
   constexpr uint32_t MBSize = 16;
   uint8_t buffer[MBSize * 3];
@@ -584,17 +581,15 @@ void TestBlocksRingBufferAPI() {
   
   {
     BlocksRingBuffer rb(BlocksRingBuffer::ThreadSafety::WithMutex,
-                        &buffer[MBSize], MakePowerOfTwo32<MBSize>(),
-                        [&](BlocksRingBuffer::EntryReader& aReader) {
-                          lastDestroyed = aReader.ReadObject<uint32_t>();
-                        });
+                        &buffer[MBSize], MakePowerOfTwo32<MBSize>());
 
-#  define VERIFY_START_END_DESTROYED(aStart, aEnd, aLastDestroyed)          \
+#  define VERIFY_START_END_PUSHED_CLEARED(aStart, aEnd, aPushed, aCleared)  \
     {                                                                       \
       BlocksRingBuffer::State state = rb.GetState();                        \
       MOZ_RELEASE_ASSERT(ExtractBlockIndex(state.mRangeStart) == (aStart)); \
       MOZ_RELEASE_ASSERT(ExtractBlockIndex(state.mRangeEnd) == (aEnd));     \
-      MOZ_RELEASE_ASSERT(lastDestroyed == (aLastDestroyed));                \
+      MOZ_RELEASE_ASSERT(state.mPushedBlockCount == (aPushed));             \
+      MOZ_RELEASE_ASSERT(state.mClearedBlockCount == (aCleared));           \
     }
 
     
@@ -618,7 +613,7 @@ void TestBlocksRingBufferAPI() {
     
     
     
-    VERIFY_START_END_DESTROYED(1, 1, 0);
+    VERIFY_START_END_PUSHED_CLEARED(1, 1, 0, 0);
 
     
     BlocksRingBuffer::BlockIndex bi0;
@@ -646,7 +641,7 @@ void TestBlocksRingBufferAPI() {
     MOZ_RELEASE_ASSERT(ExtractBlockIndex(rb.PutObject(uint32_t(1))) == 1);
     
     
-    VERIFY_START_END_DESTROYED(1, 6, 0);
+    VERIFY_START_END_PUSHED_CLEARED(1, 6, 1, 0);
 
     
     auto bi2 = rb.ReserveAndPut([]() { return sizeof(uint32_t); },
@@ -662,7 +657,7 @@ void TestBlocksRingBufferAPI() {
     MOZ_RELEASE_ASSERT(ExtractBlockIndex(bi2) == 6);
     
     
-    VERIFY_START_END_DESTROYED(1, 11, 0);
+    VERIFY_START_END_PUSHED_CLEARED(1, 11, 2, 0);
 
     
     auto bi2Next =
@@ -739,7 +734,7 @@ void TestBlocksRingBufferAPI() {
     MOZ_RELEASE_ASSERT(put3 == 11.0);
     
     
-    VERIFY_START_END_DESTROYED(1, 16, 0);
+    VERIFY_START_END_PUSHED_CLEARED(1, 16, 3, 0);
 
     
     rb.ReadAt(bi2, [&](Maybe<BlocksRingBuffer::EntryReader>&& aMaybeReader) {
@@ -782,7 +777,7 @@ void TestBlocksRingBufferAPI() {
     
     
     
-    VERIFY_START_END_DESTROYED(6, 21, 1);
+    VERIFY_START_END_PUSHED_CLEARED(6, 21, 4, 1);
 
     
     count = 1;
@@ -808,7 +803,7 @@ void TestBlocksRingBufferAPI() {
     auto& bi6 = bi5_6.second();
     
     
-    VERIFY_START_END_DESTROYED(11, 26, 2);
+    VERIFY_START_END_PUSHED_CLEARED(11, 26, 5, 2);
 
     
     rb.ReadAt(bi2, [](Maybe<BlocksRingBuffer::EntryReader>&& aMaybeReader) {
@@ -858,7 +853,7 @@ void TestBlocksRingBufferAPI() {
     rb.ClearBefore(bi4);
     
     
-    VERIFY_START_END_DESTROYED(16, 26, 3);
+    VERIFY_START_END_PUSHED_CLEARED(16, 26, 5, 3);
 
     
     count = 3;
@@ -868,16 +863,15 @@ void TestBlocksRingBufferAPI() {
     MOZ_RELEASE_ASSERT(count == 5);
 
     
-    lastDestroyed = 0;
     rb.ClearBefore(bi4);
-    VERIFY_START_END_DESTROYED(16, 26, 0);
+    VERIFY_START_END_PUSHED_CLEARED(16, 26, 5, 3);
 
     
     
     rb.ClearBefore(bi6);
     
     
-    VERIFY_START_END_DESTROYED(26, 26, 5);
+    VERIFY_START_END_PUSHED_CLEARED(26, 26, 5, 5);
 
     
     rb.ReadEach([&](auto&&) { MOZ_RELEASE_ASSERT(false); });
@@ -888,15 +882,14 @@ void TestBlocksRingBufferAPI() {
     });
 
     
-    lastDestroyed = 0;
     rb.ClearBefore(bi4);
-    VERIFY_START_END_DESTROYED(26, 26, 0);
+    VERIFY_START_END_PUSHED_CLEARED(26, 26, 5, 5);
 
     
     MOZ_RELEASE_ASSERT(rb.PutObject(uint32_t(6)) == bi6);
     
     
-    VERIFY_START_END_DESTROYED(26, 31, 0);
+    VERIFY_START_END_PUSHED_CLEARED(26, 31, 6, 5);
 
     {
       
@@ -906,26 +899,26 @@ void TestBlocksRingBufferAPI() {
       rb2.PutObject(uint32_t(7));
       rb2.PutObject(uint32_t(8));
       
-      VERIFY_START_END_DESTROYED(26, 31, 0);
+      VERIFY_START_END_PUSHED_CLEARED(26, 31, 6, 5);
 
       
       
       rb.AppendContents(rb2);
       
       
-      VERIFY_START_END_DESTROYED(26, 41, 0);
+      VERIFY_START_END_PUSHED_CLEARED(26, 41, 8, 5);
 
       
       
       rb.AppendContents(rb2);
       
       
-      VERIFY_START_END_DESTROYED(36, 51, 7);
+      VERIFY_START_END_PUSHED_CLEARED(36, 51, 10, 7);
 
       
       
     }
-    VERIFY_START_END_DESTROYED(36, 51, 7);
+    VERIFY_START_END_PUSHED_CLEARED(36, 51, 10, 7);
 
     
     rb.ReadAt(bi6, [](Maybe<BlocksRingBuffer::EntryReader>&& aMaybeReader) {
@@ -944,7 +937,6 @@ void TestBlocksRingBufferAPI() {
     
     
   }
-  MOZ_RELEASE_ASSERT(lastDestroyed == 8);
 
   
   uint32_t changed = 0;
@@ -1128,9 +1120,7 @@ void TestBlocksRingBufferUnderlyingBufferChanges() {
   testOutOfSession();
   testOutOfSession();
 
-  int cleared = 0;
-  rb.Set(&buffer[MBSize], MakePowerOfTwo<BlocksRingBuffer::Length, MBSize>(),
-         [&](auto&&) { ++cleared; });
+  rb.Set(&buffer[MBSize], MakePowerOfTwo<BlocksRingBuffer::Length, MBSize>());
   MOZ_RELEASE_ASSERT(rb.BufferLength().isSome());
   rb.ReadEach([](auto&&) { MOZ_RELEASE_ASSERT(false); });
 
@@ -1139,8 +1129,6 @@ void TestBlocksRingBufferUnderlyingBufferChanges() {
 
   
   rb.Reset();
-  
-  MOZ_RELEASE_ASSERT(cleared == 2 * 3);
 
   
   uint32_t changed = 0;
@@ -1167,19 +1155,13 @@ void TestBlocksRingBufferUnderlyingBufferChanges() {
 void TestBlocksRingBufferThreading() {
   printf("TestBlocksRingBufferThreading...\n");
 
-  
-  std::atomic<int> lastDestroyed{0};
-
   constexpr uint32_t MBSize = 8192;
   uint8_t buffer[MBSize * 3];
   for (size_t i = 0; i < MBSize * 3; ++i) {
     buffer[i] = uint8_t('A' + i);
   }
   BlocksRingBuffer rb(BlocksRingBuffer::ThreadSafety::WithMutex,
-                      &buffer[MBSize], MakePowerOfTwo32<MBSize>(),
-                      [&](BlocksRingBuffer::EntryReader& aReader) {
-                        lastDestroyed = aReader.ReadObject<int>();
-                      });
+                      &buffer[MBSize], MakePowerOfTwo32<MBSize>());
 
   
   std::atomic<bool> stopReader{false};
@@ -1188,7 +1170,7 @@ void TestBlocksRingBufferThreading() {
       BlocksRingBuffer::State state = rb.GetState();
       printf(
           "Reader: range=%llu..%llu (%llu bytes) pushed=%llu cleared=%llu "
-          "(alive=%llu) lastDestroyed=%d\n",
+          "(alive=%llu)\n",
           static_cast<unsigned long long>(ExtractBlockIndex(state.mRangeStart)),
           static_cast<unsigned long long>(ExtractBlockIndex(state.mRangeEnd)),
           static_cast<unsigned long long>(ExtractBlockIndex(state.mRangeEnd)) -
@@ -1197,8 +1179,7 @@ void TestBlocksRingBufferThreading() {
           static_cast<unsigned long long>(state.mPushedBlockCount),
           static_cast<unsigned long long>(state.mClearedBlockCount),
           static_cast<unsigned long long>(state.mPushedBlockCount -
-                                          state.mClearedBlockCount),
-          int(lastDestroyed));
+                                          state.mClearedBlockCount));
       if (stopReader) {
         break;
       }
