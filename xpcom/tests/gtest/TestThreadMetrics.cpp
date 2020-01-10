@@ -149,7 +149,6 @@ TEST_F(ThreadMetrics, CollectMetrics) {
   
   uint64_t duration = mCounter->GetExecutionDuration();
   ASSERT_GE(duration, 50000u);
-  ASSERT_LT(duration, 200000u);
 }
 
 TEST_F(ThreadMetrics, CollectRecursiveMetrics) {
@@ -159,7 +158,7 @@ TEST_F(ThreadMetrics, CollectRecursiveMetrics) {
 
   
   
-  rv = Dispatch(25, 25, 200);
+  rv = Dispatch(25, 25, 400);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
 
   
@@ -180,5 +179,5 @@ TEST_F(ThreadMetrics, CollectRecursiveMetrics) {
   ASSERT_GE(duration, 50000u);
 
   
-  ASSERT_LT(duration, 200000u);
+  ASSERT_LT(duration, 300000u);
 }
