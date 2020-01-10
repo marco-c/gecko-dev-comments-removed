@@ -1095,7 +1095,6 @@ nsGlobalWindowOuter::nsGlobalWindowOuter(uint64_t aWindowID)
       mIsClosed(false),
       mInClose(false),
       mHavePendingClose(false),
-      mHadOriginalOpener(false),
       mIsPopupSpam(false),
       mBlockScriptedClosingFlag(false),
       mWasOffline(false),
@@ -1298,10 +1297,7 @@ void nsGlobalWindowOuter::CleanUp() {
 
   ClearControllers();
 
-  mOpener = nullptr;  
-  if (mContext) {
-    mContext = nullptr;  
-  }
+  mContext = nullptr;             
   mChromeEventHandler = nullptr;  
   mParentTarget = nullptr;
   mMessageManager = nullptr;
@@ -2516,70 +2512,6 @@ void nsGlobalWindowOuter::DetachFromDocShell() {
 
   MaybeForgiveSpamCount();
   CleanUp();
-}
-
-void nsGlobalWindowOuter::SetOpenerWindow(nsPIDOMWindowOuter* aOpener,
-                                          bool aOriginalOpener) {
-  nsWeakPtr opener = do_GetWeakReference(aOpener);
-  if (opener == mOpener) {
-    MOZ_DIAGNOSTIC_ASSERT(!aOpener || !aOpener->GetDocShell() ||
-                          (GetBrowsingContext() &&
-                           aOpener->GetBrowsingContext() &&
-                           aOpener->GetBrowsingContext()->Id() ==
-                               GetBrowsingContext()->GetOpenerId()));
-    return;
-  }
-
-  NS_ASSERTION(!aOriginalOpener || !mSetOpenerWindowCalled,
-               "aOriginalOpener is true, but not first call to "
-               "SetOpenerWindow!");
-  NS_ASSERTION(aOpener || !aOriginalOpener,
-               "Shouldn't set mHadOriginalOpener if aOpener is null");
-
-  mOpener = opener.forget();
-  NS_ASSERTION(mOpener || !aOpener, "Opener must support weak references!");
-
-  if (mDocShell) {
-    MOZ_DIAGNOSTIC_ASSERT(
-        !aOriginalOpener || !aOpener ||
-        
-        
-        
-        
-        
-        
-        nsGlobalWindowOuter::Cast(aOpener)->IsClosedOrClosing() ||
-        
-        
-        IsClosedOrClosing() ||
-        aOpener->GetBrowsingContext()->Id() ==
-            GetBrowsingContext()->GetOpenerId());
-    
-    
-    GetBrowsingContext()->SetOpener(aOpener ? aOpener->GetBrowsingContext()
-                                            : nullptr);
-  }
-
-  
-  
-  
-  nsPIDOMWindowOuter* contentOpener = GetSanitizedOpener(aOpener);
-
-  
-  mozilla::Unused << contentOpener;
-  MOZ_DIAGNOSTIC_ASSERT(
-      !contentOpener || !mTabGroup ||
-      mTabGroup == nsGlobalWindowOuter::Cast(contentOpener)->mTabGroup);
-
-  if (aOriginalOpener) {
-    MOZ_ASSERT(!mHadOriginalOpener,
-               "Probably too late to call ComputeIsSecureContext again");
-    mHadOriginalOpener = true;
-  }
-
-#ifdef DEBUG
-  mSetOpenerWindowCalled = true;
-#endif
 }
 
 void nsGlobalWindowOuter::UpdateParentTarget() {

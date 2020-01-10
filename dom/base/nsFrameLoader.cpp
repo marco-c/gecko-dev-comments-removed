@@ -2085,12 +2085,6 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   newWindow->SetFrameElementInternal(mOwnerContent);
 
   
-  
-  if (RefPtr<BrowsingContext> opener = mBrowsingContext->GetOpener()) {
-    newWindow->SetOpenerWindow(opener->GetDOMWindow(), true);
-  }
-
-  
   if (mOwnerContent->IsXULElement(nsGkAtoms::browser) &&
       mOwnerContent->AttrValueIs(kNameSpaceID_None,
                                  nsGkAtoms::allowscriptstoclose,
