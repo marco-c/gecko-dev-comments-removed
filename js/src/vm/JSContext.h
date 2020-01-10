@@ -890,13 +890,6 @@ struct JSContext : public JS::RootingContext,
 
   
   
-  js::ContextData<uint8_t*> osrTempData_;
-
-  uint8_t* allocateOsrTempData(size_t size);
-  void freeOsrTempData();
-
-  
-  
   
   
   

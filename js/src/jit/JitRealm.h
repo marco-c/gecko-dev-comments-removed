@@ -138,6 +138,11 @@ class JitRuntime {
   MainThreadData<uint64_t> nextCompilationId_;
 
   
+  
+  
+  MainThreadData<js::UniquePtr<uint8_t>> ionOsrTempData_;
+
+  
   WriteOnceData<uint32_t> exceptionTailOffset_;
 
   
@@ -310,6 +315,9 @@ class JitRuntime {
   IonCompilationId nextCompilationId() {
     return IonCompilationId(nextCompilationId_++);
   }
+
+  uint8_t* allocateIonOsrTempData(size_t size);
+  void freeIonOsrTempData();
 
   TrampolinePtr getVMWrapper(const VMFunction& f) const;
 

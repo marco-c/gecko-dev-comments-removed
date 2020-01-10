@@ -374,15 +374,15 @@ void JitRuntime::ionLazyLinkListAdd(JSRuntime* rt, jit::IonBuilder* builder) {
   ionLazyLinkListSize_++;
 }
 
-uint8_t* JSContext::allocateOsrTempData(size_t size) {
-  osrTempData_ = (uint8_t*)js_realloc(osrTempData_, size);
-  return osrTempData_;
+uint8_t* JitRuntime::allocateIonOsrTempData(size_t size) {
+  
+  
+  freeIonOsrTempData();
+  ionOsrTempData_.ref().reset(static_cast<uint8_t*>(js_malloc(size)));
+  return ionOsrTempData_.ref().get();
 }
 
-void JSContext::freeOsrTempData() {
-  js_free(osrTempData_);
-  osrTempData_ = nullptr;
-}
+void JitRuntime::freeIonOsrTempData() { ionOsrTempData_.ref().reset(); }
 
 JitRealm::JitRealm() : stubCodes_(nullptr), stringsCanBeInNursery(false) {}
 
@@ -2474,14 +2474,14 @@ static IonOsrTempData* PrepareOsrTempData(JSContext* cx, BaselineFrame* frame,
   size_t totalSpace = AlignBytes(frameSpace, sizeof(Value)) +
                       AlignBytes(ionOsrTempDataSpace, sizeof(Value));
 
-  IonOsrTempData* info = (IonOsrTempData*)cx->allocateOsrTempData(totalSpace);
-  if (!info) {
+  JitRuntime* jrt = cx->runtime()->jitRuntime();
+  uint8_t* buf = jrt->allocateIonOsrTempData(totalSpace);
+  if (!buf) {
     ReportOutOfMemory(cx);
     return nullptr;
   }
 
-  memset(info, 0, totalSpace);
-
+  IonOsrTempData* info = new (buf) IonOsrTempData();
   info->jitcode = jitcode;
 
   
@@ -2496,7 +2496,7 @@ static IonOsrTempData* PrepareOsrTempData(JSContext* cx, BaselineFrame* frame,
   memcpy(frameStart, (uint8_t*)frame - numValueSlots * sizeof(Value),
          frameSpace);
 
-  JitSpew(JitSpew_BaselineOSR, "Allocated IonOsrTempData at %p", (void*)info);
+  JitSpew(JitSpew_BaselineOSR, "Allocated IonOsrTempData at %p", info);
   JitSpew(JitSpew_BaselineOSR, "Jitcode is %p", info->jitcode);
 
   
