@@ -111,7 +111,6 @@ class MediaEngineSourceInterface {
 
   virtual nsresult Allocate(const dom::MediaTrackConstraints& aConstraints,
                             const MediaEnginePrefs& aPrefs,
-                            const nsString& aDeviceId, const nsString& aGroupId,
                             const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
                             const char** aOutBadConstraint) = 0;
 
@@ -163,8 +162,6 @@ class MediaEngineSourceInterface {
 
   virtual nsresult Reconfigure(const dom::MediaTrackConstraints& aConstraints,
                                const MediaEnginePrefs& aPrefs,
-                               const nsString& aDeviceId,
-                               const nsString& aGroupId,
                                const char** aOutBadConstraint) = 0;
 
   
@@ -205,8 +202,8 @@ class MediaEngineSourceInterface {
 
 
   virtual uint32_t GetBestFitnessDistance(
-      const nsTArray<const NormalizedConstraintSet*>& aConstraintSets,
-      const nsString& aDeviceId, const nsString& aGroupId) const = 0;
+      const nsTArray<const NormalizedConstraintSet*>& aConstraintSets)
+      const = 0;
 
   
 
@@ -262,6 +259,13 @@ class MediaEngineSource : public MediaEngineSourceInterface {
   
   
   nsresult TakePhoto(MediaEnginePhotoCallback* aCallback) override;
+
+  
+  uint32_t GetBestFitnessDistance(
+      const nsTArray<const NormalizedConstraintSet*>& aConstraintSets)
+      const override {
+    return 0;
+  }
 
  protected:
   virtual ~MediaEngineSource();
