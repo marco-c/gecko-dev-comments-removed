@@ -62,6 +62,7 @@ enum PromiseSlots {
 #define PROMISE_FLAG_DEFAULT_RESOLVING_FUNCTIONS 0x08
 
 
+
 #define PROMISE_FLAG_ASYNC 0x10
 
 
@@ -241,7 +242,7 @@ MOZ_MUST_USE PromiseObject* CreatePromiseObjectForAsync(JSContext* cx);
 
 
 
-MOZ_MUST_USE bool IsPromiseForAsync(JSObject* promise);
+MOZ_MUST_USE bool IsPromiseForAsyncFunctionOrGenerator(JSObject* promise);
 
 class AsyncFunctionGeneratorObject;
 

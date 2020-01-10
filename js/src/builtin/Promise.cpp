@@ -3899,9 +3899,20 @@ MOZ_MUST_USE PromiseObject* js::CreatePromiseObjectForAsync(JSContext* cx) {
   return promise;
 }
 
-bool js::IsPromiseForAsync(JSObject* promise) {
+bool js::IsPromiseForAsyncFunctionOrGenerator(JSObject* promise) {
   return promise->is<PromiseObject>() &&
          PromiseHasAnyFlag(promise->as<PromiseObject>(), PROMISE_FLAG_ASYNC);
+}
+
+static MOZ_MUST_USE PromiseObject* CreatePromiseObjectForAsyncGenerator(
+    JSContext* cx) {
+  PromiseObject* promise = CreatePromiseObjectWithoutResolutionFunctions(cx);
+  if (!promise) {
+    return nullptr;
+  }
+
+  AddPromiseFlags(*promise, PROMISE_FLAG_ASYNC);
+  return promise;
 }
 
 
@@ -4492,7 +4503,7 @@ MOZ_MUST_USE bool js::AsyncGeneratorEnqueue(JSContext* cx,
 
   
   Rooted<PromiseObject*> resultPromise(
-      cx, CreatePromiseObjectWithoutResolutionFunctions(cx));
+      cx, CreatePromiseObjectForAsyncGenerator(cx));
   if (!resultPromise) {
     return false;
   }
