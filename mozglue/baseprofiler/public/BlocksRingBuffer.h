@@ -566,22 +566,15 @@ class BlocksRingBuffer {
 
   
   
-  class EntryWriter : public BufferWriter {
+  class MOZ_RAII EntryWriter : public BufferWriter {
    public:
     
-#ifdef DEBUG
-    EntryWriter(EntryWriter&& aOther)
-        : BufferWriter(std::move(aOther)),
-          mRing(aOther.mRing),
-          mEntryBytes(aOther.mEntryBytes),
-          mEntryStart(aOther.mEntryStart) {
-      
-      mRing.mMutex.AssertCurrentThreadOwns();
-      
-      
-      aOther += aOther.RemainingBytes();
-    }
+    EntryWriter(const EntryWriter& aOther) = delete;
+    EntryWriter& operator=(const EntryWriter& aOther) = delete;
+    EntryWriter(EntryWriter&& aOther) = delete;
+    EntryWriter& operator=(EntryWriter&& aOther) = delete;
 
+#ifdef DEBUG
     ~EntryWriter() {
       
       
@@ -589,13 +582,7 @@ class BlocksRingBuffer {
       
       mRing.mMutex.AssertCurrentThreadOwns();
     }
-#else   
-    EntryWriter(EntryWriter&& aOther) = default;
 #endif  
-    
-    EntryWriter(const EntryWriter& aOther) = delete;
-    EntryWriter& operator=(const EntryWriter& aOther) = delete;
-    EntryWriter& operator=(EntryWriter&& aOther) = delete;
 
     
     
@@ -734,7 +721,7 @@ class BlocksRingBuffer {
 
     
     BlockIndex Write(const void* aSrc, Length aBytes) {
-      return Reserve(aBytes, [&](EntryWriter aEW) {
+      return Reserve(aBytes, [&](EntryWriter& aEW) {
         aEW.Write(aSrc, aBytes);
         return aEW.CurrentBlockIndex();
       });
@@ -812,6 +799,7 @@ class BlocksRingBuffer {
   
   
   
+  
   template <typename Callback>
   auto Put(Length aLength, Callback&& aCallback) {
     return Put([&](Maybe<EntryReserver>&& aER) {
@@ -819,12 +807,12 @@ class BlocksRingBuffer {
         
         
         
-        return aER->Reserve(aLength, [&](EntryWriter aEW) {
-          return std::forward<Callback>(aCallback)(Some(std::move(aEW)));
+        return aER->Reserve(aLength, [&](EntryWriter& aEW) {
+          return std::forward<Callback>(aCallback)(&aEW);
         });
       }
       
-      return std::forward<Callback>(aCallback)(Maybe<EntryWriter>{});
+      return std::forward<Callback>(aCallback)(nullptr);
     });
   }
 
