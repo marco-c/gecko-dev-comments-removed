@@ -4935,3 +4935,11 @@ pref("devtools.devices.url", "https://code.cdn.mozilla.net/devices/devices.json"
 
 
 pref("devtools.inspector.inactive.css.enabled", true);
+
+#if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)
+
+
+pref("dom.postMessage.sharedArrayBuffer.bypassCOOP_COEP.insecure.enabled", false);
+#else
+pref("dom.postMessage.sharedArrayBuffer.bypassCOOP_COEP.insecure.enabled", false, locked);
+#endif
