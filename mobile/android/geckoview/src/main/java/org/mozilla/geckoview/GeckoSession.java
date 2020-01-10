@@ -1628,12 +1628,7 @@ public class GeckoSession implements Parcelable {
             if (key == null)
                 continue;
 
-            String value = additionalHeaders.get(key);
-
-            
-            if (value != null && !value.equals("")) {
-                headers.add( String.format("%s:%s", key, additionalHeaders.get(key)) );
-            }
+            headers.add( String.format("%s:%s", key, additionalHeaders.get(key)) );
         }
         return headers;
     }
