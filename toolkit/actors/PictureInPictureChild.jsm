@@ -1014,6 +1014,8 @@ class PictureInPictureChild extends ActorChild {
     
     playerVideo.style.height = "100vh";
     playerVideo.style.width = "100vw";
+    playerVideo.style.backgroundImage =
+      'url("chrome://global/skin/media/imagedoc-darknoise.png")';
 
     doc.body.appendChild(playerVideo);
 
