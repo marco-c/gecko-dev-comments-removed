@@ -324,7 +324,7 @@ class ObjectGroup : public gc::TenuredCell {
     
     
     
-    GCPtrId id;
+    const GCPtrId id;
 
     
     HeapTypeSet types;
