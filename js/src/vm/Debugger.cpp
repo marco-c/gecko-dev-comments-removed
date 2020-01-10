@@ -9722,9 +9722,11 @@ void DebuggerFrame::freeFrameIterData(FreeOp* fop) {
 void DebuggerFrame::maybeDecrementFrameScriptStepperCount(
     FreeOp* fop, AbstractFramePtr frame) {
   
-  if (getReservedSlot(ONSTEP_HANDLER_SLOT).isUndefined()) {
+  OnStepHandler* handler = onStepHandler();
+  if (!handler) {
     return;
   }
+
   if (frame.isWasmDebugFrame()) {
     wasm::Instance* instance = frame.wasmInstance();
     instance->debug().decrementStepperCount(
@@ -9735,6 +9737,7 @@ void DebuggerFrame::maybeDecrementFrameScriptStepperCount(
 
   
   
+  handler->drop();
   setReservedSlot(ONSTEP_HANDLER_SLOT, UndefinedValue());
 }
 
