@@ -17,24 +17,32 @@ const {
 
 
 class ManifestItemWarning extends PureComponent {
+  
+  
+  
+
   static get propTypes() {
+    
+    
     return {
       warning: PropTypes.object.isRequired,
     };
   }
+
   render() {
     const { warning } = this.props;
-
     return tr(
-      { className: "manifest__row manifest__row-error" },
+      { className: "manifest-warning" },
       th(
-        { className: "manifest__col-label", scope: "row" },
+        { scope: "row" },
         img({
-          src: "chrome://global/skin/icons/warning.svg",
+          
+          
           alt: "Warning icon",
+          src: "chrome://global/skin/icons/warning.svg",
         })
       ),
-      td({ className: "manifest__col-value" }, warning.warn)
+      td({}, warning.warn)
     );
   }
 }
