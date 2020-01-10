@@ -941,16 +941,13 @@ already_AddRefed<nsIPersistentProperties> Accessible::Attributes() {
   if (!HasOwnContent() || !mContent->IsElement()) return attributes.forget();
 
   
-  nsAtom* landmark = LandmarkRole();
-  if (landmark) {
-    nsAccUtils::SetAccAttr(attributes, nsGkAtoms::xmlroles, landmark);
-
-  } else {
+  nsAutoString xmlRoles;
+  if (mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::role,
+                                     xmlRoles)) {
+    nsAccUtils::SetAccAttr(attributes, nsGkAtoms::xmlroles, xmlRoles);
+  } else if (nsAtom* landmark = LandmarkRole()) {
     
-    nsAutoString xmlRoles;
-    if (mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::role,
-                                       xmlRoles))
-      nsAccUtils::SetAccAttr(attributes, nsGkAtoms::xmlroles, xmlRoles);
+    nsAccUtils::SetAccAttr(attributes, nsGkAtoms::xmlroles, landmark);
   }
 
   
