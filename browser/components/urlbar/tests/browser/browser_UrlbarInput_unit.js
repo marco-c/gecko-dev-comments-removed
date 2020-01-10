@@ -93,6 +93,10 @@ async function withNewWindow(callback) {
 
   let input = new UrlbarInput(inputOptions);
 
+  
+  
+  doc.documentElement.getBoundingClientRect();
+
   await callback(input);
 
   await BrowserTestUtils.closeWindow(win);
