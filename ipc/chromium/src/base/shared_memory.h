@@ -18,6 +18,7 @@
 
 #include "base/basictypes.h"
 #include "base/process.h"
+#include "mozilla/UniquePtrExtensions.h"
 
 namespace base {
 
@@ -58,6 +59,9 @@ class SharedMemory {
   static bool IsHandleValid(const SharedMemoryHandle& handle);
 
   
+  bool IsValid() const;
+
+  
   static SharedMemoryHandle NULLHandle();
 
   
@@ -92,7 +96,16 @@ class SharedMemory {
   
   
   
-  SharedMemoryHandle handle() const;
+  mozilla::UniqueFileHandle TakeHandle();
+
+#ifdef OS_WIN
+  
+  
+  HANDLE GetHandle() {
+    freezeable_ = false;
+    return mapped_file_;
+  }
+#endif
 
   
   
