@@ -218,8 +218,6 @@ def register_callback_action(name, title, symbol, description, order=10000,
                         'action': action,
                         'repository': repository,
                         'push': push,
-                        
-                        'parameters': {'$eval': 'parameters'},
                     },
 
                     
@@ -267,9 +265,6 @@ def render_actions_json(parameters, graph_config):
             actions.append(action)
     return {
         'version': 1,
-        'variables': {
-            'parameters': dict(**parameters),
-        },
         'actions': actions,
     }
 
