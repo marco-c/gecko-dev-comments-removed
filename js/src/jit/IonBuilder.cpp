@@ -9002,12 +9002,12 @@ AbortReasonOr<Ok> IonBuilder::getElemTryTypedArray(bool* emitted,
   
   
   
+  
+  
+  
+  
   if (inspector->hasSeenNonIntegerIndex(pc)) {
     trackOptimizationOutcome(TrackedOutcome::ArraySeenNonIntegerIndex);
-    return Ok();
-  }
-  if (inspector->hasSeenNegativeIndexGetElement(pc)) {
-    trackOptimizationOutcome(TrackedOutcome::ArraySeenNegativeIndex);
     return Ok();
   }
 
