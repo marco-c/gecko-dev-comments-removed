@@ -24,14 +24,6 @@ class ByteStream : public DecoderDoctorLifeLogger<ByteStream> {
 
   virtual void DiscardBefore(int64_t offset) {}
 
-  
-  
-  
-  
-  virtual const uint8_t* GetContiguousAccess(int64_t aOffset, size_t aSize) {
-    return nullptr;
-  }
-
  protected:
   virtual ~ByteStream() {}
 };

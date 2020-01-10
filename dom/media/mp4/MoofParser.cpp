@@ -36,11 +36,6 @@ namespace mozilla {
 
 const uint32_t kKeyIdSize = 16;
 
-
-
-
-const Microseconds CROSS_MOOF_CTS_MERGE_THRESHOLD = 1;
-
 bool MoofParser::RebuildFragmentedIndex(const MediaByteRangeSet& aByteRanges) {
   BoxContext context(mSource, aByteRanges);
   return RebuildFragmentedIndex(context);
@@ -76,7 +71,7 @@ bool MoofParser::RebuildFragmentedIndex(BoxContext& aContext) {
       ParseMoov(box);
     } else if (box.IsType("moof")) {
       Moof moof(box, mTrackParseMode, mTrex, mMvhd, mMdhd, mEdts, mSinf,
-                &mLastDecodeTime, mIsAudio, mTracksEndCts);
+                &mLastDecodeTime, mIsAudio);
 
       if (!moof.IsValid() && !box.Next().IsAvailable()) {
         
@@ -427,8 +422,7 @@ class CtsComparator {
 
 Moof::Moof(Box& aBox, const TrackParseMode& aTrackParseMode, Trex& aTrex,
            Mvhd& aMvhd, Mdhd& aMdhd, Edts& aEdts, Sinf& aSinf,
-           uint64_t* aDecodeTime, bool aIsAudio,
-           nsTArray<TrackEndCts>& aTracksEndCts)
+           uint64_t* aDecodeTime, bool aIsAudio)
     : mRange(aBox.Range()), mTfhd(aTrex), mMaxRoundingError(35000) {
   LOG_DEBUG(
       Moof,
@@ -461,7 +455,8 @@ Moof::Moof(Box& aBox, const TrackParseMode& aTrackParseMode, Trex& aTrex,
       mPsshes.AppendElement();
     }
     nsTArray<uint8_t>& pssh = mPsshes.LastElement();
-    pssh.AppendElements(std::move(box.ReadCompleteBox()));
+    pssh.AppendElements(box.Header());
+    pssh.AppendElements(box.Read());
   }
 
   if (IsValid()) {
@@ -476,35 +471,6 @@ Moof::Moof(Box& aBox, const TrackParseMode& aTrackParseMode, Trex& aTrex,
       for (size_t i = 1; i < ctsOrder.Length(); i++) {
         ctsOrder[i - 1]->mCompositionRange.end =
             ctsOrder[i]->mCompositionRange.start;
-      }
-
-      
-      
-      if (!ctsOrder.IsEmpty()) {
-        bool found = false;
-        
-        const uint32_t trackId = aTrex.mTrackId;
-        
-        
-        for (auto& prevCts : aTracksEndCts) {
-          if (prevCts.mTrackId == trackId) {
-            
-            
-            if (ctsOrder[0]->mCompositionRange.start - prevCts.mCtsEndTime <=
-                CROSS_MOOF_CTS_MERGE_THRESHOLD) {
-              ctsOrder[0]->mCompositionRange.start = prevCts.mCtsEndTime;
-            }
-            prevCts.mCtsEndTime = ctsOrder.LastElement()->mCompositionRange.end;
-            found = true;
-            break;
-          }
-        }
-        if (!found) {
-          
-          
-          aTracksEndCts.AppendElement(TrackEndCts(
-              trackId, ctsOrder.LastElement()->mCompositionRange.end));
-        }
       }
 
       
