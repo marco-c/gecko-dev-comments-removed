@@ -220,7 +220,6 @@ nsPlainTextSerializer::Init(const uint32_t aFlags, uint32_t aWrapColumn,
   mSettings.Init(aFlags);
   mWrapColumn = aWrapColumn;
 
-  
   if (MayWrap() && MayBreakLines()) {
     mLineBreaker = nsContentUtils::LineBreaker();
   }
@@ -1240,9 +1239,12 @@ void nsPlainTextSerializer::AddToLine(const char16_t* aLineFragment,
           --goodSpace;  
                         
         }
-      }
-      
-      if (!mLineBreaker) {
+      } else {
+        
+        
+        
+        
+
         if (mCurrentLineContent.mValue.IsEmpty() || mWrapColumn < prefixwidth) {
           goodSpace = NS_LINEBREAKER_NEED_MORE_TEXT;
         } else {
@@ -1269,9 +1271,11 @@ void nsPlainTextSerializer::AddToLine(const char16_t* aLineFragment,
                                            goodSpace);
           if (goodSpace == NS_LINEBREAKER_NEED_MORE_TEXT)
             goodSpace = mCurrentLineContent.mValue.Length();
-        }
-        
-        if (!mLineBreaker) {
+        } else {
+          
+          
+          
+          
           goodSpace =
               (prefixwidth > mWrapColumn) ? 1 : mWrapColumn - prefixwidth;
           while (goodSpace < linelength &&
