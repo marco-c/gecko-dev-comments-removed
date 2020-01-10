@@ -103,6 +103,7 @@ function getDuplicatedModules(loaders) {
     if (uniqueModules.has(mod)) {
       duplicatedModules.add(mod);
     }
+
     uniqueModules.add(mod);
   }
 
@@ -122,6 +123,21 @@ function getDuplicatedModules(loaders) {
 
 
 function runDuplicatedModulesTest(loaders, whitelist) {
+  const { AppConstants } = require("resource://gre/modules/AppConstants.jsm");
+  if (AppConstants.DEBUG_JS_MODULES) {
+    
+    
+    
+    ok(
+      false,
+      "The DevTools metrics tests should not run with " +
+        "`--enable-debug-js-modules`. Please disable this option " +
+        "and run the test again."
+    );
+    
+    return;
+  }
+
   const duplicatedModules = getDuplicatedModules(loaders);
 
   
