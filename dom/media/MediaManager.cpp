@@ -2187,9 +2187,11 @@ void MediaManager::DeviceListChanged() {
                 deviceIDs.AppendElement(id);
               }
             }
-
+            
+            
             for (auto& id : mDeviceIDs) {
               if (deviceIDs.Contains(id)) {
+                
                 continue;
               }
 
@@ -2197,11 +2199,25 @@ void MediaManager::DeviceListChanged() {
               nsGlobalWindowInner::InnerWindowByIdTable* windowsById =
                   nsGlobalWindowInner::GetWindowsTable();
               if (!windowsById) {
+                
                 continue;
               }
 
               for (auto iter = windowsById->Iter(); !iter.Done(); iter.Next()) {
                 nsGlobalWindowInner* window = iter.Data();
+                if (!window->IsCurrentInnerWindow()) {
+                  
+                  continue;
+                }
+                if (!window->GetOuterWindow()->IsTopLevelWindow()) {
+                  
+                  
+                  
+                  
+                  
+                  
+                  continue;
+                }
                 IterateWindowListeners(
                     window,
                     [&id](const RefPtr<GetUserMediaWindowListener>& aListener) {
@@ -2234,7 +2250,7 @@ nsresult MediaManager::GenerateUUID(nsAString& aResult) {
 
 static bool IsFullyActive(nsPIDOMWindowInner* aWindow) {
   while (true) {
-    if (!aWindow) {
+    if (!aWindow || nsGlobalWindowInner::Cast(aWindow)->IsDying()) {
       return false;
     }
     Document* document = aWindow->GetExtantDoc();
@@ -3368,6 +3384,12 @@ void MediaManager::OnNavigation(uint64_t aWindowID) {
   
   auto* window = nsGlobalWindowInner::GetInnerWindowWithId(aWindowID);
   if (window) {
+    
+    
+    
+    if (!window->IsCurrentInnerWindow()) {
+      return;
+    }
     IterateWindowListeners(
         window, [self = RefPtr<MediaManager>(this),
                  windowID = DebugOnly<decltype(aWindowID)>(aWindowID)](
@@ -3899,7 +3921,7 @@ void MediaManager::StopScreensharing(uint64_t aWindowID) {
   
 
   auto* window = nsGlobalWindowInner::GetInnerWindowWithId(aWindowID);
-  if (!window) {
+  if (!window || !window->IsCurrentInnerWindow()) {
     return;
   }
   IterateWindowListeners(
@@ -3913,29 +3935,29 @@ void MediaManager::IterateWindowListeners(nsPIDOMWindowInner* aWindow,
                                           const FunctionType& aCallback) {
   
   
-  if (aWindow) {
-    {
-      uint64_t windowID = aWindow->WindowID();
-      RefPtr<GetUserMediaWindowListener> listener = GetWindowListener(windowID);
-      if (listener) {
-        aCallback(listener);
-      }
-      
+  MOZ_DIAGNOSTIC_ASSERT(aWindow);
+  MOZ_DIAGNOSTIC_ASSERT(aWindow->IsCurrentInnerWindow());
+  {
+    uint64_t windowID = aWindow->WindowID();
+    RefPtr<GetUserMediaWindowListener> listener = GetWindowListener(windowID);
+    if (listener) {
+      aCallback(listener);
     }
-
     
-    nsCOMPtr<nsIDocShell> docShell = aWindow->GetDocShell();
-    if (docShell) {
-      int32_t i, count;
-      docShell->GetInProcessChildCount(&count);
-      for (i = 0; i < count; ++i) {
-        nsCOMPtr<nsIDocShellTreeItem> item;
-        docShell->GetInProcessChildAt(i, getter_AddRefs(item));
-        nsCOMPtr<nsPIDOMWindowOuter> winOuter =
-            item ? item->GetWindow() : nullptr;
+  }
 
-        if (winOuter) {
-          IterateWindowListeners(winOuter->GetCurrentInnerWindow(), aCallback);
+  
+  nsCOMPtr<nsIDocShell> docShell = aWindow->GetDocShell();
+  if (docShell) {
+    int32_t i, count;
+    docShell->GetInProcessChildCount(&count);
+    for (i = 0; i < count; ++i) {
+      nsCOMPtr<nsIDocShellTreeItem> item;
+      docShell->GetInProcessChildAt(i, getter_AddRefs(item));
+      nsCOMPtr<nsPIDOMWindowOuter> child = item ? item->GetWindow() : nullptr;
+      if (child) {
+        if (auto* innerChild = child->GetCurrentInnerWindow()) {
+          IterateWindowListeners(innerChild, aCallback);
         }
       }
     }
