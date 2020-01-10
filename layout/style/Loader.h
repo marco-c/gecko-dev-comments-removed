@@ -548,7 +548,8 @@ class Loader final {
   nsCOMPtr<nsIConsoleReportCollector> mReporter;
 
 #ifdef DEBUG
-  bool mSyncCallback;
+  
+  bool mSyncCallback = false;
 #endif
 };
 
