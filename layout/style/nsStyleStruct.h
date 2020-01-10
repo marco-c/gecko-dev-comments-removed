@@ -945,44 +945,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList {
       mMozListReversed;  
 };
 
-struct nsStyleGridLine {
-  
-  
-  bool mHasSpan;
-  int32_t mInteger;    
-  RefPtr<nsAtom> mLineName;  
-
-  
-  
-  
-  static const int32_t kMinLine = -10000;
-  static const int32_t kMaxLine = 10000;
-
-  nsStyleGridLine()
-      : mHasSpan(false), mInteger(0), mLineName(nsGkAtoms::_empty) {}
-
-  nsStyleGridLine(const nsStyleGridLine& aOther) { (*this) = aOther; }
-
-  void operator=(const nsStyleGridLine& aOther) {
-    mHasSpan = aOther.mHasSpan;
-    mInteger = aOther.mInteger;
-    mLineName = aOther.mLineName;
-  }
-
-  bool operator!=(const nsStyleGridLine& aOther) const {
-    return mHasSpan != aOther.mHasSpan || mInteger != aOther.mInteger ||
-           mLineName != aOther.mLineName;
-  }
-
-  bool IsAuto() const {
-    bool haveInitialValues = mInteger == 0 && mLineName == nsGkAtoms::_empty;
-    MOZ_ASSERT(!(haveInitialValues && mHasSpan),
-               "should not have 'span' when other components are "
-               "at their initial values");
-    return haveInitialValues;
-  }
-};
-
 
 
 
@@ -1051,7 +1013,7 @@ struct nsStyleGridTemplate {
   bool HasRepeatAuto() const { return mRepeatAutoIndex != -1; }
 
   bool IsRepeatAutoIndex(uint32_t aIndex) const {
-    MOZ_ASSERT(aIndex < uint32_t(2 * nsStyleGridLine::kMaxLine));
+    MOZ_ASSERT(aIndex < uint32_t(2 * mozilla::StyleMAX_GRID_LINE));
     return int32_t(aIndex) == mRepeatAutoIndex;
   }
 };
@@ -1142,10 +1104,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
 
   mozilla::StyleGridTemplateAreas mGridTemplateAreas;
 
-  nsStyleGridLine mGridColumnStart;
-  nsStyleGridLine mGridColumnEnd;
-  nsStyleGridLine mGridRowStart;
-  nsStyleGridLine mGridRowEnd;
+  mozilla::StyleGridLine mGridColumnStart;
+  mozilla::StyleGridLine mGridColumnEnd;
+  mozilla::StyleGridLine mGridRowStart;
+  mozilla::StyleGridLine mGridRowEnd;
   mozilla::NonNegativeLengthPercentageOrNormal mColumnGap;
   mozilla::NonNegativeLengthPercentageOrNormal mRowGap;
 
