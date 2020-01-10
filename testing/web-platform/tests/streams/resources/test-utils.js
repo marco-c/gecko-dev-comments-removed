@@ -51,6 +51,7 @@ self.garbageCollect = () => {
   if (self.gc) {
     
     
+    
     self.gc();
   } else if (self.GCController) {
     
