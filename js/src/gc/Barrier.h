@@ -418,7 +418,7 @@ class MOZ_NON_MEMMOVABLE BarrieredBase {
   
   
   
-  T* unsafeUnbarrieredForTracing() { return &value; }
+  T* unsafeUnbarrieredForTracing() const { return const_cast<T*>(&value); }
 };
 
 
