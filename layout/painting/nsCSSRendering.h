@@ -619,6 +619,9 @@ struct nsCSSRendering {
     
     
     Float icoordInFrame = 0.0f;
+    
+    
+    Float baselineOffset = 0.0f;
   };
 
   
