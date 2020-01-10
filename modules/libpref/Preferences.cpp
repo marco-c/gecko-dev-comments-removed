@@ -4472,8 +4472,25 @@ struct Internals {
   template <typename T>
   static void VarChanged(const char* aPref, void* aClosure) {
     CacheData* cache = static_cast<CacheData*>(aClosure);
-    *static_cast<T*>(cache->mCacheLocation) =
-        GetPref(aPref, cache->GetDefault<StripAtomic<T>>());
+    StripAtomic<T> value;
+    nsresult rv = GetPrefValue(aPref, &value, PrefValueKind::User);
+    if (NS_SUCCEEDED(rv)) {
+      *static_cast<T*>(cache->mCacheLocation) = value;
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      NS_WARNING(nsPrintfCString("VarChanged failure: %s\n", aPref).get());
+      MOZ_ASSERT(false);
+    }
   }
 
   template <typename T>
