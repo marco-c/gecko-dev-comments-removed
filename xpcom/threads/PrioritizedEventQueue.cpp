@@ -147,9 +147,14 @@ EventQueuePriority PrioritizedEventQueue::SelectQueue(
   return queue;
 }
 
+
+
+
+
+
 already_AddRefed<nsIRunnable> PrioritizedEventQueue::GetEvent(
     EventQueuePriority* aPriority, const MutexAutoLock& aProofOfLock,
-    mozilla::TimeDuration* aLastEventDelay) {
+    mozilla::TimeDuration* aHypotheticalInputEventDelay) {
 #ifndef RELEASE_OR_BETA
   
   
@@ -183,14 +188,16 @@ already_AddRefed<nsIRunnable> PrioritizedEventQueue::GetEvent(
       break;
 
     case EventQueuePriority::High:
-      event = mHighQueue->GetEvent(aPriority, aProofOfLock, aLastEventDelay);
+      event = mHighQueue->GetEvent(aPriority, aProofOfLock,
+                                   aHypotheticalInputEventDelay);
       MOZ_ASSERT(event);
       mInputHandlingStartTime = TimeStamp();
       mProcessHighPriorityQueue = false;
       break;
 
     case EventQueuePriority::Input:
-      event = mInputQueue->GetEvent(aPriority, aProofOfLock, aLastEventDelay);
+      event = mInputQueue->GetEvent(aPriority, aProofOfLock,
+                                    aHypotheticalInputEventDelay);
       MOZ_ASSERT(event);
       break;
 
@@ -200,17 +207,17 @@ already_AddRefed<nsIRunnable> PrioritizedEventQueue::GetEvent(
       
     case EventQueuePriority::MediumHigh:
       event = mMediumHighQueue->GetEvent(aPriority, aProofOfLock);
-      *aLastEventDelay = TimeDuration();
+      *aHypotheticalInputEventDelay = TimeDuration();
       break;
 
     case EventQueuePriority::Normal:
       event = mNormalQueue->GetEvent(aPriority, aProofOfLock);
-      *aLastEventDelay = TimeDuration();
+      *aHypotheticalInputEventDelay = TimeDuration();
       break;
 
     case EventQueuePriority::Idle:
     case EventQueuePriority::DeferredTimers:
-      *aLastEventDelay = TimeDuration();
+      *aHypotheticalInputEventDelay = TimeDuration();
       
       
 
@@ -225,8 +232,7 @@ already_AddRefed<nsIRunnable> PrioritizedEventQueue::GetEvent(
         return nullptr;
       }
 
-      nsCOMPtr<nsIRunnable> event =
-          mDeferredTimersQueue->GetEvent(aPriority, aProofOfLock);
+      event = mDeferredTimersQueue->GetEvent(aPriority, aProofOfLock);
       if (!event) {
         event = mIdleQueue->GetEvent(aPriority, aProofOfLock);
       }
@@ -243,6 +249,10 @@ already_AddRefed<nsIRunnable> PrioritizedEventQueue::GetEvent(
 #endif
       }
       break;
+  }  
+
+  if (!event) {
+    *aHypotheticalInputEventDelay = TimeDuration();
   }
 
   return event.forget();
