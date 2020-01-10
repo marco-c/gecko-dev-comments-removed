@@ -157,7 +157,7 @@ class Output(object):
 
                     
                     
-                    if 'responsiveness' is name:
+                    if 'responsiveness' == name:
                         subtest = {
                             'name': name,
                             'value': filter.responsiveness_Metric(vals)

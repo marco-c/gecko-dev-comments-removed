@@ -55,7 +55,7 @@ class TestCreate(unittest.TestCase):
             self.assertEqual(task['schedulerId'], 'domain-level-4')
             
             for depid in task.get('dependencies', []):
-                if depid is 'decisiontask':
+                if depid == 'decisiontask':
                     
                     continue
                 self.assertIn(depid, self.created_tasks)

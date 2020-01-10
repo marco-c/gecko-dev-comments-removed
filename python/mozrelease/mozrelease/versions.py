@@ -31,7 +31,7 @@ class MozillaVersionCompareMixin():
                 has_esr.issuperset(set(['other', 'self'])):
             
             return val
-        elif val is not 0:
+        elif val != 0:
             
             
             return val
