@@ -6,7 +6,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.jsm",
 });
 
-async function loadExtension(options = {}) {
+async function loadTipExtension(options = {}) {
   let ext = ExtensionTestUtils.loadExtension({
     manifest: {
       permissions: ["urlbar"],
@@ -75,8 +75,8 @@ add_task(async function setUp() {
 
 
 
-add_task(async function testOnResultPicked_mainButton_noURL_enter() {
-  let ext = await loadExtension();
+add_task(async function tip_onResultPicked_mainButton_noURL_enter() {
+  let ext = await loadTipExtension();
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     waitForFocus,
@@ -89,8 +89,8 @@ add_task(async function testOnResultPicked_mainButton_noURL_enter() {
 });
 
 
-add_task(async function testOnResultPicked_mainButton_noURL_mouse() {
-  let ext = await loadExtension();
+add_task(async function tip_onResultPicked_mainButton_noURL_mouse() {
+  let ext = await loadTipExtension();
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     waitForFocus,
@@ -107,8 +107,8 @@ add_task(async function testOnResultPicked_mainButton_noURL_mouse() {
 
 
 
-add_task(async function testOnResultPicked_mainButton_url_enter() {
-  let ext = await loadExtension({ buttonUrl: "http://example.com/" });
+add_task(async function tip_onResultPicked_mainButton_url_enter() {
+  let ext = await loadTipExtension({ buttonUrl: "http://example.com/" });
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
@@ -130,8 +130,8 @@ add_task(async function testOnResultPicked_mainButton_url_enter() {
 });
 
 
-add_task(async function testOnResultPicked_mainButton_url_mouse() {
-  let ext = await loadExtension({ buttonUrl: "http://example.com/" });
+add_task(async function tip_onResultPicked_mainButton_url_mouse() {
+  let ext = await loadTipExtension({ buttonUrl: "http://example.com/" });
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
@@ -157,8 +157,8 @@ add_task(async function testOnResultPicked_mainButton_url_mouse() {
 
 
 
-add_task(async function testOnResultPicked_helpButton_url_enter() {
-  let ext = await loadExtension({ helpUrl: "http://example.com/" });
+add_task(async function tip_onResultPicked_helpButton_url_enter() {
+  let ext = await loadTipExtension({ helpUrl: "http://example.com/" });
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
@@ -180,8 +180,8 @@ add_task(async function testOnResultPicked_helpButton_url_enter() {
 });
 
 
-add_task(async function testOnResultPicked_helpButton_url_mouse() {
-  let ext = await loadExtension({ helpUrl: "http://example.com/" });
+add_task(async function tip_onResultPicked_helpButton_url_mouse() {
+  let ext = await loadTipExtension({ helpUrl: "http://example.com/" });
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
@@ -202,5 +202,82 @@ add_task(async function testOnResultPicked_helpButton_url_mouse() {
     await loadedPromise;
     Assert.equal(gBrowser.currentURI.spec, "http://example.com/");
   });
+  await ext.unload();
+});
+
+
+add_task(async function search() {
+  gURLBar.blur();
+
+  let ext = ExtensionTestUtils.loadExtension({
+    manifest: {
+      permissions: ["urlbar"],
+    },
+    isPrivileged: true,
+    background: () => {
+      browser.urlbar.search("test");
+    },
+  });
+  await ext.startup();
+
+  let context = await UrlbarTestUtils.promiseSearchComplete(window);
+  Assert.equal(gURLBar.value, "test");
+  Assert.equal(context.searchString, "test");
+  Assert.ok(gURLBar.focused);
+  Assert.equal(gURLBar.getAttribute("focused"), "true");
+
+  await UrlbarTestUtils.promisePopupClose(window);
+  await ext.unload();
+});
+
+
+add_task(async function searchEmpty() {
+  gURLBar.blur();
+
+  
+  
+  
+  
+  let ext = ExtensionTestUtils.loadExtension({
+    manifest: {
+      permissions: ["urlbar"],
+    },
+    isPrivileged: true,
+    background() {
+      browser.urlbar.onBehaviorRequested.addListener(query => {
+        return "restricting";
+      }, "test");
+      browser.urlbar.onResultsRequested.addListener(query => {
+        return [
+          {
+            type: "tip",
+            source: "local",
+            heuristic: true,
+            payload: {
+              text: "Test",
+              buttonText: "OK",
+            },
+          },
+        ];
+      }, "test");
+      browser.urlbar.search("");
+    },
+  });
+  await ext.startup();
+
+  await BrowserTestUtils.waitForCondition(
+    () => UrlbarProvidersManager.getProvider("test"),
+    "Waiting for provider to be registered"
+  );
+
+  let context = await UrlbarTestUtils.promiseSearchComplete(window);
+  Assert.equal(gURLBar.value, "");
+  Assert.equal(context.searchString, "");
+  Assert.equal(context.results.length, 1);
+  Assert.equal(context.results[0].type, UrlbarUtils.RESULT_TYPE.TIP);
+  Assert.ok(gURLBar.focused);
+  Assert.equal(gURLBar.getAttribute("focused"), "true");
+
+  await UrlbarTestUtils.promisePopupClose(window);
   await ext.unload();
 });
