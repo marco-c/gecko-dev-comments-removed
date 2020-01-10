@@ -467,6 +467,13 @@ class ExtensionWrapper {
     }
     this.state = "unloading";
 
+    if (this.addonPromise) {
+      
+      
+      
+      await this.addonPromise;
+    }
+
     if (this.addon) {
       await this.addon.uninstall();
     } else {
@@ -610,11 +617,19 @@ class AOMExtensionWrapper extends ExtensionWrapper {
   onEvent(kind, ...args) {
     switch (kind) {
       case "addon-manager-started":
+        if (this.state === "uninitialized") {
+          
+          return;
+        }
         this.addonPromise = AddonManager.getAddonByID(this.id).then(addon => {
           this.addon = addon;
+          this.addonPromise = null;
         });
       
       case "addon-manager-shutdown":
+        if (this.state === "uninitialized") {
+          return;
+        }
         this.addon = null;
 
         this.setRestarting();
