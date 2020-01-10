@@ -15,10 +15,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-
-
-extern char **environ;
-
 namespace angle
 {
 
@@ -170,7 +166,7 @@ bool RunApp(const std::vector<const char *> &args,
         
         
         
-        execve(args[0], const_cast<char *const *>(args.data()), environ);
+        execv(args[0], const_cast<char *const *>(args.data()));
         _exit(errno);
     }
 
