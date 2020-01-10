@@ -839,6 +839,11 @@ class nsIWidget : public nsISupports {
   
 
 
+  virtual bool IsTiled() const = 0;
+
+  
+
+
   virtual bool IsFullyOccluded() const = 0;
 
   
