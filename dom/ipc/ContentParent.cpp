@@ -5500,7 +5500,10 @@ void ContentParent::EnsurePermissionsByKey(const nsCString& aKey) {
   
   
   
-  nsCOMPtr<nsIPermissionManager> permManager = services::GetPermissionManager();
+  RefPtr<nsPermissionManager> permManager = nsPermissionManager::GetInstance();
+  if (!permManager) {
+    return;
+  }
 
   if (mActivePermissionKeys.Contains(aKey)) {
     return;
@@ -5508,12 +5511,9 @@ void ContentParent::EnsurePermissionsByKey(const nsCString& aKey) {
   mActivePermissionKeys.PutEntry(aKey);
 
   nsTArray<IPC::Permission> perms;
-  nsresult rv = permManager->GetPermissionsWithKey(aKey, perms);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
+  if (permManager->GetPermissionsWithKey(aKey, perms)) {
+    Unused << SendSetPermissionsWithKey(aKey, perms);
   }
-
-  Unused << SendSetPermissionsWithKey(aKey, perms);
 }
 
 bool ContentParent::NeedsPermissionsUpdate(
