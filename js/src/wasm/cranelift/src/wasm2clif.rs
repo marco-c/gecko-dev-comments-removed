@@ -32,8 +32,8 @@ use cranelift_wasm::{
     SignatureIndex, TableIndex, WasmResult,
 };
 
-use bindings;
-use compile::{symbolic_function_name, wasm_function_name};
+use crate::bindings;
+use crate::compile::{symbolic_function_name, wasm_function_name};
 
 
 fn native_pointer_type() -> ir::Type {

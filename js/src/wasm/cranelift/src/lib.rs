@@ -13,13 +13,10 @@
 
 
 
-extern crate cranelift_codegen;
-extern crate cranelift_wasm;
 #[macro_use]
 extern crate target_lexicon;
 #[macro_use]
 extern crate log;
-extern crate env_logger;
 
 mod bindings; 
 mod compile; 
@@ -27,9 +24,10 @@ mod cpu;
 mod utils; 
 mod wasm2clif; 
 
-use bindings::{CompiledFunc, FuncCompileInput, ModuleEnvironment, StaticEnvironment};
-use compile::BatchCompiler;
 use std::ptr;
+
+use crate::bindings::{CompiledFunc, FuncCompileInput, ModuleEnvironment, StaticEnvironment};
+use crate::compile::BatchCompiler;
 
 #[no_mangle]
 pub extern "C" fn cranelift_initialize() {
