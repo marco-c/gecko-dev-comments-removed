@@ -1,46 +1,35 @@
-import time
+def ok_response(request, response, visited_count,
+                extra_body='', mime_type='application/javascript'):
+  
+  
+  return (
+    [
+      ('Cache-Control', 'no-cache, must-revalidate'),
+      ('Pragma', 'no-cache'),
+      ('Content-Type', mime_type)
+    ],
+    '/* %s */ %s' % (str(visited_count), extra_body))
 
 def main(request, response):
-    
-    mode = 'init'
-    if 'mode' in request.cookies:
-        mode = request.cookies['mode'].value
+  key = request.GET["Key"]
+  mode = request.GET["Mode"]
 
-    
-    headers = [('Cache-Control', 'no-cache, must-revalidate'),
-               ('Pragma', 'no-cache')]
+  visited_count = request.server.stash.take(key)
+  if visited_count is None:
+    visited_count = 0
 
-    content_type = ''
-    extra_body = ''
+  
+  visited_count += 1
+  request.server.stash.put(key, visited_count)
 
-    if mode == 'init':
-        
-        
-        content_type = 'application/javascript'
-        response.set_cookie('mode', 'normal')
-    elif mode == 'normal':
-        
-        
-        content_type = 'application/javascript'
-        response.set_cookie('mode', 'error');
-    elif mode == 'error':
-        
-        
-        content_type = 'text/html'
-        response.set_cookie('mode', 'syntax-error');
-    elif mode == 'syntax-error':
-        
-        content_type = 'application/javascript'
-        response.set_cookie('mode', 'throw-install');
-        extra_body = 'badsyntax(isbad;'
-    elif mode == 'throw-install':
-        
-        content_type = 'application/javascript'
-        response.delete_cookie('mode')
-        extra_body = "addEventListener('install', function(e) { throw new Error('boom'); });"
-
-    headers.append(('Content-Type', content_type))
-    
-    
-    return headers, '/* %s %s */ %s' % (time.time(), time.clock(), extra_body)
-
+  
+  if visited_count == 2:
+    if mode == 'normal':
+      return ok_response(request, response, visited_count)
+    if mode == 'bad_mime_type':
+      return ok_response(request, response, visited_count, mime_type='text/html')
+    if mode == 'syntax_error':
+      return ok_response(request, response, visited_count, extra_body='badsyntax(isbad;')
+    if mode == 'throw_install':
+      return ok_response(request, response, visited_count, extra_body="addEventListener('install', function(e) { throw new Error('boom'); });")
+  return ok_response(request, response, visited_count)
