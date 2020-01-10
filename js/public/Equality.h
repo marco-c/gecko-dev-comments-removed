@@ -8,6 +8,8 @@
 #ifndef js_Equality_h
 #define js_Equality_h
 
+#include "mozilla/FloatingPoint.h"
+
 #include "jstypes.h"  
 
 #include "js/RootingAPI.h"  
@@ -49,6 +51,15 @@ extern JS_PUBLIC_API bool LooselyEqual(JSContext* cx, JS::Handle<JS::Value> v1,
 
 extern JS_PUBLIC_API bool SameValue(JSContext* cx, JS::Handle<JS::Value> v1,
                                     JS::Handle<JS::Value> v2, bool* same);
+
+
+
+
+
+
+static inline bool SameValueZero(double v1, double v2) {
+  return mozilla::EqualOrBothNaN(v1, v2);
+}
 
 }  
 

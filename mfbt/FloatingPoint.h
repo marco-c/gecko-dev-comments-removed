@@ -505,6 +505,18 @@ static inline bool NumbersAreIdentical(T aValue1, T aValue2) {
   return BitwiseCast<Bits>(aValue1) == BitwiseCast<Bits>(aValue2);
 }
 
+
+
+
+
+template <typename T>
+static inline bool EqualOrBothNaN(T aValue1, T aValue2) {
+  if (IsNaN(aValue1)) {
+    return IsNaN(aValue2);
+  }
+  return aValue1 == aValue2;
+}
+
 namespace detail {
 
 template <typename T>
