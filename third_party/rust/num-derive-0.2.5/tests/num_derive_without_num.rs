@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+#[macro_use]
+extern crate num_derive;
+
+#[derive(Debug, FromPrimitive, ToPrimitive)]
+enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}

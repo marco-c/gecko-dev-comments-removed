@@ -20,22 +20,27 @@
 
 
 
+
+
+
+#![doc(html_root_url = "https://docs.rs/bincode/1.2.0")]
 #![crate_name = "bincode"]
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
 
 extern crate byteorder;
+#[macro_use]
 extern crate serde;
 
 mod config;
-mod ser;
-mod error;
 mod de;
+mod error;
 mod internal;
+mod ser;
 
-pub use error::{Error, ErrorKind, Result};
 pub use config::Config;
 pub use de::read::{BincodeRead, IoReader, SliceReader};
+pub use error::{Error, ErrorKind, Result};
 
 
 
@@ -68,6 +73,7 @@ pub trait SerializerAcceptor {
 
 
 
+#[inline(always)]
 pub fn config() -> Config {
     Config::new()
 }
@@ -123,7 +129,7 @@ where
 pub fn deserialize_in_place<'a, R, T>(reader: R, place: &mut T) -> Result<()>
 where
     T: serde::de::Deserialize<'a>,
-    R: BincodeRead<'a>
+    R: BincodeRead<'a>,
 {
     config().deserialize_in_place(reader, place)
 }
@@ -147,9 +153,10 @@ where
 
 
 #[doc(hidden)]
-pub fn with_deserializer<'a, A,  R>(reader: R, acceptor: A) -> A::Output
-where A: DeserializerAcceptor<'a>,
-        R: BincodeRead<'a>
+pub fn with_deserializer<'a, A, R>(reader: R, acceptor: A) -> A::Output
+where
+    A: DeserializerAcceptor<'a>,
+    R: BincodeRead<'a>,
 {
     config().with_deserializer(reader, acceptor)
 }
@@ -158,8 +165,9 @@ where A: DeserializerAcceptor<'a>,
 
 #[doc(hidden)]
 pub fn with_serializer<A, W>(writer: W, acceptor: A) -> A::Output
-where A: SerializerAcceptor,
-    W: std::io::Write
+where
+    A: SerializerAcceptor,
+    W: std::io::Write,
 {
     config().with_serializer(writer, acceptor)
 }
