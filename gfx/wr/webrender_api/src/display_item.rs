@@ -837,6 +837,13 @@ pub struct IdentityPrimitive {
     pub input: FilterPrimitiveInput,
 }
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
+pub struct OffsetPrimitive {
+    pub input: FilterPrimitiveInput,
+    pub offset: LayoutVector2D,
+}
+
 
 /// cbindgen:derive-eq=false
 #[repr(C)]
@@ -852,6 +859,7 @@ pub enum FilterPrimitiveKind {
     ColorMatrix(ColorMatrixPrimitive),
     DropShadow(DropShadowPrimitive),
     ComponentTransfer(ComponentTransferPrimitive),
+    Offset(OffsetPrimitive),
 }
 
 impl Default for FilterPrimitiveKind {
@@ -872,6 +880,7 @@ impl FilterPrimitiveKind {
             FilterPrimitiveKind::Identity(..) |
             FilterPrimitiveKind::Blend(..) |
             FilterPrimitiveKind::ColorMatrix(..) |
+            FilterPrimitiveKind::Offset(..) |
             
             FilterPrimitiveKind::ComponentTransfer(..) => {}
         }
