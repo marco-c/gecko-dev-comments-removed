@@ -625,6 +625,7 @@ class MediaStreamTrack : public DOMEventTargetHelper,
   RefPtr<ProcessedMediaStream> mStream;
   
   
+  
   RefPtr<MediaInputPort> mPort;
   
   const TrackID mTrackID;
