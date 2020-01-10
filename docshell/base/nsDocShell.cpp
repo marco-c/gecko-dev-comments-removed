@@ -1057,13 +1057,6 @@ nsDOMNavigationTiming* nsDocShell::GetNavigationTiming() const {
 
 bool nsDocShell::ValidateOrigin(nsIDocShellTreeItem* aOriginTreeItem,
                                 nsIDocShellTreeItem* aTargetTreeItem) {
-  
-  
-  if (nsContentUtils::GetCurrentJSContext() &&
-      nsContentUtils::IsCallerChrome()) {
-    return true;
-  }
-
   MOZ_ASSERT(aOriginTreeItem && aTargetTreeItem, "need two docshells");
 
   
