@@ -259,7 +259,7 @@ function checkIllegalPrefixed(prefix, opcode) {
 
 
 
-for (let i = 3; i < 0x10; i++)
+for (let i = 0x4; i < 0x10; i++)
     checkIllegalPrefixed(ThreadPrefix, i);
 
 for (let i = 0x4f; i < 0x100; i++)
