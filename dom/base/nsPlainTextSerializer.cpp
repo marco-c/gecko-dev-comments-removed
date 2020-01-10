@@ -1163,6 +1163,135 @@ static bool IsSpaceStuffable(const char16_t* s) {
           NS_strncmp(s, u"From ", 5) == 0);
 }
 
+void nsPlainTextSerializer::MaybeWrapAndOutputCompleteLines() {
+  if (!MayWrap()) {
+    return;
+  }
+
+  const uint32_t prefixwidth = mCurrentLine.DeterminePrefixWidth();
+  int32_t linelength = mCurrentLine.mContent.mValue.Length();
+
+  
+  uint32_t currentLineContentWidth =
+      GetUnicharStringWidth(mCurrentLine.mContent.mValue.get(),
+                            mCurrentLine.mContent.mValue.Length());
+
+  
+  
+  
+  
+  uint32_t bonuswidth = (mWrapColumn > 20) ? 4 : 0;
+
+  while (currentLineContentWidth + prefixwidth > mWrapColumn + bonuswidth) {
+    
+    
+    int32_t goodSpace = mCurrentLine.mContent.mValue.Length();
+    uint32_t width = currentLineContentWidth;
+    while (goodSpace > 0 && (width + prefixwidth > mWrapColumn)) {
+      goodSpace--;
+      width -= GetUnicharWidth(mCurrentLine.mContent.mValue[goodSpace]);
+    }
+
+    goodSpace++;
+
+    if (mLineBreaker) {
+      goodSpace =
+          mLineBreaker->Prev(mCurrentLine.mContent.mValue.get(),
+                             mCurrentLine.mContent.mValue.Length(), goodSpace);
+      if (goodSpace != NS_LINEBREAKER_NEED_MORE_TEXT &&
+          nsCRT::IsAsciiSpace(
+              mCurrentLine.mContent.mValue.CharAt(goodSpace - 1))) {
+        --goodSpace;  
+                      
+      }
+    } else {
+      
+      
+      
+      
+
+      if (mCurrentLine.mContent.mValue.IsEmpty() || mWrapColumn < prefixwidth) {
+        goodSpace = NS_LINEBREAKER_NEED_MORE_TEXT;
+      } else {
+        goodSpace = std::min(mWrapColumn - prefixwidth,
+                             mCurrentLine.mContent.mValue.Length() - 1);
+        while (goodSpace >= 0 &&
+               !nsCRT::IsAsciiSpace(
+                   mCurrentLine.mContent.mValue.CharAt(goodSpace))) {
+          goodSpace--;
+        }
+      }
+    }
+
+    nsAutoString restOfLine;
+    if (goodSpace == NS_LINEBREAKER_NEED_MORE_TEXT) {
+      
+      
+      goodSpace =
+          (prefixwidth > mWrapColumn + 1) ? 1 : mWrapColumn - prefixwidth + 1;
+      if (mLineBreaker) {
+        if ((uint32_t)goodSpace < mCurrentLine.mContent.mValue.Length())
+          goodSpace = mLineBreaker->Next(mCurrentLine.mContent.mValue.get(),
+                                         mCurrentLine.mContent.mValue.Length(),
+                                         goodSpace);
+        if (goodSpace == NS_LINEBREAKER_NEED_MORE_TEXT)
+          goodSpace = mCurrentLine.mContent.mValue.Length();
+      } else {
+        
+        
+        
+        
+        goodSpace = (prefixwidth > mWrapColumn) ? 1 : mWrapColumn - prefixwidth;
+        while (goodSpace < linelength &&
+               !nsCRT::IsAsciiSpace(
+                   mCurrentLine.mContent.mValue.CharAt(goodSpace))) {
+          goodSpace++;
+        }
+      }
+    }
+
+    if ((goodSpace < linelength) && (goodSpace > 0)) {
+      
+
+      
+      
+      if (nsCRT::IsAsciiSpace(mCurrentLine.mContent.mValue.CharAt(goodSpace))) {
+        mCurrentLine.mContent.mValue.Right(restOfLine,
+                                           linelength - goodSpace - 1);
+      } else {
+        mCurrentLine.mContent.mValue.Right(restOfLine, linelength - goodSpace);
+      }
+      
+      const bool breakBySpace =
+          mCurrentLine.mContent.mValue.CharAt(goodSpace) == ' ';
+      mCurrentLine.mContent.mValue.Truncate(goodSpace);
+      EndLine(true, breakBySpace);
+      mCurrentLine.mContent.mValue.Truncate();
+      
+      if (mSettings.HasFlag(nsIDocumentEncoder::OutputFormatFlowed)) {
+        if (!restOfLine.IsEmpty() && IsSpaceStuffable(restOfLine.get()) &&
+            mCurrentLine.mCiteQuoteLevel ==
+                0  
+        ) {
+          
+          mCurrentLine.mContent.mValue.Append(char16_t(' '));
+          
+        }
+      }
+      mCurrentLine.mContent.mValue.Append(restOfLine);
+      currentLineContentWidth =
+          GetUnicharStringWidth(mCurrentLine.mContent.mValue.get(),
+                                mCurrentLine.mContent.mValue.Length());
+      linelength = mCurrentLine.mContent.mValue.Length();
+      mEmptyLines = -1;
+    } else {
+      
+      
+      break;
+    }
+  }
+}
+
 
 
 
@@ -1171,14 +1300,10 @@ static bool IsSpaceStuffable(const char16_t* s) {
 
 void nsPlainTextSerializer::AddToLine(const char16_t* aLineFragment,
                                       int32_t aLineFragmentLength) {
-  const uint32_t prefixwidth = mCurrentLine.DeterminePrefixWidth();
-
   if (mLineBreakDue) EnsureVerticalSpace(mFloatingLines);
 
-  int32_t linelength = mCurrentLine.mContent.mValue.Length();
-  if (0 == linelength) {
+  if (mCurrentLine.mContent.mValue.IsEmpty()) {
     if (0 == aLineFragmentLength) {
-      
       return;
     }
 
@@ -1196,134 +1321,7 @@ void nsPlainTextSerializer::AddToLine(const char16_t* aLineFragment,
 
   mCurrentLine.mContent.mValue.Append(aLineFragment, aLineFragmentLength);
 
-  if (MayWrap()) {
-    
-    uint32_t currentLineContentWidth = GetUnicharStringWidth(
-      mCurrentLine.mContent.mValue.get(),
-      mCurrentLine.mContent.mValue.Length());
-
-    linelength = mCurrentLine.mContent.mValue.Length();
-
-    
-    
-    
-    
-    uint32_t bonuswidth = (mWrapColumn > 20) ? 4 : 0;
-
-    while (currentLineContentWidth + prefixwidth >
-           mWrapColumn + bonuswidth) {
-      
-      
-      int32_t goodSpace = mCurrentLine.mContent.mValue.Length();
-      uint32_t width = currentLineContentWidth;
-      while (goodSpace > 0 && (width + prefixwidth > mWrapColumn)) {
-        goodSpace--;
-        width -= GetUnicharWidth(mCurrentLine.mContent.mValue[goodSpace]);
-      }
-
-      goodSpace++;
-
-      if (mLineBreaker) {
-        goodSpace = mLineBreaker->Prev(mCurrentLine.mContent.mValue.get(),
-                                       mCurrentLine.mContent.mValue.Length(),
-                                       goodSpace);
-        if (goodSpace != NS_LINEBREAKER_NEED_MORE_TEXT &&
-            nsCRT::IsAsciiSpace(
-                mCurrentLine.mContent.mValue.CharAt(goodSpace - 1))) {
-          --goodSpace;  
-                        
-        }
-      } else {
-        
-        
-        
-        
-
-        if (mCurrentLine.mContent.mValue.IsEmpty() ||
-            mWrapColumn < prefixwidth) {
-          goodSpace = NS_LINEBREAKER_NEED_MORE_TEXT;
-        } else {
-          goodSpace = std::min(mWrapColumn - prefixwidth,
-                               mCurrentLine.mContent.mValue.Length() - 1);
-          while (goodSpace >= 0 &&
-                 !nsCRT::IsAsciiSpace(
-                     mCurrentLine.mContent.mValue.CharAt(goodSpace))) {
-            goodSpace--;
-          }
-        }
-      }
-
-      nsAutoString restOfLine;
-      if (goodSpace == NS_LINEBREAKER_NEED_MORE_TEXT) {
-        
-        
-        goodSpace =
-            (prefixwidth > mWrapColumn + 1) ? 1 : mWrapColumn - prefixwidth + 1;
-        if (mLineBreaker) {
-          if ((uint32_t)goodSpace < mCurrentLine.mContent.mValue.Length())
-            goodSpace = mLineBreaker->Next(
-                mCurrentLine.mContent.mValue.get(),
-                mCurrentLine.mContent.mValue.Length(), goodSpace);
-          if (goodSpace == NS_LINEBREAKER_NEED_MORE_TEXT)
-            goodSpace = mCurrentLine.mContent.mValue.Length();
-        } else {
-          
-          
-          
-          
-          goodSpace =
-              (prefixwidth > mWrapColumn) ? 1 : mWrapColumn - prefixwidth;
-          while (goodSpace < linelength &&
-                 !nsCRT::IsAsciiSpace(
-                     mCurrentLine.mContent.mValue.CharAt(goodSpace))) {
-            goodSpace++;
-          }
-        }
-      }
-
-      if ((goodSpace < linelength) && (goodSpace > 0)) {
-        
-
-        
-        
-        if (nsCRT::IsAsciiSpace(
-                mCurrentLine.mContent.mValue.CharAt(goodSpace))) {
-          mCurrentLine.mContent.mValue.Right(restOfLine,
-                                             linelength - goodSpace - 1);
-        } else {
-          mCurrentLine.mContent.mValue.Right(restOfLine,
-                                             linelength - goodSpace);
-        }
-        
-        const bool breakBySpace =
-            mCurrentLine.mContent.mValue.CharAt(goodSpace) == ' ';
-        mCurrentLine.mContent.mValue.Truncate(goodSpace);
-        EndLine(true, breakBySpace);
-        mCurrentLine.mContent.mValue.Truncate();
-        
-        if (mSettings.HasFlag(nsIDocumentEncoder::OutputFormatFlowed)) {
-          if (!restOfLine.IsEmpty() && IsSpaceStuffable(restOfLine.get()) &&
-              mCurrentLine.mCiteQuoteLevel ==
-                  0  
-          ) {
-            
-            mCurrentLine.mContent.mValue.Append(char16_t(' '));
-            
-          }
-        }
-        mCurrentLine.mContent.mValue.Append(restOfLine);
-        currentLineContentWidth =
-            GetUnicharStringWidth(mCurrentLine.mContent.mValue.get(),
-                                  mCurrentLine.mContent.mValue.Length());
-        linelength = mCurrentLine.mContent.mValue.Length();
-        mEmptyLines = -1;
-      } else {
-        
-        
-        break;
-      }
-    }
-  }
+  MaybeWrapAndOutputCompleteLines();
 }
 
 
