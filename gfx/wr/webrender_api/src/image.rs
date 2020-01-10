@@ -9,7 +9,8 @@ use peek_poke::PeekPoke;
 use std::ops::{Add, Sub};
 use std::sync::Arc;
 
-use crate::api::{IdNamespace, TileSize};
+use crate::api::{IdNamespace, PipelineId, TileSize};
+use crate::display_item::ImageRendering;
 use crate::font::{FontInstanceKey, FontInstanceData, FontKey, FontTemplate};
 use crate::units::*;
 
@@ -56,6 +57,54 @@ impl BlobImageKey {
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ExternalImageId(pub u64);
+
+
+pub enum ExternalImageSource<'a> {
+    
+    RawData(&'a [u8]),
+    
+    NativeTexture(u32),
+    
+    Invalid,
+}
+
+
+
+
+
+
+pub struct ExternalImage<'a> {
+    
+    pub uv: TexelRect,
+    
+    pub source: ExternalImageSource<'a>,
+}
+
+
+
+
+
+
+
+pub trait ExternalImageHandler {
+    
+    
+    
+    fn lock(&mut self, key: ExternalImageId, channel_index: u8, rendering: ImageRendering) -> ExternalImage;
+    
+    
+    fn unlock(&mut self, key: ExternalImageId, channel_index: u8);
+}
+
+
+
+pub trait OutputImageHandler {
+    
+    fn lock(&mut self, pipeline_id: PipelineId) -> Option<(u32, FramebufferIntSize)>;
+    
+    
+    fn unlock(&mut self, pipeline_id: PipelineId);
+}
 
 
 #[repr(u8)]
