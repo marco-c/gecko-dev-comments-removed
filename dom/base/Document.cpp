@@ -2211,7 +2211,7 @@ nsresult Document::Init() {
 
   
   
-  mFeaturePolicy = new FeaturePolicy(this);
+  mFeaturePolicy = new mozilla::dom::FeaturePolicy(this);
   mFeaturePolicy->SetDefaultOrigin(NodePrincipal());
 
   mStyleSet = MakeUnique<ServoStyleSet>(*this);
@@ -3275,14 +3275,14 @@ nsresult Document::InitFeaturePolicy(nsIChannel* aChannel) {
 
   mFeaturePolicy->SetDefaultOrigin(NodePrincipal());
 
-  RefPtr<FeaturePolicy> parentPolicy = nullptr;
+  RefPtr<mozilla::dom::FeaturePolicy> parentPolicy = nullptr;
   if (mDocumentContainer) {
     nsPIDOMWindowOuter* containerWindow = mDocumentContainer->GetWindow();
     if (containerWindow) {
       nsCOMPtr<nsINode> node = containerWindow->GetFrameElementInternal();
       HTMLIFrameElement* iframe = HTMLIFrameElement::FromNodeOrNull(node);
       if (iframe) {
-        parentPolicy = iframe->Policy();
+        parentPolicy = iframe->FeaturePolicy();
       }
     }
   }
@@ -12573,7 +12573,7 @@ void Document::MaybeResolveReadyForIdle() {
   }
 }
 
-FeaturePolicy* Document::Policy() const {
+mozilla::dom::FeaturePolicy* Document::FeaturePolicy() const {
   
   
   
