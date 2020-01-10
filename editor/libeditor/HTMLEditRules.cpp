@@ -2311,6 +2311,46 @@ EditActionResult HTMLEditor::HandleDeleteSelection(
   MOZ_ASSERT(aStripWrappers == nsIEditor::eStrip ||
              aStripWrappers == nsIEditor::eNoStrip);
 
+  EditActionResult result =
+      HandleDeleteSelectionInternal(aDirectionAndAmount, aStripWrappers);
+  if (NS_WARN_IF(result.Failed()) || result.Canceled()) {
+    return result;
+  }
+  if (!result.Handled()) {
+    
+    
+    DebugOnly<nsresult> rvIgnored =
+        DeleteSelectionWithTransaction(aDirectionAndAmount, aStripWrappers);
+    if (NS_WARN_IF(Destroyed())) {
+      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+    }
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rvIgnored),
+        "DeleteSelectionWithTransaction() failed, but ignored");
+  }
+
+  EditorDOMPoint atNewStartOfSelection(
+      EditorBase::GetStartPoint(*SelectionRefPtr()));
+  if (NS_WARN_IF(!atNewStartOfSelection.IsSet())) {
+    return EditActionHandled(NS_ERROR_FAILURE);
+  }
+  if (atNewStartOfSelection.GetContainerAsContent()) {
+    nsresult rv = DeleteMostAncestorMailCiteElementIfEmpty(
+        MOZ_KnownLive(*atNewStartOfSelection.GetContainerAsContent()));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return EditActionHandled(rv);
+    }
+  }
+  return EditActionHandled();
+}
+
+EditActionResult HTMLEditor::HandleDeleteSelectionInternal(
+    nsIEditor::EDirection aDirectionAndAmount,
+    nsIEditor::EStripWrappers aStripWrappers) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(aStripWrappers == nsIEditor::eStrip ||
+             aStripWrappers == nsIEditor::eNoStrip);
+
   
   
   TopLevelEditSubActionDataRef().mDidDeleteSelection = true;
@@ -2394,8 +2434,11 @@ EditActionResult HTMLEditor::HandleDeleteSelection(
       return EditActionResult(rv);
     }
 
-    
     if (aDirectionAndAmount == nsIEditor::eNone) {
+      
+      
+      
+      
       return EditActionIgnored();
     }
 
@@ -2662,9 +2705,9 @@ EditActionResult HTMLEditor::HandleDeleteCollapsedSelectionAtAtomicContent(
     
     
     EditActionResult result =
-        HandleDeleteSelection(aDirectionAndAmount, aStripWrappers);
+        HandleDeleteSelectionInternal(aDirectionAndAmount, aStripWrappers);
     NS_WARNING_ASSERTION(result.Succeeded(),
-                         "Nested HandleDeleteSelection() failed");
+                         "Nested HandleDeleteSelectionInternal() failed");
     return result;
   }
 
@@ -2884,6 +2927,10 @@ EditActionResult HTMLEditor::HandleDeleteCollapsedSelectionAtOtherBlockBoundary(
   
   if (leftNode && rightNode &&
       HTMLEditor::NodesInDifferentTableElements(*leftNode, *rightNode)) {
+    
+    
+    
+    
     return didBRElementDeleted ? EditActionHandled() : EditActionIgnored();
   }
 
@@ -2939,9 +2986,9 @@ EditActionResult HTMLEditor::HandleDeleteCollapsedSelectionAtOtherBlockBoundary(
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "Selection::Collapse() failed, but ignored");
     EditActionResult result =
-        HandleDeleteSelection(aDirectionAndAmount, aStripWrappers);
+        HandleDeleteSelectionInternal(aDirectionAndAmount, aStripWrappers);
     NS_WARNING_ASSERTION(result.Succeeded(),
-                         "Nested HandleDeleteSelection() failed");
+                         "Nested HandleDeleteSelectionInternal() failed");
     return result;
   }
 

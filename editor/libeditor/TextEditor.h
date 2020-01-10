@@ -637,7 +637,8 @@ class TextEditor : public EditorBase,
 
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
-  HandleDeleteSelectionInternal(nsIEditor::EDirection aDirectionAndAmount);
+  HandleDeleteSelectionInternal(nsIEditor::EDirection aDirectionAndAmount,
+                                nsIEditor::EStripWrappers aStripWrappers);
 
   
 

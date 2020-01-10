@@ -658,32 +658,6 @@ nsresult TextEditor::DeleteSelectionAsSubAction(EDirection aDirectionAndAmount,
   if (NS_WARN_IF(result.Failed()) || result.Canceled()) {
     return result.Rv();
   }
-  
-  
-  
-  if (!result.Handled()) {
-    DebugOnly<nsresult> rvIgnored =
-        DeleteSelectionWithTransaction(aDirectionAndAmount, aStripWrappers);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                         "DeleteSelectionWithTransaction() failed");
-  }
-
-  if (AsHTMLEditor()) {
-    EditorDOMPoint atNewStartOfSelection(
-        EditorBase::GetStartPoint(*SelectionRefPtr()));
-    if (NS_WARN_IF(!atNewStartOfSelection.IsSet())) {
-      return NS_ERROR_FAILURE;
-    }
-    if (atNewStartOfSelection.GetContainerAsContent()) {
-      nsresult rv =
-          MOZ_KnownLive(AsHTMLEditor())
-              ->DeleteMostAncestorMailCiteElementIfEmpty(MOZ_KnownLive(
-                  *atNewStartOfSelection.GetContainerAsContent()));
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-    }
-  }
 
   
   
