@@ -89,6 +89,7 @@ using std::map;
 
 
 
+#pragma pack(push, 4)
 struct ExceptionMessage {
   mach_msg_header_t           header;
   mach_msg_body_t             body;
@@ -97,9 +98,10 @@ struct ExceptionMessage {
   NDR_record_t                ndr;
   exception_type_t            exception;
   mach_msg_type_number_t      code_count;
-  integer_t                   code[EXCEPTION_CODE_MAX];
+  mach_exception_data_type_t  code[EXCEPTION_CODE_MAX];
   char                        padding[512];
 };
+#pragma pack(pop)
 
 struct ExceptionParameters {
   ExceptionParameters() : count(0) {}
@@ -110,62 +112,58 @@ struct ExceptionParameters {
   thread_state_flavor_t flavors[EXC_TYPES_COUNT];
 };
 
+#pragma pack(push, 4)
 struct ExceptionReplyMessage {
   mach_msg_header_t  header;
   NDR_record_t       ndr;
   kern_return_t      return_code;
 };
+#pragma pack(pop)
 
 
 
 exception_mask_t s_exception_mask = EXC_MASK_BAD_ACCESS |
 EXC_MASK_BAD_INSTRUCTION | EXC_MASK_ARITHMETIC | EXC_MASK_BREAKPOINT;
 
-#if !TARGET_OS_IPHONE
-extern "C" {
-  
-  boolean_t exc_server(mach_msg_header_t* request,
-                       mach_msg_header_t* reply);
-
-  
-  
-  kern_return_t catch_exception_raise(mach_port_t target_port,
-                                      mach_port_t failed_thread,
-                                      mach_port_t task,
-                                      exception_type_t exception,
-                                      exception_data_t code,
-                                      mach_msg_type_number_t code_count)
-      __attribute__((visibility("default")));
-}
-#endif
-
 kern_return_t ForwardException(mach_port_t task,
                                mach_port_t failed_thread,
                                exception_type_t exception,
-                               exception_data_t code,
+                               mach_exception_data_t code,
                                mach_msg_type_number_t code_count);
 
-#if TARGET_OS_IPHONE
 
-boolean_t breakpad_exc_server(mach_msg_header_t* InHeadP,
-                              mach_msg_header_t* OutHeadP) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+boolean_t mach_exc_server(mach_msg_header_t* InHeadP,
+                          mach_msg_header_t* OutHeadP)
+{
   OutHeadP->msgh_bits =
-      MACH_MSGH_BITS(MACH_MSGH_BITS_REMOTE(InHeadP->msgh_bits), 0);
+    MACH_MSGH_BITS(MACH_MSGH_BITS_REMOTE(InHeadP->msgh_bits), 0);
   OutHeadP->msgh_remote_port = InHeadP->msgh_remote_port;
   
   OutHeadP->msgh_size = (mach_msg_size_t)sizeof(mig_reply_error_t);
   OutHeadP->msgh_local_port = MACH_PORT_NULL;
   OutHeadP->msgh_id = InHeadP->msgh_id + 100;
+  OutHeadP->msgh_reserved = 0;
 
-  if (InHeadP->msgh_id != 2401) {
+  if (InHeadP->msgh_id != 2405) {
     ((mig_reply_error_t*)OutHeadP)->NDR = NDR_record;
     ((mig_reply_error_t*)OutHeadP)->RetCode = MIG_BAD_ID;
     return FALSE;
   }
 
-#ifdef  __MigPackStructs
-#pragma pack(4)
-#endif
+#pragma pack(push, 4)
   typedef struct {
     mach_msg_header_t Head;
     
@@ -176,7 +174,7 @@ boolean_t breakpad_exc_server(mach_msg_header_t* InHeadP,
     NDR_record_t NDR;
     exception_type_t exception;
     mach_msg_type_number_t codeCnt;
-    integer_t code[2];
+    int64_t code[2];
     mach_msg_trailer_t trailer;
   } Request;
 
@@ -185,9 +183,7 @@ boolean_t breakpad_exc_server(mach_msg_header_t* InHeadP,
     NDR_record_t NDR;
     kern_return_t RetCode;
   } Reply;
-#ifdef  __MigPackStructs
-#pragma pack()
-#endif
+#pragma pack(pop)
 
   Request* In0P = (Request*)InHeadP;
   Reply* OutP = (Reply*)OutHeadP;
@@ -203,24 +199,85 @@ boolean_t breakpad_exc_server(mach_msg_header_t* InHeadP,
   OutP->NDR = NDR_record;
   return TRUE;
 }
-#else
-boolean_t breakpad_exc_server(mach_msg_header_t* request,
-                              mach_msg_header_t* reply) {
-  return exc_server(request, reply);
-}
 
+kern_return_t mach_exception_raise(mach_port_t exception_port,
+                                   mach_port_t thread,
+                                   mach_port_t task,
+                                   exception_type_t exception,
+                                   mach_exception_data_t code,
+                                   mach_msg_type_number_t codeCnt)
+{
+#pragma pack(push, 4)
+  typedef struct {
+    mach_msg_header_t Head;
+    
+    mach_msg_body_t msgh_body;
+    mach_msg_port_descriptor_t thread;
+    mach_msg_port_descriptor_t task;
+    
+    NDR_record_t NDR;
+    exception_type_t exception;
+    mach_msg_type_number_t codeCnt;
+    int64_t code[2];
+  } Request;
 
-kern_return_t catch_exception_raise(mach_port_t port, mach_port_t failed_thread,
-                                    mach_port_t task,
-                                    exception_type_t exception,
-                                    exception_data_t code,
-                                    mach_msg_type_number_t code_count) {
-  if (task != mach_task_self()) {
-    return KERN_FAILURE;
+  typedef struct {
+    mach_msg_header_t Head;
+    NDR_record_t NDR;
+    kern_return_t RetCode;
+    mach_msg_trailer_t trailer;
+  } Reply;
+#pragma pack(pop)
+
+  Request In;
+  Request *InP = &In;
+
+  mach_msg_return_t msg_result;
+  unsigned int msgh_size;
+
+  InP->msgh_body.msgh_descriptor_count = 2;
+  InP->thread.name = thread;
+  InP->thread.disposition = 19;
+  InP->thread.type = MACH_MSG_PORT_DESCRIPTOR;
+  InP->task.name = task;
+  InP->task.disposition = 19;
+  InP->task.type = MACH_MSG_PORT_DESCRIPTOR;
+
+  InP->NDR = NDR_record;
+
+  InP->exception = exception;
+
+  if (codeCnt > 2) {
+    { return MIG_ARRAY_TOO_LARGE; }
   }
-  return ForwardException(task, failed_thread, exception, code, code_count);
+  (void)memcpy((char *) InP->code, (const char *) code, 8 * codeCnt);
+
+  InP->codeCnt = codeCnt;
+
+  msgh_size = (mach_msg_size_t)(sizeof(Request) - 16) + ((8 * codeCnt));
+  InP->Head.msgh_bits = MACH_MSGH_BITS_COMPLEX |
+    MACH_MSGH_BITS(19, MACH_MSG_TYPE_MAKE_SEND_ONCE);
+  
+  InP->Head.msgh_remote_port = exception_port;
+  InP->Head.msgh_local_port = mig_get_reply_port();
+  InP->Head.msgh_id = 2405;
+  InP->Head.msgh_reserved = 0;
+
+  msg_result = mach_msg(&InP->Head,
+                        MACH_SEND_MSG|MACH_RCV_MSG|MACH_MSG_OPTION_NONE,
+                        msgh_size,
+                        (mach_msg_size_t)sizeof(Reply),
+                        InP->Head.msgh_local_port,
+                        MACH_MSG_TIMEOUT_NONE,
+                        MACH_PORT_NULL);
+
+  if (msg_result != MACH_MSG_SUCCESS) {
+    fprintf(stderr, "** mach_msg() error forwarding exception!!\n");
+    return msg_result;
+  }
+
+  return KERN_SUCCESS;
 }
-#endif
 
 ExceptionHandler::ExceptionHandler(const string &dump_path,
                                    FilterCallback filter,
@@ -351,7 +408,7 @@ bool ExceptionHandler::WriteMinidumpForChild(mach_port_t child,
 bool ExceptionHandler::WriteMinidumpWithException(
     int exception_type,
     int exception_code,
-    int exception_subcode,
+    int64_t exception_subcode,
     breakpad_ucontext_t* task_context,
     mach_port_t thread_name,
     bool exit_after_write,
@@ -430,7 +487,7 @@ bool ExceptionHandler::WriteMinidumpWithException(
 
 kern_return_t ForwardException(mach_port_t task, mach_port_t failed_thread,
                                exception_type_t exception,
-                               exception_data_t code,
+                               mach_exception_data_t code,
                                mach_msg_type_number_t code_count) {
   
   
@@ -465,12 +522,10 @@ kern_return_t ForwardException(mach_port_t task, mach_port_t failed_thread,
   exception_behavior_t target_behavior = current.behaviors[found];
 
   kern_return_t result;
-  
-  
-  switch (target_behavior) {
+  switch (target_behavior & ~MACH_EXCEPTION_CODES) {
     case EXCEPTION_DEFAULT:
-      result = exception_raise(target_port, failed_thread, task, exception,
-                               code, code_count);
+      result = mach_exception_raise(target_port, failed_thread, task, exception,
+                                    code, code_count);
       break;
     default:
       fprintf(stderr, "** Unknown exception behavior: %d\n", target_behavior);
@@ -561,9 +616,6 @@ void* ExceptionHandler::WaitForMessage(void* exception_handler_class) {
         
         
         
-        
-        
-        
         if (receive.task.name == mach_task_self()) {
           self->SuspendThreads();
 
@@ -572,7 +624,7 @@ void* ExceptionHandler::WaitForMessage(void* exception_handler_class) {
             gBreakpadAllocator->Unprotect();
 #endif
 
-          int subcode = 0;
+          mach_exception_data_type_t subcode = 0;
           if (receive.exception == EXC_BAD_ACCESS && receive.code_count > 1)
             subcode = receive.code[1];
 
@@ -595,17 +647,10 @@ void* ExceptionHandler::WaitForMessage(void* exception_handler_class) {
           if (gBreakpadAllocator)
             gBreakpadAllocator->Protect();
 #endif
-          
-          
-          
-          self->ResumeThreads();
         }
 
-        
-        
-        
         ExceptionReplyMessage reply;
-        if (!breakpad_exc_server(&receive.header, &reply.header))
+        if (!mach_exc_server(&receive.header, &reply.header))
           exit(1);
 
         
@@ -708,9 +753,12 @@ bool ExceptionHandler::InstallHandler() {
                                                   previous_->flavors);
 
   
+  
+  
   if (result == KERN_SUCCESS)
     result = task_set_exception_ports(current_task, s_exception_mask,
-                                      handler_port_, EXCEPTION_DEFAULT,
+                                      handler_port_,
+                                      EXCEPTION_DEFAULT | MACH_EXCEPTION_CODES,
                                       THREAD_STATE_NONE);
 
   installed_exception_handler_ = (result == KERN_SUCCESS);
