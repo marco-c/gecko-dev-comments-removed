@@ -31,7 +31,6 @@
 #include "mozilla/Services.h"
 
 #ifdef XP_MACOSX
-#  include <sys/xattr.h>
 #  include "nsILocalFileMac.h"
 #  include "nsCommandLineServiceMac.h"
 #  include "MacLaunchHelper.h"
@@ -58,20 +57,15 @@ using namespace mozilla;
 
 static LazyLogModule sUpdateLog("updatedriver");
 #define LOG(args) MOZ_LOG(sUpdateLog, mozilla::LogLevel::Debug, args)
-#define LOG_ENABLED() MOZ_LOG_TEST(sUpdateLog, mozilla::LogLevel::Debug)
 
 #ifdef XP_WIN
 #  define UPDATER_BIN "updater.exe"
 #  define MAINTENANCE_SVC_NAME L"MozillaMaintenance"
 #elif XP_MACOSX
+#  define UPDATER_APP "updater.app"
 #  define UPDATER_BIN "org.mozilla.updater"
 #else
 #  define UPDATER_BIN "updater"
-#endif
-
-#ifdef XP_MACOSX
-#  define UPDATER_INI "updater.ini"
-#  define UPDATER_APP "updater.app"
 #endif
 
 #ifdef XP_MACOSX
@@ -120,11 +114,15 @@ static nsresult GetCurrentWorkingDir(char* buf, size_t size) {
 
 #if defined(XP_WIN)
   wchar_t wpath[MAX_PATH];
-  if (!_wgetcwd(wpath, size)) return NS_ERROR_FAILURE;
+  if (!_wgetcwd(wpath, size)) {
+    return NS_ERROR_FAILURE;
+  }
   NS_ConvertUTF16toUTF8 path(wpath);
   strncpy(buf, path.get(), size);
 #else
-  if (!getcwd(buf, size)) return NS_ERROR_FAILURE;
+  if (!getcwd(buf, size)) {
+    return NS_ERROR_FAILURE;
+  }
 #endif
   return NS_OK;
 }
@@ -141,27 +139,20 @@ static nsresult GetInstallDirPath(nsIFile* appDir, nsACString& installDirPath) {
 #ifdef XP_MACOSX
   nsCOMPtr<nsIFile> parentDir1, parentDir2;
   rv = appDir->GetParent(getter_AddRefs(parentDir1));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  NS_ENSURE_SUCCESS(rv, rv);
   rv = parentDir1->GetParent(getter_AddRefs(parentDir2));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  NS_ENSURE_SUCCESS(rv, rv);
   rv = parentDir2->GetNativePath(installDirPath);
+  NS_ENSURE_SUCCESS(rv, rv);
 #elif XP_WIN
   nsAutoString installDirPathW;
   rv = appDir->GetPath(installDirPathW);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  NS_ENSURE_SUCCESS(rv, rv);
   installDirPath = NS_ConvertUTF16toUTF8(installDirPathW);
 #else
   rv = appDir->GetNativePath(installDirPath);
+  NS_ENSURE_SUCCESS(rv, rv);
 #endif
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
   return NS_OK;
 }
 
@@ -171,10 +162,14 @@ static bool GetFile(nsIFile* dir, const nsACString& name,
 
   nsCOMPtr<nsIFile> file;
   rv = dir->Clone(getter_AddRefs(file));
-  if (NS_FAILED(rv)) return false;
+  if (NS_FAILED(rv)) {
+    return false;
+  }
 
   rv = file->AppendNative(name);
-  if (NS_FAILED(rv)) return false;
+  if (NS_FAILED(rv)) {
+    return false;
+  }
 
   result = file;
   return true;
@@ -200,7 +195,9 @@ static bool GetStatusFileContents(nsIFile* statusFile, char (&buf)[Size]) {
 
   PRFileDesc* fd = nullptr;
   nsresult rv = statusFile->OpenNSPRFileDesc(PR_RDONLY, 0660, &fd);
-  if (NS_FAILED(rv)) return false;
+  if (NS_FAILED(rv)) {
+    return false;
+  }
 
   const int32_t n = PR_Read(fd, buf, Size);
   PR_Close(fd);
@@ -265,97 +262,32 @@ static bool GetVersionFile(nsIFile* dir, nsCOMPtr<nsIFile>& result) {
 static bool IsOlderVersion(nsIFile* versionFile, const char* appVersion) {
   PRFileDesc* fd = nullptr;
   nsresult rv = versionFile->OpenNSPRFileDesc(PR_RDONLY, 0660, &fd);
-  if (NS_FAILED(rv)) return true;
+  if (NS_FAILED(rv)) {
+    return true;
+  }
 
   char buf[32];
   const int32_t n = PR_Read(fd, buf, sizeof(buf));
   PR_Close(fd);
 
-  if (n < 0) return false;
+  if (n < 0) {
+    return false;
+  }
 
   
-  if (buf[n - 1] == '\n') buf[n - 1] = '\0';
+  if (buf[n - 1] == '\n') {
+    buf[n - 1] = '\0';
+  }
 
   
   
   const char kNull[] = "null";
-  if (strncmp(buf, kNull, sizeof(kNull) - 1) == 0) return false;
-
-  if (mozilla::Version(appVersion) > buf) return true;
-
-  return false;
-}
-
-#if defined(XP_MACOSX)
-static bool CopyFileIntoUpdateDir(nsIFile* parentDir, const nsACString& leaf,
-                                  nsIFile* updateDir) {
-  nsCOMPtr<nsIFile> file;
-
-  
-  nsresult rv = updateDir->Clone(getter_AddRefs(file));
-  if (NS_FAILED(rv)) return false;
-  rv = file->AppendNative(leaf);
-  if (NS_FAILED(rv)) return false;
-  file->Remove(true);
-
-  
-  nsCString targetFilePath;
-  rv = file->GetNativePath(targetFilePath);
-  if (NS_FAILED(rv)) return false;
-
-  
-  rv = parentDir->Clone(getter_AddRefs(file));
-  if (NS_FAILED(rv)) return false;
-  rv = file->AppendNative(leaf);
-  if (NS_FAILED(rv)) return false;
-  rv = file->CopyToNative(updateDir, EmptyCString());
-  if (NS_FAILED(rv)) return false;
-
-  
-  
-  
-  
-  int remove_rv = removexattr(targetFilePath.get(), "com.apple.quarantine", 0);
-  LOG(("Removing quarantine from %s: rv = %d", targetFilePath.get(),
-       remove_rv));
-
-  
-  if (LOG_ENABLED()) {
-    bool isQuarantined;
-    
-    
-    
-    isQuarantined = (getxattr(targetFilePath.get(), "com.apple.quarantine",
-                              nullptr, 0, 0, 0) >= 0);
-    LOG(("Destination file %s is%s quarantined", targetFilePath.get(),
-         isQuarantined ? "" : " not"));
-  }
-
-  return true;
-}
-
-static bool CopyUpdaterIntoUpdateDir(nsIFile* greDir, nsIFile* appDir,
-                                     nsIFile* updateDir,
-                                     nsCOMPtr<nsIFile>& updater) {
-  
-  if (!CopyFileIntoUpdateDir(appDir, NS_LITERAL_CSTRING(UPDATER_APP),
-                             updateDir))
+  if (strncmp(buf, kNull, sizeof(kNull) - 1) == 0) {
     return false;
-  CopyFileIntoUpdateDir(greDir, NS_LITERAL_CSTRING(UPDATER_INI), updateDir);
-  
-  nsresult rv = updateDir->Clone(getter_AddRefs(updater));
-  if (NS_FAILED(rv)) return false;
-  rv = updater->AppendNative(NS_LITERAL_CSTRING(UPDATER_APP));
-  nsresult tmp = updater->AppendNative(NS_LITERAL_CSTRING("Contents"));
-  if (NS_FAILED(tmp)) {
-    rv = tmp;
   }
-  tmp = updater->AppendNative(NS_LITERAL_CSTRING("MacOS"));
-  if (NS_FAILED(tmp) || NS_FAILED(rv)) return false;
-  rv = updater->AppendNative(NS_LITERAL_CSTRING(UPDATER_BIN));
-  return NS_SUCCEEDED(rv);
+
+  return mozilla::Version(appVersion) > buf;
 }
-#endif
 
 
 
@@ -408,43 +340,21 @@ static void ApplyUpdate(nsIFile* greDir, nsIFile* updateDir, nsIFile* appDir,
   }
   updateDirPath = NS_ConvertUTF16toUTF8(updateDirPathW);
 #elif defined(XP_MACOSX)
-  if (isStaged) {
-    nsCOMPtr<nsIFile> mozUpdaterDir;
-    rv = updateDir->Clone(getter_AddRefs(mozUpdaterDir));
-    if (NS_FAILED(rv)) {
-      LOG(("failed cloning update dir\n"));
-      return;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    mozUpdaterDir->Append(NS_LITERAL_STRING("MozUpdater"));
-    mozUpdaterDir->Append(NS_LITERAL_STRING("bgupdate"));
-    rv = mozUpdaterDir->CreateUnique(nsIFile::DIRECTORY_TYPE, 0755);
-    if (NS_FAILED(rv)) {
-      LOG(("failed creating unique dir\n"));
-      return;
-    }
-
-    
-    
-    
-    if (!CopyUpdaterIntoUpdateDir(greDir, appDir, mozUpdaterDir, updater)) {
-      LOG(("failed copying updater\n"));
-      return;
-    }
-  } else {
-    
-    
-    if (!CopyUpdaterIntoUpdateDir(greDir, appDir, updateDir, updater)) {
-      LOG(("failed copying updater\n"));
-      return;
-    }
+  
+  if (!GetFile(appDir, NS_LITERAL_CSTRING(UPDATER_APP), updater)) {
+    return;
+  }
+  rv = updater->AppendNative(NS_LITERAL_CSTRING("Contents"));
+  if (NS_FAILED(rv)) {
+    return;
+  }
+  rv = updater->AppendNative(NS_LITERAL_CSTRING("MacOS"));
+  if (NS_FAILED(rv)) {
+    return;
+  }
+  rv = updater->AppendNative(NS_LITERAL_CSTRING(UPDATER_BIN));
+  if (NS_FAILED(rv)) {
+    return;
   }
 
   
@@ -744,19 +654,11 @@ nsresult ProcessUpdates(nsIFile* greDir, nsIFile* appDir, nsIFile* updRootDir,
 
   nsCOMPtr<nsIFile> updatesDir;
   rv = updRootDir->Clone(getter_AddRefs(updatesDir));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
+  NS_ENSURE_SUCCESS(rv, rv);
   rv = updatesDir->AppendNative(NS_LITERAL_CSTRING("updates"));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
+  NS_ENSURE_SUCCESS(rv, rv);
   rv = updatesDir->AppendNative(NS_LITERAL_CSTRING("0"));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   

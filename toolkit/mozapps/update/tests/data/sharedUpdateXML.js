@@ -110,8 +110,7 @@ const DEFAULT_UPDATE_VERSION = "999999.0";
 
 
 function getRemoteUpdatesXMLString(aUpdates) {
-  
-  return '<?xml version="1.0"?>' + "<updates>" + aUpdates + "</updates>";
+  return '<?xml version="1.0"?><updates>' + aUpdates + "</updates>";
 }
 
 
