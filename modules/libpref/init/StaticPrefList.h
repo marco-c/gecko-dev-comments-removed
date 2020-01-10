@@ -737,6 +737,14 @@ VARCACHE_PREF(
 
 VARCACHE_PREF(
   Live,
+  "browser.cache.disk.smart_size.enabled",
+   browser_cache_disk_smart_size_enabled,
+  RelaxedAtomicBool, true
+)
+
+
+VARCACHE_PREF(
+  Live,
   "browser.contentblocking.allowlist.storage.enabled",
   browser_contentblocking_allowlist_storage_enabled,
   bool, false
