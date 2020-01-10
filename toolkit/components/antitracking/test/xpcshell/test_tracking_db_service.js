@@ -60,38 +60,53 @@ const LOG = {
       4,
     ],
   ],
+  "https://7.example.com": [
+    [Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_SOCIALTRACKER, true, 1],
+  ],
+  "https://8.example.com": [
+    [Ci.nsIWebProgressListener.STATE_BLOCKED_SOCIALTRACKING_CONTENT, true, 1],
+  ],
 
   
   
-  "https://7.example.com": [
+  "https://10.example.com": [
     [Ci.nsIWebProgressListener.STATE_COOKIES_LOADED, true, 1],
   ],
   
-  "https://8.example.com": [
+  "https://11.unblocked.example.com": [
     [Ci.nsIWebProgressListener.STATE_COOKIES_LOADED_TRACKER, true, 1],
   ],
   
-  "https://9.example.com": [
+  "https://12.example.com": [
     [Ci.nsIWebProgressListener.STATE_COOKIES_LOADED_SOCIALTRACKER, true, 1],
   ],
   
-  "https://10.example.com": [
+  "https://13.example.com": [
     [Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_BY_PERMISSION, true, 2],
   ],
   
-  "https://11.example.com": [
+  "https://14.example.com": [
     [Ci.nsIWebProgressListener.STATE_BLOCKED_FINGERPRINTING_CONTENT, false, 1],
   ],
 };
 
 do_get_profile();
 
+Services.prefs.setBoolPref("browser.contentblocking.database.enabled", true);
+Services.prefs.setBoolPref(
+  "privacy.socialtracking.block_cookies.enabled",
+  true
+);
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("browser.contentblocking.database.enabled");
+  Services.prefs.clearUserPref("privacy.socialtracking.block_cookies.enabled");
+});
+
 
 
 
 
 add_task(async function test_save_and_delete() {
-  Services.prefs.setBoolPref("browser.contentblocking.database.enabled", true);
   await TrackingDBService.saveEvents(JSON.stringify(LOG));
 
   
@@ -103,7 +118,7 @@ add_task(async function test_save_and_delete() {
   let rows = await db.execute(SQL.selectAll);
   equal(
     rows.length,
-    4,
+    5,
     "Events that should not be saved have not been, length is 4"
   );
   rows = await db.execute(SQL.selectAllEntriesOfType, {
@@ -142,19 +157,24 @@ add_task(async function test_save_and_delete() {
   count = rows[0].getResultByName("count");
   equal(count, 1, "there is only one fingerprinter entry");
 
+  rows = await db.execute(SQL.selectAllEntriesOfType, {
+    type: TrackingDBService.SOCIAL_ID,
+  });
+  equal(rows.length, 1, "Only one day has had social entries, length is 1");
+  count = rows[0].getResultByName("count");
+  equal(count, 2, "there are two social entries");
+
   
   await TrackingDBService.clearAll();
   
   rows = await db.execute(SQL.selectAll);
   equal(rows.length, 0, "length is 0");
   await db.close();
-  Services.prefs.clearUserPref("browser.contentblocking.database.enabled");
 });
 
 
 
 add_task(async function test_timestamp_aggragation() {
-  Services.prefs.setBoolPref("browser.contentblocking.database.enabled", true);
   
   await TrackingDBService.saveEvents(JSON.stringify({}));
   let db = await Sqlite.openConnection({ path: DB_PATH });
@@ -278,7 +298,6 @@ add_task(async function test_timestamp_aggragation() {
   rows = await db.execute(SQL.selectAll);
   equal(rows.length, 0, "length is 0");
   await db.close();
-  Services.prefs.clearUserPref("browser.contentblocking.database.enabled");
 });
 
 let addEventsToDB = async db => {
@@ -322,7 +341,6 @@ let addEventsToDB = async db => {
 
 
 add_task(async function test_getEventsByDateRange() {
-  Services.prefs.setBoolPref("browser.contentblocking.database.enabled", true);
   
   await TrackingDBService.saveEvents(JSON.stringify({}));
   let db = await Sqlite.openConnection({ path: DB_PATH });
@@ -359,13 +377,11 @@ add_task(async function test_getEventsByDateRange() {
 
   await TrackingDBService.clearAll();
   await db.close();
-  Services.prefs.clearUserPref("browser.contentblocking.database.enabled");
 });
 
 
 
 add_task(async function test_sumAllEvents() {
-  Services.prefs.setBoolPref("browser.contentblocking.database.enabled", true);
   
   await TrackingDBService.saveEvents(JSON.stringify({}));
   let db = await Sqlite.openConnection({ path: DB_PATH });
@@ -381,13 +397,11 @@ add_task(async function test_sumAllEvents() {
 
   await TrackingDBService.clearAll();
   await db.close();
-  Services.prefs.clearUserPref("browser.contentblocking.database.enabled");
 });
 
 
 
 add_task(async function test_getEarliestRecordedDate() {
-  Services.prefs.setBoolPref("browser.contentblocking.database.enabled", true);
   
   await TrackingDBService.saveEvents(JSON.stringify({}));
   let db = await Sqlite.openConnection({ path: DB_PATH });
@@ -408,5 +422,4 @@ add_task(async function test_getEarliestRecordedDate() {
 
   await TrackingDBService.clearAll();
   await db.close();
-  Services.prefs.clearUserPref("browser.contentblocking.database.enabled");
 });
