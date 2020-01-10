@@ -1748,6 +1748,13 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   InsertPaddingBRElementForEmptyLastLineIfNeeded(Element& aElement);
 
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  MaybeInsertPaddingBRElementForEmptyLastLineAtSelection();
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
