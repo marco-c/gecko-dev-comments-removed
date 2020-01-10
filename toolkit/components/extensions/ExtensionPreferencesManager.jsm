@@ -79,7 +79,35 @@ let settingsMap = new Map();
 function initialValueCallback() {
   let initialValue = {};
   for (let pref of this.prefNames) {
-    initialValue[pref] = Preferences.get(pref);
+    
+    if (Preferences.isSet(pref)) {
+      initialValue[pref] = Preferences.get(pref);
+    }
+  }
+  return initialValue;
+}
+
+
+
+
+
+
+
+
+
+function settingsUpdate(initialValue) {
+  for (let pref of this.prefNames) {
+    try {
+      if (
+        initialValue[pref] !== undefined &&
+        initialValue[pref] === defaultPreferences.get(pref)
+      ) {
+        initialValue[pref] = undefined;
+      }
+    } catch (e) {
+      
+      
+    }
   }
   return initialValue;
 }
@@ -210,7 +238,9 @@ this.ExtensionPreferencesManager = {
       STORE_TYPE,
       name,
       value,
-      initialValueCallback.bind(setting)
+      initialValueCallback.bind(setting),
+      name,
+      settingsUpdate.bind(setting)
     );
     if (item) {
       setPrefs(setting, item);

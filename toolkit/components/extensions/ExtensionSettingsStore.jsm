@@ -302,13 +302,16 @@ var ExtensionSettingsStore = {
 
 
 
+
+
   async addSetting(
     id,
     type,
     key,
     value,
     initialValueCallback = () => undefined,
-    callbackArgument = key
+    callbackArgument = key,
+    settingDataUpdate = val => val
   ) {
     if (typeof initialValueCallback != "function") {
       throw new Error("initialValueCallback must be a function.");
@@ -325,6 +328,10 @@ var ExtensionSettingsStore = {
       };
     }
     let keyInfo = _store.data[type][key];
+
+    
+    keyInfo.initialValue = settingDataUpdate(keyInfo.initialValue);
+
     
     let foundIndex = keyInfo.precedenceList.findIndex(item => item.id == id);
     if (foundIndex === -1) {
