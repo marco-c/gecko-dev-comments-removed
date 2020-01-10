@@ -108,7 +108,7 @@ class Key {
 
   double ToFloat() const {
     Assert(IsFloat());
-    const EncodedDataType* pos = BufferStart();
+    const unsigned char* pos = BufferStart();
     double res = DecodeNumber(pos, BufferEnd());
     Assert(pos >= BufferEnd());
     return res;
@@ -116,7 +116,7 @@ class Key {
 
   double ToDateMsec() const {
     Assert(IsDate());
-    const EncodedDataType* pos = BufferStart();
+    const unsigned char* pos = BufferStart();
     double res = DecodeNumber(pos, BufferEnd());
     Assert(pos >= BufferEnd());
     return res;
@@ -124,7 +124,7 @@ class Key {
 
   void ToString(nsString& aString) const {
     Assert(IsString());
-    const EncodedDataType* pos = BufferStart();
+    const unsigned char* pos = BufferStart();
     DecodeString(pos, BufferEnd(), aString);
     Assert(pos >= BufferEnd());
   }
@@ -252,15 +252,12 @@ class Key {
  private:
   class MOZ_STACK_CLASS ArrayValueEncoder;
 
-  using EncodedDataType = unsigned char;
-
-  const EncodedDataType* BufferStart() const {
-    
-    return reinterpret_cast<const EncodedDataType*>(mBuffer.BeginReading());
+  const unsigned char* BufferStart() const {
+    return reinterpret_cast<const unsigned char*>(mBuffer.BeginReading());
   }
 
-  const EncodedDataType* BufferEnd() const {
-    return reinterpret_cast<const EncodedDataType*>(mBuffer.EndReading());
+  const unsigned char* BufferEnd() const {
+    return reinterpret_cast<const unsigned char*>(mBuffer.EndReading());
   }
 
   
@@ -307,51 +304,26 @@ class Key {
 
   
   
-  static nsresult DecodeJSVal(const EncodedDataType*& aPos,
-                              const EncodedDataType* aEnd, JSContext* aCx,
+  static nsresult DecodeJSVal(const unsigned char*& aPos,
+                              const unsigned char* aEnd, JSContext* aCx,
                               JS::MutableHandle<JS::Value> aVal);
 
-  static void DecodeString(const EncodedDataType*& aPos,
-                           const EncodedDataType* aEnd, nsString& aString);
+  static void DecodeString(const unsigned char*& aPos,
+                           const unsigned char* aEnd, nsString& aString);
 
-  static double DecodeNumber(const EncodedDataType*& aPos,
-                             const EncodedDataType* aEnd);
+  static double DecodeNumber(const unsigned char*& aPos,
+                             const unsigned char* aEnd);
 
-  static JSObject* DecodeBinary(const EncodedDataType*& aPos,
-                                const EncodedDataType* aEnd, JSContext* aCx);
-
-  
-  
-  
-  
-  
-  template <typename T>
-  static uint32_t CalcDecodedStringySize(
-      const EncodedDataType* aBegin, const EncodedDataType* aEnd,
-      const EncodedDataType** aOutEncodedSectionEnd);
-
-  static uint32_t LengthOfEncodedBinary(const EncodedDataType* aPos,
-                                        const EncodedDataType* aEnd);
-
-  template <typename T>
-  static void DecodeAsStringy(const EncodedDataType* aEncodedSectionBegin,
-                              const EncodedDataType* aEncodedSectionEnd,
-                              uint32_t aDecodedLength, T* aOut);
-
-  template <EncodedDataType TypeMask, typename T, typename AcquireBuffer,
-            typename AcquireEmpty>
-  static void DecodeStringy(const EncodedDataType*& aPos,
-                            const EncodedDataType* aEnd,
-                            const AcquireBuffer& acquireBuffer,
-                            const AcquireEmpty& acquireEmpty);
+  static JSObject* DecodeBinary(const unsigned char*& aPos,
+                                const unsigned char* aEnd, JSContext* aCx);
 
   IDBResult<void, IDBSpecialValue::Invalid> EncodeJSValInternal(
       JSContext* aCx, JS::Handle<JS::Value> aVal, uint8_t aTypeOffset,
       uint16_t aRecursionDepth, ErrorResult& aRv);
 
-  static nsresult DecodeJSValInternal(const EncodedDataType*& aPos,
-                                      const EncodedDataType* aEnd,
-                                      JSContext* aCx, uint8_t aTypeOffset,
+  static nsresult DecodeJSValInternal(const unsigned char*& aPos,
+                                      const unsigned char* aEnd, JSContext* aCx,
+                                      uint8_t aTypeOffset,
                                       JS::MutableHandle<JS::Value> aVal,
                                       uint16_t aRecursionDepth);
 

@@ -5,19 +5,6 @@
 
 var testGenerator = testSteps();
 
-
-
-
-function showKey(key) {
-  if (key instanceof Array) {
-    return key.map(x => showKey(x)).toString();
-  }
-  if (key instanceof ArrayBuffer) {
-    return "ArrayBuffer([" + new Uint8Array(key).toString() + "])";
-  }
-  return key.toString();
-}
-
 function* testSteps() {
   const dbname = this.window ? window.location.pathname : "Splendid Test";
 
@@ -30,9 +17,7 @@ function* testSteps() {
 
   
   let store = db.createObjectStore("store");
-  let enc = new TextEncoder();
 
-  
   
   var keys = [
     -1 / 0,
@@ -122,20 +107,6 @@ function* testSteps() {
     "\uFFFF",
     "\uFFFF\x00",
     "\uFFFFZZZ",
-    
-    
-    
-    
-    
-    new ArrayBuffer(0),
-    Uint8Array.from([0]).buffer,
-    Uint8Array.from([0, 0]).buffer,
-    Uint8Array.from([0, 1]).buffer,
-    Uint8Array.from([0, 1, 0]).buffer,
-    enc.encode("abc").buffer,
-    enc.encode("abcd").buffer,
-    enc.encode("xyz").buffer,
-    Uint8Array.from([0x80]).buffer,
     [],
     [-1 / 0],
     [-1],
@@ -165,15 +136,6 @@ function* testSteps() {
     ["abc\x00\x00def"],
     ["x", [[]]],
     ["x", [[[]]]],
-    
-    [new ArrayBuffer(0)],
-    [new ArrayBuffer(0), "abc"],
-    [new ArrayBuffer(0), new ArrayBuffer(0)],
-    [new ArrayBuffer(0), enc.encode("abc").buffer],
-    [enc.encode("abc").buffer],
-    [enc.encode("abc").buffer, new ArrayBuffer(0)],
-    [enc.encode("abc").buffer, enc.encode("xyz").buffer],
-    [enc.encode("xyz").buffer],
     [[]],
     [[], "foo"],
     [[], []],
@@ -202,21 +164,11 @@ function* testSteps() {
       is(
         indexedDB.cmp(e.target.result, keyI),
         0,
-        "Returned key should cmp as equal; index = " +
-          i +
-          ", input = " +
-          showKey(keyI) +
-          ", returned = " +
-          showKey(e.target.result)
+        "Returned key should cmp as equal"
       );
       ok(
         compareKeys(e.target.result, keyI),
-        "Returned key should actually be equal; index = " +
-          i +
-          ", input = " +
-          showKey(keyI) +
-          ", returned = " +
-          showKey(e.target.result)
+        "Returned key should actually be equal"
       );
     };
 
@@ -243,21 +195,11 @@ function* testSteps() {
     is(
       indexedDB.cmp(cursor.key, keys[i]),
       0,
-      "Read back key should cmp as equal; index = " +
-        i +
-        ", input = " +
-        showKey(keys[i]) +
-        ", readBack = " +
-        showKey(cursor.key)
+      "Read back key should cmp as equal"
     );
     ok(
       compareKeys(cursor.key, keys[i]),
-      "Read back key should actually be equal; index = " +
-        i +
-        ", input = " +
-        showKey(keys[i]) +
-        ", readBack = " +
-        showKey(cursor.key)
+      "Read back key should actually be equal"
     );
     is(cursor.value, i, "Stored with right value");
 
