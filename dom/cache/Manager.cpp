@@ -1452,7 +1452,15 @@ class Manager::OpenStreamAction final : public Manager::BaseAction {
   }
 
   virtual void Complete(Listener* aListener, ErrorResult&& aRv) override {
-    mResolver(std::move(mBodyStream));
+    if (aRv.Failed()) {
+      
+      
+      aRv.SuppressException();
+      mResolver(nullptr);
+    } else {
+      mResolver(std::move(mBodyStream));
+    }
+
     mResolver = nullptr;
   }
 
