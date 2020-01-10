@@ -16,6 +16,7 @@ import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
+import android.text.TextUtils;
 
 import org.mozilla.gecko.util.GeckoBundle;
 
@@ -43,8 +44,8 @@ public class ContentBlocking {
 
 
 
-            public @NonNull Builder categories(final @Category int cat) {
-                getSettings().setCategories(cat);
+            public @NonNull Builder antiTracking(final @CBAntiTracking int cat) {
+                getSettings().setAntiTracking(cat);
                 return this;
             }
 
@@ -55,7 +56,20 @@ public class ContentBlocking {
 
 
 
-            public @NonNull Builder cookieBehavior(final @CookieBehavior int behavior) {
+
+            public @NonNull Builder safeBrowsing(final @CBSafeBrowsing int cat) {
+                getSettings().setSafeBrowsing(cat);
+                return this;
+            }
+
+            
+
+
+
+
+
+
+            public @NonNull Builder cookieBehavior(final @CBCookieBehavior int behavior) {
                 getSettings().setCookieBehavior(behavior);
                 return this;
             }
@@ -67,7 +81,7 @@ public class ContentBlocking {
 
 
 
-            public @NonNull Builder cookieLifetime(final @CookieLifetime int lifetime) {
+            public @NonNull Builder cookieLifetime(final @CBCookieLifetime int lifetime) {
                 getSettings().setCookieLifetime(lifetime);
                 return this;
             }
@@ -75,26 +89,26 @@ public class ContentBlocking {
 
          final Pref<String> mAt = new Pref<String>(
             "urlclassifier.trackingTable",
-            ContentBlocking.catToAtPref(AT_DEFAULT));
+            ContentBlocking.catToAtPref(AntiTracking.DEFAULT));
          final Pref<Boolean> mCm = new Pref<Boolean>(
             "privacy.trackingprotection.cryptomining.enabled", false);
          final Pref<String> mCmList = new Pref<String>(
             "urlclassifier.features.cryptomining.blacklistTables",
-            ContentBlocking.catToCmListPref(NONE));
+            ContentBlocking.catToCmListPref(AntiTracking.NONE));
          final Pref<Boolean> mFp = new Pref<Boolean>(
             "privacy.trackingprotection.fingerprinting.enabled", false);
          final Pref<String> mFpList = new Pref<String>(
             "urlclassifier.features.fingerprinting.blacklistTables",
-            ContentBlocking.catToFpListPref(NONE));
+            ContentBlocking.catToFpListPref(AntiTracking.NONE));
 
          final Pref<Boolean> mSbMalware = new Pref<Boolean>(
             "browser.safebrowsing.malware.enabled", true);
          final Pref<Boolean> mSbPhishing = new Pref<Boolean>(
             "browser.safebrowsing.phishing.enabled", true);
          final Pref<Integer> mCookieBehavior = new Pref<Integer>(
-            "network.cookie.cookieBehavior", COOKIE_ACCEPT_NON_TRACKERS);
+            "network.cookie.cookieBehavior", CookieBehavior.ACCEPT_NON_TRACKERS);
          final Pref<Integer> mCookieLifetime = new Pref<Integer>(
-            "network.cookie.lifetimePolicy", COOKIE_LIFETIME_NORMAL);
+            "network.cookie.lifetimePolicy", CookieLifetime.NORMAL);
 
         
 
@@ -140,7 +154,7 @@ public class ContentBlocking {
 
 
 
-        public @NonNull Settings setCategories(final @Category int cat) {
+        public @NonNull Settings setAntiTracking(final @CBAntiTracking int cat) {
             mAt.commit(ContentBlocking.catToAtPref(cat));
 
             mCm.commit(ContentBlocking.catToCmPref(cat));
@@ -148,7 +162,18 @@ public class ContentBlocking {
 
             mFp.commit(ContentBlocking.catToFpPref(cat));
             mFpList.commit(ContentBlocking.catToFpListPref(cat));
+            return this;
+        }
 
+        
+
+
+
+
+
+
+
+        public @NonNull Settings setSafeBrowsing(final @CBSafeBrowsing int cat) {
             mSbMalware.commit(ContentBlocking.catToSbMalware(cat));
             mSbPhishing.commit(ContentBlocking.catToSbPhishing(cat));
             return this;
@@ -159,12 +184,10 @@ public class ContentBlocking {
 
 
 
-        public @Category int getCategories() {
-            return ContentBlocking.atListToCat(mAt.get()) |
-                   ContentBlocking.cmListToCat(mCmList.get()) |
-                   ContentBlocking.fpListToCat(mFpList.get()) |
-                   ContentBlocking.sbMalwareToCat(mSbMalware.get()) |
-                   ContentBlocking.sbPhishingToCat(mSbPhishing.get());
+        public @CBAntiTracking int getAntiTrackingCategories() {
+            return ContentBlocking.atListToAtCat(mAt.get()) |
+                   ContentBlocking.cmListToAtCat(mCmList.get()) |
+                   ContentBlocking.fpListToAtCat(mFpList.get());
         }
 
         
@@ -172,7 +195,17 @@ public class ContentBlocking {
 
 
 
-        public @CookieBehavior int getCookieBehavior() {
+        public @CBAntiTracking int getSafeBrowsingCategories() {
+            return ContentBlocking.sbMalwareToSbCat(mSbMalware.get()) |
+                   ContentBlocking.sbPhishingToSbCat(mSbPhishing.get());
+        }
+
+        
+
+
+
+
+        public @CBCookieBehavior int getCookieBehavior() {
             return mCookieBehavior.get();
         }
 
@@ -184,7 +217,7 @@ public class ContentBlocking {
 
 
         public @NonNull Settings setCookieBehavior(
-                final @CookieBehavior int behavior) {
+                final @CBCookieBehavior int behavior) {
             mCookieBehavior.commit(behavior);
             return this;
         }
@@ -194,7 +227,7 @@ public class ContentBlocking {
 
 
 
-        public @CookieBehavior int getCookieLifetime() {
+        public @CBCookieLifetime int getCookieLifetime() {
             return mCookieLifetime.get();
         }
 
@@ -206,7 +239,7 @@ public class ContentBlocking {
 
 
         public @NonNull Settings setCookieLifetime(
-                final @CookieLifetime int lifetime) {
+                final @CBCookieLifetime int lifetime) {
             mCookieLifetime.commit(lifetime);
             return this;
         }
@@ -227,166 +260,173 @@ public class ContentBlocking {
                 };
     }
 
+    public static class AntiTracking {
+        public static final int NONE = 0;
+
+        
+
+
+        public static final int AD = 1 << 1;
+
+        
+
+
+        public static final int ANALYTIC = 1 << 2;
+
+        
+
+
+        public static final int SOCIAL = 1 << 3;
+
+        
+
+
+
+        public static final int CONTENT = 1 << 4;
+
+        
+
+
+        public static final int TEST = 1 << 5;
+
+        
+
+
+        public static final int CRYPTOMINING = 1 << 6;
+
+        
+
+
+        public static final int FINGERPRINTING = 1 << 7;
+
+        
+
+
+        public static final int DEFAULT = AD | ANALYTIC | SOCIAL | TEST;
+
+        
+
+
+
+        public static final int STRICT = DEFAULT | CONTENT | CRYPTOMINING | FINGERPRINTING;
+
+        protected AntiTracking() {}
+    }
+
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(flag = true,
-            value = { NONE, AT_AD, AT_ANALYTIC, AT_SOCIAL, AT_CONTENT,
-                      AT_TEST, AT_CRYPTOMINING, AT_FINGERPRINTING,
-                      AT_DEFAULT, AT_STRICT,
-                      SB_MALWARE, SB_UNWANTED,
-                      SB_HARMFUL, SB_PHISHING,
-                      CB_DEFAULT, CB_STRICT })
-     @interface Category {}
+            value = { AntiTracking.AD, AntiTracking.ANALYTIC,
+                      AntiTracking.SOCIAL, AntiTracking.CONTENT,
+                      AntiTracking.TEST, AntiTracking.CRYPTOMINING,
+                      AntiTracking.FINGERPRINTING,
+                      AntiTracking.DEFAULT, AntiTracking.STRICT,
+                      AntiTracking.NONE })
+     @interface CBAntiTracking {}
 
-    public static final int NONE = 0;
+    public static class SafeBrowsing {
+        public static final int NONE = 0;
 
-    
-    
-
-
-    public static final int AT_AD = 1 << 1;
-
-    
+        
 
 
-    public static final int AT_ANALYTIC = 1 << 2;
+        public static final int MALWARE = 1 << 10;
 
-    
-
-
-    public static final int AT_SOCIAL = 1 << 3;
-
-    
+        
 
 
+        public static final int UNWANTED = 1 << 11;
 
-    public static final int AT_CONTENT = 1 << 4;
-
-    
-
-
-    public static final int AT_TEST = 1 << 5;
-
-    
+        
 
 
-    public static final int AT_CRYPTOMINING = 1 << 6;
+        public static final int HARMFUL = 1 << 12;
 
-    
-
-
-    public static final int AT_FINGERPRINTING = 1 << 7;
-
-    
+        
 
 
-    public static final int AT_DEFAULT =
-        AT_AD | AT_ANALYTIC | AT_SOCIAL | AT_TEST;
+        public static final int PHISHING = 1 << 13;
 
-    
-
+        
 
 
-    public static final int AT_STRICT =
-        AT_DEFAULT | AT_CONTENT | AT_CRYPTOMINING | AT_FINGERPRINTING;
+        public static final int DEFAULT = MALWARE | UNWANTED | HARMFUL | PHISHING;
 
-    
-    
+        protected SafeBrowsing() {}
+    }
 
-
-    public static final int SB_MALWARE = 1 << 10;
-
-    
-
-
-    public static final int SB_UNWANTED = 1 << 11;
-
-    
-
-
-    public static final int SB_HARMFUL = 1 << 12;
-
-    
-
-
-    public static final int SB_PHISHING = 1 << 13;
-
-    
-
-
-
-    public static final int SB_ALL =
-        SB_MALWARE | SB_UNWANTED | SB_HARMFUL | SB_PHISHING;
-
-    
-
-
-
-    public static final int CB_DEFAULT = SB_ALL | AT_DEFAULT;
-
-    
-
-
-
-
-    public static final int CB_STRICT = SB_ALL | AT_STRICT;
-
-    
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({ COOKIE_ACCEPT_ALL, COOKIE_ACCEPT_FIRST_PARTY,
-              COOKIE_ACCEPT_NONE, COOKIE_ACCEPT_VISITED,
-              COOKIE_ACCEPT_NON_TRACKERS })
-     @interface CookieBehavior {}
+    @IntDef(flag = true,
+            value = { SafeBrowsing.MALWARE, SafeBrowsing.UNWANTED,
+                      SafeBrowsing.HARMFUL, SafeBrowsing.PHISHING,
+                      SafeBrowsing.DEFAULT, SafeBrowsing.NONE })
+     @interface CBSafeBrowsing {}
+
 
     
+    public static class CookieBehavior {
+        
 
 
-    public static final int COOKIE_ACCEPT_ALL = 0;
+        public static final int ACCEPT_ALL = 0;
 
-    
-
-
-
-    public static final int COOKIE_ACCEPT_FIRST_PARTY = 1;
-
-    
-
-
-    public static final int COOKIE_ACCEPT_NONE = 2;
-
-    
+        
 
 
 
-    public static final int COOKIE_ACCEPT_VISITED = 3;
+        public static final int ACCEPT_FIRST_PARTY = 1;
 
-    
-
-
+        
 
 
-    public static final int COOKIE_ACCEPT_NON_TRACKERS = 4;
+        public static final int ACCEPT_NONE = 2;
 
-    
+        
+
+
+
+        public static final int ACCEPT_VISITED = 3;
+
+        
+
+
+
+
+        public static final int ACCEPT_NON_TRACKERS = 4;
+
+        protected CookieBehavior() {}
+    }
+
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({ COOKIE_LIFETIME_NORMAL, COOKIE_LIFETIME_RUNTIME,
-              COOKIE_LIFETIME_DAYS })
-     @interface CookieLifetime {}
+    @IntDef({ CookieBehavior.ACCEPT_ALL, CookieBehavior.ACCEPT_FIRST_PARTY,
+              CookieBehavior.ACCEPT_NONE, CookieBehavior.ACCEPT_VISITED,
+              CookieBehavior.ACCEPT_NON_TRACKERS })
+     @interface CBCookieBehavior {}
 
     
+    public static class CookieLifetime {
+        
 
 
-    public static final int COOKIE_LIFETIME_NORMAL = 0;
+        public static final int NORMAL = 0;
 
-    
-
-
-    public static final int COOKIE_LIFETIME_RUNTIME = 2;
-
-    
+        
 
 
+        public static final int RUNTIME = 2;
 
-    public static final int COOKIE_LIFETIME_DAYS = 3;
+        
+
+
+
+        public static final int DAYS = 3;
+
+        protected CookieLifetime() {}
+    }
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({ CookieLifetime.NORMAL, CookieLifetime.RUNTIME,
+              CookieLifetime.DAYS })
+     @interface CBCookieLifetime {}
 
     
 
@@ -397,35 +437,82 @@ public class ContentBlocking {
 
         public final @NonNull String uri;
 
+        private final @CBAntiTracking int mAntiTrackingCat;
+        private final @CBSafeBrowsing int mSafeBrowsingCat;
+        private final @CBCookieBehavior int mCookieBehaviorCat;
+        private final boolean mIsBlocking;
+
+        public BlockEvent(@NonNull final String uri,
+                          final @CBAntiTracking int atCat,
+                          final @CBSafeBrowsing int sbCat,
+                          final @CBCookieBehavior int cbCat,
+                          final boolean isBlocking) {
+            this.uri = uri;
+            this.mAntiTrackingCat = atCat;
+            this.mSafeBrowsingCat = sbCat;
+            this.mCookieBehaviorCat = cbCat;
+            this.mIsBlocking = isBlocking;
+        }
+
         
 
 
 
-        public final @Category int categories;
-
-        public BlockEvent(@NonNull final String uri,
-                          @Category final int categories) {
-            this.uri = uri;
-            this.categories = categories;
+        @UiThread
+        public @CBAntiTracking int getAntiTrackingCategory() {
+            return mAntiTrackingCat;
         }
+
+        
+
+
+
+        @UiThread
+        public @CBSafeBrowsing int getSafeBrowsingCategory() {
+            return mSafeBrowsingCat;
+        }
+
+        
+
+
+
+        @UiThread
+        public @CBCookieBehavior int getCookieBehaviorCategory() {
+            return mCookieBehaviorCat;
+        }
+
 
          static BlockEvent fromBundle(
                 @NonNull final GeckoBundle bundle) {
             final String uri = bundle.getString("uri");
-            final String matchedList = bundle.getString("matchedList");
+            final String blockedList = bundle.getString("blockedList");
+            final String loadedList =
+                TextUtils.join(",", bundle.getStringArray("loadedLists"));
             final long error = bundle.getLong("error", 0L);
+            final long category = bundle.getLong("category", 0L);
 
-            @Category int cats = NONE;
+            final String matchedList =
+                blockedList != null ? blockedList : loadedList;
 
-            if (matchedList != null) {
-                cats = ContentBlocking.atListToCat(matchedList) |
-                       ContentBlocking.cmListToCat(matchedList) |
-                       ContentBlocking.fpListToCat(matchedList);
-            } else if (error != 0L) {
-                cats = ContentBlocking.errorToCat(error);
-            }
+            final boolean blocking =
+                loadedList.isEmpty() &&
+                (blockedList != null ||
+                 error != 0L ||
+                 ContentBlocking.isBlockingGeckoCbCat(category));
 
-            return new BlockEvent(uri, cats);
+            return new BlockEvent(
+                uri,
+                ContentBlocking.atListToAtCat(matchedList) |
+                    ContentBlocking.cmListToAtCat(matchedList) |
+                    ContentBlocking.fpListToAtCat(matchedList),
+                ContentBlocking.errorToSbCat(error),
+                ContentBlocking.geckoCatToCbCat(category),
+                blocking);
+        }
+
+        @UiThread
+        public boolean isBlocking() {
+            return mIsBlocking;
         }
     }
 
@@ -445,8 +532,17 @@ public class ContentBlocking {
         @UiThread
         default void onContentBlocked(@NonNull GeckoSession session,
                                       @NonNull BlockEvent event) {}
-    }
 
+        
+
+
+
+
+
+        @UiThread
+        default void onContentLoaded(@NonNull GeckoSession session,
+                                     @NonNull BlockEvent event) {}
+    }
 
     private static final String TEST = "moztest-track-simple";
     private static final String AD = "ads-track-digest256";
@@ -458,40 +554,40 @@ public class ContentBlocking {
     private static final String FINGERPRINTING =
         "base-fingerprinting-track-digest256";
 
-     static @Category int sbMalwareToCat(final boolean enabled) {
-        return enabled ? (SB_MALWARE | SB_UNWANTED | SB_HARMFUL)
-                       : NONE;
+     static @CBSafeBrowsing int sbMalwareToSbCat(final boolean enabled) {
+        return enabled ? (SafeBrowsing.MALWARE | SafeBrowsing.UNWANTED | SafeBrowsing.HARMFUL)
+                       : SafeBrowsing.NONE;
     }
 
-     static @Category int sbPhishingToCat(final boolean enabled) {
-        return enabled ? SB_PHISHING
-                       : NONE;
+     static @CBSafeBrowsing int sbPhishingToSbCat(final boolean enabled) {
+        return enabled ? SafeBrowsing.PHISHING
+                       : SafeBrowsing.NONE;
     }
 
-     static boolean catToSbMalware(@Category final int cat) {
-        return (cat & (SB_MALWARE | SB_UNWANTED | SB_HARMFUL)) != 0;
+     static boolean catToSbMalware(@CBAntiTracking final int cat) {
+        return (cat & (SafeBrowsing.MALWARE | SafeBrowsing.UNWANTED | SafeBrowsing.HARMFUL)) != 0;
     }
 
-     static boolean catToSbPhishing(@Category final int cat) {
-        return (cat & SB_PHISHING) != 0;
+     static boolean catToSbPhishing(@CBAntiTracking final int cat) {
+        return (cat & SafeBrowsing.PHISHING) != 0;
     }
 
-     static String catToAtPref(@Category final int cat) {
+     static String catToAtPref(@CBAntiTracking final int cat) {
         StringBuilder builder = new StringBuilder();
 
-        if ((cat & AT_TEST) != 0) {
+        if ((cat & AntiTracking.TEST) != 0) {
             builder.append(TEST).append(',');
         }
-        if ((cat & AT_AD) != 0) {
+        if ((cat & AntiTracking.AD) != 0) {
             builder.append(AD).append(',');
         }
-        if ((cat & AT_ANALYTIC) != 0) {
+        if ((cat & AntiTracking.ANALYTIC) != 0) {
             builder.append(ANALYTIC).append(',');
         }
-        if ((cat & AT_SOCIAL) != 0) {
+        if ((cat & AntiTracking.SOCIAL) != 0) {
             builder.append(SOCIAL).append(',');
         }
-        if ((cat & AT_CONTENT) != 0) {
+        if ((cat & AntiTracking.CONTENT) != 0) {
             builder.append(CONTENT).append(',');
         }
         if (builder.length() == 0) {
@@ -501,82 +597,127 @@ public class ContentBlocking {
         return builder.substring(0, builder.length() - 1);
     }
 
-     static boolean catToCmPref(@Category final int cat) {
-        return (cat & AT_CRYPTOMINING) != 0;
+     static boolean catToCmPref(@CBAntiTracking final int cat) {
+        return (cat & AntiTracking.CRYPTOMINING) != 0;
     }
 
-     static String catToCmListPref(@Category final int cat) {
+     static String catToCmListPref(@CBAntiTracking final int cat) {
         StringBuilder builder = new StringBuilder();
 
-        if ((cat & AT_CRYPTOMINING) != 0) {
+        if ((cat & AntiTracking.CRYPTOMINING) != 0) {
             builder.append(CRYPTOMINING);
         }
         return builder.toString();
     }
 
-     static boolean catToFpPref(@Category final int cat) {
-        return (cat & AT_FINGERPRINTING) != 0;
+     static boolean catToFpPref(@CBAntiTracking final int cat) {
+        return (cat & AntiTracking.FINGERPRINTING) != 0;
     }
 
-     static String catToFpListPref(@Category final int cat) {
+     static String catToFpListPref(@CBAntiTracking final int cat) {
         StringBuilder builder = new StringBuilder();
 
-        if ((cat & AT_FINGERPRINTING) != 0) {
+        if ((cat & AntiTracking.FINGERPRINTING) != 0) {
             builder.append(FINGERPRINTING);
         }
         return builder.toString();
     }
 
-     static @Category int fpListToCat(final String list) {
-        int cat = 0;
+     static @CBAntiTracking int fpListToAtCat(final String list) {
+        int cat = AntiTracking.NONE;
+        if (list == null) {
+            return cat;
+        }
         if (list.indexOf(FINGERPRINTING) != -1) {
-            cat |= AT_FINGERPRINTING;
+            cat |= AntiTracking.FINGERPRINTING;
         }
         return cat;
     }
 
-     static @Category int atListToCat(final String list) {
-        int cat = 0;
+     static @CBAntiTracking int atListToAtCat(final String list) {
+        int cat = AntiTracking.NONE;
+
+        if (list == null) {
+            return cat;
+        }
         if (list.indexOf(TEST) != -1) {
-            cat |= AT_TEST;
+            cat |= AntiTracking.TEST;
         }
         if (list.indexOf(AD) != -1) {
-            cat |= AT_AD;
+            cat |= AntiTracking.AD;
         }
         if (list.indexOf(ANALYTIC) != -1) {
-            cat |= AT_ANALYTIC;
+            cat |= AntiTracking.ANALYTIC;
         }
         if (list.indexOf(SOCIAL) != -1) {
-            cat |= AT_SOCIAL;
+            cat |= AntiTracking.SOCIAL;
         }
         if (list.indexOf(CONTENT) != -1) {
-            cat |= AT_CONTENT;
+            cat |= AntiTracking.CONTENT;
         }
         return cat;
     }
 
-     static @Category int cmListToCat(final String list) {
-        int cat = 0;
+     static @CBAntiTracking int cmListToAtCat(final String list) {
+        int cat = AntiTracking.NONE;
+        if (list == null) {
+            return cat;
+        }
         if (list.indexOf(CRYPTOMINING) != -1) {
-            cat |= AT_CRYPTOMINING;
+            cat |= AntiTracking.CRYPTOMINING;
         }
         return cat;
     }
 
-     static @Category int errorToCat(final long error) {
+     static @CBSafeBrowsing int errorToSbCat(final long error) {
         
         if (error == 0x805D001FL) {
-            return SB_PHISHING;
+            return SafeBrowsing.PHISHING;
         }
         if (error == 0x805D001EL) {
-            return SB_MALWARE;
+            return SafeBrowsing.MALWARE;
         }
         if (error == 0x805D0023L) {
-            return SB_UNWANTED;
+            return SafeBrowsing.UNWANTED;
         }
         if (error == 0x805D0026L) {
-            return SB_HARMFUL;
+            return SafeBrowsing.HARMFUL;
         }
-        return NONE;
+        return SafeBrowsing.NONE;
+    }
+
+    
+    private static final long STATE_COOKIES_LOADED = 0x8000L;
+    private static final long STATE_COOKIES_BLOCKED_TRACKER = 0x20000000L;
+    private static final long STATE_COOKIES_BLOCKED_ALL = 0x40000000L;
+    private static final long STATE_COOKIES_BLOCKED_FOREIGN = 0x80L;
+
+     static boolean isBlockingGeckoCbCat(final long geckoCat) {
+        return
+            (geckoCat &
+                (STATE_COOKIES_BLOCKED_TRACKER |
+                 STATE_COOKIES_BLOCKED_ALL |
+                 STATE_COOKIES_BLOCKED_FOREIGN))
+            != 0;
+    }
+
+     static @CBCookieBehavior int geckoCatToCbCat(
+            final long geckoCat) {
+        if ((geckoCat & STATE_COOKIES_LOADED) != 0) {
+            
+            
+            return CookieBehavior.ACCEPT_NONE;
+        }
+        if ((geckoCat & STATE_COOKIES_BLOCKED_FOREIGN) != 0) {
+            return CookieBehavior.ACCEPT_FIRST_PARTY;
+        }
+        if ((geckoCat & STATE_COOKIES_BLOCKED_TRACKER) != 0) {
+            return CookieBehavior.ACCEPT_NON_TRACKERS;
+        }
+        if ((geckoCat & STATE_COOKIES_BLOCKED_ALL) != 0) {
+            return CookieBehavior.ACCEPT_NONE;
+        }
+        
+        return CookieBehavior.ACCEPT_ALL;
     }
 }
