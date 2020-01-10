@@ -1,0 +1,46 @@
+
+
+
+"use strict";
+
+
+
+
+do_get_profile();
+
+function run_test() {
+  
+  
+  checkPKCS11ModuleNotPresent("OS Client Cert Module", "osclientcerts");
+
+  
+  
+  let libraryFile = Services.dirsvc.get("GreBinD", Ci.nsIFile);
+  libraryFile.append(ctypes.libraryName("osclientcerts"));
+  loadPKCS11Module(libraryFile, "OS Client Cert Module", true);
+  let testModule = checkPKCS11ModuleExists(
+    "OS Client Cert Module",
+    "osclientcerts"
+  );
+
+  
+  let testModuleSlotNames = Array.from(
+    testModule.listSlots(),
+    slot => slot.name
+  );
+  testModuleSlotNames.sort();
+  const expectedSlotNames = ["OS Client Cert Slot"];
+  deepEqual(
+    testModuleSlotNames,
+    expectedSlotNames,
+    "Actual and expected slot names should be equal"
+  );
+
+  
+  
+  let pkcs11ModuleDB = Cc["@mozilla.org/security/pkcs11moduledb;1"].getService(
+    Ci.nsIPKCS11ModuleDB
+  );
+  pkcs11ModuleDB.deleteModule("OS Client Cert Module");
+  checkPKCS11ModuleNotPresent("OS Client Cert Module", "osclientcerts");
+}

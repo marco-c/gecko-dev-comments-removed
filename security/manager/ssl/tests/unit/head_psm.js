@@ -1045,18 +1045,20 @@ function asyncTestCertificateUsages(certdb, cert, expectedUsages) {
 
 
 
-function loadPKCS11TestModule(expectModuleUnloadToFail) {
-  let libraryFile = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
-  libraryFile.append("pkcs11testmodule");
-  libraryFile.append(ctypes.libraryName("pkcs11testmodule"));
-  ok(libraryFile.exists(), "The pkcs11testmodule file should exist");
+
+
+
+
+
+function loadPKCS11Module(libraryFile, moduleName, expectModuleUnloadToFail) {
+  ok(libraryFile.exists(), "The PKCS11 module file should exist");
 
   let pkcs11ModuleDB = Cc["@mozilla.org/security/pkcs11moduledb;1"].getService(
     Ci.nsIPKCS11ModuleDB
   );
   registerCleanupFunction(() => {
     try {
-      pkcs11ModuleDB.deleteModule("PKCS11 Test Module");
+      pkcs11ModuleDB.deleteModule(moduleName);
     } catch (e) {
       Assert.ok(
         expectModuleUnloadToFail,
@@ -1064,7 +1066,7 @@ function loadPKCS11TestModule(expectModuleUnloadToFail) {
       );
     }
   });
-  pkcs11ModuleDB.addModule("PKCS11 Test Module", libraryFile.path, 0, 0);
+  pkcs11ModuleDB.addModule(moduleName, libraryFile.path, 0, 0);
 }
 
 
@@ -1093,4 +1095,71 @@ function writeLinesAndClose(lines, outputStream) {
     outputStream.write(line, line.length);
   }
   outputStream.close();
+}
+
+
+
+
+
+
+
+
+function checkPKCS11ModuleNotPresent(moduleName, libraryName) {
+  let moduleDB = Cc["@mozilla.org/security/pkcs11moduledb;1"].getService(
+    Ci.nsIPKCS11ModuleDB
+  );
+  let modules = moduleDB.listModules();
+  ok(
+    modules.hasMoreElements(),
+    "One or more modules should be present with test module not present"
+  );
+  for (let module of modules) {
+    notEqual(
+      module.name,
+      moduleName,
+      "Non-test module name shouldn't equal 'PKCS11 Test Module'"
+    );
+    ok(
+      !(module.libName && module.libName.includes(libraryName)),
+      `Non-test module lib name should not include '${libraryName}'`
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function checkPKCS11ModuleExists(moduleName, libraryName) {
+  let moduleDB = Cc["@mozilla.org/security/pkcs11moduledb;1"].getService(
+    Ci.nsIPKCS11ModuleDB
+  );
+  let modules = moduleDB.listModules();
+  ok(
+    modules.hasMoreElements(),
+    "One or more modules should be present with test module present"
+  );
+  let testModule = null;
+  for (let module of modules) {
+    if (module.name == moduleName) {
+      testModule = module;
+      break;
+    }
+  }
+  notEqual(testModule, null, "Test module should have been found");
+  notEqual(testModule.libName, null, "Test module lib name should not be null");
+  ok(
+    testModule.libName.includes(ctypes.libraryName(libraryName)),
+    `Test module lib name should include lib name of '${libraryName}'`
+  );
+
+  return testModule;
 }

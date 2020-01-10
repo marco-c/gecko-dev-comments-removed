@@ -251,7 +251,86 @@ impl Deref for NCryptKeyHandle {
 }
 
 
-#[derive(Debug)]
+
+
+
+
+
+
+
+
+
+const SHA1_ALGORITHM_STRING: &[u16] = &[83, 72, 65, 49, 0];
+const SHA256_ALGORITHM_STRING: &[u16] = &[83, 72, 65, 50, 53, 54, 0];
+const SHA384_ALGORITHM_STRING: &[u16] = &[83, 72, 65, 51, 56, 52, 0];
+const SHA512_ALGORITHM_STRING: &[u16] = &[83, 72, 65, 53, 49, 50, 0];
+
+enum SignParams {
+    EC,
+    RSA_PKCS1(BCRYPT_PKCS1_PADDING_INFO),
+    RSA_PSS(BCRYPT_PSS_PADDING_INFO),
+}
+
+impl SignParams {
+    fn new(key_type: KeyType, params: &Option<CK_RSA_PKCS_PSS_PARAMS>) -> Result<SignParams, ()> {
+        
+        match key_type {
+            KeyType::EC => return Ok(SignParams::EC),
+            KeyType::RSA => {}
+        }
+        
+        let pss_params = match params {
+            Some(pss_params) => pss_params,
+            None => {
+                
+                
+                return Ok(SignParams::RSA_PKCS1(BCRYPT_PKCS1_PADDING_INFO {
+                    pszAlgId: std::ptr::null(),
+                }));
+            }
+        };
+        let algorithm_string = match pss_params.hashAlg {
+            CKM_SHA_1 => SHA1_ALGORITHM_STRING,
+            CKM_SHA256 => SHA256_ALGORITHM_STRING,
+            CKM_SHA384 => SHA384_ALGORITHM_STRING,
+            CKM_SHA512 => SHA512_ALGORITHM_STRING,
+            _ => {
+                error!(
+                    "unsupported algorithm to use with RSA-PSS: {}",
+                    unsafe_packed_field_access!(pss_params.hashAlg)
+                );
+                return Err(());
+            }
+        };
+        Ok(SignParams::RSA_PSS(BCRYPT_PSS_PADDING_INFO {
+            pszAlgId: algorithm_string.as_ptr(),
+            cbSalt: pss_params.sLen,
+        }))
+    }
+
+    fn params_ptr(&mut self) -> *mut std::ffi::c_void {
+        match self {
+            SignParams::EC => std::ptr::null_mut(),
+            SignParams::RSA_PKCS1(params) => {
+                params as *mut BCRYPT_PKCS1_PADDING_INFO as *mut std::ffi::c_void
+            }
+            SignParams::RSA_PSS(params) => {
+                params as *mut BCRYPT_PSS_PADDING_INFO as *mut std::ffi::c_void
+            }
+        }
+    }
+
+    fn flags(&self) -> u32 {
+        match self {
+            &SignParams::EC => 0,
+            &SignParams::RSA_PKCS1(_) => NCRYPT_PAD_PKCS1_FLAG,
+            &SignParams::RSA_PSS(_) => NCRYPT_PAD_PSS_FLAG,
+        }
+    }
+}
+
+
+#[derive(Clone, Copy, Debug)]
 pub enum KeyType {
     EC,
     RSA,
@@ -405,37 +484,40 @@ impl Key {
         }
     }
 
-    pub fn get_signature_length(&self, data: &[u8]) -> Result<usize, ()> {
-        match self.sign_internal(data, false) {
+    pub fn get_signature_length(
+        &self,
+        data: &[u8],
+        params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
+    ) -> Result<usize, ()> {
+        match self.sign_internal(data, params, false) {
             Ok(dummy_signature_bytes) => Ok(dummy_signature_bytes.len()),
             Err(()) => Err(()),
         }
     }
 
-    pub fn sign(&self, data: &[u8]) -> Result<Vec<u8>, ()> {
-        self.sign_internal(data, true)
+    pub fn sign(
+        &self,
+        data: &[u8],
+        params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
+    ) -> Result<Vec<u8>, ()> {
+        self.sign_internal(data, params, true)
     }
 
     
     
     
-    fn sign_internal(&self, data: &[u8], do_signature: bool) -> Result<Vec<u8>, ()> {
+    fn sign_internal(
+        &self,
+        data: &[u8],
+        params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
+        do_signature: bool,
+    ) -> Result<Vec<u8>, ()> {
         
         
         let key = NCryptKeyHandle::from_cert(&self.cert)?;
-        
-        let mut padding_info = BCRYPT_PKCS1_PADDING_INFO {
-            
-            
-            pszAlgId: std::ptr::null(),
-        };
-        let (padding_info_ptr, flags) = match self.key_type_enum {
-            KeyType::EC => (std::ptr::null_mut(), 0),
-            KeyType::RSA => (
-                &mut padding_info as *mut BCRYPT_PKCS1_PADDING_INFO,
-                NCRYPT_PAD_PKCS1_FLAG,
-            ),
-        };
+        let mut sign_params = SignParams::new(self.key_type_enum, params)?;
+        let params_ptr = sign_params.params_ptr();
+        let flags = sign_params.flags();
         let mut data = data.to_vec();
         let mut signature_len = 0;
         
@@ -443,7 +525,7 @@ impl Key {
         let status = unsafe {
             NCryptSignHash(
                 *key,
-                padding_info_ptr as *mut std::ffi::c_void,
+                params_ptr,
                 data.as_mut_ptr(),
                 data.len().try_into().map_err(|_| ())?,
                 std::ptr::null_mut(),
@@ -468,7 +550,7 @@ impl Key {
         let status = unsafe {
             NCryptSignHash(
                 *key,
-                padding_info_ptr as *mut std::ffi::c_void,
+                params_ptr,
                 data.as_mut_ptr(),
                 data.len().try_into().map_err(|_| ())?,
                 signature.as_mut_ptr(),

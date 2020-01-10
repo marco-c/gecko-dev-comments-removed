@@ -8,6 +8,19 @@ use std::convert::TryInto;
 
 
 
+
+
+
+macro_rules! unsafe_packed_field_access {
+    ($e:expr) => {{
+        #[allow(unused_unsafe)]
+        let tmp = unsafe { $e };
+        tmp
+    }};
+}
+
+
+
 pub fn serialize_uint<T: TryInto<u64>>(value: T) -> Result<Vec<u8>, ()> {
     let value_size = std::mem::size_of::<T>();
     let mut value_buf = Vec::with_capacity(value_size);
