@@ -29,8 +29,9 @@ namespace mozilla {
 
 static const uint32_t MONO = 1;
 
-AudioCaptureStream::AudioCaptureStream(TrackID aTrackId)
-    : ProcessedMediaStream(), mTrackId(aTrackId), mStarted(false) {
+AudioCaptureStream::AudioCaptureStream(TrackRate aRate)
+    : ProcessedMediaStream(aRate, MediaSegment::AUDIO, new AudioSegment()),
+      mStarted(false) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_COUNT_CTOR(AudioCaptureStream);
   mMixer.AddCallback(this);
@@ -62,9 +63,8 @@ void AudioCaptureStream::ProcessInput(GraphTime aFrom, GraphTime aTo,
   }
 
   uint32_t inputCount = mInputs.Length();
-  StreamTracks::Track* track = EnsureTrack(mTrackId);
 
-  if (IsFinishedOnGraphThread()) {
+  if (mEnded) {
     return;
   }
 
@@ -73,7 +73,7 @@ void AudioCaptureStream::ProcessInput(GraphTime aFrom, GraphTime aTo,
   
   
   if (InMutedCycle() || inputCount == 0) {
-    track->Get<AudioSegment>()->AppendNullData(aTo - aFrom);
+    GetData<AudioSegment>()->AppendNullData(aTo - aFrom);
   } else {
     
     
@@ -81,29 +81,20 @@ void AudioCaptureStream::ProcessInput(GraphTime aFrom, GraphTime aTo,
     AudioSegment output;
     for (uint32_t i = 0; i < inputCount; i++) {
       MediaStream* s = mInputs[i]->GetSource();
-      StreamTracks::TrackIter track(s->GetStreamTracks(), MediaSegment::AUDIO);
-      if (track.IsEnded()) {
-        
-        AudioSegment toMix;
+      AudioSegment* inputSegment = s->GetData<AudioSegment>();
+      StreamTime inputStart = s->GraphTimeToStreamTimeWithBlocking(aFrom);
+      StreamTime inputEnd = s->GraphTimeToStreamTimeWithBlocking(aTo);
+      AudioSegment toMix;
+      if (s->Ended() && inputSegment->GetDuration() <= inputStart) {
         toMix.AppendNullData(aTo - aFrom);
-        toMix.Mix(mMixer, MONO, Graph()->GraphRate());
-      }
-      for (; !track.IsEnded(); track.Next()) {
-        AudioSegment* inputSegment = track->Get<AudioSegment>();
-        StreamTime inputStart = s->GraphTimeToStreamTimeWithBlocking(aFrom);
-        StreamTime inputEnd = s->GraphTimeToStreamTimeWithBlocking(aTo);
-        AudioSegment toMix;
-        if (track->IsEnded() && inputSegment->GetDuration() <= inputStart) {
-          toMix.AppendNullData(aTo - aFrom);
-        } else {
-          toMix.AppendSlice(*inputSegment, inputStart, inputEnd);
-          
-          if (inputEnd - inputStart < aTo - aFrom) {
-            toMix.AppendNullData((aTo - aFrom) - (inputEnd - inputStart));
-          }
+      } else {
+        toMix.AppendSlice(*inputSegment, inputStart, inputEnd);
+        
+        if (inputEnd - inputStart < aTo - aFrom) {
+          toMix.AppendNullData((aTo - aFrom) - (inputEnd - inputStart));
         }
-        toMix.Mix(mMixer, MONO, Graph()->GraphRate());
       }
+      toMix.Mix(mMixer, MONO, Graph()->GraphRate());
     }
     
     mMixer.FinishMixing();
@@ -139,6 +130,6 @@ void AudioCaptureStream::MixerCallback(AudioDataValue* aMixedBuffer,
   }
 
   
-  EnsureTrack(mTrackId)->Get<AudioSegment>()->AppendAndConsumeChunk(&chunk);
+  GetData<AudioSegment>()->AppendAndConsumeChunk(&chunk);
 }
 }  

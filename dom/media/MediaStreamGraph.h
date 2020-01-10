@@ -8,9 +8,7 @@
 
 #include "AudioStream.h"
 #include "MainThreadUtils.h"
-#include "MediaStreamTypes.h"
-#include "StreamTracks.h"
-#include "VideoSegment.h"
+#include "MediaSegment.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
@@ -50,6 +48,22 @@ namespace dom {
 enum class AudioContextOperation;
 enum class AudioContextOperationFlags;
 }  
+
+inline TrackTicks RateConvertTicksRoundDown(TrackRate aOutRate,
+                                            TrackRate aInRate,
+                                            TrackTicks aTicks) {
+  MOZ_ASSERT(0 < aOutRate && aOutRate <= TRACK_RATE_MAX, "Bad out rate");
+  MOZ_ASSERT(0 < aInRate && aInRate <= TRACK_RATE_MAX, "Bad in rate");
+  MOZ_ASSERT(0 <= aTicks && aTicks <= TRACK_TICKS_MAX, "Bad ticks");
+  return (aTicks * aOutRate) / aInRate;
+}
+inline TrackTicks RateConvertTicksRoundUp(TrackRate aOutRate, TrackRate aInRate,
+                                          TrackTicks aTicks) {
+  MOZ_ASSERT(0 < aOutRate && aOutRate <= TRACK_RATE_MAX, "Bad out rate");
+  MOZ_ASSERT(0 < aInRate && aInRate <= TRACK_RATE_MAX, "Bad in rate");
+  MOZ_ASSERT(0 <= aTicks && aTicks <= TRACK_TICKS_MAX, "Bad ticks");
+  return (aTicks * aOutRate + aInRate - 1) / aInRate;
+}
 
 
 
@@ -98,7 +112,7 @@ class SourceMediaStream;
 class AudioDataListenerInterface {
  protected:
   
-  virtual ~AudioDataListenerInterface() {}
+  virtual ~AudioDataListenerInterface() = default;
 
  public:
   
@@ -141,7 +155,7 @@ class AudioDataListenerInterface {
 class AudioDataListener : public AudioDataListenerInterface {
  protected:
   
-  virtual ~AudioDataListener() {}
+  virtual ~AudioDataListener() = default;
 
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AudioDataListener)
@@ -161,7 +175,7 @@ class AudioDataListener : public AudioDataListenerInterface {
 
 class MainThreadMediaStreamListener {
  public:
-  virtual void NotifyMainThreadStreamFinished() = 0;
+  virtual void NotifyMainThreadTrackEnded() = 0;
 };
 
 
@@ -174,10 +188,20 @@ struct AudioNodeSizes {
   const char* mNodeType;
 };
 
+
+
+
+
+
+
+
+
+
+enum class DisabledTrackMode { ENABLED, SILENCE_BLACK, SILENCE_FREEZE };
+
 class AudioNodeEngine;
 class AudioNodeExternalInputStream;
 class AudioNodeStream;
-class AudioSegment;
 class DirectMediaStreamTrackListener;
 class MediaInputPort;
 class MediaStreamGraphImpl;
@@ -185,15 +209,6 @@ class MediaStreamTrackListener;
 class ProcessedMediaStream;
 class SourceMediaStream;
 class TrackUnionStream;
-
-
-
-
-template <typename Listener>
-struct TrackBound {
-  RefPtr<Listener> mListener;
-  TrackID mTrackID;
-};
 
 
 
@@ -262,7 +277,12 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaStream)
 
-  explicit MediaStream();
+  MediaStream(TrackRate aSampleRate, MediaSegment::Type aType,
+              MediaSegment* aSegment);
+
+  
+  const TrackRate mSampleRate;
+  const MediaSegment::Type mType;
 
  protected:
   
@@ -275,16 +295,12 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
   MediaStreamGraphImpl* GraphImpl();
   const MediaStreamGraphImpl* GraphImpl() const;
   MediaStreamGraph* Graph();
+  const MediaStreamGraph* Graph() const;
   
 
 
   void SetGraphImpl(MediaStreamGraphImpl* aGraph);
   void SetGraphImpl(MediaStreamGraph* aGraph);
-
-  
-
-
-  TrackRate GraphRate() const { return mTracks.GraphRate(); }
 
   
   
@@ -304,10 +320,8 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
   virtual void Suspend();
   virtual void Resume();
   
-  virtual void AddTrackListener(MediaStreamTrackListener* aListener,
-                                TrackID aTrackID);
-  virtual void RemoveTrackListener(MediaStreamTrackListener* aListener,
-                                   TrackID aTrackID);
+  virtual void AddListener(MediaStreamTrackListener* aListener);
+  virtual void RemoveListener(MediaStreamTrackListener* aListener);
 
   
 
@@ -316,9 +330,7 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
 
 
 
-
-  virtual void AddDirectTrackListener(DirectMediaStreamTrackListener* aListener,
-                                      TrackID aTrackID);
+  virtual void AddDirectListener(DirectMediaStreamTrackListener* aListener);
 
   
 
@@ -327,13 +339,11 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
 
 
 
-
-  virtual void RemoveDirectTrackListener(
-      DirectMediaStreamTrackListener* aListener, TrackID aTrackID);
+  virtual void RemoveDirectListener(DirectMediaStreamTrackListener* aListener);
 
   
   
-  void SetTrackEnabled(TrackID aTrackID, DisabledTrackMode aMode);
+  void SetEnabled(DisabledTrackMode aMode);
 
   
   
@@ -370,9 +380,9 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
     return mMainThreadCurrentTime;
   }
   
-  bool IsFinished() const {
+  bool IsEnded() const {
     NS_ASSERTION(NS_IsMainThread(), "Call only on main thread");
-    return mMainThreadFinished;
+    return mMainThreadEnded;
   }
 
   bool IsDestroyed() const {
@@ -396,10 +406,7 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
 
 
   virtual void DestroyImpl();
-  StreamTime GetTracksEnd() const { return mTracks.GetEarliestTrackEnd(); }
-#ifdef DEBUG
-  void DumpTrackInfo() const { return mTracks.DumpTrackInfo(); }
-#endif
+  StreamTime GetEnd() const;
   void SetAudioOutputVolumeImpl(void* aKey, float aVolume);
   void AddAudioOutputImpl(void* aKey);
   void RemoveAudioOutputImpl(void* aKey);
@@ -409,48 +416,58 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
 
 
   virtual void RemoveAllDirectListenersImpl() {}
-  void RemoveAllListenersImpl();
-  virtual void AddTrackListenerImpl(
-      already_AddRefed<MediaStreamTrackListener> aListener, TrackID aTrackID);
-  virtual void RemoveTrackListenerImpl(MediaStreamTrackListener* aListener,
-                                       TrackID aTrackID);
-  virtual void AddDirectTrackListenerImpl(
-      already_AddRefed<DirectMediaStreamTrackListener> aListener,
-      TrackID aTrackID);
-  virtual void RemoveDirectTrackListenerImpl(
-      DirectMediaStreamTrackListener* aListener, TrackID aTrackID);
-  virtual void SetTrackEnabledImpl(TrackID aTrackID, DisabledTrackMode aMode);
-  DisabledTrackMode GetDisabledTrackMode(TrackID aTrackID);
+  void RemoveAllResourcesAndListenersImpl();
+
+  virtual void AddListenerImpl(
+      already_AddRefed<MediaStreamTrackListener> aListener);
+  virtual void RemoveListenerImpl(MediaStreamTrackListener* aListener);
+  virtual void AddDirectListenerImpl(
+      already_AddRefed<DirectMediaStreamTrackListener> aListener);
+  virtual void RemoveDirectListenerImpl(
+      DirectMediaStreamTrackListener* aListener);
+  virtual void SetEnabledImpl(DisabledTrackMode aMode);
 
   void AddConsumer(MediaInputPort* aPort) { mConsumers.AppendElement(aPort); }
   void RemoveConsumer(MediaInputPort* aPort) {
     mConsumers.RemoveElement(aPort);
   }
-  StreamTracks& GetStreamTracks() { return mTracks; }
-  GraphTime GetStreamTracksStartTime() const { return mTracksStartTime; }
+  GraphTime StartTime() const { return mStartTime; }
+  bool Ended() const { return mEnded; }
+
+  template <class SegmentType>
+  SegmentType* GetData() const {
+    if (!mSegment) {
+      return nullptr;
+    }
+    if (mSegment->GetType() != SegmentType::StaticType()) {
+      return nullptr;
+    }
+    return static_cast<SegmentType*>(mSegment.get());
+  }
+  MediaSegment* GetData() const { return mSegment.get(); }
 
   double StreamTimeToSeconds(StreamTime aTime) const {
     NS_ASSERTION(0 <= aTime && aTime <= STREAM_TIME_MAX, "Bad time");
-    return static_cast<double>(aTime) / mTracks.GraphRate();
+    return static_cast<double>(aTime) / mSampleRate;
   }
   int64_t StreamTimeToMicroseconds(StreamTime aTime) const {
     NS_ASSERTION(0 <= aTime && aTime <= STREAM_TIME_MAX, "Bad time");
-    return (aTime * 1000000) / mTracks.GraphRate();
+    return (aTime * 1000000) / mSampleRate;
   }
   StreamTime SecondsToNearestStreamTime(double aSeconds) const {
     NS_ASSERTION(0 <= aSeconds && aSeconds <= TRACK_TICKS_MAX / TRACK_RATE_MAX,
                  "Bad seconds");
-    return mTracks.GraphRate() * aSeconds + 0.5;
+    return mSampleRate * aSeconds + 0.5;
   }
   StreamTime MicrosecondsToStreamTimeRoundDown(int64_t aMicroseconds) const {
-    return (aMicroseconds * mTracks.GraphRate()) / 1000000;
+    return (aMicroseconds * mSampleRate) / 1000000;
   }
 
   TrackTicks TimeToTicksRoundUp(TrackRate aRate, StreamTime aTime) const {
-    return RateConvertTicksRoundUp(aRate, mTracks.GraphRate(), aTime);
+    return RateConvertTicksRoundUp(aRate, mSampleRate, aTime);
   }
   StreamTime TicksToTimeRoundDown(TrackRate aRate, TrackTicks aTicks) const {
-    return RateConvertTicksRoundDown(mTracks.GraphRate(), aRate, aTicks);
+    return RateConvertTicksRoundDown(mSampleRate, aRate, aTicks);
   }
   
 
@@ -473,17 +490,7 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
 
   GraphTime StreamTimeToGraphTime(StreamTime aTime) const;
 
-  bool IsFinishedOnGraphThread() const { return mFinished; }
-  virtual void FinishOnGraphThread();
-
-  
-
-
-  StreamTracks::Track* FindTrack(TrackID aID) const;
-
-  StreamTracks::Track* EnsureTrack(TrackID aTrack);
-
-  virtual void ApplyTrackDisabling(TrackID aTrackID, MediaSegment* aSegment,
+  virtual void ApplyTrackDisabling(MediaSegment* aSegment,
                                    MediaSegment* aRawSegment = nullptr);
 
   
@@ -504,27 +511,24 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
   
   
   virtual void AdvanceTimeVaryingValuesToCurrentTime(GraphTime aCurrentTime,
-                                                     GraphTime aBlockedTime) {
-    mTracksStartTime += aBlockedTime;
-    mTracks.ForgetUpTo(aCurrentTime - mTracksStartTime);
-  }
+                                                     GraphTime aBlockedTime);
 
   void NotifyMainThreadListeners() {
     NS_ASSERTION(NS_IsMainThread(), "Call only on main thread");
 
     for (int32_t i = mMainThreadListeners.Length() - 1; i >= 0; --i) {
-      mMainThreadListeners[i]->NotifyMainThreadStreamFinished();
+      mMainThreadListeners[i]->NotifyMainThreadTrackEnded();
     }
     mMainThreadListeners.Clear();
   }
 
-  bool ShouldNotifyStreamFinished() {
+  bool ShouldNotifyTrackEnded() {
     NS_ASSERTION(NS_IsMainThread(), "Call only on main thread");
-    if (!mMainThreadFinished || mFinishedNotificationSent) {
+    if (!mMainThreadEnded || mEndedNotificationSent) {
       return false;
     }
 
-    mFinishedNotificationSent = true;
+    mEndedNotificationSent = true;
     return true;
   }
 
@@ -534,11 +538,25 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
   
   
   
-  StreamTracks mTracks;
+  
+  
+  const UniquePtr<MediaSegment> mSegment;
+
   
   
   
-  GraphTime mTracksStartTime;
+  GraphTime mStartTime;
+
+  
+  StreamTime mForgottenTime;
+
+  
+  
+  
+  bool mEnded;
+
+  
+  bool mNotifiedEnded;
 
   
   struct AudioOutput {
@@ -547,15 +565,11 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
     float mVolume;
   };
   nsTArray<AudioOutput> mAudioOutputs;
-  
-  
-  VideoFrame mLastPlayedVideoFrame;
-  nsTArray<TrackBound<MediaStreamTrackListener>> mTrackListeners;
+  nsTArray<RefPtr<MediaStreamTrackListener>> mTrackListeners;
   nsTArray<MainThreadMediaStreamListener*> mMainThreadListeners;
   
   
-  
-  nsTArray<DisabledTrack> mDisabledTracks;
+  DisabledTrackMode mDisabledMode;
 
   
   
@@ -577,9 +591,8 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
     MediaTime mBlockedAudioTime;
     
     StreamTime mLastTickWritten;
-    TrackID mTrackID;
   };
-  nsTArray<AudioOutputStream> mAudioOutputStreams;
+  UniquePtr<AudioOutputStream> mAudioOutputStream;
 
   
 
@@ -588,21 +601,9 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
   int32_t mSuspendedCount;
 
   
-
-
-
-
-  bool mFinished;
-  
-
-
-
-  bool mNotifiedFinished;
-
-  
   StreamTime mMainThreadCurrentTime;
-  bool mMainThreadFinished;
-  bool mFinishedNotificationSent;
+  bool mMainThreadEnded;
+  bool mEndedNotificationSent;
   bool mMainThreadDestroyed;
 
   
@@ -615,9 +616,13 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
 
 
 
+
+
+
+
 class SourceMediaStream : public MediaStream {
  public:
-  explicit SourceMediaStream();
+  SourceMediaStream(MediaSegment::Type aType, TrackRate aSampleRate);
 
   SourceMediaStream* AsSourceStream() override { return this; }
 
@@ -631,7 +636,7 @@ class SourceMediaStream : public MediaStream {
 
 
 
-  void SetPullingEnabled(TrackID aTrackID, bool aEnabled);
+  void SetPullingEnabled(bool aEnabled);
 
   
   
@@ -661,28 +666,13 @@ class SourceMediaStream : public MediaStream {
 
   void ExtractPendingInput(GraphTime aCurrentTime, GraphTime aDesiredUpToTime);
 
-  enum {
-    ADDTRACK_QUEUED = 0x01  
-  };
   
 
 
 
-  void AddTrack(TrackID aID, MediaSegment* aSegment, uint32_t aFlags = 0) {
-    AddTrackInternal(aID, GraphRate(), aSegment, aFlags);
-  }
-
-  
 
 
-  void AddAudioTrack(TrackID aID, TrackRate aRate, AudioSegment* aSegment,
-                     uint32_t aFlags = 0);
-
-  
-
-
-
-  void FinishAddTracks();
+  void SetAppendDataSourceRate(TrackRate aRate);
 
   
 
@@ -690,53 +680,27 @@ class SourceMediaStream : public MediaStream {
 
 
 
-  virtual StreamTime AppendToTrack(TrackID aID, MediaSegment* aSegment,
-                                   MediaSegment* aRawSegment = nullptr);
+  virtual StreamTime AppendData(MediaSegment* aSegment,
+                                MediaSegment* aRawSegment = nullptr);
   
 
 
 
-
-  void EndTrack(TrackID aID);
-  
-
-
-
-
-  void FinishPendingWithLockHeld();
-  void FinishPending() {
-    MutexAutoLock lock(mMutex);
-    FinishPendingWithLockHeld();
-  }
+  void End();
 
   
   
-  void SetTrackEnabledImpl(TrackID aTrackID, DisabledTrackMode aMode) override;
+  void SetEnabledImpl(DisabledTrackMode aMode) override;
 
   
   
-  void ApplyTrackDisabling(TrackID aTrackID, MediaSegment* aSegment,
+  void ApplyTrackDisabling(MediaSegment* aSegment,
                            MediaSegment* aRawSegment = nullptr) override {
     mMutex.AssertCurrentThreadOwns();
-    MediaStream::ApplyTrackDisabling(aTrackID, aSegment, aRawSegment);
+    MediaStream::ApplyTrackDisabling(aSegment, aRawSegment);
   }
 
   void RemoveAllDirectListenersImpl() override;
-
-  
-
-
-
-  void EndAllTrackAndFinish();
-
-  
-
-
-
-
-  bool HasPendingAudioTrack();
-
-  
 
   friend class MediaStreamGraphImpl;
 
@@ -749,7 +713,6 @@ class SourceMediaStream : public MediaStream {
 
 
   struct TrackData {
-    TrackID mID;
     
     TrackRate mInputRate;
     
@@ -757,40 +720,22 @@ class SourceMediaStream : public MediaStream {
     nsAutoRef<SpeexResamplerState> mResampler;
     int mResamplerChannelCount;
     
-    StreamTime mEndOfFlushedData;
     
+    UniquePtr<MediaSegment> mData;
     
-    nsAutoPtr<MediaSegment> mData;
-    
-    
-    uint32_t mCommands;
+    bool mEnded;
     
     bool mPullingEnabled;
   };
 
   bool NeedsMixing();
 
-  void ResampleAudioToGraphSampleRate(TrackData* aTrackData,
-                                      MediaSegment* aSegment);
+  void ResampleAudioToGraphSampleRate(MediaSegment* aSegment);
 
-  void AddDirectTrackListenerImpl(
-      already_AddRefed<DirectMediaStreamTrackListener> aListener,
-      TrackID aTrackID) override;
-  void RemoveDirectTrackListenerImpl(DirectMediaStreamTrackListener* aListener,
-                                     TrackID aTrackID) override;
-
-  void AddTrackInternal(TrackID aID, TrackRate aRate, MediaSegment* aSegment,
-                        uint32_t aFlags);
-
-  TrackData* FindDataForTrack(TrackID aID) {
-    mMutex.AssertCurrentThreadOwns();
-    for (uint32_t i = 0; i < mUpdateTracks.Length(); ++i) {
-      if (mUpdateTracks[i].mID == aID) {
-        return &mUpdateTracks[i];
-      }
-    }
-    return nullptr;
-  }
+  void AddDirectListenerImpl(
+      already_AddRefed<DirectMediaStreamTrackListener> aListener) override;
+  void RemoveDirectListenerImpl(
+      DirectMediaStreamTrackListener* aListener) override;
 
   
 
@@ -798,7 +743,7 @@ class SourceMediaStream : public MediaStream {
 
 
 
-  void NotifyDirectConsumers(TrackData* aTrack, MediaSegment* aSegment);
+  void NotifyDirectConsumers(MediaSegment* aSegment);
 
   virtual void AdvanceTimeVaryingValuesToCurrentTime(
       GraphTime aCurrentTime, GraphTime aBlockedTime) override;
@@ -813,10 +758,8 @@ class SourceMediaStream : public MediaStream {
   
   Mutex mMutex;
   
-  nsTArray<TrackData> mUpdateTracks;
-  nsTArray<TrackData> mPendingTracks;
-  nsTArray<TrackBound<DirectMediaStreamTrackListener>> mDirectTrackListeners;
-  bool mFinishPending;
+  UniquePtr<TrackData> mUpdateTrack;
+  nsTArray<RefPtr<DirectMediaStreamTrackListener>> mDirectTrackListeners;
 };
 
 
@@ -903,7 +846,9 @@ class MediaInputPort final {
   };
   
   
-  InputInterval GetNextInputInterval(GraphTime aTime) const;
+  
+  static InputInterval GetNextInputInterval(MediaInputPort const* aPort,
+                                            GraphTime aTime);
 
   
 
@@ -963,8 +908,11 @@ class MediaInputPort final {
 
 class ProcessedMediaStream : public MediaStream {
  public:
-  explicit ProcessedMediaStream()
-      : MediaStream(), mAutofinish(false), mCycleMarker(0) {}
+  ProcessedMediaStream(TrackRate aSampleRate, MediaSegment::Type aType,
+                       MediaSegment* aSegment)
+      : MediaStream(aSampleRate, aType, aSegment),
+        mAutoend(true),
+        mCycleMarker(0) {}
 
   
   
@@ -980,7 +928,7 @@ class ProcessedMediaStream : public MediaStream {
 
 
 
-  void QueueSetAutofinish(bool aAutofinish);
+  void QueueSetAutoend(bool aAutoend);
 
   ProcessedMediaStream* AsProcessedStream() override { return this; }
 
@@ -999,8 +947,6 @@ class ProcessedMediaStream : public MediaStream {
   }
   void InputSuspended(MediaInputPort* aPort);
   void InputResumed(MediaInputPort* aPort);
-  virtual MediaStream* GetInputStreamFor(TrackID aTrackID) { return nullptr; }
-  virtual TrackID GetInputTrackIDFor(TrackID aTrackID) { return TRACK_NONE; }
   void DestroyImpl() override;
   
 
@@ -1018,11 +964,10 @@ class ProcessedMediaStream : public MediaStream {
 
 
 
-
-  enum { ALLOW_FINISH = 0x01 };
+  enum { ALLOW_END = 0x01 };
   virtual void ProcessInput(GraphTime aFrom, GraphTime aTo,
                             uint32_t aFlags) = 0;
-  void SetAutofinishImpl(bool aAutofinish) { mAutofinish = aAutofinish; }
+  void SetAutoendImpl(bool aAutoend) { mAutoend = aAutoend; }
 
   
   
@@ -1050,7 +995,7 @@ class ProcessedMediaStream : public MediaStream {
   nsTArray<MediaInputPort*> mInputs;
   
   nsTArray<MediaInputPort*> mSuspendedInputs;
-  bool mAutofinish;
+  bool mAutoend;
   
   
   
@@ -1115,7 +1060,7 @@ class MediaStreamGraph {
 
 
 
-  SourceMediaStream* CreateSourceStream();
+  SourceMediaStream* CreateSourceStream(MediaSegment::Type aType);
   
 
 
@@ -1127,13 +1072,11 @@ class MediaStreamGraph {
 
 
 
-
-
-  ProcessedMediaStream* CreateTrackUnionStream();
+  ProcessedMediaStream* CreateTrackUnionStream(MediaSegment::Type aType);
   
 
 
-  AudioCaptureStream* CreateAudioCaptureStream(TrackID aTrackId);
+  AudioCaptureStream* CreateAudioCaptureStream();
 
   
 
@@ -1220,7 +1163,7 @@ class MediaStreamGraph {
 
 
 
-  TrackRate mSampleRate;
+  const TrackRate mSampleRate;
 };
 
 }  

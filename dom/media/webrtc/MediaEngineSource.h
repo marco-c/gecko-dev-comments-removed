@@ -14,7 +14,6 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
 #include "nsStringFwd.h"
-#include "TrackID.h"
 
 namespace mozilla {
 
@@ -121,7 +120,6 @@ class MediaEngineSourceInterface {
 
 
   virtual void SetTrack(const RefPtr<SourceMediaStream>& aStream,
-                        TrackID aTrackID,
                         const PrincipalHandle& aPrincipal) = 0;
 
   

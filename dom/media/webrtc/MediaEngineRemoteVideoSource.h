@@ -25,7 +25,6 @@
 #include "MediaEngineSource.h"
 #include "VideoSegment.h"
 #include "AudioSegment.h"
-#include "StreamTracks.h"
 #include "MediaStreamGraph.h"
 
 #include "MediaEngineWrapper.h"
@@ -116,7 +115,7 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
                     const ipc::PrincipalInfo& aPrincipalInfo,
                     const char** aOutBadConstraint) override;
   nsresult Deallocate() override;
-  void SetTrack(const RefPtr<SourceMediaStream>& aStream, TrackID aTrackID,
+  void SetTrack(const RefPtr<SourceMediaStream>& aStream,
                 const PrincipalHandle& aPrincipal) override;
   nsresult Start() override;
   nsresult Reconfigure(const dom::MediaTrackConstraints& aConstraints,
@@ -184,10 +183,6 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
   
   
   RefPtr<SourceMediaStream> mStream;
-
-  
-  
-  TrackID mTrackID = TRACK_NONE;
 
   
   

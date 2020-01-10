@@ -7,9 +7,8 @@
 #ifndef MOZILLA_MEDIASTREAMLISTENER_h_
 #define MOZILLA_MEDIASTREAMLISTENER_h_
 
-#include "StreamTracks.h"
-
 #include "MediaStreamGraph.h"
+#include "PrincipalHandle.h"
 
 namespace mozilla {
 
@@ -153,13 +152,7 @@ class DirectMediaStreamTrackListener : public MediaStreamTrackListener {
 
 
 
-
-
-
-
   enum class InstallationResult {
-    TRACK_NOT_FOUND_AT_SOURCE,
-    TRACK_TYPE_NOT_SUPPORTED,
     STREAM_NOT_SUPPORTED,
     ALREADY_EXISTS,
     SUCCESS
