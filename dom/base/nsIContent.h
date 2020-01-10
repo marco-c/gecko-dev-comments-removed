@@ -203,13 +203,6 @@ class nsIContent : public nsINode {
 
 
 
-
-  inline bool IsInAnonymousSubtree() const;
-
-  
-
-
-
   inline bool IsInHTMLDocument() const;
 
   

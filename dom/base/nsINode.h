@@ -1244,7 +1244,17 @@ class nsINode : public mozilla::dom::EventTarget {
 #endif
   }
 
-  bool IsInAnonymousSubtree() const;
+  
+
+
+
+
+
+
+
+  bool IsInAnonymousSubtree() const {
+    return IsInNativeAnonymousSubtree();
+  }
 
   bool IsInSVGUseShadowTree() const {
     return !!GetContainingSVGUseShadowHost();
