@@ -2150,7 +2150,8 @@ class Document : public nsINode,
 
   
   
-  void RequestFullscreen(UniquePtr<FullscreenRequest> aRequest);
+  void RequestFullscreen(UniquePtr<FullscreenRequest> aRequest,
+                         bool applyFullScreenDirectly = false);
 
   
   

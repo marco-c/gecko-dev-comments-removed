@@ -19,19 +19,31 @@ class DOMFullscreenChild extends JSWindowActorChild {
 
     switch (aMessage.name) {
       case "DOMFullscreen:Entered": {
-        this._lastTransactionId = windowUtils.lastTransactionId;
-        if (
-          !windowUtils.handleFullscreenRequests() &&
-          !this.document.fullscreenElement
-        ) {
-          
-          
-          
-          this.sendAsyncMessage("DOMFullscreen:Exit", {});
+        let remoteFrameBC = aMessage.data.remoteFrameBC;
+        if (remoteFrameBC) {
+          let remoteFrame = remoteFrameBC.embedderElement;
+          this._isNotTheRequestSource = true;
+          windowUtils.remoteFrameFullscreenChanged(remoteFrame);
+        } else {
+          this._lastTransactionId = windowUtils.lastTransactionId;
+          if (
+            !windowUtils.handleFullscreenRequests() &&
+            !this.document.fullscreenElement
+          ) {
+            
+            
+            
+            this.sendAsyncMessage("DOMFullscreen:Exit", {});
+          }
         }
         break;
       }
       case "DOMFullscreen:CleanUp": {
+        let remoteFrameBC = aMessage.data.remoteFrameBC;
+        if (remoteFrameBC) {
+          this._isNotTheRequestSource = true;
+        }
+
         
         
         
@@ -67,13 +79,22 @@ class DOMFullscreenChild extends JSWindowActorChild {
       }
       case "MozDOMFullscreen:Entered":
       case "MozDOMFullscreen:Exited": {
-        let rootWindow = this.contentWindow.windowRoot;
-        rootWindow.addEventListener("MozAfterPaint", this);
-        if (!this.document || !this.document.fullscreenElement) {
+        if (this._isNotTheRequestSource) {
           
           
           
-          this.sendAsyncMessage("DOMFullscreen:Exit", {});
+
+          delete this._isNotTheRequestSource;
+          this.sendAsyncMessage(aEvent.type.replace("Moz", ""), {});
+        } else {
+          let rootWindow = this.contentWindow.windowRoot;
+          rootWindow.addEventListener("MozAfterPaint", this);
+          if (!this.document || !this.document.fullscreenElement) {
+            
+            
+            
+            this.sendAsyncMessage("DOMFullscreen:Exit", {});
+          }
         }
         break;
       }

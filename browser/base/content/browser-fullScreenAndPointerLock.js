@@ -414,6 +414,7 @@ var FullScreen = {
 
   enterDomFullscreen(aBrowser, aActor) {
     if (!document.fullscreenElement) {
+      aActor.requestOrigin = null;
       return;
     }
 
@@ -429,10 +430,17 @@ var FullScreen = {
     
     
     
+    
+    
+    
+    
     if (this._isRemoteBrowser(aBrowser)) {
-      aActor.sendAsyncMessage("DOMFullscreen:Entered", {});
+      if (
+        !this._sendMessageToTheRightContent(aActor, "DOMFullscreen:Entered")
+      ) {
+        return;
+      }
     }
-
     
     
     
@@ -495,12 +503,15 @@ var FullScreen = {
   },
 
   cleanupDomFullscreen(aActor) {
+    if (!this._sendMessageToTheRightContent(aActor, "DOMFullscreen:CleanUp")) {
+      return;
+    }
+
     PopupNotifications.panel.removeEventListener(
       "popupshowing",
       () => this._handlePermPromptShow(),
       true
     );
-    aActor.sendAsyncMessage("DOMFullscreen:CleanUp", {});
 
     PointerlockFsWarning.close();
     gBrowser.tabContainer.removeEventListener(
@@ -509,6 +520,54 @@ var FullScreen = {
     );
 
     document.documentElement.removeAttribute("inDOMFullscreen");
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _sendMessageToTheRightContent(aActor, aMessage) {
+    let childBC = aActor.browsingContext;
+    let parentBC = childBC.parent;
+
+    while (parentBC) {
+      let childPid = childBC.currentWindowGlobal.osPid;
+      let parentPid = parentBC.currentWindowGlobal.osPid;
+
+      if (childPid == parentPid) {
+        childBC = parentBC;
+        parentBC = childBC.parent;
+      } else {
+        break;
+      }
+    }
+
+    if (parentBC) {
+      let parentActor = parentBC.currentWindowGlobal.getActor("DOMFullscreen");
+      parentActor.sendAsyncMessage(aMessage, {
+        remoteFrameBC: childBC,
+      });
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    aActor.requestOrigin.sendAsyncMessage(aMessage, {});
+    aActor.requestOrigin = null;
+    return true;
   },
 
   _isRemoteBrowser(aBrowser) {
