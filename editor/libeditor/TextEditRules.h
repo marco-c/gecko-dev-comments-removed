@@ -412,30 +412,6 @@ class MOZ_STACK_CLASS EditSubActionInfo final {
   const nsAString* blockType;
 };
 
-
-
-
-class MOZ_STACK_CLASS AutoLockListener final {
- public:
-  explicit AutoLockListener(bool* aEnabled)
-      : mEnabled(aEnabled), mOldState(false) {
-    if (mEnabled) {
-      mOldState = *mEnabled;
-      *mEnabled = false;
-    }
-  }
-
-  ~AutoLockListener() {
-    if (mEnabled) {
-      *mEnabled = mOldState;
-    }
-  }
-
- protected:
-  bool* mEnabled;
-  bool mOldState;
-};
-
 }  
 
 #endif  

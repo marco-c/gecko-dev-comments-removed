@@ -700,8 +700,17 @@ class EditorBase : public nsIEditor,
   struct MOZ_STACK_CLASS EditSubActionData final {
     uint32_t mJoinedLeftNodeLength;
 
+    
+    
+    
+    
+    bool mAdjustChangedRangeFromListener;
+
    private:
-    void Clear() { mJoinedLeftNodeLength = 0; }
+    void Clear() {
+      mJoinedLeftNodeLength = 0;
+      mAdjustChangedRangeFromListener = true;
+    }
 
     friend EditorBase;
   };
