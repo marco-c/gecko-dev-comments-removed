@@ -23,6 +23,6 @@ exports.rules = require("devtools/client/inspector/rules/reducers/rules");
 
 
 const {
-  default: objectInspector,
-} = require("devtools/client/debugger/packages/devtools-reps/src/object-inspector/reducer");
-exports.objectInspector = objectInspector;
+  objectInspector,
+} = require("devtools/client/shared/components/reps/reps");
+exports.objectInspector = objectInspector.reducer.default;

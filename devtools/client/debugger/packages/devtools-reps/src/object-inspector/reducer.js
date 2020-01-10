@@ -2,6 +2,8 @@
 
 
 
+import type { ReduxAction, State } from "./types";
+
 function initialState(overrides) {
   return {
     expandedPaths: new Set(),
@@ -13,7 +15,10 @@ function initialState(overrides) {
   };
 }
 
-function reducer(state = initialState(), action = {}) {
+function reducer(
+  state: State = initialState(),
+  action: ReduxAction = {}
+): State {
   const { type, data } = action;
 
   const cloneState = overrides => ({ ...state, ...overrides });
