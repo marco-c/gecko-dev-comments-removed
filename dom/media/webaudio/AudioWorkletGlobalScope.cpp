@@ -287,8 +287,7 @@ AudioParamDescriptorMap AudioWorkletGlobalScope::DescriptorsFromJS(
 }
 
 bool AudioWorkletGlobalScope::ConstructProcessor(
-    const nsAString& aName,
-    NotNull<StructuredCloneHolder*> aOptionsSerialization,
+    const nsAString& aName, NotNull<StructuredCloneHolder*> aSerializedOptions,
     JS::MutableHandle<JSObject*> aRetProcessor) {
   
 
@@ -304,13 +303,12 @@ bool AudioWorkletGlobalScope::ConstructProcessor(
 
 
 
-
   
 
 
 
-  JS::Rooted<JS::Value> optionsVal(cx);
-  aOptionsSerialization->Read(this, cx, &optionsVal, rv);
+  JS::Rooted<JS::Value> deserializedOptions(cx);
+  aSerializedOptions->Read(this, cx, &deserializedOptions, rv);
   if (rv.MaybeSetPendingException(cx)) {
     return false;
   }
@@ -318,34 +316,30 @@ bool AudioWorkletGlobalScope::ConstructProcessor(
 
 
 
-  RefPtr<AudioWorkletProcessorConstructor> processorConstructor =
+  RefPtr<AudioWorkletProcessorConstructor> processorCtor =
       mNameToProcessorMap.Get(aName);
   
   
-  MOZ_ASSERT(processorConstructor);
+  MOZ_ASSERT(processorCtor);
+  
+
+
+
+
   
 
 
 
   
   
-  JS::Rooted<JSObject*> options(cx, &optionsVal.toObject());
-  
-  
-  
-  RefPtr<AudioWorkletProcessor> processor = processorConstructor->Construct(
+  JS::Rooted<JSObject*> options(cx, &deserializedOptions.toObject());
+  RefPtr<AudioWorkletProcessor> processor = processorCtor->Construct(
       options, rv, "AudioWorkletProcessor construction",
       CallbackFunction::eReportExceptions);
   if (rv.Failed()) {
     rv.SuppressException();  
     return false;
   }
-  
-
-
-
-
-
   JS::Rooted<JS::Value> processorVal(cx);
   if (NS_WARN_IF(!ToJSValue(cx, processor, &processorVal))) {
     return false;
