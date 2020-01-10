@@ -9,7 +9,6 @@ const {
   button,
   p,
 } = require("devtools/client/shared/vendor/react-dom-factories");
-const { openDocLink } = require("devtools/client/shared/link");
 
 
 
@@ -26,6 +25,7 @@ class Description extends PureComponent {
   }
 
   handleLinkClick(event) {
+    const { openDocLink } = require("devtools/client/shared/link");
     openDocLink(event.target.value);
   }
 
