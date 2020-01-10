@@ -147,6 +147,7 @@ async function fetchManifest(aWindow) {
   
   const manifestURL = new aWindow.URL(elem.href, elem.baseURI);
   const reqInit = {
+    credentials: "omit",
     mode: "cors",
   };
   if (elem.crossOrigin === "use-credentials") {
