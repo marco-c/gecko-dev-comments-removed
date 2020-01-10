@@ -111,6 +111,10 @@ class VPXDecoder : public MediaDataDecoder,
 
     bool mFullRange = false;
 
+    gfx::ColorRange ColorRange() const {
+      return mFullRange ? gfx::ColorRange::FULL : gfx::ColorRange::LIMITED;
+    }
+
     
 
 
