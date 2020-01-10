@@ -373,12 +373,6 @@ void nsContentSecurityManager::AssertEvalNotRestricted(
 
       
       NS_LITERAL_CSTRING("debugger"),
-
-      
-      
-
-      
-      NS_LITERAL_CSTRING("chrome://global/content/bindings/autocomplete.xml"),
   };
 
   
