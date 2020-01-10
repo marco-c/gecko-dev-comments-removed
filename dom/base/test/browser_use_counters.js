@@ -16,10 +16,16 @@ add_task(async function test_initialize() {
   gOldParentCanRecord = Telemetry.canRecordExtended;
   Telemetry.canRecordExtended = true;
 
-  
-  
-  
-  await SpecialPowers.pushPrefEnv({ set: [["dom.ipc.processCount", 1]] });
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      
+      
+      ["dom.ipc.processCount", 1],
+      ["layout.css.use-counters.enabled", true],
+      ["layout.css.use-counters-unimplemented.enabled", true],
+    ],
+  });
 
   gOldContentCanRecord = await ContentTask.spawn(
     gBrowser.selectedBrowser,
