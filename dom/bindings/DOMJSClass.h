@@ -16,6 +16,7 @@
 #include "mozilla/Likely.h"
 
 #include "mozilla/dom/PrototypeList.h"  
+#include "mozilla/dom/WebIDLPrefs.h"    
 
 #include "mozilla/dom/JSSlots.h"
 
@@ -110,21 +111,13 @@ static const uint32_t AudioWorkletGlobalScope = 1u << 7;
 
 struct PrefableDisablers {
   inline bool isEnabled(JSContext* cx, JS::Handle<JSObject*> obj) const {
-    
-    
-    
-    
-    
-    
-    
-    
-    
     if (nonExposedGlobals &&
         IsNonExposedGlobal(cx, JS::GetNonCCWObjectGlobal(obj),
                            nonExposedGlobals)) {
       return false;
     }
-    if (!enabled) {
+    if (prefIndex != WebIDLPrefIndex::NoPref &&
+        !sWebIDLPrefs[uint16_t(prefIndex)]()) {
       return false;
     }
     if (secureContext && !IsSecureContextOrObjectIsFromSecureContext(cx, obj)) {
@@ -137,8 +130,7 @@ struct PrefableDisablers {
   }
 
   
-  
-  bool enabled;
+  const WebIDLPrefIndex prefIndex;
 
   
   const bool secureContext;
@@ -164,7 +156,7 @@ struct Prefable {
 
   
   
-  PrefableDisablers* const disablers;
+  const PrefableDisablers* const disablers;
 
   
   
