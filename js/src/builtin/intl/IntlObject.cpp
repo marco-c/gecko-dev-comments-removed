@@ -830,10 +830,7 @@ bool GlobalObject::initIntlObject(JSContext* cx, Handle<GlobalObject*> global) {
   if (!CreateDateTimeFormat(cx, intl)) {
     return false;
   }
-  RootedObject numberFormatProto(cx), numberFormat(cx);
-  numberFormatProto =
-      CreateNumberFormatPrototype(cx, intl, global, &numberFormat);
-  if (!numberFormatProto) {
+  if (!CreateNumberFormat(cx, intl)) {
     return false;
   }
   RootedObject pluralRulesProto(cx,
@@ -863,8 +860,6 @@ bool GlobalObject::initIntlObject(JSContext* cx, Handle<GlobalObject*> global) {
   
   
   
-  global->setReservedSlot(NUMBER_FORMAT, ObjectValue(*numberFormat));
-  global->setReservedSlot(NUMBER_FORMAT_PROTO, ObjectValue(*numberFormatProto));
   global->setReservedSlot(PLURAL_RULES_PROTO, ObjectValue(*pluralRulesProto));
   global->setReservedSlot(RELATIVE_TIME_FORMAT_PROTO,
                           ObjectValue(*relativeTimeFmtProto));
