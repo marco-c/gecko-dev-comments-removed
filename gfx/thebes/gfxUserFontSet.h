@@ -661,7 +661,13 @@ class gfxUserFontEntry : public gfxFontEntry {
   
   
   
-  bool LoadPlatformFont(const uint8_t* aFontData, uint32_t aLength);
+  bool LoadPlatformFontSync(const uint8_t* aFontData, uint32_t aLength);
+
+  
+  bool LoadPlatformFont(const uint8_t* aOriginalFontData,
+                        uint32_t aOriginalLength, gfxUserFontType aFontType,
+                        const uint8_t* aSanitizedFontData,
+                        uint32_t aSanitizedLength);
 
   
   void StoreUserFontData(gfxFontEntry* aFontEntry, bool aPrivate,

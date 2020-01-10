@@ -588,7 +588,7 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aForceAsync) {
           nsresult rv =
               mFontSet->SyncLoadFontData(this, &currSrc, buffer, bufferLength);
 
-          if (NS_SUCCEEDED(rv) && LoadPlatformFont(buffer, bufferLength)) {
+          if (NS_SUCCEEDED(rv) && LoadPlatformFontSync(buffer, bufferLength)) {
             SetLoadState(STATUS_LOADED);
             Telemetry::Accumulate(Telemetry::WEBFONT_SRCTYPE,
                                   currSrc.mSourceType + 1);
@@ -632,7 +632,7 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aForceAsync) {
 
       
       currSrc.mBuffer->TakeBuffer(buffer, bufferLength);
-      if (buffer && LoadPlatformFont(buffer, bufferLength)) {
+      if (buffer && LoadPlatformFontSync(buffer, bufferLength)) {
         
         
         SetLoadState(STATUS_LOADED);
@@ -666,9 +666,9 @@ void gfxUserFontEntry::SetLoadState(UserFontLoadState aLoadState) {
 
 MOZ_DEFINE_MALLOC_SIZE_OF_ON_ALLOC(UserFontMallocSizeOfOnAlloc)
 
-bool gfxUserFontEntry::LoadPlatformFont(const uint8_t* aFontData,
-                                        uint32_t aLength) {
-  AUTO_PROFILER_LABEL("gfxUserFontEntry::LoadPlatformFont", OTHER);
+bool gfxUserFontEntry::LoadPlatformFontSync(const uint8_t* aFontData,
+                                            uint32_t aLength) {
+  AUTO_PROFILER_LABEL("gfxUserFontEntry::LoadPlatformFontSync", OTHER);
   NS_ASSERTION((mUserFontLoadState == STATUS_NOT_LOADED ||
                 mUserFontLoadState == STATUS_LOAD_PENDING ||
                 mUserFontLoadState == STATUS_LOADING) &&
@@ -684,17 +684,28 @@ bool gfxUserFontEntry::LoadPlatformFont(const uint8_t* aFontData,
   gfxUserFontType fontType;
   const uint8_t* saneData =
       SanitizeOpenTypeData(aFontData, aLength, saneLen, fontType);
-  if (!saneData) {
+
+  return LoadPlatformFont(aFontData, aLength, fontType, saneData, saneLen);
+}
+
+bool gfxUserFontEntry::LoadPlatformFont(const uint8_t* aOriginalFontData,
+                                        uint32_t aOriginalLength,
+                                        gfxUserFontType aFontType,
+                                        const uint8_t* aSanitizedFontData,
+                                        uint32_t aSanitizedLength) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!aSanitizedFontData) {
     mFontSet->LogMessage(this, "rejected by sanitizer");
   } else {
     
     
     
-    if (gfxFontUtils::DetermineFontDataType(saneData, saneLen) !=
-        GFX_USERFONT_OPENTYPE) {
+    if (gfxFontUtils::DetermineFontDataType(
+            aSanitizedFontData, aSanitizedLength) != GFX_USERFONT_OPENTYPE) {
       mFontSet->LogMessage(this, "not a supported OpenType format");
-      free((void*)saneData);
-      saneData = nullptr;
+      free((void*)aSanitizedFontData);
+      aSanitizedFontData = nullptr;
     }
   }
 
@@ -707,11 +718,12 @@ bool gfxUserFontEntry::LoadPlatformFont(const uint8_t* aFontData,
   uint32_t fontCompressionRatio = 0;
   size_t computedSize = 0;
 
-  if (saneData) {
-    if (saneLen) {
-      fontCompressionRatio = uint32_t(100.0 * aLength / saneLen + 0.5);
-      if (fontType == GFX_USERFONT_WOFF || fontType == GFX_USERFONT_WOFF2) {
-        Telemetry::Accumulate(fontType == GFX_USERFONT_WOFF
+  if (aSanitizedFontData) {
+    if (aSanitizedLength) {
+      fontCompressionRatio =
+          uint32_t(100.0 * aOriginalLength / aSanitizedLength + 0.5);
+      if (aFontType == GFX_USERFONT_WOFF || aFontType == GFX_USERFONT_WOFF2) {
+        Telemetry::Accumulate(aFontType == GFX_USERFONT_WOFF
                                   ? Telemetry::WEBFONT_COMPRESSION_WOFF
                                   : Telemetry::WEBFONT_COMPRESSION_WOFF2,
                               fontCompressionRatio);
@@ -722,7 +734,8 @@ bool gfxUserFontEntry::LoadPlatformFont(const uint8_t* aFontData,
     
     
     
-    gfxFontUtils::GetFullNameFromSFNT(saneData, saneLen, originalFullName);
+    gfxFontUtils::GetFullNameFromSFNT(aSanitizedFontData, aSanitizedLength,
+                                      originalFullName);
 
     
     
@@ -730,12 +743,13 @@ bool gfxUserFontEntry::LoadPlatformFont(const uint8_t* aFontData,
     
     
     
-    computedSize = UserFontMallocSizeOfOnAlloc(saneData);
+    computedSize = UserFontMallocSizeOfOnAlloc(aSanitizedFontData);
 
     
     
     fe = gfxPlatform::GetPlatform()->MakePlatformFont(
-        mName, Weight(), Stretch(), SlantStyle(), saneData, saneLen);
+        mName, Weight(), Stretch(), SlantStyle(), aSanitizedFontData,
+        aSanitizedLength);
     if (!fe) {
       mFontSet->LogMessage(this, "not usable by platform");
     }
@@ -750,12 +764,13 @@ bool gfxUserFontEntry::LoadPlatformFont(const uint8_t* aFontData,
     FallibleTArray<uint8_t> metadata;
     uint32_t metaOrigLen = 0;
     uint8_t compression = gfxUserFontData::kUnknownCompression;
-    if (fontType == GFX_USERFONT_WOFF) {
-      CopyWOFFMetadata<WOFFHeader>(aFontData, aLength, &metadata, &metaOrigLen);
+    if (aFontType == GFX_USERFONT_WOFF) {
+      CopyWOFFMetadata<WOFFHeader>(aOriginalFontData, aOriginalLength,
+                                   &metadata, &metaOrigLen);
       compression = gfxUserFontData::kZlibCompression;
-    } else if (fontType == GFX_USERFONT_WOFF2) {
-      CopyWOFFMetadata<WOFF2Header>(aFontData, aLength, &metadata,
-                                    &metaOrigLen);
+    } else if (aFontType == GFX_USERFONT_WOFF2) {
+      CopyWOFFMetadata<WOFF2Header>(aOriginalFontData, aOriginalLength,
+                                    &metadata, &metaOrigLen);
       compression = gfxUserFontData::kBrotliCompression;
     }
 
@@ -792,7 +807,7 @@ bool gfxUserFontEntry::LoadPlatformFont(const uint8_t* aFontData,
 
   
   
-  free((void*)aFontData);
+  free((void*)aOriginalFontData);
 
   return fe != nullptr;
 }
@@ -824,7 +839,7 @@ bool gfxUserFontEntry::FontDataDownloadComplete(const uint8_t* aFontData,
   
   if (NS_SUCCEEDED(aDownloadStatus) &&
       mFontDataLoadingState != LOADING_TIMED_OUT) {
-    bool loaded = LoadPlatformFont(aFontData, aLength);
+    bool loaded = LoadPlatformFontSync(aFontData, aLength);
     aFontData = nullptr;
 
     if (loaded) {
