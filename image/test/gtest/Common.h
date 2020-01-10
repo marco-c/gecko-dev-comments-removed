@@ -162,6 +162,12 @@ bool IsSolidColor(gfx::SourceSurface* aSurface, BGRAColor aColor,
 
 
 
+bool IsSolidPalettedColor(Decoder* aDecoder, uint8_t aColor);
+
+
+
+
+
 
 
 
@@ -173,11 +179,25 @@ bool RowsAreSolidColor(gfx::SourceSurface* aSurface, int32_t aStartRow,
 
 
 
+bool PalettedRowsAreSolidColor(Decoder* aDecoder, int32_t aStartRow,
+                               int32_t aRowCount, uint8_t aColor);
+
+
+
+
+
 
 
 
 bool RectIsSolidColor(gfx::SourceSurface* aSurface, const gfx::IntRect& aRect,
                       BGRAColor aColor, uint8_t aFuzz = 0);
+
+
+
+
+
+bool PalettedRectIsSolidColor(Decoder* aDecoder, const gfx::IntRect& aRect,
+                              uint8_t aColor);
 
 
 
@@ -340,6 +360,19 @@ void CheckGeneratedSurface(gfx::SourceSurface* aSurface,
 
 
 
+void CheckGeneratedPalettedImage(Decoder* aDecoder, const gfx::IntRect& aRect);
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -369,10 +402,8 @@ void CheckWritePixels(Decoder* aDecoder, SurfaceFilter* aFilter,
 
 
 
-
-void CheckTransformedWritePixels(
-    Decoder* aDecoder, SurfaceFilter* aFilter, const BGRAColor& aInputColor,
-    const BGRAColor& aOutputColor,
+void CheckPalettedWritePixels(
+    Decoder* aDecoder, SurfaceFilter* aFilter,
     const Maybe<gfx::IntRect>& aOutputRect = Nothing(),
     const Maybe<gfx::IntRect>& aInputRect = Nothing(),
     const Maybe<gfx::IntRect>& aInputWriteRect = Nothing(),
