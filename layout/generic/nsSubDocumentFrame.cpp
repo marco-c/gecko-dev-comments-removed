@@ -1391,14 +1391,9 @@ nsDisplayRemote::nsDisplayRemote(nsDisplayListBuilder* aBuilder,
 
   nsFrameLoader* frameLoader = GetFrameLoader();
   MOZ_ASSERT(frameLoader && frameLoader->IsRemoteFrame());
-  mLayersId = frameLoader->GetLayersId();
-
-  if (nsFrameLoader* frameLoader = GetFrameLoader()) {
-    
-    
-    if (BrowserParent* browser = BrowserParent::GetFrom(frameLoader)) {
-      mTabId = browser->GetTabId();
-    }
+  if (frameLoader->GetRemoteBrowser()) {
+    mLayersId = frameLoader->GetLayersId();
+    mTabId = frameLoader->GetRemoteBrowser()->GetTabId();
   }
 }
 
