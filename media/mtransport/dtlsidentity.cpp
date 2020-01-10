@@ -24,81 +24,12 @@
 namespace mozilla {
 
 
-static SECItem* ExportDEREncryptedPrivateKeyInfo(
-    PK11SlotInfo* slot,    
-    SECOidTag algTag,      
-    const SECItem* pwitem, 
-    SECKEYPrivateKey* pk,  
-    int iteration,         
-    void* wincx)           
+static SECItem* WrapPrivateKeyInfoWithEmptyPassword(
+    SECKEYPrivateKey* pk) 
 {
-  SECKEYEncryptedPrivateKeyInfo* pki = PK11_ExportEncryptedPrivKeyInfo(
-      slot, algTag, const_cast<SECItem*>(pwitem), pk, iteration, wincx);
-  SECItem* derPKI;
-
-  if (!pki) {
-    return NULL;
-  }
-  derPKI = SEC_ASN1EncodeItem(
-      NULL, NULL, pki,
-      NSS_Get_SECKEY_EncryptedPrivateKeyInfoTemplate(NULL, PR_FALSE));
-  SECKEY_DestroyEncryptedPrivateKeyInfo(pki, PR_TRUE);
-  return derPKI;
-}
-
-
-static SECStatus ImportDEREncryptedPrivateKeyInfoAndReturnKey(
-    PK11SlotInfo* slot, SECItem* derPKI, SECItem* pwitem, SECItem* nickname,
-    SECItem* publicValue, PRBool isPerm, PRBool isPrivate, KeyType type,
-    unsigned int keyUsage, SECKEYPrivateKey** privk, void* wincx) {
-  SECKEYEncryptedPrivateKeyInfo* epki = NULL;
-  PLArenaPool* temparena = NULL;
-  SECStatus rv = SECFailure;
-
-  temparena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
-  if (!temparena) return rv;
-  epki = PORT_ArenaZNew(temparena, SECKEYEncryptedPrivateKeyInfo);
-  if (!epki) {
-    PORT_FreeArena(temparena, PR_FALSE);
-    return rv;
-  }
-  epki->arena = temparena;
-
-  rv = SEC_ASN1DecodeItem(
-      epki->arena, epki,
-      NSS_Get_SECKEY_EncryptedPrivateKeyInfoTemplate(NULL, PR_FALSE), derPKI);
-  if (rv != SECSuccess) {
-    
-
-
-    PORT_FreeArena(temparena, PR_TRUE);
-    return rv;
-  }
-  if (epki->encryptedData.data == NULL) {
-    
-
-
-
-    PORT_FreeArena(temparena, PR_TRUE);
-    PORT_SetError(SEC_ERROR_BAD_KEY);
-    return SECFailure;
-  }
-
-  rv = PK11_ImportEncryptedPrivateKeyInfoAndReturnKey(
-      slot, epki, pwitem, nickname, publicValue, isPerm, isPrivate, type,
-      keyUsage, privk, wincx);
-
-  
-  SECKEY_DestroyEncryptedPrivateKeyInfo(epki, PR_TRUE );
-  return rv;
-}
-
-nsresult DtlsIdentity::Serialize(nsTArray<uint8_t>* aKeyDer,
-                                 nsTArray<uint8_t>* aCertDer) {
   UniquePK11SlotInfo slot(PK11_GetInternalSlot());
   if (!slot) {
-    MOZ_ASSERT(false);
-    return NS_ERROR_FAILURE;
+    return nullptr;
   }
 
   
@@ -106,9 +37,59 @@ nsresult DtlsIdentity::Serialize(nsTArray<uint8_t>* aKeyDer,
   
   
   SECItem dummyPassword = {siBuffer, nullptr, 0};
-  ScopedSECItem derPki(ExportDEREncryptedPrivateKeyInfo(
-      slot.get(), SEC_OID_AES_128_CBC, &dummyPassword, private_key_.get(), 1,
-      nullptr));
+  ScopedSECKEYEncryptedPrivateKeyInfo epki(PK11_ExportEncryptedPrivKeyInfo(
+      slot.get(), SEC_OID_AES_128_CBC, &dummyPassword, pk, 1, nullptr));
+
+  if (!epki) {
+    return nullptr;
+  }
+
+  return SEC_ASN1EncodeItem(
+      nullptr, nullptr, epki.get(),
+      NSS_Get_SECKEY_EncryptedPrivateKeyInfoTemplate(nullptr, false));
+}
+
+
+static SECStatus UnwrapPrivateKeyInfoWithEmptyPassword(
+    SECItem* derPKI, SECItem* publicValue, KeyType type,
+    SECKEYPrivateKey** privk) {
+  UniquePK11SlotInfo slot(PK11_GetInternalSlot());
+  if (!slot) {
+    return SECFailure;
+  }
+
+  UniquePLArenaPool temparena(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
+  if (!temparena) {
+    return SECFailure;
+  }
+
+  SECKEYEncryptedPrivateKeyInfo* epki =
+      PORT_ArenaZNew(temparena.get(), SECKEYEncryptedPrivateKeyInfo);
+  if (!epki) {
+    return SECFailure;
+  }
+
+  SECStatus rv = SEC_ASN1DecodeItem(
+      temparena.get(), epki,
+      NSS_Get_SECKEY_EncryptedPrivateKeyInfoTemplate(nullptr, false), derPKI);
+  if (rv != SECSuccess) {
+    
+
+
+    return rv;
+  }
+
+  
+  
+  SECItem dummyPassword = {siBuffer, nullptr, 0};
+  return PK11_ImportEncryptedPrivateKeyInfoAndReturnKey(
+      slot.get(), epki, &dummyPassword, nullptr, publicValue, false, false,
+      type, KU_ALL, privk, nullptr);
+}
+
+nsresult DtlsIdentity::Serialize(nsTArray<uint8_t>* aKeyDer,
+                                 nsTArray<uint8_t>* aCertDer) {
+  ScopedSECItem derPki(WrapPrivateKeyInfoWithEmptyPassword(private_key_.get()));
   if (!derPki) {
     return NS_ERROR_FAILURE;
   }
@@ -122,12 +103,6 @@ nsresult DtlsIdentity::Serialize(nsTArray<uint8_t>* aKeyDer,
 RefPtr<DtlsIdentity> DtlsIdentity::Deserialize(
     const nsTArray<uint8_t>& aKeyDer, const nsTArray<uint8_t>& aCertDer,
     SSLKEAType authType) {
-  UniquePK11SlotInfo slot(PK11_GetInternalSlot());
-  if (!slot) {
-    MOZ_ASSERT(false);
-    return nullptr;
-  }
-
   SECItem certDer = {siBuffer, const_cast<uint8_t*>(aCertDer.Elements()),
                      static_cast<unsigned int>(aCertDer.Length())};
   UniqueCERTCertificate cert(CERT_NewTempCertificate(
@@ -159,13 +134,10 @@ RefPtr<DtlsIdentity> DtlsIdentity::Deserialize(
   SECItem derPKI = {siBuffer, const_cast<uint8_t*>(aKeyDer.Elements()),
                     static_cast<unsigned int>(aKeyDer.Length())};
 
-  
-  SECItem dummyPassword = {siBuffer, nullptr, 0};
   SECKEYPrivateKey* privateKey;
-  if (ImportDEREncryptedPrivateKeyInfoAndReturnKey(
-          slot.get(), &derPKI, &dummyPassword, nullptr, publicValue, false,
-          false, publicKey->keyType, KU_ALL, &privateKey,
-          nullptr) != SECSuccess) {
+  if (UnwrapPrivateKeyInfoWithEmptyPassword(&derPKI, publicValue,
+                                            publicKey->keyType,
+                                            &privateKey) != SECSuccess) {
     MOZ_ASSERT(false);
     return nullptr;
   }
