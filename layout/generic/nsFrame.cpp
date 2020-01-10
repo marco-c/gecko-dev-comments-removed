@@ -10889,9 +10889,9 @@ bool nsIFrame::IsStackingContext(const nsStyleDisplay* aStyleDisplay,
                                  bool aIsPositioned) {
   return HasOpacity(aStyleDisplay, aStyleEffects, nullptr) ||
          IsTransformed(aStyleDisplay) ||
-         (IsFrameOfType(eSupportsContainLayoutAndPaint) &&
-          (aStyleDisplay->IsContainPaint() ||
-           aStyleDisplay->IsContainLayout())) ||
+         ((aStyleDisplay->IsContainPaint() ||
+           aStyleDisplay->IsContainLayout()) &&
+          IsFrameOfType(eSupportsContainLayoutAndPaint)) ||
          
          
          ChildrenHavePerspective(aStyleDisplay) ||
