@@ -1083,6 +1083,10 @@ extern mozilla::Atomic<JS::LargeAllocationFailureCallback>
 
 extern mozilla::Atomic<JS::BuildIdOp> GetBuildId;
 
+
+
+extern void (*HelperThreadTaskCallback)(js::RunnableTask*);
+
 } 
 
 #endif 

@@ -3086,7 +3086,9 @@ void XPCJSRuntime::Initialize(JSContext* cx) {
   JS::SetProcessBuildIdOp(GetBuildId);
 
   
+  
   InitializeHelperThreadPool();
+  SetHelperThreadTaskCallback(&DispatchOffThreadTask);
 
   
   
