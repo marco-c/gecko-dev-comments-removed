@@ -642,6 +642,26 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
   }
 
   
+  if (limit == 0 || duration.ToSeconds() < limit / 2.0) {
+    return true;
+  }
+
+  self->mSlowScriptActualWait += duration;
+
+  
+  
+  
+  if (!self->mSlowScriptSecondHalf) {
+    self->mSlowScriptCheckpoint = TimeStamp::NowLoRes();
+    self->mSlowScriptSecondHalf = true;
+    return true;
+  }
+
+  
+  
+  
+
+  
   
   RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
   RefPtr<nsGlobalWindowInner> win = WindowOrNull(global);
@@ -664,26 +684,6 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
     NS_WARNING("No active window");
     return true;
   }
-
-  
-  if (limit == 0 || duration.ToSeconds() < limit / 2.0) {
-    return true;
-  }
-
-  self->mSlowScriptActualWait += duration;
-
-  
-  
-  
-  if (!self->mSlowScriptSecondHalf) {
-    self->mSlowScriptCheckpoint = TimeStamp::NowLoRes();
-    self->mSlowScriptSecondHalf = true;
-    return true;
-  }
-
-  
-  
-  
 
   if (win->IsDying()) {
     
