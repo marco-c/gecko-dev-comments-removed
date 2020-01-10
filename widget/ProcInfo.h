@@ -25,13 +25,15 @@ enum class ProcType {
   PrivilegedAbout,
   WebLargeAllocation,
   
-  Gpu,
-  
-  Rdd,
-  
+  Browser,  
+  Plugin,
+  IPDLUnitTest,
+  GMPlugin,
+  GPU,
+  VR,
+  RDD,
   Socket,
-  
-  Browser,
+  RemoteSandboxBroker,
   
   Unknown
 };
@@ -76,9 +78,14 @@ typedef MozPromise<ProcInfo, nsresult, true> ProcInfoPromise;
 
 
 
-RefPtr<ProcInfoPromise> GetProcInfo(
-    base::ProcessId pid, int32_t childId, const ProcType& type,
-    ipc::GeckoChildProcessHost* childProcess = nullptr);
+#ifdef XP_MACOSX
+RefPtr<ProcInfoPromise> GetProcInfo(base::ProcessId pid, int32_t childId,
+                                    const ProcType& type,
+                                    mach_port_t aChildTask = MACH_PORT_NULL);
+#else
+RefPtr<ProcInfoPromise> GetProcInfo(base::ProcessId pid, int32_t childId,
+                                    const ProcType& type);
+#endif
 
 }  
 #endif  
