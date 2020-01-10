@@ -21,10 +21,10 @@
 #include "mozilla/dom/Touch.h"              
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/gfx/LoggingConstants.h"
-#include "mozilla/gfx/gfxVars.h"    
-#include "mozilla/gfx/GPUParent.h"  
-#include "mozilla/gfx/Logging.h"    
-#include "mozilla/gfx/Point.h"      
+#include "mozilla/gfx/gfxVars.h"            
+#include "mozilla/gfx/GPUParent.h"          
+#include "mozilla/gfx/Logging.h"            
+#include "mozilla/gfx/Point.h"              
 #include "mozilla/layers/APZSampler.h"      
 #include "mozilla/layers/APZThreadUtils.h"  
 #include "mozilla/layers/APZUpdater.h"      
@@ -3372,6 +3372,10 @@ bool APZCTreeManager::GetAPZTestData(LayersId aLayersId,
 
 void APZCTreeManager::SendSubtreeTransformsToChromeMainThread(
     const AsyncPanZoomController* aAncestor) {
+  if (!mRootNode) {
+    
+    return;
+  }
   RefPtr<GeckoContentController> controller =
       GetContentController(mRootLayersId);
   if (!controller) {
