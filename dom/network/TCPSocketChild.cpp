@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include <algorithm>
 #include "TCPSocketChild.h"
@@ -14,17 +14,16 @@
 #include "nsITCPSocketCallback.h"
 #include "TCPSocket.h"
 #include "nsContentUtils.h"
-#include "js/ArrayBuffer.h"  // JS::NewArrayBufferWithContents
-#include "js/RootingAPI.h"   // JS::MutableHandle
-#include "js/Utility.h"  // js::ArrayBufferContentsArena, JS::FreePolicy, js_pod_arena_malloc
-#include "js/Value.h"  // JS::Value
+#include "js/ArrayBuffer.h"  
+#include "js/RootingAPI.h"   
+#include "js/Utility.h"  
+#include "js/Value.h"  
 
 using mozilla::net::gNeckoChild;
 
 namespace IPC {
 
-bool DeserializeArrayBuffer(JSContext* cx,
-                            const InfallibleTArray<uint8_t>& aBuffer,
+bool DeserializeArrayBuffer(JSContext* cx, const nsTArray<uint8_t>& aBuffer,
                             JS::MutableHandle<JS::Value> aVal) {
   mozilla::UniquePtr<uint8_t[], JS::FreePolicy> data(
       js_pod_arena_malloc<uint8_t>(js::ArrayBufferContentsArena,
@@ -35,15 +34,15 @@ bool DeserializeArrayBuffer(JSContext* cx,
   JSObject* obj =
       JS::NewArrayBufferWithContents(cx, aBuffer.Length(), data.get());
   if (!obj) return false;
-  // If JS::NewArrayBufferWithContents returns non-null, the ownership of
-  // the data is transfered to obj, so we release the ownership here.
+  
+  
   mozilla::Unused << data.release();
 
   aVal.setObject(*obj);
   return true;
 }
 
-}  // namespace IPC
+}  
 
 namespace mozilla {
 namespace dom {
@@ -97,7 +96,7 @@ void TCPSocketChild::SendOpen(nsITCPSocketCallback* aSocket, bool aUseSSL,
 
   AddIPDLReference();
   gNeckoChild->SendPTCPSocketConstructor(this, mHost, mPort);
-  MOZ_ASSERT(mFilterName.IsEmpty());  // Currently nobody should use this
+  MOZ_ASSERT(mFilterName.IsEmpty());  
   PTCPSocketChild::SendOpen(mHost, mPort, aUseSSL, aUseArrayBuffers);
 }
 
@@ -187,7 +186,7 @@ nsresult TCPSocketChild::SendSend(const ArrayBuffer& aData,
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  InfallibleTArray<uint8_t> arr;
+  nsTArray<uint8_t> arr;
   arr.SwapElements(fallibleArr);
   SendData(arr, aTrackingNumber);
   return NS_OK;
@@ -208,7 +207,7 @@ void TCPSocketChild::GetPort(uint16_t* aPort) { *aPort = mPort; }
 
 nsresult TCPSocketChild::SetFilterName(const nsACString& aFilterName) {
   if (!mFilterName.IsEmpty()) {
-    // filter name can only be set once.
+    
     return NS_ERROR_FAILURE;
   }
   mFilterName = aFilterName;
@@ -220,5 +219,5 @@ mozilla::ipc::IPCResult TCPSocketChild::RecvRequestDelete() {
   return IPC_OK();
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
