@@ -1077,7 +1077,7 @@ class _ASRouter {
     }
 
     
-    const experimentName = `activity-stream-extended-triplets`;
+    const experimentName = `activity-stream-extended-triplets-v2-1581912`;
     TelemetryEnvironment.setExperimentActive(experimentName, branch);
 
     const state = { extendedTripletsInitialized: true };
