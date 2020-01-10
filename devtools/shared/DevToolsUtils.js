@@ -805,10 +805,23 @@ exports.openFileStream = function(filePath) {
 
 
 
-exports.saveAs = async function(parentWindow, dataArray, fileName = "") {
+
+
+
+
+exports.saveAs = async function(
+  parentWindow,
+  dataArray,
+  fileName = "",
+  filters = []
+) {
   let returnFile;
   try {
-    returnFile = await exports.showSaveFileDialog(parentWindow, fileName);
+    returnFile = await exports.showSaveFileDialog(
+      parentWindow,
+      fileName,
+      filters
+    );
   } catch (ex) {
     return;
   }
@@ -830,7 +843,14 @@ exports.saveAs = async function(parentWindow, dataArray, fileName = "") {
 
 
 
-exports.showSaveFileDialog = function(parentWindow, suggestedFilename) {
+
+
+
+exports.showSaveFileDialog = function(
+  parentWindow,
+  suggestedFilename,
+  filters = []
+) {
   const fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
 
   if (suggestedFilename) {
@@ -838,7 +858,13 @@ exports.showSaveFileDialog = function(parentWindow, suggestedFilename) {
   }
 
   fp.init(parentWindow, null, fp.modeSave);
-  fp.appendFilters(fp.filterAll);
+  if (Array.isArray(filters) && filters.length > 0) {
+    for (const { pattern, label } of filters) {
+      fp.appendFilter(label, pattern);
+    }
+  } else {
+    fp.appendFilters(fp.filterAll);
+  }
 
   return new Promise((resolve, reject) => {
     fp.open(result => {
