@@ -2,7 +2,7 @@
 
 ## When do you need to build Firefox for Android
 
-If a remote debugging change impacts the server (file located in `devtools/server` or in `devtools/shared`), you will not be able to test it with a device which runs the release version of Firefox for Android. For the purpose of remote debugging, your local build of Firefox Desktop where you will test about:debugging runs the content of `devtools/client` (including `devtools/client/aboutdebugging-new`). And `devtools/server` runs on the device. So as soon as you are developing or testing a patch that needs to update the server and is about USB debugging, you need to build Firefox for Android and deploy it on a test device.
+If a remote debugging change impacts the server (file located in `devtools/server` or in `devtools/shared`), you will not be able to test it with a device which runs the release version of Firefox for Android. For the purpose of remote debugging, your local build of Firefox Desktop where you will test about:debugging runs the content of `devtools/client` (including `devtools/client/aboutdebugging`). And `devtools/server` runs on the device. So as soon as you are developing or testing a patch that needs to update the server and is about USB debugging, you need to build Firefox for Android and deploy it on a test device.
 
 ## Setup your environment
 

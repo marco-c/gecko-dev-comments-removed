@@ -4,7 +4,7 @@ This document explains how to test with real USB connected devices.
 
 ## Tests overview
 
-The tests that use a real device are located in `devtools/client/aboutdebugging-new/test/browser/`and the name of tests starts with `browser_aboutdebugging_real`. These are normal mochitest, but we need to setup the environment before starting tests.
+The tests that use a real device are located in `devtools/client/aboutdebugging/test/browser/`and the name of tests starts with `browser_aboutdebugging_real`. These are normal mochitest, but we need to setup the environment before starting tests.
 
 ## Setup environment
 ### Real device side
@@ -18,7 +18,7 @@ You can refer to https://developer.mozilla.org/en-US/docs/Tools/Remote_Debugging
 ### PC side
 Setup the real device information to evaluate the validity in tests.
 
-1. Copy a sample file which is located at `devtools/client/aboutdebugging-new/test/browser/real/usb-runtimes-sample.json` and rename it for example to `devtools/client/aboutdebugging-new/test/browser/real/local-usb-runtimes.json`.
+1. Copy a sample file which is located at `devtools/client/aboutdebugging/test/browser/real/usb-runtimes-sample.json` and rename it for example to `devtools/client/aboutdebugging/test/browser/real/local-usb-runtimes.json`.
 2. Edit the file.
 
    This is a JSON file like below, write your real device information in here. This example indicates that there should be one USB device and should be displayed `Pixel 2` as device name and `Firefox Nightly` as short name on the sidebar of about:debugging. Regarding the other information, please see `Detail of config file` section of this document.
@@ -38,10 +38,10 @@ Setup the real device information to evaluate the validity in tests.
 
 ## Test
 Normally, although we do test `./mach mochitest <path>`, to load the real device information created, specify the path as `USB_RUNTIME` environment variable, then do test.
-For example, if the name of the saved file is `devtools/client/aboutdebugging-new/test/browser/real/local-usb-runtimes.json`, run all real device test with a command like the one below:
+For example, if the name of the saved file is `devtools/client/aboutdebugging/test/browser/real/local-usb-runtimes.json`, run all real device test with a command like the one below:
 
 ```
-USB_RUNTIMES=devtools/client/aboutdebugging-new/test/browser/real/local-usb-runtimes.json ./mach mochitest devtools/client/aboutdebugging-new/test/browser/browser_aboutdebugging_real
+USB_RUNTIMES=devtools/client/aboutdebugging/test/browser/real/local-usb-runtimes.json ./mach mochitest devtools/client/aboutdebugging/test/browser/browser_aboutdebugging_real
 ```
 
 If there is no `USB_RUNTIMES` environment variable, the tests will not run. This is also to avoid to run on try-server and so on.

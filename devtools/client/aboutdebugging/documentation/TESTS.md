@@ -2,11 +2,11 @@
 
 ## Tests overview
 
-Tests are located in `devtools/client/aboutdebugging-new/test`. There are two subfolders, `browser` and `unit`. `browser` contains our [browser mochitests](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/Mochitest). Most of our tests are browser mochitests. `unit` contains our [xpc-shell unit tests](https://developer.mozilla.org/en-US/docs/Mozilla/QA/Writing_xpcshell-based_unit_tests). At the moment of writing we only have one.
+Tests are located in `devtools/client/aboutdebugging/test`. There are two subfolders, `browser` and `unit`. `browser` contains our [browser mochitests](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/Mochitest). Most of our tests are browser mochitests. `unit` contains our [xpc-shell unit tests](https://developer.mozilla.org/en-US/docs/Mozilla/QA/Writing_xpcshell-based_unit_tests). At the moment of writing we only have one.
 
 ## Test coverage
 
-You can get some code coverage information at https://codecov.io/gh/mozilla/gecko-dev/tree/master/devtools/client/aboutdebugging-new/src . The service is sometimes very slow, be patient! You might have to reload the page several times to get a result.
+You can get some code coverage information at https://codecov.io/gh/mozilla/gecko-dev/tree/master/devtools/client/aboutdebugging/src . The service is sometimes very slow, be patient! You might have to reload the page several times to get a result.
 
 ## Running tests
 
@@ -20,7 +20,7 @@ A few examples below:
 ```
 # Run browser_aboutdebugging_addons_manifest_url.js only
 
-./mach test devtools/client/aboutdebugging-new/test/browser/browser_aboutdebugging_addons_manifest_url.js
+./mach test devtools/client/aboutdebugging/test/browser/browser_aboutdebugging_addons_manifest_url.js
 
 # or
 
@@ -30,7 +30,7 @@ A few examples below:
 ```
 # Run all aboutdebugging tests
 
-./mach test devtools/client/aboutdebugging-new/test/browser/
+./mach test devtools/client/aboutdebugging/test/browser/
 
 # or (this works because all our tests start with "browser_aboutdebugging...")
 
