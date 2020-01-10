@@ -909,16 +909,6 @@ notification[value="translation"] {
 
 
 
-
-
-#main-window:-moz-any([customize-entering],[customize-exiting]) label {
-  transform: perspective(0.01px);
-}
-
-
-
-
-
 #TabsToolbar > .titlebar-buttonbox-container {
   margin-bottom: var(--tabs-navbar-shadow-size);
 }
