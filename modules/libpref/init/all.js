@@ -546,9 +546,6 @@ pref("media.autoplay.default", 0);
 pref("media.autoplay.block-webaudio", false);
 
 
-pref("media.autoplay.allow-muted", true);
-
-
 pref("media.autoplay.allow-extension-background-pages", true);
 
 
