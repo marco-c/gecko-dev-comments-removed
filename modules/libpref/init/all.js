@@ -2579,13 +2579,6 @@ pref("plugin.default.state", 2);
 
 
 
-pref("plugin.sessionPermissionNow.intervalInMinutes", 60);
-
-
-pref("plugin.persistentPermissionAlways.intervalInDays", 90);
-
-
-
 
 
 
