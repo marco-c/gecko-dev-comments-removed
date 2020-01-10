@@ -872,7 +872,7 @@ pref("gfx.font_rendering.directwrite.use_gdi_table_loading", true);
 #endif
 
 
-pref("gfx.font_ahem_antialias_none", false);
+pref("gfx.font_rendering.ahem_antialias_none", false);
 
 #ifdef XP_WIN
 
