@@ -253,15 +253,10 @@ DebuggerServerConnection.prototype = {
           );
         }
 
-        
-        
-        if (!response) {
-          return;
-        }
-
         if (!response.from) {
           response.from = from;
         }
+
         this.transport.send(response);
       })
       .catch(error => {

@@ -644,7 +644,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
   inspectObject(dbgObj, inspectFromAnnotation) {
-    this.conn.sendActorEvent(this.actorID, "inspectObject", {
+    this.emit("inspectObject", {
       objectActor: this.createValueGrip(dbgObj),
       inspectFromAnnotation,
     });
@@ -1035,12 +1035,12 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     }
 
     return {
-      from: this.actorID,
       messages: messages,
     };
   },
 
   
+
 
 
 
@@ -1069,7 +1069,6 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
         response = await this._maybeWaitForResponseResult(response);
         
         this.emit("evaluationResult", {
-          from: this.actorID,
           type: "evaluationResult",
           resultID,
           ...response,
@@ -1316,7 +1315,6 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     }
 
     return {
-      from: this.actorID,
       input: input,
       result: resultGrip,
       awaitResult,
@@ -1412,14 +1410,12 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
       if (result === null) {
         return {
-          from: this.actorID,
           matches: null,
         };
       }
 
       if (result && result.isUnsafeGetter === true) {
         return {
-          from: this.actorID,
           isUnsafeGetter: true,
           getterPath: result.getterPath,
         };
@@ -1476,7 +1472,6 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     }
 
     return {
-      from: this.actorID,
       matches,
       matchProp,
       isElementAccess: isElementAccess === true,
@@ -1642,12 +1637,9 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     }
 
     if (msg.messageType == "PageError") {
-      const packet = {
-        from: this.actorID,
-        type: "pageError",
+      this.emit("pageError", {
         pageError: this.preparePageErrorForRemote(msg),
-      };
-      this.conn.send(packet);
+      });
     }
   },
 
@@ -1659,22 +1651,16 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
   onConsoleServiceMessage: function(message) {
-    let packet;
     if (message instanceof Ci.nsIScriptError) {
-      packet = {
-        from: this.actorID,
-        type: "pageError",
+      this.emit("pageError", {
         pageError: this.preparePageErrorForRemote(message),
-      };
+      });
     } else {
-      packet = {
-        from: this.actorID,
-        type: "logMessage",
+      this.emit("logMessage", {
         message: this._createStringGrip(message.message),
         timeStamp: message.timeStamp,
-      };
+      });
     }
-    this.conn.send(packet);
   },
 
   getActorIdForInternalSourceId(id) {
@@ -1793,7 +1779,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
   onConsoleAPICall: function(message) {
-    this.conn.sendActorEvent(this.actorID, "consoleAPICall", {
+    this.emit("consoleAPICall", {
       message: this.prepareConsoleMessageForRemote(message),
     });
   },
@@ -1979,12 +1965,9 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
   onFileActivity: function(fileURI) {
-    const packet = {
-      from: this.actorID,
-      type: "fileActivity",
+    this.emit("fileActivity", {
       uri: fileURI,
-    };
-    this.conn.send(packet);
+    });
   },
 
   
@@ -2066,13 +2049,8 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
   _onObserverNotification: function(subject, topic) {
-    switch (topic) {
-      case "last-pb-context-exited":
-        this.conn.send({
-          from: this.actorID,
-          type: "lastPrivateContextExited",
-        });
-        break;
+    if (topic === "last-pb-context-exited") {
+      this.emit("lastPrivateContextExited");
     }
   },
 
