@@ -627,6 +627,27 @@ class ValueDeserializationHelper {
     RefPtr<Blob> blob = aFile.mBlob;
 
     
+    
+    nsCOMPtr<nsIGlobalObject> global;
+    if (NS_IsMainThread()) {
+      if (aDatabase && aDatabase->GetParentObject()) {
+        global = aDatabase->GetParentObject();
+      } else {
+        global = xpc::CurrentNativeGlobal(aCx);
+      }
+    } else {
+      WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+      MOZ_ASSERT(workerPrivate);
+
+      WorkerGlobalScope* globalScope = workerPrivate->GlobalScope();
+      MOZ_ASSERT(globalScope);
+
+      global = do_QueryObject(globalScope);
+    }
+
+    MOZ_ASSERT(global);
+
+    
 
 
 
@@ -641,29 +662,11 @@ class ValueDeserializationHelper {
 
       const RefPtr<FileBlobImpl> impl = new FileBlobImpl(file);
       impl->SetFileId(aFile.mFileInfo->Id());
-      blob = File::Create(nullptr, impl);
-    }
-
-    
-    
-    nsCOMPtr<nsISupports> parent;
-    if (NS_IsMainThread()) {
-      if (aDatabase && aDatabase->GetParentObject()) {
-        parent = aDatabase->GetParentObject();
-      } else {
-        parent = xpc::CurrentNativeGlobal(aCx);
+      blob = File::Create(global, impl);
+      if (NS_WARN_IF(!blob)) {
+        return false;
       }
-    } else {
-      WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-      MOZ_ASSERT(workerPrivate);
-
-      WorkerGlobalScope* globalScope = workerPrivate->GlobalScope();
-      MOZ_ASSERT(globalScope);
-
-      parent = do_QueryObject(globalScope);
     }
-
-    MOZ_ASSERT(parent);
 
     if (aData.tag == SCTAG_DOM_BLOB) {
       blob->Impl()->SetLazyData(VoidString(), aData.type, aData.size,
@@ -679,6 +682,10 @@ class ValueDeserializationHelper {
 
       const RefPtr<Blob> exposedBlob =
           Blob::Create(blob->GetParentObject(), blob->Impl());
+      if (NS_WARN_IF(!exposedBlob)) {
+        return false;
+      }
+
       MOZ_ASSERT(exposedBlob);
       JS::Rooted<JS::Value> wrappedBlob(aCx);
       if (!ToJSValue(aCx, exposedBlob, &wrappedBlob)) {

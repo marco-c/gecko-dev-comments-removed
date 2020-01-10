@@ -110,7 +110,7 @@ class EncodeCompleteCallback {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(EncodeCompleteCallback)
 
   MOZ_CAN_RUN_SCRIPT
-  virtual nsresult ReceiveBlob(already_AddRefed<Blob> aBlob) = 0;
+  virtual nsresult ReceiveBlobImpl(already_AddRefed<BlobImpl> aBlobImpl) = 0;
 
  protected:
   virtual ~EncodeCompleteCallback() {}

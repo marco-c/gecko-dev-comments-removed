@@ -14,7 +14,7 @@
 namespace mozilla {
 
 namespace dom {
-class Blob;
+class BlobImpl;
 class ImageCapture;
 class MediaStreamTrack;
 }  
@@ -48,7 +48,8 @@ class CaptureTask : public DirectMediaTrackListener,
   
   
   
-  nsresult TaskComplete(already_AddRefed<dom::Blob> aBlob, nsresult aRv);
+  nsresult TaskComplete(already_AddRefed<dom::BlobImpl> aBlobImpl,
+                        nsresult aRv);
 
   
   
