@@ -5,11 +5,7 @@ add_task(async function() {
 
   await SpecialPowers.flushPrefEnv();
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.trackingprotection.enabled", true],
-      
-      [ContentBlocking.prefIntroCount, ContentBlocking.MAX_INTROS],
-    ],
+    set: [["privacy.trackingprotection.enabled", true]],
   });
 
   await UrlClassifierTestUtils.addTestTrackers();

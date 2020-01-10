@@ -16,10 +16,6 @@ add_task(async function setup() {
   let oldCanRecord = Services.telemetry.canRecordExtended;
   Services.telemetry.canRecordExtended = true;
 
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [[ContentBlocking.prefIntroCount, ContentBlocking.MAX_INTROS]],
-  });
   await UrlClassifierTestUtils.addTestTrackers();
 
   registerCleanupFunction(() => {
