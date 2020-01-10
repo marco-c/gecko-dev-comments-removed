@@ -226,6 +226,10 @@ var AboutProtectionsHandler = {
             logins
           );
         }
+        
+        
+        const { email } = await fxAccounts.getSignedInUser();
+        userEmail = email;
       } else {
         
         monitorData = {
