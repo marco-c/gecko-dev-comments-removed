@@ -110,9 +110,6 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
                             const PeerIdentity* aSinkIdentity);
   
   bool AnyLocalTrackHasPeerIdentity() const;
-  
-  
-  void UpdateRemoteStreamPrincipals_m(nsIPrincipal* aPrincipal);
 
   bool AnyCodecHasPluginID(uint64_t aPluginID);
 
@@ -130,8 +127,8 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   nsPIDOMWindowInner* GetWindow() const;
   already_AddRefed<nsIHttpChannelInternal> GetChannel() const;
 
-  void AlpnNegotiated_s(const std::string& aAlpn);
-  void AlpnNegotiated_m(const std::string& aAlpn);
+  void AlpnNegotiated_s(const std::string& aAlpn, bool aPrivacyRequested);
+  void AlpnNegotiated_m(bool aPrivacyRequested);
 
   
   RefPtr<WebRtcCallWrapper> mCall;

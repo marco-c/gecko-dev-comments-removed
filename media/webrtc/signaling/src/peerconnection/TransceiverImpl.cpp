@@ -254,21 +254,6 @@ void TransceiverImpl::SetReceiveTrackMuted(bool aMuted) {
   static_cast<RemoteTrackSource&>(mReceiveTrack->GetSource()).SetMuted(aMuted);
 }
 
-nsresult TransceiverImpl::UpdatePrincipal(nsIPrincipal* aPrincipal) {
-  if (mJsepTransceiver->IsStopped()) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  static_cast<RemoteTrackSource&>(mReceiveTrack->GetSource())
-      .SetPrincipal(aPrincipal);
-
-  mReceivePipeline->SetPrincipalHandle_m(MakePrincipalHandle(aPrincipal));
-  return NS_OK;
-}
-
 void TransceiverImpl::ResetSync() {
   if (mConduit) {
     mConduit->SetSyncGroup("");
