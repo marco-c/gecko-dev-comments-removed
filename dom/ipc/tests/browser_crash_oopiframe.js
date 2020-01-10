@@ -55,7 +55,6 @@ add_task(async function() {
     "oop-browser-crashed"
   );
 
-  info("Waiting for oop-browser-crashed event.");
   await eventFiredPromise.then(event => {
     isnot(
       event.browsingContextId,
@@ -70,15 +69,14 @@ add_task(async function() {
     );
   });
 
-  
-  
-  
-  await BrowserTestUtils.waitForCondition(() => {
-    return iframeBC.currentWindowGlobal;
-  });
+  info("Wait for a new browsing context to get attached to our oop iframe.");
+  await BrowserTestUtils.waitForCondition(
+    () => rootBC.getChildren()[0] != iframeBC
+  );
 
+  let newIframeBC = rootBC.getChildren()[0];
   let newIframeURI = await SpecialPowers.spawn(
-    iframeBC,
+    newIframeBC,
     [],
     () => content.document.documentURI
   );
