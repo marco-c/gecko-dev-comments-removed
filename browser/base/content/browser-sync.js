@@ -64,6 +64,18 @@ var gSync = {
   },
 
   getSendTabTargets() {
+    
+    
+    
+    
+    
+    
+    
+    let getClientRecord = () => undefined;
+    if (UIState.get().syncEnabled && Weave.Service.clientsEngine) {
+      getClientRecord = id =>
+        Weave.Service.clientsEngine.getClientByFxaDeviceId(id);
+    }
     let targets = [];
     if (!fxAccounts.device.recentDeviceList) {
       return targets;
@@ -72,9 +84,8 @@ var gSync = {
       if (d.isCurrentDevice) {
         continue;
       }
-      let clientRecord = Weave.Service.clientsEngine.getClientByFxaDeviceId(
-        d.id
-      );
+
+      let clientRecord = getClientRecord(d.id);
       if (clientRecord || fxAccounts.commands.sendTab.isDeviceCompatible(d)) {
         targets.push({
           clientRecord,
@@ -933,7 +944,9 @@ var gSync = {
       } else {
         
         type = target.type == "mobile" ? "phone" : target.type;
-        lastModified = null;
+        lastModified = target.lastAccessTime
+          ? new Date(target.lastAccessTime)
+          : null;
       }
       addTargetDevice(target.id, target.name, type, lastModified);
     }
@@ -1388,10 +1401,17 @@ var gSync = {
       
       return null;
     }
-    const relativeDateStr = this.relativeTimeFormat.formatBestUnit(date);
-    return this.syncStrings.formatStringFromName("lastSync2.label", [
-      relativeDateStr,
-    ]);
+    try {
+      const relativeDateStr = this.relativeTimeFormat.formatBestUnit(date);
+      return this.syncStrings.formatStringFromName("lastSync2.label", [
+        relativeDateStr,
+      ]);
+    } catch (ex) {
+      
+      
+      console.log("failed to format lastSync time", date, ex);
+      return null;
+    }
   },
 
   onClientsSynced() {
