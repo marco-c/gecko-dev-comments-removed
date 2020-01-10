@@ -34,6 +34,7 @@
 #ifdef FUZZING
 #  include "mozilla/StaticPrefs_fuzzing.h"
 #endif
+#include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/dom/ScriptSettings.h"
 
 #include "nsContentUtils.h"
@@ -1150,12 +1151,11 @@ nsresult XPCJSContext::Initialize(XPCJSContext* aPrimaryContext) {
 
   
   
-  
 
 #if defined(XP_MACOSX) || defined(DARWIN)
   
   
-  const size_t kStackQuota = 7 * 1024 * 1024;
+  const size_t kUncappedStackQuota = 7 * 1024 * 1024;
   const size_t kTrustedScriptBuffer = 180 * 1024;
 #elif defined(XP_LINUX) && !defined(ANDROID)
   
@@ -1174,7 +1174,7 @@ nsresult XPCJSContext::Initialize(XPCJSContext* aPrimaryContext) {
   const size_t kStackSafeMargin = 128 * 1024;
 
   struct rlimit rlim;
-  const size_t kStackQuota =
+  const size_t kUncappedStackQuota =
       getrlimit(RLIMIT_STACK, &rlim) == 0
           ? std::max(std::min(size_t(rlim.rlim_cur - kStackSafeMargin),
                               kStackQuotaMax - kStackSafeMargin),
@@ -1190,15 +1190,11 @@ nsresult XPCJSContext::Initialize(XPCJSContext* aPrimaryContext) {
   
   
   
-  
+  const size_t kUncappedStackQuota = GetWindowsStackSize();
 #  if defined(MOZ_ASAN)
   
-  const size_t kStackQuota =
-      std::min(GetWindowsStackSize(), size_t(6 * 1024 * 1024));
   const size_t kTrustedScriptBuffer = 450 * 1024;
 #  else
-  const size_t kStackQuota =
-      std::min(GetWindowsStackSize(), size_t(2 * 1024 * 1024));
   const size_t kTrustedScriptBuffer = (sizeof(size_t) == 8)
                                           ? 180 * 1024   
                                           : 120 * 1024;  
@@ -1213,20 +1209,21 @@ nsresult XPCJSContext::Initialize(XPCJSContext* aPrimaryContext) {
   
   
   
-  const size_t kStackQuota = 2 * kDefaultStackQuota;
+  const size_t kUncappedStackQuota = 2 * kDefaultStackQuota;
   const size_t kTrustedScriptBuffer = 450 * 1024;
 #elif defined(ANDROID)
   
   
   
-  const size_t kStackQuota = kDefaultStackQuota + kDefaultStackQuota / 2;
+  const size_t kUncappedStackQuota =
+      kDefaultStackQuota + kDefaultStackQuota / 2;
   const size_t kTrustedScriptBuffer = sizeof(size_t) * 12800;
 #else
   
 #  if defined(DEBUG)
-  const size_t kStackQuota = 2 * kDefaultStackQuota;
+  const size_t kUncappedStackQuota = 2 * kDefaultStackQuota;
 #  else
-  const size_t kStackQuota = kDefaultStackQuota;
+  const size_t kUncappedStackQuota = kDefaultStackQuota;
 #  endif
   
   
@@ -1236,6 +1233,12 @@ nsresult XPCJSContext::Initialize(XPCJSContext* aPrimaryContext) {
   
   
   (void)kDefaultStackQuota;
+
+  
+  
+  const size_t kStackQuotaCap =
+      StaticPrefs::javascript_options_main_thread_stack_quota_cap();
+  const size_t kStackQuota = std::min(kUncappedStackQuota, kStackQuotaCap);
 
   JS_SetNativeStackQuota(
       cx, kStackQuota, kStackQuota - kSystemCodeBuffer,
