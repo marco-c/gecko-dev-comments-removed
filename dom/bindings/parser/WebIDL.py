@@ -236,8 +236,6 @@ class IDLScope(IDLObject):
         
         
         self.globalNameMapping = defaultdict(set)
-        self.primaryGlobalAttr = None
-        self.primaryGlobalName = None
 
     def __str__(self):
         return self.QName()
@@ -465,8 +463,17 @@ class IDLExposureMixins():
                 raise WebIDLError("Unknown [Exposed] value %s" % globalName,
                                   [self._location])
 
-        if len(self._exposureGlobalNames) == 0:
-            self._exposureGlobalNames.add(scope.primaryGlobalName)
+        
+        
+        
+        
+        
+        
+        if len(scope.globalNames) != 0:
+            if (len(self._exposureGlobalNames) == 0):
+                raise WebIDLError(("'%s' is not exposed anywhere even though we have "
+                                   "globals to be exposed to") % self,
+                                  [self.location])
 
         globalNameSetToExposureSet(scope, self._exposureGlobalNames,
                                    self.exposureSet)
@@ -800,6 +807,8 @@ class IDLInterfaceMixin(IDLInterfaceOrInterfaceMixinOrNamespace):
         
         
         
+        
+        
         hasImplicitExposure = len(self._exposureGlobalNames) == 0
         if hasImplicitExposure:
             self._exposureGlobalNames.update(self.actualExposureGlobalNames)
@@ -998,9 +1007,7 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
             self.totalMembersInSlots = self.parent.totalMembersInSlots
 
             
-            
-            if (self.parent.getExtendedAttribute("Global") or
-                self.parent.getExtendedAttribute("PrimaryGlobal")):
+            if self.parent.getExtendedAttribute("Global"):
                 
                 
                 
@@ -1094,7 +1101,7 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
             if self.globalNames:
                 raise WebIDLError(
                     "Can't have both a named constructor and [Global]",
-                    [self.location, self.namedConstructors.location])
+                    [self.location, ctor.location])
             assert len(ctor._exposureGlobalNames) == 0
             ctor._exposureGlobalNames.update(self._exposureGlobalNames)
             ctor.finish(scope)
@@ -1717,20 +1724,6 @@ class IDLInterface(IDLInterfaceOrNamespace):
                     self.globalNames = [self.identifier.name]
                 self.parentScope.addIfaceGlobalNames(self.identifier.name,
                                                      self.globalNames)
-                self._isOnGlobalProtoChain = True
-            elif identifier == "PrimaryGlobal":
-                if not attr.noArguments():
-                    raise WebIDLError("[PrimaryGlobal] must take no arguments",
-                                      [attr.location])
-                if self.parentScope.primaryGlobalAttr is not None:
-                    raise WebIDLError(
-                        "[PrimaryGlobal] specified twice",
-                        [attr.location,
-                         self.parentScope.primaryGlobalAttr.location])
-                self.parentScope.primaryGlobalAttr = attr
-                self.parentScope.primaryGlobalName = self.identifier.name
-                self.parentScope.addIfaceGlobalNames(self.identifier.name,
-                                                     [self.identifier.name])
                 self._isOnGlobalProtoChain = True
             elif identifier == "LegacyWindowAlias":
                 if attr.hasValue():
@@ -3780,10 +3773,6 @@ class IDLInterfaceMember(IDLObjectWithIdentifier, IDLExposureMixins):
         return self._extendedAttrDict.get(name, None)
 
     def finish(self, scope):
-        
-        if (len(self._exposureGlobalNames) == 0):
-            print(self.identifier.name)
-        assert len(self._exposureGlobalNames) != 0
         IDLExposureMixins.finish(self, scope)
 
     def validate(self):
@@ -5484,10 +5473,8 @@ class IDLIncludesStatement(IDLObject):
             raise WebIDLError("Right-hand side of 'includes' is not an "
                               "interface mixin",
                               [self.mixin.location, mixin.location])
-        if len(interface._exposureGlobalNames) != 0:
-            mixin.actualExposureGlobalNames.update(interface._exposureGlobalNames)
-        else:
-            mixin.actualExposureGlobalNames.add(scope.primaryGlobalName);
+
+        mixin.actualExposureGlobalNames.update(interface._exposureGlobalNames)
 
         interface.addIncludedMixin(mixin)
         self.interface = interface
@@ -7334,12 +7321,6 @@ class Parser(Tokenizer):
             logger.reportGrammarErrors()
 
         self._globalScope = IDLScope(BuiltinLocation("<Global Scope>"), None, None)
-
-        
-        
-        
-        self._globalScope.primaryGlobalName = "FakeTestPrimaryGlobal"
-        self._globalScope.addIfaceGlobalNames("FakeTestPrimaryGlobal", ["FakeTestPrimaryGlobal"])
 
         self._installBuiltins(self._globalScope)
         self._productions = []
