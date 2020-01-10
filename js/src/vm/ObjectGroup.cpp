@@ -239,10 +239,6 @@ bool ObjectGroup::useSingletonForAllocationSite(JSScript* script,
 
   
 
-  if (!script->hasTrynotes()) {
-    return true;
-  }
-
   uint32_t offset = script->pcToOffset(pc);
 
   for (const JSTryNote& tn : script->trynotes()) {

@@ -431,15 +431,12 @@ class MOZ_STACK_CLASS TryNoteIter {
       : script_(cx, script),
         pcOffset_(script->pcToOffset(pc)),
         isTryNoteValid_(isTryNoteValid) {
-    if (script->hasTrynotes()) {
-      
-      
-      auto trynotes = script->trynotes();
-      tn_ = trynotes.data();
-      tnEnd_ = tn_ + trynotes.size();
-    } else {
-      tn_ = tnEnd_ = nullptr;
-    }
+    
+    
+    auto trynotes = script->trynotes();
+    tn_ = trynotes.data();
+    tnEnd_ = tn_ + trynotes.size();
+
     settle();
   }
 

@@ -695,10 +695,6 @@ RetAddrEntry& BaselineScript::retAddrEntryFromReturnAddress(
 }
 
 void BaselineScript::computeResumeNativeOffsets(JSScript* script) {
-  if (!script->hasResumeOffsets()) {
-    return;
-  }
-
   
   
   auto computeNative = [this, script](uint32_t pcOffset) {
