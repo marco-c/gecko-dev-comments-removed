@@ -1001,13 +1001,29 @@ already_AddRefed<TransceiverImpl> PeerConnectionImpl::CreateTransceiverImpl(
     aSendTrack->AddPrincipalChangeObserver(this);
   }
 
+  
+  
+  
+  RefPtr<nsIPrincipal> principal;
+  Document* doc = GetWindow()->GetExtantDoc();
+  MOZ_ASSERT(doc);
+  const bool privacyRequested = mPrivacyRequested.valueOr(true);
+  if (privacyRequested) {
+    
+    
+    principal =
+        NullPrincipal::CreateWithInheritedAttributes(doc->NodePrincipal());
+  } else {
+    principal = doc->NodePrincipal();
+  }
+
   OwningNonNull<dom::MediaStreamTrack> receiveTrack =
-      CreateReceiveTrack(aJsepTransceiver->GetMediaType());
+      CreateReceiveTrack(aJsepTransceiver->GetMediaType(), principal);
 
   RefPtr<TransceiverImpl> transceiverImpl;
-
-  aRv = mMedia->AddTransceiver(aJsepTransceiver, *receiveTrack, aSendTrack,
-                               &transceiverImpl);
+  aRv =
+      mMedia->AddTransceiver(aJsepTransceiver, *receiveTrack, aSendTrack,
+                             MakePrincipalHandle(principal), &transceiverImpl);
 
   return transceiverImpl.forget();
 }
@@ -1829,23 +1845,8 @@ static int GetDTMFToneCode(uint16_t c) {
 }
 
 OwningNonNull<dom::MediaStreamTrack> PeerConnectionImpl::CreateReceiveTrack(
-    SdpMediaSection::MediaType type) {
+    SdpMediaSection::MediaType type, nsIPrincipal* aPrincipal) {
   bool audio = (type == SdpMediaSection::MediaType::kAudio);
-
-  
-  
-  
-  nsCOMPtr<nsIPrincipal> principal;
-  Document* doc = GetWindow()->GetExtantDoc();
-  MOZ_ASSERT(doc);
-  if (mPrivacyRequested.isSome() && !*mPrivacyRequested) {
-    principal = doc->NodePrincipal();
-  } else {
-    
-    
-    principal =
-        NullPrincipal::CreateWithInheritedAttributes(doc->NodePrincipal());
-  }
 
   MediaTrackGraph* graph = MediaTrackGraph::GetInstance(
       audio ? MediaTrackGraph::AUDIO_THREAD_DRIVER
@@ -1857,13 +1858,13 @@ OwningNonNull<dom::MediaStreamTrack> PeerConnectionImpl::CreateReceiveTrack(
   if (audio) {
     RefPtr<SourceMediaTrack> source =
         graph->CreateSourceTrack(MediaSegment::AUDIO);
-    trackSource = new RemoteTrackSource(source, principal,
+    trackSource = new RemoteTrackSource(source, aPrincipal,
                                         NS_ConvertASCIItoUTF16("remote audio"));
     track = new AudioStreamTrack(GetWindow(), source, trackSource);
   } else {
     RefPtr<SourceMediaTrack> source =
         graph->CreateSourceTrack(MediaSegment::VIDEO);
-    trackSource = new RemoteTrackSource(source, principal,
+    trackSource = new RemoteTrackSource(source, aPrincipal,
                                         NS_ConvertASCIItoUTF16("remote video"));
     track = new VideoStreamTrack(GetWindow(), source, trackSource);
   }
