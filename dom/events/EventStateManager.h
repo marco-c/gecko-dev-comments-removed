@@ -247,6 +247,15 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
+
+
+
+  void RecomputeMouseEnterStateForRemoteFrame(Element& aElement);
+
+  
+
+
+
   static bool IsUserInteractionEvent(const WidgetEvent* aEvent);
 
   

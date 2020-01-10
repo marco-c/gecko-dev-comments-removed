@@ -1306,6 +1306,24 @@ void BrowserParent::SendMouseEvent(const nsAString& aType, float aX, float aY,
   }
 }
 
+void BrowserParent::MouseEnterIntoWidget() {
+  nsCOMPtr<nsIWidget> widget = GetWidget();
+  if (widget) {
+    
+    
+    mTabSetsCursor = true;
+    if (mCursor != eCursorInvalid) {
+      widget->SetCursor(mCursor, mCustomCursor, mCustomCursorHotspotX,
+                        mCustomCursorHotspotY);
+    }
+  }
+
+  
+  
+  
+  mIsMouseEnterIntoWidgetEventSuppressed = true;
+}
+
 void BrowserParent::SendRealMouseEvent(WidgetMouseEvent& aEvent) {
   if (mIsDestroyed) {
     return;

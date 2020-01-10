@@ -122,10 +122,18 @@ void nsFrameLoaderOwner::ChangeRemoteness(
     ourFrame->ResetFrameLoader();
   }
 
+  
+  
   if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
     if (fm->GetFocusedElement() == owner) {
       fm->ActivateRemoteFrameIfNeeded(*owner);
     }
+  }
+
+  if (owner->GetPrimaryFrame()) {
+    EventStateManager* eventManager =
+        owner->GetPrimaryFrame()->PresContext()->EventStateManager();
+    eventManager->RecomputeMouseEnterStateForRemoteFrame(*owner);
   }
 
   
