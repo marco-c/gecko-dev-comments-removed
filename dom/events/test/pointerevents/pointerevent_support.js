@@ -49,16 +49,16 @@ function check_PointerEvent(event, testNamePrefix) {
   
   
   var idl_type_check = {
-    long: function(v) {
+    long(v) {
       return typeof v === "number" && Math.round(v) === v;
     },
-    float: function(v) {
+    float(v) {
       return typeof v === "number";
     },
-    string: function(v) {
+    string(v) {
       return typeof v === "string";
     },
-    boolean: function(v) {
+    boolean(v) {
       return typeof v === "boolean";
     },
   };

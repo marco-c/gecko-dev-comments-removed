@@ -31,7 +31,7 @@ MediaStreamPlayback.prototype = {
 
 
 
-  playMedia: function(isResume) {
+  playMedia(isResume) {
     this.startMedia(isResume);
     return this.verifyPlaying()
       .then(() => this.stopTracksForStreamInMediaPlayback())
@@ -45,7 +45,7 @@ MediaStreamPlayback.prototype = {
 
 
 
-  stopTracksForStreamInMediaPlayback: function() {
+  stopTracksForStreamInMediaPlayback() {
     var elem = this.mediaElement;
     return Promise.all([
       haveEvent(
@@ -66,7 +66,7 @@ MediaStreamPlayback.prototype = {
 
 
 
-  playMediaWithoutStoppingTracks: function(isResume) {
+  playMediaWithoutStoppingTracks(isResume) {
     this.startMedia(isResume);
     return this.verifyPlaying().then(() => this.detachFromMediaElement());
   },
@@ -77,7 +77,7 @@ MediaStreamPlayback.prototype = {
 
 
 
-  startMedia: function(isResume) {
+  startMedia(isResume) {
     
     if (!isResume) {
       is(
@@ -100,7 +100,7 @@ MediaStreamPlayback.prototype = {
   
 
 
-  verifyPlaying: function() {
+  verifyPlaying() {
     var lastElementTime = this.mediaElement.currentTime;
 
     var mediaTimeProgressed = listenUntil(
@@ -164,7 +164,7 @@ MediaStreamPlayback.prototype = {
 
 
 
-  detachFromMediaElement: function() {
+  detachFromMediaElement() {
     this.mediaElement.pause();
     this.mediaElement.srcObject = null;
   },

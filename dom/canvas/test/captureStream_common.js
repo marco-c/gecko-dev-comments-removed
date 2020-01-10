@@ -40,7 +40,7 @@ CaptureStreamTestHelper.prototype = {
 
 
 
-  startDrawing: function(f) {
+  startDrawing(f) {
     var stop = false;
     var draw = () => {
       if (stop) {
@@ -54,7 +54,7 @@ CaptureStreamTestHelper.prototype = {
   },
 
   
-  requestFrame: function(video) {
+  requestFrame(video) {
     info("Requesting frame from " + video.id);
     video.srcObject.requestFrame();
   },
@@ -63,7 +63,7 @@ CaptureStreamTestHelper.prototype = {
 
 
 
-  getPixel: function(video, offsetX = 0, offsetY = 0) {
+  getPixel(video, offsetX = 0, offsetY = 0) {
     
     CaptureStreamTestHelper2D.prototype.clear.call(this, this.cout);
 
@@ -89,7 +89,7 @@ CaptureStreamTestHelper.prototype = {
 
 
 
-  isPixel: function(px, refColor, threshold = 0) {
+  isPixel(px, refColor, threshold = 0) {
     return px.every((ch, i) => Math.abs(ch - refColor.data[i]) <= threshold);
   },
 
@@ -100,14 +100,14 @@ CaptureStreamTestHelper.prototype = {
 
 
 
-  isPixelNot: function(px, refColor, threshold = 127) {
+  isPixelNot(px, refColor, threshold = 127) {
     return px.some((ch, i) => Math.abs(ch - refColor.data[i]) > threshold);
   },
 
   
 
 
-  isOpaquePixelNot: function(px, refColor, threshold) {
+  isOpaquePixelNot(px, refColor, threshold) {
     px[3] = refColor.data[3];
     return this.isPixelNot(px, refColor, threshold);
   },
@@ -116,7 +116,7 @@ CaptureStreamTestHelper.prototype = {
 
 
 
-  waitForPixel: async function(
+  async waitForPixel(
     video,
     test,
     {
@@ -151,7 +151,7 @@ CaptureStreamTestHelper.prototype = {
 
 
 
-  pixelMustBecome: async function(
+  async pixelMustBecome(
     video,
     refColor,
     { threshold = 0, infoString = "n/a", cancel = new Promise(() => {}) } = {}
@@ -202,7 +202,7 @@ CaptureStreamTestHelper.prototype = {
 
 
 
-  pixelMustNotBecome: async function(
+  async pixelMustNotBecome(
     video,
     refColor,
     { threshold = 0, time = 5000, infoString = "n/a" } = {}
@@ -236,7 +236,7 @@ CaptureStreamTestHelper.prototype = {
   },
 
   
-  createAndAppendElement: function(type, id) {
+  createAndAppendElement(type, id) {
     var e = document.createElement(type);
     e.id = id;
     e.width = this.elemWidth;

@@ -5,7 +5,7 @@
   
   
   global.rtcIdentityProvider.register({
-    generateAssertion: function(payload, origin, usernameHint) {
+    generateAssertion(payload, origin, usernameHint) {
       dump("idp: generateAssertion(" + payload + ")\n");
       return Promise.resolve({
         idp: { domain: "example.com", protocol: "idp.js" },
@@ -13,7 +13,7 @@
       });
     },
 
-    validateAssertion: function(assertion, origin) {
+    validateAssertion(assertion, origin) {
       dump("idp: validateAssertion(" + assertion + ")\n");
       return Promise.resolve({
         identity: "user@example.com",

@@ -59,7 +59,7 @@ DOMRequestIpcHelper.prototype = {
 
 
 
-  addMessageListeners: function(aMessages) {
+  addMessageListeners(aMessages) {
     if (!aMessages) {
       return;
     }
@@ -100,7 +100,7 @@ DOMRequestIpcHelper.prototype = {
 
 
 
-  removeMessageListeners: function(aMessages) {
+  removeMessageListeners(aMessages) {
     if (!this._listeners || !aMessages) {
       return;
     }
@@ -142,7 +142,7 @@ DOMRequestIpcHelper.prototype = {
 
 
 
-  initDOMRequestHelper: function(aWindow, aMessages) {
+  initDOMRequestHelper(aWindow, aMessages) {
     
     
     this.QueryInterface(Ci.nsISupportsWeakReference);
@@ -170,7 +170,7 @@ DOMRequestIpcHelper.prototype = {
     );
   },
 
-  destroyDOMRequestHelper: function() {
+  destroyDOMRequestHelper() {
     if (this._destroyed) {
       return;
     }
@@ -198,7 +198,7 @@ DOMRequestIpcHelper.prototype = {
     this._window = null;
   },
 
-  observe: function(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic, aData) {
     if (aTopic !== "inner-window-destroyed") {
       return;
     }
@@ -211,7 +211,7 @@ DOMRequestIpcHelper.prototype = {
     this.destroyDOMRequestHelper();
   },
 
-  getRequestId: function(aRequest) {
+  getRequestId(aRequest) {
     if (!this._requests) {
       this._requests = {};
     }
@@ -221,37 +221,37 @@ DOMRequestIpcHelper.prototype = {
     return id;
   },
 
-  getPromiseResolverId: function(aPromiseResolver) {
+  getPromiseResolverId(aPromiseResolver) {
     
     
     return this.getRequestId(aPromiseResolver);
   },
 
-  getRequest: function(aId) {
+  getRequest(aId) {
     if (this._requests && this._requests[aId]) {
       return this._requests[aId];
     }
   },
 
-  getPromiseResolver: function(aId) {
+  getPromiseResolver(aId) {
     
     
     return this.getRequest(aId);
   },
 
-  removeRequest: function(aId) {
+  removeRequest(aId) {
     if (this._requests && this._requests[aId]) {
       delete this._requests[aId];
     }
   },
 
-  removePromiseResolver: function(aId) {
+  removePromiseResolver(aId) {
     
     
     this.removeRequest(aId);
   },
 
-  takeRequest: function(aId) {
+  takeRequest(aId) {
     if (!this._requests || !this._requests[aId]) {
       return null;
     }
@@ -260,20 +260,20 @@ DOMRequestIpcHelper.prototype = {
     return request;
   },
 
-  takePromiseResolver: function(aId) {
+  takePromiseResolver(aId) {
     
     
     return this.takeRequest(aId);
   },
 
-  _getRandomId: function() {
+  _getRandomId() {
     return Cc["@mozilla.org/uuid-generator;1"]
       .getService(Ci.nsIUUIDGenerator)
       .generateUUID()
       .toString();
   },
 
-  createRequest: function() {
+  createRequest() {
     
     if (!this._window) {
       Cu.reportError(
@@ -289,7 +289,7 @@ DOMRequestIpcHelper.prototype = {
 
 
 
-  createPromise: function(aPromiseInit) {
+  createPromise(aPromiseInit) {
     
     if (!this._window) {
       Cu.reportError(
@@ -304,7 +304,7 @@ DOMRequestIpcHelper.prototype = {
 
 
 
-  createPromiseWithId: function(aCallback) {
+  createPromiseWithId(aCallback) {
     return this.createPromise((aResolve, aReject) => {
       let resolverId = this.getPromiseResolverId({
         resolve: aResolve,
@@ -314,7 +314,7 @@ DOMRequestIpcHelper.prototype = {
     });
   },
 
-  forEachRequest: function(aCallback) {
+  forEachRequest(aCallback) {
     if (!this._requests) {
       return;
     }
@@ -326,7 +326,7 @@ DOMRequestIpcHelper.prototype = {
     });
   },
 
-  forEachPromiseResolver: function(aCallback) {
+  forEachPromiseResolver(aCallback) {
     if (!this._requests) {
       return;
     }

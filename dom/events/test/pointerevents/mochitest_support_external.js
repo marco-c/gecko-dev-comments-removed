@@ -69,7 +69,7 @@ var MouseEventHelper = (function() {
     BUTTONS_5TH: utils.MOUSE_BUTTONS_5TH_BUTTON,
 
     
-    computeButtonsMaskFromButton: function(aButton) {
+    computeButtonsMaskFromButton(aButton) {
       
       
       var mask = [
@@ -83,7 +83,7 @@ var MouseEventHelper = (function() {
       return mask;
     },
 
-    checkExitState: function() {
+    checkExitState() {
       ok(!this.BUTTONS_STATE, "Mismatched mousedown/mouseup caught.");
     },
   };
@@ -179,7 +179,7 @@ var TouchEventHelper = {
   TOUCH_STATE: false,
 
   
-  checkExitState: function() {
+  checkExitState() {
     ok(!this.TOUCH_STATE, "Mismatched touchstart/touchend caught.");
   },
 };

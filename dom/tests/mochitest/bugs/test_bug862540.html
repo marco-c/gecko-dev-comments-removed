@@ -14,7 +14,7 @@
    window.status = 5;
    is(window.status, "5", "Should be able to get 5");
 
-   window.status = { toString: function() { return "foo"; } };
+   window.status = { toString() { return "foo"; } };
    ok(window.status === "foo", "Should be coercing window.status to string");
 
   </script>

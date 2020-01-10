@@ -126,7 +126,7 @@ AudioStreamAnalyser.prototype = {
 
 
 
-  getByteFrequencyData: function() {
+  getByteFrequencyData() {
     this.analyser.getByteFrequencyData(this.data);
     return this.data;
   },
@@ -135,7 +135,7 @@ AudioStreamAnalyser.prototype = {
 
 
 
-  enableDebugCanvas: function() {
+  enableDebugCanvas() {
     var cvs = (this.debugCanvas = document.createElement("canvas"));
     const content = document.getElementById("content");
     content.insertBefore(cvs, content.children[0]);
@@ -166,7 +166,7 @@ AudioStreamAnalyser.prototype = {
 
 
 
-  disableDebugCanvas: function() {
+  disableDebugCanvas() {
     if (!this.debugCanvas || !this.debugCanvas.parentElement) {
       return;
     }
@@ -180,7 +180,7 @@ AudioStreamAnalyser.prototype = {
 
 
 
-  disconnect: function() {
+  disconnect() {
     this.disableDebugCanvas();
     this.sourceNodes.forEach(n => n.disconnect());
     this.sourceNodes = [];
@@ -198,7 +198,7 @@ AudioStreamAnalyser.prototype = {
 
 
 
-  waitForAnalysisSuccess: async function(
+  async waitForAnalysisSuccess(
     analysisFunction,
     cancel = wait(60000, new Error("Audio analysis timed out"))
   ) {
@@ -223,7 +223,7 @@ AudioStreamAnalyser.prototype = {
 
 
 
-  binIndexForFrequency: function(frequency) {
+  binIndexForFrequency(frequency) {
     return (
       1 +
       Math.round(
@@ -238,7 +238,7 @@ AudioStreamAnalyser.prototype = {
 
 
 
-  frequencyForBinIndex: function(index) {
+  frequencyForBinIndex(index) {
     return ((index - 1) * this.audioContext.sampleRate) / this.analyser.fftSize;
   },
 };
@@ -932,7 +932,7 @@ CommandChain.prototype = {
 
 
 
-  execute: function() {
+  execute() {
     return this.commands
       .reduce((prev, next, i) => {
         if (typeof next !== "function" || !next.name) {
@@ -959,7 +959,7 @@ CommandChain.prototype = {
   
 
 
-  append: function(commands) {
+  append(commands) {
     this.commands = this.commands.concat(commands);
   },
 
@@ -968,7 +968,7 @@ CommandChain.prototype = {
 
 
 
-  indexOf: function(functionOrName, occurrence) {
+  indexOf(functionOrName, occurrence) {
     occurrence = occurrence || 0;
     return this.commands.findIndex(func => {
       if (typeof functionOrName === "string") {
@@ -986,7 +986,7 @@ CommandChain.prototype = {
     });
   },
 
-  mustHaveIndexOf: function(functionOrName, occurrence) {
+  mustHaveIndexOf(functionOrName, occurrence) {
     var index = this.indexOf(functionOrName, occurrence);
     if (index == -1) {
       throw new Error("Unknown test: " + functionOrName);
@@ -997,25 +997,25 @@ CommandChain.prototype = {
   
 
 
-  insertAfter: function(functionOrName, commands, all, occurrence) {
+  insertAfter(functionOrName, commands, all, occurrence) {
     this._insertHelper(functionOrName, commands, 1, all, occurrence);
   },
 
   
 
 
-  insertAfterEach: function(functionOrName, commands) {
+  insertAfterEach(functionOrName, commands) {
     this._insertHelper(functionOrName, commands, 1, true);
   },
 
   
 
 
-  insertBefore: function(functionOrName, commands, all, occurrence) {
+  insertBefore(functionOrName, commands, all, occurrence) {
     this._insertHelper(functionOrName, commands, 0, all, occurrence);
   },
 
-  _insertHelper: function(functionOrName, commands, delta, all, occurrence) {
+  _insertHelper(functionOrName, commands, delta, all, occurrence) {
     occurrence = occurrence || 0;
     for (
       var index = this.mustHaveIndexOf(functionOrName, occurrence);
@@ -1036,7 +1036,7 @@ CommandChain.prototype = {
   
 
 
-  remove: function(functionOrName, occurrence) {
+  remove(functionOrName, occurrence) {
     return this.commands.splice(
       this.mustHaveIndexOf(functionOrName, occurrence),
       1
@@ -1046,7 +1046,7 @@ CommandChain.prototype = {
   
 
 
-  removeAfter: function(functionOrName, occurrence) {
+  removeAfter(functionOrName, occurrence) {
     return this.commands.splice(
       this.mustHaveIndexOf(functionOrName, occurrence) + 1
     );
@@ -1055,7 +1055,7 @@ CommandChain.prototype = {
   
 
 
-  removeBefore: function(functionOrName, occurrence) {
+  removeBefore(functionOrName, occurrence) {
     return this.commands.splice(
       0,
       this.mustHaveIndexOf(functionOrName, occurrence)
@@ -1065,7 +1065,7 @@ CommandChain.prototype = {
   
 
 
-  replace: function(functionOrName, commands) {
+  replace(functionOrName, commands) {
     this.insertBefore(functionOrName, commands);
     return this.remove(functionOrName);
   },
@@ -1073,7 +1073,7 @@ CommandChain.prototype = {
   
 
 
-  replaceAfter: function(functionOrName, commands, occurrence) {
+  replaceAfter(functionOrName, commands, occurrence) {
     var oldCommands = this.removeAfter(functionOrName, occurrence);
     this.append(commands);
     return oldCommands;
@@ -1082,7 +1082,7 @@ CommandChain.prototype = {
   
 
 
-  replaceBefore: function(functionOrName, commands) {
+  replaceBefore(functionOrName, commands) {
     var oldCommands = this.removeBefore(functionOrName);
     this.insertBefore(functionOrName, commands);
     return oldCommands;
@@ -1091,7 +1091,7 @@ CommandChain.prototype = {
   
 
 
-  filterOut: function(id_match) {
+  filterOut(id_match) {
     this.commands = this.commands.filter(c => !id_match.test(c.name));
   },
 };
@@ -1101,7 +1101,7 @@ function AudioStreamHelper() {
 }
 
 AudioStreamHelper.prototype = {
-  checkAudio: function(stream, analyser, fun) {
+  checkAudio(stream, analyser, fun) {
     
 
 
@@ -1110,13 +1110,13 @@ AudioStreamHelper.prototype = {
     return analyser.waitForAnalysisSuccess(fun);
   },
 
-  checkAudioFlowing: function(stream) {
+  checkAudioFlowing(stream) {
     var analyser = new AudioStreamAnalyser(this._context, stream);
     var freq = analyser.binIndexForFrequency(TEST_AUDIO_FREQ);
     return this.checkAudio(stream, analyser, array => array[freq] > 200);
   },
 
-  checkAudioNotFlowing: function(stream) {
+  checkAudioNotFlowing(stream) {
     var analyser = new AudioStreamAnalyser(this._context, stream);
     var freq = analyser.binIndexForFrequency(TEST_AUDIO_FREQ);
     return this.checkAudio(stream, analyser, array => array[freq] < 50);

@@ -9,7 +9,7 @@ let methods = {
   
 
 
-  createWorker: function(url) {
+  createWorker(url) {
     dump("Frame script: creating worker with url '" + url + "'\n");
 
     workers[url] = new content.Worker(url);
@@ -19,7 +19,7 @@ let methods = {
   
 
 
-  terminateWorker: function(url) {
+  terminateWorker(url) {
     dump("Frame script: terminating worker with url '" + url + "'\n");
 
     workers[url].terminate();
@@ -30,7 +30,7 @@ let methods = {
   
 
 
-  postMessageToWorker: function(url, message) {
+  postMessageToWorker(url, message) {
     dump("Frame script: posting message to worker with url '" + url + "'\n");
 
     let worker = workers[url];
@@ -46,7 +46,7 @@ let methods = {
   
 
 
-  disableCache: function() {
+  disableCache() {
     docShell.defaultLoadFlags =
       Ci.nsIRequest.LOAD_BYPASS_CACHE | Ci.nsIRequest.INHIBIT_CACHING;
   },
@@ -60,13 +60,13 @@ addMessageListener("jsonrpc", function(event) {
     })
     .then(function(result) {
       sendAsyncMessage("jsonrpc", {
-        id: id,
-        result: result,
+        id,
+        result,
       });
     })
     .catch(function(error) {
       sendAsyncMessage("jsonrpc", {
-        id: id,
+        id,
         error: error.toString(),
       });
     });
