@@ -8,7 +8,6 @@
 
 #include "ContainerWriter.h"
 #include "CubebUtils.h"
-#include "MediaQueue.h"
 #include "MediaStreamGraph.h"
 #include "MediaStreamListener.h"
 #include "mozilla/DebugOnly.h"
@@ -20,7 +19,6 @@
 namespace mozilla {
 
 class DriftCompensator;
-class Muxer;
 class Runnable;
 class TaskQueue;
 
@@ -45,6 +43,14 @@ class MediaEncoderListener {
  protected:
   virtual ~MediaEncoderListener() {}
 };
+
+
+
+
+
+
+
+
 
 
 
@@ -158,6 +164,18 @@ class MediaEncoder {
 
 
 
+
+
+  nsresult GetEncodedMetadata(nsTArray<nsTArray<uint8_t>>* aOutputBufs,
+                              nsAString& aMIMEType);
+  
+
+
+
+
+
+
+
   nsresult GetEncodedData(nsTArray<nsTArray<uint8_t>>* aOutputBufs);
 
   
@@ -177,8 +195,6 @@ class MediaEncoder {
 #ifdef MOZ_WEBM_ENCODER
   static bool IsWebMEncoderEnabled();
 #endif
-
-  const nsString& MimeType() const;
 
   
 
@@ -237,10 +253,15 @@ class MediaEncoder {
 
   void SetError();
 
+  
+  nsresult WriteEncodedDataToMuxer(TrackEncoder* aTrackEncoder);
+  
+  nsresult CopyMetadataToMuxer(TrackEncoder* aTrackEncoder);
+
   const RefPtr<TaskQueue> mEncoderThread;
   const RefPtr<DriftCompensator> mDriftCompensator;
 
-  UniquePtr<Muxer> mMuxer;
+  UniquePtr<ContainerWriter> mWriter;
   RefPtr<AudioTrackEncoder> mAudioEncoder;
   RefPtr<AudioTrackListener> mAudioListener;
   RefPtr<VideoTrackEncoder> mVideoEncoder;
@@ -263,10 +284,10 @@ class MediaEncoder {
   
   
   RefPtr<dom::VideoStreamTrack> mVideoTrack;
-
   TimeStamp mStartTime;
-  const nsString mMIMEType;
+  nsString mMIMEType;
   bool mInitialized;
+  bool mMetadataEncoded;
   bool mCompleted;
   bool mError;
   bool mCanceled;
