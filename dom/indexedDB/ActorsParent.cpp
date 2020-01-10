@@ -12585,8 +12585,18 @@ void Database::UnregisterTransaction(TransactionBase* aTransaction) {
 bool Database::RegisterMutableFile(MutableFile* aMutableFile) {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aMutableFile);
+
+  
+  
+  
+  
+  
+  
+  if (!mDirectoryLock) {
+    return false;
+  }
+
   MOZ_ASSERT(!mMutableFiles.GetEntry(aMutableFile));
-  MOZ_ASSERT(mDirectoryLock);
 
   if (NS_WARN_IF(!mMutableFiles.PutEntry(aMutableFile, fallible))) {
     return false;
