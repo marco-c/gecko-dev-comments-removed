@@ -2432,7 +2432,6 @@ static int32_t CompareBuildIDs(nsACString& oldID, nsACString& newID) {
 
 
 
-
 int32_t CompareCompatVersions(const nsACString& aOldCompatVersion,
                               const nsACString& aNewCompatVersion) {
   
