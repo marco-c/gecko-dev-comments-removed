@@ -1848,8 +1848,9 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
     
     
     
-    nsresult rv =
-        MakeBasicBlock(MOZ_KnownLive(ParagraphSeparatorElement(separator)));
+    nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                      .FormatBlockContainer(
+                          MOZ_KnownLive(ParagraphSeparatorElement(separator)));
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED) ||
         NS_WARN_IF(!CanHandleEditAction())) {
       return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
@@ -1857,7 +1858,7 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
     
     
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "HTMLEditRules::MakeBasicBlock() failed");
+                         "HTMLEditor::FormatBlockContainer() failed");
 
     firstRange = SelectionRefPtr()->GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
@@ -4547,7 +4548,7 @@ nsresult HTMLEditRules::WillMakeBasicBlock(const nsAString& aBlockType,
   
   
   
-  rv = MakeBasicBlock(blockType);
+  rv = MOZ_KnownLive(HTMLEditorRef()).FormatBlockContainer(blockType);
   if (NS_WARN_IF(!CanHandleEditAction())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
@@ -4557,26 +4558,23 @@ nsresult HTMLEditRules::WillMakeBasicBlock(const nsAString& aBlockType,
   return NS_OK;
 }
 
-nsresult HTMLEditRules::MakeBasicBlock(nsAtom& blockType) {
-  MOZ_ASSERT(IsEditorDataAvailable());
+nsresult HTMLEditor::FormatBlockContainer(nsAtom& blockType) {
+  MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
 
   if (!SelectionRefPtr()->IsCollapsed()) {
-    nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                      .MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
+    nsresult rv = MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
   }
 
-  AutoSelectionRestorer restoreSelectionLater(HTMLEditorRef());
-  AutoTransactionsConserveSelection dontChangeMySelection(HTMLEditorRef());
+  AutoSelectionRestorer restoreSelectionLater(*this);
+  AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
   AutoTArray<OwningNonNull<nsINode>, 64> arrayOfNodes;
-  nsresult rv =
-      MOZ_KnownLive(HTMLEditorRef())
-          .SplitInlinesAndCollectEditTargetNodesInExtendedSelectionRanges(
-              arrayOfNodes, EditSubAction::eCreateOrRemoveBlock,
-              HTMLEditor::CollectNonEditableNodes::Yes);
+  nsresult rv = SplitInlinesAndCollectEditTargetNodesInExtendedSelectionRanges(
+      arrayOfNodes, EditSubAction::eCreateOrRemoveBlock,
+      CollectNonEditableNodes::Yes);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -4584,7 +4582,7 @@ nsresult HTMLEditRules::MakeBasicBlock(nsAtom& blockType) {
   
   
   
-  if (HTMLEditorRef().IsEmptyOneHardLine(arrayOfNodes)) {
+  if (IsEmptyOneHardLine(arrayOfNodes)) {
     nsRange* firstRange = SelectionRefPtr()->GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
       return NS_ERROR_FAILURE;
@@ -4593,8 +4591,7 @@ nsresult HTMLEditRules::MakeBasicBlock(nsAtom& blockType) {
     EditorDOMPoint pointToInsertBlock(firstRange->StartRef());
     if (&blockType == nsGkAtoms::normal || &blockType == nsGkAtoms::_empty) {
       
-      RefPtr<Element> curBlock =
-          HTMLEditorRef().GetBlock(*pointToInsertBlock.GetContainer());
+      RefPtr<Element> curBlock = GetBlock(*pointToInsertBlock.GetContainer());
       if (NS_WARN_IF(!curBlock)) {
         return NS_ERROR_FAILURE;
       }
@@ -4606,12 +4603,11 @@ nsresult HTMLEditRules::MakeBasicBlock(nsAtom& blockType) {
       
       
       nsCOMPtr<nsIContent> brContent =
-          HTMLEditorRef().GetNextEditableHTMLNode(pointToInsertBlock);
+          GetNextEditableHTMLNode(pointToInsertBlock);
       if (brContent && brContent->IsHTMLElement(nsGkAtoms::br)) {
         AutoEditorDOMPointChildInvalidator lockOffset(pointToInsertBlock);
-        rv = MOZ_KnownLive(HTMLEditorRef())
-                 .DeleteNodeWithTransaction(*brContent);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
+        rv = DeleteNodeWithTransaction(*brContent);
+        if (NS_WARN_IF(Destroyed())) {
           return NS_ERROR_EDITOR_DESTROYED;
         }
         if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -4619,12 +4615,10 @@ nsresult HTMLEditRules::MakeBasicBlock(nsAtom& blockType) {
         }
       }
       
-      SplitNodeResult splitNodeResult =
-          MOZ_KnownLive(HTMLEditorRef())
-              .SplitNodeDeepWithTransaction(
-                  *curBlock, pointToInsertBlock,
-                  SplitAtEdges::eDoNotCreateEmptyContainer);
-      if (NS_WARN_IF(!CanHandleEditAction())) {
+      SplitNodeResult splitNodeResult = SplitNodeDeepWithTransaction(
+          *curBlock, pointToInsertBlock,
+          SplitAtEdges::eDoNotCreateEmptyContainer);
+      if (NS_WARN_IF(Destroyed())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
       if (NS_WARN_IF(splitNodeResult.Failed())) {
@@ -4632,9 +4626,8 @@ nsresult HTMLEditRules::MakeBasicBlock(nsAtom& blockType) {
       }
       EditorDOMPoint pointToInsertBrNode(splitNodeResult.SplitPoint());
       
-      brContent = MOZ_KnownLive(HTMLEditorRef())
-                      .InsertBRElementWithTransaction(pointToInsertBrNode);
-      if (NS_WARN_IF(!CanHandleEditAction())) {
+      brContent = InsertBRElementWithTransaction(pointToInsertBrNode);
+      if (NS_WARN_IF(Destroyed())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
       if (NS_WARN_IF(!brContent)) {
@@ -4646,7 +4639,7 @@ nsresult HTMLEditRules::MakeBasicBlock(nsAtom& blockType) {
       restoreSelectionLater.Abort();
       ErrorResult error;
       SelectionRefPtr()->Collapse(atBrNode, error);
-      if (NS_WARN_IF(!CanHandleEditAction())) {
+      if (NS_WARN_IF(Destroyed())) {
         error.SuppressException();
         return NS_ERROR_EDITOR_DESTROYED;
       }
@@ -4658,11 +4651,11 @@ nsresult HTMLEditRules::MakeBasicBlock(nsAtom& blockType) {
 
     
     nsCOMPtr<nsIContent> brNode =
-        HTMLEditorRef().GetNextEditableHTMLNodeInBlock(pointToInsertBlock);
+        GetNextEditableHTMLNodeInBlock(pointToInsertBlock);
     if (brNode && brNode->IsHTMLElement(nsGkAtoms::br)) {
       AutoEditorDOMPointChildInvalidator lockOffset(pointToInsertBlock);
-      rv = MOZ_KnownLive(HTMLEditorRef()).DeleteNodeWithTransaction(*brNode);
-      if (NS_WARN_IF(!CanHandleEditAction())) {
+      rv = DeleteNodeWithTransaction(*brNode);
+      if (NS_WARN_IF(Destroyed())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
       if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -4673,28 +4666,26 @@ nsresult HTMLEditRules::MakeBasicBlock(nsAtom& blockType) {
     }
     
     SplitNodeResult splitNodeResult =
-        MOZ_KnownLive(HTMLEditorRef())
-            .MaybeSplitAncestorsForInsertWithTransaction(blockType,
-                                                         pointToInsertBlock);
+        MaybeSplitAncestorsForInsertWithTransaction(blockType,
+                                                    pointToInsertBlock);
     if (NS_WARN_IF(splitNodeResult.Failed())) {
       return splitNodeResult.Rv();
     }
     RefPtr<Element> block =
-        MOZ_KnownLive(HTMLEditorRef())
-            .CreateNodeWithTransaction(blockType, splitNodeResult.SplitPoint());
-    if (NS_WARN_IF(!CanHandleEditAction())) {
+        CreateNodeWithTransaction(blockType, splitNodeResult.SplitPoint());
+    if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
     if (NS_WARN_IF(!block)) {
       return NS_ERROR_FAILURE;
     }
     
-    HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement = block;
+    TopLevelEditSubActionDataRef().mNewBlockElement = block;
     
     while (!arrayOfNodes.IsEmpty()) {
       OwningNonNull<nsINode> curNode = arrayOfNodes[0];
-      rv = MOZ_KnownLive(HTMLEditorRef()).DeleteNodeWithTransaction(*curNode);
-      if (NS_WARN_IF(!CanHandleEditAction())) {
+      rv = DeleteNodeWithTransaction(*curNode);
+      if (NS_WARN_IF(Destroyed())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
       if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -4706,38 +4697,32 @@ nsresult HTMLEditRules::MakeBasicBlock(nsAtom& blockType) {
     restoreSelectionLater.Abort();
     
     rv = SelectionRefPtr()->Collapse(block, 0);
-    if (NS_WARN_IF(!CanHandleEditAction())) {
+    if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-    return NS_OK;
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "Failed to collapse `Selection` into the new block");
+    return rv;
   }
   
   
   
   if (&blockType == nsGkAtoms::blockquote) {
-    rv = MOZ_KnownLive(HTMLEditorRef())
-             .MoveNodesIntoNewBlockquoteElement(arrayOfNodes);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-  } else if (&blockType == nsGkAtoms::normal ||
-             &blockType == nsGkAtoms::_empty) {
-    rv = MOZ_KnownLive(HTMLEditorRef())
-             .RemoveBlockContainerElements(arrayOfNodes);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-  } else {
-    rv = MOZ_KnownLive(HTMLEditorRef())
-             .CreateOrChangeBlockContainerElement(arrayOfNodes, blockType);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+    rv = MoveNodesIntoNewBlockquoteElement(arrayOfNodes);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "MoveNodesIntoNewBlockquoteElement() failed");
+    return rv;
   }
-  return NS_OK;
+  if (&blockType == nsGkAtoms::normal || &blockType == nsGkAtoms::_empty) {
+    rv = RemoveBlockContainerElements(arrayOfNodes);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "RemoveBlockContainerElements() failed");
+    return rv;
+  }
+  rv = CreateOrChangeBlockContainerElement(arrayOfNodes, blockType);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "CreateOrChangeBlockContainerElement() failed");
+  return rv;
 }
 
 nsresult HTMLEditRules::DidMakeBasicBlock() {
