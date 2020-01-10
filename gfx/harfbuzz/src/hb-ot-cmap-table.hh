@@ -994,6 +994,15 @@ struct cmap
     const CmapSubtable *subtable;
 
     
+
+
+    if ((subtable = this->find_subtable (3, 0)))
+    {
+      if (symbol) *symbol = true;
+      return subtable;
+    }
+
+    
     if ((subtable = this->find_subtable (3, 10))) return subtable;
     if ((subtable = this->find_subtable (0, 6))) return subtable;
     if ((subtable = this->find_subtable (0, 4))) return subtable;
@@ -1004,13 +1013,6 @@ struct cmap
     if ((subtable = this->find_subtable (0, 2))) return subtable;
     if ((subtable = this->find_subtable (0, 1))) return subtable;
     if ((subtable = this->find_subtable (0, 0))) return subtable;
-
-    
-    if ((subtable = this->find_subtable (3, 0)))
-    {
-      if (symbol) *symbol = true;
-      return subtable;
-    }
 
     
     return &Null (CmapSubtable);

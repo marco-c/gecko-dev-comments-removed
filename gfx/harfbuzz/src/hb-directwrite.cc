@@ -879,29 +879,12 @@ _hb_directwrite_shape (hb_shape_plan_t    *shape_plan,
 				     features, num_features, 0);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-hb_bool_t
-hb_directwrite_shape_experimental_width (hb_font_t          *font,
-					 hb_buffer_t        *buffer,
-					 const hb_feature_t *features,
-					 unsigned int        num_features,
-					 float               width)
+HB_UNUSED static bool
+_hb_directwrite_shape_experimental_width (hb_font_t          *font,
+					  hb_buffer_t        *buffer,
+					  const hb_feature_t *features,
+					  unsigned int        num_features,
+					  float               width)
 {
   static const char *shapers = "directwrite";
   hb_shape_plan_t *shape_plan;

@@ -1385,14 +1385,13 @@ hb_font_create_sub_font (hb_font_t *parent)
 
   font->x_scale = parent->x_scale;
   font->y_scale = parent->y_scale;
+  font->mults_changed ();
   font->x_ppem = parent->x_ppem;
   font->y_ppem = parent->y_ppem;
   font->ptem = parent->ptem;
 
   font->num_coords = parent->num_coords;
-  if (!font->num_coords)
-    font->coords = nullptr;
-  else
+  if (font->num_coords)
   {
     unsigned int size = parent->num_coords * sizeof (parent->coords[0]);
     font->coords = (int *) malloc (size);
@@ -1815,6 +1814,7 @@ hb_font_get_ptem (hb_font_t *font)
   return font->ptem;
 }
 
+#ifndef HB_NO_VAR
 
 
 
@@ -1830,7 +1830,6 @@ _hb_font_adopt_var_coords_normalized (hb_font_t *font,
   font->num_coords = coords_length;
 }
 
-#ifndef HB_NO_VAR
 
 
 
@@ -1909,7 +1908,6 @@ hb_font_set_var_named_instance (hb_font_t *font,
   hb_font_set_var_coords_design (font, coords, coords_length);
   free (coords);
 }
-#endif
 
 
 
@@ -1951,7 +1949,7 @@ hb_font_get_var_coords_normalized (hb_font_t *font,
 
   return font->coords;
 }
-
+#endif
 
 #ifndef HB_DISABLE_DEPRECATED
 

@@ -96,13 +96,6 @@ struct TrackData
     
 
 
-
-
-    float csspx = ptem * 96.f / 72.f;
-
-    
-
-
     const TrackTableEntry *trackTableEntry = nullptr;
     unsigned int count = nTracks;
     for (unsigned int i = 0; i < count; i++)
@@ -130,10 +123,10 @@ struct TrackData
     hb_array_t<const Fixed> size_table ((base+sizeTable).arrayZ, sizes);
     unsigned int size_index;
     for (size_index = 0; size_index < sizes - 1; size_index++)
-      if (size_table[size_index].to_float () >= csspx)
+      if (size_table[size_index].to_float () >= ptem)
         break;
 
-    return roundf (interpolate_at (size_index ? size_index - 1 : 0, csspx,
+    return roundf (interpolate_at (size_index ? size_index - 1 : 0, ptem,
 				   *trackTableEntry, base));
   }
 

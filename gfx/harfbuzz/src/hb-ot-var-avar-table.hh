@@ -49,9 +49,10 @@ struct AxisValueMap
   }
 
   public:
-  F2DOT14	fromCoord;	
+  F2DOT14	coords[2];
 
-  F2DOT14	toCoord;	
+
+
 
   public:
   DEFINE_SIZE_STATIC (4);
@@ -59,10 +60,11 @@ struct AxisValueMap
 
 struct SegmentMaps : ArrayOf<AxisValueMap>
 {
-  int map (int value) const
+  int map (int value, unsigned int from_offset = 0, unsigned int to_offset = 1) const
   {
+#define fromCoord coords[from_offset]
+#define toCoord coords[to_offset]
     
-
 
 
     if (len < 2)
@@ -91,7 +93,11 @@ struct SegmentMaps : ArrayOf<AxisValueMap>
     return arrayZ[i-1].toCoord +
 	   ((arrayZ[i].toCoord - arrayZ[i-1].toCoord) *
 	    (value - arrayZ[i-1].fromCoord) + denom/2) / denom;
+#undef toCoord
+#undef fromCoord
   }
+
+  int unmap (int value) const { return map (value, 1, 0); }
 
   public:
   DEFINE_SIZE_ARRAY (2, *this);
@@ -133,6 +139,18 @@ struct avar
     }
   }
 
+  void unmap_coords (int *coords, unsigned int coords_length) const
+  {
+    unsigned int count = hb_min (coords_length, axisCount);
+
+    const SegmentMaps *map = &firstAxisSegmentMaps;
+    for (unsigned int i = 0; i < count; i++)
+    {
+      coords[i] = map->unmap (coords[i]);
+      map = &StructAfter<SegmentMaps> (*map);
+    }
+  }
+
   protected:
   FixedVersion<>version;	
 
@@ -140,7 +158,7 @@ struct avar
   HBUINT16	axisCount;	
 
 
-  SegmentMaps   firstAxisSegmentMaps;
+  SegmentMaps	firstAxisSegmentMaps;
 
   public:
   DEFINE_SIZE_MIN (8);

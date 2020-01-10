@@ -59,25 +59,6 @@ myanmar_other_features[] =
   HB_TAG('b','l','w','s'),
   HB_TAG('p','s','t','s'),
 };
-static const hb_tag_t
-myanmar_positioning_features[] =
-{
-  
-
-
-
-  HB_TAG('d','i','s','t'),
-  
-
-
-
-
-
-
-
-  HB_TAG('a','b','v','m'),
-  HB_TAG('b','l','w','m'),
-};
 
 static void
 setup_syllables_myanmar (const hb_ot_shape_plan_t *plan,
@@ -114,9 +95,6 @@ collect_features_myanmar (hb_ot_shape_planner_t *plan)
 
   for (unsigned int i = 0; i < ARRAY_LENGTH (myanmar_other_features); i++)
     map->enable_feature (myanmar_other_features[i], F_MANUAL_ZWJ);
-
-  for (unsigned int i = 0; i < ARRAY_LENGTH (myanmar_positioning_features); i++)
-    map->enable_feature (myanmar_positioning_features[i]);
 }
 
 static void
