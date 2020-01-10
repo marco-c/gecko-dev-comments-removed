@@ -97,7 +97,7 @@ const TRAILHEAD_CONFIG = {
   
   
   
-  EXPERIMENT_RATIOS_FOR_EXTENDED_TRIPLETS: [["control", 99], ["holdback", 1]],
+  EXPERIMENT_RATIOS_FOR_EXTENDED_TRIPLETS: [["control", 95], ["holdback", 5]],
   EXTENDED_TRIPLETS_EXPERIMENT_PREF: "trailhead.extendedTriplets.experiment",
 };
 
