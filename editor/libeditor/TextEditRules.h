@@ -364,9 +364,6 @@ class TextEditRules {
 #endif  
 
   bool mDidExplicitlySetInterline;
-  
-  
-  bool mDeleteBidiImmediately;
   bool mIsHTMLEditRules;
 };
 

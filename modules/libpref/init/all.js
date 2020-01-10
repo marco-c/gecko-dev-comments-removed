@@ -2873,10 +2873,6 @@ pref("bidi.numeral", 0);
 
 
 
-pref("bidi.edit.delete_immediately", true);
-
-
-
 
 
 pref("bidi.edit.caret_movement_style", 2);
