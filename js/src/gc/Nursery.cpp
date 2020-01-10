@@ -1305,7 +1305,7 @@ bool js::Nursery::maybeResizeExact(JS::GCReason reason) {
 
   
   
-  if (gc::IsOOMReason(reason)) {
+  if (gc::IsOOMReason(reason) || runtime()->gc.systemHasLowMemory()) {
     minimizeAllocableSpace();
     return true;
   }
