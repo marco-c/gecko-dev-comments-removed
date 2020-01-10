@@ -395,11 +395,7 @@ SkScalerContext_CairoFT::SkScalerContext_CairoFT(sk_sp<SkTypeface> typeface, con
 
     
     if (!gFontHintingEnabled) {
-        CairoLockedFTFace faceLock(fScaledFont);
-        FT_Face face = faceLock.getFace();
-        if (!(face->face_flags & FT_FACE_FLAG_TRICKY)) {
-            loadFlags |= FT_LOAD_NO_AUTOHINT;
-        }
+        loadFlags |= FT_LOAD_NO_AUTOHINT;
     }
 
     if ((fRec.fFlags & SkScalerContext::kEmbeddedBitmapText_Flag) == 0) {
