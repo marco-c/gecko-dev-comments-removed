@@ -390,6 +390,20 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             getSettings().mTelemetryEnabled.set(true);
             return this;
         }
+
+        
+
+
+
+
+
+
+
+        public @NonNull Builder debugLogging(final boolean enable) {
+            getSettings().mConsoleServiceToLogcat.set(enable);
+            getSettings().mGeckoViewLogLevel.set(enable ? "Debug" : "Fatal");
+            return this;
+        }
     }
 
     private GeckoRuntime mRuntime;
@@ -428,6 +442,10 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             "gl.msaa-level", 0);
      final Pref<Boolean> mTelemetryEnabled = new Pref<>(
             "toolkit.telemetry.geckoview.streaming", false);
+     final Pref<String> mGeckoViewLogLevel = new Pref<>(
+            "geckoview.logging", "Debug");
+     final Pref<Boolean> mConsoleServiceToLogcat = new Pref<>(
+            "consoleservice.logcat", true);
 
      boolean mDebugPause;
      boolean mUseMaxScreenDepth;
