@@ -545,8 +545,7 @@ def check_output(out, err, rc, timed_out, test, options):
 
         
         
-        if test.allow_unhandlable_oom \
-           and 'Assertion failure: [unhandlable oom]' in err:
+        if test.allow_unhandlable_oom and 'MOZ_CRASH([unhandlable oom]' in err:
             return True
 
         
