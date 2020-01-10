@@ -29,10 +29,6 @@
 #include "mozilla/Variant.h"
 #include "mozilla/Vector.h"
 
-namespace IPC {
-struct Permission;
-}
-
 namespace mozilla {
 class OriginAttributesPattern;
 }
@@ -210,6 +206,9 @@ class nsPermissionManager final : public nsIPermissionManager,
 
   static void Startup();
 
+  nsresult RemovePermissionsWithAttributes(
+      mozilla::OriginAttributesPattern& aAttrs);
+
   
 
 
@@ -293,68 +292,6 @@ class nsPermissionManager final : public nsIPermissionManager,
 
 
   bool PermissionAvailable(nsIPrincipal* aPrincipal, const nsACString& aType);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void GetPermissionsWithKey(const nsACString& aPermissionKey,
-                             nsTArray<IPC::Permission>& aPerms);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  void SetPermissionsWithKey(const nsACString& aPermissionKey,
-                             nsTArray<IPC::Permission>& aPerms);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void WhenPermissionsAvailable(nsIPrincipal* aPrincipal,
-                                nsIRunnable* aRunnable);
-
-  
-
-
-
-  bool HasPreloadPermissions();
 
  private:
   virtual ~nsPermissionManager();
@@ -589,10 +526,6 @@ class nsPermissionManager final : public nsIPermissionManager,
 
   template <class T>
   nsresult RemovePermissionEntries(T aCondition);
-
-  nsresult RemovePermissionsWithAttributes(const nsAString& aPattern);
-  nsresult RemovePermissionsWithAttributes(
-      mozilla::OriginAttributesPattern& aAttrs);
 
   nsRefPtrHashtable<nsCStringHashKey,
                     mozilla::GenericNonExclusivePromise::Private>
