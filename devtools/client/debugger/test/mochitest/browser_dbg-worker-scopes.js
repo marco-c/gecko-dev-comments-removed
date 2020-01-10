@@ -6,13 +6,14 @@
 
 
 
+
 const { PromiseTestUtils } = ChromeUtils.import(
   "resource://testing-common/PromiseTestUtils.jsm"
 );
 PromiseTestUtils.whitelistRejectionsGlobally(/Current state is running/);
 
 function findNode(dbg, text) {
-  for (let index = 0;; index++) {
+  for (let index = 0; ; index++) {
     var elem = findElement(dbg, "scopeNode", index);
     if (elem && elem.innerText == text) {
       return elem;
@@ -25,7 +26,7 @@ function toggleNode(dbg, text) {
 }
 
 function findNodeValue(dbg, text) {
-  for (let index = 0;; index++) {
+  for (let index = 0; ; index++) {
     var elem = findElement(dbg, "scopeNode", index);
     if (elem && elem.innerText == text) {
       return findElement(dbg, "scopeValue", index).innerText;
@@ -39,6 +40,7 @@ add_task(async function() {
   const workerSource = findSource(dbg, "scopes-worker.js");
 
   await addBreakpoint(dbg, workerSource, 11);
+  await dbg.toolbox._target.waitForRequestsToSettle();
   invokeInTab("startWorker");
   await waitForPaused(dbg, "scopes-worker.js");
   await removeBreakpoint(dbg, workerSource.id, 11);
@@ -47,9 +49,9 @@ add_task(async function() {
   assertPausedAtSourceAndLine(dbg, workerSource.id, 11);
 
   await toggleNode(dbg, "var_array");
-  ok(findNodeValue(dbg, "0") == "\"mango\"", "array elem0");
-  ok(findNodeValue(dbg, "1") == "\"pamplemousse\"", "array elem1");
-  ok(findNodeValue(dbg, "2") == "\"pineapple\"", "array elem2");
+  ok(findNodeValue(dbg, "0") == '"mango"', "array elem0");
+  ok(findNodeValue(dbg, "1") == '"pamplemousse"', "array elem1");
+  ok(findNodeValue(dbg, "2") == '"pineapple"', "array elem2");
   await toggleNode(dbg, "var_array");
 
   await toggleNode(dbg, "var_tarray");
@@ -61,19 +63,19 @@ add_task(async function() {
   await toggleNode(dbg, "var_set");
   await toggleNode(dbg, "<entries>");
 
-  ok(findNodeValue(dbg, "0") == "\"papaya\"", "set elem0");
-  ok(findNodeValue(dbg, "1") == "\"banana\"", "set elem1");
+  ok(findNodeValue(dbg, "0") == '"papaya"', "set elem0");
+  ok(findNodeValue(dbg, "1") == '"banana"', "set elem1");
   await toggleNode(dbg, "var_set");
 
   await toggleNode(dbg, "var_map");
   await toggleNode(dbg, "<entries>");
   await toggleNode(dbg, "0");
   ok(findNodeValue(dbg, "<key>"), "1");
-  ok(findNodeValue(dbg, "<value>"), "\"one\"");
+  ok(findNodeValue(dbg, "<value>"), '"one"');
   await toggleNode(dbg, "0");
   await toggleNode(dbg, "1");
   ok(findNodeValue(dbg, "<key>"), "2");
-  ok(findNodeValue(dbg, "<value>"), "\"two\"");
+  ok(findNodeValue(dbg, "<value>"), '"two"');
   await toggleNode(dbg, "var_map");
 
   await toggleNode(dbg, "var_weakmap");
