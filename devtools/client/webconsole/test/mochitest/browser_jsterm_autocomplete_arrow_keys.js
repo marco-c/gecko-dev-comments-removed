@@ -19,17 +19,18 @@ const TEST_URI = `data:text/html;charset=utf-8,<head><script>
 add_task(async function() {
   
   await pushPref("devtools.webconsole.jsterm.codeMirror", false);
-  await performTests();
+  await performTests(true);
   
   await pushPref("devtools.webconsole.jsterm.codeMirror", true);
   await performTests();
 });
 
-async function performTests() {
+async function performTests(oldJsterm) {
   const hud = await openNewTabAndConsole(TEST_URI);
   const { jsterm } = hud;
   const { autocompletePopup: popup } = jsterm;
 
+  await checkWordNavigation(hud, oldJsterm);
   await checkArrowLeftDismissPopup(hud);
   await checkArrowLeftDismissCompletion(hud);
   await checkArrowRightAcceptCompletion(hud);
@@ -177,5 +178,53 @@ async function checkArrowRightAcceptCompletion(hud) {
     is(popup.isOpen, false, "popup is closed");
     checkInputCompletionValue(hud, "", "completeNode is empty");
   }
+  setInputValue(hud, "");
+}
+
+async function checkWordNavigation(hud, oldJsterm) {
+  const accelKey = Services.appinfo.OS == "Darwin"
+    ? "altKey"
+    : "ctrlKey";
+  const goLeft = () => EventUtils.synthesizeKey("KEY_ArrowLeft", {[accelKey]: true});
+  const goRight = () => EventUtils.synthesizeKey("KEY_ArrowRight", {[accelKey]: true});
+  const isWindowsAndOldJsTerm = Services.appinfo.OS == "WINNT" && oldJsterm;
+
+  setInputValue(hud, "aa bb cc dd");
+  checkInputValueAndCursorPosition(hud, "aa bb cc dd|");
+
+  goRight();
+  checkInputValueAndCursorPosition(hud, "aa bb cc dd|");
+
+  goLeft();
+  checkInputValueAndCursorPosition(hud, "aa bb cc |dd");
+
+  goLeft();
+  checkInputValueAndCursorPosition(hud, "aa bb |cc dd");
+
+  goLeft();
+  checkInputValueAndCursorPosition(hud, "aa |bb cc dd");
+
+  goLeft();
+  checkInputValueAndCursorPosition(hud, "|aa bb cc dd");
+
+  goLeft();
+  checkInputValueAndCursorPosition(hud, "|aa bb cc dd");
+
+  goRight();
+  
+  let expectedInput = isWindowsAndOldJsTerm ? "aa |bb cc dd" : "aa| bb cc dd";
+  checkInputValueAndCursorPosition(hud, expectedInput);
+
+  goRight();
+  expectedInput = isWindowsAndOldJsTerm ? "aa bb |cc dd" : "aa bb| cc dd";
+  checkInputValueAndCursorPosition(hud, expectedInput);
+
+  goRight();
+  expectedInput = isWindowsAndOldJsTerm ? "aa bb cc |dd" : "aa bb cc| dd";
+  checkInputValueAndCursorPosition(hud, expectedInput);
+
+  goRight();
+  checkInputValueAndCursorPosition(hud, "aa bb cc dd|");
+
   setInputValue(hud, "");
 }
