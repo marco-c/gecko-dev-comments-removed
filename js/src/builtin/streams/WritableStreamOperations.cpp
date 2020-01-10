@@ -378,6 +378,47 @@ MOZ_MUST_USE bool js::WritableStreamFinishInFlightClose(
 
 
 
+MOZ_MUST_USE bool js::WritableStreamFinishInFlightCloseWithError(
+    JSContext* cx, Handle<WritableStream*> unwrappedStream,
+    Handle<Value> error) {
+  cx->check(error);
+
+  
+  MOZ_ASSERT(unwrappedStream->haveInFlightCloseRequest());
+  MOZ_ASSERT(!unwrappedStream->inFlightCloseRequest().isUndefined());
+
+  
+  if (!RejectUnwrappedPromiseWithError(
+          cx, &unwrappedStream->inFlightCloseRequest().toObject(), error)) {
+    return false;
+  }
+
+  
+  unwrappedStream->clearInFlightCloseRequest();
+
+  
+  MOZ_ASSERT(unwrappedStream->writable() ^ unwrappedStream->erroring());
+
+  
+  if (unwrappedStream->hasPendingAbortRequest()) {
+    
+    if (!RejectUnwrappedPromiseWithError(
+            cx, unwrappedStream->pendingAbortRequestPromise(), error)) {
+      return false;
+    }
+
+    
+    unwrappedStream->clearPendingAbortRequest();
+  }
+
+  
+  return WritableStreamDealWithRejection(cx, unwrappedStream, error);
+}
+
+
+
+
+
 bool js::WritableStreamCloseQueuedOrInFlight(
     const WritableStream* unwrappedStream) {
   
