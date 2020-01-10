@@ -3746,23 +3746,52 @@ static bool GetSkFontFromGfxFont(DrawTarget& aDrawTarget, gfxFont* aFont,
 
 static void GetPositioning(
     const nsCSSRendering::PaintDecorationLineParams& aParams, const Rect& aRect,
-    Float aOneCSSPixel, SkScalar aBounds[], SkPoint& aTextPos) {
+    Float aOneCSSPixel, Float aCenterBaselineOffset, SkScalar aBounds[]) {
   
-  SkScalar upperLine, lowerLine;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Float rectThickness = aParams.vertical ? aRect.Width() : aRect.Height();
 
   
-  
-  
+  SkScalar upperLine, lowerLine;
   if (aParams.decoration == mozilla::StyleTextDecorationLine_OVERLINE) {
-    aTextPos = {aParams.pt.x,
-                aParams.pt.y + aParams.offset + (2 * aParams.lineSize.height)};
-    lowerLine = aTextPos.fY - aParams.offset + aParams.defaultLineThickness;
-    upperLine = lowerLine - aRect.Height();
+    lowerLine =
+        -aParams.offset + aParams.defaultLineThickness - aCenterBaselineOffset;
+    upperLine = lowerLine - rectThickness;
   } else {
-    aTextPos = {aParams.pt.x,
-                aParams.pt.y - aParams.offset - aParams.lineSize.height};
-    upperLine = aTextPos.fY - aParams.offset;
-    lowerLine = upperLine + aRect.Height();
+    
+    
+    
+    
+    upperLine = -aParams.offset - aCenterBaselineOffset;
+    lowerLine = upperLine + rectThickness;
   }
 
   
@@ -3948,19 +3977,36 @@ static void SkipInk(nsIFrame* aFrame, DrawTarget& aDrawTarget,
   SkScalar startIntercept = 0;
   SkScalar endIntercept = 0;
 
+  
+  
+  
+  
+  Float dir = 1.0f;
+  Float lineStart = aParams.vertical ? aParams.pt.y : aParams.pt.x;
+  Float lineEnd = lineStart + aParams.lineSize.width;
+  if (aParams.sidewaysLeft) {
+    dir = -1.0f;
+    std::swap(lineStart, lineEnd);
+  }
+
   for (int i = 0; i <= length; i += 2) {
     
-    startIntercept = (i > 0) ? aIntercepts[i - 1] : aParams.pt.x - padding;
-    endIntercept = (i < length)
-                       ? aIntercepts[i]
-                       : aParams.pt.x + aParams.lineSize.width + padding;
+    startIntercept = (i > 0) ? (dir * aIntercepts[i - 1]) + lineStart
+                             : lineStart - (dir * padding);
+    endIntercept = (i < length) ? (dir * aIntercepts[i]) + lineStart
+                                : lineEnd + (dir * padding);
 
     
     
     
     clipParams.lineSize.width =
-        (endIntercept - startIntercept) - (2.0 * padding);
-    aRect.width = clipParams.lineSize.width;
+        (dir * (endIntercept - startIntercept)) - (2.0 * padding);
+
+    if (aParams.vertical) {
+      aRect.height = clipParams.lineSize.width;
+    } else {
+      aRect.width = clipParams.lineSize.width;
+    }
 
     
     
@@ -3971,8 +4017,14 @@ static void SkipInk(nsIFrame* aFrame, DrawTarget& aDrawTarget,
 
     
     
-    clipParams.pt.x = startIntercept + padding;
-    aRect.x = clipParams.pt.x;
+    if (aParams.vertical) {
+      clipParams.pt.y = aParams.sidewaysLeft ? endIntercept + padding
+                                             : startIntercept + padding;
+      aRect.y = clipParams.pt.y;
+    } else {
+      clipParams.pt.x = startIntercept + padding;
+      aRect.x = clipParams.pt.x;
+    }
 
     nsCSSRendering::PaintDecorationLineInternal(aFrame, aDrawTarget, clipParams,
                                                 aRect);
@@ -4034,7 +4086,9 @@ void nsCSSRendering::PaintDecorationLine(
   SkPoint textPos = {0, 0};
   SkScalar bounds[] = {0, 0};
   Float oneCSSPixel = aFrame->PresContext()->CSSPixelsToDevPixels(1.0f);
-  GetPositioning(aParams, rect, oneCSSPixel, bounds, textPos);
+  if (!textRun->UseCenterBaseline()) {
+    GetPositioning(aParams, rect, oneCSSPixel, 0, bounds);
+  }
 
   
   nsTArray<SkScalar> intercepts;
@@ -4053,6 +4107,13 @@ void nsCSSRendering::PaintDecorationLine(
   gfxTextRun::GlyphRunIterator iter(textRun, aParams.glyphRange, isRTL);
 
   while (iter.NextRun()) {
+    if (iter.GetGlyphRun()->mOrientation ==
+        mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT) {
+      
+      
+      continue;
+    }
+
     
     SkFont font;
     if (!GetSkFontFromGfxFont(aDrawTarget, iter.GetGlyphRun()->mFont, font)) {
@@ -4065,6 +4126,17 @@ void nsCSSRendering::PaintDecorationLine(
         CreateTextBlob(textRun, characterGlyphs, font, spacing.Elements(),
                        iter.GetStringStart(), iter.GetStringEnd(),
                        (float)appUnitsPerDevPixel, textPos, spacingOffset);
+
+    if (textRun->UseCenterBaseline()) {
+      
+      
+      
+      
+      gfxFont::Metrics metrics =
+          iter.GetGlyphRun()->mFont->GetMetrics(nsFontMetrics::eHorizontal);
+      Float centerToBaseline = (metrics.emAscent - metrics.emDescent) / 2.0f;
+      GetPositioning(aParams, rect, oneCSSPixel, centerToBaseline, bounds);
+    }
 
     
     GetTextIntercepts(textBlob, bounds, intercepts);
