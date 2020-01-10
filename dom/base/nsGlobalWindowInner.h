@@ -1135,7 +1135,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   virtual already_AddRefed<nsPIWindowRoot> GetTopWindowRoot() override;
 
   
-  nsIPrincipal* GetTopLevelPrincipal();
+  nsIPrincipal* GetTopLevelAntiTrackingPrincipal();
 
   
   
