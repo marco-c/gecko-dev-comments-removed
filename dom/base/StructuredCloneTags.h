@@ -137,6 +137,8 @@ enum StructuredCloneTags {
 
   SCTAG_DOM_STRUCTURED_CLONE_HOLDER,
 
+  SCTAG_DOM_BROWSING_CONTEXT,
+
   
   
 };
