@@ -564,6 +564,30 @@ async function openPasswordContextMenu(
 
 
 
+
+
+
+
+
+
+
+
+
+
+function listenForTestNotification(expectedMessage, count = 1) {
+  return new Promise(resolve => {
+    LoginManagerParent.setListenerForTests((msg, data) => {
+      if (msg == expectedMessage && --count == 0) {
+        LoginManagerParent.setListenerForTests(null);
+        resolve(data);
+      }
+    });
+  });
+}
+
+
+
+
 async function doFillGeneratedPasswordContextMenuItem(browser, passwordInput) {
   await SimpleTest.promiseFocus(browser);
   await openPasswordContextMenu(browser, passwordInput);
@@ -595,21 +619,12 @@ async function doFillGeneratedPasswordContextMenuItem(browser, passwordInput) {
       await ContentTaskUtils.waitForEvent(input, "input");
     }
   );
-  let messagePromise = new Promise(resolve => {
-    const eventName = "PasswordManager:onGeneratedPasswordFilledOrEdited";
-    browser.messageManager.addMessageListener(eventName, function mgsHandler(
-      msg
-    ) {
-      if (msg.target != browser) {
-        return;
-      }
-      browser.messageManager.removeMessageListener(eventName, mgsHandler);
-      info(
-        "doFillGeneratedPasswordContextMenuItem: Got onGeneratedPasswordFilledOrEdited, resolving"
-      );
-      
-      SimpleTest.executeSoon(resolve);
-    });
+
+  let passwordGeneratedPromise = listenForTestNotification(
+    "PasswordFilledOrEdited"
+  );
+  await new Promise(resolve => {
+    SimpleTest.executeSoon(resolve);
   });
 
   EventUtils.synthesizeMouseAtCenter(generatedPasswordItem, {});
@@ -617,5 +632,5 @@ async function doFillGeneratedPasswordContextMenuItem(browser, passwordInput) {
     "doFillGeneratedPasswordContextMenuItem: Waiting for content input event"
   );
   await passwordChangedPromise;
-  await messagePromise;
+  await passwordGeneratedPromise;
 }

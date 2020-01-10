@@ -19,11 +19,6 @@ XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
 
 ChromeUtils.defineModuleGetter(
   this,
-  "DeferredTask",
-  "resource://gre/modules/DeferredTask.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
   "LoginHelper",
   "resource://gre/modules/LoginHelper.jsm"
 );
@@ -52,7 +47,10 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 const EXPORTED_SYMBOLS = ["LoginManagerParent"];
 
-let gLoginManagerParentSingleton = null;
+
+
+
+let gListenerForTests = null;
 
 
 
@@ -73,11 +71,49 @@ let gGeneratedPasswordsByPrincipalOrigin = new Map();
 
 let gRecipeManager = null;
 
-class LoginManagerParent {
-  constructor() {
-    
-    
-    this._lastMPLoginCancelled = Math.NEGATIVE_INFINITY;
+
+
+
+
+let gLastMPLoginCancelled = Math.NEGATIVE_INFINITY;
+
+let gGeneratedPasswordObserver = {
+  addedObserver: false,
+
+  observe(subject, topic, data) {
+    if (
+      topic == "passwordmgr-autosaved-login-merged" ||
+      (topic == "passwordmgr-storage-changed" && data == "removeLogin")
+    ) {
+      let { origin, guid } = subject;
+      let generatedPW = gGeneratedPasswordsByPrincipalOrigin.get(origin);
+
+      
+      
+      if (
+        generatedPW &&
+        (guid == generatedPW.storageGUID ||
+          topic == "passwordmgr-autosaved-login-merged")
+      ) {
+        log(
+          "Removing storageGUID for generated-password cache entry on origin:",
+          origin
+        );
+        generatedPW.storageGUID = null;
+      }
+    }
+  },
+};
+
+Services.ppmm.addMessageListener("PasswordManager:findRecipes", message => {
+  let formHost = new URL(message.data.formOrigin).host;
+  return gRecipeManager.getRecipesForHost(formHost);
+});
+
+class LoginManagerParent extends JSWindowActorParent {
+  
+  static setListenerForTests(listener) {
+    gListenerForTests = listener;
   }
 
   
@@ -85,12 +121,14 @@ class LoginManagerParent {
     return gGeneratedPasswordsByPrincipalOrigin;
   }
 
-  static getLoginManagerParent() {
-    
-    if (!gLoginManagerParentSingleton) {
-      gLoginManagerParentSingleton = new LoginManagerParent();
+  getRootBrowser() {
+    let browsingContext = null;
+    if (this._overrideBrowsingContextId) {
+      browsingContext = BrowsingContext.get(this._overrideBrowsingContextId);
+    } else {
+      browsingContext = this.browsingContext.top;
     }
-    return gLoginManagerParentSingleton;
+    return browsingContext.embedderElement;
   }
 
   
@@ -130,7 +168,7 @@ class LoginManagerParent {
       
       if (e.result == Cr.NS_ERROR_ABORT) {
         log("User cancelled master password prompt.");
-        this._lastMPLoginCancelled = Date.now();
+        gLastMPLoginCancelled = Date.now();
         return [];
       }
       throw e;
@@ -153,35 +191,25 @@ class LoginManagerParent {
     );
   }
 
-  static receiveMessage(msg) {
-    LoginManagerParent.getLoginManagerParent().receiveMessage(msg);
-  }
-
-  
-  
   receiveMessage(msg) {
     let data = msg.data;
     switch (msg.name) {
       case "PasswordManager:findLogins": {
         
-        this.sendLoginDataToChild(
+        return this.sendLoginDataToChild(
           data.formOrigin,
           data.actionOrigin,
-          data.requestId,
-          msg.target.messageManager,
           data.options
         );
-        break;
-      }
-
-      case "PasswordManager:findRecipes": {
-        let formHost = new URL(data.formOrigin).host;
-        return gRecipeManager.getRecipesForHost(formHost);
       }
 
       case "PasswordManager:onFormSubmit": {
         
-        this.onFormSubmit(msg.target, data);
+        let browser = this.getRootBrowser();
+        this.onFormSubmit(browser, data);
+        if (gListenerForTests) {
+          gListenerForTests("FormSubmit", data);
+        }
         break;
       }
 
@@ -191,8 +219,7 @@ class LoginManagerParent {
       }
 
       case "PasswordManager:autoCompleteLogins": {
-        this.doAutocompleteSearch(data, msg.target);
-        break;
+        return this.doAutocompleteSearch(data);
       }
 
       case "PasswordManager:removeLogin": {
@@ -202,40 +229,31 @@ class LoginManagerParent {
       }
 
       case "PasswordManager:OpenPreferences": {
-        LoginHelper.openPasswordManager(msg.target.ownerGlobal, {
+        let window = this.getRootBrowser().ownerGlobal;
+        LoginHelper.openPasswordManager(window, {
           filterString: msg.data.hostname,
           entryPoint: msg.data.entryPoint,
         });
         break;
       }
+
+      
+      
+      case "PasswordManager:formProcessed": {
+        let topActor = this.browsingContext.top.currentWindowGlobal.getActor(
+          "LoginManager"
+        );
+        topActor.sendAsyncMessage("PasswordManager:formProcessed", {
+          formid: data.formid,
+        });
+        if (gListenerForTests) {
+          gListenerForTests("FormProcessed", {});
+        }
+        break;
+      }
     }
 
     return undefined;
-  }
-
-  
-  observe(subject, topic, data) {
-    if (
-      topic == "passwordmgr-autosaved-login-merged" ||
-      (topic == "passwordmgr-storage-changed" && data == "removeLogin")
-    ) {
-      let { origin, guid } = subject;
-      let generatedPW = gGeneratedPasswordsByPrincipalOrigin.get(origin);
-
-      
-      
-      if (
-        generatedPW &&
-        (guid == generatedPW.storageGUID ||
-          topic == "passwordmgr-autosaved-login-merged")
-      ) {
-        log(
-          "Removing storageGUID for generated-password cache entry on origin:",
-          origin
-        );
-        generatedPW.storageGUID = null;
-      }
-    }
   }
 
   
@@ -259,9 +277,14 @@ class LoginManagerParent {
     
     let jsLogins = [LoginHelper.loginToVanillaObject(login)];
 
-    browser.messageManager.sendAsyncMessage("PasswordManager:fillForm", {
+    let browserURI = browser.currentURI.spec;
+    let originMatches =
+      LoginHelper.getLoginOrigin(browserURI) == loginFormOrigin;
+
+    this.sendAsyncMessage("PasswordManager:fillForm", {
       inputElementIdentifier,
       loginFormOrigin,
+      originMatches,
       logins: jsLogins,
       recipes,
     });
@@ -273,8 +296,6 @@ class LoginManagerParent {
   async sendLoginDataToChild(
     formOrigin,
     actionOrigin,
-    requestId,
-    target,
     { guid, showMasterPassword }
   ) {
     let recipes = [];
@@ -290,22 +311,19 @@ class LoginManagerParent {
     }
 
     if (!showMasterPassword && !Services.logins.isLoggedIn) {
-      try {
-        target.sendAsyncMessage("PasswordManager:loginsFound", {
-          requestId,
-          logins: [],
-          recipes,
-        });
-      } catch (e) {
-        log("error sending message to target", e);
-      }
-      return;
+      return { logins: [], recipes };
     }
 
     
     
     if (Services.logins.uiBusy) {
       log("deferring sendLoginDataToChild for", formOrigin);
+
+      let uiBusyPromiseResolve;
+      let uiBusyPromise = new Promise(resolve => {
+        uiBusyPromiseResolve = resolve;
+      });
+
       let self = this;
       let observer = {
         QueryInterface: ChromeUtils.generateQI([
@@ -319,23 +337,14 @@ class LoginManagerParent {
           Services.obs.removeObserver(this, "passwordmgr-crypto-login");
           Services.obs.removeObserver(this, "passwordmgr-crypto-loginCanceled");
           if (topic == "passwordmgr-crypto-loginCanceled") {
-            target.sendAsyncMessage("PasswordManager:loginsFound", {
-              requestId,
-              logins: [],
-              recipes,
-            });
+            uiBusyPromise.resolve({ logins: [], recipes });
             return;
           }
 
-          self.sendLoginDataToChild(
-            formOrigin,
-            actionOrigin,
-            requestId,
-            target,
-            {
-              showMasterPassword,
-            }
-          );
+          let result = self.sendLoginDataToChild(formOrigin, actionOrigin, {
+            showMasterPassword,
+          });
+          uiBusyPromiseResolve(result);
         },
       };
 
@@ -346,7 +355,8 @@ class LoginManagerParent {
       
       Services.obs.addObserver(observer, "passwordmgr-crypto-login");
       Services.obs.addObserver(observer, "passwordmgr-crypto-loginCanceled");
-      return;
+
+      return uiBusyPromise;
     }
 
     
@@ -367,34 +377,25 @@ class LoginManagerParent {
     
     
     let jsLogins = LoginHelper.loginsToVanillaObjects(logins);
-    target.sendAsyncMessage("PasswordManager:loginsFound", {
-      requestId,
-      logins: jsLogins,
-      recipes,
-    });
+    return { logins: jsLogins, recipes };
   }
 
-  doAutocompleteSearch(
-    {
-      autocompleteInfo,
-      browsingContextId,
-      formOrigin,
-      actionOrigin,
-      searchString,
-      previousResult,
-      requestId,
-      isSecure,
-      isPasswordField,
-    },
-    target
-  ) {
+  doAutocompleteSearch({
+    autocompleteInfo,
+    formOrigin,
+    actionOrigin,
+    searchString,
+    previousResult,
+    isSecure,
+    isPasswordField,
+  }) {
     
     
 
     
     if (!Services.logins.isLoggedIn) {
-      let timeDiff = Date.now() - this._lastMPLoginCancelled;
-      if (timeDiff < this._repromptTimeout) {
+      let timeDiff = Date.now() - gLastMPLoginCancelled;
+      if (timeDiff < LoginManagerParent._repromptTimeout) {
         log(
           "Not searching logins for autocomplete since the master password " +
             `prompt was last cancelled ${Math.round(
@@ -403,14 +404,7 @@ class LoginManagerParent {
         );
         
         
-        target.messageManager.sendAsyncMessage(
-          "PasswordManager:loginsAutoCompleted",
-          {
-            requestId,
-            logins: [],
-          }
-        );
-        return;
+        return { logins: [] };
       }
     }
 
@@ -448,27 +442,22 @@ class LoginManagerParent {
       return match && match.toLowerCase().startsWith(searchStringLower);
     });
 
+    let browser = this.getRootBrowser();
+
     let generatedPassword = null;
     if (
       isPasswordField &&
       autocompleteInfo.fieldName == "new-password" &&
       Services.logins.getLoginSavingEnabled(formOrigin) &&
-      !PrivateBrowsingUtils.isWindowPrivate(target.ownerGlobal)
+      (!browser || !PrivateBrowsingUtils.isWindowPrivate(browser.ownerGlobal))
     ) {
-      generatedPassword = this.getGeneratedPassword(browsingContextId);
+      generatedPassword = this.getGeneratedPassword();
     }
 
     
     
     let jsLogins = LoginHelper.loginsToVanillaObjects(matchingLogins);
-    target.messageManager.sendAsyncMessage(
-      "PasswordManager:loginsAutoCompleted",
-      {
-        requestId,
-        generatedPassword,
-        logins: jsLogins,
-      }
-    );
+    return { generatedPassword, logins: jsLogins };
   }
 
   
@@ -478,7 +467,20 @@ class LoginManagerParent {
     return BrowsingContext;
   }
 
-  getGeneratedPassword(browsingContextId) {
+  
+  useBrowsingContext(browsingContextId = 0) {
+    this._overrideBrowsingContextId = browsingContextId;
+  }
+
+  getBrowsingContextToUse() {
+    if (this._overrideBrowsingContextId) {
+      return BrowsingContext.get(this._overrideBrowsingContextId);
+    }
+
+    return this.browsingContext;
+  }
+
+  getGeneratedPassword() {
     if (
       !LoginHelper.enabled ||
       !LoginHelper.generationAvailable ||
@@ -487,7 +489,7 @@ class LoginManagerParent {
       return null;
     }
 
-    let browsingContext = BrowsingContext.get(browsingContextId);
+    let browsingContext = this.getBrowsingContextToUse();
     if (!browsingContext) {
       return null;
     }
@@ -514,6 +516,20 @@ class LoginManagerParent {
       storageGUID: null,
       value: PasswordGenerator.generatePassword(),
     };
+
+    
+    if (!gGeneratedPasswordObserver.addedObserver) {
+      Services.obs.addObserver(
+        gGeneratedPasswordObserver,
+        "passwordmgr-autosaved-login-merged"
+      );
+      Services.obs.addObserver(
+        gGeneratedPasswordObserver,
+        "passwordmgr-storage-changed"
+      );
+      gGeneratedPasswordObserver.addedObserver = true;
+    }
+
     gGeneratedPasswordsByPrincipalOrigin.set(framePrincipalOrigin, generatedPW);
     return generatedPW.value;
   }
@@ -721,7 +737,6 @@ class LoginManagerParent {
   }
 
   _onGeneratedPasswordFilledOrEdited({
-    browsingContextId,
     formActionOrigin,
     openerTopWindowID,
     password,
@@ -729,12 +744,20 @@ class LoginManagerParent {
   }) {
     log("_onGeneratedPasswordFilledOrEdited");
 
+    if (gListenerForTests) {
+      gListenerForTests("PasswordFilledOrEdited", {});
+    }
+
     if (!password) {
       log("_onGeneratedPasswordFilledOrEdited: The password field is empty");
       return;
     }
 
-    let browsingContext = BrowsingContext.get(browsingContextId);
+    let browsingContext = this.getBrowsingContextToUse();
+    if (!browsingContext) {
+      return;
+    }
+
     let {
       originNoSuffix,
     } = browsingContext.currentWindowGlobal.documentPrincipal;
@@ -901,7 +924,7 @@ class LoginManagerParent {
         "_onGeneratedPasswordFilledOrEdited: not auto-saving/updating this login"
       );
     }
-    let browser = browsingContext.top.embedderElement;
+    let browser = this.getRootBrowser();
     let prompter = this._getPrompter(browser, openerTopWindowID);
 
     if (loginToChange) {

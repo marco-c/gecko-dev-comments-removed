@@ -4,6 +4,9 @@ module.exports = {
   "extends": [
     "plugin:mozilla/mochitest-test"
   ],
+  "globals": {
+    "Assert": true,
+  },
   "rules": {
     
     "mozilla/use-ownerGlobal": "off",

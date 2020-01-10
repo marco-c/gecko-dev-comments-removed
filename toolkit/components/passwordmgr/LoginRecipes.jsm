@@ -249,7 +249,8 @@ this.LoginRecipesContent = {
 
 
 
-  getRecipes(aHost, win) {
+
+  getRecipes(aActor, aHost, win) {
     let recipes;
     let recipeMap = this._recipeCache.get(win);
 
@@ -261,10 +262,8 @@ this.LoginRecipesContent = {
       }
     }
 
-    let mm = win.docShell.messageManager;
-
     log.warn("getRecipes: falling back to a synchronous message for:", aHost);
-    recipes = mm.sendSyncMessage("PasswordManager:findRecipes", {
+    recipes = Services.cpmm.sendSyncMessage("PasswordManager:findRecipes", {
       formOrigin: aHost,
     })[0];
     this.cacheRecipes(aHost, win, recipes);

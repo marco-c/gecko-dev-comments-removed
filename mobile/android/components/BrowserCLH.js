@@ -75,17 +75,6 @@ BrowserCLH.prototype = {
 
         GeckoViewUtils.addLazyGetter(this, "LoginManagerParent", {
           module: "resource://gre/modules/LoginManagerParent.jsm",
-          mm: [
-            
-            
-            "PasswordManager:findLogins",
-            "PasswordManager:findRecipes",
-            "PasswordManager:onFormSubmit",
-            "PasswordManager:autoCompleteLogins",
-            "PasswordManager:removeLogin",
-            
-            
-          ],
         });
         GeckoViewUtils.addLazyGetter(this, "LoginManagerChild", {
           module: "resource://gre/modules/LoginManagerChild.jsm",
@@ -251,17 +240,6 @@ BrowserCLH.prototype = {
           event,
           event.target.ownerGlobal.top
         );
-      },
-      options
-    );
-
-    aWindow.addEventListener(
-      "pageshow",
-      event => {
-        
-        if (ChromeUtils.getClassName(event.target) == "HTMLDocument") {
-          this.LoginManagerChild.forWindow(aWindow).onPageShow(event);
-        }
       },
       options
     );

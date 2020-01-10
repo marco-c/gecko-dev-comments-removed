@@ -152,9 +152,16 @@ this.InsecurePasswordUtils = {
       let isLocalIP = this._isPrincipalForLocalIPAddress(
         aForm.rootElement.nodePrincipal
       );
-      let topWindow = aForm.ownerDocument.defaultView.top;
+      
+      
+      let topDocument;
+      try {
+        topDocument = aForm.ownerDocument.defaultView.top.document;
+      } catch (ex) {
+        topDocument = aForm.ownerDocument.defaultView.document;
+      }
       let topIsLocalIP = this._isPrincipalForLocalIPAddress(
-        topWindow.document.nodePrincipal
+        topDocument.nodePrincipal
       );
 
       
