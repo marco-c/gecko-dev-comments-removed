@@ -82,8 +82,9 @@ class MediaRecorder final : public DOMEventTargetHelper,
   
   RecordingState State() const { return mState; }
 
-  static bool IsTypeSupported(GlobalObject& aGlobal, const nsAString& aType);
-  static bool IsTypeSupported(const nsAString& aType);
+  static bool IsTypeSupported(GlobalObject& aGlobal,
+                              const nsAString& aMIMEType);
+  static bool IsTypeSupported(const nsAString& aMIMEType);
 
   
   static already_AddRefed<MediaRecorder> Constructor(
