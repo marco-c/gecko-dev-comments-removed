@@ -376,17 +376,22 @@ function denyRequestNoPermission(aBrowser, aRequest) {
 
 
 
-async function checkOSPermission(camNeeded, micNeeded) {
+async function checkOSPermission(camNeeded, micNeeded, scrNeeded) {
   
   
   
-  if (Services.prefs.getBoolPref("media.navigator.streams.fake", false)) {
+  if (
+    !scrNeeded &&
+    Services.prefs.getBoolPref("media.navigator.streams.fake", false)
+  ) {
     return true;
   }
 
   let camStatus = {},
     micStatus = {};
-  OSPermissions.getMediaCapturePermissionState(camStatus, micStatus);
+  if (camNeeded || micNeeded) {
+    OSPermissions.getMediaCapturePermissionState(camStatus, micStatus);
+  }
   if (camNeeded) {
     let camPermission = camStatus.value;
     let camAccessible = await checkAndGetOSPermission(
@@ -404,6 +409,14 @@ async function checkOSPermission(camNeeded, micNeeded) {
       OSPermissions.requestAudioCapturePermission
     );
     if (!micAccessible) {
+      return false;
+    }
+  }
+  let scrStatus = {};
+  if (scrNeeded) {
+    OSPermissions.getScreenCapturePermissionState(scrStatus);
+    if (scrStatus.value == OSPermissions.PERMISSION_STATE_DENIED) {
+      OSPermissions.maybeRequestScreenCapturePermission();
       return false;
     }
   }
@@ -561,9 +574,11 @@ function checkRequestAllowed(aRequest, aPrincipal, aBrowser) {
     let browser = aBrowser;
     browser.getDevicePermissionOrigins("webrtc").add(aPrincipal.origin);
 
-    let camNeeded = !!videoDevices.length;
+    
+    let camNeeded = !!videoDevices.length && !sharingScreen;
+    let scrNeeded = !!videoDevices.length && sharingScreen;
     let micNeeded = !!audioDevices.length;
-    checkOSPermission(camNeeded, micNeeded).then(havePermission => {
+    checkOSPermission(camNeeded, micNeeded, scrNeeded).then(havePermission => {
       if (havePermission) {
         let mm = browser.messageManager;
         mm.sendAsyncMessage("webrtc:Allow", {
@@ -1116,9 +1131,14 @@ function prompt(aBrowser, aRequest) {
           aBrowser.getDevicePermissionOrigins("webrtc").add(principal.origin);
         }
 
-        let camNeeded = !!videoDevices.length;
+        let camNeeded = !!videoDevices.length && !sharingScreen;
+        let scrNeeded = !!videoDevices.length && sharingScreen;
         let micNeeded = !!audioDevices.length;
-        let havePermission = await checkOSPermission(camNeeded, micNeeded);
+        let havePermission = await checkOSPermission(
+          camNeeded,
+          micNeeded,
+          scrNeeded
+        );
         if (!havePermission) {
           denyRequestNoPermission(notification.browser, aRequest);
           return;
