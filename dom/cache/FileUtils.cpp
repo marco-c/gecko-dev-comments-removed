@@ -380,9 +380,50 @@ nsresult BodyDeleteFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
       return rv;
     }
 
+    nsCOMPtr<nsIFile> bodyDirectory;
+    rv = finalFile->GetParent(getter_AddRefs(bodyDirectory));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
     rv = RemoveNsIFile(aQuotaInfo, finalFile);
     
     MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+    
+    
+    nsCOMPtr<nsIDirectoryEnumerator> entries;
+    rv = bodyDirectory->GetDirectoryEntries(getter_AddRefs(entries));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    bool isEmpty = true;
+    nsCOMPtr<nsIFile> file;
+    while (NS_SUCCEEDED(rv = entries->GetNextFile(getter_AddRefs(file))) &&
+           file) {
+      nsAutoCString leafName;
+      rv = file->GetNativeLeafName(leafName);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+
+      if (StringEndsWith(leafName, NS_LITERAL_CSTRING(".tmp")) ||
+          StringEndsWith(leafName, NS_LITERAL_CSTRING(".final"))) {
+        isEmpty = false;
+        break;
+      }
+    }
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    if (isEmpty) {
+      DebugOnly<nsresult> result =
+          RemoveNsIFileRecursively(aQuotaInfo, bodyDirectory,
+                                    false);
+      MOZ_ASSERT(NS_SUCCEEDED(result));
+    }
   }
 
   return NS_OK;
@@ -519,8 +560,9 @@ nsresult BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
 
     
     if (NS_WARN_IF(!isDir)) {
-      rv = RemoveNsIFile(aQuotaInfo, subdir);
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
+      DebugOnly<nsresult> result =
+          RemoveNsIFile(aQuotaInfo, subdir,  false);
+      MOZ_ASSERT(NS_SUCCEEDED(result));
       continue;
     }
 
@@ -530,10 +572,25 @@ nsresult BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
       return rv;
     }
 
+    bool isEmpty = true;
     
     nsCOMPtr<nsIFile> file;
     while (NS_SUCCEEDED(rv = subEntries->GetNextFile(getter_AddRefs(file))) &&
            file) {
+      bool isDirectory = false;
+      rv = file->IsDirectory(&isDirectory);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+
+      
+      if (isDirectory) {
+        DebugOnly<nsresult> result =
+            RemoveNsIFileRecursively(aQuotaInfo, file,  false);
+        MOZ_ASSERT(NS_SUCCEEDED(result));
+        continue;
+      }
+
       nsAutoCString leafName;
       rv = file->GetNativeLeafName(leafName);
       if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -543,9 +600,8 @@ nsresult BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
       
       
       if (StringEndsWith(leafName, NS_LITERAL_CSTRING(".tmp"))) {
-        
-        rv = RemoveNsIFileRecursively(aQuotaInfo, file);
-        MOZ_ASSERT(NS_SUCCEEDED(rv));
+        DebugOnly<nsresult> result = RemoveNsIFile(aQuotaInfo, file);
+        MOZ_ASSERT(NS_SUCCEEDED(result));
         continue;
       }
 
@@ -555,6 +611,8 @@ nsresult BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
       
       if (NS_WARN_IF(!StringEndsWith(leafName, suffix) ||
                      leafName.Length() != NSID_LENGTH - 1 + suffix.Length())) {
+        DebugOnly<nsresult> result = RemoveNsIFile(aQuotaInfo, file);
+        MOZ_ASSERT(NS_SUCCEEDED(result));
         continue;
       }
 
@@ -562,15 +620,32 @@ nsresult BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
       
       nsID id;
       if (NS_WARN_IF(!id.Parse(leafName.BeginReading()))) {
+        DebugOnly<nsresult> result =
+            RemoveNsIFile(aQuotaInfo, file,  false);
+        MOZ_ASSERT(NS_SUCCEEDED(result));
         continue;
       }
 
       if (!aKnownBodyIdList.Contains(id)) {
-        
-        rv = RemoveNsIFileRecursively(aQuotaInfo, file);
-        MOZ_ASSERT(NS_SUCCEEDED(rv));
+        DebugOnly<nsresult> result = RemoveNsIFile(aQuotaInfo, file);
+        MOZ_ASSERT(NS_SUCCEEDED(result));
+        continue;
       }
+
+      isEmpty = false;
     }
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    if (isEmpty) {
+      DebugOnly<nsresult> result =
+          RemoveNsIFileRecursively(aQuotaInfo, subdir,  false);
+      MOZ_ASSERT(NS_SUCCEEDED(result));
+    }
+  }
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
 
   return rv;
@@ -632,8 +707,9 @@ nsresult DeleteMarkerFile(const QuotaInfo& aQuotaInfo) {
     return rv;
   }
 
-  rv = RemoveNsIFile(aQuotaInfo, marker);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  DebugOnly<nsresult> result =
+      RemoveNsIFile(aQuotaInfo, marker,  false);
+  MOZ_ASSERT(NS_SUCCEEDED(result));
 
   
   
@@ -660,7 +736,8 @@ bool MarkerFileExists(const QuotaInfo& aQuotaInfo) {
 }
 
 
-nsresult RemoveNsIFileRecursively(const QuotaInfo& aQuotaInfo, nsIFile* aFile) {
+nsresult RemoveNsIFileRecursively(const QuotaInfo& aQuotaInfo, nsIFile* aFile,
+                                  const bool aTrackQuota) {
   MOZ_DIAGNOSTIC_ASSERT(aFile);
 
   bool isDirectory = false;
@@ -674,7 +751,7 @@ nsresult RemoveNsIFileRecursively(const QuotaInfo& aQuotaInfo, nsIFile* aFile) {
   }
 
   if (!isDirectory) {
-    return RemoveNsIFile(aQuotaInfo, aFile);
+    return RemoveNsIFile(aQuotaInfo, aFile, aTrackQuota);
   }
 
   
@@ -688,7 +765,7 @@ nsresult RemoveNsIFileRecursively(const QuotaInfo& aQuotaInfo, nsIFile* aFile) {
   nsCOMPtr<nsIFile> file;
   while (NS_SUCCEEDED((rv = entries->GetNextFile(getter_AddRefs(file)))) &&
          file) {
-    rv = RemoveNsIFileRecursively(aQuotaInfo, file);
+    rv = RemoveNsIFileRecursively(aQuotaInfo, file, aTrackQuota);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -707,17 +784,21 @@ nsresult RemoveNsIFileRecursively(const QuotaInfo& aQuotaInfo, nsIFile* aFile) {
 }
 
 
-nsresult RemoveNsIFile(const QuotaInfo& aQuotaInfo, nsIFile* aFile) {
+nsresult RemoveNsIFile(const QuotaInfo& aQuotaInfo, nsIFile* aFile,
+                       const bool aTrackQuota) {
   MOZ_DIAGNOSTIC_ASSERT(aFile);
 
+  nsresult rv;
   int64_t fileSize = 0;
-  nsresult rv = aFile->GetFileSize(&fileSize);
-  if (rv == NS_ERROR_FILE_NOT_FOUND ||
-      rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) {
-    return NS_OK;
-  }
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  if (aTrackQuota) {
+    rv = aFile->GetFileSize(&fileSize);
+    if (rv == NS_ERROR_FILE_NOT_FOUND ||
+        rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) {
+      return NS_OK;
+    }
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   rv = aFile->Remove( false);
@@ -725,7 +806,7 @@ nsresult RemoveNsIFile(const QuotaInfo& aQuotaInfo, nsIFile* aFile) {
     return rv;
   }
 
-  if (fileSize > 0) {
+  if (aTrackQuota && fileSize > 0) {
     DecreaseUsageForQuotaInfo(aQuotaInfo, fileSize);
   }
 
