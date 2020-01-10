@@ -49,8 +49,6 @@
 
 #include "nsIHandlerService.h"
 #include "nsIMIMEInfo.h"
-#include "nsIRefreshURI.h"  
-#include "nsIDocumentLoader.h"  
 #include "nsIHelperAppLauncherDialog.h"
 #include "nsIContentDispatchChooser.h"
 #include "nsNetUtil.h"
@@ -1256,25 +1254,6 @@ void nsExternalAppHandler::RetargetLoadNotifications(nsIRequest* request) {
   nsCOMPtr<nsIChannel> aChannel = do_QueryInterface(request);
   if (!aChannel) return;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  nsCOMPtr<nsIDocumentLoader> origContextLoader =
-      do_GetInterface(mContentContext);
-  if (origContextLoader) {
-    origContextLoader->GetDocumentChannel(getter_AddRefs(mOriginalChannel));
-  }
-
   bool isPrivate = NS_UsePrivateBrowsing(aChannel);
 
   nsCOMPtr<nsILoadGroup> oldLoadGroup;
@@ -1535,19 +1514,6 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
   
   
   RetargetLoadNotifications(request);
-
-  
-  if (mOriginalChannel) {
-    nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mOriginalChannel));
-    if (httpChannel) {
-      nsAutoCString refreshHeader;
-      Unused << httpChannel->GetResponseHeader(NS_LITERAL_CSTRING("refresh"),
-                                               refreshHeader);
-      if (!refreshHeader.IsEmpty()) {
-        mMaybeCloseWindowHelper->SetShouldCloseWindow(false);
-      }
-    }
-  }
 
   
   
@@ -2263,13 +2229,6 @@ nsresult nsExternalAppHandler::ContinueSave(nsIFile* aNewFileLocation) {
     return rv;
   }
 
-  
-  
-  
-  
-  
-  ProcessAnyRefreshTags();
-
   return NS_OK;
 }
 
@@ -2279,10 +2238,6 @@ nsresult nsExternalAppHandler::ContinueSave(nsIFile* aNewFileLocation) {
 NS_IMETHODIMP nsExternalAppHandler::LaunchWithApplication(
     nsIFile* aApplication, bool aRememberThisPreference) {
   if (mCanceled) return NS_OK;
-
-  
-  
-  ProcessAnyRefreshTags();
 
   if (mMimeInfo && aApplication) {
     PlatformLocalHandlerApp_t* handlerApp =
@@ -2392,25 +2347,6 @@ NS_IMETHODIMP nsExternalAppHandler::Cancel(nsresult aReason) {
   mDialogProgressListener = nullptr;
 
   return NS_OK;
-}
-
-void nsExternalAppHandler::ProcessAnyRefreshTags() {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mContentContext && mOriginalChannel) {
-    nsCOMPtr<nsIRefreshURI> refreshHandler(do_GetInterface(mContentContext));
-    if (refreshHandler) {
-      refreshHandler->SetupRefreshURI(mOriginalChannel);
-    }
-    mOriginalChannel = nullptr;
-  }
 }
 
 bool nsExternalAppHandler::GetNeverAskFlagFromPref(const char* prefName,

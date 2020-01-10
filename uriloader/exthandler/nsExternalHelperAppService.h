@@ -408,15 +408,6 @@ class nsExternalAppHandler final : public nsIStreamListener,
 
 
 
-  void ProcessAnyRefreshTags();
-
-  
-
-
-
-
-
-
 
   void NotifyTransfer(nsresult aStatus);
 
@@ -449,8 +440,6 @@ class nsExternalAppHandler final : public nsIStreamListener,
 
 
   nsCOMPtr<nsITransfer> mTransfer;
-
-  nsCOMPtr<nsIChannel> mOriginalChannel; 
 
   nsCOMPtr<nsIHelperAppLauncherDialog> mDialog;
 
