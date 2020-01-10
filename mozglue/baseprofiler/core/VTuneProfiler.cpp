@@ -17,8 +17,6 @@
 
 #  include <memory>
 
-using namespace std;
-
 namespace mozilla {
 namespace baseprofiler {
 
