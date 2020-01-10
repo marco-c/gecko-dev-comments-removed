@@ -80,7 +80,7 @@ var UITour = {
     ["accountStatus", {
       query: (aDocument) => {
         
-        let fxAFooter = aDocument.getElementById("appMenu-fxa-container");
+        let fxAFooter = aDocument.getElementById("appMenu-fxa-status");
         if (fxAFooter.getAttribute("fxastatus")) {
           return aDocument.getElementById("appMenu-fxa-avatar");
         }
