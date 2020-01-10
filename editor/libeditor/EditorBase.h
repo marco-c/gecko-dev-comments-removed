@@ -46,6 +46,7 @@ class nsIDocumentStateListener;
 class nsIEditActionListener;
 class nsIEditorObserver;
 class nsINode;
+class nsIPrincipal;
 class nsISupports;
 class nsITransferable;
 class nsITransaction;
@@ -284,8 +285,12 @@ class EditorBase : public nsIEditor,
   
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult ToggleTextDirection();
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  ToggleTextDirectionAsAction(nsIPrincipal* aPrincipal = nullptr);
 
   
 
@@ -598,8 +603,13 @@ class EditorBase : public nsIEditor,
 
   class MOZ_STACK_CLASS AutoEditActionDataSetter final {
    public:
+    
+    
+    
+    
     AutoEditActionDataSetter(const EditorBase& aEditorBase,
-                             EditAction aEditAction);
+                             EditAction aEditAction,
+                             nsIPrincipal* aPrincipal = nullptr);
     ~AutoEditActionDataSetter();
 
     void UpdateEditAction(EditAction aEditAction) { mEditAction = aEditAction; }

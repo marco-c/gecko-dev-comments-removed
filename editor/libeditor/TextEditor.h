@@ -16,6 +16,7 @@
 class nsIContent;
 class nsIDocumentEncoder;
 class nsIOutputStream;
+class nsIPrincipal;
 class nsISelectionController;
 class nsITransferable;
 
@@ -63,13 +64,28 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
   NS_IMETHOD SetDocumentCharacterSet(const nsACString& characterSet) override;
 
   
-  
-  MOZ_CAN_RUN_SCRIPT
-  NS_IMETHOD Undo(uint32_t aCount) final;
-  MOZ_CAN_RUN_SCRIPT
-  NS_IMETHOD Redo(uint32_t aCount) final;
 
-  MOZ_CAN_RUN_SCRIPT NS_IMETHOD Cut() override;
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult UndoAsAction(uint32_t aCount,
+                                           nsIPrincipal* aPrincipal = nullptr);
+  MOZ_CAN_RUN_SCRIPT nsresult RedoAsAction(uint32_t aCount,
+                                           nsIPrincipal* aPrincipal = nullptr);
+
+  
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult CutAsAction(nsIPrincipal* aPrincipal = nullptr);
+
   bool CanCut() const;
   NS_IMETHOD Copy() override;
   bool CanCopy() const;
@@ -83,8 +99,16 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
   using EditorBase::CanDelete;
   using EditorBase::CanPaste;
 
-  MOZ_CAN_RUN_SCRIPT
-  NS_IMETHOD PasteTransferable(nsITransferable* aTransferable) override;
+  
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT virtual nsresult PasteTransferableAsAction(
+      nsITransferable* aTransferable, nsIPrincipal* aPrincipal = nullptr);
 
   NS_IMETHOD OutputToString(const nsAString& aFormatType, uint32_t aFlags,
                             nsAString& aOutputString) override;
@@ -132,32 +156,12 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult PasteAsAction(int32_t aClipboardType, bool aDispatchPasteEvent);
-
-  
 
 
 
-
-
-
-
-  nsresult InsertTextAsAction(const nsAString& aStringToInsert);
-
-  
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult PasteAsQuotationAsAction(int32_t aClipboardType,
-                                            bool aDispatchPasteEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult PasteAsAction(int32_t aClipboardType,
+                                            bool aDispatchPasteEvent,
+                                            nsIPrincipal* aPrincipal = nullptr);
 
   
 
@@ -169,9 +173,43 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult DeleteSelectionAsAction(EDirection aDirection,
-                                   EStripWrappers aStripWrappers);
+
+  nsresult InsertTextAsAction(const nsAString& aStringToInsert,
+                              nsIPrincipal* aPrincipal = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT virtual nsresult PasteAsQuotationAsAction(
+      int32_t aClipboardType, bool aDispatchPasteEvent,
+      nsIPrincipal* aPrincipal = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  DeleteSelectionAsAction(EDirection aDirection, EStripWrappers aStripWrappers,
+                          nsIPrincipal* aPrincipal = nullptr);
 
   
 
@@ -186,8 +224,11 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult SetText(const nsAString& aString);
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  SetTextAsAction(const nsAString& aString, nsIPrincipal* aPrincipal = nullptr);
 
   
 
@@ -197,15 +238,23 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult ReplaceTextAsAction(const nsAString& aString,
-                               nsRange* aReplaceRange = nullptr);
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  ReplaceTextAsAction(const nsAString& aString, nsRange* aReplaceRange,
+                      nsIPrincipal* aPrincipal = nullptr);
 
   
 
 
 
-  MOZ_CAN_RUN_SCRIPT virtual nsresult InsertLineBreakAsAction();
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT virtual nsresult InsertLineBreakAsAction(
+      nsIPrincipal* aPrincipal = nullptr);
 
   
 

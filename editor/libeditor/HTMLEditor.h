@@ -136,8 +136,9 @@ class HTMLEditor final : public TextEditor,
   virtual bool CanPaste(int32_t aClipboardType) const override;
   using EditorBase::CanPaste;
 
-  MOZ_CAN_RUN_SCRIPT
-  NS_IMETHOD PasteTransferable(nsITransferable* aTransferable) override;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult PasteTransferableAsAction(
+      nsITransferable* aTransferable,
+      nsIPrincipal* aPrincipal = nullptr) override;
 
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD DeleteNode(nsINode* aNode) override;
 
@@ -164,9 +165,25 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult PasteAsQuotationAsAction(int32_t aClipboardType,
-                                            bool aDispatchPasteEvent) override;
+  MOZ_CAN_RUN_SCRIPT nsresult PasteNoFormattingAsAction(
+      int32_t aSelectionType, nsIPrincipal* aPrincipal = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT virtual nsresult PasteAsQuotationAsAction(
+      int32_t aClipboardType, bool aDispatchPasteEvent,
+      nsIPrincipal* aPrincipal = nullptr) override;
 
   
 
@@ -180,13 +197,29 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT virtual nsresult InsertLineBreakAsAction() override;
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT virtual nsresult InsertLineBreakAsAction(
+      nsIPrincipal* aPrincipal = nullptr) override;
 
   
 
 
 
-  nsresult InsertParagraphSeparatorAsAction();
+
+
+
+
+  nsresult InsertParagraphSeparatorAsAction(nsIPrincipal* aPrincipal = nullptr);
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  InsertElementAtSelectionAsAction(Element* aElement, bool aDeleteSelection,
+                                   nsIPrincipal* aPrincipal = nullptr);
+
+  MOZ_CAN_RUN_SCRIPT nsresult InsertLinkAroundSelectionAsAction(
+      Element* aAnchorElement, nsIPrincipal* aPrincipal = nullptr);
 
   
 
@@ -208,8 +241,27 @@ class HTMLEditor final : public TextEditor,
   
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult IndentAsAction();
-  MOZ_CAN_RUN_SCRIPT nsresult OutdentAsAction();
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  IndentAsAction(nsIPrincipal* aPrincipal = nullptr);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  OutdentAsAction(nsIPrincipal* aPrincipal = nullptr);
+
+  MOZ_CAN_RUN_SCRIPT nsresult SetParagraphFormatAsAction(
+      const nsAString& aParagraphFormat, nsIPrincipal* aPrincipal = nullptr);
+
+  nsresult AlignAsAction(const nsAString& aAlignType,
+                         nsIPrincipal* aPrincipal = nullptr);
+
+  nsresult RemoveListAsAction(const nsAString& aListType,
+                              nsIPrincipal* aPrincipal = nullptr);
+
+  MOZ_CAN_RUN_SCRIPT nsresult MakeOrChangeListAsAction(
+      const nsAString& aListType, bool entireList, const nsAString& aBulletType,
+      nsIPrincipal* aPrincipal = nullptr);
 
   
 
@@ -331,7 +383,12 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  nsresult SetSelectionToAbsoluteOrStatic(bool aEnabled);
+
+
+
+
+  nsresult SetSelectionToAbsoluteOrStaticAsAction(
+      bool aEnabled, nsIPrincipal* aPrincipal = nullptr);
 
   
 
@@ -344,7 +401,15 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  nsresult AddZIndex(int32_t aChange);
+
+
+
+
+  nsresult AddZIndexAsAction(int32_t aChange,
+                             nsIPrincipal* aPrincipal = nullptr);
+
+  MOZ_CAN_RUN_SCRIPT nsresult SetBackgroundColorAsAction(
+      const nsAString& aColor, nsIPrincipal* aPrincipal = nullptr);
 
   
 
@@ -352,9 +417,13 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult SetInlinePropertyAsAction(nsAtom& aProperty, nsAtom* aAttribute,
-                                     const nsAString& aValue);
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult SetInlinePropertyAsAction(
+      nsAtom& aProperty, nsAtom* aAttribute, const nsAString& aValue,
+      nsIPrincipal* aPrincipal = nullptr);
 
   nsresult GetInlineProperty(nsAtom* aProperty, nsAtom* aAttribute,
                              const nsAString& aValue, bool* aFirst, bool* aAny,
@@ -379,8 +448,20 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult RemoveInlinePropertyAsAction(nsAtom& aProperty, nsAtom* aAttribute);
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  RemoveInlinePropertyAsAction(nsAtom& aProperty, nsAtom* aAttribute,
+                               nsIPrincipal* aPrincipal = nullptr);
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  RemoveAllInlinePropertiesAsAction(nsIPrincipal* aPrincipal = nullptr);
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  IncreaseFontSizeAsAction(nsIPrincipal* aPrincipal = nullptr);
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  DecreaseFontSizeAsAction(nsIPrincipal* aPrincipal = nullptr);
 
   
 
@@ -493,6 +574,9 @@ class HTMLEditor final : public TextEditor,
 
   MOZ_CAN_RUN_SCRIPT
   nsresult InsertTextWithQuotations(const nsAString& aStringToInsert);
+
+  MOZ_CAN_RUN_SCRIPT nsresult InsertHTMLAsAction(
+      const nsAString& aInString, nsIPrincipal* aPrincipal = nullptr);
 
  protected:  
   

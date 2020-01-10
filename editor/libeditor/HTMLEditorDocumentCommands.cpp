@@ -11,6 +11,7 @@
 #include "nsCommandParams.h"         
 #include "nsIDocShell.h"             
 #include "nsIEditingSession.h"       
+#include "nsIPrincipal.h"            
 #include "nsISelectionController.h"  
 #include "nsISupportsImpl.h"         
 #include "nsISupportsUtils.h"        
@@ -44,13 +45,14 @@ bool SetDocumentStateCommand::IsCommandEnabled(Command aCommand,
 }
 
 nsresult SetDocumentStateCommand::DoCommand(Command aCommand,
-                                            TextEditor& aTextEditor) const {
+                                            TextEditor& aTextEditor,
+                                            nsIPrincipal* aPrincipal) const {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 nsresult SetDocumentStateCommand::DoCommandParam(
-    Command aCommand, const Maybe<bool>& aBoolParam,
-    TextEditor& aTextEditor) const {
+    Command aCommand, const Maybe<bool>& aBoolParam, TextEditor& aTextEditor,
+    nsIPrincipal* aPrincipal) const {
   if (NS_WARN_IF(aBoolParam.isNothing())) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -123,8 +125,8 @@ nsresult SetDocumentStateCommand::DoCommandParam(
 }
 
 nsresult SetDocumentStateCommand::DoCommandParam(
-    Command aCommand, const nsACString& aCStringParam,
-    TextEditor& aTextEditor) const {
+    Command aCommand, const nsACString& aCStringParam, TextEditor& aTextEditor,
+    nsIPrincipal* aPrincipal) const {
   if (NS_WARN_IF(aCStringParam.IsVoid())) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -356,7 +358,8 @@ bool DocumentStateCommand::IsCommandEnabled(Command aCommand,
 }
 
 nsresult DocumentStateCommand::DoCommand(Command aCommand,
-                                         TextEditor& aTextEditor) const {
+                                         TextEditor& aTextEditor,
+                                         nsIPrincipal* aPrincipal) const {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 

@@ -2317,8 +2317,12 @@ bool nsTextEditorState::SetValue(const nsAString& aValue,
             
             
             RefPtr<nsRange> range;  
+            
+            
+            
+            
             DebugOnly<nsresult> rv =
-                textEditor->ReplaceTextAsAction(newValue, range);
+                textEditor->ReplaceTextAsAction(newValue, range, nullptr);
             NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                                  "Failed to set the new value");
           } else if (aFlags & eSetValue_ForXUL) {
@@ -2350,13 +2354,19 @@ bool nsTextEditorState::SetValue(const nsAString& aValue,
                 StringTail(newValue, newlength - currentLength);
 
             if (insertValue.IsEmpty()) {
+              
+              
+              
               DebugOnly<nsresult> rv = textEditor->DeleteSelectionAsAction(
-                  nsIEditor::eNone, nsIEditor::eStrip);
+                  nsIEditor::eNone, nsIEditor::eStrip, nullptr);
               NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                                    "Failed to remove the text");
             } else {
+              
+              
+              
               DebugOnly<nsresult> rv =
-                  textEditor->InsertTextAsAction(insertValue);
+                  textEditor->InsertTextAsAction(insertValue, nullptr);
               NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                                    "Failed to insert the new value");
             }
@@ -2377,7 +2387,9 @@ bool nsTextEditorState::SetValue(const nsAString& aValue,
               selection->RemoveAllRangesTemporarily();
             }
 
-            textEditor->SetText(newValue);
+            
+            
+            textEditor->SetTextAsAction(newValue, nullptr);
 
             
             
