@@ -48,6 +48,8 @@ class VP8TrackEncoder : public VideoTrackEncoder {
   
   
   
+  
+  
   nsresult GetEncodedPartitions(EncodedFrameContainer& aData);
 
   

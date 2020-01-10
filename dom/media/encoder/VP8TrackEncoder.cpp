@@ -499,7 +499,10 @@ nsresult VP8TrackEncoder::GetEncodedTrack(EncodedFrameContainer& aData) {
       }
       
       rv = GetEncodedPartitions(aData);
-      NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+      if (rv != NS_OK && rv != NS_ERROR_NOT_AVAILABLE) {
+        VP8LOG(LogLevel::Error, "GetEncodedPartitions failed.");
+        return NS_ERROR_FAILURE;
+      }
     } else {
       
       
@@ -546,12 +549,21 @@ nsresult VP8TrackEncoder::GetEncodedTrack(EncodedFrameContainer& aData) {
     mEncodingComplete = true;
     
     
-    do {
+    while (true) {
       if (vpx_codec_encode(mVPXContext, nullptr, mEncodedTimestamp, 0, 0,
                            VPX_DL_REALTIME)) {
         return NS_ERROR_FAILURE;
       }
-    } while (NS_SUCCEEDED(GetEncodedPartitions(aData)));
+      nsresult rv = GetEncodedPartitions(aData);
+      if (rv == NS_ERROR_NOT_AVAILABLE) {
+        
+        break;
+      }
+      if (rv != NS_OK) {
+        
+        return NS_ERROR_FAILURE;
+      }
+    }
   }
 
   return NS_OK;
