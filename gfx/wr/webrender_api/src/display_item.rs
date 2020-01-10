@@ -104,6 +104,7 @@ pub enum DisplayItem {
     Gradient(GradientDisplayItem),
     RadialGradient(RadialGradientDisplayItem),
     Image(ImageDisplayItem),
+    RepeatingImage(RepeatingImageDisplayItem),
     YuvImage(YuvImageDisplayItem),
     BackdropFilter(BackdropFilterDisplayItem),
 
@@ -148,6 +149,7 @@ pub enum DebugDisplayItem {
     Gradient(GradientDisplayItem),
     RadialGradient(RadialGradientDisplayItem),
     Image(ImageDisplayItem),
+    RepeatingImage(RepeatingImageDisplayItem),
     YuvImage(YuvImageDisplayItem),
     BackdropFilter(BackdropFilterDisplayItem),
 
@@ -1073,8 +1075,26 @@ pub struct IframeDisplayItem {
 
 
 
+
+
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct ImageDisplayItem {
+    pub common: CommonItemProperties,
+    
+    
+    
+    pub bounds: LayoutRect,
+    pub image_key: ImageKey,
+    pub image_rendering: ImageRendering,
+    pub alpha_type: AlphaType,
+    
+    pub color: ColorF,
+}
+
+
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
+pub struct RepeatingImageDisplayItem {
     pub common: CommonItemProperties,
     
     
@@ -1406,6 +1426,7 @@ impl DisplayItem {
             DisplayItem::Gradient(..) => "gradient",
             DisplayItem::Iframe(..) => "iframe",
             DisplayItem::Image(..) => "image",
+            DisplayItem::RepeatingImage(..) => "repeating_image",
             DisplayItem::Line(..) => "line",
             DisplayItem::PopAllShadows => "pop_all_shadows",
             DisplayItem::PopReferenceFrame => "pop_reference_frame",
