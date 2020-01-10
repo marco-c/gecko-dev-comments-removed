@@ -334,6 +334,17 @@ var gIdentityHandler = {
     return this._protectionsPanelEnabled;
   },
 
+  get _useGrayLockIcon() {
+    delete this._useGrayLockIcon;
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "_useGrayLockIcon",
+      "security.secure_connection_icon_color_gray",
+      false
+    );
+    return this._useGrayLockIcon;
+  },
+
   
 
 
@@ -827,6 +838,13 @@ var gIdentityHandler = {
     }
 
     
+    this._updateAttribute(
+      this._identityIcon,
+      "lock-icon-gray",
+      this._useGrayLockIcon
+    );
+
+    
     this._identityIcon.setAttribute("tooltiptext", tooltip);
 
     if (this._pageExtensionPolicy) {
@@ -942,24 +960,23 @@ var gIdentityHandler = {
     }
 
     
-    let elementIDs = ["identity-popup", "identity-popup-securityView-body"];
+    this._updateAttribute(
+      this._identityPopup,
+      "lock-icon-gray",
+      this._useGrayLockIcon
+    );
 
-    function updateAttribute(elem, attr, value) {
-      if (value) {
-        elem.setAttribute(attr, value);
-      } else {
-        elem.removeAttribute(attr);
-      }
-    }
+    
+    let elementIDs = ["identity-popup", "identity-popup-securityView-body"];
 
     for (let id of elementIDs) {
       let element = document.getElementById(id);
-      updateAttribute(element, "connection", connection);
-      updateAttribute(element, "loginforms", loginforms);
-      updateAttribute(element, "ciphers", ciphers);
-      updateAttribute(element, "mixedcontent", mixedcontent);
-      updateAttribute(element, "isbroken", this._isBrokenConnection);
-      updateAttribute(element, "customroot", customRoot);
+      this._updateAttribute(element, "connection", connection);
+      this._updateAttribute(element, "loginforms", loginforms);
+      this._updateAttribute(element, "ciphers", ciphers);
+      this._updateAttribute(element, "mixedcontent", mixedcontent);
+      this._updateAttribute(element, "isbroken", this._isBrokenConnection);
+      this._updateAttribute(element, "customroot", customRoot);
     }
 
     
@@ -1226,6 +1243,14 @@ var gIdentityHandler = {
 
     if (!this._permissionList.hasChildNodes()) {
       this._permissionEmptyHint.removeAttribute("hidden");
+    }
+  },
+
+  _updateAttribute(elem, attr, value) {
+    if (value) {
+      elem.setAttribute(attr, value);
+    } else {
+      elem.removeAttribute(attr);
     }
   },
 
