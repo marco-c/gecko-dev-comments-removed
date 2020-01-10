@@ -591,25 +591,33 @@ class StorageUI {
         } else {
           for (const name of deleted[type][host]) {
             try {
-              
-              const names = JSON.parse(name);
-              
-              
-              if (names.length < 3) {
-                if (this.tree.isSelected([type, host, ...names])) {
-                  this.table.clear();
-                  this.hideSidebar();
-                  this.tree.selectPreviousItem();
+              if (["indexedDB", "Cache"].includes(type)) {
+                
+                
+                
+                const names = JSON.parse(name);
+                
+                
+                if (names.length < 3) {
+                  if (this.tree.isSelected([type, host, ...names])) {
+                    this.table.clear();
+                    this.hideSidebar();
+                    this.tree.selectPreviousItem();
+                  }
+                  this.tree.remove([type, host, ...names]);
                 }
-                this.tree.remove([type, host, ...names]);
-              }
 
-              
-              if (names.length > 0) {
-                const tableItemName = names.pop();
-                if (this.tree.isSelected([type, host, ...names])) {
-                  await this.removeItemFromTable(tableItemName);
+                
+                if (names.length > 0) {
+                  const tableItemName = names.pop();
+                  if (this.tree.isSelected([type, host, ...names])) {
+                    await this.removeItemFromTable(tableItemName);
+                  }
                 }
+              } else if (this.tree.isSelected([type, host])) {
+                
+                
+                await this.removeItemFromTable(name);
               }
             } catch (ex) {
               if (this.tree.isSelected([type, host])) {
@@ -644,8 +652,17 @@ class StorageUI {
     try {
       const toUpdate = [];
       for (const name of changed[type][host]) {
-        const names = JSON.parse(name);
-        if (names[0] == db && names[1] == objectStore && names[2]) {
+        if (["indexedDB", "Cache"].includes(type)) {
+          
+          
+          
+          const names = JSON.parse(name);
+          if (names[0] == db && names[1] == objectStore && names[2]) {
+            toUpdate.push(name);
+          }
+        } else {
+          
+          
           toUpdate.push(name);
         }
       }
