@@ -2123,13 +2123,25 @@ class ADBDevice(ADBCommand):
                  * ADBRootError
                  * ADBError
         """
+        def verify_mkdir(path):
+            
+            
+            
+            retry = 0
+            while retry < 10:
+                if self.is_dir(path, timeout=timeout, root=root):
+                    return True
+                time.sleep(1)
+                retry += 1
+            return False
+
         path = posixpath.normpath(path)
         if parents:
             if self._mkdir_p is None or self._mkdir_p:
                 
                 
                 if self.shell_bool('mkdir -p %s' % path, timeout=timeout,
-                                   root=root):
+                                   root=root) or verify_mkdir(path):
                     self._mkdir_p = True
                     return
             
@@ -2152,7 +2164,7 @@ class ADBDevice(ADBCommand):
         
         if not parents or not self.is_dir(path, root=root):
             self.shell_output('mkdir %s' % path, timeout=timeout, root=root)
-        if not self.is_dir(path, timeout=timeout, root=root):
+        if not verify_mkdir(path):
             raise ADBError('mkdir %s Failed' % path)
 
     def push(self, local, remote, timeout=None):
