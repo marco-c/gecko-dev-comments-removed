@@ -66,6 +66,10 @@ export default class LoginList extends ReflectedFluentElement {
     document.l10n.setAttributes(this, "login-list", {count: visibleLoginCount});
   }
 
+  
+
+
+
   _applyFilter() {
     let matchingLoginGuids;
     if (this._filter) {
@@ -150,15 +154,25 @@ export default class LoginList extends ReflectedFluentElement {
     return true;
   }
 
+  
+
+
   setLogins(logins) {
     this._logins = logins;
     this.render();
   }
 
+  
+
+
   loginAdded(login) {
     this._logins.push(login);
     this.render();
   }
+
+  
+
+
 
   loginModified(login) {
     for (let i = 0; i < this._logins.length; i++) {
@@ -169,6 +183,11 @@ export default class LoginList extends ReflectedFluentElement {
     }
     this.render();
   }
+
+  
+
+
+
 
   loginRemoved(login) {
     this._logins = this._logins.filter(l => l.guid != login.guid);

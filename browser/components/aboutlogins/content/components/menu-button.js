@@ -73,6 +73,9 @@ export default class MenuButton extends ReflectedFluentElement {
     }
   }
 
+  
+
+
   toggleMenu() {
     let wasHidden = this.shadowRoot.querySelector(".menu").hidden;
     if (wasHidden) {

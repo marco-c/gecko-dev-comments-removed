@@ -6,6 +6,10 @@ import {recordTelemetryEvent} from "../aboutLoginsUtils.js";
 import ReflectedFluentElement from "./reflected-fluent-element.js";
 
 export default class CopyToClipboardButton extends ReflectedFluentElement {
+  
+
+
+
   static get BUTTON_RESET_TIMEOUT() {
     return 5000;
   }
@@ -66,6 +70,10 @@ export default class CopyToClipboardButton extends ReflectedFluentElement {
       recordTelemetryEvent({object: this.dataset.telemetryObject, method: "copy"});
     }
   }
+
+  
+
+
 
   set relatedInput(val) {
     this._relatedInput = val;

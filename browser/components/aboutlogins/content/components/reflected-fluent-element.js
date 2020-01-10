@@ -9,6 +9,8 @@ export default class ReflectedFluentElement extends HTMLElement {
 
   
 
+
+
   reflectFluentStrings() {
     for (let reflectedFluentID of this.constructor.reflectedFluentIDs) {
       if (this.hasAttribute(reflectedFluentID)) {
@@ -27,6 +29,8 @@ export default class ReflectedFluentElement extends HTMLElement {
   }
 
   
+
+
 
   attributeChangedCallback(attr, oldValue, newValue) {
     if (!this.shadowRoot) {

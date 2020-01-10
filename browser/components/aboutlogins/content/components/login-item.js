@@ -238,6 +238,10 @@ export default class LoginItem extends ReflectedFluentElement {
     }
   }
 
+  
+
+
+
   setLogin(login) {
     this._login = login;
 
@@ -253,6 +257,13 @@ export default class LoginItem extends ReflectedFluentElement {
     this.render();
   }
 
+  
+
+
+
+
+
+
   loginAdded(login) {
     if (this._login.guid ||
         !window.AboutLoginsUtils.doLoginsMatch(login, this._loginFromForm())) {
@@ -264,6 +275,13 @@ export default class LoginItem extends ReflectedFluentElement {
     this.render();
   }
 
+  
+
+
+
+
+
+
   loginModified(login) {
     if (this._login.guid != login.guid) {
       return;
@@ -274,6 +292,13 @@ export default class LoginItem extends ReflectedFluentElement {
     this.render();
   }
 
+  
+
+
+
+
+
+
   loginRemoved(login) {
     if (login.guid != this._login.guid) {
       return;
@@ -283,6 +308,12 @@ export default class LoginItem extends ReflectedFluentElement {
     this._login = {};
     this.render();
   }
+
+  
+
+
+
+
 
   toggleEditing(force) {
     let shouldEdit = force !== undefined ? force : !this.hasAttribute("editing");

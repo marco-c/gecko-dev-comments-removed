@@ -54,6 +54,12 @@ export default class LoginListItem extends HTMLElement {
     }
   }
 
+  
+
+
+
+
+
   update(login) {
     this._login = login;
     this.render();
