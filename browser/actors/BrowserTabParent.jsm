@@ -13,7 +13,17 @@ class BrowserTabParent extends JSWindowActorParent {
     }
 
     let gBrowser = browser.ownerGlobal.gBrowser;
+
     if (!gBrowser) {
+      
+      
+      
+      
+      
+      return;
+    }
+
+    if (!gBrowser.tabpanels || !gBrowser.tabpanels.contains(browser)) {
       
       
       
