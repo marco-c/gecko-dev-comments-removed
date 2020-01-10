@@ -1308,6 +1308,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
+  void MaybeNotifyAutoplayBlocked();
+
+  
+  
   RefPtr<MediaDecoder> mDecoder;
 
   

@@ -3876,10 +3876,24 @@ void HTMLMediaElement::DispatchEventsWhenPlayWasNotAllowed() {
       ChromeOnlyDispatch::eYes);
   asyncDispatcher->PostDOMEvent();
 #endif
-  OwnerDoc()->MaybeNotifyAutoplayBlocked();
+  MaybeNotifyAutoplayBlocked();
   ReportToConsole(nsIScriptError::warningFlag, "BlockAutoplayError");
   mHasPlayEverBeenBlocked = true;
   mHasEverBeenBlockedForAutoplay = true;
+}
+
+void HTMLMediaElement::MaybeNotifyAutoplayBlocked() {
+  Document* topLevelDoc = OwnerDoc()->GetTopLevelContentDocument();
+  if (!topLevelDoc) {
+    return;
+  }
+
+  
+  
+  RefPtr<AsyncEventDispatcher> asyncDispatcher = new AsyncEventDispatcher(
+      topLevelDoc, NS_LITERAL_STRING("GloballyAutoplayBlocked"),
+      CanBubble::eYes, ChromeOnlyDispatch::eYes);
+  asyncDispatcher->PostDOMEvent();
 }
 
 void HTMLMediaElement::PlayInternal(bool aHandlingUserInput) {
@@ -6099,7 +6113,7 @@ void HTMLMediaElement::SuspendOrResumeElement(bool aPauseElement,
       
       if (mHasEverBeenBlockedForAutoplay &&
           !AutoplayPolicy::IsAllowedToPlay(*this)) {
-        OwnerDoc()->MaybeNotifyAutoplayBlocked();
+        MaybeNotifyAutoplayBlocked();
       }
     }
   }

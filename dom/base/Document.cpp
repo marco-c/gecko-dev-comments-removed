@@ -14822,20 +14822,6 @@ bool Document::HasBeenUserGestureActivated() {
   return bc->GetUserGestureActivation();
 }
 
-void Document::MaybeNotifyAutoplayBlocked() {
-  Document* topLevelDoc = GetTopLevelContentDocument();
-  if (!topLevelDoc) {
-    return;
-  }
-
-  
-  
-  RefPtr<AsyncEventDispatcher> asyncDispatcher = new AsyncEventDispatcher(
-      topLevelDoc, NS_LITERAL_STRING("GloballyAutoplayBlocked"),
-      CanBubble::eYes, ChromeOnlyDispatch::eYes);
-  asyncDispatcher->PostDOMEvent();
-}
-
 void Document::ClearUserGestureActivation() {
   if (!HasBeenUserGestureActivated()) {
     return;
