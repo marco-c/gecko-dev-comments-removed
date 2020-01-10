@@ -26,8 +26,6 @@ XPCOMUtils.defineLazyGlobalGetters(this, ["InspectorUtils"]);
 const kStateActive = 0x00000001; 
 const kStateHover = 0x00000004; 
 
-
-
 const SUPPORTED_PROPERTIES = [
   "direction",
   "color",
