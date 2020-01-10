@@ -269,25 +269,12 @@ class WebRenderAPI final {
   void SetCompositionRecorder(
       UniquePtr<layers::WebRenderCompositionRecorder> aRecorder);
 
-  typedef MozPromise<bool, nsresult, true> WriteCollectedFramesPromise;
-  typedef MozPromise<layers::CollectedFrames, nsresult, true>
-      GetCollectedFramesPromise;
-
   
 
 
 
 
-  RefPtr<WriteCollectedFramesPromise> WriteCollectedFrames();
-
-  
-
-
-
-
-
-
-  RefPtr<GetCollectedFramesPromise> GetCollectedFrames();
+  void WriteCollectedFrames();
 
  protected:
   WebRenderAPI(wr::DocumentHandle* aHandle, wr::WindowId aId,

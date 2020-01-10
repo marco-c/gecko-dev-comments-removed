@@ -296,7 +296,7 @@ class WebRenderBridgeParent final
 
 
 
-  RefPtr<wr::WebRenderAPI::WriteCollectedFramesPromise> WriteCollectedFrames();
+  void WriteCollectedFrames();
 
 #if defined(MOZ_WIDGET_ANDROID)
   
@@ -305,14 +305,6 @@ class WebRenderBridgeParent final
   void RequestScreenPixels(UiCompositorControllerParent* aController);
   void MaybeCaptureScreenPixels();
 #endif
-  
-
-
-
-
-
-
-  RefPtr<wr::WebRenderAPI::GetCollectedFramesPromise> GetCollectedFrames();
 
  private:
   class ScheduleSharedSurfaceRelease;
