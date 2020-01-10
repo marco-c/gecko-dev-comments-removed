@@ -352,11 +352,6 @@ var UrlbarUtils = {
         );
         return { url, postData };
       }
-      case UrlbarUtils.RESULT_TYPE.TIP: {
-        
-        
-        return { url: result.payload.buttonUrl, postData: null };
-      }
     }
     return { url: null, postData: null };
   },
