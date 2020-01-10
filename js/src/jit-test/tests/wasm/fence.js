@@ -1,4 +1,6 @@
 
+
+
 wasmFullPass(
 `(module
 	(func atomic.fence)
