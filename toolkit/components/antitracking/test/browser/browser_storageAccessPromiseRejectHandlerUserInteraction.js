@@ -27,7 +27,7 @@ AntiTracking.runTest(
   null, 
   false, 
   false, 
-  Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER, 
+  0, 
   false, 
   "allow-scripts allow-same-origin allow-popups" 
 );
