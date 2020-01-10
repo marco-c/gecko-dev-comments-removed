@@ -210,7 +210,7 @@ class CloneDataPolicy {
  public:
   
 
-  CloneDataPolicy() : sharedArrayBuffer_(true) {}
+  CloneDataPolicy() : sharedArrayBuffer_(false) {}
 
   
   
@@ -220,10 +220,7 @@ class CloneDataPolicy {
   
   
 
-  CloneDataPolicy& denySharedArrayBuffer() {
-    sharedArrayBuffer_ = false;
-    return *this;
-  }
+  void allowSharedMemory() { sharedArrayBuffer_ = true; }
 
   bool isSharedArrayBufferAllowed() const { return sharedArrayBuffer_; }
 };

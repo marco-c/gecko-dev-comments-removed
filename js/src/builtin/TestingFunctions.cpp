@@ -3363,9 +3363,9 @@ bool js::testingFunc_serialize(JSContext* cx, unsigned argc, Value* vp) {
       }
 
       if (StringEqualsAscii(poli, "allow")) {
-        
+        policy.allowSharedMemory();
       } else if (StringEqualsAscii(poli, "deny")) {
-        policy.denySharedArrayBuffer();
+        
       } else {
         JS_ReportErrorASCII(cx, "Invalid policy value for 'SharedArrayBuffer'");
         return false;
