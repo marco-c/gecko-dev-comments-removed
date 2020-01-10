@@ -3261,16 +3261,13 @@ bool nsBlockFrame::IsEmpty() {
 }
 
 bool nsBlockFrame::ShouldApplyBStartMargin(BlockReflowInput& aState,
-                                           nsLineBox* aLine,
-                                           nsIFrame* aChildFrame) {
+                                           nsLineBox* aLine) {
   if (aState.mFlags.mShouldApplyBStartMargin) {
     
     return true;
   }
 
-  if (!aState.IsAdjacentWithTop() ||
-      aChildFrame->StyleBorder()->mBoxDecorationBreak ==
-          StyleBoxDecorationBreak::Clone) {
+  if (!aState.IsAdjacentWithTop()) {
     
     
     
@@ -3330,11 +3327,8 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
   
   
   
-  
-  bool applyBStartMargin = (frame->StyleBorder()->mBoxDecorationBreak ==
-                                StyleBoxDecorationBreak::Clone ||
-                            !frame->GetPrevContinuation()) &&
-                           ShouldApplyBStartMargin(aState, aLine, frame);
+  bool applyBStartMargin =
+      !frame->GetPrevContinuation() && ShouldApplyBStartMargin(aState, aLine);
   if (applyBStartMargin) {
     
     
@@ -3984,7 +3978,7 @@ void nsBlockFrame::ReflowInlineFrames(BlockReflowInput& aState,
 
   
   
-  if (ShouldApplyBStartMargin(aState, aLine, aLine->mFirstChild)) {
+  if (ShouldApplyBStartMargin(aState, aLine)) {
     aState.mBCoord += aState.mPrevBEndMargin.get();
   }
   nsFlowAreaRect floatAvailableSpace = aState.GetFloatAvailableSpace();
@@ -7367,23 +7361,22 @@ void nsBlockFrame::CheckFloats(BlockReflowInput& aState) {
 
 void nsBlockFrame::IsMarginRoot(bool* aBStartMarginRoot,
                                 bool* aBEndMarginRoot) {
+  nsIFrame* parent = GetParent();
   if (!(GetStateBits() & NS_BLOCK_MARGIN_ROOT)) {
-    nsIFrame* parent = GetParent();
     if (!parent || parent->IsFloatContainingBlock()) {
       *aBStartMarginRoot = false;
       *aBEndMarginRoot = false;
       return;
     }
+  }
+
+  if (parent && parent->IsColumnSetFrame()) {
     
     
     
-    if (parent->IsColumnSetFrame()) {
-      MOZ_ASSERT(!StaticPrefs::layout_css_column_span_enabled(),
-                 "Column contents always have BFC set!");
-      *aBStartMarginRoot = GetPrevInFlow() == nullptr;
-      *aBEndMarginRoot = GetNextInFlow() == nullptr;
-      return;
-    }
+    *aBStartMarginRoot = GetPrevInFlow() == nullptr;
+    *aBEndMarginRoot = GetNextInFlow() == nullptr;
+    return;
   }
 
   *aBStartMarginRoot = true;
