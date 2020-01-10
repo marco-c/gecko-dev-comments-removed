@@ -223,11 +223,13 @@ strong {
 }
 
 
-.tooltip-container:-moz-locale-dir(rtl) {
+.tooltip-container:-moz-locale-dir(rtl),
+.tooltip-container:dir(rtl) {
   direction: ltr;
 }
 
-.tooltip-panel:-moz-locale-dir(rtl) {
+.tooltip-panel:-moz-locale-dir(rtl),
+.tooltip-panel:dir(rtl) {
   direction: rtl;
 }
 
