@@ -155,7 +155,7 @@ async function createLocalClientWrapper() {
   const { DebuggerClient } = require("devtools/shared/client/debugger-client");
   const {
     ClientWrapper,
-  } = require("devtools/client/aboutdebugging/src/modules/client-wrapper");
+  } = require("devtools/client/aboutdebugging-new/src/modules/client-wrapper");
 
   DebuggerServer.init();
   DebuggerServer.registerAllActors();

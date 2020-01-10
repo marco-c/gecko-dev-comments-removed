@@ -19,7 +19,9 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-const { RUNTIMES } = require("devtools/client/aboutdebugging/src/constants");
+const {
+  RUNTIMES,
+} = require("devtools/client/aboutdebugging-new/src/constants");
 
 
 
@@ -99,7 +101,7 @@ class Mocks {
   createNetworkRuntime(host, runtimeInfo) {
     const {
       addNetworkLocation,
-    } = require("devtools/client/aboutdebugging/src/modules/network-locations");
+    } = require("devtools/client/aboutdebugging-new/src/modules/network-locations");
     addNetworkLocation(host);
 
     
@@ -119,7 +121,7 @@ class Mocks {
   removeNetworkRuntime(host) {
     const {
       removeNetworkLocation,
-    } = require("devtools/client/aboutdebugging/src/modules/network-locations");
+    } = require("devtools/client/aboutdebugging-new/src/modules/network-locations");
     removeNetworkLocation(host);
 
     delete this._clients[RUNTIMES.NETWORK][host];

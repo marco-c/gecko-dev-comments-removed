@@ -21,10 +21,10 @@ const dom = require("devtools/client/shared/vendor/react-dom-factories");
 
 const {
   MESSAGE_LEVEL,
-} = require("devtools/client/aboutdebugging/src/constants");
+} = require("devtools/client/aboutdebugging-new/src/constants");
 
 const Message = React.createFactory(
-  require("devtools/client/aboutdebugging/src/components/shared/Message")
+  require("devtools/client/aboutdebugging-new/src/components/shared/Message")
 );
 
 describe("Message component", () => {
