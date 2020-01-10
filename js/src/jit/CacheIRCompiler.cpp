@@ -3493,6 +3493,28 @@ bool CacheIRCompiler::emitStoreTypedElement() {
   return true;
 }
 
+static void EmitAllocateBigInt(MacroAssembler& masm, Register result,
+                               Register temp, const LiveRegisterSet& liveSet,
+                               Label* fail) {
+  Label fallback, done;
+  masm.newGCBigInt(result, temp, &fallback);
+  masm.jump(&done);
+  {
+    masm.bind(&fallback);
+    masm.PushRegsInMask(liveSet);
+
+    masm.setupUnalignedABICall(temp);
+    masm.loadJSContext(temp);
+    masm.passABIArg(temp);
+    masm.callWithABI(JS_FUNC_TO_DATA_PTR(void*, jit::AllocateBigIntNoGC));
+    masm.storeCallPointerResult(result);
+
+    masm.PopRegsInMask(liveSet);
+    masm.branchPtr(Assembler::Equal, result, ImmWord(0), fail);
+  }
+  masm.bind(&done);
+}
+
 bool CacheIRCompiler::emitLoadTypedElementResult() {
   JitSpew(JitSpew_Codegen, __FUNCTION__);
   AutoOutputRegister output(*this);
@@ -3502,7 +3524,16 @@ bool CacheIRCompiler::emitLoadTypedElementResult() {
   Scalar::Type type = reader.scalarType();
 
   AutoScratchRegister scratch1(allocator, masm);
+#ifdef JS_PUNBOX64
+  AutoScratchRegister scratch2(allocator, masm);
+#else
+  
+  
   AutoScratchRegisterMaybeOutput scratch2(allocator, masm, output);
+#endif
+
+  
+  MOZ_ASSERT_IF(Scalar::isBigIntType(type), output.hasValue());
 
   if (!output.hasValue()) {
     if (type == Scalar::Float32 || type == Scalar::Float64) {
@@ -3531,13 +3562,48 @@ bool CacheIRCompiler::emitLoadTypedElementResult() {
   masm.spectreBoundsCheck32(index, scratch1, scratch2, failure->label());
 
   
+  Maybe<Register> bigInt;
+  if (Scalar::isBigIntType(type)) {
+    bigInt.emplace(output.valueReg().scratchReg());
+
+    LiveRegisterSet save(GeneralRegisterSet::Volatile(),
+                         liveVolatileFloatRegs());
+    save.takeUnchecked(scratch1);
+    save.takeUnchecked(scratch2);
+    save.takeUnchecked(output);
+
+    EmitAllocateBigInt(masm, *bigInt, scratch1, save, failure->label());
+  }
+
+  
   LoadTypedThingData(masm, layout, obj, scratch1);
 
   
   BaseIndex source(scratch1, index, ScaleFromElemWidth(Scalar::byteSize(type)));
+
   if (output.hasValue()) {
-    masm.loadFromTypedArray(type, source, output.valueReg(),
-                            *allowDoubleResult_, scratch1, failure->label());
+    if (Scalar::isBigIntType(type)) {
+#ifdef JS_PUNBOX64
+      Register64 temp(scratch2);
+#else
+      
+      
+      MOZ_ASSERT(output.valueReg().scratchReg() != output.valueReg().typeReg());
+      masm.push(obj);
+      Register64 temp(output.valueReg().typeReg(), obj);
+#endif
+
+      masm.loadFromTypedBigIntArray(type, source, *bigInt, temp);
+
+#ifndef JS_PUNBOX64
+      masm.pop(obj);
+#endif
+
+      masm.tagValue(JSVAL_TYPE_BIGINT, *bigInt, output.valueReg());
+    } else {
+      masm.loadFromTypedArray(type, source, output.valueReg(),
+                              *allowDoubleResult_, scratch1, failure->label());
+    }
   } else {
     bool needGpr = (type == Scalar::Int8 || type == Scalar::Uint8 ||
                     type == Scalar::Int16 || type == Scalar::Uint16 ||
@@ -3643,6 +3709,28 @@ bool CacheIRCompiler::emitLoadTypedObjectResult() {
   StubFieldOffset offset(reader.stubOffset(), StubField::Type::RawWord);
 
   
+  Maybe<Register> bigInt;
+  if (SimpleTypeDescrKeyIsScalar(typeDescr)) {
+    Scalar::Type type = ScalarTypeFromSimpleTypeDescrKey(typeDescr);
+    if (Scalar::isBigIntType(type)) {
+      FailurePath* failure;
+      if (!addFailurePath(&failure)) {
+        return false;
+      }
+
+      bigInt.emplace(output.valueReg().scratchReg());
+
+      LiveRegisterSet save(GeneralRegisterSet::Volatile(),
+                           liveVolatileFloatRegs());
+      save.takeUnchecked(scratch1);
+      save.takeUnchecked(scratch2);
+      save.takeUnchecked(output);
+
+      EmitAllocateBigInt(masm, *bigInt, scratch1, save, failure->label());
+    }
+  }
+
+  
   LoadTypedThingData(masm, layout, obj, scratch1);
 
   
@@ -3650,8 +3738,27 @@ bool CacheIRCompiler::emitLoadTypedObjectResult() {
 
   if (SimpleTypeDescrKeyIsScalar(typeDescr)) {
     Scalar::Type type = ScalarTypeFromSimpleTypeDescrKey(typeDescr);
-    masm.loadFromTypedArray(type, fieldAddr, output.valueReg(),
-                             true, scratch2, nullptr);
+
+    if (Scalar::isBigIntType(type)) {
+#ifdef JS_PUNBOX64
+      Register64 temp(scratch2);
+#else
+      
+      masm.push(obj);
+      Register64 temp(scratch2, obj);
+#endif
+
+      masm.loadFromTypedBigIntArray(type, fieldAddr, *bigInt, temp);
+
+#ifndef JS_PUNBOX64
+      masm.pop(obj);
+#endif
+
+      masm.tagValue(JSVAL_TYPE_BIGINT, *bigInt, output.valueReg());
+    } else {
+      masm.loadFromTypedArray(type, fieldAddr, output.valueReg(),
+                               true, scratch2, nullptr);
+    }
   } else {
     ReferenceType type = ReferenceTypeFromSimpleTypeDescrKey(typeDescr);
     switch (type) {

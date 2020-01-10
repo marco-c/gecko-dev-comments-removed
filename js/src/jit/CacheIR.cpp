@@ -1694,13 +1694,6 @@ AttachDecision GetPropIRGenerator::tryAttachTypedObject(HandleObject obj,
     return AttachDecision::NoAction;
   }
 
-  if (fieldDescr->is<ScalarTypeDescr>()) {
-    Scalar::Type type = fieldDescr->as<ScalarTypeDescr>().type();
-    if (Scalar::isBigIntType(type)) {
-      return AttachDecision::NoAction;
-    }
-  }
-
   TypedThingLayout layout = GetTypedThingLayout(obj->getClass());
 
   uint32_t fieldOffset = structDescr->fieldOffset(fieldIndex);
@@ -2264,12 +2257,6 @@ AttachDecision GetPropIRGenerator::tryAttachTypedElement(
   
   if (obj->is<TypedArrayObject>() &&
       index >= obj->as<TypedArrayObject>().length()) {
-    return AttachDecision::NoAction;
-  }
-
-  
-  if (obj->is<TypedArrayObject>() &&
-      Scalar::isBigIntType(obj->as<TypedArrayObject>().type())) {
     return AttachDecision::NoAction;
   }
 

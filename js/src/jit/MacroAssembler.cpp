@@ -420,11 +420,6 @@ void MacroAssembler::loadFromTypedArray(Scalar::Type arrayType, const T& src,
         branchTest32(Assembler::Signed, dest.gpr(), dest.gpr(), fail);
       }
       break;
-    case Scalar::BigInt64:
-    case Scalar::BigUint64:
-      
-      jump(fail);
-      break;
     case Scalar::Float32:
       loadFloat32(src, dest.fpu());
       canonicalizeFloat(dest.fpu());
@@ -435,6 +430,8 @@ void MacroAssembler::loadFromTypedArray(Scalar::Type arrayType, const T& src,
         canonicalizeDouble(dest.fpu());
       }
       break;
+    case Scalar::BigInt64:
+    case Scalar::BigUint64:
     default:
       MOZ_CRASH("Invalid typed array type");
   }
@@ -508,12 +505,8 @@ void MacroAssembler::loadFromTypedArray(Scalar::Type arrayType, const T& src,
       boxDouble(fpscratch, dest, fpscratch);
       break;
     }
-    
     case Scalar::BigInt64:
-    case Scalar::BigUint64: {
-      jump(fail);
-      break;
-    }
+    case Scalar::BigUint64:
     default:
       MOZ_CRASH("Invalid typed array type");
   }
@@ -529,6 +522,25 @@ template void MacroAssembler::loadFromTypedArray(Scalar::Type arrayType,
                                                  const ValueOperand& dest,
                                                  bool allowDouble,
                                                  Register temp, Label* fail);
+
+template <typename T>
+void MacroAssembler::loadFromTypedBigIntArray(Scalar::Type arrayType,
+                                              const T& src, Register bigInt,
+                                              Register64 temp) {
+  MOZ_ASSERT(Scalar::isBigIntType(arrayType));
+
+  load64(src, temp);
+  initializeBigInt64(arrayType, bigInt, temp);
+}
+
+template void MacroAssembler::loadFromTypedBigIntArray(Scalar::Type arrayType,
+                                                       const Address& src,
+                                                       Register bigInt,
+                                                       Register64 temp);
+template void MacroAssembler::loadFromTypedBigIntArray(Scalar::Type arrayType,
+                                                       const BaseIndex& src,
+                                                       Register bigInt,
+                                                       Register64 temp);
 
 
 
