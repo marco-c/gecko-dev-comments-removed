@@ -152,6 +152,28 @@ TargetMatrix ViewAs(const gfx::Matrix4x4Typed<SourceMatrixSourceUnits,
                     PixelCastJustification) {
   return TargetMatrix::FromUnknownMatrix(aMatrix.ToUnknownMatrix());
 }
+template <class TargetMatrix, class SourceMatrixSourceUnits,
+          class SourceMatrixTargetUnits>
+Maybe<TargetMatrix> ViewAs(
+    const Maybe<gfx::Matrix4x4Typed<SourceMatrixSourceUnits,
+                                    SourceMatrixTargetUnits>>& aMatrix,
+    PixelCastJustification) {
+  if (aMatrix.isSome()) {
+    return Some(TargetMatrix::FromUnknownMatrix(aMatrix->ToUnknownMatrix()));
+  }
+  return Nothing();
+}
+
+
+
+template <typename SourceUnits, typename TargetUnits>
+Maybe<gfx::Matrix4x4> ToUnknownMatrix(
+    const Maybe<gfx::Matrix4x4Typed<SourceUnits, TargetUnits>>& aMatrix) {
+  if (aMatrix.isSome()) {
+    return Some(aMatrix->ToUnknownMatrix());
+  }
+  return Nothing();
+}
 
 
 
