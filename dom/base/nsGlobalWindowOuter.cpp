@@ -3525,11 +3525,30 @@ void nsGlobalWindowOuter::SetInnerHeightOuter(int32_t aInnerHeight,
 
 nsIntSize nsGlobalWindowOuter::GetOuterSize(CallerType aCallerType,
                                             ErrorResult& aError) {
-  if (nsContentUtils::ResistFingerprinting(aCallerType) ||
-      (mDoc && mDoc->InRDMPane())) {
+  if (nsContentUtils::ResistFingerprinting(aCallerType)) {
     CSSIntSize size;
     aError = GetInnerSize(size);
     return nsIntSize(size.width, size.height);
+  }
+
+  if (mDoc && mDoc->InRDMPane()) {
+    CSSIntSize size;
+    aError = GetInnerSize(size);
+
+    
+    
+    
+    
+    
+    
+    RefPtr<nsPresContext> presContext = mDocShell->GetPresContext();
+
+    if (presContext) {
+      float zoom = presContext->GetDeviceFullZoom();
+      int32_t width = std::round(size.width * zoom);
+      int32_t height = std::round(size.height * zoom);
+      return nsIntSize(width, height);
+    }
   }
 
   nsCOMPtr<nsIBaseWindow> treeOwnerAsWin = GetTreeOwnerWindow();
