@@ -9288,17 +9288,16 @@ nsresult HTMLEditRules::PinSelectionToNewBlock() {
 
   
   
-  
-  
-  RefPtr<nsRange> range = new nsRange(selectionStartPoint.GetContainer());
-  nsresult rv = range->CollapseTo(selectionStartPoint);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  RefPtr<StaticRange> staticRange = StaticRange::Create(
+      selectionStartPoint.ToRawRangeBoundary(),
+      selectionStartPoint.ToRawRangeBoundary(), IgnoreErrors());
+  if (NS_WARN_IF(!staticRange)) {
+    return NS_ERROR_FAILURE;
   }
 
   bool nodeBefore, nodeAfter;
-  rv =
-      RangeUtils::CompareNodeToRange(mNewBlock, range, &nodeBefore, &nodeAfter);
+  nsresult rv = RangeUtils::CompareNodeToRange(mNewBlock, staticRange,
+                                               &nodeBefore, &nodeAfter);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
