@@ -8,11 +8,14 @@
 #define PHC_h
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Maybe.h"
 #include <stdint.h>
 #include <stdlib.h>
 
 namespace mozilla {
 namespace phc {
+
+
 
 
 
@@ -70,8 +73,8 @@ class AddrInfo {
 
   
   
-  StackTrace mAllocStack;
-  StackTrace mFreeStack;
+  mozilla::Maybe<StackTrace> mAllocStack;
+  mozilla::Maybe<StackTrace> mFreeStack;
 
   
   AddrInfo()

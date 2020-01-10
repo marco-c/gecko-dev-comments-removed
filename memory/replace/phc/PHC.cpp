@@ -137,21 +137,13 @@ class InfallibleAllocPolicy {
 
 class StackTrace : public phc::StackTrace {
  public:
-  StackTrace() : phc::StackTrace(), mSkipped(false) {}
-
-  bool IsEmpty() const { return mLength == 0 && !mSkipped; }
+  StackTrace() : phc::StackTrace() {}
 
   void Clear() {
     mLength = 0;
-    mSkipped = false;
   }
 
   void Fill();
-
-  void FillSkipped() {
-    mLength = 0;
-    mSkipped = true;
-  }
 
  private:
   static void StackWalkCallback(uint32_t aFrameNumber, void* aPc, void* aSp,
@@ -162,11 +154,6 @@ class StackTrace : public phc::StackTrace {
     st->mLength++;
     MOZ_ASSERT(st->mLength == aFrameNumber);
   }
-
-  
-  
-  
-  bool mSkipped;
 };
 
 
@@ -190,7 +177,6 @@ class StackTrace : public phc::StackTrace {
 
 void StackTrace::Fill() {
   mLength = 0;
-  mSkipped = false;
 
 #if defined(XP_WIN) && defined(_M_IX86)
   
@@ -561,13 +547,13 @@ class GMut {
     
     
     
-    StackTrace mAllocStack;
+    Maybe<StackTrace> mAllocStack;
 
     
     
     
     
-    StackTrace mFreeStack;
+    Maybe<StackTrace> mFreeStack;
 
     
     
@@ -620,8 +606,8 @@ class GMut {
     page.mState = PageState::InUse;
     page.mArenaId = aArenaId;
     page.mUsableSize = aUsableSize;
-    page.mAllocStack = aAllocStack;
-    page.mFreeStack.Clear();
+    page.mAllocStack = Some(aAllocStack);
+    page.mFreeStack = Nothing();
     page.mReuseTime = kMaxTime;
   }
 
@@ -641,7 +627,7 @@ class GMut {
     page.mUsableSize = aNewUsableSize;
     
     
-    page.mAllocStack = aAllocStack;
+    page.mAllocStack = Some(aAllocStack);
     
     
   };
@@ -667,7 +653,7 @@ class GMut {
 
     
 
-    page.mFreeStack = aFreeStack;
+    page.mFreeStack = Some(aFreeStack);
     page.mReuseTime = GAtomic::Now() + aReuseDelay;
   }
 
@@ -776,8 +762,8 @@ class GMut {
     MOZ_ASSERT(aPage.mState == PageState::InUse);
     
     MOZ_ASSERT(aPage.mUsableSize > 0);
-    MOZ_ASSERT(!aPage.mAllocStack.IsEmpty());
-    MOZ_ASSERT(aPage.mFreeStack.IsEmpty());
+    MOZ_ASSERT(aPage.mAllocStack.isSome());
+    MOZ_ASSERT(aPage.mFreeStack.isNothing());
     MOZ_ASSERT(aPage.mReuseTime == kMaxTime);
   }
 
@@ -789,8 +775,8 @@ class GMut {
     MOZ_ASSERT(isFresh || aPage.mState == PageState::Freed);
     MOZ_ASSERT_IF(isFresh, aPage.mArenaId == Nothing());
     MOZ_ASSERT(isFresh == (aPage.mUsableSize == 0));
-    MOZ_ASSERT(isFresh == (aPage.mAllocStack.IsEmpty()));
-    MOZ_ASSERT(isFresh == (aPage.mFreeStack.IsEmpty()));
+    MOZ_ASSERT(isFresh == (aPage.mAllocStack.isNothing()));
+    MOZ_ASSERT(isFresh == (aPage.mFreeStack.isNothing()));
     MOZ_ASSERT(aPage.mReuseTime != kMaxTime);
 #endif
   }
@@ -1024,7 +1010,6 @@ MOZ_ALWAYS_INLINE static void* PageRealloc(const Maybe<arena_id_t>& aArenaId,
   StackTrace stack;
   if (GTls::IsDisabledOnCurrentThread()) {
     
-    stack.FillSkipped();
   } else {
     
     disable.emplace();
@@ -1098,7 +1083,6 @@ MOZ_ALWAYS_INLINE static void PageFree(const Maybe<arena_id_t>& aArenaId,
   StackTrace freeStack;
   if (GTls::IsDisabledOnCurrentThread()) {
     
-    freeStack.FillSkipped();
   } else {
     
     disable.emplace();
@@ -1153,7 +1137,7 @@ static size_t replace_malloc_usable_size(usable_ptr_t aPtr) {
   MutexAutoLock lock(GMut::sMutex);
 
   
-  gMut->EnsureInUse(lock, aPtr, *i);
+  gMut->EnsureInUse(lock, const_cast<void*>(aPtr), *i);
 
   return gMut->PageUsableSize(lock, *i);
 }

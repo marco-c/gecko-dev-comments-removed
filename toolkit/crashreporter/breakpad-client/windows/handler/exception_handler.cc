@@ -39,6 +39,10 @@
 #include "windows/handler/exception_handler.h"
 #include "common/windows/guid_string.h"
 
+#ifdef MOZ_PHC
+#include "replace_malloc_bridge.h"
+#endif
+
 namespace google_breakpad {
 
 
@@ -823,6 +827,7 @@ bool ExceptionHandler::WriteMinidumpForChild(HANDLE child,
   CloseHandle(child_thread_handle);
 
   if (callback) {
+    
     success = callback(handler.dump_path_c_, handler.next_minidump_id_c_,
                        callback_context, NULL, NULL, nullptr, success);
   }
@@ -830,17 +835,37 @@ bool ExceptionHandler::WriteMinidumpForChild(HANDLE child,
   return success;
 }
 
+#ifdef MOZ_PHC
+static void GetPHCAddrInfo(EXCEPTION_POINTERS* exinfo,
+                           mozilla::phc::AddrInfo* addr_info) {
+  
+  PEXCEPTION_RECORD rec = exinfo->ExceptionRecord;
+  if (rec->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
+    
+    
+    
+    char* crashAddr = reinterpret_cast<char*>(rec->ExceptionInformation[1]);
+    ReplaceMalloc::IsPHCAllocation(crashAddr, addr_info);
+  }
+}
+#endif
+
 bool ExceptionHandler::WriteMinidumpWithException(
     DWORD requesting_thread_id,
     EXCEPTION_POINTERS* exinfo,
     MDRawAssertionInfo* assertion) {
+    mozilla::phc::AddrInfo addr_info;
+#ifdef MOZ_PHC
+    GetPHCAddrInfo(exinfo, &addr_info);
+#endif
+
   
   
   
   
   
   
-  if (filter_ && !filter_(callback_context_, exinfo, nullptr, assertion)) {
+  if (filter_ && !filter_(callback_context_, exinfo, &addr_info, assertion)) {
     return false;
   }
 
@@ -861,7 +886,7 @@ bool ExceptionHandler::WriteMinidumpWithException(
     
     
     success = callback_(dump_path_c_, next_minidump_id_c_, callback_context_,
-                        exinfo, assertion, nullptr, success);
+                        exinfo, assertion, &addr_info, success);
   }
 
   return success;
