@@ -823,7 +823,7 @@ class HTMLEditor final : public TextEditor,
                                                           int32_t aChange,
                                                           int32_t* aReturn);
 
-  virtual bool IsBlockNode(nsINode* aNode) override;
+  virtual bool IsBlockNode(nsINode* aNode) const override;
   using EditorBase::IsBlockNode;
 
   
@@ -835,7 +835,7 @@ class HTMLEditor final : public TextEditor,
   
 
 
-  virtual bool IsContainer(nsINode* aNode) override;
+  virtual bool IsContainer(nsINode* aNode) const override;
 
   
 
@@ -846,7 +846,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  bool IsInVisibleTextFrames(dom::Text& aText);
+  bool IsInVisibleTextFrames(dom::Text& aText) const;
 
   
 
@@ -893,9 +893,10 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  bool IsTextPropertySetByContent(nsINode* aNode, nsAtom* aProperty,
-                                  nsAtom* aAttribute, const nsAString* aValue,
-                                  nsAString* outValue = nullptr);
+  static bool IsTextPropertySetByContent(nsINode* aNode, nsAtom* aProperty,
+                                         nsAtom* aAttribute,
+                                         const nsAString* aValue,
+                                         nsAString* outValue = nullptr);
 
   static dom::Element* GetLinkElement(nsINode* aNode);
 

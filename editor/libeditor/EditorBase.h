@@ -1467,7 +1467,7 @@ class EditorBase : public nsIEditor,
 
   MOZ_CAN_RUN_SCRIPT nsresult DoTransactionInternal(nsITransaction* aTxn);
 
-  virtual bool IsBlockNode(nsINode* aNode);
+  virtual bool IsBlockNode(nsINode* aNode) const;
 
   
 
@@ -1591,14 +1591,14 @@ class EditorBase : public nsIEditor,
 
 
   nsIContent* GetRightmostChild(nsINode* aCurrentNode,
-                                bool bNoBlockCrossing = false);
+                                bool bNoBlockCrossing = false) const;
 
   
 
 
 
   nsIContent* GetLeftmostChild(nsINode* aCurrentNode,
-                               bool bNoBlockCrossing = false);
+                               bool bNoBlockCrossing = false) const;
 
   
 
@@ -1623,12 +1623,12 @@ class EditorBase : public nsIEditor,
   
 
 
-  virtual bool IsContainer(nsINode* aNode);
+  virtual bool IsContainer(nsINode* aNode) const;
 
   
 
 
-  bool IsEditable(nsINode* aNode) {
+  bool IsEditable(nsINode* aNode) const {
     if (NS_WARN_IF(!aNode)) {
       return false;
     }
