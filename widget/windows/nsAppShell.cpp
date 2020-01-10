@@ -34,12 +34,6 @@
 #  include "mozilla/a11y/Platform.h"
 #endif  
 
-
-
-
-#define MOZ_WM_PRINTER_PROPERTIES_COMPLETION 0x5b7a
-#define MOZ_WM_PRINTER_PROPERTIES_FAILURE 0x5b7f
-
 using namespace mozilla;
 using namespace mozilla::widget;
 
@@ -528,14 +522,18 @@ bool nsAppShell::ProcessNextNativeEvent(bool mayWait) {
           continue;  
         }
 
+#if defined(_X86_)
         
         
         
-        if (msg.message == MOZ_WM_PRINTER_PROPERTIES_COMPLETION ||
-            msg.message == MOZ_WM_PRINTER_PROPERTIES_FAILURE) {
+        
+        
+        if (msg.message == 0x5b7a || msg.message == 0x5b7f ||
+            msg.message == 0x5b80 || msg.message == 0x5b81) {
           mMsgsToRepost.push_back(msg);
           continue;
         }
+#endif
 
         ::TranslateMessage(&msg);
         ::DispatchMessageW(&msg);
