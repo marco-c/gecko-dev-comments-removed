@@ -36,6 +36,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/net/NeckoMessageUtils.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_permissions.h"
 #include "nsReadLine.h"
 #include "mozilla/Telemetry.h"
 #include "nsIConsoleService.h"
@@ -154,16 +155,21 @@ bool IsPreloadPermission(const nsACString& aType) {
   return false;
 }
 
+
+
+void MaybeStripOAs(OriginAttributes& aOriginAttributes) {
+  if (!StaticPrefs::permissions_isolateBy_privateBrowsing()) {
+    aOriginAttributes.mPrivateBrowsingId = 0;
+  }
+
+  if (!StaticPrefs::permissions_isolateBy_userContext()) {
+    aOriginAttributes.StripAttributes(OriginAttributes::STRIP_USER_CONTEXT_ID);
+  }
+}
+
 void OriginAppendOASuffix(OriginAttributes aOriginAttributes,
                           nsACString& aOrigin) {
-  
-  
-  
-  aOriginAttributes.mPrivateBrowsingId = 0;
-
-  
-  aOriginAttributes.StripAttributes(
-      mozilla::OriginAttributes::STRIP_USER_CONTEXT_ID);
+  MaybeStripOAs(aOriginAttributes);
 
   nsAutoCString oaSuffix;
   aOriginAttributes.CreateSuffix(oaSuffix);
@@ -214,13 +220,7 @@ nsresult GetPrincipalFromOrigin(const nsACString& aOrigin,
     return NS_ERROR_FAILURE;
   }
 
-  
-  
-  
-  attrs.mPrivateBrowsingId = 0;
-
-  
-  attrs.StripAttributes(mozilla::OriginAttributes::STRIP_USER_CONTEXT_ID);
+  MaybeStripOAs(attrs);
 
   nsCOMPtr<nsIURI> uri;
   nsresult rv = NS_NewURI(getter_AddRefs(uri), originNoSuffix);
@@ -3214,13 +3214,7 @@ void nsPermissionManager::GetKeyForOrigin(const nsACString& aOrigin,
     return;
   }
 
-  
-  
-  
-  attrs.mPrivateBrowsingId = 0;
-
-  
-  attrs.StripAttributes(OriginAttributes::STRIP_USER_CONTEXT_ID);
+  MaybeStripOAs(attrs);
 
 #ifdef DEBUG
   
