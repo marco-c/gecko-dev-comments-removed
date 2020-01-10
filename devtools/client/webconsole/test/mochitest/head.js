@@ -1376,3 +1376,17 @@ async function checkMessageStack(hud, text, frameLines) {
        `Found line ${frameLines[i]} for frame #${i}`);
   }
 }
+
+
+
+
+
+
+function reloadPage() {
+  const onLoad = BrowserTestUtils.waitForContentEvent(
+    gBrowser.selectedBrowser, "load", true);
+  ContentTask.spawn(gBrowser.selectedBrowser, null, () => {
+    content.location.reload();
+  });
+  return onLoad;
+}
