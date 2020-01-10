@@ -754,7 +754,7 @@ HTMLTooltip.prototype = {
 
   async hide({ fromMouseup = false } = {}) {
     
-    if (Services.prefs.getBoolPref("ui.popup.disable_autohide", false)) {
+    if (Services.prefs.getBoolPref("devtools.popup.disable_autohide", false)) {
       return;
     }
 
