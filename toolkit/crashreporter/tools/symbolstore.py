@@ -253,7 +253,7 @@ class GitFileInfo(VCSFileInfo):
 vcsFileInfoCache = {}
 
 if platform.system() == 'Windows':
-    def normpath(path):
+    def realpath(path):
         '''
         Normalize a path using `GetFinalPathNameByHandleW` to get the
         path with all components in the case they exist in on-disk, so
@@ -298,7 +298,7 @@ if platform.system() == 'Windows':
         return result
 else:
     
-    normpath = os.path.normpath
+    realpath = os.path.realpath
 
 def IsInDir(file, dir):
     
@@ -382,8 +382,8 @@ def make_file_mapping(install_manifests):
         for dst, src in reg:
             if hasattr(src, 'path'):
                 
-                abs_dest = normpath(os.path.join(destination, dst))
-                file_mapping[abs_dest] = normpath(src.path)
+                abs_dest = realpath(os.path.join(destination, dst))
+                file_mapping[abs_dest] = realpath(src.path)
     return file_mapping
 
 @memoize
@@ -452,7 +452,7 @@ class Dumper:
         else:
             self.archs = ['-a %s' % a for a in archs.split()]
         
-        self.srcdirs = [normpath(s) for s in srcdirs]
+        self.srcdirs = [realpath(s) for s in srcdirs]
         self.copy_debug = copy_debug
         self.vcsinfo = vcsinfo
         self.srcsrv = srcsrv
@@ -551,7 +551,7 @@ class Dumper:
                         (x, index, filename) = line.rstrip().split(None, 2)
                         
                         sourcepath = filename
-                        filename = normpath(filename)
+                        filename = realpath(filename)
                         if filename in self.file_mapping:
                             filename = self.file_mapping[filename]
                         if self.vcsinfo:
@@ -959,7 +959,7 @@ to canonical locations in the source repository. Specify
         exit(1)
     file_mapping = make_file_mapping(manifests)
     
-    generated_files = {normpath(os.path.join(buildconfig.topobjdir, f)): f
+    generated_files = {realpath(os.path.join(buildconfig.topobjdir, f)): f
                        for (f, _) in get_generated_sources()}
     _, bucket = get_s3_region_and_bucket()
     dumper = GetPlatformSpecificDumper(dump_syms=args[0],
