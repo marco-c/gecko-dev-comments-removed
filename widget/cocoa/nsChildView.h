@@ -159,6 +159,7 @@ class WidgetRenderingContext;
   
   
   
+  
   BOOL mNeedsGLUpdate;
 
   
@@ -168,6 +169,7 @@ class WidgetRenderingContext;
   
   nsIDragService* mDragService;
 
+  
   
   NSOpenGLContext* mGLContext;
 
@@ -202,6 +204,7 @@ class WidgetRenderingContext;
   
   BOOL mUsingOMTCompositor;
 
+  
   
   
   CGImageRef mTopLeftCornerMask;
@@ -652,12 +655,14 @@ class nsChildView final : public nsBaseWidget {
 
   
   
+  
   mozilla::UniquePtr<GLPresenter> mGLPresenter;
 
   mozilla::UniquePtr<mozilla::VibrancyManager> mVibrancyManager;
   RefPtr<mozilla::SwipeTracker> mSwipeTracker;
   mozilla::UniquePtr<mozilla::SwipeEventQueue> mSwipeEventQueue;
 
+  
   
   RefPtr<mozilla::gfx::DrawTarget> mBackingSurface;
 
