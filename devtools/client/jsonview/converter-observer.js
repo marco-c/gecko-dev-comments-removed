@@ -14,20 +14,14 @@ const { XPCOMUtils } = ChromeUtils.import(
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
-XPCOMUtils.defineLazyGetter(this, "devtools", function() {
-  
-  const { devtools } = ChromeUtils.import(
+XPCOMUtils.defineLazyGetter(this, "JsonViewService", function() {
+  const { require } = ChromeUtils.import(
     "resource://devtools/shared/Loader.jsm"
   );
-  return devtools;
-});
-
-
-XPCOMUtils.defineLazyGetter(this, "JsonViewService", function() {
-  
-  const { JsonViewService } = devtools.require(
-    "devtools/client/jsonview/converter-child"
-  );
+  const {
+    
+    JsonViewService,
+  } = require("devtools/client/jsonview/converter-child");
   return JsonViewService;
 });
 
