@@ -261,6 +261,14 @@ class WidgetRenderingContext;
 - (bool)preRender:(NSOpenGLContext*)aGLContext;
 - (void)postRender:(NSOpenGLContext*)aGLContext;
 
+
+
+
+
+
+
+- (void)ensureNextCompositeIsAtomicWithMainThreadPaint;
+
 - (NSView*)vibrancyViewsContainer;
 - (NSView*)nonDraggableViewsContainer;
 - (NSView*)pixelHostingView;
