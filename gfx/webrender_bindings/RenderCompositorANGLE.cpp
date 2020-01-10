@@ -386,6 +386,11 @@ bool RenderCompositorANGLE::BeginFrame() {
           mSwapChain = swapChain1;
           mUseAlpha = useAlpha;
           mDCLayerTree->SetDefaultSwapChain(swapChain1);
+          
+          
+          if (useAlpha) {
+            mFullRender = true;
+          }
         } else {
           gfxCriticalNote << "Failed to re-create SwapChain";
           RenderThread::Get()->HandleWebRenderError(
@@ -433,7 +438,13 @@ RenderedFrameId RenderCompositorANGLE::EndFrame(
 
     const LayoutDeviceIntSize& bufferSize = mBufferSize.ref();
 
-    if (mUsePartialPresent) {
+    
+    
+    
+    
+    MOZ_ASSERT_IF(mUsePartialPresent && mUseAlpha, mFullRender);
+
+    if (mUsePartialPresent && !mUseAlpha) {
       
       mFullRender = false;
       
