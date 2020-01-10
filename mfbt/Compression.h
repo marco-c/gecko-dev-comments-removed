@@ -9,14 +9,8 @@
 #ifndef mozilla_Compression_h_
 #define mozilla_Compression_h_
 
-#include "mozilla/AllocPolicy.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Types.h"
-#include "mozilla/Result.h"
-#include "mozilla/Span.h"
-
-struct LZ4F_cctx_s;  
-struct LZ4F_dctx_s;  
 
 namespace mozilla {
 namespace Compression {
@@ -141,87 +135,6 @@ class LZ4 {
     MOZ_ASSERT(max > aInputSize);
     return max;
   }
-};
-
-
-
-
-
-
-template<class AllocPolicy = MallocAllocPolicy>
-class LZ4FrameCompressionContext final : private AllocPolicy {
- public:
-  MFBT_API LZ4FrameCompressionContext(int aCompressionLevel, size_t aMaxSrcSize,
-                             bool aChecksum, bool aStableSrc = false);
-  MFBT_API ~LZ4FrameCompressionContext();
-
-
-  
-
-
-
-
-
-  MFBT_API Result<Span<const char>, size_t> BeginCompressing();
-
-  
-
-
-
-
-
-
-  MFBT_API Result<Span<const char>, size_t> ContinueCompressing(Span<const char> aInput);
-
-  
-
-
-
-
-
-  MFBT_API Result<Span<const char>, size_t> EndCompressing();
-
- private:
-  LZ4F_cctx_s* mContext;
-  int mCompressionLevel;
-  bool mGenerateChecksum;
-  bool mStableSrc;
-  size_t mMaxSrcSize;
-  size_t mWriteBufLen;
-  char* mWriteBuffer;
-};
-
-struct LZ4FrameDecompressionResult {
-  size_t mSizeRead;
-  size_t mSizeWritten;
-  bool mFinished;
-};
-
-
-
-
-
-
-class LZ4FrameDecompressionContext final {
- public:
-  explicit MFBT_API LZ4FrameDecompressionContext(bool aStableDest = false);
-  MFBT_API ~LZ4FrameDecompressionContext();
-
-  
-
-
-
-
-
-
-
-
-  MFBT_API Result<LZ4FrameDecompressionResult, size_t> Decompress(
-      Span<char> aOutput, Span<const char> aInput);
-
- private:
-  LZ4F_dctx_s* mContext;
-  bool mStableDest;
 };
 
 } 
