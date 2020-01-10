@@ -38,7 +38,18 @@ from __future__ import absolute_import, unicode_literals, print_function
 
 import subprocess
 import sys
-from ctypes import c_void_p, POINTER, sizeof, Structure, windll, WinError, WINFUNCTYPE, c_ulong
+from ctypes import (
+    cast,
+    create_unicode_buffer,
+    c_ulong,
+    c_void_p,
+    POINTER,
+    sizeof,
+    Structure,
+    windll,
+    WinError,
+    WINFUNCTYPE,
+)
 from ctypes.wintypes import BOOL, BYTE, DWORD, HANDLE, LPCWSTR, LPWSTR, UINT, WORD
 
 from .qijo import QueryInformationJobObject
@@ -163,8 +174,13 @@ class EnvironmentBlock:
                 if isinstance(v, bytes):
                     v = v.decode(fs_encoding, 'replace')
                 values.append("{}={}".format(k, v))
-            values.append("")
-            self._as_parameter_ = LPCWSTR("\0".join(values))
+
+            
+            
+            
+            
+            values = create_unicode_buffer("\0".join(values) + "\0")
+            self._as_parameter_ = cast(values, LPCWSTR)
 
 
 
