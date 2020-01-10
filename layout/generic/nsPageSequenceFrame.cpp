@@ -558,6 +558,14 @@ nsresult nsPageSequenceFrame::PrePrintNextPage(nsITimerCallback* aCallback,
         ctx->InitializeWithDrawTarget(nullptr, WrapNotNull(canvasTarget));
 
         
+        
+        
+        
+        
+        
+        
+        
+        
         AutoWeakFrame weakFrame = this;
         canvas->DispatchPrintCallback(aCallback);
         NS_ENSURE_STATE(weakFrame.IsAlive());
