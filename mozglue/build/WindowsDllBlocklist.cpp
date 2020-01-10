@@ -12,6 +12,7 @@
 #pragma warning(pop)
 
 #include "Authenticode.h"
+#include "BaseProfiler.h"
 #include "CrashAnnotations.h"
 #include "MozglueUtils.h"
 #include "UntrustedDllsHandler.h"
@@ -661,7 +662,24 @@ MFBT_API void DllBlocklist_Initialize(uint32_t aInitFlags) {
 
   
   
-  if (GetModuleHandleA("user32.dll")) {
+  
+  
+  
+  
+  
+  
+  
+  const bool skipUser32Check =
+      (sInitFlags & eDllBlocklistInitFlagWasBootstrapped)
+#ifdef MOZ_BASE_PROFILER
+      || (!IsWin10AnniversaryUpdateOrLater()
+          && baseprofiler::profiler_is_active())
+#endif
+      ;
+
+  
+  
+  if (!skipUser32Check && GetModuleHandleW(L"user32.dll")) {
     sUser32BeforeBlocklist = true;
 #ifdef DEBUG
     printf_stderr("DLL blocklist was unable to intercept AppInit DLLs.\n");
