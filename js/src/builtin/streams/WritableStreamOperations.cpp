@@ -29,6 +29,7 @@ using js::WritableStream;
 
 using JS::Handle;
 using JS::ObjectValue;
+using JS::RejectPromise;
 using JS::ResolvePromise;
 using JS::Rooted;
 using JS::Value;
@@ -230,6 +231,36 @@ MOZ_MUST_USE bool js::WritableStreamFinishInFlightWrite(
   MOZ_ASSERT(!unwrappedStream->haveInFlightWriteRequest());
 
   return true;
+}
+
+
+
+
+
+MOZ_MUST_USE bool js::WritableStreamFinishInFlightWriteWithError(
+    JSContext* cx, Handle<WritableStream*> unwrappedStream,
+    Handle<Value> error) {
+  
+  MOZ_ASSERT(unwrappedStream->haveInFlightWriteRequest());
+
+  
+  Rooted<JSObject*> writeRequest(
+      cx, &unwrappedStream->inFlightWriteRequest().toObject());
+  if (!cx->compartment()->wrap(cx, &writeRequest)) {
+    return false;
+  }
+  if (!RejectPromise(cx, writeRequest, error)) {
+    return false;
+  }
+
+  
+  unwrappedStream->clearInFlightWriteRequest(cx);
+
+  
+  MOZ_ASSERT(unwrappedStream->writable() ^ unwrappedStream->erroring());
+
+  
+  return WritableStreamDealWithRejection(cx, unwrappedStream, error);
 }
 
 
