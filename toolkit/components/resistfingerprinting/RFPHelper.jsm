@@ -179,6 +179,7 @@ class _RFPHelper {
       case 0: 
       
       
+      
       case 1: 
         if (
           Services.prefs.prefHasUserValue("javascript.use_us_english_locale")
