@@ -6724,11 +6724,6 @@ void nsTextFrame::PaintText(const PaintTextParams& aParams,
 
   
   
-  Range glyphRange;
-  if (aIsSelected) {
-    provider.InitializeForDisplay(true);
-    glyphRange = ComputeTransformedRange(provider);
-  }
   provider.InitializeForDisplay(!aIsSelected);
 
   const bool reversed = mTextRun->IsInlineReversed();
@@ -6785,7 +6780,7 @@ void nsTextFrame::PaintText(const PaintTextParams& aParams,
     params.provider = &provider;
     params.contentRange = contentRange;
     params.textPaintStyle = &textPaintStyle;
-    params.glyphRange = glyphRange;
+    params.glyphRange = range;
     if (PaintTextWithSelection(params, clipEdges)) {
       return;
     }
