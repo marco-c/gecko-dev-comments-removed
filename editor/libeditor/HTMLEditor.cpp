@@ -4151,25 +4151,28 @@ nsresult HTMLEditor::SetCSSBackgroundColorWithTransaction(
   CommitComposition();
 
   
-  RefPtr<TextEditRules> rules(mRules);
+  if (IsPlaintextEditor()) {
+    return NS_OK;
+  }
 
-  bool isCollapsed = SelectionRefPtr()->IsCollapsed();
+  EditActionResult result = CanHandleHTMLEditSubAction();
+  if (NS_WARN_IF(result.Failed()) || result.Canceled()) {
+    return result.Rv();
+  }
+
+  bool selectionIsCollapsed = SelectionRefPtr()->IsCollapsed();
 
   AutoPlaceholderBatch treatAsOneTransaction(*this);
   AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertElement, nsIEditor::eNext);
-  AutoSelectionRestorer restoreSelectionLater(*this);
-  AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
-  
-  
-  bool cancel, handled;
-  EditSubActionInfo subActionInfo(EditSubAction::eSetTextProperty);
-  nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  if (!cancel && !handled) {
+  {
+    AutoSelectionRestorer restoreSelectionLater(*this);
+    AutoTransactionsConserveSelection dontChangeMySelection(*this);
+
+    
+    
+    
     
     for (uint32_t i = 0; i < SelectionRefPtr()->RangeCount(); i++) {
       RefPtr<nsRange> range = SelectionRefPtr()->GetRangeAt(i);
@@ -4177,115 +4180,131 @@ nsresult HTMLEditor::SetCSSBackgroundColorWithTransaction(
         return NS_ERROR_FAILURE;
       }
 
-      nsCOMPtr<Element> cachedBlockParent;
+      EditorDOMPoint startOfRange(range->StartRef());
+      EditorDOMPoint endOfRange(range->EndRef());
+      if (NS_WARN_IF(!startOfRange.IsSet()) ||
+          NS_WARN_IF(!endOfRange.IsSet())) {
+        continue;
+      }
 
-      
-      nsCOMPtr<nsINode> startNode = range->GetStartContainer();
-      int32_t startOffset = range->StartOffset();
-      nsCOMPtr<nsINode> endNode = range->GetEndContainer();
-      int32_t endOffset = range->EndOffset();
-      if (startNode == endNode && IsTextNode(startNode)) {
-        
-        nsCOMPtr<Element> blockParent = GetBlockNodeParent(startNode);
-        
-        if (blockParent && cachedBlockParent != blockParent) {
-          cachedBlockParent = blockParent;
-          mCSSEditUtils->SetCSSEquivalentToHTMLStyle(
-              blockParent, nullptr, nsGkAtoms::bgcolor, &aColor, false);
-        }
-      } else if (startNode == endNode &&
-                 startNode->IsHTMLElement(nsGkAtoms::body) && isCollapsed) {
-        
-        mCSSEditUtils->SetCSSEquivalentToHTMLStyle(
-            MOZ_KnownLive(startNode->AsElement()), nullptr, nsGkAtoms::bgcolor,
-            &aColor, false);
-      } else if (startNode == endNode && (endOffset - startOffset == 1 ||
-                                          (!startOffset && !endOffset))) {
+      if (startOfRange.GetContainer() == endOfRange.GetContainer()) {
         
         
-        nsCOMPtr<nsIContent> selectedNode = range->GetChildAtStartOffset();
-        nsCOMPtr<Element> blockParent = GetBlock(*selectedNode);
-        if (blockParent && cachedBlockParent != blockParent) {
-          cachedBlockParent = blockParent;
-          mCSSEditUtils->SetCSSEquivalentToHTMLStyle(
-              blockParent, nullptr, nsGkAtoms::bgcolor, &aColor, false);
-        }
-      } else {
-        
-        
-        
-        
-        
-
-        
-        
-        
-        
-
-        nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
-        nsCOMPtr<nsINode> node;
-
-        
-        ContentSubtreeIterator subtreeIter;
-        rv = subtreeIter.Init(range);
-        
-        
-        
-        if (NS_SUCCEEDED(rv)) {
-          for (; !subtreeIter.IsDone(); subtreeIter.Next()) {
-            node = subtreeIter.GetCurrentNode();
-            NS_ENSURE_TRUE(node, NS_ERROR_FAILURE);
-
-            if (IsEditable(node)) {
-              arrayOfNodes.AppendElement(*node);
+        if (startOfRange.IsInTextNode()) {
+          if (RefPtr<Element> blockParent =
+                  GetBlockNodeParent(startOfRange.GetContainer())) {
+            mCSSEditUtils->SetCSSEquivalentToHTMLStyle(
+                blockParent, nullptr, nsGkAtoms::bgcolor, &aColor, false);
+            if (NS_WARN_IF(Destroyed())) {
+              return NS_ERROR_EDITOR_DESTROYED;
             }
           }
-        }
-        
-        
-        
-        if (IsTextNode(startNode) && IsEditable(startNode)) {
-          nsCOMPtr<Element> blockParent = GetBlockNodeParent(startNode);
-          if (blockParent && cachedBlockParent != blockParent) {
-            cachedBlockParent = blockParent;
-            mCSSEditUtils->SetCSSEquivalentToHTMLStyle(
-                blockParent, nullptr, nsGkAtoms::bgcolor, &aColor, false);
-          }
+          continue;
         }
 
         
-        for (auto& node : arrayOfNodes) {
-          nsCOMPtr<Element> blockParent = GetBlock(node);
-          if (blockParent && cachedBlockParent != blockParent) {
-            cachedBlockParent = blockParent;
+        
+        
+        
+        if (startOfRange.GetContainer()->IsHTMLElement(nsGkAtoms::body) &&
+            selectionIsCollapsed) {
+          mCSSEditUtils->SetCSSEquivalentToHTMLStyle(
+              MOZ_KnownLive(startOfRange.GetContainerAsElement()), nullptr,
+              nsGkAtoms::bgcolor, &aColor, false);
+          if (NS_WARN_IF(Destroyed())) {
+            return NS_ERROR_EDITOR_DESTROYED;
+          }
+          continue;
+        }
+        
+        
+        if ((startOfRange.IsStartOfContainer() &&
+             endOfRange.IsStartOfContainer()) ||
+            startOfRange.Offset() + 1 == endOfRange.Offset()) {
+          if (NS_WARN_IF(startOfRange.IsInDataNode())) {
+            continue;
+          }
+          if (RefPtr<Element> blockParent =
+                  GetBlock(*startOfRange.GetChild())) {
             mCSSEditUtils->SetCSSEquivalentToHTMLStyle(
                 blockParent, nullptr, nsGkAtoms::bgcolor, &aColor, false);
+            if (NS_WARN_IF(Destroyed())) {
+              return NS_ERROR_EDITOR_DESTROYED;
+            }
+          }
+          continue;
+        }
+      }
+
+      
+      AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfContents;
+      ContentSubtreeIterator subtreeIter;
+      
+      
+      
+      if (NS_SUCCEEDED(subtreeIter.Init(range))) {
+        for (; !subtreeIter.IsDone(); subtreeIter.Next()) {
+          nsINode* node = subtreeIter.GetCurrentNode();
+          if (NS_WARN_IF(!node)) {
+            return NS_ERROR_FAILURE;
+          }
+          if (node->IsContent() && IsEditable(node)) {
+            arrayOfContents.AppendElement(*node->AsContent());
           }
         }
-        arrayOfNodes.Clear();
+      }
 
-        
-        
-        
-        if (IsTextNode(endNode) && IsEditable(endNode)) {
-          nsCOMPtr<Element> blockParent = GetBlockNodeParent(endNode);
-          if (blockParent && cachedBlockParent != blockParent) {
-            cachedBlockParent = blockParent;
-            mCSSEditUtils->SetCSSEquivalentToHTMLStyle(
-                blockParent, nullptr, nsGkAtoms::bgcolor, &aColor, false);
+      
+      RefPtr<Element> handledBlockParent;
+
+      
+      
+      if (startOfRange.IsInTextNode() &&
+          IsEditable(startOfRange.GetContainer())) {
+        RefPtr<Element> blockParent =
+            GetBlockNodeParent(startOfRange.GetContainer());
+        if (blockParent && handledBlockParent != blockParent) {
+          handledBlockParent = blockParent;
+          mCSSEditUtils->SetCSSEquivalentToHTMLStyle(
+              blockParent, nullptr, nsGkAtoms::bgcolor, &aColor, false);
+          if (NS_WARN_IF(Destroyed())) {
+            return NS_ERROR_EDITOR_DESTROYED;
+          }
+        }
+      }
+
+      
+      
+      for (auto& content : arrayOfContents) {
+        RefPtr<Element> blockParent = GetBlock(content);
+        if (blockParent && handledBlockParent != blockParent) {
+          handledBlockParent = blockParent;
+          mCSSEditUtils->SetCSSEquivalentToHTMLStyle(
+              blockParent, nullptr, nsGkAtoms::bgcolor, &aColor, false);
+          if (NS_WARN_IF(Destroyed())) {
+            return NS_ERROR_EDITOR_DESTROYED;
+          }
+        }
+      }
+
+      
+      
+      if (endOfRange.IsInTextNode() && IsEditable(endOfRange.GetContainer())) {
+        RefPtr<Element> blockParent =
+            GetBlockNodeParent(endOfRange.GetContainer());
+        if (blockParent && handledBlockParent != blockParent) {
+          mCSSEditUtils->SetCSSEquivalentToHTMLStyle(
+              blockParent, nullptr, nsGkAtoms::bgcolor, &aColor, false);
+          if (NS_WARN_IF(Destroyed())) {
+            return NS_ERROR_EDITOR_DESTROYED;
           }
         }
       }
     }
   }
-  if (!cancel) {
-    
-    rv = rules->DidDoAction(subActionInfo, rv);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-  }
-  return NS_OK;
+
+  
+  return NS_WARN_IF(Destroyed()) ? NS_ERROR_EDITOR_DESTROYED : NS_OK;
 }
 
 NS_IMETHODIMP
@@ -4307,8 +4326,10 @@ nsresult HTMLEditor::SetBackgroundColorAsAction(const nsAString& aColor,
     
     
     
-    return EditorBase::ToGenericNSResult(
-        SetCSSBackgroundColorWithTransaction(aColor));
+    nsresult rv = SetCSSBackgroundColorWithTransaction(aColor);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "SetCSSBackgroundColorWithTransaction() failed");
+    return EditorBase::ToGenericNSResult(rv);
   }
 
   

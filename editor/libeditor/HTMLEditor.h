@@ -3243,11 +3243,33 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT
   nsresult LoadHTML(const nsAString& aInputString);
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult SetInlinePropertyInternal(nsAtom& aProperty, nsAtom* aAttribute,
-                                     const nsAString& aValue);
-  MOZ_CAN_RUN_SCRIPT
-  nsresult RemoveInlinePropertyInternal(nsAtom* aProperty, nsAtom* aAttribute);
+  
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult SetInlinePropertyInternal(
+      nsAtom& aProperty, nsAtom* aAttribute, const nsAString& aValue);
+
+  
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  RemoveInlinePropertyInternal(nsAtom* aProperty, nsAtom* aAttribute);
 
   
 
@@ -3272,10 +3294,10 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult SetCSSBackgroundColorWithTransaction(const nsAString& aColor);
-  MOZ_CAN_RUN_SCRIPT
-  nsresult SetHTMLBackgroundColorWithTransaction(const nsAString& aColor);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  SetCSSBackgroundColorWithTransaction(const nsAString& aColor);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  SetHTMLBackgroundColorWithTransaction(const nsAString& aColor);
 
   virtual void InitializeSelectionAncestorLimit(
       nsIContent& aAncestorLimit) override;

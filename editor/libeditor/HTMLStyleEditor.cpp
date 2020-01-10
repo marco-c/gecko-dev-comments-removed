@@ -100,10 +100,8 @@ nsresult HTMLEditor::SetInlinePropertyAsAction(nsAtom& aProperty,
     }
   }
   nsresult rv = SetInlinePropertyInternal(aProperty, aAttribute, aValue);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return EditorBase::ToGenericNSResult(rv);
-  }
-  return NS_OK;
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "SetInlinePropertyInternal() failed");
+  return EditorBase::ToGenericNSResult(rv);
 }
 
 NS_IMETHODIMP
@@ -135,62 +133,78 @@ HTMLEditor::SetInlineProperty(const nsAString& aProperty,
       break;
   }
   nsresult rv = SetInlinePropertyInternal(*property, attribute, aValue);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return EditorBase::ToGenericNSResult(rv);
-  }
-  return NS_OK;
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "SetInlinePropertyInternal() failed");
+  return EditorBase::ToGenericNSResult(rv);
 }
 
-nsresult HTMLEditor::SetInlinePropertyInternal(nsAtom& aProperty,
-                                               nsAtom* aAttribute,
-                                               const nsAString& aValue) {
+nsresult HTMLEditor::SetInlinePropertyInternal(
+    nsAtom& aProperty, nsAtom* aAttribute, const nsAString& aAttributeValue) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (NS_WARN_IF(!mRules)) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  RefPtr<TextEditRules> rules(mRules);
   CommitComposition();
 
   if (SelectionRefPtr()->IsCollapsed()) {
     
     
-    mTypeInState->SetProp(&aProperty, aAttribute, aValue);
+    mTypeInState->SetProp(&aProperty, aAttribute, aAttributeValue);
     return NS_OK;
+  }
+
+  
+  if (IsPlaintextEditor()) {
+    return NS_OK;
+  }
+
+  EditActionResult result = CanHandleHTMLEditSubAction();
+  if (NS_WARN_IF(result.Failed()) || result.Canceled()) {
+    return result.Rv();
   }
 
   AutoPlaceholderBatch treatAsOneTransaction(*this);
   AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertElement, nsIEditor::eNext);
-  AutoSelectionRestorer restoreSelectionLater(*this);
-  AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
-  bool cancel, handled;
-  EditSubActionInfo subActionInfo(EditSubAction::eSetTextProperty);
-  
-  nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  if (!cancel && !handled) {
+  {
+    AutoSelectionRestorer restoreSelectionLater(*this);
+    AutoTransactionsConserveSelection dontChangeMySelection(*this);
+
+    
+    
+    
     
     AutoRangeArray arrayOfRanges(SelectionRefPtr());
     for (auto& range : arrayOfRanges.mRanges) {
       
       
-      rv = PromoteInlineRange(*range);
+      nsresult rv = PromoteInlineRange(*range);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
 
       
-      nsCOMPtr<nsINode> startNode = range->GetStartContainer();
-      nsCOMPtr<nsINode> endNode = range->GetEndContainer();
-      if (startNode && startNode == endNode && startNode->GetAsText()) {
-        rv = SetInlinePropertyOnTextNode(
-            MOZ_KnownLive(*startNode->GetAsText()), range->StartOffset(),
-            range->EndOffset(), aProperty, aAttribute, aValue);
+      
+
+      EditorDOMPoint startOfRange(range->StartRef());
+      EditorDOMPoint endOfRange(range->EndRef());
+      if (NS_WARN_IF(!startOfRange.IsSet()) ||
+          NS_WARN_IF(!endOfRange.IsSet())) {
+        continue;
+      }
+
+      
+      if (startOfRange.GetContainer() == endOfRange.GetContainer() &&
+          startOfRange.IsInTextNode()) {
+        nsresult rv = SetInlinePropertyOnTextNode(
+            MOZ_KnownLive(*startOfRange.GetContainerAsText()),
+            startOfRange.Offset(), endOfRange.Offset(), aProperty, aAttribute,
+            aAttributeValue);
+        if (NS_WARN_IF(Destroyed())) {
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -198,75 +212,66 @@ nsresult HTMLEditor::SetInlinePropertyInternal(nsAtom& aProperty,
       }
 
       
-      
-      
-      
-      
-
-      
-      
-      
-      
-
-      nsTArray<OwningNonNull<nsIContent>> arrayOfNodes;
-
-      
+      AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfContents;
       ContentSubtreeIterator subtreeIter;
-      rv = subtreeIter.Init(range);
       
       
       
-      if (NS_SUCCEEDED(rv)) {
+      if (NS_SUCCEEDED(subtreeIter.Init(range))) {
         for (; !subtreeIter.IsDone(); subtreeIter.Next()) {
-          OwningNonNull<nsINode> node = *subtreeIter.GetCurrentNode();
-
+          nsINode* node = subtreeIter.GetCurrentNode();
+          if (NS_WARN_IF(!node)) {
+            return NS_ERROR_FAILURE;
+          }
           if (node->IsContent() && IsEditable(node)) {
-            arrayOfNodes.AppendElement(*node->AsContent());
+            arrayOfContents.AppendElement(*node->AsContent());
           }
         }
       }
+
       
-      
-      
-      if (startNode && startNode->GetAsText() && IsEditable(startNode)) {
-        rv = SetInlinePropertyOnTextNode(
-            MOZ_KnownLive(*startNode->GetAsText()), range->StartOffset(),
-            startNode->Length(), aProperty, aAttribute, aValue);
+      if (startOfRange.IsInTextNode() &&
+          IsEditable(startOfRange.GetContainer())) {
+        nsresult rv = SetInlinePropertyOnTextNode(
+            MOZ_KnownLive(*startOfRange.GetContainerAsText()),
+            startOfRange.Offset(), startOfRange.GetContainer()->Length(),
+            aProperty, aAttribute, aAttributeValue);
+        if (NS_WARN_IF(Destroyed())) {
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
       }
 
       
-      for (auto& node : arrayOfNodes) {
-        rv = SetInlinePropertyOnNode(*node, aProperty, aAttribute, aValue);
+      for (auto& content : arrayOfContents) {
+        nsresult rv = SetInlinePropertyOnNode(*content, aProperty, aAttribute,
+                                              aAttributeValue);
+        if (NS_WARN_IF(Destroyed())) {
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
       }
 
       
-      
-      
-      if (endNode && endNode->GetAsText() && IsEditable(endNode)) {
-        rv = SetInlinePropertyOnTextNode(MOZ_KnownLive(*endNode->GetAsText()),
-                                         0, range->EndOffset(), aProperty,
-                                         aAttribute, aValue);
+      if (endOfRange.IsInTextNode() && IsEditable(endOfRange.GetContainer())) {
+        nsresult rv = SetInlinePropertyOnTextNode(
+            MOZ_KnownLive(*endOfRange.GetContainerAsText()), 0,
+            endOfRange.Offset(), aProperty, aAttribute, aAttributeValue);
+        if (NS_WARN_IF(Destroyed())) {
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
       }
     }
   }
-  if (cancel) {
-    return NS_OK;
-  }
-
-  rv = rules->DidDoAction(subActionInfo, rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  return NS_OK;
+  
+  return NS_WARN_IF(Destroyed()) ? NS_ERROR_EDITOR_DESTROYED : NS_OK;
 }
 
 
@@ -1259,10 +1264,9 @@ nsresult HTMLEditor::RemoveAllInlinePropertiesAsAction(
       *this, EditSubAction::eRemoveAllTextProperties, nsIEditor::eNext);
 
   nsresult rv = RemoveInlinePropertyInternal(nullptr, nullptr);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return EditorBase::ToGenericNSResult(rv);
-  }
-  return NS_OK;
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "RemoveInlinePropertyInternal() failed");
+  return EditorBase::ToGenericNSResult(rv);
 }
 
 nsresult HTMLEditor::RemoveInlinePropertyAsAction(nsAtom& aProperty,
@@ -1288,10 +1292,9 @@ nsresult HTMLEditor::RemoveInlinePropertyAsAction(nsAtom& aProperty,
       break;
   }
   nsresult rv = RemoveInlinePropertyInternal(&aProperty, aAttribute);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return EditorBase::ToGenericNSResult(rv);
-  }
-  return NS_OK;
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "RemoveInlinePropertyInternal() failed");
+  return EditorBase::ToGenericNSResult(rv);
 }
 
 NS_IMETHODIMP
@@ -1319,10 +1322,9 @@ HTMLEditor::RemoveInlineProperty(const nsAString& aProperty,
       break;
   }
   nsresult rv = RemoveInlinePropertyInternal(property, attribute);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return EditorBase::ToGenericNSResult(rv);
-  }
-  return NS_OK;
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "RemoveInlinePropertyInternal() failed");
+  return EditorBase::ToGenericNSResult(rv);
 }
 
 nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
@@ -1353,21 +1355,24 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
     return NS_OK;
   }
 
+  
+  if (IsPlaintextEditor()) {
+    return NS_OK;
+  }
+
+  EditActionResult result = CanHandleHTMLEditSubAction();
+  if (NS_WARN_IF(result.Failed()) || result.Canceled()) {
+    return result.Rv();
+  }
+
   AutoPlaceholderBatch treatAsOneTransaction(*this);
   AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eRemoveTextProperty, nsIEditor::eNext);
-  AutoSelectionRestorer restoreSelectionLater(*this);
-  AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
-  bool cancel, handled;
-  EditSubActionInfo subActionInfo(EditSubAction::eRemoveTextProperty);
-  
-  RefPtr<TextEditRules> rules(mRules);
-  nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  if (!cancel && !handled) {
+  {
+    AutoSelectionRestorer restoreSelectionLater(*this);
+    AutoTransactionsConserveSelection dontChangeMySelection(*this);
+
     
     
     
@@ -1376,14 +1381,14 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
       if (aProperty == nsGkAtoms::name) {
         
         
-        rv = PromoteRangeIfStartsOrEndsInNamedAnchor(*range);
+        nsresult rv = PromoteRangeIfStartsOrEndsInNamedAnchor(*range);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
       } else {
         
         
-        rv = PromoteInlineRange(*range);
+        nsresult rv = PromoteInlineRange(*range);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -1391,90 +1396,109 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
 
       
       
-      rv = SplitStyleAboveRange(range, aProperty, aAttribute);
+      
+      
+      
+      nsresult rv = SplitStyleAboveRange(range, aProperty, aAttribute);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
 
-      
-      nsCOMPtr<nsINode> startNode = range->GetStartContainer();
-      nsCOMPtr<nsINode> endNode = range->GetEndContainer();
-      if (startNode && startNode == endNode && startNode->GetAsText()) {
+      EditorDOMPoint startOfRange(range->StartRef());
+      EditorDOMPoint endOfRange(range->EndRef());
+      if (NS_WARN_IF(!startOfRange.IsSet()) ||
+          NS_WARN_IF(!endOfRange.IsSet())) {
+        continue;
+      }
+
+      if (startOfRange.GetContainer() == endOfRange.GetContainer() &&
+          startOfRange.IsInTextNode()) {
         
-        if (IsCSSEnabled() && CSSEditUtils::IsCSSEditableProperty(
-                                  startNode, aProperty, aAttribute)) {
-          
-          
-          if (CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(
-                  startNode, aProperty, aAttribute, EmptyString(),
-                  CSSEditUtils::eComputed)) {
-            
-            
-            
-            
-            if (CSSEditUtils::IsCSSInvertible(*aProperty, aAttribute)) {
-              NS_NAMED_LITERAL_STRING(value, "-moz-editor-invert-value");
-              SetInlinePropertyOnTextNode(
-                  MOZ_KnownLive(*startNode->GetAsText()), range->StartOffset(),
-                  range->EndOffset(), *aProperty, aAttribute, value);
-            }
-          }
+        
+        
+        if (!IsCSSEnabled()) {
+          continue;
         }
-      } else {
+        if (!CSSEditUtils::IsCSSEditableProperty(startOfRange.GetContainer(),
+                                                 aProperty, aAttribute)) {
+          continue;
+        }
         
-
-        nsTArray<OwningNonNull<nsIContent>> arrayOfNodes;
-
         
-        ContentSubtreeIterator subtreeIter;
-        DebugOnly<nsresult> rvIgnored = subtreeIter.Init(range);
-        NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                             "Failed to initialize subtree iterator");
+        if (!CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(
+                startOfRange.GetContainer(), aProperty, aAttribute,
+                EmptyString(), CSSEditUtils::eComputed)) {
+          continue;
+        }
+        
+        
+        
+        
+        if (!CSSEditUtils::IsCSSInvertible(*aProperty, aAttribute)) {
+          continue;
+        }
+        NS_NAMED_LITERAL_STRING(value, "-moz-editor-invert-value");
+        SetInlinePropertyOnTextNode(
+            MOZ_KnownLive(*startOfRange.GetContainerAsText()),
+            startOfRange.Offset(), endOfRange.Offset(), *aProperty, aAttribute,
+            value);
+        if (NS_WARN_IF(Destroyed())) {
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
+        continue;
+      }
+
+      
+      AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfContents;
+      ContentSubtreeIterator subtreeIter;
+      if (NS_SUCCEEDED(subtreeIter.Init(range))) {
         for (; !subtreeIter.IsDone(); subtreeIter.Next()) {
           nsCOMPtr<nsINode> node = subtreeIter.GetCurrentNode();
           if (NS_WARN_IF(!node)) {
             return NS_ERROR_FAILURE;
           }
-          if (IsEditable(node) && node->IsContent()) {
-            arrayOfNodes.AppendElement(*node->AsContent());
+          if (node->IsContent() && IsEditable(node)) {
+            arrayOfContents.AppendElement(*node->AsContent());
           }
         }
+      }
 
-        
-        for (auto& node : arrayOfNodes) {
-          rv = RemoveStyleInside(node, aProperty, aAttribute);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return rv;
-          }
-          if (IsCSSEnabled() &&
-              CSSEditUtils::IsCSSEditableProperty(node, aProperty,
-                                                  aAttribute) &&
-              CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(
-                  node, aProperty, aAttribute, EmptyString(),
-                  CSSEditUtils::eComputed) &&
-              
-              
-              
-              
-              
-              CSSEditUtils::IsCSSInvertible(*aProperty, aAttribute)) {
-            NS_NAMED_LITERAL_STRING(value, "-moz-editor-invert-value");
-            SetInlinePropertyOnNode(node, *aProperty, aAttribute, value);
-          }
+      for (auto& content : arrayOfContents) {
+        nsresult rv = RemoveStyleInside(content, aProperty, aAttribute);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
         }
+        
+        
+        
+        if (!IsCSSEnabled()) {
+          continue;
+        }
+        if (!CSSEditUtils::IsCSSEditableProperty(content, aProperty,
+                                                 aAttribute)) {
+          continue;
+        }
+        if (!CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(
+                content, aProperty, aAttribute, EmptyString(),
+                CSSEditUtils::eComputed)) {
+          continue;
+        }
+        
+        
+        
+        
+        
+        if (!CSSEditUtils::IsCSSInvertible(*aProperty, aAttribute)) {
+          continue;
+        }
+        NS_NAMED_LITERAL_STRING(value, "-moz-editor-invert-value");
+        SetInlinePropertyOnNode(content, *aProperty, aAttribute, value);
       }
     }
   }
 
-  if (cancel) {
-    return NS_OK;
-  }
-
-  rv = rules->DidDoAction(subActionInfo, rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  return NS_OK;
+  
+  return NS_WARN_IF(Destroyed()) ? NS_ERROR_EDITOR_DESTROYED : NS_OK;
 }
 
 NS_IMETHODIMP
