@@ -938,7 +938,9 @@ mozilla::ipc::IPCResult HttpChannelParent::RecvRedirect2Verify(
 
   
   
-  if (aSourceRequestBlockingReason) {
+  
+  
+  if (MOZ_UNLIKELY(aSourceRequestBlockingReason) && mChannel) {
     nsCOMPtr<nsILoadInfo> sourceLoadInfo = mChannel->LoadInfo();
     if (sourceLoadInfo) {
       sourceLoadInfo->SetRequestBlockingReason(aSourceRequestBlockingReason);
