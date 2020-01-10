@@ -253,10 +253,10 @@ static const char kPrefHealthReportUploadEnabled[] =
 int gArgc;
 char** gArgv;
 
-#include "buildid.h"
-
 static const char gToolkitVersion[] = NS_STRINGIFY(GRE_MILESTONE);
-static const char gToolkitBuildID[] = NS_STRINGIFY(MOZ_BUILDID);
+
+
+extern const char gToolkitBuildID[];
 
 static nsIProfileLock* gProfileLock;
 
