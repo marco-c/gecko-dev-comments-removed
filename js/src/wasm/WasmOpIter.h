@@ -1,20 +1,20 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
- * Copyright 2016 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifndef wasm_op_iter_h
 #define wasm_op_iter_h
@@ -29,11 +29,11 @@
 namespace js {
 namespace wasm {
 
-// The kind of a control-flow stack item.
+
 enum class LabelKind : uint8_t { Body, Block, Loop, Then, Else };
 
-// The type of values on the operand stack during validation. The Any type
-// represents the type of a value produced by an unconditional branch.
+
+
 
 class StackType {
   PackedTypeCode tc_;
@@ -84,6 +84,19 @@ class StackType {
 
   Code code() const { return Code(UnpackTypeCodeType(tc_)); }
 
+  bool isNumeric() const {
+    switch (code()) {
+      case Code::TVar:
+      case Code::I32:
+      case Code::I64:
+      case Code::F32:
+      case Code::F64:
+        return true;
+      default:
+        return false;
+    }
+  }
+
   uint32_t refTypeIndex() const { return UnpackTypeCodeIndex(tc_); }
   bool isRef() const { return UnpackTypeCodeType(tc_) == TypeCode::Ref; }
 
@@ -104,7 +117,7 @@ static inline ValType NonTVarToValType(StackType type) {
 }
 
 #ifdef DEBUG
-// Families of opcodes that share a signature and validation logic.
+
 enum class OpKind {
   Block,
   Loop,
@@ -176,12 +189,12 @@ enum class OpKind {
   StructNarrow,
 };
 
-// Return the OpKind for a given Op. This is used for sanity-checking that
-// API users use the correct read function for a given Op.
+
+
 OpKind Classify(OpBytes op);
 #endif
 
-// Common fields for linear memory access.
+
 template <typename Value>
 struct LinearMemoryAddress {
   Value base;
@@ -195,7 +208,7 @@ struct LinearMemoryAddress {
 
 template <typename ControlItem>
 class ControlStackEntry {
-  // Use a Pair to optimize away empty ControlItem.
+  
   mozilla::Pair<LabelKind, ControlItem> kindAndItem_;
   bool polymorphicBase_;
   ExprType type_;
@@ -229,7 +242,7 @@ class ControlStackEntry {
 
 template <typename Value>
 class TypeAndValue {
-  // Use a Pair to optimize away empty Value.
+  
   mozilla::Pair<StackType, Value> tv_;
 
  public:
@@ -244,12 +257,12 @@ class TypeAndValue {
   void setValue(Value value) { tv_.second() = value; }
 };
 
-// An iterator over the bytes of a function body. It performs validation
-// and unpacks the data into a usable form.
-//
-// The MOZ_STACK_CLASS attribute here is because of the use of DebugOnly.
-// There's otherwise nothing inherent in this class which would require
-// it to be used on the stack.
+
+
+
+
+
+
 template <typename Policy>
 class MOZ_STACK_CLASS OpIter : private Policy {
   typedef typename Policy::Value Value;
@@ -326,7 +339,6 @@ class MOZ_STACK_CLASS OpIter : private Policy {
     controlStack_.back().setPolymorphicBase();
   }
 
-  inline bool Join(StackType one, StackType two, StackType* result) const;
   inline bool checkIsSubtypeOf(ValType lhs, ValType rhs);
 
  public:
@@ -343,43 +355,43 @@ class MOZ_STACK_CLASS OpIter : private Policy {
       : d_(decoder), env_(env), offsetOfLastReadOp_(0) {}
 #endif
 
-  // Return the decoding byte offset.
+  
   uint32_t currentOffset() const { return d_.currentOffset(); }
 
-  // Return the offset within the entire module of the last-read op.
+  
   size_t lastOpcodeOffset() const {
     return offsetOfLastReadOp_ ? offsetOfLastReadOp_ : d_.currentOffset();
   }
 
-  // Return a BytecodeOffset describing where the current op should be reported
-  // to trap/call.
+  
+  
   BytecodeOffset bytecodeOffset() const {
     return BytecodeOffset(lastOpcodeOffset());
   }
 
-  // Test whether the iterator has reached the end of the buffer.
+  
   bool done() const { return d_.done(); }
 
-  // Return a pointer to the end of the buffer being decoded by this iterator.
+  
   const uint8_t* end() const { return d_.end(); }
 
-  // Report a general failure.
+  
   MOZ_MUST_USE bool fail(const char* msg) MOZ_COLD;
 
-  // Report a general failure with a context
+  
   MOZ_MUST_USE bool fail_ctx(const char* fmt, const char* context) MOZ_COLD;
 
-  // Report an unrecognized opcode.
+  
   MOZ_MUST_USE bool unrecognizedOpcode(const OpBytes* expr) MOZ_COLD;
 
-  // Return whether the innermost block has a polymorphic base of its stack.
-  // Ideally this accessor would be removed; consider using something else.
+  
+  
   bool currentBlockHasPolymorphicBase() const {
     return !controlStack_.empty() && controlStack_.back().polymorphicBase();
   }
 
-  // ------------------------------------------------------------------------
-  // Decoding and validation interface.
+  
+  
 
   MOZ_MUST_USE bool readOp(OpBytes* op);
   MOZ_MUST_USE bool readFunctionStart(ExprType ret);
@@ -482,73 +494,36 @@ class MOZ_STACK_CLASS OpIter : private Policy {
   MOZ_MUST_USE bool readValType(ValType* type);
   MOZ_MUST_USE bool readReferenceType(ValType* type, const char* const context);
 
-  // At a location where readOp is allowed, peek at the next opcode
-  // without consuming it or updating any internal state.
-  // Never fails: returns uint16_t(Op::Limit) in op->b0 if it can't read.
+  
+  
+  
   void peekOp(OpBytes* op);
 
-  // ------------------------------------------------------------------------
-  // Stack management.
+  
+  
 
-  // Set the result value of the current top-of-value-stack expression.
+  
   void setResult(Value value) { valueStack_.back().setValue(value); }
 
-  // Return the result value of the current top-of-value-stack expression.
+  
   Value getResult() { return valueStack_.back().value(); }
 
-  // Return a reference to the top of the control stack.
+  
   ControlItem& controlItem() { return controlStack_.back().controlItem(); }
 
-  // Return a reference to an element in the control stack.
+  
   ControlItem& controlItem(uint32_t relativeDepth) {
     return controlStack_[controlStack_.length() - 1 - relativeDepth]
         .controlItem();
   }
 
-  // Return a reference to the outermost element on the control stack.
+  
   ControlItem& controlOutermost() { return controlStack_[0].controlItem(); }
 
-  // Test whether the control-stack is empty, meaning we've consumed the final
-  // end of the function body.
+  
+  
   bool controlStackEmpty() const { return controlStack_.empty(); }
 };
-
-template <typename Policy>
-inline bool OpIter<Policy>::Join(StackType one, StackType two,
-                                 StackType* result) const {
-  if (MOZ_LIKELY(one == two)) {
-    *result = one;
-    return true;
-  }
-
-  if (one == StackType::TVar) {
-    *result = two;
-    return true;
-  }
-
-  if (two == StackType::TVar) {
-    *result = one;
-    return true;
-  }
-
-  if (one.isReference() && two.isReference()) {
-    if (env_.isRefSubtypeOf(NonTVarToValType(two), NonTVarToValType(one))) {
-      *result = one;
-      return true;
-    }
-
-    if (env_.isRefSubtypeOf(NonTVarToValType(one), NonTVarToValType(two))) {
-      *result = two;
-      return true;
-    }
-
-    // No subtyping relations between the two types.
-    *result = StackType::AnyRef;
-    return true;
-  }
-
-  return false;
-}
 
 template <typename Policy>
 inline bool OpIter<Policy>::checkIsSubtypeOf(ValType actual, ValType expected) {
@@ -602,24 +577,24 @@ inline bool OpIter<Policy>::failEmptyStack() {
                              : fail("popping value from outside block");
 }
 
-// This function pops exactly one value from the stack, yielding TVar types in
-// various cases and therefore making it the caller's responsibility to do the
-// right thing for StackType::TVar. Prefer (pop|top)WithType.
+
+
+
 template <typename Policy>
 inline bool OpIter<Policy>::popStackType(StackType* type, Value* value) {
   ControlStackEntry<ControlItem>& block = controlStack_.back();
 
   MOZ_ASSERT(valueStack_.length() >= block.valueStackStart());
   if (MOZ_UNLIKELY(valueStack_.length() == block.valueStackStart())) {
-    // If the base of this block's stack is polymorphic, then we can pop a
-    // dummy value of any type; it won't be used since we're in unreachable
-    // code.
+    
+    
+    
     if (block.polymorphicBase()) {
       *type = StackType::TVar;
       *value = Value();
 
-      // Maintain the invariant that, after a pop, there is always memory
-      // reserved to push a value infallibly.
+      
+      
       return valueStack_.reserve(valueStack_.length() + 1);
     }
 
@@ -633,8 +608,8 @@ inline bool OpIter<Policy>::popStackType(StackType* type, Value* value) {
   return true;
 }
 
-// This function pops exactly one value from the stack, checking that it has the
-// expected type which can either be a specific value type or a type variable.
+
+
 template <typename Policy>
 inline bool OpIter<Policy>::popWithType(ValType expectedType, Value* value) {
   StackType stackType(expectedType);
@@ -646,10 +621,10 @@ inline bool OpIter<Policy>::popWithType(ValType expectedType, Value* value) {
          checkIsSubtypeOf(NonTVarToValType(stackType), expectedType);
 }
 
-// This function pops as many types from the stack as determined by the given
-// signature. Currently, all signatures are limited to 0 or 1 types, with
-// ExprType::Void meaning 0 and all other ValTypes meaning 1, but this will be
-// generalized in the future.
+
+
+
+
 template <typename Policy>
 inline bool OpIter<Policy>::popWithType(ExprType expectedType, Value* value) {
   if (IsVoid(expectedType)) {
@@ -660,18 +635,18 @@ inline bool OpIter<Policy>::popWithType(ExprType expectedType, Value* value) {
   return popWithType(NonVoidToValType(expectedType), value);
 }
 
-// This function is just an optimization of popWithType + push.
+
 template <typename Policy>
 inline bool OpIter<Policy>::topWithType(ValType expectedType, Value* value) {
   ControlStackEntry<ControlItem>& block = controlStack_.back();
 
   MOZ_ASSERT(valueStack_.length() >= block.valueStackStart());
   if (valueStack_.length() == block.valueStackStart()) {
-    // If the base of this block's stack is polymorphic, then we can just
-    // pull out a dummy value of the expected type; it won't be used since
-    // we're in unreachable code. We must however push this value onto the
-    // stack since it is now fixed to a specific type by this type
-    // constraint.
+    
+    
+    
+    
+    
     if (block.polymorphicBase()) {
       if (!valueStack_.emplaceBack(expectedType, Value())) {
         return false;
@@ -897,7 +872,7 @@ template <typename Policy>
 inline bool OpIter<Policy>::readElse(ExprType* type, Value* value) {
   MOZ_ASSERT(Classify(op_) == OpKind::Else);
 
-  // Finish checking the then-block.
+  
 
   if (!checkStackAtEndOfBlock(type, value)) {
     return false;
@@ -909,7 +884,7 @@ inline bool OpIter<Policy>::readElse(ExprType* type, Value* value) {
     return fail("else can only be used within an if");
   }
 
-  // Switch to the else-block.
+  
 
   if (!IsVoid(block.resultType())) {
     valueStack_.popBack();
@@ -932,8 +907,8 @@ inline bool OpIter<Policy>::readEnd(LabelKind* kind, ExprType* type,
 
   ControlStackEntry<ControlItem>& block = controlStack_.back();
 
-  // If an `if` block ends with `end` instead of `else`, then we must
-  // additionally validate that the then-block doesn't push anything.
+  
+  
   if (block.kind() == LabelKind::Then && !IsVoid(block.resultType())) {
     return fail("if without else with a result value");
   }
@@ -1002,10 +977,10 @@ inline bool OpIter<Policy>::checkBrTableEntry(uint32_t* relativeDepth,
     return false;
   }
 
-  // For the first encountered branch target, do a normal branch value type
-  // check which will change *branchValueType to a non-sentinel value. For all
-  // subsequent branch targets, check that the branch target matches the
-  // now-known branch value type.
+  
+  
+  
+  
 
   if (*branchValueType == ExprType::Limit) {
     if (!checkBranchValue(*relativeDepth, branchValueType, branchValue)) {
@@ -1146,12 +1121,12 @@ inline bool OpIter<Policy>::readComparison(ValType operandType, Value* lhs,
   return true;
 }
 
-// For memories, the index is currently always a placeholder zero byte.
-//
-// For tables, the index is a placeholder zero byte until we get multi-table
-// with the reftypes proposal.
-//
-// The zero-ness of the value must be checked by the caller.
+
+
+
+
+
+
 template <typename Policy>
 inline bool OpIter<Policy>::readMemOrTableIndex(bool isMem, uint32_t* index) {
 #ifdef ENABLE_WASM_REFTYPES
@@ -1336,7 +1311,15 @@ inline bool OpIter<Policy>::readSelect(StackType* type, Value* trueValue,
     return false;
   }
 
-  if (!Join(falseType, trueType, type)) {
+  if (!falseType.isNumeric() || !trueType.isNumeric()) {
+    return fail("select operand types must be numeric");
+  }
+
+  if (falseType.code() == StackType::TVar) {
+    *type = trueType;
+  } else if (trueType.code() == StackType::TVar || falseType == trueType) {
+    *type = falseType;
+  } else {
     return fail("select operand types must match");
   }
 
@@ -1515,8 +1498,8 @@ inline bool OpIter<Policy>::readReferenceType(ValType* type,
 template <typename Policy>
 inline bool OpIter<Policy>::popCallArgs(const ValTypeVector& expectedTypes,
                                         ValueVector* values) {
-  // Iterate through the argument types backward so that pops occur in the
-  // right order.
+  
+  
 
   if (!values->resize(expectedTypes.length())) {
     return false;
@@ -1573,7 +1556,7 @@ inline bool OpIter<Policy>::readCallIndirect(uint32_t* funcTypeIndex,
     return false;
   }
   if (*tableIndex >= env_.tables.length()) {
-    // Special case this for improved user experience.
+    
     if (!env_.tables.length()) {
       return fail("can't call_indirect without a table");
     }
@@ -1685,7 +1668,7 @@ inline bool OpIter<Policy>::readWake(LinearMemoryAddress<Value>* addr,
     return false;
   }
 
-  uint32_t byteSize = 4;  // Per spec; smallest WAIT is i32.
+  uint32_t byteSize = 4;  
 
   if (!readLinearMemoryAddressAligned(byteSize, addr)) {
     return false;
@@ -1837,8 +1820,8 @@ inline bool OpIter<Policy>::readMemOrTableCopy(bool isMem,
   MOZ_ASSERT(Classify(op_) == OpKind::MemOrTableCopy);
   MOZ_ASSERT(dstMemOrTableIndex != srcMemOrTableIndex);
 
-  // We use (dest, src) everywhere in code but the spec requires (src, dest)
-  // encoding order for the immediates.
+  
+  
   if (!readMemOrTableIndex(isMem, srcMemOrTableIndex)) {
     return false;
   }
@@ -1981,8 +1964,8 @@ inline bool OpIter<Policy>::readMemOrTableInit(bool isMem, uint32_t* segIndex,
     }
     *dstTableIndex = memOrTableIndex;
 
-    // Element segments must carry functions exclusively and funcref is not
-    // yet a subtype of anyref.
+    
+    
     if (env_.tables[*dstTableIndex].kind != TableKind::FuncRef) {
       return fail("only tables of 'funcref' may have element segments");
     }
@@ -2130,8 +2113,8 @@ inline bool OpIter<Policy>::readFieldIndex(uint32_t* fieldIndex,
   return true;
 }
 
-// Semantics of struct.new, struct.get, struct.set, and struct.narrow documented
-// (for now) on https://github.com/lars-t-hansen/moz-gc-experiments.
+
+
 
 template <typename Policy>
 inline bool OpIter<Policy>::readStructNew(uint32_t* typeIndex,
@@ -2254,17 +2237,17 @@ inline bool OpIter<Policy>::readStructNarrow(ValType* inputType,
   return push(*outputType);
 }
 
-}  // namespace wasm
-}  // namespace js
+}  
+}  
 
 namespace mozilla {
 
-// Specialize IsPod for the Nothing specializations.
+
 template <>
 struct IsPod<js::wasm::TypeAndValue<Nothing>> : TrueType {};
 template <>
 struct IsPod<js::wasm::ControlStackEntry<Nothing>> : TrueType {};
 
-}  // namespace mozilla
+}  
 
-#endif  // wasm_op_iter_h
+#endif  
