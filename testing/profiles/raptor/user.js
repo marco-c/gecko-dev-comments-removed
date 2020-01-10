@@ -21,3 +21,7 @@ user_pref("browser.sessionstore.resume_from_crash", false);
 
 
 user_pref("toolkit.content-background-hang-monitor.disabled", true);
+
+
+
+user_pref('javascript.options.asyncstack', false);
