@@ -258,6 +258,10 @@ class JSJitFrameIter {
 
   
   
+  inline uint32_t baselineFrameNumValueSlots() const;
+
+  
+  
 #ifdef DEBUG
   bool verifyReturnAddressUsingNativeToBytecodeMap();
 #else
