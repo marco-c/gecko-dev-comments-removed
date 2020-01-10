@@ -7,7 +7,6 @@
 #include "OSPreferences.h"
 #include "mozilla/Preferences.h"
 
-#include "FennecJNIWrappers.h"
 #include "GeneratedJNIWrappers.h"
 
 using namespace mozilla::intl;
@@ -24,9 +23,7 @@ bool OSPreferences::ReadSystemLocales(nsTArray<nsCString>& aLocaleList) {
   
   
   
-  auto locales = mozilla::jni::IsFennec()
-                     ? java::BrowserLocaleManager::GetLocales()
-                     : java::GeckoAppShell::GetDefaultLocales();
+  auto locales = java::GeckoAppShell::GetDefaultLocales();
   if (locales) {
     for (size_t i = 0; i < locales->Length(); i++) {
       jni::String::LocalRef locale = locales->GetElement(i);

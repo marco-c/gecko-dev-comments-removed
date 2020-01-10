@@ -153,7 +153,7 @@ def lint(config, **lintargs):
     path = os.path.join(
         lintargs['topobjdir'],
         'gradle/build/mobile/android/geckoview/reports',
-        'lint-results-{}.xml'.format(lintargs['substs']['GRADLE_ANDROID_APP_VARIANT_NAME']))
+        'lint-results-{}.xml'.format(lintargs['substs']['GRADLE_ANDROID_GECKOVIEW_VARIANT_NAME']))
     tree = ET.parse(open(path, 'rt'))
     root = tree.getroot()
 
@@ -167,51 +167,6 @@ def lint(config, **lintargs):
             'message': issue.get('message'),
             'path': location.get('file').replace(lintargs['root'], ''),
             'lineno': int(location.get('line') or 0),
-        }
-        results.append(result.from_config(config, **err))
-
-    return results
-
-
-def findbugs(config, **lintargs):
-    topsrcdir = lintargs['root']
-    topobjdir = lintargs['topobjdir']
-
-    
-    
-    sourcepath_finder = FileFinder(os.path.join(topsrcdir, 'mobile', 'android'))
-
-    gradle(lintargs['log'], topsrcdir=topsrcdir, topobjdir=topobjdir,
-           tasks=lintargs['substs']['GRADLE_ANDROID_FINDBUGS_TASKS'],
-           extra_args=lintargs.get('extra_args') or [])
-
-    path = os.path.join(
-        lintargs['topobjdir'],
-        'gradle/build/mobile/android/app/reports/findbugs',
-        'findbugs-{}-output.xml'.format(lintargs['substs']['GRADLE_ANDROID_APP_VARIANT_NAME']))
-    tree = ET.parse(open(path, 'rt'))
-    root = tree.getroot()
-
-    results = []
-
-    for issue in root.findall('./BugInstance'):
-        location = issue.find('./SourceLine')
-        
-        unanchored_sourcepath = location.get('sourcepath')
-
-        sourcepaths = list(sourcepath_finder.find('**/{}'.format(unanchored_sourcepath)))
-        if not len(sourcepaths) == 1:
-            raise RuntimeError('No sourcepath found for unanchored sourcepath {path}'
-                               .format(path=unanchored_sourcepath))
-
-        sourcepath, _ = sourcepaths[0]
-
-        err = {
-            'level': 'error',
-            'rule': issue.get('type'),
-            'message': ET.tostring(issue),
-            'path': os.path.join('mobile', 'android', sourcepath),
-            'lineno': int(location.get('start') or 0),
         }
         results.append(result.from_config(config, **err))
 
@@ -323,8 +278,7 @@ def test(config, **lintargs):
         
         return (s[0].upper() + s[1:]) if s else ''
 
-    pairs = (('app', lintargs['substs']['GRADLE_ANDROID_APP_VARIANT_NAME']),
-             ('geckoview', lintargs['substs']['GRADLE_ANDROID_GECKOVIEW_VARIANT_NAME']))
+    pairs = [('geckoview', lintargs['substs']['GRADLE_ANDROID_GECKOVIEW_VARIANT_NAME'])]
     for project, variant in pairs:
         report_dir = os.path.join(
             lintargs['topobjdir'],

@@ -3,7 +3,7 @@
 
 
 #include "nsClipboard.h"
-#include "FennecJNIWrappers.h"
+#include "GeneratedJNIWrappers.h"
 #include "nsISupportsPrimitives.h"
 #include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"

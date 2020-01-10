@@ -98,7 +98,7 @@ l10n_description_schema = schema.extend({
 
     
     
-    Required('docker-image'): _by_platform(Any(
+    Required('docker-image', default=None): _by_platform(Any(
         
         {'in-tree': basestring},
         None,

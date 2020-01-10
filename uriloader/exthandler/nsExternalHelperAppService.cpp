@@ -103,10 +103,6 @@
 #  include "nsWindowsHelpers.h"
 #endif
 
-#ifdef MOZ_WIDGET_ANDROID
-#  include "FennecJNIWrappers.h"
-#endif
-
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ipc/URIUtils.h"
@@ -314,34 +310,7 @@ static nsresult GetDownloadDirectory(nsIFile** _directory,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 #elif defined(ANDROID)
-  
-  
-  
-  
-  
-  
-  jni::String::LocalRef downloadDir;
-  if (jni::IsFennec()) {
-    downloadDir = java::DownloadsIntegration::GetTemporaryDownloadDirectory();
-  }
-
-  nsresult rv;
-  if (downloadDir) {
-    nsCOMPtr<nsIFile> ldir;
-    rv = NS_NewNativeLocalFile(downloadDir->ToCString(), true,
-                               getter_AddRefs(ldir));
-
-    NS_ENSURE_SUCCESS(rv, rv);
-    dir = ldir;
-
-    
-    if (aSkipChecks) {
-      dir.forget(_directory);
-      return NS_OK;
-    }
-  } else {
-    return NS_ERROR_FAILURE;
-  }
+  return NS_ERROR_FAILURE;
 #else
   
   nsresult rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(dir));

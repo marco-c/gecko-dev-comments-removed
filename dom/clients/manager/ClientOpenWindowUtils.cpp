@@ -27,7 +27,7 @@
 #include "mozilla/dom/nsCSPContext.h"
 
 #ifdef MOZ_WIDGET_ANDROID
-#  include "FennecJNIWrappers.h"
+#  include "GeneratedJNIWrappers.h"
 #endif
 
 namespace mozilla {
@@ -301,52 +301,52 @@ void WaitForLoad(const ClientOpenWindowArgs& aArgs,
 #ifdef MOZ_WIDGET_ANDROID
 
 void GeckoViewOpenWindow(const ClientOpenWindowArgs& aArgs,
-  ClientOpPromise::Private* aPromise) {
-
+                         ClientOpPromise::Private* aPromise) {
   RefPtr<ClientOpPromise::Private> promise = aPromise;
 
   
   
-  auto genericResult = java::GeckoRuntime::ServiceWorkerOpenWindow(aArgs.baseURL(), aArgs.url());
+  auto genericResult =
+      java::GeckoRuntime::ServiceWorkerOpenWindow(aArgs.baseURL(), aArgs.url());
   auto typedResult = java::GeckoResult::LocalRef(std::move(genericResult));
 
   
-  auto promiseResult = mozilla::MozPromise<nsString, nsString, false>::FromGeckoResult(typedResult);
+  auto promiseResult =
+      mozilla::MozPromise<nsString, nsString, false>::FromGeckoResult(
+          typedResult);
 
   promiseResult->Then(
-  SystemGroup::EventTargetFor(TaskCategory::Other),
-  __func__,
-  [aArgs, promise](nsString sessionId){
+      SystemGroup::EventTargetFor(TaskCategory::Other), __func__,
+      [aArgs, promise](nsString sessionId) {
+        nsresult rv;
+        nsCOMPtr<nsIWindowWatcher> wwatch =
+            do_GetService(NS_WINDOWWATCHER_CONTRACTID, &rv);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          promise->Reject(rv, __func__);
+          return rv;
+        }
 
-    nsresult rv;
-    nsCOMPtr<nsIWindowWatcher> wwatch = do_GetService(NS_WINDOWWATCHER_CONTRACTID, &rv);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      promise->Reject(rv, __func__);
-      return rv;
-    }
+        
+        
+        nsCOMPtr<mozIDOMWindowProxy> domWindow;
+        wwatch->GetWindowByName(sessionId, nullptr, getter_AddRefs(domWindow));
+        if (!domWindow) {
+          promise->Reject(NS_ERROR_FAILURE, __func__);
+          return NS_ERROR_FAILURE;
+        }
 
-    
-    
-    nsCOMPtr<mozIDOMWindowProxy> domWindow;
-    wwatch->GetWindowByName(sessionId, nullptr, getter_AddRefs(domWindow));
-    if (!domWindow) {
-      promise->Reject(NS_ERROR_FAILURE, __func__);
-      return NS_ERROR_FAILURE;
-    }
+        nsCOMPtr<nsPIDOMWindowOuter> outerWindow = do_QueryInterface(domWindow);
+        if (NS_WARN_IF(!outerWindow)) {
+          promise->Reject(NS_ERROR_FAILURE, __func__);
+          return NS_ERROR_FAILURE;
+        }
 
-    nsCOMPtr<nsPIDOMWindowOuter> outerWindow = do_QueryInterface(domWindow);
-    if (NS_WARN_IF(!outerWindow)) {
-      promise->Reject(NS_ERROR_FAILURE, __func__);
-      return NS_ERROR_FAILURE;
-    }
-
-    WaitForLoad(aArgs, outerWindow, promise);
-    return NS_OK;
-  },
-  [promise](nsString aResult){
-    promise->Reject(NS_ERROR_FAILURE, __func__);
-  }
-  );
+        WaitForLoad(aArgs, outerWindow, promise);
+        return NS_OK;
+      },
+      [promise](nsString aResult) {
+        promise->Reject(NS_ERROR_FAILURE, __func__);
+      });
 }
 
 class LaunchObserver final : public nsIObserver {
@@ -410,59 +410,15 @@ RefPtr<ClientOpPromise> ClientOpenWindowInCurrentProcess(
       new ClientOpPromise::Private(__func__);
 
 #ifdef MOZ_WIDGET_ANDROID
-
   
-  if (!jni::IsFennec()) {
-    GeckoViewOpenWindow(aArgs, promise);
-    return promise.forget();
-  }
-
-  
-  
-  
-  RefPtr<LaunchObserver> launchObserver = LaunchObserver::Create();
-  java::GeckoApp::LaunchOrBringToFront();
+  GeckoViewOpenWindow(aArgs, promise);
+  return promise.forget();
 #endif  
 
   RefPtr<BrowsingContext> bc;
   nsresult rv = OpenWindow(aArgs, getter_AddRefs(bc));
 
   nsCOMPtr<nsPIDOMWindowOuter> outerWindow(bc->GetDOMWindow());
-
-#ifdef MOZ_WIDGET_ANDROID
-  
-  
-  
-  if (rv == NS_ERROR_NOT_AVAILABLE && launchObserver) {
-    RefPtr<GenericPromise> p = launchObserver->Promise();
-    p->Then(
-        SystemGroup::EventTargetFor(TaskCategory::Other), __func__,
-        [aArgs, promise](bool aResult) {
-          RefPtr<BrowsingContext> bc;
-          nsresult rv = OpenWindow(aArgs, getter_AddRefs(bc));
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            promise->Reject(rv, __func__);
-            return;
-          }
-          nsCOMPtr<nsPIDOMWindowOuter> outerWindow(bc->GetDOMWindow());
-          if (NS_WARN_IF(!outerWindow)) {
-            promise->Reject(NS_ERROR_FAILURE, __func__);
-            return;
-          }
-
-          WaitForLoad(aArgs, outerWindow, promise);
-        },
-        [promise](nsresult aResult) { promise->Reject(aResult, __func__); });
-    return promise.forget();
-  }
-
-  
-  
-  
-  if (launchObserver) {
-    launchObserver->Cancel();
-  }
-#endif  
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
     promise->Reject(rv, __func__);

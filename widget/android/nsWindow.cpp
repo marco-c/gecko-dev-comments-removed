@@ -85,7 +85,6 @@ using mozilla::dom::ContentParent;
 #include "AndroidBridge.h"
 #include "AndroidBridgeUtilities.h"
 #include "AndroidUiThread.h"
-#include "FennecJNINatives.h"
 #include "GeckoEditableSupport.h"
 #include "GeneratedJNINatives.h"
 #include "KeyEvent.h"
