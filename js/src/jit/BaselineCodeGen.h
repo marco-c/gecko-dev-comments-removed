@@ -274,7 +274,12 @@ class BaselineCodeGen {
 
   js::Vector<CodeOffset> traceLoggerToggleOffsets_;
 
+  
   NonAssertingLabel return_;
+
+  
+  NonAssertingLabel returnNoDebugEpilogue_;
+
   NonAssertingLabel postBarrierSlot_;
 
   CodeOffset profilerEnterFrameToggleOffset_;
@@ -492,6 +497,7 @@ class BaselineCodeGen {
   MOZ_MUST_USE bool emitStackCheck();
   MOZ_MUST_USE bool emitArgumentTypeChecks();
   MOZ_MUST_USE bool emitDebugPrologue();
+  MOZ_MUST_USE bool emitDebugEpilogue();
 
   template <typename F1, typename F2>
   MOZ_MUST_USE bool initEnvironmentChainHelper(const F1& initFunctionEnv,
@@ -550,6 +556,13 @@ class BaselineCompilerHandler {
   Label* labelOf(jsbytecode* pc) { return &labels_[script_->pcToOffset(pc)]; }
 
   bool isDefinitelyLastOp() const { return pc_ == script_->lastPC(); }
+
+  bool shouldEmitDebugEpilogueAtReturnOp() const {
+    
+    
+    
+    return true;
+  }
 
   JSScript* script() const { return script_; }
   JSScript* maybeScript() const { return script_; }
@@ -696,6 +709,13 @@ class BaselineInterpreterHandler {
   bool isDefinitelyLastOp() const { return false; }
   JSScript* maybeScript() const { return nullptr; }
   JSFunction* maybeFunction() const { return nullptr; }
+
+  bool shouldEmitDebugEpilogueAtReturnOp() const {
+    
+    
+    
+    return false;
+  }
 
   MOZ_MUST_USE bool addDebugInstrumentationOffset(CodeOffset offset) {
     return debugInstrumentationOffsets_.append(offset.offset());
