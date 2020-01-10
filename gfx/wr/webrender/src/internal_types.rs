@@ -270,6 +270,9 @@ pub enum TextureSource {
     
     
     RenderTaskCache(SavedTargetIndex, Swizzle),
+    
+    
+    Dummy,
 }
 
 
