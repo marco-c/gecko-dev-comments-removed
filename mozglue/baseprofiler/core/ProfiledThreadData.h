@@ -18,6 +18,9 @@
 
 #include <string>
 
+namespace mozilla {
+namespace baseprofiler {
+
 class ProfileBuffer;
 
 
@@ -49,29 +52,27 @@ class ProfiledThreadData final {
   ~ProfiledThreadData();
 
   void NotifyUnregistered(uint64_t aBufferPosition) {
-    mLastSample = mozilla::Nothing();
+    mLastSample = Nothing();
     MOZ_ASSERT(!mBufferPositionWhenReceivedJSContext,
                "JSContext should have been cleared before the thread was "
                "unregistered");
-    mUnregisterTime = mozilla::TimeStamp::Now();
-    mBufferPositionWhenUnregistered = mozilla::Some(aBufferPosition);
+    mUnregisterTime = TimeStamp::Now();
+    mBufferPositionWhenUnregistered = Some(aBufferPosition);
   }
-  mozilla::Maybe<uint64_t> BufferPositionWhenUnregistered() {
+  Maybe<uint64_t> BufferPositionWhenUnregistered() {
     return mBufferPositionWhenUnregistered;
   }
 
-  mozilla::Maybe<uint64_t>& LastSample() { return mLastSample; }
+  Maybe<uint64_t>& LastSample() { return mLastSample; }
 
   void StreamJSON(const ProfileBuffer& aBuffer, SpliceableJSONWriter& aWriter,
                   const std::string& aProcessName,
-                  const mozilla::TimeStamp& aProcessStartTime,
-                  double aSinceTime);
+                  const TimeStamp& aProcessStartTime, double aSinceTime);
 
   const RefPtr<ThreadInfo> Info() const { return mThreadInfo; }
 
   void NotifyReceivedJSContext(uint64_t aCurrentBufferPosition) {
-    mBufferPositionWhenReceivedJSContext =
-        mozilla::Some(aCurrentBufferPosition);
+    mBufferPositionWhenReceivedJSContext = Some(aCurrentBufferPosition);
   }
 
  private:
@@ -89,25 +90,28 @@ class ProfiledThreadData final {
   
   
   
-  mozilla::Maybe<uint64_t> mLastSample;
+  Maybe<uint64_t> mLastSample;
 
   
-  mozilla::Maybe<uint64_t> mBufferPositionWhenReceivedJSContext;
+  Maybe<uint64_t> mBufferPositionWhenReceivedJSContext;
 
   
   
 
-  mozilla::Maybe<uint64_t> mBufferPositionWhenUnregistered;
-  mozilla::TimeStamp mUnregisterTime;
+  Maybe<uint64_t> mBufferPositionWhenUnregistered;
+  TimeStamp mUnregisterTime;
 };
 
 void StreamSamplesAndMarkers(const char* aName, int aThreadId,
                              const ProfileBuffer& aBuffer,
                              SpliceableJSONWriter& aWriter,
                              const std::string& aProcessName,
-                             const mozilla::TimeStamp& aProcessStartTime,
-                             const mozilla::TimeStamp& aRegisterTime,
-                             const mozilla::TimeStamp& aUnregisterTime,
+                             const TimeStamp& aProcessStartTime,
+                             const TimeStamp& aRegisterTime,
+                             const TimeStamp& aUnregisterTime,
                              double aSinceTime, UniqueStacks& aUniqueStacks);
+
+}  
+}  
 
 #endif  

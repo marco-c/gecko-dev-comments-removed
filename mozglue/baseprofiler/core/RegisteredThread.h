@@ -14,6 +14,9 @@
 
 #include "mozilla/UniquePtr.h"
 
+namespace mozilla {
+namespace baseprofiler {
+
 
 
 
@@ -33,8 +36,8 @@ class RacyRegisteredThread final {
   bool IsBeingProfiled() const { return mIsBeingProfiled; }
 
   void AddPendingMarker(const char* aMarkerName,
-                        JS::ProfilingCategoryPair aCategoryPair,
-                        mozilla::UniquePtr<ProfilerMarkerPayload> aPayload,
+                        ProfilingCategoryPair aCategoryPair,
+                        UniquePtr<ProfilerMarkerPayload> aPayload,
                         double aTime) {
     
     
@@ -143,13 +146,12 @@ class RacyRegisteredThread final {
   static const int AWAKE = 0;
   static const int SLEEPING_NOT_OBSERVED = 1;
   static const int SLEEPING_OBSERVED = 2;
-  mozilla::Atomic<int> mSleep;
+  Atomic<int> mSleep;
 
   
   
   
-  mozilla::Atomic<bool, mozilla::MemoryOrdering::Relaxed,
-                  mozilla::recordreplay::Behavior::DontPreserve>
+  Atomic<bool, MemoryOrdering::Relaxed, recordreplay::Behavior::DontPreserve>
       mIsBeingProfiled;
 };
 
@@ -172,7 +174,7 @@ class RegisteredThread final {
   PlatformData* GetPlatformData() const { return mPlatformData.get(); }
   const void* StackTop() const { return mStackTop; }
 
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
   const RefPtr<ThreadInfo> Info() const { return mThreadInfo; }
 
@@ -184,5 +186,8 @@ class RegisteredThread final {
 
   const RefPtr<ThreadInfo> mThreadInfo;
 };
+
+}  
+}  
 
 #endif  

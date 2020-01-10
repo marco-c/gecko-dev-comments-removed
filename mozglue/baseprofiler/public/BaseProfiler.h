@@ -95,15 +95,17 @@
 #  include <stdint.h>
 #  include <string>
 
-class ProfilerBacktrace;
-class ProfilerMarkerPayload;
-class SpliceableJSONWriter;
-
 namespace mozilla {
+
 class MallocAllocPolicy;
 template <class T, size_t MinInlineCapacity, class AllocPolicy>
 class Vector;
-}  
+
+namespace baseprofiler {
+
+class ProfilerBacktrace;
+class ProfilerMarkerPayload;
+class SpliceableJSONWriter;
 
 
 #  define BASE_PROFILER_RAII_PASTE(id, line) id##line
@@ -177,8 +179,6 @@ struct ProfilerFeature {
 #  undef DECLARE
 };
 
-namespace mozilla {
-namespace profiler {
 namespace detail {
 
 
@@ -224,8 +224,6 @@ class RacyFeatures {
 MFBT_API bool IsThreadBeingProfiled();
 
 }  
-}  
-}  
 
 
 
@@ -244,7 +242,7 @@ static constexpr uint32_t BASE_PROFILER_DEFAULT_STARTUP_ENTRIES =
 #  if !defined(ARCH_ARMV6)
     1u << 22;  
 #  else
-    1u << 17;  
+    1u << 17;  // 131'072
 #  endif
 
 #  define BASE_PROFILER_DEFAULT_DURATION 20
@@ -256,7 +254,8 @@ static constexpr uint32_t BASE_PROFILER_DEFAULT_STARTUP_ENTRIES =
 
 MFBT_API void profiler_init(void* stackTop);
 
-#  define AUTO_BASE_PROFILER_INIT mozilla::AutoProfilerInit BASE_PROFILER_RAII
+#  define AUTO_BASE_PROFILER_INIT \
+    ::mozilla::baseprofiler::AutoProfilerInit BASE_PROFILER_RAII
 
 
 
@@ -279,10 +278,10 @@ MFBT_API void profiler_shutdown();
 
 
 
-MFBT_API void profiler_start(
-    uint32_t aCapacity, double aInterval, uint32_t aFeatures,
-    const char** aFilters, uint32_t aFilterCount,
-    const mozilla::Maybe<double>& aDuration = mozilla::Nothing());
+MFBT_API void profiler_start(uint32_t aCapacity, double aInterval,
+                             uint32_t aFeatures, const char** aFilters,
+                             uint32_t aFilterCount,
+                             const Maybe<double>& aDuration = Nothing());
 
 
 
@@ -296,7 +295,7 @@ MFBT_API void profiler_stop();
 MFBT_API void profiler_ensure_started(
     uint32_t aCapacity, double aInterval, uint32_t aFeatures,
     const char** aFilters, uint32_t aFilterCount,
-    const mozilla::Maybe<double>& aDuration = mozilla::Nothing());
+    const Maybe<double>& aDuration = Nothing());
 
 
 
@@ -304,12 +303,13 @@ MFBT_API void profiler_ensure_started(
 
 
 
-#  define BASE_PROFILER_REGISTER_THREAD(name)    \
-    do {                                         \
-      char stackTop;                             \
-      profiler_register_thread(name, &stackTop); \
+#  define BASE_PROFILER_REGISTER_THREAD(name)                             \
+    do {                                                                  \
+      char stackTop;                                                      \
+      ::mozilla::baseprofiler::profiler_register_thread(name, &stackTop); \
     } while (0)
-#  define BASE_PROFILER_UNREGISTER_THREAD() profiler_unregister_thread()
+#  define BASE_PROFILER_UNREGISTER_THREAD() \
+    ::mozilla::baseprofiler::profiler_unregister_thread()
 MFBT_API ProfilingStack* profiler_register_thread(const char* name,
                                                   void* guessStackTop);
 MFBT_API void profiler_unregister_thread();
@@ -350,7 +350,7 @@ MFBT_API void profiler_remove_sampled_counter(BaseProfilerCount* aCounter);
 
 
 #  define AUTO_BASE_PROFILER_REGISTER_THREAD(name) \
-    mozilla::AutoProfilerRegisterThread BASE_PROFILER_RAII(name)
+    ::mozilla::baseprofiler::AutoProfilerRegisterThread BASE_PROFILER_RAII(name)
 
 
 
@@ -370,9 +370,9 @@ MFBT_API void profiler_thread_wake();
 
 
 #  define AUTO_BASE_PROFILER_THREAD_SLEEP \
-    mozilla::AutoProfilerThreadSleep BASE_PROFILER_RAII
+    ::mozilla::baseprofiler::AutoProfilerThreadSleep BASE_PROFILER_RAII
 #  define AUTO_BASE_PROFILER_THREAD_WAKE \
-    mozilla::AutoProfilerThreadWake BASE_PROFILER_RAII
+    ::mozilla::baseprofiler::AutoProfilerThreadWake BASE_PROFILER_RAII
 
 
 
@@ -395,14 +395,13 @@ MFBT_API void profiler_thread_wake();
 
 
 inline bool profiler_is_active() {
-  return mozilla::profiler::detail::RacyFeatures::IsActive();
+  return baseprofiler::detail::RacyFeatures::IsActive();
 }
 
 
 
 inline bool profiler_thread_is_being_profiled() {
-  return profiler_is_active() &&
-         mozilla::profiler::detail::IsThreadBeingProfiled();
+  return profiler_is_active() && baseprofiler::detail::IsThreadBeingProfiled();
 }
 
 
@@ -427,9 +426,8 @@ MFBT_API bool profiler_feature_active(uint32_t aFeature);
 
 
 MFBT_API void profiler_get_start_params(
-    int* aEntrySize, mozilla::Maybe<double>* aDuration, double* aInterval,
-    uint32_t* aFeatures,
-    mozilla::Vector<const char*, 0, mozilla::MallocAllocPolicy>* aFilters);
+    int* aEntrySize, Maybe<double>* aDuration, double* aInterval,
+    uint32_t* aFeatures, Vector<const char*, 0, MallocAllocPolicy>* aFilters);
 
 
 
@@ -448,12 +446,8 @@ class ProfilerStackCollector {
   
   
   
-  virtual mozilla::Maybe<uint64_t> SamplePositionInBuffer() {
-    return mozilla::Nothing();
-  }
-  virtual mozilla::Maybe<uint64_t> BufferRangeStart() {
-    return mozilla::Nothing();
-  }
+  virtual Maybe<uint64_t> SamplePositionInBuffer() { return Nothing(); }
+  virtual Maybe<uint64_t> BufferRangeStart() { return Nothing(); }
 
   
   
@@ -467,7 +461,7 @@ class ProfilerStackCollector {
   virtual void CollectNativeLeafAddr(void* aAddr) = 0;
 
   virtual void CollectProfilingStackFrame(
-      const js::ProfilingStackFrame& aFrame) = 0;
+      const ProfilingStackFrame& aFrame) = 0;
 };
 
 
@@ -483,7 +477,7 @@ struct ProfilerBacktraceDestructor {
 };
 
 using UniqueProfilerBacktrace =
-    mozilla::UniquePtr<ProfilerBacktrace, ProfilerBacktraceDestructor>;
+    UniquePtr<ProfilerBacktrace, ProfilerBacktraceDestructor>;
 
 
 
@@ -501,7 +495,7 @@ struct ProfilerBufferInfo {
 
 
 
-MFBT_API mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
+MFBT_API Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 
@@ -517,19 +511,21 @@ MFBT_API mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 
-#  define AUTO_BASE_PROFILER_LABEL(label, categoryPair) \
-    mozilla::AutoProfilerLabel BASE_PROFILER_RAII(      \
-        label, nullptr, JS::ProfilingCategoryPair::categoryPair)
+#  define AUTO_BASE_PROFILER_LABEL(label, categoryPair)            \
+    ::mozilla::baseprofiler::AutoProfilerLabel BASE_PROFILER_RAII( \
+        label, nullptr,                                            \
+        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair)
 
 
 
 
 
 
-#  define AUTO_BASE_PROFILER_LABEL_CATEGORY_PAIR(categoryPair) \
-    mozilla::AutoProfilerLabel BASE_PROFILER_RAII(             \
-        "", nullptr, JS::ProfilingCategoryPair::categoryPair,  \
-        uint32_t(js::ProfilingStackFrame::Flags::              \
+#  define AUTO_BASE_PROFILER_LABEL_CATEGORY_PAIR(categoryPair)         \
+    ::mozilla::baseprofiler::AutoProfilerLabel BASE_PROFILER_RAII(     \
+        "", nullptr,                                                   \
+        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair,  \
+        uint32_t(::mozilla::baseprofiler::ProfilingStackFrame::Flags:: \
                      LABEL_DETERMINED_BY_CATEGORY_PAIR))
 
 
@@ -553,8 +549,9 @@ MFBT_API mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 #  define AUTO_BASE_PROFILER_LABEL_DYNAMIC_CSTR(label, categoryPair, cStr) \
-    mozilla::AutoProfilerLabel BASE_PROFILER_RAII(                         \
-        label, cStr, JS::ProfilingCategoryPair::categoryPair)
+    ::mozilla::baseprofiler::AutoProfilerLabel BASE_PROFILER_RAII(         \
+        label, cStr,                                                       \
+        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair)
 
 
 
@@ -564,12 +561,13 @@ MFBT_API mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 #  define AUTO_BASE_PROFILER_LABEL_DYNAMIC_STRING(label, categoryPair, str) \
-    mozilla::Maybe<std::string> autoStr;                                    \
-    mozilla::Maybe<mozilla::AutoProfilerLabel> raiiObjectString;            \
-    if (profiler_is_active()) {                                             \
+    Maybe<std::string> autoStr;                                             \
+    Maybe<::mozilla::baseprofiler::AutoProfilerLabel> raiiObjectString;     \
+    if (::mozilla::baseprofiler::profiler_is_active()) {                    \
       autoStr.emplace(str);                                                 \
-      raiiObjectString.emplace(label, autoStr->c_str(),                     \
-                               JS::ProfilingCategoryPair::categoryPair);    \
+      raiiObjectString.emplace(                                             \
+          label, autoStr->c_str(),                                          \
+          ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair);    \
     }
 
 
@@ -577,18 +575,19 @@ MFBT_API mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 
-#  define AUTO_BASE_PROFILER_LABEL_FAST(label, categoryPair, ctx) \
-    mozilla::AutoProfilerLabel BASE_PROFILER_RAII(                \
-        ctx, label, nullptr, JS::ProfilingCategoryPair::categoryPair)
+#  define AUTO_BASE_PROFILER_LABEL_FAST(label, categoryPair, ctx)  \
+    ::mozilla::baseprofiler::AutoProfilerLabel BASE_PROFILER_RAII( \
+        ctx, label, nullptr,                                       \
+        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair)
 
 
 
 
-#  define AUTO_BASE_PROFILER_LABEL_DYNAMIC_FAST(label, dynamicString,       \
-                                                categoryPair, ctx, flags)   \
-    mozilla::AutoProfilerLabel BASE_PROFILER_RAII(                          \
-        ctx, label, dynamicString, JS::ProfilingCategoryPair::categoryPair, \
-        flags)
+#  define AUTO_BASE_PROFILER_LABEL_DYNAMIC_FAST(label, dynamicString,     \
+                                                categoryPair, ctx, flags) \
+    ::mozilla::baseprofiler::AutoProfilerLabel BASE_PROFILER_RAII(        \
+        ctx, label, dynamicString,                                        \
+        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair, flags)
 
 
 
@@ -599,20 +598,21 @@ MFBT_API mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 #  define BASE_PROFILER_ADD_MARKER(markerName, categoryPair) \
-    profiler_add_marker(markerName, JS::ProfilingCategoryPair::categoryPair)
+    ::mozilla::baseprofiler::profiler_add_marker(            \
+        markerName,                                          \
+        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair)
 
 MFBT_API void profiler_add_marker(const char* aMarkerName,
-                                  JS::ProfilingCategoryPair aCategoryPair);
-MFBT_API void profiler_add_marker(
-    const char* aMarkerName, JS::ProfilingCategoryPair aCategoryPair,
-    mozilla::UniquePtr<ProfilerMarkerPayload> aPayload);
+                                  ProfilingCategoryPair aCategoryPair);
+MFBT_API void profiler_add_marker(const char* aMarkerName,
+                                  ProfilingCategoryPair aCategoryPair,
+                                  UniquePtr<ProfilerMarkerPayload> aPayload);
 MFBT_API void profiler_add_js_marker(const char* aMarkerName);
 
 
 MFBT_API void profiler_add_marker_for_thread(
-    int aThreadId, JS::ProfilingCategoryPair aCategoryPair,
-    const char* aMarkerName,
-    mozilla::UniquePtr<ProfilerMarkerPayload> aPayload);
+    int aThreadId, ProfilingCategoryPair aCategoryPair, const char* aMarkerName,
+    UniquePtr<ProfilerMarkerPayload> aPayload);
 
 enum TracingKind {
   TRACING_EVENT,
@@ -622,8 +622,8 @@ enum TracingKind {
 
 
 #  define MOZDECLARE_DOCSHELL_AND_HISTORY_ID(docShell)   \
-    mozilla::Maybe<std::string> docShellId;              \
-    mozilla::Maybe<uint32_t> docShellHistoryId;          \
+    Maybe<std::string> docShellId;                       \
+    Maybe<uint32_t> docShellHistoryId;                   \
     if (docShell) {                                      \
       docShellId = mozilla::Some(docShell->HistoryID()); \
       uint32_t id;                                       \
@@ -643,37 +643,41 @@ enum TracingKind {
 
 #  define BASE_PROFILER_TRACING(categoryString, markerName, categoryPair, \
                                 kind)                                     \
-    profiler_tracing(categoryString, markerName,                          \
-                     JS::ProfilingCategoryPair::categoryPair, kind)
-#  define BASE_PROFILER_TRACING_DOCSHELL(categoryString, markerName,   \
-                                         categoryPair, kind, docShell) \
-    MOZDECLARE_DOCSHELL_AND_HISTORY_ID(docShell);                      \
-    profiler_tracing(categoryString, markerName,                       \
-                     JS::ProfilingCategoryPair::categoryPair, kind,    \
-                     docShellId, docShellHistoryId)
+    ::mozilla::baseprofiler::profiler_tracing(                            \
+        categoryString, markerName,                                       \
+        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair, kind)
+#  define BASE_PROFILER_TRACING_DOCSHELL(categoryString, markerName,        \
+                                         categoryPair, kind, docShell)      \
+    MOZDECLARE_DOCSHELL_AND_HISTORY_ID(docShell);                           \
+    ::mozilla::baseprofiler::profiler_tracing(                              \
+        categoryString, markerName,                                         \
+        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair, kind, \
+        docShellId, docShellHistoryId)
 
 MFBT_API void profiler_tracing(
     const char* aCategoryString, const char* aMarkerName,
-    JS::ProfilingCategoryPair aCategoryPair, TracingKind aKind,
-    const mozilla::Maybe<std::string>& aDocShellId = mozilla::Nothing(),
-    const mozilla::Maybe<uint32_t>& aDocShellHistoryId = mozilla::Nothing());
+    ProfilingCategoryPair aCategoryPair, TracingKind aKind,
+    const Maybe<std::string>& aDocShellId = Nothing(),
+    const Maybe<uint32_t>& aDocShellHistoryId = Nothing());
 MFBT_API void profiler_tracing(
     const char* aCategoryString, const char* aMarkerName,
-    JS::ProfilingCategoryPair aCategoryPair, TracingKind aKind,
+    ProfilingCategoryPair aCategoryPair, TracingKind aKind,
     UniqueProfilerBacktrace aCause,
-    const mozilla::Maybe<std::string>& aDocShellId = mozilla::Nothing(),
-    const mozilla::Maybe<uint32_t>& aDocShellHistoryId = mozilla::Nothing());
+    const Maybe<std::string>& aDocShellId = Nothing(),
+    const Maybe<uint32_t>& aDocShellHistoryId = Nothing());
 
 
 #  define AUTO_BASE_PROFILER_TRACING(categoryString, markerName, categoryPair) \
-    mozilla::AutoProfilerTracing BASE_PROFILER_RAII(                           \
-        categoryString, markerName, JS::ProfilingCategoryPair::categoryPair,   \
-        mozilla::Nothing(), mozilla::Nothing())
-#  define AUTO_BASE_PROFILER_TRACING_DOCSHELL(categoryString, markerName,    \
-                                              categoryPair, docShell)        \
-    MOZDECLARE_DOCSHELL_AND_HISTORY_ID(docShell);                            \
-    mozilla::AutoProfilerTracing BASE_PROFILER_RAII(                         \
-        categoryString, markerName, JS::ProfilingCategoryPair::categoryPair, \
+    ::mozilla::baseprofiler::AutoProfilerTracing BASE_PROFILER_RAII(           \
+        categoryString, markerName,                                            \
+        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair,          \
+        Nothing(), Nothing())
+#  define AUTO_BASE_PROFILER_TRACING_DOCSHELL(categoryString, markerName, \
+                                              categoryPair, docShell)     \
+    MOZDECLARE_DOCSHELL_AND_HISTORY_ID(docShell);                         \
+    ::mozilla::baseprofiler::AutoProfilerTracing BASE_PROFILER_RAII(      \
+        categoryString, markerName,                                       \
+        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair,     \
         docShellId, docShellHistoryId)
 
 
@@ -684,24 +688,24 @@ MFBT_API void profiler_tracing(
 
 MFBT_API void profiler_add_text_marker(
     const char* aMarkerName, const std::string& aText,
-    JS::ProfilingCategoryPair aCategoryPair,
-    const mozilla::TimeStamp& aStartTime, const mozilla::TimeStamp& aEndTime,
-    const mozilla::Maybe<std::string>& aDocShellId = mozilla::Nothing(),
-    const mozilla::Maybe<uint32_t>& aDocShellHistoryId = mozilla::Nothing(),
+    ProfilingCategoryPair aCategoryPair, const TimeStamp& aStartTime,
+    const TimeStamp& aEndTime,
+    const Maybe<std::string>& aDocShellId = Nothing(),
+    const Maybe<uint32_t>& aDocShellHistoryId = Nothing(),
     UniqueProfilerBacktrace aCause = nullptr);
 
 class MOZ_RAII AutoProfilerTextMarker {
  public:
   AutoProfilerTextMarker(const char* aMarkerName, const std::string& aText,
-                         JS::ProfilingCategoryPair aCategoryPair,
-                         const mozilla::Maybe<std::string>& aDocShellId,
-                         const mozilla::Maybe<uint32_t>& aDocShellHistoryId,
+                         ProfilingCategoryPair aCategoryPair,
+                         const Maybe<std::string>& aDocShellId,
+                         const Maybe<uint32_t>& aDocShellHistoryId,
                          UniqueProfilerBacktrace&& aCause =
                              nullptr MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
       : mMarkerName(aMarkerName),
         mText(aText),
         mCategoryPair(aCategoryPair),
-        mStartTime(mozilla::TimeStamp::Now()),
+        mStartTime(TimeStamp::Now()),
         mCause(std::move(aCause)),
         mDocShellId(aDocShellId),
         mDocShellHistoryId(aDocShellHistoryId) {
@@ -710,40 +714,43 @@ class MOZ_RAII AutoProfilerTextMarker {
 
   ~AutoProfilerTextMarker() {
     profiler_add_text_marker(mMarkerName, mText, mCategoryPair, mStartTime,
-                             mozilla::TimeStamp::Now(), mDocShellId,
-                             mDocShellHistoryId, std::move(mCause));
+                             TimeStamp::Now(), mDocShellId, mDocShellHistoryId,
+                             std::move(mCause));
   }
 
  protected:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
   const char* mMarkerName;
   std::string mText;
-  const JS::ProfilingCategoryPair mCategoryPair;
-  mozilla::TimeStamp mStartTime;
+  const ProfilingCategoryPair mCategoryPair;
+  TimeStamp mStartTime;
   UniqueProfilerBacktrace mCause;
-  const mozilla::Maybe<std::string> mDocShellId;
-  const mozilla::Maybe<uint32_t> mDocShellHistoryId;
+  const Maybe<std::string> mDocShellId;
+  const Maybe<uint32_t> mDocShellHistoryId;
 };
 
 #  define AUTO_BASE_PROFILER_TEXT_MARKER_CAUSE(markerName, text, categoryPair, \
                                                cause)                          \
-    AutoProfilerTextMarker BASE_PROFILER_RAII(                                 \
-        markerName, text, JS::ProfilingCategoryPair::categoryPair,             \
+    ::mozilla::baseprofiler::AutoProfilerTextMarker BASE_PROFILER_RAII(        \
+        markerName, text,                                                      \
+        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair,          \
         mozilla::Nothing(), mozilla::Nothing(), cause)
 
-#  define AUTO_BASE_PROFILER_TEXT_MARKER_DOCSHELL(markerName, text,            \
-                                                  categoryPair, docShell)      \
-    MOZDECLARE_DOCSHELL_AND_HISTORY_ID(docShell);                              \
-    AutoProfilerTextMarker BASE_PROFILER_RAII(                                 \
-        markerName, text, JS::ProfilingCategoryPair::categoryPair, docShellId, \
-        docShellHistoryId)
+#  define AUTO_BASE_PROFILER_TEXT_MARKER_DOCSHELL(markerName, text,       \
+                                                  categoryPair, docShell) \
+    MOZDECLARE_DOCSHELL_AND_HISTORY_ID(docShell);                         \
+    ::mozilla::baseprofiler::AutoProfilerTextMarker BASE_PROFILER_RAII(   \
+        markerName, text,                                                 \
+        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair,     \
+        docShellId, docShellHistoryId)
 
-#  define AUTO_BASE_PROFILER_TEXT_MARKER_DOCSHELL_CAUSE(                       \
-      markerName, text, categoryPair, docShell, cause)                         \
-    MOZDECLARE_DOCSHELL_AND_HISTORY_ID(docShell);                              \
-    AutoProfilerTextMarker BASE_PROFILER_RAII(                                 \
-        markerName, text, JS::ProfilingCategoryPair::categoryPair, docShellId, \
-        docShellHistoryId, cause)
+#  define AUTO_BASE_PROFILER_TEXT_MARKER_DOCSHELL_CAUSE(                \
+      markerName, text, categoryPair, docShell, cause)                  \
+    MOZDECLARE_DOCSHELL_AND_HISTORY_ID(docShell);                       \
+    ::mozilla::baseprofiler::AutoProfilerTextMarker BASE_PROFILER_RAII( \
+        markerName, text,                                               \
+        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair,   \
+        docShellId, docShellHistoryId, cause)
 
 
 
@@ -756,8 +763,8 @@ MFBT_API void profiler_set_process_name(const std::string& aProcessName);
 
 
 
-MFBT_API mozilla::UniquePtr<char[]> profiler_get_profile(
-    double aSinceTime = 0, bool aIsShuttingDown = false);
+MFBT_API UniquePtr<char[]> profiler_get_profile(double aSinceTime = 0,
+                                                bool aIsShuttingDown = false);
 
 
 
@@ -772,8 +779,6 @@ MFBT_API void profiler_save_profile_to_file(const char* aFilename);
 
 
 
-
-namespace mozilla {
 
 class MOZ_RAII AutoProfilerInit {
  public:
@@ -853,7 +858,7 @@ class MOZ_RAII AutoProfilerLabel {
   
   
   AutoProfilerLabel(const char* aLabel, const char* aDynamicString,
-                    JS::ProfilingCategoryPair aCategoryPair,
+                    ProfilingCategoryPair aCategoryPair,
                     uint32_t aFlags = 0 MOZ_GUARD_OBJECT_NOTIFIER_PARAM) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
 
@@ -862,7 +867,7 @@ class MOZ_RAII AutoProfilerLabel {
   }
 
   void Push(ProfilingStack* aProfilingStack, const char* aLabel,
-            const char* aDynamicString, JS::ProfilingCategoryPair aCategoryPair,
+            const char* aDynamicString, ProfilingCategoryPair aCategoryPair,
             uint32_t aFlags = 0) {
     
 
@@ -898,9 +903,9 @@ class MOZ_RAII AutoProfilerLabel {
 class MOZ_RAII AutoProfilerTracing {
  public:
   AutoProfilerTracing(const char* aCategoryString, const char* aMarkerName,
-                      JS::ProfilingCategoryPair aCategoryPair,
-                      const mozilla::Maybe<std::string>& aDocShellId,
-                      const mozilla::Maybe<uint32_t>& aDocShellHistoryId
+                      ProfilingCategoryPair aCategoryPair,
+                      const Maybe<std::string>& aDocShellId,
+                      const Maybe<uint32_t>& aDocShellHistoryId
                           MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
       : mCategoryString(aCategoryString),
         mMarkerName(aMarkerName),
@@ -912,12 +917,11 @@ class MOZ_RAII AutoProfilerTracing {
                      TRACING_INTERVAL_START, mDocShellId, mDocShellHistoryId);
   }
 
-  AutoProfilerTracing(const char* aCategoryString, const char* aMarkerName,
-                      JS::ProfilingCategoryPair aCategoryPair,
-                      UniqueProfilerBacktrace aBacktrace,
-                      const mozilla::Maybe<std::string>& aDocShellId,
-                      const mozilla::Maybe<uint32_t>& aDocShellHistoryId
-                          MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+  AutoProfilerTracing(
+      const char* aCategoryString, const char* aMarkerName,
+      ProfilingCategoryPair aCategoryPair, UniqueProfilerBacktrace aBacktrace,
+      const Maybe<std::string>& aDocShellId,
+      const Maybe<uint32_t>& aDocShellHistoryId MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
       : mCategoryString(aCategoryString),
         mMarkerName(aMarkerName),
         mCategoryPair(aCategoryPair),
@@ -938,9 +942,9 @@ class MOZ_RAII AutoProfilerTracing {
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
   const char* mCategoryString;
   const char* mMarkerName;
-  const JS::ProfilingCategoryPair mCategoryPair;
-  const mozilla::Maybe<std::string> mDocShellId;
-  const mozilla::Maybe<uint32_t> mDocShellHistoryId;
+  const ProfilingCategoryPair mCategoryPair;
+  const Maybe<std::string> mDocShellId;
+  const Maybe<uint32_t> mDocShellHistoryId;
 };
 
 
@@ -952,7 +956,8 @@ MFBT_API void GetProfilerEnvVarsForChildProcess(
     std::function<void(const char* key, const char* value)>&& aSetEnv);
 
 }  
+}  
 
-#endif
+#endif  
 
-#endif
+#endif  

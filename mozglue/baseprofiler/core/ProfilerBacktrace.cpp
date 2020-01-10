@@ -15,14 +15,17 @@
 #  include "BaseProfileJSONWriter.h"
 #  include "ThreadInfo.h"
 
+namespace mozilla {
+namespace baseprofiler {
+
 ProfilerBacktrace::ProfilerBacktrace(const char* aName, int aThreadId,
-                                     mozilla::UniquePtr<ProfileBuffer> aBuffer)
+                                     UniquePtr<ProfileBuffer> aBuffer)
     : mName(strdup(aName)), mThreadId(aThreadId), mBuffer(std::move(aBuffer)) {}
 
 ProfilerBacktrace::~ProfilerBacktrace() {}
 
 void ProfilerBacktrace::StreamJSON(SpliceableJSONWriter& aWriter,
-                                   const mozilla::TimeStamp& aProcessStartTime,
+                                   const TimeStamp& aProcessStartTime,
                                    UniqueStacks& aUniqueStacks) {
   
   
@@ -30,9 +33,12 @@ void ProfilerBacktrace::StreamJSON(SpliceableJSONWriter& aWriter,
   
   StreamSamplesAndMarkers(mName.get(), mThreadId, *mBuffer.get(), aWriter, "",
                           aProcessStartTime,
-                           mozilla::TimeStamp(),
-                           mozilla::TimeStamp(),
+                           TimeStamp(),
+                           TimeStamp(),
                            0, aUniqueStacks);
 }
+
+}  
+}  
 
 #endif  
