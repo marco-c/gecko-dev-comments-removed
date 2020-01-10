@@ -1104,6 +1104,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
   }
 
   function WebVTT() {
+    this.isProcessingCues = false;
     
   }
 
@@ -1152,7 +1153,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
   
   
   
-  WebVTT.processCues = function(window, cues, overlay, controls) {
+  function processCuesInternal(window, cues, overlay, controls) {
     LOG(`=== processCues ===`);
     if (!cues) {
       LOG(`clear display and abort processing because of no cue.`);
@@ -1305,6 +1306,18 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
     } else {
       LOG(`[ERROR] unknown div computing state`);
     }
+  };
+
+  WebVTT.processCues = function(window, cues, overlay, controls) {
+    
+    
+    
+    if (this.isProcessingCues) {
+      return;
+    }
+    this.isProcessingCues = true;
+    processCuesInternal(window, cues, overlay, controls);
+    this.isProcessingCues = false;
   };
 
   WebVTT.Parser = function(window, decoder) {
