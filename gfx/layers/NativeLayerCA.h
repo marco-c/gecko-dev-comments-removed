@@ -112,6 +112,8 @@ class NativeLayerCA : public NativeLayer {
   Maybe<GLuint> NextSurfaceAsFramebuffer(bool aNeedsDepth) override;
   gfx::IntRegion CurrentSurfaceInvalidRegion() override;
   void NotifySurfaceReady() override;
+  void SetIsOpaque(bool aIsOpaque) override;
+  bool IsOpaque() override;
   void SetSurfaceIsFlipped(bool aIsFlipped) override;
   bool SurfaceIsFlipped() override;
 
@@ -144,12 +146,6 @@ class NativeLayerCA : public NativeLayer {
   void SetSurfaceRegistry(RefPtr<IOSurfaceRegistry> aSurfaceRegistry);
   RefPtr<IOSurfaceRegistry> GetSurfaceRegistry();
 
-  
-  
-  
-  void SetOpaqueRegion(const gfx::IntRegion& aRegion) override;
-  gfx::IntRegion OpaqueRegion() override;
-
  protected:
   friend class NativeLayerRootCA;
 
@@ -173,8 +169,6 @@ class NativeLayerCA : public NativeLayer {
 
   std::vector<SurfaceWithInvalidRegion> RemoveExcessUnusedSurfaces(
       const MutexAutoLock&);
-  void PlaceContentLayers(const MutexAutoLock&, const gfx::IntRegion& aRegion,
-                          bool aOpaque, std::deque<CALayer*>* aLayersToRecycle);
 
   
   Mutex mMutex;
@@ -256,16 +250,17 @@ class NativeLayerCA : public NativeLayer {
 
   gfx::IntPoint mPosition;
   gfx::IntSize mSize;
-  gfx::IntRegion mOpaqueRegion;  
 
   
-  CALayer* mWrappingCALayer = nullptr;    
-  std::deque<CALayer*> mContentCALayers;  
+  CALayer* mWrappingCALayer = nullptr;  
+  CALayer* mContentCALayer;             
 
   float mBackingScale = 1.0f;
   bool mSurfaceIsFlipped = false;
+  bool mIsOpaque = false;
   bool mMutatedPosition = false;
   bool mMutatedGeometry = false;
+  bool mMutatedIsOpaque = false;
 };
 
 }  
