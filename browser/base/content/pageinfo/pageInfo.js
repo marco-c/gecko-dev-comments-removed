@@ -356,85 +356,91 @@ async function onLoadPageInfo() {
   Services.obs.notifyObservers(window, "page-info-dialog-loaded");
 }
 
-function loadPageInfo(frameOuterWindowID, imageElement, browser) {
+async function loadPageInfo(browsingContext, imageElement, browser) {
   browser = browser || window.opener.gBrowser.selectedBrowser;
-  let mm = browser.messageManager;
+  browsingContext = browsingContext || browser.browsingContext;
 
-  let imageInfo = imageElement;
+  if (browser.outerBrowser) {
+    
+    browser = browser.outerBrowser;
+  }
 
-  
-  mm.sendAsyncMessage("PageInfo:getData", {
+  let actor = browsingContext.currentWindowGlobal.getActor("PageInfo");
+
+  let result = await actor.sendQuery("PageInfo:getData", {
     strings: gStrings,
-    frameOuterWindowID,
   });
-
-  let pageInfoData;
+  await onNonMediaPageInfoLoad(browser, result, imageElement);
 
   
-  mm.addMessageListener("PageInfo:data", async function onmessage(message) {
-    mm.removeMessageListener("PageInfo:data", onmessage);
-    pageInfoData = message.data;
-    let docInfo = pageInfoData.docInfo;
-    let windowInfo = pageInfoData.windowInfo;
-    let uri = Services.io.newURI(docInfo.documentURIObject.spec);
-    let principal = docInfo.principal;
-    gDocInfo = docInfo;
+  
+  let contextsToVisit = [browsingContext];
+  while (contextsToVisit.length) {
+    let currContext = contextsToVisit.pop();
+    let global = currContext.currentWindowGlobal;
 
-    gImageElement = imageInfo;
-    var titleFormat = windowInfo.isTopWindow
-      ? "page-info-page"
-      : "page-info-frame";
-    document.l10n.setAttributes(document.documentElement, titleFormat, {
-      website: docInfo.location,
+    if (!global) {
+      continue;
+    }
+
+    let subframeActor = global.getActor("PageInfo");
+    let mediaResult = await subframeActor.sendQuery("PageInfo:getMediaData", {
+      strings: gStrings,
     });
-
-    document
-      .getElementById("main-window")
-      .setAttribute("relatedUrl", docInfo.location);
-
-    await makeGeneralTab(pageInfoData.metaViewRows, docInfo);
-    if (
-      uri.spec.startsWith("about:neterror") ||
-      uri.spec.startsWith("about:certerror")
-    ) {
-      uri = browser.currentURI;
-      principal = Services.scriptSecurityManager.createContentPrincipal(
-        uri,
-        browser.contentPrincipal.originAttributes
-      );
-    }
-    onLoadPermission(uri, principal);
-    securityOnLoad(uri, windowInfo);
-  });
-
-  
-  mm.addMessageListener("PageInfo:mediaData", function onmessage(message) {
-    
-    if (window.closed) {
-      mm.removeMessageListener("PageInfo:mediaData", onmessage);
-      return;
-    }
-
-    
-    if (message.data.isComplete) {
-      mm.removeMessageListener("PageInfo:mediaData", onmessage);
-      onFinished.forEach(function(func) {
-        func(pageInfoData);
-      });
-      return;
-    }
-
-    for (let item of message.data.mediaItems) {
+    for (let item of mediaResult.mediaItems) {
       addImage(item);
     }
-
     selectImage();
-  });
+    contextsToVisit.push(...currContext.getChildren());
+  }
 
   
   onLoadRegistry.forEach(function(func) {
     func();
   });
+
+  onFinished.forEach(function(func) {
+    func();
+  });
+}
+
+
+
+
+
+async function onNonMediaPageInfoLoad(browser, args, imageInfo) {
+  let pageInfoData = args;
+  let docInfo = pageInfoData.docInfo;
+  let windowInfo = pageInfoData.windowInfo;
+  let uri = Services.io.newURI(docInfo.documentURIObject.spec);
+  let principal = docInfo.principal;
+  gDocInfo = docInfo;
+
+  gImageElement = imageInfo;
+  var titleFormat = windowInfo.isTopWindow
+    ? "page-info-page"
+    : "page-info-frame";
+  document.l10n.setAttributes(document.documentElement, titleFormat, {
+    website: docInfo.location,
+  });
+
+  document
+    .getElementById("main-window")
+    .setAttribute("relatedUrl", docInfo.location);
+
+  await makeGeneralTab(pageInfoData.metaViewRows, docInfo);
+  if (
+    uri.spec.startsWith("about:neterror") ||
+    uri.spec.startsWith("about:certerror")
+  ) {
+    uri = browser.currentURI;
+    principal = Services.scriptSecurityManager.createContentPrincipal(
+      uri,
+      browser.contentPrincipal.originAttributes
+    );
+  }
+  onLoadPermission(uri, principal);
+  securityOnLoad(uri, windowInfo);
 }
 
 function resetPageInfo(args) {
@@ -490,15 +496,15 @@ function showTab(id) {
   deck.selectedPanel = pagel;
 }
 
-function loadTab(args) {
+async function loadTab(args) {
   
   
   let imageElement = args && args.imageElement;
-  let frameOuterWindowID = args && args.frameOuterWindowID;
+  let browsingContext = args && args.browsingContext;
   let browser = args && args.browser;
 
   
-  loadPageInfo(frameOuterWindowID, imageElement, browser);
+  loadPageInfo(browsingContext, imageElement, browser);
 
   var initialTab = (args && args.initialTab) || "generalTab";
   var radioGroup = document.getElementById("viewGroup");

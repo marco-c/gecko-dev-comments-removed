@@ -9,42 +9,36 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-const { ActorChild } = ChromeUtils.import(
-  "resource://gre/modules/ActorChild.jsm"
-);
-
 XPCOMUtils.defineLazyModuleGetters(this, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
 });
 
-class PageInfoChild extends ActorChild {
-  
-  receiveMessage(message) {
+class PageInfoChild extends JSWindowActorChild {
+  async receiveMessage(message) {
     let strings = message.data.strings;
-    let window;
 
-    let frameOuterWindowID = message.data.frameOuterWindowID;
-
-    
-    if (frameOuterWindowID != undefined) {
-      window = Services.wm.getOuterWindowWithId(frameOuterWindowID);
-    } else {
-      window = message.target.content;
-    }
-
+    let window = this.contentWindow;
     let document = window.document;
 
-    let pageInfoData = {
-      metaViewRows: this.getMetaInfo(document),
-      docInfo: this.getDocumentInfo(document),
-      windowInfo: this.getWindowInfo(window),
-    };
-
-    message.target.sendAsyncMessage("PageInfo:data", pageInfoData);
-
     
-    this.getMediaInfo(document, window, strings, message.target);
+    
+    switch (message.name) {
+      case "PageInfo:getData": {
+        return Promise.resolve({
+          metaViewRows: this.getMetaInfo(document),
+          docInfo: this.getDocumentInfo(document),
+          windowInfo: this.getWindowInfo(window),
+        });
+      }
+      case "PageInfo:getMediaData": {
+        return Promise.resolve({
+          mediaItems: await this.getDocumentMedia(document, strings),
+        });
+      }
+    }
+
+    return undefined;
   }
 
   getMetaInfo(document) {
@@ -111,54 +105,35 @@ class PageInfoChild extends ActorChild {
   }
 
   
-  getMediaInfo(document, window, strings, mm) {
-    let frameList = this.goThroughFrames(document, window);
-    this.processFrames(document, frameList, strings, mm);
-  }
 
-  goThroughFrames(document, window) {
-    let frameList = [document];
-    if (window && window.frames.length > 0) {
-      let num = window.frames.length;
-      for (let i = 0; i < num; i++) {
-        
-        frameList = frameList.concat(
-          this.goThroughFrames(window.frames[i].document, window.frames[i])
-        );
-      }
-    }
-    return frameList;
-  }
 
-  async processFrames(document, frameList, strings, mm) {
+
+
+  async getDocumentMedia(document, strings) {
     let nodeCount = 0;
     let content = document.ownerGlobal;
-    for (let doc of frameList) {
-      let iterator = doc.createTreeWalker(doc, content.NodeFilter.SHOW_ELEMENT);
+    let iterator = document.createTreeWalker(
+      document,
+      content.NodeFilter.SHOW_ELEMENT
+    );
 
-      
-      while (iterator.nextNode()) {
-        let mediaItems = this.getMediaItems(
-          document,
-          strings,
-          iterator.currentNode
-        );
+    let totalMediaItems = [];
 
-        if (mediaItems.length) {
-          mm.sendAsyncMessage("PageInfo:mediaData", {
-            mediaItems,
-            isComplete: false,
-          });
-        }
+    while (iterator.nextNode()) {
+      let mediaItems = this.getMediaItems(
+        document,
+        strings,
+        iterator.currentNode
+      );
 
-        if (++nodeCount % 500 == 0) {
-          
-          await new Promise(resolve => setTimeout(resolve, 10));
-        }
+      if (++nodeCount % 500 == 0) {
+        
+        await new Promise(resolve => setTimeout(resolve, 10));
       }
+      totalMediaItems.push(...mediaItems);
     }
-    
-    mm.sendAsyncMessage("PageInfo:mediaData", { isComplete: true });
+
+    return totalMediaItems;
   }
 
   getMediaItems(document, strings, elem) {
@@ -344,7 +319,11 @@ class PageInfoChild extends ActorChild {
       img.src = url;
       result.naturalWidth = img.naturalWidth;
       result.naturalHeight = img.naturalHeight;
-    } else {
+    } else if (!(item instanceof content.SVGImageElement)) {
+      
+      
+      
+
       
       
       result.width = item.width;

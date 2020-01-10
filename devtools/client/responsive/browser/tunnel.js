@@ -488,8 +488,6 @@ MessageManagerTunnel.prototype = {
     
     "MessageChannel:",
     
-    "PageInfo:",
-    
     "Printing:",
   ],
 
@@ -502,8 +500,6 @@ MessageManagerTunnel.prototype = {
     "Finder:",
     
     "MessageChannel:",
-    
-    "PageInfo:",
     
     "Printing:",
   ],
