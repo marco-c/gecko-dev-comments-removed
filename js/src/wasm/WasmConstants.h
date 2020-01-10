@@ -174,7 +174,8 @@ enum class Op {
 
   
   Drop = 0x1a,
-  Select = 0x1b,
+  SelectNumeric = 0x1b,
+  SelectTyped = 0x1c,
 
   
   GetLocal = 0x20,
