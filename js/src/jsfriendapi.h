@@ -2607,7 +2607,6 @@ extern bool AddMozDateTimeFormatConstructor(JSContext* cx,
                                             JS::Handle<JSObject*> intl);
 
 
-
 extern bool AddLocaleConstructor(JSContext* cx, JS::Handle<JSObject*> intl);
 #endif  
 
