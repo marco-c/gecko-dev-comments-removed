@@ -79,7 +79,7 @@ export const selectLayoutRender = (state, prefs, rickRollCache) => {
     if (feed && feed.data) {
       data = {
         ...feed.data,
-        recommendations: [...feed.data.recommendations],
+        recommendations: [...(feed.data.recommendations || [])],
       };
     }
 
@@ -91,7 +91,9 @@ export const selectLayoutRender = (state, prefs, rickRollCache) => {
     }
 
     
-    if (data && component.spocs && component.spocs.positions && component.spocs.positions.length) {
+    const hasRecs = data && data.recommendations && data.recommendations.length;
+    
+    if (hasRecs && component.spocs && component.spocs.positions && component.spocs.positions.length) {
       
       if (spocs.loaded && spocs.data.spocs && spocs.data.spocs.length) {
         data = rollForSpocs(data, component.spocs);

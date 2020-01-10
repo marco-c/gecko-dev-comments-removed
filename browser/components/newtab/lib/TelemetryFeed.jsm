@@ -783,7 +783,11 @@ this.TelemetryFeed = class TelemetryFeed {
     const impressionSets = session.impressionSets || {};
     const impressions = impressionSets[data.source] || [];
     
-    data.tiles.forEach(tile => impressions.push({id: tile.id, pos: tile.pos}));
+    data.tiles.forEach(tile => impressions.push({
+      id: tile.id,
+      pos: tile.pos,
+      ...(tile.shim ? {shim: tile.shim} : {}),
+    }));
     impressionSets[data.source] = impressions;
     session.impressionSets = impressionSets;
   }
