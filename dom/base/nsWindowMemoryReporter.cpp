@@ -116,60 +116,64 @@ nsWindowMemoryReporter* nsWindowMemoryReporter::Get() {
   return sWindowReporter;
 }
 
-static nsCString GetWindowURISpec(nsGlobalWindowInner* aWindow) {
-  NS_ENSURE_TRUE(aWindow, NS_LITERAL_CSTRING(""));
+static already_AddRefed<nsIURI> GetWindowURI(nsGlobalWindowInner* aWindow) {
+  NS_ENSURE_TRUE(aWindow, nullptr);
 
   nsCOMPtr<Document> doc = aWindow->GetExtantDoc();
-  if (doc) {
-    nsCOMPtr<nsIURI> uri;
-    uri = doc->GetDocumentURI();
-    return uri->GetSpecOrDefault();
-  }
-  nsCOMPtr<nsIScriptObjectPrincipal> scriptObjPrincipal =
-      do_QueryObject(aWindow);
-  NS_ENSURE_TRUE(scriptObjPrincipal, NS_LITERAL_CSTRING(""));
+  nsCOMPtr<nsIURI> uri;
 
-  
-  
-  
-  
-  if (!aWindow->GetOuterWindow()) {
-    return NS_LITERAL_CSTRING("");
+  if (doc) {
+    uri = doc->GetDocumentURI();
   }
-  nsIPrincipal* principal = scriptObjPrincipal->GetPrincipal();
-  if (!principal) {
-    return NS_LITERAL_CSTRING("");
+
+  if (!uri) {
+    nsCOMPtr<nsIScriptObjectPrincipal> scriptObjPrincipal =
+        do_QueryObject(aWindow);
+    NS_ENSURE_TRUE(scriptObjPrincipal, nullptr);
+
+    
+    
+    
+    
+    if (aWindow->GetOuterWindow()) {
+      nsIPrincipal* principal = scriptObjPrincipal->GetPrincipal();
+      if (principal) {
+        principal->GetURI(getter_AddRefs(uri));
+      }
+    }
   }
-  nsCString spec;
-  principal->GetAsciiSpec(spec);
-  return spec;
+
+  return uri.forget();
 }
 
 
-static nsCString GetWindowURISpec(nsGlobalWindowOuter* aWindow) {
-  NS_ENSURE_TRUE(aWindow, NS_LITERAL_CSTRING(""));
-  return GetWindowURISpec(aWindow->GetCurrentInnerWindowInternal());
+static already_AddRefed<nsIURI> GetWindowURI(nsGlobalWindowOuter* aWindow) {
+  NS_ENSURE_TRUE(aWindow, nullptr);
+  return GetWindowURI(aWindow->GetCurrentInnerWindowInternal());
 }
 
 static void AppendWindowURI(nsGlobalWindowInner* aWindow, nsACString& aStr,
                             bool aAnonymize) {
-  nsCString spec = GetWindowURISpec(aWindow);
+  nsCOMPtr<nsIURI> uri = GetWindowURI(aWindow);
 
-  if (spec.IsEmpty()) {
+  if (uri) {
+    if (aAnonymize && !aWindow->IsChromeWindow()) {
+      aStr.AppendPrintf("<anonymized-%" PRIu64 ">", aWindow->WindowID());
+    } else {
+      nsCString spec = uri->GetSpecOrDefault();
+
+      
+      
+      
+      spec.ReplaceChar('/', '\\');
+
+      aStr += spec;
+    }
+  } else {
     
     
     aStr += NS_LITERAL_CSTRING("[system]");
-    return;
   }
-  if (aAnonymize && !aWindow->IsChromeWindow()) {
-    aStr.AppendPrintf("<anonymized-%" PRIu64 ">", aWindow->WindowID());
-    return;
-  }
-  
-  
-  
-  spec.ReplaceChar('/', '\\');
-  aStr += spec;
 }
 
 MOZ_DEFINE_MALLOC_SIZE_OF(WindowsMallocSizeOf)
@@ -223,11 +227,18 @@ static void CollectWindowReports(nsGlobalWindowInner* aWindow,
   
   
   nsGlobalWindowOuter* top = nullptr;
+  nsCOMPtr<nsIURI> location;
   if (aWindow->GetOuterWindow()) {
     
     MOZ_ASSERT(!!aWindow->GetInProcessTopInternal() ==
                !!aWindow->GetDocShell());
     top = aWindow->GetInProcessTopInternal();
+    if (top) {
+      location = GetWindowURI(top);
+    }
+  }
+  if (!location) {
+    location = GetWindowURI(aWindow);
   }
 
   windowPath += NS_LITERAL_CSTRING("window-objects/");
