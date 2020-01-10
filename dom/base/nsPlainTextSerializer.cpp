@@ -684,8 +684,6 @@ nsresult nsPlainTextSerializer::DoOpenContainer(const nsAtom* aTag) {
     
     
     
-    
-    
     nsAutoString style;
     int32_t whitespace;
     if (NS_SUCCEEDED(GetAttributeValue(nsGkAtoms::style, style)) &&
@@ -695,28 +693,6 @@ nsresult nsPlainTextSerializer::DoOpenContainer(const nsAtom* aTag) {
         printf("Set mPreFormattedMail based on style pre-wrap\n");
 #endif
         mPreFormattedMail = true;
-        int32_t widthOffset = style.Find("width:");
-        if (widthOffset >= 0) {
-          
-          
-          
-          
-          
-          int32_t semiOffset = style.Find("ch", false, widthOffset + 6);
-          int32_t length = (semiOffset > 0 ? semiOffset - widthOffset - 6
-                                           : style.Length() - widthOffset);
-          nsAutoString widthstr;
-          style.Mid(widthstr, widthOffset + 6, length);
-          nsresult err;
-          int32_t col = widthstr.ToInteger(&err);
-
-          if (NS_SUCCEEDED(err)) {
-            mWrapColumn = (uint32_t)col;
-#ifdef DEBUG_preformatted
-            printf("Set wrap column to %d based on style\n", mWrapColumn);
-#endif
-          }
-        }
       } else if (kNotFound != style.Find("pre", true, whitespace)) {
 #ifdef DEBUG_preformatted
         printf("Set mPreFormattedMail based on style pre\n");
