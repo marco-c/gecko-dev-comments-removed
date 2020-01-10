@@ -561,6 +561,15 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
     
     
     aChildDoc->SendParentCOMProxy(WrapperFor(outerDoc));
+    if (nsWinUtils::IsWindowEmulationStarted()) {
+      
+      
+      
+      
+      aChildDoc->SetEmulatedWindowHandle(mEmulatedWindowHandle);
+      Unused << aChildDoc->SendEmulatedWindow(
+          reinterpret_cast<uintptr_t>(mEmulatedWindowHandle), nullptr);
+    }
   }
 #endif  
 
