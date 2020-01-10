@@ -59,6 +59,15 @@ static_assert(
 const uint8_t MAX_PREFIX_BIT_LENGTH = 32;
 
 
+
+
+
+
+
+
+const uint8_t MAX_BIT_LENGTH_IN_SATURATED_TABLE = 8;
+
+
 const uint8_t BIT_BUFFER_SIZE = 64;
 
 
@@ -1633,12 +1642,20 @@ FlatHuffmanKey::FlatHuffmanKey(const HuffmanKey* key)
 
 template <typename T>
 HuffmanTableImplementationGeneric<T>::Iterator::Iterator(
+    typename HuffmanTableImplementationSaturated<T>::Iterator&& iterator)
+    : implementation(std::move(iterator)) {}
+
+template <typename T>
+HuffmanTableImplementationGeneric<T>::Iterator::Iterator(
     typename HuffmanTableImplementationMap<T>::Iterator&& iterator)
     : implementation(std::move(iterator)) {}
 
 template <typename T>
 void HuffmanTableImplementationGeneric<T>::Iterator::operator++() {
   implementation.match(
+      [](typename HuffmanTableImplementationSaturated<T>::Iterator& iterator) {
+        iterator.operator++();
+      },
       [](typename HuffmanTableImplementationMap<T>::Iterator& iterator) {
         iterator.operator++();
       });
@@ -1648,6 +1665,12 @@ template <typename T>
 bool HuffmanTableImplementationGeneric<T>::Iterator::operator==(
     const HuffmanTableImplementationGeneric<T>::Iterator& other) const {
   return implementation.match(
+      [other](const typename HuffmanTableImplementationSaturated<T>::Iterator&
+                  iterator) {
+        return iterator ==
+               other.implementation.template as<
+                   typename HuffmanTableImplementationSaturated<T>::Iterator>();
+      },
       [other](
           const typename HuffmanTableImplementationMap<T>::Iterator& iterator) {
         return iterator ==
@@ -1660,6 +1683,12 @@ template <typename T>
 bool HuffmanTableImplementationGeneric<T>::Iterator::operator!=(
     const HuffmanTableImplementationGeneric<T>::Iterator& other) const {
   return implementation.match(
+      [other](const typename HuffmanTableImplementationSaturated<T>::Iterator&
+                  iterator) {
+        return iterator !=
+               other.implementation.template as<
+                   typename HuffmanTableImplementationSaturated<T>::Iterator>();
+      },
       [other](
           const typename HuffmanTableImplementationMap<T>::Iterator& iterator) {
         return iterator !=
@@ -1671,6 +1700,8 @@ bool HuffmanTableImplementationGeneric<T>::Iterator::operator!=(
 template <typename T>
 const T* HuffmanTableImplementationGeneric<T>::Iterator::operator*() const {
   return implementation.match(
+      [](const typename HuffmanTableImplementationSaturated<T>::Iterator&
+             iterator) { return iterator.operator*(); },
       [](const typename HuffmanTableImplementationMap<T>::Iterator& iterator) {
         return iterator.operator*();
       });
@@ -1685,6 +1716,9 @@ HuffmanTableImplementationGeneric<T>::HuffmanTableImplementationGeneric(
 template <typename T>
 void HuffmanTableImplementationGeneric<T>::selfCheck() {
   this->implementation.match(
+      [](HuffmanTableImplementationSaturated<T>& implementation) {
+        implementation.selfCheck();
+      },
       [](HuffmanTableImplementationMap<T>& implementation) {
         implementation.selfCheck();
       },
@@ -1698,6 +1732,10 @@ template <typename T>
 typename HuffmanTableImplementationGeneric<T>::Iterator
 HuffmanTableImplementationGeneric<T>::begin() const {
   return this->implementation.match(
+      [](const HuffmanTableImplementationSaturated<T>& implementation)
+          -> HuffmanTableImplementationGeneric<T>::Iterator {
+        return implementation.begin();
+      },
       [](const HuffmanTableImplementationMap<T>& implementation)
           -> HuffmanTableImplementationGeneric<T>::Iterator {
         return implementation.begin();
@@ -1712,6 +1750,10 @@ template <typename T>
 typename HuffmanTableImplementationGeneric<T>::Iterator
 HuffmanTableImplementationGeneric<T>::end() const {
   return this->implementation.match(
+      [](const HuffmanTableImplementationSaturated<T>& implementation)
+          -> HuffmanTableImplementationGeneric<T>::Iterator {
+        return implementation.end();
+      },
       [](const HuffmanTableImplementationMap<T>& implementation)
           -> HuffmanTableImplementationGeneric<T>::Iterator {
         return implementation.end();
@@ -1726,13 +1768,15 @@ template <typename T>
 JS::Result<Ok> HuffmanTableImplementationGeneric<T>::initWithSingleValue(
     JSContext* cx, T&& value) {
   
-  
-  
-  this->implementation = {
-      mozilla::VariantType<HuffmanTableImplementationMap<T>>{}, cx};
-  MOZ_TRY(this->implementation.template as<HuffmanTableImplementationMap<T>>()
-              .initWithSingleValue(cx, std::move(value)));
+  MOZ_ASSERT(this->implementation.template is<
+             HuffmanTableUnreachable>());  
 
+  this->implementation = {
+      mozilla::VariantType<HuffmanTableImplementationSaturated<T>>{}, cx};
+
+  MOZ_TRY(
+      this->implementation.template as<HuffmanTableImplementationSaturated<T>>()
+          .initWithSingleValue(cx, std::move(value)));
   return Ok();
 }
 
@@ -1741,14 +1785,18 @@ JS::Result<Ok> HuffmanTableImplementationGeneric<T>::init(
     JSContext* cx, size_t numberOfSymbols, uint8_t maxBitLength) {
   MOZ_ASSERT(this->implementation.template is<
              HuffmanTableUnreachable>());  
-  
-  
-  
-  this->implementation = {
-      mozilla::VariantType<HuffmanTableImplementationMap<T>>{}, cx};
-  MOZ_TRY(
-      this->implementation.template as<HuffmanTableImplementationMap<T>>().init(
-          cx, numberOfSymbols, maxBitLength));
+  if (maxBitLength > MAX_BIT_LENGTH_IN_SATURATED_TABLE) {
+    this->implementation = {
+        mozilla::VariantType<HuffmanTableImplementationMap<T>>{}, cx};
+    MOZ_TRY(this->implementation.template as<HuffmanTableImplementationMap<T>>()
+                .init(cx, numberOfSymbols, maxBitLength));
+  } else {
+    this->implementation = {
+        mozilla::VariantType<HuffmanTableImplementationSaturated<T>>{}, cx};
+    MOZ_TRY(this->implementation
+                .template as<HuffmanTableImplementationSaturated<T>>()
+                .init(cx, numberOfSymbols, maxBitLength));
+  }
   return Ok();
 }
 
@@ -1756,6 +1804,12 @@ template <typename T>
 JS::Result<Ok> HuffmanTableImplementationGeneric<T>::addSymbol(
     uint32_t bits, uint8_t bitLength, T&& value) {
   return this->implementation.match(
+      [bits, bitLength, value = std::move(value)](
+          HuffmanTableImplementationSaturated<T>&
+              implementation) mutable 
+      -> JS::Result<Ok> {
+        return implementation.addSymbol(bits, bitLength, std::move(value));
+      },
       [bits, bitLength, value = std::move(value)](
           HuffmanTableImplementationMap<T>&
               implementation) mutable 
@@ -1772,6 +1826,8 @@ template <typename T>
 HuffmanEntry<const T*> HuffmanTableImplementationGeneric<T>::lookup(
     HuffmanLookup lookup) const {
   return this->implementation.match(
+      [lookup](const HuffmanTableImplementationSaturated<T>& implementation)
+          -> HuffmanEntry<const T*> { return implementation.lookup(lookup); },
       [lookup](const HuffmanTableImplementationMap<T>& implementation)
           -> HuffmanEntry<const T*> { return implementation.lookup(lookup); },
       [](const HuffmanTableUnreachable&) -> HuffmanEntry<const T*> {
@@ -1915,6 +1971,153 @@ HuffmanEntry<const T*> HuffmanTableImplementationMap<T>::lookup(
 
   
   return HuffmanEntry<const T*>(0, 0, nullptr);
+}
+
+template <typename T>
+HuffmanTableImplementationSaturated<T>::Iterator::Iterator(
+    const HuffmanEntry<T>* position)
+    : position(position) {}
+
+template <typename T>
+void HuffmanTableImplementationSaturated<T>::Iterator::operator++() {
+  position++;
+}
+
+template <typename T>
+const T* HuffmanTableImplementationSaturated<T>::Iterator::operator*() const {
+  return &position->value;
+}
+
+template <typename T>
+bool HuffmanTableImplementationSaturated<T>::Iterator::operator==(
+    const Iterator& other) const {
+  return position == other.position;
+}
+
+template <typename T>
+bool HuffmanTableImplementationSaturated<T>::Iterator::operator!=(
+    const Iterator& other) const {
+  return position != other.position;
+}
+
+template <typename T>
+JS::Result<Ok> HuffmanTableImplementationSaturated<T>::initWithSingleValue(
+    JSContext* cx, T&& value) {
+  MOZ_ASSERT(values.empty());  
+  if (!values.emplaceBack(0, 0, std::move(value))) {
+    return cx->alreadyReportedError();
+  }
+  if (!saturated.emplaceBack(0)) {
+    return cx->alreadyReportedError();
+  }
+  this->maxBitLength = 0;
+  return Ok();
+}
+
+template <typename T>
+JS::Result<Ok> HuffmanTableImplementationSaturated<T>::init(
+    JSContext* cx, size_t numberOfSymbols, uint8_t maxBitLength) {
+  MOZ_ASSERT(maxBitLength <= MAX_BIT_LENGTH_IN_SATURATED_TABLE);
+  MOZ_ASSERT(values.empty());  
+
+  this->maxBitLength = maxBitLength;
+
+  if (!values.initCapacity(numberOfSymbols)) {
+    return cx->alreadyReportedError();
+  }
+  const size_t saturatedLength = 1 << maxBitLength;
+  if (!saturated.initCapacity(saturatedLength)) {
+    return cx->alreadyReportedError();
+  }
+  
+  for (size_t i = 0; i < saturatedLength; ++i) {
+    
+    saturated.infallibleAppend(
+        size_t(-1));  
+  }
+  return Ok();
+}
+
+#ifdef DEBUG
+template <typename T>
+void HuffmanTableImplementationSaturated<T>::selfCheck() {
+  MOZ_ASSERT(
+      this->maxBitLength <=
+      MAX_CODE_BIT_LENGTH);  
+
+  bool foundMaxBitLength = false;
+  for (size_t i = 0; i < saturated.length(); ++i) {
+    
+    
+    
+    
+    const size_t index = saturated[i];
+    MOZ_ASSERT(index != size_t(-1));
+    if (values[index].key.bitLength == maxBitLength) {
+      foundMaxBitLength = true;
+    }
+  }
+  MOZ_ASSERT(foundMaxBitLength);
+}
+#endif  
+
+template <typename T>
+JS::Result<Ok> HuffmanTableImplementationSaturated<T>::addSymbol(
+    uint32_t bits, uint8_t bitLength, T&& value) {
+  MOZ_ASSERT(bitLength != 0,
+             "Adding a symbol with a bitLength of 0 doesn't make sense.");
+  MOZ_ASSERT(values.empty() || values.back().key.bitLength <= bitLength,
+             "Symbols must be ranked by increasing bits length");
+  MOZ_ASSERT_IF(bitLength != 32 , bits >> bitLength == 0);
+  MOZ_ASSERT(bitLength <= maxBitLength);
+
+  const size_t index = values.length();
+
+  
+  if (!values.emplaceBack(bits, bitLength, std::move(value))) {
+    MOZ_CRASH();  
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const uint8_t padding = maxBitLength - bitLength;
+  const size_t begin = bits << padding;  
+  const size_t length =
+      ((padding != 0)  
+           ? size_t(-1) >> (8 * sizeof(size_t) - padding)
+           : 0) +
+      1;
+  for (size_t i = begin; i < begin + length; ++i) {
+    saturated[i] = index;
+  }
+
+  return Ok();
+}
+
+template <typename T>
+HuffmanEntry<const T*> HuffmanTableImplementationSaturated<T>::lookup(
+    HuffmanLookup key) const {
+  
+  
+  
+  const uint32_t bits = key.leadingBits(maxBitLength);
+  const size_t index =
+      saturated[bits];  
+                        
+  const auto& entry =
+      values[index];  
+  return HuffmanEntry<const T*>(entry.key.bits, entry.key.bitLength,
+                                &entry.value);
 }
 
 
