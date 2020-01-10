@@ -524,7 +524,25 @@ AudioListener* AudioContext::Listener() {
   return mListener;
 }
 
-double AudioContext::OutputLatency() { return Graph()->AudioOutputLatency(); }
+double AudioContext::OutputLatency() {
+  
+  
+  double latency_s = 0.0;
+  if (nsRFPService::IsResistFingerprintingEnabled()) {
+#ifdef XP_MACOSX
+    latency_s = 512. / mSampleRate;
+#elif MOZ_WIDGET_ANDROID
+    latency_s = 0.020;
+#elif XP_WIN
+    latency_s = 0.04;
+#else  
+    latency_s = 0.025;
+#endif
+  } else {
+    return Graph()->AudioOutputLatency();
+  }
+  return latency_s;
+}
 
 void AudioContext::GetOutputTimestamp(AudioTimestamp& aTimeStamp) {
   if (!Destination()) {
@@ -555,7 +573,6 @@ Worklet* AudioContext::GetAudioWorklet(ErrorResult& aRv) {
 
   return mWorklet;
 }
-
 bool AudioContext::IsRunning() const {
   return mAudioContextState == AudioContextState::Running;
 }
