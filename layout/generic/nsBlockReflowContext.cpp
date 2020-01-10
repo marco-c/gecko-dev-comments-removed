@@ -347,7 +347,10 @@ bool nsBlockReflowContext::PlaceBlock(const ReflowInput& aReflowInput,
   
   WritingMode wm = aReflowInput.GetWritingMode();
   WritingMode parentWM = mMetrics.GetWritingMode();
-  if (aReflowStatus.IsComplete()) {
+
+  
+  
+  if (aReflowStatus.IsComplete() && !mFrame->HasColumnSpanSiblings()) {
     aBEndMarginResult = mMetrics.mCarriedOutBEndMargin;
     aBEndMarginResult.Include(aReflowInput.ComputedLogicalMargin()
                                   .ConvertTo(parentWM, wm)
