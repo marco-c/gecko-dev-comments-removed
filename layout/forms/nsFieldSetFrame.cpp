@@ -185,12 +185,12 @@ bool nsDisplayFieldSetBorder::CreateWebRenderCommands(
     if (!legendRect.IsEmpty()) {
       
       auto appUnitsPerDevPixel = frame->PresContext()->AppUnitsPerDevPixel();
-      auto layoutRect = wr::ToRoundedLayoutRect(LayoutDeviceRect::FromAppUnits(
+      auto layoutRect = wr::ToLayoutRect(LayoutDeviceRect::FromAppUnits(
           frame->GetVisualOverflowRectRelativeToSelf() + offset,
           appUnitsPerDevPixel));
 
       wr::ComplexClipRegion region;
-      region.rect = wr::ToRoundedLayoutRect(
+      region.rect = wr::ToLayoutRect(
           LayoutDeviceRect::FromAppUnits(legendRect, appUnitsPerDevPixel));
       region.mode = wr::ClipMode::ClipOut;
       region.radii = wr::EmptyBorderRadius();
