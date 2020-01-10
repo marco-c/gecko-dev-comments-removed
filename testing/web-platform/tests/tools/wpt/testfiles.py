@@ -5,6 +5,7 @@ import re
 import subprocess
 import sys
 
+import six
 from collections import OrderedDict
 from six import iteritems
 
@@ -376,10 +377,12 @@ def get_parser_affected():
 
 def get_revish(**kwargs):
     
-    revish = kwargs["revish"]
+    revish = kwargs.get("revish")
     if revish is None:
         revish = "%s..HEAD" % branch_point()
-    assert isinstance(revish, str)
+    if isinstance(revish, six.text_type):
+        revish = revish.encode("utf8")
+    assert isinstance(revish, six.binary_type)
     return revish
 
 
