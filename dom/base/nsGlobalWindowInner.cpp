@@ -261,7 +261,6 @@
 #include "mozilla/dom/ClientState.h"
 
 #include "mozilla/dom/WindowGlobalChild.h"
-#include "mozilla/dom/BrowserChild.h"
 
 #include "mozilla/net/CookieSettings.h"
 
@@ -1918,54 +1917,6 @@ bool nsGlobalWindowInner::DialogsAreBeingAbused() {
   return false;
 }
 
-void nsGlobalWindowInner::FireFrameLoadEvent(bool aIsTrusted) {
-  
-  
-  if (!GetBrowsingContext()->GetParent() ||
-      !GetBrowsingContext()->IsContent()) {
-    return;
-  }
-
-  
-  
-  
-  
-  RefPtr<Element> element = GetBrowsingContext()->GetEmbedderElement();
-  if (element) {
-    nsEventStatus status = nsEventStatus_eIgnore;
-    WidgetEvent event(aIsTrusted, eLoad);
-    event.mFlags.mBubbles = false;
-    event.mFlags.mCancelable = false;
-
-    
-    
-    
-    
-    
-    EventDispatcher::Dispatch(element, nullptr, &event, nullptr, &status);
-    return;
-  }
-
-  
-  
-  
-  
-  RefPtr<BrowserChild> browserChild =
-      BrowserChild::GetFrom(static_cast<nsPIDOMWindowInner*>(this));
-  if (browserChild) {
-    
-    
-    
-    nsCOMPtr<nsPIDOMWindowOuter> rootOuter =
-        do_GetInterface(browserChild->WebNavigation());
-    if (!rootOuter || rootOuter != GetOuterWindow()) {
-      return;
-    }
-
-    mozilla::Unused << browserChild->SendFireFrameLoadEvent(aIsTrusted);
-  }
-}
-
 nsresult nsGlobalWindowInner::PostHandleEvent(EventChainPostVisitor& aVisitor) {
   
   switch (aVisitor.mEvent->mMessage) {
@@ -2026,7 +1977,25 @@ nsresult nsGlobalWindowInner::PostHandleEvent(EventChainPostVisitor& aVisitor) {
 
     mTimeoutManager->OnDocumentLoaded();
 
-    FireFrameLoadEvent(aVisitor.mEvent->IsTrusted());
+    nsCOMPtr<Element> element = GetOuterWindow()->GetFrameElementInternal();
+    nsIDocShell* docShell = GetDocShell();
+    if (element && GetParentInternal() && docShell &&
+        docShell->ItemType() != nsIDocShellTreeItem::typeChrome) {
+      
+      
+
+      nsEventStatus status = nsEventStatus_eIgnore;
+      WidgetEvent event(aVisitor.mEvent->IsTrusted(), eLoad);
+      event.mFlags.mBubbles = false;
+      event.mFlags.mCancelable = false;
+
+      
+      
+      
+      
+      
+      EventDispatcher::Dispatch(element, nullptr, &event, nullptr, &status);
+    }
 
     if (mVREventObserver) {
       mVREventObserver->NotifyAfterLoad();
@@ -7113,7 +7082,6 @@ nsPIDOMWindowInner::nsPIDOMWindowInner(nsPIDOMWindowOuter* aOuterWindow)
       mNumOfOpenWebSockets(0),
       mEvent(nullptr) {
   MOZ_ASSERT(aOuterWindow);
-  mBrowsingContext = aOuterWindow->GetBrowsingContext();
 }
 
 void nsPIDOMWindowInner::RegisterReportingObserver(ReportingObserver* aObserver,
