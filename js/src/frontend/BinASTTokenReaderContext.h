@@ -7,11 +7,12 @@
 #ifndef frontend_BinASTTokenReaderContext_h
 #define frontend_BinASTTokenReaderContext_h
 
-#include "mozilla/Array.h"       
-#include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
-#include "mozilla/Maybe.h"       
-#include "mozilla/Variant.h"     
+#include "mozilla/Array.h"         
+#include "mozilla/Assertions.h"    
+#include "mozilla/Attributes.h"    
+#include "mozilla/IntegerRange.h"  
+#include "mozilla/Maybe.h"         
+#include "mozilla/Variant.h"       
 
 #include <stddef.h>  
 #include <stdint.h>  
@@ -97,6 +98,16 @@ struct HuffmanLookup {
   
   
   const uint8_t bitLength;
+
+  
+  
+  
+  
+  
+  
+  
+  mozilla::detail::IntegerRange<size_t> suffixes(
+      uint8_t expectedBitLength) const;
 };
 
 
