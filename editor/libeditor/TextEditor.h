@@ -356,6 +356,12 @@ class TextEditor : public EditorBase,
     return mIsMaskingPassword;
   }
 
+  
+
+
+
+  static char16_t PasswordMask();
+
  protected:  
   
 

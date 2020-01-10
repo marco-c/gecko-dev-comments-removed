@@ -87,47 +87,6 @@ function testText(aIDs, aStartOffset, aEndOffset, aText, aTodoFlag) {
 
 
 
-
-function testPasswordText(aIDs, aStartOffset, aEndOffset, aText) {
-  for (var i = 0; i < aIDs.length; i++) {
-    var acc = getAccessible(aIDs[i], nsIAccessibleText);
-    try {
-      isnot(
-        acc.getText(aStartOffset, aEndOffset),
-        aText,
-        "getText: plain text between start and end offsets '" +
-          aStartOffset +
-          "', '" +
-          aEndOffset +
-          " for '" +
-          prettyName(aIDs[i]) +
-          "'"
-      );
-    } catch (e) {
-      ok(
-        false,
-        "getText fails between start and end offsets '" +
-          aStartOffset +
-          "', '" +
-          aEndOffset +
-          " for '" +
-          prettyName(aIDs[i]) +
-          "'"
-      );
-    }
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
 function testCharAtOffset(aIDs, aOffset, aChar, aStartOffset, aEndOffset) {
   var IDs = aIDs instanceof Array ? aIDs : [aIDs];
   for (var i = 0; i < IDs.length; i++) {

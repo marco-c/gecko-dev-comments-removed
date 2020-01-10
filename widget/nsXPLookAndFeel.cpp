@@ -998,12 +998,19 @@ char16_t LookAndFeel::GetPasswordCharacter() {
 
 
 bool LookAndFeel::GetEchoPassword() {
+  if (StaticPrefs::editor_password_mask_delay() >= 0) {
+    return StaticPrefs::editor_password_mask_delay() > 0;
+  }
   return nsLookAndFeel::GetInstance()->GetEchoPasswordImpl();
 }
 
 
 uint32_t LookAndFeel::GetPasswordMaskDelay() {
-  return nsLookAndFeel::GetInstance()->GetPasswordMaskDelayImpl();
+  int32_t delay = StaticPrefs::editor_password_mask_delay();
+  if (delay < 0) {
+    return nsLookAndFeel::GetInstance()->GetPasswordMaskDelayImpl();
+  }
+  return delay;
 }
 
 
