@@ -248,7 +248,7 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
   
   if ((pos->mOffset.Get(eSideTop).IsAuto() &&
        pos->mOffset.Get(eSideBottom).IsAuto()) ||
-      (pos->mOffset.Get(eSideLeft).IsAuto() ||
+      (pos->mOffset.Get(eSideLeft).IsAuto() &&
        pos->mOffset.Get(eSideRight).IsAuto())) {
     return true;
   }
