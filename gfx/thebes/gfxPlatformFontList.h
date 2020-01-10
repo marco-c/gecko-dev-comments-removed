@@ -304,6 +304,10 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   FontFamily GetDefaultFont(const gfxFontStyle* aStyle);
 
   
+  
+  gfxFontEntry* GetDefaultFontEntry() { return mDefaultFontEntry.get(); }
+
+  
 
 
 
@@ -796,6 +800,8 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   nsRefPtrHashtable<nsPtrHashKey<mozilla::fontlist::Face>, gfxFontEntry>
       mFontEntries;
+
+  RefPtr<gfxFontEntry> mDefaultFontEntry;
 
   bool mFontFamilyWhitelistActive;
 };

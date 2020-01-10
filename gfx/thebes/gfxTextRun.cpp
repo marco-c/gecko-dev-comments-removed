@@ -1992,10 +1992,19 @@ gfxFont* gfxFontGroup::GetDefaultFont() {
     
     
     
-    uint32_t oldGeneration = pfl->SharedFontList()->GetGeneration();
-    pfl->UpdateFontList();
-    if (pfl->SharedFontList()->GetGeneration() != oldGeneration) {
-      return GetDefaultFont();
+    
+    
+    if (NS_IsMainThread()) {
+      uint32_t oldGeneration = pfl->SharedFontList()->GetGeneration();
+      pfl->UpdateFontList();
+      if (pfl->SharedFontList()->GetGeneration() != oldGeneration) {
+        return GetDefaultFont();
+      }
+    } else {
+      gfxFontEntry* fe = pfl->GetDefaultFontEntry();
+      if (fe) {
+        return fe->FindOrMakeFont(&mStyle);
+      }
     }
   }
 

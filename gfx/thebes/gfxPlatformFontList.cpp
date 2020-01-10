@@ -386,6 +386,9 @@ bool gfxPlatformFontList::AddWithLegacyFamilyName(const nsACString& aLegacyName,
 }
 
 nsresult gfxPlatformFontList::InitFontList() {
+  
+  MOZ_ASSERT(NS_IsMainThread());
+
   mFontlistInitCount++;
 
   if (LOG_FONTINIT_ENABLED()) {
@@ -481,6 +484,21 @@ nsresult gfxPlatformFontList::InitFontList() {
       return rv;
     }
     ApplyWhitelist();
+  }
+
+  
+  
+  gfxFontStyle defStyle;
+  FontFamily fam = GetDefaultFont(&defStyle);
+  if (fam.mIsShared) {
+    auto face = fam.mShared->FindFaceForStyle(SharedFontList(), defStyle);
+    if (!face) {
+      mDefaultFontEntry = nullptr;
+    } else {
+      mDefaultFontEntry = GetOrCreateFontEntry(face, fam.mShared);
+    }
+  } else {
+    mDefaultFontEntry = fam.mUnshared->FindFontForStyle(defStyle);
   }
 
   return NS_OK;
