@@ -296,7 +296,7 @@ class WebRenderBridgeParent final
 
 
 
-  void WriteCollectedFrames();
+  RefPtr<wr::WebRenderAPI::WriteCollectedFramesPromise> WriteCollectedFrames();
 
 #if defined(MOZ_WIDGET_ANDROID)
   
