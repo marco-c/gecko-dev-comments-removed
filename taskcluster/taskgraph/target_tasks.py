@@ -307,6 +307,12 @@ def target_tasks_mozilla_esr68(full_task_graph, parameters, graph_config):
         if not standard_filter(task, parameters):
             return False
 
+        platform = task.attributes.get('test_platform')
+
+        
+        if platform and '-qr/' in platform:
+            return False
+
         
 
         return True
