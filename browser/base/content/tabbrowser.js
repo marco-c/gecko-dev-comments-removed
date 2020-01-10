@@ -5249,7 +5249,12 @@
           return;
         }
 
-        if (!browser.docShell || event.target != browser.docShell.document) {
+        if (!browser.docShell) {
+          return;
+        }
+        
+        browser.docShell.QueryInterface(Ci.nsIWebNavigation);
+        if (event.target != browser.docShell.document) {
           return;
         }
 

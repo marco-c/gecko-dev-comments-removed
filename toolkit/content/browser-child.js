@@ -33,7 +33,13 @@ addEventListener(
       !aEvent.isTrusted ||
       
       
-      content.closed ||
+      content.closed
+    ) {
+      return;
+    }
+    
+    docShell.QueryInterface(Ci.nsIWebNavigation);
+    if (
       
       
       
