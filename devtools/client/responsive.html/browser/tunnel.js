@@ -431,6 +431,8 @@ MessageManagerTunnel.prototype = {
     "Link:AddSearch",
     "PageStyle:StyleSheets",
     
+    "Content:LoadURIResult",
+    "Content:LocationChange",
     "Content:SecurityChange",
     
     "DOMTitleChanged",
