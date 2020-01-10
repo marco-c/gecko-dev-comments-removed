@@ -437,7 +437,7 @@ class RemoteAudioDecoder : public RemoteDataDecoder {
     return mFirstDemuxedSampleTime->ToMicroseconds() > aTime;
   }
 
-  bool ShouldDiscardSample(int64_t aSession) const {
+  bool ShouldDiscardSample() const {
     AssertOnTaskQueue();
     
     
@@ -445,8 +445,7 @@ class RemoteAudioDecoder : public RemoteDataDecoder {
     
     
     
-    return GetState() == State::SHUTDOWN || !mFirstDemuxedSampleTime ||
-           mSession != aSession;
+    return GetState() == State::SHUTDOWN || !mFirstDemuxedSampleTime;
   }
 
   
@@ -467,7 +466,7 @@ class RemoteAudioDecoder : public RemoteDataDecoder {
 
     AssertOnTaskQueue();
 
-    if (ShouldDiscardSample(aSample->Session()) || !aBuffer->IsValid()) {
+    if (ShouldDiscardSample() || !aBuffer->IsValid()) {
       aSample->Dispose();
       return;
     }
@@ -591,7 +590,6 @@ RemoteDataDecoder::RemoteDataDecoder(MediaData::Type aType,
       mFormat(aFormat),
       mDrmStubId(aDrmStubId),
       mTaskQueue(aTaskQueue),
-      mSession(0),
       mNumPendingInputs(0) {}
 
 RefPtr<MediaDataDecoder::FlushPromise> RemoteDataDecoder::Flush() {
@@ -608,7 +606,6 @@ RefPtr<MediaDataDecoder::FlushPromise> RemoteDataDecoder::ProcessFlush() {
   mDecodePromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   mDrainPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   SetState(State::DRAINED);
-  mSession++;
   mJavaDecoder->Flush();
   return FlushPromise::CreateAndResolve(true, __func__);
 }
@@ -636,7 +633,7 @@ RefPtr<MediaDataDecoder::DecodePromise> RemoteDataDecoder::Drain() {
     SetState(State::DRAINING);
     self->mInputBufferInfo->Set(0, 0, -1,
                                 MediaCodec::BUFFER_FLAG_END_OF_STREAM);
-    mJavaDecoder->Input(nullptr, self->mInputBufferInfo, nullptr, mSession);
+    mJavaDecoder->Input(nullptr, self->mInputBufferInfo, nullptr);
     return p;
   });
 }
@@ -743,7 +740,7 @@ RefPtr<MediaDataDecoder::DecodePromise> RemoteDataDecoder::ProcessDecode(
   SetState(State::DRAINABLE);
   mInputBufferInfo->Set(0, aSample->Size(), aSample->mTime.ToMicroseconds(), 0);
   return mJavaDecoder->Input(bytes, mInputBufferInfo,
-                             GetCryptoInfoFromSample(aSample), mSession)
+                             GetCryptoInfoFromSample(aSample))
              ? mDecodePromise.Ensure(__func__)
              : DecodePromise::CreateAndReject(
                    MediaResult(NS_ERROR_OUT_OF_MEMORY, __func__), __func__);
@@ -831,7 +828,6 @@ void RemoteDataDecoder::DrainComplete() {
   }
   SetState(State::DRAINED);
   ReturnDecodedData();
-  mSession++;
   
   mJavaDecoder->Flush();
 }
