@@ -404,9 +404,8 @@ class AbuseReport extends HTMLElement {
     this.render();
 
     this.addEventListener("click", this);
+
     
-    
-    document.addEventListener("focus", this, true);
     
     
     document.addEventListener("keydown", this);
@@ -415,7 +414,6 @@ class AbuseReport extends HTMLElement {
   disconnectedCallback() {
     this.textContent = "";
     this.removeEventListener("click", this);
-    document.removeEventListener("focus", this, true);
     document.removeEventListener("keydown", this);
   }
 
@@ -425,25 +423,6 @@ class AbuseReport extends HTMLElement {
     }
 
     switch (evt.type) {
-      case "focus":
-        if (evt.target === document.body) {
-          
-          
-          
-          const chromeWin = window.windowRoot.ownerGlobal;
-          
-          const {
-            previousElementSibling,
-          } = window.parent.docShell.chromeEventHandler;
-          Services.focus.moveFocus(
-            chromeWin, previousElementSibling,
-            Services.focus.MOVE_BACKWARD, Services.focus.FLAG_BYKEY);
-          return;
-        } else if (this.contains(evt.target)) {
-          return;
-        }
-        this.focus();
-        break;
       case "keydown":
         if (evt.key === "Escape") {
           
@@ -453,10 +432,15 @@ class AbuseReport extends HTMLElement {
           }
           this.cancel();
         }
+        this.handleKeyboardNavigation(evt);
         break;
       case "click":
         if (evt.target === this._iconClose ||
             evt.target === this._btnCancel) {
+          
+          
+          
+          evt.target.blur();
           this.cancel();
         }
         if (evt.target === this._btnNext) {
@@ -480,6 +464,41 @@ class AbuseReport extends HTMLElement {
           }
         }
         break;
+    }
+  }
+
+  handleKeyboardNavigation(evt) {
+    if (evt.keyCode !== evt.DOM_VK_TAB ||
+      evt.altKey || evt.controlKey || evt.metaKey) {
+      return;
+    }
+
+    const fm = Services.focus;
+    const backward = evt.shiftKey;
+
+    const isFirstFocusableElement = el => {
+      
+      if (el === document.body) {
+        return true;
+      }
+      
+      
+      
+      const rv = el == fm.moveFocus(window, null, fm.MOVEFOCUS_FIRST, 0);
+      fm.setFocus(el, 0);
+      return rv;
+    };
+
+    
+    
+    
+    if (backward && isFirstFocusableElement(evt.target)) {
+      evt.preventDefault();
+      evt.stopImmediatePropagation();
+      const chromeWin = window.windowRoot.ownerGlobal;
+      Services.focus.moveFocus(
+        chromeWin, null,
+        Services.MOVEFOCUS_BACKWARD, Services.focus.FLAG_BYKEY);
     }
   }
 

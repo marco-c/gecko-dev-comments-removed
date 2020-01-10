@@ -157,7 +157,7 @@
           
           this.aboutAddonsContent.setAttribute("aria-hidden", true);
           
-          fm.moveFocus(abuseReport.ownerGlobal, null, fm.MOVEFOCUS_ROOT, fm.FLAG_BYKEY);
+          this.focus();
           this.dispatchEvent(new CustomEvent("abuse-report:frame-shown"));
         });
       } else {
