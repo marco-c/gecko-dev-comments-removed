@@ -169,6 +169,9 @@ var whitelist = [
    platforms: ["linux", "win"]},
   
   {file: "resource://gre/localization/en-US/toolkit/about/aboutCompat.ftl"},
+
+  
+  {file: "chrome://browser/content/aboutlogins/aboutLoginsUtils.js"},
 ];
 
 if (!AppConstants.MOZ_NEW_NOTIFICATION_STORE) {
