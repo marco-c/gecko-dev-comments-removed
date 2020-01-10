@@ -28,6 +28,7 @@ namespace js {
 
 
 
+
 class ObjectWrapperMap {
   static const size_t InitialInnerMapSize = 4;
 
@@ -125,6 +126,31 @@ class ObjectWrapperMap {
 
     Ptr() : InnerMap::Ptr(), map(nullptr) {}
     Ptr(const InnerMap::Ptr& p, InnerMap& m) : InnerMap::Ptr(p), map(&m) {}
+  };
+
+  
+  class WrappedCompartmentEnum {
+    OuterMap::Enum iter;
+
+    void settle() {
+      
+      
+      while (!iter.empty() && iter.front().value().empty()) {
+        iter.popFront();
+      }
+    }
+
+   public:
+    explicit WrappedCompartmentEnum(ObjectWrapperMap& map) : iter(map.map) {
+      settle();
+    }
+    bool empty() const { return iter.empty(); }
+    JS::Compartment* front() const { return iter.front().key(); }
+    operator JS::Compartment*() const { return front(); }
+    void popFront() {
+      iter.popFront();
+      settle();
+    }
   };
 
   explicit ObjectWrapperMap(Zone* zone) : map(zone), zone(zone) {}
@@ -358,17 +384,26 @@ class JS::Compartment {
     return crossCompartmentObjectWrappers.hasNurseryAllocatedWrapperEntries(f);
   }
 
+  
+  
   struct ObjectWrapperEnum : public js::ObjectWrapperMap::Enum {
-    explicit ObjectWrapperEnum(JS::Compartment* c)
+    explicit ObjectWrapperEnum(Compartment* c)
         : js::ObjectWrapperMap::Enum(c->crossCompartmentObjectWrappers) {}
-    explicit ObjectWrapperEnum(JS::Compartment* c,
-                               const js::CompartmentFilter& f)
+    explicit ObjectWrapperEnum(Compartment* c, const js::CompartmentFilter& f)
         : js::ObjectWrapperMap::Enum(c->crossCompartmentObjectWrappers, f) {}
-    explicit ObjectWrapperEnum(JS::Compartment* c, JS::Compartment* target)
+    explicit ObjectWrapperEnum(Compartment* c, Compartment* target)
         : js::ObjectWrapperMap::Enum(c->crossCompartmentObjectWrappers,
                                      target) {
       MOZ_ASSERT(target);
     }
+  };
+
+  
+  struct WrappedObjectCompartmentEnum
+      : public js::ObjectWrapperMap::WrappedCompartmentEnum {
+    explicit WrappedObjectCompartmentEnum(Compartment* c)
+        : js::ObjectWrapperMap::WrappedCompartmentEnum(
+              c->crossCompartmentObjectWrappers) {}
   };
 
   
