@@ -2969,22 +2969,13 @@ VARCACHE_PREF(
   bool, false
 )
 
-#if defined(RELEASE_OR_BETA)
 
-VARCACHE_PREF(
-  Skip,
-  "gfx.blocklist.all",
-   gfx_blocklist_all,
-  int32_t, 0
-)
-#else
 VARCACHE_PREF(
   Once,
   "gfx.blocklist.all",
    gfx_blocklist_all,
   int32_t, 0
 )
-#endif
 
 
 VARCACHE_PREF(
