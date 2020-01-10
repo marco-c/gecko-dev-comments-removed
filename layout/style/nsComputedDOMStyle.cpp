@@ -901,15 +901,8 @@ bool nsComputedDOMStyle::NeedsToFlushLayout(nsCSSPropertyID aPropID) const {
     case eCSSProperty_margin_left: {
       
       
-      
-      
-      
-      
-      
-      
-      
-      
-      return true;
+      Side side = SideForPaddingOrMarginOrInsetProperty(aPropID);
+      return !style->StyleMargin()->mMargin.Get(side).ConvertsToLength();
     }
     default:
       return false;
