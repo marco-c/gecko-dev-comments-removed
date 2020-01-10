@@ -8398,16 +8398,14 @@ AbortReasonOr<Ok> IonBuilder::jsop_intrinsic(PropertyName* name) {
     return pushTypeBarrier(ins, types, BarrierKind::TypeSet);
   }
 
-  if (types->empty()) {
+  
+  pushConstant(vp);
+
+  
+  if (!types->hasType(TypeSet::GetValueType(vp))) {
     types->addType(TypeSet::GetValueType(vp), alloc().lifoAlloc());
   }
 
-  
-  
-  
-  MOZ_ASSERT(types->hasType(TypeSet::GetValueType(vp)));
-
-  pushConstant(vp);
   return Ok();
 }
 
