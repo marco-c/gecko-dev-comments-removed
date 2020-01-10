@@ -1456,6 +1456,11 @@ class UrlbarInput {
     this._resetSearchState();
 
     
+    if (this.document.activeElement != this.inputField) {
+      this.selectionStart = this.selectionEnd = 0;
+    }
+
+    
     
     
     this._clearActionOverride();
