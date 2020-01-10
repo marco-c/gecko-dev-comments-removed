@@ -1181,23 +1181,25 @@ nsresult VerifyCertAtTime(nsIX509Cert* aCert,
   mozilla::pkix::Result result;
 
   if (!aHostname.IsVoid() && aUsage == certificateUsageSSLServer) {
-    result = certVerifier->VerifySSLServerCert(
-        nssCert,
-        Maybe<nsTArray<uint8_t>>(),  
-        Maybe<nsTArray<uint8_t>>(),  
-        aTime,
-        nullptr,  
-        aHostname, resultChain,
-        false,  
-        aFlags, OriginAttributes(), &evOidPolicy);
+    result =
+        certVerifier->VerifySSLServerCert(nssCert, aTime,
+                                          nullptr,  
+                                          aHostname, resultChain, aFlags,
+                                          Nothing(),  
+                                          Nothing(),  
+                                          Nothing(),  
+                                          OriginAttributes(),
+                                          false,  
+                                          &evOidPolicy);
   } else {
     const nsCString& flatHostname = PromiseFlatCString(aHostname);
     result = certVerifier->VerifyCert(
         nssCert.get(), aUsage, aTime,
         nullptr,  
         aHostname.IsVoid() ? nullptr : flatHostname.get(), resultChain, aFlags,
-        Maybe<nsTArray<uint8_t>>(),  
-        Maybe<nsTArray<uint8_t>>(),  
+        Nothing(),  
+        Nothing(),  
+        Nothing(),  
         OriginAttributes(), &evOidPolicy);
   }
 

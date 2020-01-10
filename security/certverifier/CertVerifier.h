@@ -146,10 +146,11 @@ class CertVerifier {
       CERTCertificate* cert, SECCertificateUsage usage,
       mozilla::pkix::Time time, void* pinArg, const char* hostname,
        UniqueCERTCertList& builtChain, Flags flags = 0,
+      
+      const Maybe<nsTArray<nsTArray<uint8_t>>>& extraCertificates = Nothing(),
        const Maybe<nsTArray<uint8_t>>& stapledOCSPResponseArg =
-          Maybe<nsTArray<uint8_t>>(),
-       const Maybe<nsTArray<uint8_t>>& sctsFromTLS =
-          Maybe<nsTArray<uint8_t>>(),
+          Nothing(),
+       const Maybe<nsTArray<uint8_t>>& sctsFromTLS = Nothing(),
        const OriginAttributes& originAttributes =
           OriginAttributes(),
        SECOidTag* evOidPolicy = nullptr,
@@ -160,16 +161,18 @@ class CertVerifier {
        CertificateTransparencyInfo* ctInfo = nullptr);
 
   mozilla::pkix::Result VerifySSLServerCert(
-      const UniqueCERTCertificate& peerCert,
-       const Maybe<nsTArray<uint8_t>>& stapledOCSPResponse,
-       const Maybe<nsTArray<uint8_t>>& sctsFromTLS,
-      mozilla::pkix::Time time,
-       void* pinarg, const nsACString& hostname,
+      const UniqueCERTCertificate& peerCert, mozilla::pkix::Time time,
+      void* pinarg, const nsACString& hostname,
        UniqueCERTCertList& builtChain,
-       bool saveIntermediatesInPermanentDatabase = false,
        Flags flags = 0,
+       const Maybe<nsTArray<nsTArray<uint8_t>>>& extraCertificates =
+          Nothing(),
+       const Maybe<nsTArray<uint8_t>>& stapledOCSPResponse =
+          Nothing(),
+       const Maybe<nsTArray<uint8_t>>& sctsFromTLS = Nothing(),
        const OriginAttributes& originAttributes =
           OriginAttributes(),
+       bool saveIntermediatesInPermanentDatabase = false,
        SECOidTag* evOidPolicy = nullptr,
        OCSPStaplingStatus* ocspStaplingStatus = nullptr,
        KeySizeStatus* keySizeStatus = nullptr,
