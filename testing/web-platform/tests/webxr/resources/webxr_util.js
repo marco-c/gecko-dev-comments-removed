@@ -16,6 +16,15 @@ function xr_promise_test(name, func, properties) {
       await loadChromiumResources;
     }
 
+    
+    
+    
+    
+    t.add_cleanup(async () => {
+      
+      await navigator.xr.test.disconnectAllDevices();
+    });
+
     return func(t);
   }, name, properties);
 }
@@ -49,14 +58,11 @@ function xr_session_promise_test(
           
           
           
-          
           t.add_cleanup(async () => {
-                
-                if (testSession) {
-                  await testSession.end().catch(() => {});
-                }
-                
-                await navigator.xr.test.disconnectAllDevices();
+            
+            if (testSession) {
+              await testSession.end().catch(() => {});
+            }
           });
 
           return navigator.xr.test.simulateDeviceConnection(fakeDeviceInit)
