@@ -180,11 +180,9 @@ var AboutProtectionsHandler = {
 
 
 
-
   async getMonitorData() {
     let monitorData = {};
     let potentiallyBreachedLogins = null;
-    let userEmail = null;
     const hasFxa = await fxAccounts.accountStatus();
 
     if (hasFxa) {
@@ -223,13 +221,6 @@ var AboutProtectionsHandler = {
         potentiallyBreachedLogins = await LoginHelper.getBreachesForLogins(
           logins
         );
-
-        
-        
-        if (monitorData.errorMessage) {
-          const { email } = await fxAccounts.getSignedInUser();
-          userEmail = email;
-        }
       }
     } else {
       
@@ -240,7 +231,6 @@ var AboutProtectionsHandler = {
 
     return {
       ...monitorData,
-      userEmail,
       potentiallyBreachedLogins: potentiallyBreachedLogins
         ? potentiallyBreachedLogins.size
         : 0,
