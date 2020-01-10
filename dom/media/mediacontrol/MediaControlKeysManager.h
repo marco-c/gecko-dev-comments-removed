@@ -15,22 +15,15 @@ namespace dom {
 
 
 
-
 class MediaControlKeysManager final {
  public:
   MediaControlKeysManager();
   ~MediaControlKeysManager();
 
-  
-  
-  
-  
-  bool AddListener(MediaControlKeysEventListener* aListener);
-  bool RemoveListener(MediaControlKeysEventListener* aListener);
-
- private:
   void StartMonitoringControlKeys();
   void StopMonitoringControlKeys();
+
+ private:
   void CreateEventSource();
   RefPtr<MediaControlKeysEventSource> mEventSource;
 };
