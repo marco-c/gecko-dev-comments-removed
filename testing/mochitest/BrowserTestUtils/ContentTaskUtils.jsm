@@ -10,6 +10,10 @@
 
 
 
+
+
+
+
 "use strict";
 
 var EXPORTED_SYMBOLS = ["ContentTaskUtils"];
@@ -29,7 +33,7 @@ var ContentTaskUtils = {
 
 
   is_hidden(element) {
-    var style = element.ownerGlobal.getComputedStyle(element);
+    let style = element.ownerDocument.defaultView.getComputedStyle(element);
     if (style.display == "none") {
       return true;
     }
@@ -54,7 +58,7 @@ var ContentTaskUtils = {
 
 
   is_visible(element) {
-    var style = element.ownerGlobal.getComputedStyle(element);
+    let style = element.ownerDocument.defaultView.getComputedStyle(element);
     if (style.display == "none") {
       return false;
     }
