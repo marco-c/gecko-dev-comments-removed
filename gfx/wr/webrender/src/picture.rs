@@ -66,7 +66,7 @@ use api::units::*;
 use crate::box_shadow::{BLUR_SAMPLE_SCALE};
 use crate::clip::{ClipStore, ClipChainInstance, ClipDataHandle, ClipChainId};
 use crate::clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX,
-    ClipScrollTree, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace, CoordinateSystemId
+    ClipScrollTree, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace
 };
 use crate::composite::{CompositorKind, CompositeState, NativeSurfaceId};
 use crate::debug_colors;
@@ -3662,17 +3662,7 @@ impl PicturePrimitive {
                 
                 
                 if state.composite_state.picture_caching_is_enabled {
-                    
-                    
-                    
-                    let spatial_node = &frame_context
-                        .clip_scroll_tree
-                        .spatial_nodes[self.spatial_node_index.0 as usize];
-                    if spatial_node.coordinate_system_id == CoordinateSystemId::root() {
-                        Some(PictureCompositeMode::TileCache { })
-                    } else {
-                        None
-                    }
+                    Some(PictureCompositeMode::TileCache { })
                 } else {
                     None
                 }

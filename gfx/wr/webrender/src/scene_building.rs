@@ -12,7 +12,8 @@ use api::{PropertyBinding, ReferenceFrame, ReferenceFrameKind, ScrollFrameDispla
 use api::{Shadow, SpaceAndClipInfo, SpatialId, StackingContext, StickyFrameDisplayItem};
 use api::{ClipMode, PrimitiveKeyKind, TransformStyle, YuvColorSpace, ColorRange, YuvData, TempFilterData};
 use api::units::*;
-use crate::clip::{ClipChainId, ClipRegion, ClipItemKey, ClipStore, ClipItemKeyKind, ClipDataHandle, ClipNodeKind};
+use crate::clip::{ClipChainId, ClipRegion, ClipItemKey, ClipStore, ClipItemKeyKind};
+use crate::clip::{ClipInternData, ClipDataHandle, ClipNodeKind};
 use crate::clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, ClipScrollTree, SpatialNodeIndex};
 use crate::frame_builder::{ChasePrimitive, FrameBuilderConfig};
 use crate::glyph_rasterizer::FontInstance;
@@ -361,6 +362,14 @@ pub struct SceneBuilder<'a> {
 
     
     content_slice_count: usize,
+
+    
+    
+    
+    
+    
+    
+    picture_cache_spatial_nodes: FastHashSet<SpatialNodeIndex>,
 }
 
 impl<'a> SceneBuilder<'a> {
@@ -401,6 +410,7 @@ impl<'a> SceneBuilder<'a> {
             found_explicit_tile_cache: false,
             iframe_depth: 0,
             content_slice_count: 0,
+            picture_cache_spatial_nodes: FastHashSet::default(),
         };
 
         let device_pixel_scale = view.accumulated_scale_factor_for_snapping();
@@ -457,6 +467,7 @@ impl<'a> SceneBuilder<'a> {
             root_pic_index: builder.root_pic_index,
             config: builder.config,
             content_slice_count: builder.content_slice_count,
+            picture_cache_spatial_nodes: builder.picture_cache_spatial_nodes,
         }
     }
 
@@ -572,10 +583,7 @@ impl<'a> SceneBuilder<'a> {
                 update_shared_clips |= last_prim_clip_chain_id != instance.clip_chain_id;
                 last_prim_clip_chain_id = instance.clip_chain_id;
 
-                
-                
-                
-                if update_shared_clips && self.found_explicit_tile_cache {
+                if update_shared_clips {
                     prim_clips.clear();
                     
                     for clip_instance in &clip_chain_instance_stack {
@@ -653,6 +661,7 @@ impl<'a> SceneBuilder<'a> {
                 &mut self.interners,
                 &mut self.prim_store,
                 &mut self.clip_store,
+                &mut self.picture_cache_spatial_nodes,
             );
 
             main_prim_list.add_prim(
@@ -1461,7 +1470,12 @@ impl<'a> SceneBuilder<'a> {
                 
                 let handle = self.interners
                     .clip
-                    .intern(&item, || item.kind.node_kind());
+                    .intern(&item, || {
+                        ClipInternData {
+                            clip_node_kind: item.kind.node_kind(),
+                            spatial_node_index: item.spatial_node_index,
+                        }
+                    });
 
                 clip_chain_id = self.clip_store.add_clip_chain_node(
                     handle,
@@ -1778,9 +1792,9 @@ impl<'a> SceneBuilder<'a> {
                 .clip_store
                 .clip_chain_nodes[current_clip_chain_id.0 as usize];
 
-            let clip_kind = self.interners.clip[clip_chain_node.handle];
+            let clip_node_data = &self.interners.clip[clip_chain_node.handle];
 
-            if let ClipNodeKind::Complex = clip_kind {
+            if let ClipNodeKind::Complex = clip_node_data.clip_node_kind {
                 blit_reason = BlitReason::CLIP;
                 break;
             }
@@ -2240,7 +2254,12 @@ impl<'a> SceneBuilder<'a> {
         let handle = self
             .interners
             .clip
-            .intern(&item, || ClipNodeKind::Rectangle);
+            .intern(&item, || {
+                ClipInternData {
+                    clip_node_kind: ClipNodeKind::Rectangle,
+                    spatial_node_index,
+                }
+            });
 
         parent_clip_chain_index = self
             .clip_store
@@ -2260,7 +2279,12 @@ impl<'a> SceneBuilder<'a> {
             let handle = self
                 .interners
                 .clip
-                .intern(&item, || ClipNodeKind::Complex);
+                .intern(&item, || {
+                    ClipInternData {
+                        clip_node_kind: ClipNodeKind::Complex,
+                        spatial_node_index,
+                    }
+                });
 
             parent_clip_chain_index = self
                 .clip_store
@@ -2285,7 +2309,12 @@ impl<'a> SceneBuilder<'a> {
             let handle = self
                 .interners
                 .clip
-                .intern(&item, || ClipNodeKind::Complex);
+                .intern(&item, || {
+                    ClipInternData {
+                        clip_node_kind: ClipNodeKind::Complex,
+                        spatial_node_index,
+                    }
+                });
 
             parent_clip_chain_index = self
                 .clip_store
@@ -3866,7 +3895,12 @@ fn create_tile_cache(
     interners: &mut Interners,
     prim_store: &mut PrimitiveStore,
     clip_store: &mut ClipStore,
+    picture_cache_spatial_nodes: &mut FastHashSet<SpatialNodeIndex>,
 ) -> PrimitiveInstance {
+    
+    
+    picture_cache_spatial_nodes.insert(scroll_root);
+
     
     
     let pic_key = PictureKey::new(
@@ -3895,6 +3929,11 @@ fn create_tile_cache(
     
     let mut parent_clip_chain_id = ClipChainId::NONE;
     for clip_handle in &shared_clips {
+        
+        
+        let clip_node_data = &interners.clip[*clip_handle];
+        picture_cache_spatial_nodes.insert(clip_node_data.spatial_node_index);
+
         parent_clip_chain_id = clip_store.add_clip_chain_node(
             *clip_handle,
             parent_clip_chain_id,
@@ -3947,8 +3986,8 @@ fn add_clips(
         let clip_chain_node = &clip_store
             .clip_chain_nodes[current_clip_chain_id.0 as usize];
 
-        let clip_kind = interners.clip[clip_chain_node.handle];
-        if let ClipNodeKind::Rectangle = clip_kind {
+        let clip_node_data = &interners.clip[clip_chain_node.handle];
+        if let ClipNodeKind::Rectangle = clip_node_data.clip_node_kind {
             prim_clips.push(clip_chain_node.handle);
         }
 

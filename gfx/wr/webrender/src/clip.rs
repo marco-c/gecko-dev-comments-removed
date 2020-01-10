@@ -1061,12 +1061,23 @@ pub struct ClipItemKey {
     pub spatial_node_index: SpatialNodeIndex,
 }
 
+
+#[derive(Debug, MallocSizeOf)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct ClipInternData {
+    
+    pub clip_node_kind: ClipNodeKind,
+    
+    pub spatial_node_index: SpatialNodeIndex,
+}
+
 impl intern::InternDebug for ClipItemKey {}
 
 impl intern::Internable for ClipIntern {
     type Key = ClipItemKey;
     type StoreData = ClipNode;
-    type InternData = ClipNodeKind;
+    type InternData = ClipInternData;
 }
 
 #[derive(Debug, MallocSizeOf)]
