@@ -182,6 +182,10 @@ struct ShellContext {
   
   js::Monitor offThreadMonitor;
   Vector<OffThreadJob*, 0, SystemAllocPolicy> offThreadJobs;
+
+  
+  using ObjectVector = GCVector<JSObject*, 0, SystemAllocPolicy>;
+  JS::PersistentRooted<ObjectVector> finalizationGroupsToCleanUp;
 };
 
 extern ShellContext* GetShellContext(JSContext* cx);
