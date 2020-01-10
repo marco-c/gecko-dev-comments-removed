@@ -225,7 +225,8 @@ class RenderThread final {
   void IncPendingFrameCount(wr::WindowId aWindowId, const VsyncId& aStartId,
                             const TimeStamp& aStartTime,
                             uint8_t aDocFrameCount);
-
+  
+  void DecPendingFrameBuildCount(wr::WindowId aWindowId);
   void NotifySlowFrame(wr::WindowId aWindowId);
 
   
@@ -306,14 +307,11 @@ class RenderThread final {
   };
 
   struct WindowInfo {
-    
     int64_t PendingCount() { return mPendingFrames.size(); }
-    int64_t RenderingCount() { return mIsRendering ? 1 : 0; }
-
     
     
     std::queue<PendingFrameInfo> mPendingFrames;
-    bool mIsRendering = false;
+    uint8_t mPendingFrameBuild = 0;
     bool mIsDestroyed = false;
     bool mHadSlowFrame = false;
   };
