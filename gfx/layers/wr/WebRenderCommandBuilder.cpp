@@ -1525,10 +1525,6 @@ void WebRenderCommandBuilder::DoGroupingForDisplayList(
   group.mAppUnitsPerDevPixel = appUnitsPerDevPixel;
   group.mImageBounds = layerBounds.ToUnknownRect();
   group.mClippedImageBounds = group.mImageBounds;
-  
-  
-  
-  group.mVisibleRect = group.mVisibleRect - group.mLayerBounds.TopLeft();
 
   g.mTransform = Matrix::Scaling(scale.width, scale.height)
                      .PostTranslate(residualOffset.x, residualOffset.y);
