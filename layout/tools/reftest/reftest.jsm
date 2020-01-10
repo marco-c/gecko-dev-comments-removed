@@ -205,6 +205,7 @@ function OnRefTestLoad(win)
       
       
       ChromeUtils.unregisterWindowActor("LoadURIDelegate");
+      ChromeUtils.unregisterWindowActor("WebBrowserChrome");
     } else {
       document.getElementById("reftest-window").appendChild(g.browser);
     }
