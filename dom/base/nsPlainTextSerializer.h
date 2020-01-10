@@ -116,12 +116,11 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   
   inline bool MayWrap() const {
     return mWrapColumn &&
-           ((mSettings.GetFlags() & nsIDocumentEncoder::OutputFormatted) ||
-            (mSettings.GetFlags() & nsIDocumentEncoder::OutputWrap));
+           mSettings.HasFlag(nsIDocumentEncoder::OutputFormatted |
+                             nsIDocumentEncoder::OutputWrap);
   }
   inline bool MayBreakLines() const {
-    return !(mSettings.GetFlags() &
-             nsIDocumentEncoder::OutputDisallowLineBreaking);
+    return !mSettings.HasFlag(nsIDocumentEncoder::OutputDisallowLineBreaking);
   }
 
   inline bool DoOutput() const { return mHeadLevel == 0; }
@@ -165,6 +164,10 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
     
     int32_t GetFlags() const { return mFlags; }
+
+    
+    
+    bool HasFlag(int32_t aFlag) const { return mFlags & aFlag; }
 
     
     bool GetWithRubyAnnotation() const { return mWithRubyAnnotation; }
