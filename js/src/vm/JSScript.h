@@ -1403,8 +1403,51 @@ class BaseScript : public gc::TenuredCell {
   
   GCPtr<ScriptSourceObject*> sourceObject_ = {};
 
-  BaseScript(uint8_t* stubEntry, ScriptSourceObject* sourceObject)
-      : jitCodeRaw_(stubEntry), sourceObject_(sourceObject) {}
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint32_t sourceStart_ = 0;
+  uint32_t sourceEnd_ = 0;
+  uint32_t toStringStart_ = 0;
+  uint32_t toStringEnd_ = 0;
+
+  
+  uint32_t lineno_ = 0;
+  uint32_t column_ = 0;  
+
+  BaseScript(uint8_t* stubEntry, ScriptSourceObject* sourceObject,
+             uint32_t sourceStart, uint32_t sourceEnd, uint32_t toStringStart,
+             uint32_t toStringEnd)
+      : jitCodeRaw_(stubEntry),
+        sourceObject_(sourceObject),
+        sourceStart_(sourceStart),
+        sourceEnd_(sourceEnd),
+        toStringStart_(toStringStart),
+        toStringEnd_(toStringEnd) {
+    MOZ_ASSERT(toStringStart <= sourceStart);
+    MOZ_ASSERT(sourceStart <= sourceEnd);
+    MOZ_ASSERT(sourceEnd <= toStringEnd);
+  }
 
  public:
   uint8_t* jitCodeRaw() const { return jitCodeRaw_; }
@@ -1419,6 +1462,15 @@ class BaseScript : public gc::TenuredCell {
   const char* maybeForwardedFilename() const {
     return maybeForwardedScriptSource()->filename();
   }
+
+  uint32_t sourceStart() const { return sourceStart_; }
+  uint32_t sourceEnd() const { return sourceEnd_; }
+  uint32_t sourceLength() const { return sourceEnd_ - sourceStart_; }
+  uint32_t toStringStart() const { return toStringStart_; }
+  uint32_t toStringEnd() const { return toStringEnd_; }
+
+  uint32_t lineno() const { return lineno_; }
+  uint32_t column() const { return column_; }
 
   void traceChildren(JSTracer* trc);
 
@@ -1977,43 +2029,6 @@ class JSScript : public js::BaseScript {
   uint32_t dataSize_ = 0;
 
   
-  uint32_t lineno_ = 0;
-
-  
-  uint32_t column_ = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  uint32_t sourceStart_ = 0;
-  uint32_t sourceEnd_ = 0;
-  uint32_t toStringStart_ = 0;
-  uint32_t toStringEnd_ = 0;
-
-  
   
   
   mozilla::Atomic<uint32_t, mozilla::Relaxed,
@@ -2381,10 +2396,6 @@ class JSScript : public js::BaseScript {
 
   size_t mainOffset() const { return immutableScriptData()->mainOffset; }
 
-  uint32_t lineno() const { return lineno_; }
-
-  uint32_t column() const { return column_; }
-
   void setColumn(size_t column) { column_ = column; }
 
   
@@ -2442,16 +2453,6 @@ class JSScript : public js::BaseScript {
   size_t numICEntries() const { return immutableScriptData()->numICEntries; }
 
   size_t funLength() const { return immutableScriptData()->funLength; }
-
-  uint32_t sourceStart() const { return sourceStart_; }
-
-  uint32_t sourceEnd() const { return sourceEnd_; }
-
-  uint32_t sourceLength() const { return sourceEnd_ - sourceStart_; }
-
-  uint32_t toStringStart() const { return toStringStart_; }
-
-  uint32_t toStringEnd() const { return toStringEnd_; }
 
   bool noScriptRval() const { return hasFlag(ImmutableFlags::NoScriptRval); }
 
@@ -3368,17 +3369,6 @@ class LazyScript : public BaseScript {
   }
   void setFlag(ImmutableFlags flag) { immutableFlags_ |= uint32_t(flag); }
 
-  
-  
-  uint32_t sourceStart_;
-  uint32_t sourceEnd_;
-  uint32_t toStringStart_;
-  uint32_t toStringEnd_;
-  
-  
-  uint32_t lineno_;
-  uint32_t column_;
-
   LazyScript(JSFunction* fun, uint8_t* stubEntry,
              ScriptSourceObject& sourceObject, LazyScriptData* data,
              uint32_t immutableFlags, uint32_t sourceStart, uint32_t sourceEnd,
@@ -3585,14 +3575,6 @@ class LazyScript : public BaseScript {
     MOZ_ASSERT(lazyData_);
     return lazyData_->fieldInitializers_;
   }
-
-  uint32_t sourceStart() const { return sourceStart_; }
-  uint32_t sourceEnd() const { return sourceEnd_; }
-  uint32_t sourceLength() const { return sourceEnd_ - sourceStart_; }
-  uint32_t toStringStart() const { return toStringStart_; }
-  uint32_t toStringEnd() const { return toStringEnd_; }
-  uint32_t lineno() const { return lineno_; }
-  uint32_t column() const { return column_; }
 
   void setToStringEnd(uint32_t toStringEnd) {
     MOZ_ASSERT(toStringStart_ <= toStringEnd);
