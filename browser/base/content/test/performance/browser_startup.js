@@ -36,8 +36,6 @@ const startupPhases = {
         "resource://gre/modules/MainProcessSingleton.jsm",
         "resource://gre/modules/XPCOMUtils.jsm",
         "resource://gre/modules/Services.jsm",
-        
-        "resource://gre/modules/PushComponents.jsm", 
       ]),
     },
   },
@@ -82,6 +80,7 @@ const startupPhases = {
       components: new Set([
         "PageIconProtocolHandler.js",
         "PlacesCategoriesStarter.js",
+        "PushComponents.jsm",
         "nsPlacesExpiration.js",
       ]),
       modules: new Set([
