@@ -295,11 +295,7 @@ struct DIGroup {
   IntRect mInvalidRect;
   nsRect mGroupBounds;
   LayerIntRect mVisibleRect;
-  
-  
-  
   LayerIntRect mLastVisibleRect;
-
   
   
   IntRect mPreservedRect;
@@ -634,7 +630,6 @@ struct DIGroup {
             mKey.value().second(),
             ViewAs<ImagePixel>(mVisibleRect,
                                PixelCastJustification::LayerIsImage));
-        mLastVisibleRect = mVisibleRect;
         PushImage(aBuilder, itemBounds);
       }
       return;
@@ -746,7 +741,6 @@ struct DIGroup {
     aResources.SetBlobImageVisibleArea(
         mKey.value().second(),
         ViewAs<ImagePixel>(mVisibleRect, PixelCastJustification::LayerIsImage));
-    mLastVisibleRect = mVisibleRect;
     PushImage(aBuilder, itemBounds);
     GP("End EndGroup\n\n");
   }
@@ -1530,6 +1524,7 @@ void WebRenderCommandBuilder::DoGroupingForDisplayList(
   group.mResidualOffset = residualOffset;
   group.mGroupBounds = groupBounds;
   group.mLayerBounds = layerBounds;
+  group.mLastVisibleRect = group.mVisibleRect;
   group.mVisibleRect = visibleRect;
   group.mPreservedRect = group.mVisibleRect.Intersect(group.mLastVisibleRect).ToUnknownRect();
   group.mAppUnitsPerDevPixel = appUnitsPerDevPixel;
