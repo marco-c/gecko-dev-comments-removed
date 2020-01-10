@@ -10,11 +10,12 @@ function getNthItem(dbg, index) {
 }
 
 
+
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html", "simple1");
   const {
     selectors: { getSelectedSource },
-    getState
+    getState,
   } = dbg;
 
   await selectSource(dbg, "simple1", 1);
@@ -22,13 +23,17 @@ add_task(async function() {
   findElementWithSelector(dbg, ".outline-tab").click();
   is(getItems(dbg).length, 5, "5 items in the list");
 
-  
+  info("Click an item in outline panel");
   const item = getNthItem(dbg, 3);
   is(item.innerText, "evaledFunc()", "got evaled func");
   item.click();
   assertHighlightLocation(dbg, "simple1", 15);
+  ok(
+    item.parentNode.classList.contains("focused"),
+    "The clicked item li is focused"
+  );
 
-  
+  info("Ensure main() is the first function listed");
   const firstFunction = findElementWithSelector(
     dbg,
     ".outline-list__element .function-signature"
@@ -38,7 +43,8 @@ add_task(async function() {
     "main()",
     "Natural first function is first listed"
   );
-  
+
+  info("Sort the list");
   findElementWithSelector(dbg, ".outline-footer button").click();
   
   is(
@@ -46,11 +52,15 @@ add_task(async function() {
     "active",
     "Alphabetize button is highlighted when active"
   );
-  
+
+  info("Ensure doEval() is the first function listed after alphabetization");
   const firstAlphaFunction = findElementWithSelector(
     dbg,
     ".outline-list__element .function-signature"
   );
-  is(firstAlphaFunction.innerText, "doEval()",
-     "Alphabetized first function is correct");
+  is(
+    firstAlphaFunction.innerText,
+    "doEval()",
+    "Alphabetized first function is correct"
+  );
 });

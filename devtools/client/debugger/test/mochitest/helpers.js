@@ -1601,7 +1601,7 @@ async function codeMirrorGutterElement(dbg, line) {
 }
 
 async function clickAtPos(dbg, pos) {
-  const tokenEl = await getTokenFromPosition(dbg, pos)
+  const tokenEl = await getTokenFromPosition(dbg, pos);
 
   if (!tokenEl) {
     return false;
@@ -1621,7 +1621,7 @@ async function clickAtPos(dbg, pos) {
 }
 
 async function hoverAtPos(dbg, pos) {
-  const tokenEl = await getTokenFromPosition(dbg, pos)
+  const tokenEl = await getTokenFromPosition(dbg, pos);
 
   if (!tokenEl) {
     return false;
