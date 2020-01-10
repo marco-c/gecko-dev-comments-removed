@@ -103,6 +103,12 @@ void RenderAndroidSurfaceTextureHostOGL::DeleteTextureHandle() {
 }
 
 bool RenderAndroidSurfaceTextureHostOGL::EnsureAttachedToGLContext() {
+  
+  
+  if (RenderThread::Get()->IsHandlingWebRenderError()) {
+    return false;
+  }
+
   if (mAttachedToGLContext) {
     return true;
   }
@@ -197,7 +203,9 @@ void RenderAndroidSurfaceTextureHostOGL::NofityForUse() {
     
     
     MOZ_ASSERT(!mSurfTex || !mSurfTex->IsSingleBuffer());
-    EnsureAttachedToGLContext();
+    if (!EnsureAttachedToGLContext()) {
+      return;
+    }
     mPrepareStatus = STATUS_PREPARE_NEEDED;
   }
 }
@@ -207,7 +215,9 @@ void RenderAndroidSurfaceTextureHostOGL::NotifyNotUsed() {
 
   if (mSurfTex && mSurfTex->IsSingleBuffer() &&
       mPrepareStatus == STATUS_PREPARED) {
-    EnsureAttachedToGLContext();
+    if (!EnsureAttachedToGLContext()) {
+      return;
+    }
     
     mGL->MakeCurrent();
     mSurfTex->ReleaseTexImage();
@@ -215,7 +225,9 @@ void RenderAndroidSurfaceTextureHostOGL::NotifyNotUsed() {
     
     
     MOZ_ASSERT(!mSurfTex->IsSingleBuffer());
-    EnsureAttachedToGLContext();
+    if (!EnsureAttachedToGLContext()) {
+      return;
+    }
     mSurfTex->UpdateTexImage();
   }
 

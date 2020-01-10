@@ -255,6 +255,11 @@ class RenderThread final {
   
   void SimulateDeviceReset();
 
+  
+  void HandleWebRenderError(WebRenderError aError);
+  
+  bool IsHandlingWebRenderError();
+
   size_t RendererCount();
 
   void SetCompositionRecorderForWindow(
@@ -314,6 +319,7 @@ class RenderThread final {
   bool mHasShutdown;
 
   bool mHandlingDeviceReset;
+  bool mHandlingWebRenderError;
 };
 
 }  
