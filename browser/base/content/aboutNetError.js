@@ -7,6 +7,11 @@
 const formatter = new Intl.DateTimeFormat("default");
 
 
+const TLS_ERROR_REPORT_TELEMETRY_AUTO_CHECKED = 2;
+const TLS_ERROR_REPORT_TELEMETRY_AUTO_UNCHECKED = 3;
+const TLS_ERROR_REPORT_TELEMETRY_UI_SHOWN = 0;
+
+
 
 
 
@@ -330,12 +335,7 @@ function setupErrorUI() {
 
   let checkbox = document.getElementById("automaticallyReportInFuture");
   checkbox.addEventListener("change", function({ target: { checked } }) {
-    document.dispatchEvent(
-      new CustomEvent("AboutNetErrorSetAutomatic", {
-        detail: checked,
-        bubbles: true,
-      })
-    );
+    onSetAutomatic(checked);
   });
 
   let errorReportingEnabled = RPMGetBoolPref(
@@ -343,17 +343,32 @@ function setupErrorUI() {
   );
   if (errorReportingEnabled) {
     showCertificateErrorReporting();
+    RPMAddToHistogram(
+      "TLS_ERROR_REPORT_UI",
+      TLS_ERROR_REPORT_TELEMETRY_UI_SHOWN
+    );
     let errorReportingAutomatic = RPMGetBoolPref(
       "security.ssl.errorReporting.automatic"
     );
     checkbox.checked = !!errorReportingAutomatic;
   }
+}
 
+function onSetAutomatic(checked) {
+  let bin = TLS_ERROR_REPORT_TELEMETRY_AUTO_UNCHECKED;
+  if (checked) {
+    bin = TLS_ERROR_REPORT_TELEMETRY_AUTO_CHECKED;
+  }
+  RPMAddToHistogram("TLS_ERROR_REPORT_UI", bin);
+
+  RPMSetBoolPref("security.ssl.errorReporting.automatic", checked);
   
-  const TLS_ERROR_REPORT_TELEMETRY_UI_SHOWN = 0;
-  RPMSendAsyncMessage("Browser:SSLErrorReportTelemetry", {
-    reportStatus: TLS_ERROR_REPORT_TELEMETRY_UI_SHOWN,
-  });
+  if (checked) {
+    RPMSendAsyncMessage("ReportTLSError", {
+      host: document.location.host,
+      port: parseInt(document.location.port) || -1,
+    });
+  }
 }
 
 async function setNetErrorMessageFromCode() {
