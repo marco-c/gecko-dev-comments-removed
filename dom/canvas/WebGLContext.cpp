@@ -483,46 +483,32 @@ bool WebGLContext::CreateAndInitGL(
     flags |= gl::CreateContextFlags::REQUIRE_COMPAT_PROFILE;
   }
 
-  {
-    bool highPower = false;
-    switch (mOptions.powerPreference) {
-      case dom::WebGLPowerPreference::Low_power:
-        highPower = false;
-        break;
+  switch (mOptions.powerPreference) {
+    case dom::WebGLPowerPreference::Low_power:
+      break;
 
-      case dom::WebGLPowerPreference::High_performance:
-        highPower = true;
-        break;
-
-        
-        
-        
-        
-        
-        
-        
-        
-      default:
-        highPower = true;
-        if (StaticPrefs::WebGLDefaultLowPower()) {
-          highPower = false;
-        } else if (!mCanvasElement->GetParentNode()) {
-          GenerateWarning(
-              "WebGLContextAttributes.powerPreference: 'default' when <canvas>"
-              " has no parent Element defaults to 'low-power'.");
-          highPower = false;
-        }
-        break;
-    }
-
-    
-    if (!gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
-      highPower = false;
-    }
-
-    if (highPower) {
+    case dom::WebGLPowerPreference::High_performance:
       flags |= gl::CreateContextFlags::HIGH_POWER;
-    }
+      break;
+
+      
+      
+      
+      
+      
+      
+      
+      
+    default:
+      if (!StaticPrefs::WebGLDefaultLowPower()) {
+        flags |= gl::CreateContextFlags::HIGH_POWER;
+      }
+      break;
+  }
+
+  
+  if (!gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
+    flags &= ~gl::CreateContextFlags::HIGH_POWER;
   }
 
 #ifdef XP_MACOSX
