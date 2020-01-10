@@ -111,7 +111,7 @@ class WebConsole {
 
 
   init() {
-    return this.ui.init().then(() => this);
+    return this.ui.init();
   }
 
   
