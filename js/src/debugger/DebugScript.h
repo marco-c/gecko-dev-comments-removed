@@ -19,7 +19,7 @@ class Realm;
 
 namespace js {
 
-class BreakpointSite;
+class JSBreakpointSite;
 class Debugger;
 
 
@@ -59,7 +59,7 @@ class DebugScript {
 
 
 
-  BreakpointSite* breakpoints[1];
+  JSBreakpointSite* breakpoints[1];
 
   
 
@@ -71,17 +71,17 @@ class DebugScript {
 
   static size_t allocSize(size_t codeLength) {
     return offsetof(DebugScript, breakpoints) +
-           codeLength * sizeof(BreakpointSite*);
+           codeLength * sizeof(JSBreakpointSite*);
   }
 
   static DebugScript* get(JSScript* script);
   static DebugScript* getOrCreate(JSContext* cx, JSScript* script);
 
  public:
-  static BreakpointSite* getBreakpointSite(JSScript* script, jsbytecode* pc);
-  static BreakpointSite* getOrCreateBreakpointSite(JSContext* cx,
-                                                   JSScript* script,
-                                                   jsbytecode* pc);
+  static JSBreakpointSite* getBreakpointSite(JSScript* script, jsbytecode* pc);
+  static JSBreakpointSite* getOrCreateBreakpointSite(JSContext* cx,
+                                                     JSScript* script,
+                                                     jsbytecode* pc);
   static void destroyBreakpointSite(JSFreeOp* fop, JSScript* script,
                                     jsbytecode* pc);
 
