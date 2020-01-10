@@ -94,7 +94,7 @@ use crate::prim_store::{SpaceMapper, PrimitiveVisibilityMask, PointKey, Primitiv
 use crate::prim_store::{SpaceSnapper, PictureIndex, PrimitiveInstance, PrimitiveInstanceKind};
 use crate::prim_store::{get_raster_rects, PrimitiveScratchBuffer, RectangleKey};
 use crate::prim_store::{OpacityBindingStorage, ImageInstanceStorage, OpacityBindingIndex};
-use crate::print_tree::PrintTreePrinter;
+use crate::print_tree::{PrintTree, PrintTreePrinter};
 use crate::render_backend::DataStores;
 use crate::render_task_graph::RenderTaskId;
 use crate::render_target::RenderTargetKind;
@@ -518,6 +518,50 @@ impl TileSurface {
 }
 
 
+
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[repr(u8)]
+enum PrimitiveCompareResult {
+    
+    Equal,
+    
+    Descriptor,
+    
+    Clip,
+    
+    Transform,
+    
+    Image,
+    
+    OpacityBinding,
+}
+
+
+#[derive(Debug)]
+enum InvalidationReason {
+    
+    FractionalOffset,
+    
+    BackgroundColor,
+    
+    NonCacheable,
+    
+    SurfaceOpacityChanged,
+    
+    NoTexture,
+    
+    NoSurface,
+    
+    PrimCount,
+    
+    Content {
+        
+        prim_compare_result: PrimitiveCompareResult,
+    },
+}
+
+
 pub struct Tile {
     
     pub world_rect: WorldRect,
@@ -544,8 +588,6 @@ pub struct Tile {
     
     fract_offset: PictureVector2D,
     
-    is_same_content: bool,
-    
     
     pub id: TileId,
     
@@ -561,6 +603,8 @@ pub struct Tile {
     pub world_dirty_rect: WorldRect,
     
     background_color: Option<ColorF>,
+    
+    invalidation_reason: Option<InvalidationReason>,
 }
 
 impl Tile {
@@ -575,7 +619,6 @@ impl Tile {
             surface: None,
             current_descriptor: TileDescriptor::new(),
             prev_descriptor: TileDescriptor::new(),
-            is_same_content: false,
             is_valid: false,
             is_visible: false,
             fract_offset: PictureVector2D::zero(),
@@ -585,7 +628,19 @@ impl Tile {
             dirty_rect: PictureRect::zero(),
             world_dirty_rect: WorldRect::zero(),
             background_color: None,
+            invalidation_reason: None,
         }
+    }
+
+    
+    fn print(&self, pt: &mut dyn PrintTreePrinter) {
+        pt.new_level(format!("Tile {:?}", self.id));
+        pt.add_item(format!("rect: {}", self.rect));
+        pt.add_item(format!("fract_offset: {:?}", self.fract_offset));
+        pt.add_item(format!("background_color: {:?}", self.background_color));
+        pt.add_item(format!("invalidation_reason: {:?}", self.invalidation_reason));
+        self.current_descriptor.print(pt);
+        pt.end_level();
     }
 
     
@@ -593,8 +648,9 @@ impl Tile {
         &mut self,
         ctx: &TilePostUpdateContext,
         state: &TilePostUpdateState,
-        compare_cache: &mut FastHashMap<PrimitiveComparisonKey, bool>,
-    ) {
+        compare_cache: &mut FastHashMap<PrimitiveComparisonKey, PrimitiveCompareResult>,
+        invalidation_reason: &mut Option<InvalidationReason>,
+    ) -> PictureRect {
         let mut prim_comparer = PrimitiveComparer::new(
             &self.prev_descriptor,
             &self.current_descriptor,
@@ -603,13 +659,18 @@ impl Tile {
             ctx.opacity_bindings,
         );
 
+        let mut dirty_rect = PictureRect::zero();
+
         self.root.update_dirty_rects(
             &self.prev_descriptor.prims,
             &self.current_descriptor.prims,
             &mut prim_comparer,
-            &mut self.dirty_rect,
+            &mut dirty_rect,
             compare_cache,
+            invalidation_reason,
         );
+
+        dirty_rect
     }
 
     
@@ -624,9 +685,42 @@ impl Tile {
         
         
         let mut compare_cache = FastHashMap::default();
-        self.update_dirty_rects(ctx, state, &mut compare_cache);
-        self.is_same_content &= self.dirty_rect.is_empty();
-        self.is_valid &= self.is_same_content;
+        let mut invalidation_reason = None;
+        let dirty_rect = self.update_dirty_rects(
+            ctx,
+            state,
+            &mut compare_cache,
+            &mut invalidation_reason,
+        );
+        if !dirty_rect.is_empty() {
+            self.invalidate(
+                Some(dirty_rect),
+                invalidation_reason.expect("bug: no invalidation_reason"),
+            );
+        }
+    }
+
+    
+    
+    fn invalidate(
+        &mut self,
+        invalidation_rect: Option<PictureRect>,
+        reason: InvalidationReason,
+    ) {
+        self.is_valid = false;
+
+        match invalidation_rect {
+            Some(rect) => {
+                self.dirty_rect = self.dirty_rect.union(&rect);
+            }
+            None => {
+                self.dirty_rect = self.rect;
+            }
+        }
+
+        if self.invalidation_reason.is_none() {
+            self.invalidation_reason = Some(reason);
+        }
     }
 
     
@@ -637,6 +731,7 @@ impl Tile {
         ctx: &TilePreUpdateContext,
     ) {
         self.rect = rect;
+        self.invalidation_reason  = None;
 
         self.clipped_rect = self.rect
             .intersection(&ctx.local_rect)
@@ -658,22 +753,17 @@ impl Tile {
         }
 
         
-        self.is_same_content = true;
-
-        
         
         let fract_changed = (self.fract_offset.x - ctx.fract_offset.x).abs() > 0.001 ||
                             (self.fract_offset.y - ctx.fract_offset.y).abs() > 0.001;
         if fract_changed {
+            self.invalidate(None, InvalidationReason::FractionalOffset);
             self.fract_offset = ctx.fract_offset;
         }
 
-        
-        
-        if fract_changed || ctx.background_color != self.background_color {
+        if ctx.background_color != self.background_color {
+            self.invalidate(None, InvalidationReason::BackgroundColor);
             self.background_color = ctx.background_color;
-            self.is_same_content = false;
-            self.dirty_rect = rect;
         }
 
         
@@ -699,8 +789,7 @@ impl Tile {
 
         
         if !info.is_cacheable {
-            self.is_same_content = false;
-            self.dirty_rect = self.dirty_rect.union(&info.prim_rect);
+            self.invalidate(Some(info.prim_rect), InvalidationReason::NonCacheable);
         }
 
         
@@ -882,8 +971,7 @@ impl Tile {
                         if let SurfaceTextureDescriptor::NativeSurface { ref mut id, .. } = descriptor {
                             
                             
-                            self.dirty_rect = self.rect;
-                            self.is_valid = false;
+                            self.invalidate(None, InvalidationReason::SurfaceOpacityChanged);
 
                             
                             
@@ -1100,6 +1188,69 @@ impl TileDescriptor {
             image_keys: Vec::new(),
             transforms: Vec::new(),
         }
+    }
+
+    
+    fn print(&self, pt: &mut dyn PrintTreePrinter) {
+        pt.new_level("current_descriptor".to_string());
+
+        pt.new_level("prims".to_string());
+        for prim in &self.prims {
+            pt.new_level(format!("prim uid={}", prim.prim_uid.get_uid()));
+            pt.add_item(format!("origin: {},{}", prim.origin.x, prim.origin.y));
+            pt.add_item(format!("clip: origin={},{} size={}x{}",
+                prim.prim_clip_rect.x,
+                prim.prim_clip_rect.y,
+                prim.prim_clip_rect.w,
+                prim.prim_clip_rect.h,
+            ));
+            pt.add_item(format!("deps: t={} i={} o={} c={}",
+                prim.transform_dep_count,
+                prim.image_dep_count,
+                prim.opacity_binding_dep_count,
+                prim.clip_dep_count,
+            ));
+            pt.end_level();
+        }
+        pt.end_level();
+
+        if !self.clips.is_empty() {
+            pt.new_level("clips".to_string());
+            for clip in &self.clips {
+                pt.new_level(format!("clip uid={}", clip.get_uid()));
+                pt.end_level();
+            }
+            pt.end_level();
+        }
+
+        if !self.image_keys.is_empty() {
+            pt.new_level("image_keys".to_string());
+            for key in &self.image_keys {
+                pt.new_level(format!("key={:?}", key));
+                pt.end_level();
+            }
+            pt.end_level();
+        }
+
+        if !self.opacity_bindings.is_empty() {
+            pt.new_level("opacity_bindings".to_string());
+            for opacity_binding in &self.opacity_bindings {
+                pt.new_level(format!("binding={:?}", opacity_binding));
+                pt.end_level();
+            }
+            pt.end_level();
+        }
+
+        if !self.transforms.is_empty() {
+            pt.new_level("transforms".to_string());
+            for transform in &self.transforms {
+                pt.new_level(format!("spatial_node={:?}", transform));
+                pt.end_level();
+            }
+            pt.end_level();
+        }
+
+        pt.end_level();
     }
 
     
@@ -1341,6 +1492,8 @@ pub struct TileCacheInstance {
     
     
     frames_until_size_eval: usize,
+    
+    fract_offset: PictureVector2D,
 }
 
 impl TileCacheInstance {
@@ -1379,6 +1532,7 @@ impl TileCacheInstance {
             shared_clip_chain,
             current_tile_size: DeviceIntSize::zero(),
             frames_until_size_eval: 0,
+            fract_offset: PictureVector2D::zero(),
         }
     }
 
@@ -1560,7 +1714,7 @@ impl TileCacheInstance {
             .origin;
 
         
-        let fract_offset = PictureVector2D::new(
+        self.fract_offset = PictureVector2D::new(
             ref_point.x.fract(),
             ref_point.y.fract(),
         );
@@ -1640,7 +1794,7 @@ impl TileCacheInstance {
             local_rect: self.local_rect,
             local_clip_rect: self.local_clip_rect,
             pic_to_world_mapper,
-            fract_offset,
+            fract_offset: self.fract_offset,
             background_color: self.background_color,
             global_screen_world_rect: frame_context.global_screen_world_rect,
         };
@@ -1661,8 +1815,8 @@ impl TileCacheInstance {
                 
                 let rect = PictureRect::new(
                     PicturePoint::new(
-                        x as f32 * self.tile_size.width + fract_offset.x,
-                        y as f32 * self.tile_size.height + fract_offset.y,
+                        x as f32 * self.tile_size.width + self.fract_offset.x,
+                        y as f32 * self.tile_size.height + self.fract_offset.y,
                     ),
                     self.tile_size,
                 );
@@ -1967,6 +2121,31 @@ impl TileCacheInstance {
         }
 
         true
+    }
+
+    
+    fn print(&self) {
+        
+        
+        
+        
+        
+        let mut pt = PrintTree::new("Picture Cache");
+
+        pt.new_level(format!("Slice {}", self.slice));
+
+        pt.add_item(format!("fract_offset: {:?}", self.fract_offset));
+        pt.add_item(format!("background_color: {:?}", self.background_color));
+
+        for y in self.tile_bounds_p0.y .. self.tile_bounds_p1.y {
+            for x in self.tile_bounds_p0.x .. self.tile_bounds_p1.x {
+                let key = TileOffset::new(x, y);
+                let tile = &self.tiles[&key];
+                tile.print(&mut pt);
+            }
+        }
+
+        pt.end_level();
     }
 
     
@@ -3328,8 +3507,6 @@ impl PicturePrimitive {
                                 }
                             };
 
-                            let surface = tile.surface.as_mut().expect("no tile surface set!");
-
                             
                             
                             
@@ -3339,6 +3516,8 @@ impl PicturePrimitive {
                                 
                                 
                                 
+                                let surface = tile.surface.as_mut().expect("no tile surface set!");
+
                                 if let TileSurface::Texture { descriptor: SurfaceTextureDescriptor::NativeSurface { id, .. }, .. } = surface {
                                     if let Some(id) = id.take() {
                                         frame_state.composite_state.destroy_surface(id);
@@ -3370,6 +3549,8 @@ impl PicturePrimitive {
                                 let label_offset = DeviceVector2D::new(20.0, 30.0);
                                 let tile_device_rect = tile.world_rect * frame_context.global_device_pixel_scale;
                                 if tile_device_rect.size.height >= label_offset.y {
+                                    let surface = tile.surface.as_ref().expect("no tile surface set!");
+
                                     scratch.push_debug_string(
                                         tile_device_rect.origin + label_offset,
                                         debug_colors::RED,
@@ -3383,7 +3564,7 @@ impl PicturePrimitive {
                                 }
                             }
 
-                            if let TileSurface::Texture { descriptor, .. } = surface {
+                            if let TileSurface::Texture { descriptor, .. } = tile.surface.as_mut().unwrap() {
                                 match descriptor {
                                     SurfaceTextureDescriptor::TextureCache { ref handle, .. } => {
                                         
@@ -3400,15 +3581,13 @@ impl PicturePrimitive {
                                         } else {
                                             
                                             
-                                            tile.is_valid = false;
-                                            tile.dirty_rect = tile.rect;
+                                            tile.invalidate(None, InvalidationReason::NoTexture);
                                         }
                                     }
                                     SurfaceTextureDescriptor::NativeSurface { id, .. } => {
                                         if id.is_none() {
                                             
-                                            tile.is_valid = false;
-                                            tile.dirty_rect = tile.rect;
+                                            tile.invalidate(None, InvalidationReason::NoSurface);
                                         }
                                     }
                                 }
@@ -3422,7 +3601,7 @@ impl PicturePrimitive {
                             }
 
                             
-                            if let TileSurface::Texture { ref mut descriptor, ref mut visibility_mask } = surface {
+                            if let TileSurface::Texture { ref mut descriptor, ref mut visibility_mask } = tile.surface.as_mut().unwrap() {
                                 match descriptor {
                                     SurfaceTextureDescriptor::TextureCache { ref mut handle } => {
                                         if !frame_state.resource_cache.texture_cache.is_allocated(handle) {
@@ -3523,6 +3702,11 @@ impl PicturePrimitive {
                             
                             tile.dirty_rect = PictureRect::zero();
                             tile.is_valid = true;
+                        }
+
+                        
+                        if frame_context.debug_flags.contains(DebugFlags::INVALIDATION_DBG) {
+                            tile_cache.print();
                         }
 
                         None
@@ -4434,18 +4618,18 @@ impl<'a> PrimitiveComparer<'a> {
     }
 
     
-    fn is_prim_same(
+    fn compare_prim(
         &mut self,
         prev: &PrimitiveDescriptor,
         curr: &PrimitiveDescriptor,
-    ) -> bool {
+    ) -> PrimitiveCompareResult {
         let resource_cache = self.resource_cache;
         let spatial_nodes = self.spatial_nodes;
         let opacity_bindings = self.opacity_bindings;
 
         
         if prev != curr {
-            return false;
+            return PrimitiveCompareResult::Descriptor;
         }
 
         
@@ -4456,7 +4640,7 @@ impl<'a> PrimitiveComparer<'a> {
                 false
             }
         ) {
-            return false;
+            return PrimitiveCompareResult::Clip;
         }
 
         
@@ -4467,7 +4651,7 @@ impl<'a> PrimitiveComparer<'a> {
                 spatial_nodes[curr].changed
             }
         ) {
-            return false;
+            return PrimitiveCompareResult::Transform;
         }
 
         
@@ -4478,7 +4662,7 @@ impl<'a> PrimitiveComparer<'a> {
                 resource_cache.is_image_dirty(*curr)
             }
         ) {
-            return false;
+            return PrimitiveCompareResult::Image;
         }
 
         
@@ -4497,10 +4681,10 @@ impl<'a> PrimitiveComparer<'a> {
                 false
             }
         ) {
-            return false;
+            return PrimitiveCompareResult::OpacityBinding;
         }
 
-        true
+        PrimitiveCompareResult::Equal
     }
 }
 
@@ -4817,7 +5001,8 @@ impl TileNode {
         curr_prims: &[PrimitiveDescriptor],
         prim_comparer: &mut PrimitiveComparer,
         dirty_rect: &mut PictureRect,
-        compare_cache: &mut FastHashMap<PrimitiveComparisonKey, bool>,
+        compare_cache: &mut FastHashMap<PrimitiveComparisonKey, PrimitiveCompareResult>,
+        invalidation_reason: &mut Option<InvalidationReason>,
     ) {
         match self.kind {
             TileNodeKind::Node { ref mut children, .. } => {
@@ -4828,6 +5013,7 @@ impl TileNode {
                         prim_comparer,
                         dirty_rect,
                         compare_cache,
+                        invalidation_reason,
                     );
                 }
             }
@@ -4859,16 +5045,21 @@ impl TileNode {
                             curr_index: *curr_index,
                         };
 
-                        let is_prim_same = *compare_cache
+                        let prim_compare_result = *compare_cache
                             .entry(key)
                             .or_insert_with(|| {
                                 let prev = &prev_prims[i0];
                                 let curr = &curr_prims[i1];
-                                prim_comparer.is_prim_same(prev, curr)
+                                prim_comparer.compare_prim(prev, curr)
                             });
 
                         
-                        if !is_prim_same {
+                        if prim_compare_result != PrimitiveCompareResult::Equal {
+                            if invalidation_reason.is_none() {
+                                *invalidation_reason = Some(InvalidationReason::Content {
+                                    prim_compare_result,
+                                });
+                            }
                             *dirty_rect = self.rect.union(dirty_rect);
                             *dirty_tracker = *dirty_tracker | 1;
                             break;
@@ -4878,6 +5069,9 @@ impl TileNode {
                         prev_i1 = i1;
                     }
                 } else {
+                    if invalidation_reason.is_none() {
+                        *invalidation_reason = Some(InvalidationReason::PrimCount);
+                    }
                     *dirty_rect = self.rect.union(dirty_rect);
                     *dirty_tracker = *dirty_tracker | 1;
                 }
