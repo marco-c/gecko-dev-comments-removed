@@ -21,7 +21,6 @@
 
 namespace mozilla {
 
-class AutoLockRulesSniffing;
 class EditSubActionInfo;
 class HTMLEditor;
 class HTMLEditRules;
@@ -76,8 +75,6 @@ class TextEditRules {
 
   HTMLEditRules* AsHTMLEditRules();
   const HTMLEditRules* AsHTMLEditRules() const;
-
-  bool IsLocked() const { return mLockRulesSniffing; }
 
   MOZ_CAN_RUN_SCRIPT
   virtual nsresult Init(TextEditor* aTextEditor);
@@ -369,15 +366,11 @@ class TextEditRules {
   bool mIsHandling;
 #endif  
 
-  bool mLockRulesSniffing;
   bool mDidExplicitlySetInterline;
   
   
   bool mDeleteBidiImmediately;
   bool mIsHTMLEditRules;
-
-  
-  friend class AutoLockRulesSniffing;
 };
 
 
@@ -426,29 +419,6 @@ class MOZ_STACK_CLASS EditSubActionInfo final {
 
   
   const nsAString* blockType;
-};
-
-
-
-
-
-
-class MOZ_STACK_CLASS AutoLockRulesSniffing final {
- public:
-  explicit AutoLockRulesSniffing(TextEditRules* aRules) : mRules(aRules) {
-    if (mRules) {
-      mRules->mLockRulesSniffing = true;
-    }
-  }
-
-  ~AutoLockRulesSniffing() {
-    if (mRules) {
-      mRules->mLockRulesSniffing = false;
-    }
-  }
-
- protected:
-  TextEditRules* mRules;
 };
 
 

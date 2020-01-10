@@ -2050,10 +2050,6 @@ void TextEditor::OnStartToHandleTopLevelEditSubAction(
   MOZ_ASSERT(GetTopLevelEditSubAction() == aEditSubAction);
   MOZ_ASSERT(GetDirectionOfTopLevelEditSubAction() == aDirection);
 
-  if (rules->IsLocked()) {
-    return;
-  }
-
   if (aEditSubAction == EditSubAction::eSetText) {
     
     
@@ -2091,14 +2087,12 @@ void TextEditor::OnEndHandlingTopLevelEditSubAction() {
     
     RefPtr<TextEditRules> rules(mRules);
 
-    if (!rules->IsLocked()) {
-      
-      DebugOnly<nsresult> rv = rules->AfterEdit(
-          GetTopLevelEditSubAction(), GetDirectionOfTopLevelEditSubAction());
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rv),
-          "TextEditRules::AfterEdit() failed to handle something");
-    }
+    
+    DebugOnly<nsresult> rv = rules->AfterEdit(
+        GetTopLevelEditSubAction(), GetDirectionOfTopLevelEditSubAction());
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "TextEditRules::AfterEdit() failed to handle something");
   }
   EditorBase::OnEndHandlingTopLevelEditSubAction();
   MOZ_ASSERT(!GetTopLevelEditSubAction());
