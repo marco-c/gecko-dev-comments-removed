@@ -10,6 +10,9 @@
 
 
 
+
+PromiseTestUtils.whitelistRejectionsGlobally(/Resource .*? does not exist/);
+
 const server = createTestHTTPServer();
 
 let docValue = 1;

@@ -198,6 +198,7 @@ function checkPendingBreakpoints(cx: Context, sourceId: string) {
 
     
     await dispatch(loadSourceText({ cx, source }));
+    await dispatch(setBreakableLines(cx, source.id));
 
     await Promise.all(
       pendingBreakpoints.map(bp => {
