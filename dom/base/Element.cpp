@@ -3319,8 +3319,41 @@ CORSMode Element::AttrValueToCORSMode(const nsAttrValue* aValue) {
   return CORSMode(aValue->GetEnumValue());
 }
 
+
+
+
+
+
+
+
 static const char* GetFullscreenError(CallerType aCallerType) {
-  return nsContentUtils::CheckRequestFullscreenAllowed(aCallerType);
+  if (!StaticPrefs::full_screen_api_allow_trusted_requests_only() ||
+      aCallerType == CallerType::System) {
+    return nullptr;
+  }
+
+  if (!UserActivation::IsHandlingUserInput()) {
+    return "FullscreenDeniedNotInputDriven";
+  }
+
+  
+  
+  
+  TimeDuration timeout = nsContentUtils::HandlingUserInputTimeout();
+  if (timeout > TimeDuration(nullptr) &&
+      (TimeStamp::Now() - UserActivation::GetHandlingInputStart()) > timeout) {
+    return "FullscreenDeniedNotInputDriven";
+  }
+
+  
+  
+  if (StaticPrefs::full_screen_api_mouse_event_allow_left_button_only() &&
+      (EventStateManager::sCurrentMouseBtn == MouseButton::eMiddle ||
+       EventStateManager::sCurrentMouseBtn == MouseButton::eRight)) {
+    return "FullscreenDeniedMouseEventOnlyLeftBtn";
+  }
+
+  return nullptr;
 }
 
 already_AddRefed<Promise> Element::RequestFullscreen(CallerType aCallerType,

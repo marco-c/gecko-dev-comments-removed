@@ -2305,16 +2305,6 @@ class nsContentUtils {
 
 
 
-
-
-  static const char* CheckRequestFullscreenAllowed(
-      mozilla::dom::CallerType aCallerType);
-
-  
-
-
-
-
   static bool IsCutCopyAllowed(nsIPrincipal* aSubjectPrincipal);
 
   
