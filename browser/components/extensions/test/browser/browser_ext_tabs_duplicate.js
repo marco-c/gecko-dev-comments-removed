@@ -158,7 +158,7 @@ add_task(async function testDuplicatePinnedTab() {
             
             browser.test.assertEq(1, tab.index);
             
-            browser.test.assertTrue(tab.pinned);
+            browser.test.assertFalse(tab.pinned);
 
             browser.tabs.remove([tabs[0].id, tab.id]);
             browser.test.notifyPass("tabs.duplicate.pinned");
