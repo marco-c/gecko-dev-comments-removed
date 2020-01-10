@@ -278,7 +278,7 @@ var W3CTest = {
 
 
 
-  "timeout": function() {
+  "timeout": async function() {
     this.logFailure("Timeout", "Test runner timed us out.");
     timeout();
   }
