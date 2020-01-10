@@ -189,12 +189,13 @@ class TypeDescr : public NativeObject {
   
   
   
+  
   MOZ_MUST_USE bool hasTraceList() const {
     return !getFixedSlot(JS_DESCR_SLOT_TRACE_LIST).isUndefined();
   }
-  const int32_t* traceList() const {
+  const uint32_t* traceList() const {
     MOZ_ASSERT(hasTraceList());
-    return reinterpret_cast<int32_t*>(
+    return reinterpret_cast<uint32_t*>(
         getFixedSlot(JS_DESCR_SLOT_TRACE_LIST).toPrivate());
   }
 
