@@ -9,6 +9,62 @@
 const l10n = require("devtools/client/webconsole/webconsole-l10n");
 const { getUrlDetails } = require("devtools/client/netmonitor/src/utils/request-utils");
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const urlRegex = /(^|[\s(,;'"`“])((?:https?:\/\/|www\d{0,3}[.][a-z0-9.\-]{2,249}|[a-z0-9.\-]{2,250}[.][a-z]{2,4}\/)[-\w.!~*'();,/?:@&=+$#%]*)/im;
+
+
+
+
+
+const uneatLastUrlCharsRegex = /(?:[),;.!?`'"]|[.!?]\)|\)[.!?])$/;
+
 const {
   MESSAGE_SOURCE,
   MESSAGE_TYPE,
@@ -443,19 +499,85 @@ function isPacketPrivate(packet) {
 }
 
 function createWarningGroupMessage(id, type, firstMessage) {
-  let messageText;
-  if (type === MESSAGE_TYPE.CONTENT_BLOCKING_GROUP) {
-    messageText = l10n.getStr("webconsole.group.contentBlocked");
-  }
   return new ConsoleMessage({
     id,
     level: MESSAGE_LEVEL.WARN,
     source: MESSAGE_SOURCE.CONSOLE_FRONTEND,
     type,
-    messageText,
+    messageText: getWarningGroupLabel(firstMessage),
     timeStamp: firstMessage.timeStamp,
     innerWindowID: firstMessage.innerWindowID,
   });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getWarningGroupLabel(firstMessage) {
+  if (
+    isContentBlockingMessage(firstMessage) ||
+    isTrackingProtectionMessage(firstMessage)
+  ) {
+    return replaceURL(firstMessage.messageText, "<URL>");
+  }
+
+  return "";
+}
+
+
+
+
+
+
+
+
+
+function replaceURL(text, replacementText = "") {
+  let result = "";
+  let currentIndex = 0;
+  let contentStart;
+  while (true) {
+    const url = urlRegex.exec(text);
+    
+    if (!url) {
+      break;
+    }
+    contentStart = url.index + url[1].length;
+    if (contentStart > 0) {
+      const nonUrlText = text.substring(0, contentStart);
+      result += nonUrlText;
+    }
+
+    
+    
+    
+    let useUrl = url[2];
+    const uneat = uneatLastUrlCharsRegex.exec(useUrl);
+    if (uneat) {
+      useUrl = useUrl.substring(0, uneat.index);
+    }
+
+    if (useUrl) {
+      result += replacementText;
+    }
+
+    currentIndex = currentIndex + contentStart;
+
+    currentIndex = currentIndex + useUrl.length;
+    text = text.substring(url.index + url[1].length + useUrl.length);
+  }
+
+  return result + text;
 }
 
 
@@ -467,6 +589,11 @@ function getWarningGroupType(message) {
   if (isContentBlockingMessage(message)) {
     return MESSAGE_TYPE.CONTENT_BLOCKING_GROUP;
   }
+
+  if (isTrackingProtectionMessage(message)) {
+    return MESSAGE_TYPE.TRACKING_PROTECTION_GROUP;
+  }
+
   return null;
 }
 
@@ -478,7 +605,12 @@ function getWarningGroupType(message) {
 
 
 function getParentWarningGroupMessageId(message) {
-  return `${message.type}-${message.innerWindowID}`;
+  const warningGroupType = getWarningGroupType(message);
+  if (!warningGroupType) {
+    return null;
+  }
+
+  return `${warningGroupType}-${message.innerWindowID}`;
 }
 
 
@@ -488,6 +620,7 @@ function getParentWarningGroupMessageId(message) {
 
 function isWarningGroup(message) {
   return message.type === MESSAGE_TYPE.CONTENT_BLOCKING_GROUP
+   || message.type === MESSAGE_TYPE.TRACKING_PROTECTION_GROUP
    || message.type === MESSAGE_TYPE.CORS_GROUP
    || message.type === MESSAGE_TYPE.CSP_GROUP;
 }
@@ -502,8 +635,17 @@ function isContentBlockingMessage(message) {
   return category == "cookieBlockedPermission" ||
     category == "cookieBlockedTracker" ||
     category == "cookieBlockedAll" ||
-    category == "cookieBlockedForeign" ||
-    category == "Tracking Protection";
+    category == "cookieBlockedForeign";
+}
+
+
+
+
+
+
+function isTrackingProtectionMessage(message) {
+  const {category} = message;
+  return category == "Tracking Protection";
 }
 
 module.exports = {
