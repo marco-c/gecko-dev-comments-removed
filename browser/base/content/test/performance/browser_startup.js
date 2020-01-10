@@ -36,6 +36,7 @@ const startupPhases = {
       "resource://gre/modules/XPCOMUtils.jsm",
       "resource://gre/modules/Services.jsm",
       "resource://gre/modules/L10nRegistry.jsm",
+      "resource://gre/modules/Fluent.jsm",
       
       "resource://gre/modules/PushComponents.jsm", 
     ]),
