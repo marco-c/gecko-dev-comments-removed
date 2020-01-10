@@ -888,9 +888,7 @@ using HuffmanTableValue =
     mozilla::Variant<HuffmanTableUnreachable,  
                      HuffmanTableInitializing, GenericHuffmanTable>;
 
-struct HuffmanTableExplicitSymbolsListLength : GenericHuffmanTable {
-  HuffmanTableExplicitSymbolsListLength() : GenericHuffmanTable() {}
-};
+using HuffmanTableExplicitSymbolsListLength = GenericHuffmanTable;
 
 
 using HuffmanTableListLength =
