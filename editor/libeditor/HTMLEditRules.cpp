@@ -7218,7 +7218,8 @@ nsresult HTMLEditRules::GetNodesForOperation(
     }
     
     for (auto& item : Reversed(rangeItemArray)) {
-      nsresult rv = BustUpInlinesAtRangeEndpoints(*item);
+      nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                        .SplitParentInlineElementsAtRangeEdges(*item);
       if (NS_FAILED(rv)) {
         break;
       }
@@ -7499,51 +7500,41 @@ nsresult HTMLEditRules::GetParagraphFormatNodes(
   return NS_OK;
 }
 
-nsresult HTMLEditRules::BustUpInlinesAtRangeEndpoints(
-    RangeItem& aRangeItem) const {
-  MOZ_ASSERT(IsEditorDataAvailable());
+nsresult HTMLEditor::SplitParentInlineElementsAtRangeEdges(
+    RangeItem& aRangeItem) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
 
-  bool isCollapsed = aRangeItem.mStartContainer == aRangeItem.mEndContainer &&
-                     aRangeItem.mStartOffset == aRangeItem.mEndOffset;
+  if (!aRangeItem.IsCollapsed()) {
+    nsCOMPtr<nsIContent> mostAncestorInlineContentAtEnd =
+        GetMostAncestorInlineElement(*aRangeItem.mEndContainer);
 
-  nsCOMPtr<nsIContent> endInline =
-      HTMLEditorRef().GetMostAncestorInlineElement(*aRangeItem.mEndContainer);
-
-  
-  
-  if (endInline && !isCollapsed) {
-    SplitNodeResult splitEndInlineResult =
-        MOZ_KnownLive(HTMLEditorRef())
-            .SplitNodeDeepWithTransaction(
-                *endInline,
-                EditorDOMPoint(aRangeItem.mEndContainer, aRangeItem.mEndOffset),
-                SplitAtEdges::eDoNotCreateEmptyContainer);
-    if (NS_WARN_IF(!CanHandleEditAction())) {
-      return NS_ERROR_EDITOR_DESTROYED;
+    if (mostAncestorInlineContentAtEnd) {
+      SplitNodeResult splitEndInlineResult = SplitNodeDeepWithTransaction(
+          *mostAncestorInlineContentAtEnd, aRangeItem.EndPoint(),
+          SplitAtEdges::eDoNotCreateEmptyContainer);
+      if (NS_WARN_IF(Destroyed())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      if (NS_WARN_IF(splitEndInlineResult.Failed())) {
+        return splitEndInlineResult.Rv();
+      }
+      EditorRawDOMPoint splitPointAtEnd(splitEndInlineResult.SplitPoint());
+      if (NS_WARN_IF(!splitPointAtEnd.IsSet())) {
+        return NS_ERROR_FAILURE;
+      }
+      aRangeItem.mEndContainer = splitPointAtEnd.GetContainer();
+      aRangeItem.mEndOffset = splitPointAtEnd.Offset();
     }
-    if (NS_WARN_IF(splitEndInlineResult.Failed())) {
-      return splitEndInlineResult.Rv();
-    }
-    EditorRawDOMPoint splitPointAtEnd(splitEndInlineResult.SplitPoint());
-    if (NS_WARN_IF(!splitPointAtEnd.IsSet())) {
-      return NS_ERROR_FAILURE;
-    }
-    aRangeItem.mEndContainer = splitPointAtEnd.GetContainer();
-    aRangeItem.mEndOffset = splitPointAtEnd.Offset();
   }
 
-  nsCOMPtr<nsIContent> startInline =
-      HTMLEditorRef().GetMostAncestorInlineElement(*aRangeItem.mStartContainer);
+  nsCOMPtr<nsIContent> mostAncestorInlineContentAtStart =
+      GetMostAncestorInlineElement(*aRangeItem.mStartContainer);
 
-  if (startInline) {
-    SplitNodeResult splitStartInlineResult =
-        MOZ_KnownLive(HTMLEditorRef())
-            .SplitNodeDeepWithTransaction(
-                *startInline,
-                EditorDOMPoint(aRangeItem.mStartContainer,
-                               aRangeItem.mStartOffset),
-                SplitAtEdges::eDoNotCreateEmptyContainer);
-    if (NS_WARN_IF(!CanHandleEditAction())) {
+  if (mostAncestorInlineContentAtStart) {
+    SplitNodeResult splitStartInlineResult = SplitNodeDeepWithTransaction(
+        *mostAncestorInlineContentAtStart, aRangeItem.StartPoint(),
+        SplitAtEdges::eDoNotCreateEmptyContainer);
+    if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
     if (NS_WARN_IF(splitStartInlineResult.Failed())) {
@@ -7641,6 +7632,7 @@ nsIContent* HTMLEditor::GetMostAncestorInlineElement(nsINode& aNode) const {
     return nullptr;
   }
 
+  
   
   if (&aNode == host) {
     return nullptr;
@@ -7932,6 +7924,7 @@ EditActionResult HTMLEditRules::ReturnInParagraph(Element& aParentDivOrP) {
          container = container->GetParent()) {
       if (HTMLEditUtils::IsLink(container)) {
         
+        
         atStartOfSelection.Set(container);
         
         
@@ -8041,9 +8034,9 @@ EditActionResult HTMLEditRules::ReturnInParagraph(Element& aParentDivOrP) {
       
       pointToInsertBR.Set(pointToSplitParentDivOrP.GetContainer());
       DebugOnly<bool> advanced = pointToInsertBR.AdvanceOffset();
-      NS_WARNING_ASSERTION(
-          advanced,
-          "Failed to advance offset to after the container of selection start");
+      NS_WARNING_ASSERTION(advanced,
+                           "Failed to advance offset to after the container "
+                           "of selection start");
     }
   } else {
     
@@ -9106,6 +9099,7 @@ nsresult HTMLEditor::GetInlineStyles(nsINode& aNode,
     bool isSet = false;
     nsAutoString outValue;
     
+    
     if (!useCSS || (styleCache.mTag == nsGkAtoms::font &&
                     styleCache.mAttr == nsGkAtoms::size)) {
       isSet = IsTextPropertySetByContent(&aNode, styleCache.mTag,
@@ -9623,6 +9617,8 @@ bool HTMLEditRules::InDifferentTableElements(nsINode* aNode1, nsINode* aNode2) {
 nsresult HTMLEditRules::RemoveEmptyNodesInChangedRange() {
   MOZ_ASSERT(IsEditorDataAvailable());
 
+  
+  
   
   
   

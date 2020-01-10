@@ -1214,6 +1214,18 @@ class HTMLEditor final : public TextEditor,
 
   nsIContent* GetMostAncestorInlineElement(nsINode& aNode) const;
 
+  
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  SplitParentInlineElementsAtRangeEdges(RangeItem& aRangeItem);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
