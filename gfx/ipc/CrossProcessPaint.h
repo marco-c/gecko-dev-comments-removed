@@ -10,7 +10,9 @@
 
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/DOMRect.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/ipc/ByteBuf.h"
 #include "nsDataHashtable.h"
 #include "nsHashKeys.h"
@@ -23,6 +25,11 @@ struct ParamTraits;
 }  
 
 namespace mozilla {
+
+namespace dom {
+class WindowGlobalParent;
+}  
+
 namespace gfx {
 
 class CrossProcessPaint;
@@ -49,8 +56,10 @@ class PaintFragment final {
 
 
 
-  static PaintFragment Record(nsIDocShell* aDocShell, const IntRect& aRect,
-                              float aScale, nscolor aBackgroundColor);
+
+  static PaintFragment Record(nsIDocShell* aDocShell,
+                              const Maybe<IntRect>& aRect, float aScale,
+                              nscolor aBackgroundColor);
 
   
   bool IsEmpty() const;
@@ -94,42 +103,28 @@ class CrossProcessPaint final {
 
 
 
-  static void StartLocal(nsIDocShell* aRoot, const IntRect& aRect, float aScale,
-                         nscolor aBackgroundColor, dom::Promise* aPromise);
-
-  
 
 
 
+  static bool Start(dom::WindowGlobalParent* aRoot, const dom::DOMRect* aRect,
+                    float aScale, nscolor aBackgroundColor,
+                    dom::Promise* aPromise);
 
-
-
-
-
-
-
-
-
-
-
-
-  static void StartRemote(dom::TabId aRoot, const IntRect& aRect, float aScale,
-                          nscolor aBackgroundColor, dom::Promise* aPromise);
-
-  void ReceiveFragment(dom::TabId aId, PaintFragment&& aFragment);
-  void LostFragment(dom::TabId aId);
+  void ReceiveFragment(dom::WindowGlobalParent* aWGP,
+                       PaintFragment&& aFragment);
+  void LostFragment(dom::WindowGlobalParent* aWGP);
 
  private:
   typedef nsRefPtrHashtable<nsUint64HashKey, SourceSurface> ResolvedSurfaceMap;
-  typedef nsDataHashtable<nsUint64HashKey, PaintFragment> ReceivedFragmentMap;
+  typedef nsDataHashtable<nsRefPtrHashKey<dom::WindowGlobalParent>,
+                          PaintFragment>
+      ReceivedFragmentMap;
 
   CrossProcessPaint(dom::Promise* aPromise, float aScale,
-                    nscolor aBackgroundColor, dom::TabId aRootId);
+                    nscolor aBackgroundColor, dom::WindowGlobalParent* aRoot);
   ~CrossProcessPaint();
 
-  void QueueRootPaint(dom::TabId aId, const IntRect& aRect, float aScale,
-                      nscolor aBackgroundColor);
-  void QueueSubPaint(dom::TabId aId);
+  void QueuePaint(dom::WindowGlobalParent* aWGP, const Maybe<IntRect>& aRect);
 
   
   
@@ -141,10 +136,11 @@ class CrossProcessPaint final {
   
   
   void MaybeResolve();
-  bool ResolveInternal(dom::TabId aId, ResolvedSurfaceMap* aResolved);
+  bool ResolveInternal(dom::WindowGlobalParent* aWGP,
+                       ResolvedSurfaceMap* aResolved);
 
   RefPtr<dom::Promise> mPromise;
-  dom::TabId mRootId;
+  RefPtr<dom::WindowGlobalParent> mRoot;
   float mScale;
   nscolor mBackgroundColor;
   uint32_t mPendingFragments;
