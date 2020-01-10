@@ -184,11 +184,28 @@ class BlocksRingBuffer {
   PowerOfTwo<Length> BufferLength() const { return mBuffer.BufferLength(); }
 
   
+  struct State {
+    
+    BlockIndex mRangeStart;
+
+    
+    BlockIndex mRangeEnd;
+
+    
+    uint64_t mPushedBlockCount = 0;
+
+    
+    
+    uint64_t mClearedBlockCount = 0;
+  };
+
   
   
-  Pair<uint64_t, uint64_t> GetPushedAndClearedCounts() const {
+  
+  State GetState() const {
     baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
-    return {mPushedBlockCount, mClearedBlockCount};
+    return {mFirstReadIndex, mNextWriteIndex, mPushedBlockCount,
+            mClearedBlockCount};
   }
 
   
