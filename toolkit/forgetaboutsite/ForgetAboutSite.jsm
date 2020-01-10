@@ -4,20 +4,25 @@
 
 "use strict";
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var EXPORTED_SYMBOLS = ["ForgetAboutSite"];
 
 var ForgetAboutSite = {
   async removeDataFromDomain(aDomain) {
     let errorCount = await new Promise(resolve => {
-      Services.clearData.deleteDataFromHost(aDomain, true ,
-                                            Ci.nsIClearDataService.CLEAR_FORGET_ABOUT_SITE,
-                                            errorCode => resolve(bitCounting(errorCode)));
+      Services.clearData.deleteDataFromHost(
+        aDomain,
+        true ,
+        Ci.nsIClearDataService.CLEAR_FORGET_ABOUT_SITE,
+        errorCode => resolve(bitCounting(errorCode))
+      );
     });
 
     if (errorCount !== 0) {
-      throw new Error(`There were a total of ${errorCount} errors during removal`);
+      throw new Error(
+        `There were a total of ${errorCount} errors during removal`
+      );
     }
   },
 };
@@ -26,6 +31,7 @@ function bitCounting(value) {
   
   
   
-  const count = value - ((value >> 1) & 0o33333333333) - ((value >> 2) & 0o11111111111);
+  const count =
+    value - ((value >> 1) & 0o33333333333) - ((value >> 2) & 0o11111111111);
   return ((count + (count >> 3)) & 0o30707070707) % 63;
 }
