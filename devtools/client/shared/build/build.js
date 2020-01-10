@@ -53,6 +53,11 @@ for (let i = 2; i < process.argv.length; i++) {
   deps.push(srcPath);
 }
 
+if (false) {
+  const code = transform("devtools/client/debugger/src/utils/prefs.js");
+  console.log(code.slice(0, 1500));
+}
+
 
 
 console.log(deps.map(file => "dep:" + file).join("\n"));
