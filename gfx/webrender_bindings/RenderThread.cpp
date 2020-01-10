@@ -436,10 +436,10 @@ void RenderThread::UpdateAndRender(
       NewRunnableFunction("NotifyDidStartRenderRunnable", &NotifyDidStartRender,
                           renderer->GetCompositorBridge()));
 
-  bool rendered = false;
+  wr::RenderedFrameId latestFrameId;
   RendererStats stats = {0};
   if (aRender) {
-    rendered = renderer->UpdateAndRender(
+    latestFrameId = renderer->UpdateAndRender(
         aReadbackSize, aReadbackFormat, aReadbackBuffer, aHadSlowFrame, &stats);
   } else {
     renderer->Update();
@@ -455,14 +455,14 @@ void RenderThread::UpdateAndRender(
                           renderer->GetCompositorBridge(), info, aStartId,
                           aStartTime, start, end, aRender, stats));
 
-  if (rendered) {
+  if (latestFrameId.IsValid()) {
     auto recorderIt = mCompositionRecorders.find(aWindowId);
     if (recorderIt != mCompositionRecorders.end()) {
       recorderIt->second->MaybeRecordFrame(renderer->GetRenderer(), info.get());
     }
   }
 
-  if (rendered) {
+  if (latestFrameId.IsValid()) {
     
     
     
@@ -470,6 +470,8 @@ void RenderThread::UpdateAndRender(
     
     renderer->WaitForGPU();
   }
+
+  RenderedFrameId lastCompletedFrameId = renderer->GetLastCompletedFrameId();
 
   RefPtr<layers::AsyncImagePipelineManager> pipelineMgr =
       renderer->GetCompositorBridge()->GetAsyncImagePipelineManager();
@@ -479,7 +481,8 @@ void RenderThread::UpdateAndRender(
   
   
   MOZ_ASSERT(pipelineMgr);
-  pipelineMgr->NotifyPipelinesUpdated(info, aRender);
+  pipelineMgr->NotifyPipelinesUpdated(info, latestFrameId,
+                                      lastCompletedFrameId);
 }
 
 void RenderThread::Pause(wr::WindowId aWindowId) {

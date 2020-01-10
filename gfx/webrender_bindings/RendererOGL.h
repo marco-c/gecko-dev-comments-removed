@@ -58,13 +58,16 @@ class RendererOGL {
   void Update();
 
   
-  bool UpdateAndRender(const Maybe<gfx::IntSize>& aReadbackSize,
-                       const Maybe<wr::ImageFormat>& aReadbackFormat,
-                       const Maybe<Range<uint8_t>>& aReadbackBuffer,
-                       bool aHadSlowFrame, RendererStats* aOutStats);
+  RenderedFrameId UpdateAndRender(const Maybe<gfx::IntSize>& aReadbackSize,
+                                  const Maybe<wr::ImageFormat>& aReadbackFormat,
+                                  const Maybe<Range<uint8_t>>& aReadbackBuffer,
+                                  bool aHadSlowFrame, RendererStats* aOutStats);
 
   
   void WaitForGPU();
+
+  
+  RenderedFrameId GetLastCompletedFrameId();
 
   
   void SetProfilerEnabled(bool aEnabled);

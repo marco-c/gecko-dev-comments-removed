@@ -6,6 +6,9 @@
 
 #include "AsyncImagePipelineManager.h"
 
+#include <algorithm>
+#include <iterator>
+
 #include "CompositableHost.h"
 #include "gfxEnv.h"
 #include "mozilla/gfx/gfxVars.h"
@@ -33,13 +36,6 @@ AsyncImagePipelineManager::AsyncImagePipeline::AsyncImagePipeline()
       mFilter(wr::ImageRendering::Auto),
       mMixBlendMode(wr::MixBlendMode::Normal) {}
 
-AsyncImagePipelineManager::PipelineUpdates::PipelineUpdates(
-    RefPtr<wr::WebRenderPipelineInfo> aPipelineInfo,
-    const uint64_t aUpdatesCount, const bool aRendered)
-    : mPipelineInfo(aPipelineInfo),
-      mUpdatesCount(aUpdatesCount),
-      mRendered(aRendered) {}
-
 AsyncImagePipelineManager::AsyncImagePipelineManager(
     nsTArray<RefPtr<wr::WebRenderAPI>>&& aApis, bool aUseCompositorWnd)
     : mApis(aApis),
@@ -50,8 +46,8 @@ AsyncImagePipelineManager::AsyncImagePipelineManager(
       mAsyncImageEpoch{0},
       mWillGenerateFrame{},
       mDestroyed(false),
-      mUpdatesLock("UpdatesLock"),
-      mUpdatesCount(0) {
+      mRenderSubmittedUpdatesLock("SubmittedUpdatesLock"),
+      mLastCompletedFrameId(0) {
   MOZ_COUNT_CTOR(AsyncImagePipelineManager);
 }
 
@@ -497,8 +493,15 @@ void AsyncImagePipelineManager::HoldExternalImage(
   if (!holder) {
     return;
   }
-  
-  holder->mTextureHosts.push(ForwardingTextureHost(aEpoch, aTexture));
+  if (aTexture->HasIntermediateBuffer()) {
+    
+    
+    holder->mTextureHostsUntilRenderSubmitted.emplace_back(aEpoch, aTexture);
+  } else {
+    
+    holder->mTextureHostsUntilRenderCompleted.emplace_back(
+        MakeUnique<ForwardingTextureHost>(aEpoch, aTexture));
+  }
 }
 
 void AsyncImagePipelineManager::HoldExternalImage(
@@ -517,35 +520,49 @@ void AsyncImagePipelineManager::HoldExternalImage(
     return;
   }
 
-  auto image = MakeUnique<ForwardingExternalImage>(aEpoch, aImageId);
-  holder->mExternalImages.push(std::move(image));
+  holder->mExternalImages.emplace_back(
+      MakeUnique<ForwardingExternalImage>(aEpoch, aImageId));
 }
 
 void AsyncImagePipelineManager::NotifyPipelinesUpdated(
-    RefPtr<wr::WebRenderPipelineInfo> aInfo, bool aRender) {
-  
-  
+    RefPtr<wr::WebRenderPipelineInfo> aInfo, wr::RenderedFrameId aLatestFrameId,
+    wr::RenderedFrameId aLastCompletedFrameId) {
   MOZ_ASSERT(wr::RenderThread::IsInRenderThread());
+  MOZ_ASSERT(mLastCompletedFrameId <= aLastCompletedFrameId.mId);
 
   
-  uint64_t currCount = aRender ? ++mUpdatesCount : mUpdatesCount;
-  auto updates = MakeUnique<PipelineUpdates>(aInfo, currCount, aRender);
-
-  {
-    
-    MutexAutoLock lock(mUpdatesLock);
-    mUpdatesQueues.push(std::move(updates));
-  }
-
-  if (!aRender) {
-    
-    return;
-  }
+  
+  mPendingUpdates.push_back(aInfo);
 
   
-  layers::CompositorThreadHolder::Loop()->PostTask(
-      NewRunnableMethod("ProcessPipelineUpdates", this,
-                        &AsyncImagePipelineManager::ProcessPipelineUpdates));
+  if (aLatestFrameId.IsValid()) {
+    mLastCompletedFrameId = aLastCompletedFrameId.mId;
+
+    {
+      
+      
+      MutexAutoLock lock(mRenderSubmittedUpdatesLock);
+
+      
+      
+      mRenderSubmittedUpdates.emplace_back(aLatestFrameId,
+                                           std::move(mPendingUpdates));
+    }
+
+    
+    
+    layers::CompositorThreadHolder::Loop()->PostTask(
+        NewRunnableMethod("ProcessPipelineUpdates", this,
+                          &AsyncImagePipelineManager::ProcessPipelineUpdates));
+  } else if (mLastCompletedFrameId < aLastCompletedFrameId.mId) {
+    
+    
+    
+    mLastCompletedFrameId = aLastCompletedFrameId.mId;
+    layers::CompositorThreadHolder::Loop()->PostTask(NewRunnableMethod(
+        "CheckForTextureHostsNotUsedByGPU", this,
+        &AsyncImagePipelineManager::CheckForTextureHostsNotUsedByGPU));
+  }
 }
 
 void AsyncImagePipelineManager::ProcessPipelineUpdates() {
@@ -555,37 +572,28 @@ void AsyncImagePipelineManager::ProcessPipelineUpdates() {
     return;
   }
 
-  UniquePtr<PipelineUpdates> updates;
+  std::vector<std::pair<wr::RenderedFrameId, PipelineInfoVector>>
+      submittedUpdates;
+  {
+    
+    
+    MutexAutoLock lock(mRenderSubmittedUpdatesLock);
+    mRenderSubmittedUpdates.swap(submittedUpdates);
+  }
 
-  while (true) {
-    {
-      
-      MutexAutoLock lock(mUpdatesLock);
-      if (mUpdatesQueues.empty()) {
-        
-        break;
+  
+  
+  for (auto update : submittedUpdates) {
+    for (auto pipelineInfo : update.second) {
+      auto& info = pipelineInfo->Raw();
+
+      for (uintptr_t i = 0; i < info.epochs.length; i++) {
+        ProcessPipelineRendered(info.epochs.data[i].pipeline_id,
+                                info.epochs.data[i].epoch, update.first);
       }
-      
-      uint64_t currCount = mUpdatesCount;
-      if (mUpdatesQueues.front()->NeedsToWait(currCount)) {
-        
-        break;
+      for (uintptr_t i = 0; i < info.removed_pipelines.length; i++) {
+        ProcessPipelineRemoved(info.removed_pipelines.data[i], update.first);
       }
-      updates = std::move(mUpdatesQueues.front());
-      mUpdatesQueues.pop();
-    }
-    MOZ_ASSERT(updates);
-
-    auto& info = updates->mPipelineInfo->Raw();
-
-    for (uintptr_t i = 0; i < info.epochs.length; i++) {
-      ProcessPipelineRendered(info.epochs.data[i].pipeline_id,
-                              info.epochs.data[i].epoch,
-                              updates->mUpdatesCount);
-    }
-    for (uintptr_t i = 0; i < info.removed_pipelines.length; i++) {
-      ProcessPipelineRemoved(info.removed_pipelines.data[i],
-                             updates->mUpdatesCount);
     }
   }
   CheckForTextureHostsNotUsedByGPU();
@@ -593,30 +601,53 @@ void AsyncImagePipelineManager::ProcessPipelineUpdates() {
 
 void AsyncImagePipelineManager::ProcessPipelineRendered(
     const wr::PipelineId& aPipelineId, const wr::Epoch& aEpoch,
-    const uint64_t aUpdatesCount) {
+    wr::RenderedFrameId aRenderedFrameId) {
   if (auto entry = mPipelineTexturesHolders.Lookup(wr::AsUint64(aPipelineId))) {
     PipelineTexturesHolder* holder = entry.Data();
     
-    while (!holder->mTextureHosts.empty()) {
-      if (aEpoch <= holder->mTextureHosts.front().mEpoch) {
-        break;
-      }
-      
-      HoldUntilNotUsedByGPU(holder->mTextureHosts.front().mTexture,
-                            aUpdatesCount);
-      holder->mTextureHosts.pop();
+    
+    auto firstSubmittedHostToKeep = std::find_if(
+        holder->mTextureHostsUntilRenderSubmitted.begin(),
+        holder->mTextureHostsUntilRenderSubmitted.end(),
+        [&aEpoch](const auto& entry) { return aEpoch <= entry.mEpoch; });
+    holder->mTextureHostsUntilRenderSubmitted.erase(
+        holder->mTextureHostsUntilRenderSubmitted.begin(),
+        firstSubmittedHostToKeep);
+
+    
+    
+    
+    
+    auto firstCompletedHostToKeep = std::find_if(
+        holder->mTextureHostsUntilRenderCompleted.begin(),
+        holder->mTextureHostsUntilRenderCompleted.end(),
+        [&aEpoch](const auto& entry) { return aEpoch <= entry->mEpoch; });
+    if (firstCompletedHostToKeep !=
+        holder->mTextureHostsUntilRenderCompleted.begin()) {
+      std::vector<UniquePtr<ForwardingTextureHost>> hostsUntilCompleted(
+          std::make_move_iterator(
+              holder->mTextureHostsUntilRenderCompleted.begin()),
+          std::make_move_iterator(firstCompletedHostToKeep));
+      mTexturesInUseByGPU.emplace_back(aRenderedFrameId,
+                                       std::move(hostsUntilCompleted));
+      holder->mTextureHostsUntilRenderCompleted.erase(
+          holder->mTextureHostsUntilRenderCompleted.begin(),
+          firstCompletedHostToKeep);
     }
-    while (!holder->mExternalImages.empty()) {
-      if (aEpoch <= holder->mExternalImages.front()->mEpoch) {
-        break;
-      }
-      holder->mExternalImages.pop();
-    }
+
+    
+    
+    auto firstImageToKeep = std::find_if(
+        holder->mExternalImages.begin(), holder->mExternalImages.end(),
+        [&aEpoch](const auto& entry) { return aEpoch <= entry->mEpoch; });
+    holder->mExternalImages.erase(holder->mExternalImages.begin(),
+                                  firstImageToKeep);
   }
 }
 
 void AsyncImagePipelineManager::ProcessPipelineRemoved(
-    const wr::RemovedPipeline& aRemovedPipeline, const uint64_t aUpdatesCount) {
+    const wr::RemovedPipeline& aRemovedPipeline,
+    wr::RenderedFrameId aRenderedFrameId) {
   if (mDestroyed) {
     return;
   }
@@ -624,48 +655,35 @@ void AsyncImagePipelineManager::ProcessPipelineRemoved(
           wr::AsUint64(aRemovedPipeline.pipeline_id))) {
     PipelineTexturesHolder* holder = entry.Data();
     if (holder->mDestroyedEpoch.isSome()) {
-      while (!holder->mTextureHosts.empty()) {
+      if (!holder->mTextureHostsUntilRenderCompleted.empty()) {
         
-        HoldUntilNotUsedByGPU(holder->mTextureHosts.front().mTexture,
-                              aUpdatesCount);
-        holder->mTextureHosts.pop();
+        
+        mTexturesInUseByGPU.emplace_back(
+            aRenderedFrameId,
+            std::move(holder->mTextureHostsUntilRenderCompleted));
       }
+
+      
       
       entry.Remove();
     }
+
     
     
     
   }
-}
-
-void AsyncImagePipelineManager::HoldUntilNotUsedByGPU(
-    const CompositableTextureHostRef& aTextureHost, uint64_t aUpdatesCount) {
-  MOZ_ASSERT(aTextureHost);
-
-  if (aTextureHost->HasIntermediateBuffer()) {
-    
-    
-    return;
-  }
-
-  
-  if (mUseTripleBuffering) {
-    ++aUpdatesCount;
-  }
-
-  mTexturesInUseByGPU.emplace(std::make_pair(aUpdatesCount, aTextureHost));
 }
 
 void AsyncImagePipelineManager::CheckForTextureHostsNotUsedByGPU() {
-  uint64_t currCount = mUpdatesCount;
+  uint64_t lastCompletedFrameId = mLastCompletedFrameId;
 
-  while (!mTexturesInUseByGPU.empty()) {
-    if (currCount <= mTexturesInUseByGPU.front().first) {
-      break;
-    }
-    mTexturesInUseByGPU.pop();
-  }
+  
+  auto firstTexturesToKeep =
+      std::find_if(mTexturesInUseByGPU.begin(), mTexturesInUseByGPU.end(),
+                   [lastCompletedFrameId](const auto& entry) {
+                     return lastCompletedFrameId < entry.first.mId;
+                   });
+  mTexturesInUseByGPU.erase(mTexturesInUseByGPU.begin(), firstTexturesToKeep);
 }
 
 wr::Epoch AsyncImagePipelineManager::GetNextImageEpoch() {

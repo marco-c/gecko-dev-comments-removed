@@ -106,11 +106,11 @@ static void DoNotifyWebRenderContextPurge(
   aBridge->NotifyWebRenderContextPurge();
 }
 
-bool RendererOGL::UpdateAndRender(const Maybe<gfx::IntSize>& aReadbackSize,
-                                  const Maybe<wr::ImageFormat>& aReadbackFormat,
-                                  const Maybe<Range<uint8_t>>& aReadbackBuffer,
-                                  bool aHadSlowFrame,
-                                  RendererStats* aOutStats) {
+RenderedFrameId RendererOGL::UpdateAndRender(
+    const Maybe<gfx::IntSize>& aReadbackSize,
+    const Maybe<wr::ImageFormat>& aReadbackFormat,
+    const Maybe<Range<uint8_t>>& aReadbackBuffer, bool aHadSlowFrame,
+    RendererStats* aOutStats) {
   mozilla::widget::WidgetRenderingContext widgetContext;
 
 #if defined(XP_MACOSX)
@@ -123,7 +123,8 @@ bool RendererOGL::UpdateAndRender(const Maybe<gfx::IntSize>& aReadbackSize,
   if (!mCompositor->GetWidget()->PreRender(&widgetContext)) {
     
     
-    return false;
+    return RenderedFrameId();
+    ;
   }
   
 
@@ -132,7 +133,8 @@ bool RendererOGL::UpdateAndRender(const Maybe<gfx::IntSize>& aReadbackSize,
       RenderThread::Get()->HandleDeviceReset("BeginFrame",  true);
     }
     mCompositor->GetWidget()->PostRender(&widgetContext);
-    return false;
+    return RenderedFrameId();
+    ;
   }
 
   wr_renderer_update(mRenderer);
@@ -148,7 +150,7 @@ bool RendererOGL::UpdateAndRender(const Maybe<gfx::IntSize>& aReadbackSize,
   if (!result.Result()) {
     RenderThread::Get()->HandleWebRenderError(WebRenderError::RENDER);
     mCompositor->GetWidget()->PostRender(&widgetContext);
-    return false;
+    return RenderedFrameId();
   }
 
   if (aReadbackBuffer.isSome()) {
@@ -162,7 +164,7 @@ bool RendererOGL::UpdateAndRender(const Maybe<gfx::IntSize>& aReadbackSize,
 
   mScreenshotGrabber.MaybeGrabScreenshot(mRenderer, size.ToUnknownSize());
 
-  mCompositor->EndFrame(result.DirtyRects());
+  RenderedFrameId frameId = mCompositor->EndFrame(result.DirtyRects());
 
   mCompositor->GetWidget()->PostRender(&widgetContext);
 
@@ -181,7 +183,7 @@ bool RendererOGL::UpdateAndRender(const Maybe<gfx::IntSize>& aReadbackSize,
   
   
 
-  return true;
+  return frameId;
 }
 
 void RendererOGL::CheckGraphicsResetStatus() {
@@ -206,6 +208,10 @@ void RendererOGL::WaitForGPU() {
       RenderThread::Get()->HandleDeviceReset("WaitForGPU",  true);
     }
   }
+}
+
+RenderedFrameId RendererOGL::GetLastCompletedFrameId() {
+  return mCompositor->GetLastCompletedFrameId();
 }
 
 void RendererOGL::Pause() { mCompositor->Pause(); }

@@ -37,10 +37,22 @@ class RenderCompositor {
   virtual ~RenderCompositor();
 
   virtual bool BeginFrame() = 0;
-  virtual void EndFrame(const FfiVec<DeviceIntRect>& aDirtyRects) = 0;
+
+  
+  
+  
+  virtual RenderedFrameId EndFrame(
+      const FfiVec<DeviceIntRect>& aDirtyRects) = 0;
   
   
   virtual bool WaitForGPU() { return true; }
+
+  
+  
+  virtual RenderedFrameId GetLastCompletedFrameId() {
+    return mLatestRenderFrameId.Prev();
+  }
+
   virtual void Pause() = 0;
   virtual bool Resume() = 0;
   
@@ -86,6 +98,13 @@ class RenderCompositor {
   virtual bool SurfaceIsYFlipped() { return false; }
 
  protected:
+  
+  RenderedFrameId mLatestRenderFrameId = RenderedFrameId{2};
+  RenderedFrameId GetNextRenderFrameId() {
+    mLatestRenderFrameId = mLatestRenderFrameId.Next();
+    return mLatestRenderFrameId;
+  }
+
   RefPtr<widget::CompositorWidget> mWidget;
   RefPtr<layers::SyncObjectHost> mSyncObject;
 };

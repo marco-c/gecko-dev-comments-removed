@@ -7,7 +7,7 @@
 #ifndef MOZILLA_GFX_WEBRENDERCOMPOSITABLE_HOLDER_H
 #define MOZILLA_GFX_WEBRENDERCOMPOSITABLE_HOLDER_H
 
-#include <queue>
+#include <vector>
 
 #include "CompositableHost.h"
 #include "mozilla/gfx/Point.h"
@@ -62,8 +62,12 @@ class AsyncImagePipelineManager final {
   
   
   
+  
+  
+  
   void NotifyPipelinesUpdated(RefPtr<wr::WebRenderPipelineInfo> aInfo,
-                              bool aRender);
+                              wr::RenderedFrameId aLatestFrameId,
+                              wr::RenderedFrameId aLastCompletedFrameId);
 
   
   
@@ -125,9 +129,9 @@ class AsyncImagePipelineManager final {
  private:
   void ProcessPipelineRendered(const wr::PipelineId& aPipelineId,
                                const wr::Epoch& aEpoch,
-                               const uint64_t aUpdatesCount);
+                               wr::RenderedFrameId aRenderedFrameId);
   void ProcessPipelineRemoved(const wr::RemovedPipeline& aRemovedPipeline,
-                              const uint64_t aUpdatesCount);
+                              wr::RenderedFrameId aRenderedFrameId);
 
   wr::Epoch GetNextImageEpoch();
   uint32_t GetNextResourceId() { return ++mResourceId; }
@@ -157,8 +161,13 @@ class AsyncImagePipelineManager final {
 
   struct PipelineTexturesHolder {
     
-    std::queue<ForwardingTextureHost> mTextureHosts;
-    std::queue<UniquePtr<ForwardingExternalImage>> mExternalImages;
+    std::vector<ForwardingTextureHost> mTextureHostsUntilRenderSubmitted;
+    
+    
+    
+    std::vector<UniquePtr<ForwardingTextureHost>>
+        mTextureHostsUntilRenderCompleted;
+    std::vector<UniquePtr<ForwardingExternalImage>> mExternalImages;
     Maybe<wr::Epoch> mDestroyedEpoch;
     WebRenderBridgeParent* MOZ_NON_OWNING_REF mWrBridge = nullptr;
   };
@@ -209,9 +218,6 @@ class AsyncImagePipelineManager final {
       TextureHost* aTexture, wr::ImageKey aKey, TextureHost::ResourceUpdateOp,
       wr::TransactionBuilder& aTxn);
 
-  
-  void HoldUntilNotUsedByGPU(const CompositableTextureHostRef& aTextureHost,
-                             uint64_t aUpdatesCount);
   void CheckForTextureHostsNotUsedByGPU();
 
   nsTArray<RefPtr<wr::WebRenderAPI>> mApis;
@@ -238,29 +244,20 @@ class AsyncImagePipelineManager final {
 
   nsTArray<ImageCompositeNotificationInfo> mImageCompositeNotifications;
 
-  
-  Mutex mUpdatesLock;
-  
-  Atomic<uint64_t> mUpdatesCount;
-  struct PipelineUpdates {
-    PipelineUpdates(RefPtr<wr::WebRenderPipelineInfo> aPipelineInfo,
-                    const uint64_t aUpdatesCount, const bool aRendered);
-    bool NeedsToWait(const uint64_t aUpdatesCount) {
-      MOZ_ASSERT(mUpdatesCount <= aUpdatesCount);
-      if (mUpdatesCount == aUpdatesCount && !mRendered) {
-        
-        return true;
-      }
-      return false;
-    }
-    RefPtr<wr::WebRenderPipelineInfo> mPipelineInfo;
-    const uint64_t mUpdatesCount;
-    const bool mRendered;
-  };
-  std::queue<UniquePtr<PipelineUpdates>> mUpdatesQueues;
+  typedef std::vector<RefPtr<wr::WebRenderPipelineInfo>> PipelineInfoVector;
 
   
-  std::queue<std::pair<uint64_t, CompositableTextureHostRef>>
+  
+  PipelineInfoVector mPendingUpdates;
+  
+  
+  std::vector<std::pair<wr::RenderedFrameId, PipelineInfoVector>>
+      mRenderSubmittedUpdates;
+  Mutex mRenderSubmittedUpdatesLock;
+
+  Atomic<uint64_t> mLastCompletedFrameId;
+  std::vector<std::pair<wr::RenderedFrameId,
+                        std::vector<UniquePtr<ForwardingTextureHost>>>>
       mTexturesInUseByGPU;
 };
 
