@@ -47,7 +47,7 @@ function test_simple_breakpoint() {
     gThreadClient.setBreakpoint({
       sourceUrl: source.url,
       line: 3,
-    }, { logValue: "a" });
+    }, { logValue: "c" });
 
     
     gThreadClient.resume();
@@ -63,7 +63,7 @@ function test_simple_breakpoint() {
                    1);
   
 
-  Assert.equal(lastMessage.level, "logPoint");
-  Assert.equal(lastMessage.arguments[0], "three");
+  Assert.equal(lastMessage.level, "logPointError");
+  Assert.equal(lastMessage.arguments[0], "[Logpoint threw]: c is not defined");
   finishClient(gClient);
 }
