@@ -458,6 +458,11 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
 
 
+  void SetFixedLayerMargins(ScreenIntCoord aTop, ScreenIntCoord aBottom);
+
+  
+
+
 
 
 
@@ -863,6 +868,11 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
 
   ScreenPoint mCurrentMousePosition;
+  
+
+
+
+  ScreenMargin mFixedLayerMargins;
   
 
   gfx::TreeLog<gfx::LOG_DEFAULT> mApzcTreeLog;
