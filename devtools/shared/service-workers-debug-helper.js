@@ -22,10 +22,12 @@ XPCOMUtils.defineLazyServiceGetter(
 
 
 
+
+
 const PROCESS_COUNT_PREF = "dom.ipc.processCount";
 const MULTI_OPTOUT_PREF = "dom.ipc.multiOptOut";
 
-function addMultiE10sListener(listener) {
+function addDebugServiceWorkersListener(listener) {
   
   
   
@@ -42,15 +44,12 @@ function addMultiE10sListener(listener) {
   Services.prefs.addObserver(MULTI_OPTOUT_PREF, listener);
 }
 
-function removeMultiE10sListener(listener) {
+function removeDebugServiceWorkersListener(listener) {
   Services.prefs.removeObserver(PROCESS_COUNT_PREF, listener);
   Services.prefs.removeObserver(MULTI_OPTOUT_PREF, listener);
 }
 
-
-
-
-function isMultiE10s() {
+function canDebugServiceWorkers() {
   const isE10s = Services.appinfo.browserTabsRemoteAutostart;
   const processCount = Services.appinfo.maxWebProcessCount;
   const multiE10s = isE10s && processCount > 1;
@@ -58,12 +57,11 @@ function isMultiE10s() {
 
   
   
-  const canDebugSW = isNewSWImplementation || !multiE10s;
-  return !canDebugSW;
+  return isNewSWImplementation || !multiE10s;
 }
 
 module.exports = {
-  addMultiE10sListener,
-  isMultiE10s,
-  removeMultiE10sListener,
+  addDebugServiceWorkersListener,
+  canDebugServiceWorkers,
+  removeDebugServiceWorkersListener,
 };

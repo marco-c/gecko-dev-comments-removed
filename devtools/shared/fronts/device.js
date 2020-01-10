@@ -17,6 +17,29 @@ class DeviceFront extends FrontClassWithSpec(deviceSpec) {
 
     
     this.formAttributeName = "deviceActor";
+
+    
+    
+    
+    
+    this.on("multi-e10s-updated", (e, isMultiE10s) => {
+      this.emit("can-debug-sw-updated", !isMultiE10s);
+    });
+  }
+
+  
+
+
+
+  async getDescription() {
+    const description = await super.getDescription();
+
+    
+    if (typeof description.canDebugServiceWorkers === "undefined") {
+      description.canDebugServiceWorkers = !description.isMultiE10s;
+    }
+
+    return description;
   }
 
   screenshotToBlob() {

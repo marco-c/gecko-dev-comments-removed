@@ -54,6 +54,10 @@ exports.compatibilityReport = PropTypes.shape(compatibilityReport);
 
 const runtimeDetails = {
   
+  
+  canDebugServiceWorkers: PropTypes.bool,
+
+  
   clientWrapper: PropTypes.instanceOf(ClientWrapper).isRequired,
 
   
@@ -65,10 +69,6 @@ const runtimeDetails = {
 
   
   info: PropTypes.shape(runtimeInfo).isRequired,
-
-  
-  
-  isMultiE10s: PropTypes.bool,
 
   
   
