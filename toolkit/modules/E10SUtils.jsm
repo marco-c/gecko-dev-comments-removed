@@ -812,12 +812,8 @@ var E10SUtils = {
   
 
 
-
   isWebRemoteType(aBrowser) {
-    if (aBrowser.ownerGlobal.docShell.nsILoadContext.useRemoteSubframes) {
-      return aBrowser.remoteType.startsWith(FISSION_WEB_REMOTE_TYPE_PREFIX);
-    }
-    return aBrowser.remoteType == WEB_REMOTE_TYPE;
+    return aBrowser.remoteType.startsWith(WEB_REMOTE_TYPE);
   },
 };
 
