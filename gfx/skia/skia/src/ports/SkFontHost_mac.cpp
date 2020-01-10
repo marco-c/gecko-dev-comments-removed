@@ -1280,7 +1280,9 @@ void SkScalerContext_Mac::generateMetrics(SkGlyph* glyph) {
         
         
         
-        if (0 == cgAdvance.width && 0 == cgAdvance.height) {
+        
+        if (0 == cgAdvance.width && 0 == cgAdvance.height &&
+            SkMask::kARGB32_Format != glyph->fMaskFormat) {
             SkUniqueCFRef<CGPathRef> path(CTFontCreatePathForGlyph(fCTFont.get(), cgGlyph,nullptr));
             if (!path || CGPathIsEmpty(path.get())) {
                 return;
