@@ -348,18 +348,23 @@ PersistentBufferProviderShared::BorrowDrawTarget(
     return nullptr;
   }
 
+  mDrawTarget = tex->BorrowDrawTarget();
   if (mBack != previousBackBuffer && !aPersistedRect.IsEmpty()) {
-    TextureClient* previous = GetTexture(previousBackBuffer);
-    if (previous && previous->Lock(OpenMode::OPEN_READ)) {
-      DebugOnly<bool> success =
-          previous->CopyToTextureClient(tex, &aPersistedRect, nullptr);
-      MOZ_ASSERT(success);
+    if (mPreviousSnapshot) {
+      mDrawTarget->CopySurface(mPreviousSnapshot, aPersistedRect,
+                               gfx::IntPoint(0, 0));
+    } else {
+      TextureClient* previous = GetTexture(previousBackBuffer);
+      if (previous && previous->Lock(OpenMode::OPEN_READ)) {
+        DebugOnly<bool> success =
+            previous->CopyToTextureClient(tex, &aPersistedRect, nullptr);
+        MOZ_ASSERT(success);
 
-      previous->Unlock();
+        previous->Unlock();
+      }
     }
   }
-
-  mDrawTarget = tex->BorrowDrawTarget();
+  mPreviousSnapshot = nullptr;
 
   if (mDrawTarget) {
     
@@ -382,11 +387,22 @@ bool PersistentBufferProviderShared::ReturnDrawTarget(
   
   MOZ_ASSERT(!mSnapshot);
 
-  mDrawTarget = nullptr;
-  dt = nullptr;
-
   TextureClient* back = GetTexture(mBack);
   MOZ_ASSERT(back);
+
+  
+  
+  
+  
+  
+  
+  
+  if (back->HasSynchronization()) {
+    mPreviousSnapshot = back->BorrowSnapshot();
+  }
+
+  mDrawTarget = nullptr;
+  dt = nullptr;
 
   if (back) {
     back->Unlock();
@@ -411,6 +427,11 @@ already_AddRefed<gfx::SourceSurface>
 PersistentBufferProviderShared::BorrowSnapshot() {
   MOZ_ASSERT(!mDrawTarget);
 
+  if (mPreviousSnapshot) {
+    mSnapshot = mPreviousSnapshot;
+    return do_AddRef(mSnapshot);
+  }
+
   auto front = GetTexture(mFront);
   if (!front || front->IsLocked()) {
     MOZ_ASSERT(false);
@@ -421,17 +442,9 @@ PersistentBufferProviderShared::BorrowSnapshot() {
     return nullptr;
   }
 
-  RefPtr<DrawTarget> dt = front->BorrowDrawTarget();
+  mSnapshot = front->BorrowSnapshot();
 
-  if (!dt) {
-    front->Unlock();
-    return nullptr;
-  }
-
-  mSnapshot = dt->Snapshot();
-
-  RefPtr<SourceSurface> snapshot = mSnapshot;
-  return snapshot.forget();
+  return do_AddRef(mSnapshot);
 }
 
 void PersistentBufferProviderShared::ReturnSnapshot(
@@ -441,6 +454,10 @@ void PersistentBufferProviderShared::ReturnSnapshot(
 
   mSnapshot = nullptr;
   snapshot = nullptr;
+
+  if (mPreviousSnapshot) {
+    return;
+  }
 
   auto front = GetTexture(mFront);
   if (front) {
@@ -477,6 +494,7 @@ void PersistentBufferProviderShared::ClearCachedResources() {
 
 void PersistentBufferProviderShared::Destroy() {
   mSnapshot = nullptr;
+  mPreviousSnapshot = nullptr;
   mDrawTarget = nullptr;
 
   for (auto& mTexture : mTextures) {
