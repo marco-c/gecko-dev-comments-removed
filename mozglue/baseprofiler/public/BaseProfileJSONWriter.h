@@ -19,14 +19,17 @@
 #include <ostream>
 #include <string>
 
-class SpliceableChunkedJSONWriter;
+namespace mozilla {
+namespace baseprofiler {
+
+class SpliceableJSONWriter;
 
 
 
 
 
 
-class ChunkedJSONWriteFunc : public mozilla::JSONWriteFunc {
+class ChunkedJSONWriteFunc : public JSONWriteFunc {
  public:
   friend class SpliceableJSONWriter;
 
@@ -43,7 +46,7 @@ class ChunkedJSONWriteFunc : public mozilla::JSONWriteFunc {
   void Write(const char* aStr) override;
   void CopyDataIntoLazilyAllocatedBuffer(
       const std::function<char*(size_t)>& aAllocator) const;
-  mozilla::UniquePtr<char[]> CopyData() const;
+  UniquePtr<char[]> CopyData() const;
   void Take(ChunkedJSONWriteFunc&& aOther);
   
   
@@ -70,11 +73,11 @@ class ChunkedJSONWriteFunc : public mozilla::JSONWriteFunc {
   
   
   
-  mozilla::Vector<mozilla::UniquePtr<char[]>> mChunkList;
-  mozilla::Vector<size_t> mChunkLengths;
+  Vector<UniquePtr<char[]>> mChunkList;
+  Vector<size_t> mChunkLengths;
 };
 
-struct OStreamJSONWriteFunc : public mozilla::JSONWriteFunc {
+struct OStreamJSONWriteFunc : public JSONWriteFunc {
   explicit OStreamJSONWriteFunc(std::ostream& aStream) : mStream(aStream) {}
 
   void Write(const char* aStr) override { mStream << aStr; }
@@ -82,10 +85,9 @@ struct OStreamJSONWriteFunc : public mozilla::JSONWriteFunc {
   std::ostream& mStream;
 };
 
-class SpliceableJSONWriter : public mozilla::JSONWriter {
+class SpliceableJSONWriter : public JSONWriter {
  public:
-  explicit SpliceableJSONWriter(
-      mozilla::UniquePtr<mozilla::JSONWriteFunc> aWriter)
+  explicit SpliceableJSONWriter(UniquePtr<JSONWriteFunc> aWriter)
       : JSONWriter(std::move(aWriter)) {}
 
   void StartBareList(CollectionStyle aStyle = MultiLineStyle) {
@@ -118,7 +120,7 @@ class SpliceableJSONWriter : public mozilla::JSONWriter {
 class SpliceableChunkedJSONWriter : public SpliceableJSONWriter {
  public:
   explicit SpliceableChunkedJSONWriter()
-      : SpliceableJSONWriter(mozilla::MakeUnique<ChunkedJSONWriteFunc>()) {}
+      : SpliceableJSONWriter(MakeUnique<ChunkedJSONWriteFunc>()) {}
 
   ChunkedJSONWriteFunc* WriteFunc() const {
     return static_cast<ChunkedJSONWriteFunc*>(JSONWriter::WriteFunc());
@@ -129,12 +131,11 @@ class SpliceableChunkedJSONWriter : public SpliceableJSONWriter {
 };
 
 class JSONSchemaWriter {
-  mozilla::JSONWriter& mWriter;
+  JSONWriter& mWriter;
   uint32_t mIndex;
 
  public:
-  explicit JSONSchemaWriter(mozilla::JSONWriter& aWriter)
-      : mWriter(aWriter), mIndex(0) {
+  explicit JSONSchemaWriter(JSONWriter& aWriter) : mWriter(aWriter), mIndex(0) {
     aWriter.StartObjectProperty("schema",
                                 SpliceableJSONWriter::SingleLineStyle);
   }
@@ -143,5 +144,8 @@ class JSONSchemaWriter {
 
   ~JSONSchemaWriter() { mWriter.EndObject(); }
 };
+
+}  
+}  
 
 #endif  

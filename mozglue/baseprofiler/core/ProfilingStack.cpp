@@ -16,7 +16,8 @@
 
 #  include <algorithm>
 
-using namespace js;
+namespace mozilla {
+namespace baseprofiler {
 
 ProfilingStack::~ProfilingStack() {
   
@@ -35,18 +36,21 @@ void ProfilingStack::ensureCapacitySlow() {
   auto newCapacity =
       std::max(sp + 1, capacity ? capacity * 2 : kInitialCapacity);
 
-  auto* newFrames = new js::ProfilingStackFrame[newCapacity];
+  auto* newFrames = new ProfilingStackFrame[newCapacity];
 
   
   
-  for (auto i : mozilla::IntegerRange(capacity)) {
+  for (auto i : IntegerRange(capacity)) {
     newFrames[i] = frames[i];
   }
 
-  js::ProfilingStackFrame* oldFrames = frames;
+  ProfilingStackFrame* oldFrames = frames;
   frames = newFrames;
   capacity = newCapacity;
   delete[] oldFrames;
 }
+
+}  
+}  
 
 #endif  
