@@ -18,6 +18,9 @@
 
 
 
+
+
+
 function requireLazy(callback) {
   
   let cache;
@@ -41,10 +44,6 @@ const lazyCustomizableWidgets = requireLazy(() =>
   
   ChromeUtils.import("resource:///modules/CustomizableWidgets.jsm")
 );
-
-
-
-
 
 const BUTTON_ENABLED_PREF = "devtools.performance.popup.enabled";
 const WIDGET_ID = "profiler-button";

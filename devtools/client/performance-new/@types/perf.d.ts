@@ -151,6 +151,8 @@ export interface RecordingStateFromPreferences {
   features: string[];
   threads: string[];
   objdirs: string[];
+  
+  duration: number;
 }
 
 
@@ -225,8 +227,6 @@ export type PopupBackgroundFeatures = { [feature: string]: boolean };
 
 
 export interface PopupBackgroundState {
-  isRunning: boolean;
-  settingsOpen: boolean;
   features: PopupBackgroundFeatures;
   buffersize: number;
   windowLength: number;
@@ -239,4 +239,60 @@ export interface ContentFrameMessageManager {
   addMessageListener: (event: string, listener: (event: any) => void) => void;
   addEventListener: (event: string, listener: (event: any) => void) => void;
   sendAsyncMessage: (name: string, data: any) => void;
+}
+
+
+
+
+
+
+export interface PerformancePref {
+  
+
+
+  Entries: "devtools.performance.recording.entries";
+  
+
+
+
+
+  Interval: "devtools.performance.recording.interval";
+  
+
+
+  Features: "devtools.performance.recording.features";
+  
+
+
+  Threads: "devtools.performance.recording.threads";
+  
+
+
+  ObjDirs: "devtools.performance.recording.objdirs";
+  
+
+
+
+
+
+
+  Duration: "devtools.performance.recording.duration";
+  
+
+
+
+
+  UIBaseUrl: "devtools.performance.recording.ui-base-url";
+  
+
+
+
+  UIBaseUrlPathPref: "devtools.performance.recording.ui-base-url-path";
+  
+
+
+
+
+
+  PopupEnabled: "devtools.performance.popup.enabled";
 }

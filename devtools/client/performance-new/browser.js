@@ -23,6 +23,8 @@
 
 
 
+
+
 function requireLazy(callback) {
   
   let cache;
@@ -47,11 +49,25 @@ const lazyProfilerGetSymbols = requireLazy(() =>
 const TRANSFER_EVENT = "devtools:perf-html-transfer-profile";
 const SYMBOL_TABLE_REQUEST_EVENT = "devtools:perf-html-request-symbol-table";
 const SYMBOL_TABLE_RESPONSE_EVENT = "devtools:perf-html-reply-symbol-table";
+
+
+const ENTRIES_PREF = "devtools.performance.recording.entries";
+
+const INTERVAL_PREF = "devtools.performance.recording.interval";
+
+const FEATURES_PREF = "devtools.performance.recording.features";
+
+const THREADS_PREF = "devtools.performance.recording.threads";
+
+
+const OBJDIRS_PREF = "devtools.performance.recording.objdirs";
+
 const UI_BASE_URL_PREF = "devtools.performance.recording.ui-base-url";
+
 const UI_BASE_URL_PATH_PREF = "devtools.performance.recording.ui-base-url-path";
+
 const UI_BASE_URL_DEFAULT = "https://profiler.firefox.com";
 const UI_BASE_URL_PATH_DEFAULT = "/from-addon";
-const OBJDIRS_PREF = "devtools.performance.recording.objdirs";
 
 
 
@@ -213,10 +229,9 @@ async function _getIntPref(preferenceFront, prefName, defaultValue) {
 
 
 
-
 async function getRecordingPreferencesFromDebuggee(
   preferenceFront,
-  defaultSettings = {}
+  defaultSettings
 ) {
   const [entries, interval, features, threads, objdirs] = await Promise.all([
     _getIntPref(
@@ -255,27 +270,17 @@ async function getRecordingPreferencesFromDebuggee(
 
 
 
-
 async function setRecordingPreferencesOnDebuggee(preferenceFront, settings) {
   const { Services } = lazyServices();
   await Promise.all([
-    preferenceFront.setIntPref(
-      `devtools.performance.recording.entries`,
-      settings.entries
-    ),
-    preferenceFront.setIntPref(
-      `devtools.performance.recording.interval`,
-      
-      settings.interval * 1000
-    ),
+    preferenceFront.setIntPref(ENTRIES_PREF, settings.entries),
+    
+    preferenceFront.setIntPref(INTERVAL_PREF, settings.interval * 1000),
     preferenceFront.setCharPref(
-      `devtools.performance.recording.features`,
+      FEATURES_PREF,
       JSON.stringify(settings.features)
     ),
-    preferenceFront.setCharPref(
-      `devtools.performance.recording.threads`,
-      JSON.stringify(settings.threads)
-    ),
+    preferenceFront.setCharPref(THREADS_PREF, JSON.stringify(settings.threads)),
     Services.prefs.setCharPref(OBJDIRS_PREF, JSON.stringify(settings.objdirs)),
   ]);
 }

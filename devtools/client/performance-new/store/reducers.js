@@ -83,7 +83,7 @@ function interval(state = 1000, action) {
 
 
 
-function entries(state = 10000000, action) {
+function entries(state = 0, action) {
   switch (action.type) {
     case "CHANGE_ENTRIES":
       return action.entries;
@@ -98,7 +98,7 @@ function entries(state = 10000000, action) {
 
 
 
-function features(state = ["js", "stackwalk", "responsiveness"], action) {
+function features(state = [], action) {
   switch (action.type) {
     case "CHANGE_FEATURES":
       return action.features;
@@ -113,7 +113,7 @@ function features(state = ["js", "stackwalk", "responsiveness"], action) {
 
 
 
-function threads(state = ["GeckoMain", "Compositor"], action) {
+function threads(state = [], action) {
   switch (action.type) {
     case "CHANGE_THREADS":
       return action.threads;

@@ -28,6 +28,20 @@ const { AppConstants } = ChromeUtils.import(
 
 
 
+const ENTRIES_PREF = "devtools.performance.recording.entries";
+
+const INTERVAL_PREF = "devtools.performance.recording.interval";
+
+const FEATURES_PREF = "devtools.performance.recording.features";
+
+const THREADS_PREF = "devtools.performance.recording.threads";
+
+const OBJDIRS_PREF = "devtools.performance.recording.objdirs";
+
+const DURATION_PREF = "devtools.performance.recording.duration";
+
+
+
 
 
 
@@ -71,114 +85,9 @@ const lazyReceiveProfile = requireLazy(() => {
 
 
 
-const PROFILER_STATE_PREF = "devtools.performance.popup";
-const DEFAULT_WINDOW_LENGTH = 20; 
-const DEFAULT_INTERVAL = 1; 
-const DEFAULT_BUFFER_SIZE = 10000000; 
-const DEFAULT_THREADS = "GeckoMain,Compositor";
-const DEFAULT_STACKWALK_FEATURE = true;
-
-
-
-
-
-const symbolCache = new Map();
-
-
-
-
-
-
-
-
-
-
-
-const primeSymbolStore = libs => {
-  for (const { path, debugName, debugPath, breakpadId } of libs) {
-    symbolCache.set(`${debugName}/${breakpadId}`, { path, debugPath });
-  }
-};
-
-
-
-
-
-
-
-
-const state = initializeState();
-
-const forTestsOnly = {
-  DEFAULT_BUFFER_SIZE,
-  DEFAULT_STACKWALK_FEATURE,
-  initializeState,
-  adjustState,
-  getState() {
-    return state;
-  },
-  revertPrefs() {
-    Services.prefs.clearUserPref(PROFILER_STATE_PREF);
-  },
-};
-
-
-
-
-function adjustState(newState) {
-  
-  
-  newState = JSON.parse(JSON.stringify(newState));
-  Object.assign(state, newState);
-
-  try {
-    Services.prefs.setStringPref(PROFILER_STATE_PREF, JSON.stringify(state));
-  } catch (error) {
-    console.error("Unable to save the profiler state for the popup.");
-    throw error;
-  }
-}
-
-
-
-
-
-async function getSymbolsFromThisBrowser(debugName, breakpadId) {
-  if (symbolCache.size === 0) {
-    primeSymbolStore(Services.profiler.sharedLibraries);
-  }
-
-  const cachedLibInfo = symbolCache.get(`${debugName}/${breakpadId}`);
-  if (!cachedLibInfo) {
-    throw new Error(
-      `The library ${debugName} ${breakpadId} is not in the ` +
-        "Services.profiler.sharedLibraries list, so the local path for it is not known " +
-        "and symbols for it can not be obtained. This usually happens if a content " +
-        "process uses a library that's not used in the parent process - " +
-        "Services.profiler.sharedLibraries only knows about libraries in the " +
-        "parent process."
-    );
-  }
-
-  const { path, debugPath } = cachedLibInfo;
-  const { OS } = lazyOS();
-  if (!OS.Path.split(path).absolute) {
-    throw new Error(
-      "Services.profiler.sharedLibraries did not contain an absolute path for " +
-        `the library ${debugName} ${breakpadId}, so symbols for this library can not ` +
-        "be obtained."
-    );
-  }
-
-  const { ProfilerGetSymbols } = lazyProfilerGetSymbols();
-  return ProfilerGetSymbols.getSymbolTable(path, debugPath, breakpadId);
-}
-
-
-
 
 async function captureProfile() {
-  if (!state.isRunning) {
+  if (!Services.profiler.IsActive()) {
     
     return;
   }
@@ -195,42 +104,67 @@ async function captureProfile() {
       }
     );
 
+  
+  const _symbolCache = new Map();
+
   const receiveProfile = lazyReceiveProfile();
-  receiveProfile(profile, getSymbolsFromThisBrowser);
+
+  receiveProfile(profile, async function getSymbols(debugName, breakpadId) {
+    if (_symbolCache.size === 0) {
+      
+      for (const lib of Services.profiler.sharedLibraries) {
+        _symbolCache.set(`${lib.debugName}/${lib.breakpadId}`, {
+          path: lib.path,
+          debugPath: lib.debugPath,
+        });
+      }
+    }
+
+    const cachedLibInfo = _symbolCache.get(`${debugName}/${breakpadId}`);
+    if (!cachedLibInfo) {
+      throw new Error(
+        `The library ${debugName} ${breakpadId} is not in the ` +
+          "Services.profiler.sharedLibraries list, so the local path for it is not known " +
+          "and symbols for it can not be obtained. This usually happens if a content " +
+          "process uses a library that's not used in the parent process - " +
+          "Services.profiler.sharedLibraries only knows about libraries in the " +
+          "parent process."
+      );
+    }
+
+    const { path, debugPath } = cachedLibInfo;
+    const { OS } = lazyOS();
+    if (!OS.Path.split(path).absolute) {
+      throw new Error(
+        "Services.profiler.sharedLibraries did not contain an absolute path for " +
+          `the library ${debugName} ${breakpadId}, so symbols for this library can not ` +
+          "be obtained."
+      );
+    }
+
+    const { ProfilerGetSymbols } = lazyProfilerGetSymbols();
+
+    return ProfilerGetSymbols.getSymbolTable(path, debugPath, breakpadId);
+  });
 
   Services.profiler.StopProfiler();
 }
 
-
-
-
-
-
-
-
-function getEnabledFeatures(features, threads) {
-  const enabledFeatures = Object.keys(features).filter(f => features[f]);
-  if (threads.length > 0) {
-    enabledFeatures.push("threads");
-  }
-  const supportedFeatures = Services.profiler.GetFeatures([]);
-  return enabledFeatures.filter(feature => supportedFeatures.includes(feature));
-}
-
 function startProfiler() {
-  const threads = state.threads.split(",");
-  const features = getEnabledFeatures(state.features, threads);
-  const windowLength =
-    state.windowLength !== state.infiniteWindowLength ? state.windowLength : 0;
-
-  const { buffersize, interval } = state;
-
-  Services.profiler.StartProfiler(
-    buffersize,
+  const {
+    entries,
     interval,
     features,
     threads,
-    windowLength
+    duration,
+  } = getRecordingPreferencesFromBrowser();
+
+  Services.profiler.StartProfiler(
+    entries,
+    interval,
+    features,
+    threads,
+    duration
   );
 }
 
@@ -245,7 +179,7 @@ function stopProfiler() {
 
 
 function toggleProfiler() {
-  if (state.isRunning) {
+  if (Services.profiler.IsActive()) {
     stopProfiler();
   } else {
     startProfiler();
@@ -260,85 +194,6 @@ function restartProfiler() {
   startProfiler();
 }
 
-
-const isRunningObserver = {
-  _observers: new Set(),
-
-  
-
-
-
-
-  observe(subject, topic, data) {
-    switch (topic) {
-      case "profiler-started":
-      case "profiler-stopped":
-        
-        const isRunningPromise = Promise.resolve(topic === "profiler-started");
-        for (const observer of this._observers) {
-          isRunningPromise.then(observer);
-        }
-        break;
-    }
-  },
-
-  _startListening() {
-    Services.obs.addObserver(this, "profiler-started");
-    Services.obs.addObserver(this, "profiler-stopped");
-  },
-
-  _stopListening() {
-    Services.obs.removeObserver(this, "profiler-started");
-    Services.obs.removeObserver(this, "profiler-stopped");
-  },
-
-  
-
-
-  addObserver(observer) {
-    if (this._observers.size === 0) {
-      this._startListening();
-    }
-
-    this._observers.add(observer);
-    
-    Promise.resolve(Services.profiler.IsActive()).then(observer);
-  },
-
-  
-
-
-  removeObserver(observer) {
-    if (this._observers.delete(observer) && this._observers.size === 0) {
-      this._stopListening();
-    }
-  },
-};
-
-
-
-
-function getStoredStateOrNull() {
-  
-  const storedStateString = Services.prefs.getStringPref(
-    PROFILER_STATE_PREF,
-    ""
-  );
-  if (storedStateString === "") {
-    return null;
-  }
-
-  try {
-    
-    return JSON.parse(storedStateString);
-  } catch (error) {
-    console.error(
-      `Could not parse the stored state for the profile in the ` +
-        `preferences ${PROFILER_STATE_PREF}`
-    );
-  }
-  return null;
-}
 
 
 
@@ -394,161 +249,105 @@ function _getArrayOfStringsHostPref(prefName, defaultValue) {
 
 
 
-function getRecordingPreferencesFromBrowser(defaultSettings) {
-  const [entries, interval, features, threads, objdirs] = [
-    Services.prefs.getIntPref(
-      `devtools.performance.recording.entries`,
-      defaultSettings.entries
-    ),
-    Services.prefs.getIntPref(
-      `devtools.performance.recording.interval`,
-      defaultSettings.interval
-    ),
-    _getArrayOfStringsPref(
-      `devtools.performance.recording.features`,
-      defaultSettings.features
-    ),
-    _getArrayOfStringsPref(
-      `devtools.performance.recording.threads`,
-      defaultSettings.threads
-    ),
-    _getArrayOfStringsHostPref(
-      "devtools.performance.recording.objdirs",
-      defaultSettings.objdirs
-    ),
-  ];
+let _defaultSettings;
 
-  
-  const newInterval = interval / 1000;
-  return { entries, interval: newInterval, features, threads, objdirs };
+
+
+
+
+function getDefaultRecordingSettings() {
+  if (!_defaultSettings) {
+    _defaultSettings = {
+      entries: 10000000, 
+      
+      duration: 0,
+      interval: 1, 
+      features: ["js", "leaf", "responsiveness", "stackwalk"],
+      threads: ["GeckoMain", "Compositor"],
+      objdirs: [],
+    };
+
+    if (AppConstants.platform === "android") {
+      
+      _defaultSettings.features.push("java");
+    }
+  }
+
+  return _defaultSettings;
+}
+
+
+
+
+function getRecordingPreferencesFromBrowser() {
+  const defaultSettings = getDefaultRecordingSettings();
+
+  const entries = Services.prefs.getIntPref(
+    ENTRIES_PREF,
+    defaultSettings.entries
+  );
+  const interval = Services.prefs.getIntPref(
+    INTERVAL_PREF,
+    defaultSettings.interval
+  );
+  const features = _getArrayOfStringsPref(
+    FEATURES_PREF,
+    defaultSettings.features
+  );
+  const threads = _getArrayOfStringsPref(THREADS_PREF, defaultSettings.threads);
+  const objdirs = _getArrayOfStringsHostPref(
+    OBJDIRS_PREF,
+    defaultSettings.objdirs
+  );
+  const duration = Services.prefs.getIntPref(
+    DURATION_PREF,
+    defaultSettings.duration
+  );
+
+  const supportedFeatures = new Set(Services.profiler.GetFeatures());
+
+  return {
+    entries,
+    
+    interval: interval / 1000,
+    
+    features: features.filter(feature => supportedFeatures.has(feature)),
+    threads,
+    objdirs,
+    duration,
+  };
 }
 
 
 
 
 function setRecordingPreferencesOnBrowser(settings) {
-  Services.prefs.setIntPref(
-    `devtools.performance.recording.entries`,
-    settings.entries
-  );
-  Services.prefs.setIntPref(
-    `devtools.performance.recording.interval`,
-    
-    settings.interval * 1000
-  );
-  Services.prefs.setCharPref(
-    `devtools.performance.recording.features`,
-    JSON.stringify(settings.features)
-  );
-  Services.prefs.setCharPref(
-    `devtools.performance.recording.threads`,
-    JSON.stringify(settings.threads)
-  );
-  Services.prefs.setCharPref(
-    "devtools.performance.recording.objdirs",
-    JSON.stringify(settings.objdirs)
-  );
-}
-
-
-
-
-function initializeState() {
-  const features = {
-    java: false,
-    js: true,
-    leaf: true,
-    mainthreadio: false,
-    privacy: false,
-    responsiveness: true,
-    screenshots: false,
-    seqstyle: false,
-    stackwalk: DEFAULT_STACKWALK_FEATURE,
-    tasktracer: false,
-    trackopts: false,
-    jstracer: false,
-    preferencereads: false,
-    jsallocations: false,
-    nativeallocations: false,
-  };
-
-  if (AppConstants.platform === "android") {
-    
-    features.java = true;
-  }
-
-  const storedState = getStoredStateOrNull();
-
-  if (storedState && storedState.features) {
-    const storedFeatures = storedState.features;
-    
-    
-    for (const key of Object.keys(features)) {
-      
-      const featureAsObjMap = features;
-      featureAsObjMap[key] =
-        key in storedFeatures
-          ? Boolean(storedFeatures[key])
-          : featureAsObjMap[key];
-    }
-  }
-
+  Services.prefs.setIntPref(ENTRIES_PREF, settings.entries);
   
-
-
-
-
-
-  function validateStoredState(key, type, defaultValue) {
-    if (!storedState) {
-      return defaultValue;
-    }
-    
-    const storedStateAsObjMap = storedState;
-    const storedValue = storedStateAsObjMap[key];
-    return typeof storedValue === type ? storedValue : defaultValue;
-  }
-
-  return {
-    
-    isRunning: Services.profiler.IsActive(),
-    settingsOpen: false,
-    features,
-
-    
-    buffersize: validateStoredState(
-      "buffersize",
-      "number",
-      DEFAULT_BUFFER_SIZE
-    ),
-    windowLength: validateStoredState(
-      "windowLength",
-      "number",
-      DEFAULT_WINDOW_LENGTH
-    ),
-    interval: validateStoredState("interval", "number", DEFAULT_INTERVAL),
-    threads: validateStoredState("threads", "string", DEFAULT_THREADS),
-  };
+  Services.prefs.setIntPref(INTERVAL_PREF, settings.interval * 1000);
+  Services.prefs.setCharPref(FEATURES_PREF, JSON.stringify(settings.features));
+  Services.prefs.setCharPref(THREADS_PREF, JSON.stringify(settings.threads));
+  Services.prefs.setCharPref(OBJDIRS_PREF, JSON.stringify(settings.objdirs));
 }
-
-isRunningObserver.addObserver(isRunning => {
-  adjustState({ isRunning });
-});
 
 const platform = AppConstants.platform;
 
+
+
+
+function revertRecordingPreferences() {
+  setRecordingPreferencesOnBrowser(getDefaultRecordingSettings());
+}
+
 var EXPORTED_SYMBOLS = [
-  "adjustState",
   "captureProfile",
-  "state",
   "startProfiler",
   "stopProfiler",
   "restartProfiler",
   "toggleProfiler",
-  "isRunningObserver",
   "platform",
+  "getDefaultRecordingSettings",
   "getRecordingPreferencesFromBrowser",
   "setRecordingPreferencesOnBrowser",
-  "forTestsOnly",
-  "getSymbolsFromThisBrowser",
+  "revertRecordingPreferences",
 ];

@@ -75,10 +75,7 @@ async function gInit() {
       perfFront: perfFrontInterface,
       receiveProfile,
       
-      
-      recordingSettingsFromPreferences: getRecordingPreferencesFromBrowser(
-        selectors.getRecordingSettings(store.getState())
-      ),
+      recordingSettingsFromPreferences: getRecordingPreferencesFromBrowser(),
       
       setRecordingPreferences: () =>
         setRecordingPreferencesOnBrowser(

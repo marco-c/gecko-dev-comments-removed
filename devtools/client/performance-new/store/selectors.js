@@ -59,6 +59,8 @@ const getRecordingSettings = state => {
     features: getFeatures(state),
     threads: getThreads(state),
     objdirs: getObjdirs(state),
+    
+    duration: 0,
   };
 };
 
