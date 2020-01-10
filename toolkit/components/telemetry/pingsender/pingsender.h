@@ -16,4 +16,7 @@ namespace PingSender {
 
 bool Post(const std::string& url, const std::string& payload);
 
+bool IsValidDestination(char* aUriEndingInHost);
+bool IsValidDestination(std::string aUriEndingInHost);
+
 }  
