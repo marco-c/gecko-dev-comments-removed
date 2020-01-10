@@ -71,23 +71,6 @@
 
 
 
-
-
-
-
-#if MOZ_IS_GCC
-#  if !MOZ_GCC_VERSION_AT_LEAST(8, 2, 0)
-#    define JS_BROKEN_GCC_ATTRIBUTE_WARNING
-#  endif
-#endif
-
-
-
-
-
-
-
-
 #define JS_BEGIN_MACRO do {
 #define JS_END_MACRO \
   }                  \
