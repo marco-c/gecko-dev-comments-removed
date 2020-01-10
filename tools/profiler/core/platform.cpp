@@ -2930,9 +2930,6 @@ void profiler_init(void* aStackTop) {
 #endif
 
     
-    RegisterProfilerLabelEnterExit(MozGlueLabelEnter, MozGlueLabelExit);
-
-    
     
     
     
@@ -3477,6 +3474,9 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
     }
   }
 
+  
+  RegisterProfilerLabelEnterExit(MozGlueLabelEnter, MozGlueLabelExit);
+
 #ifdef MOZ_TASK_TRACER
   if (ActivePS::FeatureTaskTracer(aLock)) {
     tasktracer::StartLogging();
@@ -3616,6 +3616,9 @@ static MOZ_MUST_USE SamplerThread* locked_profiler_stop(PSLockRef aLock) {
     tasktracer::StopLogging();
   }
 #endif
+
+  
+  RegisterProfilerLabelEnterExit(nullptr, nullptr);
 
   
   int tid = profiler_current_thread_id();
