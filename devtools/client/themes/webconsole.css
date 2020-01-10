@@ -483,6 +483,9 @@ html #webconsole-notificationbox {
   
   padding-inline-start: calc(var(--console-inline-start-gutter) - 4px);
   
+  position: relative;
+  z-index: 0; 
+  
   background-image: url(chrome://devtools/skin/images/webconsole/input.svg);
   background-position-x: calc(10px + var(--console-icon-horizontal-offset));
   background-position-y: 5px;

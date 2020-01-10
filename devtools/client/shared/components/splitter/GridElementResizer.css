@@ -3,21 +3,23 @@
 
 
 .grid-element-width-resizer {
-  border-inline-style: solid;
-  border-inline-color: var(--theme-splitter-color);
-  border-inline-width: 0;
-  width: 10px;
-  z-index: 1;
+  
+  --inline-inset: 3px;
+  
+  width: calc(1px + (2 * var(--inline-inset)));
+  position: relative;
+  cursor: ew-resize;
+  z-index: 10;
 }
 
 .grid-element-width-resizer.start {
   justify-self: start;
-  border-inline-start-width: 1px;
+  inset-inline-start: calc(-1 * var(--inline-inset));
 }
 
 .grid-element-width-resizer.end {
   justify-self: end;
-  border-inline-end-width: 1px;
+  inset-inline-start: var(--inline-inset);
 }
 
 .dragging,
@@ -27,8 +29,4 @@
   
 
   pointer-events: none !important;
-}
-
-.grid-element-width-resizer {
-  cursor: ew-resize;
 }
