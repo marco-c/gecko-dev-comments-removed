@@ -129,7 +129,65 @@ declare namespace MockedExports {
 
   const Services: Services;
 
-  const chrome: any;
+  
+  
+  class nsIFilePicker {}
+
+  interface FilePicker {
+    init: (window: Window, title: string, mode: number) => void;
+    open: (callback: (rv: number) => unknown) => void;
+    
+    modeGetFolder: number;
+    returnOK: number;
+    file: {
+      path: string
+    }
+  }
+
+  
+  
+  class nsIEnvironment {}
+
+  interface Environment {
+    get(envName: string): string;
+    set(envName: string, value: string): void;
+  }
+
+  const chrome: {
+    Cc: {
+      "@mozilla.org/process/environment;1": {
+        getService(service: nsIEnvironment): Environment
+      },
+      "@mozilla.org/filepicker;1": {
+        createInstance(instance: nsIFilePicker): FilePicker
+      }
+    },
+    Ci: {
+      nsIFilePicker: nsIFilePicker;
+      nsIEnvironment: nsIEnvironment;
+    },
+  };
+}
+
+
+declare module "devtools/client/shared/vendor/react" {
+  import * as React from "react";
+  export = React;
+}
+
+declare module "devtools/client/shared/vendor/react-dom-factories" {
+  import * as ReactDomFactories from "react-dom-factories";
+  export = ReactDomFactories;
+}
+
+declare module "devtools/client/shared/vendor/redux" {
+  import * as Redux from "redux";
+  export = Redux;
+}
+
+declare module "devtools/client/shared/vendor/react-redux" {
+  import * as ReactRedux from "react-redux";
+  export = ReactRedux;
 }
 
 declare module "devtools/shared/event-emitter2" {

@@ -1,7 +1,58 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 "use strict";
+
 const {
   PureComponent,
   createFactory,
@@ -29,22 +80,22 @@ const {
   calculateOverhead,
 } = require("devtools/client/performance-new/utils");
 const { connect } = require("devtools/client/shared/vendor/react-redux");
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const actions = require("devtools/client/performance-new/store/actions");
 const selectors = require("devtools/client/performance-new/store/selectors");
-const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
-XPCOMUtils.defineLazyServiceGetter(
-  this,
-  "FilePicker",
-  "@mozilla.org/filepicker;1",
-  "nsIFilePicker"
-);
+const {
+  openFilePickerForObjdir,
+} = require("devtools/client/performance-new/browser");
 
 
 
 const PROFILE_ENTRY_SIZE = 9;
 
 const NOTCHES = Array(22).fill("discrete-level-notch");
+
+
+
+
+
 
 const threadColumns = [
   [
@@ -211,28 +262,14 @@ const featureCheckboxes = [
 
 
 
-class Settings extends PureComponent {
-  static get propTypes() {
-    return {
-      
-      interval: PropTypes.number.isRequired,
-      entries: PropTypes.number.isRequired,
-      features: PropTypes.array.isRequired,
-      threads: PropTypes.array.isRequired,
-      threadsString: PropTypes.string.isRequired,
-      objdirs: PropTypes.array.isRequired,
 
-      
-      changeInterval: PropTypes.func.isRequired,
-      changeEntries: PropTypes.func.isRequired,
-      changeFeatures: PropTypes.func.isRequired,
-      changeThreads: PropTypes.func.isRequired,
-      changeObjdirs: PropTypes.func.isRequired,
-    };
-  }
+class Settings extends PureComponent {
+  
+
 
   constructor(props) {
     super(props);
+    
     this.state = {
       
       temporaryThreadText: null,
@@ -283,6 +320,10 @@ class Settings extends PureComponent {
     return notches;
   }
 
+  
+
+
+
   _handleThreadCheckboxChange(event) {
     const { threads, changeThreads } = this.props;
     const { checked, value } = event.target;
@@ -295,6 +336,10 @@ class Settings extends PureComponent {
       changeThreads(threads.filter(thread => thread !== value));
     }
   }
+
+  
+
+
 
   _handleFeaturesCheckboxChange(event) {
     const { features, changeFeatures } = this.props;
@@ -311,17 +356,12 @@ class Settings extends PureComponent {
 
   _handleAddObjdir() {
     const { objdirs, changeObjdirs } = this.props;
-    FilePicker.init(window, "Pick build directory", FilePicker.modeGetFolder);
-    FilePicker.open(rv => {
-      if (rv == FilePicker.returnOK) {
-        const path = FilePicker.file.path;
-        if (path && !objdirs.includes(path)) {
-          const newObjdirs = [...objdirs, path];
-          changeObjdirs(newObjdirs);
-        }
-      }
-    });
+    openFilePickerForObjdir(window, objdirs, changeObjdirs);
   }
+
+  
+
+
 
   _handleRemoveObjdir(index) {
     const { objdirs, changeObjdirs } = this.props;
@@ -330,14 +370,24 @@ class Settings extends PureComponent {
     changeObjdirs(newObjdirs);
   }
 
+  
+
+
   _setThreadTextFromInput(event) {
     this.setState({ temporaryThreadText: event.target.value });
   }
+
+  
+
 
   _handleThreadTextCleanup(event) {
     this.setState({ temporaryThreadText: null });
     this.props.changeThreads(_threadTextToList(event.target.value));
   }
+  
+
+
+
 
   _renderThreadsColumns(threadDisplay, index) {
     const { threads } = this.props;
@@ -365,8 +415,14 @@ class Settings extends PureComponent {
   }
 
   _renderThreads() {
+    const { temporaryThreadText } = this.state;
+
     return details(
-      { className: "perf-settings-details", onToggle: _handleToggle },
+      {
+        className: "perf-settings-details",
+        
+        onToggle: _handleToggle,
+      },
       summary(
         {
           className: "perf-settings-summary",
@@ -402,9 +458,9 @@ class Settings extends PureComponent {
                 id: "perf-settings-thread-text",
                 type: "text",
                 value:
-                  this.state.temporaryThreadText === null
-                    ? this.props.threads
-                    : this.state.temporaryThreadText,
+                  temporaryThreadText === null
+                    ? this.props.threads.join(",")
+                    : temporaryThreadText,
                 onBlur: this._handleThreadTextCleanup,
                 onFocus: this._setThreadTextFromInput,
                 onChange: this._setThreadTextFromInput,
@@ -418,7 +474,11 @@ class Settings extends PureComponent {
 
   _renderFeatures() {
     return details(
-      { className: "perf-settings-details", onToggle: _handleToggle },
+      {
+        className: "perf-settings-details",
+        
+        onToggle: _handleToggle,
+      },
       summary(
         {
           className: "perf-settings-summary",
@@ -468,6 +528,7 @@ class Settings extends PureComponent {
     return details(
       {
         className: "perf-settings-details",
+        
         onToggle: _handleToggle,
       },
       summary(
@@ -568,10 +629,19 @@ function _entriesTextDisplay(value) {
 }
 
 function _handleToggle() {
-  if (window.gResizePopup) {
-    window.gResizePopup(document.body.clientHeight);
+  
+  const anyWindow = window;
+  
+  const popupWindow = anyWindow;
+
+  if (popupWindow.gResizePopup) {
+    popupWindow.gResizePopup(document.body.clientHeight);
   }
 }
+
+
+
+
 
 function mapStateToProps(state) {
   return {
@@ -584,6 +654,7 @@ function mapStateToProps(state) {
   };
 }
 
+
 const mapDispatchToProps = {
   changeInterval: actions.changeInterval,
   changeEntries: actions.changeEntries,
@@ -592,7 +663,9 @@ const mapDispatchToProps = {
   changeObjdirs: actions.changeObjdirs,
 };
 
-module.exports = connect(
+const SettingsConnected = connect(
   mapStateToProps,
   mapDispatchToProps
 )(Settings);
+
+module.exports = SettingsConnected;
