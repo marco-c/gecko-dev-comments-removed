@@ -46,6 +46,11 @@ class SpecialPowersChild extends SpecialPowersAPI {
   }
 
   handleEvent(aEvent) {
+    
+    
+  }
+
+  actorCreated() {
     this.attachToWindow();
   }
 

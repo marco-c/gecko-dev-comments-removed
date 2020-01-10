@@ -457,11 +457,12 @@ function Tester(aTests, structuredLogger, aCallback) {
     this.cpowEventUtils
   );
 
+  
+  
+  
+  window.getWindowGlobalChild().getActor("SpecialPowers");
+
   var simpleTestScope = {};
-  this._scriptLoader.loadSubScript(
-    "chrome://mochikit/content/tests/SimpleTest/ChromePowers.js",
-    simpleTestScope
-  );
   this._scriptLoader.loadSubScript(
     "chrome://mochikit/content/tests/SimpleTest/SimpleTest.js",
     simpleTestScope

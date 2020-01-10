@@ -2,6 +2,8 @@
 
 "use strict";
 
+PromiseTestUtils.whitelistRejectionsGlobally(/packaging errors/);
+
 
 add_task(async function testInvalidIconSizes() {
   let extension = ExtensionTestUtils.loadExtension({

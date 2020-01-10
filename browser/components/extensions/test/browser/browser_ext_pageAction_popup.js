@@ -2,6 +2,8 @@
 
 "use strict";
 
+PromiseTestUtils.whitelistRejectionsGlobally(/packaging errors/);
+
 const { GlobalManager } = ChromeUtils.import(
   "resource://gre/modules/Extension.jsm",
   null
