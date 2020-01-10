@@ -64,7 +64,6 @@ namespace StaticPrefs {
 
 
 enum class UpdatePolicy {
-  Skip,  
   Once,  
   Live   
 };

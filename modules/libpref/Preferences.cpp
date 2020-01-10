@@ -4509,15 +4509,10 @@ Result<Ok, const char*> Preferences::InitInitialObjects(bool aIsStartup) {
     
     
     
-    
-    
-    
 #  define PREF(name, cpp_type, value)
-#  define VARCACHE_PREF(policy, name, id, cpp_type, value)                     \
-    MOZ_ASSERT(StaticPrefs::UpdatePolicy::policy ==                            \
-                       StaticPrefs::UpdatePolicy::Skip ||                      \
-                   PreferencesInternalMethods::GetPref<StripAtomic<cpp_type>>( \
-                       name, value) == StaticPrefs::id(),                      \
+#  define VARCACHE_PREF(policy, name, id, cpp_type, value)                 \
+    MOZ_ASSERT(PreferencesInternalMethods::GetPref<StripAtomic<cpp_type>>( \
+                   name, value) == StaticPrefs::id(),                      \
                "Incorrect cached value for " name);
 #  include "mozilla/StaticPrefListAll.h"
 #  undef PREF
@@ -5394,7 +5389,7 @@ static void InitVarCachePref(StaticPrefs::UpdatePolicy aPolicy,
   
   
 
-  if (aSetValue && MOZ_LIKELY(aPolicy != StaticPrefs::UpdatePolicy::Skip)) {
+  if (aSetValue) {
     SetPref(PromiseFlatCString(aName).get(), aDefaultValue);
     if (MOZ_LIKELY(aPolicy == StaticPrefs::UpdatePolicy::Live)) {
       *aCache = aDefaultValue;
@@ -5649,7 +5644,7 @@ static void InitStaticPrefsFromShared() {
   
 #define PREF(name, cpp_type, value)
 #define VARCACHE_PREF(policy, name, id, cpp_type, value)               \
-  if (UpdatePolicy::policy != UpdatePolicy::Skip) {                    \
+  {                                                                    \
     StripAtomic<cpp_type> val;                                         \
     nsresult rv;                                                       \
     if (UpdatePolicy::policy == UpdatePolicy::Once) {                  \
