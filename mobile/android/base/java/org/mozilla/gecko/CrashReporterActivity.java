@@ -139,6 +139,8 @@ public class CrashReporterActivity extends AppCompatActivity
     @Override
     @SuppressLint("WrongThread") 
     public void onCreate(Bundle savedInstanceState) {
+        informReporterStarted();
+
         super.onCreate(savedInstanceState);
         
         mHandler = new Handler();
@@ -595,5 +597,12 @@ public class CrashReporterActivity extends AppCompatActivity
 
     private String unescape(String string) {
         return string.replaceAll("\\\\\\\\", "\\").replaceAll("\\\\n", "\n").replaceAll("\\\\t", "\t");
+    }
+
+    
+
+
+    private void informReporterStarted() {
+        CrashHandlerService.reportingStarted(this);
     }
 }
