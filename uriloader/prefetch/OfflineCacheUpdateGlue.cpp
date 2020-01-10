@@ -62,6 +62,8 @@ nsIOfflineCacheUpdate* OfflineCacheUpdateGlue::EnsureUpdate() {
     mUpdate = new nsOfflineCacheUpdate();
     LOG(("OfflineCacheUpdateGlue [%p] is using update [%p]", this,
          mUpdate.get()));
+
+    mUpdate->SetCookieSettings(mCookieSettings);
   }
 
   return mUpdate;
@@ -120,8 +122,12 @@ OfflineCacheUpdateGlue::Init(nsIURI* aManifestURI, nsIURI* aDocumentURI,
     return NS_OK;
   }
 
-  return mUpdate->Init(aManifestURI, aDocumentURI, aLoadingPrincipal, nullptr,
-                       aCustomProfileDir);
+  rv = mUpdate->Init(aManifestURI, aDocumentURI, aLoadingPrincipal, nullptr,
+                     aCustomProfileDir);
+
+  mUpdate->SetCookieSettings(mCookieSettings);
+
+  return rv;
 }
 
 void OfflineCacheUpdateGlue::SetDocument(Document* aDocument) {
@@ -137,6 +143,8 @@ void OfflineCacheUpdateGlue::SetDocument(Document* aDocument) {
   
   
   if (!aDocument) return;
+
+  mCookieSettings = aDocument->CookieSettings();
 
   nsIChannel* channel = aDocument->GetChannel();
   nsCOMPtr<nsIApplicationCacheChannel> appCacheChannel =
