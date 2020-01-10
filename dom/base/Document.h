@@ -56,6 +56,7 @@
 #include "mozilla/dom/ContentBlockingLog.h"
 #include "mozilla/dom/DispatcherTrait.h"
 #include "mozilla/dom/DocumentOrShadowRoot.h"
+#include "mozilla/dom/ViewportMetaData.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/NotNull.h"
@@ -187,6 +188,7 @@ class FrameRequestCallback;
 class ImageTracker;
 class HTMLAllCollection;
 class HTMLBodyElement;
+class HTMLMetaElement;
 class HTMLSharedElement;
 class HTMLImageElement;
 struct LifecycleCallbackArgs;
@@ -1512,6 +1514,10 @@ class Document : public nsINode,
 
 
   nsViewportInfo GetViewportInfo(const ScreenIntSize& aDisplaySize);
+
+  void AddMetaViewportElement(HTMLMetaElement* aElement,
+                              ViewportMetaData&& aData);
+  void RemoveMetaViewportElement(HTMLMetaElement* aElement);
 
   void UpdateForScrollAnchorAdjustment(nscoord aLength);
 
@@ -3990,7 +3996,10 @@ class Document : public nsINode,
   
   
   
-  bool ParseScalesInMetaViewport();
+  bool ParseScalesInViewportMetaData(const ViewportMetaData& aViewportMetaData);
+
+  
+  ViewportMetaData GetViewportMetaData() const;
 
   FlashClassification DocumentFlashClassificationInternal();
 
@@ -5166,6 +5175,17 @@ class Document : public nsINode,
   
   
   nsCOMPtr<nsILayoutHistoryState> mLayoutHistoryState;
+
+  struct MetaViewportElementAndData {
+    RefPtr<HTMLMetaElement> mElement;
+    ViewportMetaData mData;
+
+    bool operator==(const MetaViewportElementAndData& aOther) const {
+      return mElement == aOther.mElement && mData == aOther.mData;
+    }
+  };
+  
+  nsTArray<MetaViewportElementAndData> mMetaViewports;
 
   
   

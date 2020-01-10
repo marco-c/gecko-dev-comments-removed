@@ -12,17 +12,34 @@
 namespace mozilla {
 
 namespace dom {
-class Document;
-
 struct ViewportMetaData {
+  
+  nsString mWidth;
+  nsString mHeight;
+  nsString mInitialScale;
+  nsString mMinimumScale;
+  nsString mMaximumScale;
+  nsString mUserScalable;
+
+  bool operator==(const ViewportMetaData& aOther) const {
+    return mWidth == aOther.mWidth && mHeight == aOther.mHeight &&
+           mInitialScale == aOther.mInitialScale &&
+           mMinimumScale == aOther.mMinimumScale &&
+           mMaximumScale == aOther.mMaximumScale &&
+           mUserScalable == aOther.mUserScalable;
+  }
+  bool operator!=(const ViewportMetaData& aOther) const {
+    return !(*this == aOther);
+  }
+
+  ViewportMetaData() = default;
   
 
 
 
 
 
-  static void ProcessViewportInfo(Document* aDocument,
-                                  const nsAString& viewportInfo);
+  explicit ViewportMetaData(const nsAString& aViewportInfo);
 };
 
 }  
