@@ -44,12 +44,6 @@ static nsLiteralCString evalWhitelist[] = {
     NS_LITERAL_CSTRING("resource://testing-common/ajv-4.1.1.js"),
     
     NS_LITERAL_CSTRING("resource://testing-common/content-task.js"),
-
-    
-    
-
-    
-    NS_LITERAL_CSTRING("chrome://global/content/bindings/autocomplete.xml"),
 };
 
 
