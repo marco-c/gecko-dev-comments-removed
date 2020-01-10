@@ -8,15 +8,18 @@
 
 
 
+
+
+
+
+
+
+
 module.exports = function defer() {
   let resolve, reject;
-  const promise = new Promise(function() {
-    resolve = arguments[0];
-    reject = arguments[1];
+  const promise = new Promise(function(res, rej) {
+    resolve = res;
+    reject = rej;
   });
-  return {
-    resolve: resolve,
-    reject: reject,
-    promise: promise,
-  };
+  return { resolve, reject, promise };
 };
