@@ -31,6 +31,11 @@ loader.lazyRequireGetter(
   "devtools/shared/async-utils",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "DevToolsUtils",
+  "devtools/shared/DevToolsUtils"
+);
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
@@ -978,16 +983,7 @@ HTMLTooltip.prototype = {
   },
 
   _getTopWindow: function() {
-    const win = this.doc.defaultView;
-    if (win.windowRoot) {
-      
-      
-      
-      
-      return win.windowRoot.ownerGlobal;
-    }
-    
-    return win.top;
+    return DevToolsUtils.getTopWindow(this.doc.defaultView);
   },
 
   
