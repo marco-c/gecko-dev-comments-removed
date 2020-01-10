@@ -115,13 +115,13 @@ bool SharedArrayRawBuffer::wasmGrowToSizeInPlace(const Lock&,
   uint8_t* dataEnd = dataPointerShared().unwrap() + length_;
   MOZ_ASSERT(uintptr_t(dataEnd) % gc::SystemPageSize() == 0);
 
-  
-  
-
   if (!CommitBufferMemory(dataEnd, delta)) {
     return false;
   }
 
+  
+  
+  
   length_ = newLength;
 
   return true;
