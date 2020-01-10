@@ -311,6 +311,15 @@ class FirefoxConnector {
 
 
 
+  setBlockedUrls(urls) {
+    return this.webConsoleClient.setBlockedUrls(urls);
+  }
+
+  
+
+
+
+
 
   setPreferences(request) {
     return this.webConsoleClient.setPreferences(request);

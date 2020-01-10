@@ -1,0 +1,13 @@
+
+
+
+
+"use strict";
+
+function hasMatchingBlockingRequestPattern(blockedUrls, url) {
+  return blockedUrls.some(blockedUrl => url.includes(blockedUrl));
+}
+
+module.exports = {
+  hasMatchingBlockingRequestPattern,
+};

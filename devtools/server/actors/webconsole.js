@@ -1986,6 +1986,24 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
 
+  async setBlockedUrls(urls) {
+    await this._sendMessageToNetmonitors(
+      "debug:set-blocked-urls",
+      "debug:set-blocked-urls:response",
+      { urls }
+    );
+
+    return {};
+  },
+
+  
+
+
+
+
+
+
+
   onFileActivity: function(fileURI) {
     this.emit("fileActivity", {
       uri: fileURI,

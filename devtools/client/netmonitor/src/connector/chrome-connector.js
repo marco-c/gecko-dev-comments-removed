@@ -98,16 +98,7 @@ class ChromeConnector {
 
 
 
-  blockRequest(filter) {
-    
-  }
-
-  
-
-
-
-
-  unblockRequest(filter) {
+  setBlockedUrls(urls) {
     
   }
 

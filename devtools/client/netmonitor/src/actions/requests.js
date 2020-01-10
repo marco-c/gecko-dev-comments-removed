@@ -6,7 +6,6 @@
 
 const {
   ADD_REQUEST,
-  BLOCK_SELECTED_REQUEST_DONE,
   CLEAR_REQUESTS,
   CLONE_REQUEST,
   CLONE_SELECTED_REQUEST,
@@ -14,7 +13,6 @@ const {
   RIGHT_CLICK_REQUEST,
   SEND_CUSTOM_REQUEST,
   TOGGLE_RECORDING,
-  UNBLOCK_SELECTED_REQUEST_DONE,
   UPDATE_REQUEST,
 } = require("../constants");
 const { getSelectedRequest, getRequestById } = require("../selectors/index");
@@ -110,40 +108,6 @@ function sendCustomRequest(connector, requestId = null) {
 
 
 
-function blockSelectedRequestURL(connector, clickedRequest) {
-  return async dispatch => {
-    if (!clickedRequest) {
-      return;
-    }
-
-    const { url } = clickedRequest;
-    await connector.blockRequest({ url });
-    dispatch({
-      type: BLOCK_SELECTED_REQUEST_DONE,
-    });
-  };
-}
-
-
-
-
-function unblockSelectedRequestURL(connector, clickedRequest) {
-  return async dispatch => {
-    if (!clickedRequest) {
-      return;
-    }
-
-    const { url } = clickedRequest;
-    await connector.unblockRequest({ url });
-    dispatch({
-      type: UNBLOCK_SELECTED_REQUEST_DONE,
-    });
-  };
-}
-
-
-
-
 
 function removeSelectedCustomRequest() {
   return {
@@ -168,7 +132,6 @@ function toggleRecording() {
 
 module.exports = {
   addRequest,
-  blockSelectedRequestURL,
   clearRequests,
   cloneRequest,
   cloneSelectedRequest,
@@ -176,6 +139,5 @@ module.exports = {
   removeSelectedCustomRequest,
   sendCustomRequest,
   toggleRecording,
-  unblockSelectedRequestURL,
   updateRequest,
 };
