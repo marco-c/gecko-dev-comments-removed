@@ -2692,13 +2692,6 @@ nsresult nsGlobalWindowOuter::SetArguments(nsIArray* aArguments) {
   
   
   
-  
-  
-  
-  
-  
-  
-  
   nsGlobalWindowInner* currentInner = GetCurrentInnerWindowInternal();
 
   mArguments = aArguments;

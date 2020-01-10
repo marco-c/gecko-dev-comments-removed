@@ -977,18 +977,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   
 
 
-
-
-
-
-
-
-
-  virtual nsresult SetArguments(nsIArray* aArguments) = 0;
-
-  
-
-
   uint64_t WindowID() const { return mWindowID; }
 
   

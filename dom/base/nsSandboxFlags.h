@@ -31,7 +31,6 @@ const unsigned long SANDBOXED_NAVIGATION = 0x1;
 
 
 
-
 const unsigned long SANDBOXED_AUXILIARY_NAVIGATION = 0x2;
 
 
