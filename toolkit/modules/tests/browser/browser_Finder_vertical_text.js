@@ -25,10 +25,16 @@ add_task(async function test_vertical_text() {
       }
 
       let targets = [
+        
         "vertical-rl",
         "vertical-lr",
         "sideways-rl",
         "sideways-lr",
+        
+        "l-r",
+        "l-l",
+        "s-r",
+        "s-l",
       ];
 
       for (let i = 0; i < targets.length; ++i) {
@@ -37,9 +43,12 @@ add_task(async function test_vertical_text() {
         let promiseFind = waitForFind();
         finder.fastFind(target, false, false);
         let findResult = await promiseFind;
-        is(
+
+        
+        
+        isnot(
           findResult.result,
-          Ci.nsITypeAheadFind.FIND_FOUND,
+          Ci.nsITypeAheadFind.FIND_NOTFOUND,
           "Found target text '" + target + "'."
         );
       }
