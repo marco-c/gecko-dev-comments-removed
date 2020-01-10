@@ -323,7 +323,10 @@ class Nursery {
   bool registerMallocedBuffer(void* buffer);
 
   
-  void removeMallocedBuffer(void* buffer) { mallocedBuffers.remove(buffer); }
+  void removeMallocedBuffer(void* buffer) {
+    MOZ_ASSERT(mallocedBuffers.has(buffer));
+    mallocedBuffers.remove(buffer);
+  }
 
   MOZ_MUST_USE bool addedUniqueIdToCell(gc::Cell* cell) {
     MOZ_ASSERT(IsInsideNursery(cell));
