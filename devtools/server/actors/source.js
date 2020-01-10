@@ -6,13 +6,13 @@
 
 "use strict";
 
-const { Ci, Cu } = require("chrome");
+const { Cu } = require("chrome");
 const {
   setBreakpointAtEntryPoints,
 } = require("devtools/server/actors/breakpoint");
 const { ActorClassWithSpec } = require("devtools/shared/protocol");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-const { assert, fetch } = DevToolsUtils;
+const { assert } = DevToolsUtils;
 const { joinURI } = require("devtools/shared/path");
 const { sourceSpec } = require("devtools/shared/specs/source");
 
@@ -165,13 +165,6 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     return this._extensionName;
   },
 
-  get isCacheEnabled() {
-    if (this.threadActor._parent._getCacheDisabled) {
-      return !this.threadActor._parent._getCacheDisabled();
-    }
-    return true;
-  },
-
   form: function() {
     const source = this._source;
 
@@ -208,18 +201,6 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
 
     query.source = this._source;
     return this.dbg.findScripts(query);
-  },
-
-  _reportLoadSourceError: function(error) {
-    try {
-      DevToolsUtils.reportException("SourceActor", error);
-
-      JSON.stringify(this.form(), null, 4)
-        .split(/\n/g)
-        .forEach(line => console.error("\t", line));
-    } catch (e) {
-      
-    }
   },
 
   _getSourceText: async function() {
@@ -263,53 +244,16 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       return toResolvedContent(this._source.text);
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    const loadFromCache = this.isInlineSource && this.isCacheEnabled;
-
-    
-    const win = this.threadActor._parent.window;
-    let principal, cacheKey;
-    
-    if (!isWorker && win instanceof Ci.nsIDOMWindow) {
-      const docShell = win.docShell;
-      const channel = docShell.currentDocumentChannel;
-      principal = channel.loadInfo.loadingPrincipal;
-
-      
-      
-      if (
-        loadFromCache &&
-        docShell.currentDocumentChannel instanceof Ci.nsICacheInfoChannel
-      ) {
-        cacheKey = docShell.currentDocumentChannel.cacheKey;
-      }
-    }
-
-    const sourceFetched = fetch(this.url, {
-      principal,
-      cacheKey,
-      loadFromCache,
-    });
-
-    
-    return sourceFetched.then(
-      result => {
-        this._contentType = result.contentType;
-        return result;
-      },
-      error => {
-        this._reportLoadSourceError(error);
-        throw error;
-      }
+    const result = await this.sources.htmlFileContents(
+      this.url,
+       false,
+       this.isInlineSource
     );
+
+    
+    this._contentType = result.contentType;
+
+    return result;
   },
 
   getBreakableLines() {
