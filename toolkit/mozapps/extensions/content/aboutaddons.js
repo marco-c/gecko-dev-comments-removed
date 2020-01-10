@@ -163,6 +163,27 @@ function getOptionsType(addon, type) {
 }
 
 
+async function isAddonOptionsUIAllowed(addon) {
+  if (addon.type !== "extension" || !getOptionsType(addon)) {
+    
+    
+    
+    return true;
+  }
+  if (!PrivateBrowsingUtils.isContentWindowPrivate(window)) {
+    return true;
+  }
+  if (addon.incognito === "not_allowed") {
+    return false;
+  }
+  
+  
+  return allowPrivateBrowsingByDefault ||
+    
+    isAllowedInPrivateBrowsing(addon);
+}
+
+
 
 
 
@@ -630,6 +651,11 @@ class AddonOptions extends HTMLElement {
       case "preferences":
         el.hidden = getOptionsType(addon) !== "tab" &&
           (getOptionsType(addon) !== "inline" || card.expanded);
+        if (!el.hidden) {
+          isAddonOptionsUIAllowed(addon).then(allowed => {
+            el.hidden = !allowed;
+          });
+        }
         break;
     }
   }
@@ -1104,6 +1130,11 @@ class AddonDetails extends HTMLElement {
     notesBtn.hidden = !this.releaseNotesUri;
     let prefsBtn = getButtonByName("preferences");
     prefsBtn.hidden = getOptionsType(addon) !== "inline";
+    if (!prefsBtn.hidden) {
+      isAddonOptionsUIAllowed(addon).then(allowed => {
+        prefsBtn.hidden = !allowed;
+      });
+    }
 
     
     this.tabGroup.hidden = Array.from(this.tabGroup.children).every(button => {
@@ -1517,6 +1548,13 @@ class AddonCard extends HTMLElement {
   }
 
   onEnabled(addon) {
+    this.reloading = false;
+    this.update();
+  }
+
+  onInstalled(addon) {
+    
+    
     this.reloading = false;
     this.update();
   }
@@ -2584,7 +2622,8 @@ class DetailView {
     card.setAddon(addon);
     card.expand();
     await card.render();
-    if (this.selectedTab === "preferences") {
+    if (this.selectedTab === "preferences" &&
+        (await isAddonOptionsUIAllowed(addon))) {
       card.showPrefs();
     }
 
