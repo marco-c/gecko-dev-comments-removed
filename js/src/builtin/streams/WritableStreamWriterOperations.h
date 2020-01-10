@@ -9,11 +9,19 @@
 #ifndef builtin_streams_WritableStreamWriterOperations_h
 #define builtin_streams_WritableStreamWriterOperations_h
 
-#include "js/Value.h"  
+#include "mozilla/Attributes.h"  
+
+#include "js/RootingAPI.h"  
+#include "js/Value.h"       
+
+class JSObject;
 
 namespace js {
 
 class WritableStreamDefaultWriter;
+
+extern JSObject* WritableStreamDefaultWriterClose(
+    JSContext* cx, JS::Handle<WritableStreamDefaultWriter*> unwrappedWriter);
 
 extern JS::Value WritableStreamDefaultWriterGetDesiredSize(
     const WritableStreamDefaultWriter* unwrappedWriter);

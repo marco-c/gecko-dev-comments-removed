@@ -8,21 +8,96 @@
 
 #include "builtin/streams/WritableStreamWriterOperations.h"
 
+#include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
+
+#include "jsapi.h"        
+#include "jsfriendapi.h"  
+
+#include "builtin/Promise.h"                          
+#include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/WritableStream.h"  
 #include "builtin/streams/WritableStreamDefaultController.h"  
 #include "builtin/streams/WritableStreamDefaultControllerOperations.h"  
 #include "builtin/streams/WritableStreamDefaultWriter.h"  
+#include "builtin/streams/WritableStreamOperations.h"  
 #include "js/Value.h"  
 
+#include "builtin/streams/WritableStream-inl.h"  
 #include "builtin/streams/WritableStreamDefaultWriter-inl.h"  
 #include "vm/Compartment-inl.h"  
 
+using JS::Handle;
 using JS::Int32Value;
+using JS::MutableHandle;
 using JS::NullValue;
 using JS::NumberValue;
+using JS::Rooted;
 using JS::Value;
 
+using js::PromiseObject;
 
+
+
+
+
+
+
+JSObject* js::WritableStreamDefaultWriterClose(
+    JSContext* cx, Handle<WritableStreamDefaultWriter*> unwrappedWriter) {
+  
+  
+  MOZ_ASSERT(unwrappedWriter->hasStream());
+  Rooted<WritableStream*> unwrappedStream(cx, unwrappedWriter->stream());
+
+  
+  
+  
+  if (unwrappedStream->closed() || unwrappedStream->errored()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_WRITABLESTREAM_CLOSED_OR_ERRORED);
+    return PromiseRejectedWithPendingError(cx);
+  }
+
+  
+  MOZ_ASSERT(unwrappedStream->writable() ^ unwrappedStream->erroring());
+
+  
+  MOZ_ASSERT(!WritableStreamCloseQueuedOrInFlight(unwrappedStream));
+
+  
+  Rooted<PromiseObject*> promise(cx, PromiseObject::createSkippingExecutor(cx));
+  if (!promise) {
+    return nullptr;
+  }
+
+  
+  unwrappedStream->setCloseRequest(promise);
+
+  
+  
+  if (unwrappedStream->backpressure() && unwrappedStream->writable()) {
+    Rooted<JSObject*> readyPromise(cx, unwrappedWriter->readyPromise());
+    if (!cx->compartment()->wrap(cx, &readyPromise)) {
+      return nullptr;
+    }
+    if (!ResolvePromise(cx, readyPromise, UndefinedHandleValue)) {
+      return nullptr;
+    }
+  }
+
+  
+  
+  
+  Rooted<WritableStreamDefaultController*> unwrappedController(
+      cx, unwrappedStream->controller());
+  if (!WritableStreamDefaultControllerClose(cx, unwrappedController)) {
+    return nullptr;
+  }
+
+  
+  return promise;
+}
 
 
 

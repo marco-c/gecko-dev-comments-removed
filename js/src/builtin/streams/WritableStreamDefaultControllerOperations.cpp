@@ -313,6 +313,21 @@ MOZ_MUST_USE bool js::SetUpWritableStreamDefaultControllerFromUnderlyingSink(
 
 
 
+MOZ_MUST_USE bool js::WritableStreamDefaultControllerClose(
+    JSContext* cx,
+    Handle<WritableStreamDefaultController*> unwrappedController) {
+  
+  
+  
+  
+  JS_ReportErrorASCII(cx, "nope");
+  return false;
+}
+
+
+
+
+
 double js::WritableStreamDefaultControllerGetDesiredSize(
     const WritableStreamDefaultController* controller) {
   return controller->strategyHWM() - controller->queueTotalSize();
