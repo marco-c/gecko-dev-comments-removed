@@ -1018,10 +1018,8 @@ void nsXULElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
     
     
     
-    nsAutoString command;
     if (aVisitor.mDOMEvent && aVisitor.mDOMEvent->AsXULCommandEvent() &&
-        GetAttr(kNameSpaceID_None, nsGkAtoms::command, command) &&
-        !command.IsEmpty()) {
+        HasNonEmptyAttr(nsGkAtoms::command)) {
       
       
       aVisitor.mCanHandle = false;

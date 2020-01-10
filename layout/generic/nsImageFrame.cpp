@@ -606,8 +606,7 @@ static bool HasAltText(const Element& aElement) {
   }
 
   MOZ_ASSERT(aElement.IsHTMLElement(nsGkAtoms::img));
-  nsAutoString altText;
-  return aElement.GetAttr(nsGkAtoms::alt, altText) && !altText.IsEmpty();
+  return aElement.HasNonEmptyAttr(nsGkAtoms::alt);
 }
 
 
@@ -1743,8 +1742,8 @@ void nsDisplayImage::Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) {
     flags |= imgIContainer::FLAG_HIGH_QUALITY_SCALING;
   }
 
-  ImgDrawResult result = frame->PaintImage(
-      *aCtx, ToReferenceFrame(), GetPaintRect(), mImage, flags);
+  ImgDrawResult result = frame->PaintImage(*aCtx, ToReferenceFrame(),
+                                           GetPaintRect(), mImage, flags);
 
   if (result == ImgDrawResult::NOT_READY ||
       result == ImgDrawResult::INCOMPLETE ||
@@ -1752,8 +1751,8 @@ void nsDisplayImage::Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) {
     
     
     if (mPrevImage) {
-      result = frame->PaintImage(
-          *aCtx, ToReferenceFrame(), GetPaintRect(), mPrevImage, flags);
+      result = frame->PaintImage(*aCtx, ToReferenceFrame(), GetPaintRect(),
+                                 mPrevImage, flags);
     }
   }
 

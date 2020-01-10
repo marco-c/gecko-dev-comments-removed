@@ -167,11 +167,8 @@ bool HTMLImageElement::Complete() {
   
   
 
-  if (!HasAttr(kNameSpaceID_None, nsGkAtoms::srcset)) {
-    nsAutoString src;
-    if (!GetAttr(kNameSpaceID_None, nsGkAtoms::src, src) || src.IsEmpty()) {
-      return true;
-    }
+  if (!HasAttr(nsGkAtoms::srcset) && !HasNonEmptyAttr(nsGkAtoms::src)) {
+    return true;
   }
 
   if (!mCurrentRequest || mPendingRequest) {
