@@ -854,7 +854,6 @@ DefineTransaction.verifyInput = function(input,
   
   
   
-  
   let isSinglePropertyInput = isPrimitive(input) ||
                               Array.isArray(input) ||
                               (input instanceof Ci.nsISupports);
@@ -1012,7 +1011,6 @@ PT.NewBookmark.prototype = Object.seal({
     await createItem();
 
     this.undo = async function() {
-      
       
       await PlacesUtils.bookmarks.remove(info);
       if (tags.length > 0) {
