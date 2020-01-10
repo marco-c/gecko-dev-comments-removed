@@ -179,7 +179,8 @@ class StartupCache : public nsIMemoryReporter {
   
   size_t HeapSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
-  
+  bool ShouldCompactCache();
+  nsresult ResetStartupWriteTimerCheckingReadCount();
   nsresult ResetStartupWriteTimer();
   bool StartupWriteComplete();
 
@@ -222,6 +223,7 @@ class StartupCache : public nsIMemoryReporter {
   bool mStartupWriteInitiated;
   bool mWrittenOnce;
   bool mCurTableReferenced;
+  uint32_t mRequestedCount;
   size_t mCacheEntriesBaseOffset;
 
   static StaticRefPtr<StartupCache> gStartupCache;
