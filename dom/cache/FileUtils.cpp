@@ -389,7 +389,9 @@ nsresult BodyDeleteFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
       fileDeleted = false;
       return NS_OK;
     };
-    rv = BodyTraverseFiles(aQuotaInfo, bodyDir, removeFileForId);
+    rv = BodyTraverseFiles(aQuotaInfo, bodyDir, removeFileForId,
+                            false,
+                            true);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -559,7 +561,9 @@ nsresult BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
           fileDeleted = false;
           return NS_OK;
         };
-    rv = BodyTraverseFiles(aQuotaInfo, subdir, removeOrphanedFiles);
+    rv = BodyTraverseFiles(aQuotaInfo, subdir, removeOrphanedFiles,
+                            true,
+                            true);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -574,7 +578,7 @@ nsresult BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
 template <typename Func>
 nsresult BodyTraverseFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBodyDir,
                            const Func& aHandleFileFunc,
-                           const bool aTrackQuota) {
+                           const bool aCanRemoveFiles, const bool aTrackQuota) {
   MOZ_DIAGNOSTIC_ASSERT(aBodyDir);
 
   nsresult rv;
@@ -625,17 +629,16 @@ nsresult BodyTraverseFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBodyDir,
     
     
     if (StringEndsWith(leafName, NS_LITERAL_CSTRING(".tmp"))) {
-      DebugOnly<nsresult> result = RemoveNsIFile(aQuotaInfo, file, aTrackQuota);
-      MOZ_ASSERT(NS_SUCCEEDED(result));
-      continue;
-    }
-
-    nsCString suffix(NS_LITERAL_CSTRING(".final"));
-
-    
-    
-    if (NS_WARN_IF(!StringEndsWith(leafName, suffix) ||
-                   leafName.Length() != NSID_LENGTH - 1 + suffix.Length())) {
+      if (aCanRemoveFiles) {
+        DebugOnly<nsresult> result =
+            RemoveNsIFile(aQuotaInfo, file, aTrackQuota);
+        MOZ_ASSERT(NS_SUCCEEDED(result));
+        continue;
+      }
+    } else if (NS_WARN_IF(
+                   !StringEndsWith(leafName, NS_LITERAL_CSTRING(".final")))) {
+      
+      
       DebugOnly<nsresult> result =
           RemoveNsIFile(aQuotaInfo, file,  false);
       MOZ_ASSERT(NS_SUCCEEDED(result));
@@ -657,7 +660,7 @@ nsresult BodyTraverseFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBodyDir,
     return rv;
   }
 
-  if (isEmpty) {
+  if (isEmpty && aCanRemoveFiles) {
     DebugOnly<nsresult> result =
         RemoveNsIFileRecursively(aQuotaInfo, aBodyDir,  false);
     MOZ_ASSERT(NS_SUCCEEDED(result));
