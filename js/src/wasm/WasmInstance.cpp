@@ -753,7 +753,7 @@ static int32_t PerformWait(Instance* instance, uint32_t byteOffset, T value,
   return 0;
 }
 
-void Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
+bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
                          uint32_t dstOffset, uint32_t srcOffset, uint32_t len) {
   Table& table = *tables_[tableIndex];
   MOZ_ASSERT(dstOffset <= table.length());
@@ -773,6 +773,13 @@ void Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
     uint32_t funcIndex = elemFuncIndices[srcOffset + i];
     if (funcIndex == NullFuncIndex) {
       table.setNull(dstOffset + i);
+    } else if (!table.isFunction()) {
+      
+      void* fnref = Instance::funcRef(this, funcIndex);
+      if (fnref == AnyRef::invalid().forCompiledCode()) {
+        return false;  
+      }
+      table.fillAnyRef(dstOffset + i, 1, AnyRef::fromCompiledCode(fnref));
     } else {
       if (funcIndex < funcImports.length()) {
         FuncImportTls& import = funcImportTls(funcImports[funcIndex]);
@@ -801,6 +808,7 @@ void Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
       table.setFuncRef(dstOffset + i, code, this);
     }
   }
+  return true;
 }
 
  int32_t Instance::tableInit(Instance* instance, uint32_t dstOffset,
@@ -824,10 +832,6 @@ void Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
 
   const Table& table = *instance->tables()[tableIndex];
   const uint32_t tableLen = table.length();
-
-  
-  
-  MOZ_ASSERT(table.kind() == TableKind::FuncRef);
 
   
   
@@ -860,7 +864,9 @@ void Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
   }
 
   if (len > 0) {
-    instance->initElems(tableIndex, seg, dstOffset, srcOffset, len);
+    if (!instance->initElems(tableIndex, seg, dstOffset, srcOffset, len)) {
+      return -1;  
+    }
   }
 
   if (!mustTrap) {

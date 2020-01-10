@@ -5045,22 +5045,26 @@ static bool ParseTable(WasmParseContext& c, WasmToken token,
     return false;
   }
 
-  AstElemSegment* segment = new (c.lifo) AstElemSegment(
-      AstElemSegmentKind::Active, AstRef(name), zero, std::move(elems));
+  AstElemSegment* segment =
+      new (c.lifo) AstElemSegment(AstElemSegmentKind::Active, AstRef(name),
+                                  zero, ValType::FuncRef, std::move(elems));
   return segment && module->append(segment);
 }
 
-static bool TryParseFuncOrFuncRef(WasmParseContext& c, bool* isFunc) {
+static bool TryParseElemType(WasmParseContext& c, bool* isFunc, ValType* ty) {
   if (c.ts.getIf(WasmToken::Func)) {
     *isFunc = true;
+    *ty = ValType::FuncRef;
     return true;
   }
 
   WasmToken token = c.ts.peek();
   if (token.kind() == WasmToken::ValueType &&
-      token.valueType() == ValType::FuncRef) {
+      (token.valueType() == ValType::FuncRef ||
+       token.valueType() == ValType::AnyRef)) {
     c.ts.get();
     *isFunc = false;
+    *ty = token.valueType();
     return true;
   }
 
@@ -5091,9 +5095,11 @@ static AstElemSegment* ParseElemSegment(WasmParseContext& c) {
   
   
   
+  
 
   AstRef targetTable = AstRef(0);
   AstExpr* offsetIfActive = nullptr;
+  ValType elemType = ValType::FuncRef;
   bool haveTableref = false;
   AstElemSegmentKind kind;
 
@@ -5126,9 +5132,9 @@ static AstElemSegment* ParseElemSegment(WasmParseContext& c) {
           c.error);
       return nullptr;
     }
-    if (!TryParseFuncOrFuncRef(c, &nakedFnrefs)) {
+    if (!TryParseElemType(c, &nakedFnrefs, &elemType)) {
       c.ts.generateError(c.ts.peek(),
-                         "'func' or 'funcref' required for elem segment",
+                         "'func' or element type required for elem segment",
                          c.error);
       return nullptr;
     }
@@ -5136,7 +5142,7 @@ static AstElemSegment* ParseElemSegment(WasmParseContext& c) {
   } else if (c.ts.getIf(WasmToken::Declared)) {
     kind = AstElemSegmentKind::Declared;
     nakedFnrefs = true;
-  } else if (TryParseFuncOrFuncRef(c, &nakedFnrefs)) {
+  } else if (TryParseElemType(c, &nakedFnrefs, &elemType)) {
     
     kind = AstElemSegmentKind::Passive;
   } else {
@@ -5187,8 +5193,8 @@ static AstElemSegment* ParseElemSegment(WasmParseContext& c) {
     }
   }
 
-  return new (c.lifo)
-      AstElemSegment(kind, targetTable, offsetIfActive, std::move(elems));
+  return new (c.lifo) AstElemSegment(kind, targetTable, offsetIfActive,
+                                     elemType, std::move(elems));
 }
 
 static bool ParseGlobal(WasmParseContext& c, AstModule* module) {
@@ -7425,6 +7431,16 @@ static bool EncodeElemSegment(Encoder& e, AstElemSegment& segment) {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   bool hasRefNull = false;
   for (const AstElem& elem : segment.elems()) {
     if (elem.is<AstNullValue>()) {
@@ -7433,11 +7449,16 @@ static bool EncodeElemSegment(Encoder& e, AstElemSegment& segment) {
     }
   }
 
-  
+  ElemSegmentPayload payload =
+      hasRefNull || segment.elemType() != ValType::FuncRef
+          ? ElemSegmentPayload::ElemExpression
+          : ElemSegmentPayload::ExternIndex;
+
   ElemSegmentKind kind;
   switch (segment.kind()) {
     case AstElemSegmentKind::Active: {
-      kind = segment.targetTable().index()
+      kind = segment.targetTable().index() ||
+                     payload != ElemSegmentPayload::ExternIndex
                  ? ElemSegmentKind::ActiveWithTableIndex
                  : ElemSegmentKind::Active;
       break;
@@ -7451,8 +7472,6 @@ static bool EncodeElemSegment(Encoder& e, AstElemSegment& segment) {
       break;
     }
   }
-  ElemSegmentPayload payload = hasRefNull ? ElemSegmentPayload::ElemExpression
-                                          : ElemSegmentPayload::ExternIndex;
 
   
   if (!e.writeVarU32(ElemSegmentFlags(kind, payload).encoded())) {
@@ -7482,7 +7501,8 @@ static bool EncodeElemSegment(Encoder& e, AstElemSegment& segment) {
   
   if (kind != ElemSegmentKind::Active) {
     if (payload == ElemSegmentPayload::ElemExpression &&
-        !e.writeFixedU8(uint8_t(TypeCode::FuncRef))) {
+        !e.writeFixedU8(
+            uint8_t(UnpackTypeCodeType(segment.elemType().packed())))) {
       return false;
     }
     if (payload == ElemSegmentPayload::ExternIndex &&
