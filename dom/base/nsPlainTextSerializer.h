@@ -230,6 +230,12 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
     }
 
     
+    
+    int32_t FindWrapIndexForContent(
+        uint32_t aWrapColumn, uint32_t aContentWidth,
+        mozilla::intl::LineBreaker* aLineBreaker) const;
+
+    
     uint32_t DeterminePrefixWidth() const {
       
       return (mCiteQuoteLevel > 0 ? mCiteQuoteLevel + 1 : 0) +
