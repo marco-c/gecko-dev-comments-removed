@@ -256,6 +256,10 @@ static MOZ_ALWAYS_INLINE void PodSet(T* aDst, const T& aSrc, size_t aNElem) {
 
 
 
+
+
+
+
 const uint8_t JS_FRESH_NURSERY_PATTERN = 0x2F;
 const uint8_t JS_SWEPT_NURSERY_PATTERN = 0x2B;
 const uint8_t JS_ALLOCATED_NURSERY_PATTERN = 0x2D;
