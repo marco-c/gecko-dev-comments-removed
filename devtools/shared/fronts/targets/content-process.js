@@ -33,6 +33,10 @@ class ContentProcessTargetFront extends TargetMixin(
     this.targetForm.contextActor = this._threadActor;
   }
 
+  get name() {
+    return `Content Process ${this.processID}`;
+  }
+
   attach() {
     
     

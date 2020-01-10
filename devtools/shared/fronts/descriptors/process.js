@@ -49,6 +49,7 @@ class ProcessDescriptorFront extends FrontClassWithSpec(processDescriptorSpec) {
     
     front.actorID = form.actor;
     front.form(form);
+    front.processID = this.id;
     this.manage(front);
     return front;
   }
