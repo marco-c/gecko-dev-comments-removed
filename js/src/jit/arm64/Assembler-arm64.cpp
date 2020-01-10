@@ -626,7 +626,11 @@ void Assembler::TraceDataRelocations(JSTracer* trc, JitCode* code,
 
     
     
+    
+    
+
     if (literal >> JSVAL_TAG_SHIFT) {
+      
       Value v = Value::fromRawBits(literal);
       TraceManuallyBarrieredEdge(trc, &v, "ion-masm-value");
       if (*literalAddr != v.asRawBits()) {
@@ -637,6 +641,7 @@ void Assembler::TraceDataRelocations(JSTracer* trc, JitCode* code,
       continue;
     }
 
+    
     
     TraceManuallyBarrieredGenericPointerEdge(
         trc, reinterpret_cast<gc::Cell**>(literalAddr), "ion-masm-ptr");

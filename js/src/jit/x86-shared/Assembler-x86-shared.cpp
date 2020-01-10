@@ -49,8 +49,12 @@ void AssemblerX86Shared::TraceDataRelocations(JSTracer* trc, JitCode* code,
 #ifdef JS_PUNBOX64
     
     
+    
+    
+
     uintptr_t word = reinterpret_cast<uintptr_t>(data);
     if (word >> JSVAL_TAG_SHIFT) {
+      
       Value value = Value::fromRawBits(word);
       MOZ_ASSERT_IF(value.isGCThing(),
                     gc::IsCellPointerValid(value.toGCThing()));
@@ -64,6 +68,7 @@ void AssemblerX86Shared::TraceDataRelocations(JSTracer* trc, JitCode* code,
     }
 #endif
 
+    
     gc::Cell* cell = static_cast<gc::Cell*>(data);
     MOZ_ASSERT(gc::IsCellPointerValid(cell));
     TraceManuallyBarrieredGenericPointerEdge(trc, &cell, "jit-masm-ptr");
