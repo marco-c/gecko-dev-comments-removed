@@ -458,7 +458,7 @@ void ToggleBaselineProfiling(JSContext* cx, bool enable);
 void ToggleBaselineTraceLoggerScripts(JSRuntime* runtime, bool enable);
 void ToggleBaselineTraceLoggerEngine(JSRuntime* runtime, bool enable);
 
-struct BaselineBailoutInfo {
+struct alignas(uintptr_t) BaselineBailoutInfo {
   
   uint8_t* incomingStack = nullptr;
 
