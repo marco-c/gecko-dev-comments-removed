@@ -102,6 +102,11 @@ class AntiTrackingCommon final {
 
   
   
+  static bool CreateStoragePermissionKey(nsIPrincipal* aPrincipal,
+                                         nsACString& aKey);
+
+  
+  
   static bool IsStorageAccessPermission(nsIPermission* aPermission,
                                         nsIPrincipal* aPrincipal);
 

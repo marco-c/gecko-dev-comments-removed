@@ -1258,9 +1258,8 @@ AntiTrackingCommon::SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(
 }
 
 
-bool AntiTrackingCommon::IsStorageAccessPermission(nsIPermission* aPermission,
-                                                   nsIPrincipal* aPrincipal) {
-  MOZ_ASSERT(aPermission);
+bool AntiTrackingCommon::CreateStoragePermissionKey(nsIPrincipal* aPrincipal,
+                                                    nsACString& aKey) {
   MOZ_ASSERT(aPrincipal);
 
   nsAutoCString origin;
@@ -1268,6 +1267,16 @@ bool AntiTrackingCommon::IsStorageAccessPermission(nsIPermission* aPermission,
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return false;
   }
+
+  CreatePermissionKey(origin, aKey);
+  return true;
+}
+
+
+bool AntiTrackingCommon::IsStorageAccessPermission(nsIPermission* aPermission,
+                                                   nsIPrincipal* aPrincipal) {
+  MOZ_ASSERT(aPermission);
+  MOZ_ASSERT(aPrincipal);
 
   
   
@@ -1280,10 +1289,13 @@ bool AntiTrackingCommon::IsStorageAccessPermission(nsIPermission* aPermission,
   
   
   nsAutoCString permissionKey;
-  CreatePermissionKey(origin, permissionKey);
+  bool result = CreateStoragePermissionKey(aPrincipal, permissionKey);
+  if (NS_WARN_IF(!result)) {
+    return false;
+  }
 
   nsAutoCString type;
-  rv = aPermission->GetType(type);
+  nsresult rv = aPermission->GetType(type);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return false;
   }

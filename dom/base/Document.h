@@ -8,6 +8,7 @@
 
 #include "mozilla/EventStates.h"  
 #include "mozilla/FlushType.h"    
+#include "mozilla/MozPromise.h"   
 #include "mozilla/Pair.h"         
 #include "mozilla/Saturate.h"     
 #include "nsAutoPtr.h"            
@@ -4129,6 +4130,8 @@ class Document : public nsINode,
 
   static bool HasRecentlyStartedForegroundLoads();
 
+  static bool AutomaticStorageAccessCanBeGranted(nsIPrincipal* aPrincipal);
+
  protected:
   void DoUpdateSVGUseElementShadowTrees();
 
@@ -4396,6 +4399,10 @@ class Document : public nsINode,
   static void* UseExistingNameString(nsINode* aRootNode, const nsString* aName);
 
   void MaybeResolveReadyForIdle();
+
+  typedef MozPromise<bool, bool, true> AutomaticStorageAccessGrantPromise;
+  MOZ_MUST_USE RefPtr<AutomaticStorageAccessGrantPromise>
+  AutomaticStorageAccessCanBeGranted();
 
   
   already_AddRefed<nsIChannel> CreateDummyChannelForCookies(
