@@ -983,9 +983,6 @@ pref("app.support.baseURL", "https://support.mozilla.org/1/firefox/%VERSION%/%OS
 #endif
 
 
-pref("app.productInfo.baseURL", "https://www.mozilla.org/firefox/features/");
-
-
 pref("security.alternate_certificate_error_page", "certerror");
 
 pref("security.certerrors.recordEventTelemetry", true);
@@ -1456,6 +1453,9 @@ pref("identity.sync.tokenserver.uri", "https://token.services.mozilla.com/1.0/sy
 
 
 pref("identity.fxaccounts.autoconfig.uri", "");
+
+
+pref("identity.sendtabpromo.url", "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/send-tab");
 
 
 
