@@ -7,12 +7,12 @@
 #include "MediaRecorder.h"
 
 #include "AudioNodeEngine.h"
-#include "AudioNodeStream.h"
+#include "AudioNodeTrack.h"
 #include "DOMMediaStream.h"
 #include "GeckoProfiler.h"
 #include "MediaDecoder.h"
 #include "MediaEncoder.h"
-#include "MediaStreamGraphImpl.h"
+#include "MediaTrackGraphImpl.h"
 #include "VideoUtils.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/dom/AudioStreamTrack.h"
@@ -1188,7 +1188,7 @@ MediaRecorder::~MediaRecorder() {
   UnRegisterActivityObserver();
 }
 
-MediaRecorder::MediaRecorder(DOMMediaStream& aSourceMediaStream,
+MediaRecorder::MediaRecorder(DOMMediaStream& aSourceMediaTrack,
                              nsPIDOMWindowInner* aOwnerWindow)
     : DOMEventTargetHelper(aOwnerWindow),
       mAudioNodeOutput(0),
@@ -1197,7 +1197,7 @@ MediaRecorder::MediaRecorder(DOMMediaStream& aSourceMediaStream,
       mVideoBitsPerSecond(0),
       mBitsPerSecond(0) {
   MOZ_ASSERT(aOwnerWindow);
-  mDOMStream = &aSourceMediaStream;
+  mDOMStream = &aSourceMediaTrack;
 
   RegisterActivityObserver();
 }

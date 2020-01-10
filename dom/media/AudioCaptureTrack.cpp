@@ -3,19 +3,19 @@
 
 
 
-#include "MediaStreamGraphImpl.h"
-#include "MediaStreamListener.h"
+#include "MediaTrackGraphImpl.h"
+#include "MediaTrackListener.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Unused.h"
 
 #include "AudioSegment.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Attributes.h"
-#include "AudioCaptureStream.h"
+#include "AudioCaptureTrack.h"
 #include "ImageContainer.h"
 #include "AudioNodeEngine.h"
-#include "AudioNodeStream.h"
-#include "AudioNodeExternalInputStream.h"
+#include "AudioNodeTrack.h"
+#include "AudioNodeExternalInputTrack.h"
 #include "webaudio/MediaStreamAudioDestinationNode.h"
 #include <algorithm>
 #include "DOMMediaStream.h"
@@ -29,35 +29,35 @@ namespace mozilla {
 
 static const uint32_t MONO = 1;
 
-AudioCaptureStream::AudioCaptureStream(TrackRate aRate)
-    : ProcessedMediaStream(aRate, MediaSegment::AUDIO, new AudioSegment()),
+AudioCaptureTrack::AudioCaptureTrack(TrackRate aRate)
+    : ProcessedMediaTrack(aRate, MediaSegment::AUDIO, new AudioSegment()),
       mStarted(false) {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_COUNT_CTOR(AudioCaptureStream);
+  MOZ_COUNT_CTOR(AudioCaptureTrack);
   mMixer.AddCallback(this);
 }
 
-AudioCaptureStream::~AudioCaptureStream() {
-  MOZ_COUNT_DTOR(AudioCaptureStream);
+AudioCaptureTrack::~AudioCaptureTrack() {
+  MOZ_COUNT_DTOR(AudioCaptureTrack);
   mMixer.RemoveCallback(this);
 }
 
-void AudioCaptureStream::Start() {
+void AudioCaptureTrack::Start() {
   class Message : public ControlMessage {
    public:
-    explicit Message(AudioCaptureStream* aStream)
-        : ControlMessage(aStream), mStream(aStream) {}
+    explicit Message(AudioCaptureTrack* aTrack)
+        : ControlMessage(aTrack), mTrack(aTrack) {}
 
-    virtual void Run() { mStream->mStarted = true; }
+    virtual void Run() { mTrack->mStarted = true; }
 
    protected:
-    AudioCaptureStream* mStream;
+    AudioCaptureTrack* mTrack;
   };
   GraphImpl()->AppendMessage(MakeUnique<Message>(this));
 }
 
-void AudioCaptureStream::ProcessInput(GraphTime aFrom, GraphTime aTo,
-                                      uint32_t aFlags) {
+void AudioCaptureTrack::ProcessInput(GraphTime aFrom, GraphTime aTo,
+                                     uint32_t aFlags) {
   if (!mStarted) {
     return;
   }
@@ -80,10 +80,10 @@ void AudioCaptureStream::ProcessInput(GraphTime aFrom, GraphTime aTo,
     mMixer.StartMixing();
     AudioSegment output;
     for (uint32_t i = 0; i < inputCount; i++) {
-      MediaStream* s = mInputs[i]->GetSource();
+      MediaTrack* s = mInputs[i]->GetSource();
       AudioSegment* inputSegment = s->GetData<AudioSegment>();
-      StreamTime inputStart = s->GraphTimeToStreamTimeWithBlocking(aFrom);
-      StreamTime inputEnd = s->GraphTimeToStreamTimeWithBlocking(aTo);
+      TrackTime inputStart = s->GraphTimeToTrackTimeWithBlocking(aFrom);
+      TrackTime inputEnd = s->GraphTimeToTrackTimeWithBlocking(aTo);
       AudioSegment toMix;
       if (s->Ended() && inputSegment->GetDuration() <= inputStart) {
         toMix.AppendNullData(aTo - aFrom);
@@ -101,10 +101,10 @@ void AudioCaptureStream::ProcessInput(GraphTime aFrom, GraphTime aTo,
   }
 }
 
-void AudioCaptureStream::MixerCallback(AudioDataValue* aMixedBuffer,
-                                       AudioSampleFormat aFormat,
-                                       uint32_t aChannels, uint32_t aFrames,
-                                       uint32_t aSampleRate) {
+void AudioCaptureTrack::MixerCallback(AudioDataValue* aMixedBuffer,
+                                      AudioSampleFormat aFormat,
+                                      uint32_t aChannels, uint32_t aFrames,
+                                      uint32_t aSampleRate) {
   AutoTArray<nsTArray<AudioDataValue>, MONO> output;
   AutoTArray<const AudioDataValue*, MONO> bufferPtrs;
   output.SetLength(MONO);

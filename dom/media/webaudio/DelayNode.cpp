@@ -7,7 +7,7 @@
 #include "DelayNode.h"
 #include "mozilla/dom/DelayNodeBinding.h"
 #include "AudioNodeEngine.h"
-#include "AudioNodeStream.h"
+#include "AudioNodeTrack.h"
 #include "AudioDestinationNode.h"
 #include "WebAudioUtils.h"
 #include "DelayBuffer.h"
@@ -31,7 +31,7 @@ class DelayNodeEngine final : public AudioNodeEngine {
   DelayNodeEngine(AudioNode* aNode, AudioDestinationNode* aDestination,
                   float aMaxDelayTicks)
       : AudioNodeEngine(aNode),
-        mDestination(aDestination->Stream())
+        mDestination(aDestination->Track())
         
         
         ,
@@ -62,16 +62,16 @@ class DelayNodeEngine final : public AudioNodeEngine {
     }
   }
 
-  void ProcessBlock(AudioNodeStream* aStream, GraphTime aFrom,
+  void ProcessBlock(AudioNodeTrack* aTrack, GraphTime aFrom,
                     const AudioBlock& aInput, AudioBlock* aOutput,
                     bool* aFinished) override {
-    MOZ_ASSERT(aStream->mSampleRate == mDestination->mSampleRate);
+    MOZ_ASSERT(aTrack->mSampleRate == mDestination->mSampleRate);
 
     if (!aInput.IsSilentOrSubnormal()) {
       if (mLeftOverData <= 0) {
         RefPtr<PlayingRefChanged> refchanged =
-            new PlayingRefChanged(aStream, PlayingRefChanged::ADDREF);
-        aStream->Graph()->DispatchToMainThreadStableState(refchanged.forget());
+            new PlayingRefChanged(aTrack, PlayingRefChanged::ADDREF);
+        aTrack->Graph()->DispatchToMainThreadStableState(refchanged.forget());
       }
       mLeftOverData = mBuffer.MaxDelayTicks();
     } else if (mLeftOverData > 0) {
@@ -79,14 +79,14 @@ class DelayNodeEngine final : public AudioNodeEngine {
     } else {
       if (mLeftOverData != INT32_MIN) {
         mLeftOverData = INT32_MIN;
-        aStream->ScheduleCheckForInactive();
+        aTrack->ScheduleCheckForInactive();
 
         
         mBuffer.Reset();
 
         RefPtr<PlayingRefChanged> refchanged =
-            new PlayingRefChanged(aStream, PlayingRefChanged::RELEASE);
-        aStream->Graph()->DispatchToMainThreadStableState(refchanged.forget());
+            new PlayingRefChanged(aTrack, PlayingRefChanged::RELEASE);
+        aTrack->Graph()->DispatchToMainThreadStableState(refchanged.forget());
       }
       aOutput->SetNull(WEBAUDIO_BLOCK_SIZE);
       return;
@@ -97,18 +97,18 @@ class DelayNodeEngine final : public AudioNodeEngine {
     
     
     if (!mHaveProducedBeforeInput) {
-      UpdateOutputBlock(aStream, aFrom, aOutput, 0.0);
+      UpdateOutputBlock(aTrack, aFrom, aOutput, 0.0);
     }
     mHaveProducedBeforeInput = false;
     mBuffer.NextBlock();
   }
 
-  void UpdateOutputBlock(AudioNodeStream* aStream, GraphTime aFrom,
+  void UpdateOutputBlock(AudioNodeTrack* aTrack, GraphTime aFrom,
                          AudioBlock* aOutput, float minDelay) {
     float maxDelay = mMaxDelay;
-    float sampleRate = aStream->mSampleRate;
+    float sampleRate = aTrack->mSampleRate;
     ChannelInterpretation channelInterpretation =
-        aStream->GetChannelInterpretation();
+        aTrack->GetChannelInterpretation();
     if (mDelay.HasSimpleValue()) {
       
       
@@ -120,7 +120,7 @@ class DelayNodeEngine final : public AudioNodeEngine {
       
       
       
-      StreamTime tick = mDestination->GraphTimeToStreamTime(aFrom);
+      TrackTime tick = mDestination->GraphTimeToTrackTime(aFrom);
       float values[WEBAUDIO_BLOCK_SIZE];
       mDelay.GetValuesAtTime(tick, values, WEBAUDIO_BLOCK_SIZE);
 
@@ -135,12 +135,12 @@ class DelayNodeEngine final : public AudioNodeEngine {
     }
   }
 
-  void ProduceBlockBeforeInput(AudioNodeStream* aStream, GraphTime aFrom,
+  void ProduceBlockBeforeInput(AudioNodeTrack* aTrack, GraphTime aFrom,
                                AudioBlock* aOutput) override {
     if (mLeftOverData <= 0) {
       aOutput->SetNull(WEBAUDIO_BLOCK_SIZE);
     } else {
-      UpdateOutputBlock(aStream, aFrom, aOutput, WEBAUDIO_BLOCK_SIZE);
+      UpdateOutputBlock(aTrack, aFrom, aOutput, WEBAUDIO_BLOCK_SIZE);
     }
     mHaveProducedBeforeInput = true;
   }
@@ -160,7 +160,7 @@ class DelayNodeEngine final : public AudioNodeEngine {
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
-  RefPtr<AudioNodeStream> mDestination;
+  RefPtr<AudioNodeTrack> mDestination;
   AudioParamTimeline mDelay;
   DelayBuffer mBuffer;
   float mMaxDelay;
@@ -177,8 +177,8 @@ DelayNode::DelayNode(AudioContext* aContext, double aMaxDelay)
                    aMaxDelay);
   DelayNodeEngine* engine = new DelayNodeEngine(
       this, aContext->Destination(), aContext->SampleRate() * aMaxDelay);
-  mStream = AudioNodeStream::Create(
-      aContext, engine, AudioNodeStream::NO_STREAM_FLAGS, aContext->Graph());
+  mTrack = AudioNodeTrack::Create(
+      aContext, engine, AudioNodeTrack::NO_TRACK_FLAGS, aContext->Graph());
 }
 
 

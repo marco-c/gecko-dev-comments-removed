@@ -7,8 +7,8 @@
 #ifndef CAPTURETASK_H
 #define CAPTURETASK_H
 
-#include "MediaStreamGraph.h"
-#include "MediaStreamListener.h"
+#include "MediaTrackGraph.h"
+#include "MediaTrackListener.h"
 #include "PrincipalChangeObserver.h"
 
 namespace mozilla {
@@ -29,14 +29,13 @@ class MediaStreamTrack;
 
 
 
-class CaptureTask : public DirectMediaStreamTrackListener,
+class CaptureTask : public DirectMediaTrackListener,
                     public dom::PrincipalChangeObserver<dom::MediaStreamTrack> {
  public:
-  class MediaStreamEventListener;
+  class MediaTrackEventListener;
 
   
-  void NotifyRealtimeTrackData(MediaStreamGraph* aGraph,
-                               StreamTime aTrackOffset,
+  void NotifyRealtimeTrackData(MediaTrackGraph* aGraph, TrackTime aTrackOffset,
                                const MediaSegment& aMedia) override;
 
   
@@ -74,7 +73,7 @@ class CaptureTask : public DirectMediaStreamTrackListener,
   
   RefPtr<dom::ImageCapture> mImageCapture;
 
-  RefPtr<MediaStreamEventListener> mEventListener;
+  RefPtr<MediaTrackEventListener> mEventListener;
 
   
   

@@ -3,10 +3,10 @@
 
 
 
-#ifndef MOZILLA_AUDIONODESTREAM_H_
-#define MOZILLA_AUDIONODESTREAM_H_
+#ifndef MOZILLA_AUDIONODETRACK_H_
+#define MOZILLA_AUDIONODETRACK_H_
 
-#include "MediaStreamGraph.h"
+#include "MediaTrackGraph.h"
 #include "mozilla/dom/AudioNodeBinding.h"
 #include "nsAutoPtr.h"
 #include "AlignedTArray.h"
@@ -42,7 +42,7 @@ typedef AlignedAutoTArray<float, GUESS_AUDIO_CHANNELS * WEBAUDIO_BLOCK_SIZE, 16>
 
 
 
-class AudioNodeStream : public ProcessedMediaStream {
+class AudioNodeTrack : public ProcessedMediaTrack {
   typedef dom::ChannelCountMode ChannelCountMode;
   typedef dom::ChannelInterpretation ChannelInterpretation;
 
@@ -56,7 +56,7 @@ class AudioNodeStream : public ProcessedMediaStream {
   
   typedef unsigned Flags;
   enum : Flags {
-    NO_STREAM_FLAGS = 0U,
+    NO_TRACK_FLAGS = 0U,
     NEED_MAIN_THREAD_ENDED = 1U << 0,
     NEED_MAIN_THREAD_CURRENT_TIME = 1U << 1,
     
@@ -70,19 +70,18 @@ class AudioNodeStream : public ProcessedMediaStream {
 
 
 
-  static already_AddRefed<AudioNodeStream> Create(AudioContext* aCtx,
-                                                  AudioNodeEngine* aEngine,
-                                                  Flags aKind,
-                                                  MediaStreamGraph* aGraph);
+  static already_AddRefed<AudioNodeTrack> Create(AudioContext* aCtx,
+                                                 AudioNodeEngine* aEngine,
+                                                 Flags aKind,
+                                                 MediaTrackGraph* aGraph);
 
  protected:
   
 
 
-  AudioNodeStream(AudioNodeEngine* aEngine, Flags aFlags,
-                  TrackRate aSampleRate);
+  AudioNodeTrack(AudioNodeEngine* aEngine, Flags aFlags, TrackRate aSampleRate);
 
-  ~AudioNodeStream();
+  ~AudioNodeTrack();
 
  public:
   
@@ -90,8 +89,8 @@ class AudioNodeStream : public ProcessedMediaStream {
 
 
 
-  void SetStreamTimeParameter(uint32_t aIndex, AudioContext* aContext,
-                              double aStreamTime);
+  void SetTrackTimeParameter(uint32_t aIndex, AudioContext* aContext,
+                             double aTrackTime);
   void SetDoubleParameter(uint32_t aIndex, double aValue);
   void SetInt32Parameter(uint32_t aIndex, int32_t aValue);
   void SetThreeDPointParameter(uint32_t aIndex, const dom::ThreeDPoint& aValue);
@@ -112,9 +111,9 @@ class AudioNodeStream : public ProcessedMediaStream {
     return mChannelInterpretation;
   }
 
-  void SetAudioParamHelperStream() {
-    MOZ_ASSERT(!mAudioParamStream, "Can only do this once");
-    mAudioParamStream = true;
+  void SetAudioParamHelperTrack() {
+    MOZ_ASSERT(!mAudioParamTrack, "Can only do this once");
+    mAudioParamTrack = true;
   }
 
   
@@ -123,16 +122,15 @@ class AudioNodeStream : public ProcessedMediaStream {
 
 
 
-  void AdvanceAndResume(StreamTime aAdvance);
+  void AdvanceAndResume(TrackTime aAdvance);
 
-  AudioNodeStream* AsAudioNodeStream() override { return this; }
+  AudioNodeTrack* AsAudioNodeTrack() override { return this; }
   void AddInput(MediaInputPort* aPort) override;
   void RemoveInput(MediaInputPort* aPort) override;
 
   
-  void SetStreamTimeParameterImpl(uint32_t aIndex,
-                                  MediaStream* aRelativeToStream,
-                                  double aStreamTime);
+  void SetTrackTimeParameterImpl(uint32_t aIndex, MediaTrack* aRelativeToTrack,
+                                 double aTrackTime);
   void SetChannelMixingParametersImpl(
       uint32_t aNumberOfChannels, ChannelCountMode aChannelCountMoe,
       ChannelInterpretation aChannelInterpretation);
@@ -143,7 +141,7 @@ class AudioNodeStream : public ProcessedMediaStream {
 
 
   void ProduceOutputBeforeInput(GraphTime aFrom);
-  bool IsAudioParamStream() const { return mAudioParamStream; }
+  bool IsAudioParamTrack() const { return mAudioParamTrack; }
 
   const OutputChunks& LastChunks() const { return mLastChunks; }
   bool MainThreadNeedsUpdates() const override {
@@ -228,7 +226,7 @@ class AudioNodeStream : public ProcessedMediaStream {
   
   bool mMarkAsEndedAfterThisBlock;
   
-  bool mAudioParamStream;
+  bool mAudioParamTrack;
   
   bool mPassThrough;
 };

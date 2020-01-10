@@ -18,7 +18,7 @@
 #include "DOMMediaStream.h"
 #include "nsIDOMNavigatorUserMedia.h"
 #include "nsITimer.h"
-#include "MediaStreamGraph.h"
+#include "MediaTrackGraph.h"
 #include "AudioSegment.h"
 #include "mozilla/WeakPtr.h"
 
@@ -138,7 +138,7 @@ class SpeechRecognition final : public DOMEventTargetHelper,
                               nsTArray<RefPtr<SharedBuffer>>& aResult);
   AudioSegment* CreateAudioSegment(nsTArray<RefPtr<SharedBuffer>>& aChunks);
   void FeedAudioData(already_AddRefed<SharedBuffer> aSamples,
-                     uint32_t aDuration, MediaStreamTrackListener* aProvider,
+                     uint32_t aDuration, MediaTrackListener* aProvider,
                      TrackRate aTrackRate);
 
   friend class SpeechEvent;
@@ -263,7 +263,7 @@ class SpeechEvent : public Runnable {
   
   
   
-  RefPtr<MediaStreamTrackListener> mProvider;
+  RefPtr<MediaTrackListener> mProvider;
   SpeechRecognition::EventType mType;
   TrackRate mTrackRate;
 };

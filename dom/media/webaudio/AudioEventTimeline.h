@@ -20,7 +20,7 @@
 
 namespace mozilla {
 
-class AudioNodeStream;
+class AudioNodeTrack;
 
 namespace dom {
 
@@ -32,14 +32,14 @@ struct AudioTimelineEvent final {
     ExponentialRamp,
     SetTarget,
     SetValueCurve,
-    Stream,
+    Track,
     Cancel
   };
 
   AudioTimelineEvent(Type aType, double aTime, float aValue,
                      double aTimeConstant = 0.0, double aDuration = 0.0,
                      const float* aCurve = nullptr, uint32_t aCurveLength = 0);
-  explicit AudioTimelineEvent(AudioNodeStream* aStream);
+  explicit AudioTimelineEvent(AudioNodeTrack* aTrack);
   AudioTimelineEvent(const AudioTimelineEvent& rhs);
   ~AudioTimelineEvent();
 
@@ -74,7 +74,7 @@ struct AudioTimelineEvent final {
   
   
   float* mCurve;
-  RefPtr<AudioNodeStream> mStream;
+  RefPtr<AudioNodeTrack> mTrack;
   double mTimeConstant;
   double mDuration;
 #ifdef DEBUG

@@ -43,7 +43,7 @@ class MediaStreamTrack;
 struct RTCRTPContributingSourceStats;
 }  
 
-class SourceMediaStream;
+class SourceMediaTrack;
 
 
 

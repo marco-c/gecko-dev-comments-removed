@@ -43,7 +43,7 @@ class VP8TrackEncoder : public VideoTrackEncoder {
  private:
   
   EncodeOperation GetNextEncodeOperation(TimeDuration aTimeElapsed,
-                                         StreamTime aProcessedDuration);
+                                         TrackTime aProcessedDuration);
 
   
   
@@ -68,7 +68,7 @@ class VP8TrackEncoder : public VideoTrackEncoder {
                                   vpx_codec_enc_cfg_t& config);
 
   
-  StreamTime mEncodedTimestamp = 0;
+  TrackTime mEncodedTimestamp = 0;
 
   
   CheckedInt64 mExtractedDuration;
@@ -86,7 +86,7 @@ class VP8TrackEncoder : public VideoTrackEncoder {
   
 
 
-  StreamTime mDurationSinceLastKeyframe = 0;
+  TrackTime mDurationSinceLastKeyframe = 0;
 
   
 

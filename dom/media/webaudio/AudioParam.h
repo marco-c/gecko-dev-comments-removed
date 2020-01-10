@@ -153,8 +153,8 @@ class AudioParam final : public nsWrapperCache, public AudioParamTimeline {
 
   float MaxValue() const { return mMaxValue; }
 
-  bool IsStreamSuspended() const {
-    return mStream ? mStream->IsSuspended() : false;
+  bool IsTrackSuspended() const {
+    return mTrack ? mTrack->IsSuspended() : false;
   }
 
   const nsTArray<AudioNode::InputNode>& InputNodes() const {
@@ -168,10 +168,10 @@ class AudioParam final : public nsWrapperCache, public AudioParamTimeline {
   }
 
   
-  MediaStream* Stream();
+  mozilla::MediaTrack* Track();
 
   
-  MediaStream* GetStream() const;
+  mozilla::MediaTrack* GetTrack() const;
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override {
     size_t amount = AudioParamTimeline::SizeOfExcludingThis(aMallocSizeOf);
@@ -181,8 +181,8 @@ class AudioParam final : public nsWrapperCache, public AudioParamTimeline {
     
     amount += mInputNodes.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
-    if (mNodeStreamPort) {
-      amount += mNodeStreamPort->SizeOfIncludingThis(aMallocSizeOf);
+    if (mNodeTrackPort) {
+      amount += mNodeTrackPort->SizeOfIncludingThis(aMallocSizeOf);
     }
 
     return amount;
@@ -216,7 +216,7 @@ class AudioParam final : public nsWrapperCache, public AudioParamTimeline {
 
   void SendEventToEngine(const AudioTimelineEvent& aEvent);
 
-  void DisconnectFromGraphAndDestroyStream();
+  void DisconnectFromGraphAndDestroyTrack();
 
   nsCycleCollectingAutoRefCnt mRefCnt;
   NS_DECL_OWNINGTHREAD
@@ -226,7 +226,7 @@ class AudioParam final : public nsWrapperCache, public AudioParamTimeline {
   nsTArray<AudioNode::InputNode> mInputNodes;
   const char* mName;
   
-  RefPtr<MediaInputPort> mNodeStreamPort;
+  RefPtr<MediaInputPort> mNodeTrackPort;
   const uint32_t mIndex;
   const float mDefaultValue;
   const float mMinValue;

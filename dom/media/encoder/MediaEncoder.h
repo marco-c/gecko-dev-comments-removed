@@ -9,8 +9,8 @@
 #include "ContainerWriter.h"
 #include "CubebUtils.h"
 #include "MediaQueue.h"
-#include "MediaStreamGraph.h"
-#include "MediaStreamListener.h"
+#include "MediaTrackGraph.h"
+#include "MediaTrackListener.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/UniquePtr.h"
@@ -230,7 +230,7 @@ class MediaEncoder {
 
 
 
-  void EnsureGraphStreamFrom(MediaStream* aStream);
+  void EnsureGraphTrackFrom(MediaTrack* aTrack);
 
   
 
@@ -266,7 +266,7 @@ class MediaEncoder {
   RefPtr<dom::AudioNode> mAudioNode;
   
   
-  RefPtr<AudioNodeStream> mPipeStream;
+  RefPtr<AudioNodeTrack> mPipeTrack;
   
   
   RefPtr<MediaInputPort> mInputPort;
@@ -278,7 +278,7 @@ class MediaEncoder {
   RefPtr<dom::VideoStreamTrack> mVideoTrack;
 
   
-  RefPtr<SharedDummyStream> mGraphStream;
+  RefPtr<SharedDummyTrack> mGraphTrack;
 
   TimeStamp mStartTime;
   const nsString mMIMEType;

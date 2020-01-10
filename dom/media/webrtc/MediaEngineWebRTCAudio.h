@@ -10,7 +10,7 @@
 #include "AudioSegment.h"
 #include "AudioDeviceInfo.h"
 #include "MediaEngineWebRTC.h"
-#include "MediaStreamListener.h"
+#include "MediaTrackListener.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 
 namespace mozilla {
@@ -45,7 +45,7 @@ class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource {
                     const ipc::PrincipalInfo& aPrincipalInfo,
                     const char** aOutBadConstraint) override;
   nsresult Deallocate() override;
-  void SetTrack(const RefPtr<SourceMediaStream>& aStream,
+  void SetTrack(const RefPtr<SourceMediaTrack>& aTrack,
                 const PrincipalHandle& aPrincipal) override;
   nsresult Start() override;
   nsresult Stop() override;
@@ -124,7 +124,7 @@ class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource {
 
   
   
-  RefPtr<SourceMediaStream> mStream;
+  RefPtr<SourceMediaTrack> mTrack;
 
   
   RefPtr<AudioInputProcessing> mInputProcessing;
@@ -143,18 +143,18 @@ class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource {
 class AudioInputProcessing : public AudioDataListener {
  public:
   AudioInputProcessing(uint32_t aMaxChannelCount,
-                       RefPtr<SourceMediaStream> aStream,
+                       RefPtr<SourceMediaTrack> aTrack,
                        const PrincipalHandle& aPrincipalHandle);
 
-  void Pull(StreamTime aEndOfAppendedData, StreamTime aDesiredTime);
+  void Pull(TrackTime aEndOfAppendedData, TrackTime aDesiredTime);
 
-  void NotifyOutputData(MediaStreamGraphImpl* aGraph, AudioDataValue* aBuffer,
+  void NotifyOutputData(MediaTrackGraphImpl* aGraph, AudioDataValue* aBuffer,
                         size_t aFrames, TrackRate aRate,
                         uint32_t aChannels) override;
-  void NotifyInputData(MediaStreamGraphImpl* aGraph,
+  void NotifyInputData(MediaTrackGraphImpl* aGraph,
                        const AudioDataValue* aBuffer, size_t aFrames,
                        TrackRate aRate, uint32_t aChannels) override;
-  bool IsVoiceInput(MediaStreamGraphImpl* aGraph) const override {
+  bool IsVoiceInput(MediaTrackGraphImpl* aGraph) const override {
     
     
     
@@ -164,27 +164,27 @@ class AudioInputProcessing : public AudioDataListener {
   void Start();
   void Stop();
 
-  void DeviceChanged(MediaStreamGraphImpl* aGraph) override;
+  void DeviceChanged(MediaTrackGraphImpl* aGraph) override;
 
-  uint32_t RequestedInputChannelCount(MediaStreamGraphImpl* aGraph) override {
+  uint32_t RequestedInputChannelCount(MediaTrackGraphImpl* aGraph) override {
     return GetRequestedInputChannelCount(aGraph);
   }
 
-  void Disconnect(MediaStreamGraphImpl* aGraph) override;
+  void Disconnect(MediaTrackGraphImpl* aGraph) override;
 
   template <typename T>
   void InsertInGraph(const T* aBuffer, size_t aFrames, uint32_t aChannels);
 
-  void PacketizeAndProcess(MediaStreamGraphImpl* aGraph,
+  void PacketizeAndProcess(MediaTrackGraphImpl* aGraph,
                            const AudioDataValue* aBuffer, size_t aFrames,
                            TrackRate aRate, uint32_t aChannels);
 
   void SetPassThrough(bool aPassThrough);
-  uint32_t GetRequestedInputChannelCount(MediaStreamGraphImpl* aGraphImpl);
+  uint32_t GetRequestedInputChannelCount(MediaTrackGraphImpl* aGraphImpl);
   void SetRequestedInputChannelCount(uint32_t aRequestedInputChannelCount);
   
   
-  bool PassThrough(MediaStreamGraphImpl* aGraphImpl) const;
+  bool PassThrough(MediaTrackGraphImpl* aGraphImpl) const;
 
   
   
@@ -198,7 +198,7 @@ class AudioInputProcessing : public AudioDataListener {
 
  private:
   ~AudioInputProcessing() = default;
-  const RefPtr<SourceMediaStream> mStream;
+  const RefPtr<SourceMediaTrack> mTrack;
   
   
   
@@ -251,7 +251,7 @@ class AudioInputProcessing : public AudioDataListener {
 
 
 
-class AudioInputProcessingPullListener : public MediaStreamTrackListener {
+class AudioInputProcessingPullListener : public MediaTrackListener {
  public:
   explicit AudioInputProcessingPullListener(
       RefPtr<AudioInputProcessing> aInputProcessing)
@@ -263,8 +263,8 @@ class AudioInputProcessingPullListener : public MediaStreamTrackListener {
     MOZ_COUNT_DTOR(AudioInputProcessingPullListener);
   }
 
-  void NotifyPull(MediaStreamGraph* aGraph, StreamTime aEndOfAppendedData,
-                  StreamTime aDesiredTime) override {
+  void NotifyPull(MediaTrackGraph* aGraph, TrackTime aEndOfAppendedData,
+                  TrackTime aDesiredTime) override {
     mInputProcessing->Pull(aEndOfAppendedData, aDesiredTime);
   }
 
@@ -288,7 +288,7 @@ class MediaEngineWebRTCAudioCaptureSource : public MediaEngineSource {
     
     return NS_OK;
   }
-  void SetTrack(const RefPtr<SourceMediaStream>& aStream,
+  void SetTrack(const RefPtr<SourceMediaTrack>& aTrack,
                 const PrincipalHandle& aPrincipal) override;
   nsresult Start() override;
   nsresult Stop() override;

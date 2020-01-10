@@ -3,10 +3,10 @@
 
 
 
-#ifndef MOZILLA_AUDIOCAPTURESTREAM_H_
-#define MOZILLA_AUDIOCAPTURESTREAM_H_
+#ifndef MOZILLA_AUDIOCAPTURETRACK_H_
+#define MOZILLA_AUDIOCAPTURETRACK_H_
 
-#include "MediaStreamGraph.h"
+#include "MediaTrackGraph.h"
 #include "AudioMixer.h"
 #include <algorithm>
 
@@ -18,11 +18,11 @@ class DOMMediaStream;
 
 
 
-class AudioCaptureStream : public ProcessedMediaStream,
-                           public MixerCallbackReceiver {
+class AudioCaptureTrack : public ProcessedMediaTrack,
+                          public MixerCallbackReceiver {
  public:
-  explicit AudioCaptureStream(TrackRate aRate);
-  virtual ~AudioCaptureStream();
+  explicit AudioCaptureTrack(TrackRate aRate);
+  virtual ~AudioCaptureTrack();
 
   void Start();
 
