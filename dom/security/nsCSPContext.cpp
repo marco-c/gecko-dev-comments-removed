@@ -16,6 +16,8 @@
 #include "nsError.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIClassInfoImpl.h"
+#include "nsIDocShell.h"
+#include "nsIDocShellTreeItem.h"
 #include "mozilla/dom/Document.h"
 #include "nsIHttpChannel.h"
 #include "nsIInterfaceRequestor.h"
@@ -1527,45 +1529,72 @@ nsresult nsCSPContext::AsyncReportViolation(
 
 
 
-NS_IMETHODIMP
-nsCSPContext::PermitsAncestry(nsILoadInfo* aLoadInfo,
-                              bool* outPermitsAncestry) {
-  MOZ_ASSERT(XRE_IsParentProcess(), "frame-ancestor check only in parent");
 
+
+
+
+
+NS_IMETHODIMP
+nsCSPContext::PermitsAncestry(nsIDocShell* aDocShell,
+                              bool* outPermitsAncestry) {
   nsresult rv;
+
+  
+  if (aDocShell == nullptr) {
+    return NS_ERROR_FAILURE;
+  }
 
   *outPermitsAncestry = true;
 
-  RefPtr<mozilla::dom::BrowsingContext> ctx;
-  aLoadInfo->GetBrowsingContext(getter_AddRefs(ctx));
-
   
   nsCOMArray<nsIURI> ancestorsArray;
+
+  nsCOMPtr<nsIInterfaceRequestor> ir(do_QueryInterface(aDocShell));
+  nsCOMPtr<nsIDocShellTreeItem> treeItem(do_GetInterface(ir));
+  nsCOMPtr<nsIDocShellTreeItem> parentTreeItem;
+  nsCOMPtr<nsIURI> currentURI;
   nsCOMPtr<nsIURI> uriClone;
 
-  while (ctx) {
-    WindowGlobalParent* window = ctx->Canonical()->GetCurrentWindowGlobal();
-    if (window) {
-      nsCOMPtr<nsIURI> currentURI = window->GetDocumentURI();
-      if (currentURI) {
-        nsAutoCString spec;
-        currentURI->GetSpec(spec);
-        
-        rv = NS_MutateURI(currentURI)
-                 .SetRef(EmptyCString())
-                 .SetUserPass(EmptyCString())
-                 .Finalize(uriClone);
-
-        
-        
-        if (NS_FAILED(rv)) {
-          rv = NS_GetURIWithoutRef(currentURI, getter_AddRefs(uriClone));
-          NS_ENSURE_SUCCESS(rv, rv);
-        }
-        ancestorsArray.AppendElement(uriClone);
-      }
+  
+  while (NS_SUCCEEDED(
+             treeItem->GetInProcessParent(getter_AddRefs(parentTreeItem))) &&
+         parentTreeItem != nullptr) {
+    
+    if (parentTreeItem->ItemType() == nsIDocShellTreeItem::typeChrome) {
+      break;
     }
-    ctx = ctx->GetParent();
+
+    Document* doc = parentTreeItem->GetDocument();
+    NS_ASSERTION(doc,
+                 "Could not get Document from nsIDocShellTreeItem in "
+                 "nsCSPContext::PermitsAncestry");
+    NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
+
+    currentURI = doc->GetDocumentURI();
+
+    if (currentURI) {
+      
+      rv = NS_MutateURI(currentURI)
+               .SetRef(EmptyCString())
+               .SetUserPass(EmptyCString())
+               .Finalize(uriClone);
+
+      
+      
+      if (NS_FAILED(rv)) {
+        rv = NS_GetURIWithoutRef(currentURI, getter_AddRefs(uriClone));
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      if (CSPCONTEXTLOGENABLED()) {
+        CSPCONTEXTLOG(("nsCSPContext::PermitsAncestry, found ancestor: %s",
+                       uriClone->GetSpecOrDefault().get()));
+      }
+      ancestorsArray.AppendElement(uriClone);
+    }
+
+    
+    treeItem = parentTreeItem;
   }
 
   nsAutoString violatedDirective;
