@@ -118,6 +118,16 @@ void GamepadPlatformService::NewButtonEvent(uint32_t aIndex, uint32_t aButton,
 }
 
 void GamepadPlatformService::NewButtonEvent(uint32_t aIndex, uint32_t aButton,
+                                            bool aPressed, double aValue) {
+  
+  
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(!NS_IsMainThread());
+  
+  NewButtonEvent(aIndex, aButton, aPressed, aPressed, aValue);
+}
+
+void GamepadPlatformService::NewButtonEvent(uint32_t aIndex, uint32_t aButton,
                                             bool aPressed, bool aTouched) {
   
   

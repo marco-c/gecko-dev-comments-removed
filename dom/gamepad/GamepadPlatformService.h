@@ -55,7 +55,9 @@ class GamepadPlatformService final {
   
   void NewButtonEvent(uint32_t aIndex, uint32_t aButton, bool aPressed,
                       bool aTouched);
-
+  
+  void NewButtonEvent(uint32_t aIndex, uint32_t aButton, bool aPressed,
+                      double aValue);
   
   
   
