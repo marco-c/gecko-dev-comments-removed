@@ -69,7 +69,7 @@ enum StructuredCloneTags {
 
   
   
-  SCTAG_DOM_RTC_CERTIFICATE,
+  SCTAG_DOM_RTCCERTIFICATE,
 
   
   
