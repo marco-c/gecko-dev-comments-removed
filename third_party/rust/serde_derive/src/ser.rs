@@ -67,19 +67,19 @@ fn precondition(cx: &Ctxt, cont: &Container) {
 }
 
 struct Parameters {
-    /// Variable holding the value being serialized. Either `self` for local
-    /// types or `__self` for remote types.
+    
+    
     self_var: Ident,
 
-    /// Path to the type the impl is for. Either a single `Ident` for local
-    /// types or `some::remote::Ident` for remote types. Does not include
-    /// generic parameters.
+    
+    
+    
     this: syn::Path,
 
-    /// Generics including any explicit and inferred bounds for the impl.
+    
     generics: syn::Generics,
 
-    /// Type has a `serde(remote = "...")` attribute.
+    
     is_remote: bool,
 }
 
@@ -107,15 +107,15 @@ impl Parameters {
         }
     }
 
-    /// Type name to use in error messages and `&'static str` arguments to
-    /// various Serializer methods.
+    
+    
     fn type_name(&self) -> String {
         self.this.segments.last().unwrap().value().ident.to_string()
     }
 }
 
-// All the generics in the input, plus a bound `T: Serialize` for each generic
-// field type that will be serialized by us.
+
+
 fn build_generics(cont: &Container) -> syn::Generics {
     let generics = bound::without_defaults(cont.generics);
 
@@ -136,11 +136,11 @@ fn build_generics(cont: &Container) -> syn::Generics {
     }
 }
 
-// Fields with a `skip_serializing` or `serialize_with` attribute, or which
-// belong to a variant with a 'skip_serializing` or `serialize_with` attribute,
-// are not serialized by us so we do not generate a bound. Fields with a `bound`
-// attribute specify their own bound so we do not generate one. All other fields
-// may need a `T: Serialize` bound where T is the type of the field.
+
+
+
+
+
 fn needs_serialize_bound(field: &attr::Field, variant: Option<&attr::Variant>) -> bool {
     !field.skip_serializing()
         && field.serialize_with().is_none()
@@ -159,7 +159,7 @@ fn serialize_body(cont: &Container, params: &Parameters) -> Fragment {
         serialize_into(params, type_into)
     } else {
         match cont.data {
-            Data::Enum(_, ref variants) => serialize_enum(params, variants, &cont.attrs),
+            Data::Enum(ref variants) => serialize_enum(params, variants, &cont.attrs),
             Data::Struct(Style::Struct, ref fields) => {
                 serialize_struct(params, fields, &cont.attrs)
             }
@@ -177,7 +177,7 @@ fn serialize_body(cont: &Container, params: &Parameters) -> Fragment {
 fn serialize_transparent(cont: &Container, params: &Parameters) -> Fragment {
     let fields = match cont.data {
         Data::Struct(_, ref fields) => fields,
-        Data::Enum(_, _) => unreachable!(),
+        Data::Enum(_) => unreachable!(),
     };
 
     let self_var = &params.self_var;
@@ -434,7 +434,7 @@ fn serialize_variant(
             #this::#variant_ident #fields_pat => #skipped_err,
         }
     } else {
-        // variant wasn't skipped
+        
         let case = match variant.style {
             Style::Unit => {
                 quote! {
@@ -1219,12 +1219,12 @@ fn wrap_serialize_with(
     })
 }
 
-// Serialization of an empty struct results in code like:
-//
-//     let mut __serde_state = try!(serializer.serialize_struct("S", 0));
-//     _serde::ser::SerializeStruct::end(__serde_state)
-//
-// where we want to omit the `mut` to avoid a warning.
+
+
+
+
+
+
 fn mut_if(is_mut: bool) -> Option<TokenStream> {
     if is_mut {
         Some(quote!(mut))

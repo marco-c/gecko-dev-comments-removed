@@ -3,8 +3,8 @@ use internals::attr::{Identifier, TagType};
 use internals::{Ctxt, Derive};
 use syn::{Member, Type};
 
-/// Cross-cutting checks that require looking at more than a single attrs
-/// object. Simpler checks should happen when parsing and building the attrs.
+
+
 pub fn check(cx: &Ctxt, cont: &mut Container, derive: Derive) {
     check_getter(cx, cont);
     check_flatten(cx, cont);
@@ -15,11 +15,11 @@ pub fn check(cx: &Ctxt, cont: &mut Container, derive: Derive) {
     check_transparent(cx, cont, derive);
 }
 
-/// Getters are only allowed inside structs (not enums) with the `remote`
-/// attribute.
+
+
 fn check_getter(cx: &Ctxt, cont: &Container) {
     match cont.data {
-        Data::Enum(_, _) => {
+        Data::Enum(_) => {
             if cont.data.has_getter() {
                 cx.error_spanned_by(
                     cont.original,
@@ -39,10 +39,10 @@ fn check_getter(cx: &Ctxt, cont: &Container) {
     }
 }
 
-/// Flattening has some restrictions we can test.
+
 fn check_flatten(cx: &Ctxt, cont: &Container) {
     match cont.data {
-        Data::Enum(_, ref variants) => {
+        Data::Enum(ref variants) => {
             for variant in variants {
                 for field in &variant.fields {
                     check_flatten_field(cx, variant.style, field);
@@ -78,15 +78,15 @@ fn check_flatten_field(cx: &Ctxt, style: Style, field: &Field) {
     }
 }
 
-/// The `other` attribute must be used at most once and it must be the last
-/// variant of an enum.
-///
-/// Inside a `variant_identifier` all variants must be unit variants. Inside a
-/// `field_identifier` all but possibly one variant must be unit variants. The
-/// last variant may be a newtype variant which is an implicit "other" case.
+
+
+
+
+
+
 fn check_identifier(cx: &Ctxt, cont: &Container) {
     let variants = match cont.data {
-        Data::Enum(_, ref variants) => variants,
+        Data::Enum(ref variants) => variants,
         Data::Struct(_, _) => {
             return;
         }
@@ -99,7 +99,7 @@ fn check_identifier(cx: &Ctxt, cont: &Container) {
             variant.attrs.other(),
             cont.attrs.tag(),
         ) {
-            // The `other` attribute may not be used in a variant_identifier.
+            
             (_, Identifier::Variant, true, _) => {
                 cx.error_spanned_by(
                     variant.original,
@@ -107,7 +107,7 @@ fn check_identifier(cx: &Ctxt, cont: &Container) {
                 );
             }
 
-            // Variant with `other` attribute cannot appear in untagged enum
+            
             (_, Identifier::No, true, &TagType::None) => {
                 cx.error_spanned_by(
                     variant.original,
@@ -115,7 +115,7 @@ fn check_identifier(cx: &Ctxt, cont: &Container) {
                 );
             }
 
-            // Variant with `other` attribute must be the last one.
+            
             (Style::Unit, Identifier::Field, true, _) | (Style::Unit, Identifier::No, true, _) => {
                 if i < variants.len() - 1 {
                     cx.error_spanned_by(
@@ -125,7 +125,7 @@ fn check_identifier(cx: &Ctxt, cont: &Container) {
                 }
             }
 
-            // Variant with `other` attribute must be a unit variant.
+            
             (_, Identifier::Field, true, _) | (_, Identifier::No, true, _) => {
                 cx.error_spanned_by(
                     variant.original,
@@ -133,13 +133,13 @@ fn check_identifier(cx: &Ctxt, cont: &Container) {
                 );
             }
 
-            // Any sort of variant is allowed if this is not an identifier.
+            
             (_, Identifier::No, false, _) => {}
 
-            // Unit variant without `other` attribute is always fine.
+            
             (Style::Unit, _, false, _) => {}
 
-            // The last field is allowed to be a newtype catch-all.
+            
             (Style::Newtype, Identifier::Field, false, _) => {
                 if i < variants.len() - 1 {
                     cx.error_spanned_by(
@@ -166,11 +166,11 @@ fn check_identifier(cx: &Ctxt, cont: &Container) {
     }
 }
 
-/// Skip-(de)serializing attributes are not allowed on variants marked
-/// (de)serialize_with.
+
+
 fn check_variant_skip_attrs(cx: &Ctxt, cont: &Container) {
     let variants = match cont.data {
-        Data::Enum(_, ref variants) => variants,
+        Data::Enum(ref variants) => variants,
         Data::Struct(_, _) => {
             return;
         }
@@ -246,13 +246,13 @@ fn check_variant_skip_attrs(cx: &Ctxt, cont: &Container) {
     }
 }
 
-/// The tag of an internally-tagged struct variant must not be
-/// the same as either one of its fields, as this would result in
-/// duplicate keys in the serialized output and/or ambiguity in
-/// the to-be-deserialized input.
+
+
+
+
 fn check_internal_tag_field_name_conflict(cx: &Ctxt, cont: &Container) {
     let variants = match cont.data {
-        Data::Enum(_, ref variants) => variants,
+        Data::Enum(ref variants) => variants,
         Data::Struct(_, _) => return,
     };
 
@@ -295,8 +295,8 @@ fn check_internal_tag_field_name_conflict(cx: &Ctxt, cont: &Container) {
     }
 }
 
-/// In the case of adjacently-tagged enums, the type and the
-/// contents tag must differ, for the same reason.
+
+
 fn check_adjacent_tag_conflict(cx: &Ctxt, cont: &Container) {
     let (type_tag, content_tag) = match *cont.attrs.tag() {
         TagType::Adjacent {
@@ -317,7 +317,7 @@ fn check_adjacent_tag_conflict(cx: &Ctxt, cont: &Container) {
     }
 }
 
-/// Enums and unit structs cannot be transparent.
+
 fn check_transparent(cx: &Ctxt, cont: &mut Container, derive: Derive) {
     if !cont.attrs.transparent() {
         return;
@@ -338,7 +338,7 @@ fn check_transparent(cx: &Ctxt, cont: &mut Container, derive: Derive) {
     }
 
     let fields = match cont.data {
-        Data::Enum(_, _) => {
+        Data::Enum(_) => {
             cx.error_spanned_by(
                 cont.original,
                 "#[serde(transparent)] is not allowed on an enum",
