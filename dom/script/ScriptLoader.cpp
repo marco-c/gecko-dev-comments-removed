@@ -355,18 +355,11 @@ bool ScriptLoader::IsAboutPageLoadingChromeURI(ScriptLoadRequest* aRequest) {
     return false;
   }
   
-  nsCOMPtr<nsIURI> triggeringURI;
-  nsresult rv =
-      aRequest->TriggeringPrincipal()->GetURI(getter_AddRefs(triggeringURI));
-  NS_ENSURE_SUCCESS(rv, false);
 
   
-  nsCOMPtr<nsIAboutModule> aboutMod;
-  rv = NS_GetAboutModule(triggeringURI, getter_AddRefs(aboutMod));
-  NS_ENSURE_SUCCESS(rv, false);
-
   uint32_t aboutModuleFlags = 0;
-  rv = aboutMod->GetURIFlags(triggeringURI, &aboutModuleFlags);
+  nsresult rv =
+      aRequest->TriggeringPrincipal()->GetAboutModuleFlags(&aboutModuleFlags);
   NS_ENSURE_SUCCESS(rv, false);
 
   if (aboutModuleFlags & nsIAboutModule::MAKE_LINKABLE) {
