@@ -206,10 +206,11 @@ class JS_PUBLIC_API ReadOnlyCompileOptions : public TransitiveCompileOptions {
   bool nonSyntacticScope = false;
   bool noScriptRval = false;
 
- private:
-  friend class CompileOptions;
-
  protected:
+  
+  
+  bool skipFilenameValidation_ = false;
+
   ReadOnlyCompileOptions() = default;
 
   
@@ -220,6 +221,7 @@ class JS_PUBLIC_API ReadOnlyCompileOptions : public TransitiveCompileOptions {
  public:
   
   
+  bool skipFilenameValidation() const { return skipFilenameValidation_; }
   const char* filename() const { return filename_; }
   const char* introducerFilename() const { return introducerFilename_; }
   const char16_t* sourceMapURL() const { return sourceMapURL_; }
@@ -386,6 +388,11 @@ class MOZ_STACK_CLASS JS_PUBLIC_API CompileOptions final
 
   CompileOptions& setNoScriptRval(bool nsr) {
     noScriptRval = nsr;
+    return *this;
+  }
+
+  CompileOptions& setSkipFilenameValidation(bool b) {
+    skipFilenameValidation_ = b;
     return *this;
   }
 

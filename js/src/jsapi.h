@@ -396,6 +396,20 @@ JS_PUBLIC_API bool InitSelfHostedCode(JSContext* cx);
 
 JS_PUBLIC_API void AssertObjectBelongsToCurrentThread(JSObject* obj);
 
+
+
+
+
+
+
+
+
+
+
+using FilenameValidationCallback = bool (*)(const char* filename,
+                                            bool isSystemRealm);
+JS_PUBLIC_API void SetFilenameValidationCallback(FilenameValidationCallback cb);
+
 } 
 
 
