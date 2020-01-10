@@ -150,10 +150,14 @@ BOOL GetUUIDTempFilePath(LPCWSTR basePath, LPCWSTR prefix, LPWSTR tmpPath) {
   }
   wcsncat(filename, tmpFileNameString, tmpFileNameStringLen);
 
-  if (wcslen(basePath) > MAX_PATH) {
+  size_t basePathLen = wcslen(basePath);
+  if (basePathLen > MAX_PATH) {
     return FALSE;
   }
-  wcsncpy(tmpPath, basePath, MAX_PATH + 1);
+  
+  
+  
+  wcsncpy(tmpPath, basePath, basePathLen + 1);
   if (!PathAppendSafe(tmpPath, filename)) {
     return FALSE;
   }

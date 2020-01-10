@@ -136,6 +136,11 @@ void UpdateLog::Printf(const char* fmt, ...) {
   vfprintf(logFP, fmt, ap);
   fprintf(logFP, "\n");
   va_end(ap);
+#if defined(XP_WIN) && defined(MOZ_DEBUG)
+  
+  
+  fflush(logFP);
+#endif
 }
 
 void UpdateLog::WarnPrintf(const char* fmt, ...) {
@@ -149,6 +154,11 @@ void UpdateLog::WarnPrintf(const char* fmt, ...) {
   vfprintf(logFP, fmt, ap);
   fprintf(logFP, "***\n");
   va_end(ap);
+#if defined(XP_WIN) && defined(MOZ_DEBUG)
+  
+  
+  fflush(logFP);
+#endif
 }
 
 #ifdef XP_WIN
