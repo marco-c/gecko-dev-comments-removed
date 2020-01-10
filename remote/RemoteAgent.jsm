@@ -66,10 +66,6 @@ class RemoteAgentClass {
       
       delete this.server._handler._overridePaths[target.path];
     });
-
-    
-    
-    await this.targets.watchForTargets();
   }
 
   get listening() {
@@ -96,6 +92,10 @@ class RemoteAgentClass {
     }
 
     await this.init();
+
+    
+    
+    await this.targets.watchForTargets();
 
     try {
       
