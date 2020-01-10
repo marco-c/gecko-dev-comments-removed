@@ -4,7 +4,6 @@
 
 "use strict";
 
-const defer = require("devtools/shared/defer");
 const Services = require("Services");
 
 const l10n = require("devtools/client/webconsole/utils/l10n");
@@ -37,23 +36,9 @@ class WebConsoleConnectionProxy {
 
 
 
-    this.client = null;
+    this.client = target.client;
 
-    
-
-
-
-    this.connected = false;
-
-    
-
-
-
-
-    this._connectTimer = null;
-
-    this._connectDefer = null;
-    this._disconnecter = null;
+    this._connecter = null;
 
     this._onPageError = this._onPageError.bind(this);
     this._onLogMessage = this._onLogMessage.bind(this);
@@ -62,9 +47,6 @@ class WebConsoleConnectionProxy {
     this._onNetworkEventUpdate = this._onNetworkEventUpdate.bind(this);
     this._onTabNavigated = this._onTabNavigated.bind(this);
     this._onTabWillNavigate = this._onTabWillNavigate.bind(this);
-    this._onAttachConsole = this._onAttachConsole.bind(this);
-    this._onCachedMessages = this._onCachedMessages.bind(this);
-    this._connectionTimeout = this._connectionTimeout.bind(this);
     this._onLastPrivateContextExited = this._onLastPrivateContextExited.bind(
       this
     );
@@ -79,47 +61,56 @@ class WebConsoleConnectionProxy {
 
 
   connect() {
-    if (this._connectDefer) {
-      return this._connectDefer.promise;
+    if (this._connecter) {
+      return this._connecter;
     }
-
-    this._connectDefer = defer();
-
-    const timeout = Services.prefs.getIntPref(PREF_CONNECTION_TIMEOUT);
-    this._connectTimer = setTimeout(this._connectionTimeout, timeout);
-
-    const connPromise = this._connectDefer.promise;
-    connPromise.then(
-      () => {
-        clearTimeout(this._connectTimer);
-        this._connectTimer = null;
-      },
-      () => {
-        clearTimeout(this._connectTimer);
-        this._connectTimer = null;
-      }
-    );
-    this.client = this.target.client;
 
     this.target.on("will-navigate", this._onTabWillNavigate);
     this.target.on("navigate", this._onTabNavigated);
 
-    this._attachConsole();
+    const connection = (async () => {
+      this._addWebConsoleClientEventListeners();
+      await this._attachConsole();
 
-    return connPromise;
-  }
+      
+      
+      const saveBodies =
+        !this.webConsoleUI.isBrowserConsole &&
+        Services.prefs.getBoolPref(
+          "devtools.netmonitor.saveRequestAndResponseBodies"
+        );
+      await this.webConsoleUI.setSaveRequestAndResponseBodies(saveBodies);
 
-  
+      const cachedMessages = await this._getCachedMessages();
+      const networkMessages = this._getNetworkMessages();
+      const messages = cachedMessages.concat(networkMessages);
+      messages.sort((a, b) => a.timeStamp - b.timeStamp);
+      this.dispatchMessagesAdd(messages);
 
+      if (!this.webConsoleClient.hasNativeConsoleAPI) {
+        await this.webConsoleUI.logWarningAboutReplacedAPI();
+      }
+    })();
 
+    let timeoutId;
+    const connectionTimeout = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject({
+          error: "timeout",
+          message: l10n.getStr("connectionTimeout"),
+        });
+      }, Services.prefs.getIntPref(PREF_CONNECTION_TIMEOUT));
+    });
 
-  _connectionTimeout() {
-    const error = {
-      error: "timeout",
-      message: l10n.getStr("connectionTimeout"),
-    };
+    
+    
+    
+    this._connecter = Promise.race([connection, connectionTimeout]);
 
-    this._connectDefer.reject(error);
+    
+    connection.then(() => clearTimeout(timeoutId));
+
+    return this._connecter;
   }
 
   
@@ -134,12 +125,7 @@ class WebConsoleConnectionProxy {
     if (this.target.chrome && !this.target.isAddon) {
       listeners.push("ContentProcessMessages");
     }
-    return this.webConsoleClient
-      .startListeners(listeners)
-      .then(this._onAttachConsole, error => {
-        console.error("attachConsole failed: " + error);
-        this._connectDefer.reject(error);
-      });
+    return this.webConsoleClient.startListeners(listeners);
   }
 
   
@@ -147,24 +133,7 @@ class WebConsoleConnectionProxy {
 
 
 
-
-
-
-
-
-  async _onAttachConsole(response) {
-    let saveBodies = Services.prefs.getBoolPref(
-      "devtools.netmonitor.saveRequestAndResponseBodies"
-    );
-
-    
-    
-    if (this.webConsoleUI.isBrowserConsole) {
-      saveBodies = false;
-    }
-
-    this.webConsoleUI.setSaveRequestAndResponseBodies(saveBodies);
-
+  _addWebConsoleClientEventListeners() {
     this.webConsoleClient.on("networkEvent", this._onNetworkEvent);
     this.webConsoleClient.on("networkEventUpdate", this._onNetworkEventUpdate);
     this.webConsoleClient.on("logMessage", this._onLogMessage);
@@ -178,44 +147,6 @@ class WebConsoleConnectionProxy {
       "clearLogpointMessages",
       this._clearLogpointMessages
     );
-
-    const msgs = ["PageError", "ConsoleAPI"];
-    const cachedMessages = await this.webConsoleClient.getCachedMessages(msgs);
-    this._onCachedMessages(cachedMessages);
-  }
-
-  
-
-
-  dispatchMessageAdd(packet) {
-    this.webConsoleUI.wrapper.dispatchMessageAdd(packet);
-  }
-
-  
-
-
-  dispatchMessagesAdd(packets) {
-    this.webConsoleUI.wrapper.dispatchMessagesAdd(packets);
-  }
-
-  
-
-
-  dispatchMessageUpdate(networkInfo, response) {
-    
-    if (!this.webConsoleUI) {
-      return;
-    }
-    this.webConsoleUI.wrapper.dispatchMessageUpdate(networkInfo, response);
-  }
-
-  dispatchRequestUpdate(id, data) {
-    
-    if (!this.webConsoleUI) {
-      return Promise.resolve();
-    }
-
-    return this.webConsoleUI.wrapper.dispatchRequestUpdate(id, data);
   }
 
   
@@ -223,38 +154,54 @@ class WebConsoleConnectionProxy {
 
 
 
-
-
-  async _onCachedMessages(response) {
-    if (response.error) {
-      console.error(
-        "Web Console getCachedMessages error: " +
-          response.error +
-          " " +
-          response.message
-      );
-      this._connectDefer.reject(response);
-      return;
-    }
-
-    if (!this._connectTimer) {
-      
-      
-      console.error("Web Console getCachedMessages error: invalid state.");
-    }
-
-    const messages = response.messages.concat(
-      ...this.webConsoleClient.getNetworkEvents()
+  _removeWebConsoleClientEventListeners() {
+    this.webConsoleClient.off("networkEvent", this._onNetworkEvent);
+    this.webConsoleClient.off("networkEventUpdate", this._onNetworkEventUpdate);
+    this.webConsoleClient.off("logMessage", this._onLogMessage);
+    this.webConsoleClient.off("pageError", this._onPageError);
+    this.webConsoleClient.off("consoleAPICall", this._onConsoleAPICall);
+    this.webConsoleClient.off(
+      "lastPrivateContextExited",
+      this._onLastPrivateContextExited
     );
-    messages.sort((a, b) => a.timeStamp - b.timeStamp);
+    this.webConsoleClient.off(
+      "clearLogpointMessages",
+      this._clearLogpointMessages
+    );
+  }
 
-    this.dispatchMessagesAdd(messages);
-    if (!this.webConsoleClient.hasNativeConsoleAPI) {
-      await this.webConsoleUI.logWarningAboutReplacedAPI();
+  
+
+
+
+
+
+
+  async _getCachedMessages() {
+    const response = await this.webConsoleClient.getCachedMessages([
+      "PageError",
+      "ConsoleAPI",
+    ]);
+
+    if (response.error) {
+      throw new Error(
+        `Web Console getCachedMessages error: ${response.error} ${
+          response.message
+        }`
+      );
     }
 
-    this.connected = true;
-    this._connectDefer.resolve(this);
+    return response.messages;
+  }
+
+  
+
+
+
+
+
+  _getNetworkMessages() {
+    return Array.from(this.webConsoleClient.getNetworkEvents());
   }
 
   
@@ -367,7 +314,6 @@ class WebConsoleConnectionProxy {
 
 
   _onTabNavigated(packet) {
-
     this.webConsoleUI.handleTabNavigated(packet);
   }
 
@@ -380,6 +326,40 @@ class WebConsoleConnectionProxy {
 
   _onTabWillNavigate(packet) {
     this.webConsoleUI.handleTabWillNavigate(packet);
+  }
+
+  
+
+
+  dispatchMessageAdd(packet) {
+    this.webConsoleUI.wrapper.dispatchMessageAdd(packet);
+  }
+
+  
+
+
+  dispatchMessagesAdd(packets) {
+    this.webConsoleUI.wrapper.dispatchMessagesAdd(packets);
+  }
+
+  
+
+
+  dispatchMessageUpdate(networkInfo, response) {
+    
+    if (!this.webConsoleUI) {
+      return;
+    }
+    this.webConsoleUI.wrapper.dispatchMessageUpdate(networkInfo, response);
+  }
+
+  dispatchRequestUpdate(id, data) {
+    
+    if (!this.webConsoleUI) {
+      return Promise.resolve();
+    }
+
+    return this.webConsoleUI.wrapper.dispatchRequestUpdate(id, data);
   }
 
   
@@ -405,26 +385,13 @@ class WebConsoleConnectionProxy {
       return;
     }
 
-    this.webConsoleClient.off("logMessage", this._onLogMessage);
-    this.webConsoleClient.off("pageError", this._onPageError);
-    this.webConsoleClient.off("consoleAPICall", this._onConsoleAPICall);
-    this.webConsoleClient.off(
-      "lastPrivateContextExited",
-      this._onLastPrivateContextExited
-    );
-    this.webConsoleClient.off("networkEvent", this._onNetworkEvent);
-    this.webConsoleClient.off("networkEventUpdate", this._onNetworkEventUpdate);
-    this.webConsoleClient.off(
-      "clearLogpointMessages",
-      this._clearLogpointMessages
-    );
+    this._removeWebConsoleClientEventListeners();
     this.target.off("will-navigate", this._onTabWillNavigate);
     this.target.off("navigate", this._onTabNavigated);
 
     this.client = null;
     this.webConsoleClient = null;
     this.target = null;
-    this.connected = false;
     this.webConsoleUI = null;
   }
 }
