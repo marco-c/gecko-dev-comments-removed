@@ -96,10 +96,6 @@ class MediaDecoderOwner {
 
   
   
-  virtual void SeekAborted() = 0;
-
-  
-  
   
   virtual void DownloadSuspended() = 0;
 
@@ -147,6 +143,12 @@ class MediaDecoderOwner {
   
   
   virtual void RemoveMediaTracks() = 0;
+
+  
+  virtual void AsyncResolveSeekDOMPromiseIfExists() = 0;
+
+  
+  virtual void AsyncRejectSeekDOMPromiseIfExists() = 0;
 
   
   

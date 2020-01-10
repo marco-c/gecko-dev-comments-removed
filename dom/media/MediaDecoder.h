@@ -497,7 +497,7 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
  protected:
   void NotifyReaderDataArrived();
   void DiscardOngoingSeekIfExists();
-  void CallSeek(const SeekTarget& aTarget);
+  virtual void CallSeek(const SeekTarget& aTarget);
 
   
   
