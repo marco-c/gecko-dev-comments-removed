@@ -317,6 +317,16 @@ const browsingContextTargetPrototype = {
   
 
 
+  get dbg() {
+    if (!this._dbg) {
+      this._dbg = this.makeDebugger();
+    }
+    return this._dbg;
+  },
+
+  
+
+
   get _consoleActor() {
     if (this.exited) {
       return null;
@@ -1016,6 +1026,11 @@ const browsingContextTargetPrototype = {
     if (this._frameDescriptorActorPool !== null) {
       this._frameDescriptorActorPool.destroy();
       this._frameDescriptorActorPool = null;
+    }
+
+    if (this._dbg) {
+      this._dbg.disable();
+      this._dbg = null;
     }
 
     this._attached = false;
