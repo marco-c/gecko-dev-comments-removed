@@ -198,8 +198,6 @@ class HTMLEditRules : public TextEditRules {
 
   MOZ_MUST_USE nsresult PinSelectionToNewBlock();
 
-  void CheckInterlinePosition();
-
   
 
 

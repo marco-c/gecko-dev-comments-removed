@@ -707,8 +707,9 @@ nsresult HTMLEditRules::AfterEditInner() {
   
   if (!HTMLEditorRef()
            .TopLevelEditSubActionDataRef()
-           .mDidExplicitlySetInterLine) {
-    CheckInterlinePosition();
+           .mDidExplicitlySetInterLine &&
+      SelectionRefPtr()->IsCollapsed()) {
+    HTMLEditorRef().SetSelectionInterlinePosition();
   }
 
   return NS_OK;
@@ -9666,13 +9667,9 @@ nsresult HTMLEditRules::PinSelectionToNewBlock() {
   return NS_OK;
 }
 
-void HTMLEditRules::CheckInterlinePosition() {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  
-  if (!SelectionRefPtr()->IsCollapsed()) {
-    return;
-  }
+void HTMLEditor::SetSelectionInterlinePosition() {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(SelectionRefPtr()->IsCollapsed());
 
   
   nsRange* firstRange = SelectionRefPtr()->GetRangeAt(0);
@@ -9680,50 +9677,63 @@ void HTMLEditRules::CheckInterlinePosition() {
     return;
   }
 
-  EditorDOMPoint atStartOfSelection(firstRange->StartRef());
-  if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
+  EditorDOMPoint atCaret(firstRange->StartRef());
+  if (NS_WARN_IF(!atCaret.IsSet())) {
     return;
   }
-  MOZ_ASSERT(atStartOfSelection.IsSetAndValid());
+  MOZ_ASSERT(atCaret.IsSetAndValid());
 
   
   
   
-  nsCOMPtr<nsIContent> node =
-      HTMLEditorRef().GetPreviousEditableHTMLNodeInBlock(atStartOfSelection);
-  if (node && node->IsHTMLElement(nsGkAtoms::br)) {
-    IgnoredErrorResult ignoredError;
-    SelectionRefPtr()->SetInterlinePosition(true, ignoredError);
-    NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                         "Failed to set interline position");
+  
+  
+  
+  if (nsIContent* previousEditableContentInBlock =
+          GetPreviousEditableHTMLNodeInBlock(atCaret)) {
+    if (previousEditableContentInBlock->IsHTMLElement(nsGkAtoms::br)) {
+      IgnoredErrorResult ignoredError;
+      SelectionRefPtr()->SetInterlinePosition(true, ignoredError);
+      NS_WARNING_ASSERTION(
+          !ignoredError.Failed(),
+          "Selection::SetInterlinePosition(true) failed, but ignored");
+      return;
+    }
+  }
+
+  if (!atCaret.GetChild()) {
     return;
   }
 
   
-  if (atStartOfSelection.GetChild()) {
-    node = HTMLEditorRef().GetPriorHTMLSibling(atStartOfSelection.GetChild());
-  } else {
-    node = nullptr;
-  }
-  if (node && HTMLEditor::NodeIsBlockStatic(*node)) {
-    IgnoredErrorResult ignoredError;
-    SelectionRefPtr()->SetInterlinePosition(true, ignoredError);
-    NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                         "Failed to set interline position");
-    return;
+  
+  
+  
+  if (nsIContent* previousEditableContentInBlockAtCaret =
+          GetPriorHTMLSibling(atCaret.GetChild())) {
+    if (HTMLEditor::NodeIsBlockStatic(*previousEditableContentInBlockAtCaret)) {
+      IgnoredErrorResult ignoredError;
+      SelectionRefPtr()->SetInterlinePosition(true, ignoredError);
+      NS_WARNING_ASSERTION(
+          !ignoredError.Failed(),
+          "Selection::SetInterlinePosition(true) failed, but ignored");
+      return;
+    }
   }
 
   
-  if (atStartOfSelection.GetChild()) {
-    node = HTMLEditorRef().GetNextHTMLSibling(atStartOfSelection.GetChild());
-  } else {
-    node = nullptr;
-  }
-  if (node && HTMLEditor::NodeIsBlockStatic(*node)) {
-    IgnoredErrorResult ignoredError;
-    SelectionRefPtr()->SetInterlinePosition(false, ignoredError);
-    NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                         "Failed to unset interline position");
+  
+  
+  
+  if (nsIContent* nextEditableContentInBlockAtCaret =
+          GetNextHTMLSibling(atCaret.GetChild())) {
+    if (HTMLEditor::NodeIsBlockStatic(*nextEditableContentInBlockAtCaret)) {
+      IgnoredErrorResult ignoredError;
+      SelectionRefPtr()->SetInterlinePosition(false, ignoredError);
+      NS_WARNING_ASSERTION(
+          !ignoredError.Failed(),
+          "Selection::SetInterlinePosition(false) failed, but ignored");
+    }
   }
 }
 
