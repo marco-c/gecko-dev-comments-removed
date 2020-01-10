@@ -2047,15 +2047,6 @@ class nsContentUtils {
 
   static bool IsInStableOrMetaStableState();
 
-  
-
-
-
-
-
-  static nsresult ProcessViewportInfo(Document* aDocument,
-                                      const nsAString& viewportInfo);
-
   static JSContext* GetCurrentJSContext();
 
   
