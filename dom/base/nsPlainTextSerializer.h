@@ -116,11 +116,12 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   
   inline bool MayWrap() const {
     return mWrapColumn &&
-           ((mSettings.mFlags & nsIDocumentEncoder::OutputFormatted) ||
-            (mSettings.mFlags & nsIDocumentEncoder::OutputWrap));
+           ((mSettings.GetFlags() & nsIDocumentEncoder::OutputFormatted) ||
+            (mSettings.GetFlags() & nsIDocumentEncoder::OutputWrap));
   }
   inline bool MayBreakLines() const {
-    return !(mSettings.mFlags & nsIDocumentEncoder::OutputDisallowLineBreaking);
+    return !(mSettings.GetFlags() &
+             nsIDocumentEncoder::OutputDisallowLineBreaking);
   }
 
   inline bool DoOutput() const { return mHeadLevel == 0; }
@@ -149,7 +150,26 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   uint32_t mHeadLevel;
   bool mAtFirstColumn;
 
-  struct Settings {
+  class Settings {
+   public:
+    
+    
+    
+    void Init(int32_t aFlags);
+
+    
+    bool GetStructs() const { return mStructs; }
+
+    
+    int32_t GetHeaderStrategy() const { return mHeaderStrategy; }
+
+    
+    int32_t GetFlags() const { return mFlags; }
+
+    
+    bool GetWithRubyAnnotation() const { return mWithRubyAnnotation; }
+
+   private:
     
     bool mStructs = true;
 
