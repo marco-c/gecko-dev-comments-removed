@@ -274,7 +274,9 @@ void EventListenerManager::AddEventListenerInternal(
     
     if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
       nsCOMPtr<Document> doc = window->GetExtantDoc();
-      if (doc) {
+      if (doc &&
+          !(aFlags.mInSystemGroup &&
+            doc->DontWarnAboutMutationEventsAndAllowSlowDOMMutations())) {
         doc->WarnOnceAbout(Document::eMutationEvent);
       }
       
