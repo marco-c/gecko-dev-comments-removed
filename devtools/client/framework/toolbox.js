@@ -175,6 +175,13 @@ loader.lazyRequireGetter(
   true
 );
 
+loader.lazyRequireGetter(
+  this,
+  "NodeFront",
+  "devtools/shared/fronts/node",
+  true
+);
+
 
 
 
@@ -3421,9 +3428,7 @@ Toolbox.prototype = {
 
 
 
-
-
-  getHighlighter(fromGrip = false) {
+  getHighlighter() {
     let pendingHighlight;
     let currentHighlighterFront;
 
@@ -3432,7 +3437,7 @@ Toolbox.prototype = {
         pendingHighlight = (async () => {
           let nodeFront = object;
 
-          if (fromGrip) {
+          if (!(nodeFront instanceof NodeFront)) {
             const inspectorFront = await this.target.getFront("inspector");
             nodeFront = await inspectorFront.getNodeFrontFromNodeGrip(object);
           }
