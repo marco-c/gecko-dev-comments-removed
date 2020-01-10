@@ -420,6 +420,7 @@ class MachCommands(MachCommandBase):
             return ret
 
         
+        
         _craft_maven_zip_archive(self.topobjdir)
 
         return 0
