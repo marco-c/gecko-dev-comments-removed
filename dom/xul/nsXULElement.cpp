@@ -199,8 +199,8 @@ already_AddRefed<nsXULElement> nsXULElement::CreateFromPrototype(
       
       
       
-      for (size_t i = 0; i < aPrototype->mAttributes.Length(); ++i) {
-        element->AddListenerFor(aPrototype->mAttributes[i].mName);
+      for (const auto& attribute : aPrototype->mAttributes) {
+        element->AddListenerForAttributeIfNeeded(attribute.mName);
       }
     }
 
@@ -584,23 +584,8 @@ bool nsXULElement::PerformAccesskey(bool aKeyCausesActivation,
 
 
 
-void nsXULElement::AddListenerFor(const nsAttrName& aName) {
+void nsXULElement::AddListenerForAttributeIfNeeded(nsAtom* aLocalName) {
   
-  
-  
-  
-  if (aName.IsAtom()) {
-    nsAtom* attr = aName.Atom();
-    MaybeAddPopupListener(attr);
-    if (nsContentUtils::IsEventAttributeName(attr, EventNameType_XUL)) {
-      nsAutoString value;
-      GetAttr(kNameSpaceID_None, attr, value);
-      SetEventHandler(attr, value, true);
-    }
-  }
-}
-
-void nsXULElement::MaybeAddPopupListener(nsAtom* aLocalName) {
   
   
   
@@ -608,6 +593,17 @@ void nsXULElement::MaybeAddPopupListener(nsAtom* aLocalName) {
       
       aLocalName == nsGkAtoms::popup || aLocalName == nsGkAtoms::context) {
     AddPopupListener(aLocalName);
+  }
+  if (nsContentUtils::IsEventAttributeName(aLocalName, EventNameType_XUL)) {
+    nsAutoString value;
+    GetAttr(kNameSpaceID_None, aLocalName, value);
+    SetEventHandler(aLocalName, value, true);
+  }
+}
+
+void nsXULElement::AddListenerForAttributeIfNeeded(const nsAttrName& aName) {
+  if (aName.IsAtom()) {
+    AddListenerForAttributeIfNeeded(aName.Atom());
   }
 }
 
@@ -857,19 +853,7 @@ nsresult nsXULElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                     bool aNotify) {
   if (aNamespaceID == kNameSpaceID_None) {
     if (aValue) {
-      
-      
-      MaybeAddPopupListener(aName);
-      if (nsContentUtils::IsEventAttributeName(aName, EventNameType_XUL)) {
-        if (aValue->Type() == nsAttrValue::eString) {
-          SetEventHandler(aName, aValue->GetStringValue(), true);
-        } else {
-          nsAutoString body;
-          aValue->ToString(body);
-          SetEventHandler(aName, body, true);
-        }
-      }
-
+      AddListenerForAttributeIfNeeded(aName);
       Document* document = GetUncomposedDoc();
 
       
