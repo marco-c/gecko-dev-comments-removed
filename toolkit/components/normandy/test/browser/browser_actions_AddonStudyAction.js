@@ -30,6 +30,7 @@ function addonStudyRecipeFactory(overrides = {}) {
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   withMockNormandyApi,
   AddonStudies.withStudies([addonStudyFactory()]),
@@ -72,6 +73,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   withMockNormandyApi,
   withSendEventStub,
@@ -109,6 +111,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   withMockNormandyApi,
   withSendEventStub,
@@ -149,6 +152,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   withMockNormandyApi,
   withSendEventStub,
@@ -190,6 +194,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   withMockNormandyApi,
   withSendEventStub,
@@ -244,6 +249,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   withMockNormandyApi,
   withSendEventStub,
@@ -333,6 +339,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   withMockNormandyApi,
   AddonStudies.withStudies([
@@ -412,6 +419,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   withMockNormandyApi,
   AddonStudies.withStudies([
@@ -473,6 +481,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   withMockNormandyApi,
   AddonStudies.withStudies([
@@ -536,6 +545,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   withMockNormandyApi,
   AddonStudies.withStudies([
@@ -598,6 +608,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   withMockNormandyApi,
   AddonStudies.withStudies([
@@ -661,6 +672,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   withMockNormandyApi,
   AddonStudies.withStudies([
@@ -723,6 +735,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   withMockNormandyApi,
   AddonStudies.withStudies([
@@ -799,6 +812,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   AddonStudies.withStudies(),
   async function unenrollNonexistent(studies) {
@@ -813,6 +827,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   AddonStudies.withStudies([addonStudyFactory({ active: false })]),
   withSendEventStub,
@@ -829,6 +844,7 @@ decorate_task(
 
 const testStopId = "testStop@example.com";
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   AddonStudies.withStudies([
     addonStudyFactory({
@@ -870,6 +886,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   AddonStudies.withStudies([
     addonStudyFactory({
@@ -903,6 +920,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   withMockNormandyApi,
   withSendEventStub,
@@ -938,6 +956,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   withMockNormandyApi,
   withSendEventStub,
@@ -969,6 +988,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   withMockNormandyApi,
   AddonStudies.withStudies([
@@ -1034,6 +1054,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   withMockNormandyApi,
   AddonStudies.withStudies([
@@ -1117,6 +1138,7 @@ decorate_task(
 
 
 decorate_task(
+  withStudiesEnabled,
   ensureAddonCleanup,
   AddonStudies.withStudies([addonStudyFactory()]),
   async function enrollTwiceFail([study]) {

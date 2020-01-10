@@ -604,7 +604,9 @@ var gPrivacyPane = {
         "command",
         gPrivacyPane.updateSubmitHealthReport
       );
-      this.initOptOutStudyCheckbox();
+      if (AppConstants.MOZ_NORMANDY) {
+        this.initOptOutStudyCheckbox();
+      }
       this.initAddonRecommendationsCheckbox();
     }
     this._initA11yState();
@@ -2140,31 +2142,39 @@ var gPrivacyPane = {
 
 
   initOptOutStudyCheckbox(doc) {
-    const allowedByPolicy = Services.policies.isAllowed("Shield");
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    dataCollectionCheckboxHandler({
-      checkbox: document.getElementById("optOutStudiesEnabled"),
-      matchPref: () =>
-        allowedByPolicy &&
-        Services.prefs.getBoolPref(PREF_NORMANDY_ENABLED, false),
-      isDisabled: () => !allowedByPolicy,
-      pref: PREF_OPT_OUT_STUDIES_ENABLED,
-    });
+    const allowedByPolicy = Services.policies.isAllowed("Shield");
+    const checkbox = document.getElementById("optOutStudiesEnabled");
+
+    if (
+      allowedByPolicy &&
+      Services.prefs.getBoolPref(PREF_NORMANDY_ENABLED, false)
+    ) {
+      if (Services.prefs.getBoolPref(PREF_OPT_OUT_STUDIES_ENABLED, false)) {
+        checkbox.setAttribute("checked", "true");
+      } else {
+        checkbox.removeAttribute("checked");
+      }
+      checkbox.setAttribute("preference", PREF_OPT_OUT_STUDIES_ENABLED);
+      checkbox.removeAttribute("disabled");
+    } else {
+      checkbox.removeAttribute("preference");
+      checkbox.removeAttribute("checked");
+      checkbox.setAttribute("disabled", "true");
+    }
   },
 
   initAddonRecommendationsCheckbox() {
