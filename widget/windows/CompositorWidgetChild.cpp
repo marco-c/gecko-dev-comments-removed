@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "CompositorWidgetChild.h"
 #include "mozilla/Unused.h"
@@ -45,7 +45,7 @@ void CompositorWidgetChild::ClearTransparentWindow() {
 }
 
 HDC CompositorWidgetChild::GetTransparentDC() const {
-  // Not supported in out-of-process mode.
+  
   return nullptr;
 }
 
@@ -64,14 +64,17 @@ mozilla::ipc::IPCResult CompositorWidgetChild::RecvUnobserveVsync() {
 }
 
 mozilla::ipc::IPCResult CompositorWidgetChild::RecvUpdateCompositorWnd(
-    const WindowsHandle& aCompositorWnd, const WindowsHandle& aParentWnd) {
+    const WindowsHandle& aCompositorWnd, const WindowsHandle& aParentWnd,
+    UpdateCompositorWndResolver&& aResolve) {
   MOZ_ASSERT(mParentWnd);
 
   HWND parentWnd = reinterpret_cast<HWND>(aParentWnd);
   if (mParentWnd == parentWnd) {
     mCompositorWnd = reinterpret_cast<HWND>(aCompositorWnd);
     ::SetParent(mCompositorWnd, mParentWnd);
+    aResolve(true);
   } else {
+    aResolve(false);
     gfxCriticalNote << "Parent winow does not match";
     MOZ_ASSERT_UNREACHABLE("unexpected to happen");
   }
@@ -79,5 +82,5 @@ mozilla::ipc::IPCResult CompositorWidgetChild::RecvUpdateCompositorWnd(
   return IPC_OK();
 }
 
-}  // namespace widget
-}  // namespace mozilla
+}  
+}  
