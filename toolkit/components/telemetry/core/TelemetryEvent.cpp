@@ -443,7 +443,9 @@ RecordEventResult RecordEvent(const StaticMutexAutoLock& lock,
 
   
   
-  if (eventKey->dynamic && !(*gDynamicEventInfo)[eventKey->id].builtin) {
+  auto dynamicNonBuiltin =
+      eventKey->dynamic && !(*gDynamicEventInfo)[eventKey->id].builtin;
+  if (dynamicNonBuiltin) {
     processType = ProcessID::Dynamic;
   }
 
@@ -462,7 +464,7 @@ RecordEventResult RecordEvent(const StaticMutexAutoLock& lock,
   
   
   TelemetryScalar::SummarizeEvent(UniqueEventName(category, method, object),
-                                  processType, eventKey->dynamic);
+                                  processType, dynamicNonBuiltin);
 
   
   if (!gEnabledCategories.GetEntry(GetCategory(lock, *eventKey))) {
