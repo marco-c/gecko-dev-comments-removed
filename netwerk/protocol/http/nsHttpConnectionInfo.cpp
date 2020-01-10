@@ -154,6 +154,9 @@ void nsHttpConnectionInfo::BuildHashKey() {
   
   
   
+  
+  
+  
 
   mHashKey.AssignLiteral("........[tlsflags0x00000000]");
   if (mIsolated) {
@@ -267,10 +270,31 @@ void nsHttpConnectionInfo::BuildHashKey() {
   mHashKey.Append(originAttributes);
 }
 
+void nsHttpConnectionInfo::RebuildHashKey() {
+  
+  bool isAnonymous = GetAnonymous();
+  bool isPrivate = GetPrivate();
+  bool isInsecureScheme = GetInsecureScheme();
+  bool isNoSpdy = GetNoSpdy();
+  bool isBeConservative = GetBeConservative();
+
+  BuildHashKey();
+
+  
+  SetAnonymous(isAnonymous);
+  SetPrivate(isPrivate);
+  SetInsecureScheme(isInsecureScheme);
+  SetNoSpdy(isNoSpdy);
+  SetBeConservative(isBeConservative);
+}
+
 void nsHttpConnectionInfo::SetOriginServer(const nsACString& host,
                                            int32_t port) {
   mOrigin = host;
   mOriginPort = port == -1 ? DefaultPort() : port;
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(mHashKey.IsEmpty());
   BuildHashKey();
 }
 
@@ -351,21 +375,21 @@ nsresult nsHttpConnectionInfo::CreateWildCard(nsHttpConnectionInfo** outParam) {
 void nsHttpConnectionInfo::SetTrrDisabled(bool aNoTrr) {
   if (mTrrDisabled != aNoTrr) {
     mTrrDisabled = aNoTrr;
-    BuildHashKey();
+    RebuildHashKey();
   }
 }
 
 void nsHttpConnectionInfo::SetIPv4Disabled(bool aNoIPv4) {
   if (mIPv4Disabled != aNoIPv4) {
     mIPv4Disabled = aNoIPv4;
-    BuildHashKey();
+    RebuildHashKey();
   }
 }
 
 void nsHttpConnectionInfo::SetIPv6Disabled(bool aNoIPv6) {
   if (mIPv6Disabled != aNoIPv6) {
     mIPv6Disabled = aNoIPv6;
-    BuildHashKey();
+    RebuildHashKey();
   }
 }
 
