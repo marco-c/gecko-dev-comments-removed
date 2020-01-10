@@ -65,7 +65,7 @@ pub use self::viewport_rule::ViewportRule;
 
 
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, ToShmem)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ToShmem)]
 pub enum CorsMode {
     
     None,
