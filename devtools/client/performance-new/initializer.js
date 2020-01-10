@@ -22,8 +22,8 @@ const actions = require("devtools/client/performance-new/store/actions");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
 const {
   receiveProfile,
-  getRecordingPreferences,
-  setRecordingPreferences,
+  getRecordingPreferencesFromDebuggee,
+  setRecordingPreferencesOnDebuggee,
 } = require("devtools/client/performance-new/browser");
 
 
@@ -45,14 +45,14 @@ async function gInit(perfFront, preferenceFront) {
       
       
       
-      recordingSettingsFromPreferences: await getRecordingPreferences(
+      recordingSettingsFromPreferences: await getRecordingPreferencesFromDebuggee(
         preferenceFront,
         selectors.getRecordingSettings(store.getState())
       ),
       
       
       setRecordingPreferences: () =>
-        setRecordingPreferences(
+        setRecordingPreferencesOnDebuggee(
           preferenceFront,
           selectors.getRecordingSettings(store.getState())
         ),
