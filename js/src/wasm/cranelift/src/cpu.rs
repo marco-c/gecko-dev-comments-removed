@@ -47,7 +47,7 @@ impl From<settings::SetError> for BasicError {
 
 
 
-pub fn make_isa(env: &StaticEnvironment) -> DashResult<Box<isa::TargetIsa>> {
+pub fn make_isa(env: &StaticEnvironment) -> DashResult<Box<dyn isa::TargetIsa>> {
     
     let shared_flags = make_shared_flags().expect("Cranelift configuration error");
 

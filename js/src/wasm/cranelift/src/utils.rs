@@ -19,7 +19,7 @@ use std::fmt;
 
 use cranelift_wasm::WasmError;
 
-type DashError = Box<error::Error>;
+type DashError = Box<dyn error::Error>;
 pub type DashResult<T> = Result<T, DashError>;
 
 
