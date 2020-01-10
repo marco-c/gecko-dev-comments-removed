@@ -18,6 +18,24 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
+  "ContentProcessConnector",
+  "devtools/server/connectors/content-process-connector",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "FrameConnector",
+  "devtools/server/connectors/frame-connector",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "WorkerConnector",
+  "devtools/server/connectors/worker-connector",
+  true
+);
+loader.lazyRequireGetter(
+  this,
   "Authentication",
   "devtools/shared/security/auth"
 );
@@ -36,12 +54,6 @@ loader.lazyRequireGetter(
 loader.lazyRequireGetter(
   this,
   "WorkerThreadWorkerDebuggerTransport",
-  "devtools/shared/transport/worker-transport",
-  true
-);
-loader.lazyRequireGetter(
-  this,
-  "MainThreadWorkerDebuggerTransport",
   "devtools/shared/transport/worker-transport",
   true
 );
@@ -80,8 +92,6 @@ loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 var DebuggerServer = {
   _listeners: [],
   _initialized: false,
-  
-  _contentProcessServerStartupScriptLoaded: false,
   
   globalActorFactories: {},
   
@@ -342,242 +352,23 @@ var DebuggerServer = {
   
 
 
-
   connectToContentProcess(connection, mm, onDestroy) {
-    return new Promise(resolve => {
-      const prefix = connection.allocID("content-process");
-      let actor, childTransport;
-
-      mm.addMessageListener("debug:content-process-actor", function listener(
-        msg
-      ) {
-        
-        
-        mm.removeMessageListener("debug:content-process-actor", listener);
-
-        
-        childTransport = new ChildDebuggerTransport(mm, prefix);
-        childTransport.hooks = {
-          onPacket: connection.send.bind(connection),
-          onClosed() {},
-        };
-        childTransport.ready();
-
-        connection.setForwarding(prefix, childTransport);
-
-        dumpn(`Start forwarding for process with prefix ${prefix}`);
-
-        actor = msg.json.actor;
-
-        resolve(actor);
-      });
-
-      
-      if (!this._contentProcessServerStartupScriptLoaded) {
-        
-        Services.ppmm.loadProcessScript(
-          CONTENT_PROCESS_SERVER_STARTUP_SCRIPT,
-          true
-        );
-        this._contentProcessServerStartupScriptLoaded = true;
-      }
-
-      
-      
-      mm.sendAsyncMessage("debug:init-content-server", {
-        prefix: prefix,
-      });
-
-      function onClose() {
-        Services.obs.removeObserver(
-          onMessageManagerClose,
-          "message-manager-close"
-        );
-        EventEmitter.off(connection, "closed", onClose);
-        if (childTransport) {
-          
-          
-          childTransport.close();
-          childTransport = null;
-          connection.cancelForwarding(prefix);
-
-          
-          try {
-            mm.sendAsyncMessage("debug:content-process-destroy");
-          } catch (e) {
-            
-          }
-        }
-
-        if (onDestroy) {
-          onDestroy(mm);
-        }
-      }
-
-      const onMessageManagerClose = DevToolsUtils.makeInfallible(
-        (subject, topic, data) => {
-          if (subject == mm) {
-            onClose();
-            connection.send({ from: actor.actor, type: "tabDetached" });
-          }
-        }
-      );
-      Services.obs.addObserver(onMessageManagerClose, "message-manager-close");
-
-      EventEmitter.on(connection, "closed", onClose);
-    });
+    return ContentProcessConnector.startServer(connection, mm, onDestroy);
   },
 
   
 
 
-
   connectToWorker(connection, dbg, id, options) {
-    return new Promise((resolve, reject) => {
-      
-      if (!dbg.isInitialized) {
-        dbg.initialize("resource://devtools/server/startup/worker.js");
+    return WorkerConnector.startServer(connection, dbg, id, options);
+  },
 
-        
-        
-        
-        const listener = {
-          onClose: () => {
-            dbg.removeListener(listener);
-          },
+  
 
-          onMessage: message => {
-            message = JSON.parse(message);
-            if (message.type !== "rpc") {
-              if (message.type == "attached") {
-                
-                
-                dbg.setDebuggerReady(true);
-              }
-              return;
-            }
 
-            Promise.resolve()
-              .then(() => {
-                const method = {
-                  fetch: DevToolsUtils.fetch,
-                }[message.method];
-                if (!method) {
-                  throw Error("Unknown method: " + message.method);
-                }
-
-                return method.apply(undefined, message.params);
-              })
-              .then(
-                value => {
-                  dbg.postMessage(
-                    JSON.stringify({
-                      type: "rpc",
-                      result: value,
-                      error: null,
-                      id: message.id,
-                    })
-                  );
-                },
-                reason => {
-                  dbg.postMessage(
-                    JSON.stringify({
-                      type: "rpc",
-                      result: null,
-                      error: reason,
-                      id: message.id,
-                    })
-                  );
-                }
-              );
-          },
-        };
-
-        dbg.addListener(listener);
-      }
-
-      
-      dbg.postMessage(
-        JSON.stringify({
-          type: "connect",
-          id,
-          options,
-        })
-      );
-
-      
-
-      
-      const listener = {
-        onClose: () => {
-          dbg.removeListener(listener);
-
-          reject("closed");
-        },
-
-        onMessage: message => {
-          message = JSON.parse(message);
-          if (message.type !== "connected" || message.id !== id) {
-            return;
-          }
-
-          
-          
-          dbg.removeListener(listener);
-
-          
-          const transport = new MainThreadWorkerDebuggerTransport(dbg, id);
-          transport.ready();
-          transport.hooks = {
-            onClosed: () => {
-              if (!dbg.isClosed) {
-                
-                
-                
-                
-                
-                
-                
-                try {
-                  dbg.postMessage(
-                    JSON.stringify({
-                      type: "disconnect",
-                      id,
-                    })
-                  );
-                } catch (e) {
-                  
-                  
-                  
-                  
-                  
-                }
-              }
-
-              connection.cancelForwarding(id);
-            },
-
-            onPacket: packet => {
-              
-              
-              
-              connection.send(packet);
-            },
-          };
-
-          
-          
-          
-          connection.setForwarding(id, transport);
-
-          resolve({
-            threadActor: message.threadActor,
-            consoleActor: message.consoleActor,
-            transport: transport,
-          });
-        },
-      };
-      dbg.addListener(listener);
+  connectToFrame(connection, frame, onDestroy, { addonId } = {}) {
+    return FrameConnector.startServer(connection, frame, onDestroy, {
+      addonId,
     });
   },
 
@@ -651,285 +442,6 @@ var DebuggerServer = {
 
 
   _childMessageManagers: new Set(),
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  connectToFrame(connection, frame, onDestroy, { addonId } = {}) {
-    return new Promise(resolve => {
-      
-      
-      let mm = frame.messageManager || frame.frameLoader.messageManager;
-      mm.loadFrameScript("resource://devtools/server/startup/frame.js", false);
-
-      const trackMessageManager = () => {
-        frame.addEventListener("DevTools:BrowserSwap", onBrowserSwap);
-        mm.addMessageListener("debug:setup-in-parent", onSetupInParent);
-        mm.addMessageListener(
-          "debug:spawn-actor-in-parent",
-          onSpawnActorInParent
-        );
-        if (!actor) {
-          mm.addMessageListener("debug:actor", onActorCreated);
-        }
-        DebuggerServer._childMessageManagers.add(mm);
-      };
-
-      const untrackMessageManager = () => {
-        frame.removeEventListener("DevTools:BrowserSwap", onBrowserSwap);
-        mm.removeMessageListener("debug:setup-in-parent", onSetupInParent);
-        mm.removeMessageListener(
-          "debug:spawn-actor-in-parent",
-          onSpawnActorInParent
-        );
-        if (!actor) {
-          mm.removeMessageListener("debug:actor", onActorCreated);
-        }
-        DebuggerServer._childMessageManagers.delete(mm);
-      };
-
-      let actor, childTransport;
-      const prefix = connection.allocID("child");
-      
-      const connPrefix = prefix + "/";
-
-      
-      
-      const parentModules = [];
-      const onSetupInParent = function(msg) {
-        
-        
-        if (msg.json.prefix != connPrefix) {
-          return false;
-        }
-
-        const { module, setupParent } = msg.json;
-        let m;
-
-        try {
-          m = require(module);
-
-          if (!(setupParent in m)) {
-            dumpn(`ERROR: module '${module}' does not export '${setupParent}'`);
-            return false;
-          }
-
-          parentModules.push(m[setupParent]({ mm, prefix: connPrefix }));
-
-          return true;
-        } catch (e) {
-          const errorMessage =
-            "Exception during actor module setup running in the parent process: ";
-          DevToolsUtils.reportException(errorMessage + e);
-          dumpn(
-            `ERROR: ${errorMessage}\n\t module: '${module}'\n\t ` +
-              `setupParent: '${setupParent}'\n${DevToolsUtils.safeErrorString(
-                e
-              )}`
-          );
-          return false;
-        }
-      };
-
-      const parentActors = [];
-      const onSpawnActorInParent = function(msg) {
-        
-        
-        if (msg.json.prefix != connPrefix) {
-          return;
-        }
-
-        const { module, constructor, args, spawnedByActorID } = msg.json;
-        let m;
-
-        try {
-          m = require(module);
-
-          if (!(constructor in m)) {
-            dump(`ERROR: module '${module}' does not export '${constructor}'`);
-            return;
-          }
-
-          const Constructor = m[constructor];
-          
-          
-          
-          const instance = new Constructor(connection, ...args, mm);
-          instance.conn = connection;
-          instance.parentID = spawnedByActorID;
-
-          
-          
-          
-          const contentPrefix = spawnedByActorID
-            .replace(connection.prefix, "")
-            .replace("/", "-");
-          instance.actorID = connection.allocID(
-            contentPrefix + "/" + instance.typeName
-          );
-          connection.addActor(instance);
-
-          mm.sendAsyncMessage("debug:spawn-actor-in-parent:actor", {
-            prefix: connPrefix,
-            actorID: instance.actorID,
-          });
-
-          parentActors.push(instance);
-        } catch (e) {
-          const errorMessage =
-            "Exception during actor module setup running in the parent process: ";
-          DevToolsUtils.reportException(errorMessage + e + "\n" + e.stack);
-          dumpn(
-            `ERROR: ${errorMessage}\n\t module: '${module}'\n\t ` +
-              `constructor: '${constructor}'\n${DevToolsUtils.safeErrorString(
-                e
-              )}`
-          );
-        }
-      };
-
-      const onActorCreated = DevToolsUtils.makeInfallible(function(msg) {
-        if (msg.json.prefix != prefix) {
-          return;
-        }
-        mm.removeMessageListener("debug:actor", onActorCreated);
-
-        
-        childTransport = new ChildDebuggerTransport(mm, prefix);
-        childTransport.hooks = {
-          
-          
-          onPacket: connection.send.bind(connection),
-          onClosed() {},
-        };
-        childTransport.ready();
-
-        connection.setForwarding(prefix, childTransport);
-
-        dumpn(`Start forwarding for frame with prefix ${prefix}`);
-
-        actor = msg.json.actor;
-        resolve(actor);
-      }).bind(this);
-
-      
-      const onBrowserSwap = ({ detail: newFrame }) => {
-        
-        untrackMessageManager();
-        
-        frame = newFrame;
-        
-        
-        mm = frame.messageManager || frame.frameLoader.messageManager;
-        
-        trackMessageManager();
-
-        
-        
-        parentModules.forEach(mod => {
-          if (mod.onBrowserSwap) {
-            mod.onBrowserSwap(mm);
-          }
-        });
-
-        
-        parentActors.forEach(parentActor => {
-          if (parentActor.onBrowserSwap) {
-            parentActor.onBrowserSwap(mm);
-          }
-        });
-
-        if (childTransport) {
-          childTransport.swapBrowser(mm);
-        }
-      };
-
-      const destroy = DevToolsUtils.makeInfallible(function() {
-        EventEmitter.off(connection, "closed", destroy);
-        Services.obs.removeObserver(
-          onMessageManagerClose,
-          "message-manager-close"
-        );
-
-        
-        
-        parentModules.forEach(mod => {
-          if (mod.onDisconnected) {
-            mod.onDisconnected();
-          }
-        });
-        
-        DebuggerServer.emit("disconnected-from-child:" + connPrefix, {
-          mm,
-          prefix: connPrefix,
-        });
-
-        if (childTransport) {
-          
-          
-          childTransport.close();
-          childTransport = null;
-          connection.cancelForwarding(prefix);
-
-          
-          try {
-            
-            
-            mm.sendAsyncMessage("debug:disconnect", { prefix });
-          } catch (e) {
-            
-          }
-        } else {
-          
-          
-          
-          resolve(null);
-        }
-        if (actor) {
-          
-          
-          
-          connection.send({ from: actor.actor, type: "tabDetached" });
-          actor = null;
-        }
-
-        if (onDestroy) {
-          onDestroy(mm);
-        }
-
-        
-        untrackMessageManager();
-      });
-
-      
-      trackMessageManager();
-
-      
-      const onMessageManagerClose = function(subject, topic, data) {
-        if (subject == mm) {
-          destroy();
-        }
-      };
-      Services.obs.addObserver(onMessageManagerClose, "message-manager-close");
-
-      
-      
-      EventEmitter.on(connection, "closed", destroy);
-
-      mm.sendAsyncMessage("debug:connect", { prefix, addonId });
-    });
-  },
 
   
 
