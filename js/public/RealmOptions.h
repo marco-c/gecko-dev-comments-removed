@@ -164,6 +164,12 @@ class JS_PUBLIC_API RealmCreationOptions {
     return *this;
   }
 
+  bool getWeakRefsEnabled() const { return weakRefs_; }
+  RealmCreationOptions& setWeakRefsEnabled(bool flag) {
+    weakRefs_ = flag;
+    return *this;
+  }
+
   
   
   
@@ -192,6 +198,7 @@ class JS_PUBLIC_API RealmCreationOptions {
   bool writableStreams_ = false;
   bool fields_ = false;
   bool awaitFix_ = false;
+  bool weakRefs_ = false;
   bool secureContext_ = false;
 };
 
