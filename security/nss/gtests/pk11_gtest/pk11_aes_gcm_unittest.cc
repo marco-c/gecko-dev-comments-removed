@@ -37,47 +37,57 @@ class Pkcs11AesGcmTest : public ::testing::TestWithParam<gcm_kat_value> {
     }
 
     
-    CK_GCM_PARAMS gcmParams;
-    gcmParams.pIv = iv.data();
-    gcmParams.ulIvLen = iv.size();
-    gcmParams.pAAD = aad.data();
-    gcmParams.ulAADLen = aad.size();
-    gcmParams.ulTagBits = 128;
+    CK_GCM_PARAMS gcm_params;
+    gcm_params.pIv = iv.data();
+    gcm_params.ulIvLen = iv.size();
+    gcm_params.pAAD = aad.data();
+    gcm_params.ulAADLen = aad.size();
+    gcm_params.ulTagBits = 128;
 
-    SECItem params = {siBuffer, reinterpret_cast<unsigned char*>(&gcmParams),
-                      sizeof(gcmParams)};
+    SECItem params = {siBuffer, reinterpret_cast<unsigned char*>(&gcm_params),
+                      sizeof(gcm_params)};
 
     ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
-    SECItem keyItem = {siBuffer, key.data(),
-                       static_cast<unsigned int>(key.size())};
+    SECItem key_item = {siBuffer, key.data(),
+                        static_cast<unsigned int>(key.size())};
 
     
-    ScopedPK11SymKey symKey(PK11_ImportSymKey(
-        slot.get(), mech, PK11_OriginUnwrap, CKA_ENCRYPT, &keyItem, nullptr));
-    ASSERT_TRUE(!!symKey) << msg;
+    ScopedPK11SymKey sym_key(PK11_ImportSymKey(
+        slot.get(), mech, PK11_OriginUnwrap, CKA_ENCRYPT, &key_item, nullptr));
+    ASSERT_TRUE(!!sym_key) << msg;
 
     
-    unsigned int outputLen = 0;
-    std::vector<uint8_t> output(plaintext.size() + gcmParams.ulTagBits / 8);
-    gcmParams.ulTagBits = 159082344;
+    unsigned int output_len = 0;
+    std::vector<uint8_t> output(plaintext.size() + gcm_params.ulTagBits / 8);
+    
+    
+    gcm_params.ulTagBits = 128;
     SECStatus rv =
-        PK11_Encrypt(symKey.get(), mech, &params, output.data(), &outputLen,
-                     output.size(), plaintext.data(), plaintext.size());
+        PK11_Encrypt(sym_key.get(), mech, &params, output.data(), &output_len,
+                     output.size() - 10, plaintext.data(), plaintext.size());
     EXPECT_EQ(SECFailure, rv);
-    EXPECT_EQ(0U, outputLen);
-    gcmParams.ulTagBits = 128;
+    EXPECT_EQ(0U, output_len);
 
     
-    rv = PK11_Encrypt(symKey.get(), mech, &params, output.data(), &outputLen,
+    
+    gcm_params.ulTagBits = 110;
+    rv = PK11_Encrypt(sym_key.get(), mech, &params, output.data(), &output_len,
+                      output.size(), plaintext.data(), plaintext.size());
+    EXPECT_EQ(SECFailure, rv);
+    EXPECT_EQ(0U, output_len);
+
+    
+    gcm_params.ulTagBits = 128;
+    rv = PK11_Encrypt(sym_key.get(), mech, &params, output.data(), &output_len,
                       output.size(), plaintext.data(), plaintext.size());
     if (invalid_iv) {
-      EXPECT_EQ(rv, SECFailure) << msg;
-      EXPECT_EQ(0U, outputLen);
+      EXPECT_EQ(SECFailure, rv) << msg;
+      EXPECT_EQ(0U, output_len);
       return;
     }
-    EXPECT_EQ(rv, SECSuccess) << msg;
+    EXPECT_EQ(SECSuccess, rv) << msg;
 
-    ASSERT_EQ(outputLen, output.size()) << msg;
+    ASSERT_EQ(output_len, output.size()) << msg;
 
     
     if (invalid_ct) {
@@ -87,48 +97,49 @@ class Pkcs11AesGcmTest : public ::testing::TestWithParam<gcm_kat_value> {
     }
 
     
-    unsigned int decryptedLen = 0;
+    unsigned int decrypted_len = 0;
     
     
     std::vector<uint8_t> decrypted(output.size());
-    rv =
-        PK11_Decrypt(symKey.get(), mech, &params, decrypted.data(),
-                     &decryptedLen, decrypted.size(), output.data(), outputLen);
-    EXPECT_EQ(rv, SECSuccess) << msg;
-    ASSERT_EQ(decryptedLen, plaintext.size()) << msg;
+    rv = PK11_Decrypt(sym_key.get(), mech, &params, decrypted.data(),
+                      &decrypted_len, decrypted.size(), output.data(),
+                      output_len);
+    EXPECT_EQ(SECSuccess, rv) << msg;
+    ASSERT_EQ(decrypted_len, plaintext.size()) << msg;
 
     
-    EXPECT_EQ(plaintext, std::vector<uint8_t>(decrypted.begin(),
-                                              decrypted.begin() + decryptedLen))
+    EXPECT_EQ(plaintext,
+              std::vector<uint8_t>(decrypted.begin(),
+                                   decrypted.begin() + decrypted_len))
         << msg;
   }
 
   SECStatus EncryptWithIV(std::vector<uint8_t>& iv) {
     
     ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
-    ScopedPK11SymKey symKey(
+    ScopedPK11SymKey sym_key(
         PK11_KeyGen(slot.get(), mech, nullptr, 16, nullptr));
-    EXPECT_TRUE(!!symKey);
+    EXPECT_TRUE(!!sym_key);
 
     std::vector<uint8_t> data(17);
     std::vector<uint8_t> output(33);
     std::vector<uint8_t> aad(0);
 
     
-    CK_GCM_PARAMS gcmParams;
-    gcmParams.pIv = iv.data();
-    gcmParams.ulIvLen = iv.size();
-    gcmParams.pAAD = aad.data();
-    gcmParams.ulAADLen = aad.size();
-    gcmParams.ulTagBits = 128;
+    CK_GCM_PARAMS gcm_params;
+    gcm_params.pIv = iv.data();
+    gcm_params.ulIvLen = iv.size();
+    gcm_params.pAAD = aad.data();
+    gcm_params.ulAADLen = aad.size();
+    gcm_params.ulTagBits = 128;
 
-    SECItem params = {siBuffer, reinterpret_cast<unsigned char*>(&gcmParams),
-                      sizeof(gcmParams)};
+    SECItem params = {siBuffer, reinterpret_cast<unsigned char*>(&gcm_params),
+                      sizeof(gcm_params)};
 
     
-    unsigned int outputLen = 0;
-    return PK11_Encrypt(symKey.get(), mech, &params, output.data(), &outputLen,
-                        output.size(), data.data(), data.size());
+    unsigned int output_len = 0;
+    return PK11_Encrypt(sym_key.get(), mech, &params, output.data(),
+                        &output_len, output.size(), data.data(), data.size());
   }
 
   const CK_MECHANISM_TYPE mech = CKM_AES_GCM;
@@ -144,17 +155,17 @@ INSTANTIATE_TEST_CASE_P(WycheproofTestVector, Pkcs11AesGcmTest,
 
 TEST_F(Pkcs11AesGcmTest, ZeroLengthIV) {
   std::vector<uint8_t> iv(0);
-  EXPECT_EQ(EncryptWithIV(iv), SECFailure);
+  EXPECT_EQ(SECFailure, EncryptWithIV(iv));
 }
 
 TEST_F(Pkcs11AesGcmTest, AllZeroIV) {
   std::vector<uint8_t> iv(16, 0);
-  EXPECT_EQ(EncryptWithIV(iv), SECSuccess);
+  EXPECT_EQ(SECSuccess, EncryptWithIV(iv));
 }
 
 TEST_F(Pkcs11AesGcmTest, TwelveByteZeroIV) {
   std::vector<uint8_t> iv(12, 0);
-  EXPECT_EQ(EncryptWithIV(iv), SECSuccess);
+  EXPECT_EQ(SECSuccess, EncryptWithIV(iv));
 }
 
 }  
