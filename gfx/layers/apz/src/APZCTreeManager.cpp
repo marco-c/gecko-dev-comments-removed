@@ -1864,6 +1864,9 @@ APZEventResult APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput) {
       
       
       
+      
+      
+      
       ScreenToParentLayerMatrix4x4 transformToApzc =
           GetScreenToApzcTransform(mApzcForInputBlock);
       ParentLayerToScreenMatrix4x4 transformToGecko =
@@ -3164,6 +3167,23 @@ already_AddRefed<AsyncPanZoomController> APZCTreeManager::GetZoomableTarget(
     }
   }
   return apzc.forget();
+}
+
+Maybe<ScreenIntPoint> APZCTreeManager::ConvertToGecko(
+    const ScreenIntPoint& aPoint, AsyncPanZoomController* aApzc) {
+  RecursiveMutexAutoLock lock(mTreeLock);
+  ScreenToScreenMatrix4x4 transformScreenToGecko =
+      GetScreenToApzcTransform(aApzc) * GetApzcToGeckoTransform(aApzc);
+  Maybe<ScreenIntPoint> geckoPoint =
+      UntransformBy(transformScreenToGecko, aPoint);
+  if (geckoPoint) {
+    if (mFixedPosSidesForInputBlock != eSideBitsNone) {
+      *geckoPoint -=
+          RoundedToInt(AsyncCompositionManager::ComputeFixedMarginsOffset(
+              mFixedLayerMargins, mFixedPosSidesForInputBlock));
+    }
+  }
+  return geckoPoint;
 }
 
 already_AddRefed<AsyncPanZoomController> APZCTreeManager::CommonAncestor(

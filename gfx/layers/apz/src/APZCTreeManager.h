@@ -595,6 +595,13 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
+  Maybe<ScreenIntPoint> ConvertToGecko(const ScreenIntPoint& aPoint,
+                                       AsyncPanZoomController* aApzc);
+
+  
+
+
+
 
 
 
