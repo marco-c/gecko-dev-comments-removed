@@ -30,7 +30,6 @@ namespace js {
 class ThreadId::PlatformData {
   friend class Thread;
   friend class ThreadId;
-  friend ThreadId ThisThread::GetId();
   pthread_t ptThread;
 
   

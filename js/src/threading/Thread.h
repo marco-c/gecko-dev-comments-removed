@@ -144,9 +144,6 @@ class Thread {
 namespace ThisThread {
 
 
-Thread::Id GetId();
-
-
 
 
 void SetName(const char* name);

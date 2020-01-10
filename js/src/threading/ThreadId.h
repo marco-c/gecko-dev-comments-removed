@@ -28,6 +28,9 @@ class ThreadId {
 
   inline PlatformData* platformData();
   inline const PlatformData* platformData() const;
+
+  
+  static ThreadId ThisThreadId();
 };
 
 } 
