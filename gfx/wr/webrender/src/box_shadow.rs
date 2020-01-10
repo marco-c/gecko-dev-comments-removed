@@ -98,13 +98,10 @@ impl<'a> DisplayListFlattener<'a> {
 
         
         
-        let shadow_rect = self.snap_rect(
-            &prim_info
-                .rect
-                .translate(*box_offset)
-                .inflate(spread_amount, spread_amount),
-            clip_and_scroll.spatial_node_index,
-        );
+        let shadow_rect = prim_info
+            .rect
+            .translate(*box_offset)
+            .inflate(spread_amount, spread_amount);
 
         
         
