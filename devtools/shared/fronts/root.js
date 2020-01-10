@@ -19,6 +19,12 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
+  "FrameDescriptorFront",
+  "devtools/shared/fronts/descriptors/frame",
+  true
+);
+loader.lazyRequireGetter(
+  this,
   "BrowsingContextTargetFront",
   "devtools/shared/fronts/targets/browsing-context",
   true
@@ -261,6 +267,26 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
 
 
 
+  
+
+
+  _getFrameDescriptorFront(form) {
+    let front = this.actor(form.actor);
+    if (front) {
+      return front;
+    }
+    front = new FrameDescriptorFront(this._client, null, this);
+    front.form(form);
+    front.actorID = form.actor;
+    this.manage(front);
+    return front;
+  }
+
+  
+
+
+
+
 
 
   _getProcessDescriptorFront(form) {
@@ -273,6 +299,14 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     front.actorID = form.actor;
     this.manage(front);
     return front;
+  }
+
+  async getBrowsingContextDescriptor(id) {
+    const form = await super.getBrowsingContextDescriptor(id);
+    if (form.actor && form.actor.includes("processDescriptor")) {
+      return this._getProcessDescriptorFront(form);
+    }
+    return this._getFrameDescriptorFront(form);
   }
 
   

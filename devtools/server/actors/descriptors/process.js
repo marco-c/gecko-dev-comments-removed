@@ -39,8 +39,16 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
     }
     Actor.prototype.initialize.call(this, connection);
     this.id = options.id;
+    this._browsingContextTargetActor = null;
     this.isParent = options.parent;
     this.destroy = this.destroy.bind(this);
+  },
+
+  get browsingContextID() {
+    if (this._browsingContextTargetActor) {
+      return this._browsingContextTargetActor.docShell.browsingContext.id;
+    }
+    return null;
   },
 
   _parentProcessConnect() {
@@ -48,7 +56,7 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
       Ci.nsIEnvironment
     );
     const isXpcshell = env.exists("XPCSHELL_TEST_PROFILE_DIR");
-    let targetActor = null;
+    let targetActor;
     if (isXpcshell) {
       
       
@@ -61,6 +69,10 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
       
       
       targetActor = new ParentProcessTargetActor(this.conn);
+      
+      
+      
+      this._browsingContextTargetActor = targetActor;
     }
     this.manage(targetActor);
     
@@ -111,6 +123,11 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
       id: this.id,
       isParent: this.isParent,
     };
+  },
+
+  destroy() {
+    this._browsingContextTargetActor = null;
+    Actor.prototype.destroy.call(this);
   },
 });
 

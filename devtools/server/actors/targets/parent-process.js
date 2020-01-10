@@ -102,25 +102,6 @@ Object.defineProperty(parentProcessTargetPrototype, "docShells", {
   },
 });
 
-
-
-
-
-
-
-
-
-
-Object.defineProperty(parentProcessTargetPrototype, "childBrowsingContexts", {
-  get: function() {
-    
-    
-    return [
-      ...this.window.document.querySelectorAll(`browser[remote="true"]`),
-    ].map(browser => browser.browsingContext);
-  },
-});
-
 parentProcessTargetPrototype.observe = function(subject, topic, data) {
   BrowsingContextTargetActor.prototype.observe.call(this, subject, topic, data);
   if (!this.attached) {

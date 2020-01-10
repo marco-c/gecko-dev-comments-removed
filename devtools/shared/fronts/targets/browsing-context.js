@@ -33,6 +33,7 @@ class BrowsingContextTargetFront extends TargetMixin(
 
   form(json) {
     this.actorID = json.actor;
+    this.browsingContextID = json.browsingContextID;
 
     
     
@@ -125,6 +126,10 @@ class BrowsingContextTargetFront extends TargetMixin(
     }
 
     return response;
+  }
+
+  listRemoteFrames() {
+    return this.client.mainRoot.listRemoteFrames(this.browsingContextID);
   }
 
   async detach() {
