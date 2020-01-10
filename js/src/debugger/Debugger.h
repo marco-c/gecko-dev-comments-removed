@@ -446,8 +446,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
     return observedGCs.put(majorGCNumber);
   }
 
-  bool isEnabled() const { return enabled; }
-
   static SavedFrame* getObjectAllocationSite(JSObject& obj);
 
   struct AllocationsLogEntry {
@@ -493,7 +491,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
       debuggees; 
   JS::ZoneSet debuggeeZones; 
   js::GCPtrObject uncaughtExceptionHook; 
-  bool enabled;
   bool allowUnobservedAsmJS;
 
   
@@ -591,6 +588,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   FrameMap frames;
 
   
+
 
 
 
@@ -776,8 +774,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   static MOZ_MUST_USE bool setHookImpl(JSContext* cx, CallArgs& args,
                                        Debugger& dbg, Hook which);
 
-  static bool getEnabled(JSContext* cx, unsigned argc, Value* vp);
-  static bool setEnabled(JSContext* cx, unsigned argc, Value* vp);
   static bool getOnDebuggerStatement(JSContext* cx, unsigned argc, Value* vp);
   static bool setOnDebuggerStatement(JSContext* cx, unsigned argc, Value* vp);
   static bool getOnExceptionUnwind(JSContext* cx, unsigned argc, Value* vp);
@@ -1349,16 +1345,12 @@ js::GCPtrNativeObject& Debugger::toJSObjectRef() {
   return object;
 }
 
-bool Debugger::observesEnterFrame() const {
-  return enabled && getHook(OnEnterFrame);
-}
+bool Debugger::observesEnterFrame() const { return getHook(OnEnterFrame); }
 
-bool Debugger::observesNewScript() const {
-  return enabled && getHook(OnNewScript);
-}
+bool Debugger::observesNewScript() const { return getHook(OnNewScript); }
 
 bool Debugger::observesNewGlobalObject() const {
-  return enabled && getHook(OnNewGlobalObject);
+  return getHook(OnNewGlobalObject);
 }
 
 bool Debugger::observesGlobal(GlobalObject* global) const {
