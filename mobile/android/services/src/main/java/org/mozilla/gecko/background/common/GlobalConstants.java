@@ -4,13 +4,23 @@
 
 package org.mozilla.gecko.background.common;
 
+import android.util.Log;
+
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.AppConstants.Versions;
+
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.List;
+
+import javax.net.ssl.SSLContext;
 
 
 
 
 public class GlobalConstants {
+  private static final String LOGTAG = "GlobalConstants";
+
   public static final String BROWSER_INTENT_PACKAGE = AppConstants.ANDROID_PACKAGE_NAME;
   public static final String BROWSER_INTENT_CLASS = AppConstants.MOZ_ANDROID_BROWSER_INTENT_CLASS;
 
@@ -38,15 +48,44 @@ public class GlobalConstants {
 
 
 
-  public static final String[] DEFAULT_CIPHER_SUITES;
-  public static final String[] DEFAULT_PROTOCOLS;
+  private static final String[] REQUIRED_CIPHER_SUITES;
+  private static final String[] REQUIRED_PROTOCOLS;
+
+  private static String[] ENABLED_CIPHERS = null;
+
+  
+
+
+
+
+  public synchronized static String[] getTlsCipherSuites() {
+    if (ENABLED_CIPHERS == null) {
+      final List<String> defaultCiphers = Arrays.asList(REQUIRED_CIPHER_SUITES);
+      String[] platformCiphers = new String[0];
+      try {
+        platformCiphers = SSLContext.getDefault().getSocketFactory().getSupportedCipherSuites();
+      } catch (NoSuchAlgorithmException e) {
+        Log.e(LOGTAG, e.getLocalizedMessage());
+      }
+      defaultCiphers.retainAll(Arrays.asList(platformCiphers));
+      ENABLED_CIPHERS = defaultCiphers.toArray(new String[0]);
+    }
+    return ENABLED_CIPHERS;
+  }
+
+  
+
+
+  public static String[] getTlsProtocols() {
+    return REQUIRED_PROTOCOLS;
+  }
 
   static {
     
     
     
     if (Versions.feature29Plus) {
-      DEFAULT_CIPHER_SUITES = new String[]
+      REQUIRED_CIPHER_SUITES = new String[]
           {
           "TLS_CHACHA20_POLY1305_SHA256",               
           "TLS_AES_128_GCM_SHA256",                     
@@ -57,7 +96,7 @@ public class GlobalConstants {
           "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",         
           };
     } else if (Versions.feature26Plus) {
-      DEFAULT_CIPHER_SUITES = new String[]
+      REQUIRED_CIPHER_SUITES = new String[]
           {
            "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",   
            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",     
@@ -71,7 +110,7 @@ public class GlobalConstants {
            "TLS_RSA_WITH_AES_128_CBC_SHA",      
           };
     } else if (Versions.feature20Plus) {
-      DEFAULT_CIPHER_SUITES = new String[]
+      REQUIRED_CIPHER_SUITES = new String[]
           {
            "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",   
            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",     
@@ -86,7 +125,7 @@ public class GlobalConstants {
            "TLS_RSA_WITH_AES_128_CBC_SHA",      
           };
     } else {
-      DEFAULT_CIPHER_SUITES = new String[]
+      REQUIRED_CIPHER_SUITES = new String[]
           {
            "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",        
            "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",      
@@ -99,13 +138,13 @@ public class GlobalConstants {
     }
 
     if (Versions.feature29Plus) {
-      DEFAULT_PROTOCOLS = new String[]
+      REQUIRED_PROTOCOLS = new String[]
           {
           "TLSv1.3",
           "TLSv1.2",
           };
     } else {
-      DEFAULT_PROTOCOLS = new String[]
+      REQUIRED_PROTOCOLS = new String[]
           {
            "TLSv1.2",
            "TLSv1.1",
