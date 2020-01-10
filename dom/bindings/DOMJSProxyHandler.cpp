@@ -79,6 +79,8 @@ static inline void CheckExpandoObject(JSObject* proxy,
   
   nsISupports* native = UnwrapDOMObject<nsISupports>(proxy);
   nsWrapperCache* cache;
+  
+  JS::AutoSuppressGCAnalysis suppress;
   CallQueryInterface(native, &cache);
   MOZ_ASSERT(cache->PreservingWrapper());
 #endif
