@@ -22,6 +22,7 @@
 #include "nsMargin.h"
 #include "nsFont.h"
 #include "nsStyleAutoArray.h"
+#include "nsStyleCoord.h"
 #include "nsStyleConsts.h"
 #include "nsChangeHint.h"
 #include "nsTimingFunction.h"
@@ -256,8 +257,6 @@ struct CachedBorderImageData {
 
 
 struct nsStyleImage {
-  using CropRect = mozilla::StyleRect<mozilla::StyleNumberOrPercentage>;
-
   nsStyleImage();
   ~nsStyleImage();
   nsStyleImage(const nsStyleImage& aOther);
@@ -267,7 +266,7 @@ struct nsStyleImage {
   void SetImageRequest(already_AddRefed<nsStyleImageRequest> aImage);
   void SetGradientData(mozilla::UniquePtr<mozilla::StyleGradient>);
   void SetElementId(already_AddRefed<nsAtom> aElementId);
-  void SetCropRect(mozilla::UniquePtr<CropRect> aCropRect);
+  void SetCropRect(mozilla::UniquePtr<nsStyleSides> aCropRect);
 
   void ResolveImage(mozilla::dom::Document& aDocument,
                     const nsStyleImage* aOldImage) {
@@ -299,10 +298,10 @@ struct nsStyleImage {
     NS_ASSERTION(mType == eStyleImageType_Element, "Data is not an element!");
     return mElementId;
   }
-  const CropRect* GetCropRect() const {
+  const mozilla::UniquePtr<nsStyleSides>& GetCropRect() const {
     NS_ASSERTION(mType == eStyleImageType_Image,
                  "Only image data can have a crop rect");
-    return mCropRect.get();
+    return mCropRect;
   }
 
   already_AddRefed<nsIURI> GetImageURI() const;
@@ -395,7 +394,7 @@ struct nsStyleImage {
   };
 
   
-  mozilla::UniquePtr<CropRect> mCropRect;
+  mozilla::UniquePtr<nsStyleSides> mCropRect;
 };
 
 struct nsStyleImageLayers {
@@ -980,9 +979,16 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList {
 
 
 
+
+
+
+
+
+
 struct nsStyleGridTemplate {
   nsTArray<nsTArray<RefPtr<nsAtom>>> mLineNameLists;
-  nsTArray<mozilla::StyleTrackSize> mTrackSizingFunctions;
+  nsTArray<nsStyleCoord> mMinTrackSizingFunctions;
+  nsTArray<nsStyleCoord> mMaxTrackSizingFunctions;
   nsTArray<RefPtr<nsAtom>> mRepeatAutoLineNameListBefore;
   nsTArray<RefPtr<nsAtom>> mRepeatAutoLineNameListAfter;
   int16_t mRepeatAutoIndex;  
@@ -995,7 +1001,8 @@ struct nsStyleGridTemplate {
   inline bool operator==(const nsStyleGridTemplate& aOther) const {
     return mIsSubgrid == aOther.mIsSubgrid &&
            mLineNameLists == aOther.mLineNameLists &&
-           mTrackSizingFunctions == aOther.mTrackSizingFunctions &&
+           mMinTrackSizingFunctions == aOther.mMinTrackSizingFunctions &&
+           mMaxTrackSizingFunctions == aOther.mMaxTrackSizingFunctions &&
            mIsAutoFill == aOther.mIsAutoFill &&
            mRepeatAutoIndex == aOther.mRepeatAutoIndex &&
            mRepeatAutoLineNameListBefore ==
@@ -1020,7 +1027,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   using StyleMaxSize = mozilla::StyleMaxSize;
   using StyleFlexBasis = mozilla::StyleFlexBasis;
   using WritingMode = mozilla::WritingMode;
-  using StyleTrackSize = mozilla::StyleTrackSize;
 
   explicit nsStylePosition(const mozilla::dom::Document&);
   nsStylePosition(const nsStylePosition& aOther);
@@ -1062,8 +1068,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   StyleSize mMinHeight;
   StyleMaxSize mMaxHeight;
   StyleFlexBasis mFlexBasis;
-  StyleTrackSize mGridAutoColumns;
-  StyleTrackSize mGridAutoRows;
+  nsStyleCoord mGridAutoColumnsMin;  
+  nsStyleCoord mGridAutoColumnsMax;  
+  nsStyleCoord mGridAutoRowsMin;     
+  nsStyleCoord mGridAutoRowsMax;     
   float mAspectRatio;
   uint8_t mGridAutoFlow;             
   mozilla::StyleBoxSizing mBoxSizing;

@@ -10,6 +10,7 @@
 
 
 #include "nsContentUtils.h"
+#include "nsStyleCoord.h"
 #include "nsSize.h"
 #include "mozilla/ReflowInput.h"
 #include "nsIServiceManager.h"

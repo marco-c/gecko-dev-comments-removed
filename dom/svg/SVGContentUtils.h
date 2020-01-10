@@ -13,7 +13,7 @@
 #include "mozilla/gfx/2D.h"  
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/RangedPtr.h"
-#include "mozilla/ServoStyleConsts.h"
+#include "nsStyleCoord.h"
 #include "nsError.h"
 #include "nsStringFwd.h"
 #include "gfx2DGlue.h"

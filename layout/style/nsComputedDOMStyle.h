@@ -40,8 +40,10 @@ class nsIFrame;
 class nsDOMCSSValueList;
 struct nsMargin;
 class nsROCSSPrimitiveValue;
+class nsStyleCoord;
 class nsStyleGradient;
 struct nsStyleImage;
+class nsStyleSides;
 
 class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
                                  public nsStubMutationObserver {
@@ -199,9 +201,8 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   void AppendGridLineNames(nsDOMCSSValueList* aValueList,
                            const nsTArray<RefPtr<nsAtom>>& aLineNames1,
                            const nsTArray<RefPtr<nsAtom>>& aLineNames2);
-  already_AddRefed<nsROCSSPrimitiveValue> GetGridTrackSize(const mozilla::StyleTrackSize&);
-  already_AddRefed<nsROCSSPrimitiveValue> GetGridTrackBreadth(const mozilla::StyleTrackBreadth&);
-  void SetValueToTrackBreadth(nsROCSSPrimitiveValue*, const mozilla::StyleTrackBreadth&);
+  already_AddRefed<CSSValue> GetGridTrackSize(const nsStyleCoord& aMinSize,
+                                              const nsStyleCoord& aMaxSize);
   already_AddRefed<CSSValue> GetGridTemplateColumnsRows(
       const nsStyleGridTemplate& aTrackList,
       const mozilla::ComputedGridTrackInfo* aTrackInfo);
@@ -312,6 +313,25 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
 
 
+
+
+
+
+
+
+
+
+  void SetValueToCoord(nsROCSSPrimitiveValue* aValue,
+                       const nsStyleCoord& aCoord, bool aClampNegativeCalc,
+                       PercentageBaseGetter aPercentageBaseGetter = nullptr,
+                       const KTableEntry aTable[] = nullptr);
+
+  
+
+
+
+
+
   nscoord StyleCoordToNSCoord(const LengthPercentage& aCoord,
                               PercentageBaseGetter aPercentageBaseGetter,
                               nscoord aDefaultValue, bool aClampNegativeCalc);
@@ -327,6 +347,12 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
     return aDefaultValue;
   }
 
+  
+
+
+  void AppendFourSideCoordValues(nsDOMCSSValueList* aList,
+                                 const nsStyleSides& aValues);
+
   bool GetCBContentWidth(nscoord& aWidth);
   bool GetCBContentHeight(nscoord& aHeight);
   bool GetCBPaddingRectWidth(nscoord& aWidth);
@@ -335,6 +361,10 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   bool GetScrollFrameContentHeight(nscoord& aHeight);
   bool GetFrameBorderRectWidth(nscoord& aWidth);
   bool GetFrameBorderRectHeight(nscoord& aHeight);
+
+  
+  void SetCssTextToCoord(nsAString& aCssText, const nsStyleCoord& aCoord,
+                         bool aClampNegativeCalc);
 
   
   

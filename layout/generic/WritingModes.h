@@ -1921,6 +1921,59 @@ const T& StyleRect<T>::GetBEnd(mozilla::WritingMode aWM) const {
 
 
 
+inline nsStyleUnit nsStyleSides::GetUnit(mozilla::WritingMode aWM,
+                                         mozilla::LogicalSide aSide) const {
+  return GetUnit(aWM.PhysicalSide(aSide));
+}
+
+inline nsStyleUnit nsStyleSides::GetIStartUnit(mozilla::WritingMode aWM) const {
+  return GetUnit(aWM, mozilla::eLogicalSideIStart);
+}
+
+inline nsStyleUnit nsStyleSides::GetBStartUnit(mozilla::WritingMode aWM) const {
+  return GetUnit(aWM, mozilla::eLogicalSideBStart);
+}
+
+inline nsStyleUnit nsStyleSides::GetIEndUnit(mozilla::WritingMode aWM) const {
+  return GetUnit(aWM, mozilla::eLogicalSideIEnd);
+}
+
+inline nsStyleUnit nsStyleSides::GetBEndUnit(mozilla::WritingMode aWM) const {
+  return GetUnit(aWM, mozilla::eLogicalSideBEnd);
+}
+
+inline bool nsStyleSides::HasBlockAxisAuto(mozilla::WritingMode aWM) const {
+  return GetBStartUnit(aWM) == eStyleUnit_Auto ||
+         GetBEndUnit(aWM) == eStyleUnit_Auto;
+}
+
+inline bool nsStyleSides::HasInlineAxisAuto(mozilla::WritingMode aWM) const {
+  return GetIStartUnit(aWM) == eStyleUnit_Auto ||
+         GetIEndUnit(aWM) == eStyleUnit_Auto;
+}
+
+inline nsStyleCoord nsStyleSides::Get(mozilla::WritingMode aWM,
+                                      mozilla::LogicalSide aSide) const {
+  return Get(aWM.PhysicalSide(aSide));
+}
+
+inline nsStyleCoord nsStyleSides::GetIStart(mozilla::WritingMode aWM) const {
+  return Get(aWM, mozilla::eLogicalSideIStart);
+}
+
+inline nsStyleCoord nsStyleSides::GetBStart(mozilla::WritingMode aWM) const {
+  return Get(aWM, mozilla::eLogicalSideBStart);
+}
+
+inline nsStyleCoord nsStyleSides::GetIEnd(mozilla::WritingMode aWM) const {
+  return Get(aWM, mozilla::eLogicalSideIEnd);
+}
+
+inline nsStyleCoord nsStyleSides::GetBEnd(mozilla::WritingMode aWM) const {
+  return Get(aWM, mozilla::eLogicalSideBEnd);
+}
+
+
 
 inline const mozilla::StyleSize& nsStylePosition::ISize(WritingMode aWM) const {
   return aWM.IsVertical() ? mHeight : mWidth;
