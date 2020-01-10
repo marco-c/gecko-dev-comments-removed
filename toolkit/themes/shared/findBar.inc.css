@@ -41,7 +41,7 @@ findbar[noanim] {
 
 
 
-:root[lwtheme-image] findbar {
+html|html[lwtheme-image] findbar {
   --lwt-toolbar-field-background-color: initial;
   --lwt-toolbar-field-color: initial;
   --lwt-toolbar-field-border-color: initial;
