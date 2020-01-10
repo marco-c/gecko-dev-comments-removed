@@ -152,6 +152,58 @@ inline bool ShouldWaiveXray(JSContext* cx, JSObject* originalObj) {
   return sameOrigin;
 }
 
+
+
+static bool MaybeWrapWindowProxy(JSContext* cx, HandleObject origObj,
+                                 HandleObject obj, MutableHandleObject retObj) {
+  bool isWindowProxy = js::IsWindowProxy(obj);
+
+  if (!isWindowProxy &&
+      !dom::IsRemoteObjectProxy(obj, dom::prototypes::id::Window)) {
+    return false;
+  }
+
+  dom::BrowsingContext* bc = nullptr;
+  if (isWindowProxy) {
+    nsGlobalWindowInner* win =
+        WindowOrNull(js::UncheckedUnwrap(obj,  false));
+    if (win && win->GetOuterWindow()) {
+      bc = win->GetOuterWindow()->GetBrowsingContext();
+    }
+    if (!bc) {
+      retObj.set(obj);
+      return true;
+    }
+  } else {
+    bc = dom::GetBrowsingContext(obj);
+    MOZ_ASSERT(bc);
+  }
+
+  if (bc->IsInProcess()) {
+    
+    
+    MOZ_ASSERT(bc->GetWindowProxy());
+
+    if (isWindowProxy) {
+      retObj.set(obj);
+    } else {
+      
+      
+      
+      
+      retObj.set(JS_NewDeadWrapper(cx));
+    }
+  } else {
+    
+    
+    if (!dom::GetRemoteOuterWindowProxy(cx, bc, origObj, retObj)) {
+      MOZ_CRASH("GetRemoteOuterWindowProxy failed");
+    }
+  }
+
+  return true;
+}
+
 void WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
                                         HandleObject origObj,
                                         HandleObject objArg,
@@ -167,9 +219,12 @@ void WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
 
   
   
-  
-  if (js::IsWindowProxy(obj)) {
-    retObj.set(waive ? WaiveXray(cx, obj) : obj);
+  if (MaybeWrapWindowProxy(cx, origObj, obj, retObj)) {
+    if (waive) {
+      
+      MOZ_ASSERT(js::IsWindowProxy(obj));
+      retObj.set(WaiveXray(cx, retObj));
+    }
     return;
   }
 

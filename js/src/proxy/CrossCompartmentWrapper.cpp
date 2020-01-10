@@ -593,13 +593,18 @@ void js::RemapWrapper(JSContext* cx, JSObject* wobjArg,
     JSObject::swap(cx, wobj, tobj);
   }
 
+  if (!wobj->is<WrapperObject>()) {
+    MOZ_ASSERT(js::IsProxy(wobj) && js::GetProxyHandler(wobj)->family() ==
+                                        js::GetDOMRemoteProxyHandlerFamily());
+    return;
+  }
+
   
   
   MOZ_ASSERT(Wrapper::wrappedObject(wobj) == newTarget);
 
   
   
-  MOZ_ASSERT(wobj->is<WrapperObject>());
   if (!wcompartment->putWrapper(cx, CrossCompartmentKey(newTarget),
                                 ObjectValue(*wobj))) {
     oomUnsafe.crash("js::RemapWrapper");
