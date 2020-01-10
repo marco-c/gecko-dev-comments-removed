@@ -1207,12 +1207,6 @@ SearchEngine.prototype = {
     );
     
     switch (uri.scheme) {
-      case "resource":
-      case "chrome":
-        
-        if (!this._isDefault) {
-          return;
-        }
       
       case "moz-extension":
       case "data":
