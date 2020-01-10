@@ -16,6 +16,11 @@ const TEST_URI =
 add_task(async function() {
   requestLongerTimeout(2);
 
+  
+  
+  
+  Cu.forceShrinkingGC();
+
   const hud = await openNewTabAndConsole(
     "data:text/html;charset=utf8,<p>hello"
   );
