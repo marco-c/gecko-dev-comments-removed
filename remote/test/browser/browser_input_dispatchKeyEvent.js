@@ -40,55 +40,46 @@ add_task(async function() {
   await checkInputContent("", 0);
 
   info("Write 'h'");
-  await dispatchKeyEvent(Input, "h", "keyDown");
-  await dispatchKeyEvent(Input, "h", "keyUp");
+  await sendTextKey(Input, "h");
   await checkInputContent("h", 1);
 
   info("Write 'H'");
-  await dispatchKeyEvent(Input, "H", "keyDown");
-  await dispatchKeyEvent(Input, "H", "keyUp");
+  await sendTextKey(Input, "H");
   await checkInputContent("hH", 2);
 
   info("Send char type event for char [’]");
+  await addInputEventListener("input");
   await Input.dispatchKeyEvent({
     type: "char",
     modifiers: 0,
     key: "’",
   });
+  await waitForInputEvent();
   await checkInputContent("hH’", 3);
 
   info("Send Left");
-  await dispatchKeyEvent(Input, "ArrowLeft", "rawKeyDown");
-  await dispatchKeyEvent(Input, "ArrowLeft", "keyUp");
+  await sendArrowKey(Input, "ArrowLeft");
   await checkInputContent("hH’", 2);
 
 
   info("Write 'a'");
-  await dispatchKeyEvent(Input, "a", "keyDown");
-  await dispatchKeyEvent(Input, "a", "keyUp");
+  await sendTextKey(Input, "a");
   await checkInputContent("hHa’", 3);
 
   info("Send Left");
-  await dispatchKeyEvent(Input, "ArrowLeft", "rawKeyDown");
-  await dispatchKeyEvent(Input, "ArrowLeft", "keyUp");
+  await sendArrowKey(Input, "ArrowLeft");
   await checkInputContent("hHa’", 2);
 
-  
-  
-  
-  info("Send Left using keyDown instead of rawKeyDown");
-  await dispatchKeyEvent(Input, "ArrowLeft", "keyDown");
-  await dispatchKeyEvent(Input, "ArrowLeft", "keyUp");
+  info("Send Left");
+  await sendArrowKey(Input, "ArrowLeft");
   await checkInputContent("hHa’", 1);
 
   info("Write 'a'");
-  await dispatchKeyEvent(Input, "a", "keyDown");
-  await dispatchKeyEvent(Input, "a", "keyUp");
+  await sendTextKey(Input, "a");
   await checkInputContent("haHa’", 2);
 
-  info("Send ALT + Right");
-  await dispatchKeyEvent(Input, "ArrowRight", "rawKeyDown", ARROW_MODIFIER);
-  await dispatchKeyEvent(Input, "ArrowRight", "keyUp", ARROW_MODIFIER);
+  info("Send ALT/CTRL + Right");
+  await sendArrowKey(Input, "ArrowRight", ARROW_MODIFIER);
   await checkInputContent("haHa’", 5);
 
   info("Delete every character in the input");
@@ -105,6 +96,31 @@ add_task(async function() {
 
   await RemoteAgent.close();
 });
+
+
+
+
+async function sendTextKey(Input, key) {
+  await addInputEventListener("input");
+
+  await dispatchKeyEvent(Input, key, "keyDown");
+  await dispatchKeyEvent(Input, key, "keyUp");
+
+  await waitForInputEvent();
+}
+
+
+
+
+
+async function sendArrowKey(Input, arrowKey, modifiers = 0) {
+  await addInputEventListener("selectionchange");
+
+  await dispatchKeyEvent(Input, arrowKey, "rawKeyDown", modifiers);
+  await dispatchKeyEvent(Input, arrowKey, "keyUp", modifiers);
+
+  await waitForInputEvent();
+}
 
 function dispatchKeyEvent(Input, key, type, modifiers = 0) {
   info(`Send ${type} for key ${key}`);
@@ -130,7 +146,41 @@ async function checkInputContent(expectedValue, expectedCaret) {
 
 async function sendBackspace(Input, expected) {
   info("Send Backspace");
+  await addInputEventListener("input");
+
   await dispatchKeyEvent(Input, "Backspace", "rawKeyDown");
   await dispatchKeyEvent(Input, "Backspace", "keyUp");
+
+  await waitForInputEvent();
+
   await checkInputContent(expected, expected.length);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function addInputEventListener(eventName) {
+  return ContentTask.spawn(gBrowser.selectedBrowser, eventName, async (_eventName) => {
+    const input = content.document.querySelector("input");
+    this.__onInputEvent =
+      new Promise(r => input.addEventListener(_eventName, r, { once: true }));
+  });
+}
+
+
+
+
+function waitForInputEvent() {
+  return ContentTask.spawn(gBrowser.selectedBrowser, null, () => this.__onInputEvent);
 }
