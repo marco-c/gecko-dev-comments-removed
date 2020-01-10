@@ -900,11 +900,13 @@ void gfxUserFontEntry::FontDataDownloadComplete(
   }
 
   
-  mFontSet->LogMessage(
-      this,
-      (mFontDataLoadingState != LOADING_TIMED_OUT ? "download failed"
-                                                  : "download timed out"),
-      nsIScriptError::errorFlag, aDownloadStatus);
+  if (mFontDataLoadingState == LOADING_TIMED_OUT) {
+    mFontSet->LogMessage(this, "font-display timeout, webfont not used",
+                         nsIScriptError::infoFlag, aDownloadStatus);
+  } else {
+    mFontSet->LogMessage(this, "download failed", nsIScriptError::errorFlag,
+                         aDownloadStatus);
+  }
 
   if (aFontData) {
     free((void*)aFontData);
