@@ -23,7 +23,7 @@ const LabelCell = createFactory(
 );
 const { SearchProvider } = require("./search-provider");
 const Toolbar = createFactory(require("./Toolbar"));
-
+const StatusBar = createFactory(require("./StatusBar"));
 
 
 
@@ -211,7 +211,8 @@ class SearchPanel extends Component {
       div(
         { className: "search-panel-content", style: { width: "100%" } },
         this.renderTree()
-      )
+      ),
+      StatusBar()
     );
   }
 }
