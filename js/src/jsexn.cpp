@@ -778,12 +778,6 @@ bool ErrorReport::init(JSContext* cx, HandleValue exn,
     
     exnObject = &exn.toObject();
     reportp = ErrorFromException(cx, exnObject);
-
-    if (!reportp && sniffingBehavior == NoSideEffects) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_ERR_DURING_THROW);
-      return false;
-    }
   }
 
   
@@ -798,6 +792,8 @@ bool ErrorReport::init(JSContext* cx, HandleValue exn,
     } else {
       str = nullptr;
     }
+  } else if (exnObject && sniffingBehavior == NoSideEffects) {
+    str = cx->names().Object;
   } else {
     str = ToString<CanGC>(cx, exn);
   }
@@ -815,7 +811,7 @@ bool ErrorReport::init(JSContext* cx, HandleValue exn,
   
   
   const char* filename_str = "filename";
-  if (!reportp && exnObject &&
+  if (!reportp && exnObject && sniffingBehavior == WithSideEffects &&
       IsDuckTypedErrorObject(cx, exnObject, &filename_str)) {
     
     RootedValue val(cx);
