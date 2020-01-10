@@ -31,12 +31,33 @@ add_task(async function test_copy() {
       this.search(name);
       let row = this.getRow(name);
 
+      let selectText = async target => {
+        let { width, height } = target.getBoundingClientRect();
+        await BrowserTestUtils.synthesizeMouse(
+          target,
+          1,
+          1,
+          { type: "mousedown" },
+          this.browser
+        );
+        await BrowserTestUtils.synthesizeMouse(
+          target,
+          width - 1,
+          height - 1,
+          { type: "mousemove" },
+          this.browser
+        );
+        await BrowserTestUtils.synthesizeMouse(
+          target,
+          width - 1,
+          height - 1,
+          { type: "mouseup" },
+          this.browser
+        );
+      };
+
       
-      await BrowserTestUtils.synthesizeMouseAtCenter(
-        row.nameCell,
-        { clickCount: 3 },
-        this.browser
-      );
+      await selectText(row.nameCell);
       Assert.ok(row.nameCell.contains(this.window.getSelection().anchorNode));
       await SimpleTest.promiseClipboardChange(name, async () => {
         await BrowserTestUtils.synthesizeKey(
@@ -47,24 +68,24 @@ add_task(async function test_copy() {
       });
 
       
-      await BrowserTestUtils.synthesizeMouseAtCenter(
-        row.valueCell,
-        { clickCount: 3 },
-        this.browser
-      );
+      await selectText(row.valueCell);
       let selection = this.window.getSelection();
       Assert.ok(row.valueCell.contains(selection.anchorNode));
 
-      
-      
-      Assert.ok(!selection.isCollapsed);
-      await SimpleTest.promiseClipboardChange(expectedString, async () => {
-        await BrowserTestUtils.synthesizeKey(
-          "c",
-          { accelKey: true },
-          this.browser
-        );
-      });
+      if (expectedString !== "") {
+        
+        Assert.ok(!selection.isCollapsed);
+        await SimpleTest.promiseClipboardChange(expectedString, async () => {
+          await BrowserTestUtils.synthesizeKey(
+            "c",
+            { accelKey: true },
+            this.browser
+          );
+        });
+      } else {
+        
+        Assert.equal(selection.toString(), "");
+      }
     }
   });
 });
