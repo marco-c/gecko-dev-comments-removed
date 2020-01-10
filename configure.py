@@ -24,7 +24,6 @@ from mozbuild.pythonutil import iter_modules_in_path
 from mozbuild.backend.configenvironment import PartialConfigEnvironment
 from mozbuild.util import (
     indented_repr,
-    encode,
     system_encoding,
 )
 import mozpack.path as mozpath
@@ -82,12 +81,12 @@ def config_status(config):
 
     sanitized_config = {}
     sanitized_config['substs'] = {
-        k: sanitized_bools(v) for k, v in config.iteritems()
+        k: sanitized_bools(v) for k, v in six.iteritems(config)
         if k not in ('DEFINES', 'non_global_defines', 'TOPSRCDIR', 'TOPOBJDIR',
                      'CONFIG_STATUS_DEPS')
     }
     sanitized_config['defines'] = {
-        k: sanitized_bools(v) for k, v in config['DEFINES'].iteritems()
+        k: sanitized_bools(v) for k, v in six.iteritems(config['DEFINES'])
     }
     sanitized_config['non_global_defines'] = config['non_global_defines']
     sanitized_config['topsrcdir'] = config['TOPSRCDIR']
@@ -108,13 +107,9 @@ def config_status(config):
             #!%(python)s
             # coding=%(encoding)s
             from __future__ import unicode_literals
-            from mozbuild.util import encode
-            encoding = '%(encoding)s'
         ''') % {'python': config['PYTHON'], 'encoding': system_encoding})
-        
-        
-        for k, v in sanitized_config.iteritems():
-            fh.write('%s = encode(%s, encoding)\n' % (k, indented_repr(v)))
+        for k, v in six.iteritems(sanitized_config):
+            fh.write('%s = %s\n' % (k, indented_repr(v)))
         fh.write("__all__ = ['topobjdir', 'topsrcdir', 'defines', "
                  "'non_global_defines', 'substs', 'mozconfig']")
 
@@ -150,10 +145,19 @@ def config_status(config):
         
         
         
-
         
-        
-        return config_status(args=[], **encode(sanitized_config, system_encoding))
+        def normalize(obj):
+            if isinstance(obj, dict):
+                return {
+                    k: normalize(v)
+                    for k, v in six.iteritems(obj)
+                }
+            if isinstance(obj, six.text_type):
+                return six.text_type(obj)
+            if isinstance(obj, Iterable):
+                return [normalize(o) for o in obj]
+            return obj
+        return config_status(args=[], **normalize(sanitized_config))
     return 0
 
 
