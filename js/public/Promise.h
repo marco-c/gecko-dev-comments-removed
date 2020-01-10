@@ -306,11 +306,8 @@ extern JS_PUBLIC_API void JobQueueMayNotBeEmpty(JSContext* cx);
 
 
 
-
-
-
-extern JS_PUBLIC_API JSObject* NewPromiseObject(
-    JSContext* cx, JS::HandleObject executor, JS::HandleObject proto = nullptr);
+extern JS_PUBLIC_API JSObject* NewPromiseObject(JSContext* cx,
+                                                JS::HandleObject executor);
 
 
 

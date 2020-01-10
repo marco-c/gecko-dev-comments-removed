@@ -278,8 +278,7 @@ class Promise : public nsISupports, public SupportsWeakPtr<Promise> {
   
   
   
-  
-  void CreateWrapper(JS::Handle<JSObject*> aDesiredProto, ErrorResult& aRv,
+  void CreateWrapper(ErrorResult& aRv,
                      PropagateUserInteraction aPropagateUserInteraction =
                          eDontPropagateUserInteraction);
 
