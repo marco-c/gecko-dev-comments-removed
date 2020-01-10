@@ -3412,7 +3412,7 @@ Toolbox.prototype = {
 
       
       
-      await this._inspector.destroy();
+      this._inspector.destroy();
 
       this._inspector = null;
       this._highlighter = null;
