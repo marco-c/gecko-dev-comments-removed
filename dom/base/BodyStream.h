@@ -4,10 +4,9 @@
 
 
 
-#ifndef mozilla_dom_FetchStream_h
-#define mozilla_dom_FetchStream_h
+#ifndef mozilla_dom_BodyStream_h
+#define mozilla_dom_BodyStream_h
 
-#include "Fetch.h"
 #include "jsapi.h"
 #include "js/Stream.h"
 #include "nsIAsyncInputStream.h"
@@ -22,19 +21,29 @@ class nsIInputStream;
 namespace mozilla {
 namespace dom {
 
-class FetchStreamHolder;
 class WeakWorkerRef;
 
-class FetchStream final : public nsIInputStreamCallback,
-                          public nsIObserver,
-                          public nsSupportsWeakReference,
-                          private JS::ReadableStreamUnderlyingSource {
+class BodyStreamHolder {
+ public:
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+
+  virtual void NullifyStream() = 0;
+
+  virtual void MarkAsRead() = 0;
+
+  virtual JSObject* ReadableStreamBody() = 0;
+};
+
+class BodyStream final : public nsIInputStreamCallback,
+                         public nsIObserver,
+                         public nsSupportsWeakReference,
+                         private JS::ReadableStreamUnderlyingSource {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIINPUTSTREAMCALLBACK
   NS_DECL_NSIOBSERVER
 
-  static void Create(JSContext* aCx, FetchStreamHolder* aStreamHolder,
+  static void Create(JSContext* aCx, BodyStreamHolder* aStreamHolder,
                      nsIGlobalObject* aGlobal, nsIInputStream* aInputStream,
                      JS::MutableHandle<JSObject*> aStream, ErrorResult& aRv);
 
@@ -45,9 +54,9 @@ class FetchStream final : public nsIInputStreamCallback,
       nsIInputStream** aInputStream);
 
  private:
-  FetchStream(nsIGlobalObject* aGlobal, FetchStreamHolder* aStreamHolder,
-              nsIInputStream* aInputStream);
-  ~FetchStream();
+  BodyStream(nsIGlobalObject* aGlobal, BodyStreamHolder* aStreamHolder,
+             nsIInputStream* aInputStream);
+  ~BodyStream();
 
 #ifdef DEBUG
   void AssertIsOnOwningThread();
@@ -118,7 +127,7 @@ class FetchStream final : public nsIInputStreamCallback,
   State mState;
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
-  RefPtr<FetchStreamHolder> mStreamHolder;
+  RefPtr<BodyStreamHolder> mStreamHolder;
   nsCOMPtr<nsIEventTarget> mOwningEventTarget;
 
   
