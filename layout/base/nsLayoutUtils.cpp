@@ -10158,9 +10158,21 @@ Maybe<MotionPathData> nsLayoutUtils::ResolveMotionPath(const nsIFrame* aFrame) {
   
   TransformReferenceBox refBox(aFrame);
   auto& transformOrigin = display->mTransformOrigin;
-  CSSPoint origin = nsStyleTransformMatrix::Convert2DPosition(
+  CSSPoint anchorPoint = nsStyleTransformMatrix::Convert2DPosition(
       transformOrigin.horizontal, transformOrigin.vertical, refBox);
   
   
-  return Some(MotionPathData{point - origin.ToUnknownPoint(), angle});
+  
+  
+  
+  if ((aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT) &&
+      display->mTransformBox != StyleGeometryBox::ViewBox &&
+      display->mTransformBox != StyleGeometryBox::BorderBox) {
+    anchorPoint.x += CSSPixel::FromAppUnits(aFrame->GetPosition().x);
+    anchorPoint.y += CSSPixel::FromAppUnits(aFrame->GetPosition().y);
+  }
+
+  
+  
+  return Some(MotionPathData{point - anchorPoint.ToUnknownPoint(), angle});
 }
