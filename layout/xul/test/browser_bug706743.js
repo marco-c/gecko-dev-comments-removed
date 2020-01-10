@@ -1,27 +1,49 @@
 add_task(async function() {
-  const url = "data:text/html,<html><head></head><body>" +
-    "<a id=\"target\" href=\"about:blank\" title=\"This is tooltip text\" " +
-            "style=\"display:block;height:20px;margin:10px;\" " +
-            "onclick=\"return false;\">here is an anchor element</a></body></html>";
+  const url =
+    "data:text/html,<html><head></head><body>" +
+    '<a id="target" href="about:blank" title="This is tooltip text" ' +
+    'style="display:block;height:20px;margin:10px;" ' +
+    'onclick="return false;">here is an anchor element</a></body></html>';
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
   let browser = gBrowser.selectedBrowser;
 
   await new Promise(resolve => {
-    SpecialPowers.pushPrefEnv({"set": [["ui.tooltipDelay", 0]]}, resolve);
+    SpecialPowers.pushPrefEnv({ set: [["ui.tooltipDelay", 0]] }, resolve);
   });
 
   
-  await BrowserTestUtils.synthesizeMouse("#target", -5, -5, { type: "mousemove" }, browser);
+  await BrowserTestUtils.synthesizeMouse(
+    "#target",
+    -5,
+    -5,
+    { type: "mousemove" },
+    browser
+  );
 
   
   let popupShownPromise = BrowserTestUtils.waitForEvent(document, "popupshown");
-  await BrowserTestUtils.synthesizeMouse("#target", 5, 15, { type: "mousemove" }, browser);
+  await BrowserTestUtils.synthesizeMouse(
+    "#target",
+    5,
+    15,
+    { type: "mousemove" },
+    browser
+  );
   await popupShownPromise;
 
   
-  let popupHiddenPromise = BrowserTestUtils.waitForEvent(document, "popuphidden");
-  await BrowserTestUtils.synthesizeMouse("#target", -5, 15, { type: "mousemove" }, browser);
+  let popupHiddenPromise = BrowserTestUtils.waitForEvent(
+    document,
+    "popuphidden"
+  );
+  await BrowserTestUtils.synthesizeMouse(
+    "#target",
+    -5,
+    15,
+    { type: "mousemove" },
+    browser
+  );
   await popupHiddenPromise;
 
   
@@ -32,48 +54,96 @@ add_task(async function() {
   
   
 
-  function tooltipNotExpected()
-  {
+  function tooltipNotExpected() {
     ok(false, "tooltip is shown during drag");
   }
   addEventListener("popupshown", tooltipNotExpected, true);
 
-  let dragService = Cc["@mozilla.org/widget/dragservice;1"].
-                      getService(Ci.nsIDragService);
+  let dragService = Cc["@mozilla.org/widget/dragservice;1"].getService(
+    Ci.nsIDragService
+  );
   dragService.startDragSession();
-  await BrowserTestUtils.synthesizeMouse("#target", 5, 15, { type: "mousemove" }, browser);
+  await BrowserTestUtils.synthesizeMouse(
+    "#target",
+    5,
+    15,
+    { type: "mousemove" },
+    browser
+  );
 
   
   await new Promise(resolve => setTimeout(resolve, 100));
   removeEventListener("popupshown", tooltipNotExpected, true);
   dragService.endDragSession(true);
 
-  await BrowserTestUtils.synthesizeMouse("#target", -5, -5, { type: "mousemove" }, browser);
+  await BrowserTestUtils.synthesizeMouse(
+    "#target",
+    -5,
+    -5,
+    { type: "mousemove" },
+    browser
+  );
 
   
   
 
   
   popupShownPromise = BrowserTestUtils.waitForEvent(document, "popupshown");
-  await BrowserTestUtils.synthesizeMouse("#target", 5, 15, { type: "mousemove" }, browser);
+  await BrowserTestUtils.synthesizeMouse(
+    "#target",
+    5,
+    15,
+    { type: "mousemove" },
+    browser
+  );
   await popupShownPromise;
 
   
   popupHiddenPromise = BrowserTestUtils.waitForEvent(document, "popuphidden");
-  await BrowserTestUtils.synthesizeMouse("#target", -5, 15, { type: "mousemove" }, browser);
+  await BrowserTestUtils.synthesizeMouse(
+    "#target",
+    -5,
+    15,
+    { type: "mousemove" },
+    browser
+  );
   await popupHiddenPromise;
 
   
   popupShownPromise = BrowserTestUtils.waitForEvent(document, "popupshown");
-  await BrowserTestUtils.synthesizeMouse("#target", 5, 15, { type: "mousemove" }, browser);
+  await BrowserTestUtils.synthesizeMouse(
+    "#target",
+    5,
+    15,
+    { type: "mousemove" },
+    browser
+  );
   await popupShownPromise;
 
   popupHiddenPromise = BrowserTestUtils.waitForEvent(document, "popuphidden");
-  await BrowserTestUtils.synthesizeMouse("#target", 5, 15, { type: "mousedown" }, browser);
+  await BrowserTestUtils.synthesizeMouse(
+    "#target",
+    5,
+    15,
+    { type: "mousedown" },
+    browser
+  );
   await popupHiddenPromise;
 
-  await BrowserTestUtils.synthesizeMouse("#target", 5, 15, { type: "mouseup" }, browser);
-  await BrowserTestUtils.synthesizeMouse("#target", -5, 15, { type: "mousemove" }, browser);
+  await BrowserTestUtils.synthesizeMouse(
+    "#target",
+    5,
+    15,
+    { type: "mouseup" },
+    browser
+  );
+  await BrowserTestUtils.synthesizeMouse(
+    "#target",
+    -5,
+    15,
+    { type: "mousemove" },
+    browser
+  );
 
   ok(true, "tooltips appear properly");
 
