@@ -495,6 +495,24 @@ class HuffmanPreludeReader {
 
     MOZ_ASSERT(numberOfSymbols <= MAX_NUMBER_OF_SYMBOLS);
 
+    if (numberOfSymbols == 1) {
+      
+      BINJS_MOZ_TRY_DECL(bitLength, reader.readByte<Compression::No>());
+      if (bitLength != 0) {
+        
+        
+        return raiseInvalidTableData(entry.identity);
+      }
+
+      
+      
+      BINJS_MOZ_TRY_DECL(
+          symbol, readSymbol<Entry>(entry,  0));
+
+      MOZ_TRY(table.impl.initWithSingleValue(cx_, std::move(symbol)));
+      return Ok();
+    }
+
     
     
     
@@ -505,10 +523,6 @@ class HuffmanPreludeReader {
     
     for (size_t i = 0; i < numberOfSymbols; ++i) {
       BINJS_MOZ_TRY_DECL(bitLength, reader.readByte<Compression::No>());
-      if (bitLength == 0) {
-        
-        return raiseInvalidTableData(entry.identity);
-      }
       BINJS_TRY(auxStorageBitLengths.append(bitLength));
     }
     
@@ -518,19 +532,37 @@ class HuffmanPreludeReader {
     uint32_t code = 0;
     MOZ_TRY(table.impl.init(cx_, numberOfSymbols));
 
-    for (size_t i = 0; i < numberOfSymbols; ++i) {
-      const auto bitLength = auxStorageBitLengths[i];
-      const auto nextBitLength =
-          auxStorageBitLengths[i + 1];  
-      if (bitLength > nextBitLength) {
-        
-        
-        return raiseInvalidTableData(entry.identity);
+    size_t nextIndex = 1;
+    for (size_t i = 0; i < numberOfSymbols; i = nextIndex) {
+      
+      
+      
+      for (size_t j = i + 1; j <= numberOfSymbols; ++j) {
+        if (auxStorageBitLengths[j] != 0) {
+          nextIndex = j;
+          break;
+        }
       }
 
       
       
       BINJS_MOZ_TRY_DECL(symbol, readSymbol<Entry>(entry, i));
+
+      const auto bitLength = auxStorageBitLengths[i];
+      if (bitLength == 0) {
+        
+        
+        continue;
+      }
+
+      
+      const auto nextBitLength =
+          auxStorageBitLengths[nextIndex];  
+      if (bitLength > nextBitLength) {
+        
+        
+        return raiseInvalidTableData(entry.identity);
+      }
 
       MOZ_TRY(table.impl.addSymbol(code, bitLength, std::move(symbol)));
 
