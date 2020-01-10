@@ -376,7 +376,7 @@ void ScrollAnchorContainer::ApplyAdjustments() {
     }
   }
 
-  MOZ_ASSERT(!mApplyingAnchorAdjustment);
+  MOZ_RELEASE_ASSERT(!mApplyingAnchorAdjustment);
   
   mApplyingAnchorAdjustment = true;
   mScrollFrame->ScrollTo(mScrollFrame->GetScrollPosition() + physicalAdjustment,
