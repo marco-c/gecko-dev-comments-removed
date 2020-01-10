@@ -46,6 +46,8 @@ export class InfoItem extends HTMLElement {
       ? this.item.info.join(", ")
       : this.item.info;
 
+    this.classList.add(labelText);
+
     
     if (this.item.label === "Modulus") {
       info.classList.add("long-hex");
