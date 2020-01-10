@@ -161,8 +161,8 @@ function* do_run_test() {
   
   
   Assert.equal(Services.cookiemgr.countCookiesFromHost("baz.com"), 1);
-  let enumerator = Services.cookiemgr.getCookiesFromHost("baz.com", {});
-  let cookie = enumerator.getNext().QueryInterface(Ci.nsICookie);
+  let cookies = Services.cookiemgr.getCookiesFromHost("baz.com", {});
+  let cookie = cookies[0];
   Assert.equal(cookie.expiry, futureExpiry + 44);
 
   do_close_profile(test_generator);

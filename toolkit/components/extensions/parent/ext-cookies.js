@@ -224,7 +224,7 @@ const query = function*(detailsIn, props, context) {
   }
 
   
-  let enumerator;
+  let cookies;
   let host;
   let url;
   let originAttributes = {
@@ -249,11 +249,9 @@ const query = function*(detailsIn, props, context) {
   if (host && "firstPartyDomain" in originAttributes) {
     
     
-    
-    
-    enumerator = Services.cookies.getCookiesFromHost(host, originAttributes);
+    cookies = Services.cookies.getCookiesFromHost(host, originAttributes);
   } else {
-    enumerator = Services.cookies.getCookiesWithOriginAttributes(
+    cookies = Services.cookies.getCookiesWithOriginAttributes(
       JSON.stringify(originAttributes),
       host
     );
@@ -330,7 +328,7 @@ const query = function*(detailsIn, props, context) {
     return true;
   }
 
-  for (const cookie of enumerator) {
+  for (const cookie of cookies) {
     if (matches(cookie)) {
       yield { cookie, isPrivate, storeId };
     }
