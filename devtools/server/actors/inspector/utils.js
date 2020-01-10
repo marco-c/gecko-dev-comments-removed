@@ -39,6 +39,36 @@ loader.lazyRequireGetter(
   "devtools/server/actors/inspector/css-logic",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "getBackgroundFor",
+  "devtools/server/actors/accessibility/audit/contrast",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "loadSheetForBackgroundCalculation",
+  "devtools/server/actors/utils/accessibility",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "removeSheetForBackgroundCalculation",
+  "devtools/server/actors/utils/accessibility",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "getAdjustedQuads",
+  "devtools/shared/layout/utils",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "getTextProperties",
+  "devtools/shared/accessibility",
+  true
+);
 
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
@@ -406,9 +436,123 @@ function findGridParentContainerForNode(node) {
   return null;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function getBackgroundColor({ rawNode: node, walker }) {
+  
+  
+  
+  
+  if (node.nodeType != Node.ELEMENT_NODE || node.children.length > 0) {
+    return {
+      value: colorUtils.colorToRGBA(
+        getClosestBackgroundColor(node),
+        true,
+        true
+      ),
+    };
+  }
+
+  const bounds = getAdjustedQuads(
+    node.ownerGlobal,
+    node.firstChild,
+    "content"
+  )[0].bounds;
+
+  
+  
+  if (!bounds) {
+    return {
+      value: colorUtils.colorToRGBA(
+        getClosestBackgroundColor(node),
+        true,
+        true
+      ),
+    };
+  }
+
+  const docWalker = walker.getDocumentWalker(node);
+  const firstChild = docWalker.firstChild();
+
+  
+  
+  
+  if (
+    !firstChild ||
+    docWalker.nextSibling() ||
+    firstChild.nodeType !== Node.TEXT_NODE
+  ) {
+    return {
+      value: colorUtils.colorToRGBA(
+        getClosestBackgroundColor(node),
+        true,
+        true
+      ),
+    };
+  }
+
+  
+  const win = node.ownerGlobal;
+  loadSheetForBackgroundCalculation(win);
+  const computedStyle = CssLogic.getComputedStyle(node);
+  const props = computedStyle ? getTextProperties(computedStyle) : null;
+
+  
+  if (!props) {
+    return {
+      value: colorUtils.colorToRGBA(
+        getClosestBackgroundColor(node),
+        true,
+        true
+      ),
+    };
+  }
+
+  const bgColor = await getBackgroundFor(node, {
+    bounds,
+    win,
+    convertBoundsRelativeToViewport: false,
+    size: props.size,
+    isBoldText: props.isBoldText,
+  });
+  removeSheetForBackgroundCalculation(win);
+
+  return (
+    bgColor || {
+      value: colorUtils.colorToRGBA(
+        getClosestBackgroundColor(node),
+        true,
+        true
+      ),
+    }
+  );
+}
+
 module.exports = {
   allAnonymousContentTreeWalkerFilter,
   findGridParentContainerForNode,
+  getBackgroundColor,
   getClosestBackgroundColor,
   getClosestBackgroundImage,
   getNodeDisplayName,

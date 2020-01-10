@@ -691,6 +691,19 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
 
 
+
+
+
+
+  getBackgroundColor: function() {
+    return InspectorActorUtils.getBackgroundColor(this);
+  },
+
+  
+
+
+
+
   getOwnerGlobalDimensions: function() {
     const win = this.rawNode.ownerGlobal;
     return {

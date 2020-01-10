@@ -112,6 +112,78 @@ function getTextProperties(computedStyle) {
   };
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getContrastRatioAgainstBackground(
+  backgroundColorData,
+  { color, isLargeText }
+) {
+  if (backgroundColorData.value) {
+    const value = colorUtils.calculateContrastRatio(
+      backgroundColorData.value,
+      color
+    );
+    return {
+      value,
+      color,
+      backgroundColor: backgroundColorData.value,
+      isLargeText,
+      score: getContrastRatioScore(value, isLargeText),
+    };
+  }
+
+  let {
+    min: backgroundColorMin,
+    max: backgroundColorMax,
+  } = backgroundColorData;
+  let min = colorUtils.calculateContrastRatio(backgroundColorMin, color);
+  let max = colorUtils.calculateContrastRatio(backgroundColorMax, color);
+
+  
+  if (min > max) {
+    [min, max] = [max, min];
+    [backgroundColorMin, backgroundColorMax] = [
+      backgroundColorMax,
+      backgroundColorMin,
+    ];
+  }
+
+  const score = getContrastRatioScore(min, isLargeText);
+
+  return {
+    min,
+    max,
+    color,
+    backgroundColorMin,
+    backgroundColorMax,
+    isLargeText,
+    score,
+    scoreMin: score,
+    scoreMax: getContrastRatioScore(max, isLargeText),
+  };
+}
+
 exports.getContrastRatioScore = getContrastRatioScore;
 exports.getTextProperties = getTextProperties;
+exports.getContrastRatioAgainstBackground = getContrastRatioAgainstBackground;
 exports.LARGE_TEXT = LARGE_TEXT;

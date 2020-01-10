@@ -6,6 +6,30 @@
 
 loader.lazyRequireGetter(this, "Ci", "chrome", true);
 loader.lazyRequireGetter(this, "Services");
+loader.lazyRequireGetter(
+  this,
+  "loadSheet",
+  "devtools/shared/layout/utils",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "removeSheet",
+  "devtools/shared/layout/utils",
+  true
+);
+
+
+
+const HIGHLIGHTER_STYLES_SHEET = `data:text/css;charset=utf-8,
+* {
+  transition: none !important;
+}
+
+:-moz-devtools-highlighted {
+  color: transparent !important;
+  text-shadow: none !important;
+}`;
 
 
 
@@ -37,4 +61,28 @@ function isDefunct(accessible) {
   return defunct;
 }
 
+
+
+
+
+
+
+
+function loadSheetForBackgroundCalculation(win) {
+  loadSheet(win, HIGHLIGHTER_STYLES_SHEET);
+}
+
+
+
+
+
+
+
+
+function removeSheetForBackgroundCalculation(win) {
+  removeSheet(win, HIGHLIGHTER_STYLES_SHEET);
+}
+
 exports.isDefunct = isDefunct;
+exports.loadSheetForBackgroundCalculation = loadSheetForBackgroundCalculation;
+exports.removeSheetForBackgroundCalculation = removeSheetForBackgroundCalculation;

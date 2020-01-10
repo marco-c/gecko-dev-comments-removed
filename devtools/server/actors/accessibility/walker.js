@@ -60,8 +60,8 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "loadSheet",
-  "devtools/shared/layout/utils",
+  "loadSheetForBackgroundCalculation",
+  "devtools/server/actors/utils/accessibility",
   true
 );
 loader.lazyRequireGetter(
@@ -72,8 +72,8 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "removeSheet",
-  "devtools/shared/layout/utils",
+  "removeSheetForBackgroundCalculation",
+  "devtools/server/actors/utils/accessibility",
   true
 );
 loader.lazyRequireGetter(
@@ -84,16 +84,6 @@ loader.lazyRequireGetter(
 );
 
 const kStateHover = 0x00000004; 
-
-const HIGHLIGHTER_STYLES_SHEET = `data:text/css;charset=utf-8,
-* {
-  transition: none !important;
-}
-
-:-moz-devtools-highlighted {
-  color: transparent !important;
-  text-shadow: none !important;
-}`;
 
 const {
   EVENT_TEXT_CHANGED,
@@ -746,7 +736,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     
     
     
-    loadSheet(win, HIGHLIGHTER_STYLES_SHEET);
+    loadSheetForBackgroundCalculation(win);
     this._loadedSheets.set(win, 1);
     this.hideHighlighter();
   },
@@ -771,7 +761,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     }
 
     this.showHighlighter();
-    removeSheet(win, HIGHLIGHTER_STYLES_SHEET);
+    removeSheetForBackgroundCalculation(win);
     this._loadedSheets.delete(win);
   },
 

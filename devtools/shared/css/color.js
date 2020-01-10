@@ -1250,7 +1250,13 @@ function parseOldStyleRgb(lexer, hasAlpha) {
 
 
 
-function colorToRGBA(name, useCssColor4ColorFunction = false) {
+
+
+
+
+
+
+function colorToRGBA(name, useCssColor4ColorFunction = false, toArray = false) {
   name = name.trim().toLowerCase();
 
   if (name in cssColors) {
@@ -1304,7 +1310,7 @@ function colorToRGBA(name, useCssColor4ColorFunction = false) {
     return null;
   }
 
-  return { r: vals[0], g: vals[1], b: vals[2], a: vals[3] };
+  return toArray ? vals : { r: vals[0], g: vals[1], b: vals[2], a: vals[3] };
 }
 
 
