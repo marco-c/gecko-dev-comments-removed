@@ -8194,7 +8194,7 @@ const selectLayoutRender = (state, prefs, rickRollCache) => {
     } 
 
 
-    const hasRecs = data && data.recommendations && data.recommendations.length; 
+    const hasRecs = data && data.recommendations; 
 
     if (hasRecs && component.spocs && component.spocs.positions && component.spocs.positions.length) {
       

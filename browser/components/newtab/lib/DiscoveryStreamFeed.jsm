@@ -1076,7 +1076,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
 defaultLayoutResp = {
   "spocs": {
-    "url": "https://getpocket.cdn.mozilla.net/v3/firefox/unique-spocs",
+    "url": "https://spocs.getpocket.com/spocs",
     "spocs_per_domain": 1
   },
   "layout": [
