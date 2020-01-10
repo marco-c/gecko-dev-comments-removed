@@ -127,9 +127,9 @@ class _BookmarkPanelHub {
 
     const createElement = elem =>
       target.document.createElementNS("http://www.w3.org/1999/xhtml", elem);
-
-    if (!target.container.querySelector("#cfrMessageContainer")) {
-      const recommendation = createElement("div");
+    let recommendation = target.container.querySelector("#cfrMessageContainer");
+    if (!recommendation) {
+      recommendation = createElement("div");
       const headerContainer = createElement("div");
       headerContainer.classList.add("cfrMessageHeader");
       recommendation.setAttribute("id", "cfrMessageContainer");
@@ -190,6 +190,41 @@ class _BookmarkPanelHub {
     }
 
     this.toggleRecommendation(true);
+    this._adjustPanelHeight(win, recommendation);
+  }
+
+  
+
+
+
+  async _adjustPanelHeight(window, messageContainer) {
+    const { document } = window;
+    
+    const screenshotContainer = document.getElementById(
+      "editBookmarkPanelImage"
+    );
+    
+    await document.l10n.translateElements([messageContainer]);
+    window.requestAnimationFrame(() => {
+      let { height } = messageContainer.getBoundingClientRect();
+      if (height > 150) {
+        messageContainer.classList.add("longMessagePadding");
+        
+        height = messageContainer.getBoundingClientRect().height;
+        
+        screenshotContainer.style.height = `${height}px`;
+      }
+    });
+  }
+
+  
+
+
+
+  _restorePanelHeight(window) {
+    const { document } = window;
+    
+    document.getElementById("editBookmarkPanelImage").style.height = "";
   }
 
   toggleRecommendation(visible) {
@@ -224,6 +259,7 @@ class _BookmarkPanelHub {
         target || this._response.target
       ).container.querySelector("#cfrMessageContainer");
       if (container) {
+        this._restorePanelHeight(this._response.win);
         container.remove();
       }
     }
@@ -250,7 +286,7 @@ class _BookmarkPanelHub {
     
     this.hideMessage(panelTarget);
     
-    this._response = { target: panelTarget };
+    this._response = { target: panelTarget, win };
     
     win.MozXULElement.insertFTLIfNeeded("browser/newtab/asrouter.ftl");
     win.MozXULElement.insertFTLIfNeeded("browser/branding/sync-brand.ftl");
