@@ -1355,7 +1355,6 @@ class SchemaAPIManager extends EventEmitter {
 
 
 
-
   constructor(processType, schema) {
     super();
     this.processType = processType;
