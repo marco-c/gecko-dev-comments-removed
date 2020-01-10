@@ -391,9 +391,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   static bool IsRequestIdleCallbackEnabled(JSContext* aCx,
                                            JSObject* );
 
-  static bool IsWindowPrintEnabled(JSContext* ,
-                                   JSObject* );
-
   static bool RegisterProtocolHandlerAllowedForContext(JSContext* ,
                                                        JSObject* aObj);
 

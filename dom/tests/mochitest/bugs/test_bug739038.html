@@ -21,7 +21,7 @@
 
 SimpleTest.waitForExplicitFinish();
 
-SpecialPowers.pushPrefEnv({"set": [["dom.disable_window_print", true]]}, function() {
+SpecialPowers.pushPrefEnv({"set": [["dom.enable_window_print", false]]}, function() {
   var ifr = document.createElement("iframe");
   ifr.onload = function() {
     var win = ifr.contentWindow;
