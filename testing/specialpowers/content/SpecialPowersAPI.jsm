@@ -118,7 +118,6 @@ class SpecialPowersAPI extends JSWindowActorChild {
     this._unexpectedCrashDumpFiles = { };
     this._crashDumpDir = null;
     this._mfl = null;
-    this._applyingPrefs = false;
     this._applyingPermissions = false;
     this._observingPermissions = false;
     this._asyncObservers = new WeakMap();
@@ -517,6 +516,12 @@ class SpecialPowersAPI extends JSWindowActorChild {
       this.contentWindow.setTimeout(callback, 0);
   }
 
+  promiseTimeout(delay) {
+    return new Promise(resolve => {
+      this._setTimeout(resolve, delay);
+    });
+  }
+
   _delayCallbackTwice(callback) {
      let delayedCallback = () => {
        let delayAgain = (aCallback) => {
@@ -737,236 +742,19 @@ class SpecialPowersAPI extends JSWindowActorChild {
     }
   }
 
-  
-
-
-
-  _resolveAndCallOptionalCallback(resolveFn, callback = null) {
-    resolveFn();
-
-    if (callback) {
-      callback();
-    }
+  async pushPrefEnv(inPrefs, callback = null) {
+    await this.sendQuery("PushPrefEnv", inPrefs).then(callback);
+    await this.promiseTimeout(0);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async _pushPrefEnv(inPrefs) {
-    var prefs = Services.prefs;
-
-    var pref_string = [];
-    pref_string[prefs.PREF_INT] = "INT";
-    pref_string[prefs.PREF_BOOL] = "BOOL";
-    pref_string[prefs.PREF_STRING] = "CHAR";
-
-    var pendingActions = [];
-    var cleanupActions = [];
-
-    for (var action in inPrefs) { 
-      for (var idx in inPrefs[action]) {
-        var aPref = inPrefs[action][idx];
-        var prefName = aPref[0];
-        var prefValue = null;
-        var prefIid = null;
-        var prefType = prefs.PREF_INVALID;
-        var originalValue = null;
-
-        if (aPref.length == 3) {
-          prefValue = aPref[1];
-          prefIid = aPref[2];
-        } else if (aPref.length == 2) {
-          prefValue = aPref[1];
-        }
-
-        
-        if (prefs.getPrefType(prefName) != prefs.PREF_INVALID) {
-          prefType = pref_string[prefs.getPrefType(prefName)];
-          if ((prefs.prefHasUserValue(prefName) && action == "clear") ||
-              (action == "set"))
-            originalValue = this._getPref(prefName, prefType, {});
-        } else if (action == "set") {
-          
-          if (aPref.length == 3) {
-            prefType = "COMPLEX";
-          } else if (aPref.length == 2) {
-            if (typeof(prefValue) == "boolean")
-              prefType = "BOOL";
-            else if (typeof(prefValue) == "number")
-              prefType = "INT";
-            else if (typeof(prefValue) == "string")
-              prefType = "CHAR";
-          }
-        }
-
-        
-        if (prefType == prefs.PREF_INVALID)
-          continue;
-
-        
-        if (originalValue == prefValue)
-          continue;
-
-        pendingActions.push({"action": action, "type": prefType, "name": prefName, "value": prefValue, "Iid": prefIid});
-
-        
-        var cleanupTodo = {"action": action, "type": prefType, "name": prefName, "value": originalValue, "Iid": prefIid};
-        if (originalValue == null) {
-          cleanupTodo.action = "clear";
-        } else {
-          cleanupTodo.action = "set";
-        }
-        cleanupActions.push(cleanupTodo);
-      }
-    }
-
-    return new Promise(resolve => {
-      if (pendingActions.length > 0) {
-        
-        
-        
-        
-        
-        
-        
-        this._prefEnvUndoStack.push(cleanupActions);
-        this._pendingPrefs.push([pendingActions,
-                                 this._delayCallbackTwice(resolve)]);
-        this._applyPrefs();
-      } else {
-        this._setTimeout(resolve);
-      }
-    });
+  async popPrefEnv(callback = null) {
+    await this.sendQuery("PopPrefEnv").then(callback);
+    await this.promiseTimeout(0);
   }
 
-  pushPrefEnv(inPrefs, callback = null) {
-    let promise = this._pushPrefEnv(inPrefs);
-    if (callback) {
-      promise.then(callback);
-    }
-    return promise;
-  }
-
-  popPrefEnv(callback = null) {
-    return new Promise(resolve => {
-      let done = this._resolveAndCallOptionalCallback.bind(this, resolve, callback);
-      if (this._prefEnvUndoStack.length > 0) {
-        
-        let cb = this._delayCallbackTwice(done);
-        
-        this._pendingPrefs.push([this._prefEnvUndoStack.pop(), cb]);
-        this._applyPrefs();
-      } else {
-        this._setTimeout(done);
-      }
-    });
-  }
-
-  flushPrefEnv(callback = null) {
-    while (this._prefEnvUndoStack.length > 1)
-      this.popPrefEnv(null);
-
-    return new Promise(resolve => {
-      let done = this._resolveAndCallOptionalCallback.bind(this, resolve, callback);
-      this.popPrefEnv(done);
-    });
-  }
-
-  _isPrefActionNeeded(prefAction) {
-    if (prefAction.action === "clear") {
-      return Services.prefs.prefHasUserValue(prefAction.name);
-    } else if (prefAction.action === "set") {
-      try {
-        let currentValue = this._getPref(prefAction.name, prefAction.type, {});
-        return currentValue != prefAction.value;
-      } catch (e) {
-        
-        return true;
-      }
-    }
-    
-    return false;
-  }
-
-  
-
-
-
-  _applyPrefs() {
-    if (this._applyingPrefs || this._pendingPrefs.length <= 0) {
-      return;
-    }
-
-    
-    this._applyingPrefs = true;
-    var transaction = this._pendingPrefs.shift();
-    var pendingActions = transaction[0];
-    var callback = transaction[1];
-
-    
-    pendingActions = pendingActions.filter(action => {
-      return this._isPrefActionNeeded(action);
-    });
-
-
-    var self = this;
-    let onPrefActionsApplied = function() {
-      self._setTimeout(callback);
-      self._setTimeout(function() {
-        self._applyingPrefs = false;
-        
-        self._applyPrefs();
-      });
-    };
-
-    
-    if (pendingActions.length === 0) {
-      onPrefActionsApplied();
-      return;
-    }
-
-    var lastPref = pendingActions[pendingActions.length - 1];
-
-    var pb = Services.prefs;
-    pb.addObserver(lastPref.name, function prefObs(subject, topic, data) {
-      pb.removeObserver(lastPref.name, prefObs);
-      onPrefActionsApplied();
-    });
-
-    for (var idx in pendingActions) {
-      var pref = pendingActions[idx];
-      if (pref.action == "set") {
-        this._setPref(pref.name, pref.type, pref.value, pref.Iid);
-      } else if (pref.action == "clear") {
-        this.clearUserPref(pref.name);
-      }
-    }
+  async flushPrefEnv(callback = null) {
+    await this.sendQuery("FlushPrefEnv").then(callback);
+    await this.promiseTimeout(0);
   }
 
   _addObserverProxy(notification) {
@@ -2075,8 +1863,6 @@ SpecialPowersAPI.prototype.EARLY_BETA_OR_EARLIER = AppConstants.EARLY_BETA_OR_EA
 
 
 Object.assign(SpecialPowersAPI.prototype, {
-  _prefEnvUndoStack: [],
-  _pendingPrefs: [],
   _permissionsUndoStack: [],
   _pendingPermissions: [],
 });
