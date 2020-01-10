@@ -900,13 +900,10 @@ Maybe<gfx::IntRect> BasicCompositor::BeginFrame(
     
     
     
-    mDrawTarget = mTarget;
-    mDrawTargetBounds = mTargetBounds;
     IntRegion clearRegion;
     clearRegion.Sub(mInvalidRegion, aOpaqueRegion);
     
-    target =
-        CreateRenderTargetAndClear(mDrawTarget, mDrawTargetBounds, clearRegion);
+    target = CreateRenderTargetAndClear(mTarget, mTargetBounds, clearRegion);
   } else if (aNativeLayer) {
 #ifdef XP_MACOSX
     if (mInvalidRect.IsEmpty()) {
@@ -926,13 +923,13 @@ Maybe<gfx::IntRect> BasicCompositor::BeginFrame(
     mCurrentNativeLayer = aNativeLayer;
     mCurrentIOSurface = new MacIOSurface(std::move(surf));
     mCurrentIOSurface->Lock(false);
-    mDrawTarget = mCurrentIOSurface->GetAsDrawTargetLocked(BackendType::SKIA);
-    mDrawTargetBounds = IntRect(IntPoint(0, 0), mDrawTarget->GetSize());
+    RefPtr<DrawTarget> dt =
+        mCurrentIOSurface->GetAsDrawTargetLocked(BackendType::SKIA);
+    IntRect dtBounds(IntPoint(0, 0), dt->GetSize());
     IntRegion clearRegion;
     clearRegion.Sub(mInvalidRegion, aOpaqueRegion);
     
-    target =
-        CreateRenderTargetAndClear(mDrawTarget, mDrawTargetBounds, clearRegion);
+    target = CreateRenderTargetAndClear(dt, dtBounds, clearRegion);
 #else
     MOZ_CRASH("Unexpected native layer on this platform");
 #endif
@@ -940,15 +937,15 @@ Maybe<gfx::IntRect> BasicCompositor::BeginFrame(
     LayoutDeviceIntRegion invalidRegion =
         LayoutDeviceIntRegion::FromUnknownRegion(mInvalidRegion);
     BufferMode bufferMode = BufferMode::BUFFERED;
-    mDrawTarget =
+    RefPtr<DrawTarget> dt =
         mWidget->StartRemoteDrawingInRegion(invalidRegion, &bufferMode);
-    if (!mDrawTarget) {
+    if (!dt) {
       return Nothing();
     }
     mInvalidRegion = invalidRegion.ToUnknownRegion();
     mInvalidRect = mInvalidRegion.GetBounds();
     if (mInvalidRect.IsEmpty()) {
-      mWidget->EndRemoteDrawingInRegion(mDrawTarget, invalidRegion);
+      mWidget->EndRemoteDrawingInRegion(dt, invalidRegion);
       return Nothing();
     }
 
@@ -958,18 +955,16 @@ Maybe<gfx::IntRect> BasicCompositor::BeginFrame(
     if (bufferMode == BufferMode::BUFFERED) {
       
       bool isCleared = false;
-      RefPtr<DrawTarget> backBuffer = mWidget->GetBackBufferDrawTarget(
-          mDrawTarget, mInvalidRect, &isCleared);
+      RefPtr<DrawTarget> backBuffer =
+          mWidget->GetBackBufferDrawTarget(dt, mInvalidRect, &isCleared);
       if (!backBuffer) {
-        mWidget->EndRemoteDrawingInRegion(mDrawTarget, invalidRegion);
+        mWidget->EndRemoteDrawingInRegion(dt, invalidRegion);
         return Nothing();
       }
       
-      
-      
-      mDrawTargetBounds = IntRect(IntPoint(0, 0), mDrawTarget->GetSize());
       target = CreateRenderTargetAndClear(
           backBuffer, mInvalidRect, isCleared ? IntRegion() : clearRegion);
+      mFrontBuffer = dt;
       
       
     } else {
@@ -978,16 +973,13 @@ Maybe<gfx::IntRect> BasicCompositor::BeginFrame(
       
       
       
-      IntSize dtSize = mDrawTarget->GetSize();
-      if (dtSize == mInvalidRect.Size()) {
-        mDrawTargetBounds = mInvalidRect;
-      } else {
-        mDrawTargetBounds = IntRect(IntPoint(0, 0), dtSize);
+      IntRect dtBounds(IntPoint(), dt->GetSize());
+      if (dtBounds.Size() == mInvalidRect.Size()) {
+        dtBounds.MoveTo(mInvalidRect.TopLeft());
       }
 
       
-      target = CreateRenderTargetAndClear(mDrawTarget, mDrawTargetBounds,
-                                          clearRegion);
+      target = CreateRenderTargetAndClear(dt, dtBounds, clearRegion);
     }
   }
 
@@ -1025,13 +1017,11 @@ void BasicCompositor::EndFrame() {
   mRenderTarget->mDrawTarget->SetTransform(gfx::Matrix());
 
   if (mTarget) {
-    mDrawTarget = nullptr;
     mRenderTarget = nullptr;
   } else if (mCurrentNativeLayer) {
 #ifdef XP_MACOSX
     NativeLayerCA* nativeLayer = mCurrentNativeLayer->AsNativeLayerCA();
     MOZ_RELEASE_ASSERT(nativeLayer, "Unexpected native layer type");
-    mDrawTarget = nullptr;
     mRenderTarget = nullptr;
     mCurrentIOSurface->Unlock(false);
     mCurrentIOSurface = nullptr;
@@ -1070,12 +1060,13 @@ void BasicCompositor::EndRemoteDrawing() {
     return;
   }
 
-  if (mRenderTarget->mDrawTarget != mDrawTarget) {
+  if (mFrontBuffer) {
+    
+    
     
     
     RefPtr<SourceSurface> source = mWidget->EndBackBufferDrawing();
     IntPoint srcOffset = mRenderTarget->GetOrigin();
-    IntPoint dstOffset = mDrawTargetBounds.TopLeft();
 
     
     
@@ -1083,14 +1074,19 @@ void BasicCompositor::EndRemoteDrawing() {
     
     for (auto iter = mInvalidRegion.RectIter(); !iter.Done(); iter.Next()) {
       const IntRect& r = iter.Get();
-      mDrawTarget->CopySurface(source, r - srcOffset, r.TopLeft() - dstOffset);
+      mFrontBuffer->CopySurface(source, r - srcOffset, r.TopLeft());
     }
+
+    mWidget->EndRemoteDrawingInRegion(
+        mFrontBuffer, LayoutDeviceIntRegion::FromUnknownRegion(mInvalidRegion));
+
+    mFrontBuffer = nullptr;
+  } else {
+    mWidget->EndRemoteDrawingInRegion(
+        mRenderTarget->mDrawTarget,
+        LayoutDeviceIntRegion::FromUnknownRegion(mInvalidRegion));
   }
 
-  mWidget->EndRemoteDrawingInRegion(
-      mDrawTarget, LayoutDeviceIntRegion::FromUnknownRegion(mInvalidRegion));
-
-  mDrawTarget = nullptr;
   mRenderTarget = nullptr;
   mIsPendingEndRemoteDrawing = false;
 }
@@ -1130,14 +1126,7 @@ void BasicCompositor::NormalDrawingDone() {
 }
 
 bool BasicCompositor::NeedsToDeferEndRemoteDrawing() {
-  MOZ_ASSERT(mDrawTarget);
-  MOZ_ASSERT(mRenderTarget);
-
-  if (mTarget || mRenderTarget->mDrawTarget == mDrawTarget) {
-    return false;
-  }
-
-  return mWidget->NeedsToDeferEndRemoteDrawing();
+  return mFrontBuffer && mWidget->NeedsToDeferEndRemoteDrawing();
 }
 
 void BasicCompositor::FinishPendingComposite() { EndRemoteDrawing(); }

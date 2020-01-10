@@ -143,8 +143,6 @@ class BasicCompositor : public Compositor {
     return LayersBackend::LAYERS_BASIC;
   }
 
-  gfx::DrawTarget* GetDrawTarget() { return mDrawTarget; }
-
   bool IsPendingComposite() override { return mIsPendingEndRemoteDrawing; }
 
   void FinishPendingComposite() override;
@@ -188,9 +186,9 @@ class BasicCompositor : public Compositor {
   bool NeedToRecreateFullWindowRenderTarget() const;
 
   
-  RefPtr<gfx::DrawTarget> mDrawTarget;
   
-  gfx::IntRect mDrawTargetBounds;
+  
+  RefPtr<gfx::DrawTarget> mFrontBuffer;
 
   
   RefPtr<BasicCompositingRenderTarget> mRenderTarget;
