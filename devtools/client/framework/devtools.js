@@ -731,10 +731,6 @@ DevTools.prototype = {
 
     
     
-    nodeSelectors.splice(0, toolbox.selectedFrameDepth);
-
-    
-    
     const onNewNode = inspector.selection.once("new-node-front");
 
     const nodeFront = await inspector.walker.findNodeFront(nodeSelectors);
