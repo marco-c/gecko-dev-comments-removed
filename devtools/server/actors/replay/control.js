@@ -112,6 +112,9 @@ function ChildProcess(id, recording) {
   this.lastPausePoint = null;
 
   
+  this.lastMemoryUsage = null;
+
+  
   this.asyncManifests = [];
 
   
@@ -168,19 +171,25 @@ ChildProcess.prototype = {
     this.paused = false;
     this.manifest = manifest;
 
-    dumpv(`SendManifest #${this.id} ${JSON.stringify(manifest.contents)}`);
+    dumpv(`SendManifest #${this.id} ${stringify(manifest.contents)}`);
     RecordReplayControl.sendManifest(this.id, manifest.contents);
   },
 
   
   manifestFinished(response) {
     assert(!this.paused);
-    if (response && response.point) {
-      this.lastPausePoint = response.point;
+    if (response) {
+      if (response.point) {
+        this.lastPausePoint = response.point;
+      }
+      if (response.memoryUsage) {
+        this.lastMemoryUsage = response.memoryUsage;
+      }
     }
     this.paused = true;
     this.manifest.onFinished(response);
     this.manifest = null;
+    maybeDumpStatistics();
   },
 
   
@@ -346,6 +355,15 @@ function CheckpointInfo() {
   
   
   this.owner = null;
+
+  
+  this.assignTime = null;
+
+  
+  this.scanTime = null;
+
+  
+  this.scanDuration = null;
 }
 
 function getCheckpointInfo(id) {
@@ -365,6 +383,16 @@ function timeSinceCheckpoint(id) {
 }
 
 
+function timeForSavedCheckpoint(id) {
+  const next = nextSavedCheckpoint(id);
+  let time = 0;
+  for (let i = id; i < next; i++) {
+    time += gCheckpoints[i].duration;
+  }
+  return time;
+}
+
+
 let gLastFlushCheckpoint = InvalidCheckpointId;
 
 
@@ -377,6 +405,7 @@ function addSavedCheckpoint(checkpoint) {
 
   const owner = pickReplayingChild();
   getCheckpointInfo(checkpoint).owner = owner;
+  getCheckpointInfo(checkpoint).assignTime = Date.now();
   owner.addSavedCheckpoint(checkpoint);
 }
 
@@ -542,7 +571,14 @@ function scanRecording(checkpoint) {
           needSaveCheckpoints: child.flushNeedSaveCheckpoints(),
         };
       },
-      onFinished: child => child.scannedCheckpoints.add(checkpoint),
+      onFinished(child, { duration }) {
+        child.scannedCheckpoints.add(checkpoint);
+        const info = getCheckpointInfo(checkpoint);
+        if (!info.scanTime) {
+          info.scanTime = Date.now();
+          info.scanDuration = duration;
+        }
+      },
     },
     checkpointExecutionPoint(checkpoint)
   );
@@ -1139,7 +1175,7 @@ function Initialize(recordingChildId) {
 
 function ManifestFinished(id, response) {
   try {
-    dumpv(`ManifestFinished #${id} ${JSON.stringify(response)}`);
+    dumpv(`ManifestFinished #${id} ${stringify(response)}`);
     lookupChild(id).manifestFinished(response);
   } catch (e) {
     dump(`ERROR: ManifestFinished threw exception: ${e} ${e.stack}\n`);
@@ -1318,10 +1354,85 @@ const gControl = {
 
 
 
+let lastDumpTime = Date.now();
+
+function maybeDumpStatistics() {
+  const now = Date.now();
+  if (now - lastDumpTime < 5000) {
+    return;
+  }
+  lastDumpTime = now;
+
+  let delayTotal = 0;
+  let unscannedTotal = 0;
+  let timeTotal = 0;
+  let scanDurationTotal = 0;
+
+  forSavedCheckpointsInRange(
+    FirstCheckpointId,
+    gLastFlushCheckpoint,
+    checkpoint => {
+      const checkpointTime = timeForSavedCheckpoint(checkpoint);
+      const info = getCheckpointInfo(checkpoint);
+
+      timeTotal += checkpointTime;
+      if (info.scanTime) {
+        delayTotal += checkpointTime * (info.scanTime - info.assignTime);
+        scanDurationTotal += info.scanDuration;
+      } else {
+        unscannedTotal += checkpointTime;
+      }
+    }
+  );
+
+  const memoryUsage = [];
+  let totalSaved = 0;
+
+  for (const child of gReplayingChildren) {
+    if (!child) {
+      continue;
+    }
+    totalSaved += child.savedCheckpoints.size;
+    if (!child.lastMemoryUsage) {
+      continue;
+    }
+    for (const [name,value] of Object.entries(child.lastMemoryUsage)) {
+      if (!memoryUsage[name]) {
+        memoryUsage[name] = 0;
+      }
+      memoryUsage[name] += value;
+    }
+  }
+
+  const delay = delayTotal / timeTotal;
+  const overhead = scanDurationTotal / (timeTotal - unscannedTotal);
+
+  dumpv(`Statistics:`);
+  dumpv(`Total recording time: ${timeTotal}`);
+  dumpv(`Unscanned fraction: ${unscannedTotal / timeTotal}`);
+  dumpv(`Average scan delay: ${delay}`);
+  dumpv(`Average scanning overhead: ${overhead}`);
+
+  dumpv(`Saved checkpoints: ${totalSaved}`);
+  for (const [name,value] of Object.entries(memoryUsage)) {
+    dumpv(`Memory ${name}: ${value}`);
+  }
+}
+
+
+
+
+
 
 function ConnectDebugger(dbg) {
   gDebugger = dbg;
   dbg._control = gControl;
+}
+
+const startTime = Date.now();
+
+function currentTime() {
+  return (((Date.now() - startTime) / 10) | 0) / 100;
 }
 
 function dumpv(str) {
@@ -1338,6 +1449,14 @@ function ThrowError(msg) {
   const error = new Error(msg);
   dump(`ReplayControl Server Error: ${msg} Stack: ${error.stack}\n`);
   throw error;
+}
+
+function stringify(object) {
+  const str = JSON.stringify(object);
+  if (str && str.length >= 4096) {
+    return `${str.substr(0, 4096)} TRIMMED ${str.length}`;
+  }
+  return str;
 }
 
 
