@@ -7732,8 +7732,94 @@ bool BytecodeEmitter::emitConditionalExpression(
   return true;
 }
 
+
+
+
+
+
+
+void BytecodeEmitter::isPropertyListObjLiteralCompatible(ListNode* obj,
+                                                         PropListType type,
+                                                         bool* withValues,
+                                                         bool* withoutValues) {
+  if (type == ClassBody) {
+    *withValues = false;
+    *withoutValues = false;
+    return;
+  }
+
+  bool keysOK = true;
+  bool valuesOK = true;
+  int propCount = 0;
+
+  for (ParseNode* propdef : obj->contents()) {
+    if (!propdef->is<BinaryNode>()) {
+      keysOK = false;
+      break;
+    }
+    propCount++;
+
+    BinaryNode* prop = &propdef->as<BinaryNode>();
+    ParseNode* key = prop->left();
+    ParseNode* value = prop->right();
+
+    
+    if (key->isKind(ParseNodeKind::ComputedName)) {
+      keysOK = false;
+      break;
+    }
+    
+    if (key->isKind(ParseNodeKind::NumberExpr)) {
+      double numValue = key->as<NumericLiteral>().value();
+      int32_t i = 0;
+      if (!NumberIsInt32(numValue, &i)) {
+        keysOK = false;
+        break;
+      }
+      if (!ObjLiteralWriter::arrayIndexInRange(i)) {
+        keysOK = false;
+        break;
+      }
+    }
+
+    AccessorType accessorType =
+        prop->is<PropertyDefinition>()
+            ? prop->as<PropertyDefinition>().accessorType()
+            : AccessorType::None;
+    if (accessorType != AccessorType::None) {
+      keysOK = false;
+      break;
+    }
+
+    if (!isRHSObjLiteralCompatible(value)) {
+      valuesOK = false;
+    }
+  }
+
+  if (propCount >= PropertyTree::MAX_HEIGHT) {
+    
+    keysOK = false;
+  }
+
+  *withValues = keysOK && valuesOK;
+  *withoutValues = keysOK;
+}
+
+bool BytecodeEmitter::isArrayObjLiteralCompatible(ParseNode* arrayHead) {
+  for (ParseNode* elem = arrayHead; elem; elem = elem->pn_next) {
+    if (elem->isKind(ParseNodeKind::Spread)) {
+      return false;
+    }
+    if (!isRHSObjLiteralCompatible(elem)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
-                                       PropListType type) {
+                                       PropListType type,
+                                       bool isInnerSingleton) {
   
 
   size_t curFieldKeyIndex = 0;
@@ -7751,7 +7837,8 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
 
         ParseNode* nameExpr = field->name().as<UnaryNode>().kid();
 
-        if (!emitTree(nameExpr)) {
+        if (!emitTree(nameExpr, ValueUsage::WantValue, EMIT_LINENOTE,
+                       isInnerSingleton)) {
           
           return false;
         }
@@ -8040,6 +8127,154 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
   return true;
 }
 
+bool BytecodeEmitter::emitPropertyListObjLiteral(ListNode* obj,
+                                                 PropListType type,
+                                                 ObjLiteralFlags flags) {
+  int32_t stackDepth = bytecodeSection().stackDepth();
+
+  ObjLiteralCreationData data(cx);
+  data.writer().beginObject(flags);
+  bool noValues = flags.contains(ObjLiteralFlag::NoValues);
+  bool singleton = flags.contains(ObjLiteralFlag::Singleton);
+
+  for (ParseNode* propdef : obj->contents()) {
+    MOZ_ASSERT(propdef->is<BinaryNode>());
+    BinaryNode* prop = &propdef->as<BinaryNode>();
+    ParseNode* key = prop->left();
+    MOZ_ASSERT(key->is<NameNode>() || key->is<NumericLiteral>());
+
+    if (key->is<NameNode>()) {
+      uint32_t propNameIndex = 0;
+      if (!data.addAtom(key->as<NameNode>().atom(), &propNameIndex)) {
+        return false;
+      }
+      data.writer().setPropName(propNameIndex);
+    } else {
+      MOZ_ASSERT(key->is<NumericLiteral>());
+      double numValue = key->as<NumericLiteral>().value();
+      int32_t i = 0;
+      DebugOnly<bool> numIsInt =
+          NumberIsInt32(numValue, &i);  
+      MOZ_ASSERT(numIsInt);
+      MOZ_ASSERT(
+          ObjLiteralWriter::arrayIndexInRange(i));  
+      data.writer().setPropIndex(i);
+    }
+
+    if (noValues) {
+      if (!data.writer().propWithUndefinedValue()) {
+        return false;
+      }
+    } else {
+      ParseNode* value = prop->right();
+      if (!emitObjLiteralValue(&data, value)) {
+        return false;
+      }
+    }
+  }
+
+  uint32_t gcThingIndex = 0;
+  if (!perScriptData().gcThingList().append(std::move(data), &gcThingIndex)) {
+    return false;
+  }
+
+  bool success = singleton ? emitIndex32(JSOP_OBJECT, gcThingIndex)
+                           : emitIndex32(JSOP_NEWOBJECT, gcThingIndex);
+  if (!success) {
+    return false;
+  }
+
+  bytecodeSection().setStackDepth(stackDepth + 1);
+  return true;
+}
+
+bool BytecodeEmitter::emitObjLiteralArray(ParseNode* arrayHead, bool isCow) {
+  int32_t stackDepth = bytecodeSection().stackDepth();
+
+  ObjLiteralCreationData data(cx);
+  ObjLiteralFlags flags(ObjLiteralFlag::Array);
+  if (isCow) {
+    flags += ObjLiteralFlag::ArrayCOW;
+  }
+  data.writer().beginObject(flags);
+
+  uint32_t index = 0;
+  for (ParseNode* elem = arrayHead; elem; elem = elem->pn_next, index++) {
+    data.writer().setPropIndex(index);
+    if (!emitObjLiteralValue(&data, elem)) {
+      return false;
+    }
+  }
+
+  uint32_t gcThingIndex = 0;
+  if (!perScriptData().gcThingList().append(std::move(data), &gcThingIndex)) {
+    return false;
+  }
+
+  JSOp op = isCow ? JSOP_NEWARRAY_COPYONWRITE : JSOP_OBJECT;
+  if (!emitIndex32(op, gcThingIndex)) {
+    return false;
+  }
+
+  bytecodeSection().setStackDepth(stackDepth + 1);
+  return true;
+}
+
+bool BytecodeEmitter::isRHSObjLiteralCompatible(ParseNode* value) {
+  return value->isKind(ParseNodeKind::NumberExpr) ||
+         value->isKind(ParseNodeKind::TrueExpr) ||
+         value->isKind(ParseNodeKind::FalseExpr) ||
+         value->isKind(ParseNodeKind::NullExpr) ||
+         value->isKind(ParseNodeKind::RawUndefinedExpr) ||
+         value->isKind(ParseNodeKind::StringExpr) ||
+         value->isKind(ParseNodeKind::TemplateStringExpr);
+}
+
+bool BytecodeEmitter::emitObjLiteralValue(ObjLiteralCreationData* data,
+                                          ParseNode* value) {
+  if (value->isKind(ParseNodeKind::NumberExpr)) {
+    double numValue = value->as<NumericLiteral>().value();
+    int32_t i = 0;
+    js::Value v;
+    if (NumberIsInt32(numValue, &i)) {
+      v.setInt32(i);
+    } else {
+      v.setDouble(numValue);
+    }
+    if (!data->writer().propWithConstNumericValue(v)) {
+      return false;
+    }
+  } else if (value->isKind(ParseNodeKind::TrueExpr)) {
+    if (!data->writer().propWithTrueValue()) {
+      return false;
+    }
+  } else if (value->isKind(ParseNodeKind::FalseExpr)) {
+    if (!data->writer().propWithFalseValue()) {
+      return false;
+    }
+  } else if (value->isKind(ParseNodeKind::NullExpr)) {
+    if (!data->writer().propWithNullValue()) {
+      return false;
+    }
+  } else if (value->isKind(ParseNodeKind::RawUndefinedExpr)) {
+    if (!data->writer().propWithUndefinedValue()) {
+      return false;
+    }
+  } else if (value->isKind(ParseNodeKind::StringExpr) ||
+             value->isKind(ParseNodeKind::TemplateStringExpr)) {
+    uint32_t valueAtomIndex = 0;
+    if (!data->addAtom(value->as<NameNode>().atom(), &valueAtomIndex)) {
+      return false;
+    }
+    if (!data->writer().propWithAtomValue(valueAtomIndex)) {
+      return false;
+    }
+  } else {
+    return false;
+  }
+  return true;
+}
+
 FieldInitializers BytecodeEmitter::setupFieldInitializers(
     ListNode* classMembers) {
   size_t numFields = 0;
@@ -8054,6 +8289,7 @@ FieldInitializers BytecodeEmitter::setupFieldInitializers(
   }
   return FieldInitializers(numFields);
 }
+
 
 
 
@@ -8252,23 +8488,111 @@ bool BytecodeEmitter::emitInitializeInstanceFields() {
 
 
 
-MOZ_NEVER_INLINE bool BytecodeEmitter::emitObject(ListNode* objNode) {
-  if (!objNode->hasNonConstInitializer() && objNode->head() &&
-      checkSingletonContext()) {
-    return emitSingletonInitialiser(objNode);
+MOZ_NEVER_INLINE bool BytecodeEmitter::emitObject(ListNode* objNode,
+                                                  bool isInnerSingleton) {
+  bool isSingletonContext = !objNode->hasNonConstInitializer() &&
+                            objNode->head() && checkSingletonContext();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  bool useObjLiteral = false;
+  bool useObjLiteralValues = false;
+  isPropertyListObjLiteralCompatible(objNode, ObjectLiteral,
+                                     &useObjLiteralValues, &useObjLiteral);
+  if (!isSingletonContext) {
+    useObjLiteralValues = false;
   }
 
   
-
+  
   ObjectEmitter oe(this);
-  if (!oe.emitObject(objNode->count())) {
+  if (useObjLiteral) {
     
-    return false;
-  }
-  if (!emitPropertyList(objNode, oe, ObjectLiteral)) {
     
-    return false;
+    
+    
+    
+    
+    
+    ObjLiteralFlags flags;
+    if (isSingletonContext) {
+      
+      
+      flags += ObjLiteralFlag::SpecificGroup;
+      if (!isInnerSingleton) {
+        flags += ObjLiteralFlag::Singleton;
+      }
+    }
+    if (!useObjLiteralValues) {
+      flags += ObjLiteralFlag::NoValues;
+    }
+
+    
+    
+    
+    
+    
+    if (!emitPropertyListObjLiteral(objNode, ObjectLiteral, flags)) {
+      
+      return false;
+    }
+    
+    
+    
+    if (!oe.emitObjectWithTemplateOnStack()) {
+      
+      return false;
+    }
+    if (!useObjLiteralValues) {
+      
+      
+      if (!emitPropertyList(objNode, oe, ObjectLiteral,
+                             true)) {
+        
+        return false;
+      }
+    }
+  } else {
+    
+    if (!oe.emitObject(objNode->count())) {
+      
+      return false;
+    }
+    if (!emitPropertyList(objNode, oe, ObjectLiteral)) {
+      
+      return false;
+    }
   }
+
   if (!oe.emitEnd()) {
     
     return false;
@@ -8304,42 +8628,17 @@ bool BytecodeEmitter::replaceNewInitWithNewObject(JSObject* obj,
 
 bool BytecodeEmitter::emitArrayLiteral(ListNode* array) {
   if (!array->hasNonConstInitializer() && array->head()) {
-    if (checkSingletonContext()) {
-      
-      return emitSingletonInitialiser(array);
-    }
-
+    bool isSingleton = checkSingletonContext();
+    
     
     
     
     
     static const size_t MinElementsForCopyOnWrite = 5;
     if (emitterMode != BytecodeEmitter::SelfHosting &&
-        array->count() >= MinElementsForCopyOnWrite) {
-      RootedValue value(cx);
-      if (!array->getConstantValue(cx, ParseNode::ForCopyOnWriteArray,
-                                   &value)) {
-        return false;
-      }
-      if (!value.isMagic(JS_GENERIC_MAGIC)) {
-        
-        
-        
-        
-        
-        
-        
-        JSObject* obj = &value.toObject();
-        MOZ_ASSERT(obj->is<ArrayObject>() &&
-                   obj->as<ArrayObject>().denseElementsAreCopyOnWrite());
-
-        ObjectBox* objbox = parser->newObjectBox(obj);
-        if (!objbox) {
-          return false;
-        }
-
-        return emitObjectOp(objbox, JSOP_NEWARRAY_COPYONWRITE);
-      }
+        (array->count() >= MinElementsForCopyOnWrite || isSingleton) &&
+        isArrayObjLiteralCompatible(array->head())) {
+      return emitObjLiteralArray(array->head(),  !isSingleton);
     }
   }
 
@@ -9060,7 +9359,8 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitInstrumentationForOpcodeSlow(
 
 bool BytecodeEmitter::emitTree(
     ParseNode* pn, ValueUsage valueUsage ,
-    EmitLineNumberNote emitLineNote ) {
+    EmitLineNumberNote emitLineNote ,
+    bool isInnerSingleton ) {
   if (!CheckRecursionLimit(cx)) {
     return false;
   }
@@ -9481,7 +9781,7 @@ bool BytecodeEmitter::emitTree(
       break;
 
     case ParseNodeKind::ObjectExpr:
-      if (!emitObject(&pn->as<ListNode>())) {
+      if (!emitObject(&pn->as<ListNode>(), isInnerSingleton)) {
         return false;
       }
       break;
@@ -9519,7 +9819,8 @@ bool BytecodeEmitter::emitTree(
 
     case ParseNodeKind::RegExpExpr: {
       uint32_t index;
-      if (!perScriptData().gcThingList().append(&pn->as<RegExpLiteral>(), &index)) {
+      if (!perScriptData().gcThingList().append(&pn->as<RegExpLiteral>(),
+                                                &index)) {
         return false;
       }
       if (!emitRegExp(index)) {

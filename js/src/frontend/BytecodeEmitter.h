@@ -11,8 +11,9 @@
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
-#include "mozilla/Maybe.h"  
-#include "mozilla/Span.h"   
+#include "mozilla/Maybe.h"   
+#include "mozilla/Span.h"    
+#include "mozilla/Vector.h"  
 
 #include <stddef.h>  
 #include <stdint.h>  
@@ -362,7 +363,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   MOZ_MUST_USE bool emitTree(ParseNode* pn,
                              ValueUsage valueUsage = ValueUsage::WantValue,
-                             EmitLineNumberNote emitLineNote = EMIT_LINENOTE);
+                             EmitLineNumberNote emitLineNote = EMIT_LINENOTE,
+                             bool isInnerSingleton = false);
 
   
   
@@ -475,15 +477,36 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_NEVER_INLINE MOZ_MUST_USE bool emitFunction(
       FunctionNode* funNode, bool needsProto = false,
       ListNode* classContentsIfConstructor = nullptr);
-  MOZ_NEVER_INLINE MOZ_MUST_USE bool emitObject(ListNode* objNode);
+  MOZ_NEVER_INLINE MOZ_MUST_USE bool emitObject(ListNode* objNode,
+                                                bool isInnerSingleton = false);
 
   MOZ_MUST_USE bool replaceNewInitWithNewObject(JSObject* obj,
                                                 BytecodeOffset offset);
 
   MOZ_MUST_USE bool emitHoistedFunctionsInList(ListNode* stmtList);
 
+  
+  
+  
+  void isPropertyListObjLiteralCompatible(ListNode* obj, PropListType type,
+                                          bool* withValues,
+                                          bool* withoutValues);
+  bool isArrayObjLiteralCompatible(ParseNode* arrayHead);
+
   MOZ_MUST_USE bool emitPropertyList(ListNode* obj, PropertyEmitter& pe,
-                                     PropListType type);
+                                     PropListType type,
+                                     bool isInnerSingleton = false);
+
+  MOZ_MUST_USE bool emitPropertyListObjLiteral(ListNode* obj, PropListType type,
+                                               ObjLiteralFlags flags);
+
+  MOZ_MUST_USE bool emitObjLiteralArray(ParseNode* arrayHead, bool isCow);
+
+  
+  MOZ_MUST_USE bool isRHSObjLiteralCompatible(ParseNode* value);
+
+  MOZ_MUST_USE bool emitObjLiteralValue(ObjLiteralCreationData* data,
+                                        ParseNode* value);
 
   FieldInitializers setupFieldInitializers(ListNode* classMembers);
   MOZ_MUST_USE bool emitCreateFieldKeys(ListNode* obj);

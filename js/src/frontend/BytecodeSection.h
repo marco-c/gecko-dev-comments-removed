@@ -19,6 +19,7 @@
 #include "frontend/BytecodeOffset.h"   
 #include "frontend/JumpList.h"         
 #include "frontend/NameCollections.h"  
+#include "frontend/ObjLiteral.h"       
 #include "frontend/ParseNode.h"        
 #include "frontend/SourceNotes.h"      
 #include "gc/Barrier.h"                
@@ -43,8 +44,8 @@ class BigIntLiteral;
 class ObjectBox;
 
 struct MOZ_STACK_CLASS GCThingList {
-  using ListType =
-      mozilla::Variant<StackGCCellPtr, BigIntCreationData, RegExpCreationData>;
+  using ListType = mozilla::Variant<StackGCCellPtr, BigIntCreationData,
+                                    ObjLiteralCreationData, RegExpCreationData>;
   JS::RootedVector<ListType> vector;
 
   
@@ -82,6 +83,10 @@ struct MOZ_STACK_CLASS GCThingList {
     }
     return vector.append(mozilla::AsVariant(
         StackGCCellPtr(JS::GCCellPtr(literal->objbox()->object()))));
+  }
+  MOZ_MUST_USE bool append(ObjLiteralCreationData&& objlit, uint32_t* index) {
+    *index = vector.length();
+    return vector.append(mozilla::AsVariant(std::move(objlit)));
   }
   MOZ_MUST_USE bool append(ObjectBox* obj, uint32_t* index);
 
