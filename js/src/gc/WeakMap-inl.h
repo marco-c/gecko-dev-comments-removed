@@ -26,6 +26,10 @@ static T* extractUnbarriered(T* v) {
 }
 
 inline  JSObject* WeakMapBase::getDelegate(JSObject* key) {
+  if (!IsWrapper(key)) {
+    return nullptr;
+  }
+
   return UncheckedUnwrapWithoutExpose(key);
 }
 
