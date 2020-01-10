@@ -3007,14 +3007,14 @@ nsresult nsDocShell::DoFindItemWithName(const nsAString& aName,
   return NS_OK;
 }
 
-bool nsDocShell::IsSandboxedFrom(nsIDocShell* aTargetDocShell) {
+bool nsDocShell::IsSandboxedFrom(BrowsingContext* aTargetBC) {
   
-  if (!aTargetDocShell) {
+  if (!aTargetBC) {
     return false;
   }
 
   
-  if (aTargetDocShell == this) {
+  if (aTargetBC == mBrowsingContext) {
     return false;
   }
 
@@ -3034,18 +3034,14 @@ bool nsDocShell::IsSandboxedFrom(nsIDocShell* aTargetDocShell) {
   }
 
   
-  nsCOMPtr<nsIDocShellTreeItem> ancestorOfTarget;
-  aTargetDocShell->GetInProcessSameTypeParent(getter_AddRefs(ancestorOfTarget));
+  RefPtr<BrowsingContext> ancestorOfTarget(aTargetBC->GetParent());
   if (ancestorOfTarget) {
     do {
       
-      if (ancestorOfTarget == this) {
+      if (ancestorOfTarget == mBrowsingContext) {
         return false;
       }
-      nsCOMPtr<nsIDocShellTreeItem> tempTreeItem;
-      ancestorOfTarget->GetInProcessSameTypeParent(
-          getter_AddRefs(tempTreeItem));
-      tempTreeItem.swap(ancestorOfTarget);
+      ancestorOfTarget = ancestorOfTarget->GetParent();
     } while (ancestorOfTarget);
 
     
@@ -3055,20 +3051,16 @@ bool nsDocShell::IsSandboxedFrom(nsIDocShell* aTargetDocShell) {
   
   
   RefPtr<BrowsingContext> permittedNavigator(
-      aTargetDocShell->GetBrowsingContext()
-          ->GetOnePermittedSandboxedNavigator());
+      aTargetBC->GetOnePermittedSandboxedNavigator());
   if (permittedNavigator == mBrowsingContext) {
     return false;
   }
 
   
   
-  if (!(sandboxFlags & SANDBOXED_TOPLEVEL_NAVIGATION)) {
-    nsCOMPtr<nsIDocShellTreeItem> rootTreeItem;
-    GetInProcessSameTypeRootTreeItem(getter_AddRefs(rootTreeItem));
-    if (SameCOMIdentity(aTargetDocShell, rootTreeItem)) {
-      return false;
-    }
+  if (!(sandboxFlags & SANDBOXED_TOPLEVEL_NAVIGATION) &&
+      aTargetBC == mBrowsingContext->Top()) {
+    return false;
   }
 
   
@@ -9270,7 +9262,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   
   
   if (aLoadState->SourceDocShell() &&
-      aLoadState->SourceDocShell()->IsSandboxedFrom(this)) {
+      aLoadState->SourceDocShell()->IsSandboxedFrom(mBrowsingContext)) {
     return NS_ERROR_DOM_INVALID_ACCESS_ERR;
   }
 
