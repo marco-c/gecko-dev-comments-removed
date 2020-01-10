@@ -283,7 +283,9 @@ PersistentBufferProviderShared::BorrowDrawTarget(
 
   
   
-  if (tex && tex->IsReadLocked()) {
+  if ((mTextureLockIsUnreliable.isSome() &&
+       mTextureLockIsUnreliable == mBack) ||
+      (tex && tex->IsReadLocked())) {
     
     
     tex = nullptr;
@@ -292,7 +294,9 @@ PersistentBufferProviderShared::BorrowDrawTarget(
   if (!tex) {
     
     for (uint32_t i = 0; i < mTextures.length(); ++i) {
-      if (!mTextures[i]->IsReadLocked()) {
+      if (!mTextures[i]->IsReadLocked() &&
+          !(mTextureLockIsUnreliable.isSome() &&
+            mTextureLockIsUnreliable.ref() == i)) {
         mBack = Some(i);
         tex = mTextures[i];
         break;
@@ -350,6 +354,9 @@ PersistentBufferProviderShared::BorrowDrawTarget(
   if (!tex || !tex->Lock(OpenMode::OPEN_READ_WRITE)) {
     return nullptr;
   }
+
+  
+  mTextureLockIsUnreliable = Nothing();
 
   mDrawTarget = tex->BorrowDrawTarget();
   if (mBack != previousBackBuffer && !aPersistedRect.IsEmpty()) {
@@ -498,6 +505,9 @@ void PersistentBufferProviderShared::ClearCachedResources() {
       mFront = Some<uint32_t>(mTextures.length() - 1);
     }
   }
+  
+  
+  mTextureLockIsUnreliable = mFront;
 }
 
 void PersistentBufferProviderShared::Destroy() {
