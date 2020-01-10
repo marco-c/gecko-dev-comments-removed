@@ -443,6 +443,44 @@ class FxAccounts {
 
 
 
+  async listAttachedOAuthClients() {
+    return this._withVerifiedAccountState(async state => {
+      const { sessionToken } = await state.getUserAccountData(["sessionToken"]);
+      const attachedClients = await this._internal.fxAccountsClient.attachedClients(
+        sessionToken
+      );
+      return attachedClients.reduce((oauthClients, client) => {
+        
+        
+        if (
+          client.clientId &&
+          !client.deviceId &&
+          !client.sessionTokenId &&
+          client.scope
+        ) {
+          oauthClients.push({
+            id: client.clientId,
+            name: client.name,
+            lastAccessTime: client.lastAccessTime,
+          });
+        }
+        return oauthClients;
+      }, []);
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
 
   authorizeOAuthCode(options) {
     return this._withVerifiedAccountState(async state => {

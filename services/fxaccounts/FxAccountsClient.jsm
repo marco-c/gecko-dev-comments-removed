@@ -242,6 +242,22 @@ this.FxAccountsClient.prototype = {
 
 
 
+  async attachedClients(sessionTokenHex) {
+    const credentials = await deriveHawkCredentials(
+      sessionTokenHex,
+      "sessionToken"
+    );
+    return this._request("/account/attached_clients", "GET", credentials);
+  },
+
+  
+
+
+
+
+
+
+
 
 
 
