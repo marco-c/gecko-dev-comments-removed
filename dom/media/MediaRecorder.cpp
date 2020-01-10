@@ -212,6 +212,184 @@ static bool AudioNodePrincipalSubsumes(MediaRecorder* aRecorder,
   return PrincipalSubsumes(aRecorder, principal);
 }
 
+static bool CanRecordAudioTrackWith(const Maybe<MediaContainerType>& aMimeType,
+                                    const nsAString& aMimeTypeString) {
+  if (aMimeTypeString.IsEmpty()) {
+    
+    
+    if (!MediaEncoder::IsWebMEncoderEnabled() &&
+        !MediaDecoder::IsOggEnabled()) {
+      
+      return false;
+    }
+
+    if (!MediaDecoder::IsOpusEnabled()) {
+      
+      return false;
+    }
+
+    return true;
+  }
+
+  if (!aMimeType) {
+    
+    
+    return false;
+  }
+
+  if (aMimeType->Type() != MEDIAMIMETYPE(VIDEO_WEBM) &&
+      aMimeType->Type() != MEDIAMIMETYPE(AUDIO_WEBM) &&
+      aMimeType->Type() != MEDIAMIMETYPE(AUDIO_OGG)) {
+    
+    return false;
+  }
+
+  if (aMimeType->Type() == MEDIAMIMETYPE(VIDEO_WEBM) &&
+      !MediaEncoder::IsWebMEncoderEnabled()) {
+    return false;
+  }
+
+  if (aMimeType->Type() == MEDIAMIMETYPE(AUDIO_WEBM) &&
+      !MediaEncoder::IsWebMEncoderEnabled()) {
+    return false;
+  }
+
+  if (aMimeType->Type() == MEDIAMIMETYPE(AUDIO_OGG) &&
+      !MediaDecoder::IsOggEnabled()) {
+    return false;
+  }
+
+  if (!MediaDecoder::IsOpusEnabled()) {
+    return false;
+  }
+
+  if (!aMimeType->ExtendedType().HaveCodecs()) {
+    
+    return true;
+  }
+
+  size_t opus = 0;
+  size_t unknown = 0;
+  for (const auto& codec : aMimeType->ExtendedType().Codecs().Range()) {
+    
+    if (codec.EqualsLiteral("vp8")) {
+      continue;
+    }
+    if (codec.EqualsLiteral("vp8.0")) {
+      continue;
+    }
+    if (codec.EqualsLiteral("opus")) {
+      
+      opus++;
+      continue;
+    }
+    unknown++;
+  }
+
+  if (unknown > 0) {
+    
+    return false;
+  }
+
+  if (opus == 0) {
+    
+    return false;
+  }
+
+  if (opus > 1) {
+    
+    return false;
+  }
+
+  return true;
+}
+
+static bool CanRecordVideoTrackWith(const Maybe<MediaContainerType>& aMimeType,
+                                    const nsAString& aMimeTypeString) {
+  if (aMimeTypeString.IsEmpty()) {
+    
+    
+    return MediaEncoder::IsWebMEncoderEnabled();
+  }
+
+  if (!aMimeType) {
+    
+    
+    return false;
+  }
+
+  if (!aMimeType->Type().HasVideoMajorType()) {
+    return false;
+  }
+
+  if (aMimeType->Type() != MEDIAMIMETYPE(VIDEO_WEBM)) {
+    return false;
+  }
+
+  if (!MediaEncoder::IsWebMEncoderEnabled()) {
+    return false;
+  }
+
+  if (!aMimeType->ExtendedType().HaveCodecs()) {
+    
+    return true;
+  }
+
+  size_t vp8 = 0;
+  size_t unknown = 0;
+  for (const auto& codec : aMimeType->ExtendedType().Codecs().Range()) {
+    if (codec.EqualsLiteral("opus")) {
+      
+      continue;
+    }
+    if (codec.EqualsLiteral("vp8")) {
+      vp8++;
+      continue;
+    }
+    if (codec.EqualsLiteral("vp8.0")) {
+      vp8++;
+      continue;
+    }
+    unknown++;
+  }
+
+  if (unknown > 0) {
+    
+    return false;
+  }
+
+  if (vp8 == 0) {
+    
+    return false;
+  }
+
+  if (vp8 > 1) {
+    
+    return false;
+  }
+
+  return true;
+}
+
+static bool CanRecordWith(MediaStreamTrack* aTrack,
+                          const Maybe<MediaContainerType>& aMimeType,
+                          const nsAString& aMimeTypeString) {
+  if (aTrack->AsAudioStreamTrack()) {
+    return CanRecordAudioTrackWith(aMimeType, aMimeTypeString);
+  }
+
+  if (aTrack->AsVideoStreamTrack()) {
+    return CanRecordVideoTrackWith(aMimeType, aMimeTypeString);
+  }
+
+  MOZ_CRASH("Unexpected track type");
+}
+
+static nsString SelectMimeType(uint8_t aNumVideoTracks, uint8_t aNumAudioTracks,
+                               const nsString& aConstrainedMimeType) {
+  MOZ_CRASH("Implemented in a later patch");
+}
+
 static void SelectBitrates(uint32_t aBitsPerSecond, uint8_t aNumVideoTracks,
                            uint32_t* aOutVideoBps, uint8_t aNumAudioTracks,
                            uint32_t* aOutAudioBps) {
@@ -372,6 +550,7 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
       : mRecorder(aRecorder),
         mMediaStreamTracks(std::move(aMediaStreamTracks)),
         mMainThread(mRecorder->GetOwner()->EventTargetFor(TaskCategory::Other)),
+        mMimeType(mRecorder->mMimeType),
         mTimeslice(aTimeslice),
         mVideoBitsPerSecond(aVideoBitsPerSecond),
         mAudioBitsPerSecond(aAudioBitsPerSecond),
@@ -379,7 +558,6 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
         mRunningState(RunningState::Idling) {
     MOZ_ASSERT(NS_IsMainThread());
 
-    aRecorder->GetMimeType(mMimeType);
     mMaxMemory = Preferences::GetUint("media.recorder.max_memory",
                                       MAX_ALLOW_MEMORY_BUFFER);
     mLastBlobTimeStamp = mStartTime;
@@ -893,10 +1071,6 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
                  }
 
                  
-                 mMimeType = NS_LITERAL_STRING("");
-                 mRecorder->SetMimeType(mMimeType);
-
-                 
                  mRecorder->DispatchSimpleEvent(NS_LITERAL_STRING("stop"));
 
                  
@@ -922,8 +1096,6 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
       if (mRunningState.isErr()) {
         return NS_OK;
       }
-      mMimeType = mime;
-      mRecorder->SetMimeType(mime);
       RunningState state = mRunningState.inspect();
       if (state == RunningState::Starting || state == RunningState::Stopping) {
         if (state == RunningState::Starting) {
@@ -1082,7 +1254,7 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
   
   RefPtr<BlobPromise> mBlobPromise;
   
-  nsString mMimeType;
+  const nsString mMimeType;
   
   TimeStamp mLastBlobTimeStamp;
   
@@ -1128,10 +1300,6 @@ void MediaRecorder::UnRegisterActivityObserver() {
   }
 }
 
-void MediaRecorder::SetMimeType(const nsString& aMimeType) {
-  mMimeType = aMimeType;
-}
-
 void MediaRecorder::GetMimeType(nsString& aMimeType) { aMimeType = mMimeType; }
 
 void MediaRecorder::Start(const Optional<uint32_t>& aTimeslice,
@@ -1168,7 +1336,9 @@ void MediaRecorder::Start(const Optional<uint32_t>& aTimeslice,
   
   
   if (mState != RecordingState::Inactive) {
-    aResult.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    aResult.ThrowDOMException(
+        NS_ERROR_DOM_INVALID_STATE_ERR,
+        NS_LITERAL_CSTRING("The MediaRecorder has already been started"));
     return;
   }
 
@@ -1202,19 +1372,30 @@ void MediaRecorder::Start(const Optional<uint32_t>& aTimeslice,
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  Maybe<MediaContainerType> mime;
+  if (mConstrainedMimeType.Length() > 0) {
+    mime = MakeMediaContainerType(mConstrainedMimeType);
+    MOZ_DIAGNOSTIC_ASSERT(
+        mime,
+        "Invalid media MIME type should have been caught by IsTypeSupported");
+  }
+  for (const auto& track : tracks) {
+    if (!CanRecordWith(track, mime, mConstrainedMimeType)) {
+      nsString id;
+      track->GetId(id);
+      aResult.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+      return;
+    }
+  }
+  if (mAudioNode && !CanRecordAudioTrackWith(mime, mConstrainedMimeType)) {
+    aResult.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return;
+  }
 
   
   
-  
+  nsString extendedMimeType = mConstrainedMimeType;
+
   
   
   
@@ -1232,6 +1413,19 @@ void MediaRecorder::Start(const Optional<uint32_t>& aTimeslice,
     MOZ_DIAGNOSTIC_ASSERT(!mStream);
     ++numAudioTracks;
   }
+  extendedMimeType =
+      SelectMimeType(numVideoTracks, numAudioTracks, extendedMimeType);
+
+  
+  mMimeType = std::move(extendedMimeType);
+
+  
+  
+  
+  
+  
+  
+  
   if (mConstrainedBitsPerSecond) {
     SelectBitrates(*mConstrainedBitsPerSecond, numVideoTracks,
                    &mVideoBitsPerSecond, numAudioTracks, &mAudioBitsPerSecond);
@@ -1418,6 +1612,8 @@ already_AddRefed<MediaRecorder> MediaRecorder::Constructor(
   
   
   if (!IsTypeSupported(aOptions.mMimeType)) {
+    
+    
     aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
     return nullptr;
   }
@@ -1426,7 +1622,8 @@ already_AddRefed<MediaRecorder> MediaRecorder::Constructor(
   RefPtr<MediaRecorder> recorder = new MediaRecorder(ownerWindow);
 
   
-  recorder->SetMimeType(aOptions.mMimeType);
+  
+  recorder->mConstrainedMimeType = aOptions.mMimeType;
 
   
   
@@ -1438,6 +1635,10 @@ already_AddRefed<MediaRecorder> MediaRecorder::Constructor(
 
   
   recorder->mStream = &aStream;
+
+  
+  
+  recorder->mMimeType = recorder->mConstrainedMimeType;
 
   
   recorder->mState = RecordingState::Inactive;
@@ -1513,6 +1714,8 @@ already_AddRefed<MediaRecorder> MediaRecorder::Constructor(
   
   
   if (!IsTypeSupported(aOptions.mMimeType)) {
+    
+    
     aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
     return nullptr;
   }
@@ -1521,7 +1724,8 @@ already_AddRefed<MediaRecorder> MediaRecorder::Constructor(
   RefPtr<MediaRecorder> recorder = new MediaRecorder(ownerWindow);
 
   
-  recorder->SetMimeType(aOptions.mMimeType);
+  
+  recorder->mConstrainedMimeType = aOptions.mMimeType;
 
   
   
@@ -1535,6 +1739,10 @@ already_AddRefed<MediaRecorder> MediaRecorder::Constructor(
   
   recorder->mAudioNode = &aAudioNode;
   recorder->mAudioNodeOutput = aAudioNodeOutput;
+
+  
+  
+  recorder->mMimeType = recorder->mConstrainedMimeType;
 
   
   recorder->mState = RecordingState::Inactive;
@@ -1568,34 +1776,6 @@ already_AddRefed<MediaRecorder> MediaRecorder::Constructor(
   return recorder.forget();
 }
 
-static char const* const gWebMVideoEncoderCodecs[4] = {
-    "opus",
-    "vp8",
-    "vp8.0",
-    
-    nullptr,
-};
-static char const* const gWebMAudioEncoderCodecs[4] = {
-    "opus",
-    nullptr,
-};
-static char const* const gOggAudioEncoderCodecs[2] = {
-    "opus",
-    
-    nullptr,
-};
-
-template <class String>
-static bool CodecListContains(char const* const* aCodecs,
-                              const String& aCodec) {
-  for (int32_t i = 0; aCodecs[i]; ++i) {
-    if (aCodec.EqualsASCII(aCodecs[i])) {
-      return true;
-    }
-  }
-  return false;
-}
-
 
 bool MediaRecorder::IsTypeSupported(GlobalObject& aGlobal,
                                     const nsAString& aMIMEType) {
@@ -1604,57 +1784,20 @@ bool MediaRecorder::IsTypeSupported(GlobalObject& aGlobal,
 
 
 bool MediaRecorder::IsTypeSupported(const nsAString& aMIMEType) {
-  char const* const* codeclist = nullptr;
-
   if (aMIMEType.IsEmpty()) {
+    
+    
     return true;
   }
 
-  nsContentTypeParser parser(aMIMEType);
-  nsAutoString mimeType;
-  nsresult rv = parser.GetType(mimeType);
-  if (NS_FAILED(rv)) {
+  Maybe<MediaContainerType> mime = MakeMediaContainerType(aMIMEType);
+  if (!mime) {
+    
     return false;
   }
 
-  
-  if (mimeType.EqualsLiteral(AUDIO_OGG)) {
-    if (MediaDecoder::IsOggEnabled() && MediaDecoder::IsOpusEnabled()) {
-      codeclist = gOggAudioEncoderCodecs;
-    }
-  }
-#ifdef MOZ_WEBM_ENCODER
-  else if ((mimeType.EqualsLiteral(VIDEO_WEBM) ||
-            mimeType.EqualsLiteral(AUDIO_WEBM)) &&
-           MediaEncoder::IsWebMEncoderEnabled()) {
-    if (mimeType.EqualsLiteral(AUDIO_WEBM)) {
-      codeclist = gWebMAudioEncoderCodecs;
-    } else {
-      codeclist = gWebMVideoEncoderCodecs;
-    }
-  }
-#endif
-
-  
-  if (!codeclist) {
-    return false;
-  }
-  
-  nsAutoString codecstring;
-  rv = parser.GetParameter("codecs", codecstring);
-
-  nsTArray<nsString> codecs;
-  if (!ParseCodecsString(codecstring, codecs)) {
-    return false;
-  }
-  for (const nsString& codec : codecs) {
-    if (!CodecListContains(codeclist, codec)) {
-      
-      return false;
-    }
-  }
-
-  return true;
+  return CanRecordAudioTrackWith(mime, aMIMEType) ||
+         CanRecordVideoTrackWith(mime, aMIMEType);
 }
 
 nsresult MediaRecorder::CreateAndDispatchBlobEvent(Blob* aBlob) {
@@ -1762,8 +1905,7 @@ void MediaRecorder::Inactivate() {
 
   
   
-  
-  
+  mMimeType = mConstrainedMimeType;
 
   
   mState = RecordingState::Inactive;

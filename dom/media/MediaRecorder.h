@@ -126,8 +126,6 @@ class MediaRecorder final : public DOMEventTargetHelper,
   void DispatchSimpleEvent(const nsAString& aStr);
   
   void NotifyError(nsresult aRv);
-  
-  void SetMimeType(const nsString& aMimeType);
 
   MediaRecorder(const MediaRecorder& x) = delete;  
   
@@ -159,9 +157,8 @@ class MediaRecorder final : public DOMEventTargetHelper,
 
   RefPtr<Document> mDocument;
 
-  
-  
   nsString mMimeType;
+  nsString mConstrainedMimeType;
 
   uint32_t mAudioBitsPerSecond = 0;
   uint32_t mVideoBitsPerSecond = 0;
