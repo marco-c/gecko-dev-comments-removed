@@ -1941,6 +1941,14 @@ void DocAccessible::ProcessContentInserted(
       Accessible* previousSibling = iter.ChildBefore();
       if (parent != aContainer ||
           iter.Child()->PrevSibling() != previousSibling) {
+        if (previousSibling && previousSibling->Parent() != aContainer) {
+          
+          
+          
+          MOZ_DIAGNOSTIC_ASSERT(parent == aContainer,
+            "Child moving to new parent, but previous sibling in wrong parent");
+          continue;
+        }
 #ifdef A11Y_LOG
         logging::TreeInfo("relocating accessible", 0, "old parent", parent,
                           "new parent", aContainer, "child", iter.Child(),
