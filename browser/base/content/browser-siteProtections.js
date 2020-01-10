@@ -959,6 +959,12 @@ var gProtectionsHandler = {
       "protections-popup-tp-switch-breakage-link"
     ));
   },
+  get _protectionsPopupTPSwitchSection() {
+    delete this._protectionsPopupTPSwitchSection;
+    return (this._protectionsPopupTPSwitchSection = document.getElementById(
+      "protections-popup-tp-switch-section"
+    ));
+  },
   get _protectionsPopupTPSwitch() {
     delete this._protectionsPopupTPSwitch;
     return (this._protectionsPopupTPSwitch = document.getElementById(
@@ -1433,6 +1439,17 @@ var gProtectionsHandler = {
 
     
     this.toggleBreakageLink();
+
+    
+    
+    
+    
+    
+    
+    this._protectionsPopupTPSwitchSection.toggleAttribute(
+      "short",
+      !currentlyEnabled
+    );
 
     
     
