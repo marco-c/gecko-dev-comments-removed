@@ -14,51 +14,124 @@ namespace dom {
 
 
 
+
+
+
 enum StructuredCloneTags {
   SCTAG_BASE = JS_SCTAG_USER_MIN,
 
+  
+  
   SCTAG_DOM_BLOB,
-
+  
+  
   
   
   SCTAG_DOM_FILE_WITHOUT_LASTMODIFIEDDATE,
-
+  
+  
   SCTAG_DOM_FILELIST,
+  
+  
   SCTAG_DOM_MUTABLEFILE,
+  
+  
   SCTAG_DOM_FILE,
-
+  
+  
   SCTAG_DOM_WASM,
 
   
-
   
   SCTAG_DOM_IMAGEDATA,
-  SCTAG_DOM_MAP_MESSAGEPORT,
 
-  SCTAG_DOM_FUNCTION,
+  EMPTY_SLOT_1,
+  EMPTY_SLOT_2,
 
+  
+  
   
   SCTAG_DOM_WEBCRYPTO_KEY,
 
+  
+  
   SCTAG_DOM_NULL_PRINCIPAL,
+  
+  
   SCTAG_DOM_SYSTEM_PRINCIPAL,
+  
+  
   SCTAG_DOM_CONTENT_PRINCIPAL,
 
-  SCTAG_DOM_IMAGEBITMAP,
+  
+  
+  EMPTY_SLOT_3,
 
+  
+  
   SCTAG_DOM_RTC_CERTIFICATE,
 
+  
+  
+  EMPTY_SLOT_4,
+  
+  
+  EMPTY_SLOT_5,
+
+  
+  
+  SCTAG_DOM_EXPANDED_PRINCIPAL,
+
+  
+  
+  EMPTY_SLOT_6,
+
+  
+  
+  SCTAG_DOM_URLSEARCHPARAMS,
+
+  
+  
+  EMPTY_SLOT_7,
+
+  
+  
+  EMPTY_SLOT_8,
+
+  
+  
+  EMPTY_SLOT_9,
+
+  
+  
+  SCTAG_DOM_STRUCTURED_CLONE_TESTER,
+
+  
+  
+
+  
+  
+
+  
+
+  
+  
+  
+  
+
+  
+  
+  
+  SCTAG_DOM_WORKER_PRINCIPAL,
+
+  SCTAG_DOM_IMAGEBITMAP,
+  SCTAG_DOM_MAP_MESSAGEPORT,
   SCTAG_DOM_FORMDATA,
 
   
   SCTAG_DOM_CANVAS,
 
-  SCTAG_DOM_EXPANDED_PRINCIPAL,
-
   SCTAG_DOM_DIRECTORY,
-
-  
-  SCTAG_DOM_URLSEARCHPARAMS,
 
   SCTAG_DOM_INPUTSTREAM,
 
@@ -66,18 +139,6 @@ enum StructuredCloneTags {
 
   
   
-  
-  
-  
-
-  SCTAG_DOM_MAX,
-
-  SCTAG_DOM_STRUCTURED_CLONE_TESTER,
-
-  
-  
-  
-  SCTAG_DOM_WORKER_PRINCIPAL
 };
 
 }  
