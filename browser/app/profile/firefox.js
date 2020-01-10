@@ -1978,11 +1978,6 @@ pref("devtools.browsertoolbox.fission", false);
 
 
 
-pref("devtools.contenttoolbox.fission", false);
-
-
-
-
 
 
 
