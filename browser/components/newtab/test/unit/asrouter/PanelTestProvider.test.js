@@ -8,7 +8,7 @@ describe("PanelTestProvider", () => {
   it("should have a message", () => {
     
     
-    assert.lengthOf(messages, 9);
+    assert.lengthOf(messages, 11);
   });
   it("should be a valid message", () => {
     const fxaMessages = messages.filter(

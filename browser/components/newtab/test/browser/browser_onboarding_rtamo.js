@@ -33,8 +33,23 @@ async function setRTAMOOnboarding() {
   ASRouter._updateMessageProviders();
   await ASRouter.loadMessagesFromAllProviders();
 
-  registerCleanupFunction(() => {
+  registerCleanupFunction(async () => {
+    
+    if (AppConstants.platform === "macosx") {
+      const { path } = Services.dirsvc.get("GreD", Ci.nsIFile).parent.parent;
+      const attributionSvc = Cc["@mozilla.org/mac-attribution;1"].getService(
+        Ci.nsIMacAttributionService
+      );
+      attributionSvc.setReferrerUrl(path, "", true);
+    }
+    
+    let env = Cc["@mozilla.org/process/environment;1"].getService(
+      Ci.nsIEnvironment
+    );
+    env.set("XPCSHELL_TEST_PROFILE_DIR", "testing");
     Services.prefs.clearUserPref(BRANCH_PREF);
+    await AttributionCode.deleteFileAsync();
+    AttributionCode._clearCache();
   });
 }
 

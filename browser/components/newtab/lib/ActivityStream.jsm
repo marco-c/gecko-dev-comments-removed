@@ -468,6 +468,14 @@ const PREFS_CONFIG = new Map([
   ],
   
   [
+    "discoverystream.campaign.blocks",
+    {
+      title: "Track campaign blocks",
+      skipBroadcast: true,
+      value: "{}",
+    },
+  ],
+  [
     "discoverystream.config",
     {
       title: "Configuration for the new pocket new tab",

@@ -3,56 +3,24 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "EveryWindow",
-  "resource:///modules/EveryWindow.jsm"
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
 );
-ChromeUtils.defineModuleGetter(
-  this,
-  "ToolbarPanelHub",
-  "resource://activity-stream/lib/ToolbarPanelHub.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "Services",
-  "resource://gre/modules/Services.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "setTimeout",
-  "resource://gre/modules/Timer.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "clearTimeout",
-  "resource://gre/modules/Timer.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "Services",
-  "resource://gre/modules/Services.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "PrivateBrowsingUtils",
-  "resource://gre/modules/PrivateBrowsingUtils.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "setInterval",
-  "resource://gre/modules/Timer.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "clearInterval",
-  "resource://gre/modules/Timer.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "requestIdleCallback",
-  "resource://gre/modules/Timer.jsm"
-);
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  EveryWindow: "resource:///modules/EveryWindow.jsm",
+  ToolbarPanelHub: "resource://activity-stream/lib/ToolbarPanelHub.jsm",
+  Services: "resource://gre/modules/Services.jsm",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
+});
+
+const {
+  setInterval,
+  clearInterval,
+  requestIdleCallback,
+  setTimeout,
+  clearTimeout,
+} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 
 const SYSTEM_TICK_INTERVAL = 5 * 60 * 1000;
@@ -151,6 +119,10 @@ class _ToolbarBadgeHub {
     }
   }
 
+  maybeInsertFTL(win) {
+    win.MozXULElement.insertFTLIfNeeded("browser/newtab/asrouter.ftl");
+  }
+
   executeAction({ id, data, message_id }) {
     switch (id) {
       case "show-whatsnew-button":
@@ -234,6 +206,15 @@ class _ToolbarBadgeHub {
       .querySelector(".toolbarbutton-badge")
       .classList.remove("feature-callout");
     toolbarButton.removeAttribute("badged");
+    
+    const notificationDescription = toolbarButton.querySelector(
+      "#toolbarbutton-notification-description"
+    );
+    if (notificationDescription) {
+      notificationDescription.remove();
+      toolbarButton.removeAttribute("aria-labelledby");
+      toolbarButton.removeAttribute("aria-describedby");
+    }
   }
 
   addToolbarNotification(win, message) {
@@ -243,11 +224,40 @@ class _ToolbarBadgeHub {
     }
     let toolbarbutton = document.getElementById(message.content.target);
     if (toolbarbutton) {
+      const badge = toolbarbutton.querySelector(".toolbarbutton-badge");
+      badge.classList.add("feature-callout");
       toolbarbutton.setAttribute("badged", true);
-      toolbarbutton
-        .querySelector(".toolbarbutton-badge")
-        .classList.add("feature-callout");
-
+      
+      
+      
+      
+      if (message.content.badgeDescription) {
+        
+        this.maybeInsertFTL(win);
+        toolbarbutton.setAttribute(
+          "aria-labelledby",
+          `toolbarbutton-notification-description ${message.content.target}`
+        );
+        
+        
+        
+        
+        toolbarbutton.setAttribute(
+          "aria-describedby",
+          `toolbarbutton-notification-description ${message.content.target}`
+        );
+        const descriptionEl = document.createElement("span");
+        descriptionEl.setAttribute(
+          "id",
+          "toolbarbutton-notification-description"
+        );
+        descriptionEl.setAttribute("hidden", true);
+        document.l10n.setAttributes(
+          descriptionEl,
+          message.content.badgeDescription.string_id
+        );
+        toolbarbutton.appendChild(descriptionEl);
+      }
       
       
       toolbarbutton.addEventListener("mousedown", this.removeAllNotifications);

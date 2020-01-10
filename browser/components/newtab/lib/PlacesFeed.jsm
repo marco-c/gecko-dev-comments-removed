@@ -260,6 +260,9 @@ class PlacesFeed {
 
 
 
+
+
+
   observe(subject, topic, value) {
     if (topic === LINK_BLOCKED_EVENT) {
       this.store.dispatch(
