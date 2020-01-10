@@ -1641,6 +1641,15 @@ class BaseScript : public gc::TenuredCell {
 
   uint8_t* jitCodeRaw() const { return jitCodeRaw_; }
 
+  
+  
+  JSFunction* function() const {
+    if (functionOrGlobal_->is<JSFunction>()) {
+      return &functionOrGlobal_->as<JSFunction>();
+    }
+    return nullptr;
+  }
+
   JS::Realm* realm() const { return functionOrGlobal_->nonCCWRealm(); }
   JS::Compartment* compartment() const {
     return functionOrGlobal_->compartment();
@@ -2744,16 +2753,6 @@ class JSScript : public js::BaseScript {
   void setLazyScript(js::LazyScript* lazy) { lazyScript = lazy; }
   js::LazyScript* maybeLazyScript() { return lazyScript; }
 
-  
-  
-  
-  JSFunction* function() const {
-    if (bodyScope()->is<js::FunctionScope>()) {
-      return bodyScope()->as<js::FunctionScope>().canonicalFunction();
-    }
-    return nullptr;
-  }
-
   bool isModule() const {
     MOZ_ASSERT(hasFlag(ImmutableFlags::IsModule) ==
                bodyScope()->is<js::ModuleScope>());
@@ -3338,8 +3337,6 @@ class LazyScript : public BaseScript {
       HandleScriptSourceObject sourceObject, uint32_t immutableFlags,
       uint32_t sourceStart, uint32_t sourceEnd, uint32_t toStringStart,
       uint32_t toStringEnd, uint32_t lineno, uint32_t column);
-
-  JSFunction* function() const { return &functionOrGlobal_->as<JSFunction>(); }
 
   bool canRelazify() const {
     
