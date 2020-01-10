@@ -192,6 +192,7 @@ function TypedArraySpeciesCreateWithBuffer(exemplar, buffer, byteOffset, length)
 }
 
 
+
 function TypedArrayCopyWithin(target, start, end = undefined) {
     
     if (!IsObject(this) || !IsTypedArray(this)) {
@@ -213,12 +214,14 @@ function TypedArrayCopyWithin(target, start, end = undefined) {
     
     var relativeTarget = ToInteger(target);
 
+    
     var to = relativeTarget < 0 ? std_Math_max(len + relativeTarget, 0)
                                 : std_Math_min(relativeTarget, len);
 
     
     var relativeStart = ToInteger(start);
 
+    
     var from = relativeStart < 0 ? std_Math_max(len + relativeStart, 0)
                                  : std_Math_min(relativeStart, len);
 
@@ -226,6 +229,7 @@ function TypedArrayCopyWithin(target, start, end = undefined) {
     var relativeEnd = end === undefined ? len
                                         : ToInteger(end);
 
+    
     var final = relativeEnd < 0 ? std_Math_max(len + relativeEnd, 0)
                                 : std_Math_min(relativeEnd, len);
 
@@ -246,6 +250,7 @@ function TypedArrayCopyWithin(target, start, end = undefined) {
     assert(-0x7FFFFFFF - 1 <= count && count <= 0x7FFFFFFF,
            "typed array element count assumed int32_t");
 
+    
     
     
     
@@ -576,6 +581,7 @@ function TypedArrayForEach(callbackfn) {
 }
 
 
+
 function TypedArrayIndexOf(searchElement, fromIndex = 0) {
     
     if (!IsObject(this) || !IsTypedArray(this)) {
@@ -602,15 +608,15 @@ function TypedArrayIndexOf(searchElement, fromIndex = 0) {
     if (n >= len)
         return -1;
 
+    
     var k;
-    
     if (n >= 0) {
+        
         k = n;
-    }
-    
-    else {
+    } else {
         
         k = len + n;
+
         
         if (k < 0)
             k = 0;
@@ -689,6 +695,7 @@ function TypedArrayKeys() {
     
     return CreateArrayIterator(O, ITEM_KIND_KEY);
 }
+
 
 
 function TypedArrayLastIndexOf(searchElement) {
@@ -1294,6 +1301,8 @@ function TypedArraySubarray(begin, end) {
     if (buffer === null) {
         buffer = TypedArrayBuffer(obj);
     }
+
+    
     var srcLength = TypedArrayLength(obj);
 
     
@@ -1302,11 +1311,15 @@ function TypedArraySubarray(begin, end) {
 
     
     var relativeBegin = ToInteger(begin);
+
+    
     var beginIndex = relativeBegin < 0 ? std_Math_max(srcLength + relativeBegin, 0)
                                        : std_Math_min(relativeBegin, srcLength);
 
     
     var relativeEnd = end === undefined ? srcLength : ToInteger(end);
+
+    
     var endIndex = relativeEnd < 0 ? std_Math_max(srcLength + relativeEnd, 0)
                                    : std_Math_min(relativeEnd, srcLength);
 
@@ -1363,15 +1376,15 @@ function TypedArrayIncludes(searchElement, fromIndex = 0) {
     
     var n = ToInteger(fromIndex);
 
+    
     var k;
-    
     if (n >= 0) {
+        
         k = n;
-    }
-    
-    else {
+    } else {
         
         k = len + n;
+
         
         if (k < 0)
             k = 0;
@@ -1602,6 +1615,7 @@ function IterableToList(items, method) {
 }
 
 
+
 function ArrayBufferSlice(start, end) {
     
     var O = this;
@@ -1644,14 +1658,16 @@ function ArrayBufferSlice(start, end) {
     
     var new_ = new ctor(newLen);
 
+    
     var isWrapped = false;
     var newBuffer;
     if ((newBuffer = GuardToArrayBuffer(new_)) !== null) {
         
-        if (IsDetachedBuffer(new_))
+        if (IsDetachedBuffer(newBuffer))
             ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
     } else {
         newBuffer = new_;
+
         
         if (!IsWrappedArrayBuffer(newBuffer))
             ThrowTypeError(JSMSG_NON_ARRAY_BUFFER_RETURNED);
@@ -1680,7 +1696,7 @@ function ArrayBufferSlice(start, end) {
     ArrayBufferCopyData(newBuffer, 0, O, first | 0, newLen | 0, isWrapped);
 
     
-    return new_;
+    return newBuffer;
 }
 
 function IsDetachedBufferThis() {
@@ -1752,11 +1768,7 @@ function SharedArrayBufferSlice(start, end) {
     }
 
     
-    if (newObj === O)
-        ThrowTypeError(JSMSG_SAME_SHARED_ARRAY_BUFFER_RETURNED);
-
-    
-    if (SharedArrayBuffersMemorySame(newObj, O))
+    if (newObj === O || SharedArrayBuffersMemorySame(newObj, O))
         ThrowTypeError(JSMSG_SAME_SHARED_ARRAY_BUFFER_RETURNED);
 
     
@@ -1768,5 +1780,5 @@ function SharedArrayBufferSlice(start, end) {
     SharedArrayBufferCopyData(newObj, 0, O, first | 0, newLen | 0, isWrapped);
 
     
-    return new_;
+    return newObj;
 }

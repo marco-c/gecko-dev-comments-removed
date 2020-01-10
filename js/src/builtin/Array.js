@@ -2,7 +2,8 @@
 
 
 
- 
+
+
 function ArrayIndexOf(searchElement) {
     
     var O = ToObject(this);
@@ -21,14 +22,15 @@ function ArrayIndexOf(searchElement) {
     if (n >= len)
         return -1;
 
+    
     var k;
-    
     if (n >= 0) {
+        
         k = n;
-    
     } else {
         
         k = len + n;
+
         
         if (k < 0)
             k = 0;
@@ -43,6 +45,7 @@ function ArrayIndexOf(searchElement) {
     
     return -1;
 }
+
 
 
 function ArrayLastIndexOf(searchElement) {
@@ -471,6 +474,7 @@ function ArrayFindIndex(predicate) {
 }
 
 
+
 function ArrayCopyWithin(target, start, end = undefined) {
     
     var O = ToObject(this);
@@ -481,12 +485,14 @@ function ArrayCopyWithin(target, start, end = undefined) {
     
     var relativeTarget = ToInteger(target);
 
+    
     var to = relativeTarget < 0 ? std_Math_max(len + relativeTarget, 0)
                                 : std_Math_min(relativeTarget, len);
 
     
     var relativeStart = ToInteger(start);
 
+    
     var from = relativeStart < 0 ? std_Math_max(len + relativeStart, 0)
                                  : std_Math_min(relativeStart, len);
 
@@ -494,6 +500,7 @@ function ArrayCopyWithin(target, start, end = undefined) {
     var relativeEnd = end === undefined ? len
                                         : ToInteger(end);
 
+    
     var final = relativeEnd < 0 ? std_Math_max(len + relativeEnd, 0)
                                 : std_Math_min(relativeEnd, len);
 
@@ -502,8 +509,10 @@ function ArrayCopyWithin(target, start, end = undefined) {
 
     
     if (from < to && to < (from + count)) {
+        
         from = from + count - 1;
         to = to + count - 1;
+
         
         while (count > 0) {
             if (from in O)
@@ -532,6 +541,7 @@ function ArrayCopyWithin(target, start, end = undefined) {
     
     return O;
 }
+
 
 
 function ArrayFill(value, start = 0, end = undefined) {
@@ -585,12 +595,12 @@ function ArrayIncludes(searchElement, fromIndex = 0) {
     
     var k;
     if (n >= 0) {
+        
         k = n;
-    }
-    
-    else {
+    } else {
         
         k = len + n;
+
         
         if (k < 0)
             k = 0;

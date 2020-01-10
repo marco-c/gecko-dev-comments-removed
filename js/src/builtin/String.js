@@ -342,6 +342,7 @@ function String_split(separator, limit) {
 }
 
 
+
 function String_substring(start, end) {
     
     RequireObjectCoercible(this);
@@ -380,6 +381,7 @@ function String_substring(start, end) {
 }
 
 
+
 function String_substr(start, length) {
     
     RequireObjectCoercible(this);
@@ -413,6 +415,7 @@ function String_substr(start, length) {
 }
 
 
+
 function String_slice(start, end) {
     
     RequireObjectCoercible(this);
@@ -442,6 +445,7 @@ function String_slice(start, end) {
     
     return SubstringKernel(str, from | 0, span | 0);
 }
+
 
 
 function String_codePointAt(pos) {
@@ -474,6 +478,7 @@ function String_codePointAt(pos) {
 }
 
 
+
 function String_repeat(count) {
     
     RequireObjectCoercible(this);
@@ -486,6 +491,7 @@ function String_repeat(count) {
     if (n < 0)
         ThrowRangeError(JSMSG_NEGATIVE_REPETITION_COUNT);
 
+    
     
     if (!(n * S.length <= MAX_STRING_LENGTH))
         ThrowRangeError(JSMSG_RESULTING_STRING_TOO_LARGE);
