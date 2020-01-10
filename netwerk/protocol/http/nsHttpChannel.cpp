@@ -64,6 +64,7 @@
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_privacy.h"
+#include "mozilla/StaticPrefs_security.h"
 #include "nsISSLSocketControl.h"
 #include "sslt.h"
 #include "nsContentUtils.h"
@@ -1573,18 +1574,7 @@ nsresult EnsureMIMEOfScript(nsHttpChannel* aChannel, nsIURI* aURI,
 
   if (block) {
     
-    
-    static bool sCachedBlockScriptWithWrongMime = false;
-    static bool sIsInited = false;
-    if (!sIsInited) {
-      sIsInited = true;
-      Preferences::AddBoolVarCache(&sCachedBlockScriptWithWrongMime,
-                                   "security.block_script_with_wrong_mime",
-                                   true);
-    }
-
-    
-    if (!sCachedBlockScriptWithWrongMime) {
+    if (!StaticPrefs::security_block_script_with_wrong_mime()) {
       return NS_OK;
     }
 
@@ -1638,18 +1628,7 @@ nsresult EnsureMIMEOfScript(nsHttpChannel* aChannel, nsIURI* aURI,
   nsContentPolicyType internalType = aLoadInfo->InternalContentPolicyType();
   if (internalType == nsIContentPolicy::TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS) {
     
-    
-    static bool sCachedBlockImportScriptsWithWrongMime = false;
-    static bool sIsInited = false;
-    if (!sIsInited) {
-      sIsInited = true;
-      Preferences::AddBoolVarCache(
-          &sCachedBlockImportScriptsWithWrongMime,
-          "security.block_importScripts_with_wrong_mime", true);
-    }
-
-    
-    if (!sCachedBlockImportScriptsWithWrongMime) {
+    if (!StaticPrefs::security_block_importScripts_with_wrong_mime()) {
       return NS_OK;
     }
 
@@ -1661,18 +1640,7 @@ nsresult EnsureMIMEOfScript(nsHttpChannel* aChannel, nsIURI* aURI,
   if (internalType == nsIContentPolicy::TYPE_INTERNAL_WORKER ||
       internalType == nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER) {
     
-    
-    static bool sCachedBlockWorkerWithWrongMime = false;
-    static bool sIsInited = false;
-    if (!sIsInited) {
-      sIsInited = true;
-      Preferences::AddBoolVarCache(&sCachedBlockWorkerWithWrongMime,
-                                   "security.block_Worker_with_wrong_mime",
-                                   true);
-    }
-
-    
-    if (!sCachedBlockWorkerWithWrongMime) {
+    if (!StaticPrefs::security_block_Worker_with_wrong_mime()) {
       return NS_OK;
     }
 

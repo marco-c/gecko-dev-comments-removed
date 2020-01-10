@@ -2474,15 +2474,6 @@ pref("security.mixed_content.block_object_subrequest", false);
 pref("security.sri.enable", true);
 
 
-pref("security.block_script_with_wrong_mime", true);
-
-
-pref("security.block_importScripts_with_wrong_mime", true);
-
-
-pref("security.block_Worker_with_wrong_mime", true);
-
-
 pref("security.ssl.enable_ocsp_must_staple", true);
 
 
