@@ -677,9 +677,10 @@ var gIdentityHandler = {
 
   _hasCustomRoot() {
     let issuerCert = null;
-    issuerCert = this._secInfo.succeededCertChain[
-      this.secInfo.succeededCertChain.length - 1
-    ];
+    
+    
+    for (issuerCert of this._secInfo.succeededCertChain.getEnumerator()) {
+    }
 
     return !issuerCert.isBuiltInRoot;
   },

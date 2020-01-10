@@ -4058,11 +4058,8 @@ Checker.prototype = {
       if (sslStatus && sslStatus.succeededCertChain) {
         let rootCert = null;
         
-        if (sslStatus.succeededCertChain.length) {
-          rootCert =
-            sslStatus.succeededCertChain[
-              sslStatus.succeededCertChain.length - 1
-            ];
+        
+        for (rootCert of sslStatus.succeededCertChain.getEnumerator()) {
         }
         if (rootCert) {
           Services.prefs.setStringPref(

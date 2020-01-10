@@ -111,9 +111,6 @@ class TransportSecurityInfo : public nsITransportSecurityInfo,
 
   bool mHaveCertErrorBits;
 
-  static nsresult ConvertCertArrayToCertList(
-      const nsTArray<RefPtr<nsIX509Cert>>& aCertArray,
-      nsIX509CertList** aCertList);
  private:
   
   
@@ -125,6 +122,10 @@ class TransportSecurityInfo : public nsITransportSecurityInfo,
  protected:
   nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
   nsTArray<RefPtr<nsIX509Cert>> mSucceededCertChain;
+
+  static nsresult ConvertCertArrayToCertList(
+      const nsTArray<RefPtr<nsIX509Cert>>& aCertArray,
+      nsIX509CertList** aCertList);
 
  private:
   uint32_t mSecurityState;
