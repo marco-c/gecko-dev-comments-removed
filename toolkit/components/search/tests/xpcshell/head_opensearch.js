@@ -36,6 +36,9 @@ function installAddonEngine(name = "engine-addon") {
 
 
 
+
+
+
 function installDistributionEngine() {
   const XRE_APP_DISTRIBUTION_DIR = "XREAppDist";
 
@@ -64,4 +67,5 @@ function installDistributionEngine() {
       return null;
     },
   });
+  return distDir;
 }
