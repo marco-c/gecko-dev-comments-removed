@@ -188,6 +188,12 @@ FinderHighlighter.prototype = {
     return this._iterator;
   },
 
+  useModal() {
+    
+    
+    return this._modal && this._useSubFrames;
+  },
+
   
 
 
@@ -272,13 +278,13 @@ FinderHighlighter.prototype = {
       };
       if (
         this.iterator.isAlreadyRunning(params) ||
-        (this._modal &&
+        (this.useModal() &&
           this.iterator._areParamsEqual(params, dict.lastIteratorParams))
       ) {
         return;
       }
 
-      if (!this._modal) {
+      if (!this.useModal()) {
         dict.visible = true;
       }
       await this.iterator.start(params);
@@ -313,7 +319,7 @@ FinderHighlighter.prototype = {
     let dict = this.getForWindow(window);
     
     dict.lastIteratorParams = params;
-    if (!this._modal) {
+    if (!this.useModal()) {
       this.hide(window, this.finder._fastFind.getFoundRange());
     }
     this.clear(window);
@@ -334,7 +340,7 @@ FinderHighlighter.prototype = {
       controller = editableNode.editor.selectionController;
     }
 
-    if (this._modal) {
+    if (this.useModal()) {
       this._modalHighlight(range, controller, window);
     } else {
       let findSelection = controller.getSelection(
@@ -367,7 +373,7 @@ FinderHighlighter.prototype = {
   show(window = null) {
     window = (window || this.finder._getWindow()).top;
     let dict = this.getForWindow(window);
-    if (!this._modal || dict.visible) {
+    if (!this.useModal() || dict.visible) {
       return;
     }
 
@@ -489,7 +495,7 @@ FinderHighlighter.prototype = {
     }
 
     this._useSubFrames = data.useSubFrames;
-    if (!this._modal) {
+    if (!this.useModal()) {
       if (this._highlightAll) {
         dict.previousFoundRange = dict.currentFoundRange;
         dict.currentFoundRange = foundRange;
@@ -586,7 +592,7 @@ FinderHighlighter.prototype = {
 
   onModalHighlightChange(useModalHighlight) {
     let window = this.finder._getWindow();
-    if (window && this._modal && !useModalHighlight) {
+    if (window && this.useModal() && !useModalHighlight) {
       this.hide(window);
       this.clear(window);
     }
@@ -603,7 +609,7 @@ FinderHighlighter.prototype = {
     this._highlightAll = highlightAll;
     if (!highlightAll) {
       let window = this.finder._getWindow();
-      if (!this._modal) {
+      if (!this.useModal()) {
         this.hide(window);
       }
       this.clear(window);
@@ -1452,7 +1458,7 @@ FinderHighlighter.prototype = {
     window,
     { contentChanged = false, scrollOnly = false, updateAllRanges = false } = {}
   ) {
-    if (!this._modal) {
+    if (!this.useModal()) {
       return;
     }
 
