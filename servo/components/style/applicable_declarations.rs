@@ -23,23 +23,33 @@ pub type ApplicableDeclarationList = SmallVec<[ApplicableDeclarationBlock; 16]>;
 
 
 
+
+
+const SOURCE_ORDER_SHIFT: usize = 0;
+const SOURCE_ORDER_BITS: usize = 24;
+const SOURCE_ORDER_MAX: u32 = (1 << SOURCE_ORDER_BITS) - 1;
+const SOURCE_ORDER_MASK: u32 = SOURCE_ORDER_MAX << SOURCE_ORDER_SHIFT;
+
+
+
+const CASCADE_LEVEL_SHIFT: usize = SOURCE_ORDER_BITS;
+
+
+
 #[derive(Clone, Copy, Eq, MallocSizeOf, PartialEq, Debug)]
-struct ApplicableDeclarationBits {
-    source_order: u32,
-    cascade_level: CascadeLevel,
-}
+struct ApplicableDeclarationBits(u32);
 
 impl ApplicableDeclarationBits {
     fn new(source_order: u32, cascade_level: CascadeLevel) -> Self {
-        Self { source_order, cascade_level }
+        Self((source_order & SOURCE_ORDER_MASK) | ((cascade_level.to_byte_lossy() as u32) << CASCADE_LEVEL_SHIFT))
     }
 
     fn source_order(&self) -> u32 {
-        self.source_order
+        self.0 & SOURCE_ORDER_MASK
     }
 
     fn level(&self) -> CascadeLevel {
-        self.cascade_level
+        CascadeLevel::from_byte((self.0 >> CASCADE_LEVEL_SHIFT) as u8)
     }
 }
 
