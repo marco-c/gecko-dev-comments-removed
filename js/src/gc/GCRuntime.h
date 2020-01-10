@@ -862,7 +862,7 @@ class GCRuntime {
   MainThreadData<bool> isCompacting;
 
   
-  MainThreadData<JSGCInvocationKind> invocationKind;
+  MainThreadOrGCTaskData<JSGCInvocationKind> invocationKind;
 
   
   MainThreadData<JS::GCReason> initialReason;

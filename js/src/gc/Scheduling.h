@@ -390,7 +390,7 @@ class GCSchedulingTunables {
 
 
 
-  MainThreadData<bool> dynamicHeapGrowthEnabled_;
+  MainThreadOrGCTaskData<bool> dynamicHeapGrowthEnabled_;
 
   
 
@@ -398,7 +398,7 @@ class GCSchedulingTunables {
 
 
 
-  MainThreadData<mozilla::TimeDuration> highFrequencyThreshold_;
+  MainThreadOrGCTaskData<mozilla::TimeDuration> highFrequencyThreshold_;
 
   
 
@@ -409,10 +409,10 @@ class GCSchedulingTunables {
 
 
 
-  MainThreadData<size_t> highFrequencyLowLimitBytes_;
-  MainThreadData<size_t> highFrequencyHighLimitBytes_;
-  MainThreadData<float> highFrequencyHeapGrowthMax_;
-  MainThreadData<float> highFrequencyHeapGrowthMin_;
+  MainThreadOrGCTaskData<size_t> highFrequencyLowLimitBytes_;
+  MainThreadOrGCTaskData<size_t> highFrequencyHighLimitBytes_;
+  MainThreadOrGCTaskData<float> highFrequencyHeapGrowthMax_;
+  MainThreadOrGCTaskData<float> highFrequencyHeapGrowthMin_;
 
   
 
@@ -420,7 +420,7 @@ class GCSchedulingTunables {
 
 
 
-  MainThreadData<float> lowFrequencyHeapGrowth_;
+  MainThreadOrGCTaskData<float> lowFrequencyHeapGrowth_;
 
   
 
@@ -548,7 +548,7 @@ class GCSchedulingState {
 
 
 
-  MainThreadData<bool> inHighFrequencyGCMode_;
+  MainThreadOrGCTaskData<bool> inHighFrequencyGCMode_;
 
  public:
   GCSchedulingState() : inHighFrequencyGCMode_(false) {}
@@ -710,18 +710,10 @@ class ZoneThreshold {
 
 
 class ZoneHeapThreshold : public ZoneThreshold {
-  
-  GCLockData<float> gcHeapGrowthFactor_;
-
  public:
-  ZoneHeapThreshold() : gcHeapGrowthFactor_(3.0f) {}
-
-  float gcHeapGrowthFactor() const { return gcHeapGrowthFactor_; }
-
   void updateAfterGC(size_t lastBytes, JSGCInvocationKind gckind,
                      const GCSchedulingTunables& tunables,
                      const GCSchedulingState& state, const AutoLockGC& lock);
-  void updateForRemovedArena(const GCSchedulingTunables& tunables);
 
  private:
   static float computeZoneHeapGrowthFactorForHeapSize(
