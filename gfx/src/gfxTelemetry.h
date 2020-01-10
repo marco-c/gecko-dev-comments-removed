@@ -44,6 +44,7 @@ enum class FeatureStatus {
   BlockedReleaseChannelAMD,
   BlockedReleaseChannelNvidia,
   BlockedReleaseChannelBattery,
+  BlockedReleaseChannelAndroid,
 
   
   Blacklisted,
