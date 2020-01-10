@@ -580,7 +580,7 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
 
 int VP8EncoderImpl::SetCpuSpeed(int width, int height) {
 #if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64) \
-  || defined(WEBRTC_ANDROID)
+  || defined(WEBRTC_ANDROID) || defined(WEBRTC_ARCH_MIPS)
   
   
   RTC_DCHECK_GT(number_of_cores_, 0);
@@ -660,7 +660,7 @@ int VP8EncoderImpl::InitAndSetControlSettings() {
   
   denoiserState denoiser_state = kDenoiserOnYOnly;
 #if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64) \
-  || defined(WEBRTC_ANDROID)
+  || defined(WEBRTC_ANDROID) || defined(WEBRTC_ARCH_MIPS)
   denoiser_state = kDenoiserOnYOnly;
 #else
   denoiser_state = kDenoiserOnAdaptive;
@@ -1054,7 +1054,7 @@ int VP8DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
   cfg.h = cfg.w = 0;  
 
 #if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64) \
-  || defined(WEBRTC_ANDROID)
+  || defined(WEBRTC_ANDROID) || defined(WEBRTC_ARCH_MIPS)
   vpx_codec_flags_t flags = use_postproc_arm_ ? VPX_CODEC_USE_POSTPROC : 0;
 #else
   vpx_codec_flags_t flags = VPX_CODEC_USE_POSTPROC;
@@ -1094,7 +1094,7 @@ int VP8DecoderImpl::Decode(const EncodedImage& input_image,
 
 
 #if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64) \
-  || defined(WEBRTC_ANDROID)
+  || defined(WEBRTC_ANDROID) || defined(WEBRTC_ARCH_MIPS)
   if (use_postproc_arm_) {
     vp8_postproc_cfg_t ppcfg;
     ppcfg.post_proc_flag = VP8_MFQE;
