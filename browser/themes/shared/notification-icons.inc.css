@@ -190,6 +190,7 @@ html|*#webRTC-previewVideo {
   width: 300px;
   
   min-width: 300px;
+  min-height: 10em;
   max-height: 200px;
 }
 
