@@ -777,6 +777,17 @@ nsresult nsSystemInfo::Init() {
   }
 
 #ifdef XP_WIN
+  bool isMinGW =
+#  ifdef __MINGW32__
+      true;
+#  else
+      false;
+#  endif
+  rv = SetPropertyAsBool(NS_LITERAL_STRING("isMinGW"), !!isMinGW);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
   
   
   typedef BOOL(WINAPI * LPFN_IWP2)(HANDLE, USHORT*, USHORT*);
