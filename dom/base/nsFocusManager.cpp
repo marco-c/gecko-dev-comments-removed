@@ -1647,17 +1647,21 @@ bool nsFocusManager::Blur(nsPIDOMWindowOuter* aWindowToClear,
       }
     }
 
+    bool windowBeingLowered = !aWindowToClear && !aAncestorWindowToFocus &&
+                              aIsLeavingDocument && aAdjustWidgets;
     
     
     if (BrowserParent* remote = BrowserParent::GetFrom(element)) {
-      remote->Deactivate();
-      LOGFOCUS(("Remote browser deactivated %p", remote));
+      remote->Deactivate(windowBeingLowered);
+      LOGFOCUS(
+          ("Remote browser deactivated %p, %d", remote, windowBeingLowered));
     }
 
     
     if (BrowserBridgeChild* bbc = BrowserBridgeChild::GetFrom(element)) {
-      bbc->Deactivate();
-      LOGFOCUS(("Out-of-process iframe deactivated %p", bbc));
+      bbc->Deactivate(windowBeingLowered);
+      LOGFOCUS(("Out-of-process iframe deactivated %p, %d", bbc,
+                windowBeingLowered));
     }
   }
 
