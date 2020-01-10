@@ -1187,7 +1187,25 @@ void KeyframeEffect::GetKeyframes(JSContext*& aCx, nsTArray<JSObject*>& aResult,
         }
       }
 
-      const char* name = nsCSSProps::PropertyIDLName(propertyValue.mProperty);
+      
+      
+      
+      
+      
+      
+      
+      const char* name = nullptr;
+      switch (propertyValue.mProperty) {
+        case nsCSSPropertyID::eCSSProperty_offset:
+          name = "cssOffset";
+          break;
+        case nsCSSPropertyID::eCSSProperty_float:
+          
+          
+        default:
+          name = nsCSSProps::PropertyIDLName(propertyValue.mProperty);
+      }
+
       JS::Rooted<JS::Value> value(aCx);
       if (!ToJSValue(aCx, stringValue, &value) ||
           !JS_DefineProperty(aCx, keyframeObject, name, value,

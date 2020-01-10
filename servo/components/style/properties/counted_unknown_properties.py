@@ -10,6 +10,7 @@
 
 
 
+
 COUNTED_UNKNOWN_PROPERTIES = [
     "-webkit-font-smoothing",
     "zoom",
@@ -82,7 +83,6 @@ COUNTED_UNKNOWN_PROPERTIES = [
     "-webkit-ruby-position",
     "-webkit-column-break-after",
     "-webkit-margin-collapse",
-    "offset",
     "-webkit-border-before",
     "-webkit-border-end",
     "-webkit-border-after",

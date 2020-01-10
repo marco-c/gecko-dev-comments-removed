@@ -506,8 +506,24 @@ static bool GetPropertyValuesPairs(JSContext* aCx,
     if (!propName.init(aCx, ids[i])) {
       return false;
     }
-    nsCSSPropertyID property = nsCSSProps::LookupPropertyByIDLName(
-        propName, CSSEnabledState::ForAllContent);
+
+    
+    
+    
+    
+    
+    
+    nsCSSPropertyID property = nsCSSPropertyID::eCSSProperty_UNKNOWN;
+    if (propName.EqualsLiteral("cssOffset")) {
+      property = nsCSSPropertyID::eCSSProperty_offset;
+    } else if (propName.EqualsLiteral("cssFloat")) {
+      property = nsCSSPropertyID::eCSSProperty_float;
+    } else if (!propName.EqualsLiteral("offset") &&
+               !propName.EqualsLiteral("float")) {
+      property = nsCSSProps::LookupPropertyByIDLName(
+          propName, CSSEnabledState::ForAllContent);
+    }
+
     if (KeyframeUtils::IsAnimatableProperty(property)) {
       AdditionalProperty* p = properties.AppendElement();
       p->mProperty = property;
