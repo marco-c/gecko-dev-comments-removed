@@ -346,6 +346,9 @@ namespace dom {
 
 typedef nsTArray<Link*> LinkArray;
 
+AutoTArray<Document*, 8>* Document::sLoadingForegroundTopLevelContentDocument =
+    nullptr;
+
 static LazyLogModule gDocumentLeakPRLog("DocumentLeak");
 static LazyLogModule gCspPRLog("CSP");
 LazyLogModule gUserInteractionPRLog("UserInteraction");
@@ -1667,6 +1670,8 @@ Document::~Document() {
   NS_ASSERTION(!mIsShowing, "Destroying a currently-showing document");
 
   if (IsTopLevelContentDocument()) {
+    RemoveToplevelLoadingDocument(this);
+
     
     if (!IsAboutPage()) {
       
@@ -11152,6 +11157,14 @@ void Document::SetReadyStateInternal(ReadyState rs,
     return;
   }
 
+  if (IsTopLevelContentDocument()) {
+    if (rs == READYSTATE_LOADING) {
+      AddToplevelLoadingDocument(this);
+    } else if (rs == READYSTATE_COMPLETE) {
+      RemoveToplevelLoadingDocument(this);
+    }
+  }
+
   if (updateTimingInformation && READYSTATE_LOADING == rs) {
     mLoadingTimeStamp = mozilla::TimeStamp::Now();
   }
@@ -15781,6 +15794,58 @@ void Document::SetIsInitialDocument(bool aIsInitialDocument) {
       wgc->SendSetIsInitialDocument(aIsInitialDocument);
     }
   }
+}
+
+void Document::AddToplevelLoadingDocument(Document* aDoc) {
+  MOZ_ASSERT(aDoc && aDoc->IsTopLevelContentDocument());
+  
+  if (aDoc->IsInBackgroundWindow() || !XRE_IsContentProcess()) {
+    return;
+  }
+
+  if (!sLoadingForegroundTopLevelContentDocument) {
+    sLoadingForegroundTopLevelContentDocument = new AutoTArray<Document*, 8>();
+  }
+  if (!sLoadingForegroundTopLevelContentDocument->Contains(aDoc)) {
+    sLoadingForegroundTopLevelContentDocument->AppendElement(aDoc);
+  }
+}
+
+void Document::RemoveToplevelLoadingDocument(Document* aDoc) {
+  MOZ_ASSERT(aDoc && aDoc->IsTopLevelContentDocument());
+  if (sLoadingForegroundTopLevelContentDocument) {
+    sLoadingForegroundTopLevelContentDocument->RemoveElement(aDoc);
+    if (sLoadingForegroundTopLevelContentDocument->IsEmpty()) {
+      delete sLoadingForegroundTopLevelContentDocument;
+      sLoadingForegroundTopLevelContentDocument = nullptr;
+    }
+  }
+}
+
+bool Document::HasRecentlyStartedForegroundLoads() {
+  if (!sLoadingForegroundTopLevelContentDocument) {
+    return false;
+  }
+
+  for (size_t i = 0; i < sLoadingForegroundTopLevelContentDocument->Length();
+       ++i) {
+    Document* doc = sLoadingForegroundTopLevelContentDocument->ElementAt(i);
+    
+    if (!doc->IsInBackgroundWindow()) {
+      nsPIDOMWindowInner* win = doc->GetInnerWindow();
+      if (win) {
+        Performance* perf = win->GetPerformance();
+        if (perf && perf->Now() < 5000) {
+          return true;
+        }
+      }
+    }
+  }
+
+  
+  delete sLoadingForegroundTopLevelContentDocument;
+  sLoadingForegroundTopLevelContentDocument = nullptr;
+  return false;
 }
 
 }  
