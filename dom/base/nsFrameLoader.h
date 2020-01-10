@@ -94,21 +94,23 @@ class nsFrameLoader final : public nsStubMutationObserver,
   friend class AutoResetInShow;
   friend class AutoResetInFrameSwap;
   typedef mozilla::dom::Document Document;
+  typedef mozilla::dom::Element Element;
   typedef mozilla::dom::BrowserParent BrowserParent;
   typedef mozilla::dom::BrowserBridgeChild BrowserBridgeChild;
   typedef mozilla::dom::BrowsingContext BrowsingContext;
 
  public:
   
-  static nsFrameLoader* Create(mozilla::dom::Element* aOwner,
-                               mozilla::dom::BrowsingContext* aOpener,
-                               bool aNetworkCreated);
+  static already_AddRefed<nsFrameLoader> Create(Element* aOwner,
+                                                BrowsingContext* aOpener,
+                                                bool aNetworkCreated);
 
   
   
-  static nsFrameLoader* Create(mozilla::dom::Element* aOwner,
-                               BrowsingContext* aPreservedBrowsingContext,
-                               const mozilla::dom::RemotenessOptions& aOptions);
+  static already_AddRefed<nsFrameLoader> Recreate(Element* aOwner,
+                                                  BrowsingContext* aContext,
+                                                  const nsAString& aRemoteType,
+                                                  bool aNetworkCreated);
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_FRAMELOADER_IID)
 
@@ -233,6 +235,8 @@ class nsFrameLoader final : public nsStubMutationObserver,
   bool DepthTooGreat() const { return mDepthTooGreat; }
 
   bool IsDead() const { return mDestroyCalled; }
+
+  bool IsNetworkCreated() const { return mNetworkCreated; }
 
   
 
@@ -406,15 +410,10 @@ class nsFrameLoader final : public nsStubMutationObserver,
  private:
   nsFrameLoader(mozilla::dom::Element* aOwner,
                 mozilla::dom::BrowsingContext* aBrowsingContext,
-                bool aNetworkCreated);
-  nsFrameLoader(mozilla::dom::Element* aOwner,
-                mozilla::dom::BrowsingContext* aBrowsingContext,
-                const mozilla::dom::RemotenessOptions& aOptions);
+                const nsAString& aRemoteType, bool aNetworkCreated);
   ~nsFrameLoader();
 
   void SetOwnerContent(mozilla::dom::Element* aContent);
-
-  bool ShouldUseRemoteProcess();
 
   
 

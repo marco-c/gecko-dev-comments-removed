@@ -169,13 +169,13 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsFrameLoader)
 NS_INTERFACE_MAP_END
 
 nsFrameLoader::nsFrameLoader(Element* aOwner, BrowsingContext* aBrowsingContext,
-                             bool aNetworkCreated)
+                             const nsAString& aRemoteType, bool aNetworkCreated)
     : mBrowsingContext(aBrowsingContext),
       mOwnerContent(aOwner),
       mDetachedSubdocFrame(nullptr),
       mPendingSwitchID(0),
       mChildID(0),
-      mRemoteType(VoidString()),
+      mRemoteType(aRemoteType),
       mDepthTooGreat(false),
       mIsTopLevelContent(false),
       mDestroyCalled(false),
@@ -186,46 +186,9 @@ nsFrameLoader::nsFrameLoader(Element* aOwner, BrowsingContext* aBrowsingContext,
       mNetworkCreated(aNetworkCreated),
       mLoadingOriginalSrc(false),
       mRemoteBrowserShown(false),
-      mIsRemoteFrame(false),
+      mIsRemoteFrame(!aRemoteType.IsEmpty()),
       mObservingOwnerContent(false),
-      mTabProcessCrashFired(false) {
-  mIsRemoteFrame = ShouldUseRemoteProcess();
-  MOZ_ASSERT(!mIsRemoteFrame || !mBrowsingContext->HasOpener(),
-             "Cannot pass aOpener for a remote frame!");
-
-  if (mIsRemoteFrame &&
-      !aOwner->GetAttr(kNameSpaceID_None, nsGkAtoms::RemoteType, mRemoteType)) {
-    mRemoteType.AssignLiteral(DEFAULT_REMOTE_TYPE);
-  }
-}
-
-nsFrameLoader::nsFrameLoader(Element* aOwner, BrowsingContext* aBrowsingContext,
-                             const mozilla::dom::RemotenessOptions& aOptions)
-    : mBrowsingContext(aBrowsingContext),
-      mOwnerContent(aOwner),
-      mDetachedSubdocFrame(nullptr),
-      mPendingSwitchID(0),
-      mChildID(0),
-      mRemoteType(VoidString()),
-      mDepthTooGreat(false),
-      mIsTopLevelContent(false),
-      mDestroyCalled(false),
-      mNeedsAsyncDestroy(false),
-      mInSwap(false),
-      mInShow(false),
-      mHideCalled(false),
-      mNetworkCreated(false),
-      mLoadingOriginalSrc(false),
-      mRemoteBrowserShown(false),
-      mIsRemoteFrame(false),
-      mObservingOwnerContent(false),
-      mTabProcessCrashFired(false) {
-  if (aOptions.mRemoteType.WasPassed() &&
-      (!aOptions.mRemoteType.Value().IsVoid())) {
-    mIsRemoteFrame = true;
-    mRemoteType = aOptions.mRemoteType.Value();
-  }
-}
+      mTabProcessCrashFired(false) {}
 
 nsFrameLoader::~nsFrameLoader() {
   if (mMessageManager) {
@@ -338,8 +301,37 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
   return BrowsingContext::Create(parentContext, aOpener, frameName, type);
 }
 
-nsFrameLoader* nsFrameLoader::Create(Element* aOwner, BrowsingContext* aOpener,
-                                     bool aNetworkCreated) {
+static bool InitialLoadIsRemote(Element* aOwner) {
+  if (PR_GetEnv("MOZ_DISABLE_OOP_TABS") ||
+      Preferences::GetBool("dom.ipc.tabs.disabled", false)) {
+    return false;
+  }
+
+  
+  
+  if (XRE_IsContentProcess()) {
+    return false;
+  }
+
+  
+  
+  nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(aOwner);
+  bool isMozBrowserFrame = browserFrame && browserFrame->GetReallyIsBrowser();
+  if (isMozBrowserFrame &&
+      !aOwner->HasAttr(kNameSpaceID_None, nsGkAtoms::remote)) {
+    return Preferences::GetBool("dom.ipc.browser_frames.oop_by_default", false);
+  }
+
+  
+  
+  return (isMozBrowserFrame || aOwner->GetNameSpaceID() == kNameSpaceID_XUL) &&
+         aOwner->AttrValueIs(kNameSpaceID_None, nsGkAtoms::remote,
+                             nsGkAtoms::_true, eCaseMatters);
+}
+
+already_AddRefed<nsFrameLoader> nsFrameLoader::Create(Element* aOwner,
+                                                      BrowsingContext* aOpener,
+                                                      bool aNetworkCreated) {
   NS_ENSURE_TRUE(aOwner, nullptr);
   Document* doc = aOwner->OwnerDoc();
 
@@ -370,36 +362,52 @@ nsFrameLoader* nsFrameLoader::Create(Element* aOwner, BrowsingContext* aOpener,
 
   RefPtr<BrowsingContext> context = CreateBrowsingContext(aOwner, aOpener);
   NS_ENSURE_TRUE(context, nullptr);
-  return new nsFrameLoader(aOwner, context, aNetworkCreated);
+
+  
+  
+  
+  nsAutoString remoteType(VoidString());
+  if (InitialLoadIsRemote(aOwner)) {
+    MOZ_ASSERT(!aOpener, "Cannot pass `aOpener` for a remote frame!");
+
+    
+    
+    bool hasRemoteType =
+        aOwner->GetAttr(kNameSpaceID_None, nsGkAtoms::RemoteType, remoteType);
+    if (!hasRemoteType || remoteType.IsEmpty()) {
+      remoteType.AssignLiteral(DEFAULT_REMOTE_TYPE);
+    }
+  }
+
+  RefPtr<nsFrameLoader> fl =
+      new nsFrameLoader(aOwner, context, remoteType, aNetworkCreated);
+  return fl.forget();
 }
 
 
-nsFrameLoader* nsFrameLoader::Create(
-    mozilla::dom::Element* aOwner, BrowsingContext* aPreservedBrowsingContext,
-    const mozilla::dom::RemotenessOptions& aOptions) {
+already_AddRefed<nsFrameLoader> nsFrameLoader::Recreate(
+    mozilla::dom::Element* aOwner, BrowsingContext* aContext,
+    const nsAString& aRemoteType, bool aNetworkCreated) {
   NS_ENSURE_TRUE(aOwner, nullptr);
-  
-  
 
-  bool hasOpener =
-      aOptions.mOpener.WasPassed() && !aOptions.mOpener.Value().IsNull();
-  MOZ_ASSERT(!aOptions.mRemoteType.WasPassed() ||
-                 aOptions.mRemoteType.Value().IsVoid() || !hasOpener,
-             "Cannot pass aOpener for a remote frame!");
-
+#ifdef DEBUG
   
-  RefPtr<BrowsingContext> opener;
-  if (hasOpener) {
-    opener = aOptions.mOpener.Value().Value().get();
-  }
-  RefPtr<BrowsingContext> context;
-  if (aPreservedBrowsingContext) {
-    context = aPreservedBrowsingContext;
-  } else {
-    context = CreateBrowsingContext(aOwner, opener);
+  
+  Document* doc = aOwner->OwnerDoc();
+  MOZ_ASSERT(!doc->IsResourceDoc());
+  MOZ_ASSERT((!doc->IsLoadedAsData() && aOwner->IsInComposedDoc()) ||
+             doc->IsStaticDocument());
+#endif
+
+  RefPtr<BrowsingContext> context = aContext;
+  if (!context) {
+    context = CreateBrowsingContext(aOwner,  nullptr);
   }
   NS_ENSURE_TRUE(context, nullptr);
-  return new nsFrameLoader(aOwner, context, aOptions);
+
+  RefPtr<nsFrameLoader> fl =
+      new nsFrameLoader(aOwner, context, aRemoteType, aNetworkCreated);
+  return fl.forget();
 }
 
 void nsFrameLoader::LoadFrame(bool aOriginalSrc) {
@@ -1949,40 +1957,6 @@ void nsFrameLoader::SetOwnerContent(Element* aContent) {
 bool nsFrameLoader::OwnerIsMozBrowserFrame() {
   nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(mOwnerContent);
   return browserFrame ? browserFrame->GetReallyIsBrowser() : false;
-}
-
-bool nsFrameLoader::ShouldUseRemoteProcess() {
-  if (PR_GetEnv("MOZ_DISABLE_OOP_TABS") ||
-      Preferences::GetBool("dom.ipc.tabs.disabled", false)) {
-    return false;
-  }
-
-  
-  
-  if (XRE_IsContentProcess() &&
-      !CompositorBridgeChild::ChildProcessHasCompositorBridge()) {
-    return false;
-  }
-
-  if (XRE_IsContentProcess() &&
-      !(PR_GetEnv("MOZ_NESTED_OOP_TABS") ||
-        Preferences::GetBool("dom.ipc.tabs.nested.enabled", false))) {
-    return false;
-  }
-
-  
-  
-  if (OwnerIsMozBrowserFrame() &&
-      !mOwnerContent->HasAttr(kNameSpaceID_None, nsGkAtoms::remote)) {
-    return Preferences::GetBool("dom.ipc.browser_frames.oop_by_default", false);
-  }
-
-  
-  
-  return (OwnerIsMozBrowserFrame() ||
-          mOwnerContent->GetNameSpaceID() == kNameSpaceID_XUL) &&
-         mOwnerContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::remote,
-                                    nsGkAtoms::_true, eCaseMatters);
 }
 
 nsresult nsFrameLoader::MaybeCreateDocShell() {

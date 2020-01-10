@@ -53,8 +53,7 @@ bool nsFrameLoaderOwner::ShouldPreserveBrowsingContext(
 
   
   
-  if (XRE_IsParentProcess() && (!aOptions.mRemoteType.WasPassed() ||
-                                aOptions.mRemoteType.Value().IsVoid())) {
+  if (XRE_IsParentProcess() && aOptions.mRemoteType.IsVoid()) {
     return false;
   }
 
@@ -67,6 +66,7 @@ bool nsFrameLoaderOwner::ShouldPreserveBrowsingContext(
 void nsFrameLoaderOwner::ChangeRemoteness(
     const mozilla::dom::RemotenessOptions& aOptions, mozilla::ErrorResult& rv) {
   RefPtr<mozilla::dom::BrowsingContext> bc;
+  bool networkCreated = false;
 
   
   
@@ -76,6 +76,9 @@ void nsFrameLoaderOwner::ChangeRemoteness(
       mFrameLoader->SkipBrowsingContextDetach();
     }
 
+    
+    
+    networkCreated = mFrameLoader->IsNetworkCreated();
     mFrameLoader->Destroy();
     mFrameLoader = nullptr;
   }
@@ -85,7 +88,8 @@ void nsFrameLoaderOwner::ChangeRemoteness(
   
   RefPtr<Element> owner = do_QueryObject(this);
   MOZ_ASSERT(owner);
-  mFrameLoader = nsFrameLoader::Create(owner, bc, aOptions);
+  mFrameLoader =
+      nsFrameLoader::Recreate(owner, bc, aOptions.mRemoteType, networkCreated);
 
   if (NS_WARN_IF(!mFrameLoader)) {
     return;

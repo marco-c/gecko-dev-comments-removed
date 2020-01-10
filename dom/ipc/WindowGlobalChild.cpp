@@ -25,6 +25,7 @@
 #include "nsFrameLoaderOwner.h"
 #include "nsQueryObject.h"
 #include "nsSerializationHelper.h"
+#include "nsFrameLoader.h"
 
 #include "mozilla/dom/JSWindowActorBinding.h"
 #include "mozilla/dom/JSWindowActorChild.h"
@@ -260,10 +261,12 @@ static nsresult ChangeFrameRemoteness(WindowGlobalChild* aWgc,
   
   RemotenessOptions options;
   options.mPendingSwitchID.Construct(aPendingSwitchId);
+  options.mRemoteType.Assign(aRemoteType);
 
   
-  if (!ContentChild::GetSingleton()->GetRemoteType().Equals(aRemoteType)) {
-    options.mRemoteType.Construct(aRemoteType);
+  
+  if (ContentChild::GetSingleton()->GetRemoteType().Equals(aRemoteType)) {
+    options.mRemoteType.Assign(VoidString());
   }
 
   ErrorResult error;
