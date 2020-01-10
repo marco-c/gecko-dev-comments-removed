@@ -674,11 +674,20 @@
       if (!options.noOverwrite) {
         flags = flags | Const.MOVEFILE_REPLACE_EXISTING;
       }
-      throw_on_zero(
-        "move",
-        WinFile.MoveFileEx(sourcePath, destPath, flags),
-        sourcePath
-      );
+
+      
+      
+      
+      
+      let result = WinFile.MoveFileEx(sourcePath, destPath, flags);
+      if (result != 0) {
+        throw_on_zero(
+          "move",
+          File.copy(sourcePath, destPath, options),
+          sourcePath
+        );
+        throw_on_zero("move", File.remove(sourcePath), sourcePath);
+      }
 
       
       
