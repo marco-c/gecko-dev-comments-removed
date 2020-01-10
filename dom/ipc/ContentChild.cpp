@@ -134,6 +134,10 @@
 #    include "mozilla/Sandbox.h"
 #  elif defined(__OpenBSD__)
 #    include <unistd.h>
+#    include <sys/stat.h>
+#    include <err.h>
+#    include <fstream>
+#    include "nsILineInputStream.h"
 #  endif
 #  if defined(MOZ_DEBUG) && defined(ENABLE_TESTS)
 #    include "mozilla/SandboxTestingChild.h"
@@ -712,6 +716,10 @@ bool ContentChild::Init(MessageLoop* aIOLoop, base::ProcessId aParentPid,
     
     ProcessChild::QuickExit();
   }
+
+#if defined(__OpenBSD__) && defined(MOZ_SANDBOX)
+  StartOpenBSDSandbox(GeckoProcessType_Content);
+#endif
 
 #ifdef MOZ_X11
 #  ifdef MOZ_WIDGET_GTK
@@ -1802,15 +1810,6 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
   mozilla::SandboxTarget::Instance()->StartSandbox();
 #  elif defined(XP_MACOSX)
   sandboxEnabled = StartMacOSContentSandbox();
-#  elif defined(__OpenBSD__)
-  sandboxEnabled = StartOpenBSDSandbox(GeckoProcessType_Content);
-  
-  if (!PR_GetEnv("DBUS_SESSION_BUS_ADDRESS")) {
-    static LazyLogModule sPledgeLog("SandboxPledge");
-    MOZ_LOG(sPledgeLog, LogLevel::Debug,
-            ("no session dbus found, faking one\n"));
-    PR_SetEnv("DBUS_SESSION_BUS_ADDRESS=");
-  }
 #  endif
 
   CrashReporter::AnnotateCrashReport(
@@ -4132,48 +4131,109 @@ mozilla::ipc::IPCResult ContentChild::RecvInitSandboxTesting(
 }  
 
 #if defined(__OpenBSD__) && defined(MOZ_SANDBOX)
-#  include <unistd.h>
 
-static LazyLogModule sPledgeLog("SandboxPledge");
+static LazyLogModule sPledgeLog("OpenBSDSandbox");
+
+NS_IMETHODIMP
+OpenBSDPledgePromises(const nsACString& aPath) {
+  
+  
+  
+  std::ifstream input(PromiseFlatCString(aPath).get());
+
+  
+  nsAutoCString promises;
+  bool disabled = false;
+
+  int linenum = 0;
+  for (std::string tLine; std::getline(input, tLine);) {
+    nsAutoCString line(tLine.c_str());
+    linenum++;
+
+    
+    
+    int32_t hash = line.FindChar('#');
+    if (hash >= 0) {
+      line = Substring(line, 0, hash);
+    }
+    line.CompressWhitespace(true, true);
+    if (line.IsEmpty()) {
+      continue;
+    }
+
+    if (linenum == 1 && line.EqualsLiteral("disable")) {
+      disabled = true;
+      break;
+    }
+
+    if (!promises.IsEmpty()) {
+      promises.Append(" ");
+    }
+    promises.Append(line);
+  }
+  input.close();
+
+  if (disabled) {
+    warnx("%s: disabled", PromiseFlatCString(aPath).get());
+  } else {
+    MOZ_LOG(
+        sPledgeLog, LogLevel::Debug,
+        ("%s: pledge(%s)\n", PromiseFlatCString(aPath).get(), promises.get()));
+    if (pledge(promises.get(), nullptr) != 0) {
+      err(1, "%s: pledge(%s) failed", PromiseFlatCString(aPath).get(),
+          promises.get());
+    }
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+OpenBSDFindPledgeFilePath(const char* file, nsACString& result) {
+  struct stat st;
+
+  
+  result.Assign(nsPrintfCString("/etc/%s/%s", MOZ_APP_NAME, file));
+  if (stat(PromiseFlatCString(result).get(), &st) == 0) {
+    return NS_OK;
+  }
+
+  
+  result.Assign(nsPrintfCString(
+      "/usr/local/lib/%s/browser/defaults/preferences/%s", MOZ_APP_NAME, file));
+  if (stat(PromiseFlatCString(result).get(), &st) == 0) {
+    return NS_OK;
+  }
+
+  errx(1, "can't locate %s", file);
+}
 
 bool StartOpenBSDSandbox(GeckoProcessType type) {
-  nsAutoCString promisesString;
-  nsAutoCString processTypeString;
+  nsAutoCString pledgeFile;
 
   switch (type) {
     case GeckoProcessType_Default:
-      processTypeString = "main";
-      Preferences::GetCString("security.sandbox.pledge.main", promisesString);
+      OpenBSDFindPledgeFilePath("pledge.main", pledgeFile);
       break;
 
     case GeckoProcessType_Content:
-      processTypeString = "content";
-      Preferences::GetCString("security.sandbox.pledge.content",
-                              promisesString);
+      OpenBSDFindPledgeFilePath("pledge.content", pledgeFile);
       break;
 
     default:
       MOZ_ASSERT(false, "unknown process type");
       return false;
-  };
-
-  if (pledge(promisesString.get(), NULL) == -1) {
-    if (errno == EINVAL) {
-      MOZ_LOG(sPledgeLog, LogLevel::Error,
-              ("pledge promises for %s process is a malformed string: '%s'\n",
-               processTypeString.get(), promisesString.get()));
-    } else if (errno == EPERM) {
-      MOZ_LOG(
-          sPledgeLog, LogLevel::Error,
-          ("pledge promises for %s process can't elevate privileges: '%s'\n",
-           processTypeString.get(), promisesString.get()));
-    }
-    return false;
-  } else {
-    MOZ_LOG(sPledgeLog, LogLevel::Debug,
-            ("pledged %s process with promises: '%s'\n",
-             processTypeString.get(), promisesString.get()));
   }
+
+  if (NS_WARN_IF(NS_FAILED(OpenBSDPledgePromises(pledgeFile)))) {
+    errx(1, "failed reading/parsing %s", pledgeFile.get());
+  }
+
+  
+  if (!PR_GetEnv("DBUS_SESSION_BUS_ADDRESS")) {
+    PR_SetEnv("DBUS_SESSION_BUS_ADDRESS=");
+  }
+
   return true;
 }
 #endif
