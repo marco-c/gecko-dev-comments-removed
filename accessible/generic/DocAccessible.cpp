@@ -1403,6 +1403,15 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
     
     
     
+    if (frame && !acc->IsOuterDoc() &&
+        frame->AccessibleType() == eOuterDocType) {
+      ContentRemoved(aRoot);
+      return true;
+    }
+
+    
+    
+    
     insert = true;
   } else {
     
