@@ -93,6 +93,10 @@ const getSymbolTableGetter = state =>
   getInitializedValues(state).getSymbolTableGetter;
 
 
+const getSupportedFeatures = state =>
+  getInitializedValues(state).supportedFeatures;
+
+
 const getPromptEnvRestart = state => state.promptEnvRestart;
 
 module.exports = {
@@ -113,4 +117,5 @@ module.exports = {
   getIsPopup,
   getSymbolTableGetter,
   getPromptEnvRestart,
+  getSupportedFeatures,
 };

@@ -181,7 +181,7 @@ export interface RecordingStateFromPreferences {
   threads: string[];
   objdirs: string[];
   
-  duration: number;
+  duration?: number;
 }
 
 
@@ -201,6 +201,11 @@ export interface InitializedValues {
   isPopup: boolean;
   
   getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
+  
+  
+  
+  
+  supportedFeatures: string[] | null
 }
 
 
@@ -249,7 +254,18 @@ export type Action =
       isPopup: boolean;
       recordingSettingsFromPreferences: RecordingStateFromPreferences;
       getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
+      supportedFeatures: string[] | null;
     };
+
+export interface InitializeStoreValues {
+  perfFront: PerfFront;
+  receiveProfile: ReceiveProfile;
+  setRecordingPreferences: SetRecordingPreferences;
+  isPopup: boolean;
+  recordingPreferences: RecordingStateFromPreferences;
+  supportedFeatures: string[] | null;
+  getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
+}
 
 export type PopupBackgroundFeatures = { [feature: string]: boolean };
 
@@ -331,6 +347,6 @@ export interface PerformancePref {
 
 
 
-export interface PopupWindow {
+export interface PopupWindow extends Window {
   gResizePopup?: (height: number) => void;
 }

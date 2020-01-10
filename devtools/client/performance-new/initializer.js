@@ -68,29 +68,42 @@ async function gInit(perfFront, preferenceFront) {
   const store = createStore(reducers);
 
   
+  const [recordingPreferences, supportedFeatures] = await Promise.all([
+    
+    
+    
+    
+    getRecordingPreferencesFromDebuggee(
+      preferenceFront,
+      getDefaultRecordingPreferences()
+    ),
+    
+    
+    
+    
+    
+    Promise.resolve(perfFront.getSupportedFeatures()).catch(() => null),
+  ]);
+
+  
   
   store.dispatch(
     actions.initializeStore({
       perfFront,
       receiveProfile,
-      
-      
-      
-      
-      recordingPreferences: await getRecordingPreferencesFromDebuggee(
-        preferenceFront,
-        getDefaultRecordingPreferences()
-      ),
+      recordingPreferences,
+      supportedFeatures,
+      isPopup: false,
 
       
       
       
 
 
-      setRecordingPreferences: recordingPreferences =>
+      setRecordingPreferences: newRecordingPreferences =>
         setRecordingPreferencesOnDebuggee(
           preferenceFront,
-          recordingPreferences
+          newRecordingPreferences
         ),
 
       

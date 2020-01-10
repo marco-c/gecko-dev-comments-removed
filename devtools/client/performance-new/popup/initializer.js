@@ -2,12 +2,11 @@
 
 
 
+
+
+
+
 "use strict";
-
-
-
-
-
 
 
 
@@ -90,6 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
 async function gInit() {
   const store = createStore(reducers);
   const perfFrontInterface = new ActorReadyGeckoProfilerInterface();
+  const supportedFeatures = await perfFrontInterface.getSupportedFeatures();
 
   
   
@@ -97,6 +97,7 @@ async function gInit() {
     actions.initializeStore({
       perfFront: perfFrontInterface,
       receiveProfile,
+      supportedFeatures,
       
       recordingPreferences: getRecordingPreferencesFromBrowser(),
       
@@ -124,7 +125,11 @@ async function gInit() {
 
 function resizeWindow() {
   window.requestAnimationFrame(() => {
-    const { gResizePopup } =  (window);
+    
+    
+    const anyWindow = window;
+    
+    const { gResizePopup } = anyWindow;
     if (gResizePopup) {
       gResizePopup(document.body.clientHeight);
     }
