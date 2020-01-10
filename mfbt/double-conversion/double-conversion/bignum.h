@@ -28,7 +28,7 @@
 #ifndef DOUBLE_CONVERSION_BIGNUM_H_
 #define DOUBLE_CONVERSION_BIGNUM_H_
 
-#include <double-conversion/utils.h>
+#include "utils.h"
 
 namespace double_conversion {
 
@@ -39,26 +39,27 @@ class Bignum {
   
   static const int kMaxSignificantBits = 3584;
 
-  Bignum();
-  void AssignUInt16(uint16_t value);
+  Bignum() : used_bigits_(0), exponent_(0) {}
+
+  void AssignUInt16(const uint16_t value);
   void AssignUInt64(uint64_t value);
   void AssignBignum(const Bignum& other);
 
-  void AssignDecimalString(Vector<const char> value);
-  void AssignHexString(Vector<const char> value);
+  void AssignDecimalString(const Vector<const char> value);
+  void AssignHexString(const Vector<const char> value);
 
-  void AssignPowerUInt16(uint16_t base, int exponent);
+  void AssignPowerUInt16(uint16_t base, const int exponent);
 
-  void AddUInt64(uint64_t operand);
+  void AddUInt64(const uint64_t operand);
   void AddBignum(const Bignum& other);
   
   void SubtractBignum(const Bignum& other);
 
   void Square();
-  void ShiftLeft(int shift_amount);
-  void MultiplyByUInt32(uint32_t factor);
-  void MultiplyByUInt64(uint64_t factor);
-  void MultiplyByPowerOfTen(int exponent);
+  void ShiftLeft(const int shift_amount);
+  void MultiplyByUInt32(const uint32_t factor);
+  void MultiplyByUInt64(const uint64_t factor);
+  void MultiplyByPowerOfTen(const int exponent);
   void Times10() { return MultiplyByUInt32(10); }
   
   
@@ -66,7 +67,7 @@ class Bignum {
   
   uint16_t DivideModuloIntBignum(const Bignum& other);
 
-  bool ToHexString(char* buffer, int buffer_size) const;
+  bool ToHexString(char* buffer, const int buffer_size) const;
 
   
   
@@ -110,33 +111,40 @@ class Bignum {
   
   static const int kBigitCapacity = kMaxSignificantBits / kBigitSize;
 
-  void EnsureCapacity(int size) {
+  static void EnsureCapacity(const int size) {
     if (size > kBigitCapacity) {
-      UNREACHABLE();
+      DOUBLE_CONVERSION_UNREACHABLE();
     }
   }
   void Align(const Bignum& other);
   void Clamp();
-  bool IsClamped() const;
-  void Zero();
+  bool IsClamped() const {
+    return used_bigits_ == 0 || RawBigit(used_bigits_ - 1) != 0;
+  }
+  void Zero() {
+    used_bigits_ = 0;
+    exponent_ = 0;
+  }
   
   
   
-  void BigitsShiftLeft(int shift_amount);
+  void BigitsShiftLeft(const int shift_amount);
   
-  int BigitLength() const { return used_digits_ + exponent_; }
-  Chunk BigitAt(int index) const;
-  void SubtractTimes(const Bignum& other, int factor);
+  int BigitLength() const { return used_bigits_ + exponent_; }
+  Chunk& RawBigit(const int index);
+  const Chunk& RawBigit(const int index) const;
+  Chunk BigitOrZero(const int index) const;
+  void SubtractTimes(const Bignum& other, const int factor);
 
+  
+  
+  
+  
+  int16_t used_bigits_;
+  int16_t exponent_;
   Chunk bigits_buffer_[kBigitCapacity];
-  
-  
-  Vector<Chunk> bigits_;
-  int used_digits_;
-  
-  int exponent_;
 
-  DC_DISALLOW_COPY_AND_ASSIGN(Bignum);
+  DOUBLE_CONVERSION_DISALLOW_COPY_AND_ASSIGN(Bignum);
 };
 
 }  

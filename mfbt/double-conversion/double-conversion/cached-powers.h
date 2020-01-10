@@ -28,36 +28,36 @@
 #ifndef DOUBLE_CONVERSION_CACHED_POWERS_H_
 #define DOUBLE_CONVERSION_CACHED_POWERS_H_
 
-#include <double-conversion/diy-fp.h>
+#include "diy-fp.h"
 
 namespace double_conversion {
 
-class PowersOfTenCache {
- public:
+namespace PowersOfTenCache {
 
   
   
-  static const int kDecimalExponentDistance;
+  static const int kDecimalExponentDistance = 8;
 
-  static const int kMinDecimalExponent;
-  static const int kMaxDecimalExponent;
-
-  
-  
-  static void GetCachedPowerForBinaryExponentRange(int min_exponent,
-                                                   int max_exponent,
-                                                   DiyFp* power,
-                                                   int* decimal_exponent);
+  static const int kMinDecimalExponent = -348;
+  static const int kMaxDecimalExponent = 340;
 
   
   
+  void GetCachedPowerForBinaryExponentRange(int min_exponent,
+                                            int max_exponent,
+                                            DiyFp* power,
+                                            int* decimal_exponent);
+
   
   
   
-  static void GetCachedPowerForDecimalExponent(int requested_exponent,
-                                               DiyFp* power,
-                                               int* found_exponent);
-};
+  
+  
+  void GetCachedPowerForDecimalExponent(int requested_exponent,
+                                        DiyFp* power,
+                                        int* found_exponent);
+
+}  
 
 }  
 

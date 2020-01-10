@@ -27,8 +27,8 @@
 
 #include <cmath>
 
-#include <double-conversion/fixed-dtoa.h>
-#include <double-conversion/ieee.h>
+#include "fixed-dtoa.h"
+#include "ieee.h"
 
 namespace double_conversion {
 
@@ -53,11 +53,11 @@ class UInt128 {
     accumulator >>= 32;
     accumulator = accumulator + (high_bits_ >> 32) * multiplicand;
     high_bits_ = (accumulator << 32) + part;
-    ASSERT((accumulator >> 32) == 0);
+    DOUBLE_CONVERSION_ASSERT((accumulator >> 32) == 0);
   }
 
   void Shift(int shift_amount) {
-    ASSERT(-64 <= shift_amount && shift_amount <= 64);
+    DOUBLE_CONVERSION_ASSERT(-64 <= shift_amount && shift_amount <= 64);
     if (shift_amount == 0) {
       return;
     } else if (shift_amount == -64) {
@@ -230,13 +230,13 @@ static void RoundUp(Vector<char> buffer, int* length, int* decimal_point) {
 static void FillFractionals(uint64_t fractionals, int exponent,
                             int fractional_count, Vector<char> buffer,
                             int* length, int* decimal_point) {
-  ASSERT(-128 <= exponent && exponent <= 0);
+  DOUBLE_CONVERSION_ASSERT(-128 <= exponent && exponent <= 0);
   
   
   
   if (-exponent <= 64) {
     
-    ASSERT(fractionals >> 56 == 0);
+    DOUBLE_CONVERSION_ASSERT(fractionals >> 56 == 0);
     int point = -exponent;
     for (int i = 0; i < fractional_count; ++i) {
       if (fractionals == 0) break;
@@ -253,18 +253,18 @@ static void FillFractionals(uint64_t fractionals, int exponent,
       fractionals *= 5;
       point--;
       int digit = static_cast<int>(fractionals >> point);
-      ASSERT(digit <= 9);
+      DOUBLE_CONVERSION_ASSERT(digit <= 9);
       buffer[*length] = static_cast<char>('0' + digit);
       (*length)++;
       fractionals -= static_cast<uint64_t>(digit) << point;
     }
     
-    ASSERT(fractionals == 0 || point - 1 >= 0);
+    DOUBLE_CONVERSION_ASSERT(fractionals == 0 || point - 1 >= 0);
     if ((fractionals != 0) && ((fractionals >> (point - 1)) & 1) == 1) {
       RoundUp(buffer, length, decimal_point);
     }
   } else {  
-    ASSERT(64 < -exponent && -exponent <= 128);
+    DOUBLE_CONVERSION_ASSERT(64 < -exponent && -exponent <= 128);
     UInt128 fractionals128 = UInt128(fractionals, 0);
     fractionals128.Shift(-exponent - 64);
     int point = 128;
@@ -276,7 +276,7 @@ static void FillFractionals(uint64_t fractionals, int exponent,
       fractionals128.Multiply(5);
       point--;
       int digit = fractionals128.DivModPowerOf2(point);
-      ASSERT(digit <= 9);
+      DOUBLE_CONVERSION_ASSERT(digit <= 9);
       buffer[*length] = static_cast<char>('0' + digit);
       (*length)++;
     }
@@ -335,7 +335,7 @@ bool FastFixedDtoa(double v,
     
     
     
-    const uint64_t kFive17 = UINT64_2PART_C(0xB1, A2BC2EC5);  
+    const uint64_t kFive17 = DOUBLE_CONVERSION_UINT64_2PART_C(0xB1, A2BC2EC5);  
     uint64_t divisor = kFive17;
     int divisor_power = 17;
     uint64_t dividend = significand;
@@ -383,7 +383,7 @@ bool FastFixedDtoa(double v,
   } else if (exponent < -128) {
     
     
-    ASSERT(fractional_count <= 20);
+    DOUBLE_CONVERSION_ASSERT(fractional_count <= 20);
     buffer[0] = '\0';
     *length = 0;
     *decimal_point = -fractional_count;
