@@ -467,29 +467,32 @@ class BlocksRingBuffer {
 
   
   
-  class Reader {
+  class MOZ_RAII Reader {
    public:
+    Reader(const Reader&) = delete;
+    Reader& operator=(const Reader&) = delete;
+    Reader(Reader&&) = delete;
+    Reader& operator=(Reader&&) = delete;
+
 #ifdef DEBUG
     ~Reader() {
       
-      mRing->mMutex.AssertCurrentThreadOwns();
+      mRing.mMutex.AssertCurrentThreadOwns();
     }
 #endif  
 
     
-    BlockIndex BufferRangeStart() const { return mRing->mFirstReadIndex; }
+    BlockIndex BufferRangeStart() const { return mRing.mFirstReadIndex; }
 
     
-    BlockIndex BufferRangeEnd() const { return mRing->mNextWriteIndex; }
+    BlockIndex BufferRangeEnd() const { return mRing.mNextWriteIndex; }
 
     
     
     BlockIterator begin() const {
-      return BlockIterator(*mRing, BufferRangeStart());
+      return BlockIterator(mRing, BufferRangeStart());
     }
-    BlockIterator end() const {
-      return BlockIterator(*mRing, BufferRangeEnd());
-    }
+    BlockIterator end() const { return BlockIterator(mRing, BufferRangeEnd()); }
 
     
     
@@ -504,30 +507,29 @@ class BlocksRingBuffer {
    private:
     friend class BlocksRingBuffer;
 
-    explicit Reader(const BlocksRingBuffer& aRing)
-        : mRing(WrapNotNull(&aRing)) {
+    explicit Reader(const BlocksRingBuffer& aRing) : mRing(aRing) {
       
-      mRing->mMutex.AssertCurrentThreadOwns();
+      mRing.mMutex.AssertCurrentThreadOwns();
     }
 
     
     
-    
-    NotNull<const BlocksRingBuffer*> mRing;
+    const BlocksRingBuffer& mRing;
   };
 
   
   
   
-  
   template <typename Callback>
   auto Read(Callback&& aCallback) const {
-    baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
-    Maybe<Reader> maybeReader;
-    if (MOZ_LIKELY(mMaybeUnderlyingBuffer)) {
-      maybeReader.emplace(Reader(*this));
+    {
+      baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
+      if (MOZ_LIKELY(mMaybeUnderlyingBuffer)) {
+        Reader reader(*this);
+        return std::forward<Callback>(aCallback)(&reader);
+      }
     }
-    return std::forward<Callback>(aCallback)(std::move(maybeReader));
+    return std::forward<Callback>(aCallback)(nullptr);
   }
 
   
@@ -535,9 +537,9 @@ class BlocksRingBuffer {
   
   template <typename Callback>
   void ReadEach(Callback&& aCallback) const {
-    Read([&](Maybe<Reader>&& aMaybeReader) {
-      if (MOZ_LIKELY(aMaybeReader)) {
-        std::move(aMaybeReader)->ForEach(aCallback);
+    Read([&](Reader* aReader) {
+      if (MOZ_LIKELY(aReader)) {
+        aReader->ForEach(aCallback);
       }
     });
   }
@@ -883,7 +885,8 @@ class BlocksRingBuffer {
     }
     if (mMaybeUnderlyingBuffer->mEntryDestructor) {
       
-      Reader(*this).ForEach([this](EntryReader& aReader) {
+      Reader reader(*this);
+      reader.ForEach([this](EntryReader& aReader) {
         mMaybeUnderlyingBuffer->mEntryDestructor(aReader);
       });
     }
