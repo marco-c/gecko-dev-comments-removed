@@ -37,6 +37,11 @@ let tabListener = {
       let nativeTab = BrowserApp.getTabForBrowser(browser);
 
       
+      if (!request && this.initializingTabs.has(nativeTab)) {
+        return;
+      }
+
+      
       this.initializingTabs.delete(nativeTab);
 
       
