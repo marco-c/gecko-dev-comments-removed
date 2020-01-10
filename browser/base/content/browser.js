@@ -3528,8 +3528,7 @@ function getDetailedCertErrorInfo(location, securityInfo) {
 
 
 function getDERString(cert) {
-  var length = {};
-  var derArray = cert.getRawDER(length);
+  var derArray = cert.getRawDER();
   var derString = "";
   for (var i = 0; i < derArray.length; i++) {
     derString += String.fromCharCode(derArray[i]);
