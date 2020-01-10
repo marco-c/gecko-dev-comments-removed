@@ -224,7 +224,6 @@ class Element : public FragmentOrElement {
 
   void SetTabIndex(int32_t aTabIndex, mozilla::ErrorResult& aError);
 
-
   
 
 
@@ -1957,7 +1956,6 @@ class Element : public FragmentOrElement {
   
   AttrArray mAttrs;
 };
-
 
 NS_DEFINE_STATIC_IID_ACCESSOR(Element, NS_ELEMENT_IID)
 

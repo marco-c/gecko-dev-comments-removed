@@ -97,7 +97,6 @@ class nsNodeInfoManager final {
 
   void RemoveNodeInfo(mozilla::dom::NodeInfo* aNodeInfo);
 
-
   
 
 

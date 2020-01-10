@@ -1667,7 +1667,6 @@ void PresShell::EndObservingDocument() {
 char* nsPresShell_ReflowStackPointerTop;
 #endif
 
-
 nsresult PresShell::Initialize() {
   if (mIsDestroying) {
     return NS_OK;
@@ -1744,7 +1743,6 @@ nsresult PresShell::Initialize() {
     
     
     NS_ENSURE_STATE(!mHaveShutDown);
-
 
     
     NS_ENSURE_STATE(!mHaveShutDown);
@@ -4075,7 +4073,6 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
 
       mPresContext->RestyleManager()->ProcessPendingRestyles();
     }
-
 
     
     

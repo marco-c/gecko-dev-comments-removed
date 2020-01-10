@@ -198,7 +198,6 @@ nsresult nsXULPrototypeCache::PutScript(nsIURI* aURI,
   return NS_OK;
 }
 
-
 void nsXULPrototypeCache::FlushScripts() { mScriptTable.Clear(); }
 
 void nsXULPrototypeCache::Flush() {
@@ -493,7 +492,6 @@ static void ReportSize(const nsCString& aPath, size_t aAmount,
 }
 
 
-
 void nsXULPrototypeCache::CollectMemoryReports(
     nsIHandleReportCallback* aHandleReport, nsISupports* aData) {
   if (!sInstance) {
@@ -514,7 +512,6 @@ void nsXULPrototypeCache::CollectMemoryReports(
 
   other += sInstance->mScriptTable.ShallowSizeOfExcludingThis(mallocSizeOf);
   
-
 
   other +=
       sInstance->mStartupCacheURITable.ShallowSizeOfExcludingThis(mallocSizeOf);

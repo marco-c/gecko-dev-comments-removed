@@ -394,7 +394,6 @@ class nsIContent : public nsINode {
     return slots ? slots->mBindingParent.get() : nullptr;
   }
 
-
   
 
 

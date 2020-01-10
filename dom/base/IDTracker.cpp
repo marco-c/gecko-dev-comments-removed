@@ -61,18 +61,18 @@ void IDTracker::ResetToURIFragmentID(nsIContent* aFromContent, nsIURI* aURI,
 
   nsIContent* bindingParent = aFromContent->GetBindingParent();
   if (bindingParent && !aFromContent->IsInShadowTree()) {
+    
+    
+    
+    
+    Element* anonRoot =
+        doc->GetAnonRootIfInAnonymousContentContainer(aFromContent);
+    if (anonRoot) {
+      mElement = nsContentUtils::MatchElementId(anonRoot, ref);
       
       
-      
-      
-      Element* anonRoot =
-          doc->GetAnonRootIfInAnonymousContentContainer(aFromContent);
-      if (anonRoot) {
-        mElement = nsContentUtils::MatchElementId(anonRoot, ref);
-        
-        
-        return;
-      }
+      return;
+    }
   }
 
   bool isEqualExceptRef;

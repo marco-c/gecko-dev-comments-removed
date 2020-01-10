@@ -679,7 +679,6 @@ void FragmentOrElement::nsExtendedDOMSlots::TraverseExtendedSlots(
   NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(aCb, "mExtendedSlots->mShadowRoot");
   aCb.NoteXPCOMChild(NS_ISUPPORTS_CAST(nsIContent*, mShadowRoot));
 
-
   if (mCustomElementData) {
     mCustomElementData->Traverse(aCb);
   }
@@ -712,7 +711,6 @@ size_t FragmentOrElement::nsExtendedDOMSlots::SizeOfExcludingThis(
 
   
   
-
 
   if (mCustomElementData) {
     n += mCustomElementData->SizeOfIncludingThis(aMallocSizeOf);
@@ -1074,7 +1072,6 @@ bool FragmentOrElement::IsLink(nsIURI** aURI) const {
   return false;
 }
 
-
 nsIContent* nsIContent::GetContainingShadowHost() const {
   if (mozilla::dom::ShadowRoot* shadow = GetContainingShadow()) {
     return shadow->GetHost();
@@ -1144,7 +1141,6 @@ void FragmentOrElement::DestroyContent() {
   if (IsElement()) {
     AsElement()->ClearServoData();
   }
-
 
 #ifdef DEBUG
   uint32_t oldChildCount = GetChildCount();
@@ -1350,7 +1346,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FragmentOrElement)
     shadowRoot->Unbind();
     tmp->ExtendedDOMSlots()->mShadowRoot = nullptr;
   }
-
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -1582,7 +1577,6 @@ bool NodeHasActiveFrame(Document* aCurrentDoc, nsINode* aNode) {
 
 
 
-
 bool FragmentOrElement::CanSkip(nsINode* aNode, bool aRemovingAllowed) {
   
   if (nsCCUncollectableMarker::sGeneration == 0) {
@@ -1592,8 +1586,7 @@ bool FragmentOrElement::CanSkip(nsINode* aNode, bool aRemovingAllowed) {
   bool unoptimizable = aNode->UnoptimizableCCNode();
   Document* currentDoc = aNode->GetComposedDoc();
   if (currentDoc && IsCertainlyAliveNode(aNode, currentDoc) &&
-      (!unoptimizable || NodeHasActiveFrame(currentDoc, aNode)
-           )) {
+      (!unoptimizable || NodeHasActiveFrame(currentDoc, aNode))) {
     MarkNodeChildren(aNode);
     return true;
   }
@@ -1795,7 +1788,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(FragmentOrElement)
   if (!nsIContent::Traverse(tmp, cb)) {
     return NS_SUCCESS_INTERRUPTED_TRAVERSE;
   }
-
 
   
 #ifdef DEBUG

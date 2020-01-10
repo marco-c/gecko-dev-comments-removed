@@ -518,8 +518,7 @@ bool InspectorUtils::IsValidCSSColor(GlobalObject& aGlobalObject,
 
 void InspectorUtils::GetBindingURLs(GlobalObject& aGlobalObject,
                                     Element& aElement,
-                                    nsTArray<nsString>& aResult) {
-}
+                                    nsTArray<nsString>& aResult) {}
 
 
 bool InspectorUtils::SetContentState(GlobalObject& aGlobalObject,

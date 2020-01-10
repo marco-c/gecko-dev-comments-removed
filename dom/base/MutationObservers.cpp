@@ -53,9 +53,9 @@ enum class IsRemoveNotification {
 #  define COMPOSED_DOC_DECL
 #endif
 
-#  define CALL_BINDING_MANAGER(func_, params_) \
-    do {                                       \
-    } while (0)
+#define CALL_BINDING_MANAGER(func_, params_) \
+  do {                                       \
+  } while (0)
 
 
 

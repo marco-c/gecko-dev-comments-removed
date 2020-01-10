@@ -60,7 +60,6 @@ class nsXULPrototypeCache : public nsIObserver {
   JSScript* GetScript(nsIURI* aURI);
   nsresult PutScript(nsIURI* aURI, JS::Handle<JSScript*> aScriptObject);
 
-
   
 
 
