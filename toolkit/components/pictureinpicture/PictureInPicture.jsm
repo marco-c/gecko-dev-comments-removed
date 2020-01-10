@@ -74,16 +74,6 @@ var PictureInPicture = {
     }
   },
 
-  
-
-
-
-  onCommand(event) {
-    let win = event.target.ownerGlobal;
-    let browser = win.gBrowser.selectedBrowser;
-    browser.messageManager.sendAsyncMessage("PictureInPicture:KeyToggle");
-  },
-
   async focusTabAndClosePip() {
     let gBrowser = this.browser.ownerGlobal.gBrowser;
     let tab = gBrowser.getTabForBrowser(this.browser);
