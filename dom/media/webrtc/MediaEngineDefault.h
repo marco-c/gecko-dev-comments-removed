@@ -90,6 +90,9 @@ class MediaEngineDefaultVideoSource : public MediaEngineSource {
   int mCb = 16;
   int mCr = 16;
 
+  
+  const RefPtr<media::Refcountable<dom::MediaTrackSettings>> mSettings;
+
  private:
   const nsString mName;
 };
