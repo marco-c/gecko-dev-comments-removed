@@ -185,18 +185,11 @@ class nsIContent : public nsINode {
 
   nsIContent* FindFirstNonChromeOnlyAccessContent() const;
 
-#ifdef DEBUG
-  void AssertAnonymousSubtreeRelatedInvariants() const;
-#endif
-
   
 
 
 
   bool IsRootOfAnonymousSubtree() const {
-#ifdef DEBUG
-    AssertAnonymousSubtreeRelatedInvariants();
-#endif
     return HasFlag(NODE_IS_ANONYMOUS_ROOT);
   }
 
@@ -370,21 +363,6 @@ class nsIContent : public nsINode {
 
 
   virtual IMEState GetDesiredIMEState();
-
-  
-
-
-
-
-
-
-
-
-
-  mozilla::dom::Element* GetBindingParent() const {
-    const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();
-    return slots ? slots->mBindingParent.get() : nullptr;
-  }
 
   
 
@@ -717,13 +695,6 @@ class nsIContent : public nsINode {
 
     virtual size_t SizeOfExcludingThis(
         mozilla::MallocSizeOf aMallocSizeOf) const;
-
-    
-
-
-
-
-    RefPtr<mozilla::dom::Element> mBindingParent;
 
     
 
