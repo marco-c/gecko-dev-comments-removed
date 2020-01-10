@@ -68,7 +68,7 @@ async function testGetDependentPromises(client, front, makePromises) {
   
   
   await new Promise(resolve => {
-    objectClient.getDependentPromises(response => {
+    objectClient.getDependentPromises().then(response => {
       const dependentNames = response.promises.map(
         p => p.preview.ownProperties.name.value
       );

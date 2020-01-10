@@ -46,11 +46,12 @@ function test_pause_frame() {
     
     
     try {
-      await gClient.request({ to: objActor, type: "bogusRequest" });
+      const objFront = gClient.getFrontByID(objActor);
+      await objFront.request({ to: objActor, type: "bogusRequest" });
       ok(false, "bogusRequest should throw");
     } catch (e) {
       ok(true, "bogusRequest thrown");
-      Assert.equal(e.error, "unrecognizedPacketType");
+      Assert.ok(!!e.match(/unrecognizedPacketType/));
     }
     Assert.ok(objClient.valid);
 
@@ -58,11 +59,12 @@ function test_pause_frame() {
       
       
       try {
-        await gClient.request({ to: objActor, type: "bogusRequest" });
+        const objFront = gClient.getFrontByID(objActor);
+        await objFront.request({ to: objActor, type: "bogusRequest" });
         ok(false, "bogusRequest should throw");
       } catch (e) {
         ok(true, "bogusRequest thrown");
-        Assert.equal(e.error, "noSuchActor");
+        Assert.ok(!!e.match(/noSuchActor/));
       }
       Assert.ok(!objClient.valid);
       finishClient(gClient);

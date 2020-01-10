@@ -362,6 +362,12 @@ class WebConsoleConnectionProxy {
 
   releaseActor(actor) {
     if (this.client) {
+      const objFront = this.client.getFrontByID(actor);
+      if (objFront) {
+        objFront.release().catch(() => {});
+        return;
+      }
+      
       this.client.release(actor).catch(() => {});
     }
   }
