@@ -1,7 +1,0 @@
-
-
-
-
-declare module "devtools-modules" {
-  declare module.exports: any;
-}
