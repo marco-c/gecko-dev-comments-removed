@@ -9,6 +9,12 @@
 #include "jsapi.h"
 #include "nsIPrincipal.h"
 
+namespace mozilla {
+namespace ipc {
+class PrincipalInfo;
+}  
+}  
+
 class nsJSPrincipals : public nsIPrincipal, public JSPrincipals {
  public:
   
@@ -24,6 +30,9 @@ class nsJSPrincipals : public nsIPrincipal, public JSPrincipals {
                                      uint32_t aTag,
                                      JSPrincipals** aOutPrincipals);
 
+  
+  static bool WritePrincipalInfo(JSStructuredCloneWriter* aWriter,
+                                 const mozilla::ipc::PrincipalInfo& aInfo);
   
   
   
