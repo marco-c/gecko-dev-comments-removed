@@ -115,10 +115,13 @@ bool AddonManagerWebAPI::IsAPIEnabled(JSContext* aCx, JSObject* aGlobal) {
       return false;
     }
 
+    
     if (!parent) {
       
       
-      return true;
+      
+      
+      return docShell->GetBrowsingContext()->IsTopContent();
     }
 
     Document* doc = win->GetDoc();
