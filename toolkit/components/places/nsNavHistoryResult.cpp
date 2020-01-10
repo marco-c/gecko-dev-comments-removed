@@ -3231,10 +3231,7 @@ nsNavHistoryResultNode::OnItemChanged(
 
   bool shouldNotify = !mParent || mParent->AreChildrenVisible();
 
-  if (aIsAnnotationProperty) {
-    if (shouldNotify)
-      NOTIFY_RESULT_OBSERVERS(result, NodeAnnotationChanged(this, aProperty));
-  } else if (aProperty.EqualsLiteral("title")) {
+  if (aProperty.EqualsLiteral("title")) {
     
     mTitle = aNewValue;
     if (shouldNotify)

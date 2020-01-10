@@ -43,8 +43,8 @@ add_task(async function test_execute() {
 
   let updatedItem = await PlacesUtils.bookmarks.fetch(testItem.guid);
 
-  
-  Assert.ok(updatedItem.lastModified > item.lastModified);
+  Assert.equal(updatedItem.lastModified.getTime(), earlierDate.getTime(),
+               "Setting an item annotation should not update lastModified");
 
   try {
     var annoVal = annosvc.getItemAnnotation(testItemId, testAnnoName);
@@ -106,7 +106,6 @@ add_task(async function test_execute() {
   
   testItem = await PlacesUtils.bookmarks.fetch(testItem.guid);
 
-  var lastModified3 = testItem.lastModified;
   
   await PlacesUtils.bookmarks.update({
     guid: testItem.guid,
@@ -116,11 +115,9 @@ add_task(async function test_execute() {
   annosvc.removeItemAnnotation(testItemId, int32Key);
 
   testItem = await PlacesUtils.bookmarks.fetch(testItem.guid);
-  var lastModified4 = testItem.lastModified;
-  info("verify that removing an annotation updates the last modified date");
-  info("lastModified3 = " + lastModified3);
-  info("lastModified4 = " + lastModified4);
-  Assert.ok(is_time_ordered(lastModified3, lastModified4));
+  info("verify that removing an annotation does not update the last modified date");
+  Assert.equal(testItem.lastModified.getTime(), earlierDate.getTime(),
+               "Setting an item annotation should not update lastModified");
 
   
   

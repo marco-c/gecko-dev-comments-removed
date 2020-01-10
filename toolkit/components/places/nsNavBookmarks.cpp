@@ -1795,7 +1795,8 @@ void nsNavBookmarks::NotifyItemVisited(const ItemVisitData& aData) {
 void nsNavBookmarks::NotifyItemChanged(const ItemChangeData& aData) {
   
   MOZ_ASSERT(!aData.bookmark.guid.IsEmpty());
-
+  
+  MOZ_ASSERT(!aData.isAnnotation, "Don't notify item annotation changes");
   PRTime lastModified = aData.bookmark.lastModified;
   if (aData.updateLastModified) {
     lastModified = RoundedPRNow();
