@@ -5,9 +5,6 @@
 const EXPORTED_SYMBOLS = ["BackgroundPageThumbs"];
 
 const DEFAULT_CAPTURE_TIMEOUT = 30000; 
-
-const TESTING_CAPTURE_TIMEOUT = 5000; 
-
 const DESTROY_BROWSER_TIMEOUT = 60000; 
 const FRAME_SCRIPT_URL =
   "chrome://global/content/backgroundPageThumbsContent.js";
@@ -476,15 +473,11 @@ Capture.prototype = {
     this.startDate = new Date();
     tel("CAPTURE_QUEUE_TIME_MS", this.startDate - this.creationDate);
 
-    let fallbackTimeout = Cu.isInAutomation
-      ? TESTING_CAPTURE_TIMEOUT
-      : DEFAULT_CAPTURE_TIMEOUT;
-
     
     let timeout =
       typeof this.options.timeout == "number"
         ? this.options.timeout
-        : fallbackTimeout;
+        : DEFAULT_CAPTURE_TIMEOUT;
     this._timeoutTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
     this._timeoutTimer.initWithCallback(
       this,
