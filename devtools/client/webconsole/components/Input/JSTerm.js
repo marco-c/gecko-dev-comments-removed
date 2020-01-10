@@ -33,7 +33,7 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "focusableSelector",
+  "getFocusableElements",
   "devtools/client/shared/focus",
   true
 );
@@ -99,8 +99,6 @@ class JSTerm extends Component {
       editorToggle: PropTypes.func.isRequired,
       
       editorOnboardingDismiss: PropTypes.func.isRequired,
-      
-      editorFeatureEnabled: PropTypes.bool,
       
       editorMode: PropTypes.bool,
       editorWidth: PropTypes.number,
@@ -542,7 +540,12 @@ class JSTerm extends Component {
         return null;
       }
 
-      const items = Array.from(el.querySelectorAll(focusableSelector));
+      
+      
+      
+      const items = getFocusableElements(el).filter(
+        ({ offsetParent }) => offsetParent !== null
+      );
       const inputIndex = items.indexOf(inputField);
 
       if (items.length === 0 || (inputIndex > -1 && items.length === 1)) {
@@ -1049,7 +1052,7 @@ class JSTerm extends Component {
   }
 
   renderOpenEditorButton() {
-    if (!this.props.editorFeatureEnabled || this.props.editorMode) {
+    if (this.props.editorMode) {
       return null;
     }
 
@@ -1063,7 +1066,7 @@ class JSTerm extends Component {
   }
 
   renderEditorOnboarding() {
-    if (!this.props.editorFeatureEnabled || !this.props.showEditorOnboarding) {
+    if (!this.props.showEditorOnboarding) {
       return null;
     }
 
