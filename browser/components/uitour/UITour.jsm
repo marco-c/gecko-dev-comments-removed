@@ -26,6 +26,11 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(
   this,
+  "fxAccounts",
+  "resource://gre/modules/FxAccounts.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
   "FxAccounts",
   "resource://gre/modules/FxAccounts.jsm"
 );
@@ -1669,6 +1674,13 @@ var UITour = {
             });
           });
         break;
+      case "fxa":
+        this.getFxA(aMessageManager, aCallbackID);
+        break;
+
+      
+      
+      
       case "sync":
         this.sendPageCallback(aMessageManager, aCallbackID, {
           setup: Services.prefs.prefHasUserValue("services.sync.username"),
@@ -1719,6 +1731,77 @@ var UITour = {
         );
         break;
     }
+  },
+
+  getFxA(aMessageManager, aCallbackID) {
+    (async () => {
+      let setup = !!(await fxAccounts.getSignedInUser());
+      let result = { setup };
+      if (!setup) {
+        this.sendPageCallback(aMessageManager, aCallbackID, result);
+        return;
+      }
+      
+      let devices = fxAccounts.device.recentDeviceList;
+      
+      
+      if (!devices) {
+        await fxAccounts.device.refreshDeviceList();
+        devices = fxAccounts.device.recentDeviceList;
+      }
+      if (devices) {
+        
+        
+        
+        result.numOtherDevices = Math.max(0, devices.length - 1);
+        result.numDevicesByType = devices
+          .filter(d => !d.isCurrentDevice)
+          .reduce((accum, d) => {
+            let type = d.type || "unknown";
+            accum[type] = (accum[type] || 0) + 1;
+            return accum;
+          }, {});
+      }
+
+      
+      result.browserServices = {};
+      let hasSync = Services.prefs.prefHasUserValue("services.sync.username");
+      if (hasSync) {
+        result.browserServices.sync = {
+          
+          setup: true,
+          desktopDevices: Services.prefs.getIntPref(
+            "services.sync.clients.devices.desktop",
+            0
+          ),
+          mobileDevices: Services.prefs.getIntPref(
+            "services.sync.clients.devices.mobile",
+            0
+          ),
+          totalDevices: Services.prefs.getIntPref(
+            "services.sync.numClients",
+            0
+          ),
+        };
+      }
+      
+      let attachedClients = await fxAccounts.listAttachedOAuthClients();
+      result.accountServices = attachedClients
+        .filter(c => !!c.id)
+        .reduce((accum, c) => {
+          accum[c.id] = {
+            id: c.id,
+            lastAccessedWeeksAgo: c.lastAccessedDaysAgo
+              ? Math.floor(c.lastAccessedDaysAgo / 7)
+              : null,
+          };
+          return accum;
+        }, {});
+      this.sendPageCallback(aMessageManager, aCallbackID, result);
+    })().catch(err => {
+      log.error(err);
+      this.sendPageCallback(aMessageManager, aCallbackID, {});
+    });
   },
 
   getAppInfo(aMessageManager, aWindow, aCallbackID) {

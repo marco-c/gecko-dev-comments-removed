@@ -447,28 +447,25 @@ class FxAccounts {
 
 
   async listAttachedOAuthClients() {
+    
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+
     return this._withVerifiedAccountState(async state => {
       const { sessionToken } = await state.getUserAccountData(["sessionToken"]);
       const attachedClients = await this._internal.fxAccountsClient.attachedClients(
         sessionToken
       );
-      return attachedClients.reduce((oauthClients, client) => {
-        
-        
-        if (
-          client.clientId &&
-          !client.deviceId &&
-          !client.sessionTokenId &&
-          client.scope
-        ) {
-          oauthClients.push({
-            id: client.clientId,
-            name: client.name,
-            lastAccessTime: client.lastAccessTime,
-          });
-        }
-        return oauthClients;
-      }, []);
+      
+      let now = Date.now();
+      return attachedClients.map(client => {
+        const daysAgo = client.lastAccessTime
+          ? Math.max(Math.floor((now - client.lastAccessTime) / ONE_DAY), 0)
+          : null;
+        return {
+          id: client.clientId,
+          lastAccessedDaysAgo: daysAgo,
+        };
+      });
     });
   }
 
