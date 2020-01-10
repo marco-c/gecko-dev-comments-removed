@@ -1330,6 +1330,9 @@ pref("browser.messaging-system.whatsNewPanel.enabled", true);
 
 pref("browser.messaging-system.fxatoolbarbadge.enabled", true);
 
+pref("browser.messaging-system.personalized-cfr.scores", "{}");
+pref("browser.messaging-system.personalized-cfr.score-threshold", "0.0");
+
 
 pref("full-screen-api.enabled", true);
 

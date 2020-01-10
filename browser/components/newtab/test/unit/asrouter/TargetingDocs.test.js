@@ -71,7 +71,13 @@ describe("ASRTargeting docs", () => {
     }
   });
   describe("No extra attributes in targeting-attributes.md", () => {
-    for (const targetingParam of DOCS_TARGETING_HEADINGS) {
+    
+    
+    
+    const whitelist = ["personalizedCfrThreshold", "personalizedCfrScores"];
+    for (const targetingParam of DOCS_TARGETING_HEADINGS.filter(
+      doc => !whitelist.includes(doc)
+    )) {
       
       
       it(`should have an implementation for ${targetingParam} in ASRouterTargeting.Environment`, () => {
