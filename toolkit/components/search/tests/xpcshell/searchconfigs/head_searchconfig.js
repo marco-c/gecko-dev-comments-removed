@@ -243,9 +243,7 @@ class SearchConfigTest {
     const data = await OS.File.read(do_get_file("all-locales").path, {
       encoding: "utf-8",
     });
-    
-    
-    return [...data.split("\n").filter(e => e != ""), "en-US"];
+    return data.split("\n").filter(e => e != "");
   }
 
   
