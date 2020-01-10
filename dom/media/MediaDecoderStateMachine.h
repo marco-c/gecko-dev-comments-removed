@@ -424,7 +424,7 @@ class MediaDecoderStateMachine
 
   
   
-  already_AddRefed<MediaSink> CreateMediaSink(bool aOutputCaptured);
+  already_AddRefed<MediaSink> CreateMediaSink();
 
   
   
@@ -706,6 +706,10 @@ class MediaDecoderStateMachine
 
   
   
+  Mirror<RefPtr<AudioDeviceInfo>> mSinkDevice;
+
+  
+  
   Mirror<bool> mOutputCaptured;
 
   
@@ -728,9 +732,6 @@ class MediaDecoderStateMachine
 
   
   Canonical<bool> mIsAudioDataAudible;
-
-  
-  Atomic<int> mSetSinkRequestsCount;
 
  public:
   AbstractCanonical<media::TimeIntervals>* CanonicalBuffered() const;
