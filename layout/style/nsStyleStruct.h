@@ -2303,11 +2303,12 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG {
   uint8_t mColorInterpolation;         
   uint8_t mColorInterpolationFilters;  
   mozilla::StyleFillRule mFillRule;
-  uint8_t mPaintOrder;      
-  uint8_t mShapeRendering;  
-  uint8_t mStrokeLinecap;   
-  uint8_t mStrokeLinejoin;  
-  uint8_t mTextAnchor;      
+  uint8_t mPaintOrder;        
+  uint8_t mShapeRendering;    
+  uint8_t mStrokeLinecap;     
+  uint8_t mStrokeLinejoin;    
+  uint8_t mDominantBaseline;  
+  uint8_t mTextAnchor;        
 
   
   
@@ -2415,9 +2416,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVGReset {
   float mStopOpacity;
   float mFloodOpacity;
 
-  uint8_t mDominantBaseline;  
-  uint8_t mVectorEffect;      
-  uint8_t mMaskType;          
+  uint8_t mVectorEffect;  
+  uint8_t mMaskType;      
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleEffects {
