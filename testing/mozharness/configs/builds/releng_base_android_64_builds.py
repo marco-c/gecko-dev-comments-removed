@@ -74,13 +74,4 @@ config = {
     },
     'src_mozconfig': 'mobile/android/config/mozconfigs/android/nightly',
     
-
-    
-    
-    
-    'postflight_build_mach_commands': [
-        ['android',
-         'archive-geckoview',
-        ],
-    ],
 }
