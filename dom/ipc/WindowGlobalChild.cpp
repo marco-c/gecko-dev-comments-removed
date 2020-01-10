@@ -140,6 +140,10 @@ void WindowGlobalChild::Init() {
   entry.OrInsert([&] { return this; });
 }
 
+void WindowGlobalChild::InitWindowGlobal(nsGlobalWindowInner* aWindow) {
+  mWindowGlobal = aWindow;
+}
+
 
 already_AddRefed<WindowGlobalChild> WindowGlobalChild::GetByInnerWindowId(
     uint64_t aInnerWindowId) {
