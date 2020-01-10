@@ -26,9 +26,6 @@
 #  include <crtdbg.h>   
 #  include <mmsystem.h> 
 #  include <stdlib.h>   
-
-#  include "prinit.h"
-
 #endif
 
 #ifdef XP_UNIX
