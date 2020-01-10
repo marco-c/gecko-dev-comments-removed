@@ -731,26 +731,19 @@ function addCertOverrides() {
 
 
 
-function MockProvider(aUseAsyncCallbacks, aTypes) {
+function MockProvider() {
   this.addons = [];
   this.installs = [];
-  this.callbackTimers = [];
-  this.timerLocations = new Map();
-  this.useAsyncCallbacks =
-    aUseAsyncCallbacks === undefined ? true : aUseAsyncCallbacks;
-  this.types =
-    aTypes === undefined
-      ? [
-          {
-            id: "extension",
-            name: "Extensions",
-            uiPriority: 4000,
-            flags:
-              AddonManager.TYPE_UI_VIEW_LIST |
-              AddonManager.TYPE_SUPPORTS_UNDO_RESTARTLESS_UNINSTALL,
-          },
-        ]
-      : aTypes;
+  this.types = [
+    {
+      id: "extension",
+      name: "Extensions",
+      uiPriority: 4000,
+      flags:
+        AddonManager.TYPE_UI_VIEW_LIST |
+        AddonManager.TYPE_SUPPORTS_UNDO_RESTARTLESS_UNINSTALL,
+    },
+  ];
 
   var self = this;
   registerCleanupFunction(function() {
@@ -767,9 +760,6 @@ MockProvider.prototype = {
   installs: null,
   started: null,
   apiDelay: 10,
-  callbackTimers: null,
-  timerLocations: null,
-  useAsyncCallbacks: null,
   types: null,
 
   
@@ -968,26 +958,6 @@ MockProvider.prototype = {
 
 
   shutdown: function MP_shutdown() {
-    if (this.callbackTimers.length) {
-      info(
-        "MockProvider: pending callbacks at shutdown(): calling immediately"
-      );
-    }
-    while (this.callbackTimers.length) {
-      
-      let timer = this.callbackTimers[0];
-      try {
-        let setAt = this.timerLocations.get(timer);
-        info("Notifying timer set at " + (setAt || "unknown location"));
-        timer.callback.notify(timer);
-        timer.cancel();
-      } catch (e) {
-        info("Timer notify failed: " + e);
-      }
-    }
-    this.callbackTimers = [];
-    this.timerLocations = null;
-
     this.started = false;
   },
 
