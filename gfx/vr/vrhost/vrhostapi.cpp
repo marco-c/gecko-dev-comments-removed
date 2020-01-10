@@ -28,6 +28,14 @@ class VRWindowManager {
     }
   }
 
+  uint32_t GetId(HWND hwnd) {
+    if (hwnd == hWindow) {
+      return nWindow;
+    } else {
+      return 0;
+    }
+  }
+
   HANDLE GetProc(uint32_t nId) {
     if (nId == nWindow) {
       return hProc;
@@ -36,11 +44,14 @@ class VRWindowManager {
     }
   }
 
-  uint32_t SetHWND(HWND hwnd, HANDLE hproc) {
+  HANDLE GetEvent() { return hEvent; }
+
+  uint32_t SetHWND(HWND hwnd, HANDLE hproc, HANDLE hevent) {
     if (hWindow == nullptr) {
       MOZ_ASSERT(hwnd != nullptr && hproc != nullptr);
       hWindow = hwnd;
       hProc = hproc;
+      hEvent = hevent;
       nWindow = GetRandomUInt();
 #if defined(DEBUG) && defined(NIGHTLY_BUILD)
       printf("VRWindowManager: Storing HWND: 0x%p as ID: 0x%X\n", hWindow,
@@ -69,6 +80,7 @@ class VRWindowManager {
   uint32_t nWindow = 0;
   HWND hWindow = nullptr;
   HANDLE hProc = nullptr;
+  HANDLE hEvent = nullptr;
   std::random_device randomGenerator;
 };
 VRWindowManager* VRWindowManager::Instance = nullptr;
@@ -118,6 +130,17 @@ DWORD StartFirefoxThreadProc(_In_ LPVOID lpParameter) {
   return 0;
 }
 
+class VRShmemInstance {
+ public:
+  VRShmemInstance() = delete;
+  VRShmemInstance(const VRShmemInstance& aRHS) = delete;
+
+  static mozilla::gfx::VRShMem& GetInstance() {
+    static mozilla::gfx::VRShMem shmem(nullptr, true );
+    return shmem;
+  }
+};
+
 
 
 
@@ -134,15 +157,15 @@ void CreateVRWindow(char* firefoxFolderPath, char* firefoxProfilePath,
 
   if (err > 0) {
     HANDLE hEvent = ::CreateEventA(nullptr,  
-                                   TRUE,     
+                                   FALSE,    
                                    FALSE,    
                                    windowState.signalName);
 
     if (hEvent != nullptr) {
       
-      mozilla::gfx::VRShMem shmem(nullptr, true );
-      shmem.CreateShMem(true );
-      shmem.PushWindowState(windowState);
+      VRShmemInstance::GetInstance().CreateShMem(
+          true );
+      VRShmemInstance::GetInstance().PushWindowState(windowState);
 
       
       
@@ -157,24 +180,68 @@ void CreateVRWindow(char* firefoxFolderPath, char* firefoxProfilePath,
         ::WaitForSingleObject(hEvent, INFINITE);
 
         
-        shmem.PullWindowState(windowState);
+        VRShmemInstance::GetInstance().PullWindowState(windowState);
 
         (*hTex) = windowState.textureFx;
         (*windowId) = VRWindowManager::GetManager()->SetHWND(
-            (HWND)windowState.hwndFx, fxParams.hProcessFx);
+            (HWND)windowState.hwndFx, fxParams.hProcessFx, hEvent);
         (*width) = windowState.widthFx;
         (*height) = windowState.heightFx;
-
-        
-        windowState = {0};
-        shmem.PushWindowState(windowState);
       } else {
         
       }
-
-      shmem.CloseShMem();
     }
   }
+}
+
+
+
+volatile bool s_WaitingForVREvent = false;
+
+
+
+void WaitForVREvent(uint32_t& nVRWindowID, uint32_t& eventType,
+                    uint32_t& eventData1, uint32_t& eventData2) {
+  MOZ_ASSERT(!s_WaitingForVREvent);
+  s_WaitingForVREvent = true;
+
+  
+  nVRWindowID = 0;
+  eventType = 0;
+  eventData1 = 0;
+  eventData2 = 0;
+
+  if (VRShmemInstance::GetInstance().HasExternalShmem()) {
+    HANDLE evt = VRWindowManager::GetManager()->GetEvent();
+    const DWORD waitResult = ::WaitForSingleObject(evt, INFINITE);
+    if (waitResult != WAIT_OBJECT_0) {
+      MOZ_ASSERT(false && "Error WaitForVREvent().\n");
+      return;
+    }
+    mozilla::gfx::VRWindowState windowState = {0};
+    VRShmemInstance::GetInstance().PullWindowState(windowState);
+
+    nVRWindowID =
+        VRWindowManager::GetManager()->GetId((HWND)windowState.hwndFx);
+    if (nVRWindowID != 0) {
+      eventType = (uint32_t)windowState.eventType;
+      mozilla::gfx::VRFxEventType fxEvent =
+          mozilla::gfx::VRFxEventType(eventType);
+
+      switch (fxEvent) {
+        case mozilla::gfx::VRFxEventType::FxEvent_IME:
+          eventData1 = (uint32_t)windowState.imeState;
+          break;
+        case mozilla::gfx::VRFxEventType::FxEvent_SHUTDOWN:
+          VRShmemInstance::GetInstance().CloseShMem();
+          break;
+        default:
+          MOZ_ASSERT(false && "Undefined VR Fx event.");
+          break;
+      }
+    }
+  }
+  s_WaitingForVREvent = false;
 }
 
 
@@ -188,6 +255,17 @@ void CloseVRWindow(uint32_t nVRWindowID, bool waitForTerminate) {
       ::WaitForSingleObject(VRWindowManager::GetManager()->GetProc(nVRWindowID),
                             INFINITE);
     }
+  }
+
+  
+  
+  
+  
+  
+  if (s_WaitingForVREvent) {
+    VRShmemInstance::GetInstance().SendShutdowmState(nVRWindowID);
+  } else {
+    VRShmemInstance::GetInstance().CloseShMem();
   }
 }
 

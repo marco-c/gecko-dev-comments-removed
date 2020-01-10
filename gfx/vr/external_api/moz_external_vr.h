@@ -40,7 +40,15 @@ enum class GamepadCapabilityFlags : uint16_t;
 #endif  
 namespace gfx {
 
-static const int32_t kVRExternalVersion = 9;
+
+
+
+
+
+
+
+#define SHMEM_VERSION "0.0.3"
+static const int32_t kVRExternalVersion = 10;
 
 
 
@@ -430,6 +438,15 @@ struct VRSystemState {
   VRControllerState controllerState[kVRControllerMaxCount];
 };
 
+enum class VRFxEventType : uint8_t {
+  FxEvent_NONE = 0,
+  FxEvent_IME,
+  FxEvent_SHUTDOWN,
+  FxEvent_TOTAL
+};
+
+enum class VRFxIMEState : uint8_t { Blur, Focus };
+
 
 struct VRWindowState {
   
@@ -437,6 +454,9 @@ struct VRWindowState {
   uint32_t widthFx;
   uint32_t heightFx;
   VRLayerTextureHandle textureFx;
+  uint32_t windowID;
+  VRFxEventType eventType;
+  VRFxIMEState imeState;
 
   
   uint32_t dxgiAdapterHost;

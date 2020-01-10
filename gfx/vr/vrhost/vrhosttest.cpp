@@ -219,6 +219,30 @@ void TestTheService() {
   fflush(nullptr);
 }
 
+DWORD TestWaitForVREventThreadProc(_In_ LPVOID lpParameter) {
+  
+  printf("\nStarting TestWaitForVREventThreadProc\n");
+
+  PFN_WAITFORVREVENT fnWaitForVRMsg = (PFN_WAITFORVREVENT)lpParameter;
+
+  uint32_t nVRWindowID = 0;
+  uint32_t eventType = 0;
+  uint32_t eventData1 = 0;
+  uint32_t eventData2 = 0;
+
+  while (eventType != 2) {  
+    fnWaitForVRMsg(nVRWindowID, eventType, eventData1, eventData2);
+    printf(
+        "\nWaitForVRMessage:\n\tvrWindowID: %d\n\teventType: %d\n\teventData1: "
+        "%d\n\teventData2: %d\n",
+        nVRWindowID, eventType, eventData1, eventData2);
+  }
+
+  printf("\nReturning from TestWaitForVREventThreadProc\n");
+
+  return 0;
+}
+
 
 
 
@@ -233,6 +257,8 @@ void TestCreateVRWindow() {
       (PFN_CLOSEVRWINDOW)::GetProcAddress(hVRHost, "CloseVRWindow");
   PFN_SENDUIMSG fnSendMsg =
       (PFN_SENDUIMSG)::GetProcAddress(hVRHost, "SendUIMessageToVRWindow");
+  PFN_WAITFORVREVENT fnWaitForVRMsg =
+      (PFN_WAITFORVREVENT)::GetProcAddress(hVRHost, "WaitForVREvent");
 
   
   char currentDir[MAX_PATH] = {0};
@@ -254,14 +280,20 @@ void TestCreateVRWindow() {
              &width, &height);
 
     
+    
+    DWORD dwTid;
+    HANDLE hThreadWait = CreateThread(nullptr, 0, TestWaitForVREventThreadProc,
+                                      (void*)fnWaitForVRMsg, 0, &dwTid);
+
+    
     ::Sleep(5000);
 
     printf(
         "Now, simulating a click on the Home button, which should look "
         "pressed\n");
     POINT pt;
-    pt.x = 450;
-    pt.y = 50;
+    pt.x = 180;
+    pt.y = 790;
     fnSendMsg(windowId, WM_LBUTTONDOWN, 0, POINTTOPOINTS(pt));
     ::Sleep(3000);
     fnSendMsg(windowId, WM_LBUTTONUP, 0, POINTTOPOINTS(pt));
@@ -276,10 +308,29 @@ void TestCreateVRWindow() {
       ::Sleep(5);
     }
 
+    printf(
+        "Next, simulating clicking inside the URL bar, which should "
+        "highlight the text\n");
+    pt.x = 700;
+    pt.y = 790;
+    fnSendMsg(windowId, WM_LBUTTONDOWN, 0, POINTTOPOINTS(pt));
+    fnSendMsg(windowId, WM_LBUTTONUP, 0, POINTTOPOINTS(pt));
+    ::Sleep(3000);
+
+    printf(
+        "Finally, simulating clicking outside the URL bar, which should "
+        "send a keyboard blur event\n");
+    pt.x = 80;
+    fnSendMsg(windowId, WM_LBUTTONDOWN, 0, POINTTOPOINTS(pt));
+    fnSendMsg(windowId, WM_LBUTTONUP, 0, POINTTOPOINTS(pt));
+
     ::Sleep(5000);
 
     
     fnClose(windowId, true);
+
+    
+    ::WaitForSingleObject(hThreadWait, INFINITE);
 
     
     printf(

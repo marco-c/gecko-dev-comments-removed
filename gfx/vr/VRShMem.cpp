@@ -27,11 +27,6 @@
 
 using namespace mozilla::gfx;
 
-
-
-
-
-#define SHMEM_VERSION "0.0.2"
 #ifdef XP_WIN
 static const char* kShmemName = "moz.gecko.vr_ext." SHMEM_VERSION;
 static LPCTSTR kMutexName = TEXT("mozilla::vr::ShmemMutex" SHMEM_VERSION);
@@ -647,5 +642,51 @@ void VRShMem::PullWindowState(VRWindowState& aState) {
     memcpy((void*)&aState, (void*)&(mExternalShmem->windowState),
            sizeof(VRWindowState));
   }
+#endif  
+}
+
+void VRShMem::SendIMEState(uint64_t aWindowID,
+                           mozilla::gfx::VRFxIMEState aImeState) {
+  MOZ_ASSERT(!HasExternalShmem());
+  if (JoinShMem()) {
+    mozilla::gfx::VRWindowState windowState = {0};
+    PullWindowState(windowState);
+    windowState.windowID = aWindowID;
+    windowState.eventType = mozilla::gfx::VRFxEventType::FxEvent_IME;
+    windowState.imeState = aImeState;
+    PushWindowState(windowState);
+    LeaveShMem();
+
+#if defined(XP_WIN)
+    
+    HANDLE hSignal = ::OpenEventA(EVENT_ALL_ACCESS,       
+                                  FALSE,                  
+                                  windowState.signalName  
+    );
+    ::SetEvent(hSignal);
+    ::CloseHandle(hSignal);
+#endif  
+  }
+}
+
+
+
+void VRShMem::SendShutdowmState(uint64_t aWindowID) {
+  MOZ_ASSERT(HasExternalShmem());
+
+  mozilla::gfx::VRWindowState windowState = {0};
+  PullWindowState(windowState);
+  windowState.windowID = aWindowID;
+  windowState.eventType = mozilla::gfx::VRFxEventType::FxEvent_SHUTDOWN;
+  PushWindowState(windowState);
+
+#if defined(XP_WIN)
+  
+  HANDLE hSignal = ::OpenEventA(EVENT_ALL_ACCESS,       
+                                FALSE,                  
+                                windowState.signalName  
+  );
+  ::SetEvent(hSignal);
+  ::CloseHandle(hSignal);
 #endif  
 }

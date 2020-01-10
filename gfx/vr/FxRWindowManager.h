@@ -7,6 +7,7 @@
 #include <cstdint>
 
 class nsPIDOMWindowOuter;
+class nsWindow;
 
 
 
@@ -17,6 +18,8 @@ class FxRWindowManager final {
 
   void AddWindow(nsPIDOMWindowOuter* aWindow);
   bool IsFxRWindow(uint64_t aOuterWindowID);
+  bool IsFxRWindow(const nsWindow* aWindow) const;
+  uint64_t GetWindowID() const;
 
  private:
   FxRWindowManager();
