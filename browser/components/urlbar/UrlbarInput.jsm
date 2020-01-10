@@ -401,7 +401,7 @@ class UrlbarInput {
 
     let url;
     let selType = this.controller.engagementEvent.typeFromResult(result);
-    let numChars = this.textValue.length;
+    let numChars = this.value.length;
     if (selectedOneOff) {
       selType = "oneoff";
       numChars = this._lastSearchString.length;
@@ -419,7 +419,7 @@ class UrlbarInput {
     } else {
       
       
-      url = this.value;
+      url = this.untrimmedValue;
       openParams.postData = null;
     }
 
@@ -641,7 +641,7 @@ class UrlbarInput {
       
       canonizedUrl = this._maybeCanonizeURL(
         event,
-        result.autofill ? this._lastSearchString : this.textValue
+        result.autofill ? this._lastSearchString : this.value
       );
       if (canonizedUrl) {
         this.value = canonizedUrl;
@@ -738,13 +738,13 @@ class UrlbarInput {
 
     if (!searchString) {
       searchString =
-        this.getAttribute("pageproxystate") == "valid" ? "" : this.textValue;
-    } else if (!this.textValue.startsWith(searchString)) {
+        this.getAttribute("pageproxystate") == "valid" ? "" : this.value;
+    } else if (!this.value.startsWith(searchString)) {
       throw new Error("The current value doesn't start with the search string");
     }
 
     this._lastSearchString = searchString;
-    this._textValueOnLastSearch = this.textValue;
+    this._textValueOnLastSearch = this.value;
 
     
     
@@ -826,11 +826,11 @@ class UrlbarInput {
     return this.querySelector("#urlbar-go-button");
   }
 
-  get textValue() {
+  get value() {
     return this.inputField.value;
   }
 
-  get value() {
+  get untrimmedValue() {
     return this._untrimmedValue;
   }
 
@@ -916,7 +916,7 @@ class UrlbarInput {
 
 
   _resetSearchState() {
-    this._lastSearchString = this.textValue;
+    this._lastSearchString = this.value;
     this._autofillPlaceholder = "";
   }
 
@@ -990,7 +990,7 @@ class UrlbarInput {
     if (this.focused || !this._overflowing) {
       this.inputField.removeAttribute("title");
     } else {
-      this.inputField.setAttribute("title", this.value);
+      this.inputField.setAttribute("title", this.untrimmedValue);
     }
   }
 
@@ -1016,7 +1016,7 @@ class UrlbarInput {
     
     
     if (!selectedVal.includes("/")) {
-      let remainder = this.textValue.replace(selectedVal, "");
+      let remainder = this.value.replace(selectedVal, "");
       if (remainder != "" && remainder[0] != "/") {
         return selectedVal;
       }
@@ -1055,7 +1055,7 @@ class UrlbarInput {
     
     
     if (
-      this.textValue == selectedVal &&
+      this.value == selectedVal &&
       !uri.schemeIs("javascript") &&
       !uri.schemeIs("data") &&
       !UrlbarPrefs.get("decodeURLsOnCopy")
@@ -1558,7 +1558,7 @@ class UrlbarInput {
   }
 
   _on_input(event) {
-    let value = this.textValue;
+    let value = this.value;
     this.valueIsTyped = true;
     this._untrimmedValue = value;
     this.window.gBrowser.userTypedValue = value;

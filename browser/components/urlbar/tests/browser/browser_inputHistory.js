@@ -21,7 +21,7 @@ async function bumpScore(uri, searchString, counts, useMouseClick = false) {
         gBrowser.selectedBrowser
       );
       
-      while (gURLBar.value != uri) {
+      while (gURLBar.untrimmedValue != uri) {
         EventUtils.synthesizeKey("KEY_ArrowDown");
       }
       if (useMouseClick) {
