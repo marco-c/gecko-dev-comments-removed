@@ -1554,8 +1554,7 @@ void ContentParent::ProcessingError(Result aCode, const char* aReason) {
 }
 
 void ContentParent::ActorDestroy(ActorDestroyReason why) {
-  RefPtr<ContentParent> kungFuDeathGrip(mSelfRef.forget());
-  MOZ_RELEASE_ASSERT(kungFuDeathGrip);
+  MOZ_RELEASE_ASSERT(mSelfRef);
 
   if (mForceKillTimer) {
     mForceKillTimer->Cancel();
@@ -1667,16 +1666,6 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
     }
   }
 
-  
-  
-  
-  
-  
-  
-  
-  NS_DispatchToCurrentThread(NS_NewRunnableFunction(
-      "DelayedReleaseContentParent", [kungFuDeathGrip] {}));
-
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
   nsTArray<ContentParentId> childIDArray =
       cpm->GetAllChildProcessById(this->ChildID());
@@ -1714,6 +1703,8 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
 
   MOZ_DIAGNOSTIC_ASSERT(mGroups.IsEmpty());
 }
+
+void ContentParent::ActorDealloc() { mSelfRef = nullptr; }
 
 bool ContentParent::TryToRecycle() {
   
