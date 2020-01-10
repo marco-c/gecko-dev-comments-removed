@@ -4,79 +4,23 @@
 "use strict";
 
 
-const { mount } = require("enzyme");
-const React = require("react");
-const Provider = React.createFactory(
-  require("devtools/client/shared/vendor/react-redux").Provider
-);
+const { shallow } = require("enzyme");
+const { createFactory } = require("react");
 
 
 const FluentReact = require("devtools/client/shared/vendor/fluent-react");
-const LocalizationProvider = React.createFactory(
-  FluentReact.LocalizationProvider
-);
+const LocalizationProvider = createFactory(FluentReact.LocalizationProvider);
 
 
-const {
-  INITSTATE,
-  CLIENT,
-  EMPTY_WORKER_LIST,
-  SINGLE_WORKER_LIST,
-  MULTIPLE_WORKER_LIST,
-} = require("devtools/client/application/test/components/fixtures/data/constants");
-
-
-const {
-  setupStore,
-} = require("devtools/client/application/test/components/helpers/helpers");
-
-
-const App = React.createFactory(
+const App = createFactory(
   require("devtools/client/application/src/components/App")
 );
 
-
-
-
-describe("App:", () => {
-  const store = setupStore(INITSTATE, {
-    client: CLIENT,
-    worker: SINGLE_WORKER_LIST,
-  });
-  it("renders the expected snapshot for an App with empty worker list", () => {
-    const wrapper = mount(
-      Provider(
-        { store },
-        LocalizationProvider(
-          { messages: [] },
-          App(INITSTATE, { client: CLIENT, worker: EMPTY_WORKER_LIST })
-        )
-      )
-    );
-    expect(wrapper).toMatchSnapshot();
-  });
-  it("renders the expected snapshot for an App with single worker list", () => {
-    const wrapper = mount(
-      Provider(
-        { store },
-        LocalizationProvider(
-          { messages: [] },
-          App(INITSTATE, { client: CLIENT, worker: SINGLE_WORKER_LIST })
-        )
-      )
-    );
-    expect(wrapper).toMatchSnapshot();
-  });
-  it("renders the expected snapshot for an App with multiple workers list", () => {
-    const wrapper = mount(
-      Provider(
-        { store },
-        LocalizationProvider(
-          { messages: [] },
-          App(INITSTATE, { client: CLIENT, worker: MULTIPLE_WORKER_LIST })
-        )
-      )
-    );
+describe("App", () => {
+  it("renders the expected snapshot", () => {
+    const wrapper = shallow(
+      LocalizationProvider({ messages: [] }, App({}))
+    ).dive(); 
     expect(wrapper).toMatchSnapshot();
   });
 });
