@@ -324,22 +324,6 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
                                    : "in parent process")));
       return true;
     }
-
-    
-    
-    
-    
-    
-    
-    if (Preferences::GetBool(
-            "toolkit.legacyUserProfileCustomizations.stylesheets")) {
-      MOZ_LOG(sCSMLog, LogLevel::Debug,
-              ("Allowing eval() %s because of "
-               "toolkit.legacyUserProfileCustomizations.stylesheets",
-               (aIsSystemPrincipal ? "with System Principal"
-                                   : "in parent process")));
-      return true;
-    }
   }
 
   
