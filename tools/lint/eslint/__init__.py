@@ -67,11 +67,6 @@ def lint(paths, config, binary=None, fix=None, setup=None, **lintargs):
     cmd_args = [binary,
                 os.path.join(module_path, "node_modules", "eslint", "bin", "eslint.js"),
                 
-                
-                
-                
-                '--plugin', 'html',
-                
                 '--ext', '[{}]'.format(','.join(config['extensions'])),
                 '--format', 'json',
                 ] + extra_args + exclude_args + paths

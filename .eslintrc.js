@@ -40,6 +40,7 @@ module.exports = {
     "plugin:mozilla/recommended"
   ],
   "plugins": [
+    "html",
     "mozilla"
   ],
   
