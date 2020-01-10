@@ -29,8 +29,7 @@ class BlockReflowInput {
   
   struct Flags {
     Flags()
-        : mHasUnconstrainedBSize(false),
-          mIsBStartMarginRoot(false),
+        : mIsBStartMarginRoot(false),
           mIsBEndMarginRoot(false),
           mShouldApplyBStartMargin(false),
           mIsFirstInflow(false),
@@ -40,12 +39,6 @@ class BlockReflowInput {
           mIsOverflowContainer(false),
           mIsFloatListInBlockPropertyTable(false),
           mCanHaveOverflowMarkers(false) {}
-
-    
-    
-    
-    
-    bool mHasUnconstrainedBSize : 1;
 
     
     

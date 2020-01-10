@@ -118,7 +118,6 @@ BlockReflowInput::BlockReflowInput(const ReflowInput& aReflowInput,
   
   
   
-  
   if (NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableBSize()) {
     
     
@@ -128,7 +127,6 @@ BlockReflowInput::BlockReflowInput(const ReflowInput& aReflowInput,
   } else {
     
     
-    mFlags.mHasUnconstrainedBSize = true;
     mContentArea.BSize(wm) = mBEndEdge = NS_UNCONSTRAINEDSIZE;
   }
   mContentArea.IStart(wm) = mBorderPadding.IStart(wm);
@@ -207,11 +205,12 @@ void BlockReflowInput::ComputeBlockAvailSpace(
          aFloatAvailableSpace.HasFloats());
 #endif
   WritingMode wm = mReflowInput.GetWritingMode();
+  const nscoord availBSize = mReflowInput.AvailableBSize();
   aResult.BStart(wm) = mBCoord;
   aResult.BSize(wm) =
-      mFlags.mHasUnconstrainedBSize
+      availBSize == NS_UNCONSTRAINEDSIZE
           ? NS_UNCONSTRAINEDSIZE
-          : mReflowInput.AvailableBSize() - mBCoord -
+          : availBSize - mBCoord -
                 GetBEndMarginClone(aFrame, mReflowInput.mRenderingContext,
                                    mContentArea, wm);
   
