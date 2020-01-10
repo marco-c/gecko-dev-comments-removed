@@ -52,17 +52,24 @@ class MozSearchbar extends MozXULElement {
         <image class="search-go-button urlbar-icon" hidden="true" onclick="handleSearchCommand(event);" tooltiptext="&contentSearchSubmit.tooltip;"></image>
       </hbox>
     `, ["chrome://browser/locale/browser.dtd"]);
+
+    this._ignoreFocus = false;
+    this._engines = null;
   }
 
   connectedCallback() {
     
-    if (this.closest("#BrowserToolbarPalette") ||
-        this.parentNode.parentNode.localName == "toolbarpaletteitem") {
+    if (this.closest("#BrowserToolbarPalette")) {
       return;
     }
 
     this.appendChild(document.importNode(this.content, true));
     this.initializeAttributeInheritance();
+
+    
+    if (this.parentNode.parentNode.localName == "toolbarpaletteitem") {
+      return;
+    }
 
     this._stringBundle = this.querySelector("stringbundle");
     this._textbox = this.querySelector(".searchbar-textbox");
@@ -71,9 +78,6 @@ class MozSearchbar extends MozXULElement {
     this._initTextbox();
 
     window.addEventListener("unload", this.destroy);
-    this._ignoreFocus = false;
-
-    this._engines = null;
 
     this.FormHistory = (ChromeUtils.import("resource://gre/modules/FormHistory.jsm", {})).FormHistory;
 
@@ -145,22 +149,21 @@ class MozSearchbar extends MozXULElement {
   }
 
   destroy() {
-    if (!this._initialized) {
-      return;
+    if (this._initialized) {
+      this._initialized = false;
+      window.removeEventListener("unload", this.destroy);
+
+      Services.obs.removeObserver(this.observer, "browser-search-engine-modified");
+      Services.obs.removeObserver(this.observer, "browser-search-service");
     }
 
-    this._initialized = false;
-    window.removeEventListener("unload", this.destroy);
-
-    Services.obs.removeObserver(this.observer, "browser-search-engine-modified");
-    Services.obs.removeObserver(this.observer, "browser-search-service");
-
     
     
     
     
     
-    if (this._textbox.mController && this._textbox.mController.input == this) {
+    if (this._textbox && this._textbox.mController &&
+        this._textbox.mController.input == this) {
       this._textbox.mController.input = null;
     }
   }
