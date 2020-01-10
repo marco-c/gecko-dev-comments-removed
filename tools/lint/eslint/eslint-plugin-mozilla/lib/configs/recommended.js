@@ -30,7 +30,6 @@ module.exports = {
     "InstallTrigger": false,
     
     
-    
     "InternalError": true,
     "Intl": false,
     "SharedArrayBuffer": false,
@@ -45,18 +44,10 @@ module.exports = {
     "sizeToContent": false,
     
     
-    
     "uneval": false,
   },
 
   "overrides": [{
-    
-    
-    "files": "**/*.*html",
-    "rules": {
-      "eol-last": "off",
-    },
-  }, {
     
     
     "files": "**/*.xml",
@@ -98,32 +89,8 @@ module.exports = {
   
   "rules": {
     
-    "arrow-spacing": "error",
-
-    
-    
-
-    
-    "block-spacing": "error",
-
-    
-    "brace-style": ["error", "1tbs", { "allowSingleLine": true }],
-
-    
-    "comma-dangle": ["error", "always-multiline"],
-
-    
-    "comma-spacing": ["error", {"after": true, "before": false}],
-
-    
-    "comma-style": "error",
-
-    
     
     "complexity": ["error", 34],
-
-    
-    "computed-property-spacing": ["error", "never"],
 
     
     "consistent-return": "error",
@@ -133,45 +100,18 @@ module.exports = {
     "constructor-super": "off",
 
     
-    
-    
-    
+    "curly": ["error", "all"],
 
     
     "dot-notation": "error",
-
-    
-    "eol-last": "error",
 
     
     
     "fetch-options/no-fetch-credentials": "off",
 
     
-    "func-call-spacing": "error",
-
-    
-    "generator-star-spacing": ["error", {"after": true, "before": false}],
-
-    
     
     "getter-return": "off",
-
-    
-    
-
-    
-    "key-spacing": ["error", {
-      "afterColon": true,
-      "beforeColon": false,
-      "mode": "minimum",
-    }],
-
-    
-    "keyword-spacing": "error",
-
-    
-    "linebreak-style": ["error", "unix"],
 
     
     
@@ -198,9 +138,6 @@ module.exports = {
     "mozilla/use-ownerGlobal": "error",
     "mozilla/use-returnValue": "error",
     "mozilla/use-services": "error",
-
-    
-    
 
     
     "no-array-constructor": "error",
@@ -262,14 +199,6 @@ module.exports = {
     "no-lonely-if": "error",
 
     
-    "no-multi-spaces": ["error", { exceptions: {
-      "ArrayExpression": true,
-      "AssignmentExpression": true,
-      "ObjectExpression": true,
-      "VariableDeclarator": true,
-    } }],
-
-    
     "no-nested-ternary": "error",
 
     
@@ -297,14 +226,8 @@ module.exports = {
     "no-shadow-restricted-names": "error",
 
     
-    "no-tabs": "error",
-
-    
     
     "no-throw-literal": "error",
-
-    
-    "no-trailing-spaces": "error",
 
     
     "no-unneeded-ternary": "error",
@@ -338,64 +261,17 @@ module.exports = {
     "no-useless-return": "error",
 
     
-    "no-whitespace-before-property": "error",
-
-    
     "no-with": "error",
 
     
     "object-shorthand": ["error", "always", { "avoidQuotes": true }],
 
     
-    "padded-blocks": ["error", "never"],
-
-    
     "prettier/prettier": "error",
 
     
     
-    "quotes": ["error", "double", {
-      "allowTemplateLiterals": true,
-      "avoidEscape": true,
-    }],
-
-    
-    
     "require-yield": "off",
-
-    
-    "rest-spread-spacing": "error",
-
-    
-    "semi": ["error", "always"],
-
-    
-    "space-before-blocks": "error",
-
-    
-    "space-before-function-paren": ["error", {
-      "anonymous": "never",
-      "asyncArrow": "always",
-      "named": "never",
-    }],
-
-    
-    
-
-    
-    "space-infix-ops": ["error", { "int32Hint": true }],
-
-    
-    "space-unary-ops": ["error", {
-      "nonwords": false,
-      "overrides": {
-        "typeof": false, 
-      },
-      "words": true,
-    }],
-
-    
-    "spaced-comment": ["error", "always", { "markers": ["#"] }],
   },
 
   

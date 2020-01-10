@@ -8,11 +8,7 @@ module.exports = {
   "rules": {
     
     "no-self-compare": "off",
-    
-    "spaced-comment": "off",
     "no-lonely-if": "off",
-    
-    "brace-style": "off",
     
     "no-undef": "off",
     

@@ -42,8 +42,73 @@ module.exports = {
   "plugins": [
     "mozilla"
   ],
-
   "overrides": [{
+      "files": [
+        "accessible/**",
+        "browser/**",
+        "build/**",
+        "caps/**",
+        "chrome/**",
+        "config/**",
+        "devtools/**",
+        "docshell/**",
+        "dom/**",
+        "editor/**",
+        "extensions/**",
+        "gfx/**",
+        "gradle/**",
+        "hal/**",
+        "image/**",
+        "intl/**",
+        "ipc/**",
+        "js/**",
+        "layout/**",
+        "media/**",
+        "memory/**",
+        "mfbt/**",
+        "mobile/**",
+        "modules/**",
+        "mozglue/**",
+        "netwerk/**",
+        "nsprpub/**",
+        "other-licenses/**",
+        "parser/**",
+        "python/**",
+        "remote/**",
+        "security/**",
+        "services/**",
+        "servo/**",
+        "startupcache/**",
+        "storage/**",
+        "taskcluster/**",
+        "testing/**",
+        "toolkit/**",
+        "tools/**",
+        "uriloader/**",
+        "view/**",
+        "widget/**",
+        "xpcom/**",
+        "xpfe/**",
+      ],
+      "rules": {
+        
+        "curly": "off"
+      }
+    }, {
+      "files": [
+        "*.html",
+        "*.xhtml",
+        "*.xul",
+        "*.xml",
+        "js/src/builtin/**/*.js",
+        "js/src/shell/**/*.js"
+      ],
+      "rules": {
+        
+        
+        "curly": "off"
+      },
+    }, {
     
     
     
@@ -124,19 +189,6 @@ module.exports = {
       "no-unused-vars": "off",
       "no-redeclare": "off",
       "no-global-assign": "off",
-
-      
-      "brace-style": "off",
-      "comma-dangle": "off",
-      "linebreak-style": "off",
-      "no-tabs": "off",
-      "no-mixed-spaces-and-tabs": "off",
-      "no-multi-spaces": "off",
-      "no-trailing-spaces": "off",
-      "padded-blocks": "off",
-      "quotes": "off",
-      "semi": "off",
-      "space-infix-ops": "off",
     }
   }, {
     "files": [
@@ -154,23 +206,6 @@ module.exports = {
       "no-undef": "off",
       "no-unneeded-ternary": "off",
       "no-unused-vars": "off",
-
-      
-      "brace-style": "off",
-      "comma-dangle": "off",
-      "comma-spacing": "off",
-      "key-spacing": "off",
-      "keyword-spacing": "off",
-      "no-extra-semi": "off",
-      "no-tabs": "off",
-      "no-mixed-spaces-and-tabs": "off",
-      "no-multi-spaces": "off",
-      "no-trailing-spaces": "off",
-      "padded-blocks": "off",
-      "quotes": "off",
-      "semi": "off",
-      "space-before-function-paren": "off",
-      "space-infix-ops": "off",
     }
   }, {
     "files": [
@@ -200,34 +235,7 @@ module.exports = {
       "no-undef": "off",
       "no-unreachable": "off",
       "no-unused-vars": "off",
-
-      
-      "arrow-spacing": "off",
-      "block-spacing": "off",
-      "brace-style": "off",
-      "comma-dangle": "off",
-      "comma-spacing": "off",
-      "comma-style": "off",
-      "eol-last": "off",
-      "func-call-spacing": "off",
-      "generator-star-spacing": "off",
-      "key-spacing": "off",
-      "keyword-spacing": "off",
-      "no-extra-semi": "off",
-      "no-tabs": "off",
-      "no-mixed-spaces-and-tabs": "off",
-      "no-multi-spaces": "off",
-      "no-trailing-spaces": "off",
-      "no-whitespace-before-property": "off",
-      "padded-blocks": "off",
-      "quotes": "off",
-      "rest-spread-spacing": "off",
-      "semi": "off",
-      "space-before-blocks": "off",
-      "space-before-function-paren": "off",
-      "space-infix-ops": "off",
-      "space-unary-ops": "off",
-      "spaced-comment": "off",
+      "no-useless-return": "off",
     }
   }, {
     "files": [
@@ -276,36 +284,6 @@ module.exports = {
       "no-unsafe-negation": "off",
       "no-unused-vars": "off",
       "no-useless-return": "off",
-
-      
-      "arrow-spacing": "off",
-      "block-spacing": "off",
-      "brace-style": "off",
-      "comma-dangle": "off",
-      "comma-spacing": "off",
-      "comma-style": "off",
-      "eol-last": "off",
-      "func-call-spacing": "off",
-      "generator-star-spacing": "off",
-      "linebreak-style": "off",
-      "key-spacing": "off",
-      "keyword-spacing": "off",
-      "no-extra-semi": "off",
-      "no-tabs": "off",
-      "no-mixed-spaces-and-tabs": "off",
-      "no-multi-spaces": "off",
-      "no-trailing-spaces": "off",
-      "no-unexpected-multiline": "off",
-      "no-whitespace-before-property": "off",
-      "padded-blocks": "off",
-      "quotes": "off",
-      "rest-spread-spacing": "off",
-      "semi": "off",
-      "space-before-blocks": "off",
-      "space-before-function-paren": "off",
-      "space-infix-ops": "off",
-      "space-unary-ops": "off",
-      "spaced-comment": "off",
     }
   }, {
     "files": [
@@ -408,37 +386,6 @@ module.exports = {
       "no-useless-concat": "off",
       "no-useless-return": "off",
       "no-with": "off",
-
-      
-      "arrow-spacing": "off",
-      "block-spacing": "off",
-      "brace-style": "off",
-      "comma-dangle": "off",
-      "comma-spacing": "off",
-      "comma-style": "off",
-      "computed-property-spacing": "off",
-      "eol-last": "off",
-      "func-call-spacing": "off",
-      "generator-star-spacing": "off",
-      "linebreak-style": "off",
-      "key-spacing": "off",
-      "keyword-spacing": "off",
-      "no-extra-semi": "off",
-      "no-tabs": "off",
-      "no-mixed-spaces-and-tabs": "off",
-      "no-multi-spaces": "off",
-      "no-trailing-spaces": "off",
-      "no-unexpected-multiline": "off",
-      "no-whitespace-before-property": "off",
-      "padded-blocks": "off",
-      "quotes": "off",
-      "rest-spread-spacing": "off",
-      "semi": "off",
-      "space-before-blocks": "off",
-      "space-before-function-paren": "off",
-      "space-infix-ops": "off",
-      "space-unary-ops": "off",
-      "spaced-comment": "off",
     }
   }]
 };

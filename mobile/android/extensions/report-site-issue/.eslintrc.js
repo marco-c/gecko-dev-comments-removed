@@ -23,24 +23,6 @@ module.exports = {
     }],
 
     
-    "array-bracket-spacing": ["error", "never"],
-
-    
-    "object-curly-spacing": ["error", "never"],
-
-    
-    "space-in-parens": ["error", "never"],
-
-    
-    "curly": ["error", "all"],
-
-    
-    "indent-legacy": ["error", 2, {"SwitchCase": 1}],
-
-    
-    "new-parens": "error",
-
-    
     "no-unused-expressions": "error",
 
     
@@ -52,14 +34,6 @@ module.exports = {
 
     
     "complexity": ["error", {"max": 26}],
-
-    
-    "dot-location": ["error", "property"],
-
-    
-    
-    
-    "max-len": ["error", 140],
 
     
     "max-nested-callbacks": ["error", 4],
@@ -74,9 +48,6 @@ module.exports = {
     "no-multi-str": "error",
 
     
-    "no-multiple-empty-lines": ["error", {"max": 2}],
-
-    
     "no-proto": "error",
 
     
@@ -85,9 +56,6 @@ module.exports = {
 
     
     "radix": "error",
-
-    
-    "semi-spacing": ["error", {"before": false, "after": true}],
 
     
     "strict": ["error", "global"],

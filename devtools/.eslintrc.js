@@ -51,17 +51,6 @@ module.exports = {
     }
   }, {
     "files": [
-      "client/framework/**",
-      "client/scratchpad/**",
-      "client/shared/*.jsm",
-      "client/shared/widgets/*.jsm",
-      "client/webide/**",
-    ],
-    "rules": {
-      "max-len": "off",
-    }
-  }, {
-    "files": [
       "client/scratchpad/test/browser_scratchpad_inspect.js",
       "client/scratchpad/test/browser_scratchpad_inspect_primitives.js",
     ],
@@ -208,9 +197,6 @@ module.exports = {
     
     "block-scoped-var": "error",
     
-    
-    "brace-style": ["error", "1tbs", {"allowSingleLine": false}],
-    
     "camelcase": "error",
     
     
@@ -222,17 +208,11 @@ module.exports = {
     
     "consistent-this": "off",
     
-    "curly": "error",
-    
     
     "default-case": "off",
     
-    "dot-location": ["error", "property"],
-    
     
     "eqeqeq": "off",
-    
-    "func-call-spacing": "error",
     
     
     
@@ -244,15 +224,6 @@ module.exports = {
     
     "handle-callback-err": "off",
     
-    "indent-legacy": ["error", 2, {"SwitchCase": 1, "ArrayExpression": "first", "ObjectExpression": "first"}],
-    
-    "key-spacing": ["error", {"beforeColon": false, "afterColon": true}],
-    
-    "max-len": ["error", 90, 2, {
-      "ignoreUrls": true,
-      "ignorePattern": "data:image\/|\\s*require\\s*\\(|^\\s*loader\\.lazy|-\\*-"
-    }],
-    
     "max-nested-callbacks": ["error", 3],
     
     "max-params": "off",
@@ -263,9 +234,6 @@ module.exports = {
     
     
     "new-cap": ["error", {"capIsNew": false}],
-    
-    
-    "new-parens": "error",
     
     "no-bitwise": "off",
     
@@ -285,23 +253,13 @@ module.exports = {
     
     "no-extend-native": "error",
     
-    "no-extra-parens": "off",
-    
     "no-fallthrough": "error",
-    
-    "no-floating-decimal": "off",
     
     "no-inline-comments": "off",
     
     "no-mixed-requires": "off",
     
-    
-    
-    "no-multi-spaces": "error",
-    
     "no-multi-str": "error",
-    
-    "no-multiple-empty-lines": ["error", {"max": 1}],
     
     "no-new-require": "off",
     
@@ -363,19 +321,10 @@ module.exports = {
     
     "prefer-const": ["error", { "destructuring": "all" }],
     
-    "quote-props": "off",
-    
     "radix": "error",
-    
-    "semi-spacing": ["error", {"before": false, "after": true}],
     
     
     "sort-vars": "off",
-    
-    "space-in-parens": ["error", "never"],
-    
-    
-    "space-unary-ops": ["error", { "words": true, "nonwords": false }],
     
     "strict": ["error", "global"],
     
@@ -386,20 +335,11 @@ module.exports = {
     
     "vars-on-top": "off",
     
-    "wrap-iife": "off",
-    
-    
-    "wrap-regex": "off",
-    
     "yoda": "error",
 
     
     
 
-    
-    "arrow-spacing": "off",
-    
-    "computed-property-spacing": "off",
     
     "guard-for-in": "off",
     
@@ -448,7 +388,5 @@ module.exports = {
     
     
     "operator-assignment": "off",
-    
-    "operator-linebreak": "off",
   }
 };

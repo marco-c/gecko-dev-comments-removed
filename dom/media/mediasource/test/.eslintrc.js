@@ -24,7 +24,6 @@ module.exports = {
   },
   
   "rules": {
-    "array-bracket-spacing": ["error", "never"],
     "no-var": "error",
     "prefer-const": "error"
   }

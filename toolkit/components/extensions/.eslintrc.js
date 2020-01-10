@@ -41,37 +41,7 @@ module.exports = {
     }],
 
     
-    "array-bracket-spacing": ["error", "never"],
-
-    
-    "object-curly-spacing": ["error", "never"],
-
-    
-    "space-in-parens": ["error", "never"],
-
-    
     "consistent-return": "off",
-
-    
-    "curly": ["error", "all"],
-
-    
-    "indent": [
-      "error", 2,
-      {
-        "ArrayExpression": "first",
-        "CallExpression": {"arguments": "first"},
-        "FunctionDeclaration": {"parameters": "first"},
-        "FunctionExpression": {"parameters": "first"},
-        "MemberExpression": "off",
-        "ObjectExpression": "first",
-        "SwitchCase": 1,
-        "ignoredNodes": ["ConditionalExpression"],
-      },
-    ],
-
-    
-    "new-parens": "error",
 
     
     
@@ -79,14 +49,6 @@ module.exports = {
     
     
     "no-empty": "error",
-
-    
-    "no-mixed-operators": ["error", {"groups": [["&&", "||"], ["==", "!=", "===", "!==", ">", ">=", "<", "<="], ["in", "instanceof"]]}],
-
-    
-    
-    
-    "no-multi-spaces": "error",
 
     
     "no-unused-expressions": "error",
@@ -98,12 +60,6 @@ module.exports = {
 
     
     "no-use-before-define": "error",
-
-    
-    "space-before-function-paren": ["error", {"anonymous": "never", "named": "never"}],
-
-    
-    "space-unary-ops": ["error", {"nonwords": false, "words": true, "overrides": {"typeof": false}}],
 
     
     
@@ -121,9 +77,6 @@ module.exports = {
     "default-case": "off",
 
     
-    "dot-location": ["error", "property"],
-
-    
     
     "eqeqeq": "off",
 
@@ -136,10 +89,6 @@ module.exports = {
 
     
     "func-style": "off",
-
-    
-    
-    "max-len": [0, 80],
 
     
     "max-nested-callbacks": ["error", 4],
@@ -175,13 +124,7 @@ module.exports = {
     "no-extend-native": "error",
 
     
-    "no-extra-parens": "off",
-
-    
     "no-fallthrough": "error",
-
-    
-    "no-floating-decimal": "off",
 
     
     "no-inline-comments": "off",
@@ -191,9 +134,6 @@ module.exports = {
 
     
     "no-multi-str": "error",
-
-    
-    "no-multiple-empty-lines": [1, {"max": 2}],
 
     
     "no-param-reassign": "off",
@@ -251,33 +191,17 @@ module.exports = {
     "one-var": "off",
 
     
-    "quote-props": "off",
-
-    
     "radix": "error",
-
-    
-    "semi-spacing": ["error", {"before": false, "after": true}],
 
     
     
     "sort-vars": "off",
 
     
-    "spaced-comment": ["error", "always"],
-
-    
     "strict": ["error", "global"],
 
     
     "vars-on-top": "off",
-
-    
-    "wrap-iife": "off",
-
-    
-    
-    "wrap-regex": "off",
 
     
     "yoda": "error",

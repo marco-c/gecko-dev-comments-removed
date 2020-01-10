@@ -1,8 +1,0 @@
-"use strict";
-
-module.exports = {
-  "rules": {
-    
-    "brace-style": "off",
-  }
-};

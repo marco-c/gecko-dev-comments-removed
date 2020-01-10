@@ -1,14 +1,5 @@
 "use strict";
 
-
-
-
-
-
-
-
-
-
 module.exports = {
   "env": {
     "node": true
@@ -16,17 +7,10 @@ module.exports = {
 
   "rules": {
     "camelcase": "error",
-    "curly": ["error", "multi-line"],
     "handle-callback-err": ["error", "er"],
-    "indent-legacy": ["error", 2, {"SwitchCase": 1}],
-    
-    "max-len": ["error", 150, 2],
-    "no-multiple-empty-lines": ["error", {"max": 1}],
     "no-shadow": "error",
     "no-undef-init": "error",
-    "object-curly-spacing": "off",
     "one-var": ["error", "never"],
-    "operator-linebreak": ["error", "after"],
     "strict": ["error", "global"],
   },
 };

@@ -28,14 +28,4 @@ module.exports = {
     "Windows": false,
     "WipeServer": false,
   },
-  
-  
-  "overrides": [{
-    "files": [
-      "test_*.js",
-    ],
-    "rules": {
-      "comma-dangle": "off",
-    }
-  }]
 };

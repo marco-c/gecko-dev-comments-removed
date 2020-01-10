@@ -11,19 +11,10 @@ module.exports = {
     "array-callback-return": "error",
 
     
-    "arrow-body-style": ["error", "as-needed"],
-
-    
     "constructor-super": "error",
 
     
-    "curly": ["error", "multi-line"],
-
-    
     "default-case": "error",
-
-    
-    "new-parens": "error",
 
     
     "no-alert": "error",
@@ -65,23 +56,6 @@ module.exports = {
 
     
     "no-useless-escape": "error",
-
-    
-    "semi-spacing": ["error", { "before": false, "after": true }],
-
-    
-    
-    "space-before-function-paren": ["error", {
-      "anonymous": "ignore",
-      "asyncArrow": "always",
-      "named": "never",
-    }],
-
-    
-    "space-in-parens": ["error", "never"],
-
-    
-    "space-unary-ops": ["error", { "words": true, "nonwords": false }],
 
     
     "strict": ["error", "global"],
