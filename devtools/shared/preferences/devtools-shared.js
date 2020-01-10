@@ -70,10 +70,4 @@ pref("devtools.remote.adb.extensionURL", "https://ftp.mozilla.org/pub/mozilla.or
 pref("devtools.devices.url", "https://code.cdn.mozilla.net/devices/devices.json");
 
 
-
-
-#if defined(NIGHTLY_BUILD)
 pref("devtools.inspector.inactive.css.enabled", true);
-#else
-pref("devtools.inspector.inactive.css.enabled", false);
-#endif
