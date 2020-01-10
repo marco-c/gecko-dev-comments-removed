@@ -225,7 +225,12 @@ bool ElemOpEmitter::emitIncDec() {
     return false;
   }
   if (isPostIncDec()) {
+    
     if (!bce_->emit1(JSOP_DUP)) {
+      
+      return false;
+    }
+    if (!bce_->emit2(JSOP_UNPICK, 3 + isSuper())) {
       
       return false;
     }
@@ -233,43 +238,6 @@ bool ElemOpEmitter::emitIncDec() {
   if (!bce_->emit1(incOp)) {
     
     return false;
-  }
-  if (isPostIncDec()) {
-    if (isSuper()) {
-      
-
-      if (!bce_->emit2(JSOP_PICK, 4)) {
-        
-        return false;
-      }
-      if (!bce_->emit2(JSOP_PICK, 4)) {
-        
-        return false;
-      }
-      if (!bce_->emit2(JSOP_PICK, 4)) {
-        
-        return false;
-      }
-      if (!bce_->emit2(JSOP_PICK, 3)) {
-        
-        return false;
-      }
-    } else {
-      
-
-      if (!bce_->emit2(JSOP_PICK, 3)) {
-        
-        return false;
-      }
-      if (!bce_->emit2(JSOP_PICK, 3)) {
-        
-        return false;
-      }
-      if (!bce_->emit2(JSOP_PICK, 2)) {
-        
-        return false;
-      }
-    }
   }
 
   JSOp setOp =
