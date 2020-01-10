@@ -1130,15 +1130,6 @@ extern JS_FRIEND_API JSObject* GetTestingFunctions(JSContext* cx);
 
 
 
-inline JSFreeOp* CastToJSFreeOp(FreeOp* fop) {
-  return reinterpret_cast<JSFreeOp*>(fop);
-}
-
-
-
-
-
-
 
 extern JS_FRIEND_API JSFlatString* GetErrorTypeName(JSContext* cx,
                                                     int16_t exnType);
