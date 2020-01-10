@@ -107,6 +107,7 @@
 
 
 
+
 use crate::bforest;
 use crate::entity::SparseMapValue;
 use crate::ir::{Ebb, ExpandedProgramPoint, Inst, Layout, ProgramOrder, ProgramPoint, Value};
@@ -141,13 +142,13 @@ use core::marker::PhantomData;
 
 
 
-pub type LiveRange = GenLiveRange<Layout>;
+pub type LiveRange = GenericLiveRange<Layout>;
 
 
 
 
 
-pub struct GenLiveRange<PO: ProgramOrder> {
+pub struct GenericLiveRange<PO: ProgramOrder> {
     
     
     value: Value,
@@ -179,32 +180,6 @@ pub struct GenLiveRange<PO: ProgramOrder> {
 }
 
 
-pub struct LiveRangeContext<'a, PO: 'a + ProgramOrder> {
-    
-    pub order: &'a PO,
-    
-    pub forest: &'a bforest::MapForest<Ebb, Inst>,
-}
-
-impl<'a, PO: ProgramOrder> LiveRangeContext<'a, PO> {
-    
-    pub fn new(order: &'a PO, forest: &'a bforest::MapForest<Ebb, Inst>) -> Self {
-        Self { order, forest }
-    }
-}
-
-impl<'a, PO: ProgramOrder> Clone for LiveRangeContext<'a, PO> {
-    fn clone(&self) -> Self {
-        LiveRangeContext {
-            order: self.order,
-            forest: self.forest,
-        }
-    }
-}
-
-impl<'a, PO: ProgramOrder> Copy for LiveRangeContext<'a, PO> {}
-
-
 pub type LiveRangeForest = bforest::MapForest<Ebb, Inst>;
 
 struct Cmp<'a, PO: ProgramOrder + 'a>(&'a PO);
@@ -215,7 +190,23 @@ impl<'a, PO: ProgramOrder> bforest::Comparator<Ebb> for Cmp<'a, PO> {
     }
 }
 
-impl<PO: ProgramOrder> GenLiveRange<PO> {
+
+macro_rules! cmp {
+    ($order:ident, $a:ident > $b:expr) => {
+        $order.cmp($a, $b) == Ordering::Greater
+    };
+    ($order:ident, $a:ident >= $b:expr) => {
+        $order.cmp($a, $b) != Ordering::Less
+    };
+    ($order:ident, $a:ident < $b:expr) => {
+        $order.cmp($a, $b) == Ordering::Less
+    };
+    ($order:ident, $a:ident <= $b:expr) => {
+        $order.cmp($a, $b) != Ordering::Greater
+    };
+}
+
+impl<PO: ProgramOrder> GenericLiveRange<PO> {
     
     
     
@@ -252,15 +243,13 @@ impl<PO: ProgramOrder> GenLiveRange<PO> {
         
         
         
-        if order.cmp(ebb, self.def_end) != Ordering::Greater
-            && order.cmp(to, self.def_begin) != Ordering::Less
-        {
+        if cmp!(order, ebb <= self.def_end) && cmp!(order, to >= self.def_begin) {
             let to_pp = to.into();
             debug_assert_ne!(
                 to_pp, self.def_begin,
                 "Can't use value in the defining instruction."
             );
-            if order.cmp(to, self.def_end) == Ordering::Greater {
+            if cmp!(order, to > self.def_end) {
                 self.def_end = to_pp;
             }
             return false;
@@ -274,7 +263,7 @@ impl<PO: ProgramOrder> GenLiveRange<PO> {
         if let Some(end) = c.goto(ebb) {
             
             first_time_livein = false;
-            if order.cmp(end, to) == Ordering::Less {
+            if cmp!(order, end < to) {
                 *c.value_mut().unwrap() = to;
             } else {
                 return first_time_livein;
@@ -282,10 +271,10 @@ impl<PO: ProgramOrder> GenLiveRange<PO> {
         } else if let Some((_, end)) = c.prev() {
             
             
-            if order.cmp(end, ebb) == Ordering::Greater {
+            if cmp!(order, end > ebb) {
                 
                 first_time_livein = false;
-                if order.cmp(end, to) == Ordering::Less {
+                if cmp!(order, end < to) {
                     *c.value_mut().unwrap() = to;
                 } else {
                     return first_time_livein;
@@ -370,13 +359,13 @@ impl<PO: ProgramOrder> GenLiveRange<PO> {
     
     
     
-    pub fn livein_local_end(&self, ebb: Ebb, ctx: LiveRangeContext<PO>) -> Option<Inst> {
-        let cmp = Cmp(ctx.order);
+    pub fn livein_local_end(&self, ebb: Ebb, forest: &LiveRangeForest, order: &PO) -> Option<Inst> {
+        let cmp = Cmp(order);
         self.liveins
-            .get_or_less(ebb, ctx.forest, &cmp)
+            .get_or_less(ebb, forest, &cmp)
             .and_then(|(_, inst)| {
                 
-                if ctx.order.cmp(inst, ebb) == Ordering::Greater {
+                if cmp!(order, inst > ebb) {
                     Some(inst)
                 } else {
                     None
@@ -387,16 +376,16 @@ impl<PO: ProgramOrder> GenLiveRange<PO> {
     
     
     
-    pub fn is_livein(&self, ebb: Ebb, ctx: LiveRangeContext<PO>) -> bool {
-        self.livein_local_end(ebb, ctx).is_some()
+    pub fn is_livein(&self, ebb: Ebb, forest: &LiveRangeForest, order: &PO) -> bool {
+        self.livein_local_end(ebb, forest, order).is_some()
     }
 
     
     
     
     
-    pub fn liveins<'a>(&'a self, ctx: LiveRangeContext<'a, PO>) -> bforest::MapIter<'a, Ebb, Inst> {
-        self.liveins.iter(ctx.forest)
+    pub fn liveins<'a>(&'a self, forest: &'a LiveRangeForest) -> bforest::MapIter<'a, Ebb, Inst> {
+        self.liveins.iter(forest)
     }
 
     
@@ -404,7 +393,8 @@ impl<PO: ProgramOrder> GenLiveRange<PO> {
         &self,
         def: ExpandedProgramPoint,
         ebb: Ebb,
-        ctx: LiveRangeContext<PO>,
+        forest: &LiveRangeForest,
+        order: &PO,
     ) -> bool {
         
         if def == self.def_begin.into() {
@@ -412,43 +402,40 @@ impl<PO: ProgramOrder> GenLiveRange<PO> {
         }
 
         
-        if ctx.order.cmp(def, self.def_begin) != Ordering::Less
-            && ctx.order.cmp(def, self.def_end) == Ordering::Less
-        {
+        if cmp!(order, def >= self.def_begin) && cmp!(order, def < self.def_end) {
             return true;
         }
 
         
-        match self.livein_local_end(ebb, ctx) {
-            Some(inst) => ctx.order.cmp(def, inst) == Ordering::Less,
+        match self.livein_local_end(ebb, forest, order) {
+            Some(inst) => cmp!(order, def < inst),
             None => false,
         }
     }
 
     
-    pub fn reaches_use(&self, user: Inst, ebb: Ebb, ctx: LiveRangeContext<PO>) -> bool {
+    pub fn reaches_use(&self, user: Inst, ebb: Ebb, forest: &LiveRangeForest, order: &PO) -> bool {
         
-        if ctx.order.cmp(user, self.def_begin) == Ordering::Greater
-            && ctx.order.cmp(user, self.def_end) != Ordering::Greater
-        {
+        if cmp!(order, user > self.def_begin) && cmp!(order, user <= self.def_end) {
             return true;
         }
 
         
-        match self.livein_local_end(ebb, ctx) {
-            Some(inst) => ctx.order.cmp(user, inst) != Ordering::Greater,
+        match self.livein_local_end(ebb, forest, order) {
+            Some(inst) => cmp!(order, user <= inst),
             None => false,
         }
     }
 
     
-    pub fn killed_at(&self, user: Inst, ebb: Ebb, ctx: LiveRangeContext<PO>) -> bool {
-        self.def_local_end() == user.into() || self.livein_local_end(ebb, ctx) == Some(user)
+    pub fn killed_at(&self, user: Inst, ebb: Ebb, forest: &LiveRangeForest, order: &PO) -> bool {
+        self.def_local_end() == user.into()
+            || self.livein_local_end(ebb, forest, order) == Some(user)
     }
 }
 
 
-impl<PO: ProgramOrder> SparseMapValue<Value> for GenLiveRange<PO> {
+impl<PO: ProgramOrder> SparseMapValue<Value> for GenericLiveRange<PO> {
     fn key(&self) -> Value {
         self.value
     }
@@ -456,7 +443,7 @@ impl<PO: ProgramOrder> SparseMapValue<Value> for GenLiveRange<PO> {
 
 #[cfg(test)]
 mod tests {
-    use super::{GenLiveRange, LiveRangeContext};
+    use super::GenericLiveRange;
     use crate::bforest;
     use crate::entity::EntityRef;
     use crate::ir::{Ebb, Inst, Value};
@@ -509,7 +496,11 @@ mod tests {
         }
 
         
-        fn validate(&self, lr: &GenLiveRange<ProgOrder>, forest: &bforest::MapForest<Ebb, Inst>) {
+        fn validate(
+            &self,
+            lr: &GenericLiveRange<ProgOrder>,
+            forest: &bforest::MapForest<Ebb, Inst>,
+        ) {
             
             let def_ebb = self.pp_ebb(lr.def_begin);
             assert_eq!(def_ebb, self.pp_ebb(lr.def_end));
@@ -553,36 +544,34 @@ mod tests {
         let i1 = Inst::new(1);
         let i2 = Inst::new(2);
         let e2 = Ebb::new(2);
-        let lr = GenLiveRange::new(v0, i1.into(), Default::default());
+        let lr = GenericLiveRange::new(v0, i1.into(), Default::default());
         let forest = &bforest::MapForest::new();
-        let ctx = LiveRangeContext::new(PO, forest);
         assert!(lr.is_dead());
         assert!(lr.is_local());
         assert_eq!(lr.def(), i1.into());
         assert_eq!(lr.def_local_end(), i1.into());
-        assert_eq!(lr.livein_local_end(e2, ctx), None);
-        PO.validate(&lr, ctx.forest);
+        assert_eq!(lr.livein_local_end(e2, forest, PO), None);
+        PO.validate(&lr, forest);
 
         
-        assert!(lr.overlaps_def(i1.into(), e0, ctx));
-        assert!(!lr.overlaps_def(i2.into(), e0, ctx));
-        assert!(!lr.overlaps_def(e0.into(), e0, ctx));
+        assert!(lr.overlaps_def(i1.into(), e0, forest, PO));
+        assert!(!lr.overlaps_def(i2.into(), e0, forest, PO));
+        assert!(!lr.overlaps_def(e0.into(), e0, forest, PO));
     }
 
     #[test]
     fn dead_arg_range() {
         let v0 = Value::new(0);
         let e2 = Ebb::new(2);
-        let lr = GenLiveRange::new(v0, e2.into(), Default::default());
+        let lr = GenericLiveRange::new(v0, e2.into(), Default::default());
         let forest = &bforest::MapForest::new();
-        let ctx = LiveRangeContext::new(PO, forest);
         assert!(lr.is_dead());
         assert!(lr.is_local());
         assert_eq!(lr.def(), e2.into());
         assert_eq!(lr.def_local_end(), e2.into());
         
-        assert_eq!(lr.livein_local_end(e2, ctx), None);
-        PO.validate(&lr, ctx.forest);
+        assert_eq!(lr.livein_local_end(e2, forest, PO), None);
+        PO.validate(&lr, forest);
     }
 
     #[test]
@@ -592,7 +581,7 @@ mod tests {
         let i11 = Inst::new(11);
         let i12 = Inst::new(12);
         let i13 = Inst::new(13);
-        let mut lr = GenLiveRange::new(v0, i11.into(), Default::default());
+        let mut lr = GenericLiveRange::new(v0, i11.into(), Default::default());
         let forest = &mut bforest::MapForest::new();
 
         assert_eq!(lr.extend_in_ebb(e10, i13, PO, forest), false);
@@ -616,7 +605,7 @@ mod tests {
         let i11 = Inst::new(11);
         let i12 = Inst::new(12);
         let i13 = Inst::new(13);
-        let mut lr = GenLiveRange::new(v0, e10.into(), Default::default());
+        let mut lr = GenericLiveRange::new(v0, e10.into(), Default::default());
         let forest = &mut bforest::MapForest::new();
 
         
@@ -651,7 +640,7 @@ mod tests {
         let i21 = Inst::new(21);
         let i22 = Inst::new(22);
         let i23 = Inst::new(23);
-        let mut lr = GenLiveRange::new(v0, i11.into(), Default::default());
+        let mut lr = GenericLiveRange::new(v0, i11.into(), Default::default());
         let forest = &mut bforest::MapForest::new();
 
         assert_eq!(lr.extend_in_ebb(e10, i12, PO, forest), false);
@@ -659,25 +648,16 @@ mod tests {
         
         assert_eq!(lr.extend_in_ebb(e20, i22, PO, forest), true);
         PO.validate(&lr, forest);
-        assert_eq!(
-            lr.livein_local_end(e20, LiveRangeContext::new(PO, forest)),
-            Some(i22)
-        );
+        assert_eq!(lr.livein_local_end(e20, forest, PO), Some(i22));
 
         
         assert_eq!(lr.extend_in_ebb(e20, i21, PO, forest), false);
-        assert_eq!(
-            lr.livein_local_end(e20, LiveRangeContext::new(PO, forest)),
-            Some(i22)
-        );
+        assert_eq!(lr.livein_local_end(e20, forest, PO), Some(i22));
 
         
         assert_eq!(lr.extend_in_ebb(e20, i23, PO, forest), false);
         PO.validate(&lr, forest);
-        assert_eq!(
-            lr.livein_local_end(e20, LiveRangeContext::new(PO, forest)),
-            Some(i23)
-        );
+        assert_eq!(lr.livein_local_end(e20, forest, PO), Some(i23));
     }
 
     #[test]
@@ -690,56 +670,33 @@ mod tests {
         let i31 = Inst::new(31);
         let e40 = Ebb::new(40);
         let i41 = Inst::new(41);
-        let mut lr = GenLiveRange::new(v0, i11.into(), Default::default());
+        let mut lr = GenericLiveRange::new(v0, i11.into(), Default::default());
         let forest = &mut bforest::MapForest::new();
 
         assert_eq!(lr.extend_in_ebb(e30, i31, PO, forest), true);
-        assert_eq!(
-            lr.liveins(LiveRangeContext::new(PO, forest))
-                .collect::<Vec<_>>(),
-            [(e30, i31)]
-        );
+        assert_eq!(lr.liveins(forest).collect::<Vec<_>>(), [(e30, i31)]);
 
         
         assert_eq!(lr.extend_in_ebb(e40, i41, PO, forest), true);
-        assert_eq!(
-            lr.liveins(LiveRangeContext::new(PO, forest))
-                .collect::<Vec<_>>(),
-            [(e30, i41)]
-        );
+        assert_eq!(lr.liveins(forest).collect::<Vec<_>>(), [(e30, i41)]);
 
         
         assert_eq!(lr.extend_in_ebb(e20, i21, PO, forest), true);
-        assert_eq!(
-            lr.liveins(LiveRangeContext::new(PO, forest))
-                .collect::<Vec<_>>(),
-            [(e20, i41)]
-        );
+        assert_eq!(lr.liveins(forest).collect::<Vec<_>>(), [(e20, i41)]);
 
-        let mut lr = GenLiveRange::new(v0, i11.into(), Default::default());
+        let mut lr = GenericLiveRange::new(v0, i11.into(), Default::default());
 
         assert_eq!(lr.extend_in_ebb(e40, i41, PO, forest), true);
-        assert_eq!(
-            lr.liveins(LiveRangeContext::new(PO, forest))
-                .collect::<Vec<_>>(),
-            [(e40, i41)]
-        );
+        assert_eq!(lr.liveins(forest).collect::<Vec<_>>(), [(e40, i41)]);
 
         assert_eq!(lr.extend_in_ebb(e20, i21, PO, forest), true);
         assert_eq!(
-            lr.liveins(LiveRangeContext::new(PO, forest))
-                .collect::<Vec<_>>(),
+            lr.liveins(forest).collect::<Vec<_>>(),
             [(e20, i21), (e40, i41)]
         );
 
         
         assert_eq!(lr.extend_in_ebb(e30, i31, PO, forest), true);
-        assert_eq!(
-            lr.liveins(LiveRangeContext::new(PO, forest))
-                .collect::<Vec<_>>(),
-            [(e20, i41)]
-        );
+        assert_eq!(lr.liveins(forest).collect::<Vec<_>>(), [(e20, i41)]);
     }
-
-    
 }

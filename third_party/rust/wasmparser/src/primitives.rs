@@ -84,6 +84,7 @@ pub enum Type {
     AnyRef,
     Func,
     EmptyBlockType,
+    Null,
 }
 
 

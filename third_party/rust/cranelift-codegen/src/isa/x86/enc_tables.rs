@@ -407,11 +407,15 @@ fn expand_fcvt_from_uint(
     pos.use_srcloc(inst);
 
     
-    
-    if xty == ir::types::I32 {
-        let wide = pos.ins().uextend(ir::types::I64, x);
-        pos.func.dfg.replace(inst).fcvt_from_sint(ty, wide);
-        return;
+    match xty {
+        ir::types::I8 | ir::types::I16 | ir::types::I32 => {
+            
+            let wide = pos.ins().uextend(ir::types::I64, x);
+            pos.func.dfg.replace(inst).fcvt_from_sint(ty, wide);
+            return;
+        }
+        ir::types::I64 => {}
+        _ => unimplemented!(),
     }
 
     let old_ebb = pos.func.layout.pp_ebb(inst);
@@ -893,6 +897,80 @@ fn expand_fcvt_to_uint_sat(
     cfg.recompute_ebb(pos.func, large);
     cfg.recompute_ebb(pos.func, uint_large_ebb);
     cfg.recompute_ebb(pos.func, done);
+}
+
+
+fn convert_shuffle(
+    inst: ir::Inst,
+    func: &mut ir::Function,
+    _cfg: &mut ControlFlowGraph,
+    _isa: &dyn TargetIsa,
+) {
+    let mut pos = FuncCursor::new(func).at_inst(inst);
+    pos.use_srcloc(inst);
+
+    if let ir::InstructionData::Shuffle { args, mask, .. } = pos.func.dfg[inst] {
+        
+        
+        let zero_unknown_lane_index = |b: u8| if b > 15 { 0b10000000 } else { b };
+
+        
+        
+        let a = pos.func.dfg.resolve_aliases(args[0]);
+        let b = pos.func.dfg.resolve_aliases(args[1]);
+        let mask = pos
+            .func
+            .dfg
+            .immediates
+            .get(mask)
+            .expect("The shuffle immediate should have been recorded before this point")
+            .clone();
+        if a == b {
+            
+            let constructed_mask = mask
+                .iter()
+                
+                .map(|&b| if b > 15 { b.wrapping_sub(16) } else { b })
+                .map(zero_unknown_lane_index)
+                .collect();
+            let handle = pos.func.dfg.constants.insert(constructed_mask);
+            
+            let a_type = pos.func.dfg.value_type(a);
+            let mask_value = pos.ins().vconst(a_type, handle);
+            
+            pos.func.dfg.replace(inst).x86_pshufb(a, mask_value);
+        } else {
+            
+            let constructed_mask = mask.iter().cloned().map(zero_unknown_lane_index).collect();
+            let handle = pos.func.dfg.constants.insert(constructed_mask);
+            
+            let a_type = pos.func.dfg.value_type(a);
+            let mask_value = pos.ins().vconst(a_type, handle);
+            
+            let shuffled_first_arg = pos.ins().x86_pshufb(a, mask_value);
+
+            
+            let constructed_mask = mask
+                .iter()
+                .map(|b| b.wrapping_sub(16))
+                .map(zero_unknown_lane_index)
+                .collect();
+            let handle = pos.func.dfg.constants.insert(constructed_mask);
+            
+            let b_type = pos.func.dfg.value_type(b);
+            let mask_value = pos.ins().vconst(b_type, handle);
+            
+            let shuffled_second_arg = pos.ins().x86_pshufb(b, mask_value);
+
+            
+            pos.func
+                .dfg
+                .replace(inst)
+                .bor(shuffled_first_arg, shuffled_second_arg);
+
+            
+        };
+    }
 }
 
 

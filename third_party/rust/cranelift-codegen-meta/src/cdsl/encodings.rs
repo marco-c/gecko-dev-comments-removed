@@ -20,7 +20,7 @@ use crate::cdsl::types::ValueType;
 
 
 
-pub struct EncodingContent {
+pub(crate) struct EncodingContent {
     
     inst: InstSpec,
 
@@ -49,9 +49,9 @@ impl EncodingContent {
     }
 }
 
-pub type Encoding = Rc<EncodingContent>;
+pub(crate) type Encoding = Rc<EncodingContent>;
 
-pub struct EncodingBuilder {
+pub(crate) struct EncodingBuilder {
     inst: InstSpec,
     recipe: EncodingRecipeNumber,
     encbits: u16,

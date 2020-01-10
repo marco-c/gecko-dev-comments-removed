@@ -403,12 +403,28 @@ fn gen_transform<'a>(
     fmt.indent(|fmt| {
         
         
+        if !transform.block_pool.is_empty() {
+            fmt.line("let orig_ebb = pos.current_ebb().unwrap();");
+        }
+
+        
+        
         if !replace_inst {
             fmt.line("pos.func.dfg.clear_results(inst);");
         }
 
         
+        for block in &transform.block_pool {
+            let var = transform.var_pool.get(block.name);
+            fmtln!(fmt, "let {} = pos.func.dfg.make_ebb();", var.name);
+        }
+
+        
         for &def_index in &transform.dst {
+            if let Some(block) = transform.block_pool.get(def_index) {
+                let var = transform.var_pool.get(block.name);
+                fmtln!(fmt, "pos.insert_ebb({});", var.name);
+            }
             emit_dst_inst(
                 transform.def_pool.get(def_index),
                 &transform.def_pool,
@@ -418,15 +434,31 @@ fn gen_transform<'a>(
         }
 
         
+        let def_next_index = transform.def_pool.next_index();
+        if let Some(block) = transform.block_pool.get(def_next_index) {
+            let var = transform.var_pool.get(block.name);
+            fmtln!(fmt, "pos.insert_ebb({});", var.name);
+        }
+
+        
         if !replace_inst {
             fmt.line("let removed = pos.remove_inst();");
             fmt.line("debug_assert_eq!(removed, inst);");
         }
 
-        if transform.def_pool.get(transform.src).apply.inst.is_branch {
+        if transform.block_pool.is_empty() {
+            if transform.def_pool.get(transform.src).apply.inst.is_branch {
+                
+                
+                fmt.line("cfg.recompute_ebb(pos.func, pos.current_ebb().unwrap());");
+            }
+        } else {
             
-            
-            fmt.line("cfg.recompute_ebb(pos.func, pos.current_ebb().unwrap());");
+            fmt.line("cfg.recompute_ebb(pos.func, orig_ebb);");
+            for block in &transform.block_pool {
+                let var = transform.var_pool.get(block.name);
+                fmtln!(fmt, "cfg.recompute_ebb(pos.func, {});", var.name);
+            }
         }
 
         fmt.line("return true;");
@@ -577,7 +609,7 @@ fn gen_isa(
 }
 
 
-pub fn generate(
+pub(crate) fn generate(
     isas: &Vec<TargetIsa>,
     format_registry: &FormatRegistry,
     transform_groups: &TransformGroups,

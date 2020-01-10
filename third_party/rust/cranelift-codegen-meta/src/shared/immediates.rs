@@ -26,6 +26,12 @@ pub(crate) struct Immediates {
     
     
     
+    
+    pub pool_constant: OperandKind,
+
+    
+    
+    
     pub offset32: OperandKind,
 
     
@@ -84,6 +90,12 @@ impl Immediates {
 
             uimm128: Builder::new_imm("uimm128")
                 .doc("A 128-bit immediate unsigned integer.")
+                .rust_type("ir::Immediate")
+                .build(),
+
+            pool_constant: Builder::new_imm("poolConstant")
+                .doc("A constant stored in the constant pool.")
+                .default_member("constant_handle")
                 .rust_type("ir::Constant")
                 .build(),
 
@@ -117,6 +129,8 @@ impl Immediates {
                 intcc_values.insert("ugt", "UnsignedGreaterThan");
                 intcc_values.insert("ule", "UnsignedLessThanOrEqual");
                 intcc_values.insert("ult", "UnsignedLessThan");
+                intcc_values.insert("of", "Overflow");
+                intcc_values.insert("nof", "NotOverflow");
                 Builder::new_enum("intcc", intcc_values)
                     .doc("An integer comparison condition code.")
                     .default_member("cond")

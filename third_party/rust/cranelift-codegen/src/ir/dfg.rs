@@ -5,7 +5,7 @@ use crate::ir;
 use crate::ir::builder::ReplaceBuilder;
 use crate::ir::extfunc::ExtFuncData;
 use crate::ir::instructions::{BranchInfo, CallInfo, InstructionData};
-use crate::ir::{types, ConstantPool};
+use crate::ir::{types, ConstantPool, Immediate};
 use crate::ir::{
     Ebb, FuncRef, Inst, SigRef, Signature, Type, Value, ValueLabelAssignments, ValueList,
     ValueListPool,
@@ -19,6 +19,7 @@ use core::mem;
 use core::ops::{Index, IndexMut};
 use core::u16;
 use std::collections::HashMap;
+use std::vec::Vec;
 
 
 
@@ -70,6 +71,9 @@ pub struct DataFlowGraph {
 
     
     pub constants: ConstantPool,
+
+    
+    pub immediates: PrimaryMap<Immediate, Vec<u8>>,
 }
 
 impl DataFlowGraph {
@@ -85,6 +89,7 @@ impl DataFlowGraph {
             ext_funcs: PrimaryMap::new(),
             values_labels: None,
             constants: ConstantPool::new(),
+            immediates: PrimaryMap::new(),
         }
     }
 
@@ -98,7 +103,8 @@ impl DataFlowGraph {
         self.signatures.clear();
         self.ext_funcs.clear();
         self.values_labels = None;
-        self.constants.clear()
+        self.constants.clear();
+        self.immediates.clear();
     }
 
     

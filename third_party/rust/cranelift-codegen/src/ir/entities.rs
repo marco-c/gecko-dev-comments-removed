@@ -26,6 +26,11 @@ use core::u32;
 use serde::{Deserialize, Serialize};
 
 
+
+
+
+
+
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Ebb(u32);
 entity_impl!(Ebb, "ebb");
@@ -42,6 +47,18 @@ impl Ebb {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -63,9 +80,31 @@ impl Value {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Inst(u32);
 entity_impl!(Inst, "inst");
+
+
+
+
+
+
+
+
+
+
+
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
@@ -87,6 +126,22 @@ impl StackSlot {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct GlobalValue(u32);
 entity_impl!(GlobalValue, "gv");
@@ -105,6 +160,10 @@ impl GlobalValue {
 }
 
 
+
+
+
+
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct Constant(u32);
 entity_impl!(Constant, "const");
@@ -121,6 +180,38 @@ impl Constant {
         }
     }
 }
+
+
+
+
+
+
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub struct Immediate(u32);
+entity_impl!(Immediate, "imm");
+
+impl Immediate {
+    
+    
+    
+    pub fn with_number(n: u32) -> Option<Self> {
+        if n < u32::MAX {
+            Some(Immediate(n))
+        } else {
+            None
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
@@ -142,6 +233,21 @@ impl JumpTable {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct FuncRef(u32);
 entity_impl!(FuncRef, "fn");
@@ -158,6 +264,17 @@ impl FuncRef {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
@@ -178,6 +295,11 @@ impl SigRef {
 }
 
 
+
+
+
+
+
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Heap(u32);
 entity_impl!(Heap, "heap");
@@ -194,6 +316,12 @@ impl Heap {
         }
     }
 }
+
+
+
+
+
+
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]

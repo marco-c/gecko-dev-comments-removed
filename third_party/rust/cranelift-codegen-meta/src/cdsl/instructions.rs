@@ -13,6 +13,7 @@ use crate::cdsl::operands::Operand;
 use crate::cdsl::type_inference::Constraint;
 use crate::cdsl::types::{LaneType, ReferenceType, ValueType, VectorType};
 use crate::cdsl::typevar::TypeVar;
+use cranelift_codegen_shared::condcodes::IntCC;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct OpcodeNumber(u32);
@@ -615,6 +616,12 @@ pub enum FormatPredicateKind {
     IsZero64BitFloat,
 
     
+    IsAllZeroes128Bit,
+
+    
+    IsAllOnes128Bit,
+
+    
     LengthEquals(usize),
 
     
@@ -622,6 +629,9 @@ pub enum FormatPredicateKind {
 
     
     IsColocatedData,
+
+    
+    HasConditionCode(IntCC),
 }
 
 #[derive(Clone, Hash, PartialEq, Eq)]
@@ -690,6 +700,14 @@ impl FormatPredicateNode {
             FormatPredicateKind::IsZero64BitFloat => {
                 format!("predicates::is_zero_64_bit_float({})", self.member_name)
             }
+            FormatPredicateKind::IsAllZeroes128Bit => format!(
+                "predicates::is_all_zeroes_128_bit(func.dfg.constants.get({}))",
+                self.member_name
+            ),
+            FormatPredicateKind::IsAllOnes128Bit => format!(
+                "predicates::is_all_ones_128_bit(func.dfg.constants.get({}))",
+                self.member_name
+            ),
             FormatPredicateKind::LengthEquals(num) => format!(
                 "predicates::has_length_of({}, {}, func)",
                 self.member_name, num
@@ -700,6 +718,10 @@ impl FormatPredicateNode {
             FormatPredicateKind::IsColocatedData => {
                 format!("predicates::is_colocated_data({}, func)", self.member_name)
             }
+            FormatPredicateKind::HasConditionCode(code) => format!(
+                "predicates::is_equal({}, IntCC::{:?})",
+                self.member_name, code
+            ),
         }
     }
 }
@@ -929,6 +951,28 @@ impl InstructionPredicate {
         ))
     }
 
+    pub fn new_is_all_zeroes_128bit(
+        format: &InstructionFormat,
+        field_name: &'static str,
+    ) -> InstructionPredicateNode {
+        InstructionPredicateNode::FormatPredicate(FormatPredicateNode::new(
+            format,
+            field_name,
+            FormatPredicateKind::IsAllZeroes128Bit,
+        ))
+    }
+
+    pub fn new_is_all_ones_128bit(
+        format: &InstructionFormat,
+        field_name: &'static str,
+    ) -> InstructionPredicateNode {
+        InstructionPredicateNode::FormatPredicate(FormatPredicateNode::new(
+            format,
+            field_name,
+            FormatPredicateKind::IsAllOnes128Bit,
+        ))
+    }
+
     pub fn new_length_equals(format: &InstructionFormat, size: usize) -> InstructionPredicateNode {
         assert!(
             format.has_value_list,
@@ -958,6 +1002,18 @@ impl InstructionPredicate {
             format,
             "global_value",
             FormatPredicateKind::IsColocatedData,
+        ))
+    }
+
+    pub fn new_has_condition_code(
+        format: &InstructionFormat,
+        condition_code: IntCC,
+        field_name: &'static str,
+    ) -> InstructionPredicateNode {
+        InstructionPredicateNode::FormatPredicate(FormatPredicateNode::new(
+            format,
+            field_name,
+            FormatPredicateKind::HasConditionCode(condition_code),
         ))
     }
 

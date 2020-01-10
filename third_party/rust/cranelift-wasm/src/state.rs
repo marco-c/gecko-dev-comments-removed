@@ -129,37 +129,15 @@ impl ControlStackFrame {
 
 
 
-
-pub struct VisibleTranslationState<'a> {
-    state: &'a TranslationState,
-}
-
-impl<'a> VisibleTranslationState<'a> {
-    
-    pub fn new(state: &'a TranslationState) -> Self {
-        VisibleTranslationState { state }
-    }
-
-    
-    pub fn reachable(&self) -> bool {
-        self.state.reachable
-    }
-}
-
-
-
-
-
-
 pub struct TranslationState {
     
     
-    pub stack: Vec<Value>,
+    pub(crate) stack: Vec<Value>,
     
-    pub control_stack: Vec<ControlStackFrame>,
+    pub(crate) control_stack: Vec<ControlStackFrame>,
     
     
-    pub reachable: bool,
+    pub(crate) reachable: bool,
 
     
     globals: HashMap<GlobalIndex, GlobalVariable>,
@@ -181,9 +159,18 @@ pub struct TranslationState {
     functions: HashMap<FuncIndex, (ir::FuncRef, usize)>,
 }
 
+
 impl TranslationState {
     
-    pub fn new() -> Self {
+    #[inline]
+    pub fn reachable(&self) -> bool {
+        self.reachable
+    }
+}
+
+impl TranslationState {
+    
+    pub(crate) fn new() -> Self {
         Self {
             stack: Vec::new(),
             control_stack: Vec::new(),
@@ -211,7 +198,7 @@ impl TranslationState {
     
     
     
-    pub fn initialize(&mut self, sig: &ir::Signature, exit_block: Ebb) {
+    pub(crate) fn initialize(&mut self, sig: &ir::Signature, exit_block: Ebb) {
         self.clear();
         self.push_block(
             exit_block,
@@ -223,34 +210,34 @@ impl TranslationState {
     }
 
     
-    pub fn push1(&mut self, val: Value) {
+    pub(crate) fn push1(&mut self, val: Value) {
         self.stack.push(val);
     }
 
     
-    pub fn pushn(&mut self, vals: &[Value]) {
+    pub(crate) fn pushn(&mut self, vals: &[Value]) {
         self.stack.extend_from_slice(vals);
     }
 
     
-    pub fn pop1(&mut self) -> Value {
+    pub(crate) fn pop1(&mut self) -> Value {
         self.stack.pop().unwrap()
     }
 
     
-    pub fn peek1(&self) -> Value {
+    pub(crate) fn peek1(&self) -> Value {
         *self.stack.last().unwrap()
     }
 
     
-    pub fn pop2(&mut self) -> (Value, Value) {
+    pub(crate) fn pop2(&mut self) -> (Value, Value) {
         let v2 = self.stack.pop().unwrap();
         let v1 = self.stack.pop().unwrap();
         (v1, v2)
     }
 
     
-    pub fn pop3(&mut self) -> (Value, Value, Value) {
+    pub(crate) fn pop3(&mut self) -> (Value, Value, Value) {
         let v3 = self.stack.pop().unwrap();
         let v2 = self.stack.pop().unwrap();
         let v1 = self.stack.pop().unwrap();
@@ -260,18 +247,18 @@ impl TranslationState {
     
     
     
-    pub fn popn(&mut self, n: usize) {
+    pub(crate) fn popn(&mut self, n: usize) {
         let new_len = self.stack.len() - n;
         self.stack.truncate(new_len);
     }
 
     
-    pub fn peekn(&self, n: usize) -> &[Value] {
+    pub(crate) fn peekn(&self, n: usize) -> &[Value] {
         &self.stack[self.stack.len() - n..]
     }
 
     
-    pub fn push_block(&mut self, following_code: Ebb, num_result_types: usize) {
+    pub(crate) fn push_block(&mut self, following_code: Ebb, num_result_types: usize) {
         self.control_stack.push(ControlStackFrame::Block {
             destination: following_code,
             original_stack_size: self.stack.len(),
@@ -281,7 +268,7 @@ impl TranslationState {
     }
 
     
-    pub fn push_loop(&mut self, header: Ebb, following_code: Ebb, num_result_types: usize) {
+    pub(crate) fn push_loop(&mut self, header: Ebb, following_code: Ebb, num_result_types: usize) {
         self.control_stack.push(ControlStackFrame::Loop {
             header,
             destination: following_code,
@@ -291,7 +278,12 @@ impl TranslationState {
     }
 
     
-    pub fn push_if(&mut self, branch_inst: Inst, following_code: Ebb, num_result_types: usize) {
+    pub(crate) fn push_if(
+        &mut self,
+        branch_inst: Inst,
+        following_code: Ebb,
+        num_result_types: usize,
+    ) {
         self.control_stack.push(ControlStackFrame::If {
             branch_inst,
             destination: following_code,
@@ -308,7 +300,7 @@ impl TranslationState {
     
     
     
-    pub fn get_global<FE: FuncEnvironment + ?Sized>(
+    pub(crate) fn get_global<FE: FuncEnvironment + ?Sized>(
         &mut self,
         func: &mut ir::Function,
         index: u32,
@@ -323,7 +315,7 @@ impl TranslationState {
 
     
     
-    pub fn get_heap<FE: FuncEnvironment + ?Sized>(
+    pub(crate) fn get_heap<FE: FuncEnvironment + ?Sized>(
         &mut self,
         func: &mut ir::Function,
         index: u32,
@@ -338,7 +330,7 @@ impl TranslationState {
 
     
     
-    pub fn get_table<FE: FuncEnvironment + ?Sized>(
+    pub(crate) fn get_table<FE: FuncEnvironment + ?Sized>(
         &mut self,
         func: &mut ir::Function,
         index: u32,
@@ -355,7 +347,7 @@ impl TranslationState {
     
     
     
-    pub fn get_indirect_sig<FE: FuncEnvironment + ?Sized>(
+    pub(crate) fn get_indirect_sig<FE: FuncEnvironment + ?Sized>(
         &mut self,
         func: &mut ir::Function,
         index: u32,
@@ -375,7 +367,7 @@ impl TranslationState {
     
     
     
-    pub fn get_direct_func<FE: FuncEnvironment + ?Sized>(
+    pub(crate) fn get_direct_func<FE: FuncEnvironment + ?Sized>(
         &mut self,
         func: &mut ir::Function,
         index: u32,

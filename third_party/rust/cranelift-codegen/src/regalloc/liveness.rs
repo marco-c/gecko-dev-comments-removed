@@ -181,7 +181,7 @@ use crate::ir::dfg::ValueDef;
 use crate::ir::{Ebb, Function, Inst, Layout, ProgramPoint, Value};
 use crate::isa::{EncInfo, OperandConstraint, TargetIsa};
 use crate::regalloc::affinity::Affinity;
-use crate::regalloc::liverange::{LiveRange, LiveRangeContext, LiveRangeForest};
+use crate::regalloc::liverange::{LiveRange, LiveRangeForest};
 use crate::timing;
 use core::mem;
 use core::ops::Index;
@@ -315,13 +315,13 @@ impl Liveness {
     }
 
     
-    pub fn ranges(&self) -> &LiveRangeSet {
-        &self.ranges
+    pub fn forest(&self) -> &LiveRangeForest {
+        &self.forest
     }
 
     
-    pub fn context<'a>(&'a self, layout: &'a Layout) -> LiveRangeContext<'a, Layout> {
-        LiveRangeContext::new(layout, &self.forest)
+    pub fn ranges(&self) -> &LiveRangeSet {
+        &self.ranges
     }
 
     

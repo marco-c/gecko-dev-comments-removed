@@ -371,4 +371,10 @@ pub trait TargetIsa: fmt::Display + Sync {
 
     
     fn emit_function_to_memory(&self, func: &ir::Function, sink: &mut binemit::MemoryCodeSink);
+
+    
+    fn unsigned_add_overflow_condition(&self) -> ir::condcodes::IntCC;
+
+    
+    fn unsigned_sub_overflow_condition(&self) -> ir::condcodes::IntCC;
 }

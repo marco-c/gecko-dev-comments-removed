@@ -122,7 +122,7 @@ enum TypeEnvRank {
 }
 
 
-pub struct TypeEnvironment {
+pub(crate) struct TypeEnvironment {
     vars: HashSet<VarIndex>,
     ranks: HashMap<TypeVar, TypeEnvRank>,
     equivalency_map: HashMap<TypeVar, TypeVar>,
@@ -602,7 +602,7 @@ fn infer_definition(
 }
 
 
-pub fn infer_transform(
+pub(crate) fn infer_transform(
     src: DefIndex,
     dst: &Vec<DefIndex>,
     def_pool: &DefPool,

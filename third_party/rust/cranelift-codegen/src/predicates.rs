@@ -33,6 +33,18 @@ pub fn is_zero_32_bit_float<T: Into<ir::immediates::Ieee32>>(x: T) -> bool {
 
 
 #[allow(dead_code)]
+pub fn is_all_zeroes_128_bit<'b, T: PartialEq<&'b [u8; 16]>>(x: T) -> bool {
+    x.eq(&&[0; 16])
+}
+
+
+#[allow(dead_code)]
+pub fn is_all_ones_128_bit<'b, T: PartialEq<&'b [u8; 16]>>(x: T) -> bool {
+    x.eq(&&[0xff; 16])
+}
+
+
+#[allow(dead_code)]
 pub fn is_equal<T: Eq + Copy, O: Into<T> + Copy>(x: T, y: O) -> bool {
     x == y.into()
 }
@@ -108,5 +120,20 @@ mod tests {
         assert!(is_signed_int(x2, 16, 2));
         assert!(!is_signed_int(x1, 16, 4));
         assert!(!is_signed_int(x2, 16, 4));
+    }
+
+    #[test]
+    fn is_all_zeroes() {
+        assert!(is_all_zeroes_128_bit(&[0; 16]));
+        assert!(is_all_zeroes_128_bit(vec![
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        ]));
+        assert!(!is_all_zeroes_128_bit(&[1; 16]));
+    }
+
+    #[test]
+    fn is_all_ones() {
+        assert!(!is_all_ones_128_bit(&[0; 16]));
+        assert!(is_all_ones_128_bit(&[0xff; 16]));
     }
 }

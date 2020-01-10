@@ -1,6 +1,6 @@
 
 
-use crate::entity::{SecondaryMap, SparseSet};
+use crate::entity::{EntitySet, SecondaryMap};
 use crate::flowgraph::{BasicBlock, ControlFlowGraph};
 use crate::ir;
 use crate::ir::instructions::BranchInfo;
@@ -50,7 +50,7 @@ impl<'a> FlagsVerifier<'a> {
     fn check(&mut self, errors: &mut VerifierErrors) -> VerifierStepResult<()> {
         
         
-        let mut worklist = SparseSet::new();
+        let mut worklist = EntitySet::with_capacity(self.func.layout.ebb_capacity());
         for ebb in self.func.layout.ebbs() {
             worklist.insert(ebb);
         }

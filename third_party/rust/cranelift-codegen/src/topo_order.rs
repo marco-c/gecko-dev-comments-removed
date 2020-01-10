@@ -1,7 +1,7 @@
 
 
 use crate::dominator_tree::DominatorTree;
-use crate::entity::SparseSet;
+use crate::entity::EntitySet;
 use crate::ir::{Ebb, Layout};
 use std::vec::Vec;
 
@@ -19,7 +19,7 @@ pub struct TopoOrder {
     next: usize,
 
     
-    visited: SparseSet<Ebb>,
+    visited: EntitySet<Ebb>,
 
     
     stack: Vec<Ebb>,
@@ -31,7 +31,7 @@ impl TopoOrder {
         Self {
             preferred: Vec::new(),
             next: 0,
-            visited: SparseSet::new(),
+            visited: EntitySet::new(),
             stack: Vec::new(),
         }
     }
@@ -64,6 +64,7 @@ impl TopoOrder {
     
     
     pub fn next(&mut self, layout: &Layout, domtree: &DominatorTree) -> Option<Ebb> {
+        self.visited.resize(layout.ebb_capacity());
         
         
         while self.stack.is_empty() {
@@ -73,7 +74,7 @@ impl TopoOrder {
                     
                     self.next += 1;
                     
-                    while self.visited.insert(ebb).is_none() {
+                    while self.visited.insert(ebb) {
                         self.stack.push(ebb);
                         match domtree.idom(ebb) {
                             Some(idom) => ebb = layout.inst_ebb(idom).expect("idom not in layout"),

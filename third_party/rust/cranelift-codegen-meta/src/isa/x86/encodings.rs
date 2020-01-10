@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use cranelift_codegen_shared::condcodes::IntCC;
 use std::collections::HashMap;
 
 use crate::cdsl::encodings::{Encoding, EncodingBuilder};
@@ -16,9 +17,11 @@ use crate::shared::types::Int::{I16, I32, I64, I8};
 use crate::shared::types::Reference::{R32, R64};
 use crate::shared::Definitions as SharedDefinitions;
 
+use crate::isa::x86::opcodes::*;
+
 use super::recipes::{RecipeGroup, Template};
 
-pub struct PerCpuModeEncodings {
+pub(crate) struct PerCpuModeEncodings {
     pub enc32: Vec<Encoding>,
     pub enc64: Vec<Encoding>,
     pub recipes: Recipes,
@@ -153,6 +156,20 @@ impl PerCpuModeEncodings {
     
     
     
+    fn enc_b32_b64(&mut self, inst: impl Into<InstSpec>, template: Template) {
+        let inst: InstSpec = inst.into();
+        self.enc32(inst.bind(B32), template.nonrex());
+
+        
+        
+        self.enc64(inst.bind(B32), template.rex());
+        self.enc64(inst.bind(B32), template.nonrex());
+        self.enc64(inst.bind(B64), template.rex().w());
+    }
+
+    
+    
+    
     fn enc_i32_i64_rex_only(&mut self, inst: impl Into<InstSpec>, template: Template) {
         let inst: InstSpec = inst.into();
         self.enc32(inst.bind(I32), template.nonrex());
@@ -280,6 +297,12 @@ impl PerCpuModeEncodings {
     }
 
     
+    fn enc_32_64(&mut self, inst: impl Clone + Into<InstSpec>, template: Template) {
+        self.enc32(inst.clone(), template.clone());
+        self.enc64(inst, template);
+    }
+
+    
     fn enc_32_64_rec(
         &mut self,
         inst: impl Clone + Into<InstSpec>,
@@ -288,6 +311,20 @@ impl PerCpuModeEncodings {
     ) {
         self.enc32_rec(inst.clone(), recipe, bits);
         self.enc64_rec(inst, recipe, bits);
+    }
+
+    
+    fn enc_32_64_func<T>(
+        &mut self,
+        inst: impl Clone + Into<InstSpec>,
+        template: Template,
+        builder_closure: T,
+    ) where
+        T: FnOnce(EncodingBuilder) -> EncodingBuilder,
+    {
+        let encoding = self.make_encoding(inst.into(), template, builder_closure);
+        self.enc32.push(encoding.clone());
+        self.enc64.push(encoding);
     }
 
     
@@ -539,6 +576,7 @@ pub(crate) fn define(
     let rec_gvaddr4 = r.template("gvaddr4");
     let rec_gvaddr8 = r.template("gvaddr8");
     let rec_icscc = r.template("icscc");
+    let rec_icscc_fpr = r.template("icscc_fpr");
     let rec_icscc_ib = r.template("icscc_ib");
     let rec_icscc_id = r.template("icscc_id");
     let rec_indirect_jmp = r.template("indirect_jmp");
@@ -622,6 +660,7 @@ pub(crate) fn define(
     let rec_urm_noflags = r.template("urm_noflags");
     let rec_urm_noflags_abcd = r.template("urm_noflags_abcd");
     let rec_vconst = r.template("vconst");
+    let rec_vconst_optimized = r.template("vconst_optimized");
 
     
     let all_ones_funcaddrs_and_not_is_pic =
@@ -644,82 +683,91 @@ pub(crate) fn define(
     e.enc64_rec(get_pinned_reg.bind(I64), rec_get_pinned_reg, 0);
     e.enc_x86_64(
         set_pinned_reg.bind(I64),
-        rec_set_pinned_reg.opcodes(vec![0x89]).rex().w(),
+        rec_set_pinned_reg.opcodes(&MOV_STORE).rex().w(),
     );
 
-    e.enc_i32_i64(iadd, rec_rr.opcodes(vec![0x01]));
-    e.enc_i32_i64(iadd_ifcout, rec_rout.opcodes(vec![0x01]));
-    e.enc_i32_i64(iadd_ifcin, rec_rin.opcodes(vec![0x11]));
-    e.enc_i32_i64(iadd_ifcarry, rec_rio.opcodes(vec![0x11]));
+    e.enc_i32_i64(iadd, rec_rr.opcodes(&ADD));
+    e.enc_i32_i64(iadd_ifcout, rec_rout.opcodes(&ADD));
+    e.enc_i32_i64(iadd_ifcin, rec_rin.opcodes(&ADC));
+    e.enc_i32_i64(iadd_ifcarry, rec_rio.opcodes(&ADC));
 
-    e.enc_i32_i64(isub, rec_rr.opcodes(vec![0x29]));
-    e.enc_i32_i64(isub_ifbout, rec_rout.opcodes(vec![0x29]));
-    e.enc_i32_i64(isub_ifbin, rec_rin.opcodes(vec![0x19]));
-    e.enc_i32_i64(isub_ifborrow, rec_rio.opcodes(vec![0x19]));
+    e.enc_i32_i64(isub, rec_rr.opcodes(&SUB));
+    e.enc_i32_i64(isub_ifbout, rec_rout.opcodes(&SUB));
+    e.enc_i32_i64(isub_ifbin, rec_rin.opcodes(&SBB));
+    e.enc_i32_i64(isub_ifborrow, rec_rio.opcodes(&SBB));
 
-    e.enc_i32_i64(band, rec_rr.opcodes(vec![0x21]));
-    e.enc_i32_i64(bor, rec_rr.opcodes(vec![0x09]));
-    e.enc_i32_i64(bxor, rec_rr.opcodes(vec![0x31]));
+    e.enc_i32_i64(band, rec_rr.opcodes(&AND));
+    e.enc_b32_b64(band, rec_rr.opcodes(&AND));
+    e.enc_i32_i64(bor, rec_rr.opcodes(&OR));
+    e.enc_b32_b64(bor, rec_rr.opcodes(&OR));
+    e.enc_i32_i64(bxor, rec_rr.opcodes(&XOR));
+    e.enc_b32_b64(bxor, rec_rr.opcodes(&XOR));
 
     
-    e.enc_i32_i64(bnot, rec_ur.opcodes(vec![0xf7]).rrr(2));
+    e.enc_i32_i64(bnot, rec_ur.opcodes(&NOT).rrr(2));
+    e.enc_b32_b64(bnot, rec_ur.opcodes(&NOT).rrr(2));
 
     
     
     
-    e.enc_both(band.bind(B1), rec_rr.opcodes(vec![0x21]));
-    e.enc_both(bor.bind(B1), rec_rr.opcodes(vec![0x09]));
-    e.enc_both(bxor.bind(B1), rec_rr.opcodes(vec![0x31]));
+    e.enc_both(band.bind(B1), rec_rr.opcodes(&AND));
+    e.enc_both(bor.bind(B1), rec_rr.opcodes(&OR));
+    e.enc_both(bxor.bind(B1), rec_rr.opcodes(&XOR));
 
-    e.enc_i32_i64(imul, rec_rrx.opcodes(vec![0x0f, 0xaf]));
-    e.enc_i32_i64(x86_sdivmodx, rec_div.opcodes(vec![0xf7]).rrr(7));
-    e.enc_i32_i64(x86_udivmodx, rec_div.opcodes(vec![0xf7]).rrr(6));
+    e.enc_i32_i64(imul, rec_rrx.opcodes(&IMUL));
+    e.enc_i32_i64(x86_sdivmodx, rec_div.opcodes(&IDIV).rrr(7));
+    e.enc_i32_i64(x86_udivmodx, rec_div.opcodes(&DIV).rrr(6));
 
-    e.enc_i32_i64(x86_smulx, rec_mulx.opcodes(vec![0xf7]).rrr(5));
-    e.enc_i32_i64(x86_umulx, rec_mulx.opcodes(vec![0xf7]).rrr(4));
+    e.enc_i32_i64(x86_smulx, rec_mulx.opcodes(&IMUL_RDX_RAX).rrr(5));
+    e.enc_i32_i64(x86_umulx, rec_mulx.opcodes(&MUL).rrr(4));
 
-    e.enc_i32_i64(copy, rec_umr.opcodes(vec![0x89]));
-    e.enc_r32_r64_rex_only(copy, rec_umr.opcodes(vec![0x89]));
-    e.enc_both(copy.bind(B1), rec_umr.opcodes(vec![0x89]));
-    e.enc_both(copy.bind(I8), rec_umr.opcodes(vec![0x89]));
-    e.enc_both(copy.bind(I16), rec_umr.opcodes(vec![0x89]));
+    e.enc_i32_i64(copy, rec_umr.opcodes(&MOV_STORE));
+    e.enc_r32_r64_rex_only(copy, rec_umr.opcodes(&MOV_STORE));
+    e.enc_both(copy.bind(B1), rec_umr.opcodes(&MOV_STORE));
+    e.enc_both(copy.bind(I8), rec_umr.opcodes(&MOV_STORE));
+    e.enc_both(copy.bind(I16), rec_umr.opcodes(&MOV_STORE));
 
     
     
     for &ty in &[I8, I16, I32] {
-        e.enc32(regmove.bind(ty), rec_rmov.opcodes(vec![0x89]));
-        e.enc64(regmove.bind(ty), rec_rmov.opcodes(vec![0x89]).rex());
+        e.enc32(regmove.bind(ty), rec_rmov.opcodes(&MOV_STORE));
+        e.enc64(regmove.bind(ty), rec_rmov.opcodes(&MOV_STORE).rex());
     }
-    e.enc64(regmove.bind(I64), rec_rmov.opcodes(vec![0x89]).rex().w());
-    e.enc_both(regmove.bind(B1), rec_rmov.opcodes(vec![0x89]));
-    e.enc_both(regmove.bind(I8), rec_rmov.opcodes(vec![0x89]));
-    e.enc32(regmove.bind_ref(R32), rec_rmov.opcodes(vec![0x89]));
-    e.enc64(regmove.bind_ref(R32), rec_rmov.opcodes(vec![0x89]).rex());
+    for &ty in &[B8, B16, B32] {
+        e.enc32(regmove.bind(ty), rec_rmov.opcodes(&MOV_STORE));
+        e.enc64(regmove.bind(ty), rec_rmov.opcodes(&MOV_STORE).rex());
+    }
+    e.enc64(regmove.bind(I64), rec_rmov.opcodes(&MOV_STORE).rex().w());
+    e.enc64(regmove.bind(B64), rec_rmov.opcodes(&MOV_STORE).rex().w());
+    e.enc_both(regmove.bind(B1), rec_rmov.opcodes(&MOV_STORE));
+    e.enc_both(regmove.bind(I8), rec_rmov.opcodes(&MOV_STORE));
+    e.enc32(regmove.bind_ref(R32), rec_rmov.opcodes(&MOV_STORE));
+    e.enc64(regmove.bind_ref(R32), rec_rmov.opcodes(&MOV_STORE).rex());
     e.enc64(
         regmove.bind_ref(R64),
-        rec_rmov.opcodes(vec![0x89]).rex().w(),
+        rec_rmov.opcodes(&MOV_STORE).rex().w(),
     );
 
-    e.enc_i32_i64(iadd_imm, rec_r_ib.opcodes(vec![0x83]).rrr(0));
-    e.enc_i32_i64(iadd_imm, rec_r_id.opcodes(vec![0x81]).rrr(0));
+    e.enc_i32_i64(iadd_imm, rec_r_ib.opcodes(&ADD_IMM8_SIGN_EXTEND).rrr(0));
+    e.enc_i32_i64(iadd_imm, rec_r_id.opcodes(&ADD_IMM).rrr(0));
 
-    e.enc_i32_i64(band_imm, rec_r_ib.opcodes(vec![0x83]).rrr(4));
-    e.enc_i32_i64(band_imm, rec_r_id.opcodes(vec![0x81]).rrr(4));
+    e.enc_i32_i64(band_imm, rec_r_ib.opcodes(&AND_IMM8_SIGN_EXTEND).rrr(4));
+    e.enc_i32_i64(band_imm, rec_r_id.opcodes(&AND_IMM).rrr(4));
 
-    e.enc_i32_i64(bor_imm, rec_r_ib.opcodes(vec![0x83]).rrr(1));
-    e.enc_i32_i64(bor_imm, rec_r_id.opcodes(vec![0x81]).rrr(1));
+    e.enc_i32_i64(bor_imm, rec_r_ib.opcodes(&OR_IMM8_SIGN_EXTEND).rrr(1));
+    e.enc_i32_i64(bor_imm, rec_r_id.opcodes(&OR_IMM).rrr(1));
 
-    e.enc_i32_i64(bxor_imm, rec_r_ib.opcodes(vec![0x83]).rrr(6));
-    e.enc_i32_i64(bxor_imm, rec_r_id.opcodes(vec![0x81]).rrr(6));
-
-    
-    
+    e.enc_i32_i64(bxor_imm, rec_r_ib.opcodes(&XOR_IMM8_SIGN_EXTEND).rrr(6));
+    e.enc_i32_i64(bxor_imm, rec_r_id.opcodes(&XOR_IMM).rrr(6));
 
     
-    e.enc32(iconst.bind(I32), rec_pu_id.opcodes(vec![0xb8]));
+    
 
-    e.enc64(iconst.bind(I32), rec_pu_id.rex().opcodes(vec![0xb8]));
-    e.enc64(iconst.bind(I32), rec_pu_id.opcodes(vec![0xb8]));
+    
+    e.enc32(iconst.bind(I32), rec_pu_id.opcodes(&MOV_IMM));
+
+    e.enc64(iconst.bind(I32), rec_pu_id.rex().opcodes(&MOV_IMM));
+    e.enc64(iconst.bind(I32), rec_pu_id.opcodes(&MOV_IMM));
 
     
     let f_unary_imm = formats.get(formats.by_name("UnaryImm"));
@@ -727,34 +775,32 @@ pub(crate) fn define(
 
     e.enc64_func(
         iconst.bind(I64),
-        rec_pu_id.opcodes(vec![0xb8]).rex(),
+        rec_pu_id.opcodes(&MOV_IMM).rex(),
         |encoding| encoding.inst_predicate(is_unsigned_int32.clone()),
     );
-    e.enc64_func(
-        iconst.bind(I64),
-        rec_pu_id.opcodes(vec![0xb8]),
-        |encoding| encoding.inst_predicate(is_unsigned_int32),
-    );
+    e.enc64_func(iconst.bind(I64), rec_pu_id.opcodes(&MOV_IMM), |encoding| {
+        encoding.inst_predicate(is_unsigned_int32)
+    });
 
     
     e.enc64(
         iconst.bind(I64),
-        rec_u_id.rex().opcodes(vec![0xc7]).rrr(0).w(),
+        rec_u_id.rex().opcodes(&MOV_IMM_SIGNEXTEND).rrr(0).w(),
     );
 
     
-    e.enc64(iconst.bind(I64), rec_pu_iq.opcodes(vec![0xb8]).rex().w());
+    e.enc64(iconst.bind(I64), rec_pu_iq.opcodes(&MOV_IMM).rex().w());
 
     
     for &ty in &[B1, B8, B16, B32] {
-        e.enc_both(bconst.bind(ty), rec_pu_id_bool.opcodes(vec![0xb8]));
+        e.enc_both(bconst.bind(ty), rec_pu_id_bool.opcodes(&MOV_IMM));
     }
-    e.enc64(bconst.bind(B64), rec_pu_id_bool.opcodes(vec![0xb8]).rex());
+    e.enc64(bconst.bind(B64), rec_pu_id_bool.opcodes(&MOV_IMM).rex());
 
     let is_zero_int = InstructionPredicate::new_is_zero_int(f_unary_imm, "imm");
     e.enc_both_instp(
         iconst.bind(I8),
-        rec_u_id_z.opcodes(vec![0x30]),
+        rec_u_id_z.opcodes(&XORB),
         is_zero_int.clone(),
     );
     
@@ -766,19 +812,15 @@ pub(crate) fn define(
     
     e.enc_both_instp(
         iconst.bind(I16),
-        rec_u_id_z.opcodes(vec![0x31]),
+        rec_u_id_z.opcodes(&XOR),
         is_zero_int.clone(),
     );
     e.enc_both_instp(
         iconst.bind(I32),
-        rec_u_id_z.opcodes(vec![0x31]),
+        rec_u_id_z.opcodes(&XOR),
         is_zero_int.clone(),
     );
-    e.enc_x86_64_instp(
-        iconst.bind(I64),
-        rec_u_id_z.opcodes(vec![0x31]),
-        is_zero_int,
-    );
+    e.enc_x86_64_instp(iconst.bind(I64), rec_u_id_z.opcodes(&XOR), is_zero_int);
 
     
     
@@ -789,97 +831,49 @@ pub(crate) fn define(
         
         e.enc32(
             inst.bind(I32).bind_any(),
-            rec_rc.opcodes(vec![0xd3]).rrr(rrr),
+            rec_rc.opcodes(&ROTATE_CL).rrr(rrr),
         );
         e.enc64(
             inst.bind(I64).bind_any(),
-            rec_rc.opcodes(vec![0xd3]).rrr(rrr).rex().w(),
+            rec_rc.opcodes(&ROTATE_CL).rrr(rrr).rex().w(),
         );
         e.enc64(
             inst.bind(I32).bind_any(),
-            rec_rc.opcodes(vec![0xd3]).rrr(rrr).rex(),
+            rec_rc.opcodes(&ROTATE_CL).rrr(rrr).rex(),
         );
         e.enc64(
             inst.bind(I32).bind_any(),
-            rec_rc.opcodes(vec![0xd3]).rrr(rrr),
+            rec_rc.opcodes(&ROTATE_CL).rrr(rrr),
         );
     }
 
-    for &(inst, rrr) in &[
-        (rotl_imm, 0),
-        (rotr_imm, 1),
-        (ishl_imm, 4),
-        (ushr_imm, 5),
-        (sshr_imm, 7),
-    ] {
-        e.enc_i32_i64(inst, rec_r_ib.opcodes(vec![0xc1]).rrr(rrr));
-    }
+    e.enc_i32_i64(rotl_imm, rec_r_ib.opcodes(&ROTATE_IMM8).rrr(0));
+    e.enc_i32_i64(rotr_imm, rec_r_ib.opcodes(&ROTATE_IMM8).rrr(1));
+    e.enc_i32_i64(ishl_imm, rec_r_ib.opcodes(&ROTATE_IMM8).rrr(4));
+    e.enc_i32_i64(ushr_imm, rec_r_ib.opcodes(&ROTATE_IMM8).rrr(5));
+    e.enc_i32_i64(sshr_imm, rec_r_ib.opcodes(&ROTATE_IMM8).rrr(7));
 
     
-    e.enc32_isap(
-        popcnt.bind(I32),
-        rec_urm.opcodes(vec![0xf3, 0x0f, 0xb8]),
-        use_popcnt,
-    );
+    e.enc32_isap(popcnt.bind(I32), rec_urm.opcodes(&POPCNT), use_popcnt);
     e.enc64_isap(
         popcnt.bind(I64),
-        rec_urm.opcodes(vec![0xf3, 0x0f, 0xb8]).rex().w(),
+        rec_urm.opcodes(&POPCNT).rex().w(),
         use_popcnt,
     );
-    e.enc64_isap(
-        popcnt.bind(I32),
-        rec_urm.opcodes(vec![0xf3, 0x0f, 0xb8]).rex(),
-        use_popcnt,
-    );
-    e.enc64_isap(
-        popcnt.bind(I32),
-        rec_urm.opcodes(vec![0xf3, 0x0f, 0xb8]),
-        use_popcnt,
-    );
+    e.enc64_isap(popcnt.bind(I32), rec_urm.opcodes(&POPCNT).rex(), use_popcnt);
+    e.enc64_isap(popcnt.bind(I32), rec_urm.opcodes(&POPCNT), use_popcnt);
 
     
-    e.enc32_isap(
-        clz.bind(I32),
-        rec_urm.opcodes(vec![0xf3, 0x0f, 0xbd]),
-        use_lzcnt,
-    );
-    e.enc64_isap(
-        clz.bind(I64),
-        rec_urm.opcodes(vec![0xf3, 0x0f, 0xbd]).rex().w(),
-        use_lzcnt,
-    );
-    e.enc64_isap(
-        clz.bind(I32),
-        rec_urm.opcodes(vec![0xf3, 0x0f, 0xbd]).rex(),
-        use_lzcnt,
-    );
-    e.enc64_isap(
-        clz.bind(I32),
-        rec_urm.opcodes(vec![0xf3, 0x0f, 0xbd]),
-        use_lzcnt,
-    );
+    e.enc32_isap(clz.bind(I32), rec_urm.opcodes(&LZCNT), use_lzcnt);
+    e.enc64_isap(clz.bind(I64), rec_urm.opcodes(&LZCNT).rex().w(), use_lzcnt);
+    e.enc64_isap(clz.bind(I32), rec_urm.opcodes(&LZCNT).rex(), use_lzcnt);
+    e.enc64_isap(clz.bind(I32), rec_urm.opcodes(&LZCNT), use_lzcnt);
 
     
-    e.enc32_isap(
-        ctz.bind(I32),
-        rec_urm.opcodes(vec![0xf3, 0x0f, 0xbc]),
-        use_bmi1,
-    );
-    e.enc64_isap(
-        ctz.bind(I64),
-        rec_urm.opcodes(vec![0xf3, 0x0f, 0xbc]).rex().w(),
-        use_bmi1,
-    );
-    e.enc64_isap(
-        ctz.bind(I32),
-        rec_urm.opcodes(vec![0xf3, 0x0f, 0xbc]).rex(),
-        use_bmi1,
-    );
-    e.enc64_isap(
-        ctz.bind(I32),
-        rec_urm.opcodes(vec![0xf3, 0x0f, 0xbc]),
-        use_bmi1,
-    );
+    e.enc32_isap(ctz.bind(I32), rec_urm.opcodes(&TZCNT), use_bmi1);
+    e.enc64_isap(ctz.bind(I64), rec_urm.opcodes(&TZCNT).rex().w(), use_bmi1);
+    e.enc64_isap(ctz.bind(I32), rec_urm.opcodes(&TZCNT).rex(), use_bmi1);
+    e.enc64_isap(ctz.bind(I32), rec_urm.opcodes(&TZCNT), use_bmi1);
 
     
     let f_load_complex = formats.get(formats.by_name("LoadComplex"));
@@ -888,41 +882,41 @@ pub(crate) fn define(
     for recipe in &[rec_ldWithIndex, rec_ldWithIndexDisp8, rec_ldWithIndexDisp32] {
         e.enc_i32_i64_instp(
             load_complex,
-            recipe.opcodes(vec![0x8b]),
+            recipe.opcodes(&MOV_LOAD),
             is_load_complex_length_two.clone(),
         );
         e.enc_x86_64_instp(
             uload32_complex,
-            recipe.opcodes(vec![0x8b]),
+            recipe.opcodes(&MOV_LOAD),
             is_load_complex_length_two.clone(),
         );
 
         e.enc64_instp(
             sload32_complex,
-            recipe.opcodes(vec![0x63]).rex().w(),
+            recipe.opcodes(&MOVSXD).rex().w(),
             is_load_complex_length_two.clone(),
         );
 
         e.enc_i32_i64_instp(
             uload16_complex,
-            recipe.opcodes(vec![0x0f, 0xb7]),
+            recipe.opcodes(&MOVZX_WORD),
             is_load_complex_length_two.clone(),
         );
         e.enc_i32_i64_instp(
             sload16_complex,
-            recipe.opcodes(vec![0x0f, 0xbf]),
+            recipe.opcodes(&MOVSX_WORD),
             is_load_complex_length_two.clone(),
         );
 
         e.enc_i32_i64_instp(
             uload8_complex,
-            recipe.opcodes(vec![0x0f, 0xb6]),
+            recipe.opcodes(&MOVZX_BYTE),
             is_load_complex_length_two.clone(),
         );
 
         e.enc_i32_i64_instp(
             sload8_complex,
-            recipe.opcodes(vec![0x0f, 0xbe]),
+            recipe.opcodes(&MOVSX_BYTE),
             is_load_complex_length_two.clone(),
         );
     }
@@ -933,22 +927,22 @@ pub(crate) fn define(
     for recipe in &[rec_stWithIndex, rec_stWithIndexDisp8, rec_stWithIndexDisp32] {
         e.enc_i32_i64_instp(
             store_complex,
-            recipe.opcodes(vec![0x89]),
+            recipe.opcodes(&MOV_STORE),
             is_store_complex_length_three.clone(),
         );
         e.enc_x86_64_instp(
             istore32_complex,
-            recipe.opcodes(vec![0x89]),
+            recipe.opcodes(&MOV_STORE),
             is_store_complex_length_three.clone(),
         );
         e.enc_both_instp(
             istore16_complex.bind(I32),
-            recipe.opcodes(vec![0x66, 0x89]),
+            recipe.opcodes(&MOV_STORE_16),
             is_store_complex_length_three.clone(),
         );
         e.enc_x86_64_instp(
             istore16_complex.bind(I64),
-            recipe.opcodes(vec![0x66, 0x89]),
+            recipe.opcodes(&MOV_STORE_16),
             is_store_complex_length_three.clone(),
         );
     }
@@ -960,20 +954,20 @@ pub(crate) fn define(
     ] {
         e.enc_both_instp(
             istore8_complex.bind(I32),
-            recipe.opcodes(vec![0x88]),
+            recipe.opcodes(&MOV_BYTE_STORE),
             is_store_complex_length_three.clone(),
         );
         e.enc_x86_64_instp(
             istore8_complex.bind(I64),
-            recipe.opcodes(vec![0x88]),
+            recipe.opcodes(&MOV_BYTE_STORE),
             is_store_complex_length_three.clone(),
         );
     }
 
     for recipe in &[rec_st, rec_stDisp8, rec_stDisp32] {
-        e.enc_i32_i64_ld_st(store, true, recipe.opcodes(vec![0x89]));
-        e.enc_x86_64(istore32.bind(I64).bind_any(), recipe.opcodes(vec![0x89]));
-        e.enc_i32_i64_ld_st(istore16, false, recipe.opcodes(vec![0x66, 0x89]));
+        e.enc_i32_i64_ld_st(store, true, recipe.opcodes(&MOV_STORE));
+        e.enc_x86_64(istore32.bind(I64).bind_any(), recipe.opcodes(&MOV_STORE));
+        e.enc_i32_i64_ld_st(istore16, false, recipe.opcodes(&MOV_STORE_16));
     }
 
     
@@ -981,40 +975,46 @@ pub(crate) fn define(
     
 
     for recipe in &[rec_st_abcd, rec_stDisp8_abcd, rec_stDisp32_abcd] {
-        e.enc_both(istore8.bind(I32).bind_any(), recipe.opcodes(vec![0x88]));
-        e.enc_x86_64(istore8.bind(I64).bind_any(), recipe.opcodes(vec![0x88]));
+        e.enc_both(
+            istore8.bind(I32).bind_any(),
+            recipe.opcodes(&MOV_BYTE_STORE),
+        );
+        e.enc_x86_64(
+            istore8.bind(I64).bind_any(),
+            recipe.opcodes(&MOV_BYTE_STORE),
+        );
     }
 
-    e.enc_i32_i64(spill, rec_spillSib32.opcodes(vec![0x89]));
-    e.enc_i32_i64(regspill, rec_regspill32.opcodes(vec![0x89]));
-    e.enc_r32_r64_rex_only(spill, rec_spillSib32.opcodes(vec![0x89]));
-    e.enc_r32_r64_rex_only(regspill, rec_regspill32.opcodes(vec![0x89]));
+    e.enc_i32_i64(spill, rec_spillSib32.opcodes(&MOV_STORE));
+    e.enc_i32_i64(regspill, rec_regspill32.opcodes(&MOV_STORE));
+    e.enc_r32_r64_rex_only(spill, rec_spillSib32.opcodes(&MOV_STORE));
+    e.enc_r32_r64_rex_only(regspill, rec_regspill32.opcodes(&MOV_STORE));
 
     
     
     
 
-    e.enc_both(spill.bind(B1), rec_spillSib32.opcodes(vec![0x89]));
-    e.enc_both(regspill.bind(B1), rec_regspill32.opcodes(vec![0x89]));
+    e.enc_both(spill.bind(B1), rec_spillSib32.opcodes(&MOV_STORE));
+    e.enc_both(regspill.bind(B1), rec_regspill32.opcodes(&MOV_STORE));
     for &ty in &[I8, I16] {
-        e.enc_both(spill.bind(ty), rec_spillSib32.opcodes(vec![0x89]));
-        e.enc_both(regspill.bind(ty), rec_regspill32.opcodes(vec![0x89]));
+        e.enc_both(spill.bind(ty), rec_spillSib32.opcodes(&MOV_STORE));
+        e.enc_both(regspill.bind(ty), rec_regspill32.opcodes(&MOV_STORE));
     }
 
     for recipe in &[rec_ld, rec_ldDisp8, rec_ldDisp32] {
-        e.enc_i32_i64_ld_st(load, true, recipe.opcodes(vec![0x8b]));
-        e.enc_x86_64(uload32.bind(I64), recipe.opcodes(vec![0x8b]));
-        e.enc64(sload32.bind(I64), recipe.opcodes(vec![0x63]).rex().w());
-        e.enc_i32_i64_ld_st(uload16, true, recipe.opcodes(vec![0x0f, 0xb7]));
-        e.enc_i32_i64_ld_st(sload16, true, recipe.opcodes(vec![0x0f, 0xbf]));
-        e.enc_i32_i64_ld_st(uload8, true, recipe.opcodes(vec![0x0f, 0xb6]));
-        e.enc_i32_i64_ld_st(sload8, true, recipe.opcodes(vec![0x0f, 0xbe]));
+        e.enc_i32_i64_ld_st(load, true, recipe.opcodes(&MOV_LOAD));
+        e.enc_x86_64(uload32.bind(I64), recipe.opcodes(&MOV_LOAD));
+        e.enc64(sload32.bind(I64), recipe.opcodes(&MOVSXD).rex().w());
+        e.enc_i32_i64_ld_st(uload16, true, recipe.opcodes(&MOVZX_WORD));
+        e.enc_i32_i64_ld_st(sload16, true, recipe.opcodes(&MOVSX_WORD));
+        e.enc_i32_i64_ld_st(uload8, true, recipe.opcodes(&MOVZX_BYTE));
+        e.enc_i32_i64_ld_st(sload8, true, recipe.opcodes(&MOVSX_BYTE));
     }
 
-    e.enc_i32_i64(fill, rec_fillSib32.opcodes(vec![0x8b]));
-    e.enc_i32_i64(regfill, rec_regfill32.opcodes(vec![0x8b]));
-    e.enc_r32_r64_rex_only(fill, rec_fillSib32.opcodes(vec![0x8b]));
-    e.enc_r32_r64_rex_only(regfill, rec_regfill32.opcodes(vec![0x8b]));
+    e.enc_i32_i64(fill, rec_fillSib32.opcodes(&MOV_LOAD));
+    e.enc_i32_i64(regfill, rec_regfill32.opcodes(&MOV_LOAD));
+    e.enc_r32_r64_rex_only(fill, rec_fillSib32.opcodes(&MOV_LOAD));
+    e.enc_r32_r64_rex_only(regfill, rec_regfill32.opcodes(&MOV_LOAD));
 
     
     for &ty in &[I64, I32, I16, I8] {
@@ -1030,44 +1030,44 @@ pub(crate) fn define(
 
     
 
-    e.enc_both(fill.bind(B1), rec_fillSib32.opcodes(vec![0x8b]));
-    e.enc_both(regfill.bind(B1), rec_regfill32.opcodes(vec![0x8b]));
+    e.enc_both(fill.bind(B1), rec_fillSib32.opcodes(&MOV_LOAD));
+    e.enc_both(regfill.bind(B1), rec_regfill32.opcodes(&MOV_LOAD));
     for &ty in &[I8, I16] {
-        e.enc_both(fill.bind(ty), rec_fillSib32.opcodes(vec![0x8b]));
-        e.enc_both(regfill.bind(ty), rec_regfill32.opcodes(vec![0x8b]));
+        e.enc_both(fill.bind(ty), rec_fillSib32.opcodes(&MOV_LOAD));
+        e.enc_both(regfill.bind(ty), rec_regfill32.opcodes(&MOV_LOAD));
     }
 
     
-    e.enc32(x86_push.bind(I32), rec_pushq.opcodes(vec![0x50]));
-    e.enc_x86_64(x86_push.bind(I64), rec_pushq.opcodes(vec![0x50]));
+    e.enc32(x86_push.bind(I32), rec_pushq.opcodes(&PUSH_REG));
+    e.enc_x86_64(x86_push.bind(I64), rec_pushq.opcodes(&PUSH_REG));
 
-    e.enc32(x86_pop.bind(I32), rec_popq.opcodes(vec![0x58]));
-    e.enc_x86_64(x86_pop.bind(I64), rec_popq.opcodes(vec![0x58]));
-
-    
-    
-    
-    e.enc64(copy_special, rec_copysp.opcodes(vec![0x89]).rex().w());
-    e.enc32(copy_special, rec_copysp.opcodes(vec![0x89]));
+    e.enc32(x86_pop.bind(I32), rec_popq.opcodes(&POP_REG));
+    e.enc_x86_64(x86_pop.bind(I64), rec_popq.opcodes(&POP_REG));
 
     
     
     
-    e.enc_i32_i64_rex_only(copy_to_ssa, rec_umr_reg_to_ssa.opcodes(vec![0x89]));
-    e.enc_r32_r64_rex_only(copy_to_ssa, rec_umr_reg_to_ssa.opcodes(vec![0x89]));
-    e.enc_both_rex_only(copy_to_ssa.bind(B1), rec_umr_reg_to_ssa.opcodes(vec![0x89]));
-    e.enc_both_rex_only(copy_to_ssa.bind(I8), rec_umr_reg_to_ssa.opcodes(vec![0x89]));
+    e.enc64(copy_special, rec_copysp.opcodes(&MOV_STORE).rex().w());
+    e.enc32(copy_special, rec_copysp.opcodes(&MOV_STORE));
+
+    
+    
+    
+    e.enc_i32_i64_rex_only(copy_to_ssa, rec_umr_reg_to_ssa.opcodes(&MOV_STORE));
+    e.enc_r32_r64_rex_only(copy_to_ssa, rec_umr_reg_to_ssa.opcodes(&MOV_STORE));
+    e.enc_both_rex_only(copy_to_ssa.bind(B1), rec_umr_reg_to_ssa.opcodes(&MOV_STORE));
+    e.enc_both_rex_only(copy_to_ssa.bind(I8), rec_umr_reg_to_ssa.opcodes(&MOV_STORE));
     e.enc_both_rex_only(
         copy_to_ssa.bind(I16),
-        rec_umr_reg_to_ssa.opcodes(vec![0x89]),
+        rec_umr_reg_to_ssa.opcodes(&MOV_STORE),
     );
     e.enc_both_rex_only(
         copy_to_ssa.bind(F64),
-        rec_furm_reg_to_ssa.opcodes(vec![0xf2, 0x0f, 0x10]),
+        rec_furm_reg_to_ssa.opcodes(&MOVSD_LOAD),
     );
     e.enc_both_rex_only(
         copy_to_ssa.bind(F32),
-        rec_furm_reg_to_ssa.opcodes(vec![0xf3, 0x0f, 0x10]),
+        rec_furm_reg_to_ssa.opcodes(&MOVSS_LOAD),
     );
 
     
@@ -1083,204 +1083,159 @@ pub(crate) fn define(
     }
 
     
-    e.enc32(adjust_sp_down.bind(I32), rec_adjustsp.opcodes(vec![0x29]));
+    e.enc32(adjust_sp_down.bind(I32), rec_adjustsp.opcodes(&SUB));
     e.enc64(
         adjust_sp_down.bind(I64),
-        rec_adjustsp.opcodes(vec![0x29]).rex().w(),
+        rec_adjustsp.opcodes(&SUB).rex().w(),
     );
 
     
-    e.enc32(adjust_sp_up_imm, rec_adjustsp_ib.opcodes(vec![0x83]));
-    e.enc32(adjust_sp_up_imm, rec_adjustsp_id.opcodes(vec![0x81]));
+    e.enc32(adjust_sp_up_imm, rec_adjustsp_ib.opcodes(&CMP_IMM8));
+    e.enc32(adjust_sp_up_imm, rec_adjustsp_id.opcodes(&CMP_IMM));
     e.enc64(
         adjust_sp_up_imm,
-        rec_adjustsp_ib.opcodes(vec![0x83]).rex().w(),
+        rec_adjustsp_ib.opcodes(&CMP_IMM8).rex().w(),
     );
     e.enc64(
         adjust_sp_up_imm,
-        rec_adjustsp_id.opcodes(vec![0x81]).rex().w(),
+        rec_adjustsp_id.opcodes(&CMP_IMM).rex().w(),
     );
 
     
     e.enc32(
         adjust_sp_down_imm,
-        rec_adjustsp_ib.opcodes(vec![0x83]).rrr(5),
+        rec_adjustsp_ib.opcodes(&CMP_IMM8).rrr(5),
     );
-    e.enc32(
+    e.enc32(adjust_sp_down_imm, rec_adjustsp_id.opcodes(&CMP_IMM).rrr(5));
+    e.enc64(
         adjust_sp_down_imm,
-        rec_adjustsp_id.opcodes(vec![0x81]).rrr(5),
+        rec_adjustsp_ib.opcodes(&CMP_IMM8).rrr(5).rex().w(),
     );
     e.enc64(
         adjust_sp_down_imm,
-        rec_adjustsp_ib.opcodes(vec![0x83]).rrr(5).rex().w(),
-    );
-    e.enc64(
-        adjust_sp_down_imm,
-        rec_adjustsp_id.opcodes(vec![0x81]).rrr(5).rex().w(),
+        rec_adjustsp_id.opcodes(&CMP_IMM).rrr(5).rex().w(),
     );
 
     
+    e.enc_both(load.bind(F32).bind_any(), rec_fld.opcodes(&MOVSS_LOAD));
+    e.enc_both(load.bind(F32).bind_any(), rec_fldDisp8.opcodes(&MOVSS_LOAD));
     e.enc_both(
         load.bind(F32).bind_any(),
-        rec_fld.opcodes(vec![0xf3, 0x0f, 0x10]),
-    );
-    e.enc_both(
-        load.bind(F32).bind_any(),
-        rec_fldDisp8.opcodes(vec![0xf3, 0x0f, 0x10]),
-    );
-    e.enc_both(
-        load.bind(F32).bind_any(),
-        rec_fldDisp32.opcodes(vec![0xf3, 0x0f, 0x10]),
+        rec_fldDisp32.opcodes(&MOVSS_LOAD),
     );
 
     e.enc_both(
         load_complex.bind(F32),
-        rec_fldWithIndex.opcodes(vec![0xf3, 0x0f, 0x10]),
+        rec_fldWithIndex.opcodes(&MOVSS_LOAD),
     );
     e.enc_both(
         load_complex.bind(F32),
-        rec_fldWithIndexDisp8.opcodes(vec![0xf3, 0x0f, 0x10]),
+        rec_fldWithIndexDisp8.opcodes(&MOVSS_LOAD),
     );
     e.enc_both(
         load_complex.bind(F32),
-        rec_fldWithIndexDisp32.opcodes(vec![0xf3, 0x0f, 0x10]),
+        rec_fldWithIndexDisp32.opcodes(&MOVSS_LOAD),
     );
 
+    e.enc_both(load.bind(F64).bind_any(), rec_fld.opcodes(&MOVSD_LOAD));
+    e.enc_both(load.bind(F64).bind_any(), rec_fldDisp8.opcodes(&MOVSD_LOAD));
     e.enc_both(
         load.bind(F64).bind_any(),
-        rec_fld.opcodes(vec![0xf2, 0x0f, 0x10]),
-    );
-    e.enc_both(
-        load.bind(F64).bind_any(),
-        rec_fldDisp8.opcodes(vec![0xf2, 0x0f, 0x10]),
-    );
-    e.enc_both(
-        load.bind(F64).bind_any(),
-        rec_fldDisp32.opcodes(vec![0xf2, 0x0f, 0x10]),
+        rec_fldDisp32.opcodes(&MOVSD_LOAD),
     );
 
     e.enc_both(
         load_complex.bind(F64),
-        rec_fldWithIndex.opcodes(vec![0xf2, 0x0f, 0x10]),
+        rec_fldWithIndex.opcodes(&MOVSD_LOAD),
     );
     e.enc_both(
         load_complex.bind(F64),
-        rec_fldWithIndexDisp8.opcodes(vec![0xf2, 0x0f, 0x10]),
+        rec_fldWithIndexDisp8.opcodes(&MOVSD_LOAD),
     );
     e.enc_both(
         load_complex.bind(F64),
-        rec_fldWithIndexDisp32.opcodes(vec![0xf2, 0x0f, 0x10]),
+        rec_fldWithIndexDisp32.opcodes(&MOVSD_LOAD),
     );
 
+    e.enc_both(store.bind(F32).bind_any(), rec_fst.opcodes(&MOVSS_STORE));
     e.enc_both(
         store.bind(F32).bind_any(),
-        rec_fst.opcodes(vec![0xf3, 0x0f, 0x11]),
+        rec_fstDisp8.opcodes(&MOVSS_STORE),
     );
     e.enc_both(
         store.bind(F32).bind_any(),
-        rec_fstDisp8.opcodes(vec![0xf3, 0x0f, 0x11]),
-    );
-    e.enc_both(
-        store.bind(F32).bind_any(),
-        rec_fstDisp32.opcodes(vec![0xf3, 0x0f, 0x11]),
+        rec_fstDisp32.opcodes(&MOVSS_STORE),
     );
 
     e.enc_both(
         store_complex.bind(F32),
-        rec_fstWithIndex.opcodes(vec![0xf3, 0x0f, 0x11]),
+        rec_fstWithIndex.opcodes(&MOVSS_STORE),
     );
     e.enc_both(
         store_complex.bind(F32),
-        rec_fstWithIndexDisp8.opcodes(vec![0xf3, 0x0f, 0x11]),
+        rec_fstWithIndexDisp8.opcodes(&MOVSS_STORE),
     );
     e.enc_both(
         store_complex.bind(F32),
-        rec_fstWithIndexDisp32.opcodes(vec![0xf3, 0x0f, 0x11]),
+        rec_fstWithIndexDisp32.opcodes(&MOVSS_STORE),
     );
 
+    e.enc_both(store.bind(F64).bind_any(), rec_fst.opcodes(&MOVSD_STORE));
     e.enc_both(
         store.bind(F64).bind_any(),
-        rec_fst.opcodes(vec![0xf2, 0x0f, 0x11]),
+        rec_fstDisp8.opcodes(&MOVSD_STORE),
     );
     e.enc_both(
         store.bind(F64).bind_any(),
-        rec_fstDisp8.opcodes(vec![0xf2, 0x0f, 0x11]),
-    );
-    e.enc_both(
-        store.bind(F64).bind_any(),
-        rec_fstDisp32.opcodes(vec![0xf2, 0x0f, 0x11]),
+        rec_fstDisp32.opcodes(&MOVSD_STORE),
     );
 
     e.enc_both(
         store_complex.bind(F64),
-        rec_fstWithIndex.opcodes(vec![0xf2, 0x0f, 0x11]),
+        rec_fstWithIndex.opcodes(&MOVSD_STORE),
     );
     e.enc_both(
         store_complex.bind(F64),
-        rec_fstWithIndexDisp8.opcodes(vec![0xf2, 0x0f, 0x11]),
+        rec_fstWithIndexDisp8.opcodes(&MOVSD_STORE),
     );
     e.enc_both(
         store_complex.bind(F64),
-        rec_fstWithIndexDisp32.opcodes(vec![0xf2, 0x0f, 0x11]),
+        rec_fstWithIndexDisp32.opcodes(&MOVSD_STORE),
     );
 
-    e.enc_both(
-        fill.bind(F32),
-        rec_ffillSib32.opcodes(vec![0xf3, 0x0f, 0x10]),
-    );
-    e.enc_both(
-        regfill.bind(F32),
-        rec_fregfill32.opcodes(vec![0xf3, 0x0f, 0x10]),
-    );
-    e.enc_both(
-        fill.bind(F64),
-        rec_ffillSib32.opcodes(vec![0xf2, 0x0f, 0x10]),
-    );
-    e.enc_both(
-        regfill.bind(F64),
-        rec_fregfill32.opcodes(vec![0xf2, 0x0f, 0x10]),
-    );
+    e.enc_both(fill.bind(F32), rec_ffillSib32.opcodes(&MOVSS_LOAD));
+    e.enc_both(regfill.bind(F32), rec_fregfill32.opcodes(&MOVSS_LOAD));
+    e.enc_both(fill.bind(F64), rec_ffillSib32.opcodes(&MOVSD_LOAD));
+    e.enc_both(regfill.bind(F64), rec_fregfill32.opcodes(&MOVSD_LOAD));
 
-    e.enc_both(
-        spill.bind(F32),
-        rec_fspillSib32.opcodes(vec![0xf3, 0x0f, 0x11]),
-    );
-    e.enc_both(
-        regspill.bind(F32),
-        rec_fregspill32.opcodes(vec![0xf3, 0x0f, 0x11]),
-    );
-    e.enc_both(
-        spill.bind(F64),
-        rec_fspillSib32.opcodes(vec![0xf2, 0x0f, 0x11]),
-    );
-    e.enc_both(
-        regspill.bind(F64),
-        rec_fregspill32.opcodes(vec![0xf2, 0x0f, 0x11]),
-    );
+    e.enc_both(spill.bind(F32), rec_fspillSib32.opcodes(&MOVSS_STORE));
+    e.enc_both(regspill.bind(F32), rec_fregspill32.opcodes(&MOVSS_STORE));
+    e.enc_both(spill.bind(F64), rec_fspillSib32.opcodes(&MOVSD_STORE));
+    e.enc_both(regspill.bind(F64), rec_fregspill32.opcodes(&MOVSD_STORE));
 
     
 
     
     e.enc32_isap(
         func_addr.bind(I32),
-        rec_fnaddr4.opcodes(vec![0xb8]),
+        rec_fnaddr4.opcodes(&MOV_IMM),
         not_all_ones_funcaddrs_and_not_is_pic,
     );
     e.enc64_isap(
         func_addr.bind(I64),
-        rec_fnaddr8.opcodes(vec![0xb8]).rex().w(),
+        rec_fnaddr8.opcodes(&MOV_IMM).rex().w(),
         not_all_ones_funcaddrs_and_not_is_pic,
     );
 
     
     e.enc32_isap(
         func_addr.bind(I32),
-        rec_allones_fnaddr4.opcodes(vec![0xb8]),
+        rec_allones_fnaddr4.opcodes(&MOV_IMM),
         all_ones_funcaddrs_and_not_is_pic,
     );
     e.enc64_isap(
         func_addr.bind(I64),
-        rec_allones_fnaddr8.opcodes(vec![0xb8]).rex().w(),
+        rec_allones_fnaddr8.opcodes(&MOV_IMM).rex().w(),
         all_ones_funcaddrs_and_not_is_pic,
     );
 
@@ -1289,14 +1244,14 @@ pub(crate) fn define(
     let is_colocated_func = InstructionPredicate::new_is_colocated_func(f_func_addr, "func_ref");
     e.enc64_instp(
         func_addr.bind(I64),
-        rec_pcrel_fnaddr8.opcodes(vec![0x8d]).rex().w(),
+        rec_pcrel_fnaddr8.opcodes(&LEA).rex().w(),
         is_colocated_func,
     );
 
     
     e.enc64_isap(
         func_addr.bind(I64),
-        rec_got_fnaddr8.opcodes(vec![0x8b]).rex().w(),
+        rec_got_fnaddr8.opcodes(&MOV_LOAD).rex().w(),
         is_pic,
     );
 
@@ -1305,19 +1260,19 @@ pub(crate) fn define(
     
     e.enc32_isap(
         symbol_value.bind(I32),
-        rec_gvaddr4.opcodes(vec![0xb8]),
+        rec_gvaddr4.opcodes(&MOV_IMM),
         not_is_pic,
     );
     e.enc64_isap(
         symbol_value.bind(I64),
-        rec_gvaddr8.opcodes(vec![0xb8]).rex().w(),
+        rec_gvaddr8.opcodes(&MOV_IMM).rex().w(),
         not_is_pic,
     );
 
     
     e.enc64_func(
         symbol_value.bind(I64),
-        rec_pcrel_gvaddr8.opcodes(vec![0x8d]).rex().w(),
+        rec_pcrel_gvaddr8.opcodes(&LEA).rex().w(),
         |encoding| {
             encoding
                 .isa_predicate(is_pic)
@@ -1328,7 +1283,7 @@ pub(crate) fn define(
     
     e.enc64_isap(
         symbol_value.bind(I64),
-        rec_got_gvaddr8.opcodes(vec![0x8b]).rex().w(),
+        rec_got_gvaddr8.opcodes(&MOV_LOAD).rex().w(),
         is_pic,
     );
 
@@ -1336,102 +1291,102 @@ pub(crate) fn define(
     
     
     
-    e.enc32(stack_addr.bind(I32), rec_spaddr4_id.opcodes(vec![0x8d]));
-    e.enc64(
-        stack_addr.bind(I64),
-        rec_spaddr8_id.opcodes(vec![0x8d]).rex().w(),
-    );
+    e.enc32(stack_addr.bind(I32), rec_spaddr4_id.opcodes(&LEA));
+    e.enc64(stack_addr.bind(I64), rec_spaddr8_id.opcodes(&LEA).rex().w());
 
     
 
     
-    e.enc32(call, rec_call_id.opcodes(vec![0xe8]));
+    e.enc32(call, rec_call_id.opcodes(&CALL_RELATIVE));
 
     
     let f_call = formats.get(formats.by_name("Call"));
     let is_colocated_func = InstructionPredicate::new_is_colocated_func(f_call, "func_ref");
-    e.enc64_instp(call, rec_call_id.opcodes(vec![0xe8]), is_colocated_func);
+    e.enc64_instp(call, rec_call_id.opcodes(&CALL_RELATIVE), is_colocated_func);
 
     
     
     
-    e.enc64_isap(call, rec_call_plt_id.opcodes(vec![0xe8]), is_pic);
+    e.enc64_isap(call, rec_call_plt_id.opcodes(&CALL_RELATIVE), is_pic);
 
     e.enc32(
         call_indirect.bind(I32),
-        rec_call_r.opcodes(vec![0xff]).rrr(2),
+        rec_call_r.opcodes(&JUMP_ABSOLUTE).rrr(2),
     );
     e.enc64(
         call_indirect.bind(I64),
-        rec_call_r.opcodes(vec![0xff]).rrr(2).rex(),
+        rec_call_r.opcodes(&JUMP_ABSOLUTE).rrr(2).rex(),
     );
     e.enc64(
         call_indirect.bind(I64),
-        rec_call_r.opcodes(vec![0xff]).rrr(2),
+        rec_call_r.opcodes(&JUMP_ABSOLUTE).rrr(2),
     );
 
-    e.enc32(return_, rec_ret.opcodes(vec![0xc3]));
-    e.enc64(return_, rec_ret.opcodes(vec![0xc3]));
+    e.enc32(return_, rec_ret.opcodes(&RET_NEAR));
+    e.enc64(return_, rec_ret.opcodes(&RET_NEAR));
 
     
-    e.enc32(jump, rec_jmpb.opcodes(vec![0xeb]));
-    e.enc64(jump, rec_jmpb.opcodes(vec![0xeb]));
-    e.enc32(jump, rec_jmpd.opcodes(vec![0xe9]));
-    e.enc64(jump, rec_jmpd.opcodes(vec![0xe9]));
+    e.enc32(jump, rec_jmpb.opcodes(&JUMP_SHORT));
+    e.enc64(jump, rec_jmpb.opcodes(&JUMP_SHORT));
+    e.enc32(jump, rec_jmpd.opcodes(&JUMP_NEAR_RELATIVE));
+    e.enc64(jump, rec_jmpd.opcodes(&JUMP_NEAR_RELATIVE));
 
-    e.enc_both(brif, rec_brib.opcodes(vec![0x70]));
-    e.enc_both(brif, rec_brid.opcodes(vec![0x0f, 0x80]));
-
-    
-    e.enc_both(brff, rec_brfb.opcodes(vec![0x70]));
-    e.enc_both(brff, rec_brfd.opcodes(vec![0x0f, 0x80]));
+    e.enc_both(brif, rec_brib.opcodes(&JUMP_SHORT_IF_OVERFLOW));
+    e.enc_both(brif, rec_brid.opcodes(&JUMP_NEAR_IF_OVERFLOW));
 
     
-    e.enc_i32_i64(brz, rec_tjccb.opcodes(vec![0x74]));
-    e.enc_i32_i64(brz, rec_tjccd.opcodes(vec![0x84]));
-    e.enc_i32_i64(brnz, rec_tjccb.opcodes(vec![0x75]));
-    e.enc_i32_i64(brnz, rec_tjccd.opcodes(vec![0x85]));
+    e.enc_both(brff, rec_brfb.opcodes(&JUMP_SHORT_IF_OVERFLOW));
+    e.enc_both(brff, rec_brfd.opcodes(&JUMP_NEAR_IF_OVERFLOW));
+
+    
+    e.enc_i32_i64(brz, rec_tjccb.opcodes(&JUMP_SHORT_IF_EQUAL));
+    e.enc_i32_i64(brz, rec_tjccd.opcodes(&TEST_BYTE_REG));
+    e.enc_i32_i64(brnz, rec_tjccb.opcodes(&JUMP_SHORT_IF_NOT_EQUAL));
+    e.enc_i32_i64(brnz, rec_tjccd.opcodes(&TEST_REG));
 
     
     
     
     
     
-    e.enc32(brz.bind(B1), rec_t8jccd_long.opcodes(vec![0x84]));
-    e.enc32(brnz.bind(B1), rec_t8jccd_long.opcodes(vec![0x85]));
+    e.enc32(brz.bind(B1), rec_t8jccd_long.opcodes(&TEST_BYTE_REG));
+    e.enc32(brnz.bind(B1), rec_t8jccd_long.opcodes(&TEST_REG));
 
-    e.enc_both(brz.bind(B1), rec_t8jccb_abcd.opcodes(vec![0x74]));
-    e.enc_both(brz.bind(B1), rec_t8jccd_abcd.opcodes(vec![0x84]));
-    e.enc_both(brnz.bind(B1), rec_t8jccb_abcd.opcodes(vec![0x75]));
-    e.enc_both(brnz.bind(B1), rec_t8jccd_abcd.opcodes(vec![0x85]));
+    e.enc_both(brz.bind(B1), rec_t8jccb_abcd.opcodes(&JUMP_SHORT_IF_EQUAL));
+    e.enc_both(brz.bind(B1), rec_t8jccd_abcd.opcodes(&TEST_BYTE_REG));
+    e.enc_both(
+        brnz.bind(B1),
+        rec_t8jccb_abcd.opcodes(&JUMP_SHORT_IF_NOT_EQUAL),
+    );
+    e.enc_both(brnz.bind(B1), rec_t8jccd_abcd.opcodes(&TEST_REG));
 
     
     e.enc64(
         jump_table_entry.bind(I64),
-        rec_jt_entry.opcodes(vec![0x63]).rex().w(),
+        rec_jt_entry.opcodes(&MOVSXD).rex().w(),
     );
-    e.enc32(jump_table_entry.bind(I32), rec_jt_entry.opcodes(vec![0x8b]));
+    e.enc32(jump_table_entry.bind(I32), rec_jt_entry.opcodes(&MOV_LOAD));
 
     e.enc64(
         jump_table_base.bind(I64),
-        rec_jt_base.opcodes(vec![0x8d]).rex().w(),
+        rec_jt_base.opcodes(&LEA).rex().w(),
     );
-    e.enc32(jump_table_base.bind(I32), rec_jt_base.opcodes(vec![0x8d]));
+    e.enc32(jump_table_base.bind(I32), rec_jt_base.opcodes(&LEA));
 
     e.enc_x86_64(
         indirect_jump_table_br.bind(I64),
-        rec_indirect_jmp.opcodes(vec![0xff]).rrr(4),
+        rec_indirect_jmp.opcodes(&JUMP_ABSOLUTE).rrr(4),
     );
     e.enc32(
         indirect_jump_table_br.bind(I32),
-        rec_indirect_jmp.opcodes(vec![0xff]).rrr(4),
+        rec_indirect_jmp.opcodes(&JUMP_ABSOLUTE).rrr(4),
     );
 
     
-    e.enc32(trap, rec_trap.opcodes(vec![0x0f, 0x0b]));
-    e.enc64(trap, rec_trap.opcodes(vec![0x0f, 0x0b]));
-    e.enc32(resumable_trap, rec_trap.opcodes(vec![0x0f, 0x0b]));
-    e.enc64(resumable_trap, rec_trap.opcodes(vec![0x0f, 0x0b]));
+    e.enc32(trap, rec_trap.opcodes(&UNDEFINED2));
+    e.enc64(trap, rec_trap.opcodes(&UNDEFINED2));
+    e.enc32(resumable_trap, rec_trap.opcodes(&UNDEFINED2));
+    e.enc64(resumable_trap, rec_trap.opcodes(&UNDEFINED2));
 
     
     e.enc32_rec(debugtrap, rec_debugtrap, 0);
@@ -1443,31 +1398,28 @@ pub(crate) fn define(
     e.enc64_rec(trapff, rec_trapff, 0);
 
     
-    e.enc_i32_i64(icmp, rec_icscc.opcodes(vec![0x39]));
-    e.enc_i32_i64(icmp_imm, rec_icscc_ib.opcodes(vec![0x83]).rrr(7));
-    e.enc_i32_i64(icmp_imm, rec_icscc_id.opcodes(vec![0x81]).rrr(7));
-    e.enc_i32_i64(ifcmp, rec_rcmp.opcodes(vec![0x39]));
-    e.enc_i32_i64(ifcmp_imm, rec_rcmp_ib.opcodes(vec![0x83]).rrr(7));
-    e.enc_i32_i64(ifcmp_imm, rec_rcmp_id.opcodes(vec![0x81]).rrr(7));
+    e.enc_i32_i64(icmp, rec_icscc.opcodes(&CMP_REG));
+    e.enc_i32_i64(icmp_imm, rec_icscc_ib.opcodes(&CMP_IMM8).rrr(7));
+    e.enc_i32_i64(icmp_imm, rec_icscc_id.opcodes(&CMP_IMM).rrr(7));
+    e.enc_i32_i64(ifcmp, rec_rcmp.opcodes(&CMP_REG));
+    e.enc_i32_i64(ifcmp_imm, rec_rcmp_ib.opcodes(&CMP_IMM8).rrr(7));
+    e.enc_i32_i64(ifcmp_imm, rec_rcmp_id.opcodes(&CMP_IMM).rrr(7));
     
 
-    e.enc32(ifcmp_sp.bind(I32), rec_rcmp_sp.opcodes(vec![0x39]));
-    e.enc64(
-        ifcmp_sp.bind(I64),
-        rec_rcmp_sp.opcodes(vec![0x39]).rex().w(),
-    );
+    e.enc32(ifcmp_sp.bind(I32), rec_rcmp_sp.opcodes(&CMP_REG));
+    e.enc64(ifcmp_sp.bind(I64), rec_rcmp_sp.opcodes(&CMP_REG).rex().w());
 
     
     
-    e.enc_both(trueif, rec_seti_abcd.opcodes(vec![0x0f, 0x90]));
-    e.enc_both(trueff, rec_setf_abcd.opcodes(vec![0x0f, 0x90]));
+    e.enc_both(trueif, rec_seti_abcd.opcodes(&SET_BYTE_IF_OVERFLOW));
+    e.enc_both(trueff, rec_setf_abcd.opcodes(&SET_BYTE_IF_OVERFLOW));
 
     
-    e.enc_i32_i64(selectif, rec_cmov.opcodes(vec![0x0f, 0x40]));
+    e.enc_i32_i64(selectif, rec_cmov.opcodes(&CMOV_OVERFLOW));
 
     
-    e.enc_i32_i64(x86_bsf, rec_bsf_and_bsr.opcodes(vec![0x0f, 0xbc]));
-    e.enc_i32_i64(x86_bsr, rec_bsf_and_bsr.opcodes(vec![0x0f, 0xbd]));
+    e.enc_i32_i64(x86_bsf, rec_bsf_and_bsr.opcodes(&BIT_SCAN_FORWARD));
+    e.enc_i32_i64(x86_bsr, rec_bsf_and_bsr.opcodes(&BIT_SCAN_REVERSE));
 
     
     
@@ -1477,24 +1429,24 @@ pub(crate) fn define(
     
     e.enc32(
         bint.bind(I32).bind(B1),
-        rec_urm_noflags_abcd.opcodes(vec![0x0f, 0xb6]),
+        rec_urm_noflags_abcd.opcodes(&MOVZX_BYTE),
     );
 
     e.enc64(
         bint.bind(I64).bind(B1),
-        rec_urm_noflags.opcodes(vec![0x0f, 0xb6]).rex(),
+        rec_urm_noflags.opcodes(&MOVZX_BYTE).rex(),
     );
     e.enc64(
         bint.bind(I64).bind(B1),
-        rec_urm_noflags_abcd.opcodes(vec![0x0f, 0xb6]),
+        rec_urm_noflags_abcd.opcodes(&MOVZX_BYTE),
     );
     e.enc64(
         bint.bind(I32).bind(B1),
-        rec_urm_noflags.opcodes(vec![0x0f, 0xb6]).rex(),
+        rec_urm_noflags.opcodes(&MOVZX_BYTE).rex(),
     );
     e.enc64(
         bint.bind(I32).bind(B1),
-        rec_urm_noflags_abcd.opcodes(vec![0x0f, 0xb6]),
+        rec_urm_noflags_abcd.opcodes(&MOVZX_BYTE),
     );
 
     
@@ -1517,103 +1469,103 @@ pub(crate) fn define(
     
     e.enc32(
         sextend.bind(I32).bind(I8),
-        rec_urm_noflags_abcd.opcodes(vec![0x0f, 0xbe]),
+        rec_urm_noflags_abcd.opcodes(&MOVSX_BYTE),
     );
     e.enc64(
         sextend.bind(I32).bind(I8),
-        rec_urm_noflags.opcodes(vec![0x0f, 0xbe]).rex(),
+        rec_urm_noflags.opcodes(&MOVSX_BYTE).rex(),
     );
     e.enc64(
         sextend.bind(I32).bind(I8),
-        rec_urm_noflags_abcd.opcodes(vec![0x0f, 0xbe]),
+        rec_urm_noflags_abcd.opcodes(&MOVSX_BYTE),
     );
 
     
     e.enc32(
         sextend.bind(I32).bind(I16),
-        rec_urm_noflags.opcodes(vec![0x0f, 0xbf]),
+        rec_urm_noflags.opcodes(&MOVSX_WORD),
     );
     e.enc64(
         sextend.bind(I32).bind(I16),
-        rec_urm_noflags.opcodes(vec![0x0f, 0xbf]).rex(),
+        rec_urm_noflags.opcodes(&MOVSX_WORD).rex(),
     );
     e.enc64(
         sextend.bind(I32).bind(I16),
-        rec_urm_noflags.opcodes(vec![0x0f, 0xbf]),
+        rec_urm_noflags.opcodes(&MOVSX_WORD),
     );
 
     
     e.enc64(
         sextend.bind(I64).bind(I8),
-        rec_urm_noflags.opcodes(vec![0x0f, 0xbe]).rex().w(),
+        rec_urm_noflags.opcodes(&MOVSX_BYTE).rex().w(),
     );
 
     
     e.enc64(
         sextend.bind(I64).bind(I16),
-        rec_urm_noflags.opcodes(vec![0x0f, 0xbf]).rex().w(),
+        rec_urm_noflags.opcodes(&MOVSX_WORD).rex().w(),
     );
 
     
     e.enc64(
         sextend.bind(I64).bind(I32),
-        rec_urm_noflags.opcodes(vec![0x63]).rex().w(),
+        rec_urm_noflags.opcodes(&MOVSXD).rex().w(),
     );
 
     
     e.enc32(
         uextend.bind(I32).bind(I8),
-        rec_urm_noflags_abcd.opcodes(vec![0x0f, 0xb6]),
+        rec_urm_noflags_abcd.opcodes(&MOVZX_BYTE),
     );
     e.enc64(
         uextend.bind(I32).bind(I8),
-        rec_urm_noflags.opcodes(vec![0x0f, 0xb6]).rex(),
+        rec_urm_noflags.opcodes(&MOVZX_BYTE).rex(),
     );
     e.enc64(
         uextend.bind(I32).bind(I8),
-        rec_urm_noflags_abcd.opcodes(vec![0x0f, 0xb6]),
+        rec_urm_noflags_abcd.opcodes(&MOVZX_BYTE),
     );
 
     
     e.enc32(
         uextend.bind(I32).bind(I16),
-        rec_urm_noflags.opcodes(vec![0x0f, 0xb7]),
+        rec_urm_noflags.opcodes(&MOVZX_WORD),
     );
     e.enc64(
         uextend.bind(I32).bind(I16),
-        rec_urm_noflags.opcodes(vec![0x0f, 0xb7]).rex(),
+        rec_urm_noflags.opcodes(&MOVZX_WORD).rex(),
     );
     e.enc64(
         uextend.bind(I32).bind(I16),
-        rec_urm_noflags.opcodes(vec![0x0f, 0xb7]),
+        rec_urm_noflags.opcodes(&MOVZX_WORD),
     );
 
     
     e.enc64(
         uextend.bind(I64).bind(I8),
-        rec_urm_noflags.opcodes(vec![0x0f, 0xb6]).rex(),
+        rec_urm_noflags.opcodes(&MOVZX_BYTE).rex(),
     );
     e.enc64(
         uextend.bind(I64).bind(I8),
-        rec_urm_noflags_abcd.opcodes(vec![0x0f, 0xb6]),
+        rec_urm_noflags_abcd.opcodes(&MOVZX_BYTE),
     );
 
     
     e.enc64(
         uextend.bind(I64).bind(I16),
-        rec_urm_noflags.opcodes(vec![0x0f, 0xb7]).rex(),
+        rec_urm_noflags.opcodes(&MOVZX_WORD).rex(),
     );
     e.enc64(
         uextend.bind(I64).bind(I16),
-        rec_urm_noflags.opcodes(vec![0x0f, 0xb7]),
+        rec_urm_noflags.opcodes(&MOVZX_WORD),
     );
 
     
     e.enc64(
         uextend.bind(I64).bind(I32),
-        rec_umr.opcodes(vec![0x89]).rex(),
+        rec_umr.opcodes(&MOV_STORE).rex(),
     );
-    e.enc64(uextend.bind(I64).bind(I32), rec_umr.opcodes(vec![0x89]));
+    e.enc64(uextend.bind(I64).bind(I32), rec_umr.opcodes(&MOV_STORE));
 
     
 
@@ -1623,7 +1575,7 @@ pub(crate) fn define(
     let is_zero_32_bit_float = InstructionPredicate::new_is_zero_32bit_float(f_unary_ieee32, "imm");
     e.enc32_instp(
         f32const,
-        rec_f32imm_z.opcodes(vec![0x0f, 0x57]),
+        rec_f32imm_z.opcodes(&XORPS),
         is_zero_32_bit_float.clone(),
     );
 
@@ -1631,148 +1583,133 @@ pub(crate) fn define(
     let is_zero_64_bit_float = InstructionPredicate::new_is_zero_64bit_float(f_unary_ieee64, "imm");
     e.enc32_instp(
         f64const,
-        rec_f64imm_z.opcodes(vec![0x66, 0x0f, 0x57]),
+        rec_f64imm_z.opcodes(&XORPD),
         is_zero_64_bit_float.clone(),
     );
 
-    e.enc_x86_64_instp(
-        f32const,
-        rec_f32imm_z.opcodes(vec![0x0f, 0x57]),
-        is_zero_32_bit_float,
-    );
-    e.enc_x86_64_instp(
-        f64const,
-        rec_f64imm_z.opcodes(vec![0x66, 0x0f, 0x57]),
-        is_zero_64_bit_float,
-    );
+    e.enc_x86_64_instp(f32const, rec_f32imm_z.opcodes(&XORPS), is_zero_32_bit_float);
+    e.enc_x86_64_instp(f64const, rec_f64imm_z.opcodes(&XORPD), is_zero_64_bit_float);
 
     
     e.enc_both(
         bitcast.bind(F32).bind(I32),
-        rec_frurm.opcodes(vec![0x66, 0x0f, 0x6e]),
+        rec_frurm.opcodes(&MOVD_LOAD_XMM),
     );
     e.enc_both(
         bitcast.bind(I32).bind(F32),
-        rec_rfumr.opcodes(vec![0x66, 0x0f, 0x7e]),
+        rec_rfumr.opcodes(&MOVD_STORE_XMM),
     );
 
     
     e.enc64(
         bitcast.bind(F64).bind(I64),
-        rec_frurm.opcodes(vec![0x66, 0x0f, 0x6e]).rex().w(),
+        rec_frurm.opcodes(&MOVD_LOAD_XMM).rex().w(),
     );
     e.enc64(
         bitcast.bind(I64).bind(F64),
-        rec_rfumr.opcodes(vec![0x66, 0x0f, 0x7e]).rex().w(),
+        rec_rfumr.opcodes(&MOVD_STORE_XMM).rex().w(),
     );
 
     
-    e.enc_both(copy.bind(F32), rec_furm.opcodes(vec![0x0f, 0x28]));
-    e.enc_both(copy.bind(F64), rec_furm.opcodes(vec![0x0f, 0x28]));
+    e.enc_both(copy.bind(F32), rec_furm.opcodes(&MOVAPS_LOAD));
+    e.enc_both(copy.bind(F64), rec_furm.opcodes(&MOVAPS_LOAD));
 
     
     
-    e.enc32(regmove.bind(F32), rec_frmov.opcodes(vec![0x0f, 0x28]));
-    e.enc64(regmove.bind(F32), rec_frmov.opcodes(vec![0x0f, 0x28]).rex());
+    e.enc32(regmove.bind(F32), rec_frmov.opcodes(&MOVAPS_LOAD));
+    e.enc64(regmove.bind(F32), rec_frmov.opcodes(&MOVAPS_LOAD).rex());
 
     
     
-    e.enc32(regmove.bind(F64), rec_frmov.opcodes(vec![0x0f, 0x28]));
-    e.enc64(regmove.bind(F64), rec_frmov.opcodes(vec![0x0f, 0x28]).rex());
+    e.enc32(regmove.bind(F64), rec_frmov.opcodes(&MOVAPS_LOAD));
+    e.enc64(regmove.bind(F64), rec_frmov.opcodes(&MOVAPS_LOAD).rex());
 
     
-    e.enc_i32_i64(
-        fcvt_from_sint.bind(F32),
-        rec_frurm.opcodes(vec![0xf3, 0x0f, 0x2a]),
-    );
+    e.enc_i32_i64(fcvt_from_sint.bind(F32), rec_frurm.opcodes(&CVTSI2SS));
 
     
-    e.enc_i32_i64(
-        fcvt_from_sint.bind(F64),
-        rec_frurm.opcodes(vec![0xf2, 0x0f, 0x2a]),
-    );
+    e.enc_i32_i64(fcvt_from_sint.bind(F64), rec_frurm.opcodes(&CVTSI2SD));
 
     
-    e.enc_both(
-        fpromote.bind(F64).bind(F32),
-        rec_furm.opcodes(vec![0xf3, 0x0f, 0x5a]),
-    );
+    e.enc_both(fpromote.bind(F64).bind(F32), rec_furm.opcodes(&CVTSS2SD));
 
     
-    e.enc_both(
-        fdemote.bind(F32).bind(F64),
-        rec_furm.opcodes(vec![0xf2, 0x0f, 0x5a]),
-    );
+    e.enc_both(fdemote.bind(F32).bind(F64), rec_furm.opcodes(&CVTSD2SS));
 
     
     e.enc_both(
         x86_cvtt2si.bind(I32).bind(F32),
-        rec_rfurm.opcodes(vec![0xf3, 0x0f, 0x2c]),
+        rec_rfurm.opcodes(&CVTTSS2SI),
     );
     e.enc64(
         x86_cvtt2si.bind(I64).bind(F32),
-        rec_rfurm.opcodes(vec![0xf3, 0x0f, 0x2c]).rex().w(),
+        rec_rfurm.opcodes(&CVTTSS2SI).rex().w(),
     );
 
     
     e.enc_both(
         x86_cvtt2si.bind(I32).bind(F64),
-        rec_rfurm.opcodes(vec![0xf2, 0x0f, 0x2c]),
+        rec_rfurm.opcodes(&CVTTSD2SI),
     );
     e.enc64(
         x86_cvtt2si.bind(I64).bind(F64),
-        rec_rfurm.opcodes(vec![0xf2, 0x0f, 0x2c]).rex().w(),
+        rec_rfurm.opcodes(&CVTTSD2SI).rex().w(),
     );
 
     
-    e.enc_both(sqrt.bind(F32), rec_furm.opcodes(vec![0xf3, 0x0f, 0x51]));
-    e.enc_both(sqrt.bind(F64), rec_furm.opcodes(vec![0xf2, 0x0f, 0x51]));
+    e.enc_both(sqrt.bind(F32), rec_furm.opcodes(&SQRTSS));
+    e.enc_both(sqrt.bind(F64), rec_furm.opcodes(&SQRTSD));
 
     
     for inst in &[nearest, floor, ceil, trunc] {
-        e.enc_both_isap(
-            inst.bind(F32),
-            rec_furmi_rnd.opcodes(vec![0x66, 0x0f, 0x3a, 0x0a]),
-            use_sse41,
-        );
-        e.enc_both_isap(
-            inst.bind(F64),
-            rec_furmi_rnd.opcodes(vec![0x66, 0x0f, 0x3a, 0x0b]),
-            use_sse41,
-        );
+        e.enc_both_isap(inst.bind(F32), rec_furmi_rnd.opcodes(&ROUNDSS), use_sse41);
+        e.enc_both_isap(inst.bind(F64), rec_furmi_rnd.opcodes(&ROUNDSD), use_sse41);
     }
 
     
-    for &(inst, opc) in &[
-        (fadd, 0x58),
-        (fsub, 0x5c),
-        (fmul, 0x59),
-        (fdiv, 0x5e),
-        (x86_fmin, 0x5d),
-        (x86_fmax, 0x5f),
-    ] {
-        e.enc_both(inst.bind(F32), rec_fa.opcodes(vec![0xf3, 0x0f, opc]));
-        e.enc_both(inst.bind(F64), rec_fa.opcodes(vec![0xf2, 0x0f, opc]));
-    }
+    e.enc_both(fadd.bind(F32), rec_fa.opcodes(&ADDSS));
+    e.enc_both(fadd.bind(F64), rec_fa.opcodes(&ADDSD));
 
-    
-    for &(inst, opc) in &[(band, 0x54), (bor, 0x56), (bxor, 0x57)] {
-        e.enc_both(inst.bind(F32), rec_fa.opcodes(vec![0x0f, opc]));
-        e.enc_both(inst.bind(F64), rec_fa.opcodes(vec![0x0f, opc]));
-    }
+    e.enc_both(fsub.bind(F32), rec_fa.opcodes(&SUBSS));
+    e.enc_both(fsub.bind(F64), rec_fa.opcodes(&SUBSD));
 
-    
-    e.enc_both(band_not.bind(F32), rec_fax.opcodes(vec![0x0f, 0x55]));
-    e.enc_both(band_not.bind(F64), rec_fax.opcodes(vec![0x0f, 0x55]));
+    e.enc_both(fmul.bind(F32), rec_fa.opcodes(&MULSS));
+    e.enc_both(fmul.bind(F64), rec_fa.opcodes(&MULSD));
+
+    e.enc_both(fdiv.bind(F32), rec_fa.opcodes(&DIVSS));
+    e.enc_both(fdiv.bind(F64), rec_fa.opcodes(&DIVSD));
+
+    e.enc_both(x86_fmin.bind(F32), rec_fa.opcodes(&MINSS));
+    e.enc_both(x86_fmin.bind(F64), rec_fa.opcodes(&MINSD));
+
+    e.enc_both(x86_fmax.bind(F32), rec_fa.opcodes(&MAXSS));
+    e.enc_both(x86_fmax.bind(F64), rec_fa.opcodes(&MAXSD));
 
     
     
     
     
-    e.enc_both(fcmp.bind(F32), rec_fcscc.opcodes(vec![0x0f, 0x2e]));
-    e.enc_both(fcmp.bind(F64), rec_fcscc.opcodes(vec![0x66, 0x0f, 0x2e]));
-    e.enc_both(ffcmp.bind(F32), rec_fcmp.opcodes(vec![0x0f, 0x2e]));
-    e.enc_both(ffcmp.bind(F64), rec_fcmp.opcodes(vec![0x66, 0x0f, 0x2e]));
+    e.enc_both(band.bind(F32), rec_fa.opcodes(&ANDPS));
+    e.enc_both(band.bind(F64), rec_fa.opcodes(&ANDPS));
+
+    e.enc_both(bor.bind(F32), rec_fa.opcodes(&ORPS));
+    e.enc_both(bor.bind(F64), rec_fa.opcodes(&ORPS));
+
+    e.enc_both(bxor.bind(F32), rec_fa.opcodes(&XORPS));
+    e.enc_both(bxor.bind(F64), rec_fa.opcodes(&XORPS));
+
+    
+    e.enc_both(band_not.bind(F32), rec_fax.opcodes(&ANDNPS));
+    e.enc_both(band_not.bind(F64), rec_fax.opcodes(&ANDNPS));
+
+    
+    
+    
+    
+    e.enc_both(fcmp.bind(F32), rec_fcscc.opcodes(&UCOMISS));
+    e.enc_both(fcmp.bind(F64), rec_fcscc.opcodes(&UCOMISD));
+    e.enc_both(ffcmp.bind(F32), rec_fcmp.opcodes(&UCOMISS));
+    e.enc_both(ffcmp.bind(F64), rec_fcmp.opcodes(&UCOMISD));
 
     
     
@@ -1785,9 +1722,9 @@ pub(crate) fn define(
     let allowed_simd_type = |t: &LaneType| t.lane_bits() >= 8 && t.lane_bits() < 128;
 
     
-    for ty in ValueType::all_lane_types().filter(|t| t.lane_bits() == 8) {
+    for ty in ValueType::all_lane_types().filter(allowed_simd_type) {
         let instruction = x86_pshufb.bind_vector_from_lane(ty, sse_vector_size);
-        let template = rec_fa.nonrex().opcodes(vec![0x66, 0x0f, 0x38, 00]);
+        let template = rec_fa.nonrex().opcodes(&PSHUFB);
         e.enc32_isap(instruction.clone(), template.clone(), use_ssse3_simd);
         e.enc64_isap(instruction, template, use_ssse3_simd);
     }
@@ -1795,9 +1732,7 @@ pub(crate) fn define(
     
     for ty in ValueType::all_lane_types().filter(|t| t.lane_bits() == 32) {
         let instruction = x86_pshufd.bind_vector_from_lane(ty, sse_vector_size);
-        let template = rec_r_ib_unsigned_fpr
-            .nonrex()
-            .opcodes(vec![0x66, 0x0f, 0x70]);
+        let template = rec_r_ib_unsigned_fpr.nonrex().opcodes(&PSHUFD);
         e.enc32(instruction.clone(), template.clone());
         e.enc64(instruction, template);
     }
@@ -1810,7 +1745,7 @@ pub(crate) fn define(
         if ty.is_float() {
             e.enc_32_64_rec(instruction, rec_null_fpr, 0);
         } else {
-            let template = rec_frurm.opcodes(vec![0x66, 0x0f, 0x6e]); 
+            let template = rec_frurm.opcodes(&MOVD_LOAD_XMM);
             if ty.lane_bits() < 64 {
                 
                 e.enc32(instruction.clone(), template.clone());
@@ -1820,17 +1755,17 @@ pub(crate) fn define(
     }
 
     
-    let mut x86_pinsr_mapping: HashMap<u64, (Vec<u8>, Option<SettingPredicateNumber>)> =
+    let mut x86_pinsr_mapping: HashMap<u64, (&'static [u8], Option<SettingPredicateNumber>)> =
         HashMap::new();
-    x86_pinsr_mapping.insert(8, (vec![0x66, 0x0f, 0x3a, 0x20], Some(use_sse41_simd))); 
-    x86_pinsr_mapping.insert(16, (vec![0x66, 0x0f, 0xc4], None)); 
-    x86_pinsr_mapping.insert(32, (vec![0x66, 0x0f, 0x3a, 0x22], Some(use_sse41_simd))); 
-    x86_pinsr_mapping.insert(64, (vec![0x66, 0x0f, 0x3a, 0x22], Some(use_sse41_simd))); 
+    x86_pinsr_mapping.insert(8, (&PINSRB, Some(use_sse41_simd)));
+    x86_pinsr_mapping.insert(16, (&PINSRW, None));
+    x86_pinsr_mapping.insert(32, (&PINSR, Some(use_sse41_simd)));
+    x86_pinsr_mapping.insert(64, (&PINSR, Some(use_sse41_simd)));
 
     for ty in ValueType::all_lane_types().filter(allowed_simd_type) {
         if let Some((opcode, isap)) = x86_pinsr_mapping.get(&ty.lane_bits()) {
             let instruction = x86_pinsr.bind_vector_from_lane(ty, sse_vector_size);
-            let template = rec_r_ib_unsigned_r.opcodes(opcode.clone());
+            let template = rec_r_ib_unsigned_r.opcodes(opcode);
             if ty.lane_bits() < 64 {
                 e.enc_32_64_maybe_isap(instruction, template.nonrex(), isap.clone());
             } else {
@@ -1844,36 +1779,36 @@ pub(crate) fn define(
     
     {
         let instruction = x86_insertps.bind_vector_from_lane(F32, sse_vector_size);
-        let template = rec_fa_ib.nonrex().opcodes(vec![0x66, 0x0f, 0x3a, 0x21]);
+        let template = rec_fa_ib.nonrex().opcodes(&INSERTPS);
         e.enc_32_64_maybe_isap(instruction, template, Some(use_sse41_simd));
     }
 
     
     {
         let instruction = x86_movsd.bind_vector_from_lane(F64, sse_vector_size);
-        let template = rec_fa.nonrex().opcodes(vec![0xf2, 0x0f, 0x10]);
+        let template = rec_fa.nonrex().opcodes(&MOVSD_LOAD);
         e.enc_32_64_maybe_isap(instruction, template, None); 
     }
 
     
     {
         let instruction = x86_movlhps.bind_vector_from_lane(F64, sse_vector_size);
-        let template = rec_fa.nonrex().opcodes(vec![0x0f, 0x16]);
+        let template = rec_fa.nonrex().opcodes(&MOVLHPS);
         e.enc_32_64_maybe_isap(instruction, template, None); 
     }
 
     
-    let mut x86_pextr_mapping: HashMap<u64, (Vec<u8>, Option<SettingPredicateNumber>)> =
+    let mut x86_pextr_mapping: HashMap<u64, (&'static [u8], Option<SettingPredicateNumber>)> =
         HashMap::new();
-    x86_pextr_mapping.insert(8, (vec![0x66, 0x0f, 0x3a, 0x14], Some(use_sse41_simd))); 
-    x86_pextr_mapping.insert(16, (vec![0x66, 0x0f, 0xc5], None)); 
-    x86_pextr_mapping.insert(32, (vec![0x66, 0x0f, 0x3a, 0x16], Some(use_sse41_simd))); 
-    x86_pextr_mapping.insert(64, (vec![0x66, 0x0f, 0x3a, 0x16], Some(use_sse41_simd))); 
+    x86_pextr_mapping.insert(8, (&PEXTRB, Some(use_sse41_simd)));
+    x86_pextr_mapping.insert(16, (&PEXTRW_SSE2, None));
+    x86_pextr_mapping.insert(32, (&PEXTR, Some(use_sse41_simd)));
+    x86_pextr_mapping.insert(64, (&PEXTR, Some(use_sse41_simd)));
 
     for ty in ValueType::all_lane_types().filter(allowed_simd_type) {
         if let Some((opcode, isap)) = x86_pextr_mapping.get(&ty.lane_bits()) {
             let instruction = x86_pextr.bind_vector_from_lane(ty, sse_vector_size);
-            let template = rec_r_ib_unsigned_gpr.opcodes(opcode.clone());
+            let template = rec_r_ib_unsigned_gpr.opcodes(opcode);
             if ty.lane_bits() < 64 {
                 e.enc_32_64_maybe_isap(instruction, template.nonrex(), isap.clone());
             } else {
@@ -1920,25 +1855,125 @@ pub(crate) fn define(
     
     
     
+    for ty in ValueType::all_lane_types().filter(allowed_simd_type) {
+        let f_unary_const = formats.get(formats.by_name("UnaryConst"));
+        let instruction = vconst.bind_vector_from_lane(ty, sse_vector_size);
+
+        let is_zero_128bit =
+            InstructionPredicate::new_is_all_zeroes_128bit(f_unary_const, "constant_handle");
+        let template = rec_vconst_optimized.nonrex().opcodes(&PXOR);
+        e.enc_32_64_func(instruction.clone(), template, |builder| {
+            builder.inst_predicate(is_zero_128bit)
+        });
+
+        let is_ones_128bit =
+            InstructionPredicate::new_is_all_ones_128bit(f_unary_const, "constant_handle");
+        let template = rec_vconst_optimized.nonrex().opcodes(&PCMPEQB);
+        e.enc_32_64_func(instruction, template, |builder| {
+            builder.inst_predicate(is_ones_128bit)
+        });
+    }
+
+    
+    
+    
     
     
     
     for ty in ValueType::all_lane_types().filter(allowed_simd_type) {
         let instruction = vconst.bind_vector_from_lane(ty, sse_vector_size);
-        let template = rec_vconst.nonrex().opcodes(vec![0x0f, 0x10]);
+        let template = rec_vconst.nonrex().opcodes(&MOVUPS_LOAD);
         e.enc_32_64_maybe_isap(instruction, template, None); 
+    }
+
+    
+    for ty in ValueType::all_lane_types().filter(allowed_simd_type) {
+        let instruction = bor.bind_vector_from_lane(ty, sse_vector_size);
+        let template = rec_fa.nonrex().opcodes(&ORPS);
+        e.enc_32_64_maybe_isap(instruction, template, None); 
+    }
+
+    
+    
+    
+    for ty in ValueType::all_lane_types().filter(allowed_simd_type) {
+        
+        let bound_store = store.bind_vector_from_lane(ty, sse_vector_size).bind_any();
+        e.enc_32_64(bound_store.clone(), rec_fst.opcodes(&MOVUPS_STORE));
+        e.enc_32_64(bound_store.clone(), rec_fstDisp8.opcodes(&MOVUPS_STORE));
+        e.enc_32_64(bound_store, rec_fstDisp32.opcodes(&MOVUPS_STORE));
+
+        
+        let bound_load = load.bind_vector_from_lane(ty, sse_vector_size).bind_any();
+        e.enc_32_64(bound_load.clone(), rec_fld.opcodes(&MOVUPS_LOAD));
+        e.enc_32_64(bound_load.clone(), rec_fldDisp8.opcodes(&MOVUPS_LOAD));
+        e.enc_32_64(bound_load, rec_fldDisp32.opcodes(&MOVUPS_LOAD));
+
+        
+        let bound_spill = spill.bind_vector_from_lane(ty, sse_vector_size);
+        e.enc_32_64(bound_spill, rec_fspillSib32.opcodes(&MOVUPS_STORE));
+        let bound_regspill = regspill.bind_vector_from_lane(ty, sse_vector_size);
+        e.enc_32_64(bound_regspill, rec_fregspill32.opcodes(&MOVUPS_STORE));
+
+        
+        let bound_fill = fill.bind_vector_from_lane(ty, sse_vector_size);
+        e.enc_32_64(bound_fill, rec_ffillSib32.opcodes(&MOVUPS_LOAD));
+        let bound_regfill = regfill.bind_vector_from_lane(ty, sse_vector_size);
+        e.enc_32_64(bound_regfill, rec_fregfill32.opcodes(&MOVUPS_LOAD));
+        let bound_fill_nop = fill_nop.bind_vector_from_lane(ty, sse_vector_size);
+        e.enc_32_64_rec(bound_fill_nop, rec_ffillnull, 0);
+
+        
+        let bound_regmove = regmove.bind_vector_from_lane(ty, sse_vector_size);
+        e.enc_32_64(bound_regmove, rec_frmov.opcodes(&MOVAPS_LOAD));
+
+        
+        let bound_copy = copy.bind_vector_from_lane(ty, sse_vector_size);
+        e.enc_32_64(bound_copy, rec_furm.opcodes(&MOVAPS_LOAD));
+        let bound_copy_nop = copy_nop.bind_vector_from_lane(ty, sse_vector_size);
+        e.enc_32_64_rec(bound_copy_nop, rec_stacknull, 0);
+    }
+
+    
+    for (ty, opcodes) in &[(I8, &PADDB), (I16, &PADDW), (I32, &PADDD), (I64, &PADDQ)] {
+        let iadd = iadd.bind_vector_from_lane(ty.clone(), sse_vector_size);
+        e.enc_32_64(iadd, rec_fa.opcodes(*opcodes));
+    }
+
+    
+    let mut pcmpeq_mapping: HashMap<u64, (&[u8], Option<SettingPredicateNumber>)> = HashMap::new();
+    pcmpeq_mapping.insert(8, (&PCMPEQB, None));
+    pcmpeq_mapping.insert(16, (&PCMPEQW, None));
+    pcmpeq_mapping.insert(32, (&PCMPEQD, None));
+    pcmpeq_mapping.insert(64, (&PCMPEQQ, Some(use_sse41_simd)));
+    for ty in ValueType::all_lane_types().filter(|t| t.is_int() && allowed_simd_type(t)) {
+        if let Some((opcodes, isa_predicate)) = pcmpeq_mapping.get(&ty.lane_bits()) {
+            let instruction = icmp.bind_vector_from_lane(ty, sse_vector_size);
+            let f_int_compare = formats.get(formats.by_name("IntCompare"));
+            let has_eq_condition_code =
+                InstructionPredicate::new_has_condition_code(f_int_compare, IntCC::Equal, "cond");
+            let template = rec_icscc_fpr.nonrex().opcodes(*opcodes);
+            e.enc_32_64_func(instruction, template, |builder| {
+                let builder = builder.inst_predicate(has_eq_condition_code);
+                if let Some(p) = isa_predicate {
+                    builder.isa_predicate(*p)
+                } else {
+                    builder
+                }
+            });
+        }
     }
 
     
 
     
-    e.enc32(null.bind_ref(R32), rec_pu_id_ref.opcodes(vec![0xb8]));
+    e.enc32(null.bind_ref(R32), rec_pu_id_ref.opcodes(&MOV_IMM));
 
-    e.enc64(null.bind_ref(R64), rec_pu_id_ref.rex().opcodes(vec![0xb8]));
-    e.enc64(null.bind_ref(R64), rec_pu_id_ref.opcodes(vec![0xb8]));
+    e.enc64(null.bind_ref(R64), rec_pu_id_ref.rex().opcodes(&MOV_IMM));
+    e.enc64(null.bind_ref(R64), rec_pu_id_ref.opcodes(&MOV_IMM));
 
     
-    e.enc_r32_r64_rex_only(is_null, rec_is_zero.opcodes(vec![0x85]));
+    e.enc_r32_r64_rex_only(is_null, rec_is_zero.opcodes(&TEST_REG));
 
     
     e.enc32_rec(safepoint, rec_safepoint, 0);
