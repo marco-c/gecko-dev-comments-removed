@@ -84,12 +84,13 @@ class BlocksRingBuffer {
   
   using Index = uint64_t;
 
+ public:
   
   using Buffer = ModuloBuffer<uint32_t, Index>;
+  using Byte = Buffer::Byte;
   using BufferWriter = Buffer::Writer;
   using BufferReader = Buffer::Reader;
 
- public:
   
   using Length = uint32_t;
 
@@ -157,6 +158,13 @@ class BlocksRingBuffer {
     }
     bool operator>=(const BlockIndex& aRhs) const {
       return mBlockIndex >= aRhs.mBlockIndex;
+    }
+
+    
+    
+    uint64_t ConvertToU64() const { return uint64_t(mBlockIndex); }
+    static BlockIndex ConvertFromU64(uint64_t aIndex) {
+      return BlockIndex(Index(aIndex));
     }
 
    private:

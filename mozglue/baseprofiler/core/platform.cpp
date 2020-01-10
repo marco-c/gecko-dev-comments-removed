@@ -690,7 +690,7 @@ class ActivePS {
       LiveProfiledThreadData& thread = sInstance->mLiveProfiledThreads[i];
       if (thread.mRegisteredThread == aRegisteredThread) {
         thread.mProfiledThreadData->NotifyUnregistered(
-            sInstance->mBuffer->mRangeEnd);
+            sInstance->mBuffer->BufferRangeEnd());
         MOZ_RELEASE_ASSERT(sInstance->mDeadProfiledThreads.append(
             std::move(thread.mProfiledThreadData)));
         sInstance->mLiveProfiledThreads.erase(
@@ -707,7 +707,7 @@ class ActivePS {
 #  endif
 
   static void DiscardExpiredDeadProfiledThreads(PSLockRef) {
-    uint64_t bufferRangeStart = sInstance->mBuffer->mRangeStart;
+    uint64_t bufferRangeStart = sInstance->mBuffer->BufferRangeStart();
     
     sInstance->mDeadProfiledThreads.eraseIf(
         [bufferRangeStart](
@@ -726,7 +726,7 @@ class ActivePS {
     for (size_t i = 0; i < registeredPages.length(); i++) {
       RefPtr<PageInformation>& page = registeredPages[i];
       if (page->DocShellId() == aRegisteredDocShellId) {
-        page->NotifyUnregistered(sInstance->mBuffer->mRangeEnd);
+        page->NotifyUnregistered(sInstance->mBuffer->BufferRangeEnd());
         MOZ_RELEASE_ASSERT(
             sInstance->mDeadProfiledPages.append(std::move(page)));
         registeredPages.erase(&registeredPages[i--]);
@@ -735,7 +735,7 @@ class ActivePS {
   }
 
   static void DiscardExpiredPages(PSLockRef) {
-    uint64_t bufferRangeStart = sInstance->mBuffer->mRangeStart;
+    uint64_t bufferRangeStart = sInstance->mBuffer->BufferRangeStart();
     
     
     sInstance->mDeadProfiledPages.eraseIf(
@@ -753,7 +753,7 @@ class ActivePS {
   }
 
   static void ClearExpiredExitProfiles(PSLockRef) {
-    uint64_t bufferRangeStart = sInstance->mBuffer->mRangeStart;
+    uint64_t bufferRangeStart = sInstance->mBuffer->BufferRangeStart();
     
     sInstance->mExitProfiles.eraseIf(
         [bufferRangeStart](const ExitProfile& aExitProfile) {
@@ -765,7 +765,7 @@ class ActivePS {
     ClearExpiredExitProfiles(aLock);
 
     MOZ_RELEASE_ASSERT(sInstance->mExitProfiles.append(
-        ExitProfile{aExitProfile, sInstance->mBuffer->mRangeEnd}));
+        ExitProfile{aExitProfile, sInstance->mBuffer->BufferRangeEnd()}));
   }
 
   static Vector<std::string> MoveExitProfiles(PSLockRef aLock) {
@@ -1457,8 +1457,7 @@ static void DoPeriodicSample(PSLockRef aLock,
       aRegisteredThread.RacyRegisteredThread().GetPendingMarkers();
   while (pendingMarkersList && pendingMarkersList->peek()) {
     ProfilerMarker* marker = pendingMarkersList->popHead();
-    buffer.AddStoredMarker(marker);
-    buffer.AddEntry(ProfileBufferEntry::Marker(marker));
+    buffer.AddMarker(marker);
   }
 }
 
@@ -2674,7 +2673,7 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
   
   
   PowerOfTwo32 capacity =
-      (aCapacity.Value() >= 1024u) ? aCapacity : BASE_PROFILER_DEFAULT_ENTRIES;
+      (aCapacity.Value() >= 8192u) ? aCapacity : BASE_PROFILER_DEFAULT_ENTRIES;
   Maybe<double> duration = aDuration;
 
   if (aDuration && *aDuration <= 0) {
@@ -3119,7 +3118,7 @@ UniqueProfilerBacktrace profiler_get_backtrace() {
 #  endif
 
   
-  auto buffer = MakeUnique<ProfileBuffer>(MakePowerOfTwo32<1024>());
+  auto buffer = MakeUnique<ProfileBuffer>(MakePowerOfTwo32<65536>());
 
   DoSyncSample(lock, *registeredThread, now, regs, *buffer.get());
 
@@ -3221,8 +3220,7 @@ void profiler_add_marker_for_thread(int aThreadId,
 
   
   ProfileBuffer& buffer = ActivePS::Buffer(lock);
-  buffer.AddStoredMarker(marker);
-  buffer.AddEntry(ProfileBufferEntry::Marker(marker));
+  buffer.AddMarker(marker);
 }
 
 void profiler_tracing(const char* aCategoryString, const char* aMarkerName,

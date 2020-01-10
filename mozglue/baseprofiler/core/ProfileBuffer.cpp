@@ -17,11 +17,14 @@
 namespace mozilla {
 namespace baseprofiler {
 
+
+static constexpr auto DuplicationBufferBytes = MakePowerOfTwo32<65536>();
+
+
 ProfileBuffer::ProfileBuffer(PowerOfTwo32 aCapacity)
-    : mEntries(MakeUnique<ProfileBufferEntry[]>(aCapacity.Value())),
-      mEntryIndexMask(aCapacity.Mask()),
-      mRangeStart(0),
-      mRangeEnd(0) {}
+    : mEntries(BlocksRingBuffer::ThreadSafety::WithoutMutex, aCapacity),
+      mDuplicationBuffer(MakeUnique<BlocksRingBuffer::Byte[]>(
+          DuplicationBufferBytes.Value())) {}
 
 ProfileBuffer::~ProfileBuffer() {
   while (mStoredMarkers.peek()) {
@@ -30,25 +33,42 @@ ProfileBuffer::~ProfileBuffer() {
 }
 
 
-void ProfileBuffer::AddEntry(const ProfileBufferEntry& aEntry) {
-  GetEntry(mRangeEnd++) = aEntry;
+BlocksRingBuffer::BlockIndex ProfileBuffer::AddEntry(
+    BlocksRingBuffer& aBlocksRingBuffer, const ProfileBufferEntry& aEntry) {
+  switch (aEntry.GetKind()) {
+#  define SWITCH_KIND(KIND, TYPE, SIZE)                      \
+    case ProfileBufferEntry::Kind::KIND: {                   \
+      return aBlocksRingBuffer.PutFrom(&aEntry, 1 + (SIZE)); \
+      break;                                                 \
+    }
 
-  
-  
-  if (mRangeEnd - mRangeStart > mEntryIndexMask.MaskValue() + 1) {
-    mRangeStart++;
+    FOR_EACH_PROFILE_BUFFER_ENTRY_KIND(SWITCH_KIND)
+
+#  undef SWITCH_KIND
+    default:
+      MOZ_ASSERT(false, "Unhandled baseprofiler::ProfilerBuffer entry KIND");
+      return BlockIndex{};
   }
 }
 
-uint64_t ProfileBuffer::AddThreadIdEntry(int aThreadId) {
-  uint64_t pos = mRangeEnd;
-  AddEntry(ProfileBufferEntry::ThreadId(aThreadId));
-  return pos;
+
+uint64_t ProfileBuffer::AddEntry(const ProfileBufferEntry& aEntry) {
+  return AddEntry(mEntries, aEntry).ConvertToU64();
 }
 
-void ProfileBuffer::AddStoredMarker(ProfilerMarker* aStoredMarker) {
-  aStoredMarker->SetPositionInBuffer(mRangeEnd);
-  mStoredMarkers.insert(aStoredMarker);
+
+BlocksRingBuffer::BlockIndex ProfileBuffer::AddThreadIdEntry(
+    BlocksRingBuffer& aBlocksRingBuffer, int aThreadId) {
+  return AddEntry(aBlocksRingBuffer, ProfileBufferEntry::ThreadId(aThreadId));
+}
+
+uint64_t ProfileBuffer::AddThreadIdEntry(int aThreadId) {
+  return AddThreadIdEntry(mEntries, aThreadId).ConvertToU64();
+}
+
+void ProfileBuffer::AddMarker(ProfilerMarker* aMarker) {
+  aMarker->SetPositionInBuffer(AddEntry(ProfileBufferEntry::Marker(aMarker)));
+  mStoredMarkers.insert(aMarker);
 }
 
 void ProfileBuffer::CollectCodeLocation(
@@ -94,21 +114,21 @@ void ProfileBuffer::DeleteExpiredStoredMarkers() {
   
   
   while (mStoredMarkers.peek() &&
-         mStoredMarkers.peek()->HasExpired(mRangeStart)) {
+         mStoredMarkers.peek()->HasExpired(BufferRangeStart())) {
     delete mStoredMarkers.popHead();
   }
 }
 
+size_t ProfileBuffer::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
+  
+  
+  
+  
+  return mEntries.SizeOfExcludingThis(aMallocSizeOf);
+}
+
 size_t ProfileBuffer::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
-  size_t n = aMallocSizeOf(this);
-  n += aMallocSizeOf(mEntries.get());
-
-  
-  
-  
-  
-
-  return n;
+  return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
 }
 
 void ProfileBuffer::CollectOverheadStats(TimeDuration aSamplingTime,
@@ -152,9 +172,10 @@ void ProfileBuffer::CollectOverheadStats(TimeDuration aSamplingTime,
 }
 
 ProfilerBufferInfo ProfileBuffer::GetProfilerBufferInfo() const {
-  return {mRangeStart,  mRangeEnd,    mEntryIndexMask.MaskValue() + 1,
-          mIntervalsNs, mOverheadsNs, mLockingsNs,
-          mCleaningsNs, mCountersNs,  mThreadsNs};
+  return {
+      BufferRangeStart(), BufferRangeEnd(), mEntries.BufferLength()->Value(),
+      mIntervalsNs,       mOverheadsNs,     mLockingsNs,
+      mCleaningsNs,       mCountersNs,      mThreadsNs};
 }
 
 
