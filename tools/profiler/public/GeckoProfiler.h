@@ -372,6 +372,8 @@ void profiler_unregister_thread();
 
 
 
+
+
 void profiler_register_page(uint64_t aBrowsingContextID,
                             uint64_t aInnerWindowID, const nsCString& aUrl,
                             bool aIsSubFrame);

@@ -350,17 +350,27 @@ class CorePS {
 
   static void AppendRegisteredPage(PSLockRef,
                                    RefPtr<PageInformation>&& aRegisteredPage) {
-    
-    
-#  if 0
     struct RegisteredPageComparator {
       PageInformation* aA;
       bool operator()(PageInformation* aB) const { return aA->Equals(aB); }
     };
-    MOZ_RELEASE_ASSERT(std::none_of(
+
+    auto foundPageIter = std::find_if(
         sInstance->mRegisteredPages.begin(), sInstance->mRegisteredPages.end(),
-        RegisteredPageComparator{aRegisteredPage.get()}));
-#  endif
+        RegisteredPageComparator{aRegisteredPage.get()});
+
+    if (foundPageIter != sInstance->mRegisteredPages.end()) {
+      if ((*foundPageIter)->Url() == "about:blank") {
+        
+        
+        
+        
+        sInstance->mRegisteredPages.erase(foundPageIter);
+      } else {
+        
+        return;
+      }
+    }
     MOZ_RELEASE_ASSERT(
         sInstance->mRegisteredPages.append(std::move(aRegisteredPage)));
   }
@@ -3069,6 +3079,9 @@ void profiler_register_page(uint64_t aBrowsingContextID,
 
   PSAutoLock lock;
 
+  
+  
+  
   RefPtr<PageInformation> pageInfo = new PageInformation(
       aBrowsingContextID, aInnerWindowID, aUrl, aIsSubFrame);
   CorePS::AppendRegisteredPage(lock, std::move(pageInfo));
