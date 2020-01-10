@@ -980,7 +980,9 @@ bool js::intl_toLocaleLowerCase(JSContext* cx, unsigned argc, Value* vp) {
 
 #else
 
-bool js::str_toLocaleLowerCase(JSContext* cx, unsigned argc, Value* vp) {
+
+
+static bool str_toLocaleLowerCase(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   RootedString str(cx, ToStringForStringFunction(cx, args.thisv()));
@@ -1395,7 +1397,9 @@ bool js::intl_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp) {
 
 #else
 
-bool js::str_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp) {
+
+
+static bool str_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   RootedString str(cx, ToStringForStringFunction(cx, args.thisv()));
@@ -1438,9 +1442,13 @@ bool js::str_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+
+
 #else
 
-bool js::str_localeCompare(JSContext* cx, unsigned argc, Value* vp) {
+
+
+static bool str_localeCompare(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   RootedString str(cx, ToStringForStringFunction(cx, args.thisv()));
   if (!str) {
@@ -1479,7 +1487,10 @@ bool js::str_localeCompare(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-bool js::str_normalize(JSContext* cx, unsigned argc, Value* vp) {
+
+
+
+static bool str_normalize(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -1610,7 +1621,7 @@ bool js::str_normalize(JSContext* cx, unsigned argc, Value* vp) {
 
 #endif  
 
-bool js::str_charAt(JSContext* cx, unsigned argc, Value* vp) {
+static bool str_charAt(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   RootedString str(cx);
@@ -2587,17 +2598,17 @@ static bool TrimString(JSContext* cx, const CallArgs& args, bool trimStart,
   return true;
 }
 
-bool js::str_trim(JSContext* cx, unsigned argc, Value* vp) {
+static bool str_trim(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return TrimString(cx, args, true, true);
 }
 
-bool js::str_trimStart(JSContext* cx, unsigned argc, Value* vp) {
+static bool str_trimStart(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return TrimString(cx, args, true, false);
 }
 
-bool js::str_trimEnd(JSContext* cx, unsigned argc, Value* vp) {
+static bool str_trimEnd(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return TrimString(cx, args, false, true);
 }
@@ -3312,7 +3323,7 @@ ArrayObject* js::StringSplitString(JSContext* cx, HandleObjectGroup group,
 
 
 
-bool js::str_concat(JSContext* cx, unsigned argc, Value* vp) {
+static bool str_concat(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   JSString* str = ToStringForStringFunction(cx, args.thisv());
   if (!str) {

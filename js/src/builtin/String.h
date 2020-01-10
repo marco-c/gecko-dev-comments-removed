@@ -55,22 +55,12 @@ extern bool str_toUpperCase(JSContext* cx, unsigned argc, Value* vp);
 
 extern bool str_toString(JSContext* cx, unsigned argc, Value* vp);
 
-extern bool str_charAt(JSContext* cx, unsigned argc, Value* vp);
-
 extern bool str_charCodeAt_impl(JSContext* cx, HandleString string,
                                 HandleValue index, MutableHandleValue res);
 
 extern bool str_charCodeAt(JSContext* cx, unsigned argc, Value* vp);
 
-extern bool str_contains(JSContext* cx, unsigned argc, Value* vp);
-
 extern bool str_endsWith(JSContext* cx, unsigned argc, Value* vp);
-
-extern bool str_trim(JSContext* cx, unsigned argc, Value* vp);
-
-extern bool str_trimStart(JSContext* cx, unsigned argc, Value* vp);
-
-extern bool str_trimEnd(JSContext* cx, unsigned argc, Value* vp);
 
 
 
@@ -95,47 +85,6 @@ extern MOZ_MUST_USE bool intl_toLocaleLowerCase(JSContext* cx, unsigned argc,
 
 extern MOZ_MUST_USE bool intl_toLocaleUpperCase(JSContext* cx, unsigned argc,
                                                 Value* vp);
-
-#if EXPOSE_INTL_API
-
-
-
-
-#else
-
-
-
-
-extern bool str_toLocaleLowerCase(JSContext* cx, unsigned argc, Value* vp);
-
-extern bool str_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp);
-
-#endif  
-
-#if EXPOSE_INTL_API
-
-
-
-extern bool str_normalize(JSContext* cx, unsigned argc, Value* vp);
-
-#endif  
-
-#if EXPOSE_INTL_API
-
-
-
-
-
-#else
-
-
-
-
-extern bool str_localeCompare(JSContext* cx, unsigned argc, Value* vp);
-
-#endif  
-
-extern bool str_concat(JSContext* cx, unsigned argc, Value* vp);
 
 ArrayObject* StringSplitString(JSContext* cx, HandleObjectGroup group,
                                HandleString str, HandleString sep,
