@@ -485,6 +485,8 @@ class nsHttpChannel final : public HttpBaseChannel,
   nsresult ProcessCrossOriginHeader();
   nsresult ProcessCrossOriginResourcePolicyHeader();
 
+  nsresult ComputeCrossOriginOpenerPolicyMismatch();
+
   
 
 
@@ -734,6 +736,10 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   uint32_t mTopWindowOriginComputed : 1;
+
+  
+  
+  uint32_t mHasCrossOriginOpenerPolicyMismatch : 1;
 
   
   

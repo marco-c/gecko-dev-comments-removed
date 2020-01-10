@@ -317,6 +317,13 @@ class HttpBaseChannel : public nsHashPropertyBag,
   virtual void SetIPv6Disabled(void) override;
   NS_IMETHOD GetCrossOriginOpenerPolicy(
       nsILoadInfo::CrossOriginOpenerPolicy* aPolicy) override;
+  virtual bool GetHasSandboxedAuxiliaryNavigations() override {
+    return mHasSandboxedNavigations;
+  }
+  virtual void SetHasSandboxedAuxiliaryNavigations(
+      bool aHasSandboxedAuxiliaryNavigations) override {
+    mHasSandboxedNavigations = aHasSandboxedAuxiliaryNavigations;
+  }
 
   inline void CleanRedirectCacheChainIfNecessary() {
     mRedirectedCachekeys = nullptr;
@@ -730,6 +737,9 @@ class HttpBaseChannel : public nsHashPropertyBag,
   
   
   uint32_t mUpgradableToSecure : 1;
+
+  
+  uint32_t mHasSandboxedNavigations : 1;
 
   
   

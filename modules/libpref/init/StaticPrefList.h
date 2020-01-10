@@ -925,6 +925,15 @@ VARCACHE_PREF(
 
 
 
+VARCACHE_PREF(
+  Live,
+  "browser.tabs.remote.useCrossOriginOpenerPolicy",
+  browser_tabs_remote_useCrossOriginOpenerPolicy,
+  bool, false
+)
+
+
+
 
 
 VARCACHE_PREF(

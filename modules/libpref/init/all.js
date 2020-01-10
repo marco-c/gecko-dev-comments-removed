@@ -3185,10 +3185,6 @@ pref("browser.tabs.remote.separatePrivilegedMozillaWebContentProcess", false);
 pref("browser.tabs.remote.separatedMozillaDomains", "addons.mozilla.org,accounts.firefox.com");
 
 
-
-pref("browser.tabs.remote.useCrossOriginOpenerPolicy", false);
-
-
 pref("svg.display-lists.hit-testing.enabled", true);
 pref("svg.display-lists.painting.enabled", true);
 
