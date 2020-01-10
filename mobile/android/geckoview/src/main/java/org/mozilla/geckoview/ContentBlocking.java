@@ -90,7 +90,7 @@ public class ContentBlocking {
          final Pref<Boolean> mSbPhishing = new Pref<Boolean>(
             "browser.safebrowsing.phishing.enabled", true);
          final Pref<Integer> mCookieBehavior = new Pref<Integer>(
-            "network.cookie.cookieBehavior", COOKIE_ACCEPT_ALL);
+            "network.cookie.cookieBehavior", COOKIE_ACCEPT_NON_TRACKERS);
          final Pref<Integer> mCookieLifetime = new Pref<Integer>(
             "network.cookie.lifetimePolicy", COOKIE_LIFETIME_NORMAL);
 
