@@ -131,7 +131,7 @@ void ImageCapture::TakePhoto(ErrorResult& aResult) {
   if (rv == NS_ERROR_NOT_IMPLEMENTED) {
     IC_LOG(
         "MediaEngine doesn't support TakePhoto(), it falls back to "
-        "MediaTrackGraph.");
+        "MediaStreamGraph.");
     RefPtr<CaptureTask> task = new CaptureTask(this);
 
     

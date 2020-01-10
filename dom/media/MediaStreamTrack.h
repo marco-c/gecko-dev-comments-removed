@@ -8,7 +8,7 @@
 
 #include "MediaTrackConstraints.h"
 #include "PrincipalChangeObserver.h"
-#include "PrincipalHandle.h"
+#include "StreamTracks.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/dom/MediaStreamTrackBinding.h"
 #include "mozilla/dom/MediaTrackSettingsBinding.h"
@@ -23,15 +23,15 @@ namespace mozilla {
 class DOMMediaStream;
 class MediaEnginePhotoCallback;
 class MediaInputPort;
-class MediaTrack;
-class MediaTrackGraph;
-class MediaTrackGraphImpl;
-class MediaTrackListener;
-class DirectMediaTrackListener;
+class MediaStream;
+class MediaStreamGraph;
+class MediaStreamGraphImpl;
+class MediaStreamTrackListener;
+class DirectMediaStreamTrackListener;
 class PeerConnectionImpl;
 class PeerConnectionMedia;
 class PeerIdentity;
-class ProcessedMediaTrack;
+class ProcessedMediaStream;
 class RemoteSourceStreamInfo;
 class SourceStreamInfo;
 class MediaMgrError;
@@ -406,12 +406,15 @@ class MediaStreamTrack : public DOMEventTargetHelper,
   friend class mozilla::SourceStreamInfo;
   friend class mozilla::RemoteSourceStreamInfo;
 
-  class MTGListener;
+  class MSGListener;
   class TrackSink;
 
  public:
+  
+
+
   MediaStreamTrack(
-      nsPIDOMWindowInner* aWindow, mozilla::MediaTrack* aInputTrack,
+      nsPIDOMWindowInner* aWindow, MediaStream* aInputStream, TrackID aTrackID,
       MediaStreamTrackSource* aSource,
       MediaStreamTrackState aReadyState = MediaStreamTrackState::Live,
       const MediaTrackConstraints& aConstraints = MediaTrackConstraints());
@@ -472,9 +475,9 @@ class MediaStreamTrack : public DOMEventTargetHelper,
     return GetSource().GetPeerIdentity();
   }
 
-  ProcessedMediaTrack* GetTrack() const;
-  MediaTrackGraph* Graph() const;
-  MediaTrackGraphImpl* GraphImpl() const;
+  ProcessedMediaStream* GetStream() const;
+  MediaStreamGraph* Graph() const;
+  MediaStreamGraphImpl* GraphImpl() const;
 
   MediaStreamTrackSource& GetSource() const {
     MOZ_RELEASE_ASSERT(mSource,
@@ -521,13 +524,13 @@ class MediaStreamTrack : public DOMEventTargetHelper,
 
 
 
-  virtual void AddListener(MediaTrackListener* aListener);
+  virtual void AddListener(MediaStreamTrackListener* aListener);
 
   
 
 
 
-  void RemoveListener(MediaTrackListener* aListener);
+  void RemoveListener(MediaStreamTrackListener* aListener);
 
   
 
@@ -535,15 +538,17 @@ class MediaStreamTrack : public DOMEventTargetHelper,
 
 
 
-  virtual void AddDirectListener(DirectMediaTrackListener* aListener);
-  void RemoveDirectListener(DirectMediaTrackListener* aListener);
+  virtual void AddDirectListener(DirectMediaStreamTrackListener* aListener);
+  void RemoveDirectListener(DirectMediaStreamTrackListener* aListener);
 
   
 
 
 
   already_AddRefed<MediaInputPort> ForwardTrackContentsTo(
-      ProcessedMediaTrack* aTrack);
+      ProcessedMediaStream* aStream);
+
+  TrackID GetTrackID() const { return mTrackID; }
 
  protected:
   virtual ~MediaStreamTrack();
@@ -614,23 +619,25 @@ class MediaStreamTrack : public DOMEventTargetHelper,
 
   
   
-  const RefPtr<mozilla::MediaTrack> mInputTrack;
+  const RefPtr<MediaStream> mInputStream;
   
   
-  RefPtr<ProcessedMediaTrack> mTrack;
+  RefPtr<ProcessedMediaStream> mStream;
   
   
   
   RefPtr<MediaInputPort> mPort;
+  
+  const TrackID mTrackID;
   RefPtr<MediaStreamTrackSource> mSource;
   const UniquePtr<TrackSink> mSink;
   nsCOMPtr<nsIPrincipal> mPrincipal;
   nsCOMPtr<nsIPrincipal> mPendingPrincipal;
-  RefPtr<MTGListener> mMTGListener;
+  RefPtr<MSGListener> mMSGListener;
   
   
-  nsTArray<RefPtr<MediaTrackListener>> mTrackListeners;
-  nsTArray<RefPtr<DirectMediaTrackListener>> mDirectTrackListeners;
+  nsTArray<RefPtr<MediaStreamTrackListener>> mTrackListeners;
+  nsTArray<RefPtr<DirectMediaStreamTrackListener>> mDirectTrackListeners;
   nsString mID;
   MediaStreamTrackState mReadyState;
   bool mEnabled;

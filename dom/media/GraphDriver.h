@@ -56,8 +56,8 @@ static const int SCHEDULE_SAFETY_MARGIN_MS = 10;
 static const int AUDIO_TARGET_MS =
     2 * MEDIA_GRAPH_TARGET_PERIOD_MS + SCHEDULE_SAFETY_MARGIN_MS;
 
-class MediaTrack;
-class MediaTrackGraphImpl;
+class MediaStream;
+class MediaStreamGraphImpl;
 
 class AudioCallbackDriver;
 class OfflineClockDriver;
@@ -117,7 +117,7 @@ enum class AudioContextOperation;
 
 class GraphDriver {
  public:
-  explicit GraphDriver(MediaTrackGraphImpl* aGraphImpl);
+  explicit GraphDriver(MediaStreamGraphImpl* aGraphImpl);
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GraphDriver);
   
@@ -178,7 +178,7 @@ class GraphDriver {
 
   void EnsureNextIteration();
 
-  MediaTrackGraphImpl* GraphImpl() const { return mGraphImpl; }
+  MediaStreamGraphImpl* GraphImpl() const { return mGraphImpl; }
 
 #ifdef DEBUG
   
@@ -201,7 +201,7 @@ class GraphDriver {
   
   GraphTime mIterationEnd;
   
-  const RefPtr<MediaTrackGraphImpl> mGraphImpl;
+  const RefPtr<MediaStreamGraphImpl> mGraphImpl;
 
   
   
@@ -220,14 +220,14 @@ class GraphDriver {
   virtual ~GraphDriver() {}
 };
 
-class MediaTrackGraphInitThreadRunnable;
+class MediaStreamGraphInitThreadRunnable;
 
 
 
 
 class ThreadedDriver : public GraphDriver {
  public:
-  explicit ThreadedDriver(MediaTrackGraphImpl* aGraphImpl);
+  explicit ThreadedDriver(MediaStreamGraphImpl* aGraphImpl);
   virtual ~ThreadedDriver();
   void WaitForNextIteration() override;
   void WakeUp() override;
@@ -238,7 +238,7 @@ class ThreadedDriver : public GraphDriver {
 
 
   void RunThread();
-  friend class MediaTrackGraphInitThreadRunnable;
+  friend class MediaStreamGraphInitThreadRunnable;
   uint32_t IterationDuration() override { return MEDIA_GRAPH_TARGET_PERIOD_MS; }
 
   nsIThread* Thread() { return mThread; }
@@ -273,7 +273,7 @@ class ThreadedDriver : public GraphDriver {
 
 class SystemClockDriver : public ThreadedDriver {
  public:
-  explicit SystemClockDriver(MediaTrackGraphImpl* aGraphImpl);
+  explicit SystemClockDriver(MediaStreamGraphImpl* aGraphImpl);
   virtual ~SystemClockDriver();
   TimeDuration WaitInterval() override;
   MediaTime GetIntervalForIteration() override;
@@ -299,7 +299,7 @@ class SystemClockDriver : public ThreadedDriver {
 
 class OfflineClockDriver : public ThreadedDriver {
  public:
-  OfflineClockDriver(MediaTrackGraphImpl* aGraphImpl, GraphTime aSlice);
+  OfflineClockDriver(MediaStreamGraphImpl* aGraphImpl, GraphTime aSlice);
   virtual ~OfflineClockDriver();
   TimeDuration WaitInterval() override;
   MediaTime GetIntervalForIteration() override;
@@ -310,11 +310,11 @@ class OfflineClockDriver : public ThreadedDriver {
   GraphTime mSlice;
 };
 
-struct TrackAndPromiseForOperation {
-  TrackAndPromiseForOperation(MediaTrack* aTrack, void* aPromise,
-                              dom::AudioContextOperation aOperation,
-                              dom::AudioContextOperationFlags aFlags);
-  RefPtr<MediaTrack> mTrack;
+struct StreamAndPromiseForOperation {
+  StreamAndPromiseForOperation(MediaStream* aStream, void* aPromise,
+                               dom::AudioContextOperation aOperation,
+                               dom::AudioContextOperationFlags aFlags);
+  RefPtr<MediaStream> mStream;
   void* mPromise;
   dom::AudioContextOperation mOperation;
   dom::AudioContextOperationFlags mFlags;
@@ -352,7 +352,7 @@ class AudioCallbackDriver : public GraphDriver,
 {
  public:
   
-  AudioCallbackDriver(MediaTrackGraphImpl* aGraphImpl,
+  AudioCallbackDriver(MediaStreamGraphImpl* aGraphImpl,
                       uint32_t aInputChannelCount,
                       AudioInputType aAudioInputType);
   virtual ~AudioCallbackDriver();
@@ -410,8 +410,9 @@ class AudioCallbackDriver : public GraphDriver,
 
   
 
-  void EnqueueTrackAndPromiseForOperation(
-      MediaTrack* aTrack, void* aPromise, dom::AudioContextOperation aOperation,
+  void EnqueueStreamAndPromiseForOperation(
+      MediaStream* aStream, void* aPromise,
+      dom::AudioContextOperation aOperation,
       dom::AudioContextOperationFlags aFlags);
 
   std::thread::id ThreadId() { return mAudioThreadId.load(); }
@@ -510,7 +511,7 @@ class AudioCallbackDriver : public GraphDriver,
 
   const RefPtr<SharedThreadPool> mInitShutdownThread;
   
-  AutoTArray<TrackAndPromiseForOperation, 1> mPromisesForOperation;
+  AutoTArray<StreamAndPromiseForOperation, 1> mPromisesForOperation;
   cubeb_device_pref mInputDevicePreference;
   
 
@@ -552,7 +553,7 @@ class AsyncCubebTask : public Runnable {
 
   RefPtr<AudioCallbackDriver> mDriver;
   AsyncCubebOperation mOperation;
-  RefPtr<MediaTrackGraphImpl> mShutdownGrip;
+  RefPtr<MediaStreamGraphImpl> mShutdownGrip;
 };
 
 }  

@@ -8,7 +8,7 @@
 #define AudioParamTimeline_h_
 
 #include "AudioEventTimeline.h"
-#include "AudioNodeTrack.h"
+#include "AudioNodeStream.h"
 #include "mozilla/ErrorResult.h"
 #include "AudioSegment.h"
 
@@ -29,11 +29,11 @@ class AudioParamTimeline : public AudioEventTimeline {
  public:
   explicit AudioParamTimeline(float aDefaultValue) : BaseClass(aDefaultValue) {}
 
-  AudioNodeTrack* Track() const { return mTrack; }
+  AudioNodeStream* Stream() const { return mStream; }
 
   bool HasSimpleValue() const {
     return BaseClass::HasSimpleValue() &&
-           (!mTrack || mTrack->LastChunks()[0].IsNull());
+           (!mStream || mStream->LastChunks()[0].IsNull());
   }
 
   template <class TimeType>
@@ -47,8 +47,8 @@ class AudioParamTimeline : public AudioEventTimeline {
       CancelScheduledValues(aEvent.Time<TimeType>());
       return;
     }
-    if (aEvent.mType == AudioTimelineEvent::Track) {
-      mTrack = aEvent.mTrack;
+    if (aEvent.mType == AudioTimelineEvent::Stream) {
+      mStream = aEvent.mStream;
       return;
     }
     if (aEvent.mType == AudioTimelineEvent::SetValue) {
@@ -74,7 +74,7 @@ class AudioParamTimeline : public AudioEventTimeline {
   void GetValuesAtTime(TimeType aTime, float* aBuffer, const size_t aSize);
 
   virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
-    return mTrack ? mTrack->SizeOfIncludingThis(aMallocSizeOf) : 0;
+    return mStream ? mStream->SizeOfIncludingThis(aMallocSizeOf) : 0;
   }
 
   virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
@@ -86,7 +86,7 @@ class AudioParamTimeline : public AudioEventTimeline {
 
  protected:
   
-  RefPtr<AudioNodeTrack> mTrack;
+  RefPtr<AudioNodeStream> mStream;
 };
 
 template <>
@@ -106,7 +106,7 @@ inline float AudioParamTimeline::GetValueAtTime(int64_t aTime,
 
   
   return BaseClass::GetValueAtTime(static_cast<int64_t>(aTime + aCounter)) +
-         (mTrack ? AudioNodeInputValue(aCounter) : 0.0f);
+         (mStream ? AudioNodeInputValue(aCounter) : 0.0f);
 }
 
 template <>
@@ -129,7 +129,7 @@ inline void AudioParamTimeline::GetValuesAtTime(int64_t aTime, float* aBuffer,
 
   
   BaseClass::GetValuesAtTime(aTime, aBuffer, aSize);
-  if (mTrack) {
+  if (mStream) {
     uint32_t blockOffset = aTime % WEBAUDIO_BLOCK_SIZE;
     MOZ_ASSERT(blockOffset + aSize <= WEBAUDIO_BLOCK_SIZE);
     for (size_t i = 0; i < aSize; ++i) {

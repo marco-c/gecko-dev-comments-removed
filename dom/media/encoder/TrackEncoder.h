@@ -8,7 +8,8 @@
 
 #include "AudioSegment.h"
 #include "EncodedFrame.h"
-#include "MediaTrackGraph.h"
+#include "MediaStreamGraph.h"
+#include "StreamTracks.h"
 #include "TrackMetadataBase.h"
 #include "VideoSegment.h"
 
@@ -275,7 +276,7 @@ class AudioTrackEncoder : public TrackEncoder {
 
 
 
-  void TryInit(const AudioSegment& aSegment, TrackTime aDuration);
+  void TryInit(const AudioSegment& aSegment, StreamTime aDuration);
 
   void Cancel() override;
 
@@ -319,7 +320,7 @@ class AudioTrackEncoder : public TrackEncoder {
 
   AudioSegment mOutgoingBuffer;
 
-  TrackTime mNotInitDuration;
+  StreamTime mNotInitDuration;
 
   uint32_t mAudioBitrate;
 };
@@ -391,7 +392,7 @@ class VideoTrackEncoder : public TrackEncoder {
 
   void Init(const VideoSegment& aSegment, const TimeStamp& aTime);
 
-  TrackTime SecondsToMediaTime(double aS) const {
+  StreamTime SecondsToMediaTime(double aS) const {
     NS_ASSERTION(0 <= aS && aS <= TRACK_TICKS_MAX / TRACK_RATE_MAX,
                  "Bad seconds");
     return mTrackRate * aS;
@@ -484,7 +485,7 @@ class VideoTrackEncoder : public TrackEncoder {
   
 
 
-  TrackTime mEncodedTicks;
+  StreamTime mEncodedTicks;
 
   
 

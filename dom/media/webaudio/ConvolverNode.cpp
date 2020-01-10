@@ -9,7 +9,7 @@
 #include "nsAutoPtr.h"
 #include "AlignmentUtils.h"
 #include "AudioNodeEngine.h"
-#include "AudioNodeTrack.h"
+#include "AudioNodeStream.h"
 #include "blink/Reverb.h"
 #include "PlayingRefChangeHandler.h"
 
@@ -121,7 +121,7 @@ class ConvolverNodeEngine final : public AudioNodeEngine {
     }
   }
 
-  void ProcessBlock(AudioNodeTrack* aTrack, GraphTime aFrom,
+  void ProcessBlock(AudioNodeStream* aStream, GraphTime aFrom,
                     const AudioBlock& aInput, AudioBlock* aOutput,
                     bool* aFinished) override;
 
@@ -170,7 +170,8 @@ static void AddScaledLeftToRight(AudioBlock* aBlock, float aScale) {
   AudioBlockAddChannelWithScale(left, aScale, right);
 }
 
-void ConvolverNodeEngine::ProcessBlock(AudioNodeTrack* aTrack, GraphTime aFrom,
+void ConvolverNodeEngine::ProcessBlock(AudioNodeStream* aStream,
+                                       GraphTime aFrom,
                                        const AudioBlock& aInput,
                                        AudioBlock* aOutput, bool* aFinished) {
   if (!mReverb) {
@@ -188,10 +189,10 @@ void ConvolverNodeEngine::ProcessBlock(AudioNodeTrack* aTrack, GraphTime aFrom,
         mRemainingLeftOutput = INT32_MIN;
         MOZ_ASSERT(mRemainingRightOutput <= 0);
         MOZ_ASSERT(mRemainingRightHistory <= 0);
-        aTrack->ScheduleCheckForInactive();
+        aStream->ScheduleCheckForInactive();
         RefPtr<PlayingRefChanged> refchanged =
-            new PlayingRefChanged(aTrack, PlayingRefChanged::RELEASE);
-        aTrack->Graph()->DispatchToMainThreadStableState(refchanged.forget());
+            new PlayingRefChanged(aStream, PlayingRefChanged::RELEASE);
+        aStream->Graph()->DispatchToMainThreadStableState(refchanged.forget());
       }
       aOutput->SetNull(WEBAUDIO_BLOCK_SIZE);
       return;
@@ -199,8 +200,8 @@ void ConvolverNodeEngine::ProcessBlock(AudioNodeTrack* aTrack, GraphTime aFrom,
   } else {
     if (mRemainingLeftOutput <= 0) {
       RefPtr<PlayingRefChanged> refchanged =
-          new PlayingRefChanged(aTrack, PlayingRefChanged::ADDREF);
-      aTrack->Graph()->DispatchToMainThreadStableState(refchanged.forget());
+          new PlayingRefChanged(aStream, PlayingRefChanged::ADDREF);
+      aStream->Graph()->DispatchToMainThreadStableState(refchanged.forget());
     }
 
     
@@ -211,7 +212,7 @@ void ConvolverNodeEngine::ProcessBlock(AudioNodeTrack* aTrack, GraphTime aFrom,
     
     if (mRightConvolverMode != RightConvolverMode::Always) {
       ChannelInterpretation channelInterpretation =
-          aTrack->GetChannelInterpretation();
+          aStream->GetChannelInterpretation();
       if (inputChannelCount == 2) {
         if (mRemainingRightHistory <= 0) {
           
@@ -336,8 +337,8 @@ ConvolverNode::ConvolverNode(AudioContext* aContext)
                 ChannelInterpretation::Speakers),
       mNormalize(true) {
   ConvolverNodeEngine* engine = new ConvolverNodeEngine(this, mNormalize);
-  mTrack = AudioNodeTrack::Create(
-      aContext, engine, AudioNodeTrack::NO_TRACK_FLAGS, aContext->Graph());
+  mStream = AudioNodeStream::Create(
+      aContext, engine, AudioNodeStream::NO_STREAM_FLAGS, aContext->Graph());
 }
 
 
@@ -405,8 +406,8 @@ void ConvolverNode::SetBuffer(JSContext* aCx, AudioBuffer* aBuffer,
   }
 
   
-  AudioNodeTrack* ns = mTrack;
-  MOZ_ASSERT(ns, "Why don't we have a track here?");
+  AudioNodeStream* ns = mStream;
+  MOZ_ASSERT(ns, "Why don't we have a stream here?");
   if (aBuffer) {
     AudioChunk data = aBuffer->GetThreadSharedChannelsForRate(aCx);
     if (data.mBufferFormat == AUDIO_FORMAT_S16) {
@@ -467,7 +468,9 @@ void ConvolverNode::SetBuffer(JSContext* aCx, AudioBuffer* aBuffer,
   mBuffer = aBuffer;
 }
 
-void ConvolverNode::SetNormalize(bool aNormalize) { mNormalize = aNormalize; }
+void ConvolverNode::SetNormalize(bool aNormalize) {
+  mNormalize = aNormalize;
+}
 
 }  
 }  

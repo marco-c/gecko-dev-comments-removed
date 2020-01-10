@@ -26,7 +26,7 @@ struct AudioTimelineEvent;
 
 class AbstractThread;
 class AudioBlock;
-class AudioNodeTrack;
+class AudioNodeStream;
 
 
 
@@ -262,8 +262,8 @@ class AudioNodeEngine {
 
   virtual dom::DelayNodeEngine* AsDelayNodeEngine() { return nullptr; }
 
-  virtual void SetTrackTimeParameter(uint32_t aIndex, TrackTime aParam) {
-    NS_ERROR("Invalid SetTrackTimeParameter index");
+  virtual void SetStreamTimeParameter(uint32_t aIndex, StreamTime aParam) {
+    NS_ERROR("Invalid SetStreamTimeParameter index");
   }
   virtual void SetDoubleParameter(uint32_t aIndex, double aParam) {
     NS_ERROR("Invalid SetDoubleParameter index");
@@ -284,8 +284,7 @@ class AudioNodeEngine {
     NS_ERROR("SetRawArrayData called on an engine that doesn't support it");
   }
 
-  virtual void SetReverb(WebCore::Reverb* aBuffer,
-                         uint32_t aImpulseChannelCount) {
+  virtual void SetReverb(WebCore::Reverb* aBuffer, uint32_t aImpulseChannelCount) {
     NS_ERROR("SetReverb called on engine that doesn't support it");
   }
 
@@ -300,7 +299,7 @@ class AudioNodeEngine {
 
 
 
-  virtual void ProcessBlock(AudioNodeTrack* aTrack, GraphTime aFrom,
+  virtual void ProcessBlock(AudioNodeStream* aStream, GraphTime aFrom,
                             const AudioBlock& aInput, AudioBlock* aOutput,
                             bool* aFinished);
   
@@ -308,8 +307,8 @@ class AudioNodeEngine {
 
 
 
-  virtual void ProduceBlockBeforeInput(AudioNodeTrack* aTrack, GraphTime aFrom,
-                                       AudioBlock* aOutput) {
+  virtual void ProduceBlockBeforeInput(AudioNodeStream* aStream,
+                                       GraphTime aFrom, AudioBlock* aOutput) {
     MOZ_ASSERT_UNREACHABLE("ProduceBlockBeforeInput called on wrong engine");
   }
 
@@ -328,7 +327,7 @@ class AudioNodeEngine {
 
 
 
-  virtual void ProcessBlocksOnPorts(AudioNodeTrack* aTrack,
+  virtual void ProcessBlocksOnPorts(AudioNodeStream* aStream,
                                     Span<const AudioBlock> aInput,
                                     Span<AudioBlock> aOutput, bool* aFinished);
 

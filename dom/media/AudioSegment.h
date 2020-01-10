@@ -149,7 +149,7 @@ struct AudioChunk {
   typedef mozilla::AudioSampleFormat SampleFormat;
 
   
-  void SliceTo(TrackTime aStart, TrackTime aEnd) {
+  void SliceTo(StreamTime aStart, StreamTime aEnd) {
     MOZ_ASSERT(aStart >= 0 && aStart < aEnd && aEnd <= mDuration,
                "Slice out of bounds");
     if (mBuffer) {
@@ -162,7 +162,7 @@ struct AudioChunk {
     }
     mDuration = aEnd - aStart;
   }
-  TrackTime GetDuration() const { return mDuration; }
+  StreamTime GetDuration() const { return mDuration; }
   bool CanCombineWithFollowing(const AudioChunk& aOther) const {
     if (aOther.mBuffer != mBuffer) {
       return false;
@@ -193,7 +193,7 @@ struct AudioChunk {
     return true;
   }
   bool IsNull() const { return mBuffer == nullptr; }
-  void SetNull(TrackTime aDuration) {
+  void SetNull(StreamTime aDuration) {
     mBuffer = nullptr;
     mChannelData.Clear();
     mDuration = aDuration;
@@ -262,7 +262,7 @@ struct AudioChunk {
 
   const PrincipalHandle& GetPrincipalHandle() const { return mPrincipalHandle; }
 
-  TrackTime mDuration = 0;             
+  StreamTime mDuration = 0;            
   RefPtr<ThreadSharedObject> mBuffer;  
                                        
   

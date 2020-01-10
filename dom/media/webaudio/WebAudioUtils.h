@@ -18,7 +18,7 @@ typedef struct SpeexResamplerState_ SpeexResamplerState;
 
 namespace mozilla {
 
-class AudioNodeTrack;
+class AudioNodeStream;
 
 extern LazyLogModule gWebAudioAPILog;
 #define WEB_AUDIO_API_LOG(...) \
@@ -51,7 +51,7 @@ inline bool FuzzyEqual(double v1, double v2) { return fabs(v1 - v2) < 1e-7; }
 
 
 void ConvertAudioTimelineEventToTicks(AudioTimelineEvent& aEvent,
-                                      AudioNodeTrack* aDest);
+                                      AudioNodeStream* aDest);
 
 
 

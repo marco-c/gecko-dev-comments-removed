@@ -6,7 +6,7 @@
 
 #include "AudioNode.h"
 #include "mozilla/ErrorResult.h"
-#include "AudioNodeTrack.h"
+#include "AudioNodeStream.h"
 #include "AudioNodeEngine.h"
 #include "mozilla/dom/AudioParam.h"
 #include "mozilla/Services.h"
@@ -68,7 +68,7 @@ AudioNode::~AudioNode() {
   MOZ_ASSERT(mInputNodes.IsEmpty());
   MOZ_ASSERT(mOutputNodes.IsEmpty());
   MOZ_ASSERT(mOutputParams.IsEmpty());
-  MOZ_ASSERT(!mTrack,
+  MOZ_ASSERT(!mStream,
              "The webaudio-node-demise notification must have been sent");
   if (mContext) {
     mContext->UnregisterNode(this);
@@ -188,7 +188,7 @@ void AudioNode::DisconnectFromGraph() {
     output->RemoveInputNode(inputIndex);
   }
 
-  DestroyMediaTrack();
+  DestroyMediaStream();
 }
 
 AudioNode* AudioNode::Connect(AudioNode& aDestination, uint32_t aOutput,
@@ -222,13 +222,14 @@ AudioNode* AudioNode::Connect(AudioNode& aDestination, uint32_t aOutput,
   input->mInputNode = this;
   input->mInputPort = aInput;
   input->mOutputPort = aOutput;
-  AudioNodeTrack* destinationTrack = aDestination.mTrack;
-  if (mTrack && destinationTrack) {
+  AudioNodeStream* destinationStream = aDestination.mStream;
+  if (mStream && destinationStream) {
     
     MOZ_ASSERT(aInput <= UINT16_MAX, "Unexpected large input port number");
     MOZ_ASSERT(aOutput <= UINT16_MAX, "Unexpected large output port number");
-    input->mTrackPort = destinationTrack->AllocateInputPort(
-        mTrack, static_cast<uint16_t>(aInput), static_cast<uint16_t>(aOutput));
+    input->mStreamPort = destinationStream->AllocateInputPort(
+        mStream, AudioNodeStream::AUDIO_TRACK, TRACK_ANY,
+        static_cast<uint16_t>(aInput), static_cast<uint16_t>(aOutput));
   }
   aDestination.NotifyInputsChanged();
 
@@ -260,31 +261,32 @@ void AudioNode::Connect(AudioParam& aDestination, uint32_t aOutput,
   input->mInputPort = INVALID_PORT;
   input->mOutputPort = aOutput;
 
-  mozilla::MediaTrack* track = aDestination.Track();
-  MOZ_ASSERT(track->AsProcessedTrack());
-  ProcessedMediaTrack* ps = static_cast<ProcessedMediaTrack*>(track);
-  if (mTrack) {
+  MediaStream* stream = aDestination.Stream();
+  MOZ_ASSERT(stream->AsProcessedStream());
+  ProcessedMediaStream* ps = static_cast<ProcessedMediaStream*>(stream);
+  if (mStream) {
     
     MOZ_ASSERT(aOutput <= UINT16_MAX, "Unexpected large output port number");
-    input->mTrackPort =
-        ps->AllocateInputPort(mTrack, 0, static_cast<uint16_t>(aOutput));
+    input->mStreamPort =
+        ps->AllocateInputPort(mStream, AudioNodeStream::AUDIO_TRACK, TRACK_ANY,
+                              0, static_cast<uint16_t>(aOutput));
   }
 }
 
-void AudioNode::SendDoubleParameterToTrack(uint32_t aIndex, double aValue) {
-  MOZ_ASSERT(mTrack, "How come we don't have a track here?");
-  mTrack->SetDoubleParameter(aIndex, aValue);
+void AudioNode::SendDoubleParameterToStream(uint32_t aIndex, double aValue) {
+  MOZ_ASSERT(mStream, "How come we don't have a stream here?");
+  mStream->SetDoubleParameter(aIndex, aValue);
 }
 
-void AudioNode::SendInt32ParameterToTrack(uint32_t aIndex, int32_t aValue) {
-  MOZ_ASSERT(mTrack, "How come we don't have a track here?");
-  mTrack->SetInt32Parameter(aIndex, aValue);
+void AudioNode::SendInt32ParameterToStream(uint32_t aIndex, int32_t aValue) {
+  MOZ_ASSERT(mStream, "How come we don't have a stream here?");
+  mStream->SetInt32Parameter(aIndex, aValue);
 }
 
-void AudioNode::SendChannelMixingParametersToTrack() {
-  if (mTrack) {
-    mTrack->SetChannelMixingParameters(mChannelCount, mChannelCountMode,
-                                       mChannelInterpretation);
+void AudioNode::SendChannelMixingParametersToStream() {
+  if (mStream) {
+    mStream->SetChannelMixingParameters(mChannelCount, mChannelCountMode,
+                                        mChannelInterpretation);
   }
 }
 
@@ -333,9 +335,9 @@ bool AudioNode::DisconnectFromOutputIfConnected<AudioNode>(
   
   destination->mInputNodes.RemoveElementAt(aInputIndex);
   output->NotifyInputsChanged();
-  if (mTrack) {
+  if (mStream) {
     nsCOMPtr<nsIRunnable> runnable = new RunnableRelease(output.forget());
-    mTrack->RunAfterPendingUpdates(runnable.forget());
+    mStream->RunAfterPendingUpdates(runnable.forget());
   }
   return true;
 }
@@ -551,17 +553,17 @@ void AudioNode::Disconnect(AudioParam& aDestination, uint32_t aOutput,
   }
 }
 
-void AudioNode::DestroyMediaTrack() {
-  if (mTrack) {
+void AudioNode::DestroyMediaStream() {
+  if (mStream) {
     
-    AudioNodeTrack* ns = mTrack;
-    MOZ_ASSERT(ns, "How come we don't have a track here?");
+    AudioNodeStream* ns = mStream;
+    MOZ_ASSERT(ns, "How come we don't have a stream here?");
     MOZ_ASSERT(ns->Engine()->NodeMainThread() == this,
                "Invalid node reference");
     ns->Engine()->ClearNode();
 
-    mTrack->Destroy();
-    mTrack = nullptr;
+    mStream->Destroy();
+    mStream = nullptr;
 
     nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
     if (obs) {
@@ -584,8 +586,8 @@ bool AudioNode::PassThrough() const {
 void AudioNode::SetPassThrough(bool aPassThrough) {
   MOZ_ASSERT(NumberOfInputs() <= 1 && NumberOfOutputs() == 1);
   mPassThrough = aPassThrough;
-  if (mTrack) {
-    mTrack->SetPassThrough(mPassThrough);
+  if (mStream) {
+    mStream->SetPassThrough(mPassThrough);
   }
 }
 

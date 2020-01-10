@@ -5,7 +5,7 @@
 
 #define ENABLE_SET_CUBEB_BACKEND 1
 #include "GraphDriver.h"
-#include "MediaTrackGraphImpl.h"
+#include "MediaStreamGraphImpl.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest-printers.h"
@@ -20,10 +20,10 @@
 using ::testing::Return;
 using namespace mozilla;
 
-RefPtr<MediaTrackGraphImpl> MakeMTGImpl() {
-  return MakeRefPtr<MediaTrackGraphImpl>(MediaTrackGraph::AUDIO_THREAD_DRIVER,
-                                         MediaTrackGraph::DIRECT_DRIVER, 44100,
-                                         2, nullptr);
+RefPtr<MediaStreamGraphImpl> MakeMSGImpl() {
+  return MakeRefPtr<MediaStreamGraphImpl>(MediaStreamGraph::AUDIO_THREAD_DRIVER,
+                                          MediaStreamGraph::DIRECT_DRIVER,
+                                          44100, 2, nullptr);
 }
 
 TEST(TestAudioCallbackDriver, StartStop)
@@ -31,7 +31,7 @@ TEST(TestAudioCallbackDriver, StartStop)
   MockCubeb* mock = new MockCubeb();
   mozilla::CubebUtils::ForceSetCubebContext(mock->AsCubebContext());
 
-  RefPtr<MediaTrackGraphImpl> graph = MakeMTGImpl();
+  RefPtr<MediaStreamGraphImpl> graph = MakeMSGImpl();
   EXPECT_TRUE(!!graph->mDriver) << "AudioCallbackDriver created.";
 
   AudioCallbackDriver* driver = graph->mDriver->AsAudioCallbackDriver();

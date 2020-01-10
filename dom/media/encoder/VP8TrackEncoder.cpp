@@ -406,7 +406,7 @@ nsresult VP8TrackEncoder::PrepareRawFrame(VideoChunk& aChunk) {
 
 
 VP8TrackEncoder::EncodeOperation VP8TrackEncoder::GetNextEncodeOperation(
-    TimeDuration aTimeElapsed, TrackTime aProcessedDuration) {
+    TimeDuration aTimeElapsed, StreamTime aProcessedDuration) {
   if (mFrameDroppingMode == FrameDroppingMode::DISALLOW) {
     return ENCODE_NORMAL_FRAME;
   }
@@ -457,7 +457,7 @@ nsresult VP8TrackEncoder::GetEncodedTrack(
 
   TakeTrackData(mSourceSegment);
 
-  TrackTime totalProcessedDuration = 0;
+  StreamTime totalProcessedDuration = 0;
   TimeStamp timebase = TimeStamp::Now();
   EncodeOperation nextEncodeOperation = ENCODE_NORMAL_FRAME;
 

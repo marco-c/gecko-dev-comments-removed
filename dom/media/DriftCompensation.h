@@ -42,7 +42,7 @@ class DriftCompensator {
   const TrackRate mAudioRate;
 
   
-  Atomic<TrackTime> mAudioSamples{0};
+  Atomic<StreamTime> mAudioSamples{0};
 
   
   TimeStamp mAudioStartTime;
@@ -78,7 +78,7 @@ class DriftCompensator {
   
 
 
-  void NotifyAudio(TrackTime aSamples) {
+  void NotifyAudio(StreamTime aSamples) {
     MOZ_ASSERT(aSamples > 0);
     mAudioSamples += aSamples;
 
@@ -93,7 +93,7 @@ class DriftCompensator {
 
   virtual TimeStamp GetVideoTime(TimeStamp aNow, TimeStamp aTime) {
     MOZ_ASSERT(mVideoThread->IsOnCurrentThread());
-    TrackTime samples = mAudioSamples;
+    StreamTime samples = mAudioSamples;
 
     if (samples / mAudioRate < 10) {
       

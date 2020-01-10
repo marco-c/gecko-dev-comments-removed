@@ -17,11 +17,11 @@ struct PRThread;
 namespace mozilla {
 
 class GraphDriver;
-class MediaTrackGraphImpl;
+class MediaStreamGraphImpl;
 
 class GraphRunner {
  public:
-  explicit GraphRunner(MediaTrackGraphImpl* aGraph);
+  explicit GraphRunner(MediaStreamGraphImpl* aGraph);
   ~GraphRunner();
 
   
@@ -59,7 +59,7 @@ class GraphRunner {
   Monitor mMonitor;
   
   
-  MediaTrackGraphImpl* const mGraph;
+  MediaStreamGraphImpl* const mGraph;
   
   
   GraphTime mStateEnd;

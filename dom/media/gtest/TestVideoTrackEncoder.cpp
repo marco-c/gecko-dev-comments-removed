@@ -5,8 +5,8 @@
 #include <algorithm>
 
 #include "DriftCompensation.h"
-#include "MediaTrackGraph.h"
-#include "MediaTrackListener.h"
+#include "MediaStreamGraph.h"
+#include "MediaStreamListener.h"
 #include "VP8TrackEncoder.h"
 #include "WebMWriter.h"  
 #include "gmock/gmock.h"

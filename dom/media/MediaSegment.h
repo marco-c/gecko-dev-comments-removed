@@ -6,8 +6,9 @@
 #ifndef MOZILLA_MEDIASEGMENT_H_
 #define MOZILLA_MEDIASEGMENT_H_
 
-#include "PrincipalHandle.h"
 #include "nsTArray.h"
+#include "nsIPrincipal.h"
+#include "nsProxyRelease.h"
 #ifdef MOZILLA_INTERNAL_API
 #  include "mozilla/TimeStamp.h"
 #endif
@@ -45,8 +46,8 @@ const int64_t MEDIA_TIME_MAX = TRACK_TICKS_MAX;
 
 
 
-typedef MediaTime TrackTime;
-const TrackTime TRACK_TIME_MAX = MEDIA_TIME_MAX;
+typedef MediaTime StreamTime;
+const StreamTime STREAM_TIME_MAX = MEDIA_TIME_MAX;
 
 
 
@@ -63,6 +64,49 @@ const GraphTime GRAPH_TIME_MAX = MEDIA_TIME_MAX;
 
 
 const size_t DEFAULT_SEGMENT_CAPACITY = 16;
+
+
+
+
+
+
+
+typedef nsMainThreadPtrHandle<nsIPrincipal> PrincipalHandle;
+
+inline PrincipalHandle MakePrincipalHandle(nsIPrincipal* aPrincipal) {
+  RefPtr<nsMainThreadPtrHolder<nsIPrincipal>> holder =
+      new nsMainThreadPtrHolder<nsIPrincipal>(
+          "MakePrincipalHandle::nsIPrincipal", aPrincipal);
+  return PrincipalHandle(holder);
+}
+
+#define PRINCIPAL_HANDLE_NONE nullptr
+
+inline nsIPrincipal* GetPrincipalFromHandle(
+    const PrincipalHandle& aPrincipalHandle) {
+  MOZ_ASSERT(NS_IsMainThread());
+  return aPrincipalHandle.get();
+}
+
+inline bool PrincipalHandleMatches(const PrincipalHandle& aPrincipalHandle,
+                                   nsIPrincipal* aOther) {
+  if (!aOther) {
+    return false;
+  }
+
+  nsIPrincipal* principal = GetPrincipalFromHandle(aPrincipalHandle);
+  if (!principal) {
+    return false;
+  }
+
+  bool result;
+  if (NS_FAILED(principal->Equals(aOther, &result))) {
+    NS_ERROR("Principal check failed");
+    return false;
+  }
+
+  return result;
+}
 
 
 
@@ -88,7 +132,7 @@ class MediaSegment {
   
 
 
-  TrackTime GetDuration() const { return mDuration; }
+  StreamTime GetDuration() const { return mDuration; }
   Type GetType() const { return mType; }
 
   
@@ -113,11 +157,6 @@ class MediaSegment {
   
 
 
-  virtual bool IsEmpty() const = 0;
-
-  
-
-
   virtual MediaSegment* CreateEmptyClone() const = 0;
   
 
@@ -126,24 +165,24 @@ class MediaSegment {
   
 
 
-  virtual void AppendSlice(const MediaSegment& aSource, TrackTime aStart,
-                           TrackTime aEnd) = 0;
+  virtual void AppendSlice(const MediaSegment& aSource, StreamTime aStart,
+                           StreamTime aEnd) = 0;
   
 
 
-  virtual void ForgetUpTo(TrackTime aDuration) = 0;
+  virtual void ForgetUpTo(StreamTime aDuration) = 0;
   
 
 
-  virtual void FlushAfter(TrackTime aNewEnd) = 0;
+  virtual void FlushAfter(StreamTime aNewEnd) = 0;
   
 
 
-  virtual void InsertNullDataAtStart(TrackTime aDuration) = 0;
+  virtual void InsertNullDataAtStart(StreamTime aDuration) = 0;
   
 
 
-  virtual void AppendNullData(TrackTime aDuration) = 0;
+  virtual void AppendNullData(StreamTime aDuration) = 0;
   
 
 
@@ -180,7 +219,7 @@ class MediaSegment {
     MOZ_COUNT_CTOR(MediaSegment);
   }
 
-  TrackTime mDuration;  
+  StreamTime mDuration;  
   Type mType;
 
   
@@ -204,31 +243,30 @@ class MediaSegmentBase : public MediaSegment {
     }
     return true;
   }
-  bool IsEmpty() const override { return mChunks.IsEmpty(); }
   MediaSegment* CreateEmptyClone() const override { return new C(); }
   void AppendFrom(MediaSegment* aSource) override {
     NS_ASSERTION(aSource->GetType() == C::StaticType(), "Wrong type");
     AppendFromInternal(static_cast<C*>(aSource));
   }
   void AppendFrom(C* aSource) { AppendFromInternal(aSource); }
-  void AppendSlice(const MediaSegment& aSource, TrackTime aStart,
-                   TrackTime aEnd) override {
+  void AppendSlice(const MediaSegment& aSource, StreamTime aStart,
+                   StreamTime aEnd) override {
     NS_ASSERTION(aSource.GetType() == C::StaticType(), "Wrong type");
     AppendSliceInternal(static_cast<const C&>(aSource), aStart, aEnd);
   }
-  void AppendSlice(const C& aOther, TrackTime aStart, TrackTime aEnd) {
+  void AppendSlice(const C& aOther, StreamTime aStart, StreamTime aEnd) {
     AppendSliceInternal(aOther, aStart, aEnd);
   }
   
 
 
 
-  void ForgetUpTo(TrackTime aDuration) override {
+  void ForgetUpTo(StreamTime aDuration) override {
     if (mChunks.IsEmpty() || aDuration <= 0) {
       return;
     }
     if (mChunks[0].IsNull()) {
-      TrackTime extraToForget =
+      StreamTime extraToForget =
           std::min(aDuration, mDuration) - mChunks[0].GetDuration();
       if (extraToForget > 0) {
         RemoveLeading(extraToForget, 1);
@@ -241,13 +279,13 @@ class MediaSegmentBase : public MediaSegment {
     mChunks.InsertElementAt(0)->SetNull(aDuration);
     mDuration += aDuration;
   }
-  void FlushAfter(TrackTime aNewEnd) override {
+  void FlushAfter(StreamTime aNewEnd) override {
     if (mChunks.IsEmpty()) {
       return;
     }
 
     if (mChunks[0].IsNull()) {
-      TrackTime extraToKeep = aNewEnd - mChunks[0].GetDuration();
+      StreamTime extraToKeep = aNewEnd - mChunks[0].GetDuration();
       if (extraToKeep < 0) {
         
         mChunks[0].SetNull(aNewEnd);
@@ -263,7 +301,7 @@ class MediaSegmentBase : public MediaSegment {
     }
     mDuration = aNewEnd;
   }
-  void InsertNullDataAtStart(TrackTime aDuration) override {
+  void InsertNullDataAtStart(StreamTime aDuration) override {
     if (aDuration <= 0) {
       return;
     }
@@ -274,7 +312,7 @@ class MediaSegmentBase : public MediaSegment {
     }
     mDuration += aDuration;
   }
-  void AppendNullData(TrackTime aDuration) override {
+  void AppendNullData(StreamTime aDuration) override {
     if (aDuration <= 0) {
       return;
     }
@@ -292,7 +330,7 @@ class MediaSegmentBase : public MediaSegment {
     ReplaceWithNull();
   }
   void ReplaceWithNull() override {
-    TrackTime duration = GetDuration();
+    StreamTime duration = GetDuration();
     Clear();
     AppendNullData(duration);
   }
@@ -329,7 +367,7 @@ class MediaSegmentBase : public MediaSegment {
     uint32_t mIndex;
   };
 
-  void RemoveLeading(TrackTime aDuration) { RemoveLeading(aDuration, 0); }
+  void RemoveLeading(StreamTime aDuration) { RemoveLeading(aDuration, 0); }
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override {
     size_t amount = mChunks.ShallowSizeOfExcludingThis(aMallocSizeOf);
@@ -387,17 +425,17 @@ class MediaSegmentBase : public MediaSegment {
   }
 
   void AppendSliceInternal(const MediaSegmentBase<C, Chunk>& aSource,
-                           TrackTime aStart, TrackTime aEnd) {
+                           StreamTime aStart, StreamTime aEnd) {
     MOZ_ASSERT(aStart <= aEnd, "Endpoints inverted");
     NS_ASSERTION(aStart >= 0 && aEnd <= aSource.mDuration,
                  "Slice out of range");
     mDuration += aEnd - aStart;
-    TrackTime offset = 0;
+    StreamTime offset = 0;
     for (uint32_t i = 0; i < aSource.mChunks.Length() && offset < aEnd; ++i) {
       const Chunk& c = aSource.mChunks[i];
-      TrackTime start = std::max(aStart, offset);
-      TrackTime nextOffset = offset + c.GetDuration();
-      TrackTime end = std::min(aEnd, nextOffset);
+      StreamTime start = std::max(aStart, offset);
+      StreamTime nextOffset = offset + c.GetDuration();
+      StreamTime end = std::min(aEnd, nextOffset);
       if (start < end) {
         if (!mChunks.IsEmpty() &&
             mChunks[mChunks.Length() - 1].CanCombineWithFollowing(c)) {
@@ -412,7 +450,7 @@ class MediaSegmentBase : public MediaSegment {
     }
   }
 
-  Chunk* AppendChunk(TrackTime aDuration) {
+  Chunk* AppendChunk(StreamTime aDuration) {
     MOZ_ASSERT(aDuration >= 0);
     Chunk* c = mChunks.AppendElement();
     c->mDuration = aDuration;
@@ -420,9 +458,9 @@ class MediaSegmentBase : public MediaSegment {
     return c;
   }
 
-  void RemoveLeading(TrackTime aDuration, uint32_t aStartIndex) {
+  void RemoveLeading(StreamTime aDuration, uint32_t aStartIndex) {
     NS_ASSERTION(aDuration >= 0, "Can't remove negative duration");
-    TrackTime t = aDuration;
+    StreamTime t = aDuration;
     uint32_t chunksToRemove = 0;
     for (uint32_t i = aStartIndex; i < mChunks.Length() && t > 0; ++i) {
       Chunk* c = &mChunks[i];
@@ -445,9 +483,9 @@ class MediaSegmentBase : public MediaSegment {
                "Capacity must be retained after removing chunks");
   }
 
-  void RemoveTrailing(TrackTime aKeep, uint32_t aStartIndex) {
+  void RemoveTrailing(StreamTime aKeep, uint32_t aStartIndex) {
     NS_ASSERTION(aKeep >= 0, "Can't keep negative duration");
-    TrackTime t = aKeep;
+    StreamTime t = aKeep;
     uint32_t i;
     for (i = aStartIndex; i < mChunks.Length(); ++i) {
       Chunk* c = &mChunks[i];

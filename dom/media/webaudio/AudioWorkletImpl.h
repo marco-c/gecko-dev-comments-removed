@@ -12,7 +12,7 @@
 
 namespace mozilla {
 
-class AudioNodeTrack;
+class AudioNodeStream;
 
 namespace dom {
 class AudioContext;
@@ -37,7 +37,7 @@ class AudioWorkletImpl final : public WorkletImpl {
   }
 
   
-  AudioNodeTrack* DestinationTrack() { return mDestinationTrack; }
+  AudioNodeStream* DestinationStream() { return mDestinationStream; }
 
  protected:
   
@@ -45,10 +45,10 @@ class AudioWorkletImpl final : public WorkletImpl {
 
  private:
   AudioWorkletImpl(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal,
-                   AudioNodeTrack* aDestinationTrack);
+                   AudioNodeStream* aDestinationStream);
   ~AudioWorkletImpl();
 
-  const RefPtr<AudioNodeTrack> mDestinationTrack;
+  const RefPtr<AudioNodeStream> mDestinationStream;
 };
 
 }  

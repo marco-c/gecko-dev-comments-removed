@@ -20,7 +20,7 @@
 #include "mediapacket.h"
 #include "mtransport/runnable_utils.h"
 #include "AudioPacketizer.h"
-#include "MediaSegment.h"
+#include "StreamTracks.h"
 #include "signaling/src/peerconnection/PacketDumper.h"
 
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
@@ -43,7 +43,7 @@ class MediaStreamTrack;
 struct RTCRTPContributingSourceStats;
 }  
 
-class SourceMediaTrack;
+class SourceMediaStream;
 
 
 
