@@ -59,8 +59,6 @@ class ImageCacheKey final {
   void* ControlledDocument() const { return mControlledDocument; }
 
  private:
-  bool SchemeIs(const char* aScheme);
-
   
   
   static void* GetSpecialCaseDocumentToken(dom::Document* aDocument,

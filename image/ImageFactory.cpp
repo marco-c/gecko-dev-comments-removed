@@ -34,24 +34,18 @@ void ImageFactory::Initialize() {}
 
 static uint32_t ComputeImageFlags(nsIURI* uri, const nsCString& aMimeType,
                                   bool isMultiPart) {
-  nsresult rv;
-
   
   bool isDiscardable = StaticPrefs::image_mem_discardable();
   bool doDecodeImmediately = StaticPrefs::image_decode_immediately_enabled();
 
   
   
-  bool isChrome = false;
-  rv = uri->SchemeIs("chrome", &isChrome);
-  if (NS_SUCCEEDED(rv) && isChrome) {
+  if (uri->SchemeIs("chrome")) {
     isDiscardable = false;
   }
 
   
-  bool isResource = false;
-  rv = uri->SchemeIs("resource", &isResource);
-  if (NS_SUCCEEDED(rv) && isResource) {
+  if (uri->SchemeIs("resource")) {
     isDiscardable = false;
   }
 
@@ -75,9 +69,7 @@ static uint32_t ComputeImageFlags(nsIURI* uri, const nsCString& aMimeType,
 
   
   
-  bool isDataURI = false;
-  rv = uri->SchemeIs("data", &isDataURI);
-  if (NS_SUCCEEDED(rv) && isDataURI) {
+  if (uri->SchemeIs("data")) {
     imageFlags |= Image::INIT_FLAG_SYNC_LOAD;
   }
 
@@ -115,9 +107,7 @@ already_AddRefed<Image> ImageFactory::CreateImage(
 
 #ifdef DEBUG
   
-  bool match = false;
-  if ((NS_SUCCEEDED(aURI->SchemeIs("resource", &match)) && match) ||
-      (NS_SUCCEEDED(aURI->SchemeIs("chrome", &match)) && match)) {
+  if (aURI->SchemeIs("resource") || aURI->SchemeIs("chrome")) {
     NotifyImageLoading(aURI);
   }
 #endif
