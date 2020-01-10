@@ -453,13 +453,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-
-  Element* IsInListItem(nsINode* aNode);
-
-  
-
-
-
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult AfterEditInner();
 
   

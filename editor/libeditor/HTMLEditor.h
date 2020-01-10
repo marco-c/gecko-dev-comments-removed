@@ -1843,6 +1843,13 @@ class HTMLEditor final : public TextEditor,
   HandleInsertParagraphInListItemElement(Element& aListItem, nsINode& aNode,
                                          int32_t aOffset);
 
+  
+
+
+
+
+  Element* GetNearestAncestorListItemElement(nsIContent& aContent) const;
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;

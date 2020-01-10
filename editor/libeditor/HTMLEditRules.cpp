@@ -1928,7 +1928,8 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
     }
   }
 
-  nsCOMPtr<Element> listItem = IsInListItem(blockParent);
+  RefPtr<Element> listItem =
+      HTMLEditorRef().GetNearestAncestorListItemElement(*blockParent);
   if (listItem && listItem != host) {
     nsresult rv =
         MOZ_KnownLive(HTMLEditorRef())
@@ -5313,7 +5314,11 @@ nsresult HTMLEditRules::IndentAroundSelectionWithHTML() {
     
     
     
-    RefPtr<Element> listItem = IsInListItem(curNode);
+    RefPtr<Element> listItem =
+        curNode->IsContent()
+            ? HTMLEditorRef().GetNearestAncestorListItemElement(
+                  *curNode->AsContent())
+            : nullptr;
     if (listItem) {
       if (indentedLI == listItem) {
         
@@ -7940,21 +7945,23 @@ void HTMLEditRules::MakeTransitionList(
   }
 }
 
-Element* HTMLEditRules::IsInListItem(nsINode* aNode) {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  NS_ENSURE_TRUE(aNode, nullptr);
-  if (HTMLEditUtils::IsListItem(aNode)) {
-    return aNode->AsElement();
+Element* HTMLEditor::GetNearestAncestorListItemElement(
+    nsIContent& aContent) const {
+  
+  if (HTMLEditUtils::IsListItem(&aContent)) {
+    return aContent.AsElement();
   }
 
-  Element* parent = aNode->GetParentElement();
-  while (parent && HTMLEditorRef().IsDescendantOfEditorRoot(parent) &&
-         !HTMLEditUtils::IsTableElement(parent)) {
-    if (HTMLEditUtils::IsListItem(parent)) {
-      return parent;
+  
+  
+  
+  for (Element* parentElement = aContent.GetParentElement();
+       parentElement && IsDescendantOfEditorRoot(parentElement) &&
+       !HTMLEditUtils::IsTableElement(parentElement);
+       parentElement = parentElement->GetParentElement()) {
+    if (HTMLEditUtils::IsListItem(parentElement)) {
+      return parentElement;
     }
-    parent = parent->GetParentElement();
   }
   return nullptr;
 }
@@ -10955,7 +10962,11 @@ nsresult HTMLEditRules::PrepareToMakeElementAbsolutePosition(
     
     
     
-    RefPtr<Element> listItem = IsInListItem(curNode);
+    RefPtr<Element> listItem =
+        curNode->IsContent()
+            ? HTMLEditorRef().GetNearestAncestorListItemElement(
+                  *curNode->AsContent())
+            : nullptr;
     if (listItem) {
       if (indentedLI == listItem) {
         
