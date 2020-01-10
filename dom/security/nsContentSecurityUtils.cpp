@@ -75,8 +75,6 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
       NS_LITERAL_CSTRING("about:printpreview"),
       
       NS_LITERAL_CSTRING("about:downloads"),
-      
-      NS_LITERAL_CSTRING("about:preferences"),
   };
 
   for (const nsLiteralCString& allowlistEntry : sAllowedAboutPagesWithNoCSP) {
