@@ -732,7 +732,14 @@ add_task(async function setup_quota_manager_testing_prefs() {
   await promiseQuotaManagerServiceReset();
 });
 
-add_task(async function test_quota_exceeded_while_migrating_data() {
+add_task(
+  
+  
+  { skip_if: () => AppConstants.platform === "android" },
+  
+  test_quota_exceeded_while_migrating_data
+);
+async function test_quota_exceeded_while_migrating_data() {
   const EXT_ID = "test-data-migration-stuck@mochi.test";
   const dataSize = 1000 * 1024;
 
@@ -791,4 +798,4 @@ add_task(async function test_quota_exceeded_while_migrating_data() {
   Services.prefs.clearUserPref("dom.quotaManager.temporaryStorage.fixedLimit");
   await promiseQuotaManagerServiceClear();
   Services.prefs.clearUserPref("dom.quotaManager.testing");
-});
+}
