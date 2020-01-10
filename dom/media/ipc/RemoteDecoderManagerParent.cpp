@@ -174,7 +174,7 @@ bool RemoteDecoderManagerParent::CreateForContent(
   return true;
 }
 
-bool RemoteDecoderManagerParent::CreateVideoBridgeToParentProcess(
+bool RemoteDecoderManagerParent::CreateVideoBridgeToOtherProcess(
     Endpoint<PVideoBridgeChild>&& aEndpoint) {
   
   

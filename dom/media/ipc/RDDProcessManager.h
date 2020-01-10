@@ -28,8 +28,8 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
 
   
   bool LaunchRDDProcess(base::ProcessId aOtherProcess,
-                           mozilla::ipc::Endpoint<PRemoteDecoderManagerChild>*
-                               aOutRemoteDecoderManager);
+                        mozilla::ipc::Endpoint<PRemoteDecoderManagerChild>*
+                            aOutRemoteDecoderManager);
 
   
   
@@ -66,6 +66,7 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   bool CreateContentBridge(base::ProcessId aOtherProcess,
                            mozilla::ipc::Endpoint<PRemoteDecoderManagerChild>*
                                aOutRemoteDecoderManager);
+  bool CreateVideoBridge();
 
   
   void OnXPCOMShutdown();
