@@ -219,6 +219,22 @@ function CssComputedView(inspector, document) {
     );
   }
 
+  if (!this.inspector.is3PaneModeEnabled) {
+    
+    
+    this.inspector.on(
+      "ruleview-added",
+      () => {
+        this.ruleView.on("ruleview-changed", this.refreshPanel);
+      },
+      { once: true }
+    );
+  }
+
+  if (this.ruleView) {
+    this.ruleView.on("ruleview-changed", this.refreshPanel);
+  }
+
   this.searchClearButton.hidden = true;
 
   
@@ -295,7 +311,14 @@ CssComputedView.prototype = {
     return this.includeBrowserStylesCheckbox.checked;
   },
 
-  _handlePrefChange: function(event, data) {
+  get ruleView() {
+    return (
+      this.inspector.hasPanel("ruleview") &&
+      this.inspector.getPanel("ruleview").view
+    );
+  },
+
+  _handlePrefChange: function() {
     if (this._computed) {
       this.refreshPanel();
     }
@@ -532,6 +555,7 @@ CssComputedView.prototype = {
   },
 
   
+
 
 
   refreshPanel: function() {
@@ -858,6 +882,10 @@ CssComputedView.prototype = {
       "input",
       this._onIncludeBrowserStyles
     );
+
+    if (this.ruleView) {
+      this.ruleView.off("ruleview-changed", this.refreshPanel);
+    }
 
     
     this.element = null;

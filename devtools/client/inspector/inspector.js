@@ -937,6 +937,13 @@ Inspector.prototype = {
   
 
 
+  hasPanel: function(id) {
+    return this._panels.has(id);
+  },
+
+  
+
+
   getPanel: function(id) {
     if (this._panels.has(id)) {
       return this._panels.get(id);
