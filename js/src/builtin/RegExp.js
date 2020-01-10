@@ -7,7 +7,7 @@ function RegExpFlagsGetter() {
     
     var R = this;
     if (!IsObject(R))
-        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, R === null ? "null" : typeof R);
+        ThrowTypeError(JSMSG_OBJECT_REQUIRED, R === null ? "null" : typeof R);
 
     
     var result = "";
@@ -45,7 +45,7 @@ function RegExpToString()
 
     
     if (!IsObject(R))
-        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, R === null ? "null" : typeof R);
+        ThrowTypeError(JSMSG_OBJECT_REQUIRED, R === null ? "null" : typeof R);
 
     
     var pattern = ToString(R.source);
@@ -102,7 +102,7 @@ function RegExpMatch(string) {
 
     
     if (!IsObject(rx))
-        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, rx === null ? "null" : typeof rx);
+        ThrowTypeError(JSMSG_OBJECT_REQUIRED, rx === null ? "null" : typeof rx);
 
     
     var S = ToString(string);
@@ -248,7 +248,7 @@ function RegExpReplace(string, replaceValue) {
 
     
     if (!IsObject(rx))
-        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, rx === null ? "null" : typeof rx);
+        ThrowTypeError(JSMSG_OBJECT_REQUIRED, rx === null ? "null" : typeof rx);
 
     
     var S = ToString(string);
@@ -661,7 +661,7 @@ function RegExpSearch(string) {
 
     
     if (!IsObject(rx))
-        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, rx === null ? "null" : typeof rx);
+        ThrowTypeError(JSMSG_OBJECT_REQUIRED, rx === null ? "null" : typeof rx);
 
     
     var S = ToString(string);
@@ -755,7 +755,7 @@ function RegExpSplit(string, limit) {
 
     
     if (!IsObject(rx))
-        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, rx === null ? "null" : typeof rx);
+        ThrowTypeError(JSMSG_OBJECT_REQUIRED, rx === null ? "null" : typeof rx);
 
     
     var S = ToString(string);
@@ -1060,7 +1060,7 @@ function RegExpTest(string) {
     
     var R = this;
     if (!IsObject(R))
-        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, R === null ? "null" : typeof R);
+        ThrowTypeError(JSMSG_OBJECT_REQUIRED, R === null ? "null" : typeof R);
 
     
     var S = ToString(string);
@@ -1098,7 +1098,7 @@ function RegExpMatchAll(string) {
 
     
     if (!IsObject(rx))
-        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, rx === null ? "null" : typeof rx);
+        ThrowTypeError(JSMSG_OBJECT_REQUIRED, rx === null ? "null" : typeof rx);
 
     
     var str = ToString(string);

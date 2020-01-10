@@ -35,7 +35,7 @@ function Reflect_apply(target, thisArgument, argumentsList) {
 
     
     if (!IsObject(argumentsList)) {
-        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT_ARG, "`argumentsList`", "Reflect.apply",
+        ThrowTypeError(JSMSG_OBJECT_REQUIRED_ARG, "`argumentsList`", "Reflect.apply",
                        ToSource(argumentsList));
     }
 
@@ -62,7 +62,7 @@ function Reflect_construct(target, argumentsList) {
 
     
     if (!IsObject(argumentsList)) {
-        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT_ARG, "`argumentsList`", "Reflect.construct",
+        ThrowTypeError(JSMSG_OBJECT_REQUIRED_ARG, "`argumentsList`", "Reflect.construct",
                        ToSource(argumentsList));
     }
 
@@ -116,7 +116,7 @@ function Reflect_defineProperty(obj, propertyKey, attributes) {
 function Reflect_getOwnPropertyDescriptor(target, propertyKey) {
     
     if (!IsObject(target))
-        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, DecompileArg(0, target));
+        ThrowTypeError(JSMSG_OBJECT_REQUIRED, DecompileArg(0, target));
 
     
     
@@ -128,7 +128,7 @@ function Reflect_getOwnPropertyDescriptor(target, propertyKey) {
 function Reflect_has(target, propertyKey) {
     
     if (!IsObject(target)) {
-        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT_ARG, "`target`", "Reflect.has",
+        ThrowTypeError(JSMSG_OBJECT_REQUIRED_ARG, "`target`", "Reflect.has",
                        ToSource(target));
     }
 
@@ -141,7 +141,7 @@ function Reflect_has(target, propertyKey) {
 function Reflect_get(target, propertyKey) {
     
     if (!IsObject(target)) {
-        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT_ARG, "`target`", "Reflect.get",
+        ThrowTypeError(JSMSG_OBJECT_REQUIRED_ARG, "`target`", "Reflect.get",
                        ToSource(target));
     }
 

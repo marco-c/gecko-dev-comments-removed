@@ -172,7 +172,7 @@ function SpeciesConstructor(obj, defaultConstructor) {
 
     
     if (!IsObject(ctor))
-        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, "object's 'constructor' property");
+        ThrowTypeError(JSMSG_OBJECT_REQUIRED, "object's 'constructor' property");
 
     
     var s = ctor[std_species];
