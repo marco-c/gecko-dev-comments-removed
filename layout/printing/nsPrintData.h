@@ -80,8 +80,6 @@ class nsPrintData {
   nsCOMPtr<nsIPrintSettings> mPrintSettings;
   RefPtr<PrintPreviewUserEventSuppressor> mPPEventSuppressor;
 
-  nsString mBrandName;  
-
  private:
   nsPrintData() = delete;
   nsPrintData& operator=(const nsPrintData& aOther) = delete;
