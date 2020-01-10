@@ -18,8 +18,6 @@
 
 #include "base/basictypes.h"
 #include "base/process.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/UniquePtrExtensions.h"
 
 namespace base {
 
@@ -60,20 +58,11 @@ class SharedMemory {
   static bool IsHandleValid(const SharedMemoryHandle& handle);
 
   
-  bool IsValid() const;
-
-  
   static SharedMemoryHandle NULLHandle();
 
   
   
-  bool Create(size_t size) { return CreateInternal(size, false); }
-
-  
-  
-  
-  
-  bool CreateFreezeable(size_t size) { return CreateInternal(size, true); }
+  bool Create(size_t size);
 
   
   
@@ -103,26 +92,7 @@ class SharedMemory {
   
   
   
-  mozilla::UniqueFileHandle TakeHandle();
-
-#ifdef OS_WIN
-  
-  
-  HANDLE GetHandle() {
-    freezeable_ = false;
-    return mapped_file_;
-  }
-#endif
-
-  
-  
-  
-  
-  
-  
-  
-  
-  MOZ_MUST_USE bool Freeze();
+  SharedMemoryHandle handle() const;
 
   
   
@@ -170,8 +140,6 @@ class SharedMemory {
   bool ShareToProcessCommon(ProcessId target_pid,
                             SharedMemoryHandle* new_handle, bool close_self);
 
-  bool CreateInternal(size_t size, bool freezeable);
-
 #if defined(OS_WIN)
   
   
@@ -179,12 +147,9 @@ class SharedMemory {
   HANDLE mapped_file_;
 #elif defined(OS_POSIX)
   int mapped_file_;
-  int frozen_file_;
-  size_t mapped_size_;
 #endif
   void* memory_;
   bool read_only_;
-  bool freezeable_;
   size_t max_size_;
 
   DISALLOW_EVIL_CONSTRUCTORS(SharedMemory);
