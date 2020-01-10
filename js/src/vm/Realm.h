@@ -32,6 +32,10 @@
 
 namespace js {
 
+namespace coverage {
+class LCovRealm;
+}  
+
 namespace jit {
 class JitRealm;
 }  
@@ -401,13 +405,11 @@ class JS::Realm : public JS::shadow::Realm {
   bool isSelfHostingRealm_ = false;
   bool isSystem_ = false;
 
+  js::UniquePtr<js::coverage::LCovRealm> lcovRealm_ = nullptr;
+
  public:
   
   js::wasm::Realm wasm;
-
-  
-  
-  js::UniquePtr<js::coverage::LCovRealm> lcovRealm = nullptr;
 
   js::RegExpRealm regExps;
 
@@ -755,6 +757,9 @@ class JS::Realm : public JS::shadow::Realm {
   
   
   bool ensureDelazifyScriptsForDebugger(JSContext* cx);
+
+  
+  js::coverage::LCovRealm* lcovRealm();
 
   
   void collectCodeCoverageInfo(JSScript* script, const char* name);

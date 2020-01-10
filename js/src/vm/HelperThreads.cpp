@@ -1911,7 +1911,7 @@ UniquePtr<ParseTask> GlobalHelperThreadState::finishParseTaskCommon(
       elem = workList.popCopy();
 
       
-      if (!elem->initScriptName(cx)) {
+      if (!coverage::InitScriptCoverage(cx, elem)) {
         return nullptr;
       }
 
