@@ -1547,10 +1547,9 @@ pref("browser.ping-centre.production.endpoint", "https://tiles.services.mozilla.
 
 pref("media.gmp-provider.enabled", true);
 
-#ifdef EARLY_BETA_OR_EARLIER
-
 
 pref("network.cookie.cookieBehavior", 4 );
+#ifdef EARLY_BETA_OR_EARLIER
 
 pref("privacy.trackingprotection.fingerprinting.enabled", true);
 #endif
