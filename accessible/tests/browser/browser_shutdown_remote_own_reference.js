@@ -25,24 +25,15 @@ add_task(async function() {
         "Creating a service in parent and waiting for service to be created " +
           "in content"
       );
-      await loadContentScripts(browser, "Common.jsm");
       
       
-      const [parentA11yInitObserver, parentA11yInit] = initAccService();
-      const [contentA11yInitObserver, contentA11yInit] = initAccService(
-        browser
+      let parentA11yInit = initPromise();
+      let contentA11yInit = initPromise(browser);
+      let contentConsumersChanged = ContentTask.spawn(
+        browser,
+        {},
+        a11yConsumersChangedPromise
       );
-      let [
-        contentConsumersChangedObserver,
-        contentConsumersChanged,
-      ] = accConsumersChanged(browser);
-
-      await Promise.all([
-        parentA11yInitObserver,
-        contentA11yInitObserver,
-        contentConsumersChangedObserver,
-      ]);
-
       let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
         Ci.nsIAccessibilityService
       );
@@ -64,15 +55,18 @@ add_task(async function() {
         "Adding additional reference to accessibility service in content " +
           "process"
       );
-      [
-        contentConsumersChangedObserver,
-        contentConsumersChanged,
-      ] = accConsumersChanged(browser);
-      await contentConsumersChangedObserver;
+      contentConsumersChanged = ContentTask.spawn(
+        browser,
+        {},
+        a11yConsumersChangedPromise
+      );
       
-      await SpecialPowers.spawn(browser, [], () => {
-        content.CommonUtils.accService;
-      });
+      loadFrameScripts(
+        browser,
+        `var accService = Components.classes[
+      '@mozilla.org/accessibilityService;1'].getService(
+        Components.interfaces.nsIAccessibilityService);`
+      );
       await contentConsumersChanged.then(data =>
         Assert.deepEqual(
           data,
@@ -85,8 +79,8 @@ add_task(async function() {
         )
       );
 
-      const contentConsumers = await SpecialPowers.spawn(browser, [], () =>
-        content.CommonUtils.accService.getConsumers()
+      const contentConsumers = await ContentTask.spawn(browser, {}, () =>
+        accService.getConsumers()
       );
       Assert.deepEqual(
         JSON.parse(contentConsumers),
@@ -103,34 +97,22 @@ add_task(async function() {
           "content stays alive"
       );
       let contentCanShutdown = false;
-      const [
-        parentA11yShutdownObserver,
-        parentA11yShutdown,
-      ] = shutdownAccService();
-      [
-        contentConsumersChangedObserver,
-        contentConsumersChanged,
-      ] = accConsumersChanged(browser);
+      let parentA11yShutdown = shutdownPromise();
+      contentConsumersChanged = ContentTask.spawn(
+        browser,
+        {},
+        a11yConsumersChangedPromise
+      );
       
       
       
-      const [
-        contentA11yShutdownObserver,
-        contentA11yShutdownPromise,
-      ] = shutdownAccService(browser);
-      const contentA11yShutdown = new Promise((resolve, reject) =>
-        contentA11yShutdownPromise.then(flag =>
+      let contentA11yShutdown = new Promise((resolve, reject) =>
+        shutdownPromise(browser).then(flag =>
           contentCanShutdown
             ? resolve()
             : reject("Accessible service was shut down incorrectly")
         )
       );
-
-      await Promise.all([
-        parentA11yShutdownObserver,
-        contentA11yShutdownObserver,
-        contentConsumersChangedObserver,
-      ]);
       
       
       
@@ -139,9 +121,7 @@ add_task(async function() {
       
       
       forceGC();
-      await SpecialPowers.spawn(browser, [], () => {
-        SpecialPowers.Cu.forceGC();
-      });
+      loadFrameScripts(browser, `Components.utils.forceGC();`);
       await parentA11yShutdown;
       await contentConsumersChanged.then(data =>
         Assert.deepEqual(
@@ -161,16 +141,17 @@ add_task(async function() {
       info("Removing a service in content");
       
       contentCanShutdown = true;
-      [
-        contentConsumersChangedObserver,
-        contentConsumersChanged,
-      ] = accConsumersChanged(browser);
-      await contentConsumersChangedObserver;
+      contentConsumersChanged = ContentTask.spawn(
+        browser,
+        {},
+        a11yConsumersChangedPromise
+      );
       
       
-      await SpecialPowers.spawn(browser, [], () => {
-        content.CommonUtils.clearAccService();
-      });
+      loadFrameScripts(
+        browser,
+        `accService = null; Components.utils.forceGC();`
+      );
       await contentA11yShutdown;
       await contentConsumersChanged.then(data =>
         Assert.deepEqual(

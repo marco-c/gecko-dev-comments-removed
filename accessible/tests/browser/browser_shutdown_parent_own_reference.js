@@ -25,16 +25,10 @@ add_task(async function() {
         "Creating a service in parent and waiting for service to be created " +
           "in content"
       );
-      await loadContentScripts(browser, "Common.jsm");
       
       
-      const [parentA11yInitObserver, parentA11yInit] = initAccService();
-      const [contentA11yInitObserver, contentA11yInit] = initAccService(
-        browser
-      );
-
-      await Promise.all([parentA11yInitObserver, contentA11yInitObserver]);
-
+      let parentA11yInit = initPromise();
+      let contentA11yInit = initPromise(browser);
       let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
         Ci.nsIAccessibilityService
       );
@@ -46,9 +40,12 @@ add_task(async function() {
           "process"
       );
       
-      await SpecialPowers.spawn(browser, [], () => {
-        content.CommonUtils.accService;
-      });
+      loadFrameScripts(
+        browser,
+        `let accService = Components.classes[
+      '@mozilla.org/accessibilityService;1'].getService(
+        Components.interfaces.nsIAccessibilityService);`
+      );
 
       info(
         "Trying to shut down a service in content and making sure it stays " +
@@ -58,13 +55,8 @@ add_task(async function() {
       
       
       
-      const [
-        contentA11yShutdownObserver,
-        contentA11yShutdownPromise,
-      ] = shutdownAccService(browser);
-      await contentA11yShutdownObserver;
-      const contentA11yShutdown = new Promise((resolve, reject) =>
-        contentA11yShutdownPromise.then(flag =>
+      let contentA11yShutdown = new Promise((resolve, reject) =>
+        shutdownPromise(browser).then(flag =>
           contentCanShutdown
             ? resolve()
             : reject("Accessible service was shut down incorrectly")
@@ -73,9 +65,10 @@ add_task(async function() {
       
       
       
-      await SpecialPowers.spawn(browser, [], () => {
-        content.CommonUtils.clearAccService();
-      });
+      loadFrameScripts(
+        browser,
+        `accService = null; Components.utils.forceGC();`
+      );
 
       
       await new Promise(resolve => executeSoon(resolve));
@@ -84,12 +77,7 @@ add_task(async function() {
       
       contentCanShutdown = true;
       
-      const [
-        parentA11yShutdownObserver,
-        parentA11yShutdown,
-      ] = shutdownAccService();
-      await parentA11yShutdownObserver;
-
+      let parentA11yShutdown = shutdownPromise();
       accService = null;
       ok(!accService, "Service is removed in parent");
       

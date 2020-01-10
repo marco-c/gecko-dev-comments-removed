@@ -22,32 +22,25 @@ add_task(async function() {
     },
     async function(browser) {
       info("Creating a service in content");
-      await loadContentScripts(browser, "Common.jsm");
       
-      const [a11yInitObserver, a11yInit] = initAccService(browser);
-      await a11yInitObserver;
-      await SpecialPowers.spawn(browser, [], () => {
-        content.CommonUtils.accService;
-      });
-      await a11yInit;
-      ok(
-        true,
-        "Accessibility service is started in content process correctly."
+      let a11yInit = initPromise(browser);
+      loadFrameScripts(
+        browser,
+        `let accService = Components.classes[
+      '@mozilla.org/accessibilityService;1'].getService(
+        Components.interfaces.nsIAccessibilityService);`
       );
+      await a11yInit;
 
       info("Removing a service in content");
       
-      const [a11yShutdownObserver, a11yShutdown] = shutdownAccService(browser);
-      await a11yShutdownObserver;
+      let a11yShutdown = shutdownPromise(browser);
       
-      await SpecialPowers.spawn(browser, [], () => {
-        content.CommonUtils.clearAccService();
-      });
-      await a11yShutdown;
-      ok(
-        true,
-        "Accessibility service is shutdown in content process correctly."
+      loadFrameScripts(
+        browser,
+        `accService = null; Components.utils.forceGC();`
       );
+      await a11yShutdown;
 
       
       await unsetE10sPrefs();

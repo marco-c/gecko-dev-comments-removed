@@ -26,7 +26,7 @@ addAccessibleTask(
     testAccessibleTree(table, tree);
 
     let onReorder = waitForEvent(EVENT_REORDER, "table");
-    await invokeContentTask(browser, [], () => {
+    await ContentTask.spawn(browser, {}, () => {
       
       
       let doc = content.document;
@@ -43,6 +43,5 @@ addAccessibleTask(
       ],
     };
     testAccessibleTree(table, tree);
-  },
-  { iframe: true }
+  }
 );

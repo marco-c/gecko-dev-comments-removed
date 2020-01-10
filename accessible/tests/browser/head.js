@@ -9,17 +9,6 @@
 
 
 
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/accessible/tests/browser/shared-head.js",
-  this
-);
-
-const { CommonUtils } = ChromeUtils.import(
-  "chrome://mochitests/content/browser/accessible/tests/browser/Common.jsm"
-);
-
-
-
 
 
 function setE10sPrefs() {
@@ -45,6 +34,38 @@ function unsetE10sPrefs() {
 
 
 
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/accessible/tests/browser/shared-head.js",
+  this
+);
+
+
+
+
+
+function a11yConsumersChangedPromise() {
+  return new Promise(resolve => {
+    let observe = (subject, topic, data) => {
+      Services.obs.removeObserver(observe, "a11y-consumers-changed");
+      resolve(JSON.parse(data));
+    };
+    Services.obs.addObserver(observe, "a11y-consumers-changed");
+  });
+}
+
+
+
+
+
+function a11yInitOrShutdownPromise() {
+  return new Promise(resolve => {
+    let observe = (subject, topic, data) => {
+      Services.obs.removeObserver(observe, "a11y-init-or-shutdown");
+      resolve(data);
+    };
+    Services.obs.addObserver(observe, "a11y-init-or-shutdown");
+  });
+}
 
 
 
@@ -52,21 +73,19 @@ function unsetE10sPrefs() {
 
 
 
+function contentA11yInitOrShutdownPromise(browser) {
+  return ContentTask.spawn(browser, {}, a11yInitOrShutdownPromise);
+}
 
-function accConsumersChanged(target) {
-  return target
-    ? [
-        SpecialPowers.spawn(target, [], () =>
-          content.CommonUtils.addAccConsumersChangedObserver()
-        ),
-        SpecialPowers.spawn(target, [], () =>
-          content.CommonUtils.observeAccConsumersChanged()
-        ),
-      ]
-    : [
-        CommonUtils.addAccConsumersChangedObserver(),
-        CommonUtils.observeAccConsumersChanged(),
-      ];
+
+
+
+
+
+function promiseOK(promise, expected) {
+  return promise.then(flag =>
+    flag === expected ? Promise.resolve() : Promise.reject()
+  );
 }
 
 
@@ -78,21 +97,14 @@ function accConsumersChanged(target) {
 
 
 
-
-function initAccService(target) {
-  return target
-    ? [
-        SpecialPowers.spawn(target, [], () =>
-          content.CommonUtils.addAccServiceInitializedObserver()
-        ),
-        SpecialPowers.spawn(target, [], () =>
-          content.CommonUtils.observeAccServiceInitialized()
-        ),
-      ]
-    : [
-        CommonUtils.addAccServiceInitializedObserver(),
-        CommonUtils.observeAccServiceInitialized(),
-      ];
+function initPromise(contentBrowser) {
+  let a11yInitPromise = contentBrowser
+    ? contentA11yInitOrShutdownPromise(contentBrowser)
+    : a11yInitOrShutdownPromise();
+  return promiseOK(a11yInitPromise, "1").then(
+    () => ok(true, "Service initialized correctly"),
+    () => ok(false, "Service shutdown incorrectly")
+  );
 }
 
 
@@ -104,21 +116,14 @@ function initAccService(target) {
 
 
 
-
-function shutdownAccService(target) {
-  return target
-    ? [
-        SpecialPowers.spawn(target, [], () =>
-          content.CommonUtils.addAccServiceShutdownObserver()
-        ),
-        SpecialPowers.spawn(target, [], () =>
-          content.CommonUtils.observeAccServiceShutdown()
-        ),
-      ]
-    : [
-        CommonUtils.addAccServiceShutdownObserver(),
-        CommonUtils.observeAccServiceShutdown(),
-      ];
+function shutdownPromise(contentBrowser) {
+  let a11yShutdownPromise = contentBrowser
+    ? contentA11yInitOrShutdownPromise(contentBrowser)
+    : a11yInitOrShutdownPromise();
+  return promiseOK(a11yShutdownPromise, "0").then(
+    () => ok(true, "Service shutdown correctly"),
+    () => ok(false, "Service initialized incorrectly")
+  );
 }
 
 

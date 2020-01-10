@@ -34,7 +34,7 @@ addAccessibleTask(
 
     
     let reorderEventPromise = waitForEvent(EVENT_REORDER, id);
-    await invokeContentTask(browser, [id], contentId => {
+    await ContentTask.spawn(browser, id, contentId => {
       let docNode = content.document.getElementById("iframe").contentDocument;
       let newHTMLNode = docNode.createElement("html");
       let newBodyNode = docNode.createElement("body");
@@ -59,7 +59,7 @@ addAccessibleTask(
 
     
     reorderEventPromise = waitForEvent(EVENT_REORDER, id);
-    await invokeContentTask(browser, [id], contentId => {
+    await ContentTask.spawn(browser, id, contentId => {
       let docNode = content.document.getElementById("iframe").contentDocument;
       
       
@@ -85,7 +85,7 @@ addAccessibleTask(
 
     
     reorderEventPromise = waitForEvent(EVENT_REORDER, id);
-    await invokeContentTask(browser, [id], contentId => {
+    await ContentTask.spawn(browser, id, contentId => {
       let docNode = content.document.getElementById("iframe").contentDocument;
       let newBodyNode = docNode.createElement("body");
       let newTextNode = docNode.createTextNode("New Hello");
@@ -109,7 +109,7 @@ addAccessibleTask(
 
     
     reorderEventPromise = waitForEvent(EVENT_REORDER, id);
-    await invokeContentTask(browser, [id], contentId => {
+    await ContentTask.spawn(browser, id, contentId => {
       
       let docNode = content.document.getElementById("iframe").contentDocument;
       let script = docNode.createElement("script");
@@ -133,7 +133,7 @@ addAccessibleTask(
 
     
     reorderEventPromise = waitForEvent(EVENT_REORDER, id);
-    await invokeContentTask(browser, [], () => {
+    await ContentTask.spawn(browser, {}, () => {
       
       let docNode = content.document.getElementById("iframe").contentDocument;
       docNode.write("Works?");
@@ -154,7 +154,7 @@ addAccessibleTask(
 
     
     reorderEventPromise = waitForEvent(EVENT_REORDER, iframe);
-    await invokeContentTask(browser, [], () => {
+    await ContentTask.spawn(browser, {}, () => {
       
       let docNode = content.document.getElementById("iframe").contentDocument;
       docNode.firstChild.remove();
@@ -173,7 +173,7 @@ addAccessibleTask(
 
     
     reorderEventPromise = waitForEvent(EVENT_REORDER, id);
-    await invokeContentTask(browser, [id], contentId => {
+    await ContentTask.spawn(browser, id, contentId => {
       
       let docNode = content.document.getElementById("iframe").contentDocument;
       let html = docNode.createElement("html");
@@ -199,7 +199,7 @@ addAccessibleTask(
 
     
     reorderEventPromise = waitForEvent(EVENT_REORDER, iframe);
-    await invokeContentTask(browser, [], () => {
+    await ContentTask.spawn(browser, {}, () => {
       
       let docNode = content.document.getElementById("iframe").contentDocument;
       docNode.documentElement.removeChild(docNode.body);
@@ -218,7 +218,7 @@ addAccessibleTask(
 
     
     reorderEventPromise = waitForEvent(EVENT_REORDER, iframe);
-    await invokeContentTask(browser, [], () => {
+    await ContentTask.spawn(browser, {}, () => {
       let docNode = content.document.getElementById("iframe").contentDocument;
       let inputNode = (content.window.inputNode = docNode.createElement(
         "input"
@@ -237,7 +237,7 @@ addAccessibleTask(
     testAccessibleTree(iframe, tree);
 
     reorderEventPromise = waitForEvent(EVENT_REORDER, iframe);
-    await invokeContentTask(browser, [], () => {
+    await ContentTask.spawn(browser, {}, () => {
       let docEl = content.document.getElementById("iframe").contentDocument
         .documentElement;
       
@@ -253,7 +253,7 @@ addAccessibleTask(
 
     
     reorderEventPromise = waitForEvent(EVENT_REORDER, id);
-    await invokeContentTask(browser, [id], contentId => {
+    await ContentTask.spawn(browser, id, contentId => {
       
       let docNode = content.document.getElementById("iframe").contentDocument;
       
@@ -294,7 +294,7 @@ addAccessibleTask(
 
     
     reorderEventPromise = waitForEvent(EVENT_REORDER, id);
-    await invokeContentTask(browser, [id], contentId => {
+    await ContentTask.spawn(browser, id, contentId => {
       let docNode = content.document.getElementById("iframe").contentDocument;
       let newBodyNode = docNode.createElement("body");
       let newTextNode = docNode.createTextNode("New Hello");
@@ -315,6 +315,5 @@ addAccessibleTask(
       ],
     };
     testAccessibleTree(iframe, tree);
-  },
-  { iframe: true }
+  }
 );
