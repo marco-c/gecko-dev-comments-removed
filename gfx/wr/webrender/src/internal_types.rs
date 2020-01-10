@@ -33,16 +33,24 @@ pub type FastHashSet<K> = HashSet<K, BuildHasherDefault<FxHasher>>;
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PlaneSplitAnchor {
-    
-    
-    
-    pub prim_instance_index: usize,
+    pub cluster_index: usize,
+    pub instance_index: usize,
+}
+
+impl PlaneSplitAnchor {
+    pub fn new(cluster_index: usize, instance_index: usize) -> Self {
+        PlaneSplitAnchor {
+            cluster_index,
+            instance_index,
+        }
+    }
 }
 
 impl Default for PlaneSplitAnchor {
     fn default() -> Self {
         PlaneSplitAnchor {
-            prim_instance_index: 0,
+            cluster_index: 0,
+            instance_index: 0,
         }
     }
 }

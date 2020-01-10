@@ -33,9 +33,8 @@ use crate::render_target::RenderTargetKind;
 use crate::render_task::{RenderTask, RenderTaskLocation, BlurTaskCache, ClearMode};
 use crate::resource_cache::ResourceCache;
 use crate::scene::SceneProperties;
-use crate::scene_builder::Interners;
 use smallvec::SmallVec;
-use std::{mem, u8, u16};
+use std::{mem, u8};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::texture_cache::TextureCacheHandle;
 use crate::util::{TransformedRectKind, MatrixHelpers, MaxRect, scale_factors, VecHelper};
@@ -1447,6 +1446,7 @@ impl TileCacheInstance {
     pub fn update_prim_dependencies(
         &mut self,
         prim_instance: &PrimitiveInstance,
+        prim_spatial_node_index: SpatialNodeIndex,
         prim_clip_chain: Option<&ClipChainInstance>,
         local_prim_rect: LayoutRect,
         clip_scroll_tree: &ClipScrollTree,
@@ -1459,7 +1459,7 @@ impl TileCacheInstance {
         surface_index: SurfaceIndex,
     ) -> bool {
         self.map_local_to_surface.set_target_spatial_node(
-            prim_instance.spatial_node_index,
+            prim_spatial_node_index,
             clip_scroll_tree,
         );
 
@@ -1497,8 +1497,8 @@ impl TileCacheInstance {
         );
 
         
-        if prim_instance.spatial_node_index != self.spatial_node_index {
-            prim_info.spatial_nodes.push(prim_instance.spatial_node_index);
+        if prim_spatial_node_index != self.spatial_node_index {
+            prim_info.spatial_nodes.push(prim_spatial_node_index);
         }
 
         
@@ -1563,7 +1563,7 @@ impl TileCacheInstance {
 
                     let same_coord_system = {
                         let prim_spatial_node = &clip_scroll_tree
-                            .spatial_nodes[prim_instance.spatial_node_index.0 as usize];
+                            .spatial_nodes[prim_spatial_node_index.0 as usize];
                         let surface_spatial_node = &clip_scroll_tree
                             .spatial_nodes[self.spatial_node_index.0 as usize];
 
@@ -1867,15 +1867,24 @@ impl<'a> PictureUpdateState<'a> {
             self,
             frame_context,
         ) {
-            for child_pic_index in &prim_list.pictures {
-                self.update(
-                    *child_pic_index,
-                    picture_primitives,
-                    frame_context,
-                    gpu_cache,
-                    clip_store,
-                    data_stores,
-                );
+            for cluster in &prim_list.clusters {
+                if cluster.flags.contains(ClusterFlags::IS_PICTURE) {
+                    for prim_instance in &cluster.prim_instances {
+                        let child_pic_index = match prim_instance.kind {
+                            PrimitiveInstanceKind::Picture { pic_index, .. } => pic_index,
+                            _ => unreachable!(),
+                        };
+
+                        self.update(
+                            child_pic_index,
+                            picture_primitives,
+                            frame_context,
+                            gpu_cache,
+                            clip_store,
+                            data_stores,
+                        );
+                    }
+                }
             }
 
             picture_primitives[pic_index.0].post_update(
@@ -1912,8 +1921,20 @@ impl<'a> PictureUpdateState<'a> {
             None => fallback_raster_spatial_node,
         };
 
-        for child_pic_index in &picture.prim_list.pictures {
-            self.assign_raster_roots(*child_pic_index, picture_primitives, new_fallback);
+        for cluster in &picture.prim_list.clusters {
+            if cluster.flags.contains(ClusterFlags::IS_PICTURE) {
+                for instance in &cluster.prim_instances {
+                    let child_pic_index = match instance.kind {
+                        PrimitiveInstanceKind::Picture { pic_index, .. } => pic_index,
+                        _ => unreachable!(),
+                    };
+                    self.assign_raster_roots(
+                        child_pic_index,
+                        picture_primitives,
+                        new_fallback,
+                    );
+                }
+            }
         }
     }
 }
@@ -2143,18 +2164,21 @@ pub struct OrderedPictureChild {
     pub gpu_address: GpuCacheAddress,
 }
 
-
-
-#[derive(Debug, Hash, Eq, PartialEq, Copy, Clone)]
-struct PrimitiveClusterKey {
-    
-    
-    
-    spatial_node_index: SpatialNodeIndex,
-    
-    
-    
-    is_backface_visible: bool,
+bitflags! {
+    /// A set of flags describing why a picture may need a backing surface.
+    #[cfg_attr(feature = "capture", derive(Serialize))]
+    pub struct ClusterFlags: u32 {
+        /// This cluster is a picture
+        const IS_PICTURE = 1;
+        /// Whether this cluster is visible when the position node is a backface.
+        const IS_BACKFACE_VISIBLE = 2;
+        /// This flag is set during the first pass picture traversal, depending on whether
+        /// the cluster is visible or not. It's read during the second pass when primitives
+        /// consult their owning clusters to see if the primitive itself is visible.
+        const IS_VISIBLE = 4;
+        /// Is a backdrop-filter cluster that requires special handling during post_update.
+        const IS_BACKDROP_FILTER = 8;
+    }
 }
 
 
@@ -2162,52 +2186,75 @@ struct PrimitiveClusterKey {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PrimitiveCluster {
     
-    spatial_node_index: SpatialNodeIndex,
-    
-    is_backface_visible: bool,
+    pub spatial_node_index: SpatialNodeIndex,
     
     
     
     
     bounding_rect: LayoutRect,
     
+    pub prim_instances: Vec<PrimitiveInstance>,
     
-    
-    pub is_visible: bool,
+    pub flags: ClusterFlags,
+}
+
+
+#[derive(Debug, Copy, Clone)]
+enum PrimitiveListPosition {
+    Begin,
+    End,
 }
 
 impl PrimitiveCluster {
+    
     fn new(
         spatial_node_index: SpatialNodeIndex,
-        is_backface_visible: bool,
+        flags: ClusterFlags,
     ) -> Self {
         PrimitiveCluster {
             bounding_rect: LayoutRect::zero(),
             spatial_node_index,
-            is_backface_visible,
-            is_visible: false,
+            flags,
+            prim_instances: Vec::new(),
+        }
+    }
+
+    
+    pub fn is_compatible(
+        &self,
+        spatial_node_index: SpatialNodeIndex,
+        flags: ClusterFlags,
+    ) -> bool {
+        self.flags == flags && self.spatial_node_index == spatial_node_index
+    }
+
+    
+    fn push(
+        &mut self,
+        prim_instance: PrimitiveInstance,
+        prim_size: LayoutSize,
+        insert_position: PrimitiveListPosition,
+    ) {
+        let prim_rect = LayoutRect::new(
+            prim_instance.prim_origin,
+            prim_size,
+        );
+        let culling_rect = prim_instance.local_clip_rect
+            .intersection(&prim_rect)
+            .unwrap_or_else(LayoutRect::zero);
+
+        self.bounding_rect = self.bounding_rect.union(&culling_rect);
+
+        match insert_position {
+            PrimitiveListPosition::Begin => {
+                self.prim_instances.insert(0, prim_instance);
+            }
+            PrimitiveListPosition::End => {
+                self.prim_instances.push(prim_instance);
+            }
         }
     }
 }
-
-#[derive(Debug, Copy, Clone)]
-pub struct PrimitiveClusterIndex(pub u32);
-
-#[derive(Debug, Copy, Clone)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-pub struct ClusterIndex(pub u16);
-
-#[derive(Debug, Copy, Clone)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-pub struct PrimitiveIndex(pub u32);
-
-impl ClusterIndex {
-    pub const INVALID: ClusterIndex = ClusterIndex(u16::MAX);
-}
-
-
-
-pub type PictureList = SmallVec<[PictureIndex; 4]>;
 
 
 
@@ -2216,16 +2263,7 @@ pub type PictureList = SmallVec<[PictureIndex; 4]>;
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PrimitiveList {
     
-    pub prim_instances: Vec<PrimitiveInstance>,
-    
-    
-    pub pictures: PictureList,
-    
-    pub clusters: SmallVec<[PrimitiveCluster; 4]>,
-    
-    
-    
-    pub deferred_prims: Vec<PrimitiveIndex>,
+    pub clusters: Vec<PrimitiveCluster>,
 }
 
 impl PrimitiveList {
@@ -2235,145 +2273,126 @@ impl PrimitiveList {
     
     pub fn empty() -> Self {
         PrimitiveList {
-            prim_instances: Vec::new(),
-            pictures: SmallVec::new(),
-            clusters: SmallVec::new(),
-            deferred_prims: Vec::new(),
+            clusters: Vec::new(),
         }
     }
 
     
-    
-    
-    
-    pub fn new(
-        mut prim_instances: Vec<PrimitiveInstance>,
-        interners: &Interners
-    ) -> Self {
-        let mut pictures = SmallVec::new();
-        let mut clusters_map = FastHashMap::default();
-        let mut clusters: SmallVec<[PrimitiveCluster; 4]> = SmallVec::new();
-        let mut deferred_prims = Vec::new();
+    fn push(
+        &mut self,
+        prim_instance: PrimitiveInstance,
+        prim_size: LayoutSize,
+        spatial_node_index: SpatialNodeIndex,
+        is_backface_visible: bool,
+        insert_position: PrimitiveListPosition,
+    ) {
+        let mut flags = ClusterFlags::empty();
 
         
         
-        for (prim_index, prim_instance) in &mut prim_instances.iter_mut().enumerate() {
-            
-            
-            let is_pic = match prim_instance.kind {
-                PrimitiveInstanceKind::Picture { pic_index, .. } => {
-                    pictures.push(pic_index);
-                    true
-                }
-                _ => {
-                    false
-                }
-            };
-
-            let (is_backface_visible, prim_size) = match prim_instance.kind {
-                PrimitiveInstanceKind::Rectangle { data_handle, .. } |
-                PrimitiveInstanceKind::Clear { data_handle, .. } => {
-                    let data = &interners.prim[data_handle];
-                    (data.is_backface_visible, data.prim_size)
-                }
-                PrimitiveInstanceKind::Image { data_handle, .. } => {
-                    let data = &interners.image[data_handle];
-                    (data.is_backface_visible, data.prim_size)
-                }
-                PrimitiveInstanceKind::ImageBorder { data_handle, .. } => {
-                    let data = &interners.image_border[data_handle];
-                    (data.is_backface_visible, data.prim_size)
-                }
-                PrimitiveInstanceKind::LineDecoration { data_handle, .. } => {
-                    let data = &interners.line_decoration[data_handle];
-                    (data.is_backface_visible, data.prim_size)
-                }
-                PrimitiveInstanceKind::LinearGradient { data_handle, .. } => {
-                    let data = &interners.linear_grad[data_handle];
-                    (data.is_backface_visible, data.prim_size)
-                }
-                PrimitiveInstanceKind::NormalBorder { data_handle, .. } => {
-                    let data = &interners.normal_border[data_handle];
-                    (data.is_backface_visible, data.prim_size)
-                }
-                PrimitiveInstanceKind::Picture { data_handle, .. } => {
-                    let data = &interners.picture[data_handle];
-                    (data.is_backface_visible, data.prim_size)
-                }
-                PrimitiveInstanceKind::RadialGradient { data_handle, ..} => {
-                    let data = &interners.radial_grad[data_handle];
-                    (data.is_backface_visible, data.prim_size)
-                }
-                PrimitiveInstanceKind::TextRun { data_handle, .. } => {
-                    let data = &interners.text_run[data_handle];
-                    (data.is_backface_visible, data.prim_size)
-                }
-                PrimitiveInstanceKind::YuvImage { data_handle, .. } => {
-                    let data = &interners.yuv_image[data_handle];
-                    (data.is_backface_visible, data.prim_size)
-                }
-                PrimitiveInstanceKind::Backdrop { data_handle, .. } => {
-                    
-                    
-                    
-                    let data = &interners.backdrop[data_handle];
-                    deferred_prims.push(PrimitiveIndex(prim_index as u32));
-                    (data.is_backface_visible, LayoutSize::zero())
-                }
-                PrimitiveInstanceKind::PushClipChain |
-                PrimitiveInstanceKind::PopClipChain => {
-                    (true, LayoutSize::zero())
-                }
-            };
-
-            
-            
-            let key = PrimitiveClusterKey {
-                spatial_node_index: prim_instance.spatial_node_index,
-                is_backface_visible,
-            };
-
-            
-            let cluster_index = *clusters_map
-                .entry(key)
-                .or_insert_with(|| {
-                    let index = clusters.len();
-                    clusters.push(PrimitiveCluster::new(
-                        prim_instance.spatial_node_index,
-                        is_backface_visible,
-                    ));
-                    index
-                }
-            );
-
-            if prim_instance.is_chased() {
-                println!("\tcluster {} with {:?}", cluster_index, key);
+        match prim_instance.kind {
+            PrimitiveInstanceKind::Picture { .. } => {
+                flags.insert(ClusterFlags::IS_PICTURE);
             }
-
-            
-            
-            
-            let cluster = &mut clusters[cluster_index];
-            if !is_pic {
-                let prim_rect = LayoutRect::new(
-                    prim_instance.prim_origin,
-                    prim_size,
-                );
-                let culling_rect = prim_instance.local_clip_rect
-                    .intersection(&prim_rect)
-                    .unwrap_or_else(LayoutRect::zero);
-
-                cluster.bounding_rect = cluster.bounding_rect.union(&culling_rect);
+            PrimitiveInstanceKind::Backdrop { .. } => {
+                flags.insert(ClusterFlags::IS_BACKDROP_FILTER);
             }
-
-            prim_instance.cluster_index = ClusterIndex(cluster_index as u16);
+            _ => {}
         }
 
+        if is_backface_visible {
+            flags.insert(ClusterFlags::IS_BACKFACE_VISIBLE);
+        }
+
+        
+        match insert_position {
+            PrimitiveListPosition::Begin => {
+                if let Some(cluster) = self.clusters.first_mut() {
+                    if cluster.is_compatible(spatial_node_index, flags) {
+                        cluster.push(prim_instance, prim_size, insert_position);
+                        return;
+                    }
+                }
+
+                let mut cluster = PrimitiveCluster::new(
+                    spatial_node_index,
+                    flags,
+                );
+                cluster.push(prim_instance, prim_size, insert_position);
+                self.clusters.insert(0, cluster);
+            }
+            PrimitiveListPosition::End => {
+                if let Some(cluster) = self.clusters.last_mut() {
+                    if cluster.is_compatible(spatial_node_index, flags) {
+                        cluster.push(prim_instance, prim_size, insert_position);
+                        return;
+                    }
+                }
+
+                let mut cluster = PrimitiveCluster::new(
+                    spatial_node_index,
+                    flags,
+                );
+                cluster.push(prim_instance, prim_size, insert_position);
+                self.clusters.push(cluster);
+            }
+        }
+    }
+
+    
+    pub fn add_prim_to_start(
+        &mut self,
+        prim_instance: PrimitiveInstance,
+        prim_size: LayoutSize,
+        spatial_node_index: SpatialNodeIndex,
+        is_backface_visible: bool,
+    ) {
+        self.push(
+            prim_instance,
+            prim_size,
+            spatial_node_index,
+            is_backface_visible,
+            PrimitiveListPosition::Begin,
+        )
+    }
+
+    
+    pub fn add_prim(
+        &mut self,
+        prim_instance: PrimitiveInstance,
+        prim_size: LayoutSize,
+        spatial_node_index: SpatialNodeIndex,
+        is_backface_visible: bool,
+    ) {
+        self.push(
+            prim_instance,
+            prim_size,
+            spatial_node_index,
+            is_backface_visible,
+            PrimitiveListPosition::End,
+        )
+    }
+
+    
+    pub fn is_empty(&self) -> bool {
+        self.clusters.is_empty()
+    }
+
+    
+    pub fn extend(&mut self, prim_list: PrimitiveList) {
+        self.clusters.extend(prim_list.clusters);
+    }
+
+    
+    pub fn len(&self) -> usize {
+        self.clusters.len()
+    }
+
+    
+    pub fn split_off(&mut self, index: usize) -> PrimitiveList {
+        let clusters = self.clusters.split_off(index);
         PrimitiveList {
-            prim_instances,
-            pictures,
-            clusters,
-            deferred_prims,
+            clusters
         }
     }
 }
@@ -2466,14 +2485,22 @@ impl PicturePrimitive {
         pt: &mut T,
     ) {
         pt.new_level(format!("{:?}", self_index));
-        pt.add_item(format!("prim_count: {:?}", self.prim_list.prim_instances.len()));
+        pt.add_item(format!("cluster_count: {:?}", self.prim_list.clusters.len()));
         pt.add_item(format!("local_rect: {:?}", self.local_rect));
         pt.add_item(format!("spatial_node_index: {:?}", self.spatial_node_index));
         pt.add_item(format!("raster_config: {:?}", self.raster_config));
         pt.add_item(format!("requested_composite_mode: {:?}", self.requested_composite_mode));
 
-        for index in &self.prim_list.pictures {
-            pictures[index.0].print(pictures, *index, pt);
+        for cluster in &self.prim_list.clusters {
+            if cluster.flags.contains(ClusterFlags::IS_PICTURE) {
+                for instance in &cluster.prim_instances {
+                    let index = match instance.kind {
+                        PrimitiveInstanceKind::Picture { pic_index, .. } => pic_index,
+                        _ => unreachable!(),
+                    };
+                    pictures[index.0].print(pictures, index, pt);
+                }
+            }
         }
 
         pt.end_level();
@@ -3290,8 +3317,8 @@ impl PicturePrimitive {
         
         
         for poly in splitter.sort(vec3(0.0, 0.0, 1.0)) {
-            let prim_instance = &self.prim_list.prim_instances[poly.anchor.prim_instance_index];
-            let spatial_node_index = prim_instance.spatial_node_index;
+            let cluster = &self.prim_list.clusters[poly.anchor.cluster_index];
+            let spatial_node_index = cluster.spatial_node_index;
             let transform = match clip_scroll_tree
                 .get_world_transform(spatial_node_index)
                 .inverse()
@@ -3459,62 +3486,11 @@ impl PicturePrimitive {
         
         state.pop_picture();
 
-        
-        
-        for prim_index in &self.prim_list.deferred_prims {
-            let prim_instance = &mut self.prim_list.prim_instances[prim_index.0 as usize];
-            match prim_instance.kind {
-                PrimitiveInstanceKind::Backdrop { data_handle, .. } => {
-                    
-                    
-                    let prim_data = &mut data_stores.backdrop[data_handle];
-                    let spatial_node_index = prim_data.kind.spatial_node_index;
-
-                    
-                    
-                    
-                    
-                    
-
-                    let prim_to_world_mapper = SpaceMapper::new_with_target(
-                        ROOT_SPATIAL_NODE_INDEX,
-                        spatial_node_index,
-                        LayoutRect::max_rect(),
-                        frame_context.clip_scroll_tree,
-                    );
-
-                    let backdrop_to_world_mapper = SpaceMapper::new_with_target(
-                        ROOT_SPATIAL_NODE_INDEX,
-                        prim_instance.spatial_node_index,
-                        LayoutRect::max_rect(),
-                        frame_context.clip_scroll_tree,
-                    );
-
-                    
-                    let prim_rect = prim_to_world_mapper.map(&prim_data.kind.border_rect).unwrap_or_else(LayoutRect::zero);
-                    
-                    let prim_rect = backdrop_to_world_mapper.unmap(&prim_rect).unwrap_or_else(LayoutRect::zero);
-
-                    
-                    
-                    
-                    prim_instance.prim_origin = prim_rect.origin;
-                    prim_data.common.prim_size = prim_rect.size;
-                    prim_instance.local_clip_rect = prim_rect;
-
-                    
-                    let cluster = &mut self.prim_list.clusters[prim_instance.cluster_index.0 as usize];
-                    cluster.bounding_rect = cluster.bounding_rect.union(&prim_rect);
-                }
-                _ => {
-                    panic!("BUG: unexpected deferred primitive kind for cluster updates");
-                }
-            }
-        }
-
         for cluster in &mut self.prim_list.clusters {
+            cluster.flags.remove(ClusterFlags::IS_VISIBLE);
+
             
-            if !cluster.is_backface_visible {
+            if !cluster.flags.contains(ClusterFlags::IS_BACKFACE_VISIBLE) {
                 
                 
                 if let Picture3DContext::In { ancestor_index, .. } = self.context_3d {
@@ -3538,6 +3514,59 @@ impl PicturePrimitive {
 
             
             
+            if cluster.flags.contains(ClusterFlags::IS_BACKDROP_FILTER) {
+                let backdrop_to_world_mapper = SpaceMapper::new_with_target(
+                    ROOT_SPATIAL_NODE_INDEX,
+                    cluster.spatial_node_index,
+                    LayoutRect::max_rect(),
+                    frame_context.clip_scroll_tree,
+                );
+
+                for prim_instance in &mut cluster.prim_instances {
+                    match prim_instance.kind {
+                        PrimitiveInstanceKind::Backdrop { data_handle, .. } => {
+                            
+                            
+                            let prim_data = &mut data_stores.backdrop[data_handle];
+                            let spatial_node_index = prim_data.kind.spatial_node_index;
+
+                            
+                            
+                            
+                            
+                            
+
+                            let prim_to_world_mapper = SpaceMapper::new_with_target(
+                                ROOT_SPATIAL_NODE_INDEX,
+                                spatial_node_index,
+                                LayoutRect::max_rect(),
+                                frame_context.clip_scroll_tree,
+                            );
+
+                            
+                            let prim_rect = prim_to_world_mapper.map(&prim_data.kind.border_rect).unwrap_or_else(LayoutRect::zero);
+                            
+                            let prim_rect = backdrop_to_world_mapper.unmap(&prim_rect).unwrap_or_else(LayoutRect::zero);
+
+                            
+                            
+                            
+                            prim_instance.prim_origin = prim_rect.origin;
+                            prim_data.common.prim_size = prim_rect.size;
+                            prim_instance.local_clip_rect = prim_rect;
+
+                            
+                            cluster.bounding_rect = cluster.bounding_rect.union(&prim_rect);
+                        }
+                        _ => {
+                            panic!("BUG: unexpected deferred primitive kind for cluster updates");
+                        }
+                    }
+                }
+            }
+
+            
+            
             let surface = state.current_surface_mut();
             surface.map_local_to_surface.set_target_spatial_node(
                 cluster.spatial_node_index,
@@ -3548,7 +3577,7 @@ impl PicturePrimitive {
             
             
             
-            cluster.is_visible = true;
+            cluster.flags.insert(ClusterFlags::IS_VISIBLE);
             if let Some(cluster_rect) = surface.map_local_to_surface.map(&cluster.bounding_rect) {
                 surface.rect = surface.rect.union(&cluster_rect);
             }
