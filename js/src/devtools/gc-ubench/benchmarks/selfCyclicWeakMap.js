@@ -1,3 +1,7 @@
+
+
+
+
 window.tests.set('selfCyclicWeakMap', (function() {
 var garbage = [];
 var garbageIndex = 0;

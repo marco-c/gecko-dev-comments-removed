@@ -1,3 +1,7 @@
+
+
+
+
 window.tests.set('pairCyclicWeakMap', (function() {
 var garbage = [];
 var garbageIndex = 0;

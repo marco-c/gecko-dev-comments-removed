@@ -1,5 +1,9 @@
 
 
+
+
+
+
 """ Usage: align_stack_comment.py FILE
 
     This script aligns the stack transition comment in BytecodeEmitter and

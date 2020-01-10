@@ -1,3 +1,7 @@
+
+
+
+
 window.tests.set('globalArrayArrayLiteral', (function() {
 var garbage = [];
 var garbageIndex = 0;

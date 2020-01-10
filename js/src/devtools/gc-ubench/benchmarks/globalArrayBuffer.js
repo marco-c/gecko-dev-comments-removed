@@ -1,3 +1,7 @@
+
+
+
+
 window.tests.set('globalArrayBuffer', (function() {
 var garbage = [];
 var garbageIndex = 0;

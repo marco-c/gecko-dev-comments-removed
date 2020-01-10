@@ -1,3 +1,7 @@
+
+
+
+
 window.tests.set('bigTextNodes', (function() {
 var garbage = [];
 var garbageIndex = 0;

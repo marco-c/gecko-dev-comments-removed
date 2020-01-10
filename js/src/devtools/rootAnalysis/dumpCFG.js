@@ -1,6 +1,10 @@
 
 
 
+
+
+
+
 function loadCFG(filename) {
   const data = os.file.readFile(filename);
   return JSON.parse(data);

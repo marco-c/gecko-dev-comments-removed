@@ -1,5 +1,9 @@
 
 
+
+
+
+
 """ Usage: make_opcode_doc.py PATH_TO_MOZILLA_CENTRAL
 
     This script generates SpiderMonkey bytecode documentation

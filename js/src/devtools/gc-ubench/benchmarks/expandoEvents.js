@@ -1,3 +1,7 @@
+
+
+
+
 window.tests.set('expandoEvents', (function() {
 var garbage = [];
 var garbageIndex = 0;

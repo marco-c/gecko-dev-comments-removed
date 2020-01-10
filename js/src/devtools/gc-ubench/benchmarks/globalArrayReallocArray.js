@@ -1,3 +1,7 @@
+
+
+
+
 window.tests.set('globalArrayReallocArray', (function() {
 var garbage = [];
 var garbageIndex = 0;

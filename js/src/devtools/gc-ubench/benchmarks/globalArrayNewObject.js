@@ -1,3 +1,7 @@
+
+
+
+
 window.tests.set('globalArrayNewObject', (function() {
 var garbage = [];
 var garbageIndex = 0;

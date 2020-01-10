@@ -1,3 +1,7 @@
+
+
+
+
 window.tests.set('globalArrayFgFinalized', (function() {
 var garbage = [];
 var garbageIndex = 0;

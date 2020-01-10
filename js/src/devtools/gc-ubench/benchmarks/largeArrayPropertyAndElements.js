@@ -1,3 +1,7 @@
+
+
+
+
 window.tests.set('largeArrayPropertyAndElements', (function() {
   var garbage;
   var index;

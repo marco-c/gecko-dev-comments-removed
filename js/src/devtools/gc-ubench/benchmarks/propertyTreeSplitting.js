@@ -1,3 +1,7 @@
+
+
+
+
 window.tests.set('propertyTreeSplitting', (function() {
 var garbage = [];
 var garbageIndex = 0;

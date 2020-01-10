@@ -1,3 +1,7 @@
+
+
+
+
 window.tests.set('textNodes', (function() {
 var garbage = [];
 var garbageIndex = 0;

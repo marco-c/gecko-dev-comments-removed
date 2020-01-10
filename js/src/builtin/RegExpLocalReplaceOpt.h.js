@@ -16,6 +16,10 @@
 
 
 
+
+
+
+
 function FUNC_NAME(rx, S, lengthS, replaceValue
 #ifdef SUBSTITUTION
                    , firstDollarIndex
