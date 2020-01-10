@@ -197,7 +197,7 @@ module.exports = {
     
     "block-scoped-var": "error",
     
-    "camelcase": "error",
+    "camelcase": ["error", { "properties": "never" }],
     
     
     
