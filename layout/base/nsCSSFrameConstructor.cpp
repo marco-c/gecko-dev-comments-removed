@@ -4599,11 +4599,6 @@ nsCSSFrameConstructor::FindDisplayData(const nsStyleDisplay& aDisplay,
                   aDisplay.mDisplay != StyleDisplay::MozInlineBox),
              "-moz-{inline-}box as XUL should have already been handled");
 
-  
-  MOZ_ASSERT(aDisplay.mDisplay != StyleDisplay::Contents ||
-                 !aElement.IsRootOfNativeAnonymousSubtree(),
-             "display:contents on anonymous content is unsupported");
-
   const FrameConstructionData* data = DisplayData(aDisplay.mDisplay);
   MOZ_ASSERT(data, "unknown 'display' value");
   return data;
@@ -5472,15 +5467,17 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
     }
   });
 
+  
   const nsStyleDisplay& display = *aComputedStyle->StyleDisplay();
-
-  
-  
   if (display.mDisplay == StyleDisplay::None) {
     return;
   }
 
   if (display.mDisplay == StyleDisplay::Contents) {
+    
+    MOZ_ASSERT(!aContent->AsElement()->IsRootOfNativeAnonymousSubtree(),
+               "display:contents on anonymous content is unsupported");
+
     CreateGeneratedContentItem(aState, aParentFrame, *aContent->AsElement(),
                                *aComputedStyle, PseudoStyleType::before,
                                aItems);
