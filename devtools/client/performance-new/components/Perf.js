@@ -102,6 +102,14 @@ class Perf extends PureComponent {
         }
       }
       reportProfilerReady(isSupportedPlatform, recordingState);
+
+      
+      
+      
+      
+      if (window.gReportReady) {
+        window.gReportReady();
+      }
     });
 
     
