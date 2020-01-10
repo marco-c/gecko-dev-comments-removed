@@ -23,6 +23,7 @@ const ADDON_NOBG_NAME = "test-devtools-webextension-nobg";
 add_task(async function testWebExtensionsToolboxNoBackgroundPage() {
   await enableExtensionDebugging();
   const { document, tab, window } = await openAboutDebugging();
+  const store = window.AboutDebugging.store;
   await selectThisFirefoxPage(document, window.AboutDebugging.store);
 
   await installTemporaryExtensionFromXPI({
@@ -37,8 +38,10 @@ add_task(async function testWebExtensionsToolboxNoBackgroundPage() {
   const toolbox = getToolbox(devtoolsWindow);
 
   const onToolboxClose = gDevTools.once("toolbox-destroyed");
-  toolboxTestScript(toolbox, devtoolsTab);
+  toolboxTestScript(toolbox, devtoolsTab, window);
 
+  
+  await waitForDispatch(store, "REQUEST_TABS_SUCCESS");
   
   
   info("Wait for the toolbox to close");
