@@ -338,8 +338,6 @@ class nsContentSink : public nsICSSLoaderObserver,
       mProcessLinkHeaderEvent;
 
   
-  static int32_t sBackoffCount;
-  
   static int32_t sNotificationInterval;
   
   static int32_t sInteractiveDeflectCount;
