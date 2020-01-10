@@ -314,11 +314,6 @@ MakeConstructible(BCP47TokenStream, {
 
 
 
-
-
-
-
-
 function parseLanguageTag(locale) {
     assert(typeof locale === "string", "locale is a string");
 
@@ -729,13 +724,6 @@ function IsStructurallyValidLanguageTag(locale) {
 
 
 
-
-
-
-
-
-
-
 function CanonicalizeLanguageTagObject(localeObj) {
     assert(IsObject(localeObj), "CanonicalizeLanguageTagObject");
 
@@ -1062,7 +1050,6 @@ function CanonicalizeTransformExtension(localeObj, fields) {
 
     return extension;
 }
-
 
 
 
