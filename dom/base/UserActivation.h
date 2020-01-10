@@ -14,6 +14,15 @@ namespace dom {
 
 class UserActivation final {
  public:
+  enum class State : uint8_t {
+    
+    None,
+    
+    
+    FullActivated,
+    EndGuard_
+  };
+
   
 
 
