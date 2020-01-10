@@ -7,11 +7,10 @@
 #ifndef frontend_BinASTTokenReaderContext_h
 #define frontend_BinASTTokenReaderContext_h
 
-#include "mozilla/Array.h"       
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
-#include "mozilla/Maybe.h"       
-#include "mozilla/Variant.h"     
+
+#include "mozilla/Maybe.h"  
 
 #include <stddef.h>  
 #include <stdint.h>  
@@ -60,15 +59,12 @@ struct NormalizedInterfaceAndField {
 
 
 struct HuffmanLookup {
-  HuffmanLookup(const uint32_t bits, const uint8_t bitLength)
+  HuffmanLookup(uint32_t bits, uint8_t bitLength)
       
-      : bits(bitLength == 0
-                 ? 0  
-                 : (bits & (uint32_t(0xFFFFFFFF) >> (32 - bitLength)))),
+      : bits(bits & (uint32_t(0xFFFFFFFF) >> (32 - bitLength))),
         bitLength(bitLength) {
     MOZ_ASSERT(bitLength <= 32);
-    MOZ_ASSERT_IF(bitLength != 32 ,
-                  this->bits >> bitLength == 0);
+    MOZ_ASSERT(bits >> bitLength == 0);
   }
 
   
@@ -89,14 +85,14 @@ struct HuffmanLookup {
   
   
   
-  const uint32_t bits;
+  uint32_t bits;
 
   
   
   
   
   
-  const uint8_t bitLength;
+  uint8_t bitLength;
 };
 
 
@@ -112,7 +108,7 @@ struct HuffmanKey {
   HuffmanKey(const uint32_t bits, const uint8_t bitLength)
       : bits(bits), bitLength(bitLength) {
     MOZ_ASSERT(bitLength <= 32);
-    MOZ_ASSERT_IF(bitLength != 32 , bits >> bitLength == 0);
+    MOZ_ASSERT(bits >> bitLength == 0);
   }
 
   
@@ -122,14 +118,14 @@ struct HuffmanKey {
   
   
   
-  const uint32_t bits;
+  uint32_t bits;
 
   
   
   
   
   
-  const uint8_t bitLength;
+  uint8_t bitLength;
 };
 
 
@@ -210,15 +206,6 @@ struct HuffmanTableUnreachable {};
 
 
 
-
-
-
-
-struct HuffmanTableInitializing {};
-
-
-
-
 struct HuffmanTableExplicitSymbolsF64 {
   using Contents = double;
   HuffmanTableImpl<double> impl;
@@ -228,7 +215,6 @@ struct HuffmanTableExplicitSymbolsF64 {
 struct HuffmanTableExplicitSymbolsU32 {
   using Contents = uint32_t;
   HuffmanTableImpl<uint32_t> impl;
-  explicit HuffmanTableExplicitSymbolsU32(JSContext* cx) : impl(cx) {}
 };
 
 struct HuffmanTableIndexedSymbolsSum {
@@ -243,11 +229,9 @@ struct HuffmanTableIndexedSymbolsBool {
   explicit HuffmanTableIndexedSymbolsBool(JSContext* cx) : impl(cx) {}
 };
 
-
-
 struct HuffmanTableIndexedSymbolsMaybeInterface {
-  using Contents = BinASTKind;
-  HuffmanTableImpl<BinASTKind, 2> impl;
+  using Contents = Nullable;
+  HuffmanTableImpl<Nullable, 2> impl;
   explicit HuffmanTableIndexedSymbolsMaybeInterface(JSContext* cx) : impl(cx) {}
 
   
@@ -260,7 +244,7 @@ struct HuffmanTableIndexedSymbolsMaybeInterface {
       return false;
     }
     
-    return impl.begin()->value == BinASTKind::_Null;
+    return impl.begin()->value == Nullable::Null;
   }
 };
 
@@ -286,10 +270,9 @@ struct HuffmanTableIndexedSymbolsOptionalLiteralString {
 
 using HuffmanTable = mozilla::Variant<
     HuffmanTableUnreachable,  
-    HuffmanTableInitializing, HuffmanTableExplicitSymbolsF64,
-    HuffmanTableExplicitSymbolsU32, HuffmanTableIndexedSymbolsSum,
-    HuffmanTableIndexedSymbolsMaybeInterface, HuffmanTableIndexedSymbolsBool,
-    HuffmanTableIndexedSymbolsStringEnum,
+    HuffmanTableExplicitSymbolsF64, HuffmanTableExplicitSymbolsU32,
+    HuffmanTableIndexedSymbolsSum, HuffmanTableIndexedSymbolsMaybeInterface,
+    HuffmanTableIndexedSymbolsBool, HuffmanTableIndexedSymbolsStringEnum,
     HuffmanTableIndexedSymbolsLiteralString,
     HuffmanTableIndexedSymbolsOptionalLiteralString>;
 
@@ -302,7 +285,6 @@ struct HuffmanTableExplicitSymbolsListLength {
 
 using HuffmanTableListLength =
     mozilla::Variant<HuffmanTableUnreachable,  
-                     HuffmanTableInitializing,
                      HuffmanTableExplicitSymbolsListLength>;
 
 
@@ -312,7 +294,7 @@ using HuffmanTableListLength =
 
 class HuffmanDictionary {
  public:
-  explicit HuffmanDictionary(JSContext* cx);
+  explicit HuffmanDictionary(JSContext* cx) : fields(cx), listLengths(cx) {}
 
   HuffmanTable& tableForField(NormalizedInterfaceAndField index);
   HuffmanTableListLength& tableForListLength(BinASTList list);
@@ -325,7 +307,7 @@ class HuffmanDictionary {
   
   
   
-  mozilla::Array<HuffmanTable, BINAST_INTERFACE_AND_FIELD_LIMIT> fields;
+  Vector<HuffmanTable, BINAST_INTERFACE_AND_FIELD_LIMIT> fields;
 
   
   
@@ -333,8 +315,7 @@ class HuffmanDictionary {
   
   
   
-  mozilla::Array<HuffmanTableListLength, BINAST_NUMBER_OF_LIST_TYPES>
-      listLengths;
+  Vector<HuffmanTableListLength, BINAST_NUMBER_OF_LIST_TYPES> listLengths;
 };
 
 
@@ -404,7 +385,7 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
     BestEffort
   };
 
- protected:
+ private:
   
   
   
@@ -419,12 +400,12 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
     
     
     template <Compression Compression>
-    MOZ_MUST_USE JS::Result<HuffmanLookup> getHuffmanLookup(
-        BinASTTokenReaderContext& owner);
+    HuffmanLookup getHuffmanLookup();
 
     
     template <Compression Compression>
-    void advanceBitBuffer(const uint8_t bitLength);
+    MOZ_MUST_USE JS::Result<Ok> advanceBitBuffer(
+        BinASTTokenReaderContext& owner, const uint8_t bitLength);
 
    private:
     
@@ -602,11 +583,8 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
 
 
   MOZ_MUST_USE JS::Result<uint32_t> readUnsignedLong(const Context&);
-  MOZ_MUST_USE JS::Result<uint32_t> readUnpackedLong();
 
  private:
-  MOZ_MUST_USE JS::Result<BinASTKind> readTagFromTable(const Context&);
-
   template <typename Table>
   MOZ_MUST_USE JS::Result<typename Table::Contents> readFieldFromTable(
       const Context&);
@@ -615,11 +593,6 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
 
 
   MOZ_MUST_USE ErrorResult<JS::Error&> raiseInvalidValue(const Context&);
-
-  
-
-
-  MOZ_MUST_USE ErrorResult<JS::Error&> raiseNotInPrelude(const Context&);
 
  private:
   
@@ -662,7 +635,8 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
 
  protected:
   friend class HuffmanPreludeReader;
-  friend struct TagReader;
+
+  JSContext* cx_;
 
  public:
   
@@ -690,6 +664,8 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
     friend BinASTTokenReaderContext;
     void init();
 
+    
+    
     bool initialized_;
     BinASTTokenReaderContext& reader_;
   };
