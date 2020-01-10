@@ -886,6 +886,14 @@ PK11_FindRawCertsWithSubject(PK11SlotInfo *slot, SECItem *derSubject,
 
 
 
+
+
+CERTCertList *
+PK11_GetCertsMatchingPrivateKey(SECKEYPrivateKey *privKey);
+
+
+
+
 SECItem *
 PK11_GetLowLevelKeyIDForCert(PK11SlotInfo *slot,
                              CERTCertificate *cert, void *pwarg);
