@@ -5910,13 +5910,6 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
   NS_ENSURE_ARG(aURI);
 
   RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(aURI);
-  
-
-
-
-
-  nsCOMPtr<nsIReferrerInfo> referrerInfo =
-      new ReferrerInfo(mCurrentURI, mozilla::net::RP_Unset, false);
   loadState->SetOriginalURI(mCurrentURI);
   loadState->SetResultPrincipalURI(aURI);
   loadState->SetResultPrincipalURIIsSome(true);
@@ -5944,6 +5937,8 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
 
   bool equalUri = false;
   nsresult rv = aURI->Equals(mCurrentURI, &equalUri);
+
+  nsCOMPtr<nsIReferrerInfo> referrerInfo;
   if (NS_SUCCEEDED(rv) && (!equalUri) && aMetaRefresh &&
       aDelay <= REFRESH_REDIRECT_TIMER) {
     
@@ -5955,9 +5950,19 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
     
 
 
-    referrerInfo = mReferrerInfo;
+
+    if (mReferrerInfo) {
+      referrerInfo = static_cast<ReferrerInfo*>(mReferrerInfo.get())
+                         ->CloneWithNewSendReferrer(false);
+    }
   } else {
     loadState->SetLoadType(LOAD_REFRESH);
+    
+
+
+
+
+    referrerInfo = new ReferrerInfo(mCurrentURI, mozilla::net::RP_Unset, false);
   }
 
   loadState->SetReferrerInfo(referrerInfo);
