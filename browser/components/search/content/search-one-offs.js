@@ -299,6 +299,12 @@ class SearchOneOffs {
     }
     if (val) {
       val.setAttribute("selected", "true");
+      if (!val.engine) {
+        
+        
+        
+        this.selectedAutocompleteIndex = -1;
+      }
     }
     this._selectedButton = val;
 
@@ -313,12 +319,6 @@ class SearchOneOffs {
       }
     }
 
-    if (val && !val.engine) {
-      
-      
-      
-      this.selectedAutocompleteIndex = -1;
-    }
     let event = new CustomEvent("SelectedOneOffButtonChanged", {
       previousSelectedButton: previousButton,
     });
@@ -924,16 +924,18 @@ class SearchOneOffs {
       }
       if (this.selectedAutocompleteIndex == numListItems - 1) {
         
+        if (!allowEmptySelection) {
+          this.selectedAutocompleteIndex = -1;
+          if (this.textbox && typeof textboxUserValue == "string") {
+            this.textbox.value = textboxUserValue;
+          }
+        }
         this.selectedButtonIndex = 0;
         if (allowEmptySelection) {
           
           
           return false;
         }
-        if (this.textbox && typeof textboxUserValue == "string") {
-          this.textbox.value = textboxUserValue;
-        }
-        this.selectedAutocompleteIndex = -1;
         return true;
       }
       if (this.selectedButton) {
