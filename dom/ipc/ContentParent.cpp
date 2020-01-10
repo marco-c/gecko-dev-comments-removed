@@ -593,6 +593,9 @@ static bool sCanLaunchSubprocesses;
 static bool sDisableUnsafeCPOWWarnings = false;
 
 
+static bool sCreatedFirstContentProcess = false;
+
+
 static uint64_t gContentChildID = 1;
 
 static const char* sObserverTopics[] = {
@@ -2144,6 +2147,14 @@ void ContentParent::LaunchSubprocessInternal(
                       std::move(prefSerializer)](base::ProcessHandle handle) {
     AUTO_PROFILER_LABEL("ContentParent::LaunchSubprocess::resolve", OTHER);
     const auto launchResumeTS = TimeStamp::Now();
+
+    if (!sCreatedFirstContentProcess) {
+      nsCOMPtr<nsIObserverService> obs =
+          mozilla::services::GetObserverService();
+      obs->NotifyObservers(nullptr, "ipc:first-content-process-created",
+                           nullptr);
+      sCreatedFirstContentProcess = true;
+    }
 
     base::ProcessId procId = base::GetProcId(handle);
     Open(mSubprocess->GetChannel(), procId);
