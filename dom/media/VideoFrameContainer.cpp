@@ -5,8 +5,12 @@
 
 
 #include "VideoFrameContainer.h"
-#include "mozilla/Telemetry.h"
+
+#ifdef MOZ_WIDGET_ANDROID
+#include "GLImages.h"  
+#endif
 #include "MediaDecoderOwner.h"
+#include "mozilla/Telemetry.h"
 
 using namespace mozilla::layers;
 
@@ -78,9 +82,27 @@ void VideoFrameContainer::UpdatePrincipalHandleForFrameIDLocked(
   mFrameIDForPendingPrincipalHandle = aFrameID;
 }
 
+#ifdef MOZ_WIDGET_ANDROID
+static void NotifySetCurrent(Image* aImage) {
+  if (aImage == nullptr) {
+    return;
+  }
+
+  SurfaceTextureImage* image = aImage->AsSurfaceTextureImage();
+  if (image == nullptr) {
+    return;
+  }
+
+  image->OnSetCurrent();
+}
+#endif
+
 void VideoFrameContainer::SetCurrentFrame(const gfx::IntSize& aIntrinsicSize,
                                           Image* aImage,
                                           const TimeStamp& aTargetTime) {
+#ifdef MOZ_WIDGET_ANDROID
+    NotifySetCurrent(aImage);
+#endif
   if (aImage) {
     MutexAutoLock lock(mMutex);
     AutoTArray<ImageContainer::NonOwningImage, 1> imageList;
@@ -95,6 +117,15 @@ void VideoFrameContainer::SetCurrentFrame(const gfx::IntSize& aIntrinsicSize,
 void VideoFrameContainer::SetCurrentFrames(
     const gfx::IntSize& aIntrinsicSize,
     const nsTArray<ImageContainer::NonOwningImage>& aImages) {
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  
+  Unused << NS_WARN_IF(aImages.Length() > 1);
+  for (auto& image : aImages) {
+    NotifySetCurrent(image.mImage);
+  }
+#endif
   MutexAutoLock lock(mMutex);
   SetCurrentFramesLocked(aIntrinsicSize, aImages);
 }
