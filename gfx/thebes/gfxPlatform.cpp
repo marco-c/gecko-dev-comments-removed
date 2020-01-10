@@ -2769,7 +2769,15 @@ static void UpdateWRQualificationForIntel(FeatureState& aFeature,
 #else
   
   
+  
+  
+#  if defined(XP_WIN)
+  
+  const int32_t kMaxPixels = 1920 * 1200;  
+#  else
+  
   const int32_t kMaxPixels = 3440 * 1440;  
+#  endif
   if (aScreenPixels > kMaxPixels) {
     aFeature.Disable(
         FeatureStatus::BlockedScreenTooLarge, "Screen size too large",
@@ -2783,8 +2791,7 @@ static void UpdateWRQualificationForIntel(FeatureState& aFeature,
   }
 #endif
 
-#if ((defined(XP_WIN) && defined(EARLY_BETA_OR_EARLIER)) || \
-     (defined(MOZ_WIDGET_GTK) && defined(NIGHTLY_BUILD)))
+#if (defined(XP_WIN) || (defined(MOZ_WIDGET_GTK) && defined(NIGHTLY_BUILD)))
   
   
 #else
