@@ -1187,9 +1187,19 @@ var Impl = {
       "sendNewProfilePing - shutting down: " + this._shuttingDown
     );
 
+    const scalars = Telemetry.getSnapshotForScalars(
+      "new-profile",
+       true
+    );
+
     
     const payload = {
       reason: this._shuttingDown ? "shutdown" : "startup",
+      processes: {
+        parent: {
+          scalars: scalars.parent,
+        },
+      },
     };
 
     
