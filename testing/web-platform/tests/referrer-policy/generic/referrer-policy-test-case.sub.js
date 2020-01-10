@@ -193,6 +193,13 @@ function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
 
     
     
+    
+    if (scenario.delivery_method === "attr-referrer") {
+      return;
+    }
+
+    
+    
     promise_test(_ => {
         
         const sourceContextList = [{sourceContextType: "srcdoc"}];
@@ -200,6 +207,23 @@ function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
         return invokeScenario(scenario, sourceContextList)
           .then(result => checkResult(scenario.referrer_url, result));
       }, testDescription + " (srcdoc iframe inherits parent)");
+
+    
+    
+    
+    
+    if (scenario.delivery_method === "http-rp") {
+      return;
+    }
+
+    
+    
+    
+    
+    
+    if (scenario.referrer_policy === null) {
+      return;
+    }
 
     
     
