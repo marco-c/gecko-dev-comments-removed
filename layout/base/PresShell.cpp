@@ -3337,14 +3337,7 @@ static nscoord ComputeWhereToScroll(WhereToScroll aWhereToScroll,
 
 
 
-
-
-
-
-
-
-static void ScrollToShowRect(PresShell* aPresShell,
-                             nsIScrollableFrame* aFrameAsScrollable,
+static void ScrollToShowRect(nsIScrollableFrame* aFrameAsScrollable,
                              const nsRect& aRect, ScrollAxis aVertical,
                              ScrollAxis aHorizontal, ScrollFlags aScrollFlags) {
   nsPoint scrollPt = aFrameAsScrollable->GetVisualViewportOffset();
@@ -3423,9 +3416,9 @@ static void ScrollToShowRect(PresShell* aPresShell,
     
     
     if (aFrameAsScrollable->IsRootScrollFrameOfDocument() &&
-        aPresShell->GetPresContext()->IsRootContentDocument()) {
-      aPresShell->ScrollToVisual(scrollPt, FrameMetrics::eMainThread,
-                                 scrollMode);
+        frame->PresShell()->GetPresContext()->IsRootContentDocument()) {
+      frame->PresShell()->ScrollToVisual(scrollPt, FrameMetrics::eMainThread,
+                                         scrollMode);
     }
   }
 }
@@ -3593,8 +3586,7 @@ bool PresShell::ScrollFrameRectIntoView(nsIFrame* aFrame, const nsRect& aRect,
 
       {
         AutoWeakFrame wf(container);
-        ScrollToShowRect(this, sf, targetRect, aVertical, aHorizontal,
-                         aScrollFlags);
+        ScrollToShowRect(sf, targetRect, aVertical, aHorizontal, aScrollFlags);
         if (!wf.IsAlive()) {
           return didScroll;
         }
