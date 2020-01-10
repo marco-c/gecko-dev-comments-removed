@@ -192,7 +192,6 @@ class SearchOneOffs {
 
   set view(val) {
     this._view = val;
-    this.popup = val && val.panel;
     return val;
   }
 
@@ -202,19 +201,12 @@ class SearchOneOffs {
 
 
 
-
-
   set popup(val) {
-    let events = ["popupshowing", "popuphidden"];
     if (this._popup) {
-      for (let event of events) {
-        this._popup.removeEventListener(event, this);
-      }
+      this._popup.removeEventListener("popupshowing", this);
     }
     if (val) {
-      for (let event of events) {
-        val.addEventListener(event, this);
-      }
+      val.addEventListener("popupshowing", this);
     }
     this._popup = val;
 
@@ -450,6 +442,9 @@ class SearchOneOffs {
 
 
   async __rebuild() {
+    this.selectedButton = null;
+    this._contextEngine = null;
+
     
     this._updateAfterQueryChanged();
 
@@ -500,7 +495,7 @@ class SearchOneOffs {
       return;
     }
 
-    let panelWidth = parseInt(this.popup.clientWidth);
+    let panelWidth = parseInt((this.popup || this._view.panel).clientWidth);
 
     
     
@@ -711,7 +706,7 @@ class SearchOneOffs {
 
   _buttonForEngine(engine) {
     let id = this._buttonIDForEngine(engine);
-    return this._popup && document.getElementById(id);
+    return document.getElementById(id);
   }
 
   
@@ -905,7 +900,7 @@ class SearchOneOffs {
 
 
   handleKeyPress(event, numListItems, allowEmptySelection, textboxUserValue) {
-    if (!this.popup) {
+    if (!this.popup && !this._view) {
       return false;
     }
     let handled = this._handleKeyPress(
@@ -1259,7 +1254,11 @@ class SearchOneOffs {
 
       
       
-      this.popup.hidePopup();
+      if (this._view) {
+        this._view.close();
+      } else {
+        this.popup.hidePopup();
+      }
       return;
     }
 
@@ -1364,13 +1363,6 @@ class SearchOneOffs {
 
   _on_popupshowing() {
     this._rebuild();
-  }
-
-  _on_popuphidden() {
-    Services.tm.dispatchToMainThread(() => {
-      this.selectedButton = null;
-      this._contextEngine = null;
-    });
   }
 }
 

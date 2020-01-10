@@ -13,7 +13,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
-  AppConstants: "resource://gre/modules/AppConstants.jsm",
 });
 
 
@@ -46,10 +45,6 @@ class UrlbarView {
     this._rows.addEventListener("overflow", this);
     this._rows.addEventListener("underflow", this);
 
-    this.panel.addEventListener("popupshowing", this);
-    this.panel.addEventListener("popupshown", this);
-    this.panel.addEventListener("popuphiding", this);
-
     this.controller.setView(this);
     this.controller.addQueryListener(this);
   }
@@ -72,7 +67,7 @@ class UrlbarView {
 
 
   get isOpen() {
-    return this.panel.state == "open" || this.panel.state == "showing";
+    return !this.panel.hasAttribute("hidden");
   }
 
   get allowEmptySelection() {
@@ -206,7 +201,12 @@ class UrlbarView {
 
   close() {
     this.controller.cancelQuery();
-    this.panel.hidePopup();
+    this.panel.setAttribute("hidden", "true");
+    this.removeAccessibleFocus();
+    this.input.inputField.setAttribute("aria-expanded", "false");
+    this.input.dropmarker.removeAttribute("open");
+    this._rows.textContent = "";
+    this.window.removeEventListener("resize", this);
   }
 
   
@@ -339,7 +339,6 @@ class UrlbarView {
     }
     this.controller.userSelectionBehavior = "none";
 
-    this.panel.removeAttribute("hidden");
     this.panel.removeAttribute("actionoverride");
 
     
@@ -390,18 +389,18 @@ class UrlbarView {
     let toolbarRect = this._getBoundsWithoutFlushing(
       this.input.textbox.closest("toolbar")
     );
-    let horizontalOffset = this.window.RTL_UI
-      ? inputRect.right - documentRect.right
-      : documentRect.left - inputRect.left;
-    let verticalOffset = inputRect.top - toolbarRect.top;
-    if (AppConstants.platform == "macosx") {
-      
-      verticalOffset++;
-    }
-    this.panel.style.marginInlineStart = px(horizontalOffset);
-    this.panel.style.marginTop = px(verticalOffset);
+    this.panel.style.top = px(toolbarRect.bottom);
 
-    this.panel.openPopup(this.input.textbox, "after_start");
+    this.panel.removeAttribute("hidden");
+    this.input.inputField.setAttribute("aria-expanded", "true");
+    this.input.dropmarker.setAttribute("open", "true");
+
+    if (this.oneOffSearchButtons.style.display != "none") {
+      this.oneOffSearchButtons._rebuild();
+    }
+
+    this.window.addEventListener("resize", this);
+    this._windowOuterWidth = this.window.outerWidth;
   }
 
   
@@ -800,8 +799,6 @@ class UrlbarView {
     if (enable && UrlbarPrefs.get("oneOffSearches")) {
       this.oneOffSearchButtons.telemetryOrigin = "urlbar";
       this.oneOffSearchButtons.style.display = "";
-      
-      
       this.oneOffSearchButtons.textbox = this.input.textbox;
       this.oneOffSearchButtons.view = this;
     } else {
@@ -920,23 +917,6 @@ class UrlbarView {
     ) {
       this._setElementOverflowing(event.target, false);
     }
-  }
-
-  _on_popupshowing() {
-    this.window.addEventListener("resize", this);
-    this._windowOuterWidth = this.window.outerWidth;
-  }
-
-  _on_popupshown() {
-    this.input.inputField.setAttribute("aria-expanded", "true");
-  }
-
-  _on_popuphiding() {
-    this.controller.cancelQuery();
-    this.window.removeEventListener("resize", this);
-    this.removeAccessibleFocus();
-    this.input.inputField.setAttribute("aria-expanded", "false");
-    this._rows.textContent = "";
   }
 
   _on_resize() {

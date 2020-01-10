@@ -32,15 +32,6 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
 
     ],
   },
-  
-  
-  
-  {
-    stack: [
-      "_openPanel@resource:///modules/UrlbarView.jsm",
-      "onQueryResults@resource:///modules/UrlbarView.jsm",
-    ],
-  },
 ];
 
 add_task(async function quantumbar() {

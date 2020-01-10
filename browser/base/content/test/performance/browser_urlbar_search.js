@@ -32,29 +32,10 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
 
     ],
   },
-  
-  
-  
-  {
-    stack: [
-      "_openPanel@resource:///modules/UrlbarView.jsm",
-      "onQueryResults@resource:///modules/UrlbarView.jsm",
-    ],
-  },
 ];
 
 
-const EXPECTED_REFLOWS_SECOND_OPEN = [
-  
-  
-  
-  {
-    stack: [
-      "_openPanel@resource:///modules/UrlbarView.jsm",
-      "onQueryResults@resource:///modules/UrlbarView.jsm",
-    ],
-  },
-];
+const EXPECTED_REFLOWS_SECOND_OPEN = [];
 
 add_task(async function quantumbar() {
   await runUrlbarTest(
