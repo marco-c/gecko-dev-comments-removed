@@ -152,13 +152,6 @@ static bool HandleMessageInMiddleman(ipc::Side aSide,
 
 
 static bool AlwaysForwardMessage(const IPC::Message& aMessage) {
-  
-  
-  
-  if (InRepaintStressMode()) {
-    return true;
-  }
-
   IPC::Message::msgid_t type = aMessage.type();
 
   

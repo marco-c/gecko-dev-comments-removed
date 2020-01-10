@@ -949,6 +949,7 @@ async function queuePauseData(point, trackCached, shouldSkipCallback) {
       
       
       if (
+        point.position &&
         gLogpoints.some(({ position }) =>
           positionSubsumes(position, point.position)
         )
@@ -1475,6 +1476,14 @@ function handleResumeManifestResponse({
   for (const point of debuggerStatements) {
     const checkpoint = getSavedCheckpoint(point.checkpoint);
     getCheckpointInfo(checkpoint).debuggerStatements.push(point);
+  }
+
+  
+  
+  
+  
+  if (RecordReplayControl.inRepaintStressMode()) {
+    queuePauseData(point);
   }
 }
 
