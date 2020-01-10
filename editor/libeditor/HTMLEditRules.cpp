@@ -1928,7 +1928,8 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
   
   
   
-  if (IsEmptyBlockElement(*blockParent, IgnoreSingleBR::eNo)) {
+  if (HTMLEditorRef().IsEmptyBlockElement(*blockParent,
+                                          HTMLEditor::IgnoreSingleBR::No)) {
     AutoEditorDOMPointChildInvalidator lockOffset(atStartOfSelection);
     EditorDOMPoint endOfBlockParent;
     endOfBlockParent.SetToEndOf(blockParent);
@@ -6086,20 +6087,16 @@ nsresult HTMLEditor::CreateStyleForInsertText(AbstractRange& aAbstractRange) {
   return rv;
 }
 
-bool HTMLEditRules::IsEmptyBlockElement(Element& aElement,
-                                        IgnoreSingleBR aIgnoreSingleBR) {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  if (NS_WARN_IF(!HTMLEditor::NodeIsBlockStatic(aElement))) {
+bool HTMLEditor::IsEmptyBlockElement(Element& aElement,
+                                     IgnoreSingleBR aIgnoreSingleBR) const {
+  if (!HTMLEditor::NodeIsBlockStatic(aElement)) {
     return false;
   }
   bool isEmpty = true;
-  nsresult rv = HTMLEditorRef().IsEmptyNode(
-      &aElement, &isEmpty, aIgnoreSingleBR == IgnoreSingleBR::eYes);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return false;
-  }
-  return isEmpty;
+  nsresult rv =
+      IsEmptyNode(&aElement, &isEmpty, aIgnoreSingleBR == IgnoreSingleBR::Yes);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "IsEmptyNode() failed");
+  return NS_SUCCEEDED(rv) && isEmpty;
 }
 
 nsresult HTMLEditRules::WillAlign(const nsAString& aAlignType, bool* aCancel,
@@ -8034,7 +8031,8 @@ nsresult HTMLEditRules::ReturnInHeader(Element& aHeader, nsINode& aNode,
   }
 
   
-  if (IsEmptyBlockElement(aHeader, IgnoreSingleBR::eYes)) {
+  if (HTMLEditorRef().IsEmptyBlockElement(aHeader,
+                                          HTMLEditor::IgnoreSingleBR::Yes)) {
     rv = MOZ_KnownLive(HTMLEditorRef()).DeleteNodeWithTransaction(aHeader);
     if (NS_WARN_IF(!CanHandleEditAction())) {
       return NS_ERROR_EDITOR_DESTROYED;
@@ -8433,7 +8431,8 @@ nsresult HTMLEditRules::ReturnInListItem(Element& aListItem, nsINode& aNode,
   
   
   if (host != aListItem.GetParentElement() &&
-      IsEmptyBlockElement(aListItem, IgnoreSingleBR::eYes)) {
+      HTMLEditorRef().IsEmptyBlockElement(aListItem,
+                                          HTMLEditor::IgnoreSingleBR::Yes)) {
     nsCOMPtr<nsIContent> leftListNode = aListItem.GetParent();
     
     if (!HTMLEditorRef().IsLastEditableChild(&aListItem)) {

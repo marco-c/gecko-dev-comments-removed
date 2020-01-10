@@ -622,13 +622,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  enum class IgnoreSingleBR { eYes, eNo };
-  bool IsEmptyBlockElement(Element& aElement, IgnoreSingleBR aIgnoreSingleBR);
-
-  
-
-
-
 
 
 
