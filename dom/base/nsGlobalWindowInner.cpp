@@ -2988,12 +2988,6 @@ bool nsGlobalWindowInner::IsPrivilegedChromeWindow(JSContext* aCx,
 }
 
 
-bool nsGlobalWindowInner::OfflineCacheAllowedForContext(JSContext* aCx,
-                                                        JSObject* aObj) {
-  return IsSecureContextOrObjectIsFromSecureContext(aCx, aObj);
-}
-
-
 bool nsGlobalWindowInner::IsRequestIdleCallbackEnabled(JSContext* aCx,
                                                        JSObject* aObj) {
   
