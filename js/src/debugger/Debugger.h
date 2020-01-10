@@ -246,6 +246,20 @@ extern void CheckDebuggeeThing(JSObject* obj, bool invisibleOk);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <class UnbarrieredKey, bool InvisibleKeysOk = false>
 class DebuggerWeakMap
     : private WeakMap<HeapPtr<UnbarrieredKey>, HeapPtr<JSObject*>> {
