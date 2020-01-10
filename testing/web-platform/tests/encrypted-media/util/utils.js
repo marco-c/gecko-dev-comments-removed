@@ -243,22 +243,28 @@ function test_exception(testCase ) {
     
     
     
-    try {
-        return func.apply(null, args).then(
-            function (result) {
-                assert_unreached(format_value(func));
-            },
-            function (error) {
-                assert_equals(error.name, exception, format_value(func));
-                assert_not_equals(error.message, "", format_value(func));
+    return func.apply(null, args).then(
+        function (result) {
+            assert_unreached(format_value(func));
+        },
+        function (error) {
+            assert_not_equals(error.message, "", format_value(func));
+            
+            
+            
+            
+            
+            if (window[exception]) {
+                assert_throws_js(window[exception],
+                                 () => { throw error; },
+                                 format_value(func));
+            } else {
+                assert_throws_dom(exception,
+                                  () => { throw error; },
+                                  format_value(func));
             }
-        );
-    } catch (e) {
-        
-        
-        assert_equals('TypeError', exception, format_value(func));
-        assert_equals(e.name, exception, format_value(func));
-    }
+        }
+    );
 }
 
 

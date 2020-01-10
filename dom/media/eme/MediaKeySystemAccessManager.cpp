@@ -73,16 +73,14 @@ void MediaKeySystemAccessManager::Request(
           NS_ConvertUTF16toUTF8(aKeySystem).get());
 
   if (aKeySystem.IsEmpty()) {
-    aPromise->MaybeReject(NS_ERROR_DOM_TYPE_ERR,
-                          NS_LITERAL_CSTRING("Key system string is empty"));
+    aPromise->MaybeRejectWithTypeError(u"Key system string is empty");
     
     
     return;
   }
   if (aConfigs.IsEmpty()) {
-    aPromise->MaybeReject(
-        NS_ERROR_DOM_TYPE_ERR,
-        NS_LITERAL_CSTRING("Candidate MediaKeySystemConfigs is empty"));
+    aPromise->MaybeRejectWithTypeError(
+        u"Candidate MediaKeySystemConfigs is empty");
     
     
     return;
