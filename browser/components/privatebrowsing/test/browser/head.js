@@ -43,6 +43,18 @@ function openWindow(aParent, aOptions) {
   ).then(() => win);
 }
 
+
+
+
+async function openAboutPrivateBrowsing() {
+  let win = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+    waitForTabURL: "about:privatebrowsing",
+  });
+  let tab = win.gBrowser.selectedBrowser;
+  return { win, tab };
+}
+
 function newDirectory() {
   let FileUtils = ChromeUtils.import("resource://gre/modules/FileUtils.jsm", {})
     .FileUtils;

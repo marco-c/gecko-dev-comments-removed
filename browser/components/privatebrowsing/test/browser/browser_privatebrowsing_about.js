@@ -9,18 +9,6 @@ const { UrlbarTestUtils } = ChromeUtils.import(
 
 
 
-async function openAboutPrivateBrowsing() {
-  let win = await BrowserTestUtils.openNewBrowserWindow({
-    private: true,
-    waitForTabURL: "about:privatebrowsing",
-  });
-  let tab = win.gBrowser.selectedBrowser;
-  return { win, tab };
-}
-
-
-
-
 
 
 async function testLinkOpensUrl({ win, tab, elementId, expectedUrl }) {

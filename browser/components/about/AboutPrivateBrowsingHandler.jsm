@@ -10,18 +10,37 @@ const { RemotePages } = ChromeUtils.import(
   "resource://gre/modules/remotepagemanager/RemotePageManagerParent.jsm"
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+const SHOWN_PREF = "browser.search.separatePrivateDefault.ui.banner.shown";
+const MAX_SEARCH_BANNER_SHOW_COUNT = 5;
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "isPrivateSearchUIEnabled",
+  "browser.search.separatePrivateDefault.ui.enabled",
+  false
+);
 
 var AboutPrivateBrowsingHandler = {
   _inited: false,
-  _topics: ["OpenPrivateWindow", "SearchHandoff"],
+  
+  _searchBannerShownThisSession: false,
+  _topics: [
+    "OpenPrivateWindow",
+    "OpenSearchPreferences",
+    "SearchHandoff",
+    "ShouldShowSearchBanner",
+    "SearchBannerDismissed",
+  ],
 
   init() {
+    this.receiveMessage = this.receiveMessage.bind(this);
     this.pageListener = new RemotePages("about:privatebrowsing");
     for (let topic of this._topics) {
-      this.pageListener.addMessageListener(
-        topic,
-        this.receiveMessage.bind(this)
-      );
+      this.pageListener.addMessageListener(topic, this.receiveMessage);
     }
     this._inited = true;
   },
@@ -31,7 +50,7 @@ var AboutPrivateBrowsingHandler = {
       return;
     }
     for (let topic of this._topics) {
-      this.pageListener.removeMessageListener(topic);
+      this.pageListener.removeMessageListener(topic, this.receiveMessage);
     }
     this.pageListener.destroy();
   },
@@ -41,6 +60,11 @@ var AboutPrivateBrowsingHandler = {
       case "OpenPrivateWindow": {
         let win = aMessage.target.browser.ownerGlobal;
         win.OpenBrowserWindow({ private: true });
+        break;
+      }
+      case "OpenSearchPreferences": {
+        let win = aMessage.target.browser.ownerGlobal;
+        win.openPreferences("search", { origin: "about-privatebrowsing" });
         break;
       }
       case "SearchHandoff": {
@@ -104,6 +128,49 @@ var AboutPrivateBrowsingHandler = {
         urlBar.addEventListener("blur", onDone);
         urlBar.addEventListener("compositionstart", checkFirstChange);
         urlBar.addEventListener("paste", checkFirstChange);
+        break;
+      }
+      case "ShouldShowSearchBanner": {
+        
+        
+        
+        
+        
+        
+        if (
+          aMessage.target.browser.getAttribute("preloadedState") === "preloaded"
+        ) {
+          aMessage.target.sendAsyncMessage("ShowSearchBanner", {
+            show: false,
+          });
+          return;
+        }
+
+        if (!isPrivateSearchUIEnabled || this._searchBannerShownThisSession) {
+          aMessage.target.sendAsyncMessage("ShowSearchBanner", {
+            show: false,
+          });
+          return;
+        }
+        this._searchBannerShownThisSession = true;
+        const shownTimes = Services.prefs.getIntPref(SHOWN_PREF, 0);
+        if (shownTimes >= MAX_SEARCH_BANNER_SHOW_COUNT) {
+          aMessage.target.sendAsyncMessage("ShowSearchBanner", {
+            show: false,
+          });
+          return;
+        }
+        Services.prefs.setIntPref(SHOWN_PREF, shownTimes + 1);
+        Services.search.getDefaultPrivate().then(engine => {
+          aMessage.target.sendAsyncMessage("ShowSearchBanner", {
+            engineName: engine.name,
+            show: true,
+          });
+        });
+        break;
+      }
+      case "SearchBannerDismissed": {
+        Services.prefs.setIntPref(SHOWN_PREF, MAX_SEARCH_BANNER_SHOW_COUNT);
         break;
       }
     }
