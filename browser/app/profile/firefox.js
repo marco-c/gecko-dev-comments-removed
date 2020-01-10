@@ -423,12 +423,6 @@ pref("permissions.postPrompt.animate", true);
   pref("permissions.eventTelemetry.enabled", false);
 #endif
 
-#ifdef NIGHTLY_BUILD
-  pref("permissions.delegation.enable", true);
-#else
-  pref("permissions.delegation.enable", false);
-#endif
-
 
 
 pref("browser.link.open_newwindow", 3);

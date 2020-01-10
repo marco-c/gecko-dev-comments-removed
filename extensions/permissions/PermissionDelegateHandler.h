@@ -28,9 +28,6 @@
 
 #include "nsISupports.h"
 
-class nsIPrincipal;
-class nsIContentPermissionRequest;
-
 namespace mozilla {
 namespace dom {
 class Document;
@@ -44,32 +41,7 @@ class PermissionDelegateHandler final : nsISupports {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(PermissionDelegateHandler)
 
-  bool Initialize();
-
   
-
-
-  bool HasPermissionDelegated(const nsACString& aType);
-
-  
-
-
-
-
-
-
-
-
-  nsresult GetPermission(const nsACString& aType, uint32_t* aPermission,
-                         bool aExactHostMatch);
-
-  
-
-
-
-
-
-
 
 
 
@@ -121,16 +93,11 @@ class PermissionDelegateHandler final : nsISupports {
   
 
 
-
   const PermissionDelegateInfo* GetPermissionDelegateInfo(
       const nsAString& aPermissionName) const;
 
   
   mozilla::dom::Document* mDocument;
-
-  nsCOMPtr<nsIPrincipal> mPrincipal;
-  nsCOMPtr<nsIPrincipal> mTopLevelPrincipal;
-  RefPtr<nsIPermissionManager> mPermissionManager;
 };
 
 #endif  
