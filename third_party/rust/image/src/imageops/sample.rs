@@ -13,7 +13,7 @@ use math::utils::clamp;
 use traits::{Enlargeable, Primitive};
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum FilterType {
     
     Nearest,
@@ -34,7 +34,7 @@ pub enum FilterType {
 
 pub struct Filter<'a> {
     
-    pub kernel: Box<Fn(f32) -> f32 + 'a>,
+    pub kernel: Box<dyn Fn(f32) -> f32 + 'a>,
 
     
     pub support: f32,
@@ -122,14 +122,13 @@ pub fn box_kernel(_x: f32) -> f32 {
 
 
 
-
 fn horizontal_sample<I, P, S>(
     image: &I,
     new_width: u32,
     filter: &mut Filter,
 ) -> ImageBuffer<P, Vec<S>>
 where
-    I: GenericImageView<Pixel = P> + 'static,
+    I: GenericImageView<Pixel = P>,
     P: Pixel<Subpixel = S> + 'static,
     S: Primitive + 'static,
 {
@@ -214,14 +213,13 @@ where
 
 
 
-
 fn vertical_sample<I, P, S>(
     image: &I,
     new_height: u32,
     filter: &mut Filter,
 ) -> ImageBuffer<P, Vec<S>>
 where
-    I: GenericImageView<Pixel = P> + 'static,
+    I: GenericImageView<Pixel = P>,
     P: Pixel<Subpixel = S> + 'static,
     S: Primitive + 'static,
 {
@@ -566,10 +564,9 @@ where
 
 
 
-
 pub fn filter3x3<I, P, S>(image: &I, kernel: &[f32]) -> ImageBuffer<P, Vec<S>>
 where
-    I: GenericImageView<Pixel = P> + 'static,
+    I: GenericImageView<Pixel = P>,
     P: Pixel<Subpixel = S> + 'static,
     S: Primitive + 'static,
 {
@@ -647,8 +644,7 @@ where
 
 
 
-
-pub fn resize<I: GenericImageView + 'static>(
+pub fn resize<I: GenericImageView>(
     image: &I,
     nwidth: u32,
     nheight: u32,
@@ -687,14 +683,12 @@ where
 
 
 
-
-pub fn blur<I: GenericImageView + 'static>(
+pub fn blur<I: GenericImageView>(
     image: &I,
     sigma: f32,
 ) -> ImageBuffer<I::Pixel, Vec<<I::Pixel as Pixel>::Subpixel>>
 where
     I::Pixel: 'static,
-    <I::Pixel as Pixel>::Subpixel: 'static,
 {
     let sigma = if sigma < 0.0 { 1.0 } else { sigma };
 
@@ -716,10 +710,9 @@ where
 
 
 
-
 pub fn unsharpen<I, P, S>(image: &I, sigma: f32, threshold: i32) -> ImageBuffer<P, Vec<S>>
 where
-    I: GenericImageView<Pixel = P> + 'static,
+    I: GenericImageView<Pixel = P>,
     P: Pixel<Subpixel = S> + 'static,
     S: Primitive + 'static,
 {

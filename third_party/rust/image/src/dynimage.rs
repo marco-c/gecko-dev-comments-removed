@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader, BufWriter, Seek, Write};
 use std::path::Path;
+use std::u32;
 
 #[cfg(feature = "bmp")]
 use bmp;
@@ -491,7 +492,7 @@ impl DynamicImage {
                     },
                     _ => {},
                 }
-                try!(p.encode(&bytes, width, height, color));
+                p.encode(&bytes, width, height, color)?;
                 Ok(())
             }
             #[cfg(feature = "pnm")]
@@ -508,14 +509,14 @@ impl DynamicImage {
                     },
                     _ => {},
                 }
-                try!(p.encode(&bytes[..], width, height, color));
+                p.encode(&bytes[..], width, height, color)?;
                 Ok(())
             }
             #[cfg(feature = "jpeg")]
             image::ImageOutputFormat::JPEG(quality) => {
                 let mut j = jpeg::JPEGEncoder::new_with_quality(w, quality);
 
-                try!(j.encode(&bytes, width, height, color));
+                j.encode(&bytes, width, height, color)?;
                 Ok(())
             }
 
@@ -535,14 +536,14 @@ impl DynamicImage {
             image::ImageOutputFormat::ICO => {
                 let i = ico::ICOEncoder::new(w);
 
-                try!(i.encode(&bytes, width, height, color));
+                i.encode(&bytes, width, height, color)?;
                 Ok(())
             }
 
             #[cfg(feature = "bmp")]
             image::ImageOutputFormat::BMP => {
                 let mut b = bmp::BMPEncoder::new(w);
-                try!(b.encode(&bytes, width, height, color));
+                b.encode(&bytes, width, height, color)?;
                 Ok(())
             }
 
@@ -561,6 +562,20 @@ impl DynamicImage {
     {
         dynamic_map!(*self, ref p -> {
             p.save(path)
+        })
+    }
+
+    
+    
+    
+    
+    
+    pub fn save_with_format<Q>(&self, path: Q, format: ImageFormat) -> io::Result<()>
+    where
+        Q: AsRef<Path>,
+    {
+        dynamic_map!(*self, ref p -> {
+            p.save_with_format(path, format)
         })
     }
 }
@@ -625,10 +640,10 @@ impl GenericImage for DynamicImage {
 }
 
 
-pub fn decoder_to_image<I: ImageDecoder>(codec: I) -> ImageResult<DynamicImage> {
+pub fn decoder_to_image<'a, I: ImageDecoder<'a>>(codec: I) -> ImageResult<DynamicImage> {
     let color = codec.colortype();
     let (w, h) = codec.dimensions();
-    let buf = try!(codec.read_image());
+    let buf = codec.read_image()?;
 
     
     assert!(w <= u32::max_value() as u64);
@@ -762,6 +777,60 @@ fn open_impl(path: &Path) -> ImageResult<DynamicImage> {
 
 
 
+pub fn image_dimensions<P>(path: P) -> ImageResult<(u32, u32)>
+where
+    P: AsRef<Path>
+{
+    
+    image_dimensions_impl(path.as_ref())
+}
+
+fn image_dimensions_impl(path: &Path) -> ImageResult<(u32, u32)> {
+    let fin = File::open(path)?;
+    let fin = BufReader::new(fin);
+
+    let ext = path
+        .extension()
+        .and_then(|s| s.to_str())
+        .map_or("".to_string(), |s| s.to_ascii_lowercase());
+
+    let (w, h): (u64, u64) = match &ext[..] {
+        #[cfg(feature = "jpeg")]
+        "jpg" | "jpeg" => jpeg::JPEGDecoder::new(fin)?.dimensions(),
+        #[cfg(feature = "png_codec")]
+        "png" => png::PNGDecoder::new(fin)?.dimensions(),
+        #[cfg(feature = "gif_codec")]
+        "gif" => gif::Decoder::new(fin)?.dimensions(),
+        #[cfg(feature = "webp")]
+        "webp" => webp::WebpDecoder::new(fin)?.dimensions(),
+        #[cfg(feature = "tiff")]
+        "tif" | "tiff" => tiff::TIFFDecoder::new(fin)?.dimensions(),
+        #[cfg(feature = "tga")]
+        "tga" => tga::TGADecoder::new(fin)?.dimensions(),
+        #[cfg(feature = "bmp")]
+        "bmp" => bmp::BMPDecoder::new(fin)?.dimensions(),
+        #[cfg(feature = "ico")]
+        "ico" => ico::ICODecoder::new(fin)?.dimensions(),
+        #[cfg(feature = "hdr")]
+        "hdr" => hdr::HDRAdapter::new(fin)?.dimensions(),
+        #[cfg(feature = "pnm")]
+        "pbm" | "pam" | "ppm" | "pgm" => {
+            pnm::PNMDecoder::new(fin)?.dimensions()
+        }
+        format => return Err(image::ImageError::UnsupportedError(format!(
+            "Image format image/{:?} is not supported.",
+            format
+        ))),
+    };
+    if w >= u32::MAX as u64 || h >= u32::MAX as u64 {
+        return Err(image::ImageError::DimensionError);
+    }
+    Ok((w as u32, h as u32))
+}
+
+
+
+
 
 
 
@@ -788,7 +857,7 @@ fn save_buffer_impl(
     height: u32,
     color: color::ColorType,
 ) -> io::Result<()> {
-    let fout = &mut BufWriter::new(try!(File::create(path)));
+    let fout = &mut BufWriter::new(File::create(path)?);
     let ext = path.extension()
         .and_then(|s| s.to_str())
         .map_or("".to_string(), |s| s.to_ascii_lowercase());
@@ -816,7 +885,63 @@ fn save_buffer_impl(
         "pam" => pnm::PNMEncoder::new(fout).encode(buf, width, height, color),
         #[cfg(feature = "bmp")]
         "bmp" => bmp::BMPEncoder::new(fout).encode(buf, width, height, color),
+        #[cfg(feature = "tiff")]
+        "tif" | "tiff" => tiff::TiffEncoder::new(fout).encode(buf, width, height, color)
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, Box::new(e))), 
         format => Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            &format!("Unsupported image format image/{:?}", format)[..],
+        )),
+    }
+}
+
+
+
+
+
+
+
+
+
+pub fn save_buffer_with_format<P>(
+    path: P,
+    buf: &[u8],
+    width: u32,
+    height: u32,
+    color: color::ColorType,
+    format: ImageFormat,
+) -> io::Result<()>
+where
+    P: AsRef<Path>,
+{
+    
+    save_buffer_with_format_impl(path.as_ref(), buf, width, height, color, format)
+}
+
+fn save_buffer_with_format_impl(
+    path: &Path,
+    buf: &[u8],
+    width: u32,
+    height: u32,
+    color: color::ColorType,
+    format: ImageFormat,
+) -> io::Result<()> {
+    let fout = &mut BufWriter::new(File::create(path)?);
+
+    match format {
+        #[cfg(feature = "ico")]
+        image::ImageFormat::ICO => ico::ICOEncoder::new(fout).encode(buf, width, height, color),
+        #[cfg(feature = "jpeg")]
+        image::ImageFormat::JPEG => jpeg::JPEGEncoder::new(fout).encode(buf, width, height, color),
+        #[cfg(feature = "png_codec")]
+        image::ImageFormat::PNG => png::PNGEncoder::new(fout).encode(buf, width, height, color),
+        #[cfg(feature = "bmp")]
+        image::ImageFormat::BMP => bmp::BMPEncoder::new(fout).encode(buf, width, height, color),
+        #[cfg(feature = "tiff")]
+        image::ImageFormat::TIFF => tiff::TiffEncoder::new(fout)
+            .encode(buf, width, height, color)
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, Box::new(e))),
+        _ => Err(io::Error::new(
             io::ErrorKind::InvalidInput,
             &format!("Unsupported image format image/{:?}", format)[..],
         )),
@@ -860,7 +985,7 @@ static MAGIC_BYTES: [(&'static [u8], ImageFormat); 17] = [
     (&[0xff, 0xd8, 0xff], ImageFormat::JPEG),
     (b"GIF89a", ImageFormat::GIF),
     (b"GIF87a", ImageFormat::GIF),
-    (b"WEBP", ImageFormat::WEBP),
+    (b"RIFF", ImageFormat::WEBP), 
     (b"MM.*", ImageFormat::TIFF),
     (b"II*.", ImageFormat::TIFF),
     (b"BM", ImageFormat::BMP),
@@ -1032,5 +1157,13 @@ mod test {
             4, 1, 2,
             &[0b11110011, 0b00001100],
             vec![255, 0]);
+    }
+
+    #[cfg(feature = "jpeg")]
+    #[test]
+    fn image_dimensions() {
+        let im_path = "./tests/images/jpg/progressive/cat.jpg";
+        let dims = super::image_dimensions(im_path).unwrap();
+        assert_eq!(dims, (320, 240));
     }
 }

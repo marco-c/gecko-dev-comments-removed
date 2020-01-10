@@ -7,11 +7,10 @@ use std::mem;
 use std::borrow;
 use std::io::{Read, Write, BufReader, BufRead};
 
-use traits::{HasParameters, Parameter};
-use common::{ColorType, BitDepth, Info, Transformations};
-use filter::{unfilter, FilterType};
-use chunk::IDAT;
-use utils;
+use crate::common::{ColorType, BitDepth, Info, Transformations};
+use crate::filter::{unfilter, FilterType};
+use crate::chunk::IDAT;
+use crate::utils;
 
 
 
@@ -25,19 +24,7 @@ use utils;
 
 
 
-
-
-
-
-
-impl<R: Read> Parameter<Decoder<R>> for Transformations {
-    fn set_param(self, this: &mut Decoder<R>) {
-        this.transform = self
-    }
-}
-
-
-
+#[derive(Debug)]
 pub struct OutputInfo {
     pub width: u32,
     pub height: u32,
@@ -54,15 +41,16 @@ impl OutputInfo {
 }
 
 #[derive(Clone, Copy, Debug)]
+
 pub struct Limits {
     
-    pub pixels: u64,
+    pub bytes: usize,
 }
 
 impl Default for Limits {
     fn default() -> Limits {
         Limits {
-            pixels: 1 << 26,
+            bytes: 1024*1024*64,
         }
     }
 }
@@ -85,7 +73,7 @@ impl<R: Read> Decoder<R> {
     pub fn new_with_limits(r: R, l: Limits) -> Decoder<R> {
         Decoder {
             r: r,
-            transform: ::Transformations::EXPAND | ::Transformations::SCALE_16 | ::Transformations::STRIP_16,
+            transform: crate::Transformations::EXPAND | crate::Transformations::SCALE_16 | crate::Transformations::STRIP_16,
             limits: l,
         }
     }
@@ -112,8 +100,8 @@ impl<R: Read> Decoder<R> {
 
     
     pub fn read_info(self) -> Result<(OutputInfo, Reader<R>), DecodingError> {
-        let mut r = Reader::new(self.r, StreamingDecoder::new(), self.transform);
-        try!(r.init());
+        let mut r = Reader::new(self.r, StreamingDecoder::new(), self.transform, self.limits);
+        r.init()?;
         let (ct, bits) = r.output_color_type();
         let info = {
             let info = r.info();
@@ -125,17 +113,17 @@ impl<R: Read> Decoder<R> {
                 line_size: r.output_line_size(info.width),
             }
         };
-        let (width, height, pixels) = (info.width as u64, info.height as u64, self.limits.pixels);
-        if width.checked_mul(height).map(|p| p > pixels).unwrap_or(true) {
-            
-            
-            return Err(DecodingError::Other(borrow::Cow::Borrowed("pixels limit exceeded")));
-        }
         Ok((info, r))
     }
-}
 
-impl<R: Read> HasParameters for Decoder<R> {}
+    
+    
+    
+    
+    pub fn set_transformations(&mut self, transform: Transformations) {
+        self.transform = transform;
+    }
+}
 
 struct ReadDecoder<R: Read> {
     reader: BufReader<R>,
@@ -149,13 +137,13 @@ impl<R: Read> ReadDecoder<R> {
     fn decode_next(&mut self, image_data: &mut Vec<u8>) -> Result<Option<Decoded>, DecodingError> {
         while !self.at_eof {
             let (consumed, result) = {
-                let buf = try!(self.reader.fill_buf());
+                let buf = self.reader.fill_buf()?;
                 if buf.is_empty() {
                     return Err(DecodingError::Format(
                         "unexpected EOF".into()
                     ))
                 }
-                try!(self.decoder.update(buf, image_data))
+                self.decoder.update(buf, image_data)?
             };
             self.reader.consume(consumed);
             match result {
@@ -187,7 +175,8 @@ pub struct Reader<R: Read> {
     
     transform: Transformations,
     
-    processed: Vec<u8>
+    processed: Vec<u8>,
+    limits: Limits,
 }
 
 macro_rules! get_info(
@@ -198,7 +187,7 @@ macro_rules! get_info(
 
 impl<R: Read> Reader<R> {
     
-    fn new(r: R, d: StreamingDecoder, t: Transformations) -> Reader<R> {
+    fn new(r: R, d: StreamingDecoder, t: Transformations, limits: Limits) -> Reader<R> {
         Reader {
             decoder: ReadDecoder {
                 reader: BufReader::with_capacity(CHUNCK_BUFFER_SIZE, r),
@@ -211,18 +200,19 @@ impl<R: Read> Reader<R> {
             prev: Vec::new(),
             current: Vec::new(),
             transform: t,
-            processed: Vec::new()
+            processed: Vec::new(),
+            limits,
         }
     }
 
     
     fn init(&mut self) -> Result<(), DecodingError> {
-        use Decoded::*;
+        use crate::Decoded::*;
         if self.decoder.info().is_some() {
             Ok(())
         } else {
             loop {
-                match try!(self.decoder.decode_next(&mut Vec::new())) {
+                match self.decoder.decode_next(&mut Vec::new())? {
                     Some(ChunkBegin(_, IDAT)) => break,
                     None => return Err(DecodingError::Format(
                         "IDAT chunk missing".into()
@@ -243,7 +233,7 @@ impl<R: Read> Reader<R> {
                     self.adam7 = Some(utils::Adam7Iterator::new(info.width, info.height))
                 }
             }
-            self.allocate_out_buf();
+            self.allocate_out_buf()?;
             self.prev = vec![0; self.rowlen];
             Ok(())
         }
@@ -256,7 +246,7 @@ impl<R: Read> Reader<R> {
     
     pub fn next_frame(&mut self, buf: &mut [u8]) -> Result<(), DecodingError> {
         
-        let (color_type, _) = self.output_color_type();
+        let (color_type, bit_depth) = self.output_color_type();
         let width = get_info!(self).width;
         if buf.len() < self.output_buffer_size() {
             return Err(DecodingError::Other(
@@ -264,15 +254,15 @@ impl<R: Read> Reader<R> {
             ))
         }
         if get_info!(self).interlaced {
-             while let Some((row, adam7)) = try!(self.next_interlaced_row()) {
+             while let Some((row, adam7)) = self.next_interlaced_row()? {
                  let (pass, line, _) = adam7.unwrap();
-                 let bytes = color_type.samples() as u8;
-                 utils::expand_pass(buf, width * bytes as u32, row, pass, line, bytes);
+                 let samples = color_type.samples() as u8;
+                 utils::expand_pass(buf, width, row, pass, line, samples * (bit_depth as u8));
              }
         } else {
             let mut len = 0;
-            while let Some(row) = try!(self.next_row()) {
-                len += try!((&mut buf[len..]).write(row));
+            while let Some(row) = self.next_row()? {
+                len += (&mut buf[len..]).write(row)?;
             }
         }
         Ok(())
@@ -285,15 +275,15 @@ impl<R: Read> Reader<R> {
 
     
     pub fn next_interlaced_row(&mut self) -> Result<Option<(&[u8], Option<(u8, u32, u32)>)>, DecodingError> {
-        use common::ColorType::*;
+        use crate::common::ColorType::*;
         let transform = self.transform;
-        if transform == ::Transformations::IDENTITY {
+        if transform == crate::Transformations::IDENTITY {
             self.next_raw_interlaced_row()
         } else {
             
             let mut buffer = mem::replace(&mut self.processed, Vec::new());
-            let (got_next, adam7) = if let Some((row, adam7)) = try!(self.next_raw_interlaced_row()) {
-                try!((&mut buffer[..]).write(row));
+            let (got_next, adam7) = if let Some((row, adam7)) = self.next_raw_interlaced_row()? {
+                (&mut buffer[..]).write(row)?;
                 (true, adam7)
             } else {
                 (false, None)
@@ -312,7 +302,7 @@ impl<R: Read> Reader<R> {
                     &mut *self.processed
                 };
                 let mut len = output_buffer.len();
-                if transform.contains(::Transformations::EXPAND) {
+                if transform.contains(crate::Transformations::EXPAND) {
                     match color_type {
                         Indexed => {
                             expand_paletted(output_buffer, get_info!(self))?
@@ -332,7 +322,7 @@ impl<R: Read> Reader<R> {
                         _ => ()
                     }
                 }
-                if bit_depth == 16 && transform.intersects(::Transformations::SCALE_16 | ::Transformations::STRIP_16) {
+                if bit_depth == 16 && transform.intersects(crate::Transformations::SCALE_16 | crate::Transformations::STRIP_16) {
                     len /= 2;
                     for i in 0..len {
                         output_buffer[i] = output_buffer[2 * i];
@@ -351,20 +341,20 @@ impl<R: Read> Reader<R> {
     
     
     pub fn output_color_type(&mut self) -> (ColorType, BitDepth) {
-        use common::ColorType::*;
+        use crate::common::ColorType::*;
         let t = self.transform;
         let info = get_info!(self);
-        if t == ::Transformations::IDENTITY {
+        if t == crate::Transformations::IDENTITY {
             (info.color_type, info.bit_depth)
         } else {
             let bits = match info.bit_depth as u8 {
                 16 if t.intersects(
-                    ::Transformations::SCALE_16 | ::Transformations::STRIP_16
+                    crate::Transformations::SCALE_16 | crate::Transformations::STRIP_16
                 ) => 8,
-                _ if t.contains(::Transformations::EXPAND) => 8,
+                _ if t.contains(crate::Transformations::EXPAND) => 8,
                 n => n
             };
-            let color_type = if t.contains(::Transformations::EXPAND) {
+            let color_type = if t.contains(crate::Transformations::EXPAND) {
                 let has_trns = info.trns.is_some();
                 match info.color_type {
                     Grayscale if has_trns => GrayscaleAlpha,
@@ -392,7 +382,7 @@ impl<R: Read> Reader<R> {
     pub fn output_line_size(&self, width: u32) -> usize {
         let size = self.line_size(width);
         if get_info!(self).bit_depth as u8 == 16 && self.transform.intersects(
-            ::Transformations::SCALE_16 | ::Transformations::STRIP_16
+            crate::Transformations::SCALE_16 | crate::Transformations::STRIP_16
         ) {
             size / 2
         } else {
@@ -402,18 +392,18 @@ impl<R: Read> Reader<R> {
 
     
     fn line_size(&self, width: u32) -> usize {
-        use common::ColorType::*;
+        use crate::common::ColorType::*;
         let t = self.transform;
         let info = get_info!(self);
         let trns = info.trns.is_some();
         
         let bits = match info.color_type {
-            Indexed if trns && t.contains(::Transformations::EXPAND) => 4 * 8,
-            Indexed if t.contains(::Transformations::EXPAND) => 3 * 8,
-            RGB if trns && t.contains(::Transformations::EXPAND) => 4 * 8,
-            Grayscale if trns && t.contains(::Transformations::EXPAND) => 2 * 8,
-            Grayscale if t.contains(::Transformations::EXPAND) => 1 * 8,
-            GrayscaleAlpha if t.contains(::Transformations::EXPAND) => 2 * 8,
+            Indexed if trns && t.contains(crate::Transformations::EXPAND) => 4 * 8,
+            Indexed if t.contains(crate::Transformations::EXPAND) => 3 * 8,
+            RGB if trns && t.contains(crate::Transformations::EXPAND) => 4 * 8,
+            Grayscale if trns && t.contains(crate::Transformations::EXPAND) => 2 * 8,
+            Grayscale if t.contains(crate::Transformations::EXPAND) => 1 * 8,
+            GrayscaleAlpha if t.contains(crate::Transformations::EXPAND) => 2 * 8,
             
             _ if info.bit_depth as u8 == 16 => info.bits_per_pixel() / 2,
             _ => info.bits_per_pixel()
@@ -425,9 +415,14 @@ impl<R: Read> Reader<R> {
         len + match extra { 0 => 0, _ => 1 }
     }
 
-    fn allocate_out_buf(&mut self) {
+    fn allocate_out_buf(&mut self) -> Result<(), DecodingError> {
         let width = get_info!(self).width;
-        self.processed = vec![0; self.line_size(width)]
+        let bytes = self.limits.bytes;
+        if bytes < self.line_size(width) {
+            return Err(DecodingError::LimitsExceeded);
+        }
+        self.processed = vec![0; self.line_size(width)];
+        Ok(())
     }
 
     
@@ -473,7 +468,7 @@ impl<R: Read> Reader<R> {
                     ))
                 }
             } else {
-                let val = try!(self.decoder.decode_next(&mut self.current));
+                let val = self.decoder.decode_next(&mut self.current)?;
                 match val {
                     Some(Decoded::ImageData) => {}
                     None => {
@@ -546,32 +541,3 @@ fn expand_gray_u8(buffer: &mut [u8], info: &Info) {
         })
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
