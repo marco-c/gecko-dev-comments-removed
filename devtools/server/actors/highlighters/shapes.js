@@ -497,7 +497,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       const nodeWin = this.currentNode.ownerGlobal;
       
       const bounds = nodeWin.document
-        .getBoxQuads({ relativeTo: win.document })[0]
+        .getBoxQuads({
+          relativeTo: win.document,
+          createFramesForSuppressedWhitespace: false,
+        })[0]
         .getBounds();
       xOffset = bounds.left - nodeWin.scrollX + win.scrollX;
       yOffset = bounds.top - nodeWin.scrollY + win.scrollY;
