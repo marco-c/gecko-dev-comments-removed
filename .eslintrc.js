@@ -43,34 +43,19 @@ module.exports = {
     "mozilla"
   ],
   "overrides": [{
-      "files": [
-        "*.html",
-        "*.xhtml",
-        "*.xul",
-        "*.xml",
-        "js/src/builtin/**/*.js",
-        "js/src/shell/**/*.js"
-      ],
-      "rules": {
-        
-        
-        "curly": "off"
-      },
-    }, {
-    
-    
-    
-    
     "files": [
-      "browser/base/content/tabbrowser.xml",
-      "browser/base/content/urlbarBindings.xml",
-      "browser/components/search/content/search.xml",
-      "browser/components/translation/translation-infobar.xml",
-      "toolkit/components/prompts/content/tabprompts.xml"
+      "*.html",
+      "*.xhtml",
+      "*.xul",
+      "*.xml",
+      "js/src/builtin/**/*.js",
+      "js/src/shell/**/*.js"
     ],
-    "env": {
-      "mozilla/browser-window": true
-    }
+    "rules": {
+      
+      
+      "curly": "off"
+    },
   }, {
     
     "files": "gfx/layers/apz/test/mochitest/**",
