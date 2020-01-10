@@ -888,8 +888,6 @@ using HuffmanTableValue =
     mozilla::Variant<HuffmanTableUnreachable,  
                      HuffmanTableInitializing, GenericHuffmanTable>;
 
-using HuffmanTableListLength = HuffmanTableValue;
-
 
 
 
@@ -900,7 +898,7 @@ class HuffmanDictionary {
   HuffmanDictionary();
 
   HuffmanTableValue& tableForField(NormalizedInterfaceAndField index);
-  HuffmanTableListLength& tableForListLength(BinASTList list);
+  HuffmanTableValue& tableForListLength(BinASTList list);
 
  private:
   
@@ -918,8 +916,7 @@ class HuffmanDictionary {
   
   
   
-  mozilla::Array<HuffmanTableListLength, BINAST_NUMBER_OF_LIST_TYPES>
-      listLengths_;
+  mozilla::Array<HuffmanTableValue, BINAST_NUMBER_OF_LIST_TYPES> listLengths_;
 };
 
 
