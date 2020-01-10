@@ -255,147 +255,146 @@ var validGradientAndElementValues = [
   "radial-gradient(at calc(100px + -25px) top, red, blue)",
   "radial-gradient(at left calc(100px + -25px), red, blue)",
 
-    
-    
-    
-    
-    "-webkit-gradient(linear, 1 2, 3 4)",
-    "-webkit-gradient(linear,1 2,3 4)", 
-    "-webkit-gradient(linear  ,  1   2  ,  3   4  )", 
-    "-webkit-gradient(linear, 1 10% , 0% 4)", 
-    "-webkit-gradient(linear, +1.0 -2%, +5.3% -0)", 
-    "-webkit-gradient(linear, left top, right bottom)", 
-    "-webkit-gradient(linear, right center, center top)",
-    "-webkit-gradient(linear, center center, center center)",
-    "-webkit-gradient(linear, center 5%, 30 top)", 
+  
+  
+  
+  "-webkit-gradient(linear, 1 2, 3 4)",
+  "-webkit-gradient(linear,1 2,3 4)", 
+  "-webkit-gradient(linear  ,  1   2  ,  3   4  )", 
+  "-webkit-gradient(linear, 1 10% , 0% 4)", 
+  "-webkit-gradient(linear, +1.0 -2%, +5.3% -0)", 
+  "-webkit-gradient(linear, left top, right bottom)", 
+  "-webkit-gradient(linear, right center, center top)",
+  "-webkit-gradient(linear, center center, center center)",
+  "-webkit-gradient(linear, center 5%, 30 top)", 
 
-    
-    "-webkit-gradient(linear, 1 2, 3 4, from(lime))",
-    "-webkit-gradient(linear, 1 2, 3 4, to(lime))",
-    
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, lime))",
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(-0, lime))",
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(-30, lime))",
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(+9999, lime))",
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(-.1, lime))",
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(0%, lime))",
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(100%, lime))",
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(9999%, lime))",
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(-.5%, lime))",
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(+0%, lime))",
-    
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, transparent))",
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, rgb(1,2,3)))",
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, #00ff00))",
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, #00f))",
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, hsla(240, 30%, 50%, 0.8)))",
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, rgba(255, 230, 10, 0.5)))",
+  
+  "-webkit-gradient(linear, 1 2, 3 4, from(lime))",
+  "-webkit-gradient(linear, 1 2, 3 4, to(lime))",
+  
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, lime))",
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(-0, lime))",
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(-30, lime))",
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(+9999, lime))",
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(-.1, lime))",
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(0%, lime))",
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(100%, lime))",
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(9999%, lime))",
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(-.5%, lime))",
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(+0%, lime))",
+  
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, transparent))",
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, rgb(1,2,3)))",
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, #00ff00))",
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, #00f))",
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, hsla(240, 30%, 50%, 0.8)))",
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, rgba(255, 230, 10, 0.5)))",
 
-    
-    
-    "-webkit-gradient(linear, 1 2, 3 4, from(lime), from(blue))",
-    "-webkit-gradient(linear, 1 2, 3 4, to(lime),   to(blue))",
-    "-webkit-gradient(linear, 1 2, 3 4, from(lime), to(blue))",
-    "-webkit-gradient(linear, 1 2, 3 4, to(lime),   from(blue))",
-    "-webkit-gradient(linear, 1 2, 3 4, from(lime), to(blue), from(purple))",
-    
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, lime), color-stop(30%, blue))",
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, lime), color-stop(30%, blue), color-stop(100%, purple))",
-    
-    "-webkit-gradient(linear, 1 2, 3 4, from(lime), color-stop(30%, blue))",
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(30%, blue), to(lime))",
-    
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(-30%, lime), color-stop(.4, blue), color-stop(1.5, purple))",
-    
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(30%, lime), color-stop(30%, blue))",
-    
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(70%, lime), color-stop(20%, blue), color-stop(40%, purple))",
+  
+  
+  "-webkit-gradient(linear, 1 2, 3 4, from(lime), from(blue))",
+  "-webkit-gradient(linear, 1 2, 3 4, to(lime),   to(blue))",
+  "-webkit-gradient(linear, 1 2, 3 4, from(lime), to(blue))",
+  "-webkit-gradient(linear, 1 2, 3 4, to(lime),   from(blue))",
+  "-webkit-gradient(linear, 1 2, 3 4, from(lime), to(blue), from(purple))",
+  
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, lime), color-stop(30%, blue))",
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, lime), color-stop(30%, blue), color-stop(100%, purple))",
+  
+  "-webkit-gradient(linear, 1 2, 3 4, from(lime), color-stop(30%, blue))",
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(30%, blue), to(lime))",
+  
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(-30%, lime), color-stop(.4, blue), color-stop(1.5, purple))",
+  
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(30%, lime), color-stop(30%, blue))",
+  
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(70%, lime), color-stop(20%, blue), color-stop(40%, purple))",
 
-    
-    "-webkit-gradient(radial, 1 2, 8, 3 4, 9)",
-    "-webkit-gradient(radial, 0 0, 10, 0 0, 5)",
-    "-webkit-gradient(radial, 1 2, -1.5, center center, +99999.9999)",
+  
+  "-webkit-gradient(radial, 1 2, 8, 3 4, 9)",
+  "-webkit-gradient(radial, 0 0, 10, 0 0, 5)",
+  "-webkit-gradient(radial, 1 2, -1.5, center center, +99999.9999)",
 
-    
-    
-    
-    "-webkit-gradient(radial, 1 2, 8, 3 4, 9, from(lime))",
-    "-webkit-gradient(radial, 1 2, 8, 3 4, 9, to(blue))",
-    "-webkit-gradient(radial, 1 2, 8, 3 4, 9, color-stop(0.5, #00f), color-stop(0.8, rgba(100, 200, 0, 0.5)))",
+  
+  
+  
+  "-webkit-gradient(radial, 1 2, 8, 3 4, 9, from(lime))",
+  "-webkit-gradient(radial, 1 2, 8, 3 4, 9, to(blue))",
+  "-webkit-gradient(radial, 1 2, 8, 3 4, 9, color-stop(0.5, #00f), color-stop(0.8, rgba(100, 200, 0, 0.5)))",
 
-    
-    
-    
-    "-webkit-linear-gradient(red, green, blue)",
+  
+  
+  
+  "-webkit-linear-gradient(red, green, blue)",
 
-    
-    "-webkit-linear-gradient(135deg, red, blue)",
-    "-webkit-linear-gradient( 135deg  , red  , blue )",
-    "-webkit-linear-gradient(280deg, red 60%, blue)",
+  
+  "-webkit-linear-gradient(135deg, red, blue)",
+  "-webkit-linear-gradient( 135deg  , red  , blue )",
+  "-webkit-linear-gradient(280deg, red 60%, blue)",
 
-    
-    
-    "-webkit-linear-gradient(0, red, blue)",
+  
+  
+  "-webkit-linear-gradient(0, red, blue)",
 
-    
-    "-webkit-gradient(linear, calc(5 + 5) top, calc(10 + 10) top, from(blue), to(lime))",
-    "-webkit-gradient(linear, calc(5 - 5) top, calc(10 + 10) top, from(blue), to(lime))",
-    "-webkit-gradient(linear, calc(5 * 5) top, calc(10 + 10) top, from(blue), to(lime))",
-    "-webkit-gradient(linear, calc(5 / 5) top, calc(10 + 10) top, from(blue), to(lime))",
-    "-webkit-gradient(linear, left calc(25% - 10%), right calc(75% + 10%), from(blue), to(lime))",
-    "-webkit-gradient(linear, calc(1) 2, 3 4)",
+  
+  "-webkit-gradient(linear, calc(5 + 5) top, calc(10 + 10) top, from(blue), to(lime))",
+  "-webkit-gradient(linear, calc(5 - 5) top, calc(10 + 10) top, from(blue), to(lime))",
+  "-webkit-gradient(linear, calc(5 * 5) top, calc(10 + 10) top, from(blue), to(lime))",
+  "-webkit-gradient(linear, calc(5 / 5) top, calc(10 + 10) top, from(blue), to(lime))",
+  "-webkit-gradient(linear, left calc(25% - 10%), right calc(75% + 10%), from(blue), to(lime))",
+  "-webkit-gradient(linear, calc(1) 2, 3 4)",
 
-    
-    "-webkit-gradient(radial, 1 2, 0, 3 4, calc(1 + 5), from(blue), to(lime))",
-    "-webkit-gradient(radial, 1 2, calc(1 + 2), 3 4, calc(1 + 5), from(blue), to(lime))",
-    "-webkit-gradient(radial, 1 2, calc(1 - 2), 3 4, calc(1 + 5), from(blue), to(lime))",
-    "-webkit-gradient(radial, 1 2, calc(1 * 2), 3 4, calc(1 + 5), from(blue), to(lime))",
-    "-webkit-gradient(radial, 1 2, calc(1 / 2), 3 4, calc(1 + 5), from(blue), to(lime))",
-    "-webkit-gradient(radial, calc(0 + 1) calc(1 + 1), calc(1 + 2), calc(1 + 2) 4, calc(1 + 5), from(blue), to(lime))",
-    "-webkit-gradient(radial, 1 2, calc(8), 3 4, 9)",
+  
+  "-webkit-gradient(radial, 1 2, 0, 3 4, calc(1 + 5), from(blue), to(lime))",
+  "-webkit-gradient(radial, 1 2, calc(1 + 2), 3 4, calc(1 + 5), from(blue), to(lime))",
+  "-webkit-gradient(radial, 1 2, calc(1 - 2), 3 4, calc(1 + 5), from(blue), to(lime))",
+  "-webkit-gradient(radial, 1 2, calc(1 * 2), 3 4, calc(1 + 5), from(blue), to(lime))",
+  "-webkit-gradient(radial, 1 2, calc(1 / 2), 3 4, calc(1 + 5), from(blue), to(lime))",
+  "-webkit-gradient(radial, calc(0 + 1) calc(1 + 1), calc(1 + 2), calc(1 + 2) 4, calc(1 + 5), from(blue), to(lime))",
+  "-webkit-gradient(radial, 1 2, calc(8), 3 4, 9)",
 
-    
-    "-webkit-radial-gradient(circle, white, black)",
-    "-webkit-radial-gradient(circle, white, black)",
-    "-webkit-radial-gradient(ellipse closest-side, white, black)",
-    "-webkit-radial-gradient(circle farthest-corner, white, black)",
+  
+  "-webkit-radial-gradient(circle, white, black)",
+  "-webkit-radial-gradient(circle, white, black)",
+  "-webkit-radial-gradient(ellipse closest-side, white, black)",
+  "-webkit-radial-gradient(circle farthest-corner, white, black)",
 
-    
-    "-webkit-radial-gradient(cover, red, blue)",
-    "-webkit-radial-gradient(cover circle, red, blue)",
-    "-webkit-radial-gradient(contain, red, blue)",
-    "-webkit-radial-gradient(contain ellipse, red, blue)",
+  
+  "-webkit-radial-gradient(cover, red, blue)",
+  "-webkit-radial-gradient(cover circle, red, blue)",
+  "-webkit-radial-gradient(contain, red, blue)",
+  "-webkit-radial-gradient(contain ellipse, red, blue)",
 
-    
-    "-webkit-linear-gradient(top, red, blue)",
-    "-webkit-linear-gradient(left, red, blue)",
-    "-webkit-linear-gradient(bottom, red, blue)",
-    "-webkit-linear-gradient(right top, red, blue)",
-    "-webkit-linear-gradient(top right, red, blue)",
-    "-webkit-radial-gradient(right, red, blue)",
-    "-webkit-radial-gradient(left bottom, red, blue)",
-    "-webkit-radial-gradient(bottom left, red, blue)",
-    "-webkit-radial-gradient(center, red, blue)",
-    "-webkit-radial-gradient(center right, red, blue)",
-    "-webkit-radial-gradient(center center, red, blue)",
-    "-webkit-radial-gradient(center top, red, blue)",
-    "-webkit-radial-gradient(left 50%, red, blue)",
-    "-webkit-radial-gradient(20px top, red, blue)",
-    "-webkit-radial-gradient(20em 30%, red, blue)",
+  
+  "-webkit-linear-gradient(top, red, blue)",
+  "-webkit-linear-gradient(left, red, blue)",
+  "-webkit-linear-gradient(bottom, red, blue)",
+  "-webkit-linear-gradient(right top, red, blue)",
+  "-webkit-linear-gradient(top right, red, blue)",
+  "-webkit-radial-gradient(right, red, blue)",
+  "-webkit-radial-gradient(left bottom, red, blue)",
+  "-webkit-radial-gradient(bottom left, red, blue)",
+  "-webkit-radial-gradient(center, red, blue)",
+  "-webkit-radial-gradient(center right, red, blue)",
+  "-webkit-radial-gradient(center center, red, blue)",
+  "-webkit-radial-gradient(center top, red, blue)",
+  "-webkit-radial-gradient(left 50%, red, blue)",
+  "-webkit-radial-gradient(20px top, red, blue)",
+  "-webkit-radial-gradient(20em 30%, red, blue)",
 
-    
-    "-webkit-radial-gradient(center, circle closest-corner, red, blue)",
-    "-webkit-radial-gradient(10px 20px, cover circle, red, blue)",
-    "-webkit-radial-gradient(5em 50%, ellipse contain, red, blue)",
+  
+  "-webkit-radial-gradient(center, circle closest-corner, red, blue)",
+  "-webkit-radial-gradient(10px 20px, cover circle, red, blue)",
+  "-webkit-radial-gradient(5em 50%, ellipse contain, red, blue)",
 
-    
-    "-webkit-repeating-linear-gradient(red 10%, blue 30%)",
-    "-webkit-repeating-linear-gradient(30deg, pink 20px, orange 70px)",
-    "-webkit-repeating-linear-gradient(left, red, blue)",
-    "-webkit-repeating-linear-gradient(left, red 10%, blue 30%)",
-    "-webkit-repeating-radial-gradient(circle, red, blue 10%, red 20%)",
-    "-webkit-repeating-radial-gradient(circle farthest-corner, gray 10px, yellow 20px)",
-    "-webkit-repeating-radial-gradient(top left, circle, red, blue 4%, red 8%)"
+  
+  "-webkit-repeating-linear-gradient(red 10%, blue 30%)",
+  "-webkit-repeating-linear-gradient(30deg, pink 20px, orange 70px)",
+  "-webkit-repeating-linear-gradient(left, red, blue)",
+  "-webkit-repeating-linear-gradient(left, red 10%, blue 30%)",
+  "-webkit-repeating-radial-gradient(circle, red, blue 10%, red 20%)",
+  "-webkit-repeating-radial-gradient(circle farthest-corner, gray 10px, yellow 20px)",
+  "-webkit-repeating-radial-gradient(top left, circle, red, blue 4%, red 8%)"
 ];
 var invalidGradientAndElementValues = [
   "-moz-element(#a:1)",
@@ -507,164 +506,163 @@ var invalidGradientAndElementValues = [
   "-moz-linear-gradient(unset, 10px 10px, blue 0)",
   "-moz-repeating-linear-gradient(unset, 10px 10px, blue 0)",
 
-    
-    
-    
-    
-    
-    "-webkit-gradient()",
-    "-webkit-gradient( )",
-    "-webkit-gradient(,)",
-    "-webkit-gradient(bogus)",
-    "-webkit-gradient(linear)",
-    "-webkit-gradient(linear,)",
-    "-webkit-gradient(,linear)",
-    "-webkit-gradient(radial)",
-    "-webkit-gradient(radial,)",
+  
+  
+  
+  
+  "-webkit-gradient()",
+  "-webkit-gradient( )",
+  "-webkit-gradient(,)",
+  "-webkit-gradient(bogus)",
+  "-webkit-gradient(linear)",
+  "-webkit-gradient(linear,)",
+  "-webkit-gradient(,linear)",
+  "-webkit-gradient(radial)",
+  "-webkit-gradient(radial,)",
 
-    
-    "-webkit-gradient(linear, 1)", 
-    "-webkit-gradient(linear, left)", 
-    "-webkit-gradient(linear, center)", 
-    "-webkit-gradient(linear, top)", 
-    "-webkit-gradient(linear, 5%)", 
-    "-webkit-gradient(linear, 1 2)", 
-    "-webkit-gradient(linear, 1, 3)", 
-    "-webkit-gradient(linear, 1, 3 4)", 
-    "-webkit-gradient(linear, 1 2, 3)", 
-    "-webkit-gradient(linear, 1 2, 3, 4)", 
-    "-webkit-gradient(linear, 1, 2, 3 4)", 
-    "-webkit-gradient(linear, 1, 2, 3, 4)", 
+  
+  "-webkit-gradient(linear, 1)", 
+  "-webkit-gradient(linear, left)", 
+  "-webkit-gradient(linear, center)", 
+  "-webkit-gradient(linear, top)", 
+  "-webkit-gradient(linear, 5%)", 
+  "-webkit-gradient(linear, 1 2)", 
+  "-webkit-gradient(linear, 1, 3)", 
+  "-webkit-gradient(linear, 1, 3 4)", 
+  "-webkit-gradient(linear, 1 2, 3)", 
+  "-webkit-gradient(linear, 1 2, 3, 4)", 
+  "-webkit-gradient(linear, 1, 2, 3 4)", 
+  "-webkit-gradient(linear, 1, 2, 3, 4)", 
 
-    
-    "-webkit-gradient(linear, 1px 2, 3 4)",
-    "-webkit-gradient(linear, 1 2, 3 4px)",
-    "-webkit-gradient(linear, 1px 2px, 3px 4px)",
-    "-webkit-gradient(linear, 1 2em, 3 4)",
+  
+  "-webkit-gradient(linear, 1px 2, 3 4)",
+  "-webkit-gradient(linear, 1 2, 3 4px)",
+  "-webkit-gradient(linear, 1px 2px, 3px 4px)",
+  "-webkit-gradient(linear, 1 2em, 3 4)",
 
-    
-    "-webkit-gradient(linear, 1 2, 8, 3 4, 9)",
+  
+  "-webkit-gradient(linear, 1 2, 8, 3 4, 9)",
 
-    
-    
-    "-webkit-gradient(linear, 0 0, top right)",
-    "-webkit-gradient(linear, bottom center, 0 0)",
-    "-webkit-gradient(linear, top bottom, 0 0)",
-    "-webkit-gradient(linear, bottom top, 0 0)",
-    "-webkit-gradient(linear, bottom top, 0 0)",
+  
+  
+  "-webkit-gradient(linear, 0 0, top right)",
+  "-webkit-gradient(linear, bottom center, 0 0)",
+  "-webkit-gradient(linear, top bottom, 0 0)",
+  "-webkit-gradient(linear, bottom top, 0 0)",
+  "-webkit-gradient(linear, bottom top, 0 0)",
 
-    
-    "-webkit-gradient(linear, 1 2, 3 4,)",
+  
+  "-webkit-gradient(linear, 1 2, 3 4,)",
 
-    
-    "-webkit-gradient(linear, 1 2, 3 4, from(invalidcolorname))",
-    "-webkit-gradient(linear, 1 2, 3 4, from(inherit))",
-    "-webkit-gradient(linear, 1 2, 3 4, from(initial))",
-    "-webkit-gradient(linear, 1 2, 3 4, from(currentColor))",
-    "-webkit-gradient(linear, 1 2, 3 4, from(00ff00))",
-    "-webkit-gradient(linear, 1 2, 3 4, from(##00ff00))",
-    "-webkit-gradient(linear, 1 2, 3 4, from(#00fff))", 
-    "-webkit-gradient(linear, 1 2, 3 4, from(xyz(0,0,0)))", 
-    
-    "-webkit-gradient(linear, 1 2, 3 4, from(rgb(100, 100%, 30)))",
+  
+  "-webkit-gradient(linear, 1 2, 3 4, from(invalidcolorname))",
+  "-webkit-gradient(linear, 1 2, 3 4, from(inherit))",
+  "-webkit-gradient(linear, 1 2, 3 4, from(initial))",
+  "-webkit-gradient(linear, 1 2, 3 4, from(currentColor))",
+  "-webkit-gradient(linear, 1 2, 3 4, from(00ff00))",
+  "-webkit-gradient(linear, 1 2, 3 4, from(##00ff00))",
+  "-webkit-gradient(linear, 1 2, 3 4, from(#00fff))", 
+  "-webkit-gradient(linear, 1 2, 3 4, from(xyz(0,0,0)))", 
+  
+  "-webkit-gradient(linear, 1 2, 3 4, from(rgb(100, 100%, 30)))",
 
-    
-    "-webkit-gradient(linear, 1 2, 3 4 from(lime))",
-    "-webkit-gradient(linear, 1 2, 3 4, from(lime,))",
-    "-webkit-gradient(linear, 1 2, 3 4, from(lime),)",
-    "-webkit-gradient(linear, 1 2, 3 4, from(lime) to(blue))",
-    "-webkit-gradient(linear, 1 2, 3 4, from(lime),, to(blue))",
-    "-webkit-gradient(linear, 1 2, 3 4, from(rbg(0, 0, 0,)))",
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(0 lime))",
-    "-webkit-gradient(linear, 1 2, 3 4, color-stop(0,, lime))",
+  
+  "-webkit-gradient(linear, 1 2, 3 4 from(lime))",
+  "-webkit-gradient(linear, 1 2, 3 4, from(lime,))",
+  "-webkit-gradient(linear, 1 2, 3 4, from(lime),)",
+  "-webkit-gradient(linear, 1 2, 3 4, from(lime) to(blue))",
+  "-webkit-gradient(linear, 1 2, 3 4, from(lime),, to(blue))",
+  "-webkit-gradient(linear, 1 2, 3 4, from(rbg(0, 0, 0,)))",
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(0 lime))",
+  "-webkit-gradient(linear, 1 2, 3 4, color-stop(0,, lime))",
 
-    
-    "-webkit-gradient(radial, 1)", 
-    "-webkit-gradient(radial, 1 2)", 
-    "-webkit-gradient(radial, 1 2, 8)", 
-    "-webkit-gradient(radial, 1 2, 8, 3)", 
-    "-webkit-gradient(radial, 1 2, 8, 3 4)", 
-    "-webkit-gradient(radial, 1 2, 3 4, 9)", 
+  
+  "-webkit-gradient(radial, 1)", 
+  "-webkit-gradient(radial, 1 2)", 
+  "-webkit-gradient(radial, 1 2, 8)", 
+  "-webkit-gradient(radial, 1 2, 8, 3)", 
+  "-webkit-gradient(radial, 1 2, 8, 3 4)", 
+  "-webkit-gradient(radial, 1 2, 3 4, 9)", 
 
-    
-    "-webkit-gradient(radial, 1 2, 8%,      3 4, 9)",
-    "-webkit-gradient(radial, 1 2, 8px,     3 4, 9)",
-    "-webkit-gradient(radial, 1 2, 8em,     3 4, 9)",
-    "-webkit-gradient(radial, 1 2, top,     3 4, 9)",
+  
+  "-webkit-gradient(radial, 1 2, 8%,      3 4, 9)",
+  "-webkit-gradient(radial, 1 2, 8px,     3 4, 9)",
+  "-webkit-gradient(radial, 1 2, 8em,     3 4, 9)",
+  "-webkit-gradient(radial, 1 2, top,     3 4, 9)",
 
-    
-    "-webkit-gradient(linear, 1 2, 8, 3 4, 9,)",
+  
+  "-webkit-gradient(linear, 1 2, 8, 3 4, 9,)",
 
-    
-    "-webkit-gradient(radial, 1 2, 8, 3 4, 9, from(invalidcolorname))",
+  
+  "-webkit-gradient(radial, 1 2, 8, 3 4, 9, from(invalidcolorname))",
 
-    
-    
-    
-    
-    "-webkit-linear-gradient()",
-    "-webkit-radial-gradient()",
-    "-webkit-repeating-linear-gradient()",
-    "-webkit-repeating-radial-gradient()",
+  
+  
+  
+  
+  "-webkit-linear-gradient()",
+  "-webkit-radial-gradient()",
+  "-webkit-repeating-linear-gradient()",
+  "-webkit-repeating-radial-gradient()",
 
-    
-    "-webkit-linear-gradient(0 red, blue)",
-    "-webkit-linear-gradient(30deg red, blue)",
-    "-webkit-linear-gradient(top right red, blue)",
-    "-webkit-linear-gradient(bottom red, blue)",
+  
+  "-webkit-linear-gradient(0 red, blue)",
+  "-webkit-linear-gradient(30deg red, blue)",
+  "-webkit-linear-gradient(top right red, blue)",
+  "-webkit-linear-gradient(bottom red, blue)",
 
-    
-    
-    "-webkit-gradient(linear, calc(5 + 5%) top, calc(10 + 10) top, from(blue), to(lime))",
-    "-webkit-gradient(linear, left calc(25 - 10%), right calc(75% + 10%), from(blue), to(lime))",
-    "-webkit-gradient(linear, calc(1 / 0) 2, 3 4)",
+  
+  
+  "-webkit-gradient(linear, calc(5 + 5%) top, calc(10 + 10) top, from(blue), to(lime))",
+  "-webkit-gradient(linear, left calc(25 - 10%), right calc(75% + 10%), from(blue), to(lime))",
+  "-webkit-gradient(linear, calc(1 / 0) 2, 3 4)",
 
-    
-    
-    "-webkit-gradient(radial, 1 2, 0, 3 4, calc(1% + 5%), from(blue), to(lime))",
-    "-webkit-gradient(radial, 1 2, calc(1 + 2), 3 4, calc(1 + 5%), from(blue), to(lime))",
-    "-webkit-gradient(radial, calc(0 + 1) calc(1 + 1), calc(1% + 2%), calc(1 + 2) 4, calc(1 + 5), from(blue), to(lime))",
-    "-webkit-gradient(radial, 1 2, calc(8 / 0), 3 4, 9)",
+  
+  
+  "-webkit-gradient(radial, 1 2, 0, 3 4, calc(1% + 5%), from(blue), to(lime))",
+  "-webkit-gradient(radial, 1 2, calc(1 + 2), 3 4, calc(1 + 5%), from(blue), to(lime))",
+  "-webkit-gradient(radial, calc(0 + 1) calc(1 + 1), calc(1% + 2%), calc(1 + 2) 4, calc(1 + 5), from(blue), to(lime))",
+  "-webkit-gradient(radial, 1 2, calc(8 / 0), 3 4, 9)",
 
-    
-    
-    
-    "-webkit-linear-gradient(10px, red, blue)",
-    "-webkit-linear-gradient(10px top, red, blue)",
-    
-    "-webkit-linear-gradient(bottom 30deg, red, blue)",
-    "-webkit-linear-gradient(30deg bottom, red, blue)",
-    "-webkit-linear-gradient(10px top 50deg, red, blue)",
-    "-webkit-linear-gradient(50deg 10px top, red, blue)",
-    
-    "-webkit-linear-gradient(center, red, blue)",
-    "-webkit-linear-gradient(left center, red, blue)",
-    "-webkit-linear-gradient(top center, red, blue)",
-    "-webkit-linear-gradient(center top, red, blue)",
+  
+  
+  
+  "-webkit-linear-gradient(10px, red, blue)",
+  "-webkit-linear-gradient(10px top, red, blue)",
+  
+  "-webkit-linear-gradient(bottom 30deg, red, blue)",
+  "-webkit-linear-gradient(30deg bottom, red, blue)",
+  "-webkit-linear-gradient(10px top 50deg, red, blue)",
+  "-webkit-linear-gradient(50deg 10px top, red, blue)",
+  
+  "-webkit-linear-gradient(center, red, blue)",
+  "-webkit-linear-gradient(left center, red, blue)",
+  "-webkit-linear-gradient(top center, red, blue)",
+  "-webkit-linear-gradient(center top, red, blue)",
 
-    
-    
-    "-webkit-linear-gradient(to top, red, blue)",
+  
+  
+  "-webkit-linear-gradient(to top, red, blue)",
 
-    
-    "-webkit-radial-gradient(circle 10deg, red, blue)",
+  
+  "-webkit-radial-gradient(circle 10deg, red, blue)",
 
-    
-    
-    
-    "-webkit-radial-gradient(circle at left bottom, red, blue)",
-    
-    "-webkit-radial-gradient(circle 10px, red, blue)",
-    "-webkit-radial-gradient(ellipse 40px 20px, red, blue)",
+  
+  
+  
+  "-webkit-radial-gradient(circle at left bottom, red, blue)",
+  
+  "-webkit-radial-gradient(circle 10px, red, blue)",
+  "-webkit-radial-gradient(ellipse 40px 20px, red, blue)",
 
-    
-    
-    
-    "-webkit-radial-gradient(30deg, red, blue)",
-    
-    "-webkit-radial-gradient(top 30deg, red, blue)",
-    "-webkit-radial-gradient(left top 30deg, red, blue)",
-    "-webkit-radial-gradient(10px 20px 30deg, red, blue)"
+  
+  
+  
+  "-webkit-radial-gradient(30deg, red, blue)",
+  
+  "-webkit-radial-gradient(top 30deg, red, blue)",
+  "-webkit-radial-gradient(left top 30deg, red, blue)",
+  "-webkit-radial-gradient(10px 20px 30deg, red, blue)"
 ];
 var unbalancedGradientAndElementValues = [
   "-moz-element(#a()",
