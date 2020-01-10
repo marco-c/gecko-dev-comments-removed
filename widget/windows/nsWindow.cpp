@@ -7455,6 +7455,21 @@ void nsWindow::SetWindowTranslucencyInner(nsTransparencyMode aMode) {
     mCompositorWidgetDelegate->UpdateTransparency(aMode);
   }
   UpdateGlass();
+
+  
+  
+  
+  if (HasGlass() && GetLayerManager()->AsKnowsCompositor() &&
+      GetLayerManager()->AsKnowsCompositor()->GetUseCompositorWnd()) {
+    HDC hdc;
+    RECT rect;
+    hdc = ::GetWindowDC(mWnd);
+    ::GetWindowRect(mWnd, &rect);
+    ::MapWindowPoints(nullptr, mWnd, (LPPOINT)&rect, 2);
+    ::FillRect(hdc, &rect,
+               reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));
+    ReleaseDC(mWnd, hdc);
+  }
 }
 
 #endif  
