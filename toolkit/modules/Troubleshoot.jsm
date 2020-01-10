@@ -114,6 +114,8 @@ PREFS_GETTERS[Ci.nsIPrefBranch.PREF_INT] = (prefs, name) =>
 PREFS_GETTERS[Ci.nsIPrefBranch.PREF_BOOL] = (prefs, name) =>
   prefs.getBoolPref(name);
 
+const kURLDecorationPref = "privacy.restrict3rdpartystorage.url_decorations";
+
 
 
 function getPrefList(filter) {
@@ -384,7 +386,13 @@ var dataProviders = {
   },
 
   lockedPreferences: function lockedPreferences(done) {
-    done(getPrefList(name => Services.prefs.prefIsLocked(name)));
+    
+    
+    done(
+      getPrefList(
+        name => name != kURLDecorationPref && Services.prefs.prefIsLocked(name)
+      )
+    );
   },
 
   graphics: function graphics(done) {
