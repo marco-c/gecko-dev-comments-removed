@@ -75,11 +75,6 @@ const startupPhases = {
   
   "before profile selection": [
     { 
-      path: "UAppData:",
-      condition: WIN,
-      stat: 3,
-    },
-    { 
       path: "UAppData:Crash Reports/InstallTime20*",
       condition: AppConstants.MOZ_CRASHREPORTER,
       stat: 1, 
@@ -99,11 +94,6 @@ const startupPhases = {
       ignoreIfUnused: true, 
       read: 1,
       close: 1,
-    },
-    { 
-      path: "DefProfLRt.parent:",
-      condition: WIN,
-      stat: 1,
     },
     { 
       path: "UAppData:profiles.ini",
@@ -130,7 +120,7 @@ const startupPhases = {
     { 
       path: "ProfD:",
       condition: WIN,
-      stat: 3,
+      stat: 1,
     },
     {
       path: "ProfLD:.startup-incomplete",
@@ -225,7 +215,7 @@ const startupPhases = {
     { 
       path: "ProfD:",
       condition: WIN,
-      stat: 2,
+      stat: 1,
     },
     {
       path: "XCurProcD:blocklist.xml",
@@ -288,16 +278,6 @@ const startupPhases = {
       condition: LINUX,
       read: 3,
       close: 3,
-    },
-    { 
-      path: "XREUSysExt:",
-      condition: WIN,
-      stat: 1,
-    },
-    { 
-      path: "XRESysExtDev:",
-      condition: WIN,
-      stat: 1,
     },
     { 
       path: "ProfD:extensions",
