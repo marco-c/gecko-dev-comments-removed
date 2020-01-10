@@ -34,9 +34,9 @@ class Feature {
     if (!this.remoteEntries) {
       let remoteEntries;
       try {
-        
-        
-        remoteEntries = await RemoteSettings(COLLECTION_NAME).get();
+        remoteEntries = await RemoteSettings(COLLECTION_NAME).get({
+          syncIfEmpty: false,
+        });
       } catch (e) {
         remoteEntries = [];
       }
