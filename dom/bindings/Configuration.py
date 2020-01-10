@@ -2,7 +2,7 @@
 
 
 
-from WebIDL import IDLImplementsStatement
+from WebIDL import IDLImplementsStatement, IDLIncludesStatement
 import os
 from collections import defaultdict
 
@@ -70,6 +70,27 @@ class Configuration(DescriptorProvider):
                         "%s\n"
                         "%s" %
                         (thing.location, thing.implementor.location))
+
+            if isinstance(thing, IDLIncludesStatement):
+                
+                
+                
+                
+                
+                
+                
+                
+                if (thing.interface.filename() != thing.filename() and
+                    thing.mixin.identifier.name != "LegacyQueryInterface"):
+                    raise TypeError(
+                        "The binding build system doesn't really support "
+                        "'includes' statements which don't appear in the "
+                        "file in which the left-hand side of the statement is "
+                        "defined.  Don't do this unless your right-hand side "
+                        "is LegacyQueryInterface.\n"
+                        "%s\n"
+                        "%s" %
+                        (thing.location, thing.interface.location))
 
             assert not thing.isType()
 
