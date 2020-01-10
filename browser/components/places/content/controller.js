@@ -589,7 +589,21 @@ PlacesController.prototype = {
 
 
 
+
+
   buildContextMenu: function PC_buildContextMenu(aPopup) {
+    
+    
+    
+    
+    if (window.top.gBrowser) {
+      var openInCurrentTab = document.getElementById("placesContext_open");
+      if (!PlacesUIUtils.loadBookmarksInTabs) {
+        openInCurrentTab.setAttribute("forcehideintabbrowser", "true");
+      } else {
+        openInCurrentTab.removeAttribute("forcehideintabbrowser");
+      }
+    }
     var metadata = this._buildSelectionMetadata();
     var ip = this._view.insertionPoint;
     var noIp = !ip || ip.isTag;
@@ -608,7 +622,7 @@ PlacesController.prototype = {
           item.getAttribute("hideifnoinsertionpoint") == "true" &&
           noIp &&
           !(ip && ip.isTag && item.id == "placesContext_paste");
-        var hideIfinTabBrowser =
+        var hideIfInTabBrowser =
           item.getAttribute("forcehideintabbrowser") == "true" &&
           window.top.gBrowser;
         var hideIfPrivate =
@@ -616,7 +630,7 @@ PlacesController.prototype = {
           PrivateBrowsingUtils.isWindowPrivate(window);
         var shouldHideItem =
           hideIfNoIP ||
-          hideIfinTabBrowser ||
+          hideIfInTabBrowser ||
           hideIfPrivate ||
           !this._shouldShowMenuItem(item, metadata);
         item.hidden = item.disabled = shouldHideItem;
