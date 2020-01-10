@@ -8,10 +8,6 @@ pre {
   -moz-control-character-visibility: visible;
 }
 
-.nowrap pre {
-  white-space: pre;
-}
-
 
 html:not([dir]) pre { 
   unicode-bidi: plaintext;
