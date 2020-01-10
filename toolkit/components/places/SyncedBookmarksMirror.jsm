@@ -914,7 +914,7 @@ class SyncedBookmarksMirror {
     if (url) {
       
       
-      let params = new URLSearchParams(url.pathname);
+      let params = new URLSearchParams(url.href.slice(url.protocol.length));
       let type = +params.get("type");
       if (type == Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_CONTENTS) {
         
@@ -923,13 +923,20 @@ class SyncedBookmarksMirror {
         
         let tagFolderName = validateTag(record.folderName);
         if (tagFolderName) {
-          url.href = `place:tag=${tagFolderName}`;
-          validity = Ci.mozISyncedBookmarksMerger.VALIDITY_REUPLOAD;
+          try {
+            url.href = `place:tag=${tagFolderName}`;
+            validity = Ci.mozISyncedBookmarksMerger.VALIDITY_REUPLOAD;
+          } catch (ex) {
+            
+            
+            
+            
+            url = null;
+          }
         } else {
           
           
           url = null;
-          validity = Ci.mozISyncedBookmarksMerger.VALIDITY_REPLACE;
         }
       } else {
         let folder = params.get("folder");
@@ -939,14 +946,20 @@ class SyncedBookmarksMirror {
           
           
           
-          url.href = `${url.href}&excludeItems=1`;
-          validity = Ci.mozISyncedBookmarksMerger.VALIDITY_REUPLOAD;
+          try {
+            url.href = `${url.href}&excludeItems=1`;
+            validity = Ci.mozISyncedBookmarksMerger.VALIDITY_REUPLOAD;
+          } catch (ex) {
+            url = null;
+          }
         }
       }
 
       
       
+    }
 
+    if (url) {
       await this.maybeStoreRemoteURL(url);
     } else {
       
