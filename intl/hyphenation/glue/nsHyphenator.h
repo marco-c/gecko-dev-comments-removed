@@ -6,11 +6,23 @@
 #ifndef nsHyphenator_h__
 #define nsHyphenator_h__
 
+#include "mozilla/ipc/SharedMemoryBasic.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/Variant.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
 #include "nsTArray.h"
 
 class nsIURI;
+struct HyphDic;
+
+namespace mozilla {
+template <>
+class DefaultDelete<const HyphDic> {
+ public:
+  void operator()(const HyphDic* ptr) const;
+};
+}
 
 class nsHyphenator {
  public:
@@ -22,20 +34,22 @@ class nsHyphenator {
 
   nsresult Hyphenate(const nsAString& aText, nsTArray<bool>& aHyphens);
 
+  void ShareToProcess(base::ProcessId aPid,
+                      mozilla::ipc::SharedMemoryBasic::Handle* aOutHandle,
+                      uint32_t* aOutSize);
+
  private:
-  ~nsHyphenator();
+  ~nsHyphenator() = default;
 
   void HyphenateWord(const nsAString& aString, uint32_t aStart, uint32_t aLimit,
                      nsTArray<bool>& aHyphens);
 
-  const void* mDict;  
-                      
-                      
-                      
-                      
-                      
-  uint32_t mDictSize;
-  bool mOwnsDict;
+  mozilla::Variant<const void*,  
+                   RefPtr<mozilla::ipc::SharedMemoryBasic>,  
+                   mozilla::UniquePtr<const HyphDic>  
+                   >
+      mDict;
+  uint32_t mDictSize;  
   bool mHyphenateCapitalized;
 };
 
