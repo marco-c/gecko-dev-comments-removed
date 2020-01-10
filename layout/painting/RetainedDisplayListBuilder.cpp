@@ -114,6 +114,13 @@ static AnimatedGeometryRoot* SelectAGRForFrame(
   return data && data->mModifiedAGR ? data->mModifiedAGR.get() : nullptr;
 }
 
+void RetainedDisplayListBuilder::AddSizeOfIncludingThis(
+    nsWindowSizes& aSizes) const {
+  aSizes.mLayoutRetainedDisplayListSize += aSizes.mState.mMallocSizeOf(this);
+  mBuilder.AddSizeOfExcludingThis(aSizes);
+  mList.AddSizeOfExcludingThis(aSizes);
+}
+
 
 
 

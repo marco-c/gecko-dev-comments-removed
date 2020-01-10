@@ -11,6 +11,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/TypedEnumBits.h"
 
+class nsWindowSizes;
 namespace mozilla {
 class DisplayListChecker;
 }  
@@ -185,6 +186,7 @@ struct RetainedDisplayListBuilder {
 
 
   void ClearFramesWithProps();
+  void AddSizeOfIncludingThis(nsWindowSizes&) const;
 
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(Cached, RetainedDisplayListBuilder)
 

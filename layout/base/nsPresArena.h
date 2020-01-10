@@ -61,7 +61,8 @@ class nsPresArena {
 
 
 
-  void AddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const;
+  void AddSizeOfExcludingThis(nsWindowSizes&,
+                              size_t nsWindowSizes::*aArenaSize) const;
 
   void Check() { mPool.Check(); }
 

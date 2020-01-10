@@ -117,7 +117,7 @@ void nsPresArena<ArenaSize>::Free(uint32_t aCode, void* aPtr) {
 
 template <size_t ArenaSize>
 void nsPresArena<ArenaSize>::AddSizeOfExcludingThis(
-    nsWindowSizes& aSizes) const {
+    nsWindowSizes& aSizes, size_t nsWindowSizes::*aArenaSize) const {
   
   
   
@@ -162,7 +162,7 @@ void nsPresArena<ArenaSize>::AddSizeOfExcludingThis(
     totalSizeInFreeLists += totalSize;
   }
 
-  aSizes.mLayoutPresShellSize += mallocSize - totalSizeInFreeLists;
+  aSizes.*aArenaSize += mallocSize - totalSizeInFreeLists;
 }
 
 
