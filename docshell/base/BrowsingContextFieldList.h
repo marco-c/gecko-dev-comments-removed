@@ -19,6 +19,8 @@ MOZ_BC_FIELD(OpenerPolicy, nsILoadInfo::CrossOriginOpenerPolicy)
 
 MOZ_BC_FIELD(OpenerId, uint64_t)
 
+MOZ_BC_FIELD(OnePermittedSandboxedNavigatorId, uint64_t)
+
 
 
 MOZ_BC_FIELD(IsActivatedByUserGesture, bool)

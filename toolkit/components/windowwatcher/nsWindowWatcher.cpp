@@ -922,7 +922,8 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   
   
   if (activeDocsSandboxFlags && parentWindow) {
-    newDocShell->SetOnePermittedSandboxedNavigator(parentWindow->GetDocShell());
+    newDocShell->GetBrowsingContext()->SetOnePermittedSandboxedNavigator(
+        parentWindow->GetBrowsingContext());
   }
 
   
