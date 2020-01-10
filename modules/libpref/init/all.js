@@ -863,10 +863,6 @@ pref("nglayout.debug.paint_flashing", false);
 pref("nglayout.debug.paint_flashing_chrome", false);
 
 
-
-pref("nglayout.debug.widget_update_flashing", false);
-
-
 pref("layout.framevisibility.enabled", true);
 
 pref("layout.framevisibility.numscrollportwidths", 0);
@@ -930,11 +926,6 @@ pref("print.print_edge_bottom", 0);
 #else
   pref("print.print_via_parent", false);
 #endif
-
-
-
-
-pref("print.font-variations-as-paths", true);
 
 
 
@@ -2394,30 +2385,6 @@ pref("clipboard.plainTextOnly", false);
 #endif
 
 
-pref("mousewheel.transaction.timeout", 1500);
-
-pref("mousewheel.transaction.ignoremovedelay", 100);
-
-
-
-
-pref("mousewheel.acceleration.start", -1);
-
-pref("mousewheel.acceleration.factor", 10);
-
-
-
-
-
-
-
-
-
-
-pref("mousewheel.system_scroll_override_on_root_content.vertical.factor", 200);
-pref("mousewheel.system_scroll_override_on_root_content.horizontal.factor", 200);
-
-
 
 
 
@@ -3298,8 +3265,6 @@ pref("ui.mouse.radius.inputSource.touchOnly", true);
   
   pref("ui.panel.default_level_parent", false);
 
-  pref("mousewheel.system_scroll_override_on_root_content.enabled", true);
-
   
   
   
@@ -3554,8 +3519,6 @@ pref("ui.mouse.radius.inputSource.touchOnly", true);
 
   pref("ui.plugin.cancel_composition_at_input_source_changed", false);
 
-  pref("mousewheel.system_scroll_override_on_root_content.enabled", false);
-
   
   pref("mousewheel.enable_pixel_scrolling", true);
 
@@ -3597,8 +3560,6 @@ pref("ui.mouse.radius.inputSource.touchOnly", true);
   
   
   pref("ui.panel.default_level_parent", true);
-
-  pref("mousewheel.system_scroll_override_on_root_content.enabled", false);
 
   
   
@@ -3797,8 +3758,6 @@ pref("ui.mouse.radius.inputSource.touchOnly", true);
   
   
   pref("ui.panel.default_level_parent", true);
-
-  pref("mousewheel.system_scroll_override_on_root_content.enabled", false);
 
   pref("intl.ime.use_simple_context_on_password_field", false);
 
@@ -4377,9 +4336,6 @@ pref("network.trr.disable-ECS", true);
 pref("network.trr.max-fails", 5);
 
 pref("network.trr.excluded-domains", "localhost,local");
-
-
-pref("network.traffic_analyzer.enabled", true);
 
 pref("captivedetect.canonicalURL", "http://detectportal.firefox.com/success.txt");
 pref("captivedetect.canonicalContent", "success\n");
