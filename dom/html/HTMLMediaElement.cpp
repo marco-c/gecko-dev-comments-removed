@@ -4670,6 +4670,14 @@ nsresult HTMLMediaElement::FinishDecoderSetup(MediaDecoder* aDecoder) {
   
   NotifyOwnerDocumentActivityChanged();
 
+  if (!mDecoder) {
+    
+    
+    
+    
+    return NS_ERROR_FAILURE;
+  }
+
   if (mPausedForInactiveDocumentOrChannel) {
     mDecoder->Suspend();
   }
