@@ -503,6 +503,19 @@ ReplayDebugger.prototype = {
     }
   },
 
+  replayPaint(data) {
+    this._control.paint(data);
+  },
+
+  replayPaintCurrentPoint() {
+    if (this.replayIsRecording()) {
+      return RecordReplayControl.restoreMainGraphics();
+    }
+
+    const point = this._control.lastPausePoint();
+    return this._control.paint(point);
+  },
+
   
   _invalidateAfterUnpause() {
     this._pool = new ReplayPool(this);
