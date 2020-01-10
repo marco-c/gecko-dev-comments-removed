@@ -451,6 +451,11 @@ var PreferenceExperiments = {
     for (const [preferenceName, preferenceInfo] of Object.entries(
       preferences
     )) {
+      
+      
+      
+      preferenceInfo.preferenceBranchType =
+        preferenceInfo.preferenceBranchType || "default";
       const { preferenceBranchType, preferenceType } = preferenceInfo;
       const preferenceBranch = PreferenceBranchType[preferenceBranchType];
       if (!preferenceBranch) {
