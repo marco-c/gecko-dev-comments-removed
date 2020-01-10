@@ -47,8 +47,8 @@ namespace gfx {
 
 
 
-#define SHMEM_VERSION "0.0.3"
-static const int32_t kVRExternalVersion = 10;
+#define SHMEM_VERSION "0.0.4"
+static const int32_t kVRExternalVersion = 11;
 
 
 
@@ -439,13 +439,21 @@ struct VRSystemState {
 };
 
 enum class VRFxEventType : uint8_t {
-  FxEvent_NONE = 0,
-  FxEvent_IME,
-  FxEvent_SHUTDOWN,
-  FxEvent_TOTAL
+  NONE = 0,
+  IME,
+  SHUTDOWN,
+  FULLSCREEN,
+  TOTAL
 };
 
-enum class VRFxIMEState : uint8_t { Blur, Focus };
+enum class VRFxEventState : uint8_t {
+  NONE = 0,
+  BLUR,
+  FOCUS,
+  FULLSCREEN_ENTER,
+  FULLSCREEN_EXIT,
+  TOTAL
+};
 
 
 struct VRWindowState {
@@ -456,7 +464,7 @@ struct VRWindowState {
   VRLayerTextureHandle textureFx;
   uint32_t windowID;
   VRFxEventType eventType;
-  VRFxIMEState imeState;
+  VRFxEventState eventState;
 
   
   uint32_t dxgiAdapterHost;
