@@ -12,10 +12,21 @@ add_task(async function test_main() {
 
   
   
+  
+  
+  
   var subtests = [
     { url: httpURL("helper_fission_basic.html") },
     { url: httpURL("helper_fission_transforms.html") },
     { url: httpURL("helper_fission_scroll_oopif.html") },
+    {
+      url: httpURL("helper_fission_event_region_override.html"),
+      setup(win) {
+        win.document.addEventListener("wheel", e => e.preventDefault(), {
+          once: true,
+        });
+      },
+    },
     
   ];
   if (isWebRender) {
@@ -61,6 +72,9 @@ add_task(async function test_main() {
             "FissionTestHelper"
           );
           let donePromise = tabActor.getTestCompletePromise();
+          if (subtest.setup) {
+            subtest.setup(fissionWindow);
+          }
           tabActor.startTest();
           await donePromise;
         }
