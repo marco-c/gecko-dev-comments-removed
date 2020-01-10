@@ -349,6 +349,11 @@ const getRelativeRect = function(node, relativeTo) {
 
 
 
+
+
+
+
+
 function HTMLTooltip(
   toolboxDoc,
   {
@@ -357,6 +362,7 @@ function HTMLTooltip(
     type = "normal",
     consumeOutsideClicks = true,
     useXulWrapper = false,
+    noAutoHide = false,
   } = {}
 ) {
   EventEmitter.decorate(this);
@@ -365,7 +371,9 @@ function HTMLTooltip(
   this.id = id;
   this.className = className;
   this.type = type;
-  this.consumeOutsideClicks = consumeOutsideClicks;
+  this.noAutoHide = noAutoHide;
+  
+  this.consumeOutsideClicks = this.noAutoHide ? false : consumeOutsideClicks;
   this.useXulWrapper = this._isXUL() && useXulWrapper;
   this.preferredWidth = "auto";
   this.preferredHeight = "auto";
@@ -781,7 +789,11 @@ HTMLTooltip.prototype = {
 
   async hide({ fromMouseup = false } = {}) {
     
-    if (Services.prefs.getBoolPref("devtools.popup.disable_autohide", false)) {
+    
+    if (
+      Services.prefs.getBoolPref("devtools.popup.disable_autohide", false) ||
+      (this.noAutoHide && this.isVisible() && fromMouseup)
+    ) {
       return;
     }
 
@@ -986,6 +998,8 @@ HTMLTooltip.prototype = {
     panel.setAttribute("consumeoutsideclicks", false);
     panel.setAttribute("incontentshell", false);
     panel.setAttribute("noautofocus", true);
+    panel.setAttribute("noautohide", this.noAutoHide);
+
     panel.setAttribute("ignorekeys", true);
     panel.setAttribute("tooltip", "aHTMLTooltip");
 
