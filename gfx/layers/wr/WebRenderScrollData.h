@@ -21,7 +21,6 @@
 #include "mozilla/layers/RenderRootBoundary.h"
 #include "mozilla/layers/WebRenderMessageUtils.h"
 #include "mozilla/webrender/WebRenderTypes.h"
-#include "mozilla/HashTable.h"
 #include "mozilla/Maybe.h"
 #include "nsTArrayForwardDeclare.h"
 
@@ -224,7 +223,7 @@ class WebRenderScrollData final {
   
   
   
-  HashMap<ScrollableLayerGuid::ViewID, size_t> mScrollIdMap;
+  std::map<ScrollableLayerGuid::ViewID, size_t> mScrollIdMap;
 
   
   

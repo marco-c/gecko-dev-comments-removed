@@ -12,7 +12,6 @@
 #include "Units.h"                  
 #include "mozilla/DefineEnum.h"     
 #include "mozilla/HashFunctions.h"  
-#include "mozilla/HashTable.h"      
 #include "mozilla/Maybe.h"
 #include "mozilla/gfx/BasePoint.h"               
 #include "mozilla/gfx/Rect.h"                    
@@ -1100,7 +1099,7 @@ struct ScrollMetadata {
   
 };
 
-typedef HashMap<ScrollableLayerGuid::ViewID, ScrollUpdateInfo>
+typedef std::map<ScrollableLayerGuid::ViewID, ScrollUpdateInfo>
     ScrollUpdatesMap;
 
 }  
