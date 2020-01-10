@@ -49,6 +49,9 @@ const EXPIRY_TIME_IN_MS = 5 * 60 * 1000;
 let gCachedWASMModulePromise = null;
 let gCachedWASMModuleExpiryTimer = 0;
 
+
+let gActiveWorkers = new Set();
+
 function clearCachedWASMModule() {
   gCachedWASMModulePromise = null;
   gCachedWASMModuleExpiryTimer = 0;
@@ -98,8 +101,10 @@ this.ProfilerGetSymbols = {
       const worker = new ChromeWorker(
         "resource://gre/modules/ProfilerGetSymbols-worker.js"
       );
+      gActiveWorkers.add(worker);
 
       worker.onmessage = msg => {
+        gActiveWorkers.delete(worker);
         if (msg.data.error) {
           const error = msg.data.error;
           if (error.name) {
@@ -126,6 +131,7 @@ this.ProfilerGetSymbols = {
       
       
       worker.onerror = errorEvent => {
+        gActiveWorkers.delete(worker);
         worker.terminate();
         const { message, filename, lineno } = errorEvent;
         const error = new Error(message, filename, lineno);
@@ -137,6 +143,7 @@ this.ProfilerGetSymbols = {
       
       
       worker.onmessageerror = errorEvent => {
+        gActiveWorkers.delete(worker);
         worker.terminate();
         const { message, filename, lineno } = errorEvent;
         const error = new Error(message, filename, lineno);
