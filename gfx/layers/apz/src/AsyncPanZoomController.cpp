@@ -1054,7 +1054,7 @@ nsEventStatus AsyncPanZoomController::HandleDragEvent(
   ScrollDirection direction = *scrollbarData.mDirection;
 
   bool isMouseAwayFromThumb = false;
-  if (int snapMultiplier = StaticPrefs::SliderSnapMultiplier()) {
+  if (int snapMultiplier = StaticPrefs::slider_snapMultiplier()) {
     
     
     
@@ -2113,7 +2113,8 @@ CSSPoint AsyncPanZoomController::GetKeyboardDestination(
 
   switch (aAction.mType) {
     case KeyboardScrollAction::eScrollCharacter: {
-      int32_t scrollDistance = StaticPrefs::ToolkitHorizontalScrollDistance();
+      int32_t scrollDistance =
+          StaticPrefs::toolkit_scrollbox_horizontalScrollDistance();
 
       if (aAction.mForward) {
         scrollDestination.x += scrollDistance * lineScrollSize.width;
@@ -2123,7 +2124,8 @@ CSSPoint AsyncPanZoomController::GetKeyboardDestination(
       break;
     }
     case KeyboardScrollAction::eScrollLine: {
-      int32_t scrollDistance = StaticPrefs::ToolkitVerticalScrollDistance();
+      int32_t scrollDistance =
+          StaticPrefs::toolkit_scrollbox_verticalScrollDistance();
 
       if (aAction.mForward) {
         scrollDestination.y += scrollDistance * lineScrollSize.height;
@@ -2343,7 +2345,7 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(
   } else if ((delta.x || delta.y) && !CanScrollWithWheel(delta)) {
     
     if (mInputQueue->GetActiveWheelTransaction() &&
-        StaticPrefs::MouseScrollTestingEnabled()) {
+        StaticPrefs::test_mousescroll()) {
       if (RefPtr<GeckoContentController> controller =
               GetGeckoContentController()) {
         controller->NotifyMozMouseScrollEvent(

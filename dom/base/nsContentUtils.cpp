@@ -330,19 +330,6 @@ mozilla::LazyLogModule nsContentUtils::sDOMDumpLog("Dump");
 int32_t nsContentUtils::sInnerOrOuterWindowCount = 0;
 uint32_t nsContentUtils::sInnerOrOuterWindowSerialCounter = 0;
 
-template int32_t nsContentUtils::ComparePoints(
-    const RangeBoundary& aFirstBoundary, const RangeBoundary& aSecondBoundary,
-    bool* aDisconnected);
-template int32_t nsContentUtils::ComparePoints(
-    const RangeBoundary& aFirstBoundary,
-    const RawRangeBoundary& aSecondBoundary, bool* aDisconnected);
-template int32_t nsContentUtils::ComparePoints(
-    const RawRangeBoundary& aFirstBoundary,
-    const RangeBoundary& aSecondBoundary, bool* aDisconnected);
-template int32_t nsContentUtils::ComparePoints(
-    const RawRangeBoundary& aFirstBoundary,
-    const RawRangeBoundary& aSecondBoundary, bool* aDisconnected);
-
 
 
 enum AutocompleteUnsupportedFieldName : uint8_t {
@@ -1182,6 +1169,10 @@ int32_t nsContentUtils::ParseHTMLInteger(const nsAString& aValue,
         break;
       }
       foundValue = true;
+    } else if (*iter == char16_t('%')) {
+      ++iter;
+      result |= eParseHTMLInteger_IsPercent;
+      break;
     } else {
       break;
     }
@@ -2519,19 +2510,14 @@ nsINode* nsContentUtils::GetCommonAncestorUnderInteractiveContent(
 }
 
 
-template <typename FPT, typename FRT, typename SPT, typename SRT>
-int32_t nsContentUtils::ComparePoints(
-    const RangeBoundaryBase<FPT, FRT>& aFirstBoundary,
-    const RangeBoundaryBase<SPT, SRT>& aSecondBoundary, bool* aDisconnected) {
-  if (NS_WARN_IF(!aFirstBoundary.IsSet()) ||
-      NS_WARN_IF(!aSecondBoundary.IsSet())) {
+int32_t nsContentUtils::ComparePoints(const RawRangeBoundary& aFirst,
+                                      const RawRangeBoundary& aSecond,
+                                      bool* aDisconnected) {
+  if (NS_WARN_IF(!aFirst.IsSet()) || NS_WARN_IF(!aSecond.IsSet())) {
     return -1;
   }
-  
-  
-  return ComparePoints(aFirstBoundary.Container(), aFirstBoundary.Offset(),
-                       aSecondBoundary.Container(), aSecondBoundary.Offset(),
-                       aDisconnected);
+  return ComparePoints(aFirst.Container(), aFirst.Offset(), aSecond.Container(),
+                       aSecond.Offset(), aDisconnected);
 }
 
 inline bool IsCharInSet(const char* aSet, const char16_t aChar) {
@@ -2668,23 +2654,21 @@ static inline bool IsAutocompleteOff(const nsIContent* aContent) {
 }
 
 
-nsresult nsContentUtils::GenerateStateKey(nsIContent* aContent,
-                                          Document* aDocument,
-                                          nsACString& aKey) {
+void nsContentUtils::GenerateStateKey(nsIContent* aContent, Document* aDocument,
+                                      nsACString& aKey) {
+  MOZ_ASSERT(aContent);
+
   aKey.Truncate();
 
   uint32_t partID = aDocument ? aDocument->GetPartID() : 0;
 
   
-  NS_ENSURE_TRUE(aContent, NS_ERROR_FAILURE);
-
-  
   if (aContent->IsInAnonymousSubtree()) {
-    return NS_OK;
+    return;
   }
 
   if (IsAutocompleteOff(aContent)) {
-    return NS_OK;
+    return;
   }
 
   RefPtr<Document> doc = aContent->GetUncomposedDoc();
@@ -2694,11 +2678,17 @@ nsresult nsContentUtils::GenerateStateKey(nsIContent* aContent,
 
   if (doc && doc->IsHTMLOrXHTML()) {
     nsHTMLDocument* htmlDoc = doc->AsHTMLDocument();
-    RefPtr<nsContentList> htmlForms;
-    RefPtr<nsContentList> htmlFormControls;
-    htmlDoc->GetFormsAndFormControls(getter_AddRefs(htmlForms),
-                                     getter_AddRefs(htmlFormControls));
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -2716,36 +2706,63 @@ nsresult nsContentUtils::GenerateStateKey(nsIContent* aContent,
     nsCOMPtr<nsIFormControl> control(do_QueryInterface(aContent));
     if (control) {
       
+      
+      int32_t controlNumber =
+          control->GetParserInsertedControlNumberForStateKey();
+      bool parserInserted = controlNumber != -1;
+
+      RefPtr<nsContentList> htmlForms;
+      RefPtr<nsContentList> htmlFormControls;
+      if (!parserInserted) {
+        
+        
+        htmlDoc->GetFormsAndFormControls(getter_AddRefs(htmlForms),
+                                         getter_AddRefs(htmlFormControls));
+      }
+
+      
       KeyAppendInt(control->ControlType(), aKey);
 
       
-      Element* formElement = control->GetFormElement();
+      HTMLFormElement* formElement = control->GetFormElement();
       if (formElement) {
         if (IsAutocompleteOff(formElement)) {
           aKey.Truncate();
-          return NS_OK;
+          return;
         }
-
-        KeyAppendString(NS_LITERAL_CSTRING("f"), aKey);
 
         
-        int32_t index = htmlForms->IndexOf(formElement, false);
-        if (index <= -1) {
-          
-          
-          
-          
-          
-          
-          
-          index = htmlDoc->GetNumFormsSynchronous() - 1;
+        
+        bool appendedForm = false;
+        if (parserInserted) {
+          MOZ_ASSERT(formElement->GetFormNumberForStateKey() != -1,
+                     "when generating a state key for a parser inserted form "
+                     "control we should have a parser inserted <form> element");
+          KeyAppendString(NS_LITERAL_CSTRING("fp"), aKey);
+          KeyAppendInt(formElement->GetFormNumberForStateKey(), aKey);
+          appendedForm = true;
+        } else {
+          KeyAppendString(NS_LITERAL_CSTRING("fn"), aKey);
+          int32_t index = htmlForms->IndexOf(formElement, false);
+          if (index <= -1) {
+            
+            
+            
+            
+            
+            
+            
+            index = htmlDoc->GetNumFormsSynchronous() - 1;
+          }
+          if (index > -1) {
+            KeyAppendInt(index, aKey);
+            appendedForm = true;
+          }
         }
-        if (index > -1) {
-          KeyAppendInt(index, aKey);
 
+        if (appendedForm) {
           
-          nsCOMPtr<nsIForm> form(do_QueryInterface(formElement));
-          index = form->IndexOfControl(control);
+          int32_t index = formElement->IndexOfControl(control);
 
           if (index > -1) {
             KeyAppendInt(index, aKey);
@@ -2757,29 +2774,30 @@ nsresult nsContentUtils::GenerateStateKey(nsIContent* aContent,
         nsAutoString formName;
         formElement->GetAttr(kNameSpaceID_None, nsGkAtoms::name, formName);
         KeyAppendString(formName, aKey);
-
       } else {
-        KeyAppendString(NS_LITERAL_CSTRING("d"), aKey);
-
         
         
-
         
-        
-
-        
-        
-        int32_t index = htmlFormControls->IndexOf(aContent, true);
-        if (index > -1) {
-          KeyAppendInt(index, aKey);
+        if (parserInserted) {
+          KeyAppendString(NS_LITERAL_CSTRING("dp"), aKey);
+          KeyAppendInt(control->GetParserInsertedControlNumberForStateKey(),
+                       aKey);
           generatedUniqueKey = true;
+        } else {
+          KeyAppendString(NS_LITERAL_CSTRING("dn"), aKey);
+          int32_t index = htmlFormControls->IndexOf(aContent, true);
+          if (index > -1) {
+            KeyAppendInt(index, aKey);
+            generatedUniqueKey = true;
+          }
         }
-      }
 
-      
-      nsAutoString name;
-      aContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
-      KeyAppendString(name, aKey);
+        
+        nsAutoString name;
+        aContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::name,
+                                       name);
+        KeyAppendString(name, aKey);
+      }
     }
   }
 
@@ -2807,8 +2825,6 @@ nsresult nsContentUtils::GenerateStateKey(nsIContent* aContent,
       parent = content->GetParentNode();
     }
   }
-
-  return NS_OK;
 }
 
 
@@ -7845,7 +7861,7 @@ nsresult nsContentUtils::SendMouseEvent(
     }
     return presShell->HandleEvent(view->GetFrame(), &event, false, &status);
   }
-  if (StaticPrefs::TestEventsAsyncEnabled()) {
+  if (StaticPrefs::test_events_async_enabled()) {
     status = widget->DispatchInputEvent(&event);
   } else {
     nsresult rv = widget->DispatchEvent(&event, status);
