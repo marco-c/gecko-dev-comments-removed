@@ -49,6 +49,9 @@ add_task(async function init() {
   
   const addon = await AddonManager.getAddonByID("screenshots@mozilla.org");
   await addon.disable({ allowSystemAddons: true });
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.search.separatePrivateDefault.ui.enabled", true]],
+  });
 });
 
 
@@ -83,6 +86,8 @@ add_task(async function test_xul_text_link_label() {
     "context-copylink",
     true,
     "context-searchselect",
+    true,
+    "context-searchselect-private",
     true,
     "---",
     null,
@@ -203,6 +208,8 @@ add_task(async function test_link() {
     true,
     "context-searchselect",
     true,
+    "context-searchselect-private",
+    true,
     "---",
     null,
     "context-sendlinktodevice",
@@ -237,6 +244,8 @@ add_task(async function test_link_in_shadow_dom() {
       true,
       "context-searchselect",
       true,
+      "context-searchselect-private",
+      true,
       "---",
       null,
       "context-sendlinktodevice",
@@ -256,6 +265,8 @@ add_task(async function test_mailto() {
     "context-copyemail",
     true,
     "context-searchselect",
+    true,
+    "context-searchselect-private",
     true,
   ]);
 });
@@ -1396,6 +1407,8 @@ add_task(async function test_select_text() {
       null,
       "context-searchselect",
       true,
+      "context-searchselect-private",
+      true,
       "context-viewpartialsource-selection",
       true,
     ],
@@ -1438,6 +1451,8 @@ add_task(async function test_select_text_link() {
       "---",
       null,
       "context-searchselect",
+      true,
+      "context-searchselect-private",
       true,
       "---",
       null,
@@ -1520,6 +1535,7 @@ add_task(async function test_select_input_text() {
   todo(false, "spell checker tests are failing, bug 1246296");
 
   
+
 
 
 
@@ -1775,6 +1791,8 @@ add_task(async function test_svg_link() {
     true,
     "context-searchselect",
     true,
+    "context-searchselect-private",
+    true,
     "---",
     null,
     "context-sendlinktodevice",
@@ -1805,6 +1823,8 @@ add_task(async function test_svg_link() {
     true,
     "context-searchselect",
     true,
+    "context-searchselect-private",
+    true,
     "---",
     null,
     "context-sendlinktodevice",
@@ -1834,6 +1854,8 @@ add_task(async function test_svg_link() {
     "context-copylink",
     true,
     "context-searchselect",
+    true,
+    "context-searchselect-private",
     true,
     "---",
     null,
@@ -1867,6 +1889,8 @@ add_task(async function test_svg_relative_link() {
     true,
     "context-searchselect",
     true,
+    "context-searchselect-private",
+    true,
     "---",
     null,
     "context-sendlinktodevice",
@@ -1897,6 +1921,8 @@ add_task(async function test_svg_relative_link() {
     true,
     "context-searchselect",
     true,
+    "context-searchselect-private",
+    true,
     "---",
     null,
     "context-sendlinktodevice",
@@ -1926,6 +1952,8 @@ add_task(async function test_svg_relative_link() {
     "context-copylink",
     true,
     "context-searchselect",
+    true,
+    "context-searchselect-private",
     true,
     "---",
     null,

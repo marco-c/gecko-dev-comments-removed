@@ -1,8 +1,17 @@
 
 
+
+
 add_task(async function() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.search.separatePrivateDefault", true],
+      ["browser.search.separatePrivateDefault.ui.enabled", true],
+    ],
+  });
+
   const url =
-    "http://mochi.test:8888/browser/browser/base/content/test/general/browser_bug970746.xhtml";
+    "http://mochi.test:8888/browser/browser/components/search/test/browser/browser_contentContextMenu.xhtml";
   await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
 
   const ellipsis = "\u2026";
@@ -11,6 +20,23 @@ add_task(async function() {
     "contentAreaContextMenu"
   );
 
+  const originalPrivateDefault = await Services.search.getDefaultPrivate();
+  let otherPrivateDefault;
+  for (let engine of await Services.search.getVisibleEngines()) {
+    if (engine.name != originalPrivateDefault.name) {
+      otherPrivateDefault = engine;
+      break;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -27,68 +53,94 @@ add_task(async function() {
       isSelected: true,
       shouldBeShown: true,
       expectedLabelContents: "I'm a link!",
+      shouldPrivateBeShown: true,
+      expectedPrivateLabelContents: "Search in",
     },
     {
       id: "link",
       isSelected: false,
       shouldBeShown: true,
       expectedLabelContents: "I'm a link!",
+      shouldPrivateBeShown: true,
+      expectedPrivateLabelContents: "Search in",
     },
     {
       id: "longLink",
       isSelected: true,
       shouldBeShown: true,
       expectedLabelContents: "I'm a really lo" + ellipsis,
+      shouldPrivateBeShown: true,
+      expectedPrivateLabelContents: "Search in",
     },
     {
       id: "longLink",
       isSelected: false,
       shouldBeShown: true,
       expectedLabelContents: "I'm a really lo" + ellipsis,
+      shouldPrivateBeShown: true,
+      expectedPrivateLabelContents: "Search in",
     },
     {
       id: "plainText",
       isSelected: true,
       shouldBeShown: true,
       expectedLabelContents: "Right clicking " + ellipsis,
+      shouldPrivateBeShown: true,
+      expectedPrivateLabelContents: "Search in",
     },
     {
       id: "plainText",
       isSelected: false,
       shouldBeShown: false,
+      shouldPrivateBeShown: false,
     },
     {
       id: "mixedContent",
       isSelected: true,
       shouldBeShown: true,
       expectedLabelContents: "I'm some text, " + ellipsis,
+      shouldPrivateBeShown: true,
+      expectedPrivateLabelContents: "Search in",
     },
     {
       id: "mixedContent",
       isSelected: false,
       shouldBeShown: false,
+      shouldPrivateBeShown: false,
     },
     {
       id: "partialLink",
       isSelected: true,
       shouldBeShown: true,
       expectedLabelContents: "link selection",
+      shouldPrivateBeShown: true,
+      expectedPrivateLabelContents: "Search in",
     },
     {
       id: "partialLink",
       isSelected: false,
       shouldBeShown: true,
       expectedLabelContents: "A partial link " + ellipsis,
+      shouldPrivateBeShown: true,
+      expectedPrivateLabelContents: "Search with " + otherPrivateDefault.name,
+      changePrivateDefaultEngine: true,
     },
     {
       id: "surrogatePair",
       isSelected: true,
       shouldBeShown: true,
       expectedLabelContents: "This character\uD83D\uDD25" + ellipsis,
+      shouldPrivateBeShown: true,
+      expectedPrivateLabelContents: "Search with " + otherPrivateDefault.name,
+      changePrivateDefaultEngine: true,
     },
   ];
 
   for (let test of tests) {
+    if (test.changePrivateDefaultEngine) {
+      await Services.search.setDefaultPrivate(otherPrivateDefault);
+    }
+
     await ContentTask.spawn(
       gBrowser.selectedBrowser,
       { selectElement: test.isSelected ? test.id : null },
@@ -137,12 +189,34 @@ add_task(async function() {
       );
     }
 
+    menuItem = document.getElementById("context-searchselect-private");
+    is(
+      menuItem.hidden,
+      !test.shouldPrivateBeShown,
+      "private search context menu item is shown for  '#" + test.id + "' "
+    );
+
+    if (test.shouldPrivateBeShown) {
+      ok(
+        menuItem.label.includes(test.expectedPrivateLabelContents),
+        "Menu item text '" +
+          menuItem.label +
+          "' contains the correct search terms '" +
+          test.expectedPrivateLabelContents +
+          "'"
+      );
+    }
+
     let popupHiddenPromise = BrowserTestUtils.waitForEvent(
       contentAreaContextMenu,
       "popuphidden"
     );
     contentAreaContextMenu.hidePopup();
     await popupHiddenPromise;
+
+    if (test.changePrivateDefaultEngine) {
+      await Services.search.setDefaultPrivate(originalPrivateDefault);
+    }
   }
 
   
