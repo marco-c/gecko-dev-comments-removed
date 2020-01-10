@@ -1194,6 +1194,12 @@ function defineAddonWrapperProperty(name, getter) {
 
     let [result, usedRepository] = chooseValue(addon, addon.selectedLocale, aProp);
 
+    if (result == null) {
+      
+      
+      [result, usedRepository] = chooseValue(addon, addon.defaultLocale, aProp);
+    }
+
     if (result && !usedRepository && aProp == "creator")
       return new AddonManagerPrivate.AddonAuthor(result);
 
