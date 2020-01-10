@@ -249,6 +249,8 @@ const query = function*(detailsIn, props, context) {
   if (host && "firstPartyDomain" in originAttributes) {
     
     
+    
+    
     enumerator = Services.cookies.getCookiesFromHost(host, originAttributes);
   } else {
     enumerator = Services.cookies.getCookiesWithOriginAttributes(
