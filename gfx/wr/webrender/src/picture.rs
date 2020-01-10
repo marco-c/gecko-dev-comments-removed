@@ -92,7 +92,7 @@ use crate::render_task::{RenderTask, RenderTaskLocation, BlurTaskCache, ClearMod
 use crate::resource_cache::ResourceCache;
 use crate::scene::SceneProperties;
 use smallvec::SmallVec;
-use std::{mem, u8, marker};
+use std::{mem, u8, marker, u32};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::texture_cache::TextureCacheHandle;
 use crate::util::{TransformedRectKind, MatrixHelpers, MaxRect, scale_factors, VecHelper};
@@ -226,18 +226,34 @@ pub type TileSize = Size2D<i32, TileCoordinate>;
 pub type TileRect = Rect<i32, TileCoordinate>;
 
 
-pub const TILE_SIZE_LARGE: DeviceIntSize = DeviceIntSize {
-    width: 2048,
+pub const TILE_SIZE_DEFAULT: DeviceIntSize = DeviceIntSize {
+    width: 1024,
     height: 512,
     _unit: marker::PhantomData,
 };
 
 
-pub const TILE_SIZE_SMALL: DeviceIntSize = DeviceIntSize {
-    width: 128,
-    height: 128,
+pub const TILE_SIZE_SCROLLBAR_HORIZONTAL: DeviceIntSize = DeviceIntSize {
+    width: 512,
+    height: 16,
     _unit: marker::PhantomData,
 };
+
+
+pub const TILE_SIZE_SCROLLBAR_VERTICAL: DeviceIntSize = DeviceIntSize {
+    width: 16,
+    height: 512,
+    _unit: marker::PhantomData,
+};
+
+
+pub fn tile_cache_sizes() -> &'static [DeviceIntSize] {
+    &[
+        TILE_SIZE_DEFAULT,
+        TILE_SIZE_SCROLLBAR_HORIZONTAL,
+        TILE_SIZE_SCROLLBAR_VERTICAL,
+    ]
+}
 
 
 
@@ -790,20 +806,16 @@ impl Tile {
         
         if supports_dirty_rects {
             
-            
-            
-            let max_split_level = if ctx.current_tile_size == TILE_SIZE_LARGE {
-                3
-            } else {
-                1
-            };
+            if ctx.current_tile_size == TILE_SIZE_DEFAULT {
+                let max_split_level = 3;
 
-            
-            self.root.maybe_merge_or_split(
-                0,
-                &self.current_descriptor.prims,
-                max_split_level,
-            );
+                
+                self.root.maybe_merge_or_split(
+                    0,
+                    &self.current_descriptor.prims,
+                    max_split_level,
+                );
+            }
         }
 
         
@@ -1292,6 +1304,11 @@ pub struct TileCacheInstance {
     shared_clip_chain: ClipChainId,
     
     root_transform: TransformKey,
+    
+    
+    
+    
+    frames_until_size_eval: usize,
 }
 
 impl TileCacheInstance {
@@ -1329,6 +1346,7 @@ impl TileCacheInstance {
             shared_clips,
             shared_clip_chain,
             current_tile_size: DeviceIntSize::zero(),
+            frames_until_size_eval: 0,
         }
     }
 
@@ -1447,27 +1465,38 @@ impl TileCacheInstance {
         }
 
         
-        let desired_tile_size = if pic_rect.size.width < 2.0 * TILE_SIZE_SMALL.width as f32 ||
-           pic_rect.size.height < 2.0 * TILE_SIZE_SMALL.height as f32 {
-            TILE_SIZE_SMALL
-        } else {
-            TILE_SIZE_LARGE
-        };
+        
+        
+        if self.frames_until_size_eval == 0 {
+            const TILE_SIZE_TINY: f32 = 32.0;
+            const TILE_SIZE_LARGE: f32 = 512.0;
 
-        
-        
-        
-        
-        
-        
-        if desired_tile_size != self.current_tile_size {
+            
+            let desired_tile_size;
+
+            if pic_rect.size.width <= TILE_SIZE_TINY && pic_rect.size.height > TILE_SIZE_LARGE {
+                desired_tile_size = TILE_SIZE_SCROLLBAR_VERTICAL;
+            } else if pic_rect.size.width > TILE_SIZE_LARGE && pic_rect.size.height <= TILE_SIZE_TINY {
+                desired_tile_size = TILE_SIZE_SCROLLBAR_HORIZONTAL;
+            } else {
+                desired_tile_size = TILE_SIZE_DEFAULT;
+            }
+
             
             
-            frame_state.composite_state.destroy_native_surfaces(
-                self.tiles.values(),
-            );
-            self.tiles.clear();
-            self.current_tile_size = desired_tile_size;
+            if desired_tile_size != self.current_tile_size {
+                
+                
+                frame_state.composite_state.destroy_native_surfaces(
+                    self.tiles.values(),
+                );
+                self.tiles.clear();
+                self.current_tile_size = desired_tile_size;
+            }
+
+            
+            
+            self.frames_until_size_eval = 120;
         }
 
         
