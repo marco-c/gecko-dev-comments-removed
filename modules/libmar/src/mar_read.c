@@ -12,7 +12,7 @@
 #include "mar_private.h"
 #include "mar.h"
 #ifdef XP_WIN
-#define strdup _strdup
+#  define strdup _strdup
 #endif
 
 
