@@ -775,7 +775,9 @@ void BaseProcessLauncher::GetChildLogName(const char* origLogName,
 
 
 
-#ifdef XP_WIN
+
+
+#if defined(XP_WIN) || defined(MOZ_WIDGET_ANDROID)
 
 static mozilla::StaticMutex gIPCLaunchThreadMutex;
 static mozilla::StaticRefPtr<nsIThread> gIPCLaunchThread;
