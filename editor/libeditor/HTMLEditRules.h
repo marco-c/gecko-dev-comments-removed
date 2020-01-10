@@ -58,7 +58,7 @@ class HTMLEditRules : public TextEditRules {
   MOZ_CAN_RUN_SCRIPT
   virtual nsresult Init(TextEditor* aTextEditor) override;
   virtual nsresult DetachEditor() override;
-  virtual nsresult BeforeEdit() override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual nsresult BeforeEdit() override;
   MOZ_CAN_RUN_SCRIPT virtual nsresult AfterEdit() override;
   
   
@@ -1114,14 +1114,14 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_MUST_USE nsresult CacheInlineStyles(nsINode* aNode);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult CacheInlineStyles(nsINode* aNode);
 
   
 
 
 
 
-  MOZ_MUST_USE nsresult ReapplyCachedStyles();
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult ReapplyCachedStyles();
 
   void ClearCachedStyles();
 
@@ -1302,14 +1302,6 @@ class HTMLEditRules : public TextEditRules {
 
 
   MOZ_CAN_RUN_SCRIPT void DocumentModifiedWorker();
-
-  
-
-
-
-
-  MOZ_MUST_USE nsresult GetInlineStyles(nsINode* aNode,
-                                        AutoStyleCacheArray& aStyleCacheArray);
 
  protected:
   HTMLEditor* mHTMLEditor;
