@@ -309,8 +309,6 @@ struct DIGroup {
   LayerPoint mResidualOffset;
   LayerIntRect mLayerBounds; 
   
-  IntRect mImageBounds; 
-  
   
   IntRect mClippedImageBounds; 
   Maybe<mozilla::Pair<wr::RenderRoot, wr::BlobImageKey>> mKey;
@@ -1259,7 +1257,6 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
       groupData->mFollowingGroup.mAppUnitsPerDevPixel =
           currentGroup->mAppUnitsPerDevPixel;
       groupData->mFollowingGroup.mLayerBounds = currentGroup->mLayerBounds;
-      groupData->mFollowingGroup.mImageBounds = currentGroup->mImageBounds;
       groupData->mFollowingGroup.mClippedImageBounds =
           currentGroup->mClippedImageBounds;
       groupData->mFollowingGroup.mScale = currentGroup->mScale;
@@ -1533,8 +1530,7 @@ void WebRenderCommandBuilder::DoGroupingForDisplayList(
   group.mVisibleRect = visibleRect;
   group.mPreservedRect = group.mVisibleRect.Intersect(group.mLastVisibleRect).ToUnknownRect();
   group.mAppUnitsPerDevPixel = appUnitsPerDevPixel;
-  group.mImageBounds = layerBounds.ToUnknownRect();
-  group.mClippedImageBounds = group.mImageBounds;
+  group.mClippedImageBounds = layerBounds.ToUnknownRect();
 
   g.mTransform = Matrix::Scaling(scale.width, scale.height)
                      .PostTranslate(residualOffset.x, residualOffset.y);
