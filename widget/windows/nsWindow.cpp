@@ -4099,6 +4099,25 @@ bool nsWindow::DispatchPluginEvent(UINT aMessage, WPARAM aWParam,
   return ret;
 }
 
+void nsWindow::DispatchPluginSettingEvents() {
+  
+  {
+    LRESULT lresult;
+    MSGResult msgResult(&lresult);
+    MSG msg =
+        WinUtils::InitMSG(WM_SETTINGCHANGE, SPI_SETWHEELSCROLLLINES, 0, mWnd);
+    ProcessMessageForPlugin(msg, msgResult);
+  }
+
+  {
+    LRESULT lresult;
+    MSGResult msgResult(&lresult);
+    MSG msg =
+        WinUtils::InitMSG(WM_SETTINGCHANGE, SPI_SETWHEELSCROLLCHARS, 0, mWnd);
+    ProcessMessageForPlugin(msg, msgResult);
+  }
+}
+
 bool nsWindow::TouchEventShouldStartDrag(EventMessage aEventMessage,
                                          LayoutDeviceIntPoint aEventPoint) {
   
@@ -4807,7 +4826,7 @@ const char16_t* GetQuitType() {
 
 
 
-bool nsWindow::ProcessMessageForPlugin(const MSG& aMsg, MSGResult& aResult) {
+bool nsWindow::ProcessMessageForPlugin(MSG aMsg, MSGResult& aResult) {
   aResult.mResult = 0;
   aResult.mConsumed = true;
 
@@ -4827,6 +4846,27 @@ bool nsWindow::ProcessMessageForPlugin(const MSG& aMsg, MSGResult& aResult) {
     case WM_SYSKEYDOWN:
       aResult.mResult = ProcessKeyDownMessage(aMsg, &eventDispatched);
       break;
+
+    case WM_SETTINGCHANGE: {
+      
+      
+      
+      if ((aMsg.wParam != SPI_SETWHEELSCROLLLINES) &&
+          (aMsg.wParam != SPI_SETWHEELSCROLLCHARS)) {
+        return false;
+      }
+      UINT wheelDelta = 0;
+      UINT getMsg = (aMsg.wParam == SPI_SETWHEELSCROLLLINES)
+                        ? SPI_GETWHEELSCROLLLINES
+                        : SPI_GETWHEELSCROLLCHARS;
+      if (NS_WARN_IF(!::SystemParametersInfo(getMsg, 0, &wheelDelta, 0))) {
+        
+        
+        wheelDelta = 3;
+      }
+      aMsg.lParam = wheelDelta;
+      break;
+    }
 
     case WM_DEADCHAR:
     case WM_SYSDEADCHAR:

@@ -274,6 +274,9 @@ nsPluginInstanceOwner::nsPluginInstanceOwner()
   mGotCompositionData = false;
   mSentStartComposition = false;
   mPluginDidNotHandleIMEComposition = false;
+  
+  mWheelScrollLines = 3;
+  mWheelScrollChars = 3;
 #endif
 }
 
@@ -2083,13 +2086,7 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(
                 delta = -WHEEL_DELTA * wheelEvent->mLineOrPageDeltaY;
                 break;
               case WheelEvent_Binding::DOM_DELTA_LINE: {
-                UINT linesPerWheelDelta = 0;
-                if (NS_WARN_IF(!::SystemParametersInfo(
-                        SPI_GETWHEELSCROLLLINES, 0, &linesPerWheelDelta, 0))) {
-                  
-                  
-                  linesPerWheelDelta = 3;
-                }
+                UINT linesPerWheelDelta = mWheelScrollLines;
                 if (!linesPerWheelDelta) {
                   break;
                 }
@@ -2112,14 +2109,7 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(
                 break;
               case WheelEvent_Binding::DOM_DELTA_LINE: {
                 pluginEvent.event = WM_MOUSEHWHEEL;
-                UINT charsPerWheelDelta = 0;
-                
-                if (::SystemParametersInfo(SPI_GETWHEELSCROLLCHARS, 0,
-                                           &charsPerWheelDelta, 0)) {
-                  
-                  
-                  charsPerWheelDelta = 3;
-                }
+                UINT charsPerWheelDelta = mWheelScrollChars;
                 if (!charsPerWheelDelta) {
                   break;
                 }
@@ -2159,6 +2149,7 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(
           break;
       }
       if (pluginEvent.event && initWParamWithCurrentState) {
+        
         
         
         pPluginEvent = &pluginEvent;
@@ -2212,6 +2203,23 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(
     NS_WARNING(
         "nsPluginFrame ProcessEvent: trying to send null event to plugin.");
     return rv;
+  }
+
+  
+  
+  
+  if (pPluginEvent && pPluginEvent->event == WM_SETTINGCHANGE) {
+    switch (pPluginEvent->wParam) {
+      case SPI_SETWHEELSCROLLLINES:
+        mWheelScrollLines = static_cast<uint32_t>(pPluginEvent->lParam);
+        break;
+      case SPI_SETWHEELSCROLLCHARS:
+        mWheelScrollChars = static_cast<uint32_t>(pPluginEvent->lParam);
+        break;
+      default:
+        break;
+    }
+    return nsEventStatus_eConsumeNoDefault;
   }
 
   if (pPluginEvent) {
