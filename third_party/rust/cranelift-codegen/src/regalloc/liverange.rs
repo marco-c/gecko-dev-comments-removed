@@ -108,12 +108,18 @@
 
 
 
-use crate::bforest;
+
+
+
+
+
+
 use crate::entity::SparseMapValue;
 use crate::ir::{Ebb, ExpandedProgramPoint, Inst, Layout, ProgramOrder, ProgramPoint, Value};
 use crate::regalloc::affinity::Affinity;
 use core::cmp::Ordering;
 use core::marker::PhantomData;
+use smallvec::SmallVec;
 
 
 
@@ -145,6 +151,12 @@ use core::marker::PhantomData;
 pub type LiveRange = GenericLiveRange<Layout>;
 
 
+pub struct Interval {
+    begin: Ebb,
+    end: Inst,
+}
+
+
 
 
 
@@ -174,20 +186,9 @@ pub struct GenericLiveRange<PO: ProgramOrder> {
     
     
     
-    liveins: bforest::Map<Ebb, Inst>,
+    liveins: SmallVec<[Interval; 2]>,
 
     po: PhantomData<*const PO>,
-}
-
-
-pub type LiveRangeForest = bforest::MapForest<Ebb, Inst>;
-
-struct Cmp<'a, PO: ProgramOrder + 'a>(&'a PO);
-
-impl<'a, PO: ProgramOrder> bforest::Comparator<Ebb> for Cmp<'a, PO> {
-    fn cmp(&self, a: Ebb, b: Ebb) -> Ordering {
-        self.0.cmp(a, b)
-    }
 }
 
 
@@ -216,9 +217,24 @@ impl<PO: ProgramOrder> GenericLiveRange<PO> {
             affinity,
             def_begin: def,
             def_end: def,
-            liveins: bforest::Map::new(),
+            liveins: SmallVec::new(),
             po: PhantomData,
         }
+    }
+
+    
+    
+    fn lookup_entry_containing_ebb(&self, ebb: Ebb, order: &PO) -> Result<usize, usize> {
+        self.liveins
+            .binary_search_by(|interval| order.cmp(interval.begin, ebb))
+            .or_else(|n| {
+                
+                if n > 0 && cmp!(order, ebb <= self.liveins[n - 1].end) {
+                    Ok(n - 1)
+                } else {
+                    Err(n)
+                }
+            })
     }
 
     
@@ -232,83 +248,101 @@ impl<PO: ProgramOrder> GenericLiveRange<PO> {
     
     
     
-    pub fn extend_in_ebb(
-        &mut self,
-        ebb: Ebb,
-        to: Inst,
-        order: &PO,
-        forest: &mut bforest::MapForest<Ebb, Inst>,
-    ) -> bool {
+    pub fn extend_in_ebb(&mut self, ebb: Ebb, inst: Inst, order: &PO) -> bool {
         
         
         
         
-        if cmp!(order, ebb <= self.def_end) && cmp!(order, to >= self.def_begin) {
-            let to_pp = to.into();
+        if cmp!(order, ebb <= self.def_end) && cmp!(order, inst >= self.def_begin) {
+            let inst_pp = inst.into();
             debug_assert_ne!(
-                to_pp, self.def_begin,
+                inst_pp, self.def_begin,
                 "Can't use value in the defining instruction."
             );
-            if cmp!(order, to > self.def_end) {
-                self.def_end = to_pp;
+            if cmp!(order, inst > self.def_end) {
+                self.def_end = inst_pp;
             }
             return false;
         }
 
         
-        let cmp = Cmp(order);
-        let mut c = self.liveins.cursor(forest, &cmp);
-        let first_time_livein;
-
-        if let Some(end) = c.goto(ebb) {
-            
-            first_time_livein = false;
-            if cmp!(order, end < to) {
-                *c.value_mut().unwrap() = to;
-            } else {
-                return first_time_livein;
-            }
-        } else if let Some((_, end)) = c.prev() {
-            
-            
-            if cmp!(order, end > ebb) {
+        match self.lookup_entry_containing_ebb(ebb, order) {
+            Ok(n) => {
                 
-                first_time_livein = false;
-                if cmp!(order, end < to) {
-                    *c.value_mut().unwrap() = to;
-                } else {
-                    return first_time_livein;
+                if cmp!(order, inst <= self.liveins[n].end) {
+                    
+                    return false;
                 }
-            } else {
-                first_time_livein = true;
+
                 
                 
-                if order.is_ebb_gap(end, ebb) {
-                    *c.value_mut().unwrap() = to;
-                } else {
-                    c.insert(ebb, to);
+                
+                if let Some(next) = &self.liveins.get(n + 1) {
+                    if order.is_ebb_gap(inst, next.begin) {
+                        
+                        
+                        let next_end = next.end;
+                        debug_assert!(cmp!(order, next_end > self.liveins[n].end));
+                        self.liveins[n].end = next_end;
+                        self.liveins.remove(n + 1);
+                        return false;
+                    }
                 }
-            }
-        } else {
-            
-            first_time_livein = true;
-            c.insert(ebb, to);
-        }
 
-        
-        debug_assert_eq!(c.value(), Some(to));
-
-        
-        if let Some((next_ebb, next_end)) = c.next() {
-            if order.is_ebb_gap(to, next_ebb) {
                 
-                c.remove();
-                c.prev();
-                *c.value_mut().unwrap() = next_end;
+                self.liveins[n].end = inst;
+                false
+            }
+
+            Err(n) => {
+                
+                
+                let coalesce_next = self
+                    .liveins
+                    .get(n)
+                    .filter(|next| order.is_ebb_gap(inst, next.begin))
+                    .is_some();
+                let coalesce_prev = self
+                    .liveins
+                    .get(n.wrapping_sub(1))
+                    .filter(|prev| order.is_ebb_gap(prev.end, ebb))
+                    .is_some();
+
+                match (coalesce_prev, coalesce_next) {
+                    
+                    
+                    (true, true) => {
+                        let prev_end = self.liveins[n - 1].end;
+                        debug_assert!(cmp!(order, prev_end <= self.liveins[n].end));
+                        self.liveins[n - 1].end = self.liveins[n].end;
+                        self.liveins.remove(n);
+                    }
+
+                    
+                    (true, false) => {
+                        debug_assert!(cmp!(order, inst >= self.liveins[n - 1].end));
+                        self.liveins[n - 1].end = inst;
+                    }
+                    (false, true) => {
+                        debug_assert!(cmp!(order, ebb <= self.liveins[n].begin));
+                        self.liveins[n].begin = ebb;
+                    }
+
+                    (false, false) => {
+                        
+                        self.liveins.insert(
+                            n,
+                            Interval {
+                                begin: ebb,
+                                end: inst,
+                            },
+                        );
+                    }
+                }
+
+                true
             }
         }
-
-        first_time_livein
     }
 
     
@@ -359,43 +393,39 @@ impl<PO: ProgramOrder> GenericLiveRange<PO> {
     
     
     
-    pub fn livein_local_end(&self, ebb: Ebb, forest: &LiveRangeForest, order: &PO) -> Option<Inst> {
-        let cmp = Cmp(order);
-        self.liveins
-            .get_or_less(ebb, forest, &cmp)
-            .and_then(|(_, inst)| {
-                
-                if cmp!(order, inst > ebb) {
-                    Some(inst)
+    pub fn livein_local_end(&self, ebb: Ebb, order: &PO) -> Option<Inst> {
+        self.lookup_entry_containing_ebb(ebb, order)
+            .and_then(|i| {
+                let inst = self.liveins[i].end;
+                if cmp!(order, ebb < inst) {
+                    Ok(inst)
                 } else {
-                    None
+                    
+                    Err(i)
                 }
             })
+            .ok()
     }
 
     
     
     
-    pub fn is_livein(&self, ebb: Ebb, forest: &LiveRangeForest, order: &PO) -> bool {
-        self.livein_local_end(ebb, forest, order).is_some()
+    pub fn is_livein(&self, ebb: Ebb, order: &PO) -> bool {
+        self.livein_local_end(ebb, order).is_some()
     }
 
     
     
     
     
-    pub fn liveins<'a>(&'a self, forest: &'a LiveRangeForest) -> bforest::MapIter<'a, Ebb, Inst> {
-        self.liveins.iter(forest)
+    pub fn liveins<'a>(&'a self) -> impl Iterator<Item = (Ebb, Inst)> + 'a {
+        self.liveins
+            .iter()
+            .map(|interval| (interval.begin, interval.end))
     }
 
     
-    pub fn overlaps_def(
-        &self,
-        def: ExpandedProgramPoint,
-        ebb: Ebb,
-        forest: &LiveRangeForest,
-        order: &PO,
-    ) -> bool {
+    pub fn overlaps_def(&self, def: ExpandedProgramPoint, ebb: Ebb, order: &PO) -> bool {
         
         if def == self.def_begin.into() {
             return true;
@@ -407,30 +437,29 @@ impl<PO: ProgramOrder> GenericLiveRange<PO> {
         }
 
         
-        match self.livein_local_end(ebb, forest, order) {
+        match self.livein_local_end(ebb, order) {
             Some(inst) => cmp!(order, def < inst),
             None => false,
         }
     }
 
     
-    pub fn reaches_use(&self, user: Inst, ebb: Ebb, forest: &LiveRangeForest, order: &PO) -> bool {
+    pub fn reaches_use(&self, user: Inst, ebb: Ebb, order: &PO) -> bool {
         
         if cmp!(order, user > self.def_begin) && cmp!(order, user <= self.def_end) {
             return true;
         }
 
         
-        match self.livein_local_end(ebb, forest, order) {
+        match self.livein_local_end(ebb, order) {
             Some(inst) => cmp!(order, user <= inst),
             None => false,
         }
     }
 
     
-    pub fn killed_at(&self, user: Inst, ebb: Ebb, forest: &LiveRangeForest, order: &PO) -> bool {
-        self.def_local_end() == user.into()
-            || self.livein_local_end(ebb, forest, order) == Some(user)
+    pub fn killed_at(&self, user: Inst, ebb: Ebb, order: &PO) -> bool {
+        self.def_local_end() == user.into() || self.livein_local_end(ebb, order) == Some(user)
     }
 }
 
@@ -443,13 +472,12 @@ impl<PO: ProgramOrder> SparseMapValue<Value> for GenericLiveRange<PO> {
 
 #[cfg(test)]
 mod tests {
-    use super::GenericLiveRange;
-    use crate::bforest;
+    use super::{GenericLiveRange, Interval};
     use crate::entity::EntityRef;
     use crate::ir::{Ebb, Inst, Value};
     use crate::ir::{ExpandedProgramPoint, ProgramOrder};
+    use alloc::vec::Vec;
     use core::cmp::Ordering;
-    use std::vec::Vec;
 
     
     
@@ -496,11 +524,7 @@ mod tests {
         }
 
         
-        fn validate(
-            &self,
-            lr: &GenericLiveRange<ProgOrder>,
-            forest: &bforest::MapForest<Ebb, Inst>,
-        ) {
+        fn validate(&self, lr: &GenericLiveRange<Self>) {
             
             let def_ebb = self.pp_ebb(lr.def_begin);
             assert_eq!(def_ebb, self.pp_ebb(lr.def_end));
@@ -516,7 +540,10 @@ mod tests {
 
             
             let mut prev_end = None;
-            for (begin, end) in lr.liveins.iter(forest) {
+            for Interval { begin, end } in lr.liveins.iter() {
+                let begin = *begin;
+                let end = *end;
+
                 assert_eq!(self.cmp(begin, end), Ordering::Less);
                 if let Some(e) = prev_end {
                     assert_eq!(self.cmp(e, begin), Ordering::Less);
@@ -545,18 +572,17 @@ mod tests {
         let i2 = Inst::new(2);
         let e2 = Ebb::new(2);
         let lr = GenericLiveRange::new(v0, i1.into(), Default::default());
-        let forest = &bforest::MapForest::new();
         assert!(lr.is_dead());
         assert!(lr.is_local());
         assert_eq!(lr.def(), i1.into());
         assert_eq!(lr.def_local_end(), i1.into());
-        assert_eq!(lr.livein_local_end(e2, forest, PO), None);
-        PO.validate(&lr, forest);
+        assert_eq!(lr.livein_local_end(e2, PO), None);
+        PO.validate(&lr);
 
         
-        assert!(lr.overlaps_def(i1.into(), e0, forest, PO));
-        assert!(!lr.overlaps_def(i2.into(), e0, forest, PO));
-        assert!(!lr.overlaps_def(e0.into(), e0, forest, PO));
+        assert!(lr.overlaps_def(i1.into(), e0, PO));
+        assert!(!lr.overlaps_def(i2.into(), e0, PO));
+        assert!(!lr.overlaps_def(e0.into(), e0, PO));
     }
 
     #[test]
@@ -564,14 +590,13 @@ mod tests {
         let v0 = Value::new(0);
         let e2 = Ebb::new(2);
         let lr = GenericLiveRange::new(v0, e2.into(), Default::default());
-        let forest = &bforest::MapForest::new();
         assert!(lr.is_dead());
         assert!(lr.is_local());
         assert_eq!(lr.def(), e2.into());
         assert_eq!(lr.def_local_end(), e2.into());
         
-        assert_eq!(lr.livein_local_end(e2, forest, PO), None);
-        PO.validate(&lr, forest);
+        assert_eq!(lr.livein_local_end(e2, PO), None);
+        PO.validate(&lr);
     }
 
     #[test]
@@ -582,18 +607,17 @@ mod tests {
         let i12 = Inst::new(12);
         let i13 = Inst::new(13);
         let mut lr = GenericLiveRange::new(v0, i11.into(), Default::default());
-        let forest = &mut bforest::MapForest::new();
 
-        assert_eq!(lr.extend_in_ebb(e10, i13, PO, forest), false);
-        PO.validate(&lr, forest);
+        assert_eq!(lr.extend_in_ebb(e10, i13, PO), false);
+        PO.validate(&lr);
         assert!(!lr.is_dead());
         assert!(lr.is_local());
         assert_eq!(lr.def(), i11.into());
         assert_eq!(lr.def_local_end(), i13.into());
 
         
-        assert_eq!(lr.extend_in_ebb(e10, i12, PO, forest), false);
-        PO.validate(&lr, forest);
+        assert_eq!(lr.extend_in_ebb(e10, i12, PO), false);
+        PO.validate(&lr);
         assert_eq!(lr.def(), i11.into());
         assert_eq!(lr.def_local_end(), i13.into());
     }
@@ -606,26 +630,25 @@ mod tests {
         let i12 = Inst::new(12);
         let i13 = Inst::new(13);
         let mut lr = GenericLiveRange::new(v0, e10.into(), Default::default());
-        let forest = &mut bforest::MapForest::new();
 
         
         
-        assert_eq!(lr.extend_in_ebb(e10, i12, PO, forest), false);
-        PO.validate(&lr, forest);
+        assert_eq!(lr.extend_in_ebb(e10, i12, PO), false);
+        PO.validate(&lr);
         assert!(!lr.is_dead());
         assert!(lr.is_local());
         assert_eq!(lr.def(), e10.into());
         assert_eq!(lr.def_local_end(), i12.into());
 
         
-        assert_eq!(lr.extend_in_ebb(e10, i11, PO, forest), false);
-        PO.validate(&lr, forest);
+        assert_eq!(lr.extend_in_ebb(e10, i11, PO), false);
+        PO.validate(&lr);
         assert_eq!(lr.def(), e10.into());
         assert_eq!(lr.def_local_end(), i12.into());
 
         
-        assert_eq!(lr.extend_in_ebb(e10, i13, PO, forest), false);
-        PO.validate(&lr, forest);
+        assert_eq!(lr.extend_in_ebb(e10, i13, PO), false);
+        PO.validate(&lr);
         assert_eq!(lr.def(), e10.into());
         assert_eq!(lr.def_local_end(), i13.into());
     }
@@ -641,23 +664,22 @@ mod tests {
         let i22 = Inst::new(22);
         let i23 = Inst::new(23);
         let mut lr = GenericLiveRange::new(v0, i11.into(), Default::default());
-        let forest = &mut bforest::MapForest::new();
 
-        assert_eq!(lr.extend_in_ebb(e10, i12, PO, forest), false);
-
-        
-        assert_eq!(lr.extend_in_ebb(e20, i22, PO, forest), true);
-        PO.validate(&lr, forest);
-        assert_eq!(lr.livein_local_end(e20, forest, PO), Some(i22));
+        assert_eq!(lr.extend_in_ebb(e10, i12, PO), false);
 
         
-        assert_eq!(lr.extend_in_ebb(e20, i21, PO, forest), false);
-        assert_eq!(lr.livein_local_end(e20, forest, PO), Some(i22));
+        assert_eq!(lr.extend_in_ebb(e20, i22, PO), true);
+        PO.validate(&lr);
+        assert_eq!(lr.livein_local_end(e20, PO), Some(i22));
 
         
-        assert_eq!(lr.extend_in_ebb(e20, i23, PO, forest), false);
-        PO.validate(&lr, forest);
-        assert_eq!(lr.livein_local_end(e20, forest, PO), Some(i23));
+        assert_eq!(lr.extend_in_ebb(e20, i21, PO), false);
+        assert_eq!(lr.livein_local_end(e20, PO), Some(i22));
+
+        
+        assert_eq!(lr.extend_in_ebb(e20, i23, PO), false);
+        PO.validate(&lr);
+        assert_eq!(lr.livein_local_end(e20, PO), Some(i23));
     }
 
     #[test]
@@ -671,32 +693,28 @@ mod tests {
         let e40 = Ebb::new(40);
         let i41 = Inst::new(41);
         let mut lr = GenericLiveRange::new(v0, i11.into(), Default::default());
-        let forest = &mut bforest::MapForest::new();
 
-        assert_eq!(lr.extend_in_ebb(e30, i31, PO, forest), true);
-        assert_eq!(lr.liveins(forest).collect::<Vec<_>>(), [(e30, i31)]);
-
-        
-        assert_eq!(lr.extend_in_ebb(e40, i41, PO, forest), true);
-        assert_eq!(lr.liveins(forest).collect::<Vec<_>>(), [(e30, i41)]);
+        assert_eq!(lr.extend_in_ebb(e30, i31, PO,), true);
+        assert_eq!(lr.liveins().collect::<Vec<_>>(), [(e30, i31)]);
 
         
-        assert_eq!(lr.extend_in_ebb(e20, i21, PO, forest), true);
-        assert_eq!(lr.liveins(forest).collect::<Vec<_>>(), [(e20, i41)]);
+        assert_eq!(lr.extend_in_ebb(e40, i41, PO,), true);
+        assert_eq!(lr.liveins().collect::<Vec<_>>(), [(e30, i41)]);
+
+        
+        assert_eq!(lr.extend_in_ebb(e20, i21, PO,), true);
+        assert_eq!(lr.liveins().collect::<Vec<_>>(), [(e20, i41)]);
 
         let mut lr = GenericLiveRange::new(v0, i11.into(), Default::default());
 
-        assert_eq!(lr.extend_in_ebb(e40, i41, PO, forest), true);
-        assert_eq!(lr.liveins(forest).collect::<Vec<_>>(), [(e40, i41)]);
+        assert_eq!(lr.extend_in_ebb(e40, i41, PO,), true);
+        assert_eq!(lr.liveins().collect::<Vec<_>>(), [(e40, i41)]);
 
-        assert_eq!(lr.extend_in_ebb(e20, i21, PO, forest), true);
-        assert_eq!(
-            lr.liveins(forest).collect::<Vec<_>>(),
-            [(e20, i21), (e40, i41)]
-        );
+        assert_eq!(lr.extend_in_ebb(e20, i21, PO,), true);
+        assert_eq!(lr.liveins().collect::<Vec<_>>(), [(e20, i21), (e40, i41)]);
 
         
-        assert_eq!(lr.extend_in_ebb(e30, i31, PO, forest), true);
-        assert_eq!(lr.liveins(forest).collect::<Vec<_>>(), [(e20, i41)]);
+        assert_eq!(lr.extend_in_ebb(e30, i31, PO,), true);
+        assert_eq!(lr.liveins().collect::<Vec<_>>(), [(e20, i41)]);
     }
 }

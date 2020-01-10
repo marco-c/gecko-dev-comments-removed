@@ -1,3 +1,4 @@
+use cranelift_codegen_shared::constants;
 use cranelift_entity::{entity_impl, EntityRef, PrimaryMap};
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -364,19 +365,21 @@ impl IsaRegsBuilder {
             }
         }
 
-        
-        
-        assert!(self.classes.len() <= 32, "Too many register classes");
+        assert!(
+            self.classes.len() <= constants::MAX_NUM_REG_CLASSES,
+            "Too many register classes"
+        );
 
-        
-        
-        
         let num_toplevel = self
             .classes
             .values()
             .filter(|x| x.toprc == x.index && self.banks.get(x.bank).unwrap().pressure_tracking)
             .count();
-        assert!(num_toplevel <= 4, "Too many top-level register classes");
+
+        assert!(
+            num_toplevel <= constants::MAX_TRACKED_TOP_RCS,
+            "Too many top-level register classes"
+        );
 
         IsaRegs::new(self.banks, self.classes)
     }

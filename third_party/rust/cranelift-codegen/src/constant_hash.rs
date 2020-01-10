@@ -9,6 +9,11 @@
 
 
 
+
+
+pub use cranelift_codegen_shared::constant_hash::*;
+
+
 pub trait Table<K: Copy + Eq> {
     
     fn len(&self) -> usize;
@@ -47,32 +52,11 @@ pub fn probe<K: Copy + Eq, T: Table<K> + ?Sized>(
 
         
         step += 1;
+
         
         
         
         debug_assert!(step < table.len());
         idx += step;
-    }
-}
-
-
-
-pub fn simple_hash(s: &str) -> usize {
-    let mut h: u32 = 5381;
-    for c in s.chars() {
-        h = (h ^ c as u32).wrapping_add(h.rotate_right(6));
-    }
-    h as usize
-}
-
-#[cfg(test)]
-mod tests {
-    use super::simple_hash;
-
-    #[test]
-    fn basic() {
-        
-        assert_eq!(simple_hash("Hello"), 0x2fa70c01);
-        assert_eq!(simple_hash("world"), 0x5b0c31d5);
     }
 }

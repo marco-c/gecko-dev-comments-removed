@@ -3,11 +3,41 @@
 
 
 
-use super::{HashMap, Occupied, Vacant};
+
+
+
 use crate::environ::{FuncEnvironment, GlobalVariable, WasmResult};
 use crate::translation_utils::{FuncIndex, GlobalIndex, MemoryIndex, SignatureIndex, TableIndex};
+use crate::{HashMap, Occupied, Vacant};
 use cranelift_codegen::ir::{self, Ebb, Inst, Value};
 use std::vec::Vec;
+
+
+
+#[derive(Debug)]
+pub enum ElseData {
+    
+    
+    
+    
+    NoElse {
+        
+        
+        
+        branch_inst: Inst,
+    },
+
+    
+    
+    
+    
+    
+    
+    WithElse {
+        
+        else_block: Ebb,
+    },
+}
 
 
 
@@ -23,14 +53,27 @@ use std::vec::Vec;
 pub enum ControlStackFrame {
     If {
         destination: Ebb,
-        branch_inst: Inst,
+        else_data: ElseData,
+        num_param_values: usize,
         num_return_values: usize,
         original_stack_size: usize,
         exit_is_branched_to: bool,
-        reachable_from_top: bool,
+        blocktype: wasmparser::TypeOrFuncType,
+        
+        head_is_reachable: bool,
+        
+        
+        
+        
+        
+        
+        consequent_ends_reachable: Option<bool>,
+        
+        
     },
     Block {
         destination: Ebb,
+        num_param_values: usize,
         num_return_values: usize,
         original_stack_size: usize,
         exit_is_branched_to: bool,
@@ -38,6 +81,7 @@ pub enum ControlStackFrame {
     Loop {
         destination: Ebb,
         header: Ebb,
+        num_param_values: usize,
         num_return_values: usize,
         original_stack_size: usize,
     },
@@ -56,6 +100,19 @@ impl ControlStackFrame {
             | ControlStackFrame::Loop {
                 num_return_values, ..
             } => num_return_values,
+        }
+    }
+    pub fn num_param_values(&self) -> usize {
+        match *self {
+            ControlStackFrame::If {
+                num_param_values, ..
+            }
+            | ControlStackFrame::Block {
+                num_param_values, ..
+            }
+            | ControlStackFrame::Loop {
+                num_param_values, ..
+            } => num_param_values,
         }
     }
     pub fn following_code(&self) -> Ebb {
@@ -129,7 +186,7 @@ impl ControlStackFrame {
 
 
 
-pub struct TranslationState {
+pub struct FuncTranslationState {
     
     
     pub(crate) stack: Vec<Value>,
@@ -160,7 +217,7 @@ pub struct TranslationState {
 }
 
 
-impl TranslationState {
+impl FuncTranslationState {
     
     #[inline]
     pub fn reachable(&self) -> bool {
@@ -168,7 +225,7 @@ impl TranslationState {
     }
 }
 
-impl TranslationState {
+impl FuncTranslationState {
     
     pub(crate) fn new() -> Self {
         Self {
@@ -202,6 +259,7 @@ impl TranslationState {
         self.clear();
         self.push_block(
             exit_block,
+            0,
             sig.returns
                 .iter()
                 .filter(|arg| arg.purpose == ir::ArgumentPurpose::Normal)
@@ -221,12 +279,17 @@ impl TranslationState {
 
     
     pub(crate) fn pop1(&mut self) -> Value {
-        self.stack.pop().unwrap()
+        self.stack
+            .pop()
+            .expect("attempted to pop a value from an empty stack")
     }
 
     
     pub(crate) fn peek1(&self) -> Value {
-        *self.stack.last().unwrap()
+        *self
+            .stack
+            .last()
+            .expect("attempted to peek at a value on an empty stack")
     }
 
     
@@ -248,31 +311,58 @@ impl TranslationState {
     
     
     pub(crate) fn popn(&mut self, n: usize) {
+        debug_assert!(
+            n <= self.stack.len(),
+            "popn({}) but stack only has {} values",
+            n,
+            self.stack.len()
+        );
         let new_len = self.stack.len() - n;
         self.stack.truncate(new_len);
     }
 
     
     pub(crate) fn peekn(&self, n: usize) -> &[Value] {
+        debug_assert!(
+            n <= self.stack.len(),
+            "peekn({}) but stack only has {} values",
+            n,
+            self.stack.len()
+        );
         &self.stack[self.stack.len() - n..]
     }
 
     
-    pub(crate) fn push_block(&mut self, following_code: Ebb, num_result_types: usize) {
+    pub(crate) fn push_block(
+        &mut self,
+        following_code: Ebb,
+        num_param_types: usize,
+        num_result_types: usize,
+    ) {
+        debug_assert!(num_param_types <= self.stack.len());
         self.control_stack.push(ControlStackFrame::Block {
             destination: following_code,
-            original_stack_size: self.stack.len(),
+            original_stack_size: self.stack.len() - num_param_types,
+            num_param_values: num_param_types,
             num_return_values: num_result_types,
             exit_is_branched_to: false,
         });
     }
 
     
-    pub(crate) fn push_loop(&mut self, header: Ebb, following_code: Ebb, num_result_types: usize) {
+    pub(crate) fn push_loop(
+        &mut self,
+        header: Ebb,
+        following_code: Ebb,
+        num_param_types: usize,
+        num_result_types: usize,
+    ) {
+        debug_assert!(num_param_types <= self.stack.len());
         self.control_stack.push(ControlStackFrame::Loop {
             header,
             destination: following_code,
-            original_stack_size: self.stack.len(),
+            original_stack_size: self.stack.len() - num_param_types,
+            num_param_values: num_param_types,
             num_return_values: num_result_types,
         });
     }
@@ -280,23 +370,41 @@ impl TranslationState {
     
     pub(crate) fn push_if(
         &mut self,
-        branch_inst: Inst,
-        following_code: Ebb,
+        destination: Ebb,
+        else_data: ElseData,
+        num_param_types: usize,
         num_result_types: usize,
+        blocktype: wasmparser::TypeOrFuncType,
     ) {
+        debug_assert!(num_param_types <= self.stack.len());
+
+        
+        
+        
+        
+        
+        self.stack.reserve(num_param_types);
+        for i in (self.stack.len() - num_param_types)..self.stack.len() {
+            let val = self.stack[i];
+            self.stack.push(val);
+        }
+
         self.control_stack.push(ControlStackFrame::If {
-            branch_inst,
-            destination: following_code,
-            original_stack_size: self.stack.len(),
+            destination,
+            else_data,
+            original_stack_size: self.stack.len() - num_param_types,
+            num_param_values: num_param_types,
             num_return_values: num_result_types,
             exit_is_branched_to: false,
-            reachable_from_top: self.reachable,
+            head_is_reachable: self.reachable,
+            consequent_ends_reachable: None,
+            blocktype,
         });
     }
 }
 
 
-impl TranslationState {
+impl FuncTranslationState {
     
     
     

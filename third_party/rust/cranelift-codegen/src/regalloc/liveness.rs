@@ -181,11 +181,11 @@ use crate::ir::dfg::ValueDef;
 use crate::ir::{Ebb, Function, Inst, Layout, ProgramPoint, Value};
 use crate::isa::{EncInfo, OperandConstraint, TargetIsa};
 use crate::regalloc::affinity::Affinity;
-use crate::regalloc::liverange::{LiveRange, LiveRangeForest};
+use crate::regalloc::liverange::LiveRange;
 use crate::timing;
+use alloc::vec::Vec;
 use core::mem;
 use core::ops::Index;
-use std::vec::Vec;
 
 
 type LiveRangeSet = SparseMap<Value, LiveRange>;
@@ -249,14 +249,13 @@ fn extend_to_use(
     worklist: &mut Vec<Ebb>,
     func: &Function,
     cfg: &ControlFlowGraph,
-    forest: &mut LiveRangeForest,
 ) {
     
     debug_assert!(worklist.is_empty());
 
     
     
-    if lr.extend_in_ebb(ebb, to, &func.layout, forest) {
+    if lr.extend_in_ebb(ebb, to, &func.layout) {
         worklist.push(ebb);
     }
 
@@ -277,7 +276,7 @@ fn extend_to_use(
             inst: branch,
         } in cfg.pred_iter(livein)
         {
-            if lr.extend_in_ebb(pred, branch, &func.layout, forest) {
+            if lr.extend_in_ebb(pred, branch, &func.layout) {
                 
                 worklist.push(pred);
             }
@@ -293,9 +292,6 @@ pub struct Liveness {
     ranges: LiveRangeSet,
 
     
-    forest: LiveRangeForest,
-
-    
     
     
     worklist: Vec<Ebb>,
@@ -309,14 +305,8 @@ impl Liveness {
     pub fn new() -> Self {
         Self {
             ranges: LiveRangeSet::new(),
-            forest: LiveRangeForest::new(),
             worklist: Vec::new(),
         }
-    }
-
-    
-    pub fn forest(&self) -> &LiveRangeForest {
-        &self.forest
     }
 
     
@@ -327,7 +317,6 @@ impl Liveness {
     
     pub fn clear(&mut self) {
         self.ranges.clear();
-        self.forest.clear();
         self.worklist.clear();
     }
 
@@ -376,7 +365,7 @@ impl Liveness {
     ) -> &mut Affinity {
         debug_assert_eq!(Some(ebb), layout.inst_ebb(user));
         let lr = self.ranges.get_mut(value).expect("Value has no live range");
-        let livein = lr.extend_in_ebb(ebb, user, layout, &mut self.forest);
+        let livein = lr.extend_in_ebb(ebb, user, layout);
         debug_assert!(!livein, "{} should already be live in {}", value, ebb);
         &mut lr.affinity
     }
@@ -431,15 +420,7 @@ impl Liveness {
                     let lr = get_or_create(&mut self.ranges, arg, isa, func, &encinfo);
 
                     
-                    extend_to_use(
-                        lr,
-                        ebb,
-                        inst,
-                        &mut self.worklist,
-                        func,
-                        cfg,
-                        &mut self.forest,
-                    );
+                    extend_to_use(lr, ebb, inst, &mut self.worklist, func, cfg);
 
                     
                     

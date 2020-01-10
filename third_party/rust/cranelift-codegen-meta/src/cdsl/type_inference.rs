@@ -5,7 +5,7 @@ use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
 
 #[derive(Debug, Hash, PartialEq, Eq)]
-pub enum Constraint {
+pub(crate) enum Constraint {
     
     
     

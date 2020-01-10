@@ -84,9 +84,9 @@ impl<F: Forest> NodePool<F> {
         F::Key: fmt::Display,
     {
         use crate::entity::EntitySet;
+        use alloc::vec::Vec;
         use core::borrow::Borrow;
         use core::cmp::Ordering;
-        use std::vec::Vec;
 
         
         

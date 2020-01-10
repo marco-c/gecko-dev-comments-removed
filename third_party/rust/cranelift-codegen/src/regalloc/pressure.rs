@@ -36,11 +36,12 @@
 
 #![allow(dead_code)]
 
-use crate::isa::registers::{RegClass, RegClassMask, RegInfo, MAX_TRACKED_TOPRCS};
+use crate::isa::registers::{RegClass, RegClassMask, RegInfo};
 use crate::regalloc::RegisterSet;
 use core::cmp::min;
 use core::fmt;
 use core::iter::ExactSizeIterator;
+use cranelift_codegen_shared::constants::MAX_TRACKED_TOP_RCS;
 
 
 
@@ -76,7 +77,7 @@ pub struct Pressure {
     aliased: RegClassMask,
 
     
-    toprc: [TopRC; MAX_TRACKED_TOPRCS],
+    toprc: [TopRC; MAX_TRACKED_TOP_RCS],
 }
 
 impl Pressure {
@@ -105,7 +106,7 @@ impl Pressure {
             } else {
                 
                 
-                for rc in &mut p.toprc[first..min(first + num, MAX_TRACKED_TOPRCS)] {
+                for rc in &mut p.toprc[first..min(first + num, MAX_TRACKED_TOP_RCS)] {
                     
                     rc.first_toprc = !0;
                     rc.limit = !0;
@@ -275,9 +276,9 @@ mod tests {
     use super::Pressure;
     use crate::isa::{RegClass, TargetIsa};
     use crate::regalloc::RegisterSet;
+    use alloc::boxed::Box;
     use core::borrow::Borrow;
     use core::str::FromStr;
-    use std::boxed::Box;
     use target_lexicon::triple;
 
     

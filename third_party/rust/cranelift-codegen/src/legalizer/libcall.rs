@@ -4,7 +4,7 @@ use crate::ir;
 use crate::ir::{get_libcall_funcref, InstBuilder};
 use crate::isa::{CallConv, TargetIsa};
 use crate::legalizer::boundary::legalize_libcall_signature;
-use std::vec::Vec;
+use alloc::vec::Vec;
 
 
 pub fn expand_as_libcall(inst: ir::Inst, func: &mut ir::Function, isa: &dyn TargetIsa) -> bool {

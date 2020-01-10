@@ -5,7 +5,10 @@
 
 
 
+
+
 use crate::Variable;
+use alloc::vec::Vec;
 use core::mem;
 use core::u32;
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
@@ -17,7 +20,6 @@ use cranelift_codegen::ir::{Ebb, Function, Inst, InstBuilder, InstructionData, T
 use cranelift_codegen::packed_option::PackedOption;
 use cranelift_codegen::packed_option::ReservedValue;
 use smallvec::SmallVec;
-use std::vec::Vec;
 
 
 
@@ -39,15 +41,19 @@ pub struct SSABuilder {
     
     
     variables: SecondaryMap<Variable, SecondaryMap<Block, PackedOption<Value>>>,
+
     
     
     blocks: PrimaryMap<Block, BlockData>,
+
     
     ebb_headers: SecondaryMap<Ebb, PackedOption<Block>>,
 
     
     calls: Vec<Call>,
+    
     results: Vec<Value>,
+
     
     side_effects: SideEffects,
 }
@@ -200,6 +206,7 @@ enum ZeroOneOrMore<T> {
     More,
 }
 
+
 #[derive(Debug)]
 enum UseVarCases {
     Unsealed(Value),
@@ -266,6 +273,7 @@ fn emit_zero(ty: Type, mut cur: FuncCursor) -> Value {
 
 
 
+
 impl SSABuilder {
     
     
@@ -289,6 +297,7 @@ impl SSABuilder {
         block: Block,
     ) -> (Value, SideEffects) {
         
+        
         if let Some(var_defs) = self.variables.get(var) {
             if let Some(val) = var_defs[block].expand() {
                 return (val, SideEffects::new());
@@ -296,19 +305,26 @@ impl SSABuilder {
         }
 
         
+        
         debug_assert!(self.calls.is_empty());
         debug_assert!(self.results.is_empty());
         debug_assert!(self.side_effects.is_empty());
+
+        
         self.use_var_nonlocal(func, var, ty, block);
-        (
-            self.run_state_machine(func, var, ty),
-            mem::replace(&mut self.side_effects, SideEffects::new()),
-        )
+
+        let value = self.run_state_machine(func, var, ty);
+        let side_effects = mem::replace(&mut self.side_effects, SideEffects::new());
+
+        (value, side_effects)
     }
 
     
     
+    
     fn use_var_nonlocal(&mut self, func: &mut Function, var: Variable, ty: Type, block: Block) {
+        
+        
         let case = match self.blocks[block] {
             BlockData::EbbHeader(ref mut data) => {
                 
@@ -318,6 +334,7 @@ impl SSABuilder {
                         
                         UseVarCases::SealedOnePredecessor(data.predecessors[0].block)
                     } else {
+                        
                         let val = func.dfg.append_ebb_param(data.ebb, ty);
                         UseVarCases::SealedMultiplePredecessors(val, data.ebb)
                     }
@@ -329,22 +346,26 @@ impl SSABuilder {
             }
             BlockData::EbbBody { predecessor: pred } => UseVarCases::SealedOnePredecessor(pred),
         };
+
+        
         match case {
-            
             UseVarCases::SealedOnePredecessor(pred) => {
+                
                 self.calls.push(Call::FinishSealedOnePredecessor(block));
                 self.calls.push(Call::UseVar(pred));
             }
-            
-            
             UseVarCases::Unsealed(val) => {
+                
                 self.def_var(var, val, block);
+
+                
                 self.results.push(val);
             }
             UseVarCases::SealedMultiplePredecessors(val, ebb) => {
                 
-                
                 self.def_var(var, val, block);
+
+                
                 self.begin_predecessors_lookup(val, ebb);
             }
         }
@@ -490,27 +511,44 @@ impl SSABuilder {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn predecessors_lookup(
         &mut self,
         func: &mut Function,
-        temp_arg_val: Value,
-        temp_arg_var: Variable,
+        sentinel: Value,
+        var: Variable,
         ty: Type,
-        dest_ebb: Ebb,
+        ebb: Ebb,
     ) -> Value {
         debug_assert!(self.calls.is_empty());
         debug_assert!(self.results.is_empty());
         
         
-        self.begin_predecessors_lookup(temp_arg_val, dest_ebb);
-        self.run_state_machine(func, temp_arg_var, ty)
+        self.begin_predecessors_lookup(sentinel, ebb);
+        self.run_state_machine(func, var, ty)
     }
 
     
     
-    fn begin_predecessors_lookup(&mut self, temp_arg_val: Value, dest_ebb: Ebb) {
+    
+    fn begin_predecessors_lookup(&mut self, sentinel: Value, dest_ebb: Ebb) {
         self.calls
-            .push(Call::FinishPredecessorsLookup(temp_arg_val, dest_ebb));
+            .push(Call::FinishPredecessorsLookup(sentinel, dest_ebb));
         
         let mut calls = mem::replace(&mut self.calls, Vec::new());
         calls.extend(
@@ -527,31 +565,36 @@ impl SSABuilder {
     fn finish_predecessors_lookup(
         &mut self,
         func: &mut Function,
-        temp_arg_val: Value,
-        temp_arg_var: Variable,
+        sentinel: Value,
+        var: Variable,
         dest_ebb: Ebb,
     ) {
         let mut pred_values: ZeroOneOrMore<Value> = ZeroOneOrMore::Zero;
 
         
-        for _ in 0..self.predecessors(dest_ebb).len() {
-            
-            
-            let pred_val = self.results.pop().unwrap();
+        let num_predecessors = self.predecessors(dest_ebb).len();
+        for &pred_val in self.results.iter().rev().take(num_predecessors) {
             match pred_values {
                 ZeroOneOrMore::Zero => {
-                    if pred_val != temp_arg_val {
+                    if pred_val != sentinel {
                         pred_values = ZeroOneOrMore::One(pred_val);
                     }
                 }
                 ZeroOneOrMore::One(old_val) => {
-                    if pred_val != temp_arg_val && pred_val != old_val {
+                    if pred_val != sentinel && pred_val != old_val {
                         pred_values = ZeroOneOrMore::More;
+                        break;
                     }
                 }
-                ZeroOneOrMore::More => {}
+                ZeroOneOrMore::More => {
+                    break;
+                }
             }
         }
+
+        
+        self.results.truncate(self.results.len() - num_predecessors);
+
         let result_val = match pred_values {
             ZeroOneOrMore::Zero => {
                 
@@ -562,11 +605,11 @@ impl SSABuilder {
                 }
                 self.side_effects.instructions_added_to_ebbs.push(dest_ebb);
                 let zero = emit_zero(
-                    func.dfg.value_type(temp_arg_val),
+                    func.dfg.value_type(sentinel),
                     FuncCursor::new(func).at_first_insertion_point(dest_ebb),
                 );
-                func.dfg.remove_ebb_param(temp_arg_val);
-                func.dfg.change_to_alias(temp_arg_val, zero);
+                func.dfg.remove_ebb_param(sentinel);
+                func.dfg.change_to_alias(sentinel, zero);
                 zero
             }
             ZeroOneOrMore::One(pred_val) => {
@@ -577,15 +620,15 @@ impl SSABuilder {
                 
                 
                 let mut resolved = func.dfg.resolve_aliases(pred_val);
-                if temp_arg_val == resolved {
+                if sentinel == resolved {
                     
                     resolved = emit_zero(
-                        func.dfg.value_type(temp_arg_val),
+                        func.dfg.value_type(sentinel),
                         FuncCursor::new(func).at_first_insertion_point(dest_ebb),
                     );
                 }
-                func.dfg.remove_ebb_param(temp_arg_val);
-                func.dfg.change_to_alias(temp_arg_val, resolved);
+                func.dfg.remove_ebb_param(sentinel);
+                func.dfg.change_to_alias(sentinel, resolved);
                 resolved
             }
             ZeroOneOrMore::More => {
@@ -600,20 +643,15 @@ impl SSABuilder {
                 } in &mut preds
                 {
                     
-                    let pred_val = self
-                        .variables
-                        .get(temp_arg_var)
-                        .unwrap()
-                        .get(*pred_block)
-                        .unwrap()
-                        .unwrap();
+                    let block_map = self.variables.get(var).unwrap();
+                    let pred_val = block_map.get(*pred_block).unwrap().unwrap();
                     let jump_arg = self.append_jump_argument(
                         func,
                         *last_inst,
                         *pred_block,
                         dest_ebb,
                         pred_val,
-                        temp_arg_var,
+                        var,
                     );
                     if let Some((middle_ebb, middle_block, middle_jump_inst)) = jump_arg {
                         *pred_block = middle_block;
@@ -625,7 +663,7 @@ impl SSABuilder {
                 debug_assert!(self.predecessors(dest_ebb).is_empty());
                 *self.predecessors_mut(dest_ebb) = preds;
 
-                temp_arg_val
+                sentinel
             }
         };
 
@@ -743,8 +781,8 @@ impl SSABuilder {
                 Call::FinishSealedOnePredecessor(block) => {
                     self.finish_sealed_one_predecessor(var, block);
                 }
-                Call::FinishPredecessorsLookup(temp_arg_val, dest_ebb) => {
-                    self.finish_predecessors_lookup(func, temp_arg_val, var, dest_ebb);
+                Call::FinishPredecessorsLookup(sentinel, dest_ebb) => {
+                    self.finish_predecessors_lookup(func, sentinel, var, dest_ebb);
                 }
             }
         }

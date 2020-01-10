@@ -17,12 +17,12 @@ use crate::regalloc::affinity::Affinity;
 use crate::regalloc::liveness::Liveness;
 use crate::regalloc::virtregs::{VirtReg, VirtRegs};
 use crate::timing;
+use alloc::vec::Vec;
 use core::cmp;
 use core::fmt;
 use core::iter;
 use core::slice;
 use log::debug;
-use std::vec::Vec;
 
 
 
@@ -196,12 +196,7 @@ impl<'a> Context<'a> {
             
             for i in 0..num_params {
                 let param = self.func.dfg.ebb_params(ebb)[i];
-                if self.liveness[param].reaches_use(
-                    pred_inst,
-                    pred_ebb,
-                    self.liveness.forest(),
-                    &self.func.layout,
-                ) {
+                if self.liveness[param].reaches_use(pred_inst, pred_ebb, &self.func.layout) {
                     self.isolate_param(ebb, param);
                 }
             }
@@ -255,7 +250,7 @@ impl<'a> Context<'a> {
                 );
 
                 
-                lr.is_livein(ebb, self.liveness.forest(), &self.func.layout)
+                lr.is_livein(ebb, &self.func.layout)
             };
 
             if interference {
@@ -435,12 +430,7 @@ impl<'a> Context<'a> {
 
             
             
-            if self.liveness[parent.value].overlaps_def(
-                node.def,
-                node.ebb,
-                self.liveness.forest(),
-                &self.func.layout,
-            ) {
+            if self.liveness[parent.value].overlaps_def(node.def, node.ebb, &self.func.layout) {
                 
                 debug!("-> interference: {} overlaps def of {}", parent, value);
                 return false;
@@ -626,12 +616,7 @@ impl<'a> Context<'a> {
                 
                 let inst = node.def.unwrap_inst();
                 if node.set_id != parent.set_id
-                    && self.liveness[parent.value].reaches_use(
-                        inst,
-                        node.ebb,
-                        self.liveness.forest(),
-                        &self.func.layout,
-                    )
+                    && self.liveness[parent.value].reaches_use(inst, node.ebb, &self.func.layout)
                 {
                     debug!(
                         " - interference: {} overlaps vcopy at {}:{}",
@@ -655,12 +640,7 @@ impl<'a> Context<'a> {
             
             debug_assert!(node.is_value() && parent.is_value());
             if node.set_id != parent.set_id
-                && self.liveness[parent.value].overlaps_def(
-                    node.def,
-                    node.ebb,
-                    self.liveness.forest(),
-                    &self.func.layout,
-                )
+                && self.liveness[parent.value].overlaps_def(node.def, node.ebb, &self.func.layout)
             {
                 
                 debug!(" - interference: {} overlaps def of {}", parent, node.value);

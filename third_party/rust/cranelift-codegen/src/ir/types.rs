@@ -2,6 +2,7 @@
 
 use core::default::Default;
 use core::fmt::{self, Debug, Display, Formatter};
+use cranelift_codegen_shared::constants;
 use target_lexicon::{PointerWidth, Triple};
 
 
@@ -26,12 +27,6 @@ pub struct Type(u8);
 pub const INVALID: Type = Type(0);
 
 
-const LANE_BASE: u8 = 0x70;
-
-
-const VECTOR_BASE: u8 = LANE_BASE + 16;
-
-
 
 
 include!(concat!(env!("OUT_DIR"), "/types.rs"));
@@ -41,10 +36,10 @@ impl Type {
     
     
     pub fn lane_type(self) -> Self {
-        if self.0 < VECTOR_BASE {
+        if self.0 < constants::VECTOR_BASE {
             self
         } else {
-            Self(LANE_BASE | (self.0 & 0x0f))
+            Self(constants::LANE_BASE | (self.0 & 0x0f))
         }
     }
 
@@ -170,21 +165,21 @@ impl Type {
 
     
     pub fn is_special(self) -> bool {
-        self.0 < LANE_BASE
+        self.0 < constants::LANE_BASE
     }
 
     
     
     
     pub fn is_lane(self) -> bool {
-        LANE_BASE <= self.0 && self.0 < VECTOR_BASE
+        constants::LANE_BASE <= self.0 && self.0 < constants::VECTOR_BASE
     }
 
     
     
     
     pub fn is_vector(self) -> bool {
-        self.0 >= VECTOR_BASE
+        self.0 >= constants::VECTOR_BASE
     }
 
     
@@ -234,7 +229,7 @@ impl Type {
     
     
     pub fn log2_lane_count(self) -> u8 {
-        self.0.saturating_sub(LANE_BASE) >> 4
+        self.0.saturating_sub(constants::LANE_BASE) >> 4
     }
 
     
@@ -363,7 +358,7 @@ impl Default for Type {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::string::ToString;
+    use alloc::string::ToString;
 
     #[test]
     fn basic_scalars() {

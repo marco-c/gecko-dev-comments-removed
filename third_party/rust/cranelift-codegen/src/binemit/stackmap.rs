@@ -1,10 +1,10 @@
 use crate::bitset::BitSet;
 use crate::ir;
 use crate::isa::TargetIsa;
-use std::vec::Vec;
+use alloc::vec::Vec;
 
 type Num = u32;
-const NUM_BITS: usize = std::mem::size_of::<Num>() * 8;
+const NUM_BITS: usize = core::mem::size_of::<Num>() * 8;
 
 
 #[derive(Clone, Debug)]
@@ -20,7 +20,7 @@ impl Stackmap {
         isa: &dyn TargetIsa,
     ) -> Self {
         let loc = &func.locations;
-        let mut live_ref_in_stack_slot = std::collections::HashSet::new();
+        let mut live_ref_in_stack_slot = crate::HashSet::new();
         
         
         
@@ -42,7 +42,7 @@ impl Stackmap {
         let frame_size = stack.frame_size.unwrap();
         let word_size = ir::stackslot::StackSize::from(isa.pointer_bytes());
         let num_words = (frame_size / word_size) as usize;
-        let mut vec = std::vec::Vec::with_capacity(num_words);
+        let mut vec = alloc::vec::Vec::with_capacity(num_words);
 
         vec.resize(num_words, false);
 

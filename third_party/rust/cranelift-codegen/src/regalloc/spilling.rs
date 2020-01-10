@@ -27,9 +27,9 @@ use crate::regalloc::pressure::Pressure;
 use crate::regalloc::virtregs::VirtRegs;
 use crate::timing;
 use crate::topo_order::TopoOrder;
+use alloc::vec::Vec;
 use core::fmt;
 use log::debug;
-use std::vec::Vec;
 
 
 fn toprc_containing_regunit(unit: RegUnit, reginfo: &RegInfo) -> RegClass {
@@ -324,13 +324,11 @@ impl<'a> Context<'a> {
                     ConstraintKind::FixedReg(_) => reguse.fixed = true,
                     ConstraintKind::Tied(_) => {
                         
-                        reguse.tied =
-                            !lr.killed_at(inst, ebb, self.liveness.forest(), &self.cur.func.layout);
+                        reguse.tied = !lr.killed_at(inst, ebb, &self.cur.func.layout);
                     }
                     ConstraintKind::FixedTied(_) => {
                         reguse.fixed = true;
-                        reguse.tied =
-                            !lr.killed_at(inst, ebb, self.liveness.forest(), &self.cur.func.layout);
+                        reguse.tied = !lr.killed_at(inst, ebb, &self.cur.func.layout);
                     }
                     ConstraintKind::Reg => {}
                 }

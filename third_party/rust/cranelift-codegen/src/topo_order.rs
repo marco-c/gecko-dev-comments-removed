@@ -3,7 +3,7 @@
 use crate::dominator_tree::DominatorTree;
 use crate::entity::EntitySet;
 use crate::ir::{Ebb, Layout};
-use std::vec::Vec;
+use alloc::vec::Vec;
 
 
 

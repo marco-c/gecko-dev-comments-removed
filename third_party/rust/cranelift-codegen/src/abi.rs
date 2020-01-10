@@ -4,8 +4,8 @@
 
 
 use crate::ir::{AbiParam, ArgumentExtension, ArgumentLoc, Type};
+use alloc::vec::Vec;
 use core::cmp::Ordering;
-use std::vec::Vec;
 
 
 

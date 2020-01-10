@@ -227,7 +227,7 @@ fn try_fold_redundant_jump(
     }
 
     
-    let arguments_vec: std::vec::Vec<_> = first_args
+    let arguments_vec: alloc::vec::Vec<_> = first_args
         .iter()
         .chain(second_params.iter())
         .map(|x| *x)

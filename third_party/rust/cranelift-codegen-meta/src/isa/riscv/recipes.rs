@@ -7,7 +7,7 @@ use crate::cdsl::regs::IsaRegs;
 use crate::shared::Definitions as SharedDefinitions;
 
 
-pub struct RecipeGroup<'formats> {
+pub(crate) struct RecipeGroup<'formats> {
     
     formats: &'formats FormatRegistry,
 

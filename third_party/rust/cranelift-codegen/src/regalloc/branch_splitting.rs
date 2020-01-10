@@ -4,7 +4,7 @@
 
 #![cfg(feature = "basic-blocks")]
 
-use std::vec::Vec;
+use alloc::vec::Vec;
 
 use crate::cursor::{Cursor, EncCursor};
 use crate::dominator_tree::DominatorTree;
@@ -22,7 +22,6 @@ pub fn run(
 ) {
     let mut ctx = Context {
         has_new_blocks: false,
-        has_fallthrough_return: None,
         cur: EncCursor::new(func, isa),
         domtree,
         topo,
@@ -34,12 +33,6 @@ pub fn run(
 struct Context<'a> {
     
     has_new_blocks: bool,
-
-    
-    
-    
-    
-    has_fallthrough_return: Option<bool>,
 
     
     cur: EncCursor<'a>,
@@ -89,7 +82,13 @@ impl<'a> Context<'a> {
         
         if self.should_split_edge(target) {
             
-            let new_ebb = self.make_empty_ebb();
+            let new_ebb = self.cur.func.dfg.make_ebb();
+
+            
+            
+            assert_ne!(Some(target), self.cur.layout().entry_block());
+            self.cur.layout_mut().insert_ebb(new_ebb, target);
+            self.has_new_blocks = true;
 
             
             
@@ -155,28 +154,6 @@ impl<'a> Context<'a> {
             
             self.cur.goto_inst(jump);
         }
-    }
-
-    
-    
-    fn make_empty_ebb(&mut self) -> Ebb {
-        let last_ebb = self.cur.layout().last_ebb().unwrap();
-        if self.has_fallthrough_return == None {
-            let last_inst = self.cur.layout().last_inst(last_ebb).unwrap();
-            self.has_fallthrough_return =
-                Some(self.cur.func.dfg[last_inst].opcode() == Opcode::FallthroughReturn);
-        }
-        let new_ebb = self.cur.func.dfg.make_ebb();
-        if self.has_fallthrough_return == Some(true) {
-            
-            
-            self.cur.layout_mut().insert_ebb(new_ebb, last_ebb);
-        } else {
-            
-            self.cur.layout_mut().insert_ebb_after(new_ebb, last_ebb);
-        }
-        self.has_new_blocks = true;
-        new_ebb
     }
 
     

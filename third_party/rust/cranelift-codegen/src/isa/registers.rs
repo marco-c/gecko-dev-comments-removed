@@ -15,22 +15,13 @@ pub type RegUnit = u16;
 
 
 
-
-
-
-pub type RegUnitMask = [u32; 3];
-
-
-
-
-
-
 pub type RegClassMask = u32;
 
 
 
 
-pub const MAX_TRACKED_TOPRCS: usize = 4;
+
+pub type RegUnitMask = [RegClassMask; 3];
 
 
 
@@ -337,4 +328,22 @@ impl<'a> fmt::Display for DisplayRegUnit<'a> {
             None => write!(f, "%INVALID{}", self.regunit),
         }
     }
+}
+
+#[test]
+fn assert_sizes() {
+    use cranelift_codegen_shared::constants;
+    use std::mem::size_of;
+
+    
+    
+    assert!(
+        (size_of::<RegClassMask>() * 8) <= constants::MAX_NUM_REG_CLASSES,
+        "need to bump MAX_NUM_REG_CLASSES or change RegClassMask type"
+    );
+
+    assert!(
+        constants::MAX_NUM_REG_CLASSES < (1 << (size_of::<RegClassIndex>() * 8)),
+        "need to change RegClassIndex's type to a wider type"
+    );
 }

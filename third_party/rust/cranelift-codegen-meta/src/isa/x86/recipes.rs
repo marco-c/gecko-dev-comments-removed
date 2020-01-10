@@ -164,7 +164,7 @@ fn replace_nonrex_constraints(
 
 
 #[derive(Clone)]
-pub struct Template<'builder> {
+pub(crate) struct Template<'builder> {
     
     formats: &'builder FormatRegistry,
 

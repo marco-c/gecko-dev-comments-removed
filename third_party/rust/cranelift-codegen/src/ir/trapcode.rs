@@ -103,7 +103,7 @@ impl FromStr for TrapCode {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::string::ToString;
+    use alloc::string::ToString;
 
     
     const CODES: [TrapCode; 11] = [

@@ -1,24 +1,9 @@
 
 
-
-
-
 use std::fmt;
 
 use crate::shared::types as shared_types;
-
-
-
-
-
-
-
-
-
-
-
-static LANE_BASE: u8 = 0x70;
-static REFERENCE_BASE: u8 = 0x7E;
+use cranelift_codegen_shared::constants;
 
 
 static _RUST_NAME_PREFIX: &'static str = "ir::types::";
@@ -208,7 +193,7 @@ impl LaneType {
 
     
     pub fn number(self) -> u8 {
-        LANE_BASE
+        constants::LANE_BASE
             + match self {
                 LaneType::BoolType(shared_types::Bool::B1) => 0,
                 LaneType::BoolType(shared_types::Bool::B8) => 1,
@@ -579,7 +564,7 @@ impl ReferenceType {
 
     
     pub fn number(self) -> u8 {
-        REFERENCE_BASE
+        constants::REFERENCE_BASE
             + match self {
                 ReferenceType(shared_types::Reference::R32) => 0,
                 ReferenceType(shared_types::Reference::R64) => 1,

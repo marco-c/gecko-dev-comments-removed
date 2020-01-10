@@ -11,7 +11,7 @@ use crate::ir::{
 use crate::isa::TargetIsa;
 use crate::loop_analysis::{Loop, LoopAnalysis};
 use crate::timing;
-use std::vec::Vec;
+use alloc::vec::Vec;
 
 
 
