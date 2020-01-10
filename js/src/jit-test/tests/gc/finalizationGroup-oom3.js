@@ -1,0 +1,4 @@
+
+let group = new FinalizationGroup(x => 0);
+group.register({}, 1, {});
+oomTest(() => group.unregister(token));

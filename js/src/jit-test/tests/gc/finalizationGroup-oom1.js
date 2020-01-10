@@ -1,0 +1,8 @@
+
+
+
+new FinalizationGroup(x => 0);
+
+oomTest(() => {
+    new FinalizationGroup(x => 0);
+});
