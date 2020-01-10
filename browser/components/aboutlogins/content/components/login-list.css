@@ -3,6 +3,7 @@
 
 
 :host {
+  --in-content-box-background-hover: var(--in-content-page-background);
   border-inline-end: 1px solid var(--in-content-box-border-color);
   background-color: var(--in-content-box-background);
   display: flex;
