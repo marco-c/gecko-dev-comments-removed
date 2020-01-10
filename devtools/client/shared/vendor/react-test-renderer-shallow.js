@@ -12,9 +12,6 @@
 	(global.ReactShallowRenderer = factory(global.React));
 }(this, (function (React) { 'use strict';
 
-var ReactInternals = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
-
-var _assign = ReactInternals.assign;
 
 
 
@@ -28,7 +25,7 @@ var _assign = ReactInternals.assign;
 
 function invariant(condition, format, a, b, c, d, e, f) {
   if (!condition) {
-    var error;
+    var error = void 0;
     if (format === undefined) {
       error = new Error('Minified exception occurred; use the non-minified dev environment ' + 'for the full error message and additional helpful warnings.');
     } else {
@@ -44,8 +41,6 @@ function invariant(condition, format, a, b, c, d, e, f) {
     throw error;
   }
 }
-
-var invariant_1 = invariant;
 
 
 
@@ -63,13 +58,17 @@ function reactProdInvariant(code) {
   }
   
   
-  var i = invariant_1;
+  var i = invariant;
   i(false,
   
   
   
   'Minified React error #' + code + '; visit %s ' + 'for the full message or use the non-minified dev environment ' + 'for full errors and additional helpful warnings. ', url);
 }
+
+var ReactInternals = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+
+var _assign = ReactInternals.assign;
 
 
 
@@ -83,22 +82,40 @@ var REACT_PROFILER_TYPE = hasSymbol ? Symbol.for('react.profiler') : 0xead2;
 var REACT_PROVIDER_TYPE = hasSymbol ? Symbol.for('react.provider') : 0xeacd;
 var REACT_CONTEXT_TYPE = hasSymbol ? Symbol.for('react.context') : 0xeace;
 var REACT_ASYNC_MODE_TYPE = hasSymbol ? Symbol.for('react.async_mode') : 0xeacf;
+var REACT_CONCURRENT_MODE_TYPE = hasSymbol ? Symbol.for('react.concurrent_mode') : 0xeacf;
 var REACT_FORWARD_REF_TYPE = hasSymbol ? Symbol.for('react.forward_ref') : 0xead0;
-var REACT_TIMEOUT_TYPE = hasSymbol ? Symbol.for('react.timeout') : 0xead1;
+var REACT_SUSPENSE_TYPE = hasSymbol ? Symbol.for('react.suspense') : 0xead1;
+var REACT_MEMO_TYPE = hasSymbol ? Symbol.for('react.memo') : 0xead3;
+var REACT_LAZY_TYPE = hasSymbol ? Symbol.for('react.lazy') : 0xead4;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function typeOf(object) {
   if (typeof object === 'object' && object !== null) {
     var $$typeof = object.$$typeof;
-
     switch ($$typeof) {
       case REACT_ELEMENT_TYPE:
         var type = object.type;
 
         switch (type) {
           case REACT_ASYNC_MODE_TYPE:
+          case REACT_CONCURRENT_MODE_TYPE:
           case REACT_FRAGMENT_TYPE:
           case REACT_PROFILER_TYPE:
           case REACT_STRICT_MODE_TYPE:
+          case REACT_SUSPENSE_TYPE:
             return type;
           default:
             var $$typeofType = type && type.$$typeof;
@@ -112,6 +129,8 @@ function typeOf(object) {
                 return $$typeof;
             }
         }
+      case REACT_LAZY_TYPE:
+      case REACT_MEMO_TYPE:
       case REACT_PORTAL_TYPE:
         return $$typeof;
     }
@@ -120,6 +139,13 @@ function typeOf(object) {
   return undefined;
 }
 
+
+
+
+
+
+
+var ForwardRef = REACT_FORWARD_REF_TYPE;
 
 
 
@@ -138,42 +164,87 @@ function isForwardRef(object) {
   return typeOf(object) === REACT_FORWARD_REF_TYPE;
 }
 
+
+function isMemo(object) {
+  return typeOf(object) === REACT_MEMO_TYPE;
+}
+
+var BEFORE_SLASH_RE = /^(.*)[\\\/]/;
+
 var describeComponentFrame = function (name, source, ownerName) {
-  return '\n    in ' + (name || 'Unknown') + (source ? ' (at ' + source.fileName.replace(/^.*[\\\/]/, '') + ':' + source.lineNumber + ')' : ownerName ? ' (created by ' + ownerName + ')' : '');
+  var sourceInfo = '';
+  if (source) {
+    var path = source.fileName;
+    var fileName = path.replace(BEFORE_SLASH_RE, '');
+    sourceInfo = ' (at ' + fileName + ':' + source.lineNumber + ')';
+  } else if (ownerName) {
+    sourceInfo = ' (created by ' + ownerName + ')';
+  }
+  return '\n    in ' + (name || 'Unknown') + sourceInfo;
 };
 
-function getComponentName(fiber) {
-  var type = fiber.type;
 
+
+
+
+
+
+
+var Resolved = 1;
+
+
+function refineResolvedLazyComponent(lazyComponent) {
+  return lazyComponent._status === Resolved ? lazyComponent._result : null;
+}
+
+function getWrappedName(outerType, innerType, wrapperName) {
+  var functionName = innerType.displayName || innerType.name || '';
+  return outerType.displayName || (functionName !== '' ? wrapperName + '(' + functionName + ')' : wrapperName);
+}
+
+function getComponentName(type) {
+  if (type == null) {
+    
+    return null;
+  }
   if (typeof type === 'function') {
-    return type.displayName || type.name;
+    return type.displayName || type.name || null;
   }
   if (typeof type === 'string') {
     return type;
   }
   switch (type) {
-    case REACT_ASYNC_MODE_TYPE:
-      return 'AsyncMode';
-    case REACT_CONTEXT_TYPE:
-      return 'Context.Consumer';
+    case REACT_CONCURRENT_MODE_TYPE:
+      return 'ConcurrentMode';
     case REACT_FRAGMENT_TYPE:
-      return 'ReactFragment';
+      return 'Fragment';
     case REACT_PORTAL_TYPE:
-      return 'ReactPortal';
+      return 'Portal';
     case REACT_PROFILER_TYPE:
-      return 'Profiler(' + fiber.pendingProps.id + ')';
-    case REACT_PROVIDER_TYPE:
-      return 'Context.Provider';
+      return 'Profiler';
     case REACT_STRICT_MODE_TYPE:
       return 'StrictMode';
-    case REACT_TIMEOUT_TYPE:
-      return 'Timeout';
+    case REACT_SUSPENSE_TYPE:
+      return 'Suspense';
   }
-  if (typeof type === 'object' && type !== null) {
+  if (typeof type === 'object') {
     switch (type.$$typeof) {
+      case REACT_CONTEXT_TYPE:
+        return 'Context.Consumer';
+      case REACT_PROVIDER_TYPE:
+        return 'Context.Provider';
       case REACT_FORWARD_REF_TYPE:
-        var functionName = type.render.displayName || type.render.name || '';
-        return functionName !== '' ? 'ForwardRef(' + functionName + ')' : 'ForwardRef';
+        return getWrappedName(type, type.render, 'ForwardRef');
+      case REACT_MEMO_TYPE:
+        return getComponentName(type.type);
+      case REACT_LAZY_TYPE:
+        {
+          var thenable = type;
+          var resolvedThenable = refineResolvedLazyComponent(thenable);
+          if (resolvedThenable) {
+            return getComponentName(resolvedThenable);
+          }
+        }
     }
   }
   return null;
@@ -183,48 +254,12 @@ function getComponentName(fiber) {
 
 
 
-
-
-
-
-
-
-var emptyObject = {};
-
-var emptyObject_1 = emptyObject;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+function is(x, y) {
+  return x === y && (x !== 0 || 1 / x === 1 / y) || x !== x && y !== y 
+  ;
+}
 
 var hasOwnProperty = Object.prototype.hasOwnProperty;
-
-
-
-
-
-function is(x, y) {
-  
-  if (x === y) {
-    
-    
-    
-    return x !== 0 || y !== 0 || 1 / x === 1 / y;
-  } else {
-    
-    return x !== x && y !== y;
-  }
-}
 
 
 
@@ -257,8 +292,6 @@ function shallowEqual(objA, objB) {
   return true;
 }
 
-var shallowEqual_1 = shallowEqual;
-
 
 
 
@@ -285,201 +318,43 @@ function checkPropTypes(typeSpecs, values, location, componentName, getStack) {
 
 var checkPropTypes_1 = checkPropTypes;
 
+var ReactSharedInternals = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+
+
+
+
+if (!ReactSharedInternals.hasOwnProperty('ReactCurrentDispatcher')) {
+  ReactSharedInternals.ReactCurrentDispatcher = {
+    current: null
+  };
+}
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var ReactShallowRenderer = function () {
-  function ReactShallowRenderer() {
-    _classCallCheck(this, ReactShallowRenderer);
+var ReactCurrentDispatcher = ReactSharedInternals.ReactCurrentDispatcher;
 
-    this._context = null;
-    this._element = null;
-    this._instance = null;
-    this._newState = null;
-    this._rendered = null;
-    this._rendering = false;
-    this._forcedUpdate = false;
-    this._updater = new Updater(this);
+
+var RE_RENDER_LIMIT = 25;
+
+var emptyObject = {};
+function areHookInputsEqual(nextDeps, prevDeps) {
+  if (prevDeps === null) {
+    return false;
   }
 
-  ReactShallowRenderer.prototype.getMountedInstance = function getMountedInstance() {
-    return this._instance;
-  };
-
-  ReactShallowRenderer.prototype.getRenderOutput = function getRenderOutput() {
-    return this._rendered;
-  };
-
-  ReactShallowRenderer.prototype.render = function render(element) {
-    var context = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : emptyObject_1;
-
-    !React.isValidElement(element) ? reactProdInvariant('12', typeof element === 'function' ? ' Instead of passing a component class, make sure to instantiate ' + 'it by passing it to React.createElement.' : '') : void 0;
+  
+  
+  if (nextDeps.length !== prevDeps.length) {
     
-    !(typeof element.type !== 'string') ? reactProdInvariant('13', element.type) : void 0;
-    !(isForwardRef(element) || typeof element.type === 'function') ? reactProdInvariant('249', Array.isArray(element.type) ? 'array' : element.type === null ? 'null' : typeof element.type) : void 0;
-
-    if (this._rendering) {
-      return;
+  }
+  for (var i = 0; i < prevDeps.length && i < nextDeps.length; i++) {
+    if (is(nextDeps[i], prevDeps[i])) {
+      continue;
     }
-
-    this._rendering = true;
-    this._element = element;
-    this._context = getMaskedContext(element.type.contextTypes, context);
-
-    if (this._instance) {
-      this._updateClassComponent(element, this._context);
-    } else {
-      if (isForwardRef(element)) {
-        this._rendered = element.type.render(element.props, element.ref);
-      } else if (shouldConstruct(element.type)) {
-        this._instance = new element.type(element.props, this._context, this._updater);
-
-        this._updateStateFromStaticLifecycle(element.props);
-
-        if (element.type.hasOwnProperty('contextTypes')) {
-          currentlyValidatingElement = element;
-
-          checkPropTypes_1(element.type.contextTypes, this._context, 'context', getName(element.type, this._instance), getStackAddendum);
-
-          currentlyValidatingElement = null;
-        }
-
-        this._mountClassComponent(element, this._context);
-      } else {
-        this._rendered = element.type(element.props, this._context);
-      }
-    }
-
-    this._rendering = false;
-    this._updater._invokeCallbacks();
-
-    return this.getRenderOutput();
-  };
-
-  ReactShallowRenderer.prototype.unmount = function unmount() {
-    if (this._instance) {
-      if (typeof this._instance.componentWillUnmount === 'function') {
-        this._instance.componentWillUnmount();
-      }
-    }
-
-    this._context = null;
-    this._element = null;
-    this._newState = null;
-    this._rendered = null;
-    this._instance = null;
-  };
-
-  ReactShallowRenderer.prototype._mountClassComponent = function _mountClassComponent(element, context) {
-    this._instance.context = context;
-    this._instance.props = element.props;
-    this._instance.state = this._instance.state || null;
-    this._instance.updater = this._updater;
-
-    if (typeof this._instance.UNSAFE_componentWillMount === 'function' || typeof this._instance.componentWillMount === 'function') {
-      var beforeState = this._newState;
-
-      
-      
-      if (typeof element.type.getDerivedStateFromProps !== 'function' && typeof this._instance.getSnapshotBeforeUpdate !== 'function') {
-        if (typeof this._instance.componentWillMount === 'function') {
-          this._instance.componentWillMount();
-        }
-        if (typeof this._instance.UNSAFE_componentWillMount === 'function') {
-          this._instance.UNSAFE_componentWillMount();
-        }
-      }
-
-      
-      if (beforeState !== this._newState) {
-        this._instance.state = this._newState || emptyObject_1;
-      }
-    }
-
-    this._rendered = this._instance.render();
-    
-    
-  };
-
-  ReactShallowRenderer.prototype._updateClassComponent = function _updateClassComponent(element, context) {
-    var props = element.props,
-        type = element.type;
-
-
-    var oldState = this._instance.state || emptyObject_1;
-    var oldProps = this._instance.props;
-
-    if (oldProps !== props) {
-      
-      
-      if (typeof element.type.getDerivedStateFromProps !== 'function' && typeof this._instance.getSnapshotBeforeUpdate !== 'function') {
-        if (typeof this._instance.componentWillReceiveProps === 'function') {
-          this._instance.componentWillReceiveProps(props, context);
-        }
-        if (typeof this._instance.UNSAFE_componentWillReceiveProps === 'function') {
-          this._instance.UNSAFE_componentWillReceiveProps(props, context);
-        }
-      }
-    }
-    this._updateStateFromStaticLifecycle(props);
-
-    
-    var state = this._newState || oldState;
-
-    var shouldUpdate = true;
-    if (this._forcedUpdate) {
-      shouldUpdate = true;
-      this._forcedUpdate = false;
-    } else if (typeof this._instance.shouldComponentUpdate === 'function') {
-      shouldUpdate = !!this._instance.shouldComponentUpdate(props, state, context);
-    } else if (type.prototype && type.prototype.isPureReactComponent) {
-      shouldUpdate = !shallowEqual_1(oldProps, props) || !shallowEqual_1(oldState, state);
-    }
-
-    if (shouldUpdate) {
-      
-      
-      if (typeof element.type.getDerivedStateFromProps !== 'function' && typeof this._instance.getSnapshotBeforeUpdate !== 'function') {
-        if (typeof this._instance.componentWillUpdate === 'function') {
-          this._instance.componentWillUpdate(props, state, context);
-        }
-        if (typeof this._instance.UNSAFE_componentWillUpdate === 'function') {
-          this._instance.UNSAFE_componentWillUpdate(props, state, context);
-        }
-      }
-    }
-
-    this._instance.context = context;
-    this._instance.props = props;
-    this._instance.state = state;
-
-    if (shouldUpdate) {
-      this._rendered = this._instance.render();
-    }
-    
-    
-  };
-
-  ReactShallowRenderer.prototype._updateStateFromStaticLifecycle = function _updateStateFromStaticLifecycle(props) {
-    var type = this._element.type;
-
-
-    if (typeof type.getDerivedStateFromProps === 'function') {
-      var oldState = this._newState || this._instance.state;
-      var partialState = type.getDerivedStateFromProps.call(null, props, oldState);
-
-      if (partialState != null) {
-        var newState = _assign({}, oldState, partialState);
-        this._instance.state = this._newState = newState;
-      }
-    }
-  };
-
-  return ReactShallowRenderer;
-}();
-
-ReactShallowRenderer.createRenderer = function () {
-  return new ReactShallowRenderer();
-};
+    return false;
+  }
+  return true;
+}
 
 var Updater = function () {
   function Updater(renderer) {
@@ -547,6 +422,477 @@ var Updater = function () {
   return Updater;
 }();
 
+function createHook() {
+  return {
+    memoizedState: null,
+    queue: null,
+    next: null
+  };
+}
+
+function basicStateReducer(state, action) {
+  return typeof action === 'function' ? action(state) : action;
+}
+
+var ReactShallowRenderer = function () {
+  function ReactShallowRenderer() {
+    _classCallCheck(this, ReactShallowRenderer);
+
+    this._reset();
+  }
+
+  ReactShallowRenderer.prototype._reset = function _reset() {
+    this._context = null;
+    this._element = null;
+    this._instance = null;
+    this._newState = null;
+    this._rendered = null;
+    this._rendering = false;
+    this._forcedUpdate = false;
+    this._updater = new Updater(this);
+    this._dispatcher = this._createDispatcher();
+    this._workInProgressHook = null;
+    this._firstWorkInProgressHook = null;
+    this._isReRender = false;
+    this._didScheduleRenderPhaseUpdate = false;
+    this._renderPhaseUpdates = null;
+    this._numberOfReRenders = 0;
+  };
+
+  ReactShallowRenderer.prototype._validateCurrentlyRenderingComponent = function _validateCurrentlyRenderingComponent() {
+    !(this._rendering && !this._instance) ? reactProdInvariant('321') : void 0;
+  };
+
+  ReactShallowRenderer.prototype._createDispatcher = function _createDispatcher() {
+    var _this = this;
+
+    var useReducer = function (reducer, initialArg, init) {
+      _this._validateCurrentlyRenderingComponent();
+      _this._createWorkInProgressHook();
+      var workInProgressHook = _this._workInProgressHook;
+
+      if (_this._isReRender) {
+        
+        var _queue = workInProgressHook.queue;
+        var _dispatch = _queue.dispatch;
+        if (_this._numberOfReRenders > 0) {
+          
+          if (_this._renderPhaseUpdates !== null) {
+            
+            var firstRenderPhaseUpdate = _this._renderPhaseUpdates.get(_queue);
+            if (firstRenderPhaseUpdate !== undefined) {
+              _this._renderPhaseUpdates.delete(_queue);
+              var _newState = workInProgressHook.memoizedState;
+              var _update = firstRenderPhaseUpdate;
+              do {
+                var _action = _update.action;
+                _newState = reducer(_newState, _action);
+                _update = _update.next;
+              } while (_update !== null);
+              workInProgressHook.memoizedState = _newState;
+              return [_newState, _dispatch];
+            }
+          }
+          return [workInProgressHook.memoizedState, _dispatch];
+        }
+        
+        var newState = workInProgressHook.memoizedState;
+        var update = _queue.first;
+        if (update !== null) {
+          do {
+            var _action2 = update.action;
+            newState = reducer(newState, _action2);
+            update = update.next;
+          } while (update !== null);
+          _queue.first = null;
+          workInProgressHook.memoizedState = newState;
+        }
+        return [newState, _dispatch];
+      } else {
+        var initialState = void 0;
+        if (reducer === basicStateReducer) {
+          
+          initialState = typeof initialArg === 'function' ? initialArg() : initialArg;
+        } else {
+          initialState = init !== undefined ? init(initialArg) : initialArg;
+        }
+        workInProgressHook.memoizedState = initialState;
+        var _queue2 = workInProgressHook.queue = {
+          first: null,
+          dispatch: null
+        };
+        var _dispatch2 = _queue2.dispatch = _this._dispatchAction.bind(_this, _queue2);
+        return [workInProgressHook.memoizedState, _dispatch2];
+      }
+    };
+
+    var useState = function (initialState) {
+      return useReducer(basicStateReducer,
+      
+      initialState);
+    };
+
+    var useMemo = function (nextCreate, deps) {
+      _this._validateCurrentlyRenderingComponent();
+      _this._createWorkInProgressHook();
+
+      var nextDeps = deps !== undefined ? deps : null;
+
+      if (_this._workInProgressHook !== null && _this._workInProgressHook.memoizedState !== null) {
+        var prevState = _this._workInProgressHook.memoizedState;
+        var prevDeps = prevState[1];
+        if (nextDeps !== null) {
+          if (areHookInputsEqual(nextDeps, prevDeps)) {
+            return prevState[0];
+          }
+        }
+      }
+
+      var nextValue = nextCreate();
+      _this._workInProgressHook.memoizedState = [nextValue, nextDeps];
+      return nextValue;
+    };
+
+    var useRef = function (initialValue) {
+      _this._validateCurrentlyRenderingComponent();
+      _this._createWorkInProgressHook();
+      var previousRef = _this._workInProgressHook.memoizedState;
+      if (previousRef === null) {
+        var ref = { current: initialValue };
+        _this._workInProgressHook.memoizedState = ref;
+        return ref;
+      } else {
+        return previousRef;
+      }
+    };
+
+    var readContext = function (context, observedBits) {
+      return context._currentValue;
+    };
+
+    var noOp = function () {
+      _this._validateCurrentlyRenderingComponent();
+    };
+
+    var identity = function (fn) {
+      return fn;
+    };
+
+    return {
+      readContext: readContext,
+      useCallback: identity,
+      useContext: function (context) {
+        _this._validateCurrentlyRenderingComponent();
+        return readContext(context);
+      },
+      useDebugValue: noOp,
+      useEffect: noOp,
+      useImperativeHandle: noOp,
+      useLayoutEffect: noOp,
+      useMemo: useMemo,
+      useReducer: useReducer,
+      useRef: useRef,
+      useState: useState
+    };
+  };
+
+  ReactShallowRenderer.prototype._dispatchAction = function _dispatchAction(queue, action) {
+    !(this._numberOfReRenders < RE_RENDER_LIMIT) ? reactProdInvariant('301') : void 0;
+
+    if (this._rendering) {
+      
+      
+      
+      this._didScheduleRenderPhaseUpdate = true;
+      var update = {
+        action: action,
+        next: null
+      };
+      var renderPhaseUpdates = this._renderPhaseUpdates;
+      if (renderPhaseUpdates === null) {
+        this._renderPhaseUpdates = renderPhaseUpdates = new Map();
+      }
+      var firstRenderPhaseUpdate = renderPhaseUpdates.get(queue);
+      if (firstRenderPhaseUpdate === undefined) {
+        renderPhaseUpdates.set(queue, update);
+      } else {
+        
+        var lastRenderPhaseUpdate = firstRenderPhaseUpdate;
+        while (lastRenderPhaseUpdate.next !== null) {
+          lastRenderPhaseUpdate = lastRenderPhaseUpdate.next;
+        }
+        lastRenderPhaseUpdate.next = update;
+      }
+    } else {
+      var _update2 = {
+        action: action,
+        next: null
+      };
+
+      
+      var last = queue.first;
+      if (last === null) {
+        queue.first = _update2;
+      } else {
+        while (last.next !== null) {
+          last = last.next;
+        }
+        last.next = _update2;
+      }
+
+      
+      this.render(this._element, this._context);
+    }
+  };
+
+  ReactShallowRenderer.prototype._createWorkInProgressHook = function _createWorkInProgressHook() {
+    if (this._workInProgressHook === null) {
+      
+      if (this._firstWorkInProgressHook === null) {
+        this._isReRender = false;
+        this._firstWorkInProgressHook = this._workInProgressHook = createHook();
+      } else {
+        
+        this._isReRender = true;
+        this._workInProgressHook = this._firstWorkInProgressHook;
+      }
+    } else {
+      if (this._workInProgressHook.next === null) {
+        this._isReRender = false;
+        
+        this._workInProgressHook = this._workInProgressHook.next = createHook();
+      } else {
+        
+        this._isReRender = true;
+        this._workInProgressHook = this._workInProgressHook.next;
+      }
+    }
+    return this._workInProgressHook;
+  };
+
+  ReactShallowRenderer.prototype._finishHooks = function _finishHooks(element, context) {
+    if (this._didScheduleRenderPhaseUpdate) {
+      
+      
+      
+      
+      this._didScheduleRenderPhaseUpdate = false;
+      this._numberOfReRenders += 1;
+
+      
+      this._workInProgressHook = null;
+      this._rendering = false;
+      this.render(element, context);
+    } else {
+      this._workInProgressHook = null;
+      this._renderPhaseUpdates = null;
+      this._numberOfReRenders = 0;
+    }
+  };
+
+  ReactShallowRenderer.prototype.getMountedInstance = function getMountedInstance() {
+    return this._instance;
+  };
+
+  ReactShallowRenderer.prototype.getRenderOutput = function getRenderOutput() {
+    return this._rendered;
+  };
+
+  ReactShallowRenderer.prototype.render = function render(element) {
+    var context = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : emptyObject;
+
+    !React.isValidElement(element) ? reactProdInvariant('12', typeof element === 'function' ? ' Instead of passing a component class, make sure to instantiate ' + 'it by passing it to React.createElement.' : '') : void 0;
+    element = element;
+    
+    !(typeof element.type !== 'string') ? reactProdInvariant('13', element.type) : void 0;
+    !(isForwardRef(element) || typeof element.type === 'function' || isMemo(element.type)) ? reactProdInvariant('249', Array.isArray(element.type) ? 'array' : element.type === null ? 'null' : typeof element.type) : void 0;
+
+    if (this._rendering) {
+      return;
+    }
+    if (this._element != null && this._element.type !== element.type) {
+      this._reset();
+    }
+
+    var elementType = isMemo(element.type) ? element.type.type : element.type;
+    var previousElement = this._element;
+
+    this._rendering = true;
+    this._element = element;
+    this._context = getMaskedContext(elementType.contextTypes, context);
+
+    
+    if (isMemo(element.type) && elementType.propTypes) {
+      currentlyValidatingElement = element;
+      checkPropTypes_1(elementType.propTypes, element.props, 'prop', getComponentName(elementType), getStackAddendum);
+    }
+
+    if (this._instance) {
+      this._updateClassComponent(elementType, element, this._context);
+    } else {
+      if (shouldConstruct(elementType)) {
+        this._instance = new elementType(element.props, this._context, this._updater);
+        if (typeof elementType.getDerivedStateFromProps === 'function') {
+          var partialState = elementType.getDerivedStateFromProps.call(null, element.props, this._instance.state);
+          if (partialState != null) {
+            this._instance.state = _assign({}, this._instance.state, partialState);
+          }
+        }
+
+        if (elementType.contextTypes) {
+          currentlyValidatingElement = element;
+          checkPropTypes_1(elementType.contextTypes, this._context, 'context', getName(elementType, this._instance), getStackAddendum);
+
+          currentlyValidatingElement = null;
+        }
+
+        this._mountClassComponent(elementType, element, this._context);
+      } else {
+        var shouldRender = true;
+        if (isMemo(element.type) && previousElement !== null) {
+          
+          var compare = element.type.compare || shallowEqual;
+          if (compare(previousElement.props, element.props)) {
+            shouldRender = false;
+          }
+        }
+        if (shouldRender) {
+          var prevDispatcher = ReactCurrentDispatcher.current;
+          ReactCurrentDispatcher.current = this._dispatcher;
+          try {
+            
+            
+            if (elementType.$$typeof === ForwardRef) {
+              !(typeof elementType.render === 'function') ? reactProdInvariant('322', typeof elementType.render) : void 0;
+              this._rendered = elementType.render.call(undefined, element.props, element.ref);
+            } else {
+              this._rendered = elementType(element.props, this._context);
+            }
+          } finally {
+            ReactCurrentDispatcher.current = prevDispatcher;
+          }
+          this._finishHooks(element, context);
+        }
+      }
+    }
+
+    this._rendering = false;
+    this._updater._invokeCallbacks();
+
+    return this.getRenderOutput();
+  };
+
+  ReactShallowRenderer.prototype.unmount = function unmount() {
+    if (this._instance) {
+      if (typeof this._instance.componentWillUnmount === 'function') {
+        this._instance.componentWillUnmount();
+      }
+    }
+    this._reset();
+  };
+
+  ReactShallowRenderer.prototype._mountClassComponent = function _mountClassComponent(elementType, element, context) {
+    this._instance.context = context;
+    this._instance.props = element.props;
+    this._instance.state = this._instance.state || null;
+    this._instance.updater = this._updater;
+
+    if (typeof this._instance.UNSAFE_componentWillMount === 'function' || typeof this._instance.componentWillMount === 'function') {
+      var beforeState = this._newState;
+
+      
+      
+      if (typeof elementType.getDerivedStateFromProps !== 'function' && typeof this._instance.getSnapshotBeforeUpdate !== 'function') {
+        if (typeof this._instance.componentWillMount === 'function') {
+          this._instance.componentWillMount();
+        }
+        if (typeof this._instance.UNSAFE_componentWillMount === 'function') {
+          this._instance.UNSAFE_componentWillMount();
+        }
+      }
+
+      
+      if (beforeState !== this._newState) {
+        this._instance.state = this._newState || emptyObject;
+      }
+    }
+
+    this._rendered = this._instance.render();
+    
+    
+  };
+
+  ReactShallowRenderer.prototype._updateClassComponent = function _updateClassComponent(elementType, element, context) {
+    var props = element.props;
+
+
+    var oldState = this._instance.state || emptyObject;
+    var oldProps = this._instance.props;
+
+    if (oldProps !== props) {
+      
+      
+      if (typeof elementType.getDerivedStateFromProps !== 'function' && typeof this._instance.getSnapshotBeforeUpdate !== 'function') {
+        if (typeof this._instance.componentWillReceiveProps === 'function') {
+          this._instance.componentWillReceiveProps(props, context);
+        }
+        if (typeof this._instance.UNSAFE_componentWillReceiveProps === 'function') {
+          this._instance.UNSAFE_componentWillReceiveProps(props, context);
+        }
+      }
+    }
+
+    
+    var state = this._newState || oldState;
+    if (typeof elementType.getDerivedStateFromProps === 'function') {
+      var partialState = elementType.getDerivedStateFromProps.call(null, props, state);
+      if (partialState != null) {
+        state = _assign({}, state, partialState);
+      }
+    }
+
+    var shouldUpdate = true;
+    if (this._forcedUpdate) {
+      shouldUpdate = true;
+      this._forcedUpdate = false;
+    } else if (typeof this._instance.shouldComponentUpdate === 'function') {
+      shouldUpdate = !!this._instance.shouldComponentUpdate(props, state, context);
+    } else if (elementType.prototype && elementType.prototype.isPureReactComponent) {
+      shouldUpdate = !shallowEqual(oldProps, props) || !shallowEqual(oldState, state);
+    }
+
+    if (shouldUpdate) {
+      
+      
+      if (typeof elementType.getDerivedStateFromProps !== 'function' && typeof this._instance.getSnapshotBeforeUpdate !== 'function') {
+        if (typeof this._instance.componentWillUpdate === 'function') {
+          this._instance.componentWillUpdate(props, state, context);
+        }
+        if (typeof this._instance.UNSAFE_componentWillUpdate === 'function') {
+          this._instance.UNSAFE_componentWillUpdate(props, state, context);
+        }
+      }
+    }
+
+    this._instance.context = context;
+    this._instance.props = props;
+    this._instance.state = state;
+    this._newState = null;
+
+    if (shouldUpdate) {
+      this._rendered = this._instance.render();
+    }
+    
+    
+  };
+
+  return ReactShallowRenderer;
+}();
+
+ReactShallowRenderer.createRenderer = function () {
+  return new ReactShallowRenderer();
+};
+
 var currentlyValidatingElement = null;
 
 function getDisplayName(element) {
@@ -557,7 +903,8 @@ function getDisplayName(element) {
   } else if (typeof element.type === 'string') {
     return element.type;
   } else {
-    return element.type.displayName || element.type.name || 'Unknown';
+    var elementType = isMemo(element.type) ? element.type.type : element.type;
+    return elementType.displayName || elementType.name || 'Unknown';
   }
 }
 
@@ -566,7 +913,7 @@ function getStackAddendum() {
   if (currentlyValidatingElement) {
     var name = getDisplayName(currentlyValidatingElement);
     var owner = currentlyValidatingElement._owner;
-    stack += describeComponentFrame(name, currentlyValidatingElement._source, owner && getComponentName(owner));
+    stack += describeComponentFrame(name, currentlyValidatingElement._source, owner && getComponentName(owner.type));
   }
   return stack;
 }
@@ -581,8 +928,8 @@ function shouldConstruct(Component) {
 }
 
 function getMaskedContext(contextTypes, unmaskedContext) {
-  if (!contextTypes) {
-    return emptyObject_1;
+  if (!contextTypes || !unmaskedContext) {
+    return emptyObject;
   }
   var context = {};
   for (var key in contextTypes) {
@@ -601,7 +948,7 @@ var ReactShallowRenderer$3 = ( ReactShallowRenderer$2 && ReactShallowRenderer ) 
 
 
 
-var shallow = ReactShallowRenderer$3.default ? ReactShallowRenderer$3.default : ReactShallowRenderer$3;
+var shallow = ReactShallowRenderer$3.default || ReactShallowRenderer$3;
 
 return shallow;
 
