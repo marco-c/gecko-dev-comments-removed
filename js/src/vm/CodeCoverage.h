@@ -26,8 +26,6 @@ namespace coverage {
 class LCovSource {
  public:
   LCovSource(LifoAlloc* alloc, JS::UniqueChars name);
-  LCovSource(LCovSource&& src);
-  ~LCovSource() = default;
 
   
   bool match(const char* name) const { return strcmp(name_.get(), name) == 0; }
@@ -96,7 +94,7 @@ class LCovRealm {
   LCovSource* lookupOrAdd(const char* name);
 
  private:
-  typedef mozilla::Vector<LCovSource, 16, LifoAllocPolicy<Fallible>>
+  typedef mozilla::Vector<LCovSource*, 16, LifoAllocPolicy<Fallible>>
       LCovSourceVector;
 
   
@@ -107,7 +105,8 @@ class LCovRealm {
   LSprinter outTN_;
 
   
-  LCovSourceVector* sources_;
+  
+  LCovSourceVector sources_;
 };
 
 class LCovRuntime {
