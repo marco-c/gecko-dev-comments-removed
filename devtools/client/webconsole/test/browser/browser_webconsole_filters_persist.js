@@ -32,10 +32,7 @@ add_task(async function() {
   });
 
   
-  
-  await waitFor(() =>
-    findMessage(hud, "Stylesheets without CSSOM changes reparsed")
-  );
+  await waitFor(() => findMessage(hud, "Expected color but found ‘blouge’"));
 
   info("Close and re-open the console");
   await closeTabAndToolbox();
