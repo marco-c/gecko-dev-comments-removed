@@ -201,6 +201,29 @@ async function testWithTouch(ui) {
       "any-hover: none should be matched"
     );
   });
+
+  
+  
+  
+  info("Test that changed touches captured on the content window are defined.");
+  await ContentTask.spawn(ui.getViewportBrowser(), {}, async function() {
+    const div = content.document.querySelector("div");
+
+    content.addEventListener(
+      "touchstart",
+      event => {
+        const changedTouch = event.changedTouches[0];
+        ok(changedTouch, "Changed touch is defined.");
+      },
+      true
+    );
+
+    await EventUtils.synthesizeMouseAtCenter(
+      div,
+      { type: "mousedown", isSynthesized: false },
+      content
+    );
+  });
 }
 
 async function testWithMetaViewportEnabled(ui) {
