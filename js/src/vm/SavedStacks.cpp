@@ -536,8 +536,8 @@ SavedFrame* SavedFrame::create(JSContext* cx) {
   
   SavedStacks::AutoReentrancyGuard guard(cx->realm()->savedStacks());
 
-  RootedObject proto(cx,
-                     GlobalObject::getOrCreateSavedFramePrototype(cx, global));
+  RootedNativeObject proto(
+      cx, GlobalObject::getOrCreateSavedFramePrototype(cx, global));
   if (!proto) {
     return nullptr;
   }

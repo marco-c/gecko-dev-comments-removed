@@ -198,7 +198,7 @@ function UnwrapDateTimeFormat(dtf) {
     if (IsObject(dtf) &&
         GuardToDateTimeFormat(dtf) === null &&
         !IsWrappedDateTimeFormat(dtf) &&
-        dtf instanceof GetBuiltinConstructor("DateTimeFormat"))
+        dtf instanceof GetDateTimeFormatConstructor())
     {
         dtf = dtf[intlFallbackSymbol()];
     }
@@ -448,7 +448,7 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
     
     
     if (dateTimeFormat !== thisValue && IsObject(thisValue) &&
-        thisValue instanceof GetBuiltinConstructor("DateTimeFormat"))
+        thisValue instanceof GetDateTimeFormatConstructor())
     {
         _DefineDataProperty(thisValue, intlFallbackSymbol(), dateTimeFormat,
                             ATTR_NONENUMERABLE | ATTR_NONCONFIGURABLE | ATTR_NONWRITABLE);

@@ -4496,7 +4496,7 @@ bool js::GetProperty(JSContext* cx, HandleValue v, HandlePropertyName name,
   
   
   if (v.isPrimitive() && !v.isNullOrUndefined()) {
-    JSObject* proto;
+    NativeObject* proto;
 
     switch (v.type()) {
       case ValueType::Double:
