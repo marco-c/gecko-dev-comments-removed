@@ -31,6 +31,12 @@ XPCOMUtils.defineLazyGetter(this, "PREFS_GUID", () =>
   CommonUtils.encodeBase64URL(Services.appinfo.ID)
 );
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "AddonManager",
+  "resource://gre/modules/AddonManager.jsm"
+);
+
 
 
 
@@ -200,6 +206,10 @@ PrefStore.prototype = {
   },
 
   _setAllPrefs(values) {
+    const selectedThemeIDPref = "extensions.activeThemeID";
+    let selectedThemeIDBefore = this._prefs.get(selectedThemeIDPref, null);
+    let selectedThemeIDAfter = selectedThemeIDBefore;
+
     
     
     let prefs = Object.keys(values).sort(
@@ -250,16 +260,54 @@ PrefStore.prototype = {
         continue;
       }
 
-      if (value == null) {
+      switch (pref) {
         
-        this._prefs.reset(pref);
-      } else {
-        try {
-          this._prefs.set(pref, value);
-        } catch (ex) {
-          this._log.trace(`Failed to set pref: ${pref}`, ex);
-        }
+        case selectedThemeIDPref:
+          selectedThemeIDAfter = value;
+          break;
+
+        
+        default:
+          if (value == null) {
+            
+            this._prefs.reset(pref);
+          } else {
+            try {
+              this._prefs.set(pref, value);
+            } catch (ex) {
+              this._log.trace(`Failed to set pref: ${pref}`, ex);
+            }
+          }
       }
+    }
+    
+    
+    
+    
+    if (selectedThemeIDBefore != selectedThemeIDAfter) {
+      this._maybeEnableBuiltinTheme(selectedThemeIDAfter).catch(e => {
+        this._log.error("Failed to maybe update the default theme", e);
+      });
+    }
+  },
+
+  async _maybeEnableBuiltinTheme(themeId) {
+    let addon = null;
+    try {
+      addon = await AddonManager.getAddonByID(themeId);
+    } catch (ex) {
+      this._log.trace(
+        `There's no addon with ID '${themeId} - it can't be a builtin theme`
+      );
+      return;
+    }
+    if (addon && addon.isBuiltin && addon.type == "theme") {
+      this._log.trace(`Enabling builtin theme '${themeId}'`);
+      await addon.enable();
+    } else {
+      this._log.trace(
+        `Have incoming theme ID of '${themeId}' but it's not a builtin theme`
+      );
     }
   },
 
