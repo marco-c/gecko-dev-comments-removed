@@ -3736,7 +3736,18 @@ double nsGlobalWindowOuter::GetDevicePixelRatioOuter(CallerType aCallerType) {
   }
 
   if (nsContentUtils::ResistFingerprinting(aCallerType)) {
-    return 1.0;
+    
+    
+    
+    
+    
+    
+    
+    nsAutoCString origin;
+    nsresult rv = this->GetPrincipal()->GetOrigin(origin);
+    if (NS_FAILED(rv) || origin != NS_LITERAL_CSTRING("resource://pdf.js")) {
+      return 1.0;
+    }
   }
 
   float overrideDPPX = presContext->GetOverrideDPPX();
