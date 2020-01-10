@@ -7,6 +7,7 @@
 #include "nsMathMLmmultiscriptsFrame.h"
 
 #include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_mathml.h"
 #include "nsPresContext.h"
 #include <algorithm>
 #include "gfxContext.h"
@@ -94,41 +95,43 @@ nsresult nsMathMLmmultiscriptsFrame::Place(DrawTarget* aDrawTarget,
   nscoord supScriptShift = 0;
   float fontSizeInflation = nsLayoutUtils::FontSizeInflationFor(this);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsAutoString value;
-  if (!mContent->IsMathMLElement(nsGkAtoms::msup_)) {
-    mContent->AsElement()->GetAttr(kNameSpaceID_None,
-                                   nsGkAtoms::subscriptshift_, value);
-    if (!value.IsEmpty()) {
+  if (!StaticPrefs::mathml_script_shift_attributes_disabled()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsAutoString value;
+    if (!mContent->IsMathMLElement(nsGkAtoms::msup_) &&
+        mContent->AsElement()->GetAttr(kNameSpaceID_None,
+                                       nsGkAtoms::subscriptshift_, value)) {
+      mContent->OwnerDoc()->WarnOnceAbout(
+          dom::Document::eMathML_DeprecatedScriptShiftAttributes);
       ParseNumericValue(value, &subScriptShift, 0, PresContext(),
                         mComputedStyle, fontSizeInflation);
     }
-  }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!mContent->IsMathMLElement(nsGkAtoms::msub_)) {
-    mContent->AsElement()->GetAttr(kNameSpaceID_None,
-                                   nsGkAtoms::superscriptshift_, value);
-    if (!value.IsEmpty()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!mContent->IsMathMLElement(nsGkAtoms::msub_) &&
+        mContent->AsElement()->GetAttr(kNameSpaceID_None,
+                                       nsGkAtoms::superscriptshift_, value)) {
+      mContent->OwnerDoc()->WarnOnceAbout(
+          dom::Document::eMathML_DeprecatedScriptShiftAttributes);
       ParseNumericValue(value, &supScriptShift, 0, PresContext(),
                         mComputedStyle, fontSizeInflation);
     }
