@@ -294,7 +294,7 @@ using HuffmanTableListLength =
 
 class HuffmanDictionary {
  public:
-  explicit HuffmanDictionary(JSContext* cx) : fields(cx), listLengths(cx) {}
+  explicit HuffmanDictionary(JSContext* cx);
 
   HuffmanTable& tableForField(NormalizedInterfaceAndField index);
   HuffmanTableListLength& tableForListLength(BinASTList list);
