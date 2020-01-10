@@ -362,41 +362,38 @@ DocumentChannelParent::FinishCrossProcessSwitch(
     nsIAsyncVerifyRedirectCallback* aCallback, nsresult aStatusCode) {
   
   
-  
-  MOZ_ASSERT(!mSuspendedChannel);
+  FinishReplacementChannelSetup(NS_SUCCEEDED(aStatusCode));
 
-  if (NS_SUCCEEDED(aStatusCode)) {
-    
-    
-    FinishReplacementChannelSetup(true);
-  }
-
-  aCallback->OnRedirectVerifyCallback(aStatusCode);
   return NS_OK;
 }
 
 nsresult DocumentChannelParent::TriggerCrossProcessSwitch(
     nsIHttpChannel* aChannel, uint64_t aIdentifier) {
-  CancelChildForProcessSwitch();
-
   RefPtr<nsHttpChannel> httpChannel = do_QueryObject(aChannel);
   MOZ_DIAGNOSTIC_ASSERT(httpChannel,
                         "Must be called with nsHttpChannel object");
-  RefPtr<nsHttpChannel::ContentProcessIdPromise> p =
+  RefPtr<ContentProcessIdPromise> p =
       httpChannel->TakeRedirectContentProcessIdPromise();
+  TriggerCrossProcessSwitch(p.forget(), aIdentifier, httpChannel);
+  return NS_OK;
+}
 
+void DocumentChannelParent::TriggerCrossProcessSwitch(
+    already_AddRefed<ContentProcessIdPromise> aPromise, uint64_t aIdentifier,
+    nsHttpChannel* aChannel) {
+  CancelChildForProcessSwitch();
+  RefPtr<DocumentChannelParent> self = this;
+  RefPtr<nsHttpChannel> channel = aChannel;
+  RefPtr<ContentProcessIdPromise> p = aPromise;
   p->Then(
       GetMainThreadSerialEventTarget(), __func__,
-      [self = RefPtr<DocumentChannelParent>(this),
-       channel = nsCOMPtr<nsIChannel>(aChannel), aIdentifier](uint64_t aCpId) {
+      [self, aIdentifier, channel](uint64_t aCpId) {
         self->TriggerRedirectToRealChannel(channel, Some(aCpId), aIdentifier);
       },
-      [httpChannel](nsresult aStatusCode) {
+      [self](nsresult aStatusCode) {
         MOZ_ASSERT(NS_FAILED(aStatusCode), "Status should be error");
-        httpChannel->OnRedirectVerifyCallback(aStatusCode);
+        self->RedirectToRealChannelFinished(aStatusCode);
       });
-
-  return NS_OK;
 }
 
 void DocumentChannelParent::TriggerRedirectToRealChannel(
@@ -606,6 +603,19 @@ DocumentChannelParent::OnStartRequest(nsIRequest* aRequest) {
   if (channel) {
     Unused << channel->GetApplyConversion(&mOldApplyConversion);
     channel->SetApplyConversion(false);
+
+    
+    
+    
+    
+    gHttpHandler->OnMayChangeProcess(channel);
+    RefPtr<ContentProcessIdPromise> promise =
+        channel->TakeRedirectContentProcessIdPromise();
+    if (promise) {
+      TriggerCrossProcessSwitch(
+          promise.forget(), channel->CrossProcessRedirectIdentifier(), channel);
+      return NS_OK;
+    }
   }
 
   TriggerRedirectToRealChannel(mChannel);
