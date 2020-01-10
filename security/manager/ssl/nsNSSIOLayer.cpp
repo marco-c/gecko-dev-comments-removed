@@ -196,6 +196,11 @@ void nsNSSSocketInfo::NoteTimeUntilReady() {
   
   Telemetry::AccumulateTimeDelta(Telemetry::SSL_TIME_UNTIL_READY,
                                  mSocketCreationTimestamp, TimeStamp::Now());
+  if (mIsDelegatedCredential) {
+    Telemetry::AccumulateTimeDelta(
+        Telemetry::TLS_DELEGATED_CREDENTIALS_TIME_UNTIL_READY_MS,
+        mSocketCreationTimestamp, TimeStamp::Now());
+  }
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
           ("[%p] nsNSSSocketInfo::NoteTimeUntilReady\n", mFd));
 }
