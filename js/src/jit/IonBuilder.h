@@ -39,8 +39,7 @@ enum class InlinableNative : uint16_t;
 
 
 BaselineFrameInspector* NewBaselineFrameInspector(TempAllocator* temp,
-                                                  BaselineFrame* frame,
-                                                  uint32_t frameSize);
+                                                  BaselineFrame* frame);
 
 using CallTargets = Vector<JSFunction*, 6, JitAllocPolicy>;
 

@@ -25,16 +25,13 @@ inline void EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm,
   masm.as_add(r0, r0, Imm8(BaselineFrame::FramePointerOffset));
   masm.ma_sub(BaselineStackReg, r0);
 
-#ifdef DEBUG
   
   {
     ScratchRegisterScope scratch(masm);
     masm.ma_sub(r0, Imm32(argSize), r1, scratch);
   }
-  Address frameSizeAddr(BaselineFrameReg,
-                        BaselineFrame::reverseOffsetOfDebugFrameSize());
-  masm.store32(r1, frameSizeAddr);
-#endif
+  masm.store32(
+      r1, Address(BaselineFrameReg, BaselineFrame::reverseOffsetOfFrameSize()));
 
   
   
@@ -77,11 +74,8 @@ inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch) {
   masm.as_add(scratch, scratch, Imm8(BaselineFrame::FramePointerOffset));
   masm.ma_sub(BaselineStackReg, scratch);
 
-#ifdef DEBUG
-  Address frameSizeAddr(BaselineFrameReg,
-                        BaselineFrame::reverseOffsetOfDebugFrameSize());
-  masm.store32(scratch, frameSizeAddr);
-#endif
+  masm.store32(scratch, Address(BaselineFrameReg,
+                                BaselineFrame::reverseOffsetOfFrameSize()));
 
   
   

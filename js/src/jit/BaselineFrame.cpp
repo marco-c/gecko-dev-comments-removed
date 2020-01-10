@@ -66,23 +66,20 @@ void BaselineFrame::trace(JSTracer* trc, const JSJitFrameIter& frameIterator) {
   frameIterator.baselineScriptAndPc(nullptr, &pc);
   size_t nlivefixed = script->calculateLiveFixed(pc);
 
-  uint32_t numValueSlots = frameIterator.baselineFrameNumValueSlots();
-
   
   
-  
-  if (numValueSlots == 0) {
+  if (numValueSlots() == 0) {
     return;
   }
 
-  MOZ_ASSERT(nfixed <= numValueSlots);
+  MOZ_ASSERT(nfixed <= numValueSlots());
 
   if (nfixed == nlivefixed) {
     
-    TraceLocals(this, trc, 0, numValueSlots);
+    TraceLocals(this, trc, 0, numValueSlots());
   } else {
     
-    TraceLocals(this, trc, nfixed, numValueSlots);
+    TraceLocals(this, trc, nfixed, numValueSlots());
 
     
     while (nfixed > nlivefixed) {
@@ -163,10 +160,10 @@ bool BaselineFrame::initForOsr(InterpreterFrame* fp, uint32_t numStackValues) {
   flags_ |= BaselineFrame::RUNNING_IN_INTERPRETER;
   setInterpreterFields(pc);
 
-#ifdef DEBUG
-  debugFrameSize_ = frameSizeForNumValueSlots(numStackValues);
-  MOZ_ASSERT(debugNumValueSlots() == numStackValues);
-#endif
+  frameSize_ = BaselineFrame::FramePointerOffset + BaselineFrame::Size() +
+               numStackValues * sizeof(Value);
+
+  MOZ_ASSERT(numValueSlots() == numStackValues);
 
   for (uint32_t i = 0; i < numStackValues; i++) {
     *valueSlot(i) = fp->slots()[i];
