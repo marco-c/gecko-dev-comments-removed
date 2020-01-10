@@ -4710,6 +4710,14 @@ VARCACHE_PREF(
 
 VARCACHE_PREF(
   Live,
+  "layout.css.cached-scrollbar-styles.enabled",
+  layout_css_cached_scrollbar_styles_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
   "layout.css.clip-path-path.enabled",
   layout_css_clip_path_path_enabled,
   bool, false

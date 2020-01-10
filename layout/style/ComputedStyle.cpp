@@ -394,4 +394,17 @@ void ComputedStyle::AddSizeOfIncludingThis(nsWindowSizes& aSizes,
   mCachedInheritingStyles.AddSizeOfIncludingThis(aSizes, aCVsSize);
 }
 
+#ifdef DEBUG
+bool ComputedStyle::EqualForCachedAnonymousContentStyle(
+    const ComputedStyle& aOther) const {
+  
+  
+  
+  
+  return Servo_ComputedValues_EqualForCachedAnonymousContentStyle(this,
+                                                                  &aOther);
+}
+
+#endif
+
 }  
