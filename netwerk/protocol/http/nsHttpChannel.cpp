@@ -1655,6 +1655,29 @@ nsresult EnsureMIMEOfScript(nsHttpChannel* aChannel, nsIURI* aURI,
     return NS_ERROR_CORRUPTED_CONTENT;
   }
 
+  if (internalType == nsIContentPolicy::TYPE_INTERNAL_WORKER ||
+      internalType == nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER) {
+    
+    
+    static bool sCachedBlockWorkerWithWrongMime = false;
+    static bool sIsInited = false;
+    if (!sIsInited) {
+      sIsInited = true;
+      Preferences::AddBoolVarCache(&sCachedBlockWorkerWithWrongMime,
+                                   "security.block_Worker_with_wrong_mime",
+                                   true);
+    }
+
+    
+    if (!sCachedBlockWorkerWithWrongMime) {
+      return NS_OK;
+    }
+
+    ReportMimeTypeMismatch(aChannel, "BlockWorkerWithWrongMimeType", aURI,
+                           contentType, Report::Error);
+    return NS_ERROR_CORRUPTED_CONTENT;
+  }
+
   
   if (internalType == nsIContentPolicy::TYPE_INTERNAL_MODULE ||
       internalType == nsIContentPolicy::TYPE_INTERNAL_MODULE_PRELOAD) {
