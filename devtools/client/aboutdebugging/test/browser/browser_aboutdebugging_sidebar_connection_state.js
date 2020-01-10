@@ -176,6 +176,13 @@ add_task(async function() {
 });
 
 async function setupPreferences() {
+  if (SpecialPowers.isDebugBuild) {
+    
+    
+    
+    return;
+  }
+
   await pushPref(
     "devtools.aboutdebugging.test-connection-timing-out-delay",
     CONNECTION_TIMING_OUT_DELAY
