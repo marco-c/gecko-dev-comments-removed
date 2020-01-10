@@ -94,6 +94,9 @@ function registryToObject(wrk, policies) {
 
 function readRegistryValue(wrk, value) {
   switch (wrk.getValueType(value)) {
+    case 7: 
+      return wrk.readStringValue(value).replace(/\0/g, "\n");
+    case 2: 
     case wrk.TYPE_STRING:
       return wrk.readStringValue(value);
     case wrk.TYPE_BINARY:
