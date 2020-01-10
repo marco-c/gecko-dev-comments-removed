@@ -60,10 +60,17 @@ export const pemToDER = pem => {
 
 export const normalizeToKebabCase = string => {
   let kebabString = string
+    
+    .replace(/\./g, "-")
+    
     .replace(/\s+/g, "-")
-    .replace(/\./g, "")
-    .replace(/\//g, "")
+    
+    .replace(/[^a-z0-9\-]/gi, "")
+    
     .replace(/--/g, "-")
+    
+    .replace(/^-/g, "")
+    .replace(/-$/g, "")
     .toLowerCase();
 
   return kebabString;
