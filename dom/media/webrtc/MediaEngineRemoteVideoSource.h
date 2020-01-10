@@ -241,7 +241,7 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
   nsString mDeviceName;
   nsCString mUniqueId;
   nsString mGroupId;
-  nsString mFacingMode;
+  Maybe<nsString> mFacingMode;
 
   
   
