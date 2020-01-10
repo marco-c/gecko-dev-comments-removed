@@ -1888,7 +1888,11 @@ impl<'a> SceneBuilder<'a> {
                         
                         
                         if parent_sc.pipeline_id != stacking_context.pipeline_id && self.iframe_depth == 1 {
-                            self.content_slice_count = stacking_context.init_picture_caching(&self.clip_scroll_tree);
+                            self.content_slice_count = stacking_context.init_picture_caching(
+                                &self.clip_scroll_tree,
+                                &self.clip_store,
+                                &self.interners,
+                            );
 
                             
                             self.picture_caching_initialized = true;
@@ -1916,7 +1920,11 @@ impl<'a> SceneBuilder<'a> {
             
             
             if !self.picture_caching_initialized {
-                self.content_slice_count = stacking_context.init_picture_caching(&self.clip_scroll_tree);
+                self.content_slice_count = stacking_context.init_picture_caching(
+                    &self.clip_scroll_tree,
+                    &self.clip_store,
+                    &self.interners,
+                );
                 self.picture_caching_initialized = true;
             }
 
@@ -3573,6 +3581,8 @@ impl FlattenedStackingContext {
     fn init_picture_caching(
         &mut self,
         clip_scroll_tree: &ClipScrollTree,
+        clip_store: &ClipStore,
+        interners: &Interners,
     ) -> usize {
         struct SliceInfo {
             cluster_index: usize,
@@ -3595,7 +3605,45 @@ impl FlattenedStackingContext {
             let create_new_slice =
                 cluster.flags.contains(ClusterFlags::SCROLLBAR_CONTAINER) ||
                 slices.last().map(|slice| {
-                    scroll_root != slice.scroll_root
+                    match (slice.scroll_root, scroll_root) {
+                        (ROOT_SPATIAL_NODE_INDEX, ROOT_SPATIAL_NODE_INDEX) => {
+                            
+                            false
+                        }
+                        (ROOT_SPATIAL_NODE_INDEX, _) => {
+                            
+                            true
+                        }
+                        (_, ROOT_SPATIAL_NODE_INDEX) => {
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            for prim_instance in &cluster.prim_instances {
+                                let mut current_clip_chain_id = prim_instance.clip_chain_id;
+
+                                while current_clip_chain_id != ClipChainId::NONE {
+                                    let clip_chain_node = &clip_store
+                                        .clip_chain_nodes[current_clip_chain_id.0 as usize];
+                                    let clip_node_data = &interners.clip[clip_chain_node.handle];
+                                    let clip_scroll_root = clip_scroll_tree.find_scroll_root(clip_node_data.spatial_node_index);
+                                    if clip_scroll_root != ROOT_SPATIAL_NODE_INDEX {
+                                        return false;
+                                    }
+                                    current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
+                                }
+                            }
+
+                            true
+                        }
+                        (curr_scroll_root, scroll_root) => {
+                            
+                            curr_scroll_root != scroll_root
+                        }
+                    }
                 }).unwrap_or(true);
 
             
