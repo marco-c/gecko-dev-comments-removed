@@ -23,6 +23,10 @@
 using PLDHashNumber = mozilla::HashNumber;
 static const uint32_t kPLDHashNumberBits = mozilla::kHashNumberBits;
 
+#ifdef DEBUG
+#define MOZ_HASH_TABLE_CHECKS_ENABLED 1
+#endif
+
 class PLDHashTable;
 struct PLDHashTableOps;
 
@@ -52,7 +56,7 @@ struct PLDHashEntryHdr {
   friend class PLDHashTable;
 };
 
-#ifdef DEBUG
+#ifdef MOZ_HASH_TABLE_CHECKS_ENABLED
 
 
 
@@ -378,7 +382,7 @@ class PLDHashTable {
   uint32_t mEntryCount;               
   uint32_t mRemovedCount;             
 
-#ifdef DEBUG
+#ifdef MOZ_HASH_TABLE_CHECKS_ENABLED
   mutable Checker mChecker;
 #endif
 
@@ -515,12 +519,14 @@ class PLDHashTable {
   
   size_t ShallowSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-#ifdef DEBUG
   
   
   
-  void MarkImmutable();
+  void MarkImmutable() {
+#ifdef MOZ_HASH_TABLE_CHECKS_ENABLED
+    mChecker.SetNonWritable();
 #endif
+  }
 
   
   

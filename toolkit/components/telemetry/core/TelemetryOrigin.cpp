@@ -319,10 +319,8 @@ void TelemetryOrigin::InitializeGlobalState() {
 
   
   
-#ifdef DEBUG
   gOriginToIndexMap->MarkImmutable();
   gHashToIndexMap->MarkImmutable();
-#endif  
 
   gInitDone = true;
 }
