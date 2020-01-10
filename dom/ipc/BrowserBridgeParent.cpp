@@ -40,9 +40,6 @@ nsresult BrowserBridgeParent::Init(const nsString& aPresentationURL,
 
   
   
-  
-  
-  
   MutableTabContext tabContext;
   tabContext.SetTabContext(false, Manager()->ChromeOuterWindowID(),
                            Manager()->ShowFocusRings(),

@@ -409,15 +409,6 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
 
-
-
-
-  bool OwnerIsIsolatedMozBrowserFrame();
-
-  
-
-
-
   void GetOwnerAppManifestURL(nsAString& aOut);
 
   

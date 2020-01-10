@@ -51,15 +51,6 @@ class TabContext {
 
 
 
-
-
-  bool IsIsolatedMozBrowserElement() const;
-
-  
-
-
-
-
   bool IsMozBrowser() const;
 
   bool IsJSPlugin() const;
