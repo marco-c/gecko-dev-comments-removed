@@ -670,31 +670,41 @@ class PanelList extends HTMLElement {
 
     
     let {
-      height,
-      width,
-      y,
-      left,
-      right,
+      anchorHeight,
+      anchorLeft,
+      anchorTop,
+      anchorWidth,
+      panelHeight,
+      panelWidth,
       winHeight,
+      winScrollY,
+      winScrollX,
       winWidth,
     } = await new Promise(resolve => {
+      this.style.left = 0;
+      this.style.top = 0;
+
       requestAnimationFrame(() =>
         setTimeout(() => {
+          let anchorNode =
+            (this.triggeringEvent && this.triggeringEvent.target) ||
+            this.parentNode;
           
-          let { y, left, right } = window.windowUtils.getBoundsWithoutFlushing(
-            this.parentNode
+          let anchorBounds = window.windowUtils.getBoundsWithoutFlushing(
+            anchorNode
           );
-          let { height, width } = window.windowUtils.getBoundsWithoutFlushing(
-            this
-          );
+          let panelBounds = window.windowUtils.getBoundsWithoutFlushing(this);
           resolve({
-            height,
-            width,
-            y,
-            left,
-            right,
+            anchorHeight: anchorBounds.height,
+            anchorLeft: anchorBounds.left,
+            anchorTop: anchorBounds.top,
+            anchorWidth: anchorBounds.width,
+            panelHeight: panelBounds.height,
+            panelWidth: panelBounds.width,
             winHeight: innerHeight,
             winWidth: innerWidth,
+            winScrollX: scrollX,
+            winScrollY: scrollY,
           });
         }, 0)
       );
@@ -702,21 +712,40 @@ class PanelList extends HTMLElement {
 
     
     let align;
+    let leftOffset;
+    
+    
+    let arrowOffset = 26;
+    let leftAlignX = anchorLeft + anchorWidth / 2 - arrowOffset;
+    let rightAlignX = anchorLeft + anchorWidth / 2 - panelWidth + arrowOffset;
     if (Services.locale.isAppLocaleRTL) {
       
-      align = right - width + 14 < 0 ? "left" : "right";
+      align = rightAlignX < 0 ? "left" : "right";
     } else {
       
-      align = left + width - 14 > winWidth ? "right" : "left";
+      align = leftAlignX + panelWidth > winWidth ? "right" : "left";
     }
+    leftOffset = align === "left" ? leftAlignX : rightAlignX;
 
-    
-    let valign = y + height + 30 > winHeight ? "top" : "bottom";
+    let bottomAlignY = anchorTop + anchorHeight;
+    let valign;
+    let topOffset;
+    if (bottomAlignY + panelHeight > winHeight) {
+      topOffset = anchorTop - panelHeight;
+      valign = "top";
+    } else {
+      topOffset = bottomAlignY;
+      valign = "bottom";
+    }
 
     
     this.setAttribute("align", align);
     this.setAttribute("valign", valign);
     this.parentNode.style.overflow = "";
+
+    this.style.left = `${leftOffset + winScrollX}px`;
+    this.style.top = `${topOffset + winScrollY}px`;
+
     this.removeAttribute("showing");
   }
 
@@ -1128,7 +1157,11 @@ class AddonPageHeader extends HTMLElement {
       this.heading = this.querySelector(".header-name");
       this.searchLabel = this.querySelector(".search-label");
       this.backButton = this.querySelector(".back-button");
-      this.pageOptionsMenu = this.querySelector("addon-page-options");
+      
+      
+      this.pageOptionsMenu = document.getElementById(
+        this.getAttribute("page-options-id")
+      );
     }
     this.addEventListener("click", this);
   }
