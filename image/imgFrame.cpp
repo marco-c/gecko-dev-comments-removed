@@ -358,7 +358,7 @@ nsresult imgFrame::InitForDecoderRecycle(const AnimationParams& aAnimParams) {
 nsresult imgFrame::InitWithDrawable(
     gfxDrawable* aDrawable, const nsIntSize& aSize, const SurfaceFormat aFormat,
     SamplingFilter aSamplingFilter, uint32_t aImageFlags,
-    gfx::BackendType aBackend, DrawTarget* aTargetDT) {
+    gfx::BackendType aBackend) {
   
   
   if (!SurfaceCache::IsLegalSize(aSize)) {
@@ -407,16 +407,12 @@ nsresult imgFrame::InitWithDrawable(
     
     MOZ_ASSERT(!mOptSurface, "Called imgFrame::InitWithDrawable() twice?");
 
-    if (aTargetDT && !gfxVars::UseWebRender()) {
-      target = aTargetDT->CreateSimilarDrawTarget(mImageSize, mFormat);
+    if (gfxPlatform::GetPlatform()->SupportsAzureContentForType(aBackend)) {
+      target = gfxPlatform::GetPlatform()->CreateDrawTargetForBackend(
+          aBackend, mImageSize, mFormat);
     } else {
-      if (gfxPlatform::GetPlatform()->SupportsAzureContentForType(aBackend)) {
-        target = gfxPlatform::GetPlatform()->CreateDrawTargetForBackend(
-            aBackend, mImageSize, mFormat);
-      } else {
-        target = gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
-            mImageSize, mFormat);
-      }
+      target = gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
+          mImageSize, mFormat);
     }
   }
 

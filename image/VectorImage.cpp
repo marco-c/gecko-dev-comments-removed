@@ -1102,8 +1102,7 @@ already_AddRefed<SourceSurface> VectorImage::CreateSurface(
   auto frame = MakeNotNull<RefPtr<imgFrame>>();
   nsresult rv = frame->InitWithDrawable(
       aSVGDrawable, aParams.size, SurfaceFormat::B8G8R8A8,
-      SamplingFilter::POINT, aParams.flags, backend,
-      aParams.context ? aParams.context->GetDrawTarget() : nullptr);
+      SamplingFilter::POINT, aParams.flags, backend);
 
   
   
