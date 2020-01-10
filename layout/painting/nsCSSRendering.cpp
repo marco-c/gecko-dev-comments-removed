@@ -3950,11 +3950,9 @@ static void GetTextIntercepts(const sk_sp<const SkTextBlob>& aBlob,
 
 static void SkipInk(nsIFrame* aFrame, DrawTarget& aDrawTarget,
                     const nsCSSRendering::PaintDecorationLineParams& aParams,
-                    const nsTArray<SkScalar>& aIntercepts, Rect& aRect) {
+                    const nsTArray<SkScalar>& aIntercepts, Float aPadding,
+                    Rect& aRect) {
   nsCSSRendering::PaintDecorationLineParams clipParams = aParams;
-  double padding = aParams.lineSize.height;
-  double oneCSSPixel = aFrame->PresContext()->CSSPixelsToDevPixels(1.0f);
-  padding = std::max(padding, oneCSSPixel);
   int length = aIntercepts.Length();
 
   SkScalar startIntercept = 0;
@@ -3975,15 +3973,15 @@ static void SkipInk(nsIFrame* aFrame, DrawTarget& aDrawTarget,
   for (int i = 0; i <= length; i += 2) {
     
     startIntercept = (i > 0) ? (dir * aIntercepts[i - 1]) + lineStart
-                             : lineStart - (dir * padding);
+                             : lineStart - (dir * aPadding);
     endIntercept = (i < length) ? (dir * aIntercepts[i]) + lineStart
-                                : lineEnd + (dir * padding);
+                                : lineEnd + (dir * aPadding);
 
     
     
     
     clipParams.lineSize.width =
-        (dir * (endIntercept - startIntercept)) - (2.0 * padding);
+        (dir * (endIntercept - startIntercept)) - (2.0 * aPadding);
 
     if (aParams.vertical) {
       aRect.height = clipParams.lineSize.width;
@@ -3993,19 +3991,18 @@ static void SkipInk(nsIFrame* aFrame, DrawTarget& aDrawTarget,
 
     
     
-    if (clipParams.lineSize.width <
-        std::max(0.5 * clipParams.lineSize.height, 1.0)) {
+    if (clipParams.lineSize.width < std::max(aPadding * 0.5, 1.0)) {
       continue;
     }
 
     
     
     if (aParams.vertical) {
-      clipParams.pt.y = aParams.sidewaysLeft ? endIntercept + padding
-                                             : startIntercept + padding;
+      clipParams.pt.y = aParams.sidewaysLeft ? endIntercept + aPadding
+                                             : startIntercept + aPadding;
       aRect.y = clipParams.pt.y;
     } else {
-      clipParams.pt.x = startIntercept + padding;
+      clipParams.pt.x = startIntercept + aPadding;
       aRect.x = clipParams.pt.x;
     }
 
@@ -4143,7 +4140,13 @@ void nsCSSRendering::PaintDecorationLine(
   bool needsSkipInk = intercepts.Length() > 0;
 
   if (needsSkipInk) {
-    SkipInk(aFrame, aDrawTarget, aParams, intercepts, rect);
+    
+    
+    
+    Float padding =
+        std::min(std::max(aParams.lineSize.height, oneCSSPixel),
+                 Float(textRun->GetFontGroup()->GetStyle()->size / 5.0));
+    SkipInk(aFrame, aDrawTarget, aParams, intercepts, padding, rect);
   } else {
     PaintDecorationLineInternal(aFrame, aDrawTarget, aParams, rect);
   }
