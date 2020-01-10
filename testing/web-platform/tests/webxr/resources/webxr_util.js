@@ -25,7 +25,7 @@ function xr_promise_test(name, func, properties) {
 
 
 function xr_session_promise_test(
-    name, func, fakeDeviceInit, sessionOptions, properties) {
+    name, func, fakeDeviceInit, sessionMode, properties) {
   let testDeviceController;
   let testSession;
 
@@ -48,7 +48,7 @@ function xr_session_promise_test(
               .then(() => new Promise((resolve, reject) => {
                       
                       XRTest.simulateUserActivation(() => {
-                        navigator.xr.requestSession(sessionOptions)
+                        navigator.xr.requestSession(sessionMode)
                             .then((session) => {
                               testSession = session;
                               
@@ -62,7 +62,7 @@ function xr_session_promise_test(
                             .catch((err) => {
                               reject(
                                   'Session with params ' +
-                                  JSON.stringify(sessionOptions) +
+                                  JSON.stringify(sessionMode) +
                                   ' was rejected on device ' +
                                   JSON.stringify(fakeDeviceInit) +
                                   ' with error: ' + err);
