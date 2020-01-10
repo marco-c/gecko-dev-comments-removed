@@ -1511,11 +1511,6 @@ pref("media.autoplay.default", 1);
   #endif
 #endif
 
-
-
-
-pref("browser.cache.frecency_experiment", 0);
-
 pref("browser.translation.detectLanguage", false);
 pref("browser.translation.neverForLanguages", "");
 
