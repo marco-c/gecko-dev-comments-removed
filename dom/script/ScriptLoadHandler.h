@@ -36,6 +36,17 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver {
 
 
 
+
+
+
+  template <typename Unit>
+  nsresult DecodeRawDataHelper(const uint8_t* aData, uint32_t aDataLength,
+                               bool aEndOfStream);
+
+  
+
+
+
   nsresult DecodeRawData(const uint8_t* aData, uint32_t aDataLength,
                          bool aEndOfStream);
 

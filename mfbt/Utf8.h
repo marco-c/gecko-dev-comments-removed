@@ -145,9 +145,11 @@ union Utf8Unit {
   
   
   
-  char mValue;
+  char mValue = '\0';
 
  public:
+  Utf8Unit() = default;
+
   explicit constexpr Utf8Unit(char aUnit) : mValue(aUnit) {}
 
   explicit constexpr Utf8Unit(unsigned char aUnit)
