@@ -1,9 +1,12 @@
+
+
+
+
+
 #include "gtest/gtest.h"
 #include "nsUrlClassifierDBService.h"
 
-using namespace mozilla::safebrowsing;
-
-void TestResponseCode(const char* table, nsresult result) {
+static void TestResponseCode(const char* table, nsresult result) {
   nsCString tableName(table);
   ASSERT_EQ(TablesToResponse(tableName), result);
 }
