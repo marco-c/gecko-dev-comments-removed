@@ -1,0 +1,18 @@
+
+
+
+
+
+
+#ifndef mozilla_WinTokenUtils_h
+#define mozilla_WinTokenUtils_h
+
+#include "mozilla/LauncherResult.h"
+
+namespace mozilla {
+
+LauncherResult<bool> IsAdminWithoutUac();
+
+}  
+
+#endif  
