@@ -49,12 +49,6 @@
 
 #define RECENT_EVENT_THRESHOLD PRTime((int64_t)15 * 60 * PR_USEC_PER_SEC)
 
-#ifdef MOZ_XUL
-
-#  define TOPIC_AUTOCOMPLETE_FEEDBACK_UPDATED \
-    "places-autocomplete-feedback-updated"
-#endif
-
 
 
 #define MOBILE_BOOKMARKS_PREF "browser.bookmarks.showMobileBookmarks"
@@ -507,11 +501,6 @@ class nsNavHistory final : public nsSupportsWeakReference,
 
   bool CheckIsRecentEvent(RecentEventHash* hashTable, const nsACString& url);
   void ExpireNonrecentEvents(RecentEventHash* hashTable);
-
-#ifdef MOZ_XUL
-  nsresult AutoCompleteFeedback(int32_t aIndex,
-                                nsIAutoCompleteController* aController);
-#endif
 
   
   
