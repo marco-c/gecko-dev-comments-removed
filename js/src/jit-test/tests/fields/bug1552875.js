@@ -1,5 +1,3 @@
-
-
 class C {
     x = function(){};
     0 = function(){};
