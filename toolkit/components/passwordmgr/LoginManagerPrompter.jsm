@@ -32,6 +32,13 @@ const BRAND_BUNDLE = "chrome://branding/locale/brand.properties";
 
 
 
+
+
+const VISIBILITY_TOGGLE_MAX_PW_AGE_MS = 2 * 60 * 1000; 
+
+
+
+
 const PROMPT_DISPLAYED = 0;
 
 const PROMPT_ADD_OR_UPDATE = 1;
@@ -1274,15 +1281,18 @@ LoginManagerPrompter.prototype = {
                   toggleBtn.addEventListener("command", onVisibilityToggle);
                   toggleBtn.setAttribute("label", togglePasswordLabel);
                   toggleBtn.setAttribute("accesskey", togglePasswordAccessKey);
-                  toggleBtn.setAttribute(
-                    "hidden",
-                    LoginHelper.isMasterPasswordSet()
-                  );
-                }
-                if (this.wasDismissed) {
-                  chromeDoc
-                    .getElementById("password-notification-visibilityToggle")
-                    .setAttribute("hidden", true);
+                  let hideToggle =
+                    LoginHelper.isMasterPasswordSet() ||
+                    
+                    (this.timeShown && this.wasDismissed) ||
+                    
+                    
+                    
+                    
+                    (messageStringID == "updateLoginMsgAddUsername" &&
+                      login.timePasswordChanged <
+                        Date.now() - VISIBILITY_TOGGLE_MAX_PW_AGE_MS);
+                  toggleBtn.setAttribute("hidden", hideToggle);
                 }
                 break;
               case "shown": {
