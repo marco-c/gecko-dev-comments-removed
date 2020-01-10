@@ -408,15 +408,11 @@ var SelectParentHelper = {
   ) {
     let element = menulist.menupopup;
 
-    let ariaOwns = "";
     for (let option of options) {
       let isOptGroup = option.tagName == "OPTGROUP";
       let item = element.ownerDocument.createXULElement(
         isOptGroup ? "menucaption" : "menuitem"
       );
-      if (isOptGroup) {
-        item.setAttribute("role", "group");
-      }
       let style = uniqueOptionStyles[option.styleIndex];
 
       item.setAttribute("label", option.textContent);
@@ -491,16 +487,6 @@ var SelectParentHelper = {
         item.removeAttribute("customoptionstyling");
       }
 
-      if (parentElement) {
-        
-        
-        
-        
-        item.id = "ContentSelectDropdownOption" + nthChildIndex;
-        item.setAttribute("aria-level", "2");
-        ariaOwns += item.id + " ";
-      }
-
       element.appendChild(item);
       nthChildIndex++;
 
@@ -548,10 +534,6 @@ var SelectParentHelper = {
           item.classList.add("contentSelectDropdown-ingroup");
         }
       }
-    }
-
-    if (parentElement && ariaOwns) {
-      parentElement.setAttribute("aria-owns", ariaOwns);
     }
 
     
