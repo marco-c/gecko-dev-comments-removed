@@ -53,6 +53,11 @@ void ResumeBeforeWaitingForIPDLReply();
 
 
 
+
+void MaybeHandlePendingSyncMessage();
+
+
+
 void InitializeForwarding();
 
 

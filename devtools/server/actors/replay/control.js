@@ -368,13 +368,7 @@ function timeSinceCheckpoint(id) {
 let gLastFlushCheckpoint = InvalidCheckpointId;
 
 
-let gLastSavedCheckpoint = FirstCheckpointId;
-
-
 const FlushMs = 0.5 * 1000;
-
-
-const SavedCheckpointMs = 0.25 * 1000;
 
 function addSavedCheckpoint(checkpoint) {
   if (getCheckpointInfo(checkpoint).owner) {
@@ -384,25 +378,14 @@ function addSavedCheckpoint(checkpoint) {
   const owner = pickReplayingChild();
   getCheckpointInfo(checkpoint).owner = owner;
   owner.addSavedCheckpoint(checkpoint);
-  gLastSavedCheckpoint = checkpoint;
 }
 
 function addCheckpoint(checkpoint, duration) {
   assert(!getCheckpointInfo(checkpoint).duration);
   getCheckpointInfo(checkpoint).duration = duration;
-
-  
-  
-  if (
-    timeSinceCheckpoint(gLastSavedCheckpoint) >= SavedCheckpointMs &&
-    gReplayingChildren.length > 0
-  ) {
-    addSavedCheckpoint(checkpoint + 1);
-  }
 }
 
 function ownerChild(checkpoint) {
-  assert(checkpoint <= gLastSavedCheckpoint);
   while (!getCheckpointInfo(checkpoint).owner) {
     checkpoint--;
   }
@@ -1006,8 +989,8 @@ function handleResumeManifestResponse({
     consoleMessages.forEach(msg => gDebugger.onConsoleMessage(msg));
   }
 
-  if (gDebugger && gDebugger.onNewScript) {
-    scripts.forEach(script => gDebugger.onNewScript(script));
+  if (gDebugger) {
+    scripts.forEach(script => gDebugger._onNewScript(script));
   }
 }
 
