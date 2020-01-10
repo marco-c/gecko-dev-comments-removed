@@ -432,12 +432,6 @@ XPCOMUtils.defineLazyGetter(UrlbarUtils.ICON, "DEFAULT", () => {
   return PlacesUtils.favicons.defaultFavicon.spec;
 });
 
-XPCOMUtils.defineLazyGetter(UrlbarUtils, "strings", () => {
-  return Services.strings.createBundle(
-    "chrome://global/locale/autocomplete.properties"
-  );
-});
-
 
 
 
