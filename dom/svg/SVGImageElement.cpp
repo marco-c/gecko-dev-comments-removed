@@ -270,9 +270,9 @@ already_AddRefed<Path> SVGImageElement::BuildPath(PathBuilder* aBuilder) {
   
 
   float x, y, width, height;
-  MOZ_ASSERT(GetPrimaryFrame());
-  SVGGeometryProperty::ResolveAll<SVGT::X, SVGT::Y, SVGT::Width, SVGT::Height>(
-      this, &x, &y, &width, &height);
+  SVGGeometryProperty::ResolveAllAllowFallback<SVGT::X, SVGT::Y, SVGT::Width,
+                                               SVGT::Height>(this, &x, &y,
+                                                             &width, &height);
 
   if (width <= 0 || height <= 0) {
     return nullptr;
