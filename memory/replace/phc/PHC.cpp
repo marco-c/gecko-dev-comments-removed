@@ -533,10 +533,8 @@ class GMut {
     
     
     
-    
     Maybe<arena_id_t> mArenaId;
 
-    
     
     
     
@@ -545,10 +543,8 @@ class GMut {
     
     
     
-    
     Maybe<StackTrace> mAllocStack;
 
-    
     
     
     

@@ -63,17 +63,27 @@ class AddrInfo {
     GuardPage = 4,
   };
 
+  
   Kind mKind;
 
   
+  
+  
   const void* mBaseAddr;
 
+  
+  
   
   size_t mUsableSize;
 
   
   
+  
   mozilla::Maybe<StackTrace> mAllocStack;
+
+  
+  
+  
   mozilla::Maybe<StackTrace> mFreeStack;
 
   
