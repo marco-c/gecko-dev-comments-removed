@@ -811,6 +811,20 @@ AsWritableBytes(Span<ElementType, Extent> s) {
 
 
 
+inline Span<const char> AsChars(Span<const uint8_t> s) {
+  return {reinterpret_cast<const char*>(s.data()), s.size()};
+}
+
+
+
+
+inline Span<char> AsWritableChars(Span<uint8_t> s) {
+  return {reinterpret_cast<char*>(s.data()), s.size()};
+}
+
+
+
+
 
 
 
