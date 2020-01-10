@@ -14,6 +14,8 @@
 #include "mozilla/mozalloc.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Services.h"
+#include "mozilla/StaticLocalPtr.h"
+#include "mozilla/SystemGroup.h"
 #include "mozilla/Unused.h"
 #include "nsCOMPtr.h"
 #include "nsIObserverService.h"
@@ -106,15 +108,6 @@ class UntrustedModulesManager {
   
   void OnNewEvents(
       const Vector<glue::ModuleLoadEvent, 0, InfallibleAllocPolicy>& aEvents) {
-    
-    
-    RefPtr<DllServices> dllSvcRef(DllServices::Get());
-    if (!dllSvcRef) {
-      return;
-    }
-    
-    Unused << dllSvcRef;
-
     
     
     const char* thisThreadName = PR_GetThreadName(PR_GetCurrentThread());
@@ -390,25 +383,29 @@ const char* DllServices::kTopicDllLoadedMainThread = "dll-loaded-main-thread";
 const char* DllServices::kTopicDllLoadedNonMainThread =
     "dll-loaded-non-main-thread";
 
-
-
-
-static Atomic<bool> sDllServicesHasBeenSet;
-static StaticRefPtr<DllServices> sInstance;
-
 DllServices* DllServices::Get() {
-  if (sDllServicesHasBeenSet) {
-    return sInstance;
-  }
+  static StaticLocalRefPtr<DllServices> sInstance(
+      []() -> already_AddRefed<DllServices> {
+        RefPtr<DllServices> dllSvc(new DllServices());
+        dllSvc->EnableFull();
 
-  sInstance = new DllServices();
-  sDllServicesHasBeenSet = true;
+        auto setClearOnShutdown = [ptr = &sInstance]() -> void {
+          ClearOnShutdown(ptr);
+        };
 
-  
-  
-  
-  sInstance->EnableFull();
-  ClearOnShutdown(&sInstance);
+        if (NS_IsMainThread()) {
+          setClearOnShutdown();
+          return dllSvc.forget();
+        }
+
+        SystemGroup::Dispatch(
+            TaskCategory::Other,
+            NS_NewRunnableFunction("mozilla::DllServices::Get",
+                                   std::move(setClearOnShutdown)));
+
+        return dllSvc.forget();
+      }());
+
   return sInstance;
 }
 
