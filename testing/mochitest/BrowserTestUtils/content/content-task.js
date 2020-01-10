@@ -8,10 +8,58 @@
 
 ChromeUtils.import("resource://testing-common/Task.jsm", this);
 ChromeUtils.import("resource://testing-common/ContentTaskUtils.jsm", this);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const AssertCls = ChromeUtils.import(
   "resource://testing-common/Assert.jsm",
   null
 ).Assert;
+
+
+
+
+
+var EventUtils = {};
+
+EventUtils.window = {};
+EventUtils.parent = EventUtils.window;
+EventUtils._EU_Ci = Ci;
+EventUtils._EU_Cc = Cc;
+EventUtils.KeyboardEvent = content.KeyboardEvent;
+EventUtils.navigator = content.navigator;
+
+EventUtils.synthesizeClick = element =>
+  new Promise(resolve => {
+    element.addEventListener(
+      "click",
+      function() {
+        resolve();
+      },
+      { once: true }
+    );
+
+    EventUtils.synthesizeMouseAtCenter(
+      element,
+      { type: "mousedown", isSynthesized: false },
+      content
+    );
+    EventUtils.synthesizeMouseAtCenter(
+      element,
+      { type: "mouseup", isSynthesized: false },
+      content
+    );
+  });
+
+try {
+  Services.scriptloader.loadSubScript(
+    "chrome://mochikit/content/tests/SimpleTest/EventUtils.js",
+    EventUtils
+  );
+} catch (e) {
+  
+  
+  
+  EventUtils = null;
+}
 
 addMessageListener("content-task:spawn", function(msg) {
   let id = msg.data.id;

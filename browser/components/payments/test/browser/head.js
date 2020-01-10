@@ -369,8 +369,6 @@ async function setupPaymentDialog(
       EventUtils.sendString(value, content.window);
     };
   });
-  await injectEventUtilsInContentTask(frame);
-  info("helper functions injected into frame");
 
   return { win, requestId, frame };
 }
@@ -927,43 +925,4 @@ async function fillInCardForm(frame, aCard, aOptions = {}) {
     },
     { card: aCard, options: aOptions }
   );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function injectEventUtilsInContentTask(browser) {
-  await spawnPaymentDialogTask(browser, async function injectEventUtils() {
-    if ("EventUtils" in this) {
-      return;
-    }
-
-    const EventUtils = (this.EventUtils = {});
-
-    EventUtils.window = {};
-    EventUtils.parent = EventUtils.window;
-    
-    EventUtils._EU_Ci = Ci;
-    EventUtils._EU_Cc = Cc;
-    
-    
-    EventUtils.navigator = content.navigator;
-    EventUtils.KeyboardEvent = content.KeyboardEvent;
-
-    Services.scriptloader.loadSubScript(
-      "chrome://mochikit/content/tests/SimpleTest/EventUtils.js",
-      EventUtils
-    );
-  });
 }

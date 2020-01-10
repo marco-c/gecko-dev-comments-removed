@@ -12,22 +12,6 @@
 
 
 
-const EventUtils = {};
-EventUtils.window = content;
-EventUtils.parent = EventUtils.window;
-EventUtils._EU_Ci = Ci; 
-EventUtils._EU_Cc = Cc; 
-EventUtils.navigator = content.navigator;
-EventUtils.KeyboardEvent = content.KeyboardEvent;
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochikit/content/tests/SimpleTest/EventUtils.js",
-  EventUtils
-);
-
-
-
-
 
 
 content.addEventListener("AppReadyStateChange", () => {

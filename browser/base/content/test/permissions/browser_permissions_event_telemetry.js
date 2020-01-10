@@ -18,7 +18,6 @@ async function showPermissionPrompt(browser) {
     E10SUtils.wrapHandlingUserInput(content, true, () => {
       
       
-      let EventUtils = ContentTaskUtils.getEventUtils(content);
       let notificationButton = content.document.getElementById(
         "desktop-notification"
       );
