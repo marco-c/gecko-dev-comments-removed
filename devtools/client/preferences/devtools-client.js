@@ -3,7 +3,8 @@
 
 
 
-pref("devtools.webide.enabled", true);
+pref("devtools.webide.enabled", false);
+pref("devtools.connectpage.enabled", false);
 
 
 pref("devtools.toolbox.footer.height", 250);

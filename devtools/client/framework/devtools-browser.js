@@ -152,7 +152,11 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     );
 
     
-    toggleMenuItem("menu_devtools_connect", devtoolsRemoteEnabled);
+    const connectPageEnabled = Services.prefs.getBoolPref(
+      "devtools.connectpage.enabled"
+    );
+    const connectEnabled = devtoolsRemoteEnabled && connectPageEnabled;
+    toggleMenuItem("menu_devtools_connect", connectEnabled);
 
     
     try {
