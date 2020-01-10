@@ -219,11 +219,28 @@ typedef SECStatus(PR_CALLBACK *SSLExtensionHandler)(
 
 
 
-#define SSL_InitAntiReplay(now, window, k, bits)                \
-    SSL_EXPERIMENTAL_API("SSL_InitAntiReplay",                  \
-                         (PRTime _now, PRTime _window,          \
-                          unsigned int _k, unsigned int _bits), \
-                         (now, window, k, bits))
+
+
+
+
+
+typedef struct SSLAntiReplayContextStr SSLAntiReplayContext;
+#define SSL_CreateAntiReplayContext(now, window, k, bits, ctx) \
+    SSL_EXPERIMENTAL_API("SSL_CreateAntiReplayContext",        \
+                         (PRTime _now, PRTime _window,         \
+                          unsigned int _k, unsigned int _bits, \
+                          SSLAntiReplayContext **_ctx),        \
+                         (now, window, k, bits, ctx))
+
+#define SSL_SetAntiReplayContext(fd, ctx)                                 \
+    SSL_EXPERIMENTAL_API("SSL_SetAntiReplayContext",                      \
+                         (PRFileDesc * _fd, SSLAntiReplayContext * _ctx), \
+                         (fd, ctx))
+
+#define SSL_ReleaseAntiReplayContext(ctx)                \
+    SSL_EXPERIMENTAL_API("SSL_ReleaseAntiReplayContext", \
+                         (SSLAntiReplayContext * _ctx),  \
+                         (ctx))
 
 
 
@@ -324,10 +341,15 @@ typedef SECStatus(PR_CALLBACK *SSLExtensionHandler)(
 
 
 
+
+
+
+
 typedef enum {
     ssl_hello_retry_fail,
     ssl_hello_retry_accept,
-    ssl_hello_retry_request
+    ssl_hello_retry_request,
+    ssl_hello_retry_reject_0rtt
 } SSLHelloRetryRequestAction;
 
 typedef SSLHelloRetryRequestAction(PR_CALLBACK *SSLHelloRetryRequestCallback)(
@@ -738,6 +760,7 @@ typedef PRTime(PR_CALLBACK *SSLTimeFunc)(void *arg);
 
 #define SSL_UseAltServerHelloType(fd, enable) SSL_DEPRECATED_EXPERIMENTAL_API
 #define SSL_SetupAntiReplay(a, b, c) SSL_DEPRECATED_EXPERIMENTAL_API
+#define SSL_InitAntiReplay(a, b, c) SSL_DEPRECATED_EXPERIMENTAL_API
 
 SEC_END_PROTOS
 

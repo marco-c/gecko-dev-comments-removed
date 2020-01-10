@@ -1094,6 +1094,9 @@ struct sslSocketStr {
     
 
     sslEsniKeys *esniKeys;
+
+    
+    SSLAntiReplayContext *antiReplay;
 };
 
 struct sslSelfEncryptKeysStr {

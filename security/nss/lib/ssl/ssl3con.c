@@ -11378,7 +11378,19 @@ ssl3_CacheWrappedSecret(sslSocket *ss, sslSessionID *sid,
             wrappingKey = PK11_KeyGen(symKeySlot, mechanism, NULL,
                                       keyLength, pwArg);
             if (wrappingKey) {
+                
+
+
+
+
                 PK11_SetWrapKey(symKeySlot, wrapKeyIndex, wrappingKey);
+                PK11_FreeSymKey(wrappingKey);
+                wrappingKey = PK11_GetWrapKey(symKeySlot, wrapKeyIndex,
+                                              CKM_INVALID_MECHANISM, incarnation, pwArg);
+                if (!wrappingKey) {
+                    PK11_FreeSlot(symKeySlot);
+                    return SECFailure;
+                }
             }
         }
     } else {

@@ -359,23 +359,38 @@ PK11_SymKeyFromHandle(PK11SlotInfo *slot, PK11SymKey *parent, PK11Origin origin,
 
 
 
+
+
 PK11SymKey *
 PK11_GetWrapKey(PK11SlotInfo *slot, int wrap, CK_MECHANISM_TYPE type,
                 int series, void *wincx)
 {
     PK11SymKey *symKey = NULL;
 
-    if (slot->series != series)
+    PK11_EnterSlotMonitor(slot);
+    if (slot->series != series ||
+        slot->refKeys[wrap] == CK_INVALID_HANDLE) {
+        PK11_ExitSlotMonitor(slot);
         return NULL;
-    if (slot->refKeys[wrap] == CK_INVALID_HANDLE)
-        return NULL;
-    if (type == CKM_INVALID_MECHANISM)
+    }
+
+    if (type == CKM_INVALID_MECHANISM) {
         type = slot->wrapMechanism;
+    }
 
     symKey = PK11_SymKeyFromHandle(slot, NULL, PK11_OriginDerive,
                                    slot->wrapMechanism, slot->refKeys[wrap], PR_FALSE, wincx);
+    PK11_ExitSlotMonitor(slot);
     return symKey;
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -385,13 +400,18 @@ PK11_GetWrapKey(PK11SlotInfo *slot, int wrap, CK_MECHANISM_TYPE type,
 void
 PK11_SetWrapKey(PK11SlotInfo *slot, int wrap, PK11SymKey *wrapKey)
 {
-    
-    
+    PK11_EnterSlotMonitor(slot);
+    if (wrap < PR_ARRAY_SIZE(slot->refKeys) &&
+        slot->refKeys[wrap] == CK_INVALID_HANDLE) {
+        
+        
 
-    slot->refKeys[wrap] = wrapKey->objectID;
-    wrapKey->owner = PR_FALSE;
-    wrapKey->sessionOwner = PR_FALSE;
-    slot->wrapMechanism = wrapKey->type;
+        slot->refKeys[wrap] = wrapKey->objectID;
+        wrapKey->owner = PR_FALSE;
+        wrapKey->sessionOwner = PR_FALSE;
+        slot->wrapMechanism = wrapKey->type;
+    }
+    PK11_ExitSlotMonitor(slot);
 }
 
 

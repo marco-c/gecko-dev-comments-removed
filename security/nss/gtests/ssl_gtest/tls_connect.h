@@ -134,6 +134,8 @@ class TlsConnectTestBase : public ::testing::Test {
   
   void ShiftDtlsTimers();
   void AdvanceTime(PRTime time_shift);
+
+  void ResetAntiReplay(PRTime window);
   void RolloverAntiReplay();
 
   void SaveAlgorithmPolicy();
@@ -149,6 +151,7 @@ class TlsConnectTestBase : public ::testing::Test {
   SessionResumptionMode expected_resumption_mode_;
   uint8_t expected_resumptions_;
   std::vector<std::vector<uint8_t>> session_ids_;
+  ScopedSSLAntiReplayContext anti_replay_;
 
   
   
