@@ -792,7 +792,9 @@ bool SandboxBroker::SetSecurityLevelForRDDProcess() {
       sandbox::MITIGATION_DEP_NO_ATL_THUNK | sandbox::MITIGATION_DEP |
       sandbox::MITIGATION_IMAGE_LOAD_PREFER_SYS32;
 
-  if (sRddWin32kDisable) {
+  
+  
+  if (sRddWin32kDisable && IsWin8OrLater()) {
     mitigations |= sandbox::MITIGATION_WIN32K_DISABLE;
     result =
         mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_WIN32K_LOCKDOWN,
