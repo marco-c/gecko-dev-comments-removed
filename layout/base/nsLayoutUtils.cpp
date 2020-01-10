@@ -168,13 +168,6 @@ using namespace mozilla::gfx;
 using mozilla::dom::HTMLMediaElement_Binding::HAVE_METADATA;
 using mozilla::dom::HTMLMediaElement_Binding::HAVE_NOTHING;
 
-
-
-#define DEFAULT_QUIESCENT_FRAMES 2
-
-
-#define DEFAULT_IDLE_PERIOD_TIME_LIMIT 1.0f
-
 #ifdef DEBUG
 
 bool nsLayoutUtils::gPreventAssertInCompareTreePosition = false;
@@ -182,11 +175,6 @@ bool nsLayoutUtils::gPreventAssertInCompareTreePosition = false;
 
 typedef ScrollableLayerGuid::ViewID ViewID;
 typedef nsStyleTransformMatrix::TransformReferenceBox TransformReferenceBox;
-
-
-uint32_t nsLayoutUtils::sIdlePeriodDeadlineLimit;
-
-uint32_t nsLayoutUtils::sQuiescentFramesBeforeIdlePeriod;
 
 static ViewID sScrollIdCounter = ScrollableLayerGuid::START_SCROLL_ID;
 
@@ -7961,13 +7949,6 @@ size_t nsLayoutUtils::SizeOfTextRunsForFrames(nsIFrame* aFrame,
 
 
 void nsLayoutUtils::Initialize() {
-  Preferences::AddUintVarCache(&sIdlePeriodDeadlineLimit,
-                               "layout.idle_period.time_limit",
-                               DEFAULT_IDLE_PERIOD_TIME_LIMIT);
-  Preferences::AddUintVarCache(&sQuiescentFramesBeforeIdlePeriod,
-                               "layout.idle_period.required_quiescent_frames",
-                               DEFAULT_QUIESCENT_FRAMES);
-
   nsComputedDOMStyle::RegisterPrefChangeCallbacks();
 }
 

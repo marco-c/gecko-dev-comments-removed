@@ -2442,12 +2442,6 @@ class nsLayoutUtils {
 
   static bool FontSizeInflationEnabled(nsPresContext* aPresContext);
 
-  static uint32_t IdlePeriodDeadlineLimit() { return sIdlePeriodDeadlineLimit; }
-
-  static uint32_t QuiescentFramesBeforeIdlePeriod() {
-    return sQuiescentFramesBeforeIdlePeriod;
-  }
-
   
 
 
@@ -2992,9 +2986,6 @@ class nsLayoutUtils {
       const nsIFrame* aFrame);
 
  private:
-  static uint32_t sIdlePeriodDeadlineLimit;
-  static uint32_t sQuiescentFramesBeforeIdlePeriod;
-
   
 
 

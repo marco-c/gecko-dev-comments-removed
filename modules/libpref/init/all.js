@@ -2986,14 +2986,6 @@ pref("layout.display-list.rebuild-frame-limit", 500);
 pref("layout.spammy_warnings.enabled", false);
 
 
-
-pref("layout.idle_period.required_quiescent_frames", 2);
-
-
-
-pref("layout.idle_period.time_limit", 1);
-
-
 pref("dom.animations.offscreen-throttling", true);
 
 
