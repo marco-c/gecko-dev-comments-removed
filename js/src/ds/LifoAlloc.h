@@ -25,8 +25,6 @@
 
 
 
-#include "jsutil.h"
-
 #include "js/UniquePtr.h"
 #include "util/Memory.h"
 #include "util/Poison.h"

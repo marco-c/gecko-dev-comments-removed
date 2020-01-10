@@ -13,7 +13,7 @@
 
 #include <stddef.h>  
 
-#include "jsutil.h"        
+#include "js/Utility.h"    
 #include "vm/JSContext.h"  
 
 namespace js {

@@ -7,7 +7,6 @@
 #ifndef frontend_ParseNodeVerify_h
 #define frontend_ParseNodeVerify_h
 
-#include "jsutil.h"                       
 #include "ds/LifoAlloc.h"                 
 #include "frontend/ParseNode.h"           
 #include "frontend/SyntaxParseHandler.h"  

@@ -17,7 +17,6 @@
 #include <stdio.h>   
 
 #include "jstypes.h"  
-#include "jsutil.h"   
 
 #include "jit/IonTypes.h"      
 #include "js/GCAnnotations.h"  

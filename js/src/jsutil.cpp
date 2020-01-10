@@ -6,8 +6,6 @@
 
 
 
-#include "jsutil.h"
-
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"

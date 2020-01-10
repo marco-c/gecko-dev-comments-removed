@@ -25,7 +25,6 @@
 
 #include "jsnum.h"    
 #include "jstypes.h"  
-#include "jsutil.h"   
 
 #include "ds/Nestable.h"                         
 #include "frontend/BytecodeControlStructures.h"  

@@ -4,7 +4,6 @@
 
 
 
-#include "jsutil.h"
 #include "threading/Thread.h"
 #include "threading/windows/ThreadPlatformData.h"
 

@@ -18,7 +18,6 @@
 
 #include "jsapi.h"        
 #include "jsfriendapi.h"  
-#include "jsutil.h"       
 
 #include "builtin/Array.h"       
 #include "debugger/Debugger.h"   
