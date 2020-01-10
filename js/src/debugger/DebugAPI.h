@@ -99,6 +99,9 @@ class DebugAPI {
   static void traceAllForMovingGC(JSTracer* trc);
 
   
+  
+  
+  
   static void sweepAll(JSFreeOp* fop);
 
   

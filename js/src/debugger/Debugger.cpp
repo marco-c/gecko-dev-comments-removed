@@ -3874,9 +3874,27 @@ void Debugger::trace(JSTracer* trc) {
 void DebugAPI::sweepAll(JSFreeOp* fop) {
   JSRuntime* rt = fop->runtime();
 
-  Debugger* dbg = rt->debuggerList().getFirst();
-  while (dbg) {
-    Debugger* next = dbg->getNext();
+  Debugger* next;
+  for (Debugger* dbg = rt->debuggerList().getFirst(); dbg; dbg = next) {
+    next = dbg->getNext();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (dbg->zone()->isGCSweeping()) {
+      for (Debugger::GeneratorWeakMap::Enum e(dbg->generatorFrames); !e.empty(); e.popFront()) {
+        DebuggerFrame* frameObj = &e.front().value()->as<DebuggerFrame>();
+        if (IsAboutToBeFinalizedUnbarriered(&frameObj)) {
+          frameObj->clearGenerator(fop, dbg, &e);
+        }
+      }
+    }
 
     
     

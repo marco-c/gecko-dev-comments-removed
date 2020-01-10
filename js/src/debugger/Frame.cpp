@@ -1070,8 +1070,12 @@ void DebuggerFrame::maybeDecrementFrameScriptStepperCount(
 void DebuggerFrame::finalize(JSFreeOp* fop, JSObject* obj) {
   MOZ_ASSERT(fop->onMainThread());
   DebuggerFrame& frameobj = obj->as<DebuggerFrame>();
+
+  
+  
+  MOZ_ASSERT(!frameobj.hasGenerator());
+
   frameobj.freeFrameIterData(fop);
-  frameobj.clearGenerator(fop);
   OnStepHandler* onStepHandler = frameobj.onStepHandler();
   if (onStepHandler) {
     onStepHandler->drop(fop, &frameobj);

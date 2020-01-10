@@ -5539,6 +5539,9 @@ bool ArenaLists::foregroundFinalize(JSFreeOp* fop, AllocKind thingKind,
   
   
   
+  
+  
+  
   if (!FinalizeArenas(fop, &arenaListsToSweep(thingKind), sweepList, thingKind,
                       sliceBudget)) {
     incrementalSweptArenaKind = thingKind;
