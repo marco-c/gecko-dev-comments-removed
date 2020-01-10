@@ -40,8 +40,6 @@ class ThreadTrampoline;
 
 class Thread {
  public:
-  using Id = ThreadId;
-
   
   class Options {
     size_t stackSize_;
@@ -68,7 +66,7 @@ class Thread {
       typename = typename mozilla::EnableIf<
           mozilla::IsSame<DerefO, Options>::value, void*>::Type>
   explicit Thread(O&& options = Options())
-      : id_(Id()), options_(std::forward<O>(options)) {
+      : id_(ThreadId()), options_(std::forward<O>(options)) {
     MOZ_ASSERT(js::IsInitialized());
   }
 
@@ -80,7 +78,7 @@ class Thread {
   
   template <typename F, typename... Args>
   MOZ_MUST_USE bool init(F&& f, Args&&... args) {
-    MOZ_RELEASE_ASSERT(id_ == Id());
+    MOZ_RELEASE_ASSERT(id_ == ThreadId());
     using Trampoline = detail::ThreadTrampoline<F, Args...>;
     AutoEnterOOMUnsafeRegion oom;
     auto trampoline =
@@ -119,7 +117,7 @@ class Thread {
   
   
   
-  Id get_id();
+  ThreadId get_id();
 
   
   Thread(Thread&& aOther);
@@ -131,7 +129,7 @@ class Thread {
   void operator=(const Thread&) = delete;
 
   
-  Id id_;
+  ThreadId id_;
 
   
   Options options_;
