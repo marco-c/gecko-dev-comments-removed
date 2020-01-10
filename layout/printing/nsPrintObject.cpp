@@ -65,6 +65,13 @@ nsresult nsPrintObject::InitAsRootObject(nsIDocShell* aDocShell, Document* aDoc,
   NS_ENSURE_STATE(aDoc);
 
   if (aForPrintPreview) {
+    nsCOMPtr<nsIContentViewer> viewer;
+    aDocShell->GetContentViewer(getter_AddRefs(viewer));
+    if (viewer && viewer->GetDocument() && viewer->GetDocument()->IsShowing()) {
+      
+      
+      viewer->GetDocument()->OnPageHide(false, nullptr);
+    }
     mDocShell = aDocShell;
   } else {
     
