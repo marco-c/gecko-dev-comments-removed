@@ -396,7 +396,7 @@ class Accessible : public nsISupports {
   
 
 
-  void MoveChild(uint32_t aNewIndex, Accessible* aChild);
+  virtual void RelocateChild(uint32_t aNewIndex, Accessible* aChild);
 
   
   
