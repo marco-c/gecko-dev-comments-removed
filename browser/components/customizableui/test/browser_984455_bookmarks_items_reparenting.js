@@ -205,6 +205,9 @@ function checkNotOverflowing(aID) {
 
 add_task(async function testOverflowingBookmarksButtonContextMenu() {
   ok(CustomizableUI.inDefaultState, "Should start in default state.");
+  
+  
+  CustomizableUI.removeWidgetFromArea("developer-button");
   CustomizableUI.removeWidgetFromArea(
     "library-button",
     CustomizableUI.AREA_NAVBAR
