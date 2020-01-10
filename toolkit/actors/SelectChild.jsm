@@ -212,7 +212,12 @@ this.SelectContentHelper.prototype = {
         }
 
         let win = this.element.ownerGlobal;
-        let selectedOption = this.element.item(this.element.selectedIndex);
+
+        
+        
+        let element = this.element;
+
+        let selectedOption = element.item(element.selectedIndex);
 
         
         
@@ -229,7 +234,7 @@ this.SelectContentHelper.prototype = {
 
         
         InspectorUtils.removeContentState(
-          this.element,
+          element,
           kStateActive,
            true
         );
@@ -239,12 +244,12 @@ this.SelectContentHelper.prototype = {
           let inputEvent = new win.Event("input", {
             bubbles: true,
           });
-          this.element.dispatchEvent(inputEvent);
+          element.dispatchEvent(inputEvent);
 
           let changeEvent = new win.Event("change", {
             bubbles: true,
           });
-          this.element.dispatchEvent(changeEvent);
+          element.dispatchEvent(changeEvent);
         }
 
         
