@@ -16,15 +16,12 @@ const {
 const { PluralForm } = require("devtools/shared/plural-form");
 const { getDisplayedFrames } = require("../../selectors/index");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
-const { table, tbody, tr, td, div, input, label } = dom;
+const { table, tbody, tr, td, div, input, label, hr } = dom;
 const { L10N } = require("../../utils/l10n");
 const FRAMES_EMPTY_TEXT = L10N.getStr("messagesEmptyText");
 const TOGGLE_MESSAGES_TRUNCATION = L10N.getStr("toggleMessagesTruncation");
 const TOGGLE_MESSAGES_TRUNCATION_TITLE = L10N.getStr(
   "toggleMessagesTruncation.title"
-);
-const TRUNCATED_MESSAGES_WARNING = L10N.getStr(
-  "netmonitor.ws.truncated-messages.warning"
 );
 const Actions = require("../../actions/index");
 
@@ -46,6 +43,7 @@ class FrameListContent extends Component {
   static get propTypes() {
     return {
       connector: PropTypes.object.isRequired,
+      startPanelContainer: PropTypes.object,
       frames: PropTypes.array,
       selectedFrame: PropTypes.object,
       selectFrame: PropTypes.func.isRequired,
@@ -63,6 +61,42 @@ class FrameListContent extends Component {
     this.state = {
       checked: false,
     };
+    this.pinnedToBottom = false;
+    this.initIntersectionObserver = false;
+  }
+
+  componentDidUpdate() {
+    const { startPanelContainer } = this.props;
+    const scrollAnchor = this.refs.scrollAnchor;
+
+    
+    if (!scrollAnchor) {
+      this.initIntersectionObserver = false;
+    }
+
+    if (startPanelContainer && scrollAnchor) {
+      
+      if (!this.initIntersectionObserver) {
+        const observer = new IntersectionObserver(
+          () => {
+            
+            
+            
+            this.pinnedToBottom = !this.pinnedToBottom;
+          },
+          {
+            root: startPanelContainer,
+            threshold: 0.1,
+          }
+        );
+        observer.observe(scrollAnchor);
+        this.initIntersectionObserver = true;
+      }
+
+      if (this.pinnedToBottom) {
+        scrollAnchor.scrollIntoView();
+      }
+    }
   }
 
   onMouseDown(evt, item) {
@@ -129,7 +163,6 @@ class FrameListContent extends Component {
                   },
                   div({
                     className: "truncated-messages-warning-icon",
-                    title: TRUNCATED_MESSAGES_WARNING,
                   }),
                   div(
                     {
@@ -176,7 +209,11 @@ class FrameListContent extends Component {
             })
           )
         )
-      )
+      ),
+      hr({
+        ref: "scrollAnchor",
+        className: "ws-frames-list-scroll-anchor",
+      })
     );
   }
 }

@@ -1,5 +1,19 @@
 
 
+#messages-panel .uncontrolled {
+  flex-direction: column;
+}
+
+#messages-panel .ws-frames-list-scroll-anchor {
+  
+  min-height: 1px;
+  margin: 0;
+  padding: 0;
+  border: none;
+ }
+
+
+
 #messages-panel .ws-frame-list-empty-notice {
   width: 100%;
 }
