@@ -1203,9 +1203,8 @@ already_AddRefed<RemoteBrowser> ContentParent::CreateBrowser(
                         aBrowsingContext->Canonical(), chromeFlags);
 
   
-  
   ManagedEndpoint<PBrowserChild> childEp =
-      constructorSender->OpenPBrowserEndpoint(do_AddRef(browserParent).take());
+      constructorSender->OpenPBrowserEndpoint(browserParent);
   if (NS_WARN_IF(!childEp.IsValid())) {
     return nullptr;
   }
@@ -3281,12 +3280,6 @@ bool ContentParent::CanOpenBrowser(const IPCTabContext& aContext) {
   return true;
 }
 
-bool ContentParent::DeallocPBrowserParent(PBrowserParent* frame) {
-  BrowserParent* parent = BrowserParent::GetFrom(frame);
-  NS_RELEASE(parent);
-  return true;
-}
-
 mozilla::ipc::IPCResult ContentParent::RecvConstructPopupBrowser(
     ManagedEndpoint<PBrowserParent>&& aBrowserEp,
     ManagedEndpoint<PWindowGlobalParent>&& aWindowEp, const TabId& aTabId,
@@ -3345,9 +3338,7 @@ mozilla::ipc::IPCResult ContentParent::RecvConstructPopupBrowser(
                                           browsingContext, chromeFlags);
 
   
-  
-  if (NS_WARN_IF(!BindPBrowserEndpoint(std::move(aBrowserEp),
-                                       do_AddRef(parent).take()))) {
+  if (NS_WARN_IF(!BindPBrowserEndpoint(std::move(aBrowserEp), parent))) {
     return IPC_FAIL(this, "BindPBrowserEndpoint failed");
   }
 

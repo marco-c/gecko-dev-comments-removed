@@ -1011,9 +1011,7 @@ nsresult ContentChild::ProvideWindowCommon(
   }
 
   
-  
-  ManagedEndpoint<PBrowserParent> parentEp =
-      OpenPBrowserEndpoint(do_AddRef(newChild).take());
+  ManagedEndpoint<PBrowserParent> parentEp = OpenPBrowserEndpoint(newChild);
   if (NS_WARN_IF(!parentEp.IsValid())) {
     return NS_ERROR_ABORT;
   }
@@ -1874,9 +1872,7 @@ mozilla::ipc::IPCResult ContentChild::RecvConstructBrowser(
       aWindowInit.browsingContext(), aChromeFlags, aIsTopLevel);
 
   
-  
-  if (NS_WARN_IF(!BindPBrowserEndpoint(std::move(aBrowserEp),
-                                       do_AddRef(browserChild).take()))) {
+  if (NS_WARN_IF(!BindPBrowserEndpoint(std::move(aBrowserEp), browserChild))) {
     return IPC_FAIL(this, "BindPBrowserEndpoint failed");
   }
 
@@ -1932,12 +1928,6 @@ PFileDescriptorSetChild* ContentChild::AllocPFileDescriptorSetChild(
 bool ContentChild::DeallocPFileDescriptorSetChild(
     PFileDescriptorSetChild* aActor) {
   delete static_cast<FileDescriptorSetChild*>(aActor);
-  return true;
-}
-
-bool ContentChild::DeallocPBrowserChild(PBrowserChild* aIframe) {
-  BrowserChild* child = static_cast<BrowserChild*>(aIframe);
-  NS_RELEASE(child);
   return true;
 }
 

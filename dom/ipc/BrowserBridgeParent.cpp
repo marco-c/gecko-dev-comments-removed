@@ -72,9 +72,8 @@ nsresult BrowserBridgeParent::Init(const nsString& aPresentationURL,
   browserParent->SetBrowserBridgeParent(this);
 
   
-  
   ManagedEndpoint<PBrowserChild> childEp =
-      constructorSender->OpenPBrowserEndpoint(do_AddRef(browserParent).take());
+      constructorSender->OpenPBrowserEndpoint(browserParent);
   if (NS_WARN_IF(!childEp.IsValid())) {
     MOZ_ASSERT(false, "Browser Open Endpoint Failed");
     return NS_ERROR_FAILURE;
