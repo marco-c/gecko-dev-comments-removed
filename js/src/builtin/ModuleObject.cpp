@@ -780,7 +780,7 @@ void ModuleObject::finalize(js::FreeOp* fop, JSObject* obj) {
   }
   if (FunctionDeclarationVector* funDecls = self->functionDeclarations()) {
     
-    fop->deleteUntracked(funDecls);
+    fop->delete_(funDecls);
   }
 }
 

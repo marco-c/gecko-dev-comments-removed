@@ -168,8 +168,6 @@ class Instance {
   
 
   JSString* createDisplayURL(JSContext* cx);
-  WasmBreakpointSite* getOrCreateBreakpointSite(JSContext* cx, uint32_t offset);
-  void destroyBreakpointSite(FreeOp* fop, uint32_t offset);
 
   
 

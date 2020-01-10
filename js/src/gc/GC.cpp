@@ -3878,9 +3878,7 @@ void GCRuntime::freeFromBackgroundThread(AutoLockHelperThreadState& lock) {
     FreeOp* fop = TlsContext.get()->defaultFreeOp();
     for (Nursery::BufferSet::Range r = buffers.all(); !r.empty();
          r.popFront()) {
-      
-      
-      fop->freeUntracked(r.front());
+      fop->free_(r.front());
     }
   } while (!lifoBlocksToFree.ref().isEmpty() ||
            !buffersToFreeAfterMinorGC.ref().empty());
@@ -3911,9 +3909,7 @@ void Realm::destroy(FreeOp* fop) {
   if (principals()) {
     JS_DropPrincipals(rt->mainContextFromOwnThread(), principals());
   }
-  
-  
-  fop->deleteUntracked(this);
+  fop->delete_(this);
 }
 
 void Compartment::destroy(FreeOp* fop) {
@@ -3921,17 +3917,13 @@ void Compartment::destroy(FreeOp* fop) {
   if (auto callback = rt->destroyCompartmentCallback) {
     callback(fop, this);
   }
-  
-  
-  fop->deleteUntracked(this);
+  fop->delete_(this);
   rt->gc.stats().sweptCompartment();
 }
 
 void Zone::destroy(FreeOp* fop) {
   MOZ_ASSERT(compartments().empty());
-  
-  
-  fop->deleteUntracked(this);
+  fop->delete_(this);
   fop->runtime()->gc.stats().sweptZone();
 }
 

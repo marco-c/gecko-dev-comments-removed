@@ -1035,8 +1035,7 @@ void IonScript::Trace(JSTracer* trc, IonScript* script) {
 }
 
 void IonScript::Destroy(FreeOp* fop, IonScript* script) {
-  
-  fop->deleteUntracked(script);
+  fop->delete_(script);
 }
 
 void JS::DeletePolicy<js::jit::IonScript>::operator()(
