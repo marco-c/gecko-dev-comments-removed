@@ -465,8 +465,7 @@ class HuffmanTableImplementationSaturated {
   
   
   
-  
-  Vector<size_t> saturated;
+  Vector<uint8_t> saturated;
 
   
   
