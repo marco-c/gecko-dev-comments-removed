@@ -397,6 +397,8 @@ pref("browser.search.widget.inNavBar", false);
   pref("browser.search.separatePrivateDefault.ui.enabled", false);
 #endif
 
+pref("browser.search.separatePrivateDefault.ui.banner.max", 0);
+
 pref("browser.sessionhistory.max_entries", 50);
 
 
