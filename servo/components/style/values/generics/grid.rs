@@ -648,9 +648,6 @@ impl Parse for LineNameList {
                 match count {
                     
                     
-                    
-                    
-                    
                     RepeatCount::Number(num) => line_names.extend(
                         names_list
                             .iter()
@@ -659,6 +656,8 @@ impl Parse for LineNameList {
                             .take(num.value() as usize * names_list.len()),
                     ),
                     RepeatCount::AutoFill if fill_idx.is_none() => {
+                        
+                        
                         
                         if names_list.len() != 1 {
                             return Err(
