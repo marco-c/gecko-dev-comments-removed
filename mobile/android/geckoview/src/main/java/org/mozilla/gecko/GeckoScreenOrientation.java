@@ -62,7 +62,7 @@ public class GeckoScreenOrientation {
     
     private static final int DEFAULT_ROTATION = Surface.ROTATION_0;
     
-    private ScreenOrientation mScreenOrientation;
+    private ScreenOrientation mScreenOrientation = ScreenOrientation.PORTRAIT_PRIMARY;
     
     private boolean mShouldNotify = true;
 
@@ -155,31 +155,36 @@ public class GeckoScreenOrientation {
 
 
     public synchronized boolean update(final ScreenOrientation aScreenOrientation) {
-        if (mScreenOrientation == aScreenOrientation) {
+        
+        
+        ScreenOrientation screenOrientation;
+        if ((aScreenOrientation.value & ScreenOrientation.PORTRAIT_PRIMARY.value) != 0) {
+            screenOrientation = ScreenOrientation.PORTRAIT_PRIMARY;
+        } else if ((aScreenOrientation.value & ScreenOrientation.PORTRAIT_SECONDARY.value) != 0) {
+            screenOrientation = ScreenOrientation.PORTRAIT_SECONDARY;
+        } else if ((aScreenOrientation.value & ScreenOrientation.LANDSCAPE_PRIMARY.value) != 0) {
+            screenOrientation = ScreenOrientation.LANDSCAPE_PRIMARY;
+        } else if ((aScreenOrientation.value & ScreenOrientation.LANDSCAPE_SECONDARY.value) != 0) {
+            screenOrientation = ScreenOrientation.LANDSCAPE_SECONDARY;
+        } else {
+            screenOrientation = ScreenOrientation.PORTRAIT_PRIMARY;
+        }
+        if (mScreenOrientation == screenOrientation) {
             return false;
         }
-        mScreenOrientation = aScreenOrientation;
+        mScreenOrientation = screenOrientation;
         Log.d(LOGTAG, "updating to new orientation " + mScreenOrientation);
         notifyListeners(mScreenOrientation);
         if (mShouldNotify) {
-            
-            
-            ScreenOrientation primaryOrientation = aScreenOrientation;
-            if (aScreenOrientation == ScreenOrientation.PORTRAIT) {
-                primaryOrientation = ScreenOrientation.PORTRAIT_PRIMARY;
-            } else if (aScreenOrientation == ScreenOrientation.LANDSCAPE) {
-                primaryOrientation = ScreenOrientation.LANDSCAPE_PRIMARY;
-            } else if (aScreenOrientation == ScreenOrientation.DEFAULT) {
-                primaryOrientation = ScreenOrientation.PORTRAIT_PRIMARY;
-            } else if (aScreenOrientation == ScreenOrientation.NONE) {
+            if (aScreenOrientation == ScreenOrientation.NONE) {
                 return false;
             }
 
             if (GeckoThread.isRunning()) {
-                onOrientationChange(primaryOrientation.value, getAngle());
+                onOrientationChange(screenOrientation.value, getAngle());
             } else {
                 GeckoThread.queueNativeCall(GeckoScreenOrientation.class, "onOrientationChange",
-                                            primaryOrientation.value, getAngle());
+                                            screenOrientation.value, getAngle());
             }
         }
         ScreenManagerHelper.refreshScreenInfo();
