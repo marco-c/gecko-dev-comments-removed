@@ -137,7 +137,7 @@ struct Statistics {
 
   static MOZ_MUST_USE bool initialize();
 
-  explicit Statistics(JSRuntime* rt);
+  explicit Statistics(gc::GCRuntime* gc);
   ~Statistics();
 
   Statistics(const Statistics&) = delete;
@@ -299,7 +299,7 @@ struct Statistics {
   UniqueChars renderJsonSlice(size_t sliceNum) const;
 
   
-  UniqueChars renderNurseryJson(JSRuntime* rt) const;
+  UniqueChars renderNurseryJson() const;
 
 #ifdef DEBUG
   
@@ -309,7 +309,7 @@ struct Statistics {
 #endif
 
  private:
-  JSRuntime* runtime;
+  gc::GCRuntime* const gc;
 
   
   FILE* gcTimerFile;
@@ -424,6 +424,8 @@ struct Statistics {
   bool enableProfiling_;
   ProfileDurations totalTimes_;
   uint64_t sliceCount_;
+
+  JSContext* context();
 
   Phase currentPhase() const;
   Phase lookupChildPhase(PhaseKind phaseKind) const;
