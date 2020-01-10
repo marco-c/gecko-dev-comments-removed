@@ -101,14 +101,14 @@ class HTMLTextFieldAccessible final : public HyperTextAccessibleWrap {
 
 
 
+
+
   nsIContent* BindingOrWidgetParent() const {
-    nsIContent* el = mContent->GetBindingParent();
-    if (el) {
+    if (auto* el = mContent->GetClosestNativeAnonymousSubtreeRootParent()) {
       return el;
     }
     
-    ErrorResult rv;
-    return Elm()->Closest(NS_LITERAL_STRING("search-textbox"), rv);
+    return Elm()->Closest(NS_LITERAL_STRING("search-textbox"), IgnoreErrors());
   }
 };
 
