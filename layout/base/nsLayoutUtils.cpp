@@ -184,8 +184,6 @@ typedef ScrollableLayerGuid::ViewID ViewID;
 typedef nsStyleTransformMatrix::TransformReferenceBox TransformReferenceBox;
 
 
-bool nsLayoutUtils::sSVGTransformBoxEnabled;
-
 uint32_t nsLayoutUtils::sIdlePeriodDeadlineLimit;
 
 uint32_t nsLayoutUtils::sQuiescentFramesBeforeIdlePeriod;
@@ -7963,8 +7961,6 @@ size_t nsLayoutUtils::SizeOfTextRunsForFrames(nsIFrame* aFrame,
 
 
 void nsLayoutUtils::Initialize() {
-  Preferences::AddBoolVarCache(&sSVGTransformBoxEnabled,
-                               "svg.transform-box.enabled");
   Preferences::AddUintVarCache(&sIdlePeriodDeadlineLimit,
                                "layout.idle_period.time_limit",
                                DEFAULT_IDLE_PERIOD_TIME_LIMIT);
