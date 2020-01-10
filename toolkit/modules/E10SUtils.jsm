@@ -813,6 +813,7 @@ var E10SUtils = {
 
 
 
+
   isWebRemoteType(aRemoteType) {
     return aRemoteType.startsWith(WEB_REMOTE_TYPE);
   },
