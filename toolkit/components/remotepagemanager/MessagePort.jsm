@@ -383,10 +383,15 @@ class MessagePort {
     return Services.appinfo.appBuildID;
   }
 
-  getIntPref(aPref) {
+  getIntPref(aPref, defaultValue) {
     let principal = this.window.document.nodePrincipal;
     if (!RPMAccessManager.checkAllowAccess(principal, "getIntPref", aPref)) {
       throw new Error("RPMAccessManager does not allow access to getIntPref");
+    }
+    
+    
+    if (defaultValue !== undefined) {
+      return Services.prefs.getIntPref(aPref, defaultValue);
     }
     return Services.prefs.getIntPref(aPref);
   }
@@ -401,12 +406,17 @@ class MessagePort {
     return Services.prefs.getStringPref(aPref);
   }
 
-  getBoolPref(aPref, defaultValue = false) {
+  getBoolPref(aPref, defaultValue) {
     let principal = this.window.document.nodePrincipal;
     if (!RPMAccessManager.checkAllowAccess(principal, "getBoolPref", aPref)) {
       throw new Error("RPMAccessManager does not allow access to getBoolPref");
     }
-    return Services.prefs.getBoolPref(aPref, defaultValue);
+    
+    
+    if (defaultValue !== undefined) {
+      return Services.prefs.getBoolPref(aPref, defaultValue);
+    }
+    return Services.prefs.getBoolPref(aPref);
   }
 
   setBoolPref(aPref, aVal) {
