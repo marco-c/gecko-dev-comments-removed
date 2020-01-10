@@ -1463,7 +1463,8 @@ function markSynced(record) {
 
 
 
-function importChange(transaction, remote, localFields) {
+
+function importChange(transaction, remote, localFields, strategy) {
   const local = transaction.get(remote.id);
 
   if (!local) {
@@ -1485,11 +1486,32 @@ function importChange(transaction, remote, localFields) {
   } 
 
 
-  const isIdentical = recordsEqual(local, remote, localFields); 
-
   const synced = { ...local,
     ...markSynced(remote)
   }; 
+
+  if (strategy === Collection.strategy.PULL_ONLY) {
+    if (remote.deleted) {
+      transaction.delete(remote.id);
+      return {
+        type: "deleted",
+        data: local
+      };
+    }
+
+    transaction.update(synced);
+    return {
+      type: "updated",
+      data: {
+        old: local,
+        new: synced
+      }
+    };
+  } 
+  
+
+
+  const isIdentical = recordsEqual(local, remote, localFields); 
 
   if (local._status !== "synced") {
     
@@ -1678,6 +1700,7 @@ class Collection {
     return {
       CLIENT_WINS: "client_wins",
       SERVER_WINS: "server_wins",
+      PULL_ONLY: "pull_only",
       MANUAL: "manual"
     };
   }
@@ -1874,11 +1897,11 @@ class Collection {
       return reject("Record is not an object.");
     }
 
-    if ((options.synced || options.useRecordId) && !record.hasOwnProperty("id")) {
+    if ((options.synced || options.useRecordId) && !Object.prototype.hasOwnProperty.call(record, "id")) {
       return reject("Missing required Id; synced and useRecordId options require one");
     }
 
-    if (!options.synced && !options.useRecordId && record.hasOwnProperty("id")) {
+    if (!options.synced && !options.useRecordId && Object.prototype.hasOwnProperty.call(record, "id")) {
       return reject("Extraneous Id; can't create a record having one set.");
     }
 
@@ -1926,7 +1949,7 @@ class Collection {
       return Promise.reject(new Error("Record is not an object."));
     }
 
-    if (!record.hasOwnProperty("id")) {
+    if (!Object.prototype.hasOwnProperty.call(record, "id")) {
       return Promise.reject(new Error("Cannot update a record missing id."));
     }
 
@@ -1954,7 +1977,7 @@ class Collection {
       return Promise.reject(new Error("Record is not an object."));
     }
 
-    if (!record.hasOwnProperty("id")) {
+    if (!Object.prototype.hasOwnProperty.call(record, "id")) {
       return Promise.reject(new Error("Cannot update a record missing id."));
     }
 
@@ -2112,7 +2135,7 @@ class Collection {
         } = await this.db.execute(transaction => {
           const imports = slice.map(remote => {
             
-            return importChange(transaction, remote, this.localFields);
+            return importChange(transaction, remote, this.localFields, strategy);
           });
           const conflicts = imports.filter(i => i.type === "conflicts").map(i => i.data);
 
@@ -2432,7 +2455,10 @@ class Collection {
     if (!options.exclude && localSynced && serverChanged && emptyCollection) {
       const e = new ServerWasFlushedError(localSynced, unquoted, "Server has been flushed. Client Side Timestamp: " + localSynced + " Server Side Timestamp: " + unquoted);
       throw e;
-    }
+    } 
+    
+    
+
 
     syncResultObject.lastModified = unquoted; 
 
@@ -2463,7 +2489,7 @@ class Collection {
       return record => {
         const result = hook(payload, this);
         const resultThenable = result && typeof result.then === "function";
-        const resultChanges = result && result.hasOwnProperty("changes");
+        const resultChanges = result && Object.prototype.hasOwnProperty.call(result, "changes");
 
         if (!(resultThenable || resultChanges)) {
           throw new Error(`Invalid return value for hook: ${JSON.stringify(result)} has no 'then()' or 'changes' properties`);
@@ -2688,39 +2714,42 @@ class Collection {
       await this.pullChanges(client, result, options);
       const {
         lastModified
-      } = result; 
+      } = result;
 
-      const toSync = await this.gatherLocalChanges(); 
-
-      await this.pushChanges(client, toSync, result, options); 
-
-      const resolvedUnsynced = result.resolved.filter(r => r._status !== "synced");
-
-      if (resolvedUnsynced.length > 0) {
-        const resolvedEncoded = await Promise.all(resolvedUnsynced.map(resolution => {
-          let record = resolution.accepted;
-
-          if (record === null) {
-            record = {
-              id: resolution.id,
-              _status: resolution._status
-            };
-          }
-
-          return this._encodeRecord("remote", record);
-        }));
-        await this.pushChanges(client, resolvedEncoded, result, options);
-      } 
-      
-
-
-      if (result.published.length > 0) {
+      if (options.strategy != Collection.strategy.PULL_ONLY) {
         
-        const pullOpts = { ...options,
-          lastModified,
-          exclude: result.published
-        };
-        await this.pullChanges(client, result, pullOpts);
+        const toSync = await this.gatherLocalChanges(); 
+
+        await this.pushChanges(client, toSync, result, options); 
+
+        const resolvedUnsynced = result.resolved.filter(r => r._status !== "synced");
+
+        if (resolvedUnsynced.length > 0) {
+          const resolvedEncoded = await Promise.all(resolvedUnsynced.map(resolution => {
+            let record = resolution.accepted;
+
+            if (record === null) {
+              record = {
+                id: resolution.id,
+                _status: resolution._status
+              };
+            }
+
+            return this._encodeRecord("remote", record);
+          }));
+          await this.pushChanges(client, resolvedEncoded, result, options);
+        } 
+        
+
+
+        if (result.published.length > 0) {
+          
+          const pullOpts = { ...options,
+            lastModified,
+            exclude: result.published
+          };
+          await this.pullChanges(client, result, pullOpts);
+        }
       } 
 
 
@@ -2775,7 +2804,7 @@ class Collection {
     }
 
     for (const record of records) {
-      if (!record.hasOwnProperty("id") || !this.idSchema.validate(record.id)) {
+      if (!Object.prototype.hasOwnProperty.call(record, "id") || !this.idSchema.validate(record.id)) {
         throw new Error("Record has invalid ID: " + JSON.stringify(record));
       }
 
@@ -3032,7 +3061,7 @@ class CollectionTransaction {
       throw new Error("Record is not an object.");
     }
 
-    if (!record.hasOwnProperty("id")) {
+    if (!Object.prototype.hasOwnProperty.call(record, "id")) {
       throw new Error("Cannot create a record missing id");
     }
 
@@ -3073,7 +3102,7 @@ class CollectionTransaction {
       throw new Error("Record is not an object.");
     }
 
-    if (!record.hasOwnProperty("id")) {
+    if (!Object.prototype.hasOwnProperty.call(record, "id")) {
       throw new Error("Cannot update a record missing id.");
     }
 
@@ -3153,7 +3182,7 @@ class CollectionTransaction {
       throw new Error("Record is not an object.");
     }
 
-    if (!record.hasOwnProperty("id")) {
+    if (!Object.prototype.hasOwnProperty.call(record, "id")) {
       throw new Error("Cannot update a record missing id.");
     }
 
@@ -3266,7 +3295,7 @@ function filterObject(filters, entry) {
       return value.some(candidate => candidate === entry[filter]);
     } else if (typeof value === "object") {
       return filterObject(value, entry[filter]);
-    } else if (!entry.hasOwnProperty(filter)) {
+    } else if (!Object.prototype.hasOwnProperty.call(entry, filter)) {
       console.error(`The property ${filter} does not exist`);
       return false;
     }
@@ -3381,7 +3410,7 @@ function makeNestedObjectFromArr(arr, val, nestedFiltersObj) {
   return arr.reduce((acc, cv, i) => {
     if (i === last) {
       return acc[cv] = val;
-    } else if (acc.hasOwnProperty(cv)) {
+    } else if (Object.prototype.hasOwnProperty.call(acc, cv)) {
       return acc[cv];
     } else {
       return acc[cv] = {};

@@ -374,11 +374,11 @@ class RemoteSettingsClient extends EventEmitter {
       let syncResult;
       try {
         
-        const strategy = Kinto.syncStrategy.SERVER_WINS;
+        const strategy = Kinto.syncStrategy.PULL_ONLY;
         syncResult = await kintoCollection.sync({ remote: gServerURL, strategy, expectedTimestamp });
         if (!syncResult.ok) {
           
-          throw new Error("Synced failed");
+          throw new Error("Sync failed");
         }
         
         
