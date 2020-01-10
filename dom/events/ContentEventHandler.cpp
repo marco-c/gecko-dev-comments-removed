@@ -7,11 +7,11 @@
 #include "ContentEventHandler.h"
 
 #include "mozilla/ContentIterator.h"
+#include "mozilla/EditorUtils.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/RangeUtils.h"
 #include "mozilla/TextComposition.h"
-#include "mozilla/TextEditor.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLUnknownElement.h"
@@ -506,71 +506,11 @@ static void ConvertToNativeNewlines(nsString& aString) {
 #endif
 }
 
-
-
-
-
-
-static void MaskString(nsString& aString, Text* aText,
-                       uint32_t aStartOffsetInString,
-                       uint32_t aStartOffsetInText) {
-  MOZ_ASSERT(aText->HasFlag(NS_MAYBE_MASKED));
-  MOZ_ASSERT(aStartOffsetInString == 0 || aStartOffsetInText == 0);
-
-  uint32_t unmaskStart = UINT32_MAX, unmaskLength = 0;
-  TextEditor* textEditor =
-      nsContentUtils::GetTextEditorFromAnonymousNodeWithoutCreation(aText);
-  if (textEditor && textEditor->UnmaskedLength() > 0) {
-    unmaskStart = textEditor->UnmaskedStart();
-    unmaskLength = textEditor->UnmaskedLength();
-    
-    
-    if (aStartOffsetInText >= unmaskStart + unmaskLength) {
-      unmaskLength = 0;
-      unmaskStart = UINT32_MAX;
-    } else {
-      
-      
-      if (aStartOffsetInText > unmaskStart) {
-        unmaskLength = unmaskStart + unmaskLength - aStartOffsetInText;
-        unmaskStart = 0;
-      }
-      
-      
-      else {
-        unmaskStart -= aStartOffsetInText;
-      }
-      
-      unmaskStart += aStartOffsetInString;
-    }
-  }
-
-  const char16_t kPasswordMask = TextEditor::PasswordMask();
-  for (uint32_t i = aStartOffsetInString; i < aString.Length(); ++i) {
-    bool isSurrogatePair = NS_IS_HIGH_SURROGATE(aString.CharAt(i)) &&
-                           i < aString.Length() - 1 &&
-                           NS_IS_LOW_SURROGATE(aString.CharAt(i + 1));
-    if (i < unmaskStart || i >= unmaskStart + unmaskLength) {
-      if (isSurrogatePair) {
-        aString.SetCharAt(kPasswordMask, i);
-        aString.SetCharAt(kPasswordMask, i + 1);
-      } else {
-        aString.SetCharAt(kPasswordMask, i);
-      }
-    }
-
-    
-    if (isSurrogatePair) {
-      ++i;
-    }
-  }
-}
-
 static void AppendString(nsString& aString, Text* aText) {
   uint32_t oldXPLength = aString.Length();
   aText->TextFragment().AppendTo(aString);
   if (aText->HasFlag(NS_MAYBE_MASKED)) {
-    MaskString(aString, aText, oldXPLength, 0);
+    EditorUtils::MaskString(aString, aText, oldXPLength, 0);
   }
 }
 
@@ -580,7 +520,7 @@ static void AppendSubString(nsString& aString, Text* aText, uint32_t aXPOffset,
   aText->TextFragment().AppendTo(aString, static_cast<int32_t>(aXPOffset),
                                  static_cast<int32_t>(aXPLength));
   if (aText->HasFlag(NS_MAYBE_MASKED)) {
-    MaskString(aString, aText, oldXPLength, aXPOffset);
+    EditorUtils::MaskString(aString, aText, oldXPLength, aXPOffset);
   }
 }
 

@@ -99,9 +99,7 @@ class TextEditor : public EditorBase,
 
 
 
-
-
-  bool CanCut() const;
+  bool IsCutCommandEnabled() const;
 
   NS_IMETHOD Copy() override;
 
@@ -110,9 +108,22 @@ class TextEditor : public EditorBase,
 
 
 
+  bool IsCopyCommandEnabled() const;
+
+  
 
 
-  bool CanCopy() const;
+
+
+
+
+  bool IsCopyToClipboardAllowed() const {
+    AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
+    if (NS_WARN_IF(!editActionData.CanHandle())) {
+      return false;
+    }
+    return IsCopyToClipboardAllowedInternal();
+  }
 
   
 
@@ -716,8 +727,7 @@ class TextEditor : public EditorBase,
   
 
 
-
-  bool CanCutOrCopy() const;
+  bool IsCopyToClipboardAllowedInternal() const;
 
   bool FireClipboardEvent(EventMessage aEventMessage, int32_t aSelectionType,
                           bool* aActionTaken = nullptr);

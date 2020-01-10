@@ -497,6 +497,17 @@ class EditorUtils final {
                              EditorRawDOMPoint* aOutPoint = nullptr);
   static bool IsDescendantOf(const nsINode& aNode, const nsINode& aParent,
                              EditorDOMPoint* aOutPoint);
+
+  
+
+
+
+
+
+
+  static void MaskString(nsString& aString, dom::Text* aText,
+                         uint32_t aStartOffsetInString,
+                         uint32_t aStartOffsetInText);
 };
 
 }  
