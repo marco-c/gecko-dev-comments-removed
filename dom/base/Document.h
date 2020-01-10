@@ -4135,7 +4135,9 @@ class Document : public nsINode,
 
   struct InternalCommandData {
     const char* mXULCommandName;
-    mozilla::Command mCommand;           
+    mozilla::Command mCommand;  
+    
+    
     ExecCommandParam mExecCommandParam;  
     GetEditorCommandFunc* mGetEditorCommandFunc;
 
@@ -4157,13 +4159,11 @@ class Document : public nsINode,
              mCommand != mozilla::Command::Copy &&
              mCommand != mozilla::Command::Paste;
     }
-    bool IsClipboardWriteCommand() const {
+    bool IsCutOrCopyCommand() const {
       return mCommand == mozilla::Command::Cut ||
              mCommand == mozilla::Command::Copy;
     }
-    bool IsClipboardReadCommand() const {
-      return mCommand == mozilla::Command::Paste;
-    }
+    bool IsPasteCommand() const { return mCommand == mozilla::Command::Paste; }
   };
 
   
@@ -4172,24 +4172,27 @@ class Document : public nsINode,
   static void EnsureInitializeInternalCommandDataHashtable();
 
   
-  
-  
-  
-  
-  
-  static bool ConvertToMidasInternalCommand(const nsAString& inCommandID,
-                                            const nsAString& inParam,
-                                            nsACString& outCommandID,
-                                            nsACString& outParam,
-                                            bool& isBoolean, bool& boolValue);
 
-  static bool ConvertToMidasInternalCommand(const nsAString& inCommandID,
-                                            nsACString& outCommandID);
 
-  static bool ConvertToMidasInternalCommandInner(
-      const nsAString& inCommandID, const nsAString& inParam,
-      nsACString& outCommandID, nsACString& outParam, bool& outIsBoolean,
-      bool& outBooleanValue, bool aIgnoreParams);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static InternalCommandData ConvertToInternalCommand(
+      const nsAString& aHTMLCommandName,
+      const nsAString& aValue = EmptyString(),
+      nsAString* aAdjustedValue = nullptr);
 
   
   typedef nsDataHashtable<nsStringCaseInsensitiveHashKey, InternalCommandData>
