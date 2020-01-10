@@ -4028,7 +4028,7 @@ bool GCRuntime::beginMarkPhase(JS::GCReason reason, AutoGCSession& session) {
   }
 
   if (isIncremental) {
-    markCompartments();
+    findDeadCompartments();
   }
 
   updateMemoryCountersOnGCStart();
@@ -4046,7 +4046,7 @@ bool GCRuntime::beginMarkPhase(JS::GCReason reason, AutoGCSession& session) {
   return true;
 }
 
-void GCRuntime::markCompartments() {
+void GCRuntime::findDeadCompartments() {
   gcstats::AutoPhase ap1(stats(), gcstats::PhaseKind::MARK_ROOTS);
   gcstats::AutoPhase ap2(stats(), gcstats::PhaseKind::MARK_COMPARTMENTS);
 
@@ -4094,8 +4094,25 @@ void GCRuntime::markCompartments() {
 
   while (!workList.empty()) {
     Compartment* comp = workList.popCopy();
+
+    
     for (Compartment::WrappedObjectCompartmentEnum e(comp); !e.empty();
          e.popFront()) {
+      Compartment* dest = e.front();
+      if (!dest->gcState.maybeAlive) {
+        dest->gcState.maybeAlive = true;
+        if (!workList.append(dest)) {
+          return;
+        }
+      }
+    }
+
+    
+    CompartmentSet debuggerTargets;
+    if (!DebugAPI::findCrossCompartmentTargets(rt, comp, debuggerTargets)) {
+      return;
+    }
+    for (auto e = debuggerTargets.all(); !e.empty(); e.popFront()) {
       Compartment* dest = e.front();
       if (!dest->gcState.maybeAlive) {
         dest->gcState.maybeAlive = true;
