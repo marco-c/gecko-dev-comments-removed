@@ -1079,10 +1079,6 @@ def enable_code_coverage(config, tests):
                 continue
 
             
-            if 'opt' in test['build-platform']:
-                test['tier'] = 3
-
-            
             if 'android' in test['build-platform']:
                 test.setdefault('fetches', {}).setdefault('toolchain', []).append('linux64-grcov')
                 test['mozharness'].setdefault('extra-options', []).append('--java-code-coverage')
