@@ -587,7 +587,7 @@ const startupPhases = {
       
       path: "XCurProcD:omni.ja",
       condition: WIN,
-      stat: 2,
+      stat: 8, 
     },
   ],
 
@@ -691,6 +691,7 @@ const startupPhases = {
     {
       
       path: "XCurProcD:omni.ja",
+      ignoreIfUnused: true,
       condition: WIN,
       stat: 7,
     },

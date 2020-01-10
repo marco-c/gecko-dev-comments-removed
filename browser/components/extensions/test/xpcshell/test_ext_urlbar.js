@@ -30,6 +30,7 @@ add_task(async function startup() {
   Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
   Services.prefs.setIntPref("browser.search.addonLoadTimeout", 0);
   await AddonTestUtils.promiseStartupManager();
+  await Services.search.init(true);
 
   
   

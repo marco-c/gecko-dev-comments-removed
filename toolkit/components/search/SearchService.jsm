@@ -13,7 +13,6 @@ const { PromiseUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
-  AddonManager: "resource://gre/modules/AddonManager.jsm",
   clearTimeout: "resource://gre/modules/Timer.jsm",
   DeferredTask: "resource://gre/modules/DeferredTask.jsm",
   ExtensionParent: "resource://gre/modules/ExtensionParent.jsm",
@@ -22,6 +21,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   RemoteSettings: "resource://services-settings/remote-settings.js",
   RemoteSettingsClient: "resource://services-settings/RemoteSettingsClient.jsm",
   SearchEngine: "resource://gre/modules/SearchEngine.jsm",
+  SearchExtensionLoader: "resource://gre/modules/SearchUtils.jsm",
   SearchStaticData: "resource://gre/modules/SearchStaticData.jsm",
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
@@ -52,14 +52,6 @@ XPCOMUtils.defineLazyGetter(this, "gEncoder", function() {
 
 
 const NS_APP_DISTRIBUTION_SEARCH_DIR_LIST = "SrchPluginsDistDL";
-
-
-
-const EXT_SEARCH_PREFIX = "resource://search-extensions/";
-const APP_SEARCH_PREFIX = "resource://search-plugins/";
-
-
-const EXT_SIGNING_ADDRESS = "search.mozilla.org";
 
 const TOPIC_LOCALES_CHANGE = "intl:app-locales-changed";
 const QUIT_APPLICATION_TOPIC = "quit-application";
@@ -267,11 +259,12 @@ function fetchRegion(ss) {
   let endpoint = Services.urlFormatter.formatURLPref(
     "browser.search.geoip.url"
   );
-  SearchUtils.log("_fetchRegion starting with endpoint " + endpoint);
   
   if (!endpoint) {
     return Promise.resolve();
   }
+  SearchUtils.log("_fetchRegion starting with endpoint " + endpoint);
+
   let startTime = Date.now();
   return new Promise(resolve => {
     
@@ -569,6 +562,9 @@ const gEmptyParseSubmissionResult = Object.freeze(
 
 function SearchService() {
   this._initObservers = PromiseUtils.defer();
+  
+  
+  this._extensionLoadReady = PromiseUtils.defer();
 }
 
 SearchService.prototype = {
@@ -640,6 +636,7 @@ SearchService.prototype = {
   async _init(skipRegionCheck) {
     SearchUtils.log("_init start");
 
+    TelemetryStopwatch.start("SEARCH_SERVICE_INIT_MS");
     try {
       
       let cache = await this._readCacheFile();
@@ -665,15 +662,19 @@ SearchService.prototype = {
       this._buildCache();
       this._addObservers();
     } catch (ex) {
-      this._initRV = ex.result !== undefined ? ex.result : Cr.NS_ERROR_FAILURE;
+      
+      this._initRV =
+        ex && ex.result !== undefined ? ex.result : Cr.NS_ERROR_FAILURE;
       SearchUtils.log(
-        "_init: failure initializng search: " + ex + "\n" + ex.stack
+        "_init: failure initializing search: " + ex + "\n" + (ex && ex.stack)
       );
     }
     gInitialized = true;
     if (Components.isSuccessCode(this._initRV)) {
+      TelemetryStopwatch.finish("SEARCH_SERVICE_INIT_MS");
       this._initObservers.resolve(this._initRV);
     } else {
+      TelemetryStopwatch.cancel("SEARCH_SERVICE_INIT_MS");
       this._initObservers.reject(this._initRV);
     }
     Services.obs.notifyObservers(
@@ -683,7 +684,6 @@ SearchService.prototype = {
     );
 
     SearchUtils.log("_init: Completed _init");
-    return this._initRV;
   },
 
   
@@ -847,20 +847,16 @@ SearchService.prototype = {
     return val;
   },
 
-  _listJSONURL:
-    (AppConstants.platform == "android"
-      ? APP_SEARCH_PREFIX
-      : EXT_SEARCH_PREFIX) + "list.json",
+  
+  get _listJSONURL() {
+    return SearchUtils.LIST_JSON_URL;
+  },
 
   _engines: {},
   __sortedEngines: null,
   _visibleDefaultEngines: [],
   _searchDefault: null,
   _searchOrder: [],
-  
-  
-  
-  _startupExtensions: new Set(),
 
   get _sortedEngines() {
     if (!this.__sortedEngines) {
@@ -1026,12 +1022,15 @@ SearchService.prototype = {
         this._visibleDefaultEngines.length ||
       this._visibleDefaultEngines.some(notInCacheVisibleEngines);
 
+    this._engineLocales = this._enginesToLocales(engines);
+    this._extensionLoadReady.resolve();
+
     if (!rebuildCache) {
       SearchUtils.log("_loadEngines: loading from cache directories");
       this._loadEnginesFromCache(cache);
       if (Object.keys(this._engines).length) {
         SearchUtils.log("_loadEngines: done using existing cache");
-        return;
+        return Promise.resolve();
       }
       SearchUtils.log(
         "_loadEngines: No valid engines found in cache. Loading engines from disk."
@@ -1049,19 +1048,7 @@ SearchService.prototype = {
       let enginesFromURLs = await this._loadFromChromeURLs(engines, isReload);
       enginesFromURLs.forEach(this._addEngineToStore, this);
     } else {
-      let engineList = this._enginesToLocales(engines);
-      for (let [id, locales] of engineList) {
-        await this.ensureBuiltinExtension(id, locales);
-      }
-
-      SearchUtils.log(
-        "_loadEngines: loading " +
-          this._startupExtensions.size +
-          " engines reported by AddonManager startup"
-      );
-      for (let extension of this._startupExtensions) {
-        await this._installExtensionEngine(extension, [DEFAULT_TAG], true);
-      }
+      return SearchExtensionLoader.installAddons(this._engineLocales.keys());
     }
 
     SearchUtils.log(
@@ -1072,39 +1059,7 @@ SearchService.prototype = {
     this._loadEnginesMetadataFromCache(cache);
 
     SearchUtils.log("_loadEngines: done using rebuilt cache");
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-  async ensureBuiltinExtension(id, locales = [DEFAULT_TAG]) {
-    SearchUtils.log("ensureBuiltinExtension: " + id);
-    try {
-      let policy = WebExtensionPolicy.getByID(id);
-      if (!policy) {
-        SearchUtils.log("ensureBuiltinExtension: Installing " + id);
-        let path = EXT_SEARCH_PREFIX + id.split("@")[0] + "/";
-        await AddonManager.installBuiltinAddon(path);
-        policy = WebExtensionPolicy.getByID(id);
-      }
-      
-      
-      await policy.readyPromise;
-      await this._installExtensionEngine(policy.extension, locales);
-      SearchUtils.log("ensureBuiltinExtension: " + id + " installed.");
-    } catch (err) {
-      Cu.reportError(
-        "Failed to install engine: " + err.message + "\n" + err.stack
-      );
-    }
+    return Promise.resolve();
   },
 
   
@@ -1119,7 +1074,7 @@ SearchService.prototype = {
     let engineLocales = new Map();
     for (let engine of engines) {
       let [extensionName, locale] = this._parseEngineName(engine);
-      let id = extensionName + "@" + EXT_SIGNING_ADDRESS;
+      let id = SearchUtils.makeExtensionId(extensionName);
       let locales = engineLocales.get(id) || new Set();
       locales.add(locale);
       engineLocales.set(id, locales);
@@ -1202,9 +1157,14 @@ SearchService.prototype = {
     
     gInitialized = false;
 
+    
+    this._initObservers = PromiseUtils.defer();
+    this._extensionLoadReady = PromiseUtils.defer();
+    
+    this._initStarted = true;
+
     (async () => {
       try {
-        this._initObservers = PromiseUtils.defer();
         if (this._batchTask) {
           SearchUtils.log("finalizing batch task");
           let task = this._batchTask;
@@ -1226,6 +1186,7 @@ SearchService.prototype = {
         this._searchDefault = null;
         this._searchOrder = [];
         this._metaData = {};
+        this._engineLocales = null;
 
         
         
@@ -1270,6 +1231,7 @@ SearchService.prototype = {
           SearchUtils.TOPIC_SEARCH_SERVICE,
           "reinit-failed"
         );
+        this._initObservers.reject();
       } finally {
         gReinitializing = false;
         Services.obs.notifyObservers(
@@ -1293,6 +1255,8 @@ SearchService.prototype = {
     this._visibleDefaultEngines = [];
     this._searchOrder = [];
     this._metaData = {};
+    this._extensionLoadReady = PromiseUtils.defer();
+    this._engineLocales = null;
   },
 
   
@@ -1347,20 +1311,30 @@ SearchService.prototype = {
       return;
     }
 
-    SearchUtils.log('_addEngineToStore: Adding engine: "' + engine.name + '"');
-
     
     
-    var hasSameNameAsUpdate =
-      engine._engineToUpdate && engine.name == engine._engineToUpdate.name;
-    if (engine.name in this._engines && !hasSameNameAsUpdate) {
+    var matchingEngineUpdate =
+      engine._engineToUpdate &&
+      (engine.name == engine._engineToUpdate.name ||
+        (engine._extensionID &&
+          engine._extensionID == engine._engineToUpdate._extensionID));
+    if (engine.name in this._engines && !matchingEngineUpdate) {
       SearchUtils.log("_addEngineToStore: Duplicate engine found, aborting!");
       return;
     }
 
     if (engine._engineToUpdate) {
+      SearchUtils.log(
+        '_addEngineToStore: Updating engine: "' + engine.name + '"'
+      );
       
       var oldEngine = engine._engineToUpdate;
+
+      let index = -1;
+      if (this.__sortedEngines) {
+        index = this.__sortedEngines.indexOf(oldEngine);
+      }
+      let isCurrent = this._currentEngine == oldEngine;
 
       
       
@@ -1380,8 +1354,18 @@ SearchService.prototype = {
 
       
       this._engines[engine.name] = engine;
+      if (index >= 0) {
+        this.__sortedEngines[index] = engine;
+        this._saveSortedEngineList();
+      }
+      if (isCurrent) {
+        this._currentEngine = engine;
+      }
       SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.CHANGED);
     } else {
+      SearchUtils.log(
+        '_addEngineToStore: Adding engine: "' + engine.name + '"'
+      );
       
       this._engines[engine.name] = engine;
       
@@ -1534,7 +1518,9 @@ SearchService.prototype = {
         SearchUtils.log(
           "_loadFromChromeURLs: loading engine from chrome url: " + url
         );
-        let uri = Services.io.newURI(APP_SEARCH_PREFIX + url + ".xml");
+        let uri = Services.io.newURI(
+          SearchUtils.APP_SEARCH_PREFIX + url + ".xml"
+        );
         let engine = new SearchEngine({
           uri,
           readOnly: true,
@@ -1575,10 +1561,10 @@ SearchService.prototype = {
     let request = new XMLHttpRequest();
     request.overrideMimeType("text/plain");
     let list = await new Promise(resolve => {
-      request.onload = function(event) {
+      request.onload = event => {
         resolve(event.target.responseText);
       };
-      request.onerror = function(event) {
+      request.onerror = event => {
         SearchUtils.log("_findEngines: failed to read " + this._listJSONURL);
         resolve();
       };
@@ -1586,7 +1572,7 @@ SearchService.prototype = {
       request.send();
     });
 
-    return this._parseListJSON(list);
+    return list !== undefined ? this._parseListJSON(list) : [];
   },
 
   _parseListJSON(list) {
@@ -1742,7 +1728,7 @@ SearchService.prototype = {
     }
 
     if (!this._searchDefault) {
-      Cu.reportError("parseListJSON: No searchDefault");
+      SearchUtils.log("parseListJSON: No searchDefault");
     }
 
     if (
@@ -1925,38 +1911,18 @@ SearchService.prototype = {
 
   
   async init(skipRegionCheck = false) {
-    SearchUtils.log("SearchService.init");
     if (this._initStarted) {
       if (!skipRegionCheck) {
         await this._ensureKnownRegionPromise;
       }
       return this._initObservers.promise;
     }
-
-    TelemetryStopwatch.start("SEARCH_SERVICE_INIT_MS");
     this._initStarted = true;
-    try {
-      
-      await this._init(skipRegionCheck);
-      TelemetryStopwatch.finish("SEARCH_SERVICE_INIT_MS");
-    } catch (ex) {
-      if (ex.result == Cr.NS_ERROR_ALREADY_INITIALIZED) {
-        
-        
-        TelemetryStopwatch.finish("SEARCH_SERVICE_INIT_MS");
-      } else {
-        this._initObservers.reject(ex.result);
-        TelemetryStopwatch.cancel("SEARCH_SERVICE_INIT_MS");
-        throw ex;
-      }
-    }
-    if (!Components.isSuccessCode(this._initRV)) {
-      throw Components.Exception(
-        "SearchService initialization failed",
-        this._initRV
-      );
-    }
-    return this._initRV;
+    SearchUtils.log("SearchService.init");
+
+    
+    this._init(skipRegionCheck);
+    return this._initObservers.promise;
   },
 
   get isInitialized() {
@@ -2083,17 +2049,17 @@ SearchService.prototype = {
   },
 
   async addEngineWithDetails(name, details) {
-    SearchUtils.log('addEngineWithDetails: Adding "' + name + '".');
-    let isCurrent = false;
-    var params = details;
-
-    let isBuiltin = !!params.isBuiltin;
     
     
-    
-    if (!gInitialized && !isBuiltin && !params.initEngine) {
+    if (!gInitialized) {
       await this.init(true);
     }
+    return this._addEngineWithDetails(name, details);
+  },
+
+  async _addEngineWithDetails(name, params) {
+    SearchUtils.log('addEngineWithDetails: Adding "' + name + '".');
+
     if (!name) {
       SearchUtils.fail("Invalid name passed to addEngineWithDetails!");
     }
@@ -2102,26 +2068,47 @@ SearchService.prototype = {
     }
     let existingEngine = this._engines[name];
     if (existingEngine) {
-      if (
+      
+      let webExtUpdate =
         params.extensionID &&
-        existingEngine._loadPath.startsWith(
-          `jar:[profile]/extensions/${params.extensionID}`
-        )
-      ) {
+        params.extensionID === existingEngine._extensionID;
+      if (!webExtUpdate) {
+        let webExtBuiltin = params.extensionID && params.isBuiltin;
         
-        isCurrent = this.defaultEngine == existingEngine;
-        await this.removeEngine(existingEngine);
-      } else {
-        SearchUtils.fail(
-          "An engine with that name already exists!",
-          Cr.NS_ERROR_FILE_ALREADY_EXISTS
-        );
+        if (
+          webExtBuiltin &&
+          existingEngine._loadPath.startsWith(
+            `[profile]/distribution/searchplugins/`
+          )
+        ) {
+          SearchExtensionLoader.reject(
+            params.extensionID,
+            new Error(
+              `${params.extensionID} cannot override distribution engine.`
+            )
+          );
+          return null;
+        } else if (
+          params.extensionID &&
+          existingEngine._loadPath.startsWith(
+            `jar:[profile]/extensions/${params.extensionID}`
+          )
+        ) {
+          
+          
+          this._removeEngineInstall(existingEngine);
+        } else {
+          SearchUtils.fail(
+            `An engine with the name ${name} already exists!`,
+            Cr.NS_ERROR_FILE_ALREADY_EXISTS
+          );
+        }
       }
     }
 
     let newEngine = new SearchEngine({
       name,
-      readOnly: isBuiltin,
+      readOnly: !!params.isBuiltin,
       sanitizeName: true,
     });
     newEngine._initFromMetadata(name, params);
@@ -2129,43 +2116,26 @@ SearchService.prototype = {
     if (params.extensionID) {
       newEngine._loadPath += ":" + params.extensionID;
     }
+    newEngine._engineToUpdate = existingEngine;
 
     this._addEngineToStore(newEngine);
-    if (isCurrent) {
-      this.defaultEngine = newEngine;
-    }
     return newEngine;
   },
 
   async addEnginesFromExtension(extension) {
     SearchUtils.log("addEnginesFromExtension: " + extension.id);
-    if (extension.addonData.builtIn) {
-      SearchUtils.log("addEnginesFromExtension: Ignoring builtIn engine.");
-      return [];
-    }
     
     
-    if (!gInitialized) {
-      this._startupExtensions.add(extension);
-      return [];
-    }
-    return this._installExtensionEngine(extension, [DEFAULT_TAG]);
-  },
-
-  async _installExtensionEngine(extension, locales, initEngine) {
-    SearchUtils.log("installExtensionEngine: " + extension.id);
+    
+    await this._extensionLoadReady.promise;
+    let locales = this._engineLocales.get(extension.id) || [DEFAULT_TAG];
 
     let installLocale = async locale => {
       let manifest =
         locale === DEFAULT_TAG
           ? extension.manifest
           : await extension.getLocalizedManifest(locale);
-      return this._addEngineForManifest(
-        extension,
-        manifest,
-        locale,
-        initEngine
-      );
+      return this._addEngineForManifest(extension, manifest, locale);
     };
 
     let engines = [];
@@ -2176,17 +2146,15 @@ SearchService.prototype = {
           ":" +
           locale
       );
-      engines.push(await installLocale(locale));
+      engines.push(installLocale(locale));
     }
-    return engines;
+    return Promise.all(engines).then(installedEngines => {
+      SearchExtensionLoader.resolve(extension.id);
+      return installedEngines;
+    });
   },
 
-  async _addEngineForManifest(
-    extension,
-    manifest,
-    locale = DEFAULT_TAG,
-    initEngine = false
-  ) {
+  async _addEngineForManifest(extension, manifest, locale = DEFAULT_TAG) {
     let { IconDetails } = ExtensionParent;
 
     
@@ -2241,10 +2209,10 @@ SearchService.prototype = {
       suggestGetParams: searchProvider.suggest_url_get_params,
       queryCharset: searchProvider.encoding || "UTF-8",
       mozParams: searchProvider.params,
-      initEngine,
+      version: extension.version,
     };
 
-    return this.addEngineWithDetails(params.name, params);
+    return this._addEngineWithDetails(params.name, params);
   },
 
   async addEngine(engineURL, iconURL, confirm, extensionID) {
@@ -2292,6 +2260,19 @@ SearchService.prototype = {
     }
   },
 
+  async _removeEngineInstall(engine) {
+    
+    if (!engine._filePath || engine._extensionID) {
+      return;
+    }
+    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+    file.persistentDescriptor = engine._filePath;
+    if (file.exists()) {
+      file.remove(false);
+    }
+    engine._filePath = null;
+  },
+
   async removeEngine(engine) {
     await this.init(true);
     if (!engine) {
@@ -2323,14 +2304,7 @@ SearchService.prototype = {
       engineToRemove.alias = null;
     } else {
       
-      if (engineToRemove._filePath) {
-        let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-        file.persistentDescriptor = engineToRemove._filePath;
-        if (file.exists()) {
-          file.remove(false);
-        }
-        engineToRemove._filePath = null;
-      }
+      this._removeEngineInstall(engineToRemove);
 
       
       var index = this._sortedEngines.indexOf(engineToRemove);
