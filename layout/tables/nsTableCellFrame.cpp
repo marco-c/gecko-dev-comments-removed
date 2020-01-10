@@ -80,7 +80,6 @@ nsTableCellFrame::nsTableCellFrame(ComputedStyle* aStyle,
   mPriorAvailISize = 0;
 
   SetContentEmpty(false);
-  SetHasPctOverBSize(false);
 }
 
 nsTableCellFrame::~nsTableCellFrame() {}
@@ -856,8 +855,6 @@ void nsTableCellFrame::Reflow(nsPresContext* aPresContext,
           .SetComputedBSize(computedUnpaginatedBSize);
       DISPLAY_REFLOW_CHANGE();
     }
-  } else {
-    SetHasPctOverBSize(false);
   }
 
   WritingMode kidWM = firstKid->GetWritingMode();
@@ -954,15 +951,9 @@ void nsTableCellFrame::Reflow(nsPresContext* aPresContext,
 
   
 
-  if (aReflowInput.mFlags.mSpecialBSizeReflow) {
-    if (aDesiredSize.BSize(wm) > BSize(wm)) {
-      
-      
-      SetHasPctOverBSize(true);
-    }
-    if (NS_UNCONSTRAINEDSIZE == aReflowInput.AvailableBSize()) {
-      aDesiredSize.BSize(wm) = BSize(wm);
-    }
+  if (aReflowInput.mFlags.mSpecialBSizeReflow &&
+      NS_UNCONSTRAINEDSIZE == aReflowInput.AvailableBSize()) {
+    aDesiredSize.BSize(wm) = BSize(wm);
   }
 
   
