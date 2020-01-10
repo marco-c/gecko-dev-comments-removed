@@ -70,17 +70,7 @@ bool ElemOpEmitter::emitGet() {
   }
   if (isIncDec() || isCompoundAssignment()) {
     if (isSuper()) {
-      
-      
-      if (!bce_->emitDupAt(2)) {
-        
-        return false;
-      }
-      if (!bce_->emitDupAt(2)) {
-        
-        return false;
-      }
-      if (!bce_->emitDupAt(2)) {
+      if (!bce_->emitDupAt(2, 3)) {
         
         return false;
       }

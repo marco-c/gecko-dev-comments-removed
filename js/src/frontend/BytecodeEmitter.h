@@ -413,7 +413,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   
   
-  MOZ_MUST_USE bool emitDupAt(unsigned slotFromTop);
+  
+  MOZ_MUST_USE bool emitDupAt(unsigned slotFromTop, unsigned count = 1);
 
   
   MOZ_MUST_USE bool emitPopN(unsigned n);
