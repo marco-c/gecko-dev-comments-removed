@@ -109,7 +109,7 @@ pub fn has_class_or_part(
 
 
 #[inline(always)]
-pub fn each_class<F>(attr: &structs::nsAttrValue, mut callback: F)
+pub fn each_class_or_part<F>(attr: &structs::nsAttrValue, mut callback: F)
 where
     F: FnMut(&Atom),
 {
