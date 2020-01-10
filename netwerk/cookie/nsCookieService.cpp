@@ -3035,10 +3035,7 @@ void nsCookieService::GetCookiesForURI(
   
   switch (cookieStatus) {
     case STATUS_REJECTED:
-      
-      if (priorCookieCount) {
-        NotifyRejected(aHostURI, aChannel, rejectedReason, OPERATION_READ);
-      }
+      NotifyRejected(aHostURI, aChannel, rejectedReason, OPERATION_READ);
       return;
     default:
       break;

@@ -31,7 +31,6 @@ AntiTracking.runTest(
     runExtraTests: false,
     cookieBehavior,
     blockingByAllowList,
-    expectedBlockingNotifications,
     callback: async _ => {
       
       let img = document.createElement("img");
