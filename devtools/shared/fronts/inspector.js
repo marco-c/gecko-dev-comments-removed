@@ -577,6 +577,15 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     }
   }
 
+  
+
+
+
+
+
+
+
+
   async getChildInspectors() {
     const fissionEnabled = Services.prefs.getBoolPref(FISSION_ENABLED);
     const childInspectors = [];
@@ -594,6 +603,18 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
       }
     }
     return childInspectors;
+  }
+
+  
+
+
+
+
+
+
+  async getAllInspectorFronts() {
+    const remoteInspectors = await this.getChildInspectors();
+    return [this, ...remoteInspectors];
   }
 }
 

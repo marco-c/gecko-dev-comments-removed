@@ -99,6 +99,13 @@ class GridFront extends FrontClassWithSpec(gridSpec) {
   
 
 
+  get walkerFront() {
+    return this.parentFront.walkerFront;
+  }
+
+  
+
+
 
   get direction() {
     if (!this._form.direction) {
@@ -135,7 +142,18 @@ class GridFront extends FrontClassWithSpec(gridSpec) {
   }
 }
 
-class LayoutFront extends FrontClassWithSpec(layoutSpec) {}
+class LayoutFront extends FrontClassWithSpec(layoutSpec) {
+  
+
+
+  get walkerFront() {
+    return this.parentFront;
+  }
+
+  getAllGrids() {
+    return this.getGrids(this.walkerFront.rootNode);
+  }
+}
 
 exports.FlexboxFront = FlexboxFront;
 registerFront(FlexboxFront);

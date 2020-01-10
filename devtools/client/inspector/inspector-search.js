@@ -514,16 +514,17 @@ SelectorAutocompleter.prototype = {
       query += "*";
     }
 
-    const inspectorFront = this.inspector.inspectorFront;
-    const remoteInspectors = await inspectorFront.getChildInspectors();
-    const inspectors = [inspectorFront, ...remoteInspectors];
-
-    const suggestionsPromises = inspectors.map(async inspector => {
-      const walker = inspector.walker;
-      return walker.getSuggestionsForQuery(query, firstPart, state);
-    });
-
-    this._lastQuery = Promise.all(suggestionsPromises)
+    this._lastQuery = this.inspector.inspectorFront
+      
+      .getAllInspectorFronts()
+      .then(inspectors => {
+        
+        return Promise.all(
+          inspectors.map(async ({ walker }) => {
+            return walker.getSuggestionsForQuery(query, firstPart, state);
+          })
+        );
+      })
       .then(suggestions => {
         
         const result = { query: "", suggestions: [] };

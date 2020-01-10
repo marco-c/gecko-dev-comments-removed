@@ -68,7 +68,7 @@ class GridInspector {
     this.inspector = inspector;
     this.store = inspector.store;
     this.telemetry = inspector.telemetry;
-    this.walker = this.inspector.walker;
+
     
     this.maxHighlighters = Services.prefs.getIntPref(
       "devtools.gridinspector.maxHighlighters"
@@ -112,7 +112,8 @@ class GridInspector {
     }
 
     try {
-      this.layoutInspector = await this.inspector.walker.getLayoutInspector();
+      
+      this.layoutFronts = await this.getLayoutFronts();
     } catch (e) {
       
       
@@ -150,6 +151,23 @@ class GridInspector {
 
 
 
+
+  async getLayoutFronts() {
+    const inspectorFronts = await this.inspector.inspectorFront.getAllInspectorFronts();
+
+    const layoutFronts = [];
+    for (const { walker } of inspectorFronts) {
+      const layoutFront = await walker.getLayoutInspector();
+      layoutFronts.push(layoutFront);
+    }
+
+    return layoutFronts;
+  }
+
+  
+
+
+
   destroy() {
     if (this._highlighters) {
       this.highlighters.off(
@@ -167,9 +185,8 @@ class GridInspector {
     this._highlighters = null;
     this.document = null;
     this.inspector = null;
-    this.layoutInspector = null;
+    this.layoutFronts = null;
     this.store = null;
-    this.walker = null;
   }
 
   getComponentProps() {
@@ -299,15 +316,7 @@ class GridInspector {
       return;
     }
 
-    
-    let gridFronts;
-    try {
-      gridFronts = await this.layoutInspector.getGrids(this.walker.rootNode);
-    } catch (e) {
-      
-      
-      return;
-    }
+    const gridFronts = await this.getGrids();
 
     
     if (!this.inspector) {
@@ -353,7 +362,7 @@ class GridInspector {
       
       if (!nodeFront) {
         try {
-          nodeFront = await this.walker.getNodeFromActor(grid.actorID, [
+          nodeFront = await grid.walkerFront.getNodeFromActor(grid.actorID, [
             "containerEl",
           ]);
         } catch (e) {
@@ -407,7 +416,9 @@ class GridInspector {
         let parentGridNodeFront;
 
         try {
-          parentGridNodeFront = await this.walker.getParentGridNode(nodeFront);
+          parentGridNodeFront = await nodeFront.walkerFront.getParentGridNode(
+            nodeFront
+          );
         } catch (e) {
           
           
@@ -436,6 +447,26 @@ class GridInspector {
 
     this.store.dispatch(updateGrids(grids));
     this.inspector.emit("grid-panel-updated");
+  }
+
+  
+
+
+
+
+
+  async getGrids() {
+    let gridFronts = [];
+
+    try {
+      for (const layoutFront of this.layoutFronts) {
+        gridFronts = gridFronts.concat(await layoutFront.getAllGrids());
+      }
+    } catch (e) {
+      
+    }
+
+    return gridFronts;
   }
 
   
@@ -521,14 +552,8 @@ class GridInspector {
     const { grids } = this.store.getState();
 
     
-    let newGridFronts;
-    try {
-      newGridFronts = await this.layoutInspector.getGrids(this.walker.rootNode);
-    } catch (e) {
-      
-      
-      return;
-    }
+    const newGridFronts = await this.getGrids();
+
     
     if (!this.inspector) {
       return;
