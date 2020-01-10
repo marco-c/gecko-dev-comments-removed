@@ -7,9 +7,6 @@
 const { SitePermissions } = ChromeUtils.import(
   "resource:///modules/SitePermissions.jsm"
 );
-const { PermissionTestUtils } = ChromeUtils.import(
-  "resource://testing-common/PermissionTestUtils.jsm"
-);
 
 const baseURL = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
@@ -17,10 +14,6 @@ const baseURL = getRootDirectory(gTestPath).replace(
 );
 const URL = baseURL + "popup_blocker2.html";
 const URI = Services.io.newURI(URL);
-const PRINCIPAL = Services.scriptSecurityManager.createContentPrincipal(
-  URI,
-  {}
-);
 
 function openIdentityPopup() {
   let promise = BrowserTestUtils.waitForEvent(
@@ -142,8 +135,7 @@ add_task(async function check_permission_state_change() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, URL);
 
   
-  let state = SitePermissions.getForPrincipal(PRINCIPAL, "popup", gBrowser)
-    .state;
+  let state = SitePermissions.get(URI, "popup", gBrowser).state;
   Assert.equal(state, SitePermissions.BLOCK);
 
   await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
@@ -164,7 +156,7 @@ add_task(async function check_permission_state_change() {
   menuitem.click();
   await closeIdentityPopup();
 
-  state = SitePermissions.getForPrincipal(PRINCIPAL, "popup", gBrowser).state;
+  state = SitePermissions.get(URI, "popup", gBrowser).state;
   Assert.equal(state, SitePermissions.ALLOW);
 
   
@@ -204,7 +196,7 @@ add_task(async function check_permission_state_change() {
 
   
   
-  state = SitePermissions.getForPrincipal(PRINCIPAL, "popup", gBrowser).state;
+  state = SitePermissions.get(URI, "popup", gBrowser).state;
   Assert.equal(state, SitePermissions.BLOCK);
 
   gBrowser.removeTab(tab);
@@ -217,7 +209,7 @@ add_task(async function check_explicit_default_permission() {
 
   
   
-  PermissionTestUtils.add(URI, "popup", Ci.nsIPermissionManager.DENY_ACTION);
+  Services.perms.add(URI, "popup", Ci.nsIPermissionManager.DENY_ACTION);
 
   await openIdentityPopup();
   let menulist = document.getElementById("identity-popup-popup-menulist");
@@ -225,7 +217,7 @@ add_task(async function check_explicit_default_permission() {
   Assert.equal(menulist.label, "Block");
   await closeIdentityPopup();
 
-  PermissionTestUtils.add(URI, "popup", Services.perms.ALLOW_ACTION);
+  SitePermissions.set(URI, "popup", SitePermissions.ALLOW);
 
   await openIdentityPopup();
   menulist = document.getElementById("identity-popup-popup-menulist");
@@ -233,6 +225,6 @@ add_task(async function check_explicit_default_permission() {
   Assert.equal(menulist.label, "Allow");
   await closeIdentityPopup();
 
-  PermissionTestUtils.remove(URI, "popup");
+  SitePermissions.remove(URI, "popup");
   gBrowser.removeTab(tab);
 });

@@ -2,16 +2,13 @@
 
 
 
-const { PermissionTestUtils } = ChromeUtils.import(
-  "resource://testing-common/PermissionTestUtils.jsm"
-);
-
 add_task(async function test() {
   let uriString = "http://example.com/";
   let cookieBehavior = "network.cookie.cookieBehavior";
+  let uriObj = Services.io.newURI(uriString);
 
   await SpecialPowers.pushPrefEnv({ set: [[cookieBehavior, 2]] });
-  PermissionTestUtils.add(uriString, "cookie", Services.perms.ALLOW_ACTION);
+  Services.perms.add(uriObj, "cookie", Services.perms.ALLOW_ACTION);
 
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: uriString },
@@ -26,5 +23,5 @@ add_task(async function test() {
     }
   );
 
-  PermissionTestUtils.add(uriString, "cookie", Services.perms.UNKNOWN_ACTION);
+  Services.perms.add(uriObj, "cookie", Services.perms.UNKNOWN_ACTION);
 });

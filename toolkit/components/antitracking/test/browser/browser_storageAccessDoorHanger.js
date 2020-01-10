@@ -242,29 +242,119 @@ async function preparePermissionsFromOtherSites(topPage) {
     
   } else if (topPage == TEST_TOP_PAGE_2) {
     
-    PermissionTestUtils.add(TEST_DOMAIN, type, permission, expireType, 0);
+    Services.perms.add(
+      Services.io.newURI(TEST_DOMAIN),
+      type,
+      permission,
+      expireType,
+      0
+    );
   } else if (topPage == TEST_TOP_PAGE_3) {
     
-    PermissionTestUtils.add(TEST_DOMAIN, type, permission, expireType, 0);
-    PermissionTestUtils.add(TEST_DOMAIN_2, type, permission, expireType, 0);
+    Services.perms.add(
+      Services.io.newURI(TEST_DOMAIN),
+      type,
+      permission,
+      expireType,
+      0
+    );
+    Services.perms.add(
+      Services.io.newURI(TEST_DOMAIN_2),
+      type,
+      permission,
+      expireType,
+      0
+    );
   } else if (topPage == TEST_TOP_PAGE_4) {
     
-    PermissionTestUtils.add(TEST_DOMAIN, type, permission, expireType, 0);
-    PermissionTestUtils.add(TEST_DOMAIN_2, type, permission, expireType, 0);
-    PermissionTestUtils.add(TEST_DOMAIN_3, type, permission, expireType, 0);
+    Services.perms.add(
+      Services.io.newURI(TEST_DOMAIN),
+      type,
+      permission,
+      expireType,
+      0
+    );
+    Services.perms.add(
+      Services.io.newURI(TEST_DOMAIN_2),
+      type,
+      permission,
+      expireType,
+      0
+    );
+    Services.perms.add(
+      Services.io.newURI(TEST_DOMAIN_3),
+      type,
+      permission,
+      expireType,
+      0
+    );
   } else if (topPage == TEST_TOP_PAGE_5) {
     
-    PermissionTestUtils.add(TEST_DOMAIN, type, permission, expireType, 0);
-    PermissionTestUtils.add(TEST_DOMAIN_2, type, permission, expireType, 0);
-    PermissionTestUtils.add(TEST_DOMAIN_3, type, permission, expireType, 0);
-    PermissionTestUtils.add(TEST_DOMAIN_4, type, permission, expireType, 0);
+    Services.perms.add(
+      Services.io.newURI(TEST_DOMAIN),
+      type,
+      permission,
+      expireType,
+      0
+    );
+    Services.perms.add(
+      Services.io.newURI(TEST_DOMAIN_2),
+      type,
+      permission,
+      expireType,
+      0
+    );
+    Services.perms.add(
+      Services.io.newURI(TEST_DOMAIN_3),
+      type,
+      permission,
+      expireType,
+      0
+    );
+    Services.perms.add(
+      Services.io.newURI(TEST_DOMAIN_4),
+      type,
+      permission,
+      expireType,
+      0
+    );
   } else if (topPage == TEST_TOP_PAGE_6) {
     
-    PermissionTestUtils.add(TEST_DOMAIN, type, permission, expireType, 0);
-    PermissionTestUtils.add(TEST_DOMAIN_2, type, permission, expireType, 0);
-    PermissionTestUtils.add(TEST_DOMAIN_3, type, permission, expireType, 0);
-    PermissionTestUtils.add(TEST_DOMAIN_4, type, permission, expireType, 0);
-    PermissionTestUtils.add(TEST_DOMAIN_5, type, permission, expireType, 0);
+    Services.perms.add(
+      Services.io.newURI(TEST_DOMAIN),
+      type,
+      permission,
+      expireType,
+      0
+    );
+    Services.perms.add(
+      Services.io.newURI(TEST_DOMAIN_2),
+      type,
+      permission,
+      expireType,
+      0
+    );
+    Services.perms.add(
+      Services.io.newURI(TEST_DOMAIN_3),
+      type,
+      permission,
+      expireType,
+      0
+    );
+    Services.perms.add(
+      Services.io.newURI(TEST_DOMAIN_4),
+      type,
+      permission,
+      expireType,
+      0
+    );
+    Services.perms.add(
+      Services.io.newURI(TEST_DOMAIN_5),
+      type,
+      permission,
+      expireType,
+      0
+    );
   } else {
     ok(false, "Unexpected top page: " + topPage);
   }

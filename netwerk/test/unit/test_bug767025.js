@@ -1,9 +1,6 @@
 
 
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
-const { PermissionTestUtils } = ChromeUtils.import(
-  "resource://testing-common/PermissionTestUtils.jsm"
-);
 
 
 
@@ -110,7 +107,7 @@ function do_app_cache(manifestURL, pageURL) {
     Ci.nsIOfflineCacheUpdateService
   );
 
-  PermissionTestUtils.add(
+  Services.perms.add(
     manifestURL,
     "offline-app",
     Ci.nsIPermissionManager.ALLOW_ACTION

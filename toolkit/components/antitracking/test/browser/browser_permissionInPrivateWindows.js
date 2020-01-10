@@ -13,10 +13,8 @@ AntiTracking.runTest(
       let Services = SpecialPowers.Services;
       
       
-      let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-        "https://tracking.example.org/"
-      );
-      for (let perm of Services.perms.getAllForPrincipal(principal)) {
+      let uri = Services.io.newURI("https://tracking.example.org/");
+      for (let perm of Services.perms.getAllForURI(uri)) {
         
         if (!perm.type.startsWith("3rdPartyStorage^")) {
           continue;

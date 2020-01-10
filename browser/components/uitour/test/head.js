@@ -9,10 +9,6 @@ ChromeUtils.defineModuleGetter(
   "resource:///modules/UITour.jsm"
 );
 
-const { PermissionTestUtils } = ChromeUtils.import(
-  "resource://testing-common/PermissionTestUtils.jsm"
-);
-
 const SINGLE_TRY_TIMEOUT = 100;
 const NUMBER_OF_TRIES = 30;
 
@@ -450,18 +446,10 @@ function setup_UITourTest() {
 
 function UITourTest(usingAddTask = false) {
   Services.prefs.setBoolPref("browser.uitour.enabled", true);
-  let testHttpsOrigin = "https://example.org";
-  let testHttpOrigin = "http://example.org";
-  PermissionTestUtils.add(
-    testHttpsOrigin,
-    "uitour",
-    Services.perms.ALLOW_ACTION
-  );
-  PermissionTestUtils.add(
-    testHttpOrigin,
-    "uitour",
-    Services.perms.ALLOW_ACTION
-  );
+  let testHttpsUri = Services.io.newURI("https://example.org");
+  let testHttpUri = Services.io.newURI("http://example.org");
+  Services.perms.add(testHttpsUri, "uitour", Services.perms.ALLOW_ACTION);
+  Services.perms.add(testHttpUri, "uitour", Services.perms.ALLOW_ACTION);
 
   
   
@@ -477,8 +465,8 @@ function UITourTest(usingAddTask = false) {
     }
     delete window.gTestTab;
     Services.prefs.clearUserPref("browser.uitour.enabled");
-    PermissionTestUtils.remove(testHttpsOrigin, "uitour");
-    PermissionTestUtils.remove(testHttpOrigin, "uitour");
+    Services.perms.remove(testHttpsUri, "uitour");
+    Services.perms.remove(testHttpUri, "uitour");
   });
 
   

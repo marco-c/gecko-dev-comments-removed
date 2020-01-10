@@ -31,9 +31,6 @@
 
 
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
-const { PermissionTestUtils } = ChromeUtils.import(
-  "resource://testing-common/PermissionTestUtils.jsm"
-);
 
 
 
@@ -144,7 +141,7 @@ function do_app_cache(manifestURL, pageURL, pinned) {
     Ci.nsIOfflineCacheUpdateService
   );
 
-  PermissionTestUtils.add(
+  Services.perms.add(
     manifestURL,
     "pin-app",
     pinned
