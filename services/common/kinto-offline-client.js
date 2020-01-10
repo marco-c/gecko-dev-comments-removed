@@ -3084,7 +3084,7 @@ class CollectionTransaction {
     
 
 
-    const isIdentical = oldRecord && recordsEqual(oldRecord, updated, this.localFields);
+    const isIdentical = oldRecord && recordsEqual(oldRecord, updated, this.collection.localFields);
     const keepSynced = isIdentical && oldRecord._status == "synced";
     const neverSynced = !oldRecord || oldRecord && oldRecord._status == "created";
     const newStatus = keepSynced || synced ? "synced" : neverSynced ? "created" : "updated";
