@@ -48,7 +48,7 @@
     }
 
     static get observedAttributes() {
-      return ["accesskey", "text"];
+      return ["accesskey"];
     }
 
     set textContent(val) {
@@ -64,12 +64,6 @@
     attributeChangedCallback(name, oldValue, newValue) {
       if (!this.isConnectedAndReady || oldValue == newValue) {
         return;
-      }
-
-      
-      
-      if (name == "text") {
-        this._lastFormattedAccessKey = null;
       }
 
       
