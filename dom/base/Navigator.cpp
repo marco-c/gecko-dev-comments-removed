@@ -853,7 +853,8 @@ void Navigator::CheckProtocolHandlerAllowed(const nsAString& aScheme,
   
   
   if (!FindInReadable(NS_LITERAL_CSTRING("%s"), spec)) {
-    aRv.ThrowDOMException(NS_ERROR_DOM_SYNTAX_ERR);
+    aRv.ThrowDOMException(NS_ERROR_DOM_SYNTAX_ERR,
+                          "Handler URI does not contain \"%s\".");
     return;
   }
 
