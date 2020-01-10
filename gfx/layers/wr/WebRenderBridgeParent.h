@@ -260,16 +260,6 @@ class WebRenderBridgeParent final
 
   void RemoveEpochDataPriorTo(const wr::Epoch& aRenderedEpoch);
 
-  
-
-
-
-
-
-
-
-  void ForceIsFirstPaint() { mIsFirstPaint = true; }
-
   void PushDeferredPipelineData(RenderRootDeferredData&& aDeferredData);
 
   
