@@ -64,8 +64,9 @@ void PaymentRequestUpdateEvent::ResolvedCallback(JSContext* aCx,
   
   RootedDictionary<PaymentDetailsUpdate> details(aCx);
   if (!details.Init(aCx, aValue)) {
-    mRequest->AbortUpdate(NS_ERROR_TYPE_ERR);
-    JS_ClearPendingException(aCx);
+    ErrorResult rv;
+    rv.StealExceptionFromJSContext(aCx);
+    mRequest->AbortUpdate(rv);
     return;
   }
 
@@ -74,9 +75,9 @@ void PaymentRequestUpdateEvent::ResolvedCallback(JSContext* aCx,
   
   
   
-  nsresult rv =
-      mRequest->IsValidDetailsUpdate(details, true );
-  if (NS_FAILED(rv)) {
+  ErrorResult rv;
+  mRequest->IsValidDetailsUpdate(details, true , rv);
+  if (rv.Failed()) {
     mRequest->AbortUpdate(rv);
     return;
   }
