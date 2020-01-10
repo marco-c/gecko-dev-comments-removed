@@ -12,8 +12,6 @@ use crate::shared_lock::SharedRwLock;
 use crate::thread_state;
 use rayon;
 use std::env;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use parking_lot::{RwLock, RwLockReadGuard};
 
 
 pub struct GlobalStyleData {
@@ -30,22 +28,14 @@ pub struct StyleThreadPool {
     pub num_threads: usize,
 
     
-    
-    
-    
-    style_thread_pool: RwLock<Option<rayon::ThreadPool>>,
+    pub style_thread_pool: Option<rayon::ThreadPool>,
 }
 
 fn thread_name(index: usize) -> String {
     format!("StyleThread#{}", index)
 }
 
-
-
-static ALIVE_WORKER_THREADS: AtomicUsize = AtomicUsize::new(0);
-
 fn thread_startup(_index: usize) {
-    ALIVE_WORKER_THREADS.fetch_add(1, Ordering::Relaxed);
     thread_state::initialize_layout_worker_thread();
     #[cfg(feature = "gecko")]
     unsafe {
@@ -64,43 +54,6 @@ fn thread_shutdown(_: usize) {
     unsafe {
         bindings::Gecko_UnregisterProfilerThread();
         bindings::Gecko_SetJemallocThreadLocalArena(false);
-    }
-    ALIVE_WORKER_THREADS.fetch_sub(1, Ordering::Relaxed);
-}
-
-impl StyleThreadPool {
-    
-    pub fn shutdown() {
-        if ALIVE_WORKER_THREADS.load(Ordering::Relaxed) == 0 {
-            return;
-        }
-        {
-            
-            let _ = STYLE_THREAD_POOL.style_thread_pool.write().take();
-        }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        while ALIVE_WORKER_THREADS.load(Ordering::Relaxed) != 0 {
-            std::thread::yield_now();
-        }
-    }
-
-    
-    
-    
-    
-    pub fn pool(&self) -> RwLockReadGuard<Option<rayon::ThreadPool>> {
-        self.style_thread_pool.read()
     }
 }
 
@@ -160,11 +113,10 @@ lazy_static! {
         };
 
         StyleThreadPool {
-            num_threads,
-            style_thread_pool: RwLock::new(pool),
+            num_threads: num_threads,
+            style_thread_pool: pool,
         }
     };
-
     /// Global style data
     pub static ref GLOBAL_STYLE_DATA: GlobalStyleData = GlobalStyleData {
         shared_lock: SharedRwLock::new_leaked(),
