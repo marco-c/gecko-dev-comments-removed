@@ -492,6 +492,8 @@ class nsWindow final : public nsBaseWidget {
   
   guint32 mLastScrollEventTime;
 
+  bool mPanInProgress = false;
+
   
   nsRefPtrHashtable<nsPtrHashKey<GdkEventSequence>, mozilla::dom::Touch>
       mTouches;

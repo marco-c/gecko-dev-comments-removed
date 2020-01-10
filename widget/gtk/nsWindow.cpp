@@ -119,6 +119,9 @@ using namespace mozilla::widget;
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/KnowsCompositor.h"
 
+#include "mozilla/layers/APZInputBridge.h"
+#include "mozilla/layers/IAPZCTreeManager.h"
+
 #ifdef MOZ_X11
 #  include "GLContextGLX.h"  
 #  include "GtkCompositorWidget.h"
@@ -3034,8 +3037,11 @@ void nsWindow::OnScrollEvent(GdkEventScroll* aEvent) {
 #if GTK_CHECK_VERSION(3, 4, 0)
   
   if (aEvent->direction != GDK_SCROLL_SMOOTH &&
-      mLastScrollEventTime == aEvent->time)
+      mLastScrollEventTime == aEvent->time) {
+    LOG(("[%d] duplicate legacy scroll event %d\n", aEvent->time,
+         aEvent->direction));
     return;
+  }
 #endif
   WidgetWheelEvent wheelEvent(true, eWheel, this);
   wheelEvent.mDeltaMode = dom::WheelEvent_Binding::DOM_DELTA_LINE;
@@ -3045,19 +3051,54 @@ void nsWindow::OnScrollEvent(GdkEventScroll* aEvent) {
       
       
       mLastScrollEventTime = aEvent->time;
-      
-      
-      wheelEvent.mDeltaX = aEvent->delta_x * 3;
-      wheelEvent.mDeltaY = aEvent->delta_y * 3;
-      wheelEvent.mIsNoLineOrPageDelta = true;
-      
+
       
       
       GdkDevice* device = gdk_event_get_source_device((GdkEvent*)aEvent);
       GdkInputSource source = gdk_device_get_source(device);
       if (source == GDK_SOURCE_TOUCHSCREEN || source == GDK_SOURCE_TOUCHPAD) {
+        if (StaticPrefs::APZGTKKineticScrollEnabled() &&
+            gtk_check_version(3, 20, 0) == nullptr) {
+          static auto sGdkEventIsScrollStopEvent =
+              (gboolean(*)(const GdkEvent*))dlsym(
+                  RTLD_DEFAULT, "gdk_event_is_scroll_stop_event");
+
+          LOG(("[%d] pan smooth event dx=%f dy=%f inprogress=%d\n",
+               aEvent->time, aEvent->delta_x, aEvent->delta_y, mPanInProgress));
+          PanGestureInput::PanGestureType eventType =
+              PanGestureInput::PANGESTURE_PAN;
+          if (sGdkEventIsScrollStopEvent((GdkEvent*)aEvent)) {
+            eventType = PanGestureInput::PANGESTURE_END;
+            mPanInProgress = false;
+          } else if (!mPanInProgress) {
+            eventType = PanGestureInput::PANGESTURE_START;
+            mPanInProgress = true;
+          }
+
+          LayoutDeviceIntPoint touchPoint = GetRefPoint(this, aEvent);
+          PanGestureInput panEvent(
+              eventType, aEvent->time, GetEventTimeStamp(aEvent->time),
+              ScreenPoint(touchPoint.x, touchPoint.y),
+              ScreenPoint(aEvent->delta_x, aEvent->delta_y),
+              KeymapWrapper::ComputeKeyModifiers(aEvent->state));
+          panEvent.mDeltaType = PanGestureInput::PANDELTA_PAGE;
+          panEvent.mSimulateMomentum = true;
+
+          DispatchPanGestureInput(panEvent);
+
+          return;
+        }
+
+        
         wheelEvent.mScrollType = WidgetWheelEvent::SCROLL_ASYNCHRONOUSELY;
       }
+
+      
+      
+      wheelEvent.mDeltaX = aEvent->delta_x * 3;
+      wheelEvent.mDeltaY = aEvent->delta_y * 3;
+      wheelEvent.mIsNoLineOrPageDelta = true;
+
       break;
     }
 #endif
