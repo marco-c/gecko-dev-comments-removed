@@ -71,6 +71,13 @@ scrollcorner, resizer, scrollbar, scrollbarbutton, slider {
 
 
 
+  justify-items: start;
+
+  
+
+
+
+
 
   -moz-user-focus: ignore;
   -moz-user-select: none;
