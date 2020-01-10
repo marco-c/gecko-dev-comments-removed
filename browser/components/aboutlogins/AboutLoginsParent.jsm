@@ -726,10 +726,17 @@ var AboutLoginsParent = {
     
     
     const loggedIn = state.status != UIState.STATUS_NOT_CONFIGURED;
+
+    
+    const dismissedMobileFooter = Services.prefs.getBoolPref(
+      HIDE_MOBILE_FOOTER_PREF
+    );
+
     return {
       loggedIn,
       email: state.email,
       avatarURL: state.avatarURL,
+      hideMobileFooter: !loggedIn || dismissedMobileFooter,
     };
   },
 
