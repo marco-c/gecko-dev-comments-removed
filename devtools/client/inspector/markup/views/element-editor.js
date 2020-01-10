@@ -977,7 +977,7 @@ ElementEditor.prototype = {
     
     
     this.markup.reselectOnRemoved(this.node, "edittagname");
-    this.markup.walker.editTagName(this.node, newTagName).catch(() => {
+    this.node.walkerFront.editTagName(this.node, newTagName).catch(() => {
       
       this.markup.cancelReselectOnRemoved();
     });
