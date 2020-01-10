@@ -237,8 +237,17 @@ class nsThread : public nsIThreadInternal,
   
   nsCOMPtr<nsIRunnable> mCurrentEvent;
 
+  
+  
+  
   mozilla::TimeStamp mCurrentEventStart;
   mozilla::TimeStamp mNextIdleDeadline;
+
+  
+  
+  
+  mozilla::TimeDuration mLastEventDelay;
+  mozilla::TimeStamp mLastEventStart;
 
 #ifdef EARLY_BETA_OR_EARLIER
   nsCString mNameForWakeupTelemetry;
