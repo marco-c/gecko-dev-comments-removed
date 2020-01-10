@@ -478,6 +478,18 @@ class MacroAssembler : public MacroAssemblerSpecific {
                              uint8_t* target) PER_SHARED_ARCH;
   static void patchCallToNop(uint8_t* callsite) PER_SHARED_ARCH;
 
+  
+  
+  
+  
+  
+  
+  CodeOffset moveNearAddressWithPatch(Register dest)
+      DEFINED_ON(x86, x64, arm, arm64, mips_shared);
+  static void patchNearAddressMove(CodeLocationLabel loc,
+                                   CodeLocationLabel target)
+      DEFINED_ON(x86, x64, arm, arm64, mips_shared);
+
  public:
   
   
