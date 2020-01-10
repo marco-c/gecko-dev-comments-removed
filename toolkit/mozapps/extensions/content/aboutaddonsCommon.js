@@ -201,3 +201,8 @@ function isDisabledUnsigned(addon) {
       : AddonSettings.REQUIRE_SIGNING;
   return signingRequired && !isCorrectlySigned(addon);
 }
+
+function isPending(addon, action) {
+  const amAction = AddonManager["PENDING_" + action.toUpperCase()];
+  return !!(addon.pendingOperations & amAction);
+}

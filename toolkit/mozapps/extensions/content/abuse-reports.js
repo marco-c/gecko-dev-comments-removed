@@ -170,7 +170,10 @@ async function submitReport({ report, reason, message }) {
     
     
     let barId;
-    if (!(addon.permissions & AddonManager.PERM_CAN_UNINSTALL)) {
+    if (
+      !(addon.permissions & AddonManager.PERM_CAN_UNINSTALL) &&
+      !isPending(addon, "uninstall")
+    ) {
       
       barId = "submitted-no-remove-action";
     } else if (report.reportEntryPoint === "uninstall") {

@@ -1139,6 +1139,10 @@ add_task(async function test_abuse_report_message_bars() {
       setTestRequestHandler(200, "{}");
       triggerNewAbuseReport(extId, "uninstall");
       await promiseAbuseReportRendered();
+      const addon = await AddonManager.getAddonByID(extId);
+      
+      
+      await addon.uninstall(true);
       triggerSubmitAbuseReport("fake-reason", "fake-message");
     };
     await assertMessageBars(["submitting", "submitted-and-removed"], testFn);
