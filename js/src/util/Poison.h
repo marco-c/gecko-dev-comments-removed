@@ -20,9 +20,9 @@
 #include <string.h>
 
 #include "jstypes.h"
-#include "jsutil.h"  
 
 #include "js/Value.h"
+#include "util/DiagnosticAssertions.h"
 
 
 #if defined(JS_CRASH_DIAGNOSTICS) || defined(JS_GC_ZEAL)
