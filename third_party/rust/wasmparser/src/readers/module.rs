@@ -13,7 +13,7 @@
 
 
 
-use std::iter::{IntoIterator, Iterator};
+use core::iter::{IntoIterator, Iterator};
 
 use super::{
     BinaryReader, BinaryReaderError, CustomSectionKind, Range, Result, SectionCode, SectionHeader,
