@@ -7,7 +7,7 @@
 
 
 
-.tree-input {
+html|input.tree-input {
   -moz-appearance: none;
   border-width: 0;
   box-shadow: var(--focus-ring-box-shadow);
