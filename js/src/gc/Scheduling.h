@@ -569,6 +569,11 @@ class GCSchedulingState {
   }
 };
 
+using AtomicByteCount =
+    mozilla::Atomic<size_t, mozilla::ReleaseAcquire,
+                    mozilla::recordreplay::Behavior::DontPreserve>;
+
+
 
 
 
@@ -585,28 +590,22 @@ class HeapSize {
 
 
 
-
-
-  mozilla::Atomic<size_t, mozilla::ReleaseAcquire,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      gcBytes_;
+  AtomicByteCount bytes_;
 
   
 
 
 
 
-  mozilla::Atomic<size_t, mozilla::ReleaseAcquire,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      retainedBytes_;
+  AtomicByteCount retainedBytes_;
 
  public:
-  explicit HeapSize(HeapSize* parent) : parent_(parent), gcBytes_(0) {}
+  explicit HeapSize(HeapSize* parent) : parent_(parent), bytes_(0) {}
 
-  size_t gcBytes() const { return gcBytes_; }
+  size_t bytes() const { return bytes_; }
   size_t retainedBytes() const { return retainedBytes_; }
 
-  void updateOnGCStart() { retainedBytes_ = size_t(gcBytes_); }
+  void updateOnGCStart() { retainedBytes_ = size_t(bytes_); }
 
   void addGCArena() { addBytes(ArenaSize); }
   void removeGCArena() {
@@ -615,9 +614,9 @@ class HeapSize {
   }
 
   void addBytes(size_t nbytes) {
-    mozilla::DebugOnly<size_t> initialBytes(gcBytes_);
+    mozilla::DebugOnly<size_t> initialBytes(bytes_);
     MOZ_ASSERT(initialBytes + nbytes > initialBytes);
-    gcBytes_ += nbytes;
+    bytes_ += nbytes;
     if (parent_) {
       parent_->addBytes(nbytes);
     }
@@ -628,8 +627,8 @@ class HeapSize {
       
       retainedBytes_ = nbytes <= retainedBytes_ ? retainedBytes_ - nbytes : 0;
     }
-    MOZ_ASSERT(gcBytes_ >= nbytes);
-    gcBytes_ -= nbytes;
+    MOZ_ASSERT(bytes_ >= nbytes);
+    bytes_ -= nbytes;
     if (parent_) {
       parent_->removeBytes(nbytes, wasSwept);
     }
@@ -639,31 +638,33 @@ class HeapSize {
   void adopt(HeapSize& source) {
     
     
-    gcBytes_ += source.gcBytes_;
+    bytes_ += source.bytes_;
     source.retainedBytes_ = 0;
-    source.gcBytes_ = 0;
+    source.bytes_ = 0;
   }
 };
 
 
-class ZoneThreshold {
+
+class HeapThreshold {
  protected:
+  HeapThreshold() = default;
+
   
-  mozilla::Atomic<size_t, mozilla::Relaxed,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      gcTriggerBytes_;
+  AtomicByteCount bytes_;
 
  public:
-  size_t gcTriggerBytes() const { return gcTriggerBytes_; }
+  size_t bytes() const { return bytes_; }
   size_t nonIncrementalTriggerBytes(GCSchedulingTunables& tunables) const {
-    return gcTriggerBytes_ * tunables.nonIncrementalFactor();
+    return bytes_ * tunables.nonIncrementalFactor();
   }
   float eagerAllocTrigger(bool highFrequencyGC) const;
 };
 
 
 
-class ZoneHeapThreshold : public ZoneThreshold {
+
+class GCHeapThreshold : public HeapThreshold {
  public:
   void updateAfterGC(size_t lastBytes, JSGCInvocationKind gckind,
                      const GCSchedulingTunables& tunables,
@@ -681,7 +682,8 @@ class ZoneHeapThreshold : public ZoneThreshold {
 
 
 
-class ZoneMallocThreshold : public ZoneThreshold {
+
+class MallocHeapThreshold : public HeapThreshold {
  public:
   void updateAfterGC(size_t lastBytes, size_t baseBytes, float growthFactor,
                      const AutoLockGC& lock);
@@ -694,9 +696,9 @@ class ZoneMallocThreshold : public ZoneThreshold {
 
 
 
-class ZoneFixedThreshold : public ZoneThreshold {
+class JitHeapThreshold : public HeapThreshold {
  public:
-  explicit ZoneFixedThreshold(size_t bytes) { gcTriggerBytes_ = bytes; }
+  explicit JitHeapThreshold(size_t bytes) { bytes_ = bytes; }
 };
 
 #ifdef DEBUG

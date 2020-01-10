@@ -30,7 +30,7 @@ bool CurrentThreadIsGCSweeping();
 namespace gc {
 void MaybeMallocTriggerZoneGC(JSRuntime* rt, ZoneAllocator* zoneAlloc,
                               const HeapSize& heap,
-                              const ZoneThreshold& threshold,
+                              const HeapThreshold& threshold,
                               JS::GCReason reason);
 }
 
@@ -54,10 +54,10 @@ class ZoneAllocator : public JS::shadow::Zone,
   void reportAllocationOverflow() const;
 
   void adoptMallocBytes(ZoneAllocator* other) {
-    gcMallocBytes.adopt(other->gcMallocBytes);
-    gcJitBytes.adopt(other->gcJitBytes);
+    mallocHeapSize.adopt(other->mallocHeapSize);
+    jitHeapSize.adopt(other->jitHeapSize);
 #ifdef DEBUG
-    gcMallocTracker.adopt(other->gcMallocTracker);
+    mallocTracker.adopt(other->mallocTracker);
 #endif
   }
 
@@ -70,12 +70,12 @@ class ZoneAllocator : public JS::shadow::Zone,
   void addCellMemory(js::gc::Cell* cell, size_t nbytes, js::MemoryUse use) {
     MOZ_ASSERT(cell);
     MOZ_ASSERT(nbytes);
-    gcMallocBytes.addBytes(nbytes);
+    mallocHeapSize.addBytes(nbytes);
 
     
 
 #ifdef DEBUG
-    gcMallocTracker.trackMemory(cell, nbytes, use);
+    mallocTracker.trackMemory(cell, nbytes, use);
 #endif
   }
 
@@ -85,37 +85,37 @@ class ZoneAllocator : public JS::shadow::Zone,
     MOZ_ASSERT(nbytes);
     MOZ_ASSERT_IF(CurrentThreadIsGCSweeping(), wasSwept);
 
-    gcMallocBytes.removeBytes(nbytes, wasSwept);
+    mallocHeapSize.removeBytes(nbytes, wasSwept);
 
 #ifdef DEBUG
-    gcMallocTracker.untrackMemory(cell, nbytes, use);
+    mallocTracker.untrackMemory(cell, nbytes, use);
 #endif
   }
 
   void swapCellMemory(js::gc::Cell* a, js::gc::Cell* b, js::MemoryUse use) {
 #ifdef DEBUG
-    gcMallocTracker.swapMemory(a, b, use);
+    mallocTracker.swapMemory(a, b, use);
 #endif
   }
 
 #ifdef DEBUG
   void registerPolicy(js::ZoneAllocPolicy* policy) {
-    return gcMallocTracker.registerPolicy(policy);
+    return mallocTracker.registerPolicy(policy);
   }
   void unregisterPolicy(js::ZoneAllocPolicy* policy) {
-    return gcMallocTracker.unregisterPolicy(policy);
+    return mallocTracker.unregisterPolicy(policy);
   }
   void movePolicy(js::ZoneAllocPolicy* dst, js::ZoneAllocPolicy* src) {
-    return gcMallocTracker.movePolicy(dst, src);
+    return mallocTracker.movePolicy(dst, src);
   }
 #endif
 
   void incPolicyMemory(js::ZoneAllocPolicy* policy, size_t nbytes) {
     MOZ_ASSERT(nbytes);
-    gcMallocBytes.addBytes(nbytes);
+    mallocHeapSize.addBytes(nbytes);
 
 #ifdef DEBUG
-    gcMallocTracker.incPolicyMemory(policy, nbytes);
+    mallocTracker.incPolicyMemory(policy, nbytes);
 #endif
 
     maybeMallocTriggerZoneGC();
@@ -125,35 +125,35 @@ class ZoneAllocator : public JS::shadow::Zone,
     MOZ_ASSERT(nbytes);
     MOZ_ASSERT_IF(CurrentThreadIsGCSweeping(), wasSwept);
 
-    gcMallocBytes.removeBytes(nbytes, wasSwept);
+    mallocHeapSize.removeBytes(nbytes, wasSwept);
 
 #ifdef DEBUG
-    gcMallocTracker.decPolicyMemory(policy, nbytes);
+    mallocTracker.decPolicyMemory(policy, nbytes);
 #endif
   }
 
   void incJitMemory(size_t nbytes) {
     MOZ_ASSERT(nbytes);
-    gcJitBytes.addBytes(nbytes);
-    maybeTriggerZoneGC(gcJitBytes, gcJitThreshold,
+    jitHeapSize.addBytes(nbytes);
+    maybeTriggerZoneGC(jitHeapSize, jitHeapThreshold,
                        JS::GCReason::TOO_MUCH_JIT_CODE);
   }
   void decJitMemory(size_t nbytes) {
     MOZ_ASSERT(nbytes);
-    gcJitBytes.removeBytes(nbytes, true);
+    jitHeapSize.removeBytes(nbytes, true);
   }
 
   
   void maybeMallocTriggerZoneGC() {
-    maybeTriggerZoneGC(gcMallocBytes, gcMallocThreshold,
+    maybeTriggerZoneGC(mallocHeapSize, mallocHeapThreshold,
                        JS::GCReason::TOO_MUCH_MALLOC);
   }
 
  private:
   void maybeTriggerZoneGC(const js::gc::HeapSize& heap,
-                          const js::gc::ZoneThreshold& threshold,
+                          const js::gc::HeapThreshold& threshold,
                           JS::GCReason reason) {
-    if (heap.gcBytes() >= threshold.gcTriggerBytes()) {
+    if (heap.bytes() >= threshold.bytes()) {
       gc::MaybeMallocTriggerZoneGC(runtimeFromAnyThread(), this, heap,
                                    threshold, reason);
     }
@@ -161,10 +161,10 @@ class ZoneAllocator : public JS::shadow::Zone,
 
  public:
   
-  js::gc::HeapSize zoneSize;
+  js::gc::HeapSize gcHeapSize;
 
   
-  js::gc::ZoneHeapThreshold threshold;
+  js::gc::GCHeapThreshold gcHeapThreshold;
 
   
   
@@ -172,22 +172,22 @@ class ZoneAllocator : public JS::shadow::Zone,
 
   
   
-  js::gc::HeapSize gcMallocBytes;
+  js::gc::HeapSize mallocHeapSize;
 
   
-  js::gc::ZoneMallocThreshold gcMallocThreshold;
+  js::gc::MallocHeapThreshold mallocHeapThreshold;
 
   
-  js::gc::HeapSize gcJitBytes;
+  js::gc::HeapSize jitHeapSize;
 
   
-  js::gc::ZoneFixedThreshold gcJitThreshold;
+  js::gc::JitHeapThreshold jitHeapThreshold;
 
  private:
 #ifdef DEBUG
   
   
-  js::gc::MemoryTracker gcMallocTracker;
+  js::gc::MemoryTracker mallocTracker;
 #endif
 
   friend class js::gc::GCRuntime;
