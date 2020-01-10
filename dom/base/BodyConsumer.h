@@ -38,6 +38,26 @@ class BodyConsumer final : public nsIObserver,
     CONSUME_TEXT,
   };
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static already_AddRefed<Promise> Create(
       nsIGlobalObject* aGlobal, nsIEventTarget* aMainThreadEventTarget,
       nsIInputStream* aBodyStream, AbortSignalImpl* aSignalImpl,
