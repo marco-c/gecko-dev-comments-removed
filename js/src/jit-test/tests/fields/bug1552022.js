@@ -1,5 +1,3 @@
-
-
 load(libdir + "eqArrayHelper.js");
 
 let expected = [];

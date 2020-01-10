@@ -1,5 +1,3 @@
-
-
 let called = false
 class base {
     set x(arg) {
