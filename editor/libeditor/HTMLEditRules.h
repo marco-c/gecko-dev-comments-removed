@@ -196,15 +196,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
-  InsertBRElementToEmptyListItemsAndTableCellsInRange(
-      const RawRangeBoundary& aStartRef, const RawRangeBoundary& aEndRef);
-
-  
-
-
-
   MOZ_MUST_USE nsresult PinSelectionToNewBlock();
 
   void CheckInterlinePosition();
