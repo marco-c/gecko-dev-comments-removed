@@ -312,7 +312,37 @@ class nsAttrValue {
 
 
 
+
+
   bool ParseSpecialIntValue(const nsAString& aString);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  bool ParseHTMLDimension(const nsAString& aInput) {
+    return DoParseHTMLDimension(aInput, false);
+  }
+
+  
+
+
+
+
+
+
+
+  bool ParseNonzeroHTMLDimension(const nsAString& aInput) {
+    return DoParseHTMLDimension(aInput, true);
+  }
 
   
 
@@ -486,6 +516,15 @@ class nsAttrValue {
 
   static nsTArray<const EnumTable*>* sEnumTableArray;
   static MiscContainer* sMiscContainerCache;
+
+  
+
+
+
+
+
+
+  bool DoParseHTMLDimension(const nsAString& aInput, bool aEnsureNonzero);
 
   uintptr_t mBits;
 };
