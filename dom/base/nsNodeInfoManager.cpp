@@ -318,6 +318,11 @@ void nsNodeInfoManager::RemoveNodeInfo(NodeInfo* aNodeInfo) {
   MOZ_ASSERT(ret, "Can't find mozilla::dom::NodeInfo to remove!!!");
 }
 
+static bool IsSystemOrAddonPrincipal(nsIPrincipal* aPrincipal) {
+  return nsContentUtils::IsSystemPrincipal(aPrincipal) ||
+         BasePrincipal::Cast(aPrincipal)->AddonPolicy();
+}
+
 bool nsNodeInfoManager::InternalSVGEnabled() {
   
   
@@ -334,15 +339,19 @@ bool nsNodeInfoManager::InternalSVGEnabled() {
       loadInfo = channel->LoadInfo();
     }
   }
+
+  
+  
+  
   bool conclusion =
-      (SVGEnabled || nsContentUtils::IsSystemPrincipal(mPrincipal) ||
+      (SVGEnabled || IsSystemOrAddonPrincipal(mPrincipal) ||
        (loadInfo &&
         (loadInfo->GetExternalContentPolicyType() ==
              nsIContentPolicy::TYPE_IMAGE ||
          loadInfo->GetExternalContentPolicyType() ==
              nsIContentPolicy::TYPE_OTHER) &&
-        (nsContentUtils::IsSystemPrincipal(loadInfo->LoadingPrincipal()) ||
-         nsContentUtils::IsSystemPrincipal(loadInfo->TriggeringPrincipal()))));
+        (IsSystemOrAddonPrincipal(loadInfo->LoadingPrincipal()) ||
+         IsSystemOrAddonPrincipal(loadInfo->TriggeringPrincipal()))));
   mSVGEnabled = conclusion ? eTriTrue : eTriFalse;
   return conclusion;
 }
