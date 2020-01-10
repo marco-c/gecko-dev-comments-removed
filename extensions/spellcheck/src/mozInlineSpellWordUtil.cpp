@@ -52,6 +52,31 @@ static bool IsAmbiguousDOMWordSeprator(char16_t ch) {
 
 
 
+
+
+
+
+
+
+
+static bool IsDOMWordSeparator(char16_t ch) {
+  
+  if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') return true;
+
+  
+  if (ch >= 0xA0 && (ch == 0x00A0 ||  
+                     ch == 0x2002 ||  
+                     ch == 0x2003 ||  
+                     ch == 0x2009 ||  
+                     ch == 0x3000))   
+    return true;
+
+  
+  return false;
+}
+
+
+
 nsresult mozInlineSpellWordUtil::Init(TextEditor* aTextEditor) {
   if (NS_WARN_IF(!aTextEditor)) {
     return NS_ERROR_FAILURE;
@@ -359,16 +384,14 @@ enum CharClass {
 };
 
 
+template <class T>
 struct MOZ_STACK_CLASS WordSplitState {
-  mozInlineSpellWordUtil* mWordUtil;
-  const nsDependentSubstring mDOMWordText;
+  const T& mDOMWordText;
   int32_t mDOMWordOffset;
   CharClass mCurCharClass;
 
-  WordSplitState(mozInlineSpellWordUtil* aWordUtil, const nsString& aString,
-                 int32_t aStart, int32_t aLen)
-      : mWordUtil(aWordUtil),
-        mDOMWordText(aString, aStart, aLen),
+  explicit WordSplitState(const T& aString)
+      : mDOMWordText(aString),
         mDOMWordOffset(0),
         mCurCharClass(CHAR_CLASS_END_OF_INPUT) {}
 
@@ -381,18 +404,23 @@ struct MOZ_STACK_CLASS WordSplitState {
   
   
   
-  bool IsSpecialWord();
+  bool IsSpecialWord() const;
 
   
   
   
-  bool ShouldSkipWord(int32_t aStart, int32_t aLength);
+  bool ShouldSkipWord(int32_t aStart, int32_t aLength) const;
+
+  
+  
+  bool GetDOMWordSeparatorOffset(int32_t aOffset,
+                                 int32_t* aSeparatorOffset) const;
 };
 
 
-
-CharClass WordSplitState::ClassifyCharacter(int32_t aIndex,
-                                            bool aRecurse) const {
+template <class T>
+CharClass WordSplitState<T>::ClassifyCharacter(int32_t aIndex,
+                                               bool aRecurse) const {
   NS_ASSERTION(aIndex >= 0 && aIndex <= int32_t(mDOMWordText.Length()),
                "Index out of range");
   if (aIndex == int32_t(mDOMWordText.Length())) return CHAR_CLASS_SEPARATOR;
@@ -472,8 +500,8 @@ CharClass WordSplitState::ClassifyCharacter(int32_t aIndex,
 }
 
 
-
-void WordSplitState::Advance() {
+template <class T>
+void WordSplitState<T>::Advance() {
   NS_ASSERTION(mDOMWordOffset >= 0, "Negative word index");
   NS_ASSERTION(mDOMWordOffset < (int32_t)mDOMWordText.Length(),
                "Length beyond end");
@@ -486,20 +514,20 @@ void WordSplitState::Advance() {
 }
 
 
-
-void WordSplitState::AdvanceThroughSeparators() {
+template <class T>
+void WordSplitState<T>::AdvanceThroughSeparators() {
   while (mCurCharClass == CHAR_CLASS_SEPARATOR) Advance();
 }
 
 
-
-void WordSplitState::AdvanceThroughWord() {
+template <class T>
+void WordSplitState<T>::AdvanceThroughWord() {
   while (mCurCharClass == CHAR_CLASS_WORD) Advance();
 }
 
 
-
-bool WordSplitState::IsSpecialWord() {
+template <class T>
+bool WordSplitState<T>::IsSpecialWord() const {
   
   
   
@@ -555,8 +583,8 @@ bool WordSplitState::IsSpecialWord() {
 }
 
 
-
-bool WordSplitState::ShouldSkipWord(int32_t aStart, int32_t aLength) {
+template <class T>
+bool WordSplitState<T>::ShouldSkipWord(int32_t aStart, int32_t aLength) const {
   int32_t last = aStart + aLength;
 
   
@@ -570,30 +598,27 @@ bool WordSplitState::ShouldSkipWord(int32_t aStart, int32_t aLength) {
   return false;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-static bool IsDOMWordSeparator(char16_t ch) {
-  
-  if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') return true;
-
-  
-  if (ch >= 0xA0 && (ch == 0x00A0 ||  
-                     ch == 0x2002 ||  
-                     ch == 0x2003 ||  
-                     ch == 0x2009 ||  
-                     ch == 0x3000))   
-    return true;
-
-  
+template <class T>
+bool WordSplitState<T>::GetDOMWordSeparatorOffset(
+    int32_t aOffset, int32_t* aSeparatorOffset) const {
+  for (int32_t i = aOffset - 1; i >= 0; --i) {
+    if (IsDOMWordSeparator(mDOMWordText[i]) ||
+        (!IsAmbiguousDOMWordSeprator(mDOMWordText[i]) &&
+         ClassifyCharacter(i, true) == CHAR_CLASS_SEPARATOR)) {
+      
+      for (int32_t j = i - 1; j >= 0; --j) {
+        if (IsDOMWordSeparator(mDOMWordText[j]) ||
+            (!IsAmbiguousDOMWordSeprator(mDOMWordText[j]) &&
+             ClassifyCharacter(j, true) == CHAR_CLASS_SEPARATOR)) {
+          i = j;
+        } else {
+          break;
+        }
+      }
+      *aSeparatorOffset = i;
+      return true;
+    }
+  }
   return false;
 }
 
@@ -614,38 +639,22 @@ static inline bool IsBRElement(nsINode* aNode) {
 
 
 
-static bool TextNodeContainsDOMWordSeparator(nsINode* aNode,
+static bool TextNodeContainsDOMWordSeparator(nsIContent* aContent,
                                              int32_t aBeforeOffset,
                                              int32_t* aSeparatorOffset) {
-  
-  nsIContent* content = static_cast<nsIContent*>(aNode);
-  const nsTextFragment* textFragment = content->GetText();
+  const nsTextFragment* textFragment = aContent->GetText();
   NS_ASSERTION(textFragment, "Where is our text?");
-  nsString text;
   int32_t end = std::min(aBeforeOffset, int32_t(textFragment->GetLength()));
-  bool ok = textFragment->AppendTo(text, 0, end, mozilla::fallible);
-  if (!ok) return false;
 
-  WordSplitState state(nullptr, text, 0, end);
-  for (int32_t i = end - 1; i >= 0; --i) {
-    if (IsDOMWordSeparator(textFragment->CharAt(i)) ||
-        (!IsAmbiguousDOMWordSeprator(textFragment->CharAt(i)) &&
-         state.ClassifyCharacter(i, true) == CHAR_CLASS_SEPARATOR)) {
-      
-      for (int32_t j = i - 1; j >= 0; --j) {
-        if (IsDOMWordSeparator(textFragment->CharAt(j)) ||
-            (!IsAmbiguousDOMWordSeprator(textFragment->CharAt(j)) &&
-             state.ClassifyCharacter(j, true) == CHAR_CLASS_SEPARATOR)) {
-          i = j;
-        } else {
-          break;
-        }
-      }
-      *aSeparatorOffset = i;
-      return true;
-    }
+  if (textFragment->Is2b()) {
+    nsDependentSubstring targetText(textFragment->Get2b(), end);
+    WordSplitState<nsDependentSubstring> state(targetText);
+    return state.GetDOMWordSeparatorOffset(end, aSeparatorOffset);
   }
-  return false;
+
+  nsDependentCSubstring targetText(textFragment->Get1b(), end);
+  WordSplitState<nsDependentCSubstring> state(targetText);
+  return state.GetDOMWordSeparatorOffset(end, aSeparatorOffset);
 }
 
 
@@ -665,7 +674,7 @@ static bool ContainsDOMWordSeparator(nsINode* aNode, int32_t aBeforeOffset,
 
   if (!IsSpellCheckingTextNode(aNode)) return false;
 
-  return TextNodeContainsDOMWordSeparator(aNode, aBeforeOffset,
+  return TextNodeContainsDOMWordSeparator(aNode->AsContent(), aBeforeOffset,
                                           aSeparatorOffset);
 }
 
@@ -732,7 +741,7 @@ void mozInlineSpellWordUtil::BuildSoftText() {
           
           if (!ContainsDOMWordSeparator(node, firstOffsetInNode - 1,
                                         &newOffset)) {
-            nsINode* prevNode = node->GetPreviousSibling();
+            nsIContent* prevNode = node->GetPreviousSibling();
             while (prevNode && IsSpellCheckingTextNode(prevNode)) {
               mSoftBegin.mNode = prevNode;
               if (TextNodeContainsDOMWordSeparator(prevNode, INT32_MAX,
@@ -1010,7 +1019,8 @@ int32_t mozInlineSpellWordUtil::FindRealWordContaining(int32_t aSoftTextOffset,
 
 
 nsresult mozInlineSpellWordUtil::SplitDOMWord(int32_t aStart, int32_t aEnd) {
-  WordSplitState state(this, mSoftText, aStart, aEnd - aStart);
+  nsDependentSubstring targetText(mSoftText, aStart, aEnd - aStart);
+  WordSplitState<nsDependentSubstring> state(targetText);
   state.mCurCharClass = state.ClassifyCharacter(0, true);
 
   state.AdvanceThroughSeparators();
