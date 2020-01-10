@@ -82,21 +82,6 @@ function MockFxAccountsClient() {
   this.getDeviceList = function() {
     return Promise.resolve();
   };
-  this.oauthDestroy = sinon.stub().callsFake((_clientId, token) => {
-    this.activeTokens.delete(token);
-    return Promise.resolve();
-  });
-  this.oauthToken = function(_sessionToken, _clientId, _scopeString) {
-    let token = "token" + this.numTokenFetches;
-    this.numTokenFetches += 1;
-    this.activeTokens.add(token);
-    print("oauthToken returning token", token);
-    return Promise.resolve({ access_token: token });
-  };
-
-  
-  this.numTokenFetches = 0;
-  this.activeTokens = new Set();
 
   FxAccountsClient.apply(this);
 }
@@ -105,7 +90,7 @@ MockFxAccountsClient.prototype = {
   __proto__: FxAccountsClient.prototype,
 };
 
-function MockFxAccounts() {
+function MockFxAccounts(mockGrantClient) {
   return new FxAccounts({
     fxAccountsClient: new MockFxAccountsClient(),
     getAssertion: () => Promise.resolve("assertion"),
@@ -114,6 +99,12 @@ function MockFxAccounts() {
       let storage = new MockStorageManager();
       storage.initialize(credentials);
       return new AccountState(storage);
+    },
+    _destroyOAuthToken(tokenData) {
+      
+      return mockGrantClient.destroyToken(tokenData.token).then(() => {
+        Services.obs.notifyObservers(null, "testhelper-fxa-revoke-complete");
+      });
     },
     _getDeviceName() {
       return "mock device name";
@@ -130,8 +121,8 @@ function MockFxAccounts() {
   });
 }
 
-async function createMockFxA() {
-  let fxa = new MockFxAccounts();
+async function createMockFxA(mockGrantClient) {
+  let fxa = new MockFxAccounts(mockGrantClient);
   let credentials = {
     email: "foo@example.com",
     uid: "1234@lcip.org",
@@ -150,10 +141,33 @@ async function createMockFxA() {
 
 
 
+function MockFxAccountsOAuthGrantClient() {
+  this.activeTokens = new Set();
+}
+
+MockFxAccountsOAuthGrantClient.prototype = {
+  serverURL: { href: "http://localhost" },
+  getTokenFromAssertion(assertion, scope) {
+    let token = "token" + this.numTokenFetches;
+    this.numTokenFetches += 1;
+    this.activeTokens.add(token);
+    print("getTokenFromAssertion returning token", token);
+    return Promise.resolve({ access_token: token });
+  },
+  destroyToken(token) {
+    ok(this.activeTokens.delete(token));
+    print("after destroy have", this.activeTokens.size, "tokens left.");
+    return Promise.resolve({});
+  },
+  
+  numTokenFetches: 0,
+  activeTokens: null,
+};
+
 add_task(async function testRevoke() {
-  let tokenOptions = { scope: "test-scope" };
-  let fxa = await createMockFxA();
-  let client = fxa._internal.fxAccountsClient;
+  let client = new MockFxAccountsOAuthGrantClient();
+  let tokenOptions = { scope: "test-scope", client };
+  let fxa = await createMockFxA(client);
 
   
   let token1 = await fxa.getOAuthToken(tokenOptions);
@@ -163,8 +177,10 @@ add_task(async function testRevoke() {
   equal(token1, "token0");
 
   
+  let revokeComplete = promiseNotification("testhelper-fxa-revoke-complete");
+  
   await fxa.removeCachedOAuthToken({ token: token1 });
-  ok(client.oauthDestroy.calledOnce);
+  await revokeComplete;
 
   
   equal(client.activeTokens.size, 0);
@@ -177,17 +193,17 @@ add_task(async function testRevoke() {
 });
 
 add_task(async function testSignOutDestroysTokens() {
-  let fxa = await createMockFxA();
-  let client = fxa._internal.fxAccountsClient;
+  let client = new MockFxAccountsOAuthGrantClient();
+  let fxa = await createMockFxA(client);
 
   
-  let token1 = await fxa.getOAuthToken({ scope: "test-scope" });
+  let token1 = await fxa.getOAuthToken({ scope: "test-scope", client });
   equal(client.numTokenFetches, 1);
   equal(client.activeTokens.size, 1);
   ok(token1, "got a token");
 
   
-  let token2 = await fxa.getOAuthToken({ scope: "test-scope-2" });
+  let token2 = await fxa.getOAuthToken({ scope: "test-scope-2", client });
   equal(client.numTokenFetches, 2);
   equal(client.activeTokens.size, 2);
   ok(token2, "got a token");
@@ -198,7 +214,6 @@ add_task(async function testSignOutDestroysTokens() {
   
   await fxa.signOut();
   await signoutComplete;
-  ok(client.oauthDestroy.calledTwice);
   
   equal(client.activeTokens.size, 0);
 });
@@ -209,14 +224,14 @@ add_task(async function testTokenRaces() {
   
   
   
-  let fxa = await createMockFxA();
-  let client = fxa._internal.fxAccountsClient;
+  let client = new MockFxAccountsOAuthGrantClient();
+  let fxa = await createMockFxA(client);
 
   let results = await Promise.all([
-    fxa.getOAuthToken({ scope: "test-scope" }),
-    fxa.getOAuthToken({ scope: "test-scope" }),
-    fxa.getOAuthToken({ scope: "test-scope-2" }),
-    fxa.getOAuthToken({ scope: "test-scope-2" }),
+    fxa.getOAuthToken({ scope: "test-scope", client }),
+    fxa.getOAuthToken({ scope: "test-scope", client }),
+    fxa.getOAuthToken({ scope: "test-scope-2", client }),
+    fxa.getOAuthToken({ scope: "test-scope-2", client }),
   ]);
 
   equal(client.numTokenFetches, 2, "should have fetched 2 tokens.");
@@ -227,9 +242,14 @@ add_task(async function testTokenRaces() {
   equal(results[2], results[3]);
   
   equal(client.activeTokens.size, 2);
+  
+  let notifications = Promise.all([
+    promiseNotification("testhelper-fxa-revoke-complete"),
+    promiseNotification("testhelper-fxa-revoke-complete"),
+  ]);
   await fxa.removeCachedOAuthToken({ token: results[0] });
   equal(client.activeTokens.size, 1);
   await fxa.removeCachedOAuthToken({ token: results[2] });
   equal(client.activeTokens.size, 0);
-  ok(client.oauthDestroy.calledTwice);
+  await notifications;
 });

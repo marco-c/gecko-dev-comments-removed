@@ -69,6 +69,12 @@ ChromeUtils.defineModuleGetter(
 
 ChromeUtils.defineModuleGetter(
   this,
+  "FxAccountsOAuthGrantClient",
+  "resource://gre/modules/FxAccountsOAuthGrantClient.jsm"
+);
+
+ChromeUtils.defineModuleGetter(
+  this,
   "FxAccountsCommands",
   "resource://gre/modules/FxAccountsCommands.js"
 );
@@ -469,7 +475,8 @@ class FxAccounts {
 
   authorizeOAuthCode(options) {
     return this._withVerifiedAccountState(async state => {
-      const { sessionToken } = await state.getUserAccountData(["sessionToken"]);
+      const client = this._internal.oauthClient;
+      const oAuthURL = client.serverURL.href;
       const params = { ...options };
       if (params.keys_jwk) {
         const jwk = JSON.parse(
@@ -485,10 +492,8 @@ class FxAccounts {
         delete params.keys_jwk;
       }
       try {
-        return await this._internal.fxAccountsClient.oauthAuthorize(
-          sessionToken,
-          params
-        );
+        const assertion = await this._internal.getAssertion(oAuthURL);
+        return await client.authorizeCodeFromAssertion(assertion, params);
       } catch (err) {
         throw this._internal._errorToErrorClass(err);
       }
@@ -857,6 +862,20 @@ FxAccountsInternal.prototype = {
     return this._device;
   },
 
+  _oauthClient: null,
+  get oauthClient() {
+    if (!this._oauthClient) {
+      const serverURL = Services.urlFormatter.formatURLPref(
+        "identity.fxaccounts.remote.oauth.uri"
+      );
+      this._oauthClient = new FxAccountsOAuthGrantClient({
+        serverURL,
+        client_id: FX_OAUTH_CLIENT_ID,
+      });
+    }
+    return this._oauthClient;
+  },
+
   
   newAccountState(credentials) {
     let storage = new FxAccountsStorageManager();
@@ -1128,10 +1147,11 @@ FxAccountsInternal.prototype = {
   },
 
   _destroyOAuthToken(tokenData) {
-    return this.fxAccountsClient.oauthDestroy(
-      FX_OAUTH_CLIENT_ID,
-      tokenData.token
-    );
+    let client = new FxAccountsOAuthGrantClient({
+      serverURL: tokenData.server,
+      client_id: FX_OAUTH_CLIENT_ID,
+    });
+    return client.destroyToken(tokenData.token);
   },
 
   _destroyAllOAuthTokens(tokenInfos) {
@@ -1546,16 +1566,17 @@ FxAccountsInternal.prototype = {
   },
 
   
-  async _doTokenFetch(scopeString) {
-    return this.withVerifiedAccountState(async state => {
-      const { sessionToken } = await state.getUserAccountData(["sessionToken"]);
-      const result = await this.fxAccountsClient.oauthToken(
-        sessionToken,
-        FX_OAUTH_CLIENT_ID,
-        scopeString
-      );
-      return result.access_token;
-    });
+  async _doTokenFetch(client, scopeString) {
+    let oAuthURL = client.serverURL.href;
+    try {
+      log.debug("getOAuthToken fetching new token from", oAuthURL);
+      let assertion = await this.getAssertion(oAuthURL);
+      let result = await client.getTokenFromAssertion(assertion, scopeString);
+      let token = result.access_token;
+      return token;
+    } catch (err) {
+      throw this._errorToErrorClass(err);
+    }
   },
 
   getOAuthToken(options = {}) {
@@ -1585,6 +1606,8 @@ FxAccountsInternal.prototype = {
       
       
       let scopeString = scope.sort().join(" ");
+      let client = options.client || this.oauthClient;
+      let oAuthURL = client.serverURL.href;
 
       
       
@@ -1596,7 +1619,7 @@ FxAccountsInternal.prototype = {
 
       
       
-      let promise = this._doTokenFetch(scopeString)
+      let promise = this._doTokenFetch(client, scopeString)
         .then(token => {
           
           
@@ -1606,7 +1629,7 @@ FxAccountsInternal.prototype = {
           }
           
           if (token) {
-            let entry = { token };
+            let entry = { token, server: oAuthURL };
             currentState.setCachedToken(scope, entry);
           }
           return token;
