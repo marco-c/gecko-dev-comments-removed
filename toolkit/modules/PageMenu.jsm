@@ -244,25 +244,7 @@ function PageMenuParent() {
 
 PageMenuParent.prototype = {
   __proto__: PageMenu.prototype,
-
   
-
-
-
-
-
-
-  buildAndAddToPopup(aTarget, aPopup) {
-    let menuObject = this.maybeBuild(aTarget);
-    if (!menuObject) {
-      return false;
-    }
-
-    return this.buildAndAttachMenuWithObject(menuObject, null, aPopup);
-  },
-
-  
-
 
 
 
