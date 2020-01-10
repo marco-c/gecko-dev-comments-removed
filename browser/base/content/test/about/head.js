@@ -22,17 +22,8 @@ function getCertChain(securityInfoAsString) {
   return certChain;
 }
 
-function getDERString(cert) {
-  var derArray = cert.getRawDER();
-  var derString = "";
-  for (var i = 0; i < derArray.length; i++) {
-    derString += String.fromCharCode(derArray[i]);
-  }
-  return derString;
-}
-
 function getPEMString(cert) {
-  var derb64 = btoa(getDERString(cert));
+  var derb64 = cert.getBase64DERString();
   
   
   var wrapped = derb64.replace(/(\S{64}(?!$))/g, "$1\r\n");

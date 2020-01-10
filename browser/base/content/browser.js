@@ -3638,7 +3638,7 @@ var BrowserOnClick = {
         securityInfo = getSecurityInfo(securityInfoAsString);
         cert = securityInfo.serverCert;
         if (Services.prefs.getBoolPref("security.aboutcertificate.enabled")) {
-          let derb64 = encodeURIComponent(btoa(getDERString(cert)));
+          let derb64 = encodeURIComponent(cert.getBase64DERString());
           let url = `about:certificate?cert=${derb64}`;
           openTrustedLinkIn(url, "tab", {
             triggeringPrincipal: browser.contentPrincipal,
@@ -3975,17 +3975,8 @@ function getSecurityInfo(securityInfoAsString) {
 
 
 
-function getDERString(cert) {
-  var derArray = cert.getRawDER();
-  var derString = "";
-  for (var i = 0; i < derArray.length; i++) {
-    derString += String.fromCharCode(derArray[i]);
-  }
-  return derString;
-}
-
 function getPEMString(cert) {
-  var derb64 = btoa(getDERString(cert));
+  var derb64 = cert.getBase64DERString();
   
   
   var wrapped = derb64.replace(/(\S{64}(?!$))/g, "$1\r\n");
