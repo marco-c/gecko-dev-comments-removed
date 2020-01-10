@@ -47,7 +47,7 @@ AudioSink::AudioSink(AbstractThread* aThread,
       mFramesParsed(0),
       mIsAudioDataAudible(false),
       mAudioQueue(aAudioQueue) {
-  bool resampling = StaticPrefs::MediaResamplingEnabled();
+  bool resampling = StaticPrefs::media_resampling_enabled();
 
   if (resampling) {
     mOutputRate = 48000;

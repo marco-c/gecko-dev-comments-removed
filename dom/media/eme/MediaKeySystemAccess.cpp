@@ -112,7 +112,8 @@ static MediaKeySystemStatus EnsureCDMInstalled(const nsAString& aKeySystem,
 
 MediaKeySystemStatus MediaKeySystemAccess::GetKeySystemStatus(
     const nsAString& aKeySystem, nsACString& aOutMessage) {
-  MOZ_ASSERT(StaticPrefs::MediaEmeEnabled() || IsClearkeyKeySystem(aKeySystem));
+  MOZ_ASSERT(StaticPrefs::media_eme_enabled() ||
+             IsClearkeyKeySystem(aKeySystem));
 
   if (IsClearkeyKeySystem(aKeySystem)) {
     return EnsureCDMInstalled(aKeySystem, aOutMessage);
@@ -255,7 +256,7 @@ static nsTArray<KeySystemConfig> GetSupportedKeySystems() {
       clearkey.mSessionTypes.AppendElement(MediaKeySessionType::Temporary);
       clearkey.mEncryptionSchemes.AppendElement(NS_LITERAL_STRING("cenc"));
       
-      if (StaticPrefs::MediaClearkeyPersistentLicenseEnabled()) {
+      if (StaticPrefs::media_clearkey_persistent_license_enabled()) {
         clearkey.mSessionTypes.AppendElement(
             MediaKeySessionType::Persistent_license);
       }

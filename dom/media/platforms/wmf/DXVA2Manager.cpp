@@ -416,7 +416,7 @@ D3D9DXVA2Manager::Init(layers::KnowsCompositor* aKnowsCompositor,
   }
 
   if ((adapter.VendorId == 0x1022 || adapter.VendorId == 0x1002) &&
-      !StaticPrefs::PDMWMFSkipBlacklist()) {
+      !StaticPrefs::media_wmf_skip_blacklist()) {
     for (const auto& model : sAMDPreUVD4) {
       if (adapter.DeviceId == model) {
         mIsAMDPreUVD4 = true;
@@ -506,7 +506,7 @@ DXVA2Manager* DXVA2Manager::CreateD3D9DXVA(
 
   
   
-  uint32_t dxvaLimit = StaticPrefs::PDMWMFMaxDXVAVideos();
+  uint32_t dxvaLimit = StaticPrefs::media_wmf_dxva_max_videos();
 
   if (sDXVAVideosCount == dxvaLimit) {
     aFailureReason.AssignLiteral("Too many DXVA videos playing");
@@ -680,7 +680,7 @@ D3D11DXVA2Manager::Init(layers::KnowsCompositor* aKnowsCompositor,
         gfx::SurfaceFormat::NV12);
 
     if (ImageBridgeChild::GetSingleton() &&
-        StaticPrefs::PDMWMFUseSyncTexture() &&
+        StaticPrefs::media_wmf_use_sync_texture() &&
         mDevice != DeviceManagerDx::Get()->GetCompositorDevice()) {
       
       
@@ -695,7 +695,7 @@ D3D11DXVA2Manager::Init(layers::KnowsCompositor* aKnowsCompositor,
   } else {
     mTextureClientAllocator = new D3D11RecycleAllocator(
         aKnowsCompositor, mDevice, gfx::SurfaceFormat::NV12);
-    if (StaticPrefs::PDMWMFUseSyncTexture()) {
+    if (StaticPrefs::media_wmf_use_sync_texture()) {
       
       
       
@@ -849,7 +849,7 @@ D3D11DXVA2Manager::InitInternal(layers::KnowsCompositor* aKnowsCompositor,
   }
 
   if ((adapterDesc.VendorId == 0x1022 || adapterDesc.VendorId == 0x1002) &&
-      !StaticPrefs::PDMWMFSkipBlacklist()) {
+      !StaticPrefs::media_wmf_skip_blacklist()) {
     for (const auto& model : sAMDPreUVD4) {
       if (adapterDesc.DeviceId == model) {
         mIsAMDPreUVD4 = true;
@@ -1219,7 +1219,7 @@ DXVA2Manager* DXVA2Manager::CreateD3D11DXVA(
     ID3D11Device* aDevice) {
   
   
-  uint32_t dxvaLimit = StaticPrefs::PDMWMFMaxDXVAVideos();
+  uint32_t dxvaLimit = StaticPrefs::media_wmf_dxva_max_videos();
 
   if (sDXVAVideosCount == dxvaLimit) {
     aFailureReason.AssignLiteral("Too many DXVA videos playing");
@@ -1251,7 +1251,7 @@ bool DXVA2Manager::IsUnsupportedResolution(const uint32_t& aWidth,
   
   
   
-  return !StaticPrefs::PDMWMFAMDHighResEnabled() && mIsAMDPreUVD4 &&
+  return !StaticPrefs::media_wmf_amd_highres_enabled() && mIsAMDPreUVD4 &&
          (aWidth >= 1920 || aHeight >= 1088) && aFramerate > 45;
 }
 

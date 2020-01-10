@@ -40,7 +40,7 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
     }
     if (VPXDecoder::IsVPX(aParams.mConfig.mMimeType) &&
         aParams.mOptions.contains(CreateDecoderParams::Option::LowLatency) &&
-        !StaticPrefs::MediaFfmpegLowLatencyEnabled()) {
+        !StaticPrefs::media_ffmpeg_low_latency_enabled()) {
       
       
       

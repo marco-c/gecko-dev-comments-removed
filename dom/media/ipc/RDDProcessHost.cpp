@@ -78,7 +78,7 @@ bool RDDProcessHost::WaitForLaunch() {
     return !!mRDDChild;
   }
 
-  int32_t timeoutMs = StaticPrefs::MediaRddProcessStartupTimeoutMs();
+  int32_t timeoutMs = StaticPrefs::media_rdd_process_startup_timeout_ms();
 
   
   

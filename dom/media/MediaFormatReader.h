@@ -445,7 +445,7 @@ class MediaFormatReader final
         
         
         return mNumOfConsecutiveError > mMaxConsecutiveError ||
-               StaticPrefs::MediaPlaybackWarningsAsErrors();
+               StaticPrefs::media_playback_warnings_as_errors();
       } else if (mError.ref() == NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER) {
         
         

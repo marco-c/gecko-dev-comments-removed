@@ -44,7 +44,7 @@ FFmpegLibWrapper::LinkResult FFmpegLibWrapper::Link() {
     }
 #ifdef MOZ_FFMPEG
     if (version < (54u << 16 | 35u << 8 | 1u) &&
-        !StaticPrefs::MediaLibavcodecAllowObsolete()) {
+        !StaticPrefs::media_libavcodec_allow_obsolete()) {
       
       
       Unlink();

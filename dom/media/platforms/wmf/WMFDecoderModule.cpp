@@ -74,7 +74,7 @@ void WMFDecoderModule::Init() {
     
     
     
-    sDXVAEnabled = !StaticPrefs::MediaGpuProcessDecoder();
+    sDXVAEnabled = !StaticPrefs::media_gpu_process_decoder();
     
     
     
@@ -89,7 +89,7 @@ void WMFDecoderModule::Init() {
 
   sDXVAEnabled = sDXVAEnabled && gfx::gfxVars::CanUseHardwareVideoDecoding();
   testForVPx = testForVPx && gfx::gfxVars::CanUseHardwareVideoDecoding();
-  if (testForVPx && StaticPrefs::MediaWmfVp9Enabled()) {
+  if (testForVPx && StaticPrefs::media_wmf_vp9_enabled()) {
     gfx::WMFVPXVideoCrashGuard guard;
     if (!guard.Crashed()) {
       sUsableVPXMFT = CanCreateMFTDecoder(CLSID_WebmMfVpxDec);

@@ -101,7 +101,7 @@ void MediaKeySystemAccessManager::Request(
     return;
   }
 
-  if (!StaticPrefs::MediaEmeEnabled() && !IsClearkeyKeySystem(aKeySystem)) {
+  if (!StaticPrefs::media_eme_enabled() && !IsClearkeyKeySystem(aKeySystem)) {
     
     
     

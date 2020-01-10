@@ -468,7 +468,7 @@ bool ChannelMediaDecoder::ShouldThrottleDownload(
 
   int64_t length = aStats.mTotalBytes;
   if (length > 0 &&
-      length <= int64_t(StaticPrefs::MediaMemoryCacheMaxSize()) * 1024) {
+      length <= int64_t(StaticPrefs::media_memory_cache_max_size()) * 1024) {
     
     
     
