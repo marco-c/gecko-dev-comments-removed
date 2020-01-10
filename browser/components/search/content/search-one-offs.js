@@ -448,15 +448,13 @@ class SearchOneOffs {
     }
 
     
-    if (!this.popup && this._engines) {
-      return;
-    }
-
-    
-    if (this.popup && this._textbox) {
-      let textboxWidth = await window.promiseDocumentFlushed(() => {
-        return this._textbox.clientWidth;
-      });
+    if (this._textbox) {
+      
+      
+      let DOMUtils = window.windowUtils;
+      let textboxWidth = DOMUtils.getBoundsWithoutFlushing(this._textbox).width;
+      
+      
       if (this._engines && this._textboxWidth == textboxWidth) {
         return;
       }
