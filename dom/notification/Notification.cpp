@@ -511,6 +511,14 @@ NotificationPermissionRequest::Run() {
       break;
   }
 
+  if (!mIsHandlingUserInput &&
+      !StaticPrefs::dom_webnotifications_requireuserinteraction()) {
+    nsCOMPtr<Document> doc = mWindow->GetExtantDoc();
+    if (doc) {
+      doc->WarnOnceAbout(Document::eNotificationsRequireUserGestureDeprecation);
+    }
+  }
+
   
   
   if (!isSystem && !blocked &&
