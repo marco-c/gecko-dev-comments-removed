@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+  let o = {};
+  new Function("o.#f");
+}, 'It should be a SyntaxError if AllPrivateIdentifiersValid returns false to dynamic function body');
+
+
+reportCompare(0, 0);

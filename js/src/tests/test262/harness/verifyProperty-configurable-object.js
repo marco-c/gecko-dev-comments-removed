@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+Object.defineProperty(this, 'Object', {
+  configurable: true,
+  value: Object
+});
+
+verifyProperty(this, 'Object', {
+  configurable: true
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(JSON.stringify(Infinity), 'null');
+assert.sameValue(JSON.stringify({key: -Infinity}), '{"key":null}');
+assert.sameValue(JSON.stringify([NaN]), '[null]');
+
+reportCompare(0, 0);

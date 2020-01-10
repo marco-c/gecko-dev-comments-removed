@@ -20,7 +20,6 @@
 
 
 
-
 const zero = new Date(0);
 
 assert.sameValue(zero.valueOf(), Date.parse(zero.toString()),

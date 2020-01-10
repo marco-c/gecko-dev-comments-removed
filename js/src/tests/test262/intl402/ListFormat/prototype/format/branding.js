@@ -12,6 +12,7 @@
 
 
 
+
 const format = Intl.ListFormat.prototype.format;
 
 assert.sameValue(typeof format, "function");

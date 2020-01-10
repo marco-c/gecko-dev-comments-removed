@@ -1,0 +1,79 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var foo = 1;
+
+
+var binding;
+
+
+for (binding of [await foo]) {
+  await foo;
+  break;
+}
+
+
+for (var binding of [await foo]) {
+  await foo;
+  break;
+}
+
+
+for (let binding of [await foo]) {
+  await foo;
+  break;
+}
+
+reportCompare(0, 0);

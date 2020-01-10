@@ -32,6 +32,8 @@
 
 
 
+
+
 var iter;
 var FinalizationGroupCleanupIteratorPrototype;
 var called = 0;
@@ -43,23 +45,26 @@ function callback(iterator) {
   FinalizationGroupCleanupIteratorPrototype = Object.getPrototypeOf(iterator);
 }
 
-(function() {
-  var o = {};
-  fg.register(o);
-})();
+function emptyCells() {
+  var target = {};
+  fg.register(target, 'target');
 
-$262.gc();
+  var prom = asyncGC(target);
+  target = null;
 
-fg.cleanupSome(callback);
+  return prom;
+}
 
+emptyCells().then(function() {
+  fg.cleanupSome(callback);
 
-assert.sameValue(called, 1, 'cleanup successful');
-assert.sameValue(typeof iter, 'object');
-assert.sameValue(Object.getPrototypeOf(iter), FinalizationGroupCleanupIteratorPrototype);
+  
+  assert.sameValue(called, 1, 'cleanup successful');
+  assert.sameValue(typeof iter, 'object');
+  assert.sameValue(Object.getPrototypeOf(iter), FinalizationGroupCleanupIteratorPrototype);
 
-
-assert.throws(TypeError, function() {
-  iter.next();
-}, 'Iter should fail if not called during the cleanupSome call');
-
-reportCompare(0, 0);
+  
+  assert.throws(TypeError, function() {
+    iter.next();
+  }, 'Iter should fail if not called during the cleanupSome call');
+}).then($DONE, resolveAsyncGC);

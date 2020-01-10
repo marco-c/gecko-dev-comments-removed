@@ -7,6 +7,17 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 var date_1899_end = -2208988800001;
 var date_1900_start = -2208988800000;
 var date_1969_end = -1;
@@ -18,6 +29,7 @@ var date_2100_start = 4102444800000;
 
 var start_of_time = -8.64e15;
 var end_of_time = 8.64e15;
+
 
 
 

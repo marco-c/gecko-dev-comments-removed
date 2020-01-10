@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+class C {
+  get #f();
+  static set #f(v) {}
+}
+

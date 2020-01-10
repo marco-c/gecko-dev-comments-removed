@@ -10,7 +10,6 @@
 
 
 
-
 const defaultLocale = new Intl.RelativeTimeFormat().resolvedOptions().locale;
 
 const tests = [

@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Intl.DisplayNames('en', null);
+}, 'null');
+
+reportCompare(0, 0);

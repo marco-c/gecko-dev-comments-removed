@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var stringSet;
+
+class C {
+  get 'default'() { return 'get string'; }
+  set 'default'(param) { stringSet = param; }
+}
+
+assert.sameValue(C.prototype['default'], 'get string');
+
+C.prototype['default'] = 'set string';
+assert.sameValue(stringSet, 'set string');
+
+reportCompare(0, 0);

@@ -33,7 +33,7 @@ let classStringExpression = `(
 class {
   static #m() { return 'test262'; }
 
-  access() {
+  static access() {
     return this.#m();
   }
 }

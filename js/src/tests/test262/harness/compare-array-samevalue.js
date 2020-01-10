@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+assert(compareArray([NaN], [NaN]));
+assert(!compareArray([0], [-0]));
+
+reportCompare(0, 0);

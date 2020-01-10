@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let lf = new Intl.ListFormat();
+
+assert.sameValue("", lf.format(undefined));
+
+reportCompare(0, 0);

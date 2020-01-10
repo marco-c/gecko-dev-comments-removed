@@ -1,0 +1,49 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  static #method(a, b, c) {};
+
+  static getPrivateMethod() {
+    return this.#method;
+  }
+
+}
+
+assert.sameValue(C.getPrivateMethod().length, 3);
+
+reportCompare(0, 0);

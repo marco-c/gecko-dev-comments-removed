@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(this, "Function");
+verifyWritable(this, "Function");
+verifyConfigurable(this, "Function");
+
+reportCompare(0, 0);

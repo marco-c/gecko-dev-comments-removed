@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(this, "RegExp");
+verifyWritable(this, "RegExp");
+verifyConfigurable(this, "RegExp");
+
+reportCompare(0, 0);

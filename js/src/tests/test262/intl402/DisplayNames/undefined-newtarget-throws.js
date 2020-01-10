@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Intl.DisplayNames();
+});
+
+assert.throws(TypeError, function() {
+  Intl.DisplayNames('en');
+});
+
+assert.throws(TypeError, function() {
+  Intl.DisplayNames(['en']);
+});
+
+reportCompare(0, 0);

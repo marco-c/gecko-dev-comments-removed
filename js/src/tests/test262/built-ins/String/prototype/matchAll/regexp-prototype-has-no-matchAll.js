@@ -17,7 +17,6 @@
 
 
 
-
 assert.sameValue(typeof String.prototype.matchAll, "function");
 
 delete RegExp.prototype[Symbol.matchAll];

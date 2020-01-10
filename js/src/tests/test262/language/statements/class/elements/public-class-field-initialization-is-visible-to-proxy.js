@@ -16,7 +16,6 @@
 
 
 
-
 function ProxyBase() {
   return new Proxy(this, {
     defineProperty: function (target, key, descriptor) {

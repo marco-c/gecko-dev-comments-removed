@@ -1,0 +1,62 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var C = class {
+  * #method() {};
+
+  getPrivateMethod() {
+    return this.#method;
+  }
+}
+
+let c = new C();
+assert.sameValue(c.getPrivateMethod().name, "#method");
+
+reportCompare(0, 0);

@@ -7,16 +7,6 @@
 
 
 
-var __globalObject = Function("return this;")();
-function fnGlobalObject() {
-  return __globalObject;
-}
-
-
-
-
-
-
 
 
 
@@ -43,6 +33,7 @@ const assertNativeFunction = function(fn, special) {
     "Conforms to NativeFunction Syntax: '" + actual + "'." + (special ? "(" + special + ")" : "")
   );
 };
+
 
 
 

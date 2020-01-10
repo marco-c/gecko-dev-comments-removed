@@ -1,0 +1,59 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  static set #f(v) {
+    this._v = v;
+  }
+
+  static access() {
+    this.#f = 'Test262';
+  }
+}
+
+C.access();
+assert.sameValue(C._v, 'Test262');
+assert.throws(TypeError, function() {
+  C.access.call({});
+}, 'Accessed static private setter from an arbitrary object');
+
+reportCompare(0, 0);

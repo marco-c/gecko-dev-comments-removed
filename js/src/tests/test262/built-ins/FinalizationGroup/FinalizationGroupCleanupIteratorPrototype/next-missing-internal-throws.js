@@ -30,6 +30,8 @@
 
 
 
+
+
 var FinalizationGroupCleanupIteratorPrototype;
 var called = 0;
 var endOfCall = 0;
@@ -71,16 +73,19 @@ function callback(iterator) {
   endOfCall += 1;
 }
 
-(function() {
-  var o = {};
-  fg.register(o);
-})();
+function emptyCells() {
+  var target = {};
+  fg.register(target);
 
-$262.gc();
+  var prom = asyncGC(target);
+  target = null;
 
-fg.cleanupSome(callback);
+  return prom;
+}
 
-assert.sameValue(called, 1, 'cleanup successful');
-assert.sameValue(endOfCall, 1, 'Abrupt completions are not directly returned.');
+emptyCells().then(function() {
+  fg.cleanupSome(callback);
 
-reportCompare(0, 0);
+  assert.sameValue(called, 1, 'cleanup successful');
+  assert.sameValue(endOfCall, 1, 'Abrupt completions are not directly returned.');
+}).then($DONE, resolveAsyncGC);

@@ -10,6 +10,7 @@
 
 
 
+
 var byteConversionValues = {
   values: [
     127,         
@@ -457,6 +458,7 @@ var byteConversionValues = {
 
 
 
+
 var NaNs = [
   NaN,
   Number.NaN,
@@ -468,6 +470,13 @@ var NaNs = [
   -Math.pow(-1, 0.5),
   Number("Not-a-Number"),
 ];
+
+
+
+
+
+
+
 
 
 

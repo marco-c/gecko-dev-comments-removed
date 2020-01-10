@@ -1,0 +1,76 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+for ( await null ; await null; await null ) {
+  await null;
+  break;
+}
+
+
+for ( var binding; await null; await null ) {
+  await null;
+  break;
+}
+
+
+for ( let binding; await null; await null ) {
+  await null;
+  break;
+}
+
+reportCompare(0, 0);

@@ -8,6 +8,7 @@
 
 
 
+
 function allowProxyTraps(overrides) {
   function throwTest262Error(msg) {
     return function () { throw new Test262Error(msg); };

@@ -40,20 +40,13 @@
 
 
 
-
-
-
-
-
-
-
 const self = this;
-assert.throws(ReferenceError, function() {
+assert.throws(TypeError, function() {
   class C {
     [self.#f] = 'Test262';
     #f = 'foo';
   }
-}, 'access to a not defined private field in object should throw a ReferenceError');
+}, 'access to a not defined private field in object should throw a TypeError');
 
 
 reportCompare(0, 0);

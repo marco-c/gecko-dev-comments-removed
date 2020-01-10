@@ -9,7 +9,6 @@
 
 
 
-
 let defaultLocale = new Intl.NumberFormat().resolvedOptions().locale;
 
 let supportedNumberingSystems = ["latn", "arab"].filter(nu =>

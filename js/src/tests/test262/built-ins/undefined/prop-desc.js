@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(this, "undefined", {
+  enumerable: false,
+  writable: false,
+  configurable: false
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var sym = Symbol('desc');
+assert.sameValue(JSON.stringify(sym), undefined);
+assert.sameValue(JSON.stringify([sym]), '[null]');
+assert.sameValue(JSON.stringify({key: sym}), '{}');
+
+var obj = {};
+obj[sym] = 1;
+assert.sameValue(JSON.stringify(obj), '{}');
+
+reportCompare(0, 0);

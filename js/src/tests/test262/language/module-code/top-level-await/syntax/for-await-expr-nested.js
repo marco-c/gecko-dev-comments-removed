@@ -1,0 +1,72 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+for ( await await await await await await await await await await await await await await await 'await' ; await await await await await await await await await await await await await await await 'await'; await await await await await await await await await await await await await await await 'await' ) {
+  await await await await await await await await await await await await await await await 'await';
+  break;
+}
+
+
+for ( var binding; await await await await await await await await await await await await await await await 'await'; await await await await await await await await await await await await await await await 'await' ) {
+  await await await await await await await await await await await await await await await 'await';
+  break;
+}
+
+
+for ( let binding; await await await await await await await await await await await await await await await 'await'; await await await await await await await await await await await await await await await 'await' ) {
+  await await await await await await await await await await await await await await await 'await';
+  break;
+}
+
+reportCompare(0, 0);

@@ -38,6 +38,7 @@
 
 
 
+
 var FinalizationGroupCleanupIteratorPrototype;
 var called = 0;
 var fg = new FinalizationGroup(function() {});
@@ -47,26 +48,29 @@ function callback(iterator) {
   FinalizationGroupCleanupIteratorPrototype = Object.getPrototypeOf(iterator);
 }
 
-(function() {
-  var o = {};
-  fg.register(o);
-})();
+function emptyCells() {
+  var target = {};
+  fg.register(target);
 
-$262.gc();
+  var prom = asyncGC(target);
+  target = null;
 
-fg.cleanupSome(callback);
+  return prom;
+}
 
-assert.sameValue(called, 1, 'cleanup successful');
+emptyCells().then(function() {
+  fg.cleanupSome(callback);
 
-assert.sameValue(typeof FinalizationGroupCleanupIteratorPrototype.next, 'function');
+  assert.sameValue(called, 1, 'cleanup successful');
 
-var next = FinalizationGroupCleanupIteratorPrototype.next;
+  assert.sameValue(typeof FinalizationGroupCleanupIteratorPrototype.next, 'function');
 
-verifyProperty(next, 'name', {
-  value: 'next',
-  enumerable: false,
-  writable: false,
-  configurable: true,
-});
+  var next = FinalizationGroupCleanupIteratorPrototype.next;
 
-reportCompare(0, 0);
+  verifyProperty(next, 'name', {
+    value: 'next',
+    enumerable: false,
+    writable: false,
+    configurable: true,
+  });
+}).then($DONE, resolveAsyncGC);

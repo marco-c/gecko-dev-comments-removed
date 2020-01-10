@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(Test262Error, function() {
+  JSON.stringify({}, function() {
+    throw new Test262Error();
+  });
+});
+
+reportCompare(0, 0);

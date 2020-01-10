@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(this, "Infinity", {
+  enumerable: false,
+  writable: false,
+  configurable: false
+});
+
+reportCompare(0, 0);

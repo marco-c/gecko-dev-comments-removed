@@ -33,87 +33,43 @@
 
 
 
-var holdings;
-var fg = new FinalizationGroup(function() {});
 
-function callback(iterator) {
-  holdings = [...iterator];
+function check(value, expectedName) {
+  var holdings;
+  var called = 0;
+  var fg = new FinalizationGroup(function() {});
+
+  function callback(iterator) {
+    called += 1;
+    holdings = [...iterator];
+  }
+
+  
+  function emptyCells(value) {
+    var target = {};
+    fg.register(target, value);
+
+    var prom = asyncGC(target);
+    target = null;
+
+    return prom;
+  }
+
+  return emptyCells(value).then(function() {
+    fg.cleanupSome(callback);
+    assert.sameValue(called, 1, expectedName);
+    assert.sameValue(holdings.length, 1, expectedName);
+    assert.sameValue(holdings[0], value, expectedName);
+  });
 }
 
-(function() {
-  var o = {};
-  fg.register(o);
-  fg.register(o, undefined);
-})();
-
-$262.gc();
-fg.cleanupSome(callback);
-
-assert.compareArray(holdings, [undefined, undefined], 'undefined');
-
-(function() {
-  var o = {};
-  fg.register(o, null);
-})();
-
-$262.gc();
-fg.cleanupSome(callback);
-assert.compareArray(holdings, [null], 'null');
-
-(function() {
-  var o = {};
-  fg.register(o, '');
-})();
-
-$262.gc();
-fg.cleanupSome(callback);
-assert.compareArray(holdings, [''], 'the empty string');
-
-var other = {};
-(function() {
-  var o = {};
-  fg.register(o, other);
-})();
-
-$262.gc();
-fg.cleanupSome(callback);
-assert.compareArray(holdings, [other], '{}');
-
-(function() {
-  var o = {};
-  fg.register(o, 42);
-})();
-
-$262.gc();
-fg.cleanupSome(callback);
-assert.compareArray(holdings, [42], '42');
-
-(function() {
-  var o = {};
-  fg.register(o, true);
-})();
-
-$262.gc();
-fg.cleanupSome(callback);
-assert.compareArray(holdings, [true], 'true');
-
-(function() {
-  var o = {};
-  fg.register(o, false);
-})();
-
-$262.gc();
-fg.cleanupSome(callback);
-assert.compareArray(holdings, [false], 'false');
-
-var s = Symbol();
-(function() {
-  var o = {};
-  fg.register(o, s);
-})();
-
-$262.gc();
-fg.cleanupSome(callback);
-assert.compareArray(holdings, [s], 'symbol');
-
-reportCompare(0, 0);
+Promise.all([
+  check(undefined, 'undefined'),
+  check(null, 'null'),
+  check('', 'the empty string'),
+  check({}, 'object'),
+  check(42, 'number'),
+  check(true, 'true'),
+  check(false, 'false'),
+  check(Symbol(1), 'symbol'),
+]).then(() => $DONE(), resolveAsyncGC);

@@ -28,6 +28,7 @@ function $DETACHBUFFER(buffer) {
 
 
 
+
 var TypedArray = Object.getPrototypeOf(Int8Array);
 
 

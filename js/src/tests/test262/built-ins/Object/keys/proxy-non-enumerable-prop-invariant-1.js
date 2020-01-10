@@ -1,0 +1,56 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var target = {};
+Object.defineProperty(target, 'prop', {
+  value: 1,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+var proxy = new Proxy(target, {
+  ownKeys: function() {
+    return [];
+  },
+});
+
+assert.throws(TypeError, function() {
+  Object.keys(proxy);
+});
+
+reportCompare(0, 0);

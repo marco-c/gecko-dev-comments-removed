@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(this, "decodeURI");
+verifyWritable(this, "decodeURI");
+verifyConfigurable(this, "decodeURI");
+
+reportCompare(0, 0);

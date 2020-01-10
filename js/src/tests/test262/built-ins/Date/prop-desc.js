@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(this, "Date");
+verifyWritable(this, "Date");
+verifyConfigurable(this, "Date");
+
+reportCompare(0, 0);

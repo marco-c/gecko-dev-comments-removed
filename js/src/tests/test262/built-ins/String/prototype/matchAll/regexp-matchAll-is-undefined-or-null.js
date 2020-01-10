@@ -16,7 +16,7 @@
 
 
 
-var regexp = /./;
+var regexp = /./g;
 var callCount = 0;
 var arg;
 var obj = {};

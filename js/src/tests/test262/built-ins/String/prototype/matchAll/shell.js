@@ -20,6 +20,7 @@
 
 
 
+
 assert.compareIterator = function(iter, validators, message) {
   message = message || '';
 
@@ -34,6 +35,7 @@ assert.compareIterator = function(iter, validators, message) {
   assert(result.done, 'Expected only ' + i + ' values(s). Instead iterator produced more. ' + message);
   assert.sameValue(result.value, undefined, 'Expected value of `undefined` when iterator completes. ' + message);
 }
+
 
 
 

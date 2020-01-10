@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(this, "RangeError");
+verifyWritable(this, "RangeError");
+verifyConfigurable(this, "RangeError");
+
+reportCompare(0, 0);

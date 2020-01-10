@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const re = /./;
+const indices = re.exec("a").indices;
+verifyProperty(indices, 'groups', {
+  writable: true,
+  enumerable: true,
+  configurable: true,
+  value: undefined
+});
+
+reportCompare(0, 0);

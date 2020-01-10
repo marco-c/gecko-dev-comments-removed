@@ -21,6 +21,22 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function testWithIntlConstructors(f) {
   var constructors = ["Collator", "NumberFormat", "DateTimeFormat"];
 

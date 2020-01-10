@@ -1,0 +1,73 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+for ( await new Promise(function(res, rej) { res(1); }) ; await new Promise(function(res, rej) { res(1); }); await new Promise(function(res, rej) { res(1); }) ) {
+  await new Promise(function(res, rej) { res(1); });
+  break;
+}
+
+
+for ( var binding; await new Promise(function(res, rej) { res(1); }); await new Promise(function(res, rej) { res(1); }) ) {
+  await new Promise(function(res, rej) { res(1); });
+  break;
+}
+
+
+for ( let binding; await new Promise(function(res, rej) { res(1); }); await new Promise(function(res, rej) { res(1); }) ) {
+  await new Promise(function(res, rej) { res(1); });
+  break;
+}
+
+reportCompare(0, 0);

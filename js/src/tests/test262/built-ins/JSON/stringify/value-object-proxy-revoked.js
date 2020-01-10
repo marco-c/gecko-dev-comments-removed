@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var handle = Proxy.revocable({}, {});
+
+handle.revoke();
+
+assert.throws(TypeError, function() {
+  JSON.stringify(handle.proxy);
+}, 'top-level value');
+
+assert.throws(TypeError, function() {
+  JSON.stringify({a: {b: handle.proxy}});
+}, 'nested value');
+
+reportCompare(0, 0);

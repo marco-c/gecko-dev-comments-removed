@@ -19,7 +19,6 @@
 
 
 
-
 class Test {
   f = this;
   #g = (Object.freeze(this), "Test262");

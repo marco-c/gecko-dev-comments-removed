@@ -1,0 +1,47 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+try {} catch ({ x = await 42 }) {} 
+try {} catch ({ x: y = await 42 }) {} 
+try {} catch ([ x = await 42 ]) {}
+
+reportCompare(0, 0);

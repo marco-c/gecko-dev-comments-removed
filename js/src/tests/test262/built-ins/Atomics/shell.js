@@ -15,6 +15,10 @@
 
 
 
+
+
+
+
 function testWithAtomicsOutOfBoundsIndices(f) {
   var bad_indices = [
     function(view) { return -1; },
@@ -118,6 +122,13 @@ function testWithAtomicsNonViewValues(f) {
     }
   }
 }
+
+
+
+
+
+
+
 
 
 

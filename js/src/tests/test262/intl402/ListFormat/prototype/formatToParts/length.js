@@ -13,6 +13,7 @@
 
 
 
+
 verifyProperty(Intl.ListFormat.prototype.formatToParts, "length", {
   value: 1,
   writable: false,

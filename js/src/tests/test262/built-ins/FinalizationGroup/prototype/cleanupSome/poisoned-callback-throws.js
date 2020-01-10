@@ -25,37 +25,39 @@
 
 
 
+
+
 var called = 0;
-var iterator;
+var iterator = false;
 
 function poisoned(iter) {
+  called += 1;
   iterator = iter;
   iter.next(); 
   throw new Test262Error();
 }
-var fg = new FinalizationGroup(function() {
-  called += 1;
-});
+var fg = new FinalizationGroup(function() {});
 
 function emptyCells() {
-  (function() {
-    var o = {};
-    fg.register(o);
-  })();
-  $262.gc();
+  var target = {};
+  fg.register(target);
+
+  var prom = asyncGC(target);
+  target = null;
+
+  return prom;
 }
 
-emptyCells();
+emptyCells().then(function() {
+  assert.throws(Test262Error, function() {
+    fg.cleanupSome(poisoned);
+  });
 
-assert.throws(Test262Error, function() {
-  fg.cleanupSome(poisoned);
-});
+  assert.sameValue(called, 1);
 
-assert.sameValue(called, 0);
-
-assert.sameValue(typeof iteraror.next, 'function');
-assert.throws(TypeError, function() {
-  iterator.next();
-}, 'iterator.next throws a TypeError if IsFinalizationGroupCleanupJobActive is false');
-
-reportCompare(0, 0);
+  assert.sameValue(typeof iterator, 'object');
+  assert.sameValue(typeof iterator.next, 'function');
+  assert.throws(TypeError, function() {
+    iterator.next();
+  }, 'iterator.next throws a TypeError if IsFinalizationGroupCleanupJobActive is false');
+}).then($DONE, resolveAsyncGC);

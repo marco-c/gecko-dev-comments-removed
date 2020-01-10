@@ -12,7 +12,6 @@
 
 
 
-
 const defaultLocale = new Intl.Segmenter().resolvedOptions().locale;
 
 const tests = [

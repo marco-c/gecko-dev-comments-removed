@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(this, "Boolean");
+verifyWritable(this, "Boolean");
+verifyConfigurable(this, "Boolean");
+
+reportCompare(0, 0);

@@ -17,20 +17,22 @@
 
 
 
+
+
 var deref = false;
+var wr;
 
 function emptyCells() {
-  var wr;
-  (function() {
-    var a = {};
-    wr = new WeakRef(a);
-  })();
-  $262.gc();
-  deref = wr.deref();
+  var target = {};
+  wr = new WeakRef(target);
+
+  var prom = asyncGC(target);
+  target = null;
+
+  return prom;
 }
 
-emptyCells();
-
-assert.sameValue(deref, undefined);
-
-reportCompare(0, 0);
+emptyCells().then(function() {
+  deref = wr.deref();
+  assert.sameValue(deref, undefined);
+}).then($DONE, resolveAsyncGC);

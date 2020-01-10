@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(this, "parseInt");
+verifyWritable(this, "parseInt");
+verifyConfigurable(this, "parseInt");
+
+reportCompare(0, 0);

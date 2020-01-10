@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+var proto = Object.getPrototypeOf(Intl.DisplayNames);
+
+assert.sameValue(proto, Function.prototype);
+
+reportCompare(0, 0);

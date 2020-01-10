@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var x = await void 1;
+
+assert.sameValue(x, undefined);
+
+$DONE();

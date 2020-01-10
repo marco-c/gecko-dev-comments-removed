@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+assert.deepEqual({ a: { x: 1 }, b: [true] }, { a: { x: 1 }, b: [true] });
+
+assert.throws(Test262Error, function () { assert.deepEqual({}, { a: { x: 1 }, b: [true] }); });
+assert.throws(Test262Error, function () { assert.deepEqual({ a: { x: 1 }, b: [true] }, { a: { x: 1 }, b: [false] }); });
+
+reportCompare(0, 0);

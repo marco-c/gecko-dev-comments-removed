@@ -11,6 +11,9 @@
 
 
 
+
+
+
 var _target, _handler, _prop, _value, _receiver;
 var target = {};
 var handler = {
@@ -20,7 +23,7 @@ var handler = {
     _prop = prop;
     _value = value;
     _receiver = receiver;
-    return t[prop] = value;
+    return true;
   }
 };
 var p = new Proxy(target, handler);

@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(this, "Object");
+verifyWritable(this, "Object");
+verifyConfigurable(this, "Object");
+
+reportCompare(0, 0);

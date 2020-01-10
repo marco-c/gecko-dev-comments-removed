@@ -19,10 +19,11 @@
 
 
 
-assert.sameValue(JSON.stringify.name, "stringify");
-
-verifyNotEnumerable(JSON.stringify, "name");
-verifyNotWritable(JSON.stringify, "name");
-verifyConfigurable(JSON.stringify, "name");
+verifyProperty(JSON.stringify, 'name', {
+  value: 'stringify',
+  writable: false,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

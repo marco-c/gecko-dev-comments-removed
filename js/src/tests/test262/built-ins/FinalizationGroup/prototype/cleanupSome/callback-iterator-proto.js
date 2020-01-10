@@ -51,6 +51,8 @@
 
 
 
+
+
 var IteratorPrototype = Object.getPrototypeOf(Object.getPrototypeOf([][Symbol.iterator]()));
 var FinalizationGroupCleanupIteratorPrototype;
 var called = 0;
@@ -66,25 +68,32 @@ var fg = new FinalizationGroup(function() {
   cleanupCallbackCalled += 1;
 });
 
-(function() {
-  let o = {};
-  fg.register(o);
-})();
+async function register() {
+  var target = {};
+  fg.register(target);
+  var prom = asyncGC(target);
+  
+  target = null;
+  assert.sameValue(called, 0); 
 
-assert.sameValue(called, 0);
+  return prom;
+}
 
-$262.gc();
-fg.cleanupSome(callback);
+register()
+  .then(function() {
+    
+    cleanupCallbackCalled = 0;
 
-assert.sameValue(called, 1);
+    fg.cleanupSome(callback);
 
-var proto = Object.getPrototypeOf(FinalizationGroupCleanupIteratorPrototype);
-assert.sameValue(
-  proto, IteratorPrototype,
-  '[[Prototype]] internal slot whose value is the intrinsic object %IteratorPrototype%'
-);
+    assert.sameValue(called, 1);
 
+    var proto = Object.getPrototypeOf(FinalizationGroupCleanupIteratorPrototype);
+    assert.sameValue(
+      proto, IteratorPrototype,
+      '[[Prototype]] internal slot whose value is the intrinsic object %IteratorPrototype%'
+    );
 
-assert.sameValue(cleanupCallbackCalled, 0, 'if a callback is given, do not call cleanupCallback');
-
-reportCompare(0, 0);
+    assert.sameValue(cleanupCallbackCalled, 0, 'if a callback is given, do not call cleanupCallback');
+  })
+  .then($DONE, resolveAsyncGC);

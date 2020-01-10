@@ -30,6 +30,7 @@
 
 
 
+
 var cleanupCallback = 0;
 var called = 0;
 
@@ -45,16 +46,14 @@ var fg = new FinalizationGroup(function() {
 });
 
 function emptyCells() {
-  (function() {
-    var a = {};
-    fg.register(a, 'a');
-  })();
+  var target = {};
+  fg.register(target, 'a');
 
-  
-  $262.gc();
+  var prom = asyncGC(target);
+  target = null;
+
+  return prom;
 }
-
-emptyCells();
 
 
 
@@ -77,7 +76,7 @@ async function fn() {
   
   cleanupCallback = 0;
 
-  $262.gc();
+  await $262.gc();
   await Promise.resolve(2); 
 
   fg.cleanupSome(cb);
@@ -87,7 +86,7 @@ async function fn() {
   assert.sameValue(called, 2, 'cleanupSome callback for the second time');
   assert.sameValue(cleanupCallback, 0, 'cleanupCallback is not called again #1');
 
-  $262.gc();
+  await $262.gc();
   await Promise.resolve(3); 
 
   fg.cleanupSome(cb);
@@ -95,11 +94,12 @@ async function fn() {
   assert.sameValue(called, 3, 'cleanupSome callback for the third time');
   assert.sameValue(cleanupCallback, 0, 'cleanupCallback is not called again #2');
 
-  $262.gc();
+  await $262.gc();
 }
 
-fn()
-  .then(async function() { 
+emptyCells()
+  .then(async function() {
+    await fn();
     await Promise.resolve(4); 
 
     assert.sameValue(cleanupCallback, 0, 'cleanupCallback is not called again #3');
@@ -109,7 +109,7 @@ fn()
     assert.sameValue(called, 4, 'cleanupSome callback for the fourth time');
     assert.sameValue(cleanupCallback, 0, 'cleanupCallback is not called again #4');
     
-    $262.gc();
+    await $262.gc();
 
     
     fg.cleanupSome(iterator => {
@@ -122,7 +122,7 @@ fn()
     assert.sameValue(called, 5, 'cleanupSome callback for the fifth time');
     assert.sameValue(cleanupCallback, 0, 'cleanupCallback is not called again #4');
 
-    $262.gc();
+    await $262.gc();
 
     await Promise.resolve(5); 
     await await Promise.resolve(6); 
@@ -133,4 +133,4 @@ fn()
     assert.sameValue(called, 5, 'cleanupSome callback is not called anymore, no empty cells');
     assert.sameValue(cleanupCallback, 0, 'cleanupCallback is not called again #5');
   })
-  .then($DONE, $DONE);
+  .then($DONE, resolveAsyncGC);

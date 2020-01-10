@@ -17,35 +17,32 @@
 
 
 
+
+
 var holdingsList;
 function cb(iterator) {
   holdingsList = [...iterator];
 };
 var fg = new FinalizationGroup(function() {});
 
+var referenced = {};
+
 function emptyCells() {
-  var x;
-  (function() {
-    var a = {};
-    b = {};
-    x = {};
-    var y = {};
-    fg.register(x, 'x');
-    fg.register(a, 'a');
-    fg.register(y, y);
-    fg.register(b, 'b');
-    var b;
-  })();
-  $262.gc();
-  x; 
+  var target = {};
+  fg.register(target, 'target!');
+  fg.register(referenced, 'referenced');
+
+  var prom = asyncGC(target);
+  target = null;
+
+  return prom;
 }
 
-emptyCells();
-fg.cleanupSome(cb);
+emptyCells().then(function() {
+  fg.cleanupSome(cb);
 
+  assert.sameValue(holdingsList.length, 1);
+  assert.sameValue(holdingsList[0], 'target!');
 
-assert.sameValue(holdingsList.length, 2);
-assert(holdingsList.includes('a'));
-assert(holdingsList.includes('b'));
-
-reportCompare(0, 0);
+  assert.sameValue(typeof referenced, 'object', 'referenced preserved');
+}).then($DONE, resolveAsyncGC);

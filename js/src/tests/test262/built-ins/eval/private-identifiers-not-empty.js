@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+  let o = {};
+  eval("o.#f");
+}, 'It should be a SyntaxError if AllPrivateIdentifiersValid returns false to eval body');
+
+
+reportCompare(0, 0);

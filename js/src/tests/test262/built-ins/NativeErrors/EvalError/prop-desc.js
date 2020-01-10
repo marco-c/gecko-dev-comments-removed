@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(this, "EvalError");
+verifyWritable(this, "EvalError");
+verifyConfigurable(this, "EvalError");
+
+reportCompare(0, 0);

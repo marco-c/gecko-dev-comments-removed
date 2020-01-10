@@ -1,0 +1,84 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var binding;
+
+
+for (binding of [await function() {}]) {
+  await function() {};
+  break;
+}
+
+
+for (var binding of [await function() {}]) {
+  await function() {};
+  break;
+}
+
+
+for (let binding of [await function() {}]) {
+  await function() {};
+  break;
+}
+
+reportCompare(0, 0);

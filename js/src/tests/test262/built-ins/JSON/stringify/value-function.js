@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(JSON.stringify(function() {}), undefined);
+assert.sameValue(JSON.stringify([function() {}]), '[null]');
+assert.sameValue(JSON.stringify({key: function() {}}), '{}');
+
+reportCompare(0, 0);

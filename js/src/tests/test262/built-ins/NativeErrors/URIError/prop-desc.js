@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(this, "URIError");
+verifyWritable(this, "URIError");
+verifyConfigurable(this, "URIError");
+
+reportCompare(0, 0);

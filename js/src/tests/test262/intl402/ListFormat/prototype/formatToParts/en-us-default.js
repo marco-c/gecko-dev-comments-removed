@@ -8,6 +8,7 @@
 
 
 
+
 function verifyFormatParts(actual, expected, message) {
   assert.sameValue(actual.length, expected.length, `${message}: length`);
 

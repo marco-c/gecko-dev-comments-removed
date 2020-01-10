@@ -1,0 +1,67 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+try {
+  await new Promise(function(res, rej) { res(1); });
+} catch(e) {
+  await new Promise(function(res, rej) { res(1); });
+}
+
+try {
+  await new Promise(function(res, rej) { res(1); });
+} finally {
+  await new Promise(function(res, rej) { res(1); });
+}
+
+try {
+  await new Promise(function(res, rej) { res(1); });
+} catch(e) {
+  await new Promise(function(res, rej) { res(1); });
+} finally {
+  await new Promise(function(res, rej) { res(1); });
+}
+
+reportCompare(0, 0);

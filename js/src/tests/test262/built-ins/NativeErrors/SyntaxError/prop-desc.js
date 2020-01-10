@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(this, "SyntaxError");
+verifyWritable(this, "SyntaxError");
+verifyConfigurable(this, "SyntaxError");
+
+reportCompare(0, 0);

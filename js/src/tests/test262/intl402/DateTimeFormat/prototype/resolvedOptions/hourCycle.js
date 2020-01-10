@@ -86,4 +86,16 @@ assert.sameValue(resolvedOptions.hour12, true);
 verifyProperty(resolvedOptions, 'hourCycle', dataPropertyDesc);
 verifyProperty(resolvedOptions, 'hour12', dataPropertyDesc);
 
+
+
+resolvedOptions = new Intl.DateTimeFormat("fr", {
+  hourCycle: "h12",
+  hour12: false,
+}).resolvedOptions();
+
+assert.sameValue(resolvedOptions.hour, undefined,
+                 "Precondition: hour should not be included by default");
+assert.sameValue(resolvedOptions.hourCycle, undefined);
+assert.sameValue(resolvedOptions.hour12, undefined);
+
 reportCompare(0, 0);

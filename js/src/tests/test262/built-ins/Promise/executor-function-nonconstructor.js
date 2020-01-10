@@ -11,6 +11,8 @@
 
 
 
+
+
 var executorFunction;
 
 function NotPromise(executor) {
@@ -20,8 +22,6 @@ function NotPromise(executor) {
 Promise.resolve.call(NotPromise);
 
 assert.sameValue(Object.prototype.hasOwnProperty.call(executorFunction, "prototype"), false);
-assert.throws(TypeError, function() {
-  new executorFunction();
-});
+assert.sameValue(isConstructor(executorFunction), false);
 
 reportCompare(0, 0);
