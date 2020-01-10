@@ -23,10 +23,12 @@ class OggWriter : public ContainerWriter {
   OggWriter();
   ~OggWriter();
 
-  nsresult WriteEncodedTrack(const EncodedFrameContainer& aData,
+  
+  
+  nsresult WriteEncodedTrack(const nsTArray<RefPtr<EncodedFrame>>& aData,
                              uint32_t aFlags = 0) override;
 
-  nsresult GetContainerData(nsTArray<nsTArray<uint8_t> >* aOutputBufs,
+  nsresult GetContainerData(nsTArray<nsTArray<uint8_t>>* aOutputBufs,
                             uint32_t aFlags = 0) override;
 
   
@@ -38,7 +40,7 @@ class OggWriter : public ContainerWriter {
   nsresult WriteEncodedData(const nsTArray<uint8_t>& aBuffer, int aDuration,
                             uint32_t aFlags = 0);
 
-  void ProduceOggPage(nsTArray<nsTArray<uint8_t> >* aOutputBufs);
+  void ProduceOggPage(nsTArray<nsTArray<uint8_t>>* aOutputBufs);
   
   RefPtr<OpusMetadata> mMetadata;
 

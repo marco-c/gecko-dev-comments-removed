@@ -34,7 +34,7 @@ class VP8TrackEncoder : public VideoTrackEncoder {
 
   already_AddRefed<TrackMetadataBase> GetMetadata() final;
 
-  nsresult GetEncodedTrack(EncodedFrameContainer& aData) final;
+  nsresult GetEncodedTrack(nsTArray<RefPtr<EncodedFrame>>& aData) final;
 
  protected:
   nsresult Init(int32_t aWidth, int32_t aHeight, int32_t aDisplayWidth,
@@ -50,7 +50,7 @@ class VP8TrackEncoder : public VideoTrackEncoder {
   
   
   
-  nsresult GetEncodedPartitions(EncodedFrameContainer& aData);
+  nsresult GetEncodedPartitions(nsTArray<RefPtr<EncodedFrame>>& aData);
 
   
   nsresult PrepareRawFrame(VideoChunk& aChunk);

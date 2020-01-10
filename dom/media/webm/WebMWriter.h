@@ -47,13 +47,15 @@ class WebMWriter : public ContainerWriter {
   virtual ~WebMWriter();
 
   
-  nsresult WriteEncodedTrack(const EncodedFrameContainer& aData,
+  
+  
+  nsresult WriteEncodedTrack(const nsTArray<RefPtr<EncodedFrame>>& aData,
                              uint32_t aFlags = 0) override;
 
   
   
   
-  nsresult GetContainerData(nsTArray<nsTArray<uint8_t> >* aOutputBufs,
+  nsresult GetContainerData(nsTArray<nsTArray<uint8_t>>* aOutputBufs,
                             uint32_t aFlags = 0) override;
 
   

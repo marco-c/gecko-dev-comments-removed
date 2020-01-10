@@ -7,7 +7,7 @@
 #define TrackEncoder_h_
 
 #include "AudioSegment.h"
-#include "EncodedFrameContainer.h"
+#include "EncodedFrame.h"
 #include "MediaStreamGraph.h"
 #include "StreamTracks.h"
 #include "TrackMetadataBase.h"
@@ -82,7 +82,7 @@ class TrackEncoder {
 
 
 
-  virtual nsresult GetEncodedTrack(EncodedFrameContainer& aData) = 0;
+  virtual nsresult GetEncodedTrack(nsTArray<RefPtr<EncodedFrame>>& aData) = 0;
 
   
 

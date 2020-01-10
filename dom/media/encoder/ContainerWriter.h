@@ -7,7 +7,7 @@
 #define ContainerWriter_h_
 
 #include "nsTArray.h"
-#include "EncodedFrameContainer.h"
+#include "EncodedFrame.h"
 #include "TrackMetadataBase.h"
 
 namespace mozilla {
@@ -32,8 +32,9 @@ class ContainerWriter {
 
 
 
-  virtual nsresult WriteEncodedTrack(const EncodedFrameContainer& aData,
-                                     uint32_t aFlags = 0) = 0;
+
+  virtual nsresult WriteEncodedTrack(
+      const nsTArray<RefPtr<EncodedFrame>>& aData, uint32_t aFlags = 0) = 0;
 
   
 
@@ -59,7 +60,7 @@ class ContainerWriter {
 
 
 
-  virtual nsresult GetContainerData(nsTArray<nsTArray<uint8_t> >* aOutputBufs,
+  virtual nsresult GetContainerData(nsTArray<nsTArray<uint8_t>>* aOutputBufs,
                                     uint32_t aFlags = 0) = 0;
 
  protected:
