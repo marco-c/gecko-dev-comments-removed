@@ -28,5 +28,10 @@ exports.CSS_TYPES = {
 
 
 
-
-exports.PSEUDO_CLASSES = [":hover", ":active", ":focus", ":focus-within"];
+exports.PSEUDO_CLASSES = [
+  ":hover",
+  ":active",
+  ":focus",
+  ":focus-within",
+  ":visited",
+];
