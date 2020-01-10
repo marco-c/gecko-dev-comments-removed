@@ -168,7 +168,7 @@ class LazyLogModule final {
   explicit constexpr LazyLogModule(const char* aLogName)
       : mLogName(aLogName), mLog(nullptr) {}
 
-  operator LogModule*() {
+  MOZ_NEVER_INLINE_DEBUG operator LogModule*() {
     
     
     

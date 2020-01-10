@@ -96,6 +96,15 @@
 
 
 
+#if defined(DEBUG)
+#  define MOZ_NEVER_INLINE_DEBUG MOZ_NEVER_INLINE
+#else
+#  define MOZ_NEVER_INLINE_DEBUG
+#endif
+
+
+
+
 
 
 
