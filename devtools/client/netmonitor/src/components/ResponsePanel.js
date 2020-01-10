@@ -17,6 +17,7 @@ const {
   fetchNetworkUpdatePacket,
   formDataURI,
   getUrlBaseName,
+  isJSON,
 } = require("../utils/request-utils");
 const { Filters } = require("../utils/filter-predicates");
 
@@ -94,29 +95,11 @@ class ResponsePanel extends Component {
 
 
 
-  isBase64(response) {
-    try {
-      return btoa(atob(response)) == response;
-    } catch (err) {
-      return false;
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-  isJSON(mimeType, response) {
+  handleJSONResponse(mimeType, response) {
     const limit = Services.prefs.getIntPref(
       "devtools.netmonitor.responseBodyLimit"
     );
     const { request } = this.props;
-    let json, error;
 
     
     
@@ -126,19 +109,7 @@ class ResponsePanel extends Component {
       return result;
     }
 
-    try {
-      json = JSON.parse(response);
-    } catch (err) {
-      if (this.isBase64(response)) {
-        try {
-          json = JSON.parse(atob(response));
-        } catch (err64) {
-          error = err;
-        }
-      } else {
-        error = err;
-      }
-    }
+    let { json, error } = isJSON(response);
 
     if (/\bjson/.test(mimeType) || json) {
       
@@ -226,7 +197,8 @@ class ResponsePanel extends Component {
     }
 
     
-    const { json, jsonpCallback, error } = this.isJSON(mimeType, text) || {};
+    const { json, jsonpCallback, error } =
+      this.handleJSONResponse(mimeType, text) || {};
     const object = {};
     let sectionName;
 

@@ -584,6 +584,49 @@ function processNetworkUpdates(update, request) {
   return result;
 }
 
+
+
+
+
+
+
+
+
+
+function isBase64(payload) {
+  try {
+    return btoa(atob(payload)) == payload;
+  } catch (err) {
+    return false;
+  }
+}
+
+
+
+
+function isJSON(payload) {
+  let json, error;
+
+  try {
+    json = JSON.parse(payload);
+  } catch (err) {
+    if (isBase64(payload)) {
+      try {
+        json = JSON.parse(atob(payload));
+      } catch (err64) {
+        error = err;
+      }
+    } else {
+      error = err;
+    }
+  }
+
+  return {
+    json,
+    error,
+  };
+}
+
 module.exports = {
   decodeUnicodeBase64,
   getFormDataSections,
@@ -612,4 +655,5 @@ module.exports = {
   processNetworkUpdates,
   propertiesEqual,
   ipToLong,
+  isJSON,
 };
