@@ -392,35 +392,23 @@ class OSXVsyncSource final : public VsyncSource {
       
       
       
-      
-      
-      
-      
-      
-      
-      
-      
-      const UInt32 kMaxDisplays = 256;
-      uint32_t displayCount;
-      CGDirectDisplayID displays[kMaxDisplays];
-      if ((CGGetActiveDisplayList(kMaxDisplays, displays, &displayCount) !=
-           kCGErrorSuccess) ||
-          (displayCount == 0)) {
-        return;
-      }
-      for (uint32_t i = 0; i < displayCount; ++i) {
-        if (CGDisplayIDToOpenGLDisplayMask(displays[i]) == 0) {
-          return;
-        }
-      }
+      CVReturn retval = CVDisplayLinkCreateWithActiveCGDisplays(&mDisplayLink);
 
       
       
       
       
       
-      if (CVDisplayLinkCreateWithCGDisplays(
-              displays, displayCount, &mDisplayLink) != kCVReturnSuccess) {
+      
+      
+      
+      
+      if ((retval == kCVReturnSuccess) &&
+          (CVDisplayLinkGetCurrentCGDisplay(mDisplayLink) == 0)) {
+        retval = kCVReturnInvalidDisplay;
+      }
+
+      if (retval != kCVReturnSuccess) {
         NS_WARNING(
             "Could not create a display link with all active displays. "
             "Retrying");
