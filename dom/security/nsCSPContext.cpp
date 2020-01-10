@@ -53,7 +53,6 @@
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Element.h"
 #include "nsXULAppAPI.h"
-#include "nsJSUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -212,15 +211,6 @@ bool nsCSPContext::permitsInternal(
       
       
       if (!aIsPreload && aSendViolationReports) {
-        uint32_t lineNumber = 0;
-        uint32_t columnNumber = 0;
-        nsAutoCString spec;
-        JSContext* cx = nsContentUtils::GetCurrentJSContext();
-        if (cx) {
-          nsJSUtils::GetCallingLocation(cx, spec, &lineNumber, &columnNumber);
-          
-          
-        }
         AsyncReportViolation(
             aTriggeringElement, aCSPEventListener,
             (aSendContentLocationInViolationReports ? aContentLocation
@@ -230,10 +220,10 @@ bool nsCSPContext::permitsInternal(
 
             violatedDirective, p,   
             EmptyString(),          
-            NS_ConvertUTF8toUTF16(spec), 
-            EmptyString(),               
-            lineNumber,                  
-            columnNumber);               
+            EmptyString(),          
+            EmptyString(),          
+            0,                      
+            0);                     
       }
     }
   }
@@ -497,21 +487,6 @@ void nsCSPContext::reportInlineViolation(
     mSelfURI->GetSpec(sourceFile);
   }
 
-  uint32_t lineNumber = aLineNumber;
-  uint32_t columnNumber = aColumnNumber;
-
-  JSContext* cx = nsContentUtils::GetCurrentJSContext();
-  if (cx) {
-    if (!nsJSUtils::GetCallingLocation(cx, sourceFile, &lineNumber,
-                                       &columnNumber)) {
-      
-      
-      
-      lineNumber = aLineNumber;
-      columnNumber = aColumnNumber;
-    }
-  }
-
   AsyncReportViolation(aTriggeringElement, aCSPEventListener,
                        nullptr,                        
                        BlockedContentSource::eInline,  
@@ -521,8 +496,8 @@ void nsCSPContext::reportInlineViolation(
                        observerSubject,                
                        NS_ConvertUTF8toUTF16(sourceFile),  
                        aContent,                           
-                       lineNumber,                         
-                       columnNumber);                      
+                       aLineNumber,                        
+                       aColumnNumber);                     
 }
 
 NS_IMETHODIMP
