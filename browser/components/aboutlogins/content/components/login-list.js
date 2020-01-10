@@ -18,7 +18,6 @@ export default class LoginList extends HTMLElement {
     
     this._loginGuidsSortedOrder = [];
     
-    
     this._logins = {};
     this._filter = "";
     this._selectedGuid = null;
@@ -37,6 +36,7 @@ export default class LoginList extends HTMLElement {
     this._count = shadowRoot.querySelector(".count");
     this._createLoginButton = shadowRoot.querySelector(".create-login-button");
     this._list = shadowRoot.querySelector("ol");
+    this._list.appendChild(this._blankLoginListItem);
     this._sortSelect = shadowRoot.querySelector("#login-sort");
 
     this.render();
@@ -53,69 +53,41 @@ export default class LoginList extends HTMLElement {
     this._createLoginButton.addEventListener("click", this);
   }
 
-  
+  async render() {
+    let visibleLoginGuids = this._applyFilter();
+    this._updateVisibleLoginCount(visibleLoginGuids.size);
 
-
-
-
-
-  async render(options = {}) {
-    this._list.textContent = "";
-
-    if (options.createLogin) {
-      this._blankLoginListItem.classList.add("selected");
-      this._blankLoginListItem.setAttribute("aria-selected", "true");
-      this._list.setAttribute(
-        "aria-activedescendant",
-        this._blankLoginListItem.id
-      );
-      this._list.appendChild(this._blankLoginListItem);
-    } else {
-      this._blankLoginListItem.remove();
-    }
-
-    if (!this._loginGuidsSortedOrder.length) {
-      document.l10n.setAttributes(this._count, "login-list-count", {
-        count: 0,
-      });
-      return;
-    }
-
-    let visibleLogins = this._applyFilter();
-    document.l10n.setAttributes(this._count, "login-list-count", {
-      count: visibleLogins.length,
-    });
-
+    
     let fragment = document.createDocumentFragment();
-    let chunkSize = 5;
-    for (let i = 0; i < this._loginGuidsSortedOrder.length; i++) {
-      let guid = this._loginGuidsSortedOrder[i];
-      let { login } = this._logins[guid];
+    for (let guid of this._loginGuidsSortedOrder) {
+      if (this._logins[guid].listItem) {
+        continue;
+      }
+      let login = this._logins[guid].login;
       let listItem = LoginListItemFactory.create(login);
-      if (login.guid == this._selectedGuid) {
+      this._logins[login.guid] = Object.assign(this._logins[login.guid], {
+        listItem,
+      });
+      fragment.appendChild(listItem);
+    }
+    this._list.appendChild(fragment);
+
+    
+    for (let guid of this._loginGuidsSortedOrder) {
+      let { listItem } = this._logins[guid];
+      if (guid == this._selectedGuid) {
         this._setListItemAsSelected(listItem);
       }
       if (
         this._breachesByLoginGUID &&
-        this._breachesByLoginGUID.has(login.guid)
+        this._breachesByLoginGUID.has(listItem.dataset.guid)
       ) {
         listItem.classList.add("breached");
       }
-      if (!visibleLogins.includes(login.guid)) {
-        listItem.hidden = true;
-      }
 
-      fragment.appendChild(listItem);
-
-      
-      
-      if (i == chunkSize) {
-        this._list.appendChild(fragment);
-        await new Promise(resolve => requestAnimationFrame(resolve));
-        chunkSize *= chunkSize;
-      }
+      listItem.hidden = !visibleLoginGuids.has(listItem.dataset.guid);
     }
-    this._list.appendChild(fragment);
+    this._blankLoginListItem.hidden = this._selectedGuid != null;
   }
 
   handleEvent(event) {
@@ -127,8 +99,8 @@ export default class LoginList extends HTMLElement {
           return;
         }
 
-        let loginListItem = event.originalTarget.closest(".login-list-item");
-        if (!loginListItem || !loginListItem.dataset.guid) {
+        let listItem = event.originalTarget.closest(".login-list-item");
+        if (!listItem || !listItem.dataset.guid) {
           return;
         }
 
@@ -136,7 +108,7 @@ export default class LoginList extends HTMLElement {
           new CustomEvent("AboutLoginsLoginSelected", {
             bubbles: true,
             composed: true,
-            detail: loginListItem._login,
+            detail: listItem._login,
           })
         );
 
@@ -161,7 +133,7 @@ export default class LoginList extends HTMLElement {
       }
       case "AboutLoginsCreateLogin": {
         this._selectedGuid = null;
-        this.render({ createLogin: true });
+        this._setListItemAsSelected(this._blankLoginListItem);
         break;
       }
       case "AboutLoginsFilterLogins": {
@@ -202,6 +174,8 @@ export default class LoginList extends HTMLElement {
       return map;
     }, {});
     this._applySort();
+    this._list.textContent = "";
+    this._list.appendChild(this._blankLoginListItem);
     this.render();
 
     if (!this._selectedGuid || !this._logins[this._selectedGuid]) {
@@ -224,6 +198,7 @@ export default class LoginList extends HTMLElement {
   
 
 
+
   updateBreaches(breachesByLoginGUID) {
     this._breachesByLoginGUID = breachesByLoginGUID;
     this.render();
@@ -236,6 +211,9 @@ export default class LoginList extends HTMLElement {
     this._logins[login.guid] = { login };
     this._loginGuidsSortedOrder.push(login.guid);
     this._applySort();
+
+    
+    
     this.render();
   }
 
@@ -244,41 +222,70 @@ export default class LoginList extends HTMLElement {
 
 
   loginModified(login) {
-    this._logins[login.guid] = { login };
+    this._logins[login.guid] = Object.assign(this._logins[login.guid], {
+      login,
+    });
     this._applySort();
+    let { listItem } = this._logins[login.guid];
+    LoginListItemFactory.update(listItem, login);
+
+    
+    
     this.render();
   }
 
   
+
 
 
 
 
   loginRemoved(login) {
+    this._logins[login.guid].listItem.remove();
+
+    
+    
+    
+    if (this._selectedGuid == login.guid) {
+      let index = this._loginGuidsSortedOrder.indexOf(login.guid);
+      if (this._loginGuidsSortedOrder.length > 1) {
+        let newlySelectedIndex = index > 0 ? index - 1 : index + 1;
+        let newlySelectedListItem = this._logins[
+          this._loginGuidsSortedOrder[newlySelectedIndex]
+        ].listItem;
+        this._setListItemAsSelected(newlySelectedListItem);
+      }
+    }
+
     delete this._logins[login.guid];
     this._loginGuidsSortedOrder = this._loginGuidsSortedOrder.filter(guid => {
       return guid != login.guid;
     });
 
-    this.render();
+    let visibleLoginGuids = this._applyFilter();
+    this._updateVisibleLoginCount(visibleLoginGuids.size);
+
+    
+    
   }
 
   
 
 
-
   _applyFilter() {
     let matchingLoginGuids;
     if (this._filter) {
-      matchingLoginGuids = this._loginGuidsSortedOrder.filter(guid => {
-        let { login } = this._logins[guid];
-        return (
-          login.origin.toLocaleLowerCase().includes(this._filter) ||
-          login.username.toLocaleLowerCase().includes(this._filter)
-        );
-      });
+      matchingLoginGuids = new Set(
+        this._loginGuidsSortedOrder.filter(guid => {
+          let { login } = this._logins[guid];
+          return (
+            login.origin.toLocaleLowerCase().includes(this._filter) ||
+            login.username.toLocaleLowerCase().includes(this._filter)
+          );
+        })
+      );
     } else {
-      matchingLoginGuids = [...this._loginGuidsSortedOrder];
+      matchingLoginGuids = new Set([...this._loginGuidsSortedOrder]);
     }
 
     return matchingLoginGuids;
@@ -291,6 +298,14 @@ export default class LoginList extends HTMLElement {
       let loginB = this._logins[b].login;
       return sortFnOptions[sort](loginA, loginB);
     });
+  }
+
+  _updateVisibleLoginCount(count) {
+    if (count != document.l10n.getAttributes(this._count).args.count) {
+      document.l10n.setAttributes(this._count, "login-list-count", {
+        count,
+      });
+    }
   }
 
   _handleKeyboardNav(event) {
@@ -380,9 +395,7 @@ export default class LoginList extends HTMLElement {
       oldSelectedItem.classList.remove("selected");
       oldSelectedItem.removeAttribute("aria-selected");
     }
-    if (listItem.dataset.guid) {
-      this._blankLoginListItem.remove();
-    }
+    this._blankLoginListItem.hidden = !!listItem.dataset.guid;
     listItem.classList.add("selected");
     listItem.setAttribute("aria-selected", "true");
     this._list.setAttribute("aria-activedescendant", listItem.id);
