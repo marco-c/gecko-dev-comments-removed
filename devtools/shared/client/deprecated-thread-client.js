@@ -229,7 +229,6 @@ ThreadClient.prototype = {
     type: "detach",
   }, {
     after: function(response) {
-      this.client.unregisterClient(this);
       return response;
     },
   }),
@@ -342,7 +341,7 @@ ThreadClient.prototype = {
     
     
     
-    this._lastPausePacket = packet.type === "resumed" ? null : packet;
+    this._lastPausePacket = packet;
     this._clearPauseGrips();
     packet.type === ThreadStateTypes.detached && this._clearThreadGrips();
     this.client._eventsEnabled && this.emit(packet.type, packet);
