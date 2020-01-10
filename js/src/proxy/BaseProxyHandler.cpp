@@ -5,7 +5,9 @@
 
 
 #include "js/Proxy.h"
+#include "proxy/DeadObjectProxy.h"
 #include "vm/ProxyObject.h"
+#include "vm/WrapperObject.h"
 
 #include "vm/JSContext-inl.h"
 #include "vm/JSObject-inl.h"
@@ -383,3 +385,35 @@ bool BaseProxyHandler::getElements(JSContext* cx, HandleObject proxy,
 bool BaseProxyHandler::isCallable(JSObject* obj) const { return false; }
 
 bool BaseProxyHandler::isConstructor(JSObject* obj) const { return false; }
+
+JS_FRIEND_API void js::NukeNonCCWProxy(JSContext* cx, HandleObject proxy) {
+  MOZ_ASSERT(proxy->is<ProxyObject>());
+  MOZ_ASSERT(!proxy->is<CrossCompartmentWrapperObject>());
+
+  
+
+  
+  
+  proxy->as<ProxyObject>().handler()->finalize(cx->defaultFreeOp(), proxy);
+
+  proxy->as<ProxyObject>().nuke();
+
+  MOZ_ASSERT(IsDeadProxyObject(proxy));
+}
+
+JS_FRIEND_API void js::NukeRemovedCrossCompartmentWrapper(JSContext* cx,
+                                                          JSObject* wrapper) {
+  MOZ_ASSERT(wrapper->is<CrossCompartmentWrapperObject>());
+
+  NotifyGCNukeWrapper(wrapper);
+
+  
+  
+  
+  
+  
+
+  wrapper->as<ProxyObject>().nuke();
+
+  MOZ_ASSERT(IsDeadProxyObject(wrapper));
+}

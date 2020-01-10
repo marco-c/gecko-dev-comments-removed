@@ -734,6 +734,16 @@ constexpr unsigned CheckProxyFlags() {
         &js::ProxyObjectOps                                                \
   }
 
+
+
+
+JS_FRIEND_API void NukeNonCCWProxy(JSContext* cx, HandleObject proxy);
+
+
+
+JS_FRIEND_API void NukeRemovedCrossCompartmentWrapper(JSContext* cx,
+                                                      JSObject* wrapper);
+
 } 
 
 #endif 
