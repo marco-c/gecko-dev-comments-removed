@@ -276,6 +276,7 @@ class nsWindow final : public nsBaseWidget {
   nsIFrame* GetFrame();
   bool IsDestroyed() { return mIsDestroyed; }
   bool IsWaylandPopup();
+  bool IsPIPWindow() { return mIsPIPWindow; };
 
   void DispatchDragEvent(mozilla::EventMessage aMsg,
                          const LayoutDeviceIntPoint& aRefPoint, guint aTime);
@@ -523,6 +524,8 @@ class nsWindow final : public nsBaseWidget {
   bool mTitlebarBackdropState;
   
   LayoutDeviceIntRegion mDraggableRegion;
+  
+  bool mIsPIPWindow;
 
 #ifdef ACCESSIBILITY
   RefPtr<mozilla::a11y::Accessible> mRootAccessible;
