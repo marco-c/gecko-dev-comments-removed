@@ -713,8 +713,6 @@ class MozbuildObject(ProcessExecutionMixin):
 
         if silent:
             args.append('-s')
-        else:
-            args.append('BUILD_VERBOSE_LOG=1')
 
         
         
