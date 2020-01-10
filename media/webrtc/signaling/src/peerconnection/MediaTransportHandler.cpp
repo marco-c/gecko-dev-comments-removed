@@ -86,7 +86,7 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
   
   
   
-  void StartIceGathering(bool aDefaultRouteOnly,
+  void StartIceGathering(bool aDefaultRouteOnly, bool aObfuscateHostAddresses,
                          
                          
                          
@@ -657,7 +657,8 @@ void MediaTransportHandlerSTS::SetTargetForDefaultLocalAddressLookup(
 }
 
 void MediaTransportHandlerSTS::StartIceGathering(
-    bool aDefaultRouteOnly, const nsTArray<NrIceStunAddr>& aStunAddrs) {
+    bool aDefaultRouteOnly, bool aObfuscateHostAddresses,
+    const nsTArray<NrIceStunAddr>& aStunAddrs) {
   mInitPromise->Then(
       mStsThread, __func__,
       [=, self = RefPtr<MediaTransportHandlerSTS>(this)]() {
@@ -677,7 +678,8 @@ void MediaTransportHandlerSTS::StartIceGathering(
 
         
         if (!mIceCtx->GetStreams().empty()) {
-          mIceCtx->StartGathering(aDefaultRouteOnly, mProxyOnly);
+          mIceCtx->StartGathering(aDefaultRouteOnly, mProxyOnly,
+                                  aObfuscateHostAddresses);
           return;
         }
 

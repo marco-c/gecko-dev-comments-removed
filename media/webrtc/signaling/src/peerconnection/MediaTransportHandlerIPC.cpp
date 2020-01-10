@@ -209,14 +209,15 @@ void MediaTransportHandlerIPC::SetTargetForDefaultLocalAddressLookup(
 
 
 void MediaTransportHandlerIPC::StartIceGathering(
-    bool aDefaultRouteOnly,
+    bool aDefaultRouteOnly, bool aObfuscateHostAddresses,
     
     const nsTArray<NrIceStunAddr>& aStunAddrs) {
   mInitPromise->Then(
       mCallbackThread, __func__,
       [=, self = RefPtr<MediaTransportHandlerIPC>(this)](bool ) {
         if (mChild) {
-          mChild->SendStartIceGathering(aDefaultRouteOnly, aStunAddrs);
+          mChild->SendStartIceGathering(aDefaultRouteOnly,
+                                        aObfuscateHostAddresses, aStunAddrs);
         }
       },
       [](const nsCString& aError) {});
