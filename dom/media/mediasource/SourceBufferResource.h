@@ -88,7 +88,6 @@ class SourceBufferResource final
 
   
   void AppendData(MediaByteBuffer* aData);
-  void AppendData(const MediaSpan& aData);
   void Ended();
   bool IsEnded() {
     MOZ_ASSERT(OnThread());
@@ -96,10 +95,11 @@ class SourceBufferResource final
   }
   
   
-  uint32_t EvictData(uint64_t aPlaybackOffset, int64_t aThresholdReduct);
+  uint32_t EvictData(uint64_t aPlaybackOffset, int64_t aThresholdReduct,
+                     ErrorResult& aRv);
 
   
-  void EvictBefore(uint64_t aOffset);
+  void EvictBefore(uint64_t aOffset, ErrorResult& aRv);
 
   
   uint32_t EvictAll();
