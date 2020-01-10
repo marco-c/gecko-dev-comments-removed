@@ -101,6 +101,21 @@ class TabGroup final : public SchedulerGroup,
   
   uint32_t Count(bool aActiveOnly = false) const;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsresult FindItemWithName(const nsAString& aName,
+                            nsIDocShellTreeItem* aRequestor,
+                            nsIDocShellTreeItem* aOriginalRequestor,
+                            nsIDocShellTreeItem** aFoundItem);
+
   nsTArray<nsPIDOMWindowOuter*> GetTopLevelWindows() const;
   const nsTArray<nsPIDOMWindowOuter*>& GetWindows() { return mWindows; }
 
