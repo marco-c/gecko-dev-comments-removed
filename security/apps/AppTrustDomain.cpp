@@ -25,8 +25,6 @@
 #include "addons-public-intermediate.inc"
 #include "addons-stage.inc"
 
-#include "privileged-package-root.inc"
-
 using namespace mozilla::pkix;
 
 extern mozilla::LazyLogModule gPIPNSSLog;
@@ -57,11 +55,6 @@ nsresult AppTrustDomain::SetTrustedRoot(AppTrustedRoot trustedRoot) {
     case nsIX509CertDB::AddonsStageRoot:
       trustedDER.data = const_cast<uint8_t*>(addonsStageRoot);
       trustedDER.len = mozilla::ArrayLength(addonsStageRoot);
-      break;
-
-    case nsIX509CertDB::PrivilegedPackageRoot:
-      trustedDER.data = const_cast<uint8_t*>(privilegedPackageRoot);
-      trustedDER.len = mozilla::ArrayLength(privilegedPackageRoot);
       break;
 
     default:
