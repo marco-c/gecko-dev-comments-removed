@@ -8668,26 +8668,11 @@ nsHttpChannel::OnTransportStatus(nsITransport* trans, nsresult status,
          (mLoadFlags & LOAD_BACKGROUND) ? "" : " and status", this,
          static_cast<uint32_t>(status), progress, progressMax));
 
-    nsAutoCString host;
-    mURI->GetHost(host);
     if (!(mLoadFlags & LOAD_BACKGROUND)) {
+      nsAutoCString host;
+      mURI->GetHost(host);
       mProgressSink->OnStatus(this, nullptr, status,
                               NS_ConvertUTF8toUTF16(host).get());
-    } else {
-      nsCOMPtr<nsIParentChannel> parentChannel;
-      NS_QueryNotificationCallbacks(this, parentChannel);
-      RefPtr<HttpChannelParent> httpParent = do_QueryObject(parentChannel);
-      nsCOMPtr<nsIProgressEventSink> eventSink = do_QueryObject(httpParent);
-      
-      
-      
-      
-      
-      
-      if (eventSink) {
-        eventSink->OnStatus(this, nullptr, status,
-                            NS_ConvertUTF8toUTF16(host).get());
-      }
     }
 
     if (progress > 0) {

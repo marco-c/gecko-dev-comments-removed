@@ -1809,9 +1809,12 @@ HttpChannelParent::OnProgress(nsIRequest* aRequest, nsISupports* aContext,
        "]\n",
        this, aProgress, aProgressMax));
   MOZ_ASSERT(NS_IsMainThread());
+  
+  
+  MOZ_ASSERT(mIPCClosed || mBgParent);
 
   
-  if (mIPCClosed) {
+  if (mIPCClosed || !mBgParent) {
     return NS_OK;
   }
 
@@ -1825,7 +1828,7 @@ HttpChannelParent::OnProgress(nsIRequest* aRequest, nsISupports* aContext,
   
   
   
-  if (!SendOnProgress(aProgress, aProgressMax)) {
+  if (!mBgParent->OnProgress(aProgress, aProgressMax)) {
     return NS_ERROR_UNEXPECTED;
   }
 
@@ -1838,9 +1841,12 @@ HttpChannelParent::OnStatus(nsIRequest* aRequest, nsISupports* aContext,
   LOG(("HttpChannelParent::OnStatus [this=%p status=%" PRIx32 "]\n", this,
        static_cast<uint32_t>(aStatus)));
   MOZ_ASSERT(NS_IsMainThread());
+  
+  
+  MOZ_ASSERT(mIPCClosed || mBgParent);
 
   
-  if (mIPCClosed) {
+  if (mIPCClosed || !mBgParent) {
     return NS_OK;
   }
 
@@ -1855,7 +1861,7 @@ HttpChannelParent::OnStatus(nsIRequest* aRequest, nsISupports* aContext,
   }
 
   
-  if (!SendOnStatus(aStatus)) {
+  if (!mBgParent->OnStatus(aStatus)) {
     return NS_ERROR_UNEXPECTED;
   }
 
