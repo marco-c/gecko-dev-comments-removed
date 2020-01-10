@@ -166,6 +166,24 @@ class CallbackObject : public nsISupports {
     return aMallocSizeOf(this);
   }
 
+  
+  
+  
+  
+  bool IsBlackForCC() const {
+    
+    return (!mCallback || !JS::ObjectIsMarkedGray(mCallback)) &&
+           (!mCallbackGlobal || !JS::ObjectIsMarkedGray(mCallbackGlobal)) &&
+           (!mCreationStack || !JS::ObjectIsMarkedGray(mCreationStack)) &&
+           (!mIncumbentJSGlobal ||
+            !JS::ObjectIsMarkedGray(mIncumbentJSGlobal)) &&
+           
+           
+           
+           
+           (!mIncumbentGlobal || mIncumbentJSGlobal);
+  }
+
  protected:
   virtual ~CallbackObject() { mozilla::DropJSObjects(this); }
 
