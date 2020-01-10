@@ -174,7 +174,7 @@ function waitForFrameLoad(ui, targetURL) {
 }
 
 function waitForViewportResizeTo(ui, width, height) {
-  return new Promise(async function(resolve) {
+  return new Promise(function(resolve) {
     const isSizeMatching = data => data.width == width && data.height == height;
 
     
