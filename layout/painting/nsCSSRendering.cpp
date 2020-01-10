@@ -3746,7 +3746,7 @@ static bool GetSkFontFromGfxFont(DrawTarget& aDrawTarget, gfxFont* aFont,
 
 static void GetPositioning(
     const nsCSSRendering::PaintDecorationLineParams& aParams, const Rect& aRect,
-    SkScalar aBounds[], SkPoint& aTextPos) {
+    Float aOneCSSPixel, SkScalar aBounds[], SkPoint& aTextPos) {
   
   SkScalar upperLine, lowerLine;
 
@@ -3767,10 +3767,13 @@ static void GetPositioning(
 
   
   
-  Float linePadding =
-      aParams.lineSize.height > 1 ? 0.25f * aParams.lineSize.height : 0;
-  aBounds[0] = upperLine - linePadding;
-  aBounds[1] = lowerLine + linePadding;
+  Float lineThicknessPadding = aParams.lineSize.height > aOneCSSPixel
+                                   ? 0.25f * aParams.lineSize.height
+                                   : 0;
+  
+  lineThicknessPadding = std::min(lineThicknessPadding, 0.75f * aOneCSSPixel);
+  aBounds[0] = upperLine - lineThicknessPadding;
+  aBounds[1] = lowerLine + lineThicknessPadding;
 }
 
 
@@ -4030,7 +4033,8 @@ void nsCSSRendering::PaintDecorationLine(
   
   SkPoint textPos = {0, 0};
   SkScalar bounds[] = {0, 0};
-  GetPositioning(aParams, rect, bounds, textPos);
+  Float oneCSSPixel = aFrame->PresContext()->CSSPixelsToDevPixels(1.0f);
+  GetPositioning(aParams, rect, oneCSSPixel, bounds, textPos);
 
   
   nsTArray<SkScalar> intercepts;
