@@ -114,7 +114,7 @@ add_task(async function() {
 
   
   await withPerfObserver(async function() {
-    let firstTab = gBrowser.tabContainer.firstElementChild;
+    let firstTab = gBrowser.tabs[0];
     await BrowserTestUtils.switchTab(gBrowser, firstTab);
     await BrowserTestUtils.waitForCondition(() => {
       return gBrowser.tabContainer.arrowScrollbox.hasAttribute("scrolledtostart");
@@ -132,7 +132,7 @@ add_task(async function() {
   
   
   while (gBrowser.tabContainer.hasAttribute("overflow")) {
-    lastTab = gBrowser.tabContainer.lastElementChild;
+    lastTab = gBrowser.tabs[gBrowser.tabs.length - 1];
     if (gBrowser.selectedTab !== lastTab) {
       await BrowserTestUtils.switchTab(gBrowser, lastTab);
     }

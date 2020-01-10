@@ -150,7 +150,7 @@ function ensure_opentabs_match_db() {
     if (browserWin.closed)
       continue;
 
-    for (let i = 0; i < browserWin.gBrowser.tabContainer.childElementCount; i++) {
+    for (let i = 0; i < browserWin.gBrowser.tabs.length; i++) {
       let browser = browserWin.gBrowser.getBrowserAtIndex(i);
       let url = browser.currentURI.spec;
       if (browserWin.isBlankPageURL(url))
@@ -191,9 +191,6 @@ async function checkAutocompleteResults(expected) {
     
     delete expected[url];
   }
-
-  await UrlbarTestUtils.promisePopupClose(window,
-    () => EventUtils.synthesizeKey("KEY_Escape"));
 
   
   for (let entry in expected) {
