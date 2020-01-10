@@ -22,6 +22,9 @@ class nsITimeoutHandler : public nsISupports {
 
   MOZ_CAN_RUN_SCRIPT virtual void Call() = 0;
 
+  
+  
+  
   virtual void GetLocation(const char** aFileName, uint32_t* aLineNo,
                            uint32_t* aColumn) = 0;
 

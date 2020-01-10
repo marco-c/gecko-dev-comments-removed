@@ -42,10 +42,6 @@ class nsIScriptTimeoutHandler : public nsITimeoutHandler {
   virtual const nsAString& GetHandlerText() = 0;
 
   
-  
-  
-
-  
   virtual const nsTArray<JS::Value>& GetArgs() = 0;
 
   
