@@ -33,6 +33,12 @@ XPCOMUtils.defineLazyServiceGetter(
   "@mozilla.org/windows-ui-utils;1",
   "nsIWindowsUIUtils"
 );
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "UpdateManager",
+  "@mozilla.org/updates/update-manager;1",
+  "nsIUpdateManager"
+);
 
 XPCOMUtils.defineLazyGetter(this, "gSystemPrincipal", () =>
   Services.scriptSecurityManager.getSystemPrincipal()
@@ -163,25 +169,10 @@ function needHomepageOverride(prefb) {
 
 
 
-function getPostUpdateOverridePage(defaultOverridePage) {
-  var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
-    Ci.nsIUpdateManager
-  );
-  
-  
-  
-  if (um.activeUpdate) {
-    var update = um.activeUpdate.QueryInterface(Ci.nsIWritablePropertyBag);
-  } else {
-    
-    try {
-      update = um.getUpdateAt(0).QueryInterface(Ci.nsIWritablePropertyBag);
-    } catch (e) {
-      Cu.reportError("Unable to find update: " + e);
-      return defaultOverridePage;
-    }
-  }
 
+
+function getPostUpdateOverridePage(update, defaultOverridePage) {
+  update = update.QueryInterface(Ci.nsIWritablePropertyBag);
   let actions = update.getProperty("actions");
   
   
@@ -665,9 +656,12 @@ nsBrowserContentHandler.prototype = {
             overridePage = Services.urlFormatter.formatURLPref(
               "startup.homepage_override_url"
             );
-            if (prefb.prefHasUserValue("app.update.postupdate")) {
-              prefb.clearUserPref("app.update.postupdate");
-              overridePage = getPostUpdateOverridePage(overridePage);
+            let update = UpdateManager.activeUpdate;
+            if (
+              update &&
+              Services.vc.compare(update.appVersion, old_mstone) > 0
+            ) {
+              overridePage = getPostUpdateOverridePage(update, overridePage);
               
               UpdatePing.handleUpdateSuccess(old_mstone, old_buildId);
             }
@@ -675,8 +669,7 @@ nsBrowserContentHandler.prototype = {
             overridePage = overridePage.replace("%OLD_VERSION%", old_mstone);
             break;
           case OVERRIDE_NEW_BUILD_ID:
-            if (prefb.prefHasUserValue("app.update.postupdate")) {
-              prefb.clearUserPref("app.update.postupdate");
+            if (UpdateManager.activeUpdate) {
               
               UpdatePing.handleUpdateSuccess(old_mstone, old_buildId);
             }

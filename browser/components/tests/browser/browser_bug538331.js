@@ -4,7 +4,6 @@
 
 
 
-const PREF_POSTUPDATE = "app.update.postupdate";
 const PREF_MSTONE = "browser.startup.homepage_override.mstone";
 const PREF_OVERRIDE_URL = "startup.homepage_override_url";
 
@@ -35,12 +34,10 @@ const XML_SUFFIX =
 const BCH_TESTS = [
   {
     description: "no mstone change and no update",
-    noPostUpdatePref: true,
     noMstoneChange: true,
   },
   {
     description: "mstone changed and no update",
-    noPostUpdatePref: true,
     prefURL: DEFAULT_PREF_URL,
   },
   {
@@ -82,63 +79,29 @@ const BCH_TESTS = [
   },
 ];
 
-var gOriginalMStone;
-var gOriginalOverrideURL;
-
-function test() {
-  waitForExplicitFinish();
-
+add_task(async function test_bug538331() {
   
   
   Services.prefs.clearUserPref("browser.startup.page");
 
-  if (Services.prefs.prefHasUserValue(PREF_MSTONE)) {
-    gOriginalMStone = Services.prefs.getCharPref(PREF_MSTONE);
-  }
-
-  if (Services.prefs.prefHasUserValue(PREF_OVERRIDE_URL)) {
-    gOriginalOverrideURL = Services.prefs.getCharPref(PREF_OVERRIDE_URL);
-  }
-
-  testDefaultArgs();
-}
-
-function finish_test() {
-  
-  
-  if (gOriginalMStone) {
-    Services.prefs.setCharPref(PREF_MSTONE, gOriginalMStone);
-  } else if (Services.prefs.prefHasUserValue(PREF_MSTONE)) {
-    Services.prefs.clearUserPref(PREF_MSTONE);
-  }
+  let originalMstone = Services.prefs.getCharPref(PREF_MSTONE);
 
   
   
-  if (gOriginalOverrideURL) {
-    Services.prefs.setCharPref(PREF_OVERRIDE_URL, gOriginalOverrideURL);
-  } else if (Services.prefs.prefHasUserValue(PREF_OVERRIDE_URL)) {
-    Services.prefs.clearUserPref(PREF_OVERRIDE_URL);
-  }
+  await SpecialPowers.pushPrefEnv({
+    set: [[PREF_MSTONE, originalMstone], [PREF_OVERRIDE_URL, DEFAULT_PREF_URL]],
+  });
 
-  writeUpdatesToXMLFile(XML_EMPTY);
-  reloadUpdateManagerData();
+  registerCleanupFunction(async () => {
+    let activeUpdateFile = getActiveUpdateFile();
+    activeUpdateFile.remove(false);
+    reloadUpdateManagerData(true);
+  });
 
-  finish();
-}
-
-
-function testDefaultArgs() {
   
   
   
   Cc["@mozilla.org/browser/clh;1"].getService(Ci.nsIBrowserHandler).defaultArgs;
-
-  let originalMstone = Services.prefs.getCharPref(PREF_MSTONE);
-
-  Services.prefs.setCharPref(PREF_OVERRIDE_URL, DEFAULT_PREF_URL);
-
-  writeUpdatesToXMLFile(XML_EMPTY);
-  reloadUpdateManagerData();
 
   for (let i = 0; i < BCH_TESTS.length; i++) {
     let testCase = BCH_TESTS[i];
@@ -157,7 +120,7 @@ function testDefaultArgs() {
       writeUpdatesToXMLFile(XML_EMPTY);
     }
 
-    reloadUpdateManagerData();
+    reloadUpdateManagerData(false);
 
     let noOverrideArgs = Cc["@mozilla.org/browser/clh;1"].getService(
       Ci.nsIBrowserHandler
@@ -180,10 +143,6 @@ function testDefaultArgs() {
       Services.prefs.setCharPref(PREF_MSTONE, "PreviousMilestone");
     }
 
-    if (testCase.noPostUpdatePref == undefined) {
-      Services.prefs.setBoolPref(PREF_POSTUPDATE, true);
-    }
-
     let defaultArgs = Cc["@mozilla.org/browser/clh;1"].getService(
       Ci.nsIBrowserHandler
     ).defaultArgs;
@@ -197,22 +156,51 @@ function testDefaultArgs() {
         "preference " + PREF_MSTONE + " should have been updated"
       );
     }
-
-    if (Services.prefs.prefHasUserValue(PREF_POSTUPDATE)) {
-      Services.prefs.clearUserPref(PREF_POSTUPDATE);
-    }
   }
+});
 
-  finish_test();
+
+
+
+
+
+
+function getActiveUpdateFile() {
+  let updateRootDir = Services.dirsvc.get("UpdRootD", Ci.nsIFile);
+  let updatesFile = updateRootDir.clone();
+  updatesFile.append("updates.xml");
+  if (updatesFile.exists()) {
+    
+    try {
+      updatesFile.remove(false);
+    } catch (e) {}
+  }
+  let activeUpdateFile = updateRootDir.clone();
+  activeUpdateFile.append("active-update.xml");
+  return activeUpdateFile;
 }
 
 
-function reloadUpdateManagerData() {
+
+
+
+
+
+
+
+function reloadUpdateManagerData(skipFiles = false) {
   Cc["@mozilla.org/updates/update-manager;1"]
     .getService(Ci.nsIUpdateManager)
     .QueryInterface(Ci.nsIObserver)
-    .observe(null, "um-reload-update-data", "");
+    .observe(null, "um-reload-update-data", skipFiles ? "skip-files" : "");
 }
+
+
+
+
+
+
+
 
 function writeUpdatesToXMLFile(aText) {
   const PERMS_FILE = 0o644;
@@ -221,15 +209,15 @@ function writeUpdatesToXMLFile(aText) {
   const MODE_CREATE = 0x08;
   const MODE_TRUNCATE = 0x20;
 
-  let file = Services.dirsvc.get("UpdRootD", Ci.nsIFile);
-  file.append("updates.xml");
+  let activeUpdateFile = getActiveUpdateFile();
+  if (!activeUpdateFile.exists()) {
+    activeUpdateFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, PERMS_FILE);
+  }
   let fos = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(
     Ci.nsIFileOutputStream
   );
-  if (!file.exists()) {
-    file.create(Ci.nsIFile.NORMAL_FILE_TYPE, PERMS_FILE);
-  }
-  fos.init(file, MODE_WRONLY | MODE_CREATE | MODE_TRUNCATE, PERMS_FILE, 0);
+  let flags = MODE_WRONLY | MODE_CREATE | MODE_TRUNCATE;
+  fos.init(activeUpdateFile, flags, PERMS_FILE, 0);
   fos.write(aText, aText.length);
   fos.close();
 }

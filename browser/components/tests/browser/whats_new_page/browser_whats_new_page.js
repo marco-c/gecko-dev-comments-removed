@@ -6,12 +6,6 @@
 add_task(async function whats_new_page() {
   
   
-  ok(
-    !Services.prefs.prefHasUserValue("app.update.postupdate"),
-    "The app.update.postupdate preference should not have a user value"
-  );
-  
-  
   
   
   
@@ -33,6 +27,20 @@ add_task(async function whats_new_page() {
     "The what's new page's url should equal https://example.com/"
   );
   gBrowser.removeTab(gBrowser.selectedTab);
+
+  let um = Cc["@mozilla.org/updates/update-manager;1"].getService(
+    Ci.nsIUpdateManager
+  );
+  await TestUtils.waitForCondition(
+    () => !um.activeUpdate,
+    "Waiting for the active update to be removed"
+  );
+  ok(!um.activeUpdate, "There should not be an active update");
+  await TestUtils.waitForCondition(
+    () => !!um.getUpdateAt(0),
+    "Waiting for the active update to be moved to the update history"
+  );
+  ok(!!um.getUpdateAt(0), "There should be an update in the update history");
 
   
   
@@ -93,4 +101,8 @@ add_task(async function whats_new_page() {
   fos.close();
 
   updatesFile.remove(false);
+  Cc["@mozilla.org/updates/update-manager;1"]
+    .getService(Ci.nsIUpdateManager)
+    .QueryInterface(Ci.nsIObserver)
+    .observe(null, "um-reload-update-data", "");
 });

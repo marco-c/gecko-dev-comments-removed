@@ -202,6 +202,13 @@ function initUpdateServiceStub() {
 }
 
 
+
+
+
+
+
+
+
 function reloadUpdateManagerData(skipFiles = false) {
   let observeData = skipFiles ? "skip-files" : "";
   gUpdateManager
