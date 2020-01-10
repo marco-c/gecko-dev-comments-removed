@@ -439,6 +439,23 @@ nsresult HTMLFileInputAccessible::HandleAccEvent(AccEvent* aEvent) {
   return NS_OK;
 }
 
+Accessible* HTMLFileInputAccessible::CurrentItem() const {
+  
+  if (Accessible* item = HyperTextAccessibleWrap::CurrentItem()) {
+    return item;
+  }
+
+  
+  
+  Accessible* button = FirstChild();
+  if (!button) {
+    MOZ_ASSERT_UNREACHABLE("File input doesn't contain a button");
+    return nullptr;
+  }
+  MOZ_ASSERT(button->IsButton());
+  return button;
+}
+
 
 
 
