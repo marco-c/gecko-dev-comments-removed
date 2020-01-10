@@ -268,6 +268,7 @@ pub struct DeferredResolve {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct ClipTaskIndex(pub u16);
 
 impl ClipTaskIndex {
@@ -870,6 +871,7 @@ bitflags! {
 }
 
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
 #[derive(Debug, Clone)]
 pub enum ClipMaskKind {
     
@@ -1400,6 +1402,7 @@ impl PrimitiveVisibilityMask {
 
 
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PrimitiveVisibility {
     
     pub clip_chain: ClipChainInstance,
@@ -1559,6 +1562,7 @@ impl PrimitiveInstance {
     }
 }
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
 #[derive(Debug)]
 pub struct SegmentedInstance {
     pub gpu_cache_handle: GpuCacheHandle,
@@ -1586,6 +1590,7 @@ pub type LinearGradientStorage = storage::Storage<LinearGradientPrimitive>;
 
 
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PrimitiveScratchBuffer {
     
     

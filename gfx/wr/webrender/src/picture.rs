@@ -1056,6 +1056,7 @@ impl DirtyRegion {
 }
 
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct RecordedDirtyRegion {
     pub rects: Vec<WorldRect>,
 }
