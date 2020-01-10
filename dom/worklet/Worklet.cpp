@@ -16,7 +16,7 @@
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/WorkletImpl.h"
-#include "js/CompilationAndEvaluation.h"
+#include "js/Modules.h"
 #include "js/SourceText.h"
 #include "nsIInputStreamPump.h"
 #include "nsIThreadRetargetableRequest.h"
@@ -49,6 +49,8 @@ class ExecutionRunnable final : public Runnable {
   void RunOnWorkletThread();
 
   void RunOnMainThread();
+
+  bool ParseAndLinkModule(JSContext* aCx, JS::MutableHandle<JSObject*> aModule);
 
   RefPtr<WorkletFetchHandler> mHandler;
   RefPtr<WorkletImpl> mWorkletImpl;
@@ -336,6 +338,33 @@ ExecutionRunnable::Run() {
   return NS_OK;
 }
 
+bool ExecutionRunnable::ParseAndLinkModule(
+    JSContext* aCx, JS::MutableHandle<JSObject*> aModule) {
+  JS::CompileOptions compileOptions(aCx);
+  compileOptions.setIntroductionType("Worklet");
+  compileOptions.setFileAndLine(mHandler->URL().get(), 0);
+  compileOptions.setIsRunOnce(true);
+  compileOptions.setNoScriptRval(true);
+
+  JS::SourceText<char16_t> buffer;
+  if (!buffer.init(aCx, std::move(mScriptBuffer), mScriptLength)) {
+    return false;
+  }
+  JS::Rooted<JSObject*> module(aCx,
+                               JS::CompileModule(aCx, compileOptions, buffer));
+  if (!module) {
+    return false;
+  }
+  
+  
+  
+  if (!JS::ModuleInstantiate(aCx, module)) {
+    return false;
+  }
+  aModule.set(module);
+  return true;
+}
+
 void ExecutionRunnable::RunOnWorkletThread() {
   WorkletThread::EnsureCycleCollectedJSContext(mParentRuntime);
 
@@ -346,25 +375,24 @@ void ExecutionRunnable::RunOnWorkletThread() {
   JSContext* cx = aes.cx();
 
   JS::Rooted<JSObject*> globalObj(cx, globalScope->GetGlobalJSObject());
-
-  JS::CompileOptions compileOptions(cx);
-  compileOptions.setIntroductionType("Worklet");
-  compileOptions.setFileAndLine(mHandler->URL().get(), 0);
-  compileOptions.setIsRunOnce(true);
-  compileOptions.setNoScriptRval(true);
-
   JSAutoRealm ar(cx, globalObj);
 
-  JS::Rooted<JS::Value> unused(cx);
-  JS::SourceText<char16_t> buffer;
-  if (!buffer.init(cx, std::move(mScriptBuffer), mScriptLength) ||
-      !JS::Evaluate(cx, compileOptions, buffer, &unused)) {
+  JS::Rooted<JSObject*> module(cx);
+  if (!ParseAndLinkModule(cx, &module)) {
     ErrorResult error;
     error.MightThrowJSException();
     error.StealExceptionFromJSContext(cx);
     mResult = error.StealNSResult();
     return;
   }
+
+  
+  
+  
+  
+  
+  JS::ModuleEvaluate(cx, module);
+  JS::Rooted<JS::Value> unused(cx);
 
   
   mResult = NS_OK;
