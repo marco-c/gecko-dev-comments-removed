@@ -5,6 +5,7 @@
 
 const {
   types,
+  Option,
   RetVal,
   generateActorSpec,
 } = require("devtools/shared/protocol");
@@ -36,6 +37,10 @@ const contentProcessTargetSpec = generateActorSpec({
     
     newSource: {
       type: "newSource",
+    },
+    tabDetached: {
+      type: "tabDetached",
+      from: Option(0, "string"),
     },
   },
 });
