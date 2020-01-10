@@ -2829,9 +2829,6 @@ pref("layout.display-list.rebuild-frame-limit", 500);
 pref("layout.spammy_warnings.enabled", false);
 
 
-pref("layout.float-fragments-inside-column.enabled", true);
-
-
 
 pref("layout.idle_period.required_quiescent_frames", 2);
 

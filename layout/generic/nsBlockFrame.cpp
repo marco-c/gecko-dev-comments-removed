@@ -6340,16 +6340,6 @@ LogicalRect nsBlockFrame::AdjustFloatAvailableSpace(
                            ? NS_UNCONSTRAINEDSIZE
                            : std::max(0, aState.ContentBEnd() - aState.mBCoord);
 
-  if (availBSize != NS_UNCONSTRAINEDSIZE &&
-      !aState.mFlags.mFloatFragmentsInsideColumnEnabled &&
-      nsLayoutUtils::GetClosestFrameOfType(this, LayoutFrameType::ColumnSet)) {
-    
-    
-    
-    
-    availBSize = NS_UNCONSTRAINEDSIZE;
-  }
-
   return LogicalRect(wm, aState.ContentIStart(), aState.ContentBStart(),
                      availISize, availBSize);
 }

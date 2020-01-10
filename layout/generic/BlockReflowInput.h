@@ -39,7 +39,6 @@ class BlockReflowInput {
           mIsLineLayoutEmpty(false),
           mIsOverflowContainer(false),
           mIsFloatListInBlockPropertyTable(false),
-          mFloatFragmentsInsideColumnEnabled(false),
           mCanHaveOverflowMarkers(false) {}
 
     
@@ -100,9 +99,6 @@ class BlockReflowInput {
 
     
     bool mIsFloatListInBlockPropertyTable : 1;
-
-    
-    bool mFloatFragmentsInsideColumnEnabled : 1;
 
     
     bool mCanHaveOverflowMarkers : 1;
