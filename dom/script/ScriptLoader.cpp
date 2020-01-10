@@ -1338,11 +1338,19 @@ nsresult ScriptLoader::StartLoad(ScriptLoadRequest* aRequest) {
     }
   }
 
+  nsCOMPtr<nsIScriptGlobalObject> globalObject = GetScriptGlobalObject();
+  if (!globalObject) {
+    return NS_ERROR_FAILURE;
+  }
+
   
   
   aRequest->mCacheInfo = nullptr;
   nsCOMPtr<nsICacheInfoChannel> cic(do_QueryInterface(channel));
   if (cic && StaticPrefs::dom_script_loader_bytecode_cache_enabled() &&
+      
+      
+      !js::GlobalHasInstrumentation(globalObject->GetGlobalJSObject()) &&
       
       !aRequest->IsModuleRequest()) {
     if (!aRequest->IsLoadingSource()) {
