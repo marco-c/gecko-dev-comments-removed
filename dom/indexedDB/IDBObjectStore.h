@@ -54,6 +54,8 @@ class IDBObjectStore final : public nsISupports, public nsWrapperCache {
 
   static const JSClass sDummyPropJSClass;
 
+  
+  
   RefPtr<IDBTransaction> mTransaction;
   JS::Heap<JS::Value> mCachedKeyPath;
 
