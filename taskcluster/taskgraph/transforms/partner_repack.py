@@ -94,6 +94,9 @@ def add_command_arguments(config, tasks):
             'task-reference': ' '.join(['<{}>'.format(dep) for dep in task['dependencies']])
         }
 
+        
+        task['worker']['env']['RELEASE_TYPE'] = config.params['release_type']
+
         yield task
 
 
