@@ -62,10 +62,13 @@ bool MessageEventRunnable::DispatchDOMEvent(JSContext* aCx,
   }
 
   JS::CloneDataPolicy cloneDataPolicy;
-  
-  
-  
-  cloneDataPolicy.allowSharedMemory();
+  if (parent->GetClientInfo().isSome() &&
+      parent->GetClientInfo()->AgentClusterId().isSome() &&
+      parent->GetClientInfo()->AgentClusterId()->Equals(
+          aWorkerPrivate->AgentClusterId())) {
+    cloneDataPolicy.allowSharedMemory();
+  }
+
   Read(parent, aCx, &messageData, cloneDataPolicy, rv);
 
   if (isTimelineRecording) {
