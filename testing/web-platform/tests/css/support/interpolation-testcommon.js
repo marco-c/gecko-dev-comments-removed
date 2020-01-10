@@ -16,7 +16,9 @@
   
   
   
-
+  
+  
+  
   var cssAnimationsInterpolation = {
     name: 'CSS Animations',
     supportsProperty: function() {return true;},
@@ -231,15 +233,12 @@
     var property = interpolationTest.options.property;
     var from = interpolationTest.options.from;
     var to = interpolationTest.options.to;
-    var comparisonFunction = interpolationTest.options.comparisonFunction;
-
     if ((interpolationTest.options.method && interpolationTest.options.method != interpolationMethod.name)
       || !interpolationMethod.supportsProperty(property)
       || !interpolationMethod.supportsValue(from)
       || !interpolationMethod.supportsValue(to)) {
       return;
     }
-
     var testText = `${interpolationMethod.name}: property <${property}> from ${keyframeText(from)} to ${keyframeText(to)}`;
     var testContainer = createElement(interpolationMethodContainer, 'div');
     createElement(testContainer);
@@ -247,14 +246,6 @@
     if (expectations === expectNoInterpolation) {
       expectations = interpolationMethod.nonInterpolationExpectations(from, to);
     }
-
-    
-    if (!comparisonFunction) {
-      comparisonFunction = (actual, expected) => {
-        assert_equals(normalizeValue(actual), normalizeValue(expected));
-      };
-    }
-
     return expectations.map(function(expectation) {
       var actualTargetContainer = createTargetContainer(testContainer, 'actual');
       var expectedTargetContainer = createTargetContainer(testContainer, 'expected');
@@ -279,9 +270,9 @@
             assert_true(CSS.supports(property, underlying), '\'underlying\' value should be supported');
           }
 
-          comparisonFunction(
-              getComputedStyle(target).getPropertyValue(property),
-              expectedValue);
+          assert_equals(
+            normalizeValue(getComputedStyle(target).getPropertyValue(property)),
+            normalizeValue(expectedValue));
         }, `${testText} at (${expectation.at}) should be [${sanitizeUrls(expectedValue)}]`);
       };
       return target;
@@ -323,7 +314,6 @@
     container.remove();
     interpolationTests = [];
   }
-
   window.test_interpolation = test_interpolation;
   window.test_no_interpolation = test_no_interpolation;
   window.neutralKeyframe = neutralKeyframe;
