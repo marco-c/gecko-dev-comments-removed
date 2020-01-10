@@ -83,9 +83,6 @@ add_task(async () => {
       ".ReturnToAMOContainer",
       ".ReturnToAMOAddonContents",
       ".ReturnToAMOIcon",
-      
-      ".onboardingMessageContainer",
-      ".onboardingMessage",
     ]) {
       ok(content.document.querySelector(selector), `Should render ${selector}`);
     }
