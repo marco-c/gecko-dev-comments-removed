@@ -1396,7 +1396,7 @@ function getCharsetforSave(aDocument) {
 
 
 function openURL(aURL) {
-  var uri = makeURI(aURL);
+  var uri = aURL instanceof Ci.nsIURI ? aURL : makeURI(aURL);
 
   var protocolSvc = Cc[
     "@mozilla.org/uriloader/external-protocol-service;1"

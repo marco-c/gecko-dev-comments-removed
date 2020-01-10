@@ -623,10 +623,18 @@ class ContextMenuChild extends JSWindowActorChild {
     let referrerInfo = Cc["@mozilla.org/referrer-info;1"].createInstance(
       Ci.nsIReferrerInfo
     );
-    referrerInfo.initWithNode(
-      context.onLink ? context.link : aEvent.composedTarget
-    );
+    referrerInfo.initWithNode(aEvent.composedTarget);
     referrerInfo = E10SUtils.serializeReferrerInfo(referrerInfo);
+
+    
+    
+    let linkReferrerInfo = null;
+    if (context.onLink) {
+      linkReferrerInfo = Cc["@mozilla.org/referrer-info;1"].createInstance(
+        Ci.nsIReferrerInfo
+      );
+      linkReferrerInfo.initWithNode(context.link);
+    }
 
     let target = context.target;
     if (target) {
@@ -681,17 +689,8 @@ class ContextMenuChild extends JSWindowActorChild {
       );
     }
 
-    
-    
-    if (context.onLink) {
-      let targetReferrerInfo = Cc[
-        "@mozilla.org/referrer-info;1"
-      ].createInstance(Ci.nsIReferrerInfo);
-
-      targetReferrerInfo.initWithNode(aEvent.composedTarget);
-      data.targetReferrerInfo = E10SUtils.serializeReferrerInfo(
-        targetReferrerInfo
-      );
+    if (linkReferrerInfo) {
+      data.linkReferrerInfo = E10SUtils.serializeReferrerInfo(linkReferrerInfo);
     }
 
     if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
