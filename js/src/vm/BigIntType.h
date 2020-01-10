@@ -180,14 +180,6 @@ class BigInt final
                                     unsigned radix, bool isNegative,
                                     bool* haveParseError);
 
-  template <typename CharT>
-  static bool literalIsZero(const mozilla::Range<const CharT> chars);
-
-  
-  
-  template <typename CharT>
-  static bool literalIsZeroNoRadix(const mozilla::Range<const CharT> chars);
-
   static int8_t compare(BigInt* lhs, BigInt* rhs);
   static bool equal(BigInt* lhs, BigInt* rhs);
   static JS::Result<bool> looselyEqual(JSContext* cx, Handle<BigInt*> lhs,
@@ -401,10 +393,6 @@ extern JS::Result<JS::BigInt*, JS::OOM&> StringToBigInt(
 
 extern JS::BigInt* ParseBigIntLiteral(
     JSContext* cx, const mozilla::Range<const char16_t>& chars);
-
-
-
-extern bool BigIntLiteralIsZero(const mozilla::Range<const char16_t>& chars);
 
 extern JS::BigInt* ToBigInt(JSContext* cx, JS::Handle<JS::Value> v);
 extern JS::Result<int64_t> ToBigInt64(JSContext* cx, JS::Handle<JS::Value> v);

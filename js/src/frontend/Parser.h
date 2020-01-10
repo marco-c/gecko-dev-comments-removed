@@ -271,10 +271,6 @@ class MOZ_STACK_CLASS ParserSharedBase : private JS::AutoGCRooter {
   
   AutoKeepAtoms keepAtoms_;
 
-  ParseInfo::DeferredAllocationVector& deferredAllocations() {
-    return getParseInfo().deferredAllocations;
-  }
-
  private:
   
   friend void js::frontend::TraceParser(JSTracer* trc,
@@ -331,6 +327,13 @@ class MOZ_STACK_CLASS ParserBase : public ParserSharedBase,
 
   FunctionTreeHolder& treeHolder_;
 
+ public:
+  FunctionTreeHolder& getTreeHolder() { return treeHolder_; }
+
+  MOZ_MUST_USE bool publishDeferredItems() {
+    return publishDeferredItems(getTreeHolder().getFunctionTree());
+  }
+
   MOZ_MUST_USE bool publishDeferredItems(FunctionTree* root) {
     
     
@@ -346,17 +349,6 @@ class MOZ_STACK_CLASS ParserBase : public ParserSharedBase,
 
   bool publishLazyScripts(FunctionTree* root);
   bool publishDeferredFunctions(FunctionTree* root);
-  bool publishDeferredAllocations();
-
- public:
-  FunctionTreeHolder& getTreeHolder() { return treeHolder_; }
-
-  MOZ_MUST_USE bool publishDeferredItems() {
-    if (!publishDeferredAllocations()) {
-      return false;
-    }
-    return publishDeferredItems(getTreeHolder().getFunctionTree());
-  }
 
   bool awaitIsKeyword() const { return awaitHandling_ != AwaitIsName; }
 

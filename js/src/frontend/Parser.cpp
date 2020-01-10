@@ -1781,20 +1781,6 @@ bool PerHandlerParser<SyntaxParseHandler>::finishFunction(
   return EmitLazyScript(cx_, funbox, sourceObject_, parseGoal());
 }
 
-bool ParserBase::publishDeferredAllocations() {
-  for (ParseInfo::DeferredAllocationType deferredAllocation :
-       deferredAllocations()) {
-    if (deferredAllocation.is<BigIntLiteral*>()) {
-      BigIntLiteral* lit = deferredAllocation.as<BigIntLiteral*>();
-      if (!lit->publish(this->cx_, this)) {
-        return false;
-      }
-    }
-  }
-  deferredAllocations().clearAndFree();
-  return true;
-}
-
 bool ParserBase::publishLazyScripts(FunctionTree* root) {
   if (root) {
     auto visitor = [](ParserBase* parser, FunctionTree* tree) {
@@ -9638,29 +9624,6 @@ BigIntLiteral* Parser<FullParseHandler, Unit>::newBigInt() {
   
   
   const auto& chars = tokenStream.getCharBuffer();
-
-  if (this->getTreeHolder().isDeferred()) {
-    BigIntCreationData data;
-    if (!data.init(this->cx_, chars)) {
-      return null();
-    }
-
-    
-    
-    BigIntLiteral* lit = handler_.newBigInt(pos());
-    if (!lit) {
-      return null();
-    }
-    if (!this->deferredAllocations().append(AsVariant(lit))) {
-      return null();
-    }
-    
-    
-    
-    lit->init(std::move(data));
-    return lit;
-  }
-
   mozilla::Range<const char16_t> source(chars.begin(), chars.length());
 
   BigInt* b = js::ParseBigIntLiteral(cx_, source);
