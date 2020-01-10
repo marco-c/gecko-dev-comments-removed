@@ -1249,29 +1249,7 @@ static void FinalizeFamilyMemberList(nsCStringHashKey::KeyType aKey,
 }
 
 void gfxFT2FontList::FindFonts() {
-  if (!XRE_IsParentProcess()) {
-    
-    nsTArray<FontListEntry> fonts;
-    mozilla::dom::ContentChild::GetSingleton()->SendReadFontList(&fonts);
-    for (uint32_t i = 0, n = fonts.Length(); i < n; ++i) {
-      
-      
-      AppendFaceFromFontListEntry(fonts[i], kUnknown);
-    }
-    
-    
-    
-    for (auto iter = mFontFamilies.Iter(); !iter.Done(); iter.Next()) {
-      nsCStringHashKey::KeyType key = iter.Key();
-      RefPtr<gfxFontFamily>& family = iter.Data();
-      FinalizeFamilyMemberList(key, family,  false);
-    }
-
-    LOG(("got font list from chrome process: %" PRIdPTR " faces in %" PRIu32
-         " families",
-         fonts.Length(), mFontFamilies.Count()));
-    return;
-  }
+  MOZ_ASSERT(XRE_IsParentProcess());
 
   
   if (!mFontNameCache) {
@@ -1462,8 +1440,31 @@ static void LoadSkipSpaceLookupCheck(
 nsresult gfxFT2FontList::InitFontListForPlatform() {
   LoadSkipSpaceLookupCheck(mSkipSpaceLookupCheckFamilies);
 
-  FindFonts();
+  if (XRE_IsParentProcess()) {
+    FindFonts();
+    return NS_OK;
+  }
 
+  
+  nsTArray<FontListEntry> fonts;
+  mozilla::dom::ContentChild::GetSingleton()->SendReadFontList(&fonts); 
+  for (uint32_t i = 0, n = fonts.Length(); i < n; ++i) {
+    
+    
+    AppendFaceFromFontListEntry(fonts[i], kUnknown);
+  }
+  
+  
+  
+  for (auto iter = mFontFamilies.Iter(); !iter.Done(); iter.Next()) {
+    nsCStringHashKey::KeyType key = iter.Key();
+    RefPtr<gfxFontFamily>& family = iter.Data();
+    FinalizeFamilyMemberList(key, family,  false);
+  }
+
+  LOG(("got font list from chrome process: %" PRIdPTR " faces in %" PRIu32
+       " families",
+       fonts.Length(), mFontFamilies.Count()));
   return NS_OK;
 }
 
