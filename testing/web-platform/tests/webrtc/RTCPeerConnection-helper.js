@@ -223,6 +223,10 @@ function coupleIceCandidates(pc1, pc2) {
 
 
 
+
+
+
+
 async function doSignalingHandshake(localPc, remotePc, options={}) {
   let offer = await localPc.createOffer();
   
@@ -231,8 +235,8 @@ async function doSignalingHandshake(localPc, remotePc, options={}) {
   }
 
   
-  await localPc.setLocalDescription(offer);
   await remotePc.setRemoteDescription(offer);
+  await localPc.setLocalDescription(offer);
 
   let answer = await remotePc.createAnswer();
   
