@@ -35,6 +35,7 @@
 #ifndef _transport_addr_h
 #define _transport_addr_h
 
+#include <stdbool.h>
 #include <sys/types.h>
 #ifdef WIN32
 #include <winsock2.h>
@@ -69,6 +70,7 @@ typedef struct nr_transport_addr_ {
 
   char as_string[56];
   char tls_host[256];
+  bool is_proxied;
 } nr_transport_addr;
 
 typedef struct nr_transport_addr_mask_ {
