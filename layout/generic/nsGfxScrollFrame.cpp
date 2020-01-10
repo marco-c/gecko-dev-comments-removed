@@ -927,22 +927,6 @@ bool nsHTMLScrollFrame::IsXULCollapsed() {
 
 
 
-static Element* GetBrowserRoot(nsIContent* aContent) {
-  if (aContent) {
-    Document* doc = aContent->GetUncomposedDoc();
-    if (nsPIDOMWindowOuter* win = doc->GetWindow()) {
-      Element* frameElement = win->GetFrameElementInternal();
-      if (frameElement && frameElement->NodeInfo()->Equals(nsGkAtoms::browser,
-                                                           kNameSpaceID_XUL))
-        return frameElement;
-    }
-  }
-
-  return nullptr;
-}
-
-
-
 
 
 
@@ -1129,14 +1113,7 @@ void nsHTMLScrollFrame::Reflow(nsPresContext* aPresContext,
 
   if (mHelper.mIsRoot) {
     mHelper.mCollapsedResizer = true;
-
-    Element* browserRoot = GetBrowserRoot(mContent);
-    if (browserRoot) {
-      bool showResizer =
-          browserRoot->HasAttr(kNameSpaceID_None, nsGkAtoms::showresizer);
-      reflowScrollCorner = showResizer == mHelper.mCollapsedResizer;
-      mHelper.mCollapsedResizer = !showResizer;
-    }
+    reflowScrollCorner = false;
 
     
     
@@ -4973,10 +4950,7 @@ nsresult ScrollFrameHelper::CreateAnonymousContent(
       mResizerContent->SetProperty(nsGkAtoms::docLevelNativeAnonymousContent,
                                    reinterpret_cast<void*>(true));
 
-      Element* browserRoot = GetBrowserRoot(mOuter->GetContent());
-      mCollapsedResizer =
-          !(browserRoot &&
-            browserRoot->HasAttr(kNameSpaceID_None, nsGkAtoms::showresizer));
+      mCollapsedResizer = true;
     } else {
       mResizerContent->SetAttr(kNameSpaceID_None, nsGkAtoms::element,
                                NS_LITERAL_STRING("_parent"), false);
