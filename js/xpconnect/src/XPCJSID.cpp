@@ -35,7 +35,7 @@ static bool ID_GetNumber(JSContext* aCx, unsigned aArgc, Value* aVp);
 
 
 enum { kID_Slot0, kID_Slot1, kID_Slot2, kID_Slot3, kID_SlotCount };
-static const js::Class sID_Class = {
+static const JSClass sID_Class = {
     "nsJSID", JSCLASS_HAS_RESERVED_SLOTS(kID_SlotCount), JS_NULL_CLASS_OPS};
 
 
@@ -51,7 +51,7 @@ static bool IID_GetName(JSContext* aCx, unsigned aArgc, Value* aVp);
 
 
 enum { kIID_InfoSlot, kIID_SlotCount };
-static const js::Class sIID_Class = {
+static const JSClass sIID_Class = {
     "nsJSIID", JSCLASS_HAS_RESERVED_SLOTS(kIID_SlotCount), JS_NULL_CLASS_OPS};
 
 
@@ -68,14 +68,14 @@ static bool CID_GetName(JSContext* aCx, unsigned aArgc, Value* aVp);
 
 
 enum { kCID_ContractSlot, kCID_SlotCount };
-static const js::Class sCID_Class = {
+static const JSClass sCID_Class = {
     "nsJSCID", JSCLASS_HAS_RESERVED_SLOTS(kCID_SlotCount), JS_NULL_CLASS_OPS};
 
 
 
 
 
-static JSObject* GetIDPrototype(JSContext* aCx, const js::Class* aClass) {
+static JSObject* GetIDPrototype(JSContext* aCx, const JSClass* aClass) {
   XPCWrappedNativeScope* scope = ObjectScope(CurrentGlobalOrNull(aCx));
   if (NS_WARN_IF(!scope)) {
     return nullptr;
@@ -145,7 +145,7 @@ static JSObject* GetIDPrototype(JSContext* aCx, const js::Class* aClass) {
 }
 
 
-static JSObject* GetIDObject(HandleValue aVal, const Class* aClass) {
+static JSObject* GetIDObject(HandleValue aVal, const JSClass* aClass) {
   if (aVal.isObject()) {
     
     JSObject* obj = js::CheckedUnwrapStatic(&aVal.toObject());
@@ -220,7 +220,7 @@ Maybe<nsID> JSValue2ID(JSContext* aCx, HandleValue aVal) {
 
 
 
-static JSObject* NewIDObjectHelper(JSContext* aCx, const js::Class* aClass) {
+static JSObject* NewIDObjectHelper(JSContext* aCx, const JSClass* aClass) {
   RootedObject proto(aCx, GetIDPrototype(aCx, aClass));
   if (proto) {
     return JS_NewObjectWithGivenProto(aCx, aClass, proto);

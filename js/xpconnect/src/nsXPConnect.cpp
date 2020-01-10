@@ -459,7 +459,7 @@ JSObject* CreateGlobalObject(JSContext* cx, const JSClass* clasp,
     
     
     
-    if (!((const js::Class*)clasp)->isWrappedNative()) {
+    if (!((const JSClass*)clasp)->isWrappedNative()) {
       VerifyTraceProtoAndIfaceCacheCalledTracer trc(cx);
       TraceChildren(&trc, GCCellPtr(global.get()));
       MOZ_ASSERT(trc.ok,

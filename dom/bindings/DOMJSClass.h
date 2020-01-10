@@ -418,7 +418,7 @@ struct DOMJSClass {
   
   
   
-  const js::Class mBase;
+  const JSClass mBase;
 
   
   
@@ -461,7 +461,7 @@ struct DOMIfaceAndProtoJSClass {
   
   
   
-  const js::Class mBase;
+  const JSClass mBase;
 
   
   

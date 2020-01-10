@@ -617,7 +617,7 @@ bool JSXrayTraits::resolveOwnProperty(JSContext* cx, HandleObject wrapper,
           }
 
           if (ShouldResolveStaticProperties(standardConstructor)) {
-            const js::Class* clasp = js::ProtoKeyToClass(standardConstructor);
+            const JSClass* clasp = js::ProtoKeyToClass(standardConstructor);
             MOZ_ASSERT(clasp->specDefined());
 
             if (!TryResolvePropertyFromSpecs(
@@ -700,7 +700,7 @@ bool JSXrayTraits::resolveOwnProperty(JSContext* cx, HandleObject wrapper,
   }
 
   
-  const js::Class* clasp = js::GetObjectClass(target);
+  const JSClass* clasp = js::GetObjectClass(target);
   MOZ_ASSERT(clasp->specDefined());
 
   
@@ -949,7 +949,7 @@ bool JSXrayTraits::enumerateNames(JSContext* cx, HandleObject wrapper,
         }
 
         if (ShouldResolveStaticProperties(standardConstructor)) {
-          const js::Class* clasp = js::ProtoKeyToClass(standardConstructor);
+          const JSClass* clasp = js::ProtoKeyToClass(standardConstructor);
           MOZ_ASSERT(clasp->specDefined());
 
           if (!AppendNamesFromFunctionAndPropertySpecs(
@@ -983,7 +983,7 @@ bool JSXrayTraits::enumerateNames(JSContext* cx, HandleObject wrapper,
   }
 
   
-  const js::Class* clasp = js::GetObjectClass(target);
+  const JSClass* clasp = js::GetObjectClass(target);
   MOZ_ASSERT(clasp->specDefined());
 
   return AppendNamesFromFunctionAndPropertySpecs(
@@ -1006,7 +1006,7 @@ bool JSXrayTraits::construct(JSContext* cx, HandleObject wrapper,
       return baseInstance.construct(cx, wrapper, args);
     }
 
-    const js::Class* clasp = js::ProtoKeyToClass(standardConstructor);
+    const JSClass* clasp = js::ProtoKeyToClass(standardConstructor);
     MOZ_ASSERT(clasp);
     if (!(clasp->flags & JSCLASS_HAS_XRAYED_CONSTRUCTOR)) {
       return baseInstance.construct(cx, wrapper, args);
@@ -1744,7 +1744,7 @@ bool DOMXrayTraits::call(JSContext* cx, HandleObject wrapper,
                          const JS::CallArgs& args,
                          const js::Wrapper& baseInstance) {
   RootedObject obj(cx, getTargetObject(wrapper));
-  const js::Class* clasp = js::GetObjectClass(obj);
+  const JSClass* clasp = js::GetObjectClass(obj);
   
   
   
@@ -1767,7 +1767,7 @@ bool DOMXrayTraits::construct(JSContext* cx, HandleObject wrapper,
                               const js::Wrapper& baseInstance) {
   RootedObject obj(cx, getTargetObject(wrapper));
   MOZ_ASSERT(mozilla::dom::HasConstructor(obj));
-  const js::Class* clasp = js::GetObjectClass(obj);
+  const JSClass* clasp = js::GetObjectClass(obj);
   
   if (clasp->flags & JSCLASS_IS_DOMIFACEANDPROTOJSCLASS) {
     if (JSNative construct = clasp->getConstruct()) {

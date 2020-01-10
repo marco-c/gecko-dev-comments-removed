@@ -347,7 +347,7 @@ nsPIDOMWindowOuter* nsPIDOMWindowOuter::GetFromCurrentInner(
 
 
 
-const js::Class OuterWindowProxyClass = PROXY_CLASS_DEF(
+const JSClass OuterWindowProxyClass = PROXY_CLASS_DEF(
     "Proxy", JSCLASS_HAS_RESERVED_SLOTS(2)); 
 
 static const size_t OUTER_WINDOW_SLOT = 0;
@@ -4039,7 +4039,7 @@ already_AddRefed<BrowsingContext> nsGlobalWindowOuter::GetChildWindow(
     const nsAString& aName) {
   NS_ENSURE_TRUE(mBrowsingContext, nullptr);
 
-  return do_AddRef(mBrowsingContext->FindChildWithName(aName, *mBrowsingContext));
+  return do_AddRef(mBrowsingContext->FindChildWithName(aName));
 }
 
 bool nsGlobalWindowOuter::DispatchCustomEvent(const nsAString& aEventName) {
@@ -6331,8 +6331,6 @@ void nsGlobalWindowOuter::ForceClose() {
 void nsGlobalWindowOuter::FinalClose() {
   
   mIsClosed = true;
-
-  GetBrowsingContext()->SetClosed(true);
 
   
   

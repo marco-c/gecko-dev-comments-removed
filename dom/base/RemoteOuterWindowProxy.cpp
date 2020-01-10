@@ -58,7 +58,7 @@ static const RemoteOuterWindowProxy sSingleton;
 
 
 template <>
-const js::Class RemoteOuterWindowProxy::Base::sClass =
+const JSClass RemoteOuterWindowProxy::Base::sClass =
     PROXY_CLASS_DEF("Proxy", JSCLASS_HAS_RESERVED_SLOTS(2));
 
 bool GetRemoteOuterWindowProxy(JSContext* aCx, BrowsingContext* aContext,

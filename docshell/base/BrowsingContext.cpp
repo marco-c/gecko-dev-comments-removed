@@ -462,20 +462,18 @@ void BrowsingContext::GetChildren(Children& aChildren) {
 
 
 
-BrowsingContext* BrowsingContext::FindWithName(
-    const nsAString& aName, BrowsingContext& aRequestingContext) {
+BrowsingContext* BrowsingContext::FindWithName(const nsAString& aName) {
   BrowsingContext* found = nullptr;
   if (aName.IsEmpty()) {
     
     found = nullptr;
+  } else if (BrowsingContext* special = FindWithSpecialName(aName)) {
+    found = special;
   } else if (aName.LowerCaseEqualsLiteral("_blank")) {
     
     
     found = nullptr;
-  } else if (IsSpecialName(aName)) {
-    found = FindWithSpecialName(aName, aRequestingContext);
-  } else if (BrowsingContext* child =
-                 FindWithNameInSubtree(aName, aRequestingContext)) {
+  } else if (BrowsingContext* child = FindWithNameInSubtree(aName, this)) {
     found = child;
   } else {
     BrowsingContext* current = this;
@@ -488,8 +486,7 @@ BrowsingContext* BrowsingContext::FindWithName(
         
         
         siblings = &mGroup->Toplevels();
-      } else if (parent->NameEquals(aName) &&
-                 aRequestingContext.CanAccess(parent) &&
+      } else if (parent->NameEquals(aName) && CanAccess(parent) &&
                  parent->IsTargetable()) {
         found = parent;
         break;
@@ -503,7 +500,7 @@ BrowsingContext* BrowsingContext::FindWithName(
         }
 
         if (BrowsingContext* relative =
-                sibling->FindWithNameInSubtree(aName, aRequestingContext)) {
+                sibling->FindWithNameInSubtree(aName, this)) {
           found = relative;
           
           parent = nullptr;
@@ -517,21 +514,19 @@ BrowsingContext* BrowsingContext::FindWithName(
 
   
   
-  MOZ_DIAGNOSTIC_ASSERT(!found || aRequestingContext.CanAccess(found));
+  MOZ_DIAGNOSTIC_ASSERT(!found || CanAccess(found));
 
   return found;
 }
 
-BrowsingContext* BrowsingContext::FindChildWithName(
-    const nsAString& aName, BrowsingContext& aRequestingContext) {
+BrowsingContext* BrowsingContext::FindChildWithName(const nsAString& aName) {
   if (aName.IsEmpty()) {
     
     return nullptr;
   }
 
   for (BrowsingContext* child : mChildren) {
-    if (child->NameEquals(aName) && aRequestingContext.CanAccess(child) &&
-        child->IsTargetable()) {
+    if (child->NameEquals(aName) && CanAccess(child) && child->IsTargetable()) {
       return child;
     }
   }
@@ -539,16 +534,7 @@ BrowsingContext* BrowsingContext::FindChildWithName(
   return nullptr;
 }
 
-
-bool BrowsingContext::IsSpecialName(const nsAString& aName) {
-  return (aName.LowerCaseEqualsLiteral("_self") ||
-          aName.LowerCaseEqualsLiteral("_parent") ||
-          aName.LowerCaseEqualsLiteral("_top") ||
-          aName.LowerCaseEqualsLiteral("_blank"));
-}
-
-BrowsingContext* BrowsingContext::FindWithSpecialName(
-    const nsAString& aName, BrowsingContext& aRequestingContext) {
+BrowsingContext* BrowsingContext::FindWithSpecialName(const nsAString& aName) {
   
   
   
@@ -557,26 +543,23 @@ BrowsingContext* BrowsingContext::FindWithSpecialName(
   }
 
   if (aName.LowerCaseEqualsLiteral("_parent")) {
-    if (mParent) {
-      return aRequestingContext.CanAccess(mParent) ? mParent.get() : nullptr;
-    }
-    return this;
+    return mParent && CanAccess(mParent.get()) ? mParent.get() : this;
   }
 
   if (aName.LowerCaseEqualsLiteral("_top")) {
     BrowsingContext* top = Top();
 
-    return aRequestingContext.CanAccess(top) ? top : nullptr;
+    return CanAccess(top) ? top : nullptr;
   }
 
   return nullptr;
 }
 
 BrowsingContext* BrowsingContext::FindWithNameInSubtree(
-    const nsAString& aName, BrowsingContext& aRequestingContext) {
+    const nsAString& aName, BrowsingContext* aRequestingContext) {
   MOZ_DIAGNOSTIC_ASSERT(!aName.IsEmpty());
 
-  if (NameEquals(aName) && aRequestingContext.CanAccess(this) &&
+  if (NameEquals(aName) && aRequestingContext->CanAccess(this) &&
       IsTargetable()) {
     return this;
   }
@@ -769,7 +752,7 @@ static const RemoteLocationProxy sSingleton;
 
 
 template <>
-const js::Class RemoteLocationProxy::Base::sClass =
+const JSClass RemoteLocationProxy::Base::sClass =
     PROXY_CLASS_DEF("Proxy", JSCLASS_HAS_RESERVED_SLOTS(2));
 
 void BrowsingContext::Location(JSContext* aCx,
@@ -780,29 +763,6 @@ void BrowsingContext::Location(JSContext* aCx,
                             aLocation);
   if (!aLocation) {
     aError.StealExceptionFromJSContext(aCx);
-  }
-}
-
-void BrowsingContext::LoadURI(BrowsingContext* aAccessor,
-                              nsDocShellLoadState* aLoadState) {
-  MOZ_DIAGNOSTIC_ASSERT(!IsDiscarded());
-  MOZ_DIAGNOSTIC_ASSERT(!aAccessor || !aAccessor->IsDiscarded());
-
-  if (mDocShell) {
-    mDocShell->LoadURI(aLoadState);
-  } else if (!aAccessor && XRE_IsParentProcess()) {
-    Unused << Canonical()->GetCurrentWindowGlobal()->SendLoadURIInChild(
-        aLoadState);
-  } else {
-    MOZ_DIAGNOSTIC_ASSERT(aAccessor);
-    MOZ_DIAGNOSTIC_ASSERT(aAccessor->Group() == Group());
-
-    nsCOMPtr<nsPIDOMWindowOuter> win(aAccessor->GetDOMWindow());
-    MOZ_DIAGNOSTIC_ASSERT(win);
-    if (WindowGlobalChild* wgc =
-            win->GetCurrentInnerWindow()->GetWindowGlobalChild()) {
-      wgc->SendLoadURI(this, aLoadState);
-    }
   }
 }
 
