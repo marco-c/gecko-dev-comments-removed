@@ -1375,13 +1375,6 @@ struct MOZ_STACK_CLASS JS_FRIEND_API ErrorReport {
   JSErrorReport ownedReport;
 
   
-  
-  JS::RootedString str;
-
-  
-  JS::AutoStableStringChars strChars;
-
-  
   JS::RootedObject exnObject;
 
   
