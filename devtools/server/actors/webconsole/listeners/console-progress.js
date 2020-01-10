@@ -17,10 +17,6 @@ const ChromeUtils = require("ChromeUtils");
 
 
 
-
-
-
-
 function ConsoleProgressListener(window, owner) {
   this.window = window;
   this.owner = owner;
@@ -28,32 +24,6 @@ function ConsoleProgressListener(window, owner) {
 exports.ConsoleProgressListener = ConsoleProgressListener;
 
 ConsoleProgressListener.prototype = {
-  
-
-
-
-  MONITOR_FILE_ACTIVITY: 1,
-
-  
-
-
-
-  MONITOR_LOCATION_CHANGE: 2,
-
-  
-
-
-
-
-  _fileActivity: false,
-
-  
-
-
-
-
-  _locationChange: false,
-
   
 
 
@@ -90,53 +60,15 @@ ConsoleProgressListener.prototype = {
 
 
 
-
-
-
-
-
-
-
-  startMonitor: function(monitor) {
-    switch (monitor) {
-      case this.MONITOR_FILE_ACTIVITY:
-        this._fileActivity = true;
-        break;
-      case this.MONITOR_LOCATION_CHANGE:
-        this._locationChange = true;
-        break;
-      default:
-        throw new Error(
-          "ConsoleProgressListener: unknown monitor type " + monitor + "!"
-        );
-    }
+  startMonitor: function() {
     this._init();
   },
 
   
 
 
-
-
-
-
-  stopMonitor: function(monitor) {
-    switch (monitor) {
-      case this.MONITOR_FILE_ACTIVITY:
-        this._fileActivity = false;
-        break;
-      case this.MONITOR_LOCATION_CHANGE:
-        this._locationChange = false;
-        break;
-      default:
-        throw new Error(
-          "ConsoleProgressListener: unknown monitor type " + monitor + "!"
-        );
-    }
-
-    if (!this._fileActivity && !this._locationChange) {
-      this.destroy();
-    }
+  stopMonitor: function() {
+    this.destroy();
   },
 
   onStateChange: function(progress, request, state, status) {
@@ -144,13 +76,7 @@ ConsoleProgressListener.prototype = {
       return;
     }
 
-    if (this._fileActivity) {
-      this._checkFileActivity(progress, request, state, status);
-    }
-
-    if (this._locationChange) {
-      this._checkLocationChange(progress, request, state, status);
-    }
+    this._checkFileActivity(progress, request, state, status);
   },
 
   
@@ -183,42 +109,12 @@ ConsoleProgressListener.prototype = {
   
 
 
-
-
-
-  _checkLocationChange: function(progress, request, state) {
-    const isStart = state & Ci.nsIWebProgressListener.STATE_START;
-    const isStop = state & Ci.nsIWebProgressListener.STATE_STOP;
-    const isNetwork = state & Ci.nsIWebProgressListener.STATE_IS_NETWORK;
-    const isWindow = state & Ci.nsIWebProgressListener.STATE_IS_WINDOW;
-
-    
-    if (!isNetwork || !isWindow || progress.DOMWindow != this.window) {
-      return;
-    }
-
-    if (isStart && request instanceof Ci.nsIChannel) {
-      this.owner.onLocationChange("start", request.URI.spec, "");
-    } else if (isStop) {
-      this.owner.onLocationChange(
-        "stop",
-        this.window.location.href,
-        this.window.document.title
-      );
-    }
-  },
-
-  
-
-
   destroy: function() {
     if (!this._initialized) {
       return;
     }
 
     this._initialized = false;
-    this._fileActivity = false;
-    this._locationChange = false;
 
     try {
       this._webProgress.removeProgressListener(this);
