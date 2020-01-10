@@ -1,4 +1,4 @@
-add_task(async function run_test() {
+function run_test() {
   
   let exe = do_get_file("test_crash_win64cfi_not_a_pe.exe");
   ok(exe);
@@ -9,7 +9,7 @@ add_task(async function run_test() {
   
   
   
-  await do_x64CFITest(
+  do_x64CFITest(
     "CRASH_X64CFI_ALLOC_SMALL",
     [
       { symbol: "CRASH_X64CFI_ALLOC_SMALL", trust: "context" },
@@ -17,4 +17,4 @@ add_task(async function run_test() {
     ],
     ["--force-use-module", exe.path]
   );
-});
+}

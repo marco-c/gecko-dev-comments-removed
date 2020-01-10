@@ -1,4 +1,4 @@
-add_task(async function run_test() {
+function run_test() {
   if (!("@mozilla.org/toolkit/crash-reporter;1" in Cc)) {
     dump(
       "INFO | test_crash_oom.js | Can't test crashreporter in a non-libxul build.\n"
@@ -10,7 +10,7 @@ add_task(async function run_test() {
   
   
 
-  await do_crash(
+  do_crash(
     function() {
       
       shouldDelay = true;
@@ -49,4 +49,4 @@ add_task(async function run_test() {
     },
     true
   );
-});
+}

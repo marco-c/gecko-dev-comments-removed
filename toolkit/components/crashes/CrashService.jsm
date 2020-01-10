@@ -6,6 +6,9 @@
 
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm", this);
 ChromeUtils.import("resource://gre/modules/AsyncShutdown.jsm", this);
+const { parseKeyValuePairs } = ChromeUtils.import(
+  "resource://gre/modules/KeyValueParser.jsm"
+);
 ChromeUtils.import("resource://gre/modules/osfile.jsm", this);
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 
@@ -118,8 +121,19 @@ function processExtraFile(extraPath) {
     try {
       let decoder = new TextDecoder();
       let extraData = await OS.File.read(extraPath);
+      let keyValuePairs = parseKeyValuePairs(decoder.decode(extraData));
 
-      return JSON.parse(decoder.decode(extraData));
+      
+      
+      
+      
+      ["TelemetryEnvironment", "StackTraces"].forEach(field => {
+        if (field in keyValuePairs) {
+          keyValuePairs[field] = keyValuePairs[field].replace(/\n/g, "n");
+        }
+      });
+
+      return keyValuePairs;
     } catch (e) {
       Cu.reportError(e);
       return {};

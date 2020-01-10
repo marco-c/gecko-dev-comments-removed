@@ -6,6 +6,9 @@
 
 const myScope = this;
 
+const { parseKeyValuePairsFromLines } = ChromeUtils.import(
+  "resource://gre/modules/KeyValueParser.jsm"
+);
 ChromeUtils.import("resource://gre/modules/Log.jsm", this);
 ChromeUtils.import("resource://gre/modules/osfile.jsm", this);
 const { PromiseUtils } = ChromeUtils.import(
@@ -50,7 +53,10 @@ function getAndRemoveField(obj, field) {
   let value = null;
 
   if (field in obj) {
-    value = obj[field];
+    
+    
+    value = obj[field].trim();
+
     delete obj[field];
   }
 
@@ -211,8 +217,6 @@ this.CrashManager.prototype = Object.freeze({
   
   EVENT_FILE_ERROR_MALFORMED: "malformed",
   
-  EVENT_FILE_ERROR_OBSOLETE: "obsolete",
-  
   EVENT_FILE_ERROR_UNKNOWN_EVENT: "unknown-event",
 
   _lazyGetDir(field, path, leaf) {
@@ -349,7 +353,6 @@ this.CrashManager.prototype = Object.freeze({
               
 
               case this.EVENT_FILE_ERROR_MALFORMED:
-              case this.EVENT_FILE_ERROR_OBSOLETE:
                 deletePaths.push(entry.path);
                 break;
 
@@ -679,7 +682,7 @@ this.CrashManager.prototype = Object.freeze({
       "TelemetryEnvironment"
     );
     let sessionId = getAndRemoveField(reportMeta, "TelemetrySessionId");
-    let stackTraces = getAndRemoveField(reportMeta, "StackTraces");
+    let stackTraces = parseAndRemoveField(reportMeta, "StackTraces");
     let minidumpSha256Hash = getAndRemoveField(
       reportMeta,
       "MinidumpSha256Hash"
@@ -719,12 +722,16 @@ this.CrashManager.prototype = Object.freeze({
 
     switch (type) {
       case "crash.main.1":
+        if (lines.length > 1) {
+          this._log.warn(
+            "Multiple lines unexpected in payload for " + entry.path
+          );
+          return this.EVENT_FILE_ERROR_MALFORMED;
+        }
+      
       case "crash.main.2":
-        return this.EVENT_FILE_ERROR_OBSOLETE;
-
-      case "crash.main.3":
         let crashID = lines[0];
-        let metadata = JSON.parse(lines[1]);
+        let metadata = parseKeyValuePairsFromLines(lines.slice(1));
         store.addCrash(
           this.PROCESS_TYPE_MAIN,
           this.CRASH_TYPE_CRASH,

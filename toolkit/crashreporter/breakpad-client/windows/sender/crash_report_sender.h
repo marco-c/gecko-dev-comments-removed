@@ -38,18 +38,17 @@
 
 
 
-#pragma warning(push)
+#pragma warning( push )
 
-#pragma warning(disable : 4530)
+#pragma warning( disable : 4530 )
 
 #include <map>
 #include <string>
 
 namespace google_breakpad {
 
-using std::map;
-using std::string;
 using std::wstring;
+using std::map;
 
 typedef enum {
   RESULT_FAILED = 0,  
@@ -66,13 +65,15 @@ class CrashReportSender {
   
   
   
-  explicit CrashReportSender(const wstring& checkpoint_file);
+  explicit CrashReportSender(const wstring &checkpoint_file);
   ~CrashReportSender() {}
 
   
   
   
-  void set_max_reports_per_day(int reports) { max_reports_per_day_ = reports; }
+  void set_max_reports_per_day(int reports) {
+    max_reports_per_day_ = reports;
+  }
 
   int max_reports_per_day() const { return max_reports_per_day_; }
 
@@ -85,13 +86,15 @@ class CrashReportSender {
   
   
   
-  ReportResult SendCrashReport(const wstring& url, const string& parameters,
-                               const map<wstring, wstring>& files,
-                               wstring* report_code);
+  
+  ReportResult SendCrashReport(const wstring &url,
+                               const map<wstring, wstring> &parameters,
+                               const map<wstring, wstring> &files,
+                               wstring *report_code);
 
  private:
   
-  void ReadCheckpoint(FILE* fd);
+  void ReadCheckpoint(FILE *fd);
 
   
   void ReportSent(int today);
@@ -101,7 +104,7 @@ class CrashReportSender {
 
   
   
-  int OpenCheckpointFile(const wchar_t* mode, FILE** fd);
+  int OpenCheckpointFile(const wchar_t *mode, FILE **fd);
 
   wstring checkpoint_file_;
   int max_reports_per_day_;
@@ -111,12 +114,12 @@ class CrashReportSender {
   int reports_sent_;
 
   
-  explicit CrashReportSender(const CrashReportSender&);
-  void operator=(const CrashReportSender&);
+  explicit CrashReportSender(const CrashReportSender &);
+  void operator=(const CrashReportSender &);
 };
 
 }  
 
-#pragma warning(pop)
+#pragma warning( pop )
 
 #endif  

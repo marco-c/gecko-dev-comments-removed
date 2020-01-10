@@ -1,4 +1,4 @@
-add_task(async function run_test() {
+function run_test() {
   var is_win7_or_newer = false;
   var is_windows = false;
   var ph = Cc["@mozilla.org/network/protocol;1?name=http"].getService(
@@ -17,7 +17,7 @@ add_task(async function run_test() {
   }
 
   
-  await do_crash(null, function(mdump, extra) {
+  do_crash(null, function(mdump, extra) {
     Assert.ok(mdump.exists());
     Assert.ok(mdump.fileSize > 0);
     Assert.ok("StartupTime" in extra);
@@ -51,14 +51,11 @@ add_task(async function run_test() {
   });
 
   
-  await do_crash(
+  do_crash(
     function() {
       
       crashReporter.annotateCrashReport("TestKey", "TestValue");
-      crashReporter.annotateCrashReport(
-        "TestUnicode",
-        "\u{1F4A9}\n\u{0000}Escape"
-      );
+      crashReporter.annotateCrashReport("TestUnicode", "\u{1F4A9}");
       crashReporter.annotateCrashReport("Add-ons", "test%40mozilla.org:0.1");
       crashReporter.appendAppNotesToCrashReport("Junk");
       crashReporter.appendAppNotesToCrashReport("MoreJunk");
@@ -73,7 +70,7 @@ add_task(async function run_test() {
     },
     function(mdump, extra) {
       Assert.equal(extra.TestKey, "TestValue");
-      Assert.equal(extra.TestUnicode, "\u{1F4A9}\n\u{0000}Escape");
+      Assert.equal(extra.TestUnicode, "\u{1F4A9}");
       Assert.equal(extra.Notes, "JunkMoreJunk");
       Assert.equal(extra["Add-ons"], "test%40mozilla.org:0.1");
       const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -96,7 +93,7 @@ add_task(async function run_test() {
     }
   );
 
-  await do_crash(
+  do_crash(
     function() {
       
       
@@ -149,7 +146,7 @@ add_task(async function run_test() {
     }
   );
 
-  await do_crash(
+  do_crash(
     function() {
       
       Services.prefs.setBoolPref(
@@ -183,7 +180,7 @@ add_task(async function run_test() {
     }
   );
 
-  await do_crash(
+  do_crash(
     function() {
       
       
@@ -217,4 +214,4 @@ add_task(async function run_test() {
       );
     }
   );
-});
+}

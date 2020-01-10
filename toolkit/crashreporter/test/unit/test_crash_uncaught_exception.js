@@ -1,9 +1,9 @@
 
 
 
-add_task(async function run_test() {
+function run_test() {
   
-  await do_crash(
+  do_crash(
     function() {
       crashType = CrashTestUtils.CRASH_UNCAUGHT_EXCEPTION;
       crashReporter.annotateCrashReport("TestKey", "TestValue");
@@ -14,4 +14,4 @@ add_task(async function run_test() {
     
     true
   );
-});
+}
