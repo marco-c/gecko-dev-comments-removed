@@ -8,10 +8,6 @@ export default class LoginListItem extends HTMLElement {
   constructor(login) {
     super();
     this._login = login;
-    this.id = login.guid ?
-      
-      "lli-" + this._login.guid :
-      "new-login-list-item";
   }
 
   connectedCallback() {
@@ -26,7 +22,6 @@ export default class LoginListItem extends HTMLElement {
 
     this._title = this.shadowRoot.querySelector(".title");
     this._username = this.shadowRoot.querySelector(".username");
-    this.setAttribute("role", "option");
 
     this.render();
 
