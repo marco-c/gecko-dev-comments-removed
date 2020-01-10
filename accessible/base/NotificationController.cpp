@@ -192,7 +192,9 @@ bool NotificationController::QueueMutationEvent(AccTreeMutationEvent* aEvent) {
 
   
   
-  if (!container->IsHyperText()) {
+  
+  
+  if (!container->IsHyperText() || !container->GetFrame()) {
     return true;
   }
 
