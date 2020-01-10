@@ -60,7 +60,7 @@ def make_signing_description(config, jobs):
 
         if 'win' in build_platform:
             
-            formats = ['sha2signcode']
+            formats = ['autograph_authenticode']
         else:
             formats = ['autograph_gpg']
 
