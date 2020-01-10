@@ -1220,7 +1220,7 @@ uint16_t nsFlexContainerFrame::CSSAlignmentForAbsPosChild(
     const uint8_t alignContent = SimplifyAlignOrJustifyContentForOneItem(
         containerStylePos->mAlignContent,
          true);
-    if (NS_STYLE_FLEX_WRAP_NOWRAP != containerStylePos->mFlexWrap &&
+    if (StyleFlexWrap::Nowrap != containerStylePos->mFlexWrap &&
         alignContent != NS_STYLE_ALIGN_STRETCH) {
       
       
@@ -1600,7 +1600,7 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
   const ReflowInput* flexContainerRI = aItemReflowInput.mParentReflowInput;
   MOZ_ASSERT(flexContainerRI,
              "flex item's reflow input should have ptr to container's state");
-  if (NS_STYLE_FLEX_WRAP_NOWRAP == flexContainerRI->mStylePosition->mFlexWrap) {
+  if (StyleFlexWrap::Nowrap == flexContainerRI->mStylePosition->mFlexWrap) {
     
     
     nscoord containerCrossSize = GET_CROSS_COMPONENT_LOGICAL(
@@ -3150,7 +3150,7 @@ CrossAxisPositionTracker::CrossAxisPositionTracker(
   }
 
   const bool isSingleLine =
-      NS_STYLE_FLEX_WRAP_NOWRAP == aReflowInput.mStylePosition->mFlexWrap;
+      StyleFlexWrap::Nowrap == aReflowInput.mStylePosition->mFlexWrap;
   if (isSingleLine) {
     MOZ_ASSERT(!aFirstLine->getNext(),
                "If we're styled as single-line, we should only have 1 line");
@@ -3782,7 +3782,7 @@ void FlexboxAxisTracker::InitAxesFromModernProps(
   }
 
   
-  if (stylePos->mFlexWrap == NS_STYLE_FLEX_WRAP_WRAP_REVERSE) {
+  if (stylePos->mFlexWrap == StyleFlexWrap::WrapReverse) {
     mCrossAxis = GetReverseAxis(mCrossAxis);
     mIsCrossAxisReversed = true;
   } else {
@@ -3845,7 +3845,7 @@ void nsFlexContainerFrame::GenerateFlexLines(
   MOZ_ASSERT(aLines.isEmpty(), "Expecting outparam to start out empty");
 
   const bool isSingleLine =
-      NS_STYLE_FLEX_WRAP_NOWRAP == aReflowInput.mStylePosition->mFlexWrap;
+      StyleFlexWrap::Nowrap == aReflowInput.mStylePosition->mFlexWrap;
 
   
   
@@ -5364,7 +5364,7 @@ nscoord nsFlexContainerFrame::IntrinsicISize(gfxContext* aRenderingContext,
       
       
       
-      bool isSingleLine = (NS_STYLE_FLEX_WRAP_NOWRAP == stylePos->mFlexWrap);
+      bool isSingleLine = (StyleFlexWrap::Nowrap == stylePos->mFlexWrap);
       if (axisTracker.IsRowOriented() &&
           (isSingleLine || aType == nsLayoutUtils::PREF_ISIZE)) {
         containerISize += childISize;

@@ -453,9 +453,11 @@ enum class StyleFlexDirection : uint8_t {
 };
 
 
-#define NS_STYLE_FLEX_WRAP_NOWRAP 0
-#define NS_STYLE_FLEX_WRAP_WRAP 1
-#define NS_STYLE_FLEX_WRAP_WRAP_REVERSE 2
+enum class StyleFlexWrap : uint8_t {
+  Nowrap,
+  Wrap,
+  WrapReverse,
+};
 
 
 
