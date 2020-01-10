@@ -332,6 +332,11 @@ class PictureInPictureToggleChild extends ActorChild {
 
 
   onPointerDown(event) {
+    
+    if (event.button != 0) {
+      return;
+    }
+
     let state = this.docState;
 
     let video = state.weakOverVideo && state.weakOverVideo.get();
@@ -402,6 +407,11 @@ class PictureInPictureToggleChild extends ActorChild {
 
 
   onMouseButtonEvent(event) {
+    
+    if (event.button != 0) {
+      return;
+    }
+
     let state = this.docState;
     if (state.isClickingToggle) {
       event.stopImmediatePropagation();

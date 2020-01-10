@@ -154,14 +154,22 @@ async function toggleOpacityReachesThreshold(
 
 
 
-async function assertSawMouseEvents(browser, isExpectingEvents) {
+
+async function assertSawMouseEvents(
+  browser,
+  isExpectingEvents,
+  isExpectingClick = true
+) {
   const MOUSE_BUTTON_EVENTS = [
     "pointerdown",
     "mousedown",
     "pointerup",
     "mouseup",
-    "click",
   ];
+
+  if (isExpectingClick) {
+    MOUSE_BUTTON_EVENTS.push("click");
+  }
 
   let mouseEvents = await ContentTask.spawn(browser, null, async () => {
     return this.content.wrappedJSObject.getRecordedEvents();
@@ -329,6 +337,34 @@ async function testToggle(testURL, expectations) {
           videoID,
           HOVER_TOGGLE_OPACITY
         );
+
+        
+        info("Right-clicking on toggle.");
+
+        await BrowserTestUtils.synthesizeMouseAtPoint(
+          toggleLeft,
+          toggleTop,
+          { button: 1 },
+          browser
+        );
+
+        
+        
+        await assertSawMouseEvents(browser, !controls, false);
+
+        
+        
+        
+        for (let win of Services.wm.getEnumerator(WINDOW_TYPE)) {
+          if (!win.closed) {
+            ok(false, "Found a Picture-in-Picture window unexpectedly.");
+            return;
+          }
+        }
+
+        ok(true, "No Picture-in-Picture window found.");
+
+        
 
         if (canToggle) {
           info(
