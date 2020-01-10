@@ -35,13 +35,13 @@ master_doc = 'index'
 
 
 project = u'mozlint'
-copyright = u'2015, Andrew Halberstadt'
-author = u'Andrew Halberstadt'
+copyright = u'2015-Today, Mozilla'
+author = u'Andrew Halberstadt and others'
 
 
-version = '0.1.0'
+version = '0.2.0'
 
-release = '0.1.0'
+release = '0.2.0'
 
 
 
