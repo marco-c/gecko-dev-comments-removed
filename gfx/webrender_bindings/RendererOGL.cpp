@@ -68,6 +68,7 @@ RendererOGL::~RendererOGL() {
     
     return;
   }
+  mCompositor->GetWidget()->DoCompositorCleanup();
   wr_renderer_delete(mRenderer);
 }
 

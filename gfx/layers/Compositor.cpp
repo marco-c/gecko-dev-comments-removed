@@ -76,6 +76,9 @@ Compositor::Compositor(widget::CompositorWidget* aWidget,
 
 Compositor::~Compositor() { ReadUnlockTextures(); }
 
+
+void Compositor::DoWidgetCleanup() { mWidget->DoCompositorCleanup(); }
+
 void Compositor::Destroy() {
   TextureSourceProvider::Destroy();
   mIsDestroyed = true;
