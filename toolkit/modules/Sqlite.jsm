@@ -1355,6 +1355,16 @@ OpenedConnection.prototype = Object.freeze({
 
 
 
+  get variableLimit() {
+    return this.unsafeRawConnection.variableLimit;
+  },
+
+  
+
+
+
+
+
 
   getSchemaVersion(schemaName = "main") {
     return this.execute(`PRAGMA ${schemaName}.user_version`).then(
