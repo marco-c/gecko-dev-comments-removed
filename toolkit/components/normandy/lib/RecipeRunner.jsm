@@ -63,7 +63,7 @@ const PREFS_TO_WATCH = [
 XPCOMUtils.defineLazyGetter(this, "gRemoteSettingsClient", () => {
   return RemoteSettings(REMOTE_SETTINGS_COLLECTION, {
     filterFunc: async entry =>
-      (await RecipeRunner.checkFilter(entry.recipe)) ? entry : null,
+      (await RecipeRunner.shouldRunRecipe(entry.recipe)) ? entry : null,
   });
 });
 
@@ -285,9 +285,7 @@ var RecipeRunner = {
     timerManager.registerTimer(TIMER_NAME, () => this.run(), runInterval);
   },
 
-  async run(options = {}) {
-    const { trigger = "timer" } = options;
-
+  async run({ trigger = "timer" } = {}) {
     if (this.running) {
       
       return;
@@ -324,18 +322,18 @@ var RecipeRunner = {
         return;
       }
 
-      const actions = new ActionsManager();
+      const actionsManager = new ActionsManager();
 
       
       if (recipesToRun.length === 0) {
         log.debug("No recipes to execute");
       } else {
         for (const recipe of recipesToRun) {
-          await actions.runRecipe(recipe);
+          await actionsManager.runRecipe(recipe);
         }
       }
 
-      await actions.finalize();
+      await actionsManager.finalize();
 
       await Uptake.reportRunner(Uptake.RUNNER_SUCCESS);
       Services.obs.notifyObservers(null, "recipe-runner:end");
@@ -381,10 +379,13 @@ var RecipeRunner = {
       log.error(`Could not fetch recipes from ${apiUrl}: "${e}"`);
       throw e;
     }
+
+    
+    
     
     const recipesToRun = [];
     for (const recipe of recipes) {
-      if (await this.checkFilter(recipe)) {
+      if (await this.shouldRunRecipe(recipe)) {
         recipesToRun.push(recipe);
       }
     }
@@ -411,7 +412,66 @@ var RecipeRunner = {
 
 
 
-  async checkFilter(recipe) {
+  getCapabilities() {
+    let capabilities = new Set([
+      "capabilities-v1", 
+    ]);
+
+    
+    for (const actionCapability of ActionsManager.getCapabilities()) {
+      capabilities.add(actionCapability);
+    }
+
+    
+    for (const transform of FilterExpressions.getAvailableTransforms()) {
+      capabilities.add(`jexl.transform.${transform}`);
+    }
+
+    return capabilities;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async shouldRunRecipe(recipe) {
+    const runnerCapabilities = this.getCapabilities();
+    if (Array.isArray(recipe.capabilities)) {
+      for (const recipeCapability of recipe.capabilities) {
+        if (!runnerCapabilities.has(recipeCapability)) {
+          log.debug(
+            `Recipe "${recipe.name}" requires unknown capabilities. ` +
+              `Recipe capabilities: ${JSON.stringify(recipe.capabilities)}. ` +
+              `Local runner capabilities: ${JSON.stringify(
+                Array.from(runnerCapabilities)
+              )}`
+          );
+          await Uptake.reportRecipe(
+            recipe,
+            Uptake.RECIPE_INCOMPATIBLE_COMPATIBILITIES
+          );
+          return false;
+        }
+      }
+    }
+
     const context = this.getFilterContext(recipe);
     let result;
     try {
