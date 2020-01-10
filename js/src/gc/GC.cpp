@@ -3004,7 +3004,7 @@ void GCRuntime::updateZonePointersToRelocatedCells(Zone* zone) {
 
   
   for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next()) {
-    comp->fixupAfterMovingGC();
+    comp->fixupAfterMovingGC(&trc);
   }
 
   zone->externalStringCache().purge();
