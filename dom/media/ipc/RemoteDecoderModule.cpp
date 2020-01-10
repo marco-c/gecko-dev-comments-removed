@@ -146,11 +146,8 @@ already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateVideoDecoder(
   
   RefPtr<Runnable> task =
       NS_NewRunnableFunction("RemoteDecoderModule::CreateVideoDecoder", [&]() {
-        result = child->InitIPDL(
-            aParams.VideoConfig(), aParams.mRate.mValue, aParams.mOptions,
-            aParams.mKnowsCompositor
-                ? &aParams.mKnowsCompositor->GetTextureFactoryIdentifier()
-                : nullptr);
+        result = child->InitIPDL(aParams.VideoConfig(), aParams.mRate.mValue,
+                                 aParams.mOptions);
         if (NS_FAILED(result)) {
           
           

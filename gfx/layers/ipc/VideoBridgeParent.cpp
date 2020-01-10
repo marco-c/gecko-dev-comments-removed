@@ -24,14 +24,6 @@ VideoBridgeParent::VideoBridgeParent() : mClosed(false) {
 
 VideoBridgeParent::~VideoBridgeParent() { sVideoBridgeSingleton = nullptr; }
 
-void VideoBridgeParent::Open(Endpoint<PVideoBridgeParent>&& aEndpoint) {
-  RefPtr<VideoBridgeParent> parent = new VideoBridgeParent();
-  if (!aEndpoint.Bind(parent)) {
-    
-    MOZ_CRASH("Failed to bind RemoteDecoderManagerParent to endpoint");
-  }
-}
-
 
 VideoBridgeParent* VideoBridgeParent::GetSingleton() {
   return sVideoBridgeSingleton;
