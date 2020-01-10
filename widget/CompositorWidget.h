@@ -124,6 +124,12 @@ class CompositorWidget {
 
   virtual void DoCompositorCleanup() {}
 
+  
+
+
+
+
+
   virtual RefPtr<layers::NativeLayerRoot> GetNativeLayerRoot() {
     return nullptr;
   }
@@ -145,6 +151,7 @@ class CompositorWidget {
                                  LayoutDeviceIntRect aRect) {}
 
   
+
 
 
 

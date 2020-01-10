@@ -1098,8 +1098,11 @@ void CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
                                  const IntRect* aClipRectIn,
                                  const IntRect& aRenderBounds,
                                  const nsIntRegion& aOpaqueRegion,
+                                 NativeLayer* aNativeLayer,
                                  IntRect* aClipRectOut,
                                  IntRect* aRenderBoundsOut) {
+  MOZ_RELEASE_ASSERT(!aNativeLayer, "Unexpected native layer on this platform");
+
   
   
   

@@ -22,7 +22,7 @@ class RenderCompositorOGL : public RenderCompositor {
                       RefPtr<widget::CompositorWidget>&& aWidget);
   virtual ~RenderCompositorOGL();
 
-  bool BeginFrame() override;
+  bool BeginFrame(layers::NativeLayer* aNativeLayer) override;
   void EndFrame() override;
   bool WaitForGPU() override;
   void Pause() override;
@@ -38,6 +38,11 @@ class RenderCompositorOGL : public RenderCompositor {
   void InsertFrameDoneSync();
 
   RefPtr<gl::GLContext> mGL;
+
+  
+  
+  
+  RefPtr<layers::NativeLayer> mCurrentNativeLayer;
 
   
   GLsync mPreviousFrameDoneSync;

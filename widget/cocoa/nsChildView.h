@@ -397,6 +397,7 @@ class nsChildView final : public nsBaseWidget {
   virtual int32_t RoundsWidgetCoordinatesTo() override;
 
   virtual void Invalidate(const LayoutDeviceIntRect& aRect) override;
+  void EnsureContentLayerForMainThreadPainting();
 
   virtual void* GetNativeData(uint32_t aDataType) override;
   virtual nsresult ConfigureChildren(const nsTArray<Configuration>& aConfigurations) override;
@@ -497,7 +498,6 @@ class nsChildView final : public nsBaseWidget {
   virtual bool PreRender(mozilla::widget::WidgetRenderingContext* aContext) override;
   bool PreRenderImpl(mozilla::widget::WidgetRenderingContext* aContext);
   virtual void PostRender(mozilla::widget::WidgetRenderingContext* aContext) override;
-  virtual void DoCompositorCleanup() override;
   virtual RefPtr<mozilla::layers::NativeLayerRoot> GetNativeLayerRoot() override;
   virtual void DrawWindowOverlay(mozilla::widget::WidgetRenderingContext* aManager,
                                  LayoutDeviceIntRect aRect) override;
@@ -711,12 +711,9 @@ class nsChildView final : public nsBaseWidget {
   
   
   
+  
+  
   RefPtr<mozilla::layers::NativeLayerCA> mContentLayer;
-
-  
-  
-  
-  RefPtr<MacIOSurface> mBasicCompositorIOSurface;
 
   mozilla::UniquePtr<mozilla::VibrancyManager> mVibrancyManager;
   RefPtr<mozilla::SwipeTracker> mSwipeTracker;
