@@ -244,6 +244,10 @@ class nsNPAPIPluginInstance final
 
   nsresult CreateAudioChannelAgentIfNeeded();
 
+  void NotifyAudibleStateChanged() const;
+
+  nsresult UpdateMutedIfNeeded();
+
   
   
   NPP_t mNPP;
@@ -298,7 +302,9 @@ class nsNPAPIPluginInstance final
   char** mCachedParamValues;
 
   RefPtr<mozilla::dom::AudioChannelAgent> mAudioChannelAgent;
-  bool mMuted;
+  bool mIsMuted = false;
+  bool mWindowMuted = false;
+  bool mWindowSuspended = false;
 };
 
 void NS_NotifyBeginPluginCall(NSPluginCallReentry aReentryState);
