@@ -350,7 +350,7 @@ class PackageFrontend(MachCommandBase):
 
         for record in records.itervalues():
             self.log(logging.INFO, 'artifact', {'name': record.basename},
-                     'Downloading {name}')
+                     'Setting up artifact {name}')
             valid = False
             
             for attempt, _ in enumerate(redo.retrier(attempts=retry+1,
