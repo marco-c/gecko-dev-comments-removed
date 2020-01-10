@@ -912,8 +912,9 @@ void nsTableRowFrame::ReflowChildren(nsPresContext* aPresContext,
       
       
       
-      FinishReflowChild(kidFrame, aPresContext, desiredSize, nullptr, wm,
-                        kidPosition, containerSize, ReflowChildFlags::Default);
+      FinishReflowChild(kidFrame, aPresContext, desiredSize,
+                        kidReflowInput.ptrOr(nullptr), wm, kidPosition,
+                        containerSize, ReflowChildFlags::Default);
 
       nsTableFrame* tableFrame = GetTableFrame();
       if (tableFrame->IsBorderCollapse()) {
