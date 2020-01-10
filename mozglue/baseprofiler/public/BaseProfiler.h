@@ -200,18 +200,25 @@ class RacyFeatures {
 
   MFBT_API static void SetInactive();
 
+  MFBT_API static void SetPaused();
+
+  MFBT_API static void SetUnpaused();
+
   MFBT_API static bool IsActive();
 
   MFBT_API static bool IsActiveWithFeature(uint32_t aFeature);
 
   MFBT_API static bool IsActiveWithoutPrivacy();
 
+  MFBT_API static bool IsActiveAndUnpausedWithoutPrivacy();
+
  private:
-  static const uint32_t Active = 1u << 31;
+  static constexpr uint32_t Active = 1u << 31;
+  static constexpr uint32_t Paused = 1u << 30;
 
 
 #  define NO_OVERLAP(n_, str_, Name_, desc_) \
-    static_assert(ProfilerFeature::Name_ != Active, "bad Active value");
+    static_assert(ProfilerFeature::Name_ != Paused, "bad feature value");
 
   BASE_PROFILER_FOR_EACH_FEATURE(NO_OVERLAP);
 
@@ -401,6 +408,19 @@ MFBT_API void profiler_thread_wake();
 
 inline bool profiler_is_active() {
   return baseprofiler::detail::RacyFeatures::IsActive();
+}
+
+
+
+
+
+
+
+
+
+inline bool profiler_can_accept_markers() {
+  return baseprofiler::detail::RacyFeatures::
+      IsActiveAndUnpausedWithoutPrivacy();
 }
 
 
