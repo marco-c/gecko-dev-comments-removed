@@ -98,15 +98,6 @@ class FissionTestHelperChild extends JSWindowActorChild {
 
   handleEvent(evt) {
     switch (evt.type) {
-      case "DOMWindowCreated":
-        
-        
-        
-        
-        this.contentWindow.addEventListener("FissionTestHelper:Init", this, {
-          wantUntrusted: true,
-        });
-        break;
       case "FissionTestHelper:Init":
         this.initialize();
         break;
