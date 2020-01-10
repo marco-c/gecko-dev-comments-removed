@@ -623,6 +623,8 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
     return mFlexShrink * mFlexBaseSize;
   }
 
+  bool TreatBSizeAsIndefinite() const { return mTreatBSizeAsIndefinite; }
+
   const AspectRatio& IntrinsicRatio() const { return mIntrinsicRatio; }
   bool HasIntrinsicRatio() const { return !!mIntrinsicRatio; }
 
@@ -890,6 +892,9 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
 
   
   bool mNeedsMinSizeAutoResolution;
+
+  
+  bool mTreatBSizeAsIndefinite;
 
   
   bool mHasAnyAutoMargin;
@@ -1942,6 +1947,57 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
     mAlignSelf &= ~NS_STYLE_ALIGN_FLAG_BITS;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mIsInlineAxisMainAxis) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mTreatBSizeAsIndefinite = false;
+  } else {
+    
+    
+    
+    if (aAxisTracker.IsRowOriented() ||
+        (containerRS->ComputedBSize() != NS_UNCONSTRAINEDSIZE &&
+         !containerRS->mFlags.mTreatBSizeAsIndefinite)) {
+      
+      
+      
+      
+      
+      mTreatBSizeAsIndefinite = false;
+    } else if (aFlexBaseSize != NS_UNCONSTRAINEDSIZE) {
+      
+      
+      
+      
+      
+      
+      
+      mTreatBSizeAsIndefinite = false;
+    } else {
+      
+      mTreatBSizeAsIndefinite = true;
+    }
+  }
+
   SetFlexBaseSizeAndMainSize(aFlexBaseSize);
   CheckForMinSizeAuto(aFlexItemReflowInput, aAxisTracker);
 
@@ -2010,6 +2066,7 @@ FlexItem::FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize,
       mIsStrut(true),  
       mIsInlineAxisMainAxis(true),  
       mNeedsMinSizeAutoResolution(false),
+      mTreatBSizeAsIndefinite(false),
       mHasAnyAutoMargin(false),
       mAlignSelf(NS_STYLE_ALIGN_FLEX_START),
       mAlignSelfFlags(0) {
@@ -4738,6 +4795,9 @@ void nsFlexContainerFrame::DoFlexLayout(
             childReflowInput.SetComputedISize(item->GetMainSize());
           } else {
             childReflowInput.SetComputedBSize(item->GetMainSize());
+            if (item->TreatBSizeAsIndefinite()) {
+              childReflowInput.mFlags.mTreatBSizeAsIndefinite = true;
+            }
           }
         }
 
@@ -5145,6 +5205,9 @@ void nsFlexContainerFrame::ReflowFlexItem(
   } else {
     childReflowInput.SetComputedBSize(aItem.GetMainSize());
     didOverrideComputedBSize = true;
+    if (aItem.TreatBSizeAsIndefinite()) {
+      childReflowInput.mFlags.mTreatBSizeAsIndefinite = true;
+    }
   }
 
   
@@ -5161,6 +5224,10 @@ void nsFlexContainerFrame::ReflowFlexItem(
       childReflowInput.SetComputedISize(aItem.GetCrossSize());
       didOverrideComputedISize = true;
     } else {
+      
+      
+      
+      
       childReflowInput.SetComputedBSize(aItem.GetCrossSize());
       didOverrideComputedBSize = true;
     }

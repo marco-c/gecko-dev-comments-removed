@@ -31,6 +31,12 @@
     background: orange;
     display: block;
 }
+.vert-wm {
+    writing-mode: vertical-rl;
+}
+.horiz-wm {
+    writing-mode: horizontal-tb;
+}
 </style>
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
@@ -78,6 +84,30 @@
         </div>
         <div>
             <span data-expected-height="0"></span>
+        </div>
+    </div>
+</div>
+
+
+
+
+<div style="height: 100px;">
+    <div class="flexbox column">
+        <div class="vert-wm">
+            <span data-expected-height="100"></span>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+<div style="height: 100px;">
+    <div class="flexbox vert-wm">
+        <div class="horiz-wm">
+            <span data-expected-height="100"></span>
         </div>
     </div>
 </div>
