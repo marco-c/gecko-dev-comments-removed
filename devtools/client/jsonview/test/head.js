@@ -78,9 +78,9 @@ async function addJsonViewTab(
   );
 
   const data = { rootDir, appReadyState, docReadyState };
-  
   await Promise.race([
     error,
+    
     ContentTask.spawn(browser, data, async function(data) {
       
       const { JSONView } = content.wrappedJSObject;
