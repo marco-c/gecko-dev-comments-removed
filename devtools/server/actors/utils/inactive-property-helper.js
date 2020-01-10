@@ -266,11 +266,13 @@ class InactivePropertyHelper {
       return false;
     });
 
+    this.unselect();
+
     
     
     let display;
     try {
-      display = this.style ? this.style.display : null;
+      display = elStyle ? elStyle.display : null;
     } catch (e) {}
 
     return {
@@ -294,6 +296,16 @@ class InactivePropertyHelper {
     this._cssRule = cssRule;
     this._property = property;
     this._style = style;
+  }
+
+  
+
+
+  unselect() {
+    this._node = null;
+    this._cssRule = null;
+    this._property = null;
+    this._style = null;
   }
 
   
