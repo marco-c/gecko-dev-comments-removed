@@ -354,6 +354,15 @@ bool DebuggerFrame::setGenerator(JSContext* cx,
 
   {
     AutoRealm ar(cx, script);
+
+    
+    
+    
+    
+    if (!Debugger::ensureExecutionObservabilityOfScript(cx, script)) {
+      return false;
+    }
+
     if (!DebugScript::incrementGeneratorObserverCount(cx, script)) {
       return false;
     }
