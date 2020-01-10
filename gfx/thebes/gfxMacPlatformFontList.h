@@ -164,6 +164,7 @@ class gfxMacPlatformFontList : public gfxPlatformFontList {
 
   
   void InitSingleFaceList();
+  void InitAliasesForSingleFaceList();
 
   
   void InitSystemFontNames();
