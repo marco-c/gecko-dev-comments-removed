@@ -348,10 +348,14 @@ void FocusManager::ProcessFocusEvent(AccEvent* aEvent) {
   nsEventShell::FireEvent(focusEvent);
   mLastFocus = target;
 
+  if (NS_WARN_IF(target->IsDefunct())) {
+    
+    return;
+  }
+
   
   
   
-  MOZ_ASSERT(!target->IsDefunct());
   DocAccessible* targetDocument = target->Document();
   MOZ_ASSERT(targetDocument);
   Accessible* anchorJump = targetDocument->AnchorJump();
