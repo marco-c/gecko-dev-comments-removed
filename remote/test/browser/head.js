@@ -105,6 +105,14 @@ function getTargets(CDP) {
 
 
 
+async function setup() {
+  return setupForURL(toDataURL(""));
+}
+
+
+
+
+
 
 async function setupForURL(url) {
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);

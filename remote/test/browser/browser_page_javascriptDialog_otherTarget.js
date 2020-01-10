@@ -3,13 +3,13 @@
 
 "use strict";
 
-const TEST_URI = "data:text/html;charset=utf-8,default-test-page";
-const OTHER_URI = "data:text/html;charset=utf-8,other-test-page";
+const FIRST_DOC = toDataURL("default-test-page");
+const SECOND_DOC = toDataURL("other-test-page");
 
 
 
 add_task(async function() {
-  const { client, tab } = await setupTestForUri(TEST_URI);
+  const { client, tab } = await setupForURL(FIRST_DOC);
 
   const { Page } = client;
 
@@ -24,7 +24,7 @@ add_task(async function() {
   info("Open another tab");
   const otherTab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    OTHER_URI
+    SECOND_DOC
   );
   is(gBrowser.selectedTab, otherTab, "Selected tab is now the new tab");
 
