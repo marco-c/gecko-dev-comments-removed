@@ -23,16 +23,20 @@ Cu.evalInSandbox(
   "Components.utils.import('resource://gre/modules/jsdebugger.jsm');" +
     "Components.utils.import('resource://gre/modules/Services.jsm');" +
     "Components.utils.import('resource://devtools/shared/execution-point-utils.js');" +
+    "Components.utils.import('resource://gre/modules/Timer.jsm');" +
     "addDebuggerToGlobal(this);",
   sandbox
 );
 const {
   RecordReplayControl,
   Services,
-  pointPrecedes,
   pointEquals,
+  pointToString,
+  findClosestPoint,
+  pointArrayIncludes,
   positionEquals,
   positionSubsumes,
+  setInterval,
 } = sandbox;
 
 const InvalidCheckpointId = 0;
@@ -115,9 +119,6 @@ function ChildProcess(id, recording) {
   this.lastMemoryUsage = null;
 
   
-  this.asyncManifests = [];
-
-  
   
   this.savedCheckpoints = new Set(recording ? [] : [FirstCheckpointId]);
 
@@ -143,6 +144,12 @@ function ChildProcess(id, recording) {
       }
     },
   };
+
+  
+  this.manifestSendTime = Date.now();
+
+  
+  this.asyncManifestInfo = new AsyncManifestChildInfo();
 }
 
 ChildProcess.prototype = {
@@ -166,10 +173,13 @@ ChildProcess.prototype = {
   
   
   
+  
+  
   sendManifest(manifest) {
     assert(this.paused);
     this.paused = false;
     this.manifest = manifest;
+    this.manifestSendTime = Date.now();
 
     dumpv(`SendManifest #${this.id} ${stringify(manifest.contents)}`);
     RecordReplayControl.sendManifest(this.id, manifest.contents);
@@ -220,81 +230,40 @@ ChildProcess.prototype = {
   },
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  sendManifestAsync(manifest, point) {
-    pokeChildSoon(this);
-    return new Promise(resolve => {
-      this.asyncManifests.push({ resolve, manifest, point });
-    });
+  lastSavedCheckpoint(checkpoint) {
+    while (!this.savedCheckpoints.has(checkpoint)) {
+      checkpoint--;
+    }
+    return checkpoint;
   },
 
   
-  processAsyncManifest() {
-    if (this.asyncManifests.length == 0) {
-      return false;
-    }
-    const { resolve, manifest, point } = this.asyncManifests[0];
-    if (manifest.shouldSkip && manifest.shouldSkip(this)) {
-      resolve(this);
-      this.asyncManifests.shift();
-      pokeChildSoon(this);
-      return true;
-    }
-
-    
-    
-    
-    if (this == gActiveChild && !manifest.noReassign) {
-      const child = pickReplayingChild();
-      child.asyncManifests.push(this.asyncManifests.shift());
-      pokeChildSoon(child);
-      pokeChildSoon(this);
-      return true;
-    }
-
-    if (point && maybeReachPoint(this, point)) {
-      return true;
-    }
-    this.sendManifest({
-      contents: manifest.contents(this),
-      onFinished: data => {
-        if (manifest.onFinished) {
-          manifest.onFinished(this, data);
+  
+  timeToReachPoint(point) {
+    let startDelay = 0,
+      startPoint = this.lastPausePoint;
+    if (!this.paused) {
+      if (this.manifest.expectedDuration) {
+        const elapsed = Date.now() - this.manifestSendTime;
+        if (elapsed < this.manifest.expectedDuration) {
+          startDelay = this.manifest.expectedDuration - elapsed;
         }
-        resolve(this);
-        pokeChildSoon(this);
-      },
-    });
-    this.asyncManifests.shift();
-
-    
-    
-    if (this == gActiveChild) {
-      this.waitUntilPaused();
+      }
+      if (this.manifest.destination) {
+        startPoint = this.manifest.destination;
+      }
     }
-
-    return true;
+    let startCheckpoint = startPoint.checkpoint;
+    
+    if (startPoint.position) {
+      startCheckpoint = this.lastSavedCheckpoint(startCheckpoint);
+    }
+    if (point.checkpoint < startCheckpoint) {
+      startCheckpoint = this.lastSavedCheckpoint(point.checkpoint);
+    }
+    return (
+      startDelay + checkpointRangeDuration(startCheckpoint, point.checkpoint)
+    );
   },
 };
 
@@ -316,23 +285,163 @@ function lookupChild(id) {
   return gReplayingChildren[id];
 }
 
-
-let lastPickedChildId = 0;
-
-function pickReplayingChild() {
-  
-  
-  while (true) {
-    lastPickedChildId = (lastPickedChildId + 1) % gReplayingChildren.length;
-    const child = gReplayingChildren[lastPickedChildId];
+function closestChild(point) {
+  let minChild = null,
+    minTime = Infinity;
+  for (const child of gReplayingChildren) {
     if (child) {
-      return child;
+      const time = child.timeToReachPoint(point);
+      if (time < minTime) {
+        minChild = child;
+        minTime = time;
+      }
     }
   }
+  return minChild;
 }
 
 
 let gDebugger;
+
+
+
+
+
+
+const gAsyncManifests = new Set();
+const gAsyncManifestsLowPriority = new Set();
+
+function asyncManifestWorklist(lowPriority) {
+  return lowPriority ? gAsyncManifestsLowPriority : gAsyncManifests;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function sendAsyncManifest(manifest) {
+  pokeChildrenSoon();
+  return new Promise(resolve => {
+    manifest.resolve = resolve;
+    asyncManifestWorklist(manifest.lowPriority).add(manifest);
+  });
+}
+
+function AsyncManifestChildInfo() {
+  
+  this.inProgressManifest = null;
+}
+
+
+function pickAsyncManifest(child, lowPriority) {
+  const worklist = asyncManifestWorklist(lowPriority);
+
+  let best = null,
+    bestTime = Infinity;
+  for (const manifest of worklist) {
+    
+    if (manifest.shouldSkip()) {
+      manifest.resolve();
+      worklist.delete(manifest);
+      continue;
+    }
+
+    
+    
+    if (manifest.scanCheckpoint) {
+      if (child.scannedCheckpoints.has(manifest.scanCheckpoint)) {
+        assert(!manifest.point);
+        best = manifest;
+        break;
+      } else {
+        continue;
+      }
+    }
+
+    
+    
+    if (child == gActiveChild) {
+      continue;
+    }
+
+    
+    assert(manifest.point);
+    const time = child.timeToReachPoint(manifest.point);
+    if (time < bestTime) {
+      best = manifest;
+      bestTime = time;
+    }
+  }
+
+  if (best) {
+    worklist.delete(best);
+  }
+
+  return best;
+}
+
+function processAsyncManifest(child) {
+  
+  let manifest = child.asyncManifestInfo.inProgressManifest;
+  child.asyncManifestInfo.inProgressManifest = null;
+
+  if (manifest && child == gActiveChild) {
+    
+    
+    sendAsyncManifest(manifest);
+    manifest = null;
+  }
+
+  if (!manifest) {
+    manifest = pickAsyncManifest(child,  false);
+    if (!manifest) {
+      manifest = pickAsyncManifest(child,  true);
+      if (!manifest) {
+        return false;
+      }
+    }
+  }
+
+  if (manifest.point && maybeReachPoint(child, manifest.point)) {
+    
+    child.asyncManifestInfo.inProgressManifest = manifest;
+    return true;
+  }
+
+  child.sendManifest({
+    contents: manifest.contents(child),
+    onFinished: data => {
+      manifest.onFinished(child, data);
+      manifest.resolve();
+      pokeChildSoon(child);
+    },
+    destination: manifest.destination,
+    expectedDuration: manifest.expectedDuration,
+  });
+
+  return true;
+}
 
 
 
@@ -353,8 +462,7 @@ function CheckpointInfo() {
   this.point = null;
 
   
-  
-  this.owner = null;
+  this.saved = false;
 
   
   this.assignTime = null;
@@ -374,22 +482,22 @@ function getCheckpointInfo(id) {
 }
 
 
-function timeSinceCheckpoint(id) {
+function checkpointRangeDuration(start, end) {
   let time = 0;
-  for (let i = id ? id : FirstCheckpointId; i < gCheckpoints.length; i++) {
+  for (let i = start; i < end; i++) {
     time += gCheckpoints[i].duration;
   }
   return time;
 }
 
 
+function timeSinceCheckpoint(id) {
+  return checkpointRangeDuration(id, gCheckpoints.length);
+}
+
+
 function timeForSavedCheckpoint(id) {
-  const next = nextSavedCheckpoint(id);
-  let time = 0;
-  for (let i = id; i < next; i++) {
-    time += gCheckpoints[i].duration;
-  }
-  return time;
+  return checkpointRangeDuration(id, nextSavedCheckpoint(id));
 }
 
 
@@ -398,15 +506,23 @@ let gLastFlushCheckpoint = InvalidCheckpointId;
 
 const FlushMs = 0.5 * 1000;
 
+
+let gLastPickedChildId = 0;
+
 function addSavedCheckpoint(checkpoint) {
-  if (getCheckpointInfo(checkpoint).owner) {
-    return;
+  
+  let child;
+  while (true) {
+    gLastPickedChildId = (gLastPickedChildId + 1) % gReplayingChildren.length;
+    child = gReplayingChildren[gLastPickedChildId];
+    if (child) {
+      break;
+    }
   }
 
-  const owner = pickReplayingChild();
-  getCheckpointInfo(checkpoint).owner = owner;
+  getCheckpointInfo(checkpoint).saved = true;
   getCheckpointInfo(checkpoint).assignTime = Date.now();
-  owner.addSavedCheckpoint(checkpoint);
+  child.addSavedCheckpoint(checkpoint);
 }
 
 function addCheckpoint(checkpoint, duration) {
@@ -414,19 +530,10 @@ function addCheckpoint(checkpoint, duration) {
   getCheckpointInfo(checkpoint).duration = duration;
 }
 
-function ownerChild(checkpoint) {
-  while (!getCheckpointInfo(checkpoint).owner) {
-    checkpoint--;
-  }
-  return getCheckpointInfo(checkpoint).owner;
-}
-
 
 
 function restoreCheckpoint(child, target) {
-  while (!child.savedCheckpoints.has(target)) {
-    target--;
-  }
+  assert(child.savedCheckpoints.has(target));
   child.sendManifest({
     contents: { kind: "restoreCheckpoint", target },
     onFinished({ restoredCheckpoint }) {
@@ -434,6 +541,7 @@ function restoreCheckpoint(child, target) {
       child.divergedFromRecording = false;
       pokeChildSoon(child);
     },
+    destination: checkpointExecutionPoint(target),
   });
 }
 
@@ -448,11 +556,14 @@ function maybeReachPoint(child, endpoint) {
     return false;
   }
   if (child.divergedFromRecording || child.pausePoint().position) {
-    restoreCheckpoint(child, child.pausePoint().checkpoint);
+    restoreCheckpoint(
+      child,
+      child.lastSavedCheckpoint(child.pausePoint().checkpoint)
+    );
     return true;
   }
   if (endpoint.checkpoint < child.pauseCheckpoint()) {
-    restoreCheckpoint(child, endpoint.checkpoint);
+    restoreCheckpoint(child, child.lastSavedCheckpoint(endpoint.checkpoint));
     return true;
   }
   child.sendManifest({
@@ -464,19 +575,27 @@ function maybeReachPoint(child, endpoint) {
     onFinished() {
       pokeChildSoon(child);
     },
+    destination: endpoint,
+    expectedDuration: checkpointRangeDuration(
+      child.pausePoint().checkpoint,
+      endpoint.checkpoint
+    ),
   });
   return true;
 }
 
 function nextSavedCheckpoint(checkpoint) {
-  assert(gCheckpoints[checkpoint].owner);
+  assert(gCheckpoints[checkpoint].saved);
   
-  while (!gCheckpoints[++checkpoint].owner) {}
+  while (!gCheckpoints[++checkpoint].saved) {}
   return checkpoint;
 }
 
 function forSavedCheckpointsInRange(start, end, callback) {
-  assert(gCheckpoints[start].owner);
+  if (start == FirstCheckpointId && !gCheckpoints[start].saved) {
+    return;
+  }
+  assert(gCheckpoints[start].saved);
   for (
     let checkpoint = start;
     checkpoint < end;
@@ -487,7 +606,7 @@ function forSavedCheckpointsInRange(start, end, callback) {
 }
 
 function getSavedCheckpoint(checkpoint) {
-  while (!gCheckpoints[checkpoint].owner) {
+  while (!gCheckpoints[checkpoint].saved) {
     checkpoint--;
   }
   return checkpoint;
@@ -506,7 +625,7 @@ function pokeChild(child) {
     return;
   }
 
-  if (child.processAsyncManifest()) {
+  if (processAsyncManifest(child)) {
     return;
   }
 
@@ -523,7 +642,10 @@ function pokeChildSoon(child) {
   Services.tm.dispatchToMainThread(() => pokeChild(child));
 }
 
+let gPendingPokeChildren = false;
+
 function pokeChildren() {
+  gPendingPokeChildren = false;
   for (const child of gReplayingChildren) {
     if (child) {
       pokeChild(child);
@@ -532,7 +654,10 @@ function pokeChildren() {
 }
 
 function pokeChildrenSoon() {
-  Services.tm.dispatchToMainThread(() => pokeChildren());
+  if (!gPendingPokeChildren) {
+    Services.tm.dispatchToMainThread(() => pokeChildren());
+    gPendingPokeChildren = true;
+  }
 }
 
 
@@ -548,40 +673,83 @@ const gBreakpoints = [];
 
 
 
-
-
-function scanRecording(checkpoint) {
-  assert(checkpoint < gLastFlushCheckpoint);
-
+function findScanChild(checkpoint) {
   for (const child of gReplayingChildren) {
     if (child && child.scannedCheckpoints.has(checkpoint)) {
       return child;
     }
   }
+  return null;
+}
 
-  const initialChild = ownerChild(checkpoint);
+
+async function scanRecording(checkpoint) {
+  assert(checkpoint < gLastFlushCheckpoint);
+
+  const child = findScanChild(checkpoint);
+  if (child) {
+    return;
+  }
+
   const endpoint = nextSavedCheckpoint(checkpoint);
-  return initialChild.sendManifestAsync(
-    {
-      shouldSkip: child => child.scannedCheckpoints.has(checkpoint),
-      contents(child) {
-        return {
-          kind: "scanRecording",
-          endpoint,
-          needSaveCheckpoints: child.flushNeedSaveCheckpoints(),
-        };
-      },
-      onFinished(child, { duration }) {
-        child.scannedCheckpoints.add(checkpoint);
-        const info = getCheckpointInfo(checkpoint);
-        if (!info.scanTime) {
-          info.scanTime = Date.now();
-          info.scanDuration = duration;
-        }
-      },
+  await sendAsyncManifest({
+    shouldSkip: () => !!findScanChild(checkpoint),
+    contents(child) {
+      child.scannedCheckpoints.add(checkpoint);
+      return {
+        kind: "scanRecording",
+        endpoint,
+        needSaveCheckpoints: child.flushNeedSaveCheckpoints(),
+      };
     },
-    checkpointExecutionPoint(checkpoint)
+    onFinished(child, { duration }) {
+      const info = getCheckpointInfo(checkpoint);
+      if (!info.scanTime) {
+        info.scanTime = Date.now();
+        info.scanDuration = duration;
+      }
+      if (gDebugger) {
+        gDebugger._callOnPositionChange();
+      }
+    },
+    point: checkpointExecutionPoint(checkpoint),
+    destination: checkpointExecutionPoint(endpoint),
+    expectedDuration: checkpointRangeDuration(checkpoint, endpoint) * 5,
+  });
+
+  assert(findScanChild(checkpoint));
+}
+
+function unscannedRegions() {
+  const result = [];
+
+  function addRegion(startCheckpoint, endCheckpoint) {
+    const start = checkpointExecutionPoint(startCheckpoint).progress;
+    const end = checkpointExecutionPoint(endCheckpoint).progress;
+
+    if (result.length && result[result.length - 1].end == start) {
+      result[result.length - 1].end = end;
+    } else {
+      result.push({ start, end });
+    }
+  }
+
+  forSavedCheckpointsInRange(
+    FirstCheckpointId,
+    gLastFlushCheckpoint,
+    checkpoint => {
+      if (!findScanChild(checkpoint)) {
+        addRegion(checkpoint, nextSavedCheckpoint(checkpoint));
+      }
+    }
   );
+
+  const lastFlush = gLastFlushCheckpoint || FirstCheckpointId;
+  if (lastFlush != gRecordingEndpoint) {
+    addRegion(lastFlush, gMainChild.lastPausePoint.checkpoint);
+  }
+
+  return result;
 }
 
 
@@ -594,31 +762,38 @@ function canFindHits(position) {
   return position.kind == "Break" || position.kind == "OnStep";
 }
 
+function findExistingHits(checkpoint, position) {
+  const checkpointHits = gHitSearches.get(checkpoint);
+  if (!checkpointHits) {
+    return null;
+  }
+  const entry = checkpointHits.find(({ position: existingPosition, hits }) => {
+    return positionEquals(position, existingPosition);
+  });
+  return entry ? entry.hits : null;
+}
+
 
 
 
 async function findHits(checkpoint, position) {
   assert(canFindHits(position));
-  assert(gCheckpoints[checkpoint].owner);
+  assert(gCheckpoints[checkpoint].saved);
 
   if (!gHitSearches.has(checkpoint)) {
     gHitSearches.set(checkpoint, []);
   }
 
   
-  if (!gHitSearches.has(checkpoint)) {
-    gHitSearches.set(checkpoint, []);
-  }
-  const checkpointHits = gHitSearches.get(checkpoint);
-  let hits = findExistingHits();
+  let hits = findExistingHits(checkpoint, position);
   if (hits) {
     return hits;
   }
 
-  const child = await scanRecording(checkpoint);
+  await scanRecording(checkpoint);
   const endpoint = nextSavedCheckpoint(checkpoint);
-  await child.sendManifestAsync({
-    shouldSkip: () => findExistingHits() != null,
+  await sendAsyncManifest({
+    shouldSkip: () => !!findExistingHits(checkpoint, position),
     contents() {
       return {
         kind: "findHits",
@@ -627,24 +802,28 @@ async function findHits(checkpoint, position) {
         endpoint,
       };
     },
-    onFinished: (_, hits) => checkpointHits.push({ position, hits }),
-    
-    
-    
-    noReassign: true,
+    onFinished(_, hits) {
+      if (!gHitSearches.has(checkpoint)) {
+        gHitSearches.set(checkpoint, []);
+      }
+      const checkpointHits = gHitSearches.get(checkpoint);
+      checkpointHits.push({ position, hits });
+    },
+    scanCheckpoint: checkpoint,
   });
 
-  hits = findExistingHits();
+  hits = findExistingHits(checkpoint, position);
   assert(hits);
   return hits;
+}
 
-  function findExistingHits() {
-    const entry = checkpointHits.find(
-      ({ position: existingPosition, hits }) => {
-        return positionEquals(position, existingPosition);
-      }
-    );
-    return entry ? entry.hits : null;
+
+async function findBreakpointHits(checkpoint, position) {
+  if (position.kind == "Break") {
+    const hits = await findHits(checkpoint, position);
+    if (hits.length) {
+      updateNearbyPoints();
+    }
   }
 }
 
@@ -669,6 +848,16 @@ function hasSteppingBreakpoint() {
   return gBreakpoints.some(bp => bp.kind == "EnterFrame" || bp.kind == "OnPop");
 }
 
+function findExistingFrameSteps(point) {
+  
+  
+  
+  if (point.position.kind == "EnterFrame") {
+    return gFrameSteps.find(steps => pointEquals(point, steps[0]));
+  }
+  return gFrameSteps.find(steps => pointArrayIncludes(steps, point));
+}
+
 
 
 async function findFrameSteps(point) {
@@ -682,93 +871,104 @@ async function findFrameSteps(point) {
       point.position.kind == "OnPop"
   );
 
-  let steps = findExistingSteps();
+  let steps = findExistingFrameSteps(point);
   if (steps) {
     return steps;
   }
 
-  const savedCheckpoint = getSavedCheckpoint(point.checkpoint);
+  
+  
+  const info = gControl.sendRequestMainChild({
+    type: "frameStepsInfo",
+    script: point.position.script,
+  });
 
-  let entryPoint;
-  if (point.position.kind == "EnterFrame") {
-    entryPoint = point;
-  } else {
-    
-    
-    const {
-      progress: targetProgress,
-      position: { script, frameIndex: targetFrameIndex },
-    } = point;
+  const checkpoint = getSavedCheckpoint(point.checkpoint);
+  await scanRecording(checkpoint);
+  await sendAsyncManifest({
+    shouldSkip: () => !!findExistingFrameSteps(point),
+    contents: () => ({ kind: "findFrameSteps", targetPoint: point, ...info }),
+    onFinished: (_, steps) => gFrameSteps.push(steps),
+    scanCheckpoint: checkpoint,
+  });
 
-    
-    const { firstBreakpointOffset } = gControl.sendRequestMainChild({
-      type: "getScript",
-      id: script,
-    });
-    const entryPosition = {
-      kind: "OnStep",
-      script,
-      offset: firstBreakpointOffset,
-      frameIndex: targetFrameIndex,
-    };
-
-    const entryHits = await findHits(savedCheckpoint, entryPosition);
-
-    
-    
-    
-    
-    let progressAtFrameStart = 0;
-    for (const {
-      progress,
-      position: { frameIndex },
-    } of entryHits) {
-      if (
-        frameIndex == targetFrameIndex &&
-        progress <= targetProgress &&
-        progress > progressAtFrameStart
-      ) {
-        progressAtFrameStart = progress;
-      }
-    }
-    assert(progressAtFrameStart);
-
-    
-    
-    
-    
-    entryPoint = {
-      checkpoint: point.checkpoint,
-      progress: progressAtFrameStart,
-      position: { kind: "EnterFrame" },
-    };
-  }
-
-  const child = ownerChild(savedCheckpoint);
-  await child.sendManifestAsync(
-    {
-      shouldSkip: () => findExistingSteps() != null,
-      contents() {
-        return { kind: "findFrameSteps", entryPoint };
-      },
-      onFinished: (_, { frameSteps }) => gFrameSteps.push(frameSteps),
-    },
-    entryPoint
-  );
-
-  steps = findExistingSteps();
+  steps = findExistingFrameSteps(point);
   assert(steps);
-  return steps;
 
-  function findExistingSteps() {
+  updateNearbyPoints();
+
+  return steps;
+}
+
+
+
+
+
+const gPauseData = new Map();
+
+
+
+const gCachedPoints = new Map();
+
+async function queuePauseData(point, trackCached, shouldSkipCallback) {
+  await waitForFlushed(point.checkpoint);
+
+  sendAsyncManifest({
+    shouldSkip() {
+      if (maybeGetPauseData(point)) {
+        return true;
+      }
+
+      
+      
+      
+      if (
+        gLogpoints.some(({ position }) =>
+          positionSubsumes(position, point.position)
+        )
+      ) {
+        return true;
+      }
+
+      return shouldSkipCallback && shouldSkipCallback();
+    },
+    contents() {
+      return { kind: "getPauseData" };
+    },
+    onFinished(child, data) {
+      if (!data.restoredCheckpoint) {
+        addPauseData(point, data, trackCached);
+        child.divergedFromRecording = true;
+      }
+    },
+    point,
+    expectedDuration: 250,
+    lowPriority: true,
+  });
+}
+
+function addPauseData(point, data, trackCached) {
+  if (data.paintData) {
     
     
-    
-    if (point.position.kind == "EnterFrame") {
-      return gFrameSteps.find(steps => pointEquals(point, steps[0]));
-    }
-    return gFrameSteps.find(steps => steps.some(p => pointEquals(point, p)));
+    data.paintData = RecordReplayControl.atomize(data.paintData);
   }
+  gPauseData.set(pointToString(point), data);
+
+  if (trackCached) {
+    gCachedPoints.set(pointToString(point), point);
+    if (gDebugger) {
+      gDebugger._callOnPositionChange();
+    }
+  }
+}
+
+function maybeGetPauseData(point) {
+  return gPauseData.get(pointToString(point));
+}
+
+function cachedPoints() {
+  return [...gCachedPoints.values()].map(point => point.progress);
 }
 
 
@@ -784,6 +984,7 @@ const PauseModes = {
   
   PAUSED: "PAUSED",
 
+  
   
   ARRIVING: "ARRIVING",
 
@@ -802,6 +1003,10 @@ let gPausePoint = null;
 
 const gDebuggerRequests = [];
 
+
+
+let gSyncDebuggerRequests = false;
+
 function setPauseState(mode, point, child) {
   assert(mode);
   const idString = child ? ` #${child.id}` : "";
@@ -811,28 +1016,35 @@ function setPauseState(mode, point, child) {
   gPausePoint = point;
   gActiveChild = child;
 
+  if (mode != PauseModes.PAUSED) {
+    gDebuggerRequests.length = 0;
+    gSyncDebuggerRequests = false;
+  }
+
+  if (mode == PauseModes.ARRIVING) {
+    updateNearbyPoints();
+  }
+
   pokeChildrenSoon();
 }
 
 
+
 function setReplayingPauseTarget(point) {
-  setPauseState(PauseModes.ARRIVING, point, ownerChild(point.checkpoint));
-  gDebuggerRequests.length = 0;
+  setPauseState(PauseModes.ARRIVING, point, closestChild(point.checkpoint));
+
+  gDebugger._onPause();
 
   findFrameSteps(point);
 }
 
 
-function pauseReplayingChild(point) {
-  const child = ownerChild(point.checkpoint);
-
+function pauseReplayingChild(child, point) {
   do {
     child.waitUntilPaused();
   } while (maybeReachPoint(child, point));
 
   setPauseState(PauseModes.PAUSED, point, child);
-
-  findFrameSteps(point);
 }
 
 function sendChildToPausePoint(child) {
@@ -846,14 +1058,30 @@ function sendChildToPausePoint(child) {
     case PauseModes.ARRIVING:
       if (pointEquals(child.pausePoint(), gPausePoint)) {
         setPauseState(PauseModes.PAUSED, gPausePoint, gActiveChild);
-        gDebugger._onPause();
-        return;
+      } else {
+        maybeReachPoint(child, gPausePoint);
       }
-      maybeReachPoint(child, gPausePoint);
       return;
 
     default:
       throw new Error(`Unexpected pause mode: ${gPauseMode}`);
+  }
+}
+
+function waitUntilPauseFinishes() {
+  assert(gActiveChild);
+
+  if (gActiveChild == gMainChild) {
+    gActiveChild.waitUntilPaused(true);
+    return;
+  }
+
+  while (true) {
+    gActiveChild.waitUntilPaused();
+    if (pointEquals(gActiveChild.pausePoint(), gPausePoint)) {
+      return;
+    }
+    pokeChild(gActiveChild);
   }
 }
 
@@ -873,11 +1101,13 @@ async function finishResume() {
 
   let checkpoint = startCheckpoint;
   for (; ; forward ? checkpoint++ : checkpoint--) {
-    if (checkpoint == gMainChild.pauseCheckpoint()) {
+    if (checkpoint == gLastFlushCheckpoint) {
       
       
       assert(forward);
-      setPauseState(PauseModes.RUNNING, null, gMainChild);
+      RecordReplayControl.restoreMainGraphics();
+      setPauseState(PauseModes.RUNNING, gMainChild.pausePoint(), gMainChild);
+      gDebugger._callOnPositionChange();
       maybeResumeRecording();
       return;
     }
@@ -890,7 +1120,7 @@ async function finishResume() {
       return;
     }
 
-    if (!gCheckpoints[checkpoint].owner) {
+    if (!gCheckpoints[checkpoint].saved) {
       continue;
     }
 
@@ -915,18 +1145,15 @@ async function finishResume() {
       );
     }
 
-    if (forward) {
-      hits = hits.filter(p => pointPrecedes(gPausePoint, p));
-    } else {
-      hits = hits.filter(p => pointPrecedes(p, gPausePoint));
-    }
-
-    if (hits.length) {
+    const hit = findClosestPoint(
+      hits,
+      gPausePoint,
+       !forward,
+       false
+    );
+    if (hit) {
       
-      hits.sort((a, b) =>
-        forward ? pointPrecedes(b, a) : pointPrecedes(a, b)
-      );
-      setReplayingPauseTarget(hits[0]);
+      setReplayingPauseTarget(hit);
       return;
     }
   }
@@ -951,7 +1178,7 @@ function resume(forward) {
   }
   setPauseState(
     forward ? PauseModes.RESUMING_FORWARD : PauseModes.RESUMING_BACKWARD,
-    gActiveChild.pausePoint(),
+    gPausePoint,
     null
   );
   finishResume();
@@ -961,11 +1188,113 @@ function resume(forward) {
 
 function timeWarp(point) {
   setReplayingPauseTarget(point);
-  while (gPauseMode != PauseModes.PAUSED) {
-    gActiveChild.waitUntilPaused();
-    pokeChildren();
-  }
   Services.cpmm.sendAsyncMessage("TimeWarpFinished");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let gNearbyPoints = [];
+
+
+const NumNearbyBreakpointHits = 2;
+
+
+const NumNearbySteps = 4;
+
+function nextKnownBreakpointHit(point, forward) {
+  let checkpoint = getSavedCheckpoint(point.checkpoint);
+  for (; ; forward ? checkpoint++ : checkpoint--) {
+    if (
+      checkpoint == gLastFlushCheckpoint ||
+      checkpoint == InvalidCheckpointId
+    ) {
+      return null;
+    }
+
+    if (!gCheckpoints[checkpoint].saved) {
+      continue;
+    }
+
+    let hits = [];
+
+    
+    for (const bp of gBreakpoints) {
+      if (canFindHits(bp)) {
+        const bphits = findExistingHits(checkpoint, bp);
+        if (bphits) {
+          hits = hits.concat(bphits);
+        }
+      }
+    }
+
+    const hit = findClosestPoint(
+      hits,
+      gPausePoint,
+       !forward,
+       false
+    );
+    if (hit) {
+      return hit;
+    }
+  }
+}
+
+function nextKnownBreakpointHits(point, forward, count) {
+  const rv = [];
+  for (let i = 0; i < count; i++) {
+    const next = nextKnownBreakpointHit(point, forward);
+    if (next) {
+      rv.push(next);
+      point = next;
+    } else {
+      break;
+    }
+  }
+  return rv;
+}
+
+function updateNearbyPoints() {
+  const nearby = [
+    ...nextKnownBreakpointHits(gPausePoint, true, NumNearbyBreakpointHits),
+    ...nextKnownBreakpointHits(gPausePoint, false, NumNearbyBreakpointHits),
+  ];
+
+  const steps = gPausePoint.position && findExistingFrameSteps(gPausePoint);
+  if (steps) {
+    
+    
+    
+    const index = steps.findIndex(point => pointEquals(point, gPausePoint));
+    const start = Math.max(index - NumNearbySteps, 1);
+    nearby.push(...steps.slice(start, index + NumNearbySteps - start));
+  }
+
+  
+  for (const point of nearby) {
+    if (!pointArrayIncludes(gNearbyPoints, point)) {
+      queuePauseData(point,  false, () => {
+        return !pointArrayIncludes(gNearbyPoints, point);
+      });
+    }
+  }
+
+  gNearbyPoints = nearby;
 }
 
 
@@ -985,22 +1314,26 @@ async function findLogpointHits(
   { position, text, condition, callback }
 ) {
   const hits = await findHits(checkpoint, position);
-  const child = ownerChild(checkpoint);
   for (const point of hits) {
-    await child.sendManifestAsync(
-      {
-        contents() {
-          return { kind: "hitLogpoint", text, condition };
-        },
-        onFinished(child, { result }) {
-          if (result) {
-            callback(point, gDebugger._convertCompletionValue(result));
-          }
-          child.divergedFromRecording = true;
-        },
+    if (!condition) {
+      callback(point, { return: "Loading..." });
+    }
+    sendAsyncManifest({
+      shouldSkip: () => false,
+      contents() {
+        return { kind: "hitLogpoint", text, condition };
       },
-      point
-    );
+      onFinished(child, { data, result }) {
+        if (result) {
+          addPauseData(point, data,  true);
+          callback(point, gDebugger._convertCompletionValue(result));
+        }
+        child.divergedFromRecording = true;
+      },
+      point,
+      expectedDuration: 250,
+      lowPriority: true,
+    });
   }
 }
 
@@ -1028,6 +1361,12 @@ function handleResumeManifestResponse({
   if (gDebugger) {
     scripts.forEach(script => gDebugger._onNewScript(script));
   }
+
+  consoleMessages.forEach(msg => {
+    if (msg.executionPoint) {
+      queuePauseData(msg.executionPoint,  true);
+    }
+  });
 }
 
 
@@ -1036,7 +1375,10 @@ function maybeResumeRecording() {
     return;
   }
 
-  if (timeSinceCheckpoint(gLastFlushCheckpoint) >= FlushMs) {
+  if (
+    !gLastFlushCheckpoint ||
+    timeSinceCheckpoint(gLastFlushCheckpoint) >= FlushMs
+  ) {
     ensureFlushed();
   }
 
@@ -1065,9 +1407,25 @@ function maybeResumeRecording() {
 }
 
 
+const gFlushWaiters = [];
+
+function waitForFlushed(checkpoint) {
+  if (checkpoint < gLastFlushCheckpoint) {
+    return undefined;
+  }
+  return new Promise(resolve => {
+    gFlushWaiters.push(resolve);
+  });
+}
+
+let gLastFlushTime = Date.now();
+
+
 function ensureFlushed() {
   assert(gActiveChild == gMainChild);
   gMainChild.waitUntilPaused(true);
+
+  gLastFlushTime = Date.now();
 
   if (gLastFlushCheckpoint == gActiveChild.pauseCheckpoint()) {
     return;
@@ -1103,13 +1461,35 @@ function ensureFlushed() {
       scanRecording(checkpoint);
 
       
-      gBreakpoints.forEach(position => findHits(checkpoint, position));
+      gBreakpoints.forEach(position =>
+        findBreakpointHits(checkpoint, position)
+      );
       gLogpoints.forEach(logpoint => findLogpointHits(checkpoint, logpoint));
     }
   );
 
+  for (const waiter of gFlushWaiters) {
+    waiter();
+  }
+  gFlushWaiters.length = 0;
+
   pokeChildren();
 }
+
+const CheckFlushMs = 1000;
+
+
+
+setInterval(() => {
+  const elapsed = Date.now() - gLastFlushTime;
+  if (
+    elapsed > CheckFlushMs &&
+    gMainChild.lastPausePoint &&
+    gMainChild.lastPausePoint.checkpoint != gLastFlushCheckpoint
+  ) {
+    ensureFlushed();
+  }
+}, CheckFlushMs);
 
 
 function BeforeSaveRecording() {
@@ -1193,9 +1573,17 @@ function ManifestFinished(id, response) {
 const gControl = {
   
   pausePoint() {
-    return gActiveChild && gActiveChild.paused
-      ? gActiveChild.pausePoint()
-      : null;
+    if (gActiveChild && gActiveChild == gMainChild) {
+      return gActiveChild.paused ? gActiveChild.pausePoint() : null;
+    }
+    if (gPauseMode == PauseModes.PAUSED || gPauseMode == PauseModes.ARRIVING) {
+      return gPausePoint;
+    }
+    return null;
+  },
+
+  lastPausePoint() {
+    return gPausePoint;
   },
 
   
@@ -1210,15 +1598,6 @@ const gControl = {
 
     if (gActiveChild == gMainChild) {
       gActiveChild.waitUntilPaused(true);
-      return;
-    }
-
-    while (true) {
-      gActiveChild.waitUntilPaused();
-      if (pointEquals(gActiveChild.pausePoint(), gPausePoint)) {
-        return;
-      }
-      pokeChild(gActiveChild);
     }
   },
 
@@ -1231,9 +1610,7 @@ const gControl = {
       forSavedCheckpointsInRange(
         FirstCheckpointId,
         gLastFlushCheckpoint,
-        checkpoint => {
-          findHits(checkpoint, position);
-        }
+        checkpoint => findBreakpointHits(checkpoint, position)
       );
     }
 
@@ -1242,6 +1619,8 @@ const gControl = {
       
       gActiveChild.waitUntilPaused(true);
     }
+
+    updateNearbyPoints();
   },
 
   
@@ -1252,6 +1631,7 @@ const gControl = {
       
       gActiveChild.waitUntilPaused(true);
     }
+    updateNearbyPoints();
   },
 
   
@@ -1262,7 +1642,7 @@ const gControl = {
   
   
   maybeSwitchToReplayingChild() {
-    assert(gActiveChild.paused);
+    assert(gControl.pausePoint());
     if (gActiveChild == gMainChild && RecordReplayControl.canRewind()) {
       const point = gActiveChild.pausePoint();
 
@@ -1279,13 +1659,27 @@ const gControl = {
       }
 
       ensureFlushed();
-      pauseReplayingChild(point);
+      const child = closestChild(point);
+      pauseReplayingChild(child, point);
     }
   },
 
   
   
   sendRequest(request) {
+    waitUntilPauseFinishes();
+
+    if (gSyncDebuggerRequests) {
+      gActiveChild.sendManifest({
+        contents: { kind: "batchDebuggerRequest", requests: gDebuggerRequests },
+        onFinished(finishData) {
+          assert(!finishData || !finishData.restoredCheckpoint);
+        },
+      });
+      gActiveChild.waitUntilPaused();
+      gSyncDebuggerRequests = false;
+    }
+
     let data;
     gActiveChild.sendManifest({
       contents: { kind: "debuggerRequest", request },
@@ -1299,7 +1693,7 @@ const gControl = {
       
       
       
-      pauseReplayingChild(gPausePoint);
+      pauseReplayingChild(gActiveChild, gPausePoint);
       gActiveChild.sendManifest({
         contents: { kind: "batchDebuggerRequest", requests: gDebuggerRequests },
         onFinished(finishData) {
@@ -1347,6 +1741,52 @@ const gControl = {
       gLastFlushCheckpoint,
       checkpoint => findLogpointHits(checkpoint, logpoint)
     );
+  },
+
+  unscannedRegions,
+  cachedPoints,
+
+  getPauseData() {
+    if (!gDebuggerRequests.length) {
+      assert(!gSyncDebuggerRequests);
+      const data = maybeGetPauseData(gPausePoint);
+      if (data) {
+        gSyncDebuggerRequests = true;
+        gDebuggerRequests.push({ type: "pauseData" });
+        return data;
+      }
+    }
+    gControl.maybeSwitchToReplayingChild();
+    return gControl.sendRequest({ type: "pauseData" });
+  },
+
+  repaint() {
+    if (!gPausePoint) {
+      return;
+    }
+    if (
+      gMainChild.paused &&
+      pointEquals(gPausePoint, gMainChild.pausePoint())
+    ) {
+      
+      
+      if (gMainChild.recording) {
+        ensureFlushed();
+      }
+      return;
+    }
+    const data = maybeGetPauseData(gPausePoint);
+    if (data && data.paintData) {
+      RecordReplayControl.hadRepaint(data.paintData);
+    } else {
+      gControl.maybeSwitchToReplayingChild();
+      const rv = gControl.sendRequest({ type: "repaint" });
+      if (rv && rv.length) {
+        RecordReplayControl.hadRepaint(rv);
+      } else {
+        RecordReplayControl.clearGraphics();
+      }
+    }
   },
 };
 
