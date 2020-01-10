@@ -406,7 +406,7 @@ class JSFunction : public js::NativeObject {
     
     
     MOZ_ASSERT_IF(nonLazyScript()->funHasExtensibleScope() ||
-                      nonLazyScript()->needsHomeObject() ||
+                      baseScript()->needsHomeObject() ||
                       nonLazyScript()->isDerivedClassConstructor() ||
                       isGenerator() || isAsync(),
                   nonLazyScript()->bodyScope()->hasEnvironment());
