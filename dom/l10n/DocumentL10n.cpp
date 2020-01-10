@@ -100,24 +100,119 @@ void DocumentL10n::TriggerInitialDocumentTranslation() {
 
   Element* elem = mDocument->GetDocumentElement();
   if (!elem) {
+    mReady->MaybeRejectWithUndefined();
+    InitialDocumentTranslationCompleted();
     return;
   }
 
-  Sequence<OwningNonNull<Element>> elements;
   ErrorResult rv;
 
+  
+  Sequence<OwningNonNull<Element>> elements;
   GetTranslatables(*elem, elements, rv);
-
-  ConnectRoot(*elem, rv);
-
-  RefPtr<Promise> promise = TranslateElements(elements, rv);
-  if (!promise) {
+  if (NS_WARN_IF(rv.Failed())) {
+    mReady->MaybeRejectWithUndefined();
+    InitialDocumentTranslationCompleted();
     return;
   }
 
-  RefPtr<PromiseNativeHandler> l10nReadyHandler =
-      new L10nReadyHandler(mReady, this);
-  promise->AppendNativeHandler(l10nReadyHandler);
+  RefPtr<nsXULPrototypeDocument> proto = mDocument->GetPrototype();
+
+  
+  
+  if (proto) {
+    
+
+    
+    
+    Sequence<OwningNonNull<Element>> nonProtoElements;
+
+    uint32_t i = elements.Length();
+    while (i > 0) {
+      Element* elem = elements.ElementAt(i - 1);
+      MOZ_RELEASE_ASSERT(elem->HasAttr(nsGkAtoms::datal10nid));
+      if (!elem->HasElementCreatedFromPrototypeAndHasUnmodifiedL10n()) {
+        nonProtoElements.AppendElement(*elem, fallible);
+        elements.RemoveElement(elem);
+      }
+      i--;
+    }
+
+    
+    
+    nonProtoElements->Reverse();
+
+    nsTArray<RefPtr<Promise>> promises;
+
+    
+    
+    if (!proto->WasL10nCached() && !elements.IsEmpty()) {
+      RefPtr<Promise> translatePromise = TranslateElements(elements, proto, rv);
+      if (NS_WARN_IF(!translatePromise || rv.Failed())) {
+        mReady->MaybeRejectWithUndefined();
+        InitialDocumentTranslationCompleted();
+        return;
+      }
+      promises.AppendElement(translatePromise);
+    }
+
+    
+    
+    
+    if (!nonProtoElements.IsEmpty()) {
+      RefPtr<Promise> nonProtoTranslatePromise =
+          TranslateElements(nonProtoElements, nullptr, rv);
+      if (NS_WARN_IF(!nonProtoTranslatePromise || rv.Failed())) {
+        mReady->MaybeRejectWithUndefined();
+        InitialDocumentTranslationCompleted();
+        return;
+      }
+      promises.AppendElement(nonProtoTranslatePromise);
+    }
+
+    
+    if (promises.IsEmpty()) {
+      
+      
+      mReady->MaybeResolveWithUndefined();
+      InitialDocumentTranslationCompleted();
+    } else {
+      
+      
+      
+      AutoEntryScript aes(mGlobal,
+                          "DocumentL10n InitialDocumentTranslationCompleted");
+      RefPtr<Promise> promise = Promise::All(aes.cx(), promises, rv);
+      if (NS_WARN_IF(!promise || rv.Failed())) {
+        mReady->MaybeRejectWithUndefined();
+        InitialDocumentTranslationCompleted();
+        return;
+      }
+
+      RefPtr<PromiseNativeHandler> l10nReadyHandler =
+          new L10nReadyHandler(mReady, this);
+      promise->AppendNativeHandler(l10nReadyHandler);
+    }
+  } else {
+    
+
+    
+    
+    
+    RefPtr<Promise> promise = TranslateElements(elements, nullptr, rv);
+    if (NS_WARN_IF(!promise || rv.Failed())) {
+      mReady->MaybeRejectWithUndefined();
+      InitialDocumentTranslationCompleted();
+      return;
+    }
+
+    RefPtr<PromiseNativeHandler> l10nReadyHandler =
+        new L10nReadyHandler(mReady, this);
+    promise->AppendNativeHandler(l10nReadyHandler);
+  }
+
+  
+  ConnectRoot(*elem, rv);
 }
 
 void DocumentL10n::InitialDocumentTranslationCompleted() {
