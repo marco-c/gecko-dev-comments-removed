@@ -55,10 +55,9 @@ MainProcessSingleton.prototype = {
   observe(subject, topic, data) {
     switch (topic) {
     case "app-startup": {
-      Services.obs.addObserver(this, "ipc:first-content-process-created");
-      Services.obs.addObserver(this, "xpcom-shutdown");
-
       ChromeUtils.import("resource://gre/modules/CustomElementsListener.jsm", null);
+      ChromeUtils.import("resource://gre/modules/L10nRegistry.jsm");
+      Services.obs.addObserver(this, "xpcom-shutdown");
 
       
       
@@ -66,14 +65,6 @@ MainProcessSingleton.prototype = {
       Services.ppmm.loadProcessScript("chrome://global/content/process-content.js", true, true);
       Services.mm.addMessageListener("Search:AddEngine", this.addSearchEngine);
       Services.ppmm.loadProcessScript("resource:///modules/ContentObservers.js", true);
-      break;
-    }
-
-    case "ipc:first-content-process-created": {
-      
-      
-      
-      ChromeUtils.import("resource://gre/modules/L10nRegistry.jsm");
       break;
     }
 
