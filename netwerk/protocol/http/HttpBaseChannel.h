@@ -508,8 +508,15 @@ class HttpBaseChannel : public nsHashPropertyBag,
       bool aPreserveMethod, uint32_t aRedirectFlags,
       uint32_t aExtraLoadFlags = 0);
 
+  enum class ConfigureReason {
+    Redirect,
+    InternalRedirect,
+    DocumentChannelReplacement,
+  };
+
   static void ConfigureReplacementChannel(nsIChannel*,
-                                          const ReplacementChannelConfig&);
+                                          const ReplacementChannelConfig&,
+                                          ConfigureReason);
 
   
   already_AddRefed<nsILoadInfo> CloneLoadInfoForRedirect(

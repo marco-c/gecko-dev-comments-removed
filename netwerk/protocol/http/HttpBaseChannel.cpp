@@ -3247,7 +3247,8 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
 }
 
  void HttpBaseChannel::ConfigureReplacementChannel(
-    nsIChannel* newChannel, const ReplacementChannelConfig& config) {
+    nsIChannel* newChannel, const ReplacementChannelConfig& config,
+    ConfigureReason aReason) {
   newChannel->SetLoadFlags(config.loadFlags);
 
   nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(newChannel));
@@ -3269,8 +3270,11 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
   if (config.timedChannel && newTimedChannel) {
     newTimedChannel->SetTimingEnabled(config.timedChannel->timingEnabled());
 
-    uint32_t redirectFlags = config.redirectFlags;
-    if (redirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL) {
+    
+    
+    
+    bool shouldHideTiming = aReason != ConfigureReason::Redirect;
+    if (shouldHideTiming) {
       newTimedChannel->SetRedirectCount(config.timedChannel->redirectCount());
       int8_t newCount = config.timedChannel->internalRedirectCount() + 1;
       newTimedChannel->SetInternalRedirectCount(
@@ -3283,7 +3287,7 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
           config.timedChannel->internalRedirectCount());
     }
 
-    if (redirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL) {
+    if (shouldHideTiming) {
       if (!config.timedChannel->channelCreation().IsNull()) {
         newTimedChannel->SetChannelCreation(
             config.timedChannel->channelCreation());
@@ -3298,7 +3302,7 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
     
     if (config.timedChannel->redirectStart().IsNull()) {
       
-      if (!(redirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL)) {
+      if (!shouldHideTiming) {
         newTimedChannel->SetRedirectStart(config.timedChannel->asyncOpen());
       }
     } else {
@@ -3309,7 +3313,7 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
     
     
     TimeStamp newRedirectEnd;
-    if (redirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL) {
+    if (shouldHideTiming) {
       newRedirectEnd = config.timedChannel->redirectEnd();
     } else {
       newRedirectEnd = config.timedChannel->responseEnd();
@@ -3480,7 +3484,11 @@ nsresult HttpBaseChannel::SetupReplacementChannel(nsIURI* newURI,
 
   ReplacementChannelConfig config = CloneReplacementChannelConfig(
       preserveMethod, redirectFlags, LOAD_REPLACE);
-  ConfigureReplacementChannel(newChannel, config);
+  ConfigureReason redirectType =
+      (redirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL)
+          ? ConfigureReason::InternalRedirect
+          : ConfigureReason::Redirect;
+  ConfigureReplacementChannel(newChannel, config, redirectType);
 
   
   nsCOMPtr<nsITimedChannel> newTimedChannel(do_QueryInterface(newChannel));

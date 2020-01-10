@@ -3657,7 +3657,9 @@ mozilla::ipc::IPCResult ContentChild::RecvCrossProcessRedirect(
   }
 
   HttpBaseChannel::ReplacementChannelConfig config(aConfig);
-  HttpBaseChannel::ConfigureReplacementChannel(newChannel, config);
+  HttpBaseChannel::ConfigureReplacementChannel(
+      newChannel, config,
+      HttpBaseChannel::ConfigureReason::DocumentChannelReplacement);
 
   
   rv = httpChild->ConnectParent(aRegistrarId);  
