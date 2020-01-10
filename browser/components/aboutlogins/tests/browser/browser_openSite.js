@@ -31,7 +31,11 @@ add_task(async function test_launch_login_item() {
     );
 
     let originInput = loginItem.shadowRoot.querySelector(".origin-input");
-    originInput.click();
+    let EventUtils = ContentTaskUtils.getEventUtils(content);
+    
+    
+    
+    await EventUtils.synthesizeMouseAtCenter(originInput, {}, content);
   });
 
   info("waiting for new tab to get opened");
