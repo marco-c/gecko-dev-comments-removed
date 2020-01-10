@@ -172,13 +172,16 @@ BoxModel.prototype = {
         return null;
       }
 
-      const node = this.inspector.selection.nodeFront;
+      const nodeFront = this.inspector.selection.nodeFront;
+      const inspectorFront = nodeFront.inspectorFront;
+      
+      const pageStyle = await inspectorFront.getPageStyle();
 
-      let layout = await this.inspector.pageStyle.getLayout(node, {
+      let layout = await pageStyle.getLayout(nodeFront, {
         autoMargins: true,
       });
 
-      const styleEntries = await this.inspector.pageStyle.getApplied(node, {
+      const styleEntries = await pageStyle.getApplied(nodeFront, {
         
         skipPseudo: true,
       });
@@ -186,22 +189,22 @@ BoxModel.prototype = {
 
       
       
-      const isPositionEditable = await this.inspector.pageStyle.isPositionEditable(
-        node
-      );
+      const isPositionEditable = await pageStyle.isPositionEditable(nodeFront);
 
       layout = Object.assign({}, layout, {
         isPositionEditable,
       });
 
-      const actorCanGetOffSetParent = await this.inspector.currentTarget.actorHasMethod(
+      const actorCanGetOffSetParent = await nodeFront.targetFront.actorHasMethod(
         "domwalker",
         "getOffsetParent"
       );
 
       if (actorCanGetOffSetParent) {
         
-        const offsetParent = await this.inspector.walker.getOffsetParent(node);
+        const offsetParent = await inspectorFront.walker.getOffsetParent(
+          nodeFront
+        );
         this.store.dispatch(updateOffsetParent(offsetParent));
       }
 
