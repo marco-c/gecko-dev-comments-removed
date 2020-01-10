@@ -480,6 +480,13 @@ class nsSocketTransport final : public nsASocketHandler,
   
   
   bool mSSLCallbackSet;
+
+  
+  
+  
+  
+  
+  bool mUsingQuic;
 };
 
 }  

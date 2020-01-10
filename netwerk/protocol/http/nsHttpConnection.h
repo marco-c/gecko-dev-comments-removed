@@ -23,6 +23,7 @@
 #include "nsIAsyncOutputStream.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsITimer.h"
+#include "Http3Session.h"
 
 class nsISocketTransport;
 class nsISSLSocketControl;
@@ -183,6 +184,7 @@ class nsHttpConnection final : public nsAHttpSegmentReader,
   bool UsingSpdy() { return (mUsingSpdyVersion != SpdyVersion::NONE); }
   SpdyVersion GetSpdyVersion() { return mUsingSpdyVersion; }
   bool EverUsedSpdy() { return mEverUsedSpdy; }
+  bool UsingHttp3() { return mHttp3Session; }
   PRIntervalTime Rtt() { return mRtt; }
 
   
@@ -221,6 +223,8 @@ class nsHttpConnection final : public nsAHttpSegmentReader,
   void SetupSecondaryTLS(nsAHttpTransaction* aSpdyConnectTransaction = nullptr);
   void SetInSpdyTunnel(bool arg);
 
+  
+  
   
   
   
@@ -280,6 +284,9 @@ class nsHttpConnection final : public nsAHttpSegmentReader,
   
   MOZ_MUST_USE bool EnsureNPNComplete(nsresult& aOut0RTTWriteHandshakeValue,
                                       uint32_t& aOut0RTTBytesWritten);
+  
+  
+  MOZ_MUST_USE bool EnsureNPNCompleteHttp3();
   void SetupSSL();
 
   
@@ -442,6 +449,9 @@ class nsHttpConnection final : public nsAHttpSegmentReader,
 
   nsTArray<HttpTrafficCategory> mTrafficCategory;
   bool mThroughCaptivePortal;
+
+  
+  RefPtr<Http3Session> mHttp3Session;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsHttpConnection, NS_HTTPCONNECTION_IID)

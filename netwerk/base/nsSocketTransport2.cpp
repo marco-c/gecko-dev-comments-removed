@@ -35,6 +35,7 @@
 #include "nsIDNSRecord.h"
 #include "nsIDNSByTypeRecord.h"
 #include "nsICancelable.h"
+#include "QuicSocketControl.h"
 #include "TCPFastOpenLayer.h"
 #include <algorithm>
 #include "sslexp.h"
@@ -736,7 +737,8 @@ nsSocketTransport::nsSocketTransport()
       mFastOpenStatus(TFO_NOT_SET),
       mFirstRetryError(NS_OK),
       mDoNotRetryToConnect(false),
-      mSSLCallbackSet(false) {
+      mSSLCallbackSet(false),
+      mUsingQuic(false) {
   this->mNetAddr.raw.family = 0;
   this->mNetAddr.inet = {};
   this->mSelfAddr.raw.family = 0;
@@ -819,11 +821,14 @@ nsresult nsSocketTransport::Init(const nsTArray<nsCString>& types,
     else
       mTypes.AppendElement(types[type++]);
 
-    nsCOMPtr<nsISocketProvider> provider;
-    rv = spserv->GetSocketProvider(mTypes[i].get(), getter_AddRefs(provider));
-    if (NS_FAILED(rv)) {
-      NS_WARNING("no registered socket provider");
-      return rv;
+    
+    if (!mTypes[i].EqualsLiteral("quic")) {
+      nsCOMPtr<nsISocketProvider> provider;
+      rv = spserv->GetSocketProvider(mTypes[i].get(), getter_AddRefs(provider));
+      if (NS_FAILED(rv)) {
+        NS_WARNING("no registered socket provider");
+        return rv;
+      }
     }
 
     
@@ -1089,142 +1094,178 @@ nsresult nsSocketTransport::BuildSocket(PRFileDesc*& fd, bool& proxyTransparent,
                                         bool& usingSSL) {
   SOCKET_LOG(("nsSocketTransport::BuildSocket [this=%p]\n", this));
 
-  nsresult rv;
+  nsresult rv = NS_OK;
 
   proxyTransparent = false;
   usingSSL = false;
 
   if (mTypes.IsEmpty()) {
     fd = PR_OpenTCPSocket(mNetAddr.raw.family);
-    rv = fd ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
-  } else {
+    if (!fd) {
+      SOCKET_LOG(("  error creating TCP nspr socket [rv=%" PRIx32 "]\n",
+                  static_cast<uint32_t>(rv)));
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
+    return NS_OK;
+  }
+
 #if defined(XP_UNIX)
-    MOZ_ASSERT(!mNetAddrIsSet || mNetAddr.raw.family != AF_LOCAL,
-               "Unix domain sockets can't be used with socket types");
+  MOZ_ASSERT(!mNetAddrIsSet || mNetAddr.raw.family != AF_LOCAL,
+             "Unix domain sockets can't be used with socket types");
 #endif
 
-    fd = nullptr;
+  fd = nullptr;
 
-    nsCOMPtr<nsISocketProviderService> spserv =
-        nsSocketProviderService::GetOrCreate();
+  uint32_t controlFlags = 0;
+  if (mProxyTransparentResolvesHost)
+    controlFlags |= nsISocketProvider::PROXY_RESOLVES_HOST;
 
-    
-    
-    
-    const char* host = mOriginHost.get();
-    int32_t port = (int32_t)mOriginPort;
-    nsCOMPtr<nsIProxyInfo> proxyInfo = mProxyInfo;
-    uint32_t controlFlags = 0;
+  if (mConnectionFlags & nsISocketTransport::ANONYMOUS_CONNECT)
+    controlFlags |= nsISocketProvider::ANONYMOUS_CONNECT;
 
-    uint32_t i;
-    for (i = 0; i < mTypes.Length(); ++i) {
-      nsCOMPtr<nsISocketProvider> provider;
+  if (mConnectionFlags & nsISocketTransport::NO_PERMANENT_STORAGE)
+    controlFlags |= nsISocketProvider::NO_PERMANENT_STORAGE;
 
-      SOCKET_LOG(("  pushing io layer [%u:%s]\n", i, mTypes[i].get()));
+  if (mConnectionFlags & nsISocketTransport::BE_CONSERVATIVE)
+    controlFlags |= nsISocketProvider::BE_CONSERVATIVE;
 
-      rv = spserv->GetSocketProvider(mTypes[i].get(), getter_AddRefs(provider));
-      if (NS_FAILED(rv)) break;
+  
+  
+  
+  const char* host = mOriginHost.get();
+  int32_t port = (int32_t)mOriginPort;
 
-      if (mProxyTransparentResolvesHost)
-        controlFlags |= nsISocketProvider::PROXY_RESOLVES_HOST;
-
-      if (mConnectionFlags & nsISocketTransport::ANONYMOUS_CONNECT)
-        controlFlags |= nsISocketProvider::ANONYMOUS_CONNECT;
-
-      if (mConnectionFlags & nsISocketTransport::NO_PERMANENT_STORAGE)
-        controlFlags |= nsISocketProvider::NO_PERMANENT_STORAGE;
-
-      if (mConnectionFlags & nsISocketTransport::BE_CONSERVATIVE)
-        controlFlags |= nsISocketProvider::BE_CONSERVATIVE;
-
-      nsCOMPtr<nsISupports> secinfo;
-      if (i == 0) {
-        
-        
-
-        
-        
-        
-        
-        
-        
-        const char* socketProviderHost = host;
-        int32_t socketProviderPort = port;
-        if (mProxyTransparentResolvesHost &&
-            (mTypes[0].EqualsLiteral("socks") ||
-             mTypes[0].EqualsLiteral("socks4"))) {
-          SOCKET_LOG(("SOCKS %d Host/Route override: %s:%d -> %s:%d\n",
-                      mHttpsProxy, socketProviderHost, socketProviderPort,
-                      mHost.get(), mPort));
-          socketProviderHost = mHost.get();
-          socketProviderPort = mPort;
-        }
-
-        
-        
-
-        rv = provider->NewSocket(
-            mNetAddr.raw.family,
-            mHttpsProxy ? mProxyHost.get() : socketProviderHost,
-            mHttpsProxy ? mProxyPort : socketProviderPort, proxyInfo,
-            mOriginAttributes, controlFlags, mTlsFlags, &fd,
-            getter_AddRefs(secinfo));
-
-        if (NS_SUCCEEDED(rv) && !fd) {
-          MOZ_ASSERT_UNREACHABLE(
-              "NewSocket succeeded but failed to "
-              "create a PRFileDesc");
-          rv = NS_ERROR_UNEXPECTED;
-        }
-      } else {
-        
-        
-        
-        rv = provider->AddToSocket(mNetAddr.raw.family, host, port, proxyInfo,
-                                   mOriginAttributes, controlFlags, mTlsFlags,
-                                   fd, getter_AddRefs(secinfo));
-      }
-
-      
-      if (NS_FAILED(rv)) break;
-
-      
-      
-      bool isSSL = mTypes[i].EqualsLiteral("ssl");
-      if (isSSL || mTypes[i].EqualsLiteral("starttls")) {
-        
-        nsCOMPtr<nsIInterfaceRequestor> callbacks;
-        {
-          MutexAutoLock lock(mLock);
-          mSecInfo = secinfo;
-          callbacks = mCallbacks;
-          SOCKET_LOG(("  [secinfo=%p callbacks=%p]\n", mSecInfo.get(),
-                      mCallbacks.get()));
-        }
-        
-        nsCOMPtr<nsISSLSocketControl> secCtrl(do_QueryInterface(secinfo));
-        if (secCtrl) secCtrl->SetNotificationCallbacks(callbacks);
-        
-        usingSSL = isSSL;
-      } else if (mTypes[i].EqualsLiteral("socks") ||
-                 mTypes[i].EqualsLiteral("socks4")) {
-        
-        
-        proxyInfo = nullptr;
-        proxyTransparent = true;
-      }
+  if (mTypes[0].EqualsLiteral("quic")) {
+    fd = PR_OpenUDPSocket(mNetAddr.raw.family);
+    if (!fd) {
+      SOCKET_LOG(("  error creating UDP nspr socket [rv=%" PRIx32 "]\n",
+                  static_cast<uint32_t>(rv)));
+      return NS_ERROR_OUT_OF_MEMORY;
     }
 
-    if (NS_FAILED(rv)) {
-      SOCKET_LOG(("  error pushing io layer [%u:%s rv=%" PRIx32 "]\n", i,
-                  mTypes[i].get(), static_cast<uint32_t>(rv)));
-      if (fd) {
-        CloseSocket(
-            fd, mSocketTransportService->IsTelemetryEnabledAndNotSleepPhase());
+    mUsingQuic = true;
+    
+    RefPtr<QuicSocketControl> quicCtrl = new QuicSocketControl(controlFlags);
+    quicCtrl->SetHostName(mHttpsProxy ? mProxyHost.get() : host);
+    quicCtrl->SetPort(mHttpsProxy ? mProxyPort : port);
+    nsCOMPtr<nsISupports> secinfo;
+    quicCtrl->QueryInterface(NS_GET_IID(nsISupports), (void**)(&secinfo));
+
+    
+    nsCOMPtr<nsIInterfaceRequestor> callbacks;
+    {
+      MutexAutoLock lock(mLock);
+      mSecInfo = secinfo;
+      callbacks = mCallbacks;
+      SOCKET_LOG(
+          ("  [secinfo=%p callbacks=%p]\n", mSecInfo.get(), mCallbacks.get()));
+    }
+    
+    quicCtrl->SetNotificationCallbacks(callbacks);
+
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsISocketProviderService> spserv =
+      nsSocketProviderService::GetOrCreate();
+
+  uint32_t i;
+  for (i = 0; i < mTypes.Length(); ++i) {
+    nsCOMPtr<nsISocketProvider> provider;
+
+    SOCKET_LOG(("  pushing io layer [%u:%s]\n", i, mTypes[i].get()));
+
+    rv = spserv->GetSocketProvider(mTypes[i].get(), getter_AddRefs(provider));
+    if (NS_FAILED(rv)) break;
+
+    nsCOMPtr<nsIProxyInfo> proxyInfo = mProxyInfo;
+
+    nsCOMPtr<nsISupports> secinfo;
+    if (i == 0) {
+      
+      
+
+      
+      
+      
+      
+      
+      
+      const char* socketProviderHost = host;
+      int32_t socketProviderPort = port;
+      if (mProxyTransparentResolvesHost &&
+          (mTypes[0].EqualsLiteral("socks") ||
+           mTypes[0].EqualsLiteral("socks4"))) {
+        SOCKET_LOG(("SOCKS %d Host/Route override: %s:%d -> %s:%d\n",
+                    mHttpsProxy, socketProviderHost, socketProviderPort,
+                    mHost.get(), mPort));
+        socketProviderHost = mHost.get();
+        socketProviderPort = mPort;
       }
+
+      
+      
+
+      rv = provider->NewSocket(
+          mNetAddr.raw.family,
+          mHttpsProxy ? mProxyHost.get() : socketProviderHost,
+          mHttpsProxy ? mProxyPort : socketProviderPort, proxyInfo,
+          mOriginAttributes, controlFlags, mTlsFlags, &fd,
+          getter_AddRefs(secinfo));
+
+      if (NS_SUCCEEDED(rv) && !fd) {
+        MOZ_ASSERT_UNREACHABLE(
+            "NewSocket succeeded but failed to "
+            "create a PRFileDesc");
+        rv = NS_ERROR_UNEXPECTED;
+      }
+    } else {
+      
+      
+      
+      rv = provider->AddToSocket(mNetAddr.raw.family, host, port, proxyInfo,
+                                 mOriginAttributes, controlFlags, mTlsFlags, fd,
+                                 getter_AddRefs(secinfo));
+    }
+
+    
+    if (NS_FAILED(rv)) break;
+
+    
+    
+    bool isSSL = mTypes[i].EqualsLiteral("ssl");
+    if (isSSL || mTypes[i].EqualsLiteral("starttls")) {
+      
+      nsCOMPtr<nsIInterfaceRequestor> callbacks;
+      {
+        MutexAutoLock lock(mLock);
+        mSecInfo = secinfo;
+        callbacks = mCallbacks;
+        SOCKET_LOG(("  [secinfo=%p callbacks=%p]\n", mSecInfo.get(),
+                    mCallbacks.get()));
+      }
+      
+      nsCOMPtr<nsISSLSocketControl> secCtrl(do_QueryInterface(secinfo));
+      if (secCtrl) secCtrl->SetNotificationCallbacks(callbacks);
+      
+      usingSSL = isSSL;
+    } else if (mTypes[i].EqualsLiteral("socks") ||
+               mTypes[i].EqualsLiteral("socks4")) {
+      
+      
+      proxyInfo = nullptr;
+      proxyTransparent = true;
     }
   }
 
+  if (NS_FAILED(rv)) {
+    SOCKET_LOG(("  error pushing io layer [%u:%s rv=%" PRIx32 "]\n", i,
+                mTypes[i].get(), static_cast<uint32_t>(rv)));
+    if (fd) {
+      CloseSocket(
+          fd, mSocketTransportService->IsTelemetryEnabledAndNotSleepPhase());
+    }
+  }
   return rv;
 }
 
@@ -1393,67 +1434,69 @@ nsresult nsSocketTransport::InitiateSocket() {
   status = PR_SetSocketOption(fd, &opt);
   NS_ASSERTION(status == PR_SUCCESS, "unable to make socket non-blocking");
 
-  if (mReuseAddrPort) {
-    SOCKET_LOG(("  Setting port/addr reuse socket options\n"));
+  if (!mUsingQuic) {
+    if (mReuseAddrPort) {
+      SOCKET_LOG(("  Setting port/addr reuse socket options\n"));
 
-    
-    
-    PRSocketOptionData opt_reuseaddr;
-    opt_reuseaddr.option = PR_SockOpt_Reuseaddr;
-    opt_reuseaddr.value.reuse_addr = PR_TRUE;
-    status = PR_SetSocketOption(fd, &opt_reuseaddr);
-    if (status != PR_SUCCESS) {
-      SOCKET_LOG(("  Couldn't set reuse addr socket option: %d\n", status));
+      
+      
+      PRSocketOptionData opt_reuseaddr;
+      opt_reuseaddr.option = PR_SockOpt_Reuseaddr;
+      opt_reuseaddr.value.reuse_addr = PR_TRUE;
+      status = PR_SetSocketOption(fd, &opt_reuseaddr);
+      if (status != PR_SUCCESS) {
+        SOCKET_LOG(("  Couldn't set reuse addr socket option: %d\n", status));
+      }
+
+      
+      PRSocketOptionData opt_reuseport;
+      opt_reuseport.option = PR_SockOpt_Reuseport;
+      opt_reuseport.value.reuse_port = PR_TRUE;
+      status = PR_SetSocketOption(fd, &opt_reuseport);
+      if (status != PR_SUCCESS &&
+          PR_GetError() != PR_OPERATION_NOT_SUPPORTED_ERROR) {
+        SOCKET_LOG(("  Couldn't set reuse port socket option: %d\n", status));
+      }
     }
 
     
-    PRSocketOptionData opt_reuseport;
-    opt_reuseport.option = PR_SockOpt_Reuseport;
-    opt_reuseport.value.reuse_port = PR_TRUE;
-    status = PR_SetSocketOption(fd, &opt_reuseport);
-    if (status != PR_SUCCESS &&
-        PR_GetError() != PR_OPERATION_NOT_SUPPORTED_ERROR) {
-      SOCKET_LOG(("  Couldn't set reuse port socket option: %d\n", status));
+    
+    
+    opt.option = PR_SockOpt_NoDelay;
+    opt.value.no_delay = true;
+    PR_SetSocketOption(fd, &opt);
+
+    
+    
+    
+    int32_t sndBufferSize;
+    mSocketTransportService->GetSendBufferSize(&sndBufferSize);
+    if (sndBufferSize > 0) {
+      opt.option = PR_SockOpt_SendBufferSize;
+      opt.value.send_buffer_size = sndBufferSize;
+      PR_SetSocketOption(fd, &opt);
     }
-  }
 
-  
-  
-  
-  opt.option = PR_SockOpt_NoDelay;
-  opt.value.no_delay = true;
-  PR_SetSocketOption(fd, &opt);
-
-  
-  
-  
-  int32_t sndBufferSize;
-  mSocketTransportService->GetSendBufferSize(&sndBufferSize);
-  if (sndBufferSize > 0) {
-    opt.option = PR_SockOpt_SendBufferSize;
-    opt.value.send_buffer_size = sndBufferSize;
-    PR_SetSocketOption(fd, &opt);
-  }
-
-  if (mQoSBits) {
-    opt.option = PR_SockOpt_IpTypeOfService;
-    opt.value.tos = mQoSBits;
-    PR_SetSocketOption(fd, &opt);
-  }
+    if (mQoSBits) {
+      opt.option = PR_SockOpt_IpTypeOfService;
+      opt.value.tos = mQoSBits;
+      PR_SetSocketOption(fd, &opt);
+    }
 
 #if defined(XP_WIN)
-  
-  
-  
-  
-  
-  
-  
-  opt.option = PR_SockOpt_Linger;
-  opt.value.linger.polarity = 1;
-  opt.value.linger.linger = 0;
-  PR_SetSocketOption(fd, &opt);
+    
+    
+    
+    
+    
+    
+    
+    opt.option = PR_SockOpt_Linger;
+    opt.value.linger.polarity = 1;
+    opt.value.linger.linger = 0;
+    PR_SetSocketOption(fd, &opt);
 #endif
+  }
 
   
   rv = mSocketTransportService->AttachSocket(fd, this);
@@ -1516,7 +1559,7 @@ nsresult nsSocketTransport::InitiateSocket() {
   }
 #endif
 
-  if (!mDNSRecordTxt.IsEmpty() && mSecInfo) {
+  if (!mDNSRecordTxt.IsEmpty() && !mUsingQuic && mSecInfo) {
     nsCOMPtr<nsISSLSocketControl> secCtrl = do_QueryInterface(mSecInfo);
     if (secCtrl) {
       SOCKET_LOG(("nsSocketTransport::InitiateSocket set esni keys."));
@@ -1526,6 +1569,18 @@ nsresult nsSocketTransport::InitiateSocket() {
       }
       mEsniUsed = true;
     }
+  }
+
+  if (mUsingQuic) {
+    
+    
+    
+    if (PR_Connect(fd, &prAddr, NS_SOCKET_CONNECT_TIMEOUT) == PR_SUCCESS) {
+      OnSocketConnected();
+      return NS_OK;
+    }
+    PRErrorCode code = PR_GetError();
+    return ErrorAccordingToNSPR(code);
   }
 
   
