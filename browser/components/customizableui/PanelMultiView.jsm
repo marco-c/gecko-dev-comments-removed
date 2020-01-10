@@ -539,6 +539,10 @@ var PanelMultiView = class extends AssociatedToNode {
       try {
         canCancel = false;
         this._panel.openPopup(anchor, options, ...args);
+        
+        
+        
+        this._panel.setAttribute("mainviewshowing", true);
 
         
         
@@ -1022,8 +1026,12 @@ var PanelMultiView = class extends AssociatedToNode {
 
     
     
+    
     if (viewNode.getAttribute("mainview")) {
       this._viewContainer.style.removeProperty("min-height");
+      this._panel.setAttribute("mainviewshowing", true);
+    } else {
+      this._panel.removeAttribute("mainviewshowing");
     }
 
     this._viewStack.style.transform =
