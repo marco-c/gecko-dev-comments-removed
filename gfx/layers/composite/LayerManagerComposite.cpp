@@ -609,7 +609,11 @@ void LayerManagerComposite::UpdateAndRender() {
 
   
   
-  InvalidateDebugOverlay(invalid, mRenderBounds);
+  
+  
+  if (!mNativeLayerRoot) {
+    InvalidateDebugOverlay(invalid, mRenderBounds);
+  }
 
   bool rendered = Render(invalid, opaque);
 #if defined(MOZ_WIDGET_ANDROID)
@@ -787,6 +791,96 @@ void LayerManagerComposite::RenderDebugOverlay(const IntRect& aBounds) {
     DrawPaintTimes(mCompositor);
   }
 #endif
+}
+
+void LayerManagerComposite::UpdateDebugOverlayNativeLayers() {
+  
+  
+  
+  if (mGPUStatsLayer) {
+    mNativeLayerRoot->RemoveLayer(mGPUStatsLayer);
+  }
+  if (mUnusedTransformWarningLayer) {
+    mNativeLayerRoot->RemoveLayer(mUnusedTransformWarningLayer);
+  }
+  if (mDisabledApzWarningLayer) {
+    mNativeLayerRoot->RemoveLayer(mDisabledApzWarningLayer);
+  }
+
+  bool drawFps = StaticPrefs::layers_acceleration_draw_fps();
+
+  if (drawFps) {
+    if (!mGPUStatsLayer) {
+      mGPUStatsLayer = mNativeLayerRoot->CreateLayer();
+    }
+
+    GPUStats stats;
+    stats.mScreenPixels = mRenderBounds.Area();
+    mCompositor->GetFrameStats(&stats);
+
+    std::string text = mDiagnostics->GetFrameOverlayString(stats);
+    IntSize size = mTextRenderer->ComputeSurfaceSize(
+        text, 600, TextRenderer::FontType::FixedWidth);
+
+    mGPUStatsLayer->SetRect(IntRect(IntPoint(2, 5), size));
+    RefPtr<DrawTarget> dt =
+        mGPUStatsLayer->NextSurfaceAsDrawTarget(BackendType::SKIA);
+    mTextRenderer->RenderTextToDrawTarget(dt, text, 600,
+                                          TextRenderer::FontType::FixedWidth);
+    mGPUStatsLayer->NotifySurfaceReady();
+    mNativeLayerRoot->AppendLayer(mGPUStatsLayer);
+
+    
+    
+    
+    
+    if (mUnusedApzTransformWarning) {
+      
+      
+      if (!mUnusedTransformWarningLayer) {
+        mUnusedTransformWarningLayer = mNativeLayerRoot->CreateLayer();
+        mUnusedTransformWarningLayer->SetRect(IntRect(0, 0, 20, 20));
+        mUnusedTransformWarningLayer->SetOpaqueRegion(IntRect(0, 0, 20, 20));
+        RefPtr<DrawTarget> dt =
+            mUnusedTransformWarningLayer->NextSurfaceAsDrawTarget(
+                BackendType::SKIA);
+        dt->FillRect(Rect(0, 0, 20, 20), ColorPattern(Color(1, 0, 0, 1)));
+        mUnusedTransformWarningLayer->NotifySurfaceReady();
+      }
+      mUnusedTransformWarningLayer->SetRect(
+          IntRect(mRenderBounds.XMost() - 20, mRenderBounds.Y(), 20, 20));
+      mNativeLayerRoot->AppendLayer(mUnusedTransformWarningLayer);
+
+      mUnusedApzTransformWarning = false;
+      SetDebugOverlayWantsNextFrame(true);
+    }
+
+    if (mDisabledApzWarning) {
+      
+      
+      
+      if (!mDisabledApzWarningLayer) {
+        mDisabledApzWarningLayer = mNativeLayerRoot->CreateLayer();
+        mDisabledApzWarningLayer->SetRect(IntRect(0, 0, 20, 20));
+        mDisabledApzWarningLayer->SetOpaqueRegion(IntRect(0, 0, 20, 20));
+        RefPtr<DrawTarget> dt =
+            mDisabledApzWarningLayer->NextSurfaceAsDrawTarget(
+                BackendType::SKIA);
+        dt->FillRect(Rect(0, 0, 20, 20), ColorPattern(Color(1, 1, 0, 1)));
+        mDisabledApzWarningLayer->NotifySurfaceReady();
+      }
+      mDisabledApzWarningLayer->SetRect(
+          IntRect(mRenderBounds.XMost() - 40, mRenderBounds.Y(), 20, 20));
+      mNativeLayerRoot->AppendLayer(mDisabledApzWarningLayer);
+
+      mDisabledApzWarning = false;
+      SetDebugOverlayWantsNextFrame(true);
+    }
+  } else {
+    mGPUStatsLayer = nullptr;
+    mUnusedTransformWarningLayer = nullptr;
+    mDisabledApzWarningLayer = nullptr;
+  }
 }
 
 RefPtr<CompositingRenderTarget>
@@ -1157,7 +1251,9 @@ bool LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion,
     }
   }
 
-  if (!usingNativeLayers) {
+  if (usingNativeLayers) {
+    UpdateDebugOverlayNativeLayers();
+  } else {
     
     mCompositor->GetWidget()->DrawWindowOverlay(
         &widgetContext, LayoutDeviceIntRect::FromUnknownRect(bounds));
@@ -1171,13 +1267,6 @@ bool LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion,
     HandlePixelsTarget();
 #endif  
 
-    
-    
-    
-    
-    
-    
-    
     
     RenderDebugOverlay(bounds);
   }
