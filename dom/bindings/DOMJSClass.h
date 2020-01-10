@@ -21,6 +21,9 @@
 #include "mozilla/dom/JSSlots.h"
 
 class nsCycleCollectionParticipant;
+struct JSStructuredCloneReader;
+struct JSStructuredCloneWriter;
+class nsIGlobalObject;
 
 
 #define DOM_PROTOTYPE_SLOT JSCLASS_GLOBAL_SLOT_COUNT
@@ -394,6 +397,23 @@ typedef JSObject* (*ProtoGetter)(JSContext* aCx);
 typedef JS::Handle<JSObject*> (*ProtoHandleGetter)(JSContext* aCx);
 
 
+
+
+
+
+
+typedef bool (*WebIDLSerializer)(JSContext* aCx,
+                                 JSStructuredCloneWriter* aWriter,
+                                 JS::Handle<JSObject*> aObj);
+
+
+
+
+typedef JSObject* (*WebIDLDeserializer)(JSContext* aCx,
+                                        nsIGlobalObject* aGlobal,
+                                        JSStructuredCloneReader* aReader);
+
+
 struct DOMJSClass {
   
   
@@ -422,6 +442,10 @@ struct DOMJSClass {
   
   
   nsCycleCollectionParticipant* mParticipant;
+
+  
+  
+  WebIDLSerializer mSerializer;
 
   static const DOMJSClass* FromJSClass(const JSClass* base) {
     MOZ_ASSERT(base->flags & JSCLASS_IS_DOMJSCLASS);

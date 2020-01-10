@@ -432,6 +432,11 @@ def DOMClass(descriptor):
     
     protoList.extend(['prototypes::id::_ID_Count'] * (descriptor.config.maxProtoChainLength - len(protoList)))
 
+    if descriptor.interface.isSerializable():
+        serializer = "Serialize"
+    else:
+        serializer = "nullptr"
+
     return fill(
         """
           { ${protoChain} },
@@ -439,11 +444,13 @@ def DOMClass(descriptor):
           ${hooks},
           FindAssociatedGlobalForNative<${nativeType}>::Get,
           GetProtoObjectHandle,
-          GetCCParticipant<${nativeType}>::Get()
+          GetCCParticipant<${nativeType}>::Get(),
+          ${serializer}
         """,
         protoChain=', '.join(protoList),
         nativeType=descriptor.nativeType,
-        hooks=NativePropertyHooks(descriptor))
+        hooks=NativePropertyHooks(descriptor),
+        serializer=serializer)
 
 
 def InstanceReservedSlots(descriptor):
@@ -3566,6 +3573,85 @@ class CGConstructorEnabled(CGAbstractMethod):
         body.append(conditionsWrapper)
         return body.define()
 
+
+def StructuredCloneTag(name):
+    return "SCTAG_DOM_%s" % name.upper()
+
+
+class CGSerializer(CGAbstractStaticMethod):
+    """
+    Implementation of serialization for things marked [Serializable].
+    This gets stored in our DOMJSClass, so it can be static.
+
+    The caller is expected to pass in the object whose DOMJSClass it
+    used to get the serializer.
+    """
+    def __init__(self, descriptor):
+        args = [Argument("JSContext*", "aCx"),
+                Argument("JSStructuredCloneWriter*", "aWriter"),
+                Argument("JS::Handle<JSObject*>", "aObj")]
+        CGAbstractStaticMethod.__init__(self, descriptor, "Serialize",
+                                        "bool", args)
+
+    def definition_body(self):
+        return fill(
+            """
+            MOZ_ASSERT(IsDOMObject(aObj), "Non-DOM object passed");
+            MOZ_ASSERT(GetDOMClass(aObj)->mSerializer == &Serialize,
+                       "Wrong object passed");
+            return JS_WriteUint32Pair(aWriter, ${tag}, 0) &&
+                   UnwrapDOMObject<${type}>(aObj)->WriteStructuredClone(aCx, aWriter);
+            """,
+            tag=StructuredCloneTag(self.descriptor.name),
+            type=self.descriptor.nativeType)
+
+
+class CGDeserializer(CGAbstractMethod):
+    """
+    Implementation of deserialization for things marked [Serializable].
+    This will need to be accessed from WebIDLSerializable, so can't be static.
+    """
+    def __init__(self, descriptor):
+        args = [Argument("JSContext*", "aCx"),
+                Argument("nsIGlobalObject*", "aGlobal"),
+                Argument("JSStructuredCloneReader*", "aReader")]
+        CGAbstractMethod.__init__(self, descriptor, "Deserialize",
+                                  "JSObject*", args)
+
+    def definition_body(self):
+        
+        
+        if self.descriptor.wrapperCache:
+            wrapCall = dedent(
+                """
+                result = obj->WrapObject(aCx, nullptr);
+                if (!result) {
+                  return nullptr;
+                }
+                """)
+        else:
+            wrapCall = dedent(
+                """
+                if (!obj->WrapObject(aCx, nullptr, &result)) {
+                  return nullptr;
+                }
+                """)
+
+        return fill(
+            """
+            // Protect the result from a moving GC in ~RefPtr
+            JS::Rooted<JSObject*> result(aCx);
+            {  // Scope for the RefPtr
+              RefPtr<${type}> obj = ${type}::ReadStructuredClone(aCx, aGlobal, aReader);
+              if (!obj) {
+                return nullptr;
+              }
+              $*{wrapCall}
+            }
+            return result;
+            """,
+            type=self.descriptor.nativeType,
+            wrapCall=wrapCall)
 
 def CreateBindingJSObject(descriptor, properties):
     objDecl = "BindingJSObjectCreator<%s> creator(aCx);\n" % descriptor.nativeType
@@ -13199,6 +13285,10 @@ class CGDescriptor(CGThing):
                             descriptor.interface.identifier.name)
 
         if descriptor.concrete:
+            if descriptor.interface.isSerializable():
+                cgThings.append(CGSerializer(descriptor))
+                cgThings.append(CGDeserializer(descriptor))
+
             if descriptor.proxy:
                 cgThings.append(CGGeneric(fill(
                     """
@@ -14473,6 +14563,8 @@ class CGForwardDeclarations(CGWrapper):
             if d.interface.isIteratorInterface():
                 continue
             builder.add(d.nativeType)
+            if d.interface.isSerializable():
+                builder.add("nsIGlobalObject")
             
             
             
@@ -14722,6 +14814,8 @@ class CGBindingRoot(CGThing):
             d.wantsXrays and d.wantsXrayExpandoClass for d in descriptors)
         bindingHeaders["mozilla/dom/XrayExpandoClass.h"] = any(
             d.wantsXrays for d in descriptors)
+        bindingHeaders["mozilla/dom/StructuredCloneTags.h"] = any(
+            d.interface.isSerializable() for d in descriptors)
 
         cgthings.extend(traverseMethods)
         cgthings.extend(unlinkMethods)
@@ -17998,6 +18092,103 @@ class GlobalGenRoots():
 
         
         curr = CGIncludeGuard('WebIDLPrefs', curr)
+
+        
+        return curr
+
+    @staticmethod
+    def WebIDLSerializable(config):
+        
+        declareIncludes = set(["mozilla/dom/DOMJSClass.h",
+                               "mozilla/dom/StructuredCloneTags.h",
+                               "js/TypeDecls.h"])
+        defineIncludes = set(["mozilla/dom/WebIDLSerializable.h",
+                              "mozilla/PerfectHash.h"])
+        names = list()
+        for d in config.getDescriptors(isSerializable=True):
+            names.append(d.name)
+            defineIncludes.add(CGHeaders.getDeclarationFilename(d.interface))
+
+        if len(names) == 0:
+            
+            
+            
+            return CGIncludeGuard('WebIDLSerializable', CGGeneric(""))
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if len(names) > 20:
+            raise TypeError("We now have %s serializable interfaces.  "
+                            "Double-check that the compiler is still "
+                            "generating a jump table." %
+                            len(names));
+
+        entries = list()
+        
+        for name in sorted(names):
+            
+            entries.append(fill(
+                """
+                {
+                  /* mTag */ ${tag},
+                  /* mDeserialize */ ${name}_Binding::Deserialize
+                }
+                """,
+                tag=StructuredCloneTag(name),
+                name=name)[:-1])
+
+        declare = dedent(
+            """
+            WebIDLDeserializer LookupDeserializer(StructuredCloneTags aTag);
+            """)
+        define = fill(
+            """
+            struct WebIDLSerializableEntry {
+              StructuredCloneTags mTag;
+              WebIDLDeserializer mDeserialize;
+            };
+
+            static const WebIDLSerializableEntry sEntries[] = {
+              $*{entries}
+            };
+
+            WebIDLDeserializer LookupDeserializer(StructuredCloneTags aTag) {
+              for (auto& entry : sEntries) {
+                if (entry.mTag == aTag) {
+                  return entry.mDeserialize;
+                }
+              }
+              return nullptr;
+            }
+            """,
+            entries=",\n".join(entries) + "\n")
+
+        code = CGGeneric(declare=declare, define=define)
+
+        
+        curr = CGNamespace.build(['mozilla', 'dom'], code)
+
+        curr = CGWrapper(curr, post='\n')
+
+        curr = CGHeaders([], [], [], [], declareIncludes, defineIncludes,
+                         'WebIDLSerializable', curr)
+
+        
+        curr = CGIncludeGuard('WebIDLSerializable', curr)
 
         
         return curr
