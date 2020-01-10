@@ -34,7 +34,6 @@ import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.IntentUtils;
 import org.mozilla.gecko.util.ThreadUtils;
 
-import android.annotation.TargetApi;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
@@ -2039,6 +2038,8 @@ public class GeckoSession implements Parcelable {
         if (!active) {
             mEventDispatcher.dispatch("GeckoView:FlushSessionState", null);
         }
+
+        getAutofillSupport().onActiveChanged(active);
     }
 
     
@@ -5333,8 +5334,6 @@ public class GeckoSession implements Parcelable {
         mViewportLeft = scrollX;
         mViewportTop = scrollY;
         mViewportZoom = zoom;
-
-        getAutofillSupport().onScreenMetricsUpdated();
     }
 
      void onWindowBoundsChanged() {
@@ -5674,11 +5673,16 @@ public class GeckoSession implements Parcelable {
         getAutofillSupport().autofill(values);
     }
 
-    @TargetApi(23)
+    
+
+
+
+
+
+
+
     @UiThread
-    public void provideAutofillVirtualStructure(@Nullable final View view,
-                                                @NonNull final ViewStructure structure,
-                                                final int flags) {
-        getAutofillSupport().provideAutofillVirtualStructure(view, structure, flags);
+    public @NonNull AutofillElement getAutofillElements() {
+        return getAutofillSupport().getAutofillElements();
     }
 }
