@@ -2449,14 +2449,6 @@ class nsLayoutUtils {
 
 
 
-  static uint32_t FontSizeInflationMaxRatio() {
-    return sFontSizeInflationMaxRatio;
-  }
-
-  
-
-
-
   static uint32_t FontSizeInflationEmPerLine() {
     return sFontSizeInflationEmPerLine;
   }
@@ -3061,7 +3053,6 @@ class nsLayoutUtils {
   static uint32_t sFontSizeInflationMinTwips;
   static uint32_t sFontSizeInflationLineThreshold;
   static int32_t sFontSizeInflationMappingIntercept;
-  static uint32_t sFontSizeInflationMaxRatio;
   static bool sFontSizeInflationForceEnabled;
   static bool sFontSizeInflationDisabledInMasterProcess;
   static uint32_t sSystemFontScale;

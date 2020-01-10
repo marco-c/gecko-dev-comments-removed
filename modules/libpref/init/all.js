@@ -3455,18 +3455,6 @@ pref("font.size.inflation.mappingIntercept", 1);
 
 
 
-
-pref("font.size.inflation.maxRatio", 0);
-
-
-
-
-
-
-
-
-
-
 pref("font.size.systemFontScale", 100);
 
 
