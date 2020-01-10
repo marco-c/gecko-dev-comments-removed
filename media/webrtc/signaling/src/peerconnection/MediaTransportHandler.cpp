@@ -162,6 +162,7 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
   RefPtr<NrIceCtx> mIceCtx;
   RefPtr<NrIceResolver> mDNSResolver;
   std::map<std::string, Transport> mTransports;
+  bool mProxyOnlyIfBehindProxy = false;
   bool mProxyOnly = false;
 
   
@@ -425,6 +426,8 @@ nsresult MediaTransportHandlerSTS::CreateIceCtx(
                                               __func__);
         }
 
+        mProxyOnlyIfBehindProxy = Preferences::GetBool(
+            "media.peerconnection.ice.proxy_only_if_behind_proxy", false);
         mProxyOnly =
             Preferences::GetBool("media.peerconnection.ice.proxy_only", false);
 
@@ -658,6 +661,10 @@ void MediaTransportHandlerSTS::StartIceGathering(
   mInitPromise->Then(
       mStsThread, __func__,
       [=, self = RefPtr<MediaTransportHandlerSTS>(this)]() {
+        if (mIceCtx->GetProxyConfig() && mProxyOnlyIfBehindProxy) {
+          mProxyOnly = true;
+        }
+
         
         
         
