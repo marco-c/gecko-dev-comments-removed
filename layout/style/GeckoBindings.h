@@ -561,10 +561,6 @@ mozilla::StyleGenericFontFamily Gecko_nsStyleFont_ComputeDefaultFontType(
 
 mozilla::FontSizePrefs Gecko_GetBaseSize(nsAtom* lang);
 
-
-const mozilla::dom::Element* Gecko_GetBindingParent(
-    const mozilla::dom::Element*);
-
 struct GeckoFontMetrics {
   nscoord mChSize;  
   nscoord mXSize;
