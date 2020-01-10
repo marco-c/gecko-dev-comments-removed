@@ -5857,45 +5857,50 @@
           gBrowser._tabAttrModified(this.mTab, ["busy"]);
         }
 
-        
-        if (this.mTab.hasAttribute("soundplaying") && !isSameDocument) {
-          clearTimeout(this.mTab._soundPlayingAttrRemovalTimer);
-          this.mTab._soundPlayingAttrRemovalTimer = 0;
-          this.mTab.removeAttribute("soundplaying");
-          gBrowser._tabAttrModified(this.mTab, ["soundplaying"]);
-        }
-
-        
-        if (this.mTab.hasAttribute("muted")) {
-          this.mTab.linkedBrowser.mute();
-        }
-
-        if (gBrowser.isFindBarInitialized(this.mTab)) {
-          let findBar = gBrowser.getCachedFindBar(this.mTab);
-
+        if (!isSameDocument) {
           
-          if (findBar.findMode != findBar.FIND_NORMAL) {
-            findBar.close();
+          if (this.mTab.hasAttribute("soundplaying")) {
+            clearTimeout(this.mTab._soundPlayingAttrRemovalTimer);
+            this.mTab._soundPlayingAttrRemovalTimer = 0;
+            this.mTab.removeAttribute("soundplaying");
+            gBrowser._tabAttrModified(this.mTab, ["soundplaying"]);
           }
-        }
 
-        if (!isReload) {
-          gBrowser.setTabTitle(this.mTab);
-        }
+          
+          if (this.mTab.hasAttribute("muted")) {
+            this.mTab.linkedBrowser.mute();
+          }
 
-        
-        
-        
-        
-        
-        if (
-          !this.mTab.hasAttribute("pending") &&
-          aWebProgress.isLoadingDocument &&
-          !isSameDocument
-        ) {
+          if (gBrowser.isFindBarInitialized(this.mTab)) {
+            let findBar = gBrowser.getCachedFindBar(this.mTab);
+
+            
+            if (findBar.findMode != findBar.FIND_NORMAL) {
+              findBar.close();
+            }
+          }
+
           
           
-          this.mBrowser.mIconURL = null;
+          
+          
+          if (!isReload) {
+            gBrowser.setTabTitle(this.mTab);
+          }
+
+          
+          
+          
+          
+          
+          if (
+            !this.mTab.hasAttribute("pending") &&
+            aWebProgress.isLoadingDocument
+          ) {
+            
+            
+            this.mBrowser.mIconURL = null;
+          }
         }
 
         let userContextId = this.mBrowser.getAttribute("usercontextid") || 0;
