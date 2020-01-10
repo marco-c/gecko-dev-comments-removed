@@ -576,6 +576,7 @@ this.worker = new WorkerDebuggerLoader({
     "chrome": chrome,
     "xpcInspector": xpcInspector,
     "ChromeUtils": ChromeUtils,
+    "DebuggerNotificationObserver": DebuggerNotificationObserver,
   },
   paths: {
     

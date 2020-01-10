@@ -23,6 +23,7 @@ const systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
 
 const {
   console,
+  DebuggerNotificationObserver,
   DOMPoint,
   DOMQuad,
   DOMRect,
@@ -229,6 +230,7 @@ function lazyRequireGetter(obj, property, module, destructure) {
 
 exports.modules = {
   ChromeUtils,
+  DebuggerNotificationObserver,
   HeapSnapshot,
   promise,
   

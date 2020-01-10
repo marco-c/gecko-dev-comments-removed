@@ -91,7 +91,14 @@ class EventListeners extends Component<Props> {
           <input
             type="checkbox"
             value={category.name}
-            onChange={e => this.onCategoryClick(category, e.target.checked)}
+            onChange={e => {
+              this.onCategoryClick(
+                category,
+                
+                
+                indeterminate ? false : e.target.checked
+              );
+            }}
             checked={checked}
             ref={el => el && (el.indeterminate = indeterminate)}
           />

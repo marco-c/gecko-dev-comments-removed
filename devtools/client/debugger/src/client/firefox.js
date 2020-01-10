@@ -48,7 +48,11 @@ export async function onConnect(connection: any, actions: Object) {
   });
 
   
-  actions.getEventListenerBreakpointTypes();
+  actions.getEventListenerBreakpointTypes().catch(e => console.error(e));
+
+  
+  
+  actions.addEventListenerBreakpoints([]).catch(e => console.error(e));
 
   
   
