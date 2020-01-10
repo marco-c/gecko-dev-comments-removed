@@ -1960,6 +1960,15 @@ const gControl = {
     return findFrameSteps(point);
   },
 
+  async findAncestorFrameEntryPoint(point, index) {
+    const steps = await findFrameSteps(point);
+    point = steps[0];
+    while (index--) {
+      point = await findParentFrameEntryPoint(point);
+    }
+    return point;
+  },
+
   
   childIsRecording() {
     return gActiveChild && gActiveChild.recording;
