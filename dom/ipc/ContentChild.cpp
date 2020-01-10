@@ -885,10 +885,16 @@ nsresult ContentChild::ProvideWindowCommon(
     sNoopenerNewProcessInited = true;
   }
 
+  bool useRemoteSubframes =
+      aChromeFlags & nsIWebBrowserChrome::CHROME_FISSION_WINDOW;
+
   
   
   
-  bool loadInDifferentProcess = aForceNoOpener && sNoopenerNewProcess;
+  
+  
+  bool loadInDifferentProcess =
+      aForceNoOpener && sNoopenerNewProcess && !useRemoteSubframes;
   if (aTabOpener && !loadInDifferentProcess && aURI) {
     nsCOMPtr<nsILoadContext> context;
     if (aParent) {
