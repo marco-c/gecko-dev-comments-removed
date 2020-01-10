@@ -33,199 +33,199 @@ assert_return(() => call($1, "8s_good4", [0]), 99);
 assert_return(() => call($1, "8s_good5", [0]), 122);
 
 
-assert_return(() => call($1, "16u_good1", [0]), 25185);
+assert_return(() => call($1, "16u_good1", [0]), 25_185);
 
 
-assert_return(() => call($1, "16u_good2", [0]), 25185);
+assert_return(() => call($1, "16u_good2", [0]), 25_185);
 
 
-assert_return(() => call($1, "16u_good3", [0]), 25442);
+assert_return(() => call($1, "16u_good3", [0]), 25_442);
 
 
-assert_return(() => call($1, "16u_good4", [0]), 25699);
+assert_return(() => call($1, "16u_good4", [0]), 25_699);
 
 
 assert_return(() => call($1, "16u_good5", [0]), 122);
 
 
-assert_return(() => call($1, "16s_good1", [0]), 25185);
+assert_return(() => call($1, "16s_good1", [0]), 25_185);
 
 
-assert_return(() => call($1, "16s_good2", [0]), 25185);
+assert_return(() => call($1, "16s_good2", [0]), 25_185);
 
 
-assert_return(() => call($1, "16s_good3", [0]), 25442);
+assert_return(() => call($1, "16s_good3", [0]), 25_442);
 
 
-assert_return(() => call($1, "16s_good4", [0]), 25699);
+assert_return(() => call($1, "16s_good4", [0]), 25_699);
 
 
 assert_return(() => call($1, "16s_good5", [0]), 122);
 
 
-assert_return(() => call($1, "32_good1", [0]), 1684234849);
+assert_return(() => call($1, "32_good1", [0]), 1_684_234_849);
 
 
-assert_return(() => call($1, "32_good2", [0]), 1684234849);
+assert_return(() => call($1, "32_good2", [0]), 1_684_234_849);
 
 
-assert_return(() => call($1, "32_good3", [0]), 1701077858);
+assert_return(() => call($1, "32_good3", [0]), 1_701_077_858);
 
 
-assert_return(() => call($1, "32_good4", [0]), 1717920867);
+assert_return(() => call($1, "32_good4", [0]), 1_717_920_867);
 
 
 assert_return(() => call($1, "32_good5", [0]), 122);
 
 
-assert_return(() => call($1, "8u_good1", [65507]), 0);
+assert_return(() => call($1, "8u_good1", [65_507]), 0);
 
 
-assert_return(() => call($1, "8u_good2", [65507]), 0);
+assert_return(() => call($1, "8u_good2", [65_507]), 0);
 
 
-assert_return(() => call($1, "8u_good3", [65507]), 0);
+assert_return(() => call($1, "8u_good3", [65_507]), 0);
 
 
-assert_return(() => call($1, "8u_good4", [65507]), 0);
+assert_return(() => call($1, "8u_good4", [65_507]), 0);
 
 
-assert_return(() => call($1, "8u_good5", [65507]), 0);
+assert_return(() => call($1, "8u_good5", [65_507]), 0);
 
 
-assert_return(() => call($1, "8s_good1", [65507]), 0);
+assert_return(() => call($1, "8s_good1", [65_507]), 0);
 
 
-assert_return(() => call($1, "8s_good2", [65507]), 0);
+assert_return(() => call($1, "8s_good2", [65_507]), 0);
 
 
-assert_return(() => call($1, "8s_good3", [65507]), 0);
+assert_return(() => call($1, "8s_good3", [65_507]), 0);
 
 
-assert_return(() => call($1, "8s_good4", [65507]), 0);
+assert_return(() => call($1, "8s_good4", [65_507]), 0);
 
 
-assert_return(() => call($1, "8s_good5", [65507]), 0);
+assert_return(() => call($1, "8s_good5", [65_507]), 0);
 
 
-assert_return(() => call($1, "16u_good1", [65507]), 0);
+assert_return(() => call($1, "16u_good1", [65_507]), 0);
 
 
-assert_return(() => call($1, "16u_good2", [65507]), 0);
+assert_return(() => call($1, "16u_good2", [65_507]), 0);
 
 
-assert_return(() => call($1, "16u_good3", [65507]), 0);
+assert_return(() => call($1, "16u_good3", [65_507]), 0);
 
 
-assert_return(() => call($1, "16u_good4", [65507]), 0);
+assert_return(() => call($1, "16u_good4", [65_507]), 0);
 
 
-assert_return(() => call($1, "16u_good5", [65507]), 0);
+assert_return(() => call($1, "16u_good5", [65_507]), 0);
 
 
-assert_return(() => call($1, "16s_good1", [65507]), 0);
+assert_return(() => call($1, "16s_good1", [65_507]), 0);
 
 
-assert_return(() => call($1, "16s_good2", [65507]), 0);
+assert_return(() => call($1, "16s_good2", [65_507]), 0);
 
 
-assert_return(() => call($1, "16s_good3", [65507]), 0);
+assert_return(() => call($1, "16s_good3", [65_507]), 0);
 
 
-assert_return(() => call($1, "16s_good4", [65507]), 0);
+assert_return(() => call($1, "16s_good4", [65_507]), 0);
 
 
-assert_return(() => call($1, "16s_good5", [65507]), 0);
+assert_return(() => call($1, "16s_good5", [65_507]), 0);
 
 
-assert_return(() => call($1, "32_good1", [65507]), 0);
+assert_return(() => call($1, "32_good1", [65_507]), 0);
 
 
-assert_return(() => call($1, "32_good2", [65507]), 0);
+assert_return(() => call($1, "32_good2", [65_507]), 0);
 
 
-assert_return(() => call($1, "32_good3", [65507]), 0);
+assert_return(() => call($1, "32_good3", [65_507]), 0);
 
 
-assert_return(() => call($1, "32_good4", [65507]), 0);
+assert_return(() => call($1, "32_good4", [65_507]), 0);
 
 
-assert_return(() => call($1, "32_good5", [65507]), 0);
+assert_return(() => call($1, "32_good5", [65_507]), 0);
 
 
-assert_return(() => call($1, "8u_good1", [65508]), 0);
+assert_return(() => call($1, "8u_good1", [65_508]), 0);
 
 
-assert_return(() => call($1, "8u_good2", [65508]), 0);
+assert_return(() => call($1, "8u_good2", [65_508]), 0);
 
 
-assert_return(() => call($1, "8u_good3", [65508]), 0);
+assert_return(() => call($1, "8u_good3", [65_508]), 0);
 
 
-assert_return(() => call($1, "8u_good4", [65508]), 0);
+assert_return(() => call($1, "8u_good4", [65_508]), 0);
 
 
-assert_return(() => call($1, "8u_good5", [65508]), 0);
+assert_return(() => call($1, "8u_good5", [65_508]), 0);
 
 
-assert_return(() => call($1, "8s_good1", [65508]), 0);
+assert_return(() => call($1, "8s_good1", [65_508]), 0);
 
 
-assert_return(() => call($1, "8s_good2", [65508]), 0);
+assert_return(() => call($1, "8s_good2", [65_508]), 0);
 
 
-assert_return(() => call($1, "8s_good3", [65508]), 0);
+assert_return(() => call($1, "8s_good3", [65_508]), 0);
 
 
-assert_return(() => call($1, "8s_good4", [65508]), 0);
+assert_return(() => call($1, "8s_good4", [65_508]), 0);
 
 
-assert_return(() => call($1, "8s_good5", [65508]), 0);
+assert_return(() => call($1, "8s_good5", [65_508]), 0);
 
 
-assert_return(() => call($1, "16u_good1", [65508]), 0);
+assert_return(() => call($1, "16u_good1", [65_508]), 0);
 
 
-assert_return(() => call($1, "16u_good2", [65508]), 0);
+assert_return(() => call($1, "16u_good2", [65_508]), 0);
 
 
-assert_return(() => call($1, "16u_good3", [65508]), 0);
+assert_return(() => call($1, "16u_good3", [65_508]), 0);
 
 
-assert_return(() => call($1, "16u_good4", [65508]), 0);
+assert_return(() => call($1, "16u_good4", [65_508]), 0);
 
 
-assert_return(() => call($1, "16u_good5", [65508]), 0);
+assert_return(() => call($1, "16u_good5", [65_508]), 0);
 
 
-assert_return(() => call($1, "16s_good1", [65508]), 0);
+assert_return(() => call($1, "16s_good1", [65_508]), 0);
 
 
-assert_return(() => call($1, "16s_good2", [65508]), 0);
+assert_return(() => call($1, "16s_good2", [65_508]), 0);
 
 
-assert_return(() => call($1, "16s_good3", [65508]), 0);
+assert_return(() => call($1, "16s_good3", [65_508]), 0);
 
 
-assert_return(() => call($1, "16s_good4", [65508]), 0);
+assert_return(() => call($1, "16s_good4", [65_508]), 0);
 
 
-assert_return(() => call($1, "16s_good5", [65508]), 0);
+assert_return(() => call($1, "16s_good5", [65_508]), 0);
 
 
-assert_return(() => call($1, "32_good1", [65508]), 0);
+assert_return(() => call($1, "32_good1", [65_508]), 0);
 
 
-assert_return(() => call($1, "32_good2", [65508]), 0);
+assert_return(() => call($1, "32_good2", [65_508]), 0);
 
 
-assert_return(() => call($1, "32_good3", [65508]), 0);
+assert_return(() => call($1, "32_good3", [65_508]), 0);
 
 
-assert_return(() => call($1, "32_good4", [65508]), 0);
+assert_return(() => call($1, "32_good4", [65_508]), 0);
 
 
-assert_trap(() => call($1, "32_good5", [65508]));
+assert_trap(() => call($1, "32_good5", [65_508]));
 
 
 assert_trap(() => call($1, "8u_bad", [0]));

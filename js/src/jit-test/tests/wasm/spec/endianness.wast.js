@@ -6,37 +6,37 @@ let $1 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\xa4\x80\x80\x80\x00\x07\
 assert_return(() => call($1, "i32_load16_s", [-1]), -1);
 
 
-assert_return(() => call($1, "i32_load16_s", [-4242]), -4242);
+assert_return(() => call($1, "i32_load16_s", [-4_242]), -4_242);
 
 
 assert_return(() => call($1, "i32_load16_s", [42]), 42);
 
 
-assert_return(() => call($1, "i32_load16_s", [12816]), 12816);
+assert_return(() => call($1, "i32_load16_s", [12_816]), 12_816);
 
 
-assert_return(() => call($1, "i32_load16_u", [-1]), 65535);
+assert_return(() => call($1, "i32_load16_u", [-1]), 65_535);
 
 
-assert_return(() => call($1, "i32_load16_u", [-4242]), 61294);
+assert_return(() => call($1, "i32_load16_u", [-4_242]), 61_294);
 
 
 assert_return(() => call($1, "i32_load16_u", [42]), 42);
 
 
-assert_return(() => call($1, "i32_load16_u", [51966]), 51966);
+assert_return(() => call($1, "i32_load16_u", [51_966]), 51_966);
 
 
 assert_return(() => call($1, "i32_load", [-1]), -1);
 
 
-assert_return(() => call($1, "i32_load", [-42424242]), -42424242);
+assert_return(() => call($1, "i32_load", [-42_424_242]), -42_424_242);
 
 
-assert_return(() => call($1, "i32_load", [42424242]), 42424242);
+assert_return(() => call($1, "i32_load", [42_424_242]), 42_424_242);
 
 
-assert_return(() => call($1, "i32_load", [-1414717974]), -1414717974);
+assert_return(() => call($1, "i32_load", [-1_414_717_974]), -1_414_717_974);
 
 
 run(() => call(instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x89\x80\x80\x80\x00\x02\x60\x00\x00\x60\x01\x7e\x01\x7e\x02\x93\x80\x80\x80\x00\x01\x02\x24\x31\x0c\x69\x36\x34\x5f\x6c\x6f\x61\x64\x31\x36\x5f\x73\x00\x01\x03\x82\x80\x80\x80\x00\x01\x00\x07\x87\x80\x80\x80\x00\x01\x03\x72\x75\x6e\x00\x01\x0a\x99\x80\x80\x80\x00\x01\x93\x80\x80\x80\x00\x00\x02\x40\x42\x7f\x10\x00\x01\x42\x7f\x01\x51\x45\x0d\x00\x0f\x0b\x00\x0b", exports("$1", $1)),  "run", []));  
@@ -123,28 +123,28 @@ run(() => call(instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x89\x80\x80\x80\x0
 run(() => call(instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x89\x80\x80\x80\x00\x02\x60\x00\x00\x60\x01\x7c\x01\x7c\x02\x8f\x80\x80\x80\x00\x01\x02\x24\x31\x08\x66\x36\x34\x5f\x6c\x6f\x61\x64\x00\x01\x03\x82\x80\x80\x80\x00\x01\x00\x07\x87\x80\x80\x80\x00\x01\x03\x72\x75\x6e\x00\x01\x0a\xa7\x80\x80\x80\x00\x01\xa1\x80\x80\x80\x00\x00\x02\x40\x44\xff\xff\xff\xff\xff\xff\xef\x7f\x10\x00\xbd\x44\xff\xff\xff\xff\xff\xff\xef\x7f\xbd\x51\x45\x0d\x00\x0f\x0b\x00\x0b", exports("$1", $1)),  "run", []));  
 
 
-assert_return(() => call($1, "i32_store16", [-1]), 65535);
+assert_return(() => call($1, "i32_store16", [-1]), 65_535);
 
 
-assert_return(() => call($1, "i32_store16", [-4242]), 61294);
+assert_return(() => call($1, "i32_store16", [-4_242]), 61_294);
 
 
 assert_return(() => call($1, "i32_store16", [42]), 42);
 
 
-assert_return(() => call($1, "i32_store16", [51966]), 51966);
+assert_return(() => call($1, "i32_store16", [51_966]), 51_966);
 
 
 assert_return(() => call($1, "i32_store", [-1]), -1);
 
 
-assert_return(() => call($1, "i32_store", [-4242]), -4242);
+assert_return(() => call($1, "i32_store", [-4_242]), -4_242);
 
 
-assert_return(() => call($1, "i32_store", [42424242]), 42424242);
+assert_return(() => call($1, "i32_store", [42_424_242]), 42_424_242);
 
 
-assert_return(() => call($1, "i32_store", [-559035650]), -559035650);
+assert_return(() => call($1, "i32_store", [-559_035_650]), -559_035_650);
 
 
 run(() => call(instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x89\x80\x80\x80\x00\x02\x60\x00\x00\x60\x01\x7e\x01\x7e\x02\x92\x80\x80\x80\x00\x01\x02\x24\x31\x0b\x69\x36\x34\x5f\x73\x74\x6f\x72\x65\x31\x36\x00\x01\x03\x82\x80\x80\x80\x00\x01\x00\x07\x87\x80\x80\x80\x00\x01\x03\x72\x75\x6e\x00\x01\x0a\x9b\x80\x80\x80\x00\x01\x95\x80\x80\x80\x00\x00\x02\x40\x42\x7f\x10\x00\x01\x42\xff\xff\x03\x01\x51\x45\x0d\x00\x0f\x0b\x00\x0b", exports("$1", $1)),  "run", []));  

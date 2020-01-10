@@ -168,16 +168,16 @@ assert_return(() => call($1, "i32_call", []), 258);
 assert_return(() => call($1, "i64_call", []), 258);
 
 
-assert_return(() => call($1, "i32_call_indirect", []), 66052);
+assert_return(() => call($1, "i32_call_indirect", []), 66_052);
 
 
-assert_return(() => call($1, "i64_call_indirect", []), 66052);
+assert_return(() => call($1, "i64_call_indirect", []), 66_052);
 
 
-assert_return(() => call($1, "i32_select", []), 66053);
+assert_return(() => call($1, "i32_select", []), 66_053);
 
 
-assert_return(() => call($1, "i64_select", []), 66053);
+assert_return(() => call($1, "i64_select", []), 66_053);
 
 
 assert_return(() => call($1, "f32_add", []), 258);
@@ -270,16 +270,16 @@ assert_return(() => call($1, "f32_call", []), 258);
 assert_return(() => call($1, "f64_call", []), 258);
 
 
-assert_return(() => call($1, "f32_call_indirect", []), 66052);
+assert_return(() => call($1, "f32_call_indirect", []), 66_052);
 
 
-assert_return(() => call($1, "f64_call_indirect", []), 66052);
+assert_return(() => call($1, "f64_call_indirect", []), 66_052);
 
 
-assert_return(() => call($1, "f32_select", []), 66053);
+assert_return(() => call($1, "f32_select", []), 66_053);
 
 
-assert_return(() => call($1, "f64_select", []), 66053);
+assert_return(() => call($1, "f64_select", []), 66_053);
 
 
 assert_return(() => call($1, "br_if", []), 258);
