@@ -381,6 +381,9 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
       IPCInitializer&& aInitializer, BrowsingContextGroup* aGroup,
       ContentParent* aOriginProcess);
 
+  
+  bool CanAccess(BrowsingContext* aTarget, bool aConsiderOpener = true);
+
  protected:
   virtual ~BrowsingContext();
   BrowsingContext(BrowsingContext* aParent, BrowsingContextGroup* aGroup,
@@ -397,9 +400,6 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   
   BrowsingContext* FindWithNameInSubtree(const nsAString& aName,
                                          BrowsingContext* aRequestingContext);
-
-  
-  bool CanAccess(BrowsingContext* aContext);
 
   
   void Unregister();

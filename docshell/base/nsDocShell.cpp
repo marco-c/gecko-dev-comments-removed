@@ -256,11 +256,6 @@ static int32_t gDocShellCount = 0;
 
 static uint32_t gNumberOfPrivateDocShells = 0;
 
-
-
-
-static uint32_t gValidateOrigin = 0xffffffff;
-
 #ifdef DEBUG
 static mozilla::LazyLogModule gDocShellLog("nsDocShell");
 #endif
@@ -2847,34 +2842,7 @@ bool nsDocShell::CanAccessItem(nsIDocShellTreeItem* aTargetItem,
                                bool aConsiderOpener) {
   MOZ_ASSERT(aTargetItem, "Must have target item!");
 
-  if (!gValidateOrigin || !aAccessingItem) {
-    
-    return true;
-  }
-
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  if (aTargetItem == aAccessingItem) {
+  if (!aAccessingItem) {
     
     return true;
   }
@@ -2886,105 +2854,9 @@ bool nsDocShell::CanAccessItem(nsIDocShellTreeItem* aTargetItem,
     return false;
   }
 
-  nsCOMPtr<nsIDocShellTreeItem> accessingRoot;
-  aAccessingItem->GetInProcessSameTypeRootTreeItem(
-      getter_AddRefs(accessingRoot));
-  nsCOMPtr<nsIDocShell> accessingRootDS = do_QueryInterface(accessingRoot);
-
-  nsCOMPtr<nsIDocShellTreeItem> targetRoot;
-  aTargetItem->GetInProcessSameTypeRootTreeItem(getter_AddRefs(targetRoot));
-  nsCOMPtr<nsIDocShell> targetRootDS = do_QueryInterface(targetRoot);
-
-  OriginAttributes targetOA =
-      static_cast<nsDocShell*>(targetDS.get())->GetOriginAttributes();
-  OriginAttributes accessingOA =
-      static_cast<nsDocShell*>(accessingDS.get())->GetOriginAttributes();
-
-  
-  
-  
-  
-  if (OriginAttributes::IsFirstPartyEnabled()) {
-    if (aAccessingItem->ItemType() == nsIDocShellTreeItem::typeContent &&
-        (accessingDS == accessingRootDS || accessingDS->GetIsMozBrowser())) {
-      RefPtr<Document> accessingDoc = aAccessingItem->GetDocument();
-
-      if (accessingDoc) {
-        nsCOMPtr<nsIPrincipal> accessingPrincipal =
-            accessingDoc->NodePrincipal();
-
-        accessingOA.mFirstPartyDomain =
-            accessingPrincipal->OriginAttributesRef().mFirstPartyDomain;
-      }
-    }
-
-    if (aTargetItem->ItemType() == nsIDocShellTreeItem::typeContent &&
-        (targetDS == targetRootDS || targetDS->GetIsMozBrowser())) {
-      RefPtr<Document> targetDoc = aAccessingItem->GetDocument();
-
-      if (targetDoc) {
-        nsCOMPtr<nsIPrincipal> targetPrincipal = targetDoc->NodePrincipal();
-
-        targetOA.mFirstPartyDomain =
-            targetPrincipal->OriginAttributesRef().mFirstPartyDomain;
-      }
-    }
-  }
-
-  if (targetOA != accessingOA) {
-    return false;
-  }
-
-  
-  if (static_cast<nsDocShell*>(targetDS.get())->UsePrivateBrowsing() !=
-      static_cast<nsDocShell*>(accessingDS.get())->UsePrivateBrowsing()) {
-    return false;
-  }
-
-  if (aTargetItem == accessingRoot) {
-    
-    return true;
-  }
-
-  
-  nsCOMPtr<nsIDocShellTreeItem> target = aTargetItem;
-  do {
-    if (ValidateOrigin(aAccessingItem, target)) {
-      return true;
-    }
-
-    nsCOMPtr<nsIDocShellTreeItem> parent;
-    target->GetInProcessSameTypeParent(getter_AddRefs(parent));
-    parent.swap(target);
-  } while (target);
-
-  if (aTargetItem != targetRoot) {
-    
-    
-    
-    return false;
-  }
-
-  if (!aConsiderOpener) {
-    
-    return false;
-  }
-
-  nsCOMPtr<nsPIDOMWindowOuter> targetWindow = aTargetItem->GetWindow();
-  if (!targetWindow) {
-    NS_ERROR("This should not happen, really");
-    return false;
-  }
-
-  nsCOMPtr<mozIDOMWindowProxy> targetOpener = targetWindow->GetOpener();
-  nsCOMPtr<nsIWebNavigation> openerWebNav(do_GetInterface(targetOpener));
-  nsCOMPtr<nsIDocShellTreeItem> openerItem(do_QueryInterface(openerWebNav));
-
-  if (!openerItem) {
-    return false;
-  }
-
-  return CanAccessItem(openerItem, aAccessingItem, false);
+  return Cast(accessingDS)
+      ->mBrowsingContext->CanAccess(Cast(targetDS)->mBrowsingContext,
+                                    aConsiderOpener);
 }
 
 static bool ItemIsActive(nsIDocShellTreeItem* aItem) {
@@ -4944,12 +4816,6 @@ nsDocShell::Create() {
 
   NS_ENSURE_TRUE(Preferences::GetRootBranch(), NS_ERROR_FAILURE);
   mCreated = true;
-
-  if (gValidateOrigin == 0xffffffff) {
-    
-    gValidateOrigin =
-        Preferences::GetBool("browser.frame.validate_origin", true);
-  }
 
   mUseStrictSecurityChecks = Preferences::GetBool(
       "security.strict_security_checks.enabled", mUseStrictSecurityChecks);
@@ -8620,10 +8486,8 @@ nsresult nsDocShell::CheckLoadingPermissions() {
   
   nsresult rv = NS_OK;
 
-  if (!gValidateOrigin || !IsFrame()) {
+  if (!IsFrame()) {
     
-    
-
     return rv;
   }
 

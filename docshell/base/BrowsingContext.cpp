@@ -529,11 +529,47 @@ BrowsingContext* BrowsingContext::FindWithNameInSubtree(
   return nullptr;
 }
 
-bool BrowsingContext::CanAccess(BrowsingContext* aContext) {
+
+
+
+
+
+
+
+
+bool BrowsingContext::CanAccess(BrowsingContext* aTarget,
+                                bool aConsiderOpener) {
+  MOZ_ASSERT(
+      mDocShell,
+      "CanAccess() may only be called in the process of the accessing window");
+  MOZ_ASSERT(aTarget, "Must have a target");
+
+  MOZ_DIAGNOSTIC_ASSERT(
+      Group() == aTarget->Group(),
+      "A BrowsingContext should never see a context from a different group");
+
+  
+  if (aTarget == this || aTarget == Top()) {
+    return true;
+  }
+
+  
+  for (BrowsingContext* bc = aTarget; bc; bc = bc->GetParent()) {
+    if (bc->mDocShell &&
+        nsDocShell::ValidateOrigin(mDocShell, bc->mDocShell)) {
+      return true;
+    }
+  }
+
   
   
-  
-  return aContext && nsDocShell::CanAccessItem(aContext->mDocShell, mDocShell);
+  if (aConsiderOpener && !aTarget->GetParent()) {
+    if (RefPtr<BrowsingContext> opener = aTarget->GetOpener()) {
+      return CanAccess(opener, false);
+    }
+  }
+
+  return false;
 }
 
 BrowsingContext::~BrowsingContext() {
