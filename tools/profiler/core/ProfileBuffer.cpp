@@ -6,8 +6,6 @@
 
 #include "ProfileBuffer.h"
 
-#include "ProfilerMarker.h"
-
 #include "BaseProfiler.h"
 #include "jsfriendapi.h"
 #include "mozilla/MathAlgorithms.h"
@@ -36,9 +34,6 @@ ProfileBuffer::ProfileBuffer(BlocksRingBuffer& aBuffer) : mEntries(aBuffer) {
 }
 
 ProfileBuffer::~ProfileBuffer() {
-  while (mStoredMarkers.peek()) {
-    delete mStoredMarkers.popHead();
-  }
   
   
   mEntries.Reset();
@@ -79,11 +74,6 @@ uint64_t ProfileBuffer::AddThreadIdEntry(int aThreadId) {
   return AddThreadIdEntry(mEntries, aThreadId).ConvertToU64();
 }
 
-void ProfileBuffer::AddMarker(ProfilerMarker* aMarker) {
-  aMarker->SetPositionInBuffer(AddEntry(ProfileBufferEntry::Marker(aMarker)));
-  mStoredMarkers.insert(aMarker);
-}
-
 void ProfileBuffer::CollectCodeLocation(
     const char* aLabel, const char* aStr, uint32_t aFrameFlags,
     const Maybe<uint32_t>& aLineNumber, const Maybe<uint32_t>& aColumnNumber,
@@ -121,19 +111,7 @@ void ProfileBuffer::CollectCodeLocation(
   }
 }
 
-void ProfileBuffer::DeleteExpiredStoredMarkers() {
-  AUTO_PROFILER_STATS(gecko_ProfileBuffer_DeleteExpiredStoredMarkers);
-
-  
-  
-  while (mStoredMarkers.peek() &&
-         mStoredMarkers.peek()->HasExpired(BufferRangeStart())) {
-    delete mStoredMarkers.popHead();
-  }
-}
-
 size_t ProfileBuffer::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
-  
   
   
   
