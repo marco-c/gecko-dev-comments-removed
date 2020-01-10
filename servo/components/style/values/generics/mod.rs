@@ -309,4 +309,10 @@ impl<L> ClipRectOrAuto<L> {
     pub fn auto() -> Self {
         ClipRectOrAuto::Auto
     }
+
+    
+    #[inline]
+    pub fn is_auto(&self) -> bool {
+        matches!(*self, ClipRectOrAuto::Auto)
+    }
 }

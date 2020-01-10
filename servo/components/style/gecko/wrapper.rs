@@ -829,9 +829,7 @@ impl<'le> GeckoElement<'le> {
 
     #[inline]
     fn is_in_anonymous_subtree(&self) -> bool {
-        unsafe {
-            bindings::Gecko_IsInAnonymousSubtree(self.0)
-        }
+        unsafe { bindings::Gecko_IsInAnonymousSubtree(self.0) }
     }
 
     
