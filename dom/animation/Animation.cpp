@@ -121,7 +121,7 @@ void Animation::SetId(const nsAString& aId) {
     return;
   }
   mId = aId;
-  nsNodeUtils::AnimationChanged(this);
+  MutationObservers::NotifyAnimationChanged(this);
 }
 
 void Animation::SetEffect(AnimationEffect* aEffect) {
@@ -144,7 +144,7 @@ void Animation::SetEffectNoUpdate(AnimationEffect* aEffect) {
     
     
     if (mIsRelevant) {
-      nsNodeUtils::AnimationRemoved(this);
+      MutationObservers::NotifyAnimationRemoved(this);
     }
 
     
@@ -175,7 +175,7 @@ void Animation::SetEffectNoUpdate(AnimationEffect* aEffect) {
     
     
     if (wasRelevant && mIsRelevant) {
-      nsNodeUtils::AnimationChanged(this);
+      MutationObservers::NotifyAnimationChanged(this);
     }
 
     ReschedulePendingTasks();
@@ -261,7 +261,7 @@ void Animation::SetStartTime(const Nullable<TimeDuration>& aNewStartTime) {
 
   UpdateTiming(SeekFlag::DidSeek, SyncNotifyFlag::Async);
   if (IsRelevant()) {
-    nsNodeUtils::AnimationChanged(this);
+    MutationObservers::NotifyAnimationChanged(this);
   }
   PostUpdate();
 }
@@ -315,7 +315,7 @@ void Animation::SetCurrentTime(const TimeDuration& aSeekTime) {
 
   UpdateTiming(SeekFlag::DidSeek, SyncNotifyFlag::Async);
   if (IsRelevant()) {
-    nsNodeUtils::AnimationChanged(this);
+    MutationObservers::NotifyAnimationChanged(this);
   }
   PostUpdate();
 }
@@ -346,7 +346,7 @@ void Animation::SetPlaybackRate(double aPlaybackRate) {
   
   UpdateTiming(SeekFlag::DidSeek, SyncNotifyFlag::Async);
   if (IsRelevant()) {
-    nsNodeUtils::AnimationChanged(this);
+    MutationObservers::NotifyAnimationChanged(this);
   }
   PostUpdate();
 }
@@ -391,7 +391,7 @@ void Animation::UpdatePlaybackRate(double aPlaybackRate) {
     
     
     if (IsRelevant()) {
-      nsNodeUtils::AnimationChanged(this);
+      MutationObservers::NotifyAnimationChanged(this);
     }
   } else if (playState == AnimationPlayState::Finished) {
     MOZ_ASSERT(mTimeline && !mTimeline->GetCurrentTimeAsDuration().IsNull(),
@@ -419,7 +419,7 @@ void Animation::UpdatePlaybackRate(double aPlaybackRate) {
     
     UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
     if (IsRelevant()) {
-      nsNodeUtils::AnimationChanged(this);
+      MutationObservers::NotifyAnimationChanged(this);
     }
     PostUpdate();
   } else {
@@ -570,7 +570,7 @@ void Animation::Finish(ErrorResult& aRv) {
   }
   UpdateTiming(SeekFlag::DidSeek, SyncNotifyFlag::Sync);
   if (didChange && IsRelevant()) {
-    nsNodeUtils::AnimationChanged(this);
+    MutationObservers::NotifyAnimationChanged(this);
   }
   PostUpdate();
 }
@@ -982,9 +982,9 @@ void Animation::UpdateRelevance() {
 
   
   if (wasRelevant && !mIsRelevant) {
-    nsNodeUtils::AnimationRemoved(this);
+    MutationObservers::NotifyAnimationRemoved(this);
   } else if (!wasRelevant && mIsRelevant) {
-    nsNodeUtils::AnimationAdded(this);
+    MutationObservers::NotifyAnimationAdded(this);
   }
 }
 
@@ -1357,7 +1357,7 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
 
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
   if (IsRelevant()) {
-    nsNodeUtils::AnimationChanged(this);
+    MutationObservers::NotifyAnimationChanged(this);
   }
 }
 
@@ -1405,7 +1405,7 @@ void Animation::Pause(ErrorResult& aRv) {
 
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
   if (IsRelevant()) {
-    nsNodeUtils::AnimationChanged(this);
+    MutationObservers::NotifyAnimationChanged(this);
   }
 
   PostUpdate();
@@ -1453,7 +1453,7 @@ void Animation::ResumeAt(const TimeDuration& aReadyTime) {
   
   
   if (hadPendingPlaybackRate && IsRelevant()) {
-    nsNodeUtils::AnimationChanged(this);
+    MutationObservers::NotifyAnimationChanged(this);
   }
 
   if (mReady) {

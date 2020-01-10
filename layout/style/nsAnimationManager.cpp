@@ -416,7 +416,7 @@ static void UpdateOldAnimationPropertiesWithNew(
   
   
   if (animationChanged && aOld.IsRelevant()) {
-    nsNodeUtils::AnimationChanged(&aOld);
+    MutationObservers::NotifyAnimationChanged(&aOld);
   }
 }
 
