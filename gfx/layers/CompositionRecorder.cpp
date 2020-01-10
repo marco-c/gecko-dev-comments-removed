@@ -32,11 +32,27 @@ void CompositionRecorder::RecordFrame(RecordedFrame* aFrame) {
 }
 
 void CompositionRecorder::WriteCollectedFrames() {
-  std::time_t t = std::time(nullptr);
-  std::tm tm = *std::localtime(&t);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   std::stringstream str;
+  nsCString recordingStartTime;
+  TimeDuration delta = TimeStamp::NowUnfuzzed() - mRecordingStart;
+  recordingStartTime.AppendFloat(
+      static_cast<double>(PR_Now() / 1000.0 - delta.ToMilliseconds()));
   str << gfxVars::LayersWindowRecordingPath() << "windowrecording-"
-      << std::put_time(&tm, "%Y%m%d%H%M%S");
+      << recordingStartTime;
 
 #ifdef XP_WIN
   _mkdir(str.str().c_str());
