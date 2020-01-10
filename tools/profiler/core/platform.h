@@ -89,10 +89,11 @@ void profiler_get_profile_json_into_lazily_allocated_buffer(
     bool aIsShuttingDown);
 
 
-enum class JSSamplingFlags {
+enum class JSInstrumentationFlags {
   StackSampling = 0x1,
   TrackOptimizations = 0x2,
-  TraceLogging = 0x4
+  TraceLogging = 0x4,
+  Allocations = 0x8
 };
 
 
