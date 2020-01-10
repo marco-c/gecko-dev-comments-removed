@@ -676,6 +676,11 @@ function compareFocusResults() {
           ? browser1.contentWindow
           : browser2.contentWindow;
     }
+    if (_expectedWindow == "main-window") {
+      
+      
+      matchWindow.document.body.id = "main-window-body";
+    }
 
     var focusedElement = fm.focusedElement;
     is(
@@ -698,13 +703,7 @@ function compareFocusResults() {
     is(matchWindow.document.hasFocus(), true, currentTestName + " hasFocus");
     var expectedActive = _expectedElement;
     if (!expectedActive) {
-      
-      
-      
-      expectedActive =
-        matchWindow.document.documentElement instanceof XULElement
-          ? "main-window"
-          : getId(matchWindow.document.body);
+      expectedActive = getId(matchWindow.document.body);
     }
     is(
       getId(matchWindow.document.activeElement),
