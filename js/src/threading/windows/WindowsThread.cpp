@@ -32,6 +32,8 @@ bool Thread::Id::operator==(const Id& aOther) const {
 }
 
 bool Thread::create(unsigned int(__stdcall* aMain)(void*), void* aArg) {
+  MOZ_RELEASE_ASSERT(!joinable());
+
   
   
   
