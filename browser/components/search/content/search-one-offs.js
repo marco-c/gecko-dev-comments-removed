@@ -18,24 +18,13 @@ class SearchOneOffs {
     this.container.appendChild(
       MozXULElement.parseXULToFragment(
         `
-      <deck class="search-panel-one-offs-header search-panel-header search-panel-current-input">
-        <label class="searchbar-oneoffheader-search" value="&searchWithHeader.label;"/>
-        <hbox class="search-panel-searchforwith search-panel-current-input">
-          <label value="&searchFor.label;"/>
-          <label class="searchbar-oneoffheader-searchtext search-panel-input-value" flex="1" crop="end"/>
-          <label flex="10000" value="&searchWith.label;"/>
-        </hbox>
-        <hbox class="search-panel-searchonengine search-panel-current-input">
-          <label value="&search.label;"/>
-          <label class="searchbar-oneoffheader-engine search-panel-input-value" flex="1" crop="end"/>
-          <label flex="10000" value="&searchAfter.label;"/>
-        </hbox>
-      </deck>
-      <description role="group" class="search-panel-one-offs">
-        <button class="searchbar-engine-one-off-item search-setting-button-compact" tooltiptext="&changeSearchSettings.tooltip;"/>
-      </description>
+      <div class="search-panel-one-offs-header search-panel-header search-panel-current-input">
+        <label class="searchbar-oneoffheader-search" value="&searchWithDesc.label;"/>
+      </div>
+      <div class="search-panel-one-offs"/>
       <vbox class="search-add-engines"/>
-      <button class="search-setting-button search-panel-header" label="&changeSearchSettings.button;"/>
+      <button class="searchbar-engine-one-off-item search-setting-button-compact" tooltiptext="&changeSearchSettings.tooltip;"/>
+      <button class="search-setting-button" label="&changeSearchSettings.button;"/>
       <menupopup class="search-one-offs-context-menu">
         <menuitem class="search-one-offs-context-open-in-new-tab" label="&searchInNewTab.label;" accesskey="&searchInNewTab.accesskey;"/>
         <menuitem class="search-one-offs-context-set-default" label="&searchSetAsDefault.label;" accesskey="&searchSetAsDefault.accesskey;"/>
@@ -181,10 +170,15 @@ class SearchOneOffs {
   
 
 
-
-
   get buttonWidth() {
-    return 49;
+    return this.compact ? 40 : 48;
+  }
+
+  
+
+
+  get buttonHeight() {
+    return 32;
   }
 
   
@@ -274,7 +268,14 @@ class SearchOneOffs {
       (this._view && this._view.isOpen) ||
       (this.popup && this.popup.popupOpen)
     ) {
-      this._updateAfterQueryChanged();
+      let isOneOffSelected =
+        this.selectedButton &&
+        this.selectedButton.classList.contains("searchbar-engine-one-off-item");
+      
+      
+      if (this.selectedButton && !isOneOffSelected) {
+        this.selectedButton = null;
+      }
     }
     return val;
   }
@@ -291,10 +292,6 @@ class SearchOneOffs {
 
 
   set selectedButton(val) {
-    if (val && val.classList.contains("dummy")) {
-      
-      val = null;
-    }
     let previousButton = this._selectedButton;
     if (previousButton) {
       previousButton.removeAttribute("selected");
@@ -395,43 +392,6 @@ class SearchOneOffs {
   
 
 
-  _updateAfterQueryChanged() {
-    let headerSearchText = this.querySelector(
-      ".searchbar-oneoffheader-searchtext"
-    );
-    headerSearchText.setAttribute("value", this.query);
-    let groupText;
-    let isOneOffSelected =
-      this.selectedButton &&
-      this.selectedButton.classList.contains("searchbar-engine-one-off-item");
-    
-    
-    if (this.selectedButton && !isOneOffSelected) {
-      this.selectedButton = null;
-    }
-    if (this.query) {
-      groupText =
-        headerSearchText.previousElementSibling.value +
-        '"' +
-        headerSearchText.value +
-        '"' +
-        headerSearchText.nextElementSibling.value;
-      if (!isOneOffSelected) {
-        this.header.selectedIndex = 1;
-      }
-    } else {
-      let noSearchHeader = this.querySelector(".searchbar-oneoffheader-search");
-      groupText = noSearchHeader.value;
-      if (!isOneOffSelected) {
-        this.header.selectedIndex = 0;
-      }
-    }
-    this.buttons.setAttribute("aria-label", groupText);
-  }
-
-  
-
-
   async _rebuild() {
     if (this._rebuilding) {
       return;
@@ -453,9 +413,6 @@ class SearchOneOffs {
   async __rebuild() {
     this.selectedButton = null;
     this._contextEngine = null;
-
-    
-    this._updateAfterQueryChanged();
 
     
     
@@ -480,15 +437,14 @@ class SearchOneOffs {
     }
 
     
-    while (this.buttons.firstElementChild != this.settingsButtonCompact) {
+    while (this.buttons.firstElementChild) {
       this.buttons.firstElementChild.remove();
     }
 
-    
-    
-    if (this.settingsButtonCompact.nextElementSibling) {
-      this.settingsButtonCompact.nextElementSibling.remove();
-    }
+    let headerText = this.header.querySelector(
+      ".searchbar-oneoffheader-search"
+    );
+    this.buttons.setAttribute("aria-label", headerText.value);
 
     let engines = await this.getEngines();
     let defaultEngine = await Services.search.getDefault();
@@ -508,7 +464,10 @@ class SearchOneOffs {
       return;
     }
 
-    let panelWidth = parseInt((this.popup || this._view.panel).clientWidth);
+    
+    let buttonsWidth = this.compact
+      ? this._textboxWidth - this.buttonWidth - this.header.clientWidth
+      : this.popup.clientWidth;
 
     
     
@@ -519,33 +478,41 @@ class SearchOneOffs {
     
     let scale = window.windowUtils.screenPixelsPerCSSPixel;
     if (Math.floor(scale) != scale) {
-      --panelWidth;
+      --buttonsWidth;
     }
 
     
-    let enginesPerRow = Math.floor((panelWidth + 1) / this.buttonWidth);
-    let buttonWidth = Math.floor(panelWidth / enginesPerRow);
     
-    
-    
+    this.buttons.style.setProperty(
+      this.compact ? "width" : "max-width",
+      `${buttonsWidth}px`
+    );
 
-    
-    
     
     if (this.compact) {
-      ++oneOffCount;
+      buttonsWidth -= 24;
     }
-    let rowCount = Math.ceil(oneOffCount / enginesPerRow);
-    let height = rowCount * 33; 
-    this.buttons.setAttribute("height", height + "px");
 
+    
+    
+    buttonsWidth = Math.max(buttonsWidth, this.buttonWidth);
+
+    let enginesPerRow = Math.floor(buttonsWidth / this.buttonWidth);
+    
+    
+    
+
+    
+    
+    
+    let rowCount = Math.ceil(oneOffCount / enginesPerRow);
+    let height = rowCount * this.buttonHeight;
+    this.buttons.style.setProperty("height", `${height}px`);
     
     let origin = this.telemetryOrigin;
     this.settingsButton.id = origin + "-anon-search-settings";
     this.settingsButtonCompact.id = origin + "-anon-search-settings-compact";
 
-    let dummyItems =
-      enginesPerRow - (oneOffCount % enginesPerRow || enginesPerRow);
     for (let i = 0; i < engines.length; ++i) {
       let engine = engines[i];
       let button = document.createXULElement("button");
@@ -557,53 +524,9 @@ class SearchOneOffs {
       button.setAttribute("image", uri);
       button.setAttribute("class", "searchbar-engine-one-off-item");
       button.setAttribute("tooltiptext", engine.name);
-      button.setAttribute("width", buttonWidth);
       button.engine = engine;
 
-      if ((i + 1) % enginesPerRow == 0) {
-        button.classList.add("last-of-row");
-      }
-
-      if (i + 1 == engines.length) {
-        button.classList.add("last-engine");
-      }
-
-      if (i >= oneOffCount + dummyItems - enginesPerRow) {
-        button.classList.add("last-row");
-      }
-
-      this.buttons.insertBefore(button, this.settingsButtonCompact);
-    }
-
-    let hasDummyItems = !!dummyItems;
-    while (dummyItems) {
-      let button = document.createXULElement("button");
-      button.setAttribute(
-        "class",
-        "searchbar-engine-one-off-item dummy last-row"
-      );
-      button.setAttribute("width", buttonWidth);
-
-      if (!--dummyItems) {
-        button.classList.add("last-of-row");
-      }
-
-      this.buttons.insertBefore(button, this.settingsButtonCompact);
-    }
-
-    if (this.compact) {
-      this.settingsButtonCompact.setAttribute("width", buttonWidth);
-      if (rowCount == 1 && hasDummyItems) {
-        
-        
-        
-        
-        
-        let remainder = panelWidth - enginesPerRow * buttonWidth;
-        let width = remainder + buttonWidth;
-        let lastDummyItem = this.settingsButtonCompact.previousElementSibling;
-        lastDummyItem.setAttribute("width", width);
-      }
+      this.buttons.appendChild(button);
     }
   }
 
@@ -733,36 +656,15 @@ class SearchOneOffs {
     let button = mousedOverButton;
 
     
-    if (button && button.classList.contains("dummy")) {
-      button = null;
-    }
-
-    
     
     button = button || this.selectedButton;
 
-    if (!button) {
-      this.header.selectedIndex = this.query ? 1 : 0;
-      if (this.textbox) {
-        this.textbox.removeAttribute("aria-activedescendant");
-      }
-      return;
-    }
-
-    if (
-      button.classList.contains("searchbar-engine-one-off-item") &&
-      button.engine
-    ) {
-      let headerEngineText = this.querySelector(
-        ".searchbar-oneoffheader-engine"
-      );
-      this.header.selectedIndex = 2;
-      headerEngineText.value = button.engine.name;
-    } else {
-      this.header.selectedIndex = this.query ? 1 : 0;
-    }
     if (this.textbox) {
-      this.textbox.setAttribute("aria-activedescendant", button.id);
+      if (!button) {
+        this.textbox.removeAttribute("aria-activedescendant");
+      } else {
+        this.textbox.setAttribute("aria-activedescendant", button.id);
+      }
     }
   }
 
@@ -773,19 +675,7 @@ class SearchOneOffs {
       oneOff;
       oneOff = oneOff.nextElementSibling
     ) {
-      
-      
-      
-      
-      if (oneOff.nodeType == Node.ELEMENT_NODE) {
-        if (
-          oneOff.classList.contains("dummy") ||
-          oneOff.classList.contains("search-setting-button-compact")
-        ) {
-          break;
-        }
-        buttons.push(oneOff);
-      }
+      buttons.push(oneOff);
     }
 
     if (aIncludeNonEngineButtons) {
@@ -1202,9 +1092,7 @@ class SearchOneOffs {
       return;
     }
 
-    let isOneOff =
-      target.classList.contains("searchbar-engine-one-off-item") &&
-      !target.classList.contains("dummy");
+    let isOneOff = target.classList.contains("searchbar-engine-one-off-item");
     if (
       isOneOff ||
       target.classList.contains("addengine-item") ||
@@ -1349,8 +1237,7 @@ class SearchOneOffs {
     
     if (
       !target.classList.contains("searchbar-engine-one-off-item") ||
-      target.classList.contains("search-setting-button-compact") ||
-      target.classList.contains("dummy")
+      target.classList.contains("search-setting-button-compact")
     ) {
       event.preventDefault();
       return;
