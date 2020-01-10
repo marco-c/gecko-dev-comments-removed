@@ -6,12 +6,11 @@
 
 #include "CryptoTask.h"
 #include "nsNSSComponent.h"
+#include "nsNetCID.h"
 
 namespace mozilla {
 
-nsresult CryptoTask::Dispatch(const nsACString& taskThreadName) {
-  MOZ_ASSERT(taskThreadName.Length() <= 15);
-
+nsresult CryptoTask::Dispatch() {
   
   
   if (!EnsureNSSInitializedChromeOrContent()) {
@@ -19,15 +18,14 @@ nsresult CryptoTask::Dispatch(const nsACString& taskThreadName) {
   }
 
   
-  nsresult rv =
-      NS_NewNamedThread(taskThreadName, getter_AddRefs(mThread), nullptr,
-                        nsIThreadManager::DEFAULT_STACK_SIZE);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
   
-  return mThread->Dispatch(this, NS_DISPATCH_NORMAL);
+  
+  nsCOMPtr<nsIEventTarget> target(
+      do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID));
+  if (!target) {
+    return NS_ERROR_FAILURE;
+  }
+  return target->Dispatch(this, NS_DISPATCH_NORMAL);
 }
 
 NS_IMETHODIMP
@@ -37,21 +35,8 @@ CryptoTask::Run() {
     NS_DispatchToMainThread(this);
   } else {
     
-
     CallCallback(mRv);
-
-    
-    if (mThread) {
-      
-      mThread->Shutdown();  
-      
-      
-      
-      
-      
-    }
   }
-
   return NS_OK;
 }
 
