@@ -315,16 +315,24 @@ void gfxPlatformFontList::ApplyWhitelist() {
     ToLowerCase(list[i], key);
     familyNamesWhitelist.PutEntry(key);
   }
+  AutoTArray<RefPtr<gfxFontFamily>,128> accepted;
   for (auto iter = mFontFamilies.Iter(); !iter.Done(); iter.Next()) {
-    
-    if (mFontFamilies.Count() == 1) {
-      break;
-    }
     nsAutoCString fontFamilyName(iter.Key());
     ToLowerCase(fontFamilyName);
-    if (!familyNamesWhitelist.Contains(fontFamilyName)) {
-      iter.Remove();
+    if (familyNamesWhitelist.Contains(fontFamilyName)) {
+      accepted.AppendElement(iter.Data());
     }
+  }
+  if (accepted.IsEmpty()) {
+    
+    return;
+  }
+  
+  mFontFamilies.Clear();
+  for (auto& f : accepted) {
+    nsAutoCString fontFamilyName(f->Name());
+    ToLowerCase(fontFamilyName);
+    mFontFamilies.Put(fontFamilyName, f);
   }
 }
 
@@ -342,24 +350,22 @@ void gfxPlatformFontList::ApplyWhitelist(
     ToLowerCase(item, key);
     familyNamesWhitelist.PutEntry(key);
   }
-  int count = int(aFamilies.Length());
-  
-  
-  int firstNonHidden = 0;
-  while (firstNonHidden < count && aFamilies[firstNonHidden].mHidden) {
-    ++firstNonHidden;
-  }
+  AutoTArray<fontlist::Family::InitData,128> accepted;
   bool keptNonHidden = false;
-  for (int i = count - 1; i >= firstNonHidden; --i) {
-    if (aFamilies[i].mHidden) {
-      continue;
-    }
-    if (familyNamesWhitelist.Contains(aFamilies[i].mKey)) {
-      keptNonHidden = true;
-    } else if (keptNonHidden || i > firstNonHidden) {
-      aFamilies.RemoveElementAt(i);
+  for (auto& f : aFamilies) {
+    if (f.mHidden || familyNamesWhitelist.Contains(f.mKey)) {
+      accepted.AppendElement(f);
+      if (!f.mHidden) {
+        keptNonHidden = true;
+      }
     }
   }
+  if (!keptNonHidden) {
+    
+    
+    return;
+  }
+  aFamilies = accepted;
 }
 
 bool gfxPlatformFontList::AddWithLegacyFamilyName(const nsACString& aLegacyName,
