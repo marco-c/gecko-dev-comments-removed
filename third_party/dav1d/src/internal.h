@@ -228,7 +228,6 @@ struct Dav1dFrameContext {
         int tile_row; 
         pixel *p[3], *sr_p[3];
         Av1Filter *mask_ptr, *prev_mask_ptr;
-        int restore_planes; 
     } lf;
 
     
