@@ -8,119 +8,37 @@
 #define mozilla_interceptor_VMSharingPolicies_h
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/Types.h"
 
 namespace mozilla {
 namespace interceptor {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename VMPolicyT, typename InnerT>
-class MOZ_STACK_CLASS TrampolinePool final {
- public:
-  TrampolinePool(TrampolinePool&& aOther) = default;
-
-  TrampolinePool(VMPolicyT& aVMPolicy, InnerT&& aInner)
-      : mVMPolicy(aVMPolicy), mInner(std::move(aInner)) {}
-
-  TrampolinePool& operator=(TrampolinePool&& aOther) = delete;
-  TrampolinePool(const TrampolinePool&) = delete;
-  TrampolinePool& operator=(const TrampolinePool&) = delete;
-
-  using MMPolicyT = typename VMPolicyT::MMPolicyT;
-
-  Maybe<Trampoline<MMPolicyT>> GetNextTrampoline() {
-    return mVMPolicy.GetNextTrampoline(mInner);
-  }
-
-#if defined(_M_X64)
-  bool IsInLowest2GB() const {
-    return mVMPolicy.IsTrampolineSpaceInLowest2GB(mInner);
-  }
-#endif  
-
- private:
-  VMPolicyT& mVMPolicy;
-  InnerT mInner;
-};
-
-
-
-
-
-template <typename VMPolicyT>
-class MOZ_STACK_CLASS TrampolinePool<VMPolicyT, decltype(nullptr)> final {
- public:
-  explicit TrampolinePool(VMPolicyT& aVMPolicy) : mVMPolicy(aVMPolicy) {}
-
-  TrampolinePool(TrampolinePool&& aOther) = default;
-
-  TrampolinePool& operator=(TrampolinePool&& aOther) = delete;
-  TrampolinePool(const TrampolinePool&) = delete;
-  TrampolinePool& operator=(const TrampolinePool&) = delete;
-
-  using MMPolicyT = typename VMPolicyT::MMPolicyT;
-
-  Maybe<Trampoline<MMPolicyT>> GetNextTrampoline() {
-    return mVMPolicy.GetNextTrampoline();
-  }
-
-#if defined(_M_X64)
-  bool IsInLowest2GB() const {
-    return mVMPolicy.IsTrampolineSpaceInLowest2GB();
-  }
-#endif  
-
- private:
-  VMPolicyT& mVMPolicy;
-};
-
-template <typename MMPolicy>
+template <typename MMPolicy, uint32_t kChunkSize>
 class VMSharingPolicyUnique : public MMPolicy {
-  using ThisType = VMSharingPolicyUnique<MMPolicy>;
-
  public:
-  using PoolType = TrampolinePool<ThisType, decltype(nullptr)>;
-
   template <typename... Args>
   explicit VMSharingPolicyUnique(Args... aArgs)
       : MMPolicy(std::forward<Args>(aArgs)...), mNextChunkIndex(0) {}
 
-  Maybe<PoolType> Reserve(const uintptr_t aPivotAddr,
-                          const uint32_t aMaxDistanceFromPivot) {
-    
-    
-    uint32_t len = MMPolicy::GetAllocGranularity();
-
-    Maybe<Span<const uint8_t>> maybeBounds = MMPolicy::SpanFromPivotAndDistance(
-        len, aPivotAddr, aMaxDistanceFromPivot);
-
-    return Reserve(len, maybeBounds);
+  bool Reserve(uint32_t aCount, const ReservationFlags aFlags) {
+    MOZ_ASSERT(aCount);
+    uint32_t bytesReserved = MMPolicy::Reserve(aCount * kChunkSize, aFlags);
+    return !!bytesReserved;
   }
 
-  Maybe<PoolType> Reserve(const uint32_t aSize,
-                          const Maybe<Span<const uint8_t>>& aBounds) {
-    uint32_t bytesReserved = MMPolicy::Reserve(aSize, aBounds);
-    if (!bytesReserved) {
-      return Nothing();
+  Trampoline<MMPolicy> GetNextTrampoline() {
+    uint32_t offset = mNextChunkIndex * kChunkSize;
+    if (!this->MaybeCommitNextPage(offset, kChunkSize)) {
+      return nullptr;
     }
 
-    return Some(PoolType(*this));
+    Trampoline<MMPolicy> result(this, this->GetLocalView() + offset,
+                                this->GetRemoteView() + offset, kChunkSize);
+    if (!!result) {
+      ++mNextChunkIndex;
+    }
+
+    return std::move(result);
   }
 
   TrampolineCollection<MMPolicy> Items() const {
@@ -148,107 +66,23 @@ class VMSharingPolicyUnique : public MMPolicy {
     return *this;
   }
 
- protected:
-  
-  
-  
-  Maybe<Trampoline<MMPolicy>> GetNextTrampoline() {
-    uint32_t offset = mNextChunkIndex * kChunkSize;
-    if (!this->MaybeCommitNextPage(offset, kChunkSize)) {
-      return Nothing();
-    }
-
-    Trampoline<MMPolicy> result(this, this->GetLocalView() + offset,
-                                this->GetRemoteView() + offset, kChunkSize);
-    if (!!result) {
-      ++mNextChunkIndex;
-    }
-
-    return Some(std::move(result));
-  }
-
  private:
   uint32_t mNextChunkIndex;
-  static const uint32_t kChunkSize = 128;
-
-  template <typename VMPolicyT, typename FriendT>
-  friend class TrampolinePool;
 };
 
-}  
-}  
-
-
-
-#include "mozilla/interceptor/RangeMap.h"
-
-namespace mozilla {
-namespace interceptor {
-
-template <typename MMPolicy, bool Dummy>
+template <typename MMPolicy, uint32_t kChunkSize>
 class VMSharingPolicyShared;
 
 
-
-
-
-template <bool Dummy>
-class MOZ_TRIVIAL_CTOR_DTOR VMSharingPolicyShared<MMPolicyInProcess, Dummy>
-    : public MMPolicyInProcess {
-  typedef VMSharingPolicyUnique<MMPolicyInProcess> UniquePolicyT;
-  typedef VMSharingPolicyShared<MMPolicyInProcess, Dummy> ThisType;
+template <uint32_t kChunkSize>
+class VMSharingPolicyShared<MMPolicyInProcess, kChunkSize>
+    : public MMPolicyBase {
+  typedef VMSharingPolicyUnique<MMPolicyInProcess, kChunkSize> UniquePolicyT;
 
  public:
-  using PoolType = TrampolinePool<ThisType, UniquePolicyT::PoolType>;
-  using MMPolicyT = MMPolicyInProcess;
+  typedef MMPolicyInProcess MMPolicyT;
 
-  constexpr VMSharingPolicyShared() {}
-
-  bool ShouldUnhookUponDestruction() const { return false; }
-
-  Maybe<PoolType> Reserve(const uintptr_t aPivotAddr,
-                          const uint32_t aMaxDistanceFromPivot) {
-    
-    
-    uint32_t len = this->GetAllocGranularity();
-
-    Maybe<Span<const uint8_t>> maybeBounds =
-        MMPolicyInProcess::SpanFromPivotAndDistance(len, aPivotAddr,
-                                                    aMaxDistanceFromPivot);
-
-    AutoCriticalSection lock(GetCS());
-    VMSharingPolicyUnique<MMPolicyT>* uniquePol = sVMMap.GetPolicy(maybeBounds);
-    MOZ_ASSERT(uniquePol);
-    if (!uniquePol) {
-      return Nothing();
-    }
-
-    Maybe<UniquePolicyT::PoolType> maybeUnique =
-        uniquePol->Reserve(len, maybeBounds);
-    if (!maybeUnique) {
-      return Nothing();
-    }
-
-    return Some(PoolType(*this, std::move(maybeUnique.ref())));
-  }
-
-  TrampolineCollection<MMPolicyInProcess> Items() const {
-    
-    return TrampolineCollection<MMPolicyInProcess>(*this);
-  }
-
-  void Clear() {
-    
-    
-  }
-
-  VMSharingPolicyShared(const VMSharingPolicyShared&) = delete;
-  VMSharingPolicyShared(VMSharingPolicyShared&&) = delete;
-  VMSharingPolicyShared& operator=(const VMSharingPolicyShared&) = delete;
-  VMSharingPolicyShared& operator=(VMSharingPolicyShared&&) = delete;
-
- private:
-  static CRITICAL_SECTION* GetCS() {
+  VMSharingPolicyShared() {
     static const bool isAlloc = []() -> bool {
       DWORD flags = 0;
 #if defined(RELEASE_OR_BETA)
@@ -258,41 +92,79 @@ class MOZ_TRIVIAL_CTOR_DTOR VMSharingPolicyShared<MMPolicyInProcess, Dummy>
       return true;
     }();
     Unused << isAlloc;
-
-    return &sCS;
   }
 
-  
-  
-  
-  Maybe<Trampoline<MMPolicyInProcess>> GetNextTrampoline(
-      UniquePolicyT::PoolType& aInner) {
-    AutoCriticalSection lock(GetCS());
-    return aInner.GetNextTrampoline();
+  explicit operator bool() const {
+    AutoCriticalSection lock(&sCS);
+    return !!sUniqueVM;
+  }
+
+  operator const MMPolicyInProcess&() const {
+    AutoCriticalSection lock(&sCS);
+    return sUniqueVM;
+  }
+
+  bool ShouldUnhookUponDestruction() const {
+    
+    
+    return false;
+  }
+
+  bool Reserve(uint32_t aCount, const ReservationFlags aFlags) {
+    AutoCriticalSection lock(&sCS);
+    return sUniqueVM.Reserve(aCount, aFlags);
+  }
+
+  bool IsPageAccessible(void* aVAddress) const {
+    AutoCriticalSection lock(&sCS);
+    return sUniqueVM.IsPageAccessible(aVAddress);
   }
 
 #if defined(_M_X64)
-  bool IsTrampolineSpaceInLowest2GB(
-      const UniquePolicyT::PoolType& aInner) const {
-    AutoCriticalSection lock(GetCS());
-    return aInner.IsInLowest2GB();
+  bool IsTrampolineSpaceInLowest2GB() const {
+    AutoCriticalSection lock(&sCS);
+    return sUniqueVM.IsTrampolineSpaceInLowest2GB();
   }
 #endif  
 
- private:
-  template <typename VMPolicyT, typename InnerT>
-  friend class TrampolinePool;
+  Trampoline<MMPolicyInProcess> GetNextTrampoline() {
+    AutoCriticalSection lock(&sCS);
+    return sUniqueVM.GetNextTrampoline();
+  }
 
-  static RangeMap<MMPolicyInProcess> sVMMap;
+  TrampolineCollection<MMPolicyInProcess> Items() const {
+    AutoCriticalSection lock(&sCS);
+    TrampolineCollection<MMPolicyInProcess> items(std::move(sUniqueVM.Items()));
+
+    
+    items.Lock(sCS);
+
+    return std::move(items);
+  }
+
+  void Clear() {
+    
+    
+  }
+
+  ~VMSharingPolicyShared() = default;
+
+  VMSharingPolicyShared(const VMSharingPolicyShared&) = delete;
+  VMSharingPolicyShared(VMSharingPolicyShared&&) = delete;
+  VMSharingPolicyShared& operator=(const VMSharingPolicyShared&) = delete;
+  VMSharingPolicyShared& operator=(VMSharingPolicyShared&&) = delete;
+
+ private:
+  static UniquePolicyT sUniqueVM;
   static CRITICAL_SECTION sCS;
 };
 
-template <bool Dummy>
-RangeMap<MMPolicyInProcess>
-    VMSharingPolicyShared<MMPolicyInProcess, Dummy>::sVMMap;
+template <uint32_t kChunkSize>
+typename VMSharingPolicyShared<MMPolicyInProcess, kChunkSize>::UniquePolicyT
+    VMSharingPolicyShared<MMPolicyInProcess, kChunkSize>::sUniqueVM;
 
-template <bool Dummy>
-CRITICAL_SECTION VMSharingPolicyShared<MMPolicyInProcess, Dummy>::sCS;
+template <uint32_t kChunkSize>
+CRITICAL_SECTION VMSharingPolicyShared<MMPolicyInProcess, kChunkSize>::sCS;
 
 }  
 }  
