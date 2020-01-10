@@ -330,7 +330,7 @@ class BlocksRingBuffer {
 
     
     BlockIndex NextBlockIndex() const {
-      MOZ_ASSERT(~IsAtEnd());
+      MOZ_ASSERT(!IsAtEnd());
       BufferReader reader = mRing->mBuffer.ReaderAt(Index(mBlockIndex));
       Length entrySize = reader.ReadULEB128<Length>();
       return BlockIndex(reader.CurrentIndex() + entrySize);
