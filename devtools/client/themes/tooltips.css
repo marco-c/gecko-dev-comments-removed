@@ -231,11 +231,22 @@ strong {
 }
 
 .tooltip-top .tooltip-arrow {
+  
+
+
+
+
+
+
+
+  margin-bottom: -2px;
   margin-top: -1px;
 }
 
 .tooltip-bottom .tooltip-arrow {
+  
   margin-bottom: -1px;
+  margin-top: -2px;
 }
 
 .tooltip-arrow:before {
@@ -316,6 +327,12 @@ strong {
 
   width: calc(var(--arrow-width) + 2 * var(--shadow-margin));
   height: calc(var(--arrow-width) / 2 + var(--shadow-margin));
+
+  
+
+
+
+  padding-left: 1px;
 }
 
 .tooltip-container[type="doorhanger"] > .tooltip-arrow::before {
