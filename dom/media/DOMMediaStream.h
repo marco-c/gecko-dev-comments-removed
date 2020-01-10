@@ -145,9 +145,6 @@ class DOMMediaStream : public DOMEventTargetHelper,
   
 
   
-  bool Audible() const;
-
-  
 
 
   bool HasTrack(const MediaStreamTrack& aTrack) const;
@@ -188,6 +185,10 @@ class DOMMediaStream : public DOMEventTargetHelper,
   
   
   void UnregisterTrackListener(TrackListener* aListener);
+
+  
+  
+  void SetFinishedOnInactive(bool aFinishedOnInactive);
 
  protected:
   virtual ~DOMMediaStream();
@@ -239,6 +240,10 @@ class DOMMediaStream : public DOMEventTargetHelper,
 
   
   bool mAudible = false;
+
+  
+  
+  bool mFinishedOnInactive = true;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(DOMMediaStream, NS_DOMMEDIASTREAM_IID)

@@ -91,7 +91,7 @@ class MediaStreamAudioSourceNode
   
   void NotifyTrackAdded(const RefPtr<MediaStreamTrack>& aTrack) override;
   void NotifyTrackRemoved(const RefPtr<MediaStreamTrack>& aTrack) override;
-  void NotifyAudible() override;
+  void NotifyActive() override;
 
   
   void PrincipalChanged(MediaStreamTrack* aMediaStreamTrack) override;

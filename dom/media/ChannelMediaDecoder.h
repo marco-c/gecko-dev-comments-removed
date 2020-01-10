@@ -59,7 +59,6 @@ class ChannelMediaDecoder
   };
 
  protected:
-  void ShutdownInternal() override;
   void OnPlaybackEvent(MediaPlaybackEvent&& aEvent) override;
   void DurationChanged() override;
   void MetadataLoaded(UniquePtr<MediaInfo> aInfo, UniquePtr<MetadataTags> aTags,
@@ -157,10 +156,6 @@ class ChannelMediaDecoder
   
   
   bool mInitialChannelPrincipalKnown = false;
-
-  
-  
-  RefPtr<GenericPromise> mResourceClosePromise;
 };
 
 }  

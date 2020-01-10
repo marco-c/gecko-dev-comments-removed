@@ -113,26 +113,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   typedef mozilla::MediaDecoderOwner MediaDecoderOwner;
   typedef mozilla::MetadataTags MetadataTags;
 
-  
-  
-  
-  
-  struct OutputMediaStream {
-    OutputMediaStream(RefPtr<DOMMediaStream> aStream, bool aCapturingAudioOnly,
-                      bool aFinishWhenEnded);
-    ~OutputMediaStream();
-
-    RefPtr<DOMMediaStream> mStream;
-    const bool mCapturingAudioOnly;
-    const bool mFinishWhenEnded;
-    
-    
-    nsCOMPtr<nsIURI> mFinishWhenEndedLoadingSrc;
-    
-    
-    RefPtr<DOMMediaStream> mFinishWhenEndedAttrStream;
-  };
-
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(HTMLMediaElement)
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
 
@@ -271,9 +251,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   void DispatchAsyncEvent(const nsAString& aName) final;
 
   
-  void UpdateReadyState() override {
-    mWatchManager.ManualNotify(&HTMLMediaElement::UpdateReadyStateInternal);
-  }
+  void UpdateReadyState() override { UpdateReadyStateInternal(); }
 
   
   nsresult DispatchPendingMediaEvents();
@@ -715,6 +693,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   Document* GetDocument() const override;
 
+  void ConstructMediaTracks(const MediaInfo* aInfo) override;
+
+  void RemoveMediaTracks() override;
+
   already_AddRefed<GMPCrashHelper> CreateGMPCrashHelper() override;
 
   nsISerialEventTarget* MainThreadEventTarget() {
@@ -747,16 +729,36 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   class AudioChannelAgentCallback;
   class ChannelLoader;
   class ErrorSink;
-  class MediaElementTrackSource;
   class MediaLoadListener;
   class MediaStreamRenderer;
   class MediaStreamTrackListener;
   class FirstFrameListener;
   class ShutdownObserver;
+  class StreamCaptureTrackSource;
 
   MediaDecoderOwner::NextFrameStatus NextFrameStatus();
 
   void SetDecoder(MediaDecoder* aDecoder);
+
+  
+  
+  struct OutputMediaStream {
+    OutputMediaStream();
+    ~OutputMediaStream();
+
+    RefPtr<DOMMediaStream> mStream;
+    
+    
+    
+    RefPtr<SharedDummyTrack> mGraphKeepAliveDummyStream;
+    bool mFinishWhenEnded;
+    bool mCapturingAudioOnly;
+    bool mCapturingDecoder;
+    bool mCapturingMediaStream;
+
+    
+    nsTArray<Pair<nsString, RefPtr<MediaStreamTrackSource>>> mTracks;
+  };
 
   void PlayInternal(bool aHandlingUserInput);
 
@@ -856,10 +858,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
-  void GetAllEnabledMediaTracks(nsTArray<RefPtr<MediaTrack>>& aTracks);
-
-  
-
 
 
 
@@ -870,17 +868,14 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
-
-  enum class AddTrackMode { ASYNC, SYNC };
-  void AddOutputTrackSourceToOutputStream(
-      MediaElementTrackSource* aSource, OutputMediaStream& aOutputStream,
-      AddTrackMode aMode = AddTrackMode::ASYNC);
+  void AddCaptureMediaTrackToOutputStream(dom::MediaTrack* aTrack,
+                                          OutputMediaStream& aOutputStream,
+                                          bool aAsyncAddtrack = true);
 
   
 
 
-
-  void UpdateOutputTrackSources();
+  void DiscardFinishWhenEndedOutputStreams();
 
   
 
@@ -894,8 +889,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
   already_AddRefed<DOMMediaStream> CaptureStreamInternal(
-      StreamCaptureBehavior aFinishBehavior,
-      StreamCaptureType aStreamCaptureType, MediaTrackGraph* aGraph);
+      StreamCaptureBehavior aBehavior, StreamCaptureType aType,
+      MediaTrackGraph* aGraph);
 
   
 
@@ -1256,18 +1251,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
-  
-  void ConstructMediaTracks(const MediaInfo* aInfo);
-
-  
-  
-  
-  
-  
-  void RemoveMediaTracks();
-
-  
-  
   void MarkAsTainted();
 
   virtual nsresult AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
@@ -1348,6 +1331,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   RefPtr<MediaStreamRenderer> mMediaStreamRenderer;
 
   
+  bool mSrcStreamTracksAvailable = false;
+
+  
   
   Watchable<bool> mSrcStreamPlaybackEnded = {
       false, "HTMLMediaElement::mSrcStreamPlaybackEnded"};
@@ -1365,12 +1351,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   nsTArray<OutputMediaStream> mOutputStreams;
-
-  
-  
-  
-  nsRefPtrHashtable<nsStringHashKey, MediaElementTrackSource>
-      mOutputTrackSources;
 
   
   
@@ -1563,7 +1543,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
-  Watchable<bool> mPaused = {true, "HTMLMediaElement::mPaused"};
+  Watchable<bool> mPaused;
 
   
   
@@ -1572,14 +1552,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   bool mAllowCasting = false;
   
   bool mIsCasting = false;
-
-  
-  
-  
-  
-  
-  
-  Watchable<RefPtr<SharedDummyTrack>> mTracksCaptured;
 
   
   bool mAudioCaptured = false;
@@ -1682,8 +1654,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   EncryptionInfo mPendingEncryptedInitData;
 
   
-  Watchable<bool> mDownloadSuspendedByCache = {
-      false, "HTMLMediaElement::mDownloadSuspendedByCache"};
+  bool mDownloadSuspendedByCache = false;
 
   
   
@@ -1821,8 +1792,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   bool mIsBlessed = false;
 
   
-  Watchable<bool> mFirstFrameLoaded = {false,
-                                       "HTMLMediaElement::mFirstFrameLoaded"};
+  bool mFirstFrameLoaded = false;
 
   
   
@@ -1836,6 +1806,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   bool mForcedHidden = false;
+
+  
+  
+  bool mMediaTracksConstructed = false;
 
   Visibility mVisibilityState = Visibility::Untracked;
 

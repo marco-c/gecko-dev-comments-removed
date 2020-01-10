@@ -43,12 +43,12 @@ class MediaMemoryInfo;
 class AbstractThread;
 class DOMMediaStream;
 class DecoderBenchmark;
-class ProcessedMediaTrack;
 class FrameStatistics;
 class VideoFrameContainer;
 class MediaFormatReader;
 class MediaDecoderStateMachine;
 struct MediaPlaybackEvent;
+struct SharedDummyTrack;
 
 enum class Visibility : uint8_t;
 
@@ -155,7 +155,7 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   void SetLooping(bool aLooping);
 
   
-  RefPtr<GenericPromise> SetSink(AudioDeviceInfo* aSinkDevice);
+  RefPtr<GenericPromise> SetSink(AudioDeviceInfo* aSink);
 
   bool GetMinimizePreroll() const { return mMinimizePreroll; }
 
@@ -169,20 +169,12 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   
   
+  void AddOutputStream(DOMMediaStream* aStream, SharedDummyTrack* aDummyStream);
   
+  void RemoveOutputStream(DOMMediaStream* aStream);
+
   
-  
-  void SetOutputCaptured(bool aCaptured);
-  
-  
-  
-  
-  
-  void AddOutputTrack(RefPtr<ProcessedMediaTrack> aTrack);
-  
-  void RemoveOutputTrack(const RefPtr<ProcessedMediaTrack>& aTrack);
-  
-  void SetOutputTracksPrincipal(const RefPtr<nsIPrincipal>& aPrincipal);
+  void SetOutputStreamPrincipal(nsIPrincipal* aPrincipal);
 
   
   virtual double GetDuration();
@@ -403,11 +395,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   void SetStateMachineParameters();
 
-  
-  
-  
-  virtual void ShutdownInternal();
-
   bool IsShutdown() const;
 
   
@@ -621,20 +608,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   
   
-  Canonical<RefPtr<AudioDeviceInfo>> mSinkDevice;
-
-  
-  
-  Canonical<bool> mOutputCaptured;
-
-  
-  Canonical<nsTArray<RefPtr<ProcessedMediaTrack>>> mOutputTracks;
-
-  
-  Canonical<PrincipalHandle> mOutputPrincipal;
-
-  
-  
   Maybe<double> mExplicitDuration;
 
   
@@ -665,19 +638,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
     return &mPreservesPitch;
   }
   AbstractCanonical<bool>* CanonicalLooping() { return &mLooping; }
-  AbstractCanonical<RefPtr<AudioDeviceInfo>>* CanonicalSinkDevice() {
-    return &mSinkDevice;
-  }
-  AbstractCanonical<bool>* CanonicalOutputCaptured() {
-    return &mOutputCaptured;
-  }
-  AbstractCanonical<nsTArray<RefPtr<ProcessedMediaTrack>>>*
-  CanonicalOutputTracks() {
-    return &mOutputTracks;
-  }
-  AbstractCanonical<PrincipalHandle>* CanonicalOutputPrincipal() {
-    return &mOutputPrincipal;
-  }
   AbstractCanonical<PlayState>* CanonicalPlayState() { return &mPlayState; }
 
  private:

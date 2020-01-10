@@ -7,6 +7,7 @@
 #ifndef MediaSink_h_
 #define MediaSink_h_
 
+#include "AudioDeviceInfo.h"
 #include "MediaInfo.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
@@ -37,6 +38,23 @@ class MediaSink {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaSink);
   typedef mozilla::TrackInfo::TrackType TrackType;
+
+  struct PlaybackParams {
+    PlaybackParams()
+        : mVolume(1.0), mPlaybackRate(1.0), mPreservesPitch(true) {}
+    double mVolume;
+    double mPlaybackRate;
+    bool mPreservesPitch;
+    RefPtr<AudioDeviceInfo> mSink;
+  };
+
+  
+  
+  virtual const PlaybackParams& GetPlaybackParams() const = 0;
+
+  
+  
+  virtual void SetPlaybackParams(const PlaybackParams& aParams) = 0;
 
   
   
@@ -84,10 +102,6 @@ class MediaSink {
 
   
   
-  virtual double PlaybackRate() const = 0;
-
-  
-  
   
   virtual void Redraw(const VideoInfo& aInfo){};
 
@@ -107,10 +121,6 @@ class MediaSink {
   
   
   virtual bool IsPlaying() const = 0;
-
-  
-  
-  virtual const AudioDeviceInfo* AudioDevice() { return nullptr; }
 
   
   

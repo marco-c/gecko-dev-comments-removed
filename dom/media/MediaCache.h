@@ -217,12 +217,12 @@ class MediaCacheStream : public DecoderDoctorLifeLogger<MediaCacheStream> {
   
   void InitAsClone(MediaCacheStream* aOriginal);
 
-  nsISerialEventTarget* OwnerThread() const;
+  nsIEventTarget* OwnerThread() const;
 
   
   
   
-  RefPtr<GenericPromise> Close();
+  void Close();
   
   bool IsClosed(AutoLock&) const { return mClosed; }
   
