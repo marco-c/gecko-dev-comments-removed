@@ -560,9 +560,6 @@ class ScriptSource {
 
    public:
     using Base::Base;
-
-    explicit Compressed(CompressedData<Unit>&& data)
-        : Base(std::move(data.raw), data.uncompressedLength) {}
   };
 
   
@@ -704,9 +701,6 @@ class ScriptSource {
   template <typename Unit>
   const Unit* units(JSContext* cx, UncompressedSourceCache::AutoHoldEntry& asp,
                     size_t begin, size_t len);
-
-  template <typename Unit>
-  void movePendingCompressedSource();
 
  public:
   
@@ -1008,9 +1002,15 @@ class ScriptSource {
   
   
   
+  
+  
+  
+  
+  
+  
   template <typename Unit>
-  void convertToCompressedSource(SharedImmutableString compressed,
-                                 size_t sourceLength);
+  void triggerConvertToCompressedSource(SharedImmutableString compressed,
+                                        size_t sourceLength);
 
   
   
@@ -1037,18 +1037,18 @@ class ScriptSource {
  private:
   void performTaskWork(SourceCompressionTask* task);
 
-  struct ConvertToCompressedSourceFromTask {
+  struct TriggerConvertToCompressedSourceFromTask {
     ScriptSource* const source_;
     SharedImmutableString& compressed_;
 
-    ConvertToCompressedSourceFromTask(ScriptSource* source,
-                                      SharedImmutableString& compressed)
+    TriggerConvertToCompressedSourceFromTask(ScriptSource* source,
+                                             SharedImmutableString& compressed)
         : source_(source), compressed_(compressed) {}
 
     template <typename Unit>
     void operator()(const Uncompressed<Unit>&) {
-      source_->convertToCompressedSource<Unit>(std::move(compressed_),
-                                               source_->length());
+      source_->triggerConvertToCompressedSource<Unit>(std::move(compressed_),
+                                                      source_->length());
     }
 
     template <typename Unit>
@@ -1076,7 +1076,15 @@ class ScriptSource {
     }
   };
 
-  void convertToCompressedSourceFromTask(SharedImmutableString compressed);
+  template <typename Unit>
+  void convertToCompressedSource(SharedImmutableString compressed,
+                                 size_t uncompressedLength);
+
+  template <typename Unit>
+  void performDelayedConvertToCompressedSource();
+
+  void triggerConvertToCompressedSourceFromTask(
+      SharedImmutableString compressed);
 
  private:
   
