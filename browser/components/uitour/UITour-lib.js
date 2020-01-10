@@ -375,6 +375,14 @@ if (typeof Mozilla == "undefined") {
 
 
 
+  Mozilla.UITour.showProtectionReport = function() {
+    _sendEvent("showProtectionReport");
+  };
+
+  
+
+
+
 
 
 
