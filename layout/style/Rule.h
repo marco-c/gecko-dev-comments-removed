@@ -117,6 +117,10 @@ class Rule : public nsISupports, public nsWrapperCache {
 
   
   
+  void UnlinkDeclarationWrapper(nsWrapperCache& aDecl);
+
+  
+  
   
   
   

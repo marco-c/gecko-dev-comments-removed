@@ -50,6 +50,25 @@ bool Rule::IsKnownLive() const {
       GetComposedDoc()->GetMarkedCCGeneration());
 }
 
+void Rule::UnlinkDeclarationWrapper(nsWrapperCache& aDecl) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool needDrop = PreservingWrapper() || aDecl.PreservingWrapper();
+  SetPreservingWrapper(false);
+  aDecl.SetPreservingWrapper(false);
+  if (needDrop) {
+    DropJSObjects(this);
+  }
+}
+
 NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_BEGIN(Rule)
   return tmp->IsCCLeaf() || tmp->IsKnownLive();
 NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_END

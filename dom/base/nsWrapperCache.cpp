@@ -45,6 +45,8 @@ void nsWrapperCache::SetWrapperJSObject(JSObject* aWrapper) {
 }
 
 void nsWrapperCache::ReleaseWrapper(void* aScriptObjectHolder) {
+  
+  
   if (PreservingWrapper()) {
     SetPreservingWrapper(false);
     cyclecollector::DropJSObjectsImpl(aScriptObjectHolder);

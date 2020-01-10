@@ -105,14 +105,14 @@ NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(CSSStyleRule, css::Rule)
   tmp->mDecls.TraceWrapper(aCallbacks, aClosure);
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
-NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(CSSStyleRule, css::Rule)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(CSSStyleRule)
   
 
   
   
   
-  tmp->mDecls.ReleaseWrapper(static_cast<nsISupports*>(p));
-NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+  tmp->UnlinkDeclarationWrapper(tmp->mDecls);
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END_INHERITED(css::Rule)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(CSSStyleRule, css::Rule)
   
