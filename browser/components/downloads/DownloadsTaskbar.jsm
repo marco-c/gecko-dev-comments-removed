@@ -199,6 +199,12 @@ var DownloadsTaskbar = {
         0,
         0
       );
+    } else if (this._summary.allUnknownSize) {
+      this._taskbarProgress.setProgressState(
+        Ci.nsITaskbarProgress.STATE_INDETERMINATE,
+        0,
+        0
+      );
     } else {
       
       

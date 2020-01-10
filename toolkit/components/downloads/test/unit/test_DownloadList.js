@@ -461,6 +461,14 @@ add_task(async function test_DownloadSummary() {
   await publicList.add(inProgressPublicDownload);
 
   
+  let inProgressSizelessPublicDownload = await promiseNewDownload(
+    httpUrl("interruptible_nosize.txt")
+  );
+  inProgressSizelessPublicDownload.start().catch(() => {});
+  await promiseDownloadStarted(inProgressSizelessPublicDownload);
+  await publicList.add(inProgressSizelessPublicDownload);
+
+  
   let inProgressPrivateDownload = await Downloads.createDownload({
     source: { url: httpUrl("interruptible.txt"), isPrivate: true },
     target: getTempFile(TEST_TARGET_FILE_NAME).path,
@@ -476,47 +484,80 @@ add_task(async function test_DownloadSummary() {
   
   
   Assert.ok(!publicSummary.allHaveStopped);
-  Assert.equal(publicSummary.progressTotalBytes, TEST_DATA_SHORT.length * 2);
-  Assert.equal(publicSummary.progressCurrentBytes, TEST_DATA_SHORT.length);
+  Assert.ok(!publicSummary.allUnknownSize);
+  Assert.equal(publicSummary.progressTotalBytes, TEST_DATA_SHORT.length * 3);
+  Assert.equal(publicSummary.progressCurrentBytes, TEST_DATA_SHORT.length * 2);
 
   Assert.ok(!privateSummary.allHaveStopped);
+  Assert.ok(!privateSummary.allUnknownSize);
   Assert.equal(privateSummary.progressTotalBytes, TEST_DATA_SHORT.length * 2);
   Assert.equal(privateSummary.progressCurrentBytes, TEST_DATA_SHORT.length);
 
   Assert.ok(!combinedSummary.allHaveStopped);
-  Assert.equal(combinedSummary.progressTotalBytes, TEST_DATA_SHORT.length * 4);
+  Assert.ok(!combinedSummary.allUnknownSize);
+  Assert.equal(combinedSummary.progressTotalBytes, TEST_DATA_SHORT.length * 5);
   Assert.equal(
     combinedSummary.progressCurrentBytes,
-    TEST_DATA_SHORT.length * 2
+    TEST_DATA_SHORT.length * 3
   );
 
   await inProgressPublicDownload.cancel();
 
   
-  Assert.ok(publicSummary.allHaveStopped);
-  Assert.equal(publicSummary.progressTotalBytes, 0);
-  Assert.equal(publicSummary.progressCurrentBytes, 0);
+  
+  
+  Assert.ok(!publicSummary.allHaveStopped);
+  Assert.ok(publicSummary.allUnknownSize);
+  Assert.equal(publicSummary.progressTotalBytes, TEST_DATA_SHORT.length);
+  Assert.equal(publicSummary.progressCurrentBytes, TEST_DATA_SHORT.length);
 
   Assert.ok(!privateSummary.allHaveStopped);
+  Assert.ok(!privateSummary.allUnknownSize);
   Assert.equal(privateSummary.progressTotalBytes, TEST_DATA_SHORT.length * 2);
   Assert.equal(privateSummary.progressCurrentBytes, TEST_DATA_SHORT.length);
 
   Assert.ok(!combinedSummary.allHaveStopped);
-  Assert.equal(combinedSummary.progressTotalBytes, TEST_DATA_SHORT.length * 2);
-  Assert.equal(combinedSummary.progressCurrentBytes, TEST_DATA_SHORT.length);
+  Assert.ok(!combinedSummary.allUnknownSize);
+  Assert.equal(combinedSummary.progressTotalBytes, TEST_DATA_SHORT.length * 3);
+  Assert.equal(
+    combinedSummary.progressCurrentBytes,
+    TEST_DATA_SHORT.length * 2
+  );
 
   await inProgressPrivateDownload.cancel();
 
   
+  
+  Assert.ok(!publicSummary.allHaveStopped);
+  Assert.ok(publicSummary.allUnknownSize);
+  Assert.equal(publicSummary.progressTotalBytes, TEST_DATA_SHORT.length);
+  Assert.equal(publicSummary.progressCurrentBytes, TEST_DATA_SHORT.length);
+
+  Assert.ok(privateSummary.allHaveStopped);
+  Assert.ok(privateSummary.allUnknownSize);
+  Assert.equal(privateSummary.progressTotalBytes, 0);
+  Assert.equal(privateSummary.progressCurrentBytes, 0);
+
+  Assert.ok(!combinedSummary.allHaveStopped);
+  Assert.ok(combinedSummary.allUnknownSize);
+  Assert.equal(combinedSummary.progressTotalBytes, TEST_DATA_SHORT.length);
+  Assert.equal(combinedSummary.progressCurrentBytes, TEST_DATA_SHORT.length);
+
+  await inProgressSizelessPublicDownload.cancel();
+
+  
   Assert.ok(publicSummary.allHaveStopped);
+  Assert.ok(publicSummary.allUnknownSize);
   Assert.equal(publicSummary.progressTotalBytes, 0);
   Assert.equal(publicSummary.progressCurrentBytes, 0);
 
   Assert.ok(privateSummary.allHaveStopped);
+  Assert.ok(privateSummary.allUnknownSize);
   Assert.equal(privateSummary.progressTotalBytes, 0);
   Assert.equal(privateSummary.progressCurrentBytes, 0);
 
   Assert.ok(combinedSummary.allHaveStopped);
+  Assert.ok(combinedSummary.allUnknownSize);
   Assert.equal(combinedSummary.progressTotalBytes, 0);
   Assert.equal(combinedSummary.progressCurrentBytes, 0);
 });

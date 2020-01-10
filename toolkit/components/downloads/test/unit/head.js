@@ -549,6 +549,37 @@ function promiseDownloadMidway(aDownload) {
 
 
 
+function promiseDownloadStarted(aDownload) {
+  return new Promise(resolve => {
+    
+    let onchange = function() {
+      if (
+        !aDownload.stopped &&
+        !aDownload.canceled &&
+        aDownload.currentBytes > 0
+      ) {
+        aDownload.onchange = null;
+        resolve();
+      }
+    };
+
+    
+    
+    aDownload.onchange = onchange;
+    onchange();
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
 function promiseDownloadStopped(aDownload) {
   if (!aDownload.stopped) {
     
@@ -822,6 +853,17 @@ add_task(function test_common_initialize() {
         "" + TEST_DATA_SHORT.length * 2,
         false
       );
+      aResponse.write(TEST_DATA_SHORT);
+    },
+    function secondPart(aRequest, aResponse) {
+      aResponse.write(TEST_DATA_SHORT);
+    }
+  );
+
+  registerInterruptibleHandler(
+    "/interruptible_nosize.txt",
+    function firstPart(aRequest, aResponse) {
+      aResponse.setHeader("Content-Type", "text/plain", false);
       aResponse.write(TEST_DATA_SHORT);
     },
     function secondPart(aRequest, aResponse) {
