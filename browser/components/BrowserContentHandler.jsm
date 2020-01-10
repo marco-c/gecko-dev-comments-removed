@@ -220,6 +220,9 @@ function getPostUpdateOverridePage(update, defaultOverridePage) {
 
 
 
+
+
+
 function openBrowserWindow(
   cmdLine,
   triggeringPrincipal,
@@ -308,7 +311,7 @@ function openBrowserWindow(
       win.location = chromeURL;
       win.arguments = args; 
 
-      return;
+      return win;
     }
   }
 
@@ -343,29 +346,31 @@ function openBrowserWindow(
     features += ",private";
   }
 
-  Services.ww.openWindow(null, chromeURL, "_blank", features, args);
+  return Services.ww.openWindow(null, chromeURL, "_blank", features, args);
 }
 
 function openPreferences(cmdLine, extraArgs) {
   openBrowserWindow(cmdLine, gSystemPrincipal, "about:preferences");
 }
 
-function doSearch(searchTerm, cmdLine) {
-  var engine = Services.search.defaultEngine;
+async function doSearch(searchTerm, cmdLine) {
+  
+  
+  
+  
+  
+  let win = openBrowserWindow(cmdLine, gSystemPrincipal, "about:blank");
+  var engine = await Services.search.getDefault();
   var countId = (engine.identifier || "other-" + engine.name) + ".system";
   var count = Services.telemetry.getKeyedHistogramById("SEARCH_COUNTS");
   count.add(countId);
 
   var submission = engine.getSubmission(searchTerm, null, "system");
 
-  
-  
-  openBrowserWindow(
-    cmdLine,
-    gSystemPrincipal,
-    submission.uri.spec,
-    submission.postData
-  );
+  win.gBrowser.selectedBrowser.loadURI(submission.uri.spec, {
+    triggeringPrincipal: gSystemPrincipal,
+    postData: submission.postData,
+  });
 }
 
 function nsBrowserContentHandler() {
