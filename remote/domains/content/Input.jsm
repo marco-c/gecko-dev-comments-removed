@@ -59,4 +59,14 @@ class Input extends ContentProcessDomain {
     await eventPromise;
     this._eventPromises.delete(eventId);
   }
+
+  
+
+
+
+
+
+  doDocShellCommand(command) {
+    this.docShell.doCommand(command);
+  }
 }
