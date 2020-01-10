@@ -170,9 +170,6 @@ RootActor.prototype = {
     documentLoadingMarkers: true,
     
     
-    webExtensionAddonConnect: true,
-    
-    
     
     
     

@@ -56,10 +56,7 @@ class WebExtensionDescriptorFront extends FrontClassWithSpec(
 
 
   async getTarget() {
-    if (
-      this.isWebExtension &&
-      this.client.mainRoot.traits.webExtensionAddonConnect
-    ) {
+    if (this.isWebExtension) {
       
       
       
