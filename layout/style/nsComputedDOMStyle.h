@@ -327,7 +327,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   
   
-  bool NeedsToFlushStyle() const;
+  bool NeedsToFlushStyle(nsCSSPropertyID) const;
   
   
   bool NeedsToFlushLayout(nsCSSPropertyID) const;

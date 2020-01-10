@@ -375,8 +375,6 @@ class RestyleManager {
   
   void ReparentComputedStyleForFirstLine(nsIFrame*);
 
-  bool HasPendingRestyleAncestor(dom::Element* aElement) const;
-
   
 
 
