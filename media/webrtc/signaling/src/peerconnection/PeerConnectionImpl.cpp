@@ -839,7 +839,6 @@ nsresult PeerConnectionImpl::ConfigureJsepSessionCodecs() {
 
 
 
-
 NS_IMETHODIMP
 PeerConnectionImpl::EnsureDataConnection(uint16_t aLocalPort,
                                          uint16_t aNumstreams,
