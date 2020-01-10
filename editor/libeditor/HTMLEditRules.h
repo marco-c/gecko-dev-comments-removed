@@ -120,8 +120,6 @@ class HTMLEditRules : public TextEditRules {
 
   enum RulesEndpoint { kStart, kEnd };
 
-  void InitFields();
-
   
 
 
