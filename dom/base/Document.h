@@ -3409,22 +3409,7 @@ class Document : public nsINode,
   void RegisterPendingLinkUpdate(Link* aLink);
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   void FlushPendingLinkUpdates();
-
-  void FlushPendingLinkUpdatesFromRunnable();
 
 #define DEPRECATED_OPERATION(_op) e##_op,
   enum DeprecatedOperations {
