@@ -16,6 +16,7 @@ use style_traits::{CssWriter, ToCss};
     Copy,
     Debug,
     MallocSizeOf,
+    Parse,
     PartialEq,
     SpecifiedValueInfo,
     ToComputedValue,
@@ -26,9 +27,12 @@ use style_traits::{CssWriter, ToCss};
 #[repr(C, u8)]
 pub enum GenericBorderImageSideWidth<LP, N> {
     
-    LengthPercentage(LP),
+    
+    
     
     Number(N),
+    
+    LengthPercentage(LP),
     
     Auto,
 }
