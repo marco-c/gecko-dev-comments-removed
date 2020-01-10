@@ -1480,11 +1480,12 @@ impl TileCacheInstance {
                 false,
             );
 
-            if let Some(clip_chain_instance) = clip_chain_instance {
-                
-                
-                self.local_clip_rect = clip_chain_instance.pic_clip_rect;
-            }
+            
+            
+            
+            self.local_clip_rect = clip_chain_instance.map_or(PictureRect::zero(), |clip_chain_instance| {
+                clip_chain_instance.pic_clip_rect
+            });
         }
 
         
