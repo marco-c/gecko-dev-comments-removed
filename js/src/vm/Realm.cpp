@@ -117,13 +117,8 @@ bool JSRuntime::createJitRuntime(JSContext* cx) {
 
   if (!CanLikelyAllocateMoreExecutableMemory()) {
     
-    
     if (OnLargeAllocationFailure) {
       OnLargeAllocationFailure();
-    }
-    if (!CanLikelyAllocateMoreExecutableMemory()) {
-      ReportOutOfMemory(cx);
-      return false;
     }
   }
 
@@ -136,12 +131,10 @@ bool JSRuntime::createJitRuntime(JSContext* cx) {
   
   jitRuntime_ = jrt;
 
-  AutoEnterOOMUnsafeRegion noOOM;
   if (!jitRuntime_->initialize(cx)) {
-    
-    
-    
-    noOOM.crash("OOM in createJitRuntime");
+    js_delete(jitRuntime_.ref());
+    jitRuntime_ = nullptr;
+    return false;
   }
 
   return true;

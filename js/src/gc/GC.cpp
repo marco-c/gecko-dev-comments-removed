@@ -5552,6 +5552,10 @@ IncrementalProgress GCRuntime::endSweepingSweepGroup(JSFreeOp* fop,
 
   
   for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
+    if (jit::JitZone* jitZone = zone->jitZone()) {
+      
+      jitZone->execAlloc().purge();
+    }
     AutoLockGC lock(this);
     zone->changeGCState(Zone::Sweep, Zone::Finished);
     zone->updateGCThresholds(*this, invocationKind, lock);
@@ -6357,11 +6361,6 @@ void GCRuntime::endSweepPhase(bool destroyingRuntime) {
 
 
     SweepScriptData(rt);
-
-    
-    if (rt->hasJitRuntime()) {
-      rt->jitRuntime()->execAlloc().purge();
-    }
   }
 
   {
