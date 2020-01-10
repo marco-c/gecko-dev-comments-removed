@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+add_task(function() {
+  const PREFS_LIST = ["installer.pref"];
+
+  Services.prefs.setBoolPref("installer.pref", true);
+
+  startModule(PREFS_LIST);
+
+  verifyReflectedPrefs(PREFS_LIST);
+
+  Services.prefs.setBoolPref("installer.pref", false);
+
+  verifyReflectedPrefs(PREFS_LIST);
+
+  Services.prefs.setBoolPref("installer.pref", true);
+
+  verifyReflectedPrefs(PREFS_LIST);
+});
