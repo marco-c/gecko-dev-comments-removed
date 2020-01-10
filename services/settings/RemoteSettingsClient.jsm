@@ -220,11 +220,11 @@ class RemoteSettingsClient extends EventEmitter {
         
         if (await Utils.hasLocalDump(this.bucketName, this.collectionName)) {
           
-          console.debug("Local DB is empty, load JSON dump");
+          console.debug(`${this.identifier} Local DB is empty, load JSON dump`);
           await RemoteSettingsWorker.importJSONDump(this.bucketName, this.collectionName);
         } else {
           
-          console.debug("Local DB is empty, pull data from server");
+          console.debug(`${this.identifier} Local DB is empty, pull data from server`);
           await this.sync({ loadDump: false });
         }
         
@@ -241,7 +241,7 @@ class RemoteSettingsClient extends EventEmitter {
     const { data } = await kintoCollection.list({ filters, order });
 
     if (verifySignature) {
-      console.debug("Verify signature of local data");
+      console.debug(`${this.identifier} verify signature of local data`);
       const { data: allData } = await kintoCollection.list({ order: "" });
       const localRecords = allData.map(r => kintoCollection.cleanLocalFields(r));
       const timestamp = await kintoCollection.db.getLastModified();
@@ -315,7 +315,7 @@ class RemoteSettingsClient extends EventEmitter {
           const imported = await RemoteSettingsWorker.importJSONDump(this.bucketName, this.collectionName);
           
           if (imported > 0) {
-            console.debug(`${imported} records loaded from JSON dump`);
+            console.debug(`${this.identifier} ${imported} records loaded from JSON dump`);
             ({ data: importedFromDump } = await kintoCollection.list());
           }
           collectionLastModified = await kintoCollection.db.getLastModified();
@@ -332,7 +332,7 @@ class RemoteSettingsClient extends EventEmitter {
         
         
         if (this.verifySignature && ObjectUtils.isEmpty(await kintoCollection.metadata())) {
-          console.debug("Verify signature of local data");
+          console.debug(`${this.identifier} verify signature of local data`);
           const { data: allData } = await kintoCollection.list({ order: "" });
           const localRecords = allData.map(r => kintoCollection.cleanLocalFields(r));
           const metadata = await kintoCollection.pullMetadata(this.httpClient());
@@ -452,6 +452,7 @@ class RemoteSettingsClient extends EventEmitter {
         trigger,
         duration: durationMilliseconds,
       });
+      console.debug(`${this.identifier} sync status is ${reportStatus}`);
     }
   }
 
