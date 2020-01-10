@@ -19,6 +19,7 @@
 
 
 
+
 "use strict";
 
 const kDebuggerPrefs = [
@@ -29,6 +30,7 @@ const kDebuggerPrefs = [
 const DEVTOOLS_ENABLED_PREF = "devtools.enabled";
 
 const DEVTOOLS_POLICY_DISABLED_PREF = "devtools.policy.disabled";
+const PROFILER_POPUP_ENABLED_PREF = "devtools.performance.popup.enabled";
 
 const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -42,6 +44,8 @@ ChromeUtils.defineModuleGetter(this, "CustomizableWidgets",
                                "resource:///modules/CustomizableWidgets.jsm");
 ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
                                "resource://gre/modules/PrivateBrowsingUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "ProfilerMenuButton",
+                               "resource://devtools/client/performance-new/popup/menu-button.jsm");
 
 
 
@@ -182,12 +186,47 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
     });
   }
 
+  if (isProfilerButtonEnabled()) {
+    shortcuts.push(...getProfilerKeyShortcuts());
+  }
+
   return shortcuts;
+});
+
+function getProfilerKeyShortcuts() {
+  return [
+    
+    {
+      id: "profilerStartStop",
+      shortcut: KeyShortcutsBundle.GetStringFromName("profilerStartStop.commandkey"),
+      modifiers: "control,shift",
+    },
+    
+    {
+      id: "profilerCapture",
+      shortcut: KeyShortcutsBundle.GetStringFromName("profilerCapture.commandkey"),
+      modifiers: "control,shift",
+    },
+  ];
+}
+
+
+
+
+
+function isProfilerButtonEnabled() {
+  return Services.prefs.getBoolPref(PROFILER_POPUP_ENABLED_PREF, false);
+}
+
+XPCOMUtils.defineLazyGetter(this, "ProfilerPopupBackground", function() {
+  return ChromeUtils.import(
+    "resource://devtools/client/performance-new/popup/background.jsm");
 });
 
 function DevToolsStartup() {
   this.onEnabledPrefChanged = this.onEnabledPrefChanged.bind(this);
   this.onWindowReady = this.onWindowReady.bind(this);
+  this.toggleProfilerKeyShortcuts = this.toggleProfilerKeyShortcuts.bind(this);
 }
 
 DevToolsStartup.prototype = {
@@ -217,6 +256,12 @@ DevToolsStartup.prototype = {
 
   developerToggleCreated: false,
 
+  
+
+
+
+  profilerRecordingButtonCreated: false,
+
   isDisabledByPolicy: function() {
     return Services.prefs.getBoolPref(DEVTOOLS_POLICY_DISABLED_PREF, false);
   },
@@ -236,10 +281,14 @@ DevToolsStartup.prototype = {
       
       Services.obs.addObserver(this.onWindowReady, "browser-delayed-startup-finished");
 
-      if (AppConstants.MOZ_DEV_EDITION && !this.isDisabledByPolicy()) {
-        
-        
-        this.hookDeveloperToggle();
+      if (!this.isDisabledByPolicy()) {
+        if (AppConstants.MOZ_DEV_EDITION) {
+          
+          
+          this.hookDeveloperToggle();
+        }
+
+        this.hookProfilerRecordingButton();
       }
 
       
@@ -360,6 +409,7 @@ DevToolsStartup.prototype = {
     
     
     this.hookDeveloperToggle();
+    this.hookProfilerRecordingButton();
 
     
     
@@ -453,6 +503,22 @@ DevToolsStartup.prototype = {
     CustomizableWidgets.push(item);
 
     this.developerToggleCreated = true;
+  },
+
+  
+
+
+
+
+
+  hookProfilerRecordingButton() {
+    if (this.profilerRecordingButtonCreated) {
+      return;
+    }
+    this.profilerRecordingButtonCreated = true;
+    if (isProfilerButtonEnabled()) {
+      ProfilerMenuButton.initialize();
+    }
   },
 
   
@@ -579,20 +645,90 @@ DevToolsStartup.prototype = {
     const keyset = doc.createXULElement("keyset");
     keyset.setAttribute("id", "devtoolsKeyset");
 
-    for (const key of KeyShortcuts) {
-      const xulKey = this.createKey(doc, key, () => this.onKey(window, key));
-      keyset.appendChild(xulKey);
-    }
+    this.attachKeys(doc, KeyShortcuts, keyset);
 
     
     
     
     const mainKeyset = doc.getElementById("mainKeyset");
     mainKeyset.parentNode.insertBefore(keyset, mainKeyset);
+
+    
+    
+    Services.prefs.addObserver(PROFILER_POPUP_ENABLED_PREF,
+      this.toggleProfilerKeyShortcuts);
+  },
+
+  
+
+
+  attachKeys(doc, keyShortcuts, keyset = doc.getElementById("devtoolsKeyset")) {
+    const window = doc.defaultView;
+    for (const key of keyShortcuts) {
+      const xulKey = this.createKey(doc, key, () => this.onKey(window, key));
+      keyset.appendChild(xulKey);
+    }
+  },
+
+  
+
+
+  removeKeys(doc, keyShortcuts) {
+    for (const key of keyShortcuts) {
+      const keyElement = doc.getElementById(this.getKeyElementId(key));
+      if (keyElement) {
+        keyElement.remove();
+      }
+    }
+  },
+
+  
+
+
+
+  toggleProfilerKeyShortcuts() {
+    const isEnabled = isProfilerButtonEnabled();
+    const profilerKeyShortcuts = getProfilerKeyShortcuts();
+    for (const { document } of Services.wm.getEnumerator(null)) {
+      const devtoolsKeyset = document.getElementById("devtoolsKeyset");
+      const mainKeyset = document.getElementById("mainKeyset");
+
+      if (!devtoolsKeyset || !mainKeyset) {
+        
+        continue;
+      }
+
+      if (isEnabled) {
+        this.attachKeys(document, profilerKeyShortcuts);
+      } else {
+        this.removeKeys(document, profilerKeyShortcuts);
+      }
+      
+      
+      
+      mainKeyset.parentNode.insertBefore(devtoolsKeyset, mainKeyset);
+    }
+
+    if (!isEnabled) {
+      
+      ProfilerPopupBackground.stopProfiler();
+    }
   },
 
   async onKey(window, key) {
     try {
+      
+      
+      switch (key.id) {
+        case "profilerStartStop": {
+          ProfilerPopupBackground.toggleProfiler();
+          return;
+        }
+        case "profilerCapture": {
+          ProfilerPopupBackground.captureProfile();
+          return;
+        }
+      }
       if (!Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF)) {
         const id = key.toolId || key.id;
         this.openInstallPage("KeyShortcut", id);
@@ -610,13 +746,23 @@ DevToolsStartup.prototype = {
     }
   },
 
+  getKeyElementId({ id, toolId }) {
+    return "key_" + (id || toolId);
+  },
+
   
-  createKey(doc, { id, toolId, shortcut, modifiers: mod }, oncommand) {
+  createKey(doc, key, oncommand) {
+    const { shortcut, modifiers: mod } = key;
     const k = doc.createXULElement("key");
-    k.id = "key_" + (id || toolId);
+    k.id = this.getKeyElementId(key);
 
     if (shortcut.startsWith("VK_")) {
       k.setAttribute("keycode", shortcut);
+      if (shortcut.match(/^VK_\d$/)) {
+        
+        
+        k.setAttribute("event", "keydown");
+      }
     } else {
       k.setAttribute("key", shortcut);
     }
