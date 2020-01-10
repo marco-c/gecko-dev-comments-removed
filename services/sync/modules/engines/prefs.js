@@ -18,6 +18,45 @@ const {CommonUtils} = ChromeUtils.import("resource://services-common/utils.js");
 XPCOMUtils.defineLazyGetter(this, "PREFS_GUID",
                             () => CommonUtils.encodeBase64URL(Services.appinfo.ID));
 
+
+
+
+
+
+
+
+const PREF_SYNC_PREFS_ARBITRARY = "services.sync.prefs.dangerously_allow_arbitrary";
+
+XPCOMUtils.defineLazyPreferenceGetter(this, "ALLOW_ARBITRARY", PREF_SYNC_PREFS_ARBITRARY);
+
+
+
+const PREFS_DOC_URL_TEMPLATE = "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/sync-custom-preferences";
+XPCOMUtils.defineLazyGetter(this, "PREFS_DOC_URL",
+  () => Services.urlFormatter.formatURL(PREFS_DOC_URL_TEMPLATE));
+
+
+
+this.isAllowedPrefName = function(prefName) {
+  if (prefName == PREF_SYNC_PREFS_ARBITRARY) {
+    return false; 
+  }
+  if (ALLOW_ARBITRARY) {
+    
+    return true;
+  }
+  
+  
+  
+  try {
+    Services.prefs.getBoolPref(PREF_SYNC_PREFS_PREFIX + prefName);
+    
+    return true;
+  } catch (_) {
+    return false;
+  }
+};
+
 function PrefRec(collection, id) {
   CryptoWrapper.call(this, collection, id);
 }
@@ -99,15 +138,26 @@ PrefStore.prototype = {
   _getSyncPrefs() {
     let syncPrefs = Services.prefs.getBranch(PREF_SYNC_PREFS_PREFIX)
                                   .getChildList("")
-                                  .filter(pref => !isUnsyncableURLPref(pref));
+                                  .filter(pref => isAllowedPrefName(pref) && !isUnsyncableURLPref(pref));
     
     let controlPrefs = syncPrefs.map(pref => PREF_SYNC_PREFS_PREFIX + pref);
     return controlPrefs.concat(syncPrefs);
   },
 
   _isSynced(pref) {
-    return pref.startsWith(PREF_SYNC_PREFS_PREFIX) ||
-           this._prefs.get(PREF_SYNC_PREFS_PREFIX + pref, false);
+    if (pref.startsWith(PREF_SYNC_PREFS_PREFIX)) {
+      
+      
+      let controlledPref = pref.slice(PREF_SYNC_PREFS_PREFIX.length);
+      return isAllowedPrefName(controlledPref);
+    }
+
+    
+    
+    if (!this._prefs.get(PREF_SYNC_PREFS_PREFIX + pref, false)) {
+      return false;
+    }
+    return isAllowedPrefName(pref);
   },
 
   _getAllPrefs() {
@@ -129,11 +179,43 @@ PrefStore.prototype = {
     
     let prefs = Object.keys(values).sort(a => -a.indexOf(PREF_SYNC_PREFS_PREFIX));
     for (let pref of prefs) {
+      let value = values[pref];
       if (!this._isSynced(pref)) {
+        
+        
+        if (!pref.startsWith(PREF_SYNC_PREFS_PREFIX)) {
+          
+          
+          
+          
+          
+          
+          
+          if (value !== null) { 
+            let controlPref = PREF_SYNC_PREFS_PREFIX + pref;
+            let controlPrefExists;
+            try {
+              Services.prefs.getBoolPref(controlPref);
+              controlPrefExists = true;
+            } catch (ex) {
+              controlPrefExists = false;
+            }
+            if (!controlPrefExists) {
+              
+              
+              
+              let msg = `Not syncing the preference '${pref}' because it has no local ` +
+                `control preference (${PREF_SYNC_PREFS_PREFIX}${pref}) and ` +
+                `the preference ${PREF_SYNC_PREFS_ARBITRARY} isn't true. ` +
+                `See ${PREFS_DOC_URL} for more information`;
+              console.warn(msg);
+              this._log.warn(msg);
+            }
+          }
+        }
         continue;
       }
 
-      let value = values[pref];
       if (typeof value == "string" && UNSYNCABLE_URL_REGEXP.test(value)) {
         this._log.trace(`Skipping incoming unsyncable url for pref: ${pref}`);
         continue;
