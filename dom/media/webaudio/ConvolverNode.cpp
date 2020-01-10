@@ -28,11 +28,8 @@ class ConvolverNodeEngine final : public AudioNodeEngine {
   typedef PlayingRefChangeHandler PlayingRefChanged;
 
  public:
-  ConvolverNodeEngine(AudioNode* aNode, bool aNormalize, uint64_t aWindowID)
-      : AudioNodeEngine(aNode),
-        mWindowID(aWindowID),
-        mUseBackgroundThreads(!aNode->Context()->IsOffline()),
-        mNormalize(aNormalize) {}
+  ConvolverNodeEngine(AudioNode* aNode, bool aNormalize)
+      : AudioNodeEngine(aNode) {}
 
   
   enum class RightConvolverMode {
@@ -87,65 +84,23 @@ class ConvolverNodeEngine final : public AudioNodeEngine {
     Difference
   };
 
-  enum Parameters { SAMPLE_RATE, NORMALIZE };
-  void SetInt32Parameter(uint32_t aIndex, int32_t aParam) override {
-    switch (aIndex) {
-      case NORMALIZE:
-        mNormalize = !!aParam;
-        break;
-      default:
-        NS_ERROR("Bad ConvolverNodeEngine Int32Parameter");
-    }
-  }
-  void SetDoubleParameter(uint32_t aIndex, double aParam) override {
-    switch (aIndex) {
-      case SAMPLE_RATE:
-        mSampleRate = aParam;
-        
-        
-        
-        break;
-      default:
-        NS_ERROR("Bad ConvolverNodeEngine DoubleParameter");
-    }
-  }
-  void SetBuffer(AudioChunk&& aBuffer) override {
-    
-    
-    
-    
-    
-    
-    
-    
-    const size_t MaxFFTSize = 32768;
-
-    
+  void SetReverb(WebCore::Reverb* aReverb,
+                 uint32_t aImpulseChannelCount) override {
     mRemainingLeftOutput = INT32_MIN;
     mRemainingRightOutput = 0;
     mRemainingRightHistory = 0;
 
-    if (aBuffer.IsNull() || !mSampleRate) {
-      mReverb = nullptr;
-      return;
-    }
-
     
     
-    mRightConvolverMode = aBuffer.ChannelCount() == 1
-                              ? RightConvolverMode::Direct
-                              : RightConvolverMode::Always;
-
-    bool allocationFailure = false;
-    mReverb = new WebCore::Reverb(aBuffer, MaxFFTSize, mUseBackgroundThreads,
-                                  mNormalize, mSampleRate, &allocationFailure);
-    if (allocationFailure) {
-      
-      
-      mReverb = nullptr;
-      WebAudioUtils::LogToDeveloperConsole(mWindowID,
-                                           "ConvolverNodeAllocationError");
+    if (aReverb) {
+      mRightConvolverMode = aImpulseChannelCount == 1
+                                ? RightConvolverMode::Direct
+                                : RightConvolverMode::Always;
+    } else {
+      mRightConvolverMode = RightConvolverMode::Always;
     }
+
+    mReverb = aReverb;
   }
 
   void AllocateReverbInput(const AudioBlock& aInput,
@@ -192,7 +147,6 @@ class ConvolverNodeEngine final : public AudioNodeEngine {
   
   AudioBlock mReverbInput;
   nsAutoPtr<WebCore::Reverb> mReverb;
-  uint64_t mWindowID;
   
   
   
@@ -207,10 +161,7 @@ class ConvolverNodeEngine final : public AudioNodeEngine {
   
   
   int32_t mRemainingRightHistory = 0;
-  float mSampleRate = 0.0f;
   RightConvolverMode mRightConvolverMode = RightConvolverMode::Always;
-  bool mUseBackgroundThreads;
-  bool mNormalize;
 };
 
 static void AddScaledLeftToRight(AudioBlock* aBlock, float aScale) {
@@ -385,16 +336,7 @@ ConvolverNode::ConvolverNode(AudioContext* aContext)
     : AudioNode(aContext, 2, ChannelCountMode::Clamped_max,
                 ChannelInterpretation::Speakers),
       mNormalize(true) {
-  uint64_t windowID;
-  if (aContext->GetParentObject()) {
-    windowID = aContext->GetParentObject()->WindowID();
-  } else {
-    
-    
-    windowID = 0;
-  }
-  ConvolverNodeEngine* engine =
-      new ConvolverNodeEngine(this, mNormalize, windowID);
+  ConvolverNodeEngine* engine = new ConvolverNodeEngine(this, mNormalize);
   mStream = AudioNodeStream::Create(
       aContext, engine, AudioNodeStream::NO_STREAM_FLAGS, aContext->Graph());
 }
@@ -487,20 +429,42 @@ void ConvolverNode::SetBuffer(JSContext* aCx, AudioBuffer* aBuffer,
       }
       data.mBuffer = std::move(floatBuffer);
       data.mBufferFormat = AUDIO_FORMAT_FLOAT32;
+    } else if (data.mBufferFormat == AUDIO_FORMAT_SILENCE) {
+      
+      
+      ns->SetReverb(nullptr, 0);
+      mBuffer = aBuffer;
+      return;
     }
-    SendDoubleParameterToStream(ConvolverNodeEngine::SAMPLE_RATE,
-                                aBuffer->SampleRate());
-    ns->SetBuffer(std::move(data));
-  } else {
-    ns->SetBuffer(AudioChunk());
-  }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    const size_t MaxFFTSize = 32768;
+
+    bool allocationFailure = false;
+    nsAutoPtr<WebCore::Reverb> reverb(new WebCore::Reverb(
+        data, MaxFFTSize, !Context()->IsOffline(), mNormalize,
+        aBuffer->SampleRate(), &allocationFailure));
+    if (!allocationFailure) {
+      ns->SetReverb(reverb.forget(), data.ChannelCount());
+    } else {
+      aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+      return;
+    }
+  } else {
+    ns->SetReverb(nullptr, 0);
+  }
   mBuffer = aBuffer;
 }
 
 void ConvolverNode::SetNormalize(bool aNormalize) {
   mNormalize = aNormalize;
-  SendInt32ParameterToStream(ConvolverNodeEngine::NORMALIZE, aNormalize);
 }
 
 }  
