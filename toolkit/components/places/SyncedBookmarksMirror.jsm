@@ -148,8 +148,18 @@ class ProgressTracker {
 
 
 
-  step(name) {
-    this.steps.push({ step: name, at: Date.now() });
+
+
+
+  step(name, took = -1, counts = null) {
+    let info = { step: name, at: Date.now() };
+    if (took > -1) {
+      info.took = took;
+    }
+    if (counts) {
+      info.counts = counts;
+    }
+    this.steps.push(info);
   }
 
   
@@ -161,7 +171,7 @@ class ProgressTracker {
 
 
   stepWithTelemetry(name, took, counts = null) {
-    this.step(name);
+    this.step(name, took, counts);
     this.recordStepTelemetry(name, took, counts);
   }
 
@@ -645,23 +655,25 @@ class SyncedBookmarksMirror {
         )
     );
 
-    return withTiming(
+    let { changeRecords } = await withTiming(
       "Fetching records for local items to upload",
       async () => {
         try {
-          let changeRecords = await this.fetchLocalChangeRecords(signal);
-          return changeRecords;
+          let result = await this.fetchLocalChangeRecords(signal);
+          return result;
         } finally {
           await this.db.execute(`DELETE FROM itemsToUpload`);
         }
       },
-      (time, records) =>
+      (time, result) =>
         this.progress.stepWithItemCount(
           ProgressTracker.STEPS.FETCH_LOCAL_CHANGE_RECORDS,
           time,
-          Object.keys(records).length
+          result.count
         )
     );
+
+    return changeRecords;
   }
 
   merge(
@@ -1070,6 +1082,8 @@ class SyncedBookmarksMirror {
 
 
 
+
+
   async fetchLocalChangeRecords(signal) {
     let changeRecords = {};
     let childRecordIdsByLocalParentId = new Map();
@@ -1299,7 +1313,7 @@ class SyncedBookmarksMirror {
       yieldState
     );
 
-    return changeRecords;
+    return { changeRecords, count: itemRows.length };
   }
 
   
@@ -2446,7 +2460,14 @@ async function updateFrecencies(db, limit) {
 }
 
 function bagToNamedCounts(bag, names) {
-  return names.map(name => ({ name, count: bag.getProperty(name) }));
+  let counts = [];
+  for (let name of names) {
+    let count = bag.getProperty(name);
+    if (count > 0) {
+      counts.push({ name, count });
+    }
+  }
+  return counts;
 }
 
 
