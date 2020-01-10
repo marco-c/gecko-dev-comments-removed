@@ -2344,7 +2344,6 @@ enum FirstCharKind {
 #define T_LP size_t(TokenKind::LeftParen)
 #define T_RP size_t(TokenKind::RightParen)
 #define T_SEMI size_t(TokenKind::Semi)
-#define T_HOOK size_t(TokenKind::Hook)
 #define T_LB size_t(TokenKind::LeftBracket)
 #define T_RB size_t(TokenKind::RightBracket)
 #define T_LC size_t(TokenKind::LeftCurly)
@@ -2359,7 +2358,7 @@ static const uint8_t firstCharKinds[] = {
  _______, _______,   Space, _______,  String, _______,   Ident, _______, _______,  String,
     T_LP,    T_RP, _______, _______, T_COMMA, _______, _______, _______,ZeroDigit,    Dec,
      Dec,     Dec,     Dec,     Dec,     Dec,     Dec,     Dec,     Dec, T_COLON,  T_SEMI,
- _______, _______, _______,  T_HOOK, _______,   Ident,   Ident,   Ident,   Ident,   Ident,
+ _______, _______, _______, _______, _______,   Ident,   Ident,   Ident,   Ident,   Ident,
    Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,
    Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,
    Ident,    T_LB, _______,    T_RB, _______,   Ident,  String,   Ident,   Ident,   Ident,
@@ -2374,7 +2373,6 @@ static const uint8_t firstCharKinds[] = {
 #undef T_LP
 #undef T_RP
 #undef T_SEMI
-#undef T_HOOK
 #undef T_LB
 #undef T_RB
 #undef T_LC
@@ -3143,6 +3141,10 @@ MOZ_MUST_USE bool TokenStreamSpecific<Unit, AnyCharsAccess>::getTokenInternal(
           simpleKind =
               matchCodeUnit('=') ? TokenKind::BitAndAssign : TokenKind::BitAnd;
         }
+        break;
+
+      case '?':
+        simpleKind = matchCodeUnit('?') ? TokenKind::Coalesce : TokenKind::Hook;
         break;
 
       case '!':

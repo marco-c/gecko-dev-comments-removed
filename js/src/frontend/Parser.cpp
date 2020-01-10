@@ -8322,6 +8322,10 @@ static ParseNodeKind BinaryOpTokenKindToParseNodeKind(TokenKind tok) {
                        (size_t(tok) - size_t(TokenKind::BinOpFirst)));
 }
 
+
+
+
+
 static const int PrecedenceTable[] = {
     1,  
     2,  
@@ -8330,27 +8334,28 @@ static const int PrecedenceTable[] = {
     5,  
     6,  
     7,  
-    7,  
-    7,  
-    7,  
     8,  
     8,  
     8,  
     8,  
-    8,  
-    8,  
+    9,  
+    9,  
+    9,  
     9,  
     9,  
     9,  
     10, 
     10, 
+    10, 
     11, 
     11, 
-    11, 
-    12  
+    12, 
+    12, 
+    12, 
+    13  
 };
 
-static const int PRECEDENCE_CLASSES = 12;
+static const int PRECEDENCE_CLASSES = 13;
 
 static int Precedence(ParseNodeKind pnk) {
   
