@@ -70,10 +70,18 @@ class Manifest {
     
     const fileName = generateHash(manifestUrl) + ".json";
     this._path = OS.Path.join(MANIFESTS_DIR, fileName);
-    this._browser = browser;
+    this.browser = browser;
   }
 
-  async initialise() {
+  get browser() {
+    return this._browser;
+  }
+
+  set browser(aBrowser) {
+    this._browser = aBrowser;
+  }
+
+  async initialize() {
     this._store = new JSONFile({ path: this._path, saveDelayMs: 100 });
     await this._store.load();
   }
@@ -155,12 +163,13 @@ class Manifest {
 
 
 var Manifests = {
-  async initialise() {
-    if (this.started) {
-      return this.started;
+  async _initialize() {
+    if (this._readyPromise) {
+      return this._readyPromise;
     }
 
-    this.started = (async () => {
+    
+    this._readyPromise = (async () => {
       
       await OS.File.makeDir(MANIFESTS_DIR, { ignoreExisting: true });
 
@@ -173,13 +182,12 @@ var Manifests = {
       if (!this._store.data.hasOwnProperty("scopes")) {
         this._store.data.scopes = new Map();
       }
-
-      
-      
-      this.manifestObjs = {};
     })();
 
-    return this.started;
+    
+    
+    this.manifestObjs = new Map();
+    return this._readyPromise;
   },
 
   
@@ -204,7 +212,9 @@ var Manifests = {
   
   async getManifest(browser, manifestUrl) {
     
-    await this.initialise();
+    if (!this._readyPromise) {
+      await this._initialize();
+    }
 
     
     
@@ -220,14 +230,19 @@ var Manifests = {
     }
 
     
-    if (manifestUrl in this.manifestObjs) {
-      return this.manifestObjs[manifestUrl];
+    if (this.manifestObjs.has(manifestUrl)) {
+      const manifest = this.manifestObjs.get(manifestUrl);
+      if (manifest.browser !== browser) {
+        manifest.browser = browser;
+      }
+      return manifest;
     }
 
     
-    this.manifestObjs[manifestUrl] = new Manifest(browser, manifestUrl);
-    await this.manifestObjs[manifestUrl].initialise();
-    return this.manifestObjs[manifestUrl];
+    const manifest = new Manifest(browser, manifestUrl);
+    this.manifestObjs.set(manifestUrl, manifest);
+    await manifest.initialize();
+    return manifest;
   },
 };
 
