@@ -7,6 +7,7 @@
 #define nsBaseChannel_h__
 
 #include "mozilla/net/NeckoTargetHolder.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "nsString.h"
 #include "nsAutoPtr.h"
@@ -29,6 +30,12 @@
 #include "nsThreadUtils.h"
 
 class nsIInputStream;
+
+
+
+
+
+
 
 
 
@@ -300,7 +307,7 @@ class nsBaseChannel
   uint32_t mContentDispositionHint;
   nsAutoPtr<nsString> mContentDispositionFilename;
   int64_t mContentLength;
-  uint64_t mChannelId;
+  mozilla::Maybe<uint64_t> mChannelId;
   bool mWasOpened;
 
   friend class mozilla::net::PrivateBrowsingChannel<nsBaseChannel>;
