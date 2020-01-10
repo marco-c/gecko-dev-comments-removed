@@ -280,6 +280,18 @@ static MOZ_ALWAYS_INLINE T NegativeInfinity() {
 
 
 
+template <typename T, int SignBit>
+struct InfinityBits {
+  using Traits = FloatingPoint<T>;
+
+  static_assert(SignBit == 0 || SignBit == 1, "bad sign bit");
+  static constexpr typename Traits::Bits value =
+      (SignBit * Traits::kSignBit) | Traits::kExponentBits;
+};
+
+
+
+
 
 template <typename T, int SignBit, typename FloatingPoint<T>::Bits Significand>
 struct SpecificNaNBits {
