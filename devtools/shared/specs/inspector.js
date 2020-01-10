@@ -69,6 +69,13 @@ const walkerSpec = generateActorSpec({
     "picker-node-canceled": {
       type: "pickerNodeCanceled",
     },
+    
+    
+    
+    
+    "highlighter-ready": {
+      type: "highlighter-ready",
+    },
     "display-change": {
       type: "display-change",
       nodes: Arg(0, "array:domnode"),
