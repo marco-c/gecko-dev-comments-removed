@@ -29,6 +29,7 @@ class ClientOpConstructorArgs;
 class ClientOpenWindowArgs;
 class ClientSource;
 enum class ClientType : uint8_t;
+class PClientManagerChild;
 class WorkerPrivate;
 
 
@@ -73,6 +74,9 @@ class ClientManager final : public ClientThing<ClientManagerChild> {
   
   mozilla::dom::WorkerPrivate* GetWorkerPrivate() const;
 
+  static nsresult ExpectOrForgetFutureClientSource(
+      bool aExpect, const ClientInfo& aClientInfo);
+
  public:
   
   
@@ -92,6 +96,25 @@ class ClientManager final : public ClientThing<ClientManagerChild> {
   static UniquePtr<ClientSource> CreateSourceFromInfo(
       const ClientInfo& aClientInfo, nsISerialEventTarget* aSerialEventTarget);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static nsresult ExpectFutureClientSource(const ClientInfo& aClientInfo);
+
+  
+  static nsresult ForgetFutureClientSource(const ClientInfo& aClientInfo);
+
+  
+  
+  
   
   
   
