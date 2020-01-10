@@ -125,17 +125,14 @@ function forEachThread(iteratee) {
   
   
   
-  const mainThreadPromise = iteratee(threadFront);
-  const workerPromises = listWorkerThreadFronts().map(t => {
-    try {
-      iteratee(t);
-    } catch (e) {
-      
-      
-      console.error(e);
-    }
-  });
-  return Promise.all([mainThreadPromise, ...workerPromises]);
+
+  const promises = [threadFront, ...listWorkerThreadFronts()].map(
+    
+    
+    t => iteratee(t).catch(e => console.log(e))
+  );
+
+  return Promise.all(promises);
 }
 
 function resume(thread: string): Promise<*> {
