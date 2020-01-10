@@ -187,6 +187,13 @@ void CanvasTranslator::RemoveDrawTarget(gfx::ReferencePtr aDrawTarget) {
   gfx::AutoSerializeWithMoz2D serializeWithMoz2D(
       GetReferenceDrawTarget()->GetBackendType());
   mTextureDatas.erase(aDrawTarget);
+
+  
+  
+  
+  
+  MonitorAutoLock lock(mSurfaceDescriptorsMonitor);
+  mSurfaceDescriptors.erase(aDrawTarget);
 }
 
 TextureData* CanvasTranslator::LookupTextureData(
