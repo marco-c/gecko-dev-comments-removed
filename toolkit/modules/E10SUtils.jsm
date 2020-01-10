@@ -150,6 +150,7 @@ function validatedWebRemoteType(
   aPreferredRemoteType,
   aTargetUri,
   aCurrentUri,
+  aResultPrincipal,
   aRemoteSubframes
 ) {
   
@@ -210,7 +211,18 @@ function validatedWebRemoteType(
   
   
   if (aRemoteSubframes) {
-    let targetPrincipal = sm.createContentPrincipal(aTargetUri, {});
+    
+    
+    
+    let originAttributes = {};
+
+    
+    let targetPrincipal;
+    if (aResultPrincipal) {
+      targetPrincipal = sm.principalWithOA(aResultPrincipal, originAttributes);
+    } else {
+      targetPrincipal = sm.createContentPrincipal(aTargetUri, originAttributes);
+    }
 
     
     
@@ -376,7 +388,8 @@ var E10SUtils = {
     aMultiProcess,
     aRemoteSubframes,
     aPreferredRemoteType = DEFAULT_REMOTE_TYPE,
-    aCurrentUri
+    aCurrentUri = null,
+    aResultPrincipal = null
   ) {
     if (!aMultiProcess) {
       return NOT_REMOTE;
@@ -488,7 +501,8 @@ var E10SUtils = {
             aMultiProcess,
             aRemoteSubframes,
             aPreferredRemoteType,
-            aCurrentUri
+            aCurrentUri,
+            aResultPrincipal
           );
         }
 
@@ -496,6 +510,7 @@ var E10SUtils = {
           aPreferredRemoteType,
           aURI,
           aCurrentUri,
+          aResultPrincipal,
           aRemoteSubframes
         );
     }
@@ -537,7 +552,8 @@ var E10SUtils = {
       aMultiProcess,
       aRemoteSubframes,
       aPreferredRemoteType,
-      currentURI
+      currentURI,
+      aPrincipal
     );
   },
 
