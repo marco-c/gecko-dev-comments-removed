@@ -9,8 +9,8 @@
 
 #  include "mozilla/Logging.h"
 #  include "mozilla/Maybe.h"
-#  include "mozilla/Mutex.h"
 #  include "mozilla/Monitor.h"
+#  include "mozilla/Mutex.h"
 #  include "mozilla/RefPtr.h"
 #  include "mozilla/Tuple.h"
 #  include "mozilla/TypeTraits.h"
@@ -37,6 +37,10 @@
 #  endif
 
 namespace mozilla {
+
+namespace dom {
+class Promise;
+}
 
 extern LazyLogModule gMozPromiseLog;
 
@@ -953,6 +957,12 @@ class MozPromise : public MozPromiseBase {
     return p;
   }
 #  endif
+
+  
+  
+  
+  
+  static RefPtr<MozPromise> FromDomPromise(dom::Promise* aDOMPromise);
 
   
   
