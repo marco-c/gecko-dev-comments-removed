@@ -272,6 +272,7 @@ def main(argv):
         
         
         options.exclude += [os.path.join('debug', 'Script-getOffsetsCoverage-02.js')]
+        options.exclude += [os.path.join('debug', 'Script-startColumn.js')]
 
         
         
