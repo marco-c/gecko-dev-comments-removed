@@ -5571,6 +5571,8 @@ nsresult QuotaManager::MaybeRemoveLocalStorageData() {
     return rv;
   }
 
+  InvalidateQuotaCache();
+
   
   
   rv = lsArchiveFile->Remove(false);
