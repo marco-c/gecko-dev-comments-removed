@@ -874,12 +874,12 @@ public class GeckoAppShell {
 
     @WrapForJNI(calledFrom = "gecko")
     private static boolean getHWEncoderCapability() {
-        return HardwareCodecCapabilityUtils.getHWEncoderCapability();
+        return HardwareCodecCapabilityUtils.hasHWVP8(true );
     }
 
     @WrapForJNI(calledFrom = "gecko")
     private static boolean getHWDecoderCapability() {
-        return HardwareCodecCapabilityUtils.getHWDecoderCapability();
+        return HardwareCodecCapabilityUtils.hasHWVP8(false );
     }
 
     static List<ResolveInfo> queryIntentActivities(final Intent intent) {
