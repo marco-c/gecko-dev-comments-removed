@@ -242,18 +242,18 @@ export function addHighlightToTargetSiblings(target: Element, props: Object) {
     
     
     
+    while (
+      nextSibling &&
+      nextElementSibling &&
+      nextSibling.nodeType === 1 &&
+      nextElementSibling.className.includes(tokenType) &&
+      previewExpression.includes(nextElementSibling.innerHTML)
+    ) {
+      
+      nextElementSibling.classList.add("preview-token");
 
-    while (nextSibling && nextElementSibling && nextSibling.nodeType === 1) {
-      if (
-        nextElementSibling.className.includes(tokenType) &&
-        previewExpression.includes(nextElementSibling.innerHTML)
-      ) {
-        
-        nextElementSibling.classList.add("preview-token");
-
-        nextSibling = nextSibling.nextSibling;
-        nextElementSibling = nextElementSibling.nextElementSibling;
-      }
+      nextSibling = nextSibling.nextSibling;
+      nextElementSibling = nextElementSibling.nextElementSibling;
     }
 
     let previousSibling = target.previousSibling;
@@ -262,18 +262,15 @@ export function addHighlightToTargetSiblings(target: Element, props: Object) {
     while (
       previousSibling &&
       previousElementSibling &&
-      previousSibling.nodeType === 1
+      previousSibling.nodeType === 1 &&
+      previousElementSibling.className.includes(tokenType) &&
+      previewExpression.includes(previousElementSibling.innerHTML)
     ) {
-      if (
-        previousElementSibling.className.includes(tokenType) &&
-        previewExpression.includes(previousElementSibling.innerHTML)
-      ) {
-        
-        previousElementSibling.classList.add("preview-token");
+      
+      previousElementSibling.classList.add("preview-token");
 
-        previousSibling = previousSibling.previousSibling;
-        previousElementSibling = previousElementSibling.previousElementSibling;
-      }
+      previousSibling = previousSibling.previousSibling;
+      previousElementSibling = previousElementSibling.previousElementSibling;
     }
   }
 }
