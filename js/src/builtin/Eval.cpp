@@ -43,10 +43,23 @@ static void AssertInnerizedEnvironmentChain(JSContext* cx, JSObject& env) {
 }
 
 static bool IsEvalCacheCandidate(JSScript* script) {
+  if (!script->isDirectEvalInFunction()) {
+    return false;
+  }
+
   
   
-  return script->isDirectEvalInFunction() && !script->hasSingletons() &&
-         !script->hasObjects();
+  if (script->hasSingletons()) {
+    return false;
+  }
+
+  for (JS::GCCellPtr gcThing : script->gcthings()) {
+    if (gcThing.is<JSObject>()) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 

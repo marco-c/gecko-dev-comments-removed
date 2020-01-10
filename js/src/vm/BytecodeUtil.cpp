@@ -2913,12 +2913,14 @@ static bool GenerateLcovInfo(JSContext* cx, JS::Realm* realm,
     
     
     
-    if (!script->hasObjects()) {
-      continue;
-    }
-    auto objects = script->objects();
-    for (JSObject* obj : mozilla::Reversed(objects)) {
+    auto gcthings = script->gcthings();
+    for (JS::GCCellPtr gcThing : mozilla::Reversed(gcthings)) {
+      if (!gcThing.is<JSObject>()) {
+        continue;
+      }
+
       
+      JSObject* obj = &gcThing.as<JSObject>();
       if (!obj->is<JSFunction>()) {
         continue;
       }

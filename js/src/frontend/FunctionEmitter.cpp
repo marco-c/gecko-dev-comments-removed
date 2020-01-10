@@ -220,7 +220,10 @@ bool FunctionEmitter::emitAsmJSModule() {
 
 bool FunctionEmitter::emitFunction() {
   
-  unsigned index = bce_->perScriptData().objectList().add(funbox_);
+  uint32_t index;
+  if (!bce_->perScriptData().gcThingList().append(funbox_, &index)) {
+    return false;
+  }
 
   
 

@@ -6459,29 +6459,30 @@ static bool DebuggerScript_getChildScripts(JSContext* cx, unsigned argc,
   if (!result) {
     return false;
   }
-  if (script->hasObjects()) {
-    
-    
-    
-    
-    RootedFunction fun(cx);
-    RootedScript funScript(cx);
-    RootedObject s(cx);
-    for (const GCPtrObject& obj : script->objects()) {
-      if (obj->is<JSFunction>()) {
-        fun = &obj->as<JSFunction>();
-        
-        if (!IsInterpretedNonSelfHostedFunction(fun)) {
-          continue;
-        }
-        funScript = GetOrCreateFunctionScript(cx, fun);
-        if (!funScript) {
-          return false;
-        }
-        s = dbg->wrapScript(cx, funScript);
-        if (!s || !NewbornArrayPush(cx, result, ObjectValue(*s))) {
-          return false;
-        }
+
+  
+  RootedFunction fun(cx);
+  RootedScript funScript(cx);
+  RootedObject s(cx);
+  for (JS::GCCellPtr gcThing : script->gcthings()) {
+    if (!gcThing.is<JSObject>()) {
+      continue;
+    }
+
+    JSObject* obj = &gcThing.as<JSObject>();
+    if (obj->is<JSFunction>()) {
+      fun = &obj->as<JSFunction>();
+      
+      if (!IsInterpretedNonSelfHostedFunction(fun)) {
+        continue;
+      }
+      funScript = GetOrCreateFunctionScript(cx, fun);
+      if (!funScript) {
+        return false;
+      }
+      s = dbg->wrapScript(cx, funScript);
+      if (!s || !NewbornArrayPush(cx, result, ObjectValue(*s))) {
+        return false;
       }
     }
   }

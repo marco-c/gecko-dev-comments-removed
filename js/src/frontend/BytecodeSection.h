@@ -8,6 +8,7 @@
 #define frontend_BytecodeSection_h
 
 #include "mozilla/Attributes.h"  
+#include "mozilla/Maybe.h"       
 #include "mozilla/Span.h"        
 
 #include <stddef.h>  
@@ -37,37 +38,45 @@ namespace frontend {
 
 class ObjectBox;
 
-class CGBigIntList {
-  JS::Rooted<BigIntVector> vector;
+struct MOZ_STACK_CLASS GCThingList {
+  JS::RootedVector<StackGCCellPtr> vector;
 
- public:
-  explicit CGBigIntList(JSContext* cx) : vector(cx, BigIntVector(cx)) {}
-  MOZ_MUST_USE bool append(js::BigInt* bi) { return vector.append(bi); }
-  size_t length() const { return vector.length(); }
-  void finish(mozilla::Span<GCPtrBigInt> array);
-};
-
-struct CGObjectList {
   
-  uint32_t length;
+  ObjectBox* lastbox = nullptr;
+
   
-  ObjectBox* lastbox;
+  mozilla::Maybe<uint32_t> firstScopeIndex;
 
-  CGObjectList() : length(0), lastbox(nullptr) {}
+  explicit GCThingList(JSContext* cx) : vector(cx) {}
 
-  unsigned add(ObjectBox* objbox);
-  void finish(mozilla::Span<GCPtrObject> array);
-  void finishInnerFunctions();
-};
+  MOZ_MUST_USE bool append(Scope* scope, uint32_t* index) {
+    *index = vector.length();
+    if (!vector.append(JS::GCCellPtr(scope))) {
+      return false;
+    }
+    if (!firstScopeIndex) {
+      firstScopeIndex.emplace(*index);
+    }
+    return true;
+  }
+  MOZ_MUST_USE bool append(BigInt* bi, uint32_t* index) {
+    *index = vector.length();
+    return vector.append(JS::GCCellPtr(bi));
+  }
+  MOZ_MUST_USE bool append(ObjectBox* obj, uint32_t* index);
 
-struct MOZ_STACK_CLASS CGScopeList {
-  JS::Rooted<GCVector<Scope*>> vector;
-
-  explicit CGScopeList(JSContext* cx) : vector(cx, GCVector<Scope*>(cx)) {}
-
-  bool append(Scope* scope) { return vector.append(scope); }
   uint32_t length() const { return vector.length(); }
-  void finish(mozilla::Span<GCPtrScope> array);
+  void finish(mozilla::Span<JS::GCCellPtr> array);
+  void finishInnerFunctions();
+
+  Scope* getScope(size_t index) const {
+    return &vector[index].get().get().as<Scope>();
+  }
+
+  Scope* firstScope() const {
+    MOZ_ASSERT(firstScopeIndex.isSome());
+    return getScope(*firstScopeIndex);
+  }
 };
 
 struct CGTryNoteList {
@@ -325,35 +334,15 @@ class PerScriptData {
 
   MOZ_MUST_USE bool init(JSContext* cx);
 
-  
-
-  CGScopeList& scopeList() { return scopeList_; }
-  const CGScopeList& scopeList() const { return scopeList_; }
-
-  
-
-  CGBigIntList& bigIntList() { return bigIntList_; }
-  const CGBigIntList& bigIntList() const { return bigIntList_; }
-
-  CGObjectList& objectList() { return objectList_; }
-  const CGObjectList& objectList() const { return objectList_; }
+  GCThingList& gcThingList() { return gcThingList_; }
+  const GCThingList& gcThingList() const { return gcThingList_; }
 
   PooledMapPtr<AtomIndexMap>& atomIndices() { return atomIndices_; }
   const PooledMapPtr<AtomIndexMap>& atomIndices() const { return atomIndices_; }
 
  private:
   
-
-  
-  CGScopeList scopeList_;
-
-  
-
-  
-  CGBigIntList bigIntList_;
-
-  
-  CGObjectList objectList_;
+  GCThingList gcThingList_;
 
   
   PooledMapPtr<AtomIndexMap> atomIndices_;

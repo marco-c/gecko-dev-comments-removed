@@ -552,6 +552,14 @@ void js::TraceManuallyBarrieredGenericPointerEdge(JSTracer* trc, Cell** thingp,
   }
 }
 
+void StackGCCellPtr::trace(JSTracer* trc) {
+  Cell* thing = ptr_.asCell();
+  TraceGenericPointerRoot(trc, &thing, "stack-gc-cell-ptr");
+  if (thing != ptr_.asCell()) {
+    ptr_ = JS::GCCellPtr(thing, ptr_.kind());
+  }
+}
+
 
 
 
