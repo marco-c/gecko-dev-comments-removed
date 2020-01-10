@@ -7,7 +7,7 @@
 
 
 add_task(async function() {
-  const { client } = await setupForURL(toDataURL(""));
+  const { client } = await setup();
 
   const firstContext = await testRuntimeEnable(client);
   const contextId = firstContext.id;
