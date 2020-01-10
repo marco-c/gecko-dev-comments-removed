@@ -20,10 +20,6 @@
 
   
   window.HTTP_COOKIE = "cookie_via_http";
-
-  
-  if (window.location.hostname != HOST)
-    window.location.hostname = HOST;
 })();
 
 
@@ -120,27 +116,44 @@ window.SameSiteStatus = {
   STRICT: "strict"
 };
 
-
-
-function resetSameSiteCookies(origin, value) {
-  return credFetch(origin + "/cookies/resources/dropSameSite.py")
-    .then(_ => {
-      if (origin == self.origin) {
-        assert_dom_cookie("samesite_strict", value, false);
-        assert_dom_cookie("samesite_lax", value, false);
-        assert_dom_cookie("samesite_none", value, false);
+const wait_for_message = (type, origin) => {
+  return new Promise((resolve, reject) => {
+    window.addEventListener('message', e => {
+      if (e.origin != origin) {
+        reject("Message from unexpected origin in wait_for_message:" + e.origin);
+        return;
       }
-    })
-    .then(_ => {
-      return credFetch(origin + "/cookies/resources/setSameSite.py?" + value)
-        .then(_ => {
-          if (origin == self.origin) {
-            assert_dom_cookie("samesite_strict", value, true);
-            assert_dom_cookie("samesite_lax", value, true);
-            assert_dom_cookie("samesite_none", value, true);
-          }
-        })
-    })
+
+      if (e.data.type && e.data.type === type)
+        resolve(e);
+    }, { once: true });
+  });
+};
+
+
+
+async function resetSameSiteCookies(origin, value) {
+  let w = window.open(origin + "/cookies/samesite/resources/puppet.html");
+  try {
+    await wait_for_message("READY", origin);
+    w.postMessage({type: "drop", useOwnOrigin: true}, "*");
+    await wait_for_message("drop-complete", origin);
+    if (origin == self.origin) {
+      assert_dom_cookie("samesite_strict", value, false);
+      assert_dom_cookie("samesite_lax", value, false);
+      assert_dom_cookie("samesite_none", value, false);
+    }
+
+    w.postMessage({type: "set", value: value, useOwnOrigin: true}, "*");
+    await wait_for_message("set-complete", origin);
+    if (origin == self.origin) {
+      assert_dom_cookie("samesite_strict", value, true);
+      assert_dom_cookie("samesite_lax", value, true);
+      assert_dom_cookie("samesite_none", value, true);
+    }
+  } finally {
+    w.close();
+  }
 }
 
 
