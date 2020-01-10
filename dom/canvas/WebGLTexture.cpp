@@ -775,6 +775,10 @@ void WebGLTexture::GenerateMipmap() {
     return;
   }
 
+  if (usage->IsRenderable() && !usage->IsExplicitlyRenderable()) {
+    mContext->WarnIfImplicit(usage->GetExtensionID());
+  }
+
   
 
   gl::GLContext* gl = mContext->gl;

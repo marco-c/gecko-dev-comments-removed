@@ -1694,13 +1694,18 @@ class WebGLContext : public nsICanvasRenderingContextInternal,
 
   
   WebGLExtensionBase* EnableSupportedExtension(dom::CallerType callerType,
-                                               WebGLExtensionID ext);
+                                               WebGLExtensionID ext,
+                                               bool explict = true);
 
  public:
   
   bool IsExtensionEnabled(const WebGLExtensionID ext) const {
     return mExtensions[ext];
   }
+
+  bool IsExtensionExplicit(const WebGLExtensionID ext) const;
+
+  void WarnIfImplicit(const WebGLExtensionID ext);
 
  protected:
   
