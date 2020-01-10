@@ -29,6 +29,13 @@ const {
   accessibility: {
     AUDIT_TYPE,
     ISSUE_TYPE: {
+      [AUDIT_TYPE.KEYBOARD]: {
+        FOCUSABLE_NO_SEMANTICS,
+        FOCUSABLE_POSITIVE_TABINDEX,
+        INTERACTIVE_NO_ACTION,
+        INTERACTIVE_NOT_FOCUSABLE,
+        NO_FOCUS_VISIBLE,
+      },
       [AUDIT_TYPE.TEXT_LABEL]: {
         AREA_NO_NAME_FROM_ALT,
         DIALOG_NO_NAME,
@@ -420,7 +427,11 @@ class Audit {
 
     
     
-    this.reports = [new ContrastRatio(this), new TextLabel(this)];
+    this.reports = {
+      [AUDIT_TYPE.CONTRAST]: new ContrastRatio(this),
+      [AUDIT_TYPE.KEYBOARD]: new Keyboard(this),
+      [AUDIT_TYPE.TEXT_LABEL]: new TextLabel(this),
+    };
   }
 
   get prefix() {
@@ -442,7 +453,7 @@ class Audit {
       prefix: this.prefix,
     });
 
-    this.reports.forEach(report => report.buildMarkup(audit));
+    Object.values(this.reports).forEach(report => report.buildMarkup(audit));
   }
 
   update(audit = {}) {
@@ -450,7 +461,7 @@ class Audit {
     el.setAttribute("hidden", true);
 
     let updated = false;
-    this.reports.forEach(report => {
+    Object.values(this.reports).forEach(report => {
       if (report.update(audit)) {
         updated = true;
       }
@@ -471,7 +482,7 @@ class Audit {
 
   destroy() {
     this.infobar = null;
-    this.reports.forEach(report => report.destroy());
+    Object.values(this.reports).forEach(report => report.destroy());
     this.reports = null;
   }
 }
@@ -663,6 +674,70 @@ class ContrastRatio extends AuditReport {
 
 
 
+class Keyboard extends AuditReport {
+  
+
+
+  static get ISSUE_TO_INFOBAR_LABEL_MAP() {
+    return {
+      [FOCUSABLE_NO_SEMANTICS]: "accessibility.keyboard.issue.semantics",
+      [FOCUSABLE_POSITIVE_TABINDEX]: "accessibility.keyboard.issue.tabindex",
+      [INTERACTIVE_NO_ACTION]: "accessibility.keyboard.issue.action",
+      [INTERACTIVE_NOT_FOCUSABLE]: "accessibility.keyboard.issue.focusable",
+      [NO_FOCUS_VISIBLE]: "accessibility.keyboard.issue.focus.visible",
+    };
+  }
+
+  buildMarkup(root) {
+    createNode(this.win, {
+      nodeType: "span",
+      parent: root,
+      attributes: {
+        class: "audit",
+        id: "keyboard",
+      },
+      prefix: this.prefix,
+    });
+  }
+
+  
+
+
+
+
+
+
+
+  update(audit) {
+    const el = this.getElement("keyboard");
+    el.setAttribute("hidden", true);
+    Object.values(SCORES).forEach(className => el.classList.remove(className));
+
+    if (!audit) {
+      return false;
+    }
+
+    const keyboardAudit = audit[AUDIT_TYPE.KEYBOARD];
+    if (!keyboardAudit) {
+      return false;
+    }
+
+    const { issue, score } = keyboardAudit;
+    this.setTextContent(
+      el,
+      L10N.getStr(Keyboard.ISSUE_TO_INFOBAR_LABEL_MAP[issue])
+    );
+    el.classList.add(score);
+    el.removeAttribute("hidden");
+
+    return true;
+  }
+}
+
+
+
+
+
 class TextLabel extends AuditReport {
   
 
@@ -697,7 +772,7 @@ class TextLabel extends AuditReport {
       nodeType: "span",
       parent: root,
       attributes: {
-        class: "text-label",
+        class: "audit",
         id: "text-label",
       },
       prefix: this.prefix,
