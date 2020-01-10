@@ -4300,7 +4300,7 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
 
 
 
-  WeakMapColors markedWeakMaps;
+  WeakMapSet markedWeakMaps;
 
   
 
