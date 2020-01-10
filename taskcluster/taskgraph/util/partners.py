@@ -327,7 +327,7 @@ def get_partner_config_by_kind(config, kind):
     else:
         return {}
     
-    if isinstance(partner_subset, (list, tuple)):
+    if partner_subset:
         
         for partner in kind_config.keys():
             if partner not in partner_subset:
