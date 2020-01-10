@@ -538,7 +538,7 @@ class AudioCallbackDriver : public GraphDriver,
   
 
 
-  bool mNeedsPanning;
+  Atomic<bool> mNeedsPanning;
 #endif
 };
 
