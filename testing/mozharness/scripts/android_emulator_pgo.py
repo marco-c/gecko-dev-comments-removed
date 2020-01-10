@@ -278,12 +278,28 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin,
                        EXIT_STATUS_DICT[TBPL_RETRY])
 
         
+        
+        
+        
+        merge_cmd = [
+            '/builds/worker/workspace/build/clang/bin/llvm-profdata',
+            'merge',
+            '/builds/worker/workspace/default.profraw',
+            '-o',
+            '/builds/worker/workspace/merged.profraw',
+        ]
+        rc = subprocess.call(merge_cmd)
+        if rc != 0:
+            self.fatal('INFRA-ERROR: Failed to merge profile data. Corrupt profile?',
+                       EXIT_STATUS_DICT[TBPL_RETRY])
+
+        
         tar_cmd = [
             'tar',
             '-acvf',
             '/builds/worker/artifacts/profdata.tar.xz',
             '-C', '/builds/worker/workspace',
-            'default.profraw',
+            'merged.profraw',
             'en-US.log',
         ]
         subprocess.check_call(tar_cmd)
