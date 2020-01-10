@@ -16,8 +16,6 @@ ChromeUtils.defineModuleGetter(this, "Weave",
 
 const MIN_STATUS_ANIMATION_DURATION = 1600;
 
-const FXA_NO_AVATAR_ZEROS = "00000000000000000000000000000000";
-
 var gSync = {
   _initialized: false,
   
@@ -327,11 +325,7 @@ var gSync = {
       stateValue = "unverified";
     } else if (state.status === UIState.STATUS_SIGNED_IN) {
       stateValue = "signedin";
-      
-      
-      
-      
-      if (state.avatarURL && !state.avatarURL.includes(FXA_NO_AVATAR_ZEROS)) {
+      if (state.avatarURL && !state.avatarIsDefault) {
         
         const bgImage = `url("${state.avatarURL}")`;
         let img = new Image();
@@ -373,7 +367,7 @@ var gSync = {
   emitFxaToolbarTelemetry(type, panel) {
     if (UIState.isReady() && panel) {
       const state = UIState.get();
-      const hasAvatar = state.avatarURL && !state.avatarURL.includes(FXA_NO_AVATAR_ZEROS);
+      const hasAvatar = state.avatarURL && !state.avatarIsDefault;
       let extraOptions = {"fxa_status": state.status, "fxa_avatar": hasAvatar ? "true" : "false"};
 
       
@@ -430,21 +424,6 @@ var gSync = {
     this.appMenuLabel.setAttribute("label", state.displayName || state.email);
     this.appMenuLabel.classList.add("subviewbutton-nav");
     this.appMenuStatus.removeAttribute("tooltiptext");
-
-    if (state.avatarURL) {
-      let bgImage = "url(\"" + state.avatarURL + "\")";
-      this.appMenuAvatar.style.listStyleImage = bgImage;
-
-      let img = new Image();
-      img.onerror = () => {
-        
-        
-        if (this.appMenuAvatar.style.listStyleImage === bgImage) {
-          this.appMenuAvatar.style.removeProperty("list-style-image");
-        }
-      };
-      img.src = state.avatarURL;
-    }
   },
 
   updateState(state) {
