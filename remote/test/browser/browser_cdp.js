@@ -4,28 +4,9 @@
 "use strict";
 
 
-
-const TEST_DOC = toDataURL("default-test-page");
-
-add_task(async function testCDP() {
-  
-  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_DOC);
-
-  
-  const CDP = await getCDP();
-
-  
-  const client = await CDP({
-    target(list) {
-      
-      return list.find(target => {
-        return target.url == TEST_DOC;
-      });
-    },
-  });
-  ok(true, "CDP client has been instantiated");
-
+add_task(async function testCDP(client) {
   const { Browser, Log, Page } = client;
+
   ok("Browser" in client, "Browser domain is available");
   ok("Log" in client, "Log domain is available");
   ok("Page" in client, "Page domain is available");
@@ -75,9 +56,4 @@ add_task(async function testCDP() {
 
   await navigatedWithinDocument;
   ok(true, "`Page.navigatedWithinDocument` fired");
-
-  await client.close();
-  ok(true, "The client is closed");
-
-  BrowserTestUtils.removeTab(tab);
 });

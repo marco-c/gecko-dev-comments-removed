@@ -7,9 +7,7 @@
 
 const TEST_URL = toDataURL("default-test-page");
 
-add_task(async function() {
-  const CDP = await getCDP();
-
+add_task(async function(_, CDP) {
   
   
   

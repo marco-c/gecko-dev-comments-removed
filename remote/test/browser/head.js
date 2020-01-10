@@ -14,14 +14,43 @@ const { RemoteAgentError } = ChromeUtils.import(
 
 
 
-const original_add_task = add_task.bind(this);
-this.add_task = function(test) {
-  original_add_task(async function() {
+const add_plain_task = add_task.bind(this);
+this.add_task = function(taskFn, opts = {}) {
+  const { createTab = true } = opts;
+
+  add_plain_task(async function() {
     info("Start the CDP server");
     await RemoteAgent.listen(Services.io.newURI("http://localhost:9222"));
 
     try {
-      await test();
+      const CDP = await getCDP();
+
+      
+      if (createTab) {
+        const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
+        const browsingContextId = tab.linkedBrowser.browsingContext.id;
+
+        const client = await CDP({
+          target(list) {
+            return list.find(target => target.id === browsingContextId);
+          },
+        });
+        info("CDP client instantiated");
+
+        await taskFn(client, CDP, tab);
+
+        
+        
+        
+        await TestUtils.waitForTick();
+        BrowserTestUtils.removeTab(tab);
+
+        await client.close();
+        info("CDP client closed");
+      } else {
+        const client = await CDP({});
+        await taskFn(client, CDP);
+      }
     } catch (e) {
       
       
@@ -33,6 +62,11 @@ this.add_task = function(test) {
     } finally {
       info("Stop the CDP server");
       await RemoteAgent.close();
+
+      
+      while (gBrowser.tabs.length > 1) {
+        gBrowser.removeCurrentTab();
+      }
     }
   });
 };
@@ -108,35 +142,6 @@ function getTargets(CDP) {
 }
 
 
-
-
-
-async function setup() {
-  return setupForURL(toDataURL(""));
-}
-
-
-
-
-
-
-async function setupForURL(url) {
-  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
-  is(gBrowser.selectedTab, tab, "Selected tab is the target tab");
-
-  const CDP = await getCDP();
-  const client = await CDP({
-    target(list) {
-      
-      return list.find(target => target.url == url);
-    },
-  });
-  info("CDP client instantiated");
-
-  return { client, tab };
-}
-
-
 function toDataURL(src, doctype = "html") {
   let doc, mime;
   switch (doctype) {
@@ -154,6 +159,17 @@ function toDataURL(src, doctype = "html") {
 
 
 
+async function loadURL(url) {
+  const browser = gBrowser.selectedTab.linkedBrowser;
+  const loaded = BrowserTestUtils.browserLoaded(browser, false, url);
+
+  BrowserTestUtils.loadURI(browser, url);
+  await loaded;
+}
+
+
+
+
 function getContentProperty(prop) {
   info(`Retrieve ${prop} on the content window`);
   return ContentTask.spawn(
@@ -161,16 +177,4 @@ function getContentProperty(prop) {
     prop,
     _prop => content[_prop]
   );
-}
-
-
-
-
-async function teardown(client) {
-  await client.close();
-  ok(true, "The client is closed");
-  while (gBrowser.tabs.length > 1) {
-    gBrowser.removeCurrentTab();
-  }
-  await RemoteAgent.close();
 }

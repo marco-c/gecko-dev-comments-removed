@@ -6,9 +6,7 @@
 
 
 
-add_task(async function() {
-  const { client } = await setup();
-
+add_task(async function(client) {
   const firstContext = await testRuntimeEnable(client);
   const contextId = firstContext.id;
   await testObjectReferences(client, contextId);
@@ -16,11 +14,6 @@ add_task(async function() {
   await testReturnByValue(client, contextId);
   await testAwaitPromise(client, contextId);
   await testObjectId(client, contextId);
-
-  await client.close();
-  ok(true, "The client is closed");
-
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 async function testRuntimeEnable({ Runtime }) {
