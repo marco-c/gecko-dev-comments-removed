@@ -246,8 +246,9 @@ class ObjectInspectorItem extends Component<Props> {
         
         
         if (
-          Utils.selection.documentHasSelection() &&
-          !(e.target && e.target.matches && e.target.matches(".arrow"))
+          e.target &&
+          Utils.selection.documentHasSelection(e.target.ownerDocument) &&
+          !(e.target.matches && e.target.matches(".arrow"))
         ) {
           e.stopPropagation();
         }
@@ -283,7 +284,9 @@ class ObjectInspectorItem extends Component<Props> {
               event.stopPropagation();
 
               
-              if (Utils.selection.documentHasSelection()) {
+              if (
+                Utils.selection.documentHasSelection(event.target.ownerDocument)
+              ) {
                 return;
               }
 
