@@ -634,6 +634,9 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
   bool reflowNext = false;
 
   while (child) {
+    const bool isMeasuringFeasibleContentBSize =
+        aUnboundedLastColumn && columnCount == aConfig.mBalanceColCount - 1;
+
     
     
     
@@ -644,12 +647,11 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
     
     
     
-    bool skipIncremental = !aReflowInput.ShouldReflowAllKids() &&
-                           !NS_SUBTREE_DIRTY(child) &&
-                           child->GetNextSibling() &&
-                           !(aUnboundedLastColumn &&
-                             columnCount == aConfig.mBalanceColCount - 1) &&
-                           !NS_SUBTREE_DIRTY(child->GetNextSibling());
+    bool skipIncremental =
+        !aReflowInput.ShouldReflowAllKids() && !NS_SUBTREE_DIRTY(child) &&
+        child->GetNextSibling() && !isMeasuringFeasibleContentBSize &&
+        !NS_SUBTREE_DIRTY(child->GetNextSibling());
+
     
     
     
@@ -721,7 +723,7 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
                      ToString(aStatus).c_str());
     } else {
       LogicalSize availSize(wm, aConfig.mColISize, aConfig.mColMaxBSize);
-      if (aUnboundedLastColumn && columnCount == aConfig.mBalanceColCount - 1) {
+      if (isMeasuringFeasibleContentBSize) {
         availSize.BSize(wm) = GetAvailableContentBSize(aReflowInput);
 
         COLUMN_SET_LOG(
