@@ -255,6 +255,31 @@ class RemoteSettingsClient extends EventEmitter {
   
 
 
+
+
+
+
+  async getLastModified() {
+    let timestamp = -1;
+
+    try {
+      const collection = await this.openCollection();
+      timestamp = await collection.db.getLastModified();
+    } catch (err) {
+      console.warn(
+        `Error retrieving the getLastModified timestamp from ${
+          this.identifier
+        } RemoteSettingClient`,
+        err
+      );
+    }
+
+    return timestamp;
+  }
+
+  
+
+
   async openCollection() {
     const options = {
       localFields: this.localFields,

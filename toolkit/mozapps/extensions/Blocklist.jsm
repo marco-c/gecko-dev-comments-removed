@@ -170,6 +170,14 @@ const BlocklistTelemetry = {
 
 
 
+  recordUseXML() {
+    Services.telemetry.scalarSet("blocklist.useXML", Blocklist.useXML);
+  },
+
+  
+
+
+
 
 
 
@@ -188,6 +196,43 @@ const BlocklistTelemetry = {
     } else {
       Services.telemetry.scalarSet(
         "blocklist.lastModified_xml",
+        "Missing Date"
+      );
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  async recordRSBlocklistLastModified(blocklistType, remoteSettingsClient) {
+    
+    
+    
+    if (!remoteSettingsClient) {
+      return;
+    }
+
+    let lastModified = await remoteSettingsClient.getLastModified();
+
+    if (lastModified > 0) {
+      
+      
+      lastModified = new Date(lastModified).toUTCString();
+      Services.telemetry.scalarSet(
+        `blocklist.lastModified_rs_${blocklistType}`,
+        lastModified
+      );
+    } else {
+      Services.telemetry.scalarSet(
+        `blocklist.lastModified_rs_${blocklistType}`,
         "Missing Date"
       );
     }
@@ -223,6 +268,8 @@ const BlocklistTelemetry = {
     );
   },
 };
+
+this.BlocklistTelemetry = BlocklistTelemetry;
 
 const Utils = {
   
@@ -693,6 +740,8 @@ this.PluginBlocklistRS = {
       }
       Utils.ensureVersionRangeIsSane(entry);
     });
+
+    BlocklistTelemetry.recordRSBlocklistLastModified("plugins", this._client);
   },
 
   async _filterItem(entry) {
@@ -1128,6 +1177,8 @@ this.ExtensionBlocklistRS = {
       }
       Utils.ensureVersionRangeIsSane(entry);
     });
+
+    BlocklistTelemetry.recordRSBlocklistLastModified("addons", this._client);
   },
 
   async _filterItem(entry) {
@@ -3126,6 +3177,7 @@ let Blocklist = {
         this._impl.forceUpdate();
       }
     }
+    BlocklistTelemetry.recordUseXML();
   },
 
   shutdown() {
