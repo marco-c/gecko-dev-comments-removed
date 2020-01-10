@@ -1172,16 +1172,8 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult WillInsertText(
-      EditSubAction aEditSubAction, bool* aCancel, bool* aHandled,
-      const nsAString* inString, nsAString* outString, int32_t aMaxLength);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE virtual EditActionResult HandleInsertText(
+      EditSubAction aEditSubAction, const nsAString& aInsertionString) final;
 
   
 

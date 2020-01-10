@@ -214,8 +214,8 @@ class TextEditor : public EditorBase,
 
 
 
-  nsresult InsertTextAsAction(const nsAString& aStringToInsert,
-                              nsIPrincipal* aPrincipal = nullptr);
+  MOZ_CAN_RUN_SCRIPT nsresult InsertTextAsAction(
+      const nsAString& aStringToInsert, nsIPrincipal* aPrincipal = nullptr);
 
   
 
@@ -423,7 +423,8 @@ class TextEditor : public EditorBase,
 
 
 
-  nsresult InsertTextAsSubAction(const nsAString& aStringToInsert);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  InsertTextAsSubAction(const nsAString& aStringToInsert);
 
   
 
@@ -586,7 +587,7 @@ class TextEditor : public EditorBase,
 
 
   EditActionResult TruncateInsertionStringForMaxLength(
-      nsAString& aInsertionString, uint32_t aMaxLength);
+      nsAString& aInsertionString);
 
   
 
@@ -594,6 +595,38 @@ class TextEditor : public EditorBase,
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
   InsertLineFeedCharacterAtSelection();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void HandleNewLinesInStringForSingleLineEditor(nsString& aString) const;
+
+  
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE virtual EditActionResult HandleInsertText(
+      EditSubAction aEditSubAction, const nsAString& aInsertionString);
 
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
@@ -635,6 +668,13 @@ class TextEditor : public EditorBase,
   
 
 
+
+
+  bool CanEchoPasswordNow() const;
+
+  
+
+
   MOZ_CAN_RUN_SCRIPT
   virtual nsresult SelectEntireDocument() override;
 
@@ -643,7 +683,8 @@ class TextEditor : public EditorBase,
 
 
 
-  nsresult OnInputText(const nsAString& aStringToInsert);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  OnInputText(const nsAString& aStringToInsert);
 
   
 
@@ -687,7 +728,8 @@ class TextEditor : public EditorBase,
 
 
 
-  nsresult InsertWithQuotationsAsSubAction(const nsAString& aQuotedText);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  InsertWithQuotationsAsSubAction(const nsAString& aQuotedText);
 
   
 
@@ -730,7 +772,8 @@ class TextEditor : public EditorBase,
 
   virtual nsresult PrepareTransferable(nsITransferable** transferable);
 
-  nsresult InsertTextFromTransferable(nsITransferable* transferable);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  InsertTextFromTransferable(nsITransferable* transferable);
 
   
 
