@@ -4148,6 +4148,14 @@ VARCACHE_PREF(
 
 VARCACHE_PREF(
   Live,
+  "layout.css.text-underline-offset.enabled",
+  layout_css_text_underline_offset_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
   "layout.css.column-span.enabled",
   layout_css_column_span_enabled,
   bool, false
