@@ -265,7 +265,7 @@ function getDefaultRecordingPreferences() {
       entries: 10000000, 
       
       duration: 0,
-      interval: 1, 
+      interval: 1000, 
       features: ["js", "leaf", "responsiveness", "stackwalk"],
       threads: ["GeckoMain", "Compositor"],
       objdirs: [],
