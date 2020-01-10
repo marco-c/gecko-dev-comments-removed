@@ -15,10 +15,14 @@ class Input extends ContentProcessDomain {
     super(session);
 
     
+    this._eventId = 0;
+
+    
     this._eventPromises = new Map();
   }
 
   
+
 
 
 
@@ -37,7 +41,9 @@ class Input extends ContentProcessDomain {
         once: true,
       });
     });
-    this._eventPromises.set(eventName, eventPromise);
+    this._eventId++;
+    this._eventPromises.set(this._eventId, eventPromise);
+    return this._eventId;
   }
 
   
@@ -45,12 +51,12 @@ class Input extends ContentProcessDomain {
 
 
 
-  async waitForContentEvent(eventName) {
-    const eventPromise = this._eventPromises.get(eventName);
+  async waitForContentEvent(eventId) {
+    const eventPromise = this._eventPromises.get(eventId);
     if (!eventPromise) {
-      throw new Error("No event promise available for " + eventName);
+      throw new Error("No event promise found for id " + eventId);
     }
     await eventPromise;
-    this._eventPromises.delete(eventName);
+    this._eventPromises.delete(eventId);
   }
 }
