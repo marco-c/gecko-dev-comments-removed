@@ -51,9 +51,7 @@ class WorkerTargetFront extends
       
       const connectResponse = await this.connect({});
       
-      
       this.targetForm.consoleActor = connectResponse.consoleActor;
-      this.targetForm.contextActor = connectResponse.threadActor;
       this._threadActor = connectResponse.threadActor;
 
       return this.attachConsole();

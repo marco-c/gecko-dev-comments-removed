@@ -5,9 +5,9 @@
 
 "use strict";
 
-const { ThreadStateTypes } = require("devtools/shared/client/constants");
-const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
-const { threadSpec } = require("devtools/shared/specs/thread");
+const {arg, DebuggerClient} = require("devtools/shared/client/debugger-client");
+const EventEmitter = require("devtools/shared/event-emitter");
+const {ThreadStateTypes} = require("devtools/shared/client/constants");
 
 loader.lazyRequireGetter(
   this,
@@ -30,42 +30,40 @@ loader.lazyRequireGetter(
 
 
 
-class ThreadClient extends FrontClassWithSpec(threadSpec) {
-  constructor(client) {
-    super(client);
-    this.client = client;
-    this._pauseGrips = {};
-    this._threadGrips = {};
-    this._state = "paused";
-    this._beforePaused = this._beforePaused.bind(this);
-    this._beforeResumed = this._beforeResumed.bind(this);
-    this._beforeDetached = this._beforeDetached.bind(this);
-    this.before("paused", this._beforePaused);
-    this.before("resumed", this._beforeResumed);
-    this.before("detached", this._beforeDetached);
-    
-    this.formAttributeName = "contextActor";
-  }
+function ThreadClient(client, actor) {
+  this.client = client;
+  this._actor = actor;
+  this._pauseGrips = {};
+  this._threadGrips = {};
+  this.request = this.client.request;
+}
 
+ThreadClient.prototype = {
+  _state: "paused",
   get state() {
     return this._state;
-  }
-
+  },
   get paused() {
     return this._state === "paused";
-  }
+  },
+
+  _actor: null,
 
   get actor() {
-    return this.actorID;
-  }
+    return this._actor;
+  },
 
-  _assertPaused(command) {
+  get _transport() {
+    return this.client._transport;
+  },
+
+  _assertPaused: function(command) {
     if (!this.paused) {
       throw Error(
         command + " command sent while not paused. Currently " + this._state
       );
     }
-  }
+  },
 
   
 
@@ -80,94 +78,111 @@ class ThreadClient extends FrontClassWithSpec(threadSpec) {
 
 
 
-  async _doResume(resumeLimit, rewind) {
-    this._assertPaused("resume");
+  _doResume: DebuggerClient.requester({
+    type: "resume",
+    resumeLimit: arg(0),
+    rewind: arg(1),
+  }, {
+    before: function(packet) {
+      this._assertPaused("resume");
 
-    
-    
-    this._previousState = this._state;
-    this._state = "resuming";
-    try {
-      await super.resume(resumeLimit, rewind);
-    } catch (e) {
-      if (this._state == "resuming") {
+      
+      
+      this._previousState = this._state;
+      this._state = "resuming";
+
+      return packet;
+    },
+    after: function(response) {
+      if (response.error && this._state == "resuming") {
         
         
         
-        if (e.state) {
-          this._state = ThreadStateTypes[e.state];
+        if (response.state) {
+          this._state = ThreadStateTypes[response.state];
         } else {
           this._state = this._previousState;
         }
       }
-    }
-
-    delete this._previousState;
-  }
+      delete this._previousState;
+      return response;
+    },
+  }),
 
   
 
 
-  resume() {
+
+
+
+  reconfigure: DebuggerClient.requester({
+    type: "reconfigure",
+    options: arg(0),
+  }),
+
+  
+
+
+  resume: function() {
     return this._doResume(null, false);
-  }
+  },
 
   
 
 
 
-  resumeThenPause() {
+  resumeThenPause: function() {
     return this._doResume({ type: "break" }, false);
-  }
+  },
 
   
 
 
-  rewind() {
-    this._doResume(null, true);
-  }
+  rewind: function() {
+    return this._doResume(null, true);
+  },
 
   
 
 
-  stepOver() {
+  stepOver: function() {
     return this._doResume({ type: "next" }, false);
-  }
+  },
 
   
 
 
-  stepIn() {
+  stepIn: function() {
     return this._doResume({ type: "step" }, false);
-  }
+  },
 
   
 
 
-  stepOut() {
+  stepOut: function() {
     return this._doResume({ type: "finish" }, false);
-  }
+  },
 
   
 
 
-  reverseStepOver() {
+  reverseStepOver: function() {
     return this._doResume({ type: "next" }, true);
-  }
+  },
 
   
 
 
-  interrupt() {
+  interrupt: function() {
     return this._doInterrupt(null);
-  }
+  },
 
   
 
 
-  breakOnNext() {
+  breakOnNext: function() {
     return this._doInterrupt("onNext");
-  }
+  },
 
   
 
@@ -175,7 +190,7 @@ class ThreadClient extends FrontClassWithSpec(threadSpec) {
 
 
 
-  timeWarp(target) {
+  timeWarp: function(target) {
     const warp = () => {
       this._doResume({ type: "warp", target }, true);
     };
@@ -183,21 +198,15 @@ class ThreadClient extends FrontClassWithSpec(threadSpec) {
       return warp();
     }
     return this.interrupt().then(warp);
-  }
+  },
 
   
 
 
-  _doInterrupt(when) {
-    return super.interrupt(when);
-  }
-
-  
-
-
-  getSources() {
-    return super.sources();
-  }
+  _doInterrupt: DebuggerClient.requester({
+    type: "interrupt",
+    when: arg(0),
+  }),
 
   
 
@@ -207,44 +216,23 @@ class ThreadClient extends FrontClassWithSpec(threadSpec) {
 
 
 
-
-
-  getFrames(start, count) {
-    return super.frames(start, count);
-  }
-  
-
-
-  async attach(options) {
-    let response;
-    try {
-      const onPaused = this.once("paused");
-      response = await super.attach(options);
-      await onPaused;
-    } catch (e) {
-      throw new Error(e);
-    }
-    return response;
-  }
+  pauseOnExceptions: DebuggerClient.requester({
+    type: "pauseOnExceptions",
+    pauseOnExceptions: arg(0),
+    ignoreCaughtExceptions: arg(1),
+  }),
 
   
 
 
-  async detach() {
-    const onDetached = this.once("detached");
-    await super.detach();
-    await onDetached;
-    await this.destroy();
-  }
-
-  
-
-
-
-
-  getEnvironment(frameId) {
-    return this.client.request({ to: frameId, type: "getEnvironment" });
-  }
+  detach: DebuggerClient.requester({
+    type: "detach",
+  }, {
+    after: function(response) {
+      this.client.unregisterClient(this);
+      return response;
+    },
+  }),
 
   
 
@@ -252,7 +240,61 @@ class ThreadClient extends FrontClassWithSpec(threadSpec) {
 
 
 
-  pauseGrip(grip) {
+  threadGrips: DebuggerClient.requester({
+    type: "threadGrips",
+    actors: arg(0),
+  }),
+
+  
+
+
+  getSources: DebuggerClient.requester({
+    type: "sources",
+  }),
+
+  
+
+
+
+
+
+
+
+
+
+  getFrames: DebuggerClient.requester({
+    type: "frames",
+    start: arg(0),
+    count: arg(1),
+  }),
+
+  
+
+
+
+
+
+  skipBreakpoints: DebuggerClient.requester({
+    type: "skipBreakpoints",
+    skip: arg(0),
+  }),
+
+  
+
+
+
+
+  getEnvironment: function(frameId) {
+    return this.request({ to: frameId, type: "getEnvironment" });
+  },
+
+  
+
+
+
+
+
+  pauseGrip: function(grip) {
     if (grip.actor in this._pauseGrips) {
       return this._pauseGrips[grip.actor];
     }
@@ -260,7 +302,7 @@ class ThreadClient extends FrontClassWithSpec(threadSpec) {
     const client = new ObjectClient(this.client, grip);
     this._pauseGrips[grip.actor] = client;
     return client;
-  }
+  },
 
   
 
@@ -268,72 +310,120 @@ class ThreadClient extends FrontClassWithSpec(threadSpec) {
 
 
 
-  _clearObjectClients(gripCacheName) {
+  _clearObjectClients: function(gripCacheName) {
     for (const id in this[gripCacheName]) {
       this[gripCacheName][id].valid = false;
     }
     this[gripCacheName] = {};
-  }
+  },
 
   
 
 
 
-  _clearPauseGrips() {
+  _clearPauseGrips: function() {
     this._clearObjectClients("_pauseGrips");
-  }
+  },
 
   
 
 
 
-  _clearThreadGrips() {
+  _clearThreadGrips: function() {
     this._clearObjectClients("_threadGrips");
-  }
-
-  _beforePaused(packet) {
-    this._state = "paused";
-    this._onThreadState(packet);
-  }
-
-  _beforeResumed() {
-    this._state = "attached";
-    this._onThreadState(null);
-  }
-
-  _beforeDetached(packet) {
-    this._state = "detached";
-    this._onThreadState(packet);
-    this._clearThreadGrips();
-  }
+  },
 
   
 
 
-  _onThreadState(packet) {
+
+  _onThreadState: function(packet) {
+    this._state = ThreadStateTypes[packet.type];
     
     
     
-    this._lastPausePacket = packet;
+    this._lastPausePacket = packet.type === "resumed" ? null : packet;
     this._clearPauseGrips();
-  }
+    packet.type === ThreadStateTypes.detached && this._clearThreadGrips();
+    this.client._eventsEnabled && this.emit(packet.type, packet);
+  },
 
-  getLastPausePacket() {
+  getLastPausePacket: function() {
     return this._lastPausePacket;
-  }
+  },
+
+  setBreakpoint: DebuggerClient.requester({
+    type: "setBreakpoint",
+    location: arg(0),
+    options: arg(1),
+  }),
+
+  removeBreakpoint: DebuggerClient.requester({
+    type: "removeBreakpoint",
+    location: arg(0),
+  }),
 
   
 
 
-  source(form) {
+
+
+
+
+  setXHRBreakpoint: DebuggerClient.requester({
+    type: "setXHRBreakpoint",
+    path: arg(0),
+    method: arg(1),
+  }),
+
+  
+
+
+
+
+  removeXHRBreakpoint: DebuggerClient.requester({
+    type: "removeXHRBreakpoint",
+    path: arg(0),
+    method: arg(1),
+  }),
+
+  
+
+
+  getAvailableEventBreakpoints: DebuggerClient.requester({
+    type: "getAvailableEventBreakpoints",
+  }),
+
+  
+
+
+  getActiveEventBreakpoints: DebuggerClient.requester({
+    type: "getActiveEventBreakpoints",
+  }),
+
+  
+
+
+  setActiveEventBreakpoints: DebuggerClient.requester({
+    type: "setActiveEventBreakpoints",
+    ids: arg(0),
+  }),
+
+  
+
+
+  source: function(form) {
     if (form.actor in this._threadGrips) {
       return this._threadGrips[form.actor];
     }
 
     this._threadGrips[form.actor] = new SourceFront(this.client, form);
     return this._threadGrips[form.actor];
-  }
-}
+  },
 
-exports.ThreadClient = ThreadClient;
-registerFront(ThreadClient);
+  events: ["newSource", "progress"],
+};
+
+EventEmitter.decorate(ThreadClient.prototype);
+
+module.exports = ThreadClient;

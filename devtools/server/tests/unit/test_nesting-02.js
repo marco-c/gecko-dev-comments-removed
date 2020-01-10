@@ -20,9 +20,8 @@ function run_test() {
       function(response, targetFront, threadClient) {
         
         
-        
         gThreadActor =
-          gClient._transport._serverConnection.getActor(threadClient.actorID);
+          threadClient._transport._serverConnection.getActor(threadClient._actor);
 
         test_nesting();
       });

@@ -217,7 +217,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   destroy: function() {
     dumpn("in ThreadActor.prototype.destroy");
     if (this._state == "paused") {
-      this.doResume();
+      this.onResume();
     }
 
     this._xhrBreakpoints = [];
@@ -252,25 +252,20 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   },
 
   
-  onAttach: function({options}) {
+  onAttach: function(request) {
     if (this.state === "exited") {
-      return {
-        error: "exited",
-        message: "threadActor has exited",
-      };
+      return { type: "exited" };
     }
 
     if (this.state !== "detached") {
-      return {
-        error: "wrongState",
-        message: "Current state is " + this.state,
-      };
+      return { error: "wrongState",
+               message: "Current state is " + this.state };
     }
 
     this._state = "attached";
     this._debuggerSourcesSeen = new WeakSet();
 
-    Object.assign(this._options, options || {});
+    Object.assign(this._options, request.options || {});
     this.sources.setOptions(this._options);
     this.sources.on("newSource", this.onNewSourceEvent);
 
@@ -282,8 +277,10 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       thread: this,
     });
 
-    if (options.breakpoints) {
-      this._setBreakpointsOnAttach(options.breakpoints);
+    if (request.options.breakpoints) {
+      for (const { location, options } of Object.values(request.options.breakpoints)) {
+        this.setBreakpoint(location, options);
+      }
     }
 
     this.dbg.addDebuggees();
@@ -304,18 +301,14 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       
       const packet = this._paused();
       if (!packet) {
-        return {
-          error: "notAttached",
-          message: "cannot attach, could not create pause packet",
-        };
+        return { error: "notAttached" };
       }
       packet.why = { type: "attached" };
 
       
       
       
-      this.conn.send({from: this.actorID});
-      this.conn.sendActorEvent(this.actorID, "paused", packet);
+      this.conn.send(packet);
 
       
       this._pushThreadPause();
@@ -325,16 +318,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       return null;
     } catch (e) {
       reportError(e);
-      return {
-        error: "notAttached",
-        message: e.toString(),
-      };
-    }
-  },
-
-  _setBreakpointsOnAttach(breakpoints) {
-    for (const { location, options } of Object.values(breakpoints)) {
-      this.setBreakpoint(location, options);
+      return { error: "notAttached", message: e.toString() };
     }
   },
 
@@ -481,8 +465,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this._debuggerSourcesSeen = null;
 
     dumpn("ThreadActor.prototype.onDetach: returning 'detached' packet");
-    this.conn.sendActorEvent(this.actorID, "detached");
-    return {};
+    return {
+      type: "detached",
+    };
   },
 
   onReconfigure: function(request) {
@@ -553,7 +538,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       const pkt = onPacket(packet);
 
       this._priorPause = pkt;
-      this.conn.sendActorEvent(this.actorID, "paused", pkt);
+      this.conn.send(pkt);
     } catch (error) {
       reportError(error);
       this.conn.send({
@@ -852,9 +837,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
 
-  _handleResumeLimit: async function({rewind, resumeLimit}) {
-    let steppingType = resumeLimit.type;
-    const rewinding = rewind;
+  _handleResumeLimit: async function(request) {
+    let steppingType = request.resumeLimit.type;
+    const rewinding = request.rewind;
     if (!["break", "step", "next", "finish", "warp"].includes(steppingType)) {
       return Promise.reject({
         error: "badParameterType",
@@ -945,7 +930,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   
 
 
-  onResume: async function({resumeLimit, rewind}) {
+  onResume: function(request) {
     if (this._state !== "paused") {
       return {
         error: "wrongState",
@@ -968,67 +953,53 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       };
     }
 
-    if (rewind && !this.dbg.replaying) {
+    const rewinding = request && request.rewind;
+    if (rewinding && !this.dbg.replaying) {
       return {
         error: "cantRewind",
         message: "Can't rewind a debuggee that is not replaying.",
       };
     }
 
-    try {
-      if (resumeLimit) {
-        await this._handleResumeLimit({resumeLimit, rewind});
-      } else {
-        this._clearSteppingHooks();
-      }
+    let resumeLimitHandled;
+    if (request && request.resumeLimit) {
+      resumeLimitHandled = this._handleResumeLimit(request);
+    } else {
+      this._clearSteppingHooks();
+      resumeLimitHandled = Promise.resolve(true);
+    }
+
+    return resumeLimitHandled.then(() => {
+      this.maybePauseOnExceptions();
 
       
       
       if (this.dbg.replaying) {
-        if (resumeLimit && resumeLimit.type == "warp") {
-          this.dbg.replayTimeWarp(resumeLimit.target);
-        } else if (rewind) {
+        if (request && request.resumeLimit && request.resumeLimit.type == "warp") {
+          this.dbg.replayTimeWarp(request.resumeLimit.target);
+        } else if (rewinding) {
           this.dbg.replayResumeBackward();
         } else {
           this.dbg.replayResumeForward();
         }
       }
 
-      this.doResume();
-      return {};
-    } catch (error) {
+      const packet = this._resumed();
+      this._popThreadPause();
+      
+      
+      if (Services.obs) {
+        Services.obs.notifyObservers(this, "devtools-thread-resumed");
+      }
+      return packet;
+    }, error => {
       return error instanceof Error
-        ? {
-            error: "unknownError",
+        ? { error: "unknownError",
             message: DevToolsUtils.safeErrorString(error) }
         
         
         : error;
-    }
-  },
-
-  
-
-
-
-
-  doResume() {
-    this.maybePauseOnExceptions();
-    this._state = "running";
-
-    
-    this.conn.removeActorPool(this._pausePool);
-
-    this._pausePool = null;
-    this._pauseActor = null;
-    this._popThreadPause();
-    
-    
-    this.conn.sendActorEvent(this.actorID, "resumed");
-
-    if (Services.obs) {
-      Services.obs.notifyObservers(this, "devtools-thread-resumed");
-    }
+    });
   },
 
   
@@ -1165,30 +1136,30 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   
 
 
-  onInterrupt: function({when}) {
+  onInterrupt: function(request) {
     if (this.state == "exited") {
       return { type: "exited" };
     } else if (this.state == "paused") {
       
-      this.conn.sendActorEvent(this.actorID, "paused", { why: { type: "alreadyPaused" }});
-      return {};
+      return { type: "paused", why: { type: "alreadyPaused" } };
     } else if (this.state != "running") {
       return { error: "wrongState",
                message: "Received interrupt request in " + this.state +
                         " state." };
     }
+
     try {
       
       
-      if (when == "onNext" && !this.dbg.replaying) {
+      if (request.when == "onNext" && !this.dbg.replaying) {
         const onEnterFrame = (frame) => {
-          this._pauseAndRespond(frame, { type: "interrupted", onNext: true });
+          return this._pauseAndRespond(frame, { type: "interrupted", onNext: true });
         };
         this.dbg.onEnterFrame = onEnterFrame;
 
-        this.conn.sendActorEvent(this.actorID, "willInterrupt");
-        return {};
+        return { type: "willInterrupt" };
       }
+
       if (this.dbg.replaying) {
         this.dbg.replayPause();
       }
@@ -1207,8 +1178,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       
       
       
-      this.conn.send({from: this.actorID, type: "interrupt"});
-      this.conn.sendActorEvent(this.actorID, "paused", packet);
+      this.conn.send(packet);
 
       
       this._pushThreadPause();
@@ -1292,6 +1262,18 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     return packet;
+  },
+
+  _resumed: function() {
+    this._state = "running";
+
+    
+    this.conn.removeActorPool(this._pausePool);
+
+    this._pausePool = null;
+    this._pauseActor = null;
+
+    return { from: this.actorID, type: "resumed" };
   },
 
   

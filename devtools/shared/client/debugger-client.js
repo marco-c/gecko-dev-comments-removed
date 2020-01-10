@@ -20,6 +20,7 @@ loader.lazyRequireGetter(this, "DebuggerSocket", "devtools/shared/security/socke
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 loader.lazyRequireGetter(this, "RootFront", "devtools/shared/fronts/root", true);
+loader.lazyRequireGetter(this, "ThreadClient", "devtools/shared/client/thread-client");
 loader.lazyRequireGetter(this, "ObjectClient", "devtools/shared/client/object-client");
 loader.lazyRequireGetter(this, "Front", "devtools/shared/protocol", true);
 
@@ -31,6 +32,10 @@ loader.lazyRequireGetter(this, "Front", "devtools/shared/protocol", true);
 function DebuggerClient(transport) {
   this._transport = transport;
   this._transport.hooks = this;
+
+  
+  
+  this._clients = new Map();
 
   this._pendingRequests = new Map();
   this._activeRequests = new Map();
@@ -212,9 +217,53 @@ DebuggerClient.prototype = {
 
     this.once("closed", deferred.resolve);
 
-    cleanup();
+    
+    
+    
+    const clients = [...this._clients.values()];
+    this._clients.clear();
+    const detachClients = () => {
+      const client = clients.pop();
+      if (!client) {
+        
+        cleanup();
+        return;
+      }
+      if (client.detach) {
+        client.detach(detachClients);
+        return;
+      }
+      detachClients();
+    };
+    detachClients();
 
     return deferred.promise;
+  },
+
+  
+
+
+
+
+
+
+
+  attachThread: function(threadActor, options = {}) {
+    if (this._clients.has(threadActor)) {
+      const client = this._clients.get(threadActor);
+      return promise.resolve([{}, client]);
+    }
+
+    const packet = {
+      to: threadActor,
+      type: "attach",
+      options,
+    };
+    return this.request(packet).then(response => {
+      const threadClient = new ThreadClient(this, threadActor);
+      this.registerClient(threadClient);
+      return [response, threadClient];
+    });
   },
 
   
@@ -547,13 +596,6 @@ DebuggerClient.prototype = {
     }
 
     
-    if (!this.traits.hasThreadFront &&
-        packet.from.includes("context")) {
-      this.sendToDeprecatedThreadClient(packet);
-      return;
-    }
-
-    
     
     const front = this.getActor(packet.from);
     if (front) {
@@ -561,12 +603,24 @@ DebuggerClient.prototype = {
       return;
     }
 
+    if (this._clients.has(packet.from) && packet.type) {
+      const client = this._clients.get(packet.from);
+      const type = packet.type;
+      if (client.events.includes(type)) {
+        client.emit(type, packet);
+        
+        return;
+      }
+    }
+
     let activeRequest;
     
     
     
     if (this._activeRequests.has(packet.from) &&
-        !(packet.type in UnsolicitedNotifications)) {
+        !(packet.type in UnsolicitedNotifications) &&
+        !(packet.type == ThreadStateTypes.paused &&
+          packet.why.type in UnsolicitedPauses)) {
       activeRequest = this._activeRequests.get(packet.from);
       this._activeRequests.delete(packet.from);
     }
@@ -575,6 +629,13 @@ DebuggerClient.prototype = {
     
     
     this._attemptNextRequest(packet.from);
+
+    
+    if (packet.type in ThreadStateTypes &&
+        this._clients.has(packet.from) &&
+        typeof this._clients.get(packet.from)._onThreadState == "function") {
+      this._clients.get(packet.from)._onThreadState(packet);
+    }
 
     
     
@@ -590,54 +651,6 @@ DebuggerClient.prototype = {
       } else {
         emitReply();
       }
-    }
-  },
-
-  
-  
-  
-  sendToDeprecatedThreadClient(packet) {
-    const deprecatedThreadClient = this.getActor(packet.from);
-    if (deprecatedThreadClient && packet.type) {
-      const type = packet.type;
-      if (deprecatedThreadClient.events.includes(type)) {
-        deprecatedThreadClient.emit(type, packet);
-        
-        return;
-      }
-    }
-
-    let activeRequest;
-    
-    
-    
-    if (this._activeRequests.has(packet.from) &&
-        !(packet.type == ThreadStateTypes.paused &&
-          packet.why.type in UnsolicitedPauses)) {
-      activeRequest = this._activeRequests.get(packet.from);
-      this._activeRequests.delete(packet.from);
-    }
-
-    
-    
-    
-    this._attemptNextRequest(packet.from);
-
-    
-    if (packet.type in ThreadStateTypes &&
-        deprecatedThreadClient &&
-        typeof deprecatedThreadClient._onThreadState == "function") {
-      deprecatedThreadClient._onThreadState(packet);
-    }
-
-    
-    
-    if (packet.type) {
-      this.emit(packet.type, packet);
-    }
-
-    if (activeRequest) {
-      activeRequest.emit("json-reply", packet);
     }
   },
 
@@ -846,6 +859,38 @@ DebuggerClient.prototype = {
       
       return this.waitForRequestsToSettle();
     });
+  },
+
+  registerClient: function(client) {
+    const actorID = client.actor;
+    if (!actorID) {
+      throw new Error("DebuggerServer.registerClient expects " +
+                      "a client instance with an `actor` attribute.");
+    }
+    if (!Array.isArray(client.events)) {
+      throw new Error("DebuggerServer.registerClient expects " +
+                      "a client instance with an `events` attribute " +
+                      "that is an array.");
+    }
+    if (client.events.length > 0 && typeof (client.emit) != "function") {
+      throw new Error("DebuggerServer.registerClient expects " +
+                      "a client instance with non-empty `events` array to" +
+                      "have an `emit` function.");
+    }
+    if (this._clients.has(actorID)) {
+      throw new Error("DebuggerServer.registerClient already registered " +
+                      "a client for this actor.");
+    }
+    this._clients.set(actorID, client);
+  },
+
+  unregisterClient: function(client) {
+    const actorID = client.actor;
+    if (!actorID) {
+      throw new Error("DebuggerServer.unregisterClient expects " +
+                      "a Client instance with a `actor` attribute.");
+    }
+    this._clients.delete(actorID);
   },
 
   
