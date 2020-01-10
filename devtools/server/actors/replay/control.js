@@ -831,17 +831,6 @@ function canFindHits(position) {
   return position.kind == "Break" || position.kind == "OnStep";
 }
 
-function findExistingHits(checkpoint, position) {
-  const checkpointHits = gHitSearches.get(checkpoint);
-  if (!checkpointHits) {
-    return null;
-  }
-  const entry = checkpointHits.find(({ position: existingPosition, hits }) => {
-    return positionEquals(position, existingPosition);
-  });
-  return entry ? entry.hits : null;
-}
-
 
 
 
@@ -854,7 +843,7 @@ async function findHits(checkpoint, position) {
   }
 
   
-  let hits = findExistingHits(checkpoint, position);
+  let hits = findExisting();
   if (hits) {
     return hits;
   }
@@ -862,7 +851,7 @@ async function findHits(checkpoint, position) {
   await scanRecording(checkpoint);
   const endpoint = nextSavedCheckpoint(checkpoint);
   await sendAsyncManifest({
-    shouldSkip: () => !!findExistingHits(checkpoint, position),
+    shouldSkip: () => !!findExisting(),
     contents() {
       return {
         kind: "findHits",
@@ -881,18 +870,28 @@ async function findHits(checkpoint, position) {
     scanCheckpoint: checkpoint,
   });
 
-  hits = findExistingHits(checkpoint, position);
+  hits = findExisting();
   assert(hits);
   return hits;
+
+  function findExisting() {
+    const checkpointHits = gHitSearches.get(checkpoint);
+    if (!checkpointHits) {
+      return null;
+    }
+    const entry = checkpointHits.find(
+      ({ position: existingPosition, hits }) => {
+        return positionEquals(position, existingPosition);
+      }
+    );
+    return entry ? entry.hits : null;
+  }
 }
 
 
 async function findBreakpointHits(checkpoint, position) {
   if (position.kind == "Break") {
-    const hits = await findHits(checkpoint, position);
-    if (hits.length) {
-      updateNearbyPoints();
-    }
+    findHits(checkpoint, position);
   }
 }
 
@@ -909,23 +908,10 @@ async function findBreakpointHits(checkpoint, position) {
 
 
 
-const gFrameSteps = [];
+const gFrameSteps = new Map();
 
 
-
-function hasSteppingBreakpoint() {
-  return gBreakpoints.some(bp => bp.kind == "EnterFrame" || bp.kind == "OnPop");
-}
-
-function findExistingFrameSteps(point) {
-  
-  
-  
-  if (point.position.kind == "EnterFrame") {
-    return gFrameSteps.find(steps => pointEquals(point, steps[0]));
-  }
-  return gFrameSteps.find(steps => pointArrayIncludes(steps, point));
-}
+const gParentFrames = new Map();
 
 
 
@@ -940,7 +926,7 @@ async function findFrameSteps(point) {
       point.position.kind == "OnPop"
   );
 
-  let steps = findExistingFrameSteps(point);
+  let steps = findExisting();
   if (steps) {
     return steps;
   }
@@ -955,18 +941,57 @@ async function findFrameSteps(point) {
   const checkpoint = getSavedCheckpoint(point.checkpoint);
   await scanRecording(checkpoint);
   await sendAsyncManifest({
-    shouldSkip: () => !!findExistingFrameSteps(point),
+    shouldSkip: () => !!findExisting(),
     contents: () => ({ kind: "findFrameSteps", targetPoint: point, ...info }),
-    onFinished: (_, steps) => gFrameSteps.push(steps),
+    onFinished: (_, steps) => {
+      for (const p of steps) {
+        if (p.position.frameIndex == point.position.frameIndex) {
+          gFrameSteps.set(pointToString(p), steps);
+        } else {
+          assert(p.position.kind == "EnterFrame");
+          gParentFrames.set(pointToString(p), steps[0]);
+        }
+      }
+    },
     scanCheckpoint: checkpoint,
   });
 
-  steps = findExistingFrameSteps(point);
+  steps = findExisting();
   assert(steps);
-
-  updateNearbyPoints();
-
   return steps;
+
+  function findExisting() {
+    return gFrameSteps.get(pointToString(point));
+  }
+}
+
+async function findParentFrameEntryPoint(point) {
+  assert(point.position.kind == "EnterFrame");
+  assert(point.position.frameIndex > 0);
+
+  let parentPoint = findExisting();
+  if (parentPoint) {
+    return parentPoint;
+  }
+
+  const checkpoint = getSavedCheckpoint(point.checkpoint);
+  await scanRecording(checkpoint);
+  await sendAsyncManifest({
+    shouldSkip: () => !!findExisting(),
+    contents: () => ({ kind: "findParentFrameEntryPoint", point }),
+    onFinished: (_, { parentPoint }) => {
+      gParentFrames.set(pointToString(point), parentPoint);
+    },
+    scanCheckpoint: checkpoint,
+  });
+
+  parentPoint = findExisting();
+  assert(parentPoint);
+  return parentPoint;
+
+  function findExisting() {
+    return gParentFrames.get(pointToString(point));
+  }
 }
 
 
@@ -1105,7 +1130,7 @@ function setPauseState(mode, point, child) {
   gActiveChild = child;
 
   if (mode == PauseModes.ARRIVING) {
-    updateNearbyPoints();
+    simulateNearbyNavigation();
   }
 
   pokeChildrenSoon();
@@ -1183,38 +1208,23 @@ function pauseReplayingChild(child, point) {
 }
 
 
-async function finishResume() {
-  assert(
-    gPauseMode == PauseModes.RESUMING_FORWARD ||
-      gPauseMode == PauseModes.RESUMING_BACKWARD
-  );
-  const forward = gPauseMode == PauseModes.RESUMING_FORWARD;
 
-  let startCheckpoint = gPausePoint.checkpoint;
-  if (!forward && !gPausePoint.position) {
+
+
+async function resumeTarget(point, forward, breakpoints) {
+  let startCheckpoint = point.checkpoint;
+  if (!forward && !point.position) {
     startCheckpoint--;
+    if (startCheckpoint == InvalidCheckpointId) {
+      return null;
+    }
   }
   startCheckpoint = getSavedCheckpoint(startCheckpoint);
 
   let checkpoint = startCheckpoint;
   for (; ; forward ? checkpoint++ : checkpoint--) {
-    if (checkpoint == gLastFlushCheckpoint) {
-      
-      
-      assert(forward);
-      RecordReplayControl.restoreMainGraphics();
-      setPauseState(PauseModes.RUNNING, gMainChild.pausePoint(), gMainChild);
-      gDebugger._callOnPositionChange();
-      maybeResumeRecording();
-      return;
-    }
-
-    if (checkpoint == InvalidCheckpointId) {
-      
-      
-      assert(!forward);
-      setReplayingPauseTarget(checkpointExecutionPoint(FirstCheckpointId));
-      return;
+    if ([InvalidCheckpointId, gLastFlushCheckpoint].includes(checkpoint)) {
+      return null;
     }
 
     if (!gCheckpoints[checkpoint].saved) {
@@ -1224,7 +1234,7 @@ async function finishResume() {
     const hits = [];
 
     
-    for (const bp of gBreakpoints) {
+    for (const bp of breakpoints) {
       if (canFindHits(bp)) {
         const bphits = await findHits(checkpoint, bp);
         hits.push(...bphits);
@@ -1233,11 +1243,14 @@ async function finishResume() {
 
     
     
-    if (checkpoint == startCheckpoint && hasSteppingBreakpoint()) {
-      const steps = await findFrameSteps(gPausePoint);
+    if (
+      checkpoint == startCheckpoint &&
+      gBreakpoints.some(bp => bp.kind == "EnterFrame" || bp.kind == "OnPop")
+    ) {
+      const steps = await findFrameSteps(point);
       hits.push(
-        ...steps.filter(point => {
-          return gBreakpoints.some(bp => positionSubsumes(bp, point.position));
+        ...steps.filter(p => {
+          return breakpoints.some(bp => positionSubsumes(bp, p.position));
         })
       );
     }
@@ -1252,10 +1265,35 @@ async function finishResume() {
        false
     );
     if (hit) {
-      
-      setReplayingPauseTarget(hit);
-      return;
+      return hit;
     }
+  }
+}
+
+async function finishResume() {
+  assert(
+    gPauseMode == PauseModes.RESUMING_FORWARD ||
+      gPauseMode == PauseModes.RESUMING_BACKWARD
+  );
+  const forward = gPauseMode == PauseModes.RESUMING_FORWARD;
+
+  const point = await resumeTarget(gPausePoint, forward, gBreakpoints);
+  if (point) {
+    
+    setReplayingPauseTarget(point);
+  } else if (forward) {
+    
+    
+    assert(forward);
+    RecordReplayControl.restoreMainGraphics();
+    setPauseState(PauseModes.RUNNING, gMainChild.pausePoint(), gMainChild);
+    gDebugger._callOnPositionChange();
+    maybeResumeRecording();
+  } else {
+    
+    
+    assert(!forward);
+    setReplayingPauseTarget(checkpointExecutionPoint(FirstCheckpointId));
   }
 }
 
@@ -1275,7 +1313,7 @@ function resume(forward) {
     !gPausePoint.position &&
     !forward
   ) {
-    gDebugger._onPause();
+    gDebugger._hitRecordingBoundary();
     return;
   }
   setPauseState(
@@ -1380,90 +1418,134 @@ function ChildCrashed(id) {
 
 
 
-let gNearbyPoints = [];
 
 
-const NumNearbyBreakpointHits = 2;
 
 
-const NumNearbySteps = 12;
+async function simulateBreakpointNavigation(point, forward, count) {
+  if (!count) {
+    return;
+  }
 
-function nextKnownBreakpointHit(point, forward) {
-  let checkpoint = getSavedCheckpoint(point.checkpoint);
-  for (; ; forward ? checkpoint++ : checkpoint--) {
-    if (checkpoint == (forward ? gLastFlushCheckpoint : InvalidCheckpointId)) {
-      return null;
-    }
+  const breakpoints = gBreakpoints.filter(bp => bp.kind == "Break");
+  const next = await resumeTarget(point, forward, breakpoints);
+  if (next) {
+    queuePauseData({ point: next });
+    simulateBreakpointNavigation(next, forward, count - 1);
+  }
+}
 
-    if (!gCheckpoints[checkpoint].saved) {
-      continue;
-    }
+async function findFrameEntryPoint(point) {
+  
+  
+  
+  assert(point.position.kind == "EnterFrame");
+  const steps = await findFrameSteps(point);
+  assert(pointEquals(steps[0], point));
+  return steps[1];
+}
 
-    let hits = [];
+async function simulateSteppingNavigation(point, count, frameCount, last) {
+  if (!count || !point.position) {
+    return;
+  }
+  const { script } = point.position;
+  const dbgScript = gDebugger._getScript(script);
 
-    
-    for (const bp of gBreakpoints) {
-      if (canFindHits(bp)) {
-        const bphits = findExistingHits(checkpoint, bp);
-        if (bphits) {
-          hits = hits.concat(bphits);
-        }
+  const steps = await findFrameSteps(point);
+  const pointIndex = steps.findIndex(p => pointEquals(p, point));
+
+  if (last != "reverseStepOver") {
+    for (let i = pointIndex + 1; i < steps.length; i++) {
+      const p = steps[i];
+      if (isStepOverTarget(p)) {
+        queuePauseData({ point: p, snapshot: steps[0] });
+        simulateSteppingNavigation(p, count - 1, frameCount, "stepOver");
+        break;
       }
     }
+  }
 
-    const hit = findClosestPoint(
-      hits,
-      gPausePoint,
-       !forward,
-       false
+  if (last != "stepOver") {
+    for (let i = pointIndex - 1; i >= 1; i--) {
+      const p = steps[i];
+      if (isStepOverTarget(p)) {
+        queuePauseData({ point: p, snapshot: steps[0] });
+        simulateSteppingNavigation(p, count - 1, frameCount, "reverseStepOver");
+        break;
+      }
+    }
+  }
+
+  if (frameCount) {
+    for (let i = pointIndex + 1; i < steps.length; i++) {
+      const p = steps[i];
+      if (isStepOverTarget(p)) {
+        break;
+      }
+      if (p.position.script != script) {
+        
+        
+        
+        queuePauseData({ point: p, snapshot: steps[0] });
+
+        const np = await findFrameEntryPoint(p);
+        queuePauseData({ point: np, snapshot: steps[0] });
+        findHits(getSavedCheckpoint(point.checkpoint), np.position);
+        simulateSteppingNavigation(np, count - 1, frameCount - 1, "stepIn");
+        break;
+      }
+    }
+  }
+
+  if (
+    frameCount &&
+    last != "stepOver" &&
+    last != "reverseStepOver" &&
+    point.position.frameIndex
+  ) {
+    
+    
+    queuePauseData({ point: steps[steps.length - 1], snapshot: steps[0] });
+
+    const parentEntryPoint = await findParentFrameEntryPoint(steps[0]);
+    const parentSteps = await findFrameSteps(parentEntryPoint);
+    for (let i = 0; i < parentSteps.length; i++) {
+      const p = parentSteps[i];
+      if (pointPrecedes(point, p)) {
+        
+        
+        queuePauseData({ point: p, snapshot: parentSteps[0] });
+        findHits(getSavedCheckpoint(point.checkpoint), p.position);
+        simulateSteppingNavigation(p, count - 1, frameCount - 1, "stepOut");
+        break;
+      }
+    }
+  }
+
+  function isStepOverTarget(p) {
+    const { kind, offset } = p.position;
+    return (
+      kind == "OnPop" ||
+      (kind == "OnStep" && dbgScript.getOffsetMetadata(offset).isStepStart)
     );
-    if (hit) {
-      return hit;
-    }
   }
 }
 
-function nextKnownBreakpointHits(point, forward, count) {
-  const rv = [];
-  for (let i = 0; i < count; i++) {
-    const next = nextKnownBreakpointHit(point, forward);
-    if (next) {
-      rv.push({ point: next, snapshot: null });
-      point = next;
-    } else {
-      break;
-    }
-  }
-  return rv;
-}
-
-function updateNearbyPoints() {
-  const nearby = [
-    ...nextKnownBreakpointHits(gPausePoint, true, NumNearbyBreakpointHits),
-    ...nextKnownBreakpointHits(gPausePoint, false, NumNearbyBreakpointHits),
-  ];
-
-  const steps = gPausePoint.position && findExistingFrameSteps(gPausePoint);
-  if (steps) {
-    
-    
-    
-    const index = steps.findIndex(point => pointEquals(point, gPausePoint));
-    const start = Math.max(index - NumNearbySteps, 1);
-    const nearbySteps = steps.slice(start, index + NumNearbySteps - start);
-    nearby.push(...nearbySteps.map(point => ({ point, snapshot: steps[0] })));
-  }
-
-  gNearbyPoints = nearby;
+function simulateNearbyNavigation() {
+  
+  
+  const numBreakpointHits = 2;
 
   
-  for (const { point, snapshot } of nearby) {
-    queuePauseData({
-      point,
-      snapshot,
-      shouldSkip: () => !pointArrayIncludes(gNearbyPoints, point),
-    });
-  }
+  const numSteps = 4;
+
+  
+  const numChangeFrames = 2;
+
+  simulateBreakpointNavigation(gPausePoint, true, numBreakpointHits);
+  simulateBreakpointNavigation(gPausePoint, false, numBreakpointHits);
+  simulateSteppingNavigation(gPausePoint, numSteps, numChangeFrames);
 }
 
 
@@ -1549,16 +1631,12 @@ async function findEventFrameEntry(checkpoint, progress) {
     scanCheckpoint: savedCheckpoint,
   });
 
-  const enterFramePoint = gEventFrameEntryPoints.get(progress);
-  if (!enterFramePoint) {
+  const point = gEventFrameEntryPoints.get(progress);
+  if (!point) {
     return null;
   }
 
-  
-  const frameSteps = await findFrameSteps(enterFramePoint);
-  assert(pointEquals(frameSteps[0], enterFramePoint));
-
-  return frameSteps[1];
+  return findFrameEntryPoint(point);
 }
 
 async function findEventLogpointHits(checkpoint, event, callback) {
@@ -1660,7 +1738,7 @@ function maybeResumeRecording() {
     ensureFlushed();
     Services.cpmm.sendAsyncMessage("HitRecordingEndpoint");
     if (gDebugger) {
-      gDebugger._onPause();
+      gDebugger._hitRecordingBoundary();
     }
     return;
   }
@@ -1911,12 +1989,12 @@ const gControl = {
       gActiveChild.waitUntilPaused(true);
     }
 
-    updateNearbyPoints();
+    simulateNearbyNavigation();
   },
 
   
   clearBreakpoints() {
-    dumpv(`ClearBreakpoints\n`);
+    dumpv(`ClearBreakpoints`);
     gBreakpoints.length = 0;
 
     if (gActiveChild == gMainChild) {
@@ -1924,7 +2002,6 @@ const gControl = {
       
       gActiveChild.waitUntilPaused(true);
     }
-    updateNearbyPoints();
   },
 
   
