@@ -2687,36 +2687,10 @@ pref("layout.testing.overlay-scrollbars.always-visible", false);
 pref("layout.frame_rate", -1);
 
 
-pref("layout.display-list.dump", false);
-pref("layout.display-list.dump-content", false);
-pref("layout.display-list.dump-parent", false);
-
-
-#if !defined(ANDROID)
-  pref("layout.display-list.retain", true);
-  pref("layout.display-list.retain.chrome", true);
-#else
-  pref("layout.display-list.retain", true);
-  pref("layout.display-list.retain.chrome", true);
-#endif
-
-
-
-pref("layout.display-list.rebuild-frame-limit", 500);
-
-
 pref("layout.spammy_warnings.enabled", false);
 
 
 pref("dom.animations.offscreen-throttling", true);
-
-
-
-pref("layout.animation.prerender.partial", false);
-pref("layout.animation.prerender.viewport-ratio-limit-x", "1.125");
-pref("layout.animation.prerender.viewport-ratio-limit-y", "1.125");
-pref("layout.animation.prerender.absolute-limit-x", 4096);
-pref("layout.animation.prerender.absolute-limit-y", 4096);
 
 
 pref("plugin.override_internal_types", false);
