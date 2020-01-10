@@ -82,31 +82,22 @@ this.topSites = class extends ExtensionAPI {
             links = links.slice(0, options.limit);
           }
 
-          return links.map(link => {
-            let newLink;
-            if (link.searchTopSite) {
-              newLink = {
-                type: "search",
-                url: link.url,
-                title: link.label,
-              };
-            } else {
-              newLink = {
-                type: "url",
-                url: link.url,
-                title: link.title || link.hostname,
-              };
-            }
+          return links.map(link => ({
+            type: link.searchTopSite ? "search" : "url",
+            url: link.url,
+            
+            
+            
+            title: link.label || link.title || link.hostname || "",
             
             
             
             
             
-            newLink.favicon = options.includeFavicon
+            favicon: options.includeFavicon
               ? link.favicon || link.tippyTopIcon || null
-              : null;
-            return newLink;
-          });
+              : null,
+          }));
         },
       },
     };
