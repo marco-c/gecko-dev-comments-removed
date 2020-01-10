@@ -1836,6 +1836,20 @@ nsFlexContainerFrame::MeasureAscentAndBSizeForFlexItem(
   FinishReflowChild(aItem.Frame(), aPresContext, childDesiredSize,
                     &aChildReflowInput, 0, 0, flags);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aPresContext->HasPendingInterrupt()) {
+    AddStateBits(NS_STATE_FLEX_MEASUREMENTS_INTERRUPTED);
+  }
+
   auto result =
       new CachedMeasuringReflowResult(aChildReflowInput, childDesiredSize);
 
@@ -4300,23 +4314,6 @@ void FlexLine::PositionItemsInCrossAxis(
     
     lineCrossAxisPosnTracker.ResetPosition();
   }
-}
-
-void nsFlexContainerFrame::DidReflow(nsPresContext* aPresContext,
-                                     const ReflowInput* aReflowInput) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aPresContext->HasPendingInterrupt()) {
-    AddStateBits(NS_STATE_FLEX_MEASUREMENTS_INTERRUPTED);
-  }
-  nsContainerFrame::DidReflow(aPresContext, aReflowInput);
 }
 
 void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
