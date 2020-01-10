@@ -56,15 +56,9 @@ async function testNetworkMessage(messageNode) {
   ok(headersTab, "Headers tab is available");
 
   
-  let headersContent;
-  await waitUntil(() => {
-    headersContent = messageNode.querySelector(
-      "#headers-panel .headers-overview"
-    );
-    return headersContent;
-  });
-
-  ok(headersContent, "Headers content is available");
+  await waitUntil(() =>
+    messageNode.querySelector("#headers-panel .headers-overview")
+  );
 }
 
 

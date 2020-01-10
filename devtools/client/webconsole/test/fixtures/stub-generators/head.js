@@ -367,7 +367,8 @@ async function generateConsoleApiStubs() {
     "http://example.com/browser/devtools/client/webconsole/test/fixtures/stub-generators/test-console-api.html";
 
   
-  Services.prefs.setBoolPref(PREFS.FILTER.LOG, false);
+  const { getPrefsService } = require("devtools/client/webconsole/utils/prefs");
+  getPrefsService({}).setBoolPref(PREFS.FILTER.LOG, false);
 
   const stubs = {
     preparedMessages: [],

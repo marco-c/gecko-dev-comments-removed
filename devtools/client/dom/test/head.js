@@ -34,26 +34,29 @@ registerCleanupFunction(() => {
 
 
 
-function addTestTab(url) {
+async function addTestTab(url) {
   info("Adding a new test tab with URL: '" + url + "'");
 
-  return new Promise(resolve => {
-    addTab(url).then(tab => {
-      
-      loadFrameScriptUtils();
+  const tab = await addTab(url);
 
-      
-      initDOMPanel(tab).then(panel => {
-        waitForDispatch(panel, "FETCH_PROPERTIES").then(() => {
-          resolve({
-            tab: tab,
-            browser: tab.linkedBrowser,
-            panel: panel,
-          });
-        });
-      });
-    });
-  });
+  
+  loadFrameScriptUtils();
+
+  
+  const panel = await initDOMPanel(tab);
+
+  
+  
+  
+  const doc = panel.panelWin.document;
+  const nodes = [...doc.querySelectorAll(".treeLabel")];
+  ok(nodes.length > 0, "The DOM panel is already populated");
+
+  return {
+    tab,
+    browser: tab.linkedBrowser,
+    panel,
+  };
 }
 
 
