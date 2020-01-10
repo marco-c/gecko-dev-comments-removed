@@ -33,6 +33,7 @@ const { require } = BrowserLoader({
 const {
   getRecordingPreferencesFromBrowser,
   setRecordingPreferencesOnBrowser,
+  getSymbolsFromThisBrowser,
 } = ChromeUtils.import(
   "resource://devtools/client/performance-new/popup/background.jsm"
 );
@@ -80,6 +81,9 @@ async function gInit(perfFront, preferenceFront) {
         setRecordingPreferencesOnBrowser(
           selectors.getRecordingSettings(store.getState())
         ),
+      
+      
+      getSymbolTableGetter: () => getSymbolsFromThisBrowser,
       isPopup: true,
     })
   );

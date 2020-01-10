@@ -8,7 +8,7 @@
 const { BrowserLoader } = ChromeUtils.import(
   "resource://devtools/client/shared/browser-loader.js"
 );
-const { require } = BrowserLoader({
+const { require, loader } = BrowserLoader({
   baseURI: "resource://devtools/client/performance-new/",
   window,
 });
@@ -24,6 +24,7 @@ const {
   receiveProfile,
   getRecordingPreferencesFromDebuggee,
   setRecordingPreferencesOnDebuggee,
+  createMultiModalGetSymbolTableFn,
 } = require("devtools/client/performance-new/browser");
 
 
@@ -55,12 +56,22 @@ async function gInit(perfFront, preferenceFront) {
         preferenceFront,
         selectors.getRecordingSettings(store.getState())
       ),
+
       
       
       setRecordingPreferences: () =>
         setRecordingPreferencesOnDebuggee(
           preferenceFront,
           selectors.getRecordingSettings(store.getState())
+        ),
+
+      
+      
+      getSymbolTableGetter: profile =>
+        createMultiModalGetSymbolTableFn(
+          profile,
+          selectors.getPerfFront(store.getState()),
+          selectors.getObjdirs(store.getState())
         ),
     })
   );

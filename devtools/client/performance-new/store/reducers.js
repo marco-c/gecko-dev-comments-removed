@@ -141,6 +141,7 @@ function objdirs(state = [], action) {
 
 
 
+
 function initializedValues(state = null, action) {
   switch (action.type) {
     case "INITIALIZE_STORE":
@@ -149,6 +150,7 @@ function initializedValues(state = null, action) {
         receiveProfile: action.receiveProfile,
         setRecordingPreferences: action.setRecordingPreferences,
         isPopup: Boolean(action.isPopup),
+        getSymbolTableGetter: action.getSymbolTableGetter,
       };
     default:
       return state;
