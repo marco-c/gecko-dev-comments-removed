@@ -65,7 +65,7 @@ def docker_worker_hazard(config, job, taskdesc):
 
     
     
-    env['GECKO_DIR'] = '{workdir}/checkouts/gecko'.format(**run)
+    env['GECKO_PATH'] = '{workdir}/checkouts/gecko'.format(**run)
 
     worker['command'] = [
         '{workdir}/bin/run-task'.format(**run),
