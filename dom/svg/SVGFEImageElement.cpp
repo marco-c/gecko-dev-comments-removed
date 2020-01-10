@@ -59,7 +59,7 @@ SVGFEImageElement::~SVGFEImageElement() { DestroyImageLoadingContent(); }
 
 nsresult SVGFEImageElement::LoadSVGImage(bool aForce, bool aNotify) {
   
-  nsCOMPtr<nsIURI> baseURI = GetBaseURI();
+  nsIURI* baseURI = GetBaseURI();
 
   nsAutoString href;
   if (mStringAttributes[HREF].IsExplicitlySet()) {

@@ -191,9 +191,8 @@ SVGPathElement* SVGMPathElement::GetReferencedPath() {
 void SVGMPathElement::UpdateHrefTarget(nsIContent* aParent,
                                        const nsAString& aHrefStr) {
   nsCOMPtr<nsIURI> targetURI;
-  nsCOMPtr<nsIURI> baseURI = GetBaseURI();
   nsContentUtils::NewURIWithDocumentCharset(getter_AddRefs(targetURI), aHrefStr,
-                                            OwnerDoc(), baseURI);
+                                            OwnerDoc(), GetBaseURI());
 
   
   if (mPathTracker.get()) {

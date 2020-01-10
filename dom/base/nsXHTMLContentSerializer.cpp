@@ -277,7 +277,7 @@ bool nsXHTMLContentSerializer::SerializeAttributes(
           
           
           
-          nsCOMPtr<nsIURI> uri = aElement->GetBaseURI();
+          nsIURI* uri = aElement->GetBaseURI();
           if (uri) {
             nsAutoString absURI;
             rv = NS_MakeAbsoluteURI(absURI, valueStr, uri);

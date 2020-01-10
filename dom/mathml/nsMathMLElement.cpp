@@ -930,12 +930,11 @@ bool nsMathMLElement::IsLink(nsIURI** aURI) const {
   }
 
   if (hasHref) {
-    nsCOMPtr<nsIURI> baseURI = GetBaseURI();
     
     nsAutoString hrefStr;
     href->ToString(hrefStr);
     nsContentUtils::NewURIWithDocumentCharset(aURI, hrefStr, OwnerDoc(),
-                                              baseURI);
+                                              GetBaseURI());
     
     return !!*aURI;
   }

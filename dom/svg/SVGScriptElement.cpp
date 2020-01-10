@@ -129,8 +129,7 @@ void SVGScriptElement::FreezeExecutionAttrs(Document* aOwnerDoc) {
 
     
     if (!src.IsEmpty()) {
-      nsCOMPtr<nsIURI> baseURI = GetBaseURI();
-      NS_NewURI(getter_AddRefs(mUri), src, nullptr, baseURI);
+      NS_NewURI(getter_AddRefs(mUri), src, nullptr, GetBaseURI());
 
       if (!mUri) {
         AutoTArray<nsString, 2> params = {isHref

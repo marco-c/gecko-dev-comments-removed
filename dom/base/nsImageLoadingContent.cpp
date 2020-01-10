@@ -1353,7 +1353,7 @@ nsresult nsImageLoadingContent::StringToURI(const nsAString& aSpec,
 
   
   nsIContent* thisContent = AsContent();
-  nsCOMPtr<nsIURI> baseURL = thisContent->GetBaseURI();
+  nsIURI* baseURL = thisContent->GetBaseURI();
 
   
   auto encoding = aDocument->GetDocumentCharacterSet();

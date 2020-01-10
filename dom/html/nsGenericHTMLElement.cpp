@@ -510,7 +510,7 @@ HTMLFormElement* nsGenericHTMLElement::FindAncestorForm(
       
       
       
-      if (aCurrentForm->IsInclusiveDescendantOf(prevContent)) {
+      if (nsContentUtils::ContentIsDescendantOf(aCurrentForm, prevContent)) {
         return aCurrentForm;
       }
     }
@@ -863,10 +863,9 @@ bool nsGenericHTMLElement::ParseBackgroundAttribute(int32_t aNamespaceID,
       aAttribute == nsGkAtoms::background && !aValue.IsEmpty()) {
     
     Document* doc = OwnerDoc();
-    nsCOMPtr<nsIURI> baseURI = GetBaseURI();
     nsCOMPtr<nsIURI> uri;
     nsresult rv = nsContentUtils::NewURIWithDocumentCharset(
-        getter_AddRefs(uri), aValue, doc, baseURI);
+        getter_AddRefs(uri), aValue, doc, GetBaseURI());
     if (NS_FAILED(rv)) {
       return false;
     }
@@ -2685,9 +2684,9 @@ nsresult nsGenericHTMLElement::NewURIFromString(const nsAString& aURISpec,
 
   nsCOMPtr<Document> doc = OwnerDoc();
 
-  nsCOMPtr<nsIURI> baseURI = GetBaseURI();
   nsresult rv =
-      nsContentUtils::NewURIWithDocumentCharset(aURI, aURISpec, doc, baseURI);
+      nsContentUtils::NewURIWithDocumentCharset(aURI, aURISpec, doc,
+                                                GetBaseURI());
   NS_ENSURE_SUCCESS(rv, rv);
 
   bool equal;
