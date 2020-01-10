@@ -148,8 +148,8 @@ nsresult nsContentAreaDragDropDataProvider::SaveURIToFile(
 
   
   return persist->SavePrivacyAwareURI(inSourceURI, inTriggeringPrincipal, 0,
-                                      nullptr, mozilla::net::RP_Unset, nullptr,
-                                      nullptr, inDestFile, isPrivate);
+                                      nullptr, nullptr, nullptr, inDestFile,
+                                      isPrivate);
 }
 
 

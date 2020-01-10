@@ -369,18 +369,17 @@ NS_IMETHODIMP nsWebBrowserPersist::SetProgressListener(
 
 NS_IMETHODIMP nsWebBrowserPersist::SaveURI(
     nsIURI* aURI, nsIPrincipal* aPrincipal, uint32_t aCacheKey,
-    nsIURI* aReferrer, uint32_t aReferrerPolicy, nsIInputStream* aPostData,
+    nsIReferrerInfo* aReferrerInfo, nsIInputStream* aPostData,
     const char* aExtraHeaders, nsISupports* aFile,
     nsILoadContext* aPrivacyContext) {
   bool isPrivate = aPrivacyContext && aPrivacyContext->UsePrivateBrowsing();
-  return SavePrivacyAwareURI(aURI, aPrincipal, aCacheKey, aReferrer,
-                             aReferrerPolicy, aPostData, aExtraHeaders, aFile,
-                             isPrivate);
+  return SavePrivacyAwareURI(aURI, aPrincipal, aCacheKey, aReferrerInfo,
+                             aPostData, aExtraHeaders, aFile, isPrivate);
 }
 
 NS_IMETHODIMP nsWebBrowserPersist::SavePrivacyAwareURI(
     nsIURI* aURI, nsIPrincipal* aPrincipal, uint32_t aCacheKey,
-    nsIURI* aReferrer, uint32_t aReferrerPolicy, nsIInputStream* aPostData,
+    nsIReferrerInfo* aReferrerInfo, nsIInputStream* aPostData,
     const char* aExtraHeaders, nsISupports* aFile, bool aIsPrivate) {
   NS_ENSURE_TRUE(mFirstAndOnlyUse, NS_ERROR_FAILURE);
   mFirstAndOnlyUse = false;  
@@ -393,8 +392,8 @@ NS_IMETHODIMP nsWebBrowserPersist::SavePrivacyAwareURI(
   
   mPersistFlags |= PERSIST_FLAGS_FAIL_ON_BROKEN_LINKS;
   rv = SaveURIInternal(aURI, aPrincipal, nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD,
-                       aCacheKey, aReferrer, aReferrerPolicy, aPostData,
-                       aExtraHeaders, fileAsURI, false, aIsPrivate);
+                       aCacheKey, aReferrerInfo, aPostData, aExtraHeaders,
+                       fileAsURI, false, aIsPrivate);
   return NS_FAILED(rv) ? rv : NS_OK;
 }
 
@@ -569,12 +568,9 @@ void nsWebBrowserPersist::SerializeNextFile() {
         break;
       }
 
-      
-      
       rv = SaveURIInternal(uri, data->mTriggeringPrincipal,
-                           data->mContentPolicyType, 0, nullptr,
-                           mozilla::net::RP_Unset, nullptr, nullptr, fileAsURI,
-                           true, mIsPrivate);
+                           data->mContentPolicyType, 0, nullptr, nullptr,
+                           nullptr, fileAsURI, true, mIsPrivate);
       
       
       if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1216,7 +1212,7 @@ nsresult nsWebBrowserPersist::AppendPathToURI(nsIURI* aURI,
 nsresult nsWebBrowserPersist::SaveURIInternal(
     nsIURI* aURI, nsIPrincipal* aTriggeringPrincipal,
     nsContentPolicyType aContentPolicyType, uint32_t aCacheKey,
-    nsIURI* aReferrer, uint32_t aReferrerPolicy, nsIInputStream* aPostData,
+    nsIReferrerInfo* aReferrerInfo, nsIInputStream* aPostData,
     const char* aExtraHeaders, nsIURI* aFile, bool aCalcFileExt,
     bool aIsPrivate) {
   NS_ENSURE_ARG_POINTER(aURI);
@@ -1270,12 +1266,9 @@ nsresult nsWebBrowserPersist::SaveURIInternal(
   
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(inputChannel));
   if (httpChannel) {
-    
-    if (aReferrer) {
-      nsCOMPtr<nsIReferrerInfo> referrerInfo =
-          new ReferrerInfo(aReferrer, aReferrerPolicy);
-      rv = httpChannel->SetReferrerInfoWithoutClone(referrerInfo);
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
+    if (aReferrerInfo) {
+      DebugOnly<nsresult> success = httpChannel->SetReferrerInfo(aReferrerInfo);
+      MOZ_ASSERT(NS_SUCCEEDED(success));
     }
 
     
