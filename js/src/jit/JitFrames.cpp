@@ -841,7 +841,7 @@ static void TraceIonJSFrame(JSTracer* trc, const JSJitFrameIter& frame) {
     
     
     
-    IonScript::Trace(trc, ionScript);
+    ionScript->trace(trc);
   } else {
     ionScript = frame.ionScriptFromCalleeToken();
   }
