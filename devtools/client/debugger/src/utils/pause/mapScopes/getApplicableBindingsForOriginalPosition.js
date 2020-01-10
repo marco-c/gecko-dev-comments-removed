@@ -38,8 +38,8 @@ export async function originalRangeStartsInside(
   },
   sourceMaps: SourceMaps
 ) {
-  const endPosition = await sourceMaps.getGeneratedLocation(end);
-  const startPosition = await sourceMaps.getGeneratedLocation(start);
+  const endPosition = await sourceMaps.getGeneratedLocation(end, source);
+  const startPosition = await sourceMaps.getGeneratedLocation(start, source);
 
   
   
@@ -62,7 +62,7 @@ export async function getApplicableBindingsForOriginalPosition(
   locationType: BindingLocationType,
   sourceMaps: SourceMaps
 ): Promise<Array<ApplicableBinding>> {
-  const ranges = await sourceMaps.getGeneratedRanges(start);
+  const ranges = await sourceMaps.getGeneratedRanges(start, source);
 
   const resultRanges: GeneratedRange[] = ranges.map(mapRange => ({
     start: {
@@ -85,8 +85,8 @@ export async function getApplicableBindingsForOriginalPosition(
   
   
   if (bindingType === "import" && locationType !== "ref") {
-    const endPosition = await sourceMaps.getGeneratedLocation(end);
-    const startPosition = await sourceMaps.getGeneratedLocation(start);
+    const endPosition = await sourceMaps.getGeneratedLocation(end, source);
+    const startPosition = await sourceMaps.getGeneratedLocation(start, source);
 
     for (const range of resultRanges) {
       if (

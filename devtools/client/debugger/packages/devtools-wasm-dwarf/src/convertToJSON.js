@@ -4,7 +4,6 @@
 
 
 
-
 const { getDwarfToWasmData } = require("./wasmAsset.js");
 
 let cachedWasmModule;
