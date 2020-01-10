@@ -380,6 +380,9 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
 
   bool IsActive() const;
 
+  
+  void Unregister();
+
   friend class ::nsOuterWindowProxy;
   friend class ::nsGlobalWindowOuter;
   
@@ -461,6 +464,10 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   
   
   bool mIsInProcess : 1;
+
+  
+  
+  bool mIsDiscarded : 1;
 };
 
 
