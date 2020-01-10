@@ -58,6 +58,9 @@ add_task(function setup() {
   Services.prefs.setBoolPref("network.trr.wait-for-A-and-AAAA", true);
   
   Services.prefs.setCharPref("network.trr.confirmationNS", "skip");
+  
+  
+  Services.prefs.setBoolPref("network.trr.clear-cache-on-pref-change", false);
 
   
   
@@ -87,6 +90,7 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref("network.trr.wait-for-A-and-AAAA");
   Services.prefs.clearUserPref("network.trr.excluded-domains");
   Services.prefs.clearUserPref("network.trr.builtin-excluded-domains");
+  Services.prefs.clearUserPref("network.trr.clear-cache-on-pref-change");
   Services.prefs.clearUserPref("captivedetect.canonicalURL");
 
   Services.prefs.clearUserPref("network.http.spdy.enabled");
@@ -1053,6 +1057,27 @@ add_task(async function test_connection_closed_trr_first() {
   await new DNSListener("closeme.com", "127.0.0.1");
   
   await new DNSListener("bar2.example.com", "9.9.9.9");
+});
+
+add_task(async function test_clearCacheOnURIChange() {
+  dns.clearCache(true);
+  Services.prefs.setBoolPref("network.trr.clear-cache-on-pref-change", true);
+  Services.prefs.setIntPref("network.trr.mode", 2); 
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://localhost:${h2Port}/doh?responseIP=7.7.7.7`
+  );
+
+  await new DNSListener("bar.example.com", "7.7.7.7");
+
+  
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://localhost:${h2Port}/doh?responseIP=8.8.8.8`
+  );
+
+  await new DNSListener("bar.example.com", "8.8.8.8");
+  Services.prefs.setBoolPref("network.trr.clear-cache-on-pref-change", false);
 });
 
 add_task(async function test_dnsSuffix() {
