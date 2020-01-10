@@ -297,7 +297,9 @@ nscoord nsListControlFrame::CalcBSizeOfARow() {
   
   
   nscoord rowBSize(0);
-  if (!GetMaxRowBSize(GetOptionsContainer(), GetWritingMode(), &rowBSize)) {
+  if (StyleDisplay()->IsContainSize() ||
+      !GetMaxRowBSize(GetOptionsContainer(), GetWritingMode(), &rowBSize)) {
+    
     
     float inflation = nsLayoutUtils::FontSizeInflationFor(this);
     rowBSize = CalcFallbackRowBSize(inflation);
@@ -314,7 +316,9 @@ nscoord nsListControlFrame::GetPrefISize(gfxContext* aRenderingContext) {
   
   
   WritingMode wm = GetWritingMode();
-  result = GetScrolledFrame()->GetPrefISize(aRenderingContext);
+  result = StyleDisplay()->IsContainSize()
+               ? 0
+               : GetScrolledFrame()->GetPrefISize(aRenderingContext);
   LogicalMargin scrollbarSize(
       wm, GetDesiredScrollbarSizes(PresContext(), aRenderingContext));
   result = NSCoordSaturatingAdd(result, scrollbarSize.IStartEnd(wm));
@@ -330,7 +334,9 @@ nscoord nsListControlFrame::GetMinISize(gfxContext* aRenderingContext) {
   
   
   WritingMode wm = GetWritingMode();
-  result = GetScrolledFrame()->GetMinISize(aRenderingContext);
+  result = StyleDisplay()->IsContainSize()
+               ? 0
+               : GetScrolledFrame()->GetMinISize(aRenderingContext);
   LogicalMargin scrollbarSize(
       wm, GetDesiredScrollbarSizes(PresContext(), aRenderingContext));
   result += scrollbarSize.IStartEnd(wm);
