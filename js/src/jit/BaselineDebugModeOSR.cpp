@@ -264,7 +264,6 @@ static void PatchBaselineFramesForDebugMode(
   
   
   
-  
 
   const BaselineInterpreter& baselineInterp =
       cx->runtime()->jitRuntime()->baselineInterpreter();
@@ -373,7 +372,6 @@ static void PatchBaselineFramesForDebugMode(
             break;
           }
           case RetAddrEntry::Kind::Invalid: {
-            
             
             
             

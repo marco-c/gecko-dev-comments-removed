@@ -1006,16 +1006,9 @@ bool GeneratorThrowOrReturn(JSContext* cx, BaselineFrame* frame,
 
   
   
-  if (!script->hasBaselineScript()) {
-    MOZ_ASSERT(IsBaselineInterpreterEnabled());
-    MOZ_ASSERT(!frame->runningInInterpreter());
-    frame->initInterpFieldsForGeneratorThrowOrReturn(script, pc);
-  }
-
   
-  
-  
-  frame->setOverridePc(pc);
+  MOZ_ASSERT(!frame->runningInInterpreter());
+  frame->initInterpFieldsForGeneratorThrowOrReturn(script, pc);
 
   
   
