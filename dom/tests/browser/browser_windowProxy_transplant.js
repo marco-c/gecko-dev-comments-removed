@@ -12,7 +12,8 @@ add_task(async function() {
   
   
   await SpecialPowers.pushPrefEnv({set: [["fission.preserve_browsing_contexts", true],
-                                         ["fission.rebuild_frameloaders_on_remoteness_change", true]]});
+                                         ["fission.rebuild_frameloaders_on_remoteness_change", true],
+                                         ["browser.tabs.remote.useHTTPResponseProcessSelection", true]]});
 
   
   let win = await BrowserTestUtils.openNewBrowserWindow({fission: true, remote: true});
