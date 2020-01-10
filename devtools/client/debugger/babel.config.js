@@ -1,0 +1,62 @@
+
+
+
+
+
+
+
+
+module.exports = {
+  sourceType: "unambiguous",
+  overrides: [
+    {
+      test: [
+        "./src",
+        "./packages/*/index.js",
+        "./packages/*/src",
+        /[/\\]node_modules[/\\]devtools-/,
+        /[/\\]node_modules[/\\]react-aria-components[/\\]/,
+      ],
+      presets: [
+        "@babel/preset-react",
+        [
+          "@babel/preset-env",
+          {
+            targets: {
+              browsers: ["last 1 Chrome version", "last 1 Firefox version"],
+            },
+            modules: "commonjs",
+          },
+        ],
+      ],
+      plugins: [
+        "@babel/plugin-transform-flow-strip-types",
+        "@babel/plugin-proposal-class-properties",
+        [
+          "module-resolver",
+          {
+            alias: {
+              "devtools/client/shared/vendor/react": "react",
+              "devtools/client/shared/vendor/react-dom": "react-dom",
+            },
+          },
+        ],
+      ],
+      env: {
+        test: {
+          presets: [
+            [
+              "@babel/preset-env",
+              {
+                targets: {
+                  node: 7,
+                },
+                modules: "commonjs",
+              },
+            ],
+          ],
+        },
+      },
+    },
+  ],
+};

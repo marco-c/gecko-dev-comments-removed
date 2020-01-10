@@ -78,11 +78,7 @@ return  (function(modules) {
  102:
  (function(module, exports, __webpack_require__) {
 
-"use strict";
 (function(process) {
-
-
-
 
 
 const flag = __webpack_require__(103);
@@ -113,8 +109,7 @@ function isFirefoxPanel() {
 }
 
 function isFirefox() {
-  return (/firefox/i.test(navigator.userAgent)
-  );
+  return /firefox/i.test(navigator.userAgent);
 }
 
 module.exports = {
@@ -176,7 +171,6 @@ module.exports = isObjectLike;
 
 
 
-
 function networkRequest(url, opts) {
   return fetch(url, {
     cache: opts.loadFromCache ? "default" : "no-cache"
@@ -188,8 +182,12 @@ function networkRequest(url, opts) {
           isDwarf: true
         }));
       }
-      return res.text().then(text => ({ content: text }));
+
+      return res.text().then(text => ({
+        content: text
+      }));
     }
+
     return Promise.reject(`request failed with status ${res.status}`);
   });
 }
@@ -203,16 +201,16 @@ module.exports = networkRequest;
 
 
 
+
 function WorkerDispatcher() {
   this.msgId = 1;
   this.worker = null;
-} 
-
-
+}
 
 WorkerDispatcher.prototype = {
   start(url, win = window) {
     this.worker = new win.Worker(url);
+
     this.worker.onerror = () => {
       console.error(`Error in worker ${url}`);
     };
@@ -227,8 +225,11 @@ WorkerDispatcher.prototype = {
     this.worker = null;
   },
 
-  task(method, { queue = false } = {}) {
+  task(method, {
+    queue = false
+  } = {}) {
     const calls = [];
+
     const push = args => {
       return new Promise((resolve, reject) => {
         if (queue && calls.length === 0) {
@@ -258,7 +259,9 @@ WorkerDispatcher.prototype = {
         calls: items.map(item => item[0])
       });
 
-      const listener = ({ data: result }) => {
+      const listener = ({
+        data: result
+      }) => {
         if (result.id !== id) {
           return;
         }
@@ -268,7 +271,6 @@ WorkerDispatcher.prototype = {
         }
 
         this.worker.removeEventListener("message", listener);
-
         result.results.forEach((resultData, i) => {
           const [, resolve, reject] = items[i];
 
@@ -289,29 +291,45 @@ WorkerDispatcher.prototype = {
   invoke(method, ...args) {
     return this.task(method)(...args);
   }
+
 };
 
 function workerHandler(publicInterface) {
   return function (msg) {
-    const { id, method, calls } = msg.data;
-
+    const {
+      id,
+      method,
+      calls
+    } = msg.data;
     Promise.all(calls.map(args => {
       try {
         const response = publicInterface[method].apply(undefined, args);
+
         if (response instanceof Promise) {
-          return response.then(val => ({ response: val }),
+          return response.then(val => ({
+            response: val
+          }), 
           
-          
-          err => ({ error: err.toString() }));
+          err => ({
+            error: err.toString()
+          }));
         }
-        return { response };
+
+        return {
+          response
+        };
       } catch (error) {
         
         
-        return { error: error.toString() };
+        return {
+          error: error.toString()
+        };
       }
     })).then(results => {
-      self.postMessage({ id, results });
+      self.postMessage({
+        id,
+        results
+      });
     });
   };
 }
@@ -362,16 +380,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = getMatches;
 
-var _assert = __webpack_require__(385);
+var _assert = _interopRequireDefault(__webpack_require__(385));
 
-var _assert2 = _interopRequireDefault(_assert);
-
-var _buildQuery = __webpack_require__(386);
-
-var _buildQuery2 = _interopRequireDefault(_buildQuery);
+var _buildQuery = _interopRequireDefault(__webpack_require__(386));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 
 
 
@@ -380,31 +393,37 @@ function getMatches(query, text, modifiers) {
   if (!query || !text || !modifiers) {
     return [];
   }
-  const regexQuery = (0, _buildQuery2.default)(query, modifiers, {
+
+  const regexQuery = (0, _buildQuery.default)(query, modifiers, {
     isGlobal: true
   });
   const matchedLocations = [];
   const lines = text.split("\n");
+
   for (let i = 0; i < lines.length; i++) {
     let singleMatch;
     const line = lines[i];
+
     while ((singleMatch = regexQuery.exec(line)) !== null) {
       
       if (!singleMatch) {
         throw new Error("no singleMatch");
       }
 
-      matchedLocations.push({ line: i, ch: singleMatch.index });
+      matchedLocations.push({
+        line: i,
+        ch: singleMatch.index
+      }); 
+      
+      
 
-      
-      
-      
       if (singleMatch[0] === "") {
-        (0, _assert2.default)(!regexQuery.unicode, "lastIndex++ can cause issues in unicode mode");
+        (0, _assert.default)(!regexQuery.unicode, "lastIndex++ can cause issues in unicode mode");
         regexQuery.lastIndex++;
       }
     }
   }
+
   return matchedLocations;
 }
 
@@ -699,9 +718,7 @@ module.exports = __webpack_require__(384);
 "use strict";
 
 
-var _getMatches = __webpack_require__(170);
-
-var _getMatches2 = _interopRequireDefault(_getMatches);
+var _getMatches = _interopRequireDefault(__webpack_require__(170));
 
 var _projectSearch = __webpack_require__(388);
 
@@ -709,11 +726,16 @@ var _devtoolsUtils = __webpack_require__(7);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const { workerHandler } = _devtoolsUtils.workerUtils; 
 
 
 
-self.onmessage = workerHandler({ getMatches: _getMatches2.default, findSourceMatches: _projectSearch.findSourceMatches });
+const {
+  workerHandler
+} = _devtoolsUtils.workerUtils;
+self.onmessage = workerHandler({
+  getMatches: _getMatches.default,
+  findSourceMatches: _projectSearch.findSourceMatches
+});
 
  }),
 
@@ -730,13 +752,14 @@ exports.default = assert;
 
 var _devtoolsEnvironment = __webpack_require__(102);
 
+
+
+
 function assert(condition, message) {
   if ((0, _devtoolsEnvironment.isDevelopment)() && !condition) {
     throw new Error(`Assertion failure: ${message}`);
   }
-} 
-
-
+}
 
  }),
 
@@ -751,9 +774,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = buildQuery;
 
-var _escapeRegExp = __webpack_require__(387);
-
-var _escapeRegExp2 = _interopRequireDefault(_escapeRegExp);
+var _escapeRegExp = _interopRequireDefault(__webpack_require__(387));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -763,12 +784,13 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 
 
+
+
+
+
 function ignoreWhiteSpace(str) {
-  return (/^\s{0,2}$/.test(str) ? "(?!\\s*.*)" : str
-  );
-} 
-
-
+  return /^\s{0,2}$/.test(str) ? "(?!\\s*.*)" : str;
+}
 
 function wholeMatch(query, wholeWord) {
   if (query === "" || !wholeWord) {
@@ -792,20 +814,28 @@ function buildFlags(caseSensitive, isGlobal) {
   }
 }
 
-function buildQuery(originalQuery, modifiers, { isGlobal = false, ignoreSpaces = false }) {
-  const { caseSensitive, regexMatch, wholeWord } = modifiers;
+function buildQuery(originalQuery, modifiers, {
+  isGlobal = false,
+  ignoreSpaces = false
+}) {
+  const {
+    caseSensitive,
+    regexMatch,
+    wholeWord
+  } = modifiers;
 
   if (originalQuery === "") {
     return new RegExp(originalQuery);
   }
 
   let query = originalQuery;
+
   if (ignoreSpaces) {
     query = ignoreWhiteSpace(query);
   }
 
   if (!regexMatch) {
-    query = (0, _escapeRegExp2.default)(query);
+    query = (0, _escapeRegExp.default)(query);
   }
 
   query = wholeMatch(query, wholeWord);
@@ -870,11 +900,13 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.findSourceMatches = findSourceMatches;
 
-var _getMatches = __webpack_require__(170);
-
-var _getMatches2 = _interopRequireDefault(_getMatches);
+var _getMatches = _interopRequireDefault(__webpack_require__(170));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+
+
+
 
 function findSourceMatches(sourceId, content, queryText) {
   if (queryText == "") {
@@ -886,12 +918,16 @@ function findSourceMatches(sourceId, content, queryText) {
     regexMatch: false,
     wholeWord: false
   };
-
   const text = content.value;
   const lines = text.split("\n");
-
-  return (0, _getMatches2.default)(queryText, text, modifiers).map(({ line, ch }) => {
-    const { value, matchIndex } = truncateLine(lines[line], ch);
+  return (0, _getMatches.default)(queryText, text, modifiers).map(({
+    line,
+    ch
+  }) => {
+    const {
+      value,
+      matchIndex
+    } = truncateLine(lines[line], ch);
     return {
       sourceId,
       line: line + 1,
@@ -901,16 +937,10 @@ function findSourceMatches(sourceId, content, queryText) {
       value
     };
   });
-}
+} 
 
 
-
-
-
-
-
-
-const startRegex = /([ !@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/g;
+const startRegex = /([ !@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/g; 
 
 const endRegex = new RegExp(["([ !@#$%^&*()_+-=[]{};':\"\\|,.<>/?])", '[^ !@#$%^&*()_+-=[]{};\':"\\|,.<>/?]*$"/'].join(""));
 
@@ -920,11 +950,11 @@ function truncateLine(text, column) {
       matchIndex: column,
       value: text
     };
-  }
+  } 
 
-  
-  const offset = Math.max(column - 40, 0);
-  
+
+  const offset = Math.max(column - 40, 0); 
+
   const truncStr = text.slice(offset, column + 400);
   let start = truncStr.search(startRegex);
   let end = truncStr.search(endRegex);
@@ -934,11 +964,12 @@ function truncateLine(text, column) {
     
     start = -1;
   }
+
   if (end < column) {
     end = truncStr.length;
   }
-  const value = truncStr.slice(start + 1, end);
 
+  const value = truncStr.slice(start + 1, end);
   return {
     matchIndex: column - start - offset - 1,
     value
@@ -1000,8 +1031,8 @@ module.exports = toString;
 
 
 
-
 const networkRequest = __webpack_require__(13);
+
 const workerUtils = __webpack_require__(14);
 
 module.exports = {

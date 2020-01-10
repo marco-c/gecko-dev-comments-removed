@@ -4997,8 +4997,8 @@ function isSpreadProperty(node, opts) {
 
 
 
-
 const networkRequest = __webpack_require__(13);
+
 const workerUtils = __webpack_require__(14);
 
 module.exports = {
@@ -6672,7 +6672,6 @@ exports.compareByGeneratedPositionsInflated = compareByGeneratedPositionsInflate
 
 
 
-
 function networkRequest(url, opts) {
   return fetch(url, {
     cache: opts.loadFromCache ? "default" : "no-cache"
@@ -6684,8 +6683,12 @@ function networkRequest(url, opts) {
           isDwarf: true
         }));
       }
-      return res.text().then(text => ({ content: text }));
+
+      return res.text().then(text => ({
+        content: text
+      }));
     }
+
     return Promise.reject(`request failed with status ${res.status}`);
   });
 }
@@ -6698,16 +6701,16 @@ module.exports = networkRequest;
 
 
 
+
 function WorkerDispatcher() {
   this.msgId = 1;
   this.worker = null;
-} 
-
-
+}
 
 WorkerDispatcher.prototype = {
   start(url, win = window) {
     this.worker = new win.Worker(url);
+
     this.worker.onerror = () => {
       console.error(`Error in worker ${url}`);
     };
@@ -6722,8 +6725,11 @@ WorkerDispatcher.prototype = {
     this.worker = null;
   },
 
-  task(method, { queue = false } = {}) {
+  task(method, {
+    queue = false
+  } = {}) {
     const calls = [];
+
     const push = args => {
       return new Promise((resolve, reject) => {
         if (queue && calls.length === 0) {
@@ -6753,7 +6759,9 @@ WorkerDispatcher.prototype = {
         calls: items.map(item => item[0])
       });
 
-      const listener = ({ data: result }) => {
+      const listener = ({
+        data: result
+      }) => {
         if (result.id !== id) {
           return;
         }
@@ -6763,7 +6771,6 @@ WorkerDispatcher.prototype = {
         }
 
         this.worker.removeEventListener("message", listener);
-
         result.results.forEach((resultData, i) => {
           const [, resolve, reject] = items[i];
 
@@ -6784,29 +6791,45 @@ WorkerDispatcher.prototype = {
   invoke(method, ...args) {
     return this.task(method)(...args);
   }
+
 };
 
 function workerHandler(publicInterface) {
   return function (msg) {
-    const { id, method, calls } = msg.data;
-
+    const {
+      id,
+      method,
+      calls
+    } = msg.data;
     Promise.all(calls.map(args => {
       try {
         const response = publicInterface[method].apply(undefined, args);
+
         if (response instanceof Promise) {
-          return response.then(val => ({ response: val }),
+          return response.then(val => ({
+            response: val
+          }), 
           
-          
-          err => ({ error: err.toString() }));
+          err => ({
+            error: err.toString()
+          }));
         }
-        return { response };
+
+        return {
+          response
+        };
       } catch (error) {
         
         
-        return { error: error.toString() };
+        return {
+          error: error.toString()
+        };
       }
     })).then(results => {
-      self.postMessage({ id, results });
+      self.postMessage({
+        id,
+        results
+      });
     });
   };
 }
@@ -7016,35 +7039,27 @@ exports.traverseAst = traverseAst;
 exports.hasNode = hasNode;
 exports.replaceNode = replaceNode;
 
-var _parseScriptTags = __webpack_require__(320);
+var _parseScriptTags = _interopRequireDefault(__webpack_require__(320));
 
-var _parseScriptTags2 = _interopRequireDefault(_parseScriptTags);
+var babelParser = _interopRequireWildcard(__webpack_require__(324));
 
-var _parser = __webpack_require__(324);
+var t = _interopRequireWildcard(__webpack_require__(3));
 
-var babelParser = _interopRequireWildcard(_parser);
-
-var _types = __webpack_require__(3);
-
-var t = _interopRequireWildcard(_types);
-
-var _isEmpty = __webpack_require__(154);
-
-var _isEmpty2 = _interopRequireDefault(_isEmpty);
+var _isEmpty = _interopRequireDefault(__webpack_require__(154));
 
 var _sources = __webpack_require__(155);
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-let ASTs = new Map(); 
 
 
+
+let ASTs = new Map();
 
 function _parse(code, opts) {
-  return babelParser.parse(code, {
-    ...opts,
+  return babelParser.parse(code, { ...opts,
     tokens: true
   });
 }
@@ -7064,6 +7079,7 @@ const sourceOptions = {
 
 function parse(text, opts) {
   let ast;
+
   if (!text) {
     return;
   }
@@ -7076,33 +7092,43 @@ function parse(text, opts) {
   }
 
   return ast;
-}
+} 
 
 
 
-function htmlParser({ source, line }) {
-  return parse(source, { startLine: line });
+function htmlParser({
+  source,
+  line
+}) {
+  return parse(source, {
+    startLine: line
+  });
 }
 
 const VUE_COMPONENT_START = /^\s*</;
-function vueParser({ source, line }) {
+
+function vueParser({
+  source,
+  line
+}) {
   return parse(source, {
     startLine: line,
     ...sourceOptions.original
   });
 }
+
 function parseVueScript(code) {
   if (typeof code !== "string") {
     return;
   }
 
-  let ast;
+  let ast; 
+  
+  
 
-  
-  
-  
   if (code.match(VUE_COMPONENT_START)) {
-    ast = (0, _parseScriptTags2.default)(code, vueParser);
+    ast = (0, _parseScriptTags.default)(code, vueParser);
+
     if (t.isFile(ast)) {
       
       
@@ -7111,6 +7137,7 @@ function parseVueScript(code) {
   } else {
     ast = parse(code, sourceOptions.original);
   }
+
   return ast;
 }
 
@@ -7142,9 +7169,12 @@ function getAst(sourceId) {
   }
 
   let ast = {};
-  const { contentType } = source;
+  const {
+    contentType
+  } = source;
+
   if (contentType == "text/html") {
-    ast = (0, _parseScriptTags2.default)(source.text, htmlParser) || {};
+    ast = (0, _parseScriptTags.default)(source.text, htmlParser) || {};
   } else if (contentType && contentType === "text/vue") {
     ast = parseVueScript(source.text) || {};
   } else if (contentType && contentType.match(/(javascript|jsx)/) && !contentType.match(/typescript-jsx/)) {
@@ -7152,8 +7182,7 @@ function getAst(sourceId) {
     const options = sourceOptions[type];
     ast = parse(source.text, options);
   } else if (contentType && contentType.match(/typescript/)) {
-    const options = {
-      ...sourceOptions.original,
+    const options = { ...sourceOptions.original,
       plugins: [...sourceOptions.original.plugins.filter(p => p !== "flow" && p !== "decorators" && p !== "decorators2" && (p !== "jsx" || contentType.match(/typescript-jsx/))), "decorators-legacy", "typescript"]
     };
     ast = parse(source.text, options);
@@ -7169,7 +7198,8 @@ function clearASTs() {
 
 function traverseAst(sourceId, visitor, state) {
   const ast = getAst(sourceId);
-  if ((0, _isEmpty2.default)(ast)) {
+
+  if ((0, _isEmpty.default)(ast)) {
     return null;
   }
 
@@ -7191,6 +7221,7 @@ function hasNode(rootNode, predicate) {
       return true;
     }
   }
+
   return false;
 }
 
@@ -9067,18 +9098,13 @@ exports.isTopLevel = isTopLevel;
 exports.nodeLocationKey = nodeLocationKey;
 exports.getFunctionParameterNames = getFunctionParameterNames;
 
-var _types = __webpack_require__(3);
+var t = _interopRequireWildcard(__webpack_require__(3));
 
-var t = _interopRequireWildcard(_types);
-
-var _generator = __webpack_require__(55);
-
-var _generator2 = _interopRequireDefault(_generator);
+var _generator = _interopRequireDefault(__webpack_require__(55));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 
 
@@ -9088,12 +9114,18 @@ function isFunction(node) {
 }
 
 function isAwaitExpression(path) {
-  const { node, parent } = path;
+  const {
+    node,
+    parent
+  } = path;
   return t.isAwaitExpression(node) || t.isAwaitExpression(parent.init) || t.isAwaitExpression(parent);
 }
 
 function isYieldExpression(path) {
-  const { node, parent } = path;
+  const {
+    node,
+    parent
+  } = path;
   return t.isYieldExpression(node) || t.isYieldExpression(parent.init) || t.isYieldExpression(parent);
 }
 
@@ -9102,7 +9134,9 @@ function isObjectShorthand(parent) {
 }
 
 function getObjectExpressionValue(node) {
-  const { value } = node;
+  const {
+    value
+  } = node;
 
   if (t.isIdentifier(value)) {
     return value.name;
@@ -9111,20 +9145,21 @@ function getObjectExpressionValue(node) {
   if (t.isCallExpression(value) || t.isFunctionExpression(value)) {
     return "";
   }
-  const code = (0, _generator2.default)(value).code;
 
+  const code = (0, _generator.default)(value).code;
   const shouldWrap = t.isObjectExpression(value);
   return shouldWrap ? `(${code})` : code;
 }
 
 function getCode(node) {
-  return (0, _generator2.default)(node).code;
+  return (0, _generator.default)(node).code;
 }
 
 function getComments(ast) {
   if (!ast || !ast.comments) {
     return [];
   }
+
   return ast.comments.map(comment => ({
     name: comment.location,
     location: comment.loc
@@ -9140,8 +9175,7 @@ function getSpecifiers(specifiers) {
 }
 
 function isComputedExpression(expression) {
-  return (/^\[/m.test(expression)
-  );
+  return /^\[/m.test(expression);
 }
 
 function getMemberExpression(root) {
@@ -9163,6 +9197,7 @@ function getMemberExpression(root) {
   }
 
   const expr = _getMemberExpression(root, []);
+
   return expr.join(".");
 }
 
@@ -9174,15 +9209,17 @@ function getVariables(dec) {
   if (t.isArrayPattern(dec.id)) {
     if (!dec.id.elements) {
       return [];
-    }
+    } 
+    
+    
 
-    
-    
-    
+
     return dec.id.elements.filter(element => element).map(element => ({
       name: t.isAssignmentPattern(element) ? element.left.name : element.name || element.argument && element.argument.name,
       location: element.loc
-    })).filter(({ name }) => name);
+    })).filter(({
+      name
+    }) => name);
   }
 
   return [{
@@ -9193,8 +9230,11 @@ function getVariables(dec) {
 
 function getPatternIdentifiers(pattern) {
   let items = [];
+
   if (t.isObjectPattern(pattern)) {
-    items = pattern.properties.map(({ value }) => value);
+    items = pattern.properties.map(({
+      value
+    }) => value);
   }
 
   if (t.isArrayPattern(pattern)) {
@@ -9210,16 +9250,22 @@ function getIdentifiers(items) {
     if (t.isObjectPattern(item) || t.isArrayPattern(item)) {
       ids = ids.concat(getPatternIdentifiers(item));
     } else if (t.isIdentifier(item)) {
-      const { start, end } = item.loc;
+      const {
+        start,
+        end
+      } = item.loc;
       ids.push({
         name: item.name,
         expression: item.name,
-        location: { start, end }
+        location: {
+          start,
+          end
+        }
       });
     }
   });
   return ids;
-}
+} 
 
 
 
@@ -9228,7 +9274,10 @@ function isTopLevel(ancestors) {
 }
 
 function nodeLocationKey(a) {
-  const { start, end } = a.location;
+  const {
+    start,
+    end
+  } = a.location;
   return `${start.line}:${start.column}:${end.line}:${end.column}`;
 }
 
@@ -9237,9 +9286,9 @@ function getFunctionParameterNames(path) {
     return path.node.params.map(param => {
       if (param.type !== "AssignmentPattern") {
         return param.name;
-      }
+      } 
 
-      
+
       if (param.left.type === "Identifier" && param.right.type === "Identifier") {
         return `${param.left.name} = ${param.right.name}`;
       } else if (param.left.type === "Identifier" && param.right.type === "StringLiteral") {
@@ -9253,6 +9302,7 @@ function getFunctionParameterNames(path) {
       }
     });
   }
+
   return [];
 }
 
@@ -15472,13 +15522,9 @@ Object.defineProperty(exports, "__esModule", {
 exports.clearSymbols = clearSymbols;
 exports.getSymbols = getSymbols;
 
-var _types = __webpack_require__(3);
+var t = _interopRequireWildcard(__webpack_require__(3));
 
-var t = _interopRequireWildcard(_types);
-
-var _simplePath = __webpack_require__(153);
-
-var _simplePath2 = _interopRequireDefault(_simplePath);
+var _simplePath = _interopRequireDefault(__webpack_require__(153));
 
 var _ast = __webpack_require__(20);
 
@@ -15486,25 +15532,26 @@ var _helpers = __webpack_require__(54);
 
 var _inferClassName = __webpack_require__(348);
 
-var _getFunctionName = __webpack_require__(158);
-
-var _getFunctionName2 = _interopRequireDefault(_getFunctionName);
+var _getFunctionName = _interopRequireDefault(__webpack_require__(158));
 
 var _frameworks = __webpack_require__(159);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-let symbolDeclarations = new Map(); 
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 
+
+
+let symbolDeclarations = new Map();
 
 function getUniqueIdentifiers(identifiers) {
   const newIdentifiers = [];
   const locationKeys = new Set();
+
   for (const newId of identifiers) {
     const key = (0, _helpers.nodeLocationKey)(newId);
+
     if (!locationKeys.has(key)) {
       locationKeys.add(key);
       newIdentifiers.push(newId);
@@ -15515,15 +15562,16 @@ function getUniqueIdentifiers(identifiers) {
 }
 
 
+
 function extractSymbol(path, symbols, state) {
   if ((0, _helpers.isFunction)(path)) {
-    const name = (0, _getFunctionName2.default)(path.node, path.parent);
+    const name = (0, _getFunctionName.default)(path.node, path.parent);
 
     if (!state.fnCounts[name]) {
       state.fnCounts[name] = 0;
     }
-    const index = state.fnCounts[name]++;
 
+    const index = state.fnCounts[name]++;
     symbols.functions.push({
       name,
       klass: (0, _inferClassName.inferClassName)(path),
@@ -15546,7 +15594,10 @@ function extractSymbol(path, symbols, state) {
   }
 
   if (t.isClassDeclaration(path)) {
-    const { loc, superClass } = path.node;
+    const {
+      loc,
+      superClass
+    } = path.node;
     symbols.classes.push({
       name: path.node.id.name,
       parent: superClass ? {
@@ -15566,19 +15617,32 @@ function extractSymbol(path, symbols, state) {
   }
 
   if (t.isObjectProperty(path)) {
-    const { start, end, identifierName } = path.node.key.loc;
+    const {
+      start,
+      end,
+      identifierName
+    } = path.node.key.loc;
     symbols.objectProperties.push({
       name: identifierName,
-      location: { start, end },
+      location: {
+        start,
+        end
+      },
       expression: getSnippet(path)
     });
   }
 
   if (t.isMemberExpression(path)) {
-    const { start, end } = path.node.property.loc;
+    const {
+      start,
+      end
+    } = path.node.property.loc;
     symbols.memberExpressions.push({
       name: path.node.property.name,
-      location: { start, end },
+      location: {
+        start,
+        end
+      },
       expression: getSnippet(path),
       computed: path.node.computed
     });
@@ -15586,10 +15650,16 @@ function extractSymbol(path, symbols, state) {
 
   if ((t.isStringLiteral(path) || t.isNumericLiteral(path)) && t.isMemberExpression(path.parentPath)) {
     
-    const { start, end } = path.node.loc;
+    const {
+      start,
+      end
+    } = path.node.loc;
     symbols.literals.push({
       name: path.node.value,
-      location: { start, end },
+      location: {
+        start,
+        end
+      },
       expression: getSnippet(path.parentPath)
     });
   }
@@ -15597,9 +15667,13 @@ function extractSymbol(path, symbols, state) {
   if (t.isCallExpression(path)) {
     const callee = path.node.callee;
     const args = path.node.arguments;
+
     if (t.isMemberExpression(callee)) {
       const {
-        property: { name, loc }
+        property: {
+          name,
+          loc
+        }
       } = callee;
       symbols.callExpressions.push({
         name: name,
@@ -15607,28 +15681,43 @@ function extractSymbol(path, symbols, state) {
         location: loc
       });
     } else {
-      const { start, end, identifierName } = callee.loc;
+      const {
+        start,
+        end,
+        identifierName
+      } = callee.loc;
       symbols.callExpressions.push({
         name: identifierName,
         values: args.filter(arg => arg.value).map(arg => arg.value),
-        location: { start, end }
+        location: {
+          start,
+          end
+        }
       });
     }
   }
 
   if (t.isStringLiteral(path) && t.isProperty(path.parentPath)) {
-    const { start, end } = path.node.loc;
+    const {
+      start,
+      end
+    } = path.node.loc;
     return symbols.identifiers.push({
       name: path.node.value,
       expression: (0, _helpers.getObjectExpressionValue)(path.parent),
-      location: { start, end }
+      location: {
+        start,
+        end
+      }
     });
   }
 
   if (t.isIdentifier(path) && !t.isGenericTypeAnnotation(path.parent)) {
-    let { start, end } = path.node.loc;
+    let {
+      start,
+      end
+    } = path.node.loc; 
 
-    
     if (t.isClassMethod(path.parent) && !path.inList) {
       return;
     }
@@ -15637,34 +15726,47 @@ function extractSymbol(path, symbols, state) {
       return symbols.identifiers.push({
         name: path.node.name,
         expression: (0, _helpers.getObjectExpressionValue)(path.parent),
-        location: { start, end }
+        location: {
+          start,
+          end
+        }
       });
     }
 
     if (path.node.typeAnnotation) {
       const column = path.node.typeAnnotation.loc.start.column;
-      end = { ...end, column };
+      end = { ...end,
+        column
+      };
     }
 
     symbols.identifiers.push({
       name: path.node.name,
       expression: path.node.name,
-      location: { start, end }
+      location: {
+        start,
+        end
+      }
     });
   }
 
   if (t.isThisExpression(path.node)) {
-    const { start, end } = path.node.loc;
+    const {
+      start,
+      end
+    } = path.node.loc;
     symbols.identifiers.push({
       name: "this",
-      location: { start, end },
+      location: {
+        start,
+        end
+      },
       expression: "this"
     });
   }
 
   if (t.isVariableDeclarator(path)) {
     const nodeId = path.node.id;
-
     symbols.identifiers.push(...(0, _helpers.getPatternIdentifiers)(nodeId));
   }
 }
@@ -15687,15 +15789,14 @@ function extractSymbols(sourceId) {
     loading: false,
     framework: undefined
   };
-
   const state = {
     fnCounts: Object.create(null)
   };
-
   const ast = (0, _ast.traverseAst)(sourceId, {
     enter(node, ancestors) {
       try {
-        const path = (0, _simplePath2.default)(ancestors);
+        const path = (0, _simplePath.default)(ancestors);
+
         if (path) {
           extractSymbol(path, symbols, state);
         }
@@ -15703,13 +15804,12 @@ function extractSymbols(sourceId) {
         console.error(e);
       }
     }
-  });
 
-  
+  }); 
+
   symbols.comments = (0, _helpers.getComments)(ast);
   symbols.identifiers = getUniqueIdentifiers(symbols.identifiers);
   symbols.framework = (0, _frameworks.getFramework)(symbols);
-
   return symbols;
 }
 
@@ -15724,6 +15824,7 @@ function extendSnippet(name, expression, path, prevPath) {
     if (computed) {
       return name === undefined ? `[${value}]` : `[${name}]`;
     }
+
     return name;
   }
 
@@ -15731,6 +15832,7 @@ function extendSnippet(name, expression, path, prevPath) {
     if (prevComputed || prevArray) {
       return `[${name}]${expression}`;
     }
+
     return `[${name === undefined ? value : name}].${expression}`;
   }
 
@@ -15748,7 +15850,9 @@ function extendSnippet(name, expression, path, prevPath) {
 function getMemberSnippet(node, expression = "") {
   if (t.isMemberExpression(node)) {
     const name = node.property.name;
-    const snippet = getMemberSnippet(node.object, extendSnippet(name, expression, { node }));
+    const snippet = getMemberSnippet(node.object, extendSnippet(name, expression, {
+      node
+    }));
     return snippet;
   }
 
@@ -15764,6 +15868,7 @@ function getMemberSnippet(node, expression = "") {
     if ((0, _helpers.isComputedExpression)(expression)) {
       return `${node.name}${expression}`;
     }
+
     return `${node.name}.${expression}`;
   }
 
@@ -15776,12 +15881,9 @@ function getObjectSnippet(path, prevPath, expression = "") {
   }
 
   const name = path.node.key.name;
-
   const extendedExpression = extendSnippet(name, expression, path, prevPath);
-
   const nextPrevPath = path;
   const nextPath = path.parentPath && path.parentPath.parentPath;
-
   return getSnippet(nextPath, nextPrevPath, extendedExpression);
 }
 
@@ -15792,10 +15894,8 @@ function getArraySnippet(path, prevPath, expression) {
 
   const index = `${prevPath.parentPath.containerIndex}`;
   const extendedExpression = extendSnippet(index, expression, path, prevPath);
-
   const nextPrevPath = path;
   const nextPath = path.parentPath && path.parentPath.parentPath;
-
   return getSnippet(nextPath, nextPrevPath, extendedExpression);
 }
 
@@ -15812,6 +15912,7 @@ function getSnippet(path, prevPath, expression = "") {
 
   if (t.isVariableDeclarator(path)) {
     const node = path.node.id;
+
     if (t.isObjectPattern(node)) {
       return expression;
     }
@@ -15824,7 +15925,6 @@ function getSnippet(path, prevPath, expression = "") {
   if (t.isAssignmentExpression(path)) {
     const node = path.node.left;
     const name = t.isMemberExpression(node) ? getMemberSnippet(node) : node.name;
-
     const prop = extendSnippet(name, expression, path, prevPath);
     return prop;
   }
@@ -15869,13 +15969,13 @@ function clearSymbols() {
 function getSymbols(sourceId) {
   if (symbolDeclarations.has(sourceId)) {
     const symbols = symbolDeclarations.get(sourceId);
+
     if (symbols) {
       return symbols;
     }
   }
 
   const symbols = extractSymbols(sourceId);
-
   symbolDeclarations.set(sourceId, symbols);
   return symbols;
 }
@@ -17048,16 +17148,18 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = createSimplePath;
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 
 
 
 function createSimplePath(ancestors) {
   if (ancestors.length === 0) {
     return null;
-  }
+  } 
+  
 
-  
-  
+
   return new SimplePath(ancestors.slice());
 }
 
@@ -17067,8 +17169,15 @@ function createSimplePath(ancestors) {
 
 
 class SimplePath {
-
   constructor(ancestors, index = ancestors.length - 1) {
+    _defineProperty(this, "_index", void 0);
+
+    _defineProperty(this, "_ancestors", void 0);
+
+    _defineProperty(this, "_ancestor", void 0);
+
+    _defineProperty(this, "_parentPath", void 0);
+
     if (index < 0 || index >= ancestors.length) {
       console.error(ancestors);
       throw new Error("Created invalid path");
@@ -17081,12 +17190,14 @@ class SimplePath {
 
   get parentPath() {
     let path = this._parentPath;
+
     if (path === undefined) {
       if (this._index === 0) {
         path = null;
       } else {
         path = new SimplePath(this._ancestors, this._index - 1);
       }
+
       this._parentPath = path;
     }
 
@@ -17098,7 +17209,11 @@ class SimplePath {
   }
 
   get node() {
-    const { node, key, index } = this._ancestor;
+    const {
+      node,
+      key,
+      index
+    } = this._ancestor;
 
     if (typeof index === "number") {
       return node[key][index];
@@ -17116,7 +17231,12 @@ class SimplePath {
       throw new Error("Replacing anything other than leaf nodes is undefined behavior " + "in t.traverse()");
     }
 
-    const { node, key, index } = this._ancestor;
+    const {
+      node,
+      key,
+      index
+    } = this._ancestor;
+
     if (typeof index === "number") {
       node[key][index] = replacement;
     } else {
@@ -17133,7 +17253,9 @@ class SimplePath {
   }
 
   get containerIndex() {
-    const { index } = this._ancestor;
+    const {
+      index
+    } = this._ancestor;
 
     if (typeof index !== "number") {
       throw new Error("Cannot get index of non-array node");
@@ -17156,6 +17278,7 @@ class SimplePath {
         return path;
       }
     }
+
     return null;
   }
 
@@ -17168,21 +17291,30 @@ class SimplePath {
   }
 
   getSibling(offset) {
-    const { node, key, index } = this._ancestor;
+    const {
+      node,
+      key,
+      index
+    } = this._ancestor;
 
     if (typeof index !== "number") {
       throw new Error("Non-array nodes do not have siblings");
     }
 
     const container = node[key];
-
     const siblingIndex = index + offset;
+
     if (siblingIndex < 0 || siblingIndex >= container.length) {
       return null;
     }
 
-    return new SimplePath(this._ancestors.slice(0, -1).concat([{ node, key, index: siblingIndex }]));
+    return new SimplePath(this._ancestors.slice(0, -1).concat([{
+      node,
+      key,
+      index: siblingIndex
+    }]));
   }
+
 }
 
  }),
@@ -17283,9 +17415,9 @@ exports.getSource = getSource;
 exports.clearSources = clearSources;
 
 
-const cachedSources = new Map(); 
 
 
+const cachedSources = new Map();
 
 function setSource(source) {
   cachedSources.set(source.id, source);
@@ -17293,6 +17425,7 @@ function setSource(source) {
 
 function getSource(sourceId) {
   const source = cachedSources.get(sourceId);
+
   if (!source) {
     throw new Error(`Parser: source ${sourceId} was not provided.`);
   }
@@ -17659,11 +17792,12 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = getFunctionName;
 
-var _types = __webpack_require__(3);
+var t = _interopRequireWildcard(__webpack_require__(3));
 
-var t = _interopRequireWildcard(_types);
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+
 
 
 
@@ -17673,66 +17807,87 @@ function getFunctionName(node, parent) {
     return node.id.name;
   }
 
-  if (t.isObjectMethod(node, { computed: false }) || t.isClassMethod(node, { computed: false })) {
+  if (t.isObjectMethod(node, {
+    computed: false
+  }) || t.isClassMethod(node, {
+    computed: false
+  })) {
     const key = node.key;
 
     if (t.isIdentifier(key)) {
       return key.name;
     }
+
     if (t.isStringLiteral(key)) {
       return key.value;
     }
+
     if (t.isNumericLiteral(key)) {
       return `${key.value}`;
     }
   }
 
-  if (t.isObjectProperty(parent, { computed: false, value: node }) ||
+  if (t.isObjectProperty(parent, {
+    computed: false,
+    value: node
+  }) || 
   
   
-  
-  t.isClassProperty(parent, { value: node }) && !parent.computed) {
+  t.isClassProperty(parent, {
+    value: node
+  }) && !parent.computed) {
     const key = parent.key;
 
     if (t.isIdentifier(key)) {
       return key.name;
     }
+
     if (t.isStringLiteral(key)) {
       return key.value;
     }
+
     if (t.isNumericLiteral(key)) {
       return `${key.value}`;
     }
   }
 
-  if (t.isAssignmentExpression(parent, { operator: "=", right: node })) {
+  if (t.isAssignmentExpression(parent, {
+    operator: "=",
+    right: node
+  })) {
     if (t.isIdentifier(parent.left)) {
       return parent.left.name;
-    }
+    } 
+    
 
-    
-    
-    if (t.isMemberExpression(parent.left, { computed: false })) {
+
+    if (t.isMemberExpression(parent.left, {
+      computed: false
+    })) {
       return parent.left.property.name;
     }
   }
 
-  if (t.isAssignmentPattern(parent, { right: node }) && t.isIdentifier(parent.left)) {
+  if (t.isAssignmentPattern(parent, {
+    right: node
+  }) && t.isIdentifier(parent.left)) {
     return parent.left.name;
   }
 
-  if (t.isVariableDeclarator(parent, { init: node }) && t.isIdentifier(parent.id)) {
+  if (t.isVariableDeclarator(parent, {
+    init: node
+  }) && t.isIdentifier(parent.id)) {
     return parent.id.name;
   }
 
-  if (t.isExportDefaultDeclaration(parent, { declaration: node }) && t.isFunctionDeclaration(node)) {
+  if (t.isExportDefaultDeclaration(parent, {
+    declaration: node
+  }) && t.isFunctionDeclaration(node)) {
     return "default";
   }
 
   return "anonymous";
-} 
-
-
+}
 
  }),
 
@@ -17746,27 +17901,33 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.getFramework = getFramework;
 
-var _types = __webpack_require__(3);
+var t = _interopRequireWildcard(__webpack_require__(3));
 
-var t = _interopRequireWildcard(_types);
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+
 
 function getFramework(symbols) {
   if (isReactComponent(symbols)) {
     return "React";
   }
+
   if (isAngularComponent(symbols)) {
     return "Angular";
   }
+
   if (isVueComponent(symbols)) {
     return "Vue";
   }
-} 
+}
 
-
-
-function isReactComponent({ imports, classes, callExpressions, identifiers }) {
+function isReactComponent({
+  imports,
+  classes,
+  callExpressions,
+  identifiers
+}) {
   return importsReact(imports) || requiresReact(callExpressions) || extendsReactComponent(classes) || isReact(identifiers) || isRedux(identifiers);
 }
 
@@ -17779,21 +17940,35 @@ function requiresReact(callExpressions) {
 }
 
 function extendsReactComponent(classes) {
-  return classes.some(classObj => t.isIdentifier(classObj.parent, { name: "Component" }) || t.isIdentifier(classObj.parent, { name: "PureComponent" }) || t.isMemberExpression(classObj.parent, { computed: false }) && t.isIdentifier(classObj.parent, { name: "Component" }));
+  return classes.some(classObj => t.isIdentifier(classObj.parent, {
+    name: "Component"
+  }) || t.isIdentifier(classObj.parent, {
+    name: "PureComponent"
+  }) || t.isMemberExpression(classObj.parent, {
+    computed: false
+  }) && t.isIdentifier(classObj.parent, {
+    name: "Component"
+  }));
 }
 
-function isAngularComponent({ memberExpressions }) {
+function isAngularComponent({
+  memberExpressions
+}) {
   return memberExpressions.some(item => item.expression == "angular.controller" || item.expression == "angular.module");
 }
 
-function isVueComponent({ identifiers }) {
+function isVueComponent({
+  identifiers
+}) {
   return identifiers.some(identifier => identifier.name == "Vue");
 }
+
 
 
 function isReact(identifiers) {
   return identifiers.some(identifier => identifier.name == "isReactComponent");
 }
+
 
 
 function isRedux(identifiers) {
@@ -17810,32 +17985,39 @@ function isRedux(identifiers) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.buildScopeList = undefined;
 exports.default = getScopes;
 exports.clearScopes = clearScopes;
+Object.defineProperty(exports, "buildScopeList", {
+  enumerable: true,
+  get: function () {
+    return _visitor.buildScopeList;
+  }
+});
 
 var _visitor = __webpack_require__(349);
 
-let parsedScopesCache = new Map(); 
 
 
+
+let parsedScopesCache = new Map();
 
 function getScopes(location) {
-  const { sourceId } = location;
+  const {
+    sourceId
+  } = location;
   let parsedScopes = parsedScopesCache.get(sourceId);
+
   if (!parsedScopes) {
     parsedScopes = (0, _visitor.parseSourceScopes)(sourceId);
     parsedScopesCache.set(sourceId, parsedScopes);
   }
+
   return parsedScopes ? findScopes(parsedScopes, location) : [];
 }
 
 function clearScopes() {
   parsedScopesCache = new Map();
 }
-
-exports.buildScopeList = _visitor.buildScopeList;
-
 
 
 
@@ -17844,6 +18026,7 @@ function findScopes(scopes, location) {
   
   let searchInScopes = scopes;
   const found = [];
+
   while (searchInScopes) {
     const foundOne = searchInScopes.some(s => {
       if (compareLocations(s.start, location) <= 0 && compareLocations(location, s.end) < 0) {
@@ -17852,12 +18035,15 @@ function findScopes(scopes, location) {
         searchInScopes = s.children;
         return true;
       }
+
       return false;
     });
+
     if (!foundOne) {
       break;
     }
   }
+
   return found.map(i => ({
     type: i.type,
     scopeKind: i.scopeKind,
@@ -18197,17 +18383,21 @@ exports.nodeContainsPosition = nodeContainsPosition;
 
 function startsBefore(a, b) {
   let before = a.start.line < b.line;
+
   if (a.start.line === b.line) {
     before = a.start.column >= 0 && b.column >= 0 ? a.start.column <= b.column : true;
   }
+
   return before;
 }
 
 function endsAfter(a, b) {
   let after = a.end.line > b.line;
+
   if (a.end.line === b.line) {
     after = a.end.column >= 0 && b.column >= 0 ? a.end.column >= b.column : true;
   }
+
   return after;
 }
 
@@ -18269,31 +18459,30 @@ var _getSymbols = __webpack_require__(117);
 
 var _ast = __webpack_require__(20);
 
-var _getScopes = __webpack_require__(160);
-
-var _getScopes2 = _interopRequireDefault(_getScopes);
+var _getScopes = _interopRequireWildcard(__webpack_require__(160));
 
 var _sources = __webpack_require__(155);
 
-var _findOutOfScopeLocations = __webpack_require__(350);
-
-var _findOutOfScopeLocations2 = _interopRequireDefault(_findOutOfScopeLocations);
+var _findOutOfScopeLocations = _interopRequireDefault(__webpack_require__(350));
 
 var _steps = __webpack_require__(372);
 
 var _validate = __webpack_require__(374);
 
-var _mapExpression = __webpack_require__(375);
-
-var _mapExpression2 = _interopRequireDefault(_mapExpression);
+var _mapExpression = _interopRequireDefault(__webpack_require__(375));
 
 var _devtoolsUtils = __webpack_require__(7);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const { workerHandler } = _devtoolsUtils.workerUtils; 
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 
+
+
+const {
+  workerHandler
+} = _devtoolsUtils.workerUtils;
 
 function clearState() {
   (0, _ast.clearASTs)();
@@ -18303,13 +18492,13 @@ function clearState() {
 }
 
 self.onmessage = workerHandler({
-  findOutOfScopeLocations: _findOutOfScopeLocations2.default,
+  findOutOfScopeLocations: _findOutOfScopeLocations.default,
   getSymbols: _getSymbols.getSymbols,
-  getScopes: _getScopes2.default,
+  getScopes: _getScopes.default,
   clearState,
   getNextStep: _steps.getNextStep,
   hasSyntaxError: _validate.hasSyntaxError,
-  mapExpression: _mapExpression2.default,
+  mapExpression: _mapExpression.default,
   setSource: _sources.setSource
 });
 
@@ -41447,17 +41636,19 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.inferClassName = inferClassName;
 
-var _types = __webpack_require__(3);
+var t = _interopRequireWildcard(__webpack_require__(3));
 
-var t = _interopRequireWildcard(_types);
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+
 
 
 
 function fromCallExpression(callExpression) {
   const whitelist = ["extend", "createClass"];
   const callee = callExpression.node.callee;
+
   if (!callee) {
     return null;
   }
@@ -41469,6 +41660,7 @@ function fromCallExpression(callExpression) {
   }
 
   const variable = callExpression.findParent(p => t.isVariableDeclarator(p.node));
+
   if (variable) {
     return variable.node.id.name;
   }
@@ -41490,16 +41682,13 @@ function fromCallExpression(callExpression) {
   }
 
   return null;
-}
-
-
-
-
+} 
 
 
 
 function fromPrototype(assignment) {
   const left = assignment.node.left;
+
   if (!left) {
     return null;
   }
@@ -41509,7 +41698,7 @@ function fromPrototype(assignment) {
   }
 
   return null;
-}
+} 
 
 
 
@@ -41517,16 +41706,19 @@ function fromPrototype(assignment) {
 
 function inferClassName(path) {
   const classDeclaration = path.findParent(p => t.isClassDeclaration(p.node));
+
   if (classDeclaration) {
     return classDeclaration.node.id.name;
   }
 
   const callExpression = path.findParent(p => t.isCallExpression(p.node));
+
   if (callExpression) {
     return fromCallExpression(callExpression);
   }
 
   const assignment = path.findParent(p => t.isAssignmentExpression(p.node));
+
   if (assignment) {
     return fromPrototype(assignment);
   }
@@ -41547,48 +41739,17 @@ Object.defineProperty(exports, "__esModule", {
 exports.parseSourceScopes = parseSourceScopes;
 exports.buildScopeList = buildScopeList;
 
-var _isEmpty = __webpack_require__(154);
+var _isEmpty = _interopRequireDefault(__webpack_require__(154));
 
-var _isEmpty2 = _interopRequireDefault(_isEmpty);
+var t = _interopRequireWildcard(__webpack_require__(3));
 
-var _types = __webpack_require__(3);
-
-var t = _interopRequireWildcard(_types);
-
-var _getFunctionName = __webpack_require__(158);
-
-var _getFunctionName2 = _interopRequireDefault(_getFunctionName);
+var _getFunctionName = _interopRequireDefault(__webpack_require__(158));
 
 var _ast = __webpack_require__(20);
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -41599,7 +41760,8 @@ function isGeneratedId(id) {
 
 function parseSourceScopes(sourceId) {
   const ast = (0, _ast.getAst)(sourceId);
-  if ((0, _isEmpty2.default)(ast)) {
+
+  if ((0, _isEmpty.default)(ast)) {
     return null;
   }
 
@@ -41607,8 +41769,10 @@ function parseSourceScopes(sourceId) {
 }
 
 function buildScopeList(ast, sourceId) {
-  const { global, lexical } = createGlobalScope(ast, sourceId);
-
+  const {
+    global,
+    lexical
+  } = createGlobalScope(ast, sourceId);
   const state = {
     sourceId,
     freeVariables: new Map(),
@@ -41622,6 +41786,7 @@ function buildScopeList(ast, sourceId) {
 
   for (const [key, freeVariables] of state.freeVariables) {
     let binding = global.bindings[key];
+
     if (!binding) {
       binding = {
         type: "global",
@@ -41631,11 +41796,11 @@ function buildScopeList(ast, sourceId) {
     }
 
     binding.refs = freeVariables.concat(binding.refs);
-  }
+  } 
+  
+  
 
-  
-  
-  
+
   if (isGeneratedId(sourceId) || ast.program.sourceType === "script" && !looksLikeCommonJS(global)) {
     stripModuleScope(global);
   }
@@ -41647,6 +41812,7 @@ function toParsedScopes(children, sourceId) {
   if (!children || children.length === 0) {
     return undefined;
   }
+
   return children.map(scope => ({
     
     
@@ -41669,16 +41835,17 @@ function createTempScope(type, displayName, parent, loc) {
     loc,
     bindings: Object.create(null)
   };
+
   if (parent) {
     parent.children.push(result);
   }
+
   return result;
 }
+
 function pushTempScope(state, type, displayName, loc) {
   const scope = createTempScope(type, displayName, state.scope, loc);
-
   state.scope = scope;
-
   state.freeVariableStack.push(state.freeVariables);
   state.freeVariables = new Map();
   return scope;
@@ -41690,12 +41857,15 @@ function isNode(node, type) {
 
 function getVarScope(scope) {
   let s = scope;
+
   while (s.type !== "function" && s.type !== "module") {
     if (!s.parent) {
       return s;
     }
+
     s = s.parent;
   }
+
   return s;
 }
 
@@ -41710,6 +41880,7 @@ function fromBabelLocation(location, sourceId) {
 function parseDeclarator(declaratorId, targetScope, type, locationType, declaration, state) {
   if (isNode(declaratorId, "Identifier")) {
     let existing = targetScope.bindings[declaratorId.name];
+
     if (!existing) {
       existing = {
         type,
@@ -41717,6 +41888,7 @@ function parseDeclarator(declaratorId, targetScope, type, locationType, declarat
       };
       targetScope.bindings[declaratorId.name] = existing;
     }
+
     state.declarationBindingIds.add(declaratorId);
     existing.refs.push({
       type: locationType,
@@ -41750,6 +41922,7 @@ function isLetOrConst(node) {
 
 function hasLexicalDeclaration(node, parent) {
   const nodes = [];
+
   if (t.isSwitchStatement(node)) {
     for (const caseNode of node.cases) {
       nodes.push(...caseNode.consequent);
@@ -41758,10 +41931,12 @@ function hasLexicalDeclaration(node, parent) {
     nodes.push(...node.body);
   }
 
-  const isFunctionBody = t.isFunction(parent, { body: node });
-
+  const isFunctionBody = t.isFunction(parent, {
+    body: node
+  });
   return nodes.some(child => isLexicalVariable(child) || t.isClassDeclaration(child) || !isFunctionBody && t.isFunctionDeclaration(child));
 }
+
 function isLexicalVariable(node) {
   return isNode(node, "VariableDeclaration") && isLetOrConst(node);
 }
@@ -41771,20 +41946,20 @@ function createGlobalScope(ast, sourceId) {
     start: fromBabelLocation(ast.loc.start, sourceId),
     end: fromBabelLocation(ast.loc.end, sourceId)
   });
-
   const lexical = createTempScope("block", "Lexical Global", global, {
     start: fromBabelLocation(ast.loc.start, sourceId),
     end: fromBabelLocation(ast.loc.end, sourceId)
   });
-
-  return { global, lexical };
+  return {
+    global,
+    lexical
+  };
 }
 
 const scopeCollectionVisitor = {
   
   enter(node, ancestors, state) {
     state.scopeStack.push(state.scope);
-
     const parentNode = ancestors.length === 0 ? null : ancestors[ancestors.length - 1].node;
 
     if (state.inType) {
@@ -41802,6 +41977,7 @@ const scopeCollectionVisitor = {
       };
     } else if (t.isFunction(node)) {
       let scope = state.scope;
+
       if (t.isFunctionExpression(node) && isNode(node.id, "Identifier")) {
         scope = pushTempScope(state, "block", "Function Expression", {
           start: fromBabelLocation(node.loc.start, state.sourceId),
@@ -41849,13 +42025,12 @@ const scopeCollectionVisitor = {
         }
       }
 
-      scope = pushTempScope(state, "function", (0, _getFunctionName2.default)(node, parentNode), {
+      scope = pushTempScope(state, "function", (0, _getFunctionName.default)(node, parentNode), {
         
         
         start: fromBabelLocation(node.params[0] ? node.params[0].loc.start : node.loc.start, state.sourceId),
         end: fromBabelLocation(node.loc.end, state.sourceId)
       });
-
       node.params.forEach(param => parseDeclarator(param, scope, "var", "fn-param", node, state));
 
       if (!t.isArrowFunctionExpression(node)) {
@@ -41883,6 +42058,7 @@ const scopeCollectionVisitor = {
         
         
         let declStart = node.loc.start;
+
         if (node.decorators && node.decorators.length > 0) {
           
           
@@ -41914,7 +42090,6 @@ const scopeCollectionVisitor = {
           start: fromBabelLocation(node.loc.start, state.sourceId),
           end: fromBabelLocation(node.loc.end, state.sourceId)
         });
-
         state.declarationBindingIds.add(node.id);
         scope.bindings[node.id.name] = {
           type: "const",
@@ -41928,6 +42103,7 @@ const scopeCollectionVisitor = {
       }
     } else if (t.isForXStatement(node) || t.isForStatement(node)) {
       const init = node.init || node.left;
+
       if (isNode(init, "VariableDeclaration") && isLetOrConst(init)) {
         
         pushTempScope(state, "block", "For", {
@@ -41943,17 +42119,19 @@ const scopeCollectionVisitor = {
         end: fromBabelLocation(node.loc.end, state.sourceId)
       });
       parseDeclarator(node.param, scope, "var", "catch", node, state);
-    } else if (t.isBlockStatement(node) &&
-    
+    } else if (t.isBlockStatement(node) && 
     !t.isFunction(parentNode) && hasLexicalDeclaration(node, parentNode)) {
       
       pushTempScope(state, "block", "Block", {
         start: fromBabelLocation(node.loc.start, state.sourceId),
         end: fromBabelLocation(node.loc.end, state.sourceId)
       });
-    } else if (t.isVariableDeclaration(node) && (node.kind === "var" ||
-    
-    !t.isForStatement(parentNode, { init: node }) || !t.isForXStatement(parentNode, { left: node }))) {
+    } else if (t.isVariableDeclaration(node) && (node.kind === "var" || 
+    !t.isForStatement(parentNode, {
+      init: node
+    }) || !t.isForXStatement(parentNode, {
+      left: node
+    }))) {
       
       const hoistAt = !isLetOrConst(node) ? getVarScope(state.scope) : state.scope;
       node.declarations.forEach(declarator => {
@@ -41967,7 +42145,6 @@ const scopeCollectionVisitor = {
 
         if (t.isImportNamespaceSpecifier(spec)) {
           state.declarationBindingIds.add(spec.local);
-
           state.scope.bindings[spec.local.name] = {
             
             
@@ -41984,7 +42161,6 @@ const scopeCollectionVisitor = {
           };
         } else {
           state.declarationBindingIds.add(spec.local);
-
           state.scope.bindings[spec.local.name] = {
             type: "import",
             refs: [{
@@ -42033,15 +42209,18 @@ const scopeCollectionVisitor = {
         start: fromBabelLocation(node.loc.start, state.sourceId),
         end: fromBabelLocation(node.loc.end, state.sourceId)
       });
-    } else if (t.isIdentifier(node) && t.isReferenced(node, parentNode) &&
+    } else if (t.isIdentifier(node) && t.isReferenced(node, parentNode) && 
     
-    
-    !t.isTSEnumMember(parentNode, { id: node }) && !t.isTSModuleDeclaration(parentNode, { id: node }) &&
-    
+    !t.isTSEnumMember(parentNode, {
+      id: node
+    }) && !t.isTSModuleDeclaration(parentNode, {
+      id: node
+    }) && 
     
     
     !state.declarationBindingIds.has(node)) {
       let freeVariables = state.freeVariables.get(node.name);
+
       if (!freeVariables) {
         freeVariables = [];
         state.freeVariables.set(node.name, freeVariables);
@@ -42055,6 +42234,7 @@ const scopeCollectionVisitor = {
       });
     } else if (isOpeningJSXIdentifier(node, ancestors)) {
       let freeVariables = state.freeVariables.get(node.name);
+
       if (!freeVariables) {
         freeVariables = [];
         state.freeVariables.set(node.name, freeVariables);
@@ -42068,6 +42248,7 @@ const scopeCollectionVisitor = {
       });
     } else if (t.isThisExpression(node)) {
       let freeVariables = state.freeVariables.get("this");
+
       if (!freeVariables) {
         freeVariables = [];
         state.freeVariables.set("this", freeVariables);
@@ -42079,7 +42260,9 @@ const scopeCollectionVisitor = {
         end: fromBabelLocation(node.loc.end, state.sourceId),
         meta: buildMetaBindings(state.sourceId, node, ancestors)
       });
-    } else if (t.isClassProperty(parentNode, { value: node })) {
+    } else if (t.isClassProperty(parentNode, {
+      value: node
+    })) {
       const scope = pushTempScope(state, "function", "Class Field", {
         start: fromBabelLocation(node.loc.start, state.sourceId),
         end: fromBabelLocation(node.loc.end, state.sourceId)
@@ -42099,11 +42282,9 @@ const scopeCollectionVisitor = {
       });
     }
 
-    if (
+    if ( 
     
-    
-    t.isFlow(node) && !t.isTypeCastExpression(node) ||
-    
+    t.isFlow(node) && !t.isTypeCastExpression(node) || 
     
     node.type.startsWith("TS") && !t.isTSTypeAssertion(node) && !t.isTSAsExpression(node) && !t.isTSNonNullExpression(node) && !t.isTSModuleDeclaration(node) && !t.isTSModuleBlock(node) && !t.isTSParameterProperty(node) && !t.isTSExportAssignment(node)) {
       
@@ -42111,38 +42292,40 @@ const scopeCollectionVisitor = {
       state.inType = node;
     }
   },
+
   exit(node, ancestors, state) {
     const currentScope = state.scope;
     const parentScope = state.scopeStack.pop();
+
     if (!parentScope) {
       throw new Error("Assertion failure - unsynchronized pop");
     }
-    state.scope = parentScope;
 
+    state.scope = parentScope; 
     
     
-    
+
     for (let scope = currentScope; scope && scope !== parentScope; scope = scope.parent) {
       const freeVariables = state.freeVariables;
       state.freeVariables = state.freeVariableStack.pop();
-      const parentFreeVariables = state.freeVariables;
+      const parentFreeVariables = state.freeVariables; 
+      
 
-      
-      
       for (const key of Object.keys(scope.bindings)) {
         const binding = scope.bindings[key];
-
         const freeVars = freeVariables.get(key);
+
         if (freeVars) {
           binding.refs.push(...freeVars);
           freeVariables.delete(key);
         }
-      }
+      } 
+      
 
-      
-      
+
       for (const [key, value] of freeVariables) {
         let refs = parentFreeVariables.get(key);
+
         if (!refs) {
           refs = [];
           parentFreeVariables.set(key, refs);
@@ -42156,6 +42339,7 @@ const scopeCollectionVisitor = {
       state.inType = null;
     }
   }
+
 };
 
 function isOpeningJSXIdentifier(node, ancestors) {
@@ -42164,7 +42348,10 @@ function isOpeningJSXIdentifier(node, ancestors) {
   }
 
   for (let i = ancestors.length - 1; i >= 0; i--) {
-    const { node: parent, key } = ancestors[i];
+    const {
+      node: parent,
+      key
+    } = ancestors[i];
 
     if (t.isJSXOpeningElement(parent) && key === "name") {
       return true;
@@ -42180,15 +42367,17 @@ function buildMetaBindings(sourceId, node, ancestors, parentIndex = ancestors.le
   if (parentIndex <= 1) {
     return null;
   }
-  const parent = ancestors[parentIndex].node;
-  const grandparent = ancestors[parentIndex - 1].node;
 
-  
+  const parent = ancestors[parentIndex].node;
+  const grandparent = ancestors[parentIndex - 1].node; 
+
   if (t.isSequenceExpression(parent) && parent.expressions.length === 2 && t.isNumericLiteral(parent.expressions[0]) && parent.expressions[1] === node) {
     let start = parent.loc.start;
     let end = parent.loc.end;
 
-    if (t.isCallExpression(grandparent, { callee: parent })) {
+    if (t.isCallExpression(grandparent, {
+      callee: parent
+    })) {
       
       
       start = grandparent.loc.start;
@@ -42202,11 +42391,19 @@ function buildMetaBindings(sourceId, node, ancestors, parentIndex = ancestors.le
       end: fromBabelLocation(end, sourceId),
       parent: buildMetaBindings(sourceId, parent, ancestors, parentIndex - 1)
     };
-  }
+  } 
+  
 
-  
-  
-  if (t.isCallExpression(parent) && (t.isIdentifier(parent.callee, { name: "Object" }) || t.isMemberExpression(parent.callee, { computed: false }) && t.isIdentifier(parent.callee.object, { name: "__webpack_require__" }) && t.isIdentifier(parent.callee.property, { name: "i" })) && parent.arguments.length === 1 && parent.arguments[0] === node) {
+
+  if (t.isCallExpression(parent) && (t.isIdentifier(parent.callee, {
+    name: "Object"
+  }) || t.isMemberExpression(parent.callee, {
+    computed: false
+  }) && t.isIdentifier(parent.callee.object, {
+    name: "__webpack_require__"
+  }) && t.isIdentifier(parent.callee.property, {
+    name: "i"
+  })) && parent.arguments.length === 1 && parent.arguments[0] === node) {
     return {
       type: "inherit",
       start: fromBabelLocation(parent.loc.start, sourceId),
@@ -42215,7 +42412,9 @@ function buildMetaBindings(sourceId, node, ancestors, parentIndex = ancestors.le
     };
   }
 
-  if (t.isMemberExpression(parent, { object: node })) {
+  if (t.isMemberExpression(parent, {
+    object: node
+  })) {
     if (parent.computed) {
       if (t.isStringLiteral(parent.property)) {
         return {
@@ -42236,7 +42435,10 @@ function buildMetaBindings(sourceId, node, ancestors, parentIndex = ancestors.le
       };
     }
   }
-  if (t.isCallExpression(parent, { callee: node }) && parent.arguments.length == 0) {
+
+  if (t.isCallExpression(parent, {
+    callee: node
+  }) && parent.arguments.length == 0) {
     return {
       type: "call",
       start: fromBabelLocation(parent.loc.start, sourceId),
@@ -42257,12 +42459,14 @@ function looksLikeCommonJS(rootScope) {
 function stripModuleScope(rootScope) {
   const rootLexicalScope = rootScope.children[0];
   const moduleScope = rootLexicalScope.children[0];
+
   if (moduleScope.type !== "module") {
     throw new Error("Assertion failure - should be module");
   }
 
   Object.keys(moduleScope.bindings).forEach(name => {
     const binding = moduleScope.bindings[name];
+
     if (binding.type === "let" || binding.type === "const") {
       rootLexicalScope.bindings[name] = binding;
     } else {
@@ -42285,18 +42489,13 @@ function stripModuleScope(rootScope) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _get = __webpack_require__(161);
+var _get = _interopRequireDefault(__webpack_require__(161));
 
-var _get2 = _interopRequireDefault(_get);
+var _findIndex = _interopRequireDefault(__webpack_require__(354));
 
-var _findIndex = __webpack_require__(354);
-
-var _findIndex2 = _interopRequireDefault(_findIndex);
-
-var _findLastIndex = __webpack_require__(371);
-
-var _findLastIndex2 = _interopRequireDefault(_findLastIndex);
+var _findLastIndex = _interopRequireDefault(__webpack_require__(371));
 
 var _contains = __webpack_require__(169);
 
@@ -42307,10 +42506,15 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 
 
-
 function findSymbols(source) {
-  const { functions, comments } = (0, _getSymbols.getSymbols)(source);
-  return { functions, comments };
+  const {
+    functions,
+    comments
+  } = (0, _getSymbols.getSymbols)(source);
+  return {
+    functions,
+    comments
+  };
 }
 
 
@@ -42320,11 +42524,12 @@ function findSymbols(source) {
 
 
 function getLocation(func) {
-  const location = { ...func.location };
+  const location = { ...func.location
+  }; 
+  
 
-  
-  
-  const identifierEnd = (0, _get2.default)(func, "identifier.loc.end");
+  const identifierEnd = (0, _get.default)(func, "identifier.loc.end");
+
   if (identifierEnd) {
     location.start = identifierEnd;
   }
@@ -42339,27 +42544,29 @@ function getLocation(func) {
 
 
 
+
 function removeInnerLocations(locations, position) {
   
   
   const newLocs = locations.slice();
-  const parentIndex = (0, _findLastIndex2.default)(newLocs, loc => (0, _contains.containsPosition)(loc, position));
+  const parentIndex = (0, _findLastIndex.default)(newLocs, loc => (0, _contains.containsPosition)(loc, position));
+
   if (parentIndex < 0) {
     return newLocs;
-  }
+  } 
+  
+  
 
-  
-  
-  
+
   const innerStartIndex = parentIndex + 1;
   const parentLoc = newLocs[parentIndex];
-  const outerBoundaryIndex = (0, _findIndex2.default)(newLocs, loc => !(0, _contains.containsLocation)(parentLoc, loc), innerStartIndex);
-  const innerBoundaryIndex = outerBoundaryIndex < 0 ? newLocs.length - 1 : outerBoundaryIndex - 1;
+  const outerBoundaryIndex = (0, _findIndex.default)(newLocs, loc => !(0, _contains.containsLocation)(parentLoc, loc), innerStartIndex);
+  const innerBoundaryIndex = outerBoundaryIndex < 0 ? newLocs.length - 1 : outerBoundaryIndex - 1; 
 
-  
   newLocs.splice(innerStartIndex, innerBoundaryIndex - parentIndex);
   return newLocs;
 }
+
 
 
 
@@ -42372,17 +42579,21 @@ function removeOverlaps(locations) {
   if (locations.length == 0) {
     return [];
   }
+
   const firstParent = locations[0];
   return locations.reduce(deduplicateNode, [firstParent]);
 }
 
 function deduplicateNode(nodes, location) {
   const parent = nodes[nodes.length - 1];
+
   if (!(0, _contains.containsLocation)(parent, location)) {
     nodes.push(location);
   }
+
   return nodes;
 }
+
 
 
 
@@ -42401,17 +42612,22 @@ function sortByStart(a, b) {
 
 
 
+
 function findOutOfScopeLocations(sourceId, position) {
-  const { functions, comments } = findSymbols(sourceId);
+  const {
+    functions,
+    comments
+  } = findSymbols(sourceId);
   const commentLocations = comments.map(c => c.location);
-  let locations = functions.map(getLocation).concat(commentLocations).sort(sortByStart);
+  let locations = functions.map(getLocation).concat(commentLocations).sort(sortByStart); 
   
-  
+
   locations = removeInnerLocations(locations, position).filter(loc => !(0, _contains.containsPosition)(loc, position));
   return removeOverlaps(locations);
 }
 
-exports.default = findOutOfScopeLocations;
+var _default = findOutOfScopeLocations;
+exports.default = _default;
 
  }),
 
@@ -43426,18 +43642,20 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.getNextStep = getNextStep;
 
-var _types = __webpack_require__(3);
-
-var t = _interopRequireWildcard(_types);
+var t = _interopRequireWildcard(__webpack_require__(3));
 
 var _closest = __webpack_require__(373);
 
 var _helpers = __webpack_require__(54);
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
+
+
+
 
 function getNextStep(sourceId, pausedPosition) {
   const currentExpression = getSteppableExpression(sourceId, pausedPosition);
+
   if (!currentExpression) {
     return null;
   }
@@ -43451,9 +43669,7 @@ function getNextStep(sourceId, pausedPosition) {
   }
 
   return _getNextStep(currentStatement, sourceId, pausedPosition);
-} 
-
-
+}
 
 function getSteppableExpression(sourceId, pausedPosition) {
   const closestPath = (0, _closest.getClosestPath)(sourceId, pausedPosition);
@@ -43471,9 +43687,9 @@ function getSteppableExpression(sourceId, pausedPosition) {
 
 function _getNextStep(statement, sourceId, position) {
   const nextStatement = statement.getSibling(1);
+
   if (nextStatement) {
-    return {
-      ...nextStatement.node.loc.start,
+    return { ...nextStatement.node.loc.start,
       sourceId: sourceId
     };
   }
@@ -43493,9 +43709,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.getClosestPath = getClosestPath;
 
-var _simplePath = __webpack_require__(153);
-
-var _simplePath2 = _interopRequireDefault(_simplePath);
+var _simplePath = _interopRequireDefault(__webpack_require__(153));
 
 var _ast = __webpack_require__(20);
 
@@ -43503,19 +43717,22 @@ var _contains = __webpack_require__(169);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+
+
+
 function getClosestPath(sourceId, location) {
   let closestPath = null;
-
   (0, _ast.traverseAst)(sourceId, {
     enter(node, ancestors) {
       if ((0, _contains.nodeContainsPosition)(node, location)) {
-        const path = (0, _simplePath2.default)(ancestors);
+        const path = (0, _simplePath.default)(ancestors);
 
         if (path && (!closestPath || path.depth > closestPath.depth)) {
           closestPath = path;
         }
       }
     }
+
   });
 
   if (!closestPath) {
@@ -43523,9 +43740,7 @@ function getClosestPath(sourceId, location) {
   }
 
   return closestPath;
-} 
-
-
+}
 
  }),
 
@@ -43541,6 +43756,9 @@ exports.hasSyntaxError = hasSyntaxError;
 
 var _ast = __webpack_require__(20);
 
+
+
+
 function hasSyntaxError(input) {
   try {
     (0, _ast.parseScript)(input);
@@ -43548,9 +43766,7 @@ function hasSyntaxError(input) {
   } catch (e) {
     return `${e.name} : ${e.message}`;
   }
-} 
-
-
+}
 
  }),
 
@@ -43566,20 +43782,13 @@ exports.default = mapExpression;
 
 var _ast = __webpack_require__(20);
 
-var _mapOriginalExpression = __webpack_require__(376);
+var _mapOriginalExpression = _interopRequireDefault(__webpack_require__(376));
 
-var _mapOriginalExpression2 = _interopRequireDefault(_mapOriginalExpression);
+var _mapBindings = _interopRequireDefault(__webpack_require__(377));
 
-var _mapBindings = __webpack_require__(377);
-
-var _mapBindings2 = _interopRequireDefault(_mapBindings);
-
-var _mapAwaitExpression = __webpack_require__(378);
-
-var _mapAwaitExpression2 = _interopRequireDefault(_mapAwaitExpression);
+var _mapAwaitExpression = _interopRequireDefault(__webpack_require__(378));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 
 
 
@@ -43590,24 +43799,24 @@ function mapExpression(expression, mappings, bindings, shouldMapBindings = true,
     bindings: false,
     originalExpression: false
   };
-
   const ast = (0, _ast.parseConsoleScript)(expression);
+
   try {
     if (mappings && ast) {
       const beforeOriginalExpression = expression;
-      expression = (0, _mapOriginalExpression2.default)(expression, ast, mappings);
+      expression = (0, _mapOriginalExpression.default)(expression, ast, mappings);
       mapped.originalExpression = beforeOriginalExpression !== expression;
     }
 
     if (shouldMapBindings && ast) {
       const beforeBindings = expression;
-      expression = (0, _mapBindings2.default)(expression, ast, bindings);
+      expression = (0, _mapBindings.default)(expression, ast, bindings);
       mapped.bindings = beforeBindings !== expression;
     }
 
     if (shouldMapAwait) {
       const beforeAwait = expression;
-      expression = (0, _mapAwaitExpression2.default)(expression, ast);
+      expression = (0, _mapAwaitExpression.default)(expression, ast);
       mapped.await = beforeAwait !== expression;
     }
   } catch (e) {
@@ -43636,17 +43845,16 @@ var _ast = __webpack_require__(20);
 
 var _getScopes = __webpack_require__(160);
 
-var _generator = __webpack_require__(55);
+var _generator = _interopRequireDefault(__webpack_require__(55));
 
-var _generator2 = _interopRequireDefault(_generator);
+var t = _interopRequireWildcard(__webpack_require__(3));
 
-var _types = __webpack_require__(3);
-
-var t = _interopRequireWildcard(_types);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+
+
 
 
 function replaceNode(ancestors, node) {
@@ -43657,12 +43865,11 @@ function replaceNode(ancestors, node) {
   } else {
     ancestor.node[ancestor.key] = node;
   }
-} 
-
-
+}
 
 function getFirstExpression(ast) {
   const statements = ast.program.body;
+
   if (statements.length == 0) {
     return null;
   }
@@ -43677,17 +43884,17 @@ function locationKey(start) {
 function mapOriginalExpression(expression, ast, mappings) {
   const scopes = (0, _getScopes.buildScopeList)(ast, "");
   let shouldUpdate = false;
-
   const nodes = new Map();
-  const replacements = new Map();
+  const replacements = new Map(); 
+  
+  
+  
+  
 
-  
-  
-  
-  
-  
   for (const name of Object.keys(scopes[0].bindings)) {
-    const { refs } = scopes[0].bindings[name];
+    const {
+      refs
+    } = scopes[0].bindings[name];
     const mapping = mappings[name];
 
     if (!refs.every(ref => ref.type === "ref") || !mapping || mapping === name) {
@@ -43695,20 +43902,26 @@ function mapOriginalExpression(expression, ast, mappings) {
     }
 
     let node = nodes.get(name);
+
     if (!node) {
       node = getFirstExpression((0, _ast.parseScript)(mapping));
       nodes.set(name, node);
     }
 
     for (const ref of refs) {
-      let { line, column } = ref.start;
+      let {
+        line,
+        column
+      } = ref.start; 
 
-      
       if (typeof column !== "number") {
         column = 0;
       }
 
-      replacements.set(locationKey({ line, column }), node);
+      replacements.set(locationKey({
+        line,
+        column
+      }), node);
     }
   }
 
@@ -43723,14 +43936,15 @@ function mapOriginalExpression(expression, ast, mappings) {
       return;
     }
 
-    const ancestor = ancestors[ancestors.length - 1];
+    const ancestor = ancestors[ancestors.length - 1]; 
     
-    
+
     if (t.isObjectProperty(ancestor.node) && ancestor.key !== "value") {
       return;
     }
 
     const replacement = replacements.get(locationKey(node.loc.start));
+
     if (replacement) {
       replaceNode(ancestors, t.cloneNode(replacement));
       shouldUpdate = true;
@@ -43738,7 +43952,7 @@ function mapOriginalExpression(expression, ast, mappings) {
   });
 
   if (shouldUpdate) {
-    return (0, _generator2.default)(ast).code;
+    return (0, _generator.default)(ast).code;
   }
 
   return expression;
@@ -43760,18 +43974,13 @@ var _ast = __webpack_require__(20);
 
 var _helpers = __webpack_require__(54);
 
-var _generator = __webpack_require__(55);
+var _generator = _interopRequireDefault(__webpack_require__(55));
 
-var _generator2 = _interopRequireDefault(_generator);
+var t = _interopRequireWildcard(__webpack_require__(3));
 
-var _types = __webpack_require__(3);
-
-var t = _interopRequireWildcard(_types);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 
 
 
@@ -43799,13 +44008,11 @@ function getAssignmentTarget(node, bindings) {
 
   if (t.isAssignmentPattern(node)) {
     node.left = getAssignmentTarget(node.left, bindings);
-
     return node;
   }
 
   if (t.isRestElement(node)) {
     node.argument = getAssignmentTarget(node.argument, bindings);
-
     return node;
   }
 
@@ -43814,13 +44021,13 @@ function getAssignmentTarget(node, bindings) {
   }
 
   return node;
-}
+} 
 
 
 
 function globalizeDeclaration(node, bindings) {
   return node.declarations.map(declaration => t.expressionStatement(t.assignmentExpression("=", getAssignmentTarget(declaration.id, bindings), declaration.init || t.unaryExpression("void", t.numericLiteral(0)))));
-}
+} 
 
 
 
@@ -43831,7 +44038,6 @@ function globalizeAssignment(node, bindings) {
 function mapExpressionBindings(expression, ast, bindings = []) {
   let isMapped = false;
   let shouldUpdate = true;
-
   t.traverse(ast, (node, ancestors) => {
     const parent = ancestors[ancestors.length - 1];
 
@@ -43869,7 +44075,7 @@ function mapExpressionBindings(expression, ast, bindings = []) {
     return expression;
   }
 
-  return (0, _generator2.default)(ast).code;
+  return (0, _generator.default)(ast).code;
 }
 
  }),
@@ -43884,31 +44090,25 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = mapTopLevelAwait;
 
-var _generator = __webpack_require__(55);
+var _generator = _interopRequireDefault(__webpack_require__(55));
 
-var _generator2 = _interopRequireDefault(_generator);
-
-var _types = __webpack_require__(3);
-
-var t = _interopRequireWildcard(_types);
+var t = _interopRequireWildcard(__webpack_require__(3));
 
 var _ast = __webpack_require__(20);
 
 var _helpers = __webpack_require__(54);
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 
 
 
-
 function hasTopLevelAwait(ast) {
   const hasAwait = (0, _ast.hasNode)(ast, (node, ancestors, b) => t.isAwaitExpression(node) && (0, _helpers.isTopLevel)(ancestors));
-
   return hasAwait;
-}
+} 
 
 
 function translateDeclarationIntoAssignment(node) {
@@ -43917,10 +44117,12 @@ function translateDeclarationIntoAssignment(node) {
     if (!declaration.init) {
       return acc;
     }
+
     acc.push(t.expressionStatement(t.assignmentExpression("=", declaration.id, declaration.init)));
     return acc;
   }, []);
 }
+
 
 
 
@@ -43933,15 +44135,17 @@ function addReturnNode(ast) {
 }
 
 function getDeclarations(node) {
-  const { kind, declarations } = node;
+  const {
+    kind,
+    declarations
+  } = node;
   const declaratorNodes = declarations.reduce((acc, d) => {
     const declarators = getVariableDeclarators(d.id);
     return acc.concat(declarators);
-  }, []);
+  }, []); 
+  
+  
 
-  
-  
-  
   return t.variableDeclaration(kind === "const" ? "let" : kind, declaratorNodes);
 }
 
@@ -43953,6 +44157,7 @@ function getVariableDeclarators(node) {
   if (t.isObjectProperty(node)) {
     return getVariableDeclarators(node.value);
   }
+
   if (t.isRestElement(node)) {
     return getVariableDeclarators(node.argument);
   }
@@ -43964,11 +44169,14 @@ function getVariableDeclarators(node) {
   if (t.isArrayPattern(node)) {
     return node.elements.reduce((acc, element) => acc.concat(getVariableDeclarators(element)), []);
   }
+
   if (t.isObjectPattern(node)) {
     return node.properties.reduce((acc, property) => acc.concat(getVariableDeclarators(property)), []);
   }
+
   return [];
 }
+
 
 
 
@@ -43990,6 +44198,7 @@ function addTopDeclarationNodes(ast, declarationNodes) {
 
 
 
+
 function translateDeclarationsIntoAssignment(ast) {
   const declarations = [];
   t.traverse(ast, (node, ancestors) => {
@@ -44003,7 +44212,6 @@ function translateDeclarationsIntoAssignment(ast) {
     (0, _ast.replaceNode)(ancestors, newNodes);
     declarations.push(node);
   });
-
   return {
     newAst: ast,
     declarations
@@ -44020,19 +44228,20 @@ function translateDeclarationsIntoAssignment(ast) {
 
 
 
+
 function wrapExpressionFromAst(ast) {
   
   
-  let { newAst, declarations } = translateDeclarationsIntoAssignment(ast);
-  const body = addReturnNode(newAst);
+  let {
+    newAst,
+    declarations
+  } = translateDeclarationsIntoAssignment(ast);
+  const body = addReturnNode(newAst); 
 
-  
-  newAst = t.expressionStatement(t.callExpression(t.arrowFunctionExpression([], t.blockStatement(body), true), []));
+  newAst = t.expressionStatement(t.callExpression(t.arrowFunctionExpression([], t.blockStatement(body), true), [])); 
 
-  
   newAst = addTopDeclarationNodes(newAst, declarations);
-
-  return (0, _generator2.default)(newAst).code;
+  return (0, _generator.default)(newAst).code;
 }
 
 function mapTopLevelAwait(expression, ast) {

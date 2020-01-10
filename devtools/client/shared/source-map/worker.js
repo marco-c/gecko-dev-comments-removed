@@ -76,11 +76,7 @@ return  (function(modules) {
  ({
 
  104:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
+ (function(module, exports) {
 
 
 
@@ -411,7 +407,6 @@ function isSlowBuffer (obj) {
 
 
 
-
 function networkRequest(url, opts) {
   return fetch(url, {
     cache: opts.loadFromCache ? "default" : "no-cache"
@@ -423,8 +418,12 @@ function networkRequest(url, opts) {
           isDwarf: true
         }));
       }
-      return res.text().then(text => ({ content: text }));
+
+      return res.text().then(text => ({
+        content: text
+      }));
     }
+
     return Promise.reject(`request failed with status ${res.status}`);
   });
 }
@@ -438,16 +437,16 @@ module.exports = networkRequest;
 
 
 
+
 function WorkerDispatcher() {
   this.msgId = 1;
   this.worker = null;
-} 
-
-
+}
 
 WorkerDispatcher.prototype = {
   start(url, win = window) {
     this.worker = new win.Worker(url);
+
     this.worker.onerror = () => {
       console.error(`Error in worker ${url}`);
     };
@@ -462,8 +461,11 @@ WorkerDispatcher.prototype = {
     this.worker = null;
   },
 
-  task(method, { queue = false } = {}) {
+  task(method, {
+    queue = false
+  } = {}) {
     const calls = [];
+
     const push = args => {
       return new Promise((resolve, reject) => {
         if (queue && calls.length === 0) {
@@ -493,7 +495,9 @@ WorkerDispatcher.prototype = {
         calls: items.map(item => item[0])
       });
 
-      const listener = ({ data: result }) => {
+      const listener = ({
+        data: result
+      }) => {
         if (result.id !== id) {
           return;
         }
@@ -503,7 +507,6 @@ WorkerDispatcher.prototype = {
         }
 
         this.worker.removeEventListener("message", listener);
-
         result.results.forEach((resultData, i) => {
           const [, resolve, reject] = items[i];
 
@@ -524,29 +527,45 @@ WorkerDispatcher.prototype = {
   invoke(method, ...args) {
     return this.task(method)(...args);
   }
+
 };
 
 function workerHandler(publicInterface) {
   return function (msg) {
-    const { id, method, calls } = msg.data;
-
+    const {
+      id,
+      method,
+      calls
+    } = msg.data;
     Promise.all(calls.map(args => {
       try {
         const response = publicInterface[method].apply(undefined, args);
+
         if (response instanceof Promise) {
-          return response.then(val => ({ response: val }),
+          return response.then(val => ({
+            response: val
+          }), 
           
-          
-          err => ({ error: err.toString() }));
+          err => ({
+            error: err.toString()
+          }));
         }
-        return { response };
+
+        return {
+          response
+        };
       } catch (error) {
         
         
-        return { error: error.toString() };
+        return {
+          error: error.toString()
+        };
       }
     })).then(results => {
-      self.postMessage({ id, results });
+      self.postMessage({
+        id,
+        results
+      });
     });
   };
 }
@@ -1236,14 +1255,12 @@ module.exports.initialize = input => {
  179:
  (function(module, exports, __webpack_require__) {
 
-"use strict";
 
 
 
-
-
-
-const { SourceMapConsumer } = __webpack_require__(60);
+const {
+  SourceMapConsumer
+} = __webpack_require__(60);
 
 async function createConsumer(map, sourceMapUrl) {
   return new SourceMapConsumer(map, sourceMapUrl);
@@ -1306,9 +1323,6 @@ module.exports = __webpack_require__(390);
  390:
  (function(module, exports, __webpack_require__) {
 
-"use strict";
-
-
 
 
 
@@ -1329,12 +1343,19 @@ const {
   applySourceMap
 } = __webpack_require__(391);
 
-const { getOriginalStackFrames } = __webpack_require__(411);
-const { setAssetRootURL } = __webpack_require__(515);
+const {
+  getOriginalStackFrames
+} = __webpack_require__(411);
 
 const {
-  workerUtils: { workerHandler }
-} = __webpack_require__(7);
+  setAssetRootURL
+} = __webpack_require__(515);
+
+const {
+  workerUtils: {
+    workerHandler
+  }
+} = __webpack_require__(7); 
 
 
 
@@ -1362,7 +1383,6 @@ self.onmessage = workerHandler({
  391:
  (function(module, exports, __webpack_require__) {
 
-"use strict";
 
 
 
@@ -1371,24 +1391,33 @@ self.onmessage = workerHandler({
 
 
 
+const {
+  networkRequest
+} = __webpack_require__(7);
 
+const {
+  SourceMapConsumer,
+  SourceMapGenerator
+} = __webpack_require__(60);
 
+const {
+  createConsumer
+} = __webpack_require__(179);
 
-const { networkRequest } = __webpack_require__(7);
-const { SourceMapConsumer, SourceMapGenerator } = __webpack_require__(60);
-
-const { createConsumer } = __webpack_require__(179);
 const assert = __webpack_require__(407);
+
 const {
   fetchSourceMap,
   hasOriginalURL,
   clearOriginalURLs
 } = __webpack_require__(408);
+
 const {
   getSourceMap,
   setSourceMap,
   clearSourceMaps: clearSourceMapsRequests
 } = __webpack_require__(104);
+
 const {
   originalToGeneratedId,
   generatedToOriginalId,
@@ -1396,7 +1425,10 @@ const {
   isOriginalId,
   getContentType
 } = __webpack_require__(64);
-const { clearWasmXScopes } = __webpack_require__(510);
+
+const {
+  clearWasmXScopes
+} = __webpack_require__(510);
 
 async function getOriginalURLs(generatedSource) {
   const map = await fetchSourceMap(generatedSource);
@@ -1404,8 +1436,8 @@ async function getOriginalURLs(generatedSource) {
 }
 
 const COMPUTED_SPANS = new WeakSet();
-
 const SOURCE_MAPPINGS = new WeakMap();
+
 async function getOriginalRanges(sourceId, url) {
   if (!isOriginalId(sourceId)) {
     return [];
@@ -1413,21 +1445,23 @@ async function getOriginalRanges(sourceId, url) {
 
   const generatedSourceId = originalToGeneratedId(sourceId);
   const map = await getSourceMap(generatedSourceId);
+
   if (!map) {
     return [];
   }
 
   let mappings = SOURCE_MAPPINGS.get(map);
+
   if (!mappings) {
     mappings = new Map();
     SOURCE_MAPPINGS.set(map, mappings);
   }
 
   let fileMappings = mappings.get(url);
+
   if (!fileMappings) {
     fileMappings = [];
     mappings.set(url, fileMappings);
-
     const originalMappings = fileMappings;
     map.eachMapping(mapping => {
       if (mapping.source !== url) {
@@ -1460,6 +1494,7 @@ async function getOriginalRanges(sourceId, url) {
 
 
 
+
 async function getGeneratedRanges(location, originalSource) {
   if (!isOriginalId(location.sourceId)) {
     return [];
@@ -1467,6 +1502,7 @@ async function getGeneratedRanges(location, originalSource) {
 
   const generatedSourceId = originalToGeneratedId(location.sourceId);
   const map = await getSourceMap(generatedSourceId);
+
   if (!map) {
     return [];
   }
@@ -1474,20 +1510,21 @@ async function getGeneratedRanges(location, originalSource) {
   if (!COMPUTED_SPANS.has(map)) {
     COMPUTED_SPANS.add(map);
     map.computeColumnSpans();
-  }
+  } 
+  
+  
+  
+  
+  
 
-  
-  
-  
-  
-  
-  
+
   const genPos = map.generatedPositionFor({
     source: originalSource.url,
     line: location.line,
     column: location.column == null ? 0 : location.column,
     bias: SourceMapConsumer.GREATEST_LOWER_BOUND
   });
+
   if (genPos.line === null) {
     return [];
   }
@@ -1496,7 +1533,6 @@ async function getGeneratedRanges(location, originalSource) {
     line: genPos.line,
     column: genPos.column
   }));
-
   return positions.map(mapping => ({
     line: mapping.line,
     columnStart: mapping.column,
@@ -1514,6 +1550,7 @@ async function getGeneratedLocation(location, originalSource) {
 
   const generatedSourceId = originalToGeneratedId(location.sourceId);
   const map = await getSourceMap(generatedSourceId);
+
   if (!map) {
     return location;
   }
@@ -1522,13 +1559,13 @@ async function getGeneratedLocation(location, originalSource) {
     source: originalSource.url,
     line: location.line,
     column: location.column == null ? 0 : location.column
-  });
+  }); 
+  
+  
+  
 
-  
-  
-  
-  
   let match;
+
   for (const pos of positions) {
     if (!match || pos.line < match.line || pos.column < match.column) {
       match = pos;
@@ -1558,6 +1595,7 @@ async function getAllGeneratedLocations(location, originalSource) {
 
   const generatedSourceId = originalToGeneratedId(location.sourceId);
   const map = await getSourceMap(generatedSourceId);
+
   if (!map) {
     return [];
   }
@@ -1567,8 +1605,10 @@ async function getAllGeneratedLocations(location, originalSource) {
     line: location.line,
     column: location.column == null ? 0 : location.column
   });
-
-  return positions.map(({ line, column }) => ({
+  return positions.map(({
+    line,
+    column
+  }) => ({
     sourceId: generatedSourceId,
     line,
     column
@@ -1581,6 +1621,7 @@ async function getOriginalLocations(sourceId, locations, options = {}) {
   }
 
   const map = await getSourceMap(sourceId);
+
   if (!map) {
     return locations;
   }
@@ -1588,15 +1629,16 @@ async function getOriginalLocations(sourceId, locations, options = {}) {
   return locations.map(location => getOriginalLocationSync(map, location, options));
 }
 
-function getOriginalLocationSync(map, location, { search } = {}) {
+function getOriginalLocationSync(map, location, {
+  search
+} = {}) {
   
   let match = map.originalPositionFor({
     line: location.line,
     column: location.column == null ? 0 : location.column
-  });
+  }); 
+  
 
-  
-  
   if (search) {
     let line = location.line;
     let column = location.column == null ? 0 : location.column;
@@ -1607,13 +1649,17 @@ function getOriginalLocationSync(map, location, { search } = {}) {
         column,
         bias: SourceMapConsumer[search]
       });
-
       line += search == "LEAST_UPPER_BOUND" ? 1 : -1;
       column = search == "LEAST_UPPER_BOUND" ? 0 : Infinity;
     }
   }
 
-  const { source: sourceUrl, line, column } = match;
+  const {
+    source: sourceUrl,
+    line,
+    column
+  } = match;
+
   if (sourceUrl == null) {
     
     return location;
@@ -1633,6 +1679,7 @@ async function getOriginalLocation(location, options = {}) {
   }
 
   const map = await getSourceMap(location.sourceId);
+
   if (!map) {
     return location;
   }
@@ -1642,16 +1689,19 @@ async function getOriginalLocation(location, options = {}) {
 
 async function getOriginalSourceText(originalSource) {
   assert(isOriginalId(originalSource.id), "Source is not an original source");
-
   const generatedSourceId = originalToGeneratedId(originalSource.id);
   const map = await getSourceMap(generatedSourceId);
+
   if (!map) {
     return null;
   }
 
   let text = map.sourceContentFor(originalSource.url);
+
   if (!text) {
-    text = (await networkRequest(originalSource.url, { loadFromCache: false })).content;
+    text = (await networkRequest(originalSource.url, {
+      loadFromCache: false
+    })).content;
   }
 
   return {
@@ -1672,13 +1722,13 @@ async function getOriginalSourceText(originalSource) {
 
 
 
+
 const GENERATED_MAPPINGS = new WeakMap();
+
 async function getGeneratedRangesForOriginal(sourceId, url, mergeUnmappedRegions = false) {
   assert(isOriginalId(sourceId), "Source is not an original source");
+  const map = await getSourceMap(originalToGeneratedId(sourceId)); 
 
-  const map = await getSourceMap(originalToGeneratedId(sourceId));
-
-  
   if (!map) {
     return [];
   }
@@ -1693,6 +1743,7 @@ async function getGeneratedRangesForOriginal(sourceId, url, mergeUnmappedRegions
   }
 
   const generatedRangesMap = GENERATED_MAPPINGS.get(map);
+
   if (!generatedRangesMap) {
     return [];
   }
@@ -1700,10 +1751,10 @@ async function getGeneratedRangesForOriginal(sourceId, url, mergeUnmappedRegions
   if (generatedRangesMap.has(sourceId)) {
     
     return generatedRangesMap.get(sourceId) || [];
-  }
+  } 
+  
 
-  
-  
+
   let currentGroup = [];
   const originalGroups = [currentGroup];
   map.eachMapping(mapping => {
@@ -1727,8 +1778,8 @@ async function getGeneratedRangesForOriginal(sourceId, url, mergeUnmappedRegions
       originalGroups.push(currentGroup);
     }
   }, null, SourceMapConsumer.GENERATED_ORDER);
-
   const generatedMappingsForOriginal = [];
+
   if (mergeUnmappedRegions) {
     
     
@@ -1743,17 +1794,24 @@ async function getGeneratedRangesForOriginal(sourceId, url, mergeUnmappedRegions
     }
   } else {
     let lastEntry;
+
     for (const group of originalGroups) {
       lastEntry = null;
-      for (const { start, end } of group) {
-        const lastEnd = lastEntry ? wrappedMappingPosition(lastEntry.end) : null;
 
+      for (const {
+        start,
+        end
+      } of group) {
+        const lastEnd = lastEntry ? wrappedMappingPosition(lastEntry.end) : null; 
         
-        
+
         if (lastEntry && lastEnd && lastEnd.line === start.line && lastEnd.column === start.column) {
           lastEntry.end = end;
         } else {
-          const newEntry = { start, end };
+          const newEntry = {
+            start,
+            end
+          };
           generatedMappingsForOriginal.push(newEntry);
           lastEntry = newEntry;
         }
@@ -1768,10 +1826,10 @@ async function getGeneratedRangesForOriginal(sourceId, url, mergeUnmappedRegions
 function wrappedMappingPosition(pos) {
   if (pos.column !== Infinity) {
     return pos;
-  }
+  } 
+  
 
-  
-  
+
   return {
     line: pos.line + 1,
     column: 0
@@ -1780,8 +1838,8 @@ function wrappedMappingPosition(pos) {
 
 async function getFileGeneratedRange(originalSource) {
   assert(isOriginalId(originalSource.id), "Source is not an original source");
-
   const map = await getSourceMap(originalToGeneratedId(originalSource.id));
+
   if (!map) {
     return;
   }
@@ -1792,14 +1850,12 @@ async function getFileGeneratedRange(originalSource) {
     column: 0,
     bias: SourceMapConsumer.LEAST_UPPER_BOUND
   });
-
   const end = map.generatedPositionFor({
     source: originalSource.url,
     line: Number.MAX_SAFE_INTEGER,
     column: Number.MAX_SAFE_INTEGER,
     bias: SourceMapConsumer.GREATEST_LOWER_BOUND
   });
-
   return {
     start,
     end
@@ -1816,10 +1872,11 @@ async function hasMappedSource(location) {
 }
 
 function applySourceMap(generatedId, url, code, mappings) {
-  const generator = new SourceMapGenerator({ file: url });
+  const generator = new SourceMapGenerator({
+    file: url
+  });
   mappings.forEach(mapping => generator.addMapping(mapping));
   generator.setSourceContent(url, code);
-
   const map = createConsumer(generator.toJSON());
   setSourceMap(generatedId, Promise.resolve(map));
 }
@@ -3653,11 +3710,7 @@ exports.SourceNode = SourceNode;
  }),
 
  407:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
+ (function(module, exports) {
 
 
 
@@ -3675,19 +3728,33 @@ module.exports = assert;
  408:
  (function(module, exports, __webpack_require__) {
 
-"use strict";
 
 
 
+const {
+  networkRequest
+} = __webpack_require__(7);
 
+const {
+  getSourceMap,
+  setSourceMap
+} = __webpack_require__(104);
 
+const {
+  WasmRemap
+} = __webpack_require__(409);
 
-const { networkRequest } = __webpack_require__(7);
-const { getSourceMap, setSourceMap } = __webpack_require__(104);
-const { WasmRemap } = __webpack_require__(409);
-const { SourceMapConsumer } = __webpack_require__(60);
-const { convertToJSON } = __webpack_require__(510);
-const { createConsumer } = __webpack_require__(179);
+const {
+  SourceMapConsumer
+} = __webpack_require__(60);
+
+const {
+  convertToJSON
+} = __webpack_require__(510);
+
+const {
+  createConsumer
+} = __webpack_require__(179);
 
 
 const originalURLs = new Set();
@@ -3701,41 +3768,57 @@ function hasOriginalURL(url) {
 }
 
 function _resolveSourceMapURL(source) {
-  const { url = "", sourceMapURL = "" } = source;
+  const {
+    url = "",
+    sourceMapURL = ""
+  } = source;
 
   if (!url) {
     
-    return { sourceMapURL, baseURL: sourceMapURL };
+    return {
+      sourceMapURL,
+      baseURL: sourceMapURL
+    };
   }
 
   const resolvedURL = new URL(sourceMapURL, url);
   const resolvedString = resolvedURL.toString();
+  let baseURL = resolvedString; 
+  
 
-  let baseURL = resolvedString;
-  
-  
   if (resolvedURL.protocol == "data:") {
     baseURL = url;
   }
 
-  return { sourceMapURL: resolvedString, baseURL };
+  return {
+    sourceMapURL: resolvedString,
+    baseURL
+  };
 }
 
 async function _resolveAndFetch(generatedSource) {
   
-  const { sourceMapURL, baseURL } = _resolveSourceMapURL(generatedSource);
+  const {
+    sourceMapURL,
+    baseURL
+  } = _resolveSourceMapURL(generatedSource);
 
-  let fetched = await networkRequest(sourceMapURL, { loadFromCache: false });
+  let fetched = await networkRequest(sourceMapURL, {
+    loadFromCache: false
+  });
 
   if (fetched.isDwarf) {
-    fetched = { content: await convertToJSON(fetched.content) };
-  }
+    fetched = {
+      content: await convertToJSON(fetched.content)
+    };
+  } 
 
-  
+
   let map = await createConsumer(fetched.content, baseURL);
+
   if (generatedSource.isWasm) {
-    map = new WasmRemap(map);
-    
+    map = new WasmRemap(map); 
+
     if (fetched.content.includes("x-scopes")) {
       const parsedJSON = JSON.parse(fetched.content);
       map.xScopes = parsedJSON["x-scopes"];
@@ -3750,40 +3833,41 @@ async function _resolveAndFetch(generatedSource) {
 }
 
 function fetchSourceMap(generatedSource) {
-  const existingRequest = getSourceMap(generatedSource.id);
+  const existingRequest = getSourceMap(generatedSource.id); 
+  
+  
+  
+  
+  
+  
 
-  
-  
-  
-  
-  
-  
-  
   if (existingRequest) {
     return existingRequest;
   }
 
   if (!generatedSource.sourceMapURL) {
     return null;
-  }
+  } 
 
+
+  const req = _resolveAndFetch(generatedSource); 
   
-  const req = _resolveAndFetch(generatedSource);
-  
-  
+
+
   setSourceMap(generatedSource.id, req.catch(() => null));
   return req;
 }
 
-module.exports = { fetchSourceMap, hasOriginalURL, clearOriginalURLs };
+module.exports = {
+  fetchSourceMap,
+  hasOriginalURL,
+  clearOriginalURLs
+};
 
  }),
 
  409:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
+ (function(module, exports) {
 
 
 
@@ -3834,6 +3918,7 @@ class WasmRemap {
       column: generatedPosition.line,
       bias: generatedPosition.bias
     });
+
     return result;
   }
 
@@ -3842,19 +3927,23 @@ class WasmRemap {
       line: position.column,
       column: 0
     };
+
     if (this._computeColumnSpans) {
       generatedPosition.lastColumn = 0;
     }
+
     return generatedPosition;
   }
 
   generatedPositionFor(originalPosition) {
     const position = this._map.generatedPositionFor(originalPosition);
+
     return this._remapGeneratedPosition(position);
   }
 
   allGeneratedPositionsFor(originalPosition) {
     const positions = this._map.allGeneratedPositionsFor(originalPosition);
+
     return positions.map(position => {
       return this._remapGeneratedPosition(position);
     });
@@ -3888,6 +3977,7 @@ class WasmRemap {
       });
     }, context, order);
   }
+
 }
 
 exports.WasmRemap = WasmRemap;
@@ -3897,15 +3987,20 @@ exports.WasmRemap = WasmRemap;
  411:
  (function(module, exports, __webpack_require__) {
 
-"use strict";
-
-
-const { getWasmXScopes } = __webpack_require__(510); 
 
 
 
-const { getSourceMap } = __webpack_require__(104);
-const { generatedToOriginalId } = __webpack_require__(64);
+const {
+  getWasmXScopes
+} = __webpack_require__(510);
+
+const {
+  getSourceMap
+} = __webpack_require__(104);
+
+const {
+  generatedToOriginalId
+} = __webpack_require__(64); 
 
 
 
@@ -3914,15 +4009,18 @@ async function getOriginalStackFrames(generatedLocation) {
     getSourceMap,
     generatedToOriginalId
   });
+
   if (!wasmXScopes) {
     return null;
   }
 
   const scopes = wasmXScopes.search(generatedLocation);
+
   if (scopes.length === 0) {
     console.warn("Something wrong with debug data: none original frames found");
     return null;
   }
+
   return scopes;
 }
 
@@ -3947,16 +4045,21 @@ module.exports =
  510:
  (function(module, exports, __webpack_require__) {
 
-"use strict";
 
 
 
+const {
+  convertToJSON
+} = __webpack_require__(512);
 
+const {
+  setAssetRootURL
+} = __webpack_require__(511);
 
-
-const { convertToJSON } = __webpack_require__(512);
-const { setAssetRootURL } = __webpack_require__(511);
-const { getWasmXScopes, clearWasmXScopes } = __webpack_require__(513);
+const {
+  getWasmXScopes,
+  clearWasmXScopes
+} = __webpack_require__(513);
 
 module.exports = {
   convertToJSON,
@@ -3968,15 +4071,13 @@ module.exports = {
  }),
 
  511:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
+ (function(module, exports) {
 
 
 
 
 let root;
+
 function setAssetRootURL(assetRoot) {
   root = assetRoot;
 }
@@ -3987,7 +4088,6 @@ async function getDwarfToWasmData(name) {
   }
 
   const response = await fetch(`${root}/dwarf_to_json.wasm`);
-
   return response.arrayBuffer();
 }
 
@@ -4001,22 +4101,25 @@ module.exports = {
  512:
  (function(module, exports, __webpack_require__) {
 
-"use strict";
 
 
 
 
 
-
-
-
-const { getDwarfToWasmData } = __webpack_require__(511);
+const {
+  getDwarfToWasmData
+} = __webpack_require__(511);
 
 let cachedWasmModule;
 let utf8Decoder;
 
 function convertDwarf(wasm, instance) {
-  const { memory, alloc_mem, free_mem, convert_dwarf } = instance.exports;
+  const {
+    memory,
+    alloc_mem,
+    free_mem,
+    convert_dwarf
+  } = instance.exports;
   const wasmPtr = alloc_mem(wasm.byteLength);
   new Uint8Array(memory.buffer, wasmPtr, wasm.byteLength).set(new Uint8Array(wasm));
   const resultPtr = alloc_mem(12);
@@ -4027,12 +4130,15 @@ function convertDwarf(wasm, instance) {
   const outputPtr = resultView.getUint32(0, true),
         outputLen = resultView.getUint32(4, true);
   free_mem(resultPtr);
+
   if (!success) {
     throw new Error("Unable to convert from DWARF sections");
   }
+
   if (!utf8Decoder) {
     utf8Decoder = new TextDecoder("utf-8");
   }
+
   const output = utf8Decoder.decode(new Uint8Array(memory.buffer, outputPtr, outputLen));
   free_mem(outputPtr);
   return output;
@@ -4042,14 +4148,15 @@ async function convertToJSON(buffer) {
   
   
   cachedWasmModule = cachedWasmModule || loadConverterModule();
-
   return convertDwarf(buffer, (await cachedWasmModule));
 }
 
 async function loadConverterModule() {
   const wasm = await getDwarfToWasmData();
   const imports = {};
-  const { instance } = await WebAssembly.instantiate(wasm, imports);
+  const {
+    instance
+  } = await WebAssembly.instantiate(wasm, imports);
   return instance;
 }
 
@@ -4062,24 +4169,26 @@ module.exports = {
  513:
  (function(module, exports, __webpack_require__) {
 
-"use strict";
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 
 
 
 
 
-
-
-const { decodeExpr } = __webpack_require__(514);
+const {
+  decodeExpr
+} = __webpack_require__(514);
 
 const xScopes = new Map();
 
 function indexLinkingNames(items) {
   const result = new Map();
   let queue = [...items];
+
   while (queue.length > 0) {
     const item = queue.shift();
+
     if ("uid" in item) {
       result.set(item.uid, item);
     } else if ("linkage_name" in item) {
@@ -4087,10 +4196,12 @@ function indexLinkingNames(items) {
       
       result.set(item.linkage_name, item);
     }
+
     if ("children" in item) {
       queue = [...queue, ...item.children];
     }
   }
+
   return result;
 }
 
@@ -4098,9 +4209,11 @@ function getIndexedItem(index, key) {
   if (typeof key === "object" && key != null) {
     return index.get(key.uid);
   }
+
   if (typeof key === "string") {
     return index.get(key);
   }
+
   return null;
 }
 
@@ -4108,12 +4221,18 @@ async function getXScopes(sourceId, getSourceMap) {
   if (xScopes.has(sourceId)) {
     return xScopes.get(sourceId);
   }
+
   const map = await getSourceMap(sourceId);
+
   if (!map || !map.xScopes) {
     xScopes.set(sourceId, null);
     return null;
   }
-  const { code_section_offset, debug_info } = map.xScopes;
+
+  const {
+    code_section_offset,
+    debug_info
+  } = map.xScopes;
   const xScope = {
     code_section_offset,
     debug_info,
@@ -4128,9 +4247,11 @@ function isInRange(item, pc) {
   if ("ranges" in item) {
     return item.ranges.some(r => r[0] <= pc && pc < r[1]);
   }
+
   if ("high_pc" in item) {
     return item.low_pc <= pc && pc < item.high_pc;
   }
+
   return false;
 }
 
@@ -4138,6 +4259,7 @@ function decodeExprAt(expr, pc) {
   if (typeof expr === "string") {
     return decodeExpr(expr);
   }
+
   const foundAt = expr.find(i => i.range[0] <= pc && pc < i.range[1]);
   return foundAt ? decodeExpr(foundAt.expr) : null;
 }
@@ -4152,12 +4274,14 @@ function getVariables(scope, pc) {
           expr: item.location ? decodeExprAt(item.location, pc) : null
         });
         break;
+
       case "lexical_block":
         
         const tmp = getVariables(item, pc);
         result = [...tmp.vars, ...result];
         break;
     }
+
     return result;
   }, []) : [];
   const frameBase = scope.frame_base ? decodeExpr(scope.frame_base) : null;
@@ -4171,18 +4295,22 @@ function filterScopes(items, pc, lastItem, index) {
   if (!items) {
     return [];
   }
+
   return items.reduce((result, item) => {
     switch (item.tag) {
       case "compile_unit":
         if (isInRange(item, pc)) {
           result = [...result, ...filterScopes(item.children, pc, lastItem, index)];
         }
+
         break;
+
       case "namespace":
       case "structure_type":
       case "union_type":
         result = [...result, ...filterScopes(item.children, pc, lastItem, index)];
         break;
+
       case "subprogram":
         if (isInRange(item, pc)) {
           const s = {
@@ -4192,7 +4320,9 @@ function filterScopes(items, pc, lastItem, index) {
           };
           result = [...result, s, ...filterScopes(item.children, pc, s, index)];
         }
+
         break;
+
       case "inlined_subroutine":
         if (isInRange(item, pc)) {
           const linkedItem = getIndexedItem(index, item.abstract_origin);
@@ -4201,31 +4331,42 @@ function filterScopes(items, pc, lastItem, index) {
             name: linkedItem ? linkedItem.name : void 0,
             variables: getVariables(item, pc)
           };
+
           if (lastItem) {
             lastItem.file = item.call_file;
             lastItem.line = item.call_line;
           }
+
           result = [...result, s, ...filterScopes(item.children, pc, s, index)];
         }
+
         break;
     }
+
     return result;
   }, []);
 }
 
 class XScope {
-
   constructor(xScopeData, sourceMapContext) {
+    _defineProperty(this, "xScope", void 0);
+
+    _defineProperty(this, "sourceMapContext", void 0);
+
     this.xScope = xScopeData;
     this.sourceMapContext = sourceMapContext;
   }
 
   search(generatedLocation) {
-    const { code_section_offset, debug_info, sources, idIndex } = this.xScope;
+    const {
+      code_section_offset,
+      debug_info,
+      sources,
+      idIndex
+    } = this.xScope;
     const pc = generatedLocation.line - (code_section_offset || 0);
     const scopes = filterScopes(debug_info, pc, null, idIndex);
     scopes.reverse();
-
     return scopes.map(i => {
       if (!("file" in i)) {
         return {
@@ -4233,6 +4374,7 @@ class XScope {
           variables: i.variables
         };
       }
+
       const sourceId = this.sourceMapContext.generatedToOriginalId(generatedLocation.sourceId, sources[i.file || 0]);
       return {
         displayName: i.name || "",
@@ -4244,14 +4386,19 @@ class XScope {
       };
     });
   }
+
 }
 
 async function getWasmXScopes(sourceId, sourceMapContext) {
-  const { getSourceMap } = sourceMapContext;
+  const {
+    getSourceMap
+  } = sourceMapContext;
   const xScopeData = await getXScopes(sourceId, getSourceMap);
+
   if (!xScopeData) {
     return null;
   }
+
   return new XScope(xScopeData, sourceMapContext);
 }
 
@@ -4267,54 +4414,64 @@ module.exports = {
  }),
 
  514:
- (function(module, exports, __webpack_require__) {
+ (function(module, exports) {
 
-"use strict";
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+
+
+
+
+
 
 
 class Value {
-
   constructor(val) {
+    _defineProperty(this, "val", void 0);
+
     this.val = val;
   }
+
   toString() {
     return `${this.val}`;
   }
-} 
 
-
-
-
-
+}
 
 const Int32Formatter = {
   fromAddr(addr) {
     return `(new DataView(memory0.buffer).getInt32(${addr}, true))`;
   },
+
   fromValue(value) {
     return `${value.val}`;
   }
-};
 
+};
 const Uint32Formatter = {
   fromAddr(addr) {
     return `(new DataView(memory0.buffer).getUint32(${addr}, true))`;
   },
+
   fromValue(value) {
     return `(${value.val} >>> 0)`;
   }
+
 };
 
 function createPieceFormatter(bytes) {
   let getter;
+
   switch (bytes) {
     case 0:
     case 1:
       getter = "getUint8";
       break;
+
     case 2:
       getter = "getUint16";
       break;
+
     case 3:
     case 4:
     default:
@@ -4322,124 +4479,178 @@ function createPieceFormatter(bytes) {
       getter = "getUint32";
       break;
   }
+
   const mask = (1 << 8 * bytes) - 1;
   return {
     fromAddr(addr) {
       return `(new DataView(memory0.buffer).${getter}(${addr}, true))`;
     },
+
     fromValue(value) {
       return `((${value.val} & ${mask}) >>> 0)`;
     }
+
   };
-}
+} 
 
 
 function toJS(buf, typeFormatter, frame_base = "fp()") {
   const readU8 = function () {
     return buf[i++];
   };
+
   const readS8 = function () {
     return readU8() << 24 >> 24;
   };
+
   const readU16 = function () {
     const w = buf[i] | buf[i + 1] << 8;
     i += 2;
     return w;
   };
+
   const readS16 = function () {
     return readU16() << 16 >> 16;
   };
+
   const readS32 = function () {
     const w = buf[i] | buf[i + 1] << 8 | buf[i + 2] << 16 | buf[i + 3] << 24;
     i += 4;
     return w;
   };
+
   const readU32 = function () {
     return readS32() >>> 0;
   };
+
   const readU = function () {
     let n = 0,
         shift = 0,
         b;
+
     while ((b = readU8()) & 0x80) {
       n |= (b & 0x7f) << shift;
       shift += 7;
     }
+
     return n | b << shift;
   };
+
   const readS = function () {
     let n = 0,
         shift = 0,
         b;
+
     while ((b = readU8()) & 0x80) {
       n |= (b & 0x7f) << shift;
       shift += 7;
     }
+
     n |= b << shift;
     shift += 7;
     return shift > 32 ? n << 32 - shift >> 32 - shift : n;
   };
+
   const popValue = function (formatter) {
     const loc = stack.pop();
+
     if (loc instanceof Value) {
       return formatter.fromValue(loc);
     }
+
     return formatter.fromAddr(loc);
   };
+
   let i = 0,
       a,
       b;
   const stack = [frame_base];
+
   while (i < buf.length) {
     const code = buf[i++];
+
     switch (code) {
-      case 0x03 :
+      case 0x03
+      
+      :
         stack.push(Uint32Formatter.fromAddr(readU32()));
         break;
-      case 0x08 :
+
+      case 0x08
+      
+      :
         stack.push(readU8());
         break;
-      case 0x09 :
+
+      case 0x09
+      
+      :
         stack.push(readS8());
         break;
-      case 0x0a :
+
+      case 0x0a
+      
+      :
         stack.push(readU16());
         break;
-      case 0x0b :
+
+      case 0x0b
+      
+      :
         stack.push(readS16());
         break;
-      case 0x0c :
+
+      case 0x0c
+      
+      :
         stack.push(readU32());
         break;
-      case 0x0d :
+
+      case 0x0d
+      
+      :
         stack.push(readS32());
         break;
-      case 0x10 :
+
+      case 0x10
+      
+      :
         stack.push(readU());
         break;
-      case 0x11 :
+
+      case 0x11
+      
+      :
         stack.push(readS());
         break;
 
-      case 0x1c :
+      case 0x1c
+      
+      :
         b = stack.pop();
         a = stack.pop();
         stack.push(`${a} - ${b}`);
         break;
 
-      case 0x22 :
+      case 0x22
+      
+      :
         b = stack.pop();
         a = stack.pop();
         stack.push(`${a} + ${b}`);
         break;
 
-      case 0x23 :
+      case 0x23
+      
+      :
         b = readU();
         a = stack.pop();
         stack.push(`${a} + ${b}`);
         break;
 
-      case 0x30 :
+      case 0x30
+      
+      :
       case 0x31:
       case 0x32:
       case 0x33:
@@ -4474,7 +4685,9 @@ function toJS(buf, typeFormatter, frame_base = "fp()") {
         stack.push(`${code - 0x30}`);
         break;
 
-      case 0x93 :
+      case 0x93
+      
+      :
         {
           a = readU();
           const formatter = createPieceFormatter(a);
@@ -4482,33 +4695,44 @@ function toJS(buf, typeFormatter, frame_base = "fp()") {
           break;
         }
 
-      case 0x9f :
+      case 0x9f
+      
+      :
         stack.push(new Value(stack.pop()));
         break;
 
-      case 0xf6 :
-      case 0xed :
+      case 0xf6
+      
+      :
+      case 0xed
+      
+      :
         b = readU();
         a = readS();
+
         switch (b) {
           case 0:
             stack.push(`var${a}`);
             break;
+
           case 1:
             stack.push(`global${a}`);
             break;
+
           default:
             stack.push(`ti${b}(${a})`);
             break;
         }
+
         break;
 
       default:
         
         return null;
     }
-  }
-  
+  } 
+
+
   return popValue(typeFormatter);
 }
 
@@ -4516,10 +4740,13 @@ function decodeExpr(expr) {
   if (expr.includes("//")) {
     expr = expr.slice(0, expr.indexOf("//")).trim();
   }
+
   const code = new Uint8Array(expr.length >> 1);
+
   for (let i = 0; i < code.length; i++) {
     code[i] = parseInt(expr.substr(i << 1, 2), 16);
   }
+
   const typeFormatter = Int32Formatter;
   return toJS(code, typeFormatter) || `dwarf("${expr}")`;
 }
@@ -4533,13 +4760,13 @@ module.exports = {
  515:
  (function(module, exports, __webpack_require__) {
 
-"use strict";
 
 
 
+const {
+  SourceMapConsumer
+} = __webpack_require__(60);
 
-
-const { SourceMapConsumer } = __webpack_require__(60);
 const {
   setAssetRootURL: wasmDwarfSetAssetRootURL
 } = __webpack_require__(510);
@@ -4547,9 +4774,7 @@ const {
 function setAssetRootURL(assetRoot) {
   
   const root = assetRoot.replace(/\/$/, "");
-
   wasmDwarfSetAssetRootURL(root);
-
   SourceMapConsumer.initialize({
     "lib/mappings.wasm": `${root}/source-map-mappings.wasm`
   });
@@ -5024,10 +5249,6 @@ exports.computeSourceURL = computeSourceURL;
  64:
  (function(module, exports, __webpack_require__) {
 
-"use strict";
-
-
-
 
 
 
@@ -5049,13 +5270,13 @@ function generatedToOriginalId(generatedId, url) {
 }
 
 function isOriginalId(id) {
-  return (/\/originalSource/.test(id)
-  );
+  return /\/originalSource/.test(id);
 }
 
 function isGeneratedId(id) {
   return !isOriginalId(id);
 }
+
 
 
 
@@ -5066,9 +5287,8 @@ function trimUrlQuery(url) {
   const q2 = url.indexOf("&");
   const q3 = url.indexOf("#");
   const q = Math.min(q1 != -1 ? q1 : length, q2 != -1 ? q2 : length, q3 != -1 ? q3 : length);
-
   return url.slice(0, q);
-}
+} 
 
 
 const contentMap = {
@@ -5095,18 +5315,20 @@ const contentMap = {
 function getContentType(url) {
   url = trimUrlQuery(url);
   const dot = url.lastIndexOf(".");
+
   if (dot >= 0) {
     const name = url.substring(dot + 1);
+
     if (name in contentMap) {
       return contentMap[name];
     }
   }
+
   return "text/plain";
 }
 
 function memoize(func) {
   const map = new Map();
-
   return arg => {
     if (map.has(arg)) {
       return map.get(arg);
@@ -5135,8 +5357,8 @@ module.exports = {
 
 
 
-
 const networkRequest = __webpack_require__(13);
+
 const workerUtils = __webpack_require__(14);
 
 module.exports = {

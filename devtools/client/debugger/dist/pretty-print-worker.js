@@ -509,7 +509,6 @@ exports.compareByGeneratedPositionsInflated = compareByGeneratedPositionsInflate
 
 
 
-
 function networkRequest(url, opts) {
   return fetch(url, {
     cache: opts.loadFromCache ? "default" : "no-cache"
@@ -521,8 +520,12 @@ function networkRequest(url, opts) {
           isDwarf: true
         }));
       }
-      return res.text().then(text => ({ content: text }));
+
+      return res.text().then(text => ({
+        content: text
+      }));
     }
+
     return Promise.reject(`request failed with status ${res.status}`);
   });
 }
@@ -536,16 +539,16 @@ module.exports = networkRequest;
 
 
 
+
 function WorkerDispatcher() {
   this.msgId = 1;
   this.worker = null;
-} 
-
-
+}
 
 WorkerDispatcher.prototype = {
   start(url, win = window) {
     this.worker = new win.Worker(url);
+
     this.worker.onerror = () => {
       console.error(`Error in worker ${url}`);
     };
@@ -560,8 +563,11 @@ WorkerDispatcher.prototype = {
     this.worker = null;
   },
 
-  task(method, { queue = false } = {}) {
+  task(method, {
+    queue = false
+  } = {}) {
     const calls = [];
+
     const push = args => {
       return new Promise((resolve, reject) => {
         if (queue && calls.length === 0) {
@@ -591,7 +597,9 @@ WorkerDispatcher.prototype = {
         calls: items.map(item => item[0])
       });
 
-      const listener = ({ data: result }) => {
+      const listener = ({
+        data: result
+      }) => {
         if (result.id !== id) {
           return;
         }
@@ -601,7 +609,6 @@ WorkerDispatcher.prototype = {
         }
 
         this.worker.removeEventListener("message", listener);
-
         result.results.forEach((resultData, i) => {
           const [, resolve, reject] = items[i];
 
@@ -622,29 +629,45 @@ WorkerDispatcher.prototype = {
   invoke(method, ...args) {
     return this.task(method)(...args);
   }
+
 };
 
 function workerHandler(publicInterface) {
   return function (msg) {
-    const { id, method, calls } = msg.data;
-
+    const {
+      id,
+      method,
+      calls
+    } = msg.data;
     Promise.all(calls.map(args => {
       try {
         const response = publicInterface[method].apply(undefined, args);
+
         if (response instanceof Promise) {
-          return response.then(val => ({ response: val }),
+          return response.then(val => ({
+            response: val
+          }), 
           
-          
-          err => ({ error: err.toString() }));
+          err => ({
+            error: err.toString()
+          }));
         }
-        return { response };
+
+        return {
+          response
+        };
       } catch (error) {
         
         
-        return { error: error.toString() };
+        return {
+          error: error.toString()
+        };
       }
     })).then(results => {
-      self.postMessage({ id, results });
+      self.postMessage({
+        id,
+        results
+      });
     });
   };
 }
@@ -1368,9 +1391,7 @@ module.exports = __webpack_require__(380);
 "use strict";
 
 
-var _prettyFast = __webpack_require__(381);
-
-var _prettyFast2 = _interopRequireDefault(_prettyFast);
+var _prettyFast = _interopRequireDefault(__webpack_require__(381));
 
 var _devtoolsUtils = __webpack_require__(7);
 
@@ -1379,15 +1400,19 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 
 
+const {
+  workerHandler
+} = _devtoolsUtils.workerUtils;
 
-const { workerHandler } = _devtoolsUtils.workerUtils;
-
-function prettyPrint({ url, indent, sourceText }) {
-  const prettified = (0, _prettyFast2.default)(sourceText, {
+function prettyPrint({
+  url,
+  indent,
+  sourceText
+}) {
+  const prettified = (0, _prettyFast.default)(sourceText, {
     url: url,
     indent: " ".repeat(indent)
   });
-
   return {
     code: prettified.code,
     mappings: invertMappings(prettified.map._mappings)
@@ -1402,6 +1427,7 @@ function invertMappings(mappings) {
         column: m.originalColumn
       }
     };
+
     if (m.source) {
       mapping.source = m.source;
       mapping.original = {
@@ -1410,11 +1436,14 @@ function invertMappings(mappings) {
       };
       mapping.name = m.name;
     }
+
     return mapping;
   });
 }
 
-self.onmessage = workerHandler({ prettyPrint });
+self.onmessage = workerHandler({
+  prettyPrint
+});
 
  }),
 
@@ -6088,8 +6117,8 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 
 
-
 const networkRequest = __webpack_require__(13);
+
 const workerUtils = __webpack_require__(14);
 
 module.exports = {

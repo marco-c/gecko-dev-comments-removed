@@ -76,4 +76,17 @@ if (!isProduction) {
   extra.recordsPath = "bin/module-manifest.json";
 }
 
-module.exports = toolbox.toolboxConfig(webpackConfig, envConfig, extra);
+const overallConfig = toolbox.toolboxConfig(webpackConfig, envConfig, extra);
+
+for (const rule of overallConfig.module.rules) {
+  
+  
+  if (rule.loader === "babel-loader?ignore=src/lib") {
+    rule.loader = require.resolve("babel-loader");
+    rule.options = {
+      ignore: ["src/lib"],
+    };
+  }
+}
+
+module.exports = overallConfig;
