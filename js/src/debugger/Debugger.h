@@ -947,10 +947,10 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
-  template <typename Wrapper, typename ReferentVariant, typename Referent,
-            typename Map>
-  Wrapper* wrapVariantReferent(JSContext* cx, Map& map,
-                               Handle<ReferentVariant> referent);
+  template <typename Wrapper, typename Referent, typename Map>
+  Wrapper* wrapVariantReferent(
+      JSContext* cx, Map& map,
+      Handle<typename Wrapper::ReferentVariant> referent);
   DebuggerScript* wrapVariantReferent(JSContext* cx,
                                       Handle<DebuggerScriptReferent> referent);
   DebuggerSource* wrapVariantReferent(JSContext* cx,
