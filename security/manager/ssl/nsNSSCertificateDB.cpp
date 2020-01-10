@@ -1191,6 +1191,7 @@ nsresult VerifyCertAtTime(nsIX509Cert* aCert,
                                           Nothing(),  
                                           Nothing(),  
                                           Nothing(),  
+                                          Nothing(),  
                                           OriginAttributes(),
                                           false,  
                                           &evOidPolicy);

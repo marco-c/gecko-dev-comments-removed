@@ -63,7 +63,7 @@ add_connection_test(
   null,
   
   
-  function() {}
+  null
 );
 
 
