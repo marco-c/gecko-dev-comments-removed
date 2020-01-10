@@ -3,26 +3,29 @@
 
 
 
+
 window.handlers = {};
 
 async_test(t => {
   const frame = document.body.appendChild(document.createElement("iframe"));
+  t.add_cleanup(() => frame.remove());
   frame.src = "resources/aborted-parser-frame.html";
   window.handlers.afterOpen = t.step_func_done(() => {
     const openCalled = frame.contentDocument.childNodes.length === 0;
-    frame.remove();
-    assert_true(openCalled, "child document should be empty");
+    assert_false(openCalled, "child document should not be empty");
+    assert_equals(frame.contentDocument.querySelector("p").textContent,
+		  "Text", "Should still have our paragraph");
   });
 }, "document.open() after parser is aborted");
 
-
-
 async_test(t => {
   const frame = document.body.appendChild(document.createElement("iframe"));
+  t.add_cleanup(() => frame.remove());
   frame.src = "resources/aborted-parser-async-frame.html";
   window.handlers.afterOpenAsync = t.step_func_done(() => {
     const openCalled = frame.contentDocument.childNodes.length === 0;
-    frame.remove();
-    assert_true(openCalled, "child document should be empty");
+    assert_false(openCalled, "child document should not be empty");
+    assert_equals(frame.contentDocument.querySelector("p").textContent,
+		  "Text", "Should still have our paragraph");
   });
 }, "async document.open() after parser is aborted");
