@@ -84,6 +84,35 @@ var gProtectionsHandler = {
     }
   },
 
+  onHeaderClicked(event) {
+    
+    if (this._protectionsPopup.hasAttribute("toast")) {
+      
+      PanelMultiView.hidePopup(this._protectionsPopup);
+
+      
+      this.showProtectionsPopup({event});
+    }
+  },
+
+  onLocationChange() {
+    if (!this._showToastAfterRefresh) {
+      return;
+    }
+
+    this._showToastAfterRefresh = false;
+
+    
+    if (this._previousURI != gBrowser.currentURI.spec ||
+        this._previousOuterWindowID != gBrowser.selectedBrowser.outerWindowID) {
+      return;
+    }
+
+    this.showProtectionsPopup({
+      toast: true,
+    });
+  },
+
   handleEvent(event) {
     let elem = document.activeElement;
     let position = elem.compareDocumentPosition(this._protectionsPopup);
@@ -144,6 +173,13 @@ var gProtectionsHandler = {
       this._protectionsPopup.toggleAttribute("hasException");
     this._protectionsPopupTPSwitch.toggleAttribute("enabled", !newExceptionState);
 
+    
+    
+    
+    this._showToastAfterRefresh = true;
+    this._previousURI = gBrowser.currentURI.spec;
+    this._previousOuterWindowID = gBrowser.selectedBrowser.outerWindowID;
+
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     if (newExceptionState) {
@@ -166,7 +202,6 @@ var gProtectionsHandler = {
   },
 
   
-
 
 
 
