@@ -372,8 +372,9 @@
 
         for (let [selector, newAttr] of list) {
           if (!(selector in this._inheritedElements)) {
-            let parent = this.shadowRoot || this;
-            this._inheritedElements[selector] = parent.querySelector(selector);
+            this._inheritedElements[
+              selector
+            ] = this.getElementForAttrInheritance(selector);
           }
           let el = this._inheritedElements[selector];
           if (el) {
@@ -386,6 +387,51 @@
             }
           }
         }
+      }
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      getElementForAttrInheritance(selector) {
+        let parent = this.shadowRoot || this;
+        return parent.querySelector(selector);
       }
 
       
