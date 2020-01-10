@@ -12,11 +12,6 @@ namespace mozilla {
 
 extern LogModule* GetGMPLog();
 
-
-#define GMP_LOG(msg, ...) \
-  MOZ_LOG(GetGMPLog(), LogLevel::Debug, (msg, ##__VA_ARGS__))
-
-
 #define GMP_LOG_ERROR(msg, ...) \
   MOZ_LOG(GetGMPLog(), LogLevel::Error, (msg, ##__VA_ARGS__))
 #define GMP_LOG_WARNING(msg, ...) \
