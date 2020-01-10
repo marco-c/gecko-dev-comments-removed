@@ -579,6 +579,8 @@ this.TelemetryFeed = class TelemetryFeed {
       case "snippets_user_event":
         event = await this.applySnippetsPolicy(event);
         break;
+      
+      case "whats-new-panel_user_event":
       case "onboarding_user_event":
         event = await this.applyOnboardingPolicy(event);
         break;
