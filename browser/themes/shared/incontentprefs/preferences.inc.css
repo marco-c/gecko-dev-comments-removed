@@ -42,10 +42,7 @@ body {
 
 
 
-
-
-#preferences-stack,
-#preferences-stack > * {
+#preferences-stack {
   min-height: 0;
 }
 
