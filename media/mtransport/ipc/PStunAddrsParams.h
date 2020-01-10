@@ -5,6 +5,7 @@
 #ifndef PStunAddrsParams_h
 #define PStunAddrsParams_h
 
+#include "mozilla/Maybe.h"
 #include "nsTArray.h"
 
 #ifdef MOZ_WEBRTC
@@ -23,6 +24,8 @@ typedef nsTArray<NrIceStunAddr> NrIceStunAddrArray;
 
 typedef nsTArray<int> NrIceStunAddrArray;
 #endif
+
+typedef Maybe<nsCString> MaybeNsCString;
 
 }  
 }  
