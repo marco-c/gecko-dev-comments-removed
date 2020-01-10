@@ -13,6 +13,14 @@ export const TOP_SITES_CONTEXT_MENU_OPTIONS = [
   "BlockUrl",
   "DeleteUrl",
 ];
+export const TOP_SITES_SPOC_CONTEXT_MENU_OPTIONS = [
+  "PinSpocTopSite",
+  "Separator",
+  "OpenInNewWindow",
+  "OpenInPrivateWindow",
+  "Separator",
+  "BlockUrl",
+];
 
 export const TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS = [
   "CheckPinTopSite",
