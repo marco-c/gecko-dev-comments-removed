@@ -43,18 +43,9 @@ XPCOMUtils.defineLazyPreferenceGetter(
 const ABOUT_LOGINS_ORIGIN = "about:logins";
 const MASTER_PASSWORD_NOTIFICATION_ID = "master-password-login-required";
 
-const PRIVILEGEDABOUT_PROCESS_PREF =
-  "browser.tabs.remote.separatePrivilegedContentProcess";
-const PRIVILEGEDABOUT_PROCESS_ENABLED = Services.prefs.getBoolPref(
-  PRIVILEGEDABOUT_PROCESS_PREF,
-  false
-);
 
 
-
-const EXPECTED_ABOUTLOGINS_REMOTE_TYPE = PRIVILEGEDABOUT_PROCESS_ENABLED
-  ? E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE
-  : E10SUtils.DEFAULT_REMOTE_TYPE;
+const EXPECTED_ABOUTLOGINS_REMOTE_TYPE = E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE;
 
 const convertSubjectToLogin = subject => {
   subject.QueryInterface(Ci.nsILoginMetaInfo).QueryInterface(Ci.nsILoginInfo);
