@@ -192,6 +192,7 @@ bool RetainedDisplayListBuilder::PreProcessDisplayList(
       }
 
       item->Destroy(&mBuilder);
+      Metrics()->mRemovedItems++;
 
       i++;
       aUpdated = PartialUpdateResult::Updated;
@@ -396,6 +397,7 @@ void OldItemInfo::Discard(RetainedDisplayListBuilder* aBuilder,
   if (mItem) {
     MOZ_ASSERT(mOwnsItem);
     mItem->Destroy(aBuilder->Builder());
+    aBuilder->Metrics()->mRemovedItems++;
   }
   mItem = nullptr;
 }
@@ -436,6 +438,7 @@ class MergeState {
                           HasModifiedFrame(aNewItem));
     if (!aNewItem->HasModifiedFrame() &&
         HasMatchingItemInOldList(aNewItem, &oldIndex)) {
+      mBuilder->Metrics()->mRebuiltItems++;
       nsDisplayItem* oldItem = mOldItems[oldIndex.val].mItem;
       MOZ_DIAGNOSTIC_ASSERT(oldItem->GetPerFrameKey() ==
                                 aNewItem->GetPerFrameKey() &&
@@ -648,6 +651,8 @@ class MergeState {
 #endif
 
     mMergedItems.AppendToTop(aItem);
+    mBuilder->Metrics()->mTotalItems++;
+
     MergedListIndex newIndex =
         mMergedDAG.AddNode(aDirectPredecessors, aExtraDirectPredecessor);
     return newIndex;
@@ -671,6 +676,7 @@ class MergeState {
         mBuilder->IncrementSubDocPresShellPaintCount(item);
       }
       item->SetReused(true);
+      mBuilder->Metrics()->mReusedItems++;
       mOldItems[aNode.val].AddedToMergedList(
           AddNewNode(item, Some(aNode), aDirectPredecessors, Nothing()));
     }
@@ -813,6 +819,7 @@ bool RetainedDisplayListBuilder::MergeDisplayLists(
 
   Maybe<MergedListIndex> previousItemIndex;
   while (nsDisplayItem* item = aNewList->RemoveBottom()) {
+    Metrics()->mNewItems++;
     previousItemIndex = merge.ProcessItemFromNewList(item, previousItemIndex);
   }
 
@@ -1302,11 +1309,26 @@ bool RetainedDisplayListBuilder::ComputeRebuildRegion(
   return true;
 }
 
+bool RetainedDisplayListBuilder::ShouldBuildPartial(
+    nsTArray<nsIFrame*>& aModifiedFrames) {
+  if (mList.IsEmpty()) {
+    
+    Metrics()->mPartialUpdateFailReason = PartialUpdateFailReason::EmptyList;
+    return false;
+  }
 
-
-
-static bool ShouldBuildPartial(nsTArray<nsIFrame*>& aModifiedFrames) {
   if (aModifiedFrames.Length() > StaticPrefs::LayoutRebuildFrameLimit()) {
+    
+    Metrics()->mPartialUpdateFailReason = PartialUpdateFailReason::RebuildLimit;
+    return false;
+  }
+
+  
+  
+  
+  if (mBuilder.DisablePartialUpdates()) {
+    mBuilder.SetDisablePartialUpdates(false);
+    Metrics()->mPartialUpdateFailReason = PartialUpdateFailReason::Disabled;
     return false;
   }
 
@@ -1324,11 +1346,32 @@ static bool ShouldBuildPartial(nsTArray<nsIFrame*>& aModifiedFrames) {
     if (type == LayoutFrameType::Viewport ||
         type == LayoutFrameType::PageContent ||
         type == LayoutFrameType::Canvas || type == LayoutFrameType::Scrollbar) {
+      Metrics()->mPartialUpdateFailReason = PartialUpdateFailReason::FrameType;
       return false;
     }
   }
 
   return true;
+}
+
+void RetainedDisplayListBuilder::InvalidateCaretFramesIfNeeded(
+    nsTArray<nsIFrame*>& aModifiedFrames) {
+  if (mPreviousCaret == mBuilder.GetCaretFrame()) {
+    
+    return;
+  }
+
+  if (mPreviousCaret &&
+      mBuilder.MarkFrameModifiedDuringBuilding(mPreviousCaret)) {
+    aModifiedFrames.AppendElement(mPreviousCaret);
+  }
+
+  if (mBuilder.GetCaretFrame() &&
+      mBuilder.MarkFrameModifiedDuringBuilding(mBuilder.GetCaretFrame())) {
+    aModifiedFrames.AppendElement(mBuilder.GetCaretFrame());
+  }
+
+  mPreviousCaret = mBuilder.GetCaretFrame();
 }
 
 static void ClearFrameProps(nsTArray<nsIFrame*>& aFrames) {
@@ -1347,13 +1390,10 @@ static void ClearFrameProps(nsTArray<nsIFrame*>& aFrames) {
 class AutoClearFramePropsArray {
  public:
   explicit AutoClearFramePropsArray(size_t aCapacity) : mFrames(aCapacity) {}
-
   AutoClearFramePropsArray() = default;
-
   ~AutoClearFramePropsArray() { ClearFrameProps(mFrames); }
 
   nsTArray<nsIFrame*>& Frames() { return mFrames; }
-
   bool IsEmpty() const { return mFrames.IsEmpty(); }
 
  private:
@@ -1367,9 +1407,8 @@ void RetainedDisplayListBuilder::ClearFramesWithProps() {
                                 &framesWithProps.Frames());
 }
 
-auto RetainedDisplayListBuilder::AttemptPartialUpdate(
-    nscolor aBackstop, mozilla::DisplayListChecker* aChecker)
-    -> PartialUpdateResult {
+PartialUpdateResult RetainedDisplayListBuilder::AttemptPartialUpdate(
+    nscolor aBackstop, mozilla::DisplayListChecker* aChecker) {
   mBuilder.RemoveModifiedWindowRegions();
   mBuilder.ClearWindowOpaqueRegion();
 
@@ -1388,32 +1427,10 @@ auto RetainedDisplayListBuilder::AttemptPartialUpdate(
                                 &framesWithProps.Frames());
 
   
-  
-  bool shouldBuildPartial =
-      !mList.IsEmpty() && ShouldBuildPartial(modifiedFrames.Frames());
+  bool shouldBuildPartial = ShouldBuildPartial(modifiedFrames.Frames());
 
-  
-  
-  
-  if (mBuilder.DisablePartialUpdates()) {
-    shouldBuildPartial = false;
-    mBuilder.SetDisablePartialUpdates(false);
-  }
-
-  if (mPreviousCaret != mBuilder.GetCaretFrame()) {
-    if (mPreviousCaret) {
-      if (mBuilder.MarkFrameModifiedDuringBuilding(mPreviousCaret)) {
-        modifiedFrames.Frames().AppendElement(mPreviousCaret);
-      }
-    }
-
-    if (mBuilder.GetCaretFrame()) {
-      if (mBuilder.MarkFrameModifiedDuringBuilding(mBuilder.GetCaretFrame())) {
-        modifiedFrames.Frames().AppendElement(mBuilder.GetCaretFrame());
-      }
-    }
-
-    mPreviousCaret = mBuilder.GetCaretFrame();
+  if (shouldBuildPartial) {
+    InvalidateCaretFramesIfNeeded(modifiedFrames.Frames());
   }
 
   nsRect modifiedDirty;
@@ -1465,6 +1482,7 @@ auto RetainedDisplayListBuilder::AttemptPartialUpdate(
     mBuilder.LeavePresShell(mBuilder.RootReferenceFrame(), nullptr);
     mList.DeleteAll(&mBuilder);
     modifiedDL.DeleteAll(&mBuilder);
+    Metrics()->mPartialUpdateFailReason = PartialUpdateFailReason::Content;
     return PartialUpdateResult::Failed;
   }
 

@@ -3558,8 +3558,11 @@ struct TemporaryDisplayListBuilder {
                               const bool aBuildCaret)
       : mBuilder(aFrame, aBuilderMode, aBuildCaret) {}
 
+  ~TemporaryDisplayListBuilder() { mList.DeleteAll(&mBuilder); }
+
   nsDisplayListBuilder mBuilder;
   nsDisplayList mList;
+  RetainedDisplayListMetrics mMetrics;
 };
 
 nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
@@ -3569,7 +3572,6 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
                                    nsDisplayListBuilderMode aBuilderMode,
                                    PaintFrameFlags aFlags) {
   AUTO_PROFILER_LABEL("nsLayoutUtils::PaintFrame", GRAPHICS);
-  typedef RetainedDisplayListBuilder::PartialUpdateResult PartialUpdateResult;
 
 #ifdef MOZ_DUMP_PAINTING
   if (!gPaintCountStack) {
@@ -3620,15 +3622,20 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
   Maybe<TemporaryDisplayListBuilder> temporaryBuilder;
   nsDisplayListBuilder* builder = nullptr;
   nsDisplayList* list = nullptr;
+  RetainedDisplayListMetrics* metrics = nullptr;
 
   if (useRetainedBuilder) {
     builder = retainedBuilder->Builder();
     list = retainedBuilder->List();
+    metrics = retainedBuilder->Metrics();
   } else {
     temporaryBuilder.emplace(aFrame, aBuilderMode, buildCaret);
     builder = &temporaryBuilder->mBuilder;
     list = &temporaryBuilder->mList;
+    metrics = &temporaryBuilder->mMetrics;
   }
+
+  MOZ_ASSERT(builder && list && metrics);
 
   
   if (!useRetainedBuilder && retainedBuilder) {
@@ -3638,6 +3645,9 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
     
     retainedBuilder->List()->DeleteAll(retainedBuilder->Builder());
   }
+
+  metrics->Reset();
+  metrics->StartBuild();
 
   builder->BeginFrame();
 
@@ -3745,8 +3755,6 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
     AUTO_PROFILER_TRACING("Paint", "DisplayList", GRAPHICS);
 
     PaintTelemetry::AutoRecord record(PaintTelemetry::Metric::DisplayList);
-    TimeStamp dlStart = TimeStamp::Now();
-
     {
       
       
@@ -3826,28 +3834,35 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
         if (StaticPrefs::LayoutVerifyRetainDisplayList()) {
           beforeMergeChecker.Set(list, "BM");
         }
+
         updateState = retainedBuilder->AttemptPartialUpdate(
             aBackstop, beforeMergeChecker ? &toBeMergedChecker : nullptr);
+
         if ((updateState != PartialUpdateResult::Failed) &&
             beforeMergeChecker) {
           afterMergeChecker.Set(list, "AM");
         }
+
+        metrics->EndPartialBuild(updateState);
+      } else {
+        
+        metrics->mPartialUpdateResult = PartialUpdateResult::Failed;
+        metrics->mPartialUpdateFailReason = PartialUpdateFailReason::Disabled;
       }
 
-      if ((updateState != PartialUpdateResult::Failed) &&
-          (StaticPrefs::LayoutDisplayListBuildTwice() || afterMergeChecker)) {
-        updateState = PartialUpdateResult::Failed;
-        if (StaticPrefs::LayersDrawFPS()) {
-          if (RefPtr<LayerManager> lm = builder->GetWidgetLayerManager()) {
-            if (PaintTiming* pt = ClientLayerManager::MaybeGetPaintTiming(lm)) {
-              pt->dl2Ms() = (TimeStamp::Now() - dlStart).ToMilliseconds();
-            }
-          }
-        }
-        dlStart = TimeStamp::Now();
+      
+      
+      bool doFullRebuild =
+          updateState == PartialUpdateResult::Failed || afterMergeChecker;
+
+      if (StaticPrefs::LayoutDisplayListBuildTwice()) {
+        
+        
+        metrics->StartBuild();
+        doFullRebuild = true;
       }
 
-      if (updateState == PartialUpdateResult::Failed) {
+      if (doFullRebuild) {
         list->DeleteAll(builder);
 
         builder->ClearRetainedWindowRegions();
@@ -3860,6 +3875,8 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
                                 visibleRegion, aBackstop);
 
         builder->LeavePresShell(aFrame, list);
+        metrics->EndFullBuild();
+
         updateState = PartialUpdateResult::Updated;
 
         if (afterMergeChecker) {
@@ -3888,13 +3905,15 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
 
     builder->SetIsBuilding(false);
     builder->IncrementPresShellPaintCount(presShell);
+  }
 
-    if (StaticPrefs::LayersDrawFPS()) {
-      if (RefPtr<LayerManager> lm = builder->GetWidgetLayerManager()) {
-        if (PaintTiming* pt = ClientLayerManager::MaybeGetPaintTiming(lm)) {
-          pt->dlMs() = (TimeStamp::Now() - dlStart).ToMilliseconds();
-        }
-      }
+  if (StaticPrefs::LayersDrawFPS()) {
+    RefPtr<LayerManager> lm = builder->GetWidgetLayerManager();
+    PaintTiming* pt = ClientLayerManager::MaybeGetPaintTiming(lm);
+
+    if (pt) {
+      pt->dlMs() = static_cast<float>(metrics->mPartialBuildDuration);
+      pt->dl2Ms() = static_cast<float>(metrics->mFullBuildDuration);
     }
   }
 
@@ -4116,13 +4135,28 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
   {
     AUTO_PROFILER_TRACING("Paint", "DisplayListResources", GRAPHICS);
 
-    
-    if (!useRetainedBuilder) {
-      list->DeleteAll(builder);
-    }
-
     builder->EndFrame();
+
+    if (!useRetainedBuilder) {
+      temporaryBuilder.reset();
+    }
   }
+
+#if 0
+  if (XRE_IsParentProcess()) {
+    if (metrics->mPartialUpdateResult == PartialUpdateResult::Failed) {
+      printf("DL partial update failed: %s, Frame: %p\n",
+             metrics->FailReasonString(), aFrame);
+    } else {
+      printf(
+          "DL partial build success!"
+          " new: %d, reused: %d, rebuilt: %d, removed: %d, total: %d\n",
+          metrics->mNewItems, metrics->mReusedItems, metrics->mRebuiltItems,
+          metrics->mRemovedItems, metrics->mTotalItems);
+    }
+  }
+#endif
+
   return NS_OK;
 }
 
