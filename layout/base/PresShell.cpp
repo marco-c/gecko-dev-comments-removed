@@ -10506,10 +10506,12 @@ RefPtr<MobileViewportManager> PresShell::GetMobileViewportManager() const {
 bool UseMobileViewportManager(PresShell* aPresShell, Document* aDocument) {
   
   
-  if (nsPresContext* presContext = aPresShell->GetPresContext()) {
-    if (nsIWidget* widget = presContext->GetNearestWidget()) {
-      if (!widget->AsyncPanZoomEnabled()) {
-        return false;
+  if (nsViewManager* viewManager = aPresShell->GetViewManager()) {
+    if (nsView* view = viewManager->GetRootView()) {
+      if (nsIWidget* widget = view->GetNearestWidget(nullptr)) {
+        if (!widget->AsyncPanZoomEnabled()) {
+          return false;
+        }
       }
     }
   }
