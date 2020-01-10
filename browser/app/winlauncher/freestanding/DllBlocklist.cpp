@@ -90,7 +90,9 @@ void NativeNtBlockSet::Add(const UNICODE_STRING& aName, uint64_t aVersion) {
 
   
   NativeNtBlockSetEntry* newEntry = NewEntry(aName, aVersion, mFirstEntry);
-  mFirstEntry = newEntry;
+  if (newEntry) {
+    mFirstEntry = newEntry;
+  }
 }
 
 void NativeNtBlockSet::Write(HANDLE aFile) {
@@ -311,30 +313,39 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
   }
 
   
-  nt::AllocatedUnicodeString sectionFileName(
-      gLoaderPrivateAPI.GetSectionName(*aBaseAddress));
+  nt::MemorySectionNameBuf sectionFileName(
+      gLoaderPrivateAPI.GetSectionNameBuffer(*aBaseAddress));
   if (sectionFileName.IsEmpty()) {
     ::NtUnmapViewOfSection(aProcess, *aBaseAddress);
     return STATUS_ACCESS_DENIED;
   }
 
   
-  UNICODE_STRING leaf;
-  nt::GetLeafName(&leaf, sectionFileName);
+  UNICODE_STRING leafOnStack;
+  nt::GetLeafName(&leafOnStack, sectionFileName);
 
   
-  BlockAction blockAction = IsDllAllowed(leaf, *aBaseAddress);
+  BlockAction blockAction = IsDllAllowed(leafOnStack, *aBaseAddress);
 
   if (blockAction == BlockAction::Allow) {
-    ModuleLoadFrame::NotifySectionMap(std::move(sectionFileName), *aBaseAddress,
-                                      stubStatus);
+    if (nt::RtlGetProcessHeap()) {
+      ModuleLoadFrame::NotifySectionMap(
+          nt::AllocatedUnicodeString(sectionFileName), *aBaseAddress,
+          stubStatus);
+    }
     return stubStatus;
   }
 
   if (blockAction == BlockAction::SubstituteLSP) {
     
     
-    ModuleLoadFrame::NotifyLSPSubstitutionRequired(&leaf);
+    
+    
+    MOZ_ASSERT(nt::RtlGetProcessHeap());
+
+    
+    
+    ModuleLoadFrame::NotifyLSPSubstitutionRequired(&leafOnStack);
   }
 
   ::NtUnmapViewOfSection(aProcess, *aBaseAddress);

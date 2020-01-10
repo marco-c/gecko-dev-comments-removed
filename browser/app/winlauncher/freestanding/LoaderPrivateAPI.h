@@ -41,6 +41,12 @@ class NS_NO_VTABLE LoaderPrivateAPI : public nt::LoaderAPI {
 
 
   virtual bool IsDefaultObserver() const = 0;
+
+  
+
+
+
+  virtual nt::MemorySectionNameBuf GetSectionNameBuffer(void* aSectionAddr) = 0;
 };
 
 
