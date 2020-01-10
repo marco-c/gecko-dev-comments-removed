@@ -138,14 +138,6 @@ bool FindAnimationsForCompositor(
     }
   }
 
-  
-  
-  
-  if (effects->PropertiesWithImportantRules().Intersects(aPropertySet) &&
-      effects->PropertiesForAnimationsLevel().Intersects(aPropertySet)) {
-    return false;
-  }
-
   AnimationPerformanceWarning::Type warning =
       AnimationPerformanceWarning::Type::None;
   if (!EffectCompositor::AllowCompositorAnimationsOnFrame(aFrame, warning)) {

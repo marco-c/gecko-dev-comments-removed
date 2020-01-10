@@ -205,6 +205,7 @@ class KeyframeEffect : public AnimationEffect {
   
   
   
+  
   bool HasEffectiveAnimationOfProperty(nsCSSPropertyID aProperty,
                                        const EffectSet& aEffect) const {
     return GetEffectiveAnimationOfProperty(aProperty, aEffect) != nullptr;
@@ -212,12 +213,6 @@ class KeyframeEffect : public AnimationEffect {
   const AnimationProperty* GetEffectiveAnimationOfProperty(
       nsCSSPropertyID aProperty, const EffectSet& aEffect) const;
 
-  
-  
-  
-  
-  
-  
   
   
   
@@ -282,7 +277,7 @@ class KeyframeEffect : public AnimationEffect {
   
   
   bool ShouldBlockAsyncTransformAnimations(
-      const nsIFrame* aFrame,
+      const nsIFrame* aFrame, const nsCSSPropertyIDSet& aPropertySet,
       AnimationPerformanceWarning::Type& aPerformanceWarning ) const;
   bool HasGeometricProperties() const;
   bool AffectsGeometry() const override {

@@ -279,35 +279,13 @@ const AnimationProperty* KeyframeEffect::GetEffectiveAnimationOfProperty(
 
 bool KeyframeEffect::HasEffectiveAnimationOfPropertySet(
     const nsCSSPropertyIDSet& aPropertySet, const EffectSet& aEffectSet) const {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  bool result = false;
-
   for (const AnimationProperty& property : mProperties) {
-    if (!aPropertySet.HasProperty(property.mProperty)) {
-      continue;
-    }
-
-    if (IsEffectiveProperty(aEffectSet, property.mProperty)) {
-      result = true;
-    } else if (nsCSSPropertyIDSet::TransformLikeProperties().HasProperty(
-                   property.mProperty)) {
-      return false;
+    if (aPropertySet.HasProperty(property.mProperty) &&
+        IsEffectiveProperty(aEffectSet, property.mProperty)) {
+      return true;
     }
   }
-
-  return result;
+  return false;
 }
 
 nsCSSPropertyIDSet KeyframeEffect::GetPropertiesForCompositor(
@@ -323,22 +301,44 @@ nsCSSPropertyIDSet KeyframeEffect::GetPropertiesForCompositor(
 
   static constexpr nsCSSPropertyIDSet compositorAnimatables =
       nsCSSPropertyIDSet::CompositorAnimatables();
+  static constexpr nsCSSPropertyIDSet transformLikeProperties =
+      nsCSSPropertyIDSet::TransformLikeProperties();
+
+  nsCSSPropertyIDSet transformSet;
+  AnimationPerformanceWarning::Type dummyWarning;
+
   for (const AnimationProperty& property : mProperties) {
     if (!compositorAnimatables.HasProperty(property.mProperty)) {
       continue;
     }
 
-    AnimationPerformanceWarning::Type warning;
+    
+    
+    
+    if (transformLikeProperties.HasProperty(property.mProperty)) {
+      transformSet.AddProperty(property.mProperty);
+      continue;
+    }
+
     KeyframeEffect::MatchForCompositor matchResult = IsMatchForCompositor(
-        nsCSSPropertyIDSet{property.mProperty}, aFrame, aEffects, warning);
+        nsCSSPropertyIDSet{property.mProperty}, aFrame, aEffects, dummyWarning);
     if (matchResult ==
             KeyframeEffect::MatchForCompositor::NoAndBlockThisProperty ||
         matchResult == KeyframeEffect::MatchForCompositor::No) {
       continue;
     }
-
     properties.AddProperty(property.mProperty);
   }
+
+  if (!transformSet.IsEmpty()) {
+    KeyframeEffect::MatchForCompositor matchResult =
+        IsMatchForCompositor(transformSet, aFrame, aEffects, dummyWarning);
+    if (matchResult == KeyframeEffect::MatchForCompositor::Yes ||
+        matchResult == KeyframeEffect::MatchForCompositor::IfNeeded) {
+      properties |= transformSet;
+    }
+  }
+
   return properties;
 }
 
@@ -1495,10 +1495,28 @@ bool KeyframeEffect::CanAnimateTransformOnCompositor(
 }
 
 bool KeyframeEffect::ShouldBlockAsyncTransformAnimations(
-    const nsIFrame* aFrame,
+    const nsIFrame* aFrame, const nsCSSPropertyIDSet& aPropertySet,
     AnimationPerformanceWarning::Type& aPerformanceWarning ) const {
   EffectSet* effectSet =
       EffectSet::GetEffectSet(mTarget->mElement, mTarget->mPseudoType);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCSSPropertyIDSet blockedProperties =
+      effectSet->PropertiesWithImportantRules().Intersect(
+          effectSet->PropertiesForAnimationsLevel());
+  if (blockedProperties.Intersects(aPropertySet)) {
+    aPerformanceWarning =
+        AnimationPerformanceWarning::Type::TransformIsBlockedByImportantRules;
+    return true;
+  }
+
   for (const AnimationProperty& property : mProperties) {
     
     
