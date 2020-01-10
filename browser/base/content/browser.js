@@ -649,7 +649,7 @@ var gNavigatorBundle = {
   },
 };
 
-function updateFxaToolbarMenu(enable) {
+function updateFxaToolbarMenu(enable, isInitialUpdate = false) {
   
   
   const syncEnabled = Services.prefs.getBoolPref(
@@ -670,7 +670,9 @@ function updateFxaToolbarMenu(enable) {
     
     
     
-    gSync.maybeUpdateUIState();
+    if (!isInitialUpdate) {
+      gSync.maybeUpdateUIState();
+    }
 
     Services.telemetry.setEventRecordingEnabled("fxa_avatar_menu", true);
 
@@ -1811,7 +1813,7 @@ var gBrowserInit = {
 
     this._setInitialFocus();
 
-    updateFxaToolbarMenu(gFxaToolbarEnabled);
+    updateFxaToolbarMenu(gFxaToolbarEnabled, true);
   },
 
   onLoad() {

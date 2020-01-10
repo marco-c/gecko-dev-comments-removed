@@ -76,6 +76,9 @@ const { DeclinedEngines } = ChromeUtils.import(
 const { Status } = ChromeUtils.import("resource://services-sync/status.js");
 ChromeUtils.import("resource://services-sync/telemetry.js");
 const { Svc, Utils } = ChromeUtils.import("resource://services-sync/util.js");
+const { fxAccounts } = ChromeUtils.import(
+  "resource://gre/modules/FxAccounts.jsm"
+);
 
 function getEngineModules() {
   let result = {
@@ -909,6 +912,22 @@ Sync11Service.prototype = {
     }
   },
 
+  
+  async configure() {
+    
+    
+    
+    
+    let user = await fxAccounts.getSignedInUser();
+    if (!user) {
+      throw new Error("No FxA user is signed in");
+    }
+    this._log.info("Configuring sync with current FxA user");
+    Svc.Prefs.set("username", user.email);
+    Svc.Obs.notify("weave:connected");
+  },
+
+  
   async startOver() {
     this._log.trace("Invoking Service.startOver.");
     await this._stopTracking();
@@ -930,10 +949,6 @@ Sync11Service.prototype = {
       this._log.debug("Skipping client data removal: no cluster URL.");
     }
 
-    
-    
-    
-    this._log.info("Service.startOver dropping sync key and logging out.");
     this.identity.resetCredentials();
     this.status.login = LOGIN_FAILED_NO_USERNAME;
     this.logout();
@@ -951,8 +966,6 @@ Sync11Service.prototype = {
     this.clusterURL = null;
 
     Svc.Prefs.set("lastversion", WEAVE_VERSION);
-
-    this.identity.deleteSyncCredentials();
 
     try {
       this.identity.finalize();

@@ -243,8 +243,7 @@ var configureIdentity = async function(identityOverrides, server) {
   }
 
   configureFxAccountIdentity(ns.Service.identity, config);
-  
-  ns.Service.identity.username = config.username;
+  Services.prefs.setStringPref("services.sync.username", config.username);
   
   
   await ns.Service.identity._ensureValidToken();

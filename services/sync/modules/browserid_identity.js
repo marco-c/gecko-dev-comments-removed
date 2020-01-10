@@ -74,6 +74,7 @@ const OBSERVER_TOPICS = [
   fxAccountsCommon.ONVERIFIED_NOTIFICATION,
   fxAccountsCommon.ONLOGOUT_NOTIFICATION,
   fxAccountsCommon.ON_ACCOUNT_STATE_CHANGE_NOTIFICATION,
+  "weave:connected",
 ];
 
 
@@ -118,7 +119,9 @@ this.BrowserIDManager.prototype = {
   _tokenServerClient: null,
   
   _token: null,
-  _signedInUser: null, 
+  
+  
+  _userUid: null,
 
   hashedUID() {
     if (!this._hashedUID) {
@@ -142,18 +145,21 @@ this.BrowserIDManager.prototype = {
       Services.obs.removeObserver(this.asyncObserver, topic);
     }
     this.resetCredentials();
-    this._signedInUser = null;
+    this._userUid = null;
   },
 
-  _updateSignedInUser(userData) {
-    
-    
-    
-    
-    if (this._signedInUser && this._signedInUser.uid != userData.uid) {
-      throw new Error("Attempting to update to a different user.");
+  async getSignedInUser() {
+    let data = await this._fxaService.getSignedInUser();
+    if (!data) {
+      this._userUid = null;
+      return null;
     }
-    this._signedInUser = userData;
+    if (this._userUid == null) {
+      this._userUid = data.uid;
+    } else if (this._userUid != data.uid) {
+      throw new Error("The signed in user has changed");
+    }
+    return data;
   },
 
   logout() {
@@ -167,12 +173,16 @@ this.BrowserIDManager.prototype = {
 
   async observe(subject, topic, data) {
     this._log.debug("observed " + topic);
+    if (!this.username) {
+      this._log.info("Sync is not configured, so ignoring the notification");
+      return;
+    }
     switch (topic) {
+      case "weave:connected":
       case fxAccountsCommon.ONLOGIN_NOTIFICATION: {
-        this._log.info("A user has logged in");
+        this._log.info("Sync has been connected to a logged in user");
         this.resetCredentials();
-        let accountData = await this._fxaService.getSignedInUser();
-        this._updateSignedInUser(accountData);
+        let accountData = await this.getSignedInUser();
 
         if (!accountData.verified) {
           
@@ -184,10 +194,6 @@ this.BrowserIDManager.prototype = {
       
       case fxAccountsCommon.ONVERIFIED_NOTIFICATION: {
         this._log.info("The user became verified");
-
-        
-        let accountData = await this._fxaService.getSignedInUser();
-        this.username = accountData.email;
         Weave.Status.login = LOGIN_SUCCEEDED;
 
         
@@ -253,22 +259,8 @@ this.BrowserIDManager.prototype = {
 
 
   set username(value) {
-    if (value) {
-      value = value.toLowerCase();
-
-      if (value == this.username) {
-        return;
-      }
-
-      Svc.Prefs.set("username", value);
-    } else {
-      Svc.Prefs.reset("username");
-    }
-
     
-    
-    this._log.info("Username changed. Removing stored credentials.");
-    this.resetCredentials();
+    throw new Error("don't set the username");
   },
 
   
@@ -298,25 +290,17 @@ this.BrowserIDManager.prototype = {
   
 
 
-  deleteSyncCredentials() {
-    for (let host of Utils.getSyncCredentialsHosts()) {
-      let logins = Services.logins.findLogins(host, "", "");
-      for (let login of logins) {
-        Services.logins.removeLogin(login);
-      }
-    }
-  },
-
-  
-
-
 
 
 
   async unlockAndVerifyAuthState() {
-    let data = await this._fxaService.getSignedInUser();
+    let data = await this.getSignedInUser();
     if (!data) {
-      log.debug("unlockAndVerifyAuthState has no user");
+      log.debug("unlockAndVerifyAuthState has no FxA user");
+      return LOGIN_FAILED_NO_USERNAME;
+    }
+    if (!this.username) {
+      log.debug("unlockAndVerifyAuthState finds that sync isn't configured");
       return LOGIN_FAILED_NO_USERNAME;
     }
     if (!data.verified) {
@@ -325,7 +309,6 @@ this.BrowserIDManager.prototype = {
       log.debug("unlockAndVerifyAuthState has an unverified user");
       return LOGIN_FAILED_LOGIN_REJECTED;
     }
-    this._updateSignedInUser(data);
     if (await this._fxaService.keys.canGetKeys()) {
       log.debug(
         "unlockAndVerifyAuthState already has (or can fetch) sync keys"
@@ -340,9 +323,6 @@ this.BrowserIDManager.prototype = {
       );
       return MASTER_PASSWORD_LOCKED;
     }
-    
-    
-    this._updateSignedInUser(await this._fxaService.getSignedInUser());
     
     
     
@@ -398,11 +378,6 @@ this.BrowserIDManager.prototype = {
   
   async _fetchTokenForUser() {
     
-    if (!this._signedInUser.verified) {
-      throw new Error("User is not verified");
-    }
-
-    
     
     
     if (!(await this._fxaService.keys.canGetKeys())) {
@@ -419,7 +394,7 @@ this.BrowserIDManager.prototype = {
       const assertion = await this._fxaService._internal.getAssertion(audience);
 
       this._log.debug("Getting a token");
-      const headers = { "X-Client-State": this._signedInUser.kXCS };
+      const headers = { "X-Client-State": (await this.getSignedInUser()).kXCS };
       const token = await this._tokenServerClient.getTokenFromBrowserIDAssertion(
         this._tokenServerUrl,
         assertion,
@@ -433,8 +408,7 @@ this.BrowserIDManager.prototype = {
     try {
       try {
         this._log.info("Getting keys");
-        this._updateSignedInUser(await this._fxaService.keys.getKeys()); 
-
+        await this._fxaService.keys.getKeys(); 
         token = await getToken();
       } catch (err) {
         
@@ -455,7 +429,7 @@ this.BrowserIDManager.prototype = {
       token.expiration = this._now() + token.duration * 1000 * 0.8;
       if (!this._syncKeyBundle) {
         this._syncKeyBundle = BulkKeyBundle.fromHexKey(
-          this._signedInUser.kSync
+          (await this.getSignedInUser()).kSync
         );
       }
       Weave.Status.login = LOGIN_SUCCEEDED;
@@ -500,10 +474,11 @@ this.BrowserIDManager.prototype = {
   
   
   async _ensureValidToken(forceNewToken = false) {
-    if (!this._signedInUser) {
+    let signedInUser = await this.getSignedInUser();
+    if (!signedInUser) {
       throw new Error("no user is logged in");
     }
-    if (!this._signedInUser.verified) {
+    if (!signedInUser.verified) {
       throw new Error("user is not verified");
     }
 

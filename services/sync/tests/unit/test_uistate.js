@@ -14,8 +14,13 @@ add_task(async function test_isReady_unconfigured() {
 
   
   
+  
   ok(!UIState.isReady());
-  ok(!refreshState.called);
+  
+  await new Promise(resolve => {
+    Services.tm.idleDispatchToMainThread(resolve);
+  });
+  ok(refreshState.called);
   refreshState.resetHistory();
 
   
@@ -33,6 +38,9 @@ add_task(async function test_isReady_signedin() {
 
   
   ok(!UIState.isReady());
+  await new Promise(resolve => {
+    Services.tm.idleDispatchToMainThread(resolve);
+  });
   ok(refreshState.calledOnce);
   refreshState.resetHistory();
 

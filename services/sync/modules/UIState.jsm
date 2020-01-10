@@ -74,13 +74,14 @@ const UIStateInternal = {
 
   init() {
     this._initialized = true;
-    if (!Services.prefs.prefHasUserValue("services.sync.username")) {
-      return;
-    }
     
-    this.refreshState().catch(e => {
-      Cu.reportError(e);
-    });
+    
+    
+    Services.tm.idleDispatchToMainThread(() => {
+      this.refreshState().catch(e => {
+        Cu.reportError(e);
+      });
+    }, 2000);
   },
 
   
@@ -111,6 +112,12 @@ const UIStateInternal = {
   async refreshState() {
     const newState = {};
     await this._refreshFxAState(newState);
+    
+    
+    
+    if (this._state == null && newState.status == DEFAULT_STATE.status) {
+      return this.state;
+    }
     if (newState.syncEnabled) {
       this._setLastSyncTime(newState); 
     }

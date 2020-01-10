@@ -33,6 +33,10 @@ class FxAccountsKeys {
       if (!userData) {
         throw new Error("Can't possibly get keys; User is not signed in");
       }
+      if (!userData.verified) {
+        log.info("Can't get keys; user is not verified");
+        return false;
+      }
       
       
       

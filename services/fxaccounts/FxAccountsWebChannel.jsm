@@ -398,6 +398,7 @@ this.FxAccountsWebChannelHelpers = function(options) {
   options = options || {};
 
   this._fxAccounts = options.fxAccounts || fxAccounts;
+  this._weaveXPCOM = options.weaveXPCOM || null;
   this._privateBrowsingUtils =
     options.privateBrowsingUtils || PrivateBrowsingUtils;
 };
@@ -419,9 +420,10 @@ this.FxAccountsWebChannelHelpers.prototype = {
 
 
 
-  login(accountData) {
+  async login(accountData) {
     
     
+    log.debug("Webchannel is logging a user in.");
     delete accountData.customizeSync;
 
     if (accountData.offeredSyncEngines) {
@@ -456,11 +458,19 @@ this.FxAccountsWebChannelHelpers.prototype = {
 
     
     
-    let xps = Cc["@mozilla.org/weave/service;1"].getService(Ci.nsISupports)
-      .wrappedJSObject;
-    return xps.whenLoaded().then(() => {
-      return this._fxAccounts._internal.setSignedInUser(accountData);
-    });
+    
+    
+    let xps =
+      this._weaveXPCOM ||
+      Cc["@mozilla.org/weave/service;1"].getService(Ci.nsISupports)
+        .wrappedJSObject;
+    await xps.whenLoaded();
+    await this._fxAccounts._internal.setSignedInUser(accountData);
+    
+    
+    
+    
+    await xps.Weave.Service.configure();
   },
 
   

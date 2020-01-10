@@ -580,22 +580,7 @@ class FxAccounts {
         await this.signOut();
         return null;
       }
-      if (this._internal.isUserEmailVerified(data)) {
-        
-        
-        
-        
-        
-        
-        
-        
-        if (
-          !Services.prefs.prefHasUserValue("services.sync.username") &&
-          data.email
-        ) {
-          Services.prefs.setStringPref("services.sync.username", data.email);
-        }
-      } else {
+      if (!this._internal.isUserEmailVerified(data)) {
         
         
         

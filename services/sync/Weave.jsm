@@ -76,11 +76,14 @@ WeaveService.prototype = {
     Ci.nsISupportsWeakReference,
   ]),
 
-  ensureLoaded() {
+  get Weave() {
     const { Weave } = ChromeUtils.import("resource://services-sync/main.js");
+    return Weave;
+  },
 
+  ensureLoaded() {
     
-    Weave.Service;
+    this.Weave.Service;
   },
 
   whenLoaded() {
