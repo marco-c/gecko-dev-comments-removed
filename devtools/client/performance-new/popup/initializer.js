@@ -59,17 +59,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-
-
-
-async function gInit(perfFront, preferenceFront) {
+async function gInit() {
   const store = createStore(reducers);
+  const perfFrontInterface = new ActorReadyGeckoProfilerInterface();
 
   
   
   store.dispatch(
     actions.initializeStore({
-      perfFront: new ActorReadyGeckoProfilerInterface(),
+      perfFront: perfFrontInterface,
       receiveProfile,
       
       
@@ -92,6 +90,12 @@ async function gInit(perfFront, preferenceFront) {
     React.createElement(Provider, { store }, React.createElement(Perf)),
     document.querySelector("#root")
   );
+
+  window.addEventListener("unload", function() {
+    
+    
+    perfFrontInterface.destroy();
+  });
 
   resizeWindow();
 }
