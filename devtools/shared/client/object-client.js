@@ -4,11 +4,20 @@
 
 "use strict";
 
-const { objectSpec } = require("devtools/shared/specs/object");
 const {
-  FrontClassWithSpec,
-  registerFront,
-} = require("devtools/shared/protocol");
+  arg,
+  DebuggerClient,
+} = require("devtools/shared/client/debugger-client");
+loader.lazyRequireGetter(
+  this,
+  "PropertyIteratorClient",
+  "devtools/shared/client/property-iterator-client"
+);
+loader.lazyRequireGetter(
+  this,
+  "SymbolIteratorClient",
+  "devtools/shared/client/symbol-iterator-client"
+);
 
 
 
@@ -18,70 +27,75 @@ const {
 
 
 
-class ObjectClient extends FrontClassWithSpec(objectSpec) {
-  constructor(client, grip) {
-    super(client);
-    this._grip = grip;
-    this._client = client;
-    this.valid = true;
-    this.actorID = this._grip.actor;
+function ObjectClient(client, grip) {
+  this._grip = grip;
+  this._client = client;
+  this.request = this._client.request;
+}
 
-    this.manage(this);
-  }
-
+ObjectClient.prototype = {
   get actor() {
-    return this.actorID;
-  }
-
+    return this._grip.actor;
+  },
   get _transport() {
     return this._client._transport;
-  }
+  },
+
+  valid: true,
 
   get isFrozen() {
     return this._grip.frozen;
-  }
-
+  },
   get isSealed() {
     return this._grip.sealed;
-  }
-
+  },
   get isExtensible() {
     return this._grip.extensible;
-  }
+  },
 
-  getDefinitionSite() {
-    if (this._grip.class != "Function") {
-      console.error("getDefinitionSite is only valid for function grips.");
-      return null;
+  threadGrip: DebuggerClient.requester({
+    type: "threadGrip",
+  }),
+
+  getDefinitionSite: DebuggerClient.requester(
+    {
+      type: "definitionSite",
+    },
+    {
+      before: function(packet) {
+        if (this._grip.class != "Function") {
+          throw new Error(
+            "getDefinitionSite is only valid for function grips."
+          );
+        }
+        return packet;
+      },
     }
-    return super.definitionSite();
-  }
+  ),
 
   
 
 
-  getParameterNames() {
-    if (this._grip.class !== "Function") {
-      console.error("getParameterNames is only valid for function grips.");
-      return null;
+
+
+
+
+
+  getParameterNames: DebuggerClient.requester(
+    {
+      type: "parameterNames",
+    },
+    {
+      before: function(packet) {
+        if (this._grip.class !== "Function") {
+          throw new Error(
+            "getParameterNames is only valid for function grips."
+          );
+        }
+        return packet;
+      },
     }
-    return super.parameterNames();
-  }
-
-  
-
-
-
-  getOwnPropertyNames() {
-    return super.ownPropertyNames();
-  }
-
-  
-
-
-  getPrototypeAndProperties() {
-    return super.prototypeAndProperties();
-  }
+  ),
 
   
 
@@ -89,164 +103,306 @@ class ObjectClient extends FrontClassWithSpec(objectSpec) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-  enumProperties(options) {
-    return super.enumProperties(options);
-  }
+  getOwnPropertyNames: DebuggerClient.requester({
+    type: "ownPropertyNames",
+  }),
 
   
 
 
 
-  enumEntries() {
-    if (
-      !["Map", "WeakMap", "Set", "WeakSet", "Storage"].includes(
-        this._grip.class
-      )
-    ) {
-      console.error(
-        "enumEntries is only valid for Map/Set/Storage-like grips."
-      );
-      return null;
+
+  getPrototypeAndProperties: DebuggerClient.requester({
+    type: "prototypeAndProperties",
+  }),
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  enumProperties: DebuggerClient.requester(
+    {
+      type: "enumProperties",
+      options: arg(0),
+    },
+    {
+      after: function(response) {
+        if (response.iterator) {
+          return {
+            iterator: new PropertyIteratorClient(
+              this._client,
+              response.iterator
+            ),
+          };
+        }
+        return response;
+      },
     }
-    return super.enumEntries();
-  }
+  ),
 
   
 
 
-  enumSymbols() {
-    if (this._grip.type !== "object") {
-      console.error("enumSymbols is only valid for objects grips.");
-      return null;
+
+
+
+  enumEntries: DebuggerClient.requester(
+    {
+      type: "enumEntries",
+    },
+    {
+      before: function(packet) {
+        if (
+          !["Map", "WeakMap", "Set", "WeakSet", "Storage"].includes(
+            this._grip.class
+          )
+        ) {
+          throw new Error(
+            "enumEntries is only valid for Map/Set/Storage-like grips."
+          );
+        }
+        return packet;
+      },
+      after: function(response) {
+        if (response.iterator) {
+          return {
+            iterator: new PropertyIteratorClient(
+              this._client,
+              response.iterator
+            ),
+          };
+        }
+        return response;
+      },
     }
-    return super.enumSymbols();
-  }
+  ),
 
   
 
 
 
 
-  getProperty(name) {
-    return super.property(name);
-  }
-
-  
-
-
-
-
-
-  getPropertyValue(name, receiverId) {
-    return super.propertyValue(name, receiverId);
-  }
-
-  
-
-
-  getPrototype() {
-    return super.prototype();
-  }
-
-  
-
-
-  getDisplayString() {
-    return super.displayString();
-  }
-
-  
-
-
-  getScope() {
-    if (this._grip.class !== "Function") {
-      console.error("scope is only valid for function grips.");
-      return null;
+  enumSymbols: DebuggerClient.requester(
+    {
+      type: "enumSymbols",
+    },
+    {
+      before: function(packet) {
+        if (this._grip.type !== "object") {
+          throw new Error("enumSymbols is only valid for objects grips.");
+        }
+        return packet;
+      },
+      after: function(response) {
+        if (response.iterator) {
+          return {
+            iterator: new SymbolIteratorClient(this._client, response.iterator),
+          };
+        }
+        return response;
+      },
     }
-    return super.scope();
-  }
+  ),
 
   
 
 
-  getDependentPromises() {
-    if (this._grip.class !== "Promise") {
-      console.error("getDependentPromises is only valid for promise grips.");
-      return null;
-    }
-    return super.dependentPromises();
-  }
+
+
+
+  getProperty: DebuggerClient.requester({
+    type: "property",
+    name: arg(0),
+  }),
 
   
 
 
-  getPromiseAllocationStack() {
-    if (this._grip.class !== "Promise") {
-      console.error(
-        "getPromiseAllocationStack is only valid for promise grips."
-      );
-      return null;
-    }
-    return super.allocationStack();
-  }
+
+
+
+
+  getPropertyValue: DebuggerClient.requester({
+    type: "propertyValue",
+    name: arg(0),
+    receiverId: arg(1),
+  }),
 
   
 
 
-  getPromiseFulfillmentStack() {
-    if (this._grip.class !== "Promise") {
-      console.error(
-        "getPromiseFulfillmentStack is only valid for promise grips."
-      );
-      return null;
-    }
-    return super.fulfillmentStack();
-  }
+
+
+  getPrototype: DebuggerClient.requester({
+    type: "prototype",
+  }),
 
   
 
 
-  getPromiseRejectionStack() {
-    if (this._grip.class !== "Promise") {
-      console.error(
-        "getPromiseRejectionStack is only valid for promise grips."
-      );
-      return null;
-    }
-    return super.rejectionStack();
-  }
+
+
+
+
+  apply: DebuggerClient.requester({
+    type: "apply",
+    context: arg(0),
+    arguments: arg(1),
+  }),
 
   
 
 
-  getProxySlots() {
-    if (this._grip.class !== "Proxy") {
-      console.error("getProxySlots is only valid for proxy grips.");
-      return null;
-    }
 
-    const response = super.proxySlots();
-    
-    
-    if (response.error === "unrecognizedPacketType") {
-      const { proxyTarget, proxyHandler } = this._grip;
-      return { proxyTarget, proxyHandler };
-    }
 
-    return response;
-  }
-}
+  getDisplayString: DebuggerClient.requester({
+    type: "displayString",
+  }),
+
+  
+
+
+
+
+  getScope: DebuggerClient.requester(
+    {
+      type: "scope",
+    },
+    {
+      before: function(packet) {
+        if (this._grip.class !== "Function") {
+          throw new Error("scope is only valid for function grips.");
+        }
+        return packet;
+      },
+    }
+  ),
+
+  
+
+
+  getDependentPromises: DebuggerClient.requester(
+    {
+      type: "dependentPromises",
+    },
+    {
+      before: function(packet) {
+        if (this._grip.class !== "Promise") {
+          throw new Error(
+            "getDependentPromises is only valid for promise " + "grips."
+          );
+        }
+        return packet;
+      },
+    }
+  ),
+
+  
+
+
+  getPromiseAllocationStack: DebuggerClient.requester(
+    {
+      type: "allocationStack",
+    },
+    {
+      before: function(packet) {
+        if (this._grip.class !== "Promise") {
+          throw new Error(
+            "getAllocationStack is only valid for promise grips."
+          );
+        }
+        return packet;
+      },
+    }
+  ),
+
+  
+
+
+  getPromiseFulfillmentStack: DebuggerClient.requester(
+    {
+      type: "fulfillmentStack",
+    },
+    {
+      before: function(packet) {
+        if (this._grip.class !== "Promise") {
+          throw new Error(
+            "getPromiseFulfillmentStack is only valid for " + "promise grips."
+          );
+        }
+        return packet;
+      },
+    }
+  ),
+
+  
+
+
+  getPromiseRejectionStack: DebuggerClient.requester(
+    {
+      type: "rejectionStack",
+    },
+    {
+      before: function(packet) {
+        if (this._grip.class !== "Promise") {
+          throw new Error(
+            "getPromiseRejectionStack is only valid for " + "promise grips."
+          );
+        }
+        return packet;
+      },
+    }
+  ),
+
+  
+
+
+  getProxySlots: DebuggerClient.requester(
+    {
+      type: "proxySlots",
+    },
+    {
+      before: function(packet) {
+        if (this._grip.class !== "Proxy") {
+          throw new Error("getProxySlots is only valid for proxy grips.");
+        }
+        return packet;
+      },
+      after: function(response) {
+        
+        
+        if (response.error === "unrecognizedPacketType") {
+          const { proxyTarget, proxyHandler } = this._grip;
+          return { proxyTarget, proxyHandler };
+        }
+        return response;
+      },
+    }
+  ),
+  addWatchpoint: DebuggerClient.requester({
+    type: "addWatchpoint",
+    property: arg(0),
+    label: arg(1),
+    watchpointType: arg(2),
+  }),
+  removeWatchpoint: DebuggerClient.requester({
+    type: "removeWatchpoint",
+    property: arg(0),
+  }),
+};
 
 module.exports = ObjectClient;
-registerFront(ObjectClient);

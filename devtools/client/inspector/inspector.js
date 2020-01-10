@@ -158,14 +158,7 @@ function Inspector(toolbox) {
       if (!actor) {
         return;
       }
-      const objFront = toolbox.target.client.getFrontByID(actor);
-      if (objFront) {
-        objFront.release();
-        return;
-      }
-
-      
-      toolbox.target.client.release(actor).catch(() => {});
+      toolbox.target.client.release(actor);
     },
   });
 

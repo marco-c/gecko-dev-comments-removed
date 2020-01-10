@@ -90,8 +90,8 @@ VariablesViewController.prototype = {
     if (aOptions.getLongStringClient) {
       this._getLongStringClient = aOptions.getLongStringClient;
     }
-    if (aOptions.getEnvironmentFront) {
-      this._getEnvironmentFront = aOptions.getEnvironmentFront;
+    if (aOptions.getEnvironmentClient) {
+      this._getEnvironmentClient = aOptions.getEnvironmentClient;
     }
     if (aOptions.releaseActor) {
       this._releaseActor = aOptions.releaseActor;
@@ -253,7 +253,7 @@ VariablesViewController.prototype = {
         ignoreNonIndexedProperties: true,
         query: aQuery,
       };
-      objectClient.enumProperties(options).then(iterator => {
+      objectClient.enumProperties(options, ({ iterator }) => {
         const sliceGrip = {
           type: "property-iterator",
           propertyIterator: iterator,
@@ -267,7 +267,7 @@ VariablesViewController.prototype = {
             sort: true,
             query: aQuery,
           };
-          objectClient.enumProperties(options).then(iterator => {
+          objectClient.enumProperties(options, ({ iterator }) => {
             const sliceGrip = {
               type: "property-iterator",
               propertyIterator: iterator,
@@ -279,17 +279,19 @@ VariablesViewController.prototype = {
         });
       });
     } else {
-      const options = { sort: true, query: aQuery };
       
-      objectClient.enumProperties(options).then(iterator => {
-        const sliceGrip = {
-          type: "property-iterator",
-          propertyIterator: iterator,
-          start: 0,
-          count: iterator.count,
-        };
-        deferred.resolve(this._populatePropertySlices(aTarget, sliceGrip));
-      });
+      objectClient.enumProperties(
+        { sort: true, query: aQuery },
+        ({ iterator }) => {
+          const sliceGrip = {
+            type: "property-iterator",
+            propertyIterator: iterator,
+            start: 0,
+            count: iterator.count,
+          };
+          deferred.resolve(this._populatePropertySlices(aTarget, sliceGrip));
+        }
+      );
     }
     return deferred.promise;
   },
@@ -324,7 +326,7 @@ VariablesViewController.prototype = {
       
       const deferred = defer();
       const objectClient = this._getObjectClient(aGrip);
-      objectClient.getProxySlots().then(aResponse => {
+      objectClient.getProxySlots(aResponse => {
         const target = aTarget.addItem(
           "<target>",
           { value: aResponse.proxyTarget },
@@ -381,7 +383,7 @@ VariablesViewController.prototype = {
       return this._populateFromObjectWithIterator(aTarget, aGrip).then(() => {
         const deferred = defer();
         const objectClient = this._getObjectClient(aGrip);
-        objectClient.getPrototype().then(prototype => {
+        objectClient.getPrototype(({ prototype }) => {
           this._populateObjectPrototype(aTarget, prototype);
           deferred.resolve();
         });
@@ -396,7 +398,7 @@ VariablesViewController.prototype = {
     const deferred = defer();
 
     const objectClient = this._getObjectClient(aGrip);
-    objectClient.getPrototypeAndProperties().then(aResponse => {
+    objectClient.getPrototypeAndProperties(aResponse => {
       const ownProperties = aResponse.ownProperties || {};
       const prototype = aResponse.prototype || null;
       
@@ -429,7 +431,7 @@ VariablesViewController.prototype = {
       
       
       if (aGrip.class == "Function") {
-        objectClient.getScope().then(aResponse => {
+        objectClient.getScope(aResponse => {
           if (aResponse.error) {
             
             
@@ -479,12 +481,10 @@ VariablesViewController.prototype = {
       } else {
         const deferred = defer();
         objectScopes.push(deferred.promise);
-        this._getEnvironmentFront(environment)
-          .getBindings()
-          .then(response => {
-            this._populateWithEnvironmentBindings(closure, response.bindings);
-            deferred.resolve();
-          });
+        this._getEnvironmentClient(environment).getBindings(response => {
+          this._populateWithEnvironmentBindings(closure, response.bindings);
+          deferred.resolve();
+        });
       }
     } while ((environment = environment.parent));
 
@@ -534,7 +534,7 @@ VariablesViewController.prototype = {
 
     
     return new promise((resolve, reject) => {
-      objectClient.enumEntries().then(response => {
+      objectClient.enumEntries(response => {
         if (response.error) {
           
           console.warn(response.error + ": " + response.message);

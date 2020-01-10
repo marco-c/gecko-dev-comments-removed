@@ -148,9 +148,5 @@ async function checkContentConsoleApiMessages(nonPrimitiveVariablesDisplayed) {
 
   info("Clear and close the Browser Console");
   await clearOutput(hud);
-  
-  
-  
-  await waitForTick();
   await BrowserConsoleManager.toggleBrowserConsole();
 }
