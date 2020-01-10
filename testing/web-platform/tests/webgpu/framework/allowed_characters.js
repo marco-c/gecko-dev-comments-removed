@@ -1,0 +1,6 @@
+
+
+
+
+
+export const allowedTestNameCharacters = 'a-zA-Z0-9/_ ';
