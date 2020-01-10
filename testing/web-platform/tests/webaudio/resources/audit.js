@@ -1210,6 +1210,18 @@ window.Audit = (function() {
       this._taskRunner._runNextTask();
     }
 
+    
+    
+    
+    timeout(subTask, time) {
+      async_test((test) => {
+        test.step_timeout(() => {
+          subTask();
+          test.done();
+        }, time);
+      });
+    }
+
     isPassed() {
       return this._state === TaskState.FINISHED && this._result;
     }
