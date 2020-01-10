@@ -722,7 +722,7 @@ void nsContainerFrame::DoInlineIntrinsicISize(
   nscoord clonePBM = 0;  
   const bool sliceBreak =
       styleBorder->mBoxDecorationBreak == StyleBoxDecorationBreak::Slice;
-  if (!GetPrevContinuation()) {
+  if (!GetPrevContinuation() || MOZ_UNLIKELY(!sliceBreak)) {
     nscoord startPBM =
         
         std::max(GetCoord(stylePadding->mPadding.Get(startSide), 0), 0) +
@@ -742,6 +742,7 @@ void nsContainerFrame::DoInlineIntrinsicISize(
       GetCoord(styleMargin->mMargin.Get(endSide), 0);
   if (MOZ_UNLIKELY(!sliceBreak)) {
     clonePBM += endPBM;
+    aData->mCurrentLine += clonePBM;
   }
 
   const nsLineList_iterator* savedLine = aData->mLine;
