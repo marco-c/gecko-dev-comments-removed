@@ -5,7 +5,7 @@
 let mm = this;
 
 ChromeUtils.import("resource://specialpowers/SpecialPowersAPI.jsm", this);
-ChromeUtils.import("resource://specialpowers/specialpowers.js", this);
+ChromeUtils.import("resource://specialpowers/SpecialPowers.jsm", this);
 
 
 
