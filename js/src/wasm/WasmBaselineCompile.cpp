@@ -10202,7 +10202,7 @@ bool BaseCompiler::emitWake() {
 
 bool BaseCompiler::bulkmemOpsEnabled() {
 #ifndef ENABLE_WASM_BULKMEM_OPS
-  if (!env_.sharedMemoryEnabled) {
+  if (env_.sharedMemoryEnabled == Shareable::False) {
     return iter_.fail("bulk memory ops disabled");
   }
 #endif

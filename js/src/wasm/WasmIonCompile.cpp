@@ -2865,7 +2865,7 @@ static bool EmitAtomicXchg(FunctionCompiler& f, ValType type,
 static bool EmitMemOrTableCopy(FunctionCompiler& f, bool isMem) {
   
 #ifndef ENABLE_WASM_BULKMEM_OPS
-  if (!f.env().sharedMemoryEnabled) {
+  if (f.env().sharedMemoryEnabled == Shareable::False) {
     return f.iter().fail("bulk memory ops disabled");
   }
 #endif
@@ -2926,7 +2926,7 @@ static bool EmitMemOrTableCopy(FunctionCompiler& f, bool isMem) {
 static bool EmitDataOrElemDrop(FunctionCompiler& f, bool isData) {
   
 #ifndef ENABLE_WASM_BULKMEM_OPS
-  if (!f.env().sharedMemoryEnabled) {
+  if (f.env().sharedMemoryEnabled == Shareable::False) {
     return f.iter().fail("bulk memory ops disabled");
   }
 #endif
@@ -2965,7 +2965,7 @@ static bool EmitDataOrElemDrop(FunctionCompiler& f, bool isData) {
 static bool EmitMemFill(FunctionCompiler& f) {
   
 #ifndef ENABLE_WASM_BULKMEM_OPS
-  if (!f.env().sharedMemoryEnabled) {
+  if (f.env().sharedMemoryEnabled == Shareable::False) {
     return f.iter().fail("bulk memory ops disabled");
   }
 #endif
@@ -3007,7 +3007,7 @@ static bool EmitMemFill(FunctionCompiler& f) {
 static bool EmitMemOrTableInit(FunctionCompiler& f, bool isMem) {
   
 #ifndef ENABLE_WASM_BULKMEM_OPS
-  if (!f.env().sharedMemoryEnabled) {
+  if (f.env().sharedMemoryEnabled == Shareable::False) {
     return f.iter().fail("bulk memory ops disabled");
   }
 #endif
