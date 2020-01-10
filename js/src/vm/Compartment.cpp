@@ -185,7 +185,7 @@ bool Compartment::wrap(JSContext* cx, MutableHandleBigInt bi) {
 }
 
 bool Compartment::getNonWrapperObjectForCurrentCompartment(
-    JSContext* cx, MutableHandleObject obj) {
+    JSContext* cx, HandleObject origObj, MutableHandleObject obj) {
   
   MOZ_ASSERT(cx->global());
 
@@ -263,7 +263,7 @@ bool Compartment::getNonWrapperObjectForCurrentCompartment(
     return false;
   }
   if (preWrap) {
-    preWrap(cx, cx->global(), obj, objectPassedToWrap, obj);
+    preWrap(cx, cx->global(), origObj, obj, objectPassedToWrap, obj);
     if (!obj) {
       return false;
     }
@@ -330,7 +330,8 @@ bool Compartment::wrap(JSContext* cx, MutableHandleObject obj) {
 
   
   
-  if (!getNonWrapperObjectForCurrentCompartment(cx, obj)) {
+  if (!getNonWrapperObjectForCurrentCompartment(cx,  nullptr,
+                                                obj)) {
     return false;
   }
 
@@ -369,7 +370,10 @@ bool Compartment::rewrap(JSContext* cx, MutableHandleObject obj,
 
   
   
-  if (!getNonWrapperObjectForCurrentCompartment(cx, obj)) {
+  
+  
+  
+  if (!getNonWrapperObjectForCurrentCompartment(cx, existingArg, obj)) {
     return false;
   }
 
