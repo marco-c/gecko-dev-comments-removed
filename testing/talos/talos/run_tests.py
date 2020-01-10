@@ -138,6 +138,11 @@ def run_tests(config, browser_config):
     if browser_config['subtests']:
         browser_config['preferences']['talos.subtests'] = browser_config['subtests']
 
+    if browser_config.get('enable_fission', False):
+        browser_config['preferences']['fission.autostart'] = True
+        browser_config['preferences']['dom.serviceWorkers.parent_intercept'] = True
+        browser_config['preferences']['browser.tabs.documentchannel'] = True
+
     
     
     
