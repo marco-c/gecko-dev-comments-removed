@@ -56,13 +56,6 @@ pref("browser.cache.offline.capacity",         512000);
 pref("offline-apps.quota.warn",        51200);
 
 
-
-
-
-
-pref("browser.cache.compression_level", 0);
-
-
 pref("browser.download.forbid_open_with", false);
 
 

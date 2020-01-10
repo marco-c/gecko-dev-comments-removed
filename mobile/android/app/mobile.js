@@ -81,9 +81,6 @@ pref("offline-apps.quota.warn", 1024);
 pref("browser.enable_automatic_image_resizing", true);
 
 
-pref("browser.cache.compression_level", 0);
-
-
 pref("network.protocol-handler.warn-external.tel", false);
 pref("network.protocol-handler.warn-external.sms", false);
 pref("network.protocol-handler.warn-external.mailto", false);
