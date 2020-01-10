@@ -49,10 +49,7 @@ class MediaRecorder final : public DOMEventTargetHelper,
  public:
   class Session;
 
-  MediaRecorder(DOMMediaStream& aSourceMediaTrack,
-                nsPIDOMWindowInner* aOwnerWindow);
-  MediaRecorder(AudioNode& aSrcAudioNode, uint32_t aSrcOutput,
-                nsPIDOMWindowInner* aOwnerWindow);
+  explicit MediaRecorder(nsPIDOMWindowInner* aOwnerWindow);
 
   static nsTArray<RefPtr<Session>> GetSessions();
 
@@ -79,7 +76,7 @@ class MediaRecorder final : public DOMEventTargetHelper,
   
   void RequestData(ErrorResult& aResult);
   
-  DOMMediaStream* Stream() const { return mDOMStream; }
+  DOMMediaStream* Stream() const { return mStream; }
   
   void GetMimeType(nsString& aMimeType);
   
@@ -91,11 +88,11 @@ class MediaRecorder final : public DOMEventTargetHelper,
   
   static already_AddRefed<MediaRecorder> Constructor(
       const GlobalObject& aGlobal, DOMMediaStream& aStream,
-      const MediaRecorderOptions& aInitDict, ErrorResult& aRv);
+      const MediaRecorderOptions& aOptions, ErrorResult& aRv);
   
   static already_AddRefed<MediaRecorder> Constructor(
-      const GlobalObject& aGlobal, AudioNode& aSrcAudioNode,
-      uint32_t aSrcOutput, const MediaRecorderOptions& aInitDict,
+      const GlobalObject& aGlobal, AudioNode& aAudioNode,
+      uint32_t aAudioNodeOutput, const MediaRecorderOptions& aOptions,
       ErrorResult& aRv);
 
   
@@ -115,9 +112,8 @@ class MediaRecorder final : public DOMEventTargetHelper,
 
   NS_DECL_NSIDOCUMENTACTIVITY
 
-  uint32_t AudioBitsPerSecond() { return mAudioBitsPerSecond; }
-  uint32_t VideoBitsPerSecond() { return mVideoBitsPerSecond; }
-  uint32_t BitsPerSecond() { return mBitsPerSecond; }
+  uint32_t AudioBitsPerSecond() const { return mAudioBitsPerSecond; }
+  uint32_t VideoBitsPerSecond() const { return mVideoBitsPerSecond; }
 
  protected:
   virtual ~MediaRecorder();
@@ -131,7 +127,6 @@ class MediaRecorder final : public DOMEventTargetHelper,
   void NotifyError(nsresult aRv);
   
   void SetMimeType(const nsString& aMimeType);
-  void SetOptions(const MediaRecorderOptions& aInitDict);
 
   MediaRecorder(const MediaRecorder& x) = delete;  
   
@@ -143,22 +138,20 @@ class MediaRecorder final : public DOMEventTargetHelper,
   
   void InitializeDomExceptions();
   
-  
-  
-  void ForceInactive();
+  void Inactivate();
   
   
   void StopForSessionDestruction();
   
-  RefPtr<DOMMediaStream> mDOMStream;
+  RefPtr<DOMMediaStream> mStream;
   
   RefPtr<AudioNode> mAudioNode;
   
   
-  const uint32_t mAudioNodeOutput;
+  uint32_t mAudioNodeOutput = 0;
 
   
-  RecordingState mState;
+  RecordingState mState = RecordingState::Inactive;
   
   
   nsTArray<RefPtr<Session>> mSessions;
@@ -169,9 +162,9 @@ class MediaRecorder final : public DOMEventTargetHelper,
   
   nsString mMimeType;
 
-  uint32_t mAudioBitsPerSecond;
-  uint32_t mVideoBitsPerSecond;
-  uint32_t mBitsPerSecond;
+  uint32_t mAudioBitsPerSecond = 0;
+  uint32_t mVideoBitsPerSecond = 0;
+  Maybe<uint32_t> mConstrainedBitsPerSecond;
 
   
   

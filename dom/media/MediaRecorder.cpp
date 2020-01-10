@@ -43,6 +43,14 @@
 mozilla::LazyLogModule gMediaRecorderLog("MediaRecorder");
 #define LOG(type, msg) MOZ_LOG(gMediaRecorderLog, type, msg)
 
+#define MIN_VIDEO_BITRATE_BPS 10e3        // 10kbps
+#define DEFAULT_VIDEO_BITRATE_BPS 2500e3  // 2.5Mbps
+#define MAX_VIDEO_BITRATE_BPS 100e6       // 100Mbps
+
+#define MIN_AUDIO_BITRATE_BPS 500        // 500bps
+#define DEFAULT_AUDIO_BITRATE_BPS 128e3  // 128kbps
+#define MAX_AUDIO_BITRATE_BPS 512e3      // 512kbps
+
 namespace mozilla {
 
 namespace dom {
@@ -141,7 +149,7 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(MediaRecorder)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(MediaRecorder,
                                                   DOMEventTargetHelper)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDOMStream)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mStream)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAudioNode)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSecurityDomException)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mUnknownDomException)
@@ -150,7 +158,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(MediaRecorder,
                                                 DOMEventTargetHelper)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDOMStream)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mStream)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mAudioNode)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSecurityDomException)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mUnknownDomException)
@@ -164,6 +172,81 @@ NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
 
 NS_IMPL_ADDREF_INHERITED(MediaRecorder, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(MediaRecorder, DOMEventTargetHelper)
+
+static bool PrincipalSubsumes(MediaRecorder* aRecorder,
+                              nsIPrincipal* aPrincipal) {
+  if (!aRecorder->GetOwner()) {
+    return false;
+  }
+  nsCOMPtr<Document> doc = aRecorder->GetOwner()->GetExtantDoc();
+  if (!doc) {
+    return false;
+  }
+  if (!aPrincipal) {
+    return false;
+  }
+  bool subsumes;
+  if (NS_FAILED(doc->NodePrincipal()->Subsumes(aPrincipal, &subsumes))) {
+    return false;
+  }
+  return subsumes;
+}
+
+static bool MediaStreamTracksPrincipalSubsumes(
+    MediaRecorder* aRecorder,
+    const nsTArray<RefPtr<MediaStreamTrack>>& aTracks) {
+  nsCOMPtr<nsIPrincipal> principal = nullptr;
+  for (const auto& track : aTracks) {
+    nsContentUtils::CombineResourcePrincipals(&principal,
+                                              track->GetPrincipal());
+  }
+  return PrincipalSubsumes(aRecorder, principal);
+}
+
+static bool AudioNodePrincipalSubsumes(MediaRecorder* aRecorder,
+                                       AudioNode* aAudioNode) {
+  MOZ_ASSERT(aAudioNode);
+  Document* doc =
+      aAudioNode->GetOwner() ? aAudioNode->GetOwner()->GetExtantDoc() : nullptr;
+  nsCOMPtr<nsIPrincipal> principal = doc ? doc->NodePrincipal() : nullptr;
+  return PrincipalSubsumes(aRecorder, principal);
+}
+
+static void SelectBitrates(uint32_t aBitsPerSecond, uint8_t aNumVideoTracks,
+                           uint32_t* aOutVideoBps, uint8_t aNumAudioTracks,
+                           uint32_t* aOutAudioBps) {
+  uint32_t vbps = 0;
+  uint32_t abps = 0;
+
+  const uint32_t minVideoBps = MIN_VIDEO_BITRATE_BPS * aNumVideoTracks;
+  const uint32_t maxVideoBps = MAX_VIDEO_BITRATE_BPS * aNumVideoTracks;
+
+  const uint32_t minAudioBps = MIN_AUDIO_BITRATE_BPS * aNumAudioTracks;
+  const uint32_t maxAudioBps = MAX_AUDIO_BITRATE_BPS * aNumAudioTracks;
+
+  if (aNumVideoTracks == 0) {
+    MOZ_DIAGNOSTIC_ASSERT(aNumAudioTracks > 0);
+    abps = std::min(maxAudioBps, std::max(minAudioBps, aBitsPerSecond));
+  } else if (aNumAudioTracks == 0) {
+    vbps = std::min(maxVideoBps, std::max(minVideoBps, aBitsPerSecond));
+  } else {
+    
+    
+    
+    const uint32_t videoWeight = aNumVideoTracks * 20;
+    const uint32_t audioWeight = aNumAudioTracks;
+    const uint32_t totalWeights = audioWeight + videoWeight;
+    const uint32_t videoBitrate =
+        uint64_t(aBitsPerSecond) * videoWeight / totalWeights;
+    const uint32_t audioBitrate =
+        uint64_t(aBitsPerSecond) * audioWeight / totalWeights;
+    vbps = std::min(maxVideoBps, std::max(minVideoBps, videoBitrate));
+    abps = std::min(maxAudioBps, std::max(minAudioBps, audioBitrate));
+  }
+
+  *aOutVideoBps = vbps;
+  *aOutAudioBps = abps;
+}
 
 
 
@@ -308,11 +391,16 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
   };
 
  public:
-  Session(MediaRecorder* aRecorder, uint32_t aTimeSlice)
+  Session(MediaRecorder* aRecorder,
+          nsTArray<RefPtr<MediaStreamTrack>> aMediaStreamTracks,
+          TimeDuration aTimeslice, uint32_t aVideoBitsPerSecond,
+          uint32_t aAudioBitsPerSecond)
       : mRecorder(aRecorder),
-        mMediaStreamReady(false),
+        mMediaStreamTracks(std::move(aMediaStreamTracks)),
         mMainThread(mRecorder->GetOwner()->EventTargetFor(TaskCategory::Other)),
-        mTimeSlice(aTimeSlice),
+        mTimeslice(aTimeslice),
+        mVideoBitsPerSecond(aVideoBitsPerSecond),
+        mAudioBitsPerSecond(aAudioBitsPerSecond),
         mStartTime(TimeStamp::Now()),
         mRunningState(RunningState::Idling) {
     MOZ_ASSERT(NS_IsMainThread());
@@ -327,7 +415,7 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
   void PrincipalChanged(MediaStreamTrack* aTrack) override {
     NS_ASSERTION(mMediaStreamTracks.Contains(aTrack),
                  "Principal changed for unrecorded track");
-    if (!MediaStreamTracksPrincipalSubsumes()) {
+    if (!MediaStreamTracksPrincipalSubsumes(mRecorder, mMediaStreamTracks)) {
       DoSessionEndTask(NS_ERROR_DOM_SECURITY_ERR);
     }
   }
@@ -336,22 +424,10 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
     LOG(LogLevel::Warning,
         ("Session.NotifyTrackAdded %p Raising error due to track set change",
          this));
-    if (mMediaStreamReady) {
-      DoSessionEndTask(NS_ERROR_ABORT);
-    }
-
-    NS_DispatchToMainThread(
-        NewRunnableMethod("MediaRecorder::Session::MediaStreamReady", this,
-                          &Session::MediaStreamReady));
-    return;
+    DoSessionEndTask(NS_ERROR_ABORT);
   }
 
   void NotifyTrackRemoved(const RefPtr<MediaStreamTrack>& aTrack) override {
-    if (!mMediaStreamReady) {
-      
-      return;
-    }
-
     if (aTrack->Ended()) {
       
       return;
@@ -372,32 +448,51 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
     LOG(LogLevel::Debug, ("Session.Start %p", this));
     MOZ_ASSERT(NS_IsMainThread());
 
-    DOMMediaStream* domStream = mRecorder->Stream();
-    if (domStream) {
+    if (mRecorder->mStream) {
       
       
-      
-      
-      mMediaStream = domStream;
+      mMediaStream = mRecorder->mStream;
       mMediaStream->RegisterTrackListener(this);
-      nsTArray<RefPtr<MediaStreamTrack>> tracks(2);
-      mMediaStream->GetTracks(tracks);
-      for (const auto& track : tracks) {
-        
-        NotifyTrackAdded(track);
+
+      uint8_t trackTypes = 0;
+      int32_t audioTracks = 0;
+      int32_t videoTracks = 0;
+      for (const auto& track : mMediaStreamTracks) {
+        if (track->AsAudioStreamTrack()) {
+          ++audioTracks;
+          trackTypes |= ContainerWriter::CREATE_AUDIO_TRACK;
+        } else if (track->AsVideoStreamTrack()) {
+          ++videoTracks;
+          trackTypes |= ContainerWriter::CREATE_VIDEO_TRACK;
+        } else {
+          MOZ_CRASH("Unexpected track type");
+        }
       }
+
+      if (audioTracks > 1 || videoTracks > 1) {
+        
+        
+        
+        nsPIDOMWindowInner* window = mRecorder->GetOwner();
+        Document* document = window ? window->GetExtantDoc() : nullptr;
+        nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
+                                        NS_LITERAL_CSTRING("Media"), document,
+                                        nsContentUtils::eDOM_PROPERTIES,
+                                        "MediaRecorderMultiTracksNotSupported");
+        DoSessionEndTask(NS_ERROR_ABORT);
+        return;
+      }
+
+      for (const auto& t : mMediaStreamTracks) {
+        t->AddPrincipalChangeObserver(this);
+      }
+
+      LOG(LogLevel::Debug, ("Session.Start track types = (%d)", trackTypes));
+      InitEncoder(trackTypes, mMediaStreamTracks[0]->Graph()->GraphRate());
       return;
     }
 
     if (mRecorder->mAudioNode) {
-      
-      if (!AudioNodePrincipalSubsumes()) {
-        LOG(LogLevel::Warning,
-            ("Session.Start AudioNode principal check failed"));
-        DoSessionEndTask(NS_ERROR_DOM_SECURITY_ERR);
-        return;
-      }
-
       TrackRate trackRate =
           mRecorder->mAudioNode->Context()->Graph()->GraphRate();
 
@@ -424,8 +519,7 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
     }
 
     {
-      auto tracks(std::move(mMediaStreamTracks));
-      for (RefPtr<MediaStreamTrack>& track : tracks) {
+      for (const auto& track : mMediaStreamTracks) {
         track->RemovePrincipalChangeObserver(this);
       }
     }
@@ -618,8 +712,7 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
     
     
     bool pushBlob = aForceFlush;
-    if (!pushBlob && mTimeSlice > 0 &&
-        (TimeStamp::Now() - mLastBlobTimeStamp).ToMilliseconds() > mTimeSlice) {
+    if (!pushBlob && (TimeStamp::Now() - mLastBlobTimeStamp) > mTimeslice) {
       pushBlob = true;
     }
     if (pushBlob) {
@@ -642,129 +735,6 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
                    }
                  });
     }
-  }
-
-  void MediaStreamReady() {
-    if (!mMediaStream) {
-      
-      return;
-    }
-
-    if (mMediaStreamReady) {
-      return;
-    }
-
-    if (!mRunningState.isOk() ||
-        mRunningState.inspect() != RunningState::Idling) {
-      return;
-    }
-
-    nsTArray<RefPtr<mozilla::dom::MediaStreamTrack>> tracks;
-    mMediaStream->GetTracks(tracks);
-    uint8_t trackTypes = 0;
-    int32_t audioTracks = 0;
-    int32_t videoTracks = 0;
-    for (auto& track : tracks) {
-      if (track->Ended()) {
-        continue;
-      }
-
-      ConnectMediaStreamTrack(*track);
-
-      if (track->AsAudioStreamTrack()) {
-        ++audioTracks;
-        trackTypes |= ContainerWriter::CREATE_AUDIO_TRACK;
-      } else if (track->AsVideoStreamTrack()) {
-        ++videoTracks;
-        trackTypes |= ContainerWriter::CREATE_VIDEO_TRACK;
-      } else {
-        MOZ_CRASH("Unexpected track type");
-      }
-    }
-
-    if (trackTypes == 0) {
-      MOZ_ASSERT(audioTracks == 0);
-      MOZ_ASSERT(videoTracks == 0);
-      return;
-    }
-
-    mMediaStreamReady = true;
-
-    if (audioTracks > 1 || videoTracks > 1) {
-      
-      
-      
-      nsPIDOMWindowInner* window = mRecorder->GetOwner();
-      Document* document = window ? window->GetExtantDoc() : nullptr;
-      nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
-                                      NS_LITERAL_CSTRING("Media"), document,
-                                      nsContentUtils::eDOM_PROPERTIES,
-                                      "MediaRecorderMultiTracksNotSupported");
-      DoSessionEndTask(NS_ERROR_ABORT);
-      return;
-    }
-
-    
-    if (!MediaStreamTracksPrincipalSubsumes()) {
-      LOG(LogLevel::Warning, ("Session.MediaTracksReady MediaStreamTracks "
-                              "principal check failed"));
-      DoSessionEndTask(NS_ERROR_DOM_SECURITY_ERR);
-      return;
-    }
-
-    LOG(LogLevel::Debug,
-        ("Session.MediaTracksReady track type = (%d)", trackTypes));
-    InitEncoder(trackTypes, mMediaStreamTracks[0]->Graph()->GraphRate());
-  }
-
-  void ConnectMediaStreamTrack(MediaStreamTrack& aTrack) {
-    for (auto& track : mMediaStreamTracks) {
-      if (track->AsAudioStreamTrack() && aTrack.AsAudioStreamTrack()) {
-        
-        return;
-      }
-      if (track->AsVideoStreamTrack() && aTrack.AsVideoStreamTrack()) {
-        
-        return;
-      }
-    }
-    mMediaStreamTracks.AppendElement(&aTrack);
-    aTrack.AddPrincipalChangeObserver(this);
-  }
-
-  bool PrincipalSubsumes(nsIPrincipal* aPrincipal) {
-    if (!mRecorder->GetOwner()) return false;
-    nsCOMPtr<Document> doc = mRecorder->GetOwner()->GetExtantDoc();
-    if (!doc) {
-      return false;
-    }
-    if (!aPrincipal) {
-      return false;
-    }
-    bool subsumes;
-    if (NS_FAILED(doc->NodePrincipal()->Subsumes(aPrincipal, &subsumes))) {
-      return false;
-    }
-    return subsumes;
-  }
-
-  bool MediaStreamTracksPrincipalSubsumes() {
-    MOZ_ASSERT(mRecorder->mDOMStream);
-    nsCOMPtr<nsIPrincipal> principal = nullptr;
-    for (RefPtr<MediaStreamTrack>& track : mMediaStreamTracks) {
-      nsContentUtils::CombineResourcePrincipals(&principal,
-                                                track->GetPrincipal());
-    }
-    return PrincipalSubsumes(principal);
-  }
-
-  bool AudioNodePrincipalSubsumes() {
-    MOZ_ASSERT(mRecorder->mAudioNode);
-    Document* doc = mRecorder->mAudioNode->GetOwner()
-                        ? mRecorder->mAudioNode->GetOwner()->GetExtantDoc()
-                        : nullptr;
-    nsCOMPtr<nsIPrincipal> principal = doc ? doc->NodePrincipal() : nullptr;
-    return PrincipalSubsumes(principal);
   }
 
   void InitEncoder(uint8_t aTrackTypes, TrackRate aTrackRate) {
@@ -835,40 +805,9 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
 
     gSessions.PutEntry(this);
 
-    uint32_t audioBitrate = mRecorder->AudioBitsPerSecond();
-    uint32_t videoBitrate = mRecorder->VideoBitsPerSecond();
-    uint32_t bitrate = mRecorder->BitsPerSecond();
-    if (bitrate > 0) {
-      
-      
-      if ((aTrackTypes & ContainerWriter::CREATE_AUDIO_TRACK) &&
-          (aTrackTypes & ContainerWriter::CREATE_VIDEO_TRACK) &&
-          audioBitrate + videoBitrate > bitrate) {
-        LOG(LogLevel::Info, ("Session.InitEncoder Bitrates higher than total "
-                             "cap. Recalculating."));
-        double factor =
-            bitrate / static_cast<double>(audioBitrate + videoBitrate);
-        audioBitrate = static_cast<uint32_t>(audioBitrate * factor);
-        videoBitrate = static_cast<uint32_t>(videoBitrate * factor);
-      } else if ((aTrackTypes & ContainerWriter::CREATE_AUDIO_TRACK) &&
-                 !(aTrackTypes & ContainerWriter::CREATE_VIDEO_TRACK)) {
-        audioBitrate = std::min(audioBitrate, bitrate);
-        videoBitrate = 0;
-      } else if (!(aTrackTypes & ContainerWriter::CREATE_AUDIO_TRACK) &&
-                 (aTrackTypes & ContainerWriter::CREATE_VIDEO_TRACK)) {
-        audioBitrate = 0;
-        videoBitrate = std::min(videoBitrate, bitrate);
-      }
-      MOZ_ASSERT(audioBitrate + videoBitrate <= bitrate);
-    }
-
-    
-    
-    
-
-    mEncoder =
-        MediaEncoder::CreateEncoder(mEncoderThread, mMimeType, audioBitrate,
-                                    videoBitrate, aTrackTypes, aTrackRate);
+    mEncoder = MediaEncoder::CreateEncoder(
+        mEncoderThread, mMimeType, mAudioBitsPerSecond, mVideoBitsPerSecond,
+        aTrackTypes, aTrackRate);
 
     if (!mEncoder) {
       LOG(LogLevel::Error, ("Session.InitEncoder !mEncoder %p", this));
@@ -889,13 +828,16 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
                                  mRecorder->mAudioNodeOutput);
     }
 
-    for (auto& track : mMediaStreamTracks) {
+    for (const auto& track : mMediaStreamTracks) {
       mEncoder->ConnectMediaStreamTrack(track);
     }
 
     
     
-    mEncoder->SetVideoKeyFrameInterval(mTimeSlice);
+    
+    
+    mEncoder->SetVideoKeyFrameInterval(
+        std::max(TimeDuration::FromSeconds(1), mTimeslice).ToMilliseconds());
 
     
     
@@ -942,7 +884,7 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
                  if (mRecorder->mSessions.LastElement() == this) {
                    
                    
-                   mRecorder->ForceInactive();
+                   mRecorder->Inactivate();
                  }
 
                  if (needsStartEvent) {
@@ -1145,9 +1087,6 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
   RefPtr<DOMMediaStream> mMediaStream;
 
   
-  bool mMediaStreamReady;
-
-  
   
   nsTArray<RefPtr<MediaStreamTrack>> mMediaStreamTracks;
 
@@ -1174,7 +1113,11 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
   TimeStamp mLastBlobTimeStamp;
   
   
-  const uint32_t mTimeSlice;
+  const TimeDuration mTimeslice;
+  
+  const uint32_t mVideoBitsPerSecond;
+  
+  const uint32_t mAudioBitsPerSecond;
   
   const TimeStamp mStartTime;
   
@@ -1188,32 +1131,9 @@ MediaRecorder::~MediaRecorder() {
   UnRegisterActivityObserver();
 }
 
-MediaRecorder::MediaRecorder(DOMMediaStream& aSourceMediaTrack,
-                             nsPIDOMWindowInner* aOwnerWindow)
-    : DOMEventTargetHelper(aOwnerWindow),
-      mAudioNodeOutput(0),
-      mState(RecordingState::Inactive),
-      mAudioBitsPerSecond(0),
-      mVideoBitsPerSecond(0),
-      mBitsPerSecond(0) {
+MediaRecorder::MediaRecorder(nsPIDOMWindowInner* aOwnerWindow)
+    : DOMEventTargetHelper(aOwnerWindow) {
   MOZ_ASSERT(aOwnerWindow);
-  mDOMStream = &aSourceMediaTrack;
-
-  RegisterActivityObserver();
-}
-
-MediaRecorder::MediaRecorder(AudioNode& aSrcAudioNode, uint32_t aSrcOutput,
-                             nsPIDOMWindowInner* aOwnerWindow)
-    : DOMEventTargetHelper(aOwnerWindow),
-      mAudioNodeOutput(aSrcOutput),
-      mState(RecordingState::Inactive),
-      mAudioBitsPerSecond(0),
-      mVideoBitsPerSecond(0),
-      mBitsPerSecond(0) {
-  MOZ_ASSERT(aOwnerWindow);
-
-  mAudioNode = &aSrcAudioNode;
-
   RegisterActivityObserver();
 }
 
@@ -1240,42 +1160,133 @@ void MediaRecorder::SetMimeType(const nsString& aMimeType) {
 
 void MediaRecorder::GetMimeType(nsString& aMimeType) { aMimeType = mMimeType; }
 
-void MediaRecorder::Start(const Optional<uint32_t>& aTimeSlice,
+void MediaRecorder::Start(const Optional<uint32_t>& aTimeslice,
                           ErrorResult& aResult) {
   LOG(LogLevel::Debug, ("MediaRecorder.Start %p", this));
 
   InitializeDomExceptions();
 
+  
+  
+
+  
+  
+
+  
+  TimeDuration timeslice =
+      aTimeslice.WasPassed()
+          ? TimeDuration::FromMilliseconds(aTimeslice.Value())
+          : TimeDuration::Forever();
+
+  
+
+  
+  nsTArray<RefPtr<MediaStreamTrack>> tracks;
+  if (mStream) {
+    mStream->GetTracks(tracks);
+  }
+  for (const auto& t : nsTArray<RefPtr<MediaStreamTrack>>(tracks)) {
+    if (t->Ended()) {
+      tracks.RemoveElement(t);
+    }
+  }
+
+  
+  
   if (mState != RecordingState::Inactive) {
     aResult.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
 
-  nsTArray<RefPtr<MediaStreamTrack>> tracks;
-  if (mDOMStream) {
-    mDOMStream->GetTracks(tracks);
-  }
-  if (!tracks.IsEmpty()) {
-    
-    
-    RefPtr<nsIPrincipal> streamPrincipal = mDOMStream->GetPrincipal();
-    bool subsumes = false;
-    nsPIDOMWindowInner* window;
-    Document* doc;
-    if (!(window = GetOwner()) || !(doc = window->GetExtantDoc()) ||
-        NS_FAILED(doc->NodePrincipal()->Subsumes(streamPrincipal, &subsumes)) ||
-        !subsumes) {
+  
+  
+  if (mStream) {
+    RefPtr<nsIPrincipal> streamPrincipal = mStream->GetPrincipal();
+    if (!PrincipalSubsumes(this, streamPrincipal)) {
       aResult.Throw(NS_ERROR_DOM_SECURITY_ERR);
       return;
     }
   }
+  if (mAudioNode && !AudioNodePrincipalSubsumes(this, mAudioNode)) {
+    LOG(LogLevel::Warning,
+        ("MediaRecorder %p Start AudioNode principal check failed", this));
+    aResult.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    return;
+  }
 
-  uint32_t timeSlice = aTimeSlice.WasPassed() ? aTimeSlice.Value() : 0;
-  MediaRecorderReporter::AddMediaRecorder(this);
+  
+  
+  if (mStream && !mStream->Active()) {
+    aResult.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  uint8_t numVideoTracks = 0;
+  uint8_t numAudioTracks = 0;
+  for (const auto& t : tracks) {
+    if (t->AsVideoStreamTrack() && numVideoTracks < UINT8_MAX) {
+      ++numVideoTracks;
+    } else if (t->AsAudioStreamTrack() && numAudioTracks < UINT8_MAX) {
+      ++numAudioTracks;
+    }
+  }
+  if (mAudioNode) {
+    MOZ_DIAGNOSTIC_ASSERT(!mStream);
+    ++numAudioTracks;
+  }
+  if (mConstrainedBitsPerSecond) {
+    SelectBitrates(*mConstrainedBitsPerSecond, numVideoTracks,
+                   &mVideoBitsPerSecond, numAudioTracks, &mAudioBitsPerSecond);
+  }
+
+  
+  
+  
+  
+  
+  
+  const uint32_t videoBitrate = mVideoBitsPerSecond;
+
+  
+  
+  
+  
+  
+  
+  const uint32_t audioBitrate = mAudioBitsPerSecond;
+
+  
   mState = RecordingState::Recording;
+
+  MediaRecorderReporter::AddMediaRecorder(this);
   
   mSessions.AppendElement();
-  mSessions.LastElement() = new Session(this, timeSlice);
+  mSessions.LastElement() = new Session(this, std::move(tracks), timeslice,
+                                        videoBitrate, audioBitrate);
   mSessions.LastElement()->Start();
 }
 
@@ -1285,7 +1296,7 @@ void MediaRecorder::Stop(ErrorResult& aResult) {
   if (mState == RecordingState::Inactive) {
     return;
   }
-  mState = RecordingState::Inactive;
+  Inactivate();
   MOZ_ASSERT(mSessions.Length() > 0);
   mSessions.LastElement()->Stop();
 }
@@ -1349,7 +1360,7 @@ JSObject* MediaRecorder::WrapObject(JSContext* aCx,
 
 already_AddRefed<MediaRecorder> MediaRecorder::Constructor(
     const GlobalObject& aGlobal, DOMMediaStream& aStream,
-    const MediaRecorderOptions& aInitDict, ErrorResult& aRv) {
+    const MediaRecorderOptions& aOptions, ErrorResult& aRv) {
   nsCOMPtr<nsPIDOMWindowInner> ownerWindow =
       do_QueryInterface(aGlobal.GetAsSupports());
   if (!ownerWindow) {
@@ -1357,20 +1368,75 @@ already_AddRefed<MediaRecorder> MediaRecorder::Constructor(
     return nullptr;
   }
 
-  if (!IsTypeSupported(aInitDict.mMimeType)) {
+  
+  
+
+  
+
+  
+
+  
+  
+  
+  if (!IsTypeSupported(aOptions.mMimeType)) {
     aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
     return nullptr;
   }
 
-  RefPtr<MediaRecorder> object = new MediaRecorder(aStream, ownerWindow);
-  object->SetOptions(aInitDict);
-  return object.forget();
+  
+  RefPtr<MediaRecorder> recorder = new MediaRecorder(ownerWindow);
+
+  
+  recorder->SetMimeType(aOptions.mMimeType);
+
+  
+  
+  
+  recorder->mConstrainedBitsPerSecond =
+      aOptions.mBitsPerSecond.WasPassed()
+          ? Some(aOptions.mBitsPerSecond.Value())
+          : Nothing();
+
+  
+  recorder->mStream = &aStream;
+
+  
+  recorder->mState = RecordingState::Inactive;
+
+  
+  
+  
+  recorder->mVideoBitsPerSecond = aOptions.mVideoBitsPerSecond.WasPassed()
+                                      ? aOptions.mVideoBitsPerSecond.Value()
+                                      : DEFAULT_VIDEO_BITRATE_BPS;
+
+  
+  
+  
+  recorder->mAudioBitsPerSecond = aOptions.mAudioBitsPerSecond.WasPassed()
+                                      ? aOptions.mAudioBitsPerSecond.Value()
+                                      : DEFAULT_AUDIO_BITRATE_BPS;
+
+  
+  
+  
+  
+  
+  if (recorder->mConstrainedBitsPerSecond) {
+    SelectBitrates(*recorder->mConstrainedBitsPerSecond, 1,
+                   &recorder->mVideoBitsPerSecond, 1,
+                   &recorder->mAudioBitsPerSecond);
+  }
+
+  
+  return recorder.forget();
 }
 
 
 already_AddRefed<MediaRecorder> MediaRecorder::Constructor(
-    const GlobalObject& aGlobal, AudioNode& aSrcAudioNode, uint32_t aSrcOutput,
-    const MediaRecorderOptions& aInitDict, ErrorResult& aRv) {
+    const GlobalObject& aGlobal, AudioNode& aAudioNode,
+    uint32_t aAudioNodeOutput, const MediaRecorderOptions& aOptions,
+    ErrorResult& aRv) {
   
   if (!Preferences::GetBool("media.recorder.audio_node.enabled", false)) {
     
@@ -1388,46 +1454,79 @@ already_AddRefed<MediaRecorder> MediaRecorder::Constructor(
   }
 
   
-  if (aSrcAudioNode.NumberOfOutputs() > 0 &&
-      aSrcOutput >= aSrcAudioNode.NumberOfOutputs()) {
+  
+  if (aAudioNode.NumberOfOutputs() > 0 &&
+      aAudioNodeOutput >= aAudioNode.NumberOfOutputs()) {
     aRv.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
     return nullptr;
   }
 
-  if (!IsTypeSupported(aInitDict.mMimeType)) {
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+  
+  if (!IsTypeSupported(aOptions.mMimeType)) {
     aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
     return nullptr;
   }
 
-  RefPtr<MediaRecorder> object =
-      new MediaRecorder(aSrcAudioNode, aSrcOutput, ownerWindow);
-  object->SetOptions(aInitDict);
-  return object.forget();
-}
+  
+  RefPtr<MediaRecorder> recorder = new MediaRecorder(ownerWindow);
 
-void MediaRecorder::SetOptions(const MediaRecorderOptions& aInitDict) {
-  SetMimeType(aInitDict.mMimeType);
-  mAudioBitsPerSecond = aInitDict.mAudioBitsPerSecond.WasPassed()
-                            ? aInitDict.mAudioBitsPerSecond.Value()
-                            : 0;
-  mVideoBitsPerSecond = aInitDict.mVideoBitsPerSecond.WasPassed()
-                            ? aInitDict.mVideoBitsPerSecond.Value()
-                            : 0;
-  mBitsPerSecond = aInitDict.mBitsPerSecond.WasPassed()
-                       ? aInitDict.mBitsPerSecond.Value()
-                       : 0;
+  
+  recorder->SetMimeType(aOptions.mMimeType);
+
+  
+  
+  
+  recorder->mConstrainedBitsPerSecond =
+      aOptions.mBitsPerSecond.WasPassed()
+          ? Some(aOptions.mBitsPerSecond.Value())
+          : Nothing();
+
+  
+  
+  recorder->mAudioNode = &aAudioNode;
+  recorder->mAudioNodeOutput = aAudioNodeOutput;
+
+  
+  recorder->mState = RecordingState::Inactive;
+
+  
+  
+  
+  recorder->mVideoBitsPerSecond = aOptions.mVideoBitsPerSecond.WasPassed()
+                                      ? aOptions.mVideoBitsPerSecond.Value()
+                                      : DEFAULT_VIDEO_BITRATE_BPS;
+
+  
+  
+  
+  recorder->mAudioBitsPerSecond = aOptions.mAudioBitsPerSecond.WasPassed()
+                                      ? aOptions.mAudioBitsPerSecond.Value()
+                                      : DEFAULT_AUDIO_BITRATE_BPS;
+
   
   
   
   
   
-  
-  
-  
-  if (aInitDict.mBitsPerSecond.WasPassed() &&
-      !aInitDict.mVideoBitsPerSecond.WasPassed()) {
-    mVideoBitsPerSecond = mBitsPerSecond;
+  if (recorder->mConstrainedBitsPerSecond) {
+    SelectBitrates(*recorder->mConstrainedBitsPerSecond, 1,
+                   &recorder->mVideoBitsPerSecond, 1,
+                   &recorder->mAudioBitsPerSecond);
   }
+
+  
+  return recorder.forget();
 }
 
 static char const* const gWebMVideoEncoderCodecs[4] = {
@@ -1616,9 +1715,27 @@ void MediaRecorder::NotifyOwnerDocumentActivityChanged() {
   }
 }
 
-void MediaRecorder::ForceInactive() {
-  LOG(LogLevel::Debug, ("MediaRecorder.ForceInactive %p", this));
+void MediaRecorder::Inactivate() {
+  LOG(LogLevel::Debug, ("MediaRecorder.Inactivate %p", this));
+  
+
+  
+  
+  
+  
+
+  
   mState = RecordingState::Inactive;
+
+  
+  
+  
+  
+  
+  if (mConstrainedBitsPerSecond) {
+    SelectBitrates(*mConstrainedBitsPerSecond, 1, &mVideoBitsPerSecond, 1,
+                   &mAudioBitsPerSecond);
+  }
 }
 
 void MediaRecorder::InitializeDomExceptions() {
