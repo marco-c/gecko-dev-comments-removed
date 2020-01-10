@@ -39,7 +39,6 @@
 #include "mozilla/Services.h"
 #include "nsITimer.h"
 #include "mozIStorageService.h"
-#include "mozilla/StaticPrefs_browser.h"
 
 #include "mozilla/net/NeckoCommon.h"
 #include <algorithm>
@@ -50,6 +49,8 @@ using namespace mozilla::net;
 
 
 
+#define OFFLINE_CACHE_ENABLE_PREF "browser.cache.offline.enable"
+#define OFFLINE_CACHE_STORAGE_ENABLE_PREF "browser.cache.offline.storage.enable"
 #define OFFLINE_CACHE_DIR_PREF "browser.cache.offline.parent_directory"
 #define OFFLINE_CACHE_CAPACITY_PREF "browser.cache.offline.capacity"
 #define OFFLINE_CACHE_CAPACITY 512000
@@ -60,6 +61,14 @@ static const char* observerList[] = {
     "profile-before-change",        "profile-do-change",
     NS_XPCOM_SHUTDOWN_OBSERVER_ID,  "last-pb-context-exited",
     "suspend_process_notification", "resume_process_notification"};
+
+static const char* prefList[] = {
+    OFFLINE_CACHE_ENABLE_PREF,
+    OFFLINE_CACHE_STORAGE_ENABLE_PREF,
+    OFFLINE_CACHE_CAPACITY_PREF,
+    OFFLINE_CACHE_DIR_PREF,
+    nullptr,
+};
 
 class nsCacheProfilePrefObserver : public nsIObserver {
   virtual ~nsCacheProfilePrefObserver() = default;
@@ -94,6 +103,8 @@ class nsCacheProfilePrefObserver : public nsIObserver {
   bool SanitizeAtShutdown() {
     return mSanitizeOnShutdown && mClearCacheOnShutdown;
   }
+
+  void PrefChanged(const char* aPref);
 
  private:
   bool mHaveProfile;
@@ -142,6 +153,10 @@ nsresult nsCacheProfilePrefObserver::Install() {
   nsCOMPtr<nsIPrefBranch> branch = do_GetService(NS_PREFSERVICE_CONTRACTID);
   if (!branch) return NS_ERROR_FAILURE;
 
+  Preferences::RegisterCallbacks(
+      PREF_CHANGE_METHOD(nsCacheProfilePrefObserver::PrefChanged), prefList,
+      this);
+
   
   
   
@@ -168,6 +183,13 @@ void nsCacheProfilePrefObserver::Remove() {
       obs->RemoveObserver(this, observer);
     }
   }
+
+  
+  nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
+  if (!prefs) return;
+  Preferences::UnregisterCallbacks(
+      PREF_CHANGE_METHOD(nsCacheProfilePrefObserver::PrefChanged), prefList,
+      this);
 }
 
 NS_IMETHODIMP
@@ -214,6 +236,40 @@ nsCacheProfilePrefObserver::Observe(nsISupports* subject, const char* topic,
   return NS_OK;
 }
 
+void nsCacheProfilePrefObserver::PrefChanged(const char* aPref) {
+  
+  if (!mHaveProfile) return;
+  
+  nsresult rv;
+  if (!strcmp(OFFLINE_CACHE_ENABLE_PREF, aPref) ||
+      !strcmp(OFFLINE_CACHE_STORAGE_ENABLE_PREF, aPref)) {
+    rv = Preferences::GetBool(OFFLINE_CACHE_ENABLE_PREF, &mOfflineCacheEnabled);
+    if (NS_FAILED(rv)) {
+      return;
+    }
+    rv = Preferences::GetBool(OFFLINE_CACHE_STORAGE_ENABLE_PREF,
+                              &mOfflineStorageCacheEnabled);
+    if (NS_FAILED(rv)) {
+      return;
+    }
+    nsCacheService::SetOfflineCacheEnabled(OfflineCacheEnabled());
+
+  } else if (!strcmp(OFFLINE_CACHE_CAPACITY_PREF, aPref)) {
+    int32_t capacity = 0;
+    rv = Preferences::GetInt(OFFLINE_CACHE_CAPACITY_PREF, &capacity);
+    if (NS_FAILED(rv)) return;
+    mOfflineCacheCapacity = std::max(0, capacity);
+    nsCacheService::SetOfflineCacheCapacity(mOfflineCacheCapacity);
+#if 0
+    } else if (!strcmp(OFFLINE_CACHE_DIR_PREF, aPref)) {
+        
+        
+        
+        
+#endif
+  }
+}
+
 nsresult nsCacheProfilePrefObserver::ReadPrefs(nsIPrefBranch* branch) {
   nsresult rv = NS_OK;
 
@@ -247,9 +303,13 @@ nsresult nsCacheProfilePrefObserver::ReadPrefs(nsIPrefBranch* branch) {
   }
 
   
-  mOfflineCacheEnabled = StaticPrefs::browser_cache_offline_enable();
+  mOfflineCacheEnabled = true;  
+  (void)branch->GetBoolPref(OFFLINE_CACHE_ENABLE_PREF, &mOfflineCacheEnabled);
+
   mOfflineStorageCacheEnabled =
-      StaticPrefs::browser_cache_offline_storage_enable();
+      true;  
+  (void)branch->GetBoolPref(OFFLINE_CACHE_STORAGE_ENABLE_PREF,
+                            &mOfflineStorageCacheEnabled);
 
   mOfflineCacheCapacity = OFFLINE_CACHE_CAPACITY;
   (void)branch->GetIntPref(OFFLINE_CACHE_CAPACITY_PREF, &mOfflineCacheCapacity);

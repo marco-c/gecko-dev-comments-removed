@@ -40,7 +40,3 @@ user_pref("dom.animations-api.implicit-keyframes.enabled", true);
 
 
 user_pref("media.block-autoplay-until-in-foreground", false);
-user_pref("media.block-autoplay-until-in-foreground", false);
-
-user_pref("browser.cache.offline.storage.enable", true);
-user_pref("browser.cache.offline.enable", true);
