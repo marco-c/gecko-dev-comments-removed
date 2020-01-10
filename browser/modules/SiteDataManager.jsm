@@ -24,8 +24,6 @@ XPCOMUtils.defineLazyGetter(this, "gBrandBundle", function() {
 });
 
 var SiteDataManager = {
-  _qms: Services.qms,
-
   _appCache: Cc["@mozilla.org/network/application-cache-service;1"].getService(
     Ci.nsIApplicationCacheService
   ),
@@ -174,7 +172,7 @@ var SiteDataManager = {
       
       
       
-      this._quotaUsageRequest = this._qms.getUsage(onUsageResult);
+      this._quotaUsageRequest = Services.qms.getUsage(onUsageResult);
     });
     return this._getQuotaUsagePromise;
   },
@@ -226,6 +224,94 @@ var SiteDataManager = {
       }
       site.appCacheList.push(cache);
     }
+  },
+
+  
+
+
+
+
+
+
+  getAppCacheUsageByHost(host) {
+    let usage = 0;
+
+    let groups;
+    try {
+      groups = this._appCache.getGroups();
+    } catch (e) {
+      
+      
+      
+      if (e.result != Cr.NS_ERROR_NOT_AVAILABLE) {
+        Cu.reportError(e);
+      }
+      return usage;
+    }
+
+    for (let group of groups) {
+      let uri = Services.io.newURI(group);
+      if (uri.asciiHost == host) {
+        let cache = this._appCache.getActiveCache(group);
+        usage += cache.usage;
+      }
+    }
+
+    return usage;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  async hasSiteData(asciiHost) {
+    if (Services.cookies.countCookiesFromHost(asciiHost)) {
+      return true;
+    }
+
+    let appCacheUsage = this.getAppCacheUsageByHost(asciiHost);
+    if (appCacheUsage > 0) {
+      return true;
+    }
+
+    let hasQuota = await new Promise(resolve => {
+      Services.qms.getUsage(request => {
+        if (request.resultCode != Cr.NS_OK) {
+          resolve(false);
+          return;
+        }
+
+        for (let item of request.result) {
+          if (!item.persisted && item.usage <= 0) {
+            continue;
+          }
+
+          let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+            item.origin
+          );
+          if (principal.URI.asciiHost == asciiHost) {
+            resolve(true);
+            return;
+          }
+        }
+
+        resolve(false);
+      });
+    });
+
+    if (hasQuota) {
+      return true;
+    }
+
+    return false;
   },
 
   getTotalUsage() {

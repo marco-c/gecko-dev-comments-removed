@@ -7965,38 +7965,13 @@ var OfflineApps = {
     );
   },
 
-  
-  _getOfflineAppUsage(host, groups) {
-    let cacheService = Cc[
-      "@mozilla.org/network/application-cache-service;1"
-    ].getService(Ci.nsIApplicationCacheService);
-    if (!groups) {
-      try {
-        groups = cacheService.getGroups();
-      } catch (ex) {
-        return 0;
-      }
-    }
-
-    let usage = 0;
-    for (let group of groups) {
-      let uri = Services.io.newURI(group);
-      if (uri.asciiHost == host) {
-        let cache = cacheService.getActiveCache(group);
-        usage += cache.usage;
-      }
-    }
-
-    return usage;
-  },
-
   _usedMoreThanWarnQuota(uri) {
     
     if (
       Services.perms.testExactPermission(uri, "offline-app") !=
       Ci.nsIOfflineCacheUpdateService.ALLOW_NO_WARN
     ) {
-      let usageBytes = this._getOfflineAppUsage(uri.asciiHost);
+      let usageBytes = SiteDataManager.getAppCacheUsageByHost(uri.asciiHost);
       let warnQuotaKB = Services.prefs.getIntPref("offline-apps.quota.warn");
       
       
