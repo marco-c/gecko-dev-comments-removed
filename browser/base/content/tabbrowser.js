@@ -2741,6 +2741,9 @@
 
         let tabAfter = this.tabs[index] || null;
         this._invalidateCachedTabs();
+        
+        
+        t.initialize();
         this.tabContainer.insertBefore(t, tabAfter);
         if (tabAfter) {
           this._updateTabsAfterInsert();
