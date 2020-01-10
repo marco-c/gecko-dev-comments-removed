@@ -64,6 +64,10 @@ const log = LogManager.getLogger("recipe-runner");
 
 
 
+
+
+
+
 var EXPORTED_SYMBOLS = ["PreferenceRollouts"];
 const STARTUP_PREFS_BRANCH = "app.normandy.startupRolloutPrefs.";
 const DB_NAME = "normandy-preference-rollout";
@@ -151,7 +155,9 @@ var PreferenceRollouts = {
           "graduate",
           "preference_rollout",
           rollout.slug,
-          {}
+          {
+            enrollmentId: rollout.enrollmentId,
+          }
         );
       }
 
@@ -166,6 +172,7 @@ var PreferenceRollouts = {
     for (const rollout of await this.getAllActive()) {
       TelemetryEnvironment.setExperimentActive(rollout.slug, rollout.state, {
         type: "normandy-prefrollout",
+        enrollmentId: rollout.enrollmentId,
       });
     }
   },
@@ -199,6 +206,9 @@ var PreferenceRollouts = {
 
 
   async add(rollout) {
+    if (!rollout.enrollmentId) {
+      throw new Error("Rollout must have an enrollment ID");
+    }
     const db = await getDatabase();
     return getStore(db, "readwrite").add(rollout);
   },

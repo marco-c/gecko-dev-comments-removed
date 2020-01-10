@@ -24,6 +24,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AddonStudies: "resource://normandy/lib/AddonStudies.jsm",
   ClientEnvironment: "resource://normandy/lib/ClientEnvironment.jsm",
   NormandyApi: "resource://normandy/lib/NormandyApi.jsm",
+  NormandyUtils: "resource://normandy/lib/NormandyUtils.jsm",
   PromiseUtils: "resource://gre/modules/PromiseUtils.jsm",
   Sampling: "resource://gre/modules/components-utils/Sampling.jsm",
   Services: "resource://gre/modules/Services.jsm",
@@ -178,6 +179,8 @@ class BranchedAddonStudyAction extends BaseStudyAction {
 
 
 
+
+
   async downloadAndInstall({
     recipe,
     extensionDetails,
@@ -187,6 +190,7 @@ class BranchedAddonStudyAction extends BaseStudyAction {
     onFailedInstall,
     errorClass,
     reportError,
+    errorExtra = {},
   }) {
     const { slug } = recipe.arguments;
     const { hash, hash_algorithm } = extensionDetails;
@@ -206,6 +210,7 @@ class BranchedAddonStudyAction extends BaseStudyAction {
             reason: "download-failure",
             branch: branchSlug,
             detail: AddonManager.errorToString(install.error),
+            ...errorExtra,
           })
         );
       },
@@ -315,6 +320,8 @@ class BranchedAddonStudyAction extends BaseStudyAction {
     });
     this.log.debug(`Enrolling in branch ${branch.slug}`);
 
+    const enrollmentId = NormandyUtils.generateUuid();
+
     if (branch.extensionApiId === null) {
       const study = {
         recipeId: recipe.id,
@@ -331,6 +338,7 @@ class BranchedAddonStudyAction extends BaseStudyAction {
         active: true,
         studyStartDate: new Date(),
         studyEndDate: null,
+        enrollmentId,
       };
 
       try {
@@ -345,6 +353,7 @@ class BranchedAddonStudyAction extends BaseStudyAction {
         addonId: AddonStudies.NO_ADDON_MARKER,
         addonVersion: AddonStudies.NO_ADDON_MARKER,
         branch: branch.slug,
+        enrollmentId,
       });
     } else {
       const extensionDetails = await NormandyApi.fetchExtensionDetails(
@@ -376,8 +385,9 @@ class BranchedAddonStudyAction extends BaseStudyAction {
         return true;
       };
 
+      let study;
       const onComplete = async (install, listener) => {
-        const study = {
+        study = {
           recipeId: recipe.id,
           slug,
           userFacingName,
@@ -392,6 +402,7 @@ class BranchedAddonStudyAction extends BaseStudyAction {
           active: true,
           studyStartDate: new Date(),
           studyEndDate: null,
+          enrollmentId,
         };
 
         try {
@@ -424,11 +435,13 @@ class BranchedAddonStudyAction extends BaseStudyAction {
         addonId: installedId,
         addonVersion: installedVersion,
         branch: branch.slug,
+        enrollmentId,
       });
     }
 
     TelemetryEnvironment.setExperimentActive(slug, branch.slug, {
       type: "normandy-addonstudy",
+      enrollmentId,
     });
   }
 
@@ -461,6 +474,7 @@ class BranchedAddonStudyAction extends BaseStudyAction {
       error = new AddonStudyUpdateError(slug, {
         branch: branch.slug,
         reason: "addon-id-mismatch",
+        enrollmentId: study.enrollmentId,
       });
     }
 
@@ -472,6 +486,7 @@ class BranchedAddonStudyAction extends BaseStudyAction {
       error = new AddonStudyUpdateError(slug, {
         branch: branch.slug,
         reason: "no-downgrade",
+        enrollmentId: study.enrollmentId,
       });
     } else if (versionCompare === 0) {
       return; 
@@ -492,6 +507,7 @@ class BranchedAddonStudyAction extends BaseStudyAction {
           new AddonStudyUpdateError(slug, {
             branch: branch.slug,
             reason: "addon-does-not-exist",
+            enrollmentId: study.enrollmentId,
           })
         );
         return false; 
@@ -500,6 +516,7 @@ class BranchedAddonStudyAction extends BaseStudyAction {
           new AddonStudyUpdateError(slug, {
             branch: branch.slug,
             reason: "metadata-mismatch",
+            enrollmentId: study.enrollmentId,
           })
         );
         return false; 
@@ -539,6 +556,7 @@ class BranchedAddonStudyAction extends BaseStudyAction {
       onFailedInstall,
       errorClass: AddonStudyUpdateError,
       reportError: this.reportUpdateError,
+      errorExtra: { enrollmentId: study.enrollmentId },
     });
 
     
@@ -546,6 +564,7 @@ class BranchedAddonStudyAction extends BaseStudyAction {
       addonId: installedId,
       addonVersion: installedVersion,
       branch: branch.slug,
+      enrollmentId: study.enrollmentId,
     });
   }
 

@@ -6,6 +6,7 @@ ChromeUtils.import("resource://gre/modules/AddonManager.jsm", this);
 ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm", this);
 ChromeUtils.import("resource://normandy/lib/ClientEnvironment.jsm", this);
 ChromeUtils.import("resource://normandy/lib/PreferenceExperiments.jsm", this);
+ChromeUtils.import("resource://testing-common/NormandyTestUtils.jsm", this);
 
 add_task(async function testTelemetry() {
   
@@ -36,7 +37,7 @@ add_task(async function testTelemetry() {
 
 add_task(async function testUserId() {
   
-  ok(UUID_REGEX.test(ClientEnvironment.userId), "userId available");
+  ok(NormandyTestUtils.isUuid(ClientEnvironment.userId), "userId available");
 
   
   await SpecialPowers.pushPrefEnv({

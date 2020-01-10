@@ -36,6 +36,10 @@
 
 
 
+
+
+
+
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 ChromeUtils.defineModuleGetter(
@@ -348,6 +352,7 @@ var AddonStudies = {
       addonVersion: study.addonVersion || AddonStudies.NO_ADDON_MARKER,
       reason,
       branch: study.branch,
+      enrollmentId: study.enrollmentId,
     });
     TelemetryEnvironment.setExperimentInactive(study.slug);
 

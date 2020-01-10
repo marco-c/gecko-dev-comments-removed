@@ -64,6 +64,10 @@
 
 
 
+
+
+
+
 "use strict";
 
 ChromeUtils.defineModuleGetter(
@@ -96,6 +100,11 @@ ChromeUtils.defineModuleGetter(
   this,
   "TelemetryEvents",
   "resource://normandy/lib/TelemetryEvents.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "NormandyUtils",
+  "resource://normandy/lib/NormandyUtils.jsm"
 );
 
 var EXPORTED_SYMBOLS = ["PreferenceExperiments"];
@@ -264,7 +273,10 @@ var PreferenceExperiments = {
       TelemetryEnvironment.setExperimentActive(
         experiment.slug,
         experiment.branch,
-        { type: EXPERIMENT_TYPE_PREFIX + experiment.experimentType }
+        {
+          type: EXPERIMENT_TYPE_PREFIX + experiment.experimentType,
+          enrollmentId: experiment.enrollmentId,
+        }
       );
 
       
@@ -372,6 +384,7 @@ var PreferenceExperiments = {
   },
 
   
+
 
 
 
@@ -517,6 +530,8 @@ var PreferenceExperiments = {
     }
     PreferenceExperiments.startObserver(slug, preferences);
 
+    const enrollmentId = NormandyUtils.generateUuid();
+
     
     const experiment = {
       slug,
@@ -528,6 +543,7 @@ var PreferenceExperiments = {
       experimentType,
       userFacingName,
       userFacingDescription,
+      enrollmentId,
     };
 
     store.data.experiments[slug] = experiment;
@@ -535,12 +551,16 @@ var PreferenceExperiments = {
 
     TelemetryEnvironment.setExperimentActive(slug, branch, {
       type: EXPERIMENT_TYPE_PREFIX + experimentType,
+      enrollmentId,
     });
     TelemetryEvents.sendEvent("enroll", "preference_study", slug, {
       experimentType,
       branch,
+      enrollmentId,
     });
     await this.saveStartupPrefs();
+
+    return experiment;
   },
 
   
@@ -692,7 +712,7 @@ var PreferenceExperiments = {
         "unenrollFailed",
         "preference_study",
         experimentSlug,
-        { reason: "already-unenrolled" }
+        { reason: "already-unenrolled", enrollmentId: experiment.enrollmentId }
       );
       throw new Error(
         `Cannot stop preference experiment "${experimentSlug}" because it is already expired`
@@ -744,6 +764,7 @@ var PreferenceExperiments = {
       didResetValue: resetValue ? "true" : "false",
       branch: experiment.branch,
       reason,
+      enrollmentId: experiment.enrollmentId,
     });
     await this.saveStartupPrefs();
   },
