@@ -275,12 +275,7 @@ class App extends PureComponent {
     }
 
     const currentAngle = Services.prefs.getIntPref("devtools.responsive.viewport.angle");
-    
-    
-    
-    
-    
-    const angleToRotateTo = currentAngle === 270 ? 0 : 270;
+    const angleToRotateTo = currentAngle === 90 ? 0 : 90;
     const orientation = getOrientation(currentDevice, viewport, angleToRotateTo);
 
     this.onChangeViewportOrientation(id, orientation);
