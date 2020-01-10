@@ -2194,38 +2194,12 @@ void MediaManager::DeviceListChanged() {
                 
                 continue;
               }
-
               
-              nsGlobalWindowInner::InnerWindowByIdTable* windowsById =
-                  nsGlobalWindowInner::GetWindowsTable();
-              if (!windowsById) {
-                
-                continue;
-              }
-
-              for (auto iter = windowsById->Iter(); !iter.Done(); iter.Next()) {
-                nsGlobalWindowInner* window = iter.Data();
-                if (!window->IsCurrentInnerWindow()) {
-                  
-                  continue;
-                }
-                if (!window->GetOuterWindow()->IsTopLevelWindow()) {
-                  
-                  
-                  
-                  
-                  
-                  
-                  continue;
-                }
-                IterateWindowListeners(
-                    window,
-                    [&id](const RefPtr<GetUserMediaWindowListener>& aListener) {
-                      aListener->StopRawID(id);
-                    });
+              for (auto iter = mActiveWindows.Iter(); !iter.Done();
+                   iter.Next()) {
+                iter.UserData()->StopRawID(id);
               }
             }
-
             mDeviceIDs = deviceIDs;
           },
           [](RefPtr<MediaMgrError>&& reason) {});
