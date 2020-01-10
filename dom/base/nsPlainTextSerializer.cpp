@@ -111,6 +111,13 @@ void nsPlainTextSerializer::CurrentLineContent::MaybeReplaceNbsps(
   }
 }
 
+void nsPlainTextSerializer::CurrentLine::ResetContentAndIndentationHeader() {
+  mContent.mValue.Truncate();
+  mContent.mWidth = 0;
+
+  mIndentation.mHeader.Truncate();
+}
+
 nsPlainTextSerializer::OutputManager::OutputManager(const int32_t aFlags,
                                                     nsAString& aOutput)
     : mOutput{aOutput}, mAtFirstColumn{true} {
@@ -1120,13 +1127,6 @@ void nsPlainTextSerializer::EnsureVerticalSpace(int32_t noOfRows) {
   mFloatingLines = -1;
 }
 
-void nsPlainTextSerializer::ResetCurrentLineContentAndIndentationHeader() {
-  mCurrentLine.mContent.mValue.Truncate();
-  mCurrentLine.mContent.mWidth = 0;
-
-  mCurrentLine.mIndentation.mHeader.Truncate();
-}
-
 
 
 
@@ -1148,7 +1148,7 @@ void nsPlainTextSerializer::FlushLine() {
 
     mCurrentLine.mContent.MaybeReplaceNbsps(mSettings.GetFlags());
     mOutputManager->Append(mCurrentLine.mContent.mValue);
-    ResetCurrentLineContentAndIndentationHeader();
+    mCurrentLine.ResetContentAndIndentationHeader();
   }
 }
 
@@ -1169,7 +1169,9 @@ static bool IsSpaceStuffable(const char16_t* s) {
 void nsPlainTextSerializer::AddToLine(const char16_t* aLineFragment,
                                       int32_t aLineFragmentLength) {
   const uint32_t prefixwidth =
-      (mCurrentLine.mCiteQuoteLevel > 0 ? mCurrentLine.mCiteQuoteLevel + 1 : 0) + mCurrentLine.mIndentation.mWidth;
+      (mCurrentLine.mCiteQuoteLevel > 0 ? mCurrentLine.mCiteQuoteLevel + 1
+                                        : 0) +
+      mCurrentLine.mIndentation.mWidth;
 
   if (mLineBreakDue) EnsureVerticalSpace(mFloatingLines);
 
@@ -1182,7 +1184,8 @@ void nsPlainTextSerializer::AddToLine(const char16_t* aLineFragment,
 
     if (mSettings.HasFlag(nsIDocumentEncoder::OutputFormatFlowed)) {
       if (IsSpaceStuffable(aLineFragment) &&
-          mCurrentLine.mCiteQuoteLevel == 0  
+          mCurrentLine.mCiteQuoteLevel ==
+              0  
       ) {
         
         mCurrentLine.mContent.mValue.Append(char16_t(' '));
@@ -1237,9 +1240,9 @@ void nsPlainTextSerializer::AddToLine(const char16_t* aLineFragment,
       goodSpace++;
 
       if (mLineBreaker) {
-        goodSpace =
-            mLineBreaker->Prev(mCurrentLine.mContent.mValue.get(),
-                               mCurrentLine.mContent.mValue.Length(), goodSpace);
+        goodSpace = mLineBreaker->Prev(mCurrentLine.mContent.mValue.get(),
+                                       mCurrentLine.mContent.mValue.Length(),
+                                       goodSpace);
         if (goodSpace != NS_LINEBREAKER_NEED_MORE_TEXT &&
             nsCRT::IsAsciiSpace(
                 mCurrentLine.mContent.mValue.CharAt(goodSpace - 1))) {
@@ -1252,7 +1255,8 @@ void nsPlainTextSerializer::AddToLine(const char16_t* aLineFragment,
         
         
 
-        if (mCurrentLine.mContent.mValue.IsEmpty() || mWrapColumn < prefixwidth) {
+        if (mCurrentLine.mContent.mValue.IsEmpty() ||
+            mWrapColumn < prefixwidth) {
           goodSpace = NS_LINEBREAKER_NEED_MORE_TEXT;
         } else {
           goodSpace = std::min(mWrapColumn - prefixwidth,
@@ -1273,9 +1277,9 @@ void nsPlainTextSerializer::AddToLine(const char16_t* aLineFragment,
             (prefixwidth > mWrapColumn + 1) ? 1 : mWrapColumn - prefixwidth + 1;
         if (mLineBreaker) {
           if ((uint32_t)goodSpace < mCurrentLine.mContent.mValue.Length())
-            goodSpace = mLineBreaker->Next(mCurrentLine.mContent.mValue.get(),
-                                           mCurrentLine.mContent.mValue.Length(),
-                                           goodSpace);
+            goodSpace = mLineBreaker->Next(
+                mCurrentLine.mContent.mValue.get(),
+                mCurrentLine.mContent.mValue.Length(), goodSpace);
           if (goodSpace == NS_LINEBREAKER_NEED_MORE_TEXT)
             goodSpace = mCurrentLine.mContent.mValue.Length();
         } else {
@@ -1298,11 +1302,13 @@ void nsPlainTextSerializer::AddToLine(const char16_t* aLineFragment,
 
         
         
-        if (nsCRT::IsAsciiSpace(mCurrentLine.mContent.mValue.CharAt(goodSpace))) {
+        if (nsCRT::IsAsciiSpace(
+                mCurrentLine.mContent.mValue.CharAt(goodSpace))) {
           mCurrentLine.mContent.mValue.Right(restOfLine,
-                                           linelength - goodSpace - 1);
+                                             linelength - goodSpace - 1);
         } else {
-          mCurrentLine.mContent.mValue.Right(restOfLine, linelength - goodSpace);
+          mCurrentLine.mContent.mValue.Right(restOfLine,
+                                             linelength - goodSpace);
         }
         
         const bool breakBySpace =
@@ -1313,7 +1319,8 @@ void nsPlainTextSerializer::AddToLine(const char16_t* aLineFragment,
         
         if (mSettings.HasFlag(nsIDocumentEncoder::OutputFormatFlowed)) {
           if (!restOfLine.IsEmpty() && IsSpaceStuffable(restOfLine.get()) &&
-              mCurrentLine.mCiteQuoteLevel == 0  
+              mCurrentLine.mCiteQuoteLevel ==
+                  0  
           ) {
             
             mCurrentLine.mContent.mValue.Append(char16_t(' '));
@@ -1334,7 +1341,6 @@ void nsPlainTextSerializer::AddToLine(const char16_t* aLineFragment,
     }
   }
 }
-
 
 
 
@@ -1415,7 +1421,7 @@ void nsPlainTextSerializer::EndLine(bool aSoftlinebreak, bool aBreakBySpace) {
   mCurrentLine.mContent.MaybeReplaceNbsps(mSettings.GetFlags());
   mOutputManager->Append(mCurrentLine.mContent.mValue);
   mOutputManager->AppendLineBreak();
-  ResetCurrentLineContentAndIndentationHeader();
+  mCurrentLine.ResetContentAndIndentationHeader();
   mInWhitespace = true;
   mLineBreakDue = false;
   mFloatingLines = -1;
@@ -1444,9 +1450,10 @@ void nsPlainTextSerializer::CreateQuotesAndIndent(nsAString& aResult) const {
   }
 
   
-  int32_t indentwidth = mCurrentLine.mIndentation.mWidth - mCurrentLine.mIndentation.mHeader.Length();
-  if (indentwidth > 0 &&
-      (!mCurrentLine.mContent.mValue.IsEmpty() || !mCurrentLine.mIndentation.mHeader.IsEmpty())
+  int32_t indentwidth = mCurrentLine.mIndentation.mWidth -
+                        mCurrentLine.mIndentation.mHeader.Length();
+  if (indentwidth > 0 && (!mCurrentLine.mContent.mValue.IsEmpty() ||
+                          !mCurrentLine.mIndentation.mHeader.IsEmpty())
       
   ) {
     nsAutoString spaces;
@@ -1604,7 +1611,7 @@ void nsPlainTextSerializer::Write(const nsAString& aStr) {
         mOutputManager->AppendLineBreak();
       }
 
-      ResetCurrentLineContentAndIndentationHeader();
+      mCurrentLine.ResetContentAndIndentationHeader();
     }
 
 #ifdef DEBUG_wrapping
