@@ -335,7 +335,7 @@ const browsingContextTargetPrototype = {
 
 
   get window() {
-    return this.docShell.domWindow;
+    return this.docShell && this.docShell.domWindow;
   },
 
   get outerWindowID() {
