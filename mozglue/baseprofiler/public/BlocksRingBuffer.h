@@ -7,9 +7,9 @@
 #ifndef BlocksRingBuffer_h
 #define BlocksRingBuffer_h
 
+#include "mozilla/BaseProfilerDetail.h"
 #include "mozilla/ModuloBuffer.h"
 #include "mozilla/Pair.h"
-#include "mozilla/PlatformMutex.h"
 
 #include "mozilla/Maybe.h"
 
@@ -181,7 +181,7 @@ class BlocksRingBuffer {
   
   
   Pair<uint64_t, uint64_t> GetPushedAndClearedCounts() const {
-    RBAutoLock lock(*this);
+    baseprofiler::detail::BPAutoLock lock(mMutex);
     return {mPushedBlockCount, mClearedBlockCount};
   }
 
@@ -383,7 +383,7 @@ class BlocksRingBuffer {
   
   template <typename Callback>
   auto Read(Callback&& aCallback) const {
-    RBAutoLock lock(*this);
+    baseprofiler::detail::BPAutoLock lock(mMutex);
     return std::forward<Callback>(aCallback)(Reader(*this));
   }
 
@@ -403,7 +403,7 @@ class BlocksRingBuffer {
   
   template <typename Callback>
   auto ReadAt(BlockIndex aBlockIndex, Callback&& aCallback) const {
-    RBAutoLock lock(*this);
+    baseprofiler::detail::BPAutoLock lock(mMutex);
     MOZ_ASSERT(aBlockIndex <= mNextWriteIndex);
     Maybe<EntryReader> maybeReader;
     if (aBlockIndex >= mFirstReadIndex && aBlockIndex < mNextWriteIndex) {
@@ -607,7 +607,7 @@ class BlocksRingBuffer {
     
     
     
-    RBAutoLock lock(*this);
+    baseprofiler::detail::BPAutoLock lock(mMutex);
     return std::forward<Callback>(aCallback)(EntryReserver(*this));
   }
 
@@ -638,7 +638,7 @@ class BlocksRingBuffer {
   
   
   void Clear() {
-    RBAutoLock lock(*this);
+    baseprofiler::detail::BPAutoLock lock(mMutex);
     ClearAllEntries();
   }
 
@@ -646,7 +646,7 @@ class BlocksRingBuffer {
   
   
   void ClearBefore(BlockIndex aBlockIndex) {
-    RBAutoLock lock(*this);
+    baseprofiler::detail::BPAutoLock lock(mMutex);
     
     MOZ_ASSERT(aBlockIndex <= mNextWriteIndex);
     if (aBlockIndex <= mFirstReadIndex) {
@@ -687,6 +687,7 @@ class BlocksRingBuffer {
 
 #ifdef DEBUG
   void Dump() const {
+    baseprofiler::detail::BPAutoLock lock(mMutex);
     using ULL = unsigned long long;
     printf("start=%llu (%llu) end=%llu (%llu) - ", ULL(Index(mFirstReadIndex)),
            ULL(Index(mFirstReadIndex) & (BufferLength().Value() - 1)),
@@ -762,30 +763,7 @@ class BlocksRingBuffer {
   }
 
   
-  
-  class RBMutex : private mozilla::detail::MutexImpl {
-   public:
-    RBMutex()
-        : mozilla::detail::MutexImpl(
-              mozilla::recordreplay::Behavior::DontPreserve) {}
-    void Lock() { mozilla::detail::MutexImpl::lock(); }
-    void Unlock() { mozilla::detail::MutexImpl::unlock(); }
-  };
-
-  
-  class MOZ_RAII RBAutoLock {
-   public:
-    explicit RBAutoLock(const BlocksRingBuffer& aBuffer) : mBuffer(aBuffer) {
-      mBuffer.mMutex.Lock();
-    }
-    ~RBAutoLock() { mBuffer.mMutex.Unlock(); }
-
-   private:
-    const BlocksRingBuffer& mBuffer;
-  };
-
-  
-  mutable RBMutex mMutex;
+  mutable baseprofiler::detail::BaseProfilerMutex mMutex;
 
   
   Buffer mBuffer;
