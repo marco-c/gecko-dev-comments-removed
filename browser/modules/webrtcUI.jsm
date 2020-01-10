@@ -552,9 +552,7 @@ function checkRequestAllowed(aRequest, aPrincipal, aBrowser) {
     
     
     let browser = aBrowser;
-    browser._devicePermissionPrincipals =
-      browser._devicePermissionPrincipals || [];
-    browser._devicePermissionPrincipals.push(aPrincipal);
+    browser.getDevicePermissionOrigins("webrtc").add(aPrincipal.origin);
 
     let camNeeded = !!videoDevices.length;
     let micNeeded = !!audioDevices.length;
@@ -1108,9 +1106,7 @@ function prompt(aBrowser, aRequest) {
         if (remember) {
           
           
-          aBrowser._devicePermissionPrincipals =
-            aBrowser._devicePermissionPrincipals || [];
-          aBrowser._devicePermissionPrincipals.push(principal);
+          aBrowser.getDevicePermissionOrigins("webrtc").add(principal.origin);
         }
 
         let camNeeded = !!videoDevices.length;
