@@ -665,20 +665,7 @@ pref("layout.scroll.root-frame-containers", false);
 
 pref("layout.scrollbars.always-layerize-track", false);
 
-
-pref("gfx.layerscope.enabled", false);
-pref("gfx.layerscope.port", 23456);
-
-
-
-pref("gfx.perf-warnings.enabled", false);
-
-
-
-pref("gfx.color_management.mode", 2);
 pref("gfx.color_management.display_profile", "");
-pref("gfx.color_management.rendering_intent", 0);
-pref("gfx.color_management.enablev4", false);
 
 pref("gfx.downloadable_fonts.enabled", true);
 pref("gfx.downloadable_fonts.fallback_delay", 3000);
@@ -687,13 +674,6 @@ pref("gfx.downloadable_fonts.fallback_delay_short", 100);
 
 
 pref("gfx.downloadable_fonts.disable_cache", false);
-
-
-#ifdef RELEASE_OR_BETA
-  pref("gfx.downloadable_fonts.otl_validation", false);
-#else
-  pref("gfx.downloadable_fonts.otl_validation", true);
-#endif
 
 #ifdef ANDROID
   pref("gfx.bundled_fonts.enabled", true);
