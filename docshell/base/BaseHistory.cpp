@@ -44,12 +44,12 @@ void BaseHistory::NotifyVisitedForDocument(nsIURI* aURI, dom::Document* aDoc) {
     return;
   }
 
-  TrackedURI& trackedURI = entry.Data();
+  ObservingLinks& links = entry.Data();
 
   {
     
     
-    ObserverArray::BackwardIterator iter(trackedURI.mLinks);
+    ObserverArray::BackwardIterator iter(links.mLinks);
     while (iter.HasMore()) {
       Link* link = iter.GetNext();
       if (GetLinkDocument(*link) == aDoc) {
@@ -60,7 +60,7 @@ void BaseHistory::NotifyVisitedForDocument(nsIURI* aURI, dom::Document* aDoc) {
   }
 
   
-  if (trackedURI.mLinks.IsEmpty()) {
+  if (links.mLinks.IsEmpty()) {
     entry.Remove();
   }
 }
@@ -101,20 +101,20 @@ BaseHistory::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
     return NS_OK;
   }
 
-  TrackedURI& trackedURI = entry.OrInsert([] { return TrackedURI{}; });
+  ObservingLinks& links = entry.OrInsert([] { return ObservingLinks{}; });
 
   
   
-  MOZ_DIAGNOSTIC_ASSERT(!trackedURI.mLinks.Contains(aLink),
+  MOZ_DIAGNOSTIC_ASSERT(!links.mLinks.Contains(aLink),
                         "Already tracking this Link object!");
 
   
-  trackedURI.mLinks.AppendElement(aLink);
+  links.mLinks.AppendElement(aLink);
 
   
   
   
-  if (trackedURI.mVisited) {
+  if (links.mKnownVisited) {
     DispatchNotifyVisited(aURI, GetLinkDocument(*aLink));
   }
 
@@ -170,18 +170,18 @@ BaseHistory::NotifyVisited(nsIURI* aURI) {
     return NS_OK;
   }
 
-  TrackedURI& trackedURI = entry.Data();
-  trackedURI.mVisited = true;
+  ObservingLinks& links = entry.Data();
+  links.mKnownVisited = true;
 
   
-  MOZ_ASSERT(!trackedURI.mLinks.IsEmpty());
+  MOZ_ASSERT(!links.mLinks.IsEmpty());
 
   
   
 
   
   nsTArray<Document*> seen;  
-  ObserverArray::BackwardIterator iter(trackedURI.mLinks);
+  ObserverArray::BackwardIterator iter(links.mLinks);
   while (iter.HasMore()) {
     Link* link = iter.GetNext();
     Document* doc = GetLinkDocument(*link);

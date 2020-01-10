@@ -96,40 +96,38 @@ void GeckoViewHistory::QueryVisitedStateInContentProcess() {
        newURIsIter.Next()) {
     nsIURI* uri = newURIsIter.Get()->GetKey();
     if (auto entry = mTrackedURIs.Lookup(uri)) {
-      TrackedURI& trackedURI = entry.Data();
-      if (!trackedURI.mLinks.IsEmpty()) {
-        nsTObserverArray<Link*>::BackwardIterator linksIter(trackedURI.mLinks);
-        while (linksIter.HasMore()) {
-          Link* link = linksIter.GetNext();
+      ObservingLinks& links = entry.Data();
+      nsTObserverArray<Link*>::BackwardIterator linksIter(links.mLinks);
+      while (linksIter.HasMore()) {
+        Link* link = linksIter.GetNext();
 
-          BrowserChild* browserChild = nullptr;
-          nsIWidget* widget =
-              nsContentUtils::WidgetForContent(link->GetElement());
-          if (widget) {
-            browserChild = widget->GetOwningBrowserChild();
-          }
-          if (!browserChild) {
-            
-            
-            linksIter.Remove();
-            continue;
-          }
-
+        BrowserChild* browserChild = nullptr;
+        nsIWidget* widget =
+            nsContentUtils::WidgetForContent(link->GetElement());
+        if (widget) {
+          browserChild = widget->GetOwningBrowserChild();
+        }
+        if (!browserChild) {
           
-          bool hasEntry = false;
-          for (NewURIEntry& entry : newEntries) {
-            if (entry.mBrowserChild == browserChild) {
-              entry.AddURI(uri);
-              hasEntry = true;
-              break;
-            }
-          }
-          if (!hasEntry) {
-            newEntries.AppendElement(NewURIEntry(browserChild, uri));
+          
+          linksIter.Remove();
+          continue;
+        }
+
+        
+        bool hasEntry = false;
+        for (NewURIEntry& entry : newEntries) {
+          if (entry.mBrowserChild == browserChild) {
+            entry.AddURI(uri);
+            hasEntry = true;
+            break;
           }
         }
+        if (!hasEntry) {
+          newEntries.AppendElement(NewURIEntry(browserChild, uri));
+        }
       }
-      if (trackedURI.mLinks.IsEmpty()) {
+      if (links.mLinks.IsEmpty()) {
         
         
         
@@ -170,33 +168,31 @@ void GeckoViewHistory::QueryVisitedStateInParentProcess() {
        newURIsIter.Next()) {
     nsIURI* uri = newURIsIter.Get()->GetKey();
     if (auto entry = mTrackedURIs.Lookup(uri)) {
-      TrackedURI& trackedURI = entry.Data();
-      if (!trackedURI.mLinks.IsEmpty()) {
-        nsTObserverArray<Link*>::BackwardIterator linksIter(trackedURI.mLinks);
-        while (linksIter.HasMore()) {
-          Link* link = linksIter.GetNext();
+      ObservingLinks& links = entry.Data();
+      nsTObserverArray<Link*>::BackwardIterator linksIter(links.mLinks);
+      while (linksIter.HasMore()) {
+        Link* link = linksIter.GetNext();
 
-          nsIWidget* widget =
-              nsContentUtils::WidgetForContent(link->GetElement());
-          if (!widget) {
-            linksIter.Remove();
-            continue;
-          }
+        nsIWidget* widget =
+            nsContentUtils::WidgetForContent(link->GetElement());
+        if (!widget) {
+          linksIter.Remove();
+          continue;
+        }
 
-          bool hasEntry = false;
-          for (NewURIEntry& entry : newEntries) {
-            if (entry.mWidget == widget) {
-              entry.AddURI(uri);
-              hasEntry = true;
-              break;
-            }
-          }
-          if (!hasEntry) {
-            newEntries.AppendElement(NewURIEntry(widget, uri));
+        bool hasEntry = false;
+        for (NewURIEntry& entry : newEntries) {
+          if (entry.mWidget == widget) {
+            entry.AddURI(uri);
+            hasEntry = true;
+            break;
           }
         }
+        if (!hasEntry) {
+          newEntries.AppendElement(NewURIEntry(widget, uri));
+        }
       }
-      if (trackedURI.mLinks.IsEmpty()) {
+      if (links.mLinks.IsEmpty()) {
         entry.Remove();
       }
     }

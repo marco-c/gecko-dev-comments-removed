@@ -32,9 +32,9 @@ class BaseHistory : public IHistory {
   virtual void CancelVisitedQueryIfPossible(nsIURI*) = 0;
 
   using ObserverArray = nsTObserverArray<dom::Link*>;
-  struct TrackedURI {
+  struct ObservingLinks {
     ObserverArray mLinks;
-    bool mVisited = false;
+    bool mKnownVisited = false;
 
     size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
       return mLinks.ShallowSizeOfExcludingThis(aMallocSizeOf);
@@ -55,7 +55,13 @@ class BaseHistory : public IHistory {
   void DispatchNotifyVisited(nsIURI*, dom::Document*);
 
  protected:
-  nsDataHashtable<nsURIHashKey, TrackedURI> mTrackedURIs;
+  
+  
+  
+  
+  
+  
+  nsDataHashtable<nsURIHashKey, ObservingLinks> mTrackedURIs;
 };
 
 }  
