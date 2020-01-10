@@ -451,10 +451,18 @@ bool DeviceManagerDx::CreateCompositorDeviceHelper(
     return false;
   }
 
-  
-  
-  UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT |
-               D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS;
+  UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+
+  DXGI_ADAPTER_DESC desc;
+  aAdapter->GetDesc(&desc);
+  if (desc.VendorId != 0x1414) {
+    
+    
+    
+    
+    flags |= D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS;
+  }
+
   if (aAttemptVideoSupport) {
     flags |= D3D11_CREATE_DEVICE_VIDEO_SUPPORT;
   }
