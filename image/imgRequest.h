@@ -19,7 +19,6 @@
 #include "nsError.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/net/ReferrerPolicy.h"
 #include "ImageCacheKey.h"
 
 class imgCacheValidator;
@@ -31,6 +30,7 @@ class nsIProperties;
 class nsIRequest;
 class nsITimedChannel;
 class nsIURI;
+class nsIReferrerInfo;
 
 namespace mozilla {
 namespace image {
@@ -49,7 +49,6 @@ class imgRequest final : public nsIStreamListener,
   typedef mozilla::image::Image Image;
   typedef mozilla::image::ImageCacheKey ImageCacheKey;
   typedef mozilla::image::ProgressTracker ProgressTracker;
-  typedef mozilla::net::ReferrerPolicy ReferrerPolicy;
 
  public:
   imgRequest(imgLoader* aLoader, const ImageCacheKey& aCacheKey);
@@ -67,7 +66,7 @@ class imgRequest final : public nsIStreamListener,
                              nsIChannel* aChannel, imgCacheEntry* aCacheEntry,
                              nsISupports* aCX,
                              nsIPrincipal* aTriggeringPrincipal,
-                             int32_t aCORSMode, ReferrerPolicy aReferrerPolicy);
+                             int32_t aCORSMode, nsIReferrerInfo* aReferrerInfo);
 
   void ClearLoader();
 
@@ -114,7 +113,7 @@ class imgRequest final : public nsIStreamListener,
   int32_t GetCORSMode() const { return mCORSMode; }
 
   
-  ReferrerPolicy GetReferrerPolicy() const { return mReferrerPolicy; }
+  nsIReferrerInfo* GetReferrerInfo() const { return mReferrerInfo; }
 
   
   
@@ -265,7 +264,7 @@ class imgRequest final : public nsIStreamListener,
   int32_t mCORSMode;
 
   
-  ReferrerPolicy mReferrerPolicy;
+  nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
 
   nsresult mImageErrorCode;
 

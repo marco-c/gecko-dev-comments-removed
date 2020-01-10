@@ -3366,13 +3366,9 @@ nsresult nsContentUtils::LoadImage(
 
   
   
-  nsCOMPtr<nsIURI> referrer = aReferrerInfo->GetOriginalReferrer();
-  auto referrerPolicy = static_cast<mozilla::net::ReferrerPolicy>(
-      aReferrerInfo->GetReferrerPolicy());
   return imgLoader->LoadImage(aURI,               
                               documentURI,        
-                              referrer,           
-                              referrerPolicy,     
+                              aReferrerInfo,      
                               aLoadingPrincipal,  
                               aRequestContextID,  
                               loadGroup,          

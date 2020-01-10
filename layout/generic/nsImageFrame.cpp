@@ -2397,7 +2397,7 @@ nsresult nsImageFrame::LoadIcon(const nsAString& aSpec,
 
 
       nullptr,                          
-      mozilla::net::RP_Unset, nullptr,  
+      nullptr,                          
       0, loadGroup, gIconLoad, nullptr, 
       nullptr, 
       loadFlags, nullptr, contentPolicyType, EmptyString(),
