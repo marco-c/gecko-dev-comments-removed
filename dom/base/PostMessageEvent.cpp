@@ -72,6 +72,22 @@ PostMessageEvent::Run() {
       targetWindow->IsDying())
     return NS_OK;
 
+  
+  
+  
+  
+  
+  if (nsCOMPtr<nsPIDOMWindowOuter> topWindow =
+          targetWindow->GetOuterWindow()->GetTop()) {
+    if (nsCOMPtr<nsPIDOMWindowInner> topInner =
+            topWindow->GetCurrentInnerWindow()) {
+      if (topInner->GetExtantDoc() &&
+          topInner->GetExtantDoc()->SuspendPostMessageEvent(this)) {
+        return NS_OK;
+      }
+    }
+  }
+
   JSAutoRealm ar(cx, targetWindow->GetWrapper());
 
   

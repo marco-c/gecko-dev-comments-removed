@@ -263,6 +263,7 @@ class Document;
 class DOMStyleSheetSetList;
 class ResizeObserver;
 class ResizeObserverController;
+class PostMessageEvent;
 
 
 
@@ -2883,6 +2884,18 @@ class Document : public nsINode,
 
   void AddSuspendedChannelEventQueue(net::ChannelEventQueue* aQueue);
 
+  
+
+
+
+
+  bool SuspendPostMessageEvent(PostMessageEvent* aEvent);
+
+  
+
+
+  void FireOrClearPostMessageEvents(bool aFireEvents);
+
   void SetHasDelayedRefreshEvent() { mHasDelayedRefreshEvent = true; }
 
   
@@ -4829,6 +4842,10 @@ class Document : public nsINode,
   
   
   nsTArray<RefPtr<net::ChannelEventQueue>> mSuspendedQueues;
+
+  
+  
+  nsTArray<RefPtr<PostMessageEvent>> mSuspendedPostMessageEvents;
 
   RefPtr<EventListener> mSuppressedEventListener;
 
