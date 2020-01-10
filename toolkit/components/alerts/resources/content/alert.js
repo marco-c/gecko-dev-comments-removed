@@ -51,6 +51,7 @@ function prefillAlertInfo() {
         icon.src = window.arguments[12];
       }
     }
+    
     case 12: {
       if (window.arguments[11]) {
         let alertBox = document.getElementById("alertBox");
@@ -95,12 +96,16 @@ function prefillAlertInfo() {
         );
       }
     }
+    
     case 11:
       gAlertListener = window.arguments[10];
+    
     case 10:
       gReplacedWindow = window.arguments[9];
+    
     case 9:
       gRequireInteraction = window.arguments[8];
+    
     case 8:
       if (window.arguments[7]) {
         document
@@ -110,15 +115,19 @@ function prefillAlertInfo() {
           .getElementById("alertTextLabel")
           .setAttribute("lang", window.arguments[7]);
       }
+    
     case 7:
       if (window.arguments[6]) {
         document.getElementById("alertNotification").style.direction =
           window.arguments[6];
       }
+    
     case 6:
       gOrigin = window.arguments[5];
+    
     case 5:
       gAlertCookie = window.arguments[4];
+    
     case 4:
       gAlertTextClickable = window.arguments[3];
       if (gAlertTextClickable) {
@@ -129,6 +138,7 @@ function prefillAlertInfo() {
           .getElementById("alertTextLabel")
           .setAttribute("clickable", true);
       }
+    
     case 3:
       if (window.arguments[2]) {
         document.getElementById("alertBox").setAttribute("hasBodyText", true);
@@ -159,10 +169,12 @@ function prefillAlertInfo() {
         }
         bodyTextLabel.textContent = bodyText;
       }
+    
     case 2:
       document
         .getElementById("alertTitleLabel")
         .setAttribute("value", window.arguments[1]);
+    
     case 1:
       if (window.arguments[0]) {
         document.getElementById("alertBox").setAttribute("hasImage", true);
@@ -170,6 +182,7 @@ function prefillAlertInfo() {
           .getElementById("alertImage")
           .setAttribute("src", window.arguments[0]);
       }
+    
     case 0:
       break;
   }
