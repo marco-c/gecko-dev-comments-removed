@@ -3799,6 +3799,24 @@ pub extern "C" fn Servo_ComputedValues_EqualForCachedAnonymousContentStyle(
     
     differing_properties.remove(LonghandId::XLang);
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    differing_properties.remove_all(&LonghandIdSet::has_no_effect_on_gecko_scrollbars());
+
     if !differing_properties.is_empty() {
         println_stderr!("Actual style:");
         dump_properties_and_rules(a, &differing_properties);
