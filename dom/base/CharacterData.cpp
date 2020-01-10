@@ -392,6 +392,7 @@ nsresult CharacterData::BindToTree(BindContext& aContext, nsINode& aParent) {
              "Must have content or document parent!");
   MOZ_ASSERT(aParent.OwnerDoc() == OwnerDoc(),
              "Must have the same owner document");
+  MOZ_ASSERT(OwnerDoc() == &aContext.OwnerDoc(), "These should match too");
   MOZ_ASSERT(!IsInUncomposedDoc(), "Already have a document.  Unbind first!");
   MOZ_ASSERT(!IsInComposedDoc(), "Already have a document.  Unbind first!");
   
@@ -455,7 +456,7 @@ nsresult CharacterData::BindToTree(BindContext& aContext, nsINode& aParent) {
       
       
       if (mText.IsBidi()) {
-        OwnerDoc()->SetBidiEnabled();
+        aContext.OwnerDoc().SetBidiEnabled();
       }
     } else {
       SetFlags(NODE_IS_IN_SHADOW_TREE);

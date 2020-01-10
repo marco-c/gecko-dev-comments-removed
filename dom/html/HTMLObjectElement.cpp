@@ -208,15 +208,15 @@ nsresult HTMLObjectElement::BindToTree(BindContext& aContext,
   
   
   
-  
-  
-  
-  nsCOMPtr<nsIPluginDocument> pluginDoc = do_QueryInterface(GetUncomposedDoc());
-  
-  if (mIsDoneAddingChildren && !pluginDoc) {
-    void (HTMLObjectElement::*start)() = &HTMLObjectElement::StartObjectLoad;
-    nsContentUtils::AddScriptRunner(
-        NewRunnableMethod("dom::HTMLObjectElement::BindToTree", this, start));
+  if (IsInComposedDoc()) {
+    nsCOMPtr<nsIPluginDocument> pluginDoc =
+        do_QueryInterface(&aContext.OwnerDoc());
+    
+    if (mIsDoneAddingChildren && !pluginDoc) {
+      void (HTMLObjectElement::*start)() = &HTMLObjectElement::StartObjectLoad;
+      nsContentUtils::AddScriptRunner(
+          NewRunnableMethod("dom::HTMLObjectElement::BindToTree", this, start));
+    }
   }
 
   return NS_OK;

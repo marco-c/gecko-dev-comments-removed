@@ -19,6 +19,12 @@ namespace dom {
 
 struct MOZ_STACK_CLASS BindContext final {
   
+  
+  
+  
+  Document& OwnerDoc() const { return mDoc; }
+
+  
   bool SubtreeRootChanges() const { return mSubtreeRootChanges; }
 
   
@@ -31,7 +37,8 @@ struct MOZ_STACK_CLASS BindContext final {
   
   
   explicit BindContext(nsINode& aParentNode)
-      : mSubtreeRootChanges(true),
+      : mDoc(*aParentNode.OwnerDoc()),
+        mSubtreeRootChanges(true),
         mBindingParent(aParentNode.IsContent()
                            ? static_cast<Element*>(
                                  aParentNode.AsContent()->GetBindingParent())
@@ -44,22 +51,27 @@ struct MOZ_STACK_CLASS BindContext final {
   
   
   explicit BindContext(ShadowRoot& aShadowRoot)
-      : mSubtreeRootChanges(false),
+      : mDoc(*aShadowRoot.OwnerDoc()),
+        mSubtreeRootChanges(false),
         mBindingParent(aShadowRoot.Host()) {}
 
   
   
   enum ForNativeAnonymous { ForNativeAnonymous };
   BindContext(Element& aParentElement, enum ForNativeAnonymous)
-      : mSubtreeRootChanges(true),
+      : mDoc(*aParentElement.OwnerDoc()),
+        mSubtreeRootChanges(true),
         mBindingParent(&aParentElement) {}
 
   
   BindContext(nsXBLBinding& aBinding, Element& aParentElement)
-      : mSubtreeRootChanges(true),
+      : mDoc(*aParentElement.OwnerDoc()),
+        mSubtreeRootChanges(true),
         mBindingParent(aBinding.GetBoundElement()) {}
 
  private:
+  Document& mDoc;
+
   
   
   const bool mSubtreeRootChanges;

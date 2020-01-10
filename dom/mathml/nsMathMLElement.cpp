@@ -6,6 +6,7 @@
 
 #include "nsMathMLElement.h"
 #include "base/compiler_specific.h"
+#include "mozilla/dom/BindContext.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/TextUtils.h"
@@ -81,13 +82,13 @@ nsresult nsMathMLElement::BindToTree(BindContext& aContext, nsINode& aParent) {
 
   
   
-  if (Document* doc = GetUncomposedDoc()) {
-    doc->RegisterPendingLinkUpdate(this);
+  if (IsInUncomposedDoc()) {
+    aContext.OwnerDoc().RegisterPendingLinkUpdate(this);
   }
 
   
-  if (Document* doc = GetComposedDoc()) {
-    doc->SetMathMLEnabled();
+  if (IsInComposedDoc()) {
+    aContext.OwnerDoc().SetMathMLEnabled();
   }
 
   return rv;

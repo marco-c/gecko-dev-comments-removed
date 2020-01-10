@@ -16,6 +16,7 @@
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
 #include "nsIDocShell.h"
+#include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/Document.h"
 #include "nsIExternalProtocolHandler.h"
 #include "nsIInterfaceRequestorUtils.h"
@@ -568,8 +569,8 @@ nsresult nsObjectLoadingContent::BindToTree(BindContext& aContext,
   nsImageLoadingContent::BindToTree(aContext, aParent);
   
   
-  if (Document* doc = aParent.GetUncomposedDoc()) {
-    doc->AddPlugin(this);
+  if (aParent.IsInUncomposedDoc()) {
+    aContext.OwnerDoc().AddPlugin(this);
   }
   return NS_OK;
 }

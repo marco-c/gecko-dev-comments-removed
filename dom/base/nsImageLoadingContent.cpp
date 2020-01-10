@@ -1613,7 +1613,8 @@ void nsImageLoadingContent::NotifyOwnerDocumentActivityChanged() {
 void nsImageLoadingContent::BindToTree(BindContext& aContext,
                                        nsINode& aParent) {
   
-  if (GetOurCurrentDoc()) {
+  
+  if (aParent.IsInComposedDoc()) {
     TrackImage(mCurrentRequest);
     TrackImage(mPendingRequest);
   }

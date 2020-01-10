@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/HTMLImageElementBinding.h"
+#include "mozilla/dom/BindContext.h"
 #include "nsGkAtoms.h"
 #include "nsStyleConsts.h"
 #include "nsPresContext.h"
@@ -500,9 +501,8 @@ nsresult HTMLImageElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   UpdateFormOwner();
 
   if (HaveSrcsetOrInPicture()) {
-    Document* doc = GetComposedDoc();
-    if (doc && !mInDocResponsiveContent) {
-      doc->AddResponsiveContent(this);
+    if (IsInComposedDoc() && !mInDocResponsiveContent) {
+      aContext.OwnerDoc().AddResponsiveContent(this);
       mInDocResponsiveContent = true;
     }
 
@@ -533,7 +533,7 @@ nsresult HTMLImageElement::BindToTree(BindContext& aContext, nsINode& aParent) {
     
     
     
-    if (LoadingEnabled() && OwnerDoc()->ShouldLoadImages()) {
+    if (LoadingEnabled() && aContext.OwnerDoc().ShouldLoadImages()) {
       nsContentUtils::AddScriptRunner(
           NewRunnableMethod<bool>("dom::HTMLImageElement::MaybeLoadImage", this,
                                   &HTMLImageElement::MaybeLoadImage, false));
