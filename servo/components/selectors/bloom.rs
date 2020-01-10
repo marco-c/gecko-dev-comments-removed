@@ -64,7 +64,7 @@ pub type BloomFilter = CountingBloomFilter<BloomStorageU8>;
 
 
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct CountingBloomFilter<S>
 where
     S: BloomStorage,
@@ -79,9 +79,7 @@ where
     
     #[inline]
     pub fn new() -> Self {
-        CountingBloomFilter {
-            storage: Default::default(),
-        }
+        Default::default()
     }
 
     #[inline]
