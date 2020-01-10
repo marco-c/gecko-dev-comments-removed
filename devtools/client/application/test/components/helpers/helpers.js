@@ -3,15 +3,16 @@
 
 "use strict";
 
-const reducers = require("devtools/client/application/src/reducers/index");
-const { createStore } = require("devtools/client/shared/vendor/redux");
+const { thunk } = require("devtools/client/shared/redux/middleware/thunk.js");
+const configureStore = require("redux-mock-store").default;
 
 
 
 
-function setupStore({ preloadedState } = {}) {
-  const store = createStore(reducers, preloadedState);
-  return store;
+function setupStore(preloadedState = {}) {
+  const middleware = [thunk];
+  const mockStore = configureStore(middleware);
+  return mockStore(preloadedState);
 }
 
 
@@ -19,7 +20,7 @@ function setupStore({ preloadedState } = {}) {
 
 
 async function flushPromises() {
-  return new Promise(resolve => resolve());
+  await new Promise(r => setTimeout(r, 0));
 }
 
 module.exports = {
