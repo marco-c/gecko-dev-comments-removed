@@ -3581,11 +3581,8 @@ JS::CompileOptions::CompileOptions(JSContext* cx)
   fieldsEnabledOption = cx->realm()->creationOptions().getFieldsEnabled();
 
   
-  
-  
   forceFullParse_ = cx->realm()->behaviors().disableLazyParsing() ||
-                    coverage::IsLCovEnabled() ||
-                    mozilla::recordreplay::IsRecordingOrReplaying();
+                    coverage::IsLCovEnabled();
 
   
   
