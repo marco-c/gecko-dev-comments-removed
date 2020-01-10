@@ -72,6 +72,9 @@ bool RenderCompositorEGL::BeginFrame() {
     
     DestroyEGLSurface();
     mEGLSurface = CreateEGLSurface();
+    if (mEGLSurface == EGL_NO_SURFACE) {
+      RenderThread::Get()->HandleWebRenderError(WebRenderError::NEW_SURFACE);
+    }
   }
 #endif
   if (!MakeCurrent()) {
