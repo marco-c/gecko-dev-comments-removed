@@ -7,58 +7,128 @@
 #ifndef mozilla_DynamicallyLinkedFunctionPtr_h
 #define mozilla_DynamicallyLinkedFunctionPtr_h
 
+#include "mozilla/Attributes.h"
 #include "mozilla/Move.h"
+
 #include <windows.h>
 
 namespace mozilla {
+namespace detail {
 
 template <typename T>
-class DynamicallyLinkedFunctionPtr;
+struct FunctionPtrCracker;
 
 template <typename R, typename... Args>
-class DynamicallyLinkedFunctionPtr<R(__stdcall*)(Args...)> {
-  typedef R(__stdcall* FunctionPtrT)(Args...);
+struct FunctionPtrCracker<R (*)(Args...)> {
+  using ReturnT = R;
+  using FunctionPtrT = R (*)(Args...);
+};
 
+#if defined(_M_IX86)
+template <typename R, typename... Args>
+struct FunctionPtrCracker<R(__stdcall*)(Args...)> {
+  using ReturnT = R;
+  using FunctionPtrT = R(__stdcall*)(Args...);
+};
+
+template <typename R, typename... Args>
+struct FunctionPtrCracker<R(__fastcall*)(Args...)> {
+  using ReturnT = R;
+  using FunctionPtrT = R(__fastcall*)(Args...);
+};
+#endif  
+
+template <typename T>
+class DynamicallyLinkedFunctionPtrBase {
  public:
-  DynamicallyLinkedFunctionPtr(const wchar_t* aLibName, const char* aFuncName)
-      : mModule(NULL), mFunction(nullptr) {
-    mModule = ::LoadLibraryW(aLibName);
-    if (mModule) {
-      mFunction =
-          reinterpret_cast<FunctionPtrT>(::GetProcAddress(mModule, aFuncName));
+  using ReturnT = typename FunctionPtrCracker<T>::ReturnT;
+  using FunctionPtrT = typename FunctionPtrCracker<T>::FunctionPtrT;
 
-      if (!mFunction) {
-        
-        
-        ::FreeLibrary(mModule);
-        mModule = NULL;
-      }
+  DynamicallyLinkedFunctionPtrBase(const wchar_t* aLibName,
+                                   const char* aFuncName)
+      : mModule(::LoadLibraryW(aLibName)), mFunction(nullptr) {
+    if (!mModule) {
+      return;
     }
-  }
 
-  DynamicallyLinkedFunctionPtr(const DynamicallyLinkedFunctionPtr&) = delete;
-  DynamicallyLinkedFunctionPtr& operator=(const DynamicallyLinkedFunctionPtr&) =
-      delete;
+    mFunction =
+        reinterpret_cast<FunctionPtrT>(::GetProcAddress(mModule, aFuncName));
 
-  DynamicallyLinkedFunctionPtr(DynamicallyLinkedFunctionPtr&&) = delete;
-  DynamicallyLinkedFunctionPtr& operator=(DynamicallyLinkedFunctionPtr&&) =
-      delete;
-
-  ~DynamicallyLinkedFunctionPtr() {
-    if (mModule) {
+    if (!mFunction) {
+      
+      
       ::FreeLibrary(mModule);
+      mModule = nullptr;
     }
   }
 
-  R operator()(Args... args) const {
+  DynamicallyLinkedFunctionPtrBase(const DynamicallyLinkedFunctionPtrBase&) =
+      delete;
+  DynamicallyLinkedFunctionPtrBase& operator=(
+      const DynamicallyLinkedFunctionPtrBase&) = delete;
+
+  DynamicallyLinkedFunctionPtrBase(DynamicallyLinkedFunctionPtrBase&&) = delete;
+  DynamicallyLinkedFunctionPtrBase& operator=(
+      DynamicallyLinkedFunctionPtrBase&&) = delete;
+
+  template <typename... Args>
+  ReturnT operator()(Args... args) const {
     return mFunction(std::forward<Args>(args)...);
   }
 
   explicit operator bool() const { return !!mFunction; }
 
- private:
+ protected:
   HMODULE mModule;
   FunctionPtrT mFunction;
+};
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+class MOZ_STATIC_LOCAL_CLASS StaticDynamicallyLinkedFunctionPtr final
+    : public detail::DynamicallyLinkedFunctionPtrBase<T> {
+ public:
+  StaticDynamicallyLinkedFunctionPtr(const wchar_t* aLibName,
+                                     const char* aFuncName)
+      : detail::DynamicallyLinkedFunctionPtrBase<T>(aLibName, aFuncName) {}
+
+  
+
+
+
+
+  operator typename detail::DynamicallyLinkedFunctionPtrBase<T>::FunctionPtrT()
+      const {
+    return this->mFunction;
+  }
+};
+
+template <typename T>
+class MOZ_NON_PARAM MOZ_NON_TEMPORARY_CLASS DynamicallyLinkedFunctionPtr final
+    : public detail::DynamicallyLinkedFunctionPtrBase<T> {
+ public:
+  DynamicallyLinkedFunctionPtr(const wchar_t* aLibName, const char* aFuncName)
+      : detail::DynamicallyLinkedFunctionPtrBase<T>(aLibName, aFuncName) {}
+
+  ~DynamicallyLinkedFunctionPtr() {
+    if (!this->mModule) {
+      return;
+    }
+
+    ::FreeLibrary(this->mModule);
+  }
 };
 
 }  
