@@ -6,6 +6,7 @@
 
 #include "IPCStreamSource.h"
 #include "BackgroundParent.h"  
+#include "mozilla/dom/RemoteWorkerService.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsIAsyncInputStream.h"
 #include "nsICancelableRunnable.h"
@@ -118,6 +119,7 @@ bool IPCStreamSource::Initialize() {
   
   
   
+  
   if (!NS_IsMainThread()) {
     if (const auto workerPrivate = dom::GetCurrentThreadWorkerPrivate()) {
       RefPtr<dom::StrongWorkerRef> workerRef =
@@ -129,7 +131,9 @@ bool IPCStreamSource::Initialize() {
 
       mWorkerRef = std::move(workerRef);
     } else {
-      AssertIsOnBackgroundThread();
+      MOZ_DIAGNOSTIC_ASSERT(
+          IsOnBackgroundThread() ||
+          dom::RemoteWorkerService::Thread()->IsOnCurrentThread());
     }
   }
 
