@@ -1,0 +1,4 @@
+
+
+
+window.parent.postMessage('from signed exchange', '*');
