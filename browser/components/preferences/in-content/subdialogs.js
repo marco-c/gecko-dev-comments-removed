@@ -220,7 +220,7 @@ SubDialog.prototype = {
     }
 
     
-    this._frame.contentDocument.documentElement.setInContent();
+    this._frame.contentDocument.documentElement.setAttribute("subdialog", "true");
 
     this._frame.contentWindow.addEventListener("dialogclosing", this);
 
