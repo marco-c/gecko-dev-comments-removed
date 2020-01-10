@@ -17,29 +17,26 @@
 
 
 
-template <typename W, typename T>
+template <typename W>
 struct TestStruct {
   W wrapper;
+};
+
+
+template <typename T>
+struct TestStruct<js::GCPtr<T>> {
+  js::GCPtr<T> wrapper;
 
   void trace(JSTracer* trc) {
     TraceNullableEdge(trc, &wrapper, "TestStruct::wrapper");
   }
-
-  TestStruct() {}
-  explicit TestStruct(T init) : wrapper(init) {}
 };
 
 
 namespace JS {
-
 template <typename T>
-struct DeletePolicy<TestStruct<js::GCPtr<T>, T>>
-    : public js::GCManagedDeletePolicy<TestStruct<js::GCPtr<T>, T>> {};
-
-template <typename T>
-struct DeletePolicy<TestStruct<const js::GCPtr<T>, T>>
-    : public js::GCManagedDeletePolicy<TestStruct<const js::GCPtr<T>, T>> {};
-
+struct DeletePolicy<TestStruct<js::GCPtr<T>>>
+    : public js::GCManagedDeletePolicy<TestStruct<js::GCPtr<T>>> {};
 }  
 
 template <typename T>
@@ -98,49 +95,20 @@ bool CanAccessObject(JSObject* obj) {
 
 template <typename T>
 bool TestHeapPostBarriersForType() {
-  CHECK((TestHeapPostBarriersForWrapper<JS::Heap, T>()));
-  CHECK((TestHeapPostBarriersForWrapper<js::GCPtr, T>()));
-  CHECK((TestHeapPostBarriersForWrapper<js::HeapPtr, T>()));
+  CHECK((TestHeapPostBarriersForWrapper<T, JS::Heap<T*>>()));
+  CHECK((TestHeapPostBarriersForWrapper<T, js::GCPtr<T*>>()));
+  CHECK((TestHeapPostBarriersForWrapper<T, js::HeapPtr<T*>>()));
   return true;
 }
 
-template <template <typename> class W, typename T>
+template <typename T, typename W>
 bool TestHeapPostBarriersForWrapper() {
-  CHECK((TestHeapPostBarrierConstruction<W<T*>, T>()));
-  CHECK((TestHeapPostBarrierConstruction<const W<T*>, T>()));
-  CHECK((TestHeapPostBarrierUpdate<W<T*>, T>()));
-  CHECK((TestHeapPostBarrierInitFailure<W<T*>, T>()));
-  CHECK((TestHeapPostBarrierInitFailure<const W<T*>, T>()));
+  CHECK((TestHeapPostBarrierUpdate<T, W>()));
+  CHECK((TestHeapPostBarrierInitFailure<T, W>()));
   return true;
 }
 
-template <typename W, typename T>
-bool TestHeapPostBarrierConstruction() {
-  T* initialObj = CreateGCThing<T>(cx);
-  CHECK(initialObj != nullptr);
-  CHECK(js::gc::IsInsideNursery(initialObj));
-  uintptr_t initialObjAsInt = uintptr_t(initialObj);
-
-  {
-    auto testStruct = cx->make_unique<TestStruct<W, T*>>(initialObj);
-    CHECK(testStruct);
-
-    auto& wrapper = testStruct->wrapper;
-    CHECK(wrapper == initialObj);
-
-    cx->minorGC(JS::GCReason::API);
-
-    CHECK(uintptr_t(wrapper.get()) != initialObjAsInt);
-    CHECK(!js::gc::IsInsideNursery(wrapper.get()));
-    CHECK(CanAccessObject(wrapper.get()));
-  }
-
-  cx->minorGC(JS::GCReason::API);
-
-  return true;
-}
-
-template <typename W, typename T>
+template <typename T, typename W>
 bool TestHeapPostBarrierUpdate() {
   
   
@@ -150,29 +118,35 @@ bool TestHeapPostBarrierUpdate() {
   CHECK(js::gc::IsInsideNursery(initialObj));
   uintptr_t initialObjAsInt = uintptr_t(initialObj);
 
+  TestStruct<W>* ptr = nullptr;
+
   {
-    auto testStruct = cx->make_unique<TestStruct<W, T*>>();
+    auto testStruct = cx->make_unique<TestStruct<W>>();
     CHECK(testStruct);
 
-    auto& wrapper = testStruct->wrapper;
+    W& wrapper = testStruct->wrapper;
     CHECK(wrapper.get() == nullptr);
-
     wrapper = initialObj;
     CHECK(wrapper == initialObj);
 
-    cx->minorGC(JS::GCReason::API);
-
-    CHECK(uintptr_t(wrapper.get()) != initialObjAsInt);
-    CHECK(!js::gc::IsInsideNursery(wrapper.get()));
-    CHECK(CanAccessObject(wrapper.get()));
+    ptr = testStruct.release();
   }
+
+  cx->minorGC(JS::GCReason::API);
+
+  W& wrapper = ptr->wrapper;
+  CHECK(uintptr_t(wrapper.get()) != initialObjAsInt);
+  CHECK(!js::gc::IsInsideNursery(wrapper.get()));
+  CHECK(CanAccessObject(wrapper.get()));
+
+  JS::DeletePolicy<TestStruct<W>>()(ptr);
 
   cx->minorGC(JS::GCReason::API);
 
   return true;
 }
 
-template <typename W, typename T>
+template <typename T, typename W>
 bool TestHeapPostBarrierInitFailure() {
   
   
@@ -182,10 +156,12 @@ bool TestHeapPostBarrierInitFailure() {
   CHECK(js::gc::IsInsideNursery(initialObj));
 
   {
-    auto testStruct = cx->make_unique<TestStruct<W, T*>>(initialObj);
+    auto testStruct = cx->make_unique<TestStruct<W>>();
     CHECK(testStruct);
 
-    auto& wrapper = testStruct->wrapper;
+    W& wrapper = testStruct->wrapper;
+    CHECK(wrapper.get() == nullptr);
+    wrapper = initialObj;
     CHECK(wrapper == initialObj);
 
     

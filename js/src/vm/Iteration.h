@@ -29,7 +29,7 @@ struct NativeIterator {
   GCPtrObject objectBeingIterated_ = {};
 
   
-  const GCPtrObject iterObj_ = {};
+  GCPtrObject iterObj_ = {};
 
   
   

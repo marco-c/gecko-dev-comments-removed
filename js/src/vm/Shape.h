@@ -893,7 +893,7 @@ class Shape : public gc::TenuredCell {
 
  protected:
   GCPtrBaseShape base_;
-  const GCPtrId propid_;
+  GCPtrId propid_;
 
   
   
@@ -1273,7 +1273,7 @@ class Shape : public gc::TenuredCell {
     MOZ_ASSERT(!JSID_IS_VOID(propid_));
     return propid_;
   }
-  const GCPtrId& propidRef() {
+  GCPtrId& propidRef() {
     MOZ_ASSERT(!JSID_IS_VOID(propid_));
     return propid_;
   }

@@ -279,14 +279,14 @@ class Scope : public js::gc::TenuredCell {
   friend class GCMarker;
 
   
-  const GCPtrScope enclosing_;
+  GCPtrScope enclosing_;
 
   
-  const ScopeKind kind_;
+  ScopeKind kind_;
 
   
   
-  const GCPtrShape environmentShape_;
+  GCPtrShape environmentShape_;
 
  protected:
   BaseScopeData* data_;

@@ -290,10 +290,10 @@ class DebuggerFrame::GeneratorInfo {
   
   
   
-  const HeapPtr<Value> unwrappedGenerator_;
+  HeapPtr<Value> unwrappedGenerator_;
 
   
-  const HeapPtr<JSScript*> generatorScript_;
+  HeapPtr<JSScript*> generatorScript_;
 
  public:
   GeneratorInfo(Handle<AbstractGeneratorObject*> unwrappedGenerator,
@@ -312,11 +312,7 @@ class DebuggerFrame::GeneratorInfo {
     return unwrappedGenerator_.toObject().as<AbstractGeneratorObject>();
   }
 
-  JSScript* generatorScript() { return generatorScript_; }
-
-  bool isGeneratorScriptAboutToBeFinalized() {
-    return IsAboutToBeFinalized(&generatorScript_);
-  }
+  HeapPtr<JSScript*>& generatorScript() { return generatorScript_; }
 };
 
 js::AbstractGeneratorObject& js::DebuggerFrame::unwrappedGenerator() const {
@@ -403,8 +399,8 @@ void DebuggerFrame::clearGenerator(JSFreeOp* fop) {
   
   
   
-  if (!info->isGeneratorScriptAboutToBeFinalized()) {
-    JSScript* generatorScript = info->generatorScript();
+  HeapPtr<JSScript*>& generatorScript = info->generatorScript();
+  if (!IsAboutToBeFinalized(&generatorScript)) {
     DebugScript::decrementGeneratorObserverCount(fop, generatorScript);
     maybeDecrementStepperCounter(fop, generatorScript);
   }
