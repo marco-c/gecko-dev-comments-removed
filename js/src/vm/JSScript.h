@@ -586,10 +586,7 @@ class ScriptSource {
 
   mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire,
                   mozilla::recordreplay::Behavior::DontPreserve>
-      refs;
-
-  
-  SourceType data;
+      refs = {};
 
   
   
@@ -597,27 +594,24 @@ class ScriptSource {
   
   
   
-  PinnedUnitsBase* pinnedUnitsStack_;
+  uint32_t id_ = 0;
+
+  
+  SourceType data = SourceType(Missing());
+
+  
+  
+  
+  
+  
+  
+  PinnedUnitsBase* pinnedUnitsStack_ = nullptr;
   mozilla::MaybeOneOf<CompressedData<mozilla::Utf8Unit>,
                       CompressedData<char16_t>>
       pendingCompressed_;
 
   
-  UniqueChars filename_;
-
-  UniqueTwoByteChars displayURL_;
-  UniqueTwoByteChars sourceMapURL_;
-  bool mutedErrors_;
-
-  
-  
-  
-  uint32_t introductionOffset_;
-
-  
-  
-  
-  uint32_t parameterListEnd_;
+  UniqueChars filename_ = nullptr;
 
   
   
@@ -629,27 +623,15 @@ class ScriptSource {
   
   
   
-  UniqueChars introducerFilename_;
+  UniqueChars introducerFilename_ = nullptr;
+
+  UniqueTwoByteChars displayURL_ = nullptr;
+  UniqueTwoByteChars sourceMapURL_ = nullptr;
 
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const char* introductionType_;
-
-  
-  
-  
-  UniquePtr<XDRIncrementalEncoder> xdrEncoder_;
+  UniquePtr<XDRIncrementalEncoder> xdrEncoder_ = nullptr;
 
   
   
@@ -662,13 +644,24 @@ class ScriptSource {
   
   
   
-  
-  
-  
-  uint32_t id_;
+  const char* introductionType_ = nullptr;
 
-  bool hasIntroductionOffset_ : 1;
-  bool containsAsmJS_ : 1;
+  
+  
+  
+  uint32_t introductionOffset_ = 0;
+
+  
+  
+  
+  uint32_t parameterListEnd_ = 0;
+
+  
+  bool mutedErrors_ = false;
+
+  
+  bool containsAsmJS_ = false;
+  bool hasIntroductionOffset_ = false;
 
   
   
@@ -698,22 +691,7 @@ class ScriptSource {
   
   static const size_t SourceDeflateLimit = 100;
 
-  explicit ScriptSource()
-      : refs(0),
-        data(SourceType(Missing())),
-        pinnedUnitsStack_(nullptr),
-        filename_(nullptr),
-        displayURL_(nullptr),
-        sourceMapURL_(nullptr),
-        mutedErrors_(false),
-        introductionOffset_(0),
-        parameterListEnd_(0),
-        introducerFilename_(nullptr),
-        introductionType_(nullptr),
-        xdrEncoder_(nullptr),
-        id_(++idCount_),
-        hasIntroductionOffset_(false),
-        containsAsmJS_(false) {}
+  explicit ScriptSource() : id_(++idCount_) {}
 
   ~ScriptSource() { MOZ_ASSERT(refs == 0); }
 
