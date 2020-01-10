@@ -2,7 +2,7 @@
 
 
 
-const ObjectClient = require("../__mocks__/object-client");
+const ObjectFront = require("../__mocks__/object-front");
 const { mountObjectInspector } = require("../test-utils");
 
 function generateDefaults(overrides) {
@@ -20,7 +20,7 @@ function generateDefaults(overrides) {
 }
 
 function mount(props) {
-  const client = { createObjectClient: grip => ObjectClient(grip) };
+  const client = { createObjectFront: grip => ObjectFront(grip) };
 
   return mountObjectInspector({
     client,

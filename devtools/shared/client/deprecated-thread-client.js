@@ -11,11 +11,7 @@ const {
 const EventEmitter = require("devtools/shared/event-emitter");
 const { ThreadStateTypes } = require("devtools/shared/client/constants");
 
-loader.lazyRequireGetter(
-  this,
-  "ObjectClient",
-  "devtools/shared/client/object-client"
-);
+loader.lazyRequireGetter(this, "ObjectFront", "devtools/shared/client/object");
 loader.lazyRequireGetter(
   this,
   "SourceFront",
@@ -302,9 +298,9 @@ ThreadClient.prototype = {
       return this._pauseGrips[grip.actor];
     }
 
-    const client = new ObjectClient(this.client, grip);
-    this._pauseGrips[grip.actor] = client;
-    return client;
+    const objectFront = new ObjectFront(this.client, grip);
+    this._pauseGrips[grip.actor] = objectFront;
+    return objectFront;
   },
 
   
@@ -313,7 +309,7 @@ ThreadClient.prototype = {
 
 
 
-  _clearObjectClients: function(gripCacheName) {
+  _clearObjectFronts: function(gripCacheName) {
     for (const id in this[gripCacheName]) {
       this[gripCacheName][id].valid = false;
     }
@@ -325,7 +321,7 @@ ThreadClient.prototype = {
 
 
   _clearPauseGrips: function() {
-    this._clearObjectClients("_pauseGrips");
+    this._clearObjectFronts("_pauseGrips");
   },
 
   
@@ -333,7 +329,7 @@ ThreadClient.prototype = {
 
 
   _clearThreadGrips: function() {
-    this._clearObjectClients("_threadGrips");
+    this._clearObjectFronts("_threadGrips");
   },
 
   

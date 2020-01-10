@@ -11,11 +11,7 @@ const {
 } = require("devtools/shared/protocol");
 const { threadSpec } = require("devtools/shared/specs/thread");
 
-loader.lazyRequireGetter(
-  this,
-  "ObjectClient",
-  "devtools/shared/client/object-client"
-);
+loader.lazyRequireGetter(this, "ObjectFront", "devtools/shared/fronts/object");
 loader.lazyRequireGetter(
   this,
   "SourceFront",
@@ -273,9 +269,9 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
       return this._pauseGrips[grip.actor];
     }
 
-    const client = new ObjectClient(this.client, grip);
-    this._pauseGrips[grip.actor] = client;
-    return client;
+    const objectFront = new ObjectFront(this.client, grip);
+    this._pauseGrips[grip.actor] = objectFront;
+    return objectFront;
   }
 
   
@@ -284,7 +280,7 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
 
 
 
-  _clearObjectClients(gripCacheName) {
+  _clearObjectFronts(gripCacheName) {
     for (const id in this[gripCacheName]) {
       this[gripCacheName][id].valid = false;
     }
@@ -296,7 +292,7 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
 
 
   _clearPauseGrips() {
-    this._clearObjectClients("_pauseGrips");
+    this._clearObjectFronts("_pauseGrips");
   }
 
   
@@ -304,7 +300,7 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
 
 
   _clearThreadGrips() {
-    this._clearObjectClients("_threadGrips");
+    this._clearObjectFronts("_threadGrips");
   }
 
   _beforePaused(packet) {

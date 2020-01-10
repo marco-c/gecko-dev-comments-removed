@@ -18,7 +18,7 @@ const {
 
 
 
-class ObjectClient extends FrontClassWithSpec(objectSpec) {
+class ObjectFront extends FrontClassWithSpec(objectSpec) {
   constructor(client, grip) {
     super(client);
     this._grip = grip;
@@ -198,5 +198,5 @@ class ObjectClient extends FrontClassWithSpec(objectSpec) {
   }
 }
 
-module.exports = ObjectClient;
-registerFront(ObjectClient);
+module.exports = ObjectFront;
+registerFront(ObjectFront);

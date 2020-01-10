@@ -184,11 +184,8 @@ function invokeGetter(
 ) {
   return async ({ dispatch, client, getState }: ThunkArg) => {
     try {
-      const objectClient = client.createObjectClient(targetGrip);
-      const result = await objectClient.getPropertyValue(
-        getterName,
-        receiverId
-      );
+      const objectFront = client.createObjectFront(targetGrip);
+      const result = await objectFront.getPropertyValue(getterName, receiverId);
       dispatch({
         type: "GETTER_INVOKED",
         data: {

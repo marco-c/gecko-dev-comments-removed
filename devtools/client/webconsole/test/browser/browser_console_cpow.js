@@ -5,7 +5,7 @@
 
 "use strict";
 
-const ObjectClient = require("devtools/shared/client/object-client");
+const ObjectFront = require("devtools/shared/fronts/object");
 
 const {
   gDevToolsBrowser,
@@ -72,12 +72,12 @@ async function testBackEnd(hud, actor) {
   
   
   
-  info("Creating an ObjectClient with: " + actor);
-  const objectClient = new ObjectClient(hud.ui.proxy.client, { actor });
+  info("Creating an ObjectFront with: " + actor);
+  const objectFront = new ObjectFront(hud.ui.proxy.client, { actor });
 
   
   
-  const prototypeAndProperties = await objectClient.getPrototypeAndProperties();
+  const prototypeAndProperties = await objectFront.getPrototypeAndProperties();
 
   
   const cpow = prototypeAndProperties.ownProperties.cpow.value;
@@ -85,7 +85,7 @@ async function testBackEnd(hud, actor) {
   is(cpow.class, "CPOW", "The CPOW grip has the right class.");
 
   
-  const objClient = new ObjectClient(hud.ui.proxy.client, cpow);
+  const objClient = new ObjectFront(hud.ui.proxy.client, cpow);
 
   let response = await objClient.getPrototypeAndProperties();
   is(

@@ -35,11 +35,7 @@ loader.lazyRequireGetter(
   "devtools/shared/fronts/root",
   true
 );
-loader.lazyRequireGetter(
-  this,
-  "ObjectClient",
-  "devtools/shared/client/object-client"
-);
+loader.lazyRequireGetter(this, "ObjectFront", "devtools/shared/fronts/object");
 loader.lazyRequireGetter(this, "Front", "devtools/shared/protocol", true);
 
 
@@ -957,8 +953,8 @@ DebuggerClient.prototype = {
 
 
 
-  createObjectClient: function(grip) {
-    return new ObjectClient(this, grip);
+  createObjectFront: function(grip) {
+    return new ObjectFront(this, grip);
   },
 
   get transport() {

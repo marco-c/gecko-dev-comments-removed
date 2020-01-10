@@ -14,7 +14,7 @@ module.exports = services =>
     thunkOptions: {
       
       client: {
-        createObjectClient: services && services.createObjectClient,
+        createObjectFront: services && services.createObjectFront,
         createLongStringClient: services && services.createLongStringClient,
         releaseActor: services && services.releaseActor,
       },

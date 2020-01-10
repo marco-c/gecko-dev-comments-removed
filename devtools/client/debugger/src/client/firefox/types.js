@@ -260,7 +260,7 @@ export type DebuggerClient = {
   connect: () => Promise<*>,
   request: (packet: Object) => Promise<*>,
   attachConsole: (actor: String, listeners: Array<*>) => Promise<*>,
-  createObjectClient: (grip: Grip) => ObjectClient,
+  createObjectFront: (grip: Grip) => ObjectFront,
   release: (actor: String) => {},
   getFrontByID: (actor: String) => { release: () => Promise<*> },
 };
@@ -337,7 +337,7 @@ export type SourceClient = {
 
 
 
-export type ObjectClient = {
+export type ObjectFront = {
   getPrototypeAndProperties: () => any,
   addWatchpoint: (
     property: string,
@@ -362,7 +362,7 @@ export type ThreadFront = {
   breakOnNext: () => Promise<*>,
   
   source: ({ actor: SourceId }) => SourceClient,
-  pauseGrip: (Grip | Function) => ObjectClient,
+  pauseGrip: (Grip | Function) => ObjectFront,
   pauseOnExceptions: (boolean, boolean) => Promise<*>,
   setBreakpoint: (BreakpointLocation, BreakpointOptions) => Promise<*>,
   removeBreakpoint: PendingLocation => Promise<*>,
