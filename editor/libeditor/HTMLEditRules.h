@@ -499,43 +499,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult IncreaseMarginToIndent(Element& aElement) {
-    return ChangeMarginStart(aElement, true);
-  }
-
-  
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult DecreaseMarginToOutdent(Element& aElement) {
-    return ChangeMarginStart(aElement, false);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult ChangeMarginStart(Element& aElement, bool aIncrease);
-
-  
-
-
-
   MOZ_CAN_RUN_SCRIPT void DocumentModifiedWorker();
 
  protected:
