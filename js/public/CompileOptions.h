@@ -215,7 +215,8 @@ class JS_PUBLIC_API ReadOnlyCompileOptions : public TransitiveCompileOptions {
 
   
   
-  void copyPODOptions(const ReadOnlyCompileOptions& rhs);
+  
+  void copyPODNonTransitiveOptions(const ReadOnlyCompileOptions& rhs);
 
  public:
   
@@ -288,25 +289,10 @@ class MOZ_STACK_CLASS JS_PUBLIC_API CompileOptions final
   Rooted<JSScript*> scriptOrModuleRoot;
 
  public:
+  
   explicit CompileOptions(JSContext* cx);
 
-  CompileOptions(JSContext* cx, const ReadOnlyCompileOptions& rhs)
-      : ReadOnlyCompileOptions(),
-        elementRoot(cx),
-        elementAttributeNameRoot(cx),
-        introductionScriptRoot(cx),
-        scriptOrModuleRoot(cx) {
-    copyPODOptions(rhs);
-
-    filename_ = rhs.filename();
-    introducerFilename_ = rhs.introducerFilename();
-    sourceMapURL_ = rhs.sourceMapURL();
-    elementRoot = rhs.element();
-    elementAttributeNameRoot = rhs.elementAttributeName();
-    introductionScriptRoot = rhs.introductionScript();
-    scriptOrModuleRoot = rhs.scriptOrModule();
-  }
-
+  
   CompileOptions(JSContext* cx, const TransitiveCompileOptions& rhs)
       : ReadOnlyCompileOptions(),
         elementRoot(cx),
@@ -322,6 +308,13 @@ class MOZ_STACK_CLASS JS_PUBLIC_API CompileOptions final
     elementAttributeNameRoot = rhs.elementAttributeName();
     introductionScriptRoot = rhs.introductionScript();
     scriptOrModuleRoot = rhs.scriptOrModule();
+  }
+
+  
+  
+  CompileOptions(JSContext* cx, const ReadOnlyCompileOptions& rhs)
+      : CompileOptions(cx, static_cast<const TransitiveCompileOptions&>(rhs)) {
+    copyPODNonTransitiveOptions(rhs);
   }
 
   JSObject* element() const override { return elementRoot; }
