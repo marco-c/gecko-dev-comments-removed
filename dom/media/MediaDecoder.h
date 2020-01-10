@@ -128,6 +128,10 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   
   
+  virtual bool HadCrossOriginRedirects() = 0;
+
+  
+  
   virtual double GetCurrentTime();
 
   

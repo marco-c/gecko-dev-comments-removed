@@ -281,6 +281,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
+  bool HadCrossOriginRedirects();
+
+  
+  
   
   
   
