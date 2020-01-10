@@ -4,8 +4,11 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "PageActions",
-                               "resource://gre/modules/PageActions.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PageActions",
+  "resource://gre/modules/PageActions.jsm"
+);
 
 
 
@@ -13,7 +16,9 @@ var rokuDevice = {
   id: "roku:ecp",
   target: "roku:ecp",
   factory: function(aService) {
-    const {RokuApp} = ChromeUtils.import("resource://gre/modules/RokuApp.jsm");
+    const { RokuApp } = ChromeUtils.import(
+      "resource://gre/modules/RokuApp.jsm"
+    );
     return new RokuApp(aService);
   },
   types: ["video/mp4"],
@@ -24,7 +29,9 @@ var mediaPlayerDevice = {
   id: "media:router",
   target: "media:router",
   factory: function(aService) {
-    const {MediaPlayerApp} = ChromeUtils.import("resource://gre/modules/MediaPlayerApp.jsm");
+    const { MediaPlayerApp } = ChromeUtils.import(
+      "resource://gre/modules/MediaPlayerApp.jsm"
+    );
     return new MediaPlayerApp(aService);
   },
   types: ["video/mp4", "video/webm", "application/x-mpegurl"],
@@ -104,7 +111,12 @@ var CastingApps = {
     BrowserApp.deck.addEventListener("ended", this, true);
     BrowserApp.deck.addEventListener("MozAutoplayMediaBlocked", this, true);
     
-    BrowserApp.deck.addEventListener("MozNoControlsVideoBindingAttached", this, true, true);
+    BrowserApp.deck.addEventListener(
+      "MozNoControlsVideoBindingAttached",
+      this,
+      true,
+      true
+    );
   },
 
   _mirrorStarted: function(stopMirrorCallback) {
@@ -113,11 +125,9 @@ var CastingApps = {
     NativeWindow.menu.update(this.mirrorStopMenuId, { visible: true });
   },
 
-  serviceAdded: function(aService) {
-  },
+  serviceAdded: function(aService) {},
 
-  serviceLost: function(aService) {
-  },
+  serviceLost: function(aService) {},
 
   isCastingEnabled: function isCastingEnabled() {
     return Services.prefs.getBoolPref("browser.casting.enabled");
@@ -180,16 +190,22 @@ var CastingApps = {
         let video = aEvent.target;
         if (video instanceof HTMLVideoElement) {
           
-          this._updatePageActionForVideo(aEvent.type === "playing" ? video : null);
+          this._updatePageActionForVideo(
+            aEvent.type === "playing" ? video : null
+          );
         }
         break;
       }
       case "MozAutoplayMediaBlocked": {
         if (this._bound && this._bound.has(aEvent.target)) {
-          aEvent.target.dispatchEvent(new aEvent.target.ownerGlobal.CustomEvent("MozNoControlsBlockedVideo"));
+          aEvent.target.dispatchEvent(
+            new aEvent.target.ownerGlobal.CustomEvent(
+              "MozNoControlsBlockedVideo"
+            )
+          );
         } else {
           if (!this._blocked) {
-            this._blocked = new WeakMap;
+            this._blocked = new WeakMap();
           }
           this._blocked.set(aEvent.target, true);
         }
@@ -197,7 +213,7 @@ var CastingApps = {
       }
       case "MozNoControlsVideoBindingAttached": {
         if (!this._bound) {
-          this._bound = new WeakMap;
+          this._bound = new WeakMap();
         }
 
         let video = this._findVideoFromEventTarget(aEvent.target);
@@ -208,18 +224,21 @@ var CastingApps = {
         this._bound.set(video, true);
         if (this._blocked && this._blocked.has(video)) {
           this._blocked.delete(video);
-          video.dispatchEvent(new video.ownerGlobal.CustomEvent("MozNoControlsBlockedVideo"));
+          video.dispatchEvent(
+            new video.ownerGlobal.CustomEvent("MozNoControlsBlockedVideo")
+          );
         }
         break;
       }
     }
   },
 
-
   _findVideoFromEventTarget(aTarget) {
-    if (typeof ShadowRoot !== "undefined" &&
-        aTarget.parentNode instanceof ShadowRoot &&
-        aTarget.parentNode.host instanceof HTMLVideoElement) {
+    if (
+      typeof ShadowRoot !== "undefined" &&
+      aTarget.parentNode instanceof ShadowRoot &&
+      aTarget.parentNode.host instanceof HTMLVideoElement
+    ) {
       
       return aTarget.parentNode.host;
     }
@@ -234,11 +253,19 @@ var CastingApps = {
 
   _sendEventToVideo: function _sendEventToVideo(aElement, aData) {
     let event = aElement.ownerDocument.createEvent("CustomEvent");
-    event.initCustomEvent("media-videoCasting", false, true, JSON.stringify(aData));
+    event.initCustomEvent(
+      "media-videoCasting",
+      false,
+      true,
+      JSON.stringify(aData)
+    );
     aElement.dispatchEvent(event);
   },
 
-  handleVideoBindingAttached: function handleVideoBindingAttached(aTab, aEvent) {
+  handleVideoBindingAttached: function handleVideoBindingAttached(
+    aTab,
+    aEvent
+  ) {
     
     
     let video = this._findVideoFromEventTarget(aEvent.target);
@@ -250,7 +277,7 @@ var CastingApps = {
       return;
     }
 
-    this.getVideo(video, 0, 0, (aBundle) => {
+    this.getVideo(video, 0, 0, aBundle => {
       
       if (aBundle) {
         this._sendEventToVideo(aBundle.element, { allow: true });
@@ -279,7 +306,9 @@ var CastingApps = {
   },
 
   allowableExtension: function(aURI, aExtensions) {
-    return (aURI instanceof Ci.nsIURL) && aExtensions.includes(aURI.fileExtension);
+    return (
+      aURI instanceof Ci.nsIURL && aExtensions.includes(aURI.fileExtension)
+    );
   },
 
   allowableMimeType: function(aType, aTypes) {
@@ -311,7 +340,12 @@ var CastingApps = {
       for (let element of elements) {
         
         let rect = element.getBoundingClientRect();
-        if (aY >= rect.top && aX >= rect.left && aY <= rect.bottom && aX <= rect.right) {
+        if (
+          aY >= rect.top &&
+          aX >= rect.left &&
+          aY <= rect.bottom &&
+          aX <= rect.right
+        ) {
           
           this._getVideo(element, types, extensions, aCallback);
           return;
@@ -337,8 +371,8 @@ var CastingApps = {
         contentPolicyType: Ci.nsIContentPolicy.TYPE_INTERNAL_VIDEO,
       });
     } catch (e) {
-     aCallback(null);
-     return;
+      aCallback(null);
+      return;
     }
 
     let listener = {
@@ -349,7 +383,11 @@ var CastingApps = {
           case 303:
             request.cancel(0);
             let location = channel.getResponseHeader("Location");
-            CastingApps._getContentTypeForURI(CastingApps.makeURI(location), aElement, aCallback);
+            CastingApps._getContentTypeForURI(
+              CastingApps.makeURI(location),
+              aElement,
+              aCallback
+            );
             break;
           default:
             aCallback(channel.contentType);
@@ -387,16 +425,31 @@ var CastingApps = {
 
     if (sourceURL) {
       
-      let sourceURI = this.makeURI(sourceURL, null, this.makeURI(aElement.baseURI));
+      let sourceURI = this.makeURI(
+        sourceURL,
+        null,
+        this.makeURI(aElement.baseURI)
+      );
       if (this.allowableExtension(sourceURI, aExtensions)) {
-        aCallback({ element: aElement, source: sourceURI.spec, poster: posterURL, sourceURI: sourceURI});
+        aCallback({
+          element: aElement,
+          source: sourceURI.spec,
+          poster: posterURL,
+          sourceURI: sourceURI,
+        });
         return;
       }
 
       if (aElement.type) {
         
         if (this.allowableMimeType(aElement.type, aTypes)) {
-          aCallback({ element: aElement, source: sourceURI.spec, poster: posterURL, sourceURI: sourceURI, type: aElement.type });
+          aCallback({
+            element: aElement,
+            source: sourceURI.spec,
+            poster: posterURL,
+            sourceURI: sourceURI,
+            type: aElement.type,
+          });
           return;
         }
       }
@@ -409,19 +462,35 @@ var CastingApps = {
     
     let sourceNodes = aElement.getElementsByTagName("source");
     for (let sourceNode of sourceNodes) {
-      let sourceURI = this.makeURI(sourceNode.src, null, this.makeURI(sourceNode.baseURI));
+      let sourceURI = this.makeURI(
+        sourceNode.src,
+        null,
+        this.makeURI(sourceNode.baseURI)
+      );
 
       
       
       if (this.allowableExtension(sourceURI, aExtensions)) {
-        aCallback({ element: aElement, source: sourceURI.spec, poster: posterURL, sourceURI: sourceURI, type: sourceNode.type });
+        aCallback({
+          element: aElement,
+          source: sourceURI.spec,
+          poster: posterURL,
+          sourceURI: sourceURI,
+          type: sourceNode.type,
+        });
         return;
       }
 
       if (sourceNode.type) {
         
         if (this.allowableMimeType(sourceNode.type, aTypes)) {
-          aCallback({ element: aElement, source: sourceURI.spec, poster: posterURL, sourceURI: sourceURI, type: sourceNode.type });
+          aCallback({
+            element: aElement,
+            source: sourceURI.spec,
+            poster: posterURL,
+            sourceURI: sourceURI,
+            type: sourceNode.type,
+          });
           return;
         }
       }
@@ -432,13 +501,19 @@ var CastingApps = {
 
     
     
-    var _getContentTypeForURIs = (aURIs) => {
+    var _getContentTypeForURIs = aURIs => {
       
       let sourceURI = aURIs.pop();
-      this._getContentTypeForURI(sourceURI, aElement, (aType) => {
+      this._getContentTypeForURI(sourceURI, aElement, aType => {
         if (this.allowableMimeType(aType, aTypes)) {
           
-          aCallback({ element: aElement, source: sourceURI.spec, poster: posterURL, sourceURI: sourceURI, type: aType });
+          aCallback({
+            element: aElement,
+            source: sourceURI.spec,
+            poster: posterURL,
+            sourceURI: sourceURI,
+            type: aType,
+          });
         } else if (aURIs.length > 0) {
           
           _getContentTypeForURIs(aURIs);
@@ -473,7 +548,12 @@ var CastingApps = {
       for (let element of elements) {
         
         let rect = element.getBoundingClientRect();
-        if (aY >= rect.top && aX >= rect.left && aY <= rect.bottom && aX <= rect.right) {
+        if (
+          aY >= rect.top &&
+          aX >= rect.left &&
+          aY <= rect.bottom &&
+          aX <= rect.right
+        ) {
           
           return element.mozAllowCasting;
         }
@@ -487,8 +567,9 @@ var CastingApps = {
     matches: function(aElement, aX, aY) {
       
       
-      if (SimpleServiceDiscovery.services.length == 0)
+      if (SimpleServiceDiscovery.services.length == 0) {
         return false;
+      }
       return CastingApps.isVideoCastable(aElement, aX, aY);
     },
   },
@@ -514,28 +595,28 @@ var CastingApps = {
   },
 
   _findCastableVideo: function _findCastableVideo(aBrowser) {
-      if (!aBrowser) {
-        return null;
+    if (!aBrowser) {
+      return null;
+    }
+
+    
+    
+    let castableVideo = null;
+    let videos = aBrowser.contentDocument.querySelectorAll("video");
+    for (let video of videos) {
+      if (video.mozIsCasting) {
+        
+        return video;
       }
 
-      
-      
-      let castableVideo = null;
-      let videos = aBrowser.contentDocument.querySelectorAll("video");
-      for (let video of videos) {
-        if (video.mozIsCasting) {
-          
-          return video;
-        }
-
-        if (!video.paused && video.mozAllowCasting) {
-          
-          castableVideo = video;
-        }
+      if (!video.paused && video.mozAllowCasting) {
+        
+        castableVideo = video;
       }
+    }
 
-      
-      return castableVideo;
+    
+    return castableVideo;
   },
 
   _updatePageActionForTab: function _updatePageActionForTab(aTab, aEvent) {
@@ -568,7 +649,10 @@ var CastingApps = {
     }
 
     
-    if (BrowserApp.selectedTab != BrowserApp.getTabForWindow(aVideo.ownerGlobal.top)) {
+    if (
+      BrowserApp.selectedTab !=
+      BrowserApp.getTabForWindow(aVideo.ownerGlobal.top)
+    ) {
       return;
     }
 
@@ -616,12 +700,15 @@ var CastingApps = {
     let prompt = new Prompt({
       window: aWindow,
       title: Strings.browser.GetStringFromName("casting.sendToDevice"),
-    }).setSingleChoiceItems(items).show(function(data) {
-      let selected = data.button;
-      let service = selected == -1 ? null : filteredServices[selected];
-      if (aCallback)
-        aCallback(service);
-    });
+    })
+      .setSingleChoiceItems(items)
+      .show(function(data) {
+        let selected = data.button;
+        let service = selected == -1 ? null : filteredServices[selected];
+        if (aCallback) {
+          aCallback(service);
+        }
+      });
   },
 
   handleContextMenu: function(aElement, aX, aY) {
@@ -641,55 +728,64 @@ var CastingApps = {
     }
 
     function filterFunc(aService) {
-      return this.allowableExtension(aVideo.sourceURI, aService.extensions) || this.allowableMimeType(aVideo.type, aService.types);
+      return (
+        this.allowableExtension(aVideo.sourceURI, aService.extensions) ||
+        this.allowableMimeType(aVideo.type, aService.types)
+      );
     }
 
-    this.prompt(aVideo.element.ownerGlobal, aService => {
-      if (!aService)
-        return;
-
-      
-      let app = SimpleServiceDiscovery.findAppForService(aService);
-      if (!app)
-        return;
-
-      if (aVideo.element) {
-        aVideo.title = aVideo.element.ownerGlobal.top.document.title;
+    this.prompt(
+      aVideo.element.ownerGlobal,
+      aService => {
+        if (!aService) {
+          return;
+        }
 
         
-        if (!aVideo.element.paused) {
-          aVideo.element.pause();
+        let app = SimpleServiceDiscovery.findAppForService(aService);
+        if (!app) {
+          return;
         }
-      }
 
-      app.stop(() => {
-        app.start(aStarted => {
-          if (!aStarted) {
-            dump("CastingApps: Unable to start app");
-            return;
+        if (aVideo.element) {
+          aVideo.title = aVideo.element.ownerGlobal.top.document.title;
+
+          
+          if (!aVideo.element.paused) {
+            aVideo.element.pause();
           }
+        }
 
-          app.remoteMedia(aRemoteMedia => {
-            if (!aRemoteMedia) {
-              dump("CastingApps: Failed to create remotemedia");
+        app.stop(() => {
+          app.start(aStarted => {
+            if (!aStarted) {
+              dump("CastingApps: Unable to start app");
               return;
             }
 
-            this.session = {
-              service: aService,
-              app: app,
-              remoteMedia: aRemoteMedia,
-              data: {
-                title: aVideo.title,
-                source: aVideo.source,
-                poster: aVideo.poster,
-              },
-              videoRef: Cu.getWeakReference(aVideo.element),
-            };
-          }, this);
+            app.remoteMedia(aRemoteMedia => {
+              if (!aRemoteMedia) {
+                dump("CastingApps: Failed to create remotemedia");
+                return;
+              }
+
+              this.session = {
+                service: aService,
+                app: app,
+                remoteMedia: aRemoteMedia,
+                data: {
+                  title: aVideo.title,
+                  source: aVideo.source,
+                  poster: aVideo.poster,
+                },
+                videoRef: Cu.getWeakReference(aVideo.element),
+              };
+            }, this);
+          });
         });
-      });
-    }, filterFunc.bind(this));
+      },
+      filterFunc.bind(this)
+    );
   },
 
   closeExternal: function() {
@@ -724,8 +820,8 @@ var CastingApps = {
 
     aRemoteMedia.load(this.session.data);
     GlobalEventDispatcher.sendRequest({
-        type: "Casting:Started",
-        device: this.session.service.friendlyName,
+      type: "Casting:Started",
+      device: this.session.service.friendlyName,
     });
 
     let video = this.session.videoRef.get();

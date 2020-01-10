@@ -1,7 +1,7 @@
 
 
-var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-var {Task} = ChromeUtils.import("resource://testing-common/Task.jsm");
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var { Task } = ChromeUtils.import("resource://testing-common/Task.jsm");
 
 
 
@@ -16,7 +16,7 @@ var {Task} = ChromeUtils.import("resource://testing-common/Task.jsm");
 
 
 
-var addTestEngines = Task.async(function* (aItems) {
+var addTestEngines = Task.async(function*(aItems) {
   let engines = [];
 
   for (let item of aItems) {

@@ -4,7 +4,7 @@
 "use strict";
 
 var Cm = Components.manager;
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const VKB_ENTER_KEY = 13; 
 const INITIAL_PAGE_DELAY = 500; 
@@ -13,9 +13,12 @@ const PAGE_SCROLL_TRIGGER = 200;
 const FILTER_CHANGE_TRIGGER = 200; 
 const INNERHTML_VALUE_DELAY = 100; 
 
-var gStringBundle = Services.strings.createBundle("chrome://browser/locale/config.properties");
-var gClipboardHelper = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper);
-
+var gStringBundle = Services.strings.createBundle(
+  "chrome://browser/locale/config.properties"
+);
+var gClipboardHelper = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(
+  Ci.nsIClipboardHelper
+);
 
 
 
@@ -25,7 +28,6 @@ var gClipboardHelper = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci
 
 
 var NewPrefDialog = {
-
   _prefsShield: null,
 
   _newPrefsDialog: null,
@@ -80,16 +82,22 @@ var NewPrefDialog = {
   
   
   _updatePositiveButton: function AC_updatePositiveButton(aPrefName) {
-    this._positiveButton.textContent = gStringBundle.GetStringFromName("newPref.createButton");
+    this._positiveButton.textContent = gStringBundle.GetStringFromName(
+      "newPref.createButton"
+    );
     this._positiveButton.setAttribute("disabled", true);
     if (aPrefName == "") {
       return;
     }
 
     
-    let item = AboutConfig._list.filter(i => { return i.name == aPrefName; });
+    let item = AboutConfig._list.filter(i => {
+      return i.name == aPrefName;
+    });
     if (item.length) {
-      this._positiveButton.textContent = gStringBundle.GetStringFromName("newPref.changeButton");
+      this._positiveButton.textContent = gStringBundle.GetStringFromName(
+        "newPref.changeButton"
+      );
     } else {
       this._positiveButton.removeAttribute("disabled");
     }
@@ -134,8 +142,9 @@ var NewPrefDialog = {
   
   handleKeypress: function AC_handleKeypress(aEvent) {
     
-    if (aEvent.keyCode == VKB_ENTER_KEY)
+    if (aEvent.keyCode == VKB_ENTER_KEY) {
       aEvent.target.blur();
+    }
   },
 
   
@@ -147,13 +156,22 @@ var NewPrefDialog = {
 
     switch (this.type) {
       case "boolean":
-        Services.prefs.setBoolPref(this._prefNameInputElt.value, !!(this._booleanValue.value == "true"));
+        Services.prefs.setBoolPref(
+          this._prefNameInputElt.value,
+          !!(this._booleanValue.value == "true")
+        );
         break;
       case "string":
-        Services.prefs.setCharPref(this._prefNameInputElt.value, this._stringValue.value);
+        Services.prefs.setCharPref(
+          this._prefNameInputElt.value,
+          this._stringValue.value
+        );
         break;
       case "int":
-        Services.prefs.setIntPref(this._prefNameInputElt.value, this._intValue.value);
+        Services.prefs.setIntPref(
+          this._prefNameInputElt.value,
+          this._intValue.value
+        );
         break;
     }
 
@@ -176,7 +194,8 @@ var NewPrefDialog = {
   
   
   toggleBoolValue: function AC_toggleBoolValue() {
-    this._booleanValue.value = (this._booleanValue.value == "true" ? "false" : "true");
+    this._booleanValue.value =
+      this._booleanValue.value == "true" ? "false" : "true";
   },
 };
 
@@ -187,9 +206,7 @@ var NewPrefDialog = {
 
 
 
-
 var AboutConfig = {
-
   contextMenuLINode: null,
   filterInput: null,
   _filterPrevInput: null,
@@ -205,7 +222,7 @@ var AboutConfig = {
     this._loadingContainer = document.getElementById("loading-container");
 
     let list = Services.prefs.getChildList("");
-    this._list = list.sort().map( function AC_getMapPref(aPref) {
+    this._list = list.sort().map(function AC_getMapPref(aPref) {
       return new Pref(aPref);
     }, this);
 
@@ -286,12 +303,17 @@ var AboutConfig = {
   
   _addMorePrefsToContainer: function AC_addMorePrefsToContainer() {
     
-    let filterExp = this.filterInput.value ?
-      new RegExp(this.filterInput.value, "i") : null;
+    let filterExp = this.filterInput.value
+      ? new RegExp(this.filterInput.value, "i")
+      : null;
 
     
     let prefsBuffer = [];
-    for (let i = 0; i < this._list.length && prefsBuffer.length < PREFS_BUFFER_MAX; i++) {
+    for (
+      let i = 0;
+      i < this._list.length && prefsBuffer.length < PREFS_BUFFER_MAX;
+      i++
+    ) {
       if (!this._list[i].li && this._list[i].test(filterExp)) {
         prefsBuffer.push(this._list[i]);
       }
@@ -323,13 +345,16 @@ var AboutConfig = {
 
   
   onScroll: function AC_onScroll(aEvent) {
-    if (this._prefsContainer.scrollHeight - (window.pageYOffset + window.innerHeight) < PAGE_SCROLL_TRIGGER) {
+    if (
+      this._prefsContainer.scrollHeight -
+        (window.pageYOffset + window.innerHeight) <
+      PAGE_SCROLL_TRIGGER
+    ) {
       if (!this._filterChangeTimer) {
         this._addMorePrefsToContainer();
       }
     }
   },
-
 
   
   get selected() {
@@ -358,8 +383,9 @@ var AboutConfig = {
 
   
   handleKeypress: function AC_handleKeypress(aEvent) {
-    if (aEvent.keyCode == VKB_ENTER_KEY)
+    if (aEvent.keyCode == VKB_ENTER_KEY) {
       aEvent.target.blur();
+    }
   },
 
   
@@ -478,21 +504,25 @@ var AboutConfig = {
     }
 
     
-    let item = document.querySelector(".pref-item[name=\"" + CSS.escape(pref.name) + "\"]");
+    let item = document.querySelector(
+      '.pref-item[name="' + CSS.escape(pref.name) + '"]'
+    );
     if (item) {
       item.setAttribute("value", pref.value);
       let input = item.querySelector("input");
       input.setAttribute("value", pref.value);
       input.value = pref.value;
 
-      pref.default ?
-        item.querySelector(".reset").setAttribute("disabled", "true") :
-        item.querySelector(".reset").removeAttribute("disabled");
+      pref.default
+        ? item.querySelector(".reset").setAttribute("disabled", "true")
+        : item.querySelector(".reset").removeAttribute("disabled");
       return;
     }
 
     
-    let anyWhere = this._list.filter(i => { return i.name == pref.name; });
+    let anyWhere = this._list.filter(i => {
+      return i.name == pref.name;
+    });
     if (!anyWhere.length) {
       document.location.reload();
     }
@@ -508,7 +538,6 @@ var AboutConfig = {
     }
   },
 };
-
 
 
 
@@ -580,18 +609,14 @@ Pref.prototype = {
       this.li.setAttribute("name", this.name);
 
       
-      this.li.addEventListener("click",
-        function(aEvent) {
-          AboutConfig.selected = AboutConfig.getLINodeForEvent(aEvent);
-        }
-      );
+      this.li.addEventListener("click", function(aEvent) {
+        AboutConfig.selected = AboutConfig.getLINodeForEvent(aEvent);
+      });
 
       
-      this.li.addEventListener("contextmenu",
-        function(aEvent) {
-          AboutConfig.contextMenuLINode = AboutConfig.getLINodeForEvent(aEvent);
-        }
-      );
+      this.li.addEventListener("contextmenu", function(aEvent) {
+        AboutConfig.contextMenuLINode = AboutConfig.getLINodeForEvent(aEvent);
+      });
 
       this.li.setAttribute("contextmenu", "prefs-context-menu");
 
@@ -623,7 +648,9 @@ Pref.prototype = {
       resetButton.addEventListener("click", function(event) {
         AboutConfig.resetDefaultPref(event);
       });
-      resetButton.textContent = gStringBundle.GetStringFromName("pref.resetButton");
+      resetButton.textContent = gStringBundle.GetStringFromName(
+        "pref.resetButton"
+      );
       prefItemLine.appendChild(resetButton);
 
       let toggleButton = document.createElement("div");
@@ -631,7 +658,9 @@ Pref.prototype = {
       toggleButton.addEventListener("click", function(event) {
         AboutConfig.toggleBoolPref(event);
       });
-      toggleButton.textContent = gStringBundle.GetStringFromName("pref.toggleButton");
+      toggleButton.textContent = gStringBundle.GetStringFromName(
+        "pref.toggleButton"
+      );
       prefItemLine.appendChild(toggleButton);
 
       let upButton = document.createElement("div");
@@ -694,4 +723,3 @@ Pref.prototype = {
     }
   },
 };
-

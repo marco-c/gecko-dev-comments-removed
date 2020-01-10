@@ -4,7 +4,9 @@
 
 
 if (!("SpecialPowers" in window)) {
-  dump("Robocop robocop_testharness.js found SpecialPowers unavailable: reloading...\n");
+  dump(
+    "Robocop robocop_testharness.js found SpecialPowers unavailable: reloading...\n"
+  );
   setTimeout(() => {
     window.location.reload();
   }, 1000);
@@ -19,19 +21,36 @@ function _evalURI(uri, sandbox) {
   
   let req = new XMLHttpRequest();
 
-  let baseURI = SpecialPowers.Services.io
-                             .newURI(window.document.baseURI, window.document.characterSet);
-  let theURI = SpecialPowers.Services.io
-                            .newURI(uri, window.document.characterSet, baseURI);
+  let baseURI = SpecialPowers.Services.io.newURI(
+    window.document.baseURI,
+    window.document.characterSet
+  );
+  let theURI = SpecialPowers.Services.io.newURI(
+    uri,
+    window.document.characterSet,
+    baseURI
+  );
 
   
   
-  req.open("GET", theURI.spec + ((/\?/).test(theURI.spec) ? "&slug=" : "?slug=") + (new Date()).getTime(), false);
+  req.open(
+    "GET",
+    theURI.spec +
+      (/\?/.test(theURI.spec) ? "&slug=" : "?slug=") +
+      new Date().getTime(),
+    false
+  );
   req.setRequestHeader("Cache-Control", "no-cache");
   req.setRequestHeader("Pragma", "no-cache");
   req.send();
 
-  return SpecialPowers.Cu.evalInSandbox(req.responseText, sandbox, "1.8", uri, 1);
+  return SpecialPowers.Cu.evalInSandbox(
+    req.responseText,
+    sandbox,
+    "1.8",
+    uri,
+    1
+  );
 }
 
 
@@ -45,10 +64,7 @@ function _evalURI(uri, sandbox) {
 
 
 function testOneFile(uri) {
-  let HEAD_JS = [
-    "head.js",
-    "robocop_head.js",
-  ];
+  let HEAD_JS = ["head.js", "robocop_head.js"];
 
   
   
@@ -56,12 +72,14 @@ function testOneFile(uri) {
   
   
   
-  let principal = SpecialPowers.Cc["@mozilla.org/systemprincipal;1"]
-                               .createInstance(SpecialPowers.Ci.nsIPrincipal);
+  let principal = SpecialPowers.Cc[
+    "@mozilla.org/systemprincipal;1"
+  ].createInstance(SpecialPowers.Ci.nsIPrincipal);
 
-  let testScope =
-    SpecialPowers.Cu.Sandbox(principal, { sandboxName: uri,
-                                          wantGlobalProperties: ["ChromeUtils"] });
+  let testScope = SpecialPowers.Cu.Sandbox(principal, {
+    sandboxName: uri,
+    wantGlobalProperties: ["ChromeUtils"],
+  });
 
   
   testScope.SpecialPowers = SpecialPowers;
@@ -71,10 +89,7 @@ function testOneFile(uri) {
   
   
   testScope.dump = function(str) {
-    let message = { type: "Robocop:Java",
-                    innerType: "progress",
-                    message: str,
-                  };
+    let message = { type: "Robocop:Java", innerType: "progress", message: str };
     sendMessageToJava(message);
   };
 

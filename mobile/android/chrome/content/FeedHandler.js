@@ -10,11 +10,13 @@ var FeedHandler = {
   _contentTypes: null,
 
   getContentHandlers: function fh_getContentHandlers(contentType) {
-    if (!this._contentTypes)
+    if (!this._contentTypes) {
       this.loadContentHandlers();
+    }
 
-    if (!(contentType in this._contentTypes))
+    if (!(contentType in this._contentTypes)) {
       return [];
+    }
 
     return this._contentTypes[contentType];
   },
@@ -22,36 +24,50 @@ var FeedHandler = {
   loadContentHandlers: function fh_loadContentHandlers() {
     this._contentTypes = {};
 
-    let kids = Services.prefs.getBranch(this.PREF_CONTENTHANDLERS_BRANCH).getChildList("");
+    let kids = Services.prefs
+      .getBranch(this.PREF_CONTENTHANDLERS_BRANCH)
+      .getChildList("");
 
     
     let nums = [];
     for (let i = 0; i < kids.length; i++) {
       let match = /^(\d+)\.uri$/.exec(kids[i]);
-      if (!match)
+      if (!match) {
         continue;
-      else
+      } else {
         nums.push(match[1]);
+      }
     }
 
     
-    nums.sort(function(a, b) { return a - b; });
+    nums.sort(function(a, b) {
+      return a - b;
+    });
 
     
     for (let i = 0; i < nums.length; i++) {
-      let branch = Services.prefs.getBranch(this.PREF_CONTENTHANDLERS_BRANCH + nums[i] + ".");
+      let branch = Services.prefs.getBranch(
+        this.PREF_CONTENTHANDLERS_BRANCH + nums[i] + "."
+      );
       let vals = branch.getChildList("");
-      if (vals.length == 0)
+      if (vals.length == 0) {
         return;
+      }
 
       try {
         let type = branch.getCharPref("type");
         let uri = branch.getComplexValue("uri", Ci.nsIPrefLocalizedString).data;
-        let title = branch.getComplexValue("title", Ci.nsIPrefLocalizedString).data;
+        let title = branch.getComplexValue("title", Ci.nsIPrefLocalizedString)
+          .data;
 
-        if (!(type in this._contentTypes))
+        if (!(type in this._contentTypes)) {
           this._contentTypes[type] = [];
-        this._contentTypes[type].push({ contentType: type, uri: uri, name: title });
+        }
+        this._contentTypes[type].push({
+          contentType: type,
+          uri: uri,
+          name: title,
+        });
       } catch (ex) {}
     }
   },
@@ -59,13 +75,15 @@ var FeedHandler = {
   onEvent: function fh_onEvent(event, args, callback) {
     if (event === "Feeds:Subscribe") {
       let tab = BrowserApp.getTabForId(args.tabId);
-      if (!tab)
+      if (!tab) {
         return;
+      }
 
       let browser = tab.browser;
       let feeds = browser.feeds;
-      if (feeds == null)
+      if (feeds == null) {
         return;
+      }
 
       
       let feedIndex = -1;
@@ -73,15 +91,20 @@ var FeedHandler = {
         let p = new Prompt({
           window: browser.contentWindow,
           title: Strings.browser.GetStringFromName("feedHandler.chooseFeed"),
-        }).setSingleChoiceItems(feeds.map(function(feed) {
-          return { label: feed.title || feed.href };
-        })).show(data => {
-          feedIndex = data.button;
-          if (feedIndex == -1)
-            return;
+        })
+          .setSingleChoiceItems(
+            feeds.map(function(feed) {
+              return { label: feed.title || feed.href };
+            })
+          )
+          .show(data => {
+            feedIndex = data.button;
+            if (feedIndex == -1) {
+              return;
+            }
 
-          this.loadFeed(feeds[feedIndex], browser);
-        });
+            this.loadFeed(feeds[feedIndex], browser);
+          });
         return;
       }
 
@@ -94,25 +117,31 @@ var FeedHandler = {
 
     
     let handlers = this.getContentHandlers(this.TYPE_MAYBE_FEED);
-    if (handlers.length == 0)
+    if (handlers.length == 0) {
       return;
+    }
 
     
     let p = new Prompt({
       window: aBrowser.contentWindow,
       title: Strings.browser.GetStringFromName("feedHandler.subscribeWith"),
-    }).setSingleChoiceItems(handlers.map(function(handler) {
-      return { label: handler.name };
-    })).show(function(data) {
-      if (data.button == -1)
-        return;
+    })
+      .setSingleChoiceItems(
+        handlers.map(function(handler) {
+          return { label: handler.name };
+        })
+      )
+      .show(function(data) {
+        if (data.button == -1) {
+          return;
+        }
 
-      
-      let readerURL = handlers[data.button].uri;
-      readerURL = readerURL.replace(/%s/gi, encodeURIComponent(feedURL));
+        
+        let readerURL = handlers[data.button].uri;
+        readerURL = readerURL.replace(/%s/gi, encodeURIComponent(feedURL));
 
-      
-      BrowserApp.addTab(readerURL, { parentId: BrowserApp.selectedTab.id });
-    });
+        
+        BrowserApp.addTab(readerURL, { parentId: BrowserApp.selectedTab.id });
+      });
   },
 };

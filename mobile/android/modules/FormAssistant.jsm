@@ -5,7 +5,9 @@
 
 var EXPORTED_SYMBOLS = ["FormAssistant"];
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   FormHistory: "resource://gre/modules/FormHistory.jsm",
@@ -90,14 +92,14 @@ var FormAssistant = {
 
   notifyInvalidSubmit: function(aFormElement, aInvalidElements) {
     if (!aInvalidElements.length) {
-        return;
+      return;
     }
 
     
     let currentElement = aInvalidElements[0];
     let focused = this.focusedElement;
     if (focused && focused.ownerGlobal.top !== currentElement.ownerGlobal.top) {
-        return;
+      return;
     }
 
     
@@ -113,12 +115,17 @@ var FormAssistant = {
       case "focus": {
         let currentElement = aEvent.target;
         
-        if (this._showValidationMessage(currentElement) ||
-            this._isAutoComplete(currentElement)) {
+        if (
+          this._showValidationMessage(currentElement) ||
+          this._isAutoComplete(currentElement)
+        ) {
           this._currentFocusedElement = Cu.getWeakReference(currentElement);
           
-          currentElement.ownerGlobal.addEventListener(
-              "resize", this, {capture: true, mozSystemGroup: true, once: true});
+          currentElement.ownerGlobal.addEventListener("resize", this, {
+            capture: true,
+            mozSystemGroup: true,
+            once: true,
+          });
         }
         break;
       }
@@ -168,9 +175,11 @@ var FormAssistant = {
         
         
         let checkResultsInput = hasResults => {
-          if (hasResults ||
-              currentElement !== this.focusedElement ||
-              this._showValidationMessage(currentElement)) {
+          if (
+            hasResults ||
+            currentElement !== this.focusedElement ||
+            this._showValidationMessage(currentElement)
+          ) {
             return;
           }
           
@@ -187,8 +196,11 @@ var FormAssistant = {
           
           this.observe(null, "PanZoom:StateChange", this._lastPanZoomState);
           
-          focused.ownerGlobal.addEventListener(
-              "resize", this, {capture: true, mozSystemGroup: true, once: true});
+          focused.ownerGlobal.addEventListener("resize", this, {
+            capture: true,
+            mozSystemGroup: true,
+            once: true,
+          });
         }
         break;
       }
@@ -197,11 +209,13 @@ var FormAssistant = {
 
   
   _isAutoComplete: function(aElement) {
-    return (ChromeUtils.getClassName(aElement) === "HTMLInputElement") &&
-           !aElement.readOnly &&
-           !this._isDisabledElement(aElement) &&
-           (aElement.type !== "password") &&
-           (aElement.autocomplete !== "off");
+    return (
+      ChromeUtils.getClassName(aElement) === "HTMLInputElement" &&
+      !aElement.readOnly &&
+      !this._isDisabledElement(aElement) &&
+      aElement.type !== "password" &&
+      aElement.autocomplete !== "off"
+    );
   },
 
   
@@ -209,8 +223,9 @@ var FormAssistant = {
   _getAutoCompleteSuggestions: function(aSearchString, aElement, aCallback) {
     
     if (!this._formAutoCompleteService) {
-      this._formAutoCompleteService = Cc["@mozilla.org/satchel/form-autocomplete;1"]
-          .getService(Ci.nsIFormAutoComplete);
+      this._formAutoCompleteService = Cc[
+        "@mozilla.org/satchel/form-autocomplete;1"
+      ].getService(Ci.nsIFormAutoComplete);
     }
 
     let resultsAvailable = function(results) {
@@ -219,8 +234,9 @@ var FormAssistant = {
         let value = results.getValueAt(i);
 
         
-        if (value == aSearchString)
+        if (value == aSearchString) {
           continue;
+        }
 
         
         suggestions.push({ label: value, value: value });
@@ -228,9 +244,14 @@ var FormAssistant = {
       aCallback(suggestions);
     };
 
-    this._formAutoCompleteService.autoCompleteSearchAsync(aElement.name || aElement.id,
-                                                          aSearchString, aElement, null,
-                                                          null, resultsAvailable);
+    this._formAutoCompleteService.autoCompleteSearchAsync(
+      aElement.name || aElement.id,
+      aSearchString,
+      aElement,
+      null,
+      null,
+      resultsAvailable
+    );
   },
 
   
@@ -239,7 +260,10 @@ var FormAssistant = {
 
 
   _getListSuggestions: function(aElement) {
-    if (ChromeUtils.getClassName(aElement) !== "HTMLInputElement" || !aElement.list) {
+    if (
+      ChromeUtils.getClassName(aElement) !== "HTMLInputElement" ||
+      !aElement.list
+    ) {
       return [];
     }
 
@@ -259,7 +283,7 @@ var FormAssistant = {
         label = item.text;
       }
 
-      if (filter && !(label.toLowerCase().includes(lowerFieldValue))) {
+      if (filter && !label.toLowerCase().includes(lowerFieldValue)) {
         continue;
       }
       suggestions.push({ label: label, value: item.value });
@@ -278,7 +302,7 @@ var FormAssistant = {
       return;
     }
 
-    let isEmpty = (aElement.value.length === 0);
+    let isEmpty = aElement.value.length === 0;
 
     let resultsAvailable = autoCompleteSuggestions => {
       
@@ -292,31 +316,40 @@ var FormAssistant = {
         return;
       }
 
-      GeckoViewUtils.getDispatcherForWindow(aElement.ownerGlobal).sendRequest({
-        type: "FormAssist:AutoCompleteResult",
-        suggestions: suggestions,
-        rect: this._getBoundingContentRect(aElement),
-        isEmpty: isEmpty,
-      }, {
-        onSuccess: response => this._onPopupResponse(aElement, response),
-        onError: error => Cu.reportError(error),
-      });
+      GeckoViewUtils.getDispatcherForWindow(aElement.ownerGlobal).sendRequest(
+        {
+          type: "FormAssist:AutoCompleteResult",
+          suggestions: suggestions,
+          rect: this._getBoundingContentRect(aElement),
+          isEmpty: isEmpty,
+        },
+        {
+          onSuccess: response => this._onPopupResponse(aElement, response),
+          onError: error => Cu.reportError(error),
+        }
+      );
 
       aCallback(true);
     };
 
-    this._getAutoCompleteSuggestions(aElement.value, aElement, resultsAvailable);
+    this._getAutoCompleteSuggestions(
+      aElement.value,
+      aElement,
+      resultsAvailable
+    );
   },
 
   
   
   _isValidateable: function(aElement) {
-    return (ChromeUtils.getClassName(aElement) === "HTMLInputElement" ||
-            ChromeUtils.getClassName(aElement) === "HTMLTextAreaElement" ||
-            ChromeUtils.getClassName(aElement) === "HTMLSelectElement" ||
-            ChromeUtils.getClassName(aElement) === "HTMLButtonElement") &&
-           aElement.matches(":-moz-ui-invalid") &&
-           aElement.validationMessage;
+    return (
+      (ChromeUtils.getClassName(aElement) === "HTMLInputElement" ||
+        ChromeUtils.getClassName(aElement) === "HTMLTextAreaElement" ||
+        ChromeUtils.getClassName(aElement) === "HTMLSelectElement" ||
+        ChromeUtils.getClassName(aElement) === "HTMLButtonElement") &&
+      aElement.matches(":-moz-ui-invalid") &&
+      aElement.validationMessage
+    );
   },
 
   
@@ -356,7 +389,7 @@ var FormAssistant = {
 
   _getBoundingContentRect: function(aElement) {
     if (!aElement) {
-      return {x: 0, y: 0, w: 0, h: 0};
+      return { x: 0, y: 0, w: 0, h: 0 };
     }
 
     let document = aElement.ownerDocument;
@@ -364,12 +397,16 @@ var FormAssistant = {
       document = document.defaultView.frameElement.ownerDocument;
     }
 
-    let scrollX = 0, scrollY = 0;
+    let scrollX = 0,
+      scrollY = 0;
     let r = aElement.getBoundingClientRect();
 
     
-    for (let frame = aElement.ownerGlobal; frame.frameElement;
-         frame = frame.parent) {
+    for (
+      let frame = aElement.ownerGlobal;
+      frame.frameElement;
+      frame = frame.parent
+    ) {
       
       let rect = frame.frameElement.getBoundingClientRect();
       let left = frame.getComputedStyle(frame.frameElement).borderLeftWidth;
@@ -382,9 +419,12 @@ var FormAssistant = {
     
     
     
-    let offsetX = {}, offsetY = {};
-    aElement.ownerGlobal.windowUtils
-        .getVisualViewportOffsetRelativeToLayoutViewport(offsetX, offsetY);
+    let offsetX = {},
+      offsetY = {};
+    aElement.ownerGlobal.windowUtils.getVisualViewportOffsetRelativeToLayoutViewport(
+      offsetX,
+      offsetY
+    );
 
     return {
       x: r.left + scrollX - offsetX.value,

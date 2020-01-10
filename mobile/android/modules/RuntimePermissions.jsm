@@ -6,8 +6,11 @@
 
 var EXPORTED_SYMBOLS = ["RuntimePermissions"];
 
-ChromeUtils.defineModuleGetter(this, "EventDispatcher",
-                               "resource://gre/modules/Messaging.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "EventDispatcher",
+  "resource://gre/modules/Messaging.jsm"
+);
 
 
 const ACCESS_COARSE_LOCATION = "android.permission.ACCESS_COARSE_LOCATION";

@@ -7,8 +7,10 @@
 
 var EXPORTED_SYMBOLS = ["MediaPlayerApp"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {EventDispatcher} = ChromeUtils.import("resource://gre/modules/Messaging.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { EventDispatcher } = ChromeUtils.import(
+  "resource://gre/modules/Messaging.jsm"
+);
 
 
 function send(type, data, callback) {
@@ -20,9 +22,9 @@ function send(type, data, callback) {
     msg[i] = data[i];
   }
 
-  EventDispatcher.instance.sendRequestForResult(msg)
-    .then(result => callback(result, null),
-          error => callback(null, error));
+  EventDispatcher.instance
+    .sendRequestForResult(msg)
+    .then(result => callback(result, null), error => callback(null, error));
 }
 
 
@@ -55,7 +57,6 @@ MediaPlayerApp.prototype = {
       callback(new RemoteMedia(this.id, listener));
     }
   },
-
 };
 
 

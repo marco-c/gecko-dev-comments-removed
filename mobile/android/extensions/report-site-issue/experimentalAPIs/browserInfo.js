@@ -6,15 +6,18 @@
 
 
 
-var {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const gParentalControls = (function() {
   if ("@mozilla.org/parental-controls-service;1" in Cc) {
-    return Cc["@mozilla.org/parental-controls-service;1"]
-           .createInstance(Ci.nsIParentalControlsService);
+    return Cc["@mozilla.org/parental-controls-service;1"].createInstance(
+      Ci.nsIParentalControlsService
+    );
   }
-  return {parentalControlsEnabled: false};
+  return { parentalControlsEnabled: false };
 })();
 
 this.browserInfo = class extends ExtensionAPI {
@@ -38,7 +41,9 @@ this.browserInfo = class extends ExtensionAPI {
           return AppConstants.MOZ_APP_VERSION;
         },
         async getBlockList() {
-          const trackingTable = Services.prefs.getCharPref("urlclassifier.trackingTable");
+          const trackingTable = Services.prefs.getCharPref(
+            "urlclassifier.trackingTable"
+          );
           
           
           return trackingTable.includes("content") ? "strict" : "basic";
@@ -56,7 +61,9 @@ this.browserInfo = class extends ExtensionAPI {
           return AppConstants.platform;
         },
         async hasTouchScreen() {
-          const gfxInfo = Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo);
+          const gfxInfo = Cc["@mozilla.org/gfx/info;1"].getService(
+            Ci.nsIGfxInfo
+          );
           return gfxInfo.getInfo().ApzTouchInput == 1;
         },
       },

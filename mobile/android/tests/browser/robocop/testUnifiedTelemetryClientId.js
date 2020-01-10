@@ -1,8 +1,8 @@
-const {ClientID} = ChromeUtils.import("resource://gre/modules/ClientID.jsm");
+const { ClientID } = ChromeUtils.import("resource://gre/modules/ClientID.jsm");
 
 var java = new JavaBridge(this);
 do_register_cleanup(() => {
-    java.disconnect();
+  java.disconnect();
 });
 do_test_pending();
 
@@ -12,37 +12,40 @@ var clientID;
 var isResetDone;
 
 function getAsyncClientId() {
-    isClientIDSet = false;
-    ClientID.getClientID().then(function(retClientID) {
-        
-        
-        
-        
-        
-        clientID = retClientID;
-        isClientIDSet = true;
-    }, function(fail) {
-        
-        
-        do_throw("Could not retrieve client ID: " + fail);
-    });
+  isClientIDSet = false;
+  ClientID.getClientID().then(
+    function(retClientID) {
+      
+      
+      
+      
+      
+      clientID = retClientID;
+      isClientIDSet = true;
+    },
+    function(fail) {
+      
+      
+      do_throw("Could not retrieve client ID: " + fail);
+    }
+  );
 }
 
 function pollGetAsyncClientId() {
-    java.asyncCall("blockingFromJsResponseString", isClientIDSet, clientID);
+  java.asyncCall("blockingFromJsResponseString", isClientIDSet, clientID);
 }
 
 function getAsyncReset() {
-    isResetDone = false;
-    ClientID._reset().then(function() {
-        isResetDone = true;
-    });
+  isResetDone = false;
+  ClientID._reset().then(function() {
+    isResetDone = true;
+  });
 }
 
 function pollGetAsyncReset() {
-    java.asyncCall("blockingFromJsResponseString", isResetDone, "");
+  java.asyncCall("blockingFromJsResponseString", isResetDone, "");
 }
 
 function endTest() {
-    do_test_finished();
+  do_test_finished();
 }

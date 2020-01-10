@@ -3,8 +3,11 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "ConsoleAPI",
-                               "resource://gre/modules/Console.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "ConsoleAPI",
+  "resource://gre/modules/Console.jsm"
+);
 
 
 
@@ -29,14 +32,14 @@ var EmbedRT = {
       return;
     }
 
-    let principal = Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal);
-
-    let sandbox = new Cu.Sandbox(principal,
-      {
-        sandboxName: scriptURL,
-        wantGlobalProperties: ["indexedDB"],
-      }
+    let principal = Cc["@mozilla.org/systemprincipal;1"].createInstance(
+      Ci.nsIPrincipal
     );
+
+    let sandbox = new Cu.Sandbox(principal, {
+      sandboxName: scriptURL,
+      wantGlobalProperties: ["indexedDB"],
+    });
 
     sandbox.console = new ConsoleAPI({ consoleID: "script/" + scriptURL });
 
@@ -44,7 +47,11 @@ var EmbedRT = {
     
     
     sandbox.__SCRIPT_URI_SPEC__ = scriptURL;
-    Cu.evalInSandbox("Components.classes['@mozilla.org/moz/jssubscript-loader;1'].createInstance(Components.interfaces.mozIJSSubScriptLoader).loadSubScript(__SCRIPT_URI_SPEC__);", sandbox, "ECMAv5");
+    Cu.evalInSandbox(
+      "Components.classes['@mozilla.org/moz/jssubscript-loader;1'].createInstance(Components.interfaces.mozIJSSubScriptLoader).loadSubScript(__SCRIPT_URI_SPEC__);",
+      sandbox,
+      "ECMAv5"
+    );
 
     this._scopes[scriptURL] = sandbox;
 
@@ -57,7 +64,9 @@ var EmbedRT = {
       try {
         sandbox.load(params);
       } catch (e) {
-        dump("Exception calling 'load' method in script: " + scriptURL + "\n" + e);
+        dump(
+          "Exception calling 'load' method in script: " + scriptURL + "\n" + e
+        );
       }
     }
   },

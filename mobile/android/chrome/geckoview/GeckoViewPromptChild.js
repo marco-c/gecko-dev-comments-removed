@@ -3,13 +3,18 @@
 
 
 
-const {GeckoViewUtils} = ChromeUtils.import("resource://gre/modules/GeckoViewUtils.jsm");
+const { GeckoViewUtils } = ChromeUtils.import(
+  "resource://gre/modules/GeckoViewUtils.jsm"
+);
 
-GeckoViewUtils.addLazyEventListener(this, ["click", "contextmenu", "DOMPopupBlocked"], {
-  handler: _ =>
-    Cc["@mozilla.org/prompter;1"].getService().wrappedJSObject,
-  options: {
-    capture: false,
-    mozSystemGroup: true,
-  },
-});
+GeckoViewUtils.addLazyEventListener(
+  this,
+  ["click", "contextmenu", "DOMPopupBlocked"],
+  {
+    handler: _ => Cc["@mozilla.org/prompter;1"].getService().wrappedJSObject,
+    options: {
+      capture: false,
+      mozSystemGroup: true,
+    },
+  }
+);

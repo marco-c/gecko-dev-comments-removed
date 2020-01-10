@@ -3,9 +3,13 @@
 
 
 
-const {GeckoViewChildModule} = ChromeUtils.import("resource://gre/modules/GeckoViewChildModule.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { GeckoViewChildModule } = ChromeUtils.import(
+  "resource://gre/modules/GeckoViewChildModule.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
@@ -23,31 +27,41 @@ class GeckoViewNavigationChild extends GeckoViewChildModule {
       addEventListener("DOMContentLoaded", this);
     }
 
-    if (Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_CONTENT) {
-      let tabchild = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                             .getInterface(Ci.nsIBrowserChild);
+    if (
+      Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_CONTENT
+    ) {
+      let tabchild = docShell
+        .QueryInterface(Ci.nsIInterfaceRequestor)
+        .getInterface(Ci.nsIBrowserChild);
       tabchild.webBrowserChrome = this;
     }
   }
 
   
   loadURI(aUri, aWhere, aFlags, aTriggeringPrincipal) {
-    debug `loadURI: uri=${aUri && aUri.spec}
+    debug`loadURI: uri=${aUri && aUri.spec}
                     where=${aWhere} flags=${aFlags}
-                    tp=${aTriggeringPrincipal && aTriggeringPrincipal.URI &&
-                         aTriggeringPrincipal.URI.spec}`;
+                    tp=${aTriggeringPrincipal &&
+                      aTriggeringPrincipal.URI &&
+                      aTriggeringPrincipal.URI.spec}`;
 
     if (!this.enabled) {
       return false;
     }
 
-    return LoadURIDelegate.load(content, this.eventDispatcher,
-                                aUri, aWhere, aFlags, aTriggeringPrincipal);
+    return LoadURIDelegate.load(
+      content,
+      this.eventDispatcher,
+      aUri,
+      aWhere,
+      aFlags,
+      aTriggeringPrincipal
+    );
   }
 
   
   handleLoadError(aUri, aError, aErrorModule) {
-    debug `handleLoadError: uri=${aUri && aUri.spec}
+    debug`handleLoadError: uri=${aUri && aUri.spec}
                              uri2=${aUri && aUri.displaySpec}
                              error=${aError}`;
 
@@ -66,22 +80,47 @@ class GeckoViewNavigationChild extends GeckoViewChildModule {
       return null;
     }
 
-    return LoadURIDelegate.handleLoadError(content, this.eventDispatcher,
-                                           aUri, aError, aErrorModule);
+    return LoadURIDelegate.handleLoadError(
+      content,
+      this.eventDispatcher,
+      aUri,
+      aError,
+      aErrorModule
+    );
   }
 
   
   onBeforeLinkTraversal(aOriginalTarget, aLinkURI, aLinkNode, aIsAppTab) {
-    debug `onBeforeLinkTraversal ${aLinkURI.displaySpec}`;
-    return BrowserUtils.onBeforeLinkTraversal(aOriginalTarget, aLinkURI, aLinkNode, aIsAppTab);
+    debug`onBeforeLinkTraversal ${aLinkURI.displaySpec}`;
+    return BrowserUtils.onBeforeLinkTraversal(
+      aOriginalTarget,
+      aLinkURI,
+      aLinkNode,
+      aIsAppTab
+    );
   }
 
   
-  shouldLoadURI(aDocShell, aURI, aReferrer, aHasPostData, aTriggeringPrincipal, aCsp) {
-    debug `shouldLoadURI ${aURI.displaySpec}`;
+  shouldLoadURI(
+    aDocShell,
+    aURI,
+    aReferrer,
+    aHasPostData,
+    aTriggeringPrincipal,
+    aCsp
+  ) {
+    debug`shouldLoadURI ${aURI.displaySpec}`;
 
     if (!E10SUtils.shouldLoadURI(aDocShell, aURI, aReferrer, aHasPostData)) {
-      E10SUtils.redirectLoad(aDocShell, aURI, aReferrer, aTriggeringPrincipal, false, null, aCsp);
+      E10SUtils.redirectLoad(
+        aDocShell,
+        aURI,
+        aReferrer,
+        aTriggeringPrincipal,
+        false,
+        null,
+        aCsp
+      );
       return false;
     }
 
@@ -90,15 +129,31 @@ class GeckoViewNavigationChild extends GeckoViewChildModule {
 
   
   shouldLoadURIInThisProcess(aURI) {
-    debug `shouldLoadURIInThisProcess ${aURI.displaySpec}`;
-    let remoteSubframes = docShell.QueryInterface(Ci.nsILoadContext).useRemoteSubframes;
+    debug`shouldLoadURIInThisProcess ${aURI.displaySpec}`;
+    let remoteSubframes = docShell.QueryInterface(Ci.nsILoadContext)
+      .useRemoteSubframes;
     return E10SUtils.shouldLoadURIInThisProcess(aURI, remoteSubframes);
   }
 
   
-  reloadInFreshProcess(aDocShell, aURI, aReferrer, aTriggeringPrincipal, aLoadFlags, aCsp) {
-    debug `reloadInFreshProcess ${aURI.displaySpec}`;
-    E10SUtils.redirectLoad(aDocShell, aURI, aReferrer, aTriggeringPrincipal, true, aLoadFlags, aCsp);
+  reloadInFreshProcess(
+    aDocShell,
+    aURI,
+    aReferrer,
+    aTriggeringPrincipal,
+    aLoadFlags,
+    aCsp
+  ) {
+    debug`reloadInFreshProcess ${aURI.displaySpec}`;
+    E10SUtils.redirectLoad(
+      aDocShell,
+      aURI,
+      aReferrer,
+      aTriggeringPrincipal,
+      true,
+      aLoadFlags,
+      aCsp
+    );
     return true;
   }
 
@@ -109,12 +164,16 @@ class GeckoViewNavigationChild extends GeckoViewChildModule {
         let target = aEvent.originalTarget;
 
         
-        if (target != content.document)
+        if (target != content.document) {
           return;
+        }
 
         let docURI = target.documentURI;
 
-        if (docURI.startsWith("about:certerror") || docURI.startsWith("about:blocked")) {
+        if (
+          docURI.startsWith("about:certerror") ||
+          docURI.startsWith("about:blocked")
+        ) {
           addEventListener("click", ErrorPageEventHandler, true);
           let listener = () => {
             removeEventListener("click", ErrorPageEventHandler, true);
@@ -130,5 +189,7 @@ class GeckoViewNavigationChild extends GeckoViewChildModule {
   }
 }
 
-const {debug, warn} = GeckoViewNavigationChild.initLogging("GeckoViewNavigation"); 
+const { debug, warn } = GeckoViewNavigationChild.initLogging(
+  "GeckoViewNavigation"
+); 
 const module = GeckoViewNavigationChild.create(this);

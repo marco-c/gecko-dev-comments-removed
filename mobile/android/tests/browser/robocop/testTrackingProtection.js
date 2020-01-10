@@ -6,8 +6,10 @@
 "use strict";
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {EventDispatcher} = ChromeUtils.import("resource://gre/modules/Messaging.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { EventDispatcher } = ChromeUtils.import(
+  "resource://gre/modules/Messaging.jsm"
+);
 
 const DTSCBN_PREF = "dom.testing.sync-content-blocking-notifications";
 
@@ -16,14 +18,30 @@ function promiseLoadEvent(browser, url, eventType = "load", runBeforeLoad) {
     do_print("Wait browser event: " + eventType);
 
     function handle(event) {
-      if (event.target != browser.contentDocument || event.target.location.href == "about:blank" || (url && event.target.location.href != url)) {
-        do_print("Skipping spurious '" + eventType + "' event" + " for " + event.target.location.href);
+      if (
+        event.target != browser.contentDocument ||
+        event.target.location.href == "about:blank" ||
+        (url && event.target.location.href != url)
+      ) {
+        do_print(
+          "Skipping spurious '" +
+            eventType +
+            "' event" +
+            " for " +
+            event.target.location.href
+        );
         return;
       }
 
       browser.removeEventListener(eventType, handle, true);
-      do_print("Browser event received: " + eventType + ". Will wait 500ms for the tracking event also.");
-      do_timeout(500, () => { resolve(event); });
+      do_print(
+        "Browser event received: " +
+          eventType +
+          ". Will wait 500ms for the tracking event also."
+      );
+      do_timeout(500, () => {
+        resolve(event);
+      });
     }
 
     browser.addEventListener(eventType, handle, true);
@@ -42,7 +60,8 @@ function promiseLoadEvent(browser, url, eventType = "load", runBeforeLoad) {
 
 var TABLE = "urlclassifier.trackingTable";
 
-var BrowserApp = Services.wm.getMostRecentWindow("navigator:browser").BrowserApp;
+var BrowserApp = Services.wm.getMostRecentWindow("navigator:browser")
+  .BrowserApp;
 
 
 
@@ -50,23 +69,43 @@ add_task(async function test_tracking_pb() {
   Services.prefs.setBoolPref(DTSCBN_PREF, true);
 
   
-  let browser = BrowserApp.addTab("about:blank", { selected: true, parentId: BrowserApp.selectedTab.id, isPrivate: true }).browser;
+  let browser = BrowserApp.addTab("about:blank", {
+    selected: true,
+    parentId: BrowserApp.selectedTab.id,
+    isPrivate: true,
+  }).browser;
   await new Promise((resolve, reject) => {
-    browser.addEventListener("load", function(event) {
-      Services.tm.dispatchToMainThread(resolve);
-    }, {capture: true, once: true});
+    browser.addEventListener(
+      "load",
+      function(event) {
+        Services.tm.dispatchToMainThread(resolve);
+      },
+      { capture: true, once: true }
+    );
   });
 
   
   Services.prefs.setCharPref(TABLE, "moztest-track-simple");
 
   
-  await promiseLoadEvent(browser, "http://tracking.example.org/tests/robocop/tracking_good.html");
-  EventDispatcher.instance.sendRequest({ type: "Test:Expected", expected: "unknown" });
+  await promiseLoadEvent(
+    browser,
+    "http://tracking.example.org/tests/robocop/tracking_good.html"
+  );
+  EventDispatcher.instance.sendRequest({
+    type: "Test:Expected",
+    expected: "unknown",
+  });
 
   
-  await promiseLoadEvent(browser, "http://tracking.example.org/tests/robocop/tracking_bad.html");
-  EventDispatcher.instance.sendRequest({ type: "Test:Expected", expected: "tracking_content_blocked" });
+  await promiseLoadEvent(
+    browser,
+    "http://tracking.example.org/tests/robocop/tracking_bad.html"
+  );
+  EventDispatcher.instance.sendRequest({
+    type: "Test:Expected",
+    expected: "tracking_content_blocked",
+  });
 
   
   
@@ -76,7 +115,10 @@ add_task(async function test_tracking_pb() {
       contentType: "tracking",
     });
   });
-  EventDispatcher.instance.sendRequest({ type: "Test:Expected", expected: "tracking_content_loaded" });
+  EventDispatcher.instance.sendRequest({
+    type: "Test:Expected",
+    expected: "tracking_content_loaded",
+  });
 
   
   await promiseLoadEvent(browser, undefined, undefined, () => {
@@ -85,18 +127,36 @@ add_task(async function test_tracking_pb() {
       contentType: "tracking",
     });
   });
-  EventDispatcher.instance.sendRequest({ type: "Test:Expected", expected: "tracking_content_blocked" });
+  EventDispatcher.instance.sendRequest({
+    type: "Test:Expected",
+    expected: "tracking_content_blocked",
+  });
 
   
-  Services.prefs.setBoolPref("privacy.trackingprotection.pbmode.enabled", false);
+  Services.prefs.setBoolPref(
+    "privacy.trackingprotection.pbmode.enabled",
+    false
+  );
 
   
-  await promiseLoadEvent(browser, "http://tracking.example.org/tests/robocop/tracking_bad.html");
-  EventDispatcher.instance.sendRequest({ type: "Test:Expected", expected: "unknown" });
+  await promiseLoadEvent(
+    browser,
+    "http://tracking.example.org/tests/robocop/tracking_bad.html"
+  );
+  EventDispatcher.instance.sendRequest({
+    type: "Test:Expected",
+    expected: "unknown",
+  });
 
   
-  await promiseLoadEvent(browser, "http://tracking.example.org/tests/robocop/tracking_good.html");
-  EventDispatcher.instance.sendRequest({ type: "Test:Expected", expected: "unknown" });
+  await promiseLoadEvent(
+    browser,
+    "http://tracking.example.org/tests/robocop/tracking_good.html"
+  );
+  EventDispatcher.instance.sendRequest({
+    type: "Test:Expected",
+    expected: "unknown",
+  });
 
   
   Services.prefs.clearUserPref("privacy.trackingprotection.pbmode.enabled");
@@ -106,25 +166,47 @@ add_task(async function test_tracking_not_pb() {
   
   let browser = BrowserApp.addTab("about:blank", { selected: true }).browser;
   await new Promise((resolve, reject) => {
-    browser.addEventListener("load", function(event) {
-      Services.tm.dispatchToMainThread(resolve);
-    }, {capture: true, once: true});
+    browser.addEventListener(
+      "load",
+      function(event) {
+        Services.tm.dispatchToMainThread(resolve);
+      },
+      { capture: true, once: true }
+    );
   });
 
   
-  await promiseLoadEvent(browser, "http://tracking.example.org/tests/robocop/tracking_good.html");
-  EventDispatcher.instance.sendRequest({ type: "Test:Expected", expected: "unknown" });
+  await promiseLoadEvent(
+    browser,
+    "http://tracking.example.org/tests/robocop/tracking_good.html"
+  );
+  EventDispatcher.instance.sendRequest({
+    type: "Test:Expected",
+    expected: "unknown",
+  });
 
   
-  await promiseLoadEvent(browser, "http://tracking.example.org/tests/robocop/tracking_bad.html");
-  EventDispatcher.instance.sendRequest({ type: "Test:Expected", expected: "unknown" });
+  await promiseLoadEvent(
+    browser,
+    "http://tracking.example.org/tests/robocop/tracking_bad.html"
+  );
+  EventDispatcher.instance.sendRequest({
+    type: "Test:Expected",
+    expected: "unknown",
+  });
 
   
   Services.prefs.setBoolPref("privacy.trackingprotection.enabled", true);
 
   
-  await promiseLoadEvent(browser, "http://tracking.example.org/tests/robocop/tracking_bad.html");
-  EventDispatcher.instance.sendRequest({ type: "Test:Expected", expected: "tracking_content_blocked" });
+  await promiseLoadEvent(
+    browser,
+    "http://tracking.example.org/tests/robocop/tracking_bad.html"
+  );
+  EventDispatcher.instance.sendRequest({
+    type: "Test:Expected",
+    expected: "tracking_content_blocked",
+  });
 });
 
 add_task(async function cleanup() {

@@ -3,9 +3,13 @@
 
 "use strict";
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {EventDispatcher} = ChromeUtils.import("resource://gre/modules/Messaging.jsm");
-const {UITelemetry} = ChromeUtils.import("resource://gre/modules/UITelemetry.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { EventDispatcher } = ChromeUtils.import(
+  "resource://gre/modules/Messaging.jsm"
+);
+const { UITelemetry } = ChromeUtils.import(
+  "resource://gre/modules/UITelemetry.jsm"
+);
 
 var EXPORTED_SYMBOLS = ["NetErrorHelper"];
 
@@ -78,7 +82,7 @@ handlers.searchbutton = {
     } else {
       let text = browser.contentDocument.querySelector("#searchtext");
       text.value = tab.userRequested;
-      text.addEventListener("keypress", (event) => {
+      text.addEventListener("keypress", event => {
         if (event.keyCode === KEY_CODE_ENTER) {
           this.doSearch(event.target.value);
         }
@@ -98,29 +102,36 @@ handlers.searchbutton = {
 
     let browserWin = Services.wm.getMostRecentWindow("navigator:browser");
     
-    browserWin.BrowserApp.loadURI(uri.spec, undefined, { isSearch: true, userRequested: value });
+    browserWin.BrowserApp.loadURI(uri.spec, undefined, {
+      isSearch: true,
+      userRequested: value,
+    });
   },
 };
 
 handlers.wifi = {
   
   
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver,
-                                          Ci.nsISupportsWeakReference]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIObserver,
+    Ci.nsISupportsWeakReference,
+  ]),
 
   GetWeakReference: function() {
     return Cu.getWeakReference(this);
   },
 
   onPageShown: function(browser) {
-      
-      let network = Cc["@mozilla.org/network/network-link-service;1"].getService(Ci.nsINetworkLinkService);
-      if (network.isLinkUp && network.linkStatusKnown) {
-        let nodes = browser.contentDocument.querySelectorAll("#wifi");
-        for (let i = 0; i < nodes.length; i++) {
-          nodes[i].style.display = "none";
-        }
+    
+    let network = Cc["@mozilla.org/network/network-link-service;1"].getService(
+      Ci.nsINetworkLinkService
+    );
+    if (network.isLinkUp && network.linkStatusKnown) {
+      let nodes = browser.contentDocument.querySelectorAll("#wifi");
+      for (let i = 0; i < nodes.length; i++) {
+        nodes[i].style.display = "none";
       }
+    }
   },
 
   handleClick: function(event) {
@@ -156,7 +167,9 @@ handlers.wifi = {
     node.disabled = false;
     node.classList.remove("inProgress");
 
-    let network = Cc["@mozilla.org/network/network-link-service;1"].getService(Ci.nsINetworkLinkService);
+    let network = Cc["@mozilla.org/network/network-link-service;1"].getService(
+      Ci.nsINetworkLinkService
+    );
     if (network.isLinkUp && network.linkStatusKnown) {
       
       UITelemetry.addEvent("neterror.1", "button", null, "wifitoggle.reload");

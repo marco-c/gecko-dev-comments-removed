@@ -2,8 +2,10 @@
 
 
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var modules = {
   fennec: {
@@ -14,7 +16,7 @@ var modules = {
 
   
   get firefox() {
-    return Object.assign({}, this.fennec, {hide: false});
+    return Object.assign({}, this.fennec, { hide: false });
   },
 
   
@@ -88,8 +90,9 @@ AboutRedirector.prototype = {
   getURIFlags: function(aURI) {
     let flags;
     let moduleInfo = this._getModuleInfo(aURI);
-    if (moduleInfo.hide)
+    if (moduleInfo.hide) {
       flags = Ci.nsIAboutModule.HIDE_FROM_ABOUTABOUT;
+    }
 
     return flags | Ci.nsIAboutModule.ALLOW_SCRIPT;
   },

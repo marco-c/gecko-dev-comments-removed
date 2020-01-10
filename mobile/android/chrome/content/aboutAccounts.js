@@ -24,19 +24,30 @@
 
 "use strict";
 
-const {Accounts} = ChromeUtils.import("resource://gre/modules/Accounts.jsm");
-const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { Accounts } = ChromeUtils.import("resource://gre/modules/Accounts.jsm");
+const { PromiseUtils } = ChromeUtils.import(
+  "resource://gre/modules/PromiseUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 const ACTION_URL_PARAM = "action";
 
 const COMMAND_LOADED = "fxaccounts:loaded";
 
-const log = ChromeUtils.import("resource://gre/modules/AndroidLog.jsm", {}).AndroidLog.bind("FxAccounts");
+const log = ChromeUtils.import(
+  "resource://gre/modules/AndroidLog.jsm",
+  {}
+).AndroidLog.bind("FxAccounts");
 
-XPCOMUtils.defineLazyServiceGetter(this, "ParentalControls",
-  "@mozilla.org/parental-controls-service;1", "nsIParentalControlsService");
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "ParentalControls",
+  "@mozilla.org/parental-controls-service;1",
+  "nsIParentalControlsService"
+);
 
 
 
@@ -66,15 +77,16 @@ function deferTransitionToRemoteAfterLoaded() {
   log.d("Waiting for LOADED message.");
 
   loadedDeferred = PromiseUtils.defer();
-  loadedDeferred.promise.then(() => {
-    log.d("Got LOADED message!");
-    document.getElementById("remote").style.opacity = 0;
-    show("remote");
-    document.getElementById("remote").style.opacity = 1;
-  })
-  .catch((e) => {
-    log.w("Did not get LOADED message: " + e.toString());
-  });
+  loadedDeferred.promise
+    .then(() => {
+      log.d("Got LOADED message!");
+      document.getElementById("remote").style.opacity = 0;
+      show("remote");
+      document.getElementById("remote").style.opacity = 1;
+    })
+    .catch(e => {
+      log.w("Did not get LOADED message: " + e.toString());
+    });
 }
 
 function handleLoadedMessage(message) {
@@ -94,13 +106,17 @@ var wrapper = {
     this.iframe = iframe;
     let docShell = this.iframe.frameLoader.docShell;
     docShell.QueryInterface(Ci.nsIWebProgress);
-    docShell.addProgressListener(this.iframeListener,
-                                 Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT |
-                                 Ci.nsIWebProgress.NOTIFY_LOCATION);
+    docShell.addProgressListener(
+      this.iframeListener,
+      Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT |
+        Ci.nsIWebProgress.NOTIFY_LOCATION
+    );
 
     
     
-    let webNav = iframe.frameLoader.docShell.QueryInterface(Ci.nsIWebNavigation);
+    let webNav = iframe.frameLoader.docShell.QueryInterface(
+      Ci.nsIWebNavigation
+    );
     let loadURIOptions = {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
       loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY,
@@ -111,7 +127,9 @@ var wrapper = {
   retry: function() {
     deferTransitionToRemoteAfterLoaded();
 
-    let webNav = this.iframe.frameLoader.docShell.QueryInterface(Ci.nsIWebNavigation);
+    let webNav = this.iframe.frameLoader.docShell.QueryInterface(
+      Ci.nsIWebNavigation
+    );
     let loadURIOptions = {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
       loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY,
@@ -120,15 +138,18 @@ var wrapper = {
   },
 
   iframeListener: {
-    QueryInterface: ChromeUtils.generateQI([Ci.nsIWebProgressListener, Ci.nsISupportsWeakReference]),
+    QueryInterface: ChromeUtils.generateQI([
+      Ci.nsIWebProgressListener,
+      Ci.nsISupportsWeakReference,
+    ]),
 
     onStateChange: function(aWebProgress, aRequest, aState, aStatus) {
       let failure = false;
 
       
-      if ((aState & Ci.nsIWebProgressListener.STATE_REDIRECTING)) {
+      if (aState & Ci.nsIWebProgressListener.STATE_REDIRECTING) {
         failure = true;
-      } else if ((aState & Ci.nsIWebProgressListener.STATE_STOP)) {
+      } else if (aState & Ci.nsIWebProgressListener.STATE_STOP) {
         if (aRequest instanceof Ci.nsIHttpChannel) {
           try {
             failure = aRequest.responseStatus != 200;
@@ -153,7 +174,10 @@ var wrapper = {
     },
 
     onLocationChange: function(aWebProgress, aRequest, aLocation, aFlags) {
-      if (aRequest && aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_ERROR_PAGE) {
+      if (
+        aRequest &&
+        aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_ERROR_PAGE
+      ) {
         aRequest.cancel(Cr.NS_BINDING_ABORTED);
         
         loadedDeferred.reject(new Error("Failed in onLocationChange!"));
@@ -162,7 +186,6 @@ var wrapper = {
     },
   },
 };
-
 
 function retry() {
   log.i("Retrying.");
@@ -179,7 +202,9 @@ function openPrefs() {
 }
 
 function getURLForAction(action, urlParams) {
-  let url = Services.urlFormatter.formatURLPref("identity.fxaccounts.remote.webchannel.uri");
+  let url = Services.urlFormatter.formatURLPref(
+    "identity.fxaccounts.remote.webchannel.uri"
+  );
   url = url + (url.endsWith("/") ? "" : "/") + action;
   const CONTEXT = "fx_fennec_v1";
   
@@ -212,109 +237,116 @@ function init() {
     
     
     
-    log.e("This profile cannot connect to Firefox Accounts: showing restricted error.");
+    log.e(
+      "This profile cannot connect to Firefox Accounts: showing restricted error."
+    );
     show("restrictedError");
     return;
   }
 
-  Accounts.getFirefoxAccount().then(user => {
-    
-    
-    if (window.closed) {
-      return;
-    }
-
-    updateDisplayedEmail(user);
-
-    
-    
-    let urlParams = new URLSearchParams(document.URL.split("?")[1] || "");
-    let action = urlParams.get(ACTION_URL_PARAM);
-    urlParams.delete(ACTION_URL_PARAM);
-
-    switch (action) {
-    case "signup":
-      if (user) {
-        
-        show("prefs");
-      } else {
-        show("spinner");
-        wrapper.init(getURLForAction("signup", urlParams));
-      }
-      break;
-    case "signin":
-      if (user) {
-        
-        show("prefs");
-      } else {
-        show("spinner");
-        wrapper.init(getURLForAction("signin", urlParams));
-      }
-      break;
-    case "force_auth":
-      if (user) {
-        show("spinner");
-        urlParams.set("email", user.email); 
-        wrapper.init(getURLForAction("force_auth", urlParams));
-      } else {
-        show("spinner");
-        wrapper.init(getURLForAction("signup", urlParams));
-      }
-      break;
-    case "manage":
-      if (user) {
-        show("spinner");
-        urlParams.set("email", user.email); 
-        wrapper.init(getURLForAction("settings", urlParams));
-      } else {
-        show("spinner");
-        wrapper.init(getURLForAction("signup", urlParams));
-      }
-      break;
-    case "avatar":
-      if (user) {
-        show("spinner");
-        urlParams.set("email", user.email); 
-        wrapper.init(getURLForAction("settings/avatar/change", urlParams));
-      } else {
-        show("spinner");
-        wrapper.init(getURLForAction("signup", urlParams));
-      }
-      break;
-    default:
+  Accounts.getFirefoxAccount()
+    .then(user => {
       
-      if (action) {
-        log.w("Ignoring unrecognized action: " + action);
+      
+      if (window.closed) {
+        return;
       }
-      if (user) {
-        show("prefs");
-      } else {
-        show("spinner");
-        wrapper.init(getURLForAction("signup", urlParams));
+
+      updateDisplayedEmail(user);
+
+      
+      
+      let urlParams = new URLSearchParams(document.URL.split("?")[1] || "");
+      let action = urlParams.get(ACTION_URL_PARAM);
+      urlParams.delete(ACTION_URL_PARAM);
+
+      switch (action) {
+        case "signup":
+          if (user) {
+            
+            show("prefs");
+          } else {
+            show("spinner");
+            wrapper.init(getURLForAction("signup", urlParams));
+          }
+          break;
+        case "signin":
+          if (user) {
+            
+            show("prefs");
+          } else {
+            show("spinner");
+            wrapper.init(getURLForAction("signin", urlParams));
+          }
+          break;
+        case "force_auth":
+          if (user) {
+            show("spinner");
+            urlParams.set("email", user.email); 
+            wrapper.init(getURLForAction("force_auth", urlParams));
+          } else {
+            show("spinner");
+            wrapper.init(getURLForAction("signup", urlParams));
+          }
+          break;
+        case "manage":
+          if (user) {
+            show("spinner");
+            urlParams.set("email", user.email); 
+            wrapper.init(getURLForAction("settings", urlParams));
+          } else {
+            show("spinner");
+            wrapper.init(getURLForAction("signup", urlParams));
+          }
+          break;
+        case "avatar":
+          if (user) {
+            show("spinner");
+            urlParams.set("email", user.email); 
+            wrapper.init(getURLForAction("settings/avatar/change", urlParams));
+          } else {
+            show("spinner");
+            wrapper.init(getURLForAction("signup", urlParams));
+          }
+          break;
+        default:
+          
+          if (action) {
+            log.w("Ignoring unrecognized action: " + action);
+          }
+          if (user) {
+            show("prefs");
+          } else {
+            show("spinner");
+            wrapper.init(getURLForAction("signup", urlParams));
+          }
+          break;
       }
-      break;
-    }
-  }).catch(e => {
-    log.e("Failed to get the signed in user: " + e.toString());
-  });
+    })
+    .catch(e => {
+      log.e("Failed to get the signed in user: " + e.toString());
+    });
 }
 
-document.addEventListener("DOMContentLoaded", function() {
-  init();
-  var buttonRetry = document.getElementById("buttonRetry");
-  buttonRetry.addEventListener("click", retry);
+document.addEventListener(
+  "DOMContentLoaded",
+  function() {
+    init();
+    var buttonRetry = document.getElementById("buttonRetry");
+    buttonRetry.addEventListener("click", retry);
 
-  var buttonOpenPrefs = document.getElementById("buttonOpenPrefs");
-  buttonOpenPrefs.addEventListener("click", openPrefs);
-}, {capture: true, once: true});
+    var buttonOpenPrefs = document.getElementById("buttonOpenPrefs");
+    buttonOpenPrefs.addEventListener("click", openPrefs);
+  },
+  { capture: true, once: true }
+);
 
 
 
 function getBrowserMessageManager() {
-  let browser = window
-        .docShell.rootTreeItem.domWindow
-        .BrowserApp
-        .getBrowserForDocument(document);
+  let browser = window.docShell.rootTreeItem.domWindow.BrowserApp.getBrowserForDocument(
+    document
+  );
   if (browser) {
     return browser.messageManager;
   }

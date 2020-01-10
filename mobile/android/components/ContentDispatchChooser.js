@@ -2,21 +2,26 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {EventDispatcher} = ChromeUtils.import("resource://gre/modules/Messaging.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { EventDispatcher } = ChromeUtils.import(
+  "resource://gre/modules/Messaging.jsm"
+);
 
 function ContentDispatchChooser() {}
 
-ContentDispatchChooser.prototype =
-{
+ContentDispatchChooser.prototype = {
   classID: Components.ID("5a072a22-1e66-4100-afc1-07aed8b62fc5"),
 
   QueryInterface: ChromeUtils.generateQI([Ci.nsIContentDispatchChooser]),
 
   get protoSvc() {
     if (!this._protoSvc) {
-      this._protoSvc = Cc["@mozilla.org/uriloader/external-protocol-service;1"].getService(Ci.nsIExternalProtocolService);
+      this._protoSvc = Cc[
+        "@mozilla.org/uriloader/external-protocol-service;1"
+      ].getService(Ci.nsIExternalProtocolService);
     }
     return this._protoSvc;
   },
@@ -41,9 +46,12 @@ ContentDispatchChooser.prototype =
   ask: function ask(aHandler, aWindowContext, aURI, aReason) {
     let window = null;
     try {
-      if (aWindowContext)
+      if (aWindowContext) {
         window = aWindowContext.getInterface(Ci.nsIDOMWindow);
-    } catch (e) {  }
+      }
+    } catch (e) {
+      
+    }
 
     if (!aURI.schemeIs("content")) {
       
@@ -71,27 +79,34 @@ ContentDispatchChooser.prototype =
       uri: aURI.spec,
     };
 
-    EventDispatcher.instance.sendRequestForResult(msg).then(() => {
-      
-      this._closeBlankWindow(window);
-    }, (data) => {
-      if (data.isFallback) {
+    EventDispatcher.instance.sendRequestForResult(msg).then(
+      () => {
         
-        window.location.href = data.uri;
-        return;
-      }
-
-      
-      
-      
-      let dwu = window.windowUtils;
-      let millis = dwu.millisSinceLastUserInput;
-      if (millis < 0 || millis >= 1000) {
-        window.docShell.displayLoadError(Cr.NS_ERROR_UNKNOWN_PROTOCOL, aURI, null);
-      } else {
         this._closeBlankWindow(window);
+      },
+      data => {
+        if (data.isFallback) {
+          
+          window.location.href = data.uri;
+          return;
+        }
+
+        
+        
+        
+        let dwu = window.windowUtils;
+        let millis = dwu.millisSinceLastUserInput;
+        if (millis < 0 || millis >= 1000) {
+          window.docShell.displayLoadError(
+            Cr.NS_ERROR_UNKNOWN_PROTOCOL,
+            aURI,
+            null
+          );
+        } else {
+          this._closeBlankWindow(window);
+        }
       }
-    });
+    );
   },
 };
 

@@ -3,9 +3,13 @@
 
 "use strict";
 
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   EventDispatcher: "resource://gre/modules/Messaging.jsm",
@@ -17,7 +21,12 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Utils: "resource://gre/modules/sessionstore/Utils.jsm",
 });
 
-XPCOMUtils.defineLazyModuleGetter(this, "Log", "resource://gre/modules/AndroidLog.jsm", "AndroidLog");
+XPCOMUtils.defineLazyModuleGetter(
+  this,
+  "Log",
+  "resource://gre/modules/AndroidLog.jsm",
+  "AndroidLog"
+);
 
 function dump(a) {
   Services.console.logStringMessage(a);
@@ -51,20 +60,21 @@ const PREFS_MAX_TABS_UNDO = "browser.sessionstore.max_tabs_undo";
 const MINIMUM_SAVE_DELAY = 2000;
 const SAVE_INTERVAL_PRIVATE_TABS = 500;
 
-function SessionStore() { }
+function SessionStore() {}
 
 function sendEvent(browser, event) {
-  let evt = new Event(event, {"bubbles": true, "cancelable": false});
+  let evt = new Event(event, { bubbles: true, cancelable: false });
   browser.dispatchEvent(evt);
 }
-
 
 SessionStore.prototype = {
   classID: Components.ID("{8c1f07d6-cba3-4226-a315-8bd43d67d032}"),
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsISessionStore,
-                                          Ci.nsIObserver,
-                                          Ci.nsISupportsWeakReference]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsISessionStore,
+    Ci.nsIObserver,
+    Ci.nsISupportsWeakReference,
+  ]),
 
   _windows: {},
   _lastSaveTime: 0,
@@ -96,7 +106,9 @@ SessionStore.prototype = {
   _keepAsZombieTabId: INVALID_TAB_ID,
 
   init() {
-    loggingEnabled = Services.prefs.getBoolPref("browser.sessionstore.debug_logging");
+    loggingEnabled = Services.prefs.getBoolPref(
+      "browser.sessionstore.debug_logging"
+    );
 
     
     this._sessionFile = Services.dirsvc.get("ProfD", Ci.nsIFile);
@@ -112,7 +124,9 @@ SessionStore.prototype = {
     this._startupRestoreFinished = false;
 
     this._interval = Services.prefs.getIntPref("browser.sessionstore.interval");
-    this._backupInterval = Services.prefs.getIntPref("browser.sessionstore.backupInterval");
+    this._backupInterval = Services.prefs.getIntPref(
+      "browser.sessionstore.backupInterval"
+    );
 
     this._updateMaxTabsUndo();
     Services.prefs.addObserver(PREFS_MAX_TABS_UNDO, () => {
@@ -121,10 +135,14 @@ SessionStore.prototype = {
 
     
     
-    SharedPreferences.forApp().setBoolPref(PREFS_RESTORE_FROM_CRASH,
-      Services.prefs.getBoolPref(PREFS_RESTORE_FROM_CRASH));
-    SharedPreferences.forApp().setIntPref(PREFS_MAX_CRASH_RESUMES,
-      Services.prefs.getIntPref(PREFS_MAX_CRASH_RESUMES));
+    SharedPreferences.forApp().setBoolPref(
+      PREFS_RESTORE_FROM_CRASH,
+      Services.prefs.getBoolPref(PREFS_RESTORE_FROM_CRASH)
+    );
+    SharedPreferences.forApp().setIntPref(
+      PREFS_MAX_CRASH_RESUMES,
+      Services.prefs.getIntPref(PREFS_MAX_CRASH_RESUMES)
+    );
   },
 
   _updateMaxTabsUndo() {
@@ -143,7 +161,7 @@ SessionStore.prototype = {
 
     
     if (topic == "browser:purge-session-history") {
-      this._forEachBrowserWindow((window) => {
+      this._forEachBrowserWindow(window => {
         let tabs = window.BrowserApp.tabs;
         for (let i = 0; i < tabs.length; i++) {
           let data = tabs[i].browser.__SS_data;
@@ -169,7 +187,9 @@ SessionStore.prototype = {
 
     Services.obs.notifyObservers(null, "sessionstore-state-purge-complete");
     if (this._notifyClosedTabs) {
-      this._sendClosedTabsToJava(Services.wm.getMostRecentWindow("navigator:browser"));
+      this._sendClosedTabsToJava(
+        Services.wm.getMostRecentWindow("navigator:browser")
+      );
     }
   },
 
@@ -182,11 +202,20 @@ SessionStore.prototype = {
       OS.File.remove(this._sessionFileBackup.path);
       OS.File.remove(this._sessionFilePrevious.path);
       OS.File.remove(this._sessionFileTemp.path);
-    } else { 
-      if (this._sessionFile.exists()) { this._sessionFile.remove(false); }
-      if (this._sessionFileBackup.exists()) { this._sessionFileBackup.remove(false); }
-      if (this._sessionFilePrevious.exists()) { this._sessionFilePrevious.remove(false); }
-      if (this._sessionFileTemp.exists()) { this._sessionFileTemp.remove(false); }
+    } else {
+      
+      if (this._sessionFile.exists()) {
+        this._sessionFile.remove(false);
+      }
+      if (this._sessionFileBackup.exists()) {
+        this._sessionFileBackup.remove(false);
+      }
+      if (this._sessionFilePrevious.exists()) {
+        this._sessionFilePrevious.remove(false);
+      }
+      if (this._sessionFileTemp.exists()) {
+        this._sessionFileTemp.remove(false);
+      }
     }
   },
 
@@ -203,7 +232,9 @@ SessionStore.prototype = {
       case "ClosedTabs:StartNotifications":
         this._notifyClosedTabs = true;
         log("ClosedTabs:StartNotifications");
-        this._sendClosedTabsToJava(Services.wm.getMostRecentWindow("navigator:browser"));
+        this._sendClosedTabsToJava(
+          Services.wm.getMostRecentWindow("navigator:browser")
+        );
         break;
 
       case "ClosedTabs:StopNotifications":
@@ -219,7 +250,8 @@ SessionStore.prototype = {
         log("Session:FlushTabs");
         if (!this._loadState == STATE_RUNNING || !this.flushPendingState()) {
           let window = Services.wm.getMostRecentWindow("navigator:browser");
-          if (window) { 
+          if (window) {
+            
             window.WindowEventDispatcher.sendRequest({
               type: "PrivateBrowsing:Data",
               noChange: true,
@@ -234,19 +266,25 @@ SessionStore.prototype = {
           
           let window = Services.wm.getMostRecentWindow("navigator:browser");
           let restoreCleanup = (aSubject, aTopic, aData) => {
-              Services.obs.removeObserver(restoreCleanup, "sessionstore-windows-restored");
+            Services.obs.removeObserver(
+              restoreCleanup,
+              "sessionstore-windows-restored"
+            );
 
-              if (window.BrowserApp.tabs.length == 0) {
-                window.BrowserApp.addTab("about:home", {
-                  selected: true,
-                });
-              }
-              
-              
-              this._startupRestoreFinished = true;
-              log("startupRestoreFinished = true (through notification)");
+            if (window.BrowserApp.tabs.length == 0) {
+              window.BrowserApp.addTab("about:home", {
+                selected: true,
+              });
+            }
+            
+            
+            this._startupRestoreFinished = true;
+            log("startupRestoreFinished = true (through notification)");
           };
-          Services.obs.addObserver(restoreCleanup, "sessionstore-windows-restored");
+          Services.obs.addObserver(
+            restoreCleanup,
+            "sessionstore-windows-restored"
+          );
 
           
           this.restoreLastSession(data.sessionString);
@@ -301,7 +339,11 @@ SessionStore.prototype = {
         observerService.addObserver(this, "final-ui-startup", true);
         observerService.addObserver(this, "domwindowopened", true);
         observerService.addObserver(this, "domwindowclosed", true);
-        observerService.addObserver(this, "browser:purge-session-history", true);
+        observerService.addObserver(
+          this,
+          "browser:purge-session-history",
+          true
+        );
         observerService.addObserver(this, "browser:purge-session-tabs", true);
         observerService.addObserver(this, "quit-application-requested", true);
         observerService.addObserver(this, "quit-application-proceeding", true);
@@ -317,9 +359,13 @@ SessionStore.prototype = {
         break;
       case "domwindowopened": {
         let window = aSubject;
-        window.addEventListener("load", () => {
-          this.onWindowOpen(window);
-        }, { once: true });
+        window.addEventListener(
+          "load",
+          () => {
+            this.onWindowOpen(window);
+          },
+          { once: true }
+        );
         break;
       }
       case "domwindowclosed": 
@@ -329,7 +375,7 @@ SessionStore.prototype = {
         log("quit-application-requested");
         
         if (this._pendingWrite) {
-          this._forEachBrowserWindow((aWindow) => {
+          this._forEachBrowserWindow(aWindow => {
             this._collectWindowData(aWindow);
           });
         }
@@ -360,8 +406,12 @@ SessionStore.prototype = {
         if (this._loadState == STATE_RUNNING) {
           
           this._saveTimer = null;
-          log("timer-callback, pendingWrite = " + this._pendingWritePrivateOnly +
-              "/" + this._pendingWrite);
+          log(
+            "timer-callback, pendingWrite = " +
+              this._pendingWritePrivateOnly +
+              "/" +
+              this._pendingWrite
+          );
           if (this._pendingWrite) {
             this._saveState(true);
           }
@@ -384,7 +434,10 @@ SessionStore.prototype = {
       case "Content:HistoryChange": {
         let browser = aSubject;
         let window = browser.ownerGlobal;
-        log("Content:HistoryChange for tab " + window.BrowserApp.getTabForBrowser(browser).id);
+        log(
+          "Content:HistoryChange for tab " +
+            window.BrowserApp.getTabForBrowser(browser).id
+        );
         
         
         if (!browser.__SS_restore && !browser.__SS_restoreReloadPending) {
@@ -394,11 +447,10 @@ SessionStore.prototype = {
           if (browser.__SS_historyChange) {
             window.clearTimeout(browser.__SS_historyChange);
           }
-          browser.__SS_historyChange =
-            window.setTimeout(() => {
-              delete browser.__SS_historyChange;
-              this.onTabLoad(window, browser);
-            }, 0);
+          browser.__SS_historyChange = window.setTimeout(() => {
+            delete browser.__SS_historyChange;
+            this.onTabLoad(window, browser);
+          }, 0);
         }
         break;
       }
@@ -407,9 +459,11 @@ SessionStore.prototype = {
         
         
         let window = Services.wm.getMostRecentWindow("navigator:browser");
-        if (window && window.BrowserApp) { 
+        if (window && window.BrowserApp) {
+          
           let tab = window.BrowserApp.selectedTab;
-          if (tab) { 
+          if (tab) {
+            
             this.restoreZombieTab(tab);
           }
         }
@@ -429,38 +483,52 @@ SessionStore.prototype = {
     switch (aEvent.type) {
       case "TabOpen": {
         let browser = aEvent.target;
-        log("TabOpen for tab " + window.BrowserApp.getTabForBrowser(browser).id);
+        log(
+          "TabOpen for tab " + window.BrowserApp.getTabForBrowser(browser).id
+        );
         this.onTabAdd(window, browser);
         break;
       }
       case "TabClose": {
         let browser = aEvent.target;
-        log("TabClose for tab " + window.BrowserApp.getTabForBrowser(browser).id);
+        log(
+          "TabClose for tab " + window.BrowserApp.getTabForBrowser(browser).id
+        );
         this.onTabClose(window, browser, aEvent.detail);
         this.onTabRemove(window, browser);
         break;
       }
       case "TabPreZombify": {
         let browser = aEvent.target;
-        log("TabPreZombify for tab " + window.BrowserApp.getTabForBrowser(browser).id);
+        log(
+          "TabPreZombify for tab " +
+            window.BrowserApp.getTabForBrowser(browser).id
+        );
         this.onTabRemove(window, browser, true);
         break;
       }
       case "TabPostZombify": {
         let browser = aEvent.target;
-        log("TabPostZombify for tab " + window.BrowserApp.getTabForBrowser(browser).id);
+        log(
+          "TabPostZombify for tab " +
+            window.BrowserApp.getTabForBrowser(browser).id
+        );
         this.onTabAdd(window, browser, true);
         break;
       }
       case "TabSelect": {
         let browser = aEvent.target;
-        log("TabSelect for tab " + window.BrowserApp.getTabForBrowser(browser).id);
+        log(
+          "TabSelect for tab " + window.BrowserApp.getTabForBrowser(browser).id
+        );
         this.onTabSelect(window, browser);
         break;
       }
       case "TabMove": {
         let browser = aEvent.target;
-        log("TabMove for tab " + window.BrowserApp.getTabForBrowser(browser).id);
+        log(
+          "TabMove for tab " + window.BrowserApp.getTabForBrowser(browser).id
+        );
         this.onTabMove();
         break;
       }
@@ -470,7 +538,10 @@ SessionStore.prototype = {
         
         
         let browser = aEvent.currentTarget;
-        log("DOMTitleChanged for tab " + window.BrowserApp.getTabForBrowser(browser).id);
+        log(
+          "DOMTitleChanged for tab " +
+            window.BrowserApp.getTabForBrowser(browser).id
+        );
         this.onTabLoad(window, browser);
         break;
       }
@@ -501,8 +572,10 @@ SessionStore.prototype = {
           return;
         }
 
-        if (browser.currentURI.spec.startsWith("about:reader") &&
-            !browser.contentDocument.body.classList.contains("loaded")) {
+        if (
+          browser.currentURI.spec.startsWith("about:reader") &&
+          !browser.contentDocument.body.classList.contains("loaded")
+        ) {
           
           
           return;
@@ -513,7 +586,11 @@ SessionStore.prototype = {
         
         
         
-        log(aEvent.type + " for tab " + window.BrowserApp.getTabForBrowser(browser).id);
+        log(
+          aEvent.type +
+            " for tab " +
+            window.BrowserApp.getTabForBrowser(browser).id
+        );
         if (browser.__SS_restoreDataOnPageshow) {
           delete browser.__SS_restoreDataOnPageshow;
           this._restoreScrollPosition(browser.__SS_data.scrolldata, browser);
@@ -528,17 +605,18 @@ SessionStore.prototype = {
         let browser = aEvent.currentTarget;
         
         if (loggingEnabled) {
-          log("TabInput for tab " + window.BrowserApp.getTabForBrowser(browser).id);
+          log(
+            "TabInput for tab " + window.BrowserApp.getTabForBrowser(browser).id
+          );
         }
         
         
         
         if (!this._formdataSavePending) {
-          this._formdataSavePending =
-            window.setTimeout(() => {
-              this._formdataSavePending = null;
-              this.onTabInput(window, browser);
-            }, 2000);
+          this._formdataSavePending = window.setTimeout(() => {
+            this._formdataSavePending = null;
+            this.onTabInput(window, browser);
+          }, 2000);
         }
         break;
       }
@@ -547,14 +625,17 @@ SessionStore.prototype = {
         let browser = aEvent.currentTarget;
         
         if (loggingEnabled) {
-          log(aEvent.type + " for tab " + window.BrowserApp.getTabForBrowser(browser).id);
+          log(
+            aEvent.type +
+              " for tab " +
+              window.BrowserApp.getTabForBrowser(browser).id
+          );
         }
         if (!this._scrollSavePending) {
-          this._scrollSavePending =
-            window.setTimeout(() => {
-              this._scrollSavePending = null;
-              this.onTabScroll(window, browser);
-            }, 500);
+          this._scrollSavePending = window.setTimeout(() => {
+            this._scrollSavePending = null;
+            this.onTabScroll(window, browser);
+          }, 500);
         }
         break;
       }
@@ -568,13 +649,21 @@ SessionStore.prototype = {
     }
 
     
-    if (aWindow.document.documentElement.getAttribute("windowtype") != "navigator:browser" || this._loadState <= STATE_QUITTING) {
+    if (
+      aWindow.document.documentElement.getAttribute("windowtype") !=
+        "navigator:browser" ||
+      this._loadState <= STATE_QUITTING
+    ) {
       return;
     }
 
     
     aWindow.__SSID = "window" + Date.now();
-    this._windows[aWindow.__SSID] = { tabs: [], selectedTabId: INVALID_TAB_ID, closedTabs: [] };
+    this._windows[aWindow.__SSID] = {
+      tabs: [],
+      selectedTabId: INVALID_TAB_ID,
+      closedTabs: [],
+    };
 
     
     if (this._loadState == STATE_STOPPED) {
@@ -584,8 +673,9 @@ SessionStore.prototype = {
 
     
     let tabs = aWindow.BrowserApp.tabs;
-    for (let i = 0; i < tabs.length; i++)
+    for (let i = 0; i < tabs.length; i++) {
       this.onTabAdd(aWindow, tabs[i].browser, true);
+    }
 
     
     let browsers = aWindow.document.getElementById("browsers");
@@ -623,8 +713,9 @@ SessionStore.prototype = {
     }
 
     let tabs = aWindow.BrowserApp.tabs;
-    for (let i = 0; i < tabs.length; i++)
+    for (let i = 0; i < tabs.length; i++) {
       this.onTabRemove(aWindow, tabs[i].browser, true);
+    }
 
     delete aWindow.__SSID;
   },
@@ -646,18 +737,26 @@ SessionStore.prototype = {
     aBrowser.addEventListener("DOMAutoComplete", this, true);
 
     
-    aBrowser.addEventListener("mozvisualscroll", this,
-                              { capture: true, mozSystemGroup: true });
-    aBrowser.addEventListener("mozvisualresize", this,
-                              { capture: true, mozSystemGroup: true });
+    aBrowser.addEventListener("mozvisualscroll", this, {
+      capture: true,
+      mozSystemGroup: true,
+    });
+    aBrowser.addEventListener("mozvisualresize", this, {
+      capture: true,
+      mozSystemGroup: true,
+    });
 
-    log("onTabAdd() ran for tab " + aWindow.BrowserApp.getTabForBrowser(aBrowser).id +
-        ", aNoNotification = " + aNoNotification);
+    log(
+      "onTabAdd() ran for tab " +
+        aWindow.BrowserApp.getTabForBrowser(aBrowser).id +
+        ", aNoNotification = " +
+        aNoNotification
+    );
     if (!aNoNotification) {
       if (this._loadState == STATE_QUITTING) {
         
         
-        this._forEachBrowserWindow((aWindow) => {
+        this._forEachBrowserWindow(aWindow => {
           this._collectWindowData(aWindow);
         });
       }
@@ -674,10 +773,14 @@ SessionStore.prototype = {
     aBrowser.removeEventListener("AboutReaderContentReady", this, true);
     aBrowser.removeEventListener("input", this, true);
     aBrowser.removeEventListener("DOMAutoComplete", this, true);
-    aBrowser.removeEventListener("mozvisualscroll", this,
-                                 { capture: true, mozSystemGroup: true });
-    aBrowser.removeEventListener("mozvisualresize", this,
-                                 { capture: true, mozSystemGroup: true });
+    aBrowser.removeEventListener("mozvisualscroll", this, {
+      capture: true,
+      mozSystemGroup: true,
+    });
+    aBrowser.removeEventListener("mozvisualresize", this, {
+      capture: true,
+      mozSystemGroup: true,
+    });
 
     if (aBrowser.__SS_historyChange) {
       aWindow.clearTimeout(aBrowser.__SS_historyChange);
@@ -686,8 +789,12 @@ SessionStore.prototype = {
 
     delete aBrowser.__SS_data;
 
-    log("onTabRemove() ran for tab " + aWindow.BrowserApp.getTabForBrowser(aBrowser).id +
-        ", aNoNotification = " + aNoNotification);
+    log(
+      "onTabRemove() ran for tab " +
+        aWindow.BrowserApp.getTabForBrowser(aBrowser).id +
+        ", aNoNotification = " +
+        aNoNotification
+    );
     if (!aNoNotification) {
       let isPrivate = PrivateBrowsingUtils.isBrowserPrivate(aBrowser);
       this.saveStateDelayed(isPrivate);
@@ -718,7 +825,10 @@ SessionStore.prototype = {
       this._windows[aWindow.__SSID].closedTabs.unshift(data);
       let length = this._windows[aWindow.__SSID].closedTabs.length;
       if (length > this._maxTabsUndo) {
-        this._windows[aWindow.__SSID].closedTabs.splice(this._maxTabsUndo, length - this._maxTabsUndo);
+        this._windows[aWindow.__SSID].closedTabs.splice(
+          this._maxTabsUndo,
+          length - this._maxTabsUndo
+        );
       }
 
       this._lastClosedTabIndex = aTabIndex;
@@ -739,14 +849,21 @@ SessionStore.prototype = {
 
     let entries = aData.entries;
 
-    return (entries.length == 1 &&
-            (entries[0].url == "about:home" || entries[0].url == "about:privatebrowsing"));
+    return (
+      entries.length == 1 &&
+      (entries[0].url == "about:home" ||
+        entries[0].url == "about:privatebrowsing")
+    );
   },
 
   onTabLoad(aWindow, aBrowser) {
     
     
-    if (aBrowser.__SS_restore || !this._startupRestoreFinished || aBrowser.__SS_restoreReloadPending) {
+    if (
+      aBrowser.__SS_restore ||
+      !this._startupRestoreFinished ||
+      aBrowser.__SS_restoreReloadPending
+    ) {
       return;
     }
 
@@ -772,7 +889,10 @@ SessionStore.prototype = {
 
     
     this._collectTabData(aWindow, aBrowser, data);
-    if (aBrowser.__SS_restoreDataOnLoad || aBrowser.__SS_restoreDataOnPageshow) {
+    if (
+      aBrowser.__SS_restoreDataOnLoad ||
+      aBrowser.__SS_restoreDataOnPageshow
+    ) {
       
       
       
@@ -790,7 +910,10 @@ SessionStore.prototype = {
       this.onTabScroll(aWindow, aBrowser);
     }
 
-    log("onTabLoad() ran for tab " + aWindow.BrowserApp.getTabForBrowser(aBrowser).id);
+    log(
+      "onTabLoad() ran for tab " +
+        aWindow.BrowserApp.getTabForBrowser(aBrowser).id
+    );
     sendEvent(aBrowser, "SSTabDataUpdated");
     this.saveStateDelayed();
 
@@ -863,7 +986,11 @@ SessionStore.prototype = {
 
     
     
-    if (aBrowser.__SS_restore || !this._startupRestoreFinished || aBrowser.__SS_restoreReloadPending) {
+    if (
+      aBrowser.__SS_restore ||
+      !this._startupRestoreFinished ||
+      aBrowser.__SS_restoreReloadPending
+    ) {
       sendEvent(aBrowser, "SSTabInputCaptured");
       return;
     }
@@ -883,7 +1010,10 @@ SessionStore.prototype = {
     
     if (formdata && Object.keys(formdata).length) {
       data.formdata = formdata;
-      log("onTabInput() ran for tab " + aWindow.BrowserApp.getTabForBrowser(aBrowser).id);
+      log(
+        "onTabInput() ran for tab " +
+          aWindow.BrowserApp.getTabForBrowser(aBrowser).id
+      );
       this.saveStateDelayed();
     }
     sendEvent(aBrowser, "SSTabInputCaptured");
@@ -899,7 +1029,11 @@ SessionStore.prototype = {
 
     
     
-    if (aBrowser.__SS_restore || !this._startupRestoreFinished || aBrowser.__SS_restoreReloadPending) {
+    if (
+      aBrowser.__SS_restore ||
+      !this._startupRestoreFinished ||
+      aBrowser.__SS_restoreReloadPending
+    ) {
       return;
     }
 
@@ -910,7 +1044,10 @@ SessionStore.prototype = {
     }
 
     
-    if (aBrowser.__SS_restoreDataOnLoad || aBrowser.__SS_restoreDataOnPageshow) {
+    if (
+      aBrowser.__SS_restoreDataOnLoad ||
+      aBrowser.__SS_restoreDataOnPageshow
+    ) {
       return;
     }
 
@@ -933,14 +1070,18 @@ SessionStore.prototype = {
 
     
     data.scrolldata = scrolldata;
-    log("onTabScroll() ran for tab " + aWindow.BrowserApp.getTabForBrowser(aBrowser).id);
+    log(
+      "onTabScroll() ran for tab " +
+        aWindow.BrowserApp.getTabForBrowser(aBrowser).id
+    );
     sendEvent(aBrowser, "SSTabScrollCaptured");
     this.saveStateDelayed();
   },
 
   _getContentViewerSize(aWindow) {
     let displaySize = {};
-    let width = {}, height = {};
+    let width = {},
+      height = {};
     aWindow.windowUtils.getContentViewerSize(width, height);
 
     displaySize.width = width.value;
@@ -954,8 +1095,12 @@ SessionStore.prototype = {
     if (aPrivateTabsOnly) {
       this._pendingWritePrivateOnly++;
     }
-    log("incrementing _pendingWrite to " + this._pendingWritePrivateOnly +
-        "/" + this._pendingWrite);
+    log(
+      "incrementing _pendingWrite to " +
+        this._pendingWritePrivateOnly +
+        "/" +
+        this._pendingWrite
+    );
 
     if (!this._saveTimer) {
       
@@ -963,18 +1108,20 @@ SessionStore.prototype = {
 
       
       let delay = aPrivateTabsOnly
-                    ? SAVE_INTERVAL_PRIVATE_TABS
-                    : Math.max(currentDelay, MINIMUM_SAVE_DELAY);
+        ? SAVE_INTERVAL_PRIVATE_TABS
+        : Math.max(currentDelay, MINIMUM_SAVE_DELAY);
       if (delay > 0) {
         this._createTimer(delay);
       } else {
         log("saveStateDelayed() no delay");
         this.saveState();
       }
-    } else if (aPrivateTabsOnly &&
-               
-               this._saveTimer.delay - (Date.now() - this._lastQueuedSaveTime)
-                 > SAVE_INTERVAL_PRIVATE_TABS) {
+    } else if (
+      aPrivateTabsOnly &&
+      
+      this._saveTimer.delay - (Date.now() - this._lastQueuedSaveTime) >
+        SAVE_INTERVAL_PRIVATE_TABS
+    ) {
       this._killTimer();
       this._createTimer(SAVE_INTERVAL_PRIVATE_TABS);
     } else {
@@ -987,8 +1134,12 @@ SessionStore.prototype = {
     if (aPrivateTabsOnly) {
       this._pendingWritePrivateOnly++;
     }
-    log("saveState(), incrementing _pendingWrite to " + this._pendingWritePrivateOnly +
-        "/" + this._pendingWrite);
+    log(
+      "saveState(), incrementing _pendingWrite to " +
+        this._pendingWritePrivateOnly +
+        "/" +
+        this._pendingWrite
+    );
     this._saveState(true);
   },
 
@@ -1027,8 +1178,12 @@ SessionStore.prototype = {
     this._killTimer();
 
     
-    if (!this._writeInProgress && Date.now() - this._lastBackupTime > this._backupInterval &&
-         this._sessionDataIsGood && this._sessionFile.exists()) {
+    if (
+      !this._writeInProgress &&
+      Date.now() - this._lastBackupTime > this._backupInterval &&
+      this._sessionDataIsGood &&
+      this._sessionFile.exists()
+    ) {
       if (this._sessionFileBackup.exists()) {
         this._sessionFileBackup.remove(false);
       }
@@ -1065,7 +1220,9 @@ SessionStore.prototype = {
       
       for (let i = 0; i < win.tabs.length; ++i) {
         let tab = win.tabs[i];
-        let savedWin = tab.isPrivate ? privateData.windows[winIndex] : normalData.windows[winIndex];
+        let savedWin = tab.isPrivate
+          ? privateData.windows[winIndex]
+          : normalData.windows[winIndex];
         savedWin.tabs.push(tab);
         if (win.selectedTabId === tab.tabId) {
           savedWin.selected = savedWin.tabs.length; 
@@ -1076,10 +1233,15 @@ SessionStore.prototype = {
     
     
     let window = Services.wm.getMostRecentWindow("navigator:browser");
-    if (window) { 
+    if (window) {
+      
       window.WindowEventDispatcher.sendRequest({
         type: "PrivateBrowsing:Data",
-        session: (privateData.windows.length > 0 && privateData.windows[0].tabs.length > 0) ? JSON.stringify(privateData) : null,
+        session:
+          privateData.windows.length > 0 &&
+          privateData.windows[0].tabs.length > 0
+            ? JSON.stringify(privateData)
+            : null,
       });
     }
 
@@ -1093,18 +1255,26 @@ SessionStore.prototype = {
 
     
     if (normalData.windows[0] && normalData.windows[0].tabs) {
-      log("_saveState() writing normal data, " +
-           normalData.windows[0].tabs.length + " tabs in window[0]");
+      log(
+        "_saveState() writing normal data, " +
+          normalData.windows[0].tabs.length +
+          " tabs in window[0]"
+      );
     } else {
       log("_saveState() writing empty normal data");
     }
-    this._writeFile(this._sessionFile, this._sessionFileTemp, normalData, aAsync);
+    this._writeFile(
+      this._sessionFile,
+      this._sessionFileTemp,
+      normalData,
+      aAsync
+    );
 
     this._lastSaveTime = Date.now();
   },
 
   _getCurrentState() {
-    this._forEachBrowserWindow((aWindow) => {
+    this._forEachBrowserWindow(aWindow => {
       this._collectWindowData(aWindow);
     });
 
@@ -1186,12 +1356,19 @@ SessionStore.prototype = {
 
     
     let buffer = new TextEncoder().encode(state);
-    Services.telemetry.getHistogramById("FX_SESSION_RESTORE_FILE_SIZE_BYTES").add(buffer.byteLength);
+    Services.telemetry
+      .getHistogramById("FX_SESSION_RESTORE_FILE_SIZE_BYTES")
+      .add(buffer.byteLength);
 
     Services.obs.notifyObservers(null, "sessionstore-state-write");
     let startWriteMs = Cu.now();
 
-    log("_writeFile(aAsync = " + aAsync + "), _pendingWrite = " + this._pendingWrite);
+    log(
+      "_writeFile(aAsync = " +
+        aAsync +
+        "), _pendingWrite = " +
+        this._pendingWrite
+    );
     this._writeInProgress = true;
     let pendingWrite = this._pendingWrite;
     this._write(aFile, aFileTemp, buffer, aAsync).then(() => {
@@ -1206,13 +1383,17 @@ SessionStore.prototype = {
         this._writeInProgress = false;
       }
 
-      log("_writeFile() _write() returned, _pendingWrite = " + this._pendingWrite);
+      log(
+        "_writeFile() _write() returned, _pendingWrite = " + this._pendingWrite
+      );
 
       
       
-      Services.telemetry.getHistogramById("FX_SESSION_RESTORE_WRITE_FILE_MS").add(Math.round(stopWriteMs - startWriteMs));
+      Services.telemetry
+        .getHistogramById("FX_SESSION_RESTORE_WRITE_FILE_MS")
+        .add(Math.round(stopWriteMs - startWriteMs));
       Services.obs.notifyObservers(null, "sessionstore-state-write-complete");
-      EventDispatcher.instance.sendRequest({type: "Session:DataWritten"});
+      EventDispatcher.instance.sendRequest({ type: "Session:DataWritten" });
       this._sessionDataIsGood = true;
     });
   },
@@ -1229,12 +1410,16 @@ SessionStore.prototype = {
     
     if (aAsync) {
       log("_write() writing asynchronously");
-      return OS.File.writeAtomic(aFile.path, aBuffer, { tmpPath: aFileTemp.path });
+      return OS.File.writeAtomic(aFile.path, aBuffer, {
+        tmpPath: aFileTemp.path,
+      });
     }
 
     
     let bytes = String.fromCharCode.apply(null, new Uint16Array(aBuffer));
-    let stream = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(Ci.nsIFileOutputStream);
+    let stream = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(
+      Ci.nsIFileOutputStream
+    );
     stream.init(aFileTemp, 0x02 | 0x08 | 0x20, 0o666, 0);
     stream.write(bytes, bytes.length);
     stream.close();
@@ -1260,10 +1445,11 @@ SessionStore.prototype = {
       let currentURI = aWindow.BrowserApp.selectedBrowser.currentURI;
       
       try {
-        currentURI = currentURI.mutate()
-                               .setUserPass("")
-                               .finalize();
-      } catch (ex) { } 
+        currentURI = currentURI
+          .mutate()
+          .setUserPass("")
+          .finalize();
+      } catch (ex) {} 
 
       Services.appinfo.annotateCrashReport("URL", currentURI.spec);
     } catch (ex) {
@@ -1279,7 +1465,7 @@ SessionStore.prototype = {
     let window = Services.wm.getMostRecentWindow("navigator:browser");
     for (let i = 0; i < aData.urls.length; i++) {
       let url = aData.urls[i];
-      let selected = (i == aData.urls.length - 1);
+      let selected = i == aData.urls.length - 1;
       let params = {
         selected,
         delayLoad: !selected,
@@ -1298,7 +1484,7 @@ SessionStore.prototype = {
     for (let i = 0; i < aData.tabs.length; i++) {
       let tabData = JSON.parse(aData.tabs[i]);
       let activeSHEntry = tabData.entries[tabData.index - 1];
-      let selected = (i == aData.tabs.length - 1);
+      let selected = i == aData.tabs.length - 1;
       let delayLoad = !selected;
       if (tabData.tabId) {
         tabIds.push(tabData.tabId);
@@ -1332,7 +1518,9 @@ SessionStore.prototype = {
     
     
     if (!aTabData || aTabData.entries.length == 0) {
-      Cu.reportError("SessionStore.js: Error trying to restore tab with empty tabdata");
+      Cu.reportError(
+        "SessionStore.js: Error trying to restore tab with empty tabdata"
+      );
       return;
     }
     this._restoreHistory(aBrowser.docShell, aTabData);
@@ -1373,12 +1561,16 @@ SessionStore.prototype = {
   _restoreTextData(aFormData, aBrowser) {
     if (aFormData) {
       log("_restoreTextData()");
-      Utils.restoreFrameTreeData(aBrowser.contentWindow, aFormData, (frame, data) => {
-        
-        
-        
-        return SessionStoreUtils.restoreFormData(frame.document, data);
-      });
+      Utils.restoreFrameTreeData(
+        aBrowser.contentWindow,
+        aFormData,
+        (frame, data) => {
+          
+          
+          
+          return SessionStoreUtils.restoreFormData(frame.document, data);
+        }
+      );
     }
   },
 
@@ -1388,14 +1580,20 @@ SessionStore.prototype = {
 
   _restoreZoom(aScrollData, aBrowser) {
     if (aScrollData && aScrollData.zoom && aScrollData.zoom.displaySize) {
-      log("_restoreZoom(), resolution: " + aScrollData.zoom.resolution +
-          ", old displayWidth: " + aScrollData.zoom.displaySize.width);
+      log(
+        "_restoreZoom(), resolution: " +
+          aScrollData.zoom.resolution +
+          ", old displayWidth: " +
+          aScrollData.zoom.displaySize.width
+      );
 
       let utils = aBrowser.contentWindow.windowUtils;
       
-      utils.setRestoreResolution(aScrollData.zoom.resolution,
-                                 aScrollData.zoom.displaySize.width,
-                                 aScrollData.zoom.displaySize.height);
+      utils.setRestoreResolution(
+        aScrollData.zoom.resolution,
+        aScrollData.zoom.displaySize.width,
+        aScrollData.zoom.displaySize.height
+      );
     }
   },
 
@@ -1405,11 +1603,15 @@ SessionStore.prototype = {
   _restoreScrollPosition(aScrollData, aBrowser) {
     if (aScrollData) {
       log("_restoreScrollPosition()");
-      Utils.restoreFrameTreeData(aBrowser.contentWindow, aScrollData, (frame, data) => {
-        if (data.scroll) {
-          SessionStoreUtils.restoreScrollPosition(frame, data);
+      Utils.restoreFrameTreeData(
+        aBrowser.contentWindow,
+        aScrollData,
+        (frame, data) => {
+          if (data.scroll) {
+            SessionStoreUtils.restoreScrollPosition(frame, data);
+          }
         }
-      });
+      );
     }
   },
 
@@ -1426,7 +1628,12 @@ SessionStore.prototype = {
     }
 
     
-    if (!state || state.windows.length == 0 || !state.windows[0].tabs || state.windows[0].tabs.length == 0) {
+    if (
+      !state ||
+      state.windows.length == 0 ||
+      !state.windows[0].tabs ||
+      state.windows[0].tabs.length == 0
+    ) {
       throw new Error("Invalid session JSON: " + aData);
     }
 
@@ -1477,7 +1684,11 @@ SessionStore.prototype = {
     
     if (state.windows[0].closedTabs && this._maxTabsUndo > 0) {
       this._windows[window.__SSID].closedTabs = state.windows[0].closedTabs;
-      log("_restoreWindow() loaded " + state.windows[0].closedTabs.length + " closed tabs");
+      log(
+        "_restoreWindow() loaded " +
+          state.windows[0].closedTabs.length +
+          " closed tabs"
+      );
     }
   },
 
@@ -1491,7 +1702,7 @@ SessionStore.prototype = {
 
   getClosedTabs(aWindow) {
     if (!aWindow.__SSID) {
-      throw new Error(Components.returnCode = Cr.NS_ERROR_INVALID_ARG);
+      throw new Error((Components.returnCode = Cr.NS_ERROR_INVALID_ARG));
     }
 
     return this._windows[aWindow.__SSID].closedTabs;
@@ -1499,7 +1710,7 @@ SessionStore.prototype = {
 
   undoCloseTab(aWindow, aCloseTabData) {
     if (!aWindow.__SSID) {
-      throw new Error(Components.returnCode = Cr.NS_ERROR_INVALID_ARG);
+      throw new Error((Components.returnCode = Cr.NS_ERROR_INVALID_ARG));
     }
 
     
@@ -1516,7 +1727,10 @@ SessionStore.prototype = {
       tabIndex: this._lastClosedTabIndex,
       parentId: aCloseTabData.parentId,
     };
-    let tab = aWindow.BrowserApp.addTab(aCloseTabData.entries[aCloseTabData.index - 1].url, params);
+    let tab = aWindow.BrowserApp.addTab(
+      aCloseTabData.entries[aCloseTabData.index - 1].url,
+      params
+    );
     tab.browser.__SS_data = aCloseTabData;
     tab.browser.__SS_extdata = aCloseTabData.extData;
     this._restoreTab(aCloseTabData, tab.browser);
@@ -1542,8 +1756,9 @@ SessionStore.prototype = {
     }
     const prevClosedTabCount = closedTabs.length;
 
-    closedTabs = closedTabs.filter(closedTab =>
-      !closedTab.tabId || !aTabIds.includes(closedTab.tabId));
+    closedTabs = closedTabs.filter(
+      closedTab => !closedTab.tabId || !aTabIds.includes(closedTab.tabId)
+    );
     window.closedTabs = closedTabs;
 
     if (this._notifyClosedTabs && closedTabs.length != prevClosedTabCount) {
@@ -1562,11 +1777,13 @@ SessionStore.prototype = {
     }
 
     if (!aWindow.__SSID) {
-      throw new Error(Components.returnCode = Cr.NS_ERROR_INVALID_ARG);
+      throw new Error((Components.returnCode = Cr.NS_ERROR_INVALID_ARG));
     }
 
     let closedTabs = this._windows[aWindow.__SSID].closedTabs;
-    let isPrivate = PrivateBrowsingUtils.isBrowserPrivate(aWindow.BrowserApp.selectedBrowser);
+    let isPrivate = PrivateBrowsingUtils.isBrowserPrivate(
+      aWindow.BrowserApp.selectedBrowser
+    );
 
     let tabs = closedTabs
       .filter(tab => tab.isPrivate == isPrivate)
@@ -1620,7 +1837,11 @@ SessionStore.prototype = {
       notifyMessage = "fail";
     }
 
-    Services.obs.notifyObservers(null, "sessionstore-windows-restored", notifyMessage);
+    Services.obs.notifyObservers(
+      null,
+      "sessionstore-windows-restored",
+      notifyMessage
+    );
   },
 
   removeWindow(aWindow) {
@@ -1643,7 +1864,6 @@ SessionStore.prototype = {
     this.flushPendingState();
     this._loadState = aState;
   },
-
 };
 
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory([SessionStore]);

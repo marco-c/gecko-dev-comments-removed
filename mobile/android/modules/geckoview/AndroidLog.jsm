@@ -42,7 +42,7 @@
 if (typeof Components != "undefined") {
   
   this.EXPORTED_SYMBOLS = ["AndroidLog"];
-  var {ctypes} = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
+  var { ctypes } = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
 }
 
 
@@ -59,12 +59,14 @@ const ANDROID_LOG_ERROR = 6;
 const MAX_TAG_LENGTH = 18;
 
 var liblog = ctypes.open("liblog.so"); 
-var __android_log_write = liblog.declare("__android_log_write",
-                                         ctypes.default_abi,
-                                         ctypes.int, 
-                                         ctypes.int, 
-                                         ctypes.char.ptr, 
-                                         ctypes.char.ptr); 
+var __android_log_write = liblog.declare(
+  "__android_log_write",
+  ctypes.default_abi,
+  ctypes.int, 
+  ctypes.int, 
+  ctypes.char.ptr, 
+  ctypes.char.ptr
+); 
 
 var AndroidLog = {
   MAX_TAG_LENGTH: MAX_TAG_LENGTH,

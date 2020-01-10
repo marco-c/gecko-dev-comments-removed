@@ -6,18 +6,24 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "Services",
-                               "resource://gre/modules/Services.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "Services",
+  "resource://gre/modules/Services.jsm"
+);
 
 
-ChromeUtils.defineModuleGetter(this, "PageActions",
-                               "resource://gre/modules/PageActions.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PageActions",
+  "resource://gre/modules/PageActions.jsm"
+);
 
-var {ExtensionParent} = ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
+var { ExtensionParent } = ChromeUtils.import(
+  "resource://gre/modules/ExtensionParent.jsm"
+);
 
-var {
-  IconDetails,
-} = ExtensionParent;
+var { IconDetails } = ExtensionParent;
 
 
 let pageActionMap = new WeakMap();
@@ -31,7 +37,7 @@ class PageAction extends EventEmitter {
     this.extension = extension;
 
     this.defaults = {
-      icons: IconDetails.normalize({path: manifest.default_icon}, extension),
+      icons: IconDetails.normalize({ path: manifest.default_icon }, extension),
       popup: manifest.default_popup,
     };
 
@@ -59,10 +65,18 @@ class PageAction extends EventEmitter {
 
     this.shouldShow = false;
 
-    this.tabContext.on("tab-selected", 
-                       (evt, tabId) => { this.onTabSelected(tabId); });
-    this.tabContext.on("tab-closed", 
-                       (evt, tabId) => { this.onTabClosed(tabId); });
+    this.tabContext.on(
+      "tab-selected", 
+      (evt, tabId) => {
+        this.onTabSelected(tabId);
+      }
+    );
+    this.tabContext.on(
+      "tab-closed", 
+      (evt, tabId) => {
+        this.onTabClosed(tabId);
+      }
+    );
   }
 
   
@@ -164,28 +178,37 @@ class PageAction extends EventEmitter {
     
     
     
-    let {contentWindow} = this.context.xulBrowser;
+    let { contentWindow } = this.context.xulBrowser;
 
     
     
-    let {icon} = IconDetails.getPreferredIcon(this.defaults.icons, this.extension,
-                                              16 * contentWindow.devicePixelRatio);
+    let { icon } = IconDetails.getPreferredIcon(
+      this.defaults.icons,
+      this.extension,
+      16 * contentWindow.devicePixelRatio
+    );
 
     let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
-    return IconDetails.convertImageURLToDataURL(icon, contentWindow, browserWindow).then(dataURI => {
-      if (this.shouldShow) {
-        this.options.icon = dataURI;
-        this.id = PageActions.add(this.options);
-      }
-    }).catch(() => {
-      
-      
-      this.shouldShow = false;
+    return IconDetails.convertImageURLToDataURL(
+      icon,
+      contentWindow,
+      browserWindow
+    )
+      .then(dataURI => {
+        if (this.shouldShow) {
+          this.options.icon = dataURI;
+          this.id = PageActions.add(this.options);
+        }
+      })
+      .catch(() => {
+        
+        
+        this.shouldShow = false;
 
-      return Promise.reject({
-        message: "Failed to load PageAction icon",
+        return Promise.reject({
+          message: "Failed to load PageAction icon",
+        });
       });
-    });
   }
 
   
@@ -208,15 +231,15 @@ class PageAction extends EventEmitter {
 
 this.pageAction = class extends ExtensionAPI {
   onManifestEntry(entryName) {
-    let {extension} = this;
-    let {manifest} = extension;
+    let { extension } = this;
+    let { manifest } = extension;
 
     let pageAction = new PageAction(manifest.page_action, extension);
     pageActionMap.set(extension, pageAction);
   }
 
   onShutdown() {
-    let {extension} = this;
+    let { extension } = this;
 
     if (pageActionMap.has(extension)) {
       pageActionMap.get(extension).shutdown();
@@ -225,8 +248,8 @@ this.pageAction = class extends ExtensionAPI {
   }
 
   getAPI(context) {
-    const {extension} = context;
-    const {tabManager} = extension;
+    const { extension } = context;
+    const { tabManager } = extension;
 
     pageActionMap.get(extension).setContext(context);
 
