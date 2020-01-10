@@ -431,6 +431,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult MakeBasicBlock(nsAtom& aBlockType);
 
@@ -754,26 +755,6 @@ class HTMLEditRules : public TextEditRules {
 
   void MakeTransitionList(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
                           nsTArray<bool>& aTransitionArray);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult ApplyBlockStyle(
-      nsTArray<OwningNonNull<nsINode>>& aNodeArray, nsAtom& aBlockTag);
 
   
 

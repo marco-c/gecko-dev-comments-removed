@@ -1676,6 +1676,25 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   RemoveBlockContainerElements(nsTArray<OwningNonNull<nsINode>>& aNodeArray);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult CreateOrChangeBlockContainerElement(
+      nsTArray<OwningNonNull<nsINode>>& aNodeArray, nsAtom& aBlockTag);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
