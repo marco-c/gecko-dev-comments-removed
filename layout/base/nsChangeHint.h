@@ -150,13 +150,7 @@ enum nsChangeHint : uint32_t {
 
 
 
-  nsChangeHint_UpdateTextPath = 1 << 18,
-
-  
-
-
-
-  nsChangeHint_SchedulePaint = 1 << 19,
+  nsChangeHint_SchedulePaint = 1 << 18,
 
   
 
@@ -172,26 +166,12 @@ enum nsChangeHint : uint32_t {
 
 
 
-  nsChangeHint_NeutralChange = 1 << 20,
+  nsChangeHint_NeutralChange = 1 << 19,
 
   
 
 
-  nsChangeHint_InvalidateRenderingObservers = 1 << 21,
-
-  
-
-
-
-
-
-  nsChangeHint_ReflowChangesSizeOrPosition = 1 << 22,
-
-  
-
-
-
-  nsChangeHint_UpdateComputedBSize = 1 << 23,
+  nsChangeHint_InvalidateRenderingObservers = 1 << 20,
 
   
 
@@ -199,24 +179,13 @@ enum nsChangeHint : uint32_t {
 
 
 
-
-
-  nsChangeHint_UpdateUsesOpacity = 1 << 24,
+  nsChangeHint_ReflowChangesSizeOrPosition = 1 << 21,
 
   
 
 
 
-
-
-
-  nsChangeHint_UpdateBackgroundPosition = 1 << 25,
-
-  
-
-
-
-  nsChangeHint_AddOrRemoveTransform = 1 << 26,
+  nsChangeHint_UpdateComputedBSize = 1 << 22,
 
   
 
@@ -226,21 +195,7 @@ enum nsChangeHint : uint32_t {
 
 
 
-
-
-  nsChangeHint_ScrollbarChange = 1 << 27,
-
-  
-
-
-
-  nsChangeHint_UpdateWidgetProperties = 1 << 28,
-
-  
-
-
-
-  nsChangeHint_UpdateTableCellSpans = 1 << 29,
+  nsChangeHint_UpdateUsesOpacity = 1 << 23,
 
   
 
@@ -248,7 +203,46 @@ enum nsChangeHint : uint32_t {
 
 
 
-  nsChangeHint_VisibilityChange = 1u << 30,
+
+  nsChangeHint_UpdateBackgroundPosition = 1 << 24,
+
+  
+
+
+
+  nsChangeHint_AddOrRemoveTransform = 1 << 25,
+
+  
+
+
+
+
+
+
+
+
+
+  nsChangeHint_ScrollbarChange = 1 << 26,
+
+  
+
+
+
+  nsChangeHint_UpdateWidgetProperties = 1 << 27,
+
+  
+
+
+
+  nsChangeHint_UpdateTableCellSpans = 1 << 28,
+
+  
+
+
+
+
+
+  nsChangeHint_VisibilityChange = 1u << 29,
 
   
   
@@ -265,7 +259,7 @@ enum nsChangeHint : uint32_t {
   
 
 
-  nsChangeHint_AllHints = uint32_t((1ull << 31) - 1),
+  nsChangeHint_AllHints = uint32_t((1ull << 30) - 1),
 };
 
 
@@ -334,7 +328,7 @@ inline nsChangeHint operator^=(nsChangeHint& aLeft, nsChangeHint aRight) {
    nsChangeHint_NeutralChange | nsChangeHint_ReconstructFrame |            \
    nsChangeHint_RepaintFrame | nsChangeHint_SchedulePaint |                \
    nsChangeHint_UpdateCursor | nsChangeHint_UpdateSubtreeOverflow |        \
-   nsChangeHint_UpdateTextPath | nsChangeHint_VisibilityChange)
+   nsChangeHint_VisibilityChange)
 
 
 #define nsChangeHint_Hints_NeverHandledForDescendants                         \
