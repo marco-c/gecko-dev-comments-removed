@@ -380,8 +380,8 @@ export function newGeneratedSources(sourceInfo: Array<GeneratedSourceData>) {
       
       
       
-      for (const source of newSources) {
-        dispatch(checkPendingBreakpoints(cx, source.id));
+      for (const { source } of newSourceActors) {
+        dispatch(checkPendingBreakpoints(cx, source));
       }
     })();
 
