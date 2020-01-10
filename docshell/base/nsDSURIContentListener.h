@@ -23,13 +23,15 @@ class MaybeCloseWindowHelper final : public nsITimerCallback {
   NS_DECL_ISUPPORTS
   NS_DECL_NSITIMERCALLBACK
 
-  explicit MaybeCloseWindowHelper(nsIInterfaceRequestor* aContentContext);
+  explicit MaybeCloseWindowHelper(
+      mozilla::dom::BrowsingContext* aContentContext);
 
   
 
 
 
-  nsIInterfaceRequestor* MaybeCloseWindow();
+
+  mozilla::dom::BrowsingContext* MaybeCloseWindow();
 
   void SetShouldCloseWindow(bool aShouldCloseWindow);
 
@@ -40,13 +42,13 @@ class MaybeCloseWindowHelper final : public nsITimerCallback {
   
 
 
-  nsCOMPtr<nsIInterfaceRequestor> mContentContext;
+  RefPtr<mozilla::dom::BrowsingContext> mBrowsingContext;
 
   
 
 
 
-  nsCOMPtr<nsPIDOMWindowOuter> mWindowToClose;
+  RefPtr<mozilla::dom::BrowsingContext> mBCToClose;
   nsCOMPtr<nsITimer> mTimer;
 
   

@@ -912,7 +912,10 @@ void BrowsingContext::Close(CallerType aCallerType, ErrorResult& aError) {
   
   
   
-  if (ContentChild* cc = ContentChild::GetSingleton()) {
+  if (GetDOMWindow()) {
+    nsGlobalWindowOuter::Cast(GetDOMWindow())
+        ->CloseOuter(aCallerType == CallerType::System);
+  } else if (ContentChild* cc = ContentChild::GetSingleton()) {
     cc->SendWindowClose(this, aCallerType == CallerType::System);
   } else if (ContentParent* cp = Canonical()->GetContentParent()) {
     Unused << cp->SendWindowClose(this, aCallerType == CallerType::System);

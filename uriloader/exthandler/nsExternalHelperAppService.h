@@ -172,12 +172,11 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
   nsCOMArray<nsIFile> mTemporaryPrivateFilesList;
 
  private:
-  nsresult DoContentContentProcessHelper(const nsACString& aMimeContentType,
-                                         nsIRequest* aRequest,
-                                         nsIInterfaceRequestor* aContentContext,
-                                         bool aForceSave,
-                                         nsIInterfaceRequestor* aWindowContext,
-                                         nsIStreamListener** aStreamListener);
+  nsresult DoContentContentProcessHelper(
+      const nsACString& aMimeContentType, nsIRequest* aRequest,
+      mozilla::dom::BrowsingContext* aContentContext, bool aForceSave,
+      nsIInterfaceRequestor* aWindowContext,
+      nsIStreamListener** aStreamListener);
 };
 
 
@@ -217,7 +216,7 @@ class nsExternalAppHandler final : public nsIStreamListener,
 
 
   nsExternalAppHandler(nsIMIMEInfo* aMIMEInfo, const nsACString& aFileExtension,
-                       nsIInterfaceRequestor* aContentContext,
+                       mozilla::dom::BrowsingContext* aBrowsingContext,
                        nsIInterfaceRequestor* aWindowContext,
                        nsExternalHelperAppService* aExtProtSvc,
                        const nsAString& aFilename, uint32_t aReason,
@@ -233,17 +232,7 @@ class nsExternalAppHandler final : public nsIStreamListener,
 
   void MaybeApplyDecodingForExtension(nsIRequest* request);
 
-  
-
-
-  nsIInterfaceRequestor* GetDialogParent() {
-    return mWindowContext ? mWindowContext : mContentContext;
-  }
-
-  void SetContentContext(nsIInterfaceRequestor* context) {
-    MOZ_ASSERT(!mWindowContext);
-    mContentContext = context;
-  }
+  void SetShouldCloseWindow() { mShouldCloseWindow = true; }
 
  protected:
   ~nsExternalAppHandler();
@@ -261,7 +250,7 @@ class nsExternalAppHandler final : public nsIStreamListener,
   
 
 
-  nsCOMPtr<nsIInterfaceRequestor> mContentContext;
+  RefPtr<mozilla::dom::BrowsingContext> mBrowsingContext;
 
   
 
@@ -301,6 +290,12 @@ class nsExternalAppHandler final : public nsIStreamListener,
   bool mStopRequestIssued;
 
   bool mIsFileChannel;
+
+  
+
+
+
+  bool mShouldCloseWindow;
 
   
 
@@ -349,6 +344,11 @@ class nsExternalAppHandler final : public nsIStreamListener,
 
 
   nsCOMPtr<nsIArray> mRedirects;
+  
+
+
+
+  already_AddRefed<nsIInterfaceRequestor> GetDialogParent();
   
 
 
