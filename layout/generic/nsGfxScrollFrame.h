@@ -347,9 +347,13 @@ class ScrollFrameHelper : public nsIReflowCallback {
  private:
   nsIFrame* GetFrameForDir() const;  
                                      
-  nsIFrame* GetFrameForScrollSnap() const;  
-                                            
-                                            
+  
+  
+  
+  
+  
+  
+  nsIFrame* GetFrameForStyle() const;
 
   
   ScrollSnapInfo ComputeOldScrollSnapInfo() const;
