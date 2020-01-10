@@ -2527,7 +2527,16 @@ pub struct PicturePrimitive {
     
     
     
-    pub local_rect: LayoutRect,
+    pub estimated_local_rect: LayoutRect,
+
+    
+    
+    
+    
+    
+    
+    
+    pub precise_local_rect: LayoutRect,
 
     
     
@@ -2552,7 +2561,8 @@ impl PicturePrimitive {
     ) {
         pt.new_level(format!("{:?}", self_index));
         pt.add_item(format!("cluster_count: {:?}", self.prim_list.clusters.len()));
-        pt.add_item(format!("local_rect: {:?}", self.local_rect));
+        pt.add_item(format!("estimated_local_rect: {:?}", self.estimated_local_rect));
+        pt.add_item(format!("precise_local_rect: {:?}", self.precise_local_rect));
         pt.add_item(format!("spatial_node_index: {:?}", self.spatial_node_index));
         pt.add_item(format!("raster_config: {:?}", self.raster_config));
         pt.add_item(format!("requested_composite_mode: {:?}", self.requested_composite_mode));
@@ -2670,7 +2680,8 @@ impl PicturePrimitive {
             is_backface_visible: flags.contains(PrimitiveFlags::IS_BACKFACE_VISIBLE),
             requested_raster_space,
             spatial_node_index,
-            local_rect: LayoutRect::zero(),
+            estimated_local_rect: LayoutRect::zero(),
+            precise_local_rect: LayoutRect::zero(),
             tile_cache,
             options,
             segments_are_valid: false,
@@ -2774,7 +2785,7 @@ impl PicturePrimitive {
 
         match self.raster_config {
             Some(ref raster_config) => {
-                let pic_rect = PictureRect::from_untyped(&self.local_rect.to_untyped());
+                let pic_rect = PictureRect::from_untyped(&self.precise_local_rect.to_untyped());
 
                 let device_pixel_scale = frame_state
                     .surfaces[raster_config.surface_index.0]
@@ -3695,16 +3706,18 @@ impl PicturePrimitive {
                 }
             }
 
-            self.local_rect = surface_rect;
+            
+            
+            self.estimated_local_rect = surface_rect;
+            self.precise_local_rect = surface_rect;
 
             
             
             match raster_config.composite_mode {
                 PictureCompositeMode::Filter(Filter::DropShadows(ref shadows)) => {
                     for shadow in shadows {
-                        let content_rect = surface_rect;
-                        let shadow_rect = surface_rect.translate(shadow.offset);
-                        surface_rect = content_rect.union(&shadow_rect);
+                        let shadow_rect = self.estimated_local_rect.translate(shadow.offset);
+                        surface_rect = surface_rect.union(&shadow_rect);
                     }
                 }
                 _ => {}
@@ -3765,14 +3778,14 @@ impl PicturePrimitive {
                         
                         
                         
-                        let shadow_rect = self.local_rect.translate(shadow.offset);
+                        let shadow_rect = self.precise_local_rect.translate(shadow.offset);
 
                         
                         request.push(shadow.color.premultiplied());
                         request.push(PremultipliedColorF::WHITE);
                         request.push([
-                            self.local_rect.size.width,
-                            self.local_rect.size.height,
+                            self.precise_local_rect.size.width,
+                            self.precise_local_rect.size.height,
                             0.0,
                             0.0,
                         ]);
