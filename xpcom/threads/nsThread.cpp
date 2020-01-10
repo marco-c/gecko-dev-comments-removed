@@ -203,39 +203,6 @@ NS_INTERFACE_MAP_END
 NS_IMPL_CI_INTERFACE_GETTER(nsThread, nsIThread, nsIThreadInternal,
                             nsIEventTarget, nsISupportsPriority)
 
-
-
-class nsThreadStartupEvent final : public Runnable {
- public:
-  nsThreadStartupEvent()
-      : Runnable("nsThreadStartupEvent"),
-        mMon("nsThreadStartupEvent.mMon"),
-        mInitialized(false) {}
-
-  
-  
-  void Wait() {
-    ReentrantMonitorAutoEnter mon(mMon);
-    while (!mInitialized) {
-      mon.Wait();
-    }
-  }
-
- private:
-  ~nsThreadStartupEvent() = default;
-
-  NS_IMETHOD Run() override {
-    ReentrantMonitorAutoEnter mon(mMon);
-    mInitialized = true;
-    mon.Notify();
-    return NS_OK;
-  }
-
-  ReentrantMonitor mMon;
-  bool mInitialized;
-};
-
-
 struct nsThreadShutdownContext {
   nsThreadShutdownContext(NotNull<nsThread*> aTerminatingThread,
                           NotNull<nsThread*> aJoiningThread,
@@ -358,7 +325,7 @@ namespace {
 
 struct ThreadInitData {
   nsThread* thread;
-  const nsACString& name;
+  nsCString name;
 };
 
 }  
@@ -411,14 +378,16 @@ void nsThread::MaybeRemoveFromThreadList() {
 void nsThread::ThreadFunc(void* aArg) {
   using mozilla::ipc::BackgroundChild;
 
-  ThreadInitData* initData = static_cast<ThreadInitData*>(aArg);
+  UniquePtr<ThreadInitData> initData(static_cast<ThreadInitData*>(aArg));
   nsThread* self = initData->thread;  
 
   MOZ_ASSERT(self->mEventTarget);
   MOZ_ASSERT(self->mEvents);
 
+  
+  MOZ_ASSERT(!self->mThread || (self->mThread == PR_GetCurrentThread()));
   self->mThread = PR_GetCurrentThread();
-  self->mEventTarget->SetCurrentThread();
+  self->mEventTarget->SetCurrentThread(self->mThread);
   SetupCurrentThreadForChaosMode();
 
   if (!initData->name.IsEmpty()) {
@@ -438,15 +407,6 @@ void nsThread::ThreadFunc(void* aArg) {
   if (!initData->name.IsEmpty()) {
     PROFILER_REGISTER_THREAD(initData->name.BeginReading());
   }
-
-  
-  nsCOMPtr<nsIRunnable> event = self->mEvents->GetEvent(true, nullptr);
-  MOZ_ASSERT(event);
-
-  initData = nullptr;  
-
-  event->Run();  
-  event = nullptr;
 
   {
     
@@ -489,7 +449,9 @@ void nsThread::ThreadFunc(void* aArg) {
   NotNull<nsThreadShutdownContext*> context =
       WrapNotNull(self->mShutdownContext);
   MOZ_ASSERT(context->mTerminatingThread == self);
-  event = do_QueryObject(new nsThreadShutdownAckEvent(context));
+
+  nsCOMPtr<nsIRunnable> event =
+      do_QueryObject(new nsThreadShutdownAckEvent(context));
   if (context->mIsMainThreadJoining) {
     SystemGroup::Dispatch(TaskCategory::Other, event.forget());
   } else {
@@ -655,20 +617,20 @@ nsThread::~nsThread() {
 nsresult nsThread::Init(const nsACString& aName) {
   MOZ_ASSERT(mEvents);
   MOZ_ASSERT(mEventTarget);
-
-  
-  RefPtr<nsThreadStartupEvent> startup = new nsThreadStartupEvent();
+  MOZ_ASSERT(!mThread);
 
   NS_ADDREF_THIS();
 
   mShutdownRequired = true;
 
-  ThreadInitData initData = {this, aName};
+  ThreadInitData* initData = new ThreadInitData{this, nsCString(aName)};
 
+  PRThread* thread = nullptr;
   
-  if (!PR_CreateThread(PR_USER_THREAD, ThreadFunc, &initData,
-                       PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD, PR_JOINABLE_THREAD,
-                       mStackSize)) {
+  if (!(thread = PR_CreateThread(PR_USER_THREAD, ThreadFunc, initData,
+                                 PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
+                                 PR_JOINABLE_THREAD, mStackSize))) {
+    delete initData;
     NS_RELEASE_THIS();
     return NS_ERROR_OUT_OF_MEMORY;
   }
@@ -676,14 +638,10 @@ nsresult nsThread::Init(const nsACString& aName) {
   
   
   
-  {
-    mEvents->PutEvent(do_AddRef(startup),
-                      EventQueuePriority::Normal);  
-  }
+  MOZ_ASSERT(!mThread || (mThread == thread));
+  mThread = thread;
+  mEventTarget->SetCurrentThread(thread);
 
-  
-  
-  startup->Wait();
   return NS_OK;
 }
 
