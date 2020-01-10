@@ -38,9 +38,9 @@ Cu.importGlobalProperties(["fetch"]);
 
 
 const WASM_MODULE_URL =
-  "https://zealous-rosalind-a98ce8.netlify.com/wasm/3365b75b606d0fd60ca98eea6b3057ac5bdcd4be2f24d1ad1c6452ddf2cc622ddeae28665261d7e0f13913ed5e14960b.wasm";
+  "https://zealous-rosalind-a98ce8.netlify.com/wasm/55115f2a5d24981933dba6de2026f972769ed3830cd55b2d6a26a440673eb1374cd42e6c732a0423aa748a7bea7edb69.wasm";
 const WASM_MODULE_INTEGRITY =
-  "sha384-M2W3W2BtD9YMqY7qazBXrFvc1L4vJNGtHGRS3fLMYi3erihmUmHX4PE5E+1eFJYL";
+  "sha384-VRFfKl0kmBkz26beICb5cnae04MM1VstaiakQGc+sTdM1C5scyoEI6p0invqfttp";
 
 const EXPIRY_TIME_IN_MS = 5 * 60 * 1000; 
 
