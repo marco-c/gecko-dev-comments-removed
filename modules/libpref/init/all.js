@@ -3134,13 +3134,6 @@ pref("dom.ipc.processCount.webIsolated", 1);
 pref("dom.ipc.keepProcessesAlive.privilegedabout", 1);
 
 
-#if defined(XP_WIN) || defined(XP_MACOSX)
-pref("dom.ipc.useNativeEventProcessing.content", false);
-#else
-pref("dom.ipc.useNativeEventProcessing.content", true);
-#endif
-
-
 pref("svg.disabled", false);
 
 

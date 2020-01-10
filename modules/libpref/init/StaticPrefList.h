@@ -1639,6 +1639,19 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  Live,
+  "dom.ipc.useNativeEventProcessing.content",
+   dom_ipc_useNativeEventProcessing_content,
+  RelaxedAtomicBool,
+#if defined(XP_WIN) || defined(XP_MACOSX)
+  false
+#else
+  true
+#endif
+)
+
+
 
 VARCACHE_PREF(
   Live,
