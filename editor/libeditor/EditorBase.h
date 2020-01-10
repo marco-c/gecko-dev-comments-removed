@@ -697,6 +697,15 @@ class EditorBase : public nsIEditor,
     TopLevelEditSubActionData(const TopLevelEditSubActionData& aOther) = delete;
   };
 
+  struct MOZ_STACK_CLASS EditSubActionData final {
+    uint32_t mJoinedLeftNodeLength;
+
+   private:
+    void Clear() { mJoinedLeftNodeLength = 0; }
+
+    friend EditorBase;
+  };
+
  protected:  
   
 
@@ -859,6 +868,11 @@ class EditorBase : public nsIEditor,
                          : mTopLevelEditSubActionData;
     }
 
+    const EditSubActionData& EditSubActionDataRef() const {
+      return mEditSubActionData;
+    }
+    EditSubActionData& EditSubActionDataRef() { return mEditSubActionData; }
+
     SelectionState& SavedSelectionRef() {
       return mParentData ? mParentData->SavedSelectionRef() : mSavedSelection;
     }
@@ -911,6 +925,10 @@ class EditorBase : public nsIEditor,
     
     
     TopLevelEditSubActionData mTopLevelEditSubActionData;
+
+    
+    
+    EditSubActionData mEditSubActionData;
 
     EditAction mEditAction;
 
@@ -1054,6 +1072,15 @@ class EditorBase : public nsIEditor,
   TopLevelEditSubActionData& TopLevelEditSubActionDataRef() {
     MOZ_ASSERT(IsEditActionDataAvailable());
     return mEditActionData->TopLevelEditSubActionDataRef();
+  }
+
+  const EditSubActionData& EditSubActionDataRef() const {
+    MOZ_ASSERT(IsEditActionDataAvailable());
+    return mEditActionData->EditSubActionDataRef();
+  }
+  EditSubActionData& EditSubActionDataRef() {
+    MOZ_ASSERT(IsEditActionDataAvailable());
+    return mEditActionData->EditSubActionDataRef();
   }
 
   
@@ -2018,6 +2045,14 @@ class EditorBase : public nsIEditor,
 
 
 
+
+  void OnStartToHandleEditSubAction() { EditSubActionDataRef().Clear(); }
+  void OnEndHandlingEditSubAction() { EditSubActionDataRef().Clear(); }
+
+  
+
+
+
   bool ArePreservingSelection();
   void PreserveSelectionAcrossActions();
   nsresult RestorePreservedSelection();
@@ -2392,12 +2427,12 @@ class EditorBase : public nsIEditor,
 
 
 
-  class MOZ_RAII AutoTopLevelEditSubActionNotifier final {
+  class MOZ_RAII AutoEditSubActionNotifier final {
    public:
-    AutoTopLevelEditSubActionNotifier(
+    AutoEditSubActionNotifier(
         EditorBase& aEditorBase, EditSubAction aEditSubAction,
         nsIEditor::EDirection aDirection MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-        : mEditorBase(aEditorBase), mDoNothing(false) {
+        : mEditorBase(aEditorBase), mIsTopLevel(true) {
       MOZ_GUARD_OBJECT_NOTIFIER_INIT;
       
       
@@ -2407,20 +2442,22 @@ class EditorBase : public nsIEditor,
         mEditorBase.OnStartToHandleTopLevelEditSubAction(aEditSubAction,
                                                          aDirection);
       } else {
-        mDoNothing = true;  
+        mIsTopLevel = false;
       }
+      mEditorBase.OnStartToHandleEditSubAction();
     }
 
     MOZ_CAN_RUN_SCRIPT_BOUNDARY
-    ~AutoTopLevelEditSubActionNotifier() {
-      if (!mDoNothing) {
+    ~AutoEditSubActionNotifier() {
+      mEditorBase.OnEndHandlingEditSubAction();
+      if (mIsTopLevel) {
         MOZ_KnownLive(mEditorBase).OnEndHandlingTopLevelEditSubAction();
       }
     }
 
    protected:
     EditorBase& mEditorBase;
-    bool mDoNothing;
+    bool mIsTopLevel;
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
   };
 

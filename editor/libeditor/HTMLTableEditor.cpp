@@ -212,7 +212,7 @@ nsresult HTMLEditor::InsertTableCellsWithTransaction(
 
   AutoPlaceholderBatch treateAsOneTransaction(*this);
   
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+  AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertNode, nsIEditor::eNext);
 
   
@@ -437,7 +437,7 @@ nsresult HTMLEditor::InsertTableColumnsWithTransaction(
 
   AutoPlaceholderBatch treateAsOneTransaction(*this);
   
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+  AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertNode, nsIEditor::eNext);
 
   switch (aInsertPosition) {
@@ -626,7 +626,7 @@ nsresult HTMLEditor::InsertTableRowsWithTransaction(
 
   AutoPlaceholderBatch treateAsOneTransaction(*this);
   
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+  AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertNode, nsIEditor::eNext);
 
   switch (aInsertPosition) {
@@ -893,7 +893,7 @@ nsresult HTMLEditor::DeleteTableCellWithTransaction(
 
   AutoPlaceholderBatch treateAsOneTransaction(*this);
   
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+  AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eDeleteNode, nsIEditor::eNext);
 
   ErrorResult error;
@@ -1162,7 +1162,7 @@ nsresult HTMLEditor::DeleteTableCellContentsWithTransaction() {
 
   AutoPlaceholderBatch treateAsOneTransaction(*this);
   
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+  AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eDeleteNode, nsIEditor::eNext);
   
   AutoTransactionsConserveSelection dontChangeSelection(*this);
@@ -1249,7 +1249,7 @@ nsresult HTMLEditor::DeleteSelectedTableColumnsWithTransaction(
   AutoPlaceholderBatch treateAsOneTransaction(*this);
 
   
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+  AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eDeleteNode, nsIEditor::eNext);
 
   
@@ -1474,7 +1474,7 @@ nsresult HTMLEditor::DeleteSelectedTableRowsWithTransaction(
   AutoPlaceholderBatch treateAsOneTransaction(*this);
 
   
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+  AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eDeleteNode, nsIEditor::eNext);
 
   
@@ -1584,7 +1584,7 @@ nsresult HTMLEditor::DeleteTableRowWithTransaction(Element& aTableElement,
   }
 
   
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+  AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eDeleteNode, nsIEditor::eNext);
 
   
@@ -2118,7 +2118,7 @@ HTMLEditor::SplitTableCell() {
 
   AutoPlaceholderBatch treateAsOneTransaction(*this);
   
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+  AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertNode, nsIEditor::eNext);
 
   
@@ -2370,7 +2370,7 @@ HTMLEditor::SwitchTableCellHeaderType(Element* aSourceCell,
   AutoPlaceholderBatch treatAsOneTransaction(*this);
   
   
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+  AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertNode, nsIEditor::eNext);
 
   
@@ -2633,7 +2633,7 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
 
     
     
-    AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+    AutoEditSubActionNotifier startToHandleEditSubAction(
         *this, EditSubAction::eDeleteNode, nsIEditor::eNext);
 
     for (uint32_t i = 0, n = deleteList.Length(); i < n; i++) {
@@ -2776,7 +2776,7 @@ nsresult HTMLEditor::MergeCells(RefPtr<Element> aTargetCell,
   }
 
   
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+  AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eDeleteNode, nsIEditor::eNext);
 
   
@@ -3026,7 +3026,7 @@ nsresult HTMLEditor::NormalizeTableInternal(Element& aTableOrElementInTable) {
 
   AutoPlaceholderBatch treateAsOneTransaction(*this);
   
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+  AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertNode, nsIEditor::eNext);
 
   

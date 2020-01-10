@@ -103,7 +103,7 @@ nsresult HTMLEditor::LoadHTML(const nsAString& aInputString) {
   }
 
   AutoPlaceholderBatch treatAsOneTransaction(*this);
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+  AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertHTMLSource, nsIEditor::eNext);
 
   nsresult rv = EnsureNoPaddingBRElementForEmptyEditor();
@@ -202,7 +202,7 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
   
   CommitComposition();
   AutoPlaceholderBatch treatAsOneTransaction(*this);
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+  AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::ePasteHTMLContent, nsIEditor::eNext);
 
   
@@ -1739,7 +1739,7 @@ nsresult HTMLEditor::PasteAsQuotationAsAction(int32_t aClipboardType,
   
 
   AutoPlaceholderBatch treatAsOneTransaction(*this);
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+  AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertQuotation, nsIEditor::eNext);
 
   
@@ -1985,7 +1985,7 @@ nsresult HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
     *aNodeInserted = nullptr;
   }
 
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+  AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertQuotation, nsIEditor::eNext);
 
   
@@ -2168,7 +2168,7 @@ nsresult HTMLEditor::InsertAsCitedQuotationInternal(
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(!IsPlaintextEditor());
 
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+  AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertQuotation, nsIEditor::eNext);
 
   

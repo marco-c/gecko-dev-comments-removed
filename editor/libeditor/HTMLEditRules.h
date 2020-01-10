@@ -1326,8 +1326,6 @@ class HTMLEditRules : public TextEditRules {
   bool mInitialized;
   bool mListenerEnabled;
   bool mReturnInEmptyLIKillsList;
-  
-  uint32_t mJoinOffset;
 };
 
 }  
