@@ -288,7 +288,7 @@ static LayerPoint GetLayerFixedMarginsOffset(
   
   
   LayerPoint translation;
-  int32_t sides = aLayer->GetFixedPositionSides();
+  SideBits sides = aLayer->GetFixedPositionSides();
 
   if ((sides & eSideBitsLeftRight) == eSideBitsLeftRight) {
     translation.x += (aFixedLayerMargins.left - aFixedLayerMargins.right) / 2;
