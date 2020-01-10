@@ -48,7 +48,9 @@ class FreeOp : public JSFreeOp {
 
   bool isDefaultFreeOp() const { return isDefault; }
 
-  void free_(void* p) { js_free(p); }
+  
+  
+  void freeUntracked(void* p) { js_free(p); }
 
   
   
@@ -60,13 +62,16 @@ class FreeOp : public JSFreeOp {
   
   
   
-  
-  
-  
-  
-  
-  void freeLater(void* p);
+  void freeUntrackedLater(void* p) { queueForFreeLater(p); }
 
+  
+  
+  
+  
+  
+  
+  
+  
   
   void freeLater(gc::Cell* cell, void* p, size_t nbytes, MemoryUse use);
 
@@ -78,11 +83,14 @@ class FreeOp : public JSFreeOp {
     return jitPoisonRanges.append(range);
   }
 
+  
+  
+  
   template <class T>
-  void delete_(T* p) {
+  void deleteUntracked(T* p) {
     if (p) {
       p->~T();
-      free_(p);
+      js_free(p);
     }
   }
 
@@ -135,6 +143,9 @@ class FreeOp : public JSFreeOp {
   
   template <class T>
   void release(gc::Cell* cell, T* p, size_t nbytes, MemoryUse use);
+
+ private:
+  void queueForFreeLater(void* p);
 };
 
 }  
