@@ -34,13 +34,9 @@ class CSPService : public nsIContentPolicy, public nsIChannelEventSink {
                              const nsACString& aMimeTypeGuess,
                              int16_t* aDecision);
 
-  
-  
-  
-  
   static nsresult ConsultCSPForRedirect(nsIURI* aOriginalURI, nsIURI* aNewURI,
                                         nsILoadInfo* aLoadInfo,
-                                        Maybe<nsresult>& aCancelCode);
+                                        int16_t* aDecision);
 
  protected:
   virtual ~CSPService();
