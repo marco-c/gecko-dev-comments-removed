@@ -1400,6 +1400,11 @@ class BaseScript : public gc::TenuredCell {
   uint8_t* jitCodeRaw_ = nullptr;
 
   
+  
+  
+  GCPtrObject functionOrGlobal_;
+
+  
   GCPtr<ScriptSourceObject*> sourceObject_ = {};
 
   
@@ -1440,15 +1445,17 @@ class BaseScript : public gc::TenuredCell {
   uint32_t immutableFlags_ = 0;
   uint32_t mutableFlags_ = 0;
 
-  BaseScript(uint8_t* stubEntry, ScriptSourceObject* sourceObject,
-             uint32_t sourceStart, uint32_t sourceEnd, uint32_t toStringStart,
-             uint32_t toStringEnd)
+  BaseScript(uint8_t* stubEntry, JSObject* functionOrGlobal,
+             ScriptSourceObject* sourceObject, uint32_t sourceStart,
+             uint32_t sourceEnd, uint32_t toStringStart, uint32_t toStringEnd)
       : jitCodeRaw_(stubEntry),
+        functionOrGlobal_(functionOrGlobal),
         sourceObject_(sourceObject),
         sourceStart_(sourceStart),
         sourceEnd_(sourceEnd),
         toStringStart_(toStringStart),
         toStringEnd_(toStringEnd) {
+    MOZ_ASSERT(functionOrGlobal->compartment() == sourceObject->compartment());
     MOZ_ASSERT(toStringStart <= sourceStart);
     MOZ_ASSERT(sourceStart <= sourceEnd);
     MOZ_ASSERT(sourceEnd <= toStringEnd);
@@ -1623,6 +1630,12 @@ class BaseScript : public gc::TenuredCell {
   };
 
   uint8_t* jitCodeRaw() const { return jitCodeRaw_; }
+
+  JS::Realm* realm() const { return functionOrGlobal_->nonCCWRealm(); }
+  JS::Compartment* compartment() const {
+    return functionOrGlobal_->compartment();
+  }
+  JS::Compartment* maybeCompartment() const { return compartment(); }
 
   ScriptSourceObject* sourceObject() const { return sourceObject_; }
   ScriptSource* scriptSource() const { return sourceObject()->source(); }
@@ -2334,9 +2347,6 @@ class JSScript : public js::BaseScript {
   
   js::PrivateScriptData* data_ = nullptr;
 
- public:
-  js::GCPtrObject global_ = {};
-
  private:
   
   js::jit::JitScript* jitScript_ = nullptr;
@@ -2443,10 +2453,6 @@ class JSScript : public js::BaseScript {
 
  public:
   inline JSPrincipals* principals();
-
-  JS::Realm* realm() const { return global_->nonCCWRealm(); }
-  JS::Compartment* compartment() const { return global_->compartment(); }
-  JS::Compartment* maybeCompartment() const { return compartment(); }
 
   js::RuntimeScriptData* scriptData() { return scriptData_; }
   js::ImmutableScriptData* immutableScriptData() const {
@@ -3154,9 +3160,6 @@ class LazyScript : public BaseScript {
   friend void js::gc::SweepLazyScripts(GCParallelTask* task);
 
   
-  GCPtrFunction function_;
-
-  
   
   
   
@@ -3290,11 +3293,9 @@ class LazyScript : public BaseScript {
 
   static inline JSFunction* functionDelazifying(JSContext* cx,
                                                 Handle<LazyScript*>);
-  JSFunction* functionNonDelazifying() const { return function_; }
-
-  JS::Compartment* compartment() const;
-  JS::Compartment* maybeCompartment() const { return compartment(); }
-  Realm* realm() const;
+  JSFunction* functionNonDelazifying() const {
+    return &functionOrGlobal_->as<JSFunction>();
+  }
 
   void initScript(JSScript* script);
 
