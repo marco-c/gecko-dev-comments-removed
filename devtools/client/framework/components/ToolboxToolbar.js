@@ -273,10 +273,8 @@ class ToolboxToolbar extends Component {
         ref: "frameMenuButton",
         title: description,
         onCloseButton: async () => {
-          
-          if (toolbox.highlighter) {
-            toolbox.highlighter.unhighlight();
-          }
+          await toolbox.initInspector();
+          toolbox.highlighter.unhighlight();
         },
       },
       this.createFrameList

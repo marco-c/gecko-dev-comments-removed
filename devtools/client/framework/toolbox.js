@@ -3412,7 +3412,7 @@ Toolbox.prototype = {
 
       
       
-      this._inspector.destroy();
+      await this._inspector.destroy();
 
       this._inspector = null;
       this._highlighter = null;
@@ -3542,6 +3542,9 @@ Toolbox.prototype = {
     this._toolNames = null;
 
     
+    outstanding.push(this.destroyInspector());
+
+    
     outstanding.push(this.resetPreference());
 
     
@@ -3584,10 +3587,7 @@ Toolbox.prototype = {
       resolve(
         settleAll(outstanding)
           .catch(console.error)
-          .then(async () => {
-            
-            await this.destroyInspector();
-
+          .then(() => {
             if (this._netMonitorAPI) {
               this._netMonitorAPI.destroy();
               this._netMonitorAPI = null;

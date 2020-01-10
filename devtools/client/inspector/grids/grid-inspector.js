@@ -292,7 +292,6 @@ class GridInspector {
 
 
 
-  
   async updateGridPanel() {
     
     if (!this.inspector || !this.store) {
@@ -306,11 +305,6 @@ class GridInspector {
     } catch (e) {
       
       
-      return;
-    }
-
-    
-    if (!this.inspector) {
       return;
     }
 
@@ -359,10 +353,6 @@ class GridInspector {
         } catch (e) {
           
           
-          return;
-        }
-        
-        if (!this.inspector) {
           return;
         }
       }
@@ -521,10 +511,6 @@ class GridInspector {
     } catch (e) {
       
       
-      return;
-    }
-    
-    if (!this.inspector) {
       return;
     }
 

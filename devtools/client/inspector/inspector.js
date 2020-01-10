@@ -328,7 +328,6 @@ Inspector.prototype = {
   },
 
   _deferredOpen: async function() {
-    const onMarkupLoaded = this.once("markuploaded");
     this._initMarkup();
     this.isReady = false;
 
@@ -350,9 +349,9 @@ Inspector.prototype = {
       "visible";
 
     
-    await this.setupSidebar();
+    this.setupSidebar();
 
-    await onMarkupLoaded;
+    await this.once("markuploaded");
     this.isReady = true;
 
     
