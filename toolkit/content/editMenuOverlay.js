@@ -92,4 +92,7 @@ window.addEventListener("contextmenu", (e) => {
 
   goUpdateGlobalEditMenuItems(true);
   popup.openPopupAtScreen(e.screenX, e.screenY, true);
+  
+  
+  e.preventDefault();
 });
