@@ -6485,7 +6485,7 @@ nsBrowserAccess.prototype = {
       throw Cr.NS_ERROR_FAILURE;
     }
 
-    var newWindow = null;
+    var browsingContext = null;
     var isExternal = !!(aFlags & Ci.nsIBrowserDOMWindow.OPEN_EXTERNAL);
 
     if (aOpener && isExternal) {
@@ -6549,7 +6549,7 @@ nsBrowserAccess.prototype = {
         
         
         try {
-          newWindow = openDialog(
+          openDialog(
             AppConstants.BROWSER_CHROME_URL,
             "_blank",
             features,
@@ -6566,6 +6566,17 @@ nsBrowserAccess.prototype = {
             null,
             aCsp
           );
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          browsingContext = null;
         } catch (ex) {
           Cu.reportError(ex);
         }
@@ -6599,12 +6610,13 @@ nsBrowserAccess.prototype = {
           aCsp
         );
         if (browser) {
-          newWindow = browser.contentWindow;
+          browsingContext = browser.browsingContext;
         }
         break;
       default:
         
-        newWindow = window.content;
+        browsingContext =
+          window.content && BrowsingContext.getFromWindow(window.content);
         if (aURI) {
           let loadflags = isExternal
             ? Ci.nsIWebNavigation.LOAD_FLAGS_FROM_EXTERNAL
@@ -6622,7 +6634,7 @@ nsBrowserAccess.prototype = {
           window.focus();
         }
     }
-    return newWindow;
+    return browsingContext;
   },
 
   createContentWindowInFrame: function browser_createContentWindowInFrame(

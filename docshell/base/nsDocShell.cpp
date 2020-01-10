@@ -8777,7 +8777,7 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState,
     nsCOMPtr<nsPIDOMWindowOuter> win = GetWindow();
     NS_ENSURE_TRUE(win, NS_ERROR_NOT_AVAILABLE);
 
-    nsCOMPtr<nsPIDOMWindowOuter> newWin;
+    RefPtr<BrowsingContext> newBC;
     nsAutoCString spec;
     aLoadState->URI()->GetSpec(spec);
 
@@ -8837,20 +8837,21 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState,
                      EmptyString(),         
                      loadState,
                      true,  
-                     getter_AddRefs(newWin));
-      MOZ_ASSERT(!newWin);
+                     getter_AddRefs(newBC));
+      MOZ_ASSERT(!newBC);
       return rv;
     }
 
     rv = win->OpenNoNavigate(NS_ConvertUTF8toUTF16(spec),
                              aLoadState->Target(),  
                              EmptyString(),         
-                             getter_AddRefs(newWin));
+                             getter_AddRefs(newBC));
 
     
     
     
-    nsCOMPtr<nsPIDOMWindowOuter> piNewWin = newWin;
+    nsCOMPtr<nsPIDOMWindowOuter> piNewWin =
+        newBC ? newBC->GetDOMWindow() : nullptr;
     if (piNewWin) {
       RefPtr<Document> newDoc = piNewWin->GetExtantDoc();
       if (!newDoc || newDoc->IsInitialDocument()) {
@@ -8858,8 +8859,9 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState,
       }
     }
 
-    nsCOMPtr<nsIWebNavigation> webNav = do_GetInterface(newWin);
-    targetDocShell = do_QueryInterface(webNav);
+    if (newBC) {
+      targetDocShell = newBC->GetDocShell();
+    }
   }
 
   NS_ENSURE_SUCCESS(rv, rv);
