@@ -169,30 +169,18 @@ static void Clear() {
 }
 
 static void testUpdateFail(TableUpdateArray& tableUpdates) {
-  nsCOMPtr<nsIFile> file;
-  NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR, getter_AddRefs(file));
-
-  RefPtr<Classifier> classifier = new Classifier();
-  classifier->Open(*file);
-
-  nsresult rv = SyncApplyUpdates(classifier, tableUpdates);
+  nsresult rv = SyncApplyUpdates(tableUpdates);
   ASSERT_TRUE(NS_FAILED(rv));
 }
 
 static void testUpdate(TableUpdateArray& tableUpdates,
                        PrefixStringMap& expected) {
-  nsCOMPtr<nsIFile> file;
-  NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR, getter_AddRefs(file));
-
   
   
   
   nsUrlClassifierUtils::GetInstance();
 
-  RefPtr<Classifier> classifier = new Classifier();
-  classifier->Open(*file);
-
-  nsresult rv = SyncApplyUpdates(classifier, tableUpdates);
+  nsresult rv = SyncApplyUpdates(tableUpdates);
   ASSERT_TRUE(rv == NS_OK);
   VerifyPrefixSet(expected);
 }

@@ -333,20 +333,25 @@ void Classifier::Reset() {
   LOG(("Reset() is called so we interrupt the update."));
   mUpdateInterrupted = true;
 
-  RefPtr<Classifier> self = this;
-  auto resetFunc = [self] {
-    if (self->mIsClosed) {
+  
+  
+  
+  
+  
+  
+  auto resetFunc = [&] {
+    if (this->mIsClosed) {
       return;  
     }
-    self->DropStores();
+    this->DropStores();
 
-    self->mRootStoreDirectory->Remove(true);
-    self->mBackupDirectory->Remove(true);
-    self->mUpdatingDirectory->Remove(true);
-    self->mToDeleteDirectory->Remove(true);
+    this->mRootStoreDirectory->Remove(true);
+    this->mBackupDirectory->Remove(true);
+    this->mUpdatingDirectory->Remove(true);
+    this->mToDeleteDirectory->Remove(true);
 
-    self->CreateStoreDirectory();
-    self->RegenActiveTables();
+    this->CreateStoreDirectory();
+    this->RegenActiveTables();
   };
 
   if (!mUpdateThread) {
