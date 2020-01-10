@@ -159,7 +159,13 @@ class ScriptLoadRequest
   void SetBinASTSource();
   void SetBytecode();
 
+  
+  
+  
   using ScriptTextBuffer = Vector<char16_t, 0, JSMallocAllocPolicy>;
+
+  
+  
   using BinASTSourceBuffer = Vector<uint8_t>;
 
   const ScriptTextBuffer& ScriptText() const {
@@ -269,8 +275,6 @@ class ScriptLoadRequest
   
   JS::Heap<JSScript*> mScript;
 
-  
-  
   
   Maybe<Variant<ScriptTextBuffer, BinASTSourceBuffer>> mScriptData;
 
