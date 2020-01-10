@@ -8,6 +8,7 @@
 
 #ifdef MOZ_BASE_PROFILER
 
+#  include "mozilla/leb128iterator.h"
 #  include "mozilla/PowerOfTwo.h"
 
 #  include "mozilla/Attributes.h"
@@ -150,6 +151,105 @@ void TestPowerOfTwo() {
   printf("TestPowerOfTwo done\n");
 }
 
+void TestLEB128() {
+  printf("TestLEB128...\n");
+
+  MOZ_RELEASE_ASSERT(ULEB128MaxSize<uint8_t>() == 2);
+  MOZ_RELEASE_ASSERT(ULEB128MaxSize<uint16_t>() == 3);
+  MOZ_RELEASE_ASSERT(ULEB128MaxSize<uint32_t>() == 5);
+  MOZ_RELEASE_ASSERT(ULEB128MaxSize<uint64_t>() == 10);
+
+  struct TestDataU64 {
+    uint64_t mValue;
+    unsigned mSize;
+    const char* mBytes;
+  };
+  
+  TestDataU64 tests[] = {
+    
+    {                  0u,  1, "\0" },
+    {                  1u,  1, "\x01" },
+
+    
+    
+    
+    {               0x7Fu,  1, "\x7F" },
+
+    
+    
+    
+    
+    
+    
+    {               0x80u,  2, "\x80\x01" },
+
+    
+    
+    
+    
+    
+    
+    {               0x81u,  2, "\x81\x01" },
+
+    
+    
+    
+    
+    
+    
+    {               0xFFu,  2, "\xFF\x01" },
+
+    
+    
+    
+    
+    
+    
+    {              0x100u,  2, "\x80\x02" },
+
+    
+    
+    
+    
+    
+    
+    {         0xFFFFFFFFu,  5, "\xFF\xFF\xFF\xFF\x0F" },
+
+    
+    
+    { 0xFFFFFFFFFFFFFFFFu, 10, "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x01" }
+  };
+  
+
+  for (const TestDataU64& test : tests) {
+    MOZ_RELEASE_ASSERT(ULEB128Size(test.mValue) == test.mSize);
+    
+    uint8_t buffer[ULEB128MaxSize<uint64_t>()];
+    
+    uint8_t* p = buffer;
+    
+    WriteULEB128(test.mValue, p);
+    
+    
+    MOZ_RELEASE_ASSERT(p == buffer + test.mSize);
+    
+    for (unsigned i = 0; i < test.mSize; ++i) {
+      MOZ_RELEASE_ASSERT(buffer[i] == uint8_t(test.mBytes[i]));
+    }
+    
+    p = buffer;
+    
+    uint64_t read = ReadULEB128<uint64_t>(p);
+    
+    
+    MOZ_RELEASE_ASSERT(p == buffer + test.mSize);
+    
+    MOZ_RELEASE_ASSERT(read == test.mValue);
+  }
+
+  printf("TestLEB128 done\n");
+}
+
 
 static constexpr size_t NextDepth(size_t aDepth) {
   constexpr size_t MAX_DEPTH = 128;
@@ -185,6 +285,7 @@ void TestProfiler() {
   
   TestPowerOfTwoMask();
   TestPowerOfTwo();
+  TestLEB128();
 
   {
     printf("profiler_init()...\n");
