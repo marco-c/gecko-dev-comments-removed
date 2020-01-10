@@ -50,7 +50,7 @@ class WindowGlobalChild final : public WindowGlobalActor,
   nsGlobalWindowInner* WindowGlobal() { return mWindowGlobal; }
 
   
-  bool IsClosed() { return mIPCClosed; }
+  bool IsClosed() { return !CanSend(); }
   void Destroy();
 
   
@@ -127,7 +127,6 @@ class WindowGlobalChild final : public WindowGlobalActor,
   uint64_t mInnerWindowId;
   uint64_t mOuterWindowId;
   int64_t mBeforeUnloadListeners;
-  bool mIPCClosed;
 };
 
 }  
