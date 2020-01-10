@@ -205,6 +205,7 @@ const proto = {
       g.class = "CPOW";
       return g;
     }
+
     const unwrapped = DevToolsUtils.unwrap(this.obj);
     if (unwrapped === undefined) {
       
@@ -212,6 +213,7 @@ const proto = {
       g.class = "InvisibleToDebugger: " + this.obj.class;
       return g;
     }
+
     if (unwrapped && unwrapped.isProxy) {
       
       
@@ -222,45 +224,63 @@ const proto = {
       return g;
     }
 
-    
-    
-    
-    if (unwrapped === null) {
-      g.class = "Restricted";
-    } else {
-      g.class = this.obj.class;
-    }
+    const ownPropertyLength = this._getOwnPropertyLength();
+
+    Object.assign(g, {
+      
+      
+      
+      class: unwrapped === null ? "Restricted" : this.obj.class,
+      ownPropertyLength: Number.isFinite(ownPropertyLength)
+        ? ownPropertyLength
+        : undefined,
+      extensible: this.obj.isExtensible(),
+      frozen: this.obj.isFrozen(),
+      sealed: this.obj.isSealed(),
+    });
 
     this.hooks.incrementGripDepth();
-
-    g.extensible = this.obj.isExtensible();
-    g.frozen = this.obj.isFrozen();
-    g.sealed = this.obj.isSealed();
 
     if (g.class == "Promise") {
       g.promiseState = this._createPromiseState();
     }
 
+    const raw = this.getRawObject();
+    this._populateGripPreview(g, raw);
+    this.hooks.decrementGripDepth();
+
+    return g;
+  },
+
+  _getOwnPropertyLength: function() {
     
     
-    if (isTypedArray(g)) {
+    if (isTypedArray(this.obj)) {
       
-      g.ownPropertyLength = getArrayLength(this.obj);
-    } else if (isStorage(g)) {
-      g.ownPropertyLength = getStorageLength(this.obj);
-    } else if (isReplaying) {
-      
-      
-      g.ownPropertyLength = this.obj.getOwnPropertyNamesCount();
-    } else {
-      try {
-        g.ownPropertyLength = this.obj.getOwnPropertyNames().length;
-      } catch (err) {
-        
-        
-      }
+      return getArrayLength(this.obj);
     }
 
+    if (isStorage(this.obj)) {
+      return getStorageLength(this.obj);
+    }
+
+    if (isReplaying) {
+      
+      
+      return this.obj.getOwnPropertyNamesCount();
+    }
+
+    try {
+      return this.obj.getOwnPropertyNames().length;
+    } catch (err) {
+      
+      
+    }
+
+    return null;
+  },
+
+  getRawObject: function() {
     let raw = this.obj.unsafeDereference();
 
     
@@ -274,19 +294,25 @@ const proto = {
       raw = null;
     }
 
-    for (const fn of previewers[this.obj.class] || previewers.Object) {
+    return raw;
+  },
+
+  
+
+
+  _populateGripPreview: function(grip, raw) {
+    for (const previewer of previewers[this.obj.class] || previewers.Object) {
       try {
-        if (fn(this, g, raw)) {
-          break;
+        const previewerResult = previewer(this, grip, raw);
+        if (previewerResult) {
+          return;
         }
       } catch (e) {
-        const msg = "ObjectActor.prototype.grip previewer function";
+        const msg =
+          "ObjectActor.prototype._populateGripPreview previewer function";
         DevToolsUtils.reportException(msg, e);
       }
     }
-
-    this.hooks.decrementGripDepth();
-    return g;
   },
 
   
