@@ -26,7 +26,6 @@ if (typeof Mozilla == "undefined") {
 
 
 
-
     Mozilla.UITour = {};
   }
 
@@ -127,6 +126,14 @@ if (typeof Mozilla == "undefined") {
 
 
 
+
+
+
+
+
+
+
+
   
 
 
@@ -183,6 +190,10 @@ if (typeof Mozilla == "undefined") {
   };
 
   
+
+
+
+
 
 
 
@@ -392,37 +403,8 @@ if (typeof Mozilla == "undefined") {
 
 
 
-  
-
-
-
-
 
   
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -437,24 +419,7 @@ if (typeof Mozilla == "undefined") {
 
 
 
-
-
-
   
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
 
 
 
@@ -488,8 +453,55 @@ if (typeof Mozilla == "undefined") {
 
 
 
+
   
 
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+  
 
 
 
@@ -740,7 +752,6 @@ if (typeof Mozilla == "undefined") {
   };
 
   
-
 
 
 
