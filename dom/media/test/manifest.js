@@ -1981,6 +1981,7 @@ function TimeStamp(token) {
     "." +
     ms +
     "]" +
+    
     (ms < 10 ? "  " : ms < 100 ? " " : "");
   return token ? time + " " + token : time;
 }
