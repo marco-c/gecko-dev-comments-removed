@@ -1488,7 +1488,7 @@ Element* SVGObserverUtils::GetAndObserveBackgroundClip(nsIFrame* aFrame) {
 }
 
 nsSVGPaintServerFrame* SVGObserverUtils::GetAndObservePaintServer(
-    nsIFrame* aPaintedFrame, nsStyleSVGPaint nsStyleSVG::*aPaint) {
+    nsIFrame* aPaintedFrame, mozilla::StyleSVGPaint nsStyleSVG::*aPaint) {
   
   
   
@@ -1503,12 +1503,12 @@ nsSVGPaintServerFrame* SVGObserverUtils::GetAndObservePaintServer(
   }
 
   const nsStyleSVG* svgStyle = paintedFrame->StyleSVG();
-  if ((svgStyle->*aPaint).Type() != eStyleSVGPaintType_Server) {
+  if (!(svgStyle->*aPaint).kind.IsPaintServer()) {
     return nullptr;
   }
 
   RefPtr<URLAndReferrerInfo> paintServerURL = ResolveURLUsingLocalRef(
-      paintedFrame, (svgStyle->*aPaint).GetPaintServer());
+      paintedFrame, (svgStyle->*aPaint).kind.AsPaintServer());
 
   MOZ_ASSERT(aPaint == &nsStyleSVG::mFill || aPaint == &nsStyleSVG::mStroke);
   PaintingPropertyDescriptor propDesc =

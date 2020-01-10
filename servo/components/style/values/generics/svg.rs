@@ -9,6 +9,7 @@ use cssparser::Parser;
 use style_traits::ParseError;
 
 
+/// cbindgen:derive-tagged-enum-copy-constructor=true
 #[derive(
     Animate,
     Clone,
@@ -25,7 +26,8 @@ use style_traits::ParseError;
     ToResolvedValue,
     ToShmem,
 )]
-pub enum SVGPaintFallback<C> {
+#[repr(C, u8)]
+pub enum GenericSVGPaintFallback<C> {
     
     None,
     
@@ -36,10 +38,14 @@ pub enum SVGPaintFallback<C> {
     Color(C),
 }
 
+pub use self::GenericSVGPaintFallback as SVGPaintFallback;
 
 
 
-#[animation(no_bound(UrlPaintServer))]
+
+
+/// cbindgen:derive-tagged-enum-copy-constructor=true
+#[animation(no_bound(Url))]
 #[derive(
     Animate,
     Clone,
@@ -55,12 +61,15 @@ pub enum SVGPaintFallback<C> {
     ToResolvedValue,
     ToShmem,
 )]
-pub struct SVGPaint<ColorType, UrlPaintServer> {
+#[repr(C)]
+pub struct GenericSVGPaint<Color, Url> {
     
-    pub kind: SVGPaintKind<ColorType, UrlPaintServer>,
+    pub kind: GenericSVGPaintKind<Color, Url>,
     
-    pub fallback: SVGPaintFallback<ColorType>,
+    pub fallback: GenericSVGPaintFallback<Color>,
 }
+
+pub use self::GenericSVGPaint as SVGPaint;
 
 impl<C, U> Default for SVGPaint<C, U> {
     fn default() -> Self {
@@ -76,7 +85,8 @@ impl<C, U> Default for SVGPaint<C, U> {
 
 
 
-#[animation(no_bound(UrlPaintServer))]
+/// cbindgen:derive-tagged-enum-copy-constructor=true
+#[animation(no_bound(U))]
 #[derive(
     Animate,
     Clone,
@@ -93,22 +103,25 @@ impl<C, U> Default for SVGPaint<C, U> {
     ToResolvedValue,
     ToShmem,
 )]
-pub enum SVGPaintKind<ColorType, UrlPaintServer> {
+#[repr(C, u8)]
+pub enum GenericSVGPaintKind<C, U> {
     
     #[animation(error)]
     None,
     
-    Color(ColorType),
+    Color(C),
     
     #[animation(error)]
-    PaintServer(UrlPaintServer),
+    PaintServer(U),
     
     ContextFill,
     
     ContextStroke,
 }
 
-impl<ColorType: Parse, UrlPaintServer: Parse> Parse for SVGPaint<ColorType, UrlPaintServer> {
+pub use self::GenericSVGPaintKind as SVGPaintKind;
+
+impl<C: Parse, U: Parse> Parse for SVGPaint<C, U> {
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,

@@ -18,10 +18,7 @@ use style_traits::{CommaWithSpace, CssWriter, ParseError, Separator};
 use style_traits::{StyleParseErrorKind, ToCss};
 
 
-pub type SVGPaint = generic::SVGPaint<Color, SpecifiedUrl>;
-
-
-pub type SVGPaintKind = generic::SVGPaintKind<Color, SpecifiedUrl>;
+pub type SVGPaint = generic::GenericSVGPaint<Color, SpecifiedUrl>;
 
 
 pub type SVGLength = generic::SVGLength<LengthPercentage>;
