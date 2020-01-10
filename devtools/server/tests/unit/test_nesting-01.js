@@ -6,33 +6,19 @@
 
 
 
-var gClient;
-var gThreadActor;
+add_task(
+  threadFrontTest(async ({ threadFront, client }) => {
+    
+    
+    const thread = client._transport._serverConnection.getActor(
+      threadFront.actorID
+    );
 
-function run_test() {
-  initTestDebuggerServer();
-  addTestGlobal("test-nesting");
-  gClient = new DebuggerClient(DebuggerServer.connectPipe());
-  gClient.connect().then(function() {
-    attachTestTabAndResume(gClient, "test-nesting", function(
-      response,
-      targetFront,
-      threadFront
-    ) {
-      
-      
-      gThreadActor = gClient._transport._serverConnection.getActor(
-        threadFront.actorID
-      );
+    test_nesting(thread);
+  })
+);
 
-      test_nesting();
-    });
-  });
-  do_test_pending();
-}
-
-function test_nesting() {
-  const thread = gThreadActor;
+function test_nesting(thread) {
   const { resolve, promise: p } = defer();
 
   let currentStep = 0;
@@ -51,6 +37,4 @@ function test_nesting() {
   Assert.equal(++currentStep, 2);
   
   Assert.equal(thread._nestedEventLoops.size, 0);
-
-  finishClient(gClient);
 }

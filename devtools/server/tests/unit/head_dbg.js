@@ -902,11 +902,15 @@ async function setupTestFromUrl(url) {
 
 
 
+
+
+
 function threadFrontTest(test, options = {}) {
   const {
     principal = systemPrincipal,
     doNotRunWorker = false,
     wantXrays = true,
+    waitForFinish = false,
   } = options;
 
   async function runThreadFrontTestWithServer(server, test) {
@@ -932,7 +936,18 @@ function threadFrontTest(test, options = {}) {
     );
 
     
-    await test({ threadFront, debuggee, client, server, targetFront });
+    const args = { threadFront, debuggee, client, server, targetFront };
+    if (waitForFinish) {
+      
+      
+      const promise = new Promise(
+        resolve => (threadFrontTestFinished = resolve)
+      );
+      Services.tm.dispatchToMainThread(() => test(args));
+      await promise;
+    } else {
+      await test(args);
+    }
 
     
     await client.close();
@@ -954,3 +969,10 @@ function threadFrontTest(test, options = {}) {
     }
   };
 }
+
+
+
+
+
+
+let threadFrontTestFinished;
