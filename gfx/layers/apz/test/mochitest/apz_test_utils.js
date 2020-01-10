@@ -163,8 +163,8 @@ function buildApzcTree(paint) {
 
 
 function findRcdNode(apzcTree) {
+  
   if (apzcTree.isRootContent) {
-    
     return apzcTree;
   }
   for (var i = 0; i < apzcTree.children.length; i++) {
@@ -293,8 +293,8 @@ function runSubtestsSeriallyInFreshWindows(aSubtests) {
       var test = aSubtests[testIndex];
       if (w) {
         
+        
         if (w.ApzCleanup) {
-          
           w.ApzCleanup.execute();
         }
         if (typeof test.dp_suppression != "undefined") {
