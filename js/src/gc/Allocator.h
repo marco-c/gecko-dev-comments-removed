@@ -15,8 +15,6 @@ class JSFatInlineString;
 
 namespace js {
 
-struct Class;
-
 
 
 
