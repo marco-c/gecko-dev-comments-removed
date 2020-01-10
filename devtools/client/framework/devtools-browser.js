@@ -25,6 +25,7 @@ loader.lazyRequireGetter(this, "DebuggerClient", "devtools/shared/client/debugge
 loader.lazyRequireGetter(this, "BrowserMenus", "devtools/client/framework/browser-menus");
 loader.lazyRequireGetter(this, "appendStyleSheet", "devtools/client/shared/stylesheet-utils", true);
 loader.lazyRequireGetter(this, "ResponsiveUIManager", "devtools/client/responsive.html/manager", true);
+loader.lazyRequireGetter(this, "AppConstants", "resource://gre/modules/AppConstants.jsm", true);
 loader.lazyImporter(this, "BrowserToolboxProcess", "resource://devtools/client/framework/ToolboxProcess.jsm");
 loader.lazyImporter(this, "ScratchpadManager", "resource://devtools/client/scratchpad/scratchpad-manager.jsm");
 
@@ -112,6 +113,25 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       toggleMenuItem("menu_webreplay", recordReplayEnabled);
     } catch (e) {
       
+    }
+
+    
+    
+    
+    
+    
+    const isPopupFeatureFlagEnabled = Services.prefs.getBoolPref(
+      "devtools.performance.popup.feature-flag", AppConstants.NIGHTLY_BUILD);
+    
+    toggleMenuItem("menu_toggleProfilerButtonMenu", isPopupFeatureFlagEnabled);
+
+    if (isPopupFeatureFlagEnabled) {
+      
+      
+      if (Services.prefs.getBoolPref("devtools.performance.popup.enabled", false)) {
+        const cmd = doc.getElementById("menu_toggleProfilerButtonMenu");
+        cmd.setAttribute("checked", "true");
+      }
     }
   },
 
