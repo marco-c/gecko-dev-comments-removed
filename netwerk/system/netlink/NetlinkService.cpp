@@ -57,6 +57,13 @@ static void GetAddrStr(const in_common_addr* aAddr, uint8_t aFamily,
   _retval.Assign(addr);
 }
 
+static void GetNeighborKey(const in_common_addr* aAddr, uint8_t aFamily,
+                           uint32_t aIfIndex, nsACString& _retval) {
+  GetAddrStr(aAddr, aFamily, _retval);
+  _retval.Append(",");
+  _retval.AppendInt(aIfIndex);
+}
+
 class NetlinkAddress {
  public:
   NetlinkAddress() {}
@@ -83,32 +90,6 @@ class NetlinkAddress {
     size_t addrSize = (mIfam.ifa_family == AF_INET) ? sizeof(mAddr.addr4)
                                                     : sizeof(mAddr.addr6);
     return memcmp(&mAddr, aOther->GetAddrPtr(), addrSize) == 0;
-  }
-
-  bool ContainsAddr(const in_common_addr* aAddr) {
-    int32_t addrSize = (mIfam.ifa_family == AF_INET)
-                           ? (int32_t)sizeof(mAddr.addr4)
-                           : (int32_t)sizeof(mAddr.addr6);
-    uint8_t maskit[] = {0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe};
-    int32_t bits = mIfam.ifa_prefixlen;
-    if (bits > addrSize * 8) {
-      MOZ_ASSERT(false, "Unexpected prefix length!");
-      LOG(("Unexpected prefix length %d, maximum for this family is %d", bits,
-           addrSize * 8));
-      return false;
-    }
-    for (int32_t i = 0; i < addrSize; i++) {
-      uint8_t mask = (bits >= 8) ? 0xff : maskit[bits];
-      if ((((unsigned char*)aAddr)[i] & mask) !=
-          (((unsigned char*)(&mAddr))[i] & mask)) {
-        return false;
-      }
-      bits -= 8;
-      if (bits <= 0) {
-        return true;
-      }
-    }
-    return true;
   }
 
   bool Init(struct nlmsghdr* aNlh) {
@@ -236,7 +217,6 @@ class NetlinkLink {
   void GetName(nsACString& _retval) const { _retval = mName; }
   bool IsTypeEther() const { return mIface.ifi_type == ARPHRD_ETHER; }
   uint32_t GetIndex() const { return mIface.ifi_index; }
-  uint32_t GetFlags() const { return mIface.ifi_flags; }
 
   bool Init(struct nlmsghdr* aNlh) {
     struct ifinfomsg* iface;
@@ -574,39 +554,6 @@ class NetlinkRtMsg : public NetlinkMsg {
   } mReq;
 };
 
-NetlinkService::LinkInfo::LinkInfo(NetlinkLink* aLink)
-    : mLink(aLink), mIsUp(false) {}
-
-NetlinkService::LinkInfo::~LinkInfo() {}
-
-bool NetlinkService::LinkInfo::UpdateLinkStatus() {
-  LOG(("NetlinkService::LinkInfo::UpdateLinkStatus"));
-
-  bool oldIsUp = mIsUp;
-  mIsUp = false;
-
-  if (!mLink->IsUp()) {
-    
-    LOG(("The link is down or is a loopback"));
-  } else {
-    
-    for (uint32_t i = 0; i < mAddresses.Length(); ++i) {
-#ifdef NL_DEBUG_LOG
-      nsAutoCString dbgStr;
-      GetAddrStr(mAddresses[i]->GetAddrPtr(), mAddresses[i]->Family(), dbgStr);
-      LOG(("checking address %s", dbgStr.get()));
-#endif
-      if (mAddresses[i]->ScopeIsUniverse()) {
-        mIsUp = true;
-        LOG(("global address found"));
-        break;
-      }
-    }
-  }
-
-  return mIsUp == oldIsUp;
-}
-
 NS_IMPL_ISUPPORTS(NetlinkService, nsIRunnable)
 
 NetlinkService::NetlinkService()
@@ -750,79 +697,53 @@ void NetlinkService::OnLinkMessage(struct nlmsghdr* aNlh) {
   uint32_t linkIndex = link->GetIndex();
   nsAutoCString linkName;
   link->GetName(linkName);
-
-  bool checkLinks = false;
-  LinkInfo* linkInfo = nullptr;
-  mLinks.Get(linkIndex, &linkInfo);
-
   if (aNlh->nlmsg_type == RTM_NEWLINK) {
-    if (!linkInfo) {
-      LOG(("Creating new link [index=%u, name=%s, flags=%u]", linkIndex,
-           linkName.get(), link->GetFlags()));
-      linkInfo = new LinkInfo(link.forget());
-      mLinks.Put(linkIndex, linkInfo);
-    } else {
-      LOG(("Updating link [index=%u, name=%s, flags=%u]", linkIndex,
-           linkName.get(), link->GetFlags()));
-
-      
-      if (linkInfo->mLink->GetFlags() & IFF_UP &&
-          !(link->GetFlags() & IFF_UP)) {
-        LOG(("  link went down"));
-        
-        
-        linkInfo->mDefaultRoutes.Clear();
-        linkInfo->mNeighbors.Clear();
-      }
-
-      linkInfo->mLink = link.forget();
-      if (linkInfo->UpdateLinkStatus()) {
-        
-        checkLinks = true;
-      }
-    }
+    LOG(("Adding new link [index=%u, name=%s]", linkIndex, linkName.get()));
+    mLinks.Put(linkIndex, link.forget());
   } else {
-    if (!linkInfo) {
-      
-      LOG(("Link info doesn't exist [index=%u, name=%s]", linkIndex,
-           linkName.get()));
-    } else {
-      LOG(("Removing link [index=%u, name=%s]", linkIndex, linkName.get()));
-      if (linkInfo->mIsUp) {
-        
-        checkLinks = true;
-      }
-      mLinks.Remove(linkIndex);
-    }
+    LOG(("Removing link [index=%u, name=%s]", linkIndex, linkName.get()));
+    mLinks.Remove(linkIndex);
   }
 
-  if (checkLinks) {
-    UpdateLinkStatus();
-  }
+  CheckLinks();
 }
 
-void NetlinkService::UpdateLinkStatus() {
+void NetlinkService::CheckLinks() {
   if (!mInitialScanFinished) {
     
     return;
   }
 
-  LOG(("NetlinkService::UpdateLinkStatus"));
+  LOG(("NetlinkService::CheckLinks"));
 
   
   bool newLinkUp = false;
-
-  for (auto iter = mLinks.ConstIter(); !iter.Done(); iter.Next()) {
-    auto linkInfo = iter.Data();
-    nsAutoCString linkName;
-    linkInfo->mLink->GetName(linkName);
-
-    if (linkInfo->mIsUp) {
-      LOG((" %s is up", linkName.get()));
-      newLinkUp = true;
-    } else {
-      LOG((" %s is down", linkName.get()));
+  for (uint32_t i = 0; i < mAddresses.Length(); ++i) {
+#ifdef NL_DEBUG_LOG
+    nsAutoCString dbgStr;
+    GetAddrStr(mAddresses[i]->GetAddrPtr(), mAddresses[i]->Family(), dbgStr);
+    LOG(("checking address %s on iface %d", dbgStr.get(),
+         mAddresses[i]->GetIndex()));
+#else
+    LOG(("checking address on iface %d", mAddresses[i]->GetIndex()));
+#endif
+    if (!mAddresses[i]->ScopeIsUniverse()) {
+      LOG(("  is not global"));
+      continue;
     }
+
+    NetlinkLink* link = nullptr;
+    if (!mLinks.Get(mAddresses[i]->GetIndex(), &link)) {
+      LOG(("  cannot get link"));
+      continue;
+    }
+
+    if (link->IsUp()) {
+      LOG(("  link is up"));
+      newLinkUp = true;
+      break;
+    }
+    LOG(("  link is down"));
   }
 
   if (mLinkUp != newLinkUp) {
@@ -858,74 +779,31 @@ void NetlinkService::OnAddrMessage(struct nlmsghdr* aNlh) {
   nsAutoCString addrStr;
   GetAddrStr(address->GetAddrPtr(), address->Family(), addrStr);
 
-  LinkInfo* linkInfo = nullptr;
-  mLinks.Get(ifIdx, &linkInfo);
-  if (!linkInfo) {
-    
-    LOG(("Cannot find link info [ifIdx=%u, addr=%s/%u", ifIdx, addrStr.get(),
-         address->GetPrefixLen()));
-    return;
-  }
-
   
   
   
   
-  for (uint32_t i = 0; i < linkInfo->mAddresses.Length(); ++i) {
-    if (linkInfo->mAddresses[i]->Equals(address)) {
-      LOG(("Removing address [ifIdx=%u, addr=%s/%u]", ifIdx, addrStr.get(),
-           address->GetPrefixLen()));
-      linkInfo->mAddresses.RemoveElementAt(i);
+  for (uint32_t i = 0; i < mAddresses.Length(); ++i) {
+    if (mAddresses[i]->Equals(address)) {
+      LOG(("Removing address [ifidx=%u, addr=%s/%u]", mAddresses[i]->GetIndex(),
+           addrStr.get(), mAddresses[i]->GetPrefixLen()));
+      mAddresses.RemoveElementAt(i);
       break;
     }
   }
 
   if (aNlh->nlmsg_type == RTM_NEWADDR) {
-    LOG(("Adding address [ifIdx=%u, addr=%s/%u]", ifIdx, addrStr.get(),
-         address->GetPrefixLen()));
-    linkInfo->mAddresses.AppendElement(address.forget());
-  } else {
-    
-    for (uint32_t i = linkInfo->mDefaultRoutes.Length(); i-- > 0;) {
-      MOZ_ASSERT(linkInfo->mDefaultRoutes[i]->GetGWAddrPtr(),
-                 "Stored routes must have gateway!");
-      if (linkInfo->mDefaultRoutes[i]->Family() == address->Family() &&
-          address->ContainsAddr(linkInfo->mDefaultRoutes[i]->GetGWAddrPtr())) {
-#ifdef NL_DEBUG_LOG
-        nsAutoCString routeDbgStr;
-        linkInfo->mDefaultRoutes[i]->GetAsString(routeDbgStr);
-        LOG(("Removing default route: %s", routeDbgStr.get()));
-#else
-        LOG(("Removing default route"));
-#endif
-        linkInfo->mDefaultRoutes.RemoveElementAt(i);
-      }
-    }
-
-    
-    for (auto iter = linkInfo->mNeighbors.Iter(); !iter.Done(); iter.Next()) {
-      auto neigh = iter.Data();
-      if (neigh->Family() == address->Family() &&
-          address->ContainsAddr(neigh->GetAddrPtr())) {
-#ifdef NL_DEBUG_LOG
-        nsAutoCString neighDbgStr;
-        neigh->GetAsString(neighDbgStr);
-        LOG(("Removing neighbor %s", neighDbgStr.get()));
-#else
-        LOG(("Removing neighbor"));
-#endif
-        iter.Remove();
-      }
-    }
+    LOG(("Adding address [ifidx=%u, addr=%s/%u]", address->GetIndex(),
+         addrStr.get(), address->GetPrefixLen()));
+    mAddresses.AppendElement(address.forget());
   }
 
-  if (linkInfo->UpdateLinkStatus()) {
-    UpdateLinkStatus();
-    TriggerNetworkIDCalculation();
-  } else {
-    
-    
-    if (linkInfo->mLink->IsUp()) {
+  NetlinkLink* link;
+  if (mLinks.Get(ifIdx, &link)) {
+    if (link->IsUp()) {
+      
+      
+      CheckLinks();
       TriggerNetworkIDCalculation();
     }
   }
@@ -968,50 +846,15 @@ void NetlinkService::OnRouteMessage(struct nlmsghdr* aNlh) {
     return;
   }
 
-  if (!route->HasOif()) {
-#ifdef NL_DEBUG_LOG
-    LOG(("There is no output interface in route: %s", routeDbgStr.get()));
-#else
-    LOG(("There is no output interface in the route."));
-#endif
-    return;
+  nsTArray<nsAutoPtr<NetlinkRoute> >* routesPtr;
+  if (route->Family() == AF_INET) {
+    routesPtr = &mIPv4Routes;
+  } else {
+    routesPtr = &mIPv6Routes;
   }
 
-  if (!route->GetGWAddrPtr()) {
-    
-#ifdef NL_DEBUG_LOG
-    LOG(("There is no gateway in route: %s", routeDbgStr.get()));
-#else
-    LOG(("There is no gateway in the route."));
-#endif
-    return;
-  }
-
-  if (route->Family() == AF_INET6 &&
-      net::utils::ipv6_scope((const unsigned char*)route->GetGWAddrPtr()) !=
-          IPV6_SCOPE_GLOBAL) {
-#ifdef NL_DEBUG_LOG
-    LOG(("Scope of GW isn't global: %s", routeDbgStr.get()));
-#else
-    LOG(("Scope of GW isn't global."));
-#endif
-    return;
-  }
-
-  LinkInfo* linkInfo = nullptr;
-  mLinks.Get(route->Oif(), &linkInfo);
-  if (!linkInfo) {
-    
-#ifdef NL_DEBUG_LOG
-    LOG(("Cannot find link info for route: %s", routeDbgStr.get()));
-#else
-    LOG(("Cannot find link [ifIdx=%u]", route->Oif()));
-#endif
-    return;
-  }
-
-  for (uint32_t i = 0; i < linkInfo->mDefaultRoutes.Length(); ++i) {
-    if (linkInfo->mDefaultRoutes[i]->Equals(route)) {
+  for (uint32_t i = 0; i < (*routesPtr).Length(); ++i) {
+    if ((*routesPtr)[i]->Equals(route)) {
       
       
 #ifdef NL_DEBUG_LOG
@@ -1019,7 +862,7 @@ void NetlinkService::OnRouteMessage(struct nlmsghdr* aNlh) {
 #else
       LOG(("Removing default route"));
 #endif
-      linkInfo->mDefaultRoutes.RemoveElementAt(i);
+      (*routesPtr).RemoveElementAt(i);
       break;
     }
   }
@@ -1030,7 +873,7 @@ void NetlinkService::OnRouteMessage(struct nlmsghdr* aNlh) {
 #else
     LOG(("Adding default route"));
 #endif
-    linkInfo->mDefaultRoutes.AppendElement(route.forget());
+    (*routesPtr).AppendElement(route.forget());
   }
 }
 
@@ -1043,63 +886,54 @@ void NetlinkService::OnNeighborMessage(struct nlmsghdr* aNlh) {
     return;
   }
 
-#ifdef NL_DEBUG_LOG
-  nsAutoCString neighDbgStr;
-  neigh->GetAsString(neighDbgStr);
-#endif
+  nsAutoCString neighKey;
+  GetNeighborKey(neigh->GetAddrPtr(), neigh->Family(), neigh->GetIndex(),
+                 neighKey);
 
-  nsAutoCString key;
-  GetAddrStr(neigh->GetAddrPtr(), neigh->Family(), key);
-
-  LinkInfo* linkInfo = nullptr;
-  mLinks.Get(neigh->GetIndex(), &linkInfo);
-  if (!linkInfo) {
-    
-#ifdef NL_DEBUG_LOG
-    LOG(("Cannot find link info for neighbor: %s", neighDbgStr.get()));
-#else
-    LOG(("Cannot find link info [ifIdx=%u, key=%s", neigh->GetIndex(),
-         key.get()));
-#endif
-    return;
+  nsTArray<nsAutoPtr<NetlinkRoute> >* routesPtr;
+  nsAutoPtr<NetlinkRoute>* routeCheckResultPtr;
+  if (neigh->Family() == AF_INET) {
+    routesPtr = &mIPv4Routes;
+    routeCheckResultPtr = &mIPv4RouteCheckResult;
+  } else {
+    routesPtr = &mIPv6Routes;
+    routeCheckResultPtr = &mIPv6RouteCheckResult;
   }
 
   if (aNlh->nlmsg_type == RTM_NEWNEIGH) {
     if (!mRecalculateNetworkId && neigh->HasMAC()) {
       NetlinkNeighbor* oldNeigh = nullptr;
-      linkInfo->mNeighbors.Get(key, &oldNeigh);
+      mNeighbors.Get(neighKey, &oldNeigh);
 
       if (!oldNeigh || !oldNeigh->HasMAC()) {
         
         
-        for (uint32_t i = 0; i < linkInfo->mDefaultRoutes.Length(); ++i) {
-          if (linkInfo->mDefaultRoutes[i]->GatewayEquals(neigh)) {
+        for (uint32_t i = 0; i < (*routesPtr).Length(); ++i) {
+          if ((*routesPtr)[i]->GatewayEquals(neigh)) {
             TriggerNetworkIDCalculation();
             break;
           }
         }
-        if ((mIPv4RouteCheckResult &&
-             mIPv4RouteCheckResult->GatewayEquals(neigh)) ||
-            (mIPv6RouteCheckResult &&
-             mIPv6RouteCheckResult->GatewayEquals(neigh))) {
+        if (!mRecalculateNetworkId && (*routeCheckResultPtr) &&
+            (*routeCheckResultPtr)->GatewayEquals(neigh)) {
           TriggerNetworkIDCalculation();
         }
       }
     }
 
 #ifdef NL_DEBUG_LOG
+    nsAutoCString neighDbgStr;
+    neigh->GetAsString(neighDbgStr);
     LOG(("Adding neighbor: %s", neighDbgStr.get()));
 #else
-    LOG(("Adding neighbor %s", key.get()));
+    LOG(("Adding neighbor %s", neighKey.get()));
 #endif
-    linkInfo->mNeighbors.Put(key, neigh.forget());
+    mNeighbors.Put(neighKey, neigh.forget());
   } else {
 #ifdef NL_DEBUG_LOG
-    LOG(("Removing neighbor %s", neighDbgStr.get()));
-#else
-    LOG(("Removing neighbor %s", key.get()));
+    LOG(("Removing neighbor %s", neighKey.get()));
 #endif
-    linkInfo->mNeighbors.Remove(key);
+    mNeighbors.Remove(neighKey);
   }
 }
 
@@ -1107,39 +941,33 @@ void NetlinkService::OnRouteCheckResult(struct nlmsghdr* aNlh) {
   LOG(("NetlinkService::OnRouteCheckResult"));
   nsAutoPtr<NetlinkRoute> route;
 
-#ifdef NL_DEBUG_LOG
-  nsAutoCString routeDbgStr;
-#endif
-
   if (aNlh) {
     route = new NetlinkRoute();
     if (!route->Init(aNlh)) {
       route = nullptr;
-    } else {
+    } else if (!route->IsUnicast() || !route->ScopeIsUniverse()) {
 #ifdef NL_DEBUG_LOG
+      nsAutoCString routeDbgStr;
       route->GetAsString(routeDbgStr);
-#endif
-
-      if (!route->IsUnicast() || !route->ScopeIsUniverse()) {
-#ifdef NL_DEBUG_LOG
-        LOG(("Not an unicast global route: %s", routeDbgStr.get()));
+      LOG(("Not an unicast global route: %s", routeDbgStr.get()));
 #else
-        LOG(("Not an unicast global route"));
+      LOG(("Not an unicast global route"));
 #endif
-        route = nullptr;
-      } else if (!route->HasOif()) {
-#ifdef NL_DEBUG_LOG
-        LOG(("There is no output interface in route: %s", routeDbgStr.get()));
-#else
-        LOG(("There is no output interface in the route."));
-#endif
-        route = nullptr;
-      }
+      route = nullptr;
     }
+  }
+
+  nsAutoPtr<NetlinkRoute>* routeCheckResultPtr;
+  if (mOutgoingMessages[0]->Family() == AF_INET) {
+    routeCheckResultPtr = &mIPv4RouteCheckResult;
+  } else {
+    routeCheckResultPtr = &mIPv6RouteCheckResult;
   }
 
   if (route) {
 #ifdef NL_DEBUG_LOG
+    nsAutoCString routeDbgStr;
+    route->GetAsString(routeDbgStr);
     LOG(("Storing route: %s", routeDbgStr.get()));
 #else
     LOG(("Storing result for the check"));
@@ -1148,11 +976,7 @@ void NetlinkService::OnRouteCheckResult(struct nlmsghdr* aNlh) {
     LOG(("Clearing result for the check"));
   }
 
-  if (mOutgoingMessages[0]->Family() == AF_INET) {
-    mIPv4RouteCheckResult = route.forget();
-  } else {
-    mIPv6RouteCheckResult = route.forget();
-  }
+  (*routeCheckResultPtr) = route.forget();
 }
 
 void NetlinkService::EnqueueGenMsg(uint16_t aMsgType, uint8_t aFamily) {
@@ -1182,7 +1006,7 @@ void NetlinkService::RemovePendingMsg() {
       
       mInitialScanFinished = true;
 
-      UpdateLinkStatus();
+      CheckLinks();
       TriggerNetworkIDCalculation();
 
       
@@ -1410,16 +1234,13 @@ bool NetlinkService::CalculateIDForFamily(uint8_t aFamily, SHA1Sum* aSHA1) {
 
   bool retval = false;
 
-  if (!mLinkUp) {
-    
-    LOG(("Link is down, skipping ID calculation."));
-    return retval;
-  }
-
+  nsTArray<nsAutoPtr<NetlinkRoute> >* routesPtr;
   nsAutoPtr<NetlinkRoute>* routeCheckResultPtr;
   if (aFamily == AF_INET) {
+    routesPtr = &mIPv4Routes;
     routeCheckResultPtr = &mIPv4RouteCheckResult;
   } else {
+    routesPtr = &mIPv6Routes;
     routeCheckResultPtr = &mIPv6RouteCheckResult;
   }
 
@@ -1431,63 +1252,56 @@ bool NetlinkService::CalculateIDForFamily(uint8_t aFamily, SHA1Sum* aSHA1) {
   nsTArray<NetlinkNeighbor*> gwNeighbors;
 
   
-  for (auto iter = mLinks.ConstIter(); !iter.Done(); iter.Next()) {
-    auto linkInfo = iter.Data();
-    nsAutoCString linkName;
-    linkInfo->mLink->GetName(linkName);
-
-    if (!linkInfo->mIsUp) {
-      LOG((" %s is down", linkName.get()));
+  for (uint32_t i = 0; i < (*routesPtr).Length(); ++i) {
+#ifdef NL_DEBUG_LOG
+    nsAutoCString routeDbgStr;
+    (*routesPtr)[i]->GetAsString(routeDbgStr);
+    LOG(("Checking default route: %s", routeDbgStr.get()));
+#endif
+    if (!(*routesPtr)[i]->HasOif()) {
+      LOG(("There is no output interface in default route."));
       continue;
     }
 
-    LOG((" checking link %s", linkName.get()));
-
-    
-    for (uint32_t i = 0; i < linkInfo->mDefaultRoutes.Length(); ++i) {
-#ifdef NL_DEBUG_LOG
-      nsAutoCString routeDbgStr;
-      linkInfo->mDefaultRoutes[i]->GetAsString(routeDbgStr);
-      LOG(("Checking default route: %s", routeDbgStr.get()));
-#endif
-
-      if (linkInfo->mDefaultRoutes[i]->Family() != aFamily) {
-#ifdef NL_DEBUG_LOG
-        LOG(("  skipping due to different family"));
-#endif
-        continue;
-      }
-
-      MOZ_ASSERT(linkInfo->mDefaultRoutes[i]->GetGWAddrPtr(),
-                 "Stored routes must have gateway!");
-
-      nsAutoCString neighKey;
-      GetAddrStr(linkInfo->mDefaultRoutes[i]->GetGWAddrPtr(), aFamily,
-                 neighKey);
-
-      NetlinkNeighbor* neigh = nullptr;
-      if (!linkInfo->mNeighbors.Get(neighKey, &neigh)) {
-        LOG(("Neighbor %s not found in hashtable.", neighKey.get()));
-        continue;
-      }
-
-      if (!neigh->HasMAC()) {
-        
-        LOG(("We have no MAC for neighbor %s.", neighKey.get()));
-        continue;
-      }
-
-      if (gwNeighbors.IndexOf(neigh, 0, NeighborComparator()) !=
-          nsTArray<NetlinkNeighbor*>::NoIndex) {
-        
-        LOG(("MAC of neighbor %s is already selected for hashing.",
-             neighKey.get()));
-        continue;
-      }
-
-      LOG(("MAC of neighbor %s will be used for network ID.", neighKey.get()));
-      gwNeighbors.AppendElement(neigh);
+    nsAutoCString neighKey;
+    const in_common_addr* addrPtr = (*routesPtr)[i]->GetGWAddrPtr();
+    if (!addrPtr) {
+      LOG(("There is no GW address in default route."));
+      continue;
     }
+
+    if (aFamily == AF_INET6 &&
+        net::utils::ipv6_scope((const unsigned char*)addrPtr) !=
+            IPV6_SCOPE_GLOBAL) {
+      LOG(("Scope of GW isn't global."));
+      continue;
+    }
+
+    GetNeighborKey(addrPtr, (*routesPtr)[i]->Family(), (*routesPtr)[i]->Oif(),
+                   neighKey);
+
+    NetlinkNeighbor* neigh = nullptr;
+    if (!mNeighbors.Get(neighKey, &neigh)) {
+      LOG(("Neighbor %s not found in hashtable.", neighKey.get()));
+      continue;
+    }
+
+    if (!neigh->HasMAC()) {
+      
+      LOG(("We have no MAC for neighbor %s.", neighKey.get()));
+      continue;
+    }
+
+    if (gwNeighbors.IndexOf(neigh, 0, NeighborComparator()) !=
+        nsTArray<NetlinkNeighbor*>::NoIndex) {
+      
+      LOG(("MAC of neighbor %s is already selected for hashing.",
+           neighKey.get()));
+      continue;
+    }
+
+    LOG(("MAC of neighbor %s will be used for network ID.", neighKey.get()));
+    gwNeighbors.AppendElement(neigh);
   }
 
   
@@ -1503,7 +1317,7 @@ bool NetlinkService::CalculateIDForFamily(uint8_t aFamily, SHA1Sum* aSHA1) {
     retval = true;
   }
 
-  if (!gwNeighbors.Length()) {
+  if (!gwNeighbors.Length() && mLinkUp) {
     
     
     
@@ -1514,16 +1328,16 @@ bool NetlinkService::CalculateIDForFamily(uint8_t aFamily, SHA1Sum* aSHA1) {
     
     nsTArray<nsCString> linkNames;
     for (auto iter = mLinks.ConstIter(); !iter.Done(); iter.Next()) {
-      auto linkInfo = iter.Data();
-      if (linkInfo->mIsUp) {
+      if (iter.Data()->IsUp()) {
         nsAutoCString linkName;
-        linkInfo->mLink->GetName(linkName);
+        iter.Data()->GetName(linkName);
         if (StringBeginsWith(linkName, NS_LITERAL_CSTRING("rmnet_data"))) {
           
           
-          for (uint32_t i = 0; i < linkInfo->mAddresses.Length(); ++i) {
-            if (linkInfo->mAddresses[i]->Family() == aFamily &&
-                linkInfo->mAddresses[i]->ScopeIsUniverse()) {
+          for (uint32_t i = 0; i < mAddresses.Length(); ++i) {
+            if (mAddresses[i]->Family() == aFamily &&
+                mAddresses[i]->ScopeIsUniverse() &&
+                mAddresses[i]->GetIndex() == iter.Data()->GetIndex()) {
               linkNames.AppendElement(linkName);
               break;
             }
@@ -1550,17 +1364,30 @@ bool NetlinkService::CalculateIDForFamily(uint8_t aFamily, SHA1Sum* aSHA1) {
     return retval;
   }
 
+  if (!(*routeCheckResultPtr)->HasOif()) {
+    
+    
+#ifdef NL_DEBUG_LOG
+    nsAutoCString routeDbgStr;
+    (*routeCheckResultPtr)->GetAsString(routeDbgStr);
+    LOG(("There is no output interface in route: %s", routeDbgStr.get()));
+#else
+    LOG(("There is no output interface in route"));
+#endif
+    return retval;
+  }
+
   nsAutoCString routeCheckLinkName;
-  LinkInfo* routeCheckLinkInfo = nullptr;
+  NetlinkLink* routeCheckLink = nullptr;
   uint32_t routeCheckIfIdx = (*routeCheckResultPtr)->Oif();
-  if (!mLinks.Get(routeCheckIfIdx, &routeCheckLinkInfo)) {
+  if (!mLinks.Get(routeCheckIfIdx, &routeCheckLink)) {
     LOG(("Cannot find link with index %u ??", routeCheckIfIdx));
     return retval;
   }
-  routeCheckLinkInfo->mLink->GetName(routeCheckLinkName);
+  routeCheckLink->GetName(routeCheckLinkName);
   const in_common_addr* addrPtr = (*routeCheckResultPtr)->GetGWAddrPtr();
 
-  if (routeCheckLinkInfo->mLink->IsTypeEther()) {
+  if (routeCheckLink->IsTypeEther()) {
     
 
     if (!addrPtr) {
@@ -1583,12 +1410,12 @@ bool NetlinkService::CalculateIDForFamily(uint8_t aFamily, SHA1Sum* aSHA1) {
     
     
     nsAutoCString neighKey;
-    GetAddrStr(addrPtr, aFamily, neighKey);
-    LOG(("Next hop for the checked host is %s on ifIdx %u.", neighKey.get(),
-         routeCheckIfIdx));
+    GetNeighborKey(addrPtr, (*routeCheckResultPtr)->Family(), routeCheckIfIdx,
+                   neighKey);
+    LOG(("Next hop for the checked host is %s.", neighKey.get()));
 
     NetlinkNeighbor* neigh = nullptr;
-    if (!routeCheckLinkInfo->mNeighbors.Get(neighKey, &neigh)) {
+    if (!mNeighbors.Get(neighKey, &neigh)) {
       LOG(("Neighbor %s not found in hashtable.", neighKey.get()));
       return retval;
     }
@@ -1638,24 +1465,24 @@ bool NetlinkService::CalculateIDForFamily(uint8_t aFamily, SHA1Sum* aSHA1) {
       
       
       
-      for (uint32_t i = 0; i < routeCheckLinkInfo->mAddresses.Length(); ++i) {
+      for (uint32_t i = 0; i < mAddresses.Length(); ++i) {
+        if (mAddresses[i]->GetIndex() != routeCheckIfIdx) {
+          continue;
+        }
         if (!hasSrcAddr) {
           
-          if (routeCheckLinkInfo->mAddresses[i]->Family() != aFamily) {
+          if (mAddresses[i]->Family() != aFamily) {
             continue;
           }
-        } else if (!(*routeCheckResultPtr)
-                        ->PrefSrcAddrEquals(
-                            routeCheckLinkInfo->mAddresses[i])) {
+        } else if (!(*routeCheckResultPtr)->PrefSrcAddrEquals(mAddresses[i])) {
           continue;
         }
 
         if (!linkAddress ||
-            linkAddress->GetPrefixLen() >
-                routeCheckLinkInfo->mAddresses[i]->GetPrefixLen()) {
+            linkAddress->GetPrefixLen() > mAddresses[i]->GetPrefixLen()) {
           
           
-          linkAddress = routeCheckLinkInfo->mAddresses[i];
+          linkAddress = mAddresses[i];
         }
       }
 
@@ -1722,7 +1549,7 @@ void NetlinkService::CalculateNetworkID() {
 
   SHA1Sum sha1;
 
-  UpdateLinkStatus();
+  CheckLinks();
 
   bool idChanged = false;
   bool found4 = CalculateIDForFamily(AF_INET, &sha1);
