@@ -9,9 +9,7 @@ use crate::dom::TElement;
 use crate::invalidation::element::invalidator::InvalidationResult;
 use crate::invalidation::element::restyle_hints::RestyleHint;
 use crate::properties::ComputedValues;
-use crate::rule_tree::StrongRuleNode;
 use crate::selector_parser::{PseudoElement, RestyleDamage, EAGER_PSEUDO_COUNT};
-use crate::shared_lock::StylesheetGuards;
 use crate::style_resolver::{PrimaryStyle, ResolvedElementStyles, ResolvedStyle};
 #[cfg(feature = "gecko")]
 use malloc_size_of::MallocSizeOfOps;
@@ -377,29 +375,6 @@ impl ElementData {
     
     
     
-    
-    
-    
-    
-    pub fn important_rules_are_different(
-        &self,
-        rules: &StrongRuleNode,
-        guards: &StylesheetGuards,
-    ) -> bool {
-        debug_assert!(self.has_styles());
-        let (important_rules, _custom) = self
-            .styles
-            .primary()
-            .rules()
-            .get_properties_overriding_animations(&guards);
-        let (other_important_rules, _custom) = rules.get_properties_overriding_animations(&guards);
-        important_rules != other_important_rules
-    }
-
-    
-    
-    
-    
     #[inline]
     pub fn clear_restyle_state(&mut self) {
         self.hint = RestyleHint::empty();
@@ -411,11 +386,6 @@ impl ElementData {
     pub fn clear_restyle_flags_and_damage(&mut self) {
         self.damage = RestyleDamage::empty();
         self.flags.remove(ElementDataFlags::WAS_RESTYLED);
-    }
-
-    
-    pub fn reconstructed_self(&self) -> bool {
-        self.damage.contains(RestyleDamage::reconstruct())
     }
 
     
@@ -436,13 +406,6 @@ impl ElementData {
     pub fn set_traversed_without_styling(&mut self) {
         self.flags
             .insert(ElementDataFlags::TRAVERSED_WITHOUT_STYLING);
-    }
-
-    
-    
-    pub fn traversed_without_styling(&self) -> bool {
-        self.flags
-            .contains(ElementDataFlags::TRAVERSED_WITHOUT_STYLING)
     }
 
     

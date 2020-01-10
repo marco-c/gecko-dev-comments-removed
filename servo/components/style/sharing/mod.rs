@@ -103,15 +103,6 @@ pub const SHARING_CACHE_SIZE: usize = 31;
 const SHARING_CACHE_BACKING_STORE_SIZE: usize = SHARING_CACHE_SIZE + 1;
 
 
-#[derive(Clone, Copy, PartialEq)]
-pub enum StyleSharingBehavior {
-    
-    Allow,
-    
-    Disallow,
-}
-
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OpaqueComputedValues(NonNull<()>);
 

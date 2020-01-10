@@ -21,6 +21,7 @@ use to_shmem::{SharedMemoryBuilder, ToShmem};
 
 
 
+#[cfg(feature = "gecko")]
 #[derive(Clone, Debug)]
 pub struct PendingSheet {
     origin: Origin,

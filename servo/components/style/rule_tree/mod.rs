@@ -148,16 +148,6 @@ impl StyleSource {
     }
 
     
-    pub fn is_rule(&self) -> bool {
-        self.0.is_first()
-    }
-
-    
-    pub fn is_declarations(&self) -> bool {
-        self.0.is_second()
-    }
-
-    
     pub fn as_rule(&self) -> Option<ArcBorrow<Locked<StyleRule>>> {
         self.0.as_first()
     }

@@ -106,12 +106,6 @@ impl RestyleHint {
     }
 
     
-    
-    pub fn recascade_self() -> Self {
-        RestyleHint::RECASCADE_SELF
-    }
-
-    
     pub fn replacements() -> Self {
         RestyleHint::RESTYLE_STYLE_ATTRIBUTE | Self::for_animations()
     }

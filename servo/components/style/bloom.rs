@@ -195,11 +195,6 @@ impl<E: TElement> StyleBloom<E> {
     }
 
     
-    pub fn is_empty(&self) -> bool {
-        self.elements.is_empty()
-    }
-
-    
     
     
     pub fn matching_depth(&self) -> usize {

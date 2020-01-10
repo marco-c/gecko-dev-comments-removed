@@ -303,18 +303,6 @@ impl AttrValue {
     
     
     
-    pub fn as_length(&self) -> Option<&Length> {
-        match *self {
-            AttrValue::Length(_, ref length) => length.as_ref(),
-            _ => panic!("Length not found"),
-        }
-    }
-
-    
-    
-    
-    
-    
     pub fn as_dimension(&self) -> &LengthOrPercentageOrAuto {
         match *self {
             AttrValue::Dimension(_, ref l) => l,

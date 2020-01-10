@@ -55,11 +55,6 @@ impl SourceSizeList {
     }
 
     
-    pub fn set_fallback_value(&mut self, width: Option<Length>) {
-        self.value = width;
-    }
-
-    
     pub fn evaluate(&self, device: &Device, quirks_mode: QuirksMode) -> Au {
         let matching_source_size = self
             .source_sizes

@@ -21,11 +21,6 @@ pub type BloomFilter = CountingBloomFilter<BloomStorageU8>;
 
 
 
-pub type NonCountingBloomFilter = CountingBloomFilter<BloomStorageBool>;
-
-
-
-
 
 
 
