@@ -965,9 +965,6 @@ var PlacesSearchBox = {
 
 
   init: function PSB_init() {
-    if (Services.prefs.getBoolPref("browser.urlbar.clickSelectsAll", false)) {
-      this.searchFilter.setAttribute("clickSelectsAll", true);
-    }
     this.updateCollectionTitle();
   },
 
