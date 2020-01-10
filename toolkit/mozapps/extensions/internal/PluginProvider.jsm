@@ -435,13 +435,7 @@ PluginWrapper.prototype = {
     } = pluginFor(this);
     let path = tag.fullpath;
     
-    let dir = Services.dirsvc.get("APlugns", Ci.nsIFile);
-    if (path.startsWith(dir.path)) {
-      return AddonManager.SCOPE_APPLICATION;
-    }
-
-    
-    dir = Services.dirsvc.get("ProfD", Ci.nsIFile);
+    let dir = Services.dirsvc.get("ProfD", Ci.nsIFile);
     if (path.startsWith(dir.path)) {
       return AddonManager.SCOPE_PROFILE;
     }

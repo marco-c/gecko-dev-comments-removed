@@ -62,16 +62,6 @@
 
 
 
-
-
-
-#define XRE_EXTENSIONS_DIR_LIST "XREExtDL"
-
-
-
-
-
-
 #define XRE_EXECUTABLE_FILE "XREExeF"
 
 

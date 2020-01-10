@@ -2586,8 +2586,6 @@ pref("input_event_queue.default_duration_per_event", 1);
 
 pref("input_event_queue.count_for_prediction", 9);
 
-pref("plugins.load_appdir_plugins", false);
-
 
 pref("plugins.navigator.hidden_ctp_plugin", "");
 
