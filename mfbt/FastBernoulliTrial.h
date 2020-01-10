@@ -363,9 +363,11 @@ class FastBernoulliTrial {
 
 
 
+
+
     double skipCount =
         std::floor(std::log(mGenerator.nextDouble()) * mInvLogNotProbability);
-    if (skipCount < SIZE_MAX)
+    if (skipCount < double(SIZE_MAX))
       mSkipCount = skipCount;
     else
       mSkipCount = SIZE_MAX;
