@@ -237,7 +237,12 @@ class SearchConfigTest {
     });
     
     
-    return [...data.split("\n").filter(e => e != ""), "en-US"];
+    let locales = [...data.split("\n").filter(e => e != ""), "en-US"];
+    
+    
+    
+    locales = locales.map(l => (l == "ja-JP-mac" ? "ja-JP-macos" : l));
+    return locales;
   }
 
   
