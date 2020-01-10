@@ -719,8 +719,6 @@ class nsPresContext : public nsISupports,
 
   uint32_t GetBidi() const;
 
-  bool IsTopLevelWindowInactive();
-
   
 
 
