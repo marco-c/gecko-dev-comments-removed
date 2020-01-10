@@ -1229,10 +1229,5 @@ class PluginChild extends ActorChild {
       messageString,
       pluginID,
     });
-
-    
-    doc.defaultView.top.addEventListener("unload", event => {
-      this.hideNotificationBar("plugin-crashed");
-    });
   }
 }
