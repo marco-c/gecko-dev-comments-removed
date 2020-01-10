@@ -92,6 +92,10 @@ class WebConsole {
     return this.toolbox.target;
   }
 
+  get targetList() {
+    return this.toolbox.targetList;
+  }
+
   
 
 

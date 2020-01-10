@@ -62,9 +62,8 @@ class WebConsoleUI {
     this._onChangeSplitConsoleState = this._onChangeSplitConsoleState.bind(
       this
     );
-    this._listProcessesAndCreateProxies = this._listProcessesAndCreateProxies.bind(
-      this
-    );
+    this._onTargetAvailable = this._onTargetAvailable.bind(this);
+    this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
 
     EventEmitter.decorate(this);
   }
@@ -106,7 +105,7 @@ class WebConsoleUI {
     let proxies = [this.getProxy()];
 
     if (this.additionalProxies) {
-      proxies = proxies.concat(this.additionalProxies);
+      proxies = proxies.concat([...this.additionalProxies.values()]);
     }
 
     
@@ -168,13 +167,13 @@ class WebConsoleUI {
       toolbox.off("select", this._onChangeSplitConsoleState);
     }
 
-    const target = this.hud.currentTarget;
-    if (target) {
-      target.client.mainRoot.off(
-        "processListChanged",
-        this._listProcessesAndCreateProxies
-      );
-    }
+    
+    const targetList = this.hud.targetList;
+    targetList.unwatchTargets(
+      targetList.ALL_TYPES,
+      this._onTargetAvailable,
+      this._onTargetDestroy
+    );
 
     for (const proxy of this.getAllProxies()) {
       proxy.disconnect();
@@ -184,31 +183,6 @@ class WebConsoleUI {
 
     
     this.window = this.hud = this.wrapper = null;
-  }
-
-  async switchToTarget(newTarget) {
-    
-    
-    const packet = {
-      url: newTarget.url,
-      title: newTarget.title,
-      
-      
-      
-      nativeConsoleAPI: true,
-    };
-    this.handleTabWillNavigate(packet);
-
-    
-    for (const proxy of this.getAllProxies()) {
-      proxy.disconnect();
-    }
-    this.proxy = null;
-    this.additionalProxies = [];
-
-    await this._attachTargets();
-
-    this.handleTabNavigated(packet);
   }
 
   
@@ -313,72 +287,81 @@ class WebConsoleUI {
 
 
   async _attachTargets() {
-    const target = this.hud.currentTarget;
-    const fissionSupport = Services.prefs.getBoolPref(
-      PREFS.FEATURES.BROWSER_TOOLBOX_FISSION
+    this.additionalProxies = new Map();
+    
+    
+    
+    
+    
+    
+    await this.hud.targetList.watchTargets(
+      this.hud.targetList.ALL_TYPES,
+      this._onTargetAvailable,
+      this._onTargetDestroy
     );
-    const needContentProcessMessagesListener =
-      target.isParentProcess && !target.isAddon && !fissionSupport;
-
-    this.proxy = new WebConsoleConnectionProxy(
-      this,
-      target,
-      needContentProcessMessagesListener
-    );
-
-    const onConnect = this.proxy.connect();
-
-    if (fissionSupport && target.isParentProcess && !target.isAddon) {
-      this.additionalProxies = [];
-
-      await this._listProcessesAndCreateProxies();
-      target.client.mainRoot.on(
-        "processListChanged",
-        this._listProcessesAndCreateProxies
-      );
-    }
-
-    await onConnect;
   }
 
-  async _listProcessesAndCreateProxies() {
-    const target = this.hud.currentTarget;
-    const { mainRoot } = target.client;
-    const { processes } = await mainRoot.listProcesses();
+  
 
-    if (!this.additionalProxies) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async _onTargetAvailable(type, targetFront, isTopLevel) {
+    
+    
+    if (isTopLevel) {
+      const fissionSupport = Services.prefs.getBoolPref(
+        PREFS.FEATURES.BROWSER_TOOLBOX_FISSION
+      );
+      const needContentProcessMessagesListener =
+        targetFront.isParentProcess && !targetFront.isAddon && !fissionSupport;
+      this.proxy = new WebConsoleConnectionProxy(
+        this,
+        targetFront,
+        needContentProcessMessagesListener
+      );
+      await this.proxy.connect();
       return;
     }
-
-    const newProxies = [];
-    for (const processDescriptor of processes) {
-      const targetFront = await processDescriptor.getTarget();
-
-      
-      
-      if (targetFront === target) {
-        continue;
-      }
-
-      if (!targetFront) {
-        console.warn(
-          "Can't retrieve the target front for process",
-          processDescriptor
-        );
-        continue;
-      }
-
-      if (this.additionalProxies.some(proxy => proxy.target == targetFront)) {
-        continue;
-      }
-
-      const proxy = new WebConsoleConnectionProxy(this, targetFront);
-
-      newProxies.push(proxy);
-      this.additionalProxies.push(proxy);
+    
+    
+    if (type == this.hud.targetList.TYPES.FRAME) {
+      return;
     }
+    const proxy = new WebConsoleConnectionProxy(this, targetFront);
+    this.additionalProxies.set(targetFront, proxy);
+    await proxy.connect();
+  }
 
-    await Promise.all(newProxies.map(proxy => proxy.connect()));
+  
+
+
+
+
+
+  _onTargetDestroyed(type, targetFront, isTopLevel) {
+    if (isTopLevel) {
+      this.proxy.disconnect();
+      this.proxy = null;
+    } else {
+      const proxy = this.additionalProxies.get(targetFront);
+      proxy.disconnect();
+      this.additionalProxies.delete(targetFront);
+    }
   }
 
   _initUI() {
