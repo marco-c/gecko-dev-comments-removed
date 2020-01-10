@@ -12,17 +12,14 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/CondVar.h"
 #include "mozilla/DOMEventTargetHelper.h"
-#include "mozilla/MozPromise.h"
 #include "mozilla/RelativeTimeline.h"
 #include "mozilla/StorageAccess.h"
-#include "mozilla/ThreadSafeWeakPtr.h"
 #include "nsContentUtils.h"
 #include "nsIContentSecurityPolicy.h"
 #include "nsIEventTarget.h"
 #include "nsTObserverArray.h"
 
 #include "js/ContextOptions.h"
-#include "mozilla/dom/RemoteWorkerChild.h"
 #include "mozilla/dom/Worker.h"
 #include "mozilla/dom/WorkerLoadInfo.h"
 #include "mozilla/dom/workerinternals/JSSettings.h"
@@ -46,6 +43,7 @@ class Function;
 class MessagePort;
 class MessagePortIdentifier;
 class PerformanceStorage;
+class RemoteWorkerChild;
 class TimeoutHandler;
 class WorkerControlRunnable;
 class WorkerCSPEventListener;
@@ -791,13 +789,6 @@ class WorkerPrivate : public RelativeTimeline {
 
   void SetRemoteWorkerController(RemoteWorkerChild* aController);
 
-  void SetRemoteWorkerControllerWeakRef(
-      ThreadSafeWeakPtr<RemoteWorkerChild> aWeakRef);
-
-  ThreadSafeWeakPtr<RemoteWorkerChild> GetRemoteWorkerControllerWeakRef();
-
-  RefPtr<GenericPromise> SetServiceWorkerSkipWaitingFlag();
-
   
   
   bool Freeze(nsPIDOMWindowInner* aWindow);
@@ -1073,9 +1064,6 @@ class WorkerPrivate : public RelativeTimeline {
 
   
   RefPtr<RemoteWorkerChild> mRemoteWorkerController;
-
-  
-  ThreadSafeWeakPtr<RemoteWorkerChild> mRemoteWorkerControllerWeakRef;
 
   JS::UniqueChars mDefaultLocale;  
   TimeStamp mKillTime;
