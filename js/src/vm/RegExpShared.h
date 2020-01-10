@@ -48,15 +48,6 @@ enum RegExpRunStatus {
 
 
 
-struct RegExpByteCodeHeader
-{
-  uint32_t length;          
-  uint32_t numRegisters;    
-};
-
-
-
-
 
 
 
@@ -86,27 +77,23 @@ class RegExpShared : public gc::TenuredCell {
 
   struct RegExpCompilation {
     WeakHeapPtr<jit::JitCode*> jitCode;
-    uint8_t* byteCode = nullptr;
+    uint8_t* byteCode;
+
+    RegExpCompilation() : byteCode(nullptr) {}
 
     bool compiled(ForceByteCodeEnum force = DontForceByteCode) const {
       return byteCode || (force == DontForceByteCode && jitCode);
     }
-
-    size_t byteCodeLength() const {
-      MOZ_ASSERT(byteCode);
-      auto header = reinterpret_cast<RegExpByteCodeHeader*>(byteCode);
-      return header->length;
-    }
   };
-
-  RegExpCompilation compilationArray[4];
 
   
   GCPtr<JSAtom*> source;
 
-  uint32_t parenCount;
   JS::RegExpFlags flags;
   bool canStringMatch;
+  size_t parenCount;
+
+  RegExpCompilation compilationArray[4];
 
   static int CompilationIndex(CompilationMode mode, bool latin1) {
     switch (mode) {

@@ -113,8 +113,6 @@ InterpretedRegExpMacroAssembler::InterpretedRegExpMacroAssembler(JSContext* cx, 
 {
     
     Emit32(0);
-    
-    Emit32(0);
 }
 
 InterpretedRegExpMacroAssembler::~InterpretedRegExpMacroAssembler()
@@ -129,10 +127,7 @@ InterpretedRegExpMacroAssembler::GenerateCode(JSContext* cx, bool match_only)
     Emit(BC_POP_BT, 0);
 
     
-    MOZ_ASSERT(size_t(length_) > sizeof(RegExpByteCodeHeader));
-    auto header = reinterpret_cast<RegExpByteCodeHeader*>(buffer_);
-    header->length = length_;
-    header->numRegisters = num_registers_;
+    *(int32_t*)buffer_ = num_registers_;
 
     RegExpCode res;
     res.byteCode = buffer_;
