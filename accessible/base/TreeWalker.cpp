@@ -106,6 +106,15 @@ bool TreeWalker::Seek(nsIContent* aChildNode) {
                      ? childNode->GetParentNode()
                      : childNode->GetFlattenedTreeParent();
 
+    
+    if (parentNode && parentNode->IsShadowRoot()) {
+      parentNode = childNode->GetFlattenedTreeParent();
+      if (parentNode == mAnchorNode) {
+        return true;
+      }
+      continue;
+    }
+
     if (!parentNode || !parentNode->IsElement()) {
       return false;
     }
