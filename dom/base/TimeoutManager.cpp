@@ -412,15 +412,6 @@ void TimeoutManager::UpdateBudget(const TimeStamp& aNow,
 
 uint32_t TimeoutManager::sNestingLevel = 0;
 
-namespace {
-
-
-
-#define DEFAULT_DISABLE_OPEN_CLICK_DELAY 0
-int32_t gDisableOpenClickDelay;
-
-}  
-
 TimeoutManager::TimeoutManager(nsGlobalWindowInner& aWindow,
                                uint32_t aMaxIdleDeferMS)
     : mWindow(aWindow),
@@ -462,9 +453,6 @@ TimeoutManager::~TimeoutManager() {
 
 
 void TimeoutManager::Initialize() {
-  Preferences::AddIntVarCache(&gDisableOpenClickDelay,
-                              "dom.disable_open_click_delay",
-                              DEFAULT_DISABLE_OPEN_CLICK_DELAY);
   Preferences::AddIntVarCache(&gBackgroundBudgetRegenerationFactor,
                               "dom.timeout.background_budget_regeneration_rate",
                               DEFAULT_BACKGROUND_BUDGET_REGENERATION_FACTOR);
@@ -558,7 +546,7 @@ nsresult TimeoutManager::SetTimeout(TimeoutHandler* aHandler, int32_t interval,
     
     
     
-    if (interval <= gDisableOpenClickDelay) {
+    if (interval <= StaticPrefs::dom_disable_open_click_delay()) {
       timeout->mPopupState = PopupBlocker::GetPopupControlState();
     }
   }
