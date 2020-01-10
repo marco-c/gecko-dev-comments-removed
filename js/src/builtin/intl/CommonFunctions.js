@@ -572,6 +572,21 @@ function IsStructurallyValidLanguageTag(locale) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function CanonicalizeLanguageTagFromObject(localeObj) {
     assert(IsObject(localeObj), "CanonicalizeLanguageTagFromObject");
 
@@ -593,6 +608,45 @@ function CanonicalizeLanguageTagFromObject(localeObj) {
 
     
     
+    
+
+    
+
+#ifdef DEBUG
+    function IsLowerCase(s) {
+        return s === callFunction(std_String_toLowerCase, s);
+    }
+    function IsUpperCase(s) {
+        return s === callFunction(std_String_toUpperCase, s);
+    }
+    function IsTitleCase(s) {
+        assert(s.length > 0, "unexpected empy string");
+        var r = callFunction(std_String_toUpperCase, s[0]) +
+                callFunction(std_String_toLowerCase, Substring(s, 1, s.length - 1));
+        return s === r;
+    }
+#endif
+
+    
+    assert(!script || IsTitleCase(script),
+           "If present, script subtag is in title case");
+
+    
+    assert(!region || IsUpperCase(region),
+           "If present, region subtag is in upper case");
+
+    
+    assert(IsLowerCase(language),
+           "language subtag is in lower case");
+    assert(callFunction(ArrayEvery, variants, IsLowerCase),
+           "variant subtags are in lower case");
+    assert(callFunction(ArrayEvery, extensions, IsLowerCase),
+           "extension subtags are in lower case");
+    assert(!privateuse || IsLowerCase(privateuse),
+           "If present, privateuse subtag is in lower case");
+
+    
+    
     if (hasOwn(language, languageMappings))
         language = languageMappings[language];
 
@@ -600,10 +654,7 @@ function CanonicalizeLanguageTagFromObject(localeObj) {
 
     
     if (script) {
-        assert(script.length === 4 &&
-               script ===
-               callFunction(std_String_toUpperCase, script[0]) +
-               callFunction(std_String_toLowerCase, Substring(script, 1, script.length - 1)),
+        assert(script.length === 4 && IsTitleCase(script),
                "script must be [A-Z][a-z]{3}");
         canonical += "-" + script;
     }
@@ -614,8 +665,7 @@ function CanonicalizeLanguageTagFromObject(localeObj) {
         if (hasOwn(region, regionMappings))
             region = regionMappings[region];
 
-        assert((2 <= region.length && region.length <= 3) &&
-               region === callFunction(std_String_toUpperCase, region),
+        assert((2 <= region.length && region.length <= 3) && IsUpperCase(region),
                "region must be [A-Z]{2} or [0-9]{3}");
         canonical += "-" + region;
     }
@@ -632,7 +682,7 @@ function CanonicalizeLanguageTagFromObject(localeObj) {
         
         for (var i = 0; i < extensions.length; i++) {
             var ext = extensions[i];
-            assert(ext === callFunction(std_String_toLowerCase, ext),
+            assert(IsLowerCase(ext),
                    "extension subtags must be in lower-case");
             assert(ext[1] === "-",
                    "extension subtags start with a singleton");
