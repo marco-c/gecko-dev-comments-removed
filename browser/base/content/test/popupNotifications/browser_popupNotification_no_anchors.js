@@ -11,6 +11,10 @@ function test() {
   setup();
 }
 
+const FALLBACK_ANCHOR = gURLBar.megabar
+  ? "urlbar-search-icon"
+  : "identity-icon";
+
 var tests = [
   
   
@@ -34,8 +38,8 @@ var tests = [
       );
       is(
         popup.anchorNode.id,
-        "identity-icon",
-        "notification anchored to identity icon"
+        FALLBACK_ANCHOR,
+        "notification anchored to fallback anchor"
       );
       dismissNotification(popup);
     },
@@ -75,8 +79,8 @@ var tests = [
       );
       is(
         popup.anchorNode.id,
-        "identity-icon",
-        "notification anchored to identity icon"
+        FALLBACK_ANCHOR,
+        "notification anchored to fallback anchor"
       );
       dismissNotification(popup);
     },
@@ -175,8 +179,8 @@ var tests = [
 
         is(
           PopupNotifications.panel.anchorNode.id,
-          "identity-icon",
-          "notification anchored to identity icon"
+          FALLBACK_ANCHOR,
+          "notification anchored to fallback anchor"
         );
 
         

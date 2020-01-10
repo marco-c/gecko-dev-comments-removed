@@ -1212,7 +1212,12 @@ PopupNotifications.prototype = {
     if (isNullOrHidden(anchorElement)) {
       anchorElement = this.window.document.getElementById("identity-icon");
 
-      
+      if (isNullOrHidden(anchorElement)) {
+        anchorElement = this.window.document.getElementById(
+          "urlbar-search-icon"
+        );
+      }
+
       
       
       
