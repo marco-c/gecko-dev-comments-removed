@@ -7,6 +7,7 @@
 #ifndef mozilla_layers_MatrixMessage_h
 #define mozilla_layers_MatrixMessage_h
 
+#include "mozilla/Maybe.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/layers/LayersTypes.h"
 
@@ -17,11 +18,11 @@ class MatrixMessage {
   
   MatrixMessage() {}
 
-  MatrixMessage(const LayerToScreenMatrix4x4& aMatrix,
+  MatrixMessage(const Maybe<LayerToScreenMatrix4x4>& aMatrix,
                 const LayersId& aLayersId)
-      : mMatrix(aMatrix.ToUnknownMatrix()), mLayersId(aLayersId) {}
+      : mMatrix(ToUnknownMatrix(aMatrix)), mLayersId(aLayersId) {}
 
-  inline LayerToScreenMatrix4x4 GetMatrix() const {
+  inline Maybe<LayerToScreenMatrix4x4> GetMatrix() const {
     return LayerToScreenMatrix4x4::FromUnknownMatrix(mMatrix);
   }
 
@@ -29,7 +30,7 @@ class MatrixMessage {
 
   
   
-  gfx::Matrix4x4 mMatrix;  
+  Maybe<gfx::Matrix4x4> mMatrix;  
   LayersId mLayersId;
 };
 };  
