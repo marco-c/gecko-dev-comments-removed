@@ -24,6 +24,7 @@
 #include "js/Value.h"                        
 #include "vm/JSContext.h"                    
 #include "vm/JSObject.h"                     
+#include "vm/List.h"                         
 #include "vm/Runtime.h"                      
 
 #include "builtin/streams/HandlerFunction-inl.h"  
@@ -36,7 +37,10 @@ using JS::ObjectValue;
 using JS::Rooted;
 using JS::Value;
 
+using js::ListObject;
+using js::WritableStream;
 using js::WritableStreamDefaultController;
+using js::WritableStreamFinishErroring;
 
 
 
@@ -321,6 +325,42 @@ double js::WritableStreamDefaultControllerGetDesiredSize(
 MOZ_MUST_USE bool WritableStreamDefaultControllerAdvanceQueueIfNeeded(
     JSContext* cx,
     Handle<WritableStreamDefaultController*> unwrappedController) {
+  
+  if (!unwrappedController->started()) {
+    return true;
+  }
+
+  
+  Rooted<WritableStream*> unwrappedStream(cx, unwrappedController->stream());
+
+  
+  if (!unwrappedStream->inFlightWriteRequest().isUndefined()) {
+    return true;
+  }
+
+  
+  
+  
+  MOZ_ASSERT(!unwrappedStream->closed());
+  MOZ_ASSERT(!unwrappedStream->errored());
+  if (unwrappedStream->erroring()) {
+    
+    
+    return WritableStreamFinishErroring(cx, unwrappedStream);
+  }
+
+  
+  Rooted<ListObject*> unwrappedQueue(cx, unwrappedController->queue());
+  if (unwrappedQueue->length() == 0) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
   
   JS_ReportErrorASCII(cx, "nope");
   return false;
