@@ -205,7 +205,7 @@ void nsHTMLButtonControlFrame::ReflowButtonContents(
     const ReflowInput& aButtonReflowInput, nsIFrame* aFirstKid) {
   WritingMode wm = GetWritingMode();
   LogicalSize availSize = aButtonReflowInput.ComputedSize(wm);
-  availSize.BSize(wm) = NS_INTRINSICSIZE;
+  availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
 
   
   const LogicalMargin& clbp = aButtonReflowInput.ComputedLogicalBorderPadding();
@@ -243,7 +243,7 @@ void nsHTMLButtonControlFrame::ReflowButtonContents(
 
   
   LogicalSize buttonContentBox(wm);
-  if (aButtonReflowInput.ComputedBSize() != NS_INTRINSICSIZE) {
+  if (aButtonReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE) {
     
     buttonContentBox.BSize(wm) = aButtonReflowInput.ComputedBSize();
   } else if (aButtonReflowInput.mStyleDisplay->IsContainSize()) {
@@ -265,7 +265,7 @@ void nsHTMLButtonControlFrame::ReflowButtonContents(
         buttonContentBox.BSize(wm), aButtonReflowInput.ComputedMinBSize(),
         aButtonReflowInput.ComputedMaxBSize());
   }
-  if (aButtonReflowInput.ComputedISize() != NS_INTRINSICSIZE) {
+  if (aButtonReflowInput.ComputedISize() != NS_UNCONSTRAINEDSIZE) {
     buttonContentBox.ISize(wm) = aButtonReflowInput.ComputedISize();
   } else if (aButtonReflowInput.mStyleDisplay->IsContainSize()) {
     buttonContentBox.ISize(wm) = aButtonReflowInput.ComputedMinISize();

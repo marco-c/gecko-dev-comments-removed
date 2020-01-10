@@ -809,8 +809,8 @@ static bool RecomputePosition(nsIFrame* aFrame) {
     parentReflowInput.mCBReflowInput = cbReflowInput.ptr();
   }
 
-  NS_WARNING_ASSERTION(parentSize.ISize(parentWM) != NS_INTRINSICSIZE &&
-                           parentSize.BSize(parentWM) != NS_INTRINSICSIZE,
+  NS_WARNING_ASSERTION(parentSize.ISize(parentWM) != NS_UNCONSTRAINEDSIZE &&
+                           parentSize.BSize(parentWM) != NS_UNCONSTRAINEDSIZE,
                        "parentSize should be valid");
   parentReflowInput.SetComputedISize(std::max(parentSize.ISize(parentWM), 0));
   parentReflowInput.SetComputedBSize(std::max(parentSize.BSize(parentWM), 0));
@@ -820,7 +820,7 @@ static bool RecomputePosition(nsIFrame* aFrame) {
   parentReflowInput.ComputedPhysicalBorderPadding() =
       parentFrame->GetUsedBorderAndPadding();
   LogicalSize availSize = parentSize.ConvertTo(frameWM, parentWM);
-  availSize.BSize(frameWM) = NS_INTRINSICSIZE;
+  availSize.BSize(frameWM) = NS_UNCONSTRAINEDSIZE;
 
   ViewportFrame* viewport = do_QueryFrame(parentFrame);
   nsSize cbSize =
@@ -837,7 +837,7 @@ static bool RecomputePosition(nsIFrame* aFrame) {
   nsSize computedSize(reflowInput.ComputedWidth(),
                       reflowInput.ComputedHeight());
   computedSize.width += reflowInput.ComputedPhysicalBorderPadding().LeftRight();
-  if (computedSize.height != NS_INTRINSICSIZE) {
+  if (computedSize.height != NS_UNCONSTRAINEDSIZE) {
     computedSize.height +=
         reflowInput.ComputedPhysicalBorderPadding().TopBottom();
   }
@@ -849,7 +849,7 @@ static bool RecomputePosition(nsIFrame* aFrame) {
   
   
   if (computedSize.width == size.width &&
-      (computedSize.height == NS_INTRINSICSIZE ||
+      (computedSize.height == NS_UNCONSTRAINEDSIZE ||
        computedSize.height == size.height)) {
     
     

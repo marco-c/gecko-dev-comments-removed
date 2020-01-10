@@ -502,7 +502,7 @@ static bool IsQuirkContainingBlockHeight(const ReflowInput* rs,
       LayoutFrameType::Scroll == aFrameType) {
     
     
-    if (NS_AUTOHEIGHT == rs->ComputedHeight()) {
+    if (NS_UNCONSTRAINEDSIZE == rs->ComputedHeight()) {
       if (!rs->mFrame->IsAbsolutelyPositioned(rs->mStyleDisplay)) {
         return false;
       }
@@ -671,10 +671,10 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
     
     
     SetBResize(mCBReflowInput->IsBResizeForWM(wm));
-    if (ComputedBSize() == NS_AUTOHEIGHT) {
+    if (ComputedBSize() == NS_UNCONSTRAINEDSIZE) {
       SetBResize(IsBResize() || NS_SUBTREE_DIRTY(mFrame));
     }
-  } else if (ComputedBSize() == NS_AUTOHEIGHT) {
+  } else if (ComputedBSize() == NS_UNCONSTRAINEDSIZE) {
     if (eCompatibility_NavQuirks == aPresContext->CompatibilityMode() &&
         mCBReflowInput) {
       SetBResize(mCBReflowInput->IsBResizeForWM(wm));
@@ -1031,7 +1031,7 @@ void ReflowInput::ComputeRelativeOffsets(WritingMode aWM, nsIFrame* aFrame,
 
   
   
-  if (NS_AUTOHEIGHT == aCBSize.BSize(aWM)) {
+  if (NS_UNCONSTRAINEDSIZE == aCBSize.BSize(aWM)) {
     if (position->OffsetHasPercent(blockStart)) {
       blockStartIsAuto = true;
     }
@@ -1607,7 +1607,7 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
                                           LayoutFrameType aFrameType) {
   WritingMode wm = GetWritingMode();
   WritingMode cbwm = aCBReflowInput->GetWritingMode();
-  NS_WARNING_ASSERTION(aCBSize.BSize(cbwm) != NS_AUTOHEIGHT,
+  NS_WARNING_ASSERTION(aCBSize.BSize(cbwm) != NS_UNCONSTRAINEDSIZE,
                        "containing block bsize must be constrained");
 
   NS_ASSERTION(aFrameType != LayoutFrameType::Table,
@@ -2030,7 +2030,7 @@ static nscoord CalcQuirkContainingBlockHeight(
   
   
   
-  nscoord result = NS_AUTOHEIGHT;
+  nscoord result = NS_UNCONSTRAINEDSIZE;
 
   const ReflowInput* ri = aCBReflowInput;
   for (; ri; ri = ri->mParentReflowInput) {
@@ -2050,7 +2050,7 @@ static nscoord CalcQuirkContainingBlockHeight(
       
       
       
-      if (NS_AUTOHEIGHT == ri->ComputedHeight()) {
+      if (NS_UNCONSTRAINEDSIZE == ri->ComputedHeight()) {
         if (ri->mFrame->IsAbsolutelyPositioned(ri->mStyleDisplay)) {
           break;
         } else {
@@ -2073,7 +2073,7 @@ static nscoord CalcQuirkContainingBlockHeight(
     result = (LayoutFrameType::PageContent == frameType) ? ri->AvailableHeight()
                                                          : ri->ComputedHeight();
     
-    if (NS_AUTOHEIGHT == result) return result;
+    if (NS_UNCONSTRAINEDSIZE == result) return result;
 
     
     
@@ -2166,7 +2166,7 @@ LogicalSize ReflowInput::ComputeContainingBlockRectangle(
     
     
     
-    if (!wm.IsVertical() && NS_AUTOHEIGHT == cbSize.BSize(wm)) {
+    if (!wm.IsVertical() && NS_UNCONSTRAINEDSIZE == cbSize.BSize(wm)) {
       if (eCompatibility_NavQuirks == aPresContext->CompatibilityMode() &&
           (IsQuirky(mStylePosition->mHeight) ||
            (mFrame->IsTableWrapperFrame() &&
@@ -2258,7 +2258,7 @@ void ReflowInput::InitConstraints(
 
     
     
-    if (NS_AUTOHEIGHT == cbSize.BSize(wm)) {
+    if (NS_UNCONSTRAINEDSIZE == cbSize.BSize(wm)) {
       
       
       
@@ -2287,7 +2287,7 @@ void ReflowInput::InitConstraints(
     
     
     if (blockSize.HasPercent()) {
-      if (NS_AUTOHEIGHT == cbSize.BSize(wm)) {
+      if (NS_UNCONSTRAINEDSIZE == cbSize.BSize(wm)) {
         
         
         
@@ -2301,7 +2301,7 @@ void ReflowInput::InitConstraints(
               eCompatibility_NavQuirks == aPresContext->CompatibilityMode()) {
             if (!IsTableCell(cbri->mFrame->Type())) {
               cbSize.BSize(wm) = CalcQuirkContainingBlockHeight(cbri);
-              if (cbSize.BSize(wm) == NS_AUTOHEIGHT) {
+              if (cbSize.BSize(wm) == NS_UNCONSTRAINEDSIZE) {
                 isAutoBSize = true;
               }
             } else {
@@ -2313,7 +2313,7 @@ void ReflowInput::InitConstraints(
           
           else {
             nscoord computedBSize = cbri->ComputedSize(wm).BSize(wm);
-            if (NS_AUTOHEIGHT != computedBSize) {
+            if (NS_UNCONSTRAINEDSIZE != computedBSize) {
               cbSize.BSize(wm) = computedBSize;
             } else {
               isAutoBSize = true;
@@ -2388,7 +2388,7 @@ void ReflowInput::InitConstraints(
       
       
       if (isAutoBSize || blockSize.HasLengthAndPercentage()) {
-        ComputedBSize() = NS_AUTOHEIGHT;
+        ComputedBSize() = NS_UNCONSTRAINEDSIZE;
       } else {
         ComputedBSize() =
             ComputeBSizeValue(cbSize.BSize(wm), mStylePosition->mBoxSizing,
@@ -2839,7 +2839,7 @@ static inline nscoord ComputeLineHeight(ComputedStyle* aComputedStyle,
   }
 
   MOZ_ASSERT(lineHeight.IsNormal() || lineHeight.IsMozBlockHeight());
-  if (lineHeight.IsMozBlockHeight() && aBlockBSize != NS_AUTOHEIGHT) {
+  if (lineHeight.IsMozBlockHeight() && aBlockBSize != NS_UNCONSTRAINEDSIZE) {
     return aBlockBSize;
   }
 
@@ -2849,10 +2849,10 @@ static inline nscoord ComputeLineHeight(ComputedStyle* aComputedStyle,
 }
 
 nscoord ReflowInput::CalcLineHeight() const {
-  nscoord blockBSize =
-      nsLayoutUtils::IsNonWrapperBlock(mFrame)
-          ? ComputedBSize()
-          : (mCBReflowInput ? mCBReflowInput->ComputedBSize() : NS_AUTOHEIGHT);
+  nscoord blockBSize = nsLayoutUtils::IsNonWrapperBlock(mFrame)
+                           ? ComputedBSize()
+                           : (mCBReflowInput ? mCBReflowInput->ComputedBSize()
+                                             : NS_UNCONSTRAINEDSIZE);
 
   return CalcLineHeight(mFrame->GetContent(), mFrame->Style(),
                         mFrame->PresContext(), blockBSize,

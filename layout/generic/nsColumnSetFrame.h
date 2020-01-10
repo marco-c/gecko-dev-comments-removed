@@ -91,19 +91,19 @@ class nsColumnSetFrame final : public nsContainerFrame {
     int32_t mBalanceColCount = INT32_MAX;
 
     
-    nscoord mColISize = NS_INTRINSICSIZE;
+    nscoord mColISize = NS_UNCONSTRAINEDSIZE;
 
     
     
     nscoord mExpectedISizeLeftOver = 0;
 
     
-    nscoord mColGap = NS_INTRINSICSIZE;
+    nscoord mColGap = NS_UNCONSTRAINEDSIZE;
 
     
     
     
-    nscoord mColMaxBSize = NS_INTRINSICSIZE;
+    nscoord mColMaxBSize = NS_UNCONSTRAINEDSIZE;
 
     
     
@@ -111,14 +111,14 @@ class nsColumnSetFrame final : public nsContainerFrame {
 
     
     
-    nscoord mKnownFeasibleBSize = NS_INTRINSICSIZE;
+    nscoord mKnownFeasibleBSize = NS_UNCONSTRAINEDSIZE;
 
     
     
     nscoord mKnownInfeasibleBSize = 0;
 
     
-    nscoord mComputedBSize = NS_INTRINSICSIZE;
+    nscoord mComputedBSize = NS_UNCONSTRAINEDSIZE;
 
     
     

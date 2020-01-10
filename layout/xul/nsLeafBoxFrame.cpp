@@ -229,8 +229,8 @@ void nsLeafBoxFrame::Reflow(nsPresContext* aPresContext,
   nsSize prefSize(0, 0);
 
   
-  if (computedSize.width == NS_INTRINSICSIZE ||
-      computedSize.height == NS_INTRINSICSIZE) {
+  if (computedSize.width == NS_UNCONSTRAINEDSIZE ||
+      computedSize.height == NS_UNCONSTRAINEDSIZE) {
     prefSize = GetXULPrefSize(state);
     nsSize minSize = GetXULMinSize(state);
     nsSize maxSize = GetXULMaxSize(state);
@@ -238,13 +238,13 @@ void nsLeafBoxFrame::Reflow(nsPresContext* aPresContext,
   }
 
   
-  if (aReflowInput.ComputedWidth() == NS_INTRINSICSIZE) {
+  if (aReflowInput.ComputedWidth() == NS_UNCONSTRAINEDSIZE) {
     computedSize.width = prefSize.width;
   } else {
     computedSize.width += m.left + m.right;
   }
 
-  if (aReflowInput.ComputedHeight() == NS_INTRINSICSIZE) {
+  if (aReflowInput.ComputedHeight() == NS_UNCONSTRAINEDSIZE) {
     computedSize.height = prefSize.height;
   } else {
     computedSize.height += m.top + m.bottom;

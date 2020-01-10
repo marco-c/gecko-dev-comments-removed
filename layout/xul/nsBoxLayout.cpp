@@ -47,7 +47,7 @@ nsSize nsBoxLayout::GetXULMaxSize(nsIFrame* aBox,
                                   nsBoxLayoutState& aBoxLayoutState) {
   
   
-  return nsSize(NS_INTRINSICSIZE, NS_INTRINSICSIZE);
+  return nsSize(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
 }
 
 nscoord nsBoxLayout::GetAscent(nsIFrame* aBox,

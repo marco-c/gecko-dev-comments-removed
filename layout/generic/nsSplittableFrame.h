@@ -95,8 +95,9 @@ class nsSplittableFrame : public nsFrame {
 
 
 
-  nscoord GetEffectiveComputedBSize(const ReflowInput& aReflowInput,
-                                    nscoord aConsumed = NS_INTRINSICSIZE) const;
+  nscoord GetEffectiveComputedBSize(
+      const ReflowInput& aReflowInput,
+      nscoord aConsumed = NS_UNCONSTRAINEDSIZE) const;
 
   
 
