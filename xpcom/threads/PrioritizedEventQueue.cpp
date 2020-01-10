@@ -425,7 +425,10 @@ void PrioritizedEventQueue::RequestIdleToken(TimeStamp aLocalIdlePeriodHint) {
   if (!mIdleSchedulerInitialized) {
     mIdleSchedulerInitialized = true;
     if (StaticPrefs::idle_period_cross_process_scheduling() &&
-        XRE_IsContentProcess() && NS_IsMainThread()) {
+        XRE_IsContentProcess() && NS_IsMainThread() &&
+        
+        
+        !recordreplay::IsRecordingOrReplaying()) {
       
       
       mIdleScheduler = ipc::IdleSchedulerChild::GetMainThreadIdleScheduler();
