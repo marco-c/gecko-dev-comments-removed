@@ -14,6 +14,7 @@ import os
 import platform
 import re
 import sys
+
 from .string_version import StringVersion
 from ctypes.util import find_library
 
@@ -98,25 +99,35 @@ elif system.startswith(('MINGW', 'MSYS_NT')):
     info['os'] = 'win'
     os_version = version = unknown
 elif system == "Linux":
-    if hasattr(platform, "linux_distribution"):
-        (distro, os_version, codename) = platform.linux_distribution()
+    
+    
+    try:
+        import distro
+    except ImportError:
+        pass
+    
+    
+    if hasattr(distro, "linux_distribution"):
+        (distribution, os_version, codename) = distro.linux_distribution()
+    elif hasattr(platform, "linux_distribution"):
+        (distribution, os_version, codename) = platform.linux_distribution()
     else:
-        (distro, os_version, codename) = platform.dist()
+        (distribution, os_version, codename) = platform.dist()
     if not processor:
         processor = machine
-    version = "%s %s" % (distro, os_version)
+    version = "%s %s" % (distribution, os_version)
 
     
     
     
     
-    if not distro and not os_version and not codename:
-        distro = 'lfs'
+    if not distribution and not os_version and not codename:
+        distribution = 'lfs'
         version = release
         os_version = release
 
     info['os'] = 'linux'
-    info['linux_distro'] = distro
+    info['linux_distro'] = distribution
 elif system in ['DragonFly', 'FreeBSD', 'NetBSD', 'OpenBSD']:
     info['os'] = 'bsd'
     version = os_version = sys.platform
