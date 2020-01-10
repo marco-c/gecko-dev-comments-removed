@@ -22,10 +22,9 @@
 
 
 
-
 function invariant(condition, format, a, b, c, d, e, f) {
   if (!condition) {
-    var error = void 0;
+    var error;
     if (format === undefined) {
       error = new Error('Minified exception occurred; use the non-minified dev environment ' + 'for the full error message and additional helpful warnings.');
     } else {
@@ -41,6 +40,8 @@ function invariant(condition, format, a, b, c, d, e, f) {
     throw error;
   }
 }
+
+var invariant_1 = invariant;
 
 
 
@@ -58,7 +59,7 @@ function reactProdInvariant(code) {
   }
   
   
-  var i = invariant;
+  var i = invariant_1;
   i(false,
   
   
@@ -68,11 +69,212 @@ function reactProdInvariant(code) {
 
 
 
-var ReactVersion = '16.8.6';
+var ReactVersion = '16.4.1';
 
 var ReactInternals = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
 
 var _assign = ReactInternals.assign;
+
+
+
+
+
+
+
+
+
+
+function makeEmptyFunction(arg) {
+  return function () {
+    return arg;
+  };
+}
+
+
+
+
+
+
+var emptyFunction = function emptyFunction() {};
+
+emptyFunction.thatReturns = makeEmptyFunction;
+emptyFunction.thatReturnsFalse = makeEmptyFunction(false);
+emptyFunction.thatReturnsTrue = makeEmptyFunction(true);
+emptyFunction.thatReturnsNull = makeEmptyFunction(null);
+emptyFunction.thatReturnsThis = function () {
+  return this;
+};
+emptyFunction.thatReturnsArgument = function (arg) {
+  return arg;
+};
+
+var emptyFunction_1 = emptyFunction;
+
+
+
+
+
+
+
+
+
+
+
+var emptyObject = {};
+
+var emptyObject_1 = emptyObject;
+
+
+
+
+
+
+
+
+
+
+var _uppercasePattern = /([A-Z])/g;
+
+
+
+
+
+
+
+
+
+
+
+
+
+function hyphenate(string) {
+  return string.replace(_uppercasePattern, '-$1').toLowerCase();
+}
+
+var hyphenate_1 = hyphenate;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var msPattern = /^ms-/;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function hyphenateStyleName(string) {
+  return hyphenate_1(string).replace(msPattern, '-ms-');
+}
+
+var hyphenateStyleName_1 = hyphenateStyleName;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function memoizeStringOnly(callback) {
+  var cache = {};
+  return function (string) {
+    if (!cache.hasOwnProperty(string)) {
+      cache[string] = callback.call(this, string);
+    }
+    return cache[string];
+  };
+}
+
+var memoizeStringOnly_1 = memoizeStringOnly;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var ReactInternals$1 = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+
+var ReactCurrentOwner = ReactInternals$1.ReactCurrentOwner;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -92,220 +294,8 @@ var REACT_STRICT_MODE_TYPE = hasSymbol ? Symbol.for('react.strict_mode') : 0xeac
 var REACT_PROFILER_TYPE = hasSymbol ? Symbol.for('react.profiler') : 0xead2;
 var REACT_PROVIDER_TYPE = hasSymbol ? Symbol.for('react.provider') : 0xeacd;
 var REACT_CONTEXT_TYPE = hasSymbol ? Symbol.for('react.context') : 0xeace;
-
-var REACT_CONCURRENT_MODE_TYPE = hasSymbol ? Symbol.for('react.concurrent_mode') : 0xeacf;
+var REACT_ASYNC_MODE_TYPE = hasSymbol ? Symbol.for('react.async_mode') : 0xeacf;
 var REACT_FORWARD_REF_TYPE = hasSymbol ? Symbol.for('react.forward_ref') : 0xead0;
-var REACT_SUSPENSE_TYPE = hasSymbol ? Symbol.for('react.suspense') : 0xead1;
-var REACT_MEMO_TYPE = hasSymbol ? Symbol.for('react.memo') : 0xead3;
-var REACT_LAZY_TYPE = hasSymbol ? Symbol.for('react.lazy') : 0xead4;
-
-var Resolved = 1;
-
-
-function refineResolvedLazyComponent(lazyComponent) {
-  return lazyComponent._status === Resolved ? lazyComponent._result : null;
-}
-
-function getWrappedName(outerType, innerType, wrapperName) {
-  var functionName = innerType.displayName || innerType.name || '';
-  return outerType.displayName || (functionName !== '' ? wrapperName + '(' + functionName + ')' : wrapperName);
-}
-
-function getComponentName(type) {
-  if (type == null) {
-    
-    return null;
-  }
-  if (typeof type === 'function') {
-    return type.displayName || type.name || null;
-  }
-  if (typeof type === 'string') {
-    return type;
-  }
-  switch (type) {
-    case REACT_CONCURRENT_MODE_TYPE:
-      return 'ConcurrentMode';
-    case REACT_FRAGMENT_TYPE:
-      return 'Fragment';
-    case REACT_PORTAL_TYPE:
-      return 'Portal';
-    case REACT_PROFILER_TYPE:
-      return 'Profiler';
-    case REACT_STRICT_MODE_TYPE:
-      return 'StrictMode';
-    case REACT_SUSPENSE_TYPE:
-      return 'Suspense';
-  }
-  if (typeof type === 'object') {
-    switch (type.$$typeof) {
-      case REACT_CONTEXT_TYPE:
-        return 'Context.Consumer';
-      case REACT_PROVIDER_TYPE:
-        return 'Context.Provider';
-      case REACT_FORWARD_REF_TYPE:
-        return getWrappedName(type, type.render, 'ForwardRef');
-      case REACT_MEMO_TYPE:
-        return getComponentName(type.type);
-      case REACT_LAZY_TYPE:
-        {
-          var thenable = type;
-          var resolvedThenable = refineResolvedLazyComponent(thenable);
-          if (resolvedThenable) {
-            return getComponentName(resolvedThenable);
-          }
-        }
-    }
-  }
-  return null;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var ReactSharedInternals = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
-
-
-
-
-if (!ReactSharedInternals.hasOwnProperty('ReactCurrentDispatcher')) {
-  ReactSharedInternals.ReactCurrentDispatcher = {
-    current: null
-  };
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var enableSuspenseServerRenderer = false; 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var emptyObject = {};
-function maskContext(type, context) {
-  var contextTypes = type.contextTypes;
-  if (!contextTypes) {
-    return emptyObject;
-  }
-  var maskedContext = {};
-  for (var contextName in contextTypes) {
-    maskedContext[contextName] = context[contextName];
-  }
-  return maskedContext;
-}
-
-function validateContextBounds(context, threadID) {
-  
-  
-  
-  
-  for (var i = context._threadCount | 0; i <= threadID; i++) {
-    
-    
-    
-    context[i] = context._currentValue2;
-    context._threadCount = i + 1;
-  }
-}
-
-function processContext(type, context, threadID) {
-  var contextType = type.contextType;
-  if (typeof contextType === 'object' && contextType !== null) {
-    validateContextBounds(contextType, threadID);
-    return contextType[threadID];
-  } else {
-    var maskedContext = maskContext(type, context);
-    return maskedContext;
-  }
-}
-
-
-
-
-
-var nextAvailableThreadIDs = new Uint16Array(16);
-for (var i = 0; i < 15; i++) {
-  nextAvailableThreadIDs[i] = i + 1;
-}
-nextAvailableThreadIDs[15] = 0;
-
-function growThreadCountAndReturnNextAvailable() {
-  var oldArray = nextAvailableThreadIDs;
-  var oldSize = oldArray.length;
-  var newSize = oldSize * 2;
-  !(newSize <= 0x10000) ? reactProdInvariant('304') : void 0;
-  var newArray = new Uint16Array(newSize);
-  newArray.set(oldArray);
-  nextAvailableThreadIDs = newArray;
-  nextAvailableThreadIDs[0] = oldSize + 1;
-  for (var _i = oldSize; _i < newSize - 1; _i++) {
-    nextAvailableThreadIDs[_i] = _i + 1;
-  }
-  nextAvailableThreadIDs[newSize - 1] = 0;
-  return oldSize;
-}
-
-function allocThreadID() {
-  var nextID = nextAvailableThreadIDs[0];
-  if (nextID === 0) {
-    return growThreadCountAndReturnNextAvailable();
-  }
-  nextAvailableThreadIDs[0] = nextAvailableThreadIDs[nextID];
-  return nextID;
-}
-
-function freeThreadID(id) {
-  nextAvailableThreadIDs[id] = nextAvailableThreadIDs[0];
-  nextAvailableThreadIDs[0] = id;
-}
 
 
 
@@ -349,15 +339,14 @@ var ATTRIBUTE_NAME_CHAR = ATTRIBUTE_NAME_START_CHAR + '\\-.0-9\\u00B7\\u0300-\\u
 var ROOT_ATTRIBUTE_NAME = 'data-reactroot';
 var VALID_ATTRIBUTE_NAME_REGEX = new RegExp('^[' + ATTRIBUTE_NAME_START_CHAR + '][' + ATTRIBUTE_NAME_CHAR + ']*$');
 
-var hasOwnProperty$1 = Object.prototype.hasOwnProperty;
 var illegalAttributeNameCache = {};
 var validatedAttributeNameCache = {};
 
 function isAttributeNameSafe(attributeName) {
-  if (hasOwnProperty$1.call(validatedAttributeNameCache, attributeName)) {
+  if (validatedAttributeNameCache.hasOwnProperty(attributeName)) {
     return true;
   }
-  if (hasOwnProperty$1.call(illegalAttributeNameCache, attributeName)) {
+  if (illegalAttributeNameCache.hasOwnProperty(attributeName)) {
     return false;
   }
   if (VALID_ATTRIBUTE_NAME_REGEX.test(attributeName)) {
@@ -489,7 +478,7 @@ var properties = {};
 
 
 
-['autoReverse', 'externalResourcesRequired', 'focusable', 'preserveAlpha'].forEach(function (name) {
+['autoReverse', 'externalResourcesRequired', 'preserveAlpha'].forEach(function (name) {
   properties[name] = new PropertyInfoRecord(name, BOOLEANISH_STRING, false, 
   name, 
   null);
@@ -516,7 +505,7 @@ var properties = {};
 
 'multiple', 'muted', 'selected'].forEach(function (name) {
   properties[name] = new PropertyInfoRecord(name, BOOLEAN, true, 
-  name, 
+  name.toLowerCase(), 
   null);
 } 
 );
@@ -525,7 +514,7 @@ var properties = {};
 
 ['capture', 'download'].forEach(function (name) {
   properties[name] = new PropertyInfoRecord(name, OVERLOADED_BOOLEAN, false, 
-  name, 
+  name.toLowerCase(), 
   null);
 } 
 );
@@ -533,7 +522,7 @@ var properties = {};
 
 ['cols', 'rows', 'size', 'span'].forEach(function (name) {
   properties[name] = new PropertyInfoRecord(name, POSITIVE_NUMERIC, false, 
-  name, 
+  name.toLowerCase(), 
   null);
 } 
 );
@@ -580,12 +569,9 @@ var capitalize = function (token) {
 
 
 
-['tabIndex', 'crossOrigin'].forEach(function (attributeName) {
-  properties[attributeName] = new PropertyInfoRecord(attributeName, STRING, false, 
-  attributeName.toLowerCase(), 
-  null);
-} 
-);
+properties.tabIndex = new PropertyInfoRecord('tabIndex', STRING, false, 
+'tabindex', 
+null);
 
 
 
@@ -613,7 +599,7 @@ function escapeHtml(string) {
 
   var escape = void 0;
   var html = '';
-  var index = void 0;
+  var index = 0;
   var lastIndex = 0;
 
   for (index = match.index; index < str.length; index++) {
@@ -720,10 +706,9 @@ function createMarkupForProperty(name, value) {
     } else {
       return attributeName + '=' + quoteAttributeValueForBrowser(value);
     }
-  } else if (isAttributeNameSafe(name)) {
+  } else {
     return name + '=' + quoteAttributeValueForBrowser(value);
   }
-  return '';
 }
 
 
@@ -739,293 +724,6 @@ function createMarkupForCustomAttribute(name, value) {
   }
   return name + '=' + quoteAttributeValueForBrowser(value);
 }
-
-
-
-
-
-function is(x, y) {
-  return x === y && (x !== 0 || 1 / x === 1 / y) || x !== x && y !== y 
-  ;
-}
-
-var currentlyRenderingComponent = null;
-var firstWorkInProgressHook = null;
-var workInProgressHook = null;
-
-var isReRender = false;
-
-var didScheduleRenderPhaseUpdate = false;
-
-var renderPhaseUpdates = null;
-
-var numberOfReRenders = 0;
-var RE_RENDER_LIMIT = 25;
-
-function resolveCurrentlyRenderingComponent() {
-  !(currentlyRenderingComponent !== null) ? reactProdInvariant('321') : void 0;
-  return currentlyRenderingComponent;
-}
-
-function areHookInputsEqual(nextDeps, prevDeps) {
-  if (prevDeps === null) {
-    return false;
-  }
-
-  for (var i = 0; i < prevDeps.length && i < nextDeps.length; i++) {
-    if (is(nextDeps[i], prevDeps[i])) {
-      continue;
-    }
-    return false;
-  }
-  return true;
-}
-
-function createHook() {
-  if (numberOfReRenders > 0) {
-    reactProdInvariant('312');
-  }
-  return {
-    memoizedState: null,
-    queue: null,
-    next: null
-  };
-}
-
-function createWorkInProgressHook() {
-  if (workInProgressHook === null) {
-    
-    if (firstWorkInProgressHook === null) {
-      isReRender = false;
-      firstWorkInProgressHook = workInProgressHook = createHook();
-    } else {
-      
-      isReRender = true;
-      workInProgressHook = firstWorkInProgressHook;
-    }
-  } else {
-    if (workInProgressHook.next === null) {
-      isReRender = false;
-      
-      workInProgressHook = workInProgressHook.next = createHook();
-    } else {
-      
-      isReRender = true;
-      workInProgressHook = workInProgressHook.next;
-    }
-  }
-  return workInProgressHook;
-}
-
-function prepareToUseHooks(componentIdentity) {
-  currentlyRenderingComponent = componentIdentity;
-  
-
-  
-  
-  
-  
-  
-  
-}
-
-function finishHooks(Component, props, children, refOrContext) {
-  
-  
-
-  while (didScheduleRenderPhaseUpdate) {
-    
-    
-    
-    
-    didScheduleRenderPhaseUpdate = false;
-    numberOfReRenders += 1;
-
-    
-    workInProgressHook = null;
-
-    children = Component(props, refOrContext);
-  }
-  currentlyRenderingComponent = null;
-  firstWorkInProgressHook = null;
-  numberOfReRenders = 0;
-  renderPhaseUpdates = null;
-  workInProgressHook = null;
-  return children;
-}
-
-function readContext(context, observedBits) {
-  var threadID = currentThreadID;
-  validateContextBounds(context, threadID);
-  return context[threadID];
-}
-
-function useContext(context, observedBits) {
-  resolveCurrentlyRenderingComponent();
-  var threadID = currentThreadID;
-  validateContextBounds(context, threadID);
-  return context[threadID];
-}
-
-function basicStateReducer(state, action) {
-  return typeof action === 'function' ? action(state) : action;
-}
-
-function useState(initialState) {
-  return useReducer(basicStateReducer,
-  
-  initialState);
-}
-
-function useReducer(reducer, initialArg, init) {
-  currentlyRenderingComponent = resolveCurrentlyRenderingComponent();
-  workInProgressHook = createWorkInProgressHook();
-  if (isReRender) {
-    
-    var _queue = workInProgressHook.queue;
-    var _dispatch = _queue.dispatch;
-    if (renderPhaseUpdates !== null) {
-      
-      var firstRenderPhaseUpdate = renderPhaseUpdates.get(_queue);
-      if (firstRenderPhaseUpdate !== undefined) {
-        renderPhaseUpdates.delete(_queue);
-        var newState = workInProgressHook.memoizedState;
-        var update = firstRenderPhaseUpdate;
-        do {
-          
-          
-          
-          var _action = update.action;
-          newState = reducer(newState, _action);
-          update = update.next;
-        } while (update !== null);
-
-        workInProgressHook.memoizedState = newState;
-
-        return [newState, _dispatch];
-      }
-    }
-    return [workInProgressHook.memoizedState, _dispatch];
-  } else {
-    var initialState = void 0;
-    if (reducer === basicStateReducer) {
-      
-      initialState = typeof initialArg === 'function' ? initialArg() : initialArg;
-    } else {
-      initialState = init !== undefined ? init(initialArg) : initialArg;
-    }
-    workInProgressHook.memoizedState = initialState;
-    var _queue2 = workInProgressHook.queue = {
-      last: null,
-      dispatch: null
-    };
-    var _dispatch2 = _queue2.dispatch = dispatchAction.bind(null, currentlyRenderingComponent, _queue2);
-    return [workInProgressHook.memoizedState, _dispatch2];
-  }
-}
-
-function useMemo(nextCreate, deps) {
-  currentlyRenderingComponent = resolveCurrentlyRenderingComponent();
-  workInProgressHook = createWorkInProgressHook();
-
-  var nextDeps = deps === undefined ? null : deps;
-
-  if (workInProgressHook !== null) {
-    var prevState = workInProgressHook.memoizedState;
-    if (prevState !== null) {
-      if (nextDeps !== null) {
-        var prevDeps = prevState[1];
-        if (areHookInputsEqual(nextDeps, prevDeps)) {
-          return prevState[0];
-        }
-      }
-    }
-  }
-
-  var nextValue = nextCreate();
-  workInProgressHook.memoizedState = [nextValue, nextDeps];
-  return nextValue;
-}
-
-function useRef(initialValue) {
-  currentlyRenderingComponent = resolveCurrentlyRenderingComponent();
-  workInProgressHook = createWorkInProgressHook();
-  var previousRef = workInProgressHook.memoizedState;
-  if (previousRef === null) {
-    var ref = { current: initialValue };
-    workInProgressHook.memoizedState = ref;
-    return ref;
-  } else {
-    return previousRef;
-  }
-}
-
-function useLayoutEffect(create, inputs) {
-  
-}
-
-function dispatchAction(componentIdentity, queue, action) {
-  !(numberOfReRenders < RE_RENDER_LIMIT) ? reactProdInvariant('301') : void 0;
-
-  if (componentIdentity === currentlyRenderingComponent) {
-    
-    
-    
-    didScheduleRenderPhaseUpdate = true;
-    var update = {
-      action: action,
-      next: null
-    };
-    if (renderPhaseUpdates === null) {
-      renderPhaseUpdates = new Map();
-    }
-    var firstRenderPhaseUpdate = renderPhaseUpdates.get(queue);
-    if (firstRenderPhaseUpdate === undefined) {
-      renderPhaseUpdates.set(queue, update);
-    } else {
-      
-      var lastRenderPhaseUpdate = firstRenderPhaseUpdate;
-      while (lastRenderPhaseUpdate.next !== null) {
-        lastRenderPhaseUpdate = lastRenderPhaseUpdate.next;
-      }
-      lastRenderPhaseUpdate.next = update;
-    }
-  } else {
-    
-    
-    
-  }
-}
-
-function useCallback(callback, deps) {
-  
-  return callback;
-}
-
-function noop() {}
-
-var currentThreadID = 0;
-
-function setCurrentThreadID(threadID) {
-  currentThreadID = threadID;
-}
-
-var Dispatcher = {
-  readContext: readContext,
-  useContext: useContext,
-  useMemo: useMemo,
-  useReducer: useReducer,
-  useRef: useRef,
-  useState: useState,
-  useLayoutEffect: useLayoutEffect,
-  useCallback: useCallback,
-  
-  useImperativeHandle: noop,
-  
-  useEffect: noop,
-  
-  useDebugValue: noop
-};
 
 var HTML_NAMESPACE = 'http://www.w3.org/1999/xhtml';
 var MATH_NAMESPACE = 'http://www.w3.org/1998/Math/MathML';
@@ -1091,23 +789,21 @@ var voidElementTags = _assign({
   menuitem: true
 }, omittedCloseTags);
 
-
-
 var HTML = '__html';
 
-function assertValidProps(tag, props) {
+function assertValidProps(tag, props, getStack) {
   if (!props) {
     return;
   }
   
   if (voidElementTags[tag]) {
-    !(props.children == null && props.dangerouslySetInnerHTML == null) ? reactProdInvariant('137', tag, '') : void 0;
+    !(props.children == null && props.dangerouslySetInnerHTML == null) ? reactProdInvariant('137', tag, getStack()) : void 0;
   }
   if (props.dangerouslySetInnerHTML != null) {
     !(props.children == null) ? reactProdInvariant('60') : void 0;
     !(typeof props.dangerouslySetInnerHTML === 'object' && HTML in props.dangerouslySetInnerHTML) ? reactProdInvariant('61') : void 0;
   }
-  !(props.style == null || typeof props.style === 'object') ? reactProdInvariant('62', '') : void 0;
+  !(props.style == null || typeof props.style === 'object') ? reactProdInvariant('62', getStack()) : void 0;
 }
 
 
@@ -1129,7 +825,6 @@ var isUnitlessNumber = {
   flexShrink: true,
   flexNegative: true,
   flexOrder: true,
-  gridArea: true,
   gridRow: true,
   gridRowEnd: true,
   gridRowSpan: true,
@@ -1216,26 +911,6 @@ function dangerousStyleValue(name, value, isCustomProperty) {
   return ('' + value).trim();
 }
 
-var uppercasePattern = /([A-Z])/g;
-var msPattern = /^ms-/;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function hyphenateStyleName(name) {
-  return name.replace(uppercasePattern, '-$1').toLowerCase().replace(msPattern, '-ms-');
-}
-
 function isCustomComponent(tagName, props) {
   if (tagName.indexOf('-') === -1) {
     return typeof props.is === 'string';
@@ -1320,18 +995,33 @@ function isCustomComponent(tagName, props) {
 
 
 
+
+
+
+
+
+
+
+
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 
 
 var toArray = React.Children.toArray;
 
-var ReactCurrentDispatcher = ReactSharedInternals.ReactCurrentDispatcher;
+var getStackAddendum = emptyFunction_1.thatReturns('');
+var describeStackFrame = emptyFunction_1.thatReturns('');
+
 var newlineEatingTags = {
   listing: true,
   pre: true,
   textarea: true
 };
+
+function getComponentName(type) {
+  return typeof type === 'string' ? type : typeof type === 'function' ? type.displayName || type.name : null;
+}
 
 
 
@@ -1345,15 +1035,9 @@ function validateDangerousTag(tag) {
   }
 }
 
-var styleNameCache = {};
-var processStyleName = function (styleName) {
-  if (styleNameCache.hasOwnProperty(styleName)) {
-    return styleNameCache[styleName];
-  }
-  var result = hyphenateStyleName(styleName);
-  styleNameCache[styleName] = result;
-  return result;
-};
+var processStyleName = memoizeStringOnly_1(function (styleName) {
+  return hyphenateStyleName_1(styleName);
+});
 
 function createMarkupForStyles(styles) {
   var serialized = '';
@@ -1410,9 +1094,6 @@ function flattenTopLevelChildren(children) {
 }
 
 function flattenOptionChildren(children) {
-  if (children === undefined || children === null) {
-    return children;
-  }
   var content = '';
   
   
@@ -1420,13 +1101,32 @@ function flattenOptionChildren(children) {
     if (child == null) {
       return;
     }
-    content += child;
-    
+    if (typeof child === 'string' || typeof child === 'number') {
+      content += child;
+    } else {
+      
+    }
   });
   return content;
 }
 
-var hasOwnProperty = Object.prototype.hasOwnProperty;
+function maskContext(type, context) {
+  var contextTypes = type.contextTypes;
+  if (!contextTypes) {
+    return emptyObject_1;
+  }
+  var maskedContext = {};
+  for (var contextName in contextTypes) {
+    maskedContext[contextName] = context[contextName];
+  }
+  return maskedContext;
+}
+
+function processContext(type, context) {
+  var maskedContext = maskContext(type, context);
+  return maskedContext;
+}
+
 var STYLE = 'style';
 var RESERVED_PROPS = {
   children: null,
@@ -1439,7 +1139,7 @@ function createOpenTagMarkup(tagVerbatim, tagLowercase, props, namespace, makeSt
   var ret = '<' + tagVerbatim;
 
   for (var propKey in props) {
-    if (!hasOwnProperty.call(props, propKey)) {
+    if (!props.hasOwnProperty(propKey)) {
       continue;
     }
     var propValue = props[propKey];
@@ -1480,7 +1180,7 @@ function validateRenderResult(child, type) {
   }
 }
 
-function resolve(child, context, threadID) {
+function resolve(child, context) {
   while (React.isValidElement(child)) {
     
     var element = child;
@@ -1493,7 +1193,7 @@ function resolve(child, context, threadID) {
 
   
   function processChild(element, Component) {
-    var publicContext = processContext(Component, context, threadID);
+    var publicContext = processContext(Component, context);
 
     var queue = [];
     var replace = false;
@@ -1530,11 +1230,7 @@ function resolve(child, context, threadID) {
         }
       }
     } else {
-      var componentIdentity = {};
-      prepareToUseHooks(componentIdentity);
       inst = Component(element.props, publicContext, updater);
-      inst = finishHooks(Component, element.props, inst, publicContext);
-
       if (inst == null || inst.render == null) {
         child = inst;
         validateRenderResult(child, Component);
@@ -1616,7 +1312,6 @@ function resolve(child, context, threadID) {
 var ReactDOMServerRenderer = function () {
   
 
-  
   function ReactDOMServerRenderer(children, makeStaticMarkup) {
     _classCallCheck(this, ReactDOMServerRenderer);
 
@@ -1629,16 +1324,14 @@ var ReactDOMServerRenderer = function () {
       domNamespace: Namespaces.html,
       children: flatChildren,
       childIndex: 0,
-      context: emptyObject,
+      context: emptyObject_1,
       footer: ''
     };
-    this.threadID = allocThreadID();
     this.stack = [topFrame];
     this.exhausted = false;
     this.currentSelectValue = null;
     this.previousWasTextNode = false;
     this.makeStaticMarkup = makeStaticMarkup;
-    this.suspenseDepth = 0;
 
     
     this.contextIndex = -1;
@@ -1646,14 +1339,6 @@ var ReactDOMServerRenderer = function () {
     this.contextValueStack = [];
     
   }
-
-  ReactDOMServerRenderer.prototype.destroy = function destroy() {
-    if (!this.exhausted) {
-      this.exhausted = true;
-      this.clearProviders();
-      freeThreadID(this.threadID);
-    }
-  };
 
   
 
@@ -1665,17 +1350,18 @@ var ReactDOMServerRenderer = function () {
 
 
 
+  
+
+
   ReactDOMServerRenderer.prototype.pushProvider = function pushProvider(provider) {
     var index = ++this.contextIndex;
     var context = provider.type._context;
-    var threadID = this.threadID;
-    validateContextBounds(context, threadID);
-    var previousValue = context[threadID];
+    var previousValue = context._currentValue;
 
     
     this.contextStack[index] = context;
     this.contextValueStack[index] = previousValue;
-    context[threadID] = provider.props.value;
+    context._currentValue = provider.props.value;
   };
 
   ReactDOMServerRenderer.prototype.popProvider = function popProvider(provider) {
@@ -1691,18 +1377,7 @@ var ReactDOMServerRenderer = function () {
     this.contextIndex--;
 
     
-    
-    
-    context[this.threadID] = previousValue;
-  };
-
-  ReactDOMServerRenderer.prototype.clearProviders = function clearProviders() {
-    
-    for (var index = this.contextIndex; index >= 0; index--) {
-      var _context = this.contextStack[index];
-      var previousValue = this.contextValueStack[index];
-      _context[this.threadID] = previousValue;
-    }
+    context._currentValue = previousValue;
   };
 
   ReactDOMServerRenderer.prototype.read = function read(bytes) {
@@ -1710,78 +1385,33 @@ var ReactDOMServerRenderer = function () {
       return null;
     }
 
-    var prevThreadID = currentThreadID;
-    setCurrentThreadID(this.threadID);
-    var prevDispatcher = ReactCurrentDispatcher.current;
-    ReactCurrentDispatcher.current = Dispatcher;
-    try {
-      
-      
-      var out = [''];
-      var suspended = false;
-      while (out[0].length < bytes) {
-        if (this.stack.length === 0) {
-          this.exhausted = true;
-          freeThreadID(this.threadID);
-          break;
-        }
-        var frame = this.stack[this.stack.length - 1];
-        if (suspended || frame.childIndex >= frame.children.length) {
-          var _footer = frame.footer;
-          if (_footer !== '') {
-            this.previousWasTextNode = false;
-          }
-          this.stack.pop();
-          if (frame.type === 'select') {
-            this.currentSelectValue = null;
-          } else if (frame.type != null && frame.type.type != null && frame.type.type.$$typeof === REACT_PROVIDER_TYPE) {
-            var provider = frame.type;
-            this.popProvider(provider);
-          } else if (frame.type === REACT_SUSPENSE_TYPE) {
-            this.suspenseDepth--;
-            var buffered = out.pop();
-
-            if (suspended) {
-              suspended = false;
-              
-              var _fallbackFrame = frame.fallbackFrame;
-              !_fallbackFrame ? reactProdInvariant('303') : void 0;
-              this.stack.push(_fallbackFrame);
-              
-              continue;
-            } else {
-              out[this.suspenseDepth] += buffered;
-            }
-          }
-
-          
-          out[this.suspenseDepth] += _footer;
-          continue;
-        }
-        var child = frame.children[frame.childIndex++];
-
-        var outBuffer = '';
-        try {
-          outBuffer += this.render(child, frame.context, frame.domNamespace);
-        } catch (err) {
-          if (enableSuspenseServerRenderer && typeof err.then === 'function') {
-            suspended = true;
-          } else {
-            throw err;
-          }
-        } finally {
-          
-        }
-        if (out.length <= this.suspenseDepth) {
-          out.push('');
-        }
-        out[this.suspenseDepth] += outBuffer;
+    var out = '';
+    while (out.length < bytes) {
+      if (this.stack.length === 0) {
+        this.exhausted = true;
+        break;
       }
-      return out[0];
-    } finally {
-      ReactCurrentDispatcher.current = prevDispatcher;
-      setCurrentThreadID(prevThreadID);
+      var frame = this.stack[this.stack.length - 1];
+      if (frame.childIndex >= frame.children.length) {
+        var _footer = frame.footer;
+        out += _footer;
+        if (_footer !== '') {
+          this.previousWasTextNode = false;
+        }
+        this.stack.pop();
+        if (frame.type === 'select') {
+          this.currentSelectValue = null;
+        } else if (frame.type != null && frame.type.type != null && frame.type.type.$$typeof === REACT_PROVIDER_TYPE) {
+          var provider = frame.type;
+          this.popProvider(provider);
+        }
+        continue;
+      }
+      var child = frame.children[frame.childIndex++];
+      out += this.render(child, frame.context, frame.domNamespace);
+      
     }
+    return out;
   };
 
   ReactDOMServerRenderer.prototype.render = function render(child, context, parentNamespace) {
@@ -1801,7 +1431,7 @@ var ReactDOMServerRenderer = function () {
     } else {
       var nextChild = void 0;
 
-      var _resolve = resolve(child, context, this.threadID);
+      var _resolve = resolve(child, context);
 
       nextChild = _resolve.child;
       context = _resolve.context;
@@ -1838,7 +1468,7 @@ var ReactDOMServerRenderer = function () {
 
       switch (elementType) {
         case REACT_STRICT_MODE_TYPE:
-        case REACT_CONCURRENT_MODE_TYPE:
+        case REACT_ASYNC_MODE_TYPE:
         case REACT_PROFILER_TYPE:
         case REACT_FRAGMENT_TYPE:
           {
@@ -1854,51 +1484,6 @@ var ReactDOMServerRenderer = function () {
             this.stack.push(_frame);
             return '';
           }
-        case REACT_SUSPENSE_TYPE:
-          {
-            if (enableSuspenseServerRenderer) {
-              var fallback = nextChild.props.fallback;
-              if (fallback === undefined) {
-                
-                var _nextChildren3 = toArray(nextChild.props.children);
-                var _frame3 = {
-                  type: null,
-                  domNamespace: parentNamespace,
-                  children: _nextChildren3,
-                  childIndex: 0,
-                  context: context,
-                  footer: ''
-                };
-                this.stack.push(_frame3);
-                return '';
-              }
-              var fallbackChildren = toArray(fallback);
-              var _nextChildren2 = toArray(nextChild.props.children);
-              var _fallbackFrame2 = {
-                type: null,
-                domNamespace: parentNamespace,
-                children: fallbackChildren,
-                childIndex: 0,
-                context: context,
-                footer: '',
-                out: ''
-              };
-              var _frame2 = {
-                fallbackFrame: _fallbackFrame2,
-                type: REACT_SUSPENSE_TYPE,
-                domNamespace: parentNamespace,
-                children: _nextChildren2,
-                childIndex: 0,
-                context: context,
-                footer: '<!--/$-->'
-              };
-              this.stack.push(_frame2);
-              this.suspenseDepth++;
-              return '<!--$-->';
-            } else {
-              reactProdInvariant('294');
-            }
-          }
         
         default:
           break;
@@ -1908,14 +1493,45 @@ var ReactDOMServerRenderer = function () {
           case REACT_FORWARD_REF_TYPE:
             {
               var element = nextChild;
-              var _nextChildren4 = void 0;
-              var componentIdentity = {};
-              prepareToUseHooks(componentIdentity);
-              _nextChildren4 = elementType.render(element.props, element.ref);
-              _nextChildren4 = finishHooks(elementType.render, element.props, _nextChildren4, element.ref);
-              _nextChildren4 = toArray(_nextChildren4);
-              var _frame4 = {
+              var _nextChildren2 = toArray(elementType.render(element.props, element.ref));
+              var _frame2 = {
                 type: null,
+                domNamespace: parentNamespace,
+                children: _nextChildren2,
+                childIndex: 0,
+                context: context,
+                footer: ''
+              };
+              this.stack.push(_frame2);
+              return '';
+            }
+          case REACT_PROVIDER_TYPE:
+            {
+              var provider = nextChild;
+              var nextProps = provider.props;
+              var _nextChildren3 = toArray(nextProps.children);
+              var _frame3 = {
+                type: provider,
+                domNamespace: parentNamespace,
+                children: _nextChildren3,
+                childIndex: 0,
+                context: context,
+                footer: ''
+              };
+              this.pushProvider(provider);
+
+              this.stack.push(_frame3);
+              return '';
+            }
+          case REACT_CONTEXT_TYPE:
+            {
+              var consumer = nextChild;
+              var _nextProps = consumer.props;
+              var nextValue = consumer.type._currentValue;
+
+              var _nextChildren4 = toArray(_nextProps.children(nextValue));
+              var _frame4 = {
+                type: nextChild,
                 domNamespace: parentNamespace,
                 children: _nextChildren4,
                 childIndex: 0,
@@ -1925,68 +1541,8 @@ var ReactDOMServerRenderer = function () {
               this.stack.push(_frame4);
               return '';
             }
-          case REACT_MEMO_TYPE:
-            {
-              var _element = nextChild;
-              var _nextChildren5 = [React.createElement(elementType.type, _assign({ ref: _element.ref }, _element.props))];
-              var _frame5 = {
-                type: null,
-                domNamespace: parentNamespace,
-                children: _nextChildren5,
-                childIndex: 0,
-                context: context,
-                footer: ''
-              };
-              this.stack.push(_frame5);
-              return '';
-            }
-          case REACT_PROVIDER_TYPE:
-            {
-              var provider = nextChild;
-              var nextProps = provider.props;
-              var _nextChildren6 = toArray(nextProps.children);
-              var _frame6 = {
-                type: provider,
-                domNamespace: parentNamespace,
-                children: _nextChildren6,
-                childIndex: 0,
-                context: context,
-                footer: ''
-              };
-              this.pushProvider(provider);
-
-              this.stack.push(_frame6);
-              return '';
-            }
-          case REACT_CONTEXT_TYPE:
-            {
-              var reactContext = nextChild.type;
-              
-              
-              
-              
-              
-              
-              
-              var _nextProps = nextChild.props;
-              var threadID = this.threadID;
-              validateContextBounds(reactContext, threadID);
-              var nextValue = reactContext[threadID];
-
-              var _nextChildren7 = toArray(_nextProps.children(nextValue));
-              var _frame7 = {
-                type: nextChild,
-                domNamespace: parentNamespace,
-                children: _nextChildren7,
-                childIndex: 0,
-                context: context,
-                footer: ''
-              };
-              this.stack.push(_frame7);
-              return '';
-            }
-          case REACT_LAZY_TYPE:
-            reactProdInvariant('295');
+          default:
+            break;
         }
       }
 
@@ -2079,7 +1635,7 @@ var ReactDOMServerRenderer = function () {
       }
     }
 
-    assertValidProps(tag, props);
+    assertValidProps(tag, props, getStackAddendum);
 
     var out = createOpenTagMarkup(element.type, tag, props, namespace, this.makeStaticMarkup, this.stack.length === 1);
     var footer = '';
@@ -2133,12 +1689,8 @@ var ReactDOMServerRenderer = function () {
 
 function renderToString(element) {
   var renderer = new ReactDOMServerRenderer(element, false);
-  try {
-    var markup = renderer.read(Infinity);
-    return markup;
-  } finally {
-    renderer.destroy();
-  }
+  var markup = renderer.read(Infinity);
+  return markup;
 }
 
 
@@ -2148,12 +1700,8 @@ function renderToString(element) {
 
 function renderToStaticMarkup(element) {
   var renderer = new ReactDOMServerRenderer(element, true);
-  try {
-    var markup = renderer.read(Infinity);
-    return markup;
-  } finally {
-    renderer.destroy();
-  }
+  var markup = renderer.read(Infinity);
+  return markup;
 }
 
 function renderToNodeStream() {
@@ -2181,7 +1729,7 @@ var ReactDOMServer = ( ReactDOMServerBrowser$1 && ReactDOMServerBrowser ) || Rea
 
 
 
-var server_browser = ReactDOMServer.default || ReactDOMServer;
+var server_browser = ReactDOMServer.default ? ReactDOMServer.default : ReactDOMServer;
 
 return server_browser;
 
