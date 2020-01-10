@@ -1047,35 +1047,22 @@ void nsHttpHandler::InitUserAgentComponents() {
                             static_cast<int>(minorVersion));
 #  elif defined(XP_UNIX)
   struct utsname name;
-
   int ret = uname(&name);
   if (ret >= 0) {
     nsAutoCString buf;
     buf = (char*)name.sysname;
-
-    if (strcmp(name.machine, "x86_64") == 0 &&
-        sizeof(void*) == sizeof(int32_t)) {
-      
-      
-      
-      
-      
-
-      buf += " i686 on x86_64";
-    } else {
-      buf += ' ';
+    buf += ' ';
 
 #    ifdef AIX
-      
-      
-      
-      buf += (char*)name.version;
-      buf += '.';
-      buf += (char*)name.release;
+    
+    
+    
+    buf += (char*)name.version;
+    buf += '.';
+    buf += (char*)name.release;
 #    else
-      buf += (char*)name.machine;
+    buf += (char*)name.machine;
 #    endif
-    }
 
     mOscpu.Assign(buf);
   }
