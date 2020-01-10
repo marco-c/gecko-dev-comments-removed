@@ -63,18 +63,6 @@ class BrowserConsole extends WebConsole {
     
     ShutdownObserver.init();
 
-    const window = this.iframeWindow;
-
-    
-    
-    window.addEventListener(
-      "unload",
-      () => {
-        this.destroy();
-      },
-      { once: true }
-    );
-
     
     
     this._telemetry.toolOpened("browserconsole", -1, this);

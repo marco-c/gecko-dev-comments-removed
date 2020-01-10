@@ -5,6 +5,11 @@
 "use strict";
 
 var Services = require("Services");
+const ChromeUtils = require("ChromeUtils");
+const { DevToolsLoader } = ChromeUtils.import(
+  "resource://devtools/shared/Loader.jsm"
+);
+
 loader.lazyRequireGetter(this, "Tools", "devtools/client/definitions", true);
 loader.lazyRequireGetter(
   this,
@@ -33,6 +38,7 @@ class BrowserConsoleManager {
     this._browserConsole = null;
     this._browserConsoleInitializing = null;
     this._browerConsoleSessionState = false;
+    this._debuggerClient = null;
   }
 
   storeBrowserConsoleSessionState() {
@@ -58,9 +64,6 @@ class BrowserConsoleManager {
   async openBrowserConsole(target, win) {
     const hud = new BrowserConsole(target, win, win);
     this._browserConsole = hud;
-    hud.once("destroyed", () => {
-      this._browserConsole = null;
-    });
     await hud.init();
     return hud;
   }
@@ -68,78 +71,36 @@ class BrowserConsoleManager {
   
 
 
+  async closeBrowserConsole() {
+    if (!this._browserConsole) {
+      return;
+    }
+
+    await this._browserConsole.destroy();
+    this._browserConsole = null;
+
+    await this._debuggerClient.close();
+    this._debuggerClient = null;
+  }
+
+  
+
+
   async toggleBrowserConsole() {
     if (this._browserConsole) {
-      const hud = this._browserConsole;
-      return hud.destroy();
+      return this.closeBrowserConsole();
     }
 
     if (this._browserConsoleInitializing) {
       return this._browserConsoleInitializing;
     }
 
-    async function connect() {
-      
-      
-      
-      
-      
-      
-      
-      const ChromeUtils = require("ChromeUtils");
-      const { DevToolsLoader } = ChromeUtils.import(
-        "resource://devtools/shared/Loader.jsm"
-      );
-      const loader = new DevToolsLoader({
-        freshCompartment: true,
-      });
-      const { DebuggerServer } = loader.require(
-        "devtools/server/debugger-server"
-      );
-
-      DebuggerServer.init();
-
-      
-      
-      
-      DebuggerServer.registerActors({ root: true, target: true });
-
-      DebuggerServer.allowChromeProcess = true;
-
-      const client = new DebuggerClient(DebuggerServer.connectPipe());
-      await client.connect();
-      return client.mainRoot.getMainProcess();
-    }
-
-    async function openWindow(t) {
-      const win = Services.ww.openWindow(
-        null,
-        Tools.webConsole.url,
-        "_blank",
-        BC_WINDOW_FEATURES,
-        null
-      );
-
-      await new Promise(resolve => {
-        win.addEventListener("DOMContentLoaded", resolve, { once: true });
-      });
-
-      const fissionSupport = Services.prefs.getBoolPref(
-        PREFS.FEATURES.BROWSER_TOOLBOX_FISSION
-      );
-      const title = fissionSupport
-        ? `💥 Fission Browser Console 💥`
-        : l10n.getStr("browserConsole.title");
-      win.document.title = title;
-      return win;
-    }
-
     
     
     this._browserConsoleInitializing = (async () => {
-      const target = await connect();
+      const target = await this.connect();
       await target.attach();
-      const win = await openWindow(target);
+      const win = await this.openWindow();
       const browserConsole = await this.openBrowserConsole(target, win);
       return browserConsole;
     })();
@@ -147,6 +108,65 @@ class BrowserConsoleManager {
     const browserConsole = await this._browserConsoleInitializing;
     this._browserConsoleInitializing = null;
     return browserConsole;
+  }
+
+  async connect() {
+    
+    
+    
+    
+    
+    
+    
+    const loader = new DevToolsLoader({
+      freshCompartment: true,
+    });
+    const { DebuggerServer } = loader.require(
+      "devtools/server/debugger-server"
+    );
+
+    DebuggerServer.init();
+
+    
+    
+    
+    DebuggerServer.registerActors({ root: true, target: true });
+
+    DebuggerServer.allowChromeProcess = true;
+
+    this._debuggerClient = new DebuggerClient(DebuggerServer.connectPipe());
+    await this._debuggerClient.connect();
+    return this._debuggerClient.mainRoot.getMainProcess();
+  }
+
+  async openWindow() {
+    const win = Services.ww.openWindow(
+      null,
+      Tools.webConsole.url,
+      "_blank",
+      BC_WINDOW_FEATURES,
+      null
+    );
+
+    await new Promise(resolve => {
+      win.addEventListener("DOMContentLoaded", resolve, { once: true });
+    });
+
+    
+    
+    
+    win.addEventListener("unload", this.closeBrowserConsole.bind(this), {
+      once: true,
+    });
+
+    const fissionSupport = Services.prefs.getBoolPref(
+      PREFS.FEATURES.BROWSER_TOOLBOX_FISSION
+    );
+    const title = fissionSupport
+      ? `💥 Fission Browser Console 💥`
+      : l10n.getStr("browserConsole.title");
+    win.document.title = title;
+    return win;
   }
 
   
