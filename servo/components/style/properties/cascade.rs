@@ -673,7 +673,7 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
     #[inline]
     #[cfg(feature = "gecko")]
     fn recompute_default_font_family_type_if_needed(&mut self) {
-        use crate::gecko_bindings::bindings;
+        use crate::gecko_bindings::{bindings, structs};
         use crate::values::computed::font::GenericFontFamily;
 
         if !self.seen.contains(LonghandId::XLang) &&
@@ -681,13 +681,13 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             return;
         }
 
-        let use_document_fonts = static_prefs::pref!("browser.display.use_document_fonts") != 0;
+        let use_document_fonts = unsafe { structs::StaticPrefs::sVarCache_browser_display_use_document_fonts != 0 };
         let builder = &mut self.context.builder;
         let (default_font_type, prioritize_user_fonts) = {
             let font = builder.get_font().gecko();
 
-            // System fonts are all right, and should have the default font type
-            // set to none already, so bail out early.
+            
+            
             if font.mFont.systemFont {
                 debug_assert_eq!(font.mFont.fontlist.mDefaultFontType, GenericFontFamily::None);
                 return;
@@ -701,10 +701,10 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
                 )
             };
 
-            // We prioritize user fonts over document fonts if the pref is set,
-            // and we don't have a generic family already (or we're using
-            // cursive or fantasy, since they're ignored, see bug 789788), and
-            // we have a generic family to actually replace it with.
+            
+            
+            
+            
             let prioritize_user_fonts =
                 !use_document_fonts &&
                 matches!(
@@ -716,7 +716,7 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
                 default_font_type != GenericFontFamily::None;
 
             if !prioritize_user_fonts && default_font_type == font.mFont.fontlist.mDefaultFontType {
-                // Nothing to do.
+                
                 return;
             }
             (default_font_type, prioritize_user_fonts)
@@ -731,7 +731,7 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         }
     }
 
-    /// Some keyword sizes depend on the font family and language.
+    
     #[cfg(feature = "gecko")]
     fn recompute_keyword_font_size_if_needed(&mut self) {
         use crate::values::computed::ToComputedValue;
@@ -762,8 +762,8 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         self.context.builder.mutate_font().set_font_size(new_size);
     }
 
-    /// Some properties, plus setting font-size itself, may make us go out of
-    /// our minimum font-size range.
+    
+    
     #[cfg(feature = "gecko")]
     fn constrain_font_size_if_needed(&mut self) {
         use crate::gecko_bindings::bindings;
@@ -795,13 +795,13 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         builder.mutate_font().gecko_mut().mFont.size = min_font_size;
     }
 
-    /// <svg:text> is not affected by text zoom, and it uses a preshint
-    /// to disable it. We fix up the struct when this happens by
-    /// unzooming its contained font values, which will have been zoomed
-    /// in the parent.
-    ///
-    /// FIXME(emilio): Also, why doing this _before_ handling font-size? That
-    /// sounds wrong.
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "gecko")]
     fn unzoom_fonts_if_needed(&mut self) {
         if !self.seen.contains(LonghandId::XTextZoom) {
@@ -823,12 +823,12 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         builder.mutate_font().unzoom_fonts(device);
     }
 
-    /// MathML script* attributes do some very weird shit with font-size.
-    ///
-    /// Handle them specially here, separate from other font-size stuff.
-    ///
-    /// How this should interact with lang="" and font-family-dependent sizes is
-    /// not clear to me. For now just pretend those don't exist here.
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "gecko")]
     fn handle_mathml_scriptlevel_if_needed(&mut self) {
         use app_units::Au;
@@ -840,7 +840,7 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             return;
         }
 
-        // If the user specifies a font-size, just let it be.
+        
         if self.seen.contains(LonghandId::FontSize) {
             return;
         }
@@ -869,21 +869,21 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             let new_unconstrained_size = parent_unconstrained_size.scale_by(scale);
 
             if scale <= 1. {
-                // The parent size can be smaller than scriptminsize, e.g. if it
-                // was specified explicitly. Don't scale in this case, but we
-                // don't want to set it to scriptminsize either since that will
-                // make it larger.
+                
+                
+                
+                
                 if parent_size <= min {
                     (parent_size, new_unconstrained_size)
                 } else {
                     (cmp::max(min, new_size), new_unconstrained_size)
                 }
             } else {
-                // If the new unconstrained size is larger than the min size,
-                // this means we have escaped the grasp of scriptminsize and can
-                // revert to using the unconstrained size.
-                // However, if the new size is even larger (perhaps due to usage
-                // of em units), use that instead.
+                
+                
+                
+                
+                
                 (
                     cmp::min(new_size, cmp::max(new_unconstrained_size, min)),
                     new_unconstrained_size
@@ -896,10 +896,10 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         font.mScriptUnconstrainedSize = new_unconstrained_size.0;
     }
 
-    /// Various properties affect how font-size and font-family are computed.
-    ///
-    /// These need to be handled here, since relative lengths and ex / ch units
-    /// for late properties depend on these.
+    
+    
+    
+    
     fn fixup_font_stuff(&mut self) {
         #[cfg(feature = "gecko")]
         {

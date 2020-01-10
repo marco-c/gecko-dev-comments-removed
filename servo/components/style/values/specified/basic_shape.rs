@@ -58,7 +58,9 @@ pub type Polygon = generic::GenericPolygon<LengthPercentage>;
 
 #[cfg(feature = "gecko")]
 fn is_clip_path_path_enabled(context: &ParserContext) -> bool {
-    context.chrome_rules_enabled() || static_prefs::pref!("layout.css.clip-path-path.enabled")
+    use crate::gecko_bindings::structs::mozilla;
+    context.chrome_rules_enabled() ||
+        unsafe { mozilla::StaticPrefs::sVarCache_layout_css_clip_path_path_enabled }
 }
 #[cfg(feature = "servo")]
 fn is_clip_path_path_enabled(_: &ParserContext) -> bool {
@@ -103,7 +105,7 @@ impl<ReferenceBox, ImageOrUrl> ShapeSource<BasicShape, ReferenceBox, ImageOrUrl>
 where
     ReferenceBox: Parse,
 {
-    /// The internal parser for ShapeSource.
+    
     fn parse_common<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -118,7 +120,7 @@ where
             component: &mut Option<U>,
         ) -> bool {
             if component.is_some() {
-                return false; // already parsed this component
+                return false; 
             }
 
             *component = input.try(|i| U::parse(context, i)).ok();
@@ -131,7 +133,7 @@ where
         while parse_component(context, input, &mut shape) ||
             parse_component(context, input, &mut ref_box)
         {
-            //
+            
         }
 
         if let Some(shp) = shape {
@@ -193,7 +195,7 @@ impl Parse for InsetRect {
 }
 
 impl InsetRect {
-    /// Parse the inner function arguments of `inset()`
+    
     fn parse_function_arguments<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -300,7 +302,7 @@ impl Parse for Polygon {
 }
 
 impl Polygon {
-    /// Parse the inner arguments of a `polygon` function.
+    
     fn parse_function_arguments<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -308,7 +310,7 @@ impl Polygon {
         let fill = input
             .try(|i| -> Result<_, ParseError> {
                 let fill = FillRule::parse(i)?;
-                i.expect_comma()?; // only eat the comma if there is something before it
+                i.expect_comma()?; 
                 Ok(fill)
             })
             .unwrap_or_default();

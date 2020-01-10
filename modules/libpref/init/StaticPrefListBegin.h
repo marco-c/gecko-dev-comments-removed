@@ -16,6 +16,7 @@ namespace StaticPrefs {
 
 
 
+
 #define NEVER_PREF(name, cpp_type, default_value)
 #define ALWAYS_PREF(name, base_id, full_id, cpp_type, default_value)          \
   extern cpp_type sVarCache_##full_id;                                        \

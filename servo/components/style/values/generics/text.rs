@@ -72,11 +72,14 @@ impl<Value> Spacing<Value> {
 
 #[cfg(feature = "gecko")]
 fn line_height_moz_block_height_enabled(context: &ParserContext) -> bool {
+    use crate::gecko_bindings::structs;
     context.in_ua_sheet() ||
-        static_prefs::pref!("layout.css.line-height-moz-block-height.content.enabled")
+        unsafe {
+            structs::StaticPrefs::sVarCache_layout_css_line_height_moz_block_height_content_enabled
+        }
 }
 
-/// A generic value for the `line-height` property.
+
 #[derive(
     Animate,
     Clone,
@@ -94,9 +97,9 @@ fn line_height_moz_block_height_enabled(context: &ParserContext) -> bool {
 )]
 #[repr(C, u8)]
 pub enum GenericLineHeight<N, L> {
-    /// `normal`
+    
     Normal,
-    /// `-moz-block-height`
+    
     #[cfg(feature = "gecko")]
     #[parse(condition = "line_height_moz_block_height_enabled")]
     MozBlockHeight,

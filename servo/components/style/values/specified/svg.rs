@@ -32,10 +32,11 @@ pub type SVGStrokeDashArray = generic::SVGStrokeDashArray<NonNegativeLengthPerce
 
 #[cfg(feature = "gecko")]
 pub fn is_context_value_enabled() -> bool {
-    static_prefs::pref!("gfx.font_rendering.opentype_svg.enabled")
+    use crate::gecko_bindings::structs::mozilla;
+    unsafe { mozilla::StaticPrefs::sVarCache_gfx_font_rendering_opentype_svg_enabled }
 }
 
-/// Whether the `context-value` value is enabled.
+
 #[cfg(not(feature = "gecko"))]
 pub fn is_context_value_enabled() -> bool {
     false
@@ -88,42 +89,42 @@ impl Parse for SVGStrokeDashArray {
     }
 }
 
-/// <opacity-value> | context-fill-opacity | context-stroke-opacity
+
 pub type SVGOpacity = generic::SVGOpacity<Opacity>;
 
-/// The specified value for a single CSS paint-order property.
+
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, ToCss)]
 pub enum PaintOrder {
-    /// `normal` variant
+    
     Normal = 0,
-    /// `fill` variant
+    
     Fill = 1,
-    /// `stroke` variant
+    
     Stroke = 2,
-    /// `markers` variant
+    
     Markers = 3,
 }
 
-/// Number of non-normal components
+
 const PAINT_ORDER_COUNT: u8 = 3;
 
-/// Number of bits for each component
+
 const PAINT_ORDER_SHIFT: u8 = 2;
 
-/// Mask with above bits set
+
 const PAINT_ORDER_MASK: u8 = 0b11;
 
-/// The specified value is tree `PaintOrder` values packed into the
-/// bitfields below, as a six-bit field, of 3 two-bit pairs
-///
-/// Each pair can be set to FILL, STROKE, or MARKERS
-/// Lowest significant bit pairs are highest priority.
-///  `normal` is the empty bitfield. The three pairs are
-/// never zero in any case other than `normal`.
-///
-/// Higher priority values, i.e. the values specified first,
-/// will be painted first (and may be covered by paintings of lower priority)
+
+
+
+
+
+
+
+
+
+
 #[derive(
     Clone,
     Copy,
@@ -138,14 +139,14 @@ const PAINT_ORDER_MASK: u8 = 0b11;
 pub struct SVGPaintOrder(pub u8);
 
 impl SVGPaintOrder {
-    /// Get default `paint-order` with `0`
+    
     pub fn normal() -> Self {
         SVGPaintOrder(0)
     }
 
-    /// Get variant of `paint-order`
+    
     pub fn order_at(&self, pos: u8) -> PaintOrder {
-        // Safe because PaintOrder covers all possible patterns.
+        
         unsafe { ::std::mem::transmute((self.0 >> pos * PAINT_ORDER_SHIFT) & PAINT_ORDER_MASK) }
     }
 }
@@ -160,8 +161,8 @@ impl Parse for SVGPaintOrder {
         }
 
         let mut value = 0;
-        // bitfield representing what we've seen so far
-        // bit 1 is fill, bit 2 is stroke, bit 3 is markers
+        
+        
         let mut seen = 0;
         let mut pos = 0;
 
@@ -177,7 +178,7 @@ impl Parse for SVGPaintOrder {
             match result {
                 Ok(val) => {
                     if (seen & (1 << val as u8)) != 0 {
-                        // don't parse the same ident twice
+                        
                         return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                     }
 
@@ -190,14 +191,14 @@ impl Parse for SVGPaintOrder {
         }
 
         if value == 0 {
-            // Couldn't find any keyword
+            
             return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
         }
 
-        // fill in rest
+        
         for i in pos..PAINT_ORDER_COUNT {
             for paint in 1..(PAINT_ORDER_COUNT + 1) {
-                // if not seen, set bit at position, mark as seen
+                
                 if (seen & (1 << paint)) == 0 {
                     seen |= 1 << paint;
                     value |= paint << (i * PAINT_ORDER_SHIFT);
@@ -255,8 +256,8 @@ bitflags! {
     }
 }
 
-/// Specified MozContextProperties value.
-/// Nonstandard (https://developer.mozilla.org/en-US/docs/Web/CSS/-moz-context-properties)
+
+
 #[derive(
     Clone,
     Debug,

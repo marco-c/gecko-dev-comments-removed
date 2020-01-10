@@ -11,6 +11,8 @@ use super::Device;
 use crate::context::QuirksMode;
 #[cfg(feature = "gecko")]
 use crate::gecko::media_features::MEDIA_FEATURES;
+#[cfg(feature = "gecko")]
+use crate::gecko_bindings::structs;
 use crate::parser::{Parse, ParserContext};
 #[cfg(feature = "servo")]
 use crate::servo::media_queries::MEDIA_FEATURES;
@@ -299,7 +301,9 @@ impl MediaFeatureExpression {
                     if starts_with_ignore_ascii_case(feature_name, "-webkit-") {
                         feature_name = &feature_name[8..];
                         requirements.insert(ParsingRequirements::WEBKIT_PREFIX);
-                        if static_prefs::pref!("layout.css.prefixes.device-pixel-ratio-webkit") {
+                        if unsafe {
+                            structs::StaticPrefs::sVarCache_layout_css_prefixes_device_pixel_ratio_webkit
+                        } {
                             requirements.insert(
                                 ParsingRequirements::WEBKIT_DEVICE_PIXEL_RATIO_PREF_ENABLED,
                             );
@@ -357,12 +361,12 @@ impl MediaFeatureExpression {
         let operator = input.try(consume_operation_or_colon);
         let operator = match operator {
             Err(..) => {
-                // If there's no colon, this is a media query of the
-                // form '(<feature>)', that is, there's no value
-                // specified.
-                //
-                // Gecko doesn't allow ranged expressions without a
-                // value, so just reject them here too.
+                
+                
+                
+                
+                
+                
                 if range.is_some() {
                     return Err(
                         input.new_custom_error(StyleParseErrorKind::RangedExpressionWithNoValue)
@@ -403,7 +407,7 @@ impl MediaFeatureExpression {
         Ok(Self::new(feature_index, Some(value), range_or_operator))
     }
 
-    /// Returns whether this media query evaluates to true for the given device.
+    
     pub fn matches(&self, device: &Device, quirks_mode: QuirksMode) -> bool {
         let value = self.value.as_ref();
 
@@ -453,33 +457,33 @@ impl MediaFeatureExpression {
     }
 }
 
-/// A value found or expected in a media expression.
-///
-/// FIXME(emilio): How should calc() serialize in the Number / Integer /
-/// BoolInteger / IntRatio case, as computed or as specified value?
-///
-/// If the first, this would need to store the relevant values.
-///
-/// See: https://github.com/w3c/csswg-drafts/issues/1968
+
+
+
+
+
+
+
+
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
 pub enum MediaExpressionValue {
-    /// A length.
+    
     Length(Length),
-    /// A (non-negative) integer.
+    
     Integer(u32),
-    /// A floating point value.
+    
     Float(CSSFloat),
-    /// A boolean value, specified as an integer (i.e., either 0 or 1).
+    
     BoolInteger(bool),
-    /// Two integers separated by '/', with optional whitespace on either side
-    /// of the '/'.
+    
+    
     IntRatio(AspectRatio),
-    /// A resolution.
+    
     Resolution(Resolution),
-    /// An enumerated value, defined by the variant keyword table in the
-    /// feature's `mData` member.
+    
+    
     Enumerated(KeywordDiscriminant),
-    /// An identifier.
+    
     Ident(Atom),
 }
 
