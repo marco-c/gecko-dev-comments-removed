@@ -45,7 +45,7 @@ pub enum Evaluator {
     Float(MediaFeatureEvaluator<f32>),
     BoolInteger(MediaFeatureEvaluator<bool>),
     
-    IntRatio(MediaFeatureEvaluator<AspectRatio>),
+    NumberRatio(MediaFeatureEvaluator<AspectRatio>),
     
     Resolution(MediaFeatureEvaluator<Resolution>),
     
