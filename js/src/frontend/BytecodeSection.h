@@ -14,6 +14,7 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
+#include "jstypes.h"                   
 #include "NamespaceImports.h"          
 #include "frontend/BytecodeOffset.h"   
 #include "frontend/JumpList.h"         

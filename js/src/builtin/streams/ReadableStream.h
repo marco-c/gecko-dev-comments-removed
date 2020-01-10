@@ -14,13 +14,14 @@
 
 #include <stdint.h>  
 
+#include "jstypes.h"        
 #include "js/Class.h"       
 #include "js/RootingAPI.h"  
 #include "js/Stream.h"      
 #include "js/Value.h"  
 #include "vm/NativeObject.h"  
 
-class JSObject;
+class JS_PUBLIC_API JSObject;
 
 namespace js {
 

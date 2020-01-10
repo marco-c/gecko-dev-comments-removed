@@ -11,12 +11,13 @@
 
 #include "mozilla/Attributes.h"  
 
+#include "jstypes.h"          
 #include "js/Class.h"         
 #include "js/Value.h"         
 #include "vm/NativeObject.h"  
 
-struct JSContext;
-class JSObject;
+struct JS_PUBLIC_API JSContext;
+class JS_PUBLIC_API JSObject;
 
 namespace js {
 

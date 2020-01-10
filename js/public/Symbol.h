@@ -15,12 +15,12 @@
 
 #include "js/RootingAPI.h"  
 
-struct JSContext;
-class JSString;
+struct JS_PUBLIC_API JSContext;
+class JS_PUBLIC_API JSString;
 
 namespace JS {
 
-class Symbol;
+class JS_PUBLIC_API Symbol;
 
 
 

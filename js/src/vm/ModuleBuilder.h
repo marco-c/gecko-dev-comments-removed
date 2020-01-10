@@ -9,6 +9,7 @@
 
 #include "mozilla/Attributes.h"  
 
+#include "jstypes.h"               
 #include "builtin/ModuleObject.h"  
 #include "frontend/EitherParser.h"  
 #include "js/GCHashTable.h"         
@@ -16,8 +17,8 @@
 #include "js/RootingAPI.h"          
 #include "vm/AtomsTable.h"          
 
-struct JSContext;
-class JSAtom;
+struct JS_PUBLIC_API JSContext;
+class JS_PUBLIC_API JSAtom;
 
 namespace js {
 

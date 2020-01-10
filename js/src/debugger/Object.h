@@ -14,6 +14,7 @@
 #include "mozilla/Result.h"      
 
 #include "jsapi.h"             
+#include "jstypes.h"           
 #include "NamespaceImports.h"  
 
 #include "gc/Rooting.h"       
@@ -22,7 +23,7 @@
 #include "vm/JSObject.h"      
 #include "vm/NativeObject.h"  
 
-class JSAtom;
+class JS_PUBLIC_API JSAtom;
 
 namespace js {
 

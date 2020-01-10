@@ -22,7 +22,7 @@
 #include "js/Symbol.h"              
 #include "js/Value.h"               
 
-struct JSContext;
+struct JS_PUBLIC_API JSContext;
 struct JSJitInfo;
 
 

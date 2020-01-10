@@ -11,12 +11,13 @@
 
 #include "mozilla/Attributes.h"  
 
+#include "jstypes.h"        
 #include "js/CallArgs.h"    
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       
 #include "vm/JSObject.h"    
 
-struct JSContext;
+struct JS_PUBLIC_API JSContext;
 
 namespace js {
 

@@ -17,9 +17,9 @@
 #include "js/Utility.h"     
 #include "js/Value.h"       
 
-struct JSContext;
-struct JSRuntime;
-class JSString;
+struct JS_PUBLIC_API JSContext;
+struct JS_PUBLIC_API JSRuntime;
+class JS_PUBLIC_API JSString;
 
 
 

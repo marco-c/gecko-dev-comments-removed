@@ -27,7 +27,7 @@
 #include "js/Utility.h"
 
 namespace JS {
-class Value;
+class JS_PUBLIC_API Value;
 }
 
 

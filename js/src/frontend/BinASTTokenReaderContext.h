@@ -17,6 +17,7 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
+#include "jstypes.h"               
 #include "ds/FixedLengthVector.h"  
 #include "frontend/BinASTRuntimeSupport.h"  
 #include "frontend/BinASTToken.h"
@@ -26,9 +27,9 @@
 #include "js/Result.h"                       
 #include "js/Vector.h"                       
 
-class JSAtom;
-class JSTracer;
-struct JSContext;
+class JS_PUBLIC_API JSAtom;
+class JS_PUBLIC_API JSTracer;
+struct JS_PUBLIC_API JSContext;
 
 namespace js {
 

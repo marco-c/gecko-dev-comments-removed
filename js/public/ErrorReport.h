@@ -31,8 +31,8 @@
 #include "js/UniquePtr.h"          
 #include "js/Vector.h"             
 
-struct JSContext;
-class JSString;
+struct JS_PUBLIC_API JSContext;
+class JS_PUBLIC_API JSString;
 
 
 

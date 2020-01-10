@@ -17,9 +17,9 @@
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       
 
-struct JSContext;
-class JSObject;
-class JSString;
+struct JS_PUBLIC_API JSContext;
+class JS_PUBLIC_API JSObject;
+class JS_PUBLIC_API JSString;
 
 using JSONWriteCallback = bool (*)(const char16_t* buf, uint32_t len,
                                    void* data);

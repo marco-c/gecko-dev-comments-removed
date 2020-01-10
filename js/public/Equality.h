@@ -15,7 +15,7 @@
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       
 
-struct JSContext;
+struct JS_PUBLIC_API JSContext;
 
 namespace JS {
 

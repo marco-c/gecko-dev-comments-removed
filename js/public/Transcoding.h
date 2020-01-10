@@ -19,10 +19,10 @@
 
 #include "js/RootingAPI.h"  
 
-struct JSContext;
-class JSFunction;
-class JSObject;
-class JSScript;
+struct JS_PUBLIC_API JSContext;
+class JS_PUBLIC_API JSFunction;
+class JS_PUBLIC_API JSObject;
+class JS_PUBLIC_API JSScript;
 
 namespace JS {
 

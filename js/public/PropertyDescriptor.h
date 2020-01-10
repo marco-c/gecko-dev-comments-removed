@@ -18,8 +18,8 @@
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       
 
-struct JSContext;
-class JSObject;
+struct JS_PUBLIC_API JSContext;
+class JS_PUBLIC_API JSObject;
 class JS_PUBLIC_API JSTracer;
 
 

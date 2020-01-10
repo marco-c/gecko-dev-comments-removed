@@ -42,7 +42,7 @@
 
 #include "jstypes.h"  
 
-struct JSContext;
+struct JS_PUBLIC_API JSContext;
 
 namespace js {
 

@@ -16,6 +16,7 @@
 #  include "mozilla/Maybe.h"
 #  include "mozilla/Sprintf.h"
 
+#  include "jstypes.h"
 #  include "vm/JSONPrinter.h"
 #  include "vm/Printer.h"
 
@@ -66,7 +67,7 @@
 
 
 
-class JSScript;
+class JS_PUBLIC_API JSScript;
 
 namespace js {
 

@@ -15,6 +15,7 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
+#include "jstypes.h"                
 #include "frontend/ParseContext.h"  
 #include "frontend/ParseInfo.h"
 #include "frontend/SharedContext.h"  
@@ -25,8 +26,8 @@
 #include "vm/JSScript.h"  
 #include "vm/Scope.h"     
 
-class JSFunction;
-class JSObject;
+class JS_PUBLIC_API JSFunction;
+class JS_PUBLIC_API JSObject;
 
 namespace js {
 

@@ -19,10 +19,10 @@
 #include "js/RootingAPI.h"      
 #include "js/Value.h"           
 
-struct JSContext;
-class JSObject;
-struct JSRuntime;
-class JSString;
+struct JS_PUBLIC_API JSContext;
+class JS_PUBLIC_API JSObject;
+struct JS_PUBLIC_API JSRuntime;
+class JS_PUBLIC_API JSString;
 
 namespace JS {
 template <typename UnitT>

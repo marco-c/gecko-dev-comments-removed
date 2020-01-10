@@ -9,6 +9,7 @@
 
 #include "mozilla/Assertions.h"  
 
+#include "jstypes.h"                  
 #include "gc/GCEnum.h"                
 #include "jit/ExecutableAllocator.h"  
 #include "js/AllocPolicy.h"           
@@ -16,7 +17,7 @@
 #include "js/Utility.h"               
 #include "js/Vector.h"                
 
-struct JSRuntime;
+struct JS_PUBLIC_API JSRuntime;
 
 namespace js {
 namespace gc {

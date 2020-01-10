@@ -51,13 +51,13 @@
 #include "vm/StringType.h"          
 #include "wasm/WasmJS.h"            
 
-class JSFunction;
+class JS_PUBLIC_API JSFunction;
 
 namespace JS {
 class AutoStableStringChars;
-class Compartment;
-class Realm;
-class Zone;
+class JS_PUBLIC_API Compartment;
+class JS_PUBLIC_API Realm;
+class JS_PUBLIC_API Zone;
 } 
 
 namespace js {

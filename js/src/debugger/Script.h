@@ -9,12 +9,13 @@
 
 #include "jsapi.h"  
 
+#include "jstypes.h"            
 #include "NamespaceImports.h"   
 #include "debugger/Debugger.h"  
 #include "gc/Rooting.h"         
 #include "vm/NativeObject.h"    
 
-class JSObject;
+class JS_PUBLIC_API JSObject;
 
 namespace js {
 
