@@ -206,6 +206,18 @@ class UrlbarView {
 
 
 
+  get selectedElement() {
+    if (!this.isOpen) {
+      return null;
+    }
+
+    return this._selectedElement;
+  }
+
+  
+
+
+
 
 
   get visibleRowCount() {
@@ -214,6 +226,27 @@ class UrlbarView {
       sum += Number(this._isElementVisible(row));
     }
     return sum;
+  }
+
+  
+
+
+
+
+
+
+  getResultFromElement(element) {
+    if (!this.isOpen) {
+      return null;
+    }
+
+    let row = this._getRowFromElement(element);
+
+    if (!row) {
+      return null;
+    }
+
+    return row.result;
   }
 
   
@@ -1042,6 +1075,24 @@ class UrlbarView {
     return selected;
   }
 
+  
+
+
+
+
+
+  _getRowFromElement(element) {
+    if (!this.isOpen || !element) {
+      return null;
+    }
+
+    if (!element.classList.contains("urlbarView-row")) {
+      element = element.closest(".urlbarView-row");
+    }
+
+    return element;
+  }
+
   _setAccessibleFocus(item) {
     if (item) {
       this.input.inputField.setAttribute("aria-activedescendant", item.id);
@@ -1204,12 +1255,7 @@ class UrlbarView {
       
       return;
     }
-
-    let row = event.target;
-    while (!row.classList.contains("urlbarView-row")) {
-      row = row.parentNode;
-    }
-    this.input.pickResult(row.result, event);
+    this.input.pickElement(event.target, event);
   }
 
   _on_overflow(event) {
