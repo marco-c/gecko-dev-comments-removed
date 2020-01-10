@@ -23,9 +23,17 @@ def normsep(path):
     :py:const:`os.sep` is.
     '''
     if os.sep != '/':
-        path = path.replace(os.sep, '/')
+        
+        
+        if isinstance(path, bytes):
+            path = path.replace(os.sep.encode('ascii'), b'/')
+        else:
+            path = path.replace(os.sep, '/')
     if os.altsep and os.altsep != '/':
-        path = path.replace(os.altsep, '/')
+        if isinstance(path, bytes):
+            path = path.replace(os.altsep.encode('ascii'), b'/')
+        else:
+            path = path.replace(os.altsep, '/')
     return path
 
 
