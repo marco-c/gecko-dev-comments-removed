@@ -1,0 +1,10 @@
+
+
+
+
+"use strict";
+
+const { FluentL10n } = require("devtools/client/shared/fluent-l10n/fluent-l10n");
+
+
+exports.l10n = new FluentL10n();
