@@ -28,7 +28,7 @@ inline void HandleLauncherError(const LauncherResult<T>& aResult) {
     return;
   }
 
-  HandleLauncherError(aResult.unwrapErr());
+  HandleLauncherError(aResult.inspectErr());
 }
 
 

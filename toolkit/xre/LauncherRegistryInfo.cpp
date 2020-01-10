@@ -63,7 +63,7 @@ LauncherVoidResult LauncherRegistryInfo::ReflectPrefToRegistry(
   }
 
   bool isCurrentlyEnabled =
-      curEnabledState.unwrap() != EnabledState::ForceDisabled;
+      curEnabledState.inspect() != EnabledState::ForceDisabled;
   if (isCurrentlyEnabled == aEnable) {
     
     
@@ -137,14 +137,14 @@ LauncherResult<LauncherRegistryInfo::ProcessType> LauncherRegistryInfo::Check(
   
   
   if (savedImageTimestamp.isErr() ||
-      savedImageTimestamp.unwrap() != ourImageTimestamp.unwrap()) {
+      savedImageTimestamp.inspect() != ourImageTimestamp.inspect()) {
     LauncherVoidResult clearResult = ClearStartTimestamps();
     if (clearResult.isErr()) {
       return LAUNCHER_ERROR_FROM_RESULT(clearResult);
     }
 
     LauncherVoidResult writeResult =
-        WriteImageTimestamp(ourImageTimestamp.unwrap());
+        WriteImageTimestamp(ourImageTimestamp.inspect());
     if (writeResult.isErr()) {
       return LAUNCHER_ERROR_FROM_RESULT(writeResult);
     }
@@ -152,7 +152,7 @@ LauncherResult<LauncherRegistryInfo::ProcessType> LauncherRegistryInfo::Check(
 
   ProcessType typeToRunAs = aDesiredType;
 
-  if (disposition.unwrap() == Disposition::CreatedNew ||
+  if (disposition.inspect() == Disposition::CreatedNew ||
       aDesiredType == ProcessType::Browser) {
     
     
@@ -182,7 +182,7 @@ LauncherResult<LauncherRegistryInfo::ProcessType> LauncherRegistryInfo::Check(
     
     if (aDesiredType == ProcessType::Launcher) {
       bool areTimestampsOk =
-          lastLauncherTimestamp.unwrap() < lastBrowserTimestamp.unwrap();
+          lastLauncherTimestamp.inspect() < lastBrowserTimestamp.inspect();
       if (!areTimestampsOk) {
         typeToRunAs = ProcessType::Browser;
       }
@@ -245,14 +245,14 @@ LauncherRegistryInfo::IsEnabled() {
   
 
   bool isBrowserTimestampZero =
-      browserTimestamp.isOk() && browserTimestamp.unwrap() == 0ULL;
+      browserTimestamp.isOk() && browserTimestamp.inspect() == 0ULL;
 
   if (isBrowserTimestampZero && launcherTimestamp.isErr()) {
     return EnabledState::ForceDisabled;
   }
 
   if (launcherTimestamp.isOk() && browserTimestamp.isOk() &&
-      launcherTimestamp.unwrap() < browserTimestamp.unwrap()) {
+      launcherTimestamp.inspect() < browserTimestamp.inspect()) {
     return EnabledState::Enabled;
   }
 
@@ -336,7 +336,7 @@ LauncherVoidResult LauncherRegistryInfo::WriteStartTimestamp(
 
   DWORD len = sizeof(timestamp);
   LSTATUS result =
-      ::RegSetValueExW(mRegKey.get(), name.unwrap().c_str(), 0, REG_QWORD,
+      ::RegSetValueExW(mRegKey.get(), name.inspect().c_str(), 0, REG_QWORD,
                        reinterpret_cast<PBYTE>(&timestamp), len);
   if (result != ERROR_SUCCESS) {
     return LAUNCHER_ERROR_FROM_WIN32(result);
@@ -381,7 +381,7 @@ LauncherResult<bool> LauncherRegistryInfo::ClearStartTimestamp(
   }
 
   LSTATUS result =
-      ::RegDeleteValueW(mRegKey.get(), timestampName.unwrap().c_str());
+      ::RegDeleteValueW(mRegKey.get(), timestampName.inspect().c_str());
   if (result == ERROR_SUCCESS) {
     return true;
   }
@@ -395,7 +395,7 @@ LauncherResult<bool> LauncherRegistryInfo::ClearStartTimestamp(
 
 LauncherVoidResult LauncherRegistryInfo::ClearStartTimestamps() {
   LauncherResult<EnabledState> enabled = IsEnabled();
-  if (enabled.isOk() && enabled.unwrap() == EnabledState::ForceDisabled) {
+  if (enabled.isOk() && enabled.inspect() == EnabledState::ForceDisabled) {
     
     
     return Ok();
@@ -473,7 +473,7 @@ LauncherResult<uint64_t> LauncherRegistryInfo::GetStartTimestamp(
   DWORD valueLen = sizeof(value);
   DWORD type;
   LSTATUS result =
-      ::RegQueryValueExW(mRegKey.get(), name.unwrap().c_str(), nullptr, &type,
+      ::RegQueryValueExW(mRegKey.get(), name.inspect().c_str(), nullptr, &type,
                          reinterpret_cast<PBYTE>(&value), &valueLen);
   
   if (result != ERROR_SUCCESS) {
