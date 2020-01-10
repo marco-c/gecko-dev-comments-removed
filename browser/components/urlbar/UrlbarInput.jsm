@@ -94,7 +94,6 @@ class UrlbarInput {
     this._actionOverrideKeyCount = 0;
     this._autofillPlaceholder = "";
     this._lastSearchString = "";
-    this._textValueOnLastSearch = "";
     this._resultForCurrentValue = null;
     this._suppressStartQuery = false;
     this._untrimmedValue = "";
@@ -495,7 +494,7 @@ class UrlbarInput {
           
           
           
-          this.startQuery();
+          this.startQuery({ allowEmptyInput: true });
           return;
         }
         const actionDetails = {
@@ -553,10 +552,7 @@ class UrlbarInput {
     let canonizedUrl;
 
     if (!result) {
-      
-      
-      
-      this.value = this._textValueOnLastSearch;
+      this.value = this._lastSearchString;
     } else {
       
       
@@ -639,10 +635,15 @@ class UrlbarInput {
 
 
 
+
+
+
+
   startQuery({
     allowAutofill = true,
     searchString = null,
     resetSearchState = true,
+    allowEmptyInput = false,
   } = {}) {
     if (this._suppressStartQuery) {
       return;
@@ -659,8 +660,9 @@ class UrlbarInput {
       throw new Error("The current value doesn't start with the search string");
     }
 
-    this._lastSearchString = searchString;
-    this._textValueOnLastSearche = this.textValue;
+    if (searchString || allowEmptyInput) {
+      this._lastSearchString = searchString;
+    }
 
     
     
@@ -1335,9 +1337,7 @@ class UrlbarInput {
         this.editor.selectAll();
         event.preventDefault();
       } else if (this.openViewOnFocus && !this.view.isOpen) {
-        this.startQuery({
-          allowAutofill: false,
-        });
+        this.startQuery({ allowAutofill: false });
       }
       return;
     }
@@ -1347,9 +1347,7 @@ class UrlbarInput {
         this.view.close();
       } else {
         this.focus();
-        this.startQuery({
-          allowAutofill: false,
-        });
+        this.startQuery({ allowAutofill: false });
       }
     }
   }
@@ -1408,6 +1406,7 @@ class UrlbarInput {
     this.startQuery({
       searchString: value,
       allowAutofill,
+      allowEmptyInput: true,
       resetSearchState: false,
     });
   }
