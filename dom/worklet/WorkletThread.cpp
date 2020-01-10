@@ -167,6 +167,11 @@ class WorkletJSContext final : public CycleCollectedJSContext {
     
     return false;
   }
+
+  void ReportError(JSErrorReport* aReport,
+                   JS::ConstUTF8CharsZ aToStringResult) override {
+    
+  }
 };
 
 

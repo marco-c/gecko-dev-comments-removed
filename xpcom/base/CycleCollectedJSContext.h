@@ -247,6 +247,12 @@ class CycleCollectedJSContext
 
   virtual bool IsSystemCaller() const = 0;
 
+  
+  virtual void ReportError(JSErrorReport* aReport,
+                           JS::ConstUTF8CharsZ aToStringResult) {
+    MOZ_ASSERT_UNREACHABLE("Not supported");
+  }
+
  private:
   
   

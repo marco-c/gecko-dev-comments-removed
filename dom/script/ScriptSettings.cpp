@@ -457,10 +457,10 @@ void WarningOnlyErrorReporter(JSContext* aCx, JSErrorReport* aRep) {
     
     
     
-    WorkerPrivate* worker = GetWorkerPrivateFromContext(aCx);
-    MOZ_ASSERT(worker);
+    CycleCollectedJSContext* ccjscx = CycleCollectedJSContext::GetFor(aCx);
+    MOZ_ASSERT(ccjscx);
 
-    worker->ReportError(aCx, JS::ConstUTF8CharsZ(), aRep);
+    ccjscx->ReportError(aRep, JS::ConstUTF8CharsZ());
     return;
   }
 
@@ -523,15 +523,14 @@ void AutoJSAPI::ReportException() {
       
       
       
-      WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
-      MOZ_ASSERT(worker);
-      MOZ_ASSERT(worker->GetJSContext() == cx());
+      CycleCollectedJSContext* ccjscx = CycleCollectedJSContext::GetFor(cx());
+      MOZ_ASSERT(ccjscx);
       
       
       
       
       JS::SetPendingExceptionAndStack(cx(), exn, exnStack);
-      worker->ReportError(cx(), jsReport.toStringResult(), jsReport.report());
+      ccjscx->ReportError(jsReport.report(), jsReport.toStringResult());
       ClearException();
     }
   } else {
