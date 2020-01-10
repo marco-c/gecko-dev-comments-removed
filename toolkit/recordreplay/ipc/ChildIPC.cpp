@@ -310,12 +310,6 @@ bool DebuggerRunsInMiddleman() {
   return RecordReplayValue(gDebuggerRunsInMiddleman);
 }
 
-void CreateCheckpoint() {
-  if (!HasDivergedFromRecording()) {
-    NewCheckpoint();
-  }
-}
-
 void ReportFatalError(const Maybe<MinidumpInfo>& aMinidump, const char* aFormat,
                       ...) {
   

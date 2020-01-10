@@ -16,6 +16,9 @@ namespace mozilla {
 class VsyncObserver;
 
 namespace recordreplay {
+
+void NewCheckpoint();
+
 namespace child {
 
 
@@ -30,7 +33,11 @@ base::ProcessId MiddlemanProcessId();
 base::ProcessId ParentProcessId();
 
 
-void CreateCheckpoint();
+inline void CreateCheckpoint() {
+  if (IsRecordingOrReplaying() && !HasDivergedFromRecording()) {
+    NewCheckpoint();
+  }
+}
 
 
 

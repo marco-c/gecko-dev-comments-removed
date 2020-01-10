@@ -5926,6 +5926,10 @@ void PresShell::Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
   AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING("PresShell::Paint", GRAPHICS, url);
 #endif
 
+  
+  
+  auto createCheckpoint = MakeScopeExit(recordreplay::child::CreateCheckpoint);
+
   Maybe<js::AutoAssertNoContentJS> nojs;
 
   
@@ -6083,14 +6087,6 @@ void PresShell::Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
     
     nsLayoutUtils::PaintFrame(nullptr, frame, aDirtyRegion, bgcolor,
                               nsDisplayListBuilderMode::Painting, flags);
-
-    
-    
-    if (recordreplay::IsRecordingOrReplaying()) {
-      nojs.reset();
-      recordreplay::child::CreateCheckpoint();
-    }
-
     return;
   }
 
