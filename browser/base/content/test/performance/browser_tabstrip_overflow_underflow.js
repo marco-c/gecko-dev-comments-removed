@@ -57,7 +57,6 @@ add_task(async function() {
       },
       {name: "bug 1446449 - spurious tab switch spinner",
        condition: r =>
-         AppConstants.DEBUG &&
          
          r.y1 >= document.getElementById("appcontent").getBoundingClientRect().top,
       },
