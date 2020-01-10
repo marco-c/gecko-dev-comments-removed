@@ -122,6 +122,10 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
 
   void NotifyNavigationStart(DocShellState aDocShellState);
   void NotifyFetchStart(nsIURI* aURI, Type aNavigationType);
+  
+  
+  
+  void NotifyRestoreStart();
   void NotifyBeforeUnload();
   void NotifyUnloadAccepted(nsIURI* aOldURI);
   void NotifyUnloadEventStart();

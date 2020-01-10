@@ -8077,6 +8077,11 @@ nsresult nsDocShell::RestoreFromHistory() {
 
   
   
+  
+  privWinInner->GetPerformance()->GetDOMTiming()->NotifyRestoreStart();
+
+  
+  
   mRefreshURIList = refreshURIList;
 
   
