@@ -1635,8 +1635,8 @@ static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
 }
 
 
-bool JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx,
-                                                          HandleFunction fun) {
+bool JSFunction::delazifyLazilyInterpretedFunction(JSContext* cx,
+                                                   HandleFunction fun) {
   MOZ_ASSERT(fun->isInterpretedLazy());
   MOZ_ASSERT(cx->compartment() == fun->compartment());
 
@@ -1646,29 +1646,14 @@ bool JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx,
 
   if (fun->hasLazyScript()) {
     Rooted<LazyScript*> lazy(cx, fun->lazyScript());
-    RootedScript script(cx, lazy->maybeScript());
+    RootedFunction canonicalFun(cx, lazy->functionNonDelazifying());
 
-    if (script) {
-      
-      
-      fun->setUnlazifiedScript(script);
-      
-      
-      if (lazy->canRelazify()) {
-        MOZ_RELEASE_ASSERT(script->maybeLazyScript() == lazy);
-        script->setLazyScript(lazy);
-      }
-      return true;
-    }
-
-    if (fun != lazy->functionNonDelazifying()) {
-      
-      
-      
-      if (!LazyScript::functionDelazifying(cx, lazy)) {
-        return false;
-      }
-      script = lazy->functionNonDelazifying()->nonLazyScript();
+    
+    
+    
+    
+    if (fun != canonicalFun) {
+      JSScript* script = JSFunction::getOrCreateScript(cx, canonicalFun);
       if (!script) {
         return false;
       }
@@ -1677,6 +1662,14 @@ bool JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx,
       return true;
     }
 
+    
+    
+    if (lazy->hasScript()) {
+      fun->setUnlazifiedScript(lazy->maybeScript());
+      return true;
+    }
+
+    
     return DelazifyCanonicalScriptedFunction(cx, fun);
   }
 
