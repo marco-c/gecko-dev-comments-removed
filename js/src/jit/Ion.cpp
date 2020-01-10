@@ -891,7 +891,7 @@ void IonScript::trace(JSTracer* trc) {
 
   
   for (size_t i = 0; i < numICs(); i++) {
-    getICFromIndex(i).trace(trc);
+    getICFromIndex(i).trace(trc, this);
   }
 }
 
@@ -952,10 +952,8 @@ void IonScript::copyICEntries(const uint32_t* icEntries) {
   memcpy(icIndex(), icEntries, numICs() * sizeof(uint32_t));
 
   
-  
-  
   for (size_t i = 0; i < numICs(); i++) {
-    getICFromIndex(i).updateBaseAddress(method_);
+    getICFromIndex(i).resetCodeRaw(this);
   }
 }
 
@@ -1041,7 +1039,7 @@ void JS::DeletePolicy<js::jit::IonScript>::operator()(
 
 void IonScript::purgeICs(Zone* zone) {
   for (size_t i = 0; i < numICs(); i++) {
-    getICFromIndex(i).reset(zone);
+    getICFromIndex(i).reset(zone, this);
   }
 }
 

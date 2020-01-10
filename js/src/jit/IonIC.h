@@ -76,14 +76,16 @@ class IonIC {
   IonICStub* firstStub_;
 
   
-  CodeLocationLabel rejoinLabel_;
-
-  
-  CodeLocationLabel fallbackLabel_;
-
-  
   JSScript* script_;
   jsbytecode* pc_;
+
+  
+  
+  uint32_t rejoinOffset_;
+
+  
+  
+  uint32_t fallbackOffset_;
 
   CacheKind kind_;
   bool idempotent_ : 1;
@@ -93,10 +95,10 @@ class IonIC {
   explicit IonIC(CacheKind kind)
       : codeRaw_(nullptr),
         firstStub_(nullptr),
-        rejoinLabel_(),
-        fallbackLabel_(),
         script_(nullptr),
         pc_(nullptr),
+        rejoinOffset_(0),
+        fallbackOffset_(0),
         kind_(kind),
         idempotent_(false),
         state_() {}
@@ -120,13 +122,11 @@ class IonIC {
     return pc_;
   }
 
-  CodeLocationLabel rejoinLabel() const { return rejoinLabel_; }
+  
+  void discardStubs(Zone* zone, IonScript* ionScript);
 
   
-  void discardStubs(Zone* zone);
-
-  
-  void reset(Zone* zone);
+  void reset(Zone* zone, IonScript* ionScript);
 
   ICState& state() { return state_; }
 
@@ -136,10 +136,15 @@ class IonIC {
   bool idempotent() const { return idempotent_; }
   void setIdempotent() { idempotent_ = true; }
 
-  void setFallbackLabel(CodeOffset fallbackLabel) {
-    fallbackLabel_ = fallbackLabel;
+  void setFallbackOffset(CodeOffset offset) {
+    fallbackOffset_ = offset.offset();
   }
-  void setRejoinLabel(CodeOffset rejoinLabel) { rejoinLabel_ = rejoinLabel; }
+  void setRejoinOffset(CodeOffset offset) { rejoinOffset_ = offset.offset(); }
+
+  void resetCodeRaw(IonScript* ionScript);
+
+  uint8_t* fallbackAddr(IonScript* ionScript) const;
+  uint8_t* rejoinAddr(IonScript* ionScript) const;
 
   IonGetPropertyIC* asGetPropertyIC() {
     MOZ_ASSERT(kind_ == CacheKind::GetProp || kind_ == CacheKind::GetElem);
@@ -191,13 +196,11 @@ class IonIC {
     return (IonBinaryArithIC*)this;
   }
 
-  void updateBaseAddress(JitCode* code);
-
   
   
   Register scratchRegisterForEntryJump();
 
-  void trace(JSTracer* trc);
+  void trace(JSTracer* trc, IonScript* ionScript);
 
   void attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
                          CacheKind kind, IonScript* ionScript, bool* attached,
