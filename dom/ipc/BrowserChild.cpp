@@ -3333,8 +3333,7 @@ ScreenIntSize BrowserChild::GetInnerSize() {
 };
 
 nsRect BrowserChild::GetVisibleRect() {
-  bool isForceRendering = mIsTopLevel && mRenderLayers;
-  if (isForceRendering && !mEffectsInfo.IsVisible()) {
+  if (mIsTopLevel) {
     
     
     return nsRect(nsPoint(), CSSPixel::ToAppUnits(mUnscaledInnerSize));
