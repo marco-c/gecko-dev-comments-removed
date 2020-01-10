@@ -13,6 +13,10 @@
 
 #include "../mdns_service/mdns_service.h"
 
+extern "C" {
+#include "local_addr.h"
+}
+
 using namespace mozilla::ipc;
 
 namespace mozilla {
@@ -24,16 +28,6 @@ StunAddrsRequestParent::StunAddrsRequestParent() : mIPCClosed(false) {
   nsresult res;
   mSTSThread = do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID, &res);
   MOZ_ASSERT(mSTSThread);
-
-  
-  
-  
-  
-  
-  
-  if (!mSharedMDNSService) {
-    mSharedMDNSService = new MDNSServiceWrapper;
-  }
 }
 
 StunAddrsRequestParent::~StunAddrsRequestParent() {
@@ -127,6 +121,26 @@ void StunAddrsRequestParent::SendStunAddrs_m(const NrIceStunAddrArray& addrs) {
   }
 
   
+  
+  
+  
+  
+  
+  if (!mSharedMDNSService) {
+    for (auto& addr : addrs) {
+      nr_transport_addr* local_addr =
+          const_cast<nr_transport_addr*>(&addr.localAddr().addr);
+      if (addr.localAddr().addr.ip_version == NR_IPV4 &&
+          !nr_transport_addr_is_loopback(local_addr)) {
+        char addrstring[16];
+        nr_transport_addr_get_addrstring(local_addr, addrstring, 16);
+        mSharedMDNSService = new MDNSServiceWrapper(addrstring);
+        break;
+      }
+    }
+  }
+
+  
   Unused << SendOnStunAddrsAvailable(addrs);
 }
 
@@ -135,6 +149,10 @@ StaticRefPtr<StunAddrsRequestParent::MDNSServiceWrapper>
 
 NS_IMPL_ADDREF(StunAddrsRequestParent)
 NS_IMPL_RELEASE(StunAddrsRequestParent)
+
+StunAddrsRequestParent::MDNSServiceWrapper::MDNSServiceWrapper(
+    const std::string& ifaddr)
+    : ifaddr(ifaddr) {}
 
 void StunAddrsRequestParent::MDNSServiceWrapper::RegisterHostname(
     const char* hostname, const char* address) {
@@ -161,7 +179,7 @@ StunAddrsRequestParent::MDNSServiceWrapper::~MDNSServiceWrapper() {
 
 void StunAddrsRequestParent::MDNSServiceWrapper::StartIfRequired() {
   if (!mMDNSService) {
-    mMDNSService = mdns_service_start();
+    mMDNSService = mdns_service_start(ifaddr.c_str());
   }
 }
 
