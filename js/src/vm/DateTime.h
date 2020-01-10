@@ -73,6 +73,15 @@ extern void ResetTimeZoneInternal(ResetTimeZoneMode mode);
 
 
 
+extern void ResyncICUDefaultTimeZone();
+
+
+
+
+
+
+
+
 
 
 
@@ -124,9 +133,8 @@ class DateTimeInfo {
 
   static auto acquireLockWithValidTimeZone() {
     auto guard = instance->lock();
-    if (guard->localTZAStatus_ == LocalTimeZoneAdjustmentStatus::NeedsUpdate) {
-      guard->resetTimeZoneAdjustment(
-          ResetTimeZoneMode::ResetEvenIfOffsetUnchanged);
+    if (guard->localTZAStatus_ != LocalTimeZoneAdjustmentStatus::Valid) {
+      guard->resetTimeZoneAdjustment();
     }
     return guard;
   }
@@ -186,14 +194,17 @@ class DateTimeInfo {
  private:
   
   
-  
-  
   friend void js::ResetTimeZoneInternal(ResetTimeZoneMode);
+  friend void js::ResyncICUDefaultTimeZone();
 
-  
-  static bool updateTimeZoneAdjustment(ResetTimeZoneMode mode) {
+  static void updateTimeZoneAdjustment(ResetTimeZoneMode mode) {
     auto guard = instance->lock();
-    return guard->internalUpdateTimeZoneAdjustment(mode);
+    guard->internalUpdateTimeZoneAdjustment(mode);
+  }
+
+  static void resyncICUDefaultTimeZone() {
+    auto guard = acquireLockWithValidTimeZone();
+    guard->internalResyncICUDefaultTimeZone();
   }
 
   struct RangeCache {
@@ -211,9 +222,26 @@ class DateTimeInfo {
     void sanityCheck();
   };
 
-  enum class LocalTimeZoneAdjustmentStatus : bool { Valid, NeedsUpdate };
+  enum class LocalTimeZoneAdjustmentStatus : uint8_t {
+    Valid,
+    NeedsUpdate,
+    UpdateIfChanged
+  };
 
   LocalTimeZoneAdjustmentStatus localTZAStatus_;
+
+#if ENABLE_INTL_API
+  
+  
+  
+  
+  
+  
+  
+  enum class IcuTimeZoneStatus : bool { Valid, NeedsUpdate };
+
+  IcuTimeZoneStatus icuTimeZoneStatus_;
+#endif
 
   
 
@@ -276,9 +304,11 @@ class DateTimeInfo {
 
   static constexpr int64_t RangeExpansionAmount = 30 * SecondsPerDay;
 
-  bool internalUpdateTimeZoneAdjustment(ResetTimeZoneMode mode);
+  void internalUpdateTimeZoneAdjustment(ResetTimeZoneMode mode);
 
-  bool resetTimeZoneAdjustment(ResetTimeZoneMode mode);
+  void resetTimeZoneAdjustment();
+
+  void internalResyncICUDefaultTimeZone();
 
   int64_t toClampedSeconds(int64_t milliseconds);
 
@@ -321,19 +351,6 @@ class DateTimeInfo {
   icu::TimeZone* timeZone();
 #endif 
 };
-
-enum class IcuTimeZoneStatus { Valid, NeedsUpdate };
-
-extern ExclusiveData<IcuTimeZoneStatus>* IcuTimeZoneState;
-
-
-
-
-
-
-
-
-extern void ResyncICUDefaultTimeZone();
 
 } 
 
