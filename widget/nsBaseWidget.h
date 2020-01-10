@@ -435,12 +435,6 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
                         const ScreenIntSize& aSize) override{};
 #endif
 
-  
-
-
-
-  static bool ShowContextMenuAfterMouseUp();
-
  protected:
   
   
