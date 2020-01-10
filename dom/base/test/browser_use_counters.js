@@ -52,6 +52,24 @@ add_task(async function() {
   );
 
   
+  await check_use_counter_iframe(
+    "file_use_counter_style.html",
+    "CSS_PROPERTY_BackgroundImage"
+  );
+
+  
+  await check_use_counter_iframe(
+    "file_use_counter_style.html",
+    "CSS_PROPERTY_Padding"
+  );
+
+  
+  await check_use_counter_iframe(
+    "file_use_counter_style.html",
+    "CSS_PROPERTY_MozTransform"
+  );
+
+  
   
   
   
@@ -95,8 +113,9 @@ add_task(async function() {
   
   await check_use_counter_direct(
     "file_use_counter_svg_fill_pattern_internal.svg",
-    "CSS_PROPERTY_FillOpacity",
+    "CSS_PROPERTY_FillOpacity"
   );
+
   
   
   
