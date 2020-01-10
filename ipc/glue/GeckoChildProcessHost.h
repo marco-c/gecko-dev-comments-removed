@@ -14,6 +14,7 @@
 
 #include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/LinkedList.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/StaticPtr.h"
@@ -37,7 +38,8 @@ typedef _MacSandboxInfo MacSandboxInfo;
 namespace mozilla {
 namespace ipc {
 
-class GeckoChildProcessHost : public ChildProcessHost {
+class GeckoChildProcessHost : public ChildProcessHost,
+                              public LinkedListElement<GeckoChildProcessHost> {
  protected:
   typedef mozilla::Monitor Monitor;
   typedef std::vector<std::string> StringVector;
@@ -153,10 +155,15 @@ class GeckoChildProcessHost : public ChildProcessHost {
     return MacSandboxType_Utility;
   };
 #endif
+  typedef std::function<void(GeckoChildProcessHost*)> GeckoProcessCallback;
+
+  
+  
+  
+  static void GetAll(const GeckoProcessCallback& aCallback);
 
  protected:
   ~GeckoChildProcessHost();
-
   GeckoProcessType mProcessType;
   bool mIsFileContent;
   Monitor mMonitor;
@@ -242,6 +249,9 @@ class GeckoChildProcessHost : public ChildProcessHost {
   void GetChildLogName(const char* origLogName, nsACString& buffer);
 
   
+  void RemoveFromProcessList();
+
+  
   
   
   
@@ -258,7 +268,9 @@ class GeckoChildProcessHost : public ChildProcessHost {
   mozilla::Atomic<bool> mDestroying;
 
   static uint32_t sNextUniqueID;
-
+  static StaticAutoPtr<LinkedList<GeckoChildProcessHost>>
+      sGeckoChildProcessHosts;
+  static StaticMutex sMutex;
 #if defined(MOZ_WIDGET_ANDROID)
   void LaunchAndroidService(
       const char* type, const std::vector<std::string>& argv,
