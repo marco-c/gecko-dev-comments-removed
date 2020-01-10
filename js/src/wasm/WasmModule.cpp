@@ -345,7 +345,8 @@ bool wasm::GetOptimizedEncodingBuildId(JS::BuildIdCharVector* buildId) {
 
   uint32_t cpu = ObservedCPUFeatures();
 
-  if (!buildId->reserve(buildId->length() + 10 )) {
+  if (!buildId->reserve(buildId->length() +
+                        12 )) {
     return false;
   }
 
@@ -355,6 +356,9 @@ bool wasm::GetOptimizedEncodingBuildId(JS::BuildIdCharVector* buildId) {
     cpu >>= 4;
   }
   buildId->infallibleAppend(')');
+
+  buildId->infallibleAppend('m');
+  buildId->infallibleAppend(wasm::IsHugeMemoryEnabled() ? '+' : '-');
 
   return true;
 }
