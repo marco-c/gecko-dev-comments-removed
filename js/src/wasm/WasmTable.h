@@ -98,7 +98,7 @@ class Table : public ShareableBase<Table> {
 
   
   
-  void copy(const Table& srcTable, uint32_t dstIndex, uint32_t srcIndex);
+  bool copy(const Table& srcTable, uint32_t dstIndex, uint32_t srcIndex);
 
   
   uint32_t grow(uint32_t delta);

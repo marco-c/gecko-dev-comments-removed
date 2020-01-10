@@ -668,7 +668,7 @@ static int32_t PerformWait(Instance* instance, uint32_t byteOffset, T value,
   }
 
   
-  bool mustTrap = false;
+  bool isOOB = false;
 
   
   
@@ -692,8 +692,10 @@ static int32_t PerformWait(Instance* instance, uint32_t byteOffset, T value,
       MOZ_ASSERT(len > Min(srcAvail, dstAvail));
       len = uint32_t(Min(srcAvail, dstAvail));
     }
-    mustTrap = true;
+    isOOB = true;
   }
+
+  bool isOOM = false;
 
   if (len > 0) {
     
@@ -703,23 +705,31 @@ static int32_t PerformWait(Instance* instance, uint32_t byteOffset, T value,
     
     if (&srcTable == &dstTable && dstOffset > srcOffset) {
       for (uint32_t i = len; i > 0; i--) {
-        dstTable->copy(*srcTable, dstOffset + (i - 1), srcOffset + (i - 1));
+        if (!dstTable->copy(*srcTable, dstOffset + (i - 1),
+                            srcOffset + (i - 1))) {
+          isOOM = true;
+          break;
+        }
       }
     } else if (&srcTable == &dstTable && dstOffset == srcOffset) {
       
     } else {
       for (uint32_t i = 0; i < len; i++) {
-        dstTable->copy(*srcTable, dstOffset + i, srcOffset + i);
+        if (!dstTable->copy(*srcTable, dstOffset + i, srcOffset + i)) {
+          isOOM = true;
+          break;
+        }
       }
     }
   }
 
-  if (!mustTrap) {
+  if (!isOOB && !isOOM) {
     return 0;
   }
-
-  JS_ReportErrorNumberASCII(TlsContext.get(), GetErrorMessage, nullptr,
-                            JSMSG_WASM_OUT_OF_BOUNDS);
+  if (isOOB && !isOOM) {
+    JS_ReportErrorNumberASCII(TlsContext.get(), GetErrorMessage, nullptr,
+                              JSMSG_WASM_OUT_OF_BOUNDS);
+  }
   return -1;
 }
 
