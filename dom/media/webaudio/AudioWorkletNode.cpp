@@ -63,6 +63,8 @@ class WorkletNodeEngine final : public AudioNodeEngine {
 
  private:
   void SendProcessorError();
+  bool CallProcess(JSContext* aCx, JS::Handle<JS::Value> aCallable,
+                   bool* aActiveRet);
 
   void ReleaseJSResources() {
     mInputs.mPorts.clearAndFree();
@@ -70,6 +72,7 @@ class WorkletNodeEngine final : public AudioNodeEngine {
     mInputs.mJSArray.reset();
     mOutputs.mJSArray.reset();
     mGlobal = nullptr;
+    
     mProcessor.reset();
   }
 
@@ -231,6 +234,29 @@ static bool PrepareBufferArrays(JSContext* aCx, Span<const AudioBlock> aBlocks,
   return !(NS_WARN_IF(!PrepareArray(aCx, aPorts->mPorts, &aPorts->mJSArray)));
 }
 
+
+
+
+
+bool WorkletNodeEngine::CallProcess(JSContext* aCx,
+                                    JS::Handle<JS::Value> aCallable,
+                                    bool* aActiveRet) {
+  JS::RootedVector<JS::Value> argv(aCx);
+  if (NS_WARN_IF(!argv.resize(3))) {
+    return false;
+  }
+  argv[0].setObject(*mInputs.mJSArray);
+  argv[1].setObject(*mOutputs.mJSArray);
+  
+  JS::Rooted<JS::Value> rval(aCx);
+  if (!JS::Call(aCx, mProcessor, aCallable, argv, &rval)) {
+    return false;
+  }
+
+  *aActiveRet = JS::ToBoolean(rval);
+  return true;
+}
+
 static void ProduceSilence(Span<AudioBlock> aOutput) {
   for (AudioBlock& output : aOutput) {
     output.SetNull(WEBAUDIO_BLOCK_SIZE);
@@ -262,7 +288,10 @@ void WorkletNodeEngine::ProcessBlocksOnPorts(AudioNodeStream* aStream,
   AutoEntryScript aes(mGlobal, "Worklet Process");
   JSContext* cx = aes.cx();
 
-  if (!PrepareBufferArrays(cx, aInput, &mInputs, ArrayElementInit::None) ||
+  JS::Rooted<JS::Value> process(cx);
+  if (!JS_GetProperty(cx, mProcessor, "process", &process) ||
+      !process.isObject() || !JS::IsCallable(&process.toObject()) ||
+      !PrepareBufferArrays(cx, aInput, &mInputs, ArrayElementInit::None) ||
       !PrepareBufferArrays(cx, aOutput, &mOutputs, ArrayElementInit::Zero)) {
     
     SendProcessorError();
@@ -291,6 +320,18 @@ void WorkletNodeEngine::ProcessBlocksOnPorts(AudioNodeStream* aStream,
     }
   }
 
+  bool active;
+  if (!CallProcess(cx, process, &active)) {
+    
+    SendProcessorError();
+    
+
+
+
+
+    ProduceSilence(aOutput);
+    return;
+  }
   
 
   
