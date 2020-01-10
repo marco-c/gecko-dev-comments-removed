@@ -322,8 +322,11 @@ BasicCompositor::CreateRenderTargetForWindow(
     }
     rt = new BasicCompositingRenderTarget(mDrawTarget, windowRect);
   }
+
+  rt->mDrawTarget->SetTransform(Matrix::Translation(-rt->GetOrigin()));
+
   if (!aClearRect.IsEmpty() && !isCleared) {
-    gfx::IntRect clearRect = aClearRect.ToUnknownRect() - rt->GetOrigin();
+    gfx::IntRect clearRect = aClearRect.ToUnknownRect();
     rt->mDrawTarget->ClearRect(gfx::Rect(clearRect));
   }
 
@@ -972,11 +975,6 @@ void BasicCompositor::BeginFrame(
     return;
   }
   SetRenderTarget(target);
-
-  
-  
-  mRenderTarget->mDrawTarget->SetTransform(
-      Matrix::Translation(-mRenderTarget->GetOrigin()));
 
   if (ShouldRecordFrames()) {
     IntSize windowSize = rect.ToUnknownRect().Size();
