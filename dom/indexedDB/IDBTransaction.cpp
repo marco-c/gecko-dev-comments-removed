@@ -118,6 +118,8 @@ IDBTransaction::IDBTransaction(IDBDatabase* const aDatabase,
   MOZ_ASSERT(aDatabase);
   aDatabase->AssertIsOnOwningThread();
 
+  
+  
   mBackgroundActor.mNormalBackgroundActor = nullptr;
 
 #ifdef DEBUG
