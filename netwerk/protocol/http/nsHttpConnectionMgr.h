@@ -170,7 +170,7 @@ class nsHttpConnectionMgr final : public nsIObserver, public AltSvcCache {
   
   
   MOZ_MUST_USE nsresult CompleteUpgrade(
-      nsHttpTransaction* aTrans, nsIHttpUpgradeListener* aUpgradeListener);
+      HttpTransactionShell* aTrans, nsIHttpUpgradeListener* aUpgradeListener);
 
   
   

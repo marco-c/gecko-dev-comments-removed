@@ -79,9 +79,6 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   virtual uint32_t Caps() = 0;
 
   
-  virtual void SetDNSWasRefreshed() = 0;
-
-  
   virtual MOZ_MUST_USE nsresult ReadSegments(nsAHttpSegmentReader* reader,
                                              uint32_t count,
                                              uint32_t* countRead) = 0;
@@ -235,7 +232,6 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpTransaction, NS_AHTTPTRANSACTION_IID)
   bool IsDone() override;                                                      \
   nsresult Status() override;                                                  \
   uint32_t Caps() override;                                                    \
-  void SetDNSWasRefreshed() override;                                          \
   virtual MOZ_MUST_USE nsresult ReadSegments(nsAHttpSegmentReader*, uint32_t,  \
                                              uint32_t*) override;              \
   virtual MOZ_MUST_USE nsresult WriteSegments(nsAHttpSegmentWriter*, uint32_t, \
