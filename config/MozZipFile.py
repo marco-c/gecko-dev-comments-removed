@@ -2,6 +2,7 @@
 
 
 
+from __future__ import absolute_import
 import os
 import time
 import zipfile
@@ -47,7 +48,7 @@ class ZipFile(zipfile.ZipFile):
                                     date_time=time.localtime(time.time()))
             zinfo.compress_type = self.compression
             
-            zinfo.external_attr = (0x81a4 & 0xFFFF) << 16L
+            zinfo.external_attr = (0x81a4 & 0xFFFF) << 16
         else:
             zinfo = zinfo_or_arcname
 

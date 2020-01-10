@@ -2,6 +2,7 @@
 
 
 
+from __future__ import absolute_import
 import os
 from mozunit import main, MockedOpen
 import unittest

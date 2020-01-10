@@ -4,6 +4,8 @@
 
 
 
+from __future__ import absolute_import
+from __future__ import print_function
 import buildconfig
 import mozpack.path as mozpath
 import os

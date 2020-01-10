@@ -4,6 +4,8 @@
 
 
 
+from __future__ import absolute_import
+
 
 def main(output, data_file, data_symbol):
     output.write('''    AREA |.rdata|,ALIGN=4,DATA,READONLY
