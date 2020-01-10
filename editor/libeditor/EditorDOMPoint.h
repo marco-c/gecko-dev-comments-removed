@@ -686,6 +686,7 @@ class EditorDOMPointBase final {
       return RawRangeBoundary();
     }
     if (!mParent->IsContainerNode()) {
+      MOZ_ASSERT(mOffset.value() <= mParent->Length());
       
       
       
