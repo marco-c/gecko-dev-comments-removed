@@ -182,10 +182,8 @@ var NormandyApi = {
 
 
 
-
-
-
-  async fetchRecipes(filters = { enabled: true }) {
+  async fetchRecipes() {
+    const filters = { enabled: true, only_baseline_capabilities: false };
     return this.fetchSignedObjects("recipe", filters);
   },
 
