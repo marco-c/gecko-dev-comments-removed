@@ -91,7 +91,6 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   void EndLine(bool softlinebreak, bool aBreakBySpace = false);
   void EnsureVerticalSpace(int32_t noOfRows);
 
-  void Output(nsString& aString);
   void Write(const nsAString& aString);
 
   
@@ -327,9 +326,6 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
   
   AutoTArray<bool, 8> mIsInCiteBlockquote;
-
-  
-  nsAString* mOutput;
 
   
   
