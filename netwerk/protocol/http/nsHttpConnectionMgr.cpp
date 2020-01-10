@@ -2794,7 +2794,6 @@ void nsHttpConnectionMgr::OnMsgReclaimConnection(int32_t, ARefBase* param) {
                                ? mCT.GetWeak(conn->ConnectionInfo()->HashKey())
                                : nullptr;
 
-  DebugOnly<bool> newEntry = false;
   if (!ent) {
     
     
@@ -2804,8 +2803,6 @@ void nsHttpConnectionMgr::OnMsgReclaimConnection(int32_t, ARefBase* param) {
         ("nsHttpConnectionMgr::OnMsgReclaimConnection conn %p "
          "forced new hash entry %s\n",
          conn, conn->ConnectionInfo()->HashKey().get()));
-
-    newEntry = true;
   }
 
   MOZ_ASSERT(ent);
@@ -2848,21 +2845,16 @@ void nsHttpConnectionMgr::OnMsgReclaimConnection(int32_t, ARefBase* param) {
     anonInvertedCI->SetAnonymous(!ci->GetAnonymous());
 
     nsConnectionEntry* ent = mCT.GetWeak(anonInvertedCI->HashKey());
-    if (ent && ent->mActiveConns.RemoveElement(conn)) {
-      DecrementActiveConnCount(conn);
-      ConditionallyStopTimeoutTick();
-    } else {
-      LOG(
-          ("nsHttpConnection %p could not be removed from its entry's active "
-           "list",
-           conn));
-
-      
-      
-      
-      MOZ_ASSERT(newEntry,
-                 "Active connection not found in a pre-existing entry nor "
-                 "^anonymous entry");
+    if (ent) {
+      if (ent->mActiveConns.RemoveElement(conn)) {
+        DecrementActiveConnCount(conn);
+        ConditionallyStopTimeoutTick();
+      } else {
+        LOG(
+            ("nsHttpConnection %p could not be removed from its entry's active "
+             "list",
+             conn));
+      }
     }
   }
 
