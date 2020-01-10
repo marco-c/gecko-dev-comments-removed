@@ -284,11 +284,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
 
 
-  bool HitTestAPZC(const ScreenIntPoint& aPoint);
-
-  
-
-
 
 
   void SetDPI(float aDpiValue) override;
