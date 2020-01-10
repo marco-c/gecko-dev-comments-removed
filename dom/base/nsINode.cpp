@@ -348,20 +348,19 @@ static nsIContent* GetRootForContentSubtree(nsIContent* aContent) {
   
   
   
-  ShadowRoot* containingShadow = aContent->GetContainingShadow();
-  if (containingShadow) {
+  
+  
+  
+  if (ShadowRoot* containingShadow = aContent->GetContainingShadow()) {
     return containingShadow;
   }
-
-  nsIContent* stop = aContent->GetBindingParent();
-  while (aContent) {
-    nsIContent* parent = aContent->GetParent();
-    if (parent == stop) {
-      break;
-    }
-    aContent = parent;
+  if (nsIContent* nativeAnonRoot = aContent->GetClosestNativeAnonymousSubtreeRoot()) {
+    return nativeAnonRoot;
   }
-  return aContent;
+  if (Document* doc = aContent->GetUncomposedDoc()) {
+    return doc->GetRootElement();
+  }
+  return nsIContent::FromNode(aContent->SubtreeRoot());
 }
 
 nsIContent* nsINode::GetSelectionRootContent(PresShell* aPresShell) {
@@ -374,7 +373,7 @@ nsIContent* nsINode::GetSelectionRootContent(PresShell* aPresShell) {
     return nullptr;
   }
 
-  if (static_cast<nsIContent*>(this)->HasIndependentSelection()) {
+  if (AsContent()->HasIndependentSelection()) {
     
     nsIContent* content = GetTextEditorRootContent();
     if (content) return content;
@@ -392,7 +391,7 @@ nsIContent* nsINode::GetSelectionRootContent(PresShell* aPresShell) {
         NS_ENSURE_TRUE(editorRoot, nullptr);
         return nsContentUtils::IsInSameAnonymousTree(this, editorRoot)
                    ? editorRoot
-                   : GetRootForContentSubtree(static_cast<nsIContent*>(this));
+                   : GetRootForContentSubtree(AsContent());
       }
       
       
@@ -416,7 +415,7 @@ nsIContent* nsINode::GetSelectionRootContent(PresShell* aPresShell) {
   
   NS_ENSURE_TRUE(content, nullptr);
   if (!nsContentUtils::IsInSameAnonymousTree(this, content)) {
-    content = GetRootForContentSubtree(static_cast<nsIContent*>(this));
+    content = GetRootForContentSubtree(AsContent());
     
     
     if (ShadowRoot* shadowRoot = ShadowRoot::FromNode(content)) {
