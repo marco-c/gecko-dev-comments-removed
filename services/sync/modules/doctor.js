@@ -178,7 +178,13 @@ var Doctor = {
         
         log.info(`Running validator for ${engine.name}`);
         let result = await validator.validate(engine);
-        Observers.notify("weave:engine:validate:finish", result, engine.name);
+        let { problems, version, duration, recordCount } = result;
+        Observers.notify("weave:engine:validate:finish", {
+          version,
+          checked: recordCount,
+          took: duration,
+          problems: problems ? problems.getSummary(true) : null,
+        }, engine.name);
         
         await this._maybeCure(engine, result, flowID);
       } catch (ex) {
