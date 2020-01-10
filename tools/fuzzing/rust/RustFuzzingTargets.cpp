@@ -1,0 +1,11 @@
+
+
+
+
+
+#include "FuzzingInterface.h"
+#include "RustFuzzingTargets.h"
+
+int FuzzingInitDummy(int* argc, char*** argv) { return 0; }
+
+MOZ_FUZZING_INTERFACE_RAW(FuzzingInitDummy, fuzz_rkv, Rkv);
