@@ -166,6 +166,7 @@ pub fn main_wrapper<E: Example>(
         clear_color: Some(ColorF::new(0.3, 0.0, 0.0, 1.0)),
         
         debug_flags,
+        
         ..options.unwrap_or(webrender::RendererOptions::default())
     };
 
