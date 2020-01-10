@@ -377,6 +377,13 @@ export default class LoginList extends HTMLElement {
     
     
     this.render();
+
+    if (
+      this.classList.contains("no-logins") &&
+      !this.classList.contains("create-login-selected")
+    ) {
+      this._selectFirstVisibleLogin();
+    }
   }
 
   
