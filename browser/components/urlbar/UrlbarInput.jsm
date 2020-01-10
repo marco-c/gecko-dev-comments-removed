@@ -1562,6 +1562,10 @@ class UrlbarInput {
     });
 
     contextMenu.addEventListener("popupshowing", () => {
+      
+      
+      this.view.close();
+
       let controller = this.document.commandDispatcher.getControllerForCommand(
         "cmd_paste"
       );
