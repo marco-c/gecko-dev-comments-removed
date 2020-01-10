@@ -25,6 +25,7 @@
 #include "mozilla/dom/NonRefcountedDOMObject.h"
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/dom/PrototypeList.h"
+#include "mozilla/dom/RemoteObjectProxy.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/SegmentedVector.h"
@@ -221,6 +222,12 @@ MOZ_ALWAYS_INLINE nsresult UnwrapObjectInternal(V& obj, U& value,
 
   
   if (!mayBeWrapper || !js::IsWrapper(obj)) {
+    
+    
+    if (IsRemoteObjectProxy(obj)) {
+      return NS_ERROR_XPC_SECURITY_MANAGER_VETO;
+    }
+
     
     return NS_ERROR_XPC_BAD_CONVERT_JS;
   }
