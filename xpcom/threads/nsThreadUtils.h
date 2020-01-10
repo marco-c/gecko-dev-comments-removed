@@ -1701,6 +1701,50 @@ namespace mozilla {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+PRThread* GetCurrentPhysicalThread();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+PRThread* GetCurrentVirtualThread();
+
+
+
+
+
+
+
 nsIEventTarget* GetCurrentThreadEventTarget();
 
 nsIEventTarget* GetMainThreadEventTarget();
