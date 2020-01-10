@@ -3,8 +3,8 @@
 
 
 
-#ifndef GMP_LOG_h_
-#define GMP_LOG_h_
+#ifndef DOM_MEDIA_GMPLOG_H_
+#define DOM_MEDIA_GMPLOG_H_
 
 #include "mozilla/Logging.h"
 
