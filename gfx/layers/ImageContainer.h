@@ -221,7 +221,7 @@ class Image {
 
 
 
-  virtual TextureClient* GetTextureClient(KnowsCompositor* aForwarder) {
+  virtual TextureClient* GetTextureClient(KnowsCompositor* aKnowsCompositor) {
     return nullptr;
   }
 
@@ -944,7 +944,7 @@ class SourceSurfaceImage final : public Image {
   void SetTextureFlags(TextureFlags aTextureFlags) {
     mTextureFlags = aTextureFlags;
   }
-  TextureClient* GetTextureClient(KnowsCompositor* aForwarder) override;
+  TextureClient* GetTextureClient(KnowsCompositor* aKnowsCompositor) override;
 
   gfx::IntSize GetSize() const override { return mSize; }
 
