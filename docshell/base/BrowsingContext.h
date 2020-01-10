@@ -397,7 +397,9 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   
   bool CanAccess(BrowsingContext* aContext);
 
-  bool IsActive() const;
+  
+  
+  bool IsTargetable();
 
   
   void Unregister();
