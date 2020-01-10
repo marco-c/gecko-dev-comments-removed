@@ -45,39 +45,6 @@ capture.Format = {
 
 
 
-capture.element = function(node) {
-  let win = node.ownerGlobal;
-  let rect = node.getBoundingClientRect();
-
-  return capture.canvas(win, rect.left, rect.top, rect.width, rect.height);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-capture.viewport = function(win) {
-  return capture.canvas(
-    win,
-    win.pageXOffset,
-    win.pageYOffset,
-    win.innerWidth,
-    win.innerHeight
-  );
-};
-
-
-
-
-
-
 
 
 
@@ -103,7 +70,7 @@ capture.canvas = function(
   top,
   width,
   height,
-  { canvas = null, flags = null } = {}
+  { canvas = null, flags = null, dX = 0, dY = 0 } = {}
 ) {
   const scale = win.devicePixelRatio;
 
@@ -146,7 +113,7 @@ capture.canvas = function(
   }
 
   ctx.scale(scale, scale);
-  ctx.drawWindow(win, left, top, width, height, BG_COLOUR, flags);
+  ctx.drawWindow(win, left + dX, top + dY, width, height, BG_COLOUR, flags);
 
   return canvas;
 };
