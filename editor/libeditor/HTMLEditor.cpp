@@ -3379,15 +3379,21 @@ bool HTMLEditor::IsInObservedSubtree(nsIContent* aChild) {
     return false;
   }
 
-  Element* root = GetRoot();
   
   
-  if (root && (root->ChromeOnlyAccess() != aChild->ChromeOnlyAccess() ||
-               root->GetBindingParent() != aChild->GetBindingParent())) {
-    return false;
+  
+  if (Element* root = GetRoot()) {
+    
+    
+    if (root->ChromeOnlyAccess() != aChild->ChromeOnlyAccess() ||
+        root->IsInNativeAnonymousSubtree() != aChild->IsInNativeAnonymousSubtree() ||
+        root->IsInShadowTree() != aChild->IsInShadowTree()) {
+      return false;
+    }
   }
 
-  return !aChild->ChromeOnlyAccess() && !aChild->GetBindingParent();
+  return !aChild->ChromeOnlyAccess() && !aChild->IsInShadowTree() &&
+         !aChild->IsInNativeAnonymousSubtree();
 }
 
 void HTMLEditor::DoContentInserted(nsIContent* aChild,
