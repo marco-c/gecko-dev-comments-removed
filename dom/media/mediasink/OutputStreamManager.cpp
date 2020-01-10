@@ -88,13 +88,6 @@ OutputStreamData::~OutputStreamData() {
   MOZ_ASSERT(NS_IsMainThread());
 
   
-  
-  
-  if (mInputStream->IsDestroyed()) {
-    return;
-  }
-
-  
   if (mPort) {
     mPort->Destroy();
   }
