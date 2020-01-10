@@ -1575,14 +1575,6 @@ SECStatus AuthCertificateHook(void* arg, PRFileDesc* fd, PRBool checkSig,
     return SECFailure;
   }
 
-  socketInfo->SetFullHandshake();
-
-  Time now(Now());
-  PRTime prnow(PR_Now());
-
-  if (BlockServerCertChangeForSpdy(socketInfo, serverCert) != SECSuccess)
-    return SECFailure;
-
   bool onSTSThread;
   nsresult nrv;
   nsCOMPtr<nsIEventTarget> sts =
@@ -1594,6 +1586,19 @@ SECStatus AuthCertificateHook(void* arg, PRFileDesc* fd, PRBool checkSig,
   if (NS_FAILED(nrv)) {
     NS_ERROR("Could not get STS service or IsOnCurrentThread failed");
     PR_SetError(PR_UNKNOWN_ERROR, 0);
+    return SECFailure;
+  }
+
+  MOZ_ASSERT(onSTSThread);
+
+  if (!onSTSThread) {
+    PR_SetError(PR_INVALID_STATE_ERROR, 0);
+    return SECFailure;
+  }
+
+  socketInfo->SetFullHandshake();
+
+  if (BlockServerCertChangeForSpdy(socketInfo, serverCert) != SECSuccess) {
     return SECFailure;
   }
 
@@ -1622,77 +1627,16 @@ SECStatus AuthCertificateHook(void* arg, PRFileDesc* fd, PRBool checkSig,
   uint32_t providerFlags = 0;
   socketInfo->GetProviderFlags(&providerFlags);
 
-  if (onSTSThread) {
-    
-    
-    
-    
-    socketInfo->SetCertVerificationWaiting();
-    SECStatus rv = SSLServerCertVerificationJob::Dispatch(
-        certVerifier, static_cast<const void*>(fd), socketInfo, serverCert,
-        peerCertChain, stapledOCSPResponse, sctsFromTLSExtension, providerFlags,
-        now, prnow);
-    return rv;
-  }
-
   
   
   
   
-
-  SECStatus rv = AuthCertificate(*certVerifier, socketInfo, serverCert,
-                                 peerCertChain, stapledOCSPResponse,
-                                 sctsFromTLSExtension, providerFlags, now);
-  MOZ_ASSERT((peerCertChain && rv == SECSuccess) ||
-                 (!peerCertChain && rv != SECSuccess),
-             "AuthCertificate() should take ownership of chain on failure");
-  if (rv == SECSuccess) {
-    Telemetry::Accumulate(Telemetry::SSL_CERT_ERROR_OVERRIDES, 1);
-    return SECSuccess;
-  }
-
-  PRErrorCode error = PR_GetError();
-  if (error != 0) {
-    RefPtr<CertErrorRunnable> runnable(CreateCertErrorRunnable(
-        *certVerifier, error, socketInfo, serverCert,
-        static_cast<const void*>(fd), providerFlags, prnow));
-    if (!runnable) {
-      
-      error = PR_GetError();
-    } else {
-      
-      
-      
-      
-      nrv = runnable->DispatchToMainThreadAndWait();
-      if (NS_FAILED(nrv)) {
-        NS_ERROR("Failed to dispatch CertErrorRunnable");
-        PR_SetError(PR_INVALID_STATE_ERROR, 0);
-        return SECFailure;
-      }
-
-      if (!runnable->mResult) {
-        NS_ERROR("CertErrorRunnable did not set result");
-        PR_SetError(PR_INVALID_STATE_ERROR, 0);
-        return SECFailure;
-      }
-
-      if (runnable->mResult->mErrorCode == 0) {
-        return SECSuccess;  
-      }
-
-      socketInfo->SetCanceled(runnable->mResult->mErrorCode);
-      error = runnable->mResult->mErrorCode;
-    }
-  }
-
-  if (error == 0) {
-    NS_ERROR("error code not set");
-    error = PR_UNKNOWN_ERROR;
-  }
-
-  PR_SetError(error, 0);
-  return SECFailure;
+  socketInfo->SetCertVerificationWaiting();
+  SECStatus rv = SSLServerCertVerificationJob::Dispatch(
+      certVerifier, static_cast<const void*>(fd), socketInfo, serverCert,
+      peerCertChain, stapledOCSPResponse, sctsFromTLSExtension, providerFlags,
+      Now(), PR_Now());
+  return rv;
 }
 
 SSLServerCertVerificationResult::SSLServerCertVerificationResult(
