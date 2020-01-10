@@ -1523,8 +1523,18 @@ pref("media.autoplay.default", 1);
   pref("media.autoplay.block-webaudio", false);
 #endif
 
+
+
 #if defined(XP_WIN)
   #if defined(EARLY_BETA_OR_EARLIER) || defined(MOZ_DEV_EDITION)
+    pref("media.videocontrols.picture-in-picture.enabled", true);
+    pref("media.videocontrols.picture-in-picture.video-toggle.enabled", true);
+  #endif
+#endif
+
+
+#if defined(XP_MACOSX) || defined(MOZ_WIDGET_GTK)
+  #if defined(NIGHTLY_BUILD)
     pref("media.videocontrols.picture-in-picture.enabled", true);
     pref("media.videocontrols.picture-in-picture.video-toggle.enabled", true);
   #endif
