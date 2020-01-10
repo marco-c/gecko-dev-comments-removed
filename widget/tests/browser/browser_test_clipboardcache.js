@@ -2,8 +2,9 @@
 
 "use strict";
 
-const { AppConstants } =
-  ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 
 
 
@@ -45,8 +46,9 @@ function getClipboardCacheFDCount() {
     
     
 
-    let {FileUtils} =
-      ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
+    let { FileUtils } = ChromeUtils.import(
+      "resource://gre/modules/FileUtils.jsm"
+    );
     
     dir = FileUtils.getFile("TmpD", ["mozilla-temp-files"]);
   } else {
@@ -71,18 +73,18 @@ function getClipboardCacheFDCount() {
 }
 
 async function testCopyPaste(isPrivate) {
-  let win = await BrowserTestUtils.openNewBrowserWindow({private: isPrivate});
+  let win = await BrowserTestUtils.openNewBrowserWindow({ private: isPrivate });
   let tab = await BrowserTestUtils.openNewForegroundTab(win);
   let browser = tab.linkedBrowser;
 
   
-  await ContentTask.spawn(browser, SHORT_STRING_NO_CACHE, async (shortStr) => {
+  await ContentTask.spawn(browser, SHORT_STRING_NO_CACHE, async shortStr => {
     await content.navigator.clipboard.writeText(shortStr);
   });
 
   let initialFdCount = getClipboardCacheFDCount();
 
-  await ContentTask.spawn(browser, Ipsum, async (largeString) => {
+  await ContentTask.spawn(browser, Ipsum, async largeString => {
     await content.navigator.clipboard.writeText(largeString);
   });
 
@@ -94,13 +96,17 @@ async function testCopyPaste(isPrivate) {
   }
 
   let readStr = await ContentTask.spawn(browser, null, async () => {
-    let {document} = content;
+    let { document } = content;
     document.body.contentEditable = true;
     document.body.focus();
     let pastePromise = new Promise(resolve => {
-      document.addEventListener("paste", e => {
-        resolve(e.clipboardData.getData("text/plain"));
-      }, {once: true});
+      document.addEventListener(
+        "paste",
+        e => {
+          resolve(e.clipboardData.getData("text/plain"));
+        },
+        { once: true }
+      );
     });
     document.execCommand("paste");
     return pastePromise;
@@ -117,7 +123,7 @@ async function testCopyPaste(isPrivate) {
   }
 
   
-  await ContentTask.spawn(browser, SHORT_STRING_NO_CACHE, async (shortStr) => {
+  await ContentTask.spawn(browser, SHORT_STRING_NO_CACHE, async shortStr => {
     await content.navigator.clipboard.writeText(shortStr);
   });
   is(getClipboardCacheFDCount(), initialFdCount, "Drop clipboard cache if any");
