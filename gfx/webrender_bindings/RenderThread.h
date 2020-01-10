@@ -47,7 +47,16 @@ class WebRenderThreadPool {
 
   ~WebRenderThreadPool();
 
-  wr::WrThreadPool* Raw() { return mThreadPool; }
+  wr::WrThreadPool* Raw() {
+    
+    
+    MOZ_RELEASE_ASSERT(mThreadPool);
+    return mThreadPool;
+  }
+
+  
+  
+  void Release();
 
  protected:
   wr::WrThreadPool* mThreadPool;

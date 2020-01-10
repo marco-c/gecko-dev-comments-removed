@@ -117,6 +117,9 @@ void RenderThread::ShutDownTask(layers::SynchronousTask* aTask) {
   MOZ_ASSERT(IsInRenderThread());
 
   
+  mThreadPool.Release();
+
+  
   
   layers::SharedSurfacesParent::Shutdown();
 
@@ -883,8 +886,16 @@ WebRenderThreadPool::WebRenderThreadPool() {
 }
 
 WebRenderThreadPool::~WebRenderThreadPool() {
-  wr_thread_pool_delete(mThreadPool);
+  Release();
 }
+
+void WebRenderThreadPool::Release() {
+  if (mThreadPool) {
+    wr_thread_pool_delete(mThreadPool);
+    mThreadPool = nullptr;
+  }
+}
+
 
 WebRenderProgramCache::WebRenderProgramCache(wr::WrThreadPool* aThreadPool) {
   MOZ_ASSERT(aThreadPool);
@@ -895,7 +906,7 @@ WebRenderProgramCache::WebRenderProgramCache(wr::WrThreadPool* aThreadPool) {
   }
   mProgramCache = wr_program_cache_new(&path, aThreadPool);
   if (gfxVars::UseWebRenderProgramBinaryDisk()) {
-    wr_try_load_startup_shaders_from_disk(mProgramCache);
+    wr_try_load_shader_from_disk(mProgramCache);
   }
 }
 
