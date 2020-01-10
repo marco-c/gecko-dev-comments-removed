@@ -129,15 +129,17 @@ NetworkConnectivityService::RecheckDNS() {
   nsAutoCString host;
   Preferences::GetCString("network.connectivity-service.DNSv4.domain", host);
 
-  rv = dns->AsyncResolveNative(host, nsIDNSService::RESOLVE_DISABLE_IPV6, this,
-                               NS_GetCurrentThread(), attrs,
-                               getter_AddRefs(mDNSv4Request));
+  rv = dns->AsyncResolveNative(
+      host,
+      nsIDNSService::RESOLVE_DISABLE_IPV6 | nsIDNSService::RESOLVE_DISABLE_TRR,
+      this, NS_GetCurrentThread(), attrs, getter_AddRefs(mDNSv4Request));
   NS_ENSURE_SUCCESS(rv, rv);
 
   Preferences::GetCString("network.connectivity-service.DNSv6.domain", host);
-  rv = dns->AsyncResolveNative(host, nsIDNSService::RESOLVE_DISABLE_IPV4, this,
-                               NS_GetCurrentThread(), attrs,
-                               getter_AddRefs(mDNSv6Request));
+  rv = dns->AsyncResolveNative(
+      host,
+      nsIDNSService::RESOLVE_DISABLE_IPV4 | nsIDNSService::RESOLVE_DISABLE_TRR,
+      this, NS_GetCurrentThread(), attrs, getter_AddRefs(mDNSv6Request));
   return rv;
 }
 
@@ -195,9 +197,10 @@ static inline already_AddRefed<nsIChannel> SetupIPCheckChannel(bool ipv4) {
       nullptr,  
       nullptr,  
       nullptr,
-      nsIRequest::LOAD_BYPASS_CACHE |    
-          nsIRequest::INHIBIT_CACHING |  
-          nsIRequest::LOAD_ANONYMOUS);   
+      nsIRequest::LOAD_BYPASS_CACHE |     
+          nsIRequest::INHIBIT_CACHING |   
+          nsIRequest::LOAD_DISABLE_TRR |  
+          nsIRequest::LOAD_ANONYMOUS);    
 
   NS_ENSURE_SUCCESS(rv, nullptr);
 
