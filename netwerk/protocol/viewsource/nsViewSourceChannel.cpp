@@ -41,7 +41,7 @@ NS_INTERFACE_MAP_BEGIN(nsViewSourceChannel)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIViewSourceChannel)
 NS_INTERFACE_MAP_END
 
-nsresult nsViewSourceChannel::Init(nsIURI* uri) {
+nsresult nsViewSourceChannel::Init(nsIURI* uri, nsILoadInfo* aLoadInfo) {
   mOriginalURI = uri;
 
   nsAutoCString path;
@@ -61,23 +61,12 @@ nsresult nsViewSourceChannel::Init(nsIURI* uri) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIPrincipal> nullPrincipal =
-      mozilla::NullPrincipal::CreateWithoutOriginAttributes();
+  nsCOMPtr<nsIURI> newChannelURI;
+  rv = pService->NewURI(path, nullptr, nullptr, getter_AddRefs(newChannelURI));
+  NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = pService->NewChannel(
-      path,
-      nullptr,  
-      nullptr,  
-      nullptr,  
-      nullPrincipal,
-      nullptr,  
-      nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED,
-      nsIContentPolicy::TYPE_OTHER, getter_AddRefs(mChannel));
+  rv = pService->NewChannelFromURIWithLoadInfo(newChannelURI, aLoadInfo,
+                                               getter_AddRefs(mChannel));
   NS_ENSURE_SUCCESS(rv, rv);
 
   mIsSrcdocChannel = false;
