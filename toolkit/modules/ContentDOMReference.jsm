@@ -18,9 +18,10 @@ var EXPORTED_SYMBOLS = ["ContentDOMReference"];
 
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-XPCOMUtils.defineLazyServiceGetter(this, "gUUIDGenerator",
-                                   "@mozilla.org/uuid-generator;1",
-                                   "nsIUUIDGenerator");
+
+
+
+
 
 
 
@@ -53,24 +54,24 @@ var ContentDOMReference = {
     let mappings = gRegistry.get(browsingContext);
     if (!mappings) {
       mappings = {
-        UUIDToElement: new Map(),
-        elementToUUID: new WeakMap(),
+        IDToElement: new Map(),
+        elementToID: new WeakMap(),
       };
       gRegistry.set(browsingContext, mappings);
     }
 
-    let uuid = mappings.elementToUUID.get(element);
-    if (uuid) {
+    let id = mappings.elementToID.get(element);
+    if (id) {
       
-      return { browsingContextId: browsingContext.id, uuid };
+      return { browsingContextId: browsingContext.id, id };
     }
 
     
-    uuid = gUUIDGenerator.generateUUID().toString();
-    mappings.elementToUUID.set(element, uuid);
-    mappings.UUIDToElement.set(uuid, Cu.getWeakReference(element));
+    id = Math.random();
+    mappings.elementToID.set(element, id);
+    mappings.IDToElement.set(id, Cu.getWeakReference(element));
 
-    return { browsingContextId: browsingContext.id, uuid };
+    return { browsingContextId: browsingContext.id, id };
   },
 
   
@@ -83,8 +84,8 @@ var ContentDOMReference = {
 
   resolve(identifier) {
     let browsingContext = BrowsingContext.get(identifier.browsingContextId);
-    let uuid = identifier.uuid;
-    return this._resolveUUIDToElement(browsingContext, uuid);
+    let {id} = identifier;
+    return this._resolveIDToElement(browsingContext, id);
   },
 
   
@@ -99,19 +100,19 @@ var ContentDOMReference = {
 
   revoke(identifier) {
     let browsingContext = BrowsingContext.get(identifier.browsingContextId);
-    let uuid = identifier.uuid;
+    let {id} = identifier;
 
     let mappings = gRegistry.get(browsingContext);
     if (!mappings) {
       return;
     }
 
-    let element = this._resolveUUIDToElement(browsingContext, uuid);
+    let element = this._resolveIDToElement(browsingContext, id);
     if (element) {
-      mappings.elementToUUID.delete(element);
+      mappings.elementToID.delete(element);
     }
 
-    mappings.UUIDToElement.delete(uuid);
+    mappings.IDToElement.delete(id);
   },
 
   
@@ -125,13 +126,13 @@ var ContentDOMReference = {
 
 
 
-  _resolveUUIDToElement(browsingContext, uuid) {
+  _resolveIDToElement(browsingContext, id) {
     let mappings = gRegistry.get(browsingContext);
     if (!mappings) {
       return null;
     }
 
-    let weakReference = mappings.UUIDToElement.get(uuid);
+    let weakReference = mappings.IDToElement.get(id);
     if (!weakReference) {
       return null;
     }
