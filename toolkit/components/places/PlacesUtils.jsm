@@ -1641,6 +1641,13 @@ var PlacesUtils = {
   
 
 
+  invalidateCachedGuids() {
+    GuidHelper.invalidateCache();
+  },
+
+  
+
+
 
 
 
@@ -2908,6 +2915,11 @@ var GuidHelper = {
     let guid = this.guidsForIds.get(aItemId);
     this.guidsForIds.delete(aItemId);
     this.idsForGuids.delete(guid);
+  },
+
+  invalidateCache() {
+    this.guidsForIds.clear();
+    this.idsForGuids.clear();
   },
 
   ensureObservingRemovedItems() {

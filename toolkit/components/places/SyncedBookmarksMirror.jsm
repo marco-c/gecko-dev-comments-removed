@@ -307,6 +307,7 @@ class SyncedBookmarksMirror {
     
     
     this.progress = new ProgressTracker(recordStepTelemetry);
+    this.finalizeController = new AbortController();
     this.finalizeAt = finalizeAt;
     this.finalizeBound = () => this.finalize({ alsoCleanup: false });
     this.finalizeAt.addBlocker(
@@ -592,6 +593,10 @@ class SyncedBookmarksMirror {
 
 
 
+
+
+
+
   async apply(options = {}) {
     let hasChanges =
       ("weakUpload" in options && options.weakUpload.length > 0) ||
@@ -616,14 +621,20 @@ class SyncedBookmarksMirror {
     remoteTimeSeconds = 0,
     weakUpload = [],
     maxFrecenciesToRecalculate = DEFAULT_MAX_FRECENCIES_TO_RECALCULATE,
+    signal = null,
   } = {}) {
     
     
     
     
 
+    let finalizeOrInterruptSignal = anyAborted(
+      this.finalizeController.signal,
+      signal
+    );
     let observersToNotify = new BookmarkObserverRecorder(this.db, {
       maxFrecenciesToRecalculate,
+      signal: finalizeOrInterruptSignal,
     });
 
     if (!(await this.validLocalRoots())) {
@@ -638,7 +649,8 @@ class SyncedBookmarksMirror {
         localTimeSeconds,
         remoteTimeSeconds,
         observersToNotify,
-        weakUpload
+        weakUpload,
+        finalizeOrInterruptSignal
       );
     } finally {
       this.progress.reset();
@@ -651,10 +663,16 @@ class SyncedBookmarksMirror {
     localTimeSeconds,
     remoteTimeSeconds,
     observersToNotify,
-    weakUpload
+    weakUpload,
+    signal
   ) {
     await withTiming("Merging bookmarks in Rust", () => {
       return new Promise((resolve, reject) => {
+        let op = null;
+        function onAbort() {
+          signal.removeEventListener("abort", onAbort);
+          op.cancel();
+        }
         let callback = {
           QueryInterface: ChromeUtils.generateQI([
             Ci.mozISyncedBookmarksMirrorProgressListener,
@@ -706,8 +724,12 @@ class SyncedBookmarksMirror {
             this.progress.stepWithTelemetry(ProgressTracker.STEPS.APPLY, took);
           },
           
-          handleSuccess: resolve,
+          handleSuccess(result) {
+            signal.removeEventListener("abort", onAbort);
+            resolve(result);
+          },
           handleError(code, message) {
+            signal.removeEventListener("abort", onAbort);
             switch (code) {
               case Cr.NS_ERROR_STORAGE_BUSY:
                 reject(
@@ -718,11 +740,7 @@ class SyncedBookmarksMirror {
                 break;
 
               case Cr.NS_ERROR_ABORT:
-                reject(
-                  new SyncedBookmarksMirror.ShutdownError(
-                    "Merge interrupted at shutdown"
-                  )
-                );
+                reject(new SyncedBookmarksMirror.InterruptedError(message));
                 break;
 
               default:
@@ -730,12 +748,17 @@ class SyncedBookmarksMirror {
             }
           },
         };
-        this.merger.merge(
+        op = this.merger.merge(
           localTimeSeconds,
           remoteTimeSeconds,
           weakUpload,
           callback
         );
+        if (signal.aborted) {
+          op.cancel();
+        } else {
+          signal.addEventListener("abort", onAbort);
+        }
       });
     });
 
@@ -752,6 +775,11 @@ class SyncedBookmarksMirror {
           
           await observersToNotify.notifyAll();
         } catch (ex) {
+          
+          
+          
+          PlacesUtils.invalidateCachedGuids();
+          await PlacesUtils.keywords.invalidateCachedKeywords();
           MirrorLog.warn("Error notifying Places observers", ex);
         } finally {
           await this.db.executeTransaction(async () => {
@@ -774,7 +802,7 @@ class SyncedBookmarksMirror {
       "Fetching records for local items to upload",
       async () => {
         try {
-          let changeRecords = await this.fetchLocalChangeRecords();
+          let changeRecords = await this.fetchLocalChangeRecords(signal);
           return changeRecords;
         } finally {
           await this.db.execute(`DELETE FROM itemsToUpload`);
@@ -1149,18 +1177,38 @@ class SyncedBookmarksMirror {
 
 
 
-  async fetchLocalChangeRecords() {
+
+
+
+  async fetchLocalChangeRecords(signal) {
     let changeRecords = {};
     let childRecordIdsByLocalParentId = new Map();
     let tagsByLocalId = new Map();
 
-    let childGuidRows = await this.db.execute(`
-      SELECT parentId, guid FROM structureToUpload
-      ORDER BY parentId, position`);
+    let childGuidRows = [];
+    await this.db.execute(
+      `SELECT parentId, guid FROM structureToUpload
+       ORDER BY parentId, position`,
+      null,
+      (row, cancel) => {
+        if (signal.aborted) {
+          cancel();
+        } else {
+          
+          
+          childGuidRows.push(row);
+        }
+      }
+    );
 
     await Async.yieldingForEach(
       childGuidRows,
       row => {
+        if (signal.aborted) {
+          throw new SyncedBookmarksMirror.InterruptedError(
+            "Interrupted while fetching structure to upload"
+          );
+        }
         let localParentId = row.getResultByName("parentId");
         let childRecordId = PlacesSyncUtils.bookmarks.guidToRecordId(
           row.getResultByName("guid")
@@ -1175,12 +1223,27 @@ class SyncedBookmarksMirror {
       yieldState
     );
 
-    let tagRows = await this.db.execute(`
-      SELECT id, tag FROM tagsToUpload`);
+    let tagRows = [];
+    await this.db.execute(
+      `SELECT id, tag FROM tagsToUpload`,
+      null,
+      (row, cancel) => {
+        if (signal.aborted) {
+          cancel();
+        } else {
+          tagRows.push(row);
+        }
+      }
+    );
 
     await Async.yieldingForEach(
       tagRows,
       row => {
+        if (signal.aborted) {
+          throw new SyncedBookmarksMirror.InterruptedError(
+            "Interrupted while fetching tags to upload"
+          );
+        }
         let localId = row.getResultByName("id");
         let tag = row.getResultByName("tag");
         let tags = tagsByLocalId.get(localId);
@@ -1193,16 +1256,31 @@ class SyncedBookmarksMirror {
       yieldState
     );
 
-    let itemRows = await this.db.execute(`
-      SELECT id, syncChangeCounter, guid, isDeleted, type, isQuery,
-             tagFolderName, keyword, url, IFNULL(title, '') AS title,
-             position, parentGuid,
-             IFNULL(parentTitle, '') AS parentTitle, dateAdded
-      FROM itemsToUpload`);
+    let itemRows = [];
+    await this.db.execute(
+      `SELECT id, syncChangeCounter, guid, isDeleted, type, isQuery,
+              tagFolderName, keyword, url, IFNULL(title, '') AS title,
+              position, parentGuid,
+              IFNULL(parentTitle, '') AS parentTitle, dateAdded
+       FROM itemsToUpload`,
+      null,
+      (row, cancel) => {
+        if (signal.interrupted) {
+          cancel();
+        } else {
+          itemRows.push(row);
+        }
+      }
+    );
 
     await Async.yieldingForEach(
       itemRows,
       row => {
+        if (signal.aborted) {
+          throw new SyncedBookmarksMirror.InterruptedError(
+            "Interrupted while fetching items to upload"
+          );
+        }
         let syncChangeCounter = row.getResultByName("syncChangeCounter");
 
         let guid = row.getResultByName("guid");
@@ -1348,7 +1426,8 @@ class SyncedBookmarksMirror {
     if (!this.finalizePromise) {
       this.finalizePromise = (async () => {
         this.progress.step(ProgressTracker.STEPS.FINALIZE);
-        this.merger.finalize();
+        this.finalizeController.abort();
+        this.merger.reset();
         if (alsoCleanup) {
           
           
@@ -1376,16 +1455,13 @@ SyncedBookmarksMirror.META_KEY = {
 
 
 
-class ShutdownError extends Error {
+class InterruptedError extends Error {
   constructor(message) {
     super(message);
-    this.name = "ShutdownError";
-    
-    
-    this.appIsShuttingDown = true;
+    this.name = "InterruptedError";
   }
 }
-SyncedBookmarksMirror.ShutdownError = ShutdownError;
+SyncedBookmarksMirror.InterruptedError = InterruptedError;
 
 
 
@@ -2026,9 +2102,10 @@ async function withTiming(name, func, recordTiming) {
 
 
 class BookmarkObserverRecorder {
-  constructor(db, { maxFrecenciesToRecalculate }) {
+  constructor(db, { maxFrecenciesToRecalculate, signal }) {
     this.db = db;
     this.maxFrecenciesToRecalculate = maxFrecenciesToRecalculate;
+    this.signal = signal;
     this.placesEvents = [];
     this.itemRemovedNotifications = [];
     this.guidChangedArgs = [];
@@ -2048,6 +2125,11 @@ class BookmarkObserverRecorder {
       await PlacesUtils.keywords.invalidateCachedKeywords();
     }
     await this.notifyBookmarkObservers();
+    if (this.signal.aborted) {
+      throw new SyncedBookmarksMirror.InterruptedError(
+        "Interrupted before recalculating frecencies for new URLs"
+      );
+    }
     await updateFrecencies(this.db, this.maxFrecenciesToRecalculate);
   }
 
@@ -2061,15 +2143,18 @@ class BookmarkObserverRecorder {
     
     
     
-    let removedItemRows = await this.db.execute(`
-      SELECT v.itemId AS id, v.parentId, v.parentGuid, v.position, v.type,
-             h.url, v.guid, v.isUntagging
-      FROM itemsRemoved v
-      LEFT JOIN moz_places h ON h.id = v.placeId
-      ORDER BY v.level DESC, v.parentId, v.position`);
-    await Async.yieldingForEach(
-      removedItemRows,
-      row => {
+    await this.db.execute(
+      `SELECT v.itemId AS id, v.parentId, v.parentGuid, v.position, v.type,
+              h.url, v.guid, v.isUntagging
+       FROM itemsRemoved v
+       LEFT JOIN moz_places h ON h.id = v.placeId
+       ORDER BY v.level DESC, v.parentId, v.position`,
+      null,
+      (row, cancel) => {
+        if (this.signal.aborted) {
+          cancel();
+          return;
+        }
         let info = {
           id: row.getResultByName("id"),
           parentId: row.getResultByName("parentId"),
@@ -2081,21 +2166,28 @@ class BookmarkObserverRecorder {
           isUntagging: row.getResultByName("isUntagging"),
         };
         this.noteItemRemoved(info);
-      },
-      yieldState
+      }
     );
+    if (this.signal.aborted) {
+      throw new SyncedBookmarksMirror.InterruptedError(
+        "Interrupted while recording observer notifications for removed items"
+      );
+    }
 
     MirrorLog.trace("Recording observer notifications for changed GUIDs");
-    let changedGuidRows = await this.db.execute(`
-      SELECT b.id, b.lastModified, b.type, b.guid AS newGuid,
-             c.oldGuid, p.id AS parentId, p.guid AS parentGuid
-      FROM guidsChanged c
-      JOIN moz_bookmarks b ON b.id = c.itemId
-      JOIN moz_bookmarks p ON p.id = b.parent
-      ORDER BY c.level, p.id, b.position`);
-    await Async.yieldingForEach(
-      changedGuidRows,
-      row => {
+    await this.db.execute(
+      `SELECT b.id, b.lastModified, b.type, b.guid AS newGuid,
+              c.oldGuid, p.id AS parentId, p.guid AS parentGuid
+       FROM guidsChanged c
+       JOIN moz_bookmarks b ON b.id = c.itemId
+       JOIN moz_bookmarks p ON p.id = b.parent
+       ORDER BY c.level, p.id, b.position`,
+      null,
+      (row, cancel) => {
+        if (this.signal.aborted) {
+          cancel();
+          return;
+        }
         let info = {
           id: row.getResultByName("id"),
           lastModified: row.getResultByName("lastModified"),
@@ -2106,23 +2198,30 @@ class BookmarkObserverRecorder {
           parentGuid: row.getResultByName("parentGuid"),
         };
         this.noteGuidChanged(info);
-      },
-      yieldState
+      }
     );
+    if (this.signal.aborted) {
+      throw new SyncedBookmarksMirror.InterruptedError(
+        "Interrupted while recording observer notifications for changed GUIDs"
+      );
+    }
 
     MirrorLog.trace("Recording observer notifications for new items");
-    let newItemRows = await this.db.execute(`
-      SELECT b.id, p.id AS parentId, b.position, b.type, h.url,
+    await this.db.execute(
+      `SELECT b.id, p.id AS parentId, b.position, b.type, h.url,
              IFNULL(b.title, '') AS title, b.dateAdded, b.guid,
              p.guid AS parentGuid, n.isTagging, n.keywordChanged
-      FROM itemsAdded n
-      JOIN moz_bookmarks b ON b.guid = n.guid
-      JOIN moz_bookmarks p ON p.id = b.parent
-      LEFT JOIN moz_places h ON h.id = b.fk
-      ORDER BY n.level, p.id, b.position`);
-    await Async.yieldingForEach(
-      newItemRows,
-      row => {
+       FROM itemsAdded n
+       JOIN moz_bookmarks b ON b.guid = n.guid
+       JOIN moz_bookmarks p ON p.id = b.parent
+       LEFT JOIN moz_places h ON h.id = b.fk
+       ORDER BY n.level, p.id, b.position`,
+      null,
+      (row, cancel) => {
+        if (this.signal.aborted) {
+          cancel();
+          return;
+        }
         let info = {
           id: row.getResultByName("id"),
           parentId: row.getResultByName("parentId"),
@@ -2139,23 +2238,30 @@ class BookmarkObserverRecorder {
         if (row.getResultByName("keywordChanged")) {
           this.shouldInvalidateKeywords = true;
         }
-      },
-      yieldState
+      }
     );
+    if (this.signal.aborted) {
+      throw new SyncedBookmarksMirror.InterruptedError(
+        "Interrupted while recording observer notifications for new items"
+      );
+    }
 
     MirrorLog.trace("Recording observer notifications for moved items");
-    let movedItemRows = await this.db.execute(`
-      SELECT b.id, b.guid, b.type, p.id AS newParentId, c.oldParentId,
-             p.guid AS newParentGuid, c.oldParentGuid,
-             b.position AS newPosition, c.oldPosition, h.url
-      FROM itemsMoved c
-      JOIN moz_bookmarks b ON b.id = c.itemId
-      JOIN moz_bookmarks p ON p.id = b.parent
-      LEFT JOIN moz_places h ON h.id = b.fk
-      ORDER BY c.level, newParentId, newPosition`);
-    await Async.yieldingForEach(
-      movedItemRows,
-      row => {
+    await this.db.execute(
+      `SELECT b.id, b.guid, b.type, p.id AS newParentId, c.oldParentId,
+              p.guid AS newParentGuid, c.oldParentGuid,
+              b.position AS newPosition, c.oldPosition, h.url
+       FROM itemsMoved c
+       JOIN moz_bookmarks b ON b.id = c.itemId
+       JOIN moz_bookmarks p ON p.id = b.parent
+       LEFT JOIN moz_places h ON h.id = b.fk
+       ORDER BY c.level, newParentId, newPosition`,
+      null,
+      (row, cancel) => {
+        if (this.signal.aborted) {
+          cancel();
+          return;
+        }
         let info = {
           id: row.getResultByName("id"),
           guid: row.getResultByName("guid"),
@@ -2169,27 +2275,34 @@ class BookmarkObserverRecorder {
           urlHref: row.getResultByName("url"),
         };
         this.noteItemMoved(info);
-      },
-      yieldState
+      }
     );
+    if (this.signal.aborted) {
+      throw new SyncedBookmarksMirror.InterruptedError(
+        "Interrupted while recording observer notifications for moved items"
+      );
+    }
 
     MirrorLog.trace("Recording observer notifications for changed items");
-    let changedItemRows = await this.db.execute(`
-      SELECT b.id, b.guid, b.lastModified, b.type,
-             IFNULL(b.title, '') AS newTitle,
-             IFNULL(c.oldTitle, '') AS oldTitle,
-             h.url AS newURL, i.url AS oldURL,
-             p.id AS parentId, p.guid AS parentGuid,
-             c.keywordChanged
-      FROM itemsChanged c
-      JOIN moz_bookmarks b ON b.id = c.itemId
-      JOIN moz_bookmarks p ON p.id = b.parent
-      LEFT JOIN moz_places h ON h.id = b.fk
-      LEFT JOIN moz_places i ON i.id = c.oldPlaceId
-      ORDER BY c.level, p.id, b.position`);
-    await Async.yieldingForEach(
-      changedItemRows,
-      row => {
+    await this.db.execute(
+      `SELECT b.id, b.guid, b.lastModified, b.type,
+              IFNULL(b.title, '') AS newTitle,
+              IFNULL(c.oldTitle, '') AS oldTitle,
+              h.url AS newURL, i.url AS oldURL,
+              p.id AS parentId, p.guid AS parentGuid,
+              c.keywordChanged
+       FROM itemsChanged c
+       JOIN moz_bookmarks b ON b.id = c.itemId
+       JOIN moz_bookmarks p ON p.id = b.parent
+       LEFT JOIN moz_places h ON h.id = b.fk
+       LEFT JOIN moz_places i ON i.id = c.oldPlaceId
+       ORDER BY c.level, p.id, b.position`,
+      null,
+      (row, cancel) => {
+        if (this.signal.aborted) {
+          cancel();
+          return;
+        }
         let info = {
           id: row.getResultByName("id"),
           guid: row.getResultByName("guid"),
@@ -2206,9 +2319,13 @@ class BookmarkObserverRecorder {
         if (row.getResultByName("keywordChanged")) {
           this.shouldInvalidateKeywords = true;
         }
-      },
-      yieldState
+      }
     );
+    if (this.signal.aborted) {
+      throw new SyncedBookmarksMirror.InterruptedError(
+        "Interrupted while recording observer notifications for changed items"
+      );
+    }
   }
 
   noteItemAdded(info) {
@@ -2321,6 +2438,11 @@ class BookmarkObserverRecorder {
     await Async.yieldingForEach(
       this.itemRemovedNotifications,
       info => {
+        if (this.signal.aborted) {
+          throw new SyncedBookmarksMirror.InterruptedError(
+            "Interrupted while notifying observers for removed items"
+          );
+        }
         this.notifyObserversWithInfo(observers, "onItemRemoved", info);
       },
       yieldState
@@ -2328,6 +2450,11 @@ class BookmarkObserverRecorder {
     await Async.yieldingForEach(
       this.guidChangedArgs,
       args => {
+        if (this.signal.aborted) {
+          throw new SyncedBookmarksMirror.InterruptedError(
+            "Interrupted while notifying observers for changed GUIDs"
+          );
+        }
         this.notifyObserversWithInfo(observers, "onItemChanged", {
           isTagging: false,
           args,
@@ -2335,10 +2462,20 @@ class BookmarkObserverRecorder {
       },
       yieldState
     );
+    if (this.signal.aborted) {
+      throw new SyncedBookmarksMirror.InterruptedError(
+        "Interrupted before notifying observers for new items"
+      );
+    }
     PlacesObservers.notifyListeners(this.placesEvents);
     await Async.yieldingForEach(
       this.itemMovedArgs,
       args => {
+        if (this.signal.aborted) {
+          throw new SyncedBookmarksMirror.InterruptedError(
+            "Interrupted before notifying observers for moved items"
+          );
+        }
         this.notifyObserversWithInfo(observers, "onItemMoved", {
           isTagging: false,
           args,
@@ -2349,6 +2486,11 @@ class BookmarkObserverRecorder {
     await Async.yieldingForEach(
       this.itemChangedArgs,
       args => {
+        if (this.signal.aborted) {
+          throw new SyncedBookmarksMirror.InterruptedError(
+            "Interrupted before notifying observers for changed items"
+          );
+        }
         this.notifyObserversWithInfo(observers, "onItemChanged", {
           isTagging: false,
           args,
@@ -2411,13 +2553,42 @@ async function updateFrecencies(db, limit) {
     )`,
     { limit }
   );
-
-  
-  await db.execute(`DELETE FROM moz_updateoriginsupdate_temp`);
 }
 
 function bagToNamedCounts(bag, names) {
   return names.map(name => ({ name, count: bag.getProperty(name) }));
+}
+
+
+
+
+
+
+
+
+
+
+function anyAborted(finalizeSignal, interruptSignal = null) {
+  if (finalizeSignal.aborted || !interruptSignal) {
+    
+    
+    return finalizeSignal;
+  }
+  if (interruptSignal.aborted) {
+    
+    return interruptSignal;
+  }
+  
+  
+  let controller = new AbortController();
+  function onAbort() {
+    finalizeSignal.removeEventListener("abort", onAbort);
+    interruptSignal.removeEventListener("abort", onAbort);
+    controller.abort();
+  }
+  finalizeSignal.addEventListener("abort", onAbort);
+  interruptSignal.addEventListener("abort", onAbort);
+  return controller.signal;
 }
 
 
