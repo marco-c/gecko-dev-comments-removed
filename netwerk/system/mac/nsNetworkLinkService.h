@@ -65,6 +65,11 @@ class nsNetworkLinkService : public nsINetworkLinkService,
   
   
   nsCOMPtr<nsITimer> mNetworkIdTimer;
+
+  
+  mozilla::TimeStamp mChangeTime_1min;
+  
+  mozilla::TimeStamp mChangeTime_5min;
 };
 
 #endif 
