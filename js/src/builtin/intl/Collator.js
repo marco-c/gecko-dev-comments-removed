@@ -323,20 +323,23 @@ function collatorSearchLocaleData() {
 
 
 
-function collatorCompareToBind(x, y) {
+function createCollatorCompare(collator) {
     
-    var collator = this;
+    
+    return function(x, y) {
+        
 
-    
-    assert(IsObject(collator), "collatorCompareToBind called with non-object");
-    assert(GuardToCollator(collator) !== null, "collatorCompareToBind called with non-Collator");
+        
+        assert(IsObject(collator), "collatorCompareToBind called with non-object");
+        assert(GuardToCollator(collator) !== null, "collatorCompareToBind called with non-Collator");
 
-    
-    var X = ToString(x);
-    var Y = ToString(y);
+        
+        var X = ToString(x);
+        var Y = ToString(y);
 
-    
-    return intl_CompareStrings(collator, X, Y);
+        
+        return intl_CompareStrings(collator, X, Y);
+    };
 }
 
 
@@ -363,10 +366,7 @@ function $Intl_Collator_compare_get() {
     
     if (internals.boundCompare === undefined) {
         
-        var F = callFunction(FunctionBind, collatorCompareToBind, collator);
-
-        
-        internals.boundCompare = F;
+        internals.boundCompare = createCollatorCompare(collator);
     }
 
     

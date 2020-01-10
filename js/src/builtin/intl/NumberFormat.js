@@ -682,19 +682,22 @@ function numberFormatLocaleData() {
 
 
 
-function numberFormatFormatToBind(value) {
+function createNumberFormatFormat(nf) {
     
-    var nf = this;
+    
+    return function(value) {
+        
 
-    
-    assert(IsObject(nf), "InitializeNumberFormat called with non-object");
-    assert(GuardToNumberFormat(nf) !== null, "InitializeNumberFormat called with non-NumberFormat");
+        
+        assert(IsObject(nf), "InitializeNumberFormat called with non-object");
+        assert(GuardToNumberFormat(nf) !== null, "InitializeNumberFormat called with non-NumberFormat");
 
-    
-    var x = ToNumeric(value);
+        
+        var x = ToNumeric(value);
 
-    
-    return intl_FormatNumber(nf, x,  false);
+        
+        return intl_FormatNumber(nf, x,  false);
+    };
 }
 
 
@@ -720,10 +723,7 @@ function $Intl_NumberFormat_format_get() {
     
     if (internals.boundFormat === undefined) {
         
-        var F = callFunction(FunctionBind, numberFormatFormatToBind, nf);
-
-        
-        internals.boundFormat = F;
+        internals.boundFormat = createNumberFormatFormat(nf);
     }
 
     
