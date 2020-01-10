@@ -245,9 +245,6 @@ pref("browser.download.forbid_open_with", false);
 pref("dom.registerProtocolHandler.insecure.enabled", false);
 
 
-pref("dom.quotaManager.testing", false);
-
-
 pref("dom.indexedDB.enabled", true);
 
 pref("dom.indexedDB.experimental", false);
@@ -310,12 +307,7 @@ pref("dom.keyboardevent.keypress.hack.use_legacy_keycode_and_charcode.addl", "")
 
 pref("dom.mouseevent.click.hack.use_legacy_non-primary_dispatch", "");
 
-
-pref("dom.inputevent.datatransfer.enabled", true);
-
 #ifdef JS_BUILD_BINAST
-  pref("dom.script_loader.binast_encoding.enabled", false);
-
   
   
   
@@ -2943,8 +2935,6 @@ pref("dom.ipc.plugins.reportCrashURL", true);
 pref("dom.ipc.plugins.unloadTimeoutSecs", 30);
 
 
-pref("dom.ipc.plugins.asyncdrawing.enabled", true);
-
 pref("dom.ipc.plugins.forcedirect.enabled", true);
 
 
@@ -4699,31 +4689,6 @@ pref("io.activity.enabled", false);
 
 pref("jsloader.shareGlobal", true);
 
-
-
-
-
-
-
-
-pref("dom.vr.autoactivate.enabled", false);
-
-pref("dom.vr.controller_trigger_threshold", "0.1");
-
-
-pref("dom.vr.external.notdetected.timeout", 60000);
-
-
-
-
-
-pref("dom.vr.external.quit.timeout", 10000);
-
-
-
-
-
-pref("dom.vr.navigation.timeout", 5000);
 
 pref("gfx.vr.osvr.utilLibPath", "");
 pref("gfx.vr.osvr.commonLibPath", "");
