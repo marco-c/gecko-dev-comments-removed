@@ -8587,6 +8587,8 @@ bool BaseCompiler::emitLoop() {
     topBlockResults(params);
     masm.nopAlign(CodeAlignment);
     masm.bind(&controlItem(0).label);
+    
+    sync();
     if (!addInterruptCheck()) {
       return false;
     }
