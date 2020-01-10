@@ -230,6 +230,9 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   
   bool mDestroyed;
 
+  
+  std::set<std::string> mRegisteredMDNSHostnames;
+
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PeerConnectionMedia)
 };
 
