@@ -555,13 +555,6 @@ const startupPhases = {
       close: 1,
     },
     {
-      
-      path: "XREAppDist:searchplugins",
-      condition: WIN,
-      ignoreIfUnused: true, 
-      stat: 1,
-    },
-    {
       path: "XCurProcD:extensions",
       condition: WIN,
       stat: 1,
@@ -664,13 +657,6 @@ const startupPhases = {
       condition: WIN,
       ignoreIfUnused: true,
       stat: 3,
-    },
-    {
-      
-      path: "XREAppDist:searchplugins",
-      condition: WIN,
-      ignoreIfUnused: true, 
-      stat: 1,
     },
   ],
 };
