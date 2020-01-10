@@ -6936,7 +6936,7 @@ static bool HandleInstantiationFailure(JSContext* cx, CallArgs args,
   
   
   if (metadata.strict) {
-    options.setForceStrictMode();
+    options.strictOption = true;
   }
 
   AutoStableStringChars stableChars(cx);

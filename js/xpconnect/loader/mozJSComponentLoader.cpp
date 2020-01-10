@@ -845,7 +845,7 @@ nsresult mozJSComponentLoader::ObjectForLocation(
     
     CompileOptions options(cx);
     options.setNoScriptRval(true)
-        .setForceStrictMode()
+        .maybeMakeStrictMode(true)
         .setFileAndLine(nativePath.get(), 1)
         .setSourceIsLazy(cache || ScriptPreloader::GetSingleton().Active());
 
