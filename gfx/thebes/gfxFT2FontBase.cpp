@@ -476,8 +476,13 @@ bool gfxFT2FontBase::ShouldRoundXOffset(cairo_t* aCairo) const {
   
   
   
+  
+  
+  
   return aCairo != nullptr || !mFTFace || !FT_IS_SCALABLE(mFTFace->GetFace()) ||
-         (mFTLoadFlags & FT_LOAD_MONOCHROME);
+         (mFTLoadFlags & FT_LOAD_MONOCHROME) ||
+         !((mFTLoadFlags & FT_LOAD_NO_HINTING) ||
+           FT_LOAD_TARGET_MODE(mFTLoadFlags) == FT_RENDER_MODE_LIGHT);
 }
 
 FT_Vector gfxFT2FontBase::GetEmboldenStrength(FT_Face aFace) {
