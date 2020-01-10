@@ -187,7 +187,7 @@ class Classifier {
 
 
   nsresult ApplyUpdatesBackground(TableUpdateArray& aUpdates,
-                                  nsACString& aFailedTableName);
+                                  nsTArray<nsCString>& aFailedTableNames);
 
   
 
@@ -200,7 +200,7 @@ class Classifier {
 
 
   nsresult ApplyUpdatesForeground(nsresult aBackgroundRv,
-                                  const nsACString& aFailedTableName);
+                                  const nsTArray<nsCString>& aFailedTableNames);
 
   
   bool ShouldAbort() const;
