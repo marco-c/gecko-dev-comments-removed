@@ -2489,7 +2489,7 @@ static void UpdateBackdropIfNeeded(nsIFrame* aFrame, ServoStyleSet& aStyleSet,
   MOZ_ASSERT(backdropFrame->GetParent()->IsViewportFrame() ||
              backdropFrame->GetParent()->IsCanvasFrame());
   nsTArray<nsIFrame*> wrappersToRestyle;
-  nsTArray<nsIFrame*> anchorsToSuppress;
+  nsTArray<RefPtr<Element>> anchorsToSuppress;
   ServoRestyleState state(aStyleSet, aChangeList, wrappersToRestyle,
                           anchorsToSuppress);
   nsIFrame::UpdateStyleOfOwnedChildFrame(backdropFrame, newStyle, state);
@@ -2746,8 +2746,9 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
   
   
   if (changeHint & nsChangeHint_ReconstructFrame) {
-    if (wasRestyled && styleFrame) {
-      auto* oldDisp = styleFrame->StyleDisplay();
+    if (wasRestyled) {
+      const bool wasAbsPos =
+        styleFrame && styleFrame->StyleDisplay()->IsAbsolutelyPositionedStyle();
       auto* newDisp = upToDateStyleIfRestyled->StyleDisplay();
       
       
@@ -2759,10 +2760,11 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
       
       
       
-      if (newDisp->mDisplay != StyleDisplay::None &&
-          oldDisp->IsAbsolutelyPositionedStyle() !=
-              newDisp->IsAbsolutelyPositionedStyle()) {
-        aRestyleState.AddPendingScrollAnchorSuppression(styleFrame);
+      
+      
+      
+      if (wasAbsPos != newDisp->IsAbsolutelyPositionedStyle()) {
+        aRestyleState.AddPendingScrollAnchorSuppression(aElement);
       }
     }
     ClearRestyleStateFromSubtree(aElement);
@@ -3063,14 +3065,13 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
     nsStyleChangeList currentChanges;
     bool anyStyleChanged = false;
 
-    nsTArray<RefPtr<nsIContent>> anchorContentToSuppress;
+    
+    
+    nsTArray<RefPtr<Element>> anchorsToSuppress;
 
-    
-    
     {
       AutoRestyleTimelineMarker marker(presContext->GetDocShell(), false);
       DocumentStyleRootIterator iter(doc->GetServoRestyleRoot());
-      nsTArray<nsIFrame*> anchorsToSuppress;
       while (Element* root = iter.GetNextStyleRoot()) {
         nsTArray<nsIFrame*> wrappersToRestyle;
         ServoRestyleState state(*styleSet, currentChanges, wrappersToRestyle,
@@ -3082,13 +3083,12 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
       
       
       
-      anchorContentToSuppress.SetCapacity(anchorsToSuppress.Length());
-      for (nsIFrame* frame : anchorsToSuppress) {
-        MOZ_ASSERT(frame->GetContent());
-        if (auto* container = ScrollAnchorContainer::FindFor(frame)) {
-          container->SuppressAdjustments();
+      for (Element* element : anchorsToSuppress) {
+        if (nsIFrame* frame = element->GetPrimaryFrame()) {
+          if (auto* container = ScrollAnchorContainer::FindFor(frame)) {
+            container->SuppressAdjustments();
+          }
         }
-        anchorContentToSuppress.AppendElement(frame->GetContent());
       }
     }
 
@@ -3126,8 +3126,8 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
 
     
     
-    for (nsIContent* content : anchorContentToSuppress) {
-      if (nsIFrame* frame = content->GetPrimaryFrame()) {
+    for (Element* element : anchorsToSuppress) {
+      if (nsIFrame* frame = element->GetPrimaryFrame()) {
         if (auto* container = ScrollAnchorContainer::FindFor(frame)) {
           container->SuppressAdjustments();
         }

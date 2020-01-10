@@ -42,9 +42,10 @@ class Element;
 
 class ServoRestyleState {
  public:
-  ServoRestyleState(ServoStyleSet& aStyleSet, nsStyleChangeList& aChangeList,
-                    nsTArray<nsIFrame*>& aPendingWrapperRestyles,
-                    nsTArray<nsIFrame*>& aPendingScrollAnchorSuppressions)
+  ServoRestyleState(
+      ServoStyleSet& aStyleSet, nsStyleChangeList& aChangeList,
+      nsTArray<nsIFrame*>& aPendingWrapperRestyles,
+      nsTArray<RefPtr<dom::Element>>& aPendingScrollAnchorSuppressions)
       : mStyleSet(aStyleSet),
         mChangeList(aChangeList),
         mPendingWrapperRestyles(aPendingWrapperRestyles),
@@ -140,8 +141,8 @@ class ServoRestyleState {
   
   
   
-  void AddPendingScrollAnchorSuppression(nsIFrame* aFrame) {
-    mPendingScrollAnchorSuppressions.AppendElement(aFrame);
+  void AddPendingScrollAnchorSuppression(dom::Element* aElement) {
+    mPendingScrollAnchorSuppressions.AppendElement(aElement);
   }
 
  private:
@@ -173,7 +174,7 @@ class ServoRestyleState {
   
   nsTArray<nsIFrame*>& mPendingWrapperRestyles;
 
-  nsTArray<nsIFrame*>& mPendingScrollAnchorSuppressions;
+  nsTArray<RefPtr<dom::Element>>& mPendingScrollAnchorSuppressions;
 
   
   
