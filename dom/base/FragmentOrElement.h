@@ -247,6 +247,11 @@ class FragmentOrElement : public nsIContent {
 
 
     RefPtr<nsDOMTokenList> mClassList;
+
+    
+
+
+    RefPtr<nsDOMTokenList> mPart;
   };
 
   
