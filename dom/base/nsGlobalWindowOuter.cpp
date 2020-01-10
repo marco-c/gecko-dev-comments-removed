@@ -1580,7 +1580,10 @@ void nsGlobalWindowOuter::SetInitialPrincipalToSubject(
 #endif
   }
 
-  GetDocShell()->CreateAboutBlankContentViewer(newWindowPrincipal, aCSP);
+  
+  
+  GetDocShell()->CreateAboutBlankContentViewer(newWindowPrincipal,
+                                               newWindowPrincipal, aCSP);
 
   if (mDoc) {
     mDoc->SetIsInitialDocument(true);

@@ -498,6 +498,7 @@ class nsDocShell final : public nsDocLoader,
   
   
   nsresult CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
+                                         nsIPrincipal* aStoragePrincipal,
                                          nsIContentSecurityPolicy* aCSP,
                                          nsIURI* aBaseURI,
                                          bool aTryToSaveOldPresentation = true,
@@ -649,7 +650,10 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  nsIPrincipal* GetInheritedPrincipal(bool aConsiderCurrentDocument);
+  
+  
+  nsIPrincipal* GetInheritedPrincipal(bool aConsiderCurrentDocument,
+                                      bool aConsiderStoragePrincipal = false);
 
   
 
