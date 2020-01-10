@@ -112,6 +112,18 @@ class RunInfo(dict):
         if extras is not None:
             self.update(extras)
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if "sw-e10s" not in self:
+            self["sw-e10s"] = self.get("nightly_build", False)
+
         self["headless"] = extras.get("headless", False)
         self["webrender"] = enable_webrender
 
