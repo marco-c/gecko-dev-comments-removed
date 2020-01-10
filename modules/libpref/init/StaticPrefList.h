@@ -719,6 +719,13 @@ VARCACHE_PREF(
   RelaxedAtomicBool, true
 )
 
+VARCACHE_PREF(
+  Live,
+  "browser.cache.memory.enable",
+   browser_cache_memory_enable,
+  RelaxedAtomicBool, true
+)
+
 
 VARCACHE_PREF(
   Live,
