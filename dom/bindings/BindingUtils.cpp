@@ -4009,6 +4009,13 @@ void DeprecationWarning(JSContext* aCx, JSObject* aObject,
 void DeprecationWarning(const GlobalObject& aGlobal,
                         Document::DeprecatedOperations aOperation) {
   if (NS_IsMainThread()) {
+    
+    
+    
+    if (recordreplay::HasDivergedFromRecording()) {
+      return;
+    }
+
     nsCOMPtr<nsPIDOMWindowInner> window =
         do_QueryInterface(aGlobal.GetAsSupports());
     if (window && window->GetExtantDoc()) {
