@@ -1,3 +1,9 @@
+"use strict";
+
+let { PluginManager } = ChromeUtils.import(
+  "resource:///actors/PluginParent.jsm"
+);
+
 
 
 
@@ -8,6 +14,13 @@ add_task(async function() {
       url: "about:blank",
     },
     async function(browser) {
+      
+      
+      PluginManager.gmpCrashes.set(1, {
+        pluginID: 1,
+        pluginName: "GlobalTestPlugin",
+      });
+
       await ContentTask.spawn(browser, null, async function() {
         const GMP_CRASH_EVENT = {
           pluginID: 1,

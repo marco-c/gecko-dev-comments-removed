@@ -87,5 +87,5 @@ add_task(async function() {
 
   
   pluginInfo = await promiseForPluginInfo("test", gBrowser.selectedBrowser);
-  ok(pluginInfo.activated, "plugin should not be activated");
+  ok(pluginInfo.activated, "plugin should be activated");
 });

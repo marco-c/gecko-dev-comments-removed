@@ -63,125 +63,119 @@ add_task(async function setup() {
 
 
 add_task(async function() {
-  await BrowserTestUtils.withNewTab(
-    {
-      gBrowser,
-      url: PLUGIN_PAGE,
-    },
-    async function(browser) {
-      
-      await promiseUpdatePluginBindings(browser);
+  await BrowserTestUtils.withNewTab(PLUGIN_PAGE, async function(browser) {
+    
+    await promiseUpdatePluginBindings(browser);
 
-      let pluginInfo = await promiseForPluginInfo("test", browser);
-      ok(!pluginInfo.activated, "Plugin should not be activated");
+    let pluginInfo = await promiseForPluginInfo("test", browser);
+    ok(!pluginInfo.activated, "Plugin should not be activated");
 
-      
-      let notification = PopupNotifications.getNotification(
-        "click-to-play-plugins",
-        browser
-      );
-      await promiseForNotificationShown(notification, browser);
-      PopupNotifications.panel.firstElementChild.button.click();
+    
+    let notification = PopupNotifications.getNotification(
+      "click-to-play-plugins",
+      browser
+    );
+    await promiseForNotificationShown(notification, browser);
+    PopupNotifications.panel.firstElementChild.button.click();
 
-      
-      
-      let crashReportChecker = (subject, data) => {
-        return data == "success";
+    
+    
+    let crashReportChecker = (subject, data) => {
+      return data == "success";
+    };
+    let crashReportPromise = TestUtils.topicObserved(
+      "crash-report-status",
+      crashReportChecker
+    );
+
+    await ContentTask.spawn(browser, null, async function() {
+      let plugin = content.document.getElementById("test");
+      plugin.QueryInterface(Ci.nsIObjectLoadingContent);
+
+      await ContentTaskUtils.waitForCondition(() => {
+        return plugin.activated;
+      }, "Waited too long for plugin to activate.");
+
+      try {
+        Cu.waiveXrays(plugin).crash();
+      } catch (e) {}
+
+      let getUI = id => {
+        return plugin.openOrClosedShadowRoot.getElementById(id);
       };
-      let crashReportPromise = TestUtils.topicObserved(
-        "crash-report-status",
-        crashReportChecker
-      );
-
-      await ContentTask.spawn(browser, null, async function() {
-        let plugin = content.document.getElementById("test");
-        plugin.QueryInterface(Ci.nsIObjectLoadingContent);
-
-        await ContentTaskUtils.waitForCondition(() => {
-          return plugin.activated;
-        }, "Waited too long for plugin to activate.");
-
-        try {
-          Cu.waiveXrays(plugin).crash();
-        } catch (e) {}
-
-        let getUI = id => {
-          return plugin.openOrClosedShadowRoot.getElementById(id);
-        };
-
-        
-        
-        let statusDiv;
-
-        await ContentTaskUtils.waitForCondition(() => {
-          statusDiv = getUI("submitStatus");
-          return statusDiv.getAttribute("status") == "please";
-        }, "Waited too long for plugin to show crash report UI");
-
-        
-        let style = content.getComputedStyle(getUI("pleaseSubmit"));
-        if (style.display != "block") {
-          throw new Error(
-            `Submission UI visibility is not correct. ` +
-              `Expected block style, got ${style.display}.`
-          );
-        }
-
-        
-        
-        getUI("submitComment").value = "a test comment";
-        let optIn = getUI("submitURLOptIn");
-        if (!optIn.checked) {
-          throw new Error("URL opt-in should default to true.");
-        }
-
-        
-        optIn.click();
-        getUI("submitButton").click();
-
-        
-        
-        await ContentTaskUtils.waitForCondition(
-          () => {
-            return statusDiv.getAttribute("status") == "success";
-          },
-          "Timed out waiting for plugin binding to be in success state",
-          100,
-          200
-        );
-      });
-
-      let [subject] = await crashReportPromise;
-
-      ok(
-        subject instanceof Ci.nsIPropertyBag,
-        "The crash report subject should be an nsIPropertyBag."
-      );
-
-      let crashData = convertPropertyBag(subject);
-      ok(crashData.serverCrashID, "Should have a serverCrashID set.");
 
       
-      let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-      file.initWithPath(Services.crashmanager._submittedDumpsDir);
-      file.append(crashData.serverCrashID + ".txt");
-      ok(file.exists(), "Submitted report file should exist");
-      file.remove(false);
+      
+      let statusDiv;
 
-      ok(crashData.extra, "Extra data should exist");
-      is(
-        crashData.extra.PluginUserComment,
-        "a test comment",
-        "Comment in extra data should match comment in textbox"
-      );
+      await ContentTaskUtils.waitForCondition(() => {
+        statusDiv = getUI("submitStatus");
+        return statusDiv.getAttribute("status") == "please";
+      }, "Waited too long for plugin to show crash report UI");
 
-      is(
-        crashData.extra.PluginContentURL,
-        undefined,
-        "URL should be absent from extra data when opt-in not checked"
+      
+      let style = content.getComputedStyle(getUI("pleaseSubmit"));
+      if (style.display != "block") {
+        throw new Error(
+          `Submission UI visibility is not correct. ` +
+            `Expected block style, got ${style.display}.`
+        );
+      }
+
+      
+      
+      getUI("submitComment").value = "a test comment";
+      let optIn = getUI("submitURLOptIn");
+      if (!optIn.checked) {
+        throw new Error("URL opt-in should default to true.");
+      }
+
+      
+      optIn.click();
+      getUI("submitButton").click();
+
+      
+      
+      await ContentTaskUtils.waitForCondition(
+        () => {
+          return statusDiv.getAttribute("status") == "success";
+        },
+        "Timed out waiting for plugin binding to be in success state",
+        100,
+        200
       );
-    }
-  );
+    });
+
+    let [subject] = await crashReportPromise;
+
+    ok(
+      subject instanceof Ci.nsIPropertyBag,
+      "The crash report subject should be an nsIPropertyBag."
+    );
+
+    let crashData = convertPropertyBag(subject);
+    ok(crashData.serverCrashID, "Should have a serverCrashID set.");
+
+    
+    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+    file.initWithPath(Services.crashmanager._submittedDumpsDir);
+    file.append(crashData.serverCrashID + ".txt");
+    ok(file.exists(), "Submitted report file should exist");
+    file.remove(false);
+
+    ok(crashData.extra, "Extra data should exist");
+    is(
+      crashData.extra.PluginUserComment,
+      "a test comment",
+      "Comment in extra data should match comment in textbox"
+    );
+
+    is(
+      crashData.extra.PluginContentURL,
+      undefined,
+      "URL should be absent from extra data when opt-in not checked"
+    );
+  });
 });
 
 

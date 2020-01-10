@@ -5,6 +5,10 @@ const { PromiseUtils } = ChromeUtils.import(
   "resource://gre/modules/PromiseUtils.jsm"
 );
 
+const { PluginManager } = ChromeUtils.import(
+  "resource:///actors/PluginParent.jsm"
+);
+
 
 
 
@@ -24,7 +28,6 @@ const { PromiseUtils } = ChromeUtils.import(
 
 const CRASH_URL =
   "http://example.com/browser/browser/base/content/test/plugins/plugin_crashCommentAndURL.html";
-const CRASHED_MESSAGE = "BrowserPlugins:NPAPIPluginProcessCrashed";
 
 
 
@@ -80,9 +83,10 @@ function preparePlugin(browser, pluginFallbackState) {
     });
     return plugin.runID;
   }).then(runID => {
-    browser.messageManager.sendAsyncMessage(
-      "BrowserPlugins:Test:ClearCrashData"
-    );
+    let { currentWindowGlobal } = browser.frameLoader.browsingContext;
+    currentWindowGlobal
+      .getActor("Plugin")
+      .sendAsyncMessage("PluginParent:Test:ClearCrashData");
     return runID;
   });
 }
@@ -149,20 +153,12 @@ add_task(async function testChromeHearsPluginCrashFirst() {
   
   
   
-  let runID = await preparePlugin(
-    browser,
-    Ci.nsIObjectLoadingContent.PLUGIN_ACTIVE
-  );
+  await preparePlugin(browser, Ci.nsIObjectLoadingContent.PLUGIN_ACTIVE);
 
   
   
-  let mm = browser.messageManager;
-  mm.sendAsyncMessage(CRASHED_MESSAGE, {
-    pluginName: "",
-    runID,
-    state: "please",
-  });
-
+  
+  
   await ContentTask.spawn(browser, null, async function() {
     
     
@@ -197,6 +193,11 @@ add_task(async function testChromeHearsPluginCrashFirst() {
     });
 
     plugin.dispatchEvent(event);
+    
+    
+    await ContentTaskUtils.waitForCondition(
+      () => statusDiv.getAttribute("status") == "please"
+    );
     Assert.equal(
       statusDiv.getAttribute("status"),
       "please",
@@ -230,6 +231,21 @@ add_task(async function testContentHearsCrashFirst() {
     Ci.nsIObjectLoadingContent.PLUGIN_CRASHED
   );
 
+  
+  let allowParentToRespond = PromiseUtils.defer();
+  
+  
+  
+  let parentRequestPromise = new Promise(resolve => {
+    PluginManager.mockResponse(browser, function(data) {
+      resolve(data);
+
+      return allowParentToRespond.promise.then(() => {
+        return { pluginName: "", runID, state: "please" };
+      });
+    });
+  });
+
   await ContentTask.spawn(browser, null, async function() {
     
     
@@ -254,7 +270,16 @@ add_task(async function testContentHearsCrashFirst() {
     });
 
     plugin.dispatchEvent(event);
+  });
+  let receivedData = await parentRequestPromise;
+  is(receivedData.runID, runID, "Should get a request for the same crash.");
 
+  await ContentTask.spawn(browser, null, function() {
+    let plugin = content.document.getElementById("plugin");
+    plugin.QueryInterface(Ci.nsIObjectLoadingContent);
+    let statusDiv = plugin.openOrClosedShadowRoot.getElementById(
+      "submitStatus"
+    );
     Assert.notEqual(
       statusDiv.getAttribute("status"),
       "please",
@@ -263,13 +288,7 @@ add_task(async function testContentHearsCrashFirst() {
   });
 
   
-  
-  let mm = browser.messageManager;
-  mm.sendAsyncMessage(CRASHED_MESSAGE, {
-    pluginName: "",
-    runID,
-    state: "please",
-  });
+  allowParentToRespond.resolve();
 
   await ContentTask.spawn(browser, null, async function() {
     
@@ -280,6 +299,9 @@ add_task(async function testContentHearsCrashFirst() {
     let statusDiv = plugin.openOrClosedShadowRoot.getElementById(
       "submitStatus"
     );
+    await ContentTaskUtils.waitForCondition(() => {
+      return statusDiv && statusDiv.getAttribute("status") == "please";
+    });
 
     Assert.equal(
       statusDiv.getAttribute("status"),
