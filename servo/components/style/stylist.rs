@@ -1322,14 +1322,15 @@ impl Stylist {
         let iter_declarations = || {
             block
                 .declaration_importance_iter()
-                .map(|(declaration, importance)| {
-                    debug_assert!(!importance.important());
-                    (declaration, CascadeLevel::same_tree_author_normal())
-                })
+                .map(|(declaration, _)| (declaration, Origin::Author))
         };
 
         let metrics = get_metrics_provider_for_product();
 
+        
+        
+        
+        
         
         
         properties::apply_declarations::<E, _, _>(
