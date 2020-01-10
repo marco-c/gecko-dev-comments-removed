@@ -32,15 +32,16 @@ ChromeUtils.defineModuleGetter(
   "resource:///modules/ExtensionPopups.jsm"
 );
 
-var { DefaultWeakMap, ExtensionError } = ExtensionUtils;
+var { DefaultWeakMap } = ExtensionUtils;
 
 var { ExtensionParent } = ChromeUtils.import(
   "resource://gre/modules/ExtensionParent.jsm"
 );
+var { BrowserActionBase } = ChromeUtils.import(
+  "resource://gre/modules/ExtensionActions.jsm"
+);
 
 var { IconDetails, StartupCache } = ExtensionParent;
-
-XPCOMUtils.defineLazyGlobalGetters(this, ["InspectorUtils"]);
 
 const POPUP_PRELOAD_TIMEOUT_MS = 200;
 
@@ -56,6 +57,47 @@ XPCOMUtils.defineLazyGetter(this, "browserAreas", () => {
   };
 });
 
+class BrowserAction extends BrowserActionBase {
+  constructor(extension, buttonDelegate) {
+    let tabContext = new TabContext(target => {
+      let window = target.ownerGlobal;
+      if (target === window) {
+        return this.getContextData(null);
+      }
+      return tabContext.get(window);
+    });
+    super(tabContext, extension);
+    this.buttonDelegate = buttonDelegate;
+  }
+
+  updateOnChange(target) {
+    if (target) {
+      let window = target.ownerGlobal;
+      if (target === window || target.selected) {
+        this.buttonDelegate.updateWindow(window);
+      }
+    } else {
+      for (let window of windowTracker.browserWindows()) {
+        this.buttonDelegate.updateWindow(window);
+      }
+    }
+  }
+
+  getTab(tabId) {
+    if (tabId !== null) {
+      return tabTracker.getTab(tabId);
+    }
+    return null;
+  }
+
+  getWindow(windowId) {
+    if (windowId !== null) {
+      return windowTracker.getWindow(windowId);
+    }
+    return null;
+  }
+}
+
 this.browserAction = class extends ExtensionAPI {
   static for(extension) {
     return browserActionMap.get(extension);
@@ -66,7 +108,18 @@ this.browserAction = class extends ExtensionAPI {
 
     let options = extension.manifest.browser_action;
 
+    this.action = new BrowserAction(extension, this);
+    await this.action.loadIconData();
+
     this.iconData = new DefaultWeakMap(icons => this.getIconData(icons));
+    this.iconData.set(
+      this.action.getIcon(),
+      await StartupCache.get(
+        extension,
+        ["browserAction", "default_icon_data"],
+        () => this.getIconData(this.action.getIcon())
+      )
+    );
 
     let widgetId = makeWidgetId(extension.id);
     this.id = `${widgetId}-browser-action`;
@@ -78,71 +131,17 @@ this.browserAction = class extends ExtensionAPI {
     this.eventQueue = [];
 
     this.tabManager = extension.tabManager;
-
-    this.defaults = {
-      enabled: true,
-      title: options.default_title || extension.name,
-      badgeText: "",
-      badgeBackgroundColor: [0xd9, 0, 0, 255],
-      badgeDefaultColor: [255, 255, 255, 255],
-      badgeTextColor: null,
-      popup: options.default_popup || "",
-      area: browserAreas[options.default_area || "navbar"],
-    };
-    this.globals = Object.create(this.defaults);
-
     this.browserStyle = options.browser_style;
 
     browserActionMap.set(extension, this);
 
-    this.defaults.icon = await StartupCache.get(
-      extension,
-      ["browserAction", "default_icon"],
-      () =>
-        IconDetails.normalize(
-          {
-            path: options.default_icon || extension.manifest.icons,
-            iconType: "browserAction",
-            themeIcons: options.theme_icons,
-          },
-          extension
-        )
-    );
-
-    this.iconData.set(
-      this.defaults.icon,
-      await StartupCache.get(
-        extension,
-        ["browserAction", "default_icon_data"],
-        () => this.getIconData(this.defaults.icon)
-      )
-    );
-
-    this.tabContext = new TabContext(target => {
-      let window = target.ownerGlobal;
-      if (target === window) {
-        return this.globals;
-      }
-      return this.tabContext.get(window);
-    });
-
-    
-    this.tabContext.on("location-change", this.handleLocationChange.bind(this));
-
     this.build();
-  }
-
-  handleLocationChange(eventType, tab, fromBrowse) {
-    if (fromBrowse) {
-      this.tabContext.clear(tab);
-      this.updateOnChange(tab);
-    }
   }
 
   onShutdown() {
     browserActionMap.delete(this.extension);
+    this.action.onShutdown();
 
-    this.tabContext.shutdown();
     CustomizableUI.destroyWidget(this.id);
 
     this.clearPopup();
@@ -154,9 +153,9 @@ this.browserAction = class extends ExtensionAPI {
       viewId: this.viewId,
       type: "view",
       removable: true,
-      label: this.defaults.title || this.extension.name,
-      tooltiptext: this.defaults.title || "",
-      defaultArea: this.defaults.area,
+      label: this.action.getProperty(null, "title"),
+      tooltiptext: this.action.getProperty(null, "title"),
+      defaultArea: browserAreas[this.action.getDefaultArea()],
       showInPrivateBrowsing: this.extension.privateBrowsingAllowed,
 
       
@@ -202,7 +201,7 @@ this.browserAction = class extends ExtensionAPI {
         node.onmouseout = event => this.handleEvent(event);
         node.onauxclick = event => this.handleEvent(event);
 
-        this.updateButton(node, this.globals, true);
+        this.updateButton(node, this.action.getContextData(null), true);
       },
 
       onBeforeCommand: event => {
@@ -223,7 +222,7 @@ this.browserAction = class extends ExtensionAPI {
         let tabbrowser = document.defaultView.gBrowser;
 
         let tab = tabbrowser.selectedTab;
-        let popupURL = this.getProperty(tab, "popup");
+        let popupURL = this.action.getProperty(tab, "popup");
         this.tabManager.addActiveTabPermission(tab);
 
         
@@ -269,11 +268,6 @@ this.browserAction = class extends ExtensionAPI {
       },
     });
 
-    
-    this.tabContext.on("tab-select", (evt, tab) => {
-      this.updateWindow(tab.ownerGlobal);
-    });
-
     this.widget = widget;
   }
 
@@ -296,14 +290,14 @@ this.browserAction = class extends ExtensionAPI {
     let widget = this.widget.forWindow(window);
     let tab = window.gBrowser.selectedTab;
 
-    if (!widget.node || !this.getProperty(tab, "enabled")) {
+    if (!widget.node || !this.action.getProperty(tab, "enabled")) {
       return;
     }
 
     
     
     
-    if (this.getProperty(tab, "popup")) {
+    if (this.action.getProperty(tab, "popup")) {
       if (this.widget.areaType == CustomizableUI.TYPE_MENU_PANEL) {
         await window.document.getElementById("nav-bar").overflowable.show();
       }
@@ -330,8 +324,8 @@ this.browserAction = class extends ExtensionAPI {
           
           
           let tab = window.gBrowser.selectedTab;
-          let popupURL = this.getProperty(tab, "popup");
-          let enabled = this.getProperty(tab, "enabled");
+          let popupURL = this.action.getProperty(tab, "popup");
+          let enabled = this.action.getProperty(tab, "enabled");
 
           if (
             popupURL &&
@@ -377,8 +371,8 @@ this.browserAction = class extends ExtensionAPI {
         
         
         let tab = window.gBrowser.selectedTab;
-        let popupURL = this.getProperty(tab, "popup");
-        let enabled = this.getProperty(tab, "enabled");
+        let popupURL = this.action.getProperty(tab, "popup");
+        let enabled = this.action.getProperty(tab, "enabled");
 
         if (
           popupURL &&
@@ -428,7 +422,7 @@ this.browserAction = class extends ExtensionAPI {
         }
 
         let { gBrowser } = window;
-        if (this.getProperty(gBrowser.selectedTab, "enabled")) {
+        if (this.action.getProperty(gBrowser.selectedTab, "enabled")) {
           this.lastClickInfo = {
             button: 1,
             modifiers: clickModifiersFromEvent(event),
@@ -547,7 +541,7 @@ this.browserAction = class extends ExtensionAPI {
         "badgeStyle",
         [
           `background-color: ${serializeColor(tabData.badgeBackgroundColor)}`,
-          `color: ${serializeColor(this.getTextColor(tabData))}`,
+          `color: ${serializeColor(this.action.getTextColor(tabData))}`,
         ].join("; ")
       );
 
@@ -597,189 +591,19 @@ this.browserAction = class extends ExtensionAPI {
     let node = this.widget.forWindow(window).node;
     if (node) {
       let tab = window.gBrowser.selectedTab;
-      this.updateButton(node, this.tabContext.get(tab));
+      this.updateButton(node, this.action.getContextData(tab));
     }
-  }
-
-  
-
-
-
-
-
-
-
-
-  updateOnChange(target) {
-    if (target) {
-      let window = target.ownerGlobal;
-      if (target === window || target.selected) {
-        this.updateWindow(window);
-      }
-    } else {
-      for (let window of windowTracker.browserWindows()) {
-        this.updateWindow(window);
-      }
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  getTargetFromDetails({ tabId, windowId }) {
-    if (tabId != null && windowId != null) {
-      throw new ExtensionError(
-        "Only one of tabId and windowId can be specified."
-      );
-    }
-    if (tabId != null) {
-      return tabTracker.getTab(tabId);
-    } else if (windowId != null) {
-      return windowTracker.getWindow(windowId);
-    }
-    return null;
-  }
-
-  
-
-
-
-
-
-
-
-  getContextData(target) {
-    if (target) {
-      return this.tabContext.get(target);
-    }
-    return this.globals;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  setProperty(target, prop, value) {
-    let values = this.getContextData(target);
-    if (value === null) {
-      delete values[prop];
-    } else {
-      values[prop] = value;
-    }
-
-    this.updateOnChange(target);
-    return values;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  getProperty(target, prop) {
-    return this.getContextData(target)[prop];
-  }
-
-  setPropertyFromDetails(details, prop, value) {
-    return this.setProperty(this.getTargetFromDetails(details), prop, value);
-  }
-
-  getPropertyFromDetails(details, prop) {
-    return this.getProperty(this.getTargetFromDetails(details), prop);
-  }
-
-  
-
-
-
-
-
-
-  getTextColor(values) {
-    
-    let { badgeTextColor } = values;
-    if (badgeTextColor) {
-      return badgeTextColor;
-    }
-
-    
-    let { badgeDefaultColor } = values;
-    if (badgeDefaultColor) {
-      return badgeDefaultColor;
-    }
-
-    
-    
-    let [r, g, b] = values.badgeBackgroundColor
-      .slice(0, 3)
-      .map(function(channel) {
-        channel /= 255;
-        if (channel <= 0.03928) {
-          return channel / 12.92;
-        }
-        return ((channel + 0.055) / 1.055) ** 2.4;
-      });
-    let lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-
-    
-    
-    
-    
-    
-    let channel = 1.05 * 0.05 < (lum + 0.05) ** 2 ? 0 : 255;
-    let result = [channel, channel, channel, 255];
-
-    
-    while (!Object.getOwnPropertyDescriptor(values, "badgeDefaultColor")) {
-      values = Object.getPrototypeOf(values);
-    }
-    values.badgeDefaultColor = result;
-    return result;
   }
 
   getAPI(context) {
     let { extension } = context;
     let { tabManager } = extension;
-
-    let browserAction = this;
-
-    function parseColor(color, kind) {
-      if (typeof color == "string") {
-        let rgba = InspectorUtils.colorToRGBA(color);
-        if (!rgba) {
-          throw new ExtensionError(`Invalid badge ${kind} color: "${color}"`);
-        }
-        color = [rgba.r, rgba.g, rgba.b, Math.round(rgba.a * 255)];
-      }
-      return color;
-    }
+    let { action } = this;
 
     return {
       browserAction: {
+        ...action.api(context),
+
         onClicked: new EventManager({
           context,
           name: "browserAction.onClicked",
@@ -789,117 +613,20 @@ this.browserAction = class extends ExtensionAPI {
               context.withPendingBrowser(browser, () =>
                 fire.sync(
                   tabManager.convert(tabTracker.activeTab),
-                  browserAction.lastClickInfo
+                  this.lastClickInfo
                 )
               );
             };
-            browserAction.on("click", listener);
+            this.on("click", listener);
             return () => {
-              browserAction.off("click", listener);
+              this.off("click", listener);
             };
           },
         }).api(),
 
-        enable: function(tabId) {
-          browserAction.setPropertyFromDetails({ tabId }, "enabled", true);
-        },
-
-        disable: function(tabId) {
-          browserAction.setPropertyFromDetails({ tabId }, "enabled", false);
-        },
-
-        isEnabled: function(details) {
-          return browserAction.getPropertyFromDetails(details, "enabled");
-        },
-
-        setTitle: function(details) {
-          browserAction.setPropertyFromDetails(details, "title", details.title);
-        },
-
-        getTitle: function(details) {
-          return browserAction.getPropertyFromDetails(details, "title");
-        },
-
-        setIcon: function(details) {
-          details.iconType = "browserAction";
-
-          let icon = IconDetails.normalize(details, extension, context);
-          if (!Object.keys(icon).length) {
-            icon = null;
-          }
-          browserAction.setPropertyFromDetails(details, "icon", icon);
-        },
-
-        setBadgeText: function(details) {
-          browserAction.setPropertyFromDetails(
-            details,
-            "badgeText",
-            details.text
-          );
-        },
-
-        getBadgeText: function(details) {
-          return browserAction.getPropertyFromDetails(details, "badgeText");
-        },
-
-        setPopup: function(details) {
-          
-          
-          
-          
-          
-          let url = details.popup && context.uri.resolve(details.popup);
-          if (url && !context.checkLoadURL(url)) {
-            return Promise.reject({ message: `Access denied for URL ${url}` });
-          }
-          browserAction.setPropertyFromDetails(details, "popup", url);
-        },
-
-        getPopup: function(details) {
-          return browserAction.getPropertyFromDetails(details, "popup");
-        },
-
-        setBadgeBackgroundColor: function(details) {
-          let color = parseColor(details.color, "background");
-          let values = browserAction.setPropertyFromDetails(
-            details,
-            "badgeBackgroundColor",
-            color
-          );
-          if (color === null) {
-            
-            delete values.badgeDefaultColor;
-          } else {
-            
-            values.badgeDefaultColor = null;
-          }
-        },
-
-        getBadgeBackgroundColor: function(details, callback) {
-          return browserAction.getPropertyFromDetails(
-            details,
-            "badgeBackgroundColor"
-          );
-        },
-
-        setBadgeTextColor: function(details) {
-          let color = parseColor(details.color, "text");
-          browserAction.setPropertyFromDetails(
-            details,
-            "badgeTextColor",
-            color
-          );
-        },
-
-        getBadgeTextColor: function(details) {
-          let target = browserAction.getTargetFromDetails(details);
-          let values = browserAction.getContextData(target);
-          return browserAction.getTextColor(values);
-        },
-
-        openPopup: function() {
+        openPopup: () => {
           let window = windowTracker.topWindow;
-          browserAction.triggerAction(window);
+          this.triggerAction(window);
         },
       },
     };
