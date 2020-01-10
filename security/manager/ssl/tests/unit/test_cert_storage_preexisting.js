@@ -10,6 +10,7 @@
 
 
 
+
 add_task(
   {
     skip_if: () => !AppConstants.MOZ_NEW_CERT_STORAGE,
@@ -17,10 +18,8 @@ add_task(
   async function() {
     let dbDirectory = do_get_profile();
     dbDirectory.append("security_state");
-    let dbFile = do_get_file("test_cert_storage_preexisting/data.mdb");
-    dbFile.copyTo(dbDirectory, "data.mdb");
-    let lockFile = do_get_file("test_cert_storage_preexisting/lock.mdb");
-    lockFile.copyTo(dbDirectory, "lock.mdb");
+    let dbFile = do_get_file("test_cert_storage_preexisting/data.safe.bin");
+    dbFile.copyTo(dbDirectory, "data.safe.bin");
 
     let certStorage = Cc["@mozilla.org/security/certstorage;1"].getService(
       Ci.nsICertStorage
