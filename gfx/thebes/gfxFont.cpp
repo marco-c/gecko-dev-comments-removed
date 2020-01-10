@@ -1578,16 +1578,22 @@ class GlyphBufferAzure {
   
   
   
-  void AddCapacity(uint32_t aGlyphCount) {
+  
+  void AddCapacity(uint32_t aGlyphCount, uint32_t aStrikeCount) {
     
-    if (mCapacity + aGlyphCount <= mBufSize) {
-      mCapacity += aGlyphCount;
+    
+    static const uint64_t kMaxCapacity = 64 * 1024;
+    mCapacity = uint32_t(std::min(
+        kMaxCapacity,
+        uint64_t(mCapacity) + uint64_t(aGlyphCount) * uint64_t(aStrikeCount)));
+    
+    if (mCapacity <= mBufSize) {
       return;
     }
     
     
     
-    mBufSize = std::max(mCapacity + aGlyphCount, mBufSize * 2);
+    mBufSize = std::max(mCapacity, mBufSize * 2);
     if (mBuffer == *mAutoBuffer.addr()) {
       
       mBuffer = reinterpret_cast<Glyph*>(moz_xmalloc(mBufSize * sizeof(Glyph)));
@@ -1596,12 +1602,15 @@ class GlyphBufferAzure {
       mBuffer = reinterpret_cast<Glyph*>(
           moz_xrealloc(mBuffer, mBufSize * sizeof(Glyph)));
     }
-    mCapacity += aGlyphCount;
   }
 
   void OutputGlyph(uint32_t aGlyphID, const gfx::Point& aPt) {
     
-    MOZ_ASSERT(mNumGlyphs < mCapacity);
+    if (mNumGlyphs >= mCapacity) {
+      
+      MOZ_ASSERT(mCapacity > 0 && mNumGlyphs == mCapacity);
+      Flush();
+    }
     Glyph* glyph = mBuffer + mNumGlyphs++;
     glyph->mIndex = aGlyphID;
     glyph->mPosition = aPt;
@@ -1805,7 +1814,7 @@ bool gfxFont::DrawGlyphs(const gfxShapedText* aShapedText,
 
   
   uint32_t capacityMult = 1 + aBuffer.mFontParams.extraStrikes;
-  aBuffer.AddCapacity(capacityMult * aCount);
+  aBuffer.AddCapacity(aCount, capacityMult);
 
   bool emittedGlyphs = false;
 
@@ -1825,7 +1834,7 @@ bool gfxFont::DrawGlyphs(const gfxShapedText* aShapedText,
       uint32_t glyphCount = glyphData->GetGlyphCount();
       if (glyphCount > 0) {
         
-        aBuffer.AddCapacity(capacityMult * (glyphCount - 1));
+        aBuffer.AddCapacity(glyphCount - 1, capacityMult);
         const gfxShapedText::DetailedGlyph* details =
             aShapedText->GetDetailedGlyphs(aOffset + i);
         MOZ_ASSERT(details, "missing DetailedGlyph!");
