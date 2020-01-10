@@ -44,6 +44,11 @@ run_schema = Schema({
     Required(Any('dsc', 'tarball')): source_definition,
 
     
+    
+    
+    Optional('name'): basestring,
+
+    
     Optional('patch'): basestring,
 
     
@@ -110,7 +115,9 @@ def docker_worker_debian_package(config, job, taskdesc):
     src_url = src['url']
     src_file = os.path.basename(src_url)
     src_sha256 = src['sha256']
-    package = package_re.match(src_file).group(0)
+    package = run.get('name')
+    if not package:
+        package = package_re.match(src_file).group(0)
     unpack = unpack.format(src_file=src_file, package=package)
 
     resolver = run.get('resolver', 'apt-get')
