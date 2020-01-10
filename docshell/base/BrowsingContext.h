@@ -223,13 +223,17 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   
   
   
-  BrowsingContext* FindWithName(const nsAString& aName);
+  BrowsingContext* FindWithName(const nsAString& aName,
+                                BrowsingContext& aRequestingContext);
+
 
   
   
   
   
-  BrowsingContext* FindChildWithName(const nsAString& aName);
+  BrowsingContext* FindChildWithName(const nsAString& aName,
+                                     BrowsingContext& aRequestingContext);
+
 
   nsISupports* GetParentObject() const;
   JSObject* WrapObject(JSContext* aCx,
@@ -392,14 +396,15 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
  private:
   
   
-  BrowsingContext* FindWithSpecialName(const nsAString& aName);
+  BrowsingContext* FindWithSpecialName(const nsAString& aName,
+                                       BrowsingContext& aRequestingContext);
 
   
   
   
   
   BrowsingContext* FindWithNameInSubtree(const nsAString& aName,
-                                         BrowsingContext* aRequestingContext);
+                                         BrowsingContext& aRequestingContext);
 
   
   void Unregister();

@@ -462,18 +462,21 @@ void BrowsingContext::GetChildren(Children& aChildren) {
 
 
 
-BrowsingContext* BrowsingContext::FindWithName(const nsAString& aName) {
+BrowsingContext* BrowsingContext::FindWithName(
+    const nsAString& aName, BrowsingContext& aRequestingContext) {
   BrowsingContext* found = nullptr;
   if (aName.IsEmpty()) {
     
     found = nullptr;
-  } else if (BrowsingContext* special = FindWithSpecialName(aName)) {
+  } else if (BrowsingContext* special =
+                 FindWithSpecialName(aName, aRequestingContext)) {
     found = special;
   } else if (aName.LowerCaseEqualsLiteral("_blank")) {
     
     
     found = nullptr;
-  } else if (BrowsingContext* child = FindWithNameInSubtree(aName, this)) {
+  } else if (BrowsingContext* child =
+                 FindWithNameInSubtree(aName, aRequestingContext)) {
     found = child;
   } else {
     BrowsingContext* current = this;
@@ -486,7 +489,8 @@ BrowsingContext* BrowsingContext::FindWithName(const nsAString& aName) {
         
         
         siblings = &mGroup->Toplevels();
-      } else if (parent->NameEquals(aName) && CanAccess(parent) &&
+      } else if (parent->NameEquals(aName) &&
+                 aRequestingContext.CanAccess(parent) &&
                  parent->IsTargetable()) {
         found = parent;
         break;
@@ -500,7 +504,7 @@ BrowsingContext* BrowsingContext::FindWithName(const nsAString& aName) {
         }
 
         if (BrowsingContext* relative =
-                sibling->FindWithNameInSubtree(aName, this)) {
+                sibling->FindWithNameInSubtree(aName, aRequestingContext)) {
           found = relative;
           
           parent = nullptr;
@@ -514,19 +518,21 @@ BrowsingContext* BrowsingContext::FindWithName(const nsAString& aName) {
 
   
   
-  MOZ_DIAGNOSTIC_ASSERT(!found || CanAccess(found));
+  MOZ_DIAGNOSTIC_ASSERT(!found || aRequestingContext.CanAccess(found));
 
   return found;
 }
 
-BrowsingContext* BrowsingContext::FindChildWithName(const nsAString& aName) {
+BrowsingContext* BrowsingContext::FindChildWithName(
+    const nsAString& aName, BrowsingContext& aRequestingContext) {
   if (aName.IsEmpty()) {
     
     return nullptr;
   }
 
   for (BrowsingContext* child : mChildren) {
-    if (child->NameEquals(aName) && CanAccess(child) && child->IsTargetable()) {
+    if (child->NameEquals(aName) && aRequestingContext.CanAccess(child) &&
+        child->IsTargetable()) {
       return child;
     }
   }
@@ -534,7 +540,8 @@ BrowsingContext* BrowsingContext::FindChildWithName(const nsAString& aName) {
   return nullptr;
 }
 
-BrowsingContext* BrowsingContext::FindWithSpecialName(const nsAString& aName) {
+BrowsingContext* BrowsingContext::FindWithSpecialName(
+    const nsAString& aName, BrowsingContext& aRequestingContext) {
   
   
   
@@ -543,23 +550,25 @@ BrowsingContext* BrowsingContext::FindWithSpecialName(const nsAString& aName) {
   }
 
   if (aName.LowerCaseEqualsLiteral("_parent")) {
-    return mParent && CanAccess(mParent.get()) ? mParent.get() : this;
+    return mParent && aRequestingContext.CanAccess(mParent.get())
+               ? mParent.get()
+               : this;
   }
 
   if (aName.LowerCaseEqualsLiteral("_top")) {
     BrowsingContext* top = Top();
 
-    return CanAccess(top) ? top : nullptr;
+    return aRequestingContext.CanAccess(top) ? top : nullptr;
   }
 
   return nullptr;
 }
 
 BrowsingContext* BrowsingContext::FindWithNameInSubtree(
-    const nsAString& aName, BrowsingContext* aRequestingContext) {
+    const nsAString& aName, BrowsingContext& aRequestingContext) {
   MOZ_DIAGNOSTIC_ASSERT(!aName.IsEmpty());
 
-  if (NameEquals(aName) && aRequestingContext->CanAccess(this) &&
+  if (NameEquals(aName) && aRequestingContext.CanAccess(this) &&
       IsTargetable()) {
     return this;
   }
