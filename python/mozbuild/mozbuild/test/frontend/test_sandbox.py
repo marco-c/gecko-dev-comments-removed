@@ -334,17 +334,6 @@ class TestMozbuildSandbox(unittest.TestCase):
         for item in sandbox['CONFIGURE_SUBST_FILES']:
             self.assertIsInstance(item, SourcePath)
 
-    def test_invalid_utf8_substs(self):
-        """Ensure invalid UTF-8 in substs is converted with an error."""
-
-        
-        config = MockConfig(extra_substs={'BAD_UTF8': b'\x83\x81\x83\x82\x3A'})
-
-        sandbox = MozbuildSandbox(Context(VARIABLES, config))
-
-        self.assertEqual(sandbox['CONFIG']['BAD_UTF8'],
-                         u'\ufffd\ufffd\ufffd\ufffd:')
-
     def test_invalid_exports_set_base(self):
         sandbox = self.sandbox()
 
