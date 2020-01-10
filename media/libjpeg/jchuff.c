@@ -356,12 +356,16 @@ dump_buffer(working_state *state)
   put_buffer = (put_buffer << size) | code; \
 }
 
+#if SIZEOF_SIZE_T != 8 && !defined(_WIN64)
+
 #define CHECKBUF15() { \
   if (put_bits > 15) { \
     EMIT_BYTE() \
     EMIT_BYTE() \
   } \
 }
+
+#endif
 
 #define CHECKBUF31() { \
   if (put_bits > 31) { \

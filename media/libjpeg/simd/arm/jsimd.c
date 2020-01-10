@@ -15,6 +15,7 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "../../jinclude.h"
 #include "../../jpeglib.h"
@@ -30,7 +31,7 @@
 static unsigned int simd_support = ~0;
 static unsigned int simd_huffman = 1;
 
-#if defined(__linux__) || defined(ANDROID) || defined(__ANDROID__)
+#if !defined(__ARM_NEON__) && (defined(__linux__) || defined(ANDROID) || defined(__ANDROID__))
 
 #define SOMEWHAT_SANE_PROC_CPUINFO_SIZE_LIMIT  (1024 * 1024)
 
@@ -105,7 +106,7 @@ init_simd(void)
 #ifndef NO_GETENV
   char *env = NULL;
 #endif
-#if !defined(__ARM_NEON__) && defined(__linux__) || defined(ANDROID) || defined(__ANDROID__)
+#if !defined(__ARM_NEON__) && (defined(__linux__) || defined(ANDROID) || defined(__ANDROID__))
   int bufsize = 1024; 
 #endif
 

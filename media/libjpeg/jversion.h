@@ -36,7 +36,7 @@
 
 
 #define JCOPYRIGHT \
-  "Copyright (C) 2009-2018 D. R. Commander\n" \
+  "Copyright (C) 2009-2019 D. R. Commander\n" \
   "Copyright (C) 2011-2016 Siarhei Siamashka\n" \
   "Copyright (C) 2015-2016, 2018 Matthieu Darbois\n" \
   "Copyright (C) 2015 Intel Corporation\n" \
@@ -49,4 +49,4 @@
   "Copyright (C) 1991-2016 Thomas G. Lane, Guido Vollbeding"
 
 #define JCOPYRIGHT_SHORT \
-  "Copyright (C) 1991-2018 The libjpeg-turbo Project and many others"
+  "Copyright (C) 1991-2019 The libjpeg-turbo Project and many others"

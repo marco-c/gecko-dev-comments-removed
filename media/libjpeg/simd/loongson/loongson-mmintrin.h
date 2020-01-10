@@ -21,6 +21,7 @@
 
 
 
+
 #ifndef __LOONGSON_MMINTRIN_H__
 #define __LOONGSON_MMINTRIN_H__
 
@@ -41,7 +42,7 @@ typedef float __m32;
 
 
 
-extern __inline __m64
+extern __inline __m64 FUNCTION_ATTRIBS
 _mm_setzero_si64(void)
 {
   return 0.0;
@@ -1245,6 +1246,22 @@ _mm_load_si64(const __m64 *src)
   asm("ldc1 %0, %1\n\t"
       : "=f" (ret)
       : "m" (*src)
+      : "memory"
+     );
+
+  return ret;
+}
+
+extern __inline __m64 FUNCTION_ATTRIBS
+_mm_loadu_si64(const __m64 *src)
+{
+  __m64 ret;
+
+  asm("gsldlc1 %0,  7(%1)\n\t"
+      "gsldrc1 %0,  0(%1)\n\t"
+      : "=f" (ret)
+      : "r" (src)
+      : "memory"
      );
 
   return ret;

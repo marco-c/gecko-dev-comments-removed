@@ -492,8 +492,8 @@ prepare_for_pass(j_compress_ptr cinfo)
 
     master->pass_type = output_pass;
     master->pass_number++;
-    
 #endif
+    
   case output_pass:
     
     

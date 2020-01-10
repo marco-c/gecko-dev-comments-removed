@@ -29,9 +29,10 @@
 
 
 
-#define V(i,a,b,c,d) (((JLONG)a << 16) | ((JLONG)c << 8) | ((JLONG)d << 7) | b)
+#define V(i, a, b, c, d) \
+  (((JLONG)a << 16) | ((JLONG)c << 8) | ((JLONG)d << 7) | b)
 
-const JLONG jpeg_aritab[113+1] = {
+const JLONG jpeg_aritab[113 + 1] = {
 
 
 
