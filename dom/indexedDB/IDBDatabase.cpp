@@ -768,23 +768,10 @@ void IDBDatabase::AbortTransactions(bool aShouldWarn) {
         MOZ_ASSERT(transaction);
         MOZ_ASSERT(!transaction->IsDone());
 
-        if (aShouldWarn) {
-          switch (transaction->GetMode()) {
-            
-            case IDBTransaction::READ_ONLY:
-              break;
-
-            
-            case IDBTransaction::READ_WRITE:
-            case IDBTransaction::READ_WRITE_FLUSH:
-            case IDBTransaction::CLEANUP:
-            case IDBTransaction::VERSION_CHANGE:
-              transactionsThatNeedWarning.AppendElement(transaction);
-              break;
-
-            default:
-              MOZ_CRASH("Unknown mode!");
-          }
+        
+        
+        if (aShouldWarn && transaction->IsWriteAllowed()) {
+          transactionsThatNeedWarning.AppendElement(transaction);
         }
 
         transaction->Abort(NS_ERROR_DOM_INDEXEDDB_ABORT_ERR);
