@@ -66,6 +66,15 @@ function $_(formNum, name) {
 
 
 
+function recreateTree(element) {
+  
+  element.outerHTML = element.outerHTML;
+}
+
+
+
+
+
 function checkAutoCompleteResults(actualValues, expectedValues, hostname, msg) {
   if (hostname !== null) {
     isnot(

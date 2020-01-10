@@ -198,6 +198,13 @@ const observer = {
 
     switch (aEvent.type) {
       
+      case "blur": {
+        let unmask = false;
+        LoginManagerContent._togglePasswordFieldMasking(aEvent.target, unmask);
+        break;
+      }
+
+      
       case "change": {
         LoginManagerContent._generatedPasswordFilledOrEdited(aEvent.target);
         break;
@@ -213,8 +220,18 @@ const observer = {
         break;
       }
 
-      
       case "focus": {
+        if (aEvent.target.type == "password") {
+          
+          let unmask = true;
+          LoginManagerContent._togglePasswordFieldMasking(
+            aEvent.target,
+            unmask
+          );
+          break;
+        }
+
+        
         LoginManagerContent._onUsernameFocus(aEvent);
         break;
       }
@@ -983,6 +1000,9 @@ this.LoginManagerContent = {
     if (LoginHelper.isUsernameFieldType(acInputField)) {
       this.onUsernameAutocompleted(acInputField, loginGUID);
     } else if (acInputField.hasBeenTypePassword) {
+      
+      
+      this._disableAutomaticPasswordFieldUnmasking(acInputField);
       this._highlightFilledField(acInputField);
     }
   },
@@ -1509,24 +1529,40 @@ this.LoginManagerContent = {
 
   _generatedPasswordFilledOrEdited(passwordField) {
     log("_generatedPasswordFilledOrEdited", passwordField);
+
+    if (!LoginHelper.enabled) {
+      throw new Error(
+        "A generated password was filled while the password manager was disabled."
+      );
+    }
+
     let win = passwordField.ownerGlobal;
 
     this._highlightFilledField(passwordField);
 
+    passwordField.addEventListener("blur", observer, {
+      capture: true,
+      mozSystemGroup: true,
+    });
+    passwordField.addEventListener("focus", observer, {
+      capture: true,
+      mozSystemGroup: true,
+    });
+
     
-    passwordField.addEventListener("change", observer, true);
+    this._togglePasswordFieldMasking(passwordField, true);
+
+    
+    passwordField.addEventListener("change", observer, {
+      capture: true,
+      mozSystemGroup: true,
+    });
 
     if (PrivateBrowsingUtils.isContentWindowPrivate(win)) {
       log(
         "_generatedPasswordFilledOrEdited: not automatically saving the password in private browsing mode"
       );
       return;
-    }
-
-    if (!LoginHelper.enabled) {
-      throw new Error(
-        "A generated password was filled while the password manager was disabled."
-      );
     }
 
     let loginForm = LoginFormFactory.createFromField(passwordField);
@@ -1551,6 +1587,43 @@ this.LoginManagerContent = {
         username: (usernameField && usernameField.value) || "",
       }
     );
+  },
+
+  _togglePasswordFieldMasking(passwordField, unmask) {
+    let { editor } = passwordField;
+
+    if (passwordField.type != "password") {
+      
+      log("_togglePasswordFieldMasking: Field isn't type=password");
+      return;
+    }
+
+    if (!unmask && !editor) {
+      
+      return;
+    }
+
+    if (unmask) {
+      editor.unmask(0);
+      return;
+    }
+
+    if (editor.autoMaskingEnabled) {
+      return;
+    }
+    editor.mask();
+  },
+
+  _disableAutomaticPasswordFieldUnmasking(passwordField) {
+    passwordField.removeEventListener("blur", observer, {
+      capture: true,
+      mozSystemGroup: true,
+    });
+    passwordField.removeEventListener("focus", observer, {
+      capture: true,
+      mozSystemGroup: true,
+    });
+    this._togglePasswordFieldMasking(passwordField, false);
   },
 
   
@@ -1918,6 +1991,9 @@ this.LoginManagerContent = {
 
       let doc = form.ownerDocument;
       if (passwordField.value != selectedLogin.password) {
+        
+        
+        this._disableAutomaticPasswordFieldUnmasking(passwordField);
         passwordField.setUserInput(selectedLogin.password);
         let autoFilledLogin = {
           guid: selectedLogin.QueryInterface(Ci.nsILoginMetaInfo).guid,
@@ -1948,6 +2024,9 @@ this.LoginManagerContent = {
       let win = doc.defaultView;
       let messageManager = win.docShell.messageManager;
       messageManager.sendAsyncMessage("LoginStats:LoginFillSuccessful");
+    } catch (ex) {
+      Cu.reportError(ex);
+      throw ex;
     } finally {
       if (autofillResult == -1) {
         
