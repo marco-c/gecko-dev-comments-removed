@@ -60,6 +60,20 @@ onmessage = async function(msg) {
       
       
       await OS.File.setPermissions(destPath, { unixMode: 0o700 });
+      if (OS.Constants.Sys.Name == "Darwin") {
+        
+        
+        
+        try {
+          await OS.File.macRemoveXAttr(destPath, "com.apple.quarantine");
+        } catch (e) {
+          
+          
+          
+          
+          
+        }
+      }
       extractedPaths.push(destPath);
     }
     postMessage({
