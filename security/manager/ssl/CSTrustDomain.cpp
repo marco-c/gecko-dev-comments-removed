@@ -160,7 +160,7 @@ Result CSTrustDomain::FindIssuer(Input encodedIssuerName,
 
 Result CSTrustDomain::CheckRevocation(
     EndEntityOrCA endEntityOrCA, const CertID& certID, Time time,
-    Duration validityDuration,
+    Time validityPeriodBeginning, Duration validityDuration,
      const Input* stapledOCSPresponse,
      const Input* aiaExtension) {
   

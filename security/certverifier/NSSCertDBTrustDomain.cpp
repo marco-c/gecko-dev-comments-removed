@@ -597,7 +597,7 @@ static Result GetOCSPAuthorityInfoAccessLocation(const UniquePLArenaPool& arena,
 
 Result NSSCertDBTrustDomain::CheckRevocation(
     EndEntityOrCA endEntityOrCA, const CertID& certID, Time time,
-    Duration validityDuration,
+    Time validityPeriodBeginning, Duration validityDuration,
      const Input* stapledOCSPResponse,
      const Input* aiaExtension) {
   
