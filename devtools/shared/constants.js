@@ -80,7 +80,7 @@ const SCORES = {
   
   BEST_PRACTICES: "BEST_PRACTICES",
   
-  FAIL: "fail",
+  FAIL: "FAIL",
   
   WARNING: "WARNING",
 };

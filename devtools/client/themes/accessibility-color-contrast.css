@@ -31,7 +31,7 @@
 }
 
 .accessibility-color-contrast
-  .accessibility-contrast-value:not(:empty).fail:after {
+  .accessibility-contrast-value:not(:empty).FAIL:after {
   color: #e57180;
   content: "⚠️";
 }
