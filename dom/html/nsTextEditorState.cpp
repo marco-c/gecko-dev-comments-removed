@@ -64,18 +64,17 @@ inline nsresult SetEditorFlagsIfNecessary(EditorBase& aEditorBase,
 class MOZ_STACK_CLASS AutoInputEventSuppresser final {
  public:
   explicit AutoInputEventSuppresser(TextEditor* aTextEditor)
-      : mTextEditor(aTextEditor)
+      : mTextEditor(aTextEditor),
         
         
         
-        ,
         mOuterTransaction(aTextEditor->IsSuppressingDispatchingInputEvent()) {
-    MOZ_ASSERT(aTextEditor);
+    MOZ_ASSERT(mTextEditor);
+    mTextEditor->SuppressDispatchingInputEvent(true);
   }
   ~AutoInputEventSuppresser() {
     mTextEditor->SuppressDispatchingInputEvent(mOuterTransaction);
   }
-  void Init() { mTextEditor->SuppressDispatchingInputEvent(true); }
 
  private:
   RefPtr<TextEditor> mTextEditor;
@@ -2280,7 +2279,6 @@ bool nsTextEditorState::SetValue(const nsAString& aValue,
     
     if (!currentValue.Equals(newValue)) {
       RefPtr<TextEditor> textEditor = mTextEditor;
-      AutoInputEventSuppresser suppressInputEventDispatching(textEditor);
 
       nsCOMPtr<Document> document = textEditor->GetDocument();
       if (NS_WARN_IF(!document)) {
@@ -2307,10 +2305,6 @@ bool nsTextEditorState::SetValue(const nsAString& aValue,
         {
           AutoRestoreEditorState restoreState(textEditor);
 
-          mTextListener->SettingValue(true);
-          bool notifyValueChanged = !!(aFlags & eSetValue_Notify);
-          mTextListener->SetValueChanged(notifyValueChanged);
-
           if (aFlags & eSetValue_BySetUserInput) {
             
             
@@ -2318,94 +2312,99 @@ bool nsTextEditorState::SetValue(const nsAString& aValue,
             
             
             
-            RefPtr<nsRange> range;  
             
             
             
             
             DebugOnly<nsresult> rv =
-                textEditor->ReplaceTextAsAction(newValue, range, nullptr);
+                textEditor->ReplaceTextAsAction(newValue, nullptr, nullptr);
             NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                                  "Failed to set the new value");
-          } else if (aFlags & eSetValue_ForXUL) {
-            
-            
-            suppressInputEventDispatching.Init();
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            nsCOMPtr<nsISelectionController> kungFuDeathGrip = mSelCon.get();
-            uint32_t currentLength = currentValue.Length();
-            uint32_t newlength = newValue.Length();
-            if (!currentLength || !StringBeginsWith(newValue, currentValue)) {
-              
-              currentLength = 0;
-              kungFuDeathGrip->SelectAll();
-            } else {
-              
-              mBoundFrame->SelectAllOrCollapseToEndOfText(false);
-            }
-            const nsAString& insertValue =
-                StringTail(newValue, newlength - currentLength);
-
-            if (insertValue.IsEmpty()) {
-              
-              
-              
-              DebugOnly<nsresult> rv = textEditor->DeleteSelectionAsAction(
-                  nsIEditor::eNone, nsIEditor::eStrip, nullptr);
-              NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                                   "Failed to remove the text");
-            } else {
-              
-              
-              
-              DebugOnly<nsresult> rv =
-                  textEditor->InsertTextAsAction(insertValue, nullptr);
-              NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                                   "Failed to insert the new value");
-            }
           } else {
             
             
-            suppressInputEventDispatching.Init();
+            
+            
+            
+            mTextListener->SettingValue(true);
+            bool notifyValueChanged = !!(aFlags & eSetValue_Notify);
+            mTextListener->SetValueChanged(notifyValueChanged);
 
-            
-            
-            
-            AutoDisableUndo disableUndo(textEditor);
-            if (selection) {
+            AutoInputEventSuppresser suppressInputEventDispatching(textEditor);
+
+            if (aFlags & eSetValue_ForXUL) {
               
               
               
               
-              selection->RemoveAllRangesTemporarily();
+              
+              
+              
+              
+              
+              nsCOMPtr<nsISelectionController> kungFuDeathGrip = mSelCon.get();
+              uint32_t currentLength = currentValue.Length();
+              uint32_t newlength = newValue.Length();
+              if (!currentLength || !StringBeginsWith(newValue, currentValue)) {
+                
+                currentLength = 0;
+                kungFuDeathGrip->SelectAll();
+              } else {
+                
+                mBoundFrame->SelectAllOrCollapseToEndOfText(false);
+              }
+              const nsAString& insertValue =
+                  StringTail(newValue, newlength - currentLength);
+
+              if (insertValue.IsEmpty()) {
+                
+                
+                
+                DebugOnly<nsresult> rv = textEditor->DeleteSelectionAsAction(
+                    nsIEditor::eNone, nsIEditor::eStrip, nullptr);
+                NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                                     "Failed to remove the text");
+              } else {
+                
+                
+                
+                DebugOnly<nsresult> rv =
+                    textEditor->InsertTextAsAction(insertValue, nullptr);
+                NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                                     "Failed to insert the new value");
+              }
+            } else {
+              
+              
+              
+              AutoDisableUndo disableUndo(textEditor);
+              if (selection) {
+                
+                
+                
+                
+                
+                selection->RemoveAllRangesTemporarily();
+              }
+
+              
+              
+              textEditor->SetTextAsAction(newValue, nullptr);
+
+              
+              
+              
+              
+              mTextListener->HandleValueChanged();
             }
 
-            
-            
-            textEditor->SetTextAsAction(newValue, nullptr);
-
-            
-            
-            
-            
-            mTextListener->HandleValueChanged();
-          }
-
-          mTextListener->SetValueChanged(true);
-          mTextListener->SettingValue(false);
-
-          if (!notifyValueChanged) {
-            
-            ValueWasChanged(true);
+            mTextListener->SetValueChanged(true);
+            mTextListener->SettingValue(false);
+            if (!notifyValueChanged) {
+              
+              
+              ValueWasChanged(true);
+            }
           }
         }
 
