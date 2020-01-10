@@ -139,7 +139,10 @@ class HitTestingTreeNode {
   
   EventRegionsOverride GetEventRegionsOverride() const;
   const CSSTransformMatrix& GetTransform() const;
-  LayerToScreenMatrix4x4 GetCSSTransformToRoot() const;
+  
+
+
+  LayerToScreenMatrix4x4 GetTransformToGecko() const;
   const LayerIntRegion& GetVisibleRegion() const;
 
   bool IsAsyncZoomContainer() const;
