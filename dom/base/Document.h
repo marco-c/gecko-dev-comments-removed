@@ -9,6 +9,7 @@
 #include "mozilla/EventStates.h"  
 #include "mozilla/FlushType.h"    
 #include "mozilla/Pair.h"         
+#include "mozilla/Saturate.h"     
 #include "nsAutoPtr.h"            
 #include "nsCOMArray.h"           
 #include "nsCompatibility.h"      
@@ -3699,15 +3700,13 @@ class Document : public nsINode,
 
   void PropagateUseCounters(Document* aParentDocument);
 
-  void AddToVisibleContentHeuristic(size_t aNumber) {
-    if (MOZ_UNLIKELY(SIZE_MAX - mVisibleContentHeuristic < aNumber)) {
-      mVisibleContentHeuristic = SIZE_MAX;
-    } else {
-      mVisibleContentHeuristic += aNumber;
-    }
+  void AddToVisibleContentHeuristic(uint32_t aNumber) {
+    mVisibleContentHeuristic += aNumber;
   }
 
-  size_t GetVisibleContentHeuristic() const { return mVisibleContentHeuristic; }
+  uint32_t GetVisibleContentHeuristic() const {
+    return mVisibleContentHeuristic.value();
+  }
 
   
   
@@ -4913,7 +4912,7 @@ class Document : public nsINode,
   
   
   
-  size_t mVisibleContentHeuristic = 0;
+  SaturateUint32 mVisibleContentHeuristic{0};
 
   
   bool mUserHasInteracted;
