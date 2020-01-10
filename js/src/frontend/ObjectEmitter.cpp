@@ -761,7 +761,8 @@ bool ClassEmitter::prepareForFieldInitializers(size_t numFields) {
   
   
   
-  initializersAssignment_.emplace(bce_, bce_->cx->names().dotInitializers,
+  initializersAssignment_.emplace(bce_,
+                                  bce_->cx->names().dotInitializers.toHandle(),
                                   NameOpEmitter::Kind::Initialize);
   if (!initializersAssignment_->prepareForRhs()) {
     return false;

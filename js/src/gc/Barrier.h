@@ -851,7 +851,13 @@ class ImmutableTenuredPtr {
   operator T() const { return value; }
   T operator->() const { return value; }
 
-  operator Handle<T>() const { return Handle<T>::fromMarkedLocation(&value); }
+  
+  
+  
+  
+  
+  operator Handle<T>() const { return toHandle(); }
+  Handle<T> toHandle() const { return Handle<T>::fromMarkedLocation(&value); }
 
   void init(T ptr) {
     MOZ_ASSERT(ptr->isTenured());
