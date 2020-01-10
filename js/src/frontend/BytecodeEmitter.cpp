@@ -25,6 +25,7 @@
 #include "jstypes.h"  
 #include "jsutil.h"   
 
+#include "dbg/Debugger.h"                        
 #include "ds/Nestable.h"                         
 #include "frontend/BytecodeControlStructures.h"  
 #include "frontend/CallOrNewEmitter.h"           
@@ -55,7 +56,6 @@
 #include "js/CompileOptions.h"       
 #include "vm/AsyncFunction.h"        
 #include "vm/BytecodeUtil.h"  
-#include "vm/Debugger.h"      
 #include "vm/GeneratorObject.h"  
 #include "vm/JSAtom.h"           
 #include "vm/JSContext.h"        

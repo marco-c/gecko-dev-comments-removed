@@ -4,8 +4,8 @@
 
 
 
-#ifndef vm_Debugger_h
-#define vm_Debugger_h
+#ifndef dbg_Debugger_h
+#define dbg_Debugger_h
 
 #include "mozilla/DoublyLinkedList.h"
 #include "mozilla/GuardObjects.h"

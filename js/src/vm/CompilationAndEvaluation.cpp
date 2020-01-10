@@ -17,6 +17,7 @@
 #include "jsfriendapi.h"  
 #include "jstypes.h"      
 
+#include "dbg/Debugger.h"                  
 #include "frontend/BytecodeCompilation.h"  
 #include "frontend/FullParseHandler.h"     
 #include "frontend/ParseContext.h"         
@@ -29,7 +30,6 @@
 #include "js/Value.h"              
 #include "util/CompleteFile.h"     
 #include "util/StringBuffer.h"     
-#include "vm/Debugger.h"           
 #include "vm/EnvironmentObject.h"  
 #include "vm/Interpreter.h"        
 #include "vm/JSContext.h"          
