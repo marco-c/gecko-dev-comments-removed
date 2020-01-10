@@ -44,6 +44,44 @@ import mozpack.path as mozpath
 BROWSERTIME_ROOT = os.path.dirname(__file__)
 
 
+def node_path():
+    from mozbuild.nodeutil import find_node_executable
+    node, _ = find_node_executable()
+
+    return os.path.abspath(node)
+
+
+def package_path():
+    '''The path to the `browsertime` directory.
+
+    Override the default with the `BROWSERTIME` environment variable.'''
+    override = os.environ.get('BROWSERTIME', None)
+    if override:
+        return override
+
+    return mozpath.join(BROWSERTIME_ROOT, 'node_modules', 'browsertime')
+
+
+def browsertime_path():
+    '''The path to the `browsertime.js` script.'''
+    
+    
+    
+    
+    return mozpath.join(
+        package_path(),
+        'bin',
+        'browsertime.js')
+
+
+def visualmetrics_path():
+    '''The path to the `visualmetrics.py` script.'''
+    return mozpath.join(
+        package_path(),
+        'vendor',
+        'visualmetrics.py')
+
+
 def host_platform():
     is_64bits = sys.maxsize > 2**32
 
@@ -198,52 +236,14 @@ class MachBrowsertime(MachCommandBase):
 
         return self.check()
 
-    @property
-    def node_path(self):
-        from mozbuild.nodeutil import find_node_executable
-        node, _ = find_node_executable()
-
-        return os.path.abspath(node)
-
     def node(self, args):
         r'''Invoke node (interactively) with the given arguments.'''
         return self.run_process(
-            [self.node_path] + args,
+            [node_path()] + args,
             append_env=self.append_env(),
             pass_thru=True,  
             ensure_exit_code=False,  
             cwd=mozpath.join(self.topsrcdir))
-
-    @property
-    def package_path(self):
-        r'''The path to the `browsertime` directory.
-
-        Override the default with the `BROWSERTIME` environment variable.'''
-        override = os.environ.get('BROWSERTIME', None)
-        if override:
-            return override
-
-        return mozpath.join(BROWSERTIME_ROOT, 'node_modules', 'browsertime')
-
-    @property
-    def browsertime_path(self):
-        '''The path to the `browsertime.js` script.'''
-        
-        
-        
-        
-        return mozpath.join(
-            self.package_path,
-            'bin',
-            'browsertime.js')
-
-    @property
-    def visualmetrics_path(self):
-        '''The path to the `visualmetrics.py` script.'''
-        return mozpath.join(
-            self.package_path,
-            'vendor',
-            'visualmetrics.py')
 
     def append_env(self, append_path=True):
         fetches = host_fetches[host_platform()]
@@ -273,7 +273,7 @@ class MachBrowsertime(MachCommandBase):
         
         
         
-        node_dir = os.path.dirname(self.node_path)
+        node_dir = os.path.dirname(node_path())
         path = [node_dir] + path
 
         append_env = {
@@ -321,7 +321,7 @@ class MachBrowsertime(MachCommandBase):
 
         args = ['--check']
         status = self.run_process(
-            [self.virtualenv_manager.python_path, self.visualmetrics_path] + args,
+            [self.virtualenv_manager.python_path, visualmetrics_path()] + args,
             
             
             
@@ -343,7 +343,7 @@ class MachBrowsertime(MachCommandBase):
         sys.stdout.flush()
         sys.stderr.flush()
 
-        return self.node([self.browsertime_path] + ['--version'])
+        return self.node([browsertime_path()] + ['--version'])
 
     def extra_default_args(self, args=[]):
         
@@ -403,7 +403,7 @@ class MachBrowsertime(MachCommandBase):
 
         self._activate_virtualenv()
 
-        return self.node([self.browsertime_path] + self.extra_default_args(args) + args)
+        return self.node([browsertime_path()] + self.extra_default_args(args) + args)
 
     @Command('visualmetrics', category='testing',
              description='Run visualmetrics.py')
@@ -434,7 +434,7 @@ class MachBrowsertime(MachCommandBase):
                 '75',
                 '-vvvv']
         return self.run_process(
-            [self.visualmetrics_path] + args,
+            [visualmetrics_path()] + args,
             append_env=self.append_env(),
             pass_thru=True,
             ensure_exit_code=False,  
