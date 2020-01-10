@@ -73,7 +73,7 @@ class ElementStyle {
     this.showUserAgentStyles = showUserAgentStyles;
     this.rules = [];
     this.cssProperties = this.ruleView.cssProperties;
-    this.variables = new Map();
+    this.variablesMap = new Map();
 
     
     
@@ -302,7 +302,7 @@ class ElementStyle {
 
 
   onRuleUpdated() {
-    this.variables.clear();
+    this.variablesMap.clear();
     this.updateDeclarations();
 
     
@@ -335,6 +335,9 @@ class ElementStyle {
     for (const textProp of textProps) {
       computedProps = computedProps.concat(textProp.computed);
     }
+
+    
+    const variables = new Map(pseudo ? this.variablesMap.get("") : null);
 
     
     
@@ -390,7 +393,7 @@ class ElementStyle {
         taken[computedProp.name] = computedProp;
 
         if (isCssVariable(computedProp.name)) {
-          this.variables.set(computedProp.name, computedProp.value);
+          variables.set(computedProp.name, computedProp.value);
         }
       }
     }
@@ -412,6 +415,8 @@ class ElementStyle {
         textProp.editor.updatePropertyState();
       }
     }
+
+    this.variablesMap.set(pseudo, variables);
   }
 
   
@@ -811,8 +816,11 @@ class ElementStyle {
 
 
 
-  getVariable(name) {
-    return this.variables.get(name);
+
+
+  getVariable(name, pseudo = "") {
+    const variables = this.variablesMap.get(pseudo);
+    return variables ? variables.get(name) : null;
   }
 
   
