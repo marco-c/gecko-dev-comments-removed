@@ -4,9 +4,6 @@
 ChromeUtils.import("resource://gre/modules/CanonicalJSON.jsm", this);
 ChromeUtils.import("resource://gre/modules/osfile.jsm", this);
 ChromeUtils.import("resource://normandy/lib/NormandyApi.jsm", this);
-ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm", this);
-
-Cu.importGlobalProperties(["fetch"]);
 
 load("utils.js"); 
 
@@ -175,43 +172,4 @@ add_task(withScriptServer("query_server.sjs", async function test_postData(serve
     data, {queryString: {}, body: {foo: "bar", baz: "biff"}},
     "NormandyApi sent an incorrect query string."
   );
-}));
-
-
-add_task(withScriptServer("cookie_server.sjs", async function test_sendsNoCredentials(serverUrl) {
-  
-  
-
-  
-  await fetch(serverUrl);
-
-  
-  const cookieExpectedDeferred = PromiseUtils.defer();
-  function cookieExpectedObserver(aSubject, aTopic, aData) {
-    equal(aTopic, "http-on-modify-request", "Only the expected topic should be observed");
-    let httpChannel = aSubject.QueryInterface(Ci.nsIHttpChannel);
-    equal(httpChannel.getRequestHeader("Cookie"), "type=chocolate-chip", "The header should be sent");
-    Services.obs.removeObserver(cookieExpectedObserver, "http-on-modify-request");
-    cookieExpectedDeferred.resolve();
-  };
-  Services.obs.addObserver(cookieExpectedObserver, "http-on-modify-request");
-  await fetch(serverUrl);
-  await cookieExpectedDeferred.promise;
-
-  
-  const cookieNotExpectedDeferred = PromiseUtils.defer();
-  function cookieNotExpectedObserver(aSubject, aTopic, aData) {
-    equal(aTopic, "http-on-modify-request", "Only the expected topic should be observed");
-    let httpChannel = aSubject.QueryInterface(Ci.nsIHttpChannel);
-    Assert.throws(
-      () => httpChannel.getRequestHeader("Cookie"),
-      /NS_ERROR_NOT_AVAILABLE/,
-      "The cookie header should not be sent"
-    );
-    Services.obs.removeObserver(cookieNotExpectedObserver, "http-on-modify-request");
-    cookieNotExpectedDeferred.resolve();
-  };
-  Services.obs.addObserver(cookieNotExpectedObserver, "http-on-modify-request");
-  await NormandyApi.get(serverUrl);
-  await cookieNotExpectedDeferred.promise;
 }));
