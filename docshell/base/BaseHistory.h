@@ -18,6 +18,20 @@ class BaseHistory : public IHistory {
   BaseHistory()
     : mTrackedURIs(kTrackedUrisInitialSize) {}
 
+  
+
+
+
+  void NotifyVisitedForDocument(nsIURI*,
+                                dom::Document*);
+
+  
+
+
+
+  void DispatchNotifyVisited(nsIURI*, dom::Document*);
+
+
   static dom::Document* GetLinkDocument(dom::Link&);
 
   using ObserverArray = nsTObserverArray<dom::Link*>;

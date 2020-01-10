@@ -161,19 +161,6 @@ class History final : public BaseHistory,
 
 
 
-  void NotifyVisitedForDocument(nsIURI* aURI,
-                                mozilla::dom::Document* aDocument);
-
-  
-
-
-
-  void DispatchNotifyVisited(nsIURI* aURI, mozilla::dom::Document* aDocument);
-
-  
-
-
-
 
   RefPtr<mozilla::places::Database> mDB;
 
