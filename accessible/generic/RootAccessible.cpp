@@ -348,6 +348,15 @@ void RootAccessible::ProcessDOMEvent(Event* aDOMEvent, nsINode* aTarget) {
     if (FocusMgr()->HasDOMFocus(targetNode)) {
       nsCOMPtr<nsIDOMXULMultiSelectControlElement> multiSel =
           targetNode->AsElement()->AsXULMultiSelectControl();
+      if (!multiSel) {
+        
+        
+        
+        
+        MOZ_ASSERT_UNREACHABLE(
+            "XUL tree doesn't have nsIDOMXULMultiSelectControlElement");
+        return;
+      }
       nsAutoString selType;
       multiSel->GetSelType(selType);
       if (selType.IsEmpty() || !selType.EqualsLiteral("single")) {
