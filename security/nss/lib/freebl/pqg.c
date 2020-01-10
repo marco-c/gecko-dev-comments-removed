@@ -890,7 +890,7 @@ findQfromSeed(
     pqgGenType *typePtr,        
     unsigned int *qgen_counter) 
 {
-    HASH_HashType hashtype = HASH_AlgNULL;
+    HASH_HashType hashtype;
     SECItem firstseed = { 0, 0, 0 };
     SECItem qseed = { 0, 0, 0 };
     SECStatus rv;
@@ -1239,7 +1239,7 @@ pqg_ParamGen(unsigned int L, unsigned int N, pqgGenType type,
     unsigned int offset;  
     unsigned int outlen;  
     unsigned int maxCount;
-    HASH_HashType hashtype = HASH_AlgNULL;
+    HASH_HashType hashtype;
     SECItem *seed; 
     PLArenaPool *arena = NULL;
     PQGParams *params = NULL;
@@ -1630,8 +1630,8 @@ PQG_VerifyParams(const PQGParams *params,
     unsigned int qseed_len;
     unsigned int qgen_counter_ = 0;
     SECItem pseed_ = { 0, 0, 0 };
-    HASH_HashType hashtype = HASH_AlgNULL;
-    pqgGenType type = FIPS186_1_TYPE;
+    HASH_HashType hashtype;
+    pqgGenType type;
 
 #define CHECKPARAM(cond)      \
     if (!(cond)) {            \
