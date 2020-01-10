@@ -43,7 +43,6 @@
 #include "nsIWebBrowserChrome.h"
 #include "nsIWebNavigation.h"
 #include "nsIWindowCreator.h"
-#include "nsIWindowCreator2.h"
 #include "nsIXPConnect.h"
 #include "nsIXULRuntime.h"
 #include "nsPIDOMWindow.h"
@@ -404,14 +403,13 @@ nsresult nsWindowWatcher::CreateChromeWindow(
     uint32_t aChromeFlags, nsIRemoteTab* aOpeningBrowserParent,
     mozIDOMWindowProxy* aOpener, uint64_t aNextRemoteTabId,
     nsIWebBrowserChrome** aResult) {
-  nsCOMPtr<nsIWindowCreator2> windowCreator2(do_QueryInterface(mWindowCreator));
-  if (NS_WARN_IF(!windowCreator2)) {
+  if (NS_WARN_IF(!mWindowCreator)) {
     return NS_ERROR_UNEXPECTED;
   }
 
   bool cancel = false;
   nsCOMPtr<nsIWebBrowserChrome> newWindowChrome;
-  nsresult rv = windowCreator2->CreateChromeWindow2(
+  nsresult rv = mWindowCreator->CreateChromeWindow(
       aParentChrome, aChromeFlags, aOpeningBrowserParent, aOpener,
       aNextRemoteTabId, &cancel, getter_AddRefs(newWindowChrome));
 
@@ -508,8 +506,7 @@ nsWindowWatcher::OpenWindowWithRemoteTab(
     return NS_ERROR_UNEXPECTED;
   }
 
-  nsCOMPtr<nsIWindowCreator2> windowCreator2(do_QueryInterface(mWindowCreator));
-  if (NS_WARN_IF(!windowCreator2)) {
+  if (NS_WARN_IF(!mWindowCreator)) {
     return NS_ERROR_UNEXPECTED;
   }
 
@@ -871,18 +868,9 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
 
 
-
-      nsCOMPtr<nsIWindowCreator2> windowCreator2(
-          do_QueryInterface(mWindowCreator));
-      if (windowCreator2) {
-        mozIDOMWindowProxy* openerWindow = aForceNoOpener ? nullptr : aParent;
-        rv = CreateChromeWindow(features, parentChrome, chromeFlags, nullptr,
-                                openerWindow, 0, getter_AddRefs(newChrome));
-
-      } else {
-        rv = mWindowCreator->CreateChromeWindow(parentChrome, chromeFlags,
-                                                getter_AddRefs(newChrome));
-      }
+      mozIDOMWindowProxy* openerWindow = aForceNoOpener ? nullptr : aParent;
+      rv = CreateChromeWindow(features, parentChrome, chromeFlags, nullptr,
+                              openerWindow, 0, getter_AddRefs(newChrome));
 
       if (parentTopInnerWindow) {
         parentTopInnerWindow->Resume();
