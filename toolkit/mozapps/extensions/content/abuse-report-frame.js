@@ -1,7 +1,3 @@
-
-
-
-
 "use strict";
 
 
@@ -270,7 +266,7 @@
   
   
   
-  if (useHtmlViews && ABUSE_REPORT_ENABLED) {
+  if (ABUSE_REPORT_ENABLED) {
     customElements.define(
       "addon-abuse-report-xulframe",
       AddonAbuseReportsXULFrame
