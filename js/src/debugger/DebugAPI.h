@@ -284,6 +284,15 @@ class DebugAPI {
   
   static bool hasDebuggerStatementHook(GlobalObject* global);
 
+  
+
+
+
+  static bool getScriptInstrumentationId(JSContext* cx,
+                                         HandleObject dbgObject,
+                                         HandleScript script,
+                                         MutableHandleValue rval);
+
  private:
   static bool stepModeEnabledSlow(JSScript* script);
   static bool hasBreakpointsAtSlow(JSScript* script, jsbytecode* pc);
