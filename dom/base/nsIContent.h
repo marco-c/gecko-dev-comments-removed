@@ -398,20 +398,10 @@ class nsIContent : public nsINode {
 
 
 
-
-
   mozilla::dom::ShadowRoot* GetContainingShadow() const {
     const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();
     return slots ? slots->mContainingShadow.get() : nullptr;
   }
-
-  
-
-
-
-
-
-  nsIContent* GetContainingShadowHost() const;
 
   
 

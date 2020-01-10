@@ -91,6 +91,7 @@ class Optional;
 class OwningNodeOrString;
 template <typename>
 class Sequence;
+class ShadowRoot;
 class SVGUseElement;
 class Text;
 class TextOrElementOrDocument;
@@ -1260,9 +1261,57 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  bool IsInAnonymousSubtree() const {
-    return IsInNativeAnonymousSubtree();
+  bool IsInAnonymousSubtree() const { return IsInNativeAnonymousSubtree(); }
+
+  
+
+
+
+
+  nsIContent* GetClosestNativeAnonymousSubtreeRoot() const {
+    if (!IsInNativeAnonymousSubtree()) {
+      return nullptr;
+    }
+    MOZ_ASSERT(IsContent(), "How did non-content end up in NAC?");
+    for (const nsINode* node = this; node; node = node->GetParentNode()) {
+      if (node->IsRootOfNativeAnonymousSubtree()) {
+        return const_cast<nsINode*>(node)->AsContent();
+      }
+    }
+    
+    
+    
+    
+    NS_WARNING("GetClosestNativeAnonymousSubtreeRoot on disconnected NAC!");
+    return nullptr;
   }
+
+  
+
+
+
+
+  nsIContent* GetClosestNativeAnonymousSubtreeRootParent() const {
+    const nsIContent* root = GetClosestNativeAnonymousSubtreeRoot();
+    if (!root) {
+      return nullptr;
+    }
+    
+    
+    return reinterpret_cast<const nsINode*>(root)->GetParent();
+  }
+
+  
+
+
+  mozilla::dom::ShadowRoot* GetContainingShadow() const;
+  
+
+
+
+
+
+  nsIContent* GetContainingShadowHost() const;
 
   bool IsInSVGUseShadowTree() const {
     return !!GetContainingSVGUseShadowHost();

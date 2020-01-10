@@ -2007,18 +2007,10 @@ void PresShell::FireResizeEvent() {
 }
 
 static nsIContent* GetNativeAnonymousSubtreeRoot(nsIContent* aContent) {
-  if (!aContent || !aContent->IsInNativeAnonymousSubtree()) {
+  if (!aContent) {
     return nullptr;
   }
-  auto* current = aContent;
-  
-  
-  
-  
-  while (current && !current->IsRootOfNativeAnonymousSubtree()) {
-    current = current->GetFlattenedTreeParent();
-  }
-  return current;
+  return aContent->GetClosestNativeAnonymousSubtreeRoot();
 }
 
 void PresShell::NativeAnonymousContentRemoved(nsIContent* aAnonContent) {
