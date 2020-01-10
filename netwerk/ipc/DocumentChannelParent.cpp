@@ -69,15 +69,15 @@ bool DocumentChannelParent::Init(const DocumentChannelCreationArgs& aArgs) {
   bool result = nsDocShell::CreateChannelForLoadState(
       loadState, loadInfo, mListener, nullptr,
       aArgs.initiatorType().ptrOr(nullptr), aArgs.loadFlags(), aArgs.loadType(),
-      aArgs.cacheKey(), aArgs.isActive(), aArgs.isTopLevelDoc(),
-      aArgs.hasNonEmptySandboxingFlags(), rv, getter_AddRefs(mChannel));
+      aArgs.cacheKey(), aArgs.isActive(), aArgs.isTopLevelDoc(), rv,
+      getter_AddRefs(mChannel));
   if (!result) {
     return SendFailedAsyncOpen(rv);
   }
 
-  nsDocShell::ConfigureChannel(
-      mChannel, loadState, aArgs.initiatorType().ptrOr(nullptr),
-      aArgs.loadType(), aArgs.cacheKey(), aArgs.hasNonEmptySandboxingFlags());
+  nsDocShell::ConfigureChannel(mChannel, loadState,
+                               aArgs.initiatorType().ptrOr(nullptr),
+                               aArgs.loadType(), aArgs.cacheKey());
 
   
   
@@ -802,17 +802,6 @@ DocumentChannelParent::AsyncOnChannelRedirect(
 
   
   
-  
-  nsCOMPtr<nsHttpChannel> httpChannel = do_QueryInterface(aOldChannel);
-  if (httpChannel) {
-    bool mismatch = false;
-    MOZ_ALWAYS_SUCCEEDS(
-        httpChannel->HasCrossOriginOpenerPolicyMismatch(&mismatch));
-    mHasCrossOriginOpenerPolicyMismatch |= mismatch;
-  }
-
-  
-  
   if (aFlags & nsIChannelEventSink::REDIRECT_INTERNAL) {
     aCallback->OnRedirectVerifyCallback(NS_OK);
     return NS_OK;
@@ -903,13 +892,6 @@ DocumentChannelParent::HasCrossOriginOpenerPolicyMismatch(bool* aMismatch) {
 
   if (!aMismatch) {
     return NS_ERROR_INVALID_ARG;
-  }
-
-  
-  
-  if (mHasCrossOriginOpenerPolicyMismatch) {
-    *aMismatch = true;
-    return NS_OK;
   }
 
   nsCOMPtr<nsHttpChannel> channel = do_QueryInterface(mChannel);

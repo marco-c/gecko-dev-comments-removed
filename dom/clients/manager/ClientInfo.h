@@ -46,7 +46,6 @@ class ClientInfo final {
   ~ClientInfo();
 
   bool operator==(const ClientInfo& aRight) const;
-  bool operator!=(const ClientInfo& aRight) const;
 
   
   const nsID& Id() const;

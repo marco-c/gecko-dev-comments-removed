@@ -88,11 +88,8 @@ class ClientChannelHelper final : public nsIInterfaceRequestor,
       
       if (mMode == Mode::Mode_Child) {
         Maybe<ClientInfo> newClientInfo = newLoadInfo->GetReservedClientInfo();
-        if (newClientInfo) {
-          if (!reservedClient || reservedClient->Info() != *newClientInfo) {
-            reservedClient = ClientManager::CreateSourceFromInfo(*newClientInfo,
-                                                                 mEventTarget);
-          }
+        if (reservedClient && newClientInfo &&
+            reservedClient->Info() == *newClientInfo) {
           newLoadInfo->GiveReservedClientSource(std::move(reservedClient));
         }
       } else {

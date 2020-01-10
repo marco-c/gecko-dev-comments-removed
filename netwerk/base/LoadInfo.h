@@ -39,10 +39,9 @@ class LoadInfo;
 
 namespace ipc {
 
-nsresult LoadInfoArgsToLoadInfo(
-    const Maybe<mozilla::net::LoadInfoArgs>& aLoadInfoArgs,
-    nsINode* aLoadingContext, nsINode* aCspToInheritLoadingContext,
-    net::LoadInfo** outLoadInfo);
+nsresult LoadInfoArgsToLoadInfo(const Maybe<net::LoadInfoArgs>& aLoadInfoArgs,
+                                nsINode* aLoadingContext,
+                                net::LoadInfo** outLoadInfo);
 }  
 
 namespace net {
@@ -167,8 +166,7 @@ class LoadInfo final : public nsILoadInfo {
 
   friend nsresult mozilla::ipc::LoadInfoArgsToLoadInfo(
       const Maybe<mozilla::net::LoadInfoArgs>& aLoadInfoArgs,
-      nsINode* aLoadingContext, nsINode* aCspToInheritLoadingContext,
-      net::LoadInfo** outLoadInfo);
+      nsINode* aLoadingContext, net::LoadInfo** outLoadInfo);
 
   ~LoadInfo() = default;
 
