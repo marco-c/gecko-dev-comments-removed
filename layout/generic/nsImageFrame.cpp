@@ -2568,32 +2568,22 @@ void nsImageFrame::IconLoad::GetPrefs() {
 
 nsresult nsImageFrame::RestartAnimation() {
   nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest();
-  
 
-
-
-  bool deregister = true;
-
-  if (currentRequest && !mContentURLRequestRegistered) {
+  if (currentRequest) {
+    bool deregister = false;
     nsLayoutUtils::RegisterImageRequestIfAnimated(PresContext(), currentRequest,
                                                   &deregister);
-    return currentRequest->StartDecoding(imgIContainer::FLAG_NONE);
   }
   return NS_OK;
 }
 
 nsresult nsImageFrame::StopAnimation() {
   nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest();
-  
-
-
-
-  bool deregister = true;
 
   if (currentRequest) {
+    bool deregister = true;
     nsLayoutUtils::DeregisterImageRequest(PresContext(), currentRequest,
                                           &deregister);
-    return currentRequest->CancelAndForgetObserver(NS_BINDING_ABORTED);
   }
   return NS_OK;
 }
