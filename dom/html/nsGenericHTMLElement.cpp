@@ -185,15 +185,11 @@ void nsGenericHTMLElement::GetAccessKeyLabel(nsString& aLabel) {
   }
 }
 
-static bool IsTableCell(LayoutFrameType frameType) {
-  return LayoutFrameType::TableCell == frameType ||
-         LayoutFrameType::BCTableCell == frameType;
-}
-
 static bool IsOffsetParent(nsIFrame* aFrame) {
   LayoutFrameType frameType = aFrame->Type();
 
-  if (IsTableCell(frameType) || frameType == LayoutFrameType::Table) {
+  if (frameType == LayoutFrameType::TableCell ||
+      frameType == LayoutFrameType::Table) {
     
     
     
