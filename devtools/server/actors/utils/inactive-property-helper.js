@@ -466,6 +466,7 @@ class InactivePropertyHelper {
     
     if (
       this.nodeNameOneOf([
+        "audio",
         "br",
         "button",
         "canvas",
@@ -488,12 +489,6 @@ class InactivePropertyHelper {
         "video",
       ])
     ) {
-      return true;
-    }
-
-    
-    
-    if (this.nodeName === "audio" && this.node.getAttribute("controls")) {
       return true;
     }
 
