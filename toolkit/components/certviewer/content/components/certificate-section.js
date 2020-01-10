@@ -18,7 +18,6 @@ class CertificateSection extends HTMLElement {
     document.l10n.connectRoot(this.shadowRoot);
 
     this.infoGroupsContainers = [];
-    this.createInfoGroupsContainers();
 
     this.render();
   }
@@ -29,7 +28,19 @@ class CertificateSection extends HTMLElement {
     let title = this.shadowRoot.querySelector(".title");
     title.setAttribute("data-l10n-id", "certificate-section-title");
 
+    
+    
+    let error = true;
+
     this.infoGroupContainer = this.shadowRoot.querySelector(".info-groups");
+
+    if (error) {
+      title.classList.add("error");
+      certificateTabs.appendChild(new ErrorSection());
+      return;
+    }
+
+    this.createInfoGroupsContainers();
     for (let i = 0; i < certArray.length; i++) {
       let tab = document.createElement("button");
       tab.textContent = "tab" + i;
@@ -50,9 +61,9 @@ class CertificateSection extends HTMLElement {
       } else {
         tab.setAttribute("tabindex", -1);
       }
+      this.infoGroupsContainers[0].classList.add("selected");
     }
     this.setAccessibilityEventListeners();
-    this.infoGroupsContainers[0].classList.add("selected");
   }
 
   
