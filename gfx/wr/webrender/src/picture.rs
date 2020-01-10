@@ -62,6 +62,29 @@ pub enum SubpixelMode {
 }
 
 
+#[derive(Debug, Clone)]
+struct MatrixKey {
+    m: [f32; 16],
+}
+
+impl PartialEq for MatrixKey {
+    fn eq(&self, other: &Self) -> bool {
+        const EPSILON: f32 = 0.001;
+
+        
+        
+        
+        for (i, j) in self.m.iter().zip(other.m.iter()) {
+            if !i.approx_eq_eps(j, &EPSILON) {
+                return false;
+            }
+        }
+
+        true
+    }
+}
+
+
 
 #[derive(Debug, PartialEq, Clone)]
 enum TransformKey {
@@ -73,7 +96,7 @@ enum TransformKey {
         offset_y: f32,
     },
     Transform {
-        m: [f32; 16],
+        m: MatrixKey,
     }
 }
 
@@ -84,8 +107,6 @@ impl<Src, Dst> From<CoordinateSpaceMapping<Src, Dst>> for TransformKey {
                 TransformKey::Local
             }
             CoordinateSpaceMapping::ScaleOffset(ref scale_offset) => {
-                
-                
                 TransformKey::ScaleOffset {
                     scale_x: scale_offset.scale.x,
                     scale_y: scale_offset.scale.y,
@@ -94,10 +115,10 @@ impl<Src, Dst> From<CoordinateSpaceMapping<Src, Dst>> for TransformKey {
                 }
             }
             CoordinateSpaceMapping::Transform(ref m) => {
-                
-                
                 TransformKey::Transform {
-                    m: m.to_row_major_array(),
+                    m: MatrixKey {
+                        m: m.to_row_major_array(),
+                    },
                 }
             }
         }
@@ -280,7 +301,7 @@ impl Tile {
 }
 
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct PrimitiveDescriptor {
     
     prim_uid: ItemUid,
@@ -296,6 +317,73 @@ pub struct PrimitiveDescriptor {
     clip_count: u16,
 }
 
+impl PartialEq for PrimitiveDescriptor {
+    fn eq(&self, other: &Self) -> bool {
+        const EPSILON: f32 = 0.001;
+
+        if self.prim_uid != other.prim_uid {
+            return false;
+        }
+        if self.first_clip != other.first_clip {
+            return false;
+        }
+        if self.clip_count != other.clip_count {
+            return false;
+        }
+
+        if !self.origin.x.approx_eq_eps(&other.origin.x, &EPSILON) {
+            return false;
+        }
+        if !self.origin.y.approx_eq_eps(&other.origin.y, &EPSILON) {
+            return false;
+        }
+
+        if !self.prim_clip_rect.x.approx_eq_eps(&other.prim_clip_rect.x, &EPSILON) {
+            return false;
+        }
+        if !self.prim_clip_rect.y.approx_eq_eps(&other.prim_clip_rect.y, &EPSILON) {
+            return false;
+        }
+        if !self.prim_clip_rect.w.approx_eq_eps(&other.prim_clip_rect.w, &EPSILON) {
+            return false;
+        }
+        if !self.prim_clip_rect.h.approx_eq_eps(&other.prim_clip_rect.h, &EPSILON) {
+            return false;
+        }
+
+        true
+    }
+}
+
+
+#[derive(Debug, Clone)]
+pub struct ClipDescriptor {
+    
+    uid: ItemUid,
+    
+    origin: PointKey,
+}
+
+impl PartialEq for ClipDescriptor {
+    fn eq(&self, other: &Self) -> bool {
+        const EPSILON: f32 = 0.001;
+
+        if self.uid != other.uid {
+            return false;
+        }
+
+        if !self.origin.x.approx_eq_eps(&other.origin.x, &EPSILON) {
+            return false;
+        }
+
+        if !self.origin.y.approx_eq_eps(&other.origin.y, &EPSILON) {
+            return false;
+        }
+
+        true
+    }
+}
+
 
 
 #[derive(Debug)]
@@ -306,13 +394,7 @@ pub struct TileDescriptor {
     pub prims: ComparableVec<PrimitiveDescriptor>,
 
     
-    
-    clip_uids: ComparableVec<ItemUid>,
-
-    
-    
-    
-    clip_vertices: ComparableVec<PointKey>,
+    clips: ComparableVec<ClipDescriptor>,
 
     
     image_keys: ComparableVec<ImageKey>,
@@ -330,8 +412,7 @@ impl TileDescriptor {
     fn new() -> Self {
         TileDescriptor {
             prims: ComparableVec::new(),
-            clip_uids: ComparableVec::new(),
-            clip_vertices: ComparableVec::new(),
+            clips: ComparableVec::new(),
             opacity_bindings: ComparableVec::new(),
             image_keys: ComparableVec::new(),
             transforms: ComparableVec::new(),
@@ -342,8 +423,7 @@ impl TileDescriptor {
     
     fn clear(&mut self) {
         self.prims.reset();
-        self.clip_uids.reset();
-        self.clip_vertices.reset();
+        self.clips.reset();
         self.opacity_bindings.reset();
         self.image_keys.reset();
         self.transforms.reset();
@@ -359,10 +439,7 @@ impl TileDescriptor {
         if !self.opacity_bindings.is_valid() {
             return false;
         }
-        if !self.clip_uids.is_valid() {
-            return false;
-        }
-        if !self.clip_vertices.is_valid() {
+        if !self.clips.is_valid() {
             return false;
         }
         if !self.prims.is_valid() {
@@ -917,8 +994,7 @@ impl TileCacheInstance {
 
         
         let mut opacity_bindings: SmallVec<[OpacityBinding; 4]> = SmallVec::new();
-        let mut clip_chain_uids: SmallVec<[ItemUid; 8]> = SmallVec::new();
-        let mut clip_vertices: SmallVec<[LayoutPoint; 8]> = SmallVec::new();
+        let mut clips: SmallVec<[ClipDescriptor; 8]> = SmallVec::new();
         let mut image_keys: SmallVec<[ImageKey; 8]> = SmallVec::new();
         let mut clip_spatial_nodes = FastHashSet::default();
         let mut prim_clip_rect = PictureRect::zero();
@@ -936,15 +1012,16 @@ impl TileCacheInstance {
             let clip_instances = &clip_store
                 .clip_node_instances[prim_clip_chain.clips_range.to_range()];
             for clip_instance in clip_instances {
-                clip_chain_uids.push(clip_instance.handle.uid());
+                clips.push(ClipDescriptor {
+                    uid: clip_instance.handle.uid(),
+                    origin: clip_instance.local_pos.into(),
+                });
 
                 
                 
                 if clip_instance.spatial_node_index != self.spatial_node_index {
                     clip_spatial_nodes.insert(clip_instance.spatial_node_index);
                 }
-
-                clip_vertices.push(clip_instance.local_pos);
             }
         }
 
@@ -1135,15 +1212,12 @@ impl TileCacheInstance {
                 tile.descriptor.prims.push(PrimitiveDescriptor {
                     prim_uid: prim_instance.uid(),
                     origin: prim_origin.into(),
-                    first_clip: tile.descriptor.clip_uids.len() as u16,
-                    clip_count: clip_chain_uids.len() as u16,
+                    first_clip: tile.descriptor.clips.len() as u16,
+                    clip_count: clips.len() as u16,
                     prim_clip_rect: prim_clip_rect.into(),
                 });
 
-                tile.descriptor.clip_uids.extend_from_slice(&clip_chain_uids);
-                for clip_vertex in &clip_vertices {
-                    tile.descriptor.clip_vertices.push((*clip_vertex).into());
-                }
+                tile.descriptor.clips.extend_from_slice(&clips);
 
                 
                 

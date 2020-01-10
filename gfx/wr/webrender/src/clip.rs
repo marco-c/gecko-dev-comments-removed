@@ -686,6 +686,21 @@ impl ClipChainStack {
         &mut self,
         viewport: WorldRect,
     ) {
+        
+        
+        
+        
+        let viewport = match self.stack.last() {
+            Some(parent_level) => {
+                parent_level.viewport
+                    .intersection(&viewport)
+                    .unwrap_or(WorldRect::zero())
+            }
+            None => {
+                viewport
+            }
+        };
+
         let level = ClipChainLevel::new(viewport);
         self.stack.push(level);
     }
