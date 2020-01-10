@@ -101,6 +101,9 @@ createEnum(
 
     
     "UPDATE_DEVICE_MODAL",
+
+    
+    "ZOOM_VIEWPORT",
   ],
   module.exports
 );
