@@ -1968,11 +1968,9 @@ nsresult nsListControlFrame::KeyDown(dom::Event* aKeyEvent) {
 
   AutoIncrementalSearchResetter incrementalSearchResetter;
 
-  
-  
-  
-  
-  
+  if (aKeyEvent->DefaultPrevented()) {
+    return NS_OK;
+  }
 
   const WidgetKeyboardEvent* keyEvent =
       aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
