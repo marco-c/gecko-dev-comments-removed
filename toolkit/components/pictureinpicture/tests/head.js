@@ -288,7 +288,7 @@ async function testToggle(testURL, expectations, prepFn = async () => {}) {
       await prepFn(browser);
       await ensureVideosReady(browser);
 
-      for (let [videoID, canToggle] of Object.entries(expectations)) {
+      for (let [videoID, { canToggle }] of Object.entries(expectations)) {
         await SimpleTest.promiseFocus(browser);
         info(`Testing video with id: ${videoID}`);
 
@@ -333,8 +333,10 @@ async function testToggleHelper(browser, videoID, canToggle) {
     browser
   );
 
-  info("Waiting for toggle to become visible");
-  await toggleOpacityReachesThreshold(browser, videoID, HOVER_VIDEO_OPACITY);
+  if (canToggle) {
+    info("Waiting for toggle to become visible");
+    await toggleOpacityReachesThreshold(browser, videoID, HOVER_VIDEO_OPACITY);
+  }
 
   info("Hovering the toggle rect now.");
   
@@ -359,7 +361,10 @@ async function testToggleHelper(browser, videoID, canToggle) {
     browser
   );
 
-  await toggleOpacityReachesThreshold(browser, videoID, HOVER_TOGGLE_OPACITY);
+  if (canToggle) {
+    info("Waiting for toggle to reach full opacity");
+    await toggleOpacityReachesThreshold(browser, videoID, HOVER_TOGGLE_OPACITY);
+  }
 
   
   info("Right-clicking on toggle.");
@@ -371,9 +376,16 @@ async function testToggleHelper(browser, videoID, canToggle) {
     browser
   );
 
-  
-  
-  await assertSawMouseEvents(browser, !controls, false);
+  if (canToggle) {
+    
+    
+    
+    await assertSawMouseEvents(browser, !controls, false);
+  } else {
+    
+    
+    await assertSawMouseEvents(browser, true, false);
+  }
 
   
   
@@ -419,8 +431,7 @@ async function testToggleHelper(browser, videoID, canToggle) {
     );
 
     
-    
-    await assertSawMouseEvents(browser, !controls);
+    await assertSawMouseEvents(browser, true);
 
     
     
