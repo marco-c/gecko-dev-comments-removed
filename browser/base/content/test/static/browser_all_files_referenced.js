@@ -47,6 +47,11 @@ var gExceptionPaths = [
 
   
   "resource://search-extensions/",
+
+  
+  
+  "chrome://browser/content/aboutlogins/third-party/app-store/",
+  "chrome://browser/content/aboutlogins/third-party/play-store/",
 ];
 
 
