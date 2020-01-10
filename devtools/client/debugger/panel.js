@@ -114,18 +114,22 @@ DebuggerPanel.prototype = {
   },
 
   highlightDomElement: async function(gripOrFront) {
-    const nodeFront = await getNodeFront(gripOrFront, this.toolbox);
-    nodeFront.highlighterFront.highlight(nodeFront);
+    if (!this._highlight) {
+      const { highlight, unhighlight } = this.toolbox.getHighlighter();
+      this._highlight = highlight;
+      this._unhighlight = unhighlight;
+    }
+
+    return this._highlight(gripOrFront);
   },
 
-  unHighlightDomElement: async function(gripOrFront) {
-    try {
-      const nodeFront = await getNodeFront(gripOrFront, this.toolbox);
-      nodeFront.highlighterFront.unhighlight();
-    } catch (e) {
-      
-      
+  unHighlightDomElement: function() {
+    if (!this._unhighlight) {
+      return;
     }
+
+    const forceUnHighlightInTest = true;
+    return this._unhighlight(forceUnHighlightInTest);
   },
 
   getFrames: function() {
