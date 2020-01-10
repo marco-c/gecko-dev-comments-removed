@@ -6028,7 +6028,25 @@ bool BaselineInterpreterCodeGen::emitGeneratorThrowOrReturnCallVM() {
 
   using Fn = bool (*)(JSContext*, BaselineFrame*,
                       Handle<AbstractGeneratorObject*>, HandleValue, uint32_t);
-  return callVM<Fn, jit::GeneratorThrowOrReturn>();
+  if (!callVM<Fn, jit::GeneratorThrowOrReturn>()) {
+    return false;
+  }
+
+  
+  
+  
+  
+
+  
+  masm.loadValue(frame.addressOfReturnValue(), JSReturnOperand);
+
+  
+  masm.moveToStackPtr(BaselineFrameReg);
+  masm.pop(BaselineFrameReg);
+
+  masm.ret();
+
+  return true;
 }
 
 template <>

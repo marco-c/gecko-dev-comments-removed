@@ -1025,7 +1025,10 @@ bool GeneratorThrowOrReturn(JSContext* cx, BaselineFrame* frame,
 
   GeneratorResumeKind resumeKind = GeneratorResumeKind(resumeKindArg);
   if (mustReturn) {
-    resumeKind = GeneratorResumeKind::Return;
+    
+    
+    
+    return true;
   }
 
   MOZ_ALWAYS_FALSE(
