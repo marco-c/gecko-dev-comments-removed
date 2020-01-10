@@ -110,6 +110,69 @@ static uint32_t GetOverflowChange(const nsRect& aCurScrolledRect,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ScrollFrameHelper::ScrollEvent : public Runnable {
+ public:
+  NS_DECL_NSIRUNNABLE
+  explicit ScrollEvent(ScrollFrameHelper* aHelper, bool aDelayed);
+  void Revoke() { mHelper = nullptr; }
+
+ private:
+  ScrollFrameHelper* mHelper;
+};
+
+class ScrollFrameHelper::ScrollEndEvent : public Runnable {
+ public:
+  NS_DECL_NSIRUNNABLE
+  explicit ScrollEndEvent(ScrollFrameHelper* aHelper);
+  void Revoke() { mHelper = nullptr; }
+
+ private:
+  ScrollFrameHelper* mHelper;
+};
+
+class ScrollFrameHelper::AsyncScrollPortEvent : public Runnable {
+ public:
+  NS_DECL_NSIRUNNABLE
+  explicit AsyncScrollPortEvent(ScrollFrameHelper* helper)
+      : Runnable("ScrollFrameHelper::AsyncScrollPortEvent"),
+        mHelper(helper) {}
+  void Revoke() { mHelper = nullptr; }
+
+ private:
+  ScrollFrameHelper* mHelper;
+};
+
+class ScrollFrameHelper::ScrolledAreaEvent : public Runnable {
+ public:
+  NS_DECL_NSIRUNNABLE
+  explicit ScrolledAreaEvent(ScrollFrameHelper* helper)
+      : Runnable("ScrollFrameHelper::ScrolledAreaEvent"), mHelper(helper) {}
+  void Revoke() { mHelper = nullptr; }
+
+ private:
+  ScrollFrameHelper* mHelper;
+};
+
+
+
+
+
 nsHTMLScrollFrame* NS_NewHTMLScrollFrame(PresShell* aPresShell,
                                          ComputedStyle* aStyle, bool aIsRoot) {
   return new (aPresShell)
