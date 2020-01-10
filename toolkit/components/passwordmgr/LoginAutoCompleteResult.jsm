@@ -72,16 +72,6 @@ function loginSort(formHostPort, a, b) {
     return 1;
   }
 
-  if (a.httpRealm !== b.httpRealm) {
-    
-    if (b.httpRealm === null) {
-      return 1;
-    }
-    if (a.httpRealm === null) {
-      return -1;
-    }
-  }
-
   let userA = a.username.toLowerCase();
   let userB = b.username.toLowerCase();
 
@@ -173,9 +163,18 @@ class LoginAutocompleteItem extends AutocompleteItem {
     });
 
     XPCOMUtils.defineLazyGetter(this, "comment", () => {
+      let comment = login.origin;
+      try {
+        let uri = Services.io.newURI(login.origin);
+        
+        comment = uri.displayHostPort || login.origin;
+      } catch (ex) {
+        
+      }
+
       return JSON.stringify({
         guid: login.guid,
-        comment: login.displayOrigin,
+        comment,
       });
     });
   }
