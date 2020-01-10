@@ -43,8 +43,6 @@ const MONITOR_API_ENDPOINT = "https://monitor.firefox.com/user/breach-stats";
 
 const SECURE_PROXY_ADDON_ID = "secure-proxy@mozilla.com";
 
-
-
 const SCOPE_MONITOR = [
   "profile:uid",
   "https://identity.mozilla.com/apps/monitor",
