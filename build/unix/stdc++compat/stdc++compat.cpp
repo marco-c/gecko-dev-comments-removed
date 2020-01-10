@@ -25,6 +25,7 @@
 
 
 
+
 #define GLIBCXX_VERSION(a, b, c) (((a) << 16) | ((b) << 8) | (c))
 
 #if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 18)
@@ -143,4 +144,12 @@ namespace std {
 
 template basic_ios<char, char_traits<char> >::operator bool() const;
 }  
+#endif
+
+#if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 23)
+namespace std {
+
+
+template basic_string<char, char_traits<char>, allocator<char>>::basic_string(const basic_string&, size_t, const allocator<char>&);
+} 
 #endif
