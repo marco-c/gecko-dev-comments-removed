@@ -60,6 +60,8 @@ class FileDescriptor {
   
   explicit FileDescriptor(PlatformHandleType aHandle);
 
+  explicit FileDescriptor(UniquePlatformHandle&& aHandle);
+
   
   
   FileDescriptor(const IPDLPrivate&, const PickleType& aPickle);
@@ -82,6 +84,10 @@ class FileDescriptor {
   
   
   UniquePlatformHandle ClonePlatformHandle() const;
+
+  
+  
+  UniquePlatformHandle TakePlatformHandle();
 
   
   bool operator==(const FileDescriptor& aOther) const;
