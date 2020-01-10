@@ -220,18 +220,12 @@ Maybe<TextureHost::ResourceUpdateOp> AsyncImagePipelineManager::UpdateImageKeys(
   if (texture == previousTexture) {
     
     aKeys = aPipeline->mKeys;
-    if (aPipeline->mWrTextureWrapper) {
-      HoldExternalImage(aPipelineId, aEpoch, aPipeline->mWrTextureWrapper);
-    }
     return Nothing();
   }
 
   if (!texture) {
     
     aKeys = aPipeline->mKeys;
-    if (aPipeline->mWrTextureWrapper) {
-      HoldExternalImage(aPipelineId, aEpoch, aPipeline->mWrTextureWrapper);
-    }
     return Nothing();
   }
 
@@ -248,14 +242,6 @@ Maybe<TextureHost::ResourceUpdateOp> AsyncImagePipelineManager::UpdateImageKeys(
 
   
   
-  
-  bool useWrTextureWrapper =
-      useExternalImage && wrTexture && wrTexture->SupportsWrNativeTexture();
-  
-  useWrTextureWrapper = false;
-
-  
-  
   auto numKeys = useExternalImage ? texture->NumSubTextures() : 1;
 
   
@@ -265,12 +251,6 @@ Maybe<TextureHost::ResourceUpdateOp> AsyncImagePipelineManager::UpdateImageKeys(
                    previousTexture->GetFormat() == texture->GetFormat() &&
                    previousTexture->NeedsYFlip() == texture->NeedsYFlip() &&
                    aPipeline->mKeys.Length() == numKeys;
-
-  
-  if (aPipeline->mWrTextureWrapper && (!useWrTextureWrapper || !canUpdate)) {
-    aPipeline->mWrTextureWrapper = nullptr;
-    canUpdate = false;
-  }
 
   if (!canUpdate) {
     for (auto key : aPipeline->mKeys) {
@@ -295,34 +275,9 @@ Maybe<TextureHost::ResourceUpdateOp> AsyncImagePipelineManager::UpdateImageKeys(
 
   wrTexture->MaybeNofityForUse(aMaybeFastTxn);
 
-  if (useWrTextureWrapper && aPipeline->mWrTextureWrapper) {
-    MOZ_ASSERT(canUpdate);
-    
-    
-    aPipeline->mWrTextureWrapper->UpdateWebRenderTextureHost(aMaybeFastTxn,
-                                                             wrTexture);
-    
-    SetWillGenerateFrame(aPipeline->mRenderRoot);
-  } else {
-    if (useWrTextureWrapper) {
-      aPipeline->mWrTextureWrapper = new WebRenderTextureHostWrapper(this);
-      aPipeline->mWrTextureWrapper->UpdateWebRenderTextureHost(aMaybeFastTxn,
-                                                               wrTexture);
-    }
-    Range<wr::ImageKey> keys(&aKeys[0], aKeys.Length());
-    auto externalImageKey =
-        aPipeline->mWrTextureWrapper
-            ? aPipeline->mWrTextureWrapper->GetExternalImageKey()
-            : wrTexture->GetExternalImageKey();
-    wrTexture->PushResourceUpdates(aMaybeFastTxn, op, keys, externalImageKey);
-  }
-
-  if (aPipeline->mWrTextureWrapper) {
-    
-    
-    aMaybeFastTxn.InvalidateRenderedFrame();
-    HoldExternalImage(aPipelineId, aEpoch, aPipeline->mWrTextureWrapper);
-  }
+  Range<wr::ImageKey> keys(&aKeys[0], aKeys.Length());
+  auto externalImageKey = wrTexture->GetExternalImageKey();
+  wrTexture->PushResourceUpdates(aMaybeFastTxn, op, keys, externalImageKey);
 
   return Some(op);
 }
@@ -554,25 +509,6 @@ void AsyncImagePipelineManager::HoldExternalImage(
 
 void AsyncImagePipelineManager::HoldExternalImage(
     const wr::PipelineId& aPipelineId, const wr::Epoch& aEpoch,
-    WebRenderTextureHostWrapper* aWrTextureWrapper) {
-  if (mDestroyed) {
-    return;
-  }
-  MOZ_ASSERT(aWrTextureWrapper);
-
-  PipelineTexturesHolder* holder =
-      mPipelineTexturesHolders.Get(wr::AsUint64(aPipelineId));
-  MOZ_ASSERT(holder);
-  if (!holder) {
-    return;
-  }
-  
-  holder->mTextureHostWrappers.push(
-      ForwardingTextureHostWrapper(aEpoch, aWrTextureWrapper));
-}
-
-void AsyncImagePipelineManager::HoldExternalImage(
-    const wr::PipelineId& aPipelineId, const wr::Epoch& aEpoch,
     const wr::ExternalImageId& aImageId) {
   if (mDestroyed) {
     SharedSurfacesParent::Release(aImageId);
@@ -675,12 +611,6 @@ void AsyncImagePipelineManager::ProcessPipelineRendered(
       HoldUntilNotUsedByGPU(holder->mTextureHosts.front().mTexture,
                             aUpdatesCount);
       holder->mTextureHosts.pop();
-    }
-    while (!holder->mTextureHostWrappers.empty()) {
-      if (aEpoch <= holder->mTextureHostWrappers.front().mEpoch) {
-        break;
-      }
-      holder->mTextureHostWrappers.pop();
     }
     while (!holder->mExternalImages.empty()) {
       if (aEpoch <= holder->mExternalImages.front()->mEpoch) {

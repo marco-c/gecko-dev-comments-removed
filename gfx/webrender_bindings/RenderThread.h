@@ -205,10 +205,6 @@ class RenderThread final {
   void NotifyNotUsed(uint64_t aExternalImageId);
 
   
-  void UpdateRenderTextureHost(uint64_t aSrcExternalImageId,
-                               uint64_t aWrappedExternalImageId);
-
-  
   void NofityForUse(uint64_t aExternalImageId);
 
   
