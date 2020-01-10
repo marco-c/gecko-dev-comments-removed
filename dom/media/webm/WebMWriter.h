@@ -42,8 +42,7 @@ class VP8Metadata : public TrackMetadataBase {
 class WebMWriter : public ContainerWriter {
  public:
   
-  
-  explicit WebMWriter(uint32_t aTrackTypes);
+  WebMWriter();
   virtual ~WebMWriter();
 
   
@@ -59,14 +58,11 @@ class WebMWriter : public ContainerWriter {
                             uint32_t aFlags = 0) override;
 
   
-  nsresult SetMetadata(TrackMetadataBase* aMetadata) override;
+  nsresult SetMetadata(
+      const nsTArray<RefPtr<TrackMetadataBase>>& aMetadata) override;
 
  private:
   nsAutoPtr<EbmlComposer> mEbmlComposer;
-
-  
-  
-  uint8_t mMetadataRequiredFlag;
 };
 
 }  
