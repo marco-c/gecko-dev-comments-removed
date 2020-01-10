@@ -18,6 +18,7 @@
 #include "mozilla/ThreadLocal.h"
 
 #include "GeckoProfiler.h"
+#include "prenv.h"
 #include "replace_malloc.h"
 
 #include <ctype.h>
@@ -386,8 +387,32 @@ void install_memory_hooks() {
 void remove_memory_hooks() { jemalloc_replace_dynamic(nullptr); }
 
 void enable_native_allocations() {
-  EnsureBernoulliIsInstalled();
-  ThreadIntercept::EnableAllocationFeature();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!PR_GetEnv("XPCOM_MEM_BLOAT_LOG")) {
+    EnsureBernoulliIsInstalled();
+    ThreadIntercept::EnableAllocationFeature();
+  }
 }
 
 
