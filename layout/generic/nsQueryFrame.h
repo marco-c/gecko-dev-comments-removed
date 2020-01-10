@@ -69,11 +69,6 @@ class nsQueryFrame {
 #include "mozilla/FrameIdList.h"
 #undef FRAME_ID
 #undef ABSTRACT_FRAME_ID
-
-    
-    
-    
-    NON_FRAME_MARKER
   };
 
   

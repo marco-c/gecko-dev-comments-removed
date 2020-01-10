@@ -91,6 +91,14 @@ class DisplayListBuilder;
 namespace dom {
 class Selection;
 }  
+
+enum class DisplayListArenaObjectId {
+#define DISPLAY_LIST_ARENA_OBJECT(name_) name_,
+#include "nsDisplayListArenaTypes.h"
+#undef DISPLAY_LIST_ARENA_OBJECT
+  COUNT
+};
+
 }  
 
 
@@ -1051,9 +1059,30 @@ class nsDisplayListBuilder {
 
 
 
-  void* Allocate(size_t aSize, DisplayItemType aType);
 
-  void Destroy(DisplayItemType aType, void* aPtr);
+
+  void* Allocate(size_t aSize, mozilla::DisplayListArenaObjectId aId) {
+    return mPool.Allocate(aId, aSize);
+  }
+  void* Allocate(size_t aSize, DisplayItemType aType) {
+    static_assert(size_t(DisplayItemType::TYPE_ZERO) ==
+                      size_t(mozilla::DisplayListArenaObjectId::CLIPCHAIN),
+                  "");
+#define DECLARE_DISPLAY_ITEM_TYPE(name_, ...)                         \
+  static_assert(size_t(DisplayItemType::TYPE_##name_) ==              \
+                    size_t(mozilla::DisplayListArenaObjectId::name_), \
+                "");
+#include "nsDisplayItemTypesList.h"
+#undef DECLARE_DISPLAY_ITEM_TYPE
+    return Allocate(aSize, mozilla::DisplayListArenaObjectId(size_t(aType)));
+  }
+
+  void Destroy(mozilla::DisplayListArenaObjectId aId, void* aPtr) {
+    return mPool.Free(aId, aPtr);
+  }
+  void Destroy(DisplayItemType aType, void* aPtr) {
+    return Destroy(mozilla::DisplayListArenaObjectId(size_t(aType)), aPtr);
+  }
 
   
 
@@ -1858,7 +1887,10 @@ class nsDisplayListBuilder {
 
   nsIFrame* const mReferenceFrame;
   nsIFrame* mIgnoreScrollFrame;
-  nsPresArena<32768> mPool;
+
+  using Arena = nsPresArena<32768, mozilla::DisplayListArenaObjectId,
+                            size_t(mozilla::DisplayListArenaObjectId::COUNT)>;
+  Arena mPool;
 
   AutoTArray<PresShellState, 8> mPresShellStates;
   AutoTArray<nsIFrame*, 400> mFramesMarkedForDisplay;

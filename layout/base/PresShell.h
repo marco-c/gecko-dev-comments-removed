@@ -257,26 +257,26 @@ class PresShell final : public nsStubDocumentObserver,
 
 
   void* AllocateFrame(nsQueryFrame::FrameIID aID, size_t aSize) {
-    void* result = mFrameArena.AllocateByFrameID(aID, aSize);
-    RecordAlloc(result);
-    return result;
+#define FRAME_ID(classname, ...)                                  \
+  static_assert(size_t(nsQueryFrame::FrameIID::classname##_id) == \
+                    size_t(eArenaObjectID_##classname),           \
+                "");
+#define ABSTRACT_FRAME_ID(classname)                              \
+  static_assert(size_t(nsQueryFrame::FrameIID::classname##_id) == \
+                    size_t(eArenaObjectID_##classname),           \
+                "");
+#include "mozilla/FrameIdList.h"
+#undef FRAME_ID
+#undef ABSTRACT_FRAME_ID
+    return AllocateByObjectID(ArenaObjectID(size_t(aID)), aSize);
   }
 
   void FreeFrame(nsQueryFrame::FrameIID aID, void* aPtr) {
-    RecordFree(aPtr);
-    if (!mIsDestroying) {
-      mFrameArena.FreeByFrameID(aID, aPtr);
-    }
+    return FreeByObjectID(ArenaObjectID(size_t(aID)), aPtr);
   }
 
-  
-
-
-
-
-
   void* AllocateByObjectID(ArenaObjectID aID, size_t aSize) {
-    void* result = mFrameArena.AllocateByObjectID(aID, aSize);
+    void* result = mFrameArena.Allocate(aID, aSize);
     RecordAlloc(result);
     return result;
   }
@@ -284,7 +284,7 @@ class PresShell final : public nsStubDocumentObserver,
   void FreeByObjectID(ArenaObjectID aID, void* aPtr) {
     RecordFree(aPtr);
     if (!mIsDestroying) {
-      mFrameArena.FreeByObjectID(aID, aPtr);
+      mFrameArena.Free(aID, aPtr);
     }
   }
 
@@ -2953,7 +2953,8 @@ class PresShell final : public nsStubDocumentObserver,
   
   FocusTarget mAPZFocusTarget;
 
-  nsPresArena<8192> mFrameArena;
+  using Arena = nsPresArena<8192, ArenaObjectID, eArenaObjectID_COUNT>;
+  Arena mFrameArena;
 
   Maybe<nsPoint> mVisualViewportOffset;
 

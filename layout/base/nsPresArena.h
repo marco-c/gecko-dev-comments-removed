@@ -24,7 +24,7 @@
 
 class nsWindowSizes;
 
-template <size_t ArenaSize>
+template <size_t ArenaSize, typename ObjectId, size_t ObjectIdCount>
 class nsPresArena {
  public:
   nsPresArena() = default;
@@ -34,41 +34,20 @@ class nsPresArena {
 
 
 
-  void* AllocateByFrameID(nsQueryFrame::FrameIID aID, size_t aSize) {
-    return Allocate(aID, aSize);
-  }
-  void FreeByFrameID(nsQueryFrame::FrameIID aID, void* aPtr) {
-    Free(aID, aPtr);
-  }
+  void* Allocate(ObjectId aCode, size_t aSize);
+  void Free(ObjectId aCode, void* aPtr);
 
+  enum class ArenaKind { PresShell, DisplayList };
   
 
 
 
-  void* AllocateByObjectID(mozilla::ArenaObjectID aID, size_t aSize) {
-    return Allocate(aID, aSize);
-  }
-  void FreeByObjectID(mozilla::ArenaObjectID aID, void* aPtr) {
-    Free(aID, aPtr);
-  }
 
-  void* AllocateByCustomID(uint32_t aID, size_t aSize) {
-    return Allocate(aID, aSize);
-  }
-  void FreeByCustomID(uint32_t aID, void* ptr) { Free(aID, ptr); }
-
-  
-
-
-
-  void AddSizeOfExcludingThis(nsWindowSizes&,
-                              size_t nsWindowSizes::*aArenaSize) const;
+  void AddSizeOfExcludingThis(nsWindowSizes&, ArenaKind) const;
 
   void Check() { mPool.Check(); }
 
  private:
-  void* Allocate(uint32_t aCode, size_t aSize);
-  void Free(uint32_t aCode, void* aPtr);
 
   class FreeList {
    public:
@@ -83,7 +62,7 @@ class nsPresArena {
     }
   };
 
-  FreeList mFreeLists[mozilla::eArenaObjectID_COUNT];
+  FreeList mFreeLists[ObjectIdCount];
   mozilla::ArenaAllocator<ArenaSize, 8> mPool;
 };
 
