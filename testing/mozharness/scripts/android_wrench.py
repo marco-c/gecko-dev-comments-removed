@@ -26,10 +26,36 @@ from mozharness.mozilla.testing.testbase import TestingMixin
 
 class AndroidWrench(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
     def __init__(self, require_config_file=False):
+        
+        
+        
+        self._is_emulator = None
+
         super(AndroidWrench, self).__init__()
-        self.device_serial = 'emulator-5554'
-        self.use_gles3 = True
+        if self.device_serial is None:
+            
+            
+            self._is_emulator = True
+            self.device_serial = 'emulator-5554'
+            self._adb_path = os.path.join(
+                self.query_abs_dirs()['abs_work_dir'],
+                'android-sdk-linux',
+                'platform-tools',
+                'adb')
+            self.use_gles3 = True
+        else:
+            
+            
+            
+            
+            
+            self._is_emulator = False
         self._errored = False
+
+    @property
+    def is_emulator(self):
+        """Overrides the is_emulator property on AndroidMixin."""
+        return self._is_emulator
 
     def query_abs_dirs(self):
         if self.abs_dirs:
@@ -96,7 +122,10 @@ class AndroidWrench(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
         args_file = os.path.join(
             self.query_abs_dirs()['abs_work_dir'], "wrench_args")
         with open(args_file, 'w') as argfile:
-            argfile.write("env: WRENCH_REFTEST_CONDITION_EMULATOR=1\n")
+            if self.is_emulator:
+                argfile.write("env: WRENCH_REFTEST_CONDITION_EMULATOR=1\n")
+            else:
+                argfile.write("env: WRENCH_REFTEST_CONDITION_DEVICE=1\n")
             argfile.write("reftest")
         self.device.push(args_file, '/sdcard/wrench/args')
 
@@ -158,7 +187,7 @@ class AndroidWrench(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
             self.info("=== end scraped logcat output ===")
             self.info("(see logcat artifact for full logcat")
 
-    def do_test(self):
+    def setup_emulator(self):
         
         
         
@@ -188,8 +217,11 @@ class AndroidWrench(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
                     return
             self._launch_emulator()
 
-        self.verify_device()
+    def do_test(self):
+        if self.is_emulator:
+            self.setup_emulator()
 
+        self.verify_device()
         self.info('Installing APK...')
         self.install_apk(self.query_abs_dirs()['abs_apk_path'], replace=True)
         self.info('Setting up SD card...')
