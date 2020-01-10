@@ -1440,6 +1440,16 @@ void WebRenderCommandBuilder::DoGroupingForDisplayList(
   bool snapped;
   nsRect groupBounds =
       aWrappingItem->GetUntransformedBounds(aDisplayListBuilder, &snapped);
+  
+  
+  
+  
+  
+  
+  if (mClippedGroupBounds) {
+    groupBounds = groupBounds.Intersect(mClippedGroupBounds.value());
+    mClippedGroupBounds = Nothing();
+  }
   DIGroup& group = groupData->mSubGroup;
 
   gfx::Size scale = aSc.GetInheritedScale();
@@ -1750,6 +1760,25 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
         
         
         mContainsSVGGroup = mDoGrouping = true;
+        if (aWrappingItem &&
+            aWrappingItem->GetType() == DisplayItemType::TYPE_TRANSFORM) {
+          
+          
+          
+          
+          
+          nsDisplayTransform* transform =
+              static_cast<nsDisplayTransform*>(aWrappingItem);
+
+          nsRect clippedBounds =
+              transform->GetClippedBounds(aDisplayListBuilder);
+          nsRect innerClippedBounds;
+          DebugOnly<bool> result = transform->UntransformRect(
+              aDisplayListBuilder, clippedBounds, &innerClippedBounds);
+          MOZ_ASSERT(result);
+
+          mClippedGroupBounds = Some(innerClippedBounds);
+        }
         GP("attempting to enter the grouping code\n");
       }
 
