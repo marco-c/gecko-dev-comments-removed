@@ -205,6 +205,8 @@ class BasePrincipal : public nsJSPrincipals {
 
 
   bool OverridesCSP(nsIPrincipal* aDocumentPrincipal) {
+    MOZ_ASSERT(aDocumentPrincipal);
+
     
     
     if (mKind == eExpandedPrincipal) {
@@ -264,6 +266,8 @@ class BasePrincipal : public nsJSPrincipals {
 };
 
 inline bool BasePrincipal::FastEquals(nsIPrincipal* aOther) {
+  MOZ_ASSERT(aOther);
+
   auto other = Cast(aOther);
   if (Kind() != other->Kind()) {
     
@@ -287,6 +291,8 @@ inline bool BasePrincipal::FastEquals(nsIPrincipal* aOther) {
 }
 
 inline bool BasePrincipal::FastEqualsConsideringDomain(nsIPrincipal* aOther) {
+  MOZ_ASSERT(aOther);
+
   
   
   auto other = Cast(aOther);
@@ -299,6 +305,8 @@ inline bool BasePrincipal::FastEqualsConsideringDomain(nsIPrincipal* aOther) {
 }
 
 inline bool BasePrincipal::FastSubsumes(nsIPrincipal* aOther) {
+  MOZ_ASSERT(aOther);
+
   
   if (FastEquals(aOther)) {
     return true;
@@ -309,6 +317,8 @@ inline bool BasePrincipal::FastSubsumes(nsIPrincipal* aOther) {
 }
 
 inline bool BasePrincipal::FastSubsumesConsideringDomain(nsIPrincipal* aOther) {
+  MOZ_ASSERT(aOther);
+
   
   
   
@@ -321,6 +331,8 @@ inline bool BasePrincipal::FastSubsumesConsideringDomain(nsIPrincipal* aOther) {
 
 inline bool BasePrincipal::FastSubsumesIgnoringFPD(
     nsIPrincipal* aOther, DocumentDomainConsideration aConsideration) {
+  MOZ_ASSERT(aOther);
+
   if (Kind() == eContentPrincipal &&
       !dom::ChromeUtils::IsOriginAttributesEqualIgnoringFPD(
           mOriginAttributes, Cast(aOther)->mOriginAttributes)) {
