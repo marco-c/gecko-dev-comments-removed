@@ -5061,19 +5061,6 @@ bool Compartment::findSweepGroupEdges() {
     
     
     
-    if (key.isDebuggerKey()) {
-      if (!source->addSweepGroupEdgeTo(target) ||
-          !target->addSweepGroupEdgeTo(source)) {
-        return false;
-      }
-      continue;
-    }
-
-    
-    
-    
-
-    
     
     if (key.is<JSObject*>() &&
         key.as<JSObject*>()->asTenured().isMarkedBlack()) {

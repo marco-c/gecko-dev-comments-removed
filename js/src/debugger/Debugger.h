@@ -314,6 +314,8 @@ class DebuggerWeakMap
     }
   }
 
+  bool findSweepGroupEdges(JS::Zone* debuggerZone);
+
  private:
 #ifdef JS_GC_ZEAL
   
