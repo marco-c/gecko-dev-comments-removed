@@ -1201,42 +1201,39 @@ template bool JSLinearString::isIndexSlow(const char16_t* s, size_t length,
 
 
 
+constexpr Latin1Char StaticStrings::fromSmallChar(SmallChar c) {
+  if (c < 10) {
+    return c + '0';
+  }
+  if (c < 36) {
+    return c + 'a' - 10;
+  }
+  return c + 'A' - 36;
+}
 
-#define R2(n) R(n), R((n) + (1 << 0)), R((n) + (2 << 0)), R((n) + (3 << 0))
-#define R4(n) R2(n), R2((n) + (1 << 2)), R2((n) + (2 << 2)), R2((n) + (3 << 2))
-#define R6(n) R4(n), R4((n) + (1 << 4)), R4((n) + (2 << 4)), R4((n) + (3 << 4))
-#define R7(n) R6(n), R6((n) + (1 << 6))
+constexpr StaticStrings::SmallChar StaticStrings::toSmallChar(uint32_t c) {
+  if (mozilla::IsAsciiDigit(c)) {
+    return c - '0';
+  }
+  if (mozilla::IsAsciiLowercaseAlpha(c)) {
+    return c - 'a' + 10;
+  }
+  if (mozilla::IsAsciiUppercaseAlpha(c)) {
+    return c - 'A' + 36;
+  }
+  return StaticStrings::INVALID_SMALL_CHAR;
+}
 
+constexpr StaticStrings::SmallCharArray StaticStrings::createSmallCharArray() {
+  SmallCharArray array{};
+  for (size_t i = 0; i < SMALL_CHAR_LIMIT; i++) {
+    array[i] = toSmallChar(i);
+  }
+  return array;
+}
 
-
-
-
-
-#define FROM_SMALL_CHAR(c) Latin1Char((c) + ((c) < 10 ? '0' :      \
-                                             (c) < 36 ? 'a' - 10 : \
-                                             'A' - 36))
-
-
-
-
-
-
-
-
-#define TO_SMALL_CHAR(c) ((c) >= '0' && (c) <= '9' ? (c) - '0' :              \
-                          (c) >= 'a' && (c) <= 'z' ? (c) - 'a' + 10 :         \
-                          (c) >= 'A' && (c) <= 'Z' ? (c) - 'A' + 36 :         \
-                          StaticStrings::INVALID_SMALL_CHAR)
-
-
-#define R TO_SMALL_CHAR
-const StaticStrings::SmallChar StaticStrings::toSmallChar[] = {R7(0)};
-#undef R
-
-#undef R2
-#undef R4
-#undef R6
-#undef R7
+const StaticStrings::SmallCharArray StaticStrings::toSmallCharArray =
+    createSmallCharArray();
 
 bool StaticStrings::init(JSContext* cx) {
   AutoAllocInAtomsZone az(cx);
@@ -1257,7 +1254,7 @@ bool StaticStrings::init(JSContext* cx) {
   }
 
   for (uint32_t i = 0; i < NUM_SMALL_CHARS * NUM_SMALL_CHARS; i++) {
-    Latin1Char buffer[] = {FROM_SMALL_CHAR(i >> 6), FROM_SMALL_CHAR(i & 0x3F)};
+    Latin1Char buffer[] = {fromSmallChar(i >> 6), fromSmallChar(i & 0x3F)};
     JSLinearString* s = NewInlineString<NoGC>(cx, Latin1Range(buffer, 2));
     if (!s) {
       return false;
@@ -1270,8 +1267,8 @@ bool StaticStrings::init(JSContext* cx) {
     if (i < 10) {
       intStaticTable[i] = unitStaticTable[i + '0'];
     } else if (i < 100) {
-      size_t index = ((size_t)TO_SMALL_CHAR((i / 10) + '0') << 6) +
-                     TO_SMALL_CHAR((i % 10) + '0');
+      size_t index = ((size_t)toSmallChar((i / 10) + '0') << 6) +
+                     toSmallChar((i % 10) + '0');
       intStaticTable[i] = length2StaticTable[index];
     } else {
       Latin1Char buffer[] = {Latin1Char('0' + (i / 100)),
