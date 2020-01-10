@@ -1647,18 +1647,8 @@ function switchToFrame(msg) {
 
 
 
-
-
-
-function takeScreenshot(
-  format,
-  { id, full = true, highlights = [], scroll = true } = {}
-) {
+function takeScreenshot(format, { id, full = true, scroll = true } = {}) {
   let win = curContainer.frame;
-
-  let highlightEls = highlights
-    .map(ref => WebElement.fromUUID(ref, "content"))
-    .map(webEl => seenEls.get(webEl, win));
 
   let canvas;
 
@@ -1675,11 +1665,11 @@ function takeScreenshot(
       el = win.document.documentElement;
     }
 
-    canvas = capture.element(el, highlightEls);
+    canvas = capture.element(el);
 
     
   } else {
-    canvas = capture.viewport(win, highlightEls);
+    canvas = capture.viewport(win);
   }
 
   switch (format) {

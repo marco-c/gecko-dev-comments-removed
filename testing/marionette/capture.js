@@ -45,16 +45,11 @@ capture.Format = {
 
 
 
-
-
-
-capture.element = function(node, highlights = []) {
+capture.element = function(node) {
   let win = node.ownerGlobal;
   let rect = node.getBoundingClientRect();
 
-  return capture.canvas(win, rect.left, rect.top, rect.width, rect.height, {
-    highlights,
-  });
+  return capture.canvas(win, rect.left, rect.top, rect.width, rect.height);
 };
 
 
@@ -68,22 +63,15 @@ capture.element = function(node, highlights = []) {
 
 
 
-
-
-
-capture.viewport = function(win, highlights = []) {
+capture.viewport = function(win) {
   return capture.canvas(
     win,
     win.pageXOffset,
     win.pageYOffset,
     win.innerWidth,
-    win.innerHeight,
-    { highlights }
+    win.innerHeight
   );
 };
-
-
-
 
 
 
@@ -115,7 +103,7 @@ capture.canvas = function(
   top,
   width,
   height,
-  { highlights = [], canvas = null, flags = null } = {}
+  { canvas = null, flags = null } = {}
 ) {
   const scale = win.devicePixelRatio;
 
@@ -159,31 +147,8 @@ capture.canvas = function(
 
   ctx.scale(scale, scale);
   ctx.drawWindow(win, left, top, width, height, BG_COLOUR, flags);
-  if (highlights.length) {
-    ctx = capture.highlight_(ctx, highlights, top, left);
-  }
 
   return canvas;
-};
-
-capture.highlight_ = function(context, highlights, top = 0, left = 0) {
-  if (typeof highlights == "undefined") {
-    throw new InvalidArgumentError("Missing highlights");
-  }
-
-  context.lineWidth = "2";
-  context.strokeStyle = "red";
-  context.save();
-
-  for (let el of highlights) {
-    let rect = el.getBoundingClientRect();
-    let oy = -top;
-    let ox = -left;
-
-    context.strokeRect(rect.left + ox, rect.top + oy, rect.width, rect.height);
-  }
-
-  return context;
 };
 
 
