@@ -1256,54 +1256,80 @@ JS::Result<HuffmanLookup> BinASTTokenReaderContext::BitBuffer::getHuffmanLookup(
     
     
 
-    uint64_t newBits = 0;
-    while (this->bitLength <= BIT_BUFFER_SIZE - BIT_BUFFER_READ_UNIT) {
-      
-      uint8_t byte;
-      uint32_t readLen = 1;
-      MOZ_TRY((owner.readBuf<Compression::No, EndOfFilePolicy::BestEffort>(
-          &byte, readLen)));
-      if (readLen < 1) {
-        
-        break;
-      }
+    
+    mozilla::Array<uint8_t, 8> bytes;
+    
+    uint64_t* newBits = reinterpret_cast<uint64_t*>(bytes.begin());
+    static_assert(sizeof(bytes) == sizeof(*newBits),
+                  "Expecting bytes array to match size of *newBits");
+    *newBits = 0;
 
-      
-      
-      
-      this->bits <<= BIT_BUFFER_READ_UNIT;
+    
+    uint32_t bytesInBits =
+        (this->bitLength + BIT_BUFFER_READ_UNIT - 1) / BIT_BUFFER_READ_UNIT;
+    
+    
+    uint32_t readLen = sizeof(bytes) - bytesInBits;
+    
+    
+    
+    MOZ_TRY((owner.readBuf<Compression::No, EndOfFilePolicy::BestEffort>(
+        bytes.begin(), readLen)));
+#if MOZ_LITTLE_ENDIAN
+    
+    *newBits = (((*newBits & 0x00000000000000ffULL) << 56) |
+                ((*newBits & 0x000000000000ff00ULL) << 40) |
+                ((*newBits & 0x0000000000ff0000ULL) << 24) |
+                ((*newBits & 0x00000000ff000000ULL) << 8) |
+                ((*newBits & 0x000000ff00000000ULL) >> 8) |
+                ((*newBits & 0x0000ff0000000000ULL) >> 24) |
+                ((*newBits & 0x00ff000000000000ULL) >> 40) |
+                ((*newBits & 0xff00000000000000ULL) >> 56));
+#endif
+    
+    
+    
+    
+    
 
-      
-      
-      
-      newBits <<= BIT_BUFFER_READ_UNIT;
-      newBits += byte;
+    
+    *newBits >>= (BIT_BUFFER_READ_UNIT * (sizeof(bytes) - readLen));
+    
+    
 
-      this->bitLength += BIT_BUFFER_READ_UNIT;
-      MOZ_ASSERT_IF(this->bitLength != 64 ,
-                    this->bits >> this->bitLength == 0);
+    
+    
+    *newBits = ((*newBits >> 1) & 0x5555555555555555) |
+               ((*newBits & 0x5555555555555555) << 1);
+    
+    *newBits = ((*newBits >> 2) & 0x3333333333333333) |
+               ((*newBits & 0x3333333333333333) << 2);
+    
+    *newBits = ((*newBits >> 4) & 0x0F0F0F0F0F0F0F0F) |
+               ((*newBits & 0x0F0F0F0F0F0F0F0F) << 4);
+    
+    
 
+    this->bitLength += (BIT_BUFFER_READ_UNIT * readLen);
+    
+    
+    
+    if (readLen != 8) {
+      this->bits <<= (BIT_BUFFER_READ_UNIT * readLen);
       
+      
+      this->bits += *newBits;
     }
     
+    else {
+      this->bits = *newBits;
+    }
     
-    newBits = ((newBits >> 1) & 0x5555555555555555) |
-              ((newBits & 0x5555555555555555) << 1);
-    
-    newBits = ((newBits >> 2) & 0x3333333333333333) |
-              ((newBits & 0x3333333333333333) << 2);
-    
-    newBits = ((newBits >> 4) & 0x0F0F0F0F0F0F0F0F) |
-              ((newBits & 0x0F0F0F0F0F0F0F0F) << 4);
-    
-    
-    this->bits += newBits;
+    if (this->bitLength <= MAX_PREFIX_BIT_LENGTH) {
+      return HuffmanLookup(this->bits, this->bitLength);
+    }
   }
 
-  
-  if (this->bitLength <= MAX_PREFIX_BIT_LENGTH) {
-    return HuffmanLookup(this->bits, this->bitLength);
-  }
   
   
   const uint64_t bitPrefix =
