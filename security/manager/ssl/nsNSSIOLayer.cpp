@@ -464,15 +464,15 @@ nsNSSSocketInfo::IsAcceptableForHost(const nsACString& hostname,
   }
   CertVerifier::Flags flags = CertVerifier::FLAG_LOCAL_ONLY;
   UniqueCERTCertList unusedBuiltChain;
-  mozilla::pkix::Result result =
-      certVerifier->VerifySSLServerCert(nssCert,
-                                        nullptr,  
-                                        nullptr,  
-                                        mozilla::pkix::Now(),
-                                        nullptr,  
-                                        hostname, unusedBuiltChain,
-                                        false,  
-                                        flags);
+  mozilla::pkix::Result result = certVerifier->VerifySSLServerCert(
+      nssCert,
+      Maybe<nsTArray<uint8_t>>(),  
+      Maybe<nsTArray<uint8_t>>(),  
+      mozilla::pkix::Now(),
+      nullptr,  
+      hostname, unusedBuiltChain,
+      false,  
+      flags);
   if (result != mozilla::pkix::Success) {
     return NS_OK;
   }

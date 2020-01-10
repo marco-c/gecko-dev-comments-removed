@@ -1051,15 +1051,15 @@ nsresult nsSiteSecurityService::ProcessPKPHeader(
   
   CertVerifier::Flags flags = CertVerifier::FLAG_LOCAL_ONLY |
                               CertVerifier::FLAG_TLS_IGNORE_STATUS_REQUEST;
-  if (certVerifier->VerifySSLServerCert(nssCert,
-                                        nullptr,       
-                                        nullptr,       
-                                        now, nullptr,  
-                                        host,          
-                                        certList,
-                                        false,  
-                                        flags, aOriginAttributes) !=
-      mozilla::pkix::Success) {
+  if (certVerifier->VerifySSLServerCert(
+          nssCert,
+          Maybe<nsTArray<uint8_t>>(),  
+          Maybe<nsTArray<uint8_t>>(),  
+          now, nullptr,                
+          host,                        
+          certList,
+          false,  
+          flags, aOriginAttributes) != mozilla::pkix::Success) {
     return NS_ERROR_FAILURE;
   }
 

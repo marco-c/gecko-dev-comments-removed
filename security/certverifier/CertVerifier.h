@@ -146,8 +146,10 @@ class CertVerifier {
       CERTCertificate* cert, SECCertificateUsage usage,
       mozilla::pkix::Time time, void* pinArg, const char* hostname,
        UniqueCERTCertList& builtChain, Flags flags = 0,
-       const SECItem* stapledOCSPResponse = nullptr,
-       const SECItem* sctsFromTLS = nullptr,
+       const Maybe<nsTArray<uint8_t>>& stapledOCSPResponseArg =
+          Maybe<nsTArray<uint8_t>>(),
+       const Maybe<nsTArray<uint8_t>>& sctsFromTLS =
+          Maybe<nsTArray<uint8_t>>(),
        const OriginAttributes& originAttributes =
           OriginAttributes(),
        SECOidTag* evOidPolicy = nullptr,
@@ -159,8 +161,9 @@ class CertVerifier {
 
   mozilla::pkix::Result VerifySSLServerCert(
       const UniqueCERTCertificate& peerCert,
-       const SECItem* stapledOCSPResponse,
-       const SECItem* sctsFromTLS, mozilla::pkix::Time time,
+       const Maybe<nsTArray<uint8_t>>& stapledOCSPResponse,
+       const Maybe<nsTArray<uint8_t>>& sctsFromTLS,
+      mozilla::pkix::Time time,
        void* pinarg, const nsACString& hostname,
        UniqueCERTCertList& builtChain,
        bool saveIntermediatesInPermanentDatabase = false,

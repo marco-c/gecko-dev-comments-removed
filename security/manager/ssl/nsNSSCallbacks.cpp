@@ -1045,17 +1045,22 @@ static void RebuildVerifiedCertificateInformation(PRFileDesc* fd,
 
   
   const SECItemArray* stapledOCSPResponses = SSL_PeerStapledOCSPResponses(fd);
-  const SECItem* stapledOCSPResponse = nullptr;
+  Maybe<nsTArray<uint8_t>> stapledOCSPResponse;
   
   if (stapledOCSPResponses && stapledOCSPResponses->len == 1) {
-    stapledOCSPResponse = &stapledOCSPResponses->items[0];
+    stapledOCSPResponse.emplace();
+    stapledOCSPResponse->SetCapacity(stapledOCSPResponses->items[0].len);
+    stapledOCSPResponse->AppendElements(stapledOCSPResponses->items[0].data,
+                                        stapledOCSPResponses->items[0].len);
   }
-  const SECItem* sctsFromTLSExtension = SSL_PeerSignedCertTimestamps(fd);
-  if (sctsFromTLSExtension && sctsFromTLSExtension->len == 0) {
-    
-    
-    
-    sctsFromTLSExtension = nullptr;
+
+  Maybe<nsTArray<uint8_t>> sctsFromTLSExtension;
+  const SECItem* sctsFromTLSExtensionSECItem = SSL_PeerSignedCertTimestamps(fd);
+  if (sctsFromTLSExtensionSECItem) {
+    sctsFromTLSExtension.emplace();
+    sctsFromTLSExtension->SetCapacity(sctsFromTLSExtensionSECItem->len);
+    sctsFromTLSExtension->AppendElements(sctsFromTLSExtensionSECItem->data,
+                                         sctsFromTLSExtensionSECItem->len);
   }
 
   int flags = mozilla::psm::CertVerifier::FLAG_LOCAL_ONLY;
