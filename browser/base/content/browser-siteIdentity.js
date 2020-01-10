@@ -894,6 +894,30 @@ var gIdentityHandler = {
     }
 
     
+    if (document.fullscreen) {
+      
+      
+      
+      
+      let exitedEventReceived = false;
+      window.messageManager.addMessageListener("DOMFullscreen:Painted", function listener() {
+        if (!exitedEventReceived) {
+          return;
+        }
+        window.messageManager.removeMessageListener("DOMFullscreen:Painted", listener);
+        gIdentityHandler._openPopup(event);
+      });
+      window.addEventListener("MozDOMFullscreen:Exited", () => {
+        exitedEventReceived = true;
+      }, { once: true });
+      document.exitFullscreen();
+      return;
+    }
+    this._openPopup(event);
+  },
+
+  _openPopup(event) {
+    
     
     this._identityPopup.hidden = false;
 
