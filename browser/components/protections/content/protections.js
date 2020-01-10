@@ -7,6 +7,11 @@
 import LockwiseCard from "./lockwise-card.js";
 import MonitorCard from "./monitor-card.js";
 
+
+window.addEventListener("beforeunload", () => {
+  document.sendTelemetryEvent("close", "protection_report");
+});
+
 document.addEventListener("DOMContentLoaded", e => {
   let todayInMs = Date.now();
   let weekAgoInMs = todayInMs - 7 * 24 * 60 * 60 * 1000;
@@ -52,6 +57,17 @@ document.addEventListener("DOMContentLoaded", e => {
   let legend = document.getElementById("legend");
   legend.style.gridTemplateAreas =
     "'social cookie tracker fingerprinter cryptominer'";
+
+  document.sendTelemetryEvent = (action, object) => {
+    
+    
+    RPMRecordTelemetryEvent("security.ui.protections", action, object, "", {
+      category: cbCategory,
+    });
+  };
+
+  
+  document.sendTelemetryEvent("show", "protection_report");
 
   let createGraph = data => {
     

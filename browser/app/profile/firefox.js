@@ -1610,6 +1610,8 @@ pref("browser.contentblocking.report.lockwise.enabled", true);
 
 
 pref("browser.contentblocking.report.monitor.enabled", true);
+pref("browser.contentblocking.report.monitor.url", "https://monitor.firefox.com");
+pref("browser.contentblocking.report.lockwise.url", "https://lockwise.firefox.com/");
 
 
 #ifdef NIGHTLY_BUILD
