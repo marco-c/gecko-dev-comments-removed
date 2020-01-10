@@ -1793,7 +1793,9 @@ template <gfxFont::FontComplexityT FC, gfxFont::SpacingT S>
 bool gfxFont::DrawGlyphs(const gfxShapedText* aShapedText,
                          uint32_t aOffset,  
                          uint32_t aCount,   
-                         gfx::Point* aPt, GlyphBufferAzure& aBuffer) {
+                         gfx::Point* aPt,
+                         const gfx::Matrix* aOffsetMatrix,  
+                         GlyphBufferAzure& aBuffer) {
   float& inlineCoord = aBuffer.mFontParams.isVerticalFont ? aPt->y : aPt->x;
 
   const gfxShapedText::CompressedGlyph* glyphData =
@@ -1843,7 +1845,10 @@ bool gfxFont::DrawGlyphs(const gfxShapedText* aShapedText,
               return false;
             }
           } else {
-            gfx::Point glyphPt(*aPt + details->mOffset);
+            gfx::Point glyphPt(
+                *aPt + (aOffsetMatrix
+                            ? aOffsetMatrix->TransformPoint(details->mOffset)
+                            : details->mOffset));
             DrawOneGlyph<FC>(details->mGlyphID, glyphPt, aBuffer,
                              &emittedGlyphs);
           }
@@ -2098,6 +2103,7 @@ void gfxFont::Draw(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
   
   
   gfx::Point origPt = *aPt;
+  const gfx::Matrix* offsetMatrix = nullptr;
 
   
   fontParams.advanceDirection = aRunParams.isRTL ? -1.0f : 1.0f;
@@ -2145,6 +2151,14 @@ void gfxFont::Draw(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
                    gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_SIDEWAYS_LEFT
                ? wr::FontInstanceFlags_FLIP_Y
                : wr::FontInstanceFlags_FLIP_X));
+      
+      
+      static const gfx::Matrix kSidewaysLeft = {0, -1, 1, 0, 0, 0};
+      static const gfx::Matrix kSidewaysRight = {0, 1, -1, 0, 0, 0};
+      offsetMatrix =
+          (aOrientation == ShapedTextFlags::TEXT_ORIENT_VERTICAL_SIDEWAYS_LEFT)
+              ? &kSidewaysLeft
+              : &kSidewaysRight;
     } else {
       
       matrixRestore.SetContext(aRunParams.context);
@@ -2252,21 +2266,21 @@ void gfxFont::Draw(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
       if (aRunParams.spacing) {
         emittedGlyphs =
             DrawGlyphs<FontComplexityT::ComplexFont, SpacingT::HasSpacing>(
-                aTextRun, aStart, aEnd - aStart, aPt, buffer);
+                aTextRun, aStart, aEnd - aStart, aPt, offsetMatrix, buffer);
       } else {
         emittedGlyphs =
             DrawGlyphs<FontComplexityT::ComplexFont, SpacingT::NoSpacing>(
-                aTextRun, aStart, aEnd - aStart, aPt, buffer);
+                aTextRun, aStart, aEnd - aStart, aPt, offsetMatrix, buffer);
       }
     } else {
       if (aRunParams.spacing) {
         emittedGlyphs =
             DrawGlyphs<FontComplexityT::SimpleFont, SpacingT::HasSpacing>(
-                aTextRun, aStart, aEnd - aStart, aPt, buffer);
+                aTextRun, aStart, aEnd - aStart, aPt, offsetMatrix, buffer);
       } else {
         emittedGlyphs =
             DrawGlyphs<FontComplexityT::SimpleFont, SpacingT::NoSpacing>(
-                aTextRun, aStart, aEnd - aStart, aPt, buffer);
+                aTextRun, aStart, aEnd - aStart, aPt, offsetMatrix, buffer);
       }
     }
   }

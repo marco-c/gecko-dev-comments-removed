@@ -1883,7 +1883,11 @@ class gfxFont {
   bool DrawGlyphs(const gfxShapedText* aShapedText,
                   uint32_t aOffset,  
                   uint32_t aCount,   
-                  mozilla::gfx::Point* aPt, GlyphBufferAzure& aBuffer);
+                  mozilla::gfx::Point* aPt,
+                  
+                  
+                  const mozilla::gfx::Matrix* aOffsetMatrix,
+                  GlyphBufferAzure& aBuffer);
 
   
   
