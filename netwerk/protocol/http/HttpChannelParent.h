@@ -136,12 +136,6 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   nsresult TriggerCrossProcessSwitch(nsIHttpChannel* aChannel,
                                      uint64_t aIdentifier);
 
-  
-  
-  
-  
-  void CancelChildCrossProcessRedirect();
-
  protected:
   
   
