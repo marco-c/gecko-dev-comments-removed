@@ -58,7 +58,7 @@ class SourceFront extends FrontClassWithSpec(sourceSpec) {
 
 
   async source() {
-    const response = await this.onSource();
+    const response = await super.source();
     return this._onSourceResponse(response);
   }
 

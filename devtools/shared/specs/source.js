@@ -76,10 +76,10 @@ const sourceSpec = generateActorSpec({
         lines: RetVal("json"),
       },
     },
-    onSource: {
+    source: {
       
       
-      request: { type: "source" },
+      request: {},
       response: RetVal("source.onsource"),
     },
     setPausePoints: {
