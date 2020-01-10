@@ -314,6 +314,9 @@ class Query {
     
     
     this.complete = true;
+
+    
+    this.controller = null;
   }
 
   
