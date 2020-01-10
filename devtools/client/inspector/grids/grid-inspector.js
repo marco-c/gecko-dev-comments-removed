@@ -428,12 +428,6 @@ class GridInspector {
       grids.push(gridData);
     }
 
-    
-    
-    for (const root of grids.filter(g => !g.parentNodeActorID)) {
-      this._updateZOrder(grids, root);
-    }
-
     this.store.dispatch(updateGrids(grids));
     this.inspector.emit("grid-panel-updated");
   }
@@ -737,26 +731,6 @@ class GridInspector {
       if (grid.highlighted) {
         this.highlighters.showGridHighlighter(grid.nodeFront);
       }
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  _updateZOrder(grids, parent, zIndex = 0) {
-    parent.zIndex = zIndex;
-
-    for (const childIndex of parent.subgrids) {
-      
-      this._updateZOrder(grids, grids[childIndex], zIndex + 1);
     }
   }
 }
