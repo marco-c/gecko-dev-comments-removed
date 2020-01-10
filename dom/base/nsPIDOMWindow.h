@@ -391,6 +391,11 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   
 
 
+  inline mozilla::dom::BrowsingContext* GetBrowsingContext() const;
+
+  
+
+
 
   void SetHasPaintEventListeners() { mMayHavePaintEventListener = true; }
 
@@ -626,6 +631,8 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   nsTArray<mozilla::dom::AudioContext*> mAudioContexts;  
 
   RefPtr<mozilla::dom::TabGroup> mTabGroup;
+
+  RefPtr<mozilla::dom::BrowsingContext> mBrowsingContext;
 
   
   

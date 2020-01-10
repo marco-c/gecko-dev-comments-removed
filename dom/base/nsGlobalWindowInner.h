@@ -1197,6 +1197,9 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   bool ShouldResetBrowsingContextUserGestureActivation();
 
+  
+  void FireFrameLoadEvent(bool aIsTrusted);
+
  public:
   
   virtual nsresult Dispatch(mozilla::TaskCategory aCategory,
