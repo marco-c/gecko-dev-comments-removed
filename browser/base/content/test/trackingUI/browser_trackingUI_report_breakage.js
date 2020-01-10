@@ -139,7 +139,7 @@ add_task(async function testFP() {
   
   let url = TRACKING_PAGE + "?a=b&1=abc&unicode=🦊";
   await BrowserTestUtils.withNewTab(url, async function(browser) {
-    await ContentTask.spawn(browser, {}, function() {
+    await SpecialPowers.spawn(browser, [], function() {
       content.postMessage("fingerprinting", "*");
     });
 
@@ -156,7 +156,7 @@ add_task(async function testCM() {
   
   let url = TRACKING_PAGE + "?a=b&1=abc&unicode=🦊";
   await BrowserTestUtils.withNewTab(url, async function(browser) {
-    await ContentTask.spawn(browser, {}, function() {
+    await SpecialPowers.spawn(browser, [], function() {
       content.postMessage("cryptomining", "*");
     });
 

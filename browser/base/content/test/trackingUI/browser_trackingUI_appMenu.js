@@ -36,7 +36,7 @@ add_task(async function testProtectionsButton() {
 
     
     
-    await ContentTask.spawn(browser, {}, async function() {
+    await SpecialPowers.spawn(browser, [], async function() {
       await ContentTaskUtils.waitForCondition(() => {
         let bars = content.document.querySelectorAll(".graph-bar");
         return bars.length;
