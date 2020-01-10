@@ -1766,6 +1766,14 @@ var gProtectionsHandler = {
     );
 
     
+    
+    
+    this._protectionsPopupTPSwitch.toggleAttribute(
+      "showdotindicator",
+      !currentlyEnabled
+    );
+
+    
     this.maybeUpdateEarliestRecordedDateTooltip();
   },
 
