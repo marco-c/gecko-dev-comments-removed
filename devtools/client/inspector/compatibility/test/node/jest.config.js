@@ -8,7 +8,7 @@
 module.exports = {
   verbose: true,
   moduleNameMapper: {
-    
+    "^devtools/client/shared/link": `${__dirname}/fixtures/stub`,
     "^devtools\\/(.*)": `${__dirname}/../../../../../$1`,
     "^Services": `${__dirname}/fixtures/Services`,
   },

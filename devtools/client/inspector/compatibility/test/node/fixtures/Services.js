@@ -7,7 +7,8 @@
 module.exports = {
   prefs: {
     getBoolPref: (pref, defaultValue) => {
-      return pref === "devtools.testing" ? true : !!defaultValue;
+      
+      return !!defaultValue;
     },
   },
 };
