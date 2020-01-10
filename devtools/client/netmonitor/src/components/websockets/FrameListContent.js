@@ -48,6 +48,7 @@ class FrameListContent extends Component {
       selectedFrame: PropTypes.object,
       selectFrame: PropTypes.func.isRequired,
       columns: PropTypes.object.isRequired,
+      channelId: PropTypes.number,
     };
   }
 
@@ -63,10 +64,22 @@ class FrameListContent extends Component {
     };
     this.pinnedToBottom = false;
     this.initIntersectionObserver = false;
+    this.intersectionObserver = null;
   }
 
-  componentDidUpdate() {
+  componentDidMount() {
     const { startPanelContainer } = this.props;
+    const scrollAnchor = this.refs.scrollAnchor;
+
+    if (scrollAnchor) {
+      
+      scrollAnchor.scrollIntoView();
+    }
+    this.setupScrollToBottom(startPanelContainer, scrollAnchor);
+  }
+
+  componentDidUpdate(prevProps) {
+    const { startPanelContainer, channelId } = this.props;
     const scrollAnchor = this.refs.scrollAnchor;
 
     
@@ -74,10 +87,27 @@ class FrameListContent extends Component {
       this.initIntersectionObserver = false;
     }
 
+    
+    if (channelId !== prevProps.channelId && scrollAnchor) {
+      scrollAnchor.scrollIntoView();
+    }
+
+    this.setupScrollToBottom(startPanelContainer, scrollAnchor);
+  }
+
+  componentWillUnmount() {
+    
+    const scrollAnchor = this.refs.scrollAnchor;
+    this.intersectionObserver.unobserve(scrollAnchor);
+    this.initIntersectionObserver = false;
+    this.pinnedToBottom = false;
+  }
+
+  setupScrollToBottom(startPanelContainer, scrollAnchor) {
     if (startPanelContainer && scrollAnchor) {
       
       if (!this.initIntersectionObserver) {
-        const observer = new IntersectionObserver(
+        this.intersectionObserver = new IntersectionObserver(
           () => {
             
             
@@ -89,7 +119,7 @@ class FrameListContent extends Component {
             threshold: 0.1,
           }
         );
-        observer.observe(scrollAnchor);
+        this.intersectionObserver.observe(scrollAnchor);
         this.initIntersectionObserver = true;
       }
 
