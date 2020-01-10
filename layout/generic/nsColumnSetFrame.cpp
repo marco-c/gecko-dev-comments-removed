@@ -598,9 +598,10 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
   
   nsSize containerSize = aReflowInput.ComputedSizeAsContainerIfConstrained();
 
-  LogicalSize computedSize = StaticPrefs::layout_css_column_span_enabled()
-                                 ? aReflowInput.mCBReflowInput->ComputedSize(wm)
-                                 : aReflowInput.ComputedSize(wm);
+  const nscoord computedBSize =
+      StaticPrefs::layout_css_column_span_enabled()
+          ? aReflowInput.mParentReflowInput->ComputedBSize()
+          : aReflowInput.ComputedBSize();
 
   
   
@@ -654,7 +655,7 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
     
     if (skipIncremental && changingBSize &&
         (StyleColumn()->mColumnFill == StyleColumnFill::Auto ||
-         computedSize.BSize(wm) != NS_UNCONSTRAINEDSIZE)) {
+         computedBSize != NS_UNCONSTRAINEDSIZE)) {
       skipIncremental = false;
     }
     
@@ -722,7 +723,7 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
         child->MarkSubtreeDirty();
       }
 
-      LogicalSize kidCBSize(wm, availSize.ISize(wm), computedSize.BSize(wm));
+      LogicalSize kidCBSize(wm, availSize.ISize(wm), computedBSize);
       ReflowInput kidReflowInput(PresContext(), aReflowInput, child, availSize,
                                  Some(kidCBSize));
       kidReflowInput.mFlags.mIsTopOfPage = true;
@@ -922,8 +923,7 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
     MOZ_ASSERT(borderPadding.IsAllZero(),
                "Only our parent ColumnSetWrapper can have border and padding!");
 
-    if (computedSize.BSize(wm) != NS_UNCONSTRAINEDSIZE &&
-        !HasColumnSpanSiblings()) {
+    if (computedBSize != NS_UNCONSTRAINEDSIZE && !HasColumnSpanSiblings()) {
       NS_ASSERTION(aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE,
                    "Available block-size should be constrained because it's "
                    "restricted by the computed block-size when our reflow "
@@ -946,8 +946,7 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
       
       
       
-      contentSize.BSize(wm) =
-          std::min(contentSize.BSize(wm), computedSize.BSize(wm));
+      contentSize.BSize(wm) = std::min(contentSize.BSize(wm), computedBSize);
     }
   } else {
     
@@ -1217,6 +1216,9 @@ void nsColumnSetFrame::Reflow(nsPresContext* aPresContext,
   MOZ_ASSERT_IF(StaticPrefs::layout_css_column_span_enabled(),
                 aReflowInput.mCBReflowInput->mFrame->StyleColumn()
                     ->IsColumnContainerStyle());
+  MOZ_ASSERT_IF(
+      StaticPrefs::layout_css_column_span_enabled(),
+      aReflowInput.mParentReflowInput->mFrame->IsColumnSetWrapperFrame());
 
   
   if (aReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE) {
