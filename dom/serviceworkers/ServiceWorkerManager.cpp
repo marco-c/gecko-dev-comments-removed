@@ -2336,19 +2336,6 @@ void ServiceWorkerManager::Update(
       actor, aPrincipal->OriginAttributesRef(), nsCString(aScope));
 }
 
-namespace {
-
-void RejectUpdateWithInvalidStateError(
-    ServiceWorkerUpdateFinishCallback& aCallback) {
-  ErrorResult error(NS_ERROR_DOM_INVALID_STATE_ERR);
-  aCallback.UpdateFailed(error);
-
-  
-  error.SuppressException();
-}
-
-}  
-
 void ServiceWorkerManager::UpdateInternal(
     nsIPrincipal* aPrincipal, const nsACString& aScope,
     ServiceWorkerUpdateFinishCallback* aCallback) {
@@ -2364,22 +2351,20 @@ void ServiceWorkerManager::UpdateInternal(
   RefPtr<ServiceWorkerRegistrationInfo> registration =
       GetRegistration(scopeKey, aScope);
   if (NS_WARN_IF(!registration)) {
+    ErrorResult error;
+    error.ThrowTypeError<MSG_SW_UPDATE_BAD_REGISTRATION>(
+        NS_ConvertUTF8toUTF16(aScope), NS_LITERAL_STRING("uninstalled"));
+    aCallback->UpdateFailed(error);
+
+    
+    error.SuppressException();
     return;
   }
 
-  
-  
-  
   RefPtr<ServiceWorkerInfo> newest = registration->Newest();
-  if (!newest) {
-    RejectUpdateWithInvalidStateError(*aCallback);
-    return;
-  }
-
-  if (newest->State() == ServiceWorkerState::Installing) {
-    RejectUpdateWithInvalidStateError(*aCallback);
-    return;
-  }
+  MOZ_DIAGNOSTIC_ASSERT(newest,
+                        "The Update algorithm should have been aborted already "
+                        "if there wasn't a newest worker");
 
   RefPtr<ServiceWorkerJobQueue> queue = GetOrCreateJobQueue(scopeKey, aScope);
 
