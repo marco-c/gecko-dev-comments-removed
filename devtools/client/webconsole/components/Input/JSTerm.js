@@ -1744,7 +1744,6 @@ class JSTerm extends Component {
   }
 
   destroy() {
-    this.webConsoleClient.clearNetworkRequests();
     if (this.webConsoleUI.outputNode) {
       
       
