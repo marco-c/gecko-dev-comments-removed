@@ -1370,7 +1370,7 @@ void MacroAssembler::loadDependentStringBase(Register str, Register dest) {
     
     movePtr(ImmWord(0), dest);
     test32MovePtr(Assembler::Zero, Address(str, JSString::offsetOfFlags()),
-                  Imm32(JSString::HAS_BASE_BIT), dest, str);
+                  Imm32(JSString::DEPENDENT_BIT), dest, str);
   }
 
   loadPtr(Address(str, JSDependentString::offsetOfBase()), dest);

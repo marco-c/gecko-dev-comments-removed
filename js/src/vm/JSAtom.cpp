@@ -878,22 +878,21 @@ struct AtomizeUTF8OrWTF8CharsWrapper {
 
 
 template <typename CharT>
-static MOZ_ALWAYS_INLINE JSFlatString* MakeFlatStringForAtomization(
+static MOZ_ALWAYS_INLINE JSLinearString* MakeLinearStringForAtomization(
     JSContext* cx, const CharT* chars, size_t length) {
   return NewStringCopyN<NoGC>(cx, chars, length);
 }
 
 
 
-static MOZ_ALWAYS_INLINE JSFlatString* MakeFlatStringForAtomization(
+static MOZ_ALWAYS_INLINE JSLinearString* MakeLinearStringForAtomization(
     JSContext* cx, LittleEndianChars chars, size_t length) {
   return NewStringFromLittleEndianNoGC(cx, chars, length);
 }
 
 template <typename CharT, typename WrapperT>
-static MOZ_ALWAYS_INLINE JSFlatString* MakeUTF8AtomHelper(JSContext* cx,
-                                                          const WrapperT* chars,
-                                                          size_t length) {
+static MOZ_ALWAYS_INLINE JSLinearString* MakeUTF8AtomHelper(
+    JSContext* cx, const WrapperT* chars, size_t length) {
   if (JSInlineString::lengthFits<CharT>(length)) {
     CharT* storage;
     JSInlineString* str = AllocateInlineString<NoGC>(cx, length, &storage);
@@ -919,13 +918,13 @@ static MOZ_ALWAYS_INLINE JSFlatString* MakeUTF8AtomHelper(JSContext* cx,
   InflateUTF8CharsToBufferAndTerminate(chars->utf8, newStr.get(), length,
                                        chars->encoding);
 
-  return JSFlatString::new_<NoGC>(cx, std::move(newStr), length);
+  return JSLinearString::new_<NoGC>(cx, std::move(newStr), length);
 }
 
 
 
 template <typename InputCharsT>
- MOZ_ALWAYS_INLINE JSFlatString* MakeFlatStringForAtomization(
+ MOZ_ALWAYS_INLINE JSLinearString* MakeLinearStringForAtomization(
     JSContext* cx, const AtomizeUTF8OrWTF8CharsWrapper<InputCharsT>* chars,
     size_t length) {
   if (length == 0) {
@@ -944,15 +943,15 @@ static MOZ_ALWAYS_INLINE JSAtom* AllocateNewAtom(
     const Maybe<uint32_t>& indexValue, const AtomHasher::Lookup& lookup) {
   AutoAllocInAtomsZone ac(cx);
 
-  JSFlatString* flat = MakeFlatStringForAtomization(cx, chars, length);
-  if (!flat) {
+  JSLinearString* linear = MakeLinearStringForAtomization(cx, chars, length);
+  if (!linear) {
     
     
     ReportOutOfMemory(cx);
     return nullptr;
   }
 
-  JSAtom* atom = flat->morphAtomizedStringIntoAtom(lookup.hash);
+  JSAtom* atom = linear->morphAtomizedStringIntoAtom(lookup.hash);
   MOZ_ASSERT(atom->hash() == lookup.hash);
 
   if (pin) {

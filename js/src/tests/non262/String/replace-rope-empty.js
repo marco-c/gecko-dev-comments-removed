@@ -11,20 +11,20 @@ print(BUGNUMBER + ": " + summary);
 
 
 
-assertEq(isRope("a".repeat(23)), false);
-assertEq(isRope("a".repeat(24)), true);
-
-
-assertEq("a".repeat(23).replace("", "foo"),
-         "foo" + "a".repeat(23));
-assertEq("a".repeat(23).replace("", ""),
-         "a".repeat(23));
+assertEq(isRope("a".repeat(24)), false);
+assertEq(isRope("a".repeat(25)), true);
 
 
 assertEq("a".repeat(24).replace("", "foo"),
          "foo" + "a".repeat(24));
 assertEq("a".repeat(24).replace("", ""),
          "a".repeat(24));
+
+
+assertEq("a".repeat(25).replace("", "foo"),
+         "foo" + "a".repeat(25));
+assertEq("a".repeat(25).replace("", ""),
+         "a".repeat(25));
 
 if (typeof reportCompare === "function")
     reportCompare(true, true);
