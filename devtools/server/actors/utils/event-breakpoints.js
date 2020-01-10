@@ -167,8 +167,9 @@ const AVAILABLE_BREAKPOINTS = [
     name: "Load",
     items: [
       globalEvent("load", "load"),
-      globalEvent("load", "beforeunload"),
-      globalEvent("load", "unload"),
+      
+      
+      
       globalEvent("load", "abort"),
       globalEvent("load", "error"),
       globalEvent("load", "hashchange"),
