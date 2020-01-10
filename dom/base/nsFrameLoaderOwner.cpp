@@ -90,34 +90,42 @@ void nsFrameLoaderOwner::ChangeRemotenessCommon(
   doc->BlockOnload();
   auto cleanup = MakeScopeExit([&]() { doc->UnblockOnload(false); });
 
-  
-  
-  if (mFrameLoader) {
-    if (aPreserveContext) {
-      bc = mFrameLoader->GetBrowsingContext();
-      mFrameLoader->SkipBrowsingContextDetach();
+  {
+    
+    
+    
+    
+    nsAutoScriptBlocker sb;
+
+    
+    
+    if (mFrameLoader) {
+      if (aPreserveContext) {
+        bc = mFrameLoader->GetBrowsingContext();
+        mFrameLoader->SkipBrowsingContextDetach();
+      }
+
+      
+      
+      networkCreated = mFrameLoader->IsNetworkCreated();
+      mFrameLoader->Destroy();
+      mFrameLoader = nullptr;
+    }
+
+    mFrameLoader =
+        nsFrameLoader::Recreate(owner, bc, aRemoteType, networkCreated);
+    if (NS_WARN_IF(!mFrameLoader)) {
+      aRv.Throw(NS_ERROR_FAILURE);
+      return;
     }
 
     
     
-    networkCreated = mFrameLoader->IsNetworkCreated();
-    mFrameLoader->Destroy();
-    mFrameLoader = nullptr;
-  }
-
-  mFrameLoader =
-      nsFrameLoader::Recreate(owner, bc, aRemoteType, networkCreated);
-  if (NS_WARN_IF(!mFrameLoader)) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return;
-  }
-
-  
-  
-  
-  aFrameLoaderInit();
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
+    
+    aFrameLoaderInit();
+    if (NS_WARN_IF(aRv.Failed())) {
+      return;
+    }
   }
 
   
