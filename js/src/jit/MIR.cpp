@@ -5649,7 +5649,7 @@ bool jit::ElementAccessIsDenseNative(CompilerConstraintList* constraints,
   }
 
   
-  const Class* clasp = types->getKnownClass(constraints);
+  const JSClass* clasp = types->getKnownClass(constraints);
   return clasp && clasp->isNative() && !IsTypedArrayClass(clasp);
 }
 
@@ -5989,7 +5989,7 @@ AbortReasonOr<bool> PrototypeHasIndexedProperty(IonBuilder* builder,
 
 AbortReasonOr<bool> jit::TypeCanHaveExtraIndexedProperties(
     IonBuilder* builder, TemporaryTypeSet* types) {
-  const Class* clasp = types->getKnownClass(builder->constraints());
+  const JSClass* clasp = types->getKnownClass(builder->constraints());
 
   
   

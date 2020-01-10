@@ -139,7 +139,7 @@ class TypedProto;
 
 class TypedProto : public NativeObject {
  public:
-  static const Class class_;
+  static const JSClass class_;
 };
 
 class TypeDescr : public NativeObject {
@@ -223,7 +223,7 @@ class ScalarTypeDescr : public SimpleTypeDescr {
   static uint32_t alignment(Type t);
   static const char* typeName(Type type);
 
-  static const Class class_;
+  static const JSClass class_;
   static const JSFunctionSpec typeObjectMethods[];
 
   Type type() const {
@@ -317,7 +317,7 @@ class ReferenceTypeDescr : public SimpleTypeDescr {
   static const int32_t TYPE_MAX = int32_t(ReferenceType::TYPE_STRING) + 1;
   static const type::Kind Kind = type::Reference;
   static const bool Opaque = true;
-  static const Class class_;
+  static const JSClass class_;
   static uint32_t size(Type t);
   static uint32_t alignment(Type t);
   static const JSFunctionSpec typeObjectMethods[];
@@ -355,7 +355,7 @@ class ComplexTypeDescr : public TypeDescr {
   }
 };
 
-bool IsTypedObjectClass(const Class* clasp);  
+bool IsTypedObjectClass(const JSClass* clasp);  
 bool IsTypedObjectArray(JSObject& obj);
 
 MOZ_MUST_USE bool CreateUserSizeAndAlignmentProperties(JSContext* cx,
@@ -402,7 +402,7 @@ class ArrayMetaTypeDescr : public NativeObject {
 
 class ArrayTypeDescr : public ComplexTypeDescr {
  public:
-  static const Class class_;
+  static const JSClass class_;
   static const type::Kind Kind = type::Array;
 
   TypeDescr& elementType() const {
@@ -484,7 +484,7 @@ class StructMetaTypeDescr : public NativeObject {
 
 class StructTypeDescr : public ComplexTypeDescr {
  public:
-  static const Class class_;
+  static const JSClass class_;
 
   
   size_t fieldCount() const;
@@ -534,7 +534,7 @@ class TypedObjectModuleObject : public NativeObject {
     SlotCount
   };
 
-  static const Class class_;
+  static const JSClass class_;
 };
 
 
@@ -678,7 +678,7 @@ class OutlineTypedObject : public TypedObject {
 
   
   static OutlineTypedObject* createUnattachedWithClass(
-      JSContext* cx, const Class* clasp, HandleTypeDescr type,
+      JSContext* cx, const JSClass* clasp, HandleTypeDescr type,
       gc::InitialHeap heap = gc::DefaultHeap);
 
   
@@ -714,14 +714,14 @@ class OutlineTypedObject : public TypedObject {
 
 class OutlineTransparentTypedObject : public OutlineTypedObject {
  public:
-  static const Class class_;
+  static const JSClass class_;
 };
 
 
 
 class OutlineOpaqueTypedObject : public OutlineTypedObject {
  public:
-  static const Class class_;
+  static const JSClass class_;
 };
 
 
@@ -770,7 +770,7 @@ class InlineTypedObject : public TypedObject {
 
 class InlineTransparentTypedObject : public InlineTypedObject {
  public:
-  static const Class class_;
+  static const JSClass class_;
 
   uint8_t* inlineTypedMem() const {
     return InlineTypedObject::inlineTypedMem();
@@ -780,7 +780,7 @@ class InlineTransparentTypedObject : public InlineTypedObject {
 
 class InlineOpaqueTypedObject : public InlineTypedObject {
  public:
-  static const Class class_;
+  static const JSClass class_;
 };
 
 
@@ -1007,43 +1007,43 @@ JS_FOR_EACH_SCALAR_BIGINT_TYPE_REPR(JS_LOAD_SCALAR_CLASS_DEFN)
 JS_FOR_EACH_REFERENCE_TYPE_REPR(JS_STORE_REFERENCE_CLASS_DEFN)
 JS_FOR_EACH_REFERENCE_TYPE_REPR(JS_LOAD_REFERENCE_CLASS_DEFN)
 
-inline bool IsTypedObjectClass(const Class* class_) {
+inline bool IsTypedObjectClass(const JSClass* class_) {
   return class_ == &OutlineTransparentTypedObject::class_ ||
          class_ == &InlineTransparentTypedObject::class_ ||
          class_ == &OutlineOpaqueTypedObject::class_ ||
          class_ == &InlineOpaqueTypedObject::class_;
 }
 
-inline bool IsOpaqueTypedObjectClass(const Class* class_) {
+inline bool IsOpaqueTypedObjectClass(const JSClass* class_) {
   return class_ == &OutlineOpaqueTypedObject::class_ ||
          class_ == &InlineOpaqueTypedObject::class_;
 }
 
-inline bool IsOutlineTypedObjectClass(const Class* class_) {
+inline bool IsOutlineTypedObjectClass(const JSClass* class_) {
   return class_ == &OutlineOpaqueTypedObject::class_ ||
          class_ == &OutlineTransparentTypedObject::class_;
 }
 
-inline bool IsInlineTypedObjectClass(const Class* class_) {
+inline bool IsInlineTypedObjectClass(const JSClass* class_) {
   return class_ == &InlineOpaqueTypedObject::class_ ||
          class_ == &InlineTransparentTypedObject::class_;
 }
 
-inline const Class* GetOutlineTypedObjectClass(bool opaque) {
+inline const JSClass* GetOutlineTypedObjectClass(bool opaque) {
   return opaque ? &OutlineOpaqueTypedObject::class_
                 : &OutlineTransparentTypedObject::class_;
 }
 
-inline bool IsSimpleTypeDescrClass(const Class* clasp) {
+inline bool IsSimpleTypeDescrClass(const JSClass* clasp) {
   return clasp == &ScalarTypeDescr::class_ ||
          clasp == &ReferenceTypeDescr::class_;
 }
 
-inline bool IsComplexTypeDescrClass(const Class* clasp) {
+inline bool IsComplexTypeDescrClass(const JSClass* clasp) {
   return clasp == &StructTypeDescr::class_ || clasp == &ArrayTypeDescr::class_;
 }
 
-inline bool IsTypeDescrClass(const Class* clasp) {
+inline bool IsTypeDescrClass(const JSClass* clasp) {
   return IsSimpleTypeDescrClass(clasp) || IsComplexTypeDescrClass(clasp);
 }
 

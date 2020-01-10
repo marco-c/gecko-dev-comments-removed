@@ -40,8 +40,8 @@ using mozilla::RangedPtr;
 
 using JS::AutoStableStringChars;
 
-const Class js::JSONClass = {js_JSON_str,
-                             JSCLASS_HAS_CACHED_PROTO(JSProto_JSON)};
+const JSClass js::JSONClass = {js_JSON_str,
+                               JSCLASS_HAS_CACHED_PROTO(JSProto_JSON)};
 
 
 

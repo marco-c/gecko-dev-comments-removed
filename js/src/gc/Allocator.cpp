@@ -32,7 +32,7 @@ using namespace gc;
 template <AllowGC allowGC >
 JSObject* js::AllocateObject(JSContext* cx, AllocKind kind,
                              size_t nDynamicSlots, InitialHeap heap,
-                             const Class* clasp) {
+                             const JSClass* clasp) {
   MOZ_ASSERT(IsObjectAllocKind(kind));
   size_t thingSize = Arena::thingSize(kind);
 
@@ -83,11 +83,11 @@ JSObject* js::AllocateObject(JSContext* cx, AllocKind kind,
 template JSObject* js::AllocateObject<NoGC>(JSContext* cx, gc::AllocKind kind,
                                             size_t nDynamicSlots,
                                             gc::InitialHeap heap,
-                                            const Class* clasp);
+                                            const JSClass* clasp);
 template JSObject* js::AllocateObject<CanGC>(JSContext* cx, gc::AllocKind kind,
                                              size_t nDynamicSlots,
                                              gc::InitialHeap heap,
-                                             const Class* clasp);
+                                             const JSClass* clasp);
 
 
 
@@ -95,7 +95,7 @@ template JSObject* js::AllocateObject<CanGC>(JSContext* cx, gc::AllocKind kind,
 template <AllowGC allowGC>
 JSObject* GCRuntime::tryNewNurseryObject(JSContext* cx, size_t thingSize,
                                          size_t nDynamicSlots,
-                                         const Class* clasp) {
+                                         const JSClass* clasp) {
   MOZ_RELEASE_ASSERT(!cx->isHelperThreadContext());
 
   MOZ_ASSERT(cx->isNurseryAllocAllowed());

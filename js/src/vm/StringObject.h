@@ -23,7 +23,7 @@ class StringObject : public NativeObject {
  public:
   static const unsigned RESERVED_SLOTS = 2;
 
-  static const Class class_;
+  static const JSClass class_;
 
   
 

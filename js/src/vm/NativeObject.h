@@ -1114,7 +1114,7 @@ class NativeObject : public JSObject {
 
   static MOZ_ALWAYS_INLINE uint32_t dynamicSlotsCount(uint32_t nfixed,
                                                       uint32_t span,
-                                                      const Class* clasp);
+                                                      const JSClass* clasp);
   static MOZ_ALWAYS_INLINE uint32_t dynamicSlotsCount(Shape* shape);
 
   
@@ -1487,7 +1487,7 @@ class NativeObject : public JSObject {
 
 class PlainObject : public NativeObject {
  public:
-  static const js::Class class_;
+  static const JSClass class_;
 
   
   inline js::gc::AllocKind allocKindForTenure() const;

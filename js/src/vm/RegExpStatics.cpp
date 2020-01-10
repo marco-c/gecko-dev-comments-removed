@@ -46,7 +46,7 @@ static const JSClassOps RegExpStaticsObjectClassOps = {
     nullptr,                
     resc_trace};
 
-const Class RegExpStaticsObject::class_ = {
+const JSClass RegExpStaticsObject::class_ = {
     "RegExpStatics", JSCLASS_HAS_PRIVATE | JSCLASS_FOREGROUND_FINALIZE,
     &RegExpStaticsObjectClassOps};
 

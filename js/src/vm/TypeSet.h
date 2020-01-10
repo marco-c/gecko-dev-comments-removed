@@ -290,7 +290,7 @@ class TypeSet {
     inline ObjectGroup* groupNoBarrier();
     inline JSObject* singletonNoBarrier();
 
-    const Class* clasp();
+    const JSClass* clasp();
     TaggedProto proto();
     TypeNewScript* newScript();
 
@@ -483,7 +483,7 @@ class TypeSet {
   inline ObjectGroup* getGroupNoBarrier(unsigned i) const;
 
   
-  inline const Class* getObjectClass(unsigned i) const;
+  inline const JSClass* getObjectClass(unsigned i) const;
 
   bool canSetDefinite(unsigned slot) {
     
@@ -789,7 +789,7 @@ class TemporaryTypeSet : public TypeSet {
                       ObjectGroupFlags flags);
 
   
-  const Class* getKnownClass(CompilerConstraintList* constraints);
+  const JSClass* getKnownClass(CompilerConstraintList* constraints);
 
   
 
@@ -812,7 +812,7 @@ class TemporaryTypeSet : public TypeSet {
 
 
   ForAllResult forAllClasses(CompilerConstraintList* constraints,
-                             bool (*func)(const Class* clasp));
+                             bool (*func)(const JSClass* clasp));
 
   
 

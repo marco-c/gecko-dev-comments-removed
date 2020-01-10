@@ -156,7 +156,7 @@ class TenuringTracer : public JSTracer {
 
 
 
-inline bool CanNurseryAllocateFinalizedClass(const js::Class* const clasp) {
+inline bool CanNurseryAllocateFinalizedClass(const JSClass* const clasp) {
   MOZ_ASSERT(clasp->hasFinalize());
   return clasp->flags & JSCLASS_SKIP_NURSERY_FINALIZE;
 }
@@ -230,7 +230,7 @@ class Nursery {
   
   
   JSObject* allocateObject(JSContext* cx, size_t size, size_t numDynamic,
-                           const js::Class* clasp);
+                           const JSClass* clasp);
 
   
   

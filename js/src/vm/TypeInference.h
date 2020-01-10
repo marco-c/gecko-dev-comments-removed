@@ -224,7 +224,7 @@ class TypeNewScriptInitializer {
 
 inline bool isInlinableCall(jsbytecode* pc);
 
-bool ClassCanHaveExtraProperties(const Class* clasp);
+bool ClassCanHaveExtraProperties(const JSClass* clasp);
 
 class RecompileInfo {
   JSScript* script_;

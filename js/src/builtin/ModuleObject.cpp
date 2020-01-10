@@ -81,7 +81,7 @@ static bool ModuleValueGetter(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
- const Class ImportEntryObject::class_ = {
+ const JSClass ImportEntryObject::class_ = {
     "ImportEntry", JSCLASS_HAS_RESERVED_SLOTS(ImportEntryObject::SlotCount)};
 
 DEFINE_GETTER_FUNCTIONS(ImportEntryObject, moduleRequest, ModuleRequestSlot)
@@ -153,7 +153,7 @@ ImportEntryObject* ImportEntryObject::create(
 
 
 
- const Class ExportEntryObject::class_ = {
+ const JSClass ExportEntryObject::class_ = {
     "ExportEntry", JSCLASS_HAS_RESERVED_SLOTS(ExportEntryObject::SlotCount)};
 
 DEFINE_GETTER_FUNCTIONS(ExportEntryObject, exportName, ExportNameSlot)
@@ -238,7 +238,7 @@ ExportEntryObject* ExportEntryObject::create(
 
 
 
- const Class RequestedModuleObject::class_ = {
+ const JSClass RequestedModuleObject::class_ = {
     "RequestedModule",
     JSCLASS_HAS_RESERVED_SLOTS(RequestedModuleObject::SlotCount)};
 
@@ -715,7 +715,7 @@ void FunctionDeclaration::trace(JSTracer* trc) {
     nullptr, 
     ModuleObject::trace};
 
- const Class ModuleObject::class_ = {
+ const JSClass ModuleObject::class_ = {
     "Module",
     JSCLASS_HAS_RESERVED_SLOTS(ModuleObject::SlotCount) |
         JSCLASS_BACKGROUND_FINALIZE,

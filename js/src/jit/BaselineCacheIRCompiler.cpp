@@ -2357,7 +2357,7 @@ bool BaselineCacheIRCompiler::emitGuardFunApply() {
       
       masm.branchTestObject(Assembler::NotEqual, argsAddr, failure->label());
       masm.unboxObject(argsAddr, scratch);
-      const Class* clasp = &ArrayObject::class_;
+      const JSClass* clasp = &ArrayObject::class_;
       masm.branchTestObjClass(Assembler::NotEqual, scratch, clasp, scratch2,
                               scratch, failure->label());
 

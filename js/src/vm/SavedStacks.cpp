@@ -371,14 +371,14 @@ const ClassSpec SavedFrame::classSpec_ = {
     SavedFrame::finishSavedFrameInit,
     ClassSpec::DontDefineConstructor};
 
- const Class SavedFrame::class_ = {
+ const JSClass SavedFrame::class_ = {
     "SavedFrame",
     JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(SavedFrame::JSSLOT_COUNT) |
         JSCLASS_HAS_CACHED_PROTO(JSProto_SavedFrame) |
         JSCLASS_FOREGROUND_FINALIZE,
     &SavedFrameClassOps, &SavedFrame::classSpec_};
 
-const Class SavedFrame::protoClass_ = {
+const JSClass SavedFrame::protoClass_ = {
     js_Object_str, JSCLASS_HAS_CACHED_PROTO(JSProto_SavedFrame),
     JS_NULL_CLASS_OPS, &SavedFrame::classSpec_};
 

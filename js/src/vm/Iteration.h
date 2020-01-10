@@ -352,7 +352,7 @@ class PropertyIteratorObject : public NativeObject {
   static const JSClassOps classOps_;
 
  public:
-  static const Class class_;
+  static const JSClass class_;
 
   
   
@@ -372,7 +372,7 @@ class PropertyIteratorObject : public NativeObject {
 
 class ArrayIteratorObject : public NativeObject {
  public:
-  static const Class class_;
+  static const JSClass class_;
 };
 
 ArrayIteratorObject* NewArrayIteratorObject(
@@ -380,7 +380,7 @@ ArrayIteratorObject* NewArrayIteratorObject(
 
 class StringIteratorObject : public NativeObject {
  public:
-  static const Class class_;
+  static const JSClass class_;
 };
 
 StringIteratorObject* NewStringIteratorObject(
@@ -388,7 +388,7 @@ StringIteratorObject* NewStringIteratorObject(
 
 class RegExpStringIteratorObject : public NativeObject {
  public:
-  static const Class class_;
+  static const JSClass class_;
 };
 
 RegExpStringIteratorObject* NewRegExpStringIteratorObject(

@@ -409,7 +409,7 @@ void js::Nursery::leaveZealMode() {
 
 JSObject* js::Nursery::allocateObject(JSContext* cx, size_t size,
                                       size_t nDynamicSlots,
-                                      const js::Class* clasp) {
+                                      const JSClass* clasp) {
   
   
   MOZ_ASSERT(size >= sizeof(RelocationOverlay));

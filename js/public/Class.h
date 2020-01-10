@@ -33,7 +33,7 @@ class Shape;
 
 
 
-extern JS_FRIEND_DATA const js::Class* const FunctionClassPtr;
+extern JS_FRIEND_DATA const JSClass* const FunctionClassPtr;
 
 }  
 
