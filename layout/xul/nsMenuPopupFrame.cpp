@@ -1502,11 +1502,6 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
 
   nscoord oldAlignmentOffset = mAlignmentOffset;
 
-  static bool inWayland = false;
-#ifdef MOZ_WAYLAND
-  inWayland = !GDK_IS_X11_DISPLAY(gdk_display_get_default());
-#endif
-
   
   
   
@@ -1532,9 +1527,16 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
     if (mRect.width > screenRect.width) mRect.width = screenRect.width;
     if (mRect.height > screenRect.height) mRect.height = screenRect.height;
 
-    
-    
-    
+      
+      
+      
+      
+#ifdef MOZ_WAYLAND
+    static bool inWayland = gdk_display_get_default() &&
+                            !GDK_IS_X11_DISPLAY(gdk_display_get_default());
+#else
+    static bool inWayland = false;
+#endif
     if (!inWayland) {
       
       
