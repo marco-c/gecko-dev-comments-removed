@@ -117,7 +117,7 @@ var gSync = {
     );
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
-      "FXA_ENABLED",
+      "SYNC_ENABLED",
       "identity.fxaccounts.enabled"
     );
   },
@@ -141,8 +141,8 @@ var gSync = {
 
     this._definePrefGetters();
 
-    if (!this.FXA_ENABLED) {
-      this.onFxaDisabled();
+    if (!this.SYNC_ENABLED) {
+      this.onSyncDisabled();
       return;
     }
 
@@ -313,7 +313,7 @@ var gSync = {
     if (gSync.sendTabConfiguredAndLoading) {
       bodyNode.setAttribute("state", "notready");
     }
-    if (reloadDevices && UIState.get().syncEnabled) {
+    if (reloadDevices) {
       
       Services.tm.dispatchToMainThread(async () => {
         
@@ -1032,7 +1032,7 @@ var gSync = {
     
     this.init();
 
-    if (!this.FXA_ENABLED) {
+    if (!this.SYNC_ENABLED) {
       
       return;
     }
@@ -1064,7 +1064,7 @@ var gSync = {
 
   
   updateContentContextMenu(contextMenu) {
-    if (!this.FXA_ENABLED) {
+    if (!this.SYNC_ENABLED) {
       
       return;
     }
@@ -1205,8 +1205,6 @@ var gSync = {
     if (!UIState.isReady()) {
       return;
     }
-    
-    
     const state = UIState.get();
     if (state.status == UIState.STATUS_SIGNED_IN) {
       this.updateSyncStatus({ syncing: true });
@@ -1340,7 +1338,7 @@ var gSync = {
     }
   },
 
-  onFxaDisabled() {
+  onSyncDisabled() {
     const toHide = [...document.querySelectorAll(".sync-ui-item")];
     for (const item of toHide) {
       item.hidden = true;
