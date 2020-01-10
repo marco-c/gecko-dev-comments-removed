@@ -1,0 +1,15 @@
+
+
+
+
+"use strict";
+
+const { createEnum } = require("devtools/client/shared/enum");
+
+createEnum(
+  [
+    
+    "COMPATIBILITY_UPDATE_SELECTED_NODE",
+  ],
+  module.exports
+);
