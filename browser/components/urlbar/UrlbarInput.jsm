@@ -174,8 +174,10 @@ class UrlbarInput {
     this.eventBufferer = new UrlbarEventBufferer(this);
 
     this._inputFieldEvents = [
+      "click",
       "compositionstart",
       "compositionend",
+      "contextmenu",
       "dragover",
       "dragstart",
       "drop",
@@ -207,8 +209,6 @@ class UrlbarInput {
     this.inputField.controllers.insertControllerAt(0, this._copyCutController);
 
     this._initPasteAndGo();
-
-    this._ignoreFocus = true;
 
     
     this._compositionState = UrlbarUtils.COMPOSITION.NONE;
@@ -1383,6 +1383,22 @@ class UrlbarInput {
 
   
 
+
+
+  _maybeSelectAll() {
+    if (
+      !this._preventClickSelectsAll &&
+      UrlbarPrefs.get("clickSelectsAll") &&
+      this._compositionState != UrlbarUtils.COMPOSITION.COMPOSING &&
+      this.document.activeElement == this.inputField &&
+      this.inputField.selectionStart == this.inputField.selectionEnd
+    ) {
+      this.editor.selectAll();
+    }
+  }
+
+  
+
   _on_blur(event) {
     
     
@@ -1405,25 +1421,32 @@ class UrlbarInput {
     if (this.getAttribute("pageproxystate") != "valid") {
       this.window.UpdatePopupNotificationsVisibility();
     }
-    
-    if (this.document.activeElement == this.inputField) {
-      this._ignoreFocus = true;
-    }
     this._resetSearchState();
+  }
+
+  _on_click(event) {
+    this._maybeSelectAll();
+  }
+
+  _on_contextmenu(event) {
+    
+    
+    
+    if (AppConstants.platform == "win") {
+      return;
+    }
+
+    
+    if (!event.button) {
+      return;
+    }
+
+    this._maybeSelectAll();
   }
 
   _on_focus(event) {
     this._updateUrlTooltip();
     this.formatValue();
-
-    if (this._ignoreFocus) {
-      this._ignoreFocus = false;
-    } else if (
-      UrlbarPrefs.get("clickSelectsAll") &&
-      this._compositionState != UrlbarUtils.COMPOSITION.COMPOSING
-    ) {
-      this.editor.selectAll();
-    }
 
     
     if (this.getAttribute("pageproxystate") != "valid") {
@@ -1436,12 +1459,14 @@ class UrlbarInput {
   }
 
   _on_mousedown(event) {
-    
-    if (event.button != 0) {
-      return;
-    }
-
     if (event.currentTarget == this.inputField) {
+      this._preventClickSelectsAll = this.focused;
+
+      
+      if (event.button != 0) {
+        return;
+      }
+
       if (event.detail == 2 && UrlbarPrefs.get("doubleClickSelectsAll")) {
         this.editor.selectAll();
         event.preventDefault();
@@ -1453,7 +1478,10 @@ class UrlbarInput {
       return;
     }
 
-    if (event.originalTarget.classList.contains("urlbar-history-dropmarker")) {
+    if (
+      event.originalTarget.classList.contains("urlbar-history-dropmarker") &&
+      event.button == 0
+    ) {
       if (this.view.isOpen) {
         this.view.close();
       } else {
@@ -1461,6 +1489,7 @@ class UrlbarInput {
         this.startQuery({
           allowAutofill: false,
         });
+        this._maybeSelectAll();
       }
     }
   }
