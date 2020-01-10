@@ -99,21 +99,16 @@ enum PtrInfoTag {
 
   
   
-  TagLiveSmall,
-  TagLiveLarge,
-  TagLiveHuge,
+  TagLiveAlloc,
 
   
   
-  TagFreedSmall,
+  TagFreedAlloc,
 
   
   
   
-  TagFreedPageDirty,
-  TagFreedPageDecommitted,
-  TagFreedPageMadvised,
-  TagFreedPageZeroed,
+  TagFreedPage,
 };
 
 
@@ -147,20 +142,15 @@ typedef struct jemalloc_ptr_info_s {
 } jemalloc_ptr_info_t;
 
 static inline bool jemalloc_ptr_is_live(jemalloc_ptr_info_t* info) {
-  return info->tag == TagLiveSmall || info->tag == TagLiveLarge ||
-         info->tag == TagLiveHuge;
+  return info->tag == TagLiveAlloc;
 }
 
 static inline bool jemalloc_ptr_is_freed(jemalloc_ptr_info_t* info) {
-  return info->tag == TagFreedSmall || info->tag == TagFreedPageDirty ||
-         info->tag == TagFreedPageDecommitted ||
-         info->tag == TagFreedPageMadvised || info->tag == TagFreedPageZeroed;
+  return info->tag == TagFreedAlloc || info->tag == TagFreedPage;
 }
 
 static inline bool jemalloc_ptr_is_freed_page(jemalloc_ptr_info_t* info) {
-  return info->tag == TagFreedPageDirty ||
-         info->tag == TagFreedPageDecommitted ||
-         info->tag == TagFreedPageMadvised || info->tag == TagFreedPageZeroed;
+  return info->tag == TagFreedPage;
 }
 
 #ifdef __cplusplus
