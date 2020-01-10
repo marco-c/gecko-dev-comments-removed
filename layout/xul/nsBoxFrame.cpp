@@ -415,35 +415,28 @@ void nsBoxFrame::GetInitialDirection(bool& aIsNormal) {
     
     aIsNormal = (StyleVisibility()->mDirection ==
                  NS_STYLE_DIRECTION_LTR);  
-  } else
+    if (GetContent()->IsElement()) {
+      Element* element = GetContent()->AsElement();
+
+      
+      
+      static Element::AttrValuesArray strings[] = {nsGkAtoms::ltr,
+                                                   nsGkAtoms::rtl, nullptr};
+      int32_t index = element->FindAttrValueIn(
+          kNameSpaceID_None, nsGkAtoms::dir, strings, eCaseMatters);
+      if (index >= 0) {
+        bool values[] = {true, false};
+        aIsNormal = values[index];
+      }
+    }
+  } else {
     aIsNormal = true;  
+  }
 
   
   const nsStyleXUL* boxInfo = StyleXUL();
   if (boxInfo->mBoxDirection == StyleBoxDirection::Reverse) {
     aIsNormal = !aIsNormal;  
-  }
-
-  if (!GetContent()->IsElement()) {
-    return;
-  }
-
-  Element* element = GetContent()->AsElement();
-
-  
-  
-  if (IsXULHorizontal()) {
-    static Element::AttrValuesArray strings[] = {
-        nsGkAtoms::reverse, nsGkAtoms::ltr, nsGkAtoms::rtl, nullptr};
-    int32_t index = element->FindAttrValueIn(kNameSpaceID_None, nsGkAtoms::dir,
-                                             strings, eCaseMatters);
-    if (index >= 0) {
-      bool values[] = {!aIsNormal, true, false};
-      aIsNormal = values[index];
-    }
-  } else if (element->AttrValueIs(kNameSpaceID_None, nsGkAtoms::dir,
-                                  nsGkAtoms::reverse, eCaseMatters)) {
-    aIsNormal = !aIsNormal;
   }
 }
 
