@@ -524,6 +524,17 @@ void Promise::ReportRejectedPromise(JSContext* aCx, JS::HandleObject aPromise) {
   nsGlobalWindowInner* win =
       isMainThread ? xpc::WindowGlobalOrNull(aPromise) : nullptr;
 
+  
+  
+  
+  
+  
+  Maybe<JSAutoRealm> ar;
+  if (result.isObject()) {
+    result.setObject(*js::UncheckedUnwrap(&result.toObject()));
+    ar.emplace(aCx, &result.toObject());
+  }
+
   js::ErrorReport report(aCx);
   RefPtr<Exception> exn;
   if (result.isObject() &&
