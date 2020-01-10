@@ -175,8 +175,17 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   inline bool IsHandlingResizeEvent() const;
 
   
-  void SetActiveLoadingState(bool aIsActiveLoading);
-  void AddAfterLoadRunner(nsIRunnable* aRunner);
+  virtual void SetActiveLoadingState(bool aIsActiveLoading) = 0;
+
+  nsPIDOMWindowInner* GetWindowForDeprioritizedLoadRunner();
+
+  
+
+
+
+
+
+  virtual void AddDeprioritizedLoadRunner(nsIRunnable* aRunner) = 0;
 
   bool AddAudioContext(mozilla::dom::AudioContext* aAudioContext);
   void RemoveAudioContext(mozilla::dom::AudioContext* aAudioContext);
@@ -677,8 +686,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   
   
   RefPtr<mozilla::dom::WindowGlobalChild> mWindowGlobalChild;
-
-  nsTArray<nsCOMPtr<nsIRunnable>> mAfterLoadRunners;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowInner, NS_PIDOMWINDOWINNER_IID)
