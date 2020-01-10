@@ -562,7 +562,18 @@ inline uint64_t ToUint64(double d) { return ToUnsignedInteger<uint64_t>(d); }
 
 
 
-static constexpr size_t MaximumNumberToStringLength = 24 + 1;
+
+
+
+
+
+
+
+
+
+
+static constexpr size_t MaximumNumberToStringLength = 31 + 1;
+
 
 
 
