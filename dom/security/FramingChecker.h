@@ -22,14 +22,24 @@ class FramingChecker {
                                 nsIContentSecurityPolicy* aCSP);
 
  protected:
-  enum XFOHeader { eDENY, eSAMEORIGIN, eALLOWFROM };
+  enum XFOHeader { eDENY, eSAMEORIGIN };
+
+  
+
+
+
+
+
+
+
+
+  static void ReportError(const char* aMessageTag,
+                          nsIDocShellTreeItem* aParentDocShellItem,
+                          nsIURI* aChildURI, const nsAString& aPolicy);
 
   static bool CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
                                          const nsAString& aPolicy,
                                          nsIDocShell* aDocShell);
-
-  static void ReportXFOViolation(nsIDocShellTreeItem* aTopDocShellItem,
-                                 nsIURI* aThisURI, XFOHeader aHeader);
 };
 
 #endif 

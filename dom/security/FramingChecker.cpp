@@ -17,26 +17,111 @@
 #include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/dom/LoadURIOptionsBinding.h"
 #include "mozilla/NullPrincipal.h"
+#include "nsIStringBundle.h"
 
 using namespace mozilla;
+
+void FramingChecker::ReportError(const char* aMessageTag,
+                                 nsIDocShellTreeItem* aParentDocShellItem,
+                                 nsIURI* aChildURI, const nsAString& aPolicy) {
+  MOZ_ASSERT(aParentDocShellItem, "Need a parent docshell");
+  if (!aChildURI || !aParentDocShellItem) {
+    return;
+  }
+
+  Document* parentDocument = aParentDocShellItem->GetDocument();
+  nsCOMPtr<nsIURI> parentURI;
+  parentDocument->NodePrincipal()->GetURI(getter_AddRefs(parentURI));
+  MOZ_ASSERT(!parentDocument->NodePrincipal()->IsSystemPrincipal(),
+             "Should not get system principal here.");
+
+  
+  nsAutoCString parentSpec;
+  nsresult rv;
+  rv = parentURI->GetAsciiSpec(parentSpec);
+  if (NS_FAILED(rv)) {
+    return;
+  }
+
+  
+  nsAutoCString childSpec;
+  rv = aChildURI->GetAsciiSpec(childSpec);
+  if (NS_FAILED(rv)) {
+    return;
+  }
+
+  nsCOMPtr<nsIStringBundleService> bundleService =
+      mozilla::services::GetStringBundleService();
+  nsCOMPtr<nsIStringBundle> bundle;
+  rv = bundleService->CreateBundle(
+      "chrome://global/locale/security/security.properties",
+      getter_AddRefs(bundle));
+  if (NS_FAILED(rv)) {
+    return;
+  }
+
+  if (NS_WARN_IF(!bundle)) {
+    return;
+  }
+
+  nsCOMPtr<nsIConsoleService> console(
+      do_GetService(NS_CONSOLESERVICE_CONTRACTID));
+  nsCOMPtr<nsIScriptError> error(do_CreateInstance(NS_SCRIPTERROR_CONTRACTID));
+  if (!console || !error) {
+    return;
+  }
+
+  
+  nsAutoString message;
+  AutoTArray<nsString, 3> formatStrings;
+  formatStrings.AppendElement(aPolicy);
+  CopyASCIItoUTF16(childSpec, *formatStrings.AppendElement());
+  CopyASCIItoUTF16(parentSpec, *formatStrings.AppendElement());
+  rv = bundle->FormatStringFromName(aMessageTag, formatStrings, message);
+  if (NS_FAILED(rv)) {
+    return;
+  }
+
+  rv = error->InitWithWindowID(message, EmptyString(), EmptyString(), 0, 0,
+                               nsIScriptError::errorFlag, "X-Frame-Options",
+                               parentDocument->InnerWindowID());
+  if (NS_FAILED(rv)) {
+    return;
+  }
+  console->LogMessage(error);
+}
 
 
 bool FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
                                                 const nsAString& aPolicy,
                                                 nsIDocShell* aDocShell) {
-  static const char allowFrom[] = "allow-from";
-  const uint32_t allowFromLen = ArrayLength(allowFrom) - 1;
-  bool isAllowFrom =
-      StringHead(aPolicy, allowFromLen).LowerCaseEqualsLiteral(allowFrom);
-
+  nsresult rv;
   
-  if (!aPolicy.LowerCaseEqualsLiteral("deny") &&
-      !aPolicy.LowerCaseEqualsLiteral("sameorigin") && !isAllowFrom) {
-    return true;
+  
+  
+  
+  nsCOMPtr<nsIDocShellTreeItem> thisDocShellItem(aDocShell);
+  nsCOMPtr<nsIDocShellTreeItem> parentDocShellItem;
+  nsCOMPtr<nsIDocShellTreeItem> curDocShellItem = thisDocShellItem;
+  nsCOMPtr<Document> topDoc;
+  nsCOMPtr<nsIScriptSecurityManager> ssm =
+      do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID, &rv);
+
+  if (!ssm) {
+    MOZ_CRASH();
   }
 
   nsCOMPtr<nsIURI> uri;
   aHttpChannel->GetURI(getter_AddRefs(uri));
+
+  
+  if (!aPolicy.LowerCaseEqualsLiteral("deny") &&
+      !aPolicy.LowerCaseEqualsLiteral("sameorigin")) {
+    nsCOMPtr<nsIDocShellTreeItem> root;
+    curDocShellItem->GetSameTypeRootTreeItem(getter_AddRefs(root));
+    ReportError("XFOInvalid", root, uri, aPolicy);
+    return true;
+  }
 
   
   if (!aDocShell) {
@@ -60,21 +145,6 @@ bool FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
   
   if (thisWindow == topWindow) {
     return true;
-  }
-
-  
-  
-  
-  
-  nsCOMPtr<nsIDocShellTreeItem> thisDocShellItem(aDocShell);
-  nsCOMPtr<nsIDocShellTreeItem> parentDocShellItem;
-  nsCOMPtr<nsIDocShellTreeItem> curDocShellItem = thisDocShellItem;
-  nsCOMPtr<Document> topDoc;
-  nsresult rv;
-  nsCOMPtr<nsIScriptSecurityManager> ssm =
-      do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID, &rv);
-  if (!ssm) {
-    MOZ_CRASH();
   }
 
   
@@ -109,7 +179,7 @@ bool FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
 
         
         if (NS_FAILED(rv)) {
-          ReportXFOViolation(curDocShellItem, uri, eSAMEORIGIN);
+          ReportError("XFOSameOrigin", curDocShellItem, uri, aPolicy);
           return false;
         }
       }
@@ -129,32 +199,8 @@ bool FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
   
   
   if (aPolicy.LowerCaseEqualsLiteral("deny")) {
-    ReportXFOViolation(curDocShellItem, uri, eDENY);
+    ReportError("XFODeny", curDocShellItem, uri, aPolicy);
     return false;
-  }
-
-  topDoc = curDocShellItem->GetDocument();
-  topDoc->NodePrincipal()->GetURI(getter_AddRefs(topUri));
-
-  
-  
-  if (isAllowFrom) {
-    if (aPolicy.Length() == allowFromLen ||
-        (aPolicy[allowFromLen] != ' ' && aPolicy[allowFromLen] != '\t')) {
-      ReportXFOViolation(curDocShellItem, uri, eALLOWFROM);
-      return false;
-    }
-    rv = NS_NewURI(getter_AddRefs(uri), Substring(aPolicy, allowFromLen));
-    if (NS_FAILED(rv)) {
-      return false;
-    }
-    bool isPrivateWin =
-        topDoc->NodePrincipal()->OriginAttributesRef().mPrivateBrowsingId > 0;
-    rv = ssm->CheckSameOriginURI(uri, topUri, true, isPrivateWin);
-    if (NS_FAILED(rv)) {
-      ReportXFOViolation(curDocShellItem, uri, eALLOWFROM);
-      return false;
-    }
   }
 
   return true;
@@ -258,82 +304,4 @@ bool FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
   }
 
   return true;
-}
-
-
-void FramingChecker::ReportXFOViolation(nsIDocShellTreeItem* aTopDocShellItem,
-                                        nsIURI* aThisURI, XFOHeader aHeader) {
-  MOZ_ASSERT(aTopDocShellItem, "Need a top docshell");
-
-  nsCOMPtr<nsPIDOMWindowOuter> topOuterWindow = aTopDocShellItem->GetWindow();
-  if (!topOuterWindow) {
-    return;
-  }
-
-  nsPIDOMWindowInner* topInnerWindow = topOuterWindow->GetCurrentInnerWindow();
-  if (!topInnerWindow) {
-    return;
-  }
-
-  nsCOMPtr<nsIURI> topURI;
-
-  nsCOMPtr<Document> document = aTopDocShellItem->GetDocument();
-  nsresult rv = document->NodePrincipal()->GetURI(getter_AddRefs(topURI));
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  if (!topURI) {
-    return;
-  }
-
-  nsCString topURIString;
-  nsCString thisURIString;
-
-  rv = topURI->GetSpec(topURIString);
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  rv = aThisURI->GetSpec(thisURIString);
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  nsCOMPtr<nsIConsoleService> consoleService =
-      do_GetService(NS_CONSOLESERVICE_CONTRACTID);
-  nsCOMPtr<nsIScriptError> errorObject =
-      do_CreateInstance(NS_SCRIPTERROR_CONTRACTID);
-
-  if (!consoleService || !errorObject) {
-    return;
-  }
-
-  nsString msg = NS_LITERAL_STRING("Load denied by X-Frame-Options: ");
-  msg.Append(NS_ConvertUTF8toUTF16(thisURIString));
-
-  switch (aHeader) {
-    case eDENY:
-      msg.AppendLiteral(" does not permit framing.");
-      break;
-    case eSAMEORIGIN:
-      msg.AppendLiteral(" does not permit cross-origin framing.");
-      break;
-    case eALLOWFROM:
-      msg.AppendLiteral(" does not permit framing by ");
-      msg.Append(NS_ConvertUTF8toUTF16(topURIString));
-      msg.Append('.');
-      break;
-  }
-
-  
-  
-  rv = errorObject->InitWithSanitizedSource(
-      msg, EmptyString(), EmptyString(), 0, 0, nsIScriptError::errorFlag,
-      "X-Frame-Options", topInnerWindow->WindowID());
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  consoleService->LogMessage(errorObject);
 }
