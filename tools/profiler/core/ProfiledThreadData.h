@@ -10,7 +10,6 @@
 #include "platform.h"
 #include "ProfileBufferEntry.h"
 #include "ThreadInfo.h"
-#include "ThreadResponsiveness.h"
 
 #include "js/ProfilingStack.h"
 #include "mozilla/TimeStamp.h"
@@ -43,12 +42,10 @@ class ProfileBuffer;
 
 class ProfiledThreadData final {
  public:
-  ProfiledThreadData(ThreadInfo* aThreadInfo, nsIEventTarget* aEventTarget,
-                     bool aIncludeResponsiveness);
+  ProfiledThreadData(ThreadInfo* aThreadInfo, nsIEventTarget* aEventTarget);
   ~ProfiledThreadData();
 
   void NotifyUnregistered(uint64_t aBufferPosition) {
-    mResponsiveness.reset();
     mLastSample = mozilla::Nothing();
     MOZ_ASSERT(!mBufferPositionWhenReceivedJSContext,
                "JSContext should have been cleared before the thread was "
@@ -70,13 +67,6 @@ class ProfiledThreadData final {
 
   void StreamTraceLoggerJSON(JSContext* aCx, SpliceableJSONWriter& aWriter,
                              const mozilla::TimeStamp& aProcessStartTime);
-
-  
-  
-  ThreadResponsiveness* GetThreadResponsiveness() {
-    ThreadResponsiveness* responsiveness = mResponsiveness.ptrOr(nullptr);
-    return responsiveness;
-  }
 
   const RefPtr<ThreadInfo> Info() const { return mThreadInfo; }
 
@@ -108,10 +98,6 @@ class ProfiledThreadData final {
   
   
   
-
-  
-  
-  mozilla::Maybe<ThreadResponsiveness> mResponsiveness;
 
   
   
