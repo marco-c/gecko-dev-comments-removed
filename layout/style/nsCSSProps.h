@@ -290,9 +290,6 @@ class nsCSSProps {
 
   
   static const KTableEntry kCursorKTable[];
-  
-  
-  static KTableEntry kDisplayKTable[];
   static const KTableEntry kFontSmoothingKTable[];
   static const KTableEntry kTextAlignKTable[];
   static const KTableEntry kTextDecorationStyleKTable[];
