@@ -157,6 +157,42 @@ static MOZ_MUST_USE bool WritableStream_ready(JSContext* cx, unsigned argc,
 
 
 
+static MOZ_MUST_USE bool WritableStream_abort(JSContext* cx, unsigned argc,
+                                              Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  
+  Rooted<WritableStreamDefaultWriter*> unwrappedWriter(
+      cx,
+      UnwrapAndTypeCheckThis<WritableStreamDefaultWriter>(cx, args, "abort"));
+  if (!unwrappedWriter) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+
+  
+  
+  if (!unwrappedWriter->hasStream()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_WRITABLESTREAMWRITER_NOT_OWNED, "abort");
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+
+  
+  JSObject* promise =
+      WritableStreamDefaultWriterAbort(cx, unwrappedWriter, args.get(0));
+  if (!promise) {
+    return false;
+  }
+  cx->check(promise);
+
+  args.rval().setObject(*promise);
+  return true;
+}
+
+
+
+
 static MOZ_MUST_USE bool WritableStream_close(JSContext* cx, unsigned argc,
                                               Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -289,6 +325,7 @@ static const JSPropertySpec WritableStreamDefaultWriter_properties[] = {
     JS_PSG("ready", WritableStream_ready, 0), JS_PS_END};
 
 static const JSFunctionSpec WritableStreamDefaultWriter_methods[] = {
+    JS_FN("abort", WritableStream_abort, 1, 0),
     JS_FN("close", WritableStream_close, 0, 0),
     JS_FN("releaseLock", WritableStream_releaseLock, 0, 0),
     JS_FN("write", WritableStream_write, 1, 0), JS_FS_END};

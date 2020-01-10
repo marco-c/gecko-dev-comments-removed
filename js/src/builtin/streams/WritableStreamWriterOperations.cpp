@@ -48,6 +48,28 @@ using js::PromiseObject;
 
 
 
+JSObject* js::WritableStreamDefaultWriterAbort(
+    JSContext* cx, Handle<WritableStreamDefaultWriter*> unwrappedWriter,
+    Handle<Value> reason) {
+  cx->check(reason);
+
+  
+  
+  MOZ_ASSERT(unwrappedWriter->hasStream());
+  Rooted<WritableStream*> unwrappedStream(
+      cx, UnwrapStreamFromWriter(cx, unwrappedWriter));
+  if (!unwrappedStream) {
+    return nullptr;
+  }
+
+  
+  return WritableStreamAbort(cx, unwrappedStream, reason);
+}
+
+
+
+
+
 JSObject* js::WritableStreamDefaultWriterClose(
     JSContext* cx, Handle<WritableStreamDefaultWriter*> unwrappedWriter) {
   
