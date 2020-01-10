@@ -11,6 +11,7 @@ const TEST_URI =
 add_task(async function() {
   await pushPref("devtools.webconsole.features.editor", true);
   await pushPref("devtools.webconsole.input.editor", true);
+  await pushPref("devtools.webconsole.input.editorOnboarding", false);
 
   
   await pushPref("devtools.webconsole.input.editorWidth", null);
