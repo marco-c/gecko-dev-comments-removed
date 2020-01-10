@@ -548,6 +548,13 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   static void FlushApzRepaints(LayersId aLayersId);
 
   
+
+
+
+
+  void MarkAsDetached(LayersId aLayersId);
+
+  
   void AssertOnSamplerThread();
   
   void AssertOnUpdaterThread();
@@ -803,6 +810,17 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
   mutable mozilla::RecursiveMutex mTreeLock;
   RefPtr<HitTestingTreeNode> mRootNode;
+
+  
+
+
+
+
+
+
+
+
+  std::unordered_set<LayersId, LayersId::HashFn> mDetachedLayersIds;
 
   
 

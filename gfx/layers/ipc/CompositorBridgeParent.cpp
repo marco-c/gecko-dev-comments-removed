@@ -1769,6 +1769,11 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvAdoptChild(
     
     
     if (!mApzUpdater && oldRootController) {
+      
+      
+      oldApzUpdater->MarkAsDetached(child);
+
+      
       nsTArray<MatrixMessage> clear;
       clear.AppendElement(MatrixMessage(Nothing(), child));
       oldRootController->NotifyLayerTransforms(clear);
