@@ -17,12 +17,6 @@ class DOMPrefs final {
 
   
   static bool DumpEnabled();
-
-#define DOM_WEBIDL_PREF(name) static bool name(JSContext* aCx, JSObject* aObj);
-
-#include "DOMPrefsInternal.h"
-
-#undef DOM_WEBIDL_PREF
 };
 
 }  
