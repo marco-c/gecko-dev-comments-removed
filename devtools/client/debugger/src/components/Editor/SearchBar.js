@@ -157,6 +157,9 @@ class SearchBar extends Component<Props, State> {
     e.preventDefault();
     const { editor, searchOn, setActiveSearch } = this.props;
 
+    
+    this.setState({ inputFocused: false });
+
     if (!searchOn) {
       setActiveSearch("file");
     }
