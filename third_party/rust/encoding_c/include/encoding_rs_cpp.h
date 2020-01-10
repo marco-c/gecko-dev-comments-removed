@@ -931,6 +931,7 @@ class Encoding final {
       string.resize(written);
       return string;
     }
+    return std::nullopt;
   }
 
   
@@ -1073,6 +1074,7 @@ class Encoding final {
       string.resize(written);
       return string;
     }
+    return std::nullopt;
   }
 
   
