@@ -52,6 +52,12 @@ class ClientInfo final {
 
   
   
+  
+  void SetAgentClusterId(const nsID& aId);
+  const Maybe<nsID>& AgentClusterId() const;
+
+  
+  
   ClientType Type() const;
 
   

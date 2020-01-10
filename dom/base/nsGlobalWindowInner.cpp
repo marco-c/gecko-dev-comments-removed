@@ -1778,12 +1778,16 @@ nsresult nsGlobalWindowInner::EnsureClientSource() {
     }
   }
 
-  
-  
-  
-  
   if (mClientSource) {
+    
+    
+    
+    
     mClientSource->SetCsp(mDoc->GetCsp());
+
+    DocGroup* docGroup = GetDocGroup();
+    MOZ_DIAGNOSTIC_ASSERT(docGroup);
+    mClientSource->SetAgentClusterId(docGroup->AgentClusterId());
   }
 
   
