@@ -259,16 +259,10 @@ nsresult TextEditRules::DidDoAction(EditSubActionInfo& aInfo,
     return NS_ERROR_EDITOR_DESTROYED;
   }
 
-  AutoSafeEditorData setData(*this, *mTextEditor);
-
-  
-  
-  AutoTransactionsConserveSelection dontChangeMySelection(TextEditorRef());
-
   switch (aInfo.mEditSubAction) {
     case EditSubAction::eDeleteSelectedContent:
       MOZ_ASSERT(!mIsHTMLEditRules);
-      return DidDeleteSelection();
+      return NS_OK;
     case EditSubAction::eInsertElement:
     case EditSubAction::eUndo:
     case EditSubAction::eRedo:
@@ -869,11 +863,21 @@ nsresult TextEditRules::WillSetText(bool* aCancel, bool* aHandled,
 
   
   
-  if (tString.IsEmpty()) {
-    DebugOnly<nsresult> rvIgnored = DidDeleteSelection();
-    MOZ_ASSERT(rvIgnored != NS_ERROR_EDITOR_DESTROYED);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                         "DidDeleteSelection() failed");
+  if (tString.IsEmpty() && !textNode->Length()) {
+    nsresult rv =
+        MOZ_KnownLive(TextEditorRef()).DeleteNodeWithTransaction(*textNode);
+    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "DeleteNodeWithTransaction() failed, but ignored");
+    
+    
+    
+    IgnoredErrorResult ignoredError;
+    SelectionRefPtr()->SetInterlinePosition(true, ignoredError);
+    NS_WARNING_ASSERTION(!ignoredError.Failed(),
+                         "Selection::SetInterlinePoisition() failed");
   }
 
   *aHandled = true;
@@ -996,43 +1000,6 @@ nsresult TextEditRules::DeleteSelectionWithTransaction(
 
   *aHandled = true;
   return NS_OK;
-}
-
-nsresult TextEditRules::DidDeleteSelection() {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  EditorDOMPoint selectionStartPoint(
-      EditorBase::GetStartPoint(*SelectionRefPtr()));
-  if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  if (selectionStartPoint.IsInTextNode() &&
-      !selectionStartPoint.GetContainer()->Length()) {
-    nsresult rv = MOZ_KnownLive(TextEditorRef())
-                      .DeleteNodeWithTransaction(
-                          MOZ_KnownLive(*selectionStartPoint.GetContainer()));
-    if (NS_WARN_IF(!CanHandleEditAction())) {
-      return NS_ERROR_EDITOR_DESTROYED;
-    }
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-  }
-
-  
-  if (TextEditorRef()
-          .TopLevelEditSubActionDataRef()
-          .mDidExplicitlySetInterLine) {
-    return NS_OK;
-  }
-  
-  
-  ErrorResult err;
-  SelectionRefPtr()->SetInterlinePosition(true, err);
-  NS_WARNING_ASSERTION(!err.Failed(), "Failed to set interline position");
-  return err.StealNSResult();
 }
 
 nsresult TextEditRules::WillOutputText(const nsAString* aOutputFormat,

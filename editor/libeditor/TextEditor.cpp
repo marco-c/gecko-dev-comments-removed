@@ -661,19 +661,53 @@ nsresult TextEditor::DeleteSelectionAsSubAction(EDirection aDirection,
   subActionInfo.stripWrappers = aStripWrappers;
   bool cancel, handled;
   nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
+  if (NS_WARN_IF(NS_FAILED(rv)) || cancel) {
+    return rv;
+  }
+  if (!handled) {
+    rv = DeleteSelectionWithTransaction(aDirection, aStripWrappers);
+  }
+  
+  rv = rules->DidDoAction(subActionInfo, rv);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-  if (!cancel && !handled) {
-    rv = DeleteSelectionWithTransaction(aDirection, aStripWrappers);
-  }
-  if (!cancel) {
+
+  
+  
+  
+  EditorDOMPoint atNewStartOfSelection(
+      EditorBase::GetStartPoint(*SelectionRefPtr()));
+  if (NS_WARN_IF(!atNewStartOfSelection.IsSet())) {
     
-    rv = rules->DidDoAction(subActionInfo, rv);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "TextEditRules::DidDoAction() failed");
+    
+    
+    return NS_ERROR_FAILURE;
   }
-  return rv;
+  if (atNewStartOfSelection.IsInTextNode() &&
+      !atNewStartOfSelection.GetContainer()->Length()) {
+    nsresult rv = DeleteNodeWithTransaction(
+        MOZ_KnownLive(*atNewStartOfSelection.GetContainer()));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+
+  
+  
+  
+  
+  if (!TopLevelEditSubActionDataRef().mDidExplicitlySetInterLine) {
+    
+    
+    ErrorResult error;
+    SelectionRefPtr()->SetInterlinePosition(true, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
+  }
+
+  return NS_OK;
 }
 
 nsresult TextEditor::DeleteSelectionWithTransaction(
