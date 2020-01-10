@@ -161,6 +161,11 @@ class SpecialPowersAPI extends JSWindowActorChild {
     this._extensionListeners = null;
   }
 
+  
+  toJSON() {
+    return {};
+  }
+
   receiveMessage(message) {
     switch (message.name) {
       case "Assert":
