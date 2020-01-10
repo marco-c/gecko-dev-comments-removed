@@ -7526,10 +7526,28 @@ class Cursor final : public PBackgroundIDBCursorParent {
   nsCString mContinuePrimaryKeyQuery;
   nsCString mLocale;
 
-  Key mKey;
-  Key mObjectKey;
-  Key mRangeKey;
-  Key mSortKey;
+  
+  
+
+  Key mKey;  
+             
+             
+             
+  Key mObjectKey;  
+  
+  
+  
+  Key mRangeKey;  
+                  
+                  
+                  
+                  
+                  
+                  
+  Key mSortKey;   
+                  
+                  
+                  
 
   CursorOpBase* mCurrentlyRunningOp;
 
