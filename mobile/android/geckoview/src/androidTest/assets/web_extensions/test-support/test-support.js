@@ -12,7 +12,7 @@ window.addEventListener("pageshow", () => {
       try {
         
         
-        const response = window.eval(message.eval); 
+        const response = eval(message.eval); 
         sendResponse(message.id, response);
       } catch (ex) {
         sendSyncResponse(message.id, null, ex);
