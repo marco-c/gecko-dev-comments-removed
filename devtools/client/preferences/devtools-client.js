@@ -408,3 +408,10 @@ pref("devtools.debugger.features.map-await-expression", true);
 
 
 pref("devtools.popup.disable_autohide", false);
+
+
+
+
+
+
+pref("devtools.toolbox.content-frame", true);
