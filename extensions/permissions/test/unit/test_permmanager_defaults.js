@@ -57,6 +57,10 @@ add_task(async function do_test() {
   
   Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk");
 
+  let permIsolateUserContext = Services.prefs.getBoolPref(
+    "permissions.isolateBy.userContext"
+  );
+
   let pm = Cc["@mozilla.org/permissionmanager;1"].getService(
     Ci.nsIPermissionManager
   );
@@ -157,8 +161,11 @@ add_task(async function do_test() {
     pm.testPermissionFromPrincipal(principal4, TEST_PERMISSION)
   );
   
+  
   Assert.equal(
-    Ci.nsIPermissionManager.ALLOW_ACTION,
+    permIsolateUserContext
+      ? Ci.nsIPermissionManager.UNKNOWN_ACTION
+      : Ci.nsIPermissionManager.ALLOW_ACTION,
     pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION)
   );
   
@@ -179,6 +186,7 @@ add_task(async function do_test() {
     pm.testPermissionFromPrincipal(principal, TEST_PERMISSION)
   );
   
+  
   Assert.equal(
     Ci.nsIPermissionManager.UNKNOWN_ACTION,
     pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION)
@@ -197,7 +205,9 @@ add_task(async function do_test() {
   );
   
   Assert.equal(
-    Ci.nsIPermissionManager.ALLOW_ACTION,
+    permIsolateUserContext
+      ? Ci.nsIPermissionManager.UNKNOWN_ACTION
+      : Ci.nsIPermissionManager.ALLOW_ACTION,
     pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION)
   );
   
@@ -226,7 +236,9 @@ add_task(async function do_test() {
   );
   
   Assert.equal(
-    Ci.nsIPermissionManager.DENY_ACTION,
+    permIsolateUserContext
+      ? Ci.nsIPermissionManager.UNKNOWN_ACTION
+      : Ci.nsIPermissionManager.DENY_ACTION,
     pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION)
   );
   
@@ -256,7 +268,9 @@ add_task(async function do_test() {
   );
   
   Assert.equal(
-    Ci.nsIPermissionManager.PROMPT_ACTION,
+    permIsolateUserContext
+      ? Ci.nsIPermissionManager.UNKNOWN_ACTION
+      : Ci.nsIPermissionManager.PROMPT_ACTION,
     pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION)
   );
   

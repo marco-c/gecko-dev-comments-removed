@@ -41,6 +41,14 @@ add_task(async function test() {
       Ci.nsIPluginTag.STATE_ENABLED;
   });
 
+  
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["permissions.isolateBy.privateBrowsing", false]],
+  });
+
   let newTab = BrowserTestUtils.addTab(gBrowser);
   gBrowser.selectedTab = newTab;
   gTestBrowser = gBrowser.selectedBrowser;
