@@ -6982,6 +6982,18 @@ VARCACHE_PREF(
 
 
 
+
+VARCACHE_PREF(
+  Live,
+  "plain_text.wrap_long_lines",
+  plain_text_wrap_long_lines,
+  bool, true
+)
+
+
+
+
+
 VARCACHE_PREF(
   Live,
   "plugins.flashBlock.enabled",
