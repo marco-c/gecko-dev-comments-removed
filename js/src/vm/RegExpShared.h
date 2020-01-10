@@ -110,7 +110,6 @@ class RegExpShared : public gc::TenuredCell {
 
   
   RegExpShared(JSAtom* source, JS::RegExpFlags flags);
-  ~RegExpShared() = default;
 
   static bool compile(JSContext* cx, MutableHandleRegExpShared res,
                       HandleLinearString input, CompilationMode mode,
@@ -133,6 +132,8 @@ class RegExpShared : public gc::TenuredCell {
   }
 
  public:
+  ~RegExpShared() = delete;
+
   
   
   static RegExpRunStatus execute(JSContext* cx, MutableHandleRegExpShared res,

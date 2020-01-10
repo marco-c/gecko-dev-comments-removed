@@ -273,10 +273,6 @@ class ZoneAllocPolicy : public MallocProvider<ZoneAllocPolicy> {
 
 
 
-
-
-
-
 inline void AddCellMemory(gc::TenuredCell* cell, size_t nbytes, MemoryUse use) {
   if (nbytes) {
     ZoneAllocator::from(cell->zone())->addCellMemory(cell, nbytes, use);
@@ -287,7 +283,6 @@ inline void AddCellMemory(gc::Cell* cell, size_t nbytes, MemoryUse use) {
     AddCellMemory(&cell->asTenured(), nbytes, use);
   }
 }
-
 
 
 
@@ -302,39 +297,6 @@ inline void RemoveCellMemory(gc::Cell* cell, size_t nbytes, MemoryUse use) {
   if (cell->isTenured()) {
     RemoveCellMemory(&cell->asTenured(), nbytes, use);
   }
-}
-
-
-
-
-
-
-
-inline void InitReservedSlot(NativeObject* obj, uint32_t slot, void* ptr,
-                             size_t nbytes, MemoryUse use) {
-  AddCellMemory(obj, nbytes, use);
-  obj->initReservedSlot(slot, PrivateValue(ptr));
-}
-template <typename T>
-inline void InitReservedSlot(NativeObject* obj, uint32_t slot, T* ptr,
-                             MemoryUse use) {
-  InitReservedSlot(obj, slot, ptr, sizeof(T), use);
-}
-
-
-
-
-
-
-
-inline void InitObjectPrivate(NativeObject* obj, void* ptr, size_t nbytes,
-                              MemoryUse use) {
-  AddCellMemory(obj, nbytes, use);
-  obj->initPrivate(ptr);
-}
-template <typename T>
-inline void InitObjectPrivate(NativeObject* obj, T* ptr, MemoryUse use) {
-  InitObjectPrivate(obj, ptr, sizeof(T), use);
 }
 
 }  
