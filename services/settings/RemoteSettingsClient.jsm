@@ -382,7 +382,19 @@ class RemoteSettingsClient extends EventEmitter {
         }
         
         
-        syncResult.add("created", importedFromDump);
+        const importedById = importedFromDump.reduce((acc, r) => {
+          acc.set(r.id, r);
+          return acc;
+        }, new Map());
+        
+        syncResult.deleted.forEach(r => importedById.delete(r.id));
+        
+        syncResult.updated.forEach(u => {
+          if (importedById.has(u.old.id)) {
+            importedById.set(u.old.id, u.new);
+          }
+        });
+        syncResult.add("created", Array.from(importedById.values()));
       } catch (e) {
         if (e instanceof RemoteSettingsClient.InvalidSignatureError) {
           
