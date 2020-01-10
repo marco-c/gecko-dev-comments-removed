@@ -4,18 +4,28 @@
 
 
 let reportResult;
-let resultPromise;
 
 
 
 self.addEventListener('message', (event) => {
-  resultPromise = new Promise((resolve) => {
+  
+  if (reportResult) {
+    event.source.postMessage('testAlreadyRunning');
+    return;
+  }
+
+  const resultPromise = new Promise((resolve) => {
     reportResult = resolve;
+    
+    
+    
+    event.source.postMessage('messageHandlerInitialized');
   });
 
   
   
   event.waitUntil(resultPromise.then(result => {
+    reportResult = null;
     event.source.postMessage(result);
   }));
 });
