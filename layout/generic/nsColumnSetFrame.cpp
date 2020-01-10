@@ -917,37 +917,71 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
   contentSize.BSize(wm) = std::max(contentSize.BSize(wm), contentBEnd);
   mLastFrameStatus = aStatus;
 
-  
-  if (aConfig.mComputedBSize != NS_UNCONSTRAINEDSIZE) {
-    if (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE) {
+  if (StaticPrefs::layout_css_column_span_enabled()) {
+    MOZ_ASSERT(borderPadding.IsAllZero(),
+               "Only our parent ColumnSetWrapper can have border and padding!");
+
+    if (computedSize.BSize(wm) != NS_UNCONSTRAINEDSIZE &&
+        !GetProperty(nsIFrame::HasColumnSpanSiblings())) {
+      MOZ_ASSERT(aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE,
+                 "Available block-size should be constrained because it's "
+                 "restricted by the computed block-size when our reflow input "
+                 "is created in nsBlockFrame::ReflowBlockFrame()!");
+
+      
+      
+      
+      
+      
+      
+      
       contentSize.BSize(wm) =
-          std::min(contentSize.BSize(wm), aConfig.mComputedBSize);
-    } else {
-      contentSize.BSize(wm) = aConfig.mComputedBSize;
+          std::max(contentSize.BSize(wm), aReflowInput.AvailableBSize());
+
+      
+      
+      
+      
+      
+      
+      
+      contentSize.BSize(wm) =
+          std::min(contentSize.BSize(wm), computedSize.BSize(wm));
     }
-  } else if (aReflowInput.mStyleDisplay->IsContainSize()) {
-    
-    
-    
-    contentSize.BSize(wm) = aReflowInput.ApplyMinMaxBSize(0);
   } else {
     
-    
-    
-    
-    
-    contentSize.BSize(wm) = aReflowInput.ApplyMinMaxBSize(
-        contentSize.BSize(wm), aConfig.mConsumedBSize);
-  }
-  if (aReflowInput.ComputedISize() != NS_UNCONSTRAINEDSIZE) {
-    contentSize.ISize(wm) = aReflowInput.ComputedISize();
-  } else {
-    contentSize.ISize(wm) =
-        aReflowInput.ApplyMinMaxISize(contentSize.ISize(wm));
+    if (aConfig.mComputedBSize != NS_UNCONSTRAINEDSIZE) {
+      if (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE) {
+        contentSize.BSize(wm) =
+            std::min(contentSize.BSize(wm), aConfig.mComputedBSize);
+      } else {
+        contentSize.BSize(wm) = aConfig.mComputedBSize;
+      }
+    } else if (aReflowInput.mStyleDisplay->IsContainSize()) {
+      
+      
+      
+      contentSize.BSize(wm) = aReflowInput.ApplyMinMaxBSize(0);
+    } else {
+      
+      
+      
+      
+      
+      contentSize.BSize(wm) = aReflowInput.ApplyMinMaxBSize(
+          contentSize.BSize(wm), aConfig.mConsumedBSize);
+    }
+    if (aReflowInput.ComputedISize() != NS_UNCONSTRAINEDSIZE) {
+      contentSize.ISize(wm) = aReflowInput.ComputedISize();
+    } else {
+      contentSize.ISize(wm) =
+          aReflowInput.ApplyMinMaxISize(contentSize.ISize(wm));
+    }
+
+    contentSize.ISize(wm) += borderPadding.IStartEnd(wm);
+    contentSize.BSize(wm) += borderPadding.BStartEnd(wm);
   }
 
-  contentSize.ISize(wm) += borderPadding.IStartEnd(wm);
-  contentSize.BSize(wm) += borderPadding.BStartEnd(wm);
   aDesiredSize.SetSize(wm, contentSize);
   aDesiredSize.mOverflowAreas = overflowRects;
   aDesiredSize.UnionOverflowAreasWithDesiredBounds();
