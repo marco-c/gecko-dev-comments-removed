@@ -89,12 +89,6 @@ class nsNotifyAddrListener : public nsINetworkLinkService,
   mozilla::TimeStamp mStartTime;
 
   
-  bool mAllowChangedEvent;
-
-  
-  bool mIPv6Changes;
-
-  
   bool mCoalescingActive;
 
   
