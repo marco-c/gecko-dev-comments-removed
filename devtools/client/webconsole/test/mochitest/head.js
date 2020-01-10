@@ -1402,3 +1402,20 @@ function isEditorModeEnabled(hud) {
   const appNode = outputNode.querySelector(".webconsole-app");
   return appNode.classList.contains("jsterm-editor");
 }
+
+
+
+
+
+
+
+function toggleLayout(hud) {
+  const isMacOS = Services.appinfo.OS === "Darwin";
+  const enabled = isEditorModeEnabled(hud);
+
+  EventUtils.synthesizeKey("b", {
+    [isMacOS ? "metaKey" : "ctrlKey"]: true,
+  });
+  return waitFor(() => isEditorModeEnabled(hud) === !enabled);
+}
+
