@@ -4,6 +4,8 @@
 "use strict";
 
 
+
+
 const {
   createFactory,
   Component,
@@ -39,6 +41,8 @@ loader.lazyGetter(this, "MenuList", function() {
   );
 });
 
+const TELEMETRY_SIMULATION_ACTIVATED =
+  "devtools.accessibility.simulation_activated";
 const SIMULATION_MENU_LABELS = {
   NONE: "accessibility.filter.none",
   [SIMULATION_TYPE.DEUTERANOMALY]: "accessibility.simulation.deuteranomaly",
@@ -75,11 +79,16 @@ class SimulationMenuButton extends Component {
   toggleSimulation(simKey) {
     const { dispatch, simulation, simulator } = this.props;
 
-    if (simulation[simKey]) {
-      this.disableSimulation();
-    } else {
+    if (!simulation[simKey]) {
+      if (gTelemetry) {
+        gTelemetry.keyedScalarAdd(TELEMETRY_SIMULATION_ACTIVATED, simKey, 1);
+      }
+
       dispatch(actions.simulate(simulator, [simKey]));
+      return;
     }
+
+    this.disableSimulation();
   }
 
   render() {
