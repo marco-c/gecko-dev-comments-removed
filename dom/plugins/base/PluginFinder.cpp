@@ -13,6 +13,7 @@
 #if defined(XP_MACOSX)
 #  include "nsILocalFileMac.h"
 #endif
+#include "nsIWritablePropertyBag2.h"
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"
@@ -114,13 +115,47 @@ nsPluginTag* PluginFinder::FirstPluginWithPath(const nsCString& path) {
   return nullptr;
 }
 
-NS_IMPL_ISUPPORTS(PluginFinder, nsIRunnable)
+NS_IMPL_ISUPPORTS(PluginFinder, nsIRunnable, nsIAsyncShutdownBlocker)
+
+
+nsresult PluginFinder::GetName(nsAString& aName) {
+  aName.AssignLiteral("PluginFinder: finding plugins to load");
+  return NS_OK;
+}
+
+NS_IMETHODIMP PluginFinder::BlockShutdown(
+    nsIAsyncShutdownClient* aBarrierClient) {
+  
+  
+  mShutdown = true;
+  return NS_OK;
+}
+
+NS_IMETHODIMP PluginFinder::GetState(nsIPropertyBag** aBagOut) {
+  MOZ_ASSERT(aBagOut);
+  nsCOMPtr<nsIWritablePropertyBag2> propertyBag =
+      do_CreateInstance("@mozilla.org/hash-property-bag;1");
+
+  if (NS_WARN_IF(!propertyBag)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  propertyBag->SetPropertyAsBool(NS_LITERAL_STRING("Finding"),
+                                 !mFinishedFinding);
+  propertyBag->SetPropertyAsBool(NS_LITERAL_STRING("CreatingList"),
+                                 mCreateList);
+  propertyBag->SetPropertyAsBool(NS_LITERAL_STRING("FlashOnly"), mFlashOnly);
+  propertyBag->SetPropertyAsBool(NS_LITERAL_STRING("HavePlugins"), !!mPlugins);
+  propertyBag.forget(aBagOut);
+  return NS_OK;
+}
 
 PluginFinder::PluginFinder(bool aFlashOnly)
     : mFlashOnly(aFlashOnly),
       mCreateList(false),
       mPluginsChanged(false),
-      mFinishedFinding(false) {}
+      mFinishedFinding(false),
+      mCalledOnMainthread(false),  
+      mShutdown(false) {}
 
 nsresult PluginFinder::DoFullSearch(const FoundPluginCallback& aCallback) {
   MOZ_ASSERT(XRE_IsParentProcess() && NS_IsMainThread());
@@ -135,6 +170,19 @@ nsresult PluginFinder::DoFullSearch(const FoundPluginCallback& aCallback) {
 
   
   MOZ_TRY(DeterminePluginDirs());
+  
+  
+  
+  if (mFlashOnly) {
+    ReadFlashInfo();
+    
+    
+    nsTArray<mozilla::Pair<bool, RefPtr<nsPluginTag>>> arr;
+    mFoundPluginCallback(!!mPlugins, mPlugins, arr);
+    
+    
+    mPlugins = nullptr;
+  }
   return NS_OK;
 }
 
@@ -150,26 +198,36 @@ nsresult PluginFinder::HavePluginsChanged(
   }
 
   
+  if (mFlashOnly) {
+    ReadFlashInfo();
+  }
+
+  
   MOZ_TRY(DeterminePluginDirs());
   return NS_OK;
 }
 
 nsresult PluginFinder::Run() {
   if (!mFinishedFinding) {
-    MOZ_TRY(FindPlugins());
+    mCalledOnMainthread = NS_IsMainThread();
     mFinishedFinding = true;
+    FindPlugins();  
+    if (!mCalledOnMainthread) {
+      return NS_DispatchToMainThread(this);
+    }
   }
-  if (mPluginsChanged) {
-    WritePluginInfo(mFlashOnly, mPlugins, mInvalidPlugins);
-  }
-  
-  
-  
-  if (mCreateList) {
-    mFoundPluginCallback(mPluginsChanged || !!mPlugins, mPlugins,
-                         mPluginBlocklistRequests);
-  } else {
-    mChangeCallback(mPluginsChanged);
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!mShutdown) {
+    
+    
+    if (mFlashOnly && mPluginsChanged) {
+      WriteFlashInfo(mPlugins);
+    }
+    if (mCreateList) {
+      mFoundPluginCallback(mPluginsChanged, mPlugins, mPluginBlocklistRequests);
+    } else {
+      mChangeCallback(mPluginsChanged);
+    }
   }
 
   
@@ -177,6 +235,16 @@ nsresult PluginFinder::Run() {
   mPlugins = nullptr;  
   NS_ITERATIVE_UNREF_LIST(RefPtr<nsInvalidPluginTag>, mInvalidPlugins, mNext);
   NS_ITERATIVE_UNREF_LIST(RefPtr<nsPluginTag>, mCachedPlugins, mNext);
+
+  
+  
+  
+  
+  
+  if (mCreateList && !mCalledOnMainthread) {
+    RefPtr<nsPluginHost> host = nsPluginHost::GetInst();
+    host->FindingFinished();
+  }
   return NS_OK;
 }
 
@@ -269,13 +337,20 @@ nsresult PluginFinder::ReadFlashInfo() {
   const char* const mimedescriptions[3] = {"Shockwave Flash",
                                            "FutureSplash Player", nullptr};
 #endif
+
+  MOZ_ASSERT((!mPlugins) && (!mCachedPlugins));
+  
   RefPtr<nsPluginTag> tag = new nsPluginTag(
       "Shockwave Flash", desc.get(), NS_ConvertUTF16toUTF8(filename).get(),
       path.get(), version.get(), mimetypes, mimedescriptions, extensions,
       mimetypecount, lastMod, blocklistState, true);
-
-  tag->mNext = mCachedPlugins;
-  mCachedPlugins = tag;
+  mPlugins = tag;
+  
+  RefPtr<nsPluginTag> cachedTag = new nsPluginTag(
+      "Shockwave Flash", desc.get(), NS_ConvertUTF16toUTF8(filename).get(),
+      path.get(), version.get(), mimetypes, mimedescriptions, extensions,
+      mimetypecount, lastMod, blocklistState, true);
+  mCachedPlugins = cachedTag;
   return NS_OK;
 }
 
@@ -531,7 +606,15 @@ nsresult PluginFinder::ScanPluginsDirectory(nsIFile* pluginsDir,
       
       
       if (UnloadPluginsASAP()) {
-        pluginTag->TryUnloadPlugin(false);
+        if (NS_IsMainThread()) {
+          pluginTag->TryUnloadPlugin(false);
+        } else {
+          nsCOMPtr<nsIRunnable> unloadRunnable =
+              mozilla::NewRunnableMethod<bool>(
+                  "nsPluginTag::TryUnloadPlugin", pluginTag,
+                  &nsPluginTag::TryUnloadPlugin, false);
+          NS_DispatchToMainThread(unloadRunnable);
+        }
       }
     }
 
@@ -567,6 +650,7 @@ nsresult PluginFinder::ScanPluginsDirectory(nsIFile* pluginsDir,
 nsresult PluginFinder::FindPlugins() {
   Telemetry::AutoTimer<Telemetry::FIND_PLUGINS> telemetry;
 
+  
   
   ReadPluginInfo();
 
@@ -664,7 +748,11 @@ nsresult PluginFinder::FindPlugins() {
     bool aFlashOnly, nsPluginTag* aPlugins,
     nsInvalidPluginTag* aInvalidPlugins) {
   MOZ_ASSERT(XRE_IsParentProcess());
-  if (aFlashOnly) {
+  
+  
+  
+  
+  if (NS_IsMainThread() && aFlashOnly) {
     WriteFlashInfo(aPlugins);
   }
 
@@ -787,6 +875,10 @@ nsresult PluginFinder::FindPlugins() {
     return NS_OK;
   }
 
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_FAILURE;
+  }
+
   nsresult rv;
   nsCOMPtr<nsIProperties> directoryService(
       do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv));
@@ -863,15 +955,14 @@ nsresult PluginFinder::DeterminePluginDirs() {
 
 nsresult PluginFinder::ReadPluginInfo() {
   MOZ_ASSERT(XRE_IsParentProcess());
-
   
-  if (mFlashOnly) {
-    ReadFlashInfo();
+  
+  if (mFlashOnly && mCreateList) {
+    MOZ_ASSERT(!NS_IsMainThread());
+  } else {
+    MOZ_ASSERT(NS_IsMainThread());
   }
-  return ReadPluginInfoFromDisk();
-}
 
-nsresult PluginFinder::ReadPluginInfoFromDisk() {
   nsresult rv = EnsurePluginReg();
   if (NS_FAILED(rv)) {
     return rv;

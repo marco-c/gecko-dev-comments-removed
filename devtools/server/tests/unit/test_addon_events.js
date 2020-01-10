@@ -9,6 +9,9 @@ const { AddonManager } = require("resource://gre/modules/AddonManager.jsm");
 startupAddonsManager();
 
 add_task(async function testReloadExitedAddon() {
+  
+  Services.prefs.setBoolPref("plugin.load_flash_only", false);
+
   DebuggerServer.init();
   DebuggerServer.registerAllActors();
 
