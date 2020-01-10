@@ -90,6 +90,15 @@ def lint(paths, config, binary=None, fix=None, setup=None, **lintargs):
     orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
     proc = ProcessHandler(cmd_args, env=os.environ, stream=None,
                           shell=shell, universal_newlines=True)
+
+    if sys.platform == 'win32':
+        
+        
+        
+        
+        
+        proc.env = None
+
     proc.run()
     signal.signal(signal.SIGINT, orig)
 
