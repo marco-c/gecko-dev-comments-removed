@@ -670,7 +670,7 @@ function hitTest(point) {
   var data = utils.getCompositorAPZTestData();
   ok(data.hitResults.length >= 1, "Expected at least one hit result in the APZTestData");
   var result = data.hitResults[data.hitResults.length - 1];
-  return { hitInfo: result.hitResult, scrollId: result.scrollId };
+  return { hitInfo: result.hitResult, scrollId: result.scrollId, layersId: result.layersId };
 }
 
 
@@ -693,9 +693,10 @@ function hitInfoToString(hitInfo) {
 
 
 
-function checkHitResult(hitResult, expectedHitInfo, expectedScrollId, desc) {
+function checkHitResult(hitResult, expectedHitInfo, expectedScrollId, expectedLayersId, desc) {
   is(hitInfoToString(hitResult.hitInfo), hitInfoToString(expectedHitInfo), desc + " hit info");
   is(hitResult.scrollId, expectedScrollId, desc + " scrollid");
+  is(hitResult.layersId, expectedLayersId, desc + " layersid");
 }
 
 
@@ -707,6 +708,7 @@ var LayerState = {
     ACTIVE: 1,
     INACTIVE: 2,
 };
+
 
 
 
@@ -787,6 +789,7 @@ function hitTestScrollbar(params) {
     checkHitResult(hitTest(verticalScrollbarPoint),
                    expectedHitInfo | APZHitResultFlags.SCROLLBAR_VERTICAL,
                    params.expectedScrollId,
+                   params.expectedLayersId,
                    scrollframeMsg + " - vertical scrollbar");
   }
 
@@ -800,6 +803,7 @@ function hitTestScrollbar(params) {
     checkHitResult(hitTest(horizontalScrollbarPoint),
                    expectedHitInfo,
                    params.expectedScrollId,
+                   params.expectedLayersId,
                    scrollframeMsg + " - horizontal scrollbar");
   }
 }
