@@ -51,6 +51,7 @@ function xr_session_promise_test(
                         navigator.xr.requestSession(sessionMode)
                             .then((session) => {
                               testSession = session;
+                              session.mode = sessionMode;
                               
                               
                               session.updateRenderState({
