@@ -89,6 +89,11 @@ function it(message, f) {
 
 
 function parseFromString(mapString, mapBaseURL) {
+  
+  if (new URL(mapBaseURL).protocol === 'data:') {
+    throw Error('test helper does not support data: base URLs');
+  }
+
   const iframe = document.createElement('iframe');
   document.body.appendChild(iframe);
   iframe.contentDocument.write(`
