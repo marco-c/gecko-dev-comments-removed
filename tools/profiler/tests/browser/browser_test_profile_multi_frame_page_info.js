@@ -3,6 +3,8 @@
 
 
 add_task(async function test_profile_multi_frame_page_info() {
+  
+  SimpleTest.requestCompleteLog();
   if (!AppConstants.MOZ_GECKO_PROFILER) {
     return;
   }
