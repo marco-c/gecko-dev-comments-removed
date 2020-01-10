@@ -563,6 +563,15 @@ MarkupContainer.prototype = {
     }
 
     
+    
+    
+    
+    
+    if (isMiddleClick) {
+      event.preventDefault();
+    }
+
+    
     if (isMiddleClick || isMetaClick) {
       const link = target.dataset.link;
       const type = target.dataset.type;
