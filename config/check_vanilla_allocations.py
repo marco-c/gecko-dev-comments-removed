@@ -122,7 +122,8 @@ def main():
     alloc_fns_re = r'([^:/ ]+):\s+U (' + r'|'.join(alloc_fns) + r')'
 
     
-    jsutil_cpp = set([])
+    
+    util_Utility_cpp = set([])
 
     
     emit_line_info = False
@@ -166,8 +167,8 @@ def main():
             continue
 
         fn = m.group(2)
-        if filename == 'jsutil.o':
-            jsutil_cpp.add(fn)
+        if filename == 'Utility.o':
+            util_Utility_cpp.add(fn)
         else:
             
             fail("'" + fn + "' present in " + filename)
@@ -177,15 +178,15 @@ def main():
     
     
     for fn in alloc_fns_unescaped:
-        if fn not in jsutil_cpp:
-            fail("'" + fn + "' isn't used as expected in jsutil.cpp")
+        if fn not in util_Utility_cpp:
+            fail("'" + fn + "' isn't used as expected in util/Utility.cpp")
         else:
-            jsutil_cpp.remove(fn)
+            util_Utility_cpp.remove(fn)
 
     
-    if jsutil_cpp:
-        fail('unexpected allocation fns used in jsutil.cpp: ' +
-             ', '.join(jsutil_cpp))
+    if util_Utility_cpp:
+        fail('unexpected allocation fns used in util/Utility.cpp: ' +
+             ', '.join(util_Utility_cpp))
 
     
     
@@ -193,7 +194,8 @@ def main():
     
     if emit_line_info:
         print('check_vanilla_allocations.py: Source lines with allocation calls:')
-        print('check_vanilla_allocations.py: Accurate in unoptimized builds; jsutil.cpp expected.')
+        print('check_vanilla_allocations.py: Accurate in unoptimized builds; '
+              'util/Utility.cpp expected.')
 
         
         
