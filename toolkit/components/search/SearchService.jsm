@@ -663,6 +663,16 @@ SearchService.prototype = {
   _metaData: {},
 
   
+  
+  
+  get _separatePrivateDefault() {
+    return (
+      this._separatePrivateDefaultPrefValue &&
+      this._separatePrivateDefaultEnabledPrefValue
+    );
+  },
+
+  
 
 
 
@@ -718,8 +728,16 @@ SearchService.prototype = {
 
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
-      "_separatePrivateDefault",
+      "_separatePrivateDefaultPrefValue",
       SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+      false,
+      this._onSeparateDefaultPrefChanged.bind(this)
+    );
+
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "_separatePrivateDefaultEnabledPrefValue",
+      SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
       false,
       this._onSeparateDefaultPrefChanged.bind(this)
     );

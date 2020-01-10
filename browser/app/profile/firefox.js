@@ -393,8 +393,6 @@ pref("browser.search.widget.inNavBar", false);
 
 #ifdef EARLY_BETA_OR_EARLIER
   pref("browser.search.separatePrivateDefault.ui.enabled", true);
-#else
-  pref("browser.search.separatePrivateDefault.ui.enabled", false);
 #endif
 
 pref("browser.search.separatePrivateDefault.ui.banner.max", 0);
