@@ -688,13 +688,13 @@ nsresult nsSVGOuterSVGFrame::AttributeChanged(int32_t aNameSpaceID,
               ? TRANSFORM_CHANGED | COORD_CONTEXT_CHANGED
               : TRANSFORM_CHANGED);
 
-      if (aAttribute != nsGkAtoms::transform) {
+      if (aAttribute == nsGkAtoms::preserveAspectRatio) {
         static_cast<SVGSVGElement*>(GetContent())
             ->ChildrenOnlyTransformChanged();
       }
-
-    } else if (aAttribute == nsGkAtoms::width ||
-               aAttribute == nsGkAtoms::height) {
+    }
+    if (aAttribute == nsGkAtoms::width || aAttribute == nsGkAtoms::height ||
+        aAttribute == nsGkAtoms::viewBox) {
       
       
 
@@ -708,6 +708,7 @@ nsresult nsSVGOuterSVGFrame::AttributeChanged(int32_t aNameSpaceID,
         }
         
       } else {
+        
         
         
         PresShell()->FrameNeedsReflow(this, IntrinsicDirty::StyleChange,
