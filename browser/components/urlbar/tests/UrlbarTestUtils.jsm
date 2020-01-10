@@ -57,7 +57,7 @@ var UrlbarTestUtils = {
       
       this.fireInputEvent(window);
     } else {
-      window.gURLBar.setAttribute("pageproxystate", "invalid");
+      window.gURLBar.setPageProxyState("invalid");
     }
     
     
@@ -112,7 +112,7 @@ var UrlbarTestUtils = {
       urlbar.selectionEnd = selectionEnd;
       urlbar.selectionStart = selectionStart;
     }
-    urlbar.setAttribute("pageproxystate", "invalid");
+    urlbar.setPageProxyState("invalid");
     urlbar.startQuery();
   },
 

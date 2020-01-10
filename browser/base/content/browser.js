@@ -3483,10 +3483,7 @@ function SetPageProxyState(aState, updatePopupNotifications) {
   }
 
   let oldPageProxyState = gURLBar.getAttribute("pageproxystate");
-  
-  
-  
-  gURLBar.setAttribute("pageproxystate", aState);
+  gURLBar.setPageProxyState(aState);
 
   
   
