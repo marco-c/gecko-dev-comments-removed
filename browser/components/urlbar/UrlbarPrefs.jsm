@@ -107,6 +107,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["megabar", false],
 
   
+  ["searchIcon", false],
+
+  
   ["oneOffSearches", false],
 
   

@@ -326,6 +326,8 @@ pref("browser.urlbar.usepreloadedtopurls.expire_days", 14);
 
 
 pref("browser.urlbar.megabar", false);
+
+pref("browser.urlbar.searchIcon", false);
 pref("browser.urlbar.view.stripHttps", false);
 
 pref("browser.urlbar.openViewOnFocus", false);
