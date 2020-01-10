@@ -13,6 +13,7 @@
 #include "mozilla/dom/PContentPermissionRequestChild.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "nsIDOMEventListener.h"
+#include "PermissionDelegateHandler.h"
 
 
 
@@ -140,6 +141,9 @@ class ContentPermissionRequestBase : public nsIContentPermissionRequest {
 
   PromptResult CheckPromptPrefs();
 
+  
+  bool CheckPermissionDelegate();
+
   enum class DelayedTaskType {
     Allow,
     Deny,
@@ -158,6 +162,7 @@ class ContentPermissionRequestBase : public nsIContentPermissionRequest {
   nsCOMPtr<nsIPrincipal> mTopLevelPrincipal;
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   nsCOMPtr<nsIContentPermissionRequester> mRequester;
+  RefPtr<PermissionDelegateHandler> mPermissionHandler;
   nsCString mPrefName;
   nsCString mType;
   bool mIsHandlingUserInput;
