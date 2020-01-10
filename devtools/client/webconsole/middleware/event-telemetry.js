@@ -56,6 +56,7 @@ function eventTelemetryMiddleware(telemetry, sessionId, store) {
       
       telemetry.recordEvent("execute_js", "webconsole", null, {
         lines: action.expression.split(/\n/).length,
+        input: state.ui.editor ? "multiline" : "inline",
         session_id: sessionId,
       });
     }
