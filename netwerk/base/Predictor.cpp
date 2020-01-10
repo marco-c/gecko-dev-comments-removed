@@ -123,13 +123,7 @@ static bool IsNullOrHttp(nsIURI* uri) {
     return true;
   }
 
-  bool isHTTP = false;
-  uri->SchemeIs("http", &isHTTP);
-  if (!isHTTP) {
-    uri->SchemeIs("https", &isHTTP);
-  }
-
-  return isHTTP;
+  return uri->SchemeIs("http") || uri->SchemeIs("https");
 }
 
 
@@ -833,9 +827,7 @@ void Predictor::PredictForLink(nsIURI* targetURI, nsIURI* sourceURI,
   }
 
   if (!StaticPrefs::network_predictor_enable_hover_on_ssl()) {
-    bool isSSL = false;
-    sourceURI->SchemeIs("https", &isSSL);
-    if (isSSL) {
+    if (sourceURI->SchemeIs("https")) {
       
       PREDICTOR_LOG(("    Not predicting for link hover - on an SSL page"));
       return;
@@ -1351,10 +1343,8 @@ bool Predictor::RunPredictions(nsIURI* referrer,
                                     mDNSListener, nullptr, originAttributes,
                                     getter_AddRefs(tmpCancelable));
 
-    bool isHttps;
-    uri->SchemeIs("https", &isHttps);
     
-    if (sEsniEnabled && isHttps) {
+    if (sEsniEnabled && uri->SchemeIs("https")) {
       nsAutoCString esniHost;
       esniHost.Append("_esni.");
       esniHost.Append(hostname);

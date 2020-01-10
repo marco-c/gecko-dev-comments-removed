@@ -354,12 +354,9 @@ nsresult HttpBaseChannel::Init(nsIURI* aURI, uint32_t aCaps,
   
   nsAutoCString host;
   int32_t port = -1;
-  bool isHTTPS = false;
+  bool isHTTPS = mURI->SchemeIs("https");
 
-  nsresult rv = mURI->SchemeIs("https", &isHTTPS);
-  if (NS_FAILED(rv)) return rv;
-
-  rv = mURI->GetAsciiHost(host);
+  nsresult rv = mURI->GetAsciiHost(host);
   if (NS_FAILED(rv)) return rv;
 
   
@@ -1227,9 +1224,7 @@ HttpBaseChannel::DoApplyContentConversions(nsIStreamListener* aNextListener,
       break;
     }
 
-    bool isHTTPS = false;
-    mURI->SchemeIs("https", &isHTTPS);
-    if (gHttpHandler->IsAcceptableEncoding(val, isHTTPS)) {
+    if (gHttpHandler->IsAcceptableEncoding(val, mURI->SchemeIs("https"))) {
       nsCOMPtr<nsIStreamConverterService> serv;
       rv = gHttpHandler->GetStreamConverterService(getter_AddRefs(serv));
 
@@ -3128,8 +3123,7 @@ nsresult HttpBaseChannel::SetupReplacementChannel(nsIURI* newURI,
   
   
   
-  bool usingSSL = false;
-  rv = mURI->SchemeIs("https", &usingSSL);
+  bool usingSSL = mURI->SchemeIs("https");
   if (NS_SUCCEEDED(rv) && usingSSL) newLoadFlags &= ~INHIBIT_PERSISTENT_CACHING;
 
   
@@ -4265,8 +4259,7 @@ HttpBaseChannel::GetNativeServerTiming(
     nsTArray<nsCOMPtr<nsIServerTiming>>& aServerTiming) {
   aServerTiming.Clear();
 
-  bool isHTTPS = false;
-  if (NS_SUCCEEDED(mURI->SchemeIs("https", &isHTTPS)) && isHTTPS) {
+  if (mURI->SchemeIs("https")) {
     ParseServerTimingHeader(mResponseHead, aServerTiming);
     ParseServerTimingHeader(mResponseTrailers, aServerTiming);
   }

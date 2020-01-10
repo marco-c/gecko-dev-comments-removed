@@ -330,19 +330,14 @@ nsresult nsAboutCacheEntry::Channel::WriteCacheEntryDescription(
 
   
   nsCOMPtr<nsIURI> uri;
-  bool isJS = false;
-  bool isData = false;
-
   rv = NS_NewURI(getter_AddRefs(uri), str);
-  
-  
-  if (NS_SUCCEEDED(rv)) {
-    uri->SchemeIs("javascript", &isJS);
-    uri->SchemeIs("data", &isData);
-  }
+
   nsAutoCString escapedStr;
   nsAppendEscapedHTML(str, escapedStr);
-  if (NS_SUCCEEDED(rv) && !(isJS || isData)) {
+
+  
+  
+  if (NS_SUCCEEDED(rv) && !(uri->SchemeIs("javascript") || uri->SchemeIs("data"))) {
     buffer.AppendLiteral("<a href=\"");
     buffer.Append(escapedStr);
     buffer.AppendLiteral("\">");

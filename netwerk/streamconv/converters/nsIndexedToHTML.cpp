@@ -126,13 +126,9 @@ nsresult nsIndexedToHTML::DoOnStartRequest(nsIRequest* request,
   rv = channel->GetOriginalURI(getter_AddRefs(uri));
   if (NS_FAILED(rv)) return rv;
 
-  bool isResource = false;
-  rv = uri->SchemeIs("resource", &isResource);
-  if (NS_FAILED(rv)) return rv;
-
   
   
-  if (!isResource) {
+  if (!uri->SchemeIs("resource")) {
     rv = channel->GetURI(getter_AddRefs(uri));
     if (NS_FAILED(rv)) return rv;
   }
@@ -174,9 +170,7 @@ nsresult nsIndexedToHTML::DoOnStartRequest(nsIRequest* request,
   
   
 
-  bool isScheme = false;
-  bool isSchemeFile = false;
-  if (NS_SUCCEEDED(uri->SchemeIs("ftp", &isScheme)) && isScheme) {
+  if (uri->SchemeIs("ftp")) {
     
     
     
@@ -199,8 +193,7 @@ nsresult nsIndexedToHTML::DoOnStartRequest(nsIRequest* request,
       rv = uri->Resolve(NS_LITERAL_CSTRING(".."), parentStr);
       if (NS_FAILED(rv)) return rv;
     }
-  } else if (NS_SUCCEEDED(uri->SchemeIs("file", &isSchemeFile)) &&
-             isSchemeFile) {
+  } else if (uri->SchemeIs("file")) {
     nsCOMPtr<nsIFileURL> fileUrl = do_QueryInterface(uri);
     nsCOMPtr<nsIFile> file;
     rv = fileUrl->GetFile(getter_AddRefs(file));
@@ -224,7 +217,7 @@ nsresult nsIndexedToHTML::DoOnStartRequest(nsIRequest* request,
     
     buffer.AppendLiteral("<meta charset=\"UTF-8\">\n");
 
-  } else if (NS_SUCCEEDED(uri->SchemeIs("jar", &isScheme)) && isScheme) {
+  } else if (uri->SchemeIs("jar")) {
     nsAutoCString path;
     rv = uri->GetPathQueryRef(path);
     if (NS_FAILED(rv)) return rv;
@@ -515,7 +508,7 @@ nsresult nsIndexedToHTML::DoOnStartRequest(nsIRequest* request,
   
   
   
-  if (NS_FAILED(rv) && isSchemeFile && !NS_IsNativeUTF8()) {
+  if (NS_FAILED(rv) && uri->SchemeIs("file") && !NS_IsNativeUTF8()) {
     auto encoding = mozilla::dom::FallbackEncoding::FromLocale();
     nsAutoCString charset;
     encoding->Name(charset);
@@ -552,7 +545,7 @@ nsresult nsIndexedToHTML::DoOnStartRequest(nsIRequest* request,
     
     
     
-    if (!isResource) {
+    if (!uri->SchemeIs("resource")) {
       buffer.AppendLiteral("<base href=\"");
       nsAppendEscapedHTML(baseUri, buffer);
       buffer.AppendLiteral("\" />\n");
@@ -584,7 +577,7 @@ nsresult nsIndexedToHTML::DoOnStartRequest(nsIRequest* request,
     buffer.AppendLiteral("</a></p>\n");
   }
 
-  if (isSchemeFile) {
+  if (uri->SchemeIs("file")) {
     nsAutoString showHiddenText;
     rv = mBundle->GetStringFromName("ShowHidden", showHiddenText);
     if (NS_FAILED(rv)) return rv;

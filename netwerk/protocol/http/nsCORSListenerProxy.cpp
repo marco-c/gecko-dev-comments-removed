@@ -832,12 +832,9 @@ bool CheckUpgradeInsecureRequestsPreventsCORS(
   nsCOMPtr<nsIURI> channelURI;
   nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(channelURI));
   NS_ENSURE_SUCCESS(rv, false);
-  bool isHttpScheme = false;
-  rv = channelURI->SchemeIs("http", &isHttpScheme);
-  NS_ENSURE_SUCCESS(rv, false);
 
   
-  if (!isHttpScheme) {
+  if (!channelURI->SchemeIs("http")) {
     return false;
   }
 
@@ -893,10 +890,7 @@ nsresult nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
 
   
   if (aAllowDataURI == DataURIHandling::Allow && originalURI == uri) {
-    bool dataScheme = false;
-    rv = uri->SchemeIs("data", &dataScheme);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (dataScheme) {
+    if (uri->SchemeIs("data")) {
       return NS_OK;
     }
     if (loadInfo->GetAboutBlankInherits() && NS_IsAboutBlank(uri)) {

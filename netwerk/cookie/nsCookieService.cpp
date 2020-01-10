@@ -3048,10 +3048,7 @@ void nsCookieService::GetCookiesForURI(
   
   
   
-  bool isSecure;
-  if (NS_FAILED(aHostURI->SchemeIs("https", &isSecure))) {
-    isSecure = false;
-  }
+  bool isSecure = aHostURI->SchemeIs("https");
 
   nsCookie* cookie;
   int64_t currentTimeInUsec = PR_Now();
@@ -3233,35 +3230,32 @@ bool nsCookieService::CanSetCookie(nsIURI* aHostURI, const nsCookieKey& aKey,
   
   
   
-  bool isHTTPS = true;
-  nsresult rv = aHostURI->SchemeIs("https", &isHTTPS);
-  if (NS_SUCCEEDED(rv)) {
-    Telemetry::Accumulate(
-        Telemetry::COOKIE_SCHEME_SECURITY,
-        ((aCookieData.isSecure()) ? 0x02 : 0x00) | ((isHTTPS) ? 0x01 : 0x00));
+  bool isHTTPS = aHostURI->SchemeIs("https");
+  Telemetry::Accumulate(
+      Telemetry::COOKIE_SCHEME_SECURITY,
+      ((aCookieData.isSecure()) ? 0x02 : 0x00) | ((isHTTPS) ? 0x01 : 0x00));
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (aThirdPartyUtil) {
-      bool isThirdParty = true;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aThirdPartyUtil) {
+    bool isThirdParty = true;
 
-      if (aChannel) {
-        aThirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isThirdParty);
-      }
-      Telemetry::Accumulate(Telemetry::COOKIE_SCHEME_HTTPS,
-                            (isThirdParty ? 0x04 : 0x00) |
-                                (isHTTPS ? 0x02 : 0x00) |
-                                (aCookieData.isSecure() ? 0x01 : 0x00));
+    if (aChannel) {
+      aThirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isThirdParty);
     }
+    Telemetry::Accumulate(Telemetry::COOKIE_SCHEME_HTTPS,
+                          (isThirdParty ? 0x04 : 0x00) |
+                              (isHTTPS ? 0x02 : 0x00) |
+                              (aCookieData.isSecure() ? 0x01 : 0x00));
   }
 
   int64_t currentTimeInUsec = PR_Now();
@@ -3457,8 +3451,8 @@ void nsCookieService::AddInternal(const nsCookieKey& aKey, nsCookie* aCookie,
                            aCookie->Path(), exactIter);
   bool foundSecureExact = foundCookie && exactIter.Cookie()->IsSecure();
   bool isSecure = true;
-  if (aHostURI && NS_FAILED(aHostURI->SchemeIs("https", &isSecure))) {
-    isSecure = false;
+  if (aHostURI) {
+    isSecure = aHostURI->SchemeIs("https");
   }
   bool oldCookieIsSession = false;
   
@@ -3917,10 +3911,8 @@ nsresult nsCookieService::GetBaseDomain(nsIEffectiveTLDService* aTLDService,
     return NS_ERROR_INVALID_ARG;
 
   
-  if (aBaseDomain.IsEmpty()) {
-    bool isFileURI = false;
-    aHostURI->SchemeIs("file", &isFileURI);
-    if (!isFileURI) return NS_ERROR_INVALID_ARG;
+  if (aBaseDomain.IsEmpty() && !aHostURI->SchemeIs("file")) {
+    return NS_ERROR_INVALID_ARG;
   }
 
   return NS_OK;
@@ -3997,8 +3989,7 @@ CookieStatus nsCookieService::CheckPrefs(
   *aRejectedReason = 0;
 
   
-  bool ftp;
-  if (NS_SUCCEEDED(aHostURI->SchemeIs("ftp", &ftp)) && ftp) {
+  if (aHostURI->SchemeIs("ftp")) {
     COOKIE_LOGFAILURE(aCookieHeader.IsVoid() ? GET_COOKIE : SET_COOKIE,
                       aHostURI, aCookieHeader, "ftp sites cannot read cookies");
     return STATUS_REJECTED_WITH_ERROR;
@@ -4096,9 +4087,9 @@ CookieStatus nsCookieService::CheckPrefs(
     }
 
     if (StaticPrefs::network_cookie_thirdparty_nonsecureSessionOnly()) {
-      bool isHTTPS = false;
-      aHostURI->SchemeIs("https", &isHTTPS);
-      if (!isHTTPS) return STATUS_ACCEPT_SESSION;
+      if (!aHostURI->SchemeIs("https")) {
+        return STATUS_ACCEPT_SESSION;
+      }
     }
   }
 

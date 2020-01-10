@@ -2545,8 +2545,7 @@ bool NS_IsHSTSUpgradeRedirect(nsIChannel* aOldChannel, nsIChannel* aNewChannel,
     return false;
   }
 
-  bool isHttp;
-  if (NS_FAILED(oldURI->SchemeIs("http", &isHttp)) || !isHttp) {
+  if (!oldURI->SchemeIs("http")) {
     return false;
   }
 
@@ -2662,8 +2661,7 @@ void net_EnsurePSMInit() {
 
 bool NS_IsAboutBlank(nsIURI* uri) {
   
-  bool isAbout = false;
-  if (NS_FAILED(uri->SchemeIs("about", &isAbout)) || !isAbout) {
+  if (!uri->SchemeIs("about")) {
     return false;
   }
 
@@ -2767,9 +2765,7 @@ nsresult NS_ShouldSecureUpgrade(
   
   
   
-  bool isHttps = false;
-  nsresult rv = aURI->SchemeIs("https", &isHttps);
-  NS_ENSURE_SUCCESS(rv, rv);
+  bool isHttps = aURI->SchemeIs("https");
 
   if (!isHttps &&
       !nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(aURI)) {
@@ -2876,7 +2872,7 @@ nsresult NS_ShouldSecureUpgrade(
     if (!storageReady && gSocketTransportService && aResultCallback) {
       nsCOMPtr<nsIURI> uri = aURI;
       nsCOMPtr<nsISiteSecurityService> service = sss;
-      rv = gSocketTransportService->Dispatch(
+      nsresult rv = gSocketTransportService->Dispatch(
           NS_NewRunnableFunction(
               "net::NS_ShouldSecureUpgrade",
               [service{std::move(service)}, uri{std::move(uri)}, flags(flags),
@@ -2906,7 +2902,7 @@ nsresult NS_ShouldSecureUpgrade(
       return rv;
     }
 
-    rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HSTS, aURI, flags,
+    nsresult rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HSTS, aURI, flags,
                           aOriginAttributes, nullptr, &hstsSource, &isStsHost);
 
     
@@ -2974,8 +2970,7 @@ nsresult NS_CompareLoadInfoAndLoadContext(nsIChannel* aChannel) {
   nsINode* node = loadInfo->LoadingNode();
   if (node) {
     nsIURI* uri = node->OwnerDoc()->GetDocumentURI();
-    nsresult rv = uri->SchemeIs("about", &isAboutPage);
-    NS_ENSURE_SUCCESS(rv, rv);
+    isAboutPage = uri->SchemeIs("about");
   }
 
   if (isAboutPage) {

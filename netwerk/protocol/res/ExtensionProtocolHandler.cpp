@@ -681,9 +681,7 @@ Result<nsCOMPtr<nsIInputStream>, nsresult> ExtensionProtocolHandler::NewStream(
   
   
   
-  bool isExtScheme = false;
-  if (NS_FAILED(aChildURI->SchemeIs(EXTENSION_SCHEME, &isExtScheme)) ||
-      !isExtScheme) {
+  if (!aChildURI->SchemeIs(EXTENSION_SCHEME)) {
     return Err(NS_ERROR_UNKNOWN_PROTOCOL);
   }
 
@@ -799,9 +797,7 @@ Result<Ok, nsresult> ExtensionProtocolHandler::NewFD(
   nsresult rv;
 
   
-  bool isExtScheme = false;
-  if (NS_FAILED(aChildURI->SchemeIs(EXTENSION_SCHEME, &isExtScheme)) ||
-      !isExtScheme) {
+  if (!aChildURI->SchemeIs(EXTENSION_SCHEME)) {
     return Err(NS_ERROR_UNKNOWN_PROTOCOL);
   }
 
