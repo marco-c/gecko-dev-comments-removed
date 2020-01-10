@@ -13,28 +13,15 @@
 namespace mozilla {
 
 class BaseHistory : public IHistory {
+ public:
+  NS_IMETHODIMP RegisterVisitedCallback(nsIURI*, dom::Link*) final;
+  NS_IMETHODIMP UnregisterVisitedCallback(nsIURI*, dom::Link*) final;
+  NS_IMETHODIMP NotifyVisited(nsIURI* aURI) final;
+
  protected:
   static constexpr const size_t kTrackedUrisInitialSize = 64;
 
-  BaseHistory()
-    : mTrackedURIs(kTrackedUrisInitialSize) {}
-
-  
-
-
-
-  void NotifyVisitedForDocument(nsIURI*, dom::Document*);
-
-  
-
-
-
-  void DispatchNotifyVisited(nsIURI*, dom::Document*);
-
-  
-  
-  NS_IMETHODIMP RegisterVisitedCallback(nsIURI*, dom::Link*) final;
-  NS_IMETHODIMP UnregisterVisitedCallback(nsIURI*, dom::Link*) final;
+  BaseHistory() : mTrackedURIs(kTrackedUrisInitialSize) {}
 
   
   
@@ -56,10 +43,23 @@ class BaseHistory : public IHistory {
     }
   };
 
-  nsDataHashtable<nsURIHashKey, TrackedURI> mTrackedURIs;
+ private:
+  
 
+
+
+  void NotifyVisitedForDocument(nsIURI*, dom::Document*);
+
+  
+
+
+
+  void DispatchNotifyVisited(nsIURI*, dom::Document*);
+
+ protected:
+  nsDataHashtable<nsURIHashKey, TrackedURI> mTrackedURIs;
 };
 
-} 
+}  
 
 #endif

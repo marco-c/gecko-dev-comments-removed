@@ -1479,46 +1479,6 @@ void History::NotifyVisitedParent(const nsTArray<URIParams>& aURIs) {
   }
 }
 
-NS_IMETHODIMP
-History::NotifyVisited(nsIURI* aURI) {
-  MOZ_ASSERT(NS_IsMainThread());
-  NS_ENSURE_ARG(aURI);
-  
-  
-
-  nsAutoScriptBlocker scriptBlocker;
-
-  auto entry = mTrackedURIs.Lookup(aURI);
-  if (!entry) {
-    
-    return NS_OK;
-  }
-
-  TrackedURI& trackedURI = entry.Data();
-  trackedURI.mVisited = true;
-
-  
-  MOZ_ASSERT(!trackedURI.mLinks.IsEmpty());
-
-  
-  
-
-  
-  nsTArray<Document*> seen;  
-  ObserverArray::BackwardIterator iter(trackedURI.mLinks);
-  while (iter.HasMore()) {
-    Link* link = iter.GetNext();
-    Document* doc = GetLinkDocument(*link);
-    if (seen.Contains(doc)) {
-      continue;
-    }
-    seen.AppendElement(doc);
-    DispatchNotifyVisited(aURI, doc);
-  }
-
-  return NS_OK;
-}
-
 class ConcurrentStatementsHolder final : public mozIStorageCompletionCallback {
  public:
   NS_DECL_ISUPPORTS
