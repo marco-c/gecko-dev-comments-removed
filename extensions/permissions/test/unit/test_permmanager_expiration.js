@@ -85,38 +85,6 @@ function* do_run_test() {
   );
 
   
-  pm.addFromPrincipal(
-    principal,
-    "test/expiration-perm-renewable",
-    1,
-    pm.EXPIRE_TIME,
-    now + 100
-  );
-  pm.addFromPrincipal(
-    principal,
-    "test/expiration-session-renewable",
-    1,
-    pm.EXPIRE_SESSION,
-    now + 100
-  );
-
-  
-  pm.updateExpireTime(
-    principal,
-    "test/expiration-perm-renewable",
-    true,
-    now + 100,
-    now + 1e6
-  );
-  pm.updateExpireTime(
-    principal,
-    "test/expiration-session-renewable",
-    true,
-    now + 1e6,
-    now + 100
-  );
-
-  
   Assert.equal(
     1,
     pm.testPermissionFromPrincipal(principal, "test/expiration-perm-exp3")
@@ -128,17 +96,6 @@ function* do_run_test() {
   Assert.equal(
     1,
     pm.testPermissionFromPrincipal(principal, "test/expiration-perm-nexp")
-  );
-  Assert.equal(
-    1,
-    pm.testPermissionFromPrincipal(principal, "test/expiration-perm-renewable")
-  );
-  Assert.equal(
-    1,
-    pm.testPermissionFromPrincipal(
-      principal,
-      "test/expiration-session-renewable"
-    )
   );
 
   
@@ -181,19 +138,6 @@ function* do_run_test() {
   Assert.equal(
     null,
     pm.getPermissionObject(principal, "test/expiration-session-exp2", false)
-  );
-
-  
-  Assert.equal(
-    1,
-    pm.testPermissionFromPrincipal(principal, "test/expiration-perm-renewable")
-  );
-  Assert.equal(
-    1,
-    pm.testPermissionFromPrincipal(
-      principal,
-      "test/expiration-session-renewable"
-    )
   );
 
   do_finish_generator_test(test_generator);
