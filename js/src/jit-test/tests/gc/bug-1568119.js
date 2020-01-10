@@ -9,13 +9,13 @@ oomTest(() => {
   gcparam('minNurseryBytes', 256 * 1024);
   gcparam('maxNurseryBytes', 256 * 1024);
   allocateSomeStuff();
-  gc();
+  minorgc();
 
   
   
   gcparam('maxNurseryBytes', 1024 * 1024);
   gcparam('minNurseryBytes', 1024 * 1024);
   allocateSomeStuff();
-  gc();
+  minorgc();
 });
 
