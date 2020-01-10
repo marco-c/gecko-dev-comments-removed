@@ -873,16 +873,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
     }
 
     
-    overlapsAny(boxes) {
-      for (let i = 0; i < boxes.length; i++) {
-        if (this.overlaps(boxes[i])) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    
     within(container) {
       return (this.top >= container.top - this.fuzz) &&
              (this.bottom <= container.bottom + this.fuzz) &&
