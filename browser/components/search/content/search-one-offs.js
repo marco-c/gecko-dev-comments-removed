@@ -172,7 +172,7 @@ class SearchOneOffs {
 
 
   get buttonWidth() {
-    return this.compact ? 40 : 48;
+    return 48;
   }
 
   
@@ -476,51 +476,45 @@ class SearchOneOffs {
       return;
     }
 
-    
-    let buttonsWidth = this.compact
-      ? this._textboxWidth - this.buttonWidth - this.header.clientWidth
-      : this.popup.clientWidth;
-
-    
-    
-    
-    
-    
-    
-    
-    let scale = window.windowUtils.screenPixelsPerCSSPixel;
-    if (Math.floor(scale) != scale) {
-      --buttonsWidth;
-    }
-
-    
-    
     if (this.compact) {
       this.spacerCompact.setAttribute("flex", "1");
-    } else {
+    }
+
+    if (this.popup) {
+      let buttonsWidth = this.popup.clientWidth;
+
+      
+      
+      
+      
+      
+      
+      
+      let scale = window.windowUtils.screenPixelsPerCSSPixel;
+      if (Math.floor(scale) != scale) {
+        --buttonsWidth;
+      }
+
+      
+      
       this.buttons.style.setProperty("max-width", `${buttonsWidth}px`);
+
+      
+      
+      buttonsWidth = Math.max(buttonsWidth, this.buttonWidth);
+
+      let enginesPerRow = Math.floor(buttonsWidth / this.buttonWidth);
+      
+      
+      
+
+      
+      
+      
+      let rowCount = Math.ceil(oneOffCount / enginesPerRow);
+      let height = rowCount * this.buttonHeight;
+      this.buttons.style.setProperty("height", `${height}px`);
     }
-
-    
-    if (this.compact) {
-      buttonsWidth -= 24;
-    }
-
-    
-    
-    buttonsWidth = Math.max(buttonsWidth, this.buttonWidth);
-
-    let enginesPerRow = Math.floor(buttonsWidth / this.buttonWidth);
-    
-    
-    
-
-    
-    
-    
-    let rowCount = Math.ceil(oneOffCount / enginesPerRow);
-    let height = rowCount * this.buttonHeight;
-    this.buttons.style.setProperty("height", `${height}px`);
     
     let origin = this.telemetryOrigin;
     this.settingsButton.id = origin + "-anon-search-settings";

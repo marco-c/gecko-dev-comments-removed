@@ -13,27 +13,15 @@
 
 
 
-const EXPECTED_REFLOWS_FIRST_OPEN = [
-  {
-    stack: [
-      "__rebuild@chrome://browser/content/search/search-one-offs.js",
-      
+const EXPECTED_REFLOWS_FIRST_OPEN = [];
 
 
-
-
-
-
-
-
-
-
-
-
-    ],
-  },
-];
+const EXPECTED_REFLOWS_SECOND_OPEN = [];
 
 add_task(async function quantumbar() {
-  await runUrlbarTest(true, EXPECTED_REFLOWS_FIRST_OPEN);
+  await runUrlbarTest(
+    true,
+    EXPECTED_REFLOWS_FIRST_OPEN,
+    EXPECTED_REFLOWS_SECOND_OPEN
+  );
 });

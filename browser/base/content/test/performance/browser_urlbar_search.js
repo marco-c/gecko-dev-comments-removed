@@ -13,26 +13,7 @@
 
 
 
-const EXPECTED_REFLOWS_FIRST_OPEN = [
-  {
-    stack: [
-      "__rebuild@chrome://browser/content/search/search-one-offs.js",
-      
-
-
-
-
-
-
-
-
-
-
-
-
-    ],
-  },
-];
+const EXPECTED_REFLOWS_FIRST_OPEN = [];
 
 
 const EXPECTED_REFLOWS_SECOND_OPEN = [];
