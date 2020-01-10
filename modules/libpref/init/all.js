@@ -1084,8 +1084,6 @@ pref("dom.storage.client_validation", true);
 pref("dom.send_after_paint_to_content", false);
 
 
-pref("dom.timeout.background_budget_regeneration_rate", 100);
-
 
 pref("dom.timeout.background_throttling_max_budget", 50);
 
