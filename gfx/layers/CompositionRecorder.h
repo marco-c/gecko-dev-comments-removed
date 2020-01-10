@@ -43,6 +43,28 @@ class RecordedFrame {
 
 
 
+struct CollectedFrame {
+  CollectedFrame(double aTimeOffset, nsCString&& aDataUri)
+      : mTimeOffset(aTimeOffset), mDataUri(std::move(aDataUri)) {}
+
+  double mTimeOffset;
+  nsCString mDataUri;
+};
+
+
+
+
+struct CollectedFrames {
+  CollectedFrames(double aRecordingStart, nsTArray<CollectedFrame>&& aFrames)
+      : mRecordingStart(aRecordingStart), mFrames(std::move(aFrames)) {}
+
+  double mRecordingStart;
+  nsTArray<CollectedFrame> mFrames;
+};
+
+
+
+
 
 
 
@@ -62,6 +84,11 @@ class CompositionRecorder {
 
 
   void WriteCollectedFrames();
+
+  
+
+
+  CollectedFrames GetCollectedFrames();
 
  protected:
   void ClearCollectedFrames();
