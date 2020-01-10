@@ -1527,6 +1527,9 @@ pref("media.autoplay.default", 1);
   #endif
 #endif
 
+
+pref("media.videocontrols.picture-in-picture.audio-toggle.enabled", false);
+
 pref("browser.translation.detectLanguage", false);
 pref("browser.translation.neverForLanguages", "");
 
