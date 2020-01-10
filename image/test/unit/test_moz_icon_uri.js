@@ -10,10 +10,10 @@
 
 
 
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 function run_test() {
-  let ioService = Cc["@mozilla.org/network/io-service;1"].getService(
-    Ci.nsIIOService
-  );
+  let ioService = Services.io;
   let currentSpec = ""; 
   let exception = false; 
   let uri = null; 

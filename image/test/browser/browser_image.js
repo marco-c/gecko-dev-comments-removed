@@ -7,6 +7,7 @@ var gTimer;
 
 
 
+
 function testBFCache() {
   function theTest() {
     var abort = false;

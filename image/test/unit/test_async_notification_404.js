@@ -2,13 +2,14 @@
 
 
 
+
+
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-var ioService = Cc["@mozilla.org/network/io-service;1"].getService(
-  Ci.nsIIOService
-);
+var ioService = Services.io;
 
 XPCOMUtils.defineLazyGetter(this, "uri", function() {
   return ioService.newURI(
