@@ -19,23 +19,24 @@
 #include "mozilla/NullPrincipal.h"
 #include "nsIStringBundle.h"
 
-#include "nsIObserverService.h"
-
 using namespace mozilla;
 
-
-void FramingChecker::ReportError(const char* aMessageTag, nsIURI* aParentURI,
-                                 nsIURI* aChildURI, const nsAString& aPolicy,
-                                 uint64_t aInnerWindowID) {
-  MOZ_ASSERT(aParentURI, "Need a parent URI");
-  if (!aChildURI || !aParentURI) {
+void FramingChecker::ReportError(const char* aMessageTag,
+                                 nsIDocShellTreeItem* aParentDocShellItem,
+                                 nsIURI* aChildURI, const nsAString& aPolicy) {
+  MOZ_ASSERT(aParentDocShellItem, "Need a parent docshell");
+  if (!aChildURI || !aParentDocShellItem) {
     return;
   }
+
+  Document* parentDocument = aParentDocShellItem->GetDocument();
+  MOZ_ASSERT(!parentDocument->NodePrincipal()->IsSystemPrincipal(),
+             "Should not get system principal here.");
 
   
   nsAutoCString parentSpec;
   nsresult rv;
-  rv = aParentURI->GetAsciiSpec(parentSpec);
+  rv = parentDocument->NodePrincipal()->GetAsciiSpec(parentSpec);
   if (NS_FAILED(rv)) {
     return;
   }
@@ -81,7 +82,7 @@ void FramingChecker::ReportError(const char* aMessageTag, nsIURI* aParentURI,
 
   rv = error->InitWithWindowID(message, EmptyString(), EmptyString(), 0, 0,
                                nsIScriptError::errorFlag, "X-Frame-Options",
-                               aInnerWindowID);
+                               parentDocument->InnerWindowID());
   if (NS_FAILED(rv)) {
     return;
   }
@@ -89,79 +90,115 @@ void FramingChecker::ReportError(const char* aMessageTag, nsIURI* aParentURI,
 }
 
 
-void FramingChecker::ReportError(const char* aMessageTag,
-                                 BrowsingContext* aParentContext,
-                                 nsIURI* aChildURI, const nsAString& aPolicy,
-                                 uint64_t aInnerWindowID) {
-  nsCOMPtr<nsIURI> parentURI;
-  if (aParentContext) {
-    BrowsingContext* topContext = aParentContext->Top();
-    WindowGlobalParent* window =
-        topContext->Canonical()->GetCurrentWindowGlobal();
-    if (window) {
-      parentURI = window->GetDocumentURI();
-    }
-  }
-  ReportError(aMessageTag, parentURI, aChildURI, aPolicy, aInnerWindowID);
-}
-
-
 bool FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
-                                                const nsAString& aPolicy) {
+                                                const nsAString& aPolicy,
+                                                nsIDocShell* aDocShell) {
+  nsresult rv;
+  
+  
+  
+  
+  nsCOMPtr<nsIDocShellTreeItem> thisDocShellItem(aDocShell);
+  nsCOMPtr<nsIDocShellTreeItem> parentDocShellItem;
+  nsCOMPtr<nsIDocShellTreeItem> curDocShellItem = thisDocShellItem;
+  nsCOMPtr<Document> topDoc;
+  nsCOMPtr<nsIScriptSecurityManager> ssm =
+      do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID, &rv);
+
+  if (!ssm) {
+    MOZ_CRASH();
+  }
+
   nsCOMPtr<nsIURI> uri;
   aHttpChannel->GetURI(getter_AddRefs(uri));
-
-  nsCOMPtr<nsILoadInfo> loadInfo = aHttpChannel->LoadInfo();
-  uint64_t innerWindowID = loadInfo->GetInnerWindowID();
-  RefPtr<mozilla::dom::BrowsingContext> ctx;
-  loadInfo->GetBrowsingContext(getter_AddRefs(ctx));
 
   
   if (!aPolicy.LowerCaseEqualsLiteral("deny") &&
       !aPolicy.LowerCaseEqualsLiteral("sameorigin")) {
-    ReportError("XFOInvalid", ctx, uri, aPolicy, innerWindowID);
+    nsCOMPtr<nsIDocShellTreeItem> root;
+    curDocShellItem->GetInProcessSameTypeRootTreeItem(getter_AddRefs(root));
+    ReportError("XFOInvalid", root, uri, aPolicy);
+    return true;
+  }
+
+  
+  if (!aDocShell) {
+    return true;
+  }
+
+  
+  
+  
+  
+  nsCOMPtr<nsPIDOMWindowOuter> thisWindow = aDocShell->GetWindow();
+  
+  if (!thisWindow) {
+    return true;
+  }
+
+  
+  
+  nsCOMPtr<nsPIDOMWindowOuter> topWindow =
+      thisWindow->GetInProcessScriptableTop();
+
+  
+  if (thisWindow == topWindow) {
     return true;
   }
 
   
   
   bool checkSameOrigin = aPolicy.LowerCaseEqualsLiteral("sameorigin");
-  nsCOMPtr<nsIScriptSecurityManager> ssm = nsContentUtils::GetSecurityManager();
   nsCOMPtr<nsIURI> topUri;
 
-  while (ctx) {
-    WindowGlobalParent* window = ctx->Canonical()->GetCurrentWindowGlobal();
-    if (window) {
-      if (window->DocumentPrincipal()->IsSystemPrincipal()) {
-        return true;
+  
+  
+  
+  while (NS_SUCCEEDED(curDocShellItem->GetInProcessParent(
+             getter_AddRefs(parentDocShellItem))) &&
+         parentDocShellItem) {
+    nsCOMPtr<nsIDocShell> curDocShell = do_QueryInterface(curDocShellItem);
+    if (curDocShell && curDocShell->GetIsMozBrowser()) {
+      break;
+    }
+
+    topDoc = parentDocShellItem->GetDocument();
+    if (topDoc) {
+      if (topDoc->NodePrincipal()->IsSystemPrincipal()) {
+        
+        break;
       }
-      
-      
-      
-      nsCOMPtr<nsIPrincipal> principal = window->DocumentPrincipal();
-      principal->GetURI(getter_AddRefs(topUri));
 
       if (checkSameOrigin) {
+        topDoc->NodePrincipal()->GetURI(getter_AddRefs(topUri));
         bool isPrivateWin =
-            principal->OriginAttributesRef().mPrivateBrowsingId > 0;
-        nsresult rv = ssm->CheckSameOriginURI(uri, topUri, true, isPrivateWin);
+            topDoc->NodePrincipal()->OriginAttributesRef().mPrivateBrowsingId >
+            0;
+        rv = ssm->CheckSameOriginURI(uri, topUri, true, isPrivateWin);
+
         
         if (NS_FAILED(rv)) {
-          ReportError("XFOSameOrigin", topUri, uri, aPolicy, innerWindowID);
+          ReportError("XFOSameOrigin", curDocShellItem, uri, aPolicy);
           return false;
         }
       }
+    } else {
+      return false;
     }
-    ctx = ctx->GetParent();
+    curDocShellItem = parentDocShellItem;
+  }
+
+  
+  
+  if (curDocShellItem == thisDocShellItem) {
+    return true;
   }
 
   
   
   
   if (aPolicy.LowerCaseEqualsLiteral("deny")) {
-    RefPtr<mozilla::dom::BrowsingContext> ctx;
-    loadInfo->GetBrowsingContext(getter_AddRefs(ctx));
-    ReportError("XFODeny", ctx, uri, aPolicy, innerWindowID);
+    ReportError("XFODeny", curDocShellItem, uri, aPolicy);
     return false;
   }
 
@@ -205,37 +242,27 @@ static bool ShouldIgnoreFrameOptions(nsIChannel* aChannel,
 
 
 bool FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
+                                       nsIDocShell* aDocShell,
                                        nsIContentSecurityPolicy* aCsp) {
-  MOZ_ASSERT(XRE_IsParentProcess(), "x-frame-options check only in parent");
-
-  if (!aChannel) {
+  if (!aChannel || !aDocShell) {
     return true;
   }
 
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  nsContentPolicyType contentType = loadInfo->GetExternalContentPolicyType();
-
-  
-  
-  if (contentType != nsIContentPolicy::TYPE_SUBDOCUMENT) {
-    return true;
-  }
-
-  
-  
   if (ShouldIgnoreFrameOptions(aChannel, aCsp)) {
     return true;
   }
 
-  nsCOMPtr<nsIHttpChannel> httpChannel;
-  nsresult rv = nsContentSecurityUtils::GetHttpChannelFromPotentialMultiPart(
-      aChannel, getter_AddRefs(httpChannel));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return true;
+  nsresult rv;
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
+  if (!httpChannel) {
+    
+    rv = nsDocShell::Cast(aDocShell)->GetHttpChannel(
+        aChannel, getter_AddRefs(httpChannel));
+    if (NS_FAILED(rv)) {
+      return false;
+    }
   }
 
-  
-  
   if (!httpChannel) {
     return true;
   }
@@ -255,19 +282,25 @@ bool FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
   nsCharSeparatedTokenizer tokenizer(xfoHeaderValue, ',');
   while (tokenizer.hasMoreTokens()) {
     const nsAString& tok = tokenizer.nextToken();
-    if (!CheckOneFrameOptionsPolicy(httpChannel, tok)) {
+    if (!CheckOneFrameOptionsPolicy(httpChannel, tok, aDocShell)) {
       
-      
-      
-      nsCOMPtr<nsIURI> uri;
-      httpChannel->GetURI(getter_AddRefs(uri));
-      nsCOMPtr<nsIObserverService> observerService =
-          mozilla::services::GetObserverService();
-      nsAutoString policy(tok);
-      observerService->NotifyObservers(uri, "xfo-on-violate-policy",
-                                       policy.get());
+      httpChannel->Cancel(NS_BINDING_ABORTED);
+      if (aDocShell) {
+        nsCOMPtr<nsIWebNavigation> webNav(do_QueryObject(aDocShell));
+        if (webNav) {
+          nsCOMPtr<nsILoadInfo> loadInfo = httpChannel->LoadInfo();
+          RefPtr<NullPrincipal> principal =
+              NullPrincipal::CreateWithInheritedAttributes(
+                  loadInfo->TriggeringPrincipal());
+
+          LoadURIOptions loadURIOptions;
+          loadURIOptions.mTriggeringPrincipal = principal;
+          webNav->LoadURI(NS_LITERAL_STRING("about:blank"), loadURIOptions);
+        }
+      }
       return false;
     }
   }
+
   return true;
 }

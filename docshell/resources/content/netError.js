@@ -125,7 +125,7 @@ function initPage() {
     document.getElementById("errorTryAgain").style.display = "none";
   }
 
-  if (err == "cspBlocked" || err == "xfoBlocked") {
+  if (err == "cspBlocked") {
     
     
     document.getElementById("errorTryAgain").style.display = "none";

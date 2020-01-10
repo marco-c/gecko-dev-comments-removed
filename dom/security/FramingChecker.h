@@ -14,17 +14,11 @@ class nsIDocShellTreeItem;
 class nsIURI;
 class nsIContentSecurityPolicy;
 
-namespace mozilla {
-namespace dom {
-class BrowsingContext;
-}
-}  
-
 class FramingChecker {
  public:
   
   
-  static bool CheckFrameOptions(nsIChannel* aChannel,
+  static bool CheckFrameOptions(nsIChannel* aChannel, nsIDocShell* aDocShell,
                                 nsIContentSecurityPolicy* aCSP);
 
  protected:
@@ -39,19 +33,13 @@ class FramingChecker {
 
 
 
-
-
-
-
-  static void ReportError(const char* aMessageTag, nsIURI* aParentURI,
-                          nsIURI* aChildURI, const nsAString& aPolicy,
-                          uint64_t aInnerWindowID);
   static void ReportError(const char* aMessageTag,
-                          BrowsingContext* aParentContext, nsIURI* aChildURI,
-                          const nsAString& aPolicy, uint64_t aInnerWindowID);
+                          nsIDocShellTreeItem* aParentDocShellItem,
+                          nsIURI* aChildURI, const nsAString& aPolicy);
 
   static bool CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
-                                         const nsAString& aPolicy);
+                                         const nsAString& aPolicy,
+                                         nsIDocShell* aDocShell);
 };
 
 #endif 
