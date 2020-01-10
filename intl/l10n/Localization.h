@@ -3,7 +3,7 @@
 
 
 
-~
+
 #ifndef mozilla_intl_l10n_Localization_h
 #define mozilla_intl_l10n_Localization_h
 
