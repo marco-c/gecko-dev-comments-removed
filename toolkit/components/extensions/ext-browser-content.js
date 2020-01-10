@@ -373,3 +373,6 @@ if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
     .getInterface(Ci.nsIBrowserChild);
   tabchild.webBrowserChrome = WebBrowserChrome;
 }
+
+
+void content;

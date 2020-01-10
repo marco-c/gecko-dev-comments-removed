@@ -351,9 +351,6 @@ class BasePopup {
       setupBrowser(browser);
       let mm = browser.messageManager;
 
-      
-      mm.loadFrameScript("chrome://browser/content/content.js", true, true);
-
       mm.loadFrameScript(
         "chrome://extensions/content/ext-browser-content.js",
         false,
