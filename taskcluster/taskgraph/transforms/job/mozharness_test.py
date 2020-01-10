@@ -345,7 +345,10 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
     else:
         
         mh_command = [
-            'python2.7',
+            
+            
+            
+            '/usr/bin/python2.7',
             '-u',
             'mozharness/scripts/' + mozharness['script']
         ]
