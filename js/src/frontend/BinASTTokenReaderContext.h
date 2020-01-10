@@ -59,12 +59,15 @@ struct NormalizedInterfaceAndField {
 
 
 struct HuffmanLookup {
-  HuffmanLookup(uint32_t bits, uint8_t bitLength)
+  HuffmanLookup(const uint32_t bits, const uint8_t bitLength)
       
-      : bits(bits & (uint32_t(0xFFFFFFFF) >> (32 - bitLength))),
+      : bits(bitLength == 0
+                 ? 0  
+                 : (bits & (uint32_t(0xFFFFFFFF) >> (32 - bitLength)))),
         bitLength(bitLength) {
     MOZ_ASSERT(bitLength <= 32);
-    MOZ_ASSERT(bits >> bitLength == 0);
+    MOZ_ASSERT_IF(bitLength != 32 ,
+                  this->bits >> bitLength == 0);
   }
 
   
@@ -85,14 +88,14 @@ struct HuffmanLookup {
   
   
   
-  uint32_t bits;
+  const uint32_t bits;
 
   
   
   
   
   
-  uint8_t bitLength;
+  const uint8_t bitLength;
 };
 
 
@@ -108,7 +111,7 @@ struct HuffmanKey {
   HuffmanKey(const uint32_t bits, const uint8_t bitLength)
       : bits(bits), bitLength(bitLength) {
     MOZ_ASSERT(bitLength <= 32);
-    MOZ_ASSERT(bits >> bitLength == 0);
+    MOZ_ASSERT_IF(bitLength != 32 , bits >> bitLength == 0);
   }
 
   
@@ -118,14 +121,14 @@ struct HuffmanKey {
   
   
   
-  uint32_t bits;
+  const uint32_t bits;
 
   
   
   
   
   
-  uint8_t bitLength;
+  const uint8_t bitLength;
 };
 
 
