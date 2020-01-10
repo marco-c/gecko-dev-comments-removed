@@ -114,7 +114,7 @@ root.runParallelAsyncHarness = function(options) {
         });
 
         
-        setTimeout(function() {
+        var concludeSlice = function() {
             tests.forEach(function(data) {
                 
                 cases.forEach(function(name) {
@@ -135,7 +135,10 @@ root.runParallelAsyncHarness = function(options) {
 
             
             setTimeout(runLoop, 50);
-        }, duration);
+        }
+
+        
+        setTimeout(function() {requestAnimationFrame(concludeSlice)},duration);
     }
 
     
