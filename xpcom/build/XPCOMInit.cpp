@@ -12,7 +12,6 @@
 #include "mozilla/Poison.h"
 #include "mozilla/RemoteDecoderManagerChild.h"
 #include "mozilla/SharedThreadPool.h"
-#include "mozilla/VideoDecoderManagerChild.h"
 #include "mozilla/XPCOM.h"
 #include "mozJSComponentLoader.h"
 #include "nsXULAppAPI.h"
@@ -624,7 +623,6 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
     
     NS_ProcessPendingEvents(thread);
     gfxPlatform::ShutdownLayersIPC();
-    mozilla::VideoDecoderManagerChild::Shutdown();
     mozilla::RemoteDecoderManagerChild::Shutdown();
 
     mozilla::scache::StartupCache::DeleteSingleton();

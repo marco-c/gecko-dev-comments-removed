@@ -38,7 +38,7 @@ MediaResult RemoteAudioDecoderChild::InitIPDL(
     const AudioInfo& aAudioInfo,
     const CreateDecoderParams::OptionSet& aOptions) {
   RefPtr<RemoteDecoderManagerChild> manager =
-      RemoteDecoderManagerChild::GetSingleton();
+      RemoteDecoderManagerChild::GetRDDProcessSingleton();
 
   
   

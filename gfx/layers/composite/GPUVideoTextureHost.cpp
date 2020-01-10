@@ -5,7 +5,7 @@
 
 
 #include "GPUVideoTextureHost.h"
-#include "mozilla/VideoDecoderManagerParent.h"
+#include "mozilla/RemoteDecoderManagerParent.h"
 #include "ImageContainer.h"
 #include "mozilla/layers/VideoBridgeParent.h"
 

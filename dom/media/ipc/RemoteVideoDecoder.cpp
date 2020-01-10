@@ -107,7 +107,7 @@ MediaResult RemoteVideoDecoderChild::InitIPDL(
     const VideoInfo& aVideoInfo, float aFramerate,
     const CreateDecoderParams::OptionSet& aOptions) {
   RefPtr<RemoteDecoderManagerChild> manager =
-      RemoteDecoderManagerChild::GetSingleton();
+      RemoteDecoderManagerChild::GetRDDProcessSingleton();
 
   
   

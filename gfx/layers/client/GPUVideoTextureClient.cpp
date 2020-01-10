@@ -5,7 +5,7 @@
 
 
 #include "GPUVideoTextureClient.h"
-#include "mozilla/VideoDecoderManagerChild.h"
+#include "mozilla/RemoteDecoderManagerChild.h"
 #include "mozilla/gfx/2D.h"
 
 namespace mozilla {
@@ -13,7 +13,7 @@ namespace layers {
 
 using namespace gfx;
 
-GPUVideoTextureData::GPUVideoTextureData(VideoDecoderManagerChild* aManager,
+GPUVideoTextureData::GPUVideoTextureData(RemoteDecoderManagerChild* aManager,
                                          const SurfaceDescriptorGPUVideo& aSD,
                                          const gfx::IntSize& aSize)
     : mManager(aManager), mSD(aSD), mSize(aSize) {}

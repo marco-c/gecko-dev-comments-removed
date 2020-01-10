@@ -9,23 +9,56 @@
 
 namespace mozilla {
 
-class RemoteDecoderManagerChild final : public PRemoteDecoderManagerChild {
+class RemoteDecoderManagerChild final : public PRemoteDecoderManagerChild,
+                                        public mozilla::ipc::IShmemAllocator {
   friend class PRemoteDecoderManagerChild;
 
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteDecoderManagerChild)
 
   
-  static RemoteDecoderManagerChild* GetSingleton();
+  static RemoteDecoderManagerChild* GetRDDProcessSingleton();
+  static RemoteDecoderManagerChild* GetGPUProcessSingleton();
 
   
   static nsIThread* GetManagerThread();
   static AbstractThread* GetManagerAbstractThread();
 
   
-  static void InitForContent(
+  
+  already_AddRefed<gfx::SourceSurface> Readback(
+      const SurfaceDescriptorGPUVideo& aSD);
+  void DeallocateSurfaceDescriptorGPUVideo(
+      const SurfaceDescriptorGPUVideo& aSD);
+
+  bool AllocShmem(size_t aSize,
+                  mozilla::ipc::SharedMemory::SharedMemoryType aShmType,
+                  mozilla::ipc::Shmem* aShmem) override {
+    return PRemoteDecoderManagerChild::AllocShmem(aSize, aShmType, aShmem);
+  }
+  bool AllocUnsafeShmem(size_t aSize,
+                        mozilla::ipc::SharedMemory::SharedMemoryType aShmType,
+                        mozilla::ipc::Shmem* aShmem) override {
+    return PRemoteDecoderManagerChild::AllocUnsafeShmem(aSize, aShmType,
+                                                        aShmem);
+  }
+
+  
+  
+  bool DeallocShmem(mozilla::ipc::Shmem& aShmem) override;
+
+  
+  static void InitForRDDProcess(
+      Endpoint<PRemoteDecoderManagerChild>&& aVideoManager);
+  static void InitForGPUProcess(
       Endpoint<PRemoteDecoderManagerChild>&& aVideoManager);
   static void Shutdown();
+
+  
+  
+  
+  
+  void RunWhenGPUProcessRecreated(already_AddRefed<Runnable> aTask);
 
   bool CanSend();
 
@@ -35,11 +68,21 @@ class RemoteDecoderManagerChild final : public PRemoteDecoderManagerChild {
   void ActorDestroy(ActorDestroyReason aWhy) override;
   void ActorDealloc() override;
 
+  void HandleFatalError(const char* aMsg) const override;
+
   PRemoteDecoderChild* AllocPRemoteDecoderChild(
       const RemoteDecoderInfoIPDL& aRemoteDecoderInfo,
       const CreateDecoderParams::OptionSet& aOptions, bool* aSuccess,
       nsCString* aErrorDescription);
   bool DeallocPRemoteDecoderChild(PRemoteDecoderChild* actor);
+
+  PVideoDecoderChild* AllocPVideoDecoderChild(
+      const VideoInfo& aVideoInfo, const float& aFramerate,
+      const CreateDecoderParams::OptionSet& aOptions,
+      const layers::TextureFactoryIdentifier& aIdentifier, bool* aSuccess,
+      nsCString* aBlacklistedD3D11Driver, nsCString* aBlacklistedD3D9Driver,
+      nsCString* aErrorDescription);
+  bool DeallocPVideoDecoderChild(PVideoDecoderChild* actor);
 
  private:
   
@@ -48,7 +91,10 @@ class RemoteDecoderManagerChild final : public PRemoteDecoderManagerChild {
   RemoteDecoderManagerChild() = default;
   ~RemoteDecoderManagerChild() = default;
 
-  static void Open(Endpoint<PRemoteDecoderManagerChild>&& aEndpoint);
+  static void OpenForRDDProcess(
+      Endpoint<PRemoteDecoderManagerChild>&& aEndpoint);
+  static void OpenForGPUProcess(
+      Endpoint<PRemoteDecoderManagerChild>&& aEndpoint);
 
   RefPtr<RemoteDecoderManagerChild> mIPDLSelfRef;
 
