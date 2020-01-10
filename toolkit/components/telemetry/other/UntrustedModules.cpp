@@ -7,18 +7,24 @@
 #include "UntrustedModules.h"
 
 #include "core/TelemetryCommon.h"
-#include "mozilla/dom/Promise.h"
+#include "mozilla/UntrustedModulesProcessor.h"
 #include "mozilla/WinDllServices.h"
+#include "nsCOMPtr.h"
+#include "nsDataHashtable.h"
 #include "nsLocalFile.h"
-#include "nsPrintfCString.h"
 #include "nsProxyRelease.h"
-#include "nsXPCOMCIDInternal.h"
+#include "nsUnicharUtils.h"
+#include "nsXULAppAPI.h"
+
+namespace {
+using IndexMap = nsDataHashtable<nsStringHashKey, uint32_t>;
+}  
 
 namespace mozilla {
 namespace Telemetry {
 
-static const int32_t kUntrustedModuleLoadEventsTelemetryVersion = 1;
-
+static const uint32_t kThirdPartyModulesPingVersion = 1;
+static const uint32_t kMaxModulesArrayLen = 100;
 
 
 
@@ -33,14 +39,21 @@ static void LimitStringLength(nsAString& aStr, size_t aMaxFieldLength) {
     return;
   }
 
-  NS_NAMED_LITERAL_STRING(kEllipses, "...");
+  NS_NAMED_LITERAL_STRING(kEllipsis, "...");
 
-  MOZ_ASSERT(aMaxFieldLength >= kEllipses.Length());
-  size_t cutPos = (aMaxFieldLength - kEllipses.Length()) / 2;
-  size_t rightLen = aMaxFieldLength - kEllipses.Length() - cutPos;
+  if (aMaxFieldLength <= (kEllipsis.Length() + 3)) {
+    
+    
+    
+    aStr.Truncate(aMaxFieldLength);
+    return;
+  }
+
+  size_t cutPos = (aMaxFieldLength - kEllipsis.Length()) / 2;
+  size_t rightLen = aMaxFieldLength - kEllipsis.Length() - cutPos;
   size_t cutLen = aStr.Length() - (cutPos + rightLen);
 
-  aStr.Replace(cutPos, cutLen, kEllipses);
+  aStr.Replace(cutPos, cutLen, kEllipsis);
 }
 
 
@@ -57,7 +70,7 @@ static void LimitStringLength(nsAString& aStr, size_t aMaxFieldLength) {
 
 static bool AddLengthLimitedStringProp(JSContext* cx, JS::HandleObject aObj,
                                        const char* aName, const nsAString& aVal,
-                                       size_t aMaxFieldLength = 260) {
+                                       size_t aMaxFieldLength = MAX_PATH) {
   JS::RootedValue jsval(cx);
   nsAutoString shortVal(aVal);
   LimitStringLength(shortVal, aMaxFieldLength);
@@ -65,6 +78,25 @@ static bool AddLengthLimitedStringProp(JSContext* cx, JS::HandleObject aObj,
   return JS_DefineProperty(cx, aObj, aName, jsval, JSPROP_ENUMERATE);
 };
 
+static JSString* ModuleVersionToJSString(JSContext* aCx,
+                                         const ModuleVersion& aVersion) {
+  uint16_t major, minor, patch, build;
+
+  Tie(major, minor, patch, build) = aVersion.AsTuple();
+
+  NS_NAMED_LITERAL_STRING(dot, ".");
+
+  nsAutoString strVer;
+  strVer.AppendInt(major);
+  strVer.Append(dot);
+  strVer.AppendInt(minor);
+  strVer.Append(dot);
+  strVer.AppendInt(patch);
+  strVer.Append(dot);
+  strVer.AppendInt(build);
+
+  return Common::ToJSString(aCx, strVer);
+}
 
 
 
@@ -79,18 +111,21 @@ static bool AddLengthLimitedStringProp(JSContext* cx, JS::HandleObject aObj,
 
 
 
-template <typename T, size_t N, typename AllocPolicy, typename Converter>
+
+template <typename T, size_t N, typename AllocPolicy, typename Converter,
+          typename... Args>
 static bool VectorToJSArray(JSContext* cx, JS::MutableHandleObject aRet,
                             const Vector<T, N, AllocPolicy>& aContainer,
-                            Converter&& aElementConverter) {
+                            Converter&& aElementConverter, Args&&... aArgs) {
   JS::RootedObject arr(cx, JS_NewArrayObject(cx, 0));
   if (!arr) {
     return false;
   }
 
-  for (size_t i = 0; i < aContainer.length(); ++i) {
+  for (size_t i = 0, l = aContainer.length(); i < l; ++i) {
     JS::RootedValue jsel(cx);
-    if (!aElementConverter(cx, &jsel, aContainer[i])) {
+    if (!aElementConverter(cx, &jsel, aContainer[i],
+                           std::forward<Args>(aArgs)...)) {
       return false;
     }
     if (!JS_DefineElement(cx, arr, i, jsel, JSPROP_ENUMERATE)) {
@@ -102,271 +137,362 @@ static bool VectorToJSArray(JSContext* cx, JS::MutableHandleObject aRet,
   return true;
 }
 
-
-
-
-
-
-
-
-
-static bool ModuleInfoToJSObj(JSContext* cx, JS::MutableHandleObject aRet,
-                              const ModuleLoadEvent::ModuleInfo& aModInfo) {
-  JS::RootedObject modObj(cx, JS_NewObject(cx, nullptr));
-  if (!modObj) {
+static bool SerializeModule(JSContext* aCx, JS::MutableHandleValue aElement,
+                            const RefPtr<ModuleRecord>& aModule) {
+  if (!aModule) {
     return false;
   }
 
-  JS::RootedValue jsval(cx);
-
-  nsPrintfCString strBaseAddress("0x%p", (void*)aModInfo.mBase);
-  jsval.setString(Common::ToJSString(cx, strBaseAddress));
-  if (!JS_DefineProperty(cx, modObj, "baseAddress", jsval, JSPROP_ENUMERATE)) {
+  JS::RootedObject obj(aCx, JS_NewPlainObject(aCx));
+  if (!obj) {
     return false;
   }
 
-  jsval.setString(Common::ToJSString(cx, aModInfo.mFileVersion));
-  if (!JS_DefineProperty(cx, modObj, "fileVersion", jsval, JSPROP_ENUMERATE)) {
+  if (!AddLengthLimitedStringProp(aCx, obj, "resolvedDllName",
+                                  aModule->mSanitizedDllName)) {
     return false;
   }
 
-  if (!AddLengthLimitedStringProp(cx, modObj, "loaderName",
-                                  aModInfo.mLdrName)) {
-    return false;
-  }
-
-  if (!AddLengthLimitedStringProp(cx, modObj, "moduleName",
-                                  aModInfo.mFilePathClean)) {
-    return false;
-  }
-
-  if (aModInfo.mLoadDurationMS.isSome()) {
-    jsval.setNumber(aModInfo.mLoadDurationMS.value());
-    if (!JS_DefineProperty(cx, modObj, "loadDurationMS", jsval,
+  if (aModule->mVersion.isSome()) {
+    JS::RootedValue jsModuleVersion(aCx);
+    jsModuleVersion.setString(
+        ModuleVersionToJSString(aCx, aModule->mVersion.ref()));
+    if (!JS_DefineProperty(aCx, obj, "fileVersion", jsModuleVersion,
                            JSPROP_ENUMERATE)) {
       return false;
     }
   }
 
-  jsval.setNumber((uint32_t)aModInfo.mTrustFlags);
-  if (!JS_DefineProperty(cx, modObj, "moduleTrustFlags", jsval,
+  if (aModule->mVendorInfo.isSome()) {
+    const char* propName;
+
+    const VendorInfo& vendorInfo = aModule->mVendorInfo.ref();
+    switch (vendorInfo.mSource) {
+      case VendorInfo::Source::Signature:
+        propName = "signedBy";
+        break;
+      case VendorInfo::Source::VersionInfo:
+        propName = "companyName";
+        break;
+      default:
+        MOZ_ASSERT_UNREACHABLE("Unknown VendorInfo Source!");
+        return false;
+    }
+
+    MOZ_ASSERT(!vendorInfo.mVendor.IsEmpty());
+    if (vendorInfo.mVendor.IsEmpty()) {
+      return false;
+    }
+
+    if (!AddLengthLimitedStringProp(aCx, obj, propName, vendorInfo.mVendor)) {
+      return false;
+    }
+  }
+
+  JS::RootedValue jsTrustFlags(aCx);
+  jsTrustFlags.setNumber(static_cast<uint32_t>(aModule->mTrustFlags));
+  if (!JS_DefineProperty(aCx, obj, "trustFlags", jsTrustFlags,
                          JSPROP_ENUMERATE)) {
     return false;
   }
 
-  aRet.set(modObj);
+  aElement.setObject(*obj);
   return true;
 }
 
-
-
-
-
-
-
-
-
-static bool ModuleLoadEventToJSArray(JSContext* cx, JS::MutableHandleValue aRet,
-                                     const ModuleLoadEvent& aEvent) {
+static bool SerializeEvent(JSContext* aCx, JS::MutableHandleValue aElement,
+                           const ProcessedModuleLoadEvent& aEvent,
+                           const IndexMap& aModuleIndices) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  JS::RootedValue jsval(cx);
-  JS::RootedObject eObj(cx, JS_NewObject(cx, nullptr));
-  if (!eObj) {
+  JS::RootedObject obj(aCx, JS_NewPlainObject(aCx));
+  if (!obj) {
     return false;
   }
 
-  jsval.setNumber((uint32_t)aEvent.mThreadID);
-  if (!JS_DefineProperty(cx, eObj, "threadID", jsval, JSPROP_ENUMERATE)) {
-    return false;
-  }
-
-  jsval.setBoolean(aEvent.mIsStartup);
-  if (!JS_DefineProperty(cx, eObj, "isStartup", jsval, JSPROP_ENUMERATE)) {
-    return false;
-  }
-
+  JS::RootedValue jsProcessUptimeMS(aCx);
   
-  jsval.setNumber((double)aEvent.mProcessUptimeMS);
-  if (!JS_DefineProperty(cx, eObj, "processUptimeMS", jsval,
+  jsProcessUptimeMS.setNumber(static_cast<double>(aEvent.mProcessUptimeMS));
+  if (!JS_DefineProperty(aCx, obj, "processUptimeMS", jsProcessUptimeMS,
                          JSPROP_ENUMERATE)) {
     return false;
   }
 
-  
-  if (::GetCurrentThreadId() == aEvent.mThreadID) {
-    jsval.setString(Common::ToJSString(cx, NS_LITERAL_STRING("Main Thread")));
+  if (aEvent.mLoadDurationMS) {
+    JS::RootedValue jsLoadDurationMS(aCx);
+    jsLoadDurationMS.setNumber(aEvent.mLoadDurationMS.value());
+    if (!JS_DefineProperty(aCx, obj, "loadDurationMS", jsLoadDurationMS,
+                           JSPROP_ENUMERATE)) {
+      return false;
+    }
+  }
+
+  JS::RootedValue jsThreadId(aCx);
+  jsThreadId.setNumber(static_cast<uint32_t>(aEvent.mThreadId));
+  if (!JS_DefineProperty(aCx, obj, "threadID", jsThreadId, JSPROP_ENUMERATE)) {
+    return false;
+  }
+
+  nsDependentCString effectiveThreadName;
+  if (aEvent.mThreadId == ::GetCurrentThreadId()) {
+    effectiveThreadName.Rebind(NS_LITERAL_CSTRING("Main Thread"), 0);
   } else {
-    jsval.setString(Common::ToJSString(cx, aEvent.mThreadName));
+    effectiveThreadName.Rebind(aEvent.mThreadName, 0);
   }
-  if (!JS_DefineProperty(cx, eObj, "threadName", jsval, JSPROP_ENUMERATE)) {
+
+  if (!effectiveThreadName.IsEmpty()) {
+    JS::RootedValue jsThreadName(aCx);
+    jsThreadName.setString(Common::ToJSString(aCx, effectiveThreadName));
+    if (!JS_DefineProperty(aCx, obj, "threadName", jsThreadName,
+                           JSPROP_ENUMERATE)) {
+      return false;
+    }
+  }
+
+  
+  
+  if (!aEvent.mRequestedDllName.IsEmpty() &&
+      !aEvent.mRequestedDllName.Equals(aEvent.mModule->mSanitizedDllName,
+                                       nsCaseInsensitiveStringComparator())) {
+    if (!AddLengthLimitedStringProp(aCx, obj, "requestedDllName",
+                                    aEvent.mRequestedDllName)) {
+      return false;
+    }
+  }
+
+  nsAutoString strBaseAddress;
+  strBaseAddress.AppendLiteral(u"0x");
+  strBaseAddress.AppendInt(aEvent.mBaseAddress, 16);
+
+  JS::RootedValue jsBaseAddress(aCx);
+  jsBaseAddress.setString(Common::ToJSString(aCx, strBaseAddress));
+  if (!JS_DefineProperty(aCx, obj, "baseAddress", jsBaseAddress,
+                         JSPROP_ENUMERATE)) {
     return false;
   }
 
-  JS::RootedObject modulesArray(cx);
-  bool ok = VectorToJSArray(cx, &modulesArray, aEvent.mModules,
-                            [](JSContext* cx, JS::MutableHandleValue aRet,
-                               const ModuleLoadEvent::ModuleInfo& aModInfo) {
-                              JS::RootedObject obj(cx);
-                              if (!ModuleInfoToJSObj(cx, &obj, aModInfo)) {
-                                return false;
-                              }
-                              aRet.setObject(*obj);
-                              return true;
-                            });
-  if (!ok) {
+  nsAutoString resolvedDllPath;
+  const nsCOMPtr<nsIFile>& resolvedDllName = aEvent.mModule->mResolvedDllName;
+  if (!resolvedDllName ||
+      NS_FAILED(resolvedDllName->GetPath(resolvedDllPath))) {
     return false;
   }
 
-  if (!JS_DefineProperty(cx, eObj, "modules", modulesArray, JSPROP_ENUMERATE)) {
+  uint32_t index;
+  if (!aModuleIndices.Get(resolvedDllPath, &index)) {
     return false;
   }
 
-  aRet.setObject(*eObj);
+  JS::RootedValue jsModuleIndex(aCx);
+  jsModuleIndex.setNumber(index);
+  if (!JS_DefineProperty(aCx, obj, "moduleIndex", jsModuleIndex,
+                         JSPROP_ENUMERATE)) {
+    return false;
+  }
+
+  aElement.setObject(*obj);
+
   return true;
 }
 
-
-
-
-
-
-
-
-
-nsresult GetUntrustedModuleLoadEventsJSValue(
-    const UntrustedModuleLoadTelemetryData& aData, JSContext* cx,
-    JS::MutableHandle<JS::Value> aRet) {
-  if (aData.mEvents.empty()) {
-    aRet.setNull();
-    return NS_OK;
+static nsresult GetPerProcObject(JSContext* aCx, const IndexMap& aModuleIndices,
+                                 const UntrustedModulesData& aData,
+                                 JS::MutableHandleObject aObj) {
+  nsDependentCString strProcType;
+  if (aData.mProcessType == GeckoProcessType_Default) {
+    strProcType.Rebind(NS_LITERAL_CSTRING("browser"), 0);
+  } else {
+    strProcType.Rebind(XRE_ChildProcessTypeToString(aData.mProcessType));
   }
 
-  JS::RootedValue jsval(cx);
-  JS::RootedObject mainObj(cx, JS_NewObject(cx, nullptr));
-  if (!mainObj) {
-    return NS_ERROR_FAILURE;
-  }
-
-  jsval.setNumber((uint32_t)aData.mErrorModules);
-  if (!JS_DefineProperty(cx, mainObj, "errorModules", jsval,
+  JS::RootedValue jsProcType(aCx);
+  jsProcType.setString(Common::ToJSString(aCx, strProcType));
+  if (!JS_DefineProperty(aCx, aObj, "processType", jsProcType,
                          JSPROP_ENUMERATE)) {
     return NS_ERROR_FAILURE;
   }
 
-  jsval.setNumber((uint32_t)kUntrustedModuleLoadEventsTelemetryVersion);
-  if (!JS_DefineProperty(cx, mainObj, "structVersion", jsval,
-                         JSPROP_ENUMERATE)) {
+  JS::RootedValue jsElapsed(aCx);
+  jsElapsed.setNumber(aData.mElapsed.ToSecondsSigDigits());
+  if (!JS_DefineProperty(aCx, aObj, "elapsed", jsElapsed, JSPROP_ENUMERATE)) {
     return NS_ERROR_FAILURE;
   }
 
   if (aData.mXULLoadDurationMS.isSome()) {
-    jsval.setNumber(aData.mXULLoadDurationMS.value());
-    if (!JS_DefineProperty(cx, mainObj, "xulLoadDurationMS", jsval,
+    JS::RootedValue jsXulLoadDurationMS(aCx);
+    jsXulLoadDurationMS.setNumber(aData.mXULLoadDurationMS.value());
+    if (!JS_DefineProperty(aCx, aObj, "xulLoadDurationMS", jsXulLoadDurationMS,
                            JSPROP_ENUMERATE)) {
       return NS_ERROR_FAILURE;
     }
   }
 
-  JS::RootedObject eventsArray(cx);
-  if (!VectorToJSArray(cx, &eventsArray, aData.mEvents,
-                       &ModuleLoadEventToJSArray)) {
+  JS::RootedValue jsSanitizationFailures(aCx);
+  jsSanitizationFailures.setNumber(aData.mSanitizationFailures);
+  if (!JS_DefineProperty(aCx, aObj, "sanitizationFailures",
+                         jsSanitizationFailures, JSPROP_ENUMERATE)) {
     return NS_ERROR_FAILURE;
   }
 
-  if (!JS_DefineProperty(cx, mainObj, "events", eventsArray,
+  JS::RootedValue jsTrustTestFailures(aCx);
+  jsTrustTestFailures.setNumber(aData.mTrustTestFailures);
+  if (!JS_DefineProperty(aCx, aObj, "trustTestFailures", jsTrustTestFailures,
                          JSPROP_ENUMERATE)) {
     return NS_ERROR_FAILURE;
   }
 
-  JS::RootedObject combinedStacksObj(cx,
-                                     CreateJSStackObject(cx, aData.mStacks));
+  JS::RootedObject eventsArray(aCx);
+  if (!VectorToJSArray(aCx, &eventsArray, aData.mEvents, &SerializeEvent,
+                       aModuleIndices)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  if (!JS_DefineProperty(aCx, aObj, "events", eventsArray, JSPROP_ENUMERATE)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  JS::RootedObject combinedStacksObj(aCx,
+                                     CreateJSStackObject(aCx, aData.mStacks));
   if (!combinedStacksObj) {
     return NS_ERROR_FAILURE;
   }
 
-  if (!JS_DefineProperty(cx, mainObj, "combinedStacks", combinedStacksObj,
+  if (!JS_DefineProperty(aCx, aObj, "combinedStacks", combinedStacksObj,
+                         JSPROP_ENUMERATE)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  return NS_OK;
+}
+
+
+
+
+
+
+
+
+
+static nsresult GetUntrustedModuleLoadEventsJSValue(
+    const UntrustedModulesData& aData, JSContext* aCx,
+    JS::MutableHandleValue aRet) {
+  if (aData.mEvents.empty()) {
+    aRet.setNull();
+    return NS_OK;
+  }
+
+  if (aData.mModules.Count() > kMaxModulesArrayLen) {
+    return NS_ERROR_CANNOT_CONVERT_DATA;
+  }
+
+  JS::RootedObject mainObj(aCx, JS_NewPlainObject(aCx));
+  if (!mainObj) {
+    return NS_ERROR_FAILURE;
+  }
+
+  JS::RootedValue jsVersion(aCx);
+  jsVersion.setNumber(kThirdPartyModulesPingVersion);
+  if (!JS_DefineProperty(aCx, mainObj, "structVersion", jsVersion,
+                         JSPROP_ENUMERATE)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  IndexMap indexMap;
+  uint32_t curModulesArrayIdx = 0;
+
+  JS::RootedObject modulesArray(aCx, JS_NewArrayObject(aCx, 0));
+  if (!modulesArray) {
+    return NS_ERROR_FAILURE;
+  }
+
+  JS::RootedObject perProcObjContainer(aCx, JS_NewPlainObject(aCx));
+  if (!perProcObjContainer) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  for (auto iter = aData.mModules.ConstIter(); !iter.Done(); iter.Next()) {
+    auto addPtr = indexMap.LookupForAdd(iter.Key());
+    if (!addPtr) {
+      addPtr.OrInsert([curModulesArrayIdx]() { return curModulesArrayIdx; });
+
+      JS::RootedValue jsModule(aCx);
+      if (!SerializeModule(aCx, &jsModule, iter.Data()) ||
+          !JS_DefineElement(aCx, modulesArray, curModulesArrayIdx, jsModule,
+                            JSPROP_ENUMERATE)) {
+        return NS_ERROR_FAILURE;
+      }
+
+      ++curModulesArrayIdx;
+    }
+  }
+
+  JS::RootedObject perProcObj(aCx, JS_NewPlainObject(aCx));
+  if (!perProcObj) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsresult rv = GetPerProcObject(aCx, indexMap, aData, &perProcObj);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  nsAutoCString strPid;
+  strPid.AppendLiteral("0x");
+  strPid.AppendInt(static_cast<uint32_t>(aData.mPid), 16);
+
+  JS::RootedValue jsPerProcObjValue(aCx);
+  jsPerProcObjValue.setObject(*perProcObj);
+  if (!JS_DefineProperty(aCx, perProcObjContainer, strPid.get(),
+                         jsPerProcObjValue, JSPROP_ENUMERATE)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  JS::RootedValue jsModulesArrayValue(aCx);
+  jsModulesArrayValue.setObject(*modulesArray);
+  if (!JS_DefineProperty(aCx, mainObj, "modules", jsModulesArrayValue,
+                         JSPROP_ENUMERATE)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  JS::RootedValue jsPerProcObjContainerValue(aCx);
+  jsPerProcObjContainerValue.setObject(*perProcObjContainer);
+  if (!JS_DefineProperty(aCx, mainObj, "processes", jsPerProcObjContainerValue,
                          JSPROP_ENUMERATE)) {
     return NS_ERROR_FAILURE;
   }
 
   aRet.setObject(*mainObj);
-
   return NS_OK;
 }
 
-class GetUntrustedModulesMainThreadRunnable final : public Runnable {
-  nsMainThreadPtrHandle<dom::Promise> mPromise;
-  bool mDataOK;
-  UntrustedModuleLoadTelemetryData mData;
-  nsCOMPtr<nsIThread> mWorkerThread;
+static void Serialize(Maybe<UntrustedModulesData>&& aData,
+                      RefPtr<dom::Promise>&& aPromise) {
+  MOZ_ASSERT(NS_IsMainThread());
 
- public:
-  GetUntrustedModulesMainThreadRunnable(
-      const nsMainThreadPtrHandle<dom::Promise>& aPromise, bool aDataOK,
-      UntrustedModuleLoadTelemetryData&& aData)
-      : Runnable("GetUntrustedModulesMainThreadRunnable"),
-        mPromise(aPromise),
-        mDataOK(aDataOK),
-        mData(std::move(aData)),
-        mWorkerThread(do_GetCurrentThread()) {
-    MOZ_ASSERT(!NS_IsMainThread());
+  dom::AutoJSAPI jsapi;
+  if (NS_WARN_IF(!jsapi.Init(aPromise->GetGlobalObject()))) {
+    aPromise->MaybeReject(NS_ERROR_FAILURE);
+    return;
   }
 
-  NS_IMETHOD
-  Run() override {
-    MOZ_ASSERT(NS_IsMainThread());
-
-    mWorkerThread->Shutdown();
-
-    dom::AutoJSAPI jsapi;
-    if (NS_WARN_IF(!jsapi.Init(mPromise->GetGlobalObject()))) {
-      mPromise->MaybeReject(NS_ERROR_FAILURE);
-      return NS_OK;
-    }
-
-    if (!mDataOK) {
-      mPromise->MaybeReject(NS_ERROR_FAILURE);
-      return NS_OK;
-    }
-
-    JSContext* cx = jsapi.cx();
-    JS::RootedValue jsval(cx);
-
-    nsresult rv = GetUntrustedModuleLoadEventsJSValue(mData, cx, &jsval);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      mPromise->MaybeReject(rv);
-      return NS_OK;
-    }
-
-    mPromise->MaybeResolve(jsval);
-    return NS_OK;
-  }
-};
-
-class GetUntrustedModulesTelemetryDataRunnable final : public Runnable {
-  nsMainThreadPtrHandle<dom::Promise> mPromise;
-
- public:
-  explicit GetUntrustedModulesTelemetryDataRunnable(
-      const nsMainThreadPtrHandle<dom::Promise>& aPromise)
-      : Runnable("GetUntrustedModulesTelemetryDataRunnable"),
-        mPromise(aPromise) {
-    MOZ_ASSERT(NS_IsMainThread());
+  if (aData.isNothing()) {
+    aPromise->MaybeReject(NS_ERROR_NOT_AVAILABLE);
+    return;
   }
 
-  NS_IMETHOD
-  Run() override {
-    MOZ_ASSERT(!NS_IsMainThread());
-    RefPtr<DllServices> dllSvc(DllServices::Get());
-    UntrustedModuleLoadTelemetryData data;
-    bool ok = dllSvc->GetUntrustedModuleTelemetryData(data);
+  JSContext* cx = jsapi.cx();
+  JS::RootedValue jsval(cx);
 
-    
-    return NS_DispatchToMainThread(new GetUntrustedModulesMainThreadRunnable(
-        mPromise, ok, std::move(data)));
+  nsresult rv = GetUntrustedModuleLoadEventsJSValue(aData.ref(), cx, &jsval);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    aPromise->MaybeReject(rv);
+    return;
   }
-};
+
+  aPromise->MaybeResolve(jsval);
+}
 
 nsresult GetUntrustedModuleLoadEvents(JSContext* cx, dom::Promise** aPromise) {
   
@@ -376,31 +502,21 @@ nsresult GetUntrustedModuleLoadEvents(JSContext* cx, dom::Promise** aPromise) {
   }
 
   ErrorResult result;
-  RefPtr<dom::Promise> promise = dom::Promise::Create(global, result);
+  RefPtr<dom::Promise> promise(dom::Promise::Create(global, result));
   if (NS_WARN_IF(result.Failed())) {
     return result.StealNSResult();
   }
 
-  
-  nsCOMPtr<nsIThread> workThread;
-  nsresult rv = NS_NewNamedThread("UntrustedDLLs", getter_AddRefs(workThread));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    promise->MaybeReject(NS_ERROR_FAILURE);
-    return NS_OK;
-  }
+  RefPtr<DllServices> dllSvc(DllServices::Get());
+  dllSvc->GetUntrustedModulesData()->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [promise](Maybe<UntrustedModulesData>&& aData) mutable {
+        Serialize(std::move(aData), std::move(promise));
+      },
+      [promise](nsresult aRv) { promise->MaybeReject(aRv); });
 
-  
-  
-  nsMainThreadPtrHandle<dom::Promise> mainThreadPromise(
-      new nsMainThreadPtrHolder<dom::Promise>(
-          "Telemetry::UntrustedModuleLoadEvents::Promise", promise));
-
-  nsCOMPtr<nsIRunnable> runnable =
-      new GetUntrustedModulesTelemetryDataRunnable(mainThreadPromise);
   promise.forget(aPromise);
-
-  return workThread->Dispatch(runnable.forget(),
-                              nsIEventTarget::DISPATCH_NORMAL);
+  return NS_OK;
 }
 
 }  
