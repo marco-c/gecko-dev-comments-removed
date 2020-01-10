@@ -149,6 +149,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
   
   
   ["restyleSearches", false],
+
+  
+  ["view.stripHttps", false],
 ]);
 const PREF_OTHER_DEFAULTS = new Map([
   ["keyword.enabled", true],
