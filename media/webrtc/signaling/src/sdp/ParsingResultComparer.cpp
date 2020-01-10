@@ -45,7 +45,6 @@ bool ParsingResultComparer::Compare(const Sdp& rsdparsaSdp, const Sdp& sipccSdp,
                                     const std::string& originalSdp,
                                     const SdpComparisonResult expect) {
   mOriginalSdp = originalSdp;
-
   const std::string sipccSdpStr = sipccSdp.ToString();
   const std::string rsdparsaSdpStr = rsdparsaSdp.ToString();
 
@@ -299,9 +298,9 @@ std::string ParsingResultComparer::GetAttributeLines(
   
   
   
-  std::regex customRtcpFbLines("a\\=rtcp\\-fb\\:(\\d+|\\*).* x\\-.*");
+  std::regex customRtcpFbLines(R"(a\=rtcp\-fb\:(\d+|\*).* x\-.*)");
 
-  for (auto line : lines) {
+  for (auto& line : lines) {
     if (line.find("m=") == 0) {
       if (level > currentLevel) {
         attrLines.clear();
