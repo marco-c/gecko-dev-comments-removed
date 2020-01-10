@@ -253,35 +253,6 @@ CSPService::AsyncOnChannelRedirect(nsIChannel* oldChannel,
   nsCOMPtr<nsILoadInfo> loadInfo = oldChannel->LoadInfo();
 
   
-  
-  
-  nsCOMPtr<nsIContentSecurityPolicy> cspToInherit = loadInfo->GetCspToInherit();
-  if (cspToInherit) {
-    bool allowsNavigateTo = false;
-    rv = cspToInherit->GetAllowsNavigateTo(newUri, loadInfo,
-                                           true,  
-                                           false, 
-                                           &allowsNavigateTo);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    if (!allowsNavigateTo) {
-      oldChannel->Cancel(NS_ERROR_CSP_NAVIGATE_TO_VIOLATION);
-      return NS_OK;
-    }
-  }
-
-  
-  
-  
-  
-  
-  nsContentPolicyType policyType = loadInfo->InternalContentPolicyType();
-  if (!StaticPrefs::security_csp_enable() ||
-      !subjectToCSP(newUri, policyType)) {
-    return NS_OK;
-  }
-
-  
 
 
 
@@ -312,6 +283,36 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
                                            nsIURI* aNewURI,
                                            nsILoadInfo* aLoadInfo,
                                            Maybe<nsresult>& aCancelCode) {
+  
+  
+  
+  nsCOMPtr<nsIContentSecurityPolicy> cspToInherit =
+      aLoadInfo->GetCspToInherit();
+  if (cspToInherit) {
+    bool allowsNavigateTo = false;
+    nsresult rv = cspToInherit->GetAllowsNavigateTo(
+        aNewURI, aLoadInfo, true, 
+        false,                    
+        &allowsNavigateTo);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if (!allowsNavigateTo) {
+      aCancelCode = Some(NS_ERROR_CSP_NAVIGATE_TO_VIOLATION);
+      return NS_OK;
+    }
+  }
+
+  
+  
+  
+  
+  
+  nsContentPolicyType policyType = aLoadInfo->InternalContentPolicyType();
+  if (!StaticPrefs::security_csp_enable() ||
+      !subjectToCSP(aNewURI, policyType)) {
+    return NS_OK;
+  }
+
   nsCOMPtr<nsICSPEventListener> cspEventListener;
   nsresult rv =
       aLoadInfo->GetCspEventListener(getter_AddRefs(cspEventListener));
@@ -321,7 +322,6 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
   rv = aLoadInfo->GetCspNonce(cspNonce);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
-  nsContentPolicyType policyType = aLoadInfo->InternalContentPolicyType();
   bool isPreload = nsContentUtils::IsPreloadType(policyType);
 
   
