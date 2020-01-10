@@ -161,6 +161,11 @@ class SpecialPowersAPI extends JSWindowActorChild {
     this._extensionListeners = null;
   }
 
+  
+  toJSON() {
+    return {};
+  }
+
   receiveMessage(message) {
     switch (message.name) {
       case "Assert":
@@ -1141,45 +1146,81 @@ class SpecialPowersAPI extends JSWindowActorChild {
     this._getMUDV(window).stopEmulatingMedium();
   }
 
-  snapshotWindowWithOptions(win, rect, bgcolor, options) {
-    var el = this.document.createElementNS(
-      "http://www.w3.org/1999/xhtml",
-      "canvas"
+  
+  
+  
+  
+  
+  snapshotWindowWithOptions(content, rect, bgcolor, options) {
+    function getImageData(rect, bgcolor, options) {
+      let el = content.document.createElementNS(
+        "http://www.w3.org/1999/xhtml",
+        "canvas"
+      );
+      if (rect === undefined) {
+        rect = {
+          top: content.scrollY,
+          left: content.scrollX,
+          width: content.innerWidth,
+          height: content.innerHeight,
+        };
+      }
+      if (bgcolor === undefined) {
+        bgcolor = "rgb(255,255,255)";
+      }
+      if (options === undefined) {
+        options = {};
+      }
+
+      el.width = rect.width;
+      el.height = rect.height;
+      let ctx = el.getContext("2d");
+
+      let flags = 0;
+      for (let option in options) {
+        flags |= options[option] && ctx[option];
+      }
+
+      ctx.drawWindow(
+        content,
+        rect.left,
+        rect.top,
+        rect.width,
+        rect.height,
+        bgcolor,
+        flags
+      );
+
+      return ctx.getImageData(0, 0, el.width, el.height);
+    }
+
+    let toCanvas = imageData => {
+      let el = this.document.createElementNS(
+        "http://www.w3.org/1999/xhtml",
+        "canvas"
+      );
+      el.width = imageData.width;
+      el.height = imageData.height;
+
+      let ctx = el.getContext("2d");
+      ctx.putImageData(imageData, 0, 0);
+
+      return el;
+    };
+
+    if (Window.isInstance(content)) {
+      
+      return toCanvas(getImageData(rect, bgcolor, options));
+    }
+
+    
+    
+    
+    
+    
+    return this.spawn(content, [rect, bgcolor, options], getImageData).then(
+      toCanvas
     );
-    if (rect === undefined) {
-      rect = {
-        top: win.scrollY,
-        left: win.scrollX,
-        width: win.innerWidth,
-        height: win.innerHeight,
-      };
-    }
-    if (bgcolor === undefined) {
-      bgcolor = "rgb(255,255,255)";
-    }
-    if (options === undefined) {
-      options = {};
-    }
-
-    el.width = rect.width;
-    el.height = rect.height;
-    var ctx = el.getContext("2d");
-    var flags = 0;
-
-    for (var option in options) {
-      flags |= options[option] && ctx[option];
-    }
-
-    ctx.drawWindow(
-      win,
-      rect.left,
-      rect.top,
-      rect.width,
-      rect.height,
-      bgcolor,
-      flags
-    );
-    return el;
   }
 
   snapshotWindow(win, withCaret, rect, bgcolor) {
@@ -1294,6 +1335,10 @@ class SpecialPowersAPI extends JSWindowActorChild {
 
     this._os = Services.appinfo.OS;
     return this._os;
+  }
+
+  get useRemoteSubframes() {
+    return this.docShell.nsILoadContext.useRemoteSubframes;
   }
 
   addSystemEventListener(target, type, listener, useCapture) {
