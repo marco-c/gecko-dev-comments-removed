@@ -99,7 +99,7 @@ class RDDProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   
   
-  static bool StaticFillMacSandboxInfo(MacSandboxInfo& aInfo);
+  static void StaticFillMacSandboxInfo(MacSandboxInfo& aInfo);
 
   
   static MacSandboxType GetMacSandboxType();
@@ -130,7 +130,7 @@ class RDDProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   bool IsMacSandboxLaunchEnabled() override { return sLaunchWithMacSandbox; }
 
   
-  bool FillMacSandboxInfo(MacSandboxInfo& aInfo) override;
+  void FillMacSandboxInfo(MacSandboxInfo& aInfo) override;
 #endif
 
   DISALLOW_COPY_AND_ASSIGN(RDDProcessHost);
