@@ -375,16 +375,6 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
 
 
 
-
-  bool IsLikelyToBeCustomElement(nsAtom* aTypeAtom) const {
-    return mCustomDefinitions.GetWeak(aTypeAtom) ||
-           mElementCreationCallbacks.GetWeak(aTypeAtom);
-  }
-
-  
-
-
-
   CustomElementDefinition* LookupCustomElementDefinition(nsAtom* aNameAtom,
                                                          int32_t aNameSpaceID,
                                                          nsAtom* aTypeAtom);
