@@ -1048,7 +1048,8 @@ var UITour = {
 
 
 
-  _setMenuStateForAnnotation(aWindow, aShouldOpen, aMenuName) {
+
+  _setMenuStateForAnnotation(aWindow, aShouldOpen, aMenuName, aOptions = {}) {
     log.debug("_setMenuStateForAnnotation: Menu is ", aMenuName);
     log.debug(
       "_setMenuStateForAnnotation: Menu is expected to be:",
@@ -1071,7 +1072,7 @@ var UITour = {
     if (aShouldOpen) {
       log.debug("_setMenuStateForAnnotation: Opening the menu");
       promise = new Promise(resolve => {
-        this.showMenu(aWindow, aMenuName, resolve);
+        this.showMenu(aWindow, aMenuName, resolve, aOptions);
       });
     } else if (!this.noautohideMenus.has(aMenuName)) {
       
@@ -1092,7 +1093,8 @@ var UITour = {
 
 
 
-  async _ensureTarget(aChromeWindow, aTarget) {
+
+  async _ensureTarget(aChromeWindow, aTarget, aOptions = {}) {
     let shouldOpenAppMenu = false;
     let shouldOpenPageActionPanel = false;
     if (this.targetIsInAppMenu(aTarget)) {
@@ -1144,7 +1146,8 @@ var UITour = {
       promise = this._setMenuStateForAnnotation(
         aChromeWindow,
         true,
-        menuToOpen
+        menuToOpen,
+        aOptions
       );
     }
     return promise;
@@ -1184,7 +1187,8 @@ var UITour = {
 
 
 
-  async showHighlight(aChromeWindow, aTarget, aEffect = "none") {
+
+  async showHighlight(aChromeWindow, aTarget, aEffect = "none", aOptions = {}) {
     let showHighlightElement = aAnchorEl => {
       let highlighter = aChromeWindow.document.getElementById(
         "UITourHighlight"
@@ -1266,7 +1270,7 @@ var UITour = {
     };
 
     try {
-      await this._ensureTarget(aChromeWindow, aTarget);
+      await this._ensureTarget(aChromeWindow, aTarget, aOptions);
       let anchorEl = await this._correctAnchor(aChromeWindow, aTarget);
       showHighlightElement(anchorEl);
     } catch (e) {
@@ -1452,7 +1456,7 @@ var UITour = {
     this._setMenuStateForAnnotation(aWindow, false, "pageActionPanel");
   },
 
-  showMenu(aWindow, aMenuName, aOpenCallback = null) {
+  showMenu(aWindow, aMenuName, aOpenCallback = null, aOptions = {}) {
     log.debug("showMenu:", aMenuName);
     function openMenuButton(aMenuBtn) {
       if (!aMenuBtn || !aMenuBtn.hasMenu() || aMenuBtn.open) {
@@ -1483,7 +1487,9 @@ var UITour = {
         menu.show = () => aWindow.BrowserPageActions.showPanel();
       }
 
-      menu.node.setAttribute("noautohide", "true");
+      if (!aOptions.autohide) {
+        menu.node.setAttribute("noautohide", "true");
+      }
       
       if (menu.node.state != "open") {
         this.recreatePopup(menu.node);
