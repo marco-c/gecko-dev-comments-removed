@@ -79,6 +79,8 @@ class SVGElement : public SVGElementBase
   
   NS_INLINE_DECL_REFCOUNTING_INHERITED(SVGElement, SVGElementBase)
 
+  NS_DECL_ADDSIZEOFEXCLUDINGTHIS
+
   void DidAnimateClass();
 
   

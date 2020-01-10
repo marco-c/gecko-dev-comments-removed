@@ -2375,5 +2375,20 @@ void SVGElement::FlushAnimations() {
   }
 }
 
+void SVGElement::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
+                                        size_t* aNodeSize) const {
+  Element::AddSizeOfExcludingThis(aSizes, aNodeSize);
+
+  
+  
+  
+  
+  if (mContentDeclarationBlock) {
+    aSizes.mLayoutSvgMappedDeclarations +=
+        mContentDeclarationBlock->SizeofIncludingThis(
+            aSizes.mState.mMallocSizeOf);
+  }
+}
+
 }  
 }  
