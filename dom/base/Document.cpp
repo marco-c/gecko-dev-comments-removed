@@ -9509,7 +9509,7 @@ void Document::ParseWidthAndHeightInMetaViewport(const nsAString& aWidthString,
       nsresult widthErrorCode;
       mMaxWidth = aWidthString.ToInteger(&widthErrorCode);
       if (NS_FAILED(widthErrorCode)) {
-        mMaxWidth = 1.0f;
+        mMaxWidth = nsViewportInfo::Auto;
       } else if (mMaxWidth >= 0.0f) {
         mMaxWidth = clamped(mMaxWidth, CSSCoord(1.0f), CSSCoord(10000.0f));
       } else {
@@ -9536,7 +9536,7 @@ void Document::ParseWidthAndHeightInMetaViewport(const nsAString& aWidthString,
       nsresult heightErrorCode;
       mMaxHeight = aHeightString.ToInteger(&heightErrorCode);
       if (NS_FAILED(heightErrorCode)) {
-        mMaxHeight = 1.0f;
+        mMaxHeight = nsViewportInfo::Auto;
       } else if (mMaxHeight >= 0.0f) {
         mMaxHeight = clamped(mMaxHeight, CSSCoord(1.0f), CSSCoord(10000.0f));
       } else {
