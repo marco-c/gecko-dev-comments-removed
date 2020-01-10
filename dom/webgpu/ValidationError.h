@@ -1,0 +1,29 @@
+
+
+
+
+
+#ifndef GPU_ValidationError_H_
+#define GPU_ValidationError_H_
+
+#include "nsWrapperCache.h"
+#include "ObjectModel.h"
+
+namespace mozilla {
+namespace webgpu {
+class Device;
+
+class ValidationError final : public nsWrapperCache, public ChildOf<Device> {
+ public:
+  GPU_DECL_CYCLE_COLLECTION(ValidationError)
+  GPU_DECL_JS_WRAP(ValidationError)
+  ValidationError() = delete;
+
+ private:
+  virtual ~ValidationError();
+};
+
+}  
+}  
+
+#endif  

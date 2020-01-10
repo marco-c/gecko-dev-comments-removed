@@ -3,15 +3,15 @@
 
 
 
-#ifndef WEBGPU_Texture_H_
-#define WEBGPU_Texture_H_
+#ifndef GPU_Texture_H_
+#define GPU_Texture_H_
 
 #include "nsWrapperCache.h"
 #include "ObjectModel.h"
 
 namespace mozilla {
 namespace dom {
-struct WebGPUTextureViewDescriptor;
+struct GPUTextureViewDescriptor;
 }  
 
 namespace webgpu {
@@ -19,17 +19,16 @@ namespace webgpu {
 class Device;
 class TextureView;
 
-class Texture final : public ChildOf<Device> {
+class Texture final : public ObjectBase, public ChildOf<Device> {
  public:
-  WEBGPU_DECL_GOOP(Texture)
+  GPU_DECL_CYCLE_COLLECTION(Texture)
+  GPU_DECL_JS_WRAP(Texture)
 
  private:
   Texture() = delete;
   virtual ~Texture();
 
  public:
-  already_AddRefed<TextureView> CreateTextureView(
-      const dom::WebGPUTextureViewDescriptor&) const;
 };
 
 }  

@@ -1,0 +1,18 @@
+
+
+
+
+
+#include "OutOfMemoryError.h"
+#include "Device.h"
+
+namespace mozilla {
+namespace webgpu {
+
+GPU_IMPL_CYCLE_COLLECTION(OutOfMemoryError, mParent)
+GPU_IMPL_JS_WRAP(OutOfMemoryError)
+
+OutOfMemoryError::~OutOfMemoryError() = default;
+
+}  
+}  
