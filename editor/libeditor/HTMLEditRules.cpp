@@ -2384,20 +2384,24 @@ nsresult HTMLEditRules::WillDeleteSelection(
     }
 
     
-    RefPtr<Element> host = HTMLEditorRef().GetActiveEditingHost();
-    if (NS_WARN_IF(!host)) {
+    RefPtr<Element> editingHost = HTMLEditorRef().GetActiveEditingHost();
+    if (NS_WARN_IF(!editingHost)) {
       return NS_ERROR_FAILURE;
     }
 
-    {
+    if (startPoint.GetContainerAsContent()) {
       AutoEditorDOMPointChildInvalidator lockOffset(startPoint);
 
-      rv = MaybeDeleteTopMostEmptyAncestor(
-          MOZ_KnownLive(*startPoint.GetContainer()), *host, aAction, aHandled);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
+      EditActionResult result =
+          MOZ_KnownLive(HTMLEditorRef())
+              .MaybeDeleteTopMostEmptyAncestor(
+                  MOZ_KnownLive(*startPoint.GetContainerAsContent()),
+                  *editingHost, aAction);
+      if (NS_WARN_IF(result.Failed())) {
+        return result.Rv();
       }
-      if (*aHandled) {
+      if (result.Handled()) {
+        *aHandled = true;
         return NS_OK;
       }
     }
@@ -6561,122 +6565,132 @@ nsresult HTMLEditRules::AlignBlockContents(nsINode& aNode,
   return NS_OK;
 }
 
-nsresult HTMLEditRules::MaybeDeleteTopMostEmptyAncestor(
-    nsINode& aStartNode, Element& aEditingHostElement,
-    nsIEditor::EDirection aAction, bool* aHandled) {
-  MOZ_ASSERT(IsEditorDataAvailable());
+EditActionResult HTMLEditor::MaybeDeleteTopMostEmptyAncestor(
+    nsIContent& aStartContent, Element& aEditingHostElement,
+    nsIEditor::EDirection aDirectionAndAmount) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
 
   
   if (HTMLEditor::NodeIsInlineStatic(aEditingHostElement)) {
-    return NS_OK;
+    return EditActionIgnored();
   }
 
   
   
-  RefPtr<Element> block = HTMLEditorRef().GetBlock(aStartNode);
-  RefPtr<Element> emptyBlock;
-  if (block && block != &aEditingHostElement) {
+  RefPtr<Element> blockElement = GetBlock(aStartContent);
+  RefPtr<Element> topMostEmptyBlockElement;
+  if (blockElement && blockElement != &aEditingHostElement) {
     
     bool isEmptyNode = false;
-    nsresult rv = HTMLEditorRef().IsEmptyNode(block, &isEmptyNode, true, false);
+    nsresult rv = IsEmptyNode(blockElement, &isEmptyNode, true, false);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+      return EditActionResult(rv);
     }
-    while (block && isEmptyNode && !HTMLEditUtils::IsTableElement(block) &&
-           block != &aEditingHostElement) {
-      emptyBlock = block;
-      block = HTMLEditorRef().GetBlockNodeParent(emptyBlock);
-      if (block) {
-        rv = HTMLEditorRef().IsEmptyNode(block, &isEmptyNode, true, false);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
-        }
+    while (blockElement && isEmptyNode &&
+           !HTMLEditUtils::IsTableElement(blockElement) &&
+           blockElement != &aEditingHostElement) {
+      topMostEmptyBlockElement = blockElement;
+      blockElement = GetBlockNodeParent(topMostEmptyBlockElement);
+      if (!blockElement) {
+        break;
+      }
+      nsresult rv = IsEmptyNode(blockElement, &isEmptyNode, true, false);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return EditActionResult(rv);
       }
     }
   }
 
-  if (!emptyBlock || !emptyBlock->IsEditable()) {
-    return NS_OK;
+  
+  
+  
+  
+  if (!topMostEmptyBlockElement || !topMostEmptyBlockElement->IsEditable()) {
+    return EditActionIgnored();
   }
 
-  nsCOMPtr<nsINode> blockParent = emptyBlock->GetParentNode();
-  if (NS_WARN_IF(!blockParent)) {
-    return NS_ERROR_FAILURE;
+  RefPtr<Element> parentOfEmptyBlockElement =
+      topMostEmptyBlockElement->GetParentElement();
+  if (NS_WARN_IF(!parentOfEmptyBlockElement)) {
+    return EditActionResult(NS_ERROR_FAILURE);
   }
 
-  if (HTMLEditUtils::IsListItem(emptyBlock)) {
+  if (HTMLEditUtils::IsListItem(topMostEmptyBlockElement)) {
     
     
     
     
     
-    if (HTMLEditorRef().IsFirstEditableChild(emptyBlock)) {
-      EditorDOMPoint atBlockParent(blockParent);
-      if (NS_WARN_IF(!atBlockParent.IsSet())) {
-        return NS_ERROR_FAILURE;
+    
+    
+    
+    
+    if (IsFirstEditableChild(topMostEmptyBlockElement)) {
+      EditorDOMPoint atParentOfEmptyBlock(parentOfEmptyBlockElement);
+      if (NS_WARN_IF(!atParentOfEmptyBlock.IsSet())) {
+        return EditActionResult(NS_ERROR_FAILURE);
       }
       
       
-      if (!HTMLEditUtils::IsList(atBlockParent.GetContainer())) {
+      if (!HTMLEditUtils::IsList(atParentOfEmptyBlock.GetContainer())) {
         RefPtr<Element> brElement =
-            MOZ_KnownLive(HTMLEditorRef())
-                .InsertBRElementWithTransaction(atBlockParent);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
-          return NS_ERROR_EDITOR_DESTROYED;
+            InsertBRElementWithTransaction(atParentOfEmptyBlock);
+        if (NS_WARN_IF(Destroyed())) {
+          return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
         }
         if (NS_WARN_IF(!brElement)) {
-          return NS_ERROR_FAILURE;
+          return EditActionResult(NS_ERROR_FAILURE);
         }
         ErrorResult error;
         SelectionRefPtr()->Collapse(EditorRawDOMPoint(brElement), error);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
+        if (NS_WARN_IF(Destroyed())) {
           error.SuppressException();
-          return NS_ERROR_EDITOR_DESTROYED;
+          return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
         }
         if (NS_WARN_IF(error.Failed())) {
-          return error.StealNSResult();
+          return EditActionResult(error.StealNSResult());
         }
       }
     }
   } else {
-    switch (aAction) {
+    switch (aDirectionAndAmount) {
       case nsIEditor::eNext:
       case nsIEditor::eNextWord:
       case nsIEditor::eToEndOfLine: {
         
         
-        EditorRawDOMPoint afterEmptyBlock(emptyBlock);
+        EditorRawDOMPoint afterEmptyBlock(topMostEmptyBlockElement);
         bool advancedFromEmptyBlock = afterEmptyBlock.AdvanceOffset();
         NS_WARNING_ASSERTION(
             advancedFromEmptyBlock,
             "Failed to set selection to the after the empty block");
-        nsCOMPtr<nsIContent> nextNode =
-            HTMLEditorRef().GetNextNode(afterEmptyBlock);
-        if (nextNode) {
-          EditorDOMPoint pt =
-              HTMLEditorRef().GetGoodCaretPointFor(*nextNode, aAction);
+        nsCOMPtr<nsIContent> nextContentOfEmptyBlock =
+            GetNextNode(afterEmptyBlock);
+        if (nextContentOfEmptyBlock) {
+          EditorDOMPoint pt = GetGoodCaretPointFor(*nextContentOfEmptyBlock,
+                                                   aDirectionAndAmount);
           ErrorResult error;
           SelectionRefPtr()->Collapse(pt, error);
-          if (NS_WARN_IF(!CanHandleEditAction())) {
+          if (NS_WARN_IF(Destroyed())) {
             error.SuppressException();
-            return NS_ERROR_EDITOR_DESTROYED;
+            return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
           }
           if (NS_WARN_IF(error.Failed())) {
-            return error.StealNSResult();
+            return EditActionResult(error.StealNSResult());
           }
           break;
         }
         if (NS_WARN_IF(!advancedFromEmptyBlock)) {
-          return NS_ERROR_FAILURE;
+          return EditActionResult(NS_ERROR_FAILURE);
         }
         ErrorResult error;
         SelectionRefPtr()->Collapse(afterEmptyBlock, error);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
+        if (NS_WARN_IF(Destroyed())) {
           error.SuppressException();
-          return NS_ERROR_EDITOR_DESTROYED;
+          return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
         }
         if (NS_WARN_IF(error.Failed())) {
-          return error.StealNSResult();
+          return EditActionResult(error.StealNSResult());
         }
         break;
       }
@@ -6685,35 +6699,35 @@ nsresult HTMLEditRules::MaybeDeleteTopMostEmptyAncestor(
       case nsIEditor::eToBeginningOfLine: {
         
         
-        EditorRawDOMPoint atEmptyBlock(emptyBlock);
-        nsCOMPtr<nsIContent> priorNode =
-            HTMLEditorRef().GetPreviousEditableNode(atEmptyBlock);
-        if (priorNode) {
-          EditorDOMPoint pt =
-              HTMLEditorRef().GetGoodCaretPointFor(*priorNode, aAction);
+        EditorRawDOMPoint atEmptyBlock(topMostEmptyBlockElement);
+        nsCOMPtr<nsIContent> previousContentOfEmptyBlock =
+            GetPreviousEditableNode(atEmptyBlock);
+        if (previousContentOfEmptyBlock) {
+          EditorDOMPoint pt = GetGoodCaretPointFor(*previousContentOfEmptyBlock,
+                                                   aDirectionAndAmount);
           ErrorResult error;
           SelectionRefPtr()->Collapse(pt, error);
-          if (NS_WARN_IF(!CanHandleEditAction())) {
+          if (NS_WARN_IF(Destroyed())) {
             error.SuppressException();
-            return NS_ERROR_EDITOR_DESTROYED;
+            return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
           }
           if (NS_WARN_IF(error.Failed())) {
-            return error.StealNSResult();
+            return EditActionResult(error.StealNSResult());
           }
           break;
         }
-        EditorRawDOMPoint afterEmptyBlock(emptyBlock);
+        EditorRawDOMPoint afterEmptyBlock(topMostEmptyBlockElement);
         if (NS_WARN_IF(!afterEmptyBlock.AdvanceOffset())) {
-          return NS_ERROR_FAILURE;
+          return EditActionResult(NS_ERROR_FAILURE);
         }
         ErrorResult error;
         SelectionRefPtr()->Collapse(afterEmptyBlock, error);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
+        if (NS_WARN_IF(Destroyed())) {
           error.SuppressException();
-          return NS_ERROR_EDITOR_DESTROYED;
+          return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
         }
         if (NS_WARN_IF(error.Failed())) {
-          return error.StealNSResult();
+          return EditActionResult(error.StealNSResult());
         }
         break;
       }
@@ -6723,16 +6737,14 @@ nsresult HTMLEditRules::MaybeDeleteTopMostEmptyAncestor(
         MOZ_CRASH("CheckForEmptyBlock doesn't support this action yet");
     }
   }
-  *aHandled = true;
-  nsresult rv =
-      MOZ_KnownLive(HTMLEditorRef()).DeleteNodeWithTransaction(*emptyBlock);
-  if (NS_WARN_IF(!CanHandleEditAction())) {
-    return NS_ERROR_EDITOR_DESTROYED;
+  nsresult rv = DeleteNodeWithTransaction(*topMostEmptyBlockElement);
+  if (NS_WARN_IF(Destroyed())) {
+    return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
   }
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+    return EditActionResult(rv);
   }
-  return NS_OK;
+  return EditActionHandled();
 }
 
 template <typename PT, typename CT>

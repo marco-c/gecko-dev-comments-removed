@@ -401,34 +401,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult MaybeDeleteTopMostEmptyAncestor(
-      nsINode& aStartNode, Element& aEditingHostElement,
-      nsIEditor::EDirection aAction, bool* aHandled);
-
-  
-
-
-
-
-
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult ExpandSelectionForDeletion();
 

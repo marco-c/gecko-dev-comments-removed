@@ -2072,6 +2072,32 @@ class HTMLEditor final : public TextEditor,
   EditorDOMPoint GetGoodCaretPointFor(
       nsIContent& aContent, nsIEditor::EDirection aDirectionAndAmount);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  MaybeDeleteTopMostEmptyAncestor(nsIContent& aStartContent,
+                                  Element& aEditingHostElement,
+                                  nsIEditor::EDirection aDirectionAndAmount);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
