@@ -50,7 +50,7 @@ var gIdentityHandler = {
 
 
 
-  _secureInternalUIWhitelist: /^(?:accounts|addons|cache|config|crashes|downloads|license|logins|preferences|rights|sessionrestore|support|welcomeback)(?:[?#]|$)/i,
+  _secureInternalUIWhitelist: /^(?:accounts|addons|cache|config|crashes|downloads|license|logins|preferences|protections|rights|sessionrestore|support|welcomeback)(?:[?#]|$)/i,
 
   get _isBroken() {
     return this._state & Ci.nsIWebProgressListener.STATE_IS_BROKEN;
