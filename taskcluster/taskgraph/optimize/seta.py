@@ -8,9 +8,12 @@ import json
 import logging
 import requests
 from collections import defaultdict
+
+import attr
 from redo import retry
 from requests import exceptions
-import attr
+
+from taskgraph.optimize import OptimizationStrategy, register_strategy
 
 logger = logging.getLogger(__name__)
 
@@ -258,3 +261,25 @@ class SETA(object):
 
 
 is_low_value_task = SETA().is_low_value_task
+
+
+@register_strategy('seta')
+class SkipLowValue(OptimizationStrategy):
+    push_interval = 5
+    time_interval = 60
+
+    def should_remove_task(self, task, params, _):
+        label = task.label
+
+        
+        
+        if is_low_value_task(label,
+                             params.get('project'),
+                             params.get('pushlog_id'),
+                             params.get('pushdate'),
+                             self.push_interval,
+                             self.time_interval):
+            
+            return True
+        else:
+            return False
