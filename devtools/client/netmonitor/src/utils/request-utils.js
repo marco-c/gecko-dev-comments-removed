@@ -621,6 +621,14 @@ function isJSON(payload) {
     }
   }
 
+  
+  
+  if (!error) {
+    if (typeof json !== "object") {
+      return {};
+    }
+  }
+
   return {
     json,
     error,
