@@ -66,6 +66,8 @@ function flashElementOff(
   backgroundElt.classList.remove(backgroundClass);
 
   foregroundElt.classList.remove("theme-fg-contrast");
+  
+  foregroundElt.classList.remove("flash-out");
   [].forEach.call(
     foregroundElt.querySelectorAll("[class*=theme-fg-color]"),
     span => span.classList.remove("theme-fg-contrast")
