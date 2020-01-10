@@ -1233,8 +1233,6 @@ var interfaceNamesInGlobalScope = [
   
   { name: "SVGViewElement", insecureContext: true },
   
-  { name: "SVGZoomAndPan", insecureContext: true },
-  
   { name: "Text", insecureContext: true },
   
   { name: "TextDecoder", insecureContext: true },
