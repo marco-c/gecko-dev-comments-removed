@@ -19,12 +19,28 @@ namespace mozilla {
 namespace mscom {
 
 class MOZ_NON_TEMPORARY_CLASS ProcessRuntime final {
+#if !defined(MOZILLA_INTERNAL_API)
+ public:
+#endif  
+  enum class ProcessCategory {
+    GeckoBrowserParent,
+    
+    
+    Launcher = GeckoBrowserParent,
+    GeckoChild,
+    Service,
+  };
+
+  
+  explicit ProcessRuntime(ProcessCategory aProcessCategory);
+
  public:
 #if defined(MOZILLA_INTERNAL_API)
   ProcessRuntime() : ProcessRuntime(XRE_GetProcessType()) {}
 #endif  
 
   explicit ProcessRuntime(GeckoProcessType aProcessType);
+
   ~ProcessRuntime() = default;
 
   explicit operator bool() const { return SUCCEEDED(mInitResult); }
@@ -44,9 +60,10 @@ class MOZ_NON_TEMPORARY_CLASS ProcessRuntime final {
  private:
   void InitInsideApartment();
   HRESULT InitializeSecurity();
+  static COINIT GetDesiredApartmentType(ProcessCategory aProcessCategory);
 
   HRESULT mInitResult;
-  const bool mIsParentProcess;
+  const ProcessCategory mProcessCategory;
 #if defined(ACCESSIBILITY) && defined(MOZILLA_INTERNAL_API)
   ActivationContextRegion mActCtxRgn;
 #endif  

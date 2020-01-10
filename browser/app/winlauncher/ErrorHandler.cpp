@@ -286,7 +286,8 @@ static bool AddWscInfo(mozilla::JSONWriter& aJson) {
 
   
   
-  mozilla::mscom::ProcessRuntime mscom(GeckoProcessType_Default);
+  mozilla::mscom::ProcessRuntime mscom(
+      mozilla::mscom::ProcessRuntime::ProcessCategory::Launcher);
   if (!mscom) {
     
     

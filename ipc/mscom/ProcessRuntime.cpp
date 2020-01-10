@@ -37,8 +37,13 @@ namespace mozilla {
 namespace mscom {
 
 ProcessRuntime::ProcessRuntime(GeckoProcessType aProcessType)
+    : ProcessRuntime(aProcessType == GeckoProcessType_Default
+                         ? ProcessCategory::GeckoBrowserParent
+                         : ProcessCategory::GeckoChild) {}
+
+ProcessRuntime::ProcessRuntime(ProcessRuntime::ProcessCategory aProcessCategory)
     : mInitResult(CO_E_NOTINITIALIZED),
-      mIsParentProcess(aProcessType == GeckoProcessType_Default)
+      mProcessCategory(aProcessCategory)
 #if defined(ACCESSIBILITY) && defined(MOZILLA_INTERNAL_API)
       ,
       mActCtxRgn(a11y::Compatibility::GetActCtxResourceId())
@@ -50,7 +55,7 @@ ProcessRuntime::ProcessRuntime(GeckoProcessType aProcessType)
   
   
   
-  if (!mIsParentProcess && IsWin32kLockedDown()) {
+  if (mProcessCategory == ProcessCategory::GeckoChild && IsWin32kLockedDown()) {
     
     
     nsresult rv = nsThreadManager::get().Init();
@@ -115,8 +120,7 @@ ProcessRuntime::ProcessRuntime(GeckoProcessType aProcessType)
 
 #endif  
 
-  
-  mAptRegion.Init(COINIT_APARTMENTTHREADED);
+  mAptRegion.Init(GetDesiredApartmentType(mProcessCategory));
 
   
   
@@ -127,6 +131,21 @@ ProcessRuntime::ProcessRuntime(GeckoProcessType aProcessType)
   }
 
   InitInsideApartment();
+}
+
+
+COINIT ProcessRuntime::GetDesiredApartmentType(
+    ProcessRuntime::ProcessCategory aProcessCategory) {
+  
+  
+  
+  switch (aProcessCategory) {
+    case ProcessCategory::GeckoBrowserParent:
+    case ProcessCategory::GeckoChild:
+      return COINIT_APARTMENTTHREADED;
+    default:
+      return COINIT_MULTITHREADED;
+  }
 }
 
 void ProcessRuntime::InitInsideApartment() {
@@ -242,7 +261,8 @@ ProcessRuntime::InitializeSecurity() {
 
   BYTE appContainersSid[SECURITY_MAX_SID_SIZE];
   DWORD appContainersSidSize = sizeof(appContainersSid);
-  if (mIsParentProcess && IsWin8OrLater()) {
+  if (mProcessCategory == ProcessCategory::GeckoBrowserParent &&
+      IsWin8OrLater()) {
     if (!::CreateWellKnownSid(WinBuiltinAnyPackageSid, nullptr,
                               appContainersSid, &appContainersSidSize)) {
       return HRESULT_FROM_WIN32(::GetLastError());
@@ -275,7 +295,8 @@ ProcessRuntime::InitializeSecurity() {
       {nullptr, NO_MULTIPLE_TRUSTEE, TRUSTEE_IS_SID, TRUSTEE_IS_USER,
        reinterpret_cast<LPWSTR>(tokenUser.User.Sid)}});
 
-  if (mIsParentProcess && IsWin8OrLater()) {
+  if (mProcessCategory == ProcessCategory::GeckoBrowserParent &&
+      IsWin8OrLater()) {
     Unused << entries.append(
         EXPLICIT_ACCESS_W{COM_RIGHTS_EXECUTE,
                           GRANT_ACCESS,
