@@ -1199,13 +1199,19 @@ bool gfxHarfBuzzShaper::Initialize() {
   uint32_t scale = FloatToFixed(mFont->GetAdjustedSize());  
   hb_font_set_scale(mHBFont, scale, scale);
 
-  const auto& vars = mFont->GetStyle()->variationSettings;
-  size_t len = vars.Length();
-  if (len > 0) {
+  AutoTArray<gfxFontVariation, 8> vars;
+  entry->GetVariationsForStyle(vars, *mFont->GetStyle());
+  if (vars.Length() > 0) {
     
     
+    static_assert(
+        sizeof(gfxFontVariation) == sizeof(hb_variation_t) &&
+            offsetof(gfxFontVariation, mTag) == offsetof(hb_variation_t, tag) &&
+            offsetof(gfxFontVariation, mValue) ==
+                offsetof(hb_variation_t, value),
+        "Gecko vs HarfBuzz struct mismatch!");
     auto hbVars = reinterpret_cast<const hb_variation_t*>(vars.Elements());
-    hb_font_set_variations(mHBFont, hbVars, len);
+    hb_font_set_variations(mHBFont, hbVars, vars.Length());
   }
 
   return true;
