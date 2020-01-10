@@ -2363,13 +2363,6 @@ class nsContentUtils {
 
   static bool IsInPointerLockContext(nsPIDOMWindowOuter* aWin);
 
-  
-
-
-
-
-  static TimeDuration HandlingUserInputTimeout();
-
   static void GetShiftText(nsAString& text);
   static void GetControlText(nsAString& text);
   static void GetMetaText(nsAString& text);
