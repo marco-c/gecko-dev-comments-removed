@@ -16,7 +16,7 @@
 
 class nsView;
 class nsIWidget;
-class nsIXULWindow;
+class nsIAppWindow;
 
 namespace mozilla {
 class PresShell;
@@ -49,7 +49,7 @@ class nsIWidgetListener {
 
 
 
-  virtual nsIXULWindow* GetXULWindow();
+  virtual nsIAppWindow* GetAppWindow();
 
   
 
