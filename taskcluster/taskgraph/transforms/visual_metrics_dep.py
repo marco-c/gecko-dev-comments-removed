@@ -35,4 +35,7 @@ def run_visual_metrics(config, jobs):
             
             job['treeherder']['platform'] = platform
 
+            
+            job['run-on-projects'] = attributes['run_on_projects']
+
             yield job
