@@ -140,15 +140,11 @@ bool BaselineFrame::initForOsr(InterpreterFrame* fp, uint32_t numStackValues) {
   jsbytecode* pc = interpActivation->asInterpreter()->regs().pc;
   MOZ_ASSERT(fp->script()->containsPC(pc));
 
-  if (!fp->script()->hasBaselineScript()) {
-    
-    
-    
-    
-    flags_ |= BaselineFrame::RUNNING_IN_INTERPRETER;
-    interpreterScript_ = fp->script();
-    setInterpreterPC(pc);
-  }
+  
+  
+  flags_ |= BaselineFrame::RUNNING_IN_INTERPRETER;
+  interpreterScript_ = fp->script();
+  setInterpreterPC(pc);
 
   frameSize_ = BaselineFrame::FramePointerOffset + BaselineFrame::Size() +
                numStackValues * sizeof(Value);
@@ -162,17 +158,9 @@ bool BaselineFrame::initForOsr(InterpreterFrame* fp, uint32_t numStackValues) {
   if (fp->isDebuggee()) {
     
     
-
-    
-    
-    
-    setOverridePc(pc);
-
     if (!Debugger::handleBaselineOsr(cx, fp, this)) {
       return false;
     }
-
-    clearOverridePc();
     setIsDebuggee();
   }
 
