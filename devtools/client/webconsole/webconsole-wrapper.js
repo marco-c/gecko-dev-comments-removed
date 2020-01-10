@@ -153,10 +153,6 @@ class WebConsoleWrapper {
           return debuggerClient.release(actor);
         },
 
-        getWebConsoleClient: () => {
-          return webConsoleUI.webConsoleClient;
-        },
-
         
 
 
