@@ -923,6 +923,10 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
     const cue = styleBox.cue;
     const isWritingDirectionHorizontal = cue.vertical == "";
     let box = new BoxPosition(styleBox);
+    if (!box.width || !box.height) {
+      LOG(`No way to adjust a box with zero width or height.`);
+      return;
+    }
 
     
     
@@ -1266,6 +1270,10 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
             LOG(`cue ${i}, ` + cueBox.getBoxInfoInChars());
           } else {
             LOG(`can not find a proper position to place cue ${i}`);
+            
+            
+            
+            cue.displayState = null;
             rootOfCues.removeChild(styleBox.div);
           }
         }
