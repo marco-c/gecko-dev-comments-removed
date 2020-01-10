@@ -16,6 +16,21 @@ ChromeUtils.defineModuleGetter(this, "ActorManagerParent",
 const PREF_PDFJS_ENABLED_CACHE_STATE = "pdfjs.enabledCache.state";
 
 let ACTORS = {
+  ContextMenu: {
+    parent: {
+      moduleURI: "resource:///actors/ContextMenuParent.jsm",
+    },
+
+    child: {
+      moduleURI: "resource:///actors/ContextMenuChild.jsm",
+      events: {
+        "contextmenu": { mozSystemGroup: true },
+      },
+    },
+
+    allFrames: true,
+  },
+
   SubframeCrash: {
     parent: {
       moduleURI: "resource:///actors/SubframeCrashParent.jsm",
@@ -117,15 +132,6 @@ let LEGACY_ACTORS = {
     },
   },
 
-  ContextMenu: {
-    child: {
-      module: "resource:///actors/ContextMenuChild.jsm",
-      events: {
-        "contextmenu": {mozSystemGroup: true},
-      },
-    },
-  },
-
   ContentSearch: {
     child: {
       module: "resource:///actors/ContentSearchChild.jsm",
@@ -139,6 +145,16 @@ let LEGACY_ACTORS = {
         "ContentSearch",
       ],
     },
+  },
+
+  ContextMenuSpecialProcess: {
+    child: {
+      module: "resource:///actors/ContextMenuSpecialProcessChild.jsm",
+      events: {
+        "contextmenu": {mozSystemGroup: true},
+      },
+    },
+    allFrames: true,
   },
 
   DOMFullscreen: {
@@ -435,12 +451,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   DateTimePickerParent: "resource://gre/modules/DateTimePickerParent.jsm",
   Discovery: "resource:///modules/Discovery.jsm",
   ExtensionsUI: "resource:///modules/ExtensionsUI.jsm",
-  FileSource: "resource://gre/modules/L10nRegistry.jsm",
   FxAccounts: "resource://gre/modules/FxAccounts.jsm",
   HomePage: "resource:///modules/HomePage.jsm",
   HybridContentTelemetry: "resource://gre/modules/HybridContentTelemetry.jsm",
   Integration: "resource://gre/modules/Integration.jsm",
-  L10nRegistry: "resource://gre/modules/L10nRegistry.jsm",
   LiveBookmarkMigrator: "resource:///modules/LiveBookmarkMigrator.jsm",
   NewTabUtils: "resource://gre/modules/NewTabUtils.jsm",
   Normandy: "resource://normandy/Normandy.jsm",
@@ -1064,14 +1078,6 @@ BrowserGlue.prototype = {
     } else {
       PdfJs.earlyInit();
     }
-
-    
-    let locales = Services.locale.packagedLocales;
-    const greSource = new FileSource("toolkit", locales, "resource://gre/localization/{locale}/");
-    L10nRegistry.registerSource(greSource);
-
-    const appSource = new FileSource("app", locales, "resource://app/localization/{locale}/");
-    L10nRegistry.registerSource(appSource);
 
     
     if (Services.appinfo.inSafeMode) {
