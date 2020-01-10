@@ -9,6 +9,9 @@ const {
   createNode,
 } = require("./utils/markup");
 
+const { LocalizationHelper } = require("devtools/shared/l10n");
+const STRINGS_URI = "devtools/client/shared/locales/debugger.properties";
+const L10N = new LocalizationHelper(STRINGS_URI);
 
 
 
@@ -16,8 +19,13 @@ const {
 
 
 
-function PausedDebuggerOverlay(highlighterEnv) {
+
+function PausedDebuggerOverlay(highlighterEnv, options = {}) {
   this.env = highlighterEnv;
+  this.showOverlayStepButtons = options.showOverlayStepButtons;
+  this.resume = options.resume;
+  this.stepOver = options.stepOver;
+
   this.markup = new CanvasFrameAnonymousContentHelper(
     highlighterEnv,
     this._buildMarkup.bind(this)
@@ -68,6 +76,37 @@ PausedDebuggerOverlay.prototype = {
       prefix,
     });
 
+    if (this.showOverlayStepButtons) {
+      createNode(window, {
+        parent: toolbar,
+        attributes: {
+          id: "divider",
+          class: "divider",
+        },
+        prefix,
+      });
+
+      createNode(window, {
+        nodeType: "button",
+        parent: toolbar,
+        attributes: {
+          id: "step-button",
+          class: "step-button",
+        },
+        prefix,
+      });
+
+      createNode(window, {
+        nodeType: "button",
+        parent: toolbar,
+        attributes: {
+          id: "resume-button",
+          class: "resume-button",
+        },
+        prefix,
+      });
+    }
+
     return container;
   },
 
@@ -77,35 +116,53 @@ PausedDebuggerOverlay.prototype = {
     this.env = null;
   },
 
+  onClick(target) {
+    if (target.id == "paused-dbg-step-button") {
+      this.stepOver();
+    } else if (target.id == "paused-dbg-resume-button") {
+      this.resume();
+    }
+  },
+
+  handleEvent(e) {
+    switch (e.type) {
+      case "click":
+        this.onClick(e.target);
+        break;
+      case "DOMMouseScroll":
+        
+        
+        
+        
+        e.preventDefault();
+        break;
+      case "mouseover":
+        break;
+    }
+  },
+
   getElement(id) {
     return this.markup.getElement(this.ID_CLASS_PREFIX + id);
   },
 
   show(node, options = {}) {
-    if (this.env.isXUL) {
+    if (this.env.isXUL || !options.reason) {
       return false;
     }
 
     
     const root = this.getElement("root");
     root.removeAttribute("hidden");
-
-    
-    if (options.onlyToolbar) {
-      root.removeAttribute("overlay");
-    } else {
-      root.setAttribute("overlay", "true");
-    }
+    root.setAttribute("overlay", "true");
 
     
     const toolbar = this.getElement("toolbar");
-    if (options.reason) {
-      this.getElement("reason").setTextContent(options.reason);
-      toolbar.removeAttribute("hidden");
-    } else {
-      toolbar.setAttribute("hidden", "true");
-    }
+    this.getElement("reason").setTextContent(
+      L10N.getStr(`whyPaused.${options.reason}`)
+    );
+    toolbar.removeAttribute("hidden");
 
+    this.env.window.document.setSuppressedEventListener(this);
     return true;
   },
 
