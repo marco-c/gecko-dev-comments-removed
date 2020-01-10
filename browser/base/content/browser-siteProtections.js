@@ -22,11 +22,6 @@ var gProtectionsHandler = {
     return this._protectionsPopupMainViewHeaderLabel =
       document.getElementById("protections-popup-mainView-panel-header-span");
   },
-  get _protectionsPopupTPSwitch() {
-    delete this._protectionsPopupTPSwitch;
-    return this._protectionsPopupTPSwitch =
-      document.getElementById("protections-popup-tp-switch");
-  },
 
   handleProtectionsButtonEvent(event) {
     event.stopPropagation();
@@ -50,77 +45,12 @@ var gProtectionsHandler = {
     }).catch(Cu.reportError);
   },
 
-  onPopupShown(event) {
-    if (event.target == this._protectionsPopup) {
-      window.addEventListener("focus", this, true);
-    }
-  },
-
-  onPopupHidden(event) {
-    if (event.target == this._protectionsPopup) {
-      window.removeEventListener("focus", this, true);
-      this._protectionsPopup.removeAttribute("open");
-    }
-  },
-
-  handleEvent(event) {
-    let elem = document.activeElement;
-    let position = elem.compareDocumentPosition(this._protectionsPopup);
-
-    if (!(position & (Node.DOCUMENT_POSITION_CONTAINS |
-                      Node.DOCUMENT_POSITION_CONTAINED_BY)) &&
-        !this._protectionsPopup.hasAttribute("noautohide")) {
-      
-      
-      
-      PanelMultiView.hidePopup(this._protectionsPopup);
-    }
-  },
-
   refreshProtectionsPopup() {
-    
-    this._protectionsPopupTPSwitch.toggleAttribute("enabled",
-      !this._protectionsPopup.hasAttribute("hasException"));
-
     let host = gIdentityHandler.getHostForDisplay();
 
     
     this._protectionsPopupMainViewHeaderLabel.textContent =
       
       `Tracking Protections for ${host}`;
-
-    let currentlyEnabled =
-      !this._protectionsPopup.hasAttribute("hasException");
-
-    this._protectionsPopupTPSwitch.toggleAttribute("enabled", currentlyEnabled);
-  },
-
-  async onTPSwitchCommand(event) {
-    
-    
-    
-    
-    if (this._TPSwitchCommanding) {
-      return;
-    }
-
-    this._TPSwitchCommanding = true;
-
-    let currentlyEnabled =
-      !this._protectionsPopup.hasAttribute("hasException");
-
-    this._protectionsPopupTPSwitch.toggleAttribute("enabled", !currentlyEnabled);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    if (currentlyEnabled) {
-      ContentBlocking.disableForCurrentPage();
-      gIdentityHandler.recordClick("unblock");
-    } else {
-      ContentBlocking.enableForCurrentPage();
-      gIdentityHandler.recordClick("block");
-    }
-
-    PanelMultiView.hidePopup(this._protectionsPopup);
-    delete this._TPSwitchCommanding;
   },
 };

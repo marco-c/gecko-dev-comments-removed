@@ -816,11 +816,6 @@ var ContentBlocking = {
     return this.identityPopup = document.getElementById("identity-popup");
   },
 
-  get protectionsPopup() {
-    delete this.protectionsPopup;
-    return this.protectionsPopup = document.getElementById("protections-popup");
-  },
-
   strings: {
     get appMenuTitle() {
       delete this.appMenuTitle;
@@ -1093,18 +1088,6 @@ var ContentBlocking = {
     if (!baseURI) {
       return;
     }
-
-    let isBrowserPrivate = PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser);
-
-    
-    let type = isBrowserPrivate ? "trackingprotection-pb" : "trackingprotection";
-    let hasException = Services.perms.testExactPermission(baseURI, type) ==
-      Services.perms.ALLOW_ACTION;
-
-    this.content.toggleAttribute("hasException", hasException);
-    this.protectionsPopup.toggleAttribute("hasException", hasException);
-    this.iconBox.toggleAttribute("hasException", hasException);
-
     
     this.fingerprintersHistogramAdd("pageLoad");
     this.cryptominersHistogramAdd("pageLoad");
@@ -1142,7 +1125,7 @@ var ContentBlocking = {
     let isBrowserPrivate = PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser);
 
     
-    let type = isBrowserPrivate ? "trackingprotection-pb" : "trackingprotection";
+    let type =  isBrowserPrivate ? "trackingprotection-pb" : "trackingprotection";
     let hasException = Services.perms.testExactPermission(baseURI, type) ==
       Services.perms.ALLOW_ACTION;
 
@@ -1174,11 +1157,9 @@ var ContentBlocking = {
     
     
     
-    for (let elt of [this.content, this.protectionsPopup]) {
-      elt.toggleAttribute("detected", anyDetected);
-      elt.toggleAttribute("blocking", anyBlocking);
-      elt.toggleAttribute("hasException", hasException);
-    }
+    this.content.toggleAttribute("detected", anyDetected);
+    this.content.toggleAttribute("blocking", anyBlocking);
+    this.content.toggleAttribute("hasException", hasException);
 
     this.iconBox.toggleAttribute("active", anyBlocking);
     this.iconBox.toggleAttribute("hasException", hasException);
