@@ -940,8 +940,10 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
     return GetExtantDoc() && GetExtantDoc()->IsInSyncOperation();
   }
 
+  bool IsSharedMemoryAllowed() const;
+
   
-  bool IsCrossOriginIsolated() const;
+  bool CrossOriginIsolated() const;
 
  protected:
   

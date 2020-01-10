@@ -896,8 +896,10 @@ class WorkerPrivate : public RelativeTimeline {
 
   const nsID& AgentClusterId() const { return mAgentClusterId; }
 
+  bool IsSharedMemoryAllowed() const;
+
   
-  bool IsCrossOriginIsolated() const;
+  bool CrossOriginIsolated() const;
 
  private:
   WorkerPrivate(
