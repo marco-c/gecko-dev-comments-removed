@@ -18,11 +18,11 @@ def lint(paths, config, fix=None, **lintargs):
             hasFix = False
             content_to_write = []
             for i, line in enumerate(open_file):
-                if line.endswith(" \n"):
+                if line.endswith(b" \n"):
                     
                     if fix:
                         
-                        content_to_write.append(line.rstrip() + "\n")
+                        content_to_write.append(line.rstrip() + b"\n")
                         hasFix = True
                     else:
                         res = {'path': f,
@@ -37,7 +37,7 @@ def lint(paths, config, fix=None, **lintargs):
             if hasFix:
                 
                 with open(f, 'wb') as open_file_to_write:
-                    open_file_to_write.write("".join(content_to_write))
+                    open_file_to_write.write(b"".join(content_to_write))
 
             
             
@@ -46,7 +46,7 @@ def lint(paths, config, fix=None, **lintargs):
             
             content = open_file.read()
 
-            if "\r\n" in content:
+            if b"\r\n" in content:
                 if fix:
                     
                     content = content.replace(b'\r\n', b'\n')

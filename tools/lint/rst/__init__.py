@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import subprocess
@@ -82,8 +82,9 @@ def lint(files, config, **lintargs):
         proc = subprocess.Popen(
             cmdargs, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            env=os.environ
-            )
+            env=os.environ,
+            universal_newlines=True,
+        )
         all_errors = proc.communicate()[1]
         for errors in all_errors.split("\n"):
             if len(errors) > 1:
