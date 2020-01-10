@@ -678,6 +678,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
+
   static bool PerfWarnings();
 
   static void NotifyGPUProcessDisabled();

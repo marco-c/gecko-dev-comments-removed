@@ -987,9 +987,9 @@ struct ScrollMetadata {
     mIsAutoDirRootContentRTL = aValue;
   }
   bool IsAutoDirRootContentRTL() const { return mIsAutoDirRootContentRTL; }
-  
-  
-  void SetUsesContainerScrolling(bool aValue);
+  void SetUsesContainerScrolling(bool aValue) {
+    mUsesContainerScrolling = aValue;
+  }
   bool UsesContainerScrolling() const { return mUsesContainerScrolling; }
   void SetForceDisableApz(bool aForceDisable) {
     mForceDisableApz = aForceDisable;
