@@ -794,15 +794,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult CreateStyleForInsertText(dom::Document& aDocument);
-
-  
-
-
-
   enum class IgnoreSingleBR { eYes, eNo };
   bool IsEmptyBlockElement(Element& aElement, IgnoreSingleBR aIgnoreSingleBR);
 

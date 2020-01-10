@@ -49,6 +49,7 @@ struct PropItem;
 template <class T>
 class OwningNonNull;
 namespace dom {
+class AbstractRange;
 class Blob;
 class DocumentFragment;
 class Event;
@@ -1136,6 +1137,17 @@ class HTMLEditor final : public TextEditor,
 
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult ReapplyCachedStyles();
+
+  
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  CreateStyleForInsertText(dom::AbstractRange& aAbstractRange);
 
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
