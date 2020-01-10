@@ -55,7 +55,7 @@ function URLFetcher(url, timeout) {
         self.onsuccess(xhr.responseText);
       } else if (xhr.status) {
         self.onredirectorerror(xhr.status);
-      } else if (xhr.channel.status == Cr.NS_ERROR_REDIRECT_LOOP) {
+      } else if (xhr.channel && xhr.channel.status == Cr.NS_ERROR_REDIRECT_LOOP) {
         
         
         self.onredirectorerror(300);
