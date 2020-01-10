@@ -585,7 +585,6 @@ class ContentParent final : public PContentParent,
 
   
   void PaintTabWhileInterruptingJS(BrowserParent* aBrowserParent,
-                                   bool aForceRepaint,
                                    const layers::LayersObserverEpoch& aEpoch);
 
   void CancelContentJSExecutionIfRunning(

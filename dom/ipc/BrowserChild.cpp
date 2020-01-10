@@ -2439,8 +2439,7 @@ void BrowserChild::RemovePendingDocShellBlocker() {
   }
   if (!mPendingDocShellBlockers && mPendingRenderLayersReceivedMessage) {
     mPendingRenderLayersReceivedMessage = false;
-    RecvRenderLayers(mPendingRenderLayers, false ,
-                     mPendingLayersObserverEpoch);
+    RecvRenderLayers(mPendingRenderLayers, mPendingLayersObserverEpoch);
   }
 }
 
@@ -2466,8 +2465,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvSetDocShellIsActive(
 }
 
 mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(
-    const bool& aEnabled, const bool& aForceRepaint,
-    const layers::LayersObserverEpoch& aEpoch) {
+    const bool& aEnabled, const layers::LayersObserverEpoch& aEpoch) {
   if (mPendingDocShellBlockers > 0) {
     mPendingRenderLayersReceivedMessage = true;
     mPendingRenderLayers = aEnabled;
@@ -2514,17 +2512,11 @@ mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(
 
   if (aEnabled && IsVisible()) {
     
-    if (!aForceRepaint) {
-      
-      
-      
-      
-      
-      
-      
-      if (IPCOpen()) {
-        Unused << SendPaintWhileInterruptingJSNoOp(mLayersObserverEpoch);
-      }
+    
+    
+    
+    if (IPCOpen()) {
+      Unused << SendPaintWhileInterruptingJSNoOp(mLayersObserverEpoch);
     }
     return IPC_OK();
   }
@@ -2537,13 +2529,6 @@ mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(
     return IPC_OK();
   }
 
-  
-  
-  
-  
-  
-  
-  
   nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
   if (!docShell) {
     return IPC_OK();
@@ -3395,7 +3380,7 @@ ScreenIntRect BrowserChild::GetOuterRect() {
 }
 
 void BrowserChild::PaintWhileInterruptingJS(
-    const layers::LayersObserverEpoch& aEpoch, bool aForceRepaint) {
+    const layers::LayersObserverEpoch& aEpoch) {
   if (!IPCOpen() || !mPuppetWidget || !mPuppetWidget->HasLayerManager()) {
     
     
@@ -3404,7 +3389,7 @@ void BrowserChild::PaintWhileInterruptingJS(
 
   MOZ_DIAGNOSTIC_ASSERT(nsContentUtils::IsSafeToRunScript());
   nsAutoScriptBlocker scriptBlocker;
-  RecvRenderLayers(true , aForceRepaint, aEpoch);
+  RecvRenderLayers(true , aEpoch);
 }
 
 nsresult BrowserChild::CanCancelContentJS(

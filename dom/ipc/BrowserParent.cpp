@@ -3294,21 +3294,20 @@ void BrowserParent::SetRenderLayers(bool aEnabled) {
 
   mRenderLayers = aEnabled;
 
-  SetRenderLayersInternal(aEnabled, false );
+  SetRenderLayersInternal(aEnabled);
 }
 
-void BrowserParent::SetRenderLayersInternal(bool aEnabled, bool aForceRepaint) {
+void BrowserParent::SetRenderLayersInternal(bool aEnabled) {
   
   
   mLayerTreeEpoch = mLayerTreeEpoch.Next();
 
-  Unused << SendRenderLayers(aEnabled, aForceRepaint, mLayerTreeEpoch);
+  Unused << SendRenderLayers(aEnabled, mLayerTreeEpoch);
 
   
   
   if (aEnabled) {
-    Manager()->PaintTabWhileInterruptingJS(this, aForceRepaint,
-                                           mLayerTreeEpoch);
+    Manager()->PaintTabWhileInterruptingJS(this, mLayerTreeEpoch);
   }
 }
 
@@ -3325,7 +3324,7 @@ void BrowserParent::ForceRepaint() {
     ProcessPriorityManager::TabActivityChanged(this, true);
   }
 
-  SetRenderLayersInternal(true , true );
+  SetRenderLayersInternal(true );
 }
 
 void BrowserParent::NotifyResolutionChanged() {
