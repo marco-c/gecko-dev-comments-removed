@@ -105,6 +105,12 @@ const enginesCache = {
 add_task(async function setup() {
   await AddonTestUtils.promiseStartupManager();
 
+  
+  Services.prefs.setBoolPref(
+    "toolkit.telemetry.testing.overrideProductsCheck",
+    true
+  );
+
   useTestEngineConfig("resource://test/data1/");
   Services.prefs.setCharPref(SearchUtils.BROWSER_SEARCH_PREF + "region", "US");
   Services.locale.availableLocales = ["en-US"];
