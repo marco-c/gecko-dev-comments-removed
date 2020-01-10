@@ -294,15 +294,6 @@ uint32_t GridLines::AppendRemovedAutoFits(
     const ComputedGridLineInfo* aLineInfo, nscoord aLastTrackEdge,
     uint32_t& aRepeatIndex, uint32_t aNumRepeatTracks,
     uint32_t aNumLeadingTracks, nsTArray<RefPtr<nsAtom>>& aLineNames) {
-  
-  bool alreadyHasBeforeLineNames = true;
-  for (const auto& beforeName : aLineInfo->mNamesBefore) {
-    if (!aLineNames.Contains(beforeName)) {
-      alreadyHasBeforeLineNames = false;
-      break;
-    }
-  }
-
   bool extractedExplicitLineNames = false;
   nsTArray<RefPtr<nsAtom>> explicitLineNames;
   uint32_t linesAdded = 0;
@@ -327,11 +318,7 @@ uint32_t GridLines::AppendRemovedAutoFits(
       extractedExplicitLineNames = true;
     }
 
-    
-    
-    if (linesAdded > 0 || !alreadyHasBeforeLineNames) {
-      AddLineNamesIfNotPresent(aLineNames, aLineInfo->mNamesBefore);
-    }
+    AddLineNamesIfNotPresent(aLineNames, aLineInfo->mNamesBefore);
 
     RefPtr<GridLine> line = new GridLine(this);
     mLines.AppendElement(line);
@@ -365,6 +352,7 @@ uint32_t GridLines::AppendRemovedAutoFits(
 
     linesAdded++;
   }
+
   aRepeatIndex++;
 
   if (extractedExplicitLineNames) {
@@ -372,11 +360,12 @@ uint32_t GridLines::AppendRemovedAutoFits(
     AddLineNamesIfNotPresent(aLineNames, explicitLineNames);
   }
 
-  if (alreadyHasBeforeLineNames && linesAdded > 0) {
-    
-    
+  
+  
+  if (aRepeatIndex < aNumRepeatTracks) {
     AddLineNamesIfNotPresent(aLineNames, aLineInfo->mNamesBefore);
   }
+
   return linesAdded;
 }
 

@@ -837,8 +837,8 @@ void ReflowInput::InitDynamicReflowRoot() {
   
   
   if (canBeDynamicReflowRoot &&
-      (mStylePosition->GridTemplateColumns().mIsSubgrid ||
-       mStylePosition->GridTemplateRows().mIsSubgrid) &&
+      (mStylePosition->mGridTemplateColumns.IsSubgrid() ||
+       mStylePosition->mGridTemplateRows.IsSubgrid()) &&
       !(mStyleDisplay->IsContainLayout() || mStyleDisplay->IsContainPaint())) {
     
     

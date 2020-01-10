@@ -951,71 +951,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList {
       mMozListReversed;  
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-struct nsStyleGridTemplate {
-  nsTArray<nsTArray<RefPtr<nsAtom>>> mLineNameLists;
-  nsTArray<mozilla::StyleTrackSize> mTrackSizingFunctions;
-  nsTArray<RefPtr<nsAtom>> mRepeatAutoLineNameListBefore;
-  nsTArray<RefPtr<nsAtom>> mRepeatAutoLineNameListAfter;
-  int16_t mRepeatAutoIndex;  
-  bool mIsAutoFill : 1;
-  bool mIsSubgrid : 1;
-
-  nsStyleGridTemplate()
-      : mRepeatAutoIndex(-1), mIsAutoFill(false), mIsSubgrid(false) {}
-
-  inline bool operator==(const nsStyleGridTemplate& aOther) const {
-    return mIsSubgrid == aOther.mIsSubgrid &&
-           mLineNameLists == aOther.mLineNameLists &&
-           mTrackSizingFunctions == aOther.mTrackSizingFunctions &&
-           mIsAutoFill == aOther.mIsAutoFill &&
-           mRepeatAutoIndex == aOther.mRepeatAutoIndex &&
-           mRepeatAutoLineNameListBefore ==
-               aOther.mRepeatAutoLineNameListBefore &&
-           mRepeatAutoLineNameListAfter == aOther.mRepeatAutoLineNameListAfter;
-  }
-
-  bool HasRepeatAuto() const { return mRepeatAutoIndex != -1; }
-
-  bool IsRepeatAutoIndex(uint32_t aIndex) const {
-    MOZ_ASSERT(aIndex < uint32_t(2 * mozilla::StyleMAX_GRID_LINE));
-    return int32_t(aIndex) == mRepeatAutoIndex;
-  }
-};
-
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   using LengthPercentageOrAuto = mozilla::LengthPercentageOrAuto;
   using Position = mozilla::Position;
@@ -1097,9 +1032,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   float mFlexGrow;
   float mFlexShrink;
   mozilla::StyleZIndex mZIndex;
-  mozilla::UniquePtr<nsStyleGridTemplate> mGridTemplateColumns;
-  mozilla::UniquePtr<nsStyleGridTemplate> mGridTemplateRows;
 
+  mozilla::StyleGridTemplateComponent mGridTemplateColumns;
+  mozilla::StyleGridTemplateComponent mGridTemplateRows;
   mozilla::StyleGridTemplateAreas mGridTemplateAreas;
 
   mozilla::StyleGridLine mGridColumnStart;
@@ -1129,9 +1064,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   inline bool BSizeDependsOnContainer(WritingMode) const;
   inline bool MinBSizeDependsOnContainer(WritingMode) const;
   inline bool MaxBSizeDependsOnContainer(WritingMode) const;
-
-  const nsStyleGridTemplate& GridTemplateColumns() const;
-  const nsStyleGridTemplate& GridTemplateRows() const;
 
  private:
   template <typename SizeOrMaxSize>
