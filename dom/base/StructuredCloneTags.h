@@ -92,7 +92,7 @@ enum StructuredCloneTags {
 
   
   
-  SCTAG_DOM_DOMMATRIX_READONLY,
+  SCTAG_DOM_DOMMATRIXREADONLY,
 
   
   
