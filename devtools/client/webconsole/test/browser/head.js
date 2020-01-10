@@ -388,6 +388,14 @@ function loadDocument(url, browser = gBrowser.selectedBrowser) {
   return BrowserTestUtils.browserLoaded(browser);
 }
 
+async function toggleConsoleSetting(hud, node) {
+  const toolbox = hud.toolbox;
+  const doc = toolbox ? toolbox.doc : hud.chromeWindow.document;
+
+  const menuItem = doc.querySelector(node);
+  menuItem.click();
+}
+
 
 
 
