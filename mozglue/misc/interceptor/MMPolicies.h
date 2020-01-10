@@ -8,11 +8,65 @@
 #define mozilla_interceptor_MMPolicies_h
 
 #include "mozilla/Assertions.h"
+#include "mozilla/DynamicallyLinkedFunctionPtr.h"
+#include "mozilla/MathAlgorithms.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/Span.h"
 #include "mozilla/TypedEnumBits.h"
 #include "mozilla/Types.h"
 #include "mozilla/WindowsMapRemoteView.h"
 
 #include <windows.h>
+
+
+#if defined(__MINGW32__)
+typedef struct _MEM_ADDRESS_REQUIREMENTS {
+    PVOID LowestStartingAddress;
+    PVOID HighestEndingAddress;
+    SIZE_T Alignment;
+} MEM_ADDRESS_REQUIREMENTS, *PMEM_ADDRESS_REQUIREMENTS;
+
+typedef enum MEM_EXTENDED_PARAMETER_TYPE {
+    MemExtendedParameterInvalidType = 0,
+    MemExtendedParameterAddressRequirements,
+    MemExtendedParameterNumaNode,
+    MemExtendedParameterPartitionHandle,
+    MemExtendedParameterUserPhysicalHandle,
+    MemExtendedParameterAttributeFlags,
+    MemExtendedParameterMax
+} MEM_EXTENDED_PARAMETER_TYPE, *PMEM_EXTENDED_PARAMETER_TYPE;
+
+#define MEM_EXTENDED_PARAMETER_TYPE_BITS    8
+
+typedef struct DECLSPEC_ALIGN(8) MEM_EXTENDED_PARAMETER {
+
+    struct {
+        DWORD64 Type : MEM_EXTENDED_PARAMETER_TYPE_BITS;
+        DWORD64 Reserved : 64 - MEM_EXTENDED_PARAMETER_TYPE_BITS;
+    } DUMMYSTRUCTNAME;
+
+    union {
+        DWORD64 ULong64;
+        PVOID Pointer;
+        SIZE_T Size;
+        HANDLE Handle;
+        DWORD ULong;
+    } DUMMYUNIONNAME;
+
+} MEM_EXTENDED_PARAMETER, *PMEM_EXTENDED_PARAMETER;
+#endif  
+
+#if (NTDDI_VERSION < NTDDI_WIN10_RS4) || defined(__MINGW32__)
+PVOID WINAPI VirtualAlloc2(HANDLE Process, PVOID BaseAddress, SIZE_T Size,
+                           ULONG AllocationType, ULONG PageProtection,
+                           MEM_EXTENDED_PARAMETER* ExtendedParameters,
+                           ULONG ParameterCount);
+PVOID WINAPI MapViewOfFile3(HANDLE FileMapping, HANDLE Process,
+                            PVOID BaseAddress, ULONG64 Offset, SIZE_T ViewSize,
+                            ULONG AllocationType, ULONG PageProtection,
+                            MEM_EXTENDED_PARAMETER* ExtendedParameters,
+                            ULONG ParameterCount);
+#endif  
 
 
 #if !defined(_CRT_RAND_S)
@@ -22,14 +76,22 @@ extern "C" errno_t rand_s(unsigned int* randomValue);
 namespace mozilla {
 namespace interceptor {
 
-enum class ReservationFlags : uint32_t {
-  eDefault = 0,
-  eForceFirst2GB = 1,
-};
+class MOZ_TRIVIAL_CTOR_DTOR MMPolicyBase {
+ protected:
+  static uintptr_t AlignDown(const uintptr_t aUnaligned,
+                             const uintptr_t aAlignTo) {
+    MOZ_ASSERT(IsPowerOfTwo(aAlignTo));
+#pragma warning(suppress : 4146)
+    return aUnaligned & (-aAlignTo);
+  }
 
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ReservationFlags)
+  static uintptr_t AlignUp(const uintptr_t aUnaligned,
+                           const uintptr_t aAlignTo) {
+    MOZ_ASSERT(IsPowerOfTwo(aAlignTo));
+#pragma warning(suppress : 4146)
+    return aUnaligned + ((-aUnaligned) & (aAlignTo - 1));
+  }
 
-class MMPolicyBase {
  public:
   static DWORD ComputeAllocationSize(const uint32_t aRequestedSize) {
     MOZ_ASSERT(aRequestedSize);
@@ -65,7 +127,30 @@ class MMPolicyBase {
     return kPageSize;
   }
 
-#if defined(_M_X64)
+  static uintptr_t GetMaxUserModeAddress() {
+    static const uintptr_t kMaxUserModeAddr = []() -> uintptr_t {
+      SYSTEM_INFO sysInfo;
+      ::GetSystemInfo(&sysInfo);
+      return reinterpret_cast<uintptr_t>(sysInfo.lpMaximumApplicationAddress);
+    }();
+
+    return kMaxUserModeAddr;
+  }
+
+  static const uint8_t* GetLowerBound(const Span<const uint8_t>& aBounds) {
+    return &(*aBounds.cbegin());
+  }
+
+  static const uint8_t* GetUpperBoundIncl(const Span<const uint8_t>& aBounds) {
+    
+    return &(*(aBounds.cend() - 1));
+  }
+
+  static const uint8_t* GetUpperBoundExcl(const Span<const uint8_t>& aBounds) {
+    
+    
+    return GetUpperBoundIncl(aBounds) + 1;
+  }
 
   
 
@@ -75,11 +160,95 @@ class MMPolicyBase {
 
 
 
-  static PVOID FindLowRegion(HANDLE aProcess, const size_t aDesiredBytesLen) {
-    const DWORD granularity = GetAllocGranularity();
+  static Maybe<Span<const uint8_t>> SpanFromPivotAndDistance(
+      const uint32_t aSize, const uintptr_t aPivotAddr,
+      const uint32_t aMaxDistanceFromPivot) {
+    if (!aPivotAddr || !aMaxDistanceFromPivot) {
+      return Nothing();
+    }
 
-    MOZ_ASSERT(aDesiredBytesLen / granularity > 0);
+    
+    
+    const uintptr_t kMinAllowableAddress = 0x100000;
+
+    const uintptr_t kGranularity(GetAllocGranularity());
+
+    
+    CheckedInt<uintptr_t> lowerBound(aPivotAddr);
+    lowerBound -= aMaxDistanceFromPivot;
+    if (lowerBound.isValid()) {
+      
+      
+      lowerBound = std::max(lowerBound.value(), kMinAllowableAddress);
+    } else {
+      
+      
+      lowerBound = CheckedInt<uintptr_t>(kMinAllowableAddress);
+    }
+
+    
+    lowerBound = AlignUp(lowerBound.value(), kGranularity);
+    MOZ_ASSERT(lowerBound.isValid());
+    if (!lowerBound.isValid()) {
+      return Nothing();
+    }
+
+    
+    
+    const uintptr_t kMaxUserModeAddr = GetMaxUserModeAddress();
+
+    
+    CheckedInt<uintptr_t> upperBound(aPivotAddr);
+    upperBound += aMaxDistanceFromPivot;
+    if (upperBound.isValid()) {
+      
+      
+      upperBound = std::min(upperBound.value(), kMaxUserModeAddr);
+    } else {
+      
+      
+      upperBound = CheckedInt<uintptr_t>(kMaxUserModeAddr);
+    }
+
+    
+    
+    upperBound -= aSize;
+    if (!upperBound.isValid()) {
+      return Nothing();
+    }
+
+    
+    upperBound = AlignDown(upperBound.value(), kGranularity);
+    if (!upperBound.isValid()) {
+      return Nothing();
+    }
+
+    MOZ_ASSERT(lowerBound.value() < upperBound.value());
+    if (lowerBound.value() >= upperBound.value()) {
+      return Nothing();
+    }
+
+    
+    return Some(MakeSpan(reinterpret_cast<const uint8_t*>(lowerBound.value()),
+                         upperBound.value() - lowerBound.value()));
+  }
+
+  
+
+
+
+
+
+  static PVOID FindRegion(HANDLE aProcess, const size_t aDesiredBytesLen,
+                          const uint8_t* aRangeMin, const uint8_t* aRangeMax) {
+    const DWORD kGranularity = GetAllocGranularity();
+    MOZ_ASSERT(aDesiredBytesLen >= kGranularity);
     if (!aDesiredBytesLen) {
+      return nullptr;
+    }
+
+    MOZ_ASSERT(aRangeMin < aRangeMax);
+    if (aRangeMin >= aRangeMax) {
       return nullptr;
     }
 
@@ -89,21 +258,18 @@ class MMPolicyBase {
     rand_s(&rnd);
 
     
-    const uint64_t kMinAddress = 0x0000000000100000ULL;
-    const uint64_t kMaxAddress = 0x0000000080000000ULL;
-    uint64_t maxOffset =
-        (kMaxAddress - kMinAddress - aDesiredBytesLen) / granularity;
-    uint64_t offset = (uint64_t(rnd) % maxOffset) * granularity;
+    uintptr_t maxOffset =
+        (aRangeMax - aRangeMin - aDesiredBytesLen) / kGranularity;
+    uintptr_t offset = (uintptr_t(rnd) % maxOffset) * kGranularity;
 
     
-    char* address = reinterpret_cast<char*>(kMinAddress) + offset;
+    const uint8_t* address = aRangeMin + offset;
     
-    char* const kMaxPtr =
-        reinterpret_cast<char*>(kMaxAddress) - aDesiredBytesLen;
+    const uint8_t* const kMaxPtr = aRangeMax - aDesiredBytesLen;
 
     MOZ_DIAGNOSTIC_ASSERT(address <= kMaxPtr);
 
-    MEMORY_BASIC_INFORMATION mbi = {};
+    MEMORY_BASIC_INFORMATION mbi;
     SIZE_T len = sizeof(mbi);
 
     
@@ -114,55 +280,83 @@ class MMPolicyBase {
         return mbi.BaseAddress;
       }
 
-      address = reinterpret_cast<char*>(mbi.BaseAddress) + mbi.RegionSize;
+      address =
+          reinterpret_cast<const uint8_t*>(mbi.BaseAddress) + mbi.RegionSize;
     }
 
     return nullptr;
   }
 
-#endif  
+  
 
-  template <typename ReserveFnT>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename ReserveFnT, typename ReserveRangeFnT>
   static PVOID Reserve(HANDLE aProcess, const uint32_t aSize,
                        const ReserveFnT& aReserveFn,
-                       const ReservationFlags aFlags) {
-#if defined(_M_X64)
-    if (aFlags & ReservationFlags::eForceFirst2GB) {
-      size_t curAttempt = 0;
-      const size_t kMaxAttempts = 8;
-
+                       const ReserveRangeFnT& aReserveRangeFn,
+                       const Maybe<Span<const uint8_t>>& aBounds) {
+    if (!aBounds) {
       
-      
-      
-      while (curAttempt < kMaxAttempts) {
-        PVOID base = FindLowRegion(aProcess, aSize);
-        if (!base) {
-          return nullptr;
-        }
+      return aReserveFn(aProcess, nullptr, aSize);
+    }
 
-        PVOID result = aReserveFn(aProcess, base, aSize);
-        if (result) {
-          return result;
-        }
+    const uint8_t* lowerBound = GetLowerBound(aBounds.ref());
+    const uint8_t* upperBoundExcl = GetUpperBoundExcl(aBounds.ref());
 
-        ++curAttempt;
+    Maybe<PVOID> result =
+        aReserveRangeFn(aProcess, aSize, lowerBound, upperBoundExcl);
+    if (result) {
+      return result.value();
+    }
+
+    
+    
+
+    size_t curAttempt = 0;
+    const size_t kMaxAttempts = 8;
+
+    
+    
+    
+    while (curAttempt < kMaxAttempts) {
+      PVOID base = FindRegion(aProcess, aSize, lowerBound, upperBoundExcl);
+      if (!base) {
+        return nullptr;
       }
 
-      
-      
-      
+      result = Some(aReserveFn(aProcess, base, aSize));
+      if (result.value()) {
+        return result.value();
+      }
+
+      ++curAttempt;
     }
-#endif  
+
+    
+    
+    
 
     return aReserveFn(aProcess, nullptr, aSize);
   }
 };
 
-class MMPolicyInProcess : public MMPolicyBase {
+class MOZ_TRIVIAL_CTOR_DTOR MMPolicyInProcess : public MMPolicyBase {
  public:
   typedef MMPolicyInProcess MMPolicyT;
 
-  explicit MMPolicyInProcess()
+  constexpr MMPolicyInProcess()
       : mBase(nullptr), mReservationSize(0), mCommitOffset(0) {}
 
   MMPolicyInProcess(const MMPolicyInProcess&) = delete;
@@ -185,9 +379,6 @@ class MMPolicyInProcess : public MMPolicyBase {
 
     return *this;
   }
-
-  
-  ~MMPolicyInProcess() = default;
 
   explicit operator bool() const { return !!mBase; }
 
@@ -262,7 +453,8 @@ class MMPolicyInProcess : public MMPolicyBase {
   
 
 
-  uint32_t Reserve(const uint32_t aSize, const ReservationFlags aFlags) {
+  uint32_t Reserve(const uint32_t aSize,
+                   const Maybe<Span<const uint8_t>>& aBounds) {
     if (!aSize) {
       return 0;
     }
@@ -278,8 +470,31 @@ class MMPolicyInProcess : public MMPolicyBase {
       return ::VirtualAlloc(aBase, aSize, MEM_RESERVE, PAGE_NOACCESS);
     };
 
-    mBase = static_cast<uint8_t*>(MMPolicyBase::Reserve(
-        ::GetCurrentProcess(), mReservationSize, reserveFn, aFlags));
+    auto reserveWithinRangeFn =
+        [](HANDLE aProcess, uint32_t aSize, const uint8_t* aRangeMin,
+           const uint8_t* aRangeMaxExcl) -> Maybe<PVOID> {
+      static const DynamicallyLinkedFunctionPtr<decltype(&::VirtualAlloc2)>
+          pVirtualAlloc2(L"kernelbase.dll", "VirtualAlloc2");
+      if (!pVirtualAlloc2) {
+        return Nothing();
+      }
+
+      
+      MEM_ADDRESS_REQUIREMENTS memReq = {
+          const_cast<uint8_t*>(aRangeMin),
+          const_cast<uint8_t*>(aRangeMaxExcl - 1)};
+
+      MEM_EXTENDED_PARAMETER memParam = {};
+      memParam.Type = MemExtendedParameterAddressRequirements;
+      memParam.Pointer = &memReq;
+
+      return Some(pVirtualAlloc2(aProcess, nullptr, aSize, MEM_RESERVE,
+                                 PAGE_NOACCESS, &memParam, 1));
+    };
+
+    mBase = static_cast<uint8_t*>(
+        MMPolicyBase::Reserve(::GetCurrentProcess(), mReservationSize,
+                              reserveFn, reserveWithinRangeFn, aBounds));
 
     if (!mBase) {
       return 0;
@@ -471,7 +686,8 @@ class MMPolicyOutOfProcess : public MMPolicyBase {
   
 
 
-  uint32_t Reserve(const uint32_t aSize, const ReservationFlags aFlags) {
+  uint32_t Reserve(const uint32_t aSize,
+                   const Maybe<Span<const uint8_t>>& aBounds) {
     if (!aSize || !mProcess) {
       return 0;
     }
@@ -502,8 +718,31 @@ class MMPolicyOutOfProcess : public MMPolicyBase {
                                           PAGE_EXECUTE_READ);
     };
 
-    mRemoteView =
-        MMPolicyBase::Reserve(mProcess, mReservationSize, reserveFn, aFlags);
+    auto reserveWithinRangeFn =
+        [mapping = mMapping](HANDLE aProcess, uint32_t aSize,
+                             const uint8_t* aRangeMin,
+                             const uint8_t* aRangeMaxExcl) -> Maybe<PVOID> {
+      static const DynamicallyLinkedFunctionPtr<decltype(&::MapViewOfFile3)>
+          pMapViewOfFile3(L"kernelbase.dll", "MapViewOfFile3");
+      if (!pMapViewOfFile3) {
+        return Nothing();
+      }
+
+      
+      MEM_ADDRESS_REQUIREMENTS memReq = {
+          const_cast<uint8_t*>(aRangeMin),
+          const_cast<uint8_t*>(aRangeMaxExcl - 1)};
+
+      MEM_EXTENDED_PARAMETER memParam = {};
+      memParam.Type = MemExtendedParameterAddressRequirements;
+      memParam.Pointer = &memReq;
+
+      return Some(pMapViewOfFile3(mapping, aProcess, nullptr, 0, aSize, 0,
+                                  PAGE_EXECUTE_READ, &memParam, 1));
+    };
+
+    mRemoteView = MMPolicyBase::Reserve(mProcess, mReservationSize, reserveFn,
+                                        reserveWithinRangeFn, aBounds);
     if (!mRemoteView) {
       return 0;
     }
