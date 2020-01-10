@@ -3389,23 +3389,21 @@ Toolbox.prototype = {
       objectActor.preview &&
       objectActor.preview.nodeType === domNodeConstants.ELEMENT_NODE
     ) {
+      return this.viewElementInInspector(objectActor, inspectFromAnnotation);
+    }
+
+    if (objectActor.class == "Function") {
+      const { url, line } = objectActor.location;
+      return this.viewSourceInDebugger(url, line);
+    }
+
+    if (objectActor.type !== "null" && objectActor.type !== "undefined") {
       
-      await this.loadTool("inspector");
-      const inspector = this.getPanel("inspector");
-      const nodeFound = await inspector.inspectNodeActor(
-        objectActor.actor,
-        inspectFromAnnotation
-      );
-      if (nodeFound) {
-        await this.selectTool("inspector");
+      
+      if (this.currentToolId != "webconsole") {
+        await this.openSplitConsole();
       }
-    } else if (
-      objectActor.type !== "null" &&
-      objectActor.type !== "undefined"
-    ) {
-      
-      
-      await this.openSplitConsole();
+
       const panel = this.getPanel("webconsole");
       panel.hud.ui.inspectObjectActor(objectActor);
     }
@@ -3793,6 +3791,19 @@ Toolbox.prototype = {
       sourceLine,
       sourceColumn
     );
+  },
+
+  viewElementInInspector: async function(objectActor, inspectFromAnnotation) {
+    
+    await this.loadTool("inspector");
+    const inspector = this.getPanel("inspector");
+    const nodeFound = await inspector.inspectNodeActor(
+      objectActor.actor,
+      inspectFromAnnotation
+    );
+    if (nodeFound) {
+      await this.selectTool("inspector");
+    }
   },
 
   
