@@ -201,16 +201,9 @@ let ACTORS = {
     allFrames: true,
   },
 
-  
-  
-  
-  
-  
-  
-  
-  UAWidgetsDateTimeBox: {
+  UAWidgets: {
     child: {
-      moduleURI: "resource://gre/actors/UAWidgetsDateTimeBoxChild.jsm",
+      moduleURI: "resource://gre/actors/UAWidgetsChild.jsm",
       events: {
         UAWidgetSetupOrChange: {},
         UAWidgetTeardown: {},
@@ -369,16 +362,6 @@ let LEGACY_ACTORS = {
         "Browser:Thumbnail:CheckState",
         "Browser:Thumbnail:GetOriginalURL",
       ],
-    },
-  },
-
-  UAWidgets: {
-    child: {
-      module: "resource://gre/actors/UAWidgetsChild.jsm",
-      events: {
-        UAWidgetSetupOrChange: {},
-        UAWidgetTeardown: {},
-      },
     },
   },
 
