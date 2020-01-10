@@ -1,3 +1,18 @@
+
+const kCurrentDirectory = ".";
+
+
+const kParentDirectory = "..";
+
+
+let kPathSeparators;
+if (navigator.userAgent.includes("Windows NT")) {
+    
+    kPathSeparators = ['/', '\\' ];
+} else {
+    kPathSeparators = [ '/' ];
+}
+
 async function cleanupSandboxedFileSystem() {
     const dir = await FileSystemDirectoryHandle.getSystemDirectory({ type: 'sandbox' });
     for await (let entry of dir.getEntries()) {
@@ -36,6 +51,22 @@ async function getSortedDirectoryEntries(handle) {
     }
     result.sort();
     return result;
+}
+
+async function createDirectory(test, name, parent) {
+  const parent_dir_handle = parent ? parent :
+      await FileSystemDirectoryHandle.getSystemDirectory({ type: 'sandbox' });
+
+  const new_dir_handle = await parent_dir_handle.getDirectory(name, { create: true });
+  test.add_cleanup(async () => {
+        try {
+            await new_dir_handle.removeRecursively();
+        } catch (e) {
+            
+            
+        }
+  });
+  return new_dir_handle;
 }
 
 async function createEmptyFile(test, name, parent) {
