@@ -143,7 +143,7 @@ class alignas(uintptr_t) JitScript final {
     
     
     
-    HeapPtr<EnvironmentObject*> templateEnv = nullptr;
+    const HeapPtr<EnvironmentObject*> templateEnv = nullptr;
 
     
     

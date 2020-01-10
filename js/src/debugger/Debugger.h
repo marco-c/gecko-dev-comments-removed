@@ -1314,7 +1314,7 @@ class Breakpoint {
 
 
 
-  HeapPtr<JSObject*> wrappedDebugger;
+  const HeapPtr<JSObject*> wrappedDebugger;
 
   
   BreakpointSite* const site;
@@ -1328,7 +1328,7 @@ class Breakpoint {
 
 
 
-  HeapPtr<JSObject*> handler;
+  const HeapPtr<JSObject*> handler;
 
   
 
@@ -1369,7 +1369,7 @@ class Breakpoint {
 
 class JSBreakpointSite : public BreakpointSite {
  public:
-  HeapPtr<JSScript*> script;
+  const HeapPtr<JSScript*> script;
   jsbytecode* const pc;
 
  public:
@@ -1387,7 +1387,7 @@ inline JSBreakpointSite* BreakpointSite::asJS() {
 
 class WasmBreakpointSite : public BreakpointSite {
  public:
-  HeapPtr<WasmInstanceObject*> instanceObject;
+  const HeapPtr<WasmInstanceObject*> instanceObject;
   uint32_t offset;
 
  public:
