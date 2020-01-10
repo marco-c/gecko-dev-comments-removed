@@ -485,9 +485,15 @@ already_AddRefed<IDBOpenDBRequest> IDBFactory::Open(
     }
   }
 
-  const auto principalType = IdentifyPrincipalType(*mPrincipalInfo);
-
-  Telemetry::AccumulateCategorical(principalType);
+  
+  
+  
+  
+  
+  
+  if (aOptions.IsAnyMemberPresent()) {
+    Telemetry::AccumulateCategorical(IdentifyPrincipalType(*mPrincipalInfo));
+  }
 
   return OpenInternal(aCx,
                        nullptr, aName, aOptions.mVersion,
