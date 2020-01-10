@@ -6,6 +6,8 @@ var originalWindowWidth;
 registerCleanupFunction(function() {
   overflowPanel.removeAttribute("animate");
   window.resizeTo(originalWindowWidth, window.outerHeight);
+  let navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
+  return TestUtils.waitForCondition(() => !navbar.hasAttribute("overflowing"));
 });
 
 
@@ -82,7 +84,9 @@ add_task(async function() {
   CustomizableUI.reset();
 
   
-  await TestUtils.waitForCondition(() => navbar.hasAttribute("overflowing"));
+  await TestUtils.waitForCondition(() =>
+    sidebarButton.hasAttribute("overflowedItem")
+  );
   ok(navbar.hasAttribute("overflowing"), "Should have an overflowing toolbar.");
 
   sidebarButtonPlacement = CustomizableUI.getPlacementOfWidget(
