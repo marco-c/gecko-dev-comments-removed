@@ -805,6 +805,19 @@ where
                         if pseudo.is_marker() && self.element.marker_pseudo_element().is_none() {
                             invalidated_self = true;
                         }
+
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        if pseudo.is_selection() {
+                            invalidated_self = true;
+                        }
                     }
                 }
 

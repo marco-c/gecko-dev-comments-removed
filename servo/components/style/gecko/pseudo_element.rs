@@ -118,6 +118,12 @@ impl PseudoElement {
 
     
     #[inline]
+    pub fn is_selection(&self) -> bool {
+        *self == PseudoElement::Selection
+    }
+
+    
+    #[inline]
     pub fn is_first_letter(&self) -> bool {
         *self == PseudoElement::FirstLetter
     }

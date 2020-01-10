@@ -145,6 +145,12 @@ impl PseudoElement {
 
     
     #[inline]
+    pub fn is_selection(&self) -> bool {
+        *self == PseudoElement::Selection
+    }
+
+    
+    #[inline]
     pub fn is_before(&self) -> bool {
         *self == PseudoElement::Before
     }
