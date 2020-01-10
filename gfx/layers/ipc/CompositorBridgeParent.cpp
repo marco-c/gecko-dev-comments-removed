@@ -1553,8 +1553,7 @@ PLayerTransactionParent* CompositorBridgeParent::AllocPLayerTransactionParent(
 #ifdef XP_WIN
   
   
-  if (StaticPrefs::gfx_direct3d11_use_double_buffering() && IsWin10OrLater() &&
-      XRE_IsGPUProcess()) {
+  if (gfxVars::UseDoubleBufferingWithCompositor() && XRE_IsGPUProcess()) {
     mWidget->AsWindows()->EnsureCompositorWindow();
   }
 #endif

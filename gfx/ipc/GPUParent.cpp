@@ -264,8 +264,7 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
   }
 #ifdef XP_WIN
   else {
-    if (StaticPrefs::gfx_direct3d11_use_double_buffering() &&
-        IsWin10OrLater()) {
+    if (gfxVars::UseDoubleBufferingWithCompositor()) {
       
       
       widget::WinCompositorWindowThread::Start();
