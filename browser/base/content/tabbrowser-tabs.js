@@ -906,7 +906,7 @@
     }
 
     get newTabButton() {
-      return this.querySelector(".tabs-newtab-button");
+      return this.querySelector("#tabs-newtab-button");
     }
 
     
