@@ -20,7 +20,11 @@
 
 const global = this;
 
-this.EXPORTED_SYMBOLS = ["KintoHttpClient"];
+var EXPORTED_SYMBOLS = ["KintoHttpClient"];
+
+const { setTimeout, clearTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+XPCOMUtils.defineLazyGlobalGetters(global, ["fetch"]);
 
 
 
@@ -56,9 +60,6 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-ChromeUtils.import("resource://gre/modules/Timer.jsm", global);
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-XPCOMUtils.defineLazyGlobalGetters(global, ["fetch"]);
 const {
   EventEmitter
 } = ChromeUtils.import("resource://gre/modules/EventEmitter.jsm");
@@ -106,14 +107,15 @@ for (var i = 0; i < 256; ++i) {
 function bytesToUuid(buf, offset) {
   var i = offset || 0;
   var bth = byteToHex;
-  return bth[buf[i++]] + bth[buf[i++]] +
-          bth[buf[i++]] + bth[buf[i++]] + '-' +
-          bth[buf[i++]] + bth[buf[i++]] + '-' +
-          bth[buf[i++]] + bth[buf[i++]] + '-' +
-          bth[buf[i++]] + bth[buf[i++]] + '-' +
-          bth[buf[i++]] + bth[buf[i++]] +
-          bth[buf[i++]] + bth[buf[i++]] +
-          bth[buf[i++]] + bth[buf[i++]];
+  
+  return ([bth[buf[i++]], bth[buf[i++]], 
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]],
+	bth[buf[i++]], bth[buf[i++]],
+	bth[buf[i++]], bth[buf[i++]]]).join('');
 }
 
 module.exports = bytesToUuid;
@@ -125,8 +127,10 @@ module.exports = bytesToUuid;
 
 
 
-var getRandomValues = (typeof(crypto) != 'undefined' && crypto.getRandomValues.bind(crypto)) ||
-                      (typeof(msCrypto) != 'undefined' && msCrypto.getRandomValues.bind(msCrypto));
+
+var getRandomValues = (typeof(crypto) != 'undefined' && crypto.getRandomValues && crypto.getRandomValues.bind(crypto)) ||
+                      (typeof(msCrypto) != 'undefined' && typeof window.msCrypto.getRandomValues == 'function' && msCrypto.getRandomValues.bind(msCrypto));
+
 if (getRandomValues) {
   
   var rnds8 = new Uint8Array(16); 
@@ -314,13 +318,13 @@ var _batch = require("./batch");
 
 var _bucket = _interopRequireDefault(require("./bucket"));
 
-var _dec, _dec2, _dec3, _dec4, _dec5, _dec6, _dec7, _class;
+var _dec, _dec2, _dec3, _dec4, _dec5, _dec6, _dec7, _dec8, _class;
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) { var desc = {}; Object['ke' + 'ys'](descriptor).forEach(function (key) { desc[key] = descriptor[key]; }); desc.enumerable = !!desc.enumerable; desc.configurable = !!desc.configurable; if ('value' in desc || desc.initializer) { desc.writable = true; } desc = decorators.slice().reverse().reduce(function (desc, decorator) { return decorator(target, property, desc) || desc; }, desc); if (context && desc.initializer !== void 0) { desc.value = desc.initializer ? desc.initializer.call(context) : void 0; desc.initializer = undefined; } if (desc.initializer === void 0) { Object['define' + 'Property'](target, property, desc); desc = null; } return desc; }
+function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) { var desc = {}; Object.keys(descriptor).forEach(function (key) { desc[key] = descriptor[key]; }); desc.enumerable = !!desc.enumerable; desc.configurable = !!desc.configurable; if ('value' in desc || desc.initializer) { desc.writable = true; } desc = decorators.slice().reverse().reduce(function (desc, decorator) { return decorator(target, property, desc) || desc; }, desc); if (context && desc.initializer !== void 0) { desc.value = desc.initializer ? desc.initializer.call(context) : void 0; desc.initializer = undefined; } if (desc.initializer === void 0) { Object.defineProperty(target, property, desc); desc = null; } return desc; }
 
 
 
@@ -340,7 +344,7 @@ const SUPPORTED_PROTOCOL_VERSION = "v1";
 
 
 exports.SUPPORTED_PROTOCOL_VERSION = SUPPORTED_PROTOCOL_VERSION;
-let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec2 = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec3 = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec4 = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec5 = (0, _utils.nobatch)("Can't use batch within a batch!"), _dec6 = (0, _utils.capable)(["permissions_endpoint"]), _dec7 = (0, _utils.support)("1.4", "2.0"), (_class = class KintoClientBase {
+let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec2 = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec3 = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec4 = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec5 = (0, _utils.nobatch)("Can't use batch within a batch!"), _dec6 = (0, _utils.capable)(["permissions_endpoint"]), _dec7 = (0, _utils.support)("1.4", "2.0"), _dec8 = (0, _utils.capable)(["accounts"]), (_class = class KintoClientBase {
   
 
 
@@ -852,6 +856,8 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
 
+
+
   async paginatedList(path, params, options = {}) {
     
     
@@ -861,7 +867,8 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
       filters,
       limit,
       pages,
-      since
+      since,
+      fields
     } = {
       sort: "-last_modified",
       ...params
@@ -871,11 +878,17 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
       throw new Error(`Invalid value for since (${since}), should be ETag value.`);
     }
 
-    const querystring = (0, _utils.qsify)({ ...filters,
+    const query = { ...filters,
       _sort: sort,
       _limit: limit,
       _since: since
-    });
+    };
+
+    if (fields) {
+      query._fields = fields;
+    }
+
+    const querystring = (0, _utils.qsify)(query);
     let results = [],
         current = 0;
 
@@ -896,15 +909,14 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
       })));
     };
 
-    const pageResults = (results, nextPage, etag, totalRecords) => {
+    const pageResults = (results, nextPage, etag) => {
       
       
       return {
         last_modified: etag ? etag.replace(/"/g, "") : etag,
         data: results,
         next: next.bind(null, nextPage),
-        hasNextPage: !!nextPage,
-        totalRecords
+        hasNextPage: !!nextPage
       };
     };
 
@@ -914,10 +926,9 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
     }) {
       const nextPage = headers.get("Next-Page");
       const etag = headers.get("ETag");
-      const totalRecords = parseInt(headers.get("Total-Records"), 10);
 
       if (!pages) {
-        return pageResults(json.data, nextPage, etag, totalRecords);
+        return pageResults(json.data, nextPage, etag);
       } 
 
 
@@ -926,7 +937,7 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
       if (current >= pages || !nextPage) {
         
-        return pageResults(results, nextPage, etag, totalRecords);
+        return pageResults(results, nextPage, etag);
       } 
 
 
@@ -973,6 +984,9 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
     });
   }
   
+
+
+
 
 
 
@@ -1085,7 +1099,17 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
     });
   }
 
-}, (_applyDecoratedDescriptor(_class.prototype, "fetchServerSettings", [_dec], Object.getOwnPropertyDescriptor(_class.prototype, "fetchServerSettings"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "fetchServerCapabilities", [_dec2], Object.getOwnPropertyDescriptor(_class.prototype, "fetchServerCapabilities"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "fetchUser", [_dec3], Object.getOwnPropertyDescriptor(_class.prototype, "fetchUser"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "fetchHTTPApiVersion", [_dec4], Object.getOwnPropertyDescriptor(_class.prototype, "fetchHTTPApiVersion"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "batch", [_dec5], Object.getOwnPropertyDescriptor(_class.prototype, "batch"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "listPermissions", [_dec6], Object.getOwnPropertyDescriptor(_class.prototype, "listPermissions"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "deleteBuckets", [_dec7], Object.getOwnPropertyDescriptor(_class.prototype, "deleteBuckets"), _class.prototype)), _class));
+  async createAccount(username, password) {
+    return this.execute(requests.createRequest(`/accounts/${username}`, {
+      data: {
+        password
+      }
+    }, {
+      method: "PUT"
+    }));
+  }
+
+}, (_applyDecoratedDescriptor(_class.prototype, "fetchServerSettings", [_dec], Object.getOwnPropertyDescriptor(_class.prototype, "fetchServerSettings"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "fetchServerCapabilities", [_dec2], Object.getOwnPropertyDescriptor(_class.prototype, "fetchServerCapabilities"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "fetchUser", [_dec3], Object.getOwnPropertyDescriptor(_class.prototype, "fetchUser"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "fetchHTTPApiVersion", [_dec4], Object.getOwnPropertyDescriptor(_class.prototype, "fetchHTTPApiVersion"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "batch", [_dec5], Object.getOwnPropertyDescriptor(_class.prototype, "batch"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "listPermissions", [_dec6], Object.getOwnPropertyDescriptor(_class.prototype, "listPermissions"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "deleteBuckets", [_dec7], Object.getOwnPropertyDescriptor(_class.prototype, "deleteBuckets"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "createAccount", [_dec8], Object.getOwnPropertyDescriptor(_class.prototype, "createAccount"), _class.prototype)), _class));
 exports.default = KintoClientBase;
 
 },{"./batch":8,"./bucket":9,"./endpoint":11,"./http":13,"./requests":14,"./utils":15}],8:[function(require,module,exports){
@@ -1174,7 +1198,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) { var desc = {}; Object['ke' + 'ys'](descriptor).forEach(function (key) { desc[key] = descriptor[key]; }); desc.enumerable = !!desc.enumerable; desc.configurable = !!desc.configurable; if ('value' in desc || desc.initializer) { desc.writable = true; } desc = decorators.slice().reverse().reduce(function (desc, decorator) { return decorator(target, property, desc) || desc; }, desc); if (context && desc.initializer !== void 0) { desc.value = desc.initializer ? desc.initializer.call(context) : void 0; desc.initializer = undefined; } if (desc.initializer === void 0) { Object['define' + 'Property'](target, property, desc); desc = null; } return desc; }
+function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) { var desc = {}; Object.keys(descriptor).forEach(function (key) { desc[key] = descriptor[key]; }); desc.enumerable = !!desc.enumerable; desc.configurable = !!desc.configurable; if ('value' in desc || desc.initializer) { desc.writable = true; } desc = decorators.slice().reverse().reduce(function (desc, decorator) { return decorator(target, property, desc) || desc; }, desc); if (context && desc.initializer !== void 0) { desc.value = desc.initializer ? desc.initializer.call(context) : void 0; desc.initializer = undefined; } if (desc.initializer === void 0) { Object.defineProperty(target, property, desc); desc = null; } return desc; }
 
 
 
@@ -1288,10 +1312,69 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
 
-  async getData(options = {}) {
+  async getCollectionsTimestamp(options = {}) {
+    const path = (0, _endpoint.default)("collection", this.name);
     const request = {
       headers: this._getHeaders(options),
-      path: (0, _endpoint.default)("bucket", this.name)
+      path,
+      method: "HEAD"
+    };
+    const {
+      headers
+    } = await this.client.execute(request, {
+      raw: true,
+      retry: this._getRetry(options)
+    });
+    return headers.get("ETag");
+  }
+  
+
+
+
+
+
+
+
+
+
+
+  async getGroupsTimestamp(options = {}) {
+    const path = (0, _endpoint.default)("group", this.name);
+    const request = {
+      headers: this._getHeaders(options),
+      path,
+      method: "HEAD"
+    };
+    const {
+      headers
+    } = await this.client.execute(request, {
+      raw: true,
+      retry: this._getRetry(options)
+    });
+    return headers.get("ETag");
+  }
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async getData(options = {}) {
+    let path = (0, _endpoint.default)("bucket", this.name);
+    path = (0, _utils.addEndpointOptions)(path, options);
+    const request = {
+      headers: this._getHeaders(options),
+      path
     };
     const {
       data
@@ -1372,6 +1455,9 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
     });
   }
   
+
+
+
 
 
 
@@ -1472,6 +1558,9 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
 
+
+
+
   async listGroups(options = {}) {
     const path = (0, _endpoint.default)("group", this.name);
     return this.client.paginatedList(path, options, {
@@ -1491,10 +1580,17 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
 
+
+
+
+
+
   async getGroup(id, options = {}) {
+    let path = (0, _endpoint.default)("group", this.name, id);
+    path = (0, _utils.addEndpointOptions)(path, options);
     const request = {
       headers: this._getHeaders(options),
-      path: (0, _endpoint.default)("group", this.name, id)
+      path
     };
     return this.client.execute(request, {
       retry: this._getRetry(options)
@@ -1793,7 +1889,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
-function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) { var desc = {}; Object['ke' + 'ys'](descriptor).forEach(function (key) { desc[key] = descriptor[key]; }); desc.enumerable = !!desc.enumerable; desc.configurable = !!desc.configurable; if ('value' in desc || desc.initializer) { desc.writable = true; } desc = decorators.slice().reverse().reduce(function (desc, decorator) { return decorator(target, property, desc) || desc; }, desc); if (context && desc.initializer !== void 0) { desc.value = desc.initializer ? desc.initializer.call(context) : void 0; desc.initializer = undefined; } if (desc.initializer === void 0) { Object['define' + 'Property'](target, property, desc); desc = null; } return desc; }
+function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) { var desc = {}; Object.keys(descriptor).forEach(function (key) { desc[key] = descriptor[key]; }); desc.enumerable = !!desc.enumerable; desc.configurable = !!desc.configurable; if ('value' in desc || desc.initializer) { desc.writable = true; } desc = decorators.slice().reverse().reduce(function (desc, decorator) { return decorator(target, property, desc) || desc; }, desc); if (context && desc.initializer !== void 0) { desc.value = desc.initializer ? desc.initializer.call(context) : void 0; desc.initializer = undefined; } if (desc.initializer === void 0) { Object.defineProperty(target, property, desc); desc = null; } return desc; }
 
 
 
@@ -1926,17 +2022,40 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
 
+  async getRecordsTimestamp(options = {}) {
+    const path = (0, _endpoint.default)("record", this.bucket.name, this.name);
+    const request = {
+      headers: this._getHeaders(options),
+      path,
+      method: "HEAD"
+    };
+    const {
+      headers
+    } = await this.client.execute(request, {
+      raw: true,
+      retry: this._getRetry(options)
+    });
+    return headers.get("ETag");
+  }
+  
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
   async getData(options = {}) {
     let path = (0, _endpoint.default)("collection", this.bucket.name, this.name);
-
-    if (options.query) {
-      const querystring = (0, _utils.qsify)(options.query);
-      path = path + "?" + querystring;
-    }
-
+    path = (0, _utils.addEndpointOptions)(path, options);
     const request = {
       headers: this._getHeaders(options),
       path
@@ -2313,8 +2432,14 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
 
+
+
+
+
+
   async getRecord(id, options = {}) {
-    const path = (0, _endpoint.default)("record", this.bucket.name, this.name, id);
+    let path = (0, _endpoint.default)("record", this.bucket.name, this.name, id);
+    path = (0, _utils.addEndpointOptions)(path, options);
     const request = {
       headers: this._getHeaders(options),
       path
@@ -2360,10 +2485,11 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
 
+
   async listRecords(options = {}) {
     const path = (0, _endpoint.default)("record", this.bucket.name, this.name);
 
-    if (options.hasOwnProperty("at")) {
+    if (Object.prototype.hasOwnProperty.call(options, "at")) {
       return this.getSnapshot(options.at);
     } else {
       return this.client.paginatedList(path, options, {
@@ -2971,8 +3097,9 @@ function createRequest(path, {
   } = { ...requestDefaults,
     ...options
   };
+  const method = options.method || data && data.id ? "PUT" : "POST";
   return {
-    method: data && data.id ? "PUT" : "POST",
+    method,
     path,
     headers: { ...headers,
       ...safeHeader(safe)
@@ -3139,6 +3266,7 @@ exports.parseDataURL = parseDataURL;
 exports.extractFileInfo = extractFileInfo;
 exports.createFormData = createFormData;
 exports.cleanUndefinedProperties = cleanUndefinedProperties;
+exports.addEndpointOptions = addEndpointOptions;
 
 
 
@@ -3189,7 +3317,8 @@ async function pMap(list, fn) {
   let results = [];
   await list.reduce(async function (promise, entry) {
     await promise;
-    results = results.concat((await fn(entry)));
+    const out = await fn(entry);
+    results = results.concat(out);
   }, Promise.resolve());
   return results;
 }
@@ -3504,6 +3633,32 @@ function cleanUndefinedProperties(obj) {
   }
 
   return result;
+}
+
+
+
+
+
+
+
+
+
+
+function addEndpointOptions(path, options = {}) {
+  const query = { ...options.query
+  };
+
+  if (options.fields) {
+    query._fields = options.fields;
+  }
+
+  const queryString = qsify(query);
+
+  if (queryString) {
+    return path + "?" + queryString;
+  }
+
+  return path;
 }
 
 },{}]},{},[1])(1)
