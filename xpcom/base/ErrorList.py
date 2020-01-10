@@ -343,6 +343,8 @@ with modules["NETWORK"]:
     errors["NS_ERROR_NET_INADEQUATE_SECURITY"] = FAILURE(82)
     
     errors["NS_ERROR_NET_HTTP2_SENT_GOAWAY"] = FAILURE(83)
+    
+    errors["NS_ERROR_NET_HTTP3_PROTOCOL_ERROR"] = FAILURE(84)
 
     
     
