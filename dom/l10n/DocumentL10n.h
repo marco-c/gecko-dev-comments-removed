@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_DocumentL10n_h
-#define mozilla_dom_DocumentL10n_h
+#ifndef mozilla_dom_l10n_DocumentL10n_h
+#define mozilla_dom_l10n_DocumentL10n_h
 
 #include "nsCycleCollectionParticipant.h"
 #include "nsIContentSink.h"
@@ -22,6 +22,7 @@
 
 namespace mozilla {
 namespace dom {
+namespace l10n {
 
 enum class DocumentL10nState {
   Initialized = 0,
@@ -70,6 +71,7 @@ class DocumentL10n final : public l10n::DOMLocalization {
   void OnCreatePresShell();
 };
 
+}  
 }  
 }  
 

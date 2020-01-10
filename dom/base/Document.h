@@ -168,7 +168,9 @@ class CDATASection;
 class Comment;
 struct CustomElementDefinition;
 class DocGroup;
+namespace l10n {
 class DocumentL10n;
+}
 class DocumentFragment;
 class DocumentTimeline;
 class DocumentType;
@@ -3811,7 +3813,7 @@ class Document : public nsINode,
 
 
 
-  DocumentL10n* GetL10n();
+  l10n::DocumentL10n* GetL10n();
 
   
 
@@ -3864,7 +3866,7 @@ class Document : public nsINode,
   virtual void InitialDocumentTranslationCompleted();
 
  protected:
-  RefPtr<DocumentL10n> mDocumentL10n;
+  RefPtr<l10n::DocumentL10n> mDocumentL10n;
 
   
 
