@@ -184,7 +184,8 @@ enum class MediaThreadType {
   PLAYBACK,          
   PLATFORM_DECODER,  
   MSG_CONTROL,
-  WEBRTC_DECODER
+  WEBRTC_DECODER,
+  MDSM,
 };
 
 
