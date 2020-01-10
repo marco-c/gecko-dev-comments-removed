@@ -877,6 +877,11 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
 
 
+  void DiscardFinishWhenEndedOutputStreams();
+
+  
+
+
 
 
 
