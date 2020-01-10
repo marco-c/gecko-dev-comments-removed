@@ -88,7 +88,11 @@ void TextDecoder::Decode(Span<const uint8_t> aInput, const bool aStream,
   
   
   if (!aStream) {
-    mDecoder->Encoding()->NewDecoderWithBOMRemovalInto(*mDecoder);
+    if (mIgnoreBOM) {
+      mDecoder->Encoding()->NewDecoderWithoutBOMHandlingInto(*mDecoder);
+    } else {
+      mDecoder->Encoding()->NewDecoderWithBOMRemovalInto(*mDecoder);
+    }
   }
 }
 
