@@ -143,31 +143,15 @@ static void SnapLineToPixels(gfxFloat& aOffset, gfxFloat& aSize) {
 
 
 
+
 uint32_t gfxFT2FontBase::GetCharExtents(char aChar, gfxFloat* aWidth,
-                                        gfxFloat* aHeight) {
+                                        gfxRect* aBounds) {
   FT_UInt gid = GetGlyph(aChar);
   int32_t width;
-  int32_t height;
-  if (gid && GetFTGlyphExtents(gid, &width, &height)) {
-    *aWidth = FLOAT_FROM_16_16(width);
-    *aHeight = FLOAT_FROM_26_6(height);
-    return gid;
-  } else {
-    return 0;
-  }
-}
-
-
-
-
-
-
-
-uint32_t gfxFT2FontBase::GetCharWidth(char aChar, gfxFloat* aWidth) {
-  FT_UInt gid = GetGlyph(aChar);
-  int32_t width;
-  if (gid && GetFTGlyphExtents(gid, &width)) {
-    *aWidth = FLOAT_FROM_16_16(width);
+  if (gid && GetFTGlyphExtents(gid, &width, aBounds)) {
+    if (aWidth) {
+      *aWidth = FLOAT_FROM_16_16(width);
+    }
     return gid;
   } else {
     return 0;
@@ -402,14 +386,14 @@ void gfxFT2FontBase::InitMetrics() {
   UnlockFTFace();
 
   gfxFloat width;
-  mSpaceGlyph = GetCharWidth(' ', &width);
+  mSpaceGlyph = GetCharExtents(' ', &width);
   if (mSpaceGlyph) {
     mMetrics.spaceWidth = width;
   } else {
     mMetrics.spaceWidth = mMetrics.maxAdvance;  
   }
 
-  if (GetCharWidth('0', &width)) {
+  if (GetCharExtents('0', &width)) {
     mMetrics.zeroWidth = width;
   } else {
     mMetrics.zeroWidth = -1.0;  
@@ -420,14 +404,14 @@ void gfxFT2FontBase::InitMetrics() {
   
   
   gfxFloat xWidth;
-  gfxFloat xHeight;
-  if (GetCharExtents('x', &xWidth, &xHeight) && xHeight < 0.0) {
-    mMetrics.xHeight = -xHeight;
+  gfxRect xBounds;
+  if (GetCharExtents('x', &xWidth, &xBounds) && xBounds.y < 0.0) {
+    mMetrics.xHeight = -xBounds.y;
     mMetrics.aveCharWidth = std::max(mMetrics.aveCharWidth, xWidth);
   }
 
-  if (GetCharExtents('H', &xWidth, &xHeight) && xHeight < 0.0) {
-    mMetrics.capHeight = -xHeight;
+  if (GetCharExtents('H', nullptr, &xBounds) && xBounds.y < 0.0) {
+    mMetrics.capHeight = -xBounds.y;
   }
 
   mMetrics.aveCharWidth = std::max(mMetrics.aveCharWidth, mMetrics.zeroWidth);
@@ -504,27 +488,27 @@ uint32_t gfxFT2FontBase::GetGlyph(uint32_t unicode,
   return GetGlyph(unicode);
 }
 
-FT_Fixed gfxFT2FontBase::GetEmboldenAdvance(FT_Face aFace, FT_Fixed aAdvance) {
-  
-  
-  if (!mEmbolden || !aAdvance) {
-    return 0;
+FT_Vector gfxFT2FontBase::GetEmboldenStrength(FT_Face aFace) {
+  FT_Vector strength = { 0, 0 };
+  if (!mEmbolden) {
+    return strength;
   }
   
-  
-  FT_Fixed strength =
+  strength.x =
       FT_MulFix(aFace->units_per_EM, aFace->size->metrics.y_scale) / 24;
+  strength.y = strength.x;
   if (aFace->glyph->format == FT_GLYPH_FORMAT_BITMAP) {
-    strength &= -64;
-    if (!strength) {
-      strength = 64;
+    strength.x &= -64;
+    if (!strength.x) {
+      strength.x = 64;
     }
+    strength.y &= -64;
   }
-  return strength << 10;
+  return strength;
 }
 
 bool gfxFT2FontBase::GetFTGlyphExtents(uint16_t aGID, int32_t* aAdvance,
-                                       int32_t* aHeight) {
+                                       gfxRect* aBounds) {
   gfxFT2LockedFace face(this);
   MOZ_ASSERT(face.get());
   if (!face.get()) {
@@ -547,32 +531,51 @@ bool gfxFT2FontBase::GetFTGlyphExtents(uint16_t aGID, int32_t* aAdvance,
   
   gfxFloat extentsScale = GetAdjustedSize() / mFTSize;
 
-  
-  
-  
-  FT_Fixed advance;
-  if (face.get()->glyph->format == FT_GLYPH_FORMAT_OUTLINE &&
-      (!hintMetrics || FT_HAS_MULTIPLE_MASTERS(face.get()))) {
-    advance = face.get()->glyph->linearHoriAdvance;
-  } else {
-    advance = face.get()->glyph->advance.x << 10;  
-  }
-  advance += GetEmboldenAdvance(face.get(), advance);
-  
-  
-  
-  
-  if (hintMetrics && (mFTLoadFlags & FT_LOAD_NO_HINTING)) {
-    advance = (advance + 0x8000) & 0xffff0000u;
-  }
-  *aAdvance = NS_lround(advance * extentsScale);
+  FT_Vector bold = GetEmboldenStrength(face.get());
 
-  if (aHeight) {
-    FT_F26Dot6 height = -face.get()->glyph->metrics.horiBearingY;
-    if (hintMetrics && (mFTLoadFlags & FT_LOAD_NO_HINTING)) {
-      height &= -64;
+  
+  
+  
+  if (aAdvance) {
+    FT_Fixed advance;
+    if (face.get()->glyph->format == FT_GLYPH_FORMAT_OUTLINE &&
+        (!hintMetrics || FT_HAS_MULTIPLE_MASTERS(face.get()))) {
+      advance = face.get()->glyph->linearHoriAdvance;
+    } else {
+      advance = face.get()->glyph->advance.x << 10;  
     }
-    *aHeight = NS_lround(height * extentsScale);
+    if (advance) {
+      advance += bold.x << 10;  
+    }
+    
+    
+    
+    
+    if (hintMetrics && (mFTLoadFlags & FT_LOAD_NO_HINTING)) {
+      advance = (advance + 0x8000) & 0xffff0000u;
+    }
+    *aAdvance = NS_lround(advance * extentsScale);
+  }
+
+  if (aBounds) {
+    const FT_Glyph_Metrics& metrics = face.get()->glyph->metrics;
+    FT_F26Dot6 x = metrics.horiBearingX;
+    FT_F26Dot6 y = -metrics.horiBearingY;
+    FT_F26Dot6 x2 = x + metrics.width;
+    FT_F26Dot6 y2 = y + metrics.height;
+    
+    y -= bold.y;
+    x2 += bold.x;
+    if (hintMetrics && (mFTLoadFlags & FT_LOAD_NO_HINTING)) {
+      x &= -64;
+      y &= -64;
+      x2 = (x2 + 63) & -64;
+      y2 = (y2 + 63) & -64;
+    }
+    *aBounds = gfxRect(FLOAT_FROM_26_6(x) * extentsScale,
+                       FLOAT_FROM_26_6(y) * extentsScale,
+                       FLOAT_FROM_26_6(x2 - x) * extentsScale,
+                       FLOAT_FROM_26_6(y2 - y) * extentsScale);
   }
   return true;
 }
@@ -594,6 +597,11 @@ int32_t gfxFT2FontBase::GetGlyphWidth(uint16_t aGID) {
   mGlyphWidths->Put(aGID, width);
 
   return width;
+}
+
+bool gfxFT2FontBase::GetGlyphBounds(uint16_t aGID, gfxRect* aBounds,
+                                    bool aTight) {
+  return GetFTGlyphExtents(aGID, nullptr, aBounds);
 }
 
 

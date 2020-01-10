@@ -730,25 +730,6 @@ struct GlyphBuffer {
   uint32_t mNumGlyphs;  
 };
 
-struct GlyphMetrics {
-  
-  
-  Float mXBearing;
-  
-  
-  Float mXAdvance;
-  
-  
-  Float mYBearing;
-  
-  
-  Float mYAdvance;
-  
-  Float mWidth;
-  
-  Float mHeight;
-};
-
 #ifdef MOZ_ENABLE_FREETYPE
 class SharedFTFace;
 
@@ -909,12 +890,6 @@ class ScaledFont : public SupportsThreadSafeWeakPtr<ScaledFont> {
   virtual void CopyGlyphsToBuilder(const GlyphBuffer& aBuffer,
                                    PathBuilder* aBuilder,
                                    const Matrix* aTransformHint = nullptr) = 0;
-
-  
-
-  virtual void GetGlyphDesignMetrics(const uint16_t* aGlyphIndices,
-                                     uint32_t aNumGlyphs,
-                                     GlyphMetrics* aGlyphMetrics) = 0;
 
   typedef void (*FontInstanceDataOutput)(const uint8_t* aData, uint32_t aLength,
                                          const FontVariation* aVariations,
@@ -1491,25 +1466,6 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
   virtual already_AddRefed<FilterNode> CreateFilter(FilterType aType) = 0;
 
   Matrix GetTransform() const { return mTransform; }
-
-  
-
-
-
-
-
-
-
-
-
-
-  virtual void GetGlyphRasterizationMetrics(ScaledFont* aScaledFont,
-                                            const uint16_t* aGlyphIndices,
-                                            uint32_t aNumGlyphs,
-                                            GlyphMetrics* aGlyphMetrics) {
-    aScaledFont->GetGlyphDesignMetrics(aGlyphIndices, aNumGlyphs,
-                                       aGlyphMetrics);
-  }
 
   
 
