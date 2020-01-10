@@ -16,6 +16,7 @@ module.exports = {
 
   "extends": [
     "eslint:recommended",
+    "plugin:prettier/recommended",
   ],
 
   "globals": {
@@ -82,7 +83,6 @@ module.exports = {
     "html",
     "fetch-options",
     "no-unsanitized",
-    "prettier",
   ],
 
   
@@ -265,9 +265,6 @@ module.exports = {
 
     
     "object-shorthand": ["error", "always", { "avoidQuotes": true }],
-
-    
-    "prettier/prettier": "error",
 
     
     
