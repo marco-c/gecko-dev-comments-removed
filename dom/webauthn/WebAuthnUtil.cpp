@@ -32,7 +32,8 @@ bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
   }
 
   
-  if (!facetUri->SchemeIs("https")) {
+  bool facetIsHttps = false;
+  if (NS_FAILED(facetUri->SchemeIs("https", &facetIsHttps)) || !facetIsHttps) {
     return false;
   }
 
@@ -50,7 +51,8 @@ bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
   }
 
   
-  if (!appIdUri->SchemeIs("https")) {
+  bool appIdIsHttps = false;
+  if (NS_FAILED(appIdUri->SchemeIs("https", &appIdIsHttps)) || !appIdIsHttps) {
     return false;
   }
 

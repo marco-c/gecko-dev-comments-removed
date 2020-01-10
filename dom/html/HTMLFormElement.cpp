@@ -651,8 +651,9 @@ nsresult HTMLFormElement::SubmitSubmission(
   
   
   
-  bool schemeIsJavaScript = actionURI->SchemeIs("javascript");
-  if (schemeIsJavaScript) {
+  bool schemeIsJavaScript = false;
+  if (NS_SUCCEEDED(actionURI->SchemeIs("javascript", &schemeIsJavaScript)) &&
+      schemeIsJavaScript) {
     mIsSubmitting = false;
   }
 
@@ -757,7 +758,12 @@ nsresult HTMLFormElement::DoSecureToInsecureSubmitCheck(nsIURI* aActionURL,
   if (!principalURI) {
     principalURI = OwnerDoc()->GetDocumentURI();
   }
-  bool formIsHTTPS = principalURI->SchemeIs("https");
+  bool formIsHTTPS;
+  rv = principalURI->SchemeIs("https", &formIsHTTPS);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
   if (!formIsHTTPS) {
     return NS_OK;
   }
@@ -1502,7 +1508,9 @@ nsresult HTMLFormElement::GetActionURL(nsIURI** aActionURL,
   
   
   
-  bool isHttpScheme = actionURL->SchemeIs("http");
+  bool isHttpScheme = false;
+  rv = actionURL->SchemeIs("http", &isHttpScheme);
+  NS_ENSURE_SUCCESS(rv, rv);
   if (isHttpScheme && document->GetUpgradeInsecureRequests(false)) {
     
     AutoTArray<nsString, 2> params;

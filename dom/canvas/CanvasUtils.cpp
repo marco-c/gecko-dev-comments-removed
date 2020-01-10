@@ -76,7 +76,8 @@ bool IsImageExtractionAllowed(Document* aDocument, JSContext* aCx,
   docURI->GetSpec(docURISpec);
 
   
-  if (docURI->SchemeIs("file")) {
+  bool isFileURL;
+  if (NS_SUCCEEDED(docURI->SchemeIs("file", &isFileURL)) && isFileURL) {
     return true;
   }
 

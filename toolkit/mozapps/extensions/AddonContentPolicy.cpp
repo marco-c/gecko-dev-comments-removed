@@ -112,8 +112,10 @@ AddonContentPolicy::ShouldLoad(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
   
   
   bool equals;
-  if (!(aContentLocation->SchemeIs("moz-extension") ||
-        requestOrigin->SchemeIs("moz-extension"))) {
+  if (!((NS_SUCCEEDED(aContentLocation->SchemeIs("moz-extension", &equals)) &&
+         equals) ||
+        (NS_SUCCEEDED(requestOrigin->SchemeIs("moz-extension", &equals)) &&
+         equals))) {
     return NS_OK;
   }
 

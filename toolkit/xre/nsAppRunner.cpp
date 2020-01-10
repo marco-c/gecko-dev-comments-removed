@@ -1001,11 +1001,16 @@ nsXULAppInfo::GetServerURL(nsIURL** aServerURL) {
 
 NS_IMETHODIMP
 nsXULAppInfo::SetServerURL(nsIURL* aServerURL) {
+  bool schemeOk;
   
-  if (!aServerURL->SchemeIs("http") && !aServerURL->SchemeIs("https")) {
-    return NS_ERROR_INVALID_ARG;
-  }
+  nsresult rv = aServerURL->SchemeIs("https", &schemeOk);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (!schemeOk) {
+    rv = aServerURL->SchemeIs("http", &schemeOk);
+    NS_ENSURE_SUCCESS(rv, rv);
 
+    if (!schemeOk) return NS_ERROR_INVALID_ARG;
+  }
   nsAutoCString spec;
   rv = aServerURL->GetSpec(spec);
   NS_ENSURE_SUCCESS(rv, rv);

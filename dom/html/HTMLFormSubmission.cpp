@@ -245,7 +245,9 @@ nsresult FSURLEncoded::GetEncodedSubmission(nsIURI* aURI,
   *aPostDataStream = nullptr;
 
   if (mMethod == NS_FORM_METHOD_POST) {
-    if (aURI->SchemeIs("mailto")) {
+    bool isMailto = false;
+    aURI->SchemeIs("mailto", &isMailto);
+    if (isMailto) {
       nsAutoCString path;
       rv = aURI->GetPathQueryRef(path);
       NS_ENSURE_SUCCESS(rv, rv);
@@ -281,7 +283,10 @@ nsresult FSURLEncoded::GetEncodedSubmission(nsIURI* aURI,
 
   } else {
     
-    if (aURI->SchemeIs("javascript")) {
+    bool schemeIsJavaScript;
+    rv = aURI->SchemeIs("javascript", &schemeIsJavaScript);
+    NS_ENSURE_SUCCESS(rv, rv);
+    if (schemeIsJavaScript) {
       return NS_OK;
     }
 
@@ -661,7 +666,9 @@ nsresult FSTextPlain::GetEncodedSubmission(nsIURI* aURI,
   
   
   
-  if (aURI->SchemeIs("mailto")) {
+  bool isMailto = false;
+  aURI->SchemeIs("mailto", &isMailto);
+  if (isMailto) {
     nsAutoCString path;
     rv = aURI->GetPathQueryRef(path);
     NS_ENSURE_SUCCESS(rv, rv);

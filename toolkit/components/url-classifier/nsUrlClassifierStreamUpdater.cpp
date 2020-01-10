@@ -178,7 +178,8 @@ nsresult nsUrlClassifierStreamUpdater::FetchUpdate(
   
   
   bool match;
-  if (aUpdateUrl->SchemeIs("file") || aUpdateUrl->SchemeIs("data")) {
+  if ((NS_SUCCEEDED(aUpdateUrl->SchemeIs("file", &match)) && match) ||
+      (NS_SUCCEEDED(aUpdateUrl->SchemeIs("data", &match)) && match)) {
     mChannel->SetContentType(
         NS_LITERAL_CSTRING("application/vnd.google.safebrowsing-update"));
   } else {
