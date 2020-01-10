@@ -87,8 +87,15 @@ const kAboutPageRegistrationContentScript =
 
 function registerActor() {
   let actorOptions = {
+    parent: {
+      moduleURI: "resource://testing-common/BrowserTestUtilsParent.jsm",
+    },
     child: {
       moduleURI: "resource://testing-common/BrowserTestUtilsChild.jsm",
+      events: {
+        DOMContentLoaded: { capture: true },
+        load: { capture: true },
+      },
     },
     allFrames: true,
     includeChrome: true,
@@ -415,23 +422,40 @@ var BrowserTestUtils = {
       return wantLoad == url;
     }
 
+    
+    
+    let loadEvent = maybeErrorPage ? "DOMContentLoaded" : "load";
+    let eventName = `BrowserTestUtils:ContentEvent:${loadEvent}`;
+
     return new Promise(resolve => {
-      let mm = browser.ownerGlobal.messageManager;
-      let eventName = maybeErrorPage
-        ? "browser-test-utils:DOMContentLoadedEvent"
-        : "browser-test-utils:loadEvent";
-      mm.addMessageListener(eventName, function onLoad(msg) {
-        
-        
-        if (
-          msg.target == browser &&
-          (!msg.data.subframe || includeSubFrames) &&
-          isWanted(maybeErrorPage ? msg.data.visibleURL : msg.data.internalURL)
-        ) {
-          mm.removeMessageListener(eventName, onLoad);
-          resolve(msg.data.internalURL);
-        }
-      });
+      browser.addEventListener(
+        eventName,
+        function listener(event) {
+          let { browsingContext, internalURL, visibleURL } = event.detail;
+
+          
+          
+          if (!internalURL) {
+            return;
+          }
+
+          
+          let subframe = browsingContext !== browsingContext.top;
+          if (subframe && !includeSubFrames) {
+            return;
+          }
+
+          
+          
+          if (!isWanted(maybeErrorPage ? visibleURL : internalURL)) {
+            return;
+          }
+
+          browser.removeEventListener(eventName, listener, true);
+          resolve(internalURL);
+        },
+        true
+      );
     });
   },
 
