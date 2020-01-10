@@ -1022,13 +1022,7 @@ public abstract class GeckoApp extends GeckoActivity
         
         if (BrowserLocaleManager.getInstance().systemLocaleDidChange()) {
             Log.i(LOGTAG, "System locale changed. Restarting.");
-
-            mIsAbortingAppLaunch = true;
-
-            
             finishAndShutdown( true);
-            super.onCreate(savedInstanceState);
-
             return;
         }
 
@@ -2125,12 +2119,6 @@ public abstract class GeckoApp extends GeckoActivity
             
             
             super.onDestroy();
-            
-            if (mShutdownOnDestroy) {
-                GeckoApplication.shutdown(!mRestartOnShutdown ? null : new Intent(
-                        Intent.ACTION_MAIN,  null, getApplicationContext(), getClass()));
-            }
-
             return;
         }
 
