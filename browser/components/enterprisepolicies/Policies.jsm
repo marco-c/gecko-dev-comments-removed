@@ -942,10 +942,6 @@ var Policies = {
     },
   },
 
-  LegacyProfiles: {
-    
-  },
-
   LocalFileLinks: {
     onBeforeAddons(manager, param) {
       
