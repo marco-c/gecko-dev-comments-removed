@@ -8,16 +8,17 @@
 #define MOZILLA_WEBGPU_THREADING_H
 
 #include "ThreadSafeRefcountingWithMainThreadDestruction.h"
-#include "base/thread.h"           
+#include "base/thread.h"  
 #include "mozilla/layers/SynchronousTask.h"
 
 namespace mozilla {
 namespace webgpu {
 
 class WebGPUThreading final {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(WebGPUThreading)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(
+      WebGPUThreading)
 
-public:
+ public:
   
   static void Start();
 
@@ -28,14 +29,14 @@ public:
   
   static MessageLoop* GetLoop();
 
-private:
+ private:
   explicit WebGPUThreading(base::Thread* aThread);
   ~WebGPUThreading();
 
   base::Thread* const mThread;
 };
 
-}
-}
+}  
+}  
 
-#endif 
+#endif  
