@@ -237,14 +237,11 @@ static OffsetResult GetUnretargetedOffsetsFor(const Element& aElement) {
   }
 
   
-  if (parent && parent->StylePosition()->mBoxSizing != StyleBoxSizing::Border) {
+  if (parent) {
     const nsStyleBorder* border = parent->StyleBorder();
     origin.x -= border->GetComputedBorderWidth(eSideLeft);
     origin.y -= border->GetComputedBorderWidth(eSideTop);
   }
-
-  
-  
 
   
   
