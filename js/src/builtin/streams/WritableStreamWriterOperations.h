@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+#ifndef builtin_streams_WritableStreamWriterOperations_h
+#define builtin_streams_WritableStreamWriterOperations_h
+
+#include "js/Value.h"  
+
+namespace js {
+
+class WritableStreamDefaultWriter;
+
+extern JS::Value WritableStreamDefaultWriterGetDesiredSize(
+    const WritableStreamDefaultWriter* unwrappedWriter);
+
+}  
+
+#endif  

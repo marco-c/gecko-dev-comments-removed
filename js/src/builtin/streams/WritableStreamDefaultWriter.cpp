@@ -10,10 +10,12 @@
 
 #include "mozilla/Attributes.h"  
 
-#include "jsapi.h"  
+#include "jsapi.h"        
+#include "jsfriendapi.h"  
 
 #include "builtin/streams/ClassSpecMacro.h"  
 #include "builtin/streams/MiscellaneousOperations.h"  
+#include "builtin/streams/WritableStreamWriterOperations.h"  
 #include "js/CallArgs.h"                              
 #include "js/Class.h"                        
 #include "js/PropertySpec.h"  
@@ -31,9 +33,11 @@ using JS::Rooted;
 using JS::Value;
 
 using js::ClassSpec;
+using js::GetErrorMessage;
 using js::ReturnPromiseRejectedWithPendingError;
 using js::UnwrapAndTypeCheckThis;
 using js::WritableStreamDefaultWriter;
+using js::WritableStreamDefaultWriterGetDesiredSize;
 
 
 
@@ -81,8 +85,42 @@ static MOZ_MUST_USE bool WritableStream_closed(JSContext* cx, unsigned argc,
   return true;
 }
 
+
+
+
+static MOZ_MUST_USE bool WritableStream_desiredSize(JSContext* cx,
+                                                    unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  
+  Rooted<WritableStreamDefaultWriter*> unwrappedWriter(
+      cx, UnwrapAndTypeCheckThis<WritableStreamDefaultWriter>(
+              cx, args, "get desiredSize"));
+  if (!unwrappedWriter) {
+    return false;
+  }
+
+  
+  
+  if (!unwrappedWriter->hasStream()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_WRITABLESTREAMWRITER_NOT_OWNED,
+                              "get desiredSize");
+    return false;
+  }
+
+  
+  Value v = WritableStreamDefaultWriterGetDesiredSize(unwrappedWriter);
+  MOZ_ASSERT(v.isNull() || v.isNumber(),
+             "expected a type that'll never require wrapping");
+  args.rval().set(v);
+  return true;
+}
+
 static const JSPropertySpec WritableStreamDefaultWriter_properties[] = {
-    JS_PSG("closed", WritableStream_closed, 0), JS_PS_END};
+    JS_PSG("closed", WritableStream_closed, 0),
+    JS_PSG("desiredSize", WritableStream_desiredSize, 0), JS_PS_END};
 
 static const JSFunctionSpec WritableStreamDefaultWriter_methods[] = {JS_FS_END};
 
