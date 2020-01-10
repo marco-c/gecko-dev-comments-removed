@@ -647,7 +647,6 @@ function Search(
 
   
   this._leadingRestrictionToken = null;
-  this._trailingRestrictionToken = null;
   if (tokens.length > 0) {
     if (
       UrlbarTokenizer.isRestrictionToken(tokens[0]) &&
@@ -655,13 +654,6 @@ function Search(
         tokens[0].type == UrlbarTokenizer.TYPE.RESTRICT_SEARCH)
     ) {
       this._leadingRestrictionToken = tokens[0].value;
-    }
-    if (
-      UrlbarTokenizer.isRestrictionToken(tokens[tokens.length - 1]) &&
-      (tokens.length > 1 ||
-        tokens[tokens.length - 1].type == UrlbarTokenizer.TYPE.RESTRICT_SEARCH)
-    ) {
-      this._trailingRestrictionToken = tokens[tokens.length - 1].value;
     }
 
     
@@ -1740,15 +1732,12 @@ Search.prototype = {
       return false;
     }
     
+    
+    
+    
     let query = this._trimmedOriginalSearchString;
-    if (this._leadingRestrictionToken) {
+    if (this._leadingRestrictionToken === UrlbarTokenizer.RESTRICT.SEARCH) {
       query = substringAfter(query, this._leadingRestrictionToken).trim();
-    }
-    if (this._trailingRestrictionToken) {
-      query = query.substring(
-        0,
-        query.lastIndexOf(this._trailingRestrictionToken)
-      );
     }
     this._addSearchEngineMatch({ engine, query });
     return true;
