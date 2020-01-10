@@ -741,6 +741,10 @@ void IDBTransaction::FireCompleteOrAbortEvents(nsresult aResult) {
     event = CreateGenericEvent(this, nsDependentString(kCompleteEventType),
                                eDoesNotBubble, eNotCancelable);
     MOZ_ASSERT(event);
+
+    
+    
+    MOZ_ASSERT(NS_SUCCEEDED(mAbortCode));
   } else {
     if (aResult == NS_ERROR_DOM_INDEXEDDB_QUOTA_ERR) {
       mDatabase->SetQuotaExceeded();
@@ -753,6 +757,10 @@ void IDBTransaction::FireCompleteOrAbortEvents(nsresult aResult) {
     event = CreateGenericEvent(this, nsDependentString(kAbortEventType),
                                eDoesBubble, eNotCancelable);
     MOZ_ASSERT(event);
+
+    if (NS_SUCCEEDED(mAbortCode)) {
+      mAbortCode = aResult;
+    }
   }
 
   if (NS_SUCCEEDED(mAbortCode)) {
