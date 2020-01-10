@@ -489,9 +489,11 @@ impl<'a> SceneBuilder<'a> {
 
         
         
-        
-        if let Some(cluster) = main_prim_list.clusters.first_mut() {
-            cluster.flags.insert(ClusterFlags::CREATE_PICTURE_CACHE_PRE);
+        if !self.found_explicit_tile_cache {
+            if let Some(cluster) = main_prim_list.clusters.first_mut() {
+                cluster.flags.insert(ClusterFlags::CREATE_PICTURE_CACHE_PRE);
+                cluster.cache_scroll_root = Some(ROOT_SPATIAL_NODE_INDEX);
+            }
         }
 
         
@@ -621,35 +623,36 @@ impl<'a> SceneBuilder<'a> {
 
         
         for (slice_index, slice) in slices.drain(..).enumerate() {
-            let background_color = if slice_index == 0 {
-                self.config.background_color
-            } else {
-                None
-            };
+            match slice.cache_scroll_root {
+                Some(scroll_root) => {
+                    let background_color = if slice_index == 0 {
+                        self.config.background_color
+                    } else {
+                        None
+                    };
 
-            
-            
-            
-            
-            let scroll_root = slice.cache_scroll_root.unwrap_or(ROOT_SPATIAL_NODE_INDEX);
+                    let instance = create_tile_cache(
+                        slice_index,
+                        scroll_root,
+                        slice.prim_list,
+                        background_color,
+                        slice.shared_clips.unwrap_or(Vec::new()),
+                        &mut self.interners,
+                        &mut self.prim_store,
+                        &mut self.clip_store,
+                    );
 
-            let instance = create_tile_cache(
-                slice_index,
-                scroll_root,
-                slice.prim_list,
-                background_color,
-                slice.shared_clips.unwrap_or(Vec::new()),
-                &mut self.interners,
-                &mut self.prim_store,
-                &mut self.clip_store,
-            );
-
-            main_prim_list.add_prim(
-                instance,
-                LayoutSize::zero(),
-                scroll_root,
-                PrimitiveFlags::IS_BACKFACE_VISIBLE,
-            );
+                    main_prim_list.add_prim(
+                        instance,
+                        LayoutSize::zero(),
+                        scroll_root,
+                        PrimitiveFlags::IS_BACKFACE_VISIBLE,
+                    );
+                }
+                None => {
+                    main_prim_list.extend(slice.prim_list);
+                }
+            }
         }
     }
 
@@ -3518,69 +3521,49 @@ impl FlattenedStackingContext {
         &mut self,
         clip_scroll_tree: &ClipScrollTree,
     ) {
-        struct SliceInfo {
-            cluster_index: usize,
-            scroll_roots: Vec<SpatialNodeIndex>,
-        }
+        let mut selected_cluster_and_scroll_root = None;
 
-        let mut slices: Vec<SliceInfo> = Vec::new();
-
+        
+        
         
         for (cluster_index, cluster) in self.prim_list.clusters.iter().enumerate() {
             let scroll_root = clip_scroll_tree.find_scroll_root(
                 cluster.spatial_node_index,
             );
-
-            
-            
-            
-            
-            let create_new_slice =
-                cluster.flags.contains(ClusterFlags::SCROLLBAR_CONTAINER) ||
-                slices.last().map(|slice| {
-                    scroll_root != ROOT_SPATIAL_NODE_INDEX &&
-                    slice.scroll_roots.is_empty()
-                }).unwrap_or(true);
-
-            
-            if create_new_slice {
-                slices.push(SliceInfo {
-                    cluster_index,
-                    scroll_roots: Vec::new(),
-                });
-            }
-
-            
-            
             if scroll_root != ROOT_SPATIAL_NODE_INDEX {
-                let slice = slices.last_mut().unwrap();
-                if !slice.scroll_roots.contains(&scroll_root) {
-                    slice.scroll_roots.push(scroll_root);
+                match selected_cluster_and_scroll_root {
+                    Some((_, selected_scroll_root)) => {
+                        if selected_scroll_root != scroll_root {
+                            
+                            selected_cluster_and_scroll_root = None;
+                            break;
+                        }
+                    }
+                    None => {
+                        selected_cluster_and_scroll_root = Some((cluster_index, scroll_root));
+                    }
                 }
             }
         }
 
         
         
-        for slice in slices.drain(..) {
-            let cluster = &mut self.prim_list.clusters[slice.cluster_index];
-            
-            cluster.flags.insert(ClusterFlags::CREATE_PICTURE_CACHE_PRE);
-            assert!(!slice.scroll_roots.contains(&ROOT_SPATIAL_NODE_INDEX));
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if slice.scroll_roots.len() == 1 {
-                cluster.cache_scroll_root = Some(slice.scroll_roots.first().cloned().unwrap());
+        match selected_cluster_and_scroll_root {
+            Some((cluster_index, scroll_root)) => {
+                let cluster = &mut self.prim_list.clusters[cluster_index];
+                cluster.flags.insert(ClusterFlags::CREATE_PICTURE_CACHE_PRE);
+                cluster.cache_scroll_root = Some(scroll_root);
+            }
+            None => {
+                if let Some(cluster) = self.prim_list.clusters.first_mut() {
+                    cluster.flags.insert(ClusterFlags::CREATE_PICTURE_CACHE_PRE);
+                    cluster.cache_scroll_root = Some(ROOT_SPATIAL_NODE_INDEX);
+                }
             }
         }
 
+        
+        
         
         
         if let Some(cluster) = self.prim_list.clusters.last_mut() {
@@ -3627,11 +3610,6 @@ impl FlattenedStackingContext {
 
         
         if !self.blit_reason.is_empty() {
-            return false;
-        }
-
-        
-        if self.prim_flags.contains(PrimitiveFlags::IS_SCROLLBAR_CONTAINER) {
             return false;
         }
 
