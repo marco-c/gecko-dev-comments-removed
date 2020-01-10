@@ -4727,8 +4727,11 @@ already_AddRefed<ComputedStyle> nsCSSFrameConstructor::ResolveComputedStyle(
   
   
   
-  RefPtr<ComputedStyle> parentStyle =
-      Servo_Element_GetPrimaryComputedValues(parent).Consume();
+  
+  auto* parentStyle =
+      const_cast<ComputedStyle*>(Servo_Element_GetMaybeOutOfDateStyle(parent));
+  MOZ_ASSERT(parentStyle,
+             "How are we inserting text frames in an unstyled element?");
   return mPresShell->StyleSet()->ResolveStyleForText(aContent, parentStyle);
 }
 
