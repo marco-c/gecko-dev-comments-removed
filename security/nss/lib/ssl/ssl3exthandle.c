@@ -1636,13 +1636,18 @@ SECStatus
 ssl3_SendSigAlgsXtn(const sslSocket *ss, TLSExtensionData *xtnData,
                     sslBuffer *buf, PRBool *added)
 {
-    SECStatus rv;
-
     if (ss->vrange.max < SSL_LIBRARY_VERSION_TLS_1_2) {
         return SECSuccess;
     }
 
-    rv = ssl3_EncodeSigAlgs(ss, buf);
+    PRUint16 minVersion;
+    if (ss->sec.isServer) {
+        minVersion = ss->version; 
+    } else {
+        minVersion = ss->vrange.min; 
+    }
+
+    SECStatus rv = ssl3_EncodeSigAlgs(ss, minVersion, buf);
     if (rv != SECSuccess) {
         return SECFailure;
     }

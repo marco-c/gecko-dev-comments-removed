@@ -1731,18 +1731,10 @@ tls13_HandleClientHelloPart2(sslSocket *ss,
         ss->ssl3.hs.zeroRttState = ssl_0rtt_sent;
     }
 
-#ifndef PARANOID
-    
-    if (ssl3_config_match_init(ss) == 0) { 
-        FATAL_ERROR(ss, PORT_GetError(), internal_error);
-        goto loser;
-    }
-#endif
-
     
     rv = ssl3_NegotiateCipherSuite(ss, suites, PR_FALSE);
     if (rv != SECSuccess) {
-        FATAL_ERROR(ss, SSL_ERROR_NO_CYPHER_OVERLAP, handshake_failure);
+        FATAL_ERROR(ss, PORT_GetError(), handshake_failure);
         goto loser;
     }
 
