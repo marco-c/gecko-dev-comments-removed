@@ -8,6 +8,7 @@
 #include "nsCharSeparatedTokenizer.h"
 #include "nsCSPUtils.h"
 #include "nsDocShell.h"
+#include "nsHttpChannel.h"
 #include "nsIChannel.h"
 #include "nsIConsoleService.h"
 #include "nsIContentSecurityPolicy.h"
@@ -217,7 +218,8 @@ bool FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
 
   
   
-  if (contentType != nsIContentPolicy::TYPE_SUBDOCUMENT) {
+  if (contentType != nsIContentPolicy::TYPE_SUBDOCUMENT &&
+      contentType != nsIContentPolicy::TYPE_OBJECT) {
     return true;
   }
 
@@ -237,6 +239,16 @@ bool FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
   
   
   if (!httpChannel) {
+    return true;
+  }
+
+  
+  uint32_t responseStatus;
+  rv = httpChannel->GetResponseStatus(&responseStatus);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return true;
+  }
+  if (mozilla::net::nsHttpChannel::IsRedirectStatus(responseStatus)) {
     return true;
   }
 
