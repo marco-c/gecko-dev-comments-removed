@@ -187,7 +187,7 @@ class SpecialPowersChild extends JSWindowActorChild {
     this._extensionListeners = null;
   }
 
-  observe(aSubject, aTopic, aData) {
+  handleEvent(aEvent) {
     
     
   }
