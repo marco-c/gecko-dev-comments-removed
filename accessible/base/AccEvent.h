@@ -20,6 +20,7 @@ class Selection;
 namespace a11y {
 
 class DocAccessible;
+class EventQueue;
 
 
 enum EIsFromUserInput {
