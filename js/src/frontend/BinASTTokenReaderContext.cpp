@@ -45,7 +45,20 @@ const uint32_t MAX_LIST_LENGTH =
 
 
 extern const size_t SUM_LIMITS[BINAST_NUMBER_OF_SUM_TYPES];
+
+
+
+
 extern const BinASTKind* SUM_RESOLUTIONS[BINAST_NUMBER_OF_SUM_TYPES];
+
+
+
+extern const size_t STRING_ENUM_LIMITS[BINASTSTRINGENUM_LIMIT];
+
+
+
+
+extern const BinASTVariant* STRING_ENUM_RESOLUTIONS[BINASTSTRINGENUM_LIMIT];
 
 #define WRAP_INTERFACE(TYPE) Interface::Maker(BinASTKind::TYPE)
 #define WRAP_MAYBE_INTERFACE(TYPE) MaybeInterface::Maker(BinASTKind::TYPE)
@@ -702,11 +715,23 @@ class HuffmanPreludeReader {
 
   
   struct StringEnum : EntryBase {
+    using SymbolType = BinASTVariant;
+    using Table = HuffmanTableIndexedSymbolsStringEnum;
+
     
     const BinASTStringEnum contents;
     StringEnum(const NormalizedInterfaceAndField identity,
                const BinASTStringEnum contents)
         : EntryBase(identity), contents(contents) {}
+
+    size_t maxNumberOfSymbols() const {
+      return STRING_ENUM_LIMITS[static_cast<size_t>(contents)];
+    }
+
+    BinASTVariant variantAt(size_t index) const {
+      MOZ_ASSERT(index < maxNumberOfSymbols());
+      return STRING_ENUM_RESOLUTIONS[static_cast<size_t>(contents)][index];
+    }
 
     
     
@@ -1198,6 +1223,41 @@ class HuffmanPreludeReader {
     return Ok();
   }
 
+  
+  
+
+  
+  template <>
+  MOZ_MUST_USE JS::Result<uint32_t> readNumberOfSymbols(
+      const StringEnum& entry) {
+    return entry.maxNumberOfSymbols();
+  }
+
+  
+  template <>
+  MOZ_MUST_USE JS::Result<BinASTVariant> readSymbol(const StringEnum& entry,
+                                                    size_t index) {
+    return entry.variantAt(index);
+  }
+
+  
+  template <>
+  MOZ_MUST_USE JS::Result<Ok> readSingleValueTable<StringEnum>(
+      HuffmanTableIndexedSymbolsStringEnum& table, const StringEnum& entry) {
+    BINJS_MOZ_TRY_DECL(
+        index, reader.readVarU32<BinASTTokenReaderContext::Compression::Yes>());
+    if (index > entry.maxNumberOfSymbols()) {
+      return raiseInvalidTableData(entry.identity);
+    }
+
+    BinASTVariant symbol = entry.variantAt(index);
+    
+    
+    
+    MOZ_TRY(table.impl.initWithSingleValue(cx_, std::move(symbol)));
+    return Ok();
+  }
+
  private:
   
   
@@ -1335,15 +1395,11 @@ class HuffmanPreludeReader {
       return owner.readTable<MaybeString>(entry);
     }
 
-    MOZ_MUST_USE JS::Result<Ok> operator()(const UnsignedLong& entry) {
-      
-      
-      MOZ_CRASH("Unimplemented");
-      return Ok();
+    MOZ_MUST_USE JS::Result<Ok> operator()(const StringEnum& entry) {
+      return owner.readTable<StringEnum>(entry);
     }
 
-    MOZ_MUST_USE JS::Result<Ok> operator()(const StringEnum& entry) {
-      
+    MOZ_MUST_USE JS::Result<Ok> operator()(const UnsignedLong& entry) {
       
       
       MOZ_CRASH("Unimplemented");
@@ -1430,7 +1486,7 @@ const size_t SUM_LIMITS[]{
   BinASTKind::INTERFACE_NAME,
 #define WITH_SUM(_ENUM_NAME, _HUMAN_NAME, MACRO_NAME, _TYPE_NAME) \
   const BinASTKind SUM_RESOLUTION_##MACRO_NAME[]{                 \
-      FOR_EACH_BIN_INTERFACE_IN_SUM_##ARROW_EXPRESSION(WITH_SUM_CONTENTS)};
+      FOR_EACH_BIN_INTERFACE_IN_SUM_##MACRO_NAME(WITH_SUM_CONTENTS)};
 FOR_EACH_BIN_SUM(WITH_SUM)
 #undef WITH_SUM
 #undef WITH_SUM_CONTENTS
@@ -1440,6 +1496,30 @@ const BinASTKind* SUM_RESOLUTIONS[BINAST_NUMBER_OF_SUM_TYPES]{
   SUM_RESOLUTION_##MACRO_NAME,
     FOR_EACH_BIN_SUM(WITH_SUM)
 #undef WITH_SUM
+};
+
+
+
+const size_t STRING_ENUM_LIMITS[]{
+#define WITH_ENUM(name, _, MACRO_NAME) BIN_AST_STRING_ENUM_##MACRO_NAME##_LIMIT,
+    FOR_EACH_BIN_STRING_ENUM(WITH_ENUM)
+#undef WITH_ENUM
+};
+
+#define WITH_ENUM_CONTENTS(_ENUM_NAME, VARIANT_NAME, _HUMAN_NAME) \
+  BinASTVariant::VARIANT_NAME,
+#define WITH_ENUM(_ENUM_NAME, _, MACRO_NAME)                              \
+  const BinASTVariant STRING_ENUM_RESOLUTION_##MACRO_NAME[]{              \
+      FOR_EACH_BIN_VARIANT_IN_STRING_ENUM_##MACRO_NAME##_BY_STRING_ORDER( \
+          WITH_ENUM_CONTENTS)};
+FOR_EACH_BIN_STRING_ENUM(WITH_ENUM)
+#undef WITH_ENUM
+#undef WITH_ENUM_CONTENTS
+
+const BinASTVariant* STRING_ENUM_RESOLUTIONS[BINASTSTRINGENUM_LIMIT]{
+#define WITH_ENUM(name, _, MACRO_NAME) STRING_ENUM_RESOLUTION_##MACRO_NAME,
+    FOR_EACH_BIN_STRING_ENUM(WITH_ENUM)
+#undef WITH_ENUM
 };
 
 }  
