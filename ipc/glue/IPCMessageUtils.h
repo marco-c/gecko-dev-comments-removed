@@ -24,11 +24,14 @@
 #endif
 #include "mozilla/TypeTraits.h"
 #include "mozilla/IntegerTypeTraits.h"
+#include "mozilla/Vector.h"
 
 #include <limits>
 #include <stdint.h>
 #include <type_traits>
+#include <vector>
 
+#include "nsDebug.h"
 #include "nsExceptionHandler.h"
 #include "nsHashKeys.h"
 #include "nsID.h"
@@ -636,6 +639,162 @@ struct ParamTraits<FallibleTArray<E>> {
 template <typename E, size_t N>
 struct ParamTraits<AutoTArray<E, N>> : ParamTraits<nsTArray<E>> {
   typedef AutoTArray<E, N> paramType;
+};
+
+template <typename E, size_t N, typename AP>
+struct ParamTraits<mozilla::Vector<E, N, AP>> {
+  typedef mozilla::Vector<E, N, AP> paramType;
+
+  
+  
+  
+  
+  
+  static const bool sUseWriteBytes =
+      (mozilla::IsIntegral<E>::value || mozilla::IsFloatingPoint<E>::value);
+
+  static void Write(Message* aMsg, const paramType& aParam) {
+    uint32_t length = aParam.length();
+    WriteParam(aMsg, length);
+
+    if (sUseWriteBytes) {
+      int pickledLength = 0;
+      MOZ_RELEASE_ASSERT(ByteLengthIsValid(length, sizeof(E), &pickledLength));
+      aMsg->WriteBytes(aParam.begin(), pickledLength);
+      return;
+    }
+
+    for (const E& elem : aParam) {
+      WriteParam(aMsg, elem);
+    }
+  }
+
+  static bool Read(const Message* aMsg, PickleIterator* aIter,
+                   paramType* aResult) {
+    uint32_t length;
+    if (!ReadParam(aMsg, aIter, &length)) {
+      return false;
+    }
+
+    if (sUseWriteBytes) {
+      int pickledLength = 0;
+      if (!ByteLengthIsValid(length, sizeof(E), &pickledLength)) {
+        return false;
+      }
+
+      if (!aResult->resizeUninitialized(length)) {
+        
+        NS_ABORT_OOM(length * sizeof(E));
+      }
+
+      E* elements = aResult->begin();
+      return aMsg->ReadBytesInto(aIter, elements, pickledLength);
+    }
+
+    
+    
+    
+    if (!aMsg->HasBytesAvailable(aIter, length)) {
+      return false;
+    }
+
+    if (!aResult->resize(length)) {
+      
+      NS_ABORT_OOM(length * sizeof(E));
+    }
+
+    for (uint32_t index = 0; index < length; ++index) {
+      if (!ReadParam(aMsg, aIter, &((*aResult)[index]))) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  static void Log(const paramType& aParam, std::wstring* aLog) {
+    for (uint32_t index = 0, len = aParam.length(); index < len; ++index) {
+      if (index) {
+        aLog->append(L" ");
+      }
+      LogParam(aParam[index], aLog);
+    }
+  }
+};
+
+template <typename E>
+struct ParamTraits<std::vector<E>> {
+  typedef std::vector<E> paramType;
+
+  
+  
+  
+  
+  
+  static const bool sUseWriteBytes =
+      (mozilla::IsIntegral<E>::value || mozilla::IsFloatingPoint<E>::value);
+
+  static void Write(Message* aMsg, const paramType& aParam) {
+    uint32_t length = aParam.size();
+    WriteParam(aMsg, length);
+
+    if (sUseWriteBytes) {
+      int pickledLength = 0;
+      MOZ_RELEASE_ASSERT(ByteLengthIsValid(length, sizeof(E), &pickledLength));
+      aMsg->WriteBytes(aParam.data(), pickledLength);
+      return;
+    }
+
+    for (const E& elem : aParam) {
+      WriteParam(aMsg, elem);
+    }
+  }
+
+  static bool Read(const Message* aMsg, PickleIterator* aIter,
+                   paramType* aResult) {
+    uint32_t length;
+    if (!ReadParam(aMsg, aIter, &length)) {
+      return false;
+    }
+
+    if (sUseWriteBytes) {
+      int pickledLength = 0;
+      if (!ByteLengthIsValid(length, sizeof(E), &pickledLength)) {
+        return false;
+      }
+
+      aResult->resize(length);
+
+      E* elements = aResult->data();
+      return aMsg->ReadBytesInto(aIter, elements, pickledLength);
+    }
+
+    
+    
+    
+    if (!aMsg->HasBytesAvailable(aIter, length)) {
+      return false;
+    }
+
+    aResult->resize(length);
+
+    for (uint32_t index = 0; index < length; ++index) {
+      if (!ReadParam(aMsg, aIter, &((*aResult)[index]))) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  static void Log(const paramType& aParam, std::wstring* aLog) {
+    for (uint32_t index = 0, len = aParam.size(); index < len; ++index) {
+      if (index) {
+        aLog->append(L" ");
+      }
+      LogParam(aParam[index], aLog);
+    }
+  }
 };
 
 template <>
