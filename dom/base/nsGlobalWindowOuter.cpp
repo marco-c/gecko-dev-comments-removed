@@ -7275,7 +7275,6 @@ nsresult nsGlobalWindowOuter::OpenInternal(
     
     AutoPopupStatePusher popupStatePusher(PopupBlocker::openAbused, true);
 
-    nsCOMPtr<mozIDOMWindowProxy> win;
     if (!aCalledNoScript) {
       
       
@@ -7283,7 +7282,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
           this, url.IsVoid() ? nullptr : url.get(), name_ptr, options_ptr,
            true, aDialog, aNavigate, argv,
           isPopupSpamWindow, forceNoOpener, forceNoReferrer, aLoadState,
-          getter_AddRefs(win));
+          getter_AddRefs(domReturn));
     } else {
       
       
@@ -7303,10 +7302,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
           this, url.IsVoid() ? nullptr : url.get(), name_ptr, options_ptr,
            false, aDialog, aNavigate, aExtraArgument,
           isPopupSpamWindow, forceNoOpener, forceNoReferrer, aLoadState,
-          getter_AddRefs(win));
-    }
-    if (win) {
-      domReturn = nsPIDOMWindowOuter::From(win)->GetBrowsingContext();
+          getter_AddRefs(domReturn));
     }
   }
 

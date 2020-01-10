@@ -61,6 +61,7 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/ResultExtensions.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Storage.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -287,13 +288,17 @@ nsWindowWatcher::OpenWindow(mozIDOMWindowProxy* aParent, const char* aUrl,
   }
   bool dialog = (argc != 0);
 
-  return OpenWindowInternal(aParent, aUrl, aName, aFeatures,
-                             false, dialog,
-                             true, argv,
-                             false,
-                             false,
-                             false,
-                             nullptr, aResult);
+  RefPtr<BrowsingContext> bc;
+  MOZ_TRY(OpenWindowInternal(aParent, aUrl, aName, aFeatures,
+                              false, dialog,
+                              true, argv,
+                              false,
+                              false,
+                              false,
+                              nullptr, getter_AddRefs(bc)));
+  nsCOMPtr<mozIDOMWindowProxy> win(bc->GetDOMWindow());
+  win.forget(aResult);
+  return NS_OK;
 }
 
 struct SizeSpec {
@@ -350,7 +355,7 @@ nsWindowWatcher::OpenWindow2(mozIDOMWindowProxy* aParent, const char* aUrl,
                              bool aIsPopupSpam, bool aForceNoOpener,
                              bool aForceNoReferrer,
                              nsDocShellLoadState* aLoadState,
-                             mozIDOMWindowProxy** aResult) {
+                             BrowsingContext** aResult) {
   nsCOMPtr<nsIArray> argv = ConvertArgsToArray(aArguments);
 
   uint32_t argc = 0;
@@ -577,7 +582,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     const char* aFeatures, bool aCalledFromJS, bool aDialog, bool aNavigate,
     nsIArray* aArgv, bool aIsPopupSpam, bool aForceNoOpener,
     bool aForceNoReferrer, nsDocShellLoadState* aLoadState,
-    mozIDOMWindowProxy** aResult) {
+    BrowsingContext** aResult) {
   MOZ_ASSERT_IF(aForceNoReferrer, aForceNoOpener);
 
   nsresult rv = NS_OK;
@@ -926,11 +931,16 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     newDocShell->SetSandboxFlags(activeDocsSandboxFlags);
   }
 
+  nsCOMPtr<mozIDOMWindowProxy> win;
   rv = ReadyOpenedDocShellItem(newDocShellItem, parentWindow, windowIsNew,
-                               aForceNoOpener, aResult);
+                               aForceNoOpener, getter_AddRefs(win));
   if (NS_FAILED(rv)) {
     return rv;
   }
+
+  RefPtr<BrowsingContext> bc(
+      nsPIDOMWindowOuter::From(win)->GetBrowsingContext());
+  bc.forget(aResult);
 
   if (isNewToplevelWindow) {
     nsCOMPtr<nsIDocShellTreeOwner> newTreeOwner;
@@ -940,7 +950,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
   if ((aDialog || windowIsModalContentDialog) && aArgv) {
     
-    nsCOMPtr<nsPIDOMWindowOuter> piwin(do_QueryInterface(*aResult));
+    nsCOMPtr<nsPIDOMWindowOuter> piwin(do_QueryInterface(win));
     NS_ENSURE_TRUE(piwin, NS_ERROR_UNEXPECTED);
 
     rv = piwin->SetArguments(aArgv);
@@ -1009,7 +1019,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     
     
     
-    nsCOMPtr<nsPIDOMWindowOuter> newWindow = do_QueryInterface(*aResult);
+    nsCOMPtr<nsPIDOMWindowOuter> newWindow = do_QueryInterface(win);
     NS_ASSERTION(newWindow == newDocShell->GetWindow(), "Different windows??");
 
     
@@ -1114,7 +1124,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     nsCOMPtr<nsIObserverService> obsSvc =
         mozilla::services::GetObserverService();
     if (obsSvc) {
-      obsSvc->NotifyObservers(*aResult, "toplevel-window-ready", nullptr);
+      obsSvc->NotifyObservers(win, "toplevel-window-ready", nullptr);
     }
   }
 
