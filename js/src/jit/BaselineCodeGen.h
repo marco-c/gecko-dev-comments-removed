@@ -768,6 +768,10 @@ class BaselineInterpreterGenerator final : private BaselineInterpreterCodeGen {
   
   uint32_t interpretOpNoDebugTrapOffset_ = 0;
 
+  
+  
+  uint32_t debugTrapHandlerOffset_ = 0;
+
  public:
   explicit BaselineInterpreterGenerator(JSContext* cx);
 
