@@ -4,6 +4,7 @@
 
 
 
+from __future__ import print_function
 import subprocess
 
 with open('reftest.log', "w") as out:
