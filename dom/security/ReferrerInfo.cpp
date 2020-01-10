@@ -201,8 +201,7 @@ bool ReferrerInfo::ShouldResponseInheritReferrerInfo(nsIChannel* aChannel) {
   nsresult rv = aChannel->GetURI(getter_AddRefs(channelURI));
   NS_ENSURE_SUCCESS(rv, false);
 
-  bool isAbout =
-      (NS_SUCCEEDED(channelURI->SchemeIs("about", &isAbout)) && isAbout);
+  bool isAbout = channelURI->SchemeIs("about");
   if (!isAbout) {
     return false;
   }
@@ -223,27 +222,17 @@ nsresult ReferrerInfo::HandleSecureToInsecureReferral(nsIURI* aOriginalURI,
   NS_ENSURE_ARG(aURI);
 
   aAllowed = false;
-  bool referrerIsHttpsScheme;
-  nsresult rv = aOriginalURI->SchemeIs("https", &referrerIsHttpsScheme);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
 
+  bool referrerIsHttpsScheme = aOriginalURI->SchemeIs("https");
   if (!referrerIsHttpsScheme) {
     aAllowed = true;
     return NS_OK;
   }
 
-  bool uriIsHttpsScheme;
-  rv = aURI->SchemeIs("https", &uriIsHttpsScheme);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
   
   
   
-
+  bool uriIsHttpsScheme = aURI->SchemeIs("https");
   if (aPolicy != nsIHttpChannel::REFERRER_POLICY_UNSAFE_URL &&
       aPolicy != nsIHttpChannel::REFERRER_POLICY_ORIGIN_WHEN_XORIGIN &&
       aPolicy != nsIHttpChannel::REFERRER_POLICY_ORIGIN && !uriIsHttpsScheme) {
