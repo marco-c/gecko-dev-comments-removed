@@ -318,6 +318,29 @@ MOZ_MUST_USE bool js::SetUpWritableStreamDefaultControllerFromUnderlyingSink(
 
 
 
+void js::WritableStreamDefaultControllerClearAlgorithms(
+    WritableStreamDefaultController* unwrappedController) {
+  
+  
+  
+
+  
+  unwrappedController->clearWriteMethod();
+
+  
+  unwrappedController->clearCloseMethod();
+
+  
+  unwrappedController->clearAbortMethod();
+
+  
+  unwrappedController->clearStrategySize();
+}
+
+
+
+
+
 MOZ_MUST_USE bool js::WritableStreamDefaultControllerClose(
     JSContext* cx,
     Handle<WritableStreamDefaultController*> unwrappedController) {
@@ -394,4 +417,27 @@ bool js::WritableStreamDefaultControllerGetBackpressure(
     const WritableStreamDefaultController* unwrappedController) {
   return WritableStreamDefaultControllerGetDesiredSize(unwrappedController) <=
          0.0;
+}
+
+
+
+
+
+bool js::WritableStreamDefaultControllerError(
+    JSContext* cx, Handle<WritableStreamDefaultController*> unwrappedController,
+    Handle<Value> error) {
+  cx->check(error);
+
+  
+  Rooted<WritableStream*> unwrappedStream(cx, unwrappedController->stream());
+
+  
+  MOZ_ASSERT(unwrappedStream->writable());
+
+  
+  
+  WritableStreamDefaultControllerClearAlgorithms(unwrappedController);
+
+  
+  return WritableStreamStartErroring(cx, unwrappedStream, error);
 }
