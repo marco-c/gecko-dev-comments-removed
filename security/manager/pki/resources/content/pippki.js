@@ -298,6 +298,8 @@ function getChainForUsage(results, usage) {
       certificateUsages[result.usageString] == usage &&
       result.errorCode == PRErrorCodeSuccess
     ) {
+      
+      
       return Array.from(result.chain.getEnumerator());
     }
   }
