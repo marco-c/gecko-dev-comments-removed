@@ -168,7 +168,9 @@ class RenderThread final {
   
 
   
-  void HandleFrame(wr::WindowId aWindowId, bool aRender);
+  
+  
+  void HandleFrameOneDoc(wr::WindowId aWindowId, bool aRender);
 
   
   void WakeUp(wr::WindowId aWindowId);
@@ -223,9 +225,6 @@ class RenderThread final {
   void IncPendingFrameCount(wr::WindowId aWindowId, const VsyncId& aStartId,
                             const TimeStamp& aStartTime,
                             uint8_t aDocFrameCount);
-  
-  mozilla::Pair<bool, bool> IncRenderingFrameCount(wr::WindowId aWindowId,
-                                                   bool aRender);
   
   void FrameRenderingComplete(wr::WindowId aWindowId);
 
