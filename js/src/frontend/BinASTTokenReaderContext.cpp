@@ -1256,6 +1256,7 @@ JS::Result<HuffmanLookup> BinASTTokenReaderContext::BitBuffer::getHuffmanLookup(
     
     
 
+    uint64_t newBits = 0;
     while (this->bitLength <= BIT_BUFFER_SIZE - BIT_BUFFER_READ_UNIT) {
       
       uint8_t byte;
@@ -1269,26 +1270,34 @@ JS::Result<HuffmanLookup> BinASTTokenReaderContext::BitBuffer::getHuffmanLookup(
 
       
       
-      const uint8_t reversedByte =
-          (byte & 0b10000000) >> 7 | (byte & 0b01000000) >> 5 |
-          (byte & 0b00100000) >> 3 | (byte & 0b00010000) >> 1 |
-          (byte & 0b00001000) << 1 | (byte & 0b00000100) << 3 |
-          (byte & 0b00000010) << 5 | (byte & 0b00000001) << 7;
-
-      
-      
       
       this->bits <<= BIT_BUFFER_READ_UNIT;
 
       
       
-      this->bits += reversedByte;
+      
+      newBits <<= BIT_BUFFER_READ_UNIT;
+      newBits += byte;
+
       this->bitLength += BIT_BUFFER_READ_UNIT;
       MOZ_ASSERT_IF(this->bitLength != 64 ,
                     this->bits >> this->bitLength == 0);
 
       
     }
+    
+    
+    newBits = ((newBits >> 1) & 0x5555555555555555) |
+              ((newBits & 0x5555555555555555) << 1);
+    
+    newBits = ((newBits >> 2) & 0x3333333333333333) |
+              ((newBits & 0x3333333333333333) << 2);
+    
+    newBits = ((newBits >> 4) & 0x0F0F0F0F0F0F0F0F) |
+              ((newBits & 0x0F0F0F0F0F0F0F0F) << 4);
+    
+    
+    this->bits += newBits;
   }
 
   
@@ -2044,7 +2053,9 @@ JS::Result<Ok> SingleLookupHuffmanTable<T>::initWithSingleValue(JSContext* cx,
 template <typename T>
 JS::Result<Ok> SingleLookupHuffmanTable<T>::initStart(
     JSContext* cx, size_t numberOfSymbols, uint8_t largestBitLength) {
-  MOZ_ASSERT_IF(largestBitLength != 32, (uint32_t(1) << largestBitLength) - 1 <= mozilla::MaxValue<InternalIndex>::value);
+  MOZ_ASSERT_IF(largestBitLength != 32,
+                (uint32_t(1) << largestBitLength) - 1 <=
+                    mozilla::MaxValue<InternalIndex>::value);
   MOZ_ASSERT(values.empty());  
 
   this->largestBitLength = largestBitLength;
