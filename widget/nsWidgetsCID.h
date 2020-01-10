@@ -91,6 +91,14 @@
   }
 
 
+#define NS_MACFINDERPROGRESS_CID                     \
+  {                                                  \
+    0x74EA4101, 0xA5BB, 0x49BC, {                    \
+      0x99, 0x84, 0x66, 0xDA, 0x8B, 0x22, 0x5A, 0x37 \
+    }                                                \
+  }
+
+
 #define NS_MACSHARINGSERVICE_CID                     \
   {                                                  \
     0xde59fe1a, 0x46c8, 0x490f, {                    \
