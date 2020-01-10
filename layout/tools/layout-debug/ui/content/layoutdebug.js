@@ -142,9 +142,7 @@ nsLDBBrowserContentListener.prototype = {
 
   
   onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {
-    if (
-      !(aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK)
-    ) {
+    if (!(aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK)) {
       return;
     }
 
