@@ -42,7 +42,6 @@ MOZ_ALWAYS_INLINE size_t GetStringLength(JSString* s) {
 
 
 
-
 class MOZ_STACK_CLASS JS_FRIEND_API AutoStableStringChars final {
   
 
