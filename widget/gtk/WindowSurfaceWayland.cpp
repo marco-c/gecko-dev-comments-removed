@@ -890,8 +890,12 @@ void WindowImageSurface::Draw(gfx::DrawTarget* aDest,
 }
 
 WindowImageSurface::WindowImageSurface(
-    gfx::SourceSurface* aSurface, const LayoutDeviceIntRegion& aUpdateRegion)
-    : mSurface(aSurface), mUpdateRegion(aUpdateRegion){};
+    gfxImageSurface* aImageSurface, const LayoutDeviceIntRegion& aUpdateRegion)
+    : mImageSurface(aImageSurface), mUpdateRegion(aUpdateRegion) {
+  mSurface = gfx::Factory::CreateSourceSurfaceForCairoSurface(
+      mImageSurface->CairoSurface(), mImageSurface->GetSize(),
+      mImageSurface->Format());
+}
 
 void WindowSurfaceWayland::DrawDelayedImageCommits(
     gfx::DrawTarget* aDrawTarget, LayoutDeviceIntRegion& aWaylandBufferDamage) {
@@ -915,35 +919,23 @@ bool WindowSurfaceWayland::CommitImageSurfaceToWaylandBuffer(
   LOGWAYLAND(("%s [%p] screenSize [%d x %d]\n", __PRETTY_FUNCTION__,
               (void*)this, mBufferScreenRect.width, mBufferScreenRect.height));
 
-  RefPtr<gfx::SourceSurface> surf =
-      gfx::Factory::CreateSourceSurfaceForCairoSurface(
-          mImageSurface->CairoSurface(), mImageSurface->GetSize(),
-          mImageSurface->Format());
-  if (!surf) {
-    NS_WARNING("Failed to create source cairo surface!");
-    return false;
-  }
+  mDelayedImageCommits.AppendElement(
+      WindowImageSurface(mImageSurface, aRegion));
+  
+  mImageSurface = nullptr;
 
   RefPtr<gfx::DrawTarget> dt = LockWaylandBuffer(
        mWholeWindowBufferDamage);
-  if (dt) {
-    LOGWAYLAND(
-        ("   Flushing %ld cached WindowImageSurfaces to Wayland buffer\n",
-         long(mDelayedImageCommits.Length() + 1)));
-
-    
-    DrawDelayedImageCommits(dt, aWaylandBufferDamage);
-    
-    WindowImageSurface::Draw(surf, dt, aRegion);
-    
-    aWaylandBufferDamage.OrWith(aRegion);
-    UnlockWaylandBuffer();
-  } else {
-    mDelayedImageCommits.AppendElement(WindowImageSurface(surf, aRegion));
-    LOGWAYLAND(("   Added WindowImageSurfaces, cached surfaces %ld\n",
-                long(mDelayedImageCommits.Length())));
+  if (!dt) {
     return false;
   }
+
+  LOGWAYLAND(("   Flushing %ld cached WindowImageSurfaces to Wayland buffer\n",
+              long(mDelayedImageCommits.Length() + 1)));
+
+  
+  DrawDelayedImageCommits(dt, aWaylandBufferDamage);
+  UnlockWaylandBuffer();
 
   return true;
 }
@@ -979,23 +971,6 @@ void WindowSurfaceWayland::CommitWaylandBuffer() {
   LOGWAYLAND(("   mDelayedCommitHandle = %p\n", mDelayedCommitHandle));
   LOGWAYLAND(("   mFrameCallback = %p\n", mFrameCallback));
   LOGWAYLAND(("   mLastCommittedSurface = %p\n", mLastCommittedSurface));
-
-  if (!mDrawToWaylandBufferDirectly) {
-    MOZ_ASSERT(mDelayedImageCommits.Length(),
-               "Indirect drawing without any image?");
-
-    
-    RefPtr<gfx::DrawTarget> dt = LockWaylandBuffer(
-         mWholeWindowBufferDamage);
-
-    if (dt) {
-      LOGWAYLAND(("%s [%p] flushed indirect drawing\n", __PRETTY_FUNCTION__,
-                  (void*)this));
-      DrawDelayedImageCommits(dt, mWaylandBufferDamage);
-      UnlockWaylandBuffer();
-      mDrawToWaylandBufferDirectly = true;
-    }
-  }
 
   wl_surface* waylandSurface = mWindow->GetWaylandSurface();
   if (!waylandSurface) {
@@ -1105,6 +1080,7 @@ void WindowSurfaceWayland::Commit(const LayoutDeviceIntRegion& aInvalidRegion) {
       mWaylandBufferDamage.OrWith(aInvalidRegion);
     }
     UnlockWaylandBuffer();
+    mPendingCommit = true;
   } else {
     MOZ_ASSERT(!mWaylandBuffer->IsLocked(),
                "Drawing to already locked buffer?");
@@ -1112,12 +1088,13 @@ void WindowSurfaceWayland::Commit(const LayoutDeviceIntRegion& aInvalidRegion) {
                                           mWaylandBufferDamage)) {
       
       mDrawToWaylandBufferDirectly = true;
+      mPendingCommit = true;
     }
   }
 
-  
-  mPendingCommit = true;
-  CommitWaylandBuffer();
+  if (mPendingCommit) {
+    CommitWaylandBuffer();
+  }
 }
 
 void WindowSurfaceWayland::FrameCallbackHandler() {
