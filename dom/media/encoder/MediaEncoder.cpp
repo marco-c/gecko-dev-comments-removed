@@ -678,15 +678,6 @@ nsresult MediaEncoder::GetEncodedData(
 
   MOZ_ASSERT(mEncoderThread->IsCurrentThreadIn());
   MOZ_ASSERT(mInitialized);
-
-  if (mError) {
-    
-    
-    LOG(LogLevel::Warning, ("GetEncodedData bailing early because we're in an "
-                            "error state (mError == true)"));
-    return NS_ERROR_ABORT;
-  }
-
   MOZ_ASSERT_IF(mAudioEncoder, mAudioEncoder->IsInitialized());
   MOZ_ASSERT_IF(mVideoEncoder, mVideoEncoder->IsInitialized());
 
@@ -721,12 +712,8 @@ nsresult MediaEncoder::GetEncodedData(
     nsTArray<RefPtr<EncodedFrame>> videoFrames;
     rv = mVideoEncoder->GetEncodedTrack(videoFrames);
     if (NS_FAILED(rv)) {
+      
       LOG(LogLevel::Error, ("Failed to get encoded data from video encoder."));
-      
-      
-      if (rv != NS_ERROR_DOM_MEDIA_CANCELED) {
-        SetError();
-      }
       return rv;
     }
     for (const RefPtr<EncodedFrame>& frame : videoFrames) {
@@ -741,12 +728,8 @@ nsresult MediaEncoder::GetEncodedData(
     nsTArray<RefPtr<EncodedFrame>> audioFrames;
     rv = mAudioEncoder->GetEncodedTrack(audioFrames);
     if (NS_FAILED(rv)) {
+      
       LOG(LogLevel::Error, ("Failed to get encoded data from audio encoder."));
-      
-      
-      if (rv != NS_ERROR_DOM_MEDIA_CANCELED) {
-        SetError();
-      }
       return rv;
     }
     for (const RefPtr<EncodedFrame>& frame : audioFrames) {
