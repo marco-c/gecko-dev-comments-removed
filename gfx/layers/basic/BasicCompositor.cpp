@@ -1033,6 +1033,9 @@ void BasicCompositor::EndFrame() {
   
   mRenderTarget->mDrawTarget->PopClip();
 
+  
+  mRenderTarget->mDrawTarget->SetTransform(gfx::Matrix());
+
   TryToEndRemoteDrawing();
 
   
