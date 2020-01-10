@@ -56,17 +56,16 @@ void XULPersist::AttributeChanged(dom::Element* aElement, int32_t aNameSpaceID,
   NS_ASSERTION(aElement->OwnerDoc() == mDocument, "unexpected doc");
 
   
-  nsCOMPtr<nsIDocumentObserver> kungFuDeathGrip(this);
-
-  
   
   
   nsAutoString persist;
-  aElement->GetAttr(kNameSpaceID_None, nsGkAtoms::persist, persist);
   
-  if (ShouldPersistAttribute(aElement, aAttribute) && !persist.IsEmpty() &&
+  if (aElement->GetAttr(kNameSpaceID_None, nsGkAtoms::persist, persist) &&
+      ShouldPersistAttribute(aElement, aAttribute) && !persist.IsEmpty() &&
       
       persist.Find(nsDependentAtomString(aAttribute)) >= 0) {
+    
+    nsCOMPtr<nsIDocumentObserver> kungFuDeathGrip(this);
     nsContentUtils::AddScriptRunner(
         NewRunnableMethod<Element*, int32_t, nsAtom*>(
             "dom::XULPersist::Persist", this, &XULPersist::Persist, aElement,
