@@ -609,8 +609,8 @@ if (wasmBulkMemSupported()) {
                        LinkError,
                        /elem segment does not fit/);
     assertEq(tbl.get(0), null);
-    assertEq(typeof tbl.get(1), "function");
-    assertEq(typeof tbl.get(2), "function");
+    assertEq(tbl.get(1), null);
+    assertEq(tbl.get(2), null);
     let v = new Uint8Array(mem.buffer);
     assertEq(v[0], 0);
 }
@@ -630,8 +630,8 @@ if (wasmBulkMemSupported()) {
                        LinkError,
                        /data segment does not fit/);
     let v = new Uint8Array(mem.buffer);
-    assertEq(v[65534], 1);
-    assertEq(v[65535], 2);
+    assertEq(v[65534], 0);
+    assertEq(v[65535], 0);
     assertEq(v[0], 0);
 }
 

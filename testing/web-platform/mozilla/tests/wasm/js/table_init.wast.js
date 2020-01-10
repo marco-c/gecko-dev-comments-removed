@@ -580,30 +580,6 @@ let $18 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8f\x80\x80\x80\x00\x03
 assert_trap(() => call($18, "run", [24, 16]));
 
 
-assert_return(() => call($18, "test", [24]), 0);
-
-
-assert_return(() => call($18, "test", [25]), 1);
-
-
-assert_return(() => call($18, "test", [26]), 2);
-
-
-assert_return(() => call($18, "test", [27]), 3);
-
-
-assert_return(() => call($18, "test", [28]), 4);
-
-
-assert_return(() => call($18, "test", [29]), 5);
-
-
-assert_return(() => call($18, "test", [30]), 6);
-
-
-assert_return(() => call($18, "test", [31]), 7);
-
-
 assert_trap(() => call($18, "test", [0]));
 
 
@@ -676,31 +652,34 @@ assert_trap(() => call($18, "test", [22]));
 assert_trap(() => call($18, "test", [23]));
 
 
+assert_trap(() => call($18, "test", [24]));
+
+
+assert_trap(() => call($18, "test", [25]));
+
+
+assert_trap(() => call($18, "test", [26]));
+
+
+assert_trap(() => call($18, "test", [27]));
+
+
+assert_trap(() => call($18, "test", [28]));
+
+
+assert_trap(() => call($18, "test", [29]));
+
+
+assert_trap(() => call($18, "test", [30]));
+
+
+assert_trap(() => call($18, "test", [31]));
+
+
 let $19 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8f\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x01\x7f\x01\x7f\x60\x02\x7f\x7f\x00\x03\x93\x80\x80\x80\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x20\x40\x07\xe4\x80\x80\x80\x00\x12\x02\x66\x30\x00\x00\x02\x66\x31\x00\x01\x02\x66\x32\x00\x02\x02\x66\x33\x00\x03\x02\x66\x34\x00\x04\x02\x66\x35\x00\x05\x02\x66\x36\x00\x06\x02\x66\x37\x00\x07\x02\x66\x38\x00\x08\x02\x66\x39\x00\x09\x03\x66\x31\x30\x00\x0a\x03\x66\x31\x31\x00\x0b\x03\x66\x31\x32\x00\x0c\x03\x66\x31\x33\x00\x0d\x03\x66\x31\x34\x00\x0e\x03\x66\x31\x35\x00\x0f\x04\x74\x65\x73\x74\x00\x10\x03\x72\x75\x6e\x00\x11\x09\xb4\x80\x80\x80\x00\x01\x05\x70\x10\xd2\x00\x0b\xd2\x01\x0b\xd2\x02\x0b\xd2\x03\x0b\xd2\x04\x0b\xd2\x05\x0b\xd2\x06\x0b\xd2\x07\x0b\xd2\x08\x0b\xd2\x09\x0b\xd2\x0a\x0b\xd2\x0b\x0b\xd2\x0c\x0b\xd2\x0d\x0b\xd2\x0e\x0b\xd2\x0f\x0b\x0a\xae\x81\x80\x80\x00\x12\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x84\x80\x80\x80\x00\x00\x41\x0a\x0b\x84\x80\x80\x80\x00\x00\x41\x0b\x0b\x84\x80\x80\x80\x00\x00\x41\x0c\x0b\x84\x80\x80\x80\x00\x00\x41\x0d\x0b\x84\x80\x80\x80\x00\x00\x41\x0e\x0b\x84\x80\x80\x80\x00\x00\x41\x0f\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b\x8c\x80\x80\x80\x00\x00\x20\x00\x41\x00\x20\x01\xfc\x0c\x00\x00\x0b");
 
 
 assert_trap(() => call($19, "run", [25, 16]));
-
-
-assert_return(() => call($19, "test", [25]), 0);
-
-
-assert_return(() => call($19, "test", [26]), 1);
-
-
-assert_return(() => call($19, "test", [27]), 2);
-
-
-assert_return(() => call($19, "test", [28]), 3);
-
-
-assert_return(() => call($19, "test", [29]), 4);
-
-
-assert_return(() => call($19, "test", [30]), 5);
-
-
-assert_return(() => call($19, "test", [31]), 6);
 
 
 assert_trap(() => call($19, "test", [0]));
@@ -778,202 +757,31 @@ assert_trap(() => call($19, "test", [23]));
 assert_trap(() => call($19, "test", [24]));
 
 
+assert_trap(() => call($19, "test", [25]));
+
+
+assert_trap(() => call($19, "test", [26]));
+
+
+assert_trap(() => call($19, "test", [27]));
+
+
+assert_trap(() => call($19, "test", [28]));
+
+
+assert_trap(() => call($19, "test", [29]));
+
+
+assert_trap(() => call($19, "test", [30]));
+
+
+assert_trap(() => call($19, "test", [31]));
+
+
 let $20 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8f\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x01\x7f\x01\x7f\x60\x02\x7f\x7f\x00\x03\x93\x80\x80\x80\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x04\x87\x80\x80\x80\x00\x01\x70\x01\xa0\x01\xc0\x02\x07\xe4\x80\x80\x80\x00\x12\x02\x66\x30\x00\x00\x02\x66\x31\x00\x01\x02\x66\x32\x00\x02\x02\x66\x33\x00\x03\x02\x66\x34\x00\x04\x02\x66\x35\x00\x05\x02\x66\x36\x00\x06\x02\x66\x37\x00\x07\x02\x66\x38\x00\x08\x02\x66\x39\x00\x09\x03\x66\x31\x30\x00\x0a\x03\x66\x31\x31\x00\x0b\x03\x66\x31\x32\x00\x0c\x03\x66\x31\x33\x00\x0d\x03\x66\x31\x34\x00\x0e\x03\x66\x31\x35\x00\x0f\x04\x74\x65\x73\x74\x00\x10\x03\x72\x75\x6e\x00\x11\x09\xb4\x80\x80\x80\x00\x01\x05\x70\x10\xd2\x00\x0b\xd2\x01\x0b\xd2\x02\x0b\xd2\x03\x0b\xd2\x04\x0b\xd2\x05\x0b\xd2\x06\x0b\xd2\x07\x0b\xd2\x08\x0b\xd2\x09\x0b\xd2\x0a\x0b\xd2\x0b\x0b\xd2\x0c\x0b\xd2\x0d\x0b\xd2\x0e\x0b\xd2\x0f\x0b\x0a\xae\x81\x80\x80\x00\x12\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x84\x80\x80\x80\x00\x00\x41\x0a\x0b\x84\x80\x80\x80\x00\x00\x41\x0b\x0b\x84\x80\x80\x80\x00\x00\x41\x0c\x0b\x84\x80\x80\x80\x00\x00\x41\x0d\x0b\x84\x80\x80\x80\x00\x00\x41\x0e\x0b\x84\x80\x80\x80\x00\x00\x41\x0f\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b\x8c\x80\x80\x80\x00\x00\x20\x00\x41\x00\x20\x01\xfc\x0c\x00\x00\x0b");
 
 
 assert_trap(() => call($20, "run", [96, 32]));
-
-
-assert_return(() => call($20, "test", [96]), 0);
-
-
-assert_return(() => call($20, "test", [97]), 1);
-
-
-assert_return(() => call($20, "test", [98]), 2);
-
-
-assert_return(() => call($20, "test", [99]), 3);
-
-
-assert_return(() => call($20, "test", [100]), 4);
-
-
-assert_return(() => call($20, "test", [101]), 5);
-
-
-assert_return(() => call($20, "test", [102]), 6);
-
-
-assert_return(() => call($20, "test", [103]), 7);
-
-
-assert_return(() => call($20, "test", [104]), 8);
-
-
-assert_return(() => call($20, "test", [105]), 9);
-
-
-assert_return(() => call($20, "test", [106]), 10);
-
-
-assert_return(() => call($20, "test", [107]), 11);
-
-
-assert_return(() => call($20, "test", [108]), 12);
-
-
-assert_return(() => call($20, "test", [109]), 13);
-
-
-assert_return(() => call($20, "test", [110]), 14);
-
-
-assert_return(() => call($20, "test", [111]), 15);
-
-
-assert_trap(() => call($20, "test", [112]));
-
-
-assert_trap(() => call($20, "test", [113]));
-
-
-assert_trap(() => call($20, "test", [114]));
-
-
-assert_trap(() => call($20, "test", [115]));
-
-
-assert_trap(() => call($20, "test", [116]));
-
-
-assert_trap(() => call($20, "test", [117]));
-
-
-assert_trap(() => call($20, "test", [118]));
-
-
-assert_trap(() => call($20, "test", [119]));
-
-
-assert_trap(() => call($20, "test", [120]));
-
-
-assert_trap(() => call($20, "test", [121]));
-
-
-assert_trap(() => call($20, "test", [122]));
-
-
-assert_trap(() => call($20, "test", [123]));
-
-
-assert_trap(() => call($20, "test", [124]));
-
-
-assert_trap(() => call($20, "test", [125]));
-
-
-assert_trap(() => call($20, "test", [126]));
-
-
-assert_trap(() => call($20, "test", [127]));
-
-
-assert_trap(() => call($20, "test", [128]));
-
-
-assert_trap(() => call($20, "test", [129]));
-
-
-assert_trap(() => call($20, "test", [130]));
-
-
-assert_trap(() => call($20, "test", [131]));
-
-
-assert_trap(() => call($20, "test", [132]));
-
-
-assert_trap(() => call($20, "test", [133]));
-
-
-assert_trap(() => call($20, "test", [134]));
-
-
-assert_trap(() => call($20, "test", [135]));
-
-
-assert_trap(() => call($20, "test", [136]));
-
-
-assert_trap(() => call($20, "test", [137]));
-
-
-assert_trap(() => call($20, "test", [138]));
-
-
-assert_trap(() => call($20, "test", [139]));
-
-
-assert_trap(() => call($20, "test", [140]));
-
-
-assert_trap(() => call($20, "test", [141]));
-
-
-assert_trap(() => call($20, "test", [142]));
-
-
-assert_trap(() => call($20, "test", [143]));
-
-
-assert_trap(() => call($20, "test", [144]));
-
-
-assert_trap(() => call($20, "test", [145]));
-
-
-assert_trap(() => call($20, "test", [146]));
-
-
-assert_trap(() => call($20, "test", [147]));
-
-
-assert_trap(() => call($20, "test", [148]));
-
-
-assert_trap(() => call($20, "test", [149]));
-
-
-assert_trap(() => call($20, "test", [150]));
-
-
-assert_trap(() => call($20, "test", [151]));
-
-
-assert_trap(() => call($20, "test", [152]));
-
-
-assert_trap(() => call($20, "test", [153]));
-
-
-assert_trap(() => call($20, "test", [154]));
-
-
-assert_trap(() => call($20, "test", [155]));
-
-
-assert_trap(() => call($20, "test", [156]));
-
-
-assert_trap(() => call($20, "test", [157]));
-
-
-assert_trap(() => call($20, "test", [158]));
-
-
-assert_trap(() => call($20, "test", [159]));
 
 
 assert_trap(() => call($20, "test", [0]));
@@ -1264,199 +1072,202 @@ assert_trap(() => call($20, "test", [94]));
 assert_trap(() => call($20, "test", [95]));
 
 
+assert_trap(() => call($20, "test", [96]));
+
+
+assert_trap(() => call($20, "test", [97]));
+
+
+assert_trap(() => call($20, "test", [98]));
+
+
+assert_trap(() => call($20, "test", [99]));
+
+
+assert_trap(() => call($20, "test", [100]));
+
+
+assert_trap(() => call($20, "test", [101]));
+
+
+assert_trap(() => call($20, "test", [102]));
+
+
+assert_trap(() => call($20, "test", [103]));
+
+
+assert_trap(() => call($20, "test", [104]));
+
+
+assert_trap(() => call($20, "test", [105]));
+
+
+assert_trap(() => call($20, "test", [106]));
+
+
+assert_trap(() => call($20, "test", [107]));
+
+
+assert_trap(() => call($20, "test", [108]));
+
+
+assert_trap(() => call($20, "test", [109]));
+
+
+assert_trap(() => call($20, "test", [110]));
+
+
+assert_trap(() => call($20, "test", [111]));
+
+
+assert_trap(() => call($20, "test", [112]));
+
+
+assert_trap(() => call($20, "test", [113]));
+
+
+assert_trap(() => call($20, "test", [114]));
+
+
+assert_trap(() => call($20, "test", [115]));
+
+
+assert_trap(() => call($20, "test", [116]));
+
+
+assert_trap(() => call($20, "test", [117]));
+
+
+assert_trap(() => call($20, "test", [118]));
+
+
+assert_trap(() => call($20, "test", [119]));
+
+
+assert_trap(() => call($20, "test", [120]));
+
+
+assert_trap(() => call($20, "test", [121]));
+
+
+assert_trap(() => call($20, "test", [122]));
+
+
+assert_trap(() => call($20, "test", [123]));
+
+
+assert_trap(() => call($20, "test", [124]));
+
+
+assert_trap(() => call($20, "test", [125]));
+
+
+assert_trap(() => call($20, "test", [126]));
+
+
+assert_trap(() => call($20, "test", [127]));
+
+
+assert_trap(() => call($20, "test", [128]));
+
+
+assert_trap(() => call($20, "test", [129]));
+
+
+assert_trap(() => call($20, "test", [130]));
+
+
+assert_trap(() => call($20, "test", [131]));
+
+
+assert_trap(() => call($20, "test", [132]));
+
+
+assert_trap(() => call($20, "test", [133]));
+
+
+assert_trap(() => call($20, "test", [134]));
+
+
+assert_trap(() => call($20, "test", [135]));
+
+
+assert_trap(() => call($20, "test", [136]));
+
+
+assert_trap(() => call($20, "test", [137]));
+
+
+assert_trap(() => call($20, "test", [138]));
+
+
+assert_trap(() => call($20, "test", [139]));
+
+
+assert_trap(() => call($20, "test", [140]));
+
+
+assert_trap(() => call($20, "test", [141]));
+
+
+assert_trap(() => call($20, "test", [142]));
+
+
+assert_trap(() => call($20, "test", [143]));
+
+
+assert_trap(() => call($20, "test", [144]));
+
+
+assert_trap(() => call($20, "test", [145]));
+
+
+assert_trap(() => call($20, "test", [146]));
+
+
+assert_trap(() => call($20, "test", [147]));
+
+
+assert_trap(() => call($20, "test", [148]));
+
+
+assert_trap(() => call($20, "test", [149]));
+
+
+assert_trap(() => call($20, "test", [150]));
+
+
+assert_trap(() => call($20, "test", [151]));
+
+
+assert_trap(() => call($20, "test", [152]));
+
+
+assert_trap(() => call($20, "test", [153]));
+
+
+assert_trap(() => call($20, "test", [154]));
+
+
+assert_trap(() => call($20, "test", [155]));
+
+
+assert_trap(() => call($20, "test", [156]));
+
+
+assert_trap(() => call($20, "test", [157]));
+
+
+assert_trap(() => call($20, "test", [158]));
+
+
+assert_trap(() => call($20, "test", [159]));
+
+
 let $21 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8f\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x01\x7f\x01\x7f\x60\x02\x7f\x7f\x00\x03\x93\x80\x80\x80\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x04\x87\x80\x80\x80\x00\x01\x70\x01\xa0\x01\xc0\x02\x07\xe4\x80\x80\x80\x00\x12\x02\x66\x30\x00\x00\x02\x66\x31\x00\x01\x02\x66\x32\x00\x02\x02\x66\x33\x00\x03\x02\x66\x34\x00\x04\x02\x66\x35\x00\x05\x02\x66\x36\x00\x06\x02\x66\x37\x00\x07\x02\x66\x38\x00\x08\x02\x66\x39\x00\x09\x03\x66\x31\x30\x00\x0a\x03\x66\x31\x31\x00\x0b\x03\x66\x31\x32\x00\x0c\x03\x66\x31\x33\x00\x0d\x03\x66\x31\x34\x00\x0e\x03\x66\x31\x35\x00\x0f\x04\x74\x65\x73\x74\x00\x10\x03\x72\x75\x6e\x00\x11\x09\xb4\x80\x80\x80\x00\x01\x05\x70\x10\xd2\x00\x0b\xd2\x01\x0b\xd2\x02\x0b\xd2\x03\x0b\xd2\x04\x0b\xd2\x05\x0b\xd2\x06\x0b\xd2\x07\x0b\xd2\x08\x0b\xd2\x09\x0b\xd2\x0a\x0b\xd2\x0b\x0b\xd2\x0c\x0b\xd2\x0d\x0b\xd2\x0e\x0b\xd2\x0f\x0b\x0a\xae\x81\x80\x80\x00\x12\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x84\x80\x80\x80\x00\x00\x41\x0a\x0b\x84\x80\x80\x80\x00\x00\x41\x0b\x0b\x84\x80\x80\x80\x00\x00\x41\x0c\x0b\x84\x80\x80\x80\x00\x00\x41\x0d\x0b\x84\x80\x80\x80\x00\x00\x41\x0e\x0b\x84\x80\x80\x80\x00\x00\x41\x0f\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b\x8c\x80\x80\x80\x00\x00\x20\x00\x41\x00\x20\x01\xfc\x0c\x00\x00\x0b");
 
 
 assert_trap(() => call($21, "run", [97, 31]));
-
-
-assert_return(() => call($21, "test", [97]), 0);
-
-
-assert_return(() => call($21, "test", [98]), 1);
-
-
-assert_return(() => call($21, "test", [99]), 2);
-
-
-assert_return(() => call($21, "test", [100]), 3);
-
-
-assert_return(() => call($21, "test", [101]), 4);
-
-
-assert_return(() => call($21, "test", [102]), 5);
-
-
-assert_return(() => call($21, "test", [103]), 6);
-
-
-assert_return(() => call($21, "test", [104]), 7);
-
-
-assert_return(() => call($21, "test", [105]), 8);
-
-
-assert_return(() => call($21, "test", [106]), 9);
-
-
-assert_return(() => call($21, "test", [107]), 10);
-
-
-assert_return(() => call($21, "test", [108]), 11);
-
-
-assert_return(() => call($21, "test", [109]), 12);
-
-
-assert_return(() => call($21, "test", [110]), 13);
-
-
-assert_return(() => call($21, "test", [111]), 14);
-
-
-assert_return(() => call($21, "test", [112]), 15);
-
-
-assert_trap(() => call($21, "test", [113]));
-
-
-assert_trap(() => call($21, "test", [114]));
-
-
-assert_trap(() => call($21, "test", [115]));
-
-
-assert_trap(() => call($21, "test", [116]));
-
-
-assert_trap(() => call($21, "test", [117]));
-
-
-assert_trap(() => call($21, "test", [118]));
-
-
-assert_trap(() => call($21, "test", [119]));
-
-
-assert_trap(() => call($21, "test", [120]));
-
-
-assert_trap(() => call($21, "test", [121]));
-
-
-assert_trap(() => call($21, "test", [122]));
-
-
-assert_trap(() => call($21, "test", [123]));
-
-
-assert_trap(() => call($21, "test", [124]));
-
-
-assert_trap(() => call($21, "test", [125]));
-
-
-assert_trap(() => call($21, "test", [126]));
-
-
-assert_trap(() => call($21, "test", [127]));
-
-
-assert_trap(() => call($21, "test", [128]));
-
-
-assert_trap(() => call($21, "test", [129]));
-
-
-assert_trap(() => call($21, "test", [130]));
-
-
-assert_trap(() => call($21, "test", [131]));
-
-
-assert_trap(() => call($21, "test", [132]));
-
-
-assert_trap(() => call($21, "test", [133]));
-
-
-assert_trap(() => call($21, "test", [134]));
-
-
-assert_trap(() => call($21, "test", [135]));
-
-
-assert_trap(() => call($21, "test", [136]));
-
-
-assert_trap(() => call($21, "test", [137]));
-
-
-assert_trap(() => call($21, "test", [138]));
-
-
-assert_trap(() => call($21, "test", [139]));
-
-
-assert_trap(() => call($21, "test", [140]));
-
-
-assert_trap(() => call($21, "test", [141]));
-
-
-assert_trap(() => call($21, "test", [142]));
-
-
-assert_trap(() => call($21, "test", [143]));
-
-
-assert_trap(() => call($21, "test", [144]));
-
-
-assert_trap(() => call($21, "test", [145]));
-
-
-assert_trap(() => call($21, "test", [146]));
-
-
-assert_trap(() => call($21, "test", [147]));
-
-
-assert_trap(() => call($21, "test", [148]));
-
-
-assert_trap(() => call($21, "test", [149]));
-
-
-assert_trap(() => call($21, "test", [150]));
-
-
-assert_trap(() => call($21, "test", [151]));
-
-
-assert_trap(() => call($21, "test", [152]));
-
-
-assert_trap(() => call($21, "test", [153]));
-
-
-assert_trap(() => call($21, "test", [154]));
-
-
-assert_trap(() => call($21, "test", [155]));
-
-
-assert_trap(() => call($21, "test", [156]));
-
-
-assert_trap(() => call($21, "test", [157]));
-
-
-assert_trap(() => call($21, "test", [158]));
-
-
-assert_trap(() => call($21, "test", [159]));
 
 
 assert_trap(() => call($21, "test", [0]));
@@ -1750,58 +1561,199 @@ assert_trap(() => call($21, "test", [95]));
 assert_trap(() => call($21, "test", [96]));
 
 
+assert_trap(() => call($21, "test", [97]));
+
+
+assert_trap(() => call($21, "test", [98]));
+
+
+assert_trap(() => call($21, "test", [99]));
+
+
+assert_trap(() => call($21, "test", [100]));
+
+
+assert_trap(() => call($21, "test", [101]));
+
+
+assert_trap(() => call($21, "test", [102]));
+
+
+assert_trap(() => call($21, "test", [103]));
+
+
+assert_trap(() => call($21, "test", [104]));
+
+
+assert_trap(() => call($21, "test", [105]));
+
+
+assert_trap(() => call($21, "test", [106]));
+
+
+assert_trap(() => call($21, "test", [107]));
+
+
+assert_trap(() => call($21, "test", [108]));
+
+
+assert_trap(() => call($21, "test", [109]));
+
+
+assert_trap(() => call($21, "test", [110]));
+
+
+assert_trap(() => call($21, "test", [111]));
+
+
+assert_trap(() => call($21, "test", [112]));
+
+
+assert_trap(() => call($21, "test", [113]));
+
+
+assert_trap(() => call($21, "test", [114]));
+
+
+assert_trap(() => call($21, "test", [115]));
+
+
+assert_trap(() => call($21, "test", [116]));
+
+
+assert_trap(() => call($21, "test", [117]));
+
+
+assert_trap(() => call($21, "test", [118]));
+
+
+assert_trap(() => call($21, "test", [119]));
+
+
+assert_trap(() => call($21, "test", [120]));
+
+
+assert_trap(() => call($21, "test", [121]));
+
+
+assert_trap(() => call($21, "test", [122]));
+
+
+assert_trap(() => call($21, "test", [123]));
+
+
+assert_trap(() => call($21, "test", [124]));
+
+
+assert_trap(() => call($21, "test", [125]));
+
+
+assert_trap(() => call($21, "test", [126]));
+
+
+assert_trap(() => call($21, "test", [127]));
+
+
+assert_trap(() => call($21, "test", [128]));
+
+
+assert_trap(() => call($21, "test", [129]));
+
+
+assert_trap(() => call($21, "test", [130]));
+
+
+assert_trap(() => call($21, "test", [131]));
+
+
+assert_trap(() => call($21, "test", [132]));
+
+
+assert_trap(() => call($21, "test", [133]));
+
+
+assert_trap(() => call($21, "test", [134]));
+
+
+assert_trap(() => call($21, "test", [135]));
+
+
+assert_trap(() => call($21, "test", [136]));
+
+
+assert_trap(() => call($21, "test", [137]));
+
+
+assert_trap(() => call($21, "test", [138]));
+
+
+assert_trap(() => call($21, "test", [139]));
+
+
+assert_trap(() => call($21, "test", [140]));
+
+
+assert_trap(() => call($21, "test", [141]));
+
+
+assert_trap(() => call($21, "test", [142]));
+
+
+assert_trap(() => call($21, "test", [143]));
+
+
+assert_trap(() => call($21, "test", [144]));
+
+
+assert_trap(() => call($21, "test", [145]));
+
+
+assert_trap(() => call($21, "test", [146]));
+
+
+assert_trap(() => call($21, "test", [147]));
+
+
+assert_trap(() => call($21, "test", [148]));
+
+
+assert_trap(() => call($21, "test", [149]));
+
+
+assert_trap(() => call($21, "test", [150]));
+
+
+assert_trap(() => call($21, "test", [151]));
+
+
+assert_trap(() => call($21, "test", [152]));
+
+
+assert_trap(() => call($21, "test", [153]));
+
+
+assert_trap(() => call($21, "test", [154]));
+
+
+assert_trap(() => call($21, "test", [155]));
+
+
+assert_trap(() => call($21, "test", [156]));
+
+
+assert_trap(() => call($21, "test", [157]));
+
+
+assert_trap(() => call($21, "test", [158]));
+
+
+assert_trap(() => call($21, "test", [159]));
+
+
 let $22 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8f\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x01\x7f\x01\x7f\x60\x02\x7f\x7f\x00\x03\x93\x80\x80\x80\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x40\x40\x07\xe4\x80\x80\x80\x00\x12\x02\x66\x30\x00\x00\x02\x66\x31\x00\x01\x02\x66\x32\x00\x02\x02\x66\x33\x00\x03\x02\x66\x34\x00\x04\x02\x66\x35\x00\x05\x02\x66\x36\x00\x06\x02\x66\x37\x00\x07\x02\x66\x38\x00\x08\x02\x66\x39\x00\x09\x03\x66\x31\x30\x00\x0a\x03\x66\x31\x31\x00\x0b\x03\x66\x31\x32\x00\x0c\x03\x66\x31\x33\x00\x0d\x03\x66\x31\x34\x00\x0e\x03\x66\x31\x35\x00\x0f\x04\x74\x65\x73\x74\x00\x10\x03\x72\x75\x6e\x00\x11\x09\xb4\x80\x80\x80\x00\x01\x05\x70\x10\xd2\x00\x0b\xd2\x01\x0b\xd2\x02\x0b\xd2\x03\x0b\xd2\x04\x0b\xd2\x05\x0b\xd2\x06\x0b\xd2\x07\x0b\xd2\x08\x0b\xd2\x09\x0b\xd2\x0a\x0b\xd2\x0b\x0b\xd2\x0c\x0b\xd2\x0d\x0b\xd2\x0e\x0b\xd2\x0f\x0b\x0a\xae\x81\x80\x80\x00\x12\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x84\x80\x80\x80\x00\x00\x41\x0a\x0b\x84\x80\x80\x80\x00\x00\x41\x0b\x0b\x84\x80\x80\x80\x00\x00\x41\x0c\x0b\x84\x80\x80\x80\x00\x00\x41\x0d\x0b\x84\x80\x80\x80\x00\x00\x41\x0e\x0b\x84\x80\x80\x80\x00\x00\x41\x0f\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b\x8c\x80\x80\x80\x00\x00\x20\x00\x41\x00\x20\x01\xfc\x0c\x00\x00\x0b");
 
 
 assert_trap(() => call($22, "run", [48, -16]));
-
-
-assert_return(() => call($22, "test", [48]), 0);
-
-
-assert_return(() => call($22, "test", [49]), 1);
-
-
-assert_return(() => call($22, "test", [50]), 2);
-
-
-assert_return(() => call($22, "test", [51]), 3);
-
-
-assert_return(() => call($22, "test", [52]), 4);
-
-
-assert_return(() => call($22, "test", [53]), 5);
-
-
-assert_return(() => call($22, "test", [54]), 6);
-
-
-assert_return(() => call($22, "test", [55]), 7);
-
-
-assert_return(() => call($22, "test", [56]), 8);
-
-
-assert_return(() => call($22, "test", [57]), 9);
-
-
-assert_return(() => call($22, "test", [58]), 10);
-
-
-assert_return(() => call($22, "test", [59]), 11);
-
-
-assert_return(() => call($22, "test", [60]), 12);
-
-
-assert_return(() => call($22, "test", [61]), 13);
-
-
-assert_return(() => call($22, "test", [62]), 14);
-
-
-assert_return(() => call($22, "test", [63]), 15);
 
 
 assert_trap(() => call($22, "test", [0]));
@@ -1948,33 +1900,105 @@ assert_trap(() => call($22, "test", [46]));
 assert_trap(() => call($22, "test", [47]));
 
 
+assert_trap(() => call($22, "test", [48]));
+
+
+assert_trap(() => call($22, "test", [49]));
+
+
+assert_trap(() => call($22, "test", [50]));
+
+
+assert_trap(() => call($22, "test", [51]));
+
+
+assert_trap(() => call($22, "test", [52]));
+
+
+assert_trap(() => call($22, "test", [53]));
+
+
+assert_trap(() => call($22, "test", [54]));
+
+
+assert_trap(() => call($22, "test", [55]));
+
+
+assert_trap(() => call($22, "test", [56]));
+
+
+assert_trap(() => call($22, "test", [57]));
+
+
+assert_trap(() => call($22, "test", [58]));
+
+
+assert_trap(() => call($22, "test", [59]));
+
+
+assert_trap(() => call($22, "test", [60]));
+
+
+assert_trap(() => call($22, "test", [61]));
+
+
+assert_trap(() => call($22, "test", [62]));
+
+
+assert_trap(() => call($22, "test", [63]));
+
+
 let $23 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8f\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x01\x7f\x01\x7f\x60\x02\x7f\x7f\x00\x03\x93\x80\x80\x80\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x10\x10\x07\xe4\x80\x80\x80\x00\x12\x02\x66\x30\x00\x00\x02\x66\x31\x00\x01\x02\x66\x32\x00\x02\x02\x66\x33\x00\x03\x02\x66\x34\x00\x04\x02\x66\x35\x00\x05\x02\x66\x36\x00\x06\x02\x66\x37\x00\x07\x02\x66\x38\x00\x08\x02\x66\x39\x00\x09\x03\x66\x31\x30\x00\x0a\x03\x66\x31\x31\x00\x0b\x03\x66\x31\x32\x00\x0c\x03\x66\x31\x33\x00\x0d\x03\x66\x31\x34\x00\x0e\x03\x66\x31\x35\x00\x0f\x04\x74\x65\x73\x74\x00\x10\x03\x72\x75\x6e\x00\x11\x09\xb4\x80\x80\x80\x00\x01\x05\x70\x10\xd2\x00\x0b\xd2\x01\x0b\xd2\x02\x0b\xd2\x03\x0b\xd2\x04\x0b\xd2\x05\x0b\xd2\x06\x0b\xd2\x07\x0b\xd2\x08\x0b\xd2\x09\x0b\xd2\x0a\x0b\xd2\x0b\x0b\xd2\x0c\x0b\xd2\x0d\x0b\xd2\x0e\x0b\xd2\x0f\x0b\x0a\xae\x81\x80\x80\x00\x12\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x84\x80\x80\x80\x00\x00\x41\x0a\x0b\x84\x80\x80\x80\x00\x00\x41\x0b\x0b\x84\x80\x80\x80\x00\x00\x41\x0c\x0b\x84\x80\x80\x80\x00\x00\x41\x0d\x0b\x84\x80\x80\x80\x00\x00\x41\x0e\x0b\x84\x80\x80\x80\x00\x00\x41\x0f\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b\x8c\x80\x80\x80\x00\x00\x20\x00\x41\x08\x20\x01\xfc\x0c\x00\x00\x0b");
 
 
 assert_trap(() => call($23, "run", [0, -4]));
 
 
-assert_return(() => call($23, "test", [0]), 8);
+assert_trap(() => call($23, "test", [0]));
 
 
-assert_return(() => call($23, "test", [1]), 9);
+assert_trap(() => call($23, "test", [1]));
 
 
-assert_return(() => call($23, "test", [2]), 10);
+assert_trap(() => call($23, "test", [2]));
 
 
-assert_return(() => call($23, "test", [3]), 11);
+assert_trap(() => call($23, "test", [3]));
 
 
-assert_return(() => call($23, "test", [4]), 12);
+assert_trap(() => call($23, "test", [4]));
 
 
-assert_return(() => call($23, "test", [5]), 13);
+assert_trap(() => call($23, "test", [5]));
 
 
-assert_return(() => call($23, "test", [6]), 14);
+assert_trap(() => call($23, "test", [6]));
 
 
-assert_return(() => call($23, "test", [7]), 15);
+assert_trap(() => call($23, "test", [7]));
+
+
+assert_trap(() => call($23, "test", [8]));
+
+
+assert_trap(() => call($23, "test", [9]));
+
+
+assert_trap(() => call($23, "test", [10]));
+
+
+assert_trap(() => call($23, "test", [11]));
+
+
+assert_trap(() => call($23, "test", [12]));
+
+
+assert_trap(() => call($23, "test", [13]));
+
+
+assert_trap(() => call($23, "test", [14]));
+
+
+assert_trap(() => call($23, "test", [15]));
 reinitializeRegistry();
 })();

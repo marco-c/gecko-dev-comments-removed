@@ -42,10 +42,10 @@ run(() => call($3, "fill", [0, 0, 65_536]));
 assert_trap(() => call($3, "fill", [65_280, 1, 257]));
 
 
-assert_return(() => call($3, "load8_u", [65_280]), 1);
+assert_return(() => call($3, "load8_u", [65_280]), 0);
 
 
-assert_return(() => call($3, "load8_u", [65_535]), 1);
+assert_return(() => call($3, "load8_u", [65_535]), 0);
 
 
 run(() => call($3, "fill", [65_536, 0, 0]));
@@ -156,16 +156,16 @@ assert_return(() => call($5, "load8_u", [1]), 204);
 assert_return(() => call($5, "load8_u", [2]), 0);
 
 
-run(() => call($5, "init", [65_532, 0, 4]));
-
-
 assert_trap(() => call($5, "init", [65_534, 0, 3]));
 
 
-assert_return(() => call($5, "load8_u", [65_534]), 170);
+assert_return(() => call($5, "load8_u", [65_534]), 0);
 
 
-assert_return(() => call($5, "load8_u", [65_535]), 187);
+assert_return(() => call($5, "load8_u", [65_535]), 0);
+
+
+run(() => call($5, "init", [65_532, 0, 4]));
 
 
 run(() => call($5, "init", [65_536, 0, 0]));
@@ -204,6 +204,12 @@ assert_trap(() => call($6, "init_active", []));
 let $7 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x90\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x03\x7f\x7f\x7f\x00\x60\x01\x7f\x01\x7f\x03\x85\x80\x80\x80\x00\x04\x00\x00\x01\x02\x04\x84\x80\x80\x80\x00\x01\x70\x00\x03\x07\x8f\x80\x80\x80\x00\x02\x04\x69\x6e\x69\x74\x00\x02\x04\x63\x61\x6c\x6c\x00\x03\x09\x90\x80\x80\x80\x00\x01\x05\x70\x04\xd2\x00\x0b\xd2\x01\x0b\xd2\x00\x0b\xd2\x01\x0b\x0a\xb0\x80\x80\x80\x00\x04\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x8c\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\xfc\x0c\x00\x00\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b");
 
 
+assert_trap(() => call($7, "init", [2, 0, 2]));
+
+
+assert_trap(() => call($7, "call", [2]));
+
+
 run(() => call($7, "init", [0, 1, 2]));
 
 
@@ -217,12 +223,6 @@ assert_trap(() => call($7, "call", [2]));
 
 
 run(() => call($7, "init", [1, 2, 2]));
-
-
-assert_trap(() => call($7, "init", [2, 0, 2]));
-
-
-assert_return(() => call($7, "call", [2]), 0);
 
 
 run(() => call($7, "init", [3, 0, 0]));

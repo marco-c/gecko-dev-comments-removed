@@ -25,6 +25,7 @@ function mem_fill(min, max, shared, backup, write=backup*2) {
            (func (export "run") (param $offs i32) (param $val i32) (param $len i32)
              (memory.fill (local.get $offs) (local.get $val) (local.get $len))))`);
     
+    
     let offs = min*PAGESIZE - backup;
     let val = 37;
     assertErrorMessage(() => ins.exports.run(offs, val, write),
@@ -32,7 +33,7 @@ function mem_fill(min, max, shared, backup, write=backup*2) {
                        /index out of bounds/);
     let v = new Uint8Array(ins.exports.mem.buffer);
     for (let i=0; i < backup; i++)
-        assertEq(v[offs+i], val);
+        assertEq(v[offs+i], 0);
     for (let i=0; i < offs; i++)
         assertEq(v[i], 0);
 }
@@ -71,12 +72,8 @@ function mem_init(min, max, shared, backup, write) {
                        WebAssembly.RuntimeError,
                        /index out of bounds/);
     let v = new Uint8Array(ins.exports.mem.buffer);
-    for (let i=0; i < Math.min(backup, mem_init_len); i++)
-        assertEq(v[offs + i], 0x42);
-    for (let i=Math.min(backup, mem_init_len); i < backup; i++)
+    for (let i=0; i < min; i++)
         assertEq(v[offs + i], 0);
-    for (let i=0; i < offs; i++)
-        assertEq(v[i], 0);
 }
 
 
@@ -125,9 +122,7 @@ function mem_copy(min, max, shared, srcOffs, targetOffs, len) {
     let copyDown = srcOffs < targetOffs;
     let targetAvail = v.length - targetOffs;
     let srcAvail = v.length - srcOffs;
-    let targetLim = targetOffs + Math.min(len, targetAvail, srcAvail);
     let srcLim = srcOffs + Math.min(len, targetAvail, srcAvail);
-    let immediateOOB = copyDown && (srcOffs + len > v.length || targetOffs + len > v.length);
 
     for (let i=srcOffs, j=0; i < srcLim; i++, j++)
         v[i] = j;
@@ -135,38 +130,10 @@ function mem_copy(min, max, shared, srcOffs, targetOffs, len) {
                        WebAssembly.RuntimeError,
                        /index out of bounds/);
 
-    
-    var t = 0;
-    var s = 0;
-    var i = 0;
-    function checkTarget() {
-        if (i >= targetOffs && i < targetLim) {
-            assertEq(v[i], (t++) & 0xFF);
-            if (i >= srcOffs && i < srcLim)
-                s++;
-            return true;
-        }
-        return false;
-    }
-    function checkSource() {
+    for (var i=0, s=0; i < v.length; i++ ) {
         if (i >= srcOffs && i < srcLim) {
             assertEq(v[i], (s++) & 0xFF);
-            if (i >= targetOffs && i < targetLim)
-                t++;
-            return true;
-        }
-        return false;
-    }
-
-    for (i=0; i < v.length; i++ ) {
-        if (immediateOOB) {
-            if (checkSource())
-                continue;
-        } else {
-            if (copyDown && (checkSource() || checkTarget()))
-                continue;
-            if (!copyDown && (checkTarget() || checkSource()))
-                continue;
+            continue;
         }
         assertEq(v[i], 0);
     }

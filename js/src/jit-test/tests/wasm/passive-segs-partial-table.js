@@ -44,13 +44,9 @@ function tbl_init(min, max, backup, write, segoffs=0) {
                        WebAssembly.RuntimeError,
                        /index out of bounds/);
     let tbl = ins.exports.tbl;
-    for (let i=0; i < Math.min(backup, tbl_init_len - segoffs); i++) {
-        assertEq(tbl.get(offs + i), ins.exports["f" + (i + segoffs)]);
-    }
-    for (let i=Math.min(backup, tbl_init_len); i < backup; i++)
-        assertEq(tbl.get(offs + i), null);
-    for (let i=0; i < offs; i++)
+    for (let i=0; i < min; i++) {
         assertEq(tbl.get(i), null);
+    }
 }
 
 
@@ -116,9 +112,7 @@ function tbl_copy(min, max, srcOffs, targetOffs, len) {
     let copyDown = srcOffs < targetOffs;
     let targetAvail = tbl.length - targetOffs;
     let srcAvail = tbl.length - srcOffs;
-    let targetLim = targetOffs + Math.min(len, targetAvail, srcAvail);
     let srcLim = srcOffs + Math.min(len, targetAvail, srcAvail);
-    let immediateOOB = copyDown && (srcOffs + len > tbl.length || targetOffs + len > tbl.length);
 
     for (let i=srcOffs, j=0; i < srcLim; i++, j++)
         tbl.set(i, ins.exports["f" + j]);
@@ -126,37 +120,10 @@ function tbl_copy(min, max, srcOffs, targetOffs, len) {
                        WebAssembly.RuntimeError,
                        /index out of bounds/);
 
-    var t = 0;
-    var s = 0;
-    var i = 0;
-    function checkTarget() {
-        if (i >= targetOffs && i < targetLim) {
-            assertEq(tbl.get(i), ins.exports["f" + (t++)]);
-            if (i >= srcOffs && i < srcLim)
-                s++;
-            return true;
-        }
-        return false;
-    }
-    function checkSource() {
+    for (var i=0, s=0; i < tbl.length; i++ ) {
         if (i >= srcOffs && i < srcLim) {
             assertEq(tbl.get(i), ins.exports["f" + (s++)]);
-            if (i >= targetOffs && i < targetLim)
-                t++;
-            return true;
-        }
-        return false;
-    }
-
-    for (i=0; i < tbl.length; i++ ) {
-        if (immediateOOB) {
-            if (checkSource())
-                continue;
-        } else {
-            if (copyDown && (checkSource() || checkTarget()))
-                continue;
-            if (!copyDown && (checkTarget() || checkSource()))
-                continue;
+            continue;
         }
         assertEq(tbl.get(i), null);
     }
