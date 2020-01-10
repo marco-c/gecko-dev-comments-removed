@@ -70,6 +70,8 @@ class TestGMPVideoDecoder;
 
 
 
+
+
 class MediaKeySystemAccessManager final : public nsIObserver {
  public:
   explicit MediaKeySystemAccessManager(nsPIDOMWindowInner* aWindow);
