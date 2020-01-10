@@ -58,7 +58,8 @@ bool JSScript::createJitScript(JSContext* cx) {
 
   
   
-  MOZ_ASSERT(!hasForceInterpreterOp());
+  MOZ_ASSERT_IF(JitOptions.baselineInterpreter,
+                CanBaselineInterpretScript(this));
 
   AutoEnterAnalysis enter(cx);
 

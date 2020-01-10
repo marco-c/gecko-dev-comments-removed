@@ -102,6 +102,11 @@ static constexpr uint32_t BaselineMaxScriptLength = 0x0fffffffu;
 
 
 
+
+
+
+
+
 static constexpr uint32_t BaselineMaxScriptSlots = 0xffffu;
 
 
@@ -549,6 +554,8 @@ MethodStatus CanEnterBaselineAtBranch(JSContext* cx, InterpreterFrame* fp);
 
 JitExecStatus EnterBaselineAtBranch(JSContext* cx, InterpreterFrame* fp,
                                     jsbytecode* pc);
+
+bool CanBaselineInterpretScript(JSScript* script);
 
 
 
