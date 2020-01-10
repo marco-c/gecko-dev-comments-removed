@@ -6894,7 +6894,7 @@ __webpack_require__.r(__webpack_exports__);
 
 const TOP_SITES_SOURCE = "TOP_SITES";
 const TOP_SITES_CONTEXT_MENU_OPTIONS = ["CheckPinTopSite", "EditTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", "DeleteUrl"];
-const TOP_SITES_SPOC_CONTEXT_MENU_OPTIONS = ["PinSpocTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl"]; 
+const TOP_SITES_SPOC_CONTEXT_MENU_OPTIONS = ["PinSpocTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", "ShowPrivacyInfo"]; 
 
 const TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS = ["CheckPinTopSite", "Separator", "BlockUrl"]; 
 
@@ -14695,7 +14695,8 @@ const FLUENT_FILES = ["branding/brand.ftl", "browser/branding/brandings.ftl", "b
 const helpers = {
   selectInterruptAndTriplets(message = {}, interruptCleared) {
     const hasInterrupt = interruptCleared === true ? false : Boolean(message.content);
-    const hasTriplets = Boolean(message.bundle && message.bundle.length);
+    const hasTriplets = Boolean(message.bundle && message.bundle.length); 
+
     const tripletsHeaderId = message.tripletsHeaderId === undefined ? "onboarding-welcome-header" : message.tripletsHeaderId;
     const UTMTerm = message.utm_term || "";
     return {

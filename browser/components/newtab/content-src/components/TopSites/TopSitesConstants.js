@@ -20,6 +20,7 @@ export const TOP_SITES_SPOC_CONTEXT_MENU_OPTIONS = [
   "OpenInPrivateWindow",
   "Separator",
   "BlockUrl",
+  "ShowPrivacyInfo",
 ];
 
 export const TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS = [
