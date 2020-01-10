@@ -2152,7 +2152,7 @@ pref("devtools.netmonitor.har.pageLoadedTimeout", 1500);
 pref("devtools.netmonitor.har.enableAutoExportToFile", false);
 
 
-#if defined(NIGHTLY_BUILD)
+#if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)
   pref("devtools.netmonitor.features.webSockets", true);
 #else
   pref("devtools.netmonitor.features.webSockets", false);
