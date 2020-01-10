@@ -1732,15 +1732,33 @@ nsresult TextEditor::RedoAsAction(uint32_t aCount, nsIPrincipal* aPrincipal) {
   return NS_OK;
 }
 
-bool TextEditor::CanCutOrCopy(
-    PasswordFieldAllowed aPasswordFieldAllowed) const {
+bool TextEditor::CanCutOrCopy() const {
   MOZ_ASSERT(IsEditActionDataAvailable());
-
-  if (aPasswordFieldAllowed == ePasswordFieldNotAllowed && IsPasswordEditor()) {
+  if (SelectionRefPtr()->IsCollapsed()) {
     return false;
   }
 
-  return !SelectionRefPtr()->IsCollapsed();
+  if (!IsSingleLineEditor() || !IsPasswordEditor()) {
+    return true;
+  }
+
+  
+  
+  if (IsAllMasked() || IsMaskingPassword() || mUnmaskedLength == 0) {
+    return false;
+  }
+
+  
+  
+  
+  if (SelectionRefPtr()->RangeCount() > 1) {
+    return false;
+  }
+
+  uint32_t selectionStart = 0, selectionEnd = 0;
+  nsContentUtils::GetSelectionInTextControl(SelectionRefPtr(), mRootElement,
+                                            selectionStart, selectionEnd);
+  return mUnmaskedStart <= selectionStart && UnmaskedEnd() >= selectionEnd;
 }
 
 bool TextEditor::FireClipboardEvent(EventMessage aEventMessage,
@@ -1800,7 +1818,7 @@ bool TextEditor::CanCut() const {
     return true;
   }
 
-  return IsModifiable() && CanCutOrCopy(ePasswordFieldNotAllowed);
+  return IsModifiable() && CanCutOrCopy();
 }
 
 NS_IMETHODIMP
@@ -1831,16 +1849,16 @@ bool TextEditor::CanCopy() const {
     return true;
   }
 
-  return CanCutOrCopy(ePasswordFieldNotAllowed);
+  return CanCutOrCopy();
 }
 
-bool TextEditor::CanDelete() const {
+bool TextEditor::CanDeleteSelection() const {
   AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return false;
   }
 
-  return IsModifiable() && CanCutOrCopy(ePasswordFieldAllowed);
+  return IsModifiable() && !SelectionRefPtr()->IsCollapsed();
 }
 
 already_AddRefed<nsIDocumentEncoder> TextEditor::GetAndInitDocEncoder(

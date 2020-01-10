@@ -94,17 +94,38 @@ class TextEditor : public EditorBase,
 
   MOZ_CAN_RUN_SCRIPT nsresult CutAsAction(nsIPrincipal* aPrincipal = nullptr);
 
+  
+
+
+
+
+
+
   bool CanCut() const;
+
   NS_IMETHOD Copy() override;
+
+  
+
+
+
+
+
+
   bool CanCopy() const;
-  bool CanDelete() const;
+
+  
+
+
+
+  bool CanDeleteSelection() const;
+
   virtual bool CanPaste(int32_t aClipboardType) const;
 
   
   
   using EditorBase::CanCopy;
   using EditorBase::CanCut;
-  using EditorBase::CanDelete;
   using EditorBase::CanPaste;
 
   
@@ -692,8 +713,12 @@ class TextEditor : public EditorBase,
   nsresult SharedOutputString(uint32_t aFlags, bool* aIsCollapsed,
                               nsAString& aResult);
 
-  enum PasswordFieldAllowed { ePasswordFieldAllowed, ePasswordFieldNotAllowed };
-  bool CanCutOrCopy(PasswordFieldAllowed aPasswordFieldAllowed) const;
+  
+
+
+
+  bool CanCutOrCopy() const;
+
   bool FireClipboardEvent(EventMessage aEventMessage, int32_t aSelectionType,
                           bool* aActionTaken = nullptr);
 

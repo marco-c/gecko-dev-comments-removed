@@ -578,7 +578,7 @@ bool DeleteCommand::IsCommandEnabled(Command aCommand,
   bool isEnabled = aTextEditor->IsSelectionEditable();
 
   if (aCommand == Command::Delete && isEnabled) {
-    return aTextEditor->CanDelete();
+    return aTextEditor->CanDeleteSelection();
   }
   return isEnabled;
 }
