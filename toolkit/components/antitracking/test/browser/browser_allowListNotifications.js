@@ -25,7 +25,7 @@ add_task(async function() {
   let browser = gBrowser.getBrowserForTab(tab);
   await BrowserTestUtils.browserLoaded(browser);
 
-  ContentBlocking.disableForCurrentPage();
+  gProtectionsHandler.disableForCurrentPage();
 
   
   await BrowserTestUtils.browserLoaded(browser);
@@ -112,7 +112,7 @@ add_task(async function() {
     expectTrackerFound(originLog[0]);
   }
 
-  ContentBlocking.enableForCurrentPage();
+  gProtectionsHandler.enableForCurrentPage();
 
   
   await BrowserTestUtils.browserLoaded(browser);
