@@ -252,6 +252,24 @@ class CompositorWidget {
 
   virtual already_AddRefed<gfx::SourceSurface> EndBackBufferDrawing();
 
+#ifdef XP_MACOSX
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual LayoutDeviceIntRegion GetOpaqueWidgetRegion() { return {}; }
+#endif
+
   
 
 
