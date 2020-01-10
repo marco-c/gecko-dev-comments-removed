@@ -381,6 +381,16 @@ void js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc,
   }
 
   
+  
+  
+  if (!JS::RuntimeHeapIsMinorCollecting()) {
+    for (ZonesIter zone(rt, ZoneSelector::SkipAtoms); !zone.done();
+         zone.next()) {
+      zone->traceScriptTableRoots(trc);
+    }
+  }
+
+  
   HelperThreadState().trace(trc);
 
   

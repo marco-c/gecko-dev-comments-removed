@@ -236,6 +236,22 @@ class ScriptCounts {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 using UniqueScriptCounts = js::UniquePtr<ScriptCounts>;
 using ScriptCountsMap = HashMap<JSScript*, UniqueScriptCounts,
                                 DefaultHasher<JSScript*>, SystemAllocPolicy>;

@@ -1370,13 +1370,13 @@ bool JSScript::initScriptCounts(JSContext* cx) {
   }
 
   
-  if (!realm()->scriptCountsMap) {
+  if (!zone()->scriptCountsMap) {
     auto map = cx->make_unique<ScriptCountsMap>();
     if (!map) {
       return false;
     }
 
-    realm()->scriptCountsMap = std::move(map);
+    zone()->scriptCountsMap = std::move(map);
   }
 
   
@@ -1387,7 +1387,7 @@ bool JSScript::initScriptCounts(JSContext* cx) {
   }
 
   
-  if (!realm()->scriptCountsMap->putNew(this, std::move(sc))) {
+  if (!zone()->scriptCountsMap->putNew(this, std::move(sc))) {
     ReportOutOfMemory(cx);
     return false;
   }
@@ -1408,13 +1408,13 @@ bool JSScript::initScriptCounts(JSContext* cx) {
 
 static inline ScriptCountsMap::Ptr GetScriptCountsMapEntry(JSScript* script) {
   MOZ_ASSERT(script->hasScriptCounts());
-  ScriptCountsMap::Ptr p = script->realm()->scriptCountsMap->lookup(script);
+  ScriptCountsMap::Ptr p = script->zone()->scriptCountsMap->lookup(script);
   MOZ_ASSERT(p);
   return p;
 }
 
 static inline ScriptNameMap::Ptr GetScriptNameMapEntry(JSScript* script) {
-  auto p = script->realm()->scriptNameMap->lookup(script);
+  auto p = script->zone()->scriptNameMap->lookup(script);
   MOZ_ASSERT(p);
   return p;
 }
@@ -1591,7 +1591,7 @@ void JSScript::clearHasScriptCounts() {
 void JSScript::releaseScriptCounts(ScriptCounts* counts) {
   ScriptCountsMap::Ptr p = GetScriptCountsMapEntry(this);
   *counts = std::move(*p->value().get());
-  realm()->scriptCountsMap->remove(p);
+  zone()->scriptCountsMap->remove(p);
   clearHasScriptCounts();
 }
 
@@ -1604,7 +1604,7 @@ void JSScript::destroyScriptCounts() {
 
 void JSScript::destroyScriptName() {
   auto p = GetScriptNameMapEntry(this);
-  realm()->scriptNameMap->remove(p);
+  zone()->scriptNameMap->remove(p);
 }
 
 void JSScript::resetScriptCounts() {
@@ -1624,11 +1624,11 @@ void JSScript::resetScriptCounts() {
 }
 
 bool JSScript::hasScriptName() {
-  if (!realm()->scriptNameMap) {
+  if (!zone()->scriptNameMap) {
     return false;
   }
 
-  auto p = realm()->scriptNameMap->lookup(this);
+  auto p = zone()->scriptNameMap->lookup(this);
   return p.found();
 }
 
@@ -3897,22 +3897,22 @@ JSScript* JSScript::Create(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 #ifdef MOZ_VTUNE
 uint32_t JSScript::vtuneMethodID() {
-  if (!realm()->scriptVTuneIdMap) {
+  if (!zone()->scriptVTuneIdMap) {
     auto map = MakeUnique<ScriptVTuneIdMap>();
     if (!map) {
       MOZ_CRASH("Failed to allocate ScriptVTuneIdMap");
     }
 
-    realm()->scriptVTuneIdMap = std::move(map);
+    zone()->scriptVTuneIdMap = std::move(map);
   }
 
-  ScriptVTuneIdMap::AddPtr p = realm()->scriptVTuneIdMap->lookupForAdd(this);
+  ScriptVTuneIdMap::AddPtr p = zone()->scriptVTuneIdMap->lookupForAdd(this);
   if (p) {
     return p->value();
   }
 
   uint32_t id = vtune::GenerateUniqueMethodID();
-  if (!realm()->scriptVTuneIdMap->add(p, this, id)) {
+  if (!zone()->scriptVTuneIdMap->add(p, this, id)) {
     MOZ_CRASH("Failed to add vtune method id");
   }
 
@@ -3928,13 +3928,13 @@ bool JSScript::initScriptName(JSContext* cx) {
   }
 
   
-  if (!realm()->scriptNameMap) {
+  if (!zone()->scriptNameMap) {
     auto map = cx->make_unique<ScriptNameMap>();
     if (!map) {
       return false;
     }
 
-    realm()->scriptNameMap = std::move(map);
+    zone()->scriptNameMap = std::move(map);
   }
 
   UniqueChars name = DuplicateString(filename());
@@ -3944,7 +3944,7 @@ bool JSScript::initScriptName(JSContext* cx) {
   }
 
   
-  if (!realm()->scriptNameMap->putNew(this, std::move(name))) {
+  if (!zone()->scriptNameMap->putNew(this, std::move(name))) {
     ReportOutOfMemory(cx);
     return false;
   }
@@ -4218,9 +4218,9 @@ void JSScript::finalize(JSFreeOp* fop) {
   DebugAPI::destroyDebugScript(fop, this);
 
 #ifdef MOZ_VTUNE
-  if (realm()->scriptVTuneIdMap) {
+  if (zone()->scriptVTuneIdMap) {
     
-    realm()->scriptVTuneIdMap->remove(this);
+    zone()->scriptVTuneIdMap->remove(this);
   }
 #endif
 
