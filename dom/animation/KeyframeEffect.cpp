@@ -1881,6 +1881,13 @@ KeyframeEffect::MatchForCompositor KeyframeEffect::IsMatchForCompositor(
     }
   }
 
+  
+  
+  if (aPropertySet.Intersects(nsCSSPropertyIDSet::TransformLikeProperties()) &&
+      !aFrame->StyleDisplay()->mOffsetPath.IsNone()) {
+    return KeyframeEffect::MatchForCompositor::No;
+  }
+
   return mAnimation->IsPlaying() ? KeyframeEffect::MatchForCompositor::Yes
                                  : KeyframeEffect::MatchForCompositor::IfNeeded;
 }
