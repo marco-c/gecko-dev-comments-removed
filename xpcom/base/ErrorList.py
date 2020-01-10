@@ -664,6 +664,11 @@ with modules["DOM"]:
     
     
     
+    errors["NS_ERROR_DOM_CORP_FAILED"] = FAILURE(1036)
+
+    
+    
+    
     errors["NS_SUCCESS_DOM_NO_OPERATION"] = SUCCESS(1)
 
     

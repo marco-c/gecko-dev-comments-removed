@@ -899,6 +899,17 @@ VARCACHE_PREF(
   bool, false
 )
 
+
+
+
+
+VARCACHE_PREF(
+  Live,
+  "browser.tabs.remote.useCORP",
+  browser_tabs_remote_useCORP,
+  bool, false
+)
+
 VARCACHE_PREF(
   Live,
   "browser.ui.scroll-toolbar-threshold",

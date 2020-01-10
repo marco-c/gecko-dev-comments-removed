@@ -483,6 +483,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   nsresult GetResponseCrossOriginPolicy(
       nsILoadInfo::CrossOriginPolicy* aResponseCrossOriginPolicy);
   nsresult ProcessCrossOriginHeader();
+  nsresult ProcessCrossOriginResourcePolicyHeader();
 
   
 
