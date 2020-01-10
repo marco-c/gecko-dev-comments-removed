@@ -10,7 +10,8 @@
         let localeObj = parseLanguageTag(locale); \
         assert(localeObj !== null, \
                `${desc} is a structurally valid language tag`); \
-        assert(StringFromLanguageTagObject(CanonicalizeLanguageTagObject(localeObj)) === locale, \
+        CanonicalizeLanguageTagObject(localeObj); \
+        assert(StringFromLanguageTagObject(localeObj) === locale, \
                `${desc} is a canonicalized language tag`); \
     } while (false)
 #else
@@ -318,12 +319,6 @@ MakeConstructible(BCP47TokenStream, {
 
 
 
-
-
-
-
-
-
 function parseLanguageTag(locale) {
     assert(typeof locale === "string", "locale is a string");
 
@@ -544,26 +539,7 @@ function parseLanguageTag(locale) {
     if (ts.token !== NONE)
         return null;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (hasOwn(ts.localeLowercase, grandfatheredMappings)) {
-        return {
-            locale: grandfatheredMappings[ts.localeLowercase],
-            grandfathered: true,
-        };
-    }
-
-    
-    
-    return {
+    var tagObj = {
         language,
         script,
         region,
@@ -571,6 +547,25 @@ function parseLanguageTag(locale) {
         extensions,
         privateuse,
     };
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (hasOwn(ts.localeLowercase, grandfatheredMappings))
+        updateGrandfatheredMappings(tagObj);
+
+    
+    return tagObj;
 }
 
 
@@ -745,18 +740,6 @@ function CanonicalizeLanguageTagObject(localeObj) {
     assert(IsObject(localeObj), "CanonicalizeLanguageTagObject");
 
     
-    if (hasOwn("grandfathered", localeObj)) {
-        
-        
-        
-        
-        localeObj = parseLanguageTag(localeObj.locale);
-        assert(localeObj !== null,
-               "grandfathered language tags are well-formed");
-        return localeObj;
-    }
-
-    
     
     
 
@@ -849,8 +832,6 @@ function CanonicalizeLanguageTagObject(localeObj) {
     
     
     
-
-    return localeObj;
 }
 
 
@@ -1105,7 +1086,9 @@ function CanonicalizeLanguageTag(locale) {
     var localeObj = parseLanguageTag(locale);
     assert(localeObj !== null, "CanonicalizeLanguageTag");
 
-    return StringFromLanguageTagObject(CanonicalizeLanguageTagObject(localeObj));
+    CanonicalizeLanguageTagObject(localeObj);
+
+    return StringFromLanguageTagObject(localeObj);
 }
 
 
@@ -1113,10 +1096,6 @@ function CanonicalizeLanguageTag(locale) {
 
 function StringFromLanguageTagObject(localeObj) {
     assert(IsObject(localeObj), "StringFromLanguageTagObject");
-
-    
-    if (hasOwn("grandfathered", localeObj))
-        return localeObj.locale;
 
     var {
         language,
@@ -1198,7 +1177,9 @@ function ValidateAndCanonicalizeLanguageTag(locale) {
     if (localeObj === null)
         ThrowRangeError(JSMSG_INVALID_LANGUAGE_TAG, locale);
 
-    return StringFromLanguageTagObject(CanonicalizeLanguageTagObject(localeObj));
+    CanonicalizeLanguageTagObject(localeObj)
+
+    return StringFromLanguageTagObject(localeObj);
 }
 
 
@@ -1250,7 +1231,9 @@ function DefaultLocaleIgnoringAvailableLocales() {
     if (candidate === null) {
         candidate = lastDitchLocale();
     } else {
-        candidate = StringFromLanguageTagObject(CanonicalizeLanguageTagObject(candidate));
+        CanonicalizeLanguageTagObject(candidate);
+
+        candidate = StringFromLanguageTagObject(candidate);
 
         
         
