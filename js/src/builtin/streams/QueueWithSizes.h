@@ -9,11 +9,13 @@
 #ifndef builtin_streams_QueueWithSizes_h
 #define builtin_streams_QueueWithSizes_h
 
+#include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
 
 #include "jstypes.h"        
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       
+#include "vm/List.h"        
 
 struct JS_PUBLIC_API JSContext;
 
@@ -27,6 +29,13 @@ class StreamController;
 extern MOZ_MUST_USE bool DequeueValue(
     JSContext* cx, JS::Handle<StreamController*> unwrappedContainer,
     JS::MutableHandle<JS::Value> chunk);
+
+
+
+
+
+extern void DequeueValue(StreamController* unwrappedContainer, JSContext* cx);
+
 
 
 

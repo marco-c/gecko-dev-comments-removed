@@ -37,6 +37,8 @@ class ListObject : public NativeObject {
 
   uint32_t length() const { return getDenseInitializedLength(); }
 
+  bool isEmpty() const { return length() == 0; }
+
   const Value& get(uint32_t index) const { return getDenseElement(index); }
 
   template <class T>
@@ -54,7 +56,25 @@ class ListObject : public NativeObject {
 
 
 
+
+
+
+
+  inline MOZ_MUST_USE bool appendValueAndSize(JSContext* cx, HandleValue value,
+                                              double size);
+
+  
+
+
+
+
   inline JS::Value popFirst(JSContext* cx);
+
+  
+
+
+
+  inline void popFirstPair(JSContext* cx);
 
   
 

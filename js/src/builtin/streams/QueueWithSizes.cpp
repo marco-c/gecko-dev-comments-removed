@@ -6,7 +6,7 @@
 
 
 
-#include "builtin/streams/QueueWithSizes.h"
+#include "builtin/streams/QueueWithSizes-inl.h"
 
 #include "mozilla/Assertions.h"     
 #include "mozilla/Attributes.h"     
@@ -38,32 +38,6 @@ using JS::Rooted;
 using JS::ToNumber;
 using JS::Value;
 
-class QueueEntry : public js::NativeObject {
- private:
-  enum Slots { Slot_Value = 0, Slot_Size, SlotCount };
-
- public:
-  static const JSClass class_;
-
-  Value value() { return getFixedSlot(Slot_Value); }
-  double size() { return getFixedSlot(Slot_Size).toNumber(); }
-
-  static QueueEntry* create(JSContext* cx, Handle<Value> value, double size) {
-    Rooted<QueueEntry*> entry(cx, js::NewBuiltinClassInstance<QueueEntry>(cx));
-    if (!entry) {
-      return nullptr;
-    }
-
-    entry->setFixedSlot(Slot_Value, value);
-    entry->setFixedSlot(Slot_Size, NumberValue(size));
-
-    return entry;
-  }
-};
-
-const JSClass QueueEntry::class_ = {"QueueEntry",
-                                    JSCLASS_HAS_RESERVED_SLOTS(SlotCount)};
-
 
 
 
@@ -76,14 +50,14 @@ MOZ_MUST_USE bool js::DequeueValue(JSContext* cx,
   
   
   Rooted<ListObject*> unwrappedQueue(cx, unwrappedContainer->queue());
-  MOZ_ASSERT(unwrappedQueue->length() > 0);
+
+  
+  double chunkSize = detail::QueueFirstSize(unwrappedQueue);
+  chunk.set(detail::QueueFirstValue(unwrappedQueue));
 
   
   
-  
-  Rooted<QueueEntry*> unwrappedPair(
-      cx, &unwrappedQueue->popFirstAs<QueueEntry>(cx));
-  MOZ_ASSERT(unwrappedPair);
+  detail::QueueRemoveFirstValueAndSize(unwrappedQueue, cx);
 
   
   
@@ -91,20 +65,43 @@ MOZ_MUST_USE bool js::DequeueValue(JSContext* cx,
   
   
   double totalSize = unwrappedContainer->queueTotalSize();
-  totalSize -= unwrappedPair->size();
+  totalSize -= chunkSize;
   if (totalSize < 0) {
     totalSize = 0;
   }
   unwrappedContainer->setQueueTotalSize(totalSize);
 
   
-  Rooted<Value> val(cx, unwrappedPair->value());
-  if (!cx->compartment()->wrap(cx, &val)) {
-    return false;
-  }
+  return cx->compartment()->wrap(cx, chunk);
+}
 
-  chunk.set(val);
-  return true;
+void js::DequeueValue(StreamController* unwrappedContainer, JSContext* cx) {
+  
+  
+  
+  ListObject* unwrappedQueue = unwrappedContainer->queue();
+
+  
+  
+  double chunkSize = detail::QueueFirstSize(unwrappedQueue);
+
+  
+  
+  detail::QueueRemoveFirstValueAndSize(unwrappedQueue, cx);
+
+  
+  
+  
+  
+  
+  double totalSize = unwrappedContainer->queueTotalSize();
+  totalSize -= chunkSize;
+  if (totalSize < 0) {
+    totalSize = 0;
+  }
+  unwrappedContainer->setQueueTotalSize(totalSize);
+
+  
 }
 
 
@@ -135,18 +132,14 @@ MOZ_MUST_USE bool js::EnqueueValueWithSize(
   
   {
     AutoRealm ar(cx, unwrappedContainer);
-    Rooted<ListObject*> queue(cx, unwrappedContainer->queue());
+    Rooted<ListObject*> unwrappedQueue(cx, unwrappedContainer->queue());
     Rooted<Value> wrappedVal(cx, value);
     if (!cx->compartment()->wrap(cx, &wrappedVal)) {
       return false;
     }
 
-    QueueEntry* entry = QueueEntry::create(cx, wrappedVal, size);
-    if (!entry) {
-      return false;
-    }
-    Rooted<Value> val(cx, ObjectValue(*entry));
-    if (!queue->append(cx, val)) {
+    if (!detail::QueueAppendValueAndSize(cx, unwrappedQueue, wrappedVal,
+                                         size)) {
       return false;
     }
   }
