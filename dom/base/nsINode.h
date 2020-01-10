@@ -505,8 +505,16 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  inline nsIContent* AsContent();
-  inline const nsIContent* AsContent() const;
+
+
+  nsIContent* AsContent() {
+    MOZ_ASSERT(IsContent());
+    return reinterpret_cast<nsIContent*>(this);
+  }
+  const nsIContent* AsContent() const {
+    MOZ_ASSERT(IsContent());
+    return reinterpret_cast<const nsIContent*>(this);
+  }
 
   
 
@@ -904,7 +912,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
   nsIContent* GetParent() const {
     return MOZ_LIKELY(GetBoolFlag(ParentIsContent))
-               ? reinterpret_cast<nsIContent*>(mParent)
+               ? mParent->AsContent()
                : nullptr;
   }
 
