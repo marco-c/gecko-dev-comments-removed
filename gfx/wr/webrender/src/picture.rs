@@ -3,7 +3,7 @@
 
 
 use api::{MixBlendMode, PipelineId, PremultipliedColorF};
-use api::{PropertyBinding, PropertyBindingId};
+use api::{PropertyBinding, PropertyBindingId, FontRenderMode};
 use api::{DebugFlags, RasterSpace, ImageKey, ColorF};
 use api::units::*;
 use crate::box_shadow::{BLUR_SAMPLE_SCALE};
@@ -524,9 +524,6 @@ pub struct TileCacheInstance {
     
     pub local_clip_rect: PictureRect,
     
-    
-    pub is_opaque: bool,
-    
     pub tiles_to_draw: Vec<TileKey>,
     
     
@@ -537,6 +534,13 @@ pub struct TileCacheInstance {
     
     
     pub background_color: Option<ColorF>,
+    
+    
+    
+    pub opaque_rect: PictureRect,
+    
+    
+    pub subpixel_mode: SubpixelMode,
 }
 
 impl TileCacheInstance {
@@ -561,21 +565,17 @@ impl TileCacheInstance {
             tile_bounds_p1: TileOffset::zero(),
             local_rect: PictureRect::zero(),
             local_clip_rect: PictureRect::zero(),
-            is_opaque: false,
             tiles_to_draw: Vec::new(),
             world_viewport_rect: WorldRect::zero(),
             surface_index: SurfaceIndex(0),
             background_color,
+            opaque_rect: PictureRect::zero(),
+            subpixel_mode: SubpixelMode::Allow,
         }
     }
 
     
     pub fn is_opaque(&self) -> bool {
-        
-        if self.is_opaque {
-            return true;
-        }
-
         
         
         match self.background_color {
@@ -620,6 +620,11 @@ impl TileCacheInstance {
         let tile_width = TILE_SIZE_WIDTH;
         let tile_height = TILE_SIZE_HEIGHT;
         self.surface_index = surface_index;
+
+        
+        
+        self.opaque_rect = PictureRect::zero();
+        self.subpixel_mode = SubpixelMode::Allow;
 
         self.map_local_to_surface = SpaceMapper::new(
             self.spatial_node_index,
@@ -804,9 +809,6 @@ impl TileCacheInstance {
         for (_, tile) in &mut self.tiles {
             
             tile.is_same_content = true;
-            
-            
-            tile.is_opaque = false;
 
             
             for binding in tile.descriptor.opacity_bindings.items() {
@@ -876,7 +878,6 @@ impl TileCacheInstance {
         let mut clip_vertices: SmallVec<[LayoutPoint; 8]> = SmallVec::new();
         let mut image_keys: SmallVec<[ImageKey; 8]> = SmallVec::new();
         let mut clip_spatial_nodes = FastHashSet::default();
-        let mut opaque_rect = None;
         let mut prim_clip_rect = PictureRect::zero();
 
         
@@ -884,6 +885,25 @@ impl TileCacheInstance {
             &data_stores,
             resource_cache,
         );
+
+        
+        if let Some(prim_clip_chain) = prim_clip_chain {
+            prim_clip_rect = prim_clip_chain.pic_clip_rect;
+
+            let clip_instances = &clip_store
+                .clip_node_instances[prim_clip_chain.clips_range.to_range()];
+            for clip_instance in clip_instances {
+                clip_chain_uids.push(clip_instance.handle.uid());
+
+                
+                
+                if clip_instance.spatial_node_index != self.spatial_node_index {
+                    clip_spatial_nodes.insert(clip_instance.spatial_node_index);
+                }
+
+                clip_vertices.push(clip_instance.local_pos);
+            }
+        }
 
         
         
@@ -936,7 +956,9 @@ impl TileCacheInstance {
 
                     if let Some(ref clip_chain) = prim_clip_chain {
                         if prim_is_opaque && same_coord_system && !clip_chain.needs_mask && on_picture_surface {
-                            opaque_rect = Some(clip_chain.pic_clip_rect);
+                            if clip_chain.pic_clip_rect.contains_rect(&self.opaque_rect) {
+                                self.opaque_rect = clip_chain.pic_clip_rect;
+                            }
                         }
                     };
                 } else {
@@ -973,7 +995,33 @@ impl TileCacheInstance {
                 
                 return false;
             }
-            PrimitiveInstanceKind::TextRun { .. } |
+            PrimitiveInstanceKind::TextRun { data_handle, .. } => {
+                
+                
+                if self.subpixel_mode == SubpixelMode::Allow && !self.is_opaque() {
+                    let run_data = &data_stores.text_run[data_handle];
+
+                    
+                    
+                    let on_picture_surface = surface_index == self.surface_index;
+
+                    
+                    
+                    
+                    let subpx_requested = match run_data.font.render_mode {
+                        FontRenderMode::Subpixel => true,
+                        FontRenderMode::Alpha | FontRenderMode::Mono => false,
+                    };
+
+                    if on_picture_surface && subpx_requested {
+                        if !self.opaque_rect.contains_rect(&prim_clip_rect) {
+                            self.subpixel_mode = SubpixelMode::Deny;
+                        }
+                    }
+                }
+
+                false
+            }
             PrimitiveInstanceKind::LineDecoration { .. } |
             PrimitiveInstanceKind::Clear { .. } |
             PrimitiveInstanceKind::NormalBorder { .. } |
@@ -986,25 +1034,6 @@ impl TileCacheInstance {
         };
 
         
-        if let Some(prim_clip_chain) = prim_clip_chain {
-            prim_clip_rect = prim_clip_chain.pic_clip_rect;
-
-            let clip_instances = &clip_store
-                .clip_node_instances[prim_clip_chain.clips_range.to_range()];
-            for clip_instance in clip_instances {
-                clip_chain_uids.push(clip_instance.handle.uid());
-
-                
-                
-                if clip_instance.spatial_node_index != self.spatial_node_index {
-                    clip_spatial_nodes.insert(clip_instance.spatial_node_index);
-                }
-
-                clip_vertices.push(clip_instance.local_pos);
-            }
-        }
-
-        
         
         for y in p0.y .. p1.y {
             for x in p0.x .. p1.x {
@@ -1014,15 +1043,6 @@ impl TileCacheInstance {
                     offset: TileOffset::new(x, y),
                 };
                 let tile = self.tiles.get_mut(&key).expect("bug: no tile");
-
-                
-                if !tile.is_opaque {
-                    if let Some(ref opaque_rect) = opaque_rect {
-                        if opaque_rect.contains_rect(&tile.clipped_rect) {
-                            tile.is_opaque = true;
-                        }
-                    }
-                }
 
                 
                 tile.is_same_content &= is_cacheable;
@@ -1110,12 +1130,9 @@ impl TileCacheInstance {
         let mut dirty_region_index = 0;
 
         
-        
-        self.is_opaque = true;
-
-        
         for (key, tile) in self.tiles.iter_mut() {
-            self.is_opaque &= tile.is_opaque;
+            
+            tile.is_opaque = self.opaque_rect.contains_rect(&tile.clipped_rect);
 
             
             let mut transform_spatial_nodes: Vec<SpatialNodeIndex> = tile.transforms.drain().collect();
@@ -2448,16 +2465,16 @@ impl PicturePrimitive {
             Some(RasterConfig { ref composite_mode, .. }) => {
                 let subpixel_mode = match composite_mode {
                     PictureCompositeMode::TileCache { .. } => {
-                        
-                        
-                        
-                        
-                        SubpixelMode::Allow
+                        self.tile_cache.as_ref().unwrap().subpixel_mode
                     }
                     PictureCompositeMode::Blit(..) |
                     PictureCompositeMode::ComponentTransferFilter(..) |
                     PictureCompositeMode::Filter(..) |
                     PictureCompositeMode::MixBlend(..) => {
+                        
+                        
+                        
+                        
                         SubpixelMode::Deny
                     }
                 };
