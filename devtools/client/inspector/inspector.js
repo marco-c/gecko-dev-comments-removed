@@ -1755,6 +1755,12 @@ Inspector.prototype = {
       return;
     }
 
+    
+    this.toolbox.nodePicker.stop();
+
+    
+    this.hideEyeDropper();
+
     const html = "<div></div>";
 
     
