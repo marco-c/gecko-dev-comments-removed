@@ -84,6 +84,7 @@ class FT2FontEntry : public gfxFontEntry {
   
   
   void CheckForBrokenFont(gfxFontFamily* aFamily);
+  void CheckForBrokenFont(const nsACString& aFamilyName);
 
   FT_MM_Var* GetMMVar() override;
 
@@ -122,6 +123,10 @@ class gfxFT2FontList : public gfxPlatformFontList {
   gfxFT2FontList();
   virtual ~gfxFT2FontList();
 
+  gfxFontEntry* CreateFontEntry(
+      mozilla::fontlist::Face* aFace,
+      const mozilla::fontlist::Family* aFamily) override;
+
   gfxFontEntry* LookupLocalFont(const nsACString& aFontName,
                                 WeightRange aWeightForEntry,
                                 StretchRange aStretchForEntry,
@@ -144,7 +149,7 @@ class gfxFT2FontList : public gfxPlatformFontList {
   }
 
   void GetFontFamilyList(
-      nsTArray<RefPtr<gfxFontFamily> >& aFamilyArray) override;
+      nsTArray<RefPtr<gfxFontFamily>>& aFamilyArray) override;
 
   gfxFontFamily* CreateFontFamily(const nsACString& aName) const override;
 
@@ -166,11 +171,29 @@ class gfxFT2FontList : public gfxPlatformFontList {
                                    const nsCString& aEntryName,
                                    FontNameCache* aCache, bool aJarChanged);
 
+  void InitSharedFontListForPlatform() override;
+  void CollectInitData(const nsCString& aFamilyName, const FontListEntry& aFLE,
+                       StandardFile aStdFile);
+
   
+
+
+
+  typedef void (*CollectFunc)(const nsCString& aFamilyName,
+                              const FontListEntry& aFLE, StandardFile aStdFile);
+
   
-  bool AppendFacesFromCachedFaceList(const nsCString& aFileName,
+
+
+
+
+
+
+
+  bool AppendFacesFromCachedFaceList(CollectFunc aCollectFace,
+                                     const nsCString& aFileName,
                                      const nsCString& aFaceList,
-                                     StandardFile aStdFile = kStandard);
+                                     StandardFile aStdFile);
 
   void AddFaceToList(const nsCString& aEntryName, uint32_t aIndex,
                      StandardFile aStdFile, FT_Face aFace,
@@ -190,6 +213,11 @@ class gfxFT2FontList : public gfxPlatformFontList {
   mozilla::UniquePtr<FontNameCache> mFontNameCache;
   int64_t mJarModifiedTime;
   RefPtr<WillShutdownObserver> mObserver;
+
+  nsTArray<mozilla::fontlist::Family::InitData> mFamilyInitData;
+  nsClassHashtable<nsCStringHashKey,
+                   nsTArray<mozilla::fontlist::Face::InitData>>
+      mFaceInitData;
 };
 
 #endif 
