@@ -953,6 +953,23 @@ function prompt(aBrowser, aRequest) {
             warning.textContent = pre;
             warning.appendChild(learnMore);
             warning.appendChild(chromeWin.document.createTextNode(post));
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let scrStatus = {};
+            OSPermissions.getScreenCapturePermissionState(scrStatus);
+            if (scrStatus.value == OSPermissions.PERMISSION_STATE_DENIED) {
+              OSPermissions.maybeRequestScreenCapturePermission();
+            }
           }
 
           let perms = Services.perms;
