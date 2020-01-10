@@ -1,5 +1,6 @@
 "use strict";
 
+const { NodeServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 const dns = Cc["@mozilla.org/network/dns-service;1"].getService(
   Ci.nsIDNSService
 );
@@ -139,6 +140,17 @@ class DNSListener {
     return this.promise.then.apply(this.promise, arguments);
   }
 }
+
+add_task(async function test0_nodeExecute() {
+  
+  
+  
+  equal(
+    await NodeServer.execute(`"hello"`),
+    "hello",
+    "Check that moz-http2.js is running"
+  );
+});
 
 
 add_task(async function test1() {
