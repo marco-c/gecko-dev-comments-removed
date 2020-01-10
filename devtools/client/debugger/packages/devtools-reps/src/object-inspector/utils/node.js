@@ -826,8 +826,10 @@ function getChildren(options: {
 
 function getPathExpression(item) {
   if (item && item.parent) {
-    return `${getPathExpression(item.parent)}.${item.name}`;
+    let parent = nodeIsBucket(item.parent) ? item.parent.parent : item.parent;
+    return `${getPathExpression(parent)}.${item.name}`;
   }
+  
   return item.name;
 }
 
