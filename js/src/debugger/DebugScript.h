@@ -21,7 +21,6 @@ namespace js {
 
 class BreakpointSite;
 class Debugger;
-class FreeOp;
 
 
 
