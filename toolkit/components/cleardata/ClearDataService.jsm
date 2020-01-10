@@ -290,7 +290,9 @@ const PluginDataCleaner = {
     let promises = [];
     let tags = ph.getPluginTags();
     for (let tag of tags) {
-      promises.push(aCb(ph, tag));
+      if (tag.loaded) {
+        promises.push(aCb(ph, tag));
+      }
     }
 
     
