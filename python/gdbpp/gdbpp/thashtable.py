@@ -4,9 +4,11 @@
 
 
 
+from __future__ import absolute_import
+
 import gdb
-import itertools
 from gdbpp import GeckoPrettyPrinter
+
 
 def walk_template_to_given_base(value, desired_tag_prefix):
     '''Given a value of some template subclass, walk up its ancestry until we
@@ -37,6 +39,7 @@ def walk_template_to_given_base(value, desired_tag_prefix):
             return fv
         return walk_template_to_given_base(fv, desired_tag_prefix)
     return None
+
 
 
 

@@ -4,9 +4,11 @@
 
 
 
+from __future__ import absolute_import
+
 import gdb
-import itertools
 from gdbpp import GeckoPrettyPrinter
+
 
 @GeckoPrettyPrinter('mozilla::EnumSet', '^mozilla::EnumSet<.*>$')
 class enumset_printer(object):

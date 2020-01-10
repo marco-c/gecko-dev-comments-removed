@@ -4,8 +4,11 @@
 
 
 
+from __future__ import absolute_import
+
 import gdb
 from gdbpp import GeckoPrettyPrinter
+
 
 @GeckoPrettyPrinter('nsAutoOwningThread', '^nsAutoOwningThread$')
 class owning_thread_printer(object):

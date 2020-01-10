@@ -4,9 +4,10 @@
 
 
 
-import gdb
-import itertools
+from __future__ import absolute_import
+
 from gdbpp import GeckoPrettyPrinter
+
 
 @GeckoPrettyPrinter('InfallibleTArray', '^InfallibleTArray<.*>$')
 @GeckoPrettyPrinter('FallibleTArray', '^FallibleTArray<.*>$')

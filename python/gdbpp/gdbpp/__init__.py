@@ -4,8 +4,11 @@
 
 
 
+from __future__ import absolute_import
+
 import gdb
 import gdb.printing
+
 
 class GeckoPrettyPrinter(object):
     pp = gdb.printing.RegexpCollectionPrettyPrinter('GeckoPrettyPrinters')
@@ -18,12 +21,13 @@ class GeckoPrettyPrinter(object):
         GeckoPrettyPrinter.pp.add_printer(self.name, self.regexp, wrapped)
         return wrapped
 
-import gdbpp.enumset
-import gdbpp.linkedlist
-import gdbpp.owningthread
-import gdbpp.smartptr
-import gdbpp.string
-import gdbpp.tarray
-import gdbpp.thashtable
+
+import gdbpp.enumset  
+import gdbpp.linkedlist  
+import gdbpp.owningthread  
+import gdbpp.smartptr  
+import gdbpp.string  
+import gdbpp.tarray  
+import gdbpp.thashtable  
 
 gdb.printing.register_pretty_printer(None, GeckoPrettyPrinter.pp)

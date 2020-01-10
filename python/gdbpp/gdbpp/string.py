@@ -4,8 +4,10 @@
 
 
 
-import gdb
+from __future__ import absolute_import
+
 from gdbpp import GeckoPrettyPrinter
+
 
 @GeckoPrettyPrinter('nsString', '^ns.*String$')
 class string_printer(object):
