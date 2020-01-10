@@ -69,16 +69,16 @@ struct alignas(gc::CellAlignBytes) Cell {
  public:
   
   static constexpr int ReservedBits = 2;
-  static constexpr uintptr_t RESERVED_MASK = JS_BITMASK(ReservedBits);
+  static constexpr uintptr_t RESERVED_MASK = BitMask(ReservedBits);
 
   
-  static constexpr uintptr_t FORWARD_BIT = JS_BIT(0);
+  static constexpr uintptr_t FORWARD_BIT = Bit(0);
 
   
   
   
   
-  static constexpr uintptr_t JSSTRING_BIT = JS_BIT(1);
+  static constexpr uintptr_t JSSTRING_BIT = Bit(1);
 
   MOZ_ALWAYS_INLINE bool isTenured() const { return !IsInsideNursery(this); }
   MOZ_ALWAYS_INLINE const TenuredCell& asTenured() const;

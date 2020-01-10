@@ -207,8 +207,8 @@ typedef JSGetterOp GetterOp;
 typedef JSSetterOp SetterOp;
 
 
-static const uint32_t SHAPE_INVALID_SLOT = JS_BIT(24) - 1;
-static const uint32_t SHAPE_MAXIMUM_SLOT = JS_BIT(24) - 2;
+static const uint32_t SHAPE_INVALID_SLOT = Bit(24) - 1;
+static const uint32_t SHAPE_MAXIMUM_SLOT = Bit(24) - 2;
 
 enum class MaybeAdding { Adding = true, NotAdding = false };
 
@@ -337,7 +337,7 @@ class ShapeTable {
   
   
   static const uint32_t MIN_SIZE_LOG2 = 2;
-  static const uint32_t MIN_SIZE = JS_BIT(MIN_SIZE_LOG2);
+  static const uint32_t MIN_SIZE = Bit(MIN_SIZE_LOG2);
 
   uint32_t hashShift_; 
 
@@ -415,7 +415,7 @@ class ShapeTable {
   }
 
   
-  uint32_t capacity() const { return JS_BIT(HASH_BITS - hashShift_); }
+  uint32_t capacity() const { return Bit(HASH_BITS - hashShift_); }
 
   
   
@@ -903,7 +903,7 @@ class Shape : public gc::TenuredCell {
     
     
     
-    SLOT_MASK = JS_BIT(24) - 1,
+    SLOT_MASK = BitMask(24),
 
     
     

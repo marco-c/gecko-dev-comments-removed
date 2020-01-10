@@ -25,6 +25,9 @@
 #include "mozilla/Casting.h"
 #include "mozilla/Types.h"
 
+#include <stddef.h>
+#include <stdint.h>
+
 
 
 
@@ -82,8 +85,11 @@
 
 
 
-#define JS_BIT(n) ((uint32_t)1 << (n))
-#define JS_BITMASK(n) (JS_BIT(n) - 1)
+namespace js {
+constexpr uint32_t Bit(uint32_t n) { return uint32_t(1) << n; }
+
+constexpr uint32_t BitMask(uint32_t n) { return Bit(n) - 1; }
+}  
 
 
 
@@ -91,10 +97,17 @@
 
 
 
-#define JS_HOWMANY(x, y) (((x) + (y)-1) / (y))
-#define JS_ROUNDUP(x, y) (JS_HOWMANY(x, y) * (y))
-#define JS_ROUNDDOWN(x, y) (((x) / (y)) * (y))
-#define JS_ROUND(x, y) ((((x) + (y) / 2) / (y)) * (y))
+
+
+namespace js {
+constexpr size_t HowMany(size_t x, size_t y) { return (x + y - 1) / y; }
+
+constexpr size_t RoundUp(size_t x, size_t y) { return HowMany(x, y) * y; }
+
+constexpr size_t RoundDown(size_t x, size_t y) { return (x / y) * y; }
+
+constexpr size_t Round(size_t x, size_t y) { return ((x + y / 2) / y) * y; }
+}  
 
 #if defined(JS_64BIT)
 #  define JS_BITS_PER_WORD 64

@@ -107,7 +107,7 @@ CodeSegment::~CodeSegment() {
 
 static uint32_t RoundupCodeLength(uint32_t codeLength) {
   
-  return JS_ROUNDUP(codeLength, ExecutableCodePageSize);
+  return RoundUp(codeLength, ExecutableCodePageSize);
 }
 
 

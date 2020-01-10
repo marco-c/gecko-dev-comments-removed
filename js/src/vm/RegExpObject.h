@@ -45,6 +45,13 @@ namespace frontend {
 class TokenStreamAnyChars;
 }
 
+
+namespace irregexp {
+constexpr size_t JS_HOWMANY(size_t x, size_t y) { return (x + y - 1) / y; }
+
+constexpr size_t JS_ROUNDUP(size_t x, size_t y) { return JS_HOWMANY(x, y) * y; }
+}  
+
 extern RegExpObject* RegExpAlloc(JSContext* cx, NewObjectKind newKind,
                                  HandleObject proto = nullptr);
 

@@ -33,7 +33,7 @@ static int testStructuredCloneReaderFuzz(const uint8_t* buf, size_t size) {
 
   
   const size_t kSegmentAlignment = 8;
-  size_t buf_size = JS_ROUNDUP(size, kSegmentAlignment);
+  size_t buf_size = RoundUp(size, kSegmentAlignment);
 
   JS::StructuredCloneScope scope = JS::StructuredCloneScope::DifferentProcess;
 
