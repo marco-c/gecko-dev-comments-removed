@@ -272,23 +272,21 @@ TEST_F(APZEventRegionsTester, Obscuration) {
 
   Pan(parent, 75, 25, PanOptions::NoFling);
 
-  gfx::CompositorHitTestInfo result;
-  RefPtr<AsyncPanZoomController> hit =
-      manager->GetTargetAPZC(ScreenPoint(50, 75), &result, nullptr);
-  EXPECT_EQ(child, hit.get());
-  EXPECT_EQ(result, CompositorHitTestFlags::eVisibleToHitTest);
+  APZCTreeManager::HitTestResult hit =
+      manager->GetTargetAPZC(ScreenPoint(50, 75));
+  EXPECT_EQ(child, hit.mTargetApzc.get());
+  EXPECT_EQ(hit.mHitResult, CompositorHitTestFlags::eVisibleToHitTest);
 }
 
 TEST_F(APZEventRegionsTester, Bug1119497) {
   CreateBug1119497LayerTree();
 
-  gfx::CompositorHitTestInfo result;
-  RefPtr<AsyncPanZoomController> hit =
-      manager->GetTargetAPZC(ScreenPoint(50, 50), &result, nullptr);
+  APZCTreeManager::HitTestResult hit =
+      manager->GetTargetAPZC(ScreenPoint(50, 50));
   
   
-  EXPECT_EQ(ApzcOf(layers[0]), hit.get());
-  EXPECT_EQ(result, CompositorHitTestFlags::eVisibleToHitTest);
+  EXPECT_EQ(ApzcOf(layers[0]), hit.mTargetApzc.get());
+  EXPECT_EQ(hit.mHitResult, CompositorHitTestFlags::eVisibleToHitTest);
 }
 
 TEST_F(APZEventRegionsTester, Bug1117712) {
