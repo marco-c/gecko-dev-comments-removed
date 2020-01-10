@@ -819,7 +819,17 @@ import android.view.inputmethod.EditorInfo;
 
         if (notifyGecko) {
             
-            mFocusedChild.onImeUpdateComposition(selStart, selEnd, updateFlags);
+            final Spanned currentText = mText.getCurrentText();
+            if (Selection.getSelectionStart(currentText) != selStart ||
+                Selection.getSelectionEnd(currentText) != selEnd) {
+                
+                
+                
+                
+                
+                
+                mFocusedChild.onImeUpdateComposition(selStart, selEnd, updateFlags);
+            }
         }
 
         if (DEBUG) {
