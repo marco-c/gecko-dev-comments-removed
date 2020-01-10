@@ -111,11 +111,12 @@ class ContentBlockingLog final {
           
           
           
-#ifdef DEBUG
+          
           for (const auto& hash : aTrackingFullHashes) {
-            MOZ_ASSERT(last.mTrackingFullHashes.Contains(hash));
+            if (!last.mTrackingFullHashes.Contains(hash)) {
+              last.mTrackingFullHashes.AppendElement(hash);
+            }
           }
-#endif
           return;
         }
       }
