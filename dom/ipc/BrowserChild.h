@@ -242,7 +242,7 @@ class BrowserChild final : public BrowserChildBase,
 
   BrowserChild(ContentChild* aManager, const TabId& aTabId, TabGroup* aTabGroup,
                const TabContext& aContext, BrowsingContext* aBrowsingContext,
-               uint32_t aChromeFlags);
+               uint32_t aChromeFlags, bool aIsTopLevel);
 
   nsresult Init(mozIDOMWindowProxy* aParent);
 
@@ -250,7 +250,7 @@ class BrowserChild final : public BrowserChildBase,
   static already_AddRefed<BrowserChild> Create(
       ContentChild* aManager, const TabId& aTabId, const TabId& aSameTabGroupAs,
       const TabContext& aContext, BrowsingContext* aBrowsingContext,
-      uint32_t aChromeFlags);
+      uint32_t aChromeFlags, bool aIsTopLevel);
 
   
   bool IsDestroyed() const { return mDestroyed; }
@@ -862,6 +862,10 @@ class BrowserChild final : public BrowserChildBase,
   
   LayoutDeviceIntPoint mChromeOffset;
   TabId mUniqueId;
+
+  
+  
+  bool mIsTopLevel;
 
   
   
