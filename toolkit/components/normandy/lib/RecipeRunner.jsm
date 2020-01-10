@@ -405,6 +405,32 @@ var RecipeRunner = {
       capabilities.add(`jexl.transform.${transform}`);
     }
 
+    
+    
+    capabilities.add("jexl.context.env");
+    capabilities.add("jexl.context.normandy");
+    let env = ClientEnvironment;
+    while (env && env.name) {
+      
+      
+      
+      
+      
+      for (const [name, descriptor] of Object.entries(
+        Object.getOwnPropertyDescriptors(env)
+      )) {
+        
+        
+        
+        if (descriptor.configurable && descriptor.get) {
+          capabilities.add(`jexl.context.env.${name}`);
+          capabilities.add(`jexl.context.normandy.${name}`);
+        }
+      }
+      
+      env = Object.getPrototypeOf(env);
+    }
+
     return capabilities;
   },
 
