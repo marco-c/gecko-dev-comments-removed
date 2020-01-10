@@ -1510,7 +1510,7 @@ pref("network.protocol-handler.external.le", false);
 pref("network.protocol-handler.expose-all", true);
 
 
-pref("network.warnOnAboutNetworking", true);
+pref("network.warnOnAboutNetworking", false);
 
 
 
