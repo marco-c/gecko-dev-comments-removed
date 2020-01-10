@@ -1009,6 +1009,15 @@ nsEventStatus nsBaseWidget::ProcessUntransformedAPZEvent(
   if (mAPZC && !InputAPZContext::WasRoutedToChildProcess() && aInputBlockId) {
     
     
+    
+    
+    
+    
+    
+    
+    
+    LayersId rootLayersId = mCompositorSession->RootLayerTreeId();
+
     UniquePtr<DisplayportSetListener> postLayerization;
     if (WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent()) {
       if (touchEvent->mMessage == eTouchStart) {
@@ -1018,7 +1027,7 @@ nsEventStatus nsBaseWidget::ProcessUntransformedAPZEvent(
               mSetAllowedTouchBehaviorCallback);
         }
         postLayerization = APZCCallbackHelper::SendSetTargetAPZCNotification(
-            this, GetDocument(), *(original->AsTouchEvent()), aGuid.mLayersId,
+            this, GetDocument(), *(original->AsTouchEvent()), rootLayersId,
             aInputBlockId);
       }
       mAPZEventState->ProcessTouchEvent(*touchEvent, aGuid, aInputBlockId,
@@ -1026,7 +1035,7 @@ nsEventStatus nsBaseWidget::ProcessUntransformedAPZEvent(
     } else if (WidgetWheelEvent* wheelEvent = aEvent->AsWheelEvent()) {
       MOZ_ASSERT(wheelEvent->mFlags.mHandledByAPZ);
       postLayerization = APZCCallbackHelper::SendSetTargetAPZCNotification(
-          this, GetDocument(), *(original->AsWheelEvent()), aGuid.mLayersId,
+          this, GetDocument(), *(original->AsWheelEvent()), rootLayersId,
           aInputBlockId);
       if (wheelEvent->mCanTriggerSwipe) {
         ReportSwipeStarted(aInputBlockId, wheelEvent->TriggersSwipe());
@@ -1035,7 +1044,7 @@ nsEventStatus nsBaseWidget::ProcessUntransformedAPZEvent(
     } else if (WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent()) {
       MOZ_ASSERT(mouseEvent->mFlags.mHandledByAPZ);
       postLayerization = APZCCallbackHelper::SendSetTargetAPZCNotification(
-          this, GetDocument(), *(original->AsMouseEvent()), aGuid.mLayersId,
+          this, GetDocument(), *(original->AsMouseEvent()), rootLayersId,
           aInputBlockId);
       mAPZEventState->ProcessMouseEvent(*mouseEvent, aInputBlockId);
     }
