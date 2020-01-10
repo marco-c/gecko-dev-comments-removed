@@ -609,11 +609,7 @@ static void GenerateJitEntryLoadTls(MacroAssembler& masm, unsigned frameSize) {
   
   offset = FunctionExtended::offsetOfExtendedSlot(
       FunctionExtended::WASM_TLSDATA_SLOT);
-  masm.loadValue(Address(ScratchIonEntry, offset), ScratchValIonEntry);
-
-  
-  masm.unboxPrivate(ScratchValIonEntry, WasmTlsReg);
-  
+  masm.loadPrivate(Address(ScratchIonEntry, offset), WasmTlsReg);
 }
 
 

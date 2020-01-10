@@ -812,11 +812,6 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
   }
   inline void unboxValue(const ValueOperand& src, AnyRegister dest,
                          JSValueType type);
-  void unboxPrivate(const ValueOperand& src, Register dest) {
-    if (src.payloadReg() != dest) {
-      movl(src.payloadReg(), dest);
-    }
-  }
 
   
   void unboxGCThingForPreBarrierTrampoline(const Address& src, Register dest) {
