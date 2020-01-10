@@ -70,7 +70,7 @@ const IS_UNIFIED_TELEMETRY = Services.prefs.getBoolPref(
 
 const MS_IN_A_MINUTE = 60 * 1000;
 
-const PING_TYPE_OPTOUT = "optout";
+const PING_TYPE_DELETION_REQUEST = "deletion-request";
 
 
 const MIDNIGHT_FUZZING_INTERVAL_MS = 60 * MS_IN_A_MINUTE;
@@ -137,8 +137,8 @@ function isV4PingFormat(aPing) {
 
 
 
-function isOptoutPing(aPing) {
-  return isV4PingFormat(aPing) && aPing.type == PING_TYPE_OPTOUT;
+function isDeletionRequestPing(aPing) {
+  return isV4PingFormat(aPing) && aPing.type == PING_TYPE_DELETION_REQUEST;
 }
 
 
@@ -501,7 +501,7 @@ var SendScheduler = {
       if (!TelemetrySendImpl.sendingEnabled()) {
         
         pending = [];
-        current = current.filter(p => isOptoutPing(p));
+        current = current.filter(p => isDeletionRequestPing(p));
       }
       this._log.trace(
         "_doSendTask - can send - pending: " +
@@ -1083,19 +1083,11 @@ var TelemetrySendImpl = {
         try {
           await this._doPing(ping, ping.id, false);
         } catch (ex) {
-          if (isOptoutPing(ping)) {
-            
-            this._log.info(
-              "sendPings - optout ping " + ping.id + " not sent, discarding",
-              ex
-            );
-          } else {
-            this._log.info(
-              "sendPings - ping " + ping.id + " not sent, saving to disk",
-              ex
-            );
-            await savePing(ping);
-          }
+          this._log.info(
+            "sendPings - ping " + ping.id + " not sent, saving to disk",
+            ex
+          );
+          await savePing(ping);
         } finally {
           this._currentPings.delete(ping.id);
         }
@@ -1478,7 +1470,7 @@ var TelemetrySendImpl = {
     
     if (IS_UNIFIED_TELEMETRY) {
       
-      if (ping && isOptoutPing(ping)) {
+      if (ping && isDeletionRequestPing(ping)) {
         return true;
       }
       return Services.prefs.getBoolPref(
@@ -1523,11 +1515,8 @@ var TelemetrySendImpl = {
   async _persistCurrentPings() {
     for (let [id, ping] of this._currentPings) {
       try {
-        
-        if (!isOptoutPing(ping)) {
-          await savePing(ping);
-          this._log.trace("_persistCurrentPings - saved ping " + id);
-        }
+        await savePing(ping);
+        this._log.trace("_persistCurrentPings - saved ping " + id);
       } catch (ex) {
         this._log.error("_persistCurrentPings - failed to save ping " + id, ex);
       } finally {
