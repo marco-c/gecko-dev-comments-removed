@@ -334,7 +334,8 @@ bool nsMathMLElement::ParseNumericValue(const nsString& aString,
 
   nsCSSUnit cssUnit;
   if (unit.IsEmpty()) {
-    if (aFlags & PARSE_ALLOW_UNITLESS) {
+    if (!StaticPrefs::mathml_nonzero_unitless_lengths_disabled() &&
+        (aFlags & PARSE_ALLOW_UNITLESS)) {
       
       if (!(aFlags & PARSE_SUPPRESS_WARNINGS)) {
         nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
