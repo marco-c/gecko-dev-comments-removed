@@ -1675,7 +1675,7 @@ nsresult Notification::ResolveIconAndSoundURL(nsString& iconUrl,
   AssertIsOnMainThread();
   nsresult rv = NS_OK;
 
-  nsCOMPtr<nsIURI> baseUri;
+  nsIURI* baseUri = nullptr;
 
   
   
