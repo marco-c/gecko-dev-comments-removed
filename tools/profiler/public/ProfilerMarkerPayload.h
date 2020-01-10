@@ -697,6 +697,28 @@ class JsAllocationMarkerPayload : public ProfilerMarkerPayload {
   bool mInNursery;
 };
 
+
+
+
+class NativeAllocationMarkerPayload : public ProfilerMarkerPayload {
+ public:
+  NativeAllocationMarkerPayload(const mozilla::TimeStamp& aStartTime,
+                                const int64_t aSize,
+                                UniqueProfilerBacktrace aStack)
+      : ProfilerMarkerPayload(aStartTime, aStartTime, mozilla::Nothing(),
+                              mozilla::Nothing(), std::move(aStack)),
+        mSize(aSize) {}
+
+  DECL_STREAM_PAYLOAD
+
+ private:
+  NativeAllocationMarkerPayload(CommonProps&& aCommonProps, int64_t aSize)
+      : ProfilerMarkerPayload(std::move(aCommonProps)), mSize(aSize) {}
+
+  
+  int64_t mSize;
+};
+
 namespace mozilla {
 
 

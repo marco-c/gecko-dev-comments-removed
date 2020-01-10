@@ -10,12 +10,14 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/FastBernoulliTrial.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/JSONWriter.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ProfilerCounts.h"
 #include "mozilla/ThreadLocal.h"
 
+#include "GeckoProfiler.h"
 #include "replace_malloc.h"
 
 #include <ctype.h>
@@ -50,6 +52,13 @@
 
 static ProfilerCounterTotal* sCounter;
 
+
+
+
+
+
+static mozilla::FastBernoulliTrial* gBernoulli;
+
 namespace mozilla {
 namespace profiler {
 
@@ -62,6 +71,26 @@ static malloc_table_t gMallocTable;
 
 static size_t MallocSizeOf(const void* aPtr) {
   return gMallocTable.malloc_usable_size(const_cast<void*>(aPtr));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+static void EnsureBernoulliIsInstalled() {
+  if (!gBernoulli) {
+    
+    
+    gBernoulli =
+        new FastBernoulliTrial(0.0003, 0x8e26eeee166bc8ca, 0x56820f304a9c9ae0);
+  }
 }
 
 
@@ -182,6 +211,13 @@ static void AllocCallback(void* aPtr, size_t aReqSize) {
   AutoBlockIntercepts block(threadIntercept.ref());
 
   
+  
+  
+  MOZ_ASSERT(gBernoulli,
+             "gBernoulli must be properly installed for the memory hooks.");
+  if (gBernoulli->trial(actualSize)) {
+    profiler_add_native_allocation_marker((int64_t)actualSize);
+  }
 
   
 }
@@ -192,7 +228,9 @@ static void FreeCallback(void* aPtr) {
   }
 
   
-  sCounter->Add(-((int64_t)MallocSizeOf(aPtr)));
+  size_t unsignedSize = MallocSizeOf(aPtr);
+  int64_t signedSize = -((int64_t)unsignedSize);
+  sCounter->Add(signedSize);
 
   auto threadIntercept = ThreadIntercept::MaybeGet();
   if (threadIntercept.isNothing()) {
@@ -207,6 +245,13 @@ static void FreeCallback(void* aPtr) {
   AutoBlockIntercepts block(threadIntercept.ref());
 
   
+  
+  
+  MOZ_ASSERT(gBernoulli,
+             "gBernoulli must be properly installed for the memory hooks.");
+  if (gBernoulli->trial(unsignedSize)) {
+    profiler_add_native_allocation_marker(signedSize);
+  }
 }
 
 }  
@@ -340,7 +385,10 @@ void install_memory_hooks() {
 
 void remove_memory_hooks() { jemalloc_replace_dynamic(nullptr); }
 
-void enable_native_allocations() { ThreadIntercept::EnableAllocationFeature(); }
+void enable_native_allocations() {
+  EnsureBernoulliIsInstalled();
+  ThreadIntercept::EnableAllocationFeature();
+}
 
 
 void disable_native_allocations() {
