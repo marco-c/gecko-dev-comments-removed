@@ -165,7 +165,8 @@ LazyInstantiator::GetClientPid(const DWORD aClientTid) {
 
 
 static const char* gBlockedRemoteClients[] = {
-    "tbnotifier.exe"  
+    "tbnotifier.exe",  
+    "flow.exe"         
 };
 
 
