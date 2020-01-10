@@ -77,22 +77,6 @@ class LZ4 {
 
 
 
-  static MFBT_API MOZ_MUST_USE bool decompress(const char* aSource, char* aDest,
-                                               size_t aOutputSize);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
