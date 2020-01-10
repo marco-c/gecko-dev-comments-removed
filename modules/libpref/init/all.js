@@ -4489,10 +4489,6 @@ pref("image.mem.allow_locking_in_content_processes", true);
 pref("image.webp.enabled", true);
 
 
-
-pref("canvas.image.cache.limit", 0);
-
-
 pref("gl.require-hardware", false);
 #ifdef XP_MACOSX
   pref("gl.multithreaded", true);
