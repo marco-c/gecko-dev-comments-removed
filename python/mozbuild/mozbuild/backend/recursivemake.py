@@ -1782,7 +1782,10 @@ class RecursiveMakeBackend(CommonBackend):
         for source in sorted(webidls.all_preprocessed_sources()):
             basename = os.path.basename(source)
             rule = mk.create_rule([basename])
-            rule.add_dependencies([source, '$(GLOBAL_DEPS)'])
+            
+            
+            
+            rule.add_dependencies([source, '$(WEBIDL_PP_DEPS)'])
             rule.add_commands([
                 
                 
