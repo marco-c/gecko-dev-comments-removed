@@ -50,7 +50,7 @@ using mozilla::dom::ContentParent;
 #include "nsISupportsPrimitives.h"
 #include "nsIWidgetListener.h"
 #include "nsIWindowWatcher.h"
-#include "nsIAppWindow.h"
+#include "nsIXULWindow.h"
 
 #include "nsAppShell.h"
 #include "nsFocusManager.h"
@@ -1285,11 +1285,11 @@ void nsWindow::GeckoViewSupport::Open(
                                       aInitData);
 
   if (window->mWidgetListener) {
-    nsCOMPtr<nsIAppWindow> appWindow(window->mWidgetListener->GetAppWindow());
-    if (appWindow) {
+    nsCOMPtr<nsIXULWindow> xulWindow(window->mWidgetListener->GetXULWindow());
+    if (xulWindow) {
       
       
-      appWindow->SetIntrinsicallySized(false);
+      xulWindow->SetIntrinsicallySized(false);
     }
   }
 }

@@ -154,7 +154,7 @@
 #include "mozilla/EventStateManager.h"
 #include "nsIObserverService.h"
 #include "nsFocusManager.h"
-#include "nsIAppWindow.h"
+#include "nsIXULWindow.h"
 #include "nsITimedChannel.h"
 #include "nsServiceManagerUtils.h"
 #include "mozilla/dom/CustomEvent.h"
@@ -4404,9 +4404,9 @@ nsresult nsGlobalWindowOuter::SetFullscreenInternal(FullscreenReason aReason,
   
   
   nsCOMPtr<nsIBaseWindow> treeOwnerAsWin = GetTreeOwnerWindow();
-  nsCOMPtr<nsIAppWindow> appWin(do_GetInterface(treeOwnerAsWin));
-  if (aFullscreen && appWin) {
-    appWin->SetIntrinsicallySized(false);
+  nsCOMPtr<nsIXULWindow> xulWin(do_GetInterface(treeOwnerAsWin));
+  if (aFullscreen && xulWin) {
+    xulWin->SetIntrinsicallySized(false);
   }
 
   
@@ -6798,7 +6798,7 @@ void nsGlobalWindowOuter::ActivateOrDeactivate(bool aActivate) {
     
     nsIWidgetListener* listener = topLevelWidget->GetWidgetListener();
     if (listener) {
-      nsCOMPtr<nsIAppWindow> window = listener->GetAppWindow();
+      nsCOMPtr<nsIXULWindow> window = listener->GetXULWindow();
       nsCOMPtr<nsIInterfaceRequestor> req(do_QueryInterface(window));
       topLevelWindow = do_GetInterface(req);
     }

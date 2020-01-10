@@ -133,7 +133,7 @@ class nsWindowSizes;
 class nsDOMCaretPosition;
 class nsViewportInfo;
 class nsIGlobalObject;
-class nsIAppWindow;
+class nsIXULWindow;
 class nsXULPrototypeDocument;
 class nsXULPrototypeElement;
 class PermissionDelegateHandler;
@@ -3538,7 +3538,7 @@ class Document : public nsINode,
 
   
   
-  already_AddRefed<nsIAppWindow> GetAppWindowIfToplevelChrome() const;
+  already_AddRefed<nsIXULWindow> GetXULWindowIfToplevelChrome() const;
 
   already_AddRefed<Element> CreateElement(
       const nsAString& aTagName, const ElementCreationOptionsOrString& aOptions,

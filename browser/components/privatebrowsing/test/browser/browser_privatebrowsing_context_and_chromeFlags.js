@@ -15,7 +15,7 @@ function assertWindowIsPrivate(win) {
   let winDocShell = win.docShell;
   let chromeFlags = winDocShell.treeOwner
     .QueryInterface(Ci.nsIInterfaceRequestor)
-    .getInterface(Ci.nsIAppWindow).chromeFlags;
+    .getInterface(Ci.nsIXULWindow).chromeFlags;
 
   if (!win.gBrowser.selectedBrowser.hasContentOpener) {
     Assert.ok(

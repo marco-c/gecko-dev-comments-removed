@@ -124,7 +124,7 @@ startupRecorder.prototype = {
     if (topic == firstPaintNotification) {
       
       
-      if (subject instanceof Ci.nsIAppWindow) {
+      if (subject instanceof Ci.nsIXULWindow) {
         subject = subject
           .QueryInterface(Ci.nsIInterfaceRequestor)
           .getInterface(Ci.nsIDOMWindow);
