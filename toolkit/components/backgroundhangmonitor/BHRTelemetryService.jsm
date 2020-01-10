@@ -69,6 +69,22 @@ BHRTelemetryService.prototype = Object.freeze({
     for (let i = 0; i < stack.length; ++i) {
       if (Array.isArray(stack[i]) && stack[i][0] !== -1) {
         stack[i][0] = moduleIdxs[stack[i][0]];
+      } else if (typeof stack[i] == "string") {
+        
+        
+        
+        
+        
+        
+        
+        let match = /[^\s]+:\/\/.*/.exec(stack[i]);
+        if (
+          match &&
+          !match[0].startsWith("chrome://") &&
+          !match[0].startsWith("resource://")
+        ) {
+          stack[i] = stack[i].replace(match[0], "(excluded)");
+        }
       }
     }
 
