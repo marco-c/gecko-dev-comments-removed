@@ -25,8 +25,8 @@ class CrashReporterMetadataShmem {
 
   
   void AnnotateCrashReport(CrashReporter::Annotation aKey,
-                           const nsCString& aData);
-  void AppendAppNotes(const nsCString& aData);
+                           const nsACString& aData);
+  void AppendAppNotes(const nsACString& aData);
 
   static void ReadAppNotes(const Shmem& aShmem,
                            CrashReporter::AnnotationTable& aNotes);
