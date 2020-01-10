@@ -282,7 +282,7 @@ const calculateHorizontalPosition = (
 const getRelativeRect = function(node, relativeTo) {
   
   
-  if (!node.getBoxQuads || !node.getBoxQuads({ relativeTo })[0]) {
+  if (!node.getBoxQuads) {
     const { top, left, width, height } = node.getBoundingClientRect();
     const right = left + width;
     const bottom = top + height;
@@ -623,9 +623,7 @@ HTMLTooltip.prototype = {
       this.preferredHeight === Infinity
     );
 
-    if (!this.useXulWrapper) {
-      this.container.style.height = height + "px";
-    }
+    this.container.style.height = height + "px";
 
     return { left, top };
   },

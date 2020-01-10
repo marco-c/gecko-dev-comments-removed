@@ -26,23 +26,13 @@ add_task(async function() {
 
   for (const property of propertiesToTest) {
     info("Testing that the colorpicker appears on swatch click");
-    await testColorPickerAppearsOnColorSwatchActivation(view, property);
-
-    info(
-      "Testing that swatch is focusable and colorpicker can be activated with a keyboard"
-    );
-    await testColorPickerAppearsOnColorSwatchActivation(view, property, true);
+    const value = getRuleViewProperty(view, "body", property).valueSpan;
+    const swatch = value.querySelector(".ruleview-colorswatch");
+    await testColorPickerAppearsOnColorSwatchClick(view, swatch);
   }
 });
 
-async function testColorPickerAppearsOnColorSwatchActivation(
-  view,
-  property,
-  withKeyboard = false
-) {
-  const value = getRuleViewProperty(view, "body", property).valueSpan;
-  const swatch = value.querySelector(".ruleview-colorswatch");
-
+async function testColorPickerAppearsOnColorSwatchClick(view, swatch) {
   const cPicker = view.tooltips.getTooltip("colorPicker");
   ok(cPicker, "The rule-view has the expected colorPicker property");
 
@@ -50,20 +40,7 @@ async function testColorPickerAppearsOnColorSwatchActivation(
   ok(cPickerPanel, "The XUL panel for the color picker exists");
 
   const onColorPickerReady = cPicker.once("ready");
-  if (withKeyboard) {
-    
-    const doc = value.ownerDocument;
-    value.focus();
-
-    
-    EventUtils.sendKey("Tab");
-    is(doc.activeElement, swatch, "Swatch successfully receives focus.");
-
-    
-    EventUtils.sendKey("Return");
-  } else {
-    swatch.click();
-  }
+  swatch.click();
   await onColorPickerReady;
 
   ok(true, "The color picker was shown on click of the color swatch");

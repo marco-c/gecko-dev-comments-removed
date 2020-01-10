@@ -56,15 +56,6 @@ async function testEditableFieldFocus(
     const propEditor = textProp.editor;
 
     await focusNextField(view, ruleEditor, commitKey, options);
-    if (
-      ["background-color", "color"].includes(propEditor.nameSpan.textContent)
-    ) {
-      
-      
-      
-      await focusNextField(view, ruleEditor, commitKey, options);
-      EventUtils.sendKey("Return");
-    }
     await assertEditor(
       view,
       propEditor.valueSpan,
