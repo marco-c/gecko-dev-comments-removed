@@ -109,7 +109,11 @@ struct HuffmanKey {
   
   
   
-  HuffmanKey(const uint32_t bits, const uint8_t bitLength);
+  HuffmanKey(const uint32_t bits, const uint8_t bitLength)
+      : bits(bits), bitLength(bitLength) {
+    MOZ_ASSERT(bitLength <= 32);
+    MOZ_ASSERT_IF(bitLength != 32 , bits >> bitLength == 0);
+  }
 
   
   
@@ -126,33 +130,6 @@ struct HuffmanKey {
   
   
   const uint8_t bitLength;
-};
-
-
-struct FlatHuffmanKey {
-  FlatHuffmanKey(HuffmanKey key);
-  FlatHuffmanKey(const HuffmanKey* key);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  const uint32_t representation;
-
-  
-  using Lookup = FlatHuffmanKey;
-  using Key = Lookup;
-  static HashNumber hash(const Lookup& lookup) {
-    return mozilla::DefaultHasher<uint32_t>::hash(lookup.representation);
-  }
-  static bool match(const Key& key, const Lookup& lookup) {
-    return mozilla::DefaultHasher<uint32_t>::match(key.representation,
-                                                   lookup.representation);
-  }
 };
 
 
@@ -178,14 +155,11 @@ enum class Nullable {
   NonNull,
 };
 
-
-
-
 template <typename T, int N = HUFFMAN_TABLE_DEFAULT_INLINE_BUFFER_LENGTH>
-class HuffmanTableImplementationNaive {
+class HuffmanTableImpl {
  public:
-  explicit HuffmanTableImplementationNaive(JSContext* cx) : values(cx) {}
-  HuffmanTableImplementationNaive(HuffmanTableImplementationNaive&& other)
+  explicit HuffmanTableImpl(JSContext* cx) : values(cx) {}
+  HuffmanTableImpl(HuffmanTableImpl&& other) noexcept
       : values(std::move(other.values)) {}
 
   
@@ -193,18 +167,13 @@ class HuffmanTableImplementationNaive {
 
   
   
-  JS::Result<Ok> init(JSContext* cx, size_t numberOfSymbols,
-                      uint8_t largestBitLength);
+  JS::Result<Ok> init(JSContext* cx, size_t numberOfSymbols);
 
   
   JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bits_length, T&& value);
 
-  HuffmanTableImplementationNaive() = delete;
-  HuffmanTableImplementationNaive(HuffmanTableImplementationNaive&) = delete;
-
-#ifdef DEBUG
-  void selfCheck();
-#endif  
+  HuffmanTableImpl() = delete;
+  HuffmanTableImpl(HuffmanTableImpl&) = delete;
 
   
   
@@ -236,313 +205,7 @@ class HuffmanTableImplementationNaive {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-class HuffmanTableImplementationMap {
- public:
-  explicit HuffmanTableImplementationMap(JSContext* cx)
-      : values(cx), keys(cx) {}
-  HuffmanTableImplementationMap(HuffmanTableImplementationMap&& other) noexcept
-      : values(std::move(other.values)), keys(std::move(other.keys)) {}
-
-  
-  JS::Result<Ok> initWithSingleValue(JSContext* cx, T&& value);
-
-  
-  
-  JS::Result<Ok> init(JSContext* cx, size_t numberOfSymbols,
-                      uint8_t largestBitLength);
-
-  
-  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bits_length, T&& value);
-
-#ifdef DEBUG
-  void selfCheck();
-#endif  
-
-  HuffmanTableImplementationMap() = delete;
-  HuffmanTableImplementationMap(HuffmanTableImplementationMap&) = delete;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  HuffmanEntry<const T*> lookup(HuffmanLookup key) const;
-
-  
-  size_t length() const { return values.length(); }
-
-  
-  struct Iterator {
-    Iterator(const js::HashMap<FlatHuffmanKey, T, FlatHuffmanKey>& values,
-             const HuffmanKey* position)
-        : values(values), position(position) {}
-    void operator++() { ++position; }
-    const T* operator*() const {
-      const FlatHuffmanKey key(position);
-      if (const auto ptr = values.lookup(key)) {
-        return &ptr->value();
-      }
-      MOZ_CRASH();
-    }
-    bool operator==(const Iterator& other) const {
-      MOZ_ASSERT(&values == &other.values);
-      return position == other.position;
-    }
-    bool operator!=(const Iterator& other) const {
-      MOZ_ASSERT(&values == &other.values);
-      return position != other.position;
-    }
-
-   private:
-    const js::HashMap<FlatHuffmanKey, T, FlatHuffmanKey>& values;
-    const HuffmanKey* position;
-  };
-  Iterator begin() const { return Iterator(values, keys.begin()); }
-  Iterator end() const { return Iterator(values, keys.end()); }
-
- private:
-  
-  js::HashMap<FlatHuffmanKey, T, FlatHuffmanKey> values;
-
-  
-  Vector<HuffmanKey> keys;
-
-  friend class HuffmanPreludeReader;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-class HuffmanTableImplementationSaturated {
- public:
-  explicit HuffmanTableImplementationSaturated(JSContext* cx)
-      : values(cx), saturated(cx), maxBitLength(-1) {}
-  HuffmanTableImplementationSaturated(
-      HuffmanTableImplementationSaturated&& other) = default;
-
-  
-  JS::Result<Ok> initWithSingleValue(JSContext* cx, T&& value);
-
-  
-  
-  JS::Result<Ok> init(JSContext* cx, size_t numberOfSymbols,
-                      uint8_t largestBitLength);
-
-#ifdef DEBUG
-  void selfCheck();
-#endif  
-
-  
-  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bits_length, T&& value);
-
-  HuffmanTableImplementationSaturated() = delete;
-  HuffmanTableImplementationSaturated(HuffmanTableImplementationSaturated&) =
-      delete;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  HuffmanEntry<const T*> lookup(HuffmanLookup key) const;
-
-  
-  size_t length() const { return values.length(); }
-
-  
-  struct Iterator {
-    explicit Iterator(const HuffmanEntry<T>* position);
-    void operator++();
-    const T* operator*() const;
-    bool operator==(const Iterator& other) const;
-    bool operator!=(const Iterator& other) const;
-
-   private:
-    const HuffmanEntry<T>* position;
-  };
-  Iterator begin() const { return Iterator(values.begin()); }
-  Iterator end() const { return Iterator(values.end()); }
-
- private:
-  
-  
-  
-  
-  
-  Vector<HuffmanEntry<T>> values;
-
-  
-  
-  
-  
-  
-  
-  Vector<uint8_t> saturated;
-
-  
-  
-  
-  
-  uint8_t maxBitLength;
-
-  friend class HuffmanPreludeReader;
-};
-
-
-
-
-
-
-
 struct HuffmanTableUnreachable {};
-
-
-
-
-template <typename T>
-struct HuffmanTableImplementationGeneric {
-  HuffmanTableImplementationGeneric(JSContext* cx);
-  HuffmanTableImplementationGeneric() = delete;
-
-  
-  JS::Result<Ok> initWithSingleValue(JSContext* cx, T&& value);
-
-  
-  
-  JS::Result<Ok> init(JSContext* cx, size_t numberOfSymbols,
-                      uint8_t largestBitLength);
-
-#ifdef DEBUG
-  void selfCheck();
-#endif  
-
-  
-  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bits_length, T&& value);
-
-  
-  size_t length() const;
-
-  struct Iterator {
-    Iterator(typename HuffmanTableImplementationSaturated<T>::Iterator&&);
-    Iterator(typename HuffmanTableImplementationMap<T>::Iterator&&);
-    void operator++();
-    const T* operator*() const;
-    bool operator==(const Iterator& other) const;
-    bool operator!=(const Iterator& other) const;
-
-   private:
-    mozilla::Variant<typename HuffmanTableImplementationSaturated<T>::Iterator,
-                     typename HuffmanTableImplementationMap<T>::Iterator>
-        implementation;
-  };
-
-  
-  Iterator begin() const;
-  Iterator end() const;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  HuffmanEntry<const T*> lookup(HuffmanLookup key) const;
-
- private:
-  mozilla::Variant<HuffmanTableImplementationSaturated<T>,
-                   HuffmanTableImplementationMap<T>, HuffmanTableUnreachable>
-      implementation;
-};
 
 
 
@@ -555,79 +218,73 @@ struct HuffmanTableInitializing {};
 
 
 
-struct HuffmanTableExplicitSymbolsF64
-    : HuffmanTableImplementationGeneric<double> {
+
+struct HuffmanTableExplicitSymbolsF64 {
   using Contents = double;
-  explicit HuffmanTableExplicitSymbolsF64(JSContext* cx)
-      : HuffmanTableImplementationGeneric(cx) {}
+  HuffmanTableImpl<double> impl;
+  explicit HuffmanTableExplicitSymbolsF64(JSContext* cx) : impl(cx) {}
 };
 
-struct HuffmanTableExplicitSymbolsU32
-    : HuffmanTableImplementationGeneric<uint32_t> {
+struct HuffmanTableExplicitSymbolsU32 {
   using Contents = uint32_t;
-  explicit HuffmanTableExplicitSymbolsU32(JSContext* cx)
-      : HuffmanTableImplementationGeneric(cx) {}
+  HuffmanTableImpl<uint32_t> impl;
+  explicit HuffmanTableExplicitSymbolsU32(JSContext* cx) : impl(cx) {}
 };
 
-struct HuffmanTableIndexedSymbolsSum
-    : HuffmanTableImplementationGeneric<BinASTKind> {
+struct HuffmanTableIndexedSymbolsSum {
   using Contents = BinASTKind;
-  explicit HuffmanTableIndexedSymbolsSum(JSContext* cx)
-      : HuffmanTableImplementationGeneric(cx) {}
+  HuffmanTableImpl<BinASTKind> impl;
+  explicit HuffmanTableIndexedSymbolsSum(JSContext* cx) : impl(cx) {}
 };
 
-struct HuffmanTableIndexedSymbolsBool
-    : HuffmanTableImplementationNaive<bool, 2> {
+struct HuffmanTableIndexedSymbolsBool {
   using Contents = bool;
-  explicit HuffmanTableIndexedSymbolsBool(JSContext* cx)
-      : HuffmanTableImplementationNaive(cx) {}
+  HuffmanTableImpl<bool, 2> impl;
+  explicit HuffmanTableIndexedSymbolsBool(JSContext* cx) : impl(cx) {}
 };
 
 
 
-struct HuffmanTableIndexedSymbolsMaybeInterface
-    : HuffmanTableImplementationNaive<BinASTKind, 2> {
+struct HuffmanTableIndexedSymbolsMaybeInterface {
   using Contents = BinASTKind;
-  explicit HuffmanTableIndexedSymbolsMaybeInterface(JSContext* cx)
-      : HuffmanTableImplementationNaive(cx) {}
+  HuffmanTableImpl<BinASTKind, 2> impl;
+  explicit HuffmanTableIndexedSymbolsMaybeInterface(JSContext* cx) : impl(cx) {}
 
   
   bool isAlwaysNull() const {
-    MOZ_ASSERT(length() > 0);
+    MOZ_ASSERT(impl.length() > 0);
 
     
     
-    if (length() != 1) {
+    if (impl.length() != 1) {
       return false;
     }
     
-    return begin()->value == BinASTKind::_Null;
+    return impl.begin()->value == BinASTKind::_Null;
   }
 };
 
-struct HuffmanTableIndexedSymbolsStringEnum
-    : HuffmanTableImplementationGeneric<BinASTVariant> {
+struct HuffmanTableIndexedSymbolsStringEnum {
   using Contents = BinASTVariant;
-  explicit HuffmanTableIndexedSymbolsStringEnum(JSContext* cx)
-      : HuffmanTableImplementationGeneric(cx) {}
+  HuffmanTableImpl<BinASTVariant> impl;
+  explicit HuffmanTableIndexedSymbolsStringEnum(JSContext* cx) : impl(cx) {}
 };
 
-struct HuffmanTableIndexedSymbolsLiteralString
-    : HuffmanTableImplementationGeneric<JSAtom*> {
+struct HuffmanTableIndexedSymbolsLiteralString {
   using Contents = JSAtom*;
-  explicit HuffmanTableIndexedSymbolsLiteralString(JSContext* cx)
-      : HuffmanTableImplementationGeneric(cx) {}
+  HuffmanTableImpl<JSAtom*> impl;
+  explicit HuffmanTableIndexedSymbolsLiteralString(JSContext* cx) : impl(cx) {}
 };
 
-struct HuffmanTableIndexedSymbolsOptionalLiteralString
-    : HuffmanTableImplementationGeneric<JSAtom*> {
+struct HuffmanTableIndexedSymbolsOptionalLiteralString {
   using Contents = JSAtom*;
+  HuffmanTableImpl<JSAtom*> impl;
   explicit HuffmanTableIndexedSymbolsOptionalLiteralString(JSContext* cx)
-      : HuffmanTableImplementationGeneric(cx) {}
+      : impl(cx) {}
 };
 
 
-using HuffmanTableValue = mozilla::Variant<
+using HuffmanTable = mozilla::Variant<
     HuffmanTableUnreachable,  
     HuffmanTableInitializing, HuffmanTableExplicitSymbolsF64,
     HuffmanTableExplicitSymbolsU32, HuffmanTableIndexedSymbolsSum,
@@ -636,11 +293,10 @@ using HuffmanTableValue = mozilla::Variant<
     HuffmanTableIndexedSymbolsLiteralString,
     HuffmanTableIndexedSymbolsOptionalLiteralString>;
 
-struct HuffmanTableExplicitSymbolsListLength
-    : HuffmanTableImplementationGeneric<uint32_t> {
+struct HuffmanTableExplicitSymbolsListLength {
   using Contents = uint32_t;
-  explicit HuffmanTableExplicitSymbolsListLength(JSContext* cx)
-      : HuffmanTableImplementationGeneric(cx) {}
+  HuffmanTableImpl<uint32_t> impl;
+  explicit HuffmanTableExplicitSymbolsListLength(JSContext* cx) : impl(cx) {}
 };
 
 
@@ -658,7 +314,7 @@ class HuffmanDictionary {
  public:
   explicit HuffmanDictionary(JSContext* cx);
 
-  HuffmanTableValue& tableForField(NormalizedInterfaceAndField index);
+  HuffmanTable& tableForField(NormalizedInterfaceAndField index);
   HuffmanTableListLength& tableForListLength(BinASTList list);
 
  private:
@@ -669,7 +325,7 @@ class HuffmanDictionary {
   
   
   
-  mozilla::Array<HuffmanTableValue, BINAST_INTERFACE_AND_FIELD_LIMIT> fields;
+  mozilla::Array<HuffmanTable, BINAST_INTERFACE_AND_FIELD_LIMIT> fields;
 
   
   
@@ -982,7 +638,7 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
  private:
   
   
-  js::HashMap<FlatHuffmanKey, BinASTVariant, DefaultHasher<uint32_t>,
+  js::HashMap<uint32_t, BinASTVariant, DefaultHasher<uint32_t>,
               SystemAllocPolicy>
       variantsTable_;
 
