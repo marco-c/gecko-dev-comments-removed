@@ -187,7 +187,7 @@ struct ForOfPIC {
     bool tryOptimizeArrayIteratorNext(JSContext* cx, bool* optimized);
 
     void trace(JSTracer* trc);
-    void finalize(JSFreeOp* fop, JSObject* obj);
+    void finalize(FreeOp* fop, JSObject* obj);
 
    private:
     
@@ -211,7 +211,7 @@ struct ForOfPIC {
     
     void eraseChain(JSContext* cx);
 
-    void freeAllStubs(JSFreeOp* fop);
+    void freeAllStubs(FreeOp* fop);
   };
 
   
