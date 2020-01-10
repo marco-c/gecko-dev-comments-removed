@@ -6,8 +6,6 @@
 
 
 
-ChromeUtils.import("resource:///modules/PermissionUI.jsm", this);
-
 var PointerlockFsWarning = {
   _element: null,
   _origin: null,
@@ -241,12 +239,6 @@ var PointerLock = {
 };
 
 var FullScreen = {
-  _permissionNotificationIDs: Object.values(PermissionUI)
-    .filter(value => value.prototype && value.prototype.notificationID)
-    .map(value => value.prototype.notificationID)
-    
-    .concat(["webRTC-shareDevices"]),
-
   init() {
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
@@ -789,7 +781,22 @@ var FullScreen = {
     fullscreenctls.hidden = !aEnterFS;
   },
 };
-XPCOMUtils.defineLazyGetter(FullScreen, "useLionFullScreen", function() {
+
+XPCOMUtils.defineLazyGetter(FullScreen, "_permissionNotificationIDs", () => {
+  let { PermissionUI } = ChromeUtils.import(
+    "resource:///modules/PermissionUI.jsm",
+    {}
+  );
+  return (
+    Object.values(PermissionUI)
+      .filter(value => value.prototype && value.prototype.notificationID)
+      .map(value => value.prototype.notificationID)
+      
+      .concat(["webRTC-shareDevices"])
+  );
+});
+
+XPCOMUtils.defineLazyGetter(FullScreen, "useLionFullScreen", () => {
   
   
   
