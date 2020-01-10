@@ -4,10 +4,11 @@
 
 
 
-#ifndef INTERVALS_H
-#define INTERVALS_H
+#ifndef DOM_MEDIA_INTERVALS_H_
+#define DOM_MEDIA_INTERVALS_H_
 
 #include <algorithm>
+
 #include "mozilla/TypeTraits.h"
 #include "nsTArray.h"
 
