@@ -1022,7 +1022,12 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   friend class mozilla::dom::BrowserParent;
   void BeginTrackingRemoteDragGesture(nsIContent* aContent,
                                       dom::RemoteDragStartData* aDragStartData);
-  void StopTrackingDragGesture();
+
+  
+  
+  
+  void StopTrackingDragGesture(bool aClearInChildProcesses);
+
   MOZ_CAN_RUN_SCRIPT
   void GenerateDragGesture(nsPresContext* aPresContext,
                            WidgetInputEvent* aEvent);

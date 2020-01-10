@@ -555,7 +555,7 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       GenerateDragGesture(aPresContext, touchEvent);
     } else {
       mInTouchDrag = false;
-      StopTrackingDragGesture();
+      StopTrackingDragGesture(true);
     }
   }
 
@@ -598,7 +598,7 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
             KillClickHoldTimer();
           }
           mInTouchDrag = false;
-          StopTrackingDragGesture();
+          StopTrackingDragGesture(true);
           sNormalLMouseEventInProcess = false;
           
           MOZ_FALLTHROUGH;
@@ -1612,7 +1612,7 @@ void EventStateManager::FireContextClick() {
 
   
   if (status == nsEventStatus_eConsumeNoDefault) {
-    StopTrackingDragGesture();
+    StopTrackingDragGesture(true);
   }
 
   KillClickHoldTimer();
@@ -1687,10 +1687,26 @@ void EventStateManager::BeginTrackingRemoteDragGesture(
 
 
 
-void EventStateManager::StopTrackingDragGesture() {
+void EventStateManager::StopTrackingDragGesture(bool aClearInChildProcesses) {
   mGestureDownContent = nullptr;
   mGestureDownFrameOwner = nullptr;
   mGestureDownDragStartData = nullptr;
+
+  
+  
+  
+  if (aClearInChildProcesses) {
+    nsCOMPtr<nsIDragService> dragService =
+        do_GetService("@mozilla.org/widget/dragservice;1");
+    if (dragService) {
+      nsCOMPtr<nsIDragSession> dragSession;
+      dragService->GetCurrentSession(getter_AddRefs(dragSession));
+      if (!dragSession) {
+        
+        dragService->RemoveAllChildProcesses();
+      }
+    }
+  }
 }
 
 void EventStateManager::FillInEventFromGestureDown(WidgetMouseEvent* aEvent) {
@@ -1782,7 +1798,7 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
     mCurrentTarget = mGestureDownFrameOwner->GetPrimaryFrame();
 
     if (!mCurrentTarget || !mCurrentTarget->GetNearestWidget()) {
-      StopTrackingDragGesture();
+      StopTrackingDragGesture(true);
       return;
     }
 
@@ -1791,14 +1807,14 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
     if (mCurrentTarget) {
       RefPtr<nsFrameSelection> frameSel = mCurrentTarget->GetFrameSelection();
       if (frameSel && frameSel->GetDragState()) {
-        StopTrackingDragGesture();
+        StopTrackingDragGesture(true);
         return;
       }
     }
 
     
     if (PresShell::IsMouseCapturePreventingDrag()) {
-      StopTrackingDragGesture();
+      StopTrackingDragGesture(true);
       return;
     }
 
@@ -1846,7 +1862,7 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
               nsContentUtils::GetTextEditorFromAnonymousNodeWithoutCreation(
                   eventContent);
           if (!textEditor || !textEditor->IsCopyToClipboardAllowed()) {
-            StopTrackingDragGesture();
+            StopTrackingDragGesture(true);
             return;
           }
         }
@@ -1858,7 +1874,9 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
 
       
       
-      StopTrackingDragGesture();
+      
+      
+      StopTrackingDragGesture(false);
 
       if (!targetContent) return;
 
@@ -3287,7 +3305,7 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       } else {
         
         
-        StopTrackingDragGesture();
+        StopTrackingDragGesture(true);
 
         
         
