@@ -130,6 +130,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/DoublyLinkedList.h"
+#include "mozilla/HelperMacros.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/RandomNum.h"
@@ -4673,13 +4674,28 @@ static void replace_malloc_init_funcs(malloc_table_t* table) {
 
 
 
+
+
+
+
+
+#define GENERIC_MALLOC_DECL2_MINGW(name, name_impl, return_type, ...) \
+  return_type name(ARGS_HELPER(TYPED_ARGS, ##__VA_ARGS__))            \
+      __attribute__((alias(MOZ_STRINGIFY(name_impl))));
+
 #define GENERIC_MALLOC_DECL2(name, name_impl, return_type, ...)   \
   return_type name_impl(ARGS_HELPER(TYPED_ARGS, ##__VA_ARGS__)) { \
     return DefaultMalloc::name(ARGS_HELPER(ARGS, ##__VA_ARGS__)); \
   }
 
-#define GENERIC_MALLOC_DECL(name, return_type, ...) \
-  GENERIC_MALLOC_DECL2(name, name##_impl, return_type, ##__VA_ARGS__)
+#ifndef __MINGW32__
+#  define GENERIC_MALLOC_DECL(name, return_type, ...) \
+    GENERIC_MALLOC_DECL2(name, name##_impl, return_type, ##__VA_ARGS__)
+#else
+#  define GENERIC_MALLOC_DECL(name, return_type, ...)                   \
+    GENERIC_MALLOC_DECL2(name, name##_impl, return_type, ##__VA_ARGS__) \
+    GENERIC_MALLOC_DECL2_MINGW(name, name##_impl, return_type, ##__VA_ARGS__)
+#endif
 
 #define MALLOC_DECL(...) \
   MOZ_MEMORY_API MACRO_CALL(GENERIC_MALLOC_DECL, (__VA_ARGS__))
