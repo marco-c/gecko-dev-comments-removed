@@ -97,7 +97,7 @@ class AudioBufferSourceNodeEngine final : public AudioNodeEngine {
     switch (aIndex) {
       case AudioBufferSourceNode::START:
         MOZ_ASSERT(!mStart, "Another START?");
-        mStart = aParam * mDestination->SampleRate();
+        mStart = aParam * mDestination->mSampleRate;
         
         mBeginProcessing = mStart + 0.5;
         break;
@@ -439,7 +439,7 @@ class AudioBufferSourceNodeEngine final : public AudioNodeEngine {
     float computedPlaybackRate = aPlaybackRate * exp2(aDetune / 1200.f);
     
     int32_t rate = WebAudioUtils::TruncateFloatToInt<int32_t>(
-        mSource->SampleRate() / computedPlaybackRate);
+        mSource->mSampleRate / computedPlaybackRate);
     return rate ? rate : mBufferSampleRate;
   }
 
