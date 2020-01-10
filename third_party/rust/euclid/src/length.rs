@@ -8,7 +8,7 @@
 
 
 
-use scale::TypedScale;
+use scale::Scale;
 use num::Zero;
 
 use num_traits::{NumCast, Saturating};
@@ -141,10 +141,10 @@ impl<U, T: Clone + Saturating> Saturating for Length<T, U> {
 
 
 impl<Src, Dst, T: Clone + Div<T, Output = T>> Div<Length<T, Src>> for Length<T, Dst> {
-    type Output = TypedScale<T, Src, Dst>;
+    type Output = Scale<T, Src, Dst>;
     #[inline]
-    fn div(self, other: Length<T, Src>) -> TypedScale<T, Src, Dst> {
-        TypedScale::new(self.get() / other.get())
+    fn div(self, other: Length<T, Src>) -> Scale<T, Src, Dst> {
+        Scale::new(self.get() / other.get())
     }
 }
 
@@ -183,19 +183,19 @@ impl<T: Copy + Div<T, Output = T>, U> DivAssign<T> for Length<T, U> {
 }
 
 
-impl<Src, Dst, T: Clone + Mul<T, Output = T>> Mul<TypedScale<T, Src, Dst>> for Length<T, Src> {
+impl<Src, Dst, T: Clone + Mul<T, Output = T>> Mul<Scale<T, Src, Dst>> for Length<T, Src> {
     type Output = Length<T, Dst>;
     #[inline]
-    fn mul(self, scale: TypedScale<T, Src, Dst>) -> Length<T, Dst> {
+    fn mul(self, scale: Scale<T, Src, Dst>) -> Length<T, Dst> {
         Length::new(self.get() * scale.get())
     }
 }
 
 
-impl<Src, Dst, T: Clone + Div<T, Output = T>> Div<TypedScale<T, Src, Dst>> for Length<T, Dst> {
+impl<Src, Dst, T: Clone + Div<T, Output = T>> Div<Scale<T, Src, Dst>> for Length<T, Dst> {
     type Output = Length<T, Src>;
     #[inline]
-    fn div(self, scale: TypedScale<T, Src, Dst>) -> Length<T, Src> {
+    fn div(self, scale: Scale<T, Src, Dst>) -> Length<T, Src> {
         Length::new(self.get() / scale.get())
     }
 }
@@ -267,7 +267,7 @@ mod tests {
     use num::Zero;
 
     use num_traits::Saturating;
-    use scale::TypedScale;
+    use scale::Scale;
     use core::f32::INFINITY;
 
     enum Inch {}
@@ -386,14 +386,14 @@ mod tests {
 
         let result = length / duration;
 
-        let expected: TypedScale<f32, Second, Cm> = TypedScale::new(0.5);
+        let expected: Scale<f32, Second, Cm> = Scale::new(0.5);
         assert_eq!(result, expected);
     }
 
     #[test]
     fn test_multiplication() {
         let length_mm: Length<f32, Mm> = Length::new(10.0);
-        let cm_per_mm: TypedScale<f32, Mm, Cm> = TypedScale::new(0.1);
+        let cm_per_mm: Scale<f32, Mm, Cm> = Scale::new(0.1);
 
         let result = length_mm * cm_per_mm;
 
@@ -424,7 +424,7 @@ mod tests {
     #[test]
     fn test_division_by_scalefactor() {
         let length: Length<f32, Cm> = Length::new(5.0);
-        let cm_per_second: TypedScale<f32, Second, Cm> = TypedScale::new(10.0);
+        let cm_per_second: Scale<f32, Second, Cm> = Scale::new(10.0);
 
         let result = length / cm_per_second;
 
@@ -514,7 +514,7 @@ mod tests {
 
         let result = length / length_zero;
 
-        let expected: TypedScale<f32, Cm, Cm> = TypedScale::new(INFINITY);
+        let expected: Scale<f32, Cm, Cm> = Scale::new(INFINITY);
         assert_eq!(result, expected);
     }
 }

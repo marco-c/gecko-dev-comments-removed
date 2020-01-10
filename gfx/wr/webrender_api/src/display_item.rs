@@ -206,7 +206,7 @@ pub struct StickyFrameDisplayItem {
     
     
     
-    pub margins: SideOffsets2D<Option<f32>>,
+    pub margins: SideOffsets2D<Option<f32>, LayoutPixel>,
 
     
     
@@ -424,7 +424,7 @@ pub struct NinePatchBorder {
     
     
     
-    pub slice: SideOffsets2D<i32>,
+    pub slice: DeviceIntSideOffsets,
 
     
     
@@ -440,7 +440,7 @@ pub struct NinePatchBorder {
 
     
     
-    pub outset: SideOffsets2D<f32>,
+    pub outset: LayoutSideOffsets, 
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, PeekPoke)]

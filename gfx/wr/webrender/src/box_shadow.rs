@@ -100,7 +100,7 @@ impl<'a> DisplayListFlattener<'a> {
         
         let shadow_rect = prim_info
             .rect
-            .translate(box_offset)
+            .translate(*box_offset)
             .inflate(spread_amount, spread_amount);
 
         
@@ -201,7 +201,7 @@ impl<'a> DisplayListFlattener<'a> {
             let shadow_clip_source = ClipItemKey::box_shadow(
                 shadow_rect,
                 shadow_radius,
-                dest_rect.translate(&LayoutVector2D::new(-prim_info.rect.origin.x, -prim_info.rect.origin.y)),
+                dest_rect.translate(LayoutVector2D::new(-prim_info.rect.origin.x, -prim_info.rect.origin.y)),
                 blur_radius,
                 clip_mode,
             );

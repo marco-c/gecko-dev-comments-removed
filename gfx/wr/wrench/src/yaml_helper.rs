@@ -2,7 +2,7 @@
 
 
 
-use euclid::{Angle, TypedSize2D};
+use euclid::{Angle, Size2D};
 use crate::parse_function::parse_function;
 use std::f32;
 use std::str::FromStr;
@@ -179,7 +179,7 @@ fn make_rotation(
     let transform =
         LayoutTransform::identity().pre_rotate(axis_x, axis_y, axis_z, Angle::radians(theta));
 
-    pre_transform.pre_mul(&transform).pre_mul(&post_transform)
+    pre_transform.pre_transform(&transform).pre_transform(&post_transform)
 }
 
 pub fn make_perspective(
@@ -189,7 +189,7 @@ pub fn make_perspective(
     let pre_transform = LayoutTransform::create_translation(origin.x, origin.y, 0.0);
     let post_transform = LayoutTransform::create_translation(-origin.x, -origin.y, -0.0);
     let transform = LayoutTransform::create_perspective(perspective);
-    pre_transform.pre_mul(&transform).pre_mul(&post_transform)
+    pre_transform.pre_transform(&transform).pre_transform(&post_transform)
 }
 
 
@@ -422,7 +422,7 @@ impl YamlHelper for Yaml {
                             break;
                         }
                     };
-                    transform = transform.post_mul(&mx);
+                    transform = transform.post_transform(&mx);
                 }
                 Some(transform)
             }
@@ -430,7 +430,7 @@ impl YamlHelper for Yaml {
                 let transform = array.iter().fold(
                     LayoutTransform::identity(),
                     |u, yaml| match yaml.as_transform(transform_origin) {
-                        Some(ref transform) => u.pre_mul(transform),
+                        Some(ref transform) => u.pre_transform(transform),
                         None => u,
                     },
                 );
@@ -497,7 +497,7 @@ impl YamlHelper for Yaml {
         if let Yaml::Integer(integer) = *self {
             return LayoutSize::new(integer as f32, integer as f32);
         }
-        self.as_size().unwrap_or(TypedSize2D::zero())
+        self.as_size().unwrap_or(Size2D::zero())
     }
 
     fn as_border_radius(&self) -> Option<BorderRadius> {

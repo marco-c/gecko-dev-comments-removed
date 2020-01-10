@@ -7,24 +7,7 @@
 
 
 
-#![cfg_attr(feature = "unstable", feature(fn_must_use))]
 #![cfg_attr(not(test), no_std)]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -62,31 +45,28 @@ extern crate serde;
 
 #[cfg(feature = "mint")]
 pub extern crate mint;
-#[macro_use]
-extern crate euclid_macros;
 extern crate num_traits;
-#[cfg(test)]
-extern crate rand;
 #[cfg(test)]
 use std as core;
 
-pub use box2d::{TypedBox2D, Box2D};
+pub use box2d::Box2D;
 pub use length::Length;
-pub use scale::TypedScale;
-pub use transform2d::{Transform2D, TypedTransform2D};
-pub use transform3d::{Transform3D, TypedTransform3D};
-pub use point::{Point2D, Point3D, TypedPoint2D, TypedPoint3D, point2, point3};
-pub use vector::{TypedVector2D, TypedVector3D, Vector2D, Vector3D, vec2, vec3};
+pub use scale::Scale;
+pub use transform2d::Transform2D;
+pub use transform3d::Transform3D;
+pub use point::{Point2D, Point3D, point2, point3};
+pub use vector::{Vector2D, Vector3D, vec2, vec3};
 pub use vector::{BoolVector2D, BoolVector3D, bvec2, bvec3};
 pub use homogen::HomogeneousVector;
+pub use nonempty::NonEmpty;
 
-pub use rect::{rect, Rect, TypedRect};
-pub use rigid::{RigidTransform3D, TypedRigidTransform3D};
-pub use box3d::{box3d, Box3D, TypedBox3D};
-pub use translation::{TypedTranslation2D, TypedTranslation3D};
-pub use rotation::{Angle, Rotation2D, Rotation3D, TypedRotation2D, TypedRotation3D};
-pub use side_offsets::{SideOffsets2D, TypedSideOffsets2D};
-pub use size::{Size2D, TypedSize2D, size2};
+pub use rect::{rect, Rect};
+pub use rigid::{RigidTransform3D};
+pub use box3d::{box3d, Box3D};
+pub use translation::{Translation2D, Translation3D};
+pub use rotation::{Angle, Rotation2D, Rotation3D};
+pub use side_offsets::SideOffsets2D;
+pub use size::{Size2D, Size3D, size2, size3};
 pub use trig::Trig;
 
 #[macro_use]
@@ -111,31 +91,30 @@ mod translation;
 mod trig;
 mod vector;
 mod box3d;
+mod nonempty;
 
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct UnknownUnit;
 
-
-#[deprecated]
-pub type Matrix2D<T> = Transform2D<T>;
-
-
-#[deprecated]
-pub type TypedMatrix2D<T, Src, Dst> = TypedTransform2D<T, Src, Dst>;
-
-
-#[deprecated]
-pub type Matrix4D<T> = Transform3D<T>;
-
-
-#[deprecated]
-pub type TypedMatrix4D<T, Src, Dst> = TypedTransform3D<T, Src, Dst>;
-
-
-#[deprecated]
-pub type ScaleFactor<T, Src, Dst> = TypedScale<T, Src, Dst>;
-
-
-#[deprecated]
-pub use Angle as Radians;
+pub mod default {
+    use super::UnknownUnit;
+    pub type Point2D<T> = super::Point2D<T, UnknownUnit>;
+    pub type Point3D<T> = super::Point3D<T, UnknownUnit>;
+    pub type Vector2D<T> = super::Vector2D<T, UnknownUnit>;
+    pub type Vector3D<T> = super::Vector3D<T, UnknownUnit>;
+    pub type HomogeneousVector<T> = super::HomogeneousVector<T, UnknownUnit>;
+    pub type Size2D<T> = super::Size2D<T, UnknownUnit>;
+    pub type Size3D<T> = super::Size3D<T, UnknownUnit>;
+    pub type Rect<T> = super::Rect<T, UnknownUnit>;
+    pub type Box2D<T> = super::Box2D<T, UnknownUnit>;
+    pub type Box3D<T> = super::Box3D<T, UnknownUnit>;
+    pub type SideOffsets2D<T> = super::SideOffsets2D<T, UnknownUnit>;
+    pub type Transform2D<T> = super::Transform2D<T, UnknownUnit, UnknownUnit>;
+    pub type Transform3D<T> = super::Transform3D<T, UnknownUnit, UnknownUnit>;
+    pub type Rotation2D<T> = super::Rotation2D<T, UnknownUnit, UnknownUnit>;
+    pub type Rotation3D<T> = super::Rotation3D<T, UnknownUnit, UnknownUnit>;
+    pub type Translation3D<T> = super::Translation3D<T, UnknownUnit, UnknownUnit>;
+    pub type Scale<T> = super::Scale<T, UnknownUnit, UnknownUnit>;
+    pub type RigidTransform3D<T> = super::RigidTransform3D<T, UnknownUnit, UnknownUnit>;
+}

@@ -3,7 +3,7 @@
 
 
 use api::units::*;
-use euclid::TypedSize2D;
+use euclid::Size2D;
 use std::f32::consts::FRAC_PI_2;
 
 
@@ -13,12 +13,12 @@ const STEP_COUNT: usize = 20;
 
 #[derive(Debug, Clone)]
 pub struct Ellipse<U> {
-    pub radius: TypedSize2D<f32, U>,
+    pub radius: Size2D<f32, U>,
     pub total_arc_length: f32,
 }
 
 impl<U> Ellipse<U> {
-    pub fn new(radius: TypedSize2D<f32, U>) -> Ellipse<U> {
+    pub fn new(radius: Size2D<f32, U>) -> Ellipse<U> {
         
         let total_arc_length = get_simpson_length(FRAC_PI_2, radius.width, radius.height);
 

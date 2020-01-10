@@ -5,7 +5,7 @@
 
 
 use app_units::Au;
-use euclid::Size2D;
+use euclid::default::Size2D;
 use std::iter::Sum;
 use std::ops::Add;
 

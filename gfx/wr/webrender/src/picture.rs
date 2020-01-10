@@ -12,7 +12,7 @@ use crate::clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX,
     ClipScrollTree, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace, CoordinateSystemId
 };
 use crate::debug_colors;
-use euclid::{vec3, TypedPoint2D, TypedScale, TypedSize2D, Vector2D, TypedRect};
+use euclid::{vec3, Point2D, Scale, Size2D, Vector2D, Rect};
 use euclid::approxeq::ApproxEq;
 use crate::filterdata::SFilterData;
 use crate::frame_builder::{FrameVisibilityContext, FrameVisibilityState};
@@ -111,35 +111,26 @@ struct PictureInfo {
     _spatial_node_index: SpatialNodeIndex,
 }
 
-pub struct PictureCacheState {
-    
-    pub tiles: FastHashMap<TileOffset, Tile>,
-    
-    fract_offset: PictureVector2D,
-}
-
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct RetainedTiles {
     
     #[cfg_attr(feature = "capture", serde(skip))] 
-    pub caches: FastHashMap<usize, PictureCacheState>,
+    pub tiles: FastHashMap<TileKey, Tile>,
 }
 
 impl RetainedTiles {
     pub fn new() -> Self {
         RetainedTiles {
-            caches: FastHashMap::default(),
+            tiles: FastHashMap::default(),
         }
     }
 
     
     pub fn merge(&mut self, other: RetainedTiles) {
-        assert!(self.caches.is_empty() || other.caches.is_empty());
-        if self.caches.is_empty() {
-            self.caches = other.caches;
-        }
+        assert!(self.tiles.is_empty() || other.tiles.is_empty());
+        self.tiles.extend(other.tiles);
     }
 }
 
@@ -148,9 +139,9 @@ impl RetainedTiles {
 pub struct TileCoordinate;
 
 
-pub type TileOffset = TypedPoint2D<i32, TileCoordinate>;
-pub type TileSize = TypedSize2D<i32, TileCoordinate>;
-pub type TileRect = TypedRect<i32, TileCoordinate>;
+pub type TileOffset = Point2D<i32, TileCoordinate>;
+pub type TileSize = Size2D<i32, TileCoordinate>;
+pub type TileRect = Rect<i32, TileCoordinate>;
 
 
 
@@ -206,6 +197,14 @@ impl From<PropertyBinding<f32>> for OpacityBinding {
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct TileId(usize);
+
+#[derive(Debug, Copy, Clone, PartialEq, Hash, Eq)]
+pub struct TileKey {
+    
+    slice: usize,
+    
+    offset: TileOffset,
+}
 
 
 #[derive(Debug)]
@@ -505,7 +504,7 @@ pub struct TileCacheInstance {
     
     pub spatial_node_index: SpatialNodeIndex,
     
-    pub tiles: FastHashMap<TileOffset, Tile>,
+    pub tiles: FastHashMap<TileKey, Tile>,
     
     map_local_to_surface: SpaceMapper<LayoutPixel, PicturePixel>,
     
@@ -526,7 +525,7 @@ pub struct TileCacheInstance {
     
     pub local_clip_rect: PictureRect,
     
-    pub tiles_to_draw: Vec<TileOffset>,
+    pub tiles_to_draw: Vec<TileKey>,
     
     
     
@@ -543,10 +542,6 @@ pub struct TileCacheInstance {
     
     
     pub subpixel_mode: SubpixelMode,
-    
-    
-    
-    fract_offset: PictureVector2D,
 }
 
 impl TileCacheInstance {
@@ -577,7 +572,6 @@ impl TileCacheInstance {
             background_color,
             opaque_rect: PictureRect::zero(),
             subpixel_mode: SubpixelMode::Allow,
-            fract_offset: PictureVector2D::zero(),
         }
     }
 
@@ -644,53 +638,6 @@ impl TileCacheInstance {
             frame_context.global_screen_world_rect,
             frame_context.clip_scroll_tree,
         );
-
-        
-        if let Some(prev_state) = frame_state.retained_tiles.caches.remove(&self.slice) {
-            self.tiles.extend(prev_state.tiles);
-            self.fract_offset = prev_state.fract_offset;
-        }
-
-        
-        
-        
-        
-        
-        
-        let world_origin = pic_to_world_mapper
-            .map(&PictureRect::new(PicturePoint::zero(), PictureSize::new(1.0, 1.0)))
-            .expect("bug: unable to map origin to world space")
-            .origin;
-
-        
-        let device_origin = world_origin * frame_context.global_device_pixel_scale;
-        let desired_device_origin = device_origin.round();
-
-        
-        let ref_world_rect = WorldRect::new(
-            desired_device_origin / frame_context.global_device_pixel_scale,
-            WorldSize::new(1.0, 1.0),
-        );
-
-        
-        let ref_point = pic_to_world_mapper
-            .unmap(&ref_world_rect)
-            .expect("bug: unable to unmap ref world rect")
-            .origin;
-
-        
-        let fract_offset = PictureVector2D::new(
-            ref_point.x.fract(),
-            ref_point.y.fract(),
-        );
-
-        
-        
-        let fract_changed = (self.fract_offset.x - fract_offset.x).abs() > 0.001 ||
-                            (self.fract_offset.y - fract_offset.y).abs() > 0.001;
-        if fract_changed {
-            self.fract_offset = fract_offset;
-        }
 
         let spatial_node = &frame_context
             .clip_scroll_tree
@@ -804,16 +751,31 @@ impl TileCacheInstance {
         self.tile_bounds_p0 = TileOffset::new(x0, y0);
         self.tile_bounds_p1 = TileOffset::new(x1, y1);
 
-        let mut world_culling_rect = WorldRect::zero();
+        
+        
+        let mut keys = Vec::new();
+        for key in frame_state.retained_tiles.tiles.keys() {
+            if key.slice == self.slice {
+                keys.push(*key);
+            }
+        }
+        for key in keys {
+            self.tiles.insert(key, frame_state.retained_tiles.tiles.remove(&key).unwrap());
+        }
 
         let mut old_tiles = mem::replace(
             &mut self.tiles,
             FastHashMap::default(),
         );
 
+        let mut world_culling_rect = WorldRect::zero();
+
         for y in y0 .. y1 {
             for x in x0 .. x1 {
-                let key = TileOffset::new(x, y);
+                let key = TileKey {
+                    offset: TileOffset::new(x, y),
+                    slice: self.slice,
+                };
 
                 let mut tile = old_tiles
                     .remove(&key)
@@ -822,13 +784,10 @@ impl TileCacheInstance {
                         Tile::new(next_id)
                     });
 
-                
-                
-                
                 tile.rect = PictureRect::new(
                     PicturePoint::new(
-                        x as f32 * self.tile_size.width + fract_offset.x,
-                        y as f32 * self.tile_size.height + fract_offset.y,
+                        x as f32 * self.tile_size.width,
+                        y as f32 * self.tile_size.height,
                     ),
                     self.tile_size,
                 );
@@ -850,8 +809,7 @@ impl TileCacheInstance {
         
         for (_, tile) in &mut self.tiles {
             
-            
-            tile.is_same_content = !fract_changed;
+            tile.is_same_content = true;
 
             
             for binding in tile.descriptor.opacity_bindings.items() {
@@ -1085,7 +1043,10 @@ impl TileCacheInstance {
         for y in p0.y .. p1.y {
             for x in p0.x .. p1.x {
                 
-                let key = TileOffset::new(x, y);
+                let key = TileKey {
+                    slice: self.slice,
+                    offset: TileOffset::new(x, y),
+                };
                 let tile = self.tiles.get_mut(&key).expect("bug: no tile");
 
                 
@@ -1278,9 +1239,29 @@ impl TileCacheInstance {
                         TILE_SIZE_WIDTH,
                         TILE_SIZE_HEIGHT,
                     );
+
+                    let content_origin_f = tile.world_rect.origin * frame_context.global_device_pixel_scale;
+                    let content_origin_i = content_origin_f.floor();
+
+                    
+                    
+                    
+                    
+                    let s0 = (content_origin_f.x - content_origin_i.x) / tile.world_rect.size.width;
+                    let t0 = (content_origin_f.y - content_origin_i.y) / tile.world_rect.size.height;
+                    let s1 = 1.0;
+                    let t1 = 1.0;
+
+                    let uv_rect_kind = UvRectKind::Quad {
+                        top_left: DeviceHomogeneousVector::new(s0, t0, 0.0, 1.0),
+                        top_right: DeviceHomogeneousVector::new(s1, t0, 0.0, 1.0),
+                        bottom_left: DeviceHomogeneousVector::new(s0, t1, 0.0, 1.0),
+                        bottom_right: DeviceHomogeneousVector::new(s1, t1, 0.0, 1.0),
+                    };
                     resource_cache.texture_cache.update_picture_cache(
                         tile_size,
                         &mut tile.handle,
+                        uv_rect_kind,
                         gpu_cache,
                     );
                 }
@@ -1632,7 +1613,7 @@ impl PictureCompositeMode {
                             let inflation_factor = primitive.shadow.blur_radius.round() * BLUR_SAMPLE_SCALE;
                             let input = primitive.input.to_index(cur_index).map(|index| output_rects[index]).unwrap_or(picture_rect);
                             let shadow_rect = input.inflate(inflation_factor, inflation_factor);
-                            input.union(&shadow_rect.translate(&(primitive.shadow.offset * TypedScale::new(1.0))))
+                            input.union(&shadow_rect.translate(primitive.shadow.offset * Scale::new(1.0)))
                         }
                         FilterPrimitiveKind::Blend(ref primitive) => {
                             primitive.input1.to_index(cur_index).map(|index| output_rects[index]).unwrap_or(picture_rect)
@@ -2067,15 +2048,7 @@ impl PicturePrimitive {
         retained_tiles: &mut RetainedTiles,
     ) {
         if let Some(tile_cache) = self.tile_cache.take() {
-            if !tile_cache.tiles.is_empty() {
-                retained_tiles.caches.insert(
-                    tile_cache.slice,
-                    PictureCacheState {
-                        tiles: tile_cache.tiles,
-                        fract_offset: tile_cache.fract_offset,
-                    },
-                );
-            }
+            retained_tiles.tiles.extend(tile_cache.tiles);
         }
     }
 
@@ -2461,10 +2434,10 @@ impl PicturePrimitive {
                                 continue;
                             }
 
+                            
+                            
                             let content_origin_f = tile.world_rect.origin * device_pixel_scale;
-                            let content_origin = content_origin_f.round();
-                            debug_assert!((content_origin_f.x - content_origin.x).abs() < 0.01);
-                            debug_assert!((content_origin_f.y - content_origin.y).abs() < 0.01);
+                            let content_origin = content_origin_f.floor().to_i32();
 
                             let cache_item = frame_state.resource_cache.texture_cache.get(&tile.handle);
 
@@ -2476,7 +2449,7 @@ impl PicturePrimitive {
                                 },
                                 tile_size,
                                 pic_index,
-                                content_origin.to_i32(),
+                                content_origin,
                                 UvRectKind::Rect,
                                 surface_spatial_node_index,
                                 device_pixel_scale,
@@ -2718,7 +2691,7 @@ impl PicturePrimitive {
         match transform {
             CoordinateSpaceMapping::Local => {
                 let polygon = Polygon::from_rect(
-                    local_rect * TypedScale::new(1.0),
+                    local_rect * Scale::new(1.0),
                     plane_split_anchor,
                 );
                 splitter.add(polygon);
@@ -2781,10 +2754,10 @@ impl PicturePrimitive {
             };
 
             let local_points = [
-                transform.transform_point3d(&poly.points[0].cast()).unwrap(),
-                transform.transform_point3d(&poly.points[1].cast()).unwrap(),
-                transform.transform_point3d(&poly.points[2].cast()).unwrap(),
-                transform.transform_point3d(&poly.points[3].cast()).unwrap(),
+                transform.transform_point3d(poly.points[0].cast()).unwrap(),
+                transform.transform_point3d(poly.points[1].cast()).unwrap(),
+                transform.transform_point3d(poly.points[2].cast()).unwrap(),
+                transform.transform_point3d(poly.points[3].cast()).unwrap(),
             ];
             let gpu_blocks = [
                 [local_points[0].x, local_points[0].y, local_points[1].x, local_points[1].y].into(),
@@ -2988,7 +2961,7 @@ impl PicturePrimitive {
             
             surface.rect = raster_config.composite_mode.inflate_picture_rect(surface.rect, surface.inflation_factor);
 
-            let mut surface_rect = surface.rect * TypedScale::new(1.0);
+            let mut surface_rect = surface.rect * Scale::new(1.0);
 
             
             let surface_index = state.pop_surface();
@@ -3015,7 +2988,7 @@ impl PicturePrimitive {
                 PictureCompositeMode::Filter(Filter::DropShadows(ref shadows)) => {
                     for shadow in shadows {
                         let content_rect = surface_rect;
-                        let shadow_rect = surface_rect.translate(&shadow.offset);
+                        let shadow_rect = surface_rect.translate(shadow.offset);
                         surface_rect = content_rect.union(&shadow_rect);
                     }
                 }
@@ -3077,7 +3050,7 @@ impl PicturePrimitive {
                         
                         
                         
-                        let shadow_rect = self.snapped_local_rect.translate(&shadow.offset);
+                        let shadow_rect = self.snapped_local_rect.translate(shadow.offset);
 
                         
                         request.push(shadow.color.premultiplied());
@@ -3140,7 +3113,7 @@ fn calculate_screen_uv(
     device_pixel_scale: DevicePixelScale,
     supports_snapping: bool,
 ) -> DeviceHomogeneousVector {
-    let raster_pos = transform.transform_point2d_homogeneous(local_pos);
+    let raster_pos = transform.transform_point2d_homogeneous(*local_pos);
 
     let mut device_vec = DeviceHomogeneousVector::new(
         raster_pos.x * device_pixel_scale.0,

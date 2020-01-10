@@ -1,6 +1,7 @@
 use {Line, Plane, is_zero};
 
-use euclid::{Point2D, TypedTransform3D, TypedPoint3D, TypedVector3D, TypedRect};
+use euclid::default::Point2D;
+use euclid::{Transform3D, Point3D, Vector3D, Rect};
 use euclid::approxeq::ApproxEq;
 use euclid::Trig;
 use num_traits::{Float, One, Zero};
@@ -88,7 +89,7 @@ impl<T> Intersection<T> {
 #[derive(Debug, PartialEq)]
 pub struct Polygon<T, U> {
     
-    pub points: [TypedPoint3D<T, U>; 4],
+    pub points: [Point3D<T, U>; 4],
     
     pub plane: Plane<T, U>,
     
@@ -121,7 +122,7 @@ impl<T, U> Polygon<T, U> where
     
     
     pub fn from_points(
-        points: [TypedPoint3D<T, U>; 4],
+        points: [Point3D<T, U>; 4],
         anchor: usize,
     ) -> Option<Self> {
         let edge1 = points[1] - points[0];
@@ -160,16 +161,19 @@ impl<T, U> Polygon<T, U> where
     }
 
     
-    pub fn from_rect(rect: TypedRect<T, U>, anchor: usize) -> Self {
+    pub fn from_rect(rect: Rect<T, U>, anchor: usize) -> Self {
+        let min = rect.min();
+        let max = rect.max();
+        let _0 = T::zero();
         Polygon {
             points: [
-                rect.origin.to_3d(),
-                rect.top_right().to_3d(),
-                rect.bottom_right().to_3d(),
-                rect.bottom_left().to_3d(),
+                min.to_3d(),
+                Point3D::new(max.x, min.y, _0),
+                max.to_3d(),
+                Point3D::new(min.x, max.y, _0),
             ],
             plane: Plane {
-                normal: TypedVector3D::new(T::zero(), T::zero(), T::one()),
+                normal: Vector3D::new(T::zero(), T::zero(), T::one()),
                 offset: T::zero(),
             },
             anchor,
@@ -178,48 +182,54 @@ impl<T, U> Polygon<T, U> where
 
     
     pub fn from_transformed_rect<V>(
-        rect: TypedRect<T, V>,
-        transform: TypedTransform3D<T, V, U>,
+        rect: Rect<T, V>,
+        transform: Transform3D<T, V, U>,
         anchor: usize,
     ) -> Option<Self>
     where
         T: Trig + ops::Neg<Output=T>,
     {
+        let min = rect.min();
+        let max = rect.max();
+        let _0 = T::zero();
         let points = [
-            transform.transform_point3d(&rect.origin.to_3d())?,
-            transform.transform_point3d(&rect.top_right().to_3d())?,
-            transform.transform_point3d(&rect.bottom_right().to_3d())?,
-            transform.transform_point3d(&rect.bottom_left().to_3d())?,
+            transform.transform_point3d(min.to_3d())?,
+            transform.transform_point3d(Point3D::new(max.x, min.y, _0))?,
+            transform.transform_point3d(max.to_3d())?,
+            transform.transform_point3d(Point3D::new(min.x, max.y, _0))?,
         ];
         Self::from_points(points, anchor)
     }
 
     
     pub fn from_transformed_rect_with_inverse<V>(
-        rect: TypedRect<T, V>,
-        transform: &TypedTransform3D<T, V, U>,
-        inv_transform: &TypedTransform3D<T, U, V>,
+        rect: Rect<T, V>,
+        transform: &Transform3D<T, V, U>,
+        inv_transform: &Transform3D<T, U, V>,
         anchor: usize,
     ) -> Option<Self>
     where
         T: Trig + ops::Neg<Output=T>,
     {
+        let min = rect.min();
+        let max = rect.max();
+        let _0 = T::zero();
         let points = [
-            transform.transform_point3d(&rect.origin.to_3d())?,
-            transform.transform_point3d(&rect.top_right().to_3d())?,
-            transform.transform_point3d(&rect.bottom_right().to_3d())?,
-            transform.transform_point3d(&rect.bottom_left().to_3d())?,
+            transform.transform_point3d(min.to_3d())?,
+            transform.transform_point3d(Point3D::new(max.x, min.y, _0))?,
+            transform.transform_point3d(max.to_3d())?,
+            transform.transform_point3d(Point3D::new(min.x, max.y, _0))?,
         ];
 
         
         
-        let normal_raw = TypedVector3D::new(inv_transform.m13, inv_transform.m23, inv_transform.m33);
+        let normal_raw = Vector3D::new(inv_transform.m13, inv_transform.m23, inv_transform.m33);
         let normal_sql = normal_raw.square_length();
         if normal_sql.approx_eq(&T::zero()) || transform.m44.approx_eq(&T::zero()) {
             None
         } else {
             let normal = normal_raw / normal_sql.sqrt();
-            let offset = -TypedVector3D::new(transform.m41, transform.m42, transform.m43)
+            let offset = -Vector3D::new(transform.m41, transform.m42, transform.m43)
                 .dot(normal) / transform.m44;
 
             Some(Polygon {
@@ -235,7 +245,7 @@ impl<T, U> Polygon<T, U> where
 
     
     
-    pub fn untransform_point(&self, point: TypedPoint3D<T, U>) -> Point2D<T> {
+    pub fn untransform_point(&self, point: Point3D<T, U>) -> Point2D<T> {
         
         
         let a = self.points[1] - self.points[0];
@@ -256,15 +266,15 @@ impl<T, U> Polygon<T, U> where
 
     
     pub fn transform<V>(
-        &self, transform: &TypedTransform3D<T, U, V>
+        &self, transform: &Transform3D<T, U, V>
     ) -> Option<Polygon<T, V>>
     where
         T: Trig,
         V: fmt::Debug,
     {
-        let mut points = [TypedPoint3D::origin(); 4];
+        let mut points = [Point3D::origin(); 4];
         for (out, point) in points.iter_mut().zip(self.points.iter()) {
-            let mut homo = transform.transform_point3d_homogeneous(point);
+            let mut homo = transform.transform_point3d_homogeneous(*point);
             homo.w = homo.w.max(T::approx_epsilon());
             *out = homo.to_point3d()?;
         }
@@ -310,7 +320,7 @@ impl<T, U> Polygon<T, U> where
 
     
     
-    pub fn project_on(&self, vector: &TypedVector3D<T, U>) -> LineProjection<T> {
+    pub fn project_on(&self, vector: &Vector3D<T, U>) -> LineProjection<T> {
         LineProjection {
             markers: [
                 vector.dot(self.points[0].to_vector()),
@@ -363,8 +373,8 @@ impl<T, U> Polygon<T, U> where
 
     fn split_impl(
         &mut self,
-        first: (usize, TypedPoint3D<T, U>),
-        second: (usize, TypedPoint3D<T, U>),
+        first: (usize, Point3D<T, U>),
+        second: (usize, Point3D<T, U>),
     ) -> (Option<Self>, Option<Self>) {
         
         
@@ -503,7 +513,7 @@ impl<T, U> Polygon<T, U> where
     
     
     pub fn split_with_normal(
-        &mut self, line: &Line<T, U>, normal: &TypedVector3D<T, U>,
+        &mut self, line: &Line<T, U>, normal: &Vector3D<T, U>,
     ) -> (Option<Self>, Option<Self>) {
         debug!("\tSplitting with normal");
         

@@ -1226,7 +1226,7 @@ impl BatchBuilder {
                                         textures,
                                         [
                                             ShaderColorMode::Image as i32 | ((AlphaType::PremultipliedAlpha as i32) << 16),
-                                            RasterizationSpace::Local as i32,
+                                            RasterizationSpace::Screen as i32,
                                             get_shader_opacity(1.0),
                                             0,
                                         ],
@@ -1336,7 +1336,7 @@ impl BatchBuilder {
                                             
                                             let shadow_prim_address = gpu_cache.get_address(shadow_gpu_data);
 
-                                            let shadow_rect = prim_header.local_rect.translate(&shadow.offset);
+                                            let shadow_rect = prim_header.local_rect.translate(shadow.offset);
 
                                             let shadow_prim_header = PrimitiveHeader {
                                                 local_rect: shadow_rect,
@@ -2081,7 +2081,7 @@ impl BatchBuilder {
                         gpu_blocks.push([-1.0, 0.0, 0.0, 0.0].into()); 
                         
                         for tile in chunk {
-                            let tile_rect = tile.local_rect.translate(&-prim_rect.origin.to_vector());
+                            let tile_rect = tile.local_rect.translate(-prim_rect.origin.to_vector());
                             gpu_blocks.push(tile_rect.into());
                             gpu_blocks.push(GpuBlockData::EMPTY);
                         }
@@ -2909,7 +2909,7 @@ impl ClipBatcher {
                         p1.y - p0.y,
                     ),
                 ).to_f32();
-                let world_sub_rect = normalized_sub_rect.translate(&mask_origin);
+                let world_sub_rect = normalized_sub_rect.translate(mask_origin);
 
                 
                 
