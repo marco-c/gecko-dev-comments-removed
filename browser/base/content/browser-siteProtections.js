@@ -1731,14 +1731,6 @@ var gProtectionsHandler = {
     );
 
     
-    
-    
-    this._protectionsPopupTPSwitch.toggleAttribute(
-      "showdotindicator",
-      !currentlyEnabled
-    );
-
-    
     if (currentlyEnabled) {
       this._protectionsPopupTPSwitch.setAttribute(
         "aria-label",
