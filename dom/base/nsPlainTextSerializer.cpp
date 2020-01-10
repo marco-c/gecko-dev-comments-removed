@@ -1143,6 +1143,7 @@ void nsPlainTextSerializer::FlushLine() {
       nsAutoString quotesAndIndent;
       CreateQuotesAndIndent(
           quotesAndIndent);  
+      mIndentation.mHeader.Truncate();
       mOutputManager->Append(quotesAndIndent);
     }
 
@@ -1405,6 +1406,7 @@ void nsPlainTextSerializer::EndLine(bool aSoftlinebreak, bool aBreakBySpace) {
     const bool stripTrailingSpaces = mCurrentLineContent.mValue.IsEmpty();
     nsAutoString quotesAndIndent;
     CreateQuotesAndIndent(quotesAndIndent);
+    mIndentation.mHeader.Truncate();
 
     if (stripTrailingSpaces) {
       quotesAndIndent.Trim(" ", false, true, false);
@@ -1427,8 +1429,7 @@ void nsPlainTextSerializer::EndLine(bool aSoftlinebreak, bool aBreakBySpace) {
 
 
 
-
-void nsPlainTextSerializer::CreateQuotesAndIndent(nsAString& aResult) {
+void nsPlainTextSerializer::CreateQuotesAndIndent(nsAString& aResult) const {
   
   if (mCiteQuoteLevel > 0) {
     nsAutoString quotes;
@@ -1459,7 +1460,6 @@ void nsPlainTextSerializer::CreateQuotesAndIndent(nsAString& aResult) {
 
   if (!mIndentation.mHeader.IsEmpty()) {
     aResult += mIndentation.mHeader;
-    mIndentation.mHeader.Truncate();
   }
 }
 
@@ -1598,6 +1598,7 @@ void nsPlainTextSerializer::Write(const nsAString& aStr) {
       if (outputQuotes) {
         nsAutoString quotesAndIndent;
         CreateQuotesAndIndent(quotesAndIndent);
+        mIndentation.mHeader.Truncate();
         mOutputManager->Append(quotesAndIndent);
       }
 
