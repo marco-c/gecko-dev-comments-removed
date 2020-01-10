@@ -102,7 +102,14 @@ var DateTimePickerPanel = class {
   initPicker(detail) {
     
     
-    const locale = this.setGregorian(Services.locale.webExposedLocales[0]);
+    let locale = this.setGregorian(Services.locale.webExposedLocales[0]);
+
+    
+    
+    
+    
+    locale = locale.replace(/^pt-PT/i, "pt");
+
     const dir = Services.intl.getLocaleInfo(locale).direction;
 
     switch (this.type) {
