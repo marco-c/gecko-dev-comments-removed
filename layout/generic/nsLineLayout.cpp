@@ -889,6 +889,7 @@ void nsLineLayout::ReflowFrame(nsIFrame* aFrame, nsReflowStatus& aReflowStatus,
   
   
   
+  bool placedFloat = false;
   bool isEmpty;
   if (frameType == LayoutFrameType::None) {
     isEmpty = pfd->mFrame->IsEmpty();
@@ -917,7 +918,7 @@ void nsLineLayout::ReflowFrame(nsIFrame* aFrame, nsReflowStatus& aReflowStatus,
           
           RecordNoWrapFloat(outOfFlowFrame);
         } else {
-          TryToPlaceFloat(outOfFlowFrame);
+          placedFloat = TryToPlaceFloat(outOfFlowFrame);
         }
       }
     } else if (isText) {
@@ -1063,11 +1064,11 @@ void nsLineLayout::ReflowFrame(nsIFrame* aFrame, nsReflowStatus& aReflowStatus,
       }
 
       if (!continuingTextRun && !psd->mNoWrap) {
-        if (!LineIsEmpty()) {
+        if (!LineIsEmpty() || placedFloat) {
           
           
           
-          if (!aFrame->IsPlaceholderFrame() &&
+          if ((!aFrame->IsPlaceholderFrame() || LineIsEmpty()) &&
               NotifyOptionalBreakPosition(aFrame, INT32_MAX,
                                           optionalBreakAfterFits,
                                           gfxBreakPriority::eNormalBreak)) {
