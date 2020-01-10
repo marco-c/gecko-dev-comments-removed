@@ -638,7 +638,8 @@ void ShadowRoot::MaybeSlotHostChild(nsIContent& aChild) {
   }
 
   
-  if (assignment.mSlot->AssignedNodes().IsEmpty()) {
+  if (assignment.mSlot->AssignedNodes().IsEmpty() &&
+      assignment.mSlot->HasChildren()) {
     InvalidateStyleAndLayoutOnSubtree(assignment.mSlot);
   }
 

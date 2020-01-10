@@ -2860,7 +2860,7 @@ void PresShell::SlotAssignmentWillChange(Element& aElement,
   if (aNewSlot) {
     
     
-    if (aNewSlot->AssignedNodes().IsEmpty()) {
+    if (aNewSlot->AssignedNodes().IsEmpty() && aNewSlot->HasChildren()) {
       DestroyFramesForAndRestyle(aNewSlot);
       
       
