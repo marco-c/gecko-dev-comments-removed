@@ -251,6 +251,16 @@ function run_all_fp_tests_allow_all(
       },
       'Feature policy "' + feature_name +
           '" can be disabled in cross-origin iframes using "allow" attribute.');
+
+  
+  async_test(
+      t => {
+        test_feature_availability_with_post_message_result(
+            t, same_origin_frame_pathname, '#' + error_name,
+            feature_name + " 'none'");
+      },
+      'Feature policy "' + feature_name +
+          '" can be disabled in same-origin iframes using "allow" attribute.');
 }
 
 
