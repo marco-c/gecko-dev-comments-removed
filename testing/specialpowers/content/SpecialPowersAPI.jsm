@@ -280,9 +280,12 @@ class SpecialPowersAPI {
                               { id, name, message });
       },
 
-      sendSyncMessage: (name, message) => {
+      sendQuery: async (name, message) => {
+        
+        
+        
         return this._sendSyncMessage("SPChromeScriptMessage",
-                                     { id, name, message });
+                                     { id, name, message })[0][0];
       },
 
       destroy: () => {
