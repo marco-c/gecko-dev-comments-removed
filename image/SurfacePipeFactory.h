@@ -107,35 +107,40 @@ class SurfacePipeFactory {
     const bool premultiplyAlpha =
         bool(aFlags & SurfacePipeFlags::PREMULTIPLY_ALPHA);
 
-    
-    
-    
-    
-    bool unpackOrMaskSwizzle = aInFormat == gfx::SurfaceFormat::R8G8B8 ||
-                               ((aInFormat == gfx::SurfaceFormat::R8G8B8A8 &&
-                                 aOutFormat == gfx::SurfaceFormat::R8G8B8X8) ||
-                                (aInFormat == gfx::SurfaceFormat::B8G8R8A8 &&
-                                 aOutFormat == gfx::SurfaceFormat::B8G8R8X8));
-
-    
-    
-    
-    bool swapOrAlphaSwizzle = ((aInFormat == gfx::SurfaceFormat::R8G8B8A8 &&
-                                aOutFormat == gfx::SurfaceFormat::B8G8R8A8) ||
-                               (aInFormat == gfx::SurfaceFormat::B8G8R8A8 &&
-                                aOutFormat == gfx::SurfaceFormat::R8G8B8A8)) ||
-                              premultiplyAlpha;
-
     MOZ_ASSERT(aInFormat == gfx::SurfaceFormat::R8G8B8 ||
                aInFormat == gfx::SurfaceFormat::R8G8B8A8 ||
                aInFormat == gfx::SurfaceFormat::R8G8B8X8 ||
-               aInFormat == gfx::SurfaceFormat::B8G8R8A8 ||
-               aInFormat == gfx::SurfaceFormat::B8G8R8X8);
+               aInFormat == gfx::SurfaceFormat::OS_RGBA ||
+               aInFormat == gfx::SurfaceFormat::OS_RGBX);
 
-    MOZ_ASSERT(aOutFormat == gfx::SurfaceFormat::R8G8B8A8 ||
-               aOutFormat == gfx::SurfaceFormat::R8G8B8X8 ||
-               aOutFormat == gfx::SurfaceFormat::B8G8R8A8 ||
-               aOutFormat == gfx::SurfaceFormat::B8G8R8X8);
+    MOZ_ASSERT(aOutFormat == gfx::SurfaceFormat::OS_RGBA ||
+               aOutFormat == gfx::SurfaceFormat::OS_RGBX);
+
+    const bool inFormatRgb = aInFormat == gfx::SurfaceFormat::R8G8B8;
+
+    const bool inFormatOpaque = aInFormat == gfx::SurfaceFormat::OS_RGBX ||
+                                aInFormat == gfx::SurfaceFormat::R8G8B8X8 ||
+                                inFormatRgb;
+    const bool outFormatOpaque = aOutFormat == gfx::SurfaceFormat::OS_RGBX;
+
+    const bool inFormatOrder = aInFormat == gfx::SurfaceFormat::R8G8B8A8 ||
+                               aInFormat == gfx::SurfaceFormat::R8G8B8X8;
+    const bool outFormatOrder = aOutFormat == gfx::SurfaceFormat::R8G8B8A8 ||
+                                aOutFormat == gfx::SurfaceFormat::R8G8B8X8;
+
+    
+    
+    
+    
+    bool unpackOrMaskSwizzle =
+        inFormatRgb ||
+        (!inFormatOpaque && outFormatOpaque && inFormatOrder == outFormatOrder);
+
+    
+    
+    
+    bool swapOrAlphaSwizzle =
+        (!inFormatRgb && inFormatOrder != outFormatOrder) || premultiplyAlpha;
 
     if (unpackOrMaskSwizzle && swapOrAlphaSwizzle) {
       MOZ_ASSERT_UNREACHABLE("Early and late swizzles not supported");
