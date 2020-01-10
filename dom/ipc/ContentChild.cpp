@@ -138,6 +138,7 @@
 #    include <err.h>
 #    include <fstream>
 #    include "nsILineInputStream.h"
+#    include "SpecialSystemDirectory.h"
 #  endif
 #  if defined(MOZ_DEBUG) && defined(ENABLE_TESTS)
 #    include "mozilla/SandboxTestingChild.h"
@@ -4135,6 +4136,26 @@ mozilla::ipc::IPCResult ContentChild::RecvInitSandboxTesting(
 static LazyLogModule sPledgeLog("OpenBSDSandbox");
 
 NS_IMETHODIMP
+OpenBSDFindPledgeUnveilFilePath(const char* file, nsACString& result) {
+  struct stat st;
+
+  
+  result.Assign(nsPrintfCString("/etc/%s/%s", MOZ_APP_NAME, file));
+  if (stat(PromiseFlatCString(result).get(), &st) == 0) {
+    return NS_OK;
+  }
+
+  
+  result.Assign(nsPrintfCString(
+      "/usr/local/lib/%s/browser/defaults/preferences/%s", MOZ_APP_NAME, file));
+  if (stat(PromiseFlatCString(result).get(), &st) == 0) {
+    return NS_OK;
+  }
+
+  errx(1, "can't locate %s", file);
+}
+
+NS_IMETHODIMP
 OpenBSDPledgePromises(const nsACString& aPath) {
   
   
@@ -4144,7 +4165,6 @@ OpenBSDPledgePromises(const nsACString& aPath) {
   
   nsAutoCString promises;
   bool disabled = false;
-
   int linenum = 0;
   for (std::string tLine; std::getline(input, tLine);) {
     nsAutoCString line(tLine.c_str());
@@ -4188,45 +4208,159 @@ OpenBSDPledgePromises(const nsACString& aPath) {
   return NS_OK;
 }
 
+void ExpandUnveilPath(nsAutoCString& path) {
+  
+  nsCString xdgConfigHome(PR_GetEnv("XDG_CONFIG_HOME"));
+  if (xdgConfigHome.IsEmpty()) {
+    xdgConfigHome = "~/.config";
+  }
+  path.ReplaceSubstring("$XDG_CONFIG_HOME", xdgConfigHome.get());
+
+  
+  nsCString xdgCacheHome(PR_GetEnv("XDG_CACHE_HOME"));
+  if (xdgCacheHome.IsEmpty()) {
+    xdgCacheHome = "~/.cache";
+  }
+  path.ReplaceSubstring("$XDG_CACHE_HOME", xdgCacheHome.get());
+
+  
+  nsCString xdgDataHome(PR_GetEnv("XDG_DATA_HOME"));
+  if (xdgDataHome.IsEmpty()) {
+    xdgDataHome = "~/.local/share";
+  }
+  path.ReplaceSubstring("$XDG_DATA_HOME", xdgDataHome.get());
+
+  
+  nsCOMPtr<nsIFile> homeDir;
+  nsresult rv =
+      GetSpecialSystemDirectory(Unix_HomeDirectory, getter_AddRefs(homeDir));
+  if (NS_FAILED(rv)) {
+    errx(1, "failed getting home directory");
+  }
+  if (path.FindChar('~') == 0) {
+    nsCString tHome(homeDir->NativePath());
+    tHome.Append(Substring(path, 1, path.Length() - 1));
+    path = tHome.get();
+  }
+}
+
+void MkdirP(nsAutoCString& path) {
+  
+
+  nsAutoCString tPath("");
+  for (const nsACString& dir : path.Split('/')) {
+    struct stat st;
+
+    if (dir.IsEmpty()) {
+      continue;
+    }
+
+    tPath.Append("/");
+    tPath.Append(dir);
+
+    if (stat(tPath.get(), &st) == -1) {
+      if (mkdir(tPath.get(), 0700) == -1) {
+        err(1, "failed mkdir(%s) while MkdirP(%s)",
+            PromiseFlatCString(tPath).get(), PromiseFlatCString(path).get());
+      }
+    }
+  }
+}
+
 NS_IMETHODIMP
-OpenBSDFindPledgeFilePath(const char* file, nsACString& result) {
-  struct stat st;
-
+OpenBSDUnveilPaths(const nsACString& uPath, const nsACString& pledgePath) {
   
-  result.Assign(nsPrintfCString("/etc/%s/%s", MOZ_APP_NAME, file));
-  if (stat(PromiseFlatCString(result).get(), &st) == 0) {
-    return NS_OK;
+  
+  
+  std::ifstream input(PromiseFlatCString(uPath).get());
+
+  bool disabled = false;
+  int linenum = 0;
+  for (std::string tLine; std::getline(input, tLine);) {
+    nsAutoCString line(tLine.c_str());
+    linenum++;
+
+    
+    
+    int32_t hash = line.FindChar('#');
+    if (hash >= 0) {
+      line = Substring(line, 0, hash);
+    }
+    line.CompressWhitespace(true, true);
+    if (line.IsEmpty()) {
+      continue;
+    }
+
+    if (linenum == 1 && line.EqualsLiteral("disable")) {
+      disabled = true;
+      break;
+    }
+
+    int32_t space = line.FindChar(' ');
+    if (space <= 0) {
+      errx(1, "%s: line %d: invalid format", PromiseFlatCString(uPath).get(),
+           linenum);
+    }
+
+    nsAutoCString uPath(Substring(line, 0, space));
+    ExpandUnveilPath(uPath);
+
+    nsAutoCString perms(Substring(line, space + 1, line.Length() - space - 1));
+
+    MOZ_LOG(sPledgeLog, LogLevel::Debug,
+            ("%s: unveil(%s, %s)\n", PromiseFlatCString(uPath).get(),
+             uPath.get(), perms.get()));
+    if (unveil(uPath.get(), perms.get()) == -1 && errno != ENOENT) {
+      err(1, "%s: unveil(%s, %s) failed", PromiseFlatCString(uPath).get(),
+          uPath.get(), perms.get());
+    }
+  }
+  input.close();
+
+  if (disabled) {
+    warnx("%s: disabled", PromiseFlatCString(uPath).get());
+  } else {
+    if (unveil(PromiseFlatCString(pledgePath).get(), "r") == -1) {
+      err(1, "unveil(%s, r) failed", PromiseFlatCString(pledgePath).get());
+    }
   }
 
-  
-  result.Assign(nsPrintfCString(
-      "/usr/local/lib/%s/browser/defaults/preferences/%s", MOZ_APP_NAME, file));
-  if (stat(PromiseFlatCString(result).get(), &st) == 0) {
-    return NS_OK;
-  }
-
-  errx(1, "can't locate %s", file);
+  return NS_OK;
 }
 
 bool StartOpenBSDSandbox(GeckoProcessType type) {
   nsAutoCString pledgeFile;
+  nsAutoCString unveilFile;
 
   switch (type) {
-    case GeckoProcessType_Default:
-      OpenBSDFindPledgeFilePath("pledge.main", pledgeFile);
+    case GeckoProcessType_Default: {
+      OpenBSDFindPledgeUnveilFilePath("pledge.main", pledgeFile);
+      OpenBSDFindPledgeUnveilFilePath("unveil.main", unveilFile);
+
+      
+      nsAutoCString dConf("$XDG_CACHE_HOME/dconf");
+      ExpandUnveilPath(dConf);
+      MkdirP(dConf);
       break;
+    }
 
     case GeckoProcessType_Content:
-      OpenBSDFindPledgeFilePath("pledge.content", pledgeFile);
+      OpenBSDFindPledgeUnveilFilePath("pledge.content", pledgeFile);
+      OpenBSDFindPledgeUnveilFilePath("unveil.content", unveilFile);
       break;
 
     case GeckoProcessType_GPU:
-      pledgeFile.Append("pledge.gpu");
+      OpenBSDFindPledgeUnveilFilePath("pledge.gpu", pledgeFile);
+      OpenBSDFindPledgeUnveilFilePath("unveil.gpu", unveilFile);
       break;
 
     default:
       MOZ_ASSERT(false, "unknown process type");
       return false;
+  }
+
+  if (NS_WARN_IF(NS_FAILED(OpenBSDUnveilPaths(unveilFile, pledgeFile)))) {
+    errx(1, "failed reading/parsing %s", unveilFile.get());
   }
 
   if (NS_WARN_IF(NS_FAILED(OpenBSDPledgePromises(pledgeFile)))) {
