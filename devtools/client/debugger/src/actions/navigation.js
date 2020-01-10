@@ -6,10 +6,7 @@
 
 import { clearDocuments } from "../utils/editor";
 import sourceQueue from "../utils/source-queue";
-import { getSourceList } from "../reducers/sources";
-import { waitForMs } from "../utils/utils";
 
-import { newGeneratedSources } from "./sources";
 import { updateWorkers } from "./debuggee";
 
 import { clearWasmStates } from "../utils/wasm";
@@ -72,15 +69,7 @@ export function connect(
 
 
 export function navigated() {
-  return async function({ dispatch, getState, client, panel }: ThunkArgs) {
-    
-    
-    
-    await waitForMs(100);
-    if (getSourceList(getState()).length == 0) {
-      const sources = await client.fetchSources();
-      dispatch(newGeneratedSources(sources));
-    }
+  return async function({ panel }: ThunkArgs) {
     panel.emit("reloaded");
   };
 }

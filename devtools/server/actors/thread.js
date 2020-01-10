@@ -1412,10 +1412,14 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     return { frames: frames.filter(x => !!x) };
   },
 
-  onSources: function(request) {
+  addAllSources() {
     for (const source of this.dbg.findSources()) {
       this._addSource(source);
     }
+  },
+
+  onSources: function(request) {
+    this.addAllSources();
 
     
     
@@ -1781,7 +1785,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     return {};
   },
 
-  _onWindowReady: function({ isTopLevel, window }) {
+  _onWindowReady: function({ isTopLevel, isBFCache, window }) {
     if (isTopLevel && this.state != "detached") {
       this.sources.reset();
       this.clearDebuggees();
@@ -1796,6 +1800,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     if (this.attached) {
       this.dbg.addDebuggees();
+    }
+
+    
+    
+    if (isBFCache) {
+      this.addAllSources();
     }
   },
 

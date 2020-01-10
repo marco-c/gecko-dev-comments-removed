@@ -1283,7 +1283,7 @@ const browsingContextTargetPrototype = {
       }
 
       
-      this._windowReady(window, true);
+      this._windowReady(window, { isFrameSwitching: true });
       DevToolsUtils.executeSoon(() => {
         this._navigate(window, true);
       });
@@ -1311,7 +1311,7 @@ const browsingContextTargetPrototype = {
 
 
 
-  _windowReady(window, isFrameSwitching = false) {
+  _windowReady(window, { isFrameSwitching, isBFCache } = {}) {
     const isTopLevel = window == this.window;
 
     
@@ -1323,6 +1323,7 @@ const browsingContextTargetPrototype = {
     this.emit("window-ready", {
       window: window,
       isTopLevel: isTopLevel,
+      isBFCache,
       id: getWindowID(window),
     });
   },
@@ -1604,18 +1605,20 @@ DebuggerProgressListener.prototype = {
 
     
     
-    
-    
-    
-    
-    
     if (this._knownWindowIDs.has(innerID)) {
       return;
     }
-
-    this._targetActor._windowReady(window);
-
     this._knownWindowIDs.set(innerID, window);
+
+    
+    
+    
+    
+    
+    
+    const isBFCache = evt.type == "pageshow";
+
+    this._targetActor._windowReady(window, { isBFCache });
   }, "DebuggerProgressListener.prototype.onWindowCreated"),
 
   onWindowHidden: DevToolsUtils.makeInfallible(function(evt) {
