@@ -631,7 +631,7 @@ class LeanplumNotificationChannel {
 
 
 
-  public static void configureChannels(Context context, JSONArray notificationGroups,
+  static void configureChannels(Context context, JSONArray notificationGroups,
       JSONArray notificationChannels, String defaultNotificationChannel) {
     
     configureNotificationGroups(
