@@ -1,0 +1,19 @@
+
+
+
+
+"use strict";
+
+const { UPDATE_MANIFEST } = require("../constants");
+
+function updateManifest(manifest, errorMessage) {
+  return {
+    type: UPDATE_MANIFEST,
+    manifest,
+    errorMessage,
+  };
+}
+
+module.exports = {
+  updateManifest,
+};
