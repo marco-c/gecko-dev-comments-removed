@@ -98,6 +98,7 @@ this.ProfilerGetSymbols = {
       const worker = new ChromeWorker(
         "resource://gre/modules/ProfilerGetSymbols-worker.js"
       );
+
       worker.onmessage = msg => {
         if (msg.data.error) {
           const error = msg.data.error;
@@ -118,6 +119,31 @@ this.ProfilerGetSymbols = {
         }
         resolve(msg.data.result);
       };
+
+      
+      
+      
+      
+      
+      worker.onerror = errorEvent => {
+        worker.terminate();
+        const { message, filename, lineno } = errorEvent;
+        const error = new Error(message, filename, lineno);
+        error.name = "WorkerError";
+        reject(error);
+      };
+
+      
+      
+      
+      worker.onmessageerror = errorEvent => {
+        worker.terminate();
+        const { message, filename, lineno } = errorEvent;
+        const error = new Error(message, filename, lineno);
+        error.name = "WorkerMessageError";
+        reject(error);
+      };
+
       worker.postMessage({ binaryPath, debugPath, breakpadId, module });
     });
   },
