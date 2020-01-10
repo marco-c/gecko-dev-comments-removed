@@ -6,9 +6,6 @@
 const { PromiseUtils } = ChromeUtils.import(
   "resource://gre/modules/PromiseUtils.jsm"
 );
-const { CommonUtils } = ChromeUtils.import(
-  "resource://services-common/utils.js"
-);
 const { CryptoUtils } = ChromeUtils.import(
   "resource://services-crypto/utils.js"
 );
@@ -26,10 +23,7 @@ const {
   ASSERTION_LIFETIME,
   ASSERTION_USE_PERIOD,
   CERT_LIFETIME,
-  COMMAND_SENDTAB,
-  ERRNO_DEVICE_SESSION_CONFLICT,
   ERRNO_INVALID_AUTH_TOKEN,
-  ERRNO_UNKNOWN_DEVICE,
   ERROR_AUTH_ERROR,
   ERROR_INVALID_PARAMETER,
   ERROR_NO_ACCOUNT,
@@ -47,7 +41,6 @@ const {
   ONLOGOUT_NOTIFICATION,
   ONVERIFIED_NOTIFICATION,
   ON_DEVICE_DISCONNECTED_NOTIFICATION,
-  ON_NEW_DEVICE_ID,
   POLL_SESSION,
   PREF_ACCOUNT_ROOT,
   PREF_LAST_FXA_USER,
@@ -360,10 +353,6 @@ function copyObjectProperties(from, to, thisObj, keys) {
   }
 }
 
-function urlsafeBase64Encode(key) {
-  return ChromeUtils.base64URLEncode(new Uint8Array(key), { pad: false });
-}
-
 
 
 
@@ -384,13 +373,19 @@ class FxAccounts {
         mocks,
         this._internal,
         this._internal,
-        Object.keys(mocks)
+        Object.keys(mocks).filter(key => !["device", "commands"].includes(key))
       );
     }
     this._internal.initialize();
     
     if (mocks) {
-      for (let subobject of ["currentAccountState", "keys", "fxaPushService"]) {
+      for (let subobject of [
+        "currentAccountState",
+        "keys",
+        "fxaPushService",
+        "device",
+        "commands",
+      ]) {
         if (typeof mocks[subobject] == "object") {
           copyObjectProperties(
             mocks[subobject],
@@ -770,9 +765,6 @@ FxAccountsInternal.prototype = {
   
   
   VERIFICATION_POLL_START_SLOWDOWN_THRESHOLD: 5,
-  
-  
-  DEVICE_REGISTRATION_VERSION: 2,
 
   _fxAccountsClient: null,
 
@@ -1109,41 +1101,8 @@ FxAccountsInternal.prototype = {
       .then(result => currentState.resolve(result));
   },
 
-  async checkDeviceUpdateNeeded(device) {
-    
-    
-    
-    const availableCommandsKeys = Object.keys(
-      await this.availableCommands()
-    ).sort();
-    return (
-      !device ||
-      !device.registrationVersion ||
-      device.registrationVersion < this.DEVICE_REGISTRATION_VERSION ||
-      !device.registeredCommandsKeys ||
-      !CommonUtils.arrayEqual(
-        device.registeredCommandsKeys,
-        availableCommandsKeys
-      )
-    );
-  },
-
   getDeviceList() {
-    return this.withVerifiedAccountState(async state => {
-      let accountData = await state.getUserAccountData();
-
-      const devices = await this.fxAccountsClient.getDeviceList(
-        accountData.sessionToken
-      );
-
-      
-      const ourDevice = devices.find(device => device.isCurrentDevice);
-      if (ourDevice.pushEndpointExpired) {
-        await this.fxaPushService.unsubscribe();
-        await this._registerOrUpdateDevice(accountData);
-      }
-      return devices;
-    });
+    return this.device.getDeviceList();
   },
 
   
@@ -1828,15 +1787,8 @@ FxAccountsInternal.prototype = {
   
   
   
-  async updateDeviceRegistration() {
-    try {
-      const signedInUser = await this.currentAccountState.getUserAccountData();
-      if (signedInUser) {
-        await this._registerOrUpdateDevice(signedInUser);
-      }
-    } catch (error) {
-      await this._logErrorAndResetDeviceRegistrationVersion(error);
-    }
+  updateDeviceRegistration() {
+    return this.device.updateDeviceRegistration();
   },
 
   
@@ -1859,178 +1811,6 @@ FxAccountsInternal.prototype = {
     FXA_PWDMGR_MEMORY_FIELDS.forEach(clearField);
 
     return state.updateUserAccountData(updateData);
-  },
-
-  async availableCommands() {
-    if (
-      !Services.prefs.getBoolPref("identity.fxaccounts.commands.enabled", true)
-    ) {
-      return {};
-    }
-    const sendTabKey = await this.commands.sendTab.getEncryptedKey();
-    if (!sendTabKey) {
-      
-      return {};
-    }
-    return {
-      [COMMAND_SENDTAB]: sendTabKey,
-    };
-  },
-
-  
-  
-  
-  async _registerOrUpdateDevice(signedInUser) {
-    const { sessionToken, device: currentDevice } = signedInUser;
-    if (!sessionToken) {
-      throw new Error("_registerOrUpdateDevice called without a session token");
-    }
-
-    try {
-      const subscription = await this.fxaPushService.registerPushEndpoint();
-      const deviceName = this.device.getLocalName();
-      let deviceOptions = {};
-
-      
-      if (subscription && subscription.endpoint) {
-        deviceOptions.pushCallback = subscription.endpoint;
-        let publicKey = subscription.getKey("p256dh");
-        let authKey = subscription.getKey("auth");
-        if (publicKey && authKey) {
-          deviceOptions.pushPublicKey = urlsafeBase64Encode(publicKey);
-          deviceOptions.pushAuthKey = urlsafeBase64Encode(authKey);
-        }
-      }
-      deviceOptions.availableCommands = await this.availableCommands();
-      const availableCommandsKeys = Object.keys(
-        deviceOptions.availableCommands
-      ).sort();
-
-      let device;
-      if (currentDevice && currentDevice.id) {
-        log.debug("updating existing device details");
-        device = await this.fxAccountsClient.updateDevice(
-          sessionToken,
-          currentDevice.id,
-          deviceName,
-          deviceOptions
-        );
-      } else {
-        log.debug("registering new device details");
-        device = await this.fxAccountsClient.registerDevice(
-          sessionToken,
-          deviceName,
-          this.device.getLocalType(),
-          deviceOptions
-        );
-        Services.obs.notifyObservers(null, ON_NEW_DEVICE_ID);
-      }
-
-      
-      let {
-        device: deviceProps,
-      } = await this.currentAccountState.getUserAccountData();
-      await this.currentAccountState.updateUserAccountData({
-        device: {
-          ...deviceProps, 
-          id: device.id,
-          registrationVersion: this.DEVICE_REGISTRATION_VERSION,
-          registeredCommandsKeys: availableCommandsKeys,
-        },
-      });
-      return device.id;
-    } catch (error) {
-      return this._handleDeviceError(error, sessionToken);
-    }
-  },
-
-  _handleDeviceError(error, sessionToken) {
-    return Promise.resolve()
-      .then(() => {
-        if (error.code === 400) {
-          if (error.errno === ERRNO_UNKNOWN_DEVICE) {
-            return this._recoverFromUnknownDevice();
-          }
-
-          if (error.errno === ERRNO_DEVICE_SESSION_CONFLICT) {
-            return this._recoverFromDeviceSessionConflict(error, sessionToken);
-          }
-        }
-
-        
-        return this._handleTokenError(error);
-      })
-      .catch(error => this._logErrorAndResetDeviceRegistrationVersion(error))
-      .catch(() => {});
-  },
-
-  async _recoverFromUnknownDevice() {
-    
-    
-    
-    log.warn("unknown device id, clearing the local device data");
-    try {
-      await this.currentAccountState.updateUserAccountData({ device: null });
-    } catch (error) {
-      await this._logErrorAndResetDeviceRegistrationVersion(error);
-    }
-  },
-
-  async _recoverFromDeviceSessionConflict(error, sessionToken) {
-    
-    
-    
-    
-    
-    
-    
-    
-    log.warn(
-      "device session conflict, attempting to ascertain the correct device id"
-    );
-    try {
-      const devices = await this.fxAccountsClient.getDeviceList(sessionToken);
-      const matchingDevices = devices.filter(device => device.isCurrentDevice);
-      const length = matchingDevices.length;
-      if (length === 1) {
-        const deviceId = matchingDevices[0].id;
-        await this.currentAccountState.updateUserAccountData({
-          device: {
-            id: deviceId,
-            registrationVersion: null,
-          },
-        });
-        return deviceId;
-      }
-      if (length > 1) {
-        log.error(
-          "insane server state, " + length + " devices for this session"
-        );
-      }
-      await this._logErrorAndResetDeviceRegistrationVersion(error);
-    } catch (secondError) {
-      log.error("failed to recover from device-session conflict", secondError);
-      await this._logErrorAndResetDeviceRegistrationVersion(error);
-    }
-    return null;
-  },
-
-  async _logErrorAndResetDeviceRegistrationVersion(error) {
-    
-    
-    
-    
-    log.error("device registration failed", error);
-    try {
-      this.currentAccountState.updateUserAccountData({
-        device: null,
-      });
-    } catch (secondError) {
-      log.error(
-        "failed to reset the device registration version, device registration won't be retried",
-        secondError
-      );
-    }
   },
 
   _handleTokenError(err) {
