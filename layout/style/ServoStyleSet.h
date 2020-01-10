@@ -583,9 +583,8 @@ class ServoStyleSet {
   
   
   
-  std::pair<uint8_t, uint8_t>
-      mCachedAnonymousContentStyleIndexes[1
-                                          << sizeof(AnonymousContentKey) * 8]{};
+  Array<std::pair<uint8_t, uint8_t>, 1 << sizeof(AnonymousContentKey) * 8>
+      mCachedAnonymousContentStyleIndexes;
 
   
   nsTArray<RefPtr<ComputedStyle>> mCachedAnonymousContentStyles;
