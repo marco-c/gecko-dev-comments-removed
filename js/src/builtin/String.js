@@ -2,8 +2,6 @@
 
 
 
-
-
 function StringProtoHasNoMatch() {
     var ObjectProto = GetBuiltinPrototype("Object");
     var StringProto = GetBuiltinPrototype("String");

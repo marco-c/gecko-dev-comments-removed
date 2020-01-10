@@ -2,9 +2,6 @@
 
 
 
-
-
-
 var numberFormatCache = new Record();
 
 
