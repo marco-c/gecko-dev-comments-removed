@@ -224,6 +224,114 @@ impl From<PropertyBinding<f32>> for OpacityBinding {
 }
 
 
+struct TilePreUpdateContext<'a> {
+    
+    local_rect: PictureRect,
+
+    
+    pic_to_world_mapper: SpaceMapper<PicturePixel, WorldPixel>,
+
+    
+    
+    fract_changed: bool,
+
+    
+    opacity_bindings: &'a FastHashMap<PropertyBindingId, OpacityBindingInfo>,
+}
+
+
+struct TilePostUpdateContext<'a> {
+    
+    debug_flags: DebugFlags,
+
+    
+    global_device_pixel_scale: DevicePixelScale,
+
+    
+    global_screen_world_rect: WorldRect,
+
+    
+    clip_scroll_tree: &'a ClipScrollTree,
+
+    
+    opaque_rect: PictureRect,
+
+    
+    cache_spatial_node_index: SpatialNodeIndex,
+}
+
+
+struct TilePostUpdateState<'a> {
+    
+    scratch: &'a mut PrimitiveScratchBuffer,
+
+    
+    dirty_region: &'a mut DirtyRegion,
+
+    
+    resource_cache: &'a mut ResourceCache,
+
+    
+    gpu_cache: &'a mut GpuCache,
+}
+
+
+struct PrimitiveDependencyInfo {
+    
+    is_cacheable: bool,
+
+    
+    clip_by_tile: bool,
+
+    
+    prim_uid: ItemUid,
+
+    
+    prim_spatial_node_index: SpatialNodeIndex,
+
+    
+    prim_rect: PictureRect,
+
+    
+    prim_clip_rect: PictureRect,
+
+    
+    image_keys: SmallVec<[ImageKey; 8]>,
+
+    
+    opacity_bindings: SmallVec<[OpacityBinding; 4]>,
+
+    
+    clips: SmallVec<[ClipDescriptor; 8]>,
+
+    
+    clip_spatial_nodes: FastHashSet<SpatialNodeIndex>,
+}
+
+impl PrimitiveDependencyInfo {
+    
+    fn new(
+        prim_uid: ItemUid,
+        prim_rect: PictureRect,
+        prim_spatial_node_index: SpatialNodeIndex,
+        is_cacheable: bool,
+    ) -> Self {
+        PrimitiveDependencyInfo {
+            prim_uid,
+            prim_rect,
+            prim_spatial_node_index,
+            is_cacheable,
+            image_keys: SmallVec::new(),
+            opacity_bindings: SmallVec::new(),
+            clip_by_tile: false,
+            prim_clip_rect: PictureRect::zero(),
+            clips: SmallVec::new(),
+            clip_spatial_nodes: FastHashSet::default(),
+        }
+    }
+}
+
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct TileId(usize);
 
@@ -282,12 +390,6 @@ impl Tile {
     }
 
     
-    fn clear(&mut self) {
-        self.transforms.clear();
-        self.descriptor.clear();
-    }
-
-    
     
     
     
@@ -296,6 +398,262 @@ impl Tile {
         
         self.is_same_content &= self.descriptor.is_same_content(self.id);
         self.is_valid &= self.is_same_content;
+    }
+
+    
+    
+    fn pre_update(
+        &mut self,
+        rect: PictureRect,
+        ctx: &TilePreUpdateContext,
+    ) {
+        self.rect = rect;
+
+        self.clipped_rect = self.rect
+            .intersection(&ctx.local_rect)
+            .unwrap_or(PictureRect::zero());
+
+        self.world_rect = ctx.pic_to_world_mapper
+            .map(&self.rect)
+            .expect("bug: map local tile rect");
+
+        
+
+        
+        
+        self.is_same_content = !ctx.fract_changed;
+
+        
+        for binding in self.descriptor.opacity_bindings.items() {
+            if let OpacityBinding::Binding(id) = binding {
+                let changed = match ctx.opacity_bindings.get(id) {
+                    Some(info) => info.changed,
+                    None => true,
+                };
+                if changed {
+                    self.is_same_content = false;
+                    break;
+                }
+            }
+        }
+
+        
+        
+        self.transforms.clear();
+        self.descriptor.clear();
+    }
+
+    
+    fn add_prim_dependency(
+        &mut self,
+        info: &PrimitiveDependencyInfo,
+        cache_spatial_node_index: SpatialNodeIndex,
+    ) {
+        
+        self.is_same_content &= info.is_cacheable;
+
+        
+        self.descriptor.image_keys.extend_from_slice(&info.image_keys);
+
+        
+        self.descriptor.opacity_bindings.extend_from_slice(&info.opacity_bindings);
+
+        
+        
+        
+        let (prim_origin, prim_clip_rect) = if info.clip_by_tile {
+            let tile_p0 = self.clipped_rect.origin;
+            let tile_p1 = self.clipped_rect.bottom_right();
+
+            let clip_p0 = PicturePoint::new(
+                clampf(info.prim_clip_rect.origin.x, tile_p0.x, tile_p1.x),
+                clampf(info.prim_clip_rect.origin.y, tile_p0.y, tile_p1.y),
+            );
+
+            let clip_p1 = PicturePoint::new(
+                clampf(info.prim_clip_rect.origin.x + info.prim_clip_rect.size.width, tile_p0.x, tile_p1.x),
+                clampf(info.prim_clip_rect.origin.y + info.prim_clip_rect.size.height, tile_p0.y, tile_p1.y),
+            );
+
+            (
+                PicturePoint::new(
+                    clampf(info.prim_rect.origin.x, tile_p0.x, tile_p1.x),
+                    clampf(info.prim_rect.origin.y, tile_p0.y, tile_p1.y),
+                ),
+                PictureRect::new(
+                    clip_p0,
+                    PictureSize::new(
+                        clip_p1.x - clip_p0.x,
+                        clip_p1.y - clip_p0.y,
+                    ),
+                ),
+            )
+        } else {
+            (info.prim_rect.origin, info.prim_clip_rect)
+        };
+
+        
+        self.descriptor.prims.push(PrimitiveDescriptor {
+            prim_uid: info.prim_uid,
+            origin: prim_origin.into(),
+            first_clip: self.descriptor.clips.len() as u16,
+            clip_count: info.clips.len() as u16,
+            prim_clip_rect: prim_clip_rect.into(),
+        });
+
+        self.descriptor.clips.extend_from_slice(&info.clips);
+
+        
+        
+        if info.prim_spatial_node_index != cache_spatial_node_index {
+            self.transforms.insert(info.prim_spatial_node_index);
+        }
+        for spatial_node_index in &info.clip_spatial_nodes {
+            self.transforms.insert(*spatial_node_index);
+        }
+    }
+
+    
+    
+    fn post_update(
+        &mut self,
+        ctx: &TilePostUpdateContext,
+        state: &mut TilePostUpdateState,
+    ) -> bool {
+        
+        self.is_opaque = ctx.opaque_rect.contains_rect(&self.clipped_rect);
+
+        
+        let mut transform_spatial_nodes: Vec<SpatialNodeIndex> = self.transforms.drain().collect();
+        transform_spatial_nodes.sort();
+        for spatial_node_index in transform_spatial_nodes {
+            
+            
+            let transform = if ctx.cache_spatial_node_index >= spatial_node_index {
+                ctx.clip_scroll_tree
+                    .get_relative_transform(
+                        ctx.cache_spatial_node_index,
+                        spatial_node_index,
+                    )
+            } else {
+                ctx.clip_scroll_tree
+                    .get_relative_transform(
+                        spatial_node_index,
+                        ctx.cache_spatial_node_index,
+                    )
+            };
+            self.descriptor.transforms.push(transform.into());
+        }
+
+        
+        
+        
+        
+        for image_key in self.descriptor.image_keys.items() {
+            if state.resource_cache.is_image_dirty(*image_key) {
+                self.is_same_content = false;
+                break;
+            }
+        }
+
+        
+        if state.resource_cache.texture_cache.is_allocated(&self.handle) {
+            
+            
+            
+            
+            
+            
+            
+            
+            state.resource_cache.texture_cache.request(&self.handle, state.gpu_cache);
+        } else {
+            
+            
+            self.is_valid = false;
+        }
+
+        
+        self.update_content_validity();
+
+        
+        if self.descriptor.prims.is_empty() {
+            return false;
+        }
+
+        if !self.world_rect.intersects(&ctx.global_screen_world_rect) {
+            return false;
+        }
+
+        
+        if self.is_valid {
+            if ctx.debug_flags.contains(DebugFlags::PICTURE_CACHING_DBG) {
+                let tile_device_rect = self.world_rect * ctx.global_device_pixel_scale;
+                let label_offset = DeviceVector2D::new(20.0, 30.0);
+                let color = if self.is_opaque {
+                    debug_colors::GREEN
+                } else {
+                    debug_colors::YELLOW
+                };
+                state.scratch.push_debug_rect(
+                    tile_device_rect,
+                    color.scale_alpha(0.3),
+                );
+                if tile_device_rect.size.height >= label_offset.y {
+                    state.scratch.push_debug_string(
+                        tile_device_rect.origin + label_offset,
+                        debug_colors::RED,
+                        format!("{:?}: is_opaque={}", self.id, self.is_opaque),
+                    );
+                }
+            }
+        } else {
+            if ctx.debug_flags.contains(DebugFlags::PICTURE_CACHING_DBG) {
+                state.scratch.push_debug_rect(
+                    self.world_rect * ctx.global_device_pixel_scale,
+                    debug_colors::RED,
+                );
+            }
+
+            
+            if !state.resource_cache.texture_cache.is_allocated(&self.handle) {
+                let tile_size = DeviceIntSize::new(
+                    TILE_SIZE_WIDTH,
+                    TILE_SIZE_HEIGHT,
+                );
+                state.resource_cache.texture_cache.update_picture_cache(
+                    tile_size,
+                    &mut self.handle,
+                    state.gpu_cache,
+                );
+            }
+
+            self.visibility_mask = PrimitiveVisibilityMask::empty();
+            let dirty_region_index = state.dirty_region.dirty_rects.len();
+
+            
+            
+            
+            
+            
+            if dirty_region_index < PrimitiveVisibilityMask::MAX_DIRTY_REGIONS {
+                self.visibility_mask.set_visible(dirty_region_index);
+
+                state.dirty_region.push(
+                    self.world_rect,
+                    self.visibility_mask,
+                );
+            } else {
+                self.visibility_mask.set_visible(PrimitiveVisibilityMask::MAX_DIRTY_REGIONS - 1);
+
+                state.dirty_region.include_rect(
+                    PrimitiveVisibilityMask::MAX_DIRTY_REGIONS - 1,
+                    self.world_rect,
+                );
+            }
+        }
+
+        true
     }
 }
 
@@ -887,6 +1245,13 @@ impl TileCacheInstance {
             FastHashMap::default(),
         );
 
+        let ctx = TilePreUpdateContext {
+            local_rect: self.local_rect,
+            pic_to_world_mapper,
+            fract_changed,
+            opacity_bindings: &self.opacity_bindings,
+        };
+
         for y in y0 .. y1 {
             for x in x0 .. x1 {
                 let key = TileOffset::new(x, y);
@@ -901,7 +1266,7 @@ impl TileCacheInstance {
                 
                 
                 
-                tile.rect = PictureRect::new(
+                let rect = PictureRect::new(
                     PicturePoint::new(
                         x as f32 * self.tile_size.width + fract_offset.x,
                         y as f32 * self.tile_size.height + fract_offset.y,
@@ -909,43 +1274,15 @@ impl TileCacheInstance {
                     self.tile_size,
                 );
 
-                tile.clipped_rect = tile.rect
-                    .intersection(&self.local_rect)
-                    .unwrap_or(PictureRect::zero());
-
-                tile.world_rect = pic_to_world_mapper
-                    .map(&tile.rect)
-                    .expect("bug: map local tile rect");
+                tile.pre_update(
+                    rect,
+                    &ctx,
+                );
 
                 world_culling_rect = world_culling_rect.union(&tile.world_rect);
 
                 self.tiles.insert(key, tile);
             }
-        }
-
-        
-        for (_, tile) in &mut self.tiles {
-            
-            
-            tile.is_same_content = !fract_changed;
-
-            
-            for binding in tile.descriptor.opacity_bindings.items() {
-                if let OpacityBinding::Binding(id) = binding {
-                    let changed = match self.opacity_bindings.get(id) {
-                        Some(info) => info.changed,
-                        None => true,
-                    };
-                    if changed {
-                        tile.is_same_content = false;
-                        break;
-                    }
-                }
-            }
-
-            
-            
-            tile.clear();
         }
 
         world_culling_rect
@@ -992,26 +1329,27 @@ impl TileCacheInstance {
         }
 
         
-        let mut opacity_bindings: SmallVec<[OpacityBinding; 4]> = SmallVec::new();
-        let mut clips: SmallVec<[ClipDescriptor; 8]> = SmallVec::new();
-        let mut image_keys: SmallVec<[ImageKey; 8]> = SmallVec::new();
-        let mut clip_spatial_nodes = FastHashSet::default();
-        let mut prim_clip_rect = PictureRect::zero();
-
-        
         let is_cacheable = prim_instance.is_cacheable(
             &data_stores,
             resource_cache,
         );
 
         
+        let mut prim_info = PrimitiveDependencyInfo::new(
+            prim_instance.uid(),
+            prim_rect,
+            prim_instance.spatial_node_index,
+            is_cacheable,
+        );
+
+        
         if let Some(prim_clip_chain) = prim_clip_chain {
-            prim_clip_rect = prim_clip_chain.pic_clip_rect;
+            prim_info.prim_clip_rect = prim_clip_chain.pic_clip_rect;
 
             let clip_instances = &clip_store
                 .clip_node_instances[prim_clip_chain.clips_range.to_range()];
             for clip_instance in clip_instances {
-                clips.push(ClipDescriptor {
+                prim_info.clips.push(ClipDescriptor {
                     uid: clip_instance.handle.uid(),
                     origin: clip_instance.local_pos.into(),
                 });
@@ -1019,7 +1357,7 @@ impl TileCacheInstance {
                 
                 
                 if clip_instance.spatial_node_index != self.spatial_node_index {
-                    clip_spatial_nodes.insert(clip_instance.spatial_node_index);
+                    prim_info.clip_spatial_nodes.insert(clip_instance.spatial_node_index);
                 }
             }
         }
@@ -1035,15 +1373,13 @@ impl TileCacheInstance {
         
         
         
-        let clip_by_tile = match prim_instance.kind {
+        match prim_instance.kind {
             PrimitiveInstanceKind::Picture { pic_index,.. } => {
                 
                 let pic = &pictures[pic_index.0];
                 if let Some(PictureCompositeMode::Filter(Filter::Opacity(binding, _))) = pic.requested_composite_mode {
-                    opacity_bindings.push(binding.into());
+                    prim_info.opacity_bindings.push(binding.into());
                 }
-
-                false
             }
             PrimitiveInstanceKind::Rectangle { data_handle, opacity_binding_index, .. } => {
                 if opacity_binding_index == OpacityBindingIndex::INVALID {
@@ -1083,11 +1419,11 @@ impl TileCacheInstance {
                 } else {
                     let opacity_binding = &opacity_binding_store[opacity_binding_index];
                     for binding in &opacity_binding.bindings {
-                        opacity_bindings.push(OpacityBinding::from(*binding));
+                        prim_info.opacity_bindings.push(OpacityBinding::from(*binding));
                     }
                 }
 
-                true
+                prim_info.clip_by_tile = true;
             }
             PrimitiveInstanceKind::Image { data_handle, image_instance_index, .. } => {
                 let image_data = &data_stores.image[data_handle].kind;
@@ -1097,22 +1433,19 @@ impl TileCacheInstance {
                 if opacity_binding_index != OpacityBindingIndex::INVALID {
                     let opacity_binding = &opacity_binding_store[opacity_binding_index];
                     for binding in &opacity_binding.bindings {
-                        opacity_bindings.push(OpacityBinding::from(*binding));
+                        prim_info.opacity_bindings.push(OpacityBinding::from(*binding));
                     }
                 }
 
-                image_keys.push(image_data.key);
-                false
+                prim_info.image_keys.push(image_data.key);
             }
             PrimitiveInstanceKind::YuvImage { data_handle, .. } => {
                 let yuv_image_data = &data_stores.yuv_image[data_handle].kind;
-                image_keys.extend_from_slice(&yuv_image_data.yuv_key);
-                false
+                prim_info.image_keys.extend_from_slice(&yuv_image_data.yuv_key);
             }
             PrimitiveInstanceKind::ImageBorder { data_handle, .. } => {
                 let border_data = &data_stores.image_border[data_handle].kind;
-                image_keys.push(border_data.request.key);
-                false
+                prim_info.image_keys.push(border_data.request.key);
             }
             PrimitiveInstanceKind::PushClipChain |
             PrimitiveInstanceKind::PopClipChain => {
@@ -1138,13 +1471,11 @@ impl TileCacheInstance {
                     };
 
                     if on_picture_surface && subpx_requested {
-                        if !self.opaque_rect.contains_rect(&prim_clip_rect) {
+                        if !self.opaque_rect.contains_rect(&prim_info.prim_clip_rect) {
                             self.subpixel_mode = SubpixelMode::Deny;
                         }
                     }
                 }
-
-                false
             }
             PrimitiveInstanceKind::LineDecoration { .. } |
             PrimitiveInstanceKind::Clear { .. } |
@@ -1152,7 +1483,6 @@ impl TileCacheInstance {
             PrimitiveInstanceKind::LinearGradient { .. } |
             PrimitiveInstanceKind::RadialGradient { .. } => {
                 
-                false
             }
         };
 
@@ -1164,68 +1494,10 @@ impl TileCacheInstance {
                 let key = TileOffset::new(x, y);
                 let tile = self.tiles.get_mut(&key).expect("bug: no tile");
 
-                
-                tile.is_same_content &= is_cacheable;
-
-                
-                tile.descriptor.image_keys.extend_from_slice(&image_keys);
-
-                
-                tile.descriptor.opacity_bindings.extend_from_slice(&opacity_bindings);
-
-                
-                
-                
-                let (prim_origin, prim_clip_rect) = if clip_by_tile {
-                    let tile_p0 = tile.clipped_rect.origin;
-                    let tile_p1 = tile.clipped_rect.bottom_right();
-
-                    let clip_p0 = PicturePoint::new(
-                        clampf(prim_clip_rect.origin.x, tile_p0.x, tile_p1.x),
-                        clampf(prim_clip_rect.origin.y, tile_p0.y, tile_p1.y),
-                    );
-
-                    let clip_p1 = PicturePoint::new(
-                        clampf(prim_clip_rect.origin.x + prim_clip_rect.size.width, tile_p0.x, tile_p1.x),
-                        clampf(prim_clip_rect.origin.y + prim_clip_rect.size.height, tile_p0.y, tile_p1.y),
-                    );
-
-                    (
-                        PicturePoint::new(
-                            clampf(prim_rect.origin.x, tile_p0.x, tile_p1.x),
-                            clampf(prim_rect.origin.y, tile_p0.y, tile_p1.y),
-                        ),
-                        PictureRect::new(
-                            clip_p0,
-                            PictureSize::new(
-                                clip_p1.x - clip_p0.x,
-                                clip_p1.y - clip_p0.y,
-                            ),
-                        ),
-                    )
-                } else {
-                    (prim_rect.origin, prim_clip_rect)
-                };
-
-                
-                tile.descriptor.prims.push(PrimitiveDescriptor {
-                    prim_uid: prim_instance.uid(),
-                    origin: prim_origin.into(),
-                    first_clip: tile.descriptor.clips.len() as u16,
-                    clip_count: clips.len() as u16,
-                    prim_clip_rect: prim_clip_rect.into(),
-                });
-
-                tile.descriptor.clips.extend_from_slice(&clips);
-
-                
-                
-                if prim_instance.spatial_node_index != self.spatial_node_index {
-                    tile.transforms.insert(prim_instance.spatial_node_index);
-                }
-                for spatial_node_index in &clip_spatial_nodes {
-                    tile.transforms.insert(*spatial_node_index);
-                }
+                tile.add_prim_dependency(
+                    &prim_info,
+                    self.spatial_node_index,
+                );
             }
         }
 
@@ -1244,144 +1516,30 @@ impl TileCacheInstance {
     ) {
         self.tiles_to_draw.clear();
         self.dirty_region.clear();
-        let mut dirty_region_index = 0;
+
+        let ctx = TilePostUpdateContext {
+            debug_flags: frame_context.debug_flags,
+            global_device_pixel_scale: frame_context.global_device_pixel_scale,
+            global_screen_world_rect: frame_context.global_screen_world_rect,
+            opaque_rect: self.opaque_rect,
+            cache_spatial_node_index: self.spatial_node_index,
+            clip_scroll_tree: frame_context.clip_scroll_tree,
+        };
+
+        let mut state = TilePostUpdateState {
+            resource_cache,
+            gpu_cache,
+            scratch,
+            dirty_region: &mut self.dirty_region,
+        };
 
         
         for (key, tile) in self.tiles.iter_mut() {
-            
-            tile.is_opaque = self.opaque_rect.contains_rect(&tile.clipped_rect);
-
-            
-            let mut transform_spatial_nodes: Vec<SpatialNodeIndex> = tile.transforms.drain().collect();
-            transform_spatial_nodes.sort();
-            for spatial_node_index in transform_spatial_nodes {
-                
-                
-                let transform = if self.spatial_node_index >= spatial_node_index {
-                    frame_context.clip_scroll_tree
-                        .get_relative_transform(
-                            self.spatial_node_index,
-                            spatial_node_index,
-                        )
-                } else {
-                    frame_context.clip_scroll_tree
-                        .get_relative_transform(
-                            spatial_node_index,
-                            self.spatial_node_index,
-                        )
-                };
-                tile.descriptor.transforms.push(transform.into());
-            }
-
-            
-            
-            
-            
-            for image_key in tile.descriptor.image_keys.items() {
-                if resource_cache.is_image_dirty(*image_key) {
-                    tile.is_same_content = false;
-                    break;
-                }
-            }
-
-            
-            if resource_cache.texture_cache.is_allocated(&tile.handle) {
-                
-                
-                
-                
-                
-                
-                
-                
-                resource_cache.texture_cache.request(&tile.handle, gpu_cache);
-            } else {
-                
-                
-                tile.is_valid = false;
-            }
-
-            
-            tile.update_content_validity();
-
-            
-            if tile.descriptor.prims.is_empty() {
-                continue;
-            }
-
-            if !tile.world_rect.intersects(&frame_context.global_screen_world_rect) {
-                continue;
-            }
-
-            self.tiles_to_draw.push(*key);
-
-            
-            if tile.is_valid {
-                if frame_context.debug_flags.contains(DebugFlags::PICTURE_CACHING_DBG) {
-                    let tile_device_rect = tile.world_rect * frame_context.global_device_pixel_scale;
-                    let label_offset = DeviceVector2D::new(20.0, 30.0);
-                    let color = if tile.is_opaque {
-                        debug_colors::GREEN
-                    } else {
-                        debug_colors::YELLOW
-                    };
-                    scratch.push_debug_rect(
-                        tile_device_rect,
-                        color.scale_alpha(0.3),
-                    );
-                    if tile_device_rect.size.height >= label_offset.y {
-                        scratch.push_debug_string(
-                            tile_device_rect.origin + label_offset,
-                            debug_colors::RED,
-                            format!("{:?}: is_opaque={}", tile.id, tile.is_opaque),
-                        );
-                    }
-                }
-            } else {
-                if frame_context.debug_flags.contains(DebugFlags::PICTURE_CACHING_DBG) {
-                    scratch.push_debug_rect(
-                        tile.world_rect * frame_context.global_device_pixel_scale,
-                        debug_colors::RED,
-                    );
-                }
-
-                
-                if !resource_cache.texture_cache.is_allocated(&tile.handle) {
-                    let tile_size = DeviceIntSize::new(
-                        TILE_SIZE_WIDTH,
-                        TILE_SIZE_HEIGHT,
-                    );
-                    resource_cache.texture_cache.update_picture_cache(
-                        tile_size,
-                        &mut tile.handle,
-                        gpu_cache,
-                    );
-                }
-
-                tile.visibility_mask = PrimitiveVisibilityMask::empty();
-
-                
-                
-                
-                
-                
-                if dirty_region_index < PrimitiveVisibilityMask::MAX_DIRTY_REGIONS {
-                    tile.visibility_mask.set_visible(dirty_region_index);
-
-                    self.dirty_region.push(
-                        tile.world_rect,
-                        tile.visibility_mask,
-                    );
-
-                    dirty_region_index += 1;
-                } else {
-                    tile.visibility_mask.set_visible(PrimitiveVisibilityMask::MAX_DIRTY_REGIONS - 1);
-
-                    self.dirty_region.include_rect(
-                        PrimitiveVisibilityMask::MAX_DIRTY_REGIONS - 1,
-                        tile.world_rect,
-                    );
-                }
+            if tile.post_update(
+                &ctx,
+                &mut state,
+            ) {
+                self.tiles_to_draw.push(*key);
             }
         }
 
