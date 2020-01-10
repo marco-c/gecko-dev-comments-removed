@@ -2001,6 +2001,20 @@ void DocAccessible::ContentRemoved(nsIContent* aContentNode) {
   while (nsIContent* childNode = iter.GetNextChild()) {
     ContentRemoved(childNode);
   }
+
+  
+  
+  
+  
+  
+  
+  
+  if (aContentNode->GetShadowRoot()) {
+    dom::ExplicitChildIterator iter = dom::ExplicitChildIterator(aContentNode);
+    while (nsIContent* childNode = iter.GetNextChild()) {
+      ContentRemoved(childNode);
+    }
+  }
 }
 
 bool DocAccessible::RelocateARIAOwnedIfNeeded(nsIContent* aElement) {
