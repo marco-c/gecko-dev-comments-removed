@@ -221,45 +221,40 @@ function SwapArrayElements(array, i, j) {
 }
 
 
-function Merge(list, start, mid, end, lBuffer, rBuffer, comparefn) {
-    var i, j, k;
 
-    var sizeLeft = mid - start + 1;
-    var sizeRight =  end - mid;
 
+
+function Merge(list, out, start, mid, end, comparefn) {
     
-    for (i = 0; i < sizeLeft; i++)
-        lBuffer[i] = list[start + i];
+    
+    if (mid >= end || comparefn(list[mid], list[mid + 1]) <= 0) {
+        for (var i = start; i <= end; i++) {
+            _DefineDataProperty(out, i, list[i]);
+        }
+        return;
+    }
 
-    for (j = 0; j < sizeRight; j++)
-        rBuffer[j] = list[mid + 1 + j];
-
-
-    i = 0;
-    j = 0;
-    k = start;
-    while (i < sizeLeft && j < sizeRight) {
-        if (comparefn(lBuffer[i], rBuffer[j]) <= 0) {
-            list[k] = lBuffer[i];
+    var i = start;
+    var j = mid + 1;
+    var k = start;
+    while (i <= mid && j <= end) {
+        var lvalue = list[i];
+        var rvalue = list[j];
+        if (comparefn(lvalue, rvalue) <= 0) {
+            _DefineDataProperty(out, k++, lvalue);
             i++;
         } else {
-            list[k] = rBuffer[j];
+            _DefineDataProperty(out, k++, rvalue);
             j++;
         }
-        k++;
     }
 
     
-    while (i < sizeLeft) {
-        list[k] = lBuffer[i];
-        i++;
-        k++;
+    while (i <= mid) {
+        _DefineDataProperty(out, k++, list[i++]);
     }
-
-    while (j < sizeRight) {
-        list[k] = rBuffer[j];
-        j++;
-        k++;
+    while (j <= end) {
+        _DefineDataProperty(out, k++, list[j++]);
     }
 }
 
@@ -296,25 +291,33 @@ function MergeSort(array, len, comparefn) {
     }
 
     
-    var lBuffer = new List();
-    var rBuffer = new List();
+    var lBuffer = denseList;
+    var rBuffer = [];
 
-    var mid, end;
-    for (var windowSize = 1; windowSize < denseLen; windowSize = 2 * windowSize) {
-        for (var start = 0; start < denseLen - 1; start += 2 * windowSize) {
-            assert(windowSize < denseLen, "The window size is larger than the array denseLength!");
-            
-            mid = start + windowSize - 1;
-            
-            end = start + 2 * windowSize - 1;
-            end = end < denseLen - 1 ? end : denseLen - 1;
-            
-            if (mid > end)
-                continue;
-            Merge(denseList, start, mid, end, lBuffer, rBuffer, comparefn);
-        }
+    
+    var windowSize = 4;
+    for (var start = 0; start < denseLen - 1; start += windowSize) {
+        var end = std_Math_min(start + windowSize - 1, denseLen - 1);
+        InsertionSort(lBuffer, start, end, comparefn);
     }
-    MoveHoles(array, len, denseList, denseLen);
+
+    for (; windowSize < denseLen; windowSize = 2 * windowSize) {
+        for (var start = 0; start < denseLen; start += 2 * windowSize) {
+            
+            var mid = start + windowSize - 1;
+
+            
+            var end = std_Math_min(start + 2 * windowSize - 1, denseLen - 1);
+
+            Merge(lBuffer, rBuffer, start, mid, end, comparefn);
+        }
+
+        
+        var swap = lBuffer;
+        lBuffer = rBuffer;
+        rBuffer = swap;
+    }
+    MoveHoles(array, len, lBuffer, denseLen);
     return array;
 }
 
