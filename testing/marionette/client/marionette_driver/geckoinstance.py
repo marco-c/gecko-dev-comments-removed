@@ -123,6 +123,9 @@ class GeckoInstance(object):
         "privacy.trackingprotection.enabled": False,
 
         
+        "sanity-test.running": True,
+
+        
         "security.certerrors.mitm.priming.enabled": False,
 
         
