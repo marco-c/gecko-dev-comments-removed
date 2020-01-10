@@ -5507,6 +5507,12 @@ pref("media.block-autoplay-until-in-foreground", true);
 
 
 
+
+pref("security.data_uri.unique_opaque_origin", true);
+
+
+
+
 pref("security.data_uri.block_toplevel_data_uri_navigations", true);
 
 
