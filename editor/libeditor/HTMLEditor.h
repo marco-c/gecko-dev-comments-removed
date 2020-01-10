@@ -1962,6 +1962,32 @@ class HTMLEditor final : public TextEditor,
   template <typename PT, typename CT>
   Element* GetInvisibleBRElementAt(const EditorDOMPointBase<PT, CT>& aPoint);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  JoinNearestEditableNodesWithTransaction(
+      nsIContent& aLeftNode, nsIContent& aRightNode,
+      EditorDOMPoint* aNewFirstChildOfRightNode);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;

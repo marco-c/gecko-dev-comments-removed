@@ -539,32 +539,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult JoinNearestEditableNodesWithTransaction(
-      nsIContent& aLeftNode, nsIContent& aRightNode,
-      EditorDOMPoint* aNewFirstChildOfRightNode);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult PopListItem(nsIContent& aListItem,
                                     bool* aOutOfList = nullptr);
