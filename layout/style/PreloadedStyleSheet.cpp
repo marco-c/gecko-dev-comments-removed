@@ -1,10 +1,10 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* a CSS style sheet returned from nsIStyleSheetService.preloadSheet */
+
+
+
+
+
+
 
 #include "PreloadedStyleSheet.h"
 
@@ -36,7 +36,8 @@ nsresult PreloadedStyleSheet::GetSheet(StyleSheet** aResult) {
 
   if (!mSheet) {
     RefPtr<css::Loader> loader = new css::Loader;
-    auto result = loader->LoadSheetSync(mURI, mParsingMode, true);
+    auto result = loader->LoadSheetSync(mURI, mParsingMode,
+                                        css::Loader::UseSystemPrincipal::Yes);
     if (result.isErr()) {
       return result.unwrapErr();
     }
@@ -72,15 +73,16 @@ PreloadedStyleSheet::StylesheetPreloadObserver::StyleSheetLoaded(
   return NS_OK;
 }
 
-// Note: After calling this method, the preloaded sheet *must not* be used
-// until the observer is notified that the sheet has finished loading.
+
+
 nsresult PreloadedStyleSheet::PreloadAsync(NotNull<dom::Promise*> aPromise) {
   MOZ_DIAGNOSTIC_ASSERT(!mLoaded);
 
   RefPtr<css::Loader> loader = new css::Loader;
   RefPtr<StylesheetPreloadObserver> obs =
       new StylesheetPreloadObserver(aPromise, this);
-  auto result = loader->LoadSheet(mURI, mParsingMode, false, obs);
+  auto result = loader->LoadSheet(mURI, mParsingMode,
+                                  css::Loader::UseSystemPrincipal::No, obs);
   if (result.isErr()) {
     return result.unwrapErr();
   }
@@ -88,4 +90,4 @@ nsresult PreloadedStyleSheet::PreloadAsync(NotNull<dom::Promise*> aPromise) {
   return NS_OK;
 }
 
-}  // namespace mozilla
+}  

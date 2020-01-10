@@ -178,6 +178,8 @@ class Loader final {
                           nsIURI* aURL, dom::MediaList* aMedia,
                           LoaderReusableStyleSheets* aSavedSheets);
 
+  enum class UseSystemPrincipal { No, Yes };
+
   
 
 
@@ -201,7 +203,9 @@ class Loader final {
 
   Result<RefPtr<StyleSheet>, nsresult> LoadSheetSync(
       nsIURI*, SheetParsingMode = eAuthorSheetFeatures,
-      bool aUseSystemPrincipal = false);
+      UseSystemPrincipal = UseSystemPrincipal::No);
+
+  enum class IsPreload { No, Yes };
 
   
 
@@ -225,7 +229,7 @@ class Loader final {
 
 
   Result<RefPtr<StyleSheet>, nsresult> LoadSheet(
-      nsIURI* aURI, bool aIsPreLoad, nsIPrincipal* aOriginPrincipal,
+      nsIURI* aURI, IsPreload, nsIPrincipal* aOriginPrincipal,
       const Encoding* aPreloadEncoding, nsIReferrerInfo* aReferrerInfo,
       nsICSSLoaderObserver* aObserver, CORSMode aCORSMode = CORS_NONE,
       const nsAString& aIntegrity = EmptyString());
@@ -234,7 +238,7 @@ class Loader final {
 
 
   Result<RefPtr<StyleSheet>, nsresult> LoadSheet(nsIURI*, SheetParsingMode,
-                                                 bool aUseSystemPrincipal,
+                                                 UseSystemPrincipal,
                                                  nsICSSLoaderObserver*);
 
   
@@ -319,7 +323,7 @@ class Loader final {
   nsresult CheckContentPolicy(nsIPrincipal* aLoadingPrincipal,
                               nsIPrincipal* aTriggeringPrincipal,
                               nsIURI* aTargetURI, nsINode* aRequestingNode,
-                              bool aIsPreload);
+                              IsPreload);
 
   enum class SheetState : uint8_t {
     Unknown = 0,
@@ -359,8 +363,8 @@ class Loader final {
   void InsertChildSheet(StyleSheet& aSheet, StyleSheet& aParentSheet);
 
   Result<RefPtr<StyleSheet>, nsresult> InternalLoadNonDocumentSheet(
-      nsIURI* aURL, bool aIsPreload, SheetParsingMode aParsingMode,
-      bool aUseSystemPrincipal, nsIPrincipal* aOriginPrincipal,
+      nsIURI* aURL, IsPreload, SheetParsingMode aParsingMode,
+      UseSystemPrincipal, nsIPrincipal* aOriginPrincipal,
       const Encoding* aPreloadEncoding, nsIReferrerInfo* aReferrerInfo,
       nsICSSLoaderObserver* aObserver, CORSMode aCORSMode,
       const nsAString& aIntegrity);
@@ -386,7 +390,7 @@ class Loader final {
 
   
   
-  nsresult LoadSheet(SheetLoadData*, SheetState, bool aIsPreLoad);
+  nsresult LoadSheet(SheetLoadData*, SheetState, IsPreload);
 
   enum class AllowAsyncParse {
     Yes,

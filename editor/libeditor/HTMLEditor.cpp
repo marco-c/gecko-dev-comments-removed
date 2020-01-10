@@ -3109,7 +3109,7 @@ nsresult HTMLEditor::AddOverrideStyleSheetInternal(const nsAString& aURL) {
   
   
   auto result = presShell->GetDocument()->CSSLoader()->LoadSheetSync(
-      uaURI, css::eAgentSheetFeatures, true);
+      uaURI, css::eAgentSheetFeatures, css::Loader::UseSystemPrincipal::Yes);
   
   if (NS_WARN_IF(result.isErr())) {
     return result.unwrapErr();

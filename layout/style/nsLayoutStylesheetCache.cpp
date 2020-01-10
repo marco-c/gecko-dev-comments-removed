@@ -507,7 +507,8 @@ RefPtr<StyleSheet> nsLayoutStylesheetCache::LoadSheet(
   
   
   
-  auto result = gCSSLoader->LoadSheetSync(aURI, aParsingMode, true);
+  auto result = gCSSLoader->LoadSheetSync(aURI, aParsingMode,
+                                          css::Loader::UseSystemPrincipal::Yes);
   if (MOZ_UNLIKELY(result.isErr())) {
     ErrorLoadingSheet(
         aURI,
