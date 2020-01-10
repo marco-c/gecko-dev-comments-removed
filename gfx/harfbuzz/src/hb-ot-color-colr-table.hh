@@ -125,9 +125,9 @@ struct COLR
   protected:
   HBUINT16	version;	
   HBUINT16	numBaseGlyphs;	
-  LNNOffsetTo<SortedUnsizedArrayOf<BaseGlyphRecord> >
+  LNNOffsetTo<SortedUnsizedArrayOf<BaseGlyphRecord>>
 		baseGlyphsZ;	
-  LNNOffsetTo<UnsizedArrayOf<LayerRecord> >
+  LNNOffsetTo<UnsizedArrayOf<LayerRecord>>
 		layersZ;	
   HBUINT16	numLayers;	
   public:

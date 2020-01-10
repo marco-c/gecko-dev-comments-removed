@@ -87,15 +87,15 @@ struct CPALV1Tail
   }
 
   protected:
-  LNNOffsetTo<UnsizedArrayOf<HBUINT32> >
+  LNNOffsetTo<UnsizedArrayOf<HBUINT32>>
 		paletteFlagsZ;		
 
 
-  LNNOffsetTo<UnsizedArrayOf<NameID> >
+  LNNOffsetTo<UnsizedArrayOf<NameID>>
 		paletteLabelsZ;		
 
 
-  LNNOffsetTo<UnsizedArrayOf<NameID> >
+  LNNOffsetTo<UnsizedArrayOf<NameID>>
 		colorLabelsZ;		
 
 
@@ -144,7 +144,7 @@ struct CPAL
     {
       hb_array_t<const BGRAColor> segment_colors = palette_colors.sub_array (start_offset, *color_count);
       
-      unsigned int count = MIN<unsigned int> (MAX<int> (numColors - start_offset, 0), *color_count);
+      unsigned int count = hb_min ((unsigned) hb_max ((int) (numColors - start_offset), 0), *color_count);
       *color_count = count;
       for (unsigned int i = 0; i < count; i++)
         colors[i] = segment_colors[i]; 
@@ -176,7 +176,7 @@ struct CPAL
   HBUINT16	numPalettes;		
   HBUINT16	numColorRecords;	
 
-  LNNOffsetTo<UnsizedArrayOf<BGRAColor> >
+  LNNOffsetTo<UnsizedArrayOf<BGRAColor>>
 		colorRecordsZ;		
 
   UnsizedArrayOf<HBUINT16>

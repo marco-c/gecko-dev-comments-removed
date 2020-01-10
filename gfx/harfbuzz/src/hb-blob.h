@@ -71,6 +71,9 @@ hb_blob_create (const char        *data,
 		void              *user_data,
 		hb_destroy_func_t  destroy);
 
+HB_EXTERN hb_blob_t *
+hb_blob_create_from_file (const char *file_name);
+
 
 
 
@@ -122,9 +125,6 @@ hb_blob_get_data (hb_blob_t *blob, unsigned int *length);
 
 HB_EXTERN char *
 hb_blob_get_data_writable (hb_blob_t *blob, unsigned int *length);
-
-HB_EXTERN hb_blob_t *
-hb_blob_create_from_file (const char *file_name);
 
 HB_END_DECLS
 

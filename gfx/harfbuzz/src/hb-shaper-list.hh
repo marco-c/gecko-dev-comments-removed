@@ -45,10 +45,6 @@ HB_SHAPER_IMPLEMENT (directwrite)
 #endif
 #ifdef HAVE_CORETEXT
 HB_SHAPER_IMPLEMENT (coretext)
-
-
-
-HB_SHAPER_IMPLEMENT (coretext_aat)
 #endif
 
 #ifdef HAVE_FALLBACK

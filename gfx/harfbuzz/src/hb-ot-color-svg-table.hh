@@ -62,7 +62,7 @@ struct SVGDocumentIndexEntry
 
   HBUINT16	endGlyphID;	
 
-  LNNOffsetTo<UnsizedArrayOf<HBUINT8> >
+  LNNOffsetTo<UnsizedArrayOf<HBUINT8>>
 		svgDoc;		
 
   HBUINT32	svgDocLength;	
@@ -107,7 +107,7 @@ struct SVG
 
   protected:
   HBUINT16	version;	
-  LOffsetTo<SortedArrayOf<SVGDocumentIndexEntry> >
+  LOffsetTo<SortedArrayOf<SVGDocumentIndexEntry>>
 		svgDocEntries;	
 
 				

@@ -83,7 +83,7 @@ struct ankr
   protected:
   HBUINT16	version; 	
   HBUINT16	flags;		
-  LOffsetTo<Lookup<NNOffsetTo<GlyphAnchors> > >
+  LOffsetTo<Lookup<NNOffsetTo<GlyphAnchors>>>
 		lookupTable;	
   LNNOffsetTo<HBUINT8>
 		anchorData;	

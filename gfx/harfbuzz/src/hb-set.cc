@@ -389,6 +389,7 @@ hb_set_symmetric_difference (hb_set_t       *set,
   set->symmetric_difference (other);
 }
 
+#ifndef HB_DISABLE_DEPRECATED
 
 
 
@@ -403,6 +404,7 @@ void
 hb_set_invert (hb_set_t *set HB_UNUSED)
 {
 }
+#endif
 
 
 

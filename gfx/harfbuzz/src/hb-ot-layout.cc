@@ -62,17 +62,53 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 bool
 hb_ot_layout_has_kerning (hb_face_t *face)
 {
   return face->table.kern->has_data ();
 }
 
+
+
+
+
+
+
+
+
+
+
+
 bool
 hb_ot_layout_has_machine_kerning (hb_face_t *face)
 {
   return face->table.kern->has_state_machine ();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 bool
 hb_ot_layout_has_cross_kerning (hb_face_t *face)
@@ -102,6 +138,9 @@ bool
 OT::GDEF::is_blacklisted (hb_blob_t *blob,
 			  hb_face_t *face) const
 {
+#ifdef HB_NO_OT_LAYOUT_BLACKLIST
+  return false;
+#endif
   
 
 
@@ -119,84 +158,82 @@ OT::GDEF::is_blacklisted (hb_blob_t *blob,
 
 
 
-#define ENCODE(x,y,z) (((uint64_t) (x) << 48) | ((uint64_t) (y) << 24) | (uint64_t) (z))
-  switch ENCODE(blob->length,
-		face->table.GSUB->table.get_length (),
-		face->table.GPOS->table.get_length ())
+  switch HB_CODEPOINT_ENCODE3(blob->length,
+			      face->table.GSUB->table.get_length (),
+			      face->table.GPOS->table.get_length ())
   {
     
-    case ENCODE (442, 2874, 42038):
+    case HB_CODEPOINT_ENCODE3 (442, 2874, 42038):
     
-    case ENCODE (430, 2874, 40662):
+    case HB_CODEPOINT_ENCODE3 (430, 2874, 40662):
     
-    case ENCODE (442, 2874, 39116):
+    case HB_CODEPOINT_ENCODE3 (442, 2874, 39116):
     
-    case ENCODE (430, 2874, 39374):
+    case HB_CODEPOINT_ENCODE3 (430, 2874, 39374):
     
-    case ENCODE (490, 3046, 41638):
+    case HB_CODEPOINT_ENCODE3 (490, 3046, 41638):
     
-    case ENCODE (478, 3046, 41902):
+    case HB_CODEPOINT_ENCODE3 (478, 3046, 41902):
     
-    case ENCODE (898, 12554, 46470):
+    case HB_CODEPOINT_ENCODE3 (898, 12554, 46470):
     
-    case ENCODE (910, 12566, 47732):
+    case HB_CODEPOINT_ENCODE3 (910, 12566, 47732):
     
-    case ENCODE (928, 23298, 59332):
+    case HB_CODEPOINT_ENCODE3 (928, 23298, 59332):
     
-    case ENCODE (940, 23310, 60732):
+    case HB_CODEPOINT_ENCODE3 (940, 23310, 60732):
     
-    case ENCODE (964, 23836, 60072):
+    case HB_CODEPOINT_ENCODE3 (964, 23836, 60072):
     
-    case ENCODE (976, 23832, 61456):
+    case HB_CODEPOINT_ENCODE3 (976, 23832, 61456):
     
-    case ENCODE (994, 24474, 60336):
+    case HB_CODEPOINT_ENCODE3 (994, 24474, 60336):
     
-    case ENCODE (1006, 24470, 61740):
+    case HB_CODEPOINT_ENCODE3 (1006, 24470, 61740):
     
-    case ENCODE (1006, 24576, 61346):
+    case HB_CODEPOINT_ENCODE3 (1006, 24576, 61346):
     
-    case ENCODE (1018, 24572, 62828):
+    case HB_CODEPOINT_ENCODE3 (1018, 24572, 62828):
     
-    case ENCODE (1006, 24576, 61352):
+    case HB_CODEPOINT_ENCODE3 (1006, 24576, 61352):
     
-    case ENCODE (1018, 24572, 62834):
+    case HB_CODEPOINT_ENCODE3 (1018, 24572, 62834):
     
-    case ENCODE (832, 7324, 47162):
+    case HB_CODEPOINT_ENCODE3 (832, 7324, 47162):
     
-    case ENCODE (844, 7302, 45474):
+    case HB_CODEPOINT_ENCODE3 (844, 7302, 45474):
     
-    case ENCODE (180, 13054, 7254):
+    case HB_CODEPOINT_ENCODE3 (180, 13054, 7254):
     
-    case ENCODE (192, 12638, 7254):
+    case HB_CODEPOINT_ENCODE3 (192, 12638, 7254):
     
-    case ENCODE (192, 12690, 7254):
-    
-    
-    case ENCODE (188, 248, 3852):
+    case HB_CODEPOINT_ENCODE3 (192, 12690, 7254):
     
     
-    case ENCODE (188, 264, 3426):
+    case HB_CODEPOINT_ENCODE3 (188, 248, 3852):
     
-    case ENCODE (1058, 47032, 11818):
     
-    case ENCODE (1046, 47030, 12600):
+    case HB_CODEPOINT_ENCODE3 (188, 264, 3426):
     
-    case ENCODE (1058, 71796, 16770):
+    case HB_CODEPOINT_ENCODE3 (1058, 47032, 11818):
     
-    case ENCODE (1046, 71790, 17862):
+    case HB_CODEPOINT_ENCODE3 (1046, 47030, 12600):
     
-    case ENCODE (1046, 71788, 17112):
+    case HB_CODEPOINT_ENCODE3 (1058, 71796, 16770):
     
-    case ENCODE (1058, 71794, 17514):
+    case HB_CODEPOINT_ENCODE3 (1046, 71790, 17862):
     
-    case ENCODE (1330, 109904, 57938):
+    case HB_CODEPOINT_ENCODE3 (1046, 71788, 17112):
     
-    case ENCODE (1330, 109904, 58972):
+    case HB_CODEPOINT_ENCODE3 (1058, 71794, 17514):
+    
+    case HB_CODEPOINT_ENCODE3 (1330, 109904, 57938):
+    
+    case HB_CODEPOINT_ENCODE3 (1330, 109904, 58972):
     
 
-    case ENCODE (1004, 59092, 14836):
+    case HB_CODEPOINT_ENCODE3 (1004, 59092, 14836):
       return true;
-#undef ENCODE
   }
   return false;
 }
@@ -219,11 +256,27 @@ _hb_ot_layout_set_glyph_props (hb_font_t *font,
 
 
 
+
+
+
+
+
+
+
+
+
 hb_bool_t
 hb_ot_layout_has_glyph_classes (hb_face_t *face)
 {
   return face->table.GDEF->table->has_glyph_classes ();
 }
+
+
+
+
+
+
+
 
 
 
@@ -242,6 +295,13 @@ hb_ot_layout_get_glyph_class (hb_face_t      *face,
 
 
 
+
+
+
+
+
+
+
 void
 hb_ot_layout_get_glyphs_in_class (hb_face_t                  *face,
 				  hb_ot_layout_glyph_class_t  klass,
@@ -250,6 +310,22 @@ hb_ot_layout_get_glyphs_in_class (hb_face_t                  *face,
   return face->table.GDEF->table->get_glyphs_in_class (klass, glyphs);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 unsigned int
 hb_ot_layout_get_attach_points (hb_face_t      *face,
 				hb_codepoint_t  glyph,
@@ -257,11 +333,32 @@ hb_ot_layout_get_attach_points (hb_face_t      *face,
 				unsigned int   *point_count ,
 				unsigned int   *point_array )
 {
+#ifdef HB_NO_LAYOUT_UNUSED
+  if (point_count)
+    *point_count = 0;
+  return 0;
+#endif
+
   return face->table.GDEF->table->get_attach_points (glyph,
 						     start_offset,
 						     point_count,
 						     point_array);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 unsigned int
 hb_ot_layout_get_ligature_carets (hb_font_t      *font,
@@ -271,6 +368,12 @@ hb_ot_layout_get_ligature_carets (hb_font_t      *font,
 				  unsigned int   *caret_count ,
 				  hb_position_t  *caret_array )
 {
+#ifdef HB_NO_LAYOUT_UNUSED
+  if (caret_count)
+    *caret_count = 0;
+  return 0;
+#endif
+
   unsigned int result_caret_count = 0;
   unsigned int result = font->face->table.GDEF->table->get_lig_carets (font, direction, glyph, start_offset, &result_caret_count, caret_array);
   if (result)
@@ -291,6 +394,9 @@ bool
 OT::GSUB::is_blacklisted (hb_blob_t *blob HB_UNUSED,
 			  hb_face_t *face) const
 {
+#ifdef HB_NO_OT_LAYOUT_BLACKLIST
+  return false;
+#endif
   
 
 
@@ -316,6 +422,9 @@ bool
 OT::GPOS::is_blacklisted (hb_blob_t *blob HB_UNUSED,
 			  hb_face_t *face HB_UNUSED) const
 {
+#ifdef HB_NO_OT_LAYOUT_BLACKLIST
+  return false;
+#endif
   return false;
 }
 
@@ -329,6 +438,19 @@ get_gsubgpos_table (hb_face_t *face,
     default:             return Null(OT::GSUBGPOS);
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 unsigned int
@@ -345,11 +467,24 @@ hb_ot_layout_table_get_script_tags (hb_face_t    *face,
 
 #define HB_OT_TAG_LATIN_SCRIPT		HB_TAG ('l', 'a', 't', 'n')
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 hb_bool_t
 hb_ot_layout_table_find_script (hb_face_t    *face,
 				hb_tag_t      table_tag,
 				hb_tag_t      script_tag,
-				unsigned int *script_index)
+				unsigned int *script_index )
 {
   static_assert ((OT::Index::NOT_FOUND_INDEX == HB_OT_LAYOUT_NO_SCRIPT_INDEX), "");
   const OT::GSUBGPOS &g = get_gsubgpos_table (face, table_tag);
@@ -375,17 +510,35 @@ hb_ot_layout_table_find_script (hb_face_t    *face,
   return false;
 }
 
+#ifndef HB_DISABLE_DEPRECATED
+
+
+
+
+
+
+
+
+
+
 hb_bool_t
 hb_ot_layout_table_choose_script (hb_face_t      *face,
 				  hb_tag_t        table_tag,
 				  const hb_tag_t *script_tags,
-				  unsigned int   *script_index,
-				  hb_tag_t       *chosen_script)
+				  unsigned int   *script_index  ,
+				  hb_tag_t       *chosen_script )
 {
   const hb_tag_t *t;
   for (t = script_tags; *t; t++);
   return hb_ot_layout_table_select_script (face, table_tag, t - script_tags, script_tags, script_index, chosen_script);
 }
+#endif
+
+
+
+
+
+
 
 
 
@@ -442,6 +595,19 @@ hb_ot_layout_table_select_script (hb_face_t      *face,
   return false;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 unsigned int
 hb_ot_layout_table_get_feature_tags (hb_face_t    *face,
 				     hb_tag_t      table_tag,
@@ -454,11 +620,24 @@ hb_ot_layout_table_get_feature_tags (hb_face_t    *face,
   return g.get_feature_tags (start_offset, feature_count, feature_tags);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 bool
 hb_ot_layout_table_find_feature (hb_face_t    *face,
 				 hb_tag_t      table_tag,
 				 hb_tag_t      feature_tag,
-				 unsigned int *feature_index)
+				 unsigned int *feature_index )
 {
   static_assert ((OT::Index::NOT_FOUND_INDEX == HB_OT_LAYOUT_NO_FEATURE_INDEX), "");
   const OT::GSUBGPOS &g = get_gsubgpos_table (face, table_tag);
@@ -477,6 +656,20 @@ hb_ot_layout_table_find_feature (hb_face_t    *face,
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 unsigned int
 hb_ot_layout_script_get_language_tags (hb_face_t    *face,
 				       hb_tag_t      table_tag,
@@ -489,6 +682,24 @@ hb_ot_layout_script_get_language_tags (hb_face_t    *face,
 
   return s.get_lang_sys_tags (start_offset, language_count, language_tags);
 }
+
+
+#ifndef HB_DISABLE_DEPRECATED
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 hb_bool_t
 hb_ot_layout_script_find_language (hb_face_t    *face,
@@ -504,6 +715,19 @@ hb_ot_layout_script_find_language (hb_face_t    *face,
 					      &language_tag,
 					      language_index);
 }
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -536,6 +760,21 @@ hb_ot_layout_script_select_language (hb_face_t      *face,
   return false;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 hb_bool_t
 hb_ot_layout_language_get_required_feature_index (hb_face_t    *face,
 						  hb_tag_t      table_tag,
@@ -550,6 +789,18 @@ hb_ot_layout_language_get_required_feature_index (hb_face_t    *face,
 						     feature_index,
 						     nullptr);
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -574,6 +825,22 @@ hb_ot_layout_language_get_required_feature (hb_face_t    *face,
   return l.has_required_feature ();
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 unsigned int
 hb_ot_layout_language_get_feature_indexes (hb_face_t    *face,
 					   hb_tag_t      table_tag,
@@ -588,6 +855,23 @@ hb_ot_layout_language_get_feature_indexes (hb_face_t    *face,
 
   return l.get_feature_indexes (start_offset, feature_count, feature_indexes);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 unsigned int
 hb_ot_layout_language_get_feature_tags (hb_face_t    *face,
@@ -614,13 +898,28 @@ hb_ot_layout_language_get_feature_tags (hb_face_t    *face,
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 hb_bool_t
 hb_ot_layout_language_find_feature (hb_face_t    *face,
 				    hb_tag_t      table_tag,
 				    unsigned int  script_index,
 				    unsigned int  language_index,
 				    hb_tag_t      feature_tag,
-				    unsigned int *feature_index)
+				    unsigned int *feature_index )
 {
   static_assert ((OT::Index::NOT_FOUND_INDEX == HB_OT_LAYOUT_NO_FEATURE_INDEX), "");
   const OT::GSUBGPOS &g = get_gsubgpos_table (face, table_tag);
@@ -645,6 +944,18 @@ hb_ot_layout_language_find_feature (hb_face_t    *face,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 unsigned int
 hb_ot_layout_feature_get_lookups (hb_face_t    *face,
 				  hb_tag_t      table_tag,
@@ -661,6 +972,12 @@ hb_ot_layout_feature_get_lookups (hb_face_t    *face,
 							   lookup_count,
 							   lookup_indexes);
 }
+
+
+
+
+
+
 
 
 
@@ -810,6 +1127,19 @@ script_collect_features (hb_collect_features_context_t *c,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 void
 hb_ot_layout_collect_features (hb_face_t      *face,
                                hb_tag_t        table_tag,
@@ -848,6 +1178,19 @@ hb_ot_layout_collect_features (hb_face_t      *face,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 void
 hb_ot_layout_collect_lookups (hb_face_t      *face,
 			      hb_tag_t        table_tag,
@@ -865,6 +1208,17 @@ hb_ot_layout_collect_lookups (hb_face_t      *face,
        hb_set_next (&feature_indexes, &feature_index);)
     g.get_feature (feature_index).add_lookup_indexes_to (lookup_indexes);
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -906,6 +1260,19 @@ hb_ot_layout_lookup_collect_glyphs (hb_face_t    *face,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 hb_bool_t
 hb_ot_layout_table_find_feature_variations (hb_face_t    *face,
 					    hb_tag_t      table_tag,
@@ -917,6 +1284,23 @@ hb_ot_layout_table_find_feature_variations (hb_face_t    *face,
 
   return g.find_variations_index (coords, num_coords, variations_index);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 unsigned int
 hb_ot_layout_feature_with_variations_get_lookups (hb_face_t    *face,
@@ -940,11 +1324,32 @@ hb_ot_layout_feature_with_variations_get_lookups (hb_face_t    *face,
 
 
 
+
+
+
+
+
+
+
+
+
+
 hb_bool_t
 hb_ot_layout_has_substitution (hb_face_t *face)
 {
   return face->table.GSUB->table->has_data ();
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -965,6 +1370,16 @@ hb_ot_layout_lookup_would_substitute (hb_face_t            *face,
 
   return l.would_apply (&c, &face->table.GSUB->accels[lookup_index]);
 }
+
+
+
+
+
+
+
+
+
+
 
 void
 hb_ot_layout_substitute_start (hb_font_t    *font,
@@ -1028,10 +1443,16 @@ hb_ot_layout_delete_glyphs_inplace (hb_buffer_t *buffer,
 
 
 
+
+
+
+
+
+
 void
 hb_ot_layout_lookup_substitute_closure (hb_face_t    *face,
 				        unsigned int  lookup_index,
-				        hb_set_t     *glyphs)
+				        hb_set_t     *glyphs )
 {
   hb_map_t done_lookups;
   OT::hb_closure_context_t c (face, glyphs, &done_lookups);
@@ -1049,10 +1470,13 @@ hb_ot_layout_lookup_substitute_closure (hb_face_t    *face,
 
 
 
+
+
+
 void
 hb_ot_layout_lookups_substitute_closure (hb_face_t      *face,
                                          const hb_set_t *lookups,
-                                         hb_set_t       *glyphs)
+                                         hb_set_t       *glyphs )
 {
   hb_map_t done_lookups;
   OT::hb_closure_context_t c (face, glyphs, &done_lookups);
@@ -1081,11 +1505,28 @@ hb_ot_layout_lookups_substitute_closure (hb_face_t      *face,
 
 
 
+
+
+
+
+
+
+
+
 hb_bool_t
 hb_ot_layout_has_positioning (hb_face_t *face)
 {
   return face->table.GPOS->table->has_data ();
 }
+
+
+
+
+
+
+
+
+
 
 void
 hb_ot_layout_position_start (hb_font_t *font, hb_buffer_t *buffer)
@@ -1093,17 +1534,52 @@ hb_ot_layout_position_start (hb_font_t *font, hb_buffer_t *buffer)
   OT::GPOS::position_start (font, buffer);
 }
 
+
+
+
+
+
+
+
+
+
 void
 hb_ot_layout_position_finish_advances (hb_font_t *font, hb_buffer_t *buffer)
 {
   OT::GPOS::position_finish_advances (font, buffer);
 }
 
+
+
+
+
+
+
+
+
 void
 hb_ot_layout_position_finish_offsets (hb_font_t *font, hb_buffer_t *buffer)
 {
   OT::GPOS::position_finish_offsets (font, buffer);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1150,6 +1626,7 @@ hb_ot_layout_get_size_params (hb_face_t       *face,
 
   return false;
 }
+
 
 
 
@@ -1248,6 +1725,10 @@ hb_ot_layout_feature_get_name_ids (hb_face_t       *face,
 
 
 
+
+
+
+
 unsigned int
 hb_ot_layout_feature_get_characters (hb_face_t      *face,
 				     hb_tag_t        table_tag,
@@ -1269,7 +1750,7 @@ hb_ot_layout_feature_get_characters (hb_face_t      *face,
   unsigned int len = 0;
   if (char_count && characters && start_offset < cv_params.characters.len)
   {
-    len = MIN (cv_params.characters.len - start_offset, *char_count);
+    len = hb_min (cv_params.characters.len - start_offset, *char_count);
     for (unsigned int i = 0; i < len; ++i)
       characters[i] = cv_params.characters[start_offset + i];
   }
@@ -1506,6 +1987,22 @@ typedef enum {
   HB_OT_LAYOUT_BASELINE_MATH = HB_TAG('m','a','t','h'),
   HB_OT_LAYOUT_BASELINE_ROMN = HB_TAG('r','o','m','n')
 } hb_ot_layout_baseline_t;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 HB_EXTERN hb_bool_t
 hb_ot_layout_get_baseline (hb_font_t               *font,

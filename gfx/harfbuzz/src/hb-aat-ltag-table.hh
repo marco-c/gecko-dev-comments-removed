@@ -50,7 +50,7 @@ struct FTStringRange
   }
 
   protected:
-  NNOffsetTo<UnsizedArrayOf<HBUINT8> >
+  NNOffsetTo<UnsizedArrayOf<HBUINT8>>
 		tag;		
 
   HBUINT16	length;		

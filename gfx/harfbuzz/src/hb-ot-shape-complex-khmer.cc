@@ -369,6 +369,7 @@ insert_dotted_circles (const hb_ot_shape_plan_t *plan HB_UNUSED,
     return;
 
   
+
   bool has_broken_syllables = false;
   unsigned int count = buffer->len;
   hb_glyph_info_t *info = buffer->info;
@@ -407,7 +408,6 @@ insert_dotted_circles (const hb_ot_shape_plan_t *plan HB_UNUSED,
       ginfo.cluster = buffer->cur().cluster;
       ginfo.mask = buffer->cur().mask;
       ginfo.syllable() = buffer->cur().syllable();
-      
 
       
       while (buffer->idx < buffer->len && buffer->successful &&

@@ -47,7 +47,21 @@ defaults = ('Other', 'Not_Applicable', 'Cn', 'No_Block')
 
 
 data[0][0x034F] = defaults[0]
+data[0][0x1B61] = defaults[0]
+data[0][0x1B63] = defaults[0]
+data[0][0x1B64] = defaults[0]
+data[0][0x1B65] = defaults[0]
+data[0][0x1B66] = defaults[0]
+data[0][0x1B67] = defaults[0]
+data[0][0x1B69] = defaults[0]
+data[0][0x1B6A] = defaults[0]
 data[0][0x2060] = defaults[0]
+
+data[0][0x1B5B] = 'Consonant_Placeholder'
+data[0][0x1B5C] = 'Consonant_Placeholder'
+data[0][0x1B5F] = 'Consonant_Placeholder'
+data[0][0x1B62] = 'Consonant_Placeholder'
+data[0][0x1B68] = 'Consonant_Placeholder'
 
 data[0][0x11C44] = 'Consonant_Placeholder'
 data[0][0x11C45] = 'Consonant_Placeholder'
@@ -171,7 +185,7 @@ def is_BASE(U, UISC, UGC):
 def is_BASE_IND(U, UISC, UGC):
 	
 	return (UISC in [Consonant_Dead, Modifying_Letter] or
-		(UGC == Po and not U in [0x104B, 0x104E, 0x2022, 0x111C8, 0x11A3F, 0x11A45, 0x11C44, 0x11C45]) or
+		(UGC == Po and not U in [0x104B, 0x104E, 0x1B5B, 0x1B5C, 0x1B5F, 0x2022, 0x111C8, 0x11A3F, 0x11A45, 0x11C44, 0x11C45]) or
 		False 
 		)
 def is_BASE_NUM(U, UISC, UGC):
@@ -183,15 +197,15 @@ def is_BASE_OTHER(U, UISC, UGC):
 def is_CGJ(U, UISC, UGC):
 	return U == 0x034F
 def is_CONS_FINAL(U, UISC, UGC):
-	
 	return ((UISC == Consonant_Final and UGC != Lo) or
-		UISC == Consonant_Initial_Postfixed or
 		UISC == Consonant_Succeeding_Repha)
 def is_CONS_FINAL_MOD(U, UISC, UGC):
 	
 	return  UISC == Syllable_Modifier
 def is_CONS_MED(U, UISC, UGC):
-	return UISC == Consonant_Medial and UGC != Lo
+	
+	return (UISC == Consonant_Medial and UGC != Lo or
+		UISC == Consonant_Initial_Postfixed)
 def is_CONS_MOD(U, UISC, UGC):
 	return UISC in [Nukta, Gemination_Mark, Consonant_Killer]
 def is_CONS_SUB(U, UISC, UGC):
@@ -200,7 +214,9 @@ def is_CONS_SUB(U, UISC, UGC):
 def is_CONS_WITH_STACKER(U, UISC, UGC):
 	return UISC == Consonant_With_Stacker
 def is_HALANT(U, UISC, UGC):
-	return UISC in [Virama, Invisible_Stacker] and not is_HALANT_OR_VOWEL_MODIFIER(U, UISC, UGC)
+	return (UISC in [Virama, Invisible_Stacker]
+		and not is_HALANT_OR_VOWEL_MODIFIER(U, UISC, UGC)
+		and not is_SAKOT(U, UISC, UGC))
 def is_HALANT_OR_VOWEL_MODIFIER(U, UISC, UGC):
 	
 	
@@ -216,6 +232,7 @@ def is_Word_Joiner(U, UISC, UGC):
 def is_OTHER(U, UISC, UGC):
 	
 	return (UISC == Other
+		and not is_SYM(U, UISC, UGC)
 		and not is_SYM_MOD(U, UISC, UGC)
 		and not is_CGJ(U, UISC, UGC)
 		and not is_Word_Joiner(U, UISC, UGC)
@@ -225,10 +242,12 @@ def is_Reserved(U, UISC, UGC):
 	return UGC == 'Cn'
 def is_REPHA(U, UISC, UGC):
 	return UISC in [Consonant_Preceding_Repha, Consonant_Prefixed]
+def is_SAKOT(U, UISC, UGC):
+	return U == 0x1A60
 def is_SYM(U, UISC, UGC):
 	if U == 0x25CC: return False 
 	
-	return UGC in [So, Sc]
+	return UGC in [So, Sc] and U not in [0x1B62, 0x1B68]
 def is_SYM_MOD(U, UISC, UGC):
 	return U in [0x1B6B, 0x1B6C, 0x1B6D, 0x1B6E, 0x1B6F, 0x1B70, 0x1B71, 0x1B72, 0x1B73]
 def is_VARIATION_SELECTOR(U, UISC, UGC):
@@ -264,6 +283,7 @@ use_mapping = {
 	'Rsv':	is_Reserved,
 	'R':	is_REPHA,
 	'S':	is_SYM,
+	'Sk':	is_SAKOT,
 	'SM':	is_SYM_MOD,
 	'VS':	is_VARIATION_SELECTOR,
 	'V':	is_VOWEL,
@@ -305,7 +325,11 @@ use_positions = {
 	'H': None,
 	'HVM': None,
 	'B': None,
-	'FM': None,
+	'FM': {
+		'Abv': [Top],
+		'Blw': [Bottom],
+		'Pst': [Not_Applicable],
+	},
 	'SUB': None,
 }
 
@@ -345,13 +369,7 @@ def map_to_use(data):
 		if U == 0x1CED: UISC = Tone_Mark
 
 		
-		if U == 0x1A7F: UISC = Consonant_Final
-
-		
 		if U == 0x11134: UISC = Gemination_Mark
-
-		
-		if U == 0x111C9: UISC = Consonant_Final
 
 		values = [k for k,v in items if v(U,UISC,UGC)]
 		assert len(values) == 1, "%s %s %s %s" % (hex(U), UISC, UGC, values)

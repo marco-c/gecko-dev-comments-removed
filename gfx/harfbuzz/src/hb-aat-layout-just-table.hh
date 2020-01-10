@@ -309,7 +309,7 @@ struct WidthDeltaPair
   public:
   DEFINE_SIZE_STATIC (24);
 };
-  
+
 typedef OT::LArrayOf<WidthDeltaPair> WidthDeltaCluster;
 
 struct JustificationCategory
@@ -371,7 +371,7 @@ struct JustificationHeader
 
 
 
-  Lookup<OffsetTo<WidthDeltaCluster> >
+  Lookup<OffsetTo<WidthDeltaCluster>>
   		lookupTable;	
 
 

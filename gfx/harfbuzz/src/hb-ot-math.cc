@@ -55,11 +55,21 @@
 
 
 
+
+
+
+
 hb_bool_t
 hb_ot_math_has_data (hb_face_t *face)
 {
+#ifdef HB_NO_MATH
+  return false;
+#endif
+
   return face->table.MATH->has_data ();
 }
+
+
 
 
 
@@ -80,8 +90,15 @@ hb_position_t
 hb_ot_math_get_constant (hb_font_t *font,
 			 hb_ot_math_constant_t constant)
 {
+#ifdef HB_NO_MATH
+  return 0;
+#endif
+
   return font->face->table.MATH->get_constant(constant, font);
 }
+
+
+
 
 
 
@@ -96,8 +113,22 @@ hb_position_t
 hb_ot_math_get_glyph_italics_correction (hb_font_t *font,
 					 hb_codepoint_t glyph)
 {
+#ifdef HB_NO_MATH
+  return 0;
+#endif
+
   return font->face->table.MATH->get_glyph_info().get_italics_correction (glyph, font);
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -112,8 +143,14 @@ hb_position_t
 hb_ot_math_get_glyph_top_accent_attachment (hb_font_t *font,
 					    hb_codepoint_t glyph)
 {
+#ifdef HB_NO_MATH
+  return 0;
+#endif
+
   return font->face->table.MATH->get_glyph_info().get_top_accent_attachment (glyph, font);
 }
+
+
 
 
 
@@ -128,8 +165,14 @@ hb_bool_t
 hb_ot_math_is_glyph_extended_shape (hb_face_t *face,
 				    hb_codepoint_t glyph)
 {
+#ifdef HB_NO_MATH
+  return false;
+#endif
+
   return face->table.MATH->get_glyph_info().is_extended_shape (glyph);
 }
+
+
 
 
 
@@ -154,11 +197,19 @@ hb_ot_math_get_glyph_kerning (hb_font_t *font,
 			      hb_ot_math_kern_t kern,
 			      hb_position_t correction_height)
 {
+#ifdef HB_NO_MATH
+  return 0;
+#endif
+
   return font->face->table.MATH->get_glyph_info().get_kerning (glyph,
 							       kern,
 							       correction_height,
 							       font);
 }
+
+
+
+
 
 
 
@@ -187,6 +238,12 @@ hb_ot_math_get_glyph_variants (hb_font_t *font,
 			       unsigned int *variants_count, 
 			       hb_ot_math_glyph_variant_t *variants )
 {
+#ifdef HB_NO_MATH
+  if (variants_count)
+    *variants_count = 0;
+  return 0;
+#endif
+
   return font->face->table.MATH->get_variants().get_glyph_variants (glyph, direction, font,
 								    start_offset,
 								    variants_count,
@@ -207,12 +264,25 @@ hb_ot_math_get_glyph_variants (hb_font_t *font,
 
 
 
+
+
+
+
 hb_position_t
 hb_ot_math_get_min_connector_overlap (hb_font_t *font,
 				      hb_direction_t direction)
 {
+#ifdef HB_NO_MATH
+  return 0;
+#endif
+
   return font->face->table.MATH->get_variants().get_min_connector_overlap (direction, font);
 }
+
+
+
+
+
 
 
 
@@ -243,6 +313,12 @@ hb_ot_math_get_glyph_assembly (hb_font_t *font,
 			       hb_ot_math_glyph_part_t *parts, 
 			       hb_position_t *italics_correction )
 {
+#ifdef HB_NO_MATH
+  if (parts_count)
+    *parts_count = 0;
+  return 0;
+#endif
+
   return font->face->table.MATH->get_variants().get_glyph_parts (glyph,
 								 direction,
 								 font,

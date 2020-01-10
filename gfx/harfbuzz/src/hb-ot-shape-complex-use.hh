@@ -68,6 +68,12 @@ enum use_category_t {
   USE_VS	= 21,	
 
 
+  USE_CS	= 43,	
+
+  
+  USE_HVM	= 44,	
+
+  USE_Sk	= 48,	
 
   USE_FAbv	= 24,	
   USE_FBlw	= 25,	
@@ -88,10 +94,9 @@ enum use_category_t {
   USE_VMPre	= 23,	
   USE_SMAbv	= 41,	
   USE_SMBlw	= 42,	
-  USE_CS	= 43,	
-
-  
-  USE_HVM	= 44,	
+  USE_FMAbv	= 45,	
+  USE_FMBlw	= 46,	
+  USE_FMPst	= 47,	
 };
 
 HB_INTERNAL USE_TABLE_ELEMENT_TYPE

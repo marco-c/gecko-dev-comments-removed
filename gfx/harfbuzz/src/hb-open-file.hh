@@ -56,7 +56,7 @@ typedef struct TableRecord
 {
   int cmp (Tag t) const { return -t.cmp (tag); }
 
-  static int cmp (const void *pa, const void *pb)
+  HB_INTERNAL static int cmp (const void *pa, const void *pb)
   {
     const TableRecord *a = (const TableRecord *) pa;
     const TableRecord *b = (const TableRecord *) pb;
@@ -86,15 +86,15 @@ typedef struct OffsetTable
   const TableRecord& get_table (unsigned int i) const
   { return tables[i]; }
   unsigned int get_table_tags (unsigned int  start_offset,
-				      unsigned int *table_count, 
-				      hb_tag_t     *table_tags ) const
+			       unsigned int *table_count, 
+			       hb_tag_t     *table_tags ) const
   {
     if (table_count)
     {
       if (start_offset >= tables.len)
         *table_count = 0;
       else
-        *table_count = MIN<unsigned int> (*table_count, tables.len - start_offset);
+        *table_count = hb_min (*table_count, tables.len - start_offset);
 
       const TableRecord *sub_tables = tables.arrayZ + start_offset;
       unsigned int count = *table_count;
@@ -106,7 +106,7 @@ typedef struct OffsetTable
   bool find_table_index (hb_tag_t tag, unsigned int *table_index) const
   {
     Tag t;
-    t.set (tag);
+    t = tag;
     return tables.bfind (t, table_index, HB_BFIND_NOT_FOUND_STORE, Index::NOT_FOUND_INDEX);
   }
   const TableRecord& get_table_by_tag (hb_tag_t tag) const
@@ -127,7 +127,7 @@ typedef struct OffsetTable
     
     if (unlikely (!c->extend_min (*this))) return_trace (false);
     
-    sfnt_version.set (sfnt_tag);
+    sfnt_version = sfnt_tag;
     
 
     if (unlikely (!tables.serialize (c, items.length))) return_trace (false);
@@ -140,8 +140,8 @@ typedef struct OffsetTable
     {
       TableRecord &rec = tables.arrayZ[i];
       hb_blob_t *blob = items[i].blob;
-      rec.tag.set (items[i].tag);
-      rec.length.set (hb_blob_get_length (blob));
+      rec.tag = items[i].tag;
+      rec.length = hb_blob_get_length (blob);
       rec.offset.serialize (c, this);
 
       
@@ -159,7 +159,7 @@ typedef struct OffsetTable
       {
 	head *h = (head *) start;
 	checksum_adjustment = &h->checkSumAdjustment;
-	checksum_adjustment->set (0);
+	*checksum_adjustment = 0;
       }
 
       rec.checkSum.set_for_data (start, end - start);
@@ -177,10 +177,10 @@ typedef struct OffsetTable
       for (unsigned int i = 0; i < items.length; i++)
       {
 	TableRecord &rec = tables.arrayZ[i];
-	checksum.set (checksum + rec.checkSum);
+	checksum = checksum + rec.checkSum;
       }
 
-      checksum_adjustment->set (0xB1B0AFBAu - checksum);
+      *checksum_adjustment = 0xB1B0AFBAu - checksum;
     }
 
     return_trace (true);
@@ -222,7 +222,7 @@ struct TTCHeaderVersion1
   Tag		ttcTag;		
   FixedVersion<>version;	
 
-  LArrayOf<LOffsetTo<OffsetTable> >
+  LArrayOf<LOffsetTo<OffsetTable>>
 		table;		
 
   public:
@@ -334,7 +334,7 @@ struct ResourceTypeRecord
   protected:
   Tag		tag;		
   HBUINT16	resCountM1;	
-  NNOffsetTo<UnsizedArrayOf<ResourceRecord> >
+  NNOffsetTo<UnsizedArrayOf<ResourceRecord>>
 		resourcesZ;	
 
   public:
@@ -390,7 +390,7 @@ struct ResourceMap
   HBUINT32	reserved1;	
   HBUINT16	resreved2;	
   HBUINT16	attrs;		
-  NNOffsetTo<ArrayOfM1<ResourceTypeRecord> >
+  NNOffsetTo<ArrayOfM1<ResourceTypeRecord>>
 		typeList;	
 
   Offset16	nameList;	
@@ -422,7 +422,7 @@ struct ResourceForkHeader
   }
 
   protected:
-  LNNOffsetTo<UnsizedArrayOf<HBUINT8> >
+  LNNOffsetTo<UnsizedArrayOf<HBUINT8>>
 		data;		
 
   LNNOffsetTo<ResourceMap >

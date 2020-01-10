@@ -220,7 +220,7 @@ struct LigGlyph
   {
     if (caret_count)
     {
-      hb_array_t <const OffsetTo<CaretValue> > array = carets.sub_array (start_offset, caret_count);
+      hb_array_t <const OffsetTo<CaretValue>> array = carets.sub_array (start_offset, caret_count);
       unsigned int count = array.length;
       for (unsigned int i = 0; i < count; i++)
 	caret_array[i] = (this+array[i]).get_caret_value (font, direction, glyph_id, var_store);
@@ -296,7 +296,7 @@ struct MarkGlyphSetsFormat1
 
   protected:
   HBUINT16	format;			
-  ArrayOf<LOffsetTo<Coverage> >
+  ArrayOf<LOffsetTo<Coverage>>
 		coverage;		
 
   public:
@@ -439,19 +439,19 @@ struct GDEF
   bool subset (hb_subset_context_t *c) const
   {
     TRACE_SUBSET (this);
-    struct GDEF *out = c->serializer->embed (*this);
+    auto *out = c->serializer->embed (*this);
     if (unlikely (!out)) return_trace (false);
 
-    out->glyphClassDef.serialize_subset (c, this+glyphClassDef, out);
-    out->attachList.set (0);
-    out->ligCaretList.set (0);
-    out->markAttachClassDef.serialize_subset (c, this+markAttachClassDef, out);
+    out->glyphClassDef.serialize_subset (c, glyphClassDef, this, out);
+    out->attachList = 0;
+    out->ligCaretList = 0;
+    out->markAttachClassDef.serialize_subset (c, markAttachClassDef, this, out);
 
     if (version.to_int () >= 0x00010002u)
-      out->markGlyphSetsDef.set (0);
+      out->markGlyphSetsDef = 0;
 
     if (version.to_int () >= 0x00010003u)
-      out->varStore.set (0);
+      out->varStore = 0;
 
     return_trace (true);
   }

@@ -40,11 +40,17 @@ struct hb_subset_plan_t
   hb_object_header_t header;
 
   bool drop_hints : 1;
-  bool drop_layout : 1;
   bool desubroutinize : 1;
+  bool retain_gids : 1;
 
   
   hb_set_t *unicodes;
+
+  
+  hb_set_t *name_ids;
+
+  
+  hb_set_t *drop_tables;
 
   
   hb_map_t *codepoint_to_glyph;
@@ -59,16 +65,28 @@ struct hb_subset_plan_t
 
   unsigned int _num_output_glyphs;
   hb_set_t *_glyphset;
+  hb_set_t *_glyphset_gsub;
 
  public:
 
   
 
 
+
+
   inline const hb_set_t *
   glyphset () const
   {
     return _glyphset;
+  }
+
+  
+
+
+  inline const hb_set_t *
+  glyphset_gsub () const
+  {
+    return _glyphset_gsub;
   }
 
   

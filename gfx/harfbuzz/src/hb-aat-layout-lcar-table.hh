@@ -81,7 +81,7 @@ struct lcar
   protected:
   FixedVersion<>version;	
   HBUINT16	format;		
-  Lookup<OffsetTo<LigCaretClassEntry> >
+  Lookup<OffsetTo<LigCaretClassEntry>>
 		lookup;		
 
   public:

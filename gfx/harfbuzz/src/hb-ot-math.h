@@ -52,6 +52,9 @@ HB_BEGIN_DECLS
 
 
 
+
+
+
 typedef enum {
   HB_OT_MATH_CONSTANT_SCRIPT_PERCENT_SCALE_DOWN = 0,
   HB_OT_MATH_CONSTANT_SCRIPT_SCRIPT_PERCENT_SCALE_DOWN = 1,
@@ -116,12 +119,19 @@ typedef enum {
 
 
 
+
+
+
 typedef enum {
   HB_OT_MATH_KERN_TOP_RIGHT = 0,
   HB_OT_MATH_KERN_TOP_LEFT = 1,
   HB_OT_MATH_KERN_BOTTOM_RIGHT = 2,
   HB_OT_MATH_KERN_BOTTOM_LEFT = 3
 } hb_ot_math_kern_t;
+
+
+
+
 
 
 
@@ -138,9 +148,20 @@ typedef struct hb_ot_math_glyph_variant_t {
 
 
 
+
+
 typedef enum { 
-  HB_MATH_GLYPH_PART_FLAG_EXTENDER	= 0x00000001u  
+  HB_OT_MATH_GLYPH_PART_FLAG_EXTENDER	= 0x00000001u  
 } hb_ot_math_glyph_part_flags_t;
+
+
+
+
+
+
+
+
+
 
 
 
