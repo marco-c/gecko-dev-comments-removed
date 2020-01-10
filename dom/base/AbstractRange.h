@@ -77,6 +77,8 @@ class AbstractRange : public nsISupports, public nsWrapperCache {
   RefPtr<Document> mOwner;
   RangeBoundary mStart;
   RangeBoundary mEnd;
+  
+  
   bool mIsPositioned;
 
   
