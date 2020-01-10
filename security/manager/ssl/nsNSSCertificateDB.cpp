@@ -1143,8 +1143,8 @@ nsresult VerifyCertAtTime(nsIX509Cert* aCert,
   if (!aHostname.IsVoid() && aUsage == certificateUsageSSLServer) {
     result = certVerifier->VerifySSLServerCert(
         nssCert,
-        Maybe<nsTArray<uint8_t>>(),  
-        Maybe<nsTArray<uint8_t>>(),  
+        nullptr,  
+        nullptr,  
         aTime,
         nullptr,  
         aHostname, resultChain,
@@ -1156,8 +1156,8 @@ nsresult VerifyCertAtTime(nsIX509Cert* aCert,
         nssCert.get(), aUsage, aTime,
         nullptr,  
         aHostname.IsVoid() ? nullptr : flatHostname.get(), resultChain, aFlags,
-        Maybe<nsTArray<uint8_t>>(),  
-        Maybe<nsTArray<uint8_t>>(),  
+        nullptr,  
+        nullptr,  
         OriginAttributes(), &evOidPolicy);
   }
 

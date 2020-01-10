@@ -472,8 +472,8 @@ nsNSSSocketInfo::IsAcceptableForHost(const nsACString& hostname,
   UniqueCERTCertList unusedBuiltChain;
   mozilla::pkix::Result result =
       certVerifier->VerifySSLServerCert(nssCert,
-                                        Maybe<nsTArray<uint8_t>>(),  
-                                        Maybe<nsTArray<uint8_t>>(),  
+                                        nullptr,  
+                                        nullptr,  
                                         mozilla::pkix::Now(),
                                         nullptr,  
                                         hostname, unusedBuiltChain,

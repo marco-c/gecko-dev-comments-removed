@@ -447,8 +447,8 @@ Result CertVerifier::VerifyCert(
     const char* hostname,
      UniqueCERTCertList& builtChain,
      const Flags flags,
-     const Maybe<nsTArray<uint8_t>>& stapledOCSPResponseArg,
-     const Maybe<nsTArray<uint8_t>>& sctsFromTLS,
+     const SECItem* stapledOCSPResponseSECItem,
+     const SECItem* sctsFromTLSSECItem,
      const OriginAttributes& originAttributes,
      SECOidTag* evOidPolicy,
      OCSPStaplingStatus* ocspStaplingStatus,
@@ -516,9 +516,9 @@ Result CertVerifier::VerifyCert(
 
   Input stapledOCSPResponseInput;
   const Input* stapledOCSPResponse = nullptr;
-  if (stapledOCSPResponseArg) {
-    rv = stapledOCSPResponseInput.Init(stapledOCSPResponseArg->Elements(),
-                                       stapledOCSPResponseArg->Length());
+  if (stapledOCSPResponseSECItem) {
+    rv = stapledOCSPResponseInput.Init(stapledOCSPResponseSECItem->data,
+                                       stapledOCSPResponseSECItem->len);
     if (rv != Success) {
       
       return Result::ERROR_OCSP_MALFORMED_RESPONSE;
@@ -527,12 +527,12 @@ Result CertVerifier::VerifyCert(
   }
 
   Input sctsFromTLSInput;
-  if (sctsFromTLS) {
-    rv = sctsFromTLSInput.Init(sctsFromTLS->Elements(),
-                               sctsFromTLS->Length());
-    if (rv != Success && sctsFromTLSInput.GetLength() != 0) {
-      return Result::FATAL_ERROR_LIBRARY_FAILURE;
-    }
+  if (sctsFromTLSSECItem) {
+    rv = sctsFromTLSInput.Init(sctsFromTLSSECItem->data,
+                               sctsFromTLSSECItem->len);
+    
+    
+    MOZ_ASSERT(rv == Success);
   }
 
   switch (usage) {
@@ -854,8 +854,8 @@ static bool CertIsSelfSigned(const UniqueCERTCertificate& cert, void* pinarg) {
 
 Result CertVerifier::VerifySSLServerCert(
     const UniqueCERTCertificate& peerCert,
-     const Maybe<nsTArray<uint8_t>>& stapledOCSPResponse,
-     const Maybe<nsTArray<uint8_t>>& sctsFromTLS, Time time,
+     const SECItem* stapledOCSPResponse,
+     const SECItem* sctsFromTLS, Time time,
      void* pinarg, const nsACString& hostname,
      UniqueCERTCertList& builtChain,
      bool saveIntermediatesInPermanentDatabase,
@@ -924,8 +924,8 @@ Result CertVerifier::VerifySSLServerCert(
   Input stapledOCSPResponseInput;
   Input* responseInputPtr = nullptr;
   if (stapledOCSPResponse) {
-    rv = stapledOCSPResponseInput.Init(stapledOCSPResponse->Elements(),
-                                       stapledOCSPResponse->Length());
+    rv = stapledOCSPResponseInput.Init(stapledOCSPResponse->data,
+                                       stapledOCSPResponse->len);
     if (rv != Success) {
       
       return Result::ERROR_OCSP_MALFORMED_RESPONSE;
