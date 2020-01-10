@@ -41,6 +41,11 @@ nsresult nsOSHelperAppService::OSProtocolHandlerExists(const char* aScheme,
 
 nsresult nsOSHelperAppService::GetProtocolHandlerInfoFromOS(
     const nsACString& aScheme, bool* found, nsIHandlerInfo** info) {
+  if (!mozilla::jni::IsFennec()) {
+    
+    
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
   return nsMIMEInfoAndroid::GetMimeInfoForURL(aScheme, found, info);
 }
 
