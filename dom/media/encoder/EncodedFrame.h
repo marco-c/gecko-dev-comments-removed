@@ -3,37 +3,12 @@
 
 
 
-#ifndef EncodedFrameContainer_H_
-#define EncodedFrameContainer_H_
+#ifndef EncodedFrame_h_
+#define EncodedFrame_h_
 
-#include "nsTArray.h"
+#include "nsISupportsImpl.h"
 
 namespace mozilla {
-
-class EncodedFrame;
-
-
-
-
-
-
-class EncodedFrameContainer {
- public:
-  
-  void AppendEncodedFrame(EncodedFrame* aEncodedFrame) {
-    mEncodedFrames.AppendElement(aEncodedFrame);
-  }
-  
-  const nsTArray<RefPtr<EncodedFrame> >& GetEncodedFrames() const {
-    return mEncodedFrames;
-  }
-
- private:
-  
-  
-  
-  nsTArray<RefPtr<EncodedFrame> > mEncodedFrames;
-};
 
 
 class EncodedFrame final {
@@ -44,18 +19,7 @@ class EncodedFrame final {
     VP8_I_FRAME,       
     VP8_P_FRAME,       
     OPUS_AUDIO_FRAME,  
-    VORBIS_AUDIO_FRAME,
-    AVC_I_FRAME,
-    AVC_P_FRAME,
-    AVC_B_FRAME,
-    AVC_CSD,  
-    AAC_AUDIO_FRAME,
-    AAC_CSD,  
-    AMR_AUDIO_CSD,
-    AMR_AUDIO_FRAME,
-    EVRC_AUDIO_CSD,
-    EVRC_AUDIO_FRAME,
-    UNKNOWN  
+    UNKNOWN            
   };
   void SwapInFrameData(nsTArray<uint8_t>& aData) {
     mFrameData.SwapElements(aData);
@@ -94,4 +58,4 @@ class EncodedFrame final {
 
 }  
 
-#endif
+#endif  
