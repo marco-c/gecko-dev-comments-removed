@@ -338,7 +338,17 @@ nsresult UrlClassifierCommon::CreatePairwiseWhiteListURI(nsIChannel* aChannel,
   
   nsAutoCString pageHostname, resourceDomain;
   rv = topWinURI->GetHost(pageHostname);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_FAILED(rv)) {
+    
+    
+    
+    UC_LOG(
+        ("CreatePairwiseWhiteListURI: Cannot get host from the top-level "
+         "(channel=%p)",
+         aChannel));
+    return NS_OK;
+  }
+
   rv = chanPrincipal->GetBaseDomain(resourceDomain);
   NS_ENSURE_SUCCESS(rv, rv);
   nsAutoCString whitelistEntry = NS_LITERAL_CSTRING("http://") + pageHostname +
