@@ -111,16 +111,6 @@ class TCPSocket final : public DOMEventTargetHelper,
 
   
   
-  void SendWithTrackingNumber(const nsACString& aData,
-                              const uint32_t& aTrackingNumber,
-                              ErrorResult& aRv);
-  void SendWithTrackingNumber(JSContext* aCx, const ArrayBuffer& aData,
-                              uint32_t aByteOffset,
-                              const Optional<uint32_t>& aByteLength,
-                              const uint32_t& aTrackingNumber,
-                              ErrorResult& aRv);
-  
-  
   
   static already_AddRefed<TCPSocket> CreateAcceptedSocket(
       nsIGlobalObject* aGlobal, nsISocketTransport* aTransport,
