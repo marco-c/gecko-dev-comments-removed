@@ -61,6 +61,13 @@ pub enum Float {
     None,
 }
 
+impl Float {
+    
+    pub fn is_floating(self) -> bool {
+        self != Self::None
+    }
+}
+
 impl ToComputedValue for SpecifiedFloat {
     type ComputedValue = Float;
 
