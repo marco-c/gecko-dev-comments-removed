@@ -3577,7 +3577,11 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
   NS_FOR_CSS_SIDES(i) {
     slice[i] = (float)(mSlice.Side(i)) / appUnitsPerDevPixel;
     widths[i] = (float)(mWidths.Side(i)) / appUnitsPerDevPixel;
-    outset[i] = (float)(mImageOutset.Side(i)) / appUnitsPerDevPixel;
+
+    
+    
+    
+    outset[i] = 0.0f;
   }
 
   LayoutDeviceRect destRect =
@@ -3595,6 +3599,19 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
   ImgDrawResult drawResult = ImgDrawResult::SUCCESS;
   switch (mImageRenderer.GetType()) {
     case eStyleImageType_Image: {
+      RefPtr<imgIContainer> img = mImageRenderer.GetImage();
+      if (!img || img->GetType() == imgIContainer::TYPE_VECTOR) {
+        
+        
+        
+        
+        
+        
+        
+        
+        return ImgDrawResult::NOT_SUPPORTED;
+      }
+
       uint32_t flags = imgIContainer::FLAG_ASYNC_NOTIFY;
       if (aDisplayListBuilder->IsPaintingToWindow()) {
         flags |= imgIContainer::FLAG_HIGH_QUALITY_SCALING;
@@ -3603,11 +3620,13 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
         flags |= imgIContainer::FLAG_SYNC_DECODE;
       }
 
-      RefPtr<imgIContainer> img = mImageRenderer.GetImage();
+      LayoutDeviceRect imageRect = LayoutDeviceRect::FromAppUnits(
+          nsRect(nsPoint(), mImageRenderer.GetSize()), appUnitsPerDevPixel);
+
       Maybe<SVGImageContext> svgContext;
       gfx::IntSize decodeSize =
           nsLayoutUtils::ComputeImageContainerDrawingParameters(
-              img, aForFrame, destRect, aSc, flags, svgContext);
+              img, aForFrame, imageRect, aSc, flags, svgContext);
 
       RefPtr<layers::ImageContainer> container;
       drawResult = img->GetImageContainerAtSize(aManager->LayerManager(),
@@ -3627,15 +3646,18 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
         break;
       }
 
-      aBuilder.PushBorderImage(
-          dest, clip, !aItem->BackfaceIsHidden(),
+      wr::WrBorderImage params{
           wr::ToBorderWidths(widths[0], widths[1], widths[2], widths[3]),
-          key.value(), (float)(mImageSize.width) / appUnitsPerDevPixel,
-          (float)(mImageSize.height) / appUnitsPerDevPixel,
+          key.value(),
+          mImageSize.width / appUnitsPerDevPixel,
+          mImageSize.height / appUnitsPerDevPixel,
+          mFill,
           wr::ToSideOffsets2D_i32(slice[0], slice[1], slice[2], slice[3]),
           wr::ToSideOffsets2D_f32(outset[0], outset[1], outset[2], outset[3]),
           wr::ToRepeatMode(mRepeatModeHorizontal),
-          wr::ToRepeatMode(mRepeatModeVertical));
+          wr::ToRepeatMode(mRepeatModeVertical)};
+
+      aBuilder.PushBorderImage(dest, clip, !aItem->BackfaceIsHidden(), params);
       break;
     }
     case eStyleImageType_Gradient: {
@@ -3661,7 +3683,7 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
             dest, clip, !aItem->BackfaceIsHidden(),
             wr::ToBorderWidths(widths[0], widths[1], widths[2], widths[3]),
             (float)(mImageSize.width) / appUnitsPerDevPixel,
-            (float)(mImageSize.height) / appUnitsPerDevPixel,
+            (float)(mImageSize.height) / appUnitsPerDevPixel, mFill,
             wr::ToSideOffsets2D_i32(slice[0], slice[1], slice[2], slice[3]),
             wr::ToLayoutPoint(startPoint), wr::ToLayoutPoint(endPoint), stops,
             extendMode,
@@ -3671,8 +3693,8 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
         aBuilder.PushBorderRadialGradient(
             dest, clip, !aItem->BackfaceIsHidden(),
             wr::ToBorderWidths(widths[0], widths[1], widths[2], widths[3]),
-            wr::ToLayoutPoint(lineStart), wr::ToLayoutSize(gradientRadius),
-            stops, extendMode,
+            mFill, wr::ToLayoutPoint(lineStart),
+            wr::ToLayoutSize(gradientRadius), stops, extendMode,
             wr::ToSideOffsets2D_f32(outset[0], outset[1], outset[2],
                                     outset[3]));
       }
