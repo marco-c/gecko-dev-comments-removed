@@ -25,8 +25,22 @@ class ManifestPage extends PureComponent {
   
   static get propTypes() {
     return {
+      
+      hasLoadingFailed: PropTypes.bool.isRequired,
+      isManifestLoading: PropTypes.bool.isRequired,
       manifest: PropTypes.object,
     };
+  }
+
+  get shouldShowLoader() {
+    const { isManifestLoading, hasLoadingFailed } = this.props;
+    const mustLoadManifest = typeof this.props.manifest === "undefined";
+    return isManifestLoading || mustLoadManifest || hasLoadingFailed;
+  }
+
+  renderManifest() {
+    const { manifest } = this.props;
+    return manifest ? Manifest({ ...manifest }) : ManifestEmpty({});
   }
 
   render() {
@@ -36,15 +50,18 @@ class ManifestPage extends PureComponent {
       {
         className: `app-page ${!manifest ? "app-page--empty" : ""}`,
       },
-      ManifestLoader({}),
-      manifest ? Manifest({ ...manifest }) : ManifestEmpty({})
+      this.shouldShowLoader ? ManifestLoader({}) : this.renderManifest()
     );
   }
 }
+
 function mapStateToProps(state) {
   return {
+    hasLoadingFailed: !!state.manifest.errorMessage,
+    isManifestLoading: state.manifest.isLoading,
     manifest: state.manifest.manifest,
   };
 }
+
 
 module.exports = connect(mapStateToProps)(ManifestPage);
