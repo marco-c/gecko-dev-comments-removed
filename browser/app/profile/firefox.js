@@ -1558,8 +1558,6 @@ pref("privacy.trackingprotection.fingerprinting.enabled", true);
 
 pref("privacy.trackingprotection.cryptomining.enabled", true);
 
-pref("browser.contentblocking.allowlist.storage.enabled", true);
-
 pref("browser.contentblocking.database.enabled", true);
 
 pref("dom.storage_access.enabled", true);
