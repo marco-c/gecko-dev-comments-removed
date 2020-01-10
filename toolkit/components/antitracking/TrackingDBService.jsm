@@ -292,7 +292,13 @@ TrackingDBService.prototype = {
       return null;
     }
     let earliestDate = date[0].getResultByName("timestamp");
-    return earliestDate || null;
+
+    
+    
+    let hoursInMS12 = 12 * 60 * 60 * 1000;
+    let earliestDateInMS = new Date(earliestDate).getTime() + hoursInMS12;
+
+    return earliestDateInMS || null;
   },
 };
 
