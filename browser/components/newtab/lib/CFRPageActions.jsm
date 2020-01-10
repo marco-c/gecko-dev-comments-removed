@@ -266,7 +266,14 @@ class PageAction {
   
   
   _popupStateChange(state) {
-    if (["dismissed", "removed"].includes(state)) {
+    if (state === "shown") {
+      if (this._autoFocus) {
+        this.window.document.commandDispatcher.advanceFocusIntoSubtree(
+          this.currentNotification.owner.panel
+        );
+        this._autoFocus = false;
+      }
+    } else if (["dismissed", "removed"].includes(state)) {
       this._collapse();
       if (this.currentNotification) {
         this.window.PopupNotifications.remove(this.currentNotification);
@@ -702,6 +709,15 @@ class PageAction {
         );
       })
     );
+
+    
+    
+    
+    
+    
+    
+    
+    this._autoFocus = this.window.document.activeElement === this.container;
 
     
     this.currentNotification = this.window.PopupNotifications.show(
