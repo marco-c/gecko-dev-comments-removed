@@ -11,14 +11,12 @@
 
 #include "builtin/streams/StreamController.h"  
 #include "builtin/streams/ReadableStreamController.h"  
-#include "builtin/streams/WritableStreamDefaultController.h"  
 #include "vm/JSObject.h"                               
 
 template <>
 inline bool JSObject::is<js::StreamController>() const {
   return is<js::ReadableStreamDefaultController>() ||
-         is<js::ReadableByteStreamController>() ||
-         is<js::WritableStreamDefaultController>();
+         is<js::ReadableByteStreamController>();
 }
 
 #endif  

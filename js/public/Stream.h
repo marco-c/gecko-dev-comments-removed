@@ -485,21 +485,6 @@ extern JS_PUBLIC_API bool ReadableStreamReaderReleaseLock(JSContext* cx,
 extern JS_PUBLIC_API JSObject* ReadableStreamDefaultReaderRead(
     JSContext* cx, HandleObject reader);
 
-class JS_PUBLIC_API WritableStreamUnderlyingSink {
- public:
-  virtual ~WritableStreamUnderlyingSink() {}
-
-  
-
-
-
-
-
-
-
-  virtual void finalize() = 0;
-};
-
 }  
 
 #endif  
