@@ -105,14 +105,14 @@ const size_t gStackSize = 8192;
 
 
 
-#define NS_CC_DELAY 6000  // ms
+static const uint32_t kCCDelay = 6000;  
 
-#define NS_CC_SKIPPABLE_DELAY 250  // ms
-
-
+static const int32_t kCCSkippableDelay = 250;  
 
 
-#define NS_TIME_BETWEEN_FORGET_SKIPPABLE_CYCLES 2000  // ms
+
+
+static const uint32_t kTimeBetweenForgetSkippableCycles = 2000;  
 
 
 
@@ -132,17 +132,15 @@ static const uint32_t kMaxICCDuration = 2000;
 
 
 
-#define NS_CC_FORCED (2 * 60 * PR_USEC_PER_SEC)  // 2 min
-#define NS_CC_FORCED_PURPLE_LIMIT 10
+static const uint32_t kCCForced = (2 * 60 * PR_USEC_PER_SEC);  
+static const uint32_t kCCForcedPurpleLimit = 10;
 
 
-#define NS_MAX_CC_LOCKEDOUT_TIME (30 * PR_USEC_PER_SEC)  // 30 seconds
+static const int64_t kMaxCCLockedoutTime =
+    (30 * PR_USEC_PER_SEC);  
 
 
-#define NS_CC_PURPLE_LIMIT 200
-
-
-#define NS_UNLIMITED_SCRIPT_RUNTIME (0x40000000LL << 32)
+static const uint32_t kCCPurpleLimit = 200;
 
 
 
@@ -1178,8 +1176,7 @@ static void FireForgetSkippable(uint32_t aSuspected, bool aRemoveChildless,
   ++sForgetSkippableCounter;
 
   FinishAnyIncrementalGC();
-  bool earlyForgetSkippable =
-      sCleanupsSinceLastGC < NS_MAJOR_FORGET_SKIPPABLE_CALLS;
+  bool earlyForgetSkippable = sCleanupsSinceLastGC < kMajorForgetSkippableCalls;
 
   int64_t budgetMs =
       aDeadline.IsNull()
@@ -1388,7 +1385,7 @@ void CycleCollectorStats::RunForgetSkippable() {
   
   TimeStamp beginForgetSkippable = TimeStamp::Now();
   bool ranSyncForgetSkippable = false;
-  while (sCleanupsSinceLastGC < NS_MAJOR_FORGET_SKIPPABLE_CALLS) {
+  while (sCleanupsSinceLastGC < kMajorForgetSkippableCalls) {
     FireForgetSkippable(nsCycleCollector_suspectedCount(), false, TimeStamp());
     ranSyncForgetSkippable = true;
   }
@@ -1511,7 +1508,7 @@ static bool ICCRunnerFired(TimeStamp aDeadline) {
       sCCLockedOutTime = now;
       return false;
     }
-    if (now - sCCLockedOutTime < NS_MAX_CC_LOCKEDOUT_TIME) {
+    if (now - sCCLockedOutTime < kMaxCCLockedoutTime) {
       return false;
     }
   }
@@ -1718,7 +1715,7 @@ bool InterSliceGCRunnerFired(TimeStamp aDeadline, void* aData) {
     int64_t lockedTime = PR_Now() - sCCLockedOutTime;
     int32_t maxSliceGCBudget = sActiveIntersliceGCBudget * 10;
     double percentOfLockedTime =
-        std::min((double)lockedTime / NS_MAX_CC_LOCKEDOUT_TIME, 1.0);
+        std::min((double)lockedTime / kMaxCCLockedoutTime, 1.0);
     budget = static_cast<int64_t>(
         std::max((double)budget, percentOfLockedTime * maxSliceGCBudget));
   }
@@ -1792,9 +1789,9 @@ void ShrinkingGCTimerFired(nsITimer* aTimer, void* aClosure) {
 }
 
 static bool ShouldTriggerCC(uint32_t aSuspected) {
-  return sNeedsFullCC || aSuspected > NS_CC_PURPLE_LIMIT ||
-         (aSuspected > NS_CC_FORCED_PURPLE_LIMIT &&
-          TimeUntilNow(sLastCCEndTime) > NS_CC_FORCED);
+  return sNeedsFullCC || aSuspected > kCCPurpleLimit ||
+         (aSuspected > kCCForcedPurpleLimit &&
+          TimeUntilNow(sLastCCEndTime) > kCCForced);
 }
 
 static bool CCRunnerFired(TimeStamp aDeadline) {
@@ -1802,9 +1799,9 @@ static bool CCRunnerFired(TimeStamp aDeadline) {
     return false;
   }
 
-  static uint32_t ccDelay = NS_CC_DELAY;
+  static uint32_t ccDelay = kCCDelay;
   if (sCCLockedOut) {
-    ccDelay = NS_CC_DELAY / 3;
+    ccDelay = kCCDelay / 3;
 
     PRTime now = PR_Now();
     if (sCCLockedOutTime == 0) {
@@ -1817,7 +1814,7 @@ static bool CCRunnerFired(TimeStamp aDeadline) {
       sCCLockedOutTime = now;
       return false;
     }
-    if (now - sCCLockedOutTime < NS_MAX_CC_LOCKEDOUT_TIME) {
+    if (now - sCCLockedOutTime < kMaxCCLockedoutTime) {
       return false;
     }
   }
@@ -1831,7 +1828,7 @@ static bool CCRunnerFired(TimeStamp aDeadline) {
   
   
   int32_t numEarlyTimerFires =
-      std::max((int32_t)ccDelay / NS_CC_SKIPPABLE_DELAY - 2, 1);
+      std::max((int32_t)ccDelay / kCCSkippableDelay - 2, 1);
   bool isLateTimerFire = sCCRunnerFireCount > numEarlyTimerFires;
   uint32_t suspected = nsCycleCollector_suspectedCount();
   if (isLateTimerFire && ShouldTriggerCC(suspected)) {
@@ -1861,7 +1858,7 @@ static bool CCRunnerFired(TimeStamp aDeadline) {
       didDoWork = true;
     }
   } else if (((sPreviousSuspectedCount + 100) <= suspected) ||
-             (sCleanupsSinceLastGC < NS_MAJOR_FORGET_SKIPPABLE_CALLS)) {
+             (sCleanupsSinceLastGC < kMajorForgetSkippableCalls)) {
     
     
     FireForgetSkippable(suspected, false, aDeadline);
@@ -1876,7 +1873,7 @@ static bool CCRunnerFired(TimeStamp aDeadline) {
   }
 
   if (isLateTimerFire) {
-    ccDelay = NS_CC_DELAY;
+    ccDelay = kCCDelay;
 
     
     
@@ -2060,19 +2057,18 @@ void nsJSContext::MaybePokeCC() {
   
   if (sCleanupsSinceLastGC && !sLastCCEndTime.IsNull()) {
     uint32_t sinceLastCCEnd = TimeUntilNow(sLastCCEndTime);
-    if (sinceLastCCEnd < NS_CC_DELAY) {
+    if (sinceLastCCEnd < kCCDelay) {
       return;
     }
   }
 
   
   
-  if ((sCleanupsSinceLastGC > NS_MAJOR_FORGET_SKIPPABLE_CALLS) &&
+  if ((sCleanupsSinceLastGC > kMajorForgetSkippableCalls) &&
       !sLastForgetSkippableCycleEndTime.IsNull()) {
     uint32_t sinceLastForgetSkippableCycle =
         TimeUntilNow(sLastForgetSkippableCycleEndTime);
-    if (sinceLastForgetSkippableCycle <
-        NS_TIME_BETWEEN_FORGET_SKIPPABLE_CYCLES) {
+    if (sinceLastForgetSkippableCycle < kTimeBetweenForgetSkippableCycles) {
       return;
     }
   }
@@ -2084,7 +2080,7 @@ void nsJSContext::MaybePokeCC() {
     nsCycleCollector_dispatchDeferredDeletion();
 
     sCCRunner = IdleTaskRunner::Create(
-        CCRunnerFired, "MaybePokeCC::CCRunnerFired", NS_CC_SKIPPABLE_DELAY,
+        CCRunnerFired, "MaybePokeCC::CCRunnerFired", kCCSkippableDelay,
         kForgetSkippableSliceDuration, true, [] { return sShuttingDown; },
         TaskCategory::GarbageCollection);
   }
