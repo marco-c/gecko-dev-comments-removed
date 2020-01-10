@@ -1812,6 +1812,11 @@ void js::GCParallelTask::runFromHelperThread(AutoLockHelperThreadState& lock) {
 
 void GCParallelTask::runTask() {
   
+
+  
+  
+  JS::AutoSuppressGCAnalysis nogc;
+
   TimeStamp timeStart = ReallyNow();
   func_(this);
   duration_ = TimeSince(timeStart);
