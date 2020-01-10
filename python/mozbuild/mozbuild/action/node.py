@@ -52,14 +52,25 @@ def execute_node_cmd(node_cmd_list):
         print('Executing "{}"'.format(printable_cmd), file=sys.stderr)
         sys.stderr.flush()
 
-        output = subprocess.check_output(node_cmd_list)
+        
+        
+        proc = subprocess.Popen(
+            node_cmd_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        stdout, stderr = proc.communicate()
+        retcode = proc.wait()
+
+        if retcode != 0:
+            print(stderr, file=sys.stderr)
+            sys.stderr.flush()
+            sys.exit(retcode)
 
         
         
         
         
         deps = []
-        for line in output.splitlines():
+        for line in stdout.splitlines():
             if 'dep:' in line:
                 deps.append(line.replace('dep:', ''))
             else:
