@@ -2334,8 +2334,9 @@ JSProtoKey JS::IdentifyStandardConstructor(JSObject* obj) {
   
   
   
+  
   if (!obj->is<JSFunction>() ||
-      !(obj->as<JSFunction>().flags() & JSFunction::NATIVE_CTOR)) {
+      !(obj->as<JSFunction>().flags().isNativeConstructor())) {
     return JSProto_Null;
   }
 

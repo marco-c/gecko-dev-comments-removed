@@ -6698,7 +6698,7 @@ struct LambdaFunctionInfo {
 
   explicit LambdaFunctionInfo(JSFunction* fun)
       : fun_(fun),
-        flags(fun->flags()),
+        flags(fun->flags().toRaw()),
         nargs(fun->nargs()),
         scriptOrLazyScript(fun->hasScript() ? (gc::Cell*)fun->nonLazyScript()
                                             : (gc::Cell*)fun->lazyScript()),
@@ -6708,9 +6708,9 @@ struct LambdaFunctionInfo {
     
     
     
-    MOZ_ASSERT_IF(flags & JSFunction::EXTENDED, fun->isArrow() ||
-                                                    fun->allowSuperProperty() ||
-                                                    fun->isSelfHostedBuiltin());
+    MOZ_ASSERT_IF(flags & FunctionFlags::EXTENDED,
+                  fun->isArrow() || fun->allowSuperProperty() ||
+                      fun->isSelfHostedBuiltin());
   }
 
   

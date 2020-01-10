@@ -2870,11 +2870,12 @@ void MacroAssembler::branchIfNotInterpretedConstructor(Register fun,
                                                        Label* label) {
   
   branchTestFunctionFlags(
-      fun, JSFunction::INTERPRETED | JSFunction::INTERPRETED_LAZY,
+      fun, FunctionFlags::INTERPRETED | FunctionFlags::INTERPRETED_LAZY,
       Assembler::Zero, label);
 
   
-  branchTestFunctionFlags(fun, JSFunction::CONSTRUCTOR, Assembler::Zero, label);
+  branchTestFunctionFlags(fun, FunctionFlags::CONSTRUCTOR, Assembler::Zero,
+                          label);
 }
 
 void MacroAssembler::branchTestObjGroupNoSpectreMitigations(

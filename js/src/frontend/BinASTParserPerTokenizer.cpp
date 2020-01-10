@@ -166,7 +166,7 @@ JS::Result<FunctionNode*> BinASTParserPerTokenizer<Tok>::parseLazyFunction(
   
   RootedFunction func(cx_, lazyScript_->functionNonDelazifying());
   bool isExpr = func->isLambda();
-  MOZ_ASSERT(func->kind() == JSFunction::FunctionKind::NormalFunction);
+  MOZ_ASSERT(func->kind() == FunctionFlags::FunctionKind::NormalFunction);
 
   
   

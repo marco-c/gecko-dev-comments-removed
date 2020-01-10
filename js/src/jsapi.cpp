@@ -3313,7 +3313,7 @@ static JSObject* CloneFunctionObject(JSContext* cx, HandleObject funobj,
   
   RootedFunction fun(cx, &funobj->as<JSFunction>());
   if (fun->isNative() || fun->isBoundFunction() ||
-      fun->kind() != JSFunction::NormalFunction || fun->isExtended() ||
+      fun->kind() != FunctionFlags::NormalFunction || fun->isExtended() ||
       fun->isSelfHostedBuiltin()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_CANT_CLONE_OBJECT);

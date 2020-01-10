@@ -975,7 +975,7 @@ static bool intrinsic_SetCanonicalName(JSContext* cx, unsigned argc,
   }
 
   
-  MOZ_ASSERT(fun->kind() == JSFunction::NormalFunction);
+  MOZ_ASSERT(fun->kind() == FunctionFlags::NormalFunction);
   MOZ_ASSERT(!fun->isLambda());
 
   
@@ -3002,7 +3002,7 @@ static JSObject* CloneObject(JSContext* cx,
       
       
       
-      MOZ_ASSERT(selfHostedFunction->kind() == JSFunction::NormalFunction);
+      MOZ_ASSERT(selfHostedFunction->kind() == FunctionFlags::NormalFunction);
       js::gc::AllocKind kind = hasName ? gc::AllocKind::FUNCTION_EXTENDED
                                        : selfHostedFunction->getAllocKind();
 
@@ -3132,7 +3132,7 @@ bool JSRuntime::createLazySelfHostedFunctionClone(
     funName = selfHostedFun->explicitName();
   }
 
-  fun.set(NewScriptedFunction(cx, nargs, JSFunction::INTERPRETED, funName,
+  fun.set(NewScriptedFunction(cx, nargs, FunctionFlags::INTERPRETED, funName,
                               proto, gc::AllocKind::FUNCTION_EXTENDED,
                               newKind));
   if (!fun) {
@@ -3188,7 +3188,7 @@ bool JSRuntime::cloneSelfHostedFunctionScript(JSContext* cx,
   MOZ_ASSERT(targetFun->strict(), "Self-hosted builtins must be strict");
 
   
-  targetFun->setFlags(targetFun->flags() | sourceFun->flags());
+  targetFun->setFlags(targetFun->flags().toRaw() | sourceFun->flags().toRaw());
   return true;
 }
 

@@ -1217,8 +1217,8 @@ bool FrameIter::matchCallee(JSContext* cx, HandleFunction fun) const {
   
   
   
-  if (((currentCallee->flags() ^ fun->flags()) &
-       JSFunction::STABLE_ACROSS_CLONES) != 0 ||
+  if (((currentCallee->flags().toRaw() ^ fun->flags().toRaw()) &
+       FunctionFlags::STABLE_ACROSS_CLONES) != 0 ||
       currentCallee->nargs() != fun->nargs()) {
     return false;
   }

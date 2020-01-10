@@ -2678,15 +2678,15 @@ bool CacheIRCompiler::emitLoadFunctionLengthResult() {
   
   masm.branchTest32(
       Assembler::NonZero, scratch,
-      Imm32(JSFunction::INTERPRETED_LAZY | JSFunction::RESOLVED_LENGTH),
+      Imm32(FunctionFlags::INTERPRETED_LAZY | FunctionFlags::RESOLVED_LENGTH),
       failure->label());
 
   Label boundFunction;
-  masm.branchTest32(Assembler::NonZero, scratch, Imm32(JSFunction::BOUND_FUN),
-                    &boundFunction);
+  masm.branchTest32(Assembler::NonZero, scratch,
+                    Imm32(FunctionFlags::BOUND_FUN), &boundFunction);
   Label interpreted;
-  masm.branchTest32(Assembler::NonZero, scratch, Imm32(JSFunction::INTERPRETED),
-                    &interpreted);
+  masm.branchTest32(Assembler::NonZero, scratch,
+                    Imm32(FunctionFlags::INTERPRETED), &interpreted);
 
   
   masm.load16ZeroExtend(Address(obj, JSFunction::offsetOfNargs()), scratch);
@@ -3093,7 +3093,7 @@ bool CacheIRCompiler::emitGuardFunctionIsConstructor() {
   }
 
   
-  masm.branchTestFunctionFlags(funcReg, JSFunction::CONSTRUCTOR,
+  masm.branchTestFunctionFlags(funcReg, FunctionFlags::CONSTRUCTOR,
                                Assembler::Zero, failure->label());
   return true;
 }
@@ -3107,8 +3107,8 @@ bool CacheIRCompiler::emitGuardNotClassConstructor() {
     return false;
   }
 
-  masm.branchFunctionKind(Assembler::Equal, JSFunction::ClassConstructor, fun,
-                          scratch, failure->label());
+  masm.branchFunctionKind(Assembler::Equal, FunctionFlags::ClassConstructor,
+                          fun, scratch, failure->label());
   return true;
 }
 
