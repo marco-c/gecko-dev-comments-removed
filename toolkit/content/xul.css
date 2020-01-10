@@ -23,7 +23,6 @@
 
 @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"); 
 @namespace html url("http://www.w3.org/1999/xhtml"); 
-@namespace xbl url("http://www.mozilla.org/xbl"); 
 
 :root {
   text-rendering: optimizeLegibility;
@@ -61,18 +60,11 @@ window[chromehidden~="toolbar"] .chromeclass-toolbar-additional {
 
 
 
-script, data,
-commands, commandset, command,
+script, commandset, command,
 broadcasterset, broadcaster, observes,
-keyset, key, toolbarpalette, toolbarset,
-template, rule, conditions, action,
-bindings, binding, content, member, triple,
+keyset, key, toolbarpalette, template,
 treeitem, treeseparator, treerow, treecell {
   display: none;
-}
-
-xbl|children {
-  display: none !important;
 }
 
 
@@ -191,18 +183,6 @@ toolbox {
   -moz-box-orient: vertical;
 }
 
-toolbar[customizing="true"][collapsed="true"] {
-  
-
-  visibility: visible;
-}
-
-toolbar[customizing="true"][hidden="true"] {
-  
-
-  display: -moz-box;
-}
-
 %ifdef XP_MACOSX
 toolbar[type="menubar"] {
   min-height: 0 !important;
@@ -226,10 +206,7 @@ menubar > menu:empty {
 
 
 
-menupopup {
-  -moz-box-orient: vertical;
-}
-
+menupopup,
 panel {
   -moz-box-orient: vertical;
 }
@@ -334,10 +311,7 @@ column {
   display: -moz-grid-line;
 }
 
-rows {
-  -moz-box-orient: vertical;
-}
-
+rows,
 column {
   -moz-box-orient: vertical;
 }
@@ -530,8 +504,7 @@ stringbundleset {
 
 
 
-dialog,
-dialog:root  {
+dialog {
   -moz-box-orient: vertical;
 }
 
