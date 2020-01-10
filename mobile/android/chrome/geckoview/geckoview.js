@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -23,15 +23,15 @@ XPCOMUtils.defineLazyGetter(this, "WindowEventDispatcher", () =>
   EventDispatcher.for(window)
 );
 
-
-
-
-
-
-
-
-
-
+/**
+ * ModuleManager creates and manages GeckoView modules. Each GeckoView module
+ * normally consists of a JSM module file with an optional content module file.
+ * The module file contains a class that extends GeckoViewModule, and the
+ * content module file contains a class that extends GeckoViewChildModule. A
+ * module usually pairs with a particular GeckoSessionHandler or delegate on the
+ * Java side, and automatically receives module lifetime events such as
+ * initialization, change in enabled state, and change in settings.
+ */
 var ModuleManager = {
   get _initData() {
     return window.arguments[0].QueryInterface(Ci.nsIAndroidView).initData;
@@ -125,7 +125,7 @@ var ModuleManager = {
     const remoteType = E10SUtils.getRemoteTypeForURI(
       aURI,
       this.settings.useMultiprocess,
-       false,
+      /* useRemoteSubframes */ false,
       currentType,
       this.browser.currentURI
     );
@@ -134,7 +134,7 @@ var ModuleManager = {
                              remoteType=${remoteType}`;
 
     if (currentType === remoteType) {
-      
+      // We're already using a child process of the correct type.
       return false;
     }
 
@@ -143,7 +143,7 @@ var ModuleManager = {
       return false;
     }
 
-    
+    // Now we're switching the remoteness (value of "remote" attr).
 
     let disabledModules = [];
     this.forEach(module => {
@@ -181,7 +181,7 @@ var ModuleManager = {
     );
 
     this.forEach(module => {
-      
+      // We're attaching a new browser so we have to reload the frame scripts
       module.loadInitFrameScript();
     });
 
@@ -221,11 +221,11 @@ var ModuleManager = {
       }
 
       case "GeckoView:UpdateInitData": {
-        
+        // Replace all settings during a transfer.
         const initData = this._initData;
         this._updateSettings(initData.settings);
 
-        
+        // Update module enabled states.
         for (const name in initData.modules) {
           const module = this._modules.get(name);
           if (module) {
@@ -233,7 +233,7 @@ var ModuleManager = {
           }
         }
 
-        
+        // Notify child of the transfer.
         this._browser.messageManager.sendAsyncMessage(aEvent);
         break;
       }
@@ -259,23 +259,23 @@ var ModuleManager = {
   },
 };
 
-
-
-
-
-
-
+/**
+ * ModuleInfo is the structure used by ModuleManager to represent individual
+ * modules. It is responsible for loading the module JSM file if necessary,
+ * and it acts as the intermediary between ModuleManager and the module
+ * object that extends GeckoViewModule.
+ */
 class ModuleInfo {
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Create a ModuleInfo instance. See _loadPhase for phase object description.
+   *
+   * @param manager the ModuleManager instance.
+   * @param name Name of the module.
+   * @param enabled Enabled state of the module at startup.
+   * @param onInit Phase object for the init phase, when the window is created.
+   * @param onEnable Phase object for the enable phase, when the module is first
+   *                 enabled by setting a delegate in Java.
+   */
   constructor({ manager, name, enabled, onInit, onEnable }) {
     this._manager = manager;
     this._name = name;
@@ -283,12 +283,12 @@ class ModuleInfo {
     this._impl = null;
     this._contentModuleLoaded = false;
     this._enabled = false;
-    
+    // Only enable once we performed initialization.
     this._enabledOnInit = enabled;
 
-    
-    
-    
+    // For init, load resource _before_ initializing browser to support the
+    // onInitBrowser() override. However, load content module after initializing
+    // browser, because we don't have a message manager before then.
     this._loadResource(onInit);
 
     this._onInitPhase = onInit;
@@ -304,9 +304,9 @@ class ModuleInfo {
     this.enabled = this._enabledOnInit;
   }
 
-  
-
-
+  /**
+   * Loads the onInit frame script
+   */
   loadInitFrameScript() {
     this._loadFrameScript(this._onInitPhase);
   }
@@ -317,9 +317,9 @@ class ModuleInfo {
     }
   }
 
-  
-
-
+  /**
+   * Called before the browser is removed
+   */
   onDestroyBrowser() {
     if (this._impl) {
       this._impl.onDestroyBrowser();
@@ -327,12 +327,12 @@ class ModuleInfo {
     this._contentModuleLoaded = false;
   }
 
-  
-
-
-
-
-
+  /**
+   * Load resource according to a phase object that contains possible keys,
+   *
+   * "resource": specify the JSM resource to load for this module.
+   * "frameScript": specify a content JS frame script to load for this module.
+   */
   _loadResource(aPhase) {
     if (!aPhase || !aPhase.resource || this._impl) {
       return;
@@ -342,11 +342,11 @@ class ModuleInfo {
     this._impl = new exports[this._name](this);
   }
 
-  
-
-
-
-
+  /**
+   * Load frameScript according to a phase object that contains possible keys,
+   *
+   * "frameScript": specify a content JS frame script to load for this module.
+   */
   _loadFrameScript(aPhase) {
     if (!aPhase || !aPhase.frameScript || this._contentModuleLoaded) {
       return;
@@ -395,11 +395,11 @@ class ModuleInfo {
       }
     }
 
-    this._updateContentModuleState( aEnabled);
+    this._updateContentModuleState(/* includeSettings */ aEnabled);
   }
 
   onContentModuleLoaded() {
-    this._updateContentModuleState( true);
+    this._updateContentModuleState(/* includeSettings */ true);
 
     if (this._impl) {
       this._impl.onContentModuleLoaded();
@@ -420,7 +420,7 @@ class ModuleInfo {
 
 function createBrowser() {
   const browser = (window.browser = document.createXULElement("browser"));
-  
+  // Identify this `<browser>` element uniquely to Marionette, devtools, etc.
   browser.permanentKey = {};
 
   browser.setAttribute("nodefaultsrc", "true");
@@ -446,7 +446,7 @@ function createBrowser() {
 }
 
 function InitLater(fn, object, name) {
-  return DelayedInit.schedule(fn, object, name, 15000 );
+  return DelayedInit.schedule(fn, object, name, 15000 /* 15s max wait */);
 }
 
 function startup() {
@@ -454,12 +454,6 @@ function startup() {
 
   const browser = createBrowser();
   ModuleManager.init(browser, [
-    {
-      name: "GeckoViewAccessibility",
-      onInit: {
-        resource: "resource://gre/modules/GeckoViewAccessibility.jsm",
-      },
-    },
     {
       name: "GeckoViewContent",
       onInit: {
@@ -478,7 +472,7 @@ function startup() {
       name: "GeckoViewNavigation",
       onInit: {
         resource: "resource://gre/modules/GeckoViewNavigation.jsm",
-        
+        // TODO: frameScript only needed for Fennec
         frameScript: "chrome://geckoview/content/GeckoViewNavigationChild.js",
       },
     },
@@ -538,25 +532,25 @@ function startup() {
   ]);
 
   Services.tm.dispatchToMainThread(() => {
-    
-    
-    
+    // This should always be the first thing we do here - any additional delayed
+    // initialisation tasks should be added between "browser-delayed-startup-finished"
+    // and "browser-idle-startup-tasks-finished".
 
-    
-    
-    
-    
+    // Bug 1496684: Various bits of platform stuff depend on this notification
+    // to learn when a browser window has finished its initial (chrome)
+    // initialisation, especially with regards to the very first window that is
+    // created. Therefore, GeckoView "windows" need to send this, too.
     InitLater(() =>
       Services.obs.notifyObservers(window, "browser-delayed-startup-finished")
     );
 
-    
-    
-    
+    // This should always go last, since the idle tasks (except for the ones with
+    // timeouts) should execute in order. Note that this observer notification is
+    // not guaranteed to fire, since the window could close before we get here.
 
-    
-    
-    
+    // This notification in particular signals the ScriptPreloader that we have
+    // finished startup, so it can now stop recording script usage and start
+    // updating the startup cache for faster script loading.
     InitLater(() =>
       Services.obs.notifyObservers(
         window,
@@ -565,7 +559,7 @@ function startup() {
     );
   });
 
-  
-  
+  // Move focus to the content window at the end of startup,
+  // so things like text selection can work properly.
   browser.focus();
 }
