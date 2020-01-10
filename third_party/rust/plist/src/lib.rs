@@ -52,17 +52,44 @@
 
 
 
-extern crate base64;
-extern crate byteorder;
-extern crate humantime;
-extern crate xml as xml_rs;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub mod dictionary;
+
+#[cfg(feature = "enable_unstable_features_that_may_break_with_minor_version_bumps")]
 pub mod stream;
+#[cfg(not(feature = "enable_unstable_features_that_may_break_with_minor_version_bumps"))]
+mod stream;
 
 mod date;
+mod error;
+mod integer;
+mod uid;
 mod value;
 
 pub use date::Date;
+pub use dictionary::Dictionary;
+pub use error::Error;
+pub use integer::Integer;
+pub use uid::Uid;
 pub use value::Value;
 
 
@@ -73,54 +100,26 @@ extern crate serde;
 mod de;
 #[cfg(feature = "serde")]
 mod ser;
+#[cfg(all(
+    feature = "serde",
+    any(
+        test,
+        feature = "enable_unstable_features_that_may_break_with_minor_version_bumps"
+    )
+))]
+pub use self::{de::Deserializer, ser::Serializer};
 #[cfg(feature = "serde")]
-pub use self::de::{from_file, from_reader, from_reader_xml, Deserializer};
-#[cfg(feature = "serde")]
-pub use self::ser::{to_writer_xml, Serializer};
+pub use self::{
+    de::{from_file, from_reader, from_reader_xml},
+    ser::{to_file_binary, to_file_xml, to_writer_binary, to_writer_xml},
+};
 
-use std::fmt;
-use std::io;
+#[cfg(all(test, feature = "serde"))]
+#[macro_use]
+extern crate serde_derive;
 
-#[derive(Debug)]
-pub enum Error {
-    InvalidData,
-    UnexpectedEof,
-    Io(io::Error),
-    Serde(String),
-}
-
-impl ::std::error::Error for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::InvalidData => "invalid data",
-            Error::UnexpectedEof => "unexpected eof",
-            Error::Io(ref err) => err.description(),
-            Error::Serde(ref err) => &err,
-        }
-    }
-
-    fn cause(&self) -> Option<&::std::error::Error> {
-        match *self {
-            Error::Io(ref err) => Some(err),
-            _ => None,
-        }
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Error::Io(ref err) => err.fmt(fmt),
-            _ => <Self as ::std::error::Error>::description(self).fmt(fmt),
-        }
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(err: io::Error) -> Error {
-        Error::Io(err)
-    }
-}
+#[cfg(all(test, feature = "serde"))]
+mod serde_tests;
 
 fn u64_to_usize(len_u64: u64) -> Option<usize> {
     let len = len_u64 as usize;

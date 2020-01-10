@@ -20,6 +20,7 @@
 
 
 
+
 #[macro_use]
 mod macros;
 #[cfg(feature = "serde-1")]
@@ -30,6 +31,11 @@ mod mutable_keys;
 
 pub mod set;
 pub mod map;
+
+
+
+#[cfg(feature = "rayon")]
+mod rayon;
 
 pub use equivalent::Equivalent;
 pub use map::IndexMap;
@@ -77,3 +83,11 @@ impl<K, V> Bucket<K, V> {
     fn muts(&mut self) -> (&mut K, &mut V) { (&mut self.key, &mut self.value) }
 }
 
+trait Entries {
+    type Entry;
+    fn into_entries(self) -> Vec<Self::Entry>;
+    fn as_entries(&self) -> &[Self::Entry];
+    fn as_entries_mut(&mut self) -> &mut [Self::Entry];
+    fn with_entries<F>(&mut self, f: F)
+        where F: FnOnce(&mut [Self::Entry]);
+}

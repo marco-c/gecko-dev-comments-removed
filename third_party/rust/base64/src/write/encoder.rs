@@ -1,6 +1,6 @@
-use ::encode::encode_to_slice;
+use encode::encode_to_slice;
+use std::io::{ErrorKind, Result, Write};
 use std::{cmp, fmt};
-use std::io::{Result, Write};
 use {encode_config_slice, Config};
 
 pub(crate) const BUF_SIZE: usize = 1024;
@@ -60,25 +60,29 @@ pub struct EncoderWriter<'a, W: 'a + Write> {
     w: &'a mut W,
     
     
-    extra: [u8; MIN_ENCODE_CHUNK_SIZE],
+    extra_input: [u8; MIN_ENCODE_CHUNK_SIZE],
     
-    extra_len: usize,
+    extra_input_occupied_len: usize,
+    
     
     output: [u8; BUF_SIZE],
     
+    output_occupied_len: usize,
+    
     finished: bool,
     
-    panicked: bool
+    panicked: bool,
 }
 
 impl<'a, W: Write> fmt::Debug for EncoderWriter<'a, W> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "extra:{:?} extra_len:{:?} output[..5]: {:?}",
-            self.extra,
-            self.extra_len,
-            &self.output[0..5]
+            "extra_input: {:?} extra_input_occupied_len:{:?} output[..5]: {:?} output_occupied_len: {:?}",
+            self.extra_input,
+            self.extra_input_occupied_len,
+            &self.output[0..5],
+            self.output_occupied_len
         )
     }
 }
@@ -89,14 +93,17 @@ impl<'a, W: Write> EncoderWriter<'a, W> {
         EncoderWriter {
             config,
             w,
-            extra: [0u8; MIN_ENCODE_CHUNK_SIZE],
-            extra_len: 0,
+            extra_input: [0u8; MIN_ENCODE_CHUNK_SIZE],
+            extra_input_occupied_len: 0,
             output: [0u8; BUF_SIZE],
+            output_occupied_len: 0,
             finished: false,
-            panicked: false
+            panicked: false,
         }
     }
 
+    
+    
     
     
     
@@ -112,31 +119,107 @@ impl<'a, W: Write> EncoderWriter<'a, W> {
             return Ok(());
         };
 
-        if self.extra_len > 0 {
+        self.write_all_encoded_output()?;
+
+        if self.extra_input_occupied_len > 0 {
             let encoded_len = encode_config_slice(
-                &self.extra[..self.extra_len],
+                &self.extra_input[..self.extra_input_occupied_len],
                 self.config,
                 &mut self.output[..],
             );
-            self.panicked = true;
-            let _ = self.w.write(&self.output[..encoded_len])?;
-            self.panicked = false;
+
+            self.output_occupied_len = encoded_len;
+
+            self.write_all_encoded_output()?;
+
             
-            self.extra_len = 0;
+            self.extra_input_occupied_len = 0;
         }
 
         self.finished = true;
         Ok(())
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    fn write_to_delegate(&mut self, current_output_len: usize) -> Result<()> {
+        self.panicked = true;
+        let res = self.w.write(&self.output[..current_output_len]);
+        self.panicked = false;
+
+        return res.map(|consumed| {
+            debug_assert!(consumed <= current_output_len);
+
+            if consumed < current_output_len {
+                self.output_occupied_len = current_output_len.checked_sub(consumed).unwrap();
+                
+                
+                
+                self.output.rotate_left(consumed);
+            } else {
+                self.output_occupied_len = 0;
+            }
+
+            ()
+        });
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn write_all_encoded_output(&mut self) -> Result<()> {
+        while self.output_occupied_len > 0 {
+            let remaining_len = self.output_occupied_len;
+            match self.write_to_delegate(remaining_len) {
+                
+                Err(ref e) if e.kind() == ErrorKind::Interrupted => {}
+                
+                Err(e) => return Err(e),
+                
+                Ok(_) => {}
+            };
+        }
+
+        debug_assert_eq!(0, self.output_occupied_len);
+        Ok(())
+    }
 }
 
 impl<'a, W: Write> Write for EncoderWriter<'a, W> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn write(&mut self, input: &[u8]) -> Result<usize> {
         if self.finished {
             panic!("Cannot write more after calling finish()");
         }
 
-        if input.len() == 0 {
+        if input.is_empty() {
             return Ok(0);
         }
 
@@ -147,39 +230,53 @@ impl<'a, W: Write> Write for EncoderWriter<'a, W> {
         
 
         
+        if self.output_occupied_len > 0 {
+            let current_len = self.output_occupied_len;
+            return self.write_to_delegate(current_len)
+                
+                .map(|_| 0)
+
+        }
+
+        debug_assert_eq!(0, self.output_occupied_len);
+
+        
         let mut extra_input_read_len = 0;
         let mut input = input;
 
-        let orig_extra_len = self.extra_len;
+        let orig_extra_len = self.extra_input_occupied_len;
 
         let mut encoded_size = 0;
         
         let mut max_input_len = MAX_INPUT_LEN;
 
         
-        if self.extra_len > 0 {
-            debug_assert!(self.extra_len < 3);
-            if input.len() + self.extra_len >= MIN_ENCODE_CHUNK_SIZE {
+        if self.extra_input_occupied_len > 0 {
+            debug_assert!(self.extra_input_occupied_len < 3);
+            if input.len() + self.extra_input_occupied_len >= MIN_ENCODE_CHUNK_SIZE {
                 
                 
                 
                 
                 
-                extra_input_read_len = MIN_ENCODE_CHUNK_SIZE - self.extra_len;
+                extra_input_read_len = MIN_ENCODE_CHUNK_SIZE - self.extra_input_occupied_len;
                 debug_assert!(extra_input_read_len > 0);
                 
                 
-                self.extra[self.extra_len..MIN_ENCODE_CHUNK_SIZE].copy_from_slice(&input[0..extra_input_read_len]);
+                self.extra_input[self.extra_input_occupied_len..MIN_ENCODE_CHUNK_SIZE]
+                    .copy_from_slice(&input[0..extra_input_read_len]);
 
-                let len = encode_to_slice(&self.extra[0..MIN_ENCODE_CHUNK_SIZE],
-                                          &mut self.output[..],
-                                          self.config.char_set.encode_table());
+                let len = encode_to_slice(
+                    &self.extra_input[0..MIN_ENCODE_CHUNK_SIZE],
+                    &mut self.output[..],
+                    self.config.char_set.encode_table(),
+                );
                 debug_assert_eq!(4, len);
 
                 input = &input[extra_input_read_len..];
 
                 
-                self.extra_len = 0;
+                self.extra_input_occupied_len = 0;
                 
                 encoded_size = 4;
                 
@@ -190,23 +287,27 @@ impl<'a, W: Write> Write for EncoderWriter<'a, W> {
                 
                 
                 debug_assert_eq!(1, input.len());
-                debug_assert_eq!(1, self.extra_len);
+                debug_assert_eq!(1, self.extra_input_occupied_len);
 
-                self.extra[self.extra_len] = input[0];
-                self.extra_len += 1;
+                self.extra_input[self.extra_input_occupied_len] = input[0];
+                self.extra_input_occupied_len += 1;
                 return Ok(1);
             };
         } else if input.len() < MIN_ENCODE_CHUNK_SIZE {
             
-            self.extra[0..input.len()].copy_from_slice(input);
-            self.extra_len = input.len();
+            self.extra_input[0..input.len()].copy_from_slice(input);
+            self.extra_input_occupied_len = input.len();
             return Ok(input.len());
         };
 
         
         debug_assert!(encoded_size == 0 || encoded_size == 4);
-        debug_assert!(MAX_INPUT_LEN - max_input_len == 0
-            || MAX_INPUT_LEN - max_input_len == MIN_ENCODE_CHUNK_SIZE);
+        debug_assert!(
+            // didn't encode extra input
+            MAX_INPUT_LEN == max_input_len
+                // encoded one triple
+                || MAX_INPUT_LEN == max_input_len + MIN_ENCODE_CHUNK_SIZE
+        );
 
         
         let input_complete_chunks_len = input.len() - (input.len() % MIN_ENCODE_CHUNK_SIZE);
@@ -219,25 +320,27 @@ impl<'a, W: Write> Write for EncoderWriter<'a, W> {
             &mut self.output[encoded_size..],
             self.config.char_set.encode_table(),
         );
-        self.panicked = true;
-        let r = self.w.write(&self.output[..encoded_size]);
-        self.panicked = false;
-        match r {
-            Ok(_) => return Ok(extra_input_read_len + input_chunks_to_encode_len),
-            Err(_) => {
-                
-                self.extra_len = orig_extra_len;
-                return r;
-            }
-        }
 
         
         
+        
+
+        self.write_to_delegate(encoded_size)
+            
+            
+            .map(|_| extra_input_read_len + input_chunks_to_encode_len)
+            .map_err( |e| {
+                
+                self.extra_input_occupied_len = orig_extra_len;
+
+                e
+            })
     }
 
     
     
     fn flush(&mut self) -> Result<()> {
+        self.write_all_encoded_output()?;
         self.w.flush()
     }
 }

@@ -1,6 +1,6 @@
 pub const INVALID_VALUE: u8 = 255;
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub const STANDARD_ENCODE: &'static [u8; 64] = &[
+pub const STANDARD_ENCODE: &[u8; 64] = &[
     65, 
     66, 
     67, 
@@ -67,7 +67,7 @@ pub const STANDARD_ENCODE: &'static [u8; 64] = &[
     47, 
 ];
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub const STANDARD_DECODE: &'static [u8; 256] = &[
+pub const STANDARD_DECODE: &[u8; 256] = &[
     INVALID_VALUE, 
     INVALID_VALUE, 
     INVALID_VALUE, 
@@ -326,7 +326,7 @@ pub const STANDARD_DECODE: &'static [u8; 256] = &[
     INVALID_VALUE, 
 ];
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub const URL_SAFE_ENCODE: &'static [u8; 64] = &[
+pub const URL_SAFE_ENCODE: &[u8; 64] = &[
     65, 
     66, 
     67, 
@@ -393,7 +393,7 @@ pub const URL_SAFE_ENCODE: &'static [u8; 64] = &[
     95, 
 ];
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub const URL_SAFE_DECODE: &'static [u8; 256] = &[
+pub const URL_SAFE_DECODE: &[u8; 256] = &[
     INVALID_VALUE, 
     INVALID_VALUE, 
     INVALID_VALUE, 
@@ -652,7 +652,7 @@ pub const URL_SAFE_DECODE: &'static [u8; 256] = &[
     INVALID_VALUE, 
 ];
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub const CRYPT_ENCODE: &'static [u8; 64] = &[
+pub const CRYPT_ENCODE: &[u8; 64] = &[
     46, 
     47, 
     48, 
@@ -719,7 +719,7 @@ pub const CRYPT_ENCODE: &'static [u8; 64] = &[
     122, 
 ];
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub const CRYPT_DECODE: &'static [u8; 256] = &[
+pub const CRYPT_DECODE: &[u8; 256] = &[
     INVALID_VALUE, 
     INVALID_VALUE, 
     INVALID_VALUE, 

@@ -1,5 +1,8 @@
 
 
+#[cfg(feature = "rayon")]
+pub use ::rayon::set as rayon;
+
 use std::cmp::Ordering;
 use std::collections::hash_map::RandomState;
 use std::fmt;
@@ -10,7 +13,7 @@ use std::ops::{BitAnd, BitOr, BitXor, Sub};
 use std::slice;
 use std::vec;
 
-use super::{IndexMap, Equivalent};
+use super::{IndexMap, Equivalent, Entries};
 
 type Bucket<T> = super::Bucket<T, ()>;
 
@@ -58,6 +61,28 @@ type Bucket<T> = super::Bucket<T, ()>;
 #[derive(Clone)]
 pub struct IndexSet<T, S = RandomState> {
     map: IndexMap<T, (), S>,
+}
+
+impl<T, S> Entries for IndexSet<T, S> {
+    type Entry = Bucket<T>;
+
+    fn into_entries(self) -> Vec<Self::Entry> {
+        self.map.into_entries()
+    }
+
+    fn as_entries(&self) -> &[Self::Entry] {
+        self.map.as_entries()
+    }
+
+    fn as_entries_mut(&mut self) -> &mut [Self::Entry] {
+        self.map.as_entries_mut()
+    }
+
+    fn with_entries<F>(&mut self, f: F)
+        where F: FnOnce(&mut [Self::Entry])
+    {
+        self.map.with_entries(f);
+    }
 }
 
 impl<T, S> fmt::Debug for IndexSet<T, S>
@@ -160,6 +185,28 @@ impl<T, S> IndexSet<T, S>
     
     pub fn insert(&mut self, value: T) -> bool {
         self.map.insert(value, ()).is_none()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn insert_full(&mut self, value: T) -> (usize, bool) {
+        use super::map::Entry::*;
+
+        match self.map.entry(value) {
+            Occupied(e) => (e.index(), false),
+            Vacant(e) => {
+                let index = e.index();
+                e.insert(());
+                (index, true)
+            }
+        }
     }
 
     
@@ -401,6 +448,13 @@ impl<T, S> IndexSet<T, S> {
 }
 
 
+
+
+
+
+
+
+
 pub struct IntoIter<T> {
     iter: vec::IntoIter<Bucket<T>>,
 }
@@ -422,6 +476,20 @@ impl<T> ExactSizeIterator for IntoIter<T> {
         self.iter.len()
     }
 }
+
+impl<T: fmt::Debug> fmt::Debug for IntoIter<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let iter = self.iter.as_slice().iter().map(Bucket::key_ref);
+        f.debug_list().entries(iter).finish()
+    }
+}
+
+
+
+
+
+
+
 
 
 pub struct Iter<'a, T: 'a> {
@@ -445,6 +513,25 @@ impl<'a, T> ExactSizeIterator for Iter<'a, T> {
         self.iter.len()
     }
 }
+
+impl<'a, T> Clone for Iter<'a, T> {
+    fn clone(&self) -> Self {
+        Iter { iter: self.iter.clone() }
+    }
+}
+
+impl<'a, T: fmt::Debug> fmt::Debug for Iter<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_list().entries(self.clone()).finish()
+    }
+}
+
+
+
+
+
+
+
 
 pub struct Drain<'a, T: 'a> {
     iter: vec::Drain<'a, Bucket<T>>,
@@ -573,6 +660,13 @@ impl<T, S> IndexSet<T, S>
 }
 
 
+
+
+
+
+
+
+
 pub struct Difference<'a, T: 'a, S: 'a> {
     iter: Iter<'a, T>,
     other: &'a IndexSet<T, S>,
@@ -611,6 +705,28 @@ impl<'a, T, S> DoubleEndedIterator for Difference<'a, T, S>
         None
     }
 }
+
+impl<'a, T, S> Clone for Difference<'a, T, S> {
+    fn clone(&self) -> Self {
+        Difference { iter: self.iter.clone(), ..*self }
+    }
+}
+
+impl<'a, T, S> fmt::Debug for Difference<'a, T, S>
+    where T: fmt::Debug + Eq + Hash,
+          S: BuildHasher
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_list().entries(self.clone()).finish()
+    }
+}
+
+
+
+
+
+
+
 
 
 pub struct Intersection<'a, T: 'a, S: 'a> {
@@ -652,6 +768,28 @@ impl<'a, T, S> DoubleEndedIterator for Intersection<'a, T, S>
     }
 }
 
+impl<'a, T, S> Clone for Intersection<'a, T, S> {
+    fn clone(&self) -> Self {
+        Intersection { iter: self.iter.clone(), ..*self }
+    }
+}
+
+impl<'a, T, S> fmt::Debug for Intersection<'a, T, S>
+    where T: fmt::Debug + Eq + Hash,
+          S: BuildHasher,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_list().entries(self.clone()).finish()
+    }
+}
+
+
+
+
+
+
+
+
 
 pub struct SymmetricDifference<'a, T: 'a, S1: 'a, S2: 'a> {
     iter: Chain<Difference<'a, T, S2>, Difference<'a, T, S1>>,
@@ -689,6 +827,29 @@ impl<'a, T, S1, S2> DoubleEndedIterator for SymmetricDifference<'a, T, S1, S2>
     }
 }
 
+impl<'a, T, S1, S2> Clone for SymmetricDifference<'a, T, S1, S2> {
+    fn clone(&self) -> Self {
+        SymmetricDifference { iter: self.iter.clone() }
+    }
+}
+
+impl<'a, T, S1, S2> fmt::Debug for SymmetricDifference<'a, T, S1, S2>
+    where T: fmt::Debug + Eq + Hash,
+          S1: BuildHasher,
+          S2: BuildHasher,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_list().entries(self.clone()).finish()
+    }
+}
+
+
+
+
+
+
+
+
 
 pub struct Union<'a, T: 'a, S: 'a> {
     iter: Chain<Iter<'a, T>, Difference<'a, T, S>>,
@@ -721,6 +882,21 @@ impl<'a, T, S> DoubleEndedIterator for Union<'a, T, S>
 {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back()
+    }
+}
+
+impl<'a, T, S> Clone for Union<'a, T, S> {
+    fn clone(&self) -> Self {
+        Union { iter: self.iter.clone() }
+    }
+}
+
+impl<'a, T, S> fmt::Debug for Union<'a, T, S>
+    where T: fmt::Debug + Eq + Hash,
+          S: BuildHasher,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_list().entries(self.clone()).finish()
     }
 }
 
@@ -829,6 +1005,29 @@ mod tests {
 
         for &elt in &not_present {
             assert!(set.get(&elt).is_none());
+        }
+    }
+
+    #[test]
+    fn insert_full() {
+        let insert = vec![9, 2, 7, 1, 4, 6, 13];
+        let present = vec![1, 6, 2];
+        let mut set = IndexSet::with_capacity(insert.len());
+
+        for (i, &elt) in enumerate(&insert) {
+            assert_eq!(set.len(), i);
+            let (index, success) = set.insert_full(elt);
+            assert!(success);
+            assert_eq!(Some(index), set.get_full(&elt).map(|x| x.0));
+            assert_eq!(set.len(), i + 1);
+        }
+
+        let len = set.len();
+        for &elt in &present {
+            let (index, success) = set.insert_full(elt);
+            assert!(!success);
+            assert_eq!(Some(index), set.get_full(&elt).map(|x| x.0));
+            assert_eq!(set.len(), len);
         }
     }
 
