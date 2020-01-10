@@ -302,6 +302,23 @@ this.LoginTestUtils.testData = {
       ),
 
       
+      new LoginInfo(
+        "https://www7.example.com:8080",
+        "https://www7.example.com:8080",
+        null,
+        "8080_username",
+        "8080_pass"
+      ),
+
+      new LoginInfo(
+        "https://www7.example.com:8080",
+        null,
+        "My dev server",
+        "8080_username2",
+        "8080_pass2"
+      ),
+
+      
 
       
       new LoginInfo(
@@ -405,6 +422,26 @@ this.LoginTestUtils.testData = {
         "Example Login Two",
         "the username",
         "the password two"
+      ),
+
+      
+
+      new LoginInfo(
+        "file:///",
+        "file:///",
+        null,
+        "file: username",
+        "file: password"
+      ),
+
+      
+      
+      new LoginInfo(
+        "https://js.example.com",
+        "javascript:",
+        null,
+        "javascript: username",
+        "javascript: password"
       ),
     ];
   },
