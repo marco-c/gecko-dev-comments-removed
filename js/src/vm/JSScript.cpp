@@ -726,16 +726,25 @@ SharedScriptData::SharedScriptData(uint32_t codeLength, uint32_t noteLength,
   initElements<GCPtrAtom>(cursor, natoms);
   cursor += natoms * sizeof(GCPtrAtom);
 
-  static_assert(alignof(GCPtrAtom) >= alignof(jsbytecode),
-                "Incompatible alignment");
-  codeOffset_ = cursor;
-  initElements<jsbytecode>(cursor, codeLength);
-  cursor += codeLength * sizeof(jsbytecode);
+  
+  
+  {
+    MOZ_ASSERT(cursor % CodeNoteAlign == 0);
 
-  static_assert(alignof(jsbytecode) >= alignof(jssrcnote),
-                "Incompatible alignment");
-  initElements<jssrcnote>(cursor, noteLength);
-  cursor += noteLength * sizeof(jssrcnote);
+    static_assert(CodeNoteAlign >= alignof(jsbytecode),
+                  "Incompatible alignment");
+    codeOffset_ = cursor;
+    initElements<jsbytecode>(cursor, codeLength);
+    cursor += codeLength * sizeof(jsbytecode);
+
+    static_assert(alignof(jsbytecode) >= alignof(jssrcnote),
+                  "Incompatible alignment");
+    initElements<jssrcnote>(cursor, noteLength);
+    cursor += noteLength * sizeof(jssrcnote);
+
+    MOZ_ASSERT(cursor % CodeNoteAlign == 0);
+  }
+
   tailOffset_ = cursor;
 
   
@@ -3402,6 +3411,8 @@ SharedScriptData* js::SharedScriptData::new_(JSContext* cx, uint32_t codeLength,
 
 bool JSScript::createSharedScriptData(JSContext* cx, uint32_t codeLength,
                                       uint32_t noteLength, uint32_t natoms) {
+  MOZ_ASSERT((codeLength + noteLength) % sizeof(uint32_t) == 0,
+             "Source notes should have been padded already");
   MOZ_ASSERT(!scriptData_);
   scriptData_ = SharedScriptData::new_(cx, codeLength, noteLength, natoms);
   return !!scriptData_;
@@ -3880,7 +3891,7 @@ bool JSScript::initFunctionPrototype(JSContext* cx, HandleScript script,
   gcthings[0] = JS::GCCellPtr(functionProtoScope);
 
   uint32_t codeLength = 1;
-  uint32_t noteLength = 1;
+  uint32_t noteLength = 3;
   uint32_t numAtoms = 0;
   if (!script->createSharedScriptData(cx, codeLength, noteLength, numAtoms)) {
     return false;
@@ -3891,6 +3902,8 @@ bool JSScript::initFunctionPrototype(JSContext* cx, HandleScript script,
 
   jssrcnote* notes = script->scriptData_->notes();
   notes[0] = SRC_NULL;
+  notes[1] = SRC_NULL;
+  notes[2] = SRC_NULL;
 
   return script->shareScriptData(cx);
 }
@@ -4940,14 +4953,16 @@ bool JSScript::hasBreakpointsAt(jsbytecode* pc) {
 
   
   
-  static_assert(frontend::MaxSrcNotesLength < UINT32_MAX,
-                "Length + 1 shouldn't overflow UINT32_MAX");
-  size_t noteLengthNoTerminator = bce->bytecodeSection().notes().length();
-  size_t noteLength = noteLengthNoTerminator + 1;
-  MOZ_RELEASE_ASSERT(noteLengthNoTerminator <= frontend::MaxSrcNotesLength);
+  static_assert(frontend::MaxSrcNotesLength <= UINT32_MAX - CodeNoteAlign,
+                "Length + CodeNoteAlign shouldn't overflow UINT32_MAX");
+  size_t noteLength = bce->bytecodeSection().notes().length();
+  MOZ_RELEASE_ASSERT(noteLength <= frontend::MaxSrcNotesLength);
+
+  size_t nullLength = ComputeNotePadding(codeLength, noteLength);
 
   
-  if (!script->createSharedScriptData(cx, codeLength, noteLength, natoms)) {
+  if (!script->createSharedScriptData(cx, codeLength, noteLength + nullLength,
+                                      natoms)) {
     return false;
   }
 
@@ -4968,9 +4983,11 @@ bool JSScript::hasBreakpointsAt(jsbytecode* pc) {
   }
 
   
-  std::copy_n(bce->bytecodeSection().code().begin(), codeLength, data->code());
-  bce->copySrcNotes(data->notes(), noteLength);
   InitAtomMap(*bce->perScriptData().atomIndices(), data->atoms());
+  std::copy_n(bce->bytecodeSection().code().begin(), codeLength, data->code());
+  std::copy_n(bce->bytecodeSection().notes().begin(), noteLength,
+              data->notes());
+  std::fill_n(data->notes() + noteLength, nullLength, SRC_NULL);
 
   return true;
 }

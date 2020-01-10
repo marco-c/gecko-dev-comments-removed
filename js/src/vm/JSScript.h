@@ -1678,6 +1678,22 @@ class alignas(uintptr_t) SharedScriptData final {
   static SharedScriptData* new_(JSContext* cx, uint32_t codeLength,
                                 uint32_t noteLength, uint32_t natoms);
 
+  
+  
+  
+  static constexpr size_t CodeNoteAlign = sizeof(uint32_t);
+
+  
+  static uint32_t ComputeNotePadding(uint32_t codeLength, uint32_t noteLength) {
+    uint32_t nullLength =
+        CodeNoteAlign - (codeLength + noteLength) % CodeNoteAlign;
+
+    
+    MOZ_ASSERT(nullLength >= 1);
+
+    return nullLength;
+  }
+
   uint32_t refCount() const { return refCount_; }
   void AddRef() { refCount_++; }
   void Release() {
