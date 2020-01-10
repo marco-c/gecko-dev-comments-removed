@@ -228,7 +228,9 @@ var gURLBarHandler = {
 
 
   formatValue() {
-    if (typeof this.textbox.formatValue == "function") {
+    if (this.quantumbar) {
+      this.urlbar.formatValue();
+    } else if (typeof this.textbox.formatValue == "function") {
       this.textbox.formatValue();
     }
   },
