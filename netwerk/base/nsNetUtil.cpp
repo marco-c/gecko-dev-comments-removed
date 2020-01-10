@@ -1848,7 +1848,15 @@ nsresult NS_NewURI(nsIURI** aURI, const nsACString& aSpec,
         .Finalize(aURI);
   }
 
-  if (scheme.EqualsLiteral("dweb") || scheme.EqualsLiteral("dat")) {
+  
+  
+  
+  
+  
+  if (scheme.EqualsLiteral("dweb") || scheme.EqualsLiteral("dat") ||
+      scheme.EqualsLiteral("ipfs") || scheme.EqualsLiteral("ipns") ||
+      scheme.EqualsLiteral("ssb") || scheme.EqualsLiteral("wtp") ||
+      StringBeginsWith(scheme, NS_LITERAL_CSTRING("ext+"))) {
     return NewStandardURI(aSpec, aCharset, aBaseURI, -1, aURI);
   }
 
