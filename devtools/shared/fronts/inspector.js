@@ -182,6 +182,21 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     });
   }
 
+  getNodeActorFromContentDomReference(contentDomReference) {
+    if (!this.traits.retrieveNodeFromContentDomReference) {
+      console.error(
+        "The server is too old to retrieve a node from a contentDomReference"
+      );
+      return Promise.resolve(null);
+    }
+
+    return super
+      .getNodeActorFromContentDomReference(contentDomReference)
+      .then(response => {
+        return response ? response.node : null;
+      });
+  }
+
   getStyleSheetOwnerNode(styleSheetActorID) {
     return super.getStyleSheetOwnerNode(styleSheetActorID).then(response => {
       return response ? response.node : null;
@@ -639,6 +654,48 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
   async getAllInspectorFronts() {
     const remoteInspectors = await this.getChildInspectors();
     return [this, ...remoteInspectors];
+  }
+
+  
+
+
+
+
+
+
+  async getNodeFrontFromNodeGrip(grip) {
+    const gripHasContentDomReference = "contentDomReference" in grip;
+
+    if (!gripHasContentDomReference) {
+      
+      
+      
+      
+      return this.walker.gripToNodeFront(grip);
+    }
+
+    const { contentDomReference } = grip;
+    const { browsingContextId } = contentDomReference;
+
+    
+    
+    
+    
+    if (this.targetFront.browsingContextID === browsingContextId) {
+      return this.walker.getNodeActorFromContentDomReference(
+        contentDomReference
+      );
+    }
+
+    
+    
+    
+    const descriptor = await this.targetFront.client.mainRoot.getBrowsingContextDescriptor(
+      browsingContextId
+    );
+    const target = await descriptor.getTarget();
+    const { walker } = await target.getFront("inspector");
+    return walker.getNodeActorFromContentDomReference(contentDomReference);
   }
 }
 

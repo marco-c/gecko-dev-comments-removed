@@ -171,6 +171,16 @@ loader.lazyRequireGetter(
   true
 );
 
+
+if (!isWorker) {
+  loader.lazyRequireGetter(
+    this,
+    "ContentDOMReference",
+    "resource://gre/modules/ContentDOMReference.jsm",
+    true
+  );
+}
+
 loader.lazyServiceGetter(
   this,
   "eventListenerService",
@@ -372,7 +382,10 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     return {
       actor: this.actorID,
       root: this.rootNode.form(),
-      traits: {},
+      traits: {
+        
+        retrieveNodeFromContentDomReference: true,
+      },
     };
   },
 
@@ -2651,6 +2664,24 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return this.attachElement(win.frameElement);
+  },
+
+  
+
+
+  getNodeActorFromContentDomReference: function(contentDomReference) {
+    let rawNode = ContentDOMReference.resolve(contentDomReference);
+    if (!rawNode || !this._isInDOMTree(rawNode)) {
+      return null;
+    }
+
+    
+    
+    if (rawNode.defaultView && rawNode === rawNode.defaultView.document) {
+      rawNode = rawNode.documentElement;
+    }
+
+    return this.attachElement(rawNode);
   },
 
   
