@@ -160,9 +160,10 @@ class DateTimeInfo {
 
 
 
-  static int32_t localTZA() {
+
+  static int32_t utcToLocalStandardOffsetSeconds() {
     auto guard = acquireLockWithValidTimeZone();
-    return guard->localTZA_;
+    return guard->utcToLocalStandardOffsetSeconds_;
   }
 
 #if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
@@ -189,6 +190,14 @@ class DateTimeInfo {
     auto guard = acquireLockWithValidTimeZone();
     return guard->internalTimeZoneDisplayName(buf, buflen, utcMilliseconds,
                                               locale);
+  }
+#else
+  
+
+
+
+  static int32_t localTZA() {
+    return utcToLocalStandardOffsetSeconds() * msPerSecond;
   }
 #endif 
 
@@ -236,10 +245,6 @@ class DateTimeInfo {
 
 
 
-
-  int32_t localTZA_;
-
-  
 
 
 

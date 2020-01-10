@@ -14,8 +14,16 @@
 namespace js {
 
 class DateObject : public NativeObject {
+  
   static const uint32_t UTC_TIME_SLOT = 0;
-  static const uint32_t TZA_SLOT = 1;
+
+  
+  
+  
+  
+  
+  
+  static const uint32_t UTC_TIME_ZONE_OFFSET_SLOT = 1;
 
   
 

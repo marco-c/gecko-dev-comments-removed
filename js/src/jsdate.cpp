@@ -1470,16 +1470,16 @@ void DateObject::setUTCTime(ClippedTime t, MutableHandleValue vp) {
 }
 
 void DateObject::fillLocalTimeSlots() {
-  const int32_t localTZA = DateTimeInfo::localTZA();
+  const int32_t utcTZOffset = DateTimeInfo::utcToLocalStandardOffsetSeconds();
 
   
   if (!getReservedSlot(LOCAL_TIME_SLOT).isUndefined() &&
-      getReservedSlot(TZA_SLOT).toInt32() == localTZA) {
+      getReservedSlot(UTC_TIME_ZONE_OFFSET_SLOT).toInt32() == utcTZOffset) {
     return;
   }
 
   
-  setReservedSlot(TZA_SLOT, Int32Value(localTZA));
+  setReservedSlot(UTC_TIME_ZONE_OFFSET_SLOT, Int32Value(utcTZOffset));
 
   double utcTime = UTCTime().toNumber();
 

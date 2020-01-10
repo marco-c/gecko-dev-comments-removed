@@ -185,14 +185,13 @@ void js::DateTimeInfo::updateTimeZone() {
 
 
 
-  utcToLocalStandardOffsetSeconds_ = UTCToLocalStandardOffsetSeconds();
+  int32_t newOffset = UTCToLocalStandardOffsetSeconds();
 
-  int32_t newTZA = utcToLocalStandardOffsetSeconds_ * msPerSecond;
-  if (updateIfChanged && newTZA == localTZA_) {
+  if (updateIfChanged && newOffset == utcToLocalStandardOffsetSeconds_) {
     return;
   }
 
-  localTZA_ = newTZA;
+  utcToLocalStandardOffsetSeconds_ = newOffset;
 
   dstRange_.reset();
 
