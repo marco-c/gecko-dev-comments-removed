@@ -26,7 +26,8 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 TARGET_TASK_FILTERS = (
     '.*-ccov\/.*',
-    'windows10-aarch64/opt.*'
+    'windows10-aarch64/opt.*',
+    'android-hw.*'
 )
 
 
