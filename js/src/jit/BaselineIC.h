@@ -1836,10 +1836,9 @@ struct IonOsrTempData;
 
 
 
-template <typename T>
-void StoreToTypedArray(JSContext* cx, MacroAssembler& masm, Scalar::Type type,
-                       const ValueOperand& value, const T& dest,
-                       Register scratch, Label* failure);
+void StoreToTypedObject(JSContext* cx, MacroAssembler& masm, Scalar::Type type,
+                        const ValueOperand& value, const Address& dest,
+                        Register scratch, Label* failure);
 
 extern MOZ_MUST_USE bool TypeMonitorResult(JSContext* cx,
                                            ICMonitoredFallbackStub* stub,
