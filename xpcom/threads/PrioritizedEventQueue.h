@@ -9,13 +9,12 @@
 
 #include "mozilla/AbstractEventQueue.h"
 #include "mozilla/EventQueue.h"
-#include "mozilla/IdlePeriodState.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/TypeTraits.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
+#include "nsIIdlePeriod.h"
 
-class nsIIdlePeriod;
 class nsIRunnable;
 
 namespace mozilla {
@@ -44,7 +43,7 @@ class PrioritizedEventQueue final : public AbstractEventQueue {
  public:
   static const bool SupportsPrioritization = true;
 
-  explicit PrioritizedEventQueue(already_AddRefed<nsIIdlePeriod>&& aIdlePeriod);
+  explicit PrioritizedEventQueue(already_AddRefed<nsIIdlePeriod> aIdlePeriod);
 
   virtual ~PrioritizedEventQueue();
 
@@ -91,14 +90,57 @@ class PrioritizedEventQueue final : public AbstractEventQueue {
     n += mDeferredTimersQueue->SizeOfIncludingThis(aMallocSizeOf);
     n += mIdleQueue->SizeOfIncludingThis(aMallocSizeOf);
 
-    n += mIdlePeriodState.SizeOfExcludingThis(aMallocSizeOf);
+    if (mIdlePeriod) {
+      n += aMallocSizeOf(mIdlePeriod);
+    }
 
     return n;
+  }
+
+  void SetIdleToken(uint64_t aId, TimeDuration aDuration);
+
+  bool IsActive() { return mActive; }
+
+  void EnsureIsActive() {
+    if (!mActive) {
+      SetActive();
+    }
+  }
+
+  void EnsureIsPaused() {
+    if (mActive) {
+      SetPaused();
+    }
   }
 
  private:
   EventQueuePriority SelectQueue(bool aUpdateState,
                                  const MutexAutoLock& aProofOfLock);
+
+  
+  mozilla::TimeStamp GetLocalIdleDeadline(bool& aShuttingDown);
+
+  
+  
+  void SetActive();
+  
+  
+  void SetPaused();
+
+  
+  TimeStamp GetIdleToken(TimeStamp aLocalIdlePeriodHint);
+
+  
+  
+  void RequestIdleToken(TimeStamp aLocalIdlePeriodHint);
+
+  
+  
+  bool HasIdleRequest() { return mIdleRequestId != 0; }
+
+  
+  
+  void ClearIdleToken();
 
   UniquePtr<EventQueue> mHighQueue;
   UniquePtr<EventQueue> mInputQueue;
@@ -123,6 +165,17 @@ class PrioritizedEventQueue final : public AbstractEventQueue {
   
   bool mProcessHighPriorityQueue = false;
 
+  
+  
+  
+  
+  nsCOMPtr<nsIIdlePeriod> mIdlePeriod;
+
+  
+  
+  
+  bool mHasPendingEventsPromisedIdleEvent = false;
+
   TimeStamp mInputHandlingStartTime;
 
   enum InputEventQueueState {
@@ -134,7 +187,19 @@ class PrioritizedEventQueue final : public AbstractEventQueue {
   InputEventQueueState mInputQueueState = STATE_DISABLED;
 
   
-  IdlePeriodState mIdlePeriodState;
+  
+  
+  
+  TimeStamp mIdleToken;
+
+  
+  uint64_t mIdleRequestId = 0;
+
+  RefPtr<ipc::IdleSchedulerChild> mIdleScheduler;
+  bool mIdleSchedulerInitialized = false;
+
+  
+  bool mActive = true;
 };
 
 }  
