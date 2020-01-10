@@ -698,7 +698,12 @@ const CFRPageActions = {
     }
     if (RecommendationMap.has(browser)) {
       const recommendation = RecommendationMap.get(browser);
-      if (isHostMatch(browser, recommendation.host)) {
+      if (
+        isHostMatch(browser, recommendation.host) ||
+        
+        
+        !recommendation.host
+      ) {
         
         
         pageAction.showAddressBarNotifier(recommendation);
