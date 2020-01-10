@@ -121,6 +121,9 @@ class MediaEngineTabVideoSource : public MediaEngineSource {
   int32_t mViewportHeight = 0;
   int32_t mTimePerFrame = 0;
   RefPtr<layers::ImageContainer> mImageContainer;
+  
+  
+  const RefPtr<media::Refcountable<dom::MediaTrackSettings>> mSettings;
 
   nsCOMPtr<nsPIDOMWindowOuter> mWindow;
   nsCOMPtr<nsITimer> mTimer;
