@@ -5,14 +5,12 @@
 
 
 use crate::parser::{Parse, ParserContext};
+use crate::stylesheets::CorsMode;
+use crate::values::computed::{Context, ToComputedValue};
 use cssparser::Parser;
+use servo_arc::Arc;
 use servo_url::ServoUrl;
 use std::fmt::{self, Write};
-
-
-
-use crate::values::computed::{Context, ToComputedValue};
-use servo_arc::Arc;
 use style_traits::{CssWriter, ParseError, ToCss};
 
 
@@ -44,7 +42,9 @@ pub struct CssUrl {
 impl CssUrl {
     
     
-    pub fn parse_from_string(url: String, context: &ParserContext) -> Self {
+    
+    
+    pub fn parse_from_string(url: String, context: &ParserContext, _: CorsMode) -> Self {
         let serialization = Arc::new(url);
         let resolved = context.url_data.join(&serialization).ok();
         CssUrl {
@@ -121,7 +121,11 @@ impl Parse for CssUrl {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         let url = input.expect_url()?;
-        Ok(Self::parse_from_string(url.as_ref().to_owned(), context))
+        Ok(Self::parse_from_string(
+            url.as_ref().to_owned(),
+            context,
+            CorsMode::None,
+        ))
     }
 }
 

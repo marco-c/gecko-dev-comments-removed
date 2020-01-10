@@ -260,12 +260,8 @@ pub struct SpecifiedImageUrl(pub SpecifiedUrl);
 
 impl SpecifiedImageUrl {
     
-    pub fn parse_from_string(url: String, context: &ParserContext) -> Self {
-        SpecifiedImageUrl(SpecifiedUrl::parse_from_string(
-            url,
-            context,
-            CorsMode::None,
-        ))
+    pub fn parse_from_string(url: String, context: &ParserContext, cors_mode: CorsMode) -> Self {
+        SpecifiedImageUrl(SpecifiedUrl::parse_from_string(url, context, cors_mode))
     }
 
     

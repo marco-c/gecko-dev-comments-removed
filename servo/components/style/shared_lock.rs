@@ -72,6 +72,14 @@ impl SharedRwLock {
     }
 
     
+    #[cfg(feature = "servo")]
+    pub fn new_leaked() -> Self {
+        SharedRwLock {
+            arc: Arc::new_leaked(RwLock::new(())),
+        }
+    }
+
+    
     #[cfg(feature = "gecko")]
     pub fn new_leaked() -> Self {
         SharedRwLock {
