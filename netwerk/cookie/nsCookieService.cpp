@@ -3958,7 +3958,14 @@ CookieStatus nsCookieService::CheckPrefs(
   
   if (aIsForeign && aIsTrackingResource && !aFirstPartyStorageAccessGranted &&
       aCookieSettings->GetRejectThirdPartyTrackers()) {
-    if (StoragePartitioningEnabled(aInputRejectedReason, aCookieSettings)) {
+    
+    
+    
+    
+    
+    if (StoragePartitioningEnabled(
+            nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER,
+            aCookieSettings)) {
       MOZ_ASSERT(!aOriginAttrs.mFirstPartyDomain.IsEmpty(),
                  "We must have a StoragePrincipal here!");
       return STATUS_ACCEPTED;
