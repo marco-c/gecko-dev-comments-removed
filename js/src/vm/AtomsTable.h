@@ -39,15 +39,56 @@ class MOZ_RAII AutoLockAllAtoms {
   ~AutoLockAllAtoms();
 };
 
+
+
+
+class AtomStateEntry {
+  uintptr_t bits;
+
+  static const uintptr_t NO_TAG_MASK = uintptr_t(-1) - 1;
+
+ public:
+  AtomStateEntry() : bits(0) {}
+  AtomStateEntry(const AtomStateEntry& other) : bits(other.bits) {}
+  AtomStateEntry(JSAtom* ptr, bool tagged)
+      : bits(uintptr_t(ptr) | uintptr_t(tagged)) {
+    MOZ_ASSERT((uintptr_t(ptr) & 0x1) == 0);
+  }
+
+  bool isPinned() const { return bits & 0x1; }
+
+  
+
+
+
+  void setPinned(bool pinned) const {
+    const_cast<AtomStateEntry*>(this)->bits |= uintptr_t(pinned);
+  }
+
+  JSAtom* asPtrUnbarriered() const {
+    MOZ_ASSERT(bits);
+    return reinterpret_cast<JSAtom*>(bits & NO_TAG_MASK);
+  }
+
+  JSAtom* asPtr(JSContext* cx) const;
+
+  bool needsSweep() {
+    JSAtom* atom = asPtrUnbarriered();
+    return gc::IsAboutToBeFinalizedUnbarriered(&atom);
+  }
+};
+
 struct AtomHasher {
   struct Lookup;
   static inline HashNumber hash(const Lookup& l);
-  static MOZ_ALWAYS_INLINE bool match(const WeakHeapPtr<JSAtom*>& entry,
+  static MOZ_ALWAYS_INLINE bool match(const AtomStateEntry& entry,
                                       const Lookup& lookup);
+  static void rekey(AtomStateEntry& k, const AtomStateEntry& newKey) {
+    k = newKey;
+  }
 };
 
-using AtomSet =
-    JS::GCHashSet<WeakHeapPtr<JSAtom*>, AtomHasher, SystemAllocPolicy>;
+using AtomSet = JS::GCHashSet<AtomStateEntry, AtomHasher, SystemAllocPolicy>;
 
 
 
