@@ -7,6 +7,7 @@
 
 #include "mozilla/ArrayUtils.h"  
 #include "mozilla/Assertions.h"  
+#include "mozilla/Utf8.h"        
 
 #include <algorithm>  
 #include <memory>     
@@ -31,6 +32,7 @@
 #include "vm/JSScript.h"  
 
 using mozilla::ArrayLength;
+using mozilla::Utf8Unit;
 
 struct JSContext;
 class JSString;
@@ -62,6 +64,12 @@ static bool Evaluate(JSContext* cx, const JS::CompileOptions& options,
                      JS::SourceText<char16_t>& sourceText) {
   JS::Rooted<JS::Value> dummy(cx);
   return JS::Evaluate(cx, options, sourceText, &dummy);
+}
+
+static bool Evaluate(JSContext* cx, const JS::CompileOptions& options,
+                     JS::SourceText<Utf8Unit>& sourceText) {
+  JS::Rooted<JS::Value> dummy(cx);
+  return JS::EvaluateDontInflate(cx, options, sourceText, &dummy);
 }
 
 template <typename Unit>
@@ -203,6 +211,7 @@ static bool IsExpectedFunctionString(JS::Handle<JSString*> str,
 
 BEGIN_TEST(testScriptSourceCompression_inOneChunk) {
   CHECK(run<char16_t>());
+  CHECK(run<Utf8Unit>());
   return true;
 }
 
@@ -235,6 +244,7 @@ END_TEST(testScriptSourceCompression_inOneChunk)
 
 BEGIN_TEST(testScriptSourceCompression_endsAtBoundaryInOneChunk) {
   CHECK(run<char16_t>());
+  CHECK(run<Utf8Unit>());
   return true;
 }
 
@@ -268,6 +278,7 @@ END_TEST(testScriptSourceCompression_endsAtBoundaryInOneChunk)
 
 BEGIN_TEST(testScriptSourceCompression_isExactChunk) {
   CHECK(run<char16_t>());
+  CHECK(run<Utf8Unit>());
   return true;
 }
 
@@ -298,6 +309,7 @@ END_TEST(testScriptSourceCompression_isExactChunk)
 
 BEGIN_TEST(testScriptSourceCompression_crossesChunkBoundary) {
   CHECK(run<char16_t>());
+  CHECK(run<Utf8Unit>());
   return true;
 }
 
@@ -330,6 +342,7 @@ END_TEST(testScriptSourceCompression_crossesChunkBoundary)
 
 BEGIN_TEST(testScriptSourceCompression_crossesChunkBoundary_endsAtBoundary) {
   CHECK(run<char16_t>());
+  CHECK(run<Utf8Unit>());
   return true;
 }
 
@@ -365,6 +378,7 @@ END_TEST(testScriptSourceCompression_crossesChunkBoundary_endsAtBoundary)
 
 BEGIN_TEST(testScriptSourceCompression_containsWholeChunk) {
   CHECK(run<char16_t>());
+  CHECK(run<Utf8Unit>());
   return true;
 }
 
@@ -399,6 +413,7 @@ END_TEST(testScriptSourceCompression_containsWholeChunk)
 
 BEGIN_TEST(testScriptSourceCompression_containsWholeChunk_endsAtBoundary) {
   CHECK(run<char16_t>());
+  CHECK(run<Utf8Unit>());
   return true;
 }
 
@@ -433,6 +448,7 @@ END_TEST(testScriptSourceCompression_containsWholeChunk_endsAtBoundary)
 
 BEGIN_TEST(testScriptSourceCompression_spansMultipleMiddleChunks) {
   CHECK(run<char16_t>());
+  CHECK(run<Utf8Unit>());
   return true;
 }
 
