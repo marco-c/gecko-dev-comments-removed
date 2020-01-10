@@ -399,17 +399,21 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     
     const isWasm = this._source.introductionType === "wasm";
     if (!isWasm && !scripts.some(script => !script.isFunction)) {
-      scripts.length = 0;
-      function addScripts(script) {
-        scripts.push(script);
-        script.getChildScripts().forEach(addScripts);
-      }
+      let newScript;
       try {
-        addScripts(this._source.reparse());
+        newScript = this._source.reparse();
       } catch (e) {
         
         
         
+      }
+      if (newScript) {
+        scripts.length = 0;
+        function addScripts(script) {
+          scripts.push(script);
+          script.getChildScripts().forEach(addScripts);
+        }
+        addScripts(newScript);
       }
     }
 
