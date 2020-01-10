@@ -194,7 +194,8 @@ class NrIceMediaStream {
   
   const std::string& GetId() const { return id_; }
 
-  sigslot::signal3<NrIceMediaStream*, const std::string&, const std::string&>
+  sigslot::signal5<NrIceMediaStream*, const std::string&, const std::string&,
+                   const std::string&, const std::string&>
       SignalCandidate;  
 
   sigslot::signal1<NrIceMediaStream*> SignalReady;   
