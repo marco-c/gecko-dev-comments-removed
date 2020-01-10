@@ -1,4 +1,4 @@
-
+/* eslint-env webextensions */
 "use strict";
 
 const { E10SUtils } = ChromeUtils.import(
@@ -38,10 +38,10 @@ const EXTENSION_DATA = {
       async details => {
         browser.test.log("webRequest onAuthRequired");
 
-        
-        
-        
-        
+        // A blocking request that returns a promise exercises a codepath that
+        // sets the notificationCallbacks on the channel to a JS object that we
+        // can't do directly QueryObject on with expected results.
+        // This triggered a crash which was fixed in bug 1528188.
         return new Promise((resolve, reject) => {
           setTimeout(resolve, 0);
         });
@@ -70,11 +70,11 @@ async function postFrom(start, target) {
       url: start,
     },
     async function(browser) {
-      info("Test tab ready: " + start);
+      info("Test tab ready: postFrom " + start);
 
-      
+      // Create the form element in our loaded URI.
       await ContentTask.spawn(browser, { target }, function({ target }) {
-        
+        // eslint-disable-next-line no-unsanitized/property
         content.document.body.innerHTML = `
         <form method="post" action="${target}">
           <input type="text" name="initialRemoteType" value="${
@@ -84,7 +84,7 @@ async function postFrom(start, target) {
         </form>`;
       });
 
-      
+      // Perform a form POST submit load.
       info("Performing POST submission");
       await performLoad(
         browser,
@@ -101,7 +101,7 @@ async function postFrom(start, target) {
         }
       );
 
-      
+      // Check that the POST data was submitted.
       info("Fetching results");
       return ContentTask.spawn(browser, null, () => {
         return {
@@ -114,11 +114,95 @@ async function postFrom(start, target) {
   );
 }
 
+async function loadAndGetProcessID(browser, target, expectedProcessSwitch) {
+  info(`Performing GET load: ${target}`);
+  await performLoad(
+    browser,
+    {
+      maybeErrorPage: true,
+    },
+    async () => {
+      BrowserTestUtils.loadURI(browser, target);
+      if (expectedProcessSwitch) {
+        await BrowserTestUtils.waitForEvent(
+          gBrowser.getTabForBrowser(browser),
+          "SSTabRestored"
+        );
+      }
+    }
+  );
+
+  info(`Navigated to: ${target}`);
+  browser = gBrowser.selectedBrowser;
+  let processID = await ContentTask.spawn(browser, null, () => {
+    return Services.appinfo.processID;
+  });
+  return processID;
+}
+
+async function testLoadAndRedirect(
+  target,
+  expectedProcessSwitch,
+  testRedirect
+) {
+  let start = httpURL(`dummy_page.html`);
+  return BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: start,
+    },
+    async function(_browser) {
+      info("Test tab ready: getFrom " + start);
+
+      let browser = gBrowser.selectedBrowser;
+      let firstProcessID = await ContentTask.spawn(browser, null, () => {
+        return Services.appinfo.processID;
+      });
+
+      info(`firstProcessID: ${firstProcessID}`);
+
+      let secondProcessID = await loadAndGetProcessID(
+        browser,
+        target,
+        expectedProcessSwitch
+      );
+
+      info(`secondProcessID: ${secondProcessID}`);
+      Assert.equal(firstProcessID != secondProcessID, expectedProcessSwitch);
+
+      if (!testRedirect) {
+        return;
+      }
+
+      let thirdProcessID = await loadAndGetProcessID(
+        browser,
+        add307(target),
+        expectedProcessSwitch
+      );
+
+      info(`thirdProcessID: ${thirdProcessID}`);
+      Assert.equal(firstProcessID != thirdProcessID, expectedProcessSwitch);
+      Assert.ok(secondProcessID == thirdProcessID);
+    }
+  );
+}
+
+// TODO: Currently no test framework for ftp://.
+add_task(async function test_protocol() {
+  await SpecialPowers.pushPrefEnv({ set: [[PREF_NAME, true]] });
+
+  // TODO: Processes should be switched due to navigation of different origins.
+  await testLoadAndRedirect("data:,foo", false, true);
+
+  // Redirecting to file::// is not allowed.
+  await testLoadAndRedirect(FILE_DUMMY, true, false);
+});
+
 add_task(async function test_disabled() {
   await SpecialPowers.pushPrefEnv({ set: [[PREF_NAME, false]] });
 
-  
-  
+  // With the pref disabled, file URIs should successfully POST, but remain in
+  // the 'file' process.
   info("DISABLED -- FILE -- raw URI load");
   let resp = await postFrom(FILE_DUMMY, PRINT_POSTDATA);
   is(resp.remoteType, E10SUtils.FILE_REMOTE_TYPE, "no process switch");
@@ -131,8 +215,8 @@ add_task(async function test_disabled() {
   is(resp307.location, PRINT_POSTDATA, "correct location");
   is(resp307.body, "initialRemoteType=file", "correct POST body");
 
-  
-  
+  // With the pref disabled, extension URIs should fail to POST, but correctly
+  // switch processes.
   await withExtensionDummy(async dummy => {
     info("DISABLED -- EXTENSION -- raw URI load");
     let respExt = await postFrom(dummy, PRINT_POSTDATA);
@@ -151,8 +235,8 @@ add_task(async function test_disabled() {
 add_task(async function test_enabled() {
   await SpecialPowers.pushPrefEnv({ set: [[PREF_NAME, true]] });
 
-  
-  
+  // With the pref enabled, URIs should correctly switch processes & the POST
+  // should succeed.
   info("ENABLED -- FILE -- raw URI load");
   let resp = await postFrom(FILE_DUMMY, PRINT_POSTDATA);
   ok(E10SUtils.isWebRemoteType(resp.remoteType), "process switch");
@@ -165,7 +249,7 @@ add_task(async function test_enabled() {
   is(resp307.location, PRINT_POSTDATA, "correct location");
   is(resp307.body, "initialRemoteType=file", "correct POST body");
 
-  
+  // Same with extensions
   await withExtensionDummy(async dummy => {
     info("ENABLED -- EXTENSION -- raw URI load");
     let respExt = await postFrom(dummy, PRINT_POSTDATA);
