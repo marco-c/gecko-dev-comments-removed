@@ -377,6 +377,13 @@ function denyRequestNoPermission(aBrowser, aRequest) {
 
 
 async function checkOSPermission(camNeeded, micNeeded) {
+  
+  
+  
+  if (Services.prefs.getBoolPref("media.navigator.streams.fake", false)) {
+    return true;
+  }
+
   let camStatus = {},
     micStatus = {};
   OSPermissions.getMediaCapturePermissionState(camStatus, micStatus);
