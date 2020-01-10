@@ -461,10 +461,29 @@ struct Loader::Sheets {
   
   nsDataHashtable<SheetLoadDataHashKey, SheetLoadData*> mLoadingDatas;
 
+  nsRefPtrHashtable<nsStringHashKey, StyleSheet> mInlineSheets;
+
+
+  RefPtr<StyleSheet> LookupInline(const nsAString&);
+
   
   using CacheResult = Tuple<RefPtr<StyleSheet>, SheetState>;
   CacheResult Lookup(SheetLoadDataHashKey&, bool aSyncLoad);
 };
+
+RefPtr<StyleSheet> Loader::Sheets::LookupInline(const nsAString& aBuffer) {
+  auto result = mInlineSheets.Lookup(aBuffer);
+  if (!result) {
+    return nullptr;
+  }
+  if (result.Data()->HasForcedUniqueInner()) {
+    
+    
+    result.Remove();
+    return nullptr;
+  }
+  return result.Data()->Clone(nullptr, nullptr, nullptr, nullptr);
+}
 
 static void AssertComplete(const StyleSheet& aSheet) {
   
@@ -1825,6 +1844,7 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
 
   
   auto isAlternate = IsAlternateSheet(aInfo.mTitle, aInfo.mHasAlternateRel);
+  LOG(("  Sheet is alternate: %d", static_cast<int>(isAlternate)));
 
   
   
@@ -1833,48 +1853,71 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
   nsIURI* originalURI = nullptr;
 
   MOZ_ASSERT(aInfo.mIntegrity.IsEmpty());
-  auto sheet = MakeRefPtr<StyleSheet>(eAuthorSheetFeatures, aInfo.mCORSMode,
-                                      SRIMetadata{});
-  sheet->SetURIs(sheetURI, originalURI, baseURI);
-  nsCOMPtr<nsIReferrerInfo> referrerInfo =
-      ReferrerInfo::CreateForInternalCSSResources(aInfo.mContent->OwnerDoc());
-  sheet->SetReferrerInfo(referrerInfo);
-
-  nsIPrincipal* principal = aInfo.mContent->NodePrincipal();
-  if (aInfo.mTriggeringPrincipal) {
-    
-    
-    
-    
-    principal =
-        BasePrincipal::Cast(aInfo.mTriggeringPrincipal)->PrincipalToInherit();
-  }
 
   
-  sheet->SetPrincipal(principal);
+  
+  const bool isWorthCaching = aInfo.mContent->IsInShadowTree();
+  RefPtr<StyleSheet> sheet;
+  if (isWorthCaching) {
+    if (!mSheets) {
+      mSheets = MakeUnique<Sheets>();
+    }
+    sheet = mSheets->LookupInline(aBuffer);
+  }
+  const bool sheetFromCache = !!sheet;
+  if (!sheet) {
+    sheet = MakeRefPtr<StyleSheet>(eAuthorSheetFeatures, aInfo.mCORSMode,
+                                   SRIMetadata{});
+    sheet->SetURIs(sheetURI, originalURI, baseURI);
+    nsCOMPtr<nsIReferrerInfo> referrerInfo =
+        ReferrerInfo::CreateForInternalCSSResources(aInfo.mContent->OwnerDoc());
+    sheet->SetReferrerInfo(referrerInfo);
 
-  LOG(("  Sheet is alternate: %d", static_cast<int>(isAlternate)));
+    nsIPrincipal* principal = aInfo.mContent->NodePrincipal();
+    if (aInfo.mTriggeringPrincipal) {
+      
+      
+      
+      
+      principal =
+          BasePrincipal::Cast(aInfo.mTriggeringPrincipal)->PrincipalToInherit();
+    }
+
+    
+    sheet->SetPrincipal(principal);
+  }
 
   auto matched = PrepareSheet(*sheet, aInfo.mTitle, aInfo.mMedia, nullptr,
                               isAlternate, aInfo.mIsExplicitlyEnabled);
 
   InsertSheetInTree(*sheet, aInfo.mContent);
 
-  auto data = MakeRefPtr<SheetLoadData>(
-      this, aInfo.mTitle, nullptr, sheet, false, owningElement, isAlternate,
-      matched, aObserver, nullptr, aInfo.mReferrerInfo, aInfo.mContent);
-  data->mLineNumber = aLineNumber;
-  
-  
-  
-  
-  
-  NS_ConvertUTF16toUTF8 utf8(aBuffer);
-  Completed completed = ParseSheet(utf8, *data, AllowAsyncParse::No);
-
-  if (completed == Completed::No) {
-    data->mMustNotify = true;
+  Completed completed;
+  if (sheetFromCache) {
+    MOZ_ASSERT(sheet->IsComplete());
+    completed = Completed::Yes;
+  } else {
+    auto data = MakeRefPtr<SheetLoadData>(
+        this, aInfo.mTitle, nullptr, sheet, false, owningElement, isAlternate,
+        matched, aObserver, nullptr, aInfo.mReferrerInfo, aInfo.mContent);
+    data->mLineNumber = aLineNumber;
+    
+    
+    
+    
+    
+    NS_ConvertUTF16toUTF8 utf8(aBuffer);
+    completed = ParseSheet(utf8, *data, AllowAsyncParse::No);
+    if (completed == Completed::Yes) {
+      
+      if (isWorthCaching) {
+        mSheets->mInlineSheets.Put(aBuffer, sheet);
+      }
+    } else {
+      data->mMustNotify = true;
+    }
   }
+
   return LoadSheetResult{completed, isAlternate, matched};
 }
 
