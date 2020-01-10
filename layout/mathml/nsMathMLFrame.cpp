@@ -309,9 +309,9 @@ class nsDisplayMathMLBar final : public nsPaintedDisplayItem {
   }
 
   
-  static uint16_t CalculatePerFrameKey(nsDisplayListBuilder* aBuilder,
-                                       nsIFrame* aFrame, const nsRect& aRect,
-                                       uint16_t aIndex) {
+  static uint16_t CalculatePerFrameIndex(nsDisplayListBuilder* aBuilder,
+                                         nsIFrame* aFrame, const nsRect& aRect,
+                                         uint16_t aIndex) {
     return aIndex;
   }
 

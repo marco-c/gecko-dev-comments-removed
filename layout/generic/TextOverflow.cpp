@@ -163,11 +163,12 @@ class nsDisplayTextOverflowMarker final : public nsPaintedDisplayItem {
   }
 
   
-  static uint16_t CalculatePerFrameKey(nsDisplayListBuilder* aBuilder,
-                                       nsIFrame* aFrame, const nsRect& aRect,
-                                       nscoord aAscent,
-                                       const StyleTextOverflowSide& aStyle,
-                                       uint32_t aLineNumber, uint16_t aIndex) {
+  static uint16_t CalculatePerFrameIndex(nsDisplayListBuilder* aBuilder,
+                                         nsIFrame* aFrame, const nsRect& aRect,
+                                         nscoord aAscent,
+                                         const StyleTextOverflowSide& aStyle,
+                                         uint32_t aLineNumber,
+                                         uint16_t aIndex) {
     return (aLineNumber << 1) + aIndex;
   }
 
