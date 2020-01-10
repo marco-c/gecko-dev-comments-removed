@@ -135,7 +135,8 @@ enum class LogReason : int {
   NativeFontResourceNotFound,
   UnscaledFontNotFound,
   ScaledFontNotFound,
-  InvalidLayerType,
+  InvalidLayerType,  
+  PlayEventFailed,
   
   MustBeLessThanThis = 101,
 };
