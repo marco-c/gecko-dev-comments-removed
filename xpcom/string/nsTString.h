@@ -327,6 +327,13 @@ class nsTString : public nsTSubstring<T> {
 
 
 
+  double ToDoubleAllowTrailingChars(nsresult* aErrorCode) const;
+  float ToFloatAllowTrailingChars(nsresult* aErrorCode) const;
+
+  
+
+
+
 
 
 
@@ -472,6 +479,14 @@ class nsTString : public nsTSubstring<T> {
       : substring_type(char_traits::sEmptyBuffer, 0,
                        aDataFlags | DataFlags::TERMINATED,
                        ClassFlags::NULL_TERMINATED) {}
+
+  enum class TrailingCharsPolicy {
+    Disallow,
+    Allow,
+  };
+  
+  double ToDouble(TrailingCharsPolicy aTrailingCharsPolicy,
+                  nsresult* aErrorCode) const;
 
   struct Segment {
     uint32_t mBegin, mLength;
