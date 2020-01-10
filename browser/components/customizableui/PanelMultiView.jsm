@@ -952,6 +952,10 @@ var PanelMultiView = class extends AssociatedToNode {
         });
       }
       await nextPanelView.descriptionHeightWorkaround();
+      
+      if (!nextPanelView.isOpenIn(this)) {
+        return;
+      }
     } else {
       this._offscreenViewStack.style.minHeight = olderView.knownHeight + "px";
       this._offscreenViewStack.appendChild(viewNode);
