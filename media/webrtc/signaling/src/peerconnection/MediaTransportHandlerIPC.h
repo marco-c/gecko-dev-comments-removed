@@ -36,12 +36,14 @@ class MediaTransportHandlerIPC : public MediaTransportHandler {
                                   const std::string& aLocalPwd,
                                   size_t aComponentCount) override;
 
+  void SetTargetForDefaultLocalAddressLookup(const std::string& aTargetIp,
+                                             uint16_t aTargetPort) override;
+
   
   
   
   
-  void StartIceGathering(bool aDefaultRouteOnly, const std::string& aRemoteIp,
-                         uint16_t aRemotePort,
+  void StartIceGathering(bool aDefaultRouteOnly,
                          
                          
                          const nsTArray<NrIceStunAddr>& aStunAddrs) override;

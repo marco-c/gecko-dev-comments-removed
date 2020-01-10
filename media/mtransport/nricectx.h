@@ -224,9 +224,8 @@ class NrIceCtx {
                                 bool tcp_enabled = true,
                                 bool allow_link_local = false);
 
-  
-  
-  void SetRemoteAddr(const std::string& remote_ip, uint16_t remote_port);
+  void SetTargetForDefaultLocalAddressLookup(const std::string& target_ip,
+                                             uint16_t target_port);
 
   
   

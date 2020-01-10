@@ -177,6 +177,7 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   void GatherIfReady();
   void FlushIceCtxOperationQueueIfReady();
   void PerformOrEnqueueIceCtxOperation(nsIRunnable* runnable);
+  nsresult SetTargetForDefaultLocalAddressLookup();
   void EnsureIceGathering(bool aDefaultRouteOnly);
 
   bool GetPrefDefaultAddressOnly() const;
@@ -236,8 +237,9 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   
   nsTArray<NrIceStunAddr> mStunAddrs;
 
-  nsCString mRemoteIp;
-  int32_t mRemotePort;
+  
+  
+  bool mTargetForDefaultLocalAddressLookupIsSet;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PeerConnectionMedia)
 };
