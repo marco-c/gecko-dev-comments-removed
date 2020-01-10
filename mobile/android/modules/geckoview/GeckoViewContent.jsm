@@ -34,6 +34,8 @@ class GeckoViewContent extends GeckoViewModule {
        true,  false);
     this.window.addEventListener("MozDOMFullscreen:Exited", this,
        true,  false);
+    this.window.addEventListener("framefocusrequested", this,
+       true,  false);
 
     this.messageManager.addMessageListener("GeckoView:DOMFullscreenExit", this);
     this.messageManager.addMessageListener("GeckoView:DOMFullscreenRequest", this);
@@ -45,6 +47,8 @@ class GeckoViewContent extends GeckoViewModule {
     this.window.removeEventListener("MozDOMFullscreen:Entered", this,
        true);
     this.window.removeEventListener("MozDOMFullscreen:Exited", this,
+       true);
+    this.window.removeEventListener("framefocusrequested", this,
        true);
 
     this.messageManager.removeMessageListener("GeckoView:DOMFullscreenExit", this);
@@ -114,6 +118,18 @@ class GeckoViewContent extends GeckoViewModule {
     debug `handleEvent: ${aEvent.type}`;
 
     switch (aEvent.type) {
+      case "framefocusrequested":
+        if (this.browser != aEvent.target) {
+          return;
+        }
+        if (this.browser.hasAttribute("primary")) {
+          return;
+        }
+        this.eventDispatcher.sendRequest({
+          type: "GeckoView:FocusRequest",
+        });
+        aEvent.preventDefault();
+        break;
       case "MozDOMFullscreen:Entered":
         if (this.browser == aEvent.target) {
           

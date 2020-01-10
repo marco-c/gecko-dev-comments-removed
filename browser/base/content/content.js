@@ -68,7 +68,3 @@ ContentMetaHandler.init(this);
 
 
 void content;
-
-addEventListener("DOMWindowFocus", function(event) {
-  sendAsyncMessage("DOMWindowFocus", {});
-}, false);

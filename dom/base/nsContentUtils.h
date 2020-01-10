@@ -1518,14 +1518,6 @@ class nsContentUtils {
 
 
 
-
-
-  static nsresult DispatchFocusChromeEvent(nsPIDOMWindowOuter* aWindow);
-
-  
-
-
-
   static void RequestFrameFocus(Element& aFrameElement, bool aCanRaise);
 
   

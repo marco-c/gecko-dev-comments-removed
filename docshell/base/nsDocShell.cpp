@@ -8924,33 +8924,29 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState,
     targetDocShell = do_QueryInterface(webNav);
   }
 
+  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_TRUE(targetDocShell, rv);
   
   
   
   
-  if (NS_SUCCEEDED(rv) && targetDocShell) {
-    nsDocShell* docShell = nsDocShell::Cast(targetDocShell);
-    
-    aLoadState->SetTarget(EmptyString());
-    
-    aLoadState->SetFileName(VoidString());
-    rv = docShell->InternalLoad(aLoadState, aDocShell, aRequest);
+  nsDocShell* docShell = nsDocShell::Cast(targetDocShell);
+  
+  aLoadState->SetTarget(EmptyString());
+  
+  aLoadState->SetFileName(VoidString());
+  rv = docShell->InternalLoad(aLoadState, aDocShell, aRequest);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-    if (NS_SUCCEEDED(rv)) {
-      
-      
-      
-      bool isTargetActive = false;
-      targetDocShell->GetIsActive(&isTargetActive);
-      nsCOMPtr<nsPIDOMWindowOuter> domWin = targetDocShell->GetWindow();
-      if (mIsActive && !isTargetActive && domWin &&
-          !Preferences::GetBool("browser.tabs.loadDivertedInBackground",
-                                false)) {
-        if (NS_FAILED(nsContentUtils::DispatchFocusChromeEvent(domWin))) {
-          return NS_ERROR_FAILURE;
-        }
-      }
-    }
+  
+  
+  
+  bool isTargetActive = false;
+  targetDocShell->GetIsActive(&isTargetActive);
+  nsCOMPtr<nsPIDOMWindowOuter> domWin = targetDocShell->GetWindow();
+  if (mIsActive && !isTargetActive && domWin &&
+      !Preferences::GetBool("browser.tabs.loadDivertedInBackground", false)) {
+    nsFocusManager::FocusWindow(domWin);
   }
 
   

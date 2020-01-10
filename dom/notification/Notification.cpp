@@ -37,6 +37,7 @@
 #include "nsContentUtils.h"
 #include "nsCRTGlue.h"
 #include "nsDOMJSUtils.h"
+#include "nsFocusManager.h"
 #include "nsGlobalWindow.h"
 #include "nsIAlertsService.h"
 #include "nsIContentPermissionPrompt.h"
@@ -289,10 +290,7 @@ class FocusWindowRunnable final : public Runnable {
       return NS_OK;
     }
 
-    
-    
-    nsContentUtils::DispatchFocusChromeEvent(mWindow->GetOuterWindow());
-
+    nsFocusManager::FocusWindow(mWindow->GetOuterWindow());
     return NS_OK;
   }
 };
@@ -1221,9 +1219,7 @@ MainThreadNotificationObserver::Observe(nsISupports* aSubject,
 
     bool doDefaultAction = notification->DispatchClickEvent();
     if (doDefaultAction) {
-      
-      
-      nsContentUtils::DispatchFocusChromeEvent(window->GetOuterWindow());
+      nsFocusManager::FocusWindow(window->GetOuterWindow());
     }
   } else if (!strcmp("alertfinished", aTopic)) {
     notification->UnpersistNotification();

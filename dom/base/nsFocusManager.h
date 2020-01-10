@@ -58,6 +58,11 @@ class nsFocusManager final : public nsIFocusManager,
   static nsresult Init();
   static void Shutdown();
 
+  
+  
+  
+  static void FocusWindow(nsPIDOMWindowOuter* aWindow);
+
   void PrefChanged(const char* aPref);
 
   
