@@ -118,12 +118,16 @@
   --theme-toolbar-separator: var(--grey-90-a10);
 
   
-  --toolbarbutton-background: var(--theme-toolbar-hover);
+  --toolbarbutton-background: var(--theme-toolbar-background);
   --toolbarbutton-hover-background: var(--theme-toolbar-hover);
 
   
   --theme-button-background: rgba(12, 12, 13, 0.05);
   --theme-button-active-background: rgba(12, 12, 13, 0.1);
+
+  
+  --theme-accordion-header-background: var(--theme-toolbar-background);
+  --theme-accordion-header-hover: var(--theme-toolbar-hover);
 
   
   --theme-selection-background: var(--blue-55);
@@ -241,6 +245,10 @@
   
   --theme-button-background: rgba(249, 249, 250, 0.1);
   --theme-button-active-background: rgba(249, 249, 250, 0.15);
+
+  
+  --theme-accordion-header-background: #232327;
+  --theme-accordion-header-hover: #2a2a2e;
 
   
   --theme-selection-background: #204e8a;

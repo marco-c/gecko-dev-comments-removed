@@ -6,7 +6,7 @@
 
 const {
   Component,
-  cloneElement,
+  createElement,
 } = require("devtools/client/shared/vendor/react");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const {
@@ -14,6 +14,7 @@ const {
   li,
   h2,
   div,
+  span,
 } = require("devtools/client/shared/vendor/react-dom-factories");
 
 class Accordion extends Component {
@@ -22,12 +23,13 @@ class Accordion extends Component {
       
       items: PropTypes.arrayOf(
         PropTypes.shape({
-          component: PropTypes.object,
-          componentProps: PropTypes.object,
           buttons: PropTypes.arrayOf(PropTypes.object),
           className: PropTypes.string,
+          component: PropTypes.object,
+          componentProps: PropTypes.object,
+          contentClassName: PropTypes.string,
           header: PropTypes.string.isRequired,
-          labelledby: PropTypes.string.isRequired,
+          id: PropTypes.string.isRequired,
           onToggle: PropTypes.func,
           opened: PropTypes.bool.isRequired,
         })
@@ -35,95 +37,161 @@ class Accordion extends Component {
     };
   }
 
+  
+
+
+
+  static getDerivedStateFromProps(props, state) {
+    const newItems = props.items.filter(
+      ({ id }) => typeof state.opened[id] !== "boolean"
+    );
+
+    if (newItems.length) {
+      const everOpened = { ...state.everOpened };
+      const opened = { ...state.opened };
+      for (const item of newItems) {
+        everOpened[item.id] = item.opened;
+        opened[item.id] = item.opened;
+      }
+      return { everOpened, opened };
+    }
+
+    return null;
+  }
+
   constructor(props) {
     super(props);
 
     this.state = {
-      opened: Object.assign({}, props.items.map(item => item.opened)),
+      opened: {},
     };
+
+    this.onHeaderClick = this.onHeaderClick.bind(this);
+    this.onHeaderKeyDown = this.onHeaderKeyDown.bind(this);
+  }
+
+  
+
+
+  onHeaderClick(event) {
+    event.preventDefault();
+    
+    
+    
+    event.stopPropagation();
+    this.toggleItem(event.currentTarget.parentElement.id);
   }
 
   
 
 
 
+  onHeaderKeyDown(event) {
+    if (event.key === " " || event.key === "Enter") {
+      event.preventDefault();
+      this.toggleItem(event.currentTarget.parentElement.id);
+    }
+  }
 
-  handleHeaderClick(i) {
-    const { opened } = this.state;
+  
+
+
+
+  toggleItem(id) {
+    const item = this.props.items.find(x => x.id === id);
+    const opened = !this.state.opened[id];
+    
+    if (!item) {
+      return;
+    }
+
     this.setState({
+      everOpened: {
+        ...this.state.everOpened,
+        [id]: true,
+      },
       opened: {
-        ...opened,
-        [i]: !opened[i],
+        ...this.state.opened,
+        [id]: opened,
       },
     });
 
-    const item = this.props.items[i];
-    if (item.onToggle) {
-      item.onToggle(!opened[i]);
+    if (typeof item.onToggle === "function") {
+      item.onToggle(opened);
     }
   }
 
-  
-
-
-
-
-
-
-  onHandleHeaderKeyDown(e, i) {
-    if (e && (e.key === " " || e.key === "Enter")) {
-      this.handleHeaderClick(i);
-    }
-  }
-
-  renderContainer(item, i) {
+  renderItem(item) {
     const {
       buttons,
-      className,
+      className = "",
       component,
-      componentProps,
-      labelledby,
+      componentProps = {},
+      contentClassName = "",
       header,
+      id,
     } = item;
-    const opened = this.state.opened[i];
+    const headerId = `${id}-header`;
+    const opened = this.state.opened[id];
+    let itemContent;
+
+    
+    
+    
+    if (this.state.everOpened[id]) {
+      if (typeof component === "function") {
+        itemContent = createElement(component, componentProps);
+      } else if (typeof component === "object") {
+        itemContent = component;
+      }
+    }
 
     return li(
       {
-        className,
-        "aria-labelledby": labelledby,
-        key: labelledby,
+        key: id,
+        id,
+        className: `accordion-item ${className}`.trim(),
+        "aria-labelledby": headerId,
       },
       h2(
         {
+          id: headerId,
           className: "accordion-header",
-          id: labelledby,
           tabIndex: 0,
           "aria-expanded": opened,
-          onKeyDown: e => this.onHandleHeaderKeyDown(e, i),
-          onClick: () => this.handleHeaderClick(i),
+          
+          
+          "aria-label": header,
+          onKeyDown: this.onHeaderKeyDown,
+          onClick: this.onHeaderClick,
         },
-        div({
-          className: `arrow theme-twisty${opened ? " open" : ""}`,
+        span({
+          className: `theme-twisty${opened ? " open" : ""}`,
           role: "presentation",
         }),
-        header,
+        span(
+          {
+            className: "accordion-header-label",
+          },
+          header
+        ),
         buttons &&
-          div(
+          span(
             {
-              className: "header-buttons",
+              className: "accordion-header-buttons",
               role: "presentation",
             },
             buttons
           )
       ),
-      opened &&
-        div(
-          {
-            className: "accordion-content",
-            role: "presentation",
-          },
-          cloneElement(component, componentProps || {})
-        )
+      div(
+        {
+          className: `accordion-content ${contentClassName}`.trim(),
+          hidden: !opened,
+          role: "presentation",
+        },
+        itemContent
+      )
     );
   }
 
@@ -133,7 +201,7 @@ class Accordion extends Component {
         className: "accordion",
         tabIndex: -1,
       },
-      this.props.items.map((item, i) => this.renderContainer(item, i))
+      this.props.items.map(item => this.renderItem(item))
     );
   }
 }
