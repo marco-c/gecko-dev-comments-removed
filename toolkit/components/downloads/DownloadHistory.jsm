@@ -728,7 +728,6 @@ this.DownloadHistoryList.prototype = {
   },
 
   
-  nodeAnnotationChanged() {},
   nodeIconChanged() {},
   nodeTitleChanged() {},
   nodeKeywordChanged() {},
