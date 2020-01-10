@@ -153,6 +153,7 @@ class DebuggerWeakMap
   using Ptr = typename Base::Ptr;
   using AddPtr = typename Base::AddPtr;
   using Range = typename Base::Range;
+  using Enum = typename Base::Enum;
   using Lookup = typename Base::Lookup;
 
   
@@ -163,11 +164,6 @@ class DebuggerWeakMap
   using Base::lookupForAdd;
   using Base::remove;
   using Base::trace;
-
-  class Enum : public Base::Enum {
-   public:
-    Enum(DebuggerWeakMap& map) : Base::Enum(map) {}
-  };
 
   template <typename KeyInput, typename ValueInput>
   bool relookupOrAdd(AddPtr& p, const KeyInput& k, const ValueInput& v) {
@@ -180,10 +176,22 @@ class DebuggerWeakMap
     return ok;
   }
 
+  
+  template <typename Predicate>
+  void removeIf(Predicate test) {
+    for (Enum e(*static_cast<Base*>(this)); !e.empty(); e.popFront()) {
+      JSObject* key = e.front().key();
+      JSObject* value = e.front().value();
+      if (test(key, value)) {
+        e.removeFront();
+      }
+    }
+  }
+
  public:
   template <void(traceValueEdges)(JSTracer*, JSObject*)>
   void traceCrossCompartmentEdges(JSTracer* tracer) {
-    for (Enum e(*this); !e.empty(); e.popFront()) {
+    for (Enum e(*static_cast<Base*>(this)); !e.empty(); e.popFront()) {
       traceValueEdges(tracer, e.front().value());
       Key key = e.front().key();
       TraceEdge(tracer, &key, "Debugger WeakMap key");
@@ -266,7 +274,6 @@ typedef mozilla::Variant<ScriptSourceObject*, WasmInstanceObject*>
 
 class Debugger : private mozilla::LinkedListElement<Debugger> {
   friend class Breakpoint;
-  friend class DebuggerFrame;
   friend class DebuggerMemory;
   friend struct JSRuntime::GlobalObjectWatchersLinkAccess<Debugger>;
   friend class SavedStacks;
@@ -1220,6 +1227,23 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   JSObject* wrapWasmSource(JSContext* cx,
                            Handle<WasmInstanceObject*> wasmInstance);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE bool addGeneratorFrame(JSContext* cx,
+                                      Handle<AbstractGeneratorObject*> genObj,
+                                      HandleDebuggerFrame frameObj);
+
  private:
   Debugger(const Debugger&) = delete;
   Debugger& operator=(const Debugger&) = delete;
@@ -1499,51 +1523,14 @@ class DebuggerFrame : public NativeObject {
   OnPopHandler* onPopHandler() const;
   void setOnPopHandler(OnPopHandler* handler);
 
+  bool setGenerator(JSContext* cx,
+                    Handle<AbstractGeneratorObject*> unwrappedGenObj);
   bool hasGenerator() const;
+  void clearGenerator(FreeOp* fop);
 
   
   
   AbstractGeneratorObject& unwrappedGenerator() const;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_MUST_USE bool setGenerator(JSContext* cx,
-                                 Handle<AbstractGeneratorObject*> genObj);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void clearGenerator(FreeOp* fop);
-  void clearGenerator(
-      FreeOp* fop, Debugger* owner,
-      Debugger::GeneratorWeakMap::Enum* maybeGeneratorFramesEnum = nullptr);
 
   
 
@@ -1607,6 +1594,7 @@ class DebuggerFrame : public NativeObject {
   void maybeDecrementFrameScriptStepperCount(FreeOp* fop,
                                              AbstractFramePtr frame);
 
+ private:
   class GeneratorInfo;
   inline GeneratorInfo* generatorInfo() const;
 };
