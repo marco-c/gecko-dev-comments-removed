@@ -1068,8 +1068,20 @@ void WebRenderScrollDataCollection::AppendRoot(
       layerScrollData.back().InitializeRoot(layerScrollData.size() - 1);
 
       if (aRootMetadata) {
-        layerScrollData.back().AppendScrollMetadata(aScrollDatas[renderRoot],
-                                                    aRootMetadata.ref());
+        
+        
+        
+        size_t rootMetadataTarget = layerScrollData.size() - 1;
+        for (size_t i = rootMetadataTarget; i > 0; i--) {
+          if (auto zoomContainerId = layerScrollData[i - 1].GetAsyncZoomContainerId()) {
+            if (*zoomContainerId == aRootMetadata->GetMetrics().GetScrollId()) {
+              rootMetadataTarget = i - 1;
+              break;
+            }
+          }
+        }
+        layerScrollData[rootMetadataTarget].AppendScrollMetadata(
+            aScrollDatas[renderRoot], aRootMetadata.ref());
       }
     }
   }
