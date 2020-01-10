@@ -7276,12 +7276,13 @@ class MTypedArrayElementShift : public MUnaryInstruction,
 
 
 class MTypedArrayIndexToInt32 : public MUnaryInstruction,
-                                public NoTypePolicy::Data {
+                                public TypedArrayIndexPolicy::Data {
   explicit MTypedArrayIndexToInt32(MDefinition* def)
       : MUnaryInstruction(classOpcode, def) {
     MOZ_ASSERT(def->type() == MIRType::Int32 || def->type() == MIRType::Double);
     setResultType(MIRType::Int32);
     setMovable();
+    specialization_ = def->type();
   }
 
  public:
