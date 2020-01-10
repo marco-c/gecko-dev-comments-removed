@@ -164,11 +164,17 @@ bool HTMLImageElement::Draggable() const {
 }
 
 bool HTMLImageElement::Complete() {
-  if (!mCurrentRequest) {
-    return true;
+  
+  
+
+  if (!HasAttr(kNameSpaceID_None, nsGkAtoms::srcset)) {
+    nsAutoString src;
+    if (!GetAttr(kNameSpaceID_None, nsGkAtoms::src, src) || src.IsEmpty()) {
+      return true;
+    }
   }
 
-  if (mPendingRequest) {
+  if (!mCurrentRequest || mPendingRequest) {
     return false;
   }
 
