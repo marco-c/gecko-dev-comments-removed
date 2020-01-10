@@ -1254,6 +1254,6 @@ int64_t WebMTrackDemuxer::GetEvictionOffset(const TimeUnit& aTime) {
 
   return offset;
 }
+}  
 
 #undef WEBM_DEBUG
-}  
