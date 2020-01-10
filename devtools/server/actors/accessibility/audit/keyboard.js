@@ -45,6 +45,9 @@ const {
 const STYLE_RULE = 1;
 
 
+const SHOW_LONG_DESC_ACTION = "showlongdesc";
+
+
 
 
 
@@ -337,8 +340,21 @@ function semanticsRule(accessible) {
     return { score: WARNING, issue: FOCUSABLE_NO_SEMANTICS };
   }
 
-  if (accessible.actionCount > 0) {
-    return { score: FAIL, issue: MOUSE_INTERACTIVE_ONLY };
+  if (
+    
+    accessible.role === Ci.nsIAccessibleRole.ROLE_TEXT_LEAF ||
+    
+    accessible.actionCount === 0
+  ) {
+    return null;
+  }
+
+  
+  
+  for (let i = 0; i < accessible.actionCount; i++) {
+    if (accessible.getActionName(i) !== SHOW_LONG_DESC_ACTION) {
+      return { score: FAIL, issue: MOUSE_INTERACTIVE_ONLY };
+    }
   }
 
   return null;
