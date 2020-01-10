@@ -3425,15 +3425,21 @@ already_AddRefed<Animation> Element::Animate(
 }
 
 void Element::GetAnimations(const GetAnimationsOptions& aOptions,
-                            nsTArray<RefPtr<Animation>>& aAnimations) {
-  Document* doc = GetComposedDoc();
-  if (doc) {
-    
-    
-    
-    
-    doc->FlushPendingNotifications(
-        ChangesToFlush(FlushType::Style, false ));
+                            nsTArray<RefPtr<Animation>>& aAnimations,
+                            Flush aFlush) {
+  if (aFlush == Flush::Yes) {
+    if (Document* doc = GetComposedDoc()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      doc->FlushPendingNotifications(
+          ChangesToFlush(FlushType::Style, false ));
+    }
   }
 
   Element* elem = this;

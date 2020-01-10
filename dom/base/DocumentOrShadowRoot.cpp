@@ -5,8 +5,10 @@
 
 
 #include "DocumentOrShadowRoot.h"
+#include "mozilla/AnimationComparator.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/dom/AnimatableBinding.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/ShadowRoot.h"
@@ -450,6 +452,31 @@ struct nsRadioGroupStruct {
   uint32_t mRequiredRadioCount;
   bool mGroupSuffersFromValueMissing;
 };
+
+void DocumentOrShadowRoot::GetAnimations(
+    nsTArray<RefPtr<Animation>>& aAnimations) {
+  
+  
+  
+  if (Document* doc = AsNode().GetComposedDoc()) {
+    doc->FlushPendingNotifications(
+        ChangesToFlush(FlushType::Style, false ));
+  }
+
+  GetAnimationsOptions options;
+  options.mSubtree = true;
+
+  for (RefPtr<nsIContent> child = AsNode().GetFirstChild(); child;
+       child = child->GetNextSibling()) {
+    if (RefPtr<Element> element = Element::FromNode(child)) {
+      nsTArray<RefPtr<Animation>> result;
+      element->GetAnimations(options, result, Element::Flush::No);
+      aAnimations.AppendElements(std::move(result));
+    }
+  }
+
+  aAnimations.Sort(AnimationPtrComparator<RefPtr<Animation>>());
+}
 
 nsresult DocumentOrShadowRoot::WalkRadioGroup(const nsAString& aName,
                                               nsIRadioVisitor* aVisitor,
