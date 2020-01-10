@@ -196,12 +196,12 @@ struct Dav1dFrameContext {
             int16_t eob[3 ];
             uint8_t txtp[3 ];
         } *cbi;
-        int8_t *txtp;
         
         uint16_t (*pal)[3 ][8 ];
         
         uint8_t *pal_idx;
         coef *cf;
+        int pal_sz, pal_idx_sz, cf_sz;
         
         int *tile_start_off;
     } frame_thread;
@@ -217,10 +217,8 @@ struct Dav1dFrameContext {
         int last_sharpness;
         uint8_t lvl[8 ][4 ][8 ][2 ];
         uint8_t *tx_lpf_right_edge[2];
-        pixel *cdef_line;
-        pixel *cdef_line_ptr[2 ][3 ][2 ];
-        pixel *lr_lpf_line;
-        pixel *lr_lpf_line_ptr[3 ];
+        pixel *cdef_line[2 ][3 ][2 ];
+        pixel *lr_lpf_line[3 ];
 
         
         int tile_row; 
@@ -275,24 +273,54 @@ struct Dav1dTileContext {
     Dav1dTileState *ts;
     int bx, by;
     BlockContext l, *a;
-    coef *cf;
-    pixel *emu_edge; 
+    ALIGN(union, 32) {
+        int16_t cf_8bpc [32 * 32];
+        int32_t cf_16bpc[32 * 32];
+    };
     
     
     uint16_t al_pal[2 ][32 ][3 ][8 ];
-    ALIGN(uint16_t pal[3 ][8 ], 16);
     uint8_t pal_sz_uv[2 ][32 ];
     uint8_t txtp_map[32 * 32]; 
-    Dav1dWarpedMotionParams warpmv;
-    union {
-        void *mem;
-        uint8_t *pal_idx;
-        int16_t *ac;
-        pixel *interintra, *lap;
-        int16_t *compinter;
+    ALIGN(union, 32) {
+        struct {
+            union {
+                uint8_t  lap_8bpc [128 * 32];
+                uint16_t lap_16bpc[128 * 32];
+                struct {
+                    int16_t compinter[2][128 * 128];
+                    uint8_t seg_mask[128 * 128];
+                };
+            };
+            union {
+                
+                uint8_t  emu_edge_8bpc [320 * (256 + 7)];
+                uint16_t emu_edge_16bpc[320 * (256 + 7)];
+            };
+        };
+        struct {
+            uint8_t interintra_8bpc[64 * 64];
+            uint8_t edge_8bpc[257];
+        };
+        struct {
+            uint16_t interintra_16bpc[64 * 64];
+            uint16_t edge_16bpc[257];
+        };
+        struct {
+            uint8_t pal_idx[2 * 64 * 64];
+            union {
+                struct {
+                    uint8_t pal_order[64][8];
+                    uint8_t pal_ctx[64];
+                };
+                uint8_t levels[36 * 36];
+            };
+            uint16_t pal[3 ][8 ];
+        };
+        int16_t ac[32 * 32];
     } scratch;
-    ALIGN(uint8_t scratch_seg_mask[128 * 128], 32);
 
+    Dav1dWarpedMotionParams warpmv;
     Av1Filter *lf_mask;
     int8_t *cur_sb_cdef_idx_ptr;
     
