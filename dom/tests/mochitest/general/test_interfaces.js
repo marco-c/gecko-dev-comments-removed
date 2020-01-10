@@ -180,6 +180,8 @@ var interfaceNamesInGlobalScope = [
   
   { name: "BaseAudioContext", insecureContext: true },
   
+  { name: "BatteryManager", insecureContext: true },
+  
   { name: "BeforeUnloadEvent", insecureContext: true },
   
   { name: "BiquadFilterNode", insecureContext: true },
