@@ -19,7 +19,9 @@ add_task(async function() {
       
       testDone.promise = ContentTask.spawn(browser, null, async function() {
         return new Promise(resolve => {
-          let webNavigation = content.docShell.QueryInterface(Ci.nsIWebNavigation);
+          let webNavigation = content.docShell.QueryInterface(
+            Ci.nsIWebNavigation
+          );
           let { legacySHistory } = webNavigation.sessionHistory;
           
           let historyListener = {

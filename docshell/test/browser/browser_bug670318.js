@@ -33,7 +33,7 @@ add_task(async function test() {
                   "load",
                   function onLoad() {
                     removeEventListener("load", onLoad, true);
-  
+
                     Assert.ok(
                       history.index < history.count,
                       "history.index is valid"
@@ -75,7 +75,7 @@ add_task(async function test() {
           
           content._testListener = listener;
           content.location = URL;
-  
+
           await testDone.promise;
         });
 
@@ -114,31 +114,30 @@ add_task(async function test() {
               content.location.reload();
               await promise;
             });
+            testDone.resolve();
+          }
+        },
 
-            content.location.reload();
-            await promise;
-          });
-          testDone.resolve();
-        }
-      },
+        OnHistoryReload: () => true,
+        OnHistoryGotoIndex: () => {},
+        OnHistoryPurge: () => {},
+        OnHistoryReplaceEntry: () => {
+          
+          
+          
+          ++count;
+        },
 
-      OnHistoryReload: () => true,
-      OnHistoryGotoIndex: () => {},
-      OnHistoryPurge: () => {},
-      OnHistoryReplaceEntry: () => {
-        
-        
-        
-        ++count;
-      },
+        QueryInterface: ChromeUtils.generateQI([
+          Ci.nsISHistoryListener,
+          Ci.nsISupportsWeakReference,
+        ]),
+      };
 
-      QueryInterface: ChromeUtils.generateQI([Ci.nsISHistoryListener,
-                                              Ci.nsISupportsWeakReference]),
-    };
+      history.addSHistoryListener(listener);
+      BrowserTestUtils.loadURI(browser, URL);
 
-    history.addSHistoryListener(listener);
-    BrowserTestUtils.loadURI(browser, URL);
-
-    await testDone.promise;
-  });
+      await testDone.promise;
+    }
+  );
 });
