@@ -397,7 +397,6 @@ class Browsertime(Perftest):
         return ['--browser', 'firefox', '--firefox.binaryPath', binary_path]
 
     def run_test(self, test, timeout):
-
         self.run_test_setup(test)
 
         browsertime_script = [os.path.join(os.path.dirname(__file__), "..",
@@ -407,19 +406,28 @@ class Browsertime(Perftest):
 
         
         
-        timeout = int(timeout / 1000) * int(test.get('browser_cycles', 1))
 
         
         
-        timeout += (20 * int(test.get('browser_cycles', 1)))
+        
+        bt_timeout = int(timeout / 1000) * int(test.get("page_cycles", 1))
+
+        
+        
+        
+        bt_timeout += int(self.post_startup_delay / 1000)
+
+        
+        
+        bt_timeout += 20
+
+        
+        
+        bt_timeout = bt_timeout * int(test.get('browser_cycles', 1))
 
         
         if self.config['gecko_profile'] is True:
-            timeout += 5 * 60
-
-        
-        
-        timeout = timeout * int(test.get("page_cycles", 1))
+            bt_timeout += 5 * 60
 
         
         
@@ -433,6 +441,10 @@ class Browsertime(Perftest):
         browsertime_script.extend(["--browsertime.foreground_delay", "5000"])
 
         
+        browsertime_script.extend(["--browsertime.post_startup_delay",
+                                  str(self.post_startup_delay)])
+
+        
         
         cmd = ([self.browsertime_node, self.browsertime_browsertimejs] +
                self.driver_paths +
@@ -440,6 +452,7 @@ class Browsertime(Perftest):
                ['--skipHar',
                 '--video', 'false',
                 '--visualMetrics', 'false',
+                '--timeouts.pageLoad', str(timeout),
                 '-vv',
                 '--resultDir', self.results_handler.result_dir_for_test(test),
                 '-n', str(test.get('browser_cycles', 1))])
@@ -465,7 +478,7 @@ class Browsertime(Perftest):
 
         try:
             proc = mozprocess.ProcessHandler(cmd, env=env)
-            proc.run(timeout=timeout,
+            proc.run(timeout=bt_timeout,
                      outputTimeout=2*60)
             proc.wait()
 
