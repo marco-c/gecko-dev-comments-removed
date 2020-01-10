@@ -2261,7 +2261,60 @@ ResumeMode Debugger::dispatchHook(JSContext* cx, HookIsEnabledFun hookIsEnabled,
   return ResumeMode::Continue;
 }
 
+
+static const size_t SourceURLMaxLength = 1024;
+
+
+static const size_t SourceURLRealmLimit = 100;
+
+static bool RememberSourceURL(JSContext* cx, HandleScript script) {
+  cx->check(script);
+
+  
+  if (script->sourceObject()->unwrappedIntroductionScript()) {
+    return true;
+  }
+
+  const char* filename = script->filename();
+  if (!filename || strlen(filename) > SourceURLMaxLength) {
+    return true;
+  }
+
+  RootedObject holder(cx, script->global().getSourceURLsHolder());
+  if (!holder) {
+    holder = NewDenseEmptyArray(cx);
+    if (!holder) {
+      return false;
+    }
+    script->global().setSourceURLsHolder(holder);
+  }
+
+  if (holder->as<ArrayObject>().length() >= SourceURLRealmLimit) {
+    return true;
+  }
+
+  RootedString filenameString(cx, JS_AtomizeString(cx, filename));
+  if (!filenameString) {
+    return false;
+  }
+
+  
+  
+  return NewbornArrayPush(cx, holder, StringValue(filenameString));
+}
+
 void DebugAPI::slowPathOnNewScript(JSContext* cx, HandleScript script) {
+  if (!script->realm()->isDebuggee()) {
+    
+    
+    if (!script->realm()->isSystem()) {
+      if (!RememberSourceURL(cx, script)) {
+        cx->clearPendingException();
+      }
+    }
+    return;
+  }
+
   ResumeMode resumeMode = Debugger::dispatchHook(
       cx,
       [script](Debugger* dbg) -> bool {
@@ -5783,6 +5836,39 @@ bool Debugger::findAllGlobals(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+bool Debugger::findSourceURLs(JSContext* cx, unsigned argc, Value* vp) {
+  THIS_DEBUGGER(cx, argc, vp, "findSourceURLs", args, dbg);
+
+  RootedObject result(cx, NewDenseEmptyArray(cx));
+  if (!result) {
+    return false;
+  }
+
+  for (WeakGlobalObjectSet::Range r = dbg->allDebuggees(); !r.empty();
+       r.popFront()) {
+    RootedObject holder(cx, r.front()->getSourceURLsHolder());
+    if (holder) {
+      for (size_t i = 0; i < holder->as<ArrayObject>().length(); i++) {
+        Value v = holder->as<ArrayObject>().getDenseElement(i);
+
+        
+        
+        
+        MOZ_ASSERT(v.isString() && v.toString()->isAtom());
+        cx->markAtomValue(v);
+
+        if (!NewbornArrayPush(cx, result, v)) {
+          return false;
+        }
+      }
+    }
+  }
+
+  args.rval().setObject(*result);
+  return true;
+}
+
+
 bool Debugger::makeGlobalObjectReference(JSContext* cx, unsigned argc,
                                          Value* vp) {
   THIS_DEBUGGER(cx, argc, vp, "makeGlobalObjectReference", args, dbg);
@@ -6015,6 +6101,7 @@ const JSFunctionSpec Debugger::methods[] = {
     JS_FN("findSources", Debugger::findSources, 1, 0),
     JS_FN("findObjects", Debugger::findObjects, 1, 0),
     JS_FN("findAllGlobals", Debugger::findAllGlobals, 0, 0),
+    JS_FN("findSourceURLs", Debugger::findSourceURLs, 0, 0),
     JS_FN("makeGlobalObjectReference", Debugger::makeGlobalObjectReference, 1,
           0),
     JS_FN("adoptDebuggeeValue", Debugger::adoptDebuggeeValue, 1, 0),

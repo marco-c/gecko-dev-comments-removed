@@ -23,9 +23,11 @@
 #include "debugger/Debugger.h"   
 #include "debugger/NoExecute.h"  
 #include "debugger/Script.h"     
+#include "debugger/Source.h"     
 #include "gc/Barrier.h"          
 #include "gc/Rooting.h"          
 #include "gc/Tracer.h"       
+#include "js/CompilationAndEvaluation.h" 
 #include "js/Conversions.h"  
 #include "js/HeapAPI.h"      
 #include "js/Promise.h"      
@@ -1250,6 +1252,140 @@ bool DebuggerObject::executeInGlobalWithBindingsMethod(JSContext* cx,
 }
 
 
+template <typename T>
+static bool CopyStringToVector(JSContext* cx, JSString* str, Vector<T>& chars) {
+  JSFlatString* flat = str->ensureFlat(cx);
+  if (!flat) {
+    return false;
+  }
+  if (!chars.appendN(0, flat->length() + 1)) {
+    return false;
+  }
+  CopyChars(chars.begin(), *flat);
+  return true;
+}
+
+
+bool DebuggerObject::createSource(JSContext* cx, unsigned argc, Value* vp) {
+  THIS_DEBUGOBJECT(cx, argc, vp, "createSource", args, object);
+  if (!args.requireAtLeast(
+          cx, "Debugger.Object.prototype.createSource", 1)) {
+    return false;
+  }
+
+  if (!DebuggerObject::requireGlobal(cx, object)) {
+    return false;
+  }
+
+  RootedObject options(cx, ToObject(cx, args[0]));
+  if (!options) {
+    return false;
+  }
+
+  RootedValue v(cx);
+  if (!JS_GetProperty(cx, options, "text", &v)) {
+    return false;
+  }
+
+  RootedString text(cx, ToString<CanGC>(cx, v));
+  if (!text) {
+    return false;
+  }
+
+  if (!JS_GetProperty(cx, options, "url", &v)) {
+    return false;
+  }
+
+  RootedString url(cx, ToString<CanGC>(cx, v));
+  if (!url) {
+    return false;
+  }
+
+  if (!JS_GetProperty(cx, options, "startLine", &v)) {
+    return false;
+  }
+
+  uint32_t startLine;
+  if (!ToUint32(cx, v, &startLine)) {
+    return false;
+  }
+
+  if (!JS_GetProperty(cx, options, "sourceMapURL", &v)) {
+    return false;
+  }
+
+  RootedString sourceMapURL(cx);
+  if (!v.isUndefined()) {
+    sourceMapURL = ToString<CanGC>(cx, v);
+    if (!sourceMapURL) {
+      return false;
+    }
+  }
+
+  if (!JS_GetProperty(cx, options, "isScriptElement", &v)) {
+    return false;
+  }
+
+  bool isScriptElement = ToBoolean(v);
+
+  JS::CompileOptions compileOptions(cx);
+  compileOptions.lineno = startLine;
+
+  if (!JS_StringHasLatin1Chars(url)) {
+    JS_ReportErrorASCII(cx, "URL must be a narrow string");
+    return false;
+  }
+
+  Vector<Latin1Char> urlChars(cx);
+  if (!CopyStringToVector(cx, url, urlChars)) {
+    return false;
+  }
+  compileOptions.setFile((const char*) urlChars.begin());
+
+  Vector<char16_t> sourceMapURLChars(cx);
+  if (sourceMapURL) {
+    if (!CopyStringToVector(cx, sourceMapURL, sourceMapURLChars)) {
+      return false;
+    }
+    compileOptions.setSourceMapURL(sourceMapURLChars.begin());
+  }
+
+  if (isScriptElement) {
+    
+    compileOptions.setIntroductionType("scriptElement");
+  }
+
+  Vector<char16_t> textChars(cx);
+  if (!CopyStringToVector(cx, text, textChars)) {
+    return false;
+  }
+
+  JS::SourceText<char16_t> srcBuf;
+  if (!srcBuf.init(cx, textChars.begin(), text->length(),
+                   JS::SourceOwnership::Borrowed)) {
+    return false;
+  }
+
+  RootedScript script(cx);
+  {
+    AutoRealm ar(cx, object->referent());
+    script = JS::Compile(cx, compileOptions, srcBuf);
+    if (!script) {
+      return false;
+    }
+  }
+
+  RootedScriptSourceObject sso(cx, script->sourceObject());
+  RootedObject wrapped(cx, object->owner()->wrapSource(cx, sso));
+  if (!wrapped) {
+    return false;
+  }
+
+  args.rval().setObject(*wrapped);
+  return true;
+}
+
+
 bool DebuggerObject::makeDebuggeeValueMethod(JSContext* cx, unsigned argc,
                                              Value* vp) {
   THIS_DEBUGOBJECT(cx, argc, vp, "makeDebuggeeValue", args, object);
@@ -1465,6 +1601,7 @@ const JSFunctionSpec DebuggerObject::methods_[] = {
     JS_FN("executeInGlobal", DebuggerObject::executeInGlobalMethod, 1, 0),
     JS_FN("executeInGlobalWithBindings",
           DebuggerObject::executeInGlobalWithBindingsMethod, 2, 0),
+    JS_FN("createSource", DebuggerObject::createSource, 1, 0),
     JS_FN("makeDebuggeeValue", DebuggerObject::makeDebuggeeValueMethod, 1, 0),
     JS_FN("makeDebuggeeNativeFunction",
           DebuggerObject::makeDebuggeeNativeFunctionMethod, 1, 0),
