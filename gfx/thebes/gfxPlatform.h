@@ -550,6 +550,16 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   static qcms_transform* GetCMSBGRATransform();
 
+  
+
+
+  static qcms_transform* GetCMSOSRGBATransform();
+
+  
+
+
+  static qcms_data_type GetCMSOSRGBAType();
+
   virtual void FontsPrefsChanged(const char* aPref);
 
   int32_t GetBidiNumeralOption();
