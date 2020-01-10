@@ -6,7 +6,7 @@
 
 const {
   createFactory,
-  Component,
+  PureComponent,
 } = require("devtools/client/shared/vendor/react");
 
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
@@ -52,7 +52,7 @@ loader.lazyRequireGetter(
 
 
 
-class Worker extends Component {
+class Worker extends PureComponent {
   static get propTypes() {
     return {
       client: PropTypes.instanceOf(DebuggerClient).isRequired,
