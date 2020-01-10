@@ -203,7 +203,7 @@ class DrawTargetCairo final : public DrawTarget {
 
   
   
-  void SetFontOptions();
+  void SetFontOptions(cairo_antialias_t aAAMode = CAIRO_ANTIALIAS_DEFAULT);
 
  private:  
   cairo_t* mContext;

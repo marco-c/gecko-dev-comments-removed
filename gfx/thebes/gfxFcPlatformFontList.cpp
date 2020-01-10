@@ -28,6 +28,7 @@
 
 #include "mozilla/gfx/HelpersCairo.h"
 
+#include <cairo-ft.h>
 #include <fontconfig/fcfreetype.h>
 #include <dlfcn.h>
 #include <unistd.h>
@@ -245,7 +246,7 @@ static void GetFontProperties(FcPattern* aFontPattern, WeightRange* aWeight,
 gfxFontconfigFontEntry::gfxFontconfigFontEntry(const nsACString& aFaceName,
                                                FcPattern* aFontPattern,
                                                bool aIgnoreFcCharmap)
-    : gfxFontEntry(aFaceName),
+    : gfxFT2FontEntryBase(aFaceName),
       mFontPattern(aFontPattern),
       mFTFaceInitialized(false),
       mIgnoreFcCharmap(aIgnoreFcCharmap),
@@ -303,7 +304,7 @@ gfxFontconfigFontEntry::gfxFontconfigFontEntry(const nsACString& aFaceName,
                                                StretchRange aStretch,
                                                SlantStyleRange aStyle,
                                                RefPtr<SharedFTFace>&& aFace)
-    : gfxFontEntry(aFaceName),
+    : gfxFT2FontEntryBase(aFaceName),
       mFTFace(std::move(aFace)),
       mFTFaceInitialized(true),
       mIgnoreFcCharmap(true),
@@ -322,7 +323,7 @@ gfxFontconfigFontEntry::gfxFontconfigFontEntry(const nsACString& aFaceName,
                                                WeightRange aWeight,
                                                StretchRange aStretch,
                                                SlantStyleRange aStyle)
-    : gfxFontEntry(aFaceName),
+    : gfxFT2FontEntryBase(aFaceName),
       mFontPattern(aFontPattern),
       mFTFaceInitialized(false),
       mHasVariationsInitialized(false),
@@ -525,14 +526,9 @@ double gfxFontconfigFontEntry::GetAspect() {
   return mAspect;
 }
 
-static void PrepareFontOptions(FcPattern* aPattern,
-                               cairo_font_options_t* aFontOptions,
-                               int* aOutLoadFlags, int* aOutLoadTarget,
+static void PrepareFontOptions(FcPattern* aPattern, int* aOutLoadFlags,
                                unsigned int* aOutSynthFlags) {
-  NS_ASSERTION(aFontOptions, "null font options passed to PrepareFontOptions");
-
   int loadFlags = FT_LOAD_DEFAULT;
-  int loadTarget = 0;
   unsigned int synthFlags = 0;
 
   
@@ -578,11 +574,6 @@ static void PrepareFontOptions(FcPattern* aPattern,
   
   
   
-  if (printing) {
-    cairo_font_options_set_hint_metrics(aFontOptions, CAIRO_HINT_METRICS_OFF);
-  } else {
-    cairo_font_options_set_hint_metrics(aFontOptions, CAIRO_HINT_METRICS_ON);
-  }
 
   
   
@@ -611,7 +602,6 @@ static void PrepareFontOptions(FcPattern* aPattern,
     hinting = FcTrue;
   }
 
-  cairo_hint_style_t hint_style;
   int fc_hintstyle = FC_HINT_NONE;
   if ((!printing || hinting) &&
       FcPatternGetInteger(aPattern, FC_HINT_STYLE, 0, &fc_hintstyle) !=
@@ -620,106 +610,47 @@ static void PrepareFontOptions(FcPattern* aPattern,
   }
   switch (fc_hintstyle) {
     case FC_HINT_NONE:
-      hint_style = CAIRO_HINT_STYLE_NONE;
-      loadTarget = FT_LOAD_NO_HINTING;
+      loadFlags = FT_LOAD_NO_HINTING;
       break;
     case FC_HINT_SLIGHT:
-      hint_style = CAIRO_HINT_STYLE_SLIGHT;
-      loadTarget = FT_LOAD_TARGET_LIGHT;
-      break;
-    case FC_HINT_MEDIUM:
-    default:  
-      hint_style = CAIRO_HINT_STYLE_MEDIUM;
-      break;
-    case FC_HINT_FULL:
-      hint_style = CAIRO_HINT_STYLE_FULL;
+      loadFlags = FT_LOAD_TARGET_LIGHT;
       break;
   }
-  cairo_font_options_set_hint_style(aFontOptions, hint_style);
-
-  int rgba;
-  if (FcPatternGetInteger(aPattern, FC_RGBA, 0, &rgba) != FcResultMatch) {
-    rgba = FC_RGBA_UNKNOWN;
-  }
-  cairo_subpixel_order_t subpixel_order = CAIRO_SUBPIXEL_ORDER_DEFAULT;
-  switch (rgba) {
-    case FC_RGBA_UNKNOWN:
-    case FC_RGBA_NONE:
-    default:
-      
-      
-      rgba = FC_RGBA_NONE;
-      
-      
-      
-      MOZ_FALLTHROUGH;
-    case FC_RGBA_RGB:
-      subpixel_order = CAIRO_SUBPIXEL_ORDER_RGB;
-      break;
-    case FC_RGBA_BGR:
-      subpixel_order = CAIRO_SUBPIXEL_ORDER_BGR;
-      break;
-    case FC_RGBA_VRGB:
-      subpixel_order = CAIRO_SUBPIXEL_ORDER_VRGB;
-      break;
-    case FC_RGBA_VBGR:
-      subpixel_order = CAIRO_SUBPIXEL_ORDER_VBGR;
-      break;
-  }
-  cairo_font_options_set_subpixel_order(aFontOptions, subpixel_order);
 
   FcBool fc_antialias;
   if (FcPatternGetBool(aPattern, FC_ANTIALIAS, 0, &fc_antialias) !=
       FcResultMatch) {
     fc_antialias = FcTrue;
   }
-  cairo_antialias_t antialias;
   if (!fc_antialias) {
-    antialias = CAIRO_ANTIALIAS_NONE;
     if (fc_hintstyle != FC_HINT_NONE) {
-      loadTarget = FT_LOAD_TARGET_MONO;
+      loadFlags = FT_LOAD_TARGET_MONO;
     }
-    loadTarget |= FT_LOAD_MONOCHROME;
-  } else if (rgba == FC_RGBA_NONE) {
-    antialias = CAIRO_ANTIALIAS_GRAY;
-  } else {
-    antialias = CAIRO_ANTIALIAS_SUBPIXEL;
-    if (fc_hintstyle == FC_HINT_FULL) {
-      loadTarget = rgba == FC_RGBA_VRGB || rgba == FC_RGBA_VBGR
-                       ? FT_LOAD_TARGET_LCD_V
-                       : FT_LOAD_TARGET_LCD;
+    loadFlags |= FT_LOAD_MONOCHROME;
+  } else if (fc_hintstyle == FC_HINT_FULL) {
+    int fc_rgba;
+    if (FcPatternGetInteger(aPattern, FC_RGBA, 0, &fc_rgba) != FcResultMatch) {
+      fc_rgba = FC_RGBA_UNKNOWN;
+    }
+    switch (fc_rgba) {
+      case FC_RGBA_RGB:
+      case FC_RGBA_BGR:
+        loadFlags = FT_LOAD_TARGET_LCD;
+        break;
+      case FC_RGBA_VRGB:
+      case FC_RGBA_VBGR:
+        loadFlags = FT_LOAD_TARGET_LCD_V;
+        break;
     }
   }
-  cairo_font_options_set_antialias(aFontOptions, antialias);
 
   FcBool bitmap;
   if (FcPatternGetBool(aPattern, FC_EMBEDDED_BITMAP, 0, &bitmap) !=
       FcResultMatch) {
     bitmap = FcFalse;
   }
-  if (fc_antialias && (hint_style == CAIRO_HINT_STYLE_NONE || !bitmap)) {
+  if (fc_antialias && (fc_hintstyle == FC_HINT_NONE || !bitmap)) {
     loadFlags |= FT_LOAD_NO_BITMAP;
-  }
-
-  int fc_lcd_filter;
-  if (FcPatternGetInteger(aPattern, FC_LCD_FILTER, 0, &fc_lcd_filter) ==
-      FcResultMatch) {
-    cairo_lcd_filter_t lcd_filter = CAIRO_LCD_FILTER_DEFAULT;
-    switch (fc_lcd_filter) {
-      case FC_LCD_NONE:
-        lcd_filter = CAIRO_LCD_FILTER_NONE;
-        break;
-      case FC_LCD_DEFAULT:
-        lcd_filter = CAIRO_LCD_FILTER_FIR5;
-        break;
-      case FC_LCD_LIGHT:
-        lcd_filter = CAIRO_LCD_FILTER_FIR3;
-        break;
-      case FC_LCD_LEGACY:
-        lcd_filter = CAIRO_LCD_FILTER_INTRA_PIXEL;
-        break;
-    }
-    cairo_font_options_set_lcd_filter(aFontOptions, lcd_filter);
   }
 
   FcBool autohint;
@@ -735,66 +666,7 @@ static void PrepareFontOptions(FcPattern* aPattern,
   }
 
   *aOutLoadFlags = loadFlags;
-  *aOutLoadTarget = loadTarget;
   *aOutSynthFlags = synthFlags;
-}
-
-cairo_scaled_font_t* gfxFontconfigFontEntry::CreateScaledFont(
-    FcPattern* aRenderPattern, gfxFloat aAdjustedSize,
-    const gfxFontStyle* aStyle, RefPtr<SharedFTFace> aFTFace,
-    int* aOutLoadFlags, unsigned int* aOutSynthFlags) {
-  if (aStyle->NeedsSyntheticBold(this)) {
-    FcPatternAddBool(aRenderPattern, FC_EMBOLDEN, FcTrue);
-  }
-
-  
-  bool needsOblique = IsUpright() &&
-                      aStyle->style != FontSlantStyle::Normal() &&
-                      aStyle->allowSyntheticStyle;
-
-  if (needsOblique) {
-    
-    FcPatternDel(aRenderPattern, FC_EMBEDDED_BITMAP);
-    FcPatternAddBool(aRenderPattern, FC_EMBEDDED_BITMAP, FcFalse);
-  }
-
-  if (HasVariations() && aFTFace != mFTFace) {
-    AutoTArray<gfxFontVariation, 8> settings;
-    GetVariationsForStyle(settings, *aStyle);
-    gfxFT2FontBase::SetupVarCoords(GetMMVar(), settings, aFTFace->GetFace());
-  }
-
-  cairo_font_options_t* fontOptions = cairo_font_options_create();
-  int loadFlags;
-  int loadTarget;
-  unsigned int synthFlags;
-  PrepareFontOptions(aRenderPattern, fontOptions, &loadFlags, &loadTarget,
-                     &synthFlags);
-
-  *aOutLoadFlags = loadFlags | loadTarget;
-  *aOutSynthFlags = synthFlags;
-
-  cairo_font_face_t* face = cairo_ft_font_face_create_for_ft_face(
-      aFTFace->GetFace(), loadFlags, synthFlags, aFTFace.get());
-
-  cairo_scaled_font_t* scaledFont = nullptr;
-
-  cairo_matrix_t sizeMatrix;
-  cairo_matrix_t identityMatrix;
-
-  cairo_matrix_init_scale(&sizeMatrix, aAdjustedSize, aAdjustedSize);
-  cairo_matrix_init_identity(&identityMatrix);
-
-  scaledFont =
-      cairo_scaled_font_create(face, &sizeMatrix, &identityMatrix, fontOptions);
-  cairo_font_options_destroy(fontOptions);
-
-  NS_ASSERTION(cairo_scaled_font_status(scaledFont) == CAIRO_STATUS_SUCCESS,
-               "Failed to make scaled font");
-
-  cairo_font_face_destroy(face);
-
-  return scaledFont;
 }
 
 #ifdef MOZ_WIDGET_GTK
@@ -940,24 +812,23 @@ gfxFont* gfxFontconfigFontEntry::CreateFontInstance(
     NS_WARNING("Failed to get FreeType face for pattern");
     return nullptr;
   }
-  if (face->GetFace()->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS) {
+  if (HasVariations()) {
     
     
     
     
-    if (face->GetData()) {
-      
-      
-      face = face->GetData()->CloneFace();
-    } else {
-      
-      
-      face = CreateFaceForPattern(mFontPattern);
-      if (!face) {
-        
-        
-        face = mFTFace;
-      }
+    
+    
+    
+    
+    RefPtr<SharedFTFace> varFace = face->GetData()
+                                       ? face->GetData()->CloneFace()
+                                       : CreateFaceForPattern(mFontPattern);
+    if (varFace) {
+      AutoTArray<gfxFontVariation, 8> settings;
+      GetVariationsForStyle(settings, *aFontStyle);
+      gfxFT2FontBase::SetupVarCoords(GetMMVar(), settings, varFace->GetFace());
+      face = std::move(varFace);
     }
   }
 
@@ -969,10 +840,21 @@ gfxFont* gfxFontconfigFontEntry::CreateFontInstance(
     return nullptr;
   }
 
+  if (aFontStyle->NeedsSyntheticBold(this)) {
+    FcPatternAddBool(renderPattern, FC_EMBOLDEN, FcTrue);
+  }
+
+  
+  if (IsUpright() && aFontStyle->style != FontSlantStyle::Normal() &&
+      aFontStyle->allowSyntheticStyle) {
+    
+    FcPatternDel(renderPattern, FC_EMBEDDED_BITMAP);
+    FcPatternAddBool(renderPattern, FC_EMBEDDED_BITMAP, FcFalse);
+  }
+
   int loadFlags;
   unsigned int synthFlags;
-  cairo_scaled_font_t* scaledFont = CreateScaledFont(
-      renderPattern, size, aFontStyle, face, &loadFlags, &synthFlags);
+  PrepareFontOptions(renderPattern, &loadFlags, &synthFlags);
 
   std::string file;
   int index = 0;
@@ -998,9 +880,8 @@ gfxFont* gfxFontconfigFontEntry::CreateFontInstance(
   }
 
   gfxFont* newFont = new gfxFontconfigFont(
-      unscaledFont, scaledFont, std::move(face), renderPattern, size, this,
-      aFontStyle, loadFlags, (synthFlags & CAIRO_FT_SYNTHESIZE_BOLD) != 0);
-  cairo_scaled_font_destroy(scaledFont);
+      unscaledFont, std::move(face), renderPattern, size, this, aFontStyle,
+      loadFlags, (synthFlags & CAIRO_FT_SYNTHESIZE_BOLD) != 0);
 
   return newFont;
 }
@@ -1354,11 +1235,11 @@ void gfxFontconfigFontFamily::AddFacesToFontList(Func aAddPatternFunc) {
 
 gfxFontconfigFont::gfxFontconfigFont(
     const RefPtr<UnscaledFontFontconfig>& aUnscaledFont,
-    cairo_scaled_font_t* aScaledFont, RefPtr<SharedFTFace>&& aFTFace,
-    FcPattern* aPattern, gfxFloat aAdjustedSize, gfxFontEntry* aFontEntry,
-    const gfxFontStyle* aFontStyle, int aLoadFlags, bool aEmbolden)
-    : gfxFT2FontBase(aUnscaledFont, aScaledFont, std::move(aFTFace), aFontEntry,
-                     aFontStyle, aLoadFlags, aEmbolden),
+    RefPtr<SharedFTFace>&& aFTFace, FcPattern* aPattern, gfxFloat aAdjustedSize,
+    gfxFontEntry* aFontEntry, const gfxFontStyle* aFontStyle, int aLoadFlags,
+    bool aEmbolden)
+    : gfxFT2FontBase(aUnscaledFont, std::move(aFTFace), aFontEntry, aFontStyle,
+                     aLoadFlags, aEmbolden),
       mPattern(aPattern) {
   mAdjustedSize = aAdjustedSize;
   InitMetrics();
@@ -1370,8 +1251,7 @@ already_AddRefed<ScaledFont> gfxFontconfigFont::GetScaledFont(
     mozilla::gfx::DrawTarget* aTarget) {
   if (!mAzureScaledFont) {
     mAzureScaledFont = Factory::CreateScaledFontForFontconfigFont(
-        GetUnscaledFont(), GetAdjustedSize(), GetCairoScaledFont(), mFTFace,
-        GetPattern());
+        GetUnscaledFont(), GetAdjustedSize(), mFTFace, GetPattern());
     InitializeScaledFont();
   }
 

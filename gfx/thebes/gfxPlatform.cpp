@@ -1343,6 +1343,13 @@ void gfxPlatform::WillShutdown() {
   mScreenReferenceSurface = nullptr;
   mScreenReferenceDrawTarget = nullptr;
 
+#ifdef USE_SKIA
+  
+  
+  
+  SkGraphics::PurgeFontCache();
+#endif
+
   
   
   
@@ -1351,12 +1358,6 @@ void gfxPlatform::WillShutdown() {
   
   
 #ifdef NS_FREE_PERMANENT_DATA
-#  ifdef USE_SKIA
-  
-  
-  SkGraphics::PurgeFontCache();
-#  endif
-
 #  if MOZ_TREE_CAIRO
   cairo_debug_reset_static_data();
 #  endif

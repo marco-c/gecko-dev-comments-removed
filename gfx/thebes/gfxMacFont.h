@@ -8,7 +8,6 @@
 
 #include "mozilla/MemoryReporting.h"
 #include "gfxFont.h"
-#include "cairo.h"
 #include <ApplicationServices/ApplicationServices.h>
 
 #include "mozilla/gfx/UnscaledFontMac.h"
@@ -84,8 +83,6 @@ class gfxMacFont : public gfxFont {
   
   
   CTFontRef mCTFont;
-
-  cairo_font_face_t* mFontFace;
 
   mozilla::UniquePtr<gfxFontShaper> mCoreTextShaper;
 

@@ -1195,7 +1195,7 @@ bool DrawTargetCairo::IsCurrentGroupOpaque() {
   return cairo_surface_get_content(surf) == CAIRO_CONTENT_COLOR;
 }
 
-void DrawTargetCairo::SetFontOptions() {
+void DrawTargetCairo::SetFontOptions(cairo_antialias_t aAAMode) {
   
   
   
@@ -1211,7 +1211,7 @@ void DrawTargetCairo::SetFontOptions() {
   
 
   
-  if (mPermitSubpixelAA) {
+  if (mPermitSubpixelAA && aAAMode == CAIRO_ANTIALIAS_DEFAULT) {
     return;
   }
 
@@ -1223,12 +1223,22 @@ void DrawTargetCairo::SetFontOptions() {
     }
   }
 
-  
-  
   cairo_get_font_options(mContext, mFontOptions);
-  cairo_antialias_t antialias = cairo_font_options_get_antialias(mFontOptions);
-  if (antialias == CAIRO_ANTIALIAS_SUBPIXEL) {
-    cairo_font_options_set_antialias(mFontOptions, CAIRO_ANTIALIAS_GRAY);
+  cairo_antialias_t oldAA = cairo_font_options_get_antialias(mFontOptions);
+  cairo_antialias_t newAA =
+      aAAMode == CAIRO_ANTIALIAS_DEFAULT ? oldAA : aAAMode;
+  
+  if (newAA == CAIRO_ANTIALIAS_DEFAULT) {
+    return;
+  }
+  
+  
+  if (!mPermitSubpixelAA && newAA == CAIRO_ANTIALIAS_SUBPIXEL) {
+    newAA = CAIRO_ANTIALIAS_GRAY;
+  }
+  
+  if (oldAA == CAIRO_ANTIALIAS_DEFAULT || (int)newAA < (int)oldAA) {
+    cairo_font_options_set_antialias(mFontOptions, newAA);
     cairo_set_font_options(mContext, mFontOptions);
   }
 }
@@ -1266,7 +1276,9 @@ void DrawTargetCairo::FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
     return;
   }
 
-  if (!aFont) {
+  cairo_scaled_font_t* cairoScaledFont =
+      aFont ? aFont->GetCairoScaledFont() : nullptr;
+  if (!cairoScaledFont) {
     gfxDevCrash(LogReason::InvalidFont) << "Invalid scaled font";
     return;
   }
@@ -1274,7 +1286,7 @@ void DrawTargetCairo::FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
   AutoPrepareForDrawing prep(this, mContext);
   AutoClearDeviceOffset clear(aPattern);
 
-  cairo_set_scaled_font(mContext, aFont->GetCairoScaledFont());
+  cairo_set_scaled_font(mContext, cairoScaledFont);
 
   cairo_pattern_t* pat =
       GfxPatternToCairoPattern(aPattern, aOptions.mAlpha, GetTransform());
@@ -1283,11 +1295,11 @@ void DrawTargetCairo::FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
   cairo_set_source(mContext, pat);
   cairo_pattern_destroy(pat);
 
-  cairo_set_antialias(mContext,
-                      GfxAntialiasToCairoAntialias(aOptions.mAntialiasMode));
+  cairo_antialias_t aa = GfxAntialiasToCairoAntialias(aOptions.mAntialiasMode);
+  cairo_set_antialias(mContext, aa);
 
   
-  SetFontOptions();
+  SetFontOptions(aa);
 
   
   

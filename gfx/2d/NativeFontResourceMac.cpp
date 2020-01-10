@@ -21,7 +21,7 @@ namespace gfx {
 
 
 already_AddRefed<NativeFontResourceMac> NativeFontResourceMac::Create(
-    uint8_t* aFontData, uint32_t aDataLength, bool aNeedsCairo) {
+    uint8_t* aFontData, uint32_t aDataLength) {
   
   CFDataRef data = CFDataCreate(kCFAllocatorDefault, aFontData, aDataLength);
   if (!data) {
@@ -46,7 +46,7 @@ already_AddRefed<NativeFontResourceMac> NativeFontResourceMac::Create(
 
   
   RefPtr<NativeFontResourceMac> fontResource =
-      new NativeFontResourceMac(fontRef, aNeedsCairo);
+      new NativeFontResourceMac(fontRef);
 
   return fontResource.forget();
 }
@@ -54,8 +54,7 @@ already_AddRefed<NativeFontResourceMac> NativeFontResourceMac::Create(
 already_AddRefed<UnscaledFont> NativeFontResourceMac::CreateUnscaledFont(
     uint32_t aIndex, const uint8_t* aInstanceData,
     uint32_t aInstanceDataLength) {
-  RefPtr<UnscaledFont> unscaledFont =
-      new UnscaledFontMac(mFontRef, true, mNeedsCairo);
+  RefPtr<UnscaledFont> unscaledFont = new UnscaledFontMac(mFontRef, true);
 
   return unscaledFont.forget();
 }
