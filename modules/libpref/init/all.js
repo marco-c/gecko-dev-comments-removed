@@ -4967,11 +4967,6 @@ pref("dom.vr.display.rafMaxDuration", 50);
 
 
 
-
-pref("ui.touch_activation.duration_ms", 10);
-
-
-
 pref("memory_info_dumper.watch_fifo.enabled", false);
 
 
