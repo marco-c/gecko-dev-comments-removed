@@ -6,6 +6,12 @@
 
 
 
+
+
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.htmlaboutaddons.enabled", false]],
+});
+
 async function test() {
   requestLongerTimeout(2);
 

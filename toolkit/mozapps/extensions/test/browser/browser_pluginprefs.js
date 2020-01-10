@@ -4,6 +4,13 @@
 
 
 
+
+
+
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.htmlaboutaddons.enabled", false]],
+});
+
 var gManagerWindow;
 
 async function test() {

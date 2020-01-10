@@ -9,6 +9,12 @@ var gManagerWindow;
 var gCategoryUtilities;
 var gAvailableCategory;
 
+
+
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.htmlaboutaddons.enabled", false]],
+});
+
 async function test() {
   waitForExplicitFinish();
 

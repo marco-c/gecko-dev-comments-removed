@@ -16,6 +16,12 @@ var gInstall;
 
 const EXTENSION_NAME = "Wunderbar";
 
+
+
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.htmlaboutaddons.enabled", false]],
+});
+
 async function test() {
   waitForExplicitFinish();
 

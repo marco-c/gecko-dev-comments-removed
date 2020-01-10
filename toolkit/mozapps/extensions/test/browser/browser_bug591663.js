@@ -30,6 +30,11 @@ var gExtensionProperties = {
   type: "extension",
 };
 
+
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.htmlaboutaddons.enabled", false]],
+});
+
 async function test() {
   waitForExplicitFinish();
 

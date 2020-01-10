@@ -8,6 +8,13 @@
 var gManagerWindow;
 var gProvider;
 
+
+
+
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.htmlaboutaddons.enabled", false]],
+});
+
 async function test() {
   waitForExplicitFinish();
 

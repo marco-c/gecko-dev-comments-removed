@@ -3,6 +3,14 @@ const {AddonTestUtils} = ChromeUtils.import("resource://testing-common/AddonTest
 let gManagerWindow;
 let gCategoryUtilities;
 
+
+
+
+
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.htmlaboutaddons.enabled", false]],
+});
+
 registerCleanupFunction(() => {
   
   gManagerWindow = null;

@@ -12,6 +12,12 @@ PromiseTestUtils.whitelistRejectionsGlobally(/this\._errorLink/);
 var gManagerWindow;
 var gCategoryUtilities;
 
+
+
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.htmlaboutaddons.enabled", false]],
+});
+
 async function test() {
   waitForExplicitFinish();
 

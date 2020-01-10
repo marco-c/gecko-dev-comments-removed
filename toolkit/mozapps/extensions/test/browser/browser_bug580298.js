@@ -9,6 +9,12 @@ var gManagerWindow;
 var gCategoryUtilities;
 var gProvider;
 
+
+
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.htmlaboutaddons.enabled", false]],
+});
+
 add_task(async function test() {
   gProvider = new MockProvider();
 

@@ -12,6 +12,14 @@ var gProvider;
 
 var gLoadCompleteCallback = null;
 
+
+SpecialPowers.pushPrefEnv({
+  set: [
+    ["extensions.htmlaboutaddons.enabled", false],
+    ["extensions.htmlaboutaddons.discover.enabled", false],
+  ],
+});
+
 var gProgressListener = {
   onStateChange(aWebProgress, aRequest, aStateFlags, aStatus) {
     

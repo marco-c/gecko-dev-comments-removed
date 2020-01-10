@@ -7,6 +7,12 @@ var gDocument;
 var gCategoryUtilities;
 var gProvider;
 
+
+
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.htmlaboutaddons.enabled", false]],
+});
+
 async function setup_manager(...args) {
   let aWindow = await open_manager(...args);
   gManagerWindow = aWindow;

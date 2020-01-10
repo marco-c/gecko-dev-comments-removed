@@ -14,6 +14,11 @@ var gApp = document.getElementById("bundle_brand").getString("brandShortName");
 var gVersion = Services.appinfo.version;
 
 
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.htmlaboutaddons.enabled", false]],
+});
+
+
 async function open_details(aId, aType, aCallback) {
   requestLongerTimeout(2);
 

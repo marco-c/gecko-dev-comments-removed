@@ -25,6 +25,12 @@ var gTypes = [
   },
 ];
 
+
+
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.htmlaboutaddons.enabled", false]],
+});
+
 function go_back(aManager) {
   gBrowser.goBack();
 }

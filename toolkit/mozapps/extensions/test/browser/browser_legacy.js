@@ -1,4 +1,9 @@
 
+
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.htmlaboutaddons.enabled", false]],
+});
+
 add_task(async function() {
   const INFO_URL = Services.urlFormatter.formatURLPref("app.support.baseURL") + "webextensions";
 

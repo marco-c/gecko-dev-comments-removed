@@ -21,6 +21,12 @@ var infoURL = Services.urlFormatter.formatURLPref("app.support.baseURL") + "unsi
 
 const EXPECTED_ADDONS = 11;
 
+
+
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.htmlaboutaddons.enabled", false]],
+});
+
 add_task(async function() {
   gProvider = new MockProvider();
 

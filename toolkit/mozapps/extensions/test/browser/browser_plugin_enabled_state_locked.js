@@ -21,6 +21,12 @@ function getTestPluginPref() {
   return `${prefix}test`;
 }
 
+
+
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.htmlaboutaddons.enabled", false]],
+});
+
 registerCleanupFunction(() => {
   Services.prefs.unlockPref(getTestPluginPref());
   Services.prefs.clearUserPref(getTestPluginPref());

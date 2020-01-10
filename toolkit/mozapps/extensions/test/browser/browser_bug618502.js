@@ -7,6 +7,12 @@
 
 var gCategoryUtilities;
 
+
+
+SpecialPowers.pushPrefEnv({
+  set: [["extensions.htmlaboutaddons.enabled", false]],
+});
+
 function test() {
   waitForExplicitFinish();
 
