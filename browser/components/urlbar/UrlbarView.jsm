@@ -830,7 +830,7 @@ class UrlbarView {
     let title = item._elements.get("title");
 
     if (result.type == UrlbarUtils.RESULT_TYPE.TIP) {
-      this._addTextContentWithHighlights(title, result.payload.text, []);
+      title.textContent = result.payload.text;
       let tipButton = item._elements.get("tipButton");
       tipButton.textContent = result.payload.buttonText;
       
