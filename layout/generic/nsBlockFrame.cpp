@@ -3580,14 +3580,16 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
           availSize.BSize(wm) -= aState.BorderPadding().BEnd(wm);
         }
 
-        
-        
         nscoord contentBSize = aState.mReflowInput.ComputedBSize();
         if (aState.mReflowInput.ComputedMaxBSize() != NS_UNCONSTRAINEDSIZE) {
           contentBSize =
               std::min(contentBSize, aState.mReflowInput.ComputedMaxBSize());
         }
         if (contentBSize != NS_UNCONSTRAINEDSIZE) {
+          
+          
+          contentBSize -= aState.mConsumedBSize;
+
           
           
           

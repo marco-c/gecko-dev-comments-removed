@@ -938,15 +938,6 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
       
       contentSize.BSize(wm) =
           std::max(contentSize.BSize(wm), aReflowInput.AvailableBSize());
-
-      
-      
-      
-      
-      
-      
-      
-      contentSize.BSize(wm) = std::min(contentSize.BSize(wm), computedBSize);
     }
   } else {
     
