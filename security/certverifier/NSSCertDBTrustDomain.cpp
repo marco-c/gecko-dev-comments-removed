@@ -1355,53 +1355,71 @@ void DisableMD5() {
       NSS_USE_ALG_IN_CERT_SIGNATURE | NSS_USE_ALG_IN_CMS_SIGNATURE);
 }
 
-bool LoadLoadableRoots(const nsCString& dir) {
+bool LoadUserModuleAt(const char* moduleName, const char* libraryName,
+                      const nsCString& dir) {
   
   
   
   int unusedModType;
-  Unused << SECMOD_DeleteModule(kRootModuleName, &unusedModType);
-  
-  
-  
-  
-  
-  Unused << SECMOD_DeleteModule("Root Certs", &unusedModType);
+  Unused << SECMOD_DeleteModule(moduleName, &unusedModType);
 
   nsAutoCString fullLibraryPath;
   if (!dir.IsEmpty()) {
     fullLibraryPath.Assign(dir);
     fullLibraryPath.AppendLiteral(FILE_PATH_SEPARATOR);
   }
-  fullLibraryPath.Append(MOZ_DLL_PREFIX "nssckbi" MOZ_DLL_SUFFIX);
+  fullLibraryPath.Append(MOZ_DLL_PREFIX);
+  fullLibraryPath.Append(libraryName);
+  fullLibraryPath.Append(MOZ_DLL_SUFFIX);
   
   fullLibraryPath.ReplaceSubstring("\\", "\\\\");
   fullLibraryPath.ReplaceSubstring("\"", "\\\"");
 
   nsAutoCString pkcs11ModuleSpec("name=\"");
-  pkcs11ModuleSpec.Append(kRootModuleName);
+  pkcs11ModuleSpec.Append(moduleName);
   pkcs11ModuleSpec.AppendLiteral("\" library=\"");
   pkcs11ModuleSpec.Append(fullLibraryPath);
   pkcs11ModuleSpec.AppendLiteral("\"");
 
-  UniqueSECMODModule rootsModule(SECMOD_LoadUserModule(
+  UniqueSECMODModule userModule(SECMOD_LoadUserModule(
       const_cast<char*>(pkcs11ModuleSpec.get()), nullptr, false));
-  if (!rootsModule) {
+  if (!userModule) {
     return false;
   }
 
-  if (!rootsModule->loaded) {
+  if (!userModule->loaded) {
     return false;
   }
 
   return true;
 }
 
-void UnloadLoadableRoots() {
-  UniqueSECMODModule rootsModule(SECMOD_FindModule(kRootModuleName));
+const char* kOSClientCertsModuleName = "OS Client Cert Module";
 
+bool LoadOSClientCertsModule(const nsCString& dir) {
+  return LoadUserModuleAt(kOSClientCertsModuleName, "osclientcerts", dir);
+}
+
+bool LoadLoadableRoots(const nsCString& dir) {
+  
+  
+  
+  
+  
+  int unusedModType;
+  Unused << SECMOD_DeleteModule("Root Certs", &unusedModType);
+  return LoadUserModuleAt(kRootModuleName, "nssckbi", dir);
+}
+
+void UnloadUserModules() {
+  UniqueSECMODModule rootsModule(SECMOD_FindModule(kRootModuleName));
   if (rootsModule) {
     SECMOD_UnloadUserModule(rootsModule.get());
+  }
+  UniqueSECMODModule osClientCertsModule(
+      SECMOD_FindModule(kOSClientCertsModuleName));
+  if (osClientCertsModule) {
+    SECMOD_UnloadUserModule(osClientCertsModule.get());
   }
 }
 

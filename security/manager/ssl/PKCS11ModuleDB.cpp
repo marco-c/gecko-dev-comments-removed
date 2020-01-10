@@ -83,7 +83,7 @@ PKCS11ModuleDB::AddModule(const nsAString& aModuleName,
 
   
   
-  nsresult rv = BlockUntilLoadableRootsLoaded();
+  nsresult rv = BlockUntilLoadableCertsLoaded();
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -110,7 +110,7 @@ NS_IMETHODIMP
 PKCS11ModuleDB::ListModules(nsISimpleEnumerator** _retval) {
   NS_ENSURE_ARG_POINTER(_retval);
 
-  nsresult rv = BlockUntilLoadableRootsLoaded();
+  nsresult rv = BlockUntilLoadableCertsLoaded();
   if (NS_FAILED(rv)) {
     return rv;
   }

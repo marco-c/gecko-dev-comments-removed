@@ -8,16 +8,20 @@
 
 do_get_profile();
 
-function run_test() {
+const { TestUtils } = ChromeUtils.import(
+  "resource://testing-common/TestUtils.jsm"
+);
+
+add_task(async function run_test() {
   
   
   checkPKCS11ModuleNotPresent("OS Client Cert Module", "osclientcerts");
 
   
   
-  let libraryFile = Services.dirsvc.get("GreBinD", Ci.nsIFile);
-  libraryFile.append(ctypes.libraryName("osclientcerts"));
-  loadPKCS11Module(libraryFile, "OS Client Cert Module", true);
+  Services.prefs.setBoolPref("security.osclientcerts.autoload", true);
+  
+  await TestUtils.topicObserved("psm:load-os-client-certs-module-task-ran");
   let testModule = checkPKCS11ModuleExists(
     "OS Client Cert Module",
     "osclientcerts"
@@ -38,9 +42,6 @@ function run_test() {
 
   
   
-  let pkcs11ModuleDB = Cc["@mozilla.org/security/pkcs11moduledb;1"].getService(
-    Ci.nsIPKCS11ModuleDB
-  );
-  pkcs11ModuleDB.deleteModule("OS Client Cert Module");
+  Services.prefs.setBoolPref("security.osclientcerts.autoload", false);
   checkPKCS11ModuleNotPresent("OS Client Cert Module", "osclientcerts");
-}
+});

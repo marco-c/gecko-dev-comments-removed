@@ -178,7 +178,7 @@ Result IsDelegatedCredentialAcceptable(const DelegatedCredentialInfo& dcInfo,
 
 
 Result IsCertBuiltInRoot(CERTCertificate* cert, bool& result) {
-  if (NS_FAILED(BlockUntilLoadableRootsLoaded())) {
+  if (NS_FAILED(BlockUntilLoadableCertsLoaded())) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
 
@@ -492,7 +492,7 @@ Result CertVerifier::VerifyCert(
   MOZ_ASSERT(usage == certificateUsageSSLServer || !keySizeStatus);
   MOZ_ASSERT(usage == certificateUsageSSLServer || !sha1ModeResult);
 
-  if (NS_FAILED(BlockUntilLoadableRootsLoaded())) {
+  if (NS_FAILED(BlockUntilLoadableCertsLoaded())) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
   if (NS_FAILED(CheckForSmartCardChanges())) {

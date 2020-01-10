@@ -68,7 +68,22 @@ void DisableMD5();
 
 bool LoadLoadableRoots(const nsCString& dir);
 
-void UnloadLoadableRoots();
+
+
+
+
+
+
+
+
+bool LoadOSClientCertsModule(const nsCString& dir);
+
+extern const char* kOSClientCertsModuleName;
+
+
+
+
+void UnloadUserModules();
 
 nsresult DefaultServerNicknameForCert(const CERTCertificate* cert,
                                        nsCString& nickname);
@@ -274,9 +289,9 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
   const OriginAttributes& mOriginAttributes;
   const Vector<mozilla::pkix::Input>& mThirdPartyRootInputs;  
   const Vector<mozilla::pkix::Input>&
-      mThirdPartyIntermediateInputs;  
+      mThirdPartyIntermediateInputs;                             
   const Maybe<nsTArray<nsTArray<uint8_t>>>& mExtraCertificates;  
-  UniqueCERTCertList& mBuiltChain;    
+  UniqueCERTCertList& mBuiltChain;                               
   PinningTelemetryInfo* mPinningTelemetryInfo;
   const char* mHostname;  
 #ifdef MOZ_NEW_CERT_STORAGE

@@ -56,7 +56,7 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
  public:
   
   
-  friend class LoadLoadableRootsTask;
+  friend class LoadLoadableCertsTask;
   
   
   friend class BackgroundImportEnterpriseCertsTask;
@@ -97,9 +97,9 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
   bool ShouldEnableEnterpriseRootsForFamilySafety(uint32_t familySafetyMode);
 
   
-  mozilla::Monitor mLoadableRootsLoadedMonitor;
-  bool mLoadableRootsLoaded;
-  nsresult mLoadableRootsLoadedResult;
+  mozilla::Monitor mLoadableCertsLoadedMonitor;
+  bool mLoadableCertsLoaded;
+  nsresult mLoadableCertsLoadedResult;
 
   
   mozilla::Mutex mMutex;
@@ -123,15 +123,16 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
   
   
   
-  bool mLoadLoadableRootsTaskDispatched;
+  
+  bool mLoadLoadableCertsTaskDispatched;
 };
 
-inline nsresult BlockUntilLoadableRootsLoaded() {
+inline nsresult BlockUntilLoadableCertsLoaded() {
   nsCOMPtr<nsINSSComponent> component(do_GetService(PSM_COMPONENT_CONTRACTID));
   if (!component) {
     return NS_ERROR_FAILURE;
   }
-  return component->BlockUntilLoadableRootsLoaded();
+  return component->BlockUntilLoadableCertsLoaded();
 }
 
 inline nsresult CheckForSmartCardChanges() {
