@@ -215,58 +215,71 @@ NS_INTERFACE_MAP_END_INHERITING(TextEditor)
 nsresult HTMLEditor::Init(Document& aDoc, Element* aRoot,
                           nsISelectionController* aSelCon, uint32_t aFlags,
                           const nsAString& aInitialValue) {
+  MOZ_ASSERT(!mInitSucceeded,
+             "HTMLEditor::Init() called again without calling PreDestroy()?");
   MOZ_ASSERT(aInitialValue.IsEmpty(), "Non-empty initial values not supported");
 
-  nsresult rulesRv = NS_OK;
-
-  {
-    
-    AutoEditInitRulesTrigger rulesTrigger(this, rulesRv);
-
-    
-    nsresult rv = TextEditor::Init(aDoc, aRoot, nullptr, aFlags, aInitialValue);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    
-    aDoc.AddMutationObserverUnlessExists(this);
-
-    if (!mRootElement) {
-      UpdateRootElement();
-    }
-
-    
-    if (IsMailEditor()) {
-      SetAbsolutePositioningEnabled(false);
-      SetSnapToGridEnabled(false);
-    }
-
-    
-    mCSSEditUtils = MakeUnique<CSSEditUtils>(this);
-
-    
-    Document* doc = GetDocument();
-    if (NS_WARN_IF(!doc)) {
-      return NS_ERROR_FAILURE;
-    }
-    if (!IsPlaintextEditor() && !IsInteractionAllowed()) {
-      mDisabledLinkHandling = true;
-      mOldLinkHandlingEnabled = doc->LinkHandlingEnabled();
-      doc->SetLinkHandlingEnabled(false);
-    }
-
-    
-    mTypeInState = new TypeInState();
-
-    if (!IsInteractionAllowed()) {
-      
-      AddOverrideStyleSheetInternal(
-          NS_LITERAL_STRING("resource://gre/res/EditorOverride.css"));
-    }
+  nsresult rv = EditorBase::Init(aDoc, aRoot, nullptr, aFlags, aInitialValue);
+  if (NS_FAILED(rv)) {
+    return rv;
   }
-  NS_ENSURE_SUCCESS(rulesRv, rulesRv);
 
+  
+  aDoc.AddMutationObserverUnlessExists(this);
+
+  if (!mRootElement) {
+    UpdateRootElement();
+  }
+
+  
+  if (IsMailEditor()) {
+    SetAbsolutePositioningEnabled(false);
+    SetSnapToGridEnabled(false);
+  }
+
+  
+  mCSSEditUtils = MakeUnique<CSSEditUtils>(this);
+
+  
+  Document* document = GetDocument();
+  if (NS_WARN_IF(!document)) {
+    return NS_ERROR_FAILURE;
+  }
+  if (!IsPlaintextEditor() && !IsInteractionAllowed()) {
+    mDisabledLinkHandling = true;
+    mOldLinkHandlingEnabled = document->LinkHandlingEnabled();
+    document->SetLinkHandlingEnabled(false);
+  }
+
+  
+  mTypeInState = new TypeInState();
+
+  if (!IsInteractionAllowed()) {
+    
+    AddOverrideStyleSheetInternal(
+        NS_LITERAL_STRING("resource://gre/res/EditorOverride.css"));
+  }
+
+  
+  
+  AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
+  if (NS_WARN_IF(!editActionData.CanHandle())) {
+    return NS_ERROR_FAILURE;
+  }
+
+  rv = InitEditorContentAndSelection();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    
+    return EditorBase::ToGenericNSResult(rv);
+  }
+
+  
+  
+  ClearUndoRedo();
+  EnableUndoRedo();
+  MOZ_ASSERT(!mInitSucceeded, "HTMLEditor::Init() shouldn't be nested");
+  mInitSucceeded = true;
   return NS_OK;
 }
 
@@ -274,6 +287,8 @@ void HTMLEditor::PreDestroy(bool aDestroyingFrames) {
   if (mDidPreDestroy) {
     return;
   }
+
+  mInitSucceeded = false;
 
   
   

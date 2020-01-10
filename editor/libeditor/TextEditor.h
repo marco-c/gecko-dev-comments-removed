@@ -23,7 +23,6 @@ class nsISelectionController;
 class nsITransferable;
 
 namespace mozilla {
-class AutoEditInitRulesTrigger;
 class DeleteNodeTransaction;
 class InsertNodeTransaction;
 enum class EditSubAction : int32_t;
@@ -682,10 +681,6 @@ class TextEditor : public EditorBase,
   MOZ_CAN_RUN_SCRIPT virtual nsresult OnEndHandlingTopLevelEditSubAction()
       override;
 
-  void BeginEditorInit();
-  MOZ_CAN_RUN_SCRIPT
-  nsresult EndEditorInit();
-
   
 
 
@@ -716,8 +711,7 @@ class TextEditor : public EditorBase,
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE virtual nsresult
-  InitEditorContentAndSelection();
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult InitEditorContentAndSelection();
 
   int32_t WrapWidth() const { return mWrapColumn; }
 
@@ -902,7 +896,6 @@ class TextEditor : public EditorBase,
 
   int32_t mWrapColumn;
   int32_t mMaxTextLength;
-  int32_t mInitTriggerCounter;
   int32_t mNewlineHandling;
   int32_t mCaretStyle;
 
@@ -916,7 +909,6 @@ class TextEditor : public EditorBase,
   
   bool mIsMaskingPassword;
 
-  friend class AutoEditInitRulesTrigger;
   friend class DeleteNodeTransaction;
   friend class EditorBase;
   friend class InsertNodeTransaction;
