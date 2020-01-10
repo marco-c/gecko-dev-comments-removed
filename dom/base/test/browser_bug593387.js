@@ -7,6 +7,10 @@
 
 
 add_task(async function test() {
+  
+  
+  await SpecialPowers.pushPrefEnv({"set": [["security.csp.enable", false],]});
+
   await BrowserTestUtils.withNewTab({ gBrowser,
                                       url: "chrome://global/content/mozilla.xhtml" },
                                      async function(newBrowser) {

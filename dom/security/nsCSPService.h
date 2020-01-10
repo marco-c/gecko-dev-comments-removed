@@ -28,6 +28,12 @@ class CSPService : public nsIContentPolicy, public nsIChannelEventSink {
 
   CSPService();
 
+  
+  
+  static nsresult ConsultCSP(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
+                             const nsACString& aMimeTypeGuess,
+                             int16_t* aDecision);
+
  protected:
   virtual ~CSPService();
 };

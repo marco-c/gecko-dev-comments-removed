@@ -1272,20 +1272,22 @@ nsresult WorkerPrivate::SetCSPFromHeaderValues(
   AssertIsOnMainThread();
   MOZ_DIAGNOSTIC_ASSERT(!mLoadInfo.mCSP);
 
-  if (nsContentUtils::IsSystemPrincipal(mLoadInfo.mPrincipal)) {
-    
-    
-    return NS_OK;
-  }
-
   NS_ConvertASCIItoUTF16 cspHeaderValue(aCSPHeaderValue);
   NS_ConvertASCIItoUTF16 cspROHeaderValue(aCSPReportOnlyHeaderValue);
 
   nsresult rv;
   nsCOMPtr<nsIContentSecurityPolicy> csp = new nsCSPContext();
 
+  
+  
+  
+  
   nsCOMPtr<nsIURI> selfURI;
   mLoadInfo.mPrincipal->GetURI(getter_AddRefs(selfURI));
+  if (!selfURI) {
+    selfURI = mLoadInfo.mBaseURI;
+  }
+  MOZ_ASSERT(selfURI, "need a self URI for CSP");
 
   rv = csp->SetRequestContextWithPrincipal(mLoadInfo.mPrincipal, selfURI,
                                            EmptyString(), 0);

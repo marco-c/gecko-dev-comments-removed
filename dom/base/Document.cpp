@@ -2974,13 +2974,6 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
     return NS_OK;
   }
 
-  
-  
-  
-  if (nsContentUtils::IsSystemPrincipal(NodePrincipal())) {
-    return NS_OK;
-  }
-
   MOZ_ASSERT(!mCSP, "where did mCSP get set if not here?");
 
   
