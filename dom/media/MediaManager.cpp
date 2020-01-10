@@ -1947,9 +1947,12 @@ NS_IMPL_ISUPPORTS(MediaManager, nsIMediaManagerService, nsIObserver)
 
 StaticRefPtr<MediaManager> MediaManager::sSingleton;
 
+StaticMutex MediaManager::sSingletonMutex;
+
 #ifdef DEBUG
 
 bool MediaManager::IsInMediaThread() {
+  StaticMutexAutoLock lock(sSingletonMutex);
   return sSingleton ? (sSingleton->mMediaThread->thread_id() ==
                        PlatformThread::CurrentId())
                     : false;
@@ -1985,6 +1988,7 @@ class MTAThread : public base::Thread {
 
 
 MediaManager* MediaManager::Get() {
+  StaticMutexAutoLock lock(sSingletonMutex);
   if (!sSingleton) {
     MOZ_ASSERT(NS_IsMainThread());
 
@@ -2070,7 +2074,10 @@ MediaManager* MediaManager::Get() {
 }
 
 
-MediaManager* MediaManager::GetIfExists() { return sSingleton; }
+MediaManager* MediaManager::GetIfExists() {
+  StaticMutexAutoLock lock(sSingletonMutex);
+  return sSingleton;
+}
 
 
 already_AddRefed<MediaManager> MediaManager::GetInstance() {
@@ -3642,7 +3649,12 @@ void MediaManager::Shutdown() {
   
 
   
-  MOZ_ASSERT(this == sSingleton);
+#ifdef DEBUG
+  {
+    StaticMutexAutoLock lock(sSingletonMutex);
+    MOZ_ASSERT(this == sSingleton);
+  }
+#endif
 
   
   
@@ -3654,6 +3666,7 @@ void MediaManager::Shutdown() {
         if (mMediaThread) {
           mMediaThread->Stop();
         }
+        StaticMutexAutoLock lock(sSingletonMutex);
         
         media::GetShutdownBarrier()->RemoveBlocker(
             sSingleton->mShutdownBlocker);
