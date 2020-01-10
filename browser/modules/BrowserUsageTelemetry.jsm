@@ -186,8 +186,10 @@ let URICountListener = {
   },
 
   onLocationChange(browser, webProgress, request, uri, flags) {
-    
-    SearchTelemetry.stopTrackingBrowser(browser);
+    if (!(flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT)) {
+      
+      SearchTelemetry.stopTrackingBrowser(browser);
+    }
 
     
     if (flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_ERROR_PAGE) {
