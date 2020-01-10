@@ -2261,8 +2261,8 @@ static void ConstrainToCoordValues(float& aStart, float& aSize) {
   
   
   
-  if (aSize > nscoord_MAX) {
-    float excess = aSize - nscoord_MAX;
+  if (aSize > float(nscoord_MAX)) {
+    float excess = aSize - float(nscoord_MAX);
     excess /= 2;
     aStart += excess;
     aSize = (float)nscoord_MAX;
