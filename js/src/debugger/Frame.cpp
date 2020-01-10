@@ -679,25 +679,39 @@ DebuggerFrameImplementation DebuggerFrame::getImplementation(
 
 bool DebuggerFrame::setOnStepHandler(JSContext* cx, HandleDebuggerFrame frame,
                                      OnStepHandler* handler) {
-  MOZ_ASSERT(frame->isLive());
-
   OnStepHandler* prior = frame->onStepHandler();
   if (handler == prior) {
     return true;
   }
 
   JSFreeOp* fop = cx->defaultFreeOp();
-  AbstractFramePtr referent = DebuggerFrame::getReferent(frame);
+  if (frame->isLive()) {
+    AbstractFramePtr referent = DebuggerFrame::getReferent(frame);
 
-  
-  
-  if (handler) {
-    if (!frame->maybeIncrementStepperCounter(cx, referent)) {
-      return false;
+    
+    
+    if (handler) {
+      if (!frame->maybeIncrementStepperCounter(cx, referent)) {
+        return false;
+      }
+    } else {
+      frame->maybeDecrementStepperCounter(cx->runtime()->defaultFreeOp(),
+                                          referent);
+    }
+  } else if (frame->hasGenerator()) {
+    RootedScript script(cx, frame->generatorInfo()->generatorScript());
+
+    if (handler) {
+      if (!frame->maybeIncrementStepperCounter(cx, script)) {
+        return false;
+      }
+    } else {
+      frame->maybeDecrementStepperCounter(cx->runtime()->defaultFreeOp(),
+                                          script);
     }
   } else {
-    frame->maybeDecrementStepperCounter(cx->runtime()->defaultFreeOp(),
-                                        referent);
+    
+    
   }
 
   
@@ -1216,7 +1230,9 @@ bool DebuggerFrame::CallData::ToNative(JSContext* cx, unsigned argc,
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-  bool checkLive = MyMethod != &CallData::liveGetter;
+  bool checkLive = MyMethod != &CallData::liveGetter &&
+                   MyMethod != &CallData::onStepGetter &&
+                   MyMethod != &CallData::onStepSetter;
 
   RootedDebuggerFrame frame(cx,
                             DebuggerFrame::check(cx, args.thisv(), checkLive));
