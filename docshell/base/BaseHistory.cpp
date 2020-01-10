@@ -151,10 +151,6 @@ void BaseHistory::NotifyVisited(nsIURI* aURI) {
     return;
   }
 
-  
-  
-  nsAutoScriptBlocker scriptBlocker;
-
   auto entry = mTrackedURIs.Lookup(aURI);
   if (!entry) {
     
