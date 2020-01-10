@@ -29,9 +29,6 @@ document.addEventListener("DOMContentLoaded", e => {
     RPMSendAsyncMessage("OpenContentBlockingPreferences");
   });
 
-  
-  RPMSendAsyncMessage("GetEnabledPrefs");
-
   RPMAddMessageListener("SendCBCategory", message => {
     if (message.data == "custom") {
       protectionDetails.setAttribute(
@@ -172,29 +169,31 @@ document.addEventListener("DOMContentLoaded", e => {
     createGraph(message.data);
   });
 
-  
-  RPMAddMessageListener("SendEnabledMonitorCardPref", message => {
-    if (message.data.isEnabled) {
-      const monitorCard = new MonitorCard(document);
-      monitorCard.init();
-    }
-
-    
-    const monitorUI = document.querySelector(".monitor-card");
-    monitorUI.dataset.enabled = message.data.isEnabled;
-  });
+  let lockwiseEnabled = RPMGetBoolPref(
+    "browser.contentblocking.report.lockwise.enabled",
+    true
+  );
+  if (lockwiseEnabled) {
+    const lockwiseCard = new LockwiseCard(document);
+    lockwiseCard.init();
+  }
 
   
-  RPMAddMessageListener("SendEnabledLockwiseCardPref", message => {
-    if (message.data.isEnabled) {
-      const lockwiseCard = new LockwiseCard(document);
-      lockwiseCard.init();
-    }
+  const lockwiseUI = document.querySelector(".lockwise-card");
+  lockwiseUI.dataset.enabled = lockwiseEnabled;
 
-    
-    const lockwiseUI = document.querySelector(".lockwise-card");
-    lockwiseUI.dataset.enabled = message.data.isEnabled;
-  });
+  let monitorEnabled = RPMGetBoolPref(
+    "browser.contentblocking.report.monitor.enabled",
+    true
+  );
+  if (monitorEnabled) {
+    const monitorCard = new MonitorCard(document);
+    monitorCard.init();
+  }
+
+  
+  const monitorUI = document.querySelector(".monitor-card");
+  monitorUI.dataset.enabled = monitorEnabled;
 
   
   
