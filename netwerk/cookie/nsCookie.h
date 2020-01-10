@@ -41,6 +41,9 @@ class nsCookie final : public nsICookie {
 
  public:
   
+  static bool ValidateRawSame(const mozilla::net::CookieStruct& aCookieData);
+
+  
   
   static int64_t GenerateUniqueCreationTime(int64_t aCreationTime);
 
@@ -50,7 +53,8 @@ class nsCookie final : public nsICookie {
       const nsACString& aHost, const nsACString& aPath, int64_t aExpiry,
       int64_t aLastAccessed, int64_t aCreationTime, bool aIsSession,
       bool aIsSecure, bool aIsHttpOnly,
-      const OriginAttributes& aOriginAttributes, int32_t aSameSite);
+      const OriginAttributes& aOriginAttributes, int32_t aSameSite,
+      int32_t aRawSameSite);
 
   static already_AddRefed<nsCookie> Create(
       const mozilla::net::CookieStruct& aCookieData,
@@ -81,6 +85,7 @@ class nsCookie final : public nsICookie {
     return mOriginAttributes;
   }
   inline int32_t SameSite() const { return mData.sameSite(); }
+  inline int32_t RawSameSite() const { return mData.rawSameSite(); }
 
   
   inline void SetExpiry(int64_t aExpiry) { mData.expiry() = aExpiry; }

@@ -49,7 +49,7 @@ conn.executeSimpleSQL("INSERT INTO moz_cookies(" +
 
 const enumerator = Services.cookies.sessionEnumerator;
 
-Assert.equal(conn.schemaVersion, 9);
+Assert.equal(conn.schemaVersion, 10);
 let stmt = conn.createStatement("SELECT sql FROM sqlite_master " +
                                   "WHERE type = 'table' AND " +
                                   "      name = 'moz_cookies'");

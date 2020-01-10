@@ -41,11 +41,12 @@ already_AddRefed<nsCookie> nsCookie::Create(
     const nsACString& aName, const nsACString& aValue, const nsACString& aHost,
     const nsACString& aPath, int64_t aExpiry, int64_t aLastAccessed,
     int64_t aCreationTime, bool aIsSession, bool aIsSecure, bool aIsHttpOnly,
-    const OriginAttributes& aOriginAttributes, int32_t aSameSite) {
+    const OriginAttributes& aOriginAttributes, int32_t aSameSite,
+    int32_t aRawSameSite) {
   mozilla::net::CookieStruct cookieData(
       nsCString(aName), nsCString(aValue), nsCString(aHost), nsCString(aPath),
       aExpiry, aLastAccessed, aCreationTime, aIsHttpOnly, aIsSession, aIsSecure,
-      aSameSite);
+      aSameSite, aRawSameSite);
 
   return Create(cookieData, aOriginAttributes);
 }
@@ -70,6 +71,11 @@ already_AddRefed<nsCookie> nsCookie::Create(
   if (cookie->mData.sameSite() < 0 ||
       cookie->mData.sameSite() > nsICookie::SAMESITE_STRICT) {
     cookie->mData.sameSite() = nsICookie::SAMESITE_STRICT;
+  }
+
+  
+  if (!nsCookie::ValidateRawSame(cookie->mData)) {
+    cookie->mData.rawSameSite() = nsICookie::SAMESITE_NONE;
   }
 
   return cookie.forget();
@@ -170,6 +176,12 @@ nsCookie::GetExpires(uint64_t* aExpires) {
     *aExpires = Expiry() > 0 ? Expiry() : 1;
   }
   return NS_OK;
+}
+
+
+bool nsCookie::ValidateRawSame(const mozilla::net::CookieStruct& aCookieData) {
+  return aCookieData.rawSameSite() == aCookieData.sameSite() ||
+         aCookieData.rawSameSite() == nsICookie::SAMESITE_NONE;
 }
 
 NS_IMPL_ISUPPORTS(nsCookie, nsICookie)
