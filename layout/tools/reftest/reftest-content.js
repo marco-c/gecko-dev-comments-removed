@@ -650,9 +650,26 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
             return;
         }
 
+        
+        function Contains(rectA, rectB) {
+            return (rectA.left <= rectB.left && rectB.right <= rectA.right && rectA.top <= rectB.top && rectB.bottom <= rectA.bottom);
+        }
+        
+        function ContainedIn(rectList, rect) {
+            for (let i = 0; i < rectList.length; ++i) {
+                if (Contains(rectList[i], rect)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         updateCanvasPending = true;
         for (let i = 0; i < event.clientRects.length; ++i) {
             let r = event.clientRects[i];
+            if (ContainedIn(updateCanvasRects, r)) {
+                continue;
+            }
 
             
             
