@@ -33,6 +33,7 @@ class ServiceWorkerInfo final : public nsIServiceWorkerInfo {
   ServiceWorkerDescriptor mDescriptor;
   const nsString mCacheName;
   OriginAttributes mOriginAttributes;
+  const nsString mWorkerPrivateId;
 
   
   
