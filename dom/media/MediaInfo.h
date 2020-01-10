@@ -253,6 +253,9 @@ class VideoInfo : public TrackInfo {
   
   gfx::ColorRange mColorRange = gfx::ColorRange::LIMITED;
 
+  Maybe<int32_t> GetFrameRate() const { return mFrameRate; }
+  void SetFrameRate(int32_t aRate) { mFrameRate = Some(aRate); }
+
  private:
   
   
@@ -260,6 +263,8 @@ class VideoInfo : public TrackInfo {
 
   
   bool mAlphaPresent = false;
+
+  Maybe<int32_t> mFrameRate;
 };
 
 class AudioInfo : public TrackInfo {
