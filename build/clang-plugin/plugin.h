@@ -39,17 +39,6 @@ typedef ASTConsumer *ASTConsumerPtr;
 #define getEndLoc getLocEnd
 #endif
 
-#ifndef HAVE_NEW_ASTMATCHER_NAMES
-
-
-
-#define cxxConstructExpr constructExpr
-#define cxxConstructorDecl constructorDecl
-#define cxxMethodDecl methodDecl
-#define cxxNewExpr newExpr
-#define cxxRecordDecl recordDecl
-#endif
-
 #ifndef HAS_ACCEPTS_IGNORINGPARENIMPCASTS
 #define hasIgnoringParenImpCasts(x) has(x)
 #else
