@@ -187,17 +187,13 @@ class MOZ_RAII AutoSetTemporaryAncestorLimiter final {
 
 
 
-HTMLEditRules::HTMLEditRules()
-    : mHTMLEditor(nullptr),
-      mInitialized(false),
-      mReturnInEmptyLIKillsList(false) {
+HTMLEditRules::HTMLEditRules() : mHTMLEditor(nullptr), mInitialized(false) {
   mIsHTMLEditRules = true;
   InitFields();
 }
 
 void HTMLEditRules::InitFields() {
   mHTMLEditor = nullptr;
-  mReturnInEmptyLIKillsList = true;
 }
 
 nsresult HTMLEditRules::Init(TextEditor* aTextEditor) {
@@ -222,16 +218,6 @@ nsresult HTMLEditRules::Init(TextEditor* aTextEditor) {
   if (NS_WARN_IF(!mHTMLEditor)) {
     return NS_ERROR_FAILURE;
   }
-
-  
-  static const char kPrefName[] =
-      "editor.html.typing.returnInEmptyListItemClosesList";
-  nsAutoCString returnInEmptyLIKillsList;
-  Preferences::GetCString(kPrefName, returnInEmptyLIKillsList);
-
-  
-  
-  mReturnInEmptyLIKillsList = !returnInEmptyLIKillsList.EqualsLiteral("false");
 
   Element* rootElement = HTMLEditorRef().GetRoot();
   if (NS_WARN_IF(!rootElement && !HTMLEditorRef().GetDocument())) {
@@ -8255,7 +8241,7 @@ nsresult HTMLEditRules::ReturnInListItem(Element& aListItem, nsINode& aNode,
   
   
   
-  if (mReturnInEmptyLIKillsList && host != aListItem.GetParentElement() &&
+  if (host != aListItem.GetParentElement() &&
       IsEmptyBlockElement(aListItem, IgnoreSingleBR::eYes)) {
     nsCOMPtr<nsIContent> leftListNode = aListItem.GetParent();
     
