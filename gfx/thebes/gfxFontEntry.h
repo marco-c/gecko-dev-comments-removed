@@ -335,12 +335,12 @@ class gfxFontEntry {
   
   
   hb_face_t* GetHBFace();
-  virtual void ForgetHBFace();
+  void ForgetHBFace();
 
   
   
   gr_face* GetGrFace();
-  virtual void ReleaseGrFace(gr_face* aFace);
+  void ReleaseGrFace(gr_face* aFace);
 
   
   
