@@ -6,11 +6,19 @@
 
 #include "frontend/BinASTTokenReaderContext.h"
 
-#include "mozilla/Result.h"  
+#include "mozilla/Result.h"     
+#include "mozilla/ScopeExit.h"  
 
 #include <string.h>  
 
 #include "frontend/BinAST-macros.h"  
+#include "gc/Rooting.h"              
+#include "js/AllocPolicy.h"          
+#include "js/StableStringChars.h"    
+#include "js/Utility.h"              
+#include "js/Vector.h"               
+#include "util/StringBuffer.h"       
+#include "vm/JSAtom.h"               
 #include "vm/JSScript.h"             
 
 namespace js {
@@ -66,31 +74,43 @@ BinASTTokenReaderContext::readBuf<BinASTTokenReaderContext::Compression::Yes>(
       len -= availableDecodedLength();
     }
 
-    if (isEOF()) {
-      return raiseError("Unexpected end of file");
-    }
-
-    
-    decodedBegin_ = 0;
-
-    size_t inSize = stop_ - current_;
-    size_t outSize = DECODED_BUFFER_SIZE;
-    uint8_t* out = decodedBuffer_;
-
-    BrotliDecoderResult result;
-    result = BrotliDecoderDecompressStream(decoder_, &inSize, &current_,
-                                           &outSize, &out,
-                                            nullptr);
-    if (result == BROTLI_DECODER_RESULT_ERROR) {
-      return raiseError("Failed to decompress brotli stream");
-    }
-
-    decodedEnd_ = out - decodedBuffer_;
+    MOZ_TRY(fillDecodedBuf());
   }
 
   memmove(bytes, decodedBufferBegin(), len);
-  decodedBegin_ += len;
+  advanceDecodedBuffer(len);
   return Ok();
+}
+
+JS::Result<Ok> BinASTTokenReaderContext::fillDecodedBuf() {
+  if (isEOF()) {
+    return raiseError("Unexpected end of file");
+  }
+
+  MOZ_ASSERT(!availableDecodedLength());
+
+  decodedBegin_ = 0;
+
+  size_t inSize = stop_ - current_;
+  size_t outSize = DECODED_BUFFER_SIZE;
+  uint8_t* out = decodedBuffer_;
+
+  BrotliDecoderResult result;
+  result = BrotliDecoderDecompressStream(decoder_, &inSize, &current_, &outSize,
+                                         &out,
+                                          nullptr);
+  if (result == BROTLI_DECODER_RESULT_ERROR) {
+    return raiseError("Failed to decompress brotli stream");
+  }
+
+  decodedEnd_ = out - decodedBuffer_;
+
+  return Ok();
+}
+
+void BinASTTokenReaderContext::advanceDecodedBuffer(uint32_t count) {
+  MOZ_ASSERT(decodedBegin_ + count <= decodedEnd_);
+  decodedBegin_ += count;
 }
 
 bool BinASTTokenReaderContext::isEOF() const {
@@ -144,9 +164,108 @@ JS::Result<Ok> BinASTTokenReaderContext::readHeader() {
     return raiseError("Failed to create brotli decoder");
   }
 
+  MOZ_TRY(readStringPrelude());
+
   
 
   return raiseError("Not Yet Implemented");
+}
+
+JS::Result<Ok> BinASTTokenReaderContext::readStringPrelude() {
+  BINJS_MOZ_TRY_DECL(stringsNumberOfEntries, readVarU32<Compression::Yes>());
+
+  const uint32_t MAX_NUMBER_OF_STRINGS = 32768;
+
+  if (stringsNumberOfEntries > MAX_NUMBER_OF_STRINGS) {
+    return raiseError("Too many entries in strings dictionary");
+  }
+
+  
+  
+  
+  Vector<BinASTKind> binASTKinds(cx_);
+
+  BinASTSourceMetadata* metadata =
+      BinASTSourceMetadata::Create(binASTKinds, stringsNumberOfEntries);
+  if (!metadata) {
+    return raiseOOM();
+  }
+
+  
+  
+  auto se = mozilla::MakeScopeExit([metadata]() { js_free(metadata); });
+
+  
+  
+  
+
+  
+  
+  
+  StringBuffer buf(cx_);
+
+  RootedAtom atom(cx_);
+
+  for (uint32_t stringIndex = 0; stringIndex < stringsNumberOfEntries;
+       stringIndex++) {
+    size_t len;
+    while (true) {
+      if (availableDecodedLength() == 0) {
+        MOZ_TRY(fillDecodedBuf());
+      }
+
+      MOZ_ASSERT(availableDecodedLength() > 0);
+
+      const uint8_t* end = static_cast<const uint8_t*>(
+          memchr(decodedBufferBegin(), '\0', availableDecodedLength()));
+      if (end) {
+        
+        len = end - decodedBufferBegin();
+        break;
+      }
+
+      BINJS_TRY(buf.append(decodedBufferBegin(), availableDecodedLength()));
+      advanceDecodedBuffer(availableDecodedLength());
+    }
+
+    
+
+    if (!buf.length()) {
+      
+      const char* begin = reinterpret_cast<const char*>(decodedBufferBegin());
+      BINJS_TRY_VAR(atom, AtomizeWTF8Chars(cx_, begin, len));
+    } else {
+      BINJS_TRY(
+          buf.append(reinterpret_cast<const char*>(decodedBufferBegin()), len));
+
+      const char* begin = reinterpret_cast<const char*>(buf.rawLatin1Begin());
+      len = buf.length();
+
+      
+      BINJS_TRY_VAR(atom, AtomizeWTF8Chars(cx_, begin, len));
+
+      buf.clear();
+    }
+
+    
+    
+
+    metadata->getAtom(stringIndex) = atom;
+
+    
+    advanceDecodedBuffer(len + 1);
+  }
+
+  
+  
+
+  MOZ_ASSERT(!metadata_);
+  MOZ_ASSERT(buf.empty());
+  se.release();
+  metadata_ = metadata;
+  metadataOwned_ = MetadataOwnership::Owned;
+
+  return Ok();
 }
 
 void BinASTTokenReaderContext::traceMetadata(JSTracer* trc) {
@@ -269,7 +388,8 @@ JS::Result<uint32_t> BinASTTokenReaderContext::readVarU32() {
   }
 }
 
-JS::Result<uint32_t> BinASTTokenReaderContext::readUnsignedLong(const Context&) {
+JS::Result<uint32_t> BinASTTokenReaderContext::readUnsignedLong(
+    const Context&) {
   return readVarU32<Compression::Yes>();
 }
 

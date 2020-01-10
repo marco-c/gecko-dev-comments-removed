@@ -130,11 +130,26 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
   template <Compression compression>
   MOZ_MUST_USE JS::Result<Ok> readBuf(uint8_t* bytes, uint32_t len);
 
+  
+
+
+
+
+
+  MOZ_MUST_USE JS::Result<Ok> fillDecodedBuf();
+
+  void advanceDecodedBuffer(uint32_t count);
+
  public:
   
 
 
   MOZ_MUST_USE JS::Result<Ok> readHeader();
+
+  
+
+
+  MOZ_MUST_USE JS::Result<Ok> readStringPrelude();
 
   
   
