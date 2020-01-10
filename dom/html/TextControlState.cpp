@@ -1065,10 +1065,13 @@ nsresult TextInputListener::UpdateTextInputCommands(
 
 
 
+
+
 enum class TextControlAction {
   PrepareEditor,
   CommitComposition,
   SetValue,
+  SetSelectionRange,
 };
 
 class MOZ_STACK_CLASS AutoTextControlHandlingState {
@@ -1088,6 +1091,7 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
                                TextControlAction aTextControlAction)
       : mParent(aTextControlState.mHandlingState),
         mTextControlState(aTextControlState),
+        mTextCtrlElement(aTextControlState.mTextCtrlElement),
         mTextControlAction(aTextControlAction) {
     MOZ_ASSERT(aTextControlAction != TextControlAction::SetValue,
                "Use specific constructor");
@@ -1104,6 +1108,7 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
                                const nsAString& aSettingValue, ErrorResult& aRv)
       : mParent(aTextControlState.mHandlingState),
         mTextControlState(aTextControlState),
+        mTextCtrlElement(aTextControlState.mTextCtrlElement),
         mTextControlAction(aTextControlAction) {
     MOZ_ASSERT(aTextControlAction == TextControlAction::SetValue,
                "Use generic constructor");
@@ -1120,8 +1125,9 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
   }
 
   ~AutoTextControlHandlingState() {
-    if (!mTextControlStateDestroyed) {
-      mTextControlState.mHandlingState = mParent;
+    mTextControlState.mHandlingState = mParent;
+    if (!mParent && mTextControlStateDestroyed) {
+      mTextControlState.Destroy();
     }
   }
 
@@ -1132,6 +1138,9 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
     }
   }
 
+  bool IsTextControlStateDestroyed() const {
+    return mTextControlStateDestroyed;
+  }
   bool IsHandling(TextControlAction aTextControlAction) const {
     if (mTextControlAction == aTextControlAction) {
       return true;
@@ -1158,6 +1167,10 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
 
   AutoTextControlHandlingState* mParent;
   TextControlState& mTextControlState;
+  
+  
+  
+  nsCOMPtr<nsITextControlElement> mTextCtrlElement;
   nsString mSettingValue;
   TextControlAction mTextControlAction;
   bool mTextControlStateDestroyed = false;
@@ -1187,8 +1200,9 @@ TextControlState::TextControlState(nsITextControlElement* aOwningElement)
 
 TextControlState* TextControlState::Construct(
     nsITextControlElement* aOwningElement, TextControlState** aReusedState) {
-  if (*aReusedState && !(*aReusedState)->IsBusy()) {
+  if (aReusedState && *aReusedState) {
     TextControlState* state = *aReusedState;
+    MOZ_ASSERT(!state->IsBusy());
     *aReusedState = nullptr;
     state->mTextCtrlElement = aOwningElement;
     state->mBoundFrame = nullptr;
@@ -1209,8 +1223,18 @@ TextControlState* TextControlState::Construct(
 }
 
 TextControlState::~TextControlState() {
+  MOZ_ASSERT(!mHandlingState);
   MOZ_COUNT_DTOR(TextControlState);
   Clear();
+}
+
+void TextControlState::Destroy() {
+  
+  if (mHandlingState) {
+    mHandlingState->OnDestroyTextControlState();
+    return;
+  }
+  delete this;
 }
 
 Element* TextControlState::GetRootNode() {
@@ -1804,6 +1828,9 @@ void TextControlState::SetSelectionRange(
   MOZ_ASSERT(IsSelectionCached() || mBoundFrame,
              "How can we have a non-cached selection but no frame?");
 
+  AutoTextControlHandlingState handlingSetSelectionRange(
+      *this, TextControlAction::SetSelectionRange);
+
   if (aStart > aEnd) {
     aStart = aEnd;
   }
@@ -1830,9 +1857,9 @@ void TextControlState::SetSelectionRange(
     props.SetDirection(aDirection);
   } else {
     MOZ_ASSERT(mBoundFrame, "Our frame should still be valid");
-    WeakPtr<TextControlState> self(this);
     aRv = mBoundFrame->SetSelectionRange(aStart, aEnd, aDirection);
-    if (aRv.Failed() || !self.get()) {
+    if (aRv.Failed() ||
+        handlingSetSelectionRange.IsTextControlStateDestroyed()) {
       return;
     }
     if (mBoundFrame) {
@@ -2104,6 +2131,10 @@ HTMLInputElement* TextControlState::GetParentNumberControl(
 void TextControlState::DestroyEditor() {
   
   if (mEditorInitialized) {
+    
+    
+    
+    
     RefPtr<TextEditor> textEditor = mTextEditor;
     textEditor->PreDestroy(true);
     mEditorInitialized = false;
@@ -2395,7 +2426,6 @@ bool TextControlState::SetValue(const nsAString& aValue,
       
       
       if (nsContentUtils::IsSafeToRunScript()) {
-        WeakPtr<TextControlState> self(this);
         
         
         
@@ -2403,7 +2433,7 @@ bool TextControlState::SetValue(const nsAString& aValue,
             *this, TextControlAction::CommitComposition);
         RefPtr<TextEditor> textEditor = mTextEditor;
         nsresult rv = textEditor->CommitComposition();
-        if (!self.get()) {
+        if (handlingCommitComposition.IsTextControlStateDestroyed()) {
           return true;
         }
         if (NS_FAILED(rv)) {

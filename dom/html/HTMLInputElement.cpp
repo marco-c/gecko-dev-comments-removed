@@ -942,19 +942,21 @@ bool HTMLInputElement::sShutdown = false;
 
 
 void HTMLInputElement::ReleaseTextControlState(TextControlState* aState) {
-  if (!sShutdown && !sCachedTextControlState) {
+  if (!sShutdown && !sCachedTextControlState && !aState->IsBusy()) {
     aState->PrepareForReuse();
     sCachedTextControlState = aState;
   } else {
-    delete aState;
+    aState->Destroy();
   }
 }
 
 
 void HTMLInputElement::Shutdown() {
   sShutdown = true;
-  delete sCachedTextControlState;
-  sCachedTextControlState = nullptr;
+  if (sCachedTextControlState) {
+    sCachedTextControlState->Destroy();
+    sCachedTextControlState = nullptr;
+  }
 }
 
 
@@ -2651,6 +2653,8 @@ nsresult HTMLInputElement::SetValueInternal(const nsAString& aValue,
       }
 
       if (IsSingleLineTextControl(false)) {
+        
+        
         
         
         
