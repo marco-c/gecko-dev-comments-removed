@@ -202,6 +202,11 @@ class ReferrerInfo : public nsIReferrerInfo {
   
 
 
+  static uint32_t GetUserXOriginTrimmingPolicy();
+
+  
+
+
 
 
 
@@ -346,6 +351,7 @@ class ReferrerInfo : public nsIReferrerInfo {
   friend class mozilla::net::HttpBaseChannel;
 
   
+
 
 
 
