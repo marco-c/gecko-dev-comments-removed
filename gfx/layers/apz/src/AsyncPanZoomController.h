@@ -1229,6 +1229,8 @@ class AsyncPanZoomController {
   
   PanZoomState mState;
 
+  static bool IsPanningState(PanZoomState aState);
+
   
 
 
