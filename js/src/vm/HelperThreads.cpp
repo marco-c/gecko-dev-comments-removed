@@ -850,7 +850,7 @@ static bool EnsureParserCreatedClasses(JSContext* cx, ParseTaskKind kind) {
     return false;  
   }
 
-  if (!GlobalObject::initAsyncGenerators(cx, global)) {
+  if (!EnsureConstructor(cx, global, JSProto_AsyncGeneratorFunction)) {
     return false;  
   }
 
