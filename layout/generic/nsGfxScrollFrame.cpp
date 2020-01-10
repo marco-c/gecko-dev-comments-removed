@@ -3078,17 +3078,7 @@ void ScrollFrameHelper::AppendScrollPartsTo(nsDisplayListBuilder* aBuilder,
   
   
   if (mIsRoot) {
-    nsRect scrollPartsClip =
-        mOuter->GetRectRelativeToSelf() + aBuilder->ToReferenceFrame(mOuter);
-    if (!StaticPrefs::LayoutUseContainersForRootFrames() &&
-        mOuter->PresContext()->IsRootContentDocument()) {
-      
-      
-      
-      double res = mOuter->PresShell()->GetResolution();
-      scrollPartsClip.width = NSToCoordRound(scrollPartsClip.width * res);
-      scrollPartsClip.height = NSToCoordRound(scrollPartsClip.height * res);
-    }
+    nsRect scrollPartsClip(aBuilder->ToReferenceFrame(mOuter), TrueOuterSize());
     clipState.ClipContentDescendants(scrollPartsClip);
   }
 
@@ -5690,6 +5680,15 @@ class MOZ_RAII AutoMinimumScaleSizeChangeDetector final {
   nsSize mPreviousMinimumScaleSize;
   bool mPreviousIsUsingMinimumScaleSize;
 };
+
+nsSize ScrollFrameHelper::TrueOuterSize() const {
+  if (RefPtr<MobileViewportManager> manager =
+          mOuter->PresShell()->GetMobileViewportManager()) {
+    return LayoutDeviceSize::ToAppUnits(
+        manager->DisplaySize(), mOuter->PresContext()->AppUnitsPerDevPixel());
+  }
+  return mOuter->GetSize();
+}
 
 void ScrollFrameHelper::UpdateMinimumScaleSize(
     const nsRect& aScrollableOverflow, const nsSize& aICBSize) {

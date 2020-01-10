@@ -571,6 +571,12 @@ class ScrollFrameHelper : public nsIReflowCallback {
                               const nsSize& aICBSize);
 
   
+  
+  
+  
+  nsSize TrueOuterSize() const;
+
+  
   nsCOMPtr<mozilla::dom::Element> mHScrollbarContent;
   nsCOMPtr<mozilla::dom::Element> mVScrollbarContent;
   nsCOMPtr<mozilla::dom::Element> mScrollCornerContent;
