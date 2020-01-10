@@ -180,7 +180,8 @@ class DebuggerWeakMap
   void removeIf(Predicate test) {
     for (Enum e(*static_cast<Base*>(this)); !e.empty(); e.popFront()) {
       JSObject* key = e.front().key();
-      if (test(key)) {
+      JSObject* value = e.front().value();
+      if (test(key, value)) {
         e.removeFront();
       }
     }
@@ -501,6 +502,9 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   FrameMap frames;
 
   
+
+
+
 
 
 
@@ -1445,6 +1449,20 @@ class DebuggerFrame : public NativeObject {
     ARGUMENTS_SLOT,
     ONSTEP_HANDLER_SLOT,
     ONPOP_HANDLER_SLOT,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    GENERATOR_INFO_SLOT,
+
     RESERVED_SLOTS,
   };
 
@@ -1500,6 +1518,15 @@ class DebuggerFrame : public NativeObject {
   OnStepHandler* onStepHandler() const;
   OnPopHandler* onPopHandler() const;
   void setOnPopHandler(OnPopHandler* handler);
+
+  bool setGenerator(JSContext* cx,
+                    Handle<AbstractGeneratorObject*> unwrappedGenObj);
+  bool hasGenerator() const;
+  void clearGenerator(FreeOp* fop);
+
+  
+  
+  AbstractGeneratorObject& unwrappedGenerator() const;
 
   
 
@@ -1562,6 +1589,10 @@ class DebuggerFrame : public NativeObject {
   void freeFrameIterData(FreeOp* fop);
   void maybeDecrementFrameScriptStepperCount(FreeOp* fop,
                                              AbstractFramePtr frame);
+
+ private:
+  class GeneratorInfo;
+  inline GeneratorInfo* generatorInfo() const;
 };
 
 class DebuggerObject : public NativeObject {
