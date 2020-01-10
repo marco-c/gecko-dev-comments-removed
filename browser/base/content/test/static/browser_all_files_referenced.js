@@ -224,12 +224,6 @@ var whitelist = [
   { file: "chrome://browser/content/aboutlogins/aboutLoginsUtils.js" },
 ];
 
-if (!AppConstants.MOZ_NEW_NOTIFICATION_STORE) {
-  
-  
-  whitelist.push({ file: "resource://gre/modules/kvstore.jsm" });
-}
-
 whitelist = new Set(
   whitelist
     .filter(
