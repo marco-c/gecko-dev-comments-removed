@@ -2,11 +2,10 @@
 
 
 
-var EXPORTED_SYMBOLS = [ "InlineSpellChecker",
-                         "SpellCheckHelper" ];
+var EXPORTED_SYMBOLS = ["InlineSpellChecker", "SpellCheckHelper"];
 const MAX_UNDO_STACK_DEPTH = 1;
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function InlineSpellChecker(aEditor) {
   this.init(aEditor);
@@ -27,13 +26,18 @@ InlineSpellChecker.prototype = {
   },
 
   initFromRemote(aSpellInfo, aWindowGlobalParent) {
-    if (this.mRemote)
+    if (this.mRemote) {
       throw new Error("Unexpected state");
+    }
     this.uninit();
 
-    if (!aSpellInfo)
+    if (!aSpellInfo) {
       return;
-    this.mInlineSpellChecker = this.mRemote = new RemoteSpellChecker(aSpellInfo, aWindowGlobalParent);
+    }
+    this.mInlineSpellChecker = this.mRemote = new RemoteSpellChecker(
+      aSpellInfo,
+      aWindowGlobalParent
+    );
     this.mOverMisspelling = aSpellInfo.overMisspelling;
     this.mMisspelling = aSpellInfo.misspelling;
   },
@@ -62,18 +66,23 @@ InlineSpellChecker.prototype = {
   initFromEvent(rangeParent, rangeOffset) {
     this.mOverMisspelling = false;
 
-    if (!rangeParent || !this.mInlineSpellChecker)
+    if (!rangeParent || !this.mInlineSpellChecker) {
       return;
+    }
 
     var selcon = this.mEditor.selectionController;
     var spellsel = selcon.getSelection(selcon.SELECTION_SPELLCHECK);
-    if (spellsel.rangeCount == 0)
-      return; 
+    if (spellsel.rangeCount == 0) {
+      return;
+    } 
 
-    var range = this.mInlineSpellChecker.getMisspelledWord(rangeParent,
-                                                          rangeOffset);
-    if (!range)
-      return; 
+    var range = this.mInlineSpellChecker.getMisspelledWord(
+      rangeParent,
+      rangeOffset
+    );
+    if (!range) {
+      return;
+    } 
 
     this.mMisspelling = range.toString();
     this.mOverMisspelling = true;
@@ -86,8 +95,9 @@ InlineSpellChecker.prototype = {
   get canSpellCheck() {
     
     
-    if (this.mRemote)
+    if (this.mRemote) {
       return this.mRemote.canSpellCheck;
+    }
     return this.mInlineSpellChecker != null;
   },
 
@@ -95,23 +105,28 @@ InlineSpellChecker.prototype = {
     if (this.mRemote) {
       return this.mRemote.spellCheckPending;
     }
-    return !!(this.mInlineSpellChecker &&
-              !this.mInlineSpellChecker.spellChecker &&
-              this.mInlineSpellChecker.spellCheckPending);
+    return !!(
+      this.mInlineSpellChecker &&
+      !this.mInlineSpellChecker.spellChecker &&
+      this.mInlineSpellChecker.spellCheckPending
+    );
   },
 
   
   get enabled() {
-    if (this.mRemote)
+    if (this.mRemote) {
       return this.mRemote.enableRealTimeSpell;
-    return (this.mInlineSpellChecker &&
-            this.mInlineSpellChecker.enableRealTimeSpell);
+    }
+    return (
+      this.mInlineSpellChecker && this.mInlineSpellChecker.enableRealTimeSpell
+    );
   },
   set enabled(isEnabled) {
-    if (this.mRemote)
+    if (this.mRemote) {
       this.mRemote.setSpellcheckUserOverride(isEnabled);
-    else if (this.mInlineSpellChecker)
+    } else if (this.mInlineSpellChecker) {
       this.mEditor.setSpellcheckUserOverride(isEnabled);
+    }
   },
 
   
@@ -122,15 +137,20 @@ InlineSpellChecker.prototype = {
   
   
   addSuggestionsToMenu(menu, insertBefore, maxNumber) {
-    if (!this.mRemote && (!this.mInlineSpellChecker || !this.mOverMisspelling))
-      return 0; 
+    if (
+      !this.mRemote &&
+      (!this.mInlineSpellChecker || !this.mOverMisspelling)
+    ) {
+      return 0;
+    } 
 
     var spellchecker = this.mRemote || this.mInlineSpellChecker.spellChecker;
     try {
-      if (!this.mRemote && !spellchecker.CheckCurrentWord(this.mMisspelling))
-        return 0; 
-    } catch (e) {
+      if (!this.mRemote && !spellchecker.CheckCurrentWord(this.mMisspelling)) {
         return 0;
+      } 
+    } catch (e) {
+      return 0;
     }
 
     this.mMenu = menu;
@@ -138,8 +158,9 @@ InlineSpellChecker.prototype = {
     this.mSuggestionItems = [];
     for (var i = 0; i < maxNumber; i++) {
       var suggestion = spellchecker.GetSuggestedWord();
-      if (!suggestion.length)
+      if (!suggestion.length) {
         break;
+      }
       this.mSpellSuggestions.push(suggestion);
 
       var item = menu.ownerDocument.createXULElement("menuitem");
@@ -148,7 +169,11 @@ InlineSpellChecker.prototype = {
       item.setAttribute("value", suggestion);
       
       
-      var callback = function(me, val) { return function(evt) { me.replaceMisspelling(val); }; };
+      var callback = function(me, val) {
+        return function(evt) {
+          me.replaceMisspelling(val);
+        };
+      };
       item.addEventListener("command", callback(this, i), true);
       item.setAttribute("class", "spell-suggestion");
       menu.insertBefore(item, insertBefore);
@@ -169,10 +194,9 @@ InlineSpellChecker.prototype = {
     var sortedList = [];
     var names = Services.intl.getLocaleDisplayNames(undefined, list);
     for (var i = 0; i < list.length; i++) {
-      sortedList.push({"localeCode": list[i],
-                       "displayName": names[i]});
+      sortedList.push({ localeCode: list[i], displayName: names[i] });
     }
-    let comparer = (new Services.intl.Collator()).compare;
+    let comparer = new Services.intl.Collator().compare;
     sortedList.sort((a, b) => comparer(a.displayName, b.displayName));
     return sortedList;
   },
@@ -183,8 +207,9 @@ InlineSpellChecker.prototype = {
     this.mDictionaryMenu = menu;
     this.mDictionaryItems = [];
 
-    if (!this.enabled)
+    if (!this.enabled) {
       return 0;
+    }
 
     var list;
     var curlang = "";
@@ -203,7 +228,10 @@ InlineSpellChecker.prototype = {
 
     for (var i = 0; i < sortedList.length; i++) {
       var item = menu.ownerDocument.createXULElement("menuitem");
-      item.setAttribute("id", "spell-check-dictionary-" + sortedList[i].localeCode);
+      item.setAttribute(
+        "id",
+        "spell-check-dictionary-" + sortedList[i].localeCode
+      );
       
       
       
@@ -220,16 +248,23 @@ InlineSpellChecker.prototype = {
             
             var view = menu.ownerGlobal;
             var spellcheckChangeEvent = new view.CustomEvent(
-                  "spellcheck-changed", {detail: { dictionary: localeCode}});
+              "spellcheck-changed",
+              { detail: { dictionary: localeCode } }
+            );
             menu.ownerDocument.dispatchEvent(spellcheckChangeEvent);
           };
         };
-        item.addEventListener("command", callback(this, sortedList[i].localeCode), true);
+        item.addEventListener(
+          "command",
+          callback(this, sortedList[i].localeCode),
+          true
+        );
       }
-      if (insertBefore)
+      if (insertBefore) {
         menu.insertBefore(item, insertBefore);
-      else
+      } else {
         menu.appendChild(item);
+      }
     }
     return list.length;
   },
@@ -249,8 +284,9 @@ InlineSpellChecker.prototype = {
       this.mRemote.selectDictionary(localeCode);
       return;
     }
-    if (!this.mInlineSpellChecker)
+    if (!this.mInlineSpellChecker) {
       return;
+    }
     var spellchecker = this.mInlineSpellChecker.spellChecker;
     spellchecker.SetCurrentDictionary(localeCode);
     this.mInlineSpellChecker.spellCheckRange(null); 
@@ -262,53 +298,65 @@ InlineSpellChecker.prototype = {
       this.mRemote.replaceMisspelling(index);
       return;
     }
-    if (!this.mInlineSpellChecker || !this.mOverMisspelling)
+    if (!this.mInlineSpellChecker || !this.mOverMisspelling) {
       return;
-    if (index < 0 || index >= this.mSpellSuggestions.length)
+    }
+    if (index < 0 || index >= this.mSpellSuggestions.length) {
       return;
-    this.mInlineSpellChecker.replaceWord(this.mWordNode, this.mWordOffset,
-                                         this.mSpellSuggestions[index]);
+    }
+    this.mInlineSpellChecker.replaceWord(
+      this.mWordNode,
+      this.mWordOffset,
+      this.mSpellSuggestions[index]
+    );
   },
 
   
   toggleEnabled() {
-    if (this.mRemote)
+    if (this.mRemote) {
       this.mRemote.toggleEnabled();
-    else
-      this.mEditor.setSpellcheckUserOverride(!this.mInlineSpellChecker.enableRealTimeSpell);
+    } else {
+      this.mEditor.setSpellcheckUserOverride(
+        !this.mInlineSpellChecker.enableRealTimeSpell
+      );
+    }
   },
 
   
   addToDictionary() {
     
-    if (this.mAddedWordStack.length == MAX_UNDO_STACK_DEPTH)
+    if (this.mAddedWordStack.length == MAX_UNDO_STACK_DEPTH) {
       this.mAddedWordStack.shift();
+    }
 
     this.mAddedWordStack.push(this.mMisspelling);
-    if (this.mRemote)
+    if (this.mRemote) {
       this.mRemote.addToDictionary();
-    else
+    } else {
       this.mInlineSpellChecker.addWordToDictionary(this.mMisspelling);
+    }
   },
   
   undoAddToDictionary() {
     if (this.mAddedWordStack.length > 0) {
       var word = this.mAddedWordStack.pop();
-      if (this.mRemote)
+      if (this.mRemote) {
         this.mRemote.undoAddToDictionary(word);
-      else
+      } else {
         this.mInlineSpellChecker.removeWordFromDictionary(word);
+      }
     }
   },
   canUndo() {
     
-    return (this.mAddedWordStack.length > 0);
+    return this.mAddedWordStack.length > 0;
   },
   ignoreWord() {
-    if (this.mRemote)
+    if (this.mRemote) {
       this.mRemote.ignoreWord();
-    else
+    } else {
       this.mInlineSpellChecker.ignoreWord(this.mMisspelling);
+    }
   },
 };
 
@@ -344,12 +392,14 @@ var SpellCheckHelper = {
   SPELLCHECKABLE: 0x100,
 
   isTargetAKeywordField(aNode, window) {
-    if (!(aNode instanceof window.HTMLInputElement))
+    if (!(aNode instanceof window.HTMLInputElement)) {
       return false;
+    }
 
     var form = aNode.form;
-    if (!form || aNode.type == "password")
+    if (!form || aNode.type == "password") {
       return false;
+    }
 
     var method = form.method.toUpperCase();
 
@@ -363,14 +413,16 @@ var SpellCheckHelper = {
     
     
     
-    return (method == "GET" || method == "") ||
-           (form.enctype != "text/plain") && (form.enctype != "multipart/form-data");
+    return (
+      method == "GET" ||
+      method == "" ||
+      (form.enctype != "text/plain" && form.enctype != "multipart/form-data")
+    );
   },
 
   
   getComputedStyle(aElem, aProp) {
-    return aElem.ownerGlobal
-                .getComputedStyle(aElem).getPropertyValue(aProp);
+    return aElem.ownerGlobal.getComputedStyle(aElem).getPropertyValue(aProp);
   },
 
   isEditable(element, window) {
@@ -388,12 +440,15 @@ var SpellCheckHelper = {
         }
 
         
-        if (!element.readOnly &&
-            (element.type == "text" || element.type == "search")) {
+        if (
+          !element.readOnly &&
+          (element.type == "text" || element.type == "search")
+        ) {
           flags |= this.SPELLCHECKABLE;
         }
-        if (this.isTargetAKeywordField(element, window))
+        if (this.isTargetAKeywordField(element, window)) {
           flags |= this.KEYWORD;
+        }
         if (element.type == "password") {
           flags |= this.PASSWORD;
         }
@@ -411,16 +466,19 @@ var SpellCheckHelper = {
         var isSpellcheckable = false;
         try {
           var editingSession = win.docShell.editingSession;
-          if (editingSession.windowIsEditable(win) &&
-              this.getComputedStyle(element, "-moz-user-modify") == "read-write") {
+          if (
+            editingSession.windowIsEditable(win) &&
+            this.getComputedStyle(element, "-moz-user-modify") == "read-write"
+          ) {
             isSpellcheckable = true;
           }
         } catch (ex) {
           
         }
 
-        if (isSpellcheckable)
+        if (isSpellcheckable) {
           flags |= this.CONTENTEDITABLE | this.SPELLCHECKABLE;
+        }
       }
     }
 
@@ -435,16 +493,25 @@ function RemoteSpellChecker(aSpellInfo, aWindowGlobalParent) {
 }
 
 RemoteSpellChecker.prototype = {
-  get canSpellCheck() { return this._spellInfo.canSpellCheck; },
-  get spellCheckPending() { return this._spellInfo.initialSpellCheckPending; },
-  get overMisspelling() { return this._spellInfo.overMisspelling; },
-  get enableRealTimeSpell() { return this._spellInfo.enableRealTimeSpell; },
+  get canSpellCheck() {
+    return this._spellInfo.canSpellCheck;
+  },
+  get spellCheckPending() {
+    return this._spellInfo.initialSpellCheckPending;
+  },
+  get overMisspelling() {
+    return this._spellInfo.overMisspelling;
+  },
+  get enableRealTimeSpell() {
+    return this._spellInfo.enableRealTimeSpell;
+  },
 
   GetSuggestedWord() {
     if (!this._suggestionGenerator) {
-      this._suggestionGenerator = (function* (spellInfo) {
-        for (let i of spellInfo.spellSuggestions)
+      this._suggestionGenerator = (function*(spellInfo) {
+        for (let i of spellInfo.spellSuggestions) {
           yield i;
+        }
       })(this._spellInfo);
     }
 
@@ -456,8 +523,12 @@ RemoteSpellChecker.prototype = {
     return next.value;
   },
 
-  get currentDictionary() { return this._spellInfo.currentDictionary; },
-  get dictionaryList() { return this._spellInfo.dictionaryList.slice(); },
+  get currentDictionary() {
+    return this._spellInfo.currentDictionary;
+  },
+  get dictionaryList() {
+    return this._spellInfo.dictionaryList.slice();
+  },
 
   selectDictionary(localeCode) {
     this._actor.selectDictionary({ localeCode });
@@ -479,20 +550,23 @@ RemoteSpellChecker.prototype = {
     
     
 
-    let dictionary = Cc["@mozilla.org/spellchecker/personaldictionary;1"]
-                       .getService(Ci.mozIPersonalDictionary);
+    let dictionary = Cc[
+      "@mozilla.org/spellchecker/personaldictionary;1"
+    ].getService(Ci.mozIPersonalDictionary);
     dictionary.addWord(this._spellInfo.misspelling);
     this._actor.recheckSpelling();
   },
   undoAddToDictionary(word) {
-    let dictionary = Cc["@mozilla.org/spellchecker/personaldictionary;1"]
-                       .getService(Ci.mozIPersonalDictionary);
+    let dictionary = Cc[
+      "@mozilla.org/spellchecker/personaldictionary;1"
+    ].getService(Ci.mozIPersonalDictionary);
     dictionary.removeWord(word);
     this._actor.recheckSpelling();
   },
   ignoreWord() {
-    let dictionary = Cc["@mozilla.org/spellchecker/personaldictionary;1"]
-                       .getService(Ci.mozIPersonalDictionary);
+    let dictionary = Cc[
+      "@mozilla.org/spellchecker/personaldictionary;1"
+    ].getService(Ci.mozIPersonalDictionary);
     dictionary.ignoreWord(this._spellInfo.misspelling);
     this._actor.recheckSpelling();
   },

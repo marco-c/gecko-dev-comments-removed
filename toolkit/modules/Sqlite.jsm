@@ -4,17 +4,17 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "Sqlite",
-];
+var EXPORTED_SYMBOLS = ["Sqlite"];
 
 
 
 
 const TRANSACTIONS_QUEUE_TIMEOUT_MS = 300000; 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {setTimeout} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
@@ -25,9 +25,12 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PromiseUtils: "resource://gre/modules/PromiseUtils.jsm",
 });
 
-XPCOMUtils.defineLazyServiceGetter(this, "FinalizationWitnessService",
-                                   "@mozilla.org/toolkit/finalizationwitness;1",
-                                   "nsIFinalizationWitnessService");
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "FinalizationWitnessService",
+  "@mozilla.org/toolkit/finalizationwitness;1",
+  "nsIFinalizationWitnessService"
+);
 
 
 var likeSqlRegex = /\bLIKE\b\s(?![@:?])/i;
@@ -67,11 +70,19 @@ function isInvalidBoundLikeQuery(sql) {
 
 
 function logScriptError(message) {
-  let consoleMessage = Cc["@mozilla.org/scripterror;1"].
-                       createInstance(Ci.nsIScriptError);
+  let consoleMessage = Cc["@mozilla.org/scripterror;1"].createInstance(
+    Ci.nsIScriptError
+  );
   let stack = new Error();
-  consoleMessage.init(message, stack.fileName, null, stack.lineNumber, 0,
-                      Ci.nsIScriptError.errorFlag, "component javascript");
+  consoleMessage.init(
+    message,
+    stack.fileName,
+    null,
+    stack.lineNumber,
+    0,
+    Ci.nsIScriptError.errorFlag,
+    "component javascript"
+  );
   Services.console.logMessage(consoleMessage);
 
   
@@ -107,14 +118,18 @@ XPCOMUtils.defineLazyGetter(this, "Barriers", () => {
 
 
 
-    shutdown: new AsyncShutdown.Barrier("Sqlite.jsm: wait until all clients have completed their task"),
+    shutdown: new AsyncShutdown.Barrier(
+      "Sqlite.jsm: wait until all clients have completed their task"
+    ),
 
     
 
 
 
 
-    connections: new AsyncShutdown.Barrier("Sqlite.jsm: wait until all connections are closed"),
+    connections: new AsyncShutdown.Barrier(
+      "Sqlite.jsm: wait until all connections are closed"
+    ),
   };
 
   
@@ -128,14 +143,20 @@ XPCOMUtils.defineLazyGetter(this, "Barriers", () => {
     let connectionData = ConnectionData.byId.get(identifier);
 
     if (connectionData === undefined) {
-      logScriptError("Error: Attempt to finalize unknown Sqlite connection: " +
-                     identifier + "\n");
+      logScriptError(
+        "Error: Attempt to finalize unknown Sqlite connection: " +
+          identifier +
+          "\n"
+      );
       return;
     }
 
     ConnectionData.byId.delete(identifier);
-    logScriptError("Warning: Sqlite connection '" + identifier +
-                   "' was not properly closed. Auto-close triggered by garbage collection.\n");
+    logScriptError(
+      "Warning: Sqlite connection '" +
+        identifier +
+        "' was not properly closed. Auto-close triggered by garbage collection.\n"
+    );
     connectionData.close();
   };
   Services.obs.addObserver(finalizationObserver, "sqlite-finalization-witness");
@@ -146,7 +167,8 @@ XPCOMUtils.defineLazyGetter(this, "Barriers", () => {
 
 
 
-  AsyncShutdown.profileBeforeChange.addBlocker("Sqlite.jsm shutdown blocker",
+  AsyncShutdown.profileBeforeChange.addBlocker(
+    "Sqlite.jsm shutdown blocker",
     async function() {
       await Barriers.shutdown.wait();
       
@@ -160,23 +182,31 @@ XPCOMUtils.defineLazyGetter(this, "Barriers", () => {
       await Barriers.connections.wait();
 
       
-      Services.obs.removeObserver(finalizationObserver, "sqlite-finalization-witness");
+      Services.obs.removeObserver(
+        finalizationObserver,
+        "sqlite-finalization-witness"
+      );
     },
 
     function status() {
       if (isClosed) {
         
         
-        return { description: "Waiting for connections to close",
-                 state: Barriers.connections.state };
+        return {
+          description: "Waiting for connections to close",
+          state: Barriers.connections.state,
+        };
       }
 
       
       
       
-      return { description: "Waiting for the barrier to be lifted",
-               state: Barriers.shutdown.state };
-  });
+      return {
+        description: "Waiting for the barrier to be lifted",
+        state: Barriers.shutdown.state,
+      };
+    }
+  );
 
   return Barriers;
 });
@@ -200,8 +230,10 @@ XPCOMUtils.defineLazyGetter(this, "Barriers", () => {
 
 
 function ConnectionData(connection, identifier, options = {}) {
-  this._log = Log.repository.getLoggerWithMessagePrefix("Sqlite.Connection",
-                                                        identifier + ": ");
+  this._log = Log.repository.getLoggerWithMessagePrefix(
+    "Sqlite.Connection",
+    identifier + ": "
+  );
   this._log.info("Opened");
 
   this._dbConn = connection;
@@ -230,7 +262,8 @@ function ConnectionData(connection, identifier, options = {}) {
     this.defaultTransactionType = options.defaultTransactionType;
   } else {
     this.defaultTransactionType = convertStorageTransactionType(
-      this._dbConn.defaultTransactionType);
+      this._dbConn.defaultTransactionType
+    );
   }
   this._hasInProgressTransaction = false;
   
@@ -239,8 +272,9 @@ function ConnectionData(connection, identifier, options = {}) {
 
   this._idleShrinkMS = options.shrinkMemoryOnConnectionIdleMS;
   if (this._idleShrinkMS) {
-    this._idleShrinkTimer = Cc["@mozilla.org/timer;1"]
-                              .createInstance(Ci.nsITimer);
+    this._idleShrinkTimer = Cc["@mozilla.org/timer;1"].createInstance(
+      Ci.nsITimer
+    );
     
     
   }
@@ -252,7 +286,9 @@ function ConnectionData(connection, identifier, options = {}) {
 
   
   
-  this._barrier = new AsyncShutdown.Barrier(`${this._identifier}: waiting for clients`);
+  this._barrier = new AsyncShutdown.Barrier(
+    `${this._identifier}: waiting for clients`
+  );
 
   Barriers.connections.client.addBlocker(
     this._identifier + ": waiting for shutdown",
@@ -324,7 +360,11 @@ ConnectionData.prototype = Object.freeze({
       throw new TypeError("Expected a function as second argument");
     }
     if (this._closeRequested) {
-      throw new Error(`${this._identifier}: cannot execute operation ${name}, the connection is already closing`);
+      throw new Error(
+        `${
+          this._identifier
+        }: cannot execute operation ${name}, the connection is already closing`
+      );
     }
 
     
@@ -347,7 +387,7 @@ ConnectionData.prototype = Object.freeze({
           status.isPending = true;
           status.command = sql;
           try {
-            return (await this.execute(sql, ...rest));
+            return await this.execute(sql, ...rest);
           } finally {
             status.isPending = false;
           }
@@ -358,7 +398,7 @@ ConnectionData.prototype = Object.freeze({
           status.isPending = false;
           status.command = "<close>";
           try {
-            return (await this.close());
+            return await this.close();
           } finally {
             status.isPending = false;
           }
@@ -369,7 +409,7 @@ ConnectionData.prototype = Object.freeze({
           status.isPending = false;
           status.command = sql;
           try {
-            return (await this.executeCached(sql, ...rest));
+            return await this.executeCached(sql, ...rest);
           } finally {
             status.isPending = false;
           }
@@ -378,7 +418,11 @@ ConnectionData.prototype = Object.freeze({
     });
 
     let promiseResult = task(loggedDb);
-    if (!promiseResult || typeof promiseResult != "object" || !("then" in promiseResult)) {
+    if (
+      !promiseResult ||
+      typeof promiseResult != "object" ||
+      !("then" in promiseResult)
+    ) {
       throw new TypeError("Expected a Promise");
     }
     let key = `${this._identifier}: ${name} (${this._getOperationId()})`;
@@ -389,7 +433,7 @@ ConnectionData.prototype = Object.freeze({
 
     return (async () => {
       try {
-        return (await promiseResult);
+        return await promiseResult;
       } finally {
         this._barrier.client.removeBlocker(key, promiseComplete);
       }
@@ -422,8 +466,9 @@ ConnectionData.prototype = Object.freeze({
       connection: this._dbConn,
       readOnly,
     };
-    if (this._idleShrinkMS)
+    if (this._idleShrinkMS) {
       options.shrinkMemoryOnConnectionIdleMS = this._idleShrinkMS;
+    }
 
     return cloneStorageConnection(options);
   },
@@ -433,7 +478,7 @@ ConnectionData.prototype = Object.freeze({
   _finalize() {
     this._log.debug("Finalizing connection.");
     
-    for (let [, statement] of this._pendingStatements) {
+    for (let [,  statement] of this._pendingStatements) {
       statement.cancel();
     }
     this._pendingStatements.clear();
@@ -442,12 +487,12 @@ ConnectionData.prototype = Object.freeze({
     this._statementCounter = 0;
 
     
-    for (let [, statement] of this._anonymousStatements) {
+    for (let [,  statement] of this._anonymousStatements) {
       statement.finalize();
     }
     this._anonymousStatements.clear();
 
-    for (let [, statement] of this._cachedStatements) {
+    for (let [,  statement] of this._cachedStatements) {
       statement.finalize();
     }
     this._cachedStatements.clear();
@@ -512,7 +557,7 @@ ConnectionData.prototype = Object.freeze({
   },
 
   execute(sql, params = null, onRow = null) {
-    if (typeof(sql) != "string") {
+    if (typeof sql != "string") {
       throw new Error("Must define SQL to execute as a string: " + sql);
     }
 
@@ -572,7 +617,9 @@ ConnectionData.prototype = Object.freeze({
         
         
         if (this._hasInProgressTransaction) {
-          console.error("Unexpected transaction in progress when trying to start a new one.");
+          console.error(
+            "Unexpected transaction in progress when trying to start a new one."
+          );
         }
         this._hasInProgressTransaction = true;
         try {
@@ -586,12 +633,18 @@ ConnectionData.prototype = Object.freeze({
             
             
             if (wrappedConnections.has(this._identifier)) {
-              this._log.warn("A new transaction could not be started cause the wrapped connection had one in progress", ex);
+              this._log.warn(
+                "A new transaction could not be started cause the wrapped connection had one in progress",
+                ex
+              );
               
               
               this._hasInProgressTransaction = false;
             } else {
-              this._log.warn("A transaction was already in progress, likely a nested transaction", ex);
+              this._log.warn(
+                "A transaction was already in progress, likely a nested transaction",
+                ex
+              );
               throw ex;
             }
           }
@@ -603,7 +656,10 @@ ConnectionData.prototype = Object.freeze({
             
             
             if (this._closeRequested) {
-              this._log.warn("Connection closed while performing a transaction", ex);
+              this._log.warn(
+                "Connection closed while performing a transaction",
+                ex
+              );
             } else {
               this._log.warn("Error during transaction. Rolling back", ex);
               
@@ -621,8 +677,12 @@ ConnectionData.prototype = Object.freeze({
 
           
           if (this._closeRequested) {
-            this._log.warn("Connection closed before committing the transaction.");
-            throw new Error("Connection closed before committing the transaction.");
+            this._log.warn(
+              "Connection closed before committing the transaction."
+            );
+            throw new Error(
+              "Connection closed before committing the transaction."
+            );
           }
 
           
@@ -650,11 +710,15 @@ ConnectionData.prototype = Object.freeze({
     });
     
     
-    this._transactionQueue = promise.catch(ex => { console.error(ex); });
+    this._transactionQueue = promise.catch(ex => {
+      console.error(ex);
+    });
 
     
-    this._barrier.client.addBlocker(`Transaction (${this._getOperationId()})`,
-      this._transactionQueue);
+    this._barrier.client.addBlocker(
+      `Transaction (${this._getOperationId()})`,
+      this._transactionQueue
+    );
     return promise;
   },
 
@@ -666,7 +730,7 @@ ConnectionData.prototype = Object.freeze({
 
   discardCachedStatements() {
     let count = 0;
-    for (let [, statement] of this._cachedStatements) {
+    for (let [,  statement] of this._cachedStatements) {
       ++count;
       statement.finalize();
     }
@@ -691,19 +755,21 @@ ConnectionData.prototype = Object.freeze({
     }
 
     function bindParam(obj, key, val) {
-      let isBlob = val && typeof val == "object" &&
-                   val.constructor.name == "Uint8Array";
+      let isBlob =
+        val && typeof val == "object" && val.constructor.name == "Uint8Array";
       let args = [key, val];
-      if (isBlob)
+      if (isBlob) {
         args.push(val.length);
-      let methodName =
-        `bind${isBlob ? "Blob" : ""}By${typeof key == "number" ? "Index" : "Name"}`;
+      }
+      let methodName = `bind${isBlob ? "Blob" : ""}By${
+        typeof key == "number" ? "Index" : "Name"
+      }`;
       obj[methodName](...args);
     }
 
     if (Array.isArray(params)) {
       
-      if (params.length && (typeof(params[0]) == "object")) {
+      if (params.length && typeof params[0] == "object") {
         let paramsArray = statement.newBindingParamsArray();
         for (let p of params) {
           let bindings = paramsArray.newBindingParams();
@@ -725,15 +791,18 @@ ConnectionData.prototype = Object.freeze({
     }
 
     
-    if (params && typeof(params) == "object") {
+    if (params && typeof params == "object") {
       for (let k in params) {
         bindParam(statement, k, params[k]);
       }
       return;
     }
 
-    throw new Error("Invalid type for bound parameters. Expected Array or " +
-                    "object. Got: " + params);
+    throw new Error(
+      "Invalid type for bound parameters. Expected Array or " +
+        "object. Got: " +
+        params
+    );
   },
 
   _executeStatement(sql, statement, params, onRow) {
@@ -741,7 +810,7 @@ ConnectionData.prototype = Object.freeze({
       throw new Error("Statement is not ready for execution.");
     }
 
-    if (onRow && typeof(onRow) != "function") {
+    if (onRow && typeof onRow != "function") {
       throw new Error("onRow must be a function. Got: " + onRow);
     }
 
@@ -773,7 +842,11 @@ ConnectionData.prototype = Object.freeze({
       handleResult(resultSet) {
         
         
-        for (let row = resultSet.getNextRow(); row && !userCancelled; row = resultSet.getNextRow()) {
+        for (
+          let row = resultSet.getNextRow();
+          row && !userCancelled;
+          row = resultSet.getNextRow()
+        ) {
           if (!onRow) {
             rows.push(row);
             continue;
@@ -793,8 +866,9 @@ ConnectionData.prototype = Object.freeze({
       },
 
       handleError(error) {
-        self._log.info("Error when executing SQL (" +
-                       error.result + "): " + error.message);
+        self._log.info(
+          "Error when executing SQL (" + error.result + "): " + error.message
+        );
         errors.push(error);
       },
 
@@ -812,14 +886,18 @@ ConnectionData.prototype = Object.freeze({
             break;
 
           case Ci.mozIStorageStatementCallback.REASON_ERROR:
-            let error = new Error("Error(s) encountered during statement execution: " + errors.map(e => e.message).join(", "));
+            let error = new Error(
+              "Error(s) encountered during statement execution: " +
+                errors.map(e => e.message).join(", ")
+            );
             error.errors = errors;
             deferred.reject(error);
             break;
 
           default:
-            deferred.reject(new Error("Unknown completion reason code: " +
-                                      reason));
+            deferred.reject(
+              new Error("Unknown completion reason code: " + reason)
+            );
             break;
         }
       },
@@ -848,9 +926,11 @@ ConnectionData.prototype = Object.freeze({
       return;
     }
 
-    this._idleShrinkTimer.initWithCallback(this.shrinkMemory.bind(this),
-                                           this._idleShrinkMS,
-                                           this._idleShrinkTimer.TYPE_ONE_SHOT);
+    this._idleShrinkTimer.initWithCallback(
+      this.shrinkMemory.bind(this),
+      this._idleShrinkMS,
+      this._idleShrinkTimer.TYPE_ONE_SHOT
+    );
   },
 
   
@@ -867,11 +947,16 @@ ConnectionData.prototype = Object.freeze({
         if (this._timeoutPromise == timeoutPromise) {
           this._timeoutPromise = null;
         }
-        reject(new Error("Transaction timeout, most likely caused by unresolved pending work."));
+        reject(
+          new Error(
+            "Transaction timeout, most likely caused by unresolved pending work."
+          )
+        );
       }, TRANSACTIONS_QUEUE_TIMEOUT_MS);
     });
     this._timeoutPromise = timeoutPromise;
-    this._timeoutPromiseExpires = Cu.now() + TRANSACTIONS_QUEUE_TIMEOUT_MS * 0.2;
+    this._timeoutPromiseExpires =
+      Cu.now() + TRANSACTIONS_QUEUE_TIMEOUT_MS * 0.2;
     return this._timeoutPromise;
   },
 });
@@ -927,21 +1012,26 @@ function openConnection(options) {
   }
 
   if (isClosed) {
-    throw new Error("Sqlite.jsm has been shutdown. Cannot open connection to: " + options.path);
+    throw new Error(
+      "Sqlite.jsm has been shutdown. Cannot open connection to: " + options.path
+    );
   }
 
   
   let path = OS.Path.join(OS.Constants.Path.profileDir, options.path);
 
-  let sharedMemoryCache = "sharedMemoryCache" in options ?
-                            options.sharedMemoryCache : true;
+  let sharedMemoryCache =
+    "sharedMemoryCache" in options ? options.sharedMemoryCache : true;
 
   let openedOptions = {};
 
   if ("shrinkMemoryOnConnectionIdleMS" in options) {
     if (!Number.isInteger(options.shrinkMemoryOnConnectionIdleMS)) {
-      throw new Error("shrinkMemoryOnConnectionIdleMS must be an integer. " +
-                      "Got: " + options.shrinkMemoryOnConnectionIdleMS);
+      throw new Error(
+        "shrinkMemoryOnConnectionIdleMS must be an integer. " +
+          "Got: " +
+          options.shrinkMemoryOnConnectionIdleMS
+      );
     }
 
     openedOptions.shrinkMemoryOnConnectionIdleMS =
@@ -951,8 +1041,9 @@ function openConnection(options) {
   if ("defaultTransactionType" in options) {
     let defaultTransactionType = options.defaultTransactionType;
     if (!OpenedConnection.TRANSACTION_TYPES.includes(defaultTransactionType)) {
-      throw new Error("Unknown default transaction type: " +
-                      defaultTransactionType);
+      throw new Error(
+        "Unknown default transaction type: " + defaultTransactionType
+      );
     }
 
     openedOptions.defaultTransactionType = defaultTransactionType;
@@ -964,8 +1055,9 @@ function openConnection(options) {
   log.info("Opening database: " + path + " (" + identifier + ")");
 
   return new Promise((resolve, reject) => {
-    let dbOptions = Cc["@mozilla.org/hash-property-bag;1"].
-                    createInstance(Ci.nsIWritablePropertyBag);
+    let dbOptions = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
+      Ci.nsIWritablePropertyBag
+    );
     if (!sharedMemoryCache) {
       dbOptions.setProperty("shared", false);
     }
@@ -979,25 +1071,35 @@ function openConnection(options) {
 
     dbOptions = dbOptions.enumerator.hasMoreElements() ? dbOptions : null;
 
-    Services.storage.openAsyncDatabase(file, dbOptions, (status, connection) => {
-      if (!connection) {
-        log.warn(`Could not open connection to ${path}: ${status}`);
-        let error = new Components.Exception(`Could not open connection to ${path}: ${status}`,
-                                              status);
-        reject(error);
-        return;
+    Services.storage.openAsyncDatabase(
+      file,
+      dbOptions,
+      (status, connection) => {
+        if (!connection) {
+          log.warn(`Could not open connection to ${path}: ${status}`);
+          let error = new Components.Exception(
+            `Could not open connection to ${path}: ${status}`,
+            status
+          );
+          reject(error);
+          return;
+        }
+        log.info("Connection opened");
+        try {
+          resolve(
+            new OpenedConnection(
+              connection.QueryInterface(Ci.mozIStorageAsyncConnection),
+              identifier,
+              openedOptions
+            )
+          );
+        } catch (ex) {
+          log.warn("Could not open database", ex);
+          connection.asyncClose();
+          reject(ex);
+        }
       }
-      log.info("Connection opened");
-      try {
-        resolve(
-          new OpenedConnection(connection.QueryInterface(Ci.mozIStorageAsyncConnection),
-                               identifier, openedOptions));
-      } catch (ex) {
-        log.warn("Could not open database", ex);
-        connection.asyncClose();
-        reject(ex);
-      }
-    });
+    );
   });
 }
 
@@ -1042,15 +1144,21 @@ function cloneStorageConnection(options) {
   }
 
   if (isClosed) {
-    throw new Error("Sqlite.jsm has been shutdown. Cannot clone connection to: " + source.databaseFile.path);
+    throw new Error(
+      "Sqlite.jsm has been shutdown. Cannot clone connection to: " +
+        source.databaseFile.path
+    );
   }
 
   let openedOptions = {};
 
   if ("shrinkMemoryOnConnectionIdleMS" in options) {
     if (!Number.isInteger(options.shrinkMemoryOnConnectionIdleMS)) {
-      throw new TypeError("shrinkMemoryOnConnectionIdleMS must be an integer. " +
-                          "Got: " + options.shrinkMemoryOnConnectionIdleMS);
+      throw new TypeError(
+        "shrinkMemoryOnConnectionIdleMS must be an integer. " +
+          "Got: " +
+          options.shrinkMemoryOnConnectionIdleMS
+      );
     }
     openedOptions.shrinkMemoryOnConnectionIdleMS =
       options.shrinkMemoryOnConnectionIdleMS;
@@ -1107,7 +1215,10 @@ function wrapStorageConnection(options) {
   }
 
   if (isClosed) {
-    throw new Error("Sqlite.jsm has been shutdown. Cannot wrap connection to: " + connection.databaseFile.path);
+    throw new Error(
+      "Sqlite.jsm has been shutdown. Cannot wrap connection to: " +
+        connection.databaseFile.path
+    );
   }
 
   let identifier = getIdentifierByFileName(connection.databaseFile.leafName);
@@ -1184,8 +1295,10 @@ function OpenedConnection(connection, identifier, options = {}) {
 
   
   
-  ConnectionData.byId.set(this._connectionData._identifier,
-                          this._connectionData);
+  ConnectionData.byId.set(
+    this._connectionData._identifier,
+    this._connectionData
+  );
 
   
   
@@ -1193,7 +1306,8 @@ function OpenedConnection(connection, identifier, options = {}) {
   
   this._witness = FinalizationWitnessService.make(
     "sqlite-finalization-witness",
-    this._connectionData._identifier);
+    this._connectionData._identifier
+  );
 }
 
 OpenedConnection.TRANSACTION_TYPES = ["DEFERRED", "IMMEDIATE", "EXCLUSIVE"];
@@ -1466,13 +1580,12 @@ OpenedConnection.prototype = Object.freeze({
   tableExists(name) {
     return this.execute(
       "SELECT name FROM (SELECT * FROM sqlite_master UNION ALL " +
-                        "SELECT * FROM sqlite_temp_master) " +
-      "WHERE type = 'table' AND name=?",
-      [name])
-      .then(function onResult(rows) {
-        return Promise.resolve(rows.length > 0);
-      }
-    );
+        "SELECT * FROM sqlite_temp_master) " +
+        "WHERE type = 'table' AND name=?",
+      [name]
+    ).then(function onResult(rows) {
+      return Promise.resolve(rows.length > 0);
+    });
   },
 
   
@@ -1486,13 +1599,12 @@ OpenedConnection.prototype = Object.freeze({
   indexExists(name) {
     return this.execute(
       "SELECT name FROM (SELECT * FROM sqlite_master UNION ALL " +
-                        "SELECT * FROM sqlite_temp_master) " +
-      "WHERE type = 'index' AND name=?",
-      [name])
-      .then(function onResult(rows) {
-        return Promise.resolve(rows.length > 0);
-      }
-    );
+        "SELECT * FROM sqlite_temp_master) " +
+        "WHERE type = 'index' AND name=?",
+      [name]
+    ).then(function onResult(rows) {
+      return Promise.resolve(rows.length > 0);
+    });
   },
 
   

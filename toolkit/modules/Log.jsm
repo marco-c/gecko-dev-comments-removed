@@ -6,11 +6,15 @@
 
 var EXPORTED_SYMBOLS = ["Log"];
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "Services",
-                               "resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "Services",
+  "resource://gre/modules/Services.jsm"
+);
 const INTERNAL_FIELDS = new Set(["_level", "_message", "_time", "_namespace"]);
-
 
 
 
@@ -22,14 +26,14 @@ function dumpError(text) {
 
 var Log = {
   Level: {
-    Fatal:  70,
-    Error:  60,
-    Warn:   50,
-    Info:   40,
+    Fatal: 70,
+    Error: 60,
+    Warn: 50,
+    Info: 40,
     Config: 30,
-    Debug:  20,
-    Trace:  10,
-    All:    -1, 
+    Debug: 20,
+    Trace: 10,
+    All: -1, 
     Desc: {
       70: "FATAL",
       60: "ERROR",
@@ -38,17 +42,17 @@ var Log = {
       30: "CONFIG",
       20: "DEBUG",
       10: "TRACE",
-      "-1":  "ALL",
+      "-1": "ALL",
     },
     Numbers: {
-      "FATAL": 70,
-      "ERROR": 60,
-      "WARN": 50,
-      "INFO": 40,
-      "CONFIG": 30,
-      "DEBUG": 20,
-      "TRACE": 10,
-      "ALL": -1,
+      FATAL: 70,
+      ERROR: 60,
+      WARN: 50,
+      INFO: 40,
+      CONFIG: 30,
+      DEBUG: 20,
+      TRACE: 10,
+      ALL: -1,
     },
   },
 
@@ -127,8 +131,10 @@ var Log = {
     
     if (e.stack) {
       let stack = e.stack;
-      return "JS Stack trace: " + stack.trim()
-        .replace(/@[^@]*?([^\/\.]+\.\w+:)/g, "@$1");
+      return (
+        "JS Stack trace: " +
+        stack.trim().replace(/@[^@]*?([^\/\.]+\.\w+:)/g, "@$1")
+      );
     }
 
     return "No traceback available";
@@ -149,8 +155,12 @@ class LogMessage {
 
 
 
-    if (!params && message && (typeof(message) == "object") &&
-        (typeof(message.valueOf()) != "string")) {
+    if (
+      !params &&
+      message &&
+      typeof message == "object" &&
+      typeof message.valueOf() != "string"
+    ) {
       this.message = null;
       this.params = message;
     } else {
@@ -166,8 +176,9 @@ class LogMessage {
   }
 
   get levelDesc() {
-    if (this.level in Log.Level.Desc)
+    if (this.level in Log.Level.Desc) {
       return Log.Level.Desc[this.level];
+    }
     return "UNKNOWN";
   }
 
@@ -187,8 +198,9 @@ class LogMessage {
 
 class Logger {
   constructor(name, repository) {
-    if (!repository)
+    if (!repository) {
       repository = Log.repository;
+    }
     this._name = name;
     this.children = [];
     this.ownAppenders = [];
@@ -224,10 +236,12 @@ class Logger {
         this._level = null;
       }
     }
-    if (this._level != null)
+    if (this._level != null) {
       return this._level;
-    if (this.parent)
+    }
+    if (this.parent) {
       return this.parent.level;
+    }
     dumpError("Log warning: root logger configuration error: no level defined");
     return Log.Level.All;
   }
@@ -235,10 +249,12 @@ class Logger {
     if (this._levelPrefName) {
       
       
-      dumpError(`Log warning: The log '${this.name}' is configured to use ` +
-                `the preference '${this._levelPrefName}' - you must adjust ` +
-                `the level by setting this preference, not by using the ` +
-                `level setter`);
+      dumpError(
+        `Log warning: The log '${this.name}' is configured to use ` +
+          `the preference '${this._levelPrefName}' - you must adjust ` +
+          `the level by setting this preference, not by using the ` +
+          `level setter`
+      );
       return;
     }
     this._level = level;
@@ -269,9 +285,11 @@ class Logger {
       return;
     }
     if (this._levelPrefName) {
-      dumpError(`The log '${this.name}' is already configured with the ` +
-                `preference '${this._levelPrefName}' - ignoring request to ` +
-                `also use the preference '${prefName}'`);
+      dumpError(
+        `The log '${this.name}' is already configured with the ` +
+          `preference '${this._levelPrefName}' - ignoring request to ` +
+          `also use the preference '${prefName}'`
+      );
       return;
     }
     this._levelPrefName = prefName;
@@ -342,8 +360,9 @@ class Logger {
   }
 
   log(level, string, params) {
-    if (this.level > level)
+    if (this.level > level) {
       return;
+    }
 
     
     
@@ -414,24 +433,28 @@ class LoggerRepository {
     
     
     for (let i = 0; i < pieces.length - 1; i++) {
-      if (cur)
+      if (cur) {
         cur += "." + pieces[i];
-      else
+      } else {
         cur = pieces[i];
-      if (cur in this._loggers)
+      }
+      if (cur in this._loggers) {
         parent = cur;
+      }
     }
 
     
-    if (!parent)
+    if (!parent) {
       this._loggers[name].parent = this.rootLogger;
-    else
+    } else {
       this._loggers[name].parent = this._loggers[parent];
+    }
 
     
     for (let logger in this._loggers) {
-      if (logger != name && logger.indexOf(name) == 0)
+      if (logger != name && logger.indexOf(name) == 0) {
         this._updateParents(logger);
+      }
     }
   }
 
@@ -445,8 +468,9 @@ class LoggerRepository {
 
 
   getLogger(name) {
-    if (name in this._loggers)
+    if (name in this._loggers) {
       return this._loggers[name];
+    }
     this._loggers[name] = new Logger(name, this);
     this._updateParents(name);
     return this._loggers[name];
@@ -511,12 +535,12 @@ class BasicFormatter {
 
   formatText(message) {
     let params = message.params;
-    if (typeof(params) == "undefined") {
+    if (typeof params == "undefined") {
       return message.message || "";
     }
     
     
-    let pIsObject = (typeof(params) == "object" || typeof(params) == "function");
+    let pIsObject = typeof params == "object" || typeof params == "function";
 
     
     if (this.parameterFormatter) {
@@ -526,19 +550,21 @@ class BasicFormatter {
       let regex = /\$\{(\S*?)\}/g;
       let textParts = [];
       if (message.message) {
-        textParts.push(message.message.replace(regex, (_, sub) => {
-          
-          if (sub) {
-            if (pIsObject && sub in message.params) {
-              subDone = true;
-              return this.parameterFormatter.format(message.params[sub]);
+        textParts.push(
+          message.message.replace(regex, (_, sub) => {
+            
+            if (sub) {
+              if (pIsObject && sub in message.params) {
+                subDone = true;
+                return this.parameterFormatter.format(message.params[sub]);
+              }
+              return "${" + sub + "}";
             }
-            return "${" + sub + "}";
-          }
-          
-          subDone = true;
-          return this.parameterFormatter.format(message.params);
-        }));
+            
+            subDone = true;
+            return this.parameterFormatter.format(message.params);
+          })
+        );
       }
       if (!subDone) {
         
@@ -553,10 +579,15 @@ class BasicFormatter {
   }
 
   format(message) {
-    return message.time + "\t" +
-      message.loggerName + "\t" +
-      message.levelDesc + "\t" +
-      this.formatText(message);
+    return (
+      message.time +
+      "\t" +
+      message.loggerName +
+      "\t" +
+      message.levelDesc +
+      "\t" +
+      this.formatText(message)
+    );
   }
 }
 
@@ -564,8 +595,15 @@ class BasicFormatter {
 
 
 function isError(aObj) {
-  return (aObj && typeof(aObj) == "object" && "name" in aObj && "message" in aObj &&
-          "fileName" in aObj && "lineNumber" in aObj && "stack" in aObj);
+  return (
+    aObj &&
+    typeof aObj == "object" &&
+    "name" in aObj &&
+    "message" in aObj &&
+    "fileName" in aObj &&
+    "lineNumber" in aObj &&
+    "stack" in aObj
+  );
 }
 
 
@@ -588,8 +626,10 @@ class ParameterFormatter {
         return "null";
       }
       
-      if ((typeof(ob) != "object" || typeof(ob.valueOf()) != "object") &&
-          typeof(ob) != "function") {
+      if (
+        (typeof ob != "object" || typeof ob.valueOf() != "object") &&
+        typeof ob != "function"
+      ) {
         return ob;
       }
       if (ob instanceof Ci.nsIException) {
@@ -606,12 +646,16 @@ class ParameterFormatter {
         return val;
       });
     } catch (e) {
-      dumpError(`Exception trying to format object for log message: ${Log.exceptionStr(e)}`);
+      dumpError(
+        `Exception trying to format object for log message: ${Log.exceptionStr(
+          e
+        )}`
+      );
     }
     
     try {
       return ob.toSource();
-    } catch (_) { }
+    } catch (_) {}
     try {
       return String(ob);
     } catch (_) {

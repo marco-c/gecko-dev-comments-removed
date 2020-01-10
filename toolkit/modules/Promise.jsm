@@ -6,9 +6,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "Promise",
-];
+var EXPORTED_SYMBOLS = ["Promise"];
 
 
 
@@ -91,5 +89,5 @@ var EXPORTED_SYMBOLS = [
 
 
 Cc["@mozilla.org/moz/jssubscript-loader;1"]
-    .getService(Ci.mozIJSSubScriptLoader)
-    .loadSubScript("resource://gre/modules/Promise-backend.js", this);
+  .getService(Ci.mozIJSSubScriptLoader)
+  .loadSubScript("resource://gre/modules/Promise-backend.js", this);

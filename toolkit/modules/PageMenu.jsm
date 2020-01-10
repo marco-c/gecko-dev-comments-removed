@@ -4,8 +4,7 @@
 
 var EXPORTED_SYMBOLS = ["PageMenuParent", "PageMenuChild"];
 
-function PageMenu() {
-}
+function PageMenu() {}
 
 PageMenu.prototype = {
   PAGEMENU_ATTR: "pagemenu",
@@ -75,8 +74,7 @@ PageMenu.prototype = {
 
     let pos = insertionPoint.getAttribute(this.PAGEMENU_ATTR);
     if (pos == "start") {
-      insertionPoint.insertBefore(fragment,
-                                  insertionPoint.firstElementChild);
+      insertionPoint.insertBefore(fragment, insertionPoint.firstElementChild);
     } else if (pos.startsWith("#")) {
       insertionPoint.insertBefore(fragment, insertionPoint.querySelector(pos));
     } else {
@@ -161,8 +159,10 @@ PageMenu.prototype = {
       } else if (this._browser) {
         let win = target.ownerGlobal;
         let windowUtils = win.windowUtils;
-        win.gContextMenu.doCustomCommand(target.getAttribute(this.GENERATEDITEMID_ATTR),
-                                         windowUtils.isHandlingUserInput);
+        win.gContextMenu.doCustomCommand(
+          target.getAttribute(this.GENERATEDITEMID_ATTR),
+          windowUtils.isHandlingUserInput
+        );
       }
     } else if (type == "popuphidden" && this._popup == target) {
       this.removeGeneratedContent(this._popup);
@@ -192,8 +192,9 @@ PageMenu.prototype = {
   
   
   getInsertionPoint(aPopup) {
-    if (aPopup.hasAttribute(this.PAGEMENU_ATTR))
+    if (aPopup.hasAttribute(this.PAGEMENU_ATTR)) {
       return aPopup;
+    }
 
     let element = aPopup.firstElementChild;
     while (element) {
@@ -237,8 +238,7 @@ PageMenu.prototype = {
 };
 
 
-function PageMenuParent() {
-}
+function PageMenuParent() {}
 
 PageMenuParent.prototype = {
   __proto__: PageMenu.prototype,
@@ -255,8 +255,7 @@ PageMenuParent.prototype = {
 };
 
 
-function PageMenuChild() {
-}
+function PageMenuChild() {}
 
 PageMenuChild.prototype = {
   __proto__: PageMenu.prototype,

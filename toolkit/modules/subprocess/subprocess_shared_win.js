@@ -119,334 +119,317 @@ Object.assign(win32, {
 });
 
 Object.assign(win32, {
-  JOBOBJECT_BASIC_LIMIT_INFORMATION: new ctypes.StructType("JOBOBJECT_BASIC_LIMIT_INFORMATION", [
-    {"PerProcessUserTimeLimit": win32.LARGE_INTEGER},
-    {"PerJobUserTimeLimit": win32.LARGE_INTEGER},
-    {"LimitFlags": win32.DWORD},
-    {"MinimumWorkingSetSize": win32.SIZE_T},
-    {"MaximumWorkingSetSize": win32.SIZE_T},
-    {"ActiveProcessLimit": win32.DWORD},
-    {"Affinity": win32.ULONG_PTR},
-    {"PriorityClass": win32.DWORD},
-    {"SchedulingClass": win32.DWORD},
-  ]),
+  JOBOBJECT_BASIC_LIMIT_INFORMATION: new ctypes.StructType(
+    "JOBOBJECT_BASIC_LIMIT_INFORMATION",
+    [
+      { PerProcessUserTimeLimit: win32.LARGE_INTEGER },
+      { PerJobUserTimeLimit: win32.LARGE_INTEGER },
+      { LimitFlags: win32.DWORD },
+      { MinimumWorkingSetSize: win32.SIZE_T },
+      { MaximumWorkingSetSize: win32.SIZE_T },
+      { ActiveProcessLimit: win32.DWORD },
+      { Affinity: win32.ULONG_PTR },
+      { PriorityClass: win32.DWORD },
+      { SchedulingClass: win32.DWORD },
+    ]
+  ),
 
   IO_COUNTERS: new ctypes.StructType("IO_COUNTERS", [
-    {"ReadOperationCount": win32.ULONGLONG},
-    {"WriteOperationCount": win32.ULONGLONG},
-    {"OtherOperationCount": win32.ULONGLONG},
-    {"ReadTransferCount": win32.ULONGLONG},
-    {"WriteTransferCount": win32.ULONGLONG},
-    {"OtherTransferCount": win32.ULONGLONG},
+    { ReadOperationCount: win32.ULONGLONG },
+    { WriteOperationCount: win32.ULONGLONG },
+    { OtherOperationCount: win32.ULONGLONG },
+    { ReadTransferCount: win32.ULONGLONG },
+    { WriteTransferCount: win32.ULONGLONG },
+    { OtherTransferCount: win32.ULONGLONG },
   ]),
 });
 
 Object.assign(win32, {
-  JOBOBJECT_EXTENDED_LIMIT_INFORMATION: new ctypes.StructType("JOBOBJECT_EXTENDED_LIMIT_INFORMATION", [
-    {"BasicLimitInformation": win32.JOBOBJECT_BASIC_LIMIT_INFORMATION},
-    {"IoInfo": win32.IO_COUNTERS},
-    {"ProcessMemoryLimit": win32.SIZE_T},
-    {"JobMemoryLimit": win32.SIZE_T},
-    {"PeakProcessMemoryUsed": win32.SIZE_T},
-    {"PeakJobMemoryUsed": win32.SIZE_T},
-  ]),
+  JOBOBJECT_EXTENDED_LIMIT_INFORMATION: new ctypes.StructType(
+    "JOBOBJECT_EXTENDED_LIMIT_INFORMATION",
+    [
+      { BasicLimitInformation: win32.JOBOBJECT_BASIC_LIMIT_INFORMATION },
+      { IoInfo: win32.IO_COUNTERS },
+      { ProcessMemoryLimit: win32.SIZE_T },
+      { JobMemoryLimit: win32.SIZE_T },
+      { PeakProcessMemoryUsed: win32.SIZE_T },
+      { PeakJobMemoryUsed: win32.SIZE_T },
+    ]
+  ),
 
   OVERLAPPED: new ctypes.StructType("OVERLAPPED", [
-    {"Internal": win32.ULONG_PTR},
-    {"InternalHigh": win32.ULONG_PTR},
-    {"Offset": win32.DWORD},
-    {"OffsetHigh": win32.DWORD},
-    {"hEvent": win32.HANDLE},
+    { Internal: win32.ULONG_PTR },
+    { InternalHigh: win32.ULONG_PTR },
+    { Offset: win32.DWORD },
+    { OffsetHigh: win32.DWORD },
+    { hEvent: win32.HANDLE },
   ]),
 
   PROCESS_INFORMATION: new ctypes.StructType("PROCESS_INFORMATION", [
-    {"hProcess": win32.HANDLE},
-    {"hThread": win32.HANDLE},
-    {"dwProcessId": win32.DWORD},
-    {"dwThreadId": win32.DWORD},
+    { hProcess: win32.HANDLE },
+    { hThread: win32.HANDLE },
+    { dwProcessId: win32.DWORD },
+    { dwThreadId: win32.DWORD },
   ]),
 
   SECURITY_ATTRIBUTES: new ctypes.StructType("SECURITY_ATTRIBUTES", [
-    {"nLength": win32.DWORD},
-    {"lpSecurityDescriptor": win32.LPVOID},
-    {"bInheritHandle": win32.BOOL},
+    { nLength: win32.DWORD },
+    { lpSecurityDescriptor: win32.LPVOID },
+    { bInheritHandle: win32.BOOL },
   ]),
 
   STARTUPINFOW: new ctypes.StructType("STARTUPINFOW", [
-    {"cb": win32.DWORD},
-    {"lpReserved": win32.LPWSTR},
-    {"lpDesktop": win32.LPWSTR},
-    {"lpTitle": win32.LPWSTR},
-    {"dwX": win32.DWORD},
-    {"dwY": win32.DWORD},
-    {"dwXSize": win32.DWORD},
-    {"dwYSize": win32.DWORD},
-    {"dwXCountChars": win32.DWORD},
-    {"dwYCountChars": win32.DWORD},
-    {"dwFillAttribute": win32.DWORD},
-    {"dwFlags": win32.DWORD},
-    {"wShowWindow": win32.WORD},
-    {"cbReserved2": win32.WORD},
-    {"lpReserved2": win32.LPBYTE},
-    {"hStdInput": win32.HANDLE},
-    {"hStdOutput": win32.HANDLE},
-    {"hStdError": win32.HANDLE},
+    { cb: win32.DWORD },
+    { lpReserved: win32.LPWSTR },
+    { lpDesktop: win32.LPWSTR },
+    { lpTitle: win32.LPWSTR },
+    { dwX: win32.DWORD },
+    { dwY: win32.DWORD },
+    { dwXSize: win32.DWORD },
+    { dwYSize: win32.DWORD },
+    { dwXCountChars: win32.DWORD },
+    { dwYCountChars: win32.DWORD },
+    { dwFillAttribute: win32.DWORD },
+    { dwFlags: win32.DWORD },
+    { wShowWindow: win32.WORD },
+    { cbReserved2: win32.WORD },
+    { lpReserved2: win32.LPBYTE },
+    { hStdInput: win32.HANDLE },
+    { hStdOutput: win32.HANDLE },
+    { hStdError: win32.HANDLE },
   ]),
 });
 
 Object.assign(win32, {
   STARTUPINFOEXW: new ctypes.StructType("STARTUPINFOEXW", [
-    {"StartupInfo": win32.STARTUPINFOW},
-    {"lpAttributeList": win32.LPPROC_THREAD_ATTRIBUTE_LIST},
+    { StartupInfo: win32.STARTUPINFOW },
+    { lpAttributeList: win32.LPPROC_THREAD_ATTRIBUTE_LIST },
   ]),
 });
-
 
 var libc = new Library("libc", LIBC_CHOICES, {
   AssignProcessToJobObject: [
     win32.WINAPI,
     win32.BOOL,
-    win32.HANDLE, 
-    win32.HANDLE, 
+    win32.HANDLE ,
+    win32.HANDLE ,
   ],
 
-  CloseHandle: [
-    win32.WINAPI,
-    win32.BOOL,
-    win32.HANDLE, 
-  ],
+  CloseHandle: [win32.WINAPI, win32.BOOL, win32.HANDLE ],
 
   CreateEventW: [
     win32.WINAPI,
     win32.HANDLE,
-    win32.SECURITY_ATTRIBUTES.ptr, 
-    win32.BOOL, 
-    win32.BOOL, 
-    win32.LPWSTR, 
+    win32.SECURITY_ATTRIBUTES.ptr ,
+    win32.BOOL ,
+    win32.BOOL ,
+    win32.LPWSTR ,
   ],
 
   CreateFileW: [
     win32.WINAPI,
     win32.HANDLE,
-    win32.LPWSTR, 
-    win32.DWORD, 
-    win32.DWORD, 
-    win32.SECURITY_ATTRIBUTES.ptr, 
-    win32.DWORD, 
-    win32.DWORD, 
-    win32.HANDLE, 
+    win32.LPWSTR ,
+    win32.DWORD ,
+    win32.DWORD ,
+    win32.SECURITY_ATTRIBUTES.ptr ,
+    win32.DWORD ,
+    win32.DWORD ,
+    win32.HANDLE ,
   ],
 
   CreateJobObjectW: [
     win32.WINAPI,
     win32.HANDLE,
-    win32.SECURITY_ATTRIBUTES.ptr, 
-    win32.LPWSTR, 
+    win32.SECURITY_ATTRIBUTES.ptr ,
+    win32.LPWSTR ,
   ],
 
   CreateNamedPipeW: [
     win32.WINAPI,
     win32.HANDLE,
-    win32.LPWSTR, 
-    win32.DWORD, 
-    win32.DWORD, 
-    win32.DWORD, 
-    win32.DWORD, 
-    win32.DWORD, 
-    win32.DWORD, 
-    win32.SECURITY_ATTRIBUTES.ptr, 
+    win32.LPWSTR ,
+    win32.DWORD ,
+    win32.DWORD ,
+    win32.DWORD ,
+    win32.DWORD ,
+    win32.DWORD ,
+    win32.DWORD ,
+    win32.SECURITY_ATTRIBUTES.ptr ,
   ],
 
   CreatePipe: [
     win32.WINAPI,
     win32.BOOL,
-    win32.LPHANDLE, 
-    win32.LPHANDLE, 
-    win32.SECURITY_ATTRIBUTES.ptr, 
-    win32.DWORD, 
+    win32.LPHANDLE ,
+    win32.LPHANDLE ,
+    win32.SECURITY_ATTRIBUTES.ptr ,
+    win32.DWORD ,
   ],
 
   CreateProcessW: [
     win32.WINAPI,
     win32.BOOL,
-    win32.LPCWSTR, 
-    win32.LPWSTR, 
-    win32.SECURITY_ATTRIBUTES.ptr, 
-    win32.SECURITY_ATTRIBUTES.ptr, 
-    win32.BOOL, 
-    win32.DWORD, 
-    win32.LPVOID, 
-    win32.LPCWSTR, 
-    win32.STARTUPINFOW.ptr, 
-    win32.PROCESS_INFORMATION.ptr, 
+    win32.LPCWSTR ,
+    win32.LPWSTR ,
+    win32.SECURITY_ATTRIBUTES.ptr ,
+    win32.SECURITY_ATTRIBUTES.ptr ,
+    win32.BOOL ,
+    win32.DWORD ,
+    win32.LPVOID ,
+    win32.LPCWSTR ,
+    win32.STARTUPINFOW.ptr ,
+    win32.PROCESS_INFORMATION.ptr ,
   ],
 
   CreateSemaphoreW: [
     win32.WINAPI,
     win32.HANDLE,
-    win32.SECURITY_ATTRIBUTES.ptr, 
-    win32.LONG, 
-    win32.LONG, 
-    win32.LPCWSTR, 
+    win32.SECURITY_ATTRIBUTES.ptr ,
+    win32.LONG ,
+    win32.LONG ,
+    win32.LPCWSTR ,
   ],
 
   DeleteProcThreadAttributeList: [
     win32.WINAPI,
     win32.VOID,
-    win32.LPPROC_THREAD_ATTRIBUTE_LIST, 
+    win32.LPPROC_THREAD_ATTRIBUTE_LIST ,
   ],
 
   DuplicateHandle: [
     win32.WINAPI,
     win32.BOOL,
-    win32.HANDLE, 
-    win32.HANDLE, 
-    win32.HANDLE, 
-    win32.LPHANDLE, 
-    win32.DWORD, 
-    win32.BOOL, 
-    win32.DWORD, 
+    win32.HANDLE ,
+    win32.HANDLE ,
+    win32.HANDLE ,
+    win32.LPHANDLE ,
+    win32.DWORD ,
+    win32.BOOL ,
+    win32.DWORD ,
   ],
 
   FreeEnvironmentStringsW: [
     win32.WINAPI,
     win32.BOOL,
-    win32.LPCWSTR, 
+    win32.LPCWSTR ,
   ],
 
-  GetCurrentProcess: [
-    win32.WINAPI,
-    win32.HANDLE,
-  ],
+  GetCurrentProcess: [win32.WINAPI, win32.HANDLE],
 
-  GetCurrentProcessId: [
-    win32.WINAPI,
-    win32.DWORD,
-  ],
+  GetCurrentProcessId: [win32.WINAPI, win32.DWORD],
 
-  GetEnvironmentStringsW: [
-    win32.WINAPI,
-    win32.LPCWSTR,
-  ],
+  GetEnvironmentStringsW: [win32.WINAPI, win32.LPCWSTR],
 
   GetExitCodeProcess: [
     win32.WINAPI,
     win32.BOOL,
-    win32.HANDLE, 
-    win32.LPDWORD, 
+    win32.HANDLE ,
+    win32.LPDWORD ,
   ],
 
   GetOverlappedResult: [
     win32.WINAPI,
     win32.BOOL,
-    win32.HANDLE, 
-    win32.OVERLAPPED.ptr, 
-    win32.LPDWORD, 
-    win32.BOOL, 
+    win32.HANDLE ,
+    win32.OVERLAPPED.ptr ,
+    win32.LPDWORD ,
+    win32.BOOL ,
   ],
 
-  GetStdHandle: [
-    win32.WINAPI,
-    win32.HANDLE,
-    win32.DWORD, 
-  ],
+  GetStdHandle: [win32.WINAPI, win32.HANDLE, win32.DWORD ],
 
   InitializeProcThreadAttributeList: [
     win32.WINAPI,
     win32.BOOL,
-    win32.LPPROC_THREAD_ATTRIBUTE_LIST, 
-    win32.DWORD, 
-    win32.DWORD, 
-    win32.PSIZE_T, 
+    win32.LPPROC_THREAD_ATTRIBUTE_LIST ,
+    win32.DWORD ,
+    win32.DWORD ,
+    win32.PSIZE_T ,
   ],
 
   ReadFile: [
     win32.WINAPI,
     win32.BOOL,
-    win32.HANDLE, 
-    win32.LPVOID, 
-    win32.DWORD, 
-    win32.LPDWORD, 
-    win32.OVERLAPPED.ptr, 
+    win32.HANDLE ,
+    win32.LPVOID ,
+    win32.DWORD ,
+    win32.LPDWORD ,
+    win32.OVERLAPPED.ptr ,
   ],
 
   ReleaseSemaphore: [
     win32.WINAPI,
     win32.BOOL,
-    win32.HANDLE, 
-    win32.LONG, 
-    win32.LONG.ptr, 
+    win32.HANDLE ,
+    win32.LONG ,
+    win32.LONG.ptr ,
   ],
 
-  ResumeThread: [
-    win32.WINAPI,
-    win32.DWORD,
-    win32.HANDLE, 
-  ],
+  ResumeThread: [win32.WINAPI, win32.DWORD, win32.HANDLE ],
 
   SetInformationJobObject: [
     win32.WINAPI,
     win32.BOOL,
-    win32.HANDLE, 
-    ctypes.int, 
-    win32.LPVOID, 
-    win32.DWORD, 
+    win32.HANDLE ,
+    ctypes.int ,
+    win32.LPVOID ,
+    win32.DWORD ,
   ],
 
   TerminateJobObject: [
     win32.WINAPI,
     win32.BOOL,
-    win32.HANDLE, 
-    win32.UINT, 
+    win32.HANDLE ,
+    win32.UINT ,
   ],
 
   TerminateProcess: [
     win32.WINAPI,
     win32.BOOL,
-    win32.HANDLE, 
-    win32.UINT, 
+    win32.HANDLE ,
+    win32.UINT ,
   ],
 
   UpdateProcThreadAttribute: [
     win32.WINAPI,
     win32.BOOL,
-    win32.LPPROC_THREAD_ATTRIBUTE_LIST, 
-    win32.DWORD, 
-    win32.DWORD_PTR, 
-    win32.PVOID, 
-    win32.SIZE_T, 
-    win32.PVOID, 
-    win32.PSIZE_T, 
+    win32.LPPROC_THREAD_ATTRIBUTE_LIST ,
+    win32.DWORD ,
+    win32.DWORD_PTR ,
+    win32.PVOID ,
+    win32.SIZE_T ,
+    win32.PVOID ,
+    win32.PSIZE_T ,
   ],
 
   WaitForMultipleObjects: [
     win32.WINAPI,
     win32.DWORD,
-    win32.DWORD, 
-    win32.HANDLE.ptr, 
-    win32.BOOL, 
-    win32.DWORD, 
+    win32.DWORD ,
+    win32.HANDLE.ptr ,
+    win32.BOOL ,
+    win32.DWORD ,
   ],
 
   WaitForSingleObject: [
     win32.WINAPI,
     win32.DWORD,
-    win32.HANDLE, 
-    win32.BOOL, 
-    win32.DWORD, 
+    win32.HANDLE ,
+    win32.BOOL ,
+    win32.DWORD ,
   ],
 
   WriteFile: [
     win32.WINAPI,
     win32.BOOL,
-    win32.HANDLE, 
-    win32.LPCVOID, 
-    win32.DWORD, 
-    win32.LPDWORD, 
-    win32.OVERLAPPED.ptr, 
+    win32.HANDLE ,
+    win32.LPCVOID ,
+    win32.DWORD ,
+    win32.LPDWORD ,
+    win32.OVERLAPPED.ptr ,
   ],
 });
-
 
 let nextNamedPipeId = 0;
 
@@ -466,31 +449,39 @@ win32.createPipe = function(secAttr, readFlags = 0, writeFlags = 0, size = 0) {
   let pipeName = String.raw`\\.\Pipe\SubProcessPipe.${pid}.${nextNamedPipeId++}`;
 
   let readHandle = libc.CreateNamedPipeW(
-    pipeName, readFlags,
+    pipeName,
+    readFlags,
     win32.PIPE_TYPE_BYTE | win32.PIPE_WAIT,
-    1, 
-    size, 
-    size, 
-    0, 
-    secAttr.address());
+    1 ,
+    size ,
+    size ,
+    0 ,
+    secAttr.address()
+  );
 
-  let isInvalid = handle => String(handle) == String(win32.HANDLE(Win.INVALID_HANDLE_VALUE));
+  let isInvalid = handle =>
+    String(handle) == String(win32.HANDLE(Win.INVALID_HANDLE_VALUE));
 
   if (isInvalid(readHandle)) {
     return [];
   }
 
   let writeHandle = libc.CreateFileW(
-    pipeName, Win.GENERIC_WRITE, 0, secAttr.address(),
-    Win.OPEN_EXISTING, writeFlags, null);
+    pipeName,
+    Win.GENERIC_WRITE,
+    0,
+    secAttr.address(),
+    Win.OPEN_EXISTING,
+    writeFlags,
+    null
+  );
 
   if (isInvalid(writeHandle)) {
     libc.CloseHandle(readHandle);
     return [];
   }
 
-  return [win32.Handle(readHandle),
-          win32.Handle(writeHandle)];
+  return [win32.Handle(readHandle), win32.Handle(writeHandle)];
 };
 
 win32.createThreadAttributeList = function(handles) {
@@ -504,8 +495,10 @@ win32.createThreadAttributeList = function(handles) {
   }
 
   let size = win32.SIZE_T();
-  if (!libc.InitializeProcThreadAttributeList(null, 1, 0, size.address()) &&
-      ctypes.winLastError != win32.ERROR_INSUFFICIENT_BUFFER) {
+  if (
+    !libc.InitializeProcThreadAttributeList(null, 1, 0, size.address()) &&
+    ctypes.winLastError != win32.ERROR_INSUFFICIENT_BUFFER
+  ) {
     return null;
   }
 
@@ -516,8 +509,14 @@ win32.createThreadAttributeList = function(handles) {
   }
 
   let ok = libc.UpdateProcThreadAttribute(
-    attrList, 0, win32.PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
-    handles, handles.constructor.size, null, null);
+    attrList,
+    0,
+    win32.PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
+    handles,
+    handles.constructor.size,
+    null,
+    null
+  );
 
   if (!ok) {
     libc.DeleteProcThreadAttributeList(attrList);

@@ -6,7 +6,9 @@
 
 var EXPORTED_SYMBOLS = ["FormLikeFactory"];
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 
 
@@ -14,11 +16,7 @@ const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm")
 
 
 let FormLikeFactory = {
-  _propsFromForm: [
-    "action",
-    "autocomplete",
-    "ownerDocument",
-  ],
+  _propsFromForm: ["action", "autocomplete", "ownerDocument"],
 
   
 
@@ -63,9 +61,11 @@ let FormLikeFactory = {
 
 
   createFromField(aField) {
-    if ((ChromeUtils.getClassName(aField) !== "HTMLInputElement" &&
-         ChromeUtils.getClassName(aField) !== "HTMLSelectElement") ||
-        !aField.ownerDocument) {
+    if (
+      (ChromeUtils.getClassName(aField) !== "HTMLInputElement" &&
+        ChromeUtils.getClassName(aField) !== "HTMLSelectElement") ||
+      !aField.ownerDocument
+    ) {
       throw new Error("createFromField requires a field in a document");
     }
 

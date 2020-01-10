@@ -4,12 +4,9 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "BinarySearch",
-];
+var EXPORTED_SYMBOLS = ["BinarySearch"];
 
 var BinarySearch = Object.freeze({
-
   
 
 
@@ -63,12 +60,14 @@ var BinarySearch = Object.freeze({
       
       let mid = (low + high) >> 1;
       let cmp = comparator(target, array[mid]);
-      if (cmp == 0)
+      if (cmp == 0) {
         return [true, mid];
-      if (cmp < 0)
+      }
+      if (cmp < 0) {
         high = mid - 1;
-      else
+      } else {
         low = mid + 1;
+      }
     }
     return [false, low];
   },

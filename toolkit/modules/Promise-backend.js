@@ -63,9 +63,12 @@ if (Cu) {
   Cu.import("resource://gre/modules/Services.jsm", this);
   Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
 
-  XPCOMUtils.defineLazyServiceGetter(this, "FinalizationWitnessService",
-                                     "@mozilla.org/toolkit/finalizationwitness;1",
-                                     "nsIFinalizationWitnessService");
+  XPCOMUtils.defineLazyServiceGetter(
+    this,
+    "FinalizationWitnessService",
+    "@mozilla.org/toolkit/finalizationwitness;1",
+    "nsIFinalizationWitnessService"
+  );
 }
 
 const STATUS_PENDING = 0;
@@ -137,7 +140,7 @@ var PendingErrors = {
 
 
   register(error) {
-    let id = "pending-error-" + (this._counter++);
+    let id = "pending-error-" + this._counter++;
     
     
     
@@ -157,7 +160,8 @@ var PendingErrors = {
       stack: null,
       lineNumber: null,
     };
-    try { 
+    try {
+      
       if (error && error instanceof Ci.nsIException) {
         
         try {
@@ -180,9 +184,10 @@ var PendingErrors = {
         }
       } else if (typeof error == "object" && error) {
         for (let k of ["fileName", "stack", "lineNumber"]) {
-          try { 
+          try {
+            
             let v = error[k];
-            value[k] = v ? ("" + v) : null;
+            value[k] = v ? "" + v : null;
           } catch (ex) {
             
           }
@@ -192,8 +197,11 @@ var PendingErrors = {
       if (!value.stack) {
         
         let stack = null;
-        if (error && error.location &&
-            error.location instanceof Ci.nsIStackFrame) {
+        if (
+          error &&
+          error.location &&
+          error.location instanceof Ci.nsIStackFrame
+        ) {
           
           stack = error.location;
         } else {
@@ -294,11 +302,14 @@ if (Cu) {
 
 
 PendingErrors.addObserver(function(details) {
-  const generalDescription = "A promise chain failed to handle a rejection." +
+  const generalDescription =
+    "A promise chain failed to handle a rejection." +
     " Did you forget to '.catch', or did you forget to 'return'?\nSee" +
     " https://developer.mozilla.org/Mozilla/JavaScript_code_modules/Promise.jsm/Promise\n\n";
 
-  let error = Cc["@mozilla.org/scripterror;1"].createInstance(Ci.nsIScriptError);
+  let error = Cc["@mozilla.org/scripterror;1"].createInstance(
+    Ci.nsIScriptError
+  );
   if (!error || !Services.console) {
     
     dump("*************************\n");
@@ -314,14 +325,18 @@ PendingErrors.addObserver(function(details) {
     message += "\nFull Stack: " + details.stack;
   }
   error.init(
-              generalDescription +
-             "Date: " + details.date + "\nFull Message: " + message,
-              details.fileName,
-              details.lineNumber ? ("" + details.lineNumber) : 0,
-              details.lineNumber || 0,
-              0,
-              Ci.nsIScriptError.errorFlag,
-              "chrome javascript");
+     generalDescription +
+      "Date: " +
+      details.date +
+      "\nFull Message: " +
+      message,
+     details.fileName,
+     details.lineNumber ? "" + details.lineNumber : 0,
+     details.lineNumber || 0,
+     0,
+     Ci.nsIScriptError.errorFlag,
+     "chrome javascript"
+  );
   Services.console.logMessage(error);
 });
 
@@ -329,8 +344,12 @@ PendingErrors.addObserver(function(details) {
 
 
 
-
-const ERRORS_TO_REPORT = ["EvalError", "RangeError", "ReferenceError", "TypeError"];
+const ERRORS_TO_REPORT = [
+  "EvalError",
+  "RangeError",
+  "ReferenceError",
+  "TypeError",
+];
 
 
 
@@ -342,51 +361,59 @@ const ERRORS_TO_REPORT = ["EvalError", "RangeError", "ReferenceError", "TypeErro
 
 
 this.Promise = function Promise(aExecutor) {
-  if (typeof(aExecutor) != "function") {
+  if (typeof aExecutor != "function") {
     throw new TypeError("Promise constructor must be called with an executor.");
   }
 
   
 
 
-  Object.defineProperty(this, N_INTERNALS, { value: {
-    
+  Object.defineProperty(this, N_INTERNALS, {
+    value: {
+      
 
 
 
-    status: STATUS_PENDING,
+      status: STATUS_PENDING,
 
-    
-
-
-
-
-
-
-    value: undefined,
-
-    
-
-
-
-    handlers: [],
-
-    
+      
 
 
 
 
 
 
-    witness: undefined,
-  }});
+      value: undefined,
+
+      
+
+
+
+      handlers: [],
+
+      
+
+
+
+
+
+
+      witness: undefined,
+    },
+  });
 
   Object.seal(this);
 
-  let resolve = PromiseWalker.completePromise
-                             .bind(PromiseWalker, this, STATUS_RESOLVED);
-  let reject = PromiseWalker.completePromise
-                            .bind(PromiseWalker, this, STATUS_REJECTED);
+  let resolve = PromiseWalker.completePromise.bind(
+    PromiseWalker,
+    this,
+    STATUS_RESOLVED
+  );
+  let reject = PromiseWalker.completePromise.bind(
+    PromiseWalker,
+    this,
+    STATUS_REJECTED
+  );
 
   try {
     aExecutor(resolve, reject);
@@ -498,19 +525,20 @@ Promise.defer = function() {
 
 
 Promise.resolve = function(aValue) {
-  if (aValue && typeof(aValue) == "function" && aValue.isAsyncFunction) {
+  if (aValue && typeof aValue == "function" && aValue.isAsyncFunction) {
     throw new TypeError(
       "Cannot resolve a promise with an async function. " +
-      "You should either invoke the async function first " +
-      "or use 'Task.spawn' instead of 'Task.async' to start " +
-      "the Task and return its promise.");
+        "You should either invoke the async function first " +
+        "or use 'Task.spawn' instead of 'Task.async' to start " +
+        "the Task and return its promise."
+    );
   }
 
   if (aValue instanceof Promise) {
     return aValue;
   }
 
-  return new Promise((aResolve) => aResolve(aValue));
+  return new Promise(aResolve => aResolve(aValue));
 };
 
 
@@ -548,7 +576,7 @@ Promise.reject = function(aReason) {
 
 
 Promise.all = function(aValues) {
-  if (aValues == null || typeof(aValues[Symbol.iterator]) != "function") {
+  if (aValues == null || typeof aValues[Symbol.iterator] != "function") {
     throw new Error("Promise.all() expects an iterable.");
   }
 
@@ -574,7 +602,7 @@ Promise.all = function(aValues) {
       let value = values[i];
       let resolver = val => checkForCompletion(val, index);
 
-      if (value && typeof(value.then) == "function") {
+      if (value && typeof value.then == "function") {
         value.then(resolver, reject);
       } else {
         
@@ -598,7 +626,7 @@ Promise.all = function(aValues) {
 
 
 Promise.race = function(aValues) {
-  if (aValues == null || typeof(aValues[Symbol.iterator]) != "function") {
+  if (aValues == null || typeof aValues[Symbol.iterator] != "function") {
     throw new Error("Promise.race() expects an iterable.");
   }
 
@@ -694,10 +722,15 @@ this.PromiseWalker = {
 
     
     
-    if (aStatus == STATUS_RESOLVED && aValue &&
-        typeof(aValue.then) == "function") {
-      aValue.then(this.completePromise.bind(this, aPromise, STATUS_RESOLVED),
-                  this.completePromise.bind(this, aPromise, STATUS_REJECTED));
+    if (
+      aStatus == STATUS_RESOLVED &&
+      aValue &&
+      typeof aValue.then == "function"
+    ) {
+      aValue.then(
+        this.completePromise.bind(this, aPromise, STATUS_RESOLVED),
+        this.completePromise.bind(this, aPromise, STATUS_REJECTED)
+      );
       return;
     }
 
@@ -710,8 +743,10 @@ this.PromiseWalker = {
       
       
       let id = PendingErrors.register(aValue);
-      let witness =
-          FinalizationWitnessService.make("promise-finalization-witness", id);
+      let witness = FinalizationWitnessService.make(
+        "promise-finalization-witness",
+        id
+      );
       aPromise[N_INTERNALS].witness = [id, witness];
     }
   },
@@ -740,8 +775,11 @@ this.PromiseWalker = {
       let stack = Components_ ? Components_.stack : null;
       if (stack) {
         DOMPromise.resolve().then(() => {
-          Cu.callFunctionWithAsyncStack(this.walkerLoop.bind(this), stack,
-                                        "Promise");
+          Cu.callFunctionWithAsyncStack(
+            this.walkerLoop.bind(this),
+            stack,
+            "Promise"
+          );
         });
       } else {
         DOMPromise.resolve().then(() => this.walkerLoop());
@@ -919,18 +957,22 @@ Handler.prototype = {
       
       
       if (nextStatus == STATUS_RESOLVED) {
-        if (typeof(this.onResolve) == "function") {
+        if (typeof this.onResolve == "function") {
           nextValue = this.onResolve.call(undefined, nextValue);
         }
-      } else if (typeof(this.onReject) == "function") {
+      } else if (typeof this.onReject == "function") {
         nextValue = this.onReject.call(undefined, nextValue);
         nextStatus = STATUS_RESOLVED;
       }
     } catch (ex) {
       
 
-      if (ex && typeof ex == "object" && "name" in ex &&
-          ERRORS_TO_REPORT.includes(ex.name)) {
+      if (
+        ex &&
+        typeof ex == "object" &&
+        "name" in ex &&
+        ERRORS_TO_REPORT.includes(ex.name)
+      ) {
         
         
         
@@ -938,12 +980,18 @@ Handler.prototype = {
         
 
         dump("*************************\n");
-        dump("A coding exception was thrown in a Promise " +
-             ((nextStatus == STATUS_RESOLVED) ? "resolution" : "rejection") +
-             " callback.\n");
-        dump("See https://developer.mozilla.org/Mozilla/JavaScript_code_modules/Promise.jsm/Promise\n\n");
+        dump(
+          "A coding exception was thrown in a Promise " +
+            (nextStatus == STATUS_RESOLVED ? "resolution" : "rejection") +
+            " callback.\n"
+        );
+        dump(
+          "See https://developer.mozilla.org/Mozilla/JavaScript_code_modules/Promise.jsm/Promise\n\n"
+        );
         dump("Full message: " + ex + "\n");
-        dump("Full stack: " + (("stack" in ex) ? ex.stack : "not available") + "\n");
+        dump(
+          "Full stack: " + ("stack" in ex ? ex.stack : "not available") + "\n"
+        );
         dump("*************************\n");
       }
 

@@ -6,8 +6,10 @@
 
 var EXPORTED_SYMBOLS = ["NewTabUtils"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 
 let shortURL = {};
@@ -15,34 +17,53 @@ let searchShortcuts = {};
 let didSuccessfulImport = false;
 try {
   ChromeUtils.import("resource://activity-stream/lib/ShortURL.jsm", shortURL);
-  ChromeUtils.import("resource://activity-stream/lib/SearchShortcuts.jsm", searchShortcuts);
+  ChromeUtils.import(
+    "resource://activity-stream/lib/SearchShortcuts.jsm",
+    searchShortcuts
+  );
   didSuccessfulImport = true;
 } catch (e) {
   
 }
 
-ChromeUtils.defineModuleGetter(this, "PlacesUtils",
-  "resource://gre/modules/PlacesUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PlacesUtils",
+  "resource://gre/modules/PlacesUtils.jsm"
+);
 
-ChromeUtils.defineModuleGetter(this, "PageThumbs",
-  "resource://gre/modules/PageThumbs.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PageThumbs",
+  "resource://gre/modules/PageThumbs.jsm"
+);
 
-ChromeUtils.defineModuleGetter(this, "BinarySearch",
-  "resource://gre/modules/BinarySearch.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "BinarySearch",
+  "resource://gre/modules/BinarySearch.jsm"
+);
 
-ChromeUtils.defineModuleGetter(this, "pktApi",
-  "chrome://pocket/content/pktApi.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "pktApi",
+  "chrome://pocket/content/pktApi.jsm"
+);
 
-ChromeUtils.defineModuleGetter(this, "Pocket",
-  "chrome://pocket/content/Pocket.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "Pocket",
+  "chrome://pocket/content/Pocket.jsm"
+);
 
 XPCOMUtils.defineLazyGetter(this, "gCryptoHash", function() {
   return Cc["@mozilla.org/security/hash;1"].createInstance(Ci.nsICryptoHash);
 });
 
 XPCOMUtils.defineLazyGetter(this, "gUnicodeConverter", function() {
-  let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
-                    .createInstance(Ci.nsIScriptableUnicodeConverter);
+  let converter = Cc[
+    "@mozilla.org/intl/scriptableunicodeconverter"
+  ].createInstance(Ci.nsIScriptableUnicodeConverter);
   converter.charset = "utf8";
   return converter;
 });
@@ -115,7 +136,9 @@ function LinksStorage() {
     
     Cu.reportError(
       "Unable to migrate the newTab storage to the current version. " +
-      "Restarting from scratch.\n" + ex);
+        "Restarting from scratch.\n" +
+        ex
+    );
     this.clear();
   }
 
@@ -143,8 +166,10 @@ LinksStorage.prototype = {
       
       
       
-      this.__storedVersion =
-        Services.prefs.getIntPref("browser.newtabpage.storageVersion", 1);
+      this.__storedVersion = Services.prefs.getIntPref(
+        "browser.newtabpage.storageVersion",
+        1
+      );
     }
     return this.__storedVersion;
   },
@@ -200,7 +225,6 @@ LinksStorage.prototype = {
 
 
 
-
 var AllPages = {
   
 
@@ -227,16 +251,18 @@ var AllPages = {
 
   unregister: function AllPages_unregister(aPage) {
     let index = this._pages.indexOf(aPage);
-    if (index > -1)
+    if (index > -1) {
       this._pages.splice(index, 1);
+    }
   },
 
   
 
 
   get enabled() {
-    if (this._enabled === null)
+    if (this._enabled === null) {
       this._enabled = Services.prefs.getBoolPref(PREF_NEWTAB_ENABLED);
+    }
 
     return this._enabled;
   },
@@ -245,8 +271,9 @@ var AllPages = {
 
 
   set enabled(aEnabled) {
-    if (this.enabled != aEnabled)
+    if (this.enabled != aEnabled) {
       Services.prefs.setBoolPref(PREF_NEWTAB_ENABLED, !!aEnabled);
+    }
   },
 
   
@@ -299,8 +326,10 @@ var AllPages = {
     this._addObserver = function() {};
   },
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver,
-                                          Ci.nsISupportsWeakReference]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIObserver,
+    Ci.nsISupportsWeakReference,
+  ]),
 };
 
 
@@ -317,8 +346,9 @@ var PinnedLinks = {
 
 
   get links() {
-    if (!this._links)
+    if (!this._links) {
       this._links = Storage.get("pinnedLinks", []);
+    }
 
     return this._links;
   },
@@ -346,14 +376,16 @@ var PinnedLinks = {
 
   unpin: function PinnedLinks_unpin(aLink) {
     let index = this._indexOfLink(aLink);
-    if (index == -1)
+    if (index == -1) {
       return;
+    }
     let links = this.links;
     links[index] = null;
     
     let i = links.length - 1;
-    while (i >= 0 && links[i] == null)
+    while (i >= 0 && links[i] == null) {
       i--;
+    }
     links.splice(i + 1);
     this.save();
   },
@@ -389,8 +421,9 @@ var PinnedLinks = {
   _indexOfLink: function PinnedLinks_indexOfLink(aLink) {
     for (let i = 0; i < this.links.length; i++) {
       let link = this.links[i];
-      if (link && link.url == aLink.url)
+      if (link && link.url == aLink.url) {
         return i;
+      }
     }
 
     
@@ -416,14 +449,13 @@ var PinnedLinks = {
 
 
   replace: function PinnedLinks_replace(aUrl, aLink) {
-    let index = this._indexOfLink({url: aUrl});
+    let index = this._indexOfLink({ url: aUrl });
     if (index == -1) {
       return;
     }
     this.links[index] = aLink;
     this.save();
   },
-
 };
 
 
@@ -458,8 +490,9 @@ var BlockedLinks = {
 
 
   get links() {
-    if (!this._links)
+    if (!this._links) {
       this._links = Storage.get("blockedLinks", {});
+    }
 
     return this._links;
   },
@@ -501,7 +534,7 @@ var BlockedLinks = {
 
 
   isBlocked: function BlockedLinks_isBlocked(aLink) {
-    return (toHash(aLink.url) in this.links);
+    return toHash(aLink.url) in this.links;
   },
 
   
@@ -521,7 +554,7 @@ var BlockedLinks = {
 
   _callObservers(methodName, ...args) {
     for (let obs of this._observers) {
-      if (typeof(obs[methodName]) == "function") {
+      if (typeof obs[methodName] == "function") {
         try {
           obs[methodName](...args);
         } catch (err) {
@@ -560,8 +593,9 @@ var PlacesProvider = {
 
   init: function PlacesProvider_init() {
     PlacesUtils.history.addObserver(this, true);
-    this._placesObserver =
-      new PlacesWeakCallbackWrapper(this.handlePlacesEvents.bind(this));
+    this._placesObserver = new PlacesWeakCallbackWrapper(
+      this.handlePlacesEvents.bind(this)
+    );
     PlacesObservers.addListener(["page-visited"], this._placesObserver);
   },
 
@@ -574,7 +608,8 @@ var PlacesProvider = {
     options.maxResults = this.maxNumLinks;
 
     
-    options.sortingMode = Ci.nsINavHistoryQueryOptions.SORT_BY_FRECENCY_DESCENDING;
+    options.sortingMode =
+      Ci.nsINavHistoryQueryOptions.SORT_BY_FRECENCY_DESCENDING;
 
     let links = [];
 
@@ -614,10 +649,11 @@ var PlacesProvider = {
         let i = 1;
         let outOfOrder = [];
         while (i < links.length) {
-          if (Links.compareLinks(links[i - 1], links[i]) > 0)
+          if (Links.compareLinks(links[i - 1], links[i]) > 0) {
             outOfOrder.push(links.splice(i, 1)[0]);
-          else
+          } else {
             i++;
+          }
         }
         for (let link of outOfOrder) {
           i = BinarySearch.insertionIndexOf(Links.compareLinks, links, link);
@@ -694,7 +730,13 @@ var PlacesProvider = {
   
 
 
-  onFrecencyChanged: function PlacesProvider_onFrecencyChanged(aURI, aNewFrecency, aGUID, aHidden, aLastVisitDate) {
+  onFrecencyChanged: function PlacesProvider_onFrecencyChanged(
+    aURI,
+    aNewFrecency,
+    aGUID,
+    aHidden,
+    aLastVisitDate
+  ) {
     
     
     
@@ -724,7 +766,11 @@ var PlacesProvider = {
   
 
 
-  onTitleChanged: function PlacesProvider_onTitleChanged(aURI, aNewTitle, aGUID) {
+  onTitleChanged: function PlacesProvider_onTitleChanged(
+    aURI,
+    aNewTitle,
+    aGUID
+  ) {
     if (aURI instanceof Ci.nsIURI) {
       aURI = aURI.spec;
     }
@@ -746,8 +792,10 @@ var PlacesProvider = {
     }
   },
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsINavHistoryObserver,
-                                          Ci.nsISupportsWeakReference]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsINavHistoryObserver,
+    Ci.nsISupportsWeakReference,
+  ]),
 };
 
 
@@ -758,7 +806,7 @@ var ActivityStreamProvider = {
   
 
 
-  _adjustLimitForBlocked({ignoreBlocked, numItems}) {
+  _adjustLimitForBlocked({ ignoreBlocked, numItems }) {
     
     if (ignoreBlocked) {
       return numItems;
@@ -806,18 +854,27 @@ var ActivityStreamProvider = {
 
 
   _getCommonParams(aOptions, aParams = {}) {
-    return Object.assign({
-      bookmarkType: PlacesUtils.bookmarks.TYPE_BOOKMARK,
-      limit: this._adjustLimitForBlocked(aOptions),
-      tagsFolderId: PlacesUtils.tagsFolderId,
-    }, aParams);
+    return Object.assign(
+      {
+        bookmarkType: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+        limit: this._adjustLimitForBlocked(aOptions),
+        tagsFolderId: PlacesUtils.tagsFolderId,
+      },
+      aParams
+    );
   },
 
   
 
 
-  _highlightsColumns: ["bookmarkGuid", "description", "guid",
-    "preview_image_url", "title", "url"],
+  _highlightsColumns: [
+    "bookmarkGuid",
+    "description",
+    "guid",
+    "preview_image_url",
+    "title",
+    "url",
+  ],
 
   
 
@@ -825,15 +882,21 @@ var ActivityStreamProvider = {
   _processHighlights(aLinks, aOptions, aType) {
     
     if (!aOptions.ignoreBlocked) {
-      aLinks = aLinks.filter(link =>
-        !BlockedLinks.isBlocked(link.pocket_id ? {url: link.open_url} : link));
+      aLinks = aLinks.filter(
+        link =>
+          !BlockedLinks.isBlocked(
+            link.pocket_id ? { url: link.open_url } : link
+          )
+      );
     }
 
     
     
-    return aLinks.slice(0, aOptions.numItems).map(item => Object.assign(item, {
-      type: aType,
-    }));
+    return aLinks.slice(0, aOptions.numItems).map(item =>
+      Object.assign(item, {
+        type: aType,
+      })
+    );
   },
 
   
@@ -864,12 +927,25 @@ var ActivityStreamProvider = {
   _getIconData(aUri) {
     
     const preferredWidth = 0;
-    return new Promise(resolve => PlacesUtils.favicons.getFaviconDataForPage(
-      aUri,
-      
-      (iconUri, faviconLength, favicon, mimeType, faviconSize) =>
-        resolve(iconUri ? {favicon, faviconLength, faviconRef: iconUri.ref, faviconSize, mimeType} : null),
-      preferredWidth));
+    return new Promise(resolve =>
+      PlacesUtils.favicons.getFaviconDataForPage(
+        aUri,
+        
+        (iconUri, faviconLength, favicon, mimeType, faviconSize) =>
+          resolve(
+            iconUri
+              ? {
+                  favicon,
+                  faviconLength,
+                  faviconRef: iconUri.ref,
+                  faviconSize,
+                  mimeType,
+                }
+              : null
+          ),
+        preferredWidth
+      )
+    );
   },
 
   
@@ -887,31 +963,37 @@ var ActivityStreamProvider = {
     
     
     
-    return Promise.all(aLinks.map(link => new Promise(async resolve => {
-      
-      if (link.type === "pocket") {
-        resolve(link);
-        return;
-      }
-      let iconData;
-      try {
-        let linkUri = Services.io.newURI(link.url);
-        iconData = await this._getIconData(linkUri);
+    return Promise.all(
+      aLinks.map(
+        link =>
+          new Promise(async resolve => {
+            
+            if (link.type === "pocket") {
+              resolve(link);
+              return;
+            }
+            let iconData;
+            try {
+              let linkUri = Services.io.newURI(link.url);
+              iconData = await this._getIconData(linkUri);
 
-        
-        if (!iconData) {
-          linkUri = linkUri.mutate()
-                           .setScheme(linkUri.scheme === "https" ? "http" : "https")
-                           .finalize();
-          iconData = await this._getIconData(linkUri);
-        }
-      } catch (e) {
-        
-      }
+              
+              if (!iconData) {
+                linkUri = linkUri
+                  .mutate()
+                  .setScheme(linkUri.scheme === "https" ? "http" : "https")
+                  .finalize();
+                iconData = await this._getIconData(linkUri);
+              }
+            } catch (e) {
+              
+            }
 
-      
-      resolve(Object.assign(link, iconData || {}));
-    })));
+            
+            resolve(Object.assign(link, iconData || {}));
+          })
+      )
+    );
   },
 
   
@@ -919,10 +1001,14 @@ var ActivityStreamProvider = {
 
 
   fetchSavedPocketItems(requestData) {
-    const latestSince = (Services.prefs.getStringPref(PREF_POCKET_LATEST_SINCE, 0) * 1000);
+    const latestSince =
+      Services.prefs.getStringPref(PREF_POCKET_LATEST_SINCE, 0) * 1000;
 
     
-    if (!pktApi.isUserLoggedIn() || (Date.now() - latestSince > POCKET_INACTIVE_TIME)) {
+    if (
+      !pktApi.isUserLoggedIn() ||
+      Date.now() - latestSince > POCKET_INACTIVE_TIME
+    ) {
       return Promise.resolve(null);
     }
 
@@ -946,7 +1032,8 @@ var ActivityStreamProvider = {
 
 
   async getRecentlyPocketed(aOptions) {
-    const pocketSecondsAgo = Math.floor(Date.now() / 1000) - ACTIVITY_STREAM_DEFAULT_RECENT;
+    const pocketSecondsAgo =
+      Math.floor(Date.now() / 1000) - ACTIVITY_STREAM_DEFAULT_RECENT;
     const requestData = {
       detailType: "complete",
       count: aOptions.numItems,
@@ -967,24 +1054,24 @@ var ActivityStreamProvider = {
 
 
     let items = Object.values(data.list)
-                  
-                  .filter(item => item.status === "0")
-                  .map(item => ({
-                    date_added: item.time_added * 1000,
-                    description: item.excerpt,
-                    preview_image_url: item.image && item.image.src,
-                    title: item.resolved_title,
-                    url: item.resolved_url,
-                    pocket_id: item.item_id,
-                    open_url: item.open_url,
-                  }));
+      
+      .filter(item => item.status === "0")
+      .map(item => ({
+        date_added: item.time_added * 1000,
+        description: item.excerpt,
+        preview_image_url: item.image && item.image.src,
+        title: item.resolved_title,
+        url: item.resolved_url,
+        pocket_id: item.item_id,
+        open_url: item.open_url,
+      }));
 
-  
-  for (let item of items) {
-    let url = new URL(item.open_url);
-    url.searchParams.append("src", "fx_new_tab");
-    item.open_url = url.href;
-  }
+    
+    for (let item of items) {
+      let url = new URL(item.open_url);
+      url.searchParams.append("src", "fx_new_tab");
+      item.open_url = url.href;
+    }
 
     return this._processHighlights(items, aOptions, "pocket");
   },
@@ -998,11 +1085,14 @@ var ActivityStreamProvider = {
 
 
   async getRecentBookmarks(aOptions) {
-    const options = Object.assign({
-      bookmarkSecondsAgo: ACTIVITY_STREAM_DEFAULT_RECENT,
-      ignoreBlocked: false,
-      numItems: ACTIVITY_STREAM_DEFAULT_LIMIT,
-    }, aOptions || {});
+    const options = Object.assign(
+      {
+        bookmarkSecondsAgo: ACTIVITY_STREAM_DEFAULT_RECENT,
+        ignoreBlocked: false,
+        numItems: ACTIVITY_STREAM_DEFAULT_LIMIT,
+      },
+      aOptions || {}
+    );
 
     const sqlQuery = `
       SELECT
@@ -1027,12 +1117,17 @@ var ActivityStreamProvider = {
       LIMIT :limit
     `;
 
-    return this._processHighlights(await this.executePlacesQuery(sqlQuery, {
-      columns: [...this._highlightsColumns, "date_added"],
-      params: this._getCommonParams(options, {
-        dateAddedThreshold: (Date.now() - options.bookmarkSecondsAgo * 1000) * 1000,
+    return this._processHighlights(
+      await this.executePlacesQuery(sqlQuery, {
+        columns: [...this._highlightsColumns, "date_added"],
+        params: this._getCommonParams(options, {
+          dateAddedThreshold:
+            (Date.now() - options.bookmarkSecondsAgo * 1000) * 1000,
+        }),
       }),
-    }), options, "bookmark");
+      options,
+      "bookmark"
+    );
   },
 
   
@@ -1067,10 +1162,13 @@ var ActivityStreamProvider = {
 
 
   async getRecentHistory(aOptions) {
-    const options = Object.assign({
-      ignoreBlocked: false,
-      numItems: ACTIVITY_STREAM_DEFAULT_LIMIT,
-    }, aOptions || {});
+    const options = Object.assign(
+      {
+        ignoreBlocked: false,
+        numItems: ACTIVITY_STREAM_DEFAULT_LIMIT,
+      },
+      aOptions || {}
+    );
 
     const sqlQuery = `
       SELECT
@@ -1088,10 +1186,14 @@ var ActivityStreamProvider = {
       LIMIT :limit
     `;
 
-    return this._processHighlights(await this.executePlacesQuery(sqlQuery, {
-      columns: this._highlightsColumns,
-      params: this._getCommonParams(options),
-    }), options, "history");
+    return this._processHighlights(
+      await this.executePlacesQuery(sqlQuery, {
+        columns: this._highlightsColumns,
+        params: this._getCommonParams(options),
+      }),
+      options,
+      "history"
+    );
   },
 
   
@@ -1107,13 +1209,16 @@ var ActivityStreamProvider = {
 
 
   async getTopFrecentSites(aOptions) {
-    const options = Object.assign({
-      ignoreBlocked: false,
-      numItems: ACTIVITY_STREAM_DEFAULT_LIMIT,
-      topsiteFrecency: ACTIVITY_STREAM_DEFAULT_FRECENCY,
-      onePerDomain: true,
-      includeFavicon: true,
-    }, aOptions || {});
+    const options = Object.assign(
+      {
+        ignoreBlocked: false,
+        numItems: ACTIVITY_STREAM_DEFAULT_LIMIT,
+        topsiteFrecency: ACTIVITY_STREAM_DEFAULT_FRECENCY,
+        onePerDomain: true,
+        includeFavicon: true,
+      },
+      aOptions || {}
+    );
 
     
     
@@ -1182,9 +1287,18 @@ var ActivityStreamProvider = {
     }
 
     
-    if (didSuccessfulImport && Services.prefs.getBoolPref(`browser.newtabpage.activity-stream.${searchShortcuts.SEARCH_SHORTCUTS_EXPERIMENT}`)) {
+    if (
+      didSuccessfulImport &&
+      Services.prefs.getBoolPref(
+        `browser.newtabpage.activity-stream.${
+          searchShortcuts.SEARCH_SHORTCUTS_EXPERIMENT
+        }`
+      )
+    ) {
       links.forEach(link => {
-        let searchProvider = searchShortcuts.getSearchProvider(shortURL.shortURL(link));
+        let searchProvider = searchShortcuts.getSearchProvider(
+          shortURL.shortURL(link)
+        );
         if (searchProvider) {
           link.url = searchProvider.url;
         }
@@ -1207,11 +1321,15 @@ var ActivityStreamProvider = {
       
       const hosts = new Map();
       for (const link of exactHosts.values()) {
-        setBetterLink(hosts, link, url => url.match(/:\/\/(?:www\.)?([^\/]+)/),
+        setBetterLink(
+          hosts,
+          link,
+          url => url.match(/:\/\/(?:www\.)?([^\/]+)/),
           
           (targetLink, otherLink) => {
             targetLink.frecency = link.frecency + otherLink.frecency;
-          });
+          }
+        );
       }
 
       links = [...hosts.values()];
@@ -1262,7 +1380,7 @@ var ActivityStreamProvider = {
 
 
   async executePlacesQuery(aQuery, aOptions = {}) {
-    let {columns, params} = aOptions;
+    let { columns, params } = aOptions;
     let items = [];
     let queryError = null;
     let conn = await PlacesUtils.promiseDBConnection();
@@ -1303,7 +1421,7 @@ var ActivityStreamLinks = {
   _pocketLastUpdated: 0,
   _pocketLastLatest: 0,
 
- 
+  
 
 
 
@@ -1334,8 +1452,8 @@ var ActivityStreamLinks = {
 
 
   addBookmark(aData, aBrowserWindow) {
-      const {url, title} = aData;
-      return aBrowserWindow.PlacesCommandHook.bookmarkLink(url, title);
+    const { url, title } = aData;
+    return aBrowserWindow.PlacesCommandHook.bookmarkLink(url, title);
   },
 
   
@@ -1360,7 +1478,7 @@ var ActivityStreamLinks = {
 
   deleteHistoryEntry(aUrl) {
     const url = aUrl;
-    PinnedLinks.unpin({url});
+    PinnedLinks.unpin({ url });
     return PlacesUtils.history.remove(url);
   },
 
@@ -1375,7 +1493,9 @@ var ActivityStreamLinks = {
 
   deletePocketEntry(aItemID) {
     this._savedPocketStories = null;
-    return new Promise((success, error) => pktApi.deleteItem(aItemID, {success, error}));
+    return new Promise((success, error) =>
+      pktApi.deleteItem(aItemID, { success, error })
+    );
   },
 
   
@@ -1389,7 +1509,9 @@ var ActivityStreamLinks = {
 
   archivePocketEntry(aItemID) {
     this._savedPocketStories = null;
-    return new Promise((success, error) => pktApi.archiveItem(aItemID, {success, error}));
+    return new Promise((success, error) =>
+      pktApi.archiveItem(aItemID, { success, error })
+    );
   },
 
   
@@ -1443,20 +1565,29 @@ var ActivityStreamLinks = {
 
     
     if (!aOptions.excludeBookmarks) {
-      results.push(...await ActivityStreamProvider.getRecentBookmarks(aOptions));
+      results.push(
+        ...(await ActivityStreamProvider.getRecentBookmarks(aOptions))
+      );
     }
 
     
     if (aOptions.numItems - results.length > 0 && !aOptions.excludePocket) {
-      const latestSince = ~~(Services.prefs.getStringPref(PREF_POCKET_LATEST_SINCE, 0));
+      const latestSince = ~~Services.prefs.getStringPref(
+        PREF_POCKET_LATEST_SINCE,
+        0
+      );
       
       
       
       
-      if (!this._savedPocketStories ||
-          (Date.now() - this._pocketLastUpdated > POCKET_UPDATE_TIME) ||
-          (this._pocketLastLatest < latestSince)) {
-        this._savedPocketStories = await ActivityStreamProvider.getRecentlyPocketed(aOptions);
+      if (
+        !this._savedPocketStories ||
+        Date.now() - this._pocketLastUpdated > POCKET_UPDATE_TIME ||
+        this._pocketLastLatest < latestSince
+      ) {
+        this._savedPocketStories = await ActivityStreamProvider.getRecentlyPocketed(
+          aOptions
+        );
         this._pocketLastUpdated = Date.now();
         this._pocketLastLatest = latestSince;
       }
@@ -1469,7 +1600,7 @@ var ActivityStreamLinks = {
       const history = await ActivityStreamProvider.getRecentHistory(aOptions);
 
       
-      const bookmarkUrls = new Set(results.map(({url}) => url));
+      const bookmarkUrls = new Set(results.map(({ url }) => url));
       for (const page of history) {
         if (!bookmarkUrls.has(page.url)) {
           results.push(page);
@@ -1484,7 +1615,8 @@ var ActivityStreamLinks = {
 
     if (aOptions.withFavicons) {
       return ActivityStreamProvider._faviconBytesToDataURI(
-        await ActivityStreamProvider._addFavicons(results));
+        await ActivityStreamProvider._addFavicons(results)
+      );
     }
 
     return results;
@@ -1531,11 +1663,7 @@ var Links = {
   
 
 
-  _sortProperties: [
-    "frecency",
-    "lastVisitDate",
-    "url",
-  ],
+  _sortProperties: ["frecency", "lastVisitDate", "url"],
 
   
 
@@ -1568,8 +1696,9 @@ var Links = {
 
 
   removeProvider: function Links_removeProvider(aProvider) {
-    if (!this._providers.delete(aProvider))
+    if (!this._providers.delete(aProvider)) {
       throw new Error("Unknown provider");
+    }
   },
 
   
@@ -1585,8 +1714,9 @@ var Links = {
 
     
     
-    if (callbacks.length > 1)
+    if (callbacks.length > 1) {
       return;
+    }
 
     function executeCallbacks() {
       while (callbacks.length) {
@@ -1603,10 +1733,15 @@ var Links = {
 
     let numProvidersRemaining = this._providers.size;
     for (let [provider ] of this._providers) {
-      this._populateProviderCache(provider, () => {
-        if (--numProvidersRemaining == 0)
-          executeCallbacks();
-      }, aForce);
+      this._populateProviderCache(
+        provider,
+        () => {
+          if (--numProvidersRemaining == 0) {
+            executeCallbacks();
+          }
+        },
+        aForce
+      );
     }
 
     this._addObserver();
@@ -1622,28 +1757,33 @@ var Links = {
 
     let sites = new Set();
     for (let link of pinnedLinks) {
-      if (link)
+      if (link) {
         sites.add(NewTabUtils.extractSite(link.url));
+      }
     }
 
     
     links = links.filter(function(link) {
       let site = NewTabUtils.extractSite(link.url);
-      if (site == null || sites.has(site))
+      if (site == null || sites.has(site)) {
         return false;
+      }
       sites.add(site);
 
       return !BlockedLinks.isBlocked(link) && !PinnedLinks.isPinned(link);
     });
 
     
-    for (let i = 0; i < pinnedLinks.length && links.length; i++)
-      if (!pinnedLinks[i])
+    for (let i = 0; i < pinnedLinks.length && links.length; i++) {
+      if (!pinnedLinks[i]) {
         pinnedLinks[i] = links.shift();
+      }
+    }
 
     
-    if (links.length)
+    if (links.length) {
       pinnedLinks = pinnedLinks.concat(links);
+    }
 
     for (let link of pinnedLinks) {
       if (link) {
@@ -1674,12 +1814,15 @@ var Links = {
 
   compareLinks: function Links_compareLinks(aLink1, aLink2) {
     for (let prop of this._sortProperties) {
-      if (!(prop in aLink1) || !(prop in aLink2))
+      if (!(prop in aLink1) || !(prop in aLink2)) {
         throw new Error("Comparable link missing required property: " + prop);
+      }
     }
-    return aLink2.frecency - aLink1.frecency ||
-           aLink2.lastVisitDate - aLink1.lastVisitDate ||
-           aLink1.url.localeCompare(aLink2.url);
+    return (
+      aLink2.frecency - aLink1.frecency ||
+      aLink2.lastVisitDate - aLink1.lastVisitDate ||
+      aLink1.url.localeCompare(aLink2.url)
+    );
   },
 
   _incrementSiteMap(map, link) {
@@ -1715,7 +1858,7 @@ var Links = {
 
 
   _adjustSiteMapAndNotify(aLink, increment = true) {
-    for (let [, cache] of this._providers) {
+    for (let [,  cache] of this._providers) {
       
       if (cache.linkMap.get(aLink.url)) {
         if (increment) {
@@ -1738,7 +1881,9 @@ var Links = {
 
   populateProviderCache(provider, callback) {
     if (!this._providers.has(provider)) {
-      throw new Error("Can only populate provider cache for existing provider.");
+      throw new Error(
+        "Can only populate provider cache for existing provider."
+      );
     }
 
     return this._populateProviderCache(provider, callback, false);
@@ -1772,7 +1917,7 @@ var Links = {
         aProvider.getLinks(links => {
           
           
-          links = links.filter((link) => !!link);
+          links = links.filter(link => !!link);
           cache.sortedLinks = links;
           cache.siteMap = links.reduce((map, link) => {
             this._incrementSiteMap(map, link);
@@ -1814,17 +1959,22 @@ var Links = {
     function getNextLink() {
       let minLinks = null;
       for (let links of linkLists) {
-        if (links.length &&
-            (!minLinks || Links.compareLinks(links[0], minLinks[0]) < 0))
+        if (
+          links.length &&
+          (!minLinks || Links.compareLinks(links[0], minLinks[0]) < 0)
+        ) {
           minLinks = links;
+        }
       }
       return minLinks ? minLinks.shift() : null;
     }
 
     let finalLinks = [];
-    for (let nextLink = getNextLink();
-         nextLink && finalLinks.length < this.maxNumLinks;
-         nextLink = getNextLink()) {
+    for (
+      let nextLink = getNextLink();
+      nextLink && finalLinks.length < this.maxNumLinks;
+      nextLink = getNextLink()
+    ) {
       finalLinks.push(nextLink);
     }
 
@@ -1841,16 +1991,23 @@ var Links = {
 
 
 
-  onLinkChanged: function Links_onLinkChanged(aProvider, aLink, aIndex = -1, aDeleted = false) {
-    if (!("url" in aLink))
+  onLinkChanged: function Links_onLinkChanged(
+    aProvider,
+    aLink,
+    aIndex = -1,
+    aDeleted = false
+  ) {
+    if (!("url" in aLink)) {
       throw new Error("Changed links must have a url property");
+    }
 
     let links = this._providers.get(aProvider);
-    if (!links)
+    if (!links) {
       
       
       
       return;
+    }
 
     let { sortedLinks, siteMap, linkMap } = links;
     let existingLink = linkMap.get(aLink.url);
@@ -1929,9 +2086,13 @@ var Links = {
 
 
   onManyLinksChanged: function Links_onManyLinksChanged(aProvider) {
-    this._populateProviderCache(aProvider, () => {
-      AllPages.update(null, "links-changed");
-    }, true);
+    this._populateProviderCache(
+      aProvider,
+      () => {
+        AllPages.update(null, "links-changed");
+      },
+      true
+    );
   },
 
   _indexOf: function Links__indexOf(aArray, aLink) {
@@ -1953,15 +2114,18 @@ var Links = {
   observe: function Links_observe(aSubject, aTopic, aData) {
     
     
-    if (AllPages.length && AllPages.enabled)
-      this.populateCache(function() { AllPages.update(); }, true);
-    else
+    if (AllPages.length && AllPages.enabled) {
+      this.populateCache(function() {
+        AllPages.update();
+      }, true);
+    } else {
       this.resetCache();
+    }
   },
 
   _callObservers(methodName, ...args) {
     for (let obs of this._observers) {
-      if (typeof(obs[methodName]) == "function") {
+      if (typeof obs[methodName] == "function") {
         try {
           obs[methodName](this, ...args);
         } catch (err) {
@@ -1980,8 +2144,10 @@ var Links = {
     this._addObserver = function() {};
   },
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver,
-                                          Ci.nsISupportsWeakReference]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIObserver,
+    Ci.nsISupportsWeakReference,
+  ]),
 };
 
 Links.compareLinks = Links.compareLinks.bind(Links);
@@ -2007,17 +2173,19 @@ var Telemetry = {
 
   _collect: function Telemetry_collect() {
     let probes = [
-      { histogram: "NEWTAB_PAGE_ENABLED",
-        value: AllPages.enabled },
-      { histogram: "NEWTAB_PAGE_PINNED_SITES_COUNT",
-        value: PinnedLinks.links.length },
-      { histogram: "NEWTAB_PAGE_BLOCKED_SITES_COUNT",
-        value: Object.keys(BlockedLinks.links).length },
+      { histogram: "NEWTAB_PAGE_ENABLED", value: AllPages.enabled },
+      {
+        histogram: "NEWTAB_PAGE_PINNED_SITES_COUNT",
+        value: PinnedLinks.links.length,
+      },
+      {
+        histogram: "NEWTAB_PAGE_BLOCKED_SITES_COUNT",
+        value: Object.keys(BlockedLinks.links).length,
+      },
     ];
 
     probes.forEach(function Telemetry_collect_forEach(aProbe) {
-      Services.telemetry.getHistogramById(aProbe.histogram)
-        .add(aProbe.value);
+      Services.telemetry.getHistogramById(aProbe.histogram).add(aProbe.value);
     });
   },
 
@@ -2038,13 +2206,16 @@ var LinkChecker = {
   _cache: {},
 
   get flags() {
-    return Ci.nsIScriptSecurityManager.DISALLOW_INHERIT_PRINCIPAL |
-           Ci.nsIScriptSecurityManager.DONT_REPORT_ERRORS;
+    return (
+      Ci.nsIScriptSecurityManager.DISALLOW_INHERIT_PRINCIPAL |
+      Ci.nsIScriptSecurityManager.DONT_REPORT_ERRORS
+    );
   },
 
   checkLoadURI: function LinkChecker_checkLoadURI(aURI) {
-    if (!(aURI in this._cache))
+    if (!(aURI in this._cache)) {
       this._cache[aURI] = this._doCheckLoadURI(aURI);
+    }
 
     return this._cache[aURI];
   },
@@ -2055,8 +2226,11 @@ var LinkChecker = {
       
       
       let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
-      Services.scriptSecurityManager.
-        checkLoadURIStrWithPrincipal(systemPrincipal, aURI, this.flags);
+      Services.scriptSecurityManager.checkLoadURIStrWithPrincipal(
+        systemPrincipal,
+        aURI,
+        this.flags
+      );
       return true;
     } catch (e) {
       
@@ -2070,8 +2244,9 @@ var ExpirationFilter = {
     PageThumbs.addExpirationFilter(this);
   },
 
-  filterForThumbnailExpiration:
-  function ExpirationFilter_filterForThumbnailExpiration(aCallback) {
+  filterForThumbnailExpiration: function ExpirationFilter_filterForThumbnailExpiration(
+    aCallback
+  ) {
     if (!AllPages.enabled) {
       aCallback([]);
       return;
@@ -2082,8 +2257,9 @@ var ExpirationFilter = {
 
       
       for (let link of Links.getLinks().slice(0, 25)) {
-        if (link && link.url)
+        if (link && link.url) {
           urls.push(link.url);
+        }
       }
 
       aCallback(urls);

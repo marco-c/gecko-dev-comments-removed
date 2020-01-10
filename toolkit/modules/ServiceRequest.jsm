@@ -9,11 +9,13 @@
 
 
 
-const {Log} = ChromeUtils.import("resource://gre/modules/Log.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 XPCOMUtils.defineLazyGlobalGetters(this, ["XMLHttpRequest"]);
 
-var EXPORTED_SYMBOLS = [ "ServiceRequest" ];
+var EXPORTED_SYMBOLS = ["ServiceRequest"];
 
 const logger = Log.repository.getLogger("ServiceRequest");
 logger.level = Log.Level.Debug;
@@ -42,7 +44,9 @@ class ServiceRequest extends XMLHttpRequest {
 
     
     if (super.channel instanceof Ci.nsIHttpChannelInternal) {
-      super.channel.QueryInterface(Ci.nsIHttpChannelInternal).beConservative = true;
+      super.channel.QueryInterface(
+        Ci.nsIHttpChannelInternal
+      ).beConservative = true;
     }
   }
 }

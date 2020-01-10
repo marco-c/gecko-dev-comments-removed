@@ -14,7 +14,7 @@ var PromiseMessage = {
 
     
     
-    const dataCopy = Object.assign({}, data, {id});
+    const dataCopy = Object.assign({}, data, { id });
 
     
     messageManager.sendAsyncMessage(name, dataCopy);

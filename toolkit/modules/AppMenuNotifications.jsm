@@ -6,7 +6,7 @@
 
 var EXPORTED_SYMBOLS = ["AppMenuNotifications"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function AppMenuNotification(id, mainAction, secondaryAction, options = {}) {
   this.id = id;
@@ -51,8 +51,9 @@ var AppMenuNotifications = {
 
   get activeNotification() {
     if (this._notifications.length > 0) {
-      const doorhanger =
-        this._notifications.find(n => !n.dismissed && !n.options.badgeOnly);
+      const doorhanger = this._notifications.find(
+        n => !n.dismissed && !n.options.badgeOnly
+      );
       return doorhanger || this._notifications[0];
     }
 
@@ -60,7 +61,12 @@ var AppMenuNotifications = {
   },
 
   showNotification(id, mainAction, secondaryAction, options = {}) {
-    let notification = new AppMenuNotification(id, mainAction, secondaryAction, options);
+    let notification = new AppMenuNotification(
+      id,
+      mainAction,
+      secondaryAction,
+      options
+    );
     let existingIndex = this._notifications.findIndex(n => n.id == id);
     if (existingIndex != -1) {
       this._notifications.splice(existingIndex, 1);
@@ -70,7 +76,9 @@ var AppMenuNotifications = {
     
     
     if (!options.badgeOnly && !options.dismissed) {
-      this._notifications.forEach(n => { n.dismissed = true; });
+      this._notifications.forEach(n => {
+        n.dismissed = true;
+      });
     }
 
     
@@ -163,12 +171,14 @@ var AppMenuNotifications = {
   _removeNotification(notification) {
     
     let notifications = this._notifications;
-    if (!notifications)
+    if (!notifications) {
       return;
+    }
 
     var index = notifications.indexOf(notification);
-    if (index == -1)
+    if (index == -1) {
       return;
+    }
 
     
     notifications.splice(index, 1);

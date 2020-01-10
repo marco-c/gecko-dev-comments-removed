@@ -7,8 +7,11 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "DeferredTask",
-                               "resource://gre/modules/DeferredTask.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "DeferredTask",
+  "resource://gre/modules/DeferredTask.jsm"
+);
 
 
 
@@ -62,7 +65,9 @@ add_test(function test_arm_delay_notrestarted() {
   let executed = false;
 
   
-  let deferredTask = new DeferredTask(() => { executed = true; }, 4 * T);
+  let deferredTask = new DeferredTask(() => {
+    executed = true;
+  }, 4 * T);
   deferredTask.arm();
 
   
@@ -210,7 +215,9 @@ add_test(function test_disarm() {
 add_test(function test_disarm_delay_restarted() {
   let executed = false;
 
-  let deferredTask = new DeferredTask(() => { executed = true; }, 4 * T);
+  let deferredTask = new DeferredTask(() => {
+    executed = true;
+  }, 4 * T);
   deferredTask.arm();
 
   do_timeout(2 * T, function() {
@@ -319,7 +326,9 @@ add_test(function test_finalize() {
   }, 2 * T);
   deferredTask.arm();
 
-  do_timeout(1 * T, () => { timePassed = true; });
+  do_timeout(1 * T, () => {
+    timePassed = true;
+  });
 
   
   deferredTask.finalize().then(function() {
@@ -358,7 +367,9 @@ add_test(function test_finalize_executes_entirely() {
       
       
       
-      do_timeout(3 * T, () => { timePassed = true; });
+      do_timeout(3 * T, () => {
+        timePassed = true;
+      });
     }
 
     await promiseTimeout(1 * T);

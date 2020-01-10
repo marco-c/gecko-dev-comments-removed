@@ -6,8 +6,11 @@
 
 var EXPORTED_SYMBOLS = ["PrivacyFilter"];
 
-ChromeUtils.defineModuleGetter(this, "PrivacyLevel",
-  "resource://gre/modules/sessionstore/PrivacyLevel.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PrivacyLevel",
+  "resource://gre/modules/sessionstore/PrivacyLevel.jsm"
+);
 
 
 
@@ -60,8 +63,8 @@ var PrivacyFilter = Object.freeze({
         if (children.length) {
           retval.children = children;
         }
-      
-      
+        
+        
       } else if (data.url) {
         retval[key] = data[key];
       }
@@ -95,8 +98,9 @@ var PrivacyFilter = Object.freeze({
     }
 
     
-    browserState._closedWindows =
-      browserState._closedWindows.filter(win => !win.isPrivate);
+    browserState._closedWindows = browserState._closedWindows.filter(
+      win => !win.isPrivate
+    );
 
     
     browserState._closedWindows.forEach(win => this.filterPrivateTabs(win));
@@ -111,7 +115,7 @@ var PrivacyFilter = Object.freeze({
 
   filterPrivateTabs(winState) {
     
-    for (let i = winState.tabs.length - 1; i >= 0 ; i--) {
+    for (let i = winState.tabs.length - 1; i >= 0; i--) {
       let tab = winState.tabs[i];
 
       if (tab.isPrivate) {

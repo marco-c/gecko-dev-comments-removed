@@ -8,15 +8,14 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "PromiseTestUtils",
-];
+var EXPORTED_SYMBOLS = ["PromiseTestUtils"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 ChromeUtils.import("resource://testing-common/Assert.jsm", this);
 
 
-let JSMPromise = ChromeUtils.import("resource://gre/modules/Promise.jsm", {}).Promise;
+let JSMPromise = ChromeUtils.import("resource://gre/modules/Promise.jsm", {})
+  .Promise;
 
 var PromiseTestUtils = {
   
@@ -68,8 +67,9 @@ var PromiseTestUtils = {
 
     
     
-    JSMPromise.Debugging.addUncaughtErrorObserver(
-                            rejection => this._rejections.push(rejection));
+    JSMPromise.Debugging.addUncaughtErrorObserver(rejection =>
+      this._rejections.push(rejection)
+    );
 
     this._initialized = true;
   },
@@ -97,8 +97,10 @@ var PromiseTestUtils = {
     let observed = false;
     let observer = {
       onLeftUncaught: promise => {
-        if (PromiseDebugging.getState(promise).reason ===
-            this._ensureDOMPromiseRejectionsProcessedReason) {
+        if (
+          PromiseDebugging.getState(promise).reason ===
+          this._ensureDOMPromiseRejectionsProcessedReason
+        ) {
           observed = true;
         }
       },
@@ -139,7 +141,7 @@ var PromiseTestUtils = {
         
         return;
       }
-      message = reason.message || ("" + reason);
+      message = reason.message || "" + reason;
     } catch (ex) {}
 
     
@@ -150,9 +152,11 @@ var PromiseTestUtils = {
       
       
       
-      stack = "" + ((reason && reason.stack) ||
-                    PromiseDebugging.getRejectionStack(promise) ||
-                    "(No stack available.)");
+      stack =
+        "" +
+        ((reason && reason.stack) ||
+          PromiseDebugging.getRejectionStack(promise) ||
+          "(No stack available.)");
     } catch (ex) {}
 
     
@@ -200,8 +204,9 @@ var PromiseTestUtils = {
 
 
   expectUncaughtRejection(regExpOrCheckFn) {
-    let checkFn = !("test" in regExpOrCheckFn) ? regExpOrCheckFn :
-                  rejection => regExpOrCheckFn.test(rejection.message);
+    let checkFn = !("test" in regExpOrCheckFn)
+      ? regExpOrCheckFn
+      : rejection => regExpOrCheckFn.test(rejection.message);
     this._rejectionIgnoreFns.push(checkFn);
   },
 
@@ -214,8 +219,9 @@ var PromiseTestUtils = {
 
 
   whitelistRejectionsGlobally(regExp) {
-    this._globalRejectionIgnoreFns.push(
-      rejection => regExp.test(rejection.message));
+    this._globalRejectionIgnoreFns.push(rejection =>
+      regExp.test(rejection.message)
+    );
   },
 
   
@@ -254,10 +260,12 @@ var PromiseTestUtils = {
       
       
       
-      Assert.ok(false,
-                `A promise chain failed to handle a rejection:` +
-                ` ${rejection.message} - stack: ${rejection.stack}` +
-                `Rejection date: ${rejection.date}`);
+      Assert.ok(
+        false,
+        `A promise chain failed to handle a rejection:` +
+          ` ${rejection.message} - stack: ${rejection.stack}` +
+          `Rejection date: ${rejection.date}`
+      );
     }
   },
 
@@ -270,8 +278,11 @@ var PromiseTestUtils = {
   assertNoMoreExpectedRejections() {
     
     if (this._rejectionIgnoreFns.length > 0) {
-      Assert.equal(this._rejectionIgnoreFns.length, 0,
-             "Unable to find a rejection expected by expectUncaughtRejection.");
+      Assert.equal(
+        this._rejectionIgnoreFns.length,
+        0,
+        "Unable to find a rejection expected by expectUncaughtRejection."
+      );
     }
     
     this._rejectionIgnoreFns = [];

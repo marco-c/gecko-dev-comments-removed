@@ -28,25 +28,35 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "JSONFile",
-];
+var EXPORTED_SYMBOLS = ["JSONFile"];
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
-ChromeUtils.defineModuleGetter(this, "AsyncShutdown",
-                               "resource://gre/modules/AsyncShutdown.jsm");
-ChromeUtils.defineModuleGetter(this, "DeferredTask",
-                               "resource://gre/modules/DeferredTask.jsm");
-ChromeUtils.defineModuleGetter(this, "FileUtils",
-                               "resource://gre/modules/FileUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "OS",
-                               "resource://gre/modules/osfile.jsm");
-ChromeUtils.defineModuleGetter(this, "NetUtil",
-                               "resource://gre/modules/NetUtil.jsm");
-
+ChromeUtils.defineModuleGetter(
+  this,
+  "AsyncShutdown",
+  "resource://gre/modules/AsyncShutdown.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "DeferredTask",
+  "resource://gre/modules/DeferredTask.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "FileUtils",
+  "resource://gre/modules/FileUtils.jsm"
+);
+ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "NetUtil",
+  "resource://gre/modules/NetUtil.jsm"
+);
 
 XPCOMUtils.defineLazyGetter(this, "gTextDecoder", function() {
   return new TextDecoder();
@@ -56,9 +66,11 @@ XPCOMUtils.defineLazyGetter(this, "gTextEncoder", function() {
   return new TextEncoder();
 });
 
-const FileInputStream =
-      Components.Constructor("@mozilla.org/network/file-input-stream;1",
-                             "nsIFileInputStream", "init");
+const FileInputStream = Components.Constructor(
+  "@mozilla.org/network/file-input-stream;1",
+  "nsIFileInputStream",
+  "init"
+);
 
 
 
@@ -114,8 +126,10 @@ function JSONFile(config) {
 
   this._finalizeAt = config.finalizeAt || AsyncShutdown.profileBeforeChange;
   this._finalizeInternalBound = this._finalizeInternal.bind(this);
-  this._finalizeAt.addBlocker("JSON store: writing data",
-                              this._finalizeInternalBound);
+  this._finalizeAt.addBlocker(
+    "JSON store: writing data",
+    this._finalizeInternalBound
+  );
 }
 
 JSONFile.prototype = {
@@ -204,8 +218,9 @@ JSONFile.prototype = {
 
         
         try {
-          let openInfo = await OS.File.openUnique(this.path + ".corrupt",
-                                                  { humanReadable: true });
+          let openInfo = await OS.File.openUnique(this.path + ".corrupt", {
+            humanReadable: true,
+          });
           await openInfo.file.close();
           await OS.File.move(this.path, openInfo.path);
         } catch (e2) {
@@ -238,11 +253,17 @@ JSONFile.prototype = {
 
     try {
       
-      let inputStream = new FileInputStream(new FileUtils.File(this.path),
-                                            FileUtils.MODE_RDONLY,
-                                            FileUtils.PERMS_FILE, 0);
+      let inputStream = new FileInputStream(
+        new FileUtils.File(this.path),
+        FileUtils.MODE_RDONLY,
+        FileUtils.PERMS_FILE,
+        0
+      );
       try {
-        let bytes = NetUtil.readInputStream(inputStream, inputStream.available());
+        let bytes = NetUtil.readInputStream(
+          inputStream,
+          inputStream.available()
+        );
         data = JSON.parse(gTextDecoder.decode(bytes));
       } finally {
         inputStream.close();
@@ -252,16 +273,22 @@ JSONFile.prototype = {
       
       
       
-      if (!(ex instanceof Components.Exception &&
-            ex.result == Cr.NS_ERROR_FILE_NOT_FOUND)) {
+      if (
+        !(
+          ex instanceof Components.Exception &&
+          ex.result == Cr.NS_ERROR_FILE_NOT_FOUND
+        )
+      ) {
         Cu.reportError(ex);
         
         try {
           let originalFile = new FileUtils.File(this.path);
           let backupFile = originalFile.clone();
           backupFile.leafName += ".corrupt";
-          backupFile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE,
-                                  FileUtils.PERMS_FILE);
+          backupFile.createUnique(
+            Ci.nsIFile.NORMAL_FILE_TYPE,
+            FileUtils.PERMS_FILE
+          );
           backupFile.remove(false);
           originalFile.moveTo(backupFile.parent, backupFile.leafName);
         } catch (e2) {
@@ -307,10 +334,11 @@ JSONFile.prototype = {
     if (this._beforeSave) {
       await Promise.resolve(this._beforeSave());
     }
-    await OS.File.writeAtomic(this.path, bytes,
-                              Object.assign(
-                                { tmpPath: this.path + ".tmp" },
-                                this._options));
+    await OS.File.writeAtomic(
+      this.path,
+      bytes,
+      Object.assign({ tmpPath: this.path + ".tmp" }, this._options)
+    );
   },
 
   

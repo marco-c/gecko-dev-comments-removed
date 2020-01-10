@@ -6,9 +6,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "DeferredTask",
-];
+var EXPORTED_SYMBOLS = ["DeferredTask"];
 
 
 
@@ -84,11 +82,17 @@ var EXPORTED_SYMBOLS = [
 
 
 
-ChromeUtils.defineModuleGetter(this, "PromiseUtils",
-                               "resource://gre/modules/PromiseUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PromiseUtils",
+  "resource://gre/modules/PromiseUtils.jsm"
+);
 
-const Timer = Components.Constructor("@mozilla.org/timer;1", "nsITimer",
-                                     "initWithCallback");
+const Timer = Components.Constructor(
+  "@mozilla.org/timer;1",
+  "nsITimer",
+  "initWithCallback"
+);
 
 
 
@@ -161,8 +165,11 @@ this.DeferredTask.prototype = {
 
 
   _startTimer() {
-    this._timer = new Timer(this._timerCallback.bind(this), this._delayMs,
-                            Ci.nsITimer.TYPE_ONE_SHOT);
+    this._timer = new Timer(
+      this._timerCallback.bind(this),
+      this._delayMs,
+      Ci.nsITimer.TYPE_ONE_SHOT
+    );
   },
 
   
@@ -271,28 +278,30 @@ this.DeferredTask.prototype = {
     this._armed = false;
     this._runningPromise = runningDeferred.promise;
 
-    runningDeferred.resolve((async () => {
-      
-      await this._runTask();
+    runningDeferred.resolve(
+      (async () => {
+        
+        await this._runTask();
 
-      
-      
-      if (this._armed) {
-        if (!this._finalized) {
-          this._startTimer();
-        } else {
-          
-          
-          
-          this._armed = false;
-          await this._runTask();
+        
+        
+        if (this._armed) {
+          if (!this._finalized) {
+            this._startTimer();
+          } else {
+            
+            
+            
+            this._armed = false;
+            await this._runTask();
+          }
         }
-      }
 
-      
-      
-      this._runningPromise = null;
-    })().catch(Cu.reportError));
+        
+        
+        this._runningPromise = null;
+      })().catch(Cu.reportError)
+    );
   },
 
   

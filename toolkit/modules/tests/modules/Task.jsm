@@ -8,88 +8,91 @@
 
 
 
-var EXPORTED_SYMBOLS = [
-  "Task",
+var EXPORTED_SYMBOLS = ["Task"];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const ERRORS_TO_REPORT = [
+  "EvalError",
+  "RangeError",
+  "ReferenceError",
+  "TypeError",
 ];
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const ERRORS_TO_REPORT = ["EvalError", "RangeError", "ReferenceError", "TypeError"];
 
 
 
@@ -101,7 +104,6 @@ var gCurrentTask = null;
 
 
 var gMaintainStack = false;
-
 
 
 
@@ -196,7 +198,7 @@ var Task = {
 
 
   async: function Task_async(aTask) {
-    if (typeof(aTask) != "function") {
+    if (typeof aTask != "function") {
       throw new TypeError("aTask argument must be a function");
     }
 
@@ -218,13 +220,14 @@ var Task = {
 function createAsyncFunction(aTask) {
   let asyncFunction = function() {
     let result = aTask;
-    if (aTask && typeof(aTask) == "function") {
+    if (aTask && typeof aTask == "function") {
       if (aTask.isAsyncFunction) {
         throw new TypeError(
           "Cannot use an async function in place of a promise. " +
-          "You should either invoke the async function first " +
-          "or use 'Task.spawn' instead of 'Task.async' to start " +
-          "the Task and return its promise.");
+            "You should either invoke the async function first " +
+            "or use 'Task.spawn' instead of 'Task.async' to start " +
+            "the Task and return its promise."
+        );
       }
 
       try {
@@ -260,7 +263,7 @@ function createAsyncFunction(aTask) {
 
 function TaskImpl(iterator) {
   if (gMaintainStack) {
-    this._stack = (new Error()).stack;
+    this._stack = new Error().stack;
   }
   this.promise = new Promise((resolve, reject) => {
     this._resolve = resolve;
@@ -318,8 +321,9 @@ TaskImpl.prototype = {
           this._resolve(undefined);
         } else {
           try {
-            let result = aSendResolved ? this._iterator.next(aSendValue)
-                                       : this._iterator.throw(aSendValue);
+            let result = aSendResolved
+              ? this._iterator.next(aSendValue)
+              : this._iterator.throw(aSendValue);
 
             if (result.done) {
               
@@ -335,8 +339,9 @@ TaskImpl.prototype = {
         }
       } else {
         try {
-          let yielded = aSendResolved ? this._iterator.send(aSendValue)
-                                      : this._iterator.throw(aSendValue);
+          let yielded = aSendResolved
+            ? this._iterator.send(aSendValue)
+            : this._iterator.throw(aSendValue);
           this._handleResultValue(yielded);
         } catch (ex) {
           if (ex instanceof Task.Result) {
@@ -391,12 +396,11 @@ TaskImpl.prototype = {
       aValue = Task.spawn(aValue);
     }
 
-    if (aValue && typeof(aValue.then) == "function") {
+    if (aValue && typeof aValue.then == "function") {
       
       
       
-      aValue.then(this._run.bind(this, true),
-                  this._run.bind(this, false));
+      aValue.then(this._run.bind(this, true), this._run.bind(this, false));
     } else {
       
       
@@ -416,9 +420,11 @@ TaskImpl.prototype = {
     if (aException && typeof aException == "object" && "stack" in aException) {
       let stack = aException.stack;
 
-      if (gMaintainStack &&
-          aException._capturedTaskStack != this._stack &&
-          typeof stack == "string") {
+      if (
+        gMaintainStack &&
+        aException._capturedTaskStack != this._stack &&
+        typeof stack == "string"
+      ) {
         
 
         let bottomStack = this._stack;
@@ -434,8 +440,7 @@ TaskImpl.prototype = {
         stack = "Not available";
       }
 
-      if ("name" in aException &&
-          ERRORS_TO_REPORT.includes(aException.name)) {
+      if ("name" in aException && ERRORS_TO_REPORT.includes(aException.name)) {
         
         
         
@@ -465,9 +470,7 @@ TaskImpl.prototype = {
   },
 };
 
-
 Task.Debugging = {
-
   
 
 
@@ -488,7 +491,7 @@ Task.Debugging = {
     if (!x) {
       gCurrentTask = null;
     }
-    return gMaintainStack = x;
+    return (gMaintainStack = x);
   },
 
   

@@ -26,60 +26,72 @@ function deprecationFunctionCustomCallstack() {
   function getStack() {
     return Components.stack;
   }
-  Deprecated.warning("this method is deprecated.", "http://example.com",
-    getStack());
+  Deprecated.warning(
+    "this method is deprecated.",
+    "http://example.com",
+    getStack()
+  );
   return true;
 }
 
 var tests = [
-
-{
-  deprecatedFunction: basicDeprecatedFunction,
-  expectedObservation(aMessage) {
-    testAMessage(aMessage);
-    ok(aMessage.errorMessage.indexOf("basicDeprecatedFunction") > 0,
-      "Callstack is correctly logged.");
-  },
-},
-
-{
-  deprecatedFunction() {
-    Deprecated.warning("this method is deprecated.");
-    return true;
-  },
-  expectedObservation(aMessage) {
-    ok(aMessage.errorMessage.indexOf("must provide a URL") > 0,
-      "Deprecation warning logged an empty URL argument.");
-  },
-},
-
-
-{
-  deprecatedFunction: deprecationFunctionBogusCallstack,
-  expectedObservation(aMessage) {
-    testAMessage(aMessage);
-    ok(aMessage.errorMessage.indexOf("deprecationFunctionBogusCallstack") > 0,
-      "Callstack is correctly logged.");
-  },
-},
-
-{
-  deprecatedFunction: basicDeprecatedFunction,
-  expectedObservation: null,
   
-  logWarnings: false,
-},
-
-{
-  deprecatedFunction: deprecationFunctionCustomCallstack,
-  expectedObservation(aMessage) {
-    testAMessage(aMessage);
-    ok(aMessage.errorMessage.indexOf("deprecationFunctionCustomCallstack") > 0,
-      "Callstack is correctly logged.");
+  {
+    deprecatedFunction: basicDeprecatedFunction,
+    expectedObservation(aMessage) {
+      testAMessage(aMessage);
+      ok(
+        aMessage.errorMessage.indexOf("basicDeprecatedFunction") > 0,
+        "Callstack is correctly logged."
+      );
+    },
   },
   
-  logWarnings: true,
-}];
+  {
+    deprecatedFunction() {
+      Deprecated.warning("this method is deprecated.");
+      return true;
+    },
+    expectedObservation(aMessage) {
+      ok(
+        aMessage.errorMessage.indexOf("must provide a URL") > 0,
+        "Deprecation warning logged an empty URL argument."
+      );
+    },
+  },
+  
+  
+  {
+    deprecatedFunction: deprecationFunctionBogusCallstack,
+    expectedObservation(aMessage) {
+      testAMessage(aMessage);
+      ok(
+        aMessage.errorMessage.indexOf("deprecationFunctionBogusCallstack") > 0,
+        "Callstack is correctly logged."
+      );
+    },
+  },
+  
+  {
+    deprecatedFunction: basicDeprecatedFunction,
+    expectedObservation: null,
+    
+    logWarnings: false,
+  },
+  
+  {
+    deprecatedFunction: deprecationFunctionCustomCallstack,
+    expectedObservation(aMessage) {
+      testAMessage(aMessage);
+      ok(
+        aMessage.errorMessage.indexOf("deprecationFunctionCustomCallstack") > 0,
+        "Callstack is correctly logged."
+      );
+    },
+    
+    logWarnings: true,
+  },
+];
 
 
 var idx = -1;
@@ -95,11 +107,16 @@ function test() {
 
 
 function testAMessage(aMessage) {
-  ok(aMessage.errorMessage.indexOf("DEPRECATION WARNING: " +
-    "this method is deprecated.") === 0,
-    "Deprecation is correctly logged.");
-  ok(aMessage.errorMessage.indexOf("http://example.com") > 0,
-    "URL is correctly logged.");
+  ok(
+    aMessage.errorMessage.indexOf(
+      "DEPRECATION WARNING: " + "this method is deprecated."
+    ) === 0,
+    "Deprecation is correctly logged."
+  );
+  ok(
+    aMessage.errorMessage.indexOf("http://example.com") > 0,
+    "URL is correctly logged."
+  );
 }
 
 function nextTest() {
@@ -125,13 +142,16 @@ function nextTest() {
       if (!(aMessage instanceof Ci.nsIScriptError)) {
         return;
       }
-      if (!aMessage.errorMessage.includes("DEPRECATION WARNING: ") &&
-          !aMessage.errorMessage.includes("must provide a URL")) {
+      if (
+        !aMessage.errorMessage.includes("DEPRECATION WARNING: ") &&
+        !aMessage.errorMessage.includes("must provide a URL")
+      ) {
         return;
       }
-      ok(aMessage instanceof Ci.nsIScriptError,
-        "Deprecation log message is an instance of type nsIScriptError.");
-
+      ok(
+        aMessage instanceof Ci.nsIScriptError,
+        "Deprecation log message is an instance of type nsIScriptError."
+      );
 
       if (test.expectedObservation === null) {
         ok(false, "Deprecated warning not expected");

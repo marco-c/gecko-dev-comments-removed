@@ -8,9 +8,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "ObjectUtils",
-];
+var EXPORTED_SYMBOLS = ["ObjectUtils"];
 
 
 
@@ -84,8 +82,8 @@ function _deepEqual(a, b) {
   
   if (a === b) {
     return true;
-  
-  
+    
+    
   }
   let aIsDate = instanceOf(a, "Date");
   let bIsDate = instanceOf(b, "Date");
@@ -93,24 +91,28 @@ function _deepEqual(a, b) {
     if (!aIsDate || !bIsDate) {
       return false;
     }
-    if (isNaN(a.getTime()) && isNaN(b.getTime()))
+    if (isNaN(a.getTime()) && isNaN(b.getTime())) {
       return true;
+    }
     return a.getTime() === b.getTime();
-  
-  
-  
+    
+    
+    
   }
   let aIsRegExp = instanceOf(a, "RegExp");
   let bIsRegExp = instanceOf(b, "RegExp");
   if (aIsRegExp || bIsRegExp) {
-    return aIsRegExp && bIsRegExp &&
-           a.source === b.source &&
-           a.global === b.global &&
-           a.multiline === b.multiline &&
-           a.lastIndex === b.lastIndex &&
-           a.ignoreCase === b.ignoreCase;
-  
-  
+    return (
+      aIsRegExp &&
+      bIsRegExp &&
+      a.source === b.source &&
+      a.global === b.global &&
+      a.multiline === b.multiline &&
+      a.lastIndex === b.lastIndex &&
+      a.ignoreCase === b.ignoreCase
+    );
+    
+    
   }
   if (typeof a != "object" || typeof b != "object") {
     return a == b;
@@ -164,8 +166,9 @@ function objEquiv(a, b) {
   }
   
   
-  if (ka.length != kb.length)
+  if (ka.length != kb.length) {
     return false;
+  }
   
   ka.sort();
   kb.sort();

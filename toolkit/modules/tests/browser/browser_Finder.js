@@ -3,9 +3,12 @@
 
 
 add_task(async function() {
-  const url = "data:text/html;base64," +
-              btoa("<body><iframe srcdoc=\"content\"/></iframe>" +
-                   "<a href=\"http://test.com\">test link</a>");
+  const url =
+    "data:text/html;base64," +
+    btoa(
+      '<body><iframe srcdoc="content"/></iframe>' +
+        '<a href="http://test.com">test link</a>'
+    );
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
 
   let finder = tab.linkedBrowser.finder;
@@ -42,17 +45,27 @@ add_task(async function() {
   is(findResult.result, Ci.nsITypeAheadFind.FIND_FOUND, "should find link");
 
   await ContentTask.spawn(tab.linkedBrowser, {}, async function(arg) {
-    Assert.ok(!!content.document.getElementsByTagName("a")[0].style.outline, "outline set");
+    Assert.ok(
+      !!content.document.getElementsByTagName("a")[0].style.outline,
+      "outline set"
+    );
   });
 
   
   promiseFind = waitForFind();
   finder.fastFind("test link", false, false);
   findResult = await promiseFind;
-  is(findResult.result, Ci.nsITypeAheadFind.FIND_FOUND, "should find link again");
+  is(
+    findResult.result,
+    Ci.nsITypeAheadFind.FIND_FOUND,
+    "should find link again"
+  );
 
   await ContentTask.spawn(tab.linkedBrowser, {}, async function(arg) {
-    Assert.ok(!content.document.getElementsByTagName("a")[0].style.outline, "outline not set");
+    Assert.ok(
+      !content.document.getElementsByTagName("a")[0].style.outline,
+      "outline not set"
+    );
   });
 
   finder.removeResultListener(listener);

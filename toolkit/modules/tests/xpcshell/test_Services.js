@@ -63,7 +63,6 @@ function run_test() {
     checkService("policies", Ci.nsIEnterprisePolicies);
   }
 
-
   
   
   
@@ -73,7 +72,7 @@ function run_test() {
 
   
   Cu.unload("resource://gre/modules/Services.jsm");
-  ({Services} = ChromeUtils.import("resource://gre/modules/Services.jsm"));
+  ({ Services } = ChromeUtils.import("resource://gre/modules/Services.jsm"));
 
   checkService("appinfo", Ci.nsIXULAppInfo);
 
