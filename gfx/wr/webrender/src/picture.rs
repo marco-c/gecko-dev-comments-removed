@@ -4,15 +4,15 @@
 
 use api::{MixBlendMode, PipelineId, PremultipliedColorF};
 use api::{PropertyBinding, PropertyBindingId};
-use api::{DebugFlags, RasterSpace, ColorF, ImageKey, ClipMode};
+use api::{DebugFlags, RasterSpace, ImageKey, ColorF};
 use api::units::*;
 use crate::box_shadow::{BLUR_SAMPLE_SCALE};
-use crate::clip::{ClipChainId, ClipChainNode, ClipItem, ClipStore, ClipDataStore, ClipChainStack};
+use crate::clip::{ClipStore, ClipDataStore, ClipChainInstance};
 use crate::clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX,
-    ClipScrollTree, CoordinateSystemId, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace
+    ClipScrollTree, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace, CoordinateSystemId
 };
 use crate::debug_colors;
-use euclid::{size2, vec3, TypedPoint2D, TypedScale, TypedSize2D, Vector2D};
+use euclid::{vec3, TypedPoint2D, TypedScale, TypedSize2D, Vector2D, TypedRect};
 use euclid::approxeq::ApproxEq;
 use crate::frame_builder::{FrameVisibilityContext, FrameVisibilityState};
 use crate::intern::ItemUid;
@@ -21,17 +21,18 @@ use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureStat
 use crate::gpu_cache::{GpuCache, GpuCacheAddress, GpuCacheHandle};
 use crate::gpu_types::UvRectKind;
 use plane_split::{Clipper, Polygon, Splitter};
-use crate::prim_store::SpaceMapper;
+use crate::prim_store::{SpaceMapper, PrimitiveVisibilityMask, PointKey, PrimitiveTemplateKind};
 use crate::prim_store::{PictureIndex, PrimitiveInstance, PrimitiveInstanceKind};
-use crate::prim_store::{get_raster_rects, PrimitiveScratchBuffer, VectorKey, PointKey};
-use crate::prim_store::{OpacityBindingStorage, ImageInstanceStorage, OpacityBindingIndex, RectangleKey};
+use crate::prim_store::{get_raster_rects, PrimitiveScratchBuffer, RectangleKey};
+use crate::prim_store::{OpacityBindingStorage, ImageInstanceStorage, OpacityBindingIndex};
 use crate::print_tree::PrintTreePrinter;
 use crate::render_backend::DataStores;
-use crate::render_task::{ClearMode, RenderTask, TileBlit};
+use crate::render_task::{ClearMode, RenderTask};
 use crate::render_task::{RenderTaskId, RenderTaskLocation, BlurTaskCache};
 use crate::resource_cache::ResourceCache;
 use crate::scene::SceneProperties;
 use crate::scene_builder::Interners;
+use crate::spatial_node::SpatialNodeType;
 use smallvec::SmallVec;
 use std::{mem, u16};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -51,6 +52,58 @@ use crate::filterdata::{FilterDataHandle};
 
 
 
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum SubpixelMode {
+    
+    Allow,
+    
+    Deny,
+}
+
+
+
+#[derive(Debug, PartialEq, Clone)]
+enum TransformKey {
+    Local,
+    ScaleOffset {
+        scale_x: f32,
+        scale_y: f32,
+        offset_x: f32,
+        offset_y: f32,
+    },
+    Transform {
+        m: [f32; 16],
+    }
+}
+
+impl<Src, Dst> From<CoordinateSpaceMapping<Src, Dst>> for TransformKey {
+    fn from(transform: CoordinateSpaceMapping<Src, Dst>) -> TransformKey {
+        match transform {
+            CoordinateSpaceMapping::Local => {
+                TransformKey::Local
+            }
+            CoordinateSpaceMapping::ScaleOffset(ref scale_offset) => {
+                
+                
+                TransformKey::ScaleOffset {
+                    scale_x: scale_offset.scale.x,
+                    scale_y: scale_offset.scale.y,
+                    offset_x: scale_offset.offset.x,
+                    offset_y: scale_offset.offset.y,
+                }
+            }
+            CoordinateSpaceMapping::Transform(ref m) => {
+                
+                
+                TransformKey::Transform {
+                    m: m.to_row_major_array(),
+                }
+            }
+        }
+    }
+}
+
+
 
 struct PictureInfo {
     
@@ -63,18 +116,13 @@ struct PictureInfo {
 pub struct RetainedTiles {
     
     #[cfg_attr(feature = "capture", serde(skip))] 
-    pub tiles: Vec<Tile>,
-    
-    
-    
-    pub ref_prims: FastHashMap<ItemUid, WorldPoint>,
+    pub tiles: FastHashMap<TileKey, Tile>,
 }
 
 impl RetainedTiles {
     pub fn new() -> Self {
         RetainedTiles {
-            tiles: Vec::new(),
-            ref_prims: FastHashMap::default(),
+            tiles: FastHashMap::default(),
         }
     }
 
@@ -82,7 +130,6 @@ impl RetainedTiles {
     pub fn merge(&mut self, other: RetainedTiles) {
         assert!(self.tiles.is_empty() || other.tiles.is_empty());
         self.tiles.extend(other.tiles);
-        self.ref_prims.extend(other.ref_prims);
     }
 }
 
@@ -93,7 +140,7 @@ pub struct TileCoordinate;
 
 pub type TileOffset = TypedPoint2D<i32, TileCoordinate>;
 pub type TileSize = TypedSize2D<i32, TileCoordinate>;
-pub struct TileIndex(pub usize);
+pub type TileRect = TypedRect<i32, TileCoordinate>;
 
 
 
@@ -102,12 +149,8 @@ pub struct TileIndex(pub usize);
 
 
 
-const TILE_SIZE_WIDTH: i32 = 1024;
-const TILE_SIZE_HEIGHT: i32 = 256;
-const TILE_SIZE_TESTING: i32 = 64;
-
-const FRAMES_BEFORE_PICTURE_CACHING: usize = 2;
-const MAX_DIRTY_RECTS: usize = 3;
+pub const TILE_SIZE_WIDTH: i32 = 1024;
+pub const TILE_SIZE_HEIGHT: i32 = 512;
 
 
 
@@ -115,14 +158,13 @@ const MAX_SURFACE_SIZE: f32 = 4096.0;
 
 
 
-
-const MAX_PRIMS_TO_SEARCH: usize = 128;
-
-
-
 static NEXT_TILE_ID: AtomicUsize = AtomicUsize::new(0);
 
 fn clamp(value: i32, low: i32, high: i32) -> i32 {
+    value.max(low).min(high)
+}
+
+fn clampf(value: f32, low: f32, high: f32) -> f32 {
     value.max(low).min(high)
 }
 
@@ -153,48 +195,48 @@ impl From<PropertyBinding<f32>> for OpacityBinding {
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-struct TileId(usize);
+pub struct TileId(usize);
+
+#[derive(Debug, Copy, Clone, PartialEq, Hash, Eq)]
+pub struct TileKey {
+    
+    slice: usize,
+    
+    offset: TileOffset,
+}
 
 
 #[derive(Debug)]
 pub struct Tile {
     
-    world_rect: WorldRect,
+    pub world_rect: WorldRect,
     
-    pub local_rect: LayoutRect,
+    pub rect: PictureRect,
     
-    
-    visible_rect: Option<WorldRect>,
-    
-    
-    valid_rect: WorldRect,
+    clipped_rect: PictureRect,
     
     
-    descriptor: TileDescriptor,
+    pub descriptor: TileDescriptor,
     
     pub handle: TextureCacheHandle,
     
     
     
-    is_valid: bool,
+    pub is_valid: bool,
     
     is_same_content: bool,
     
-    same_frames: usize,
     
-    
-    id: TileId,
+    pub id: TileId,
     
     
     
     transforms: FastHashSet<SpatialNodeIndex>,
     
+    visibility_mask: PrimitiveVisibilityMask,
     
     
-    potential_clips: FastHashMap<RectangleKey, SpatialNodeIndex>,
-    
-    
-    consider_for_dirty_rect: bool,
+    pub is_opaque: bool,
 }
 
 impl Tile {
@@ -203,19 +245,17 @@ impl Tile {
         id: TileId,
     ) -> Self {
         Tile {
-            local_rect: LayoutRect::zero(),
+            rect: PictureRect::zero(),
+            clipped_rect: PictureRect::zero(),
             world_rect: WorldRect::zero(),
-            visible_rect: None,
-            valid_rect: WorldRect::zero(),
             handle: TextureCacheHandle::invalid(),
             descriptor: TileDescriptor::new(),
             is_same_content: false,
             is_valid: false,
-            same_frames: 0,
             transforms: FastHashSet::default(),
-            potential_clips: FastHashMap::default(),
             id,
-            consider_for_dirty_rect: false,
+            visibility_mask: PrimitiveVisibilityMask::empty(),
+            is_opaque: false,
         }
     }
 
@@ -223,7 +263,6 @@ impl Tile {
     fn clear(&mut self) {
         self.transforms.clear();
         self.descriptor.clear();
-        self.potential_clips.clear();
     }
 
     
@@ -233,23 +272,8 @@ impl Tile {
     fn update_content_validity(&mut self) {
         
         
-        self.is_same_content &= self.descriptor.is_same_content();
+        self.is_same_content &= self.descriptor.is_same_content(self.id);
         self.is_valid &= self.is_same_content;
-    }
-
-    
-    
-    fn update_rect_validity(&mut self, tile_bounding_rect: &WorldRect) {
-        
-        
-        
-        self.is_valid &= self.valid_rect.contains_rect(tile_bounding_rect);
-
-        
-        if !self.is_same_content {
-            self.same_frames = 0;
-        }
-        self.same_frames += 1;
     }
 }
 
@@ -259,13 +283,15 @@ pub struct PrimitiveDescriptor {
     
     prim_uid: ItemUid,
     
-    origin: WorldPoint,
+    origin: PointKey,
+    
+    
+    
+    prim_clip_rect: RectangleKey,
     
     first_clip: u16,
     
     clip_count: u16,
-    
-    world_culling_rect: WorldRect,
 }
 
 
@@ -275,7 +301,7 @@ pub struct TileDescriptor {
     
     
     
-    prims: ComparableVec<PrimitiveDescriptor>,
+    pub prims: ComparableVec<PrimitiveDescriptor>,
 
     
     
@@ -295,7 +321,7 @@ pub struct TileDescriptor {
 
     
     
-    transforms: ComparableVec<PointKey>,
+    transforms: ComparableVec<TransformKey>,
 }
 
 impl TileDescriptor {
@@ -324,7 +350,7 @@ impl TileDescriptor {
     
     
     
-    fn is_same_content(&self) -> bool {
+    fn is_same_content(&self, _id: TileId) -> bool {
         if !self.image_keys.is_valid() {
             return false;
         }
@@ -351,7 +377,10 @@ impl TileDescriptor {
 
 #[derive(Debug, Clone)]
 pub struct DirtyRegionRect {
+    
     pub world_rect: WorldRect,
+    
+    pub visibility_mask: PrimitiveVisibilityMask,
 }
 
 
@@ -361,67 +390,68 @@ pub struct DirtyRegion {
     pub dirty_rects: Vec<DirtyRegionRect>,
 
     
-    pub combined: DirtyRegionRect,
+    pub combined: WorldRect,
 }
 
 impl DirtyRegion {
     
-    pub fn new() -> Self {
+    pub fn new(
+    ) -> Self {
         DirtyRegion {
-            dirty_rects: Vec::with_capacity(MAX_DIRTY_RECTS),
-            combined: DirtyRegionRect {
-                world_rect: WorldRect::zero(),
-            },
+            dirty_rects: Vec::with_capacity(PrimitiveVisibilityMask::MAX_DIRTY_REGIONS),
+            combined: WorldRect::zero(),
         }
     }
 
     
     pub fn clear(&mut self) {
         self.dirty_rects.clear();
-        self.combined = DirtyRegionRect {
-            world_rect: WorldRect::zero(),
-        }
+        self.combined = WorldRect::zero();
     }
 
     
     pub fn push(
         &mut self,
         rect: WorldRect,
+        visibility_mask: PrimitiveVisibilityMask,
     ) {
         
-        self.combined.world_rect = self.combined.world_rect.union(&rect);
+        self.combined = self.combined.union(&rect);
 
         
         self.dirty_rects.push(DirtyRegionRect {
             world_rect: rect,
+            visibility_mask,
         });
     }
 
     
-    pub fn is_empty(&self) -> bool {
-        self.dirty_rects.is_empty()
+    pub fn include_rect(
+        &mut self,
+        region_index: usize,
+        rect: WorldRect,
+    ) {
+        self.combined = self.combined.union(&rect);
+
+        let region = &mut self.dirty_rects[region_index];
+        region.world_rect = region.world_rect.union(&rect);
     }
 
     
-    pub fn collapse(&mut self) {
-        self.dirty_rects.clear();
-        self.dirty_rects.push(self.combined.clone());
-    }
-
+    
     pub fn inflate(
         &self,
         inflate_amount: f32,
     ) -> DirtyRegion {
         let mut dirty_rects = Vec::with_capacity(self.dirty_rects.len());
-        let mut combined = DirtyRegionRect {
-            world_rect: WorldRect::zero(),
-        };
+        let mut combined = WorldRect::zero();
 
         for rect in &self.dirty_rects {
             let world_rect = rect.world_rect.inflate(inflate_amount, inflate_amount);
-            combined.world_rect = combined.world_rect.union(&world_rect);
+            combined = combined.union(&world_rect);
             dirty_rects.push(DirtyRegionRect {
                 world_rect,
+                visibility_mask: rect.visibility_mask,
             });
         }
 
@@ -462,303 +492,119 @@ impl ::std::fmt::Debug for RecordedDirtyRegion {
 }
 
 
-
-
-struct DirtyRegionBuilder<'a> {
-    tiles: &'a mut [Tile],
-    tile_count: TileSize,
-}
-
-impl<'a> DirtyRegionBuilder<'a> {
-    fn new(
-        tiles: &'a mut [Tile],
-        tile_count: TileSize,
-    ) -> Self {
-        DirtyRegionBuilder {
-            tiles,
-            tile_count,
-        }
-    }
-
-    fn tile_index(&self, x: i32, y: i32) -> usize {
-        (y * self.tile_count.width + x) as usize
-    }
-
-    fn is_dirty(&self, x: i32, y: i32) -> bool {
-        if x == self.tile_count.width || y == self.tile_count.height {
-            return false;
-        }
-
-        self.get_tile(x, y).consider_for_dirty_rect
-    }
-
-    fn get_tile(&self, x: i32, y: i32) -> &Tile {
-        &self.tiles[self.tile_index(x, y)]
-    }
-
-    fn get_tile_mut(&mut self, x: i32, y: i32) -> &mut Tile {
-        &mut self.tiles[self.tile_index(x, y)]
-    }
-
-    
-    fn column_is_dirty(&self, x: i32, y0: i32, y1: i32) -> bool {
-        for y in y0 .. y1 {
-            if !self.is_dirty(x, y) {
-                return false;
-            }
-        }
-
-        true
-    }
-
-    
-    fn push_dirty_rect(
-        &mut self,
-        x0: i32,
-        y0: i32,
-        x1: i32,
-        y1: i32,
-        dirty_region: &mut DirtyRegion,
-    ) {
-        
-        
-        let mut dirty_world_rect = WorldRect::zero();
-
-        for y in y0 .. y1 {
-            for x in x0 .. x1 {
-                let tile = self.get_tile_mut(x, y);
-                tile.consider_for_dirty_rect = false;
-                if let Some(visible_rect) = tile.visible_rect {
-                    dirty_world_rect = dirty_world_rect.union(&visible_rect);
-                }
-            }
-        }
-
-        dirty_region.push(dirty_world_rect);
-    }
-
+pub struct TileCacheInstance {
     
     
-    fn build(&mut self, dirty_region: &mut DirtyRegion) {
-        for x0 in 0 .. self.tile_count.width {
-            for y0 in 0 .. self.tile_count.height {
-                let mut y1 = y0;
-
-                while self.is_dirty(x0, y1) {
-                    y1 += 1;
-                }
-
-                if y1 > y0 {
-                    let mut x1 = x0;
-
-                    while self.column_is_dirty(x1, y0, y1) {
-                        x1 += 1;
-                    }
-
-                    self.push_dirty_rect(x0, y0, x1, y1, dirty_region);
-                }
-            }
-        }
-    }
-}
-
-
-pub struct TileCache {
     
-    spatial_node_index: SpatialNodeIndex,
     
-    pub tiles: Vec<Tile>,
     
-    map_local_to_world: SpaceMapper<LayoutPixel, WorldPixel>,
     
-    pub tiles_to_draw: Vec<TileIndex>,
+    pub slice: usize,
+    
+    pub spatial_node_index: SpatialNodeIndex,
+    
+    pub tiles: FastHashMap<TileKey, Tile>,
+    
+    map_local_to_surface: SpaceMapper<LayoutPixel, PicturePixel>,
     
     
     opacity_bindings: FastHashMap<PropertyBindingId, OpacityBindingInfo>,
     
     pub dirty_region: DirtyRegion,
     
-    world_origin: WorldPoint,
+    tile_size: PictureSize,
     
-    world_tile_size: WorldSize,
-    
-    tile_count: TileSize,
+    tile_rect: TileRect,
     
     
-    scroll_offset: Option<WorldVector2D>,
+    tile_bounds_p0: TileOffset,
+    tile_bounds_p1: TileOffset,
     
-    pub pending_blits: Vec<TileBlit>,
+    pub local_rect: PictureRect,
     
-    
-    
-    
-    
-    world_bounding_rect: WorldRect,
+    pub local_clip_rect: PictureRect,
     
     
-    root_clip_rect: WorldRect,
+    pub is_opaque: bool,
+    
+    pub tiles_to_draw: Vec<TileKey>,
     
     
-    reference_prims: ReferencePrimitiveList,
     
-    root_clip_chain_id: ClipChainId,
+    pub world_viewport_rect: WorldRect,
+    
+    surface_index: SurfaceIndex,
     
     
-    pub is_enabled: bool,
-    
-    pub local_clip_rect: LayoutRect,
+    pub background_color: Option<ColorF>,
 }
 
-
-
-#[derive(Clone)]
-struct ReferencePrimitive {
-    uid: ItemUid,
-    local_pos: LayoutPoint,
-    spatial_node_index: SpatialNodeIndex,
-    ref_count: usize,
-}
-
-
-
-
-struct ReferencePrimitiveList {
-    ref_prims: Vec<ReferencePrimitive>,
-}
-
-impl ReferencePrimitiveList {
-    fn new(
-        prim_instances: &[PrimitiveInstance],
-        pictures: &[PicturePrimitive],
-    ) -> Self {
-        let mut map = FastHashMap::default();
-        let mut search_count = 0;
-
-        
-        
-        collect_ref_prims(
-            prim_instances,
-            pictures,
-            &mut map,
-            &mut search_count,
-        );
-
-        
-        
-        
-        let ref_prims = map.values().filter(|prim| {
-            prim.ref_count == 1
-        }).cloned().collect();
-
-        ReferencePrimitiveList {
-            ref_prims,
-        }
-    }
-}
-
-
-
-fn collect_ref_prims(
-    prim_instances: &[PrimitiveInstance],
-    pictures: &[PicturePrimitive],
-    map: &mut FastHashMap<ItemUid, ReferencePrimitive>,
-    search_count: &mut usize,
-) {
-    for prim_instance in prim_instances {
-        if *search_count > MAX_PRIMS_TO_SEARCH {
-            return;
-        }
-
-        match prim_instance.kind {
-            PrimitiveInstanceKind::Picture { pic_index, .. } => {
-                collect_ref_prims(
-                    &pictures[pic_index.0].prim_list.prim_instances,
-                    pictures,
-                    map,
-                    search_count,
-                );
-            }
-            _ => {
-                let uid = prim_instance.uid();
-
-                let entry = map.entry(uid).or_insert_with(|| {
-                    ReferencePrimitive {
-                        uid,
-                        local_pos: prim_instance.prim_origin,
-                        spatial_node_index: prim_instance.spatial_node_index,
-                        ref_count: 0,
-                    }
-                });
-                entry.ref_count += 1;
-
-                *search_count = *search_count + 1;
-            }
-        }
-    }
-}
-
-impl TileCache {
+impl TileCacheInstance {
     pub fn new(
+        slice: usize,
         spatial_node_index: SpatialNodeIndex,
-        prim_instances: &[PrimitiveInstance],
-        root_clip_chain_id: ClipChainId,
-        pictures: &[PicturePrimitive],
+        background_color: Option<ColorF>,
     ) -> Self {
-        
-        
-        let reference_prims = ReferencePrimitiveList::new(
-            prim_instances,
-            pictures,
-        );
-
-        TileCache {
+        TileCacheInstance {
+            slice,
             spatial_node_index,
-            tiles: Vec::new(),
-            map_local_to_world: SpaceMapper::new(
+            tiles: FastHashMap::default(),
+            map_local_to_surface: SpaceMapper::new(
                 ROOT_SPATIAL_NODE_INDEX,
-                WorldRect::zero(),
+                PictureRect::zero(),
             ),
-            tiles_to_draw: Vec::new(),
             opacity_bindings: FastHashMap::default(),
             dirty_region: DirtyRegion::new(),
-            world_origin: WorldPoint::zero(),
-            world_tile_size: WorldSize::zero(),
-            tile_count: TileSize::zero(),
-            scroll_offset: None,
-            pending_blits: Vec::new(),
-            world_bounding_rect: WorldRect::zero(),
-            root_clip_rect: WorldRect::max_rect(),
-            reference_prims,
-            root_clip_chain_id,
-            is_enabled: true,
-            local_clip_rect: LayoutRect::zero(),
+            tile_size: PictureSize::zero(),
+            tile_rect: TileRect::zero(),
+            tile_bounds_p0: TileOffset::zero(),
+            tile_bounds_p1: TileOffset::zero(),
+            local_rect: PictureRect::zero(),
+            local_clip_rect: PictureRect::zero(),
+            is_opaque: false,
+            tiles_to_draw: Vec::new(),
+            world_viewport_rect: WorldRect::zero(),
+            surface_index: SurfaceIndex(0),
+            background_color,
+        }
+    }
+
+    
+    pub fn is_opaque(&self) -> bool {
+        
+        if self.is_opaque {
+            return true;
+        }
+
+        
+        
+        match self.background_color {
+            Some(color) => color.a >= 1.0,
+            None => false
         }
     }
 
     
     fn get_tile_coords_for_rect(
         &self,
-        rect: &WorldRect,
+        rect: &PictureRect,
     ) -> (TileOffset, TileOffset) {
         
-        let origin = rect.origin - self.world_origin;
-
-        
         let mut p0 = TileOffset::new(
-            (origin.x / self.world_tile_size.width).floor() as i32,
-            (origin.y / self.world_tile_size.height).floor() as i32,
+            (rect.origin.x / self.tile_size.width).floor() as i32,
+            (rect.origin.y / self.tile_size.height).floor() as i32,
         );
 
         let mut p1 = TileOffset::new(
-            ((origin.x + rect.size.width) / self.world_tile_size.width).ceil() as i32,
-            ((origin.y + rect.size.height) / self.world_tile_size.height).ceil() as i32,
+            ((rect.origin.x + rect.size.width) / self.tile_size.width).ceil() as i32,
+            ((rect.origin.y + rect.size.height) / self.tile_size.height).ceil() as i32,
         );
 
         
-        p0.x = clamp(p0.x, 0, self.tile_count.width);
-        p0.y = clamp(p0.y, 0, self.tile_count.height);
-        p1.x = clamp(p1.x, 0, self.tile_count.width);
-        p1.y = clamp(p1.y, 0, self.tile_count.height);
+        p0.x = clamp(p0.x, self.tile_bounds_p0.x, self.tile_bounds_p1.x);
+        p0.y = clamp(p0.y, self.tile_bounds_p0.y, self.tile_bounds_p1.y);
+        p1.x = clamp(p1.x, self.tile_bounds_p0.x, self.tile_bounds_p1.x);
+        p1.y = clamp(p1.y, self.tile_bounds_p0.y, self.tile_bounds_p1.y);
 
         (p0, p1)
     }
@@ -766,80 +612,70 @@ impl TileCache {
     
     pub fn pre_update(
         &mut self,
-        pic_rect: LayoutRect,
+        pic_rect: PictureRect,
+        surface_index: SurfaceIndex,
         frame_context: &FrameVisibilityContext,
         frame_state: &mut FrameVisibilityState,
-        surface_index: SurfaceIndex,
-    ) {
-        
-        
-        
-        
-        self.is_enabled = surface_index == SurfaceIndex(1);
-        if !self.is_enabled {
-            
-            
-            
-            
-            
-            
-            
-            return;
-        }
+    ) -> WorldRect {
+        let tile_width = TILE_SIZE_WIDTH;
+        let tile_height = TILE_SIZE_HEIGHT;
+        self.surface_index = surface_index;
 
-        let DeviceIntSize { width: tile_width, height: tile_height, _unit: _ } =
-            Self::tile_dimensions(frame_context.config.testing);
-
-        
-        let scroll_offset_point = frame_context.clip_scroll_tree
-            .get_world_transform(self.spatial_node_index)
-            .inverse_project_2d_origin()
-            .unwrap_or_else(LayoutPoint::zero);
-
-        let scroll_offset = WorldVector2D::new(scroll_offset_point.x, scroll_offset_point.y);
-        let scroll_delta = match self.scroll_offset {
-            Some(prev) => prev - scroll_offset,
-            None => WorldVector2D::zero(),
-        };
-        self.scroll_offset = Some(scroll_offset);
-
-        
-        let world_offset = if frame_state.retained_tiles.tiles.is_empty() {
-            None
-        } else {
-            assert!(self.tiles.is_empty());
-            self.tiles = mem::replace(&mut frame_state.retained_tiles.tiles, Vec::new());
-
-            
-            
-            let mut new_prim_map = FastHashMap::default();
-            build_ref_prims(
-                &self.reference_prims.ref_prims,
-                &mut new_prim_map,
-                frame_context.clip_scroll_tree,
-            );
-
-            
-            correlate_prim_maps(
-                &frame_state.retained_tiles.ref_prims,
-                &new_prim_map,
-            )
-        }.unwrap_or_else(WorldVector2D::zero);
-
-        
-        self.tiles_to_draw.clear();
-
-        self.map_local_to_world = SpaceMapper::new(
-            ROOT_SPATIAL_NODE_INDEX,
-            frame_context.screen_world_rect,
+        self.map_local_to_surface = SpaceMapper::new(
+            self.spatial_node_index,
+            PictureRect::from_untyped(&pic_rect.to_untyped()),
         );
 
-        let world_mapper = SpaceMapper::new_with_target(
+        let pic_to_world_mapper = SpaceMapper::new_with_target(
             ROOT_SPATIAL_NODE_INDEX,
             self.spatial_node_index,
-            frame_context.screen_world_rect,
+            frame_context.global_screen_world_rect,
             frame_context.clip_scroll_tree,
         );
+
+        let spatial_node = &frame_context
+            .clip_scroll_tree
+            .spatial_nodes[self.spatial_node_index.0 as usize];
+        let (viewport_rect, viewport_spatial_node_index) = match spatial_node.node_type {
+            SpatialNodeType::ScrollFrame(ref info) => {
+                (info.viewport_rect, spatial_node.parent.unwrap())
+            }
+            SpatialNodeType::StickyFrame(..) => {
+                unreachable!();
+            }
+            SpatialNodeType::ReferenceFrame(..) => {
+                assert_eq!(self.spatial_node_index, ROOT_SPATIAL_NODE_INDEX);
+                (LayoutRect::max_rect(), ROOT_SPATIAL_NODE_INDEX)
+            }
+        };
+
+        let viewport_to_world_mapper = SpaceMapper::new_with_target(
+            ROOT_SPATIAL_NODE_INDEX,
+            viewport_spatial_node_index,
+            frame_context.global_screen_world_rect,
+            frame_context.clip_scroll_tree,
+        );
+        self.world_viewport_rect = viewport_to_world_mapper
+            .map(&viewport_rect)
+            .expect("bug: unable to map viewport to world space");
+
+        
+        
+        
+        
+        
+        
+        self.map_local_to_surface.set_target_spatial_node(
+            viewport_spatial_node_index,
+            frame_context.clip_scroll_tree,
+        );
+        let local_viewport_rect = self
+            .map_local_to_surface
+            .map(&viewport_rect)
+            .expect("bug: unable to map to local viewport rect");
+
+        self.local_rect = pic_rect;
+        self.local_clip_rect = local_viewport_rect;
 
         
         
@@ -857,171 +693,120 @@ impl TileCache {
             });
         }
 
-        
-        
-        
-        
-        let pic_device_rect = {
-            let unsnapped_world_rect = world_mapper
-                .map(&pic_rect)
-                .expect("bug: unable to map picture rect to world");
-            (unsnapped_world_rect * frame_context.global_device_pixel_scale)
-                .round_out()
-        };
-        let pic_world_rect = pic_device_rect / frame_context.global_device_pixel_scale;
-
-        
-        
-        
-        
-        
-
-        let needed_world_rect = frame_context
-            .screen_world_rect
-            .intersection(&pic_world_rect)
-            .unwrap_or(frame_context.screen_world_rect);
-
-        
-        
-        
-        
-        let mut world_ref_point = if self.tiles.is_empty() {
-            needed_world_rect.origin.floor()
-        } else {
-            self.tiles[0].world_rect.origin + world_offset
-        };
-
-        
-        world_ref_point += scroll_delta;
-
-        
-        
-        let device_ref_point = world_ref_point * frame_context.global_device_pixel_scale;
-        let device_world_rect = frame_context.screen_world_rect * frame_context.global_device_pixel_scale;
-        let needed_device_rect = pic_device_rect
-            .intersection(&device_world_rect)
-            .unwrap_or(device_world_rect);
-
-        
-        
-        
-        
-        
-        
-        let needed_device_rect = needed_device_rect.inflate(
-            0.0,
-            3.0 * tile_height as f32,
-        );
-
-        let p0 = needed_device_rect.origin;
-        let p1 = needed_device_rect.bottom_right();
-
-        let p0 = DevicePoint::new(
-            device_ref_point.x + ((p0.x - device_ref_point.x) / tile_width as f32).floor() * tile_width as f32,
-            device_ref_point.y + ((p0.y - device_ref_point.y) / tile_height as f32).floor() * tile_height as f32,
-        );
-
-        let p1 = DevicePoint::new(
-            device_ref_point.x + ((p1.x - device_ref_point.x) / tile_width as f32).ceil() * tile_width as f32,
-            device_ref_point.y + ((p1.y - device_ref_point.y) / tile_height as f32).ceil() * tile_height as f32,
-        );
-
-        
-        let x_tiles = ((p1.x - p0.x) / tile_width as f32).round() as i32;
-        let y_tiles = ((p1.y - p0.y) / tile_height as f32).round() as i32;
-
-        
-        
-        
-        let mut old_tiles = FastHashMap::default();
-        for tile in self.tiles.drain(..) {
-            let tile_device_pos = (tile.world_rect.origin + scroll_delta) * frame_context.global_device_pixel_scale;
-            let key = (
-                (tile_device_pos.x + world_offset.x).round() as i32,
-                (tile_device_pos.y + world_offset.y).round() as i32,
-            );
-            old_tiles.insert(key, tile);
-        }
-
-        
-        self.world_origin = WorldPoint::new(
-            p0.x / frame_context.global_device_pixel_scale.0,
-            p0.y / frame_context.global_device_pixel_scale.0,
-        );
-        self.world_tile_size = WorldSize::new(
+        let world_tile_size = WorldSize::new(
             tile_width as f32 / frame_context.global_device_pixel_scale.0,
             tile_height as f32 / frame_context.global_device_pixel_scale.0,
         );
-        self.tile_count = TileSize::new(x_tiles, y_tiles);
 
         
         
-        for y in 0 .. y_tiles {
-            for x in 0 .. x_tiles {
-                let px = p0.x + x as f32 * tile_width as f32;
-                let py = p0.y + y as f32 * tile_height as f32;
-                let key = (px.round() as i32, py.round() as i32);
+        let local_tile_rect = pic_to_world_mapper
+            .unmap(&WorldRect::new(WorldPoint::zero(), world_tile_size))
+            .expect("bug: unable to get local tile rect");
 
-                let mut tile = match old_tiles.remove(&key) {
-                    Some(tile) => tile,
-                    None => {
-                        let next_id = TileId(NEXT_TILE_ID.fetch_add(1, Ordering::Relaxed));
-                        Tile::new(next_id)
-                    }
+        self.tile_size = local_tile_rect.size;
+
+        let screen_rect_in_pic_space = pic_to_world_mapper
+            .unmap(&frame_context.global_screen_world_rect)
+            .expect("unable to unmap screen rect");
+
+        let visible_rect_in_pic_space = screen_rect_in_pic_space
+            .intersection(&self.local_clip_rect)
+            .unwrap_or(PictureRect::zero());
+
+        
+        
+        
+        
+        let desired_rect_in_pic_space = visible_rect_in_pic_space
+            .inflate(0.0, 3.0 * self.tile_size.height);
+
+        let needed_rect_in_pic_space = desired_rect_in_pic_space
+            .intersection(&pic_rect)
+            .unwrap_or(PictureRect::zero());
+
+        let p0 = needed_rect_in_pic_space.origin;
+        let p1 = needed_rect_in_pic_space.bottom_right();
+
+        let x0 = (p0.x / local_tile_rect.size.width).floor() as i32;
+        let x1 = (p1.x / local_tile_rect.size.width).ceil() as i32;
+
+        let y0 = (p0.y / local_tile_rect.size.height).floor() as i32;
+        let y1 = (p1.y / local_tile_rect.size.height).ceil() as i32;
+
+        let x_tiles = x1 - x0;
+        let y_tiles = y1 - y0;
+        self.tile_rect = TileRect::new(
+            TileOffset::new(x0, y0),
+            TileSize::new(x_tiles, y_tiles),
+        );
+        
+        
+        self.tile_bounds_p0 = TileOffset::new(x0, y0);
+        self.tile_bounds_p1 = TileOffset::new(x1, y1);
+
+        
+        
+        let mut keys = Vec::new();
+        for key in frame_state.retained_tiles.tiles.keys() {
+            if key.slice == self.slice {
+                keys.push(*key);
+            }
+        }
+        for key in keys {
+            self.tiles.insert(key, frame_state.retained_tiles.tiles.remove(&key).unwrap());
+        }
+
+        let mut old_tiles = mem::replace(
+            &mut self.tiles,
+            FastHashMap::default(),
+        );
+
+        let mut world_culling_rect = WorldRect::zero();
+
+        for y in y0 .. y1 {
+            for x in x0 .. x1 {
+                let key = TileKey {
+                    offset: TileOffset::new(x, y),
+                    slice: self.slice,
                 };
 
-                tile.world_rect = WorldRect::new(
-                    WorldPoint::new(
-                        px / frame_context.global_device_pixel_scale.0,
-                        py / frame_context.global_device_pixel_scale.0,
+                let mut tile = old_tiles
+                    .remove(&key)
+                    .unwrap_or_else(|| {
+                        let next_id = TileId(NEXT_TILE_ID.fetch_add(1, Ordering::Relaxed));
+                        Tile::new(next_id)
+                    });
+
+                tile.rect = PictureRect::new(
+                    PicturePoint::new(
+                        x as f32 * self.tile_size.width,
+                        y as f32 * self.tile_size.height,
                     ),
-                    self.world_tile_size,
+                    self.tile_size,
                 );
 
-                tile.local_rect = world_mapper
-                    .unmap(&tile.world_rect)
-                    .expect("bug: can't unmap world rect");
+                tile.clipped_rect = tile.rect
+                    .intersection(&self.local_rect)
+                    .unwrap_or(PictureRect::zero());
 
-                tile.visible_rect = tile.world_rect.intersection(&frame_context.screen_world_rect);
+                tile.world_rect = pic_to_world_mapper
+                    .map(&tile.rect)
+                    .expect("bug: map local tile rect");
 
-                self.tiles.push(tile);
-            }
-        }
+                world_culling_rect = world_culling_rect.union(&tile.world_rect);
 
-        if !old_tiles.is_empty() {
-            
-        }
-
-        self.world_bounding_rect = WorldRect::zero();
-        self.root_clip_rect = WorldRect::max_rect();
-
-        
-        
-        
-        
-        if self.root_clip_chain_id != ClipChainId::NONE {
-            let root_clip_chain_node = &frame_state
-                .clip_store
-                .clip_chain_nodes[self.root_clip_chain_id.0 as usize];
-            let root_clip_node = &frame_state
-                .data_stores
-                .clip[root_clip_chain_node.handle];
-            if let Some(clip_rect) = root_clip_node.item.get_local_clip_rect(root_clip_chain_node.local_pos) {
-                self.map_local_to_world.set_target_spatial_node(
-                    root_clip_chain_node.spatial_node_index,
-                    frame_context.clip_scroll_tree,
-                );
-
-                if let Some(world_clip_rect) = self.map_local_to_world.map(&clip_rect) {
-                    self.root_clip_rect = world_clip_rect;
-                }
+                self.tiles.insert(key, tile);
             }
         }
 
         
-        for tile in &mut self.tiles {
+        for (_, tile) in &mut self.tiles {
             
             tile.is_same_content = true;
+            
+            
+            tile.is_opaque = false;
 
             
             for image_key in tile.descriptor.image_keys.items() {
@@ -1049,47 +834,43 @@ impl TileCache {
             
             tile.clear();
         }
+
+        world_culling_rect
     }
 
     
     pub fn update_prim_dependencies(
         &mut self,
         prim_instance: &PrimitiveInstance,
-        clip_chain_stack: &ClipChainStack,
-        prim_rect: LayoutRect,
+        prim_clip_chain: Option<&ClipChainInstance>,
+        local_prim_rect: LayoutRect,
         clip_scroll_tree: &ClipScrollTree,
         data_stores: &DataStores,
-        clip_chain_nodes: &[ClipChainNode],
+        clip_store: &ClipStore,
         pictures: &[PicturePrimitive],
         resource_cache: &ResourceCache,
         opacity_binding_store: &OpacityBindingStorage,
         image_instances: &ImageInstanceStorage,
+        surface_index: SurfaceIndex,
     ) -> bool {
-        
-        
-        if !self.is_enabled {
-            
-            return true;
-        }
-
-        self.map_local_to_world.set_target_spatial_node(
+        self.map_local_to_surface.set_target_spatial_node(
             prim_instance.spatial_node_index,
             clip_scroll_tree,
         );
 
         
-        let world_rect = match self.map_local_to_world.map(&prim_rect) {
+        let prim_rect = match self.map_local_to_surface.map(&local_prim_rect) {
             Some(rect) => rect,
             None => return false,
         };
 
         
-        if world_rect.size.width <= 0.0 || world_rect.size.height <= 0.0 {
+        if prim_rect.size.is_empty_or_negative() {
             return false;
         }
 
         
-        let (p0, p1) = self.get_tile_coords_for_rect(&world_rect);
+        let (p0, p1) = self.get_tile_coords_for_rect(&prim_rect);
 
         
         
@@ -1100,14 +881,11 @@ impl TileCache {
         
         let mut opacity_bindings: SmallVec<[OpacityBinding; 4]> = SmallVec::new();
         let mut clip_chain_uids: SmallVec<[ItemUid; 8]> = SmallVec::new();
-        let mut clip_vertices: SmallVec<[WorldPoint; 8]> = SmallVec::new();
+        let mut clip_vertices: SmallVec<[LayoutPoint; 8]> = SmallVec::new();
         let mut image_keys: SmallVec<[ImageKey; 8]> = SmallVec::new();
         let mut clip_spatial_nodes = FastHashSet::default();
-
-        
-        
-        
-        let mut world_clips: SmallVec<[(RectangleKey, SpatialNodeIndex); 4]> = SmallVec::default();
+        let mut opaque_rect = None;
+        let mut prim_clip_rect = PictureRect::zero();
 
         
         let is_cacheable = prim_instance.is_cacheable(
@@ -1126,7 +904,7 @@ impl TileCache {
         
         
         
-        let include_clip_rect = match prim_instance.kind {
+        let clip_by_tile = match prim_instance.kind {
             PrimitiveInstanceKind::Picture { pic_index,.. } => {
                 
                 let pic = &pictures[pic_index.0];
@@ -1136,8 +914,40 @@ impl TileCache {
 
                 false
             }
-            PrimitiveInstanceKind::Rectangle { opacity_binding_index, .. } => {
-                if opacity_binding_index != OpacityBindingIndex::INVALID {
+            PrimitiveInstanceKind::Rectangle { data_handle, opacity_binding_index, .. } => {
+                if opacity_binding_index == OpacityBindingIndex::INVALID {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+
+                    let on_picture_surface = surface_index == self.surface_index;
+
+                    let prim_is_opaque = match data_stores.prim[data_handle].kind {
+                        PrimitiveTemplateKind::Rectangle { ref color, .. } => color.a >= 1.0,
+                        _ => unreachable!(),
+                    };
+
+                    let same_coord_system = {
+                        let prim_spatial_node = &clip_scroll_tree
+                            .spatial_nodes[prim_instance.spatial_node_index.0 as usize];
+                        let surface_spatial_node = &clip_scroll_tree
+                            .spatial_nodes[self.spatial_node_index.0 as usize];
+
+                        prim_spatial_node.coordinate_system_id == surface_spatial_node.coordinate_system_id
+                    };
+
+                    if let Some(ref clip_chain) = prim_clip_chain {
+                        if prim_is_opaque && same_coord_system && !clip_chain.needs_mask && on_picture_surface {
+                            opaque_rect = Some(clip_chain.pic_clip_rect);
+                        }
+                    };
+                } else {
                     let opacity_binding = &opacity_binding_store[opacity_binding_index];
                     for binding in &opacity_binding.bindings {
                         opacity_bindings.push(OpacityBinding::from(*binding));
@@ -1159,12 +969,17 @@ impl TileCache {
                 }
 
                 image_keys.push(image_data.key);
-                true
+                false
             }
             PrimitiveInstanceKind::YuvImage { data_handle, .. } => {
                 let yuv_image_data = &data_stores.yuv_image[data_handle].kind;
                 image_keys.extend_from_slice(&yuv_image_data.yuv_key);
-                true
+                false
+            }
+            PrimitiveInstanceKind::PushClipChain |
+            PrimitiveInstanceKind::PopClipChain => {
+                
+                return false;
             }
             PrimitiveInstanceKind::TextRun { .. } |
             PrimitiveInstanceKind::LineDecoration { .. } |
@@ -1174,169 +989,48 @@ impl TileCache {
             PrimitiveInstanceKind::RadialGradient { .. } |
             PrimitiveInstanceKind::ImageBorder { .. } => {
                 
-                true
+                false
             }
         };
 
         
-        
-        let mut world_clip_rect = world_rect;
-        let mut culling_rect = prim_rect
-            .intersection(&prim_instance.local_clip_rect)
-            .unwrap_or_else(LayoutRect::zero);
+        if let Some(prim_clip_chain) = prim_clip_chain {
+            prim_clip_rect = prim_clip_chain.pic_clip_rect;
 
-        
-        
-        
-        
-        
-        for clip_stack in &clip_chain_stack.stack {
-            for clip_chain_id in clip_stack {
-                let mut current_clip_chain_id = *clip_chain_id;
-                while current_clip_chain_id != ClipChainId::NONE {
-                    let clip_chain_node = &clip_chain_nodes[current_clip_chain_id.0 as usize];
-                    let clip_node = &data_stores.clip[clip_chain_node.handle];
+            let clip_instances = &clip_store
+                .clip_node_instances[prim_clip_chain.clips_range.to_range()];
+            for clip_instance in clip_instances {
+                clip_chain_uids.push(clip_instance.handle.uid());
 
-                    
-                    
-                    if current_clip_chain_id == self.root_clip_chain_id {
-                        current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
-                        continue;
-                    }
-
-                    self.map_local_to_world.set_target_spatial_node(
-                        clip_chain_node.spatial_node_index,
-                        clip_scroll_tree,
-                    );
-
-                    
-                    
-                    
-                    let add_to_clip_deps = match clip_node.item {
-                        ClipItem::Rectangle(size, ClipMode::Clip) => {
-                            let clip_spatial_node = &clip_scroll_tree.spatial_nodes[clip_chain_node.spatial_node_index.0 as usize];
-
-                            let local_clip_rect = LayoutRect::new(
-                                clip_chain_node.local_pos,
-                                size,
-                            );
-
-                            if clip_spatial_node.coordinate_system_id == CoordinateSystemId(0) {
-                                
-                                
-                                match self.map_local_to_world.map(&local_clip_rect) {
-                                    Some(clip_world_rect) => {
-                                        
-                                        
-                                        
-                                        
-                                        world_clip_rect = world_clip_rect
-                                            .intersection(&clip_world_rect)
-                                            .unwrap_or_else(WorldRect::zero);
-
-                                        
-                                        
-                                        if clip_chain_node.spatial_node_index == prim_instance.spatial_node_index {
-                                            culling_rect = culling_rect.intersection(&local_clip_rect).unwrap_or_else(LayoutRect::zero);
-
-                                            false
-                                        } else if !clip_scroll_tree.is_same_or_child_of(
-                                            clip_chain_node.spatial_node_index,
-                                            self.spatial_node_index,
-                                        ) {
-                                            
-                                            
-                                            
-                                            
-                                            
-                                            
-                                            world_clips.push((
-                                                clip_world_rect.into(),
-                                                clip_chain_node.spatial_node_index,
-                                            ));
-
-                                            false
-                                        } else {
-                                            true
-                                        }
-                                    }
-                                    None => {
-                                        true
-                                    }
-                                }
-                            } else {
-                                true
-                            }
-                        }
-                        ClipItem::Rectangle(_, ClipMode::ClipOut) |
-                        ClipItem::RoundedRectangle(..) |
-                        ClipItem::Image { .. } |
-                        ClipItem::BoxShadow(..) => {
-                            true
-                        }
-                    };
-
-                    if add_to_clip_deps {
-                        clip_chain_uids.push(clip_chain_node.handle.uid());
-
-                        
-                        
-                        if clip_chain_node.spatial_node_index != self.spatial_node_index {
-                            clip_spatial_nodes.insert(clip_chain_node.spatial_node_index);
-                        }
-
-                        let local_clip_rect = LayoutRect::new(
-                            clip_chain_node.local_pos,
-                            LayoutSize::zero(),
-                        );
-                        if let Some(world_clip_rect) = self.map_local_to_world.map(&local_clip_rect) {
-                            clip_vertices.push(world_clip_rect.origin);
-                        }
-                    }
-
-                    current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
+                
+                
+                if clip_instance.spatial_node_index != self.spatial_node_index {
+                    clip_spatial_nodes.insert(clip_instance.spatial_node_index);
                 }
+
+                clip_vertices.push(clip_instance.local_pos);
             }
         }
-
-        if include_clip_rect {
-            
-            
-            if let Some(clipped_world_rect) = world_clip_rect.intersection(&self.root_clip_rect) {
-                self.world_bounding_rect = self.world_bounding_rect.union(&clipped_world_rect);
-            }
-        }
-
-        self.map_local_to_world.set_target_spatial_node(
-            prim_instance.spatial_node_index,
-            clip_scroll_tree,
-        );
-        let world_culling_rect = match self.map_local_to_world.map(&culling_rect) {
-            Some(rect) => rect,
-            None => return false,
-        };
 
         
         
         for y in p0.y .. p1.y {
             for x in p0.x .. p1.x {
-                let index = (y * self.tile_count.width + x) as usize;
-                let tile = &mut self.tiles[index];
+                
+                let key = TileKey {
+                    slice: self.slice,
+                    offset: TileOffset::new(x, y),
+                };
+                let tile = self.tiles.get_mut(&key).expect("bug: no tile");
 
                 
-                
-                let world_culling_rect = world_culling_rect
-                    .intersection(&tile.world_rect)
-                    .map(|rect| {
-                        rect.translate(&-tile.world_rect.origin.to_vector())
-                    })
-                    .unwrap_or_else(WorldRect::zero)
-                    .round();
-
-                
-                
-                
-                
+                if !tile.is_opaque {
+                    if let Some(ref opaque_rect) = opaque_rect {
+                        if opaque_rect.contains_rect(&tile.clipped_rect) {
+                            tile.is_opaque = true;
+                        }
+                    }
+                }
 
                 
                 tile.is_same_content &= is_cacheable;
@@ -1348,17 +1042,51 @@ impl TileCache {
                 tile.descriptor.opacity_bindings.extend_from_slice(&opacity_bindings);
 
                 
+                
+                
+                let (prim_origin, prim_clip_rect) = if clip_by_tile {
+                    let tile_p0 = tile.clipped_rect.origin;
+                    let tile_p1 = tile.clipped_rect.bottom_right();
+
+                    let clip_p0 = PicturePoint::new(
+                        clampf(prim_clip_rect.origin.x, tile_p0.x, tile_p1.x),
+                        clampf(prim_clip_rect.origin.y, tile_p0.y, tile_p1.y),
+                    );
+
+                    let clip_p1 = PicturePoint::new(
+                        clampf(prim_clip_rect.origin.x + prim_clip_rect.size.width, tile_p0.x, tile_p1.x),
+                        clampf(prim_clip_rect.origin.y + prim_clip_rect.size.height, tile_p0.y, tile_p1.y),
+                    );
+
+                    (
+                        PicturePoint::new(
+                            clampf(prim_rect.origin.x, tile_p0.x, tile_p1.x),
+                            clampf(prim_rect.origin.y, tile_p0.y, tile_p1.y),
+                        ),
+                        PictureRect::new(
+                            clip_p0,
+                            PictureSize::new(
+                                clip_p1.x - clip_p0.x,
+                                clip_p1.y - clip_p0.y,
+                            ),
+                        ),
+                    )
+                } else {
+                    (prim_rect.origin, prim_clip_rect)
+                };
+
+                
                 tile.descriptor.prims.push(PrimitiveDescriptor {
                     prim_uid: prim_instance.uid(),
-                    origin: (world_rect.origin - tile.world_rect.origin.to_vector()).round(),
+                    origin: prim_origin.into(),
                     first_clip: tile.descriptor.clip_uids.len() as u16,
                     clip_count: clip_chain_uids.len() as u16,
-                    world_culling_rect,
+                    prim_clip_rect: prim_clip_rect.into(),
                 });
+
                 tile.descriptor.clip_uids.extend_from_slice(&clip_chain_uids);
                 for clip_vertex in &clip_vertices {
-                    let clip_vertex = (*clip_vertex - tile.world_rect.origin.to_vector()).round();
-                    tile.descriptor.clip_vertices.push(clip_vertex.into());
+                    tile.descriptor.clip_vertices.push((*clip_vertex).into());
                 }
 
                 
@@ -1366,12 +1094,8 @@ impl TileCache {
                 if prim_instance.spatial_node_index != self.spatial_node_index {
                     tile.transforms.insert(prim_instance.spatial_node_index);
                 }
-
                 for spatial_node_index in &clip_spatial_nodes {
                     tile.transforms.insert(*spatial_node_index);
-                }
-                for (world_rect, spatial_node_index) in &world_clips {
-                    tile.potential_clips.insert(world_rect.clone(), *spatial_node_index);
                 }
             }
         }
@@ -1389,42 +1113,17 @@ impl TileCache {
         frame_context: &FrameVisibilityContext,
         scratch: &mut PrimitiveScratchBuffer,
     ) {
+        self.tiles_to_draw.clear();
         self.dirty_region.clear();
-        self.pending_blits.clear();
+        let mut dirty_region_index = 0;
 
         
-        if !self.is_enabled {
-            return;
-        }
+        
+        self.is_opaque = true;
 
         
-        if !self.world_bounding_rect.intersects(&frame_context.screen_world_rect) {
-            return;
-        }
-
-        let map_surface_to_world: SpaceMapper<LayoutPixel, WorldPixel> = SpaceMapper::new_with_target(
-            ROOT_SPATIAL_NODE_INDEX,
-            self.spatial_node_index,
-            frame_context.screen_world_rect,
-            frame_context.clip_scroll_tree,
-        );
-
-        self.local_clip_rect = map_surface_to_world
-            .unmap(&self.world_bounding_rect)
-            .expect("bug: unable to map local clip rect");
-
-        
-        for (i, tile) in self.tiles.iter_mut().enumerate() {
-            
-            
-            
-            
-            for (clip_world_rect, spatial_node_index) in &tile.potential_clips {
-                let clip_world_rect = WorldRect::from(clip_world_rect.clone());
-                if !clip_world_rect.contains_rect(&self.world_bounding_rect) {
-                    tile.transforms.insert(*spatial_node_index);
-                }
-            }
+        for (key, tile) in self.tiles.iter_mut() {
+            self.is_opaque &= tile.is_opaque;
 
             
             let mut transform_spatial_nodes: Vec<SpatialNodeIndex> = tile.transforms.drain().collect();
@@ -1432,29 +1131,20 @@ impl TileCache {
             for spatial_node_index in transform_spatial_nodes {
                 
                 
-                let inverse_origin = if self.spatial_node_index >= spatial_node_index {
+                let transform = if self.spatial_node_index >= spatial_node_index {
                     frame_context.clip_scroll_tree
                         .get_relative_transform(
                             self.spatial_node_index,
                             spatial_node_index,
                         )
-                        .project_2d_origin()
                 } else {
                     frame_context.clip_scroll_tree
                         .get_relative_transform(
                             spatial_node_index,
                             self.spatial_node_index,
                         )
-                        .inverse_project_2d_origin()
                 };
-                
-                
-                
-                
-                let key = inverse_origin
-                    .unwrap_or_else(LayoutPoint::zero)
-                    .round();
-                tile.descriptor.transforms.push(key.into());
+                tile.descriptor.transforms.push(transform.into());
             }
 
             
@@ -1469,145 +1159,94 @@ impl TileCache {
                 
                 resource_cache.texture_cache.request(&tile.handle, gpu_cache);
             } else {
+                
+                
                 tile.is_valid = false;
             }
 
             
             tile.update_content_validity();
 
-            let visible_rect = match tile.visible_rect {
-                Some(rect) => rect,
-                None => continue,
-            };
-
-            
-            let tile_bounding_rect = match visible_rect.intersection(&self.world_bounding_rect) {
-                Some(rect) => rect.translate(&-tile.world_rect.origin.to_vector()),
-                None => continue,
-            };
-
-            tile.update_rect_validity(&tile_bounding_rect);
-
             
             if tile.descriptor.prims.is_empty() {
                 continue;
             }
 
+            if !tile.world_rect.intersects(&frame_context.global_screen_world_rect) {
+                continue;
+            }
+
+            self.tiles_to_draw.push(*key);
+
             
             if tile.is_valid {
-                
-                tile.consider_for_dirty_rect = false;
-                self.tiles_to_draw.push(TileIndex(i));
-
                 if frame_context.debug_flags.contains(DebugFlags::PICTURE_CACHING_DBG) {
-                    if let Some(world_rect) = tile.world_rect.intersection(&self.world_bounding_rect) {
-                        let tile_device_rect = world_rect * frame_context.global_device_pixel_scale;
-                        let mut label_offset = DeviceVector2D::new(20.0, 30.0);
-                        scratch.push_debug_rect(
-                            tile_device_rect,
-                            debug_colors::GREEN,
+                    let tile_device_rect = tile.world_rect * frame_context.global_device_pixel_scale;
+                    let label_offset = DeviceVector2D::new(20.0, 30.0);
+                    let color = if tile.is_opaque {
+                        debug_colors::GREEN
+                    } else {
+                        debug_colors::YELLOW
+                    };
+                    scratch.push_debug_rect(
+                        tile_device_rect,
+                        color.scale_alpha(0.3),
+                    );
+                    if tile_device_rect.size.height >= label_offset.y {
+                        scratch.push_debug_string(
+                            tile_device_rect.origin + label_offset,
+                            debug_colors::RED,
+                            format!("{:?}: is_opaque={}", tile.id, tile.is_opaque),
                         );
-                        if tile_device_rect.size.height >= label_offset.y {
-                            scratch.push_debug_string(
-                                tile_device_rect.origin + label_offset,
-                                debug_colors::RED,
-                                format!("{:?} {:?} {:?}", tile.id, tile.handle, tile.world_rect),
-                            );
-                        }
-                        label_offset.y += 20.0;
-                        if tile_device_rect.size.height >= label_offset.y {
-                            scratch.push_debug_string(
-                                tile_device_rect.origin + label_offset,
-                                debug_colors::RED,
-                                format!("same: {} frames", tile.same_frames),
-                            );
-                        }
                     }
                 }
             } else {
                 if frame_context.debug_flags.contains(DebugFlags::PICTURE_CACHING_DBG) {
-                    if let Some(world_rect) = visible_rect.intersection(&self.world_bounding_rect) {
-                        scratch.push_debug_rect(
-                            world_rect * frame_context.global_device_pixel_scale,
-                            debug_colors::RED,
-                        );
-                    }
+                    scratch.push_debug_rect(
+                        tile.world_rect * frame_context.global_device_pixel_scale,
+                        debug_colors::RED,
+                    );
                 }
 
                 
-                
-                
-                
-                
-                if tile.same_frames >= FRAMES_BEFORE_PICTURE_CACHING || frame_context.config.testing {
-                    
-                    if !resource_cache.texture_cache.is_allocated(&tile.handle) {
-                        resource_cache.texture_cache.update_picture_cache(
-                            &mut tile.handle,
-                            gpu_cache,
-                        );
-                    }
-
-                    let cache_item = resource_cache
-                        .get_texture_cache_item(&tile.handle);
-
-                    let src_origin = (visible_rect.origin * frame_context.global_device_pixel_scale).round().to_i32();
-                    let valid_rect = visible_rect.translate(&-tile.world_rect.origin.to_vector());
-
-                    tile.valid_rect = visible_rect
-                        .intersection(&self.world_bounding_rect)
-                        .map(|rect| rect.translate(&-tile.world_rect.origin.to_vector()))
-                        .unwrap_or_else(WorldRect::zero);
-
-                    
-                    
-                    let dest_rect = (valid_rect * frame_context.global_device_pixel_scale).round().to_i32();
-                    self.pending_blits.push(TileBlit {
-                        target: cache_item,
-                        src_offset: src_origin,
-                        dest_offset: dest_rect.origin,
-                        size: dest_rect.size,
-                    });
-
-                    
-                    tile.is_valid = true;
+                if !resource_cache.texture_cache.is_allocated(&tile.handle) {
+                    resource_cache.texture_cache.update_picture_cache(
+                        &mut tile.handle,
+                        gpu_cache,
+                    );
                 }
 
+                tile.visibility_mask = PrimitiveVisibilityMask::empty();
+
                 
-                tile.consider_for_dirty_rect = true;
+                
+                
+                
+                
+                if dirty_region_index < PrimitiveVisibilityMask::MAX_DIRTY_REGIONS {
+                    tile.visibility_mask.set_visible(dirty_region_index);
+
+                    self.dirty_region.push(
+                        tile.world_rect,
+                        tile.visibility_mask,
+                    );
+
+                    dirty_region_index += 1;
+                } else {
+                    tile.visibility_mask.set_visible(PrimitiveVisibilityMask::MAX_DIRTY_REGIONS - 1);
+
+                    self.dirty_region.include_rect(
+                        PrimitiveVisibilityMask::MAX_DIRTY_REGIONS - 1,
+                        tile.world_rect,
+                    );
+                }
             }
         }
 
         
         
-        let mut builder = DirtyRegionBuilder::new(
-            &mut self.tiles,
-            self.tile_count,
-        );
-
-        builder.build(&mut self.dirty_region);
-
-        
-        
         if frame_context.config.testing {
             scratch.recorded_dirty_regions.push(self.dirty_region.record());
-        }
-
-        
-        
-        
-        
-        
-        if self.dirty_region.dirty_rects.len() > MAX_DIRTY_RECTS {
-            self.dirty_region.collapse();
-        }
-    }
-
-    pub fn tile_dimensions(testing: bool) -> DeviceIntSize {
-        if testing {
-            size2(TILE_SIZE_TESTING, TILE_SIZE_TESTING)
-        } else {
-            size2(TILE_SIZE_WIDTH, TILE_SIZE_HEIGHT)
         }
     }
 }
@@ -1806,8 +1445,6 @@ pub struct SurfaceInfo {
     pub inflation_factor: f32,
     
     pub device_pixel_scale: DevicePixelScale,
-    
-    pub allow_subpixel_aa: bool,
 }
 
 impl SurfaceInfo {
@@ -1818,7 +1455,6 @@ impl SurfaceInfo {
         world_rect: WorldRect,
         clip_scroll_tree: &ClipScrollTree,
         device_pixel_scale: DevicePixelScale,
-        allow_subpixel_aa: bool,
     ) -> Self {
         let map_surface_to_world = SpaceMapper::new_with_target(
             ROOT_SPATIAL_NODE_INDEX,
@@ -1844,7 +1480,6 @@ impl SurfaceInfo {
             surface_spatial_node_index,
             inflation_factor,
             device_pixel_scale,
-            allow_subpixel_aa,
         }
     }
 }
@@ -1892,7 +1527,6 @@ pub enum PictureCompositeMode {
     Blit(BlitReason),
     
     TileCache {
-        clear_color: ColorF,
     },
 }
 
@@ -2042,37 +1676,51 @@ impl PrimitiveList {
                 }
             };
 
-            let prim_data = match prim_instance.kind {
+            let (is_backface_visible, prim_size) = match prim_instance.kind {
                 PrimitiveInstanceKind::Rectangle { data_handle, .. } |
                 PrimitiveInstanceKind::Clear { data_handle, .. } => {
-                    &interners.prim[data_handle]
+                    let data = &interners.prim[data_handle];
+                    (data.is_backface_visible, data.prim_size)
                 }
                 PrimitiveInstanceKind::Image { data_handle, .. } => {
-                    &interners.image[data_handle]
+                    let data = &interners.image[data_handle];
+                    (data.is_backface_visible, data.prim_size)
                 }
                 PrimitiveInstanceKind::ImageBorder { data_handle, .. } => {
-                    &interners.image_border[data_handle]
+                    let data = &interners.image_border[data_handle];
+                    (data.is_backface_visible, data.prim_size)
                 }
                 PrimitiveInstanceKind::LineDecoration { data_handle, .. } => {
-                    &interners.line_decoration[data_handle]
+                    let data = &interners.line_decoration[data_handle];
+                    (data.is_backface_visible, data.prim_size)
                 }
                 PrimitiveInstanceKind::LinearGradient { data_handle, .. } => {
-                    &interners.linear_grad[data_handle]
+                    let data = &interners.linear_grad[data_handle];
+                    (data.is_backface_visible, data.prim_size)
                 }
                 PrimitiveInstanceKind::NormalBorder { data_handle, .. } => {
-                    &interners.normal_border[data_handle]
+                    let data = &interners.normal_border[data_handle];
+                    (data.is_backface_visible, data.prim_size)
                 }
                 PrimitiveInstanceKind::Picture { data_handle, .. } => {
-                    &interners.picture[data_handle]
+                    let data = &interners.picture[data_handle];
+                    (data.is_backface_visible, data.prim_size)
                 }
                 PrimitiveInstanceKind::RadialGradient { data_handle, ..} => {
-                    &interners.radial_grad[data_handle]
+                    let data = &interners.radial_grad[data_handle];
+                    (data.is_backface_visible, data.prim_size)
                 }
                 PrimitiveInstanceKind::TextRun { data_handle, .. } => {
-                    &interners.text_run[data_handle]
+                    let data = &interners.text_run[data_handle];
+                    (data.is_backface_visible, data.prim_size)
                 }
                 PrimitiveInstanceKind::YuvImage { data_handle, .. } => {
-                    &interners.yuv_image[data_handle]
+                    let data = &interners.yuv_image[data_handle];
+                    (data.is_backface_visible, data.prim_size)
+                }
+                PrimitiveInstanceKind::PushClipChain |
+                PrimitiveInstanceKind::PopClipChain => {
+                    (true, LayoutSize::zero())
                 }
             };
 
@@ -2080,7 +1728,7 @@ impl PrimitiveList {
             
             let key = PrimitiveClusterKey {
                 spatial_node_index: prim_instance.spatial_node_index,
-                is_backface_visible: prim_data.is_backface_visible,
+                is_backface_visible,
             };
 
             
@@ -2090,7 +1738,7 @@ impl PrimitiveList {
                     let index = clusters.len();
                     clusters.push(PrimitiveCluster::new(
                         prim_instance.spatial_node_index,
-                        prim_data.is_backface_visible,
+                        is_backface_visible,
                     ));
                     index
                 }
@@ -2103,7 +1751,7 @@ impl PrimitiveList {
             if !is_pic {
                 let prim_rect = LayoutRect::new(
                     prim_instance.prim_origin,
-                    prim_data.prim_size,
+                    prim_size,
                 );
                 let culling_rect = prim_instance.local_clip_rect
                     .intersection(&prim_rect)
@@ -2146,9 +1794,6 @@ pub struct PicturePrimitive {
 
     #[cfg_attr(feature = "capture", serde(skip))]
     pub state: Option<PictureState>,
-
-    
-    pub pipeline_id: PipelineId,
 
     
     
@@ -2207,7 +1852,7 @@ pub struct PicturePrimitive {
 
     
     #[cfg_attr(feature = "capture", serde(skip))] 
-    pub tile_cache: Option<Box<TileCache>>,
+    pub tile_cache: Option<Box<TileCacheInstance>>,
 
     
     options: PictureOptions,
@@ -2286,17 +1931,8 @@ impl PicturePrimitive {
     pub fn destroy(
         &mut self,
         retained_tiles: &mut RetainedTiles,
-        clip_scroll_tree: &ClipScrollTree,
     ) {
         if let Some(tile_cache) = self.tile_cache.take() {
-            
-            
-            build_ref_prims(
-                &tile_cache.reference_prims.ref_prims,
-                &mut retained_tiles.ref_prims,
-                clip_scroll_tree,
-            );
-
             retained_tiles.tiles.extend(tile_cache.tiles);
         }
     }
@@ -2308,14 +1944,13 @@ impl PicturePrimitive {
     pub fn new_image(
         requested_composite_mode: Option<PictureCompositeMode>,
         context_3d: Picture3DContext<OrderedPictureChild>,
-        pipeline_id: PipelineId,
         frame_output_pipeline_id: Option<PipelineId>,
         apply_local_clip_rect: bool,
         is_backface_visible: bool,
         requested_raster_space: RasterSpace,
         prim_list: PrimitiveList,
         spatial_node_index: SpatialNodeIndex,
-        tile_cache: Option<Box<TileCache>>,
+        tile_cache: Option<Box<TileCacheInstance>>,
         options: PictureOptions,
     ) -> Self {
         PicturePrimitive {
@@ -2329,7 +1964,6 @@ impl PicturePrimitive {
             extra_gpu_data_handles: SmallVec::new(),
             apply_local_clip_rect,
             is_backface_visible,
-            pipeline_id,
             requested_raster_space,
             spatial_node_index,
             snapped_local_rect: LayoutRect::zero(),
@@ -2369,6 +2003,7 @@ impl PicturePrimitive {
         surface_spatial_node_index: SpatialNodeIndex,
         raster_spatial_node_index: SpatialNodeIndex,
         parent_surface_index: SurfaceIndex,
+        parent_subpixel_mode: SubpixelMode,
         frame_state: &mut FrameBuildingState,
         frame_context: &FrameBuildingContext,
     ) -> Option<(PictureContext, PictureState, PrimitiveList)> {
@@ -2403,7 +2038,7 @@ impl PicturePrimitive {
         let map_pic_to_world = SpaceMapper::new_with_target(
             ROOT_SPATIAL_NODE_INDEX,
             surface_spatial_node_index,
-            frame_context.screen_world_rect,
+            frame_context.global_screen_world_rect,
             frame_context.clip_scroll_tree,
         );
 
@@ -2418,7 +2053,7 @@ impl PicturePrimitive {
         let (map_raster_to_world, map_pic_to_raster) = create_raster_mappers(
             surface_spatial_node_index,
             raster_spatial_node_index,
-            frame_context.screen_world_rect,
+            frame_context.global_screen_world_rect,
             frame_context.clip_scroll_tree,
         );
 
@@ -2434,25 +2069,7 @@ impl PicturePrimitive {
             }
         };
 
-        let (is_composite, is_passthrough) = match self.raster_config {
-            Some(ref rc @ RasterConfig { composite_mode: PictureCompositeMode::TileCache { .. }, .. }) => {
-                
-                
-                let port = frame_state
-                    .surfaces[parent_surface_index.0]
-                    .render_tasks
-                    .expect("bug: no render tasks set for parent!")
-                    .port;
-
-                frame_state
-                    .surfaces[rc.surface_index.0]
-                    .render_tasks = Some(SurfaceRenderTasks {
-                        root: RenderTaskId::INVALID,
-                        port,
-                    });
-
-                (false, false)
-            },
+        match self.raster_config {
             Some(ref raster_config) => {
                 let pic_rect = PictureRect::from_untyped(&self.snapped_local_rect.to_untyped());
 
@@ -2474,10 +2091,7 @@ impl PicturePrimitive {
                 };
                 let transform = map_pic_to_raster.get_transform();
 
-                let (root, port) = match raster_config.composite_mode {
-                    PictureCompositeMode::TileCache { .. } => {
-                        unreachable!();
-                    }
+                let dep_info = match raster_config.composite_mode {
                     PictureCompositeMode::Filter(Filter::Blur(blur_radius)) => {
                         let blur_std_deviation = blur_radius * device_pixel_scale.0;
                         let scale_factors = scale_factors(&transform);
@@ -2522,9 +2136,9 @@ impl PicturePrimitive {
                             pic_index,
                             device_rect.origin,
                             uv_rect_kind,
-                            raster_spatial_node_index,
                             surface_spatial_node_index,
                             device_pixel_scale,
+                            PrimitiveVisibilityMask::all(),
                         );
 
                         let picture_task_id = frame_state.render_tasks.add(picture_task);
@@ -2538,7 +2152,7 @@ impl PicturePrimitive {
                             None,
                         );
 
-                        (blur_render_task_id, picture_task_id)
+                        Some((blur_render_task_id, picture_task_id))
                     }
                     PictureCompositeMode::Filter(Filter::DropShadows(ref shadows)) => {
                         let mut max_std_deviation = 0.0;
@@ -2572,9 +2186,9 @@ impl PicturePrimitive {
                             pic_index,
                             device_rect.origin,
                             uv_rect_kind,
-                            raster_spatial_node_index,
                             surface_spatial_node_index,
                             device_pixel_scale,
+                            PrimitiveVisibilityMask::all(),
                         );
                         picture_task.mark_for_saving();
 
@@ -2600,7 +2214,7 @@ impl PicturePrimitive {
                         }
 
                         
-                        (blur_render_task_id, picture_task_id)
+                        Some((blur_render_task_id, picture_task_id))
                     }
                     PictureCompositeMode::MixBlend(..) if !frame_context.fb_config.gpu_supports_advanced_blend => {
                         let uv_rect_kind = calculate_uv_rect_kind(
@@ -2617,9 +2231,9 @@ impl PicturePrimitive {
                             pic_index,
                             clipped.origin,
                             uv_rect_kind,
-                            raster_spatial_node_index,
                             surface_spatial_node_index,
                             device_pixel_scale,
+                            PrimitiveVisibilityMask::all(),
                         );
 
                         let readback_task_id = frame_state.render_tasks.add(
@@ -2635,7 +2249,7 @@ impl PicturePrimitive {
 
                         let render_task_id = frame_state.render_tasks.add(picture_task);
 
-                        (render_task_id, render_task_id)
+                        Some((render_task_id, render_task_id))
                     }
                     PictureCompositeMode::Filter(..) => {
                         let uv_rect_kind = calculate_uv_rect_kind(
@@ -2652,14 +2266,14 @@ impl PicturePrimitive {
                             pic_index,
                             clipped.origin,
                             uv_rect_kind,
-                            raster_spatial_node_index,
                             surface_spatial_node_index,
                             device_pixel_scale,
+                            PrimitiveVisibilityMask::all(),
                         );
 
                         let render_task_id = frame_state.render_tasks.add(picture_task);
 
-                        (render_task_id, render_task_id)
+                        Some((render_task_id, render_task_id))
                     }
                     PictureCompositeMode::ComponentTransferFilter(..) => {
                         let uv_rect_kind = calculate_uv_rect_kind(
@@ -2676,14 +2290,75 @@ impl PicturePrimitive {
                             pic_index,
                             clipped.origin,
                             uv_rect_kind,
-                            raster_spatial_node_index,
                             surface_spatial_node_index,
                             device_pixel_scale,
+                            PrimitiveVisibilityMask::all(),
                         );
 
                         let render_task_id = frame_state.render_tasks.add(picture_task);
 
-                        (render_task_id, render_task_id)
+                        Some((render_task_id, render_task_id))
+                    }
+                    PictureCompositeMode::TileCache { .. } => {
+                        let tile_cache = self.tile_cache.as_mut().unwrap();
+                        let mut first = true;
+
+                        let tile_size = DeviceSize::new(
+                            TILE_SIZE_WIDTH as f32,
+                            TILE_SIZE_HEIGHT as f32,
+                        );
+
+                        for key in &tile_cache.tiles_to_draw {
+                            let tile = tile_cache.tiles.get_mut(key).expect("bug: no tile found!");
+
+                            if tile.is_valid {
+                                continue;
+                            }
+
+                            
+                            let content_origin = (tile.world_rect.origin * device_pixel_scale)
+                                .round().to_i32();
+
+                            let cache_item = frame_state.resource_cache.texture_cache.get(&tile.handle);
+
+                            let task = RenderTask::new_picture(
+                                RenderTaskLocation::PictureCache {
+                                    texture: cache_item.texture_id,
+                                    layer: cache_item.texture_layer,
+                                    size: tile_size.to_i32(),
+                                },
+                                tile_size,
+                                pic_index,
+                                content_origin,
+                                UvRectKind::Rect,
+                                surface_spatial_node_index,
+                                device_pixel_scale,
+                                tile.visibility_mask,
+                            );
+
+                            let render_task_id = frame_state.render_tasks.add(task);
+
+                            frame_state.render_tasks.add_dependency(
+                                frame_state.surfaces[parent_surface_index.0].render_tasks.unwrap().port,
+                                render_task_id,
+                            );
+
+                            if first {
+                                
+                                
+                                
+                                frame_state.surfaces[raster_config.surface_index.0].render_tasks = Some(SurfaceRenderTasks {
+                                    root: render_task_id,
+                                    port: render_task_id,
+                                });
+
+                                first = false;
+                            }
+
+                            tile.is_valid = true;
+                        }
+
+                        None
                     }
                     PictureCompositeMode::MixBlend(..) |
                     PictureCompositeMode::Blit(_) => {
@@ -2708,32 +2383,30 @@ impl PicturePrimitive {
                             pic_index,
                             clipped.origin,
                             uv_rect_kind,
-                            raster_spatial_node_index,
                             surface_spatial_node_index,
                             device_pixel_scale,
+                            PrimitiveVisibilityMask::all(),
                         );
 
                         let render_task_id = frame_state.render_tasks.add(picture_task);
 
-                        (render_task_id, render_task_id)
+                        Some((render_task_id, render_task_id))
                     }
                 };
 
-                frame_state.surfaces[raster_config.surface_index.0].render_tasks = Some(SurfaceRenderTasks {
-                    root,
-                    port,
-                });
+                if let Some((root, port)) = dep_info {
+                    frame_state.surfaces[raster_config.surface_index.0].render_tasks = Some(SurfaceRenderTasks {
+                        root,
+                        port,
+                    });
 
-                frame_state.render_tasks.add_dependency(
-                    frame_state.surfaces[parent_surface_index.0].render_tasks.unwrap().port,
-                    root,
-                );
-
-                (true, false)
+                    frame_state.render_tasks.add_dependency(
+                        frame_state.surfaces[parent_surface_index.0].render_tasks.unwrap().port,
+                        root,
+                    );
+                }
             }
-            None => {
-                (false, true)
-            }
+            None => {}
         };
 
         let state = PictureState {
@@ -2749,13 +2422,10 @@ impl PicturePrimitive {
 
         
         
-        if let Some(ref tile_cache) = self.tile_cache {
-            
-            
-            if tile_cache.is_enabled {
-                frame_state.push_dirty_region(tile_cache.dirty_region.clone());
-                dirty_region_count += 1;
-            }
+        if let Some(RasterConfig { composite_mode: PictureCompositeMode::TileCache { .. }, .. }) = self.raster_config {
+            let dirty_region = self.tile_cache.as_ref().unwrap().dirty_region.clone();
+            frame_state.push_dirty_region(dirty_region);
+            dirty_region_count += 1;
         }
 
         if inflation_factor > 0.0 {
@@ -2764,15 +2434,48 @@ impl PicturePrimitive {
             dirty_region_count += 1;
         }
 
+        
+        
+        let (is_passthrough, subpixel_mode) = match self.raster_config {
+            Some(RasterConfig { ref composite_mode, .. }) => {
+                let subpixel_mode = match composite_mode {
+                    PictureCompositeMode::TileCache { .. } => {
+                        
+                        
+                        
+                        
+                        SubpixelMode::Allow
+                    }
+                    PictureCompositeMode::Blit(..) |
+                    PictureCompositeMode::ComponentTransferFilter(..) |
+                    PictureCompositeMode::Filter(..) |
+                    PictureCompositeMode::MixBlend(..) => {
+                        SubpixelMode::Deny
+                    }
+                };
+
+                (false, subpixel_mode)
+            }
+            None => {
+                (true, SubpixelMode::Allow)
+            }
+        };
+
+        
+        let subpixel_mode = match (parent_subpixel_mode, subpixel_mode) {
+            (SubpixelMode::Allow, SubpixelMode::Allow) => SubpixelMode::Allow,
+            _ => SubpixelMode::Deny,
+        };
+
         let context = PictureContext {
             pic_index,
             apply_local_clip_rect: self.apply_local_clip_rect,
-            is_composite,
             is_passthrough,
             raster_spatial_node_index,
             surface_spatial_node_index,
             surface_index,
             dirty_region_count,
+            subpixel_mode,
         };
 
         let prim_list = mem::replace(&mut self.prim_list, PrimitiveList::empty());
@@ -2954,15 +2657,25 @@ impl PicturePrimitive {
         
         let actual_composite_mode = match self.requested_composite_mode {
             Some(PictureCompositeMode::Filter(ref filter)) if filter.is_noop() => None,
+            Some(PictureCompositeMode::TileCache { .. }) => {
+                
+                
+                
+                let spatial_node = &frame_context
+                    .clip_scroll_tree
+                    .spatial_nodes[self.spatial_node_index.0 as usize];
+                if spatial_node.coordinate_system_id == CoordinateSystemId::root() {
+                    Some(PictureCompositeMode::TileCache { })
+                } else {
+                    None
+                }
+            },
             ref mode => mode.clone(),
         };
 
         if let Some(composite_mode) = actual_composite_mode {
             
-            let (parent_raster_node_index, parent_allows_subpixel_aa)= {
-                let parent_surface = state.current_surface();
-                (parent_surface.raster_spatial_node_index, parent_surface.allow_subpixel_aa)
-            };
+            let parent_raster_node_index = state.current_surface().raster_spatial_node_index;
             let surface_spatial_node_index = self.spatial_node_index;
 
             
@@ -2989,24 +2702,6 @@ impl PicturePrimitive {
                 .get_relative_transform(surface_spatial_node_index, parent_raster_node_index)
                 .is_perspective();
 
-            
-            
-            let allow_subpixel_aa = match composite_mode {
-                PictureCompositeMode::TileCache { clear_color, .. } => {
-                    
-                    
-                    clear_color.a >= 1.0
-                }
-                PictureCompositeMode::Blit(..) |
-                PictureCompositeMode::ComponentTransferFilter(..) |
-                PictureCompositeMode::Filter(..) |
-                PictureCompositeMode::MixBlend(..) => {
-                    false
-                }
-            };
-            
-            let allow_subpixel_aa = parent_allows_subpixel_aa && allow_subpixel_aa;
-
             let surface = SurfaceInfo::new(
                 surface_spatial_node_index,
                 if establishes_raster_root {
@@ -3015,10 +2710,9 @@ impl PicturePrimitive {
                     parent_raster_node_index
                 },
                 inflation_factor,
-                frame_context.screen_world_rect,
+                frame_context.global_screen_world_rect,
                 &frame_context.clip_scroll_tree,
                 frame_context.global_device_pixel_scale,
-                allow_subpixel_aa,
             );
 
             self.raster_config = Some(RasterConfig {
@@ -3363,77 +3057,4 @@ fn create_raster_mappers(
     );
 
     (map_raster_to_world, map_pic_to_raster)
-}
-
-
-fn build_ref_prims(
-    ref_prims: &[ReferencePrimitive],
-    prim_map: &mut FastHashMap<ItemUid, WorldPoint>,
-    clip_scroll_tree: &ClipScrollTree,
-) {
-    prim_map.clear();
-
-    let mut map_local_to_world = SpaceMapper::new(
-        ROOT_SPATIAL_NODE_INDEX,
-        WorldRect::zero(),
-    );
-
-    for ref_prim in ref_prims {
-        map_local_to_world.set_target_spatial_node(
-            ref_prim.spatial_node_index,
-            clip_scroll_tree,
-        );
-
-        
-        
-        let rect = LayoutRect::new(
-            ref_prim.local_pos,
-            LayoutSize::zero(),
-        );
-
-        if let Some(rect) = map_local_to_world.map(&rect) {
-            prim_map.insert(ref_prim.uid, rect.origin);
-        }
-    }
-}
-
-
-
-
-
-
-fn correlate_prim_maps(
-    old_prims: &FastHashMap<ItemUid, WorldPoint>,
-    new_prims: &FastHashMap<ItemUid, WorldPoint>,
-) -> Option<WorldVector2D> {
-    let mut map: FastHashMap<VectorKey, usize> = FastHashMap::default();
-
-    
-    
-    
-    for (uid, old_point) in old_prims {
-        if let Some(new_point) = new_prims.get(uid) {
-            let key = (*new_point - *old_point).round().into();
-
-            let key_count = map.entry(key).or_insert(0);
-            *key_count += 1;
-        }
-    }
-
-    
-    
-    
-    map.into_iter()
-        .max_by_key(|&(_, count)| count)
-        .and_then(|(offset, count)| {
-            
-            
-            
-            let prims_available = new_prims.len().min(old_prims.len());
-            if count >= prims_available / 4 {
-                Some(offset.into())
-            } else {
-                None
-            }
-        })
 }

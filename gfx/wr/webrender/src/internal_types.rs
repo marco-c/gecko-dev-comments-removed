@@ -266,6 +266,8 @@ pub struct TextureCacheAllocInfo {
     pub filter: TextureFilter,
     
     pub is_shared_cache: bool,
+    
+    pub has_depth: bool,
 }
 
 
