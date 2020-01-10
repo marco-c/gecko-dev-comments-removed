@@ -1052,7 +1052,8 @@ bool SandboxBroker::SetSecurityLevelForPluginProcess(int32_t aSandboxLevel) {
   return true;
 }
 
-bool SandboxBroker::SetSecurityLevelForGMPlugin(SandboxLevel aLevel) {
+bool SandboxBroker::SetSecurityLevelForGMPlugin(SandboxLevel aLevel,
+                                                bool aIsRemoteLaunch) {
   if (!mPolicy) {
     return false;
   }
@@ -1243,9 +1244,13 @@ bool SandboxBroker::SetSecurityLevelForGMPlugin(SandboxLevel aLevel) {
 
   
   
-  result =
-      mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
-                       sandbox::TargetPolicy::HANDLES_DUP_BROKER, L"Section");
+  
+  
+  result = mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
+                            aIsRemoteLaunch
+                                ? sandbox::TargetPolicy::HANDLES_DUP_ANY
+                                : sandbox::TargetPolicy::HANDLES_DUP_BROKER,
+                            L"Section");
   SANDBOX_ENSURE_SUCCESS(
       result,
       "With these static arguments AddRule should never fail, what happened?");

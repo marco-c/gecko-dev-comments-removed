@@ -50,8 +50,19 @@ mozilla::ipc::IPCResult RemoteSandboxBrokerChild::AnswerLaunchApp(
     envmap[towstring(env.name())] = towstring(env.value());
   }
 
+  
+  
+  
+  ipc::ScopedProcessHandle parentProcHandle;
+  if (!base::OpenProcessHandle(OtherPid(), &parentProcHandle.rwget())) {
+    *aOutOk = false;
+    return IPC_OK();
+  }
+  mSandboxBroker.AddTargetPeer(parentProcHandle);
+
   if (!mSandboxBroker.SetSecurityLevelForGMPlugin(
-          AbstractSandboxBroker::SandboxLevel(aParams.sandboxLevel()))) {
+          AbstractSandboxBroker::SandboxLevel(aParams.sandboxLevel()),
+           true)) {
     *aOutOk = false;
     return IPC_OK();
   }
