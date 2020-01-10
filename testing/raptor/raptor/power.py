@@ -17,7 +17,7 @@ def init_android_power_test(raptor):
     upload_dir = os.getenv("MOZ_UPLOAD_DIR")
     if not upload_dir:
         LOG.critical(
-            "% power test ignored; MOZ_UPLOAD_DIR unset" % raptor.config["app"]
+            "%s power test ignored; MOZ_UPLOAD_DIR unset" % raptor.config["app"]
         )
         return
     
@@ -91,7 +91,7 @@ def finish_android_power_test(raptor, test_name, os_baseline=False):
     upload_dir = os.getenv("MOZ_UPLOAD_DIR")
     if not upload_dir:
         LOG.critical(
-            "% power test ignored because MOZ_UPLOAD_DIR was not set" % test_name
+            "%s power test ignored because MOZ_UPLOAD_DIR was not set" % test_name
         )
         return
     
