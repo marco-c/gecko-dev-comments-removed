@@ -350,8 +350,6 @@ var interfaceNamesInGlobalScope = [
   
   { name: "Element", insecureContext: true },
   
-  { name: "ElementInternals", insecureContext: true, nightly: true },
-  
   { name: "ErrorEvent", insecureContext: true },
   
   { name: "Event", insecureContext: true },
