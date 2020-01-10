@@ -359,6 +359,7 @@ function createMutex(aName, aAllowExisting = true) {
 
 
 
+
 function getPerInstallationMutexName(aGlobal = true) {
   if (AppConstants.platform != "win") {
     throw Cr.NS_ERROR_NOT_IMPLEMENTED;
@@ -472,7 +473,29 @@ function getElevationRequired() {
 
 
 
+
+
 function getCanApplyUpdates() {
+  try {
+    
+    
+    
+    let updateTestFile = getUpdateFile([FILE_UPDATE_TEST]);
+    LOG("getCanApplyUpdates - testing write access " + updateTestFile.path);
+    testWriteAccess(updateTestFile, false);
+  } catch (e) {
+    LOG(
+      "getCanApplyUpdates - unable to apply updates without write " +
+        "access to the update directory. Exception: " +
+        e
+    );
+    
+    
+    
+    fixUpdateDirectoryPermissions();
+    return false;
+  }
+
   if (AppConstants.platform == "macosx") {
     LOG(
       "getCanApplyUpdates - bypass the write since elevation can be used " +
@@ -490,15 +513,6 @@ function getCanApplyUpdates() {
   }
 
   try {
-    
-    
-    
-    
-    
-    
-    let updateTestFile = getUpdateFile([FILE_UPDATE_TEST]);
-    LOG("getCanApplyUpdates - testing write access " + updateTestFile.path);
-    testWriteAccess(updateTestFile, false);
     if (AppConstants.platform == "win") {
       
       
@@ -1359,6 +1373,42 @@ function pingStateAndStatusCodes(aUpdate, aStartup, aStatus) {
 
 
 
+function fixUpdateDirectoryPermissions() {
+  if (AppConstants.platform != "win") {
+    LOG(
+      "There is currently no implementation for fixing update directory " +
+        "permissions on this platform"
+    );
+    return false;
+  }
+
+  if (!gUpdateDirPermissionFixAttempted) {
+    
+    gUpdateDirPermissionFixAttempted = true;
+    LOG("Attempting to fix update directory permissions");
+    try {
+      Cc["@mozilla.org/updates/update-processor;1"]
+        .createInstance(Ci.nsIUpdateProcessor)
+        .fixUpdateDirectoryPerms(shouldUseService());
+    } catch (e) {
+      LOG(
+        "Attempt to fix update directory permissions failed. Exception: " + e
+      );
+      return false;
+    }
+    return true;
+  }
+  return false;
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1412,31 +1462,7 @@ function handleCriticalWriteFailure(path) {
     }
   }
 
-  if (!gUpdateDirPermissionFixAttempted) {
-    
-    
-    if (AppConstants.platform != "win") {
-      LOG(
-        "There is currently no implementation for fixing update directory " +
-          "permissions on this platform"
-      );
-      return false;
-    }
-    LOG("Attempting to fix update directory permissions");
-    try {
-      Cc["@mozilla.org/updates/update-processor;1"]
-        .createInstance(Ci.nsIUpdateProcessor)
-        .fixUpdateDirectoryPerms(shouldUseService());
-    } catch (e) {
-      LOG(
-        "Attempt to fix update directory permissions failed. Exception: " + e
-      );
-      return false;
-    }
-    gUpdateDirPermissionFixAttempted = true;
-    return true;
-  }
-  return false;
+  return fixUpdateDirectoryPermissions();
 }
 
 
@@ -3396,17 +3422,27 @@ UpdateManager.prototype = {
       return updates;
     }
 
+    
+    
+    
+    
+    
+    let mode =
+      fileName == FILE_ACTIVE_UPDATE_XML
+        ? FileUtils.MODE_RDWR
+        : FileUtils.MODE_RDONLY;
     let fileStream = Cc[
       "@mozilla.org/network/file-input-stream;1"
     ].createInstance(Ci.nsIFileInputStream);
     try {
-      fileStream.init(file, FileUtils.MODE_RDONLY, FileUtils.PERMS_FILE, 0);
+      fileStream.init(file, mode, FileUtils.PERMS_FILE, 0);
     } catch (e) {
       LOG(
         "UpdateManager:_loadXMLFileIntoArray - error initializing file " +
           "stream. Exception: " +
           e
       );
+      fixUpdateDirectoryPermissions();
       return updates;
     }
     try {

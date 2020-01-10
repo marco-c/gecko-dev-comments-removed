@@ -187,6 +187,9 @@ static bool GetStatusFile(nsIFile* dir, nsCOMPtr<nsIFile>& result) {
 
 
 
+
+
+
 template <size_t Size>
 static bool GetStatusFileContents(nsIFile* statusFile, char (&buf)[Size]) {
   static_assert(
@@ -194,7 +197,7 @@ static bool GetStatusFileContents(nsIFile* statusFile, char (&buf)[Size]) {
       "Buffer needs to be large enough to hold the known status codes");
 
   PRFileDesc* fd = nullptr;
-  nsresult rv = statusFile->OpenNSPRFileDesc(PR_RDONLY, 0660, &fd);
+  nsresult rv = statusFile->OpenNSPRFileDesc(PR_RDWR, 0660, &fd);
   if (NS_FAILED(rv)) {
     return false;
   }
