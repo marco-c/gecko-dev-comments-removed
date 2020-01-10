@@ -30,7 +30,6 @@ AntiTracking.runTest(
   {
     runExtraTests: false,
     cookieBehavior,
-    blockingByContentBlockingRTUI,
     blockingByAllowList,
     callback: async _ => {
       

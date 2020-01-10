@@ -1,7 +1,5 @@
 
 
-let counter = 0;
-
 AntiTracking.runTest(
   "Storage Access API called in a sandboxed iframe",
   
@@ -46,23 +44,7 @@ AntiTracking.runTest(
   },
 
   null, 
-  
-  async _ => {
-    
-    
-    
-    
-    
-    
-    if (++counter % 2 == 0) {
-      return;
-    }
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value =>
-        resolve()
-      );
-    });
-  },
+  null, 
   [["dom.storage_access.enabled", true]], 
   false, 
   false, 
@@ -162,9 +144,6 @@ AntiTracking.runTest(
   null, 
   
   async _ => {
-    if (++counter % 2 == 1) {
-      return;
-    }
     await new Promise(resolve => {
       Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value =>
         resolve()

@@ -150,8 +150,7 @@ UrlClassifierFeatureSocialTrackingProtection::ProcessChannel(
   NS_ENSURE_ARG_POINTER(aChannel);
   NS_ENSURE_ARG_POINTER(aShouldContinue);
 
-  bool isAllowListed = UrlClassifierCommon::IsAllowListed(
-      aChannel, AntiTrackingCommon::eSocialTracking);
+  bool isAllowListed = UrlClassifierCommon::IsAllowListed(aChannel);
 
   
   *aShouldContinue = isAllowListed;
