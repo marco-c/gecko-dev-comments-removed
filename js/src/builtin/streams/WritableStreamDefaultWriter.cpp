@@ -118,9 +118,36 @@ static MOZ_MUST_USE bool WritableStream_desiredSize(JSContext* cx,
   return true;
 }
 
+
+
+
+static MOZ_MUST_USE bool WritableStream_ready(JSContext* cx, unsigned argc,
+                                              Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  
+  Rooted<WritableStreamDefaultWriter*> unwrappedWriter(
+      cx, UnwrapAndTypeCheckThis<WritableStreamDefaultWriter>(cx, args,
+                                                              "get ready"));
+  if (!unwrappedWriter) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+
+  
+  Rooted<JSObject*> readyPromise(cx, unwrappedWriter->readyPromise());
+  if (!cx->compartment()->wrap(cx, &readyPromise)) {
+    return false;
+  }
+
+  args.rval().setObject(*readyPromise);
+  return true;
+}
+
 static const JSPropertySpec WritableStreamDefaultWriter_properties[] = {
     JS_PSG("closed", WritableStream_closed, 0),
-    JS_PSG("desiredSize", WritableStream_desiredSize, 0), JS_PS_END};
+    JS_PSG("desiredSize", WritableStream_desiredSize, 0),
+    JS_PSG("ready", WritableStream_ready, 0), JS_PS_END};
 
 static const JSFunctionSpec WritableStreamDefaultWriter_methods[] = {JS_FS_END};
 
