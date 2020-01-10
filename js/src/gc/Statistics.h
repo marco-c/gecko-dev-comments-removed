@@ -180,6 +180,10 @@ struct Statistics {
     }
   }
 
+  void measureInitialHeapSize();
+  void adoptHeapSizeDuringIncrementalGC(Zone* mergedZone);
+  void recordFreedArena() { heapBytesFreed += gc::ArenaSize; }
+
   void nonincremental(gc::AbortReason reason) {
     MOZ_ASSERT(reason != gc::AbortReason::None);
     nonincrementalReason_ = reason;
@@ -360,6 +364,15 @@ struct Statistics {
   
   size_t preTotalHeapBytes;
   size_t postTotalHeapBytes;
+
+  
+  size_t preCollectedHeapBytes;
+
+  
+  using AtomicSizeCounter =
+      mozilla::Atomic<size_t, mozilla::Relaxed,
+                      mozilla::recordreplay::Behavior::DontPreserve>;
+  AtomicSizeCounter heapBytesFreed;
 
   
 
