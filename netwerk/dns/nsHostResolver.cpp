@@ -442,44 +442,7 @@ void AddrHostRecord::ResolveComplete() {
     }
   }
 
-  if (mTRRUsed && mNativeUsed && mNativeSuccess &&
-      mTRRSuccess) {  
-    static const TimeDuration k50ms = TimeDuration::FromMilliseconds(50);
-    static const TimeDuration k100ms = TimeDuration::FromMilliseconds(100);
-    if (mTrrDuration <= mNativeDuration) {
-      if ((mNativeDuration - mTrrDuration) > k100ms) {
-        AccumulateCategorical(Telemetry::LABELS_DNS_TRR_RACE2::TRRFasterBy100);
-      } else if ((mNativeDuration - mTrrDuration) > k50ms) {
-        AccumulateCategorical(Telemetry::LABELS_DNS_TRR_RACE2::TRRFasterBy50);
-      } else {
-        AccumulateCategorical(Telemetry::LABELS_DNS_TRR_RACE2::TRRFaster);
-      }
-      LOG(("nsHostRecord::Complete %s Dns Race: TRR\n", host.get()));
-    } else {
-      if ((mTrrDuration - mNativeDuration) > k100ms) {
-        AccumulateCategorical(
-            Telemetry::LABELS_DNS_TRR_RACE2::NativeFasterBy100);
-      } else if ((mTrrDuration - mNativeDuration) > k50ms) {
-        AccumulateCategorical(
-            Telemetry::LABELS_DNS_TRR_RACE2::NativeFasterBy50);
-      } else {
-        AccumulateCategorical(Telemetry::LABELS_DNS_TRR_RACE2::NativeFaster);
-      }
-      LOG(("nsHostRecord::Complete %s Dns Race: NATIVE\n", host.get()));
-    }
-  }
-
-  if (mTRRUsed && mNativeUsed && ((mResolverMode == MODE_SHADOW))) {
-    
-    AccumulateCategorical(
-        mNativeSuccess && mTRRSuccess
-            ? Telemetry::LABELS_DNS_TRR_COMPARE::BothWorked
-            : ((mNativeSuccess
-                    ? Telemetry::LABELS_DNS_TRR_COMPARE::NativeWorked
-                    : (mTRRSuccess
-                           ? Telemetry::LABELS_DNS_TRR_COMPARE::TRRWorked
-                           : Telemetry::LABELS_DNS_TRR_COMPARE::BothFailed))));
-  } else if (mResolverMode == MODE_TRRFIRST) {
+  if (mResolverMode == MODE_TRRFIRST) {
     if (flags & nsIDNSService::RESOLVE_DISABLE_TRR) {
       
       Telemetry::Accumulate(Telemetry::DNS_TRR_DISABLED, mNativeSuccess);
@@ -510,11 +473,11 @@ void AddrHostRecord::ResolveComplete() {
     case MODE_TRRONLY:
       AccumulateCategorical(Telemetry::LABELS_DNS_LOOKUP_ALGORITHM::trrOnly);
       break;
-    case MODE_SHADOW:
-      AccumulateCategorical(Telemetry::LABELS_DNS_LOOKUP_ALGORITHM::trrShadow);
-      break;
     case MODE_RESERVED1:
       MOZ_DIAGNOSTIC_ASSERT(false, "MODE_RESERVED1 should not be used");
+      break;
+    case MODE_RESERVED4:
+      MOZ_DIAGNOSTIC_ASSERT(false, "MODE_RESERVED4 should not be used");
       break;
   }
 
@@ -1448,8 +1411,7 @@ nsresult nsHostResolver::NameLookup(nsHostRecord* rec) {
     rv = TrrLookup(rec);
   }
 
-  if (TRR_DISABLED(mode) || (mode == MODE_SHADOW) ||
-      ((mode == MODE_TRRFIRST) && NS_FAILED(rv)) ||
+  if (TRR_DISABLED(mode) || ((mode == MODE_TRRFIRST) && NS_FAILED(rv)) ||
       (mode == MODE_TRRONLY && skipTRR)) {
     if (!rec->IsAddrRecord()) {
       return rv;
@@ -1743,7 +1705,6 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
         
         
         
-        
         addrRec->mTrrDuration = TimeStamp::Now() - addrRec->mTrrStart;
       }
     }
@@ -1759,7 +1720,7 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
       addrRec->mFirstTRR.swap(newRRSet);  
       MOZ_ASSERT(addrRec->mFirstTRR && !newRRSet);
 
-      if (addrRec->mDidCallbacks || addrRec->mResolverMode == MODE_SHADOW) {
+      if (addrRec->mDidCallbacks) {
         return LOOKUP_OK;
       }
 
@@ -1828,8 +1789,7 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
   
   
   
-  
-  if (!mShutdown && !(trrResult && addrRec->mResolverMode == MODE_SHADOW)) {
+  if (!mShutdown) {
     MutexAutoLock lock(addrRec->addr_info_lock);
     RefPtr<AddrInfo> old_addr_info;
     if (different_rrset(addrRec->addr_info, newRRSet)) {
@@ -1849,14 +1809,7 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
 
   bool doCallbacks = true;
 
-  if (trrResult && (addrRec->mResolverMode == MODE_SHADOW) &&
-      !addrRec->mDidCallbacks) {
-    
-    doCallbacks = false;
-    LOG((
-        "nsHostResolver Suppressing TRR %s because it is first shadow result\n",
-        addrRec->host.get()));
-  } else if (trrResult && addrRec->mDidCallbacks) {
+  if (trrResult && addrRec->mDidCallbacks) {
     
     LOG(("nsHostResolver Suppressing callback for second TRR response for %s\n",
          addrRec->host.get()));

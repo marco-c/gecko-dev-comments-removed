@@ -135,6 +135,9 @@ nsresult TRRService::ReadPrefs(const char* name) {
       if (tmp == MODE_RESERVED1) {
         tmp = MODE_TRROFF;
       }
+      if (tmp == MODE_RESERVED4) {
+        tmp = MODE_TRROFF;
+      }
       mMode = tmp;
     }
   }

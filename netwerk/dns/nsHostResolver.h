@@ -35,7 +35,7 @@ enum ResolverMode {
   MODE_RESERVED1,   
   MODE_TRRFIRST,    
   MODE_TRRONLY,     
-  MODE_SHADOW,      
+  MODE_RESERVED4,   
   MODE_TRROFF       
 };
 }  

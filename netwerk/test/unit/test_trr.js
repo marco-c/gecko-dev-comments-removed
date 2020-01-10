@@ -305,6 +305,10 @@ add_task(async function test14() {
   Services.prefs.setIntPref("network.trr.mode", 4); 
   Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/404`);
   await new DNSListener("test14.example.com", "127.0.0.1");
+
+  Services.prefs.setIntPref("network.trr.mode", 4); 
+  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`);
+  await new DNSListener("bar.example.com", "127.0.0.1");
 });
 
 
@@ -314,6 +318,10 @@ add_task(async function test15() {
   Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/dns-750ms`);
   Services.prefs.setIntPref("network.trr.request-timeout", 10);
   await new DNSListener("test15.example.com", "127.0.0.1");
+
+  Services.prefs.setIntPref("network.trr.mode", 4); 
+  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`);
+  await new DNSListener("bar.example.com", "127.0.0.1");
 });
 
 
@@ -369,6 +377,10 @@ add_task(async function test21() {
   Services.prefs.setIntPref("network.trr.mode", 4); 
   Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=none&cnameloop=true`);
   await new DNSListener("test21.example.com", "127.0.0.1");
+
+  Services.prefs.setIntPref("network.trr.mode", 4); 
+  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`);
+  await new DNSListener("bar.example.com", "127.0.0.1");
 });
 
 
