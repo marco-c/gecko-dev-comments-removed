@@ -2716,6 +2716,30 @@ class AutoSaveRestoreContainsBlendMode {
   }
 };
 
+class AutoSaveRestoreContainsBackdropFilter {
+  nsDisplayListBuilder& mBuilder;
+  bool mSavedContainsBackdropFilter;
+
+ public:
+  explicit AutoSaveRestoreContainsBackdropFilter(nsDisplayListBuilder& aBuilder)
+      : mBuilder(aBuilder),
+        mSavedContainsBackdropFilter(aBuilder.ContainsBackdropFilter()) {}
+
+  
+
+
+
+
+
+  void DelegateUp(bool aContainsBackdropFilter) {
+    mSavedContainsBackdropFilter = aContainsBackdropFilter;
+  }
+
+  ~AutoSaveRestoreContainsBackdropFilter() {
+    mBuilder.SetContainsBackdropFilter(mSavedContainsBackdropFilter);
+  }
+};
+
 static void CheckForApzAwareEventHandlers(nsDisplayListBuilder* aBuilder,
                                           nsIFrame* aFrame) {
   if (aBuilder->GetAncestorHasApzAwareEventHandler()) {
@@ -3051,6 +3075,19 @@ void nsIFrame::BuildDisplayListForStackingContext(
   AutoSaveRestoreContainsBlendMode autoRestoreBlendMode(*aBuilder);
   aBuilder->SetContainsBlendMode(false);
 
+  bool backdropFilterEnabled =
+      StaticPrefs::layout_css_backdrop_filter_enabled();
+  bool usingBackdropFilter =
+      backdropFilterEnabled && effects->HasBackdropFilters() &&
+      nsDisplayBackdropFilters::CanCreateWebRenderCommands(aBuilder, this);
+
+  if (usingBackdropFilter) {
+    aBuilder->SetContainsBackdropFilter(true);
+  }
+
+  AutoSaveRestoreContainsBackdropFilter autoRestoreBackdropFilter(*aBuilder);
+  aBuilder->SetContainsBackdropFilter(false);
+
   nsRect visibleRectOutsideTransform = visibleRect;
   bool allowAsyncAnimation = false;
   bool inTransform = aBuilder->IsInTransform();
@@ -3121,17 +3158,9 @@ void nsIFrame::BuildDisplayListForStackingContext(
     }
   }
 
-  bool backdropFilterEnabled =
-      StaticPrefs::layout_css_backdrop_filter_enabled();
-  bool usingBackdropFilter =
-      backdropFilterEnabled && effects->HasBackdropFilters() &&
-      nsDisplayBackdropFilters::CanCreateWebRenderCommands(aBuilder, this);
   bool usingFilter = effects->HasFilters();
   bool usingMask = nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(this);
   bool usingSVGEffects = usingFilter || usingMask;
-
-  bool formsBackdropRoot = backdropFilterEnabled &&
-                           FormsBackdropRoot(disp, effects, StyleSVGReset());
 
   nsRect visibleRectOutsideSVGEffects = visibleRect;
   nsDisplayList hoistedScrollInfoItemsStorage;
@@ -3250,6 +3279,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
 
   nsDisplayListCollection set(aBuilder);
   Maybe<nsRect> clipForMask;
+  bool insertBackdropRoot;
   {
     DisplayListClipState::AutoSaveRestore nestedClipState(aBuilder);
     nsDisplayListBuilder::AutoInTransformSetter inTransformSetter(aBuilder,
@@ -3306,6 +3336,10 @@ void nsIFrame::BuildDisplayListForStackingContext(
     aBuilder->Check();
     aBuilder->DisplayCaret(this, set.Content());
 
+    insertBackdropRoot = backdropFilterEnabled &&
+                         aBuilder->ContainsBackdropFilter() &&
+                         FormsBackdropRoot(disp, effects, StyleSVGReset());
+
     
     
     
@@ -3324,13 +3358,21 @@ void nsIFrame::BuildDisplayListForStackingContext(
     
     
     
-    if (aBuilder->ContainsBlendMode() && aBuilder->IsRetainingDisplayList()) {
+    if ((insertBackdropRoot || aBuilder->ContainsBlendMode()) &&
+        aBuilder->IsRetainingDisplayList()) {
       if (!aBuilder->GetDirtyRect().Contains(aBuilder->GetVisibleRect())) {
         aBuilder->SetPartialBuildFailed(true);
       } else {
         aBuilder->SetDisablePartialUpdates(true);
       }
     }
+  }
+
+  
+  
+  
+  if (!insertBackdropRoot && aBuilder->ContainsBackdropFilter()) {
+    autoRestoreBackdropFilter.DelegateUp(true);
   }
 
   if (aBuilder->IsBackgroundOnly()) {
@@ -3384,7 +3426,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
     ct.TrackContainer(resultList.GetTop());
   }
 
-  if (formsBackdropRoot) {
+  if (insertBackdropRoot) {
     DisplayListClipState::AutoSaveRestore backdropRootContainerClipState(
         aBuilder);
     resultList.AppendNewToTop<nsDisplayBackdropRootContainer>(

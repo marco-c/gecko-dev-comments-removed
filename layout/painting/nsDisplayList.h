@@ -1650,6 +1650,17 @@ class nsDisplayListBuilder {
   }
   bool ContainsBlendMode() const { return mContainsBlendMode; }
 
+  
+
+
+
+
+
+  void SetContainsBackdropFilter(bool aContainsBackdropFilter) {
+    mContainsBackdropFilter = aContainsBackdropFilter;
+  }
+  bool ContainsBackdropFilter() const { return mContainsBackdropFilter; }
+
   DisplayListClipState& ClipState() { return mClipState; }
   const ActiveScrolledRoot* CurrentActiveScrolledRoot() {
     return mCurrentActiveScrolledRoot;
@@ -2025,6 +2036,7 @@ class nsDisplayListBuilder {
   bool mIsInActiveDocShell;
   bool mBuildAsyncZoomContainer;
   bool mBuildBackdropRootContainer;
+  bool mContainsBackdropFilter;
 
   nsRect mHitTestArea;
   CompositorHitTestInfo mHitTestInfo;
