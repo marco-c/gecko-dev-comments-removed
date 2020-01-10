@@ -251,17 +251,6 @@ ThreadClient.prototype = {
   
 
 
-
-
-
-  threadGrips: DebuggerClient.requester({
-    type: "threadGrips",
-    actors: arg(0),
-  }),
-
-  
-
-
   getSources: DebuggerClient.requester({
     type: "sources",
   }),
