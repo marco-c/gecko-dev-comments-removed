@@ -1290,11 +1290,15 @@ void CompositorOGL::DrawGeometry(const Geometry& aGeometry,
 
   IntPoint offset = mCurrentRenderTarget->GetOrigin();
   IntSize size = mCurrentRenderTarget->GetSize();
-  Rect renderBound(mCurrentRenderTarget->GetRect());
 
   
+  
   IntRect clipRect = aClipRect + mCurrentRenderTarget->GetClipSpaceOrigin();
-  renderBound.IntersectRect(renderBound, Rect(clipRect));
+  if (Maybe<IntRect> rtClip = mCurrentRenderTarget->GetClipRect()) {
+    clipRect = clipRect.Intersect(*rtClip);
+  }
+
+  Rect renderBound(mCurrentRenderTarget->GetRect().Intersect(clipRect));
 
   Rect destRect = aTransform.TransformAndClipBounds(aRect, renderBound);
 
@@ -1331,10 +1335,6 @@ void CompositorOGL::DrawGeometry(const Geometry& aGeometry,
     maskBounds = maskTransform.As2D().TransformBounds(maskBounds);
 
     clipRect = clipRect.Intersect(RoundedOut(maskBounds));
-  }
-
-  if (Maybe<IntRect> rtClip = mCurrentRenderTarget->GetClipRect()) {
-    clipRect = clipRect.Intersect(*rtClip);
   }
 
   
