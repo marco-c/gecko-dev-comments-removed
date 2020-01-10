@@ -420,7 +420,7 @@ class VideoTrackEncoder : public TrackEncoder {
   
 
 
-  void SetKeyFrameInterval(int32_t aKeyFrameInterval);
+  void SetKeyFrameInterval(uint32_t aKeyFrameInterval);
 
  protected:
   
@@ -518,7 +518,7 @@ class VideoTrackEncoder : public TrackEncoder {
   
 
 
-  int32_t mKeyFrameInterval;
+  uint32_t mKeyFrameInterval;
 
   
 
