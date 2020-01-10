@@ -4,12 +4,11 @@
 
 
 
-function RandomSelector() {
-}
+function RandomSelector() {}
 
 RandomSelector.prototype = {
-  classID:          Components.ID("{c616fcfd-9737-41f1-aa74-cee72a38f91b}"),
-  QueryInterface:   ChromeUtils.generateQI([Ci.nsIContentProcessProvider]),
+  classID: Components.ID("{c616fcfd-9737-41f1-aa74-cee72a38f91b}"),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIContentProcessProvider]),
 
   provideProcess(aType, aOpener, aProcesses, aMaxCount) {
     if (aProcesses.length < aMaxCount) {
@@ -33,12 +32,11 @@ RandomSelector.prototype = {
 
 
 
-function MinTabSelector() {
-}
+function MinTabSelector() {}
 
 MinTabSelector.prototype = {
-  classID:          Components.ID("{2dc08eaf-6eef-4394-b1df-a3a927c1290b}"),
-  QueryInterface:   ChromeUtils.generateQI([Ci.nsIContentProcessProvider]),
+  classID: Components.ID("{2dc08eaf-6eef-4394-b1df-a3a927c1290b}"),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIContentProcessProvider]),
 
   provideProcess(aType, aOpener, aProcesses, aMaxCount) {
     if (aProcesses.length < aMaxCount) {
@@ -66,4 +64,4 @@ MinTabSelector.prototype = {
   },
 };
 
-var EXPORTED_SYMBOLS = ["RandomSelector", "MinTabSelector"]
+var EXPORTED_SYMBOLS = ["RandomSelector", "MinTabSelector"];
