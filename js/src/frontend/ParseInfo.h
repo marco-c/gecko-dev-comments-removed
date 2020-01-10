@@ -8,16 +8,20 @@
 #define frontend_ParseInfo_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Variant.h"
 
 #include "ds/LifoAlloc.h"
 #include "frontend/FunctionTree.h"
 #include "frontend/UsedNameTracker.h"
 #include "js/RealmOptions.h"
+#include "js/Vector.h"
 #include "vm/JSContext.h"
 #include "vm/Realm.h"
 
 namespace js {
 namespace frontend {
+
+class BigIntLiteral;
 
 
 
@@ -27,12 +31,21 @@ struct MOZ_RAII ParseInfo {
   LifoAllocScope& allocScope;
   FunctionTreeHolder treeHolder;
 
+  using DeferredAllocationType = mozilla::Variant<BigIntLiteral*>;
+  using DeferredAllocationVector = js::Vector<DeferredAllocationType>;
+
+  
+  
+  
+  DeferredAllocationVector deferredAllocations;
+
   ParseInfo(JSContext* cx, LifoAllocScope& alloc)
       : usedNames(cx),
         allocScope(alloc),
         treeHolder(cx, cx->realm()->behaviors().deferredParserAlloc()
                            ? FunctionTreeHolder::Mode::Deferred
-                           : FunctionTreeHolder::Mode::Eager) {}
+                           : FunctionTreeHolder::Mode::Eager),
+        deferredAllocations(cx) {}
 };
 
 }  
