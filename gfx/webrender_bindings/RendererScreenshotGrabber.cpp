@@ -1,3 +1,9 @@
+
+
+
+
+
+
 #include "RendererScreenshotGrabber.h"
 
 using mozilla::layers::ProfilerScreenshots;

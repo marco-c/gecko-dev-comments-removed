@@ -1,3 +1,9 @@
+
+
+
+
+
+
 #ifndef mozilla_jni_Natives_h__
 #define mozilla_jni_Natives_h__
 
