@@ -7,6 +7,12 @@
 const { ACTIVITY_TYPE } = require("../constants");
 const { CDPConnector } = require("./chrome/events");
 
+
+
+
+
+
+
 class ChromeConnector {
   constructor() {
     
