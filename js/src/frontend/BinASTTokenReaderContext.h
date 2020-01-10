@@ -7,10 +7,11 @@
 #ifndef frontend_BinASTTokenReaderContext_h
 #define frontend_BinASTTokenReaderContext_h
 
+#include "mozilla/Array.h"       
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
-
-#include "mozilla/Maybe.h"  
+#include "mozilla/Maybe.h"       
+#include "mozilla/Variant.h"     
 
 #include <stddef.h>  
 #include <stdint.h>  
@@ -324,7 +325,7 @@ class HuffmanDictionary {
   
   
   
-  Vector<HuffmanTable, BINAST_INTERFACE_AND_FIELD_LIMIT> fields;
+  mozilla::Array<HuffmanTable, BINAST_INTERFACE_AND_FIELD_LIMIT> fields;
 
   
   
@@ -332,7 +333,8 @@ class HuffmanDictionary {
   
   
   
-  Vector<HuffmanTableListLength, BINAST_NUMBER_OF_LIST_TYPES> listLengths;
+  mozilla::Array<HuffmanTableListLength, BINAST_NUMBER_OF_LIST_TYPES>
+      listLengths;
 };
 
 
