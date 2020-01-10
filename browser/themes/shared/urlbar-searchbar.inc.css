@@ -116,6 +116,13 @@
   transition-timing-function: var(--animation-easing-function);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  #urlbar[breakout][breakout-extend-animate],
+  #urlbar[breakout][breakout-extend-animate] > #urlbar-input-container {
+    transition-duration: 0s;
+  }
+}
+
 #urlbar[breakout][breakout-extend] {
   
 
