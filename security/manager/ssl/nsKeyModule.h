@@ -39,7 +39,7 @@ class nsKeyObject final : public nsIKeyObject {
   
   nsKeyObject(nsKeyObject&);
 
-  UniquePK11SymKey mSymKey;
+  mozilla::UniquePK11SymKey mSymKey;
 };
 
 class nsKeyObjectFactory final : public nsIKeyObjectFactory {

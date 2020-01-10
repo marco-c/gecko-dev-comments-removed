@@ -26,6 +26,7 @@
 #include "nsXULAppAPI.h"
 #include "mozpkix/pkixtypes.h"
 #include "secerr.h"
+#include "ssl.h"
 
 
 

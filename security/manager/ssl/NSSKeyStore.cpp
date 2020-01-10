@@ -8,7 +8,9 @@
 
 #include "mozilla/Base64.h"
 #include "mozilla/SyncRunnable.h"
+#include "nsNSSComponent.h"
 #include "nsPK11TokenDB.h"
+#include "nsXULAppAPI.h"
 
 
 

@@ -497,7 +497,8 @@ static nsresult GenerateType3Msg(const nsString& domain,
 
   
   
-  bool ntlmv2 = StaticPrefs::network_auth_force_generic_ntlm_v1() == false;
+  bool ntlmv2 =
+      mozilla::StaticPrefs::network_auth_force_generic_ntlm_v1() == false;
 
   
 #ifdef IS_BIG_ENDIAN

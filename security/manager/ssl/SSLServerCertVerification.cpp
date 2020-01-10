@@ -1137,10 +1137,6 @@ void GatherRootCATelemetry(const UniqueCERTCertList& certList) {
 }
 
 
-const uint64_t ONE_WEEK_IN_SECONDS = (7 * (24 * 60 * 60));
-const uint64_t ONE_YEAR_IN_WEEKS = 52;
-
-
 
 void GatherSuccessfulValidationTelemetry(const UniqueCERTCertList& certList) {
   GatherBaselineRequirementsTelemetry(certList);
