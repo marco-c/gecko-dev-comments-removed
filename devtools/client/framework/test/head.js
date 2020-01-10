@@ -14,6 +14,12 @@ Services.scriptloader.loadSubScript(
 
 const EventEmitter = require("devtools/shared/event-emitter");
 
+
+
+SpecialPowers.pushPrefEnv({
+  set: [["security.allow_unsafe_parent_loads", true]],
+});
+
 function toggleAllTools(state) {
   for (const [, tool] of gDevTools._tools) {
     if (!tool.visibilityswitch) {

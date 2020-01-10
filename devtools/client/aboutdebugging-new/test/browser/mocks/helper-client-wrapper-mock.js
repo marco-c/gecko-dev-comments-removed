@@ -1,7 +1,9 @@
 
 
 
-"use strict";
+"use strict"; 
+
+
 
 
 
@@ -91,8 +93,7 @@ function createClientMock() {
     setPreference: function(prefName, value) {
       this._preferences[prefName] = value;
     },
-    getPerformancePanelUrl: () =>
-      "data:text/html;charset=UTF-8,fake_profiler_page",
+    getPerformancePanelUrl: () => CHROME_URL_ROOT + "empty.html",
     loadPerformanceProfiler: () => {},
     
     checkVersionCompatibility: () => {
