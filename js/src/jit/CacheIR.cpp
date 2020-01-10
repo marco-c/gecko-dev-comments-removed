@@ -5055,8 +5055,7 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
     return AttachDecision::TemporarilyUnoptimizable;
   }
 
-  if (isConstructing && !calleeFunc->hasJITCode()) {
-    
+  if (isConstructing && !calleeFunc->hasJitScript()) {
     
     
     
