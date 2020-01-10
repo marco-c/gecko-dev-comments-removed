@@ -1701,28 +1701,20 @@ js::GCParallelTask::~GCParallelTask() {
   assertIdle();
 }
 
-bool js::GCParallelTask::startWithLockHeld(AutoLockHelperThreadState& lock) {
+void js::GCParallelTask::startWithLockHeld(AutoLockHelperThreadState& lock) {
   MOZ_ASSERT(CanUseExtraThreads());
+  MOZ_ASSERT(HelperThreadState().threads);
   assertIdle();
-
-  
-  
-  
-  if (!HelperThreadState().threads) {
-    return false;
-  }
 
   HelperThreadState().gcParallelWorklist(lock).insertBack(this);
   setDispatched(lock);
 
   HelperThreadState().notifyOne(GlobalHelperThreadState::PRODUCER, lock);
-
-  return true;
 }
 
-bool js::GCParallelTask::start() {
-  AutoLockHelperThreadState helperLock;
-  return startWithLockHeld(helperLock);
+void js::GCParallelTask::start() {
+  AutoLockHelperThreadState lock;
+  startWithLockHeld(lock);
 }
 
 void js::GCParallelTask::startOrRunIfIdle(AutoLockHelperThreadState& lock) {
@@ -1734,10 +1726,13 @@ void js::GCParallelTask::startOrRunIfIdle(AutoLockHelperThreadState& lock) {
   
   joinWithLockHeld(lock);
 
-  if (!(CanUseExtraThreads() && startWithLockHeld(lock))) {
+  if (!CanUseExtraThreads()) {
     AutoUnlockHelperThreadState unlock(lock);
     runFromMainThread();
+    return;
   }
+
+  startWithLockHeld(lock);
 }
 
 void js::GCParallelTask::join() {

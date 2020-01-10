@@ -91,14 +91,14 @@ class GCParallelTask : public mozilla::LinkedListElement<GCParallelTask>,
   mozilla::TimeDuration duration() const { return duration_; }
 
   
-  MOZ_MUST_USE bool start();
+  void start();
   void join();
 
   
   
-  MOZ_MUST_USE bool startWithLockHeld(AutoLockHelperThreadState& locked);
-  void joinWithLockHeld(AutoLockHelperThreadState& locked);
-  void joinRunningOrFinishedTask(AutoLockHelperThreadState& locked);
+  void startWithLockHeld(AutoLockHelperThreadState& lock);
+  void joinWithLockHeld(AutoLockHelperThreadState& lock);
+  void joinRunningOrFinishedTask(AutoLockHelperThreadState& lock);
 
   
   void runFromMainThread();
