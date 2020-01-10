@@ -69,6 +69,15 @@ function TestBuffer(str)
   g.testLog.push(str);
 }
 
+function isWebRenderOnAndroidDevice() {
+  var xr = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime);
+  
+  
+  return xr.OS == "Android" &&
+      g.browserIsRemote &&
+      g.windowUtils.layerManagerType == "WebRender";
+}
+
 function FlushTestBuffer()
 {
   
@@ -1105,15 +1114,32 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults)
             
             var fuzz_exceeded = false;
 
+            
+            var expected = g.urls[0].expected;
+
             differences = g.windowUtils.compareCanvases(g.canvas1, g.canvas2, maxDifference);
+
+            if (g.urls[0].noAutoFuzz) {
+                
+            } else if (isWebRenderOnAndroidDevice() && maxDifference.value <= 2 && differences > 0) {
+                
+                
+                
+                
+                
+                
+                
+                
+                logger.info(`REFTEST wr-on-android dropping fuzz of (${maxDifference.value}, ${differences}) to (0, 0)`);
+                maxDifference.value = 0;
+                differences = 0;
+            }
+
             equal = (differences == 0);
 
             if (maxDifference.value > 0 && equal) {
                 throw "Inconsistent result from compareCanvases.";
             }
-
-            
-            var expected = g.urls[0].expected;
 
             if (expected == EXPECTED_FUZZY) {
                 logger.info(`REFTEST fuzzy test ` +
