@@ -372,6 +372,13 @@ class IonBuilder : public MIRGenerator,
                                        MDefinition* left, MDefinition* right);
 
   
+  AbortReasonOr<MBinaryBitwiseInstruction*> binaryBitOpEmit(
+      JSOp op, MIRType specialization, MDefinition* left, MDefinition* right);
+  AbortReasonOr<Ok> binaryBitOpTrySpecialized(bool* emitted, JSOp op,
+                                              MDefinition* left,
+                                              MDefinition* right);
+
+  
   AbortReasonOr<Ok> bitnotTrySpecialized(bool* emitted, MDefinition* input);
 
   
