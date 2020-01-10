@@ -384,6 +384,8 @@ var interfaceNamesInGlobalScope = [
   
   { name: "FormData", insecureContext: true },
   
+  { name: "FormDataEvent", insecureContext: true },
+  
   { name: "FontFace", insecureContext: true },
   
   { name: "FontFaceSet", insecureContext: true },
