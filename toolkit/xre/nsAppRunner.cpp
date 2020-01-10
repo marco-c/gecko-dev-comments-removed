@@ -2985,6 +2985,21 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
   DisableAppNap();
 #endif
 
+#ifndef ANDROID
+  if (PR_GetEnv("MOZ_RUN_GTEST")
+#  ifdef FUZZING
+      || PR_GetEnv("FUZZER")
+#  endif
+  ) {
+    
+    
+    
+    
+    PR_SetEnv("MOZ_HEADLESS=1");
+    MOZ_ASSERT(gfxPlatform::IsHeadless());
+  }
+#endif  
+
   if (PR_GetEnv("MOZ_CHAOSMODE")) {
     ChaosFeature feature = ChaosFeature::Any;
     long featureInt = strtol(PR_GetEnv("MOZ_CHAOSMODE"), nullptr, 16);
