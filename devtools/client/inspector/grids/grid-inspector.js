@@ -318,11 +318,6 @@ class GridInspector {
 
     const gridFronts = await this.getGrids();
 
-    
-    if (!this.inspector) {
-      return;
-    }
-
     if (!gridFronts.length) {
       try {
         this.store.dispatch(updateGrids([]));
@@ -368,10 +363,6 @@ class GridInspector {
         } catch (e) {
           
           
-          return;
-        }
-        
-        if (!this.inspector) {
           return;
         }
       }
@@ -544,47 +535,53 @@ class GridInspector {
 
 
   async onReflow() {
-    if (!this.isPanelVisible()) {
-      return;
-    }
+    try {
+      if (!this.isPanelVisible()) {
+        return;
+      }
 
-    
-    const { grids } = this.store.getState();
+      
+      const { grids } = this.store.getState();
 
-    
-    const newGridFronts = await this.getGrids();
+      
+      const newGridFronts = await this.getGrids();
 
-    
-    if (!this.inspector) {
-      return;
-    }
-
-    
-    
-    if (grids.length && grids.some(grid => !grid.nodeFront.actorID)) {
-      this.updateGridPanel(newGridFronts);
-      return;
-    }
-
-    
-    
-    const oldNodeFronts = grids.map(grid => grid.nodeFront.actorID);
-    const newNodeFronts = newGridFronts
-      .filter(grid => grid.containerNode)
-      .map(grid => grid.containerNodeFront.actorID);
-
-    if (
-      grids.length === newGridFronts.length &&
-      oldNodeFronts.sort().join(",") == newNodeFronts.sort().join(",") &&
-      !this.haveCurrentFragmentsChanged(newGridFronts)
-    ) {
       
       
-      return;
-    }
+      if (grids.length && grids.some(grid => !grid.nodeFront.actorID)) {
+        await this.updateGridPanel(newGridFronts);
+        return;
+      }
 
-    
-    this.updateGridPanel(newGridFronts);
+      
+      
+      const oldNodeFronts = grids.map(grid => grid.nodeFront.actorID);
+      const newNodeFronts = newGridFronts
+        .filter(grid => grid.containerNode)
+        .map(grid => grid.containerNodeFront.actorID);
+
+      if (
+        grids.length === newGridFronts.length &&
+        oldNodeFronts.sort().join(",") == newNodeFronts.sort().join(",") &&
+        !this.haveCurrentFragmentsChanged(newGridFronts)
+      ) {
+        
+        
+        return;
+      }
+
+      
+      await this.updateGridPanel(newGridFronts);
+    } catch (e) {
+      if (!this.inspector) {
+        
+        
+        console.warn("Inspector destroyed while executing onReflow callback");
+      } else {
+        
+        throw e;
+      }
+    }
   }
 
   
