@@ -316,7 +316,7 @@ class RemoteSettingsClient extends EventEmitter {
           
           if (imported > 0) {
             console.debug(`${this.identifier} ${imported} records loaded from JSON dump`);
-            ({ data: importedFromDump } = await kintoCollection.list());
+            ({ data: importedFromDump } = await kintoCollection.list({ order: "" }));
           }
           collectionLastModified = await kintoCollection.db.getLastModified();
         } catch (e) {
@@ -333,7 +333,11 @@ class RemoteSettingsClient extends EventEmitter {
         
         if (this.verifySignature && ObjectUtils.isEmpty(await kintoCollection.metadata())) {
           console.debug(`${this.identifier} verify signature of local data`);
-          const { data: allData } = await kintoCollection.list({ order: "" });
+          let allData = importedFromDump;
+          if (importedFromDump.length == 0) {
+            
+            ({ data: allData } = await kintoCollection.list({ order: "" }));
+          }
           const localRecords = allData.map(r => kintoCollection.cleanLocalFields(r));
           const metadata = await kintoCollection.pullMetadata(this.httpClient());
           if (this.verifySignature) {
