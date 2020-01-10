@@ -560,6 +560,7 @@ void VRManager::EnumerateVRDisplays() {
       mFrameStarted = false;
       mBrowserState.Clear();
       mLastSensorState.Clear();
+      mEnumerationCompleted = false;
       mDisplayInfo.mGroupMask = kVRGroupContent;
       
       
