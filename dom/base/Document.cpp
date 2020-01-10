@@ -5944,6 +5944,12 @@ already_AddRefed<PresShell> Document::CreatePresShell(
     
     
     aContext->MediaFeatureValuesChanged({MediaFeatureChange::kAllChanges});
+  } else {
+    
+    
+    
+    
+    mStyleSet->ClearCachedStyleData();
   }
 
   
