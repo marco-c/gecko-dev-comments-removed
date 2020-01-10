@@ -1,10 +1,10 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set sw=2 ts=8 et tw=80 : */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// HttpLog.h should generally be included first
+
+
+
+
+
+
 #include "HttpLog.h"
 
 #include "Http2Session.h"
@@ -60,11 +60,11 @@ TLSFilterTransaction::TLSFilterTransaction(nsAHttpTransaction* aWrapped,
     spserv->GetSocketProvider("ssl", getter_AddRefs(provider));
   }
 
-  // Install an NSPR layer to handle getpeername() with a failure. This is kind
-  // of silly, but the default one used by the pipe asserts when called and the
-  // nss code calls it to see if we are connected to a real socket or not.
+  
+  
+  
   if (!sLayerMethodsPtr) {
-    // one time initialization
+    
     sLayerIdentity = PR_GetUniqueIdentity("TLSFilterTransaction Layer");
     sLayerMethods = *PR_GetDefaultIOMethods();
     sLayerMethods.getpeername = GetPeerName;
@@ -158,7 +158,7 @@ nsresult TLSFilterTransaction::OnReadSegment(const char* aData, uint32_t aCount,
   nsresult rv;
   *outCountRead = 0;
 
-  // get rid of buffer first
+  
   if (mEncryptedTextUsed) {
     rv = mSegmentReader->CommitToSegmentSize(mEncryptedTextUsed, mForce);
     if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
@@ -179,10 +179,10 @@ nsresult TLSFilterTransaction::OnReadSegment(const char* aData, uint32_t aCount,
     }
   }
 
-  // encrypt for network write
-  // write aData down the SSL layer into the FilterWrite() method where it will
-  // be queued into mEncryptedText. We need to copy it like this in order to
-  // guarantee atomic writes
+  
+  
+  
+  
 
   EnsureBuffer(mEncryptedText, aCount + 4096, 0, mEncryptedTextSize);
 
@@ -195,9 +195,9 @@ nsresult TLSFilterTransaction::OnReadSegment(const char* aData, uint32_t aCount,
       if (*outCountRead) {
         return NS_OK;
       }
-      // mTransaction ReadSegments actually obscures this code, so
-      // keep it in a member var for this::ReadSegments to inspect. Similar
-      // to nsHttpConnection::mSocketOutCondition
+      
+      
+      
       PRErrorCode code = PR_GetError();
       mReadSegmentReturnValue = ErrorAccordingToNSPR(code);
 
@@ -214,9 +214,9 @@ nsresult TLSFilterTransaction::OnReadSegment(const char* aData, uint32_t aCount,
 
   uint32_t amt = 0;
   if (mEncryptedTextUsed) {
-    // If we are tunneled on spdy CommitToSegmentSize will prevent partial
-    // writes that could interfere with multiplexing. H1 is fine with
-    // partial writes.
+    
+    
+    
     rv = mSegmentReader->CommitToSegmentSize(mEncryptedTextUsed, mForce);
     if (rv != NS_BASE_STREAM_WOULD_BLOCK) {
       rv = mSegmentReader->OnReadSegment(mEncryptedText.get(),
@@ -224,7 +224,7 @@ nsresult TLSFilterTransaction::OnReadSegment(const char* aData, uint32_t aCount,
     }
 
     if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
-      // return OK because all the data was consumed and stored in this buffer
+      
       Connection()->TransactionHasDataToWrite(this);
       return NS_OK;
     } else if (NS_FAILED(rv)) {
@@ -258,8 +258,8 @@ nsresult TLSFilterTransaction::CommitToSegmentSize(uint32_t size,
     return NS_ERROR_FAILURE;
   }
 
-  // pad the commit by a little bit to leave room for encryption overhead
-  // this isn't foolproof and we may still have to buffer, but its a good start
+  
+  
   mForce = forceCommitment;
   return mSegmentReader->CommitToSegmentSize(size + 1024, forceCommitment);
 }
@@ -273,8 +273,8 @@ nsresult TLSFilterTransaction::OnWriteSegment(char* aData, uint32_t aCount,
     return NS_ERROR_FAILURE;
   }
 
-  // this will call through to FilterInput to get data from the higher
-  // level connection before removing the local TLS layer
+  
+  
   mFilterReadCode = NS_OK;
   int32_t bytesRead = PR_Read(mFD, aData, aCount);
   if (bytesRead == -1) {
@@ -282,8 +282,8 @@ nsresult TLSFilterTransaction::OnWriteSegment(char* aData, uint32_t aCount,
     if (code == PR_WOULD_BLOCK_ERROR) {
       return NS_BASE_STREAM_WOULD_BLOCK;
     }
-    // If reading from the socket succeeded (NS_SUCCEEDED(mFilterReadCode)),
-    // but the nss layer encountered an error remember the error.
+    
+    
     if (NS_SUCCEEDED(mFilterReadCode)) {
       mFilterReadCode = ErrorAccordingToNSPR(code);
       LOG(("TLSFilterTransaction::OnWriteSegment %p nss error %" PRIx32 ".\n",
@@ -356,22 +356,20 @@ nsresult TLSFilterTransaction::ReadSegments(nsAHttpSegmentReader* aReader,
   return NS_SUCCEEDED(rv) ? mReadSegmentReturnValue : rv;
 }
 
-nsresult TLSFilterTransaction::WriteSegmentsAgain(nsAHttpSegmentWriter* aWriter,
-                                                  uint32_t aCount,
-                                                  uint32_t* outCountWritten,
-                                                  bool* again) {
+nsresult TLSFilterTransaction::WriteSegments(nsAHttpSegmentWriter* aWriter,
+                                             uint32_t aCount,
+                                             uint32_t* outCountWritten) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-  LOG(("TLSFilterTransaction::WriteSegmentsAgain %p max=%d\n", this, aCount));
+  LOG(("TLSFilterTransaction::WriteSegments %p max=%d\n", this, aCount));
 
   if (!mTransaction) {
     return NS_ERROR_UNEXPECTED;
   }
 
   mSegmentWriter = aWriter;
-  nsresult rv =
-      mTransaction->WriteSegmentsAgain(this, aCount, outCountWritten, again);
+  nsresult rv = mTransaction->WriteSegments(this, aCount, outCountWritten);
   if (NS_SUCCEEDED(rv) && NS_FAILED(mFilterReadCode) && !(*outCountWritten)) {
-    // nsPipe turns failures into silent OK.. undo that!
+    
     rv = mFilterReadCode;
     if (Connection() && (mFilterReadCode == NS_BASE_STREAM_WOULD_BLOCK)) {
       Unused << Connection()->ResumeRecv();
@@ -381,13 +379,6 @@ nsresult TLSFilterTransaction::WriteSegmentsAgain(nsAHttpSegmentWriter* aWriter,
        " %d\n",
        this, static_cast<uint32_t>(rv), *outCountWritten));
   return rv;
-}
-
-nsresult TLSFilterTransaction::WriteSegments(nsAHttpSegmentWriter* aWriter,
-                                             uint32_t aCount,
-                                             uint32_t* outCountWritten) {
-  bool again = false;
-  return WriteSegmentsAgain(aWriter, aCount, outCountWritten, &again);
 }
 
 nsresult TLSFilterTransaction::GetTransactionSecurityInfo(
@@ -413,7 +404,7 @@ nsresult TLSFilterTransaction::NudgeTunnel(NudgeTunnelCallback* aCallback) {
   nsCOMPtr<nsISSLSocketControl> ssl(do_QueryInterface(mSecInfo));
   nsresult rv = ssl ? ssl->DriveHandshake() : NS_ERROR_FAILURE;
   if (NS_FAILED(rv) && rv != NS_BASE_STREAM_WOULD_BLOCK) {
-    // fatal handshake failure
+    
     LOG(("TLSFilterTransaction %p Fatal Handshake Failure: %d\n", this,
          PR_GetError()));
     return NS_ERROR_FAILURE;
@@ -422,24 +413,24 @@ nsresult TLSFilterTransaction::NudgeTunnel(NudgeTunnelCallback* aCallback) {
   uint32_t notUsed;
   Unused << OnReadSegment("", 0, &notUsed);
 
-  // The SSL Layer does some unusual things with PR_Poll that makes it a bad
-  // match for multiplexed SSL sessions. We work around this by manually polling
-  // for the moment during the brief handshake phase or otherwise blocked on
-  // write. Thankfully this is a pretty unusual state. NSPR doesn't help us here
-  // - asserting when polling without the NSPR IO layer on the bottom of the
-  // stack. As a follow-on we can do some NSPR and maybe libssl changes to make
-  // this more event driven, but this is acceptable for getting started.
+  
+  
+  
+  
+  
+  
+  
 
   uint32_t counter = mNudgeCounter++;
   uint32_t delay;
 
   if (!counter) {
     delay = 0;
-  } else if (counter < 8) {  // up to 48ms at 6
+  } else if (counter < 8) {  
     delay = 6;
-  } else if (counter < 34) {  // up to 499 ms at 17ms
+  } else if (counter < 34) {  
     delay = 17;
-  } else {  // after that at 51ms (3 old windows ticks)
+  } else {  
     delay = 51;
   }
 
@@ -483,7 +474,7 @@ nsresult TLSFilterTransaction::StartTimerCallback() {
        mNudgeCallback.get()));
 
   if (mNudgeCallback) {
-    // This class can be called re-entrantly, so cleanup m* before ->on()
+    
     RefPtr<NudgeTunnelCallback> cb(mNudgeCallback);
     mNudgeCallback = nullptr;
     return cb->OnTunnelNudged(this);
@@ -547,9 +538,9 @@ int32_t TLSFilterTransaction::FilterRecv(PRFileDesc* aFD, void* aBuf,
   return FilterRead(aFD, aBuf, aAmount);
 }
 
-/////
-// The other methods of TLSFilterTransaction just call mTransaction->method
-/////
+
+
+
 
 void TLSFilterTransaction::SetConnection(nsAHttpConnection* aConnection) {
   if (!mTransaction) {
@@ -729,7 +720,7 @@ class SocketInWrapper : public nsIAsyncInputStream,
     return mStream->ReadSegments(aWriter, aClosure, aCount, _retval);
   }
 
-  // finally, ones that don't get forwarded :)
+  
   NS_IMETHOD Read(char* aBuf, uint32_t aCount, uint32_t* _retval) override;
   virtual nsresult OnWriteSegment(char* segment, uint32_t count,
                                   uint32_t* countWritten) override;
@@ -759,10 +750,10 @@ SocketInWrapper::Read(char* aBuf, uint32_t aCount, uint32_t* _retval) {
        mTLSFilter.get()));
 
   if (!mTLSFilter) {
-    return NS_ERROR_UNEXPECTED;  // protect potentially dangling mTLSFilter
+    return NS_ERROR_UNEXPECTED;  
   }
 
-  // mTLSFilter->mSegmentWriter MUST be this at ctor time
+  
   return mTLSFilter->OnWriteSegment(aBuf, aCount, _retval);
 }
 
@@ -796,7 +787,7 @@ class SocketOutWrapper : public nsIAsyncOutputStream,
     return mStream->WriteFrom(aFromStream, aCount, _retval);
   }
 
-  // finally, ones that don't get forwarded :)
+  
   NS_IMETHOD Write(const char* aBuf, uint32_t aCount,
                    uint32_t* _retval) override;
   virtual nsresult OnReadSegment(const char* segment, uint32_t count,
@@ -820,9 +811,9 @@ SocketOutWrapper::Write(const char* aBuf, uint32_t aCount, uint32_t* _retval) {
   LOG(("SocketOutWrapper Write %d %p filter=%p\n", aCount, this,
        mTLSFilter.get()));
 
-  // mTLSFilter->mSegmentReader MUST be this at ctor time
+  
   if (!mTLSFilter) {
-    return NS_ERROR_UNEXPECTED;  // protect potentially dangling mTLSFilter
+    return NS_ERROR_UNEXPECTED;  
   }
 
   return mTLSFilter->OnReadSegment(aBuf, aCount, _retval);
@@ -941,12 +932,12 @@ class OutputStreamShim : public nsIAsyncOutputStream {
     }
   }
 
-  RefPtr<WeakTransProxy> mWeakTrans;  // SpdyConnectTransaction *
+  RefPtr<WeakTransProxy> mWeakTrans;  
   nsIOutputStreamCallback* mCallback;
   nsresult mStatus;
   mozilla::Mutex mMutex;
 
-  // Websockets
+  
   bool mIsWebsocket;
   nsresult CallTransactionHasDataToWrite();
   nsresult CloseTransaction(nsresult reason);
@@ -980,12 +971,12 @@ class InputStreamShim : public nsIAsyncInputStream {
     }
   }
 
-  RefPtr<WeakTransProxy> mWeakTrans;  // SpdyConnectTransaction *
+  RefPtr<WeakTransProxy> mWeakTrans;  
   nsIInputStreamCallback* mCallback;
   nsresult mStatus;
   mozilla::Mutex mMutex;
 
-  // Websockets
+  
   bool mIsWebsocket;
   nsresult CloseTransaction(nsresult reason);
 };
@@ -1012,9 +1003,9 @@ SpdyConnectTransaction::SpdyConnectTransaction(
   mTimestampSyn = TimeStamp::Now();
   mRequestHead = new nsHttpRequestHead();
   if (mIsWebsocket) {
-    // Ensure our request head has all the websocket headers duplicated from the
-    // original transaction before calling the boilerplate stuff to create the
-    // rest of the CONNECT headers.
+    
+    
+    
     trans->RequestHead()->Enter();
     mRequestHead->SetHeaders(trans->RequestHead()->Headers());
     trans->RequestHead()->Exit();
@@ -1029,7 +1020,7 @@ SpdyConnectTransaction::~SpdyConnectTransaction() {
   LOG(("SpdyConnectTransaction dtor %p\n", this));
 
   if (mDrivingTransaction) {
-    // requeue it I guess. This should be gone.
+    
     mDrivingTransaction->SetH2WSTransaction(nullptr);
     Unused << gHttpHandler->InitiateTransaction(
         mDrivingTransaction, mDrivingTransaction->Priority());
@@ -1073,8 +1064,8 @@ void SpdyConnectTransaction::MapStreamToHttpConnection(
       break;
   }
 
-  // this new http connection has a specific hashkey (i.e. to a particular
-  // host via the tunnel) and is associated with the tunnel streams
+  
+  
   LOG(("SpdyConnectTransaction %p new httpconnection %p %s\n", this,
        mTunneledConn.get(), aConnInfo->HashKey().get()));
 
@@ -1093,22 +1084,22 @@ void SpdyConnectTransaction::MapStreamToHttpConnection(
   } else if (mIsWebsocket) {
     LOG(("SpdyConnectTransaction::MapStreamToHttpConnection %p websocket",
          this));
-    // Let the root transaction know about us, so it can pass our own conn
-    // to the websocket.
+    
+    
     mDrivingTransaction->SetH2WSTransaction(this);
   } else {
     mTunneledConn->SetupSecondaryTLS(this);
     mTunneledConn->SetInSpdyTunnel(true);
   }
 
-  // make the originating transaction stick to the tunneled conn
+  
   RefPtr<nsAHttpConnection> wrappedConn =
       gHttpHandler->ConnMgr()->MakeConnectionHandle(mTunneledConn);
   mDrivingTransaction->SetConnection(wrappedConn);
   mDrivingTransaction->MakeSticky();
 
   if (!mIsWebsocket) {
-    // jump the priority and start the dispatcher
+    
     Unused << gHttpHandler->InitiateTransaction(
         mDrivingTransaction, nsISupportsPriority::PRIORITY_HIGHEST - 60);
     mDrivingTransaction = nullptr;
@@ -1164,7 +1155,7 @@ nsresult SpdyConnectTransaction::ReadSegments(nsAHttpSegmentReader* reader,
 
   mSegmentReader = reader;
 
-  // spdy stream carrying tunnel is not setup yet.
+  
   if (!mTunneledConn) {
     uint32_t toWrite = mConnectString.Length() - mConnectStringOffset;
     toWrite = std::min(toWrite, count);
@@ -1192,8 +1183,8 @@ nsresult SpdyConnectTransaction::ReadSegments(nsAHttpSegmentReader* reader,
   }
 
   if (mForcePlainText) {
-    // this path just ignores sending the request so that we can
-    // send a synthetic reply in writesegments()
+    
+    
     LOG(
         ("SpdyConnectTransaciton::ReadSegments %p dropping %d output bytes "
          "due to synthetic reply\n",
@@ -1212,13 +1203,13 @@ nsresult SpdyConnectTransaction::ReadSegments(nsAHttpSegmentReader* reader,
   }
 
   if (cb) {
-    // See if there is any more data available
+    
     rv = cb->OnOutputStreamReady(mTunnelStreamOut);
     if (NS_FAILED(rv)) {
       return rv;
     }
 
-    // Write out anything that may have come out of the stream just above
+    
     uint32_t subtotal;
     count -= *countRead;
     rv = Flush(count, &subtotal);
@@ -1300,15 +1291,15 @@ nsresult SpdyConnectTransaction::WriteSegments(nsAHttpSegmentWriter* writer,
   LOG(("SpdyConnectTransaction::WriteSegments %p max=%d cb=%p\n", this, count,
        cb));
 
-  // For websockets, we need to forward the initial response through to the base
-  // transaction so the normal websocket plumbing can do all the things it needs
-  // to do.
+  
+  
+  
   if (mIsWebsocket) {
     return WebsocketWriteSegments(writer, count, countWritten);
   }
 
-  // first call into the tunnel stream to get the demux'd data out of the
-  // spdy session.
+  
+  
   nsresult rv = WriteDataToBuffer(writer, count, countWritten);
   if (NS_FAILED(rv)) {
     return rv;
@@ -1339,8 +1330,8 @@ nsresult SpdyConnectTransaction::WebsocketWriteSegments(
     nsAHttpSegmentWriter* writer, uint32_t count, uint32_t* countWritten) {
   MOZ_ASSERT(mIsWebsocket);
   if (mDrivingTransaction && !mDrivingTransaction->IsDone()) {
-    // Transaction hasn't received end of headers yet, so keep passing data to
-    // it until it has. Then we can take over.
+    
+    
     nsresult rv =
         mDrivingTransaction->WriteSegments(writer, count, countWritten);
     if (NS_SUCCEEDED(rv) && mDrivingTransaction->IsDone() && !mConnRefTaken) {
@@ -1349,8 +1340,8 @@ nsresult SpdyConnectTransaction::WebsocketWriteSegments(
   }
 
   if (!mConnRefTaken) {
-    // Force driving transaction to finish so the websocket channel can get its
-    // notifications correctly and start driving.
+    
+    
     MOZ_ASSERT(mDrivingTransaction);
     mDrivingTransaction->Close(NS_OK);
   }
@@ -1382,8 +1373,8 @@ void SpdyConnectTransaction::Close(nsresult code) {
   if (mIsWebsocket && mDrivingTransaction) {
     mDrivingTransaction->SetH2WSTransaction(nullptr);
     if (!mConnRefTaken) {
-      // This indicates that the websocket failed to set up, so just close down
-      // the transaction as usual.
+      
+      
       mDrivingTransaction->Close(code);
       mDrivingTransaction = nullptr;
     }
@@ -1398,7 +1389,7 @@ void SpdyConnectTransaction::Close(nsresult code) {
 
 void SpdyConnectTransaction::SetConnRefTaken() {
   mConnRefTaken = true;
-  mDrivingTransaction = nullptr;  // Just in case
+  mDrivingTransaction = nullptr;  
 }
 
 nsIOutputStreamCallback* OutputStreamShim::GetCallback() {
@@ -1434,8 +1425,8 @@ OutputStreamShim::AsyncWait(nsIOutputStreamCallback* callback,
                             unsigned int flags, unsigned int requestedCount,
                             nsIEventTarget* target) {
   if (mIsWebsocket) {
-    // With websockets, AsyncWait may be called from the main thread, but the
-    // target is on the socket thread. That's all we really care about.
+    
+    
     nsCOMPtr<nsIEventTarget> sts =
         do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID);
     MOZ_ASSERT((!target && !callback) || (target == sts));
@@ -1571,7 +1562,7 @@ OutputStreamShim::Write(const char* aBuf, uint32_t aCount, uint32_t* _retval) {
 
   if ((trans->mOutputDataUsed + aCount) >= 512000) {
     *_retval = 0;
-    // time for some flow control;
+    
     return NS_BASE_STREAM_WOULD_BLOCK;
   }
 
@@ -1622,8 +1613,8 @@ InputStreamShim::AsyncWait(nsIInputStreamCallback* callback, unsigned int flags,
                            unsigned int requestedCount,
                            nsIEventTarget* target) {
   if (mIsWebsocket) {
-    // With websockets, AsyncWait may be called from the main thread, but the
-    // target is on the socket thread. That's all we really care about.
+    
+    
     nsCOMPtr<nsIEventTarget> sts =
         do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID);
     MOZ_ASSERT((!target && !callback) || (target == sts));
@@ -1827,7 +1818,7 @@ NS_IMETHODIMP
 SocketTransportShim::SetEventSink(nsITransportEventSink* aSink,
                                   nsIEventTarget* aEventTarget) {
   if (mIsWebsocket) {
-    // Need to pretend, since websockets expect this to work
+    
     return NS_OK;
   }
   return NS_ERROR_NOT_IMPLEMENTED;
@@ -1964,5 +1955,5 @@ NS_IMPL_ISUPPORTS(OutputStreamShim, nsIOutputStream, nsIAsyncOutputStream)
 NS_IMPL_ISUPPORTS(SocketInWrapper, nsIAsyncInputStream)
 NS_IMPL_ISUPPORTS(SocketOutWrapper, nsIAsyncOutputStream)
 
-}  // namespace net
-}  // namespace mozilla
+}  
+}  
