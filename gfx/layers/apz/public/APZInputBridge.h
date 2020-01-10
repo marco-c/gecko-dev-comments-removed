@@ -24,6 +24,49 @@ struct ScrollableLayerGuid;
 
 
 
+struct APZEventResult {
+  
+
+
+
+  APZEventResult();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsEventStatus mStatus;
+  
+
+
+  ScrollableLayerGuid mTargetGuid;
+  
+
+
+
+  uint64_t mInputBlockId;
+};
+
+
+
+
+
 
 
 
@@ -46,28 +89,7 @@ class APZInputBridge {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual nsEventStatus ReceiveInputEvent(InputData& aEvent,
-                                          ScrollableLayerGuid* aOutTargetGuid,
-                                          uint64_t* aOutInputBlockId) = 0;
+  virtual APZEventResult ReceiveInputEvent(InputData& aEvent) = 0;
 
   
 
@@ -85,9 +107,7 @@ class APZInputBridge {
 
 
 
-  nsEventStatus ReceiveInputEvent(WidgetInputEvent& aEvent,
-                                  ScrollableLayerGuid* aOutTargetGuid,
-                                  uint64_t* aOutInputBlockId);
+  APZEventResult ReceiveInputEvent(WidgetInputEvent& aEvent);
 
   
   

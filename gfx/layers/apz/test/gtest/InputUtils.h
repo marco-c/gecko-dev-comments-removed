@@ -25,8 +25,6 @@
 
 
 
-
-
 template <class InputReceiver>
 void SetDefaultAllowedTouchBehavior(const RefPtr<InputReceiver>& aTarget,
                                     uint64_t aInputBlockId,
@@ -49,13 +47,12 @@ inline MultiTouchInput CreateMultiTouchInput(
 }
 
 template <class InputReceiver>
-nsEventStatus TouchDown(const RefPtr<InputReceiver>& aTarget,
-                        const ScreenIntPoint& aPoint, TimeStamp aTime,
-                        uint64_t* aOutInputBlockId = nullptr) {
+APZEventResult TouchDown(const RefPtr<InputReceiver>& aTarget,
+                         const ScreenIntPoint& aPoint, TimeStamp aTime) {
   MultiTouchInput mti =
       CreateMultiTouchInput(MultiTouchInput::MULTITOUCH_START, aTime);
   mti.mTouches.AppendElement(CreateSingleTouchData(0, aPoint));
-  return aTarget->ReceiveInputEvent(mti, nullptr, aOutInputBlockId);
+  return aTarget->ReceiveInputEvent(mti);
 }
 
 template <class InputReceiver>
@@ -64,7 +61,7 @@ nsEventStatus TouchMove(const RefPtr<InputReceiver>& aTarget,
   MultiTouchInput mti =
       CreateMultiTouchInput(MultiTouchInput::MULTITOUCH_MOVE, aTime);
   mti.mTouches.AppendElement(CreateSingleTouchData(0, aPoint));
-  return aTarget->ReceiveInputEvent(mti, nullptr, nullptr);
+  return aTarget->ReceiveInputEvent(mti).mStatus;
 }
 
 template <class InputReceiver>
@@ -73,72 +70,67 @@ nsEventStatus TouchUp(const RefPtr<InputReceiver>& aTarget,
   MultiTouchInput mti =
       CreateMultiTouchInput(MultiTouchInput::MULTITOUCH_END, aTime);
   mti.mTouches.AppendElement(CreateSingleTouchData(0, aPoint));
-  return aTarget->ReceiveInputEvent(mti, nullptr, nullptr);
+  return aTarget->ReceiveInputEvent(mti).mStatus;
 }
 
 template <class InputReceiver>
-nsEventStatus Wheel(const RefPtr<InputReceiver>& aTarget,
-                    const ScreenIntPoint& aPoint, const ScreenPoint& aDelta,
-                    TimeStamp aTime, uint64_t* aOutInputBlockId = nullptr) {
+APZEventResult Wheel(const RefPtr<InputReceiver>& aTarget,
+                     const ScreenIntPoint& aPoint, const ScreenPoint& aDelta,
+                     TimeStamp aTime) {
   ScrollWheelInput input(MillisecondsSinceStartup(aTime), aTime, 0,
                          ScrollWheelInput::SCROLLMODE_INSTANT,
                          ScrollWheelInput::SCROLLDELTA_PIXEL, aPoint, aDelta.x,
                          aDelta.y, false, WheelDeltaAdjustmentStrategy::eNone);
-  return aTarget->ReceiveInputEvent(input, nullptr, aOutInputBlockId);
+  return aTarget->ReceiveInputEvent(input);
 }
 
 template <class InputReceiver>
-nsEventStatus SmoothWheel(const RefPtr<InputReceiver>& aTarget,
-                          const ScreenIntPoint& aPoint,
-                          const ScreenPoint& aDelta, TimeStamp aTime,
-                          uint64_t* aOutInputBlockId = nullptr) {
+APZEventResult SmoothWheel(const RefPtr<InputReceiver>& aTarget,
+                           const ScreenIntPoint& aPoint,
+                           const ScreenPoint& aDelta, TimeStamp aTime) {
   ScrollWheelInput input(MillisecondsSinceStartup(aTime), aTime, 0,
                          ScrollWheelInput::SCROLLMODE_SMOOTH,
                          ScrollWheelInput::SCROLLDELTA_LINE, aPoint, aDelta.x,
                          aDelta.y, false, WheelDeltaAdjustmentStrategy::eNone);
-  return aTarget->ReceiveInputEvent(input, nullptr, aOutInputBlockId);
+  return aTarget->ReceiveInputEvent(input);
 }
 
 template <class InputReceiver>
-nsEventStatus MouseDown(const RefPtr<InputReceiver>& aTarget,
-                        const ScreenIntPoint& aPoint, TimeStamp aTime,
-                        uint64_t* aOutInputBlockId = nullptr) {
+APZEventResult MouseDown(const RefPtr<InputReceiver>& aTarget,
+                         const ScreenIntPoint& aPoint, TimeStamp aTime) {
   MouseInput input(MouseInput::MOUSE_DOWN, MouseInput::ButtonType::LEFT_BUTTON,
                    0, 0, aPoint, MillisecondsSinceStartup(aTime), aTime, 0);
-  return aTarget->ReceiveInputEvent(input, nullptr, aOutInputBlockId);
+  return aTarget->ReceiveInputEvent(input);
 }
 
 template <class InputReceiver>
-nsEventStatus MouseMove(const RefPtr<InputReceiver>& aTarget,
-                        const ScreenIntPoint& aPoint, TimeStamp aTime,
-                        uint64_t* aOutInputBlockId = nullptr) {
+APZEventResult MouseMove(const RefPtr<InputReceiver>& aTarget,
+                         const ScreenIntPoint& aPoint, TimeStamp aTime) {
   MouseInput input(MouseInput::MOUSE_MOVE, MouseInput::ButtonType::LEFT_BUTTON,
                    0, 0, aPoint, MillisecondsSinceStartup(aTime), aTime, 0);
-  return aTarget->ReceiveInputEvent(input, nullptr, aOutInputBlockId);
+  return aTarget->ReceiveInputEvent(input);
 }
 
 template <class InputReceiver>
-nsEventStatus MouseUp(const RefPtr<InputReceiver>& aTarget,
-                      const ScreenIntPoint& aPoint, TimeStamp aTime,
-                      uint64_t* aOutInputBlockId = nullptr) {
+APZEventResult MouseUp(const RefPtr<InputReceiver>& aTarget,
+                       const ScreenIntPoint& aPoint, TimeStamp aTime) {
   MouseInput input(MouseInput::MOUSE_UP, MouseInput::ButtonType::LEFT_BUTTON, 0,
                    0, aPoint, MillisecondsSinceStartup(aTime), aTime, 0);
-  return aTarget->ReceiveInputEvent(input, nullptr, aOutInputBlockId);
+  return aTarget->ReceiveInputEvent(input);
 }
 
 template <class InputReceiver>
-nsEventStatus PanGesture(PanGestureInput::PanGestureType aType,
-                         const RefPtr<InputReceiver>& aTarget,
-                         const ScreenIntPoint& aPoint,
-                         const ScreenPoint& aDelta, TimeStamp aTime,
-                         uint64_t* aOutInputBlockId = nullptr) {
+APZEventResult PanGesture(PanGestureInput::PanGestureType aType,
+                          const RefPtr<InputReceiver>& aTarget,
+                          const ScreenIntPoint& aPoint,
+                          const ScreenPoint& aDelta, TimeStamp aTime) {
   PanGestureInput input(aType, MillisecondsSinceStartup(aTime), aTime, aPoint,
                         aDelta, 0 );
   if (aType == PanGestureInput::PANGESTURE_END) {
     input.mFollowedByMomentum = true;
   }
 
-  return aTarget->ReceiveInputEvent(input, nullptr, aOutInputBlockId);
+  return aTarget->ReceiveInputEvent(input);
 }
 
 #endif  

@@ -231,39 +231,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsEventStatus ReceiveInputEvent(InputData& aEvent,
-                                  ScrollableLayerGuid* aOutTargetGuid,
-                                  uint64_t* aOutInputBlockId) override;
+  APZEventResult ReceiveInputEvent(InputData& aEvent) override;
 
   
 
@@ -701,9 +669,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
       nsTArray<TouchBehaviorFlags>* aOutTouchBehaviors,
       gfx::CompositorHitTestInfo* aOutHitResult, LayersId* aOutLayersId,
       HitTestingTreeNodeAutoLock* aOutHitScrollbarNode);
-  nsEventStatus ProcessTouchInput(MultiTouchInput& aInput,
-                                  ScrollableLayerGuid* aOutTargetGuid,
-                                  uint64_t* aOutInputBlockId);
+  APZEventResult ProcessTouchInput(MultiTouchInput& aInput);
   
 
 
@@ -734,10 +700,9 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  nsEventStatus ProcessTouchInputForScrollbarDrag(
+  APZEventResult ProcessTouchInputForScrollbarDrag(
       MultiTouchInput& aInput,
-      const HitTestingTreeNodeAutoLock& aScrollThumbNode,
-      ScrollableLayerGuid* aOutTargetGuid, uint64_t* aOutInputBlockId);
+      const HitTestingTreeNodeAutoLock& aScrollThumbNode);
   void FlushRepaintsToClearScreenToGeckoTransform();
 
   void SynthesizePinchGestureFromMouseWheel(
