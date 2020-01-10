@@ -214,6 +214,10 @@ def target_tasks_ash(full_task_graph, parameters, graph_config):
                 if p in attr['test_platform']:
                     return False
 
+            
+            if attr['unittest_suite'] == 'raptor' and attr.get('unittest_variant') == 'fission':
+                return False
+
         
         if attr['kind'] == 'upload-symbols':
             return False
