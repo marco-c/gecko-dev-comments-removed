@@ -1305,37 +1305,23 @@ static bool LayerIsScrollbarTarget(const LayerMetricsWrapper& aTarget,
 
 static void ApplyAsyncTransformToScrollbarForContent(
     const RefPtr<APZSampler>& aSampler, Layer* aScrollbar,
-    const LayerMetricsWrapper& aContent, bool aScrollbarIsDescendant) {
+    const LayerMetricsWrapper& aContent) {
   AsyncTransformComponentMatrix clipTransform;
 
   MOZ_ASSERT(aSampler);
   LayerToParentLayerMatrix4x4 transform =
       aSampler->ComputeTransformForScrollThumb(
           aScrollbar->GetLocalTransformTyped(), aContent,
-          aScrollbar->GetScrollbarData(), aScrollbarIsDescendant,
-          &clipTransform);
-
-  if (aScrollbarIsDescendant) {
-    
-    
-    
-    
-    for (Layer* ancestor = aScrollbar; ancestor != aContent.GetLayer();
-         ancestor = ancestor->GetParent()) {
-      TransformClipRect(ancestor, clipTransform);
-    }
-  }
+          aScrollbar->GetScrollbarData(), &clipTransform);
 
   SetShadowTransform(aScrollbar, transform);
 }
 
-static LayerMetricsWrapper FindScrolledLayerForScrollbar(Layer* aScrollbar,
-                                                         bool* aOutIsAncestor) {
+static LayerMetricsWrapper FindScrolledLayerForScrollbar(Layer* aScrollbar) {
   
   LayerMetricsWrapper root(aScrollbar->Manager()->GetRoot());
   LayerMetricsWrapper prevAncestor(aScrollbar);
   LayerMetricsWrapper scrolledLayer;
-
   for (LayerMetricsWrapper ancestor(aScrollbar); ancestor;
        ancestor = ancestor.GetParent()) {
     
@@ -1346,10 +1332,9 @@ static LayerMetricsWrapper FindScrolledLayerForScrollbar(Layer* aScrollbar,
     }
     prevAncestor = ancestor;
 
-    if (LayerIsScrollbarTarget(ancestor, aScrollbar)) {
-      *aOutIsAncestor = true;
-      return ancestor;
-    }
+    
+    
+    MOZ_ASSERT(!LayerIsScrollbarTarget(ancestor, aScrollbar));
   }
 
   
@@ -1377,12 +1362,11 @@ void AsyncCompositionManager::ApplyAsyncTransformToScrollbar(Layer* aLayer) {
   
   
   
-  bool isAncestor = false;
   const LayerMetricsWrapper& scrollTarget =
-      FindScrolledLayerForScrollbar(aLayer, &isAncestor);
+      FindScrolledLayerForScrollbar(aLayer);
   if (scrollTarget) {
     ApplyAsyncTransformToScrollbarForContent(mCompositorBridge->GetAPZSampler(),
-                                             aLayer, scrollTarget, isAncestor);
+                                             aLayer, scrollTarget);
   }
 }
 

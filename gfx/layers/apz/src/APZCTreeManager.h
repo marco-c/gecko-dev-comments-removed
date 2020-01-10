@@ -532,13 +532,11 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-
-
   static LayerToParentLayerMatrix4x4 ComputeTransformForScrollThumb(
       const LayerToParentLayerMatrix4x4& aCurrentTransform,
       const gfx::Matrix4x4& aScrollableContentTransform,
       AsyncPanZoomController* aApzc, const FrameMetrics& aMetrics,
-      const ScrollbarData& aScrollbarData, bool aScrollbarIsDescendant,
+      const ScrollbarData& aScrollbarData,
       AsyncTransformComponentMatrix* aOutClipTransform);
 
   
@@ -848,20 +846,17 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
     ScrollbarData mThumbData;
     ScrollableLayerGuid mTargetGuid;
     CSSTransformMatrix mTargetTransform;
-    bool mTargetIsAncestor;
 
     ScrollThumbInfo(const uint64_t& aThumbAnimationId,
                     const CSSTransformMatrix& aThumbTransform,
                     const ScrollbarData& aThumbData,
                     const ScrollableLayerGuid& aTargetGuid,
-                    const CSSTransformMatrix& aTargetTransform,
-                    bool aTargetIsAncestor)
+                    const CSSTransformMatrix& aTargetTransform)
         : mThumbAnimationId(aThumbAnimationId),
           mThumbTransform(aThumbTransform),
           mThumbData(aThumbData),
           mTargetGuid(aTargetGuid),
-          mTargetTransform(aTargetTransform),
-          mTargetIsAncestor(aTargetIsAncestor) {
+          mTargetTransform(aTargetTransform) {
       MOZ_ASSERT(mTargetGuid.mScrollId == mThumbData.mTargetViewId);
     }
   };

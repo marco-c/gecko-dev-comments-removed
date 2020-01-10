@@ -90,8 +90,6 @@ class HitTestingTreeNode {
   HitTestingTreeNode* GetPrevSibling() const;
   HitTestingTreeNode* GetParent() const;
 
-  bool IsAncestorOf(const HitTestingTreeNode* aOther) const;
-
   
 
   AsyncPanZoomController* GetApzc() const;
