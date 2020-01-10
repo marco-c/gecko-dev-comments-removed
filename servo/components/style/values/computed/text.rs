@@ -195,20 +195,21 @@ impl TextDecorationsInEffect {
 }
 
 
-
-/// cbindgen:derive-tagged-enum-copy-constructor=true
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue)]
-#[allow(missing_docs)]
-#[repr(C, u8)]
 pub enum TextEmphasisStyle {
     
-    Keyword {
-        #[css(skip_if = "TextEmphasisFillMode::is_filled")]
-        fill: TextEmphasisFillMode,
-        shape: TextEmphasisShapeKeyword,
-    },
+    Keyword(TextEmphasisKeywordValue),
     
     None,
     
-    String(crate::OwnedStr),
+    String(String),
+}
+
+
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue)]
+pub struct TextEmphasisKeywordValue {
+    
+    pub fill: TextEmphasisFillMode,
+    
+    pub shape: TextEmphasisShapeKeyword,
 }

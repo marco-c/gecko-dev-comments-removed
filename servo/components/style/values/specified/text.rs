@@ -7,6 +7,7 @@
 use crate::parser::{Parse, ParserContext};
 use crate::properties::longhands::writing_mode::computed_value::T as SpecifiedWritingMode;
 use crate::values::computed::text::LineHeight as ComputedLineHeight;
+use crate::values::computed::text::TextEmphasisKeywordValue as ComputedTextEmphasisKeywordValue;
 use crate::values::computed::text::TextEmphasisStyle as ComputedTextEmphasisStyle;
 use crate::values::computed::text::TextOverflow as ComputedTextOverflow;
 use crate::values::computed::{Context, ToComputedValue};
@@ -644,34 +645,48 @@ impl ToComputedValue for TextAlign {
     }
 }
 
-fn fill_mode_is_default_and_shape_exists(
-    fill: &TextEmphasisFillMode,
-    shape: &Option<TextEmphasisShapeKeyword>,
-) -> bool {
-    shape.is_some() && fill.is_filled()
-}
-
-
-
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
-#[allow(missing_docs)]
 pub enum TextEmphasisStyle {
     
-    Keyword {
-        #[css(contextual_skip_if = "fill_mode_is_default_and_shape_exists")]
-        fill: TextEmphasisFillMode,
-        shape: Option<TextEmphasisShapeKeyword>,
-    },
+    Keyword(TextEmphasisKeywordValue),
     
     None,
     
-    String(crate::OwnedStr),
+    String(String),
+}
+
+
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+pub enum TextEmphasisKeywordValue {
+    
+    Fill(TextEmphasisFillMode),
+    
+    Shape(TextEmphasisShapeKeyword),
+    
+    FillAndShape(TextEmphasisFillMode, TextEmphasisShapeKeyword),
+}
+
+impl TextEmphasisKeywordValue {
+    fn fill(&self) -> Option<TextEmphasisFillMode> {
+        match *self {
+            TextEmphasisKeywordValue::Fill(fill) |
+            TextEmphasisKeywordValue::FillAndShape(fill, _) => Some(fill),
+            _ => None,
+        }
+    }
+
+    fn shape(&self) -> Option<TextEmphasisShapeKeyword> {
+        match *self {
+            TextEmphasisKeywordValue::Shape(shape) |
+            TextEmphasisKeywordValue::FillAndShape(_, shape) => Some(shape),
+            _ => None,
+        }
+    }
 }
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
-#[repr(u8)]
 pub enum TextEmphasisFillMode {
     
     Filled,
@@ -679,19 +694,10 @@ pub enum TextEmphasisFillMode {
     Open,
 }
 
-impl TextEmphasisFillMode {
-    
-    #[inline]
-    pub fn is_filled(&self) -> bool {
-        matches!(*self, TextEmphasisFillMode::Filled)
-    }
-}
-
 
 #[derive(
     Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem,
 )]
-#[repr(u8)]
 pub enum TextEmphasisShapeKeyword {
     
     Dot,
@@ -705,39 +711,77 @@ pub enum TextEmphasisShapeKeyword {
     Sesame,
 }
 
+impl TextEmphasisShapeKeyword {
+    
+    pub fn char(&self, fill: TextEmphasisFillMode) -> &str {
+        let fill = fill == TextEmphasisFillMode::Filled;
+        match *self {
+            TextEmphasisShapeKeyword::Dot => {
+                if fill {
+                    "\u{2022}"
+                } else {
+                    "\u{25e6}"
+                }
+            },
+            TextEmphasisShapeKeyword::Circle => {
+                if fill {
+                    "\u{25cf}"
+                } else {
+                    "\u{25cb}"
+                }
+            },
+            TextEmphasisShapeKeyword::DoubleCircle => {
+                if fill {
+                    "\u{25c9}"
+                } else {
+                    "\u{25ce}"
+                }
+            },
+            TextEmphasisShapeKeyword::Triangle => {
+                if fill {
+                    "\u{25b2}"
+                } else {
+                    "\u{25b3}"
+                }
+            },
+            TextEmphasisShapeKeyword::Sesame => {
+                if fill {
+                    "\u{fe45}"
+                } else {
+                    "\u{fe46}"
+                }
+            },
+        }
+    }
+}
+
 impl ToComputedValue for TextEmphasisStyle {
     type ComputedValue = ComputedTextEmphasisStyle;
 
     #[inline]
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
         match *self {
-            TextEmphasisStyle::Keyword { fill, shape } => {
-                let shape = shape.unwrap_or_else(|| {
-                    
-                    
-                    
-                    
-                    
-                    if context.style().get_inherited_box().clone_writing_mode() ==
-                        SpecifiedWritingMode::HorizontalTb
-                    {
-                        TextEmphasisShapeKeyword::Circle
-                    } else {
-                        TextEmphasisShapeKeyword::Sesame
-                    }
-                });
-                ComputedTextEmphasisStyle::Keyword { fill, shape }
+            TextEmphasisStyle::Keyword(ref keyword) => {
+                
+                
+                let default_shape = if context.style().get_inherited_box().clone_writing_mode() ==
+                    SpecifiedWritingMode::HorizontalTb
+                {
+                    TextEmphasisShapeKeyword::Circle
+                } else {
+                    TextEmphasisShapeKeyword::Sesame
+                };
+                ComputedTextEmphasisStyle::Keyword(ComputedTextEmphasisKeywordValue {
+                    fill: keyword.fill().unwrap_or(TextEmphasisFillMode::Filled),
+                    shape: keyword.shape().unwrap_or(default_shape),
+                })
             },
             TextEmphasisStyle::None => ComputedTextEmphasisStyle::None,
             TextEmphasisStyle::String(ref s) => {
                 
                 
-                
-                
-                
-                
-                let s = s.graphemes(true).next().unwrap_or("").to_string();
-                ComputedTextEmphasisStyle::String(s.into())
+                let string = s.graphemes(true).next().unwrap_or("").to_string();
+                ComputedTextEmphasisStyle::String(string)
             },
         }
     }
@@ -745,10 +789,9 @@ impl ToComputedValue for TextEmphasisStyle {
     #[inline]
     fn from_computed_value(computed: &Self::ComputedValue) -> Self {
         match *computed {
-            ComputedTextEmphasisStyle::Keyword { fill, shape } => TextEmphasisStyle::Keyword {
-                fill,
-                shape: Some(shape),
-            },
+            ComputedTextEmphasisStyle::Keyword(ref keyword) => TextEmphasisStyle::Keyword(
+                TextEmphasisKeywordValue::FillAndShape(keyword.fill, keyword.shape),
+            ),
             ComputedTextEmphasisStyle::None => TextEmphasisStyle::None,
             ComputedTextEmphasisStyle::String(ref string) => {
                 TextEmphasisStyle::String(string.clone())
@@ -771,7 +814,7 @@ impl Parse for TextEmphasisStyle {
 
         if let Ok(s) = input.try(|i| i.expect_string().map(|s| s.as_ref().to_owned())) {
             
-            return Ok(TextEmphasisStyle::String(s.into()));
+            return Ok(TextEmphasisStyle::String(s));
         }
 
         
@@ -781,17 +824,14 @@ impl Parse for TextEmphasisStyle {
             shape = input.try(TextEmphasisShapeKeyword::parse).ok();
         }
 
-        if shape.is_none() && fill.is_none() {
-            return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
-        }
-
         
-        
-        let fill = fill.unwrap_or(TextEmphasisFillMode::Filled);
-
-        
-        
-        Ok(TextEmphasisStyle::Keyword { fill, shape })
+        let keyword_value = match (fill, shape) {
+            (Some(fill), Some(shape)) => TextEmphasisKeywordValue::FillAndShape(fill, shape),
+            (Some(fill), None) => TextEmphasisKeywordValue::Fill(fill),
+            (None, Some(shape)) => TextEmphasisKeywordValue::Shape(shape),
+            _ => return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError)),
+        };
+        Ok(TextEmphasisStyle::Keyword(keyword_value))
     }
 }
 
