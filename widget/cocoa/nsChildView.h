@@ -213,6 +213,13 @@ class WidgetRenderingContext;
 
   
   
+  
+  
+  
+  
+  
+  
+  
   PixelHostingView* mPixelHostingView;
 
   
