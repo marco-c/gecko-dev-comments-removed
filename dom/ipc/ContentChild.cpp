@@ -3878,10 +3878,17 @@ mozilla::ipc::IPCResult ContentChild::RecvAttachBrowsingContext(
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvDetachBrowsingContext(
-    BrowsingContext* aContext) {
-  MOZ_RELEASE_ASSERT(aContext);
+    uint64_t aContextId, DetachBrowsingContextResolver&& aResolve) {
+  
+  
+  aResolve(true);
 
-  aContext->Detach( true);
+  
+  
+  RefPtr<BrowsingContext> context = BrowsingContext::Get(aContextId);
+  if (context) {
+    context->Detach( true);
+  }
 
   return IPC_OK();
 }

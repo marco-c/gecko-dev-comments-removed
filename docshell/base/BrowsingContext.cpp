@@ -300,7 +300,7 @@ void BrowsingContext::Detach(bool aFromIPC) {
     return;
   }
 
-  RefPtr<BrowsingContext> kungFuDeathGrip(this);
+  RefPtr<BrowsingContext> self(this);
 
   if (!mGroup->EvictCachedContext(this)) {
     Children* children = nullptr;
@@ -313,15 +313,17 @@ void BrowsingContext::Detach(bool aFromIPC) {
     children->RemoveElement(this);
   }
 
-  
-  
-  
   Unregister();
 
   if (!aFromIPC && XRE_IsContentProcess()) {
     auto cc = ContentChild::GetSingleton();
     MOZ_DIAGNOSTIC_ASSERT(cc);
-    cc->SendDetachBrowsingContext(this);
+    
+    
+    
+    auto resolve = [self](bool) {};
+    auto reject = [self](mozilla::ipc::ResponseRejectReason) {};
+    cc->SendDetachBrowsingContext(Id(), resolve, reject);
   }
 }
 

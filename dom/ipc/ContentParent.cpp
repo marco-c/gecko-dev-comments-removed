@@ -5817,14 +5817,21 @@ mozilla::ipc::IPCResult ContentParent::RecvAttachBrowsingContext(
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvDetachBrowsingContext(
-    BrowsingContext* aContext) {
-  if (!aContext) {
+    uint64_t aContextId, DetachBrowsingContextResolver&& aResolve) {
+  
+  
+  aResolve(true);
+
+  
+  
+  RefPtr<BrowsingContext> context = BrowsingContext::Get(aContextId);
+  if (!context) {
     MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Debug,
             ("ParentIPC: Trying to detach already detached"));
     return IPC_OK();
   }
 
-  if (!aContext->Canonical()->IsOwnedByProcess(ChildID())) {
+  if (!context->Canonical()->IsOwnedByProcess(ChildID())) {
     
     
     
@@ -5833,14 +5840,18 @@ mozilla::ipc::IPCResult ContentParent::RecvDetachBrowsingContext(
 
     MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Warning,
             ("ParentIPC: Trying to detach out of process context 0x%08" PRIx64,
-             aContext->Id()));
+             context->Id()));
     return IPC_OK();
   }
 
-  aContext->Detach( true);
+  context->Detach( true);
 
-  aContext->Group()->EachOtherParent(this, [&](ContentParent* aParent) {
-    Unused << aParent->SendDetachBrowsingContext(aContext);
+  context->Group()->EachOtherParent(this, [&](ContentParent* aParent) {
+    
+    
+    auto resolve = [context](bool) {};
+    auto reject = [context](ResponseRejectReason) {};
+    aParent->SendDetachBrowsingContext(context->Id(), resolve, reject);
   });
 
   return IPC_OK();
