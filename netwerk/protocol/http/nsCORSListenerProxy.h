@@ -53,9 +53,6 @@ class nsCORSListenerProxy final : public nsIStreamListener,
   NS_DECL_NSICHANNELEVENTSINK
   NS_DECL_NSITHREADRETARGETABLESTREAMLISTENER
 
-  
-  static void Startup();
-
   static void Shutdown();
 
   MOZ_MUST_USE nsresult Init(nsIChannel* aChannel,
