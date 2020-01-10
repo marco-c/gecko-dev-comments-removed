@@ -289,8 +289,6 @@ add_task(async function setup() {
         "extensions.getAddons.discovery.api_url",
         `http://${AMO_TEST_HOST}/discoapi`,
       ],
-      
-      ["extensions.htmlaboutaddons.enabled", true],
       ["extensions.htmlaboutaddons.discover.enabled", true],
       
       
