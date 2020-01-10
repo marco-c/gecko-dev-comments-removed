@@ -160,6 +160,9 @@ Tools.inspector = {
   inMenu: true,
 
   preventClosingOnKey: true,
+  
+  
+  preventRaisingOnKey: true,
   onkey: function(panel, toolbox) {
     toolbox.inspectorFront.nodePicker.togglePicker();
   },
