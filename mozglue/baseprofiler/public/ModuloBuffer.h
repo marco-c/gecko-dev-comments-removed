@@ -8,6 +8,7 @@
 #define ModuloBuffer_h
 
 #include "mozilla/leb128iterator.h"
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/PowerOfTwo.h"
 #include "mozilla/UniquePtr.h"
@@ -104,6 +105,22 @@ class ModuloBuffer {
 
   PowerOfTwo<Length> BufferLength() const {
     return PowerOfTwo<Length>(mMask.MaskValue() + 1);
+  }
+
+  
+  
+  
+  size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
+    if (!mBufferDeleter) {
+      
+      
+      return 0;
+    }
+    return aMallocSizeOf(mBuffer);
+  }
+
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
+    return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
   
