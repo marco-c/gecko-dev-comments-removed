@@ -4413,7 +4413,13 @@ class BaseCompiler final : public BaseCompilerInterface {
           break;
       }
     }
-    MOZ_ASSERT(size == fr.dynamicHeight());
+    if (deadCode_) {
+      
+      
+      MOZ_ASSERT(size <= fr.dynamicHeight());
+    } else {
+      MOZ_ASSERT(size == fr.dynamicHeight());
+    }
   }
 
 #endif
