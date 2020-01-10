@@ -1,0 +1,137 @@
+
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["ClickHandlerParent"];
+
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+ChromeUtils.defineModuleGetter(
+  this,
+  "PlacesUIUtils",
+  "resource:///modules/PlacesUIUtils.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "PrivateBrowsingUtils",
+  "resource://gre/modules/PrivateBrowsingUtils.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "E10SUtils",
+  "resource://gre/modules/E10SUtils.jsm"
+);
+
+let gContentClickListeners = new Set();
+
+class ClickHandlerParent extends JSWindowActorParent {
+  static addContentClickListener(listener) {
+    gContentClickListeners.add(listener);
+  }
+
+  static removeContentClickListener(listener) {
+    gContentClickListeners.delete(listener);
+  }
+
+  receiveMessage(message) {
+    switch (message.name) {
+      case "Content:Click":
+        this.contentAreaClick(message.data);
+        this.notifyClickListeners(message.data);
+        break;
+    }
+  }
+
+  
+
+
+
+
+
+  contentAreaClick(data) {
+    
+    
+    let browser = this.manager.browsingContext.top.embedderElement;
+    if (browser.outerBrowser) {
+      browser = browser.outerBrowser; 
+    }
+    let window = browser.ownerGlobal;
+
+    if (!data.href) {
+      
+      if (
+        Services.prefs.getBoolPref("middlemouse.contentLoadURL") &&
+        !Services.prefs.getBoolPref("general.autoScroll")
+      ) {
+        window.middleMousePaste(data);
+      }
+      return;
+    }
+
+    
+    
+    
+    if (window.openLinkIn === undefined) {
+      return;
+    }
+
+    
+    
+    
+    
+    try {
+      if (!PrivateBrowsingUtils.isWindowPrivate(window)) {
+        PlacesUIUtils.markPageAsFollowedLink(data.href);
+      }
+    } catch (ex) {
+      
+    }
+
+    
+    var where = window.whereToOpenLink(data);
+    if (where == "current") {
+      return;
+    }
+
+    
+
+    let params = {
+      charset: browser.characterSet,
+      referrerInfo: E10SUtils.deserializeReferrerInfo(data.referrerInfo),
+      allowMixedContent: data.allowMixedContent,
+      isContentWindowPrivate: data.isContentWindowPrivate,
+      originPrincipal: data.originPrincipal,
+      originStoragePrincipal: data.originStoragePrincipal,
+      triggeringPrincipal: data.triggeringPrincipal,
+      csp: data.csp ? E10SUtils.deserializeCSP(data.csp) : null,
+      frameOuterWindowID: data.frameOuterWindowID,
+    };
+
+    
+    if (data.originAttributes.userContextId) {
+      params.userContextId = data.originAttributes.userContextId;
+    }
+
+    params.allowInheritPrincipal = true;
+
+    window.openLinkIn(data.href, where, params);
+  }
+
+  notifyClickListeners(data) {
+    for (let listener of gContentClickListeners) {
+      try {
+        let browser = this.browsingContext.top.embedderElement;
+        if (browser.outerBrowser) {
+          browser = browser.outerBrowser; 
+        }
+
+        listener.onContentClick(browser, data);
+      } catch (ex) {
+        Cu.reportError(ex);
+      }
+    }
+  }
+}

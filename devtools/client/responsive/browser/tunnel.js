@@ -49,10 +49,6 @@ const PROPERTIES_FROM_BROWSER_WINDOW = [
   "PopupNotifications",
   
   
-  "whereToOpenLink",
-  "openLinkIn",
-  
-  
   "gBrowser",
 ];
 
