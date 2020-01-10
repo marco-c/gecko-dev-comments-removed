@@ -8,6 +8,7 @@
 #define MOZILLA_CONTAINERPARSER_H_
 
 #include "mozilla/RefPtr.h"
+#include "MediaSpan.h"
 #include "MediaContainerType.h"
 #include "MediaResource.h"
 #include "MediaResult.h"
@@ -30,7 +31,7 @@ class ContainerParser : public DecoderDoctorLifeLogger<ContainerParser> {
   
   
   
-  virtual MediaResult IsInitSegmentPresent(MediaByteBuffer* aData);
+  virtual MediaResult IsInitSegmentPresent(const MediaSpan& aData);
 
   
   
@@ -38,13 +39,13 @@ class ContainerParser : public DecoderDoctorLifeLogger<ContainerParser> {
   
   
   
-  virtual MediaResult IsMediaSegmentPresent(MediaByteBuffer* aData);
+  virtual MediaResult IsMediaSegmentPresent(const MediaSpan& aData);
 
   
   
   
   
-  virtual MediaResult ParseStartAndEndTimestamps(MediaByteBuffer* aData,
+  virtual MediaResult ParseStartAndEndTimestamps(const MediaSpan& aData,
                                                  int64_t& aStart,
                                                  int64_t& aEnd);
 
