@@ -1769,11 +1769,12 @@ Inspector.prototype = {
     
     this.hideEyeDropper();
 
+    const nodeFront = this.selection.nodeFront;
     const html = "<div></div>";
 
     
     const onMutations = this.once("markupmutation");
-    await this.walker.insertAdjacentHTML(
+    await nodeFront.walkerFront.insertAdjacentHTML(
       this.selection.nodeFront,
       "beforeEnd",
       html
@@ -1781,7 +1782,7 @@ Inspector.prototype = {
     await onMutations;
 
     
-    this.markup.expandNode(this.selection.nodeFront);
+    this.markup.expandNode(nodeFront);
   },
 
   
