@@ -36,8 +36,6 @@ const startupPhases = {
         "resource://gre/modules/MainProcessSingleton.jsm",
         "resource://gre/modules/XPCOMUtils.jsm",
         "resource://gre/modules/Services.jsm",
-        
-        "resource://gre/modules/PushComponents.jsm", 
       ]),
     },
   },
@@ -95,6 +93,7 @@ const startupPhases = {
         "resource://gre/modules/FxAccountsStorage.jsm",
         "resource://gre/modules/PlacesBackups.jsm",
         "resource://gre/modules/PlacesSyncUtils.jsm",
+        "resource://gre/modules/PushComponents.jsm",
         "resource://gre/modules/Sqlite.jsm",
       ]),
       services: new Set([
