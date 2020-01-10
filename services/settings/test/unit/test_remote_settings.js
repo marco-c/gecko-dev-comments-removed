@@ -135,10 +135,17 @@ add_task(async function test_get_loads_default_records_from_a_local_dump_when_da
     return;
   }
 
+  let eventData;
+  clientWithDump.on("sync", ({ data }) => eventData = data);
+
   
   const data = await clientWithDump.get();
   notEqual(data.length, 0);
   
+
+  
+  equal(eventData.created.length, data.length);
+  equal(eventData.current.length, data.length);
 });
 add_task(clear_state);
 
