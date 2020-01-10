@@ -1728,7 +1728,8 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
     
     
     
-    static_cast<nsStyledElement*>(this)->ReparseStyleAttribute(false, false);
+    static_cast<nsStyledElement*>(this)->ReparseStyleAttribute(
+         false);
   }
 
   
