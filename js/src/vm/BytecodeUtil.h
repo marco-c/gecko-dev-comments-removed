@@ -28,13 +28,13 @@
 
 
 
-typedef enum JSOp {
+enum JSOp : uint8_t {
 #define ENUMERATE_OPCODE(op, val, ...) op = val,
   FOR_EACH_OPCODE(ENUMERATE_OPCODE)
 #undef ENUMERATE_OPCODE
 
       JSOP_LIMIT
-} JSOp;
+};
 
 
 
