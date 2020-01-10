@@ -25,8 +25,6 @@ class ChangesApp extends PureComponent {
       
       onContextMenu: PropTypes.func.isRequired,
       
-      onCopy: PropTypes.func.isRequired,
-      
       onCopyAllChanges: PropTypes.func.isRequired,
       
       onCopyRule: PropTypes.func.isRequired,
@@ -221,7 +219,6 @@ class ChangesApp extends PureComponent {
         className: "theme-sidebar inspector-tabpanel",
         id: "sidebar-panel-changes",
         onContextMenu: this.props.onContextMenu,
-        onCopy: this.props.onCopy,
       },
       !hasChanges && this.renderEmptyState(),
       hasChanges && this.renderCopyAllChangesButton(),
