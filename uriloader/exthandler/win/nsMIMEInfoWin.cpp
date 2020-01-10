@@ -21,6 +21,7 @@
 #include "nsUnicharUtils.h"
 #include "nsITextToSubURI.h"
 #include "nsVariant.h"
+#include "mozilla/ShellHeaderOnlyUtils.h"
 #include "mozilla/UniquePtrExtensions.h"
 
 #define RUNDLL32_EXE L"\\rundll32.exe"
@@ -224,33 +225,25 @@ nsresult nsMIMEInfoWin::LoadUriInternal(nsIURI* aURL) {
       CopyASCIItoUTF16(urlSpec, utf16Spec);
     }
 
-    static const wchar_t cmdVerb[] = L"open";
-    SHELLEXECUTEINFOW sinfo;
-    memset(&sinfo, 0, sizeof(sinfo));
-    sinfo.cbSize = sizeof(sinfo);
-    sinfo.fMask = SEE_MASK_FLAG_DDEWAIT;
-    sinfo.hwnd = nullptr;
-    sinfo.lpVerb = (LPWSTR)&cmdVerb;
-    sinfo.nShow = SW_SHOWNORMAL;
+    
+    
+    UniqueAbsolutePidl pidl = ShellParseDisplayName(utf16Spec.get());
+    if (!pidl) {
+      return NS_ERROR_FAILURE;
+    }
 
-    LPITEMIDLIST pidl = nullptr;
-    SFGAOF sfgao;
+    _variant_t args;
+    _variant_t verb(L"open");
+    _variant_t workingDir;
+    _variant_t showCmd(SW_SHOWNORMAL);
 
     
-    if (SUCCEEDED(
-            SHParseDisplayName(utf16Spec.get(), nullptr, &pidl, 0, &sfgao))) {
-      sinfo.lpIDList = pidl;
-      sinfo.fMask |= SEE_MASK_INVOKEIDLIST;
-    } else {
-      
-      
-      rv = NS_ERROR_FAILURE;
+    
+    mozilla::LauncherVoidResult shellExecuteOk =
+        mozilla::ShellExecuteByExplorer(pidl, args, verb, workingDir, showCmd);
+    if (shellExecuteOk.isErr()) {
+      return NS_ERROR_FAILURE;
     }
-    if (NS_SUCCEEDED(rv)) {
-      BOOL result = ShellExecuteExW(&sinfo);
-      if (!result || ((LONG_PTR)sinfo.hInstApp) < 32) rv = NS_ERROR_FAILURE;
-    }
-    if (pidl) CoTaskMemFree(pidl);
   }
 
   return rv;
