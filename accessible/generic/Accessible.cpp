@@ -1741,11 +1741,10 @@ Relation Accessible::RelationByType(RelationType aType) const {
         
         dom::Document* doc = mContent->OwnerDoc();
         nsIContent* buttonEl = nullptr;
-        if (doc->IsXULDocument()) {
-          dom::XULDocument* xulDoc = doc->AsXULDocument();
+        if (doc->AllowXULXBL()) {
           nsCOMPtr<nsIHTMLCollection> possibleDefaultButtons =
-              xulDoc->GetElementsByAttribute(NS_LITERAL_STRING("default"),
-                                             NS_LITERAL_STRING("true"));
+              doc->GetElementsByAttribute(NS_LITERAL_STRING("default"),
+                                          NS_LITERAL_STRING("true"));
           if (possibleDefaultButtons) {
             uint32_t length = possibleDefaultButtons->Length();
             
