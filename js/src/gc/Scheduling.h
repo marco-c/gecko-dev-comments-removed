@@ -755,6 +755,13 @@ class ZoneMallocThreshold : public ZoneThreshold {
                                         const AutoLockGC& lock);
 };
 
+
+
+class ZoneFixedThreshold : public ZoneThreshold {
+ public:
+  explicit ZoneFixedThreshold(size_t bytes) { gcTriggerBytes_ = bytes; }
+};
+
 #ifdef DEBUG
 
 

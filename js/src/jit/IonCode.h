@@ -132,7 +132,7 @@ class JitCode : public gc::TenuredCell {
   
   
   template <AllowGC allowGC>
-  static JitCode* New(JSContext* cx, uint8_t* code, uint32_t bufferSize,
+  static JitCode* New(JSContext* cx, uint8_t* code, uint32_t totalSize,
                       uint32_t headerSize, ExecutablePool* pool, CodeKind kind);
 
  public:

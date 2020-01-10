@@ -687,6 +687,7 @@ const JSFunctionSpec WasmModuleObject::static_methods[] = {
 
 void WasmModuleObject::finalize(FreeOp* fop, JSObject* obj) {
   const Module& module = obj->as<WasmModuleObject>().module();
+  obj->zone()->decJitMemory(module.codeLength(module.code().stableTier()));
   fop->release(obj, &module, module.gcMallocBytesExcludingCode(),
                MemoryUse::WasmModule);
 }
@@ -1045,8 +1046,7 @@ WasmModuleObject* WasmModuleObject::create(JSContext* cx, const Module& module,
 
   
   
-  cx->zone()->updateJitCodeMallocBytes(
-      module.codeLength(module.code().stableTier()));
+  cx->zone()->incJitMemory(module.codeLength(module.code().stableTier()));
   return obj;
 }
 

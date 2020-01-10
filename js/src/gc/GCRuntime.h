@@ -266,6 +266,9 @@ class GCRuntime {
   void maybeAllocTriggerZoneGC(Zone* zone, size_t nbytes = 0);
   
   void maybeMallocTriggerZoneGC(Zone* zone);
+  bool maybeMallocTriggerZoneGC(Zone* zone, const HeapSize& heap,
+                                const ZoneThreshold& threshold,
+                                JS::GCReason reason);
   
   bool triggerZoneGC(Zone* zone, JS::GCReason reason, size_t usedBytes,
                      size_t thresholdBytes);
