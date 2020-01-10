@@ -542,6 +542,11 @@ class BrowsertimeAndroid(Browsertime):
         self.profile.merge(path)
         self.profile.set_preferences({'browser.tabs.remote.autostart': self.config['e10s']})
 
+        
+        
+        
+        self.remove_mozprofile_delimiters_from_profile()
+
 
 class Raptor(Perftest):
     """Container class for Raptor"""
