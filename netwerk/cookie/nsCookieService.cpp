@@ -4096,6 +4096,15 @@ nsAutoCString nsCookieService::GetPathFromURI(nsIURI* aHostURI) {
       path.Truncate(slash + 1);
     }
   }
+
+  
+  int32_t lastSlash = path.RFindChar('/');
+  int32_t firstSlash = path.FindChar('/');
+  if (lastSlash != firstSlash && lastSlash != kNotFound &&
+      lastSlash == (int32_t)(path.Length() - 1)) {
+    path.Truncate(lastSlash);
+  }
+
   return path;
 }
 
