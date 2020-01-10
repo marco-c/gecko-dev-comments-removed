@@ -13,6 +13,7 @@
 #include "mozilla/PowerOfTwo.h"
 #include "mozilla/UniquePtr.h"
 
+#include <iterator>
 #include <limits>
 #include <type_traits>
 
@@ -139,8 +140,7 @@ class ModuloBuffer {
   class Iterator {
     
     using ConstOrMutableBuffer =
-        typename std::conditional<IsBufferConst, const ModuloBuffer,
-                                  ModuloBuffer>::type;
+        std::conditional_t<IsBufferConst, const ModuloBuffer, ModuloBuffer>;
 
     
     
@@ -188,6 +188,14 @@ class ModuloBuffer {
     
 
    public:
+    
+    
+    using difference_type = Index;
+    using value_type = Byte;
+    using pointer = std::conditional_t<IsBufferConst, const Byte*, Byte*>;
+    using reference = std::conditional_t<IsBufferConst, const Byte&, Byte&>;
+    using iterator_category = std::random_access_iterator_tag;
+
     
     Iterator(const Iterator& aRhs) = default;
     Iterator& operator=(const Iterator& aRhs) = default;
@@ -247,9 +255,19 @@ class ModuloBuffer {
       ++mIndex;
       return *this;
     }
+    Iterator operator++(int) {
+      Iterator here(*mModuloBuffer, mIndex);
+      ++mIndex;
+      return here;
+    }
     Iterator& operator--() {
       --mIndex;
       return *this;
+    }
+    Iterator operator--(int) {
+      Iterator here(*mModuloBuffer, mIndex);
+      --mIndex;
+      return here;
     }
     Iterator& operator+=(Length aLength) {
       mIndex += aLength;
@@ -257,6 +275,9 @@ class ModuloBuffer {
     }
     Iterator operator+(Length aLength) const {
       return Iterator(*mModuloBuffer, mIndex + aLength);
+    }
+    friend Iterator operator+(Length aLength, const Iterator& aIt) {
+      return aIt + aLength;
     }
     Iterator& operator-=(Length aLength) {
       mIndex -= aLength;
@@ -274,9 +295,12 @@ class ModuloBuffer {
     }
 
     
-    std::conditional_t<IsBufferConst, const Byte&, Byte&> operator*() const {
+    reference operator*() const {
       return mModuloBuffer->mBuffer[OffsetInBuffer()];
     }
+
+    
+    reference operator[](Length aLength) const { return *(*this + aLength); }
 
     
     template <bool NotIsBufferConst = !IsBufferConst>
