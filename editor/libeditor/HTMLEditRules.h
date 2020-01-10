@@ -125,8 +125,9 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult WillDeleteSelection(
-      nsIEditor::EDirection aAction, nsIEditor::EStripWrappers aStripWrappers);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  WillDeleteSelection(nsIEditor::EDirection aDirectionAndAmount,
+                      nsIEditor::EStripWrappers aStripWrappers);
 
   
 
