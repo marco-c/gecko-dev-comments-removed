@@ -316,7 +316,7 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   
-  nsresult MaybeResolveProxyAndBeginConnect();
+  nsresult BeginConnectActual();
   void MaybeStartDNSPrefetch();
 
   
