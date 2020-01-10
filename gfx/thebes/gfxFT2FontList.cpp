@@ -33,6 +33,7 @@
 #include "gfxFT2Utils.h"
 #include "gfxUserFontSet.h"
 #include "gfxFontUtils.h"
+#include "SharedFontList-impl.h"
 
 #include "nsServiceManagerUtils.h"
 #include "nsIObserverService.h"
@@ -695,6 +696,23 @@ void FT2FontFamily::AddFacesToFontList(nsTArray<FontListEntry>* aFontList) {
 
 #define CACHE_KEY "font.cached-list"
 
+void gfxFT2FontList::CollectInitData(const nsCString& aFamilyName,
+                                     const FontListEntry& aFLE,
+                                     StandardFile aStdFile) {
+  const nsCString& key = aFLE.familyName();
+  auto faceList = mFaceInitData.Get(key);
+  if (!faceList) {
+    faceList = new nsTArray<fontlist::Face::InitData>;
+    mFaceInitData.Put(key, faceList);
+    mFamilyInitData.AppendElement(fontlist::Family::InitData{key, aFamilyName});
+  }
+  faceList->AppendElement(
+      fontlist::Face::InitData{aFLE.filepath(), aFLE.index(), false,
+                               WeightRange::FromScalar(aFLE.weightRange()),
+                               StretchRange::FromScalar(aFLE.stretchRange()),
+                               SlantStyleRange::FromScalar(aFLE.styleRange())});
+}
+
 class FontNameCache {
  public:
   
@@ -730,6 +748,17 @@ class FontNameCache {
 
   ~FontNameCache() { WriteCache(); }
 
+  size_t EntryCount() const { return mMap.EntryCount(); }
+
+  void DropStaleEntries() {
+    for (auto iter = mMap.Iter(); !iter.Done(); iter.Next()) {
+      auto entry = static_cast<FNCMapEntry*>(iter.Get());
+      if (!entry->mFileExists) {
+        iter.Remove();
+      }
+    }
+  }
+
   void WriteCache() {
     if (!mWriteNeeded || !mCache) {
       return;
@@ -739,10 +768,7 @@ class FontNameCache {
     nsAutoCString buf;
     for (auto iter = mMap.Iter(); !iter.Done(); iter.Next()) {
       auto entry = static_cast<FNCMapEntry*>(iter.Get());
-      if (!entry->mFileExists) {
-        
-        continue;
-      }
+      MOZ_ASSERT(entry->mFileExists);
       buf.Append(entry->mFilename);
       buf.Append(kGroupSep);
       buf.Append(entry->mFaces);
@@ -961,7 +987,8 @@ gfxFT2FontList::~gfxFT2FontList() {
   }
 }
 
-bool gfxFT2FontList::AppendFacesFromCachedFaceList(const nsCString& aFileName,
+bool gfxFT2FontList::AppendFacesFromCachedFaceList(CollectFunc aCollectFace,
+                                                   const nsCString& aFileName,
                                                    const nsCString& aFaceList,
                                                    StandardFile aStdFile) {
   const char* start = aFaceList.get();
@@ -989,7 +1016,8 @@ bool gfxFT2FontList::AppendFacesFromCachedFaceList(const nsCString& aFileName,
 
     const char* end = endOfField(start);
     nsAutoCString familyName(start, end - start);
-    ToLowerCase(familyName);
+    nsAutoCString key(familyName);
+    ToLowerCase(key);
 
     if (!nextField(start, end)) {
       break;
@@ -1036,7 +1064,7 @@ bool gfxFT2FontList::AppendFacesFromCachedFaceList(const nsCString& aFileName,
     }
 
     FontListEntry fle(
-        familyName, faceName, aFileName,
+        key, faceName, aFileName,
         WeightRange(FontWeight(minWeight), FontWeight(maxWeight)).AsScalar(),
         StretchRange(FontStretch(minStretch), FontStretch(maxStretch))
             .AsScalar(),
@@ -1044,7 +1072,8 @@ bool gfxFT2FontList::AppendFacesFromCachedFaceList(const nsCString& aFileName,
                         FontSlantStyle::FromString(maxStyle.get()))
             .AsScalar(),
         index);
-    AppendFaceFromFontListEntry(fle, aStdFile);
+
+    aCollectFace(familyName, fle, aStdFile);
     count++;
 
     start = recEnd + 1;
@@ -1082,18 +1111,22 @@ void FT2FontEntry::CheckForBrokenFont(gfxFontFamily* aFamily) {
   if (aFamily->IsBadUnderlineFamily()) {
     mIsBadUnderlineFont = true;
   }
+  CheckForBrokenFont(aFamily->Name());
+}
 
+void FT2FontEntry::CheckForBrokenFont(const nsACString& aFamilyName) {
   
   
   
-  if (aFamily->Name().EqualsLiteral("roboto")) {
+  if (aFamilyName.EqualsLiteral("roboto")) {
     mIgnoreGSUB = true;
+    return;
   }
 
   
   
   
-  else if (aFamily->Name().EqualsLiteral("droid sans arabic")) {
+  if (aFamilyName.EqualsLiteral("droid sans arabic")) {
     AutoFTFace face(this);
     if (face) {
       const TT_Header* head =
@@ -1118,7 +1151,17 @@ void gfxFT2FontList::AppendFacesFromFontFile(const nsCString& aFileName,
   int statRetval = stat(aFileName.get(), &s);
   if (!cachedFaceList.IsEmpty() && 0 == statRetval &&
       uint32_t(s.st_mtime) == timestamp && s.st_size == filesize) {
-    if (AppendFacesFromCachedFaceList(aFileName, cachedFaceList, aStdFile)) {
+    CollectFunc unshared = [](const nsCString& aFamilyName,
+                              const FontListEntry& aFLE,
+                              StandardFile aStdFile) {
+      PlatformFontList()->AppendFaceFromFontListEntry(aFLE, aStdFile);
+    };
+    CollectFunc shared = [](const nsCString& aFamilyName,
+                            const FontListEntry& aFLE, StandardFile aStdFile) {
+      PlatformFontList()->CollectInitData(aFamilyName, aFLE, aStdFile);
+    };
+    if (AppendFacesFromCachedFaceList(SharedFontList() ? shared : unshared,
+                                      aFileName, cachedFaceList, aStdFile)) {
       LOG(("using cached font info for %s", aFileName.get()));
       return;
     }
@@ -1194,29 +1237,39 @@ void gfxFT2FontList::AddFaceToList(const nsCString& aEntryName, uint32_t aIndex,
 
   
   
+  
+  
   RefPtr<FT2FontEntry> fe =
       CreateNamedFontEntry(aFace, aEntryName.get(), aIndex);
 
   if (fe) {
-    nsAutoCString name(aFace->family_name);
-    BuildKeyNameFromFontName(name);
-    RefPtr<gfxFontFamily> family = mFontFamilies.GetWeak(name);
-    if (!family) {
-      family = new FT2FontFamily(name);
-      mFontFamilies.Put(name, family);
-      if (mSkipSpaceLookupCheckFamilies.Contains(name)) {
-        family->SetSkipSpaceFeatureCheck(true);
-      }
-      if (mBadUnderlineFamilyNames.ContainsSorted(name)) {
-        family->SetBadUnderlineFamily();
-      }
-    }
     fe->mStandardFace = (aStdFile == kStandard);
-    family->AddFontEntry(fe);
+    nsAutoCString familyName(aFace->family_name);
+    if (SharedFontList()) {
+      nsAutoCString key(familyName);
+      BuildKeyNameFromFontName(key);
+      FontListEntry fle(key, fe->Name(), fe->mFilename, fe->Weight().AsScalar(),
+                        fe->Stretch().AsScalar(), fe->SlantStyle().AsScalar(),
+                        fe->mFTFontIndex);
+      CollectInitData(familyName, fle, aStdFile);
+    } else {
+      BuildKeyNameFromFontName(familyName);
+      RefPtr<gfxFontFamily> family = mFontFamilies.GetWeak(familyName);
+      if (!family) {
+        family = new FT2FontFamily(familyName);
+        mFontFamilies.Put(familyName, family);
+        if (mSkipSpaceLookupCheckFamilies.Contains(familyName)) {
+          family->SetSkipSpaceFeatureCheck(true);
+        }
+        if (mBadUnderlineFamilyNames.ContainsSorted(familyName)) {
+          family->SetBadUnderlineFamily();
+        }
+      }
+      family->AddFontEntry(fe);
+      fe->CheckForBrokenFont(family);
+    }
 
-    fe->CheckForBrokenFont(family);
-
-    fe->AppendToFaceList(aFaceList, name);
+    fe->AppendToFaceList(aFaceList, familyName);
     if (LOG_ENABLED()) {
       nsAutoCString weightString;
       fe->Weight().ToString(weightString);
@@ -1225,7 +1278,7 @@ void gfxFT2FontList::AddFaceToList(const nsCString& aEntryName, uint32_t aIndex,
       LOG(
           ("(fontinit) added (%s) to family (%s)"
            " with style: %s weight: %s stretch: %s",
-           fe->Name().get(), family->Name().get(),
+           fe->Name().get(), familyName.get(),
            fe->IsItalic() ? "italic" : "normal", weightString.get(),
            stretchString.get()));
     }
@@ -1241,7 +1294,18 @@ void gfxFT2FontList::AppendFacesFromOmnijarEntry(nsZipArchive* aArchive,
     uint32_t filesize, timestamp;
     aCache->GetInfoForFile(aEntryName, faceList, &timestamp, &filesize);
     if (faceList.Length() > 0) {
-      if (AppendFacesFromCachedFaceList(aEntryName, faceList)) {
+      CollectFunc unshared = [](const nsCString& aFamilyName,
+                                const FontListEntry& aFLE,
+                                StandardFile aStdFile) {
+        PlatformFontList()->AppendFaceFromFontListEntry(aFLE, aStdFile);
+      };
+      CollectFunc shared = [](const nsCString& aFamilyName,
+                              const FontListEntry& aFLE,
+                              StandardFile aStdFile) {
+        PlatformFontList()->CollectInitData(aFamilyName, aFLE, aStdFile);
+      };
+      if (AppendFacesFromCachedFaceList(SharedFontList() ? shared : unshared,
+                                        aEntryName, faceList, kStandard)) {
         return;
       }
     }
@@ -1325,11 +1389,6 @@ void gfxFT2FontList::FindFonts() {
 
   FindFontsInDir(root, mFontNameCache.get());
 
-  if (mFontFamilies.Count() == 0) {
-    
-    MOZ_CRASH("Could not read the system fonts directory");
-  }
-
   
   
   
@@ -1370,14 +1429,12 @@ void gfxFT2FontList::FindFonts() {
     }
   }
 
-  
-  
-  
-  for (auto iter = mFontFamilies.Iter(); !iter.Done(); iter.Next()) {
-    nsCStringHashKey::KeyType key = iter.Key();
-    RefPtr<gfxFontFamily>& family = iter.Data();
-    FinalizeFamilyMemberList(key, family,  true);
+  mFontNameCache->DropStaleEntries();
+  if (!mFontNameCache->EntryCount()) {
+    
+    MOZ_CRASH("No font files found");
   }
+
   
   WriteCache();
 }
@@ -1496,7 +1553,18 @@ nsresult gfxFT2FontList::InitFontListForPlatform() {
   LoadSkipSpaceLookupCheck(mSkipSpaceLookupCheckFamilies);
 
   if (XRE_IsParentProcess()) {
+    
+    
     FindFonts();
+
+    
+    
+    for (auto iter = mFontFamilies.Iter(); !iter.Done(); iter.Next()) {
+      nsCStringHashKey::KeyType key = iter.Key();
+      RefPtr<gfxFontFamily>& family = iter.Data();
+      FinalizeFamilyMemberList(key, family,  true);
+    }
+
     return NS_OK;
   }
 
@@ -1510,7 +1578,6 @@ nsresult gfxFT2FontList::InitFontListForPlatform() {
   }
   
   
-  
   for (auto iter = mFontFamilies.Iter(); !iter.Done(); iter.Next()) {
     nsCStringHashKey::KeyType key = iter.Key();
     RefPtr<gfxFontFamily>& family = iter.Data();
@@ -1521,6 +1588,54 @@ nsresult gfxFT2FontList::InitFontListForPlatform() {
        " families",
        fonts.Length(), mFontFamilies.Count()));
   return NS_OK;
+}
+
+void gfxFT2FontList::InitSharedFontListForPlatform() {
+  if (!XRE_IsParentProcess()) {
+    
+    
+    return;
+  }
+
+  
+  
+  
+  FindFonts();
+
+  ApplyWhitelist(mFamilyInitData);
+  mFamilyInitData.Sort();
+
+  mozilla::fontlist::FontList* list = SharedFontList();
+  list->SetFamilyNames(mFamilyInitData);
+
+  auto families = list->Families();
+  for (uint32_t i = 0; i < mFamilyInitData.Length(); i++) {
+    auto faceList = mFaceInitData.Get(mFamilyInitData[i].mKey);
+    MOZ_ASSERT(faceList);
+    families[i].AddFaces(list, *faceList);
+  }
+
+  mFamilyInitData.Clear();
+  mFaceInitData.Clear();
+}
+
+gfxFontEntry* gfxFT2FontList::CreateFontEntry(fontlist::Face* aFace,
+                                              const fontlist::Family* aFamily) {
+  fontlist::FontList* list = SharedFontList();
+  nsAutoCString desc(aFace->mDescriptor.AsString(list));
+  FontListEntry fle(aFamily->DisplayName().AsString(list), desc, desc,
+                    aFace->mWeight.AsScalar(), aFace->mStretch.AsScalar(),
+                    aFace->mStyle.AsScalar(), aFace->mIndex);
+  FT2FontEntry* fe = FT2FontEntry::CreateFontEntry(fle);
+
+  fe->mFixedPitch = aFace->mFixedPitch;
+  fe->mIsBadUnderlineFont = aFamily->IsBadUnderlineFamily();
+  fe->mShmemFace = aFace;
+  fe->mFamilyName = aFamily->DisplayName().AsString(list);
+
+  fe->CheckForBrokenFont(aFamily->Key().AsString(list));
+
+  return fe;
 }
 
 
