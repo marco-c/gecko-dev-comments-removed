@@ -852,6 +852,24 @@ nsresult nsToolkitProfileService::Init() {
     currentProfile = new nsToolkitProfile(name, rootDir, localDir, true);
     NS_ENSURE_TRUE(currentProfile, NS_ERROR_OUT_OF_MEMORY);
 
+    
+    
+    
+    
+    bool nowRelative;
+    nsCString descriptor;
+    GetProfileDescriptor(currentProfile, descriptor, &nowRelative);
+
+    if (isRelative != nowRelative || !descriptor.Equals(filePath)) {
+      mProfileDB.SetString(profileID.get(), "IsRelative",
+                           nowRelative ? "1" : "0");
+      mProfileDB.SetString(profileID.get(), "Path", descriptor.get());
+
+      
+      
+      
+    }
+
     rv = mProfileDB.GetString(profileID.get(), "Default", buffer);
     if (NS_SUCCEEDED(rv) && buffer.EqualsLiteral("1")) {
       mNormalDefault = currentProfile;
@@ -859,7 +877,7 @@ nsresult nsToolkitProfileService::Init() {
 
     
     if (mUseDedicatedProfile && !mDedicatedProfile &&
-        installProfilePath.Equals(filePath)) {
+        installProfilePath.Equals(descriptor)) {
       
       mDedicatedProfile = currentProfile;
     }
