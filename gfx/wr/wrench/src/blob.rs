@@ -9,6 +9,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use webrender::api::*;
 use webrender::api::units::{BlobDirtyRect, BlobToDeviceTranslation, TileOffset};
+use webrender::api::units::DeviceIntRect;
 
 
 
@@ -129,12 +130,14 @@ impl CheckerboardRenderer {
 }
 
 impl BlobImageHandler for CheckerboardRenderer {
-    fn add(&mut self, key: BlobImageKey, cmds: Arc<BlobImageData>, tile_size: Option<TileSize>) {
+    fn add(&mut self, key: BlobImageKey, cmds: Arc<BlobImageData>,
+           _visible_rect: &DeviceIntRect, tile_size: Option<TileSize>) {
         self.image_cmds
             .insert(key, (deserialize_blob(&cmds[..]).unwrap(), tile_size));
     }
 
-    fn update(&mut self, key: BlobImageKey, cmds: Arc<BlobImageData>, _dirty_rect: &BlobDirtyRect) {
+    fn update(&mut self, key: BlobImageKey, cmds: Arc<BlobImageData>,
+              _visible_rect: &DeviceIntRect, _dirty_rect: &BlobDirtyRect) {
         
         
         self.image_cmds.get_mut(&key).unwrap().0 = deserialize_blob(&cmds[..]).unwrap();
