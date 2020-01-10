@@ -2266,8 +2266,6 @@ pub struct PrimitiveCluster {
     pub prim_instances: Vec<PrimitiveInstance>,
     
     pub flags: ClusterFlags,
-    
-    pub cache_scroll_root: Option<SpatialNodeIndex>,
 }
 
 
@@ -2288,7 +2286,6 @@ impl PrimitiveCluster {
             spatial_node_index,
             flags,
             prim_instances: Vec::new(),
-            cache_scroll_root: None,
         }
     }
 
@@ -2436,13 +2433,21 @@ impl PrimitiveList {
     }
 
     
-    pub fn add_cluster(&mut self, cluster: PrimitiveCluster) {
-        self.clusters.push(cluster);
+    pub fn extend(&mut self, prim_list: PrimitiveList) {
+        self.clusters.extend(prim_list.clusters);
     }
 
     
-    pub fn extend(&mut self, prim_list: PrimitiveList) {
-        self.clusters.extend(prim_list.clusters);
+    pub fn len(&self) -> usize {
+        self.clusters.len()
+    }
+
+    
+    pub fn split_off(&mut self, index: usize) -> PrimitiveList {
+        let clusters = self.clusters.split_off(index);
+        PrimitiveList {
+            clusters
+        }
     }
 }
 
