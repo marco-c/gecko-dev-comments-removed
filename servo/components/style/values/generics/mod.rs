@@ -93,12 +93,9 @@ impl SymbolsType {
 
 
 
-
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Debug, Eq, PartialEq, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
-pub enum CounterStyleOrNone {
-    
-    None,
+pub enum CounterStyle {
     
     Name(CustomIdent),
     
@@ -111,28 +108,25 @@ fn is_symbolic(symbols_type: &SymbolsType) -> bool {
     *symbols_type == SymbolsType::Symbolic
 }
 
-impl CounterStyleOrNone {
+impl CounterStyle {
     
     pub fn disc() -> Self {
-        CounterStyleOrNone::Name(CustomIdent(atom!("disc")))
+        CounterStyle::Name(CustomIdent(atom!("disc")))
     }
 
     
     pub fn decimal() -> Self {
-        CounterStyleOrNone::Name(CustomIdent(atom!("decimal")))
+        CounterStyle::Name(CustomIdent(atom!("decimal")))
     }
 }
 
-impl Parse for CounterStyleOrNone {
+impl Parse for CounterStyle {
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         if let Ok(name) = input.try(|i| parse_counter_style_name(i)) {
-            return Ok(CounterStyleOrNone::Name(name));
-        }
-        if input.try(|i| i.expect_ident_matching("none")).is_ok() {
-            return Ok(CounterStyleOrNone::None);
+            return Ok(CounterStyle::Name(name));
         }
         input.expect_function_matching("symbols")?;
         input.parse_nested_block(|input| {
@@ -151,12 +145,12 @@ impl Parse for CounterStyleOrNone {
             if symbols.0.iter().any(|sym| !sym.is_allowed_in_symbols()) {
                 return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
             }
-            Ok(CounterStyleOrNone::Symbols(symbols_type, symbols))
+            Ok(CounterStyle::Symbols(symbols_type, symbols))
         })
     }
 }
 
-impl SpecifiedValueInfo for CounterStyleOrNone {
+impl SpecifiedValueInfo for CounterStyle {
     fn collect_completion_keywords(f: KeywordsCollectFn) {
         
         
@@ -165,7 +159,7 @@ impl SpecifiedValueInfo for CounterStyleOrNone {
         
         macro_rules! predefined {
             ($($name:expr,)+) => {
-                f(&["none", "symbols", $($name,)+]);
+                f(&["symbols", $($name,)+]);
             }
         }
         include!("../../counter_style/predefined.rs");

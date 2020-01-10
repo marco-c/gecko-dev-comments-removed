@@ -46,9 +46,9 @@
                 }
             }
 
-            // list-style-type must be checked the last, because it accepts
-            // arbitrary identifier for custom counter style, and thus may
-            // affect values of list-style-position.
+            
+            
+            
             if list_style_type.is_none() {
                 if let Ok(value) = input.try(|input| list_style_type::parse(context, input)) {
                     list_style_type = Some(value);
@@ -61,31 +61,23 @@
 
         let position = unwrap_or_initial!(list_style_position, position);
 
-        fn list_style_type_none() -> list_style_type::SpecifiedValue {
-            % if engine == "gecko":
-                use crate::values::generics::CounterStyleOrNone;
-                list_style_type::SpecifiedValue::CounterStyle(CounterStyleOrNone::None)
-            % else:
-                list_style_type::SpecifiedValue::None
-            % endif
-        }
-
         
         
         
+        use self::list_style_type::SpecifiedValue as ListStyleType;
         match (any, nones, list_style_type, image) {
             (true, 2, None, None) => {
                 Ok(expanded! {
                     list_style_position: position,
                     list_style_image: ImageUrlOrNone::none(),
-                    list_style_type: list_style_type_none(),
+                    list_style_type: ListStyleType::None,
                 })
             }
             (true, 1, None, Some(image)) => {
                 Ok(expanded! {
                     list_style_position: position,
                     list_style_image: image,
-                    list_style_type: list_style_type_none(),
+                    list_style_type: ListStyleType::None,
                 })
             }
             (true, 1, Some(list_style_type), None) => {
@@ -99,7 +91,7 @@
                 Ok(expanded! {
                     list_style_position: position,
                     list_style_image: ImageUrlOrNone::none(),
-                    list_style_type: list_style_type_none(),
+                    list_style_type: ListStyleType::None,
                 })
             }
             (true, 0, list_style_type, image) => {
