@@ -330,9 +330,14 @@ NetworkResponseListener.prototype = {
     const info = NetworkHelper.parseSecurityInfo(secinfo, this.httpActivity);
 
     let isRacing = false;
-    const channel = this.httpActivity.channel;
-    if (channel instanceof Ci.nsICacheInfoChannel) {
-      isRacing = channel.isRacing();
+    try {
+      const channel = this.httpActivity.channel;
+      if (channel instanceof Ci.nsICacheInfoChannel) {
+        isRacing = channel.isRacing();
+      }
+    } catch (err) {
+      
+      
     }
 
     this.httpActivity.owner.addSecurityInfo(info, isRacing);
