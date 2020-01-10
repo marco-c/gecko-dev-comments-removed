@@ -389,7 +389,8 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                  nsIContent* aContent,
                                  bool aSuppressWhiteSpaceOptimizations,
                                  const InsertionPoint& aInsertion,
-                                 FrameConstructionItemList& aItems);
+                                 FrameConstructionItemList& aItems,
+                                 uint32_t aFlags = 0);
 
   
   
@@ -405,7 +406,8 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                    ComputedStyle* aComputedStyle,
                                    bool aSuppressWhiteSpaceOptimizations,
                                    nsContainerFrame* aParentFrame,
-                                   FrameConstructionItemList& aItems);
+                                   FrameConstructionItemList& aItems,
+                                   uint32_t aFlags = 0);
 
   
   
