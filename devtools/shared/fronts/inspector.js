@@ -30,6 +30,7 @@ const TELEMETRY_EYEDROPPER_OPENED_MENU =
 const SHOW_ALL_ANONYMOUS_CONTENT_PREF =
   "devtools.inspector.showAllAnonymousContent";
 const SHOW_UA_SHADOW_ROOTS_PREF = "devtools.inspector.showUserAgentShadowRoots";
+const FISSION_ENABLED = "devtools.browsertoolbox.fission";
 
 const telemetry = new Telemetry();
 
@@ -460,6 +461,9 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     const documentNode = await walker.getRootNode();
 
     
+    documentNode.reparent(node);
+
+    
     return {
       nodes: [documentNode],
       hasFirst: true,
@@ -563,6 +567,25 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     } else {
       telemetry.getHistogramById(TELEMETRY_EYEDROPPER_OPENED).add(true);
     }
+  }
+
+  async getChildInspectors() {
+    const fissionEnabled = Services.prefs.getBoolPref(FISSION_ENABLED);
+    const childInspectors = [];
+    const target = this.targetFront;
+    
+    if (fissionEnabled && target.chrome && !target.isAddon) {
+      const { frames } = await target.listRemoteFrames();
+      
+      for (const descriptor of frames) {
+        const remoteTarget = await descriptor.getTarget();
+        if (remoteTarget) {
+          const remoteInspectorFront = await remoteTarget.getFront("inspector");
+          childInspectors.push(remoteInspectorFront);
+        }
+      }
+    }
+    return childInspectors;
   }
 }
 
