@@ -453,6 +453,7 @@ public class GeckoSession implements Parcelable {
                 "GeckoView:FullScreenEnter",
                 "GeckoView:FullScreenExit",
                 "GeckoView:WebAppManifest",
+                "GeckoView:FirstContentfulPaint",
             }
         ) {
             @Override
@@ -505,6 +506,8 @@ public class GeckoSession implements Parcelable {
                     } catch (JSONException e) {
                         Log.e(LOGTAG, "Failed to convert web app manifest to JSON", e);
                     }
+                } else if ("GeckoView:FirstContentfulPaint".equals(event)) {
+                    delegate.onFirstContentfulPaint(GeckoSession.this);
                 }
             }
         };
@@ -3108,6 +3111,20 @@ public class GeckoSession implements Parcelable {
 
         @UiThread
         default void onFirstComposite(@NonNull GeckoSession session) {}
+
+        
+
+
+
+
+
+
+
+
+
+
+        @UiThread
+        default void onFirstContentfulPaint(@NonNull GeckoSession session) {}
 
         
 
