@@ -1014,8 +1014,27 @@ bool Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
 
   mozilla::DebugOnly<Handle<GlobalObject*>> debuggeeGlobal = cx->global();
 
-  
   bool suspending = false;
+  bool success = false;
+  auto frameMapsGuard = MakeScopeExit([&] {
+    
+    
+    
+    removeFromFrameMapsAndClearBreakpointsIn(cx, frame, suspending && success);
+  });
+
+  
+  
+  
+  Rooted<DebuggerFrameVector> frames(cx, DebuggerFrameVector(cx));
+  if (!getDebuggerFrames(frame, &frames)) {
+    return false;
+  }
+  if (frames.empty()) {
+    return frameOk;
+  }
+
+  
   Rooted<AbstractGeneratorObject*> genObj(cx);
   if (frame.isGeneratorFrame()) {
     
@@ -1035,25 +1054,6 @@ bool Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
         frameOk &&
         (*pc == JSOP_INITIALYIELD || *pc == JSOP_YIELD || *pc == JSOP_AWAIT) &&
         !genObj->isClosed();
-  }
-
-  bool success = false;
-  auto frameMapsGuard = MakeScopeExit([&] {
-    
-    
-    
-    removeFromFrameMapsAndClearBreakpointsIn(cx, frame, suspending && success);
-  });
-
-  
-  
-  
-  Rooted<DebuggerFrameVector> frames(cx, DebuggerFrameVector(cx));
-  if (!getDebuggerFrames(frame, &frames)) {
-    return false;
-  }
-  if (frames.empty()) {
-    return frameOk;
   }
 
   
