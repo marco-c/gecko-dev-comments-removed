@@ -1552,6 +1552,17 @@ void js::Nursery::shrinkAllocableSpace(size_t newCapacity) {
 }
 
 void js::Nursery::minimizeAllocableSpace() {
+  if (capacity_ < roundSize(tunables().gcMinNurseryBytes())) {
+    
+    
+    
+    
+    
+    
+    
+    
+    return;
+  }
   shrinkAllocableSpace(roundSize(tunables().gcMinNurseryBytes()));
 }
 
