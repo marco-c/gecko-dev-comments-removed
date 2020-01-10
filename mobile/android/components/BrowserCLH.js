@@ -73,13 +73,6 @@ BrowserCLH.prototype = {
           "invalidformsubmit"
         );
 
-        GeckoViewUtils.addLazyGetter(this, "LoginManagerParent", {
-          module: "resource://gre/modules/LoginManagerParent.jsm",
-        });
-        GeckoViewUtils.addLazyGetter(this, "LoginManagerChild", {
-          module: "resource://gre/modules/LoginManagerChild.jsm",
-        });
-
         GeckoViewUtils.addLazyGetter(this, "ActionBarHandler", {
           module: "resource://gre/modules/ActionBarHandler.jsm",
         });
@@ -141,8 +134,6 @@ BrowserCLH.prototype = {
           }
         );
 
-        this._initLoginManagerEvents(win);
-
         GeckoViewUtils.registerLazyWindowEventListener(
           win,
           ["TextSelection:Get", "TextSelection:Action", "TextSelection:End"],
@@ -191,58 +182,6 @@ BrowserCLH.prototype = {
         break;
       }
     }
-  },
-
-  _initLoginManagerEvents: function(aWindow) {
-    if (Services.prefs.getBoolPref("reftest.remote", false)) {
-      
-      return;
-    }
-
-    function shouldIgnoreLoginManagerEvent(event) {
-      let nodePrincipal = event.target.nodePrincipal;
-      
-      
-      return nodePrincipal.isNullPrincipal || nodePrincipal.schemeIs("about");
-    }
-
-    let options = {
-      capture: true,
-      mozSystemGroup: true,
-    };
-
-    
-    
-    aWindow.addEventListener("DOMFormBeforeSubmit", event => {
-      if (shouldIgnoreLoginManagerEvent(event)) {
-        return;
-      }
-      this.LoginManagerChild.forWindow(aWindow).onDOMFormBeforeSubmit(event);
-    });
-    aWindow.addEventListener(
-      "DOMFormHasPassword",
-      event => {
-        if (shouldIgnoreLoginManagerEvent(event)) {
-          return;
-        }
-        this.LoginManagerChild.forWindow(aWindow).onDOMFormHasPassword(event);
-      },
-      options
-    );
-
-    aWindow.addEventListener(
-      "DOMInputPasswordAdded",
-      event => {
-        if (shouldIgnoreLoginManagerEvent(event)) {
-          return;
-        }
-        this.LoginManagerChild.forWindow(aWindow).onDOMInputPasswordAdded(
-          event,
-          event.target.ownerGlobal.top
-        );
-      },
-      options
-    );
   },
 
   

@@ -21,6 +21,9 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 const { PrivateBrowsingUtils } = ChromeUtils.import(
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );
@@ -497,6 +500,58 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     return undefined;
   }
 
+  shouldIgnoreLoginManagerEvent(event) {
+    let nodePrincipal = event.target.nodePrincipal;
+    
+    
+    return (
+      nodePrincipal.isSystemPrincipal ||
+      nodePrincipal.isNullPrincipal ||
+      nodePrincipal.schemeIs("about")
+    );
+  }
+
+  handleEvent(event) {
+    if (
+      AppConstants.platform == "android" &&
+      Services.prefs.getBoolPref("reftest.remote", false)
+    ) {
+      
+      return;
+    }
+
+    switch (event.type) {
+      case "DOMFormBeforeSubmit": {
+        if (this.shouldIgnoreLoginManagerEvent(event)) {
+          break;
+        }
+
+        this.onDOMFormBeforeSubmit(event);
+        break;
+      }
+      case "DOMFormHasPassword": {
+        if (this.shouldIgnoreLoginManagerEvent(event)) {
+          break;
+        }
+
+        this.onDOMFormHasPassword(event);
+        let formLike = LoginFormFactory.createFromForm(event.originalTarget);
+        InsecurePasswordUtils.reportInsecurePasswords(formLike);
+        break;
+      }
+      case "DOMInputPasswordAdded": {
+        if (this.shouldIgnoreLoginManagerEvent(event)) {
+          break;
+        }
+
+        this.onDOMInputPasswordAdded(event, this.document.defaultView);
+        let formLike = LoginFormFactory.createFromField(event.originalTarget);
+        InsecurePasswordUtils.reportInsecurePasswords(formLike);
+        break;
+      }
+    }
+  }
+
   notifyObserversOfFormProcessed(formid) {
     Services.obs.notifyObservers(this, "passwordmgr-processed-form", formid);
   }
@@ -580,8 +635,16 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       return;
     }
 
+    
+    let browsingContext = window.getWindowGlobalChild().browsingContext;
+    let docShell;
+    while (browsingContext && browsingContext.docShell) {
+      docShell = browsingContext.docShell;
+      browsingContext = browsingContext.parent;
+    }
+
     try {
-      let webProgress = window.docShell
+      let webProgress = docShell
         .QueryInterface(Ci.nsIInterfaceRequestor)
         .getInterface(Ci.nsIWebProgress);
       webProgress.addProgressListener(
@@ -681,12 +744,12 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     this._fetchLoginsFromParentAndFillForm(formLike);
   }
 
-  onDOMInputPasswordAdded(event, topWindow) {
+  onDOMInputPasswordAdded(event, window) {
     if (!event.isTrusted) {
       return;
     }
 
-    this.setupProgressListener(topWindow);
+    this.setupProgressListener(window);
 
     let pwField = event.originalTarget;
     if (pwField.form) {
@@ -709,16 +772,16 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     
     
     if (document.visibilityState == "visible" || isMasterPasswordSet) {
-      this._processDOMInputPasswordAddedEvent(event, topWindow);
+      this._processDOMInputPasswordAddedEvent(event);
     } else {
       
       this._deferHandlingEventUntilDocumentVisible(event, document, () => {
-        this._processDOMInputPasswordAddedEvent(event, topWindow);
+        this._processDOMInputPasswordAddedEvent(event);
       });
     }
   }
 
-  _processDOMInputPasswordAddedEvent(event, topWindow) {
+  _processDOMInputPasswordAddedEvent(event) {
     let pwField = event.originalTarget;
 
     let formLike = LoginFormFactory.createFromField(pwField);
