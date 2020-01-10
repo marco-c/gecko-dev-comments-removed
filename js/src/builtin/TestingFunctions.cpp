@@ -3676,7 +3676,7 @@ struct FindPathHandler {
     
     if (edge.referent == target) {
       
-      if (!recordPath(traversal)) {
+      if (!recordPath(traversal, backEdge)) {
         return false;
       }
       foundPath = true;
@@ -3690,16 +3690,23 @@ struct FindPathHandler {
   
   
   
-  bool recordPath(Traversal& traversal) {
+  
+  
+  bool recordPath(Traversal& traversal, BackEdge* targetBackEdge) {
     JS::ubi::Node here = target;
 
     do {
-      Traversal::NodeMap::Ptr p = traversal.visited.lookup(here);
-      MOZ_ASSERT(p);
-      JS::ubi::Node predecessor = p->value().predecessor();
+      BackEdge* backEdge = targetBackEdge;
+      if (here != target) {
+        Traversal::NodeMap::Ptr p = traversal.visited.lookup(here);
+        MOZ_ASSERT(p);
+        backEdge = &p->value();
+      }
+      JS::ubi::Node predecessor = backEdge->predecessor();
       if (!nodes.append(predecessor.exposeToJS()) ||
-          !edges.append(p->value().forgetName()))
+          !edges.append(backEdge->forgetName())) {
         return false;
+      }
       here = predecessor;
     } while (here != start);
 

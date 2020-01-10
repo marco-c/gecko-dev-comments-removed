@@ -75,6 +75,11 @@ namespace ubi {
 
 
 
+
+
+
+
+
 template <typename Handler>
 struct BreadthFirst {
   
@@ -91,7 +96,8 @@ struct BreadthFirst {
         pending(),
         traversalBegun(false),
         stopRequested(false),
-        abandonRequested(false) {}
+        abandonRequested(false),
+        markReferentAsVisited(false) {}
 
   
   
@@ -141,19 +147,24 @@ struct BreadthFirst {
         typename NodeMap::AddPtr a = visited.lookupForAdd(edge.referent);
         bool first = !a;
 
-        if (first) {
-          
-          
-          if (!visited.add(a, edge.referent, typename Handler::NodeData())) {
-            return false;
-          }
-        }
-
-        MOZ_ASSERT(a);
+        
+        
+        typename Handler::NodeData nodeData;
+        typename Handler::NodeData* nodeDataPtr =
+            first ? &nodeData : &a->value();
 
         
-        if (!handler(*this, origin, edge, &a->value(), first)) {
+        markReferentAsVisited = true;
+        if (!handler(*this, origin, edge, nodeDataPtr, first)) {
           return false;
+        }
+
+        if (first && markReferentAsVisited) {
+          
+          
+          if (!visited.add(a, edge.referent, std::move(nodeData))) {
+            return false;
+          }
         }
 
         if (stopRequested) {
@@ -187,6 +198,10 @@ struct BreadthFirst {
   
   
   void abandonReferent() { abandonRequested = true; }
+
+  
+  
+  void doNotMarkReferentAsVisited() { markReferentAsVisited = false; }
 
   
   JSContext* cx;
@@ -244,6 +259,10 @@ struct BreadthFirst {
 
   
   bool abandonRequested;
+
+  
+  
+  bool markReferentAsVisited;
 };
 
 }  
