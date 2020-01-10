@@ -151,6 +151,30 @@ uint64_t HTMLSummaryAccessible::NativeState() const {
   return state;
 }
 
+HTMLSummaryAccessible* HTMLSummaryAccessible::FromDetails(Accessible* details) {
+  if (!dom::HTMLDetailsElement::FromNodeOrNull(details->GetContent())) {
+    return nullptr;
+  }
+
+  HTMLSummaryAccessible* summaryAccessible = nullptr;
+  for (uint32_t i = 0; i < details->ChildCount(); i++) {
+    
+    
+    
+    Accessible* child = details->GetChildAt(i);
+    auto* summary =
+        mozilla::dom::HTMLSummaryElement::FromNodeOrNull(child->GetContent());
+    if (summary && summary->IsMainSummary()) {
+      summaryAccessible = static_cast<HTMLSummaryAccessible*>(child);
+      break;
+    }
+  }
+
+  MOZ_ASSERT(summaryAccessible,
+             "Details objects should have at least one summary");
+  return summaryAccessible;
+}
+
 
 
 

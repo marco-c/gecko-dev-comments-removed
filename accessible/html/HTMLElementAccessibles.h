@@ -95,6 +95,11 @@ class HTMLSummaryAccessible : public HyperTextAccessibleWrap {
   HTMLSummaryAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
+  
+  
+  static HTMLSummaryAccessible* FromDetails(Accessible* aDetails);
+
+  
   virtual uint64_t NativeState() const override;
 
   
