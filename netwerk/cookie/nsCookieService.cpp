@@ -2938,11 +2938,6 @@ nsCookieService::ImportCookies(nsIFile* aCookieFile) {
 
 
 
-
-static inline bool ispathdelimiter(char c) {
-  return c == '/' || c == '?' || c == '#' || c == ';';
-}
-
 bool nsCookieService::DomainMatches(nsCookie* aCookie,
                                     const nsACString& aHost) {
   
@@ -2954,32 +2949,25 @@ bool nsCookieService::DomainMatches(nsCookie* aCookie,
 
 bool nsCookieService::PathMatches(nsCookie* aCookie, const nsACString& aPath) {
   
+  
+  
+  if (aCookie->Path().IsEmpty()) return false;
+
+  
+  if (aCookie->Path().Equals(aPath)) return true;
+
+  
+  
+  bool isPrefix = StringBeginsWith(aPath, aCookie->Path());
+  if (isPrefix && aCookie->Path().Last() == '/') return true;
+
+  
+  
+  
   uint32_t cookiePathLen = aCookie->Path().Length();
-  if (cookiePathLen > 0 && aCookie->Path().Last() == '/') --cookiePathLen;
+  if (isPrefix && aPath[cookiePathLen] == '/') return true;
 
-  
-  
-  if (!StringBeginsWith(aPath, Substring(aCookie->Path(), 0, cookiePathLen)))
-    return false;
-
-  
-  
-  if (aPath.Length() > cookiePathLen &&
-      !ispathdelimiter(aPath.CharAt(cookiePathLen))) {
-    
-
-
-
-
-
-
-
-    return false;
-  }
-
-  
-  
-  return true;
+  return false;
 }
 
 void nsCookieService::GetCookiesForURI(
