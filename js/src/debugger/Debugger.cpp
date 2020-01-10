@@ -31,7 +31,6 @@
 #include "jsapi.h"        
 #include "jsfriendapi.h"  
 #include "jstypes.h"      
-#include "jsutil.h"       
 
 #include "builtin/Array.h"               
 #include "builtin/Promise.h"             
@@ -4550,8 +4549,10 @@ bool Debugger::addDebuggeeGlobal(JSContext* cx, Handle<GlobalObject*> global) {
       Realm::DebuggerVector& v = realm->getDebuggers();
       for (auto p = v.begin(); p != v.end(); p++) {
         Realm* next = (*p)->object->realm();
-        if (Find(visited, next) == visited.end() && !visited.append(next)) {
-          return false;
+        if (std::find(visited.begin(), visited.end(), next) == visited.end()) {
+          if (!visited.append(next)) {
+            return false;
+          }
         }
       }
     }
