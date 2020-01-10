@@ -33,6 +33,7 @@ use crate::stylesheets::{CounterStyleRule, FontFaceRule, FontFeatureValuesRule, 
 use crate::stylesheets::{CssRule, Origin, OriginSet, PerOrigin, PerOriginIter};
 use crate::thread_state::{self, ThreadState};
 use crate::{Atom, LocalName, Namespace, WeakAtom};
+use fallible::FallibleVec;
 use hashglobe::FailedAllocationError;
 #[cfg(feature = "gecko")]
 use malloc_size_of::MallocUnconditionalShallowSizeOf;
@@ -1641,9 +1642,9 @@ impl<'a> SelectorVisitor for StylistSelectorVisitor<'a> {
 
 
 #[derive(Debug, Default, MallocSizeOf)]
-struct ElementAndPseudoRules {
+struct GenericElementAndPseudoRules<Map> {
     
-    element_map: SelectorMap<Rule>,
+    element_map: Map,
 
     
     
@@ -1651,39 +1652,30 @@ struct ElementAndPseudoRules {
     
     
     
-    pseudos_map: PerPseudoElementMap<Box<SelectorMap<Rule>>>,
+    pseudos_map: PerPseudoElementMap<Box<Map>>,
 }
 
-impl ElementAndPseudoRules {
+impl<Map: Default + MallocSizeOf> GenericElementAndPseudoRules<Map> {
     #[inline(always)]
-    fn insert(
-        &mut self,
-        rule: Rule,
-        pseudo_element: Option<&PseudoElement>,
-        quirks_mode: QuirksMode,
-    ) -> Result<(), FailedAllocationError> {
+    fn for_insertion(&mut self, pseudo_element: Option<&PseudoElement>) -> &mut Map {
         debug_assert!(
-            pseudo_element.map_or(true, |pseudo| !pseudo.is_precomputed() &&
-                !pseudo.is_unknown_webkit_pseudo_element())
+            pseudo_element.map_or(true, |pseudo| {
+                !pseudo.is_precomputed() && !pseudo.is_unknown_webkit_pseudo_element()
+            }),
+            "Precomputed pseudos should end up in precomputed_pseudo_element_decls, \
+             and unknown webkit pseudos should be discarded before getting here"
         );
 
-        let map = match pseudo_element {
+        match pseudo_element {
             None => &mut self.element_map,
             Some(pseudo) => self
                 .pseudos_map
-                .get_or_insert_with(pseudo, || Box::new(SelectorMap::new())),
-        };
-
-        map.insert(rule, quirks_mode)
-    }
-
-    fn clear(&mut self) {
-        self.element_map.clear();
-        self.pseudos_map.clear();
+                .get_or_insert_with(pseudo, || Box::new(Default::default())),
+        }
     }
 
     #[inline]
-    fn rules(&self, pseudo: Option<&PseudoElement>) -> Option<&SelectorMap<Rule>> {
+    fn rules(&self, pseudo: Option<&PseudoElement>) -> Option<&Map> {
         match pseudo {
             Some(pseudo) => self.pseudos_map.get(pseudo).map(|p| &**p),
             None => Some(&self.element_map),
@@ -1700,6 +1692,26 @@ impl ElementAndPseudoRules {
                 sizes.mElementAndPseudosMaps += <Box<_> as MallocSizeOf>::size_of(elem, ops);
             }
         }
+    }
+}
+
+type ElementAndPseudoRules = GenericElementAndPseudoRules<SelectorMap<Rule>>;
+type PartMap = PrecomputedHashMap<Atom, SmallVec<[Rule; 1]>>;
+type PartElementAndPseudoRules = GenericElementAndPseudoRules<PartMap>;
+
+impl ElementAndPseudoRules {
+    
+    fn clear(&mut self) {
+        self.element_map.clear();
+        self.pseudos_map.clear();
+    }
+}
+
+impl PartElementAndPseudoRules {
+    
+    fn clear(&mut self) {
+        self.element_map.clear();
+        self.pseudos_map.clear();
     }
 }
 
@@ -1726,6 +1738,12 @@ pub struct CascadeData {
     
     
     slotted_rules: Option<Box<ElementAndPseudoRules>>,
+
+    
+    
+    
+    
+    part_rules: Option<Box<PartElementAndPseudoRules>>,
 
     
     invalidation_map: InvalidationMap,
@@ -1786,6 +1804,7 @@ impl CascadeData {
             normal_rules: ElementAndPseudoRules::default(),
             host_rules: None,
             slotted_rules: None,
+            part_rules: None,
             invalidation_map: InvalidationMap::new(),
             attribute_dependencies: PrecomputedHashSet::default(),
             state_dependencies: ElementState::empty(),
@@ -1874,6 +1893,12 @@ impl CascadeData {
     #[inline]
     pub fn slotted_rules(&self, pseudo: Option<&PseudoElement>) -> Option<&SelectorMap<Rule>> {
         self.slotted_rules.as_ref().and_then(|d| d.rules(pseudo))
+    }
+
+    
+    #[inline]
+    pub fn part_rules(&self, pseudo: Option<&PseudoElement>) -> Option<&PartMap> {
+        self.part_rules.as_ref().and_then(|d| d.rules(pseudo))
     }
 
     
@@ -2008,17 +2033,30 @@ impl CascadeData {
                         
                         
                         
-                        let rules = if selector.is_featureless_host_selector_or_pseudo_element() {
-                            self.host_rules
+                        if let Some(part) = selector.part() {
+                            self.part_rules
                                 .get_or_insert_with(|| Box::new(Default::default()))
-                        } else if selector.is_slotted() {
-                            self.slotted_rules
-                                .get_or_insert_with(|| Box::new(Default::default()))
+                                .for_insertion(pseudo_element)
+                                .try_entry(part.clone())?
+                                .or_insert_with(SmallVec::new)
+                                .try_push(rule)?;
                         } else {
-                            &mut self.normal_rules
-                        };
-
-                        rules.insert(rule, pseudo_element, quirks_mode)?;
+                            
+                            
+                            
+                            let rules =
+                                if selector.is_featureless_host_selector_or_pseudo_element() {
+                                    self.host_rules
+                                        .get_or_insert_with(|| Box::new(Default::default()))
+                                } else if selector.is_slotted() {
+                                    self.slotted_rules
+                                        .get_or_insert_with(|| Box::new(Default::default()))
+                                } else {
+                                    &mut self.normal_rules
+                                }
+                                .for_insertion(pseudo_element);
+                            rules.insert(rule, quirks_mode)?;
+                        }
                     }
                     self.rules_source_order += 1;
                 },
@@ -2184,6 +2222,9 @@ impl CascadeData {
         if let Some(ref mut slotted_rules) = self.slotted_rules {
             slotted_rules.clear();
         }
+        if let Some(ref mut part_rules) = self.part_rules {
+            part_rules.clear();
+        }
         if let Some(ref mut host_rules) = self.host_rules {
             host_rules.clear();
         }
@@ -2211,6 +2252,9 @@ impl CascadeData {
         self.normal_rules.add_size_of(ops, sizes);
         if let Some(ref slotted_rules) = self.slotted_rules {
             slotted_rules.add_size_of(ops, sizes);
+        }
+        if let Some(ref part_rules) = self.part_rules {
+            part_rules.add_size_of(ops, sizes);
         }
         if let Some(ref host_rules) = self.host_rules {
             host_rules.add_size_of(ops, sizes);
