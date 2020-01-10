@@ -40,6 +40,7 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/ipc/URIUtils.h"
+#include "mozilla/net/DNS.h"
 
 using namespace mozilla;
 
@@ -373,9 +374,30 @@ nsMixedContentBlocker::ShouldLoad(nsIURI* aContentLocation,
 
 bool nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackHost(
     const nsACString& aAsciiHost) {
-  return aAsciiHost.EqualsLiteral("127.0.0.1") ||
-         aAsciiHost.EqualsLiteral("::1") ||
-         aAsciiHost.EqualsLiteral("localhost");
+  if (aAsciiHost.EqualsLiteral("::1") ||
+      aAsciiHost.EqualsLiteral("localhost")) {
+    return true;
+  }
+
+  PRNetAddr tempAddr;
+  memset(&tempAddr, 0, sizeof(PRNetAddr));
+
+  if (PR_StringToNetAddr(PromiseFlatCString(aAsciiHost).get(), &tempAddr) !=
+      PR_SUCCESS) {
+    return false;
+  }
+
+  using namespace mozilla::net;
+  NetAddr addr;
+  PRNetAddrToNetAddr(&tempAddr, &addr);
+
+  
+  
+  
+  
+  
+  
+  return IsIPAddrV4(&addr) && IsLoopBackAddress(&addr);
 }
 
 bool nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(nsIURI* aURL) {
