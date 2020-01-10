@@ -204,6 +204,7 @@ const calculateHorizontalPosition = (
   offset,
   borderRadius,
   isRtl,
+  isMenuTooltip,
   doc = null
 ) => {
   
@@ -222,8 +223,9 @@ const calculateHorizontalPosition = (
   
   
   
+  
   let hangDirection;
-  if (type === TYPE.DOORHANGER) {
+  if (type === TYPE.DOORHANGER && isMenuTooltip) {
     const anchorCenter = anchorRect.left + anchorRect.width / 2;
     const viewCenter = windowRect.left + windowRect.width / 2;
     hangDirection = anchorCenter >= viewCenter ? "left" : "right";
@@ -354,13 +356,17 @@ const getRelativeRect = function(node, relativeTo) {
 
 
 
+
+
+
 function HTMLTooltip(
   toolboxDoc,
   {
-    id = "",
     className = "",
-    type = "normal",
     consumeOutsideClicks = true,
+    id = "",
+    isMenuTooltip = false,
+    type = "normal",
     useXulWrapper = false,
     noAutoHide = false,
   } = {}
@@ -374,6 +380,7 @@ function HTMLTooltip(
   this.noAutoHide = noAutoHide;
   
   this.consumeOutsideClicks = this.noAutoHide ? false : consumeOutsideClicks;
+  this.isMenuTooltip = isMenuTooltip;
   this.useXulWrapper = this._isXUL() && useXulWrapper;
   this.preferredWidth = "auto";
   this.preferredHeight = "auto";
@@ -594,6 +601,7 @@ HTMLTooltip.prototype = {
       x,
       borderRadius,
       isRtl,
+      this.isMenuTooltip,
       this.doc
     );
 
