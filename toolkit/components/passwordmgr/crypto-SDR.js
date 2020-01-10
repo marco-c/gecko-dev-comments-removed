@@ -216,6 +216,9 @@ LoginManagerCrypto_SDR.prototype = {
     } catch (e) {
       this.log("Failed to decrypt strings. (" + e.name + ")");
       
+      
+      
+      
       if (e.result == Cr.NS_ERROR_NOT_AVAILABLE) {
         canceledMP = true;
         throw Components.Exception("User canceled master password entry", Cr.NS_ERROR_ABORT);

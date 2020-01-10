@@ -330,6 +330,15 @@ LoginManager.prototype = {
     return this._storage.getAllLogins();
   },
 
+  
+
+
+
+
+  async getAllLoginsAsync() {
+    log.debug("Getting a list of all logins asynchronously");
+    return this._storage.getAllLoginsAsync();
+  },
 
   
 
