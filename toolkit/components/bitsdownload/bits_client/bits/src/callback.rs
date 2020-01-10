@@ -32,14 +32,14 @@ use BitsJob;
 
 
 pub type TransferredCallback =
-    (Fn() -> Result<(), HRESULT>) + RefUnwindSafe + Send + Sync + 'static;
-pub type ErrorCallback = (Fn() -> Result<(), HRESULT>) + RefUnwindSafe + Send + Sync + 'static;
+    dyn (Fn() -> Result<(), HRESULT>) + RefUnwindSafe + Send + Sync + 'static;
+pub type ErrorCallback = dyn (Fn() -> Result<(), HRESULT>) + RefUnwindSafe + Send + Sync + 'static;
 pub type ModificationCallback =
-    (Fn() -> Result<(), HRESULT>) + RefUnwindSafe + Send + Sync + 'static;
+    dyn (Fn() -> Result<(), HRESULT>) + RefUnwindSafe + Send + Sync + 'static;
 
 #[repr(C)]
 pub struct BackgroundCopyCallback {
-    
+    // Everything assumes that the interface vtable is the first member of this struct.
     interface: IBackgroundCopyCallback,
     rc: AtomicUsize,
     transferred_cb: Option<Box<TransferredCallback>>,
@@ -48,10 +48,10 @@ pub struct BackgroundCopyCallback {
 }
 
 impl BackgroundCopyCallback {
-    
-    
-    
-    
+    /// Construct the callback object and register it with a job.
+    ///
+    /// Only one notify interface can be present on a job at once, so this will release BITS'
+    /// ref to any previously registered interface.
     pub fn register(
         job: &mut BitsJob,
         transferred_cb: Option<Box<TransferredCallback>>,
@@ -66,8 +66,8 @@ impl BackgroundCopyCallback {
             modification_cb,
         });
 
-        
-        
+        // Leak the callback, it has no Rust owner until we need to drop it later.
+        // The ComRef will Release when it goes out of scope.
         unsafe {
             let cb = ComRef::from_raw(NonNull::new_unchecked(Box::into_raw(cb) as *mut IUnknown));
 
@@ -84,15 +84,15 @@ extern "system" fn query_interface(
     obj: *mut *mut c_void,
 ) -> HRESULT {
     unsafe {
-        
-        
-        
+        // `IBackgroundCopyCallback` is the first (currently only) interface on the
+        // `BackgroundCopyCallback` object, so we can return `this` either as
+        // `IUnknown` or `IBackgroundCopyCallback`.
         if Guid(*riid) == Guid(IUnknown::uuidof())
             || Guid(*riid) == Guid(IBackgroundCopyCallback::uuidof())
         {
             addref(this);
-            
-            
+            // Cast first to `IBackgroundCopyCallback` to be clear which `IUnknown`
+            // we are pointing at.
             *obj = this as *mut IBackgroundCopyCallback as *mut c_void;
             NOERROR
         } else {
@@ -105,7 +105,7 @@ extern "system" fn addref(raw_this: *mut IUnknown) -> ULONG {
     unsafe {
         let this = raw_this as *const BackgroundCopyCallback;
 
-        
+        // Forge a reference for just this statement.
         let old_rc = (*this).rc.fetch_add(1, Ordering::SeqCst);
         (old_rc + 1) as ULONG
     }
@@ -116,7 +116,7 @@ extern "system" fn release(raw_this: *mut IUnknown) -> ULONG {
         {
             let this = raw_this as *const BackgroundCopyCallback;
 
-            
+            // Forge a reference for just this statement.
             let old_rc = (*this).rc.fetch_sub(1, Ordering::SeqCst);
 
             let rc = old_rc - 1;
@@ -125,9 +125,9 @@ extern "system" fn release(raw_this: *mut IUnknown) -> ULONG {
             }
         }
 
-        
-        
-        
+        // rc will have been 0 for us to get here, and we're out of scope of the reference above,
+        // so there should be no references or pointers left (besides `this`).
+        // Re-Box and to drop immediately.
         let _ = Box::from_raw(raw_this as *mut BackgroundCopyCallback);
 
         0
@@ -140,7 +140,7 @@ extern "system" fn transferred_stub(
 ) -> HRESULT {
     unsafe {
         let this = raw_this as *const BackgroundCopyCallback;
-        
+        // Forge a reference just for this statement.
         if let Some(ref cb) = (*this).transferred_cb {
             match catch_unwind(|| cb()) {
                 Ok(Ok(())) => S_OK,
@@ -160,7 +160,7 @@ extern "system" fn error_stub(
 ) -> HRESULT {
     unsafe {
         let this = raw_this as *const BackgroundCopyCallback;
-        
+        // Forge a reference just for this statement.
         if let Some(ref cb) = (*this).error_cb {
             match catch_unwind(|| cb()) {
                 Ok(Ok(())) => S_OK,
