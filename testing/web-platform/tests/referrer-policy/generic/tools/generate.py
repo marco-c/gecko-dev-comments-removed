@@ -49,7 +49,7 @@ the target request is %(origin)s.'''
         meta = ''
         headers = []
         if delivery_value != None:
-            if delivery_type == 'meta-referrer':
+            if delivery_type == 'meta':
                 meta = \
                     '<meta name="referrer" content="%s">' % delivery_value
             elif delivery_type == 'http-rp':
@@ -58,10 +58,10 @@ the target request is %(origin)s.'''
                 headers.append('Referrer-Policy: ' + '%s' % delivery_value)
                 
                 headers.append('Access-Control-Allow-Origin: *')
-            elif delivery_type == 'attr-referrer':
+            elif delivery_type == 'attr':
                 
                 pass
-            elif delivery_type == 'rel-noreferrer':
+            elif delivery_type == 'rel-noref':
                 
                 pass
             else:
