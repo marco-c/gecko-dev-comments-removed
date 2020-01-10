@@ -10855,16 +10855,8 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
   } else if (mSessionHistory && mLSHE && mURIResultedInDocument) {
     
     
-    int32_t index = mSessionHistory->LegacySHistory()->GetRequestedIndex();
-    if (index == -1) {
-      index = mSessionHistory->Index();
-    }
-    nsCOMPtr<nsISHEntry> currentSH;
-    mSessionHistory->LegacySHistory()->GetEntryAtIndex(
-        index, getter_AddRefs(currentSH));
-    if (currentSH != mLSHE) {
-      mSessionHistory->LegacySHistory()->ReplaceEntry(index, mLSHE);
-    }
+
+    mSessionHistory->LegacySHistory()->EnsureCorrectEntryAtCurrIndex(mLSHE);
   }
 
   
