@@ -19,5 +19,5 @@ function loadFile(lfVarx) {
         
         if (k++ <= 4000)
           eval(lfVarx);
-    })
+    }, {expectExceptionOnFailure: false});
 }
