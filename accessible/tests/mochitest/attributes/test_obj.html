@@ -88,6 +88,9 @@
       testAttrs("statusChild", {"container-live": "polite"}, true);
       testAttrs("timerChild", {"container-live": "off"}, true);
       testAbsentAttrs("tablistChild", {"container-live": "polite"});
+      testAttrs("containerLiveOutput", {"container-live": "polite"}, true);
+      testAttrs("containerLiveOutput1", {"container-live": "polite"}, true);
+      testAttrs("containerLiveOutput2", {"container-live": "polite"}, true);
 
       // container-live-role object attribute
       testAttrs("log", {"container-live-role": "log"}, true);
@@ -165,6 +168,9 @@
   <div id="content" style="display: none"></div>
   <pre id="test">
   </pre>
+
+  
+  <output id="containerLiveOutput"><div id="containerLiveOutput1"><div id="containerLiveOutput2">Test</div></div></output>
 
   
   <div id="atomic" aria-atomic="true">live region</div>
