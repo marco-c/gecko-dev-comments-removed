@@ -660,15 +660,29 @@ void GCMarker::forgetWeakMap(WeakMapBase* map, Zone* zone) {
 
 void GCMarker::severWeakDelegate(JSObject* key, JSObject* delegate) {
   JS::Zone* zone = delegate->zone();
-  auto p = zone->gcWeakKeys(delegate).get(delegate);
-  if (p) {
-    EraseIf(p->value, [this, key](const WeakMarkable& markable) -> bool {
-      if (markable.key != key) {
-        return false;
+  bool found = true;
+  while (found) {
+    found = false;
+    auto p = zone->gcWeakKeys(delegate).get(delegate);
+    if (!p) {
+      
+      
+      break;
+    }
+
+    for (auto i = p->value.begin(); i != p->value.end(); i++) {
+      if (i->key == key) {
+        WeakMapBase* weakmap = i->weakmap;
+        p->value.erase(i);
+        
+        
+        
+        
+        weakmap->postSeverDelegate(this, key);
+        found = true;
+        break;
       }
-      markable.weakmap->postSeverDelegate(this, key, key->compartment());
-      return true;
-    });
+    }
   }
 }
 
