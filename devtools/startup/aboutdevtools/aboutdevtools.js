@@ -5,17 +5,8 @@
 "use strict";
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
-const Telemetry = require("devtools/client/shared/telemetry");
-const telemetry = new Telemetry();
 
 const DEVTOOLS_ENABLED_PREF = "devtools.enabled";
-
-const TELEMETRY_OPENED_KEY = "DEVTOOLS_ABOUT_DEVTOOLS_OPENED_KEY";
-const TELEMETRY_OPENED_REASON = "DEVTOOLS_ABOUT_DEVTOOLS_OPENED_REASON";
-const TELEMETRY_OPENED = "devtools.aboutdevtools.opened";
-const TELEMETRY_INSTALLED = "devtools.aboutdevtools.installed";
-const TELEMETRY_NOINSTALL_EXITS = "devtools.aboutdevtools.noinstall_exits";
 
 const MESSAGES = {
   AboutDebugging: "about-debugging-message",
@@ -39,11 +30,7 @@ const keyShortcutsBundle = Services.strings.createBundle(KEY_SHORTCUTS_STRINGS);
 
 const url = new URL(window.location.href.replace("about:", "http://"));
 const reason = url.searchParams.get("reason");
-const keyid = url.searchParams.get("keyid");
 const tabid = parseInt(url.searchParams.get("tabid"), 10);
-
-
-let isEnabledOnLoad;
 
 function getToolboxShortcut() {
   const modifier = Services.appinfo.OS == "Darwin" ? "Cmd+Opt+" : "Ctrl+Shift+";
@@ -54,12 +41,6 @@ function getToolboxShortcut() {
 
 function onInstallButtonClick() {
   Services.prefs.setBoolPref("devtools.enabled", true);
-
-  try {
-    telemetry.scalarAdd(TELEMETRY_INSTALLED, 1);
-  } catch (e) {
-    dump("about:devtools oninstall telemetry failed: " + e + "\n");
-  }
 }
 
 function onCloseButtonClick() {
@@ -226,20 +207,6 @@ window.addEventListener(
 
     
     updatePage();
-
-    try {
-      if (reason) {
-        telemetry.getHistogramById(TELEMETRY_OPENED_REASON).add(reason);
-      }
-
-      if (keyid) {
-        telemetry.getHistogramById(TELEMETRY_OPENED_KEY).add(keyid);
-      }
-
-      telemetry.scalarAdd(TELEMETRY_OPENED, 1);
-    } catch (e) {
-      dump("about:devtools onload telemetry failed: " + e + "\n");
-    }
   },
   { once: true }
 );
@@ -277,15 +244,6 @@ window.addEventListener(
       .getElementById("close")
       .removeEventListener("click", onCloseButtonClick);
     Services.prefs.removeObserver(DEVTOOLS_ENABLED_PREF, updatePage);
-
-    const isEnabled = Services.prefs.getBoolPref("devtools.enabled");
-    if (!isEnabledOnLoad && !isEnabled) {
-      try {
-        telemetry.scalarAdd(TELEMETRY_NOINSTALL_EXITS, 1);
-      } catch (e) {
-        dump("about:devtools onunload telemetry failed: " + e + "\n");
-      }
-    }
   },
   { once: true }
 );
