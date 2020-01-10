@@ -49,7 +49,8 @@ g.test('basic/params', t => {
   x: -10,
   y: 18,
   result: 8
-}]);
+}]); 
+
 g.test('gpu/async', async t => {
   const fence = t.queue.createFence();
   t.queue.signal(fence, 2);

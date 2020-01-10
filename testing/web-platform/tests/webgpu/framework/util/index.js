@@ -2,11 +2,19 @@
 
 
 
+import { timeout } from './timeout.js';
 export * from './stack.js'; 
 
 const perf = typeof performance !== 'undefined' ? performance : require('perf_hooks').performance;
 export function now() {
   return perf.now();
+}
+export function rejectOnTimeout(ms, msg) {
+  return new Promise((resolve, reject) => {
+    timeout(() => {
+      reject(new Error(msg));
+    }, ms);
+  });
 }
 export function objectEquals(x, y) {
   if (typeof x !== 'object' || typeof y !== 'object') return x === y;
@@ -23,4 +31,7 @@ export function objectEquals(x, y) {
   const y1 = y;
   const p = Object.keys(x);
   return Object.keys(y).every(i => p.indexOf(i) !== -1) && p.every(i => objectEquals(x1[i], y1[i]));
+}
+export function range(n, fn) {
+  return [...new Array(n)].map((_, i) => fn(i));
 }

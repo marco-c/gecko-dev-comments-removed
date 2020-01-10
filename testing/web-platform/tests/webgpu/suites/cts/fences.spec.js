@@ -36,11 +36,18 @@ g.test('wait/equal to signaled', async t => {
   t.expect(fence.getCompletedValue() === 2);
 }); 
 
-g.test('wait/greater than signaled', async t => {
+g.test('wait/signaled once', async t => {
   const fence = t.queue.createFence();
-  t.queue.signal(fence, 2);
-  const promise = fence.onCompletion(3);
-  await t.shouldReject('OperationError', promise);
+  t.queue.signal(fence, 20);
+  const promises = [];
+
+  for (let i = 0; i <= 20; ++i) {
+    promises.push(fence.onCompletion(i).then(() => {
+      t.expect(fence.getCompletedValue() >= i);
+    }));
+  }
+
+  await Promise.all(promises);
 }); 
 
 g.test('wait/signaled multiple times', async t => {
@@ -64,19 +71,6 @@ g.test('wait/already completed', async t => {
   t.expect(fence.getCompletedValue() === 2);
   await fence.onCompletion(2);
   t.expect(fence.getCompletedValue() === 2);
-}); 
-
-g.test('wait/without signal', async t => {
-  const fence = t.queue.createFence();
-  const promise = fence.onCompletion(2);
-  await t.shouldReject('OperationError', promise);
-}); 
-
-g.test('wait/before signaled', async t => {
-  const fence = t.queue.createFence();
-  const promise = fence.onCompletion(2);
-  t.queue.signal(fence, 2);
-  await t.shouldReject('OperationError', promise);
 }); 
 
 g.test('wait/many/serially', async t => {
