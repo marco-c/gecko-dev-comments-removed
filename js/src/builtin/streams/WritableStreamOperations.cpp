@@ -463,6 +463,29 @@ void js::WritableStreamMarkCloseRequestInFlight(
 
 
 
+void js::WritableStreamMarkFirstWriteRequestInFlight(
+    WritableStream* unwrappedStream) {
+  
+  MOZ_ASSERT(!unwrappedStream->haveInFlightWriteRequest());
+
+  
+  MOZ_ASSERT(unwrappedStream->writeRequests()->length() > 0);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  unwrappedStream->setHaveInFlightWriteRequest();
+}
+
+
+
+
+
 MOZ_MUST_USE bool js::WritableStreamUpdateBackpressure(
     JSContext* cx, Handle<WritableStream*> unwrappedStream, bool backpressure) {
   
