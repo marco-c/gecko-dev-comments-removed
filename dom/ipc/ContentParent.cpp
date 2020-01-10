@@ -757,14 +757,12 @@ void ContentParent::ReleaseCachedProcesses() {
   
   nsTArray<ContentParent*>& contentParents =
       GetOrCreatePool(NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE));
-  ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
   nsTArray<ContentParent*> toRelease;
 
   
   
   for (auto* cp : contentParents) {
-    nsTArray<TabId> tabIds = cpm->GetBrowserParentsByProcessId(cp->mChildID);
-    if (!tabIds.Length()) {
+    if (cp->ManagedPBrowserParent().Count() == 0) {
       toRelease.AppendElement(cp);
     }
   }
@@ -1787,8 +1785,8 @@ void ContentParent::NotifyTabDestroying(const TabId& aTabId,
       return;
     }
     ++cp->mNumDestroyingTabs;
-    nsTArray<TabId> tabIds = cpm->GetBrowserParentsByProcessId(aCpId);
-    if (static_cast<size_t>(cp->mNumDestroyingTabs) != tabIds.Length()) {
+    uint32_t tabCount = cpm->GetBrowserParentCountByProcessId(aCpId);
+    if (uint32_t(cp->mNumDestroyingTabs) != tabCount) {
       return;
     }
 
@@ -1843,10 +1841,8 @@ void ContentParent::NotifyTabDestroyed(const TabId& aTabId,
   
   
   
-  ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
-  nsTArray<TabId> tabIds = cpm->GetBrowserParentsByProcessId(this->ChildID());
-
-  if (tabIds.Length() == 1 && !ShouldKeepProcessAlive() && !TryToRecycle()) {
+  if (ManagedPBrowserParent().Count() == 1 && !ShouldKeepProcessAlive() &&
+      !TryToRecycle()) {
     
     
     MessageLoop::current()->PostTask(NewRunnableMethod<ShutDownMethod>(

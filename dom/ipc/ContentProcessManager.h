@@ -56,13 +56,6 @@ class ContentProcessManager final {
 
 
 
-  nsTArray<TabId> GetBrowserParentsByProcessId(
-      const ContentParentId& aChildCpId);
-
-  
-
-
-
   uint32_t GetBrowserParentCountByProcessId(const ContentParentId& aChildCpId);
 
   
