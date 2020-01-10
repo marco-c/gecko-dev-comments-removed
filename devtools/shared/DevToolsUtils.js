@@ -543,14 +543,16 @@ function mainThreadFetch(
       ? channel.LOAD_FROM_CACHE
       : channel.LOAD_BYPASS_CACHE;
 
-    
-    
-    if (
-      aOptions.loadFromCache &&
-      aOptions.cacheKey != 0 &&
-      channel instanceof Ci.nsICacheInfoChannel
-    ) {
-      channel.cacheKey = aOptions.cacheKey;
+    if (aOptions.loadFromCache && channel instanceof Ci.nsICacheInfoChannel) {
+      
+      
+      channel.preferCacheLoadOverBypass = true;
+
+      
+      
+      if (aOptions.cacheKey != 0) {
+        channel.cacheKey = aOptions.cacheKey;
+      }
     }
 
     if (aOptions.window) {
