@@ -637,15 +637,6 @@ pref("media.audiograph.single_thread.enabled", false);
 #endif
 
 
-pref("layers.geometry.opengl.enabled", true);
-
-
-pref("layers.geometry.basic.enabled", true);
-
-
-pref("layers.geometry.d3d11.enabled", true);
-
-
 
 pref("apz.overscroll.stop_velocity_threshold", "0.01");
 pref("apz.overscroll.stretch_factor", "0.35");
@@ -4223,27 +4214,6 @@ pref("network.tcp.tcp_fastopen_consecutive_failure_limit", 5);
 pref("network.tcp.tcp_fastopen_http_check_for_stalls_only_if_idle_for", 10);
 pref("network.tcp.tcp_fastopen_http_stalls_limit", 3);
 pref("network.tcp.tcp_fastopen_http_stalls_timeout", 20);
-
-
-
-pref("layers.bench.enabled", false);
-
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-  #ifdef NIGHTLY_BUILD
-    pref("layers.gpu-process.max_restarts", 3);
-  #endif
-#endif
-
-pref("layers.acceleration.draw-fps", false);
-
-
-#if !defined(MOZ_WIDGET_ANDROID)
-  
-  pref("layers.deaa.enabled", true);
-#else
-  
-  pref("layers.deaa.enabled", false);
-#endif
 
 #ifdef MOZ_X11
   #ifdef MOZ_WIDGET_GTK
