@@ -848,7 +848,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "PluginArray", insecureContext: true },
   
-  { name: "PointerEvent", insecureContext: true, android: false },
+  { name: "PointerEvent", insecureContext: true, fennec: false },
   
   { name: "PopStateEvent", insecureContext: true },
   
