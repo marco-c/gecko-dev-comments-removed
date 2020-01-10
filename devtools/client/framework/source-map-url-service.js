@@ -321,10 +321,10 @@ SourceMapURLService.prototype._callOneCallback = async function(
 
   const resolvedLocation = await subscriptionEntry.promise;
   if (resolvedLocation) {
-    const { line, column, sourceUrl } = resolvedLocation;
+    const { line, column, sourceUrl, sourceId } = resolvedLocation;
     
     
-    callback(this._prefValue, sourceUrl, line, column);
+    callback(this._prefValue, sourceUrl, line, column, sourceId);
   }
 };
 
