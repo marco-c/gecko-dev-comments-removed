@@ -520,13 +520,27 @@ void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     
-    nsIFrame* page = child;
-    while ((page = GetNextPage(page)) != nullptr) {
-      nsRect childVisible = visibleRect + child->GetOffsetTo(page);
+    
+    
+    
+    
+    
+    
+    NS_ASSERTION(mPageNum <= 255, "Too many pages to handle OOFs");
+    if (mPageNum <= 255) {
+      uint8_t oldPageNum = aBuilder->GetBuildingExtraPagesForPageNum();
+      aBuilder->SetBuildingExtraPagesForPageNum(mPageNum);
 
-      nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
-          aBuilder, page, childVisible, childVisible);
-      BuildDisplayListForExtraPage(aBuilder, this, page, &content);
+      nsIFrame* page = child;
+      while ((page = GetNextPage(page)) != nullptr) {
+        nsRect childVisible = visibleRect + child->GetOffsetTo(page);
+
+        nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
+            aBuilder, page, childVisible, childVisible);
+        BuildDisplayListForExtraPage(aBuilder, this, page, &content);
+      }
+
+      aBuilder->SetBuildingExtraPagesForPageNum(oldPageNum);
     }
 
     
