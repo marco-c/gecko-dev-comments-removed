@@ -6,7 +6,7 @@
 
 
 use crate::spinwait::SpinWait;
-use crate::thread_parker::ThreadParker;
+use crate::thread_parker::{ThreadParker, ThreadParkerT, UnparkHandleT};
 use core::{
     cell::Cell,
     mem, ptr,
@@ -48,10 +48,7 @@ impl ThreadData {
 
 
 #[inline]
-fn with_thread_data<F, T>(f: F) -> T
-where
-    F: FnOnce(&ThreadData) -> T,
-{
+fn with_thread_data<T>(f: impl FnOnce(&ThreadData) -> T) -> T {
     let mut thread_data_ptr = ptr::null();
     
     
@@ -108,7 +105,6 @@ impl WordLock {
     }
 
     #[cold]
-    #[inline(never)]
     fn lock_slow(&self) {
         let mut spinwait = SpinWait::new();
         let mut state = self.state.load(Ordering::Relaxed);
@@ -176,7 +172,6 @@ impl WordLock {
     }
 
     #[cold]
-    #[inline(never)]
     fn unlock_slow(&self) {
         let mut state = self.state.load(Ordering::Relaxed);
         loop {

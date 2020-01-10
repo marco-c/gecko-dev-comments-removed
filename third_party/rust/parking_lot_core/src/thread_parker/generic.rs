@@ -16,43 +16,37 @@ pub struct ThreadParker {
     parked: AtomicBool,
 }
 
-impl ThreadParker {
-    pub const IS_CHEAP_TO_CONSTRUCT: bool = true;
+impl super::ThreadParkerT for ThreadParker {
+    type UnparkHandle = UnparkHandle;
+
+    const IS_CHEAP_TO_CONSTRUCT: bool = true;
 
     #[inline]
-    pub fn new() -> ThreadParker {
+    fn new() -> ThreadParker {
         ThreadParker {
             parked: AtomicBool::new(false),
         }
     }
 
-    
     #[inline]
-    pub fn prepare_park(&self) {
+    unsafe fn prepare_park(&self) {
         self.parked.store(true, Ordering::Relaxed);
     }
 
-    
-    
     #[inline]
-    pub fn timed_out(&self) -> bool {
+    unsafe fn timed_out(&self) -> bool {
         self.parked.load(Ordering::Relaxed) != false
     }
 
-    
-    
     #[inline]
-    pub fn park(&self) {
+    unsafe fn park(&self) {
         while self.parked.load(Ordering::Acquire) != false {
             spin_loop_hint();
         }
     }
 
-    
-    
-    
     #[inline]
-    pub fn park_until(&self, timeout: Instant) -> bool {
+    unsafe fn park_until(&self, timeout: Instant) -> bool {
         while self.parked.load(Ordering::Acquire) != false {
             if Instant::now() >= timeout {
                 return false;
@@ -62,27 +56,19 @@ impl ThreadParker {
         true
     }
 
-    
-    
-    
     #[inline]
-    pub fn unpark_lock(&self) -> UnparkHandle {
+    unsafe fn unpark_lock(&self) -> UnparkHandle {
         
         self.parked.store(false, Ordering::Release);
         UnparkHandle(())
     }
 }
 
-
-
-
 pub struct UnparkHandle(());
 
-impl UnparkHandle {
-    
-    
+impl super::UnparkHandleT for UnparkHandle {
     #[inline]
-    pub fn unpark(self) {}
+    unsafe fn unpark(self) {}
 }
 
 #[inline]

@@ -25,70 +25,56 @@ pub struct ThreadParker {
     tcs: Tcs,
 }
 
-impl ThreadParker {
-    pub const IS_CHEAP_TO_CONSTRUCT: bool = true;
+impl super::ThreadParkerT for ThreadParker {
+    type UnparkHandle = UnparkHandle;
+
+    const IS_CHEAP_TO_CONSTRUCT: bool = true;
 
     #[inline]
-    pub fn new() -> ThreadParker {
+    fn new() -> ThreadParker {
         ThreadParker {
             parked: AtomicBool::new(false),
             tcs: current_tcs(),
         }
     }
 
-    
     #[inline]
-    pub fn prepare_park(&self) {
+    unsafe fn prepare_park(&self) {
         self.parked.store(true, Ordering::Relaxed);
     }
 
-    
-    
     #[inline]
-    pub fn timed_out(&self) -> bool {
+    unsafe fn timed_out(&self) -> bool {
         self.parked.load(Ordering::Relaxed)
     }
 
-    
-    
     #[inline]
-    pub fn park(&self) {
+    unsafe fn park(&self) {
         while self.parked.load(Ordering::Acquire) {
             let result = usercalls::wait(EV_UNPARK, WAIT_INDEFINITE);
             debug_assert_eq!(result.expect("wait returned error") & EV_UNPARK, EV_UNPARK);
         }
     }
 
-    
-    
-    
     #[inline]
-    pub fn park_until(&self, _timeout: Instant) -> bool {
+    unsafe fn park_until(&self, _timeout: Instant) -> bool {
         
         panic!("timeout not supported in SGX");
     }
 
-    
-    
-    
     #[inline]
-    pub fn unpark_lock(&self) -> UnparkHandle {
+    unsafe fn unpark_lock(&self) -> UnparkHandle {
         
         self.parked.store(false, Ordering::Release);
         UnparkHandle(self.tcs)
     }
 }
 
-
-
-
 pub struct UnparkHandle(Tcs);
 
-impl UnparkHandle {
-    
-    
+impl super::UnparkHandleT for UnparkHandle {
     #[inline]
-    pub fn unpark(self) {
+    unsafe fn unpark(self) {
         let result = usercalls::send(EV_UNPARK, Some(self.0));
         if cfg!(debug_assertions) {
             if let Err(error) = result {

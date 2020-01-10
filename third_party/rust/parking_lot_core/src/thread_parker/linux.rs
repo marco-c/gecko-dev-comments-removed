@@ -12,10 +12,6 @@ use core::{
 use libc;
 use std::{thread, time::Instant};
 
-const FUTEX_WAIT: i32 = 0;
-const FUTEX_WAKE: i32 = 1;
-const FUTEX_PRIVATE: i32 = 128;
-
 
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "32"))]
@@ -25,48 +21,53 @@ type tv_nsec_t = i64;
 #[allow(non_camel_case_types)]
 type tv_nsec_t = libc::c_long;
 
+fn errno() -> libc::c_int {
+    #[cfg(target_os = "linux")]
+    unsafe {
+        *libc::__errno_location()
+    }
+    #[cfg(target_os = "android")]
+    unsafe {
+        *libc::__errno()
+    }
+}
+
 
 pub struct ThreadParker {
     futex: AtomicI32,
 }
 
-impl ThreadParker {
-    pub const IS_CHEAP_TO_CONSTRUCT: bool = true;
+impl super::ThreadParkerT for ThreadParker {
+    type UnparkHandle = UnparkHandle;
+
+    const IS_CHEAP_TO_CONSTRUCT: bool = true;
 
     #[inline]
-    pub fn new() -> ThreadParker {
+    fn new() -> ThreadParker {
         ThreadParker {
             futex: AtomicI32::new(0),
         }
     }
 
-    
     #[inline]
-    pub fn prepare_park(&self) {
+    unsafe fn prepare_park(&self) {
         self.futex.store(1, Ordering::Relaxed);
     }
 
-    
-    
     #[inline]
-    pub fn timed_out(&self) -> bool {
+    unsafe fn timed_out(&self) -> bool {
         self.futex.load(Ordering::Relaxed) != 0
     }
 
-    
-    
     #[inline]
-    pub fn park(&self) {
+    unsafe fn park(&self) {
         while self.futex.load(Ordering::Acquire) != 0 {
             self.futex_wait(None);
         }
     }
 
-    
-    
-    
     #[inline]
-    pub fn park_until(&self, timeout: Instant) -> bool {
+    unsafe fn park_until(&self, timeout: Instant) -> bool {
         while self.futex.load(Ordering::Acquire) != 0 {
             let now = Instant::now();
             if timeout <= now {
@@ -87,6 +88,19 @@ impl ThreadParker {
         true
     }
 
+    
+    
+    
+    #[inline]
+    unsafe fn unpark_lock(&self) -> UnparkHandle {
+        
+        self.futex.store(0, Ordering::Release);
+
+        UnparkHandle { futex: &self.futex }
+    }
+}
+
+impl ThreadParker {
     #[inline]
     fn futex_wait(&self, ts: Option<libc::timespec>) {
         let ts_ptr = ts
@@ -97,54 +111,40 @@ impl ThreadParker {
             libc::syscall(
                 libc::SYS_futex,
                 &self.futex,
-                FUTEX_WAIT | FUTEX_PRIVATE,
+                libc::FUTEX_WAIT | libc::FUTEX_PRIVATE_FLAG,
                 1,
                 ts_ptr,
             )
         };
         debug_assert!(r == 0 || r == -1);
         if r == -1 {
-            unsafe {
-                debug_assert!(
-                    *libc::__errno_location() == libc::EINTR
-                        || *libc::__errno_location() == libc::EAGAIN
-                        || (ts.is_some() && *libc::__errno_location() == libc::ETIMEDOUT)
-                );
-            }
+            debug_assert!(
+                errno() == libc::EINTR
+                    || errno() == libc::EAGAIN
+                    || (ts.is_some() && errno() == libc::ETIMEDOUT)
+            );
         }
     }
-
-    
-    
-    
-    #[inline]
-    pub fn unpark_lock(&self) -> UnparkHandle {
-        
-        self.futex.store(0, Ordering::Release);
-
-        UnparkHandle { futex: &self.futex }
-    }
 }
-
-
-
 
 pub struct UnparkHandle {
     futex: *const AtomicI32,
 }
 
-impl UnparkHandle {
-    
-    
+impl super::UnparkHandleT for UnparkHandle {
     #[inline]
-    pub fn unpark(self) {
+    unsafe fn unpark(self) {
         
         
-        let r =
-            unsafe { libc::syscall(libc::SYS_futex, self.futex, FUTEX_WAKE | FUTEX_PRIVATE, 1) };
+        let r = libc::syscall(
+            libc::SYS_futex,
+            self.futex,
+            libc::FUTEX_WAKE | libc::FUTEX_PRIVATE_FLAG,
+            1,
+        );
         debug_assert!(r == 0 || r == 1 || r == -1);
         if r == -1 {
-            debug_assert_eq!(unsafe { *libc::__errno_location() }, libc::EFAULT);
+            debug_assert_eq!(errno(), libc::EFAULT);
         }
     }
 }

@@ -28,8 +28,7 @@ unsafe fn unreachable() -> ! {
     if cfg!(debug_assertions) {
         unreachable!();
     } else {
-        enum Void {}
-        match *(1 as *const Void) {}
+        core::hint::unreachable_unchecked()
     }
 }
 

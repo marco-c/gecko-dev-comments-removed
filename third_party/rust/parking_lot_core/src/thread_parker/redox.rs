@@ -25,43 +25,37 @@ pub struct ThreadParker {
     futex: AtomicI32,
 }
 
-impl ThreadParker {
-    pub const IS_CHEAP_TO_CONSTRUCT: bool = true;
+impl super::ThreadParkerT for ThreadParker {
+    type UnparkHandle = UnparkHandle;
+
+    const IS_CHEAP_TO_CONSTRUCT: bool = true;
 
     #[inline]
-    pub fn new() -> ThreadParker {
+    fn new() -> ThreadParker {
         ThreadParker {
             futex: AtomicI32::new(UNPARKED),
         }
     }
 
-    
     #[inline]
-    pub fn prepare_park(&self) {
+    unsafe fn prepare_park(&self) {
         self.futex.store(PARKED, Ordering::Relaxed);
     }
 
-    
-    
     #[inline]
-    pub fn timed_out(&self) -> bool {
+    unsafe fn timed_out(&self) -> bool {
         self.futex.load(Ordering::Relaxed) != UNPARKED
     }
 
-    
-    
     #[inline]
-    pub fn park(&self) {
+    unsafe fn park(&self) {
         while self.futex.load(Ordering::Acquire) != UNPARKED {
             self.futex_wait(None);
         }
     }
 
-    
-    
-    
     #[inline]
-    pub fn park_until(&self, timeout: Instant) -> bool {
+    unsafe fn park_until(&self, timeout: Instant) -> bool {
         while self.futex.load(Ordering::Acquire) != UNPARKED {
             let now = Instant::now();
             if timeout <= now {
@@ -82,6 +76,16 @@ impl ThreadParker {
         true
     }
 
+    #[inline]
+    unsafe fn unpark_lock(&self) -> UnparkHandle {
+        
+        self.futex.store(UNPARKED, Ordering::Release);
+
+        UnparkHandle { futex: self.ptr() }
+    }
+}
+
+impl ThreadParker {
     #[inline]
     fn futex_wait(&self, ts: Option<TimeSpec>) {
         let ts_ptr = ts
@@ -105,38 +109,22 @@ impl ThreadParker {
         }
     }
 
-    
-    
-    
-    #[inline]
-    pub fn unpark_lock(&self) -> UnparkHandle {
-        
-        self.futex.store(UNPARKED, Ordering::Release);
-
-        UnparkHandle { futex: self.ptr() }
-    }
-
     #[inline]
     fn ptr(&self) -> *mut i32 {
         &self.futex as *const AtomicI32 as *mut i32
     }
 }
 
-
-
-
 pub struct UnparkHandle {
     futex: *mut i32,
 }
 
-impl UnparkHandle {
-    
-    
+impl super::UnparkHandleT for UnparkHandle {
     #[inline]
-    pub fn unpark(self) {
+    unsafe fn unpark(self) {
         
         
-        let r = unsafe { futex(self.futex, FUTEX_WAKE, PARKED, 0, ptr::null_mut()) };
+        let r = futex(self.futex, FUTEX_WAKE, PARKED, 0, ptr::null_mut());
         match r {
             Ok(num_woken) => debug_assert!(num_woken == 0 || num_woken == 1),
             Err(Error { errno }) => debug_assert_eq!(errno, EFAULT),

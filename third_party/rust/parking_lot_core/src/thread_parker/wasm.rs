@@ -5,104 +5,49 @@
 
 
 
-use core::{
-    arch::wasm32,
-    sync::atomic::{AtomicI32, Ordering},
-};
-use std::{convert::TryFrom, thread, time::Instant};
 
 
-pub struct ThreadParker {
-    parked: AtomicI32,
-}
 
-const UNPARKED: i32 = 0;
-const PARKED: i32 = 1;
+use std::{thread, time::Instant};
 
-impl ThreadParker {
-    pub const IS_CHEAP_TO_CONSTRUCT: bool = true;
+pub struct ThreadParker(());
 
-    #[inline]
-    pub fn new() -> ThreadParker {
-        ThreadParker {
-            parked: AtomicI32::new(UNPARKED),
-        }
+impl super::ThreadParkerT for ThreadParker {
+    type UnparkHandle = UnparkHandle;
+
+    const IS_CHEAP_TO_CONSTRUCT: bool = true;
+
+    fn new() -> ThreadParker {
+        ThreadParker(())
     }
 
-    
-    #[inline]
-    pub fn prepare_park(&self) {
-        self.parked.store(PARKED, Ordering::Relaxed);
+    unsafe fn prepare_park(&self) {
+        panic!("Parking not supported on this platform");
     }
 
-    
-    
-    #[inline]
-    pub fn timed_out(&self) -> bool {
-        self.parked.load(Ordering::Relaxed) == PARKED
+    unsafe fn timed_out(&self) -> bool {
+        panic!("Parking not supported on this platform");
     }
 
-    
-    
-    #[inline]
-    pub fn park(&self) {
-        while self.parked.load(Ordering::Acquire) == PARKED {
-            let r = unsafe { wasm32::i32_atomic_wait(self.ptr(), PARKED, -1) };
-            
-            
-            debug_assert!(r == 0 || r == 1);
-        }
+    unsafe fn park(&self) {
+        panic!("Parking not supported on this platform");
     }
 
-    
-    
-    
-    #[inline]
-    pub fn park_until(&self, timeout: Instant) -> bool {
-        while self.parked.load(Ordering::Acquire) == PARKED {
-            if let Some(left) = timeout.checked_duration_since(Instant::now()) {
-                let nanos_left = i64::try_from(left.as_nanos()).unwrap_or(i64::max_value());
-                let r = unsafe { wasm32::i32_atomic_wait(self.ptr(), PARKED, nanos_left) };
-                debug_assert!(r == 0 || r == 1 || r == 2);
-            } else {
-                return false;
-            }
-        }
-        true
+    unsafe fn park_until(&self, _timeout: Instant) -> bool {
+        panic!("Parking not supported on this platform");
     }
 
-    
-    
-    
-    #[inline]
-    pub fn unpark_lock(&self) -> UnparkHandle {
-        
-        self.parked.store(UNPARKED, Ordering::Release);
-        UnparkHandle(self.ptr())
-    }
-
-    #[inline]
-    fn ptr(&self) -> *mut i32 {
-        &self.parked as *const AtomicI32 as *mut i32
+    unsafe fn unpark_lock(&self) -> UnparkHandle {
+        panic!("Parking not supported on this platform");
     }
 }
 
+pub struct UnparkHandle(());
 
-
-
-pub struct UnparkHandle(*mut i32);
-
-impl UnparkHandle {
-    
-    
-    #[inline]
-    pub fn unpark(self) {
-        let num_notified = unsafe { wasm32::atomic_notify(self.0 as *mut i32, 1) };
-        debug_assert!(num_notified == 0 || num_notified == 1);
-    }
+impl super::UnparkHandleT for UnparkHandle {
+    unsafe fn unpark(self) {}
 }
 
-#[inline]
 pub fn thread_yield() {
     thread::yield_now();
 }

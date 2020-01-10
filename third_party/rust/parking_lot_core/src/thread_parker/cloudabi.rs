@@ -23,87 +23,88 @@ struct Lock {
 }
 
 impl Lock {
-    #[inline]
     pub fn new() -> Self {
         Lock {
             lock: AtomicU32::new(abi::LOCK_UNLOCKED.0),
         }
     }
 
-    #[inline]
-    fn try_lock(&self) -> Option<LockGuard<'_>> {
+    
+    
+    
+    unsafe fn try_lock(&self) -> Option<LockGuard> {
         
         if let Err(old) = self.lock.compare_exchange(
             abi::LOCK_UNLOCKED.0,
-            unsafe { __pthread_thread_id.0 } | abi::LOCK_WRLOCKED.0,
+            __pthread_thread_id.0 | abi::LOCK_WRLOCKED.0,
             Ordering::Acquire,
             Ordering::Relaxed,
         ) {
             
             debug_assert_ne!(
                 old & !abi::LOCK_KERNEL_MANAGED.0,
-                unsafe { __pthread_thread_id.0 } | abi::LOCK_WRLOCKED.0,
+                __pthread_thread_id.0 | abi::LOCK_WRLOCKED.0,
                 "Attempted to recursive write-lock a lock",
             );
             None
         } else {
-            Some(LockGuard { inner: &self })
+            Some(LockGuard { lock: &self.lock })
         }
     }
 
-    #[inline]
-    pub fn lock(&self) -> LockGuard<'_> {
+    
+    
+    
+    
+    
+    pub unsafe fn lock(&self) -> LockGuard {
         self.try_lock().unwrap_or_else(|| {
             
-            unsafe {
-                let subscription = abi::subscription {
-                    type_: abi::eventtype::LOCK_WRLOCK,
-                    union: abi::subscription_union {
-                        lock: abi::subscription_lock {
-                            lock: self.ptr(),
-                            lock_scope: abi::scope::PRIVATE,
-                        },
+            let subscription = abi::subscription {
+                type_: abi::eventtype::LOCK_WRLOCK,
+                union: abi::subscription_union {
+                    lock: abi::subscription_lock {
+                        lock: self.ptr(),
+                        lock_scope: abi::scope::PRIVATE,
                     },
-                    ..mem::zeroed()
-                };
-                let mut event: abi::event = mem::uninitialized();
-                let mut nevents: usize = mem::uninitialized();
-                let ret = abi::poll(&subscription, &mut event, 1, &mut nevents);
-                debug_assert_eq!(ret, abi::errno::SUCCESS);
-                debug_assert_eq!(event.error, abi::errno::SUCCESS);
-            }
-            LockGuard { inner: &self }
+                },
+                ..mem::zeroed()
+            };
+            let mut event: abi::event = mem::uninitialized();
+            let mut nevents: usize = mem::uninitialized();
+            let ret = abi::poll(&subscription, &mut event, 1, &mut nevents);
+            debug_assert_eq!(ret, abi::errno::SUCCESS);
+            debug_assert_eq!(event.error, abi::errno::SUCCESS);
+
+            LockGuard { lock: &self.lock }
         })
     }
 
-    #[inline]
     fn ptr(&self) -> *mut abi::lock {
         &self.lock as *const AtomicU32 as *mut abi::lock
     }
 }
 
-struct LockGuard<'a> {
-    inner: &'a Lock,
+struct LockGuard {
+    lock: *const AtomicU32,
 }
 
-impl LockGuard<'_> {
-    #[inline]
+impl LockGuard {
     fn ptr(&self) -> *mut abi::lock {
-        &self.inner.lock as *const AtomicU32 as *mut abi::lock
+        self.lock as *mut abi::lock
     }
 }
 
-impl Drop for LockGuard<'_> {
+impl Drop for LockGuard {
     fn drop(&mut self) {
+        let lock = unsafe { &*self.lock };
         debug_assert_eq!(
-            self.inner.lock.load(Ordering::Relaxed) & !abi::LOCK_KERNEL_MANAGED.0,
+            lock.load(Ordering::Relaxed) & !abi::LOCK_KERNEL_MANAGED.0,
             unsafe { __pthread_thread_id.0 } | abi::LOCK_WRLOCKED.0,
             "This lock is not write-locked by this thread"
         );
 
-        if !self
-            .inner
-            .lock
+        if !lock
             .compare_exchange(
                 unsafe { __pthread_thread_id.0 } | abi::LOCK_WRLOCKED.0,
                 abi::LOCK_UNLOCKED.0,
@@ -114,7 +115,7 @@ impl Drop for LockGuard<'_> {
         {
             
             
-            let ret = unsafe { abi::lock_unlock(self.ptr(), abi::scope::PRIVATE) };
+            let ret = unsafe { abi::lock_unlock(self.lock as *mut abi::lock, abi::scope::PRIVATE) };
             debug_assert_eq!(ret, abi::errno::SUCCESS);
         }
     }
@@ -125,15 +126,13 @@ struct Condvar {
 }
 
 impl Condvar {
-    #[inline]
     pub fn new() -> Self {
         Condvar {
             condvar: AtomicU32::new(abi::CONDVAR_HAS_NO_WAITERS.0),
         }
     }
 
-    #[inline]
-    pub fn wait(&self, lock: &LockGuard<'_>) {
+    pub fn wait(&self, lock: &LockGuard) {
         unsafe {
             let subscription = abi::subscription {
                 type_: abi::eventtype::CONDVAR,
@@ -158,8 +157,7 @@ impl Condvar {
 
     
     
-    #[inline]
-    pub fn wait_timeout(&self, lock: &LockGuard<'_>, timeout: abi::timestamp) -> bool {
+    pub fn wait_timeout(&self, lock: &LockGuard, timeout: abi::timestamp) -> bool {
         unsafe {
             let subscriptions = [
                 abi::subscription {
@@ -201,13 +199,11 @@ impl Condvar {
         false
     }
 
-    #[inline]
     pub fn notify(&self) {
         let ret = unsafe { abi::condvar_signal(self.ptr(), abi::scope::PRIVATE, 1) };
         debug_assert_eq!(ret, abi::errno::SUCCESS);
     }
 
-    #[inline]
     fn ptr(&self) -> *mut abi::condvar {
         &self.condvar as *const AtomicU32 as *mut abi::condvar
     }
@@ -220,11 +216,12 @@ pub struct ThreadParker {
     condvar: Condvar,
 }
 
-impl ThreadParker {
-    pub const IS_CHEAP_TO_CONSTRUCT: bool = true;
+impl super::ThreadParkerT for ThreadParker {
+    type UnparkHandle = UnparkHandle;
 
-    #[inline]
-    pub fn new() -> ThreadParker {
+    const IS_CHEAP_TO_CONSTRUCT: bool = true;
+
+    fn new() -> ThreadParker {
         ThreadParker {
             should_park: Cell::new(false),
             lock: Lock::new(),
@@ -232,16 +229,11 @@ impl ThreadParker {
         }
     }
 
-    
-    #[inline]
-    pub fn prepare_park(&self) {
+    unsafe fn prepare_park(&self) {
         self.should_park.set(true);
     }
 
-    
-    
-    #[inline]
-    pub fn timed_out(&self) -> bool {
+    unsafe fn timed_out(&self) -> bool {
         
         
         
@@ -249,21 +241,14 @@ impl ThreadParker {
         self.should_park.get()
     }
 
-    
-    
-    #[inline]
-    pub fn park(&self) {
+    unsafe fn park(&self) {
         let guard = self.lock.lock();
         while self.should_park.get() {
             self.condvar.wait(&guard);
         }
     }
 
-    
-    
-    
-    #[inline]
-    pub fn park_until(&self, timeout: Instant) -> bool {
+    unsafe fn park_until(&self, timeout: Instant) -> bool {
         let guard = self.lock.lock();
         while self.should_park.get() {
             if let Some(duration_left) = timeout.checked_duration_since(Instant::now()) {
@@ -281,11 +266,7 @@ impl ThreadParker {
         true
     }
 
-    
-    
-    
-    #[inline]
-    pub fn unpark_lock(&self) -> UnparkHandle<'_> {
+    unsafe fn unpark_lock(&self) -> UnparkHandle {
         let _lock_guard = self.lock.lock();
 
         UnparkHandle {
@@ -295,27 +276,19 @@ impl ThreadParker {
     }
 }
 
-
-
-
-pub struct UnparkHandle<'a> {
+pub struct UnparkHandle {
     thread_parker: *const ThreadParker,
-    _lock_guard: LockGuard<'a>,
+    _lock_guard: LockGuard,
 }
 
-impl UnparkHandle<'_> {
-    
-    
-    #[inline]
-    pub fn unpark(self) {
-        unsafe {
-            (*self.thread_parker).should_park.set(false);
+impl super::UnparkHandleT for UnparkHandle {
+    unsafe fn unpark(self) {
+        (*self.thread_parker).should_park.set(false);
 
-            
-            
-            
-            (*self.thread_parker).condvar.notify();
-        }
+        
+        
+        
+        (*self.thread_parker).condvar.notify();
     }
 }
 
