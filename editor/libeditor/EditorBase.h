@@ -655,6 +655,25 @@ class EditorBase : public nsIEditor,
     
     bool mRestoreContentEditableCount;
 
+    
+
+
+    nsresult AddNodeToChangedRange(const HTMLEditor& aHTMLEditor,
+                                   nsINode& aNode);
+
+    
+
+
+    nsresult AddPointToChangedRange(const HTMLEditor& aHTMLEditor,
+                                    const EditorRawDOMPoint& aPoint);
+
+    
+
+
+    nsresult AddRangeToChangedRange(const HTMLEditor& aHTMLEditor,
+                                    const EditorRawDOMPoint& aStart,
+                                    const EditorRawDOMPoint& aEnd);
+
    private:
     void Clear() {
       mDidExplicitlySetInterLine = false;

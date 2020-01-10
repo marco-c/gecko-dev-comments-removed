@@ -1201,7 +1201,6 @@ class HTMLEditRules : public TextEditRules {
   MOZ_MUST_USE nsresult RemoveEmptyNodesInChangedRange();
 
   nsresult SelectionEndpointInNode(nsINode* aNode, bool* aResult);
-  nsresult UpdateDocChangeRange(nsRange* aRange);
 
   
 
@@ -1327,11 +1326,8 @@ class HTMLEditRules : public TextEditRules {
   bool mInitialized;
   bool mListenerEnabled;
   bool mReturnInEmptyLIKillsList;
-  RefPtr<nsRange> mUtilRange;
   
   uint32_t mJoinOffset;
-
-  friend class NS_CYCLE_COLLECTION_CLASSNAME(TextEditRules);
 };
 
 }  
