@@ -147,7 +147,7 @@ export default class LockwiseCard {
       );
       textEl.setAttribute("data-l10n-id", "lockwise-sync-status");
     } else {
-      textEl.setAttribute("data-l10n-id", "lockwise-sync-not-syncing-devices");
+      textEl.setAttribute("data-l10n-id", "lockwise-sync-not-syncing");
     }
     
     if (syncedDevices === 0) {
