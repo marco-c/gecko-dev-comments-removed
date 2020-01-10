@@ -15,6 +15,8 @@
 namespace mozilla {
 namespace dom {
 
+class BrowsingContext;
+
 
 
 
@@ -189,6 +191,12 @@ inline bool IsRemoteObjectProxy(JSObject* aObj) {
   }
   return RemoteObjectProxyBase::IsRemoteObjectProxy(aObj);
 }
+
+
+
+
+
+BrowsingContext* GetBrowsingContext(JSObject* aProxy);
 
 }  
 }  
