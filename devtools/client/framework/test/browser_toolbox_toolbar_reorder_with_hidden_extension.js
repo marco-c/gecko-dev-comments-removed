@@ -131,6 +131,10 @@ const TEST_DATA = [
 ];
 
 add_task(async function() {
+  
+  
+  await pushPref("devtools.whatsnew.enabled", false);
+
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("devtools.toolbox.tabsOrder");
   });

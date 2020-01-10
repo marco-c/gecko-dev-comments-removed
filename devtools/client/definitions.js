@@ -75,6 +75,11 @@ loader.lazyGetter(
 );
 loader.lazyGetter(
   this,
+  "WhatsNewPanel",
+  () => require("devtools/client/whats-new/panel").WhatsNewPanel
+);
+loader.lazyGetter(
+  this,
   "reloadAndRecordTab",
   () => require("devtools/client/webreplay/menu.js").reloadAndRecordTab
 );
@@ -472,6 +477,44 @@ Tools.application = {
   },
 };
 
+Tools.whatsnew = {
+  id: "whatsnew",
+  ordinal: 12,
+  visibilityswitch: "devtools.whatsnew.enabled",
+  icon: "chrome://browser/skin/whatsnew.svg",
+  url: "chrome://devtools/content/whats-new/index.html",
+  
+  
+  label: "What’s New",
+  panelLabel: "What’s New",
+  tooltip: "What’s New",
+  inMenu: false,
+
+  isTargetSupported: function(target) {
+    
+    
+    const isEnglishUser = Services.locale.negotiateLanguages(
+      ["en"],
+      [Services.locale.appLocaleAsBCP47]
+    ).length;
+
+    
+    
+    
+    const isFeatureEnabled = Services.prefs.getBoolPref(
+      "devtools.whatsnew.feature-enabled",
+      false
+    );
+
+    
+    return target.isLocalTab && isEnglishUser && isFeatureEnabled;
+  },
+
+  build: function(iframeWindow, toolbox) {
+    return new WhatsNewPanel(iframeWindow, toolbox);
+  },
+};
+
 var defaultTools = [
   Tools.options,
   Tools.webConsole,
@@ -485,6 +528,7 @@ var defaultTools = [
   Tools.dom,
   Tools.accessibility,
   Tools.application,
+  Tools.whatsnew,
 ];
 
 exports.defaultTools = defaultTools;
