@@ -950,7 +950,7 @@ struct nsStyleGridLine {
   
   bool mHasSpan;
   int32_t mInteger;    
-  nsString mLineName;  
+  nsCString mLineName;  
 
   
   
@@ -1027,11 +1027,11 @@ struct nsStyleGridLine {
 
 
 struct nsStyleGridTemplate {
-  nsTArray<nsTArray<nsString>> mLineNameLists;
+  nsTArray<nsTArray<nsCString>> mLineNameLists;
   nsTArray<nsStyleCoord> mMinTrackSizingFunctions;
   nsTArray<nsStyleCoord> mMaxTrackSizingFunctions;
-  nsTArray<nsString> mRepeatAutoLineNameListBefore;
-  nsTArray<nsString> mRepeatAutoLineNameListAfter;
+  nsTArray<nsCString> mRepeatAutoLineNameListBefore;
+  nsTArray<nsCString> mRepeatAutoLineNameListAfter;
   int16_t mRepeatAutoIndex;  
   bool mIsAutoFill : 1;
   bool mIsSubgrid : 1;
@@ -1143,8 +1143,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   mozilla::UniquePtr<nsStyleGridTemplate> mGridTemplateColumns;
   mozilla::UniquePtr<nsStyleGridTemplate> mGridTemplateRows;
 
-  
-  RefPtr<mozilla::css::GridTemplateAreasValue> mGridTemplateAreas;
+  mozilla::StyleGridTemplateAreas mGridTemplateAreas;
 
   nsStyleGridLine mGridColumnStart;
   nsStyleGridLine mGridColumnEnd;

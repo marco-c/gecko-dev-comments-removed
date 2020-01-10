@@ -15,7 +15,6 @@ use crate::values::computed::{Context, Percentage, ToComputedValue};
 use crate::values::generics::position::Position as GenericPosition;
 use crate::values::generics::position::ZIndex as GenericZIndex;
 use crate::values::specified::{AllowQuirks, Integer, LengthPercentage};
-use crate::values::{Either, None_};
 use crate::Zero;
 use cssparser::Parser;
 use selectors::parser::SelectorParseErrorKind;
@@ -477,6 +476,7 @@ impl From<GridAutoFlow> for u8 {
     ToResolvedValue,
     ToShmem,
 )]
+#[repr(C)]
 
 pub struct TemplateAreas {
     
@@ -599,6 +599,7 @@ impl Parse for TemplateAreas {
     ToResolvedValue,
     ToShmem,
 )]
+#[repr(transparent)]
 pub struct TemplateAreasArc(#[ignore_malloc_size_of = "Arc"] pub Arc<TemplateAreas>);
 
 impl Parse for TemplateAreasArc {
@@ -623,6 +624,7 @@ pub struct UnsignedRange {
 }
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToShmem)]
+#[repr(C)]
 
 
 pub struct NamedArea {
@@ -673,13 +675,34 @@ fn is_name_code_point(c: char) -> bool {
 
 
 
-pub type GridTemplateAreas = Either<TemplateAreasArc, None_>;
+
+
+/// cbindgen:derive-tagged-enum-copy-constructor=true
+#[repr(C, u8)]
+#[derive(
+    Clone,
+    Debug,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+pub enum GridTemplateAreas {
+    
+    None,
+    
+    Areas(TemplateAreasArc),
+}
 
 impl GridTemplateAreas {
     #[inline]
     
     pub fn none() -> GridTemplateAreas {
-        Either::Second(None_)
+        GridTemplateAreas::None
     }
 }
 

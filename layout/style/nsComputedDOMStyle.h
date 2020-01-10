@@ -191,16 +191,16 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   
   void AppendGridLineNames(nsString& aResult,
-                           const nsTArray<nsString>& aLineNames);
+                           const nsTArray<nsCString>& aLineNames);
   
   
   void AppendGridLineNames(nsDOMCSSValueList* aValueList,
-                           const nsTArray<nsString>& aLineNames,
+                           const nsTArray<nsCString>& aLineNames,
                            bool aSuppressEmptyList = true);
   
   void AppendGridLineNames(nsDOMCSSValueList* aValueList,
-                           const nsTArray<nsString>& aLineNames1,
-                           const nsTArray<nsString>& aLineNames2);
+                           const nsTArray<nsCString>& aLineNames1,
+                           const nsTArray<nsCString>& aLineNames2);
   already_AddRefed<CSSValue> GetGridTrackSize(const nsStyleCoord& aMinSize,
                                               const nsStyleCoord& aMaxSize);
   already_AddRefed<CSSValue> GetGridTemplateColumnsRows(
