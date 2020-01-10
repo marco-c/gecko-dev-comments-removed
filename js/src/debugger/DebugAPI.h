@@ -142,6 +142,10 @@ class DebugAPI {
   };
 
   
+  
+  enum IsObserving { NotObserving = 0, Observing = 1 };
+
+  
   static inline MOZ_MUST_USE bool checkNoExecute(JSContext* cx,
                                                  HandleScript script);
 

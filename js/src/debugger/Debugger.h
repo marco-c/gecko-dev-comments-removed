@@ -425,8 +425,9 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   };
 
   
-  
-  enum IsObserving { NotObserving = 0, Observing = 1 };
+  using IsObserving = DebugAPI::IsObserving;
+  static const IsObserving Observing = DebugAPI::Observing;
+  static const IsObserving NotObserving = DebugAPI::NotObserving;
 
   
   
