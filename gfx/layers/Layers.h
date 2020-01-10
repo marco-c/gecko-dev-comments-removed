@@ -2679,6 +2679,22 @@ class RefLayer : public ContainerLayer {
 
 
 
+  void SetRemoteDocumentRect(const LayerIntRect& aRemoteDocumentRect) {
+    if (mRemoteDocumentRect.IsEqualEdges(aRemoteDocumentRect)) {
+      return;
+    }
+    mRemoteDocumentRect = aRemoteDocumentRect;
+    Mutated();
+  }
+
+  const LayerIntRect& GetRemoteDocumentRect() const {
+    return mRemoteDocumentRect;
+  }
+
+  
+
+
+
   void DetachReferentLayer(Layer* aLayer) {
     mFirstChild = mLastChild = nullptr;
     aLayer->SetParent(nullptr);
@@ -2710,6 +2726,7 @@ class RefLayer : public ContainerLayer {
   
   LayersId mId;
   EventRegionsOverride mEventRegionsOverride;
+  LayerIntRect mRemoteDocumentRect;
 };
 
 void SetAntialiasingFlags(Layer* aLayer, gfx::DrawTarget* aTarget);

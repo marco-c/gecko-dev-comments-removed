@@ -103,6 +103,7 @@ class HitTestingTreeNode {
 
   void SetHitTestData(const EventRegions& aRegions,
                       const LayerIntRegion& aVisibleRegion,
+                      const LayerIntRect& aRemoteDocumentRect,
                       const CSSTransformMatrix& aTransform,
                       const Maybe<ParentLayerIntRegion>& aClipRegion,
                       const EventRegionsOverride& aOverride,
@@ -188,6 +189,10 @@ class HitTestingTreeNode {
   EventRegions mEventRegions;
 
   LayerIntRegion mVisibleRegion;
+
+  
+
+  LayerIntRect mRemoteDocumentRect;
 
   
 
