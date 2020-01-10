@@ -437,7 +437,9 @@ function createDevToolsFrame(doc, className) {
   const frame = doc.createXULElement("iframe");
   frame.flex = 1; 
   frame.className = className;
-  frame.setAttribute("type", "content");
+  if (Services.prefs.getBoolPref("devtools.toolbox.content-frame", false)) {
+    frame.setAttribute("type", "content");
+  }
   frame.tooltip = "aHTMLTooltip";
   return frame;
 }
