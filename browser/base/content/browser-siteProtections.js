@@ -1352,7 +1352,7 @@ var gProtectionsHandler = {
       this,
       "_protectionsPopupToastTimeout",
       "browser.protections_panel.toast.timeout",
-      5000
+      3000
     );
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
@@ -1814,6 +1814,9 @@ var gProtectionsHandler = {
 
     
     this.toggleBreakageLink();
+
+    
+    this.iconBox.toggleAttribute("hasException", newExceptionState);
 
     
     
