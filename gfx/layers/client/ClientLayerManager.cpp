@@ -665,6 +665,8 @@ void ClientLayerManager::ForwardTransaction(bool aScheduleComposite) {
   AUTO_PROFILER_TRACING("Paint", "ForwardTransaction", GRAPHICS);
   TimeStamp start = TimeStamp::Now();
 
+  GetCompositorBridgeChild()->EndCanvasTransaction();
+
   
   
   

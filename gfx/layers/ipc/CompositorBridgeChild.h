@@ -41,6 +41,7 @@ using mozilla::dom::BrowserChild;
 
 class IAPZCTreeManager;
 class APZCTreeManagerChild;
+class CanvasChild;
 class ClientLayerManager;
 class CompositorBridgeParent;
 class CompositorManagerChild;
@@ -121,6 +122,10 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
                                TextureFlags aFlags, uint64_t aSerial,
                                wr::MaybeExternalImageId& aExternalImageId,
                                nsIEventTarget* aTarget) override;
+
+  already_AddRefed<CanvasChild> GetCanvasChild() final;
+
+  void EndCanvasTransaction();
 
   
 
@@ -391,6 +396,8 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
 
   uintptr_t mSlowFlushCount;
   uintptr_t mTotalFlushCount;
+
+  RefPtr<CanvasChild> mCanvasChild;
 };
 
 }  

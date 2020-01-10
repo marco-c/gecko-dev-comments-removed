@@ -20,6 +20,7 @@
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/PaintThread.h"
 #include "mozilla/layers/TextureClientRecycleAllocator.h"
+#include "mozilla/layers/TextureRecorded.h"
 #include "mozilla/Mutex.h"
 #include "nsDebug.h"          
 #include "nsISupportsImpl.h"  
@@ -343,7 +344,11 @@ TextureData::Create(TextureForwarder* aAllocator, gfx::SurfaceFormat aFormat,
                                            aAllocFlags);
 
   if (ShouldRemoteTextureType(textureType, aSelector)) {
-    
+    RefPtr<CanvasChild> canvasChild = aAllocator->GetCanvasChild();
+    if (canvasChild) {
+      return new RecordedTextureData(canvasChild.forget(), aSize, aFormat,
+                                     textureType);
+    }
   }
 
   switch(textureType) {
