@@ -40,6 +40,9 @@ void ReportFatalError(const Maybe<MinidumpInfo>& aMinidumpInfo,
                       const char* aFormat, ...);
 
 
+size_t GetId();
+
+
 extern Monitor* gMonitor;
 
 
