@@ -926,6 +926,13 @@ void gfxUserFontEntry::LoadPlatformFontAsync(
 
   
   
+  
+  
+  
+  
+
+  mFontSet->AddRef();
+
   nsCOMPtr<nsIRunnable> event =
       NewRunnableMethod<const uint8_t*, uint32_t,
                         nsMainThreadPtrHandle<nsIFontLoadCompleteCallback>>(
@@ -952,10 +959,11 @@ void gfxUserFontEntry::ContinuePlatformFontLoadOnMainThread(
   if (loaded) {
     IncrementGeneration();
     aCallback->FontLoadComplete();
-    return;
+  } else {
+    FontLoadFailed(aCallback);
   }
 
-  FontLoadFailed(aCallback);
+  mFontSet->Release();  
 }
 
 void gfxUserFontEntry::FontLoadFailed(nsIFontLoadCompleteCallback* aCallback) {

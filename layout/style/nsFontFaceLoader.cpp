@@ -286,6 +286,11 @@ nsFontFaceLoader::OnStreamComplete(nsIStreamLoader* aLoader,
 nsresult nsFontFaceLoader::FontLoadComplete() {
   MOZ_ASSERT(NS_IsMainThread());
 
+  if (!mFontFaceSet) {
+    
+    return NS_OK;
+  }
+
   
   nsTArray<gfxUserFontSet*> fontSets;
   mUserFontEntry->GetUserFontSets(fontSets);
