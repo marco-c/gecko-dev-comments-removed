@@ -62,7 +62,7 @@ const TRAILHEAD_CONFIG = {
   INTERRUPTS_EXPERIMENT_PREF: "trailhead.firstrun.interruptsExperiment",
   TRIPLETS_ENROLLED_PREF: "trailhead.firstrun.tripletsEnrolled",
   BRANCHES: {
-    interrupts: [["join"], ["sync"], ["nofirstrun"], ["cards"]],
+    interrupts: [["control"], ["join"], ["sync"], ["nofirstrun"], ["cards"]],
     triplets: [["supercharge"], ["payoff"], ["multidevice"], ["privacy"]],
   },
   LOCALES: ["en-US", "en-GB", "en-CA", "de", "de-DE", "fr", "fr-FR"],
@@ -999,7 +999,7 @@ class _ASRouter {
     if (await this._hasAddonAttributionData()) {
       return {
         experiment,
-        interrupt: "join",
+        interrupt: "control",
         triplet: triplet || "privacy",
       };
     }
@@ -1040,8 +1040,7 @@ class _ASRouter {
       }
     } else {
       
-      interrupt = "join";
-      triplet = "supercharge";
+      interrupt = "control";
     }
 
     return { experiment, interrupt, triplet };
