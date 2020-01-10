@@ -24,6 +24,12 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
+  "isRemoteFrame",
+  "devtools/shared/layout/utils",
+  true
+);
+loader.lazyRequireGetter(
+  this,
   "isXUL",
   "devtools/server/actors/highlighters/utils/markup",
   true
@@ -212,6 +218,12 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
     if (this._highlighter) {
       this._highlighter.hide();
     }
+
+    
+    
+    
+    
+    this._hoveredNode = null;
   },
 
   
@@ -258,12 +270,26 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
     }
     this._isPicking = true;
 
+    
+    
+    
+    
+    
     this._preventContentEvent = event => {
+      if (isRemoteFrame(event.target)) {
+        return;
+      }
       event.stopPropagation();
       event.preventDefault();
     };
 
     this._onPick = event => {
+      
+      
+      if (isRemoteFrame(event.target)) {
+        return;
+      }
+
       this._preventContentEvent(event);
 
       if (!this._isEventAllowed(event)) {
@@ -279,7 +305,6 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
         );
         return;
       }
-
       this._stopPickerListeners();
       this._isPicking = false;
       if (this._autohide) {
@@ -294,8 +319,13 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
     };
 
     this._onHovered = event => {
-      this._preventContentEvent(event);
+      
+      
+      if (isRemoteFrame(event.target)) {
+        return;
+      }
 
+      this._preventContentEvent(event);
       if (!this._isEventAllowed(event)) {
         return;
       }

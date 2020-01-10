@@ -6,7 +6,6 @@
 
 const { Cu } = require("chrome");
 const Services = require("Services");
-const ChromeUtils = require("ChromeUtils");
 const InspectorUtils = require("InspectorUtils");
 const protocol = require("devtools/shared/protocol");
 const { PSEUDO_CLASSES } = require("devtools/shared/css/constants");
@@ -93,6 +92,12 @@ loader.lazyRequireGetter(
 loader.lazyRequireGetter(
   this,
   "isXBLAnonymous",
+  "devtools/shared/layout/utils",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "isRemoteFrame",
   "devtools/shared/layout/utils",
   true
 );
@@ -307,12 +312,11 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
 
 
+
+
+
   get isRemoteFrame() {
-    return (
-      this.numChildren == 0 &&
-      ChromeUtils.getClassName(this.rawNode) == "XULFrameElement" &&
-      this.rawNode.getAttribute("remote") == "true"
-    );
+    return isRemoteFrame(this.rawNode);
   },
 
   

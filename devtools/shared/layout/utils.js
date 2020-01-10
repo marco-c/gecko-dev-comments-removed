@@ -11,6 +11,7 @@ loader.lazyRequireGetter(
   "DevToolsUtils",
   "devtools/shared/DevToolsUtils"
 );
+loader.lazyRequireGetter(this, "ChromeUtils");
 
 const SHEET_TYPE = {
   agent: "AGENT_SHEET",
@@ -934,3 +935,25 @@ function getAbsoluteScrollOffsetsForNode(node) {
   };
 }
 exports.getAbsoluteScrollOffsetsForNode = getAbsoluteScrollOffsetsForNode;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function isRemoteFrame(node) {
+  return (
+    node.childNodes.length == 0 &&
+    ChromeUtils.getClassName(node) == "XULFrameElement" &&
+    node.getAttribute("remote") == "true"
+  );
+}
+exports.isRemoteFrame = isRemoteFrame;

@@ -53,21 +53,6 @@ class NodePicker extends EventEmitter {
 
 
 
-  async getAllInspectorFronts() {
-    
-    
-    
-    const inspectorFront = await this.target.getFront("inspector");
-    return [inspectorFront];
-  }
-
-  
-
-
-
-
-
-
   togglePicker(doFocus) {
     if (this.isPicking) {
       return this.stop();
@@ -93,7 +78,10 @@ class NodePicker extends EventEmitter {
 
     this.emit("picker-starting");
 
-    this._currentInspectorFronts = await this.getAllInspectorFronts();
+    
+    
+    const inspectorFront = await this.target.getFront("inspector");
+    this._currentInspectorFronts = await inspectorFront.getAllInspectorFronts();
 
     for (const { walker, highlighter } of this._currentInspectorFronts) {
       walker.on("picker-node-hovered", this._onHovered);
@@ -147,6 +135,19 @@ class NodePicker extends EventEmitter {
 
   _onHovered(data) {
     this.emit("picker-node-hovered", data.node);
+
+    
+    
+    
+    
+    
+    const unmatchedInspectors = this._currentInspectorFronts.filter(
+      ({ highlighter }) => highlighter !== data.node.highlighterFront
+    );
+
+    Promise.all(
+      unmatchedInspectors.map(({ highlighter }) => highlighter.hideBoxModel())
+    ).catch(e => console.error);
   }
 
   
