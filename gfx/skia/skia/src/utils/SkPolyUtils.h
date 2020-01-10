@@ -13,6 +13,8 @@
 #include "SkTDArray.h"
 #include "SkPoint.h"
 
+struct SkRect;
+
 
 
 
@@ -39,8 +41,9 @@ bool SkInsetConvexPolygon(const SkPoint* inputPolygonVerts, int inputPolygonSize
 
 
 
+
 bool SkOffsetSimplePolygon(const SkPoint* inputPolygonVerts, int inputPolygonSize,
-                           SkScalar offset, SkTDArray<SkPoint>* offsetPolygon,
+                           const SkRect& bounds, SkScalar offset, SkTDArray<SkPoint>* offsetPolygon,
                            SkTDArray<int>* polygonIndices = nullptr);
 
 
