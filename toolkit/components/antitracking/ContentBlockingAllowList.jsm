@@ -43,29 +43,13 @@ const ContentBlockingAllowList = {
     }
   },
 
-  _baseURIForAntiTrackingCommon(browser) {
-    
-    
-    
-    try {
-      return Services.io.newURI("https://" + browser.currentURI.hostPort);
-    } catch (e) {
-      
-      
-      return null;
-    }
-  },
-
   _basePrincipalForAntiTrackingCommon(browser) {
-    let baseURI = this._baseURIForAntiTrackingCommon(browser);
-    if (!baseURI) {
+    let principal = browser.contentBlockingAllowListPrincipal;
+    
+    if (!principal || !principal.isContentPrincipal) {
       return null;
     }
-    let attrs = browser.contentPrincipal.originAttributes;
-    return Services.scriptSecurityManager.createContentPrincipal(
-      baseURI,
-      attrs
-    );
+    return principal;
   },
 
   _permissionTypeFor(browser) {
