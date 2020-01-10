@@ -1324,19 +1324,12 @@ class HTMLMediaElement::AudioChannelAgentCallback final
 
   AudibleState IsOwnerAudible() const {
     
-    if (mOwner->mMuted || (std::fabs(mOwner->Volume()) <= 1e-7)) {
-      return mOwner->HasAudio()
-                 ? AudioChannelService::AudibleState::eMaybeAudible
-                 : AudioChannelService::AudibleState::eNotAudible;
-    }
-
-    
     if (!mOwner->HasAudio()) {
       return AudioChannelService::AudibleState::eNotAudible;
     }
 
     
-    if (mOwner->HasAudio() && !mOwner->mIsAudioTrackAudible) {
+    if (mOwner->mMuted || (std::fabs(mOwner->Volume()) <= 1e-7)) {
       return AudioChannelService::AudibleState::eMaybeAudible;
     }
 
@@ -1345,7 +1338,10 @@ class HTMLMediaElement::AudioChannelAgentCallback final
       return AudioChannelService::AudibleState::eNotAudible;
     }
 
-    return AudioChannelService::AudibleState::eAudible;
+    
+    return mOwner->mIsAudioTrackAudible
+               ? AudioChannelService::AudibleState::eAudible
+               : AudioChannelService::AudibleState::eMaybeAudible;
   }
 
   bool IsPlayingThroughTheAudioChannel() const {
