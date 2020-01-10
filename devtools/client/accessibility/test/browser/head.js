@@ -8,7 +8,6 @@
 
 
 
-
 "use strict";
 
 
@@ -418,8 +417,11 @@ async function checkToolbarState(doc, expected) {
   info("Checking toolbar state.");
   const hasExpectedStructure = await BrowserTestUtils.waitForCondition(
     () =>
-      [...doc.querySelectorAll("button.toggle-button.badge")].every(
-        (filter, i) => expected[i] === filter.classList.contains("checked")
+      [
+        ...doc.querySelectorAll("#accessibility-tree-filters-menu .command"),
+      ].every(
+        (filter, i) =>
+          (expected[i] ? "true" : null) === filter.getAttribute("aria-checked")
       ),
     "Wait for the right toolbar state."
   );
@@ -520,14 +522,23 @@ async function toggleRow(doc, rowNumber) {
 
 async function toggleFilter(doc, filterIndex) {
   const win = doc.defaultView;
-  const filter = doc.querySelectorAll(".devtools-toolbar .badge.toggle-button")[
-    filterIndex
-  ];
-  const expected = !filter.classList.contains("checked");
+  const menuButton = doc.querySelectorAll(".toolbar-menu-button")[0];
+  const filter = doc.querySelectorAll(
+    "#accessibility-tree-filters-menu .command"
+  )[filterIndex];
+  const expected =
+    filter.getAttribute("aria-checked") === "true" ? null : "true";
+
+  
+  EventUtils.synthesizeMouseAtCenter(menuButton, {}, win);
+  await BrowserTestUtils.waitForCondition(
+    () => !!filter.offsetParent,
+    "Filter is visible."
+  );
 
   EventUtils.synthesizeMouseAtCenter(filter, {}, win);
   await BrowserTestUtils.waitForCondition(
-    () => expected === filter.classList.contains("checked"),
+    () => expected === filter.getAttribute("aria-checked"),
     "Filter updated."
   );
 }

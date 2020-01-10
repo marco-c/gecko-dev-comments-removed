@@ -758,12 +758,12 @@ HTMLTooltip.prototype = {
       return;
     }
 
-    this.doc.defaultView.clearTimeout(this.attachEventsTimer);
     if (!this.isVisible()) {
       this.emit("hidden");
       return;
     }
 
+    this.doc.defaultView.clearTimeout(this.attachEventsTimer);
     
     
     if (fromMouseup) {
