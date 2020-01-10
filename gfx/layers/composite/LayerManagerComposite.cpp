@@ -553,19 +553,21 @@ void LayerManagerComposite::UpdateAndRender() {
   nsIntRegion opaque;
   PostProcessLayers(opaque);
 
-  nsIntRegion changed;
   if (mClonedLayerTreeProperties) {
     
     
     
     
 
+    nsIntRegion changed;
     const bool overflowed = !mClonedLayerTreeProperties->ComputeDifferences(
         mRoot, changed, nullptr);
 
     if (overflowed) {
       changed = mTarget ? mTargetBounds : mRenderBounds;
     }
+
+    mInvalidRegion.Or(mInvalidRegion, changed);
   }
 
   nsIntRegion invalid;
@@ -574,21 +576,16 @@ void LayerManagerComposite::UpdateAndRender() {
     
     
     
-    mInvalidRegion.Or(mInvalidRegion, changed);
+    
     invalid = mTargetBounds;
   } else {
-    if (mClonedLayerTreeProperties) {
-      invalid = std::move(changed);
-    } else {
+    if (!mClonedLayerTreeProperties) {
       
       
-      invalid = mRenderBounds;
+      mInvalidRegion = mRenderBounds;
     }
 
-    
-    
-    invalid.Or(invalid, mInvalidRegion);
-    mInvalidRegion.SetEmpty();
+    invalid = mInvalidRegion;
   }
 
   if (invalid.IsEmpty() && !mWindowOverlayChanged) {
@@ -601,11 +598,15 @@ void LayerManagerComposite::UpdateAndRender() {
   
   InvalidateDebugOverlay(invalid, mRenderBounds);
 
-  Render(invalid, opaque);
+  bool rendered = Render(invalid, opaque);
 #if defined(MOZ_WIDGET_ANDROID)
   RenderToPresentationSurface();
 #endif
-  mWindowOverlayChanged = false;
+
+  if (!mTarget && rendered) {
+    mInvalidRegion.SetEmpty();
+    mWindowOverlayChanged = false;
+  }
 
   
   mClonedLayerTreeProperties = LayerProperties::CloneFrom(GetRoot());
@@ -893,13 +894,13 @@ class ScopedCompositorRenderOffset {
 };
 #endif  
 
-void LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion,
+bool LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion,
                                    const nsIntRegion& aOpaqueRegion) {
   AUTO_PROFILER_LABEL("LayerManagerComposite::Render", GRAPHICS);
 
   if (mDestroyed || !mCompositor || mCompositor->IsDestroyed()) {
     NS_WARNING("Call on destroyed layer manager");
-    return;
+    return false;
   }
 
   mCompositor->RequestAllowFrameRecording(!!mCompositionRecorder);
@@ -943,7 +944,7 @@ void LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion,
     AUTO_PROFILER_LABEL("LayerManagerComposite::Render:Prerender", GRAPHICS);
 
     if (!mCompositor->GetWidget()->PreRender(&widgetContext)) {
-      return;
+      return false;
     }
   }
 
@@ -985,7 +986,7 @@ void LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion,
   if (actualBounds.IsEmpty()) {
     mProfilerScreenshotGrabber.NotifyEmptyFrame();
     mCompositor->GetWidget()->PostRender(&widgetContext);
-    return;
+    return true;
   }
 
   
@@ -1086,6 +1087,8 @@ void LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion,
   mPayload.Clear();
 
   mCompositor->WaitForGPU();
+
+  return true;
 }
 
 #if defined(MOZ_WIDGET_ANDROID)

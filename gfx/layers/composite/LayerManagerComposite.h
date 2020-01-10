@@ -415,7 +415,9 @@ class LayerManagerComposite final : public HostLayerManager {
   
 
 
-  void Render(const nsIntRegion& aInvalidRegion,
+
+
+  bool Render(const nsIntRegion& aInvalidRegion,
               const nsIntRegion& aOpaqueRegion);
 #if defined(MOZ_WIDGET_ANDROID)
   void RenderToPresentationSurface();
