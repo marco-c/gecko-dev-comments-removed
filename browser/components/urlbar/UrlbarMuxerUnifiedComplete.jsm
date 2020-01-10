@@ -69,7 +69,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     
     
     let reshuffleResults = context.results
-      .filter(r => r.suggestedIndex != -1)
+      .filter(r => r.suggestedIndex >= 0)
       .sort((a, b) => a.suggestedIndex - b.suggestedIndex);
     let sortedResults = [];
     
@@ -99,7 +99,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
         } else if (group == RESULT_TYPE_TO_GROUP.get(result.type)) {
           
           
-          if (result.suggestedIndex == -1) {
+          if (result.suggestedIndex < 0) {
             sortedResults.push(result);
           }
           handled.add(result);
