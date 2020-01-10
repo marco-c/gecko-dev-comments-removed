@@ -65,7 +65,6 @@
 
 
 
-
 class C {
   *method({} = undefined) {}
 };

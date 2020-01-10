@@ -9,7 +9,6 @@
 
 
 
-
 Object.prototype[1] = -1;
 Object.prototype.length = 1;
 Object.prototype.push = Array.prototype.push;

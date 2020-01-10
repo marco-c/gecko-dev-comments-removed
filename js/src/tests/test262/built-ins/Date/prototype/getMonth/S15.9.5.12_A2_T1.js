@@ -7,7 +7,6 @@
 
 
 
-
 if (Date.prototype.getMonth.hasOwnProperty("length") !== true) {
   $ERROR('#1: The getMonth has a "length" property');
 }

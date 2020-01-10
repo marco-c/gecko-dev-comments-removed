@@ -13,7 +13,6 @@
 
 
 
-
 (0,eval)(
   'assert.sameValue(f(), "outer declaration");switch (1) {' +
   '  case 1:' +

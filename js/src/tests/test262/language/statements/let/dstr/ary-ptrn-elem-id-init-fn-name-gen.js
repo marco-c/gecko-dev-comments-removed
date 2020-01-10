@@ -32,7 +32,6 @@
 
 
 
-
 let [gen = function* () {}, xGen = function* x() {}] = [];
 
 assert.sameValue(gen.name, 'gen');

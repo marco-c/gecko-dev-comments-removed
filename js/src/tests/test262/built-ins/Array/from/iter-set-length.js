@@ -16,7 +16,6 @@
 
 
 
-
 var items = {};
 var result, nextIterResult, lastIterResult;
 items[Symbol.iterator] = function() {

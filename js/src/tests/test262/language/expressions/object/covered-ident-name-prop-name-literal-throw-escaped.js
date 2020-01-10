@@ -1,0 +1,41 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = ({ t\u0068row: 42 });
+
+assert.sameValue(obj['throw'], 42, 'property exists');
+
+reportCompare(0, 0);

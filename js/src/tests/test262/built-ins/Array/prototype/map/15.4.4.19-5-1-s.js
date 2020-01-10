@@ -7,7 +7,6 @@
 
 
 
-
 var innerThisCorrect = false;
 
 function callbackfn(val, idx, obj) {

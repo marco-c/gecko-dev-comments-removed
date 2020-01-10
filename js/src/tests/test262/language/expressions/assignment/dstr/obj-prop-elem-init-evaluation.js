@@ -15,7 +15,6 @@
 
 
 
-
 var flag1 = false;
 var flag2 = false;
 var x, y;

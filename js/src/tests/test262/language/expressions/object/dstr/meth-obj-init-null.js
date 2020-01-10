@@ -46,7 +46,6 @@
 
 
 
-
 var obj = {
   method({}) {}
 };

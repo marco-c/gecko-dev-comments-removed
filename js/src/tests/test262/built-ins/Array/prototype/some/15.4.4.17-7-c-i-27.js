@@ -9,7 +9,6 @@
 
 
 
-
 var firstResult = false;
 var secondResult = false;
 var thirdResult = false;

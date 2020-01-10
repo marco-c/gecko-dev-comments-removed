@@ -11,7 +11,6 @@
 
 
 
-
 try {
   new Array.prototype.push();
   $ERROR('#1.1: new Array.prototype.push() throw TypeError. Actual: ' + (new Array.prototype.push()));

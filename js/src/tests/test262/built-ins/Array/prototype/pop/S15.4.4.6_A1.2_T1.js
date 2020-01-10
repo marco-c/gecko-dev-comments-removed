@@ -10,7 +10,6 @@
 
 
 
-
 var x = new Array(0, 1, 2, 3);
 var pop = x.pop();
 if (pop !== 3) {

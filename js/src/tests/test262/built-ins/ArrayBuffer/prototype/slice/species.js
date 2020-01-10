@@ -18,7 +18,6 @@
 
 
 
-
 var resultBuffer;
 
 var speciesConstructor = {};

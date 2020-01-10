@@ -25,7 +25,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   const { w: { x, y, z } = undefined } = { };
 });

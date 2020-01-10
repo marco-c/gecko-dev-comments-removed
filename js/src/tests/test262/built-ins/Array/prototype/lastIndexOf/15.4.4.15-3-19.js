@@ -14,7 +14,6 @@
 
 
 
-
 var targetObj = this;
 var obj = {
   1: targetObj,

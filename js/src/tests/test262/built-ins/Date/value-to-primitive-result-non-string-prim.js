@@ -28,7 +28,6 @@
 
 
 
-
 var toPrimitive = {};
 var returnValue;
 toPrimitive[Symbol.toPrimitive] = function() {

@@ -7,7 +7,6 @@
 
 
 
-
 var obj = {};
 obj.sort = Array.prototype.sort;
 obj[0] = "z";

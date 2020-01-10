@@ -8,7 +8,6 @@
 
 
 
-
 var accessed = false;
 var proto = {
   length: 2

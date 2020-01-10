@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(Math.max(0, 0), 0, "(0, 0)");
 assert.sameValue(Math.max(-0, -0), -0, "(-0, -0)");
 assert.sameValue(Math.max(0, -0), 0, "(0, -0)");

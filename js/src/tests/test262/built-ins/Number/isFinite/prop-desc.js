@@ -14,7 +14,6 @@
 
 
 
-
 verifyNotEnumerable(Number, "isFinite");
 verifyWritable(Number, "isFinite");
 verifyConfigurable(Number, "isFinite");

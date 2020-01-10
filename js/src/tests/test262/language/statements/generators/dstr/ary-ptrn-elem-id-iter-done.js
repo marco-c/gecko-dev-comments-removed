@@ -49,7 +49,6 @@
 
 
 
-
 var callCount = 0;
 function* f([_, x]) {
   assert.sameValue(x, undefined);

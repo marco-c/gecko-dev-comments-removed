@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(Number.isFinite(NaN), false);
 
 reportCompare(0, 0);

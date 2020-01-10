@@ -6,7 +6,6 @@
 
 
 
-
 assert.sameValue(typeof Date.now, "function", 'typeof Date.now');
 
 reportCompare(0, 0);

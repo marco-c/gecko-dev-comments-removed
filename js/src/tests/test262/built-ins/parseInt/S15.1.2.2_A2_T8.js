@@ -8,8 +8,6 @@
 
 
 
-
-
 if (parseInt("\u20281") !== parseInt("1")) {
   $ERROR('#1: parseInt("\\u20281") === parseInt("1"). Actual: ' + (parseInt("\u20281")));
 }

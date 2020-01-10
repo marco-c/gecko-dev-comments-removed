@@ -9,7 +9,6 @@
 
 
 
-
 assert.sameValue(new Date(2016, 0).getFullYear(), 2016, 'first millisecond');
 assert.sameValue(
   new Date(2016, 0, 1, 0, 0, 0, -1).getFullYear(), 2015, 'previous millisecond'

@@ -7,7 +7,6 @@
 
 
 
-
 if (Date.prototype.getUTCFullYear.hasOwnProperty("length") !== true) {
   $ERROR('#1: The getUTCFullYear has a "length" property');
 }

@@ -8,7 +8,6 @@
 
 
 
-
 function callbackfn(val, idx, obj) {
   if (val % 2)
     return true;

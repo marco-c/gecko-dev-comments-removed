@@ -21,7 +21,6 @@
 
 
 
-
 var arrayBuffer = Reflect.construct(ArrayBuffer, [8], Object);
 assert.sameValue(Object.getPrototypeOf(arrayBuffer), Object.prototype, "NewTarget is built-in Object constructor");
 

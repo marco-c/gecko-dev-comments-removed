@@ -34,7 +34,6 @@
 
 
 
-
 var arrayProxy = new Proxy([], {});
 var arrayProxyProxy = new Proxy(arrayProxy, {});
 var spreadable = {};

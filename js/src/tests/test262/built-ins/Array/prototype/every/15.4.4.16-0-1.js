@@ -6,7 +6,6 @@
 
 
 
-
 var f = Array.prototype.every;
 
 assert.sameValue(typeof(f), "function", 'typeof(f)');

@@ -6,7 +6,6 @@
 
 
 
-
 function callbackfn(val, idx, obj) {
   return '[object JSON]' === Object.prototype.toString.call(obj);
 }

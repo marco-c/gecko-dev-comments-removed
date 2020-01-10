@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  c\u0061se() { return 42; }
+};
+
+assert.sameValue(obj['case'](), 42, 'property exists');
+
+reportCompare(0, 0);

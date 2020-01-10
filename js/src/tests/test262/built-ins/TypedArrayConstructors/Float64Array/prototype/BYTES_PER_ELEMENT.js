@@ -14,7 +14,6 @@
 
 
 
-
 assert.sameValue(Float64Array.prototype.BYTES_PER_ELEMENT, 8);
 
 verifyNotEnumerable(Float64Array.prototype, "BYTES_PER_ELEMENT");

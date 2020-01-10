@@ -13,7 +13,6 @@
 
 
 
-
 var poisonedObject = {};
 var poisonedDate = new Date();
 Object.defineProperty(poisonedObject, Symbol.toPrimitive, {

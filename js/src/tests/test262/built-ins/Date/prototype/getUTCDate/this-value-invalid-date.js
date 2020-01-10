@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(new Date(NaN).getUTCDate(), NaN);
 
 reportCompare(0, 0);

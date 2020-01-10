@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(x => {}, "name", {
+  value: "", writable: false, enumerable: false, configurable: true
+});
+
+verifyProperty(() => {}, "name", {
+  value: "", writable: false, enumerable: false, configurable: true
+});
+
+reportCompare(0, 0);

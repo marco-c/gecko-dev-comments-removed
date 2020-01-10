@@ -13,7 +13,6 @@
 
 
 
-
 var toUpperCase = String.prototype.toUpperCase;
 
 assert.sameValue(typeof toUpperCase, 'function');

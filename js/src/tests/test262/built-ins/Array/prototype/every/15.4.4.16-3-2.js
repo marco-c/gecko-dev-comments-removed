@@ -8,7 +8,6 @@
 
 
 
-
 function callbackfn1(val, idx, obj) {
   return val > 10;
 }

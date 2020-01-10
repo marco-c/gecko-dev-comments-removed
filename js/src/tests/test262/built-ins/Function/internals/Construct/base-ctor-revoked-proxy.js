@@ -39,7 +39,6 @@
 
 
 
-
 var handlers = {
   get: function() {
     handle.revoke();

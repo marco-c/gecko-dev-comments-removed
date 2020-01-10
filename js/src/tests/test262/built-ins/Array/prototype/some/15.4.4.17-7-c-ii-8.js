@@ -8,7 +8,6 @@
 
 
 
-
 function callbackfn(val, idx, obj) {
   if (idx === 0) {
     obj[idx + 1] = 11;

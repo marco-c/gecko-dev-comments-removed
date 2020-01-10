@@ -16,7 +16,6 @@
 
 
 
-
 var positiveZero = new ArrayBuffer(+0);
 assert.sameValue(positiveZero.byteLength, 0);
 

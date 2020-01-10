@@ -67,7 +67,6 @@
 
 
 
-
 class C {
   method([x = (function() { throw new Test262Error(); })()] = [undefined]) {}
 };

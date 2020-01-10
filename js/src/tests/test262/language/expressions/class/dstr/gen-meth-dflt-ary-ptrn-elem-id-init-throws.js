@@ -71,7 +71,6 @@
 
 
 
-
 var C = class {
   *method([x = (function() { throw new Test262Error(); })()] = [undefined]) {}
 };

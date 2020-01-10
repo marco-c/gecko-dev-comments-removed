@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var y = { \u0063ontinue: x } = { continue: 42 };
+
+assert.sameValue(x, 42, 'property exists');
+assert.sameValue(y['continue'], 42, 'assignment successful');
+
+reportCompare(0, 0);

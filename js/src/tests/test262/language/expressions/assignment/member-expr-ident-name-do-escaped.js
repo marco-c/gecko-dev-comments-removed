@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+obj.\u0064o = 42;
+
+assert.sameValue(obj['do'], 42, 'property exists');
+
+reportCompare(0, 0);

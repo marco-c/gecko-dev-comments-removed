@@ -53,7 +53,6 @@
 
 
 
-
 var callCount = 0;
 var f;
 f = function*([gen = function* () {}, xGen = function* x() {}] = []) {

@@ -25,7 +25,6 @@
 
 
 
-
 var stringSet;
 var obj = {
   get [0.0000001]() { return 'get string'; },

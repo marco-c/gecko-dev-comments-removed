@@ -6,7 +6,6 @@
 
 
 
-
 var result = false;
 var obj = {
   length: 20

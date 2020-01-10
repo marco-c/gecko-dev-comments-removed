@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Date.prototype.getUTCDay.name, "getUTCDay");
 
 verifyNotEnumerable(Date.prototype.getUTCDay, "name");

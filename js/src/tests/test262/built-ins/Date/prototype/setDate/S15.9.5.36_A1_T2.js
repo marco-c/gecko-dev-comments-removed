@@ -7,7 +7,6 @@
 
 
 
-
 if (delete Date.prototype.setDate === false) {
   $ERROR('#1: The Date.prototype.setDate property has not the attributes DontDelete');
 }

@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  \u0069mport() { return 42; }
+}
+
+var obj = new C();
+
+assert.sameValue(obj['import'](), 42, 'property exists');
+
+reportCompare(0, 0);

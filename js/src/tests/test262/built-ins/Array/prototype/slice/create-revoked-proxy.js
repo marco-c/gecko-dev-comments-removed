@@ -22,7 +22,6 @@
 
 
 
-
 var o = Proxy.revocable([], {});
 var callCount = 0;
 

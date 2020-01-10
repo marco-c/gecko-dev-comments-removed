@@ -16,7 +16,6 @@
 
 
 
-
 var toNumberOffset = 0;
 var obj = {
   valueOf: function() {

@@ -6,7 +6,6 @@
 
 
 
-
 function callbackfn(val, Idx, obj)
 {
   if (arguments.length === 3) 

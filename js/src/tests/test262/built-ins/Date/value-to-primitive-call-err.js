@@ -17,7 +17,6 @@
 
 
 
-
 var badToPrimitive = {};
 badToPrimitive[Symbol.toPrimitive] = function() {
   throw new Test262Error();

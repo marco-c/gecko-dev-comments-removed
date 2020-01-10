@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(
   typeof Array.prototype.find,
   'function',

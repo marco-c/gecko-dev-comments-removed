@@ -23,7 +23,6 @@
 
 
 
-
 var re = new RegExp('');
 
 assert.sameValue(re.lastIndex, 0);

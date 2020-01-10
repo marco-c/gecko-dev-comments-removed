@@ -19,7 +19,6 @@
 
 
 
-
 $DONOTEVALUATE();
 
 0, [{ get x() {} }] = [{}];

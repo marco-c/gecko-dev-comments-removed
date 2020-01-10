@@ -9,7 +9,6 @@
 
 
 
-
 assert.sameValue(
   new Date(2016, 6, 6, 14, 16, 30).getSeconds(),
   30,

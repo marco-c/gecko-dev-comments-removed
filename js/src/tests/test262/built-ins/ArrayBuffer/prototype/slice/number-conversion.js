@@ -17,7 +17,6 @@
 
 
 
-
 var arrayBuffer = new ArrayBuffer(8);
 
 var log = "";

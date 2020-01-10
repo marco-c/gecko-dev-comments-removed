@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Array.prototype.splice.name, "splice");
 
 verifyNotEnumerable(Array.prototype.splice, "name");

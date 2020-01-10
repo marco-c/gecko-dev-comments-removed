@@ -12,7 +12,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   Int32Array.prototype.buffer;
 });

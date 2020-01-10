@@ -11,7 +11,6 @@
 
 
 
-
 var x = new Array();
 var push = x.push(1);
 if (push !== 1) {

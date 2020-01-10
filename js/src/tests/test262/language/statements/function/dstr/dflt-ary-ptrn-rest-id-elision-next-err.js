@@ -49,7 +49,6 @@
 
 
 
-
 var iter = (function*() { throw new Test262Error(); })();
 
 function f([, ...x] = iter) {}

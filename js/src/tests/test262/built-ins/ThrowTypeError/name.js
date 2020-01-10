@@ -12,11 +12,26 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 var ThrowTypeError = Object.getOwnPropertyDescriptor(function() {
   "use strict";
   return arguments;
 }(), "callee").get;
 
-assert.sameValue(Object.prototype.hasOwnProperty.call(ThrowTypeError, "name"), false);
+verifyProperty(ThrowTypeError, "name", {
+  value: "", writable: false, enumerable: false, configurable: false
+});
 
 reportCompare(0, 0);

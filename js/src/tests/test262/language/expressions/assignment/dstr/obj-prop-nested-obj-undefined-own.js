@@ -15,7 +15,6 @@
 
 
 
-
 var x;
 
 assert.throws(TypeError, function() {

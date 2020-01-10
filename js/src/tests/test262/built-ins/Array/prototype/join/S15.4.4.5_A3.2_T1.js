@@ -10,7 +10,6 @@
 
 
 
-
 var x = new Array("", "", "");
 if (x.join("") !== "") {
   $ERROR('#0: var x = new Array("","",""); x.join("") === "". Actual: ' + (x.join("")));

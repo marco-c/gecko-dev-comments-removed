@@ -8,8 +8,6 @@
 
 
 
-
-
 if (decodeURIComponent("") !== "") {
   $ERROR('#1: ""');
 }

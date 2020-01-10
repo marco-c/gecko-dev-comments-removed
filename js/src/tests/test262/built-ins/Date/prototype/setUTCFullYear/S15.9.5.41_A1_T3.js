@@ -7,7 +7,6 @@
 
 
 
-
 if (Date.prototype.propertyIsEnumerable('setUTCFullYear')) {
   $ERROR('#1: The Date.prototype.setUTCFullYear property has the attribute DontEnum');
 }

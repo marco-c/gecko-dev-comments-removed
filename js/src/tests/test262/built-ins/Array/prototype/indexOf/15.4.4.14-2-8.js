@@ -8,7 +8,6 @@
 
 
 
-
 var proto = {
   length: 0
 };

@@ -15,7 +15,6 @@
 
 
 
-
 var init, changed;
 
 (function() {

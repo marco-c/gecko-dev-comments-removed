@@ -9,8 +9,6 @@
 
 
 
-
-
 var x = encodeURIComponent.length;
 verifyNotWritable(encodeURIComponent, "length", null, Infinity);
 if (encodeURIComponent.length !== x) {

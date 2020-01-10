@@ -1,0 +1,41 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = ({ default: 42 });
+
+assert.sameValue(obj['default'], 42, 'property exists');
+
+reportCompare(0, 0);

@@ -12,7 +12,6 @@
 
 
 
-
 var foo = {};
 var bar = {};
 var s = new WeakSet();

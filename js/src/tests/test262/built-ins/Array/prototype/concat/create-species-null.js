@@ -20,7 +20,6 @@
 
 
 
-
 var a = [];
 var result;
 

@@ -11,7 +11,6 @@
 
 
 
-
 var obj = {};
 obj.pop = Array.prototype.pop;
 

@@ -24,7 +24,6 @@
 
 
 
-
 var eval, arguments;
 
 var counter = 0;

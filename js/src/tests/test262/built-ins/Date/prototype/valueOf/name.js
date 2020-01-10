@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Date.prototype.valueOf.name, "valueOf");
 
 verifyNotEnumerable(Date.prototype.valueOf, "name");

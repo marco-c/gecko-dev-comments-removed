@@ -13,8 +13,6 @@
 
 
 
-
-
 var chars = [0xD800, 0xDBFF, 0xD9FF];
 var errorCount = 0;
 var count = 0;

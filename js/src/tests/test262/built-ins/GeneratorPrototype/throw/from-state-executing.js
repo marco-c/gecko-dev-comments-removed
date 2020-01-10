@@ -35,7 +35,6 @@
 
 
 
-
 var iter, result;
 function* g() {
   iter.throw(42);

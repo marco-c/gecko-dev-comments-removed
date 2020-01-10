@@ -21,7 +21,6 @@
 
 
 
-
 var setInt32 = DataView.prototype.setInt32;
 
 assert.throws(TypeError, function() {

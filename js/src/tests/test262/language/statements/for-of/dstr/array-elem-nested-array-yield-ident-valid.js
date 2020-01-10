@@ -24,7 +24,6 @@
 
 
 
-
 var yield = 'prop';
 var x = {};
 

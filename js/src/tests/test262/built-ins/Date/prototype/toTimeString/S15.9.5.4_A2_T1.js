@@ -7,7 +7,6 @@
 
 
 
-
 if (Date.prototype.toTimeString.hasOwnProperty("length") !== true) {
   $ERROR('#1: The toTimeString has a "length" property');
 }

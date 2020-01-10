@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(Number.isFinite(-10), true, "-10");
 assert.sameValue(Number.isFinite(-0), true, "-0");
 assert.sameValue(Number.isFinite(0), true, "0");

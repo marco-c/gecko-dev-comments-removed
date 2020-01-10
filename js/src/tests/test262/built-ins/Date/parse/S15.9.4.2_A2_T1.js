@@ -7,7 +7,6 @@
 
 
 
-
 if (Date.parse.hasOwnProperty("length") !== true) {
   $ERROR('#1: The parse has a "length" property');
 }

@@ -6,7 +6,6 @@
 
 
 
-
 var a = new Array(0, 1, 1);
 
 assert.sameValue(a.lastIndexOf(1, "1"), 1, '"1" resolves to 1');

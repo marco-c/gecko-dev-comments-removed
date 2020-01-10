@@ -9,7 +9,6 @@
 
 
 
-
 verifyNotEnumerable(this, 'WeakMap');
 verifyWritable(this, 'WeakMap');
 verifyConfigurable(this, 'WeakMap');

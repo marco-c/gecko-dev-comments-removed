@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(Math.abs(-42), 42, "-42");
 assert.sameValue(Math.abs(42), 42, "42");
 assert.sameValue(Math.abs(-0.000001), 0.000001, "-0.000001");

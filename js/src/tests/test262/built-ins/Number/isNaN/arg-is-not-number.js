@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(Number.isNaN("NaN"), false, "string");
 assert.sameValue(Number.isNaN([NaN]), false, "[NaN]");
 assert.sameValue(Number.isNaN(new Number(NaN)), false, "Number object");

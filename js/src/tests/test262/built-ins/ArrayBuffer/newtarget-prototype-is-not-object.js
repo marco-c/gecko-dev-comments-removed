@@ -21,7 +21,6 @@
 
 
 
-
 function newTarget() {}
 
 newTarget.prototype = undefined;

@@ -35,7 +35,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   var [{ x }] = [null];
 });

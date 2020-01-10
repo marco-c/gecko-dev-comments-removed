@@ -6,7 +6,6 @@
 
 
 
-
 var obj = new String("hello\nworld\\!");
 var accessed = false;
 

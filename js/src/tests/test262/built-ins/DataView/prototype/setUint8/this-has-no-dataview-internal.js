@@ -20,7 +20,6 @@
 
 
 
-
 var setUint8 = DataView.prototype.setUint8;
 
 assert.throws(TypeError, function() {

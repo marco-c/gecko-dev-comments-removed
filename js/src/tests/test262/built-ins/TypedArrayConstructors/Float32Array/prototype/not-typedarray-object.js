@@ -12,7 +12,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   Float64Array.prototype.buffer;
 });

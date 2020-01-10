@@ -8,7 +8,6 @@
 
 
 
-
 function cb() {}
 assert.throws(TypeError, function() {
   [].reduceRight(cb);

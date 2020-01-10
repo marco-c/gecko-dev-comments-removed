@@ -18,7 +18,6 @@
 
 
 
-
 var setUint32 = DataView.prototype.setUint32;
 
 assert.throws(TypeError, function() {

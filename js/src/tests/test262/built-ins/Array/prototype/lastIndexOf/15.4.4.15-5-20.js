@@ -8,7 +8,6 @@
 
 
 
-
 var targetObj = {};
 
 assert.sameValue([0, true, targetObj, 3, false].lastIndexOf(targetObj, "0002.10"), 2, '[0, true, targetObj, 3, false].lastIndexOf(targetObj, "0002.10")');

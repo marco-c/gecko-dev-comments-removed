@@ -10,7 +10,6 @@
 
 
 
-
 if (typeof Boolean("0") !== "boolean") {
   $ERROR('#1.1: typeof Boolean("0") should be "boolean", actual is "' + typeof Boolean("0") + '"');
 }

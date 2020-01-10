@@ -50,7 +50,6 @@
 
 
 
-
 var callCount = 0;
 function* f([{ u: v, w: x, y: z } = { u: 444, w: 555, y: 666 }] = [{ u: 777, w: 888, y: 999 }]) {
   assert.sameValue(v, 777);

@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var y = { p\u0061ckage: x } = { package: 42 };
+
+assert.sameValue(x, 42, 'property exists');
+assert.sameValue(y['package'], 42, 'assignment successful');
+
+reportCompare(0, 0);

@@ -8,8 +8,6 @@
 
 
 
-
-
 if (parseInt("\u000B1") !== parseInt("1")) {
   $ERROR('#1: parseInt("\\u000B1") === parseInt("1"). Actual: ' + (parseInt("\u000B1")));
 }

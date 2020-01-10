@@ -14,7 +14,6 @@
 
 
 
-
 let f = 123;
 assert.sameValue(f, 123, 'binding is not initialized to `undefined`');
 

@@ -8,7 +8,6 @@
 
 
 
-
 function callbackfn(val, idx, obj)
 {
   srcArr[2] = 3;

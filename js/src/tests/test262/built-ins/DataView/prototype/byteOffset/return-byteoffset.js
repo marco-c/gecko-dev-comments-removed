@@ -13,7 +13,6 @@
 
 
 
-
 var buffer = new ArrayBuffer(12);
 
 var sample1 = new DataView(buffer, 0);

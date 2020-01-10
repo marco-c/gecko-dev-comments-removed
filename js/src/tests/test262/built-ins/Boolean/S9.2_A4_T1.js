@@ -10,7 +10,6 @@
 
 
 
-
 if (Boolean(+0) !== false) {
   $ERROR('#1: Boolean(+0) === false. Actual: ' + (Boolean(+0)));
 }

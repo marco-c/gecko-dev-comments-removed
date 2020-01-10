@@ -13,7 +13,6 @@
 
 
 
-
 var str = new String('abc');
 
 assert.sameValue(str[0], 'a');

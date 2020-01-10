@@ -8,7 +8,6 @@
 
 
 
-
 function callbackfn(val, idx, obj) {
   return idx === 3 && typeof val === "undefined";
 }

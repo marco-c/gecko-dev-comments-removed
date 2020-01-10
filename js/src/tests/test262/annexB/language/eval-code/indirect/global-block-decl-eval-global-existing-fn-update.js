@@ -21,7 +21,6 @@
 
 
 
-
 (0,eval)(
   '{ function f() { return "inner declaration"; } }assert.sameValue(typeof f, "function");\
   assert.sameValue(f(), "inner declaration");\

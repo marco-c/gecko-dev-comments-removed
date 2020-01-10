@@ -8,7 +8,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   new Symbol();
 });

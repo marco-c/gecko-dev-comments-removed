@@ -24,7 +24,6 @@
 
 
 
-
 var iterationResult, iter, x = undefined;
 
 iter = (function*() {

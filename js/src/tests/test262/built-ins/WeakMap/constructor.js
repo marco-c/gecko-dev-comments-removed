@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(
   typeof WeakMap, 'function',
   'typeof WeakMap is "function"'

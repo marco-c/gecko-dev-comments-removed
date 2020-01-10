@@ -15,7 +15,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   DataView.prototype.byteLength;
 });

@@ -25,7 +25,6 @@
 
 
 
-
 var promise = new Promise(function() {});
 var error = new Test262Error();
 

@@ -6,7 +6,6 @@
 
 
 
-
 var obj = {
   0: 11,
   length: 1

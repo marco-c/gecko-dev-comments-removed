@@ -17,7 +17,6 @@
 
 
 
-
 var canonical = Symbol.for('s');
 
 assert.sameValue(typeof canonical, 'symbol');

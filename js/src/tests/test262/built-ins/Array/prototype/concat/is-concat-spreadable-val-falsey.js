@@ -31,7 +31,6 @@
 
 
 
-
 var item = [1, 2];
 var result;
 

@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  \u0065lse() { return 42; }
+}
+
+var obj = new C();
+
+assert.sameValue(obj['else'](), 42, 'property exists');
+
+reportCompare(0, 0);

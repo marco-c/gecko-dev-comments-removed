@@ -20,7 +20,6 @@
 
 
 
-
 var speciesConstructor = {};
 speciesConstructor[Symbol.species] = function(length) {
   return arrayBuffer;

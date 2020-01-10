@@ -6,7 +6,6 @@
 
 
 
-
 var accessed = false;
 
 var obj = {

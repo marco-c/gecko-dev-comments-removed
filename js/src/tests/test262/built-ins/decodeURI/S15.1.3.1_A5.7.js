@@ -11,8 +11,6 @@
 
 
 
-
-
 try {
   new decodeURI();
   $ERROR('#1.1: new decodeURI() throw TypeError. Actual: ' + (new decodeURI()));

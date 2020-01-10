@@ -19,7 +19,6 @@
 
 
 
-
 var re = eval('/' + new RegExp('').source + '/');
 
 assert.sameValue(re.test(''), true);

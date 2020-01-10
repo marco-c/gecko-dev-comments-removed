@@ -7,7 +7,6 @@
 
 
 
-
 var x = Date.prototype.setFullYear;
 if (x === 1)
   Date.prototype.setFullYear = 2;

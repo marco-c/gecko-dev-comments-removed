@@ -15,7 +15,6 @@
 
 
 
-
 var x, y, z;
 
 var result;

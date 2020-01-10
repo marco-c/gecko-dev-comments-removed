@@ -12,7 +12,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   Uint8Array.prototype.buffer;
 });

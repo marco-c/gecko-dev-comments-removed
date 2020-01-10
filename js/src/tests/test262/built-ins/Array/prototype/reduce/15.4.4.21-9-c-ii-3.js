@@ -6,7 +6,6 @@
 
 
 
-
 var bCalled = false;
 
 function callbackfn(prevVal, curVal, idx, obj)

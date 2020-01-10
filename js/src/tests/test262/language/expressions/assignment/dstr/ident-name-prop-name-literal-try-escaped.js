@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var y = { tr\u0079: x } = { try: 42 };
+
+assert.sameValue(x, 42, 'property exists');
+assert.sameValue(y['try'], 42, 'assignment successful');
+
+reportCompare(0, 0);

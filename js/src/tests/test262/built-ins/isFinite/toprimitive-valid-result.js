@@ -20,7 +20,6 @@
 
 
 
-
 var called = 0;
 var obj = {
   valueOf: function() {

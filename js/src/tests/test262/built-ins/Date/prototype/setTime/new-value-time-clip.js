@@ -16,7 +16,6 @@
 
 
 
-
 var maxMs = 8.64e15;
 var date = new Date();
 var returnValue;

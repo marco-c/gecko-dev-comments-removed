@@ -27,7 +27,6 @@
 
 
 
-
 var badDelete = new Proxy({
   a: 1
 }, {

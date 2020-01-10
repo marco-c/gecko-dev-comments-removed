@@ -32,7 +32,6 @@
 
 
 
-
 var [x] = [];
 
 assert.sameValue(x, undefined);

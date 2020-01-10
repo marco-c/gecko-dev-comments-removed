@@ -8,7 +8,6 @@
 
 
 
-
 var result = false;
 
 function callbackfn(prevVal, curVal) {

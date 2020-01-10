@@ -1,0 +1,43 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  \u0066unction: 42
+};
+
+assert.sameValue(obj['function'], 42, 'property exists');
+
+reportCompare(0, 0);

@@ -8,7 +8,6 @@
 
 
 
-
 var fromIndex = {
   valueOf: function() {
     return 2;

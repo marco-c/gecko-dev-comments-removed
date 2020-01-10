@@ -14,7 +14,6 @@
 
 
 
-
 var obj = {
   length: 0
 };

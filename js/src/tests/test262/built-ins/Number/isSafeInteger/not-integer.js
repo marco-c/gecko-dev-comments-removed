@@ -14,7 +14,6 @@
 
 
 
-
 assert.sameValue(Number.isSafeInteger(1.1), false, "1.1");
 assert.sameValue(Number.isSafeInteger(0.000001), false, "0.000001");
 assert.sameValue(Number.isSafeInteger(-0.000001), false, "-0.000001");

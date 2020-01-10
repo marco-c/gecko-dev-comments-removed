@@ -10,7 +10,6 @@
 
 
 
-
 if (Boolean(undefined) !== false) {
   $ERROR('#1: Boolean(undefined) === false. Actual: ' + (Boolean(undefined)));
 }

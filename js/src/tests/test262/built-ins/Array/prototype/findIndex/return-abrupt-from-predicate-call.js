@@ -16,7 +16,6 @@
 
 
 
-
 var predicate = function() {
   throw new Test262Error();
 };

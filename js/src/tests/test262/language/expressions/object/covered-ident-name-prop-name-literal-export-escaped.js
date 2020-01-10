@@ -1,0 +1,41 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = ({ \u0065xport: 42 });
+
+assert.sameValue(obj['export'], 42, 'property exists');
+
+reportCompare(0, 0);

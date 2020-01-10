@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(typeof Symbol.prototype.toString, 'function');
 
 verifyNotEnumerable(Symbol.prototype, 'toString');

@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var y = { \u0066inally: x } = { finally: 42 };
+
+assert.sameValue(x, 42, 'property exists');
+assert.sameValue(y['finally'], 42, 'assignment successful');
+
+reportCompare(0, 0);

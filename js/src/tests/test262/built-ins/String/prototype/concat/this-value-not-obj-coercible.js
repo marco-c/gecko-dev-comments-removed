@@ -7,7 +7,6 @@
 
 
 
-
 var concat = String.prototype.concat;
 
 assert.sameValue(typeof concat, 'function');

@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  def\u{61}ult() { return 42; }
+}
+
+var obj = new C();
+
+assert.sameValue(obj['default'](), 42, 'property exists');
+
+reportCompare(0, 0);

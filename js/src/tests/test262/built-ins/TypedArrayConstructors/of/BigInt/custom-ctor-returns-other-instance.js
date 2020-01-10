@@ -17,7 +17,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var result;
   var custom = new TA(3);

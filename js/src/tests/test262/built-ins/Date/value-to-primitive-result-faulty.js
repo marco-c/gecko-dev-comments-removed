@@ -23,7 +23,6 @@
 
 
 
-
 var faultyToPrimitive = {};
 var returnValue;
 faultyToPrimitive[Symbol.toPrimitive] = function() {

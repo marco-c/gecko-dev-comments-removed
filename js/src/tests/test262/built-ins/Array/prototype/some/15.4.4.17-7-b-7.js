@@ -8,7 +8,6 @@
 
 
 
-
 function callbackfn(val, idx, obj) {
   if (idx === 1 && val === 6.99) {
     return true;

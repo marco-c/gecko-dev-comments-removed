@@ -25,7 +25,6 @@
 
 
 
-
 assert.sameValue((123.456).toExponential(undefined), "1.23456e+2", "undefined");
 assert.sameValue((123.456).toExponential(), "1.23456e+2", "no arg");
 assert.sameValue((123.456).toExponential(0), "1e+2", "0");

@@ -8,8 +8,6 @@
 
 
 
-
-
 if ((encodeURIComponent("http://unipro.ru/\nabout") !== "http%3A%2F%2Funipro.ru%2F%0Aabout") && encodeURIComponent("http://unipro.ru/\nabout") !== "http%3A%2F%2Funipro.ru%2F%0aabout") {
   $ERROR('#1: http://unipro.ru/\\nabout');
 }

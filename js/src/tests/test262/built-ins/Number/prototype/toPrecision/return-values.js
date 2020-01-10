@@ -23,7 +23,6 @@
 
 
 
-
 assert.sameValue((7).toPrecision(1), "7");
 assert.sameValue((7).toPrecision(2), "7.0");
 assert.sameValue((7).toPrecision(3), "7.00");

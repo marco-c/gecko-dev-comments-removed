@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Date.prototype.getUTCFullYear.name, "getUTCFullYear");
 
 verifyNotEnumerable(Date.prototype.getUTCFullYear, "name");

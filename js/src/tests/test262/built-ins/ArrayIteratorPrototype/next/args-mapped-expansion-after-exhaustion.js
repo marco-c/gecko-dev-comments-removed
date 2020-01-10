@@ -9,7 +9,6 @@
 
 
 
-
 (function(a, b, c) {
   var iterator = arguments[Symbol.iterator]();
   var result;

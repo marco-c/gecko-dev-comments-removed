@@ -14,7 +14,6 @@
 
 
 
-
 assert.sameValue(DataView.prototype[Symbol.toStringTag], 'DataView');
 
 verifyNotEnumerable(DataView.prototype, Symbol.toStringTag);

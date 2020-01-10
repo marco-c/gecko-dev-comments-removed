@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(["", "ab", "bca", "abc"].indexOf("abc"), 3, '["", "ab", "bca", "abc"].indexOf("abc")');
 
 reportCompare(0, 0);

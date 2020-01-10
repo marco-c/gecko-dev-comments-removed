@@ -11,7 +11,6 @@
 
 
 
-
 var get = Object.getOwnPropertyDescriptor(RegExp.prototype, 'multiline').get;
 
 assert.throws(TypeError, function() {

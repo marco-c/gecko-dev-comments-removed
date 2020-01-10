@@ -7,7 +7,6 @@
 
 
 
-
 var x = Date.prototype.getMonth;
 if (x === 1)
   Date.prototype.getMonth = 2;

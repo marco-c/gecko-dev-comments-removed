@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var C = class {
+  prot\u0065cted() { return 42; }
+}
+
+var obj = new C();
+
+assert.sameValue(obj['protected'](), 42, 'property exists');
+
+reportCompare(0, 0);

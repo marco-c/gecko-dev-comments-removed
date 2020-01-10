@@ -8,7 +8,6 @@
 
 
 
-
 function callbackfn(val, idx, obj) {
   if (idx === 2 && val === "prototype") {
     return false;

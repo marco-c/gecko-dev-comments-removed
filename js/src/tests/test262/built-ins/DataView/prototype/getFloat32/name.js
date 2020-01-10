@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(DataView.prototype.getFloat32.name, "getFloat32");
 
 verifyNotEnumerable(DataView.prototype.getFloat32, "name");

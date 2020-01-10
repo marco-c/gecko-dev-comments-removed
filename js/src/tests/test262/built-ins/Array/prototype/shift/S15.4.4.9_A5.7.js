@@ -11,7 +11,6 @@
 
 
 
-
 try {
   new Array.prototype.shift();
   $ERROR('#1.1: new Array.prototype.shift() throw TypeError. Actual: ' + (new Array.prototype.shift()));

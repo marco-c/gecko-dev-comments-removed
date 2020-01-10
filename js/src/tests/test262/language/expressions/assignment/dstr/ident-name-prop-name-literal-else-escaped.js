@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var y = { \u0065lse: x } = { else: 42 };
+
+assert.sameValue(x, 42, 'property exists');
+assert.sameValue(y['else'], 42, 'assignment successful');
+
+reportCompare(0, 0);

@@ -8,7 +8,6 @@
 
 
 
-
 var arrObj = [1, 2, 3];
 
 Object.defineProperty(Array.prototype, "0", {

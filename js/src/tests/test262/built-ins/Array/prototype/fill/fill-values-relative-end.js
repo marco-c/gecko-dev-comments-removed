@@ -17,7 +17,6 @@
 
 
 
-
 assert(
   compareArray([0, 0, 0].fill(8, 0, 1), [8, 0, 0]),
   'Fill elements from custom end position'

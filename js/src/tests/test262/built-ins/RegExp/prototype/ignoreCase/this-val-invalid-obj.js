@@ -11,7 +11,6 @@
 
 
 
-
 var get = Object.getOwnPropertyDescriptor(RegExp.prototype, 'ignoreCase').get;
 
 assert.throws(TypeError, function() {

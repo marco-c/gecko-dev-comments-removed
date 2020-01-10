@@ -10,7 +10,6 @@
 
 
 
-
 var x = Date.prototype.getSeconds.length;
 verifyNotWritable(Date.prototype.getSeconds, "length", null, 1);
 if (Date.prototype.getSeconds.length !== x) {

@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Date.prototype.getMonth.name, "getMonth");
 
 verifyNotEnumerable(Date.prototype.getMonth, "name");

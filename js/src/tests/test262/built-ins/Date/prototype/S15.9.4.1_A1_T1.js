@@ -10,7 +10,6 @@
 
 
 
-
 var x = Date.prototype;
 verifyNotWritable(Date, "prototype", null, 1);
 if (Date.prototype !== x) {

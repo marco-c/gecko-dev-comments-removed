@@ -26,7 +26,6 @@
 
 
 
-
 assert.sameValue((0).toExponential(1), "0.0e+0", "0 and 1");
 assert.sameValue((0).toExponential(2), "0.00e+0", "0 and 2");
 assert.sameValue((0).toExponential(7), "0.0000000e+0", "0 and 7");

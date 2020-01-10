@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+obj.privat\u0065 = 42;
+
+assert.sameValue(obj['private'], 42, 'property exists');
+
+reportCompare(0, 0);

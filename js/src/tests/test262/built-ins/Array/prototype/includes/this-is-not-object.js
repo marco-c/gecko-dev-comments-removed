@@ -11,7 +11,6 @@
 
 
 
-
 var includes = Array.prototype.includes;
 
 assert.throws(TypeError, function() {

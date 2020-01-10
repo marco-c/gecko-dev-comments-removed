@@ -7,7 +7,6 @@
 
 
 
-
 var match = String.prototype.match;
 
 assert.sameValue(typeof match, 'function');

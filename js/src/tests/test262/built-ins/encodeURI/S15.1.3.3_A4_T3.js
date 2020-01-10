@@ -8,8 +8,6 @@
 
 
 
-
-
 if ((encodeURI("http://unipro.ru/\nabout") !== "http://unipro.ru/%0Aabout") && encodeURI("http://unipro.ru/\nabout") !== "http://unipro.ru/%0aabout") {
   $ERROR('#1: http://unipro.ru/\\nabout');
 }

@@ -23,7 +23,6 @@
 
 
 
-
 assert.sameValue((10).toPrecision(1), "1e+1");
 assert.sameValue((11).toPrecision(1), "1e+1");
 assert.sameValue((17).toPrecision(1), "2e+1");

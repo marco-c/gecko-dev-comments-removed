@@ -18,7 +18,6 @@
 
 
 
-
 var obj = {
   valueOf: function() {
     throw new Test262Error("buffer should be verified before byteOffset");

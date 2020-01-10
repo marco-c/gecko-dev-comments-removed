@@ -24,7 +24,6 @@
 
 
 
-
 var yield = 2;
 var result, x;
 

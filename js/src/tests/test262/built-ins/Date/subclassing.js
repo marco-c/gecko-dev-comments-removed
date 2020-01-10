@@ -20,7 +20,6 @@
 
 
 
-
 var callCount = 0;
 var Ctor = function() {
   callCount += 1;

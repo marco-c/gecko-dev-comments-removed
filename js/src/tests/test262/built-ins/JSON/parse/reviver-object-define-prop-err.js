@@ -29,7 +29,6 @@
 
 
 
-
 var badDefine = new Proxy({
   0: null
 }, {

@@ -78,7 +78,6 @@
 
 
 
-
 class C {
   *method([{ x }]) {}
 };

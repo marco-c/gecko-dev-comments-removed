@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(Number.isSafeInteger(NaN), false);
 
 reportCompare(0, 0);

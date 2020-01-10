@@ -7,7 +7,6 @@
 
 
 
-
 var a = {
   get length() {
     return 0;

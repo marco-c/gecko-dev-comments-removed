@@ -9,7 +9,6 @@
 
 
 
-
 if (delete Date.prototype.getUTCSeconds.length !== true) {
   $ERROR('#1: The Date.prototype.getUTCSeconds.length property does not have the attributes DontDelete');
 }

@@ -6,7 +6,6 @@
 
 
 
-
 var objString = new String();
 
 var accessed = false;

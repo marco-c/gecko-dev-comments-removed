@@ -9,8 +9,6 @@
 
 
 
-
-
 var errorCount = 0;
 var count = 0;
 for (var indexI = 0; indexI <= 65535; indexI++) {

@@ -30,7 +30,6 @@
 
 
 
-
 var handle = Proxy.revocable([], {});
 var returnCount = 0;
 

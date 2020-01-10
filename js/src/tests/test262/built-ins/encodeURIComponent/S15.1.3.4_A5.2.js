@@ -10,8 +10,6 @@
 
 
 
-
-
 if (encodeURIComponent.hasOwnProperty('length') !== true) {
   $ERROR('#1: encodeURIComponent.hasOwnProperty(\'length\') === true. Actual: ' + (encodeURIComponent.hasOwnProperty('length')));
 }

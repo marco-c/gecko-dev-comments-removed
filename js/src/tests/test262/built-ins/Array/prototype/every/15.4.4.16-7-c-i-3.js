@@ -8,7 +8,6 @@
 
 
 
-
 function callbackfn(val, idx, obj) {
   if (idx === 5) {
     return val === 100;

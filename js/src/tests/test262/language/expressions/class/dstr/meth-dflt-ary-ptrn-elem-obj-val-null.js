@@ -77,7 +77,6 @@
 
 
 
-
 var C = class {
   method([{ x }] = [null]) {}
 };

@@ -9,7 +9,6 @@
 
 
 
-
 if (delete Date.prototype.getDate.length !== true) {
   $ERROR('#1: The Date.prototype.getDate.length property does not have the attributes DontDelete');
 }

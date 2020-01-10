@@ -11,8 +11,6 @@
 
 
 
-
-
 try {
   new encodeURIComponent();
   $ERROR('#1.1: new encodeURIComponent() throw TypeError. Actual: ' + (new encodeURIComponent()));

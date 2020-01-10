@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  \u0069mplements() { return 42; }
+};
+
+assert.sameValue(obj['implements'](), 42, 'property exists');
+
+reportCompare(0, 0);

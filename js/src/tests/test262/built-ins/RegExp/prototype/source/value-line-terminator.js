@@ -19,7 +19,6 @@
 
 
 
-
 var re = eval('/' + new RegExp('\n').source + '/');
 
 assert.sameValue(re.test('\n'), true, 'input: "\\n"');

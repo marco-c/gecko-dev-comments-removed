@@ -16,7 +16,6 @@
 
 
 
-
 var result;
 
 [1].find(function(kValue, k, O) {

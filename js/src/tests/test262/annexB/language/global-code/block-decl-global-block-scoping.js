@@ -23,7 +23,6 @@
 
 
 
-
 var initialBV, currentBV;
 
 {

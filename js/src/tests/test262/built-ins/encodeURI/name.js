@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(encodeURI.name, "encodeURI");
 
 verifyNotEnumerable(encodeURI, "name");

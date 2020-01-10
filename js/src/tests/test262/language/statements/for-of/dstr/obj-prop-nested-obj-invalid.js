@@ -28,7 +28,6 @@
 
 
 
-
 $DONOTEVALUATE();
 
 for ({ x: { get x() {} } } of [{ x: {} }]) ;

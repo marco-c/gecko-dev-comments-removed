@@ -14,7 +14,6 @@
 
 
 
-
 var count = 0;
 var iterable = {};
 iterable[Symbol.iterator] = function() {

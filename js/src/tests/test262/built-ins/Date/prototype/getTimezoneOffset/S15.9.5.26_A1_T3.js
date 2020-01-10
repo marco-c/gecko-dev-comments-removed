@@ -9,7 +9,6 @@
 
 
 
-
 if (Date.prototype.propertyIsEnumerable('getTimezoneOffset')) {
   $ERROR('#1: The Date.prototype.getTimezoneOffset property has the attribute DontEnum');
 }

@@ -23,7 +23,6 @@
 
 
 
-
 var stringSet;
 
 class C {

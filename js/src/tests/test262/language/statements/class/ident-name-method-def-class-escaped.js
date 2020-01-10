@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  cl\u0061ss() { return 42; }
+}
+
+var obj = new C();
+
+assert.sameValue(obj['class'](), 42, 'property exists');
+
+reportCompare(0, 0);

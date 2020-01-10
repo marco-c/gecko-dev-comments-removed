@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(Number.isInteger("1"), false, "string");
 assert.sameValue(Number.isInteger([1]), false, "[1]");
 assert.sameValue(Number.isInteger(new Number(42)), false, "Number object");

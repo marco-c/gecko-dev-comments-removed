@@ -21,7 +21,6 @@
 
 
 
-
 var result;
 
 function MyCollection() {

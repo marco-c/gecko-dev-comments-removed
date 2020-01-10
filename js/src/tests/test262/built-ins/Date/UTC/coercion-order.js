@@ -16,7 +16,6 @@
 
 
 
-
 var log = '';
 var year = { toString: function() { log += 'year'; return 0; } };
 var month = { toString: function() { log += 'month'; return 0; } };

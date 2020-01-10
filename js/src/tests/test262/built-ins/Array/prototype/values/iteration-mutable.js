@@ -12,7 +12,6 @@
 
 
 
-
 var array = [];
 var iterator = array.values();
 var result;

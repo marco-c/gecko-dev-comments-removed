@@ -10,7 +10,6 @@
 
 
 
-
 if (typeof Boolean.prototype !== "object") {
   $ERROR('#1: typeof Boolean.prototype === "object"');
 }

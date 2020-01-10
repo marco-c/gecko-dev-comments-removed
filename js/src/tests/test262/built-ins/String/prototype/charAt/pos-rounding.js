@@ -17,7 +17,6 @@
 
 
 
-
 assert.sameValue('abc'.charAt(-0.99999), 'a', '-0.99999');
 assert.sameValue('abc'.charAt(-0.00001), 'a', '-0.00001');
 assert.sameValue('abc'.charAt(0.00001), 'a', '0.00001');

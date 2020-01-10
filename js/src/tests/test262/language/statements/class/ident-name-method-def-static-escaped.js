@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  st\u0061tic() { return 42; }
+}
+
+var obj = new C();
+
+assert.sameValue(obj['static'](), 42, 'property exists');
+
+reportCompare(0, 0);

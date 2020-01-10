@@ -12,7 +12,6 @@
 
 
 
-
 var sample;
 var buffer = new ArrayBuffer(3);
 

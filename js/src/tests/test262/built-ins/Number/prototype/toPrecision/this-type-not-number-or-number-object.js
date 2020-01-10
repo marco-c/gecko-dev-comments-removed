@@ -28,7 +28,6 @@
 
 
 
-
 var toPrecision = Number.prototype.toPrecision;
 
 assert.throws(TypeError, function() {

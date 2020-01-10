@@ -19,7 +19,6 @@
 
 
 
-
 verifyProperty(JSON.parse, 'name', {
   value: 'parse',
   writable: false,

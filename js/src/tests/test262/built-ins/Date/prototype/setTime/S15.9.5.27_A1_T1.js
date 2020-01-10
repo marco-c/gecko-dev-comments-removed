@@ -7,7 +7,6 @@
 
 
 
-
 var x = Date.prototype.setTime;
 if (x === 1)
   Date.prototype.setTime = 2;

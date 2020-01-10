@@ -14,7 +14,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(DataView.prototype, "buffer");
 
 assert.sameValue(desc.set, undefined);

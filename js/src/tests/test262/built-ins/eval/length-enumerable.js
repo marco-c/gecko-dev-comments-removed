@@ -8,8 +8,6 @@
 
 
 
-
-
 if (eval.propertyIsEnumerable('length') !== false) {
   $ERROR('#1: eval.propertyIsEnumerable(\'length\') === false. Actual: ' + (eval.propertyIsEnumerable('length')));
 }

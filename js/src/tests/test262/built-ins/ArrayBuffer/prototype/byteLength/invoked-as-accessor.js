@@ -13,7 +13,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   ArrayBuffer.prototype.byteLength;
 });

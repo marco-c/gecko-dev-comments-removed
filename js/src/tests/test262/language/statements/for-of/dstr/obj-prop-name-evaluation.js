@@ -24,7 +24,6 @@
 
 
 
-
 var x, y, xy;
 
 var counter = 0;

@@ -6,7 +6,6 @@
 
 
 
-
 var obj = new Date();
 obj.length = 2;
 obj[1] = true;

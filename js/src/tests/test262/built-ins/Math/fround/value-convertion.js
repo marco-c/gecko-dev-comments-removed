@@ -16,7 +16,6 @@
 
 
 
-
 assert.sameValue(Math.fround(4294967295), 4294967296, "2**32-1");
 assert.sameValue(Math.fround(4294967296), 4294967296, "2**32");
 assert.sameValue(Math.fround(4294967297), 4294967296, "2**32+1");

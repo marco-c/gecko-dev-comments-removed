@@ -20,7 +20,6 @@
 
 
 
-
 var thisValue, args, result;
 var callCount = 0;
 var instance = [];

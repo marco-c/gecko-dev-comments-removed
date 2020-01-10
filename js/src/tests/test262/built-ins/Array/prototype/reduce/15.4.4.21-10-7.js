@@ -8,7 +8,6 @@
 
 
 
-
 foo.prototype = [1];
 
 function foo() {}

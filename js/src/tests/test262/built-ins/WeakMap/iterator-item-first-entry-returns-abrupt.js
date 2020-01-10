@@ -18,7 +18,6 @@
 
 
 
-
 var count = 0;
 var item = ['foo', 'bar'];
 Object.defineProperty(item, 0, {

@@ -8,8 +8,6 @@
 
 
 
-
-
 if (this.propertyIsEnumerable('eval') !== false) {
   $ERROR('#1: this.propertyIsEnumerable(\'eval\') === false. Actual: ' + (this.propertyIsEnumerable('eval')));
 }

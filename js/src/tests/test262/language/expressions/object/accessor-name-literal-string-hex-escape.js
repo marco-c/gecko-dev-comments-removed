@@ -25,7 +25,6 @@
 
 
 
-
 var stringSet;
 var obj = {
   get ['hex\x45scape']() { return 'get string'; },

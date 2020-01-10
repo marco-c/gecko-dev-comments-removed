@@ -17,7 +17,6 @@
 
 
 
-
 function f() {
   return Reflect.getOwnPropertyDescriptor(f, 'caller');
 }

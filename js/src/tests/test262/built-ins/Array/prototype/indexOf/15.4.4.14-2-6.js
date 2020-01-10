@@ -6,7 +6,6 @@
 
 
 
-
 var proto = {
   length: 2
 };

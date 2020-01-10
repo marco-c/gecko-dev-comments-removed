@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(Number.isSafeInteger(Infinity), false, "Infinity");
 assert.sameValue(Number.isSafeInteger(-Infinity), false, "-Infinity");
 

@@ -9,7 +9,6 @@
 
 
 
-
 assert.throws(SyntaxError, function() {
   JSON.parse('\u16801');
 }, '\\u1680');

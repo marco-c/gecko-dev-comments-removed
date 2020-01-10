@@ -24,7 +24,6 @@
 
 
 
-
 var spyToPrimitive = {};
 var callCount = 0;
 var thisValue, args;

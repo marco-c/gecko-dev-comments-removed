@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(WeakSet.length, 0, 'The value of `WeakSet.length` is `0`');
 
 verifyNotEnumerable(WeakSet, 'length');

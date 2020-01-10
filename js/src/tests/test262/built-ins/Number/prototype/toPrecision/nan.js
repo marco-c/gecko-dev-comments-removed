@@ -30,7 +30,6 @@
 
 
 
-
 assert.sameValue(
   NaN.toPrecision(undefined),
   "NaN",

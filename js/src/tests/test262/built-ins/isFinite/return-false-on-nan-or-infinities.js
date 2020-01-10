@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(isFinite(NaN), false, "NaN");
 assert.sameValue(isFinite(Infinity), false, "Infinity");
 assert.sameValue(isFinite(-Infinity), false, "-Infinity");

@@ -11,7 +11,6 @@
 
 
 
-
 var obj = {};
 obj.shift = Array.prototype.shift;
 

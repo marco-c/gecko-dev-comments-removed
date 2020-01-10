@@ -13,7 +13,6 @@
 
 
 
-
 var toLocaleLowerCase = String.prototype.toLocaleLowerCase;
 
 assert.sameValue(typeof toLocaleLowerCase, 'function');

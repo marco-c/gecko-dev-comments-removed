@@ -56,7 +56,6 @@
 
 
 
-
 var callCount = 0;
 var obj = {
   *method({ cover = (function () {}), xCover = (0, function() {})  } = {}) {

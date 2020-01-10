@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+obj.\u0065num = 42;
+
+assert.sameValue(obj['enum'], 42, 'property exists');
+
+reportCompare(0, 0);

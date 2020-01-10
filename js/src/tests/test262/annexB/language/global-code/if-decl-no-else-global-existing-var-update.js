@@ -30,7 +30,6 @@
 
 
 
-
 if (true) function f() { return 'function declaration'; }
 
 assert.sameValue(typeof f, 'function');

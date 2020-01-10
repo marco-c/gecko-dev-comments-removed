@@ -7,7 +7,6 @@
 
 
 
-
 var x = [0, 1, 2, 3];
 var arr = x.splice(NaN, 3);
 

@@ -7,7 +7,6 @@
 
 
 
-
 var obj = {};
 obj.slice = Array.prototype.slice;
 obj[4294967294] = "x";

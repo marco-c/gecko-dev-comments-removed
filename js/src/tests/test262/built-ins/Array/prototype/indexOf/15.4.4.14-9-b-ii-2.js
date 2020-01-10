@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue([undefined].indexOf(), 0, '[undefined].indexOf()');
 assert.sameValue([undefined].indexOf(undefined), 0, '[undefined].indexOf(undefined)');
 

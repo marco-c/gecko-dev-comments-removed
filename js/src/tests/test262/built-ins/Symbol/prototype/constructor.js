@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(Symbol.prototype.constructor, Symbol);
 
 verifyNotEnumerable(Symbol.prototype, 'constructor');

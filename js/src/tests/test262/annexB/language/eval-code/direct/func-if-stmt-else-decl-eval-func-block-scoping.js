@@ -32,7 +32,6 @@
 
 
 
-
 var initialBV, currentBV, varBinding;
 
 (function() {

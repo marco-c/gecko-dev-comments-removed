@@ -7,8 +7,6 @@
 
 
 
-
-
 assert.sameValue(parseInt("0", 37), NaN, "0");
 assert.sameValue(parseInt("1", 37), NaN, "1");
 assert.sameValue(parseInt("2", 37), NaN, "2");

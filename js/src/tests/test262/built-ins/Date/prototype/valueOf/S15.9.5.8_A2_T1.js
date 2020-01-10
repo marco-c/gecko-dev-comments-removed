@@ -7,7 +7,6 @@
 
 
 
-
 if (Date.prototype.valueOf.hasOwnProperty("length") !== true) {
   $ERROR('#1: The valueOf has a "length" property');
 }

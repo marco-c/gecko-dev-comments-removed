@@ -23,7 +23,6 @@
 
 
 
-
 var sample;
 var buffer = new ArrayBuffer(4);
 var typedArray = new Uint8Array(buffer, 0);

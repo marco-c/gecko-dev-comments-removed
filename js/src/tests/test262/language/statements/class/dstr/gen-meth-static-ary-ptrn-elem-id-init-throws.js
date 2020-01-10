@@ -69,7 +69,6 @@
 
 
 
-
 class C {
   static *method([x = (function() { throw new Test262Error(); })()]) {}
 };

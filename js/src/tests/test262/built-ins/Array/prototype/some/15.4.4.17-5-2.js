@@ -6,7 +6,6 @@
 
 
 
-
 var res = false;
 var o = new Object();
 o.res = true;

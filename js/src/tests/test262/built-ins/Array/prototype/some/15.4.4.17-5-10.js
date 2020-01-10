@@ -6,7 +6,6 @@
 
 
 
-
 var objArray = [];
 
 function callbackfn(val, idx, obj) {

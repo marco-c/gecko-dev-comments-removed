@@ -1,0 +1,56 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+try {
+  await 0;
+} catch(e) {
+  await 1;
+}
+
+try {
+  await 0;
+} finally {
+  await 1;
+}
+
+try {
+  await 0;
+} catch(e) {
+  await 1;
+} finally {
+  await 2;
+}
+
+reportCompare(0, 0);

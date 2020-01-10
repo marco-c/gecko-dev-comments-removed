@@ -7,7 +7,6 @@
 
 
 
-
 var search = String.prototype.search;
 
 assert.sameValue(typeof search, 'function');

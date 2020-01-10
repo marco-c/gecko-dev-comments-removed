@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(
   Array.prototype.entries.name, 'entries',
   'The value of `Array.prototype.entries.name` is `"entries"`'

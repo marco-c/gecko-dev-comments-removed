@@ -8,7 +8,6 @@
 
 
 
-
 var thisArg = {
   threshold: 10
 };

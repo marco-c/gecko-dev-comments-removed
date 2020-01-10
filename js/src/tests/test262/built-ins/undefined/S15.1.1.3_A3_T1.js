@@ -9,8 +9,6 @@
 
 
 
-
-
 verifyNotConfigurable(this, "undefined");
 
 try {

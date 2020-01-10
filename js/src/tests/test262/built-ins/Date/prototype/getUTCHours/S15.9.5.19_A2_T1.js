@@ -7,7 +7,6 @@
 
 
 
-
 if (Date.prototype.getUTCHours.hasOwnProperty("length") !== true) {
   $ERROR('#1: The getUTCHours has a "length" property');
 }

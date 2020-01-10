@@ -6,7 +6,6 @@
 
 
 
-
 var targetObj = {};
 
 Number.prototype[1] = targetObj;

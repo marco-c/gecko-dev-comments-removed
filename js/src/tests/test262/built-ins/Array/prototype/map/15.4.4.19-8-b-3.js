@@ -6,7 +6,6 @@
 
 
 
-
 function callbackfn(val, idx, obj) {
   if (idx === 2) {
     return false;

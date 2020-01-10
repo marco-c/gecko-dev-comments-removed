@@ -20,7 +20,6 @@
 
 
 
-
 assert.sameValue(Number.prototype.toPrecision(1), "0", "Number.prototype is 0");
 
 assert.sameValue((-0).toPrecision(1), "0", "-0");

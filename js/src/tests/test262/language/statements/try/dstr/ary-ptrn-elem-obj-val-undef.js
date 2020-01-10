@@ -34,7 +34,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   try {
     throw [];

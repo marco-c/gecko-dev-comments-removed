@@ -15,7 +15,6 @@
 
 
 
-
 var flag1 = false, flag2 = false;
 var _;
 

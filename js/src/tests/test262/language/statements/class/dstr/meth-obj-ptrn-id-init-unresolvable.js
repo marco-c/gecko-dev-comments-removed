@@ -74,7 +74,6 @@
 
 
 
-
 class C {
   method({ x = unresolvableReference }) {}
 };

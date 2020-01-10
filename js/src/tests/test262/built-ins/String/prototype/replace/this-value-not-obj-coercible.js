@@ -7,7 +7,6 @@
 
 
 
-
 var replace = String.prototype.replace;
 
 assert.sameValue(typeof replace, 'function');

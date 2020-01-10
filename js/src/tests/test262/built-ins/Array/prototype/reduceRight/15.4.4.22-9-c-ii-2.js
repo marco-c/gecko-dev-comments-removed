@@ -8,7 +8,6 @@
 
 
 
-
 var bParCorrect = false;
 var arr = [0, 1, true, null, new Object(), "five"];
 var initialValue = 5.5;

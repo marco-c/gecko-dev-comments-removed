@@ -25,7 +25,6 @@
 
 
 
-
 var stringSet;
 var obj = {
   get ['character\tescape']() { return 'get string'; },

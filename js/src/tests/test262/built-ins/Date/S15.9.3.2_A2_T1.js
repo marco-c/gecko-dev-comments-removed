@@ -11,7 +11,6 @@
 
 
 
-
 var x11 = new Date(date_1899_end);
 if (typeof x11.constructor.prototype !== "object") {
   $ERROR("#1.1: typeof x11.constructor.prototype === 'object'");

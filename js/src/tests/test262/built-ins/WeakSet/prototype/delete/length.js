@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(
   WeakSet.prototype.delete.length, 1,
   'The value of WeakSet.prototype.delete.length is 1'

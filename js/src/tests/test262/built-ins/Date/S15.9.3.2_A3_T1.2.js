@@ -10,7 +10,6 @@
 
 
 
-
 Date.prototype.toString = Object.prototype.toString;
 
 var x1 = new Date(date_1899_end);

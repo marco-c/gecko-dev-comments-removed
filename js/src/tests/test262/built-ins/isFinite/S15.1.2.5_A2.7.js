@@ -11,8 +11,6 @@
 
 
 
-
-
 try {
   new isFinite();
   $ERROR('#1.1: new isFinite() throw TypeError. Actual: ' + (new isFinite()));

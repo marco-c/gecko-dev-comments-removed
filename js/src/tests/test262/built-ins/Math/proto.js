@@ -12,7 +12,6 @@
 
 
 
-
 var proto = Object.getPrototypeOf(Math);
 
 assert.sameValue(proto, Object.prototype);

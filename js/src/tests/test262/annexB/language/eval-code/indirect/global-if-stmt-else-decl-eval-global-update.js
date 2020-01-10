@@ -30,7 +30,6 @@
 
 
 
-
 (0,eval)(
   'if (false) ; else function f() { return "declaration"; }assert.sameValue(typeof f, "function");\
   assert.sameValue(f(), "declaration");'

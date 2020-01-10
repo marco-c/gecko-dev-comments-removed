@@ -21,7 +21,6 @@
 
 
 
-
 var getUint16 = DataView.prototype.getUint16;
 
 assert.throws(TypeError, function() {

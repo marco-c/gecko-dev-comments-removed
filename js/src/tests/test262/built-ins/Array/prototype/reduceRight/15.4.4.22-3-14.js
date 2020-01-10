@@ -8,7 +8,6 @@
 
 
 
-
 var accessed2 = false;
 
 function callbackfn2(prevVal, curVal, idx, obj) {

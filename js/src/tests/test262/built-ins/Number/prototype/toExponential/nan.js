@@ -15,7 +15,6 @@
 
 
 
-
 assert.sameValue(NaN.toExponential(Infinity), "NaN", "NaN value");
 
 var n = new Number(NaN);

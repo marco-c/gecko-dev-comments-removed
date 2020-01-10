@@ -32,7 +32,6 @@
 
 
 
-
 assert.throws(ReferenceError, function() {
   f;
 }, 'An initialized binding is not created prior to evaluation');

@@ -9,7 +9,6 @@
 
 
 
-
 var arr = [0, 111, 2];
 
 Object.defineProperty(arr, "2", {

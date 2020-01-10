@@ -8,7 +8,6 @@
 
 
 
-
 var accessed = false;
 var testResult = false;
 var initialValue = 0;

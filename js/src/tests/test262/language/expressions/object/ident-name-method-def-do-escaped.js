@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  \u0064o() { return 42; }
+};
+
+assert.sameValue(obj['do'](), 42, 'property exists');
+
+reportCompare(0, 0);

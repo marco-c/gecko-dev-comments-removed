@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(DataView.name, "DataView", "The value of `DataView.name` is `'DataView'`");
 
 verifyNotEnumerable(DataView, "name");

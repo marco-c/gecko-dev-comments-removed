@@ -6,7 +6,6 @@
 
 
 
-
 var a = new Array(1, 2, 3);
 
 assert.sameValue(a.indexOf(3, 0.49), 2, '0.49 resolves to 0');

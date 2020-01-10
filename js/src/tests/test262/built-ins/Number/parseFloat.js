@@ -20,7 +20,6 @@
 
 
 
-
 assert.sameValue(Number.parseFloat, parseFloat);
 
 verifyNotEnumerable(Number, "parseFloat");

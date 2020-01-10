@@ -12,8 +12,6 @@
 
 
 
-
-
 if (parseInt("0x1", 16) !== 1) {
   $ERROR('#1: parseInt("0x1", 16) === 1. Actual: ' + (parseInt("0x1", 16)));
 }

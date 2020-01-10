@@ -26,7 +26,6 @@
 
 
 
-
 var array = [];
 var proxy = new Proxy(new Proxy(array, {}), {});
 var Ctor = function() {};

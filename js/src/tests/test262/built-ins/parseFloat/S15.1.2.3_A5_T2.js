@@ -8,8 +8,6 @@
 
 
 
-
-
 if (parseFloat("-11.") !== -11) {
   $ERROR('#1: parseFloat("-11.") === -11. Actual: ' + (parseFloat("-11.")));
 }

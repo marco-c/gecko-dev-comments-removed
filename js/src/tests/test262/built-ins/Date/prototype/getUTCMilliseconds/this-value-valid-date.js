@@ -9,7 +9,6 @@
 
 
 
-
 var july6 = 1467763200000;
 
 assert.sameValue(new Date(july6).getUTCMilliseconds(), 0, 'first millisecond');

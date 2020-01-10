@@ -9,7 +9,6 @@
 
 
 
-
 var x = new Array(0, 1, 2, 3);
 
 var object = {

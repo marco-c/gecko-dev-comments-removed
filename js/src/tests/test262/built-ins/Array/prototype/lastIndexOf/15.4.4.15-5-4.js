@@ -6,7 +6,6 @@
 
 
 
-
 var a = new Array(1, 2, 1);
 
 

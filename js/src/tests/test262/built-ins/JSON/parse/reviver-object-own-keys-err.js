@@ -23,7 +23,6 @@
 
 
 
-
 var badKeys = new Proxy({}, {
   ownKeys: function() {
     throw new Test262Error();

@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue((123.456).toPrecision(1.1), "1e+2", "1.1");
 assert.sameValue((123.456).toPrecision(1.9), "1e+2", "1.9");
 

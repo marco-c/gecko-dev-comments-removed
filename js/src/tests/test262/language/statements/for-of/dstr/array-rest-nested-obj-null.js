@@ -24,7 +24,6 @@
 
 
 
-
 var x, length;
 
 var counter = 0;

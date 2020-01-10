@@ -56,7 +56,6 @@
 
 
 
-
 var callCount = 0;
 var obj = {
   *method([...{ length }] = [1, 2, 3]) {

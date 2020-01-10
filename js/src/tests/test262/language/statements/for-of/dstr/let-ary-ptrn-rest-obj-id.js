@@ -49,7 +49,6 @@
 
 
 
-
 var iterCount = 0;
 
 for (let [...{ length }] of [[1, 2, 3]]) {

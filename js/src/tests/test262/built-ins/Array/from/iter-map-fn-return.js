@@ -23,7 +23,6 @@
 
 
 
-
 var thisVals = [];
 var nextResult = {
   done: false,

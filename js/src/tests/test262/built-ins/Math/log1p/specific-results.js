@@ -16,7 +16,6 @@
 
 
 
-
 assert.sameValue(Math.log1p(NaN), NaN, "NaN");
 assert.sameValue(Math.log1p(-1.000001), NaN, "-1.000001");
 assert.sameValue(Math.log1p(-2), NaN, "-2");

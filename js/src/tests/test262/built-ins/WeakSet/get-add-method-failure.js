@@ -16,7 +16,6 @@
 
 
 
-
 Object.defineProperty(WeakSet.prototype, 'add', {
   get: function() {
     throw new Test262Error();

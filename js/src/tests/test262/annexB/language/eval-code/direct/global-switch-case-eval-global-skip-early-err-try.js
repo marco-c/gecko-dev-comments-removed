@@ -24,7 +24,6 @@
 
 
 
-
 eval(
   'assert.throws(ReferenceError, function() {\
     f;\

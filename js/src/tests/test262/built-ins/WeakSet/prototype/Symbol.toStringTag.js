@@ -14,7 +14,6 @@
 
 
 
-
 assert.sameValue(WeakSet.prototype[Symbol.toStringTag], 'WeakSet');
 
 verifyNotEnumerable(WeakSet.prototype, Symbol.toStringTag);

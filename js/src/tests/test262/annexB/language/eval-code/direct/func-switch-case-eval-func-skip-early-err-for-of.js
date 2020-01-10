@@ -15,7 +15,6 @@
 
 
 
-
 (function() {
   eval(
     'assert.throws(ReferenceError, function() {\

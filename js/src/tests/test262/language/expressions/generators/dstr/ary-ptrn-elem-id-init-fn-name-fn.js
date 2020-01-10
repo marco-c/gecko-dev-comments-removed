@@ -52,7 +52,6 @@
 
 
 
-
 var callCount = 0;
 var f;
 f = function*([fn = function () {}, xFn = function x() {}]) {

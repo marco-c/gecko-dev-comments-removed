@@ -11,7 +11,6 @@
 
 
 
-
 var f = $262.createRealm().global.eval(
   'new Proxy(function() {}, { apply: function(_, __, args) { return args; } })'
 );

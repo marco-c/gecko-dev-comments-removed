@@ -14,7 +14,6 @@
 
 
 
-
 var a = [];
 
 Object.defineProperty(a, 'constructor', {

@@ -7,8 +7,6 @@
 
 
 
-
-
 assert.sameValue(parseInt("$0x"), NaN, "$0x");
 assert.sameValue(parseInt("$0X"), NaN, "$0X");
 assert.sameValue(parseInt("$$$"), NaN, "$$$");

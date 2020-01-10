@@ -9,7 +9,6 @@
 
 
 
-
 Object.defineProperty(Object.prototype, "length", {
   get: function() {
     return 20;

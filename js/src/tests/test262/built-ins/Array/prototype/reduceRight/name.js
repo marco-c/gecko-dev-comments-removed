@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Array.prototype.reduceRight.name, "reduceRight");
 
 verifyNotEnumerable(Array.prototype.reduceRight, "name");

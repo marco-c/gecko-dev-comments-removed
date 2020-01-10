@@ -8,7 +8,6 @@
 
 
 
-
 function callbackfn(prevVal, curVal, idx, obj)
 {
   delete arr[3];

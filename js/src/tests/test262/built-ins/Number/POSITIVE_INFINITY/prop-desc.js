@@ -13,7 +13,6 @@
 
 
 
-
 verifyNotEnumerable(Number, "POSITIVE_INFINITY");
 verifyNotWritable(Number, "POSITIVE_INFINITY");
 verifyNotConfigurable(Number, "POSITIVE_INFINITY");

@@ -9,7 +9,6 @@
 
 
 
-
 var innerThisCorrect = false;
 
 function callbackfn(prevVal, curVal, idx, obj)

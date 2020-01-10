@@ -8,7 +8,6 @@
 
 
 
-
 var arr = [, , , ];
 Object.defineProperty(arr, "0", {
   get: function() {

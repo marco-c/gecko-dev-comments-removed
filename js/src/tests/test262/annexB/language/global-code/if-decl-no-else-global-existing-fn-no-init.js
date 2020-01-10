@@ -21,7 +21,6 @@
 
 
 
-
 assert.sameValue(f(), 'outer declaration');
 
 if (true) function f() { return 'inner declaration'; }

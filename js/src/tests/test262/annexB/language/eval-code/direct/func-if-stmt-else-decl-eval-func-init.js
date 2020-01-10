@@ -28,7 +28,6 @@
 
 
 
-
 var init, changed;
 
 (function() {

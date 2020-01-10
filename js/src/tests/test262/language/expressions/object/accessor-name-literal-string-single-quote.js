@@ -25,7 +25,6 @@
 
 
 
-
 var stringSet;
 var obj = {
   get ['singleQuote']() { return 'get string'; },

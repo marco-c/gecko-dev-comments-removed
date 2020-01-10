@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  v\u0061r() { return 42; }
+};
+
+assert.sameValue(obj['var'](), 42, 'property exists');
+
+reportCompare(0, 0);

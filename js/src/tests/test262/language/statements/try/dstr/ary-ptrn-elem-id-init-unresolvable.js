@@ -32,7 +32,6 @@
 
 
 
-
 assert.throws(ReferenceError, function() {
   try {
     throw [];

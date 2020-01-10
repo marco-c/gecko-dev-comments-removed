@@ -6,7 +6,6 @@
 
 
 
-
 var objError = new RangeError();
 
 var accessed = false;

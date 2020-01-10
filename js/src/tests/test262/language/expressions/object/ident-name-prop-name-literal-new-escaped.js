@@ -1,0 +1,43 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  n\u0065w: 42
+};
+
+assert.sameValue(obj['new'], 42, 'property exists');
+
+reportCompare(0, 0);

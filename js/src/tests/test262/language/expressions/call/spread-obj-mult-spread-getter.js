@@ -30,7 +30,6 @@
 
 
 
-
 let getterCallCount = 0;
 let o = {
     get a() {

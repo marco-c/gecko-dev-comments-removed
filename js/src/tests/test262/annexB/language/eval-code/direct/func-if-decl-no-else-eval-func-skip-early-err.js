@@ -23,7 +23,6 @@
 
 
 
-
 var init, after;
 
 (function() {

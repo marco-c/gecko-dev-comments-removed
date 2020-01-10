@@ -8,7 +8,6 @@
 
 
 
-
 var arr = [0, 1, 2, 3, 4, 5];
 var lastIdx = arr.length - 1;
 var accessed = false;

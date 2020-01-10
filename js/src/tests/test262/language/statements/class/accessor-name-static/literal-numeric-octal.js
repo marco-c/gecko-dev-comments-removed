@@ -25,7 +25,6 @@
 
 
 
-
 var stringSet;
 
 class C {

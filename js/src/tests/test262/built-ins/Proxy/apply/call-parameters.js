@@ -12,7 +12,6 @@
 
 
 
-
 var _target, _args, _handler, _context;
 var target = function() {
   throw new Test262Error('target should not be called');

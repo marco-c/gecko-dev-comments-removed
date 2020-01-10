@@ -9,7 +9,6 @@
 
 
 
-
 assert.sameValue(typeof Date.prototype[Symbol.toPrimitive], 'function');
 
 assert.throws(TypeError, function() {

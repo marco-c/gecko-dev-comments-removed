@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(Date.UTC(0, 0, 1, Infinity), NaN, 'hour: Infinity');
 assert.sameValue(Date.UTC(0, 0, 1, -Infinity), NaN, 'hour: -Infinity');
 

@@ -66,7 +66,6 @@
 
 
 
-
 var C = class {
   method({ w: { x, y, z } = undefined } = { }) {}
 };

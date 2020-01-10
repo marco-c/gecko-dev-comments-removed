@@ -8,7 +8,6 @@
 
 
 
-
 function Foo() {}
 Foo.prototype = [1, 2, 3];
 var f = new Foo();

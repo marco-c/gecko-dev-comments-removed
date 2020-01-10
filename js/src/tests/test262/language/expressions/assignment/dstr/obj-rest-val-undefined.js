@@ -15,7 +15,6 @@
 
 
 
-
 var rest;
 
 assert.throws(TypeError, function() {

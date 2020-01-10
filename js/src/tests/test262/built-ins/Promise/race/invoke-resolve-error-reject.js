@@ -23,7 +23,6 @@
 
 
 
-
 var err = new Test262Error();
 var CustomPromise = function(executor) {
   return new Promise(executor);

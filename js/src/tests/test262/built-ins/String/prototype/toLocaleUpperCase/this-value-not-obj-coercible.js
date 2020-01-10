@@ -19,7 +19,6 @@
 
 
 
-
 var toLocaleUpperCase = String.prototype.toLocaleUpperCase;
 
 assert.sameValue(typeof toLocaleUpperCase, 'function');

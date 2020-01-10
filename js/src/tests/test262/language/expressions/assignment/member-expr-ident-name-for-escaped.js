@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+obj.\u0066or = 42;
+
+assert.sameValue(obj['for'], 42, 'property exists');
+
+reportCompare(0, 0);

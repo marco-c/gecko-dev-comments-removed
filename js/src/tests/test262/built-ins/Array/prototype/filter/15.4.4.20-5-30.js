@@ -7,7 +7,6 @@
 
 
 
-
 function innerObj() {
   this._15_4_4_20_5_30 = true;
   var _15_4_4_20_5_30 = false;

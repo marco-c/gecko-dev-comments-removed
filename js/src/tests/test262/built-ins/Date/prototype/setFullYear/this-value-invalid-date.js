@@ -18,7 +18,6 @@
 
 
 
-
 var date = new Date(NaN);
 var expected, result;
 

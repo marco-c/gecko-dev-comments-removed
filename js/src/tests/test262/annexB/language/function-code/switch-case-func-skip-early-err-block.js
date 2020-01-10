@@ -15,7 +15,6 @@
 
 
 
-
 (function() {
   assert.throws(ReferenceError, function() {
     f;

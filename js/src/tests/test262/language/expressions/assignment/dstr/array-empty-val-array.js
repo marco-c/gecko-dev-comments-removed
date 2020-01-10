@@ -16,7 +16,6 @@
 
 
 
-
 var result;
 var vals = [];
 

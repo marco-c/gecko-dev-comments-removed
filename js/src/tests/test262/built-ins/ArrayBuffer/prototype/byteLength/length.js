@@ -22,7 +22,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, "byteLength");
 
 assert.sameValue(desc.get.length, 0);

@@ -63,7 +63,6 @@
 
 
 
-
 class C {
   method({} = undefined) {}
 };

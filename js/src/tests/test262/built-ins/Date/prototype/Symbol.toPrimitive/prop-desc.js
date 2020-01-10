@@ -11,7 +11,6 @@
 
 
 
-
 verifyNotEnumerable(Date.prototype, Symbol.toPrimitive);
 verifyNotWritable(Date.prototype, Symbol.toPrimitive);
 verifyConfigurable(Date.prototype, Symbol.toPrimitive);

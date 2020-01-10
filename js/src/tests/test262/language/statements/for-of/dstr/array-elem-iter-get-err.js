@@ -30,7 +30,6 @@
 
 
 
-
 var iterable = {};
 iterable[Symbol.iterator] = function() {
   throw new Test262Error();

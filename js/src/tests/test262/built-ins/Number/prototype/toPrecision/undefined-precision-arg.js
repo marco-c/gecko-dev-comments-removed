@@ -29,7 +29,6 @@
 
 
 
-
 var n = new Number(7);
 
 assert.sameValue(n.toPrecision(undefined), "7");

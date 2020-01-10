@@ -24,7 +24,6 @@
 
 
 
-
 const { x: y = 33 } = { };
 
 assert.sameValue(y, 33);

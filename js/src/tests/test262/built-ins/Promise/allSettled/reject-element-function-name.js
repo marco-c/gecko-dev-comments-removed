@@ -15,6 +15,11 @@
 
 
 
+
+
+
+
+
 var rejectElementFunction;
 var thenable = {
   then(_, reject) {
@@ -30,7 +35,8 @@ NotPromise.resolve = function(v) {
 };
 Promise.allSettled.call(NotPromise, [thenable]);
 
-assert.sameValue(Object.prototype.hasOwnProperty.call(rejectElementFunction, 'name'), false);
-assert.sameValue(rejectElementFunction.name, '');
+verifyProperty(rejectElementFunction, "name", {
+  value: "", writable: false, enumerable: false, configurable: true
+});
 
 reportCompare(0, 0);

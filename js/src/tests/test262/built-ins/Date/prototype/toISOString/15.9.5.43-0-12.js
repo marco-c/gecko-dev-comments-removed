@@ -9,7 +9,6 @@
 
 
 
-
 var timeZoneMinutes = new Date().getTimezoneOffset() * (-1);
 var date, dateStr;
 

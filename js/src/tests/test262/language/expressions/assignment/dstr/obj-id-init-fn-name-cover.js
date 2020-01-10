@@ -25,7 +25,6 @@
 
 
 
-
 var xCover, cover;
 
 var result;

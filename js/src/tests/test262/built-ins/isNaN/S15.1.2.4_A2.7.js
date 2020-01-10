@@ -11,8 +11,6 @@
 
 
 
-
-
 try {
   new isNaN();
   $ERROR('#1.1: new isNaN() throw TypeError. Actual: ' + (new isNaN()));

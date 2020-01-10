@@ -22,7 +22,6 @@
 
 
 
-
 verifyProperty(String.prototype.valueOf, 'length', {
   value: 0,
   writable: false,

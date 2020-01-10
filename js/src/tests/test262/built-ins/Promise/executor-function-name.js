@@ -13,6 +13,11 @@
 
 
 
+
+
+
+
+
 var executorFunction;
 
 function NotPromise(executor) {
@@ -21,7 +26,8 @@ function NotPromise(executor) {
 }
 Promise.resolve.call(NotPromise);
 
-assert.sameValue(Object.prototype.hasOwnProperty.call(executorFunction, "name"), false);
-assert.sameValue(executorFunction.name, "");
+verifyProperty(executorFunction, "name", {
+  value: "", writable: false, enumerable: false, configurable: true
+});
 
 reportCompare(0, 0);

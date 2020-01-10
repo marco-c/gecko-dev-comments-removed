@@ -17,7 +17,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   RegExp.prototype.exec('');
 });

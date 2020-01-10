@@ -78,7 +78,6 @@
 
 
 
-
 class C {
   static *method([[x]]) {}
 };

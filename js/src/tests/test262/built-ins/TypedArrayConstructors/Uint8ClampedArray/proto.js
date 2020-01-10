@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(Object.getPrototypeOf(Uint8ClampedArray), TypedArray);
 
 reportCompare(0, 0);

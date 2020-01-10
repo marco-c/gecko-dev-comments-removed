@@ -25,7 +25,6 @@
 
 
 
-
 var rest;
 var obj = {};
 Object.defineProperty(obj, "a", { value: 3, configurable: false, enumerable: true });

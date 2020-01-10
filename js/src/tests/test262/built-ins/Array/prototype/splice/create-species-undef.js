@@ -22,7 +22,6 @@
 
 
 
-
 var a = [];
 var result;
 

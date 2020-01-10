@@ -13,12 +13,18 @@
 
 
 
+
+
+
+
+
 var rejectFunction;
 new Promise(function(resolve, reject) {
   rejectFunction = reject;
 });
 
-assert.sameValue(Object.prototype.hasOwnProperty.call(rejectFunction, "name"), false);
-assert.sameValue(rejectFunction.name, "");
+verifyProperty(rejectFunction, "name", {
+  value: "", writable: false, enumerable: false, configurable: true
+});
 
 reportCompare(0, 0);

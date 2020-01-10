@@ -10,8 +10,6 @@
 
 
 
-
-
 if (decodeURIComponent.hasOwnProperty('length') !== true) {
   $ERROR('#1: decodeURIComponent.hasOwnProperty(\'length\') === true. Actual: ' + (decodeURIComponent.hasOwnProperty('length')));
 }

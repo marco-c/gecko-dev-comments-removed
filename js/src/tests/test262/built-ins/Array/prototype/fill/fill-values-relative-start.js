@@ -14,7 +14,6 @@
 
 
 
-
 assert(
   compareArray([0, 0, 0].fill(8, 1), [0, 8, 8]),
   'Fill elements from custom start position'

@@ -8,7 +8,6 @@
 
 
 
-
 var testResult1 = true;
 var testResult2 = false;
 

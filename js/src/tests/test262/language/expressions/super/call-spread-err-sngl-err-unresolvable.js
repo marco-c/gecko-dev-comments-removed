@@ -33,7 +33,6 @@
 
 
 
-
 class Test262ParentClass {
   constructor() {}
 }

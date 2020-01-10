@@ -12,7 +12,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   Array.prototype.findIndex.call(undefined, function() {});
 });
