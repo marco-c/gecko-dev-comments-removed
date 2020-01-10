@@ -91,6 +91,7 @@
 #  include <stdint.h>
 
 class ProfilerBacktrace;
+class ProfilerCodeAddressService;
 class ProfilerMarkerPayload;
 class SpliceableJSONWriter;
 namespace mozilla {
@@ -847,9 +848,10 @@ mozilla::UniquePtr<char[]> profiler_get_profile(double aSinceTime = 0,
 
 
 
-bool profiler_stream_json_for_this_process(SpliceableJSONWriter& aWriter,
-                                           double aSinceTime = 0,
-                                           bool aIsShuttingDown = false);
+bool profiler_stream_json_for_this_process(
+    SpliceableJSONWriter& aWriter, double aSinceTime = 0,
+    bool aIsShuttingDown = false,
+    ProfilerCodeAddressService* aService = nullptr);
 
 
 

@@ -711,10 +711,14 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
 
   mWriter.emplace();
 
+  UniquePtr<ProfilerCodeAddressService> service =
+      profiler_code_address_service_for_presymbolication();
+
   
   mWriter->Start();
   if (!profiler_stream_json_for_this_process(*mWriter, aSinceTime,
-                                              false)) {
+                                              false,
+                                             service.get())) {
     
     
     

@@ -1,0 +1,15 @@
+
+
+
+
+
+
+#ifndef ProfilerCodeAddressService_h
+#define ProfilerCodeAddressService_h
+
+#include "CodeAddressService.h"
+
+
+class ProfilerCodeAddressService : public mozilla::CodeAddressService<> {};
+
+#endif  

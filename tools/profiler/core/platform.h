@@ -103,4 +103,10 @@ void profiler_received_exit_profile(const nsCString& aExitProfile);
 
 mozilla::Vector<nsCString> profiler_move_exit_profiles();
 
+
+
+
+mozilla::UniquePtr<ProfilerCodeAddressService>
+profiler_code_address_service_for_presymbolication();
+
 #endif 

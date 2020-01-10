@@ -21,6 +21,7 @@
 #include "mozilla/Vector.h"
 #include "nsString.h"
 
+class ProfilerCodeAddressService;
 class ProfilerMarker;
 
 
@@ -389,6 +390,8 @@ class UniqueStacks {
 
  public:
   mozilla::UniquePtr<UniqueJSONStrings> mUniqueStrings;
+
+  ProfilerCodeAddressService* mCodeAddressService = nullptr;
 
  private:
   SpliceableChunkedJSONWriter mFrameTableWriter;

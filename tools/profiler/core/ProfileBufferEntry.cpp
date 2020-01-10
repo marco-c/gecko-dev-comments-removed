@@ -17,6 +17,7 @@
 #include "mozilla/StackWalk.h"
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
+#include "ProfilerCodeAddressService.h"
 
 #include <ostream>
 
@@ -960,31 +961,17 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter,
         static const uint32_t BUF_SIZE = 256;
         char buf[BUF_SIZE];
 
-        
-        
-        unsigned long long pcULL = (unsigned long long)(uintptr_t)pc;
-        SprintfLiteral(buf, "%#llx", pcULL);
-
-        
-        
-        
-        static const bool preSymbolicate = []() {
-          const char* symbolicate = getenv("MOZ_PROFILER_SYMBOLICATE");
-          return symbolicate && symbolicate[0] != '\0';
-        }();
-        if (preSymbolicate) {
-          MozCodeAddressDetails details;
-          if (MozDescribeCodeAddress(pc, &details)) {
-            
-            const uint32_t pcLen = strlen(buf);
-            buf[pcLen] = ' ';
-            
-            
-            
-            
-            MozFormatCodeAddressDetails(buf + pcLen + 1, BUF_SIZE - (pcLen + 1),
-                                        0, pc, &details);
-          }
+        if (aUniqueStacks.mCodeAddressService) {
+          
+          
+          
+          
+          aUniqueStacks.mCodeAddressService->GetLocation(0, pc, buf, BUF_SIZE);
+        } else {
+          
+          
+          unsigned long long pcULL = (unsigned long long)(uintptr_t)pc;
+          SprintfLiteral(buf, "%#llx", pcULL);
         }
 
         stack = aUniqueStacks.AppendFrame(stack, UniqueStacks::FrameKey(buf));
