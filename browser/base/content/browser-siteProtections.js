@@ -10,6 +10,13 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/ContentBlockingAllowList.jsm"
 );
 
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "TrackingDBService",
+  "@mozilla.org/tracking-db-service;1",
+  "nsITrackingDBService"
+);
+
 var Fingerprinting = {
   PREF_ENABLED: "privacy.trackingprotection.fingerprinting.enabled",
   reportBreakageLabel: "fingerprinting",
@@ -1117,6 +1124,12 @@ var gProtectionsHandler = {
 
     this.appMenuLabel.setAttribute("value", this.strings.appMenuTitle);
     this.appMenuLabel.setAttribute("tooltiptext", this.strings.appMenuTooltip);
+
+    
+    this.maybeUpdateEarliestRecordedDateTooltip();
+
+    
+    Services.obs.addObserver(this, "browser:purge-session-history");
   },
 
   uninit() {
@@ -1229,6 +1242,21 @@ var gProtectionsHandler = {
       
       this.showProtectionsPopup({ event });
     }
+  },
+
+  async onTrackingProtectionIconHoveredOrFocused() {
+    
+    
+    if (this._updatingFooter) {
+      return;
+    }
+    this._updatingFooter = true;
+
+    
+    
+    await this.maybeUpdateEarliestRecordedDateTooltip();
+
+    this._updatingFooter = false;
   },
 
   
@@ -1385,6 +1413,17 @@ var gProtectionsHandler = {
     }
   },
 
+  observe(subject, topic, data) {
+    switch (topic) {
+      case "browser:purge-session-history":
+        
+        
+        this._hasEarliestRecord = false;
+        this.maybeUpdateEarliestRecordedDateTooltip();
+        break;
+    }
+  },
+
   refreshProtectionsPopup() {
     let host = gIdentityHandler.getHostForDisplay();
 
@@ -1416,6 +1455,9 @@ var gProtectionsHandler = {
       "short",
       !currentlyEnabled
     );
+
+    
+    this.maybeUpdateEarliestRecordedDateTooltip();
 
     
     
@@ -1687,5 +1729,36 @@ var gProtectionsHandler = {
   onSendReportClicked() {
     this._protectionsPopup.hidePopup();
     this.submitBreakageReport(this.reportURI);
+  },
+
+  async maybeUpdateEarliestRecordedDateTooltip() {
+    if (this._hasEarliestRecord) {
+      return;
+    }
+
+    let date = await TrackingDBService.getEarliestRecordedDate();
+
+    
+    
+    if (!date) {
+      return;
+    }
+    this._hasEarliestRecord = true;
+
+    const dateLocaleStr = new Date(date).toLocaleDateString("default", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+
+    const tooltipStr = gNavigatorBundle.getFormattedString(
+      "protections.footer.blockedTrackerCounter.tooltip",
+      [dateLocaleStr]
+    );
+
+    this._protectionsPopupTrackersCounterDescription.setAttribute(
+      "tooltiptext",
+      tooltipStr
+    );
   },
 };
