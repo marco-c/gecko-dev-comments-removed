@@ -597,13 +597,15 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  Document* OwnerDoc() const { return mNodeInfo->GetDocument(); }
+  Document* OwnerDoc() const MOZ_NONNULL_RETURN {
+    return mNodeInfo->GetDocument();
+  }
 
   
 
 
 
-  inline nsINode* OwnerDocAsNode() const;
+  inline nsINode* OwnerDocAsNode() const MOZ_NONNULL_RETURN;
 
   
 
