@@ -2747,11 +2747,24 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
   
   
   if (changeHint & nsChangeHint_ReconstructFrame) {
-    if (wasRestyled && styleFrame &&
-        styleFrame->StyleDisplay()->IsAbsolutelyPositionedStyle() !=
-            upToDateStyleIfRestyled->StyleDisplay()
-                ->IsAbsolutelyPositionedStyle()) {
-      aRestyleState.AddPendingScrollAnchorSuppression(styleFrame);
+    if (wasRestyled && styleFrame) {
+      auto* oldDisp = styleFrame->StyleDisplay();
+      auto* newDisp = upToDateStyleIfRestyled->StyleDisplay();
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (newDisp->mDisplay != StyleDisplay::None &&
+          oldDisp->IsAbsolutelyPositionedStyle() !=
+              newDisp->IsAbsolutelyPositionedStyle()) {
+        aRestyleState.AddPendingScrollAnchorSuppression(styleFrame);
+      }
     }
     ClearRestyleStateFromSubtree(aElement);
     return true;
