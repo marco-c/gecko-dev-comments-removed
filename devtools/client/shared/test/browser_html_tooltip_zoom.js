@@ -26,6 +26,11 @@ function getTooltipContent(doc) {
 
 add_task(async function() {
   const [host, , doc] = await createHost("window", TEST_URI);
+
+  
+  
+  await wait(1000);
+
   const zoom = 1.5;
   await pushPref("devtools.toolbox.zoomValue", zoom.toString(10));
 

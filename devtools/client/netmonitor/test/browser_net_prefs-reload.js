@@ -278,6 +278,11 @@ add_task(async function() {
     info("Moving toolbox to the right...");
 
     await monitor.toolbox.switchHost("right");
+
+    
+    
+    await wait(1000);
+
     info("Testing prefs reload for a right host.");
     storeFirstPrefValues();
 
@@ -303,6 +308,11 @@ add_task(async function() {
     info("Moving toolbox into a window...");
 
     await monitor.toolbox.switchHost("window");
+
+    
+    
+    await wait(1000);
+
     info("Testing prefs reload for a window host.");
     storeFirstPrefValues();
 

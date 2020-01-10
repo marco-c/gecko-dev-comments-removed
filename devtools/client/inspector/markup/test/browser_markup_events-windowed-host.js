@@ -23,9 +23,19 @@ add_task(async function() {
   await runTests(inspector);
 
   await toolbox.switchHost("window");
+
+  
+  
+  await wait(1000);
+
   await runTests(inspector);
 
   await toolbox.switchHost("bottom");
+
+  
+  
+  await wait(1000);
+
   await runTests(inspector);
 
   await toolbox.destroy();

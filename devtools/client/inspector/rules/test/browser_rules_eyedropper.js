@@ -54,6 +54,10 @@ add_task(async function() {
   info("Change toolbox host to WINDOW");
   await toolbox.switchHost("window");
 
+  
+  
+  await wait(1000);
+
   await runTest(testActor, inspector, view, true);
 });
 

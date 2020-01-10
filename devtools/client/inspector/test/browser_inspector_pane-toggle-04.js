@@ -16,6 +16,10 @@ add_task(async function() {
   info("Switch the host to the right");
   await toolbox.switchHost("right");
 
+  
+  
+  await wait(1000);
+
   const button = doc.querySelector(".sidebar-toggle");
   const toolboxWidth = doc.getElementById("inspector-splitter-box").clientWidth;
 
