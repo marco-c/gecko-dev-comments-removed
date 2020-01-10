@@ -3466,18 +3466,19 @@ void Selection::SetStartAndEndInternal(InLimiter aInLimiter,
   
   RefPtr<nsRange> newRange = std::move(mCachedRange);
 
-  nsresult rv = NS_OK;
+  
+  
   if (newRange) {
-    rv = newRange->SetStartAndEnd(aStartRef, aEndRef);
+    nsresult rv = newRange->SetStartAndEnd(aStartRef, aEndRef);
+    if (NS_FAILED(rv)) {
+      aRv.Throw(rv);
+      return;
+    }
   } else {
-    rv = nsRange::CreateRange(aStartRef, aEndRef, getter_AddRefs(newRange));
-  }
-
-  
-  
-  if (NS_FAILED(rv)) {
-    aRv.Throw(rv);
-    return;
+    newRange = nsRange::Create(aStartRef, aEndRef, aRv);
+    if (aRv.Failed()) {
+      return;
+    }
   }
 
   RemoveAllRanges(aRv);

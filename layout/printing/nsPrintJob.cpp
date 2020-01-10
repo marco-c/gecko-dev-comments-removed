@@ -2293,11 +2293,11 @@ static nsresult DeleteUnselectedNodes(Document* aOrigDoc, Document* aDoc) {
 
     
     
-    RefPtr<nsRange> range;
-    nsresult rv = nsRange::CreateRange(startNode, startOffset, endNode,
-                                       endOffset, getter_AddRefs(range));
+    
+    RefPtr<nsRange> range = nsRange::Create(startNode, startOffset, endNode,
+                                            endOffset, IgnoreErrors());
 
-    if (NS_SUCCEEDED(rv) && !range->Collapsed()) {
+    if (range && !range->Collapsed()) {
       selection->AddRange(*range, IgnoreErrors());
 
       
@@ -2329,11 +2329,10 @@ static nsresult DeleteUnselectedNodes(Document* aOrigDoc, Document* aDoc) {
   }
 
   
-  RefPtr<nsRange> lastRange;
-  nsresult rv = nsRange::CreateRange(startNode, startOffset, bodyNode,
-                                     bodyNode->GetChildCount(),
-                                     getter_AddRefs(lastRange));
-  if (NS_SUCCEEDED(rv) && !lastRange->Collapsed()) {
+  RefPtr<nsRange> lastRange =
+      nsRange::Create(startNode, startOffset, bodyNode,
+                      bodyNode->GetChildCount(), IgnoreErrors());
+  if (lastRange && !lastRange->Collapsed()) {
     selection->AddRange(*lastRange, IgnoreErrors());
   }
 
