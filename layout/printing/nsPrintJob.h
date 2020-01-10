@@ -113,10 +113,8 @@ class nsPrintJob final : public nsIObserver,
 
   bool IsDoingPrint() const { return mIsDoingPrinting; }
   bool IsDoingPrintPreview() const { return mIsDoingPrintPreview; }
-  bool IsFramesetDocument() const;
   bool IsIFrameSelected();
   bool IsRangeSelection();
-  bool IsFramesetFrameSelected() const;
   
   int32_t GetPrintPreviewNumPages();
   

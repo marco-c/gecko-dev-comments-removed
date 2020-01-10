@@ -30,8 +30,6 @@ nsPrintSettingsServiceWin::SerializeToPrintData(nsIPrintSettings* aSettings,
 
   
   if (aWBP) {
-    aWBP->GetIsFramesetDocument(&data->isFramesetDocument());
-    aWBP->GetIsFramesetFrameSelected(&data->isFramesetFrameSelected());
     aWBP->GetIsIFrameSelected(&data->isIFrameSelected());
     aWBP->GetIsRangeSelection(&data->isRangeSelection());
   }

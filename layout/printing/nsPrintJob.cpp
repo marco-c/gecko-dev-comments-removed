@@ -1045,12 +1045,6 @@ nsresult nsPrintJob::PrintPreview(
 }
 
 
-bool nsPrintJob::IsFramesetDocument() const {
-  nsCOMPtr<nsIDocShell> docShell(do_QueryReferent(mDocShell));
-  return IsParentAFrameSet(docShell);
-}
-
-
 bool nsPrintJob::IsIFrameSelected() {
   
   nsCOMPtr<nsIDocShell> docShell(do_QueryReferent(mDocShell));
@@ -1071,13 +1065,6 @@ bool nsPrintJob::IsRangeSelection() {
   
   nsCOMPtr<nsPIDOMWindowOuter> currentFocusWin = FindFocusedDOMWindow();
   return IsThereARangeSelection(currentFocusWin);
-}
-
-
-bool nsPrintJob::IsFramesetFrameSelected() const {
-  
-  nsCOMPtr<nsPIDOMWindowOuter> currentFocusWin = FindFocusedDOMWindow();
-  return currentFocusWin != nullptr;
 }
 
 
