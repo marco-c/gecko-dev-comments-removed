@@ -17,7 +17,8 @@
 
 enum SystemDirectories {
   OS_TemporaryDirectory = 2,
-  OS_CurrentProcessDirectory = 3,
+  
+  
   OS_CurrentWorkingDirectory = 4,
 
   Win_SystemDirectory = 201,

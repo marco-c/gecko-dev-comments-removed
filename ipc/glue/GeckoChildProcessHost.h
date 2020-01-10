@@ -175,6 +175,7 @@ class GeckoChildProcessHost : public ChildProcessHost,
   static void GetAll(const GeckoProcessCallback& aCallback);
 
   friend class BaseProcessLauncher;
+  friend class PosixProcessLauncher;
 
  protected:
   ~GeckoChildProcessHost();
@@ -259,6 +260,8 @@ class GeckoChildProcessHost : public ChildProcessHost,
 
   
   nsCString mTmpDirName;
+  
+  nsCOMPtr<nsIFile> mProfileDir;
 
   mozilla::Atomic<bool> mDestroying;
 
