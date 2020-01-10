@@ -767,14 +767,31 @@ add_task(async function testPrivateBrowsingExtension() {
   ok(!(await hasPrivateAllowed(id)), "PB is not allowed");
 
   let pbRow = card.querySelector(".addon-detail-row-private-browsing");
+  let name = card.querySelector(".addon-name");
 
   
   let [allow, disallow] = pbRow.querySelectorAll("input");
   let updated = BrowserTestUtils.waitForEvent(card, "update");
+
+  
+  let addonDisabled = AddonTestUtils.promiseAddonEvent("onDisabled");
   allow.click();
+  await addonDisabled;
+  is(
+    doc.l10n.getAttributes(name).id,
+    null,
+    "The disabled message is not shown for the add-on"
+  );
+
+  
   await updated;
   ok(!badge.hidden, "The PB badge is now shown");
   ok(await hasPrivateAllowed(id), "PB is allowed");
+  is(
+    doc.l10n.getAttributes(name).id,
+    null,
+    "The disabled message is not shown for the add-on"
+  );
 
   
   updated = BrowserTestUtils.waitForEvent(card, "update");
