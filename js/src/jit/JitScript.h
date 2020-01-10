@@ -36,12 +36,20 @@ struct IonBytecodeInfo {
 };
 
 
-#define BASELINE_DISABLED_SCRIPT ((js::jit::BaselineScript*)0x1)
+static constexpr uintptr_t BaselineDisabledScript = 0x1;
+
+static BaselineScript* const BaselineDisabledScriptPtr =
+    reinterpret_cast<BaselineScript*>(BaselineDisabledScript);
 
 
 
-#define ION_DISABLED_SCRIPT ((js::jit::IonScript*)0x1)
-#define ION_COMPILING_SCRIPT ((js::jit::IonScript*)0x2)
+static constexpr uintptr_t IonDisabledScript = 0x1;
+static constexpr uintptr_t IonCompilingScript = 0x2;
+
+static IonScript* const IonDisabledScriptPtr =
+    reinterpret_cast<IonScript*>(IonDisabledScript);
+static IonScript* const IonCompilingScriptPtr =
+    reinterpret_cast<IonScript*>(IonCompilingScript);
 
 
 
@@ -496,7 +504,7 @@ class alignas(uintptr_t) JitScript final {
  public:
   
   bool hasBaselineScript() const {
-    bool res = baselineScript_ && baselineScript_ != BASELINE_DISABLED_SCRIPT;
+    bool res = baselineScript_ && baselineScript_ != BaselineDisabledScriptPtr;
     MOZ_ASSERT_IF(!res, !hasIonScript());
     return res;
   }
@@ -525,8 +533,8 @@ class alignas(uintptr_t) JitScript final {
  public:
   
   bool hasIonScript() const {
-    bool res = ionScript_ && ionScript_ != ION_DISABLED_SCRIPT &&
-               ionScript_ != ION_COMPILING_SCRIPT;
+    bool res = ionScript_ && ionScript_ != IonDisabledScriptPtr &&
+               ionScript_ != IonCompilingScriptPtr;
     MOZ_ASSERT_IF(res, baselineScript_);
     return res;
   }
@@ -547,11 +555,11 @@ class alignas(uintptr_t) JitScript final {
 
   
   bool isIonCompilingOffThread() const {
-    return ionScript_ == ION_COMPILING_SCRIPT;
+    return ionScript_ == IonCompilingScriptPtr;
   }
   void setIsIonCompilingOffThread(JSScript* script) {
     MOZ_ASSERT(ionScript_ == nullptr);
-    setIonScriptImpl(script, ION_COMPILING_SCRIPT);
+    setIonScriptImpl(script, IonCompilingScriptPtr);
   }
   void clearIsIonCompilingOffThread(JSScript* script) {
     MOZ_ASSERT(isIonCompilingOffThread());
