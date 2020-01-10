@@ -108,51 +108,11 @@ class AutoScrollController {
     return null;
   }
 
-  getXBLNodes(parent, array) {
-    let content = parent.ownerGlobal;
-    let anonNodes = content.document.getAnonymousNodes(parent);
-    let nodes = Array.from(anonNodes || parent.childNodes || []);
-    for (let node of nodes) {
-      if (node.nodeName == "children") {
-        return true;
-      }
-      if (this.getXBLNodes(node, array)) {
-        array.push(node);
-        return true;
-      }
-    }
-    return false;
-  }
-
-  *parentNodeIterator(aNode) {
-    let content = aNode.ownerGlobal;
-
-    while (aNode) {
-      yield aNode;
-
-      let parent = aNode.parentNode;
-      if (parent && parent instanceof content.XULElement) {
-        let anonNodes = content.document.getAnonymousNodes(parent);
-        if (anonNodes && !Array.from(anonNodes).includes(aNode)) {
-          
-          
-          let nodes = [];
-          this.getXBLNodes(parent, nodes);
-          for (let node of nodes) {
-            yield node;
-          }
-        }
-      }
-
-      aNode = parent;
-    }
-  }
-
   findNearestScrollableElement(aNode) {
     
     
     this._scrollable = null;
-    for (let node of this.parentNodeIterator(aNode)) {
+    for (let node = aNode; node; node = node.flattenedTreeParentNode) {
       
       
       
