@@ -298,7 +298,7 @@ nsresult XULContentSinkImpl::FlushText(bool aCreateTextNode) {
     
     if (mState != eInDocumentElement || mContextStack.Depth() == 0) break;
 
-    nsXULPrototypeText* text = new nsXULPrototypeText();
+    RefPtr<nsXULPrototypeText> text = new nsXULPrototypeText();
     text->mValue.Assign(mText, mTextLength);
     if (stripWhitespace) text->mValue.Trim(" \t\n\r");
 
@@ -307,8 +307,7 @@ nsresult XULContentSinkImpl::FlushText(bool aCreateTextNode) {
     rv = mContextStack.GetTopChildren(&children);
     if (NS_FAILED(rv)) return rv;
 
-    
-    children->AppendElement(text);
+    children->AppendElement(text.forget());
   } while (0);
 
   
@@ -626,7 +625,7 @@ nsresult XULContentSinkImpl::OpenRoot(const char16_t** aAttributes,
   }
 
   
-  nsXULPrototypeElement* element = new nsXULPrototypeElement(aNodeInfo);
+  RefPtr<nsXULPrototypeElement> element = new nsXULPrototypeElement(aNodeInfo);
 
   
   
@@ -645,13 +644,12 @@ nsresult XULContentSinkImpl::OpenTag(const char16_t** aAttributes,
                                      const uint32_t aLineNumber,
                                      mozilla::dom::NodeInfo* aNodeInfo) {
   
-  nsXULPrototypeElement* element = new nsXULPrototypeElement(aNodeInfo);
+  RefPtr<nsXULPrototypeElement> element = new nsXULPrototypeElement(aNodeInfo);
 
   
   nsPrototypeArray* children = nullptr;
   nsresult rv = mContextStack.GetTopChildren(&children);
   if (NS_FAILED(rv)) {
-    delete element;
     return rv;
   }
 
