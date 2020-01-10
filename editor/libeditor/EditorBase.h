@@ -613,6 +613,9 @@ class EditorBase : public nsIEditor,
     friend class AutoEditActionDataSetter;
 
     
+    RefPtr<Element> mNewBlockElement;
+
+    
     bool mDidDeleteSelection;
 
     
@@ -639,6 +642,7 @@ class EditorBase : public nsIEditor,
 
    private:
     void Clear() {
+      mNewBlockElement = nullptr;
       mDidDeleteSelection = false;
       mDidExplicitlySetInterLine = false;
       mDidDeleteNonCollapsedRange = false;

@@ -203,7 +203,6 @@ void HTMLEditRules::InitFields() {
   mReturnInEmptyLIKillsList = true;
   mUtilRange = nullptr;
   mJoinOffset = 0;
-  mNewBlock = nullptr;
   mRangeItem = new RangeItem();
 
   InitStyleCacheArray(mCachedStyles);
@@ -595,14 +594,13 @@ nsresult HTMLEditRules::AfterEditInner() {
     }
 
     
-    if (mNewBlock) {
+    if (HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement) {
       rv = PinSelectionToNewBlock();
       if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                            "Failed to pin selection to the new block");
-      mNewBlock = nullptr;
     }
 
     
@@ -1881,7 +1879,8 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
     
     
     
-    mNewBlock = blockParent;
+    HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement =
+        blockParent;
   }
 
   
@@ -4085,7 +4084,8 @@ nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
     }
 
     
-    mNewBlock = theListItem;
+    HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement =
+        theListItem;
     
     restoreSelectionLater.Abort();
     ErrorResult error;
@@ -4334,7 +4334,7 @@ nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
         return NS_ERROR_FAILURE;
       }
       
-      mNewBlock = curList;
+      HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement = curList;
       
       prevListItem = nullptr;
 
@@ -4634,7 +4634,7 @@ nsresult HTMLEditRules::MakeBasicBlock(nsAtom& blockType) {
       return NS_ERROR_FAILURE;
     }
     
-    mNewBlock = block;
+    HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement = block;
     
     while (!arrayOfNodes.IsEmpty()) {
       OwningNonNull<nsINode> curNode = arrayOfNodes[0];
@@ -4827,7 +4827,7 @@ nsresult HTMLEditRules::IndentAroundSelectionWithCSS() {
       return NS_ERROR_FAILURE;
     }
     
-    mNewBlock = theBlock;
+    HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement = theBlock;
     nsresult rv = IncreaseMarginToIndent(*theBlock);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return NS_ERROR_EDITOR_DESTROYED;
@@ -4950,7 +4950,8 @@ nsresult HTMLEditRules::IndentAroundSelectionWithCSS() {
         }
         
         
-        mNewBlock = curList;
+        HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement =
+            curList;
       }
       
       nsresult rv = MOZ_KnownLive(HTMLEditorRef())
@@ -5006,7 +5007,8 @@ nsresult HTMLEditRules::IndentAroundSelectionWithCSS() {
       }
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to increase indentation");
       
-      mNewBlock = curQuote;
+      HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement =
+          curQuote;
       
     }
 
@@ -5110,7 +5112,7 @@ nsresult HTMLEditRules::IndentAroundSelectionWithHTML() {
       return NS_ERROR_FAILURE;
     }
     
-    mNewBlock = theBlock;
+    HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement = theBlock;
     
     while (!arrayOfNodes.IsEmpty()) {
       OwningNonNull<nsINode> curNode = arrayOfNodes[0];
@@ -5226,7 +5228,8 @@ nsresult HTMLEditRules::IndentAroundSelectionWithHTML() {
         }
         
         
-        mNewBlock = curList;
+        HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement =
+            curList;
       }
       
       rv = MOZ_KnownLive(HTMLEditorRef())
@@ -5335,7 +5338,8 @@ nsresult HTMLEditRules::IndentAroundSelectionWithHTML() {
         return NS_ERROR_FAILURE;
       }
       
-      mNewBlock = curQuote;
+      HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement =
+          curQuote;
       
     }
 
@@ -6185,7 +6189,7 @@ nsresult HTMLEditRules::AlignContentsAtSelection(const nsAString& aAlignType) {
       return NS_ERROR_FAILURE;
     }
     
-    mNewBlock = div;
+    HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement = div;
     
     rv = AlignBlock(*div, aAlignType, ResetAlignOf::OnlyDescendants);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -6328,7 +6332,7 @@ nsresult HTMLEditRules::AlignContentsAtSelection(const nsAString& aAlignType) {
         return NS_ERROR_FAILURE;
       }
       
-      mNewBlock = curDiv;
+      HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement = curDiv;
       
       rv = AlignBlock(*curDiv, aAlignType, ResetAlignOf::OnlyDescendants);
       if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
@@ -8614,7 +8618,8 @@ nsresult HTMLEditRules::MakeBlockquote(
         return NS_ERROR_FAILURE;
       }
       
-      mNewBlock = curBlock;
+      HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement =
+          curBlock;
       
     }
 
@@ -8857,7 +8862,8 @@ nsresult HTMLEditRules::ApplyBlockStyle(
         return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
       }
       
-      mNewBlock = theBlock;
+      HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement =
+          std::move(theBlock);
       continue;
     }
 
@@ -8908,7 +8914,8 @@ nsresult HTMLEditRules::ApplyBlockStyle(
         return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
       }
       
-      mNewBlock = curBlock;
+      HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement =
+          curBlock;
       
       nsresult rv = MOZ_KnownLive(HTMLEditorRef())
                         .MoveNodeToEndWithTransaction(
@@ -8971,7 +8978,8 @@ nsresult HTMLEditRules::ApplyBlockStyle(
         atCurNode.Set(curNode);
 
         
-        mNewBlock = curBlock;
+        HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement =
+            curBlock;
         
       }
 
@@ -9334,7 +9342,8 @@ nsresult HTMLEditRules::PinSelectionToNewBlock() {
     return NS_OK;
   }
 
-  if (NS_WARN_IF(!mNewBlock)) {
+  if (NS_WARN_IF(
+          !HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement)) {
     return NS_ERROR_NULL_POINTER;
   }
 
@@ -9354,8 +9363,9 @@ nsresult HTMLEditRules::PinSelectionToNewBlock() {
   }
 
   bool nodeBefore, nodeAfter;
-  nsresult rv = RangeUtils::CompareNodeToRange(mNewBlock, staticRange,
-                                               &nodeBefore, &nodeAfter);
+  nsresult rv = RangeUtils::CompareNodeToRange(
+      HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement,
+      staticRange, &nodeBefore, &nodeAfter);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -9366,9 +9376,10 @@ nsresult HTMLEditRules::PinSelectionToNewBlock() {
 
   if (nodeBefore) {
     
-    nsCOMPtr<nsINode> tmp = HTMLEditorRef().GetLastEditableChild(*mNewBlock);
+    nsCOMPtr<nsIContent> tmp = HTMLEditorRef().GetLastEditableChild(
+        *HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement);
     if (!tmp) {
-      tmp = mNewBlock;
+      tmp = HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement;
     }
     EditorRawDOMPoint endPoint;
     if (EditorBase::IsTextNode(tmp) || HTMLEditorRef().IsContainer(tmp)) {
@@ -9392,9 +9403,10 @@ nsresult HTMLEditRules::PinSelectionToNewBlock() {
   }
 
   
-  nsCOMPtr<nsINode> tmp = HTMLEditorRef().GetFirstEditableChild(*mNewBlock);
+  nsCOMPtr<nsIContent> tmp = HTMLEditorRef().GetFirstEditableChild(
+      *HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement);
   if (!tmp) {
-    tmp = mNewBlock;
+    tmp = HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement;
   }
   EditorRawDOMPoint atStartOfBlock;
   if (EditorBase::IsTextNode(tmp) || HTMLEditorRef().IsContainer(tmp)) {
@@ -10750,7 +10762,8 @@ nsresult HTMLEditRules::WillAbsolutePosition(bool* aCancel, bool* aHandled) {
 
   RefPtr<Element> focusElement = HTMLEditorRef().GetSelectionContainerElement();
   if (focusElement && HTMLEditUtils::IsImage(focusElement)) {
-    mNewBlock = focusElement;
+    HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement =
+        std::move(focusElement);
     return NS_OK;
   }
 
@@ -10759,7 +10772,10 @@ nsresult HTMLEditRules::WillAbsolutePosition(bool* aCancel, bool* aHandled) {
     return rv;
   }
 
-  rv = PrepareToMakeElementAbsolutePosition(aHandled, address_of(mNewBlock));
+  rv = PrepareToMakeElementAbsolutePosition(
+      aHandled,
+      address_of(
+          HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement));
   
   
   
@@ -11049,10 +11065,11 @@ nsresult HTMLEditRules::PrepareToMakeElementAbsolutePosition(
 nsresult HTMLEditRules::DidAbsolutePosition() {
   MOZ_ASSERT(IsEditorDataAvailable());
 
-  if (!mNewBlock) {
+  if (!HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement) {
     return NS_OK;
   }
-  OwningNonNull<Element> newBlock(*mNewBlock);
+  OwningNonNull<Element> newBlock(
+      *HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement);
   nsresult rv = MOZ_KnownLive(HTMLEditorRef())
                     .SetPositionToAbsoluteOrStatic(*newBlock, true);
   if (NS_WARN_IF(!CanHandleEditAction())) {

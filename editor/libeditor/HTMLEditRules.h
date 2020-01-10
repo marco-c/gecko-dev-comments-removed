@@ -536,6 +536,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult WillAbsolutePosition(bool* aCancel, bool* aHandled);
 
@@ -1354,7 +1355,6 @@ class HTMLEditRules : public TextEditRules {
   RefPtr<nsRange> mUtilRange;
   
   uint32_t mJoinOffset;
-  RefPtr<Element> mNewBlock;
   RefPtr<RangeItem> mRangeItem;
 
   
