@@ -1590,12 +1590,11 @@ VARCACHE_PREF(
 
 
 
-
 VARCACHE_PREF(
   Live,
   "dom.promise_rejection_events.enabled",
   dom_promise_rejection_events_enabled,
-  RelaxedAtomicBool, false
+  RelaxedAtomicBool, true
 )
 
 

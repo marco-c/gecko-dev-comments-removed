@@ -820,6 +820,8 @@ var interfaceNamesInGlobalScope =
 
     {name: "ProgressEvent", insecureContext: true},
 
+    {name: "PromiseRejectionEvent", insecureContext: true},
+
     {name: "PublicKeyCredential"},
 
     {name: "PushManager", insecureContext: true, fennecOrDesktop: true },

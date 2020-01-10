@@ -197,6 +197,8 @@ var interfaceNamesInGlobalScope =
 
     "ProgressEvent",
 
+    "PromiseRejectionEvent",
+
     { name: "PushEvent", fennecOrDesktop: true },
 
     { name: "PushManager", fennecOrDesktop: true },
