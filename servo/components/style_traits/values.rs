@@ -507,7 +507,9 @@ pub mod specified {
 
     
     #[repr(u8)]
-    #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, PartialOrd, ToShmem)]
+    #[derive(
+        Clone, Copy, Debug, Deserialize, Eq, MallocSizeOf, PartialEq, PartialOrd, Serialize, ToShmem,
+    )]
     pub enum AllowedNumericType {
         
         All,

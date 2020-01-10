@@ -13,16 +13,17 @@ use std::{f32, f64};
 use style_traits::{CssWriter, ToCss};
 
 
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(
     Add,
     Animate,
     Clone,
     Copy,
     Debug,
+    Deserialize,
     MallocSizeOf,
     PartialEq,
     PartialOrd,
+    Serialize,
     ToAnimatedZero,
     ToResolvedValue,
 )]

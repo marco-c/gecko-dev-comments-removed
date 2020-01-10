@@ -2,6 +2,7 @@
 
 
 
+extern crate bincode;
 extern crate cssparser;
 #[macro_use]
 extern crate cstr;
