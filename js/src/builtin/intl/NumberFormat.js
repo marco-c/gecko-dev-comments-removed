@@ -309,24 +309,25 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     lazyNumberFormatData.style = style;
 
     
-    var c = GetOption(options, "currency", "string", undefined, undefined);
-    if (c !== undefined && !IsWellFormedCurrencyCode(c))
-        ThrowRangeError(JSMSG_INVALID_CURRENCY_CODE, c);
+    var currency = GetOption(options, "currency", "string", undefined, undefined);
+    if (currency !== undefined && !IsWellFormedCurrencyCode(currency))
+        ThrowRangeError(JSMSG_INVALID_CURRENCY_CODE, currency);
     var cDigits;
     if (style === "currency") {
-        if (c === undefined)
+        if (currency === undefined)
             ThrowTypeError(JSMSG_UNDEFINED_CURRENCY);
 
         
-        c = toASCIIUpperCase(c);
-        lazyNumberFormatData.currency = c;
-        cDigits = CurrencyDigits(c);
+        currency = toASCIIUpperCase(currency);
+        lazyNumberFormatData.currency = currency;
+        cDigits = CurrencyDigits(currency);
     }
 
     
-    var cd = GetOption(options, "currencyDisplay", "string", ["code", "symbol", "name"], "symbol");
+    var currencyDisplay = GetOption(options, "currencyDisplay", "string",
+                                    ["code", "symbol", "name"], "symbol");
     if (style === "currency")
-        lazyNumberFormatData.currencyDisplay = cd;
+        lazyNumberFormatData.currencyDisplay = currencyDisplay;
 
     
     var mnfdDefault, mxfdDefault;
@@ -340,8 +341,8 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     SetNumberFormatDigitOptions(lazyNumberFormatData, options, mnfdDefault, mxfdDefault);
 
     
-    var g = GetOption(options, "useGrouping", "boolean", undefined, true);
-    lazyNumberFormatData.useGrouping = g;
+    var useGrouping = GetOption(options, "useGrouping", "boolean", undefined, true);
+    lazyNumberFormatData.useGrouping = useGrouping;
 
     
     
