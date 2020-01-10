@@ -14,10 +14,8 @@
 #include <stdint.h>  
 
 #include "jsapi.h"  
-#include "jsfriendapi.h"  
 
 #include "builtin/Promise.h"                 
-#include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/WritableStream.h"  
 #include "builtin/streams/WritableStreamDefaultController.h"  
 #include "builtin/streams/WritableStreamDefaultControllerOperations.h"  
@@ -193,78 +191,6 @@ JSObject* js::WritableStreamAbort(JSContext* cx,
     if (!WritableStreamStartErroring(cx, unwrappedStream, pendingReason)) {
       return nullptr;
     }
-  }
-
-  
-  return promise;
-}
-
-
-
-
-
-
-
-
-JSObject* js::WritableStreamClose(JSContext* cx,
-                                  Handle<WritableStream*> unwrappedStream) {
-  
-  
-  
-  if (unwrappedStream->closed() || unwrappedStream->errored()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_WRITABLESTREAM_CLOSED_OR_ERRORED);
-    return PromiseRejectedWithPendingError(cx);
-  }
-
-  
-  MOZ_ASSERT(unwrappedStream->writable() ^ unwrappedStream->erroring());
-
-  
-  MOZ_ASSERT(!WritableStreamCloseQueuedOrInFlight(unwrappedStream));
-
-  
-  Rooted<PromiseObject*> promise(cx, PromiseObject::createSkippingExecutor(cx));
-  if (!promise) {
-    return nullptr;
-  }
-
-  
-  {
-    AutoRealm ar(cx, unwrappedStream);
-    Rooted<JSObject*> wrappedPromise(cx, promise);
-    if (!cx->compartment()->wrap(cx, &wrappedPromise)) {
-      return nullptr;
-    }
-
-    unwrappedStream->setCloseRequest(promise);
-  }
-
-  
-  
-  
-  
-  if (unwrappedStream->hasWriter() && unwrappedStream->backpressure() &&
-      unwrappedStream->writable()) {
-    Rooted<WritableStreamDefaultWriter*> unwrappedWriter(
-        cx, UnwrapWriterFromStream(cx, unwrappedStream));
-    if (!unwrappedWriter) {
-      return nullptr;
-    }
-
-    if (!ResolveUnwrappedPromiseWithUndefined(
-            cx, unwrappedWriter->readyPromise())) {
-      return nullptr;
-    }
-  }
-
-  
-  
-  
-  Rooted<WritableStreamDefaultController*> unwrappedController(
-      cx, unwrappedStream->controller());
-  if (!WritableStreamDefaultControllerClose(cx, unwrappedController)) {
-    return nullptr;
   }
 
   
