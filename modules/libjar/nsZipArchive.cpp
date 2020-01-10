@@ -359,8 +359,8 @@ nsresult nsZipArchive::OpenArchive(nsZipHandle* aZipHandle, PRFileDesc* aFd) {
           nsCOMPtr<nsIFile> dir = aZipHandle->mFile.GetBaseFile();
           nsCOMPtr<nsIFile> gre_dir;
           nsAutoCString path;
-          if (NS_SUCCEEDED(nsDirectoryService::gService->GetCurrentProcessDirectory(
-                  getter_AddRefs(gre_dir)))) {
+          if (NS_SUCCEEDED(nsDirectoryService::gService->Get(
+                  NS_GRE_DIR, NS_GET_IID(nsIFile), getter_AddRefs(gre_dir)))) {
             nsAutoCString leaf;
             nsCOMPtr<nsIFile> parent;
             while (NS_SUCCEEDED(dir->GetNativeLeafName(leaf)) &&
