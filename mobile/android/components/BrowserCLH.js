@@ -83,7 +83,6 @@ BrowserCLH.prototype = {
             "PasswordManager:onFormSubmit",
             "PasswordManager:autoCompleteLogins",
             "PasswordManager:removeLogin",
-            "PasswordManager:insecureLoginFormPresent",
             
             
           ],

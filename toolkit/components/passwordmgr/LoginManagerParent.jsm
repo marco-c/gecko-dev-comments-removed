@@ -169,11 +169,6 @@ this.LoginManagerParent = {
         break;
       }
 
-      case "PasswordManager:insecureLoginFormPresent": {
-        this.setHasInsecureLoginForms(msg.target, data.hasInsecureLoginForms);
-        break;
-      }
-
       case "PasswordManager:autoCompleteLogins": {
         this.doAutocompleteSearch(data, msg.target);
         break;
@@ -920,62 +915,6 @@ this.LoginManagerParent = {
       formLogin,
       true, 
       shouldAutoSaveLogin 
-    );
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  loginFormStateByBrowser: new WeakMap(),
-
-  
-
-
-
-  stateForBrowser(browser) {
-    let loginFormState = this.loginFormStateByBrowser.get(browser);
-    if (!loginFormState) {
-      loginFormState = {};
-      this.loginFormStateByBrowser.set(browser, loginFormState);
-    }
-    return loginFormState;
-  },
-
-  
-
-
-
-
-
-  hasInsecureLoginForms(browser) {
-    return !!this.stateForBrowser(browser).hasInsecureLoginForms;
-  },
-
-  
-
-
-
-  setHasInsecureLoginForms(browser, hasInsecureLoginForms) {
-    let state = this.stateForBrowser(browser);
-
-    
-    
-    state.hasInsecureLoginForms = hasInsecureLoginForms;
-
-    
-    browser.dispatchEvent(
-      new browser.ownerGlobal.CustomEvent("InsecureLoginFormsStateChange")
     );
   },
 };

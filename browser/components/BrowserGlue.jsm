@@ -650,7 +650,6 @@ const listeners = {
     "PasswordManager:onGeneratedPasswordFilledOrEdited": ["LoginManagerParent"],
     "PasswordManager:autoCompleteLogins": ["LoginManagerParent"],
     "PasswordManager:removeLogin": ["LoginManagerParent"],
-    "PasswordManager:insecureLoginFormPresent": ["LoginManagerParent"],
     "PasswordManager:OpenPreferences": ["LoginManagerParent"],
     
     "rtcpeer:CancelRequest": ["webrtcUI"],

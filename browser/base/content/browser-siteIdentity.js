@@ -133,11 +133,7 @@ var gIdentityHandler = {
 
   get _hasInsecureLoginForms() {
     
-    
-    return (
-      LoginManagerParent.hasInsecureLoginForms(gBrowser.selectedBrowser) &&
-      Services.prefs.getBoolPref("security.insecure_password.ui.enabled")
-    );
+    return false;
   },
 
   
