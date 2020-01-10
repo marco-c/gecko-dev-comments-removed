@@ -39,6 +39,36 @@ const getNodeDisplayName = function(rawNode) {
   return (rawNode.prefix ? rawNode.prefix + ":" : "") + rawNode.localName;
 };
 
+
+
+
+
+
+
+
+
+
+function getNodeGridFlexType(node) {
+  return {
+    grid: getNodeGridType(node),
+    flex: getNodeFlexType(node),
+  };
+}
+
+function getNodeFlexType(node) {
+  return {
+    isContainer: node.getAsFlexContainer && !!node.getAsFlexContainer(),
+    isItem: !!node.parentFlexElement,
+  };
+}
+
+function getNodeGridType(node) {
+  return {
+    isContainer: node.getGridFragments && node.getGridFragments().length,
+    isItem: !!findGridParentContainerForNode(node),
+  };
+}
+
 function nodeDocument(node) {
   if (Cu.isDeadWrapper(node)) {
     return null;
@@ -352,6 +382,7 @@ module.exports = {
   getClosestBackgroundColor,
   getClosestBackgroundImage,
   getNodeDisplayName,
+  getNodeGridFlexType,
   imageToImageData,
   isNodeDead,
   nodeDocument,
