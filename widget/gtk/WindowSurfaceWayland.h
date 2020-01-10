@@ -109,7 +109,7 @@ class WindowBackBufferShm : public WindowBackBuffer {
 
  private:
   void Create(int aWidth, int aHeight);
-  void Release();
+  void ReleaseShmSurface();
 
   
   WaylandShmPool mShmPool;
