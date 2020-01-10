@@ -105,8 +105,9 @@ const uint32_t FrameRateLevels[] = {
 };
 const size_t FrameRateLevelsSize = NELEMS(FrameRateLevels);
 
-nsCString FindLevel(const uint32_t aLevels[], const size_t length,
-                    uint32_t aValue) {
+
+nsCString KeyUtil::FindLevel(const uint32_t aLevels[], const size_t length,
+                             uint32_t aValue) {
   MOZ_ASSERT(aValue);
   if (aValue <= aLevels[0]) {
     return NS_LITERAL_CSTRING("Level0");
@@ -132,7 +133,8 @@ nsCString FindLevel(const uint32_t aLevels[], const size_t length,
   return NS_LITERAL_CSTRING("");
 }
 
-nsCString BitDepthToStr(uint8_t aBitDepth) {
+
+nsCString KeyUtil::BitDepthToStr(uint8_t aBitDepth) {
   switch (aBitDepth) {
     case 8:  
       return NS_LITERAL_CSTRING("-8bit");
@@ -145,7 +147,8 @@ nsCString BitDepthToStr(uint8_t aBitDepth) {
   return NS_LITERAL_CSTRING("");
 }
 
-nsCString CreateStoreKey(const DecoderBenchmarkInfo& aBenchInfo) {
+
+nsCString KeyUtil::CreateKey(const DecoderBenchmarkInfo& aBenchInfo) {
   nsAutoCString key("Resolution");
   key.Append(FindLevel(PixelLevels, PixelLevelsSize,
                        aBenchInfo.mWidth * aBenchInfo.mHeight));
@@ -166,7 +169,7 @@ void DecoderBenchmark::Store(const DecoderBenchmarkInfo& aBenchInfo,
         "Storing a benchmark is only allowed only from the content process.");
     return;
   }
-  StoreScore(aBenchInfo.mContentType, CreateStoreKey(aBenchInfo), aStats);
+  StoreScore(aBenchInfo.mContentType, KeyUtil::CreateKey(aBenchInfo), aStats);
 }
 
 
@@ -180,7 +183,8 @@ RefPtr<BenchmarkScorePromise> DecoderBenchmark::Get(
   
   
   auto bench = MakeRefPtr<DecoderBenchmark>();
-  return bench->GetScore(aBenchInfo.mContentType, CreateStoreKey(aBenchInfo));
+  return bench->GetScore(aBenchInfo.mContentType,
+                         KeyUtil::CreateKey(aBenchInfo));
 }
 
 static nsDataHashtable<nsCStringHashKey, int32_t> DecoderVersionTable() {
