@@ -319,6 +319,7 @@ AnimationHelper::SampleResult AnimationHelper::SampleAnimationForEachNode(
   MOZ_ASSERT(aAnimationValues.IsEmpty(),
              "Should be called with empty aAnimationValues");
 
+  nsTArray<RefPtr<RawServoAnimationValue>> nonAnimatingValues;
   for (PropertyAnimationGroup& group : aPropertyAnimationGroups) {
     
     RefPtr<RawServoAnimationValue> currValue = group.mBaseStyle;
@@ -327,6 +328,23 @@ AnimationHelper::SampleResult AnimationHelper::SampleAnimationForEachNode(
                                             group.mAnimations.Length() == 1
                                         ? CanSkipCompose::IfPossible
                                         : CanSkipCompose::No;
+
+    MOZ_ASSERT(
+        !group.mAnimations.IsEmpty() ||
+            nsCSSPropertyIDSet::TransformLikeProperties().HasProperty(
+                group.mProperty),
+        "Only transform-like properties can have empty PropertyAnimation list");
+
+    
+    
+    
+    
+    
+    if (group.mAnimations.IsEmpty()) {
+      nonAnimatingValues.AppendElement(std::move(currValue));
+      continue;
+    }
+
     SampleResult result = SampleAnimationForProperty(
         aPreviousFrameTime, aCurrentFrameTime, aPreviousValue, canSkipCompose,
         group.mAnimations, currValue);
@@ -374,8 +392,12 @@ AnimationHelper::SampleResult AnimationHelper::SampleAnimationForEachNode(
   }
 #endif
 
-  return aAnimationValues.IsEmpty() ? SampleResult::None
-                                    : SampleResult::Sampled;
+  SampleResult rv =
+      aAnimationValues.IsEmpty() ? SampleResult::None : SampleResult::Sampled;
+  if (rv == SampleResult::Sampled) {
+    aAnimationValues.AppendElements(nonAnimatingValues);
+  }
+  return rv;
 }
 
 static dom::FillMode GetAdjustedFillMode(const Animation& aAnimation) {
@@ -439,6 +461,17 @@ nsTArray<PropertyAnimationGroup> AnimationHelper::ExtractAnimations(
       currData->mBaseStyle = AnimationValue::FromAnimatable(
           animation.property(), animation.baseStyle());
       currBaseStyle = &animation.baseStyle();
+    }
+
+    
+    
+    
+    
+    if (animation.isNotAnimating()) {
+      MOZ_ASSERT(nsCSSPropertyIDSet::TransformLikeProperties().HasProperty(
+                     animation.property()),
+                 "Only transform-like properties could set this true");
+      continue;
     }
 
     PropertyAnimation* propertyAnimation =
