@@ -12,13 +12,17 @@ use style_traits::{CssWriter, ToCss};
 
 
 #[derive(
+    Animate,
     Clone,
+    ComputeSquaredDistance,
     Copy,
     Debug,
     MallocSizeOf,
     Parse,
     PartialEq,
     SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
     ToComputedValue,
     ToCss,
     ToResolvedValue,
@@ -41,12 +45,16 @@ pub use self::GenericBorderImageSideWidth as BorderImageSideWidth;
 
 
 #[derive(
+    Animate,
     Clone,
+    ComputeSquaredDistance,
     Copy,
     Debug,
     MallocSizeOf,
     PartialEq,
     SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
     ToComputedValue,
     ToCss,
     ToResolvedValue,
@@ -58,6 +66,7 @@ pub struct GenericBorderImageSlice<NumberOrPercentage> {
     #[css(field_bound)]
     pub offsets: Rect<NumberOrPercentage>,
     
+    #[animation(constant)]
     #[css(represents_keyword)]
     pub fill: bool,
 }
