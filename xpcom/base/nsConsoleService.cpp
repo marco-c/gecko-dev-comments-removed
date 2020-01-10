@@ -159,12 +159,29 @@ nsresult nsConsoleService::Init() {
   return NS_OK;
 }
 
+namespace {
+
+class LogMessageRunnable : public Runnable {
+ public:
+  LogMessageRunnable(nsIConsoleMessage* aMessage, nsConsoleService* aService)
+      : mozilla::Runnable("LogMessageRunnable"),
+        mMessage(aMessage),
+        mService(aService) {}
+
+  NS_DECL_NSIRUNNABLE
+
+ private:
+  nsCOMPtr<nsIConsoleMessage> mMessage;
+  RefPtr<nsConsoleService> mService;
+
+  NS_IMETHODIMP maybeForwardScriptError(bool* sent);
+};
+
 NS_IMETHODIMP
-nsConsoleService::MaybeForwardScriptError(nsIConsoleMessage* aMessage,
-                                          bool* sent) {
+LogMessageRunnable::maybeForwardScriptError(bool* sent) {
   *sent = false;
 
-  nsCOMPtr<nsIScriptError> scriptError = do_QueryInterface(aMessage);
+  nsCOMPtr<nsIScriptError> scriptError = do_QueryInterface(mMessage);
   if (!scriptError) {
     
     return NS_OK;
@@ -231,24 +248,22 @@ nsConsoleService::MaybeForwardScriptError(nsIConsoleMessage* aMessage,
   return NS_OK;
 }
 
-namespace {
-
-class LogMessageRunnable : public Runnable {
- public:
-  LogMessageRunnable(nsIConsoleMessage* aMessage, nsConsoleService* aService)
-      : mozilla::Runnable("LogMessageRunnable"),
-        mMessage(aMessage),
-        mService(aService) {}
-
-  NS_DECL_NSIRUNNABLE
-
- private:
-  nsCOMPtr<nsIConsoleMessage> mMessage;
-  RefPtr<nsConsoleService> mService;
-};
-
 NS_IMETHODIMP
 LogMessageRunnable::Run() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (XRE_IsParentProcess()) {
+    
+    
+    
+    bool sent;
+    nsresult rv = LogMessageRunnable::maybeForwardScriptError(&sent);
+    NS_ENSURE_SUCCESS(rv, rv);
+    if (sent) {
+      return NS_OK;
+    }
+  }
+
   
   
   nsCOMArray<nsIConsoleListener> listeners;
@@ -295,18 +310,6 @@ nsresult nsConsoleService::LogMessageWithMode(
             msg.get())
             .get());
     return NS_ERROR_FAILURE;
-  }
-
-  if (XRE_IsParentProcess() && NS_IsMainThread()) {
-    
-    
-    
-    bool sent;
-    nsresult rv = MaybeForwardScriptError(aMessage, &sent);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (sent) {
-      return NS_OK;
-    }
   }
 
   RefPtr<LogMessageRunnable> r;
