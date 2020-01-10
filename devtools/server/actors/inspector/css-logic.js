@@ -654,6 +654,12 @@ CssLogic.getShortName = function(element) {
 
 
 CssLogic.getSelectors = function(domRule) {
+  if (domRule.type === CSSRule.MEDIA_RULE) {
+    
+    
+    return [];
+  }
+
   const selectors = [];
 
   const len = InspectorUtils.getSelectorCount(domRule);
