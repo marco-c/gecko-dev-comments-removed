@@ -962,6 +962,9 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
 
   using CharSlice = BinaryASTSupport::CharSlice;
   using Context = BinASTTokenReaderBase::Context;
+  using RootContext = BinASTTokenReaderBase::RootContext;
+  using ListContext = BinASTTokenReaderBase::ListContext;
+  using FieldContext = BinASTTokenReaderBase::FieldContext;
 
   
   
@@ -1109,45 +1112,44 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
   
 
 
-  MOZ_MUST_USE JS::Result<bool> readBool(const Context&);
+  MOZ_MUST_USE JS::Result<bool> readBool(const FieldContext&);
 
   
 
 
-  MOZ_MUST_USE JS::Result<double> readDouble(const Context&);
-
-  
-
-
-
-
-  MOZ_MUST_USE JS::Result<JSAtom*> readMaybeAtom(const Context&);
-  MOZ_MUST_USE JS::Result<JSAtom*> readAtom(const Context&);
-
-  
-
-
-  MOZ_MUST_USE JS::Result<JSAtom*> readMaybeIdentifierName(const Context&);
-  MOZ_MUST_USE JS::Result<JSAtom*> readIdentifierName(const Context&);
-
-  
-
-
-  MOZ_MUST_USE JS::Result<JSAtom*> readPropertyKey(const Context&);
+  MOZ_MUST_USE JS::Result<double> readDouble(const FieldContext&);
 
   
 
 
 
 
-  MOZ_MUST_USE JS::Result<Ok> readChars(Chars&, const Context&);
+  MOZ_MUST_USE JS::Result<JSAtom*> readMaybeAtom(const FieldContext&);
+  MOZ_MUST_USE JS::Result<JSAtom*> readAtom(const FieldContext&);
 
   
 
 
-  MOZ_MUST_USE JS::Result<mozilla::Maybe<BinASTVariant>> readMaybeVariant(
-      const Context&);
-  MOZ_MUST_USE JS::Result<BinASTVariant> readVariant(const Context&);
+  MOZ_MUST_USE JS::Result<JSAtom*> readMaybeIdentifierName(const FieldContext&);
+  MOZ_MUST_USE JS::Result<JSAtom*> readIdentifierName(const FieldContext&);
+
+  
+
+
+  MOZ_MUST_USE JS::Result<JSAtom*> readPropertyKey(const FieldContext&);
+
+  
+
+
+
+
+  MOZ_MUST_USE JS::Result<Ok> readChars(Chars&, const FieldContext&);
+
+  
+
+
+  MOZ_MUST_USE JS::Result<BinASTVariant> readVariant(const ListContext&);
+  MOZ_MUST_USE JS::Result<BinASTVariant> readVariant(const FieldContext&);
 
   
 
@@ -1157,7 +1159,7 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
 
 
   MOZ_MUST_USE JS::Result<SkippableSubTree> readSkippableSubTree(
-      const Context&);
+      const FieldContext&);
 
   
   
@@ -1179,7 +1181,7 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
 
 
 
-  MOZ_MUST_USE JS::Result<Ok> enterList(uint32_t& length, const Context&,
+  MOZ_MUST_USE JS::Result<Ok> enterList(uint32_t& length, const ListContext&,
                                         AutoList& guard);
 
   
@@ -1201,29 +1203,39 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
   MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(
       BinASTKind& tag, BinASTTokenReaderContext::BinASTFields& fields,
       const Context&, AutoTaggedTuple& guard);
+  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(
+      BinASTKind& tag, BinASTTokenReaderContext::BinASTFields& fields,
+      const RootContext&, AutoTaggedTuple& guard);
+  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(
+      BinASTKind& tag, BinASTTokenReaderContext::BinASTFields& fields,
+      const ListContext&, AutoTaggedTuple& guard);
+  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(
+      BinASTKind& tag, BinASTTokenReaderContext::BinASTFields& fields,
+      const FieldContext&, AutoTaggedTuple& guard);
 
   
 
 
-  MOZ_MUST_USE JS::Result<uint32_t> readUnsignedLong(const Context&);
+  MOZ_MUST_USE JS::Result<uint32_t> readUnsignedLong(const FieldContext&);
   MOZ_MUST_USE JS::Result<uint32_t> readUnpackedLong();
 
  private:
-  MOZ_MUST_USE JS::Result<BinASTKind> readTagFromTable(const Context&);
+  MOZ_MUST_USE JS::Result<BinASTKind> readTagFromTable(
+      const BinASTInterfaceAndField&);
 
   template <typename Table>
   MOZ_MUST_USE JS::Result<typename Table::Contents> readFieldFromTable(
-      const Context&);
+      const BinASTInterfaceAndField&);
 
   
 
 
-  MOZ_MUST_USE ErrorResult<JS::Error&> raiseInvalidValue(const Context&);
+  MOZ_MUST_USE ErrorResult<JS::Error&> raiseInvalidValue();
 
   
 
 
-  MOZ_MUST_USE ErrorResult<JS::Error&> raiseNotInPrelude(const Context&);
+  MOZ_MUST_USE ErrorResult<JS::Error&> raiseNotInPrelude();
 
  private:
   
