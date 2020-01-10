@@ -190,7 +190,8 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
                const TabContext& aContext, BrowsingContext* aBrowsingContext,
                uint32_t aChromeFlags, bool aIsTopLevel);
 
-  nsresult Init(mozIDOMWindowProxy* aParent);
+  nsresult Init(mozIDOMWindowProxy* aParent,
+                WindowGlobalChild* aInitialWindowChild);
 
   
   static already_AddRefed<BrowserChild> Create(
