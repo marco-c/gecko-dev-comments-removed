@@ -10,13 +10,12 @@ add_task(async function test_main() {
   
   
   var test_urls = [
-    httpURL("helper_fission_basic.html"),
+    httpURL("helper_fission_basic.html", null),
     
   ];
   if (isWebRender) {
     test_urls = test_urls.concat([
-      httpURL("helper_fission_transforms.html"),
-      httpURL("helper_fission_scroll_oopif.html"),
+      httpURL("helper_fission_transforms.html", null),
       
     ]);
   }

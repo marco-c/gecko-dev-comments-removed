@@ -3916,15 +3916,6 @@ void AsyncPanZoomController::RequestContentRepaint(
   controller->RequestContentRepaint(request);
   mExpectedGeckoMetrics = aFrameMetrics;
   mLastPaintRequestMetrics = request;
-
-  
-  
-  controller->DispatchToRepaintThread(
-      NewRunnableMethod<AsyncPanZoomController*>(
-          "layers::APZCTreeManager::SendSubtreeTransformsToChromeMainThread",
-          GetApzcTreeManager(),
-          &APZCTreeManager::SendSubtreeTransformsToChromeMainThread,
-          this));
 }
 
 bool AsyncPanZoomController::UpdateAnimation(

@@ -402,15 +402,6 @@ function moveMouseAndScrollWheelOver(target, dx, dy, testDriver, waitForScroll =
 
 
 
-function promiseMoveMouseAndScrollWheelOver(target, dx, dy, waitForScroll = true) {
-  return new Promise(resolve => {
-    moveMouseAndScrollWheelOver(target, dx, dy, resolve, waitForScroll);
-  });
-}
-
-
-
-
 
 
 
