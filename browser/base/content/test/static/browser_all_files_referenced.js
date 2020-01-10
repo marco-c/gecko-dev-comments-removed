@@ -815,7 +815,6 @@ add_task(async function checkAllTheFiles() {
   
   
   let devtoolsPrefixes = [
-    "chrome://webide/",
     "chrome://devtools",
     "resource://devtools/",
     "resource://devtools-client-jsonview/",

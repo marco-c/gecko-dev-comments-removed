@@ -1936,7 +1936,6 @@ pref("identity.fxaccounts.service.monitorLoginUrl", "https://monitor.firefox.com
 #endif
 
 
-pref("devtools.webide.enabled", false);
 pref("devtools.connectpage.enabled", false);
 
 
@@ -2360,16 +2359,6 @@ pref("devtools.popup.disable_autohide", false);
 
 
 pref("devtools.toolbox.content-frame", true);
-
-pref("devtools.webide.templatesURL", "https://code.cdn.mozilla.net/templates/list.json");
-pref("devtools.webide.autoinstallADBExtension", true);
-pref("devtools.webide.autoConnectRuntime", true);
-pref("devtools.webide.restoreLastProject", true);
-pref("devtools.webide.enableLocalRuntime", false);
-pref("devtools.webide.lastConnectedRuntime", "");
-pref("devtools.webide.lastSelectedProject", "");
-pref("devtools.webide.zoom", "1");
-pref("devtools.webide.busyTimeout", 10000);
 
 
 pref("first-startup.timeout", 30000);

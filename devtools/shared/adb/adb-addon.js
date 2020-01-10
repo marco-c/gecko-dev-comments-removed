@@ -16,8 +16,6 @@ const ADB_HELPER_ADDON_ID = "adbhelper@mozilla.org";
 
 const VALENCE_ADDON_ID = "fxdevtools-adapters@mozilla.org";
 
-
-
 const ADB_ADDON_STATES = {
   DOWNLOADING: "downloading",
   INSTALLED: "installed",

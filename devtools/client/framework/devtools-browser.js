@@ -14,7 +14,6 @@
 
 const { Cc, Ci } = require("chrome");
 const Services = require("Services");
-const defer = require("devtools/shared/defer");
 const { gDevTools } = require("./devtools");
 
 
@@ -138,10 +137,6 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
         cmd.setAttribute("hidden", "true");
       }
     }
-
-    
-    const webIDEEnabled = Services.prefs.getBoolPref("devtools.webide.enabled");
-    toggleMenuItem("menu_webide", webIDEEnabled);
 
     
     const chromeEnabled = Services.prefs.getBoolPref("devtools.chrome.enabled");
@@ -359,9 +354,6 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
       case "toggleToolboxF12":
         await gDevToolsBrowser.toggleToolboxCommand(window.gBrowser, startTime);
         break;
-      case "webide":
-        gDevToolsBrowser.openWebIDE();
-        break;
       case "browserToolbox":
         BrowserToolboxProcess.init();
         break;
@@ -399,26 +391,6 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     gBrowser.selectedTab = gBrowser.addTrustedTab(
       "chrome://devtools/content/framework/connect/connect.xhtml"
     );
-  },
-
-  
-
-
-  
-  
-  openWebIDE() {
-    const win = Services.wm.getMostRecentWindow("devtools:webide");
-    if (win) {
-      win.focus();
-    } else {
-      Services.ww.openWindow(
-        null,
-        "chrome://webide/content/",
-        "webide",
-        "chrome,centerscreen,resizable",
-        null
-      );
-    }
   },
 
   async _getContentProcessTarget(processId) {
@@ -513,11 +485,6 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     this._browserStyleSheets.set(win, styleSheet);
     return loadPromise;
   },
-
-  
-
-
-  isWebIDEInitialized: defer(),
 
   
 
