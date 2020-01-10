@@ -77,6 +77,11 @@ class NativeLayer {
 
   
   
+  virtual void SetClipRect(const Maybe<gfx::IntRect>& aClipRect) = 0;
+  virtual Maybe<gfx::IntRect> ClipRect() = 0;
+
+  
+  
   virtual void SetSurfaceIsFlipped(bool aIsFlipped) = 0;
   virtual bool SurfaceIsFlipped() = 0;
 

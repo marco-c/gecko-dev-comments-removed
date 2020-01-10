@@ -114,6 +114,8 @@ class NativeLayerCA : public NativeLayer {
   void NotifySurfaceReady() override;
   void SetIsOpaque(bool aIsOpaque) override;
   bool IsOpaque() override;
+  void SetClipRect(const Maybe<gfx::IntRect>& aClipRect) override;
+  Maybe<gfx::IntRect> ClipRect() override;
   void SetSurfaceIsFlipped(bool aIsFlipped) override;
   bool SurfaceIsFlipped() override;
 
@@ -250,17 +252,22 @@ class NativeLayerCA : public NativeLayer {
 
   gfx::IntPoint mPosition;
   gfx::IntSize mSize;
+  Maybe<gfx::IntRect> mClipRect;
 
   
+  
+  
+  
   CALayer* mWrappingCALayer = nullptr;  
-  CALayer* mContentCALayer;             
+  CALayer* mContentCALayer = nullptr;   
 
   float mBackingScale = 1.0f;
   bool mSurfaceIsFlipped = false;
   bool mIsOpaque = false;
   bool mMutatedPosition = false;
-  bool mMutatedGeometry = false;
+  bool mMutatedSize = false;
   bool mMutatedIsOpaque = false;
+  bool mMutatedClipRect = false;
 };
 
 }  
