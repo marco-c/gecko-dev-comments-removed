@@ -3505,12 +3505,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   ConstrainSize(&mBounds.width, &mBounds.height);
 
   
-  
-  if (!mIsX11Display && mWindowType == eWindowType_child) {
-    mWindowType = eWindowType_toplevel;
-  }
-
-  
   GtkWidget* parentMozContainer = nullptr;
   GtkContainer* parentGtkContainer = nullptr;
   GdkWindow* parentGdkWindow = nullptr;
@@ -3541,6 +3535,18 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     
     
     topLevelParent = GTK_WINDOW(gtk_widget_get_toplevel(parentMozContainer));
+  }
+
+  if (!mIsX11Display) {
+    if (mWindowType == eWindowType_child) {
+      
+      
+      mWindowType = eWindowType_toplevel;
+    } else if (mWindowType == eWindowType_popup && !topLevelParent) {
+      
+      
+      mWindowType = eWindowType_toplevel;
+    }
   }
 
   
