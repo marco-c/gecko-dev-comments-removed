@@ -575,9 +575,13 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
     window->SetInitialKeyboardIndicators(ShowFocusRings());
   }
 
-  nsContentUtils::SetScrollbarsVisibility(
-      window->GetDocShell(),
-      !!(mChromeFlags & nsIWebBrowserChrome::CHROME_SCROLLBARS));
+  
+  
+  if (mIsTopLevel) {
+    nsContentUtils::SetScrollbarsVisibility(
+        window->GetDocShell(),
+        !!(mChromeFlags & nsIWebBrowserChrome::CHROME_SCROLLBARS));
+  }
 
   nsWeakPtr weakPtrThis = do_GetWeakReference(
       static_cast<nsIBrowserChild*>(this));  

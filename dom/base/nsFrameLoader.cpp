@@ -869,6 +869,8 @@ bool nsFrameLoader::Show(int32_t marginWidth, int32_t marginHeight,
 
   ScreenIntSize size = frame->GetSubdocumentSize();
   if (IsRemoteFrame()) {
+    
+    
     return ShowRemoteFrame(size, frame);
   }
 
