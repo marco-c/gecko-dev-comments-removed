@@ -645,14 +645,14 @@ nsresult nsPlainTextSerializer::DoOpenContainer(nsAtom* aTag) {
 
     
     
-    if (GetLastBool(mHasWrittenCellsForRow)) {
-      
-      AddToLine(u"\t", 1);
-      mInWhitespace = true;
-    } else if (mHasWrittenCellsForRow.IsEmpty()) {
+    if (mHasWrittenCellsForRow.IsEmpty()) {
       
       
       PushBool(mHasWrittenCellsForRow, true);  
+    } else if (GetLastBool(mHasWrittenCellsForRow)) {
+      
+      AddToLine(u"\t", 1);
+      mInWhitespace = true;
     } else {
       SetLastBool(mHasWrittenCellsForRow, true);
     }
