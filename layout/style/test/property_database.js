@@ -315,7 +315,6 @@ var validGradientAndElementValues = [
   
   "-webkit-gradient(radial, 1 2, 8, 3 4, 9)",
   "-webkit-gradient(radial, 0 0, 10, 0 0, 5)",
-  "-webkit-gradient(radial, 1 2, -1.5, center center, +99999.9999)",
 
   
   
@@ -584,6 +583,7 @@ var invalidGradientAndElementValues = [
   "-webkit-gradient(radial, 1 2, 8, 3)", 
   "-webkit-gradient(radial, 1 2, 8, 3 4)", 
   "-webkit-gradient(radial, 1 2, 3 4, 9)", 
+  "-webkit-gradient(radial, 1 2, -1.5, center center, +99999.9999)", 
 
   
   "-webkit-gradient(radial, 1 2, 8%,      3 4, 9)",
@@ -969,7 +969,6 @@ if ( true) {
     "-moz-radial-gradient(left calc(100px + -25%), red, blue)",
     "-moz-radial-gradient(calc(100px + -25px) top, red, blue)",
     "-moz-radial-gradient(left calc(100px + -25px), red, blue)",
-    "-moz-radial-gradient(40%, -100px -10%, red, blue)"
   );
 
   invalidGradientAndElementValues.push(
@@ -1031,6 +1030,9 @@ if ( true) {
     "-moz-repeating-linear-gradient(30grad left 35px, red, blue)",
     "-moz-repeating-linear-gradient(10deg 20px, red, blue)",
     "-moz-repeating-linear-gradient(.414rad bottom, red, blue)",
+
+    
+    "-moz-radial-gradient(40%, -100px -10%, red, blue)",
 
     
     "-moz-radial-gradient(10% bottom, ffffff, black) scroll no-repeat",

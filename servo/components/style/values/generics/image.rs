@@ -73,9 +73,16 @@ pub use self::GenericImage as Image;
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
 #[repr(C)]
-pub struct GenericGradient<LineDirection, Length, LengthPercentage, Position, Color> {
+pub struct GenericGradient<
+    LineDirection,
+    LengthPercentage,
+    NonNegativeLength,
+    NonNegativeLengthPercentage,
+    Position,
+    Color,
+> {
     
-    pub kind: GenericGradientKind<LineDirection, Length, LengthPercentage, Position>,
+    pub kind: GenericGradientKind<LineDirection, NonNegativeLength, NonNegativeLengthPercentage, Position>,
     
     pub items: crate::OwnedSlice<GenericGradientItem<Color, LengthPercentage>>,
     
@@ -101,11 +108,11 @@ pub enum GradientCompatMode {
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
 #[repr(C, u8)]
-pub enum GenericGradientKind<LineDirection, Length, LengthPercentage, Position> {
+pub enum GenericGradientKind<LineDirection, NonNegativeLength, NonNegativeLengthPercentage, Position> {
     
     Linear(LineDirection),
     
-    Radial(GenericEndingShape<Length, LengthPercentage>, Position),
+    Radial(GenericEndingShape<NonNegativeLength, NonNegativeLengthPercentage>, Position),
 }
 
 pub use self::GenericGradientKind as GradientKind;
@@ -115,11 +122,11 @@ pub use self::GenericGradientKind as GradientKind;
     Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss, ToResolvedValue, ToShmem,
 )]
 #[repr(C, u8)]
-pub enum GenericEndingShape<Length, LengthPercentage> {
+pub enum GenericEndingShape<NonNegativeLength, NonNegativeLengthPercentage> {
     
-    Circle(GenericCircle<Length>),
+    Circle(GenericCircle<NonNegativeLength>),
     
-    Ellipse(GenericEllipse<LengthPercentage>),
+    Ellipse(GenericEllipse<NonNegativeLengthPercentage>),
 }
 
 pub use self::GenericEndingShape as EndingShape;
@@ -127,9 +134,9 @@ pub use self::GenericEndingShape as EndingShape;
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
 #[repr(C, u8)]
-pub enum GenericCircle<Length> {
+pub enum GenericCircle<NonNegativeLength> {
     
-    Radius(Length),
+    Radius(NonNegativeLength),
     
     Extent(ShapeExtent),
 }
@@ -141,9 +148,9 @@ pub use self::GenericCircle as Circle;
     Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss, ToResolvedValue, ToShmem,
 )]
 #[repr(C, u8)]
-pub enum GenericEllipse<LengthPercentage> {
+pub enum GenericEllipse<NonNegativeLengthPercentage> {
     
-    Radii(LengthPercentage, LengthPercentage),
+    Radii(NonNegativeLengthPercentage, NonNegativeLengthPercentage),
     
     Extent(ShapeExtent),
 }
@@ -314,11 +321,12 @@ where
     }
 }
 
-impl<D, L, LoP, P, C> ToCss for Gradient<D, L, LoP, P, C>
+impl<D, LP, NL, NLP, P, C> ToCss for Gradient<D, LP, NL, NLP, P, C>
 where
     D: LineDirection,
-    L: ToCss,
-    LoP: ToCss,
+    LP: ToCss,
+    NL: ToCss,
+    NLP: ToCss,
     P: ToCss,
     C: ToCss,
 {

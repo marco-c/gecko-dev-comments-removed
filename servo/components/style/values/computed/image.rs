@@ -10,7 +10,7 @@
 use crate::values::computed::position::Position;
 use crate::values::computed::url::ComputedImageUrl;
 use crate::values::computed::{Angle, Color, Context};
-use crate::values::computed::{Length, LengthPercentage, NumberOrPercentage, ToComputedValue};
+use crate::values::computed::{LengthPercentage, NonNegativeLength, NonNegativeLengthPercentage, NumberOrPercentage, ToComputedValue};
 use crate::values::generics::image::{self as generic, GradientCompatMode};
 use crate::values::specified::image::LineDirection as SpecifiedLineDirection;
 use crate::values::specified::position::{HorizontalPositionKeyword, VerticalPositionKeyword};
@@ -27,12 +27,14 @@ pub type Image = generic::GenericImage<Gradient, MozImageRect, ComputedImageUrl>
 
 
 
-pub type Gradient =
-    generic::GenericGradient<LineDirection, Length, LengthPercentage, Position, Color>;
-
-
-pub type GradientKind =
-    generic::GenericGradientKind<LineDirection, Length, LengthPercentage, Position>;
+pub type Gradient = generic::GenericGradient<
+    LineDirection,
+    LengthPercentage,
+    NonNegativeLength,
+    NonNegativeLengthPercentage,
+    Position,
+    Color,
+>;
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToResolvedValue)]
@@ -47,9 +49,6 @@ pub enum LineDirection {
     
     Corner(HorizontalPositionKeyword, VerticalPositionKeyword),
 }
-
-
-pub type EndingShape = generic::EndingShape<Length, LengthPercentage>;
 
 
 pub type GradientItem = generic::GenericGradientItem<Color, LengthPercentage>;
