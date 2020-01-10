@@ -22,7 +22,6 @@
 #include "nsITextToSubURI.h"
 #include "nsVariant.h"
 #include "mozilla/ShellHeaderOnlyUtils.h"
-#include "mozilla/UrlmonHeaderOnlyUtils.h"
 #include "mozilla/UniquePtrExtensions.h"
 
 #define RUNDLL32_EXE L"\\rundll32.exe"
@@ -228,9 +227,8 @@ nsresult nsMIMEInfoWin::LoadUriInternal(nsIURI* aURL) {
 
     
     
-    
-    LauncherResult<_bstr_t> validatedUri = UrlmonValidateUri(utf16Spec.get());
-    if (validatedUri.isErr()) {
+    UniqueAbsolutePidl pidl = ShellParseDisplayName(utf16Spec.get());
+    if (!pidl) {
       return NS_ERROR_FAILURE;
     }
 
@@ -242,8 +240,7 @@ nsresult nsMIMEInfoWin::LoadUriInternal(nsIURI* aURL) {
     
     
     mozilla::LauncherVoidResult shellExecuteOk =
-        mozilla::ShellExecuteByExplorer(validatedUri.unwrap(), args, verb,
-                                        workingDir, showCmd);
+        mozilla::ShellExecuteByExplorer(pidl, args, verb, workingDir, showCmd);
     if (shellExecuteOk.isErr()) {
       return NS_ERROR_FAILURE;
     }
