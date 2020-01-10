@@ -652,8 +652,6 @@ class ScriptSource {
   
   
   
-  
-  
   UniquePtr<XDRIncrementalEncoder> xdrEncoder_ = nullptr;
 
   
@@ -731,8 +729,7 @@ class ScriptSource {
 
   explicit ScriptSource() : id_(++idCount_) {}
 
-  void finalizeGCData();
-  ~ScriptSource();
+  ~ScriptSource() { MOZ_ASSERT(refs == 0); }
 
   void incref() { refs++; }
   void decref() {

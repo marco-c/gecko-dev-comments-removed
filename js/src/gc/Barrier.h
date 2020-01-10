@@ -935,17 +935,6 @@ struct MovableCellHasher<WeakHeapPtr<T>> {
 
 
 template <class T>
-struct HeapPtrHasher {
-  typedef HeapPtr<T> Key;
-  typedef T Lookup;
-
-  static HashNumber hash(Lookup obj) { return DefaultHasher<T>::hash(obj); }
-  static bool match(const Key& k, Lookup l) { return k.get() == l; }
-  static void rekey(Key& k, const Key& newKey) { k.unsafeSet(newKey); }
-};
-
-
-template <class T>
 struct GCPtrHasher {
   typedef GCPtr<T> Key;
   typedef T Lookup;
@@ -996,10 +985,6 @@ class MOZ_STACK_CLASS StackGCCellPtr {
 }  
 
 namespace mozilla {
-
-
-template <class T>
-struct DefaultHasher<js::HeapPtr<T>> : js::HeapPtrHasher<T> {};
 
 
 template <class T>

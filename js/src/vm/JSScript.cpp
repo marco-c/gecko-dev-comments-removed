@@ -1618,9 +1618,6 @@ void JSScript::resetScriptCounts() {
 void ScriptSourceObject::finalize(JSFreeOp* fop, JSObject* obj) {
   MOZ_ASSERT(fop->onMainThread());
   ScriptSourceObject* sso = &obj->as<ScriptSourceObject>();
-  if (sso->isCanonical()) {
-    sso->source()->finalizeGCData();
-  }
   sso->source()->decref();
 
   
@@ -2511,7 +2508,6 @@ template bool ScriptSource::assignSource(JSContext* cx,
                                          SourceText<Utf8Unit>& srcBuf);
 
 void ScriptSource::trace(JSTracer* trc) {
-  
 #ifdef JS_BUILD_BINAST
   if (data.is<BinAST>()) {
     if (auto& metadata = data.as<BinAST>().metadata) {
@@ -2521,42 +2517,6 @@ void ScriptSource::trace(JSTracer* trc) {
 #else
   MOZ_ASSERT(!data.is<BinAST>());
 #endif  
-  if (xdrEncoder_) {
-    xdrEncoder_->trace(trc);
-  }
-}
-
-void ScriptSource::finalizeGCData() {
-  
-
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(TlsContext.get() && TlsContext.get()->isMainThreadContext());
-
-#ifdef JS_BUILD_BINAST
-  if (hasBinASTSource()) {
-    if (auto& metadata = data.as<BinAST>().metadata) {
-      metadata.reset();
-    }
-  }
-#endif  
-  if (xdrEncoder_) {
-    xdrEncoder_.reset();
-  }
-}
-
-ScriptSource::~ScriptSource() {
-  MOZ_ASSERT(refs == 0);
-
-  
-  
-  
-  MOZ_ASSERT(!xdrEncoder_);
-  MOZ_ASSERT_IF(hasBinASTSource(), !data.as<BinAST>().metadata);
 }
 
 static MOZ_MUST_USE bool reallocUniquePtr(UniqueChars& unique, size_t size) {
