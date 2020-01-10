@@ -472,8 +472,11 @@ class HttpBaseChannel : public nsHashPropertyBag,
   }
 
   
+  
+  
+  
   nsresult SetReferrerInfo(nsIReferrerInfo* aReferrerInfo, bool aClone,
-                           bool aCompute);
+                           bool aCompute, bool aSetOriginal = true);
 
   struct ReplacementChannelConfig {
     ReplacementChannelConfig() = default;
@@ -599,6 +602,10 @@ class HttpBaseChannel : public nsHashPropertyBag,
   nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
   nsCOMPtr<nsIProgressEventSink> mProgressSink;
   nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
+  
+  
+  
+  nsCOMPtr<nsIReferrerInfo> mOriginalReferrerInfo;
   nsCOMPtr<nsIApplicationCache> mApplicationCache;
   nsCOMPtr<nsIURI> mAPIRedirectToURI;
   nsCOMPtr<nsIURI> mProxyURI;
