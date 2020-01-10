@@ -348,11 +348,24 @@ GMPWrapper.prototype = {
     }
   },
 
+  
+
+
+
+
+
+
+
+
   findUpdates(aListener, aReason, aAppVersion, aPlatformVersion) {
     this._log.trace(
       "findUpdates() - " + this._plugin.id + " - reason=" + aReason
     );
 
+    
+    
+    
+    
     AddonManagerPrivate.callNoUpdateListeners(this, aListener);
 
     if (aReason === AddonManager.UPDATE_WHEN_PERIODIC_UPDATE) {
@@ -517,6 +530,12 @@ GMPWrapper.prototype = {
       this._handleEnabledChanged();
     }
   },
+
+  
+
+
+
+
 
   checkForUpdates(delay) {
     if (this._isUpdateCheckPending) {
