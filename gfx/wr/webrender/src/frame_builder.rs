@@ -349,6 +349,22 @@ impl FrameBuilder {
                 &visibility_context,
                 &mut visibility_state,
             );
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            for (_, cache_state) in visibility_state.retained_tiles.caches.drain() {
+                visibility_state.composite_state.destroy_native_surfaces(
+                    cache_state.tiles.values(),
+                );
+            }
         }
 
         let mut frame_state = FrameBuildingState {

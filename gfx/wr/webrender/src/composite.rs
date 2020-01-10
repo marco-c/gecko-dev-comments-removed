@@ -234,6 +234,11 @@ pub trait Compositor {
     );
 
     
+    
+    
+    
+    
+    
     fn destroy_surface(
         &mut self,
         id: NativeSurfaceId,

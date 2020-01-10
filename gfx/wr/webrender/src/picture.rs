@@ -4656,7 +4656,7 @@ impl TileNode {
 
 impl CompositeState {
     
-    fn destroy_native_surfaces<'a, I: Iterator<Item = &'a Tile>>(
+    pub fn destroy_native_surfaces<'a, I: Iterator<Item = &'a Tile>>(
         &mut self,
         tiles_iter: I,
     ) {
