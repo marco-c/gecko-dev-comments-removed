@@ -3311,7 +3311,7 @@ impl Device {
         }
     }
 
-    pub fn gl_describe_format(&self, format: ImageFormat) -> FormatDesc {
+    fn gl_describe_format(&self, format: ImageFormat) -> FormatDesc {
         match format {
             ImageFormat::R8 => FormatDesc {
                 internal: gl::R8,
@@ -3392,16 +3392,16 @@ impl Device {
     }
 }
 
-pub struct FormatDesc {
+struct FormatDesc {
     
-    pub internal: gl::GLenum,
+    internal: gl::GLenum,
     
-    pub external: gl::GLuint,
+    external: gl::GLuint,
     
     
-    pub read: gl::GLuint,
+    read: gl::GLuint,
     
-    pub pixel_type: gl::GLuint,
+    pixel_type: gl::GLuint,
 }
 
 struct UploadChunk {
