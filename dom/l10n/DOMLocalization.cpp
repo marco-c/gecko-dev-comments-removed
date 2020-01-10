@@ -50,34 +50,35 @@ NS_INTERFACE_MAP_END
 DOMLocalization::DOMLocalization(nsIGlobalObject* aGlobal) : mGlobal(aGlobal) {
   mMutations = new mozilla::dom::l10n::Mutations(this);
 }
+
 void DOMLocalization::Init(nsTArray<nsString>& aResourceIds, ErrorResult& aRv) {
   nsCOMPtr<mozILocalizationJSM> jsm =
       do_ImportModule("resource://gre/modules/Localization.jsm");
   MOZ_RELEASE_ASSERT(jsm);
 
-  Unused << jsm->GetLocalization(getter_AddRefs(mLocalization));
+  Unused << jsm->GetLocalization(aResourceIds, getter_AddRefs(mLocalization));
   MOZ_RELEASE_ASSERT(mLocalization);
 
-  
-  
-  
-  
-  uint32_t ret;
-  if (NS_FAILED(mLocalization->AddResourceIds(aResourceIds, true, &ret))) {
-    aRv.Throw(NS_ERROR_UNEXPECTED);
-    return;
-  }
+  RegisterObservers();
+}
 
-  
-  
-  
-  
+void DOMLocalization::Init(nsTArray<nsString>& aResourceIds, JS::Handle<JS::Value> aGenerateMessages, ErrorResult& aRv) {
+  nsCOMPtr<mozILocalizationJSM> jsm =
+    do_ImportModule("resource://gre/modules/Localization.jsm");
+  MOZ_RELEASE_ASSERT(jsm);
+
+  Unused << jsm->GetLocalizationWithCustomGenerateMessages(
+      aResourceIds, aGenerateMessages, getter_AddRefs(mLocalization));
+  MOZ_RELEASE_ASSERT(mLocalization);
+
   RegisterObservers();
 }
 
 already_AddRefed<DOMLocalization> DOMLocalization::Constructor(
     const GlobalObject& aGlobal,
-    const Optional<Sequence<nsString>>& aResourceIds, ErrorResult& aRv) {
+    const Optional<Sequence<nsString>>& aResourceIds,
+    const Optional<OwningNonNull<GenerateMessages>>& aGenerateMessages,
+    ErrorResult& aRv) {
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
   if (!global) {
     aRv.Throw(NS_ERROR_FAILURE);
@@ -91,7 +92,15 @@ already_AddRefed<DOMLocalization> DOMLocalization::Constructor(
     resourceIds = aResourceIds.Value();
   }
 
-  loc->Init(resourceIds, aRv);
+  if (aGenerateMessages.WasPassed()) {
+    GenerateMessages& generateMessages = aGenerateMessages.Value();
+    JS::Rooted<JS::Value> generateMessagesJS(
+        aGlobal.Context(), JS::ObjectValue(*generateMessages.CallbackOrNull()));
+    loc->Init(resourceIds, generateMessagesJS, aRv);
+  } else {
+    loc->Init(resourceIds, aRv);
+  }
+
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
