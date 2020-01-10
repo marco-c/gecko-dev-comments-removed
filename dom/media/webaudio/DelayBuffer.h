@@ -32,7 +32,7 @@ class DelayBuffer final {
     
     
     MOZ_ASSERT(aMaxDelayTicks <=
-               std::numeric_limits<decltype(mMaxDelayTicks)>::max());
+               float(std::numeric_limits<decltype(mMaxDelayTicks)>::max()));
   }
 
   
