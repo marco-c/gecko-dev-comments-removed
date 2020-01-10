@@ -1126,6 +1126,15 @@ void MappedAttrParser::ParseMappedAttrValue(nsAtom* aMappedAttrName,
         mDecl->Raw(), propertyID, &value, false, data,
         ParsingMode::AllowUnitlessLength,
         mElement->OwnerDoc()->GetCompatibilityMode(), mLoader, {});
+
+    
+    
+    
+    if (changed) {
+      UseCounter useCounter = nsCSSProps::UseCounterFor(propertyID);
+      MOZ_ASSERT(useCounter != eUseCounter_UNKNOWN);
+      mElement->OwnerDoc()->SetUseCounter(useCounter);
+    }
     return;
   }
   MOZ_ASSERT(aMappedAttrName == nsGkAtoms::lang,
