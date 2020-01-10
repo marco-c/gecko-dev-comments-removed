@@ -426,7 +426,7 @@ var PermissionPromptPrototype = {
     } else if (this.permissionKey) {
       
       
-      let { state } = SitePermissions.get(
+      let { state } = SitePermissions.getForPrincipal(
         null,
         this.permissionKey,
         this.browser
@@ -514,7 +514,7 @@ var PermissionPromptPrototype = {
               
               
               
-              SitePermissions.set(
+              SitePermissions.setForPrincipal(
                 null,
                 this.permissionKey,
                 promptAction.action,
