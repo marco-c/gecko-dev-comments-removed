@@ -12,7 +12,7 @@ use std::vec::Vec;
 use serde::{Deserialize, Serialize};
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct ValueLocRange {
     

@@ -852,8 +852,12 @@ impl Solver {
     
     
     
-    pub fn quick_solve(&mut self, global_regs: &RegisterSet) -> Result<RegisterSet, SolverError> {
-        self.find_solution(global_regs)
+    pub fn quick_solve(
+        &mut self,
+        global_regs: &RegisterSet,
+        is_reload: bool,
+    ) -> Result<RegisterSet, SolverError> {
+        self.find_solution(global_regs, is_reload)
     }
 
     
@@ -863,7 +867,11 @@ impl Solver {
     
     
     
-    pub fn real_solve(&mut self, global_regs: &RegisterSet) -> Result<RegisterSet, SolverError> {
+    pub fn real_solve(
+        &mut self,
+        global_regs: &RegisterSet,
+        is_reload: bool,
+    ) -> Result<RegisterSet, SolverError> {
         
         for v in &mut self.vars {
             let d = v.iter(&self.regs_in, &self.regs_out, global_regs).len();
@@ -901,7 +909,7 @@ impl Solver {
         });
 
         debug!("real_solve for {}", self);
-        self.find_solution(global_regs)
+        self.find_solution(global_regs, is_reload)
     }
 
     
@@ -909,7 +917,11 @@ impl Solver {
     
     
     
-    fn find_solution(&mut self, global_regs: &RegisterSet) -> Result<RegisterSet, SolverError> {
+    fn find_solution(
+        &mut self,
+        global_regs: &RegisterSet,
+        is_reload: bool,
+    ) -> Result<RegisterSet, SolverError> {
         
         let mut iregs = self.regs_in.clone();
         let mut oregs = self.regs_out.clone();
@@ -917,7 +929,20 @@ impl Solver {
 
         for v in &mut self.vars {
             let rc = v.constraint;
-            let reg = match v.iter(&iregs, &oregs, &gregs).next() {
+
+            
+            
+            
+            
+            
+            let mut reg_set_iter = v.iter(&iregs, &oregs, &gregs);
+            let maybe_reg = if is_reload {
+                reg_set_iter.rnext()
+            } else {
+                reg_set_iter.next()
+            };
+
+            let reg = match maybe_reg {
                 Some(reg) => reg,
                 None => {
                     
@@ -1207,7 +1232,7 @@ mod tests {
         solver.reset(&regs);
         solver.reassign_in(v10, gpr, r1, r0);
         solver.inputs_done();
-        assert!(solver.quick_solve(&gregs).is_ok());
+        assert!(solver.quick_solve(&gregs, false).is_ok());
         assert_eq!(solver.schedule_moves(&regs), 0);
         assert_eq!(solver.moves(), &[mov(v10, gpr, r1, r0)]);
 
@@ -1217,7 +1242,7 @@ mod tests {
         solver.reassign_in(v10, gpr, r0, r1);
         solver.reassign_in(v11, gpr, r1, r2);
         solver.inputs_done();
-        assert!(solver.quick_solve(&gregs).is_ok());
+        assert!(solver.quick_solve(&gregs, false).is_ok());
         assert_eq!(solver.schedule_moves(&regs), 0);
         assert_eq!(
             solver.moves(),
@@ -1229,7 +1254,7 @@ mod tests {
         solver.reassign_in(v10, gpr, r0, r1);
         solver.reassign_in(v11, gpr, r1, r0);
         solver.inputs_done();
-        assert!(solver.quick_solve(&gregs).is_ok());
+        assert!(solver.quick_solve(&gregs, false).is_ok());
         assert_eq!(solver.schedule_moves(&regs), 0);
         assert_eq!(
             solver.moves(),
@@ -1269,7 +1294,7 @@ mod tests {
         solver.reassign_in(v11, s, s2, s0);
         solver.reassign_in(v12, s, s3, s1);
         solver.inputs_done();
-        assert!(solver.quick_solve(&gregs).is_ok());
+        assert!(solver.quick_solve(&gregs, false).is_ok());
         assert_eq!(solver.schedule_moves(&regs), 0);
         assert_eq!(
             solver.moves(),
@@ -1290,7 +1315,7 @@ mod tests {
         solver.reassign_in(v12, s, s1, s3);
         solver.reassign_in(v10, d, d1, d0);
         solver.inputs_done();
-        assert!(solver.quick_solve(&gregs).is_ok());
+        assert!(solver.quick_solve(&gregs, false).is_ok());
         assert_eq!(solver.schedule_moves(&regs), 0);
         assert_eq!(
             solver.moves(),
@@ -1335,7 +1360,7 @@ mod tests {
         solver.reassign_in(v11, gpr, r1, r2);
         solver.reassign_in(v12, gpr, r2, r0);
         solver.inputs_done();
-        assert!(solver.quick_solve(&gregs).is_ok());
+        assert!(solver.quick_solve(&gregs, false).is_ok());
         assert_eq!(solver.schedule_moves(&regs), 1);
         assert_eq!(
             solver.moves(),
@@ -1359,7 +1384,7 @@ mod tests {
         solver.reassign_in(v15, gpr, r5, r3);
 
         solver.inputs_done();
-        assert!(solver.quick_solve(&gregs).is_ok());
+        assert!(solver.quick_solve(&gregs, false).is_ok());
         
         assert_eq!(solver.schedule_moves(&regs), 1);
         assert_eq!(

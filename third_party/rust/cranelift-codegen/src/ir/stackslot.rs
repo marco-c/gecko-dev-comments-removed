@@ -101,7 +101,7 @@ impl fmt::Display for StackSlotKind {
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct StackSlotData {
     
@@ -154,7 +154,7 @@ impl fmt::Display for StackSlotData {
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct StackSlots {
     
@@ -207,11 +207,6 @@ impl StackSlots {
     
     pub fn is_valid(&self, ss: StackSlot) -> bool {
         self.slots.is_valid(ss)
-    }
-
-    
-    pub fn set_offset(&mut self, ss: StackSlot, offset: StackOffset) {
-        self.slots[ss].offset = Some(offset);
     }
 
     

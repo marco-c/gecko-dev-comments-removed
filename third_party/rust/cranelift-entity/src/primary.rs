@@ -27,7 +27,7 @@ use std::vec::Vec;
 
 
 
-#[derive(Debug, Clone, Hash)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct PrimaryMap<K, V>
 where

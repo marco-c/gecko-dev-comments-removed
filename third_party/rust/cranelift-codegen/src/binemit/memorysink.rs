@@ -164,6 +164,16 @@ impl<'a> CodeSink for MemoryCodeSink<'a> {
 
 
 
+pub struct NullRelocSink {}
+
+impl RelocSink for NullRelocSink {
+    fn reloc_ebb(&mut self, _: u32, _: Reloc, _: u32) {}
+    fn reloc_external(&mut self, _: u32, _: Reloc, _: &ExternalName, _: i64) {}
+    fn reloc_jt(&mut self, _: u32, _: Reloc, _: JumpTable) {}
+}
+
+
+
 pub struct NullTrapSink {}
 
 impl TrapSink for NullTrapSink {

@@ -45,7 +45,7 @@
 use crate::cursor::{Cursor, EncCursor};
 use crate::dominator_tree::DominatorTree;
 use crate::ir::{AbiParam, ArgumentLoc, InstBuilder, ValueDef};
-use crate::ir::{Ebb, Function, Inst, Layout, SigRef, Value, ValueLoc};
+use crate::ir::{Ebb, Function, Inst, InstructionData, Layout, Opcode, SigRef, Value, ValueLoc};
 use crate::isa::{regs_overlap, RegClass, RegInfo, RegUnit};
 use crate::isa::{ConstraintKind, EncInfo, OperandConstraint, RecipeConstraints, TargetIsa};
 use crate::packed_option::PackedOption;
@@ -428,10 +428,26 @@ impl<'a> Context<'a> {
 
         
         
-        let output_regs = self.solver.quick_solve(&regs.global).unwrap_or_else(|_| {
-            debug!("quick_solve failed for {}", self.solver);
-            self.iterate_solution(throughs, &regs.global, &mut replace_global_defines)
-        });
+        let is_reload = match &self.cur.func.dfg[inst] {
+            InstructionData::Unary {
+                opcode: Opcode::Fill,
+                arg: _,
+            } => true,
+            _ => false,
+        };
+
+        let output_regs = self
+            .solver
+            .quick_solve(&regs.global, is_reload)
+            .unwrap_or_else(|_| {
+                debug!("quick_solve failed for {}", self.solver);
+                self.iterate_solution(
+                    throughs,
+                    &regs.global,
+                    &mut replace_global_defines,
+                    is_reload,
+                )
+            });
 
         
         
@@ -847,12 +863,13 @@ impl<'a> Context<'a> {
         throughs: &[LiveValue],
         global_regs: &RegisterSet,
         replace_global_defines: &mut bool,
+        is_reload: bool,
     ) -> RegisterSet {
         
         self.program_complete_input_constraints();
 
         loop {
-            match self.solver.real_solve(global_regs) {
+            match self.solver.real_solve(global_regs, is_reload) {
                 Ok(regs) => return regs,
                 Err(SolverError::Divert(rc)) => {
                     
