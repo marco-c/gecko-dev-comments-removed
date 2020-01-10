@@ -4,9 +4,54 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["AutoCompletePopup"];
+var EXPORTED_SYMBOLS = ["AutoCompleteParent"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+
+let currentBrowserWeakRef = null;
+let currentActor = null;
+
+let autoCompleteListeners = new Set();
+
+function compareContext(message) {
+  if (
+    !currentActor ||
+    (currentActor.browsingContext != message.data.browsingContext &&
+      currentActor.browsingContext.top != message.data.browsingContext)
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+
+
+
+
+Services.ppmm.addMessageListener(
+  "FormAutoComplete:GetSelectedIndex",
+  message => {
+    if (compareContext(message)) {
+      let actor = currentActor;
+      if (actor && actor.openedPopup) {
+        return actor.openedPopup.selectedIndex;
+      }
+    }
+
+    return -1;
+  }
+);
+
+Services.ppmm.addMessageListener("FormAutoComplete:SelectBy", message => {
+  if (compareContext(message)) {
+    let actor = currentActor;
+    if (actor && actor.openedPopup) {
+      actor.openedPopup.selectBy(message.data.reverse, message.data.page);
+    }
+  }
+});
 
 
 
@@ -21,6 +66,9 @@ var AutoCompleteResultView = {
 
   
   results: [],
+
+  
+  currentActor: null,
 
   
   get matchCount() {
@@ -57,7 +105,9 @@ var AutoCompleteResultView = {
   },
 
   handleEnter(aIsPopupSelection) {
-    AutoCompletePopup.handleEnter(aIsPopupSelection);
+    if (this.currentActor) {
+      this.currentActor.handleEnter(aIsPopupSelection);
+    }
   },
 
   stopSearch() {},
@@ -74,60 +124,46 @@ var AutoCompleteResultView = {
   },
 
   _focus() {
-    AutoCompletePopup.requestFocus();
+    if (this.currentActor) {
+      this.currentActor.requestFocus();
+    }
   },
 
   
   clearResults() {
+    this.currentActor = null;
     this.results = [];
   },
 
-  setResults(results) {
+  setResults(actor, results) {
+    this.currentActor = actor;
     this.results = results;
   },
 };
 
-this.AutoCompletePopup = {
-  MESSAGES: [
-    "FormAutoComplete:SelectBy",
-    "FormAutoComplete:GetSelectedIndex",
-    "FormAutoComplete:SetSelectedIndex",
-    "FormAutoComplete:MaybeOpenPopup",
-    "FormAutoComplete:ClosePopup",
-    "FormAutoComplete:Disconnect",
-    "FormAutoComplete:RemoveEntry",
-    "FormAutoComplete:Invalidate",
-  ],
-
-  init() {
-    for (let msg of this.MESSAGES) {
-      Services.mm.addMessageListener(msg, this);
+class AutoCompleteParent extends JSWindowActorParent {
+  willDestroy() {
+    if (this.openedPopup) {
+      this.openedPopup.closePopup();
     }
-    Services.obs.addObserver(this, "message-manager-disconnect");
-  },
+  }
 
-  uninit() {
-    for (let msg of this.MESSAGES) {
-      Services.mm.removeMessageListener(msg, this);
-    }
-    Services.obs.removeObserver(this, "message-manager-disconnect");
-  },
+  static getCurrentBrowser() {
+    return currentBrowserWeakRef ? currentBrowserWeakRef.get() : null;
+  }
 
-  observe(subject, topic, data) {
-    switch (topic) {
-      case "message-manager-disconnect": {
-        if (this.openedPopup) {
-          this.openedPopup.closePopup();
-        }
-        break;
-      }
-    }
-  },
+  static addPopupStateListener(listener) {
+    autoCompleteListeners.add(listener);
+  }
+
+  static removePopupStateListener(listener) {
+    autoCompleteListeners.delete(listener);
+  }
 
   handleEvent(evt) {
     switch (evt.type) {
       case "popupshowing": {
-        this.sendMessageToBrowser("FormAutoComplete:PopupOpened");
+        this.sendAsyncMessage("FormAutoComplete:PopupOpened", {});
         break;
       }
 
@@ -137,7 +173,7 @@ this.AutoCompletePopup = {
           selectedIndex != -1
             ? AutoCompleteResultView.getStyleAt(selectedIndex)
             : "";
-        this.sendMessageToBrowser("FormAutoComplete:PopupClosed", {
+        this.sendAsyncMessage("FormAutoComplete:PopupClosed", {
           selectedRowStyle,
         });
         AutoCompleteResultView.clearResults();
@@ -146,15 +182,16 @@ this.AutoCompletePopup = {
         
         this.openedPopup.adjustHeight();
         this.openedPopup = null;
-        this.weakBrowser = null;
+        currentBrowserWeakRef = null;
+        currentActor = null;
         evt.target.removeEventListener("popuphidden", this);
         evt.target.removeEventListener("popupshowing", this);
         break;
       }
     }
-  },
+  }
 
-  showPopupWithResults({ browser, rect, dir, results }) {
+  showPopupWithResults({ rect, dir, results }) {
     if (!results.length || this.openedPopup) {
       
       
@@ -162,6 +199,7 @@ this.AutoCompletePopup = {
       return;
     }
 
+    let browser = this.browsingContext.top.embedderElement;
     let window = browser.ownerGlobal;
     
     if (
@@ -175,7 +213,8 @@ this.AutoCompletePopup = {
 
     
     let resultStyles = new Set(results.map(r => r.style).filter(r => !!r));
-    this.weakBrowser = Cu.getWeakReference(browser);
+    currentBrowserWeakRef = Cu.getWeakReference(browser);
+    currentActor = this;
     this.openedPopup = browser.autoCompletePopup;
     
     this.openedPopup.setAttribute("resultstyles", [...resultStyles].join(" "));
@@ -184,7 +223,7 @@ this.AutoCompletePopup = {
     this.openedPopup.setAttribute("width", Math.max(100, rect.width));
     this.openedPopup.style.direction = dir;
 
-    AutoCompleteResultView.setResults(results);
+    AutoCompleteResultView.setResults(this, results);
     this.openedPopup.view = AutoCompleteResultView;
     this.openedPopup.selectedIndex = -1;
 
@@ -216,7 +255,7 @@ this.AutoCompletePopup = {
     } else {
       this.closePopup();
     }
-  },
+  }
 
   invalidate(results) {
     if (!this.openedPopup) {
@@ -226,10 +265,10 @@ this.AutoCompletePopup = {
     if (!results.length) {
       this.closePopup();
     } else {
-      AutoCompleteResultView.setResults(results);
+      AutoCompleteResultView.setResults(this, results);
       this.openedPopup.invalidate();
     }
-  },
+  }
 
   closePopup() {
     if (this.openedPopup) {
@@ -238,36 +277,22 @@ this.AutoCompletePopup = {
       
       this.openedPopup.hidePopup();
     }
-  },
-
-  removeLogin(login) {
-    Services.logins.removeLogin(login);
-  },
+  }
 
   receiveMessage(message) {
-    if (!message.target.autoCompletePopup) {
+    let browser = this.browsingContext.top.embedderElement;
+    if (!browser || !browser.autoCompletePopup) {
+      
+      if (this.openedPopup) {
+        this.openedPopup.closePopup();
+      }
+
       
       
       return false;
     }
 
     switch (message.name) {
-      case "FormAutoComplete:SelectBy": {
-        if (this.openedPopup) {
-          this.openedPopup.selectBy(message.data.reverse, message.data.page);
-        }
-        break;
-      }
-
-      case "FormAutoComplete:GetSelectedIndex": {
-        if (this.openedPopup) {
-          return this.openedPopup.selectedIndex;
-        }
-        
-        
-        return -1;
-      }
-
       case "FormAutoComplete:SetSelectedIndex": {
         let { index } = message.data;
         if (this.openedPopup) {
@@ -279,11 +304,12 @@ this.AutoCompletePopup = {
       case "FormAutoComplete:MaybeOpenPopup": {
         let { results, rect, dir } = message.data;
         this.showPopupWithResults({
-          browser: message.target,
           rect,
           dir,
           results,
         });
+
+        this.notifyListeners();
         break;
       }
 
@@ -310,7 +336,18 @@ this.AutoCompletePopup = {
     
     
     return false;
-  },
+  }
+
+  notifyListeners() {
+    let window = this.browsingContext.top.embedderElement.ownerGlobal;
+    for (let listener of autoCompleteListeners) {
+      try {
+        listener(window);
+      } catch (ex) {
+        Cu.reportError(ex);
+      }
+    }
+  }
 
   
 
@@ -322,46 +359,25 @@ this.AutoCompletePopup = {
 
   handleEnter(aIsPopupSelection) {
     if (this.openedPopup) {
-      this.sendMessageToBrowser("FormAutoComplete:HandleEnter", {
+      this.sendAsyncMessage("FormAutoComplete:HandleEnter", {
         selectedIndex: this.openedPopup.selectedIndex,
         isPopupSelection: aIsPopupSelection,
       });
     }
-  },
+  }
 
-  
-
-
-
-
-
-
-
-
-  sendMessageToBrowser(msgName, data) {
-    let browser = this.weakBrowser ? this.weakBrowser.get() : null;
-    if (!browser) {
-      return;
-    }
-
-    if (browser.messageManager) {
-      browser.messageManager.sendAsyncMessage(msgName, data);
-    } else {
-      Cu.reportError(
-        `AutoCompletePopup: No messageManager for message "${msgName}"`
-      );
-    }
-  },
-
-  stopSearch() {},
+  stopSearch() {}
 
   
 
 
 
   requestFocus() {
-    if (this.openedPopup) {
-      this.sendMessageToBrowser("FormAutoComplete:Focus");
-    }
-  },
-};
+    
+    
+
+
+
+
+  }
+}

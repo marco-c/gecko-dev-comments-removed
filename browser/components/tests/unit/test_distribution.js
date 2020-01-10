@@ -39,7 +39,10 @@ add_task(async function setup() {
 
 
 
-PromiseTestUtils.whitelistRejectionsGlobally(/Component returned failure code/);
+PromiseTestUtils.whitelistRejectionsGlobally(/A request was aborted/);
+PromiseTestUtils.whitelistRejectionsGlobally(
+  /The operation failed for reasons unrelated/
+);
 
 const TOPICDATA_DISTRIBUTION_CUSTOMIZATION = "force-distribution-customization";
 const TOPIC_BROWSERGLUE_TEST = "browser-glue-test";

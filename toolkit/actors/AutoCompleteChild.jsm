@@ -1,0 +1,261 @@
+
+
+
+
+
+var EXPORTED_SYMBOLS = ["AutoCompleteChild"];
+
+
+
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+ChromeUtils.defineModuleGetter(
+  this,
+  "BrowserUtils",
+  "resource://gre/modules/BrowserUtils.jsm"
+);
+
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "formFill",
+  "@mozilla.org/satchel/form-fill-controller;1",
+  "nsIFormFillController"
+);
+
+let autoCompleteListeners = new Set();
+
+class AutoCompletePopup {
+  constructor(actor) {
+    this.actor = actor;
+  }
+
+  get input() {
+    return this.actor.input;
+  }
+  get overrideValue() {
+    return null;
+  }
+  set selectedIndex(index) {
+    return (this.actor.selectedIndex = index);
+  }
+  get selectedIndex() {
+    return this.actor.selectedIndex;
+  }
+  get popupOpen() {
+    return this.actor.popupOpen;
+  }
+  openAutocompletePopup(input, element) {
+    return this.actor.openAutocompletePopup(input, element);
+  }
+  closePopup() {
+    this.actor.closePopup();
+  }
+  invalidate() {
+    this.actor.invalidate();
+  }
+  selectBy(reverse, page) {
+    this.actor.selectBy(reverse, page);
+  }
+}
+
+AutoCompletePopup.prototype.QueryInterface = ChromeUtils.generateQI([
+  Ci.nsIAutoCompletePopup,
+]);
+
+class AutoCompleteChild extends JSWindowActorChild {
+  constructor() {
+    super();
+
+    this._input = null;
+    this._popupOpen = false;
+    this._attached = false;
+  }
+
+  static addPopupStateListener(listener) {
+    autoCompleteListeners.add(listener);
+  }
+
+  static removePopupStateListener(listener) {
+    autoCompleteListeners.delete(listener);
+  }
+
+  willDestroy() {
+    if (this._attached) {
+      formFill.detachFromDocument(this.document);
+    }
+  }
+
+  handleEvent(event) {
+    switch (event.type) {
+      case "DOMContentLoaded":
+      case "pageshow":
+      case "focus":
+        if (!this._attached && this.document.location != "about:blank") {
+          this._attached = true;
+          formFill.attachToDocument(this.document, new AutoCompletePopup(this));
+        }
+
+        if (event.type == "focus") {
+          formFill.handleFormEvent(event);
+        }
+
+        break;
+      case "pagehide":
+      case "unload":
+        if (this._attached) {
+          formFill.detachFromDocument(this.document);
+          this._attached = false;
+        }
+      
+      default:
+        formFill.handleFormEvent(event);
+        break;
+    }
+  }
+
+  receiveMessage(message) {
+    switch (message.name) {
+      case "FormAutoComplete:HandleEnter": {
+        this.selectedIndex = message.data.selectedIndex;
+
+        let controller = Cc[
+          "@mozilla.org/autocomplete/controller;1"
+        ].getService(Ci.nsIAutoCompleteController);
+        controller.handleEnter(message.data.isPopupSelection);
+        break;
+      }
+
+      case "FormAutoComplete:PopupClosed": {
+        this._popupOpen = false;
+        this.notifyListeners(message.name, message.data);
+        break;
+      }
+
+      case "FormAutoComplete:PopupOpened": {
+        this._popupOpen = true;
+        this.notifyListeners(message.name, message.data);
+        break;
+      }
+
+      case "FormAutoComplete:Focus": {
+        
+        
+        
+        
+        
+        
+        
+
+
+
+
+        break;
+      }
+    }
+  }
+
+  notifyListeners(messageName, data) {
+    for (let listener of autoCompleteListeners) {
+      try {
+        listener(messageName, data, this.contentWindow);
+      } catch (ex) {
+        Cu.reportError(ex);
+      }
+    }
+  }
+
+  get input() {
+    return this._input;
+  }
+
+  set selectedIndex(index) {
+    this.sendAsyncMessage("FormAutoComplete:SetSelectedIndex", { index });
+  }
+
+  get selectedIndex() {
+    
+    
+    
+    
+    
+    
+    return Services.cpmm.sendSyncMessage("FormAutoComplete:GetSelectedIndex", {
+      browsingContext: this.browsingContext,
+    });
+  }
+
+  get popupOpen() {
+    return this._popupOpen;
+  }
+
+  openAutocompletePopup(input, element) {
+    if (this._popupOpen || !input) {
+      return;
+    }
+
+    let rect = BrowserUtils.getElementBoundingScreenRect(element);
+    let window = element.ownerGlobal;
+    let dir = window.getComputedStyle(element).direction;
+    let results = this.getResultsFromController(input);
+
+    this.sendAsyncMessage("FormAutoComplete:MaybeOpenPopup", {
+      results,
+      rect,
+      dir,
+    });
+
+    this._input = input;
+  }
+
+  closePopup() {
+    
+    
+    
+    
+    this._popupOpen = false;
+    this.sendAsyncMessage("FormAutoComplete:ClosePopup", {});
+  }
+
+  invalidate() {
+    if (this._popupOpen) {
+      let results = this.getResultsFromController(this._input);
+      this.sendAsyncMessage("FormAutoComplete:Invalidate", { results });
+    }
+  }
+
+  selectBy(reverse, page) {
+    Services.cpmm.sendSyncMessage("FormAutoComplete:SelectBy", {
+      browsingContext: this.browsingContext,
+      reverse,
+      page,
+    });
+  }
+
+  getResultsFromController(inputField) {
+    let results = [];
+
+    if (!inputField) {
+      return results;
+    }
+
+    let controller = inputField.controller;
+    if (!(controller instanceof Ci.nsIAutoCompleteController)) {
+      return results;
+    }
+
+    for (let i = 0; i < controller.matchCount; ++i) {
+      let result = {};
+      result.value = controller.getValueAt(i);
+      result.label = controller.getLabelAt(i);
+      result.comment = controller.getCommentAt(i);
+      result.style = controller.getStyleAt(i);
+      result.image = controller.getImageAt(i);
+      results.push(result);
+    }
+
+    return results;
+  }
+}
