@@ -176,17 +176,11 @@ void FocusManager::ActiveItemChanged(Accessible* aItem, bool aCheckIfActive) {
   
   
   if (!mActiveItem && XRE_IsParentProcess()) {
-    nsFocusManager* domfm = nsFocusManager::GetFocusManager();
-    if (domfm) {
-      nsIContent* focusedElm = domfm->GetFocusedElement();
-      if (EventStateManager::IsRemoteTarget(focusedElm)) {
-        dom::BrowserParent* tab = dom::BrowserParent::GetFrom(focusedElm);
-        if (tab) {
-          a11y::DocAccessibleParent* dap = tab->GetTopLevelDocAccessible();
-          if (dap) {
-            Unused << dap->SendRestoreFocus();
-          }
-        }
+    dom::BrowserParent* browser = dom::BrowserParent::GetFocused();
+    if (browser) {
+      a11y::DocAccessibleParent* dap = browser->GetTopLevelDocAccessible();
+      if (dap) {
+        Unused << dap->SendRestoreFocus();
       }
     }
   }
