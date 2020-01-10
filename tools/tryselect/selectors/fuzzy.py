@@ -259,7 +259,7 @@ def run(update=False, query=None, intersect_query=None, try_config=None, full=Fa
         
         
         '--preview', 'python -c "print(\\"\\n\\".join(sorted([s.strip(\\"\'\\") for s in \\"{+}\\".split()])))"',  
-        '--preview-window=right:20%',
+        '--preview-window=right:30%',
         '--print-query',
     ]
 
