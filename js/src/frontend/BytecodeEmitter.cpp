@@ -2216,9 +2216,11 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitSwitch(SwitchStatement* switchStmt) {
 
 bool BytecodeEmitter::isRunOnceLambda() {
   if (lazyScript) {
-    MOZ_ASSERT_IF(sc->asFunctionBox()->shouldSuppressRunOnce(),
-                  !lazyScript->treatAsRunOnce());
-    return lazyScript->treatAsRunOnce();
+    
+    
+    
+    return lazyScript->treatAsRunOnce() &&
+           !sc->asFunctionBox()->shouldSuppressRunOnce();
   }
 
   return parent && parent->emittingRunOnceLambda &&
