@@ -196,12 +196,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_MUST_USE nsresult PinSelectionToNewBlock();
-
-  
-
-
-
   MOZ_CAN_RUN_SCRIPT void DocumentModifiedWorker();
 
  protected:

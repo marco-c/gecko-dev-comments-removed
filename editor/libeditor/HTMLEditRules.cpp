@@ -619,13 +619,19 @@ nsresult HTMLEditRules::AfterEditInner() {
     }
 
     
-    if (HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement) {
-      rv = PinSelectionToNewBlock();
+    if (HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement &&
+        SelectionRefPtr()->IsCollapsed()) {
+      nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                        .EnsureCaretInBlockElement(
+                            MOZ_KnownLive(*HTMLEditorRef()
+                                               .TopLevelEditSubActionDataRef()
+                                               .mNewBlockElement));
       if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "Failed to pin selection to the new block");
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rv),
+          "EnsureSelectionInBlockElement() failed, but ignored");
     }
 
     
@@ -1231,12 +1237,11 @@ nsresult HTMLEditRules::GetParagraphState(bool* aMixed, nsAString& outFormat) {
   
   
   if (arrayOfNodes.IsEmpty()) {
-    EditorRawDOMPoint selectionStartPoint(
-        EditorBase::GetStartPoint(*SelectionRefPtr()));
-    if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
+    EditorRawDOMPoint atCaret(EditorBase::GetStartPoint(*SelectionRefPtr()));
+    if (NS_WARN_IF(!atCaret.IsSet())) {
       return NS_ERROR_FAILURE;
     }
-    arrayOfNodes.AppendElement(*selectionStartPoint.GetContainer());
+    arrayOfNodes.AppendElement(*atCaret.GetContainer());
   }
 
   
@@ -3361,21 +3366,19 @@ nsresult HTMLEditor::DeleteUnnecessaryNodesAndCollapseSelection(
     const EditorDOMPoint& aSelectionEndPoint) {
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
 
-  EditorDOMPoint selectionStartPoint(aSelectionStartPoint);
+  EditorDOMPoint atCaret(aSelectionStartPoint);
   EditorDOMPoint selectionEndPoint(aSelectionEndPoint);
 
   
   
   if (GetEditAction() == EditAction::eDrop) {
-    MOZ_ASSERT(selectionStartPoint.GetContainer() ==
-               selectionEndPoint.GetContainer());
-    MOZ_ASSERT(selectionStartPoint.Offset() == selectionEndPoint.Offset());
+    MOZ_ASSERT(atCaret.GetContainer() == selectionEndPoint.GetContainer());
+    MOZ_ASSERT(atCaret.Offset() == selectionEndPoint.Offset());
     {
-      AutoTrackDOMPoint startTracker(RangeUpdaterRef(), &selectionStartPoint);
+      AutoTrackDOMPoint startTracker(RangeUpdaterRef(), &atCaret);
       AutoTrackDOMPoint endTracker(RangeUpdaterRef(), &selectionEndPoint);
 
-      nsresult rv =
-          DeleteParentBlocksWithTransactionIfEmpty(selectionStartPoint);
+      nsresult rv = DeleteParentBlocksWithTransactionIfEmpty(atCaret);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -3384,8 +3387,7 @@ nsresult HTMLEditor::DeleteUnnecessaryNodesAndCollapseSelection(
     
     
     if (TopLevelEditSubActionDataRef().mDidDeleteEmptyParentBlocks) {
-      nsresult rv =
-          SelectionRefPtr()->Collapse(selectionStartPoint.ToRawRangeBoundary());
+      nsresult rv = SelectionRefPtr()->Collapse(atCaret.ToRawRangeBoundary());
       if (NS_WARN_IF(Destroyed())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
@@ -3396,11 +3398,11 @@ nsresult HTMLEditor::DeleteUnnecessaryNodesAndCollapseSelection(
 
   
   {
-    AutoTrackDOMPoint startTracker(RangeUpdaterRef(), &selectionStartPoint);
+    AutoTrackDOMPoint startTracker(RangeUpdaterRef(), &atCaret);
     AutoTrackDOMPoint endTracker(RangeUpdaterRef(), &selectionEndPoint);
 
     nsresult rv = DeleteNodeIfInvisibleAndEditableTextNode(
-        MOZ_KnownLive(*selectionStartPoint.GetContainer()));
+        MOZ_KnownLive(*atCaret.GetContainer()));
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
@@ -3417,10 +3419,10 @@ nsresult HTMLEditor::DeleteUnnecessaryNodesAndCollapseSelection(
                          "remove end node, but ignored");
   }
 
-  nsresult rv = SelectionRefPtr()->Collapse(
-      aDirectionAndAmount == nsIEditor::ePrevious
-          ? selectionEndPoint.ToRawRangeBoundary()
-          : selectionStartPoint.ToRawRangeBoundary());
+  nsresult rv =
+      SelectionRefPtr()->Collapse(aDirectionAndAmount == nsIEditor::ePrevious
+                                      ? selectionEndPoint.ToRawRangeBoundary()
+                                      : atCaret.ToRawRangeBoundary());
   if (NS_WARN_IF(Destroyed())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
@@ -5025,12 +5027,11 @@ nsresult HTMLEditor::HandleCSSIndentAtSelectionInternal() {
   
 
   if (SelectionRefPtr()->IsCollapsed()) {
-    EditorRawDOMPoint selectionStartPoint(
-        EditorBase::GetStartPoint(*SelectionRefPtr()));
-    if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
+    EditorRawDOMPoint atCaret(EditorBase::GetStartPoint(*SelectionRefPtr()));
+    if (NS_WARN_IF(!atCaret.IsSet())) {
       return NS_ERROR_FAILURE;
     }
-    Element* block = GetBlock(*selectionStartPoint.GetContainer());
+    Element* block = GetBlock(*atCaret.GetContainer());
     if (block && HTMLEditUtils::IsListItem(block)) {
       arrayOfNodes.AppendElement(*block);
     }
@@ -9576,37 +9577,27 @@ nsresult HTMLEditor::InsertBRElementToEmptyListItemsAndTableCellsInRange(
   return NS_OK;
 }
 
-nsresult HTMLEditRules::PinSelectionToNewBlock() {
-  MOZ_ASSERT(IsEditorDataAvailable());
+nsresult HTMLEditor::EnsureCaretInBlockElement(Element& aElement) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(SelectionRefPtr()->IsCollapsed());
 
-  if (!SelectionRefPtr()->IsCollapsed()) {
-    return NS_OK;
-  }
-
-  if (NS_WARN_IF(
-          !HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement)) {
-    return NS_ERROR_NULL_POINTER;
-  }
-
-  EditorRawDOMPoint selectionStartPoint(
-      EditorBase::GetStartPoint(*SelectionRefPtr()));
-  if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
+  EditorRawDOMPoint atCaret(EditorBase::GetStartPoint(*SelectionRefPtr()));
+  if (NS_WARN_IF(!atCaret.IsSet())) {
     return NS_ERROR_FAILURE;
   }
 
   
   
-  RefPtr<StaticRange> staticRange = StaticRange::Create(
-      selectionStartPoint.ToRawRangeBoundary(),
-      selectionStartPoint.ToRawRangeBoundary(), IgnoreErrors());
+  RefPtr<StaticRange> staticRange =
+      StaticRange::Create(atCaret.ToRawRangeBoundary(),
+                          atCaret.ToRawRangeBoundary(), IgnoreErrors());
   if (NS_WARN_IF(!staticRange)) {
     return NS_ERROR_FAILURE;
   }
 
   bool nodeBefore, nodeAfter;
-  nsresult rv = RangeUtils::CompareNodeToRange(
-      HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement,
-      staticRange, &nodeBefore, &nodeAfter);
+  nsresult rv = RangeUtils::CompareNodeToRange(&aElement, staticRange,
+                                               &nodeBefore, &nodeAfter);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -9617,54 +9608,50 @@ nsresult HTMLEditRules::PinSelectionToNewBlock() {
 
   if (nodeBefore) {
     
-    nsCOMPtr<nsIContent> tmp = HTMLEditorRef().GetLastEditableChild(
-        *HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement);
-    if (!tmp) {
-      tmp = HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement;
+    nsIContent* lastEditableContent = GetLastEditableChild(aElement);
+    if (!lastEditableContent) {
+      lastEditableContent = &aElement;
     }
     EditorRawDOMPoint endPoint;
-    if (EditorBase::IsTextNode(tmp) || HTMLEditorRef().IsContainer(tmp)) {
-      endPoint.SetToEndOf(tmp);
+    if (EditorBase::IsTextNode(lastEditableContent) ||
+        IsContainer(lastEditableContent)) {
+      endPoint.SetToEndOf(lastEditableContent);
     } else {
-      endPoint.Set(tmp);
+      endPoint.Set(lastEditableContent);
       if (NS_WARN_IF(!endPoint.AdvanceOffset())) {
         return NS_ERROR_FAILURE;
       }
     }
     ErrorResult error;
     SelectionRefPtr()->Collapse(endPoint, error);
-    if (NS_WARN_IF(!CanHandleEditAction())) {
+    if (NS_WARN_IF(Destroyed())) {
       error.SuppressException();
       return NS_ERROR_EDITOR_DESTROYED;
     }
-    if (NS_WARN_IF(error.Failed())) {
-      return error.StealNSResult();
-    }
-    return NS_OK;
+    NS_WARNING_ASSERTION(!error.Failed(), "Selection::Collapse() failed");
+    return error.StealNSResult();
   }
 
   
-  nsCOMPtr<nsIContent> tmp = HTMLEditorRef().GetFirstEditableChild(
-      *HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement);
-  if (!tmp) {
-    tmp = HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement;
+  nsIContent* firstEditableContent = GetFirstEditableChild(aElement);
+  if (!firstEditableContent) {
+    firstEditableContent = &aElement;
   }
   EditorRawDOMPoint atStartOfBlock;
-  if (EditorBase::IsTextNode(tmp) || HTMLEditorRef().IsContainer(tmp)) {
-    atStartOfBlock.Set(tmp);
+  if (EditorBase::IsTextNode(firstEditableContent) ||
+      IsContainer(firstEditableContent)) {
+    atStartOfBlock.Set(firstEditableContent);
   } else {
-    atStartOfBlock.Set(tmp, 0);
+    atStartOfBlock.Set(firstEditableContent, 0);
   }
   ErrorResult error;
   SelectionRefPtr()->Collapse(atStartOfBlock, error);
-  if (NS_WARN_IF(!CanHandleEditAction())) {
+  if (NS_WARN_IF(Destroyed())) {
     error.SuppressException();
     return NS_ERROR_EDITOR_DESTROYED;
   }
-  if (NS_WARN_IF(error.Failed())) {
-    return error.StealNSResult();
-  }
-  return NS_OK;
+  NS_WARNING_ASSERTION(!error.Failed(), "Selection::Collapse() failed");
+  return error.StealNSResult();
 }
 
 void HTMLEditor::SetSelectionInterlinePosition() {
@@ -10320,9 +10307,8 @@ nsresult HTMLEditor::EnsureSelectionInBodyOrDocumentElement() {
     return NS_ERROR_FAILURE;
   }
 
-  EditorRawDOMPoint selectionStartPoint(
-      EditorBase::GetStartPoint(*SelectionRefPtr()));
-  if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
+  EditorRawDOMPoint atCaret(EditorBase::GetStartPoint(*SelectionRefPtr()));
+  if (NS_WARN_IF(!atCaret.IsSet())) {
     return NS_ERROR_FAILURE;
   }
 
@@ -10334,7 +10320,7 @@ nsresult HTMLEditor::EnsureSelectionInBodyOrDocumentElement() {
 
   
   
-  nsINode* temp = selectionStartPoint.GetContainer();
+  nsINode* temp = atCaret.GetContainer();
   while (temp && !temp->IsHTMLElement(nsGkAtoms::body)) {
     temp = temp->GetParentOrShadowHostNode();
   }
@@ -10784,14 +10770,14 @@ nsresult HTMLEditor::EnsureHardLineEndsWithLastChildOf(
     Element& aRemovingContainerElement) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  nsIContent* lastEditableChild =
+  nsIContent* firstEditableContent =
       GetLastEditableChild(aRemovingContainerElement);
-  if (!lastEditableChild) {
+  if (!firstEditableContent) {
     return NS_OK;
   }
 
-  if (HTMLEditor::NodeIsBlockStatic(*lastEditableChild) ||
-      lastEditableChild->IsHTMLElement(nsGkAtoms::br)) {
+  if (HTMLEditor::NodeIsBlockStatic(*firstEditableContent) ||
+      firstEditableContent->IsHTMLElement(nsGkAtoms::br)) {
     return NS_OK;
   }
 

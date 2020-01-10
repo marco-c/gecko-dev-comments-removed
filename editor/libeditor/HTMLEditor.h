@@ -2640,6 +2640,14 @@ class HTMLEditor final : public TextEditor,
 
   void SetSelectionInterlinePosition();
 
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  EnsureCaretInBlockElement(dom::Element& aElement);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
