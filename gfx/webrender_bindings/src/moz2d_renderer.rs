@@ -78,10 +78,9 @@ pub struct Moz2dBlobImageHandler {
 
 
 
-
-unsafe fn convert_from_bytes<T>(slice: &[u8]) -> T {
+unsafe fn convert_from_bytes<T: Copy>(slice: &[u8]) -> T {
     assert!(mem::size_of::<T>() <= slice.len());
-    ptr::read(slice.as_ptr() as *const T)
+    ptr::read_unaligned(slice.as_ptr() as *const T)
 }
 
 
@@ -113,7 +112,7 @@ impl<'a> BufReader<'a> {
     
     
     
-    unsafe fn read<T>(&mut self) -> T {
+    unsafe fn read<T: Copy>(&mut self) -> T {
         let ret = convert_from_bytes(&self.buf[self.pos..]);
         self.pos += mem::size_of::<T>();
         ret
@@ -419,6 +418,7 @@ fn merge_blob_images(old_buf: &[u8], new_buf: &[u8], dirty_rect: Box2d) -> Vec<u
 
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 struct BlobFont {
     
     font_instance_key: FontInstanceKey,
