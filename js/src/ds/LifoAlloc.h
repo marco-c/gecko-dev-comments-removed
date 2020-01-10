@@ -764,7 +764,11 @@ class LifoAlloc {
     detail::BumpChunk::Mark chunk;
     detail::BumpChunk::Mark oversize;
   };
-  Mark mark();
+
+  
+  
+  MOZ_NEVER_INLINE Mark mark();
+
   void release(Mark mark);
 
  private:
