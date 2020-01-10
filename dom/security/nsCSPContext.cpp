@@ -213,7 +213,7 @@ bool nsCSPContext::permitsInternal(
       if (!aIsPreload && aSendViolationReports) {
         uint32_t lineNumber = 0;
         uint32_t columnNumber = 0;
-        nsAutoCString spec;
+        nsAutoString spec;
         JSContext* cx = nsContentUtils::GetCurrentJSContext();
         if (cx) {
           nsJSUtils::GetCallingLocation(cx, spec, &lineNumber, &columnNumber);
@@ -229,10 +229,10 @@ bool nsCSPContext::permitsInternal(
 
             violatedDirective, p,   
             EmptyString(),          
-            NS_ConvertUTF8toUTF16(spec), 
-            EmptyString(),               
-            lineNumber,                  
-            columnNumber);               
+            spec,                   
+            EmptyString(),          
+            lineNumber,             
+            columnNumber);          
       }
     }
   }
