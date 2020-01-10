@@ -1165,7 +1165,10 @@ template <>
 void BaselineCompilerCodeGen::emitInitFrameFields(Register nonFunctionEnv) {
   masm.store32(Imm32(0), frame.addressOfFlags());
   if (handler.function()) {
-    masm.storePtr(ImmPtr(nullptr), frame.addressOfEnvironmentChain());
+    Register scratch = R0.scratchReg();
+    masm.loadFunctionFromCalleeToken(frame.addressOfCalleeToken(), scratch);
+    masm.loadPtr(Address(scratch, JSFunction::offsetOfEnvironment()), scratch);
+    masm.storePtr(scratch, frame.addressOfEnvironmentChain());
   } else {
     masm.storePtr(nonFunctionEnv, frame.addressOfEnvironmentChain());
   }
@@ -1193,8 +1196,10 @@ void BaselineInterpreterCodeGen::emitInitFrameFields(Register nonFunctionEnv) {
   {
     
     masm.andPtr(Imm32(uint32_t(CalleeTokenMask)), scratch1);
+    masm.loadPtr(Address(scratch1, JSFunction::offsetOfEnvironment()),
+                 scratch2);
+    masm.storePtr(scratch2, frame.addressOfEnvironmentChain());
     masm.loadPtr(Address(scratch1, JSFunction::offsetOfScript()), scratch1);
-    masm.storePtr(ImmPtr(nullptr), frame.addressOfEnvironmentChain());
     masm.jump(&done);
   }
   masm.bind(&notFunction);
@@ -1287,15 +1292,6 @@ bool BaselineCodeGen<Handler>::initEnvironmentChain() {
   }
 
   auto initFunctionEnv = [this, phase]() {
-    
-    
-    
-    Register callee = R0.scratchReg();
-    Register scope = R1.scratchReg();
-    masm.loadFunctionFromCalleeToken(frame.addressOfCalleeToken(), callee);
-    masm.loadPtr(Address(callee, JSFunction::offsetOfEnvironment()), scope);
-    masm.storePtr(scope, frame.addressOfEnvironmentChain());
-
     auto initEnv = [this, phase]() {
       
       prepareVMCall();
@@ -6703,8 +6699,6 @@ bool BaselineCodeGen<Handler>::emitPrologue() {
   masm.moveStackPtrTo(BaselineFrameReg);
   masm.subFromStackPtr(Imm32(BaselineFrame::Size()));
 
-  
-  
   
   
   

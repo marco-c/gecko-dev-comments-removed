@@ -2111,6 +2111,14 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo) {
     ++iter;
   }
 
+  
+  
+  
+  
+  if (!topFrame->environmentChain()) {
+    topFrame->setEnvironmentChain(topFrame->callee()->environment());
+  }
+
   MOZ_ASSERT(innerScript);
   MOZ_ASSERT(outerScript);
   MOZ_ASSERT(outerFp);
