@@ -1630,6 +1630,15 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   }
   bool IsListItem() const { return IsListItem(mDisplay); }
 
+  
+  static bool IsInlineFlow(mozilla::StyleDisplay aDisplay) {
+    return DisplayInside(aDisplay) == mozilla::StyleDisplayInside::Inline;
+  }
+
+  bool IsInlineFlow() const {
+    return IsInlineFlow(mDisplay);
+  }
+
   bool IsInlineInsideStyle() const {
     auto inside = DisplayInside();
     return inside == mozilla::StyleDisplayInside::Inline ||

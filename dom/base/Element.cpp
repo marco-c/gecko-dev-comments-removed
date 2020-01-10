@@ -890,7 +890,7 @@ nsRect Element::GetClientAreaRect() {
       
       
       
-      (frame->StyleDisplay()->mDisplay != StyleDisplay::Inline ||
+      (!frame->StyleDisplay()->IsInlineFlow() ||
        frame->IsFrameOfType(nsIFrame::eReplaced))) {
     
     

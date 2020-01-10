@@ -1328,7 +1328,7 @@ void ReflowInput::CalculateHypotheticalPosition(
   
   nscoord boxISize;
   bool knowBoxISize = false;
-  if ((StyleDisplay::Inline == mStyleDisplay->mOriginalDisplay) &&
+  if (mStyleDisplay->IsOriginalDisplayInlineOutside() &&
       !NS_FRAME_IS_REPLACED(mFrameType)) {
     
     

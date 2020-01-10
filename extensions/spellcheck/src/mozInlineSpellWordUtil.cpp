@@ -684,17 +684,26 @@ static bool IsBreakElement(nsINode* aNode) {
   }
 
   dom::Element* element = aNode->AsElement();
-
-  if (element->IsHTMLElement(nsGkAtoms::br)) return true;
-
-  
-  
-  if (!element->GetPrimaryFrame()) return false;
+  if (element->IsHTMLElement(nsGkAtoms::br)) {
+    return true;
+  }
 
   
   
-  return element->GetPrimaryFrame()->StyleDisplay()->mDisplay !=
-         StyleDisplay::Inline;
+  nsIFrame* frame = element->GetPrimaryFrame();
+  if (!frame) {
+    return false;
+  }
+
+  auto* disp = frame->StyleDisplay();
+  
+  
+  
+  
+  
+  
+  
+  return !disp->IsInlineFlow() || disp->IsListItem();
 }
 
 struct CheckLeavingBreakElementClosure {

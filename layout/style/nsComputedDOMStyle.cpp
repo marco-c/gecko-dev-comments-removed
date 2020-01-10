@@ -854,8 +854,7 @@ static nsIFrame* StyleFrame(nsIFrame* aOuterFrame) {
 static bool IsNonReplacedInline(nsIFrame* aFrame) {
   
   
-  return aFrame->StyleDisplay()->DisplayInside() ==
-             StyleDisplayInside::Inline &&
+  return aFrame->StyleDisplay()->IsInlineFlow() &&
          !aFrame->IsFrameOfType(nsIFrame::eReplaced);
 }
 

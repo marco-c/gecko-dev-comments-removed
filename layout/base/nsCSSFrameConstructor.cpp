@@ -5656,7 +5656,7 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
         
         ((bits & FCDATA_IS_TABLE_PART) &&
          (!aParentFrame ||  
-          aParentFrame->StyleDisplay()->mDisplay == StyleDisplay::Inline)) ||
+          aParentFrame->StyleDisplay()->IsInlineFlow())) ||
         
         display.IsInlineOutsideStyle() ||
         
