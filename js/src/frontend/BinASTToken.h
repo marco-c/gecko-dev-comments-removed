@@ -3746,6 +3746,11 @@ const char* describeBinASTInterfaceAndField(
 
 const char* describeBinASTVariant(const BinASTVariant& variant);
 
+
+
+
+const char* describeBinASTList(const BinASTList& list);
+
 }  
 }  
 
