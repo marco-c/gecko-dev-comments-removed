@@ -26,6 +26,10 @@ static void MmapSIGBUSHandler(int signum, siginfo_t* info, void* context) {
 
   if (mas && mas->IsInsideBuffer(info->si_addr)) {
     
+    
+    mas->CrashWithInfo(info->si_addr);
+
+    
     siglongjmp(mas->mJmpBuf, signum);
     return;
   }
@@ -136,6 +140,37 @@ bool MmapAccessScope::IsInsideBuffer(void* aPtr) {
   }
 
   return isIn;
+}
+
+void MmapAccessScope::CrashWithInfo(void* aPtr) {
+  if (!mZipHandle) {
+    
+    MOZ_CRASH_UNSAFE_PRINTF(
+        "SIGBUS received when accessing mmaped zip file [buffer=%p, "
+        "buflen=%" PRIu32 ", address=%p]",
+        mBuf, mBufLen, aPtr);
+  }
+
+  nsCOMPtr<nsIFile> file = mZipHandle->mFile.GetBaseFile();
+  nsCString fileName;
+  file->GetNativeLeafName(fileName);
+
+  
+  int fileSize = -1;
+  if (PR_Seek64(mZipHandle->mNSPRFileDesc, 0, PR_SEEK_SET) != -1) {
+    fileSize = PR_Available64(mZipHandle->mNSPRFileDesc);
+  }
+
+  
+  
+  fileName.Append(", filesize=");
+  fileName.AppendInt(fileSize);
+
+  MOZ_CRASH_UNSAFE_PRINTF(
+      "SIGBUS received when accessing mmaped zip file [file=%s, buffer=%p, "
+      "buflen=%" PRIu32 ", address=%p]",
+      fileName.get(), (char*)mZipHandle->mFileStart, mZipHandle->mTotalLen,
+      aPtr);
 }
 
 #endif

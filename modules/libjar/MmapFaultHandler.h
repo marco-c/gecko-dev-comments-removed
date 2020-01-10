@@ -54,6 +54,7 @@ class MOZ_RAII MmapAccessScope {
 
   void SetThreadLocalScope();
   bool IsInsideBuffer(void* aPtr);
+  void CrashWithInfo(void* aPtr);
 
   
   
