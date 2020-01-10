@@ -383,15 +383,21 @@ class Query {
       this.muxer.sort(this.context);
 
       
+      
       logger.debug(
         `Cropping ${this.context.results.length} matches to ${
           this.context.maxResults
         }`
       );
-      this.context.results = this.context.results.slice(
-        0,
-        this.context.maxResults
-      );
+      let resultCount = this.context.maxResults;
+      for (let i = 0; i < this.context.results.length; i++) {
+        resultCount -= UrlbarUtils.getSpanForResult(this.context.results[i]);
+        if (resultCount < 0) {
+          this.context.results.splice(i, this.context.results.length - i);
+          break;
+        }
+      }
+
       this.controller.receiveResults(this.context);
     };
 
