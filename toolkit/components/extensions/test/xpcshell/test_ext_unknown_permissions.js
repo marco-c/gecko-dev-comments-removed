@@ -1,8 +1,5 @@
 "use strict";
 
-
-ExtensionTestUtils.failOnSchemaWarnings(false);
-
 add_task(async function test_unknown_permissions() {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {

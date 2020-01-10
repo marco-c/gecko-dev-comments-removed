@@ -42,8 +42,6 @@ user_pref("extensions.update.enabled", false);
 
 user_pref("extensions.getAddons.discovery.api_url", "data:;base64,eyJyZXN1bHRzIjpbXX0%3D");
 
-user_pref("extensions.webextensions.warnings-as-errors", true);
-
 user_pref("general.useragent.updates.enabled", false);
 
 user_pref("gfx.webrender.all.qualified", false);

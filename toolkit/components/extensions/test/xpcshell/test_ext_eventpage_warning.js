@@ -2,8 +2,6 @@
 
 AddonTestUtils.init(this);
 
-ExtensionTestUtils.failOnSchemaWarnings(false);
-
 function createEventPageExtension(eventPage) {
   return ExtensionTestUtils.loadExtension({
     manifest: {

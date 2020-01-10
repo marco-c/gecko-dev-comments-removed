@@ -2,8 +2,6 @@
 
 AddonTestUtils.init(this);
 
-ExtensionTestUtils.failOnSchemaWarnings(false);
-
 add_task(async function test_proxy_deprecation_messages() {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {

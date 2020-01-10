@@ -18,10 +18,7 @@ const DUMMY_APP_NAME = "Dummy brandName";
 
 async function getManifestPermissions(extensionData) {
   let extension = ExtensionTestCommon.generate(extensionData);
-  
-  ExtensionTestUtils.failOnSchemaWarnings(false);
   await extension.loadManifest();
-  ExtensionTestUtils.failOnSchemaWarnings(true);
   return extension.manifestPermissions;
 }
 
