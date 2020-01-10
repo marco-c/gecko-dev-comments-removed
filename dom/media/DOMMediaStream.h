@@ -91,6 +91,16 @@ class DOMMediaStream : public DOMEventTargetHelper,
 
 
     virtual void NotifyInactive(){};
+
+    
+
+
+    virtual void NotifyAudible(){};
+
+    
+
+
+    virtual void NotifyInaudible(){};
   };
 
   explicit DOMMediaStream(nsPIDOMWindowInner* aWindow);
@@ -197,6 +207,12 @@ class DOMMediaStream : public DOMEventTargetHelper,
   void NotifyInactive();
 
   
+  void NotifyAudible();
+
+  
+  void NotifyInaudible();
+
+  
   void NotifyTrackAdded(const RefPtr<MediaStreamTrack>& aTrack);
 
   
@@ -225,11 +241,14 @@ class DOMMediaStream : public DOMEventTargetHelper,
   nsTArray<TrackListener*> mTrackListeners;
 
   
-  bool mActive;
+  bool mActive = false;
+
+  
+  bool mAudible = false;
 
   
   
-  bool mFinishedOnInactive;
+  bool mFinishedOnInactive = true;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(DOMMediaStream, NS_DOMMEDIASTREAM_IID)

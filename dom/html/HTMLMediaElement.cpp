@@ -4720,10 +4720,8 @@ class HTMLMediaElement::MediaStreamTrackListener
     mElement->NotifyMediaStreamTrackRemoved(aTrack);
   }
 
-  void NotifyActive() override {
-    if (!mElement) {
-      return;
-    }
+  void OnActive() {
+    MOZ_ASSERT(mElement);
 
     
     
@@ -4756,18 +4754,68 @@ class HTMLMediaElement::MediaStreamTrackListener
     mElement->DoLoad();
   }
 
-  void NotifyInactive() override {
+  void NotifyActive() override {
     if (!mElement) {
       return;
     }
+
+    if (!mElement->IsVideo()) {
+      
+      return;
+    }
+
+    OnActive();
+  }
+
+  void NotifyAudible() override {
+    if (!mElement) {
+      return;
+    }
+
+    if (mElement->IsVideo()) {
+      
+      return;
+    }
+
+    OnActive();
+  }
+
+  void OnInactive() {
+    MOZ_ASSERT(mElement);
+
     if (mElement->IsPlaybackEnded()) {
       return;
     }
     LOG(LogLevel::Debug, ("%p, mSrcStream %p became inactive", mElement.get(),
                           mElement->mSrcStream.get()));
-    MOZ_ASSERT(!mElement->mSrcStream->Active());
     mElement->PlaybackEnded();
     mElement->UpdateReadyStateInternal();
+  }
+
+  void NotifyInactive() override {
+    if (!mElement) {
+      return;
+    }
+
+    if (!mElement->IsVideo()) {
+      
+      return;
+    }
+
+    OnInactive();
+  }
+
+  void NotifyInaudible() override {
+    if (!mElement) {
+      return;
+    }
+
+    if (mElement->IsVideo()) {
+      
+      return;
+    }
+
+    OnInactive();
   }
 
  protected:
