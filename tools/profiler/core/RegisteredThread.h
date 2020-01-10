@@ -59,6 +59,8 @@ class RacyRegisteredThread final {
   
   
   void ReinitializeOnResume() {
+    mPendingMarkers.reset();
+
     
     
     

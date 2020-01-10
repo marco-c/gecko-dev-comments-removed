@@ -133,6 +133,16 @@ class ProfilerSignalSafeLinkedList {
       abort();
     }
 
+    reset();
+  }
+
+  
+  
+  
+  
+  
+  
+  void reset() {
     while (mList.peek()) {
       delete mList.popHead();
     }
