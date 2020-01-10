@@ -4193,34 +4193,7 @@ pref("image.mem.discardable", true);
 #endif
 
 
-pref("image.mem.debug-reporting", false);
-
-
-
-pref("image.mem.shared", true);
-
-
 pref("image.mem.allow_locking_in_content_processes", true);
-
-
-
-#if defined(ANDROID)
-  pref("image.mem.volatile.min_threshold_kb", 100);
-#else
-  pref("image.mem.volatile.min_threshold_kb", -1);
-#endif
-
-
-pref("image.webp.enabled", true);
-
-
-pref("gl.require-hardware", false);
-#ifdef XP_MACOSX
-  pref("gl.multithreaded", true);
-#endif
-pref("gl.ignore-dx-interop2-blacklist", false);
-pref("gl.use-tls-is-current", 0);
-pref("gl.allow-high-power", true);
 
 #ifdef XP_MACOSX
   pref("webgl.1.allow-core-profiles", true);
