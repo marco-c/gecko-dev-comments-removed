@@ -276,7 +276,8 @@ class nsHttpChannel final : public HttpBaseChannel,
   }
   TransactionObserver* GetTransactionObserver() { return mTransactionObserver; }
 
-  typedef MozPromise<uint64_t, nsresult, false> ContentProcessIdPromise;
+  typedef MozPromise<uint64_t, nsresult, true >
+      ContentProcessIdPromise;
   already_AddRefed<ContentProcessIdPromise>
   TakeRedirectContentProcessIdPromise() {
     return mRedirectContentProcessIdPromise.forget();
