@@ -1116,6 +1116,17 @@ class HTMLEditor final : public TextEditor,
 
 
 
+
+  EditActionResult CanHandleHTMLEditSubAction() const;
+
+  
+
+
+
+
+
+
+
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult WillInsert(bool* aCancel = nullptr);
 
   
@@ -1710,8 +1721,9 @@ class HTMLEditor final : public TextEditor,
 
 
 
+
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
-  FormatBlockContainer(nsAtom& aBlockType);
+  FormatBlockContainerWithTransaction(nsAtom& aBlockType);
 
   
 
@@ -2861,8 +2873,8 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult InsertBasicBlockWithTransaction(nsAtom& aTagName);
+
+  MOZ_CAN_RUN_SCRIPT nsresult FormatBlockContainerAsSubAction(nsAtom& aTagName);
 
   
 

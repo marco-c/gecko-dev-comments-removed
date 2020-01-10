@@ -700,6 +700,52 @@ nsresult HTMLEditRules::AfterEditInner() {
   return NS_OK;
 }
 
+EditActionResult HTMLEditor::CanHandleHTMLEditSubAction() const {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
+  if (NS_WARN_IF(Destroyed())) {
+    return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+  }
+
+  
+  if (!SelectionRefPtr()->RangeCount()) {
+    return EditActionCanceled();
+  }
+
+  nsRange* range = SelectionRefPtr()->GetRangeAt(0);
+  nsINode* selStartNode = range->GetStartContainer();
+  if (NS_WARN_IF(!selStartNode)) {
+    return EditActionResult(NS_ERROR_FAILURE);
+  }
+
+  if (!IsModifiableNode(*selStartNode)) {
+    return EditActionCanceled();
+  }
+
+  nsINode* selEndNode = range->GetEndContainer();
+  if (NS_WARN_IF(!selEndNode)) {
+    return EditActionResult(NS_ERROR_FAILURE);
+  }
+
+  if (selStartNode == selEndNode) {
+    return EditActionIgnored();
+  }
+
+  if (!IsModifiableNode(*selEndNode)) {
+    return EditActionCanceled();
+  }
+
+  nsINode* commonAncestor = range->GetCommonAncestor();
+  if (NS_WARN_IF(!commonAncestor)) {
+    return EditActionResult(NS_ERROR_FAILURE);
+  }
+  if (!IsModifiableNode(*commonAncestor)) {
+    return EditActionCanceled();
+  }
+
+  return EditActionIgnored();
+}
+
 nsresult HTMLEditRules::WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
                                      bool* aHandled) {
   if (NS_WARN_IF(!CanHandleEditAction())) {
@@ -720,41 +766,18 @@ nsresult HTMLEditRules::WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
 
   AutoSafeEditorData setData(*this, *mHTMLEditor);
 
-  
-  if (NS_WARN_IF(!SelectionRefPtr()->RangeCount())) {
-    return NS_OK;
+  EditActionResult result = HTMLEditorRef().CanHandleHTMLEditSubAction();
+  if (NS_WARN_IF(result.Failed())) {
+    return result.Rv();
   }
-
-  RefPtr<nsRange> range = SelectionRefPtr()->GetRangeAt(0);
-  nsCOMPtr<nsINode> selStartNode = range->GetStartContainer();
-  if (NS_WARN_IF(!selStartNode)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  if (!HTMLEditorRef().IsModifiableNode(*selStartNode)) {
+  if (result.Canceled()) {
+    if (!SelectionRefPtr()->RangeCount()) {
+      
+      
+      return NS_OK;
+    }
     *aCancel = true;
     return NS_OK;
-  }
-
-  nsCOMPtr<nsINode> selEndNode = range->GetEndContainer();
-  if (NS_WARN_IF(!selEndNode)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  if (selStartNode != selEndNode) {
-    if (!HTMLEditorRef().IsModifiableNode(*selEndNode)) {
-      *aCancel = true;
-      return NS_OK;
-    }
-
-    nsINode* commonAncestor = range->GetCommonAncestor();
-    if (NS_WARN_IF(!commonAncestor)) {
-      return NS_ERROR_FAILURE;
-    }
-    if (!HTMLEditorRef().IsModifiableNode(*commonAncestor)) {
-      *aCancel = true;
-      return NS_OK;
-    }
   }
 
   switch (aInfo.mEditSubAction) {
@@ -791,8 +814,6 @@ nsresult HTMLEditRules::WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
       return WillRemoveAbsolutePosition(aCancel, aHandled);
     case EditSubAction::eSetOrClearAlignment:
       return WillAlign(*aInfo.alignType, aCancel, aHandled);
-    case EditSubAction::eCreateOrRemoveBlock:
-      return WillMakeBasicBlock(*aInfo.blockType, aCancel, aHandled);
     case EditSubAction::eRemoveList: {
       nsresult rv = WillRemoveList(aCancel, aHandled);
       if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED) ||
@@ -820,6 +841,7 @@ nsresult HTMLEditRules::WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
       return WillRelativeChangeZIndex(-1, aCancel, aHandled);
     case EditSubAction::eIncreaseZIndex:
       return WillRelativeChangeZIndex(1, aCancel, aHandled);
+    case EditSubAction::eCreateOrRemoveBlock:
     case EditSubAction::eInsertHTMLSource:
     case EditSubAction::eUndo:
     case EditSubAction::eRedo:
@@ -1852,7 +1874,7 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
     
     
     nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                      .FormatBlockContainer(
+                      .FormatBlockContainerWithTransaction(
                           MOZ_KnownLive(ParagraphSeparatorElement(separator)));
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED) ||
         NS_WARN_IF(!CanHandleEditAction())) {
@@ -1860,8 +1882,9 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
     }
     
     
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "HTMLEditor::FormatBlockContainer() failed");
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "HTMLEditor::FormatBlockContainerWithTransaction() failed");
 
     firstRange = SelectionRefPtr()->GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
@@ -4535,37 +4558,7 @@ nsresult HTMLEditRules::WillMakeDefListItem(const nsAString* aItemType,
   return NS_OK;
 }
 
-nsresult HTMLEditRules::WillMakeBasicBlock(const nsAString& aBlockType,
-                                           bool* aCancel, bool* aHandled) {
-  MOZ_ASSERT(IsEditorDataAvailable());
-  MOZ_ASSERT(aCancel && aHandled);
-
-  OwningNonNull<nsAtom> blockType = NS_Atomize(aBlockType);
-
-  
-  nsresult rv = MOZ_KnownLive(HTMLEditorRef()).WillInsert();
-  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-    return NS_ERROR_EDITOR_DESTROYED;
-  }
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "WillInsert() failed");
-
-  *aCancel = false;
-  *aHandled = true;
-
-  
-  
-  
-  rv = MOZ_KnownLive(HTMLEditorRef()).FormatBlockContainer(blockType);
-  if (NS_WARN_IF(!CanHandleEditAction())) {
-    return NS_ERROR_EDITOR_DESTROYED;
-  }
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  return NS_OK;
-}
-
-nsresult HTMLEditor::FormatBlockContainer(nsAtom& blockType) {
+nsresult HTMLEditor::FormatBlockContainerWithTransaction(nsAtom& blockType) {
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
 
   if (!SelectionRefPtr()->IsCollapsed()) {

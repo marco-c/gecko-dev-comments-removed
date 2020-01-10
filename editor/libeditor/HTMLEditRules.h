@@ -371,18 +371,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult WillMakeBasicBlock(const nsAString& aBlockType,
-                                           bool* aCancel, bool* aHandled);
-
-  
-
-
-
-
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult DidMakeBasicBlock();
 
   
