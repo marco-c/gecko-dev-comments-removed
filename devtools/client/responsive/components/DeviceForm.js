@@ -49,6 +49,7 @@ class DeviceForm extends PureComponent {
     this.onChangeSize = this.onChangeSize.bind(this);
     this.onDeviceFormHide = this.onDeviceFormHide.bind(this);
     this.onDeviceFormSave = this.onDeviceFormSave.bind(this);
+    this.onInputFocus = this.onInputFocus.bind(this);
     this.validateNameField = this.validateNameField.bind(this);
   }
 
@@ -92,6 +93,13 @@ class DeviceForm extends PureComponent {
     
     if (this.props.onDeviceFormHide) {
       this.props.onDeviceFormHide();
+    }
+  }
+
+  onInputFocus(e) {
+    
+    if (this.props.formType === "add") {
+      e.target.select();
     }
   }
 
@@ -144,6 +152,7 @@ class DeviceForm extends PureComponent {
         dom.input({
           defaultValue: device.name,
           ref: this.nameInputRef,
+          onFocus: this.onInputFocus,
         })
       ),
       dom.label(
@@ -169,6 +178,7 @@ class DeviceForm extends PureComponent {
           step: "any",
           defaultValue: device.pixelRatio,
           ref: this.pixelRatioInputRef,
+          onFocus: this.onInputFocus,
         })
       ),
       dom.label(
@@ -180,6 +190,7 @@ class DeviceForm extends PureComponent {
         dom.input({
           defaultValue: device.userAgent,
           ref: this.userAgentInputRef,
+          onFocus: this.onInputFocus,
         })
       ),
       dom.label(
