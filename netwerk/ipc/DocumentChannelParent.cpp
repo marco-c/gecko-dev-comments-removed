@@ -801,24 +801,31 @@ DocumentChannelParent::AsyncOnChannelRedirect(
   
   
   
+  nsCOMPtr<nsILoadInfo> loadInfo = aOldChannel->LoadInfo();
+  Maybe<LoadInfoArgs> loadInfoArgs;
+  MOZ_ALWAYS_SUCCEEDS(ipc::LoadInfoToLoadInfoArgs(loadInfo, &loadInfoArgs));
+  MOZ_ASSERT(loadInfoArgs.isSome());
+
   nsCOMPtr<nsIURI> newUri;
   nsresult rv = aNewChannel->GetURI(getter_AddRefs(newUri));
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIAsyncVerifyRedirectCallback> callback(aCallback);
   nsCOMPtr<nsIChannel> oldChannel(aOldChannel);
-  SendConfirmRedirect(newUri)->Then(
-      GetCurrentThreadSerialEventTarget(), __func__,
-      [callback, oldChannel](const Tuple<nsresult, Maybe<nsresult>>& aResult) {
-        if (Get<1>(aResult)) {
-          oldChannel->Cancel(*Get<1>(aResult));
-        }
-        callback->OnRedirectVerifyCallback(Get<0>(aResult));
-      },
-      [callback, oldChannel](const mozilla::ipc::ResponseRejectReason) {
-        oldChannel->Cancel(NS_ERROR_DOM_BAD_URI);
-        callback->OnRedirectVerifyCallback(NS_BINDING_ABORTED);
-      });
+  SendConfirmRedirect(*loadInfoArgs, newUri)
+      ->Then(
+          GetCurrentThreadSerialEventTarget(), __func__,
+          [callback,
+           oldChannel](const Tuple<nsresult, Maybe<nsresult>>& aResult) {
+            if (Get<1>(aResult)) {
+              oldChannel->Cancel(*Get<1>(aResult));
+            }
+            callback->OnRedirectVerifyCallback(Get<0>(aResult));
+          },
+          [callback, oldChannel](const mozilla::ipc::ResponseRejectReason) {
+            oldChannel->Cancel(NS_ERROR_DOM_BAD_URI);
+            callback->OnRedirectVerifyCallback(NS_BINDING_ABORTED);
+          });
 
   
   
