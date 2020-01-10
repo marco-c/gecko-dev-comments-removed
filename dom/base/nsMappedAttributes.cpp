@@ -51,7 +51,7 @@ nsMappedAttributes::nsMappedAttributes(const nsMappedAttributes& aCopy)
       
       
       mServoStyle(nullptr) {
-  NS_ASSERTION(mBufferSize >= aCopy.mAttrCount, "can't fit attributes");
+  MOZ_ASSERT(mBufferSize >= aCopy.mAttrCount, "can't fit attributes");
   MOZ_ASSERT(mRefCnt == 0);  
 
   uint32_t i;
@@ -146,7 +146,7 @@ void nsMappedAttributes::SetAndSwapAttr(nsAtom* aAttrName, nsAttrValue& aValue,
     }
   }
 
-  NS_ASSERTION(mBufferSize >= mAttrCount + 1, "can't fit attributes");
+  MOZ_ASSERT(mBufferSize >= mAttrCount + 1, "can't fit attributes");
 
   if (mAttrCount != i) {
     memmove(&Attrs()[i + 1], &Attrs()[i],
@@ -260,8 +260,7 @@ int32_t nsMappedAttributes::IndexOfAttr(const nsAtom* aLocalName) const {
 
 size_t nsMappedAttributes::SizeOfIncludingThis(
     MallocSizeOf aMallocSizeOf) const {
-  NS_ASSERTION(mAttrCount == mBufferSize,
-               "mBufferSize and mAttrCount are expected to be the same.");
+  MOZ_ASSERT(mBufferSize >= mAttrCount, "can't fit attributes");
 
   size_t n = aMallocSizeOf(this);
   for (uint16_t i = 0; i < mAttrCount; ++i) {
