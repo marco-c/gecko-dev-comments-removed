@@ -69,8 +69,8 @@ static void LoadPrefValue(const char* aName) {
       }
 
       
-      if (!strstr(prefValue.get(), "%PID")) {
-        prefValue.AppendLiteral("%PID");
+      if (!strstr(prefValue.get(), MOZ_LOG_PID_TOKEN)) {
+        prefValue.AppendLiteral(MOZ_LOG_PID_TOKEN);
       }
 
       LogModule::SetLogFile(prefValue.BeginReading());
