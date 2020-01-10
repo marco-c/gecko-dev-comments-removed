@@ -291,7 +291,6 @@ struct JSContext : public JS::RootingContext,
   bool jitSupportsUnalignedAccesses() const {
     return runtime_->jitSupportsUnalignedAccesses;
   }
-  bool jitSupportsSimd() const { return runtime_->jitSupportsSimd; }
 
   
 
