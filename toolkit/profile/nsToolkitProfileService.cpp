@@ -1179,14 +1179,6 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
 
           mCurrent = profile;
         } else {
-          if (aIsResetting) {
-            
-            
-            
-            *aProfile = nullptr;
-            return NS_OK;
-          }
-
           rv = CreateDefaultProfile(getter_AddRefs(mCurrent));
           if (NS_FAILED(rv)) {
             *aProfile = nullptr;
@@ -1355,13 +1347,6 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
 
   
   if (mIsFirstRun) {
-    if (aIsResetting) {
-      
-      
-      *aProfile = nullptr;
-      return NS_OK;
-    }
-
     
     
     if (!mStartWithLast) {
