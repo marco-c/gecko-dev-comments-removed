@@ -325,6 +325,11 @@ bool nsStyleUtil::CSPAllowsInlineStyle(
   }
 
   
+  if (csp->GetSkipAllowInlineStyleCheck()) {
+    return true;
+  }
+
+  
   nsAutoString nonce;
   if (aElement && aElement->NodeInfo()->NameAtom() == nsGkAtoms::style) {
     aElement->GetAttr(kNameSpaceID_None, nsGkAtoms::nonce, nonce);
