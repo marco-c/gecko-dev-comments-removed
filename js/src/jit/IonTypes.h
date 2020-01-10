@@ -713,11 +713,16 @@ static inline MIRType ScalarTypeToMIRType(Scalar::Type type) {
 #endif  
 
 enum ABIArgType {
+  
   ArgType_General = 0x1,
-  ArgType_Double = 0x2,
-  ArgType_Float32 = 0x3,
-  ArgType_Int32 = 0x4,
-  ArgType_Int64 = 0x5,
+  
+  ArgType_Int32 = 0x2,
+  
+  ArgType_Int64 = 0x3,
+  
+  ArgType_Float32 = 0x4,
+  
+  ArgType_Float64 = 0x5,
 
   RetType_Shift = 0x0,
   ArgType_Shift = 0x3,
@@ -754,13 +759,13 @@ enum ABIFunctionType {
 
   
   Args_Int64_Double =
-      (ArgType_Int64 << RetType_Shift) | (ArgType_Double << ArgType_Shift),
+      (ArgType_Int64 << RetType_Shift) | (ArgType_Float64 << ArgType_Shift),
 
   
-  Args_Double_None = ArgType_Double << RetType_Shift,
+  Args_Double_None = ArgType_Float64 << RetType_Shift,
 
   
-  Args_Int_Double = Args_General0 | (ArgType_Double << ArgType_Shift),
+  Args_Int_Double = Args_General0 | (ArgType_Float64 << ArgType_Shift),
 
   
   Args_Int_Float32 = Args_General0 | (ArgType_Float32 << ArgType_Shift),
@@ -775,7 +780,7 @@ enum ABIFunctionType {
                         (ArgType_General << (ArgType_Shift * 2)),
 
   
-  Args_Double_Double = Args_Double_None | (ArgType_Double << ArgType_Shift),
+  Args_Double_Double = Args_Double_None | (ArgType_Float64 << ArgType_Shift),
 
   
   Args_Double_Int = Args_Double_None | (ArgType_General << ArgType_Shift),
@@ -787,11 +792,11 @@ enum ABIFunctionType {
   
   Args_Double_DoubleInt = Args_Double_None |
                           (ArgType_General << (ArgType_Shift * 1)) |
-                          (ArgType_Double << (ArgType_Shift * 2)),
+                          (ArgType_Float64 << (ArgType_Shift * 2)),
 
   
   Args_Double_DoubleDouble =
-      Args_Double_Double | (ArgType_Double << (ArgType_Shift * 2)),
+      Args_Double_Double | (ArgType_Float64 << (ArgType_Shift * 2)),
 
   
   Args_Float32_Float32Float32 =
@@ -799,37 +804,38 @@ enum ABIFunctionType {
 
   
   Args_Double_IntDouble = Args_Double_None |
-                          (ArgType_Double << (ArgType_Shift * 1)) |
+                          (ArgType_Float64 << (ArgType_Shift * 1)) |
                           (ArgType_General << (ArgType_Shift * 2)),
 
   
-  Args_Int_IntDouble = Args_General0 | (ArgType_Double << (ArgType_Shift * 1)) |
+  Args_Int_IntDouble = Args_General0 |
+                       (ArgType_Float64 << (ArgType_Shift * 1)) |
                        (ArgType_General << (ArgType_Shift * 2)),
 
   
   Args_Int_DoubleInt = Args_General0 |
                        (ArgType_General << (ArgType_Shift * 1)) |
-                       (ArgType_Double << (ArgType_Shift * 2)),
+                       (ArgType_Float64 << (ArgType_Shift * 2)),
 
   
   Args_Double_DoubleDoubleDouble =
-      Args_Double_DoubleDouble | (ArgType_Double << (ArgType_Shift * 3)),
+      Args_Double_DoubleDouble | (ArgType_Float64 << (ArgType_Shift * 3)),
 
   
   Args_Double_DoubleDoubleDoubleDouble =
-      Args_Double_DoubleDoubleDouble | (ArgType_Double << (ArgType_Shift * 4)),
+      Args_Double_DoubleDoubleDouble | (ArgType_Float64 << (ArgType_Shift * 4)),
 
   
   Args_Int_DoubleIntInt = Args_General0 |
                           (ArgType_General << (ArgType_Shift * 1)) |
                           (ArgType_General << (ArgType_Shift * 2)) |
-                          (ArgType_Double << (ArgType_Shift * 3)),
+                          (ArgType_Float64 << (ArgType_Shift * 3)),
 
   
   Args_Int_IntDoubleIntInt = Args_General0 |
                              (ArgType_General << (ArgType_Shift * 1)) |
                              (ArgType_General << (ArgType_Shift * 2)) |
-                             (ArgType_Double << (ArgType_Shift * 3)) |
+                             (ArgType_Float64 << (ArgType_Shift * 3)) |
                              (ArgType_General << (ArgType_Shift * 4)),
 
   Args_Int_GeneralGeneralGeneralInt64 =
