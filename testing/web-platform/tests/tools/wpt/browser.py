@@ -461,35 +461,47 @@ class Chrome(Browser):
     def find_webdriver(self, channel=None):
         return find_executable("chromedriver")
 
-    def _latest_chromedriver_url(self, browser_binary=None):
-        latest = None
-        chrome_version = self.version(browser_binary)
-        assert chrome_version, "Cannot detect the version of Chrome"
-
+    def _official_chromedriver_url(self, chrome_version):
         
-        chrome_version = chrome_version.split(' ')[0]
         parts = chrome_version.split(".")
-        if len(parts) == 4:
-            latest_url = "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_%s.%s.%s" % tuple(parts[:-1])
+        assert len(parts) == 4
+        latest_url = "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_%s.%s.%s" % tuple(parts[:-1])
+        try:
+            latest = get(latest_url).text.strip()
+        except requests.RequestException:
+            latest_url = "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_%s" % parts[0]
             try:
                 latest = get(latest_url).text.strip()
             except requests.RequestException:
-                latest_url = "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_%s" % parts[0]
-                try:
-                    latest = get(latest_url).text.strip()
-                except requests.RequestException:
-                    pass
-        if latest is None:
+                return None
+        return "https://chromedriver.storage.googleapis.com/%s/chromedriver_%s.zip" % (
+            latest, self.platform_string())
+
+    def _chromium_chromedriver_url(self, chrome_version):
+        try:
             
             omaha = get("https://omahaproxy.appspot.com/deps.json?version=" + chrome_version).json()
             revision = omaha['chromium_base_position']
             url = "https://storage.googleapis.com/chromium-browser-snapshots/%s/%s/chromedriver_%s.zip" % (
                 self.chromium_platform_string(), revision, self.platform_string())
-        else:
-            url = "https://chromedriver.storage.googleapis.com/%s/chromedriver_%s.zip" % (
-                latest, self.platform_string())
-
+            
+            get(url)
+        except requests.RequestException:
+            
+            revision_url = "https://storage.googleapis.com/chromium-browser-snapshots/%s/LAST_CHANGE" % (
+                self.chromium_platform_string())
+            revision = get(revision_url).text.strip()
+            url = "https://storage.googleapis.com/chromium-browser-snapshots/%s/%s/chromedriver_%s.zip" % (
+                self.chromium_platform_string(), revision, self.platform_string())
         return url
+
+    def _latest_chromedriver_url(self, browser_binary=None):
+        chrome_version = self.version(browser_binary)
+        assert chrome_version, "Cannot detect the version of Chrome"
+        
+        chrome_version = chrome_version.split(' ')[0]
+        return (self._official_chromedriver_url(chrome_version) or
+                self._chromium_chromedriver_url(chrome_version))
 
     def install_webdriver(self, dest=None, channel=None, browser_binary=None):
         if dest is None:
