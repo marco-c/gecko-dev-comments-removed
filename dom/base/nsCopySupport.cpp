@@ -120,15 +120,6 @@ static nsresult EncodeForTextUnicode(nsIDocumentEncoder& aEncoder,
   rv = aEncoder.GetMimeType(mimeType);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (!selForcedTextPlain && mimeType.EqualsLiteral(kTextMime)) {
-    
-    
-    
-    if (!aDocument.IsHTMLOrXHTML()) {
-      selForcedTextPlain = true;
-    }
-  }
-
   
   
   aEncodedAsTextHTMLResult = mimeType.EqualsLiteral(kHTMLMime);
