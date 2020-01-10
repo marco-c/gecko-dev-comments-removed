@@ -425,6 +425,21 @@ typedef void (*hb_destroy_func_t) (void *user_data);
 
 #define HB_FEATURE_GLOBAL_END	((unsigned int) -1)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef struct hb_feature_t {
   hb_tag_t      tag;
   uint32_t      value;

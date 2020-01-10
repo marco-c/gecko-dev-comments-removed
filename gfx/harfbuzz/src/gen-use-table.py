@@ -384,6 +384,9 @@ def map_to_use(data):
 		if U == 0x103C: UIPC = Left
 
 		
+		if U == 0x1C29: UIPC = Left
+
+		
 		if 0xA926 <= U <= 0xA92A: UIPC = Top
 		
 		

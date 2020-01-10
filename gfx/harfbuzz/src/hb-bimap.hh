@@ -94,6 +94,14 @@ struct hb_bimap_t
 
 struct hb_inc_bimap_t : hb_bimap_t
 {
+  hb_inc_bimap_t () { init (); }
+
+  void init ()
+  {
+    hb_bimap_t::init ();
+    next_value = 0;
+  }
+
   
 
 
@@ -102,10 +110,22 @@ struct hb_inc_bimap_t : hb_bimap_t
     hb_codepoint_t  rhs = forw_map[lhs];
     if (rhs == HB_MAP_VALUE_INVALID)
     {
-      rhs = get_population ();
+      rhs = next_value++;
       set (lhs, rhs);
     }
     return rhs;
+  }
+
+  hb_codepoint_t skip ()
+  { return next_value++; }
+
+  hb_codepoint_t get_next_value () const
+  { return next_value; }
+
+  void add_set (const hb_set_t *set)
+  {
+    hb_codepoint_t i = HB_SET_VALUE_INVALID;
+    while (hb_set_next (set, &i)) add (i);
   }
 
   
@@ -138,6 +158,9 @@ struct hb_inc_bimap_t : hb_bimap_t
     for (hb_codepoint_t rhs = 0; rhs < count; rhs++)
       set (work[rhs], rhs);
   }
+
+  protected:
+  unsigned int	next_value;
 };
 
 #endif 

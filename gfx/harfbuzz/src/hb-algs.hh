@@ -588,8 +588,16 @@ hb_memcmp (const void *a, const void *b, unsigned int len)
   
 
 
-  if (!len) return 0;
+  if (unlikely (!len)) return 0;
   return memcmp (a, b, len);
+}
+
+static inline void *
+hb_memset (void *s, int c, unsigned int n)
+{
+  
+  if (unlikely (!n)) return 0;
+  return memset (s, c, n);
 }
 
 static inline bool
