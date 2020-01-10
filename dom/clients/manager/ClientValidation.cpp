@@ -6,7 +6,6 @@
 
 #include "ClientValidation.h"
 
-#include "ClientPrefs.h"
 #include "mozilla/net/MozURL.h"
 
 namespace mozilla {
@@ -111,13 +110,6 @@ bool ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
 
       
       
-      if (!ClientPrefsGetDataURLUniqueOpaqueOrigin() &&
-          scheme.LowerCaseEqualsLiteral("data")) {
-        return true;
-      }
-
-      
-      
       
       
       return false;
@@ -133,10 +125,7 @@ bool ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
              scheme.LowerCaseEqualsLiteral("resource") ||
              scheme.LowerCaseEqualsLiteral("blob") ||
              scheme.LowerCaseEqualsLiteral("javascript") ||
-             scheme.LowerCaseEqualsLiteral("view-source") ||
-
-             (!ClientPrefsGetDataURLUniqueOpaqueOrigin() &&
-              scheme.LowerCaseEqualsLiteral("data"));
+             scheme.LowerCaseEqualsLiteral("view-source");
     }
     case PrincipalInfo::TNullPrincipalInfo: {
       
