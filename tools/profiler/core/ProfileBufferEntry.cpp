@@ -1198,6 +1198,7 @@ void ProfileBuffer::StreamProfilerOverheadToJSON(
   EntryGetter e(*this);
 
   aWriter.StartObjectProperty("profilerOverhead_UNSTABLE");
+  aWriter.StartObjectProperty("samples");
   
   
   {
@@ -1274,6 +1275,7 @@ void ProfileBuffer::StreamProfilerOverheadToJSON(
     e.Next();
   }
   aWriter.EndArray();  
+  aWriter.EndObject();  
 
   
   
