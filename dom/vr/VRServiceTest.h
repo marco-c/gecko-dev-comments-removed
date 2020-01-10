@@ -195,7 +195,7 @@ class VRServiceTest final : public DOMEventTargetHelper {
   
   
   
-  InfallibleTArray<uint64_t> mCommandBuffer;
+  nsTArray<uint64_t> mCommandBuffer;
   bool mShuttingDown;
 };
 
