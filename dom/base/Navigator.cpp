@@ -1402,7 +1402,7 @@ Promise* Navigator::Share(const ShareData& aData, ErrorResult& aRv) {
   
   
   
-  if (!UserActivation::IsHandlingUserInput()) {
+  if (StaticPrefs::dom_webshare_requireinteraction() && !UserActivation::IsHandlingUserInput()) {
     NS_WARNING("Attempt to share not triggered by user activation");
     aRv.Throw(NS_ERROR_DOM_NOT_ALLOWED_ERR);
     return nullptr;

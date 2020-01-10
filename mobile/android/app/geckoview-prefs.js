@@ -39,6 +39,9 @@ pref("geckoview.console.enabled", false);
 #endif
 
 
+pref("dom.webshare.enabled", true);
+
+
 pref("dom.capture.enabled", true);
 
 

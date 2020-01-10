@@ -2738,6 +2738,14 @@ public class GeckoSession implements Parcelable {
                 res = delegate.onPopupPrompt(session, prompt);
                 break;
             }
+            case "share": {
+                final String text = message.getString("text");
+                final String uri = message.getString("uri");
+                final PromptDelegate.SharePrompt prompt =
+                    new PromptDelegate.SharePrompt(title, text, uri);
+                res = delegate.onSharePrompt(session, prompt);
+                break;
+            }
             default: {
                 callback.sendError("Invalid type");
                 return;
@@ -4414,6 +4422,82 @@ public class GeckoSession implements Parcelable {
         }
 
         
+
+
+        public class SharePrompt extends BasePrompt {
+            @Retention(RetentionPolicy.SOURCE)
+            @IntDef({Result.SUCCESS, Result.FAILURE, Result.ABORT})
+             @interface ShareResult {}
+
+            
+
+
+            public static class Result {
+                
+
+
+                public static final int SUCCESS = 0;
+
+                
+
+
+                public static final int FAILURE = 1;
+
+                
+
+
+                public static final int ABORT = 2;
+
+                protected Result() {}
+            }
+
+            
+
+
+            public final @Nullable String text;
+
+            
+
+
+            public final @Nullable String uri;
+
+            protected SharePrompt(@Nullable final String title,
+                                  @Nullable final String text,
+                                  @Nullable final String uri) {
+                super(title);
+                this.text = text;
+                this.uri = uri;
+            }
+
+            
+
+
+
+
+
+
+
+
+            @UiThread
+            public @NonNull PromptResponse confirm(@ShareResult final int response) {
+                ensureResult().putInt("response", response);
+                return super.confirm();
+            }
+
+            
+
+
+
+
+
+            @UiThread
+            public @NonNull PromptResponse dismiss() {
+                ensureResult().putInt("response", Result.ABORT);
+                return super.dismiss();
+            }
+        }
+
+        
         
 
 
@@ -4547,6 +4631,23 @@ public class GeckoSession implements Parcelable {
         @UiThread
         default @Nullable GeckoResult<PromptResponse> onPopupPrompt(@NonNull final GeckoSession session,
                                                                     @NonNull final PopupPrompt prompt) {
+            return null;
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+        @UiThread
+        default @Nullable GeckoResult<PromptResponse> onSharePrompt(@NonNull final GeckoSession session,
+                                                                    @NonNull final SharePrompt prompt) {
             return null;
         }
     }
