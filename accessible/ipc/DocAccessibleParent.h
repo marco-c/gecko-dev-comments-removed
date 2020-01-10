@@ -216,7 +216,13 @@ class DocAccessibleParent : public ProxyAccessible,
 
 #if defined(XP_WIN)
   void MaybeInitWindowEmulation();
-  void SendParentCOMProxy();
+
+  
+
+
+
+
+  void SendParentCOMProxy(Accessible* aOuterDoc);
 
   virtual mozilla::ipc::IPCResult RecvGetWindowedPluginIAccessible(
       const WindowsHandle& aHwnd, IAccessibleHolder* aPluginCOMProxy) override;
