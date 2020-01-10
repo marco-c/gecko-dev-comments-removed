@@ -2007,7 +2007,7 @@ BrowserGlue.prototype = {
 
     
     Services.tm.idleDispatchToMainThread(() => {
-      PushService.ensureReady();
+      PushService.wrappedJSObject.ensureReady();
     });
 
     Services.tm.idleDispatchToMainThread(() => {
