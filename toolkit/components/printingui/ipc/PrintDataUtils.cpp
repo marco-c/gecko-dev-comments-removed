@@ -39,6 +39,13 @@ MockWebBrowserPrint::GetCurrentPrintSettings(
 }
 
 NS_IMETHODIMP
+MockWebBrowserPrint::GetDocumentName(nsAString& aDocName) {
+  
+  aDocName = mData.printJobName();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 MockWebBrowserPrint::GetDoingPrint(bool* aDoingPrint) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
@@ -85,28 +92,6 @@ MockWebBrowserPrint::PrintPreviewNavigate(int16_t aNavType, int32_t aPageNum) {
 
 NS_IMETHODIMP
 MockWebBrowserPrint::Cancel() { return NS_ERROR_NOT_IMPLEMENTED; }
-
-NS_IMETHODIMP
-MockWebBrowserPrint::EnumerateDocumentNames(uint32_t* aCount,
-                                            char16_t*** aResult) {
-  *aCount = 0;
-  *aResult = nullptr;
-
-  if (mData.printJobName().IsEmpty()) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  
-  char16_t** array = (char16_t**)moz_xmalloc(sizeof(char16_t*));
-  array[0] = ToNewUnicode(mData.printJobName());
-
-  *aCount = 1;
-  *aResult = array;
-  return NS_OK;
-}
 
 NS_IMETHODIMP
 MockWebBrowserPrint::ExitPrintPreview() { return NS_ERROR_NOT_IMPLEMENTED; }
