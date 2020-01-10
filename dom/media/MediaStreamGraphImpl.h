@@ -669,6 +669,15 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
 
+  size_t mMainThreadPortCount = 0;
+
+  
+
+
+
+
+
+
 
   RefPtr<GraphDriver> mDriver;
 
