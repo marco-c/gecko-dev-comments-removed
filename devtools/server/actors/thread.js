@@ -220,6 +220,10 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     return this.dbg.getNewestFrame();
   },
 
+  get skipBreakpoints() {
+    return this._options.skipBreakpoints;
+  },
+
   
 
 
@@ -627,10 +631,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     if ("observeAsmJS" in options) {
       this.dbg.allowUnobservedAsmJS = !options.observeAsmJS;
-    }
-
-    if ("skipBreakpoints" in options) {
-      this.skipBreakpoints = options.skipBreakpoints;
     }
 
     if ("pauseWorkersUntilAttach" in options) {
@@ -1894,7 +1894,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   },
 
   onSkipBreakpoints: function({ skip }) {
-    this.skipBreakpoints = skip;
+    this._options.skipBreakpoints = skip;
     return { skip };
   },
 
