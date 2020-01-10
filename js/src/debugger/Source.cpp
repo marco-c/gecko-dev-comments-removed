@@ -21,7 +21,6 @@
 #include "debugger/Script.h"    
 #include "gc/Tracer.h"  
 #include "js/CompilationAndEvaluation.h"  
-#include "js/StableStringChars.h"         
 #include "vm/BytecodeUtil.h"              
 #include "vm/JSContext.h"                 
 #include "vm/JSObject.h"                  
@@ -44,7 +43,6 @@ class GlobalObject;
 
 using namespace js;
 
-using JS::AutoStableStringChars;
 using mozilla::AsVariant;
 using mozilla::Maybe;
 using mozilla::Nothing;
@@ -536,12 +534,12 @@ bool DebuggerSource::CallData::setSourceMapURL() {
     return false;
   }
 
-  AutoStableStringChars stableChars(cx);
-  if (!stableChars.initTwoByte(cx, str)) {
+  UniqueTwoByteChars chars = JS_CopyStringCharsZ(cx, str);
+  if (!chars) {
     return false;
   }
 
-  if (!ss->setSourceMapURL(cx, stableChars.twoByteChars())) {
+  if (!ss->setSourceMapURL(cx, std::move(chars))) {
     return false;
   }
 
