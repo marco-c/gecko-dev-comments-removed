@@ -149,10 +149,6 @@ static uint32_t gDumpLOFileNameCnt = 0;
 #define PRT_YESNO(_p) ((_p) ? "YES" : "NO")
 static const char* gFrameTypesStr[] = {"eDoc", "eFrame", "eIFrame",
                                        "eFrameSet"};
-static const char* gPrintFrameTypeStr[] = {"kNoFrames", "kFramesAsIs",
-                                           "kSelectedFrame", "kEachFrameSep"};
-static const char* gFrameHowToEnableStr[] = {
-    "kFrameEnableNone", "kFrameEnableAll", "kFrameEnableAsIsAndEach"};
 static const char* gPrintRangeStr[] = {
     "kRangeAllPages", "kRangeSpecifiedPageRange", "kRangeSelection"};
 
@@ -851,19 +847,6 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
       docShell, printData->mCurrentFocusWin, printData->mIsParentAFrameSet);
 
   
-  if (printData->mIsParentAFrameSet) {
-    if (printData->mCurrentFocusWin) {
-      printData->mPrintSettings->SetHowToEnableFrameUI(
-          nsIPrintSettings::kFrameEnableAll);
-    } else {
-      printData->mPrintSettings->SetHowToEnableFrameUI(
-          nsIPrintSettings::kFrameEnableAsIsAndEach);
-    }
-  } else {
-    printData->mPrintSettings->SetHowToEnableFrameUI(
-        nsIPrintSettings::kFrameEnableNone);
-  }
-  
   printData->mPrintSettings->SetPrintOptions(
       nsIPrintSettings::kEnableSelectionRB,
       isSelection || printData->mIsIFrameSelected);
@@ -980,17 +963,9 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   }
 
   if (aIsPrintPreview) {
-    printData->mPrintSettings->SetPrintFrameType(nsIPrintSettings::kFramesAsIs);
-
     
     
     printData->mPrintSettings->SetPrintRange(nsIPrintSettings::kRangeAllPages);
-  } else {
-    printData->mPrintSettings->GetPrintFrameType(&printData->mPrintFrameType);
-  }
-
-  if (printData->mPrintFrameType == nsIPrintSettings::kEachFrameSep) {
-    CheckForChildFrameSets(printData->mPrintObject);
   }
 
   if (NS_FAILED(EnablePOsForPrinting())) {
@@ -1316,37 +1291,6 @@ void nsPrintJob::BuildDocTree(nsIDocShell* aParentNode,
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-void nsPrintJob::CheckForChildFrameSets(const UniquePtr<nsPrintObject>& aPO) {
-  NS_ASSERTION(aPO, "Pointer is null!");
-
-  
-  bool hasChildFrames = false;
-  for (const UniquePtr<nsPrintObject>& po : aPO->mKids) {
-    if (po->mFrameType == eFrame) {
-      hasChildFrames = true;
-      CheckForChildFrameSets(po);
-    }
-  }
-
-  if (hasChildFrames && aPO->mFrameType == eFrame) {
-    aPO->mFrameType = eFrameSet;
-  }
-}
-
-
 bool nsPrintJob::IsThereAnIFrameSelected(nsIDocShell* aDocShell,
                                          nsPIDOMWindowOuter* aDOMWin,
                                          bool& aIsParentFrameSet) {
@@ -1438,18 +1382,6 @@ void nsPrintJob::GetDisplayTitleAndURL(const UniquePtr<nsPrintObject>& aPO,
 
 
 nsresult nsPrintJob::DocumentReadyForPrinting() {
-  int16_t printRangeType = nsIPrintSettings::kRangeAllPages;
-  mPrt->mPrintSettings->GetPrintRange(&printRangeType);
-  if (mPrt->mPrintFrameType == nsIPrintSettings::kEachFrameSep &&
-      printRangeType != nsIPrintSettings::kRangeSelection) {
-    
-    
-    RefPtr<nsPrintData> printData = mPrt;
-    CheckForChildFrameSets(printData->mPrintObject);
-  }
-
-  
-  
   
   nsresult rv = SetupToPrintContent();
   if (NS_FAILED(rv)) {
@@ -2002,9 +1934,7 @@ void nsPrintJob::UpdateZoomRatio(nsPrintObject* aPO, bool aSetPixelScale) {
     mPrt->mPrintSettings->GetPrintRange(&printRangeType);
 
     float ratio;
-    if ((mPrt->mPrintFrameType == nsIPrintSettings::kFramesAsIs ||
-         mPrt->mPrintFrameType == nsIPrintSettings::kNoFrames) &&
-        printRangeType != nsIPrintSettings::kRangeSelection) {
+    if (printRangeType != nsIPrintSettings::kRangeSelection) {
       ratio = mPrt->mShrinkRatio - 0.005f;  
     } else {
       ratio = aPO->mShrinkRatio - 0.005f;  
@@ -2684,15 +2614,6 @@ bool nsPrintJob::PrintPage(nsPrintObject* aPO, bool& aInRange) {
     aInRange = true;
   }
 
-  
-  
-  int16_t printRangeType = nsIPrintSettings::kRangeAllPages;
-  printData->mPrintSettings->GetPrintRange(&printRangeType);
-  if (printData->mPrintFrameType == nsIPrintSettings::kEachFrameSep &&
-      printRangeType != nsIPrintSettings::kRangeSelection) {
-    endPage = printData->mNumPrintablePages;
-  }
-
   printData->DoOnProgressChange(++printData->mNumPagesPrinted, endPage, false,
                                 0);
   if (NS_WARN_IF(mPrt != printData)) {
@@ -2894,20 +2815,11 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
     return NS_ERROR_FAILURE;
   }
 
-  printData->mPrintFrameType = nsIPrintSettings::kNoFrames;
-  printData->mPrintSettings->GetPrintFrameType(&printData->mPrintFrameType);
-
-  int16_t printHowEnable = nsIPrintSettings::kFrameEnableNone;
-  printData->mPrintSettings->GetHowToEnableFrameUI(&printHowEnable);
-
   int16_t printRangeType = nsIPrintSettings::kRangeAllPages;
   printData->mPrintSettings->GetPrintRange(&printRangeType);
 
   PR_PL(("\n"));
   PR_PL(("********* nsPrintJob::EnablePOsForPrinting *********\n"));
-  PR_PL(("PrintFrameType:     %s \n",
-         gPrintFrameTypeStr[printData->mPrintFrameType]));
-  PR_PL(("HowToEnableFrameUI: %s \n", gFrameHowToEnableStr[printHowEnable]));
   PR_PL(("PrintRange:         %s \n", gPrintRangeStr[printRangeType]));
   PR_PL(("----\n"));
 
@@ -2927,13 +2839,7 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
         NS_ASSERTION(po, "nsPrintObject can't be null!");
         SetPrintAsIs(po.get());
       }
-
-      
-      printData->mPrintFrameType = nsIPrintSettings::kFramesAsIs;
     }
-    PR_PL(("PrintFrameType:     %s \n",
-           gPrintFrameTypeStr[printData->mPrintFrameType]));
-    PR_PL(("HowToEnableFrameUI: %s \n", gFrameHowToEnableStr[printHowEnable]));
     PR_PL(("PrintRange:         %s \n", gPrintRangeStr[printRangeType]));
     return NS_OK;
   }
@@ -2966,10 +2872,6 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
           printRangeType = nsIPrintSettings::kRangeAllPages;
           printData->mPrintSettings->SetPrintRange(printRangeType);
         }
-        PR_PL(("PrintFrameType:     %s \n",
-               gPrintFrameTypeStr[printData->mPrintFrameType]));
-        PR_PL(("HowToEnableFrameUI: %s \n",
-               gFrameHowToEnableStr[printHowEnable]));
         PR_PL(("PrintRange:         %s \n", gPrintRangeStr[printRangeType]));
         return NS_OK;
       }
@@ -2988,51 +2890,27 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
     }
   }
 
-  
-  if (printData->mPrintFrameType == nsIPrintSettings::kFramesAsIs &&
-      printRangeType != nsIPrintSettings::kRangeSelection) {
+  if (printRangeType != nsIPrintSettings::kRangeSelection) {
     SetPrintAsIs(printData->mPrintObject.get());
     SetPrintPO(printData->mPrintObject.get(), true);
     return NS_OK;
   }
 
-  
-  
-  
-  if (printData->mPrintFrameType == nsIPrintSettings::kSelectedFrame ||
-      printRangeType == nsIPrintSettings::kRangeSelection) {
-    if ((printData->mIsParentAFrameSet && printData->mCurrentFocusWin) ||
-        printData->mIsIFrameSelected) {
-      nsPrintObject* po = FindPrintObjectByDOMWin(printData->mPrintObject.get(),
-                                                  printData->mCurrentFocusWin);
-      if (po) {
+  if ((printData->mIsParentAFrameSet && printData->mCurrentFocusWin) ||
+      printData->mIsIFrameSelected) {
+    nsPrintObject* po = FindPrintObjectByDOMWin(printData->mPrintObject.get(),
+                                                printData->mCurrentFocusWin);
+    if (po) {
+      
+      
+      
+      if (po->mKids.Length() > 0) {
         
-        
-        
-        if (po->mKids.Length() > 0) {
-          
-          SetPrintAsIs(po);
-        }
-
-        
-        SetPrintPO(po, true);
+        SetPrintAsIs(po);
       }
-    }
-    return NS_OK;
-  }
 
-  
-  
-  if (printData->mPrintFrameType == nsIPrintSettings::kEachFrameSep &&
-      printRangeType != nsIPrintSettings::kRangeSelection) {
-    SetPrintPO(printData->mPrintObject.get(), true);
-    int32_t cnt = printData->mPrintDocList.Length();
-    for (int32_t i = 0; i < cnt; i++) {
-      nsPrintObject* po = printData->mPrintDocList.ElementAt(i);
-      NS_ASSERTION(po, "nsPrintObject can't be null!");
-      if (po->mFrameType == eFrameSet) {
-        po->mDontPrint = true;
-      }
+      
+      SetPrintPO(po, true);
     }
   }
 
@@ -3520,9 +3398,8 @@ static void DumpPrintObjectsList(const nsTArray<nsPrintObject*>& aDocList) {
       }
     }
 
-    PR_PL(("%s %d %d %d %p %p %p\n", types[po->mFrameType], po->IsPrintable(),
-           po->mPrintAsIs, po->mHasBeenPrinted, po, po->mDocShell.get(),
-           rootFrame));
+    PR_PL(("%s %d %d %p %p %p\n", types[po->mFrameType], po->IsPrintable(),
+           po->mHasBeenPrinted, po, po->mDocShell.get(), rootFrame));
   }
 }
 

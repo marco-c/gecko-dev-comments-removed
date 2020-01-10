@@ -781,6 +781,8 @@ pref("gfx.downloadable_fonts.fallback_delay_short", 100);
 
 pref("gfx.downloadable_fonts.disable_cache", false);
 
+pref("gfx.downloadable_fonts.woff2.enabled", true);
+
 
 #ifdef RELEASE_OR_BETA
 pref("gfx.downloadable_fonts.otl_validation", false);
@@ -2636,7 +2638,7 @@ pref("security.dialog_enable_delay", 1000);
 pref("security.notification_enable_delay", 500);
 
 #if defined(DEBUG) && !defined(ANDROID)
-pref("csp.about_uris_without_csp", "blank,printpreview,srcdoc,addons,cache-entry,config,crashes,debugging,devtools,downloads,home,networking,newtab,performance,plugins,profiles,restartrequired,serviceworkers,sessionrestore,support,sync-log,telemetry,url-classifier,webrtc,welcomeback");
+pref("csp.about_uris_without_csp", "blank,printpreview,srcdoc,addons,cache-entry,config,crashes,debugging,devtools,downloads,home,networking,newtab,performance,plugins,policies,profiles,restartrequired,serviceworkers,sessionrestore,support,sync-log,telemetry,url-classifier,webrtc,welcomeback");
 
 pref("csp.overrule_about_uris_without_csp_whitelist", false);
 pref("csp.skip_about_page_has_csp_assert", false);
@@ -3864,9 +3866,6 @@ pref("layout.word_select.eat_space_to_next_word", true);
 
 
 pref("slider.snapMultiplier", 6);
-
-
-pref("print.extend_native_print_dialog", true);
 
 
 
