@@ -322,6 +322,10 @@ this.VideoControlsImplWidget = class {
           this.setShowPictureInPictureMessage(true);
         }
 
+        
+        
+        this.pictureInPictureToggleButton.setAttribute("hidden", true);
+
         if (this.video.readyState >= this.video.HAVE_METADATA) {
           
           
@@ -2669,6 +2673,10 @@ this.NoControlsDesktopImplWidget = class {
         if (this.document.fullscreenElement) {
           this.videocontrols.setAttribute("inDOMFullscreen", true);
         }
+
+        
+        
+        this.pictureInPictureToggleButton.setAttribute("hidden", true);
 
         if (this.video.readyState >= this.video.HAVE_METADATA) {
           
