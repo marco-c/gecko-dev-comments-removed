@@ -1,3 +1,7 @@
+
+
+
+
 function toFixed(num, fixed) {
   fixed = fixed || 0;
   fixed = Math.pow(10, fixed);
