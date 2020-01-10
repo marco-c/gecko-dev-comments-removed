@@ -2568,7 +2568,18 @@
 
 
  \
-    MACRO(JSOP_INSTRUMENTATION_SCRIPT_ID, 240, "instrumentationScriptId", NULL, 1, 0, 1, JOF_BYTE)
+    MACRO(JSOP_INSTRUMENTATION_SCRIPT_ID, 240, "instrumentationScriptId", NULL, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+ \
+    MACRO(JSOP_COALESCE, 241, "coalesce", NULL, 5, 1, 1, JOF_JUMP|JOF_DETECTING)
+
 
 
 
@@ -2576,7 +2587,6 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  MACRO(241)                                   \
   MACRO(242)                                   \
   MACRO(243)                                   \
   MACRO(244)                                   \

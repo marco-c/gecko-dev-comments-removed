@@ -1,5 +1,5 @@
 
-function test() { 
+function test() {
 
 
 Pattern("program").match(Reflect.parse("42", {builder:{program:() => "program"}}));

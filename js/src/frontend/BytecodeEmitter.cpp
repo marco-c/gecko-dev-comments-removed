@@ -7517,11 +7517,11 @@ bool BytecodeEmitter::emitCallOrNew(
 static const JSOp ParseNodeKindToJSOp[] = {
     
     
-    JSOP_NOP,        JSOP_NOP,    JSOP_OR,       JSOP_AND, JSOP_BITOR,
-    JSOP_BITXOR,     JSOP_BITAND, JSOP_STRICTEQ, JSOP_EQ,  JSOP_STRICTNE,
-    JSOP_NE,         JSOP_LT,     JSOP_LE,       JSOP_GT,  JSOP_GE,
-    JSOP_INSTANCEOF, JSOP_IN,     JSOP_LSH,      JSOP_RSH, JSOP_URSH,
-    JSOP_ADD,        JSOP_SUB,    JSOP_MUL,      JSOP_DIV, JSOP_MOD,
+    JSOP_NOP,        JSOP_COALESCE, JSOP_OR,       JSOP_AND, JSOP_BITOR,
+    JSOP_BITXOR,     JSOP_BITAND,   JSOP_STRICTEQ, JSOP_EQ,  JSOP_STRICTNE,
+    JSOP_NE,         JSOP_LT,       JSOP_LE,       JSOP_GT,  JSOP_GE,
+    JSOP_INSTANCEOF, JSOP_IN,       JSOP_LSH,      JSOP_RSH, JSOP_URSH,
+    JSOP_ADD,        JSOP_SUB,      JSOP_MUL,      JSOP_DIV, JSOP_MOD,
     JSOP_POW};
 
 static inline JSOp BinaryOpParseNodeKindToJSOp(ParseNodeKind pnk) {
@@ -7573,71 +7573,9 @@ bool BytecodeEmitter::emitLeftAssociative(ListNode* node) {
   return true;
 }
 
-bool BytecodeEmitter::emitNullCoalesce(ListNode* node) {
-  MOZ_ASSERT(node->isKind(ParseNodeKind::CoalesceExpr));
-
-  
-
-
-
-
-
-
-
-  TDZCheckCache tdzCache(this);
-
-  JumpList jump;
-  
-  for (ParseNode* expr = node->head();; expr = expr->pn_next) {
-    if (!emitTree(expr)) {
-      
-      return false;
-    }
-
-    
-    
-    if (!expr->pn_next) {
-      break;
-    }
-
-    if (!emitPushNotUndefinedOrNull()) {
-      
-      return false;
-    }
-
-    
-    
-    
-    
-    if (!emit1(JSOP_NOT)) {
-      
-      return false;
-    }
-
-    
-    if(!this->newSrcNote(SRC_IF)) {
-      return false;
-    }
-
-    if (!emitJump(JSOP_IFEQ, &jump)) {
-      
-      return false;
-    }
-
-    if (!emit1(JSOP_POP)) {
-      return false;
-    }
-  }
-
-  if (!emitJumpTargetAndPatch(jump)) {
-    return false;
-  }
-
-  return true;
-}
-
-bool BytecodeEmitter::emitLogical(ListNode* node) {
+bool BytecodeEmitter::emitShortCircuit(ListNode* node) {
   MOZ_ASSERT(node->isKind(ParseNodeKind::OrExpr) ||
+             node->isKind(ParseNodeKind::CoalesceExpr) ||
              node->isKind(ParseNodeKind::AndExpr));
 
   
@@ -7659,7 +7597,21 @@ bool BytecodeEmitter::emitLogical(ListNode* node) {
     return false;
   }
 
-  JSOp op = node->isKind(ParseNodeKind::OrExpr) ? JSOP_OR : JSOP_AND;
+  JSOp op;
+  switch (node->getKind()) {
+    case ParseNodeKind::OrExpr:
+      op = JSOP_OR;
+      break;
+    case ParseNodeKind::CoalesceExpr:
+      op = JSOP_COALESCE;
+      break;
+    case ParseNodeKind::AndExpr:
+      op = JSOP_AND;
+      break;
+    default:
+      MOZ_CRASH("Unexpected ParseNodeKind");
+  }
+
   JumpList jump;
   if (!emitJump(op, &jump)) {
     return false;
@@ -9309,15 +9261,10 @@ bool BytecodeEmitter::emitTree(
       }
       break;
 
-    case ParseNodeKind::CoalesceExpr:
-      if (!emitNullCoalesce(&pn->as<ListNode>())) {
-        return false;
-      }
-      break;
-
     case ParseNodeKind::OrExpr:
+    case ParseNodeKind::CoalesceExpr:
     case ParseNodeKind::AndExpr:
-      if (!emitLogical(&pn->as<ListNode>())) {
+      if (!emitShortCircuit(&pn->as<ListNode>())) {
         return false;
       }
       break;
