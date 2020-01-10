@@ -137,8 +137,6 @@ nsresult HTMLLinkElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   nsContentUtils::AddScriptRunner(
       NewRunnableMethod("dom::HTMLLinkElement::BindToTree", this, update));
 
-  
-  
   if (IsInUncomposedDoc() &&
       AttrValueIs(kNameSpaceID_None, nsGkAtoms::rel, nsGkAtoms::localization,
                   eIgnoreCase)) {
@@ -177,11 +175,10 @@ void HTMLLinkElement::UnbindFromTree(bool aNullParent) {
 
   
   
-  
   bool ignore;
   if (oldDoc && oldDoc->GetScriptHandlingObject(ignore) &&
-      this->AttrValueIs(kNameSpaceID_None, nsGkAtoms::rel,
-                        nsGkAtoms::localization, eIgnoreCase)) {
+      AttrValueIs(kNameSpaceID_None, nsGkAtoms::rel, nsGkAtoms::localization,
+                  eIgnoreCase)) {
     oldDoc->LocalizationLinkRemoved(this);
   }
 
@@ -288,8 +285,7 @@ nsresult HTMLLinkElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   
   
   if (aNameSpaceID == kNameSpaceID_None && aName == nsGkAtoms::rel) {
-    Document* doc = GetComposedDoc();
-    if (doc) {
+    if (Document* doc = GetUncomposedDoc()) {
       if ((aValue && aValue->Equals(nsGkAtoms::localization, eIgnoreCase)) &&
           (!aOldValue ||
            !aOldValue->Equals(nsGkAtoms::localization, eIgnoreCase))) {
@@ -308,8 +304,7 @@ nsresult HTMLLinkElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   if (aNameSpaceID == kNameSpaceID_None && aName == nsGkAtoms::href &&
       AttrValueIs(kNameSpaceID_None, nsGkAtoms::rel, nsGkAtoms::localization,
                   eIgnoreCase)) {
-    Document* doc = GetComposedDoc();
-    if (doc) {
+    if (Document* doc = GetUncomposedDoc()) {
       if (aOldValue) {
         doc->LocalizationLinkRemoved(this);
       }
