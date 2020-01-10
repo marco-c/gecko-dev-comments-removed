@@ -1268,6 +1268,13 @@ pref("network.http.proxy.version", "1.1");
 
 
 
+
+
+
+pref("network.http.proxy.respect-be-conservative", true);
+
+
+
 pref("network.http.default-socket-type", "");
 
 
