@@ -1198,6 +1198,7 @@ static void ApplyRenderingChangeToTree(PresShell* aPresShell, nsIFrame* aFrame,
   
   
   
+  
   NS_ASSERTION(!(aChange & nsChangeHint_UpdateTransformLayer) ||
                    nsLayoutUtils::GetPrimaryFrameFromStyleFrame(aFrame)
                        ->IsTransformed() ||
@@ -1844,9 +1845,12 @@ void RestyleManager::IncrementAnimationGeneration() {
 
 
 void RestyleManager::AddLayerChangesForAnimation(
-    nsIFrame* aStyleFrame, nsIContent* aContent, nsChangeHint aHintForThisFrame,
+    nsIFrame* aStyleFrame, nsIFrame* aPrimaryFrame,
+    Element* aElement, nsChangeHint aHintForThisFrame,
     nsStyleChangeList& aChangeListToProcess) {
-  if (!aStyleFrame || !aContent) {
+  MOZ_ASSERT(aElement);
+  MOZ_ASSERT(!!aStyleFrame == !!aPrimaryFrame);
+  if (!aStyleFrame) {
     return;
   }
 
@@ -1927,11 +1931,13 @@ void RestyleManager::AddLayerChangesForAnimation(
   };
 
   AnimationInfo::EnumerateGenerationOnFrame(
-      aStyleFrame, aContent, LayerAnimationInfo::sDisplayItemTypes,
+      aStyleFrame, aElement, LayerAnimationInfo::sDisplayItemTypes,
       maybeApplyChangeHint);
 
   if (hint) {
-    aChangeListToProcess.AppendChange(aStyleFrame, aContent, hint);
+    
+    
+    aChangeListToProcess.AppendChange(aPrimaryFrame, aElement, hint);
   }
 }
 
@@ -2852,7 +2858,7 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
     
     
     
-    AddLayerChangesForAnimation(styleFrame, aElement, changeHint,
+    AddLayerChangesForAnimation(styleFrame, primaryFrame, aElement, changeHint,
                                 aRestyleState.ChangeList());
 
     childrenFlags |=

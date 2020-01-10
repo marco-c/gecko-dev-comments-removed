@@ -419,8 +419,8 @@ class RestyleManager {
   
   
   static void AddLayerChangesForAnimation(
-      nsIFrame* aFrame, nsIContent* aContent, nsChangeHint aHintForThisFrame,
-      nsStyleChangeList& aChangeListToProcess);
+      nsIFrame* aStyleFrame, nsIFrame* aPrimaryFrame, Element* aElement,
+      nsChangeHint aHintForThisFrame, nsStyleChangeList& aChangeListToProcess);
 
   
 
