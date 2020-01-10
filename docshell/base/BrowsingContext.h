@@ -277,6 +277,13 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   BrowsingContext* FindChildWithName(const nsAString& aName,
                                      BrowsingContext& aRequestingContext);
 
+  
+  
+  
+  
+  BrowsingContext* FindWithNameInSubtree(const nsAString& aName,
+                                         BrowsingContext& aRequestingContext);
+
   nsISupports* GetParentObject() const;
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
@@ -464,19 +471,8 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
  private:
   
   
-  static bool IsSpecialName(const nsAString& aName);
-
-  
-  
   BrowsingContext* FindWithSpecialName(const nsAString& aName,
                                        BrowsingContext& aRequestingContext);
-
-  
-  
-  
-  
-  BrowsingContext* FindWithNameInSubtree(const nsAString& aName,
-                                         BrowsingContext& aRequestingContext);
 
   friend class ::nsOuterWindowProxy;
   friend class ::nsGlobalWindowOuter;

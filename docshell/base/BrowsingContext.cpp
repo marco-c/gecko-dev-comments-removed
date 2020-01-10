@@ -115,7 +115,8 @@ already_AddRefed<BrowsingContext> BrowsingContext::Create(
 
   
   RefPtr<BrowsingContextGroup> group =
-      BrowsingContextGroup::Select(aParent, aOpener);
+    (aType == Type::Chrome) ? do_AddRef(BrowsingContextGroup::GetChromeGroup())
+                            : BrowsingContextGroup::Select(aParent, aOpener);
 
   RefPtr<BrowsingContext> context;
   if (XRE_IsParentProcess()) {
@@ -478,7 +479,7 @@ BrowsingContext* BrowsingContext::FindWithName(const nsAString& aName) {
     
     
     found = nullptr;
-  } else if (IsSpecialName(aName)) {
+  } else if (nsContentUtils::IsSpecialName(aName)) {
     found = FindWithSpecialName(aName, *requestingContext);
   } else if (BrowsingContext* child =
                  FindWithNameInSubtree(aName, *requestingContext)) {
@@ -545,14 +546,6 @@ BrowsingContext* BrowsingContext::FindChildWithName(
   return nullptr;
 }
 
-
-bool BrowsingContext::IsSpecialName(const nsAString& aName) {
-  return (aName.LowerCaseEqualsLiteral("_self") ||
-          aName.LowerCaseEqualsLiteral("_parent") ||
-          aName.LowerCaseEqualsLiteral("_top") ||
-          aName.LowerCaseEqualsLiteral("_blank"));
-}
-
 BrowsingContext* BrowsingContext::FindWithSpecialName(
     const nsAString& aName, BrowsingContext& aRequestingContext) {
   
@@ -615,6 +608,11 @@ bool BrowsingContext::CanAccess(BrowsingContext* aTarget,
   MOZ_DIAGNOSTIC_ASSERT(
       Group() == aTarget->Group(),
       "A BrowsingContext should never see a context from a different group");
+
+  if (IsChrome()) {
+    MOZ_DIAGNOSTIC_ASSERT(aTarget->IsChrome());
+    return true;
+  }
 
   
   if (aTarget == this || aTarget == Top()) {
