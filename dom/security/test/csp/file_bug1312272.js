@@ -1,7 +1,7 @@
 var m = document.getElementById("m");
 m.addEventListener("click", function() {
   
-  parent.postMessage('finish', '*');
+  parent.postMessage("finish", "*");
 });
 console.log("finish-handler setup");
 m.click();

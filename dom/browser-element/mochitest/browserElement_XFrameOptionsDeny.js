@@ -41,16 +41,19 @@ function runTest() {
   var step1, stepfinish;
   iframe.addEventListener("mozbrowsershowmodalprompt", function(e) {
     switch (e.detail.message) {
-    case "step 1":
-      step1 = SpecialPowers.snapshotWindow(iframe.contentWindow);
-      break;
-    case "step 2":
-      
-      
-      stepfinish = SpecialPowers.snapshotWindow(iframe.contentWindow);
-      ok(step1.toDataURL() == stepfinish.toDataURL(), "Screenshots should be identical");
-      SimpleTest.finish();
-      break;
+      case "step 1":
+        step1 = SpecialPowers.snapshotWindow(iframe.contentWindow);
+        break;
+      case "step 2":
+        
+        
+        stepfinish = SpecialPowers.snapshotWindow(iframe.contentWindow);
+        ok(
+          step1.toDataURL() == stepfinish.toDataURL(),
+          "Screenshots should be identical"
+        );
+        SimpleTest.finish();
+        break;
     }
   });
 
@@ -59,7 +62,8 @@ function runTest() {
   
   
   
-  iframe.src = "http://example.com/tests/dom/browser-element/mochitest/file_browserElement_XFrameOptionsDeny.html";
+  iframe.src =
+    "http://example.com/tests/dom/browser-element/mochitest/file_browserElement_XFrameOptionsDeny.html";
 }
 
 addEventListener("testready", runTest);

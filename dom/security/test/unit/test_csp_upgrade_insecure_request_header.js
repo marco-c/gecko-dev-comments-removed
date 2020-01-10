@@ -1,8 +1,9 @@
-const {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
-const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
+const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
+const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
@@ -13,7 +14,7 @@ XPCOMUtils.defineLazyGetter(this, "URL", function() {
   return "http://localhost:" + httpserver.identity.primaryPort;
 });
 
-var httpserver =  null;
+var httpserver = null;
 var channel = null;
 var curTest = null;
 var testpath = "/footpath";
@@ -41,11 +42,10 @@ var tests = [
   },
 ];
 
-function ChannelListener() {
-}
+function ChannelListener() {}
 
 ChannelListener.prototype = {
-  onStartRequest(request) { },
+  onStartRequest(request) {},
   onDataAvailable(request, stream, offset, count) {
     do_throw("Should not get any data!");
   },

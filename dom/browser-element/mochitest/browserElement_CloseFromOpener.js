@@ -24,7 +24,6 @@ function runTest() {
     });
   });
 
-
   document.body.appendChild(iframe);
 
   

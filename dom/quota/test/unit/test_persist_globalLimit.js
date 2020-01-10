@@ -8,8 +8,7 @@
 
 
 
-async function testSteps()
-{
+async function testSteps() {
   const globalLimitKB = 1;
 
   const principal = getPrincipal("https://persisted.example.com");

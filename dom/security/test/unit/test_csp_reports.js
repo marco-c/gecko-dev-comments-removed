@@ -2,9 +2,9 @@
 
 
 
-const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
+const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 var httpServer = new HttpServer();
 httpServer.start(-1);
@@ -30,31 +30,39 @@ function makeReportHandler(testpath, message, expectedJSON) {
 
     
     var contentType = request.hasHeader("Content-Type")
-                    ? request.getHeader("Content-Type") : undefined;
+      ? request.getHeader("Content-Type")
+      : undefined;
     if (contentType !== "application/csp-report") {
-      do_throw("violation report should have the 'application/csp-report' " +
-               "content-type, when in fact it is " + contentType.toString());
+      do_throw(
+        "violation report should have the 'application/csp-report' " +
+          "content-type, when in fact it is " +
+          contentType.toString()
+      );
     }
 
     
     var reportObj = JSON.parse(
-          NetUtil.readInputStreamToString(
-            request.bodyInputStream,
-            request.bodyInputStream.available()));
+      NetUtil.readInputStreamToString(
+        request.bodyInputStream,
+        request.bodyInputStream.available()
+      )
+    );
 
     
     
     
 
-    for (var i in expectedJSON)
+    for (var i in expectedJSON) {
       Assert.equal(expectedJSON[i], reportObj["csp-report"][i]);
+    }
 
     testsToFinish--;
     httpServer.registerPathHandler(testpath, null);
-    if (testsToFinish < 1)
+    if (testsToFinish < 1) {
       httpServer.stop(do_test_finished);
-    else
+    } else {
       do_test_finished();
+    }
   };
 }
 
@@ -68,19 +76,27 @@ function makeTest(id, expectedJSON, useReportOnlyPolicy, callback) {
   do_test_pending();
 
   
-  var csp = Cc["@mozilla.org/cspcontext;1"]
-              .createInstance(Ci.nsIContentSecurityPolicy);
-  var policy = "default-src 'none' 'report-sample'; " +
-               "report-uri " + REPORT_SERVER_URI +
-                               ":" + REPORT_SERVER_PORT +
-                               "/test" + id;
-  var selfuri = NetUtil.newURI(REPORT_SERVER_URI +
-                               ":" + REPORT_SERVER_PORT +
-                               "/foo/self");
+  var csp = Cc["@mozilla.org/cspcontext;1"].createInstance(
+    Ci.nsIContentSecurityPolicy
+  );
+  var policy =
+    "default-src 'none' 'report-sample'; " +
+    "report-uri " +
+    REPORT_SERVER_URI +
+    ":" +
+    REPORT_SERVER_PORT +
+    "/test" +
+    id;
+  var selfuri = NetUtil.newURI(
+    REPORT_SERVER_URI + ":" + REPORT_SERVER_PORT + "/foo/self"
+  );
 
   dump("Created test " + id + " : " + policy + "\n\n");
 
-  principal = Services.scriptSecurityManager.createCodebasePrincipal(selfuri, {});
+  principal = Services.scriptSecurityManager.createCodebasePrincipal(
+    selfuri,
+    {}
+  );
   csp.setRequestContextWithPrincipal(principal, selfuri, "", 0);
 
   
@@ -96,147 +112,198 @@ function makeTest(id, expectedJSON, useReportOnlyPolicy, callback) {
 }
 
 function run_test() {
-  var selfuri = NetUtil.newURI(REPORT_SERVER_URI +
-                               ":" + REPORT_SERVER_PORT +
-                               "/foo/self");
+  var selfuri = NetUtil.newURI(
+    REPORT_SERVER_URI + ":" + REPORT_SERVER_PORT + "/foo/self"
+  );
 
   
-  makeTest(0, {"blocked-uri": "inline"}, false,
-      function(csp) {
-        let inlineOK = true;
-        inlineOK = csp.getAllowsInline(Ci.nsIContentPolicy.TYPE_SCRIPT,
-                                       "", 
-                                       false, 
-                                       null, 
-                                       null, 
-                                       "", 
-                                       0, 
-                                       0); 
+  makeTest(0, { "blocked-uri": "inline" }, false, function(csp) {
+    let inlineOK = true;
+    inlineOK = csp.getAllowsInline(
+      Ci.nsIContentPolicy.TYPE_SCRIPT,
+      "", 
+      false, 
+      null, 
+      null, 
+      "", 
+      0, 
+      0
+    ); 
 
-        
-        Assert.ok(!inlineOK);
-      });
+    
+    Assert.ok(!inlineOK);
+  });
 
   
-  makeTest(1, {"blocked-uri": "eval",
-               
-               "script-sample": "\xc2\xa3\xc2\xa5\xc2\xb5\xe5\x8c\x97\xf0\xa0\x9d\xb9",
-               "line-number": 1,
-               "column-number": 2}, false,
-      function(csp) {
-        let evalOK = true, oReportViolation = {"value": false};
-        evalOK = csp.getAllowsEval(oReportViolation);
+  makeTest(
+    1,
+    {
+      "blocked-uri": "eval",
+      
+      "script-sample": "\xc2\xa3\xc2\xa5\xc2\xb5\xe5\x8c\x97\xf0\xa0\x9d\xb9",
+      "line-number": 1,
+      "column-number": 2,
+    },
+    false,
+    function(csp) {
+      let evalOK = true,
+        oReportViolation = { value: false };
+      evalOK = csp.getAllowsEval(oReportViolation);
 
-        
-        Assert.ok(!evalOK);
-        
-        Assert.ok(oReportViolation.value);
+      
+      Assert.ok(!evalOK);
+      
+      Assert.ok(oReportViolation.value);
 
-        if (oReportViolation.value) {
+      if (oReportViolation.value) {
+        
+        csp.logViolationDetails(
+          Ci.nsIContentSecurityPolicy.VIOLATION_TYPE_EVAL,
+          null, 
+          null, 
+          selfuri.asciiSpec,
           
-          csp.logViolationDetails(Ci.nsIContentSecurityPolicy.VIOLATION_TYPE_EVAL,
-                                  null, 
-                                  null, 
-                                  selfuri.asciiSpec,
-                                  
-                                  
-                                  
-                                  "\u00a3\u00a5\u00b5\u5317\ud841\udf79",
-                                  1, 
-                                  2); 
-        }
-      });
-
-  makeTest(2, {"blocked-uri": "http://blocked.test/foo.js"}, false,
-      function(csp) {
-        
-        csp.shouldLoad(Ci.nsIContentPolicy.TYPE_SCRIPT,
-                      null, 
-                      NetUtil.newURI("http://blocked.test/foo.js"),
-                      null, null, null, null, true, null);
-      });
-
-  
-  makeTest(3, {"blocked-uri": "inline"}, true,
-      function(csp) {
-        let inlineOK = true;
-        inlineOK = csp.getAllowsInline(Ci.nsIContentPolicy.TYPE_SCRIPT,
-                                       "", 
-                                       false, 
-                                       null, 
-                                       null, 
-                                       "", 
-                                       0, 
-                                       0); 
-
-        
-        Assert.ok(inlineOK);
-      });
-
-  
-  makeTest(4, {"blocked-uri": "inline"}, true,
-      function(csp) {
-        let evalOK = true, oReportViolation = {"value": false};
-        evalOK = csp.getAllowsEval(oReportViolation);
-
-        
-        Assert.ok(evalOK);
-        
-        Assert.ok(oReportViolation.value);
-
-        if (oReportViolation.value) {
           
-          csp.logViolationDetails(Ci.nsIContentSecurityPolicy.VIOLATION_TYPE_INLINE_SCRIPT,
-                                  null, 
-                                  null, 
-                                  selfuri.asciiSpec,
-                                  "script sample",
-                                  4, 
-                                  5); 
-        }
-      });
+          
+          "\u00a3\u00a5\u00b5\u5317\ud841\udf79",
+          1, 
+          2
+        ); 
+      }
+    }
+  );
+
+  makeTest(2, { "blocked-uri": "http://blocked.test/foo.js" }, false, function(
+    csp
+  ) {
+    
+    csp.shouldLoad(
+      Ci.nsIContentPolicy.TYPE_SCRIPT,
+      null, 
+      NetUtil.newURI("http://blocked.test/foo.js"),
+      null,
+      null,
+      null,
+      null,
+      true,
+      null
+    );
+  });
 
   
-  makeTest(5, {"blocked-uri": "data"}, false,
-    function(csp) {
-      var base64data =
-        "iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12" +
-        "P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==";
-      
-      csp.shouldLoad(Ci.nsIContentPolicy.TYPE_IMAGE,
-                     null, 
-                     NetUtil.newURI("data:image/png;base64," + base64data),
-                     null, null, null, null, true, null);
-      });
+  makeTest(3, { "blocked-uri": "inline" }, true, function(csp) {
+    let inlineOK = true;
+    inlineOK = csp.getAllowsInline(
+      Ci.nsIContentPolicy.TYPE_SCRIPT,
+      "", 
+      false, 
+      null, 
+      null, 
+      "", 
+      0, 
+      0
+    ); 
+
+    
+    Assert.ok(inlineOK);
+  });
 
   
-  makeTest(6, {"blocked-uri": "intent"}, false,
-    function(csp) {
+  makeTest(4, { "blocked-uri": "inline" }, true, function(csp) {
+    let evalOK = true,
+      oReportViolation = { value: false };
+    evalOK = csp.getAllowsEval(oReportViolation);
+
+    
+    Assert.ok(evalOK);
+    
+    Assert.ok(oReportViolation.value);
+
+    if (oReportViolation.value) {
       
-      csp.shouldLoad(Ci.nsIContentPolicy.TYPE_SUBDOCUMENT,
-                     null, 
-                     NetUtil.newURI("intent://mymaps.com/maps?um=1&ie=UTF-8&fb=1&sll"),
-                     null, null, null, null, true, null);
-      });
+      csp.logViolationDetails(
+        Ci.nsIContentSecurityPolicy.VIOLATION_TYPE_INLINE_SCRIPT,
+        null, 
+        null, 
+        selfuri.asciiSpec,
+        "script sample",
+        4, 
+        5
+      ); 
+    }
+  });
 
   
-  var selfSpec = REPORT_SERVER_URI + ":" + REPORT_SERVER_PORT + "/foo/self/foo.js";
-  makeTest(7, {"blocked-uri": selfSpec}, false,
-    function(csp) {
-      
-      csp.shouldLoad(Ci.nsIContentPolicy.TYPE_SCRIPT,
-                     null, 
-                     NetUtil.newURI(selfSpec + "#bar"),
-                     null, null, null, null, true, null);
-      });
+  makeTest(5, { "blocked-uri": "data" }, false, function(csp) {
+    var base64data =
+      "iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12" +
+      "P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==";
+    
+    csp.shouldLoad(
+      Ci.nsIContentPolicy.TYPE_IMAGE,
+      null, 
+      NetUtil.newURI("data:image/png;base64," + base64data),
+      null,
+      null,
+      null,
+      null,
+      true,
+      null
+    );
+  });
 
   
-  makeTest(8, {"blocked-uri": "ftp://blocked.test/profile.png"}, false,
+  makeTest(6, { "blocked-uri": "intent" }, false, function(csp) {
+    
+    csp.shouldLoad(
+      Ci.nsIContentPolicy.TYPE_SUBDOCUMENT,
+      null, 
+      NetUtil.newURI("intent://mymaps.com/maps?um=1&ie=UTF-8&fb=1&sll"),
+      null,
+      null,
+      null,
+      null,
+      true,
+      null
+    );
+  });
+
+  
+  var selfSpec =
+    REPORT_SERVER_URI + ":" + REPORT_SERVER_PORT + "/foo/self/foo.js";
+  makeTest(7, { "blocked-uri": selfSpec }, false, function(csp) {
+    
+    csp.shouldLoad(
+      Ci.nsIContentPolicy.TYPE_SCRIPT,
+      null, 
+      NetUtil.newURI(selfSpec + "#bar"),
+      null,
+      null,
+      null,
+      null,
+      true,
+      null
+    );
+  });
+
+  
+  makeTest(
+    8,
+    { "blocked-uri": "ftp://blocked.test/profile.png" },
+    false,
     function(csp) {
       
-      csp.shouldLoad(Ci.nsIContentPolicy.TYPE_SCRIPT,
-                     null, 
-                    NetUtil.newURI("ftp://blocked.test/profile.png"),
-                    null, null, null, null, true, null);
-    });
+      csp.shouldLoad(
+        Ci.nsIContentPolicy.TYPE_SCRIPT,
+        null, 
+        NetUtil.newURI("ftp://blocked.test/profile.png"),
+        null,
+        null,
+        null,
+        null,
+        true,
+        null
+      );
+    }
+  );
 }

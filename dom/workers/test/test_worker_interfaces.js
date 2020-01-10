@@ -27,279 +27,293 @@
 
 
 
-var ecmaGlobals =
-  [
-    {name: "Array", insecureContext: true},
-    {name: "ArrayBuffer", insecureContext: true},
-    {name: "Atomics", insecureContext: true, disabled: true},
-    {name: "BigInt", insecureContext: true},
-    {name: "BigInt64Array", insecureContext: true},
-    {name: "BigUint64Array", insecureContext: true},
-    {name: "Boolean", insecureContext: true},
-    {name: "ByteLengthQueuingStrategy", insecureContext: true},
-    {name: "CountQueuingStrategy", insecureContext: true},
-    {name: "DataView", insecureContext: true},
-    {name: "Date", insecureContext: true},
-    {name: "Error", insecureContext: true},
-    {name: "EvalError", insecureContext: true},
-    {name: "Float32Array", insecureContext: true},
-    {name: "Float64Array", insecureContext: true},
-    {name: "Function", insecureContext: true},
-    {name: "Infinity", insecureContext: true},
-    {name: "Int16Array", insecureContext: true},
-    {name: "Int32Array", insecureContext: true},
-    {name: "Int8Array", insecureContext: true},
-    {name: "InternalError", insecureContext: true},
-    {name: "Intl", insecureContext: true},
-    {name: "JSON", insecureContext: true},
-    {name: "Map", insecureContext: true},
-    {name: "MediaCapabilities", insecureContext: true},
-    {name: "MediaCapabilitiesInfo", insecureContext: true},
-    {name: "Math", insecureContext: true},
-    {name: "NaN", insecureContext: true},
-    {name: "Number", insecureContext: true},
-    {name: "Object", insecureContext: true},
-    {name: "Promise", insecureContext: true},
-    {name: "Proxy", insecureContext: true},
-    {name: "RangeError", insecureContext: true},
-    {name: "ReadableStream", insecureContext: true},
-    {name: "ReferenceError", insecureContext: true},
-    {name: "Reflect", insecureContext: true},
-    {name: "RegExp", insecureContext: true},
-    {name: "Set", insecureContext: true},
-    {name: "SharedArrayBuffer", insecureContext: true, disabled: true},
-    {name: "String", insecureContext: true},
-    {name: "Symbol", insecureContext: true},
-    {name: "SyntaxError", insecureContext: true},
-    {name: "TypedObject", insecureContext: true, nightly: true},
-    {name: "TypeError", insecureContext: true},
-    {name: "Uint16Array", insecureContext: true},
-    {name: "Uint32Array", insecureContext: true},
-    {name: "Uint8Array", insecureContext: true},
-    {name: "Uint8ClampedArray", insecureContext: true},
-    {name: "URIError", insecureContext: true},
-    {name: "WeakMap", insecureContext: true},
-    {name: "WeakSet", insecureContext: true},
-    {name: "WebAssembly", insecureContext: true, disabled: !getJSTestingFunctions().wasmIsSupportedByHardware()},
-  ];
-
-
-
-
-var interfaceNamesInGlobalScope =
-  [
-
-    {name: "AbortController", insecureContext: true},
-
-    {name: "AbortSignal", insecureContext: true},
-
-    {name: "Blob", insecureContext: true},
-
-    {name: "BroadcastChannel", insecureContext: true},
-
-    {name: "Cache", insecureContext: true},
-
-    {name: "CacheStorage", insecureContext: true},
-
-    {name: "CloseEvent", insecureContext: true},
-
-    {name: "Crypto", insecureContext: true},
-
-    {name: "CustomEvent", insecureContext: true},
-
-    {name: "DedicatedWorkerGlobalScope", insecureContext: true},
-
-    {name: "Directory", insecureContext: true},
-
-    {name: "DOMException", insecureContext: true},
-
-    {name: "DOMMatrix", insecureContext: true},
-
-    {name: "DOMMatrixReadOnly", insecureContext: true},
-
-    {name: "DOMPoint", insecureContext: true},
-
-    {name: "DOMPointReadOnly", insecureContext: true},
-
-    {name: "DOMQuad", insecureContext: true},
-
-    {name: "DOMRect", insecureContext: true},
-
-    {name: "DOMRectReadOnly", insecureContext: true},
-
-    {name: "DOMRequest", insecureContext: true},
-
-    {name: "DOMStringList", insecureContext: true},
-
-    {name: "ErrorEvent", insecureContext: true},
-
-    {name: "Event", insecureContext: true},
-
-    {name: "EventSource", insecureContext: true},
-
-    {name: "EventTarget", insecureContext: true},
-
-    {name: "File", insecureContext: true},
-
-    {name: "FileList", insecureContext: true},
-
-    {name: "FileReader", insecureContext: true},
-
-    {name: "FileReaderSync", insecureContext: true},
-
-    {name: "FormData", insecureContext: true},
-
-    {name: "Headers", insecureContext: true},
-
-    {name: "IDBCursor", insecureContext: true},
-
-    {name: "IDBCursorWithValue", insecureContext: true},
-
-    {name: "IDBDatabase", insecureContext: true},
-
-    {name: "IDBFactory", insecureContext: true},
-
-    {name: "IDBIndex", insecureContext: true},
-
-    {name: "IDBKeyRange", insecureContext: true},
-
-    {name: "IDBObjectStore", insecureContext: true},
-
-    {name: "IDBOpenDBRequest", insecureContext: true},
-
-    {name: "IDBRequest", insecureContext: true},
-
-    {name: "IDBTransaction", insecureContext: true},
-
-    {name: "IDBVersionChangeEvent", insecureContext: true},
-
-    {name: "ImageBitmap", insecureContext: true},
-
-    {name: "ImageBitmapRenderingContext", insecureContext: true},
-
-    {name: "ImageData", insecureContext: true},
-
-    {name: "MessageChannel", insecureContext: true},
-
-    {name: "MessageEvent", insecureContext: true},
-
-    {name: "MessagePort", insecureContext: true},
-
-    { name: "NetworkInformation", insecureContext: true, android: true },
-
-    {name: "Notification", insecureContext: true},
-
-    { name: "OffscreenCanvas", insecureContext: true, disabled: true },
-
-    {name: "Performance", insecureContext: true},
-
-    {name: "PerformanceEntry", insecureContext: true},
-
-    {name: "PerformanceMark", insecureContext: true},
-
-    {name: "PerformanceMeasure", insecureContext: true},
-
-    {name: "PerformanceObserver", insecureContext: true},
-
-    {name: "PerformanceObserverEntryList", insecureContext: true},
-
-    {name: "PerformanceResourceTiming", insecureContext: true},
-
-    {name: "PerformanceServerTiming", insecureContext: false},
-
-    {name: "ProgressEvent", insecureContext: true},
-
-    {name: "PromiseRejectionEvent", insecureContext: true},
-
-    {name: "PushManager", insecureContext: true, fennecOrDesktop: true},
-
-    {name: "PushSubscription", insecureContext: true, fennecOrDesktop: true },
-
-    {name: "PushSubscriptionOptions", insecureContext: true, fennecOrDesktop: true},
-
-    {name: "Request", insecureContext: true},
-
-    {name: "Response", insecureContext: true},
-
-    {name: "ServiceWorkerRegistration", insecureContext: true},
-
-    {name: "StorageManager", fennec: false},
-
-    {name: "SubtleCrypto", insecureContext: true},
-
-    {name: "TextDecoder", insecureContext: true},
-
-    {name: "TextEncoder", insecureContext: true},
-
-    {name: "XMLHttpRequest", insecureContext: true},
-
-    {name: "XMLHttpRequestEventTarget", insecureContext: true},
-
-    {name: "XMLHttpRequestUpload", insecureContext: true},
-
-    {name: "URL", insecureContext: true},
-
-    {name: "URLSearchParams", insecureContext: true},
-
-    { name: "WebGLActiveInfo", insecureContext: true, disabled: true },
-
-    { name: "WebGLBuffer", insecureContext: true, disabled: true },
-
-    { name: "WebGLContextEvent", insecureContext: true, disabled: true },
-
-    { name: "WebGLFramebuffer", insecureContext: true, disabled: true },
-
-    { name: "WebGLProgram", insecureContext: true, disabled: true },
-
-    { name: "WebGLRenderbuffer", insecureContext: true, disabled: true },
-
-    { name: "WebGLRenderingContext", insecureContext: true, disabled: true },
-
-    { name: "WebGLShader", insecureContext: true, disabled: true },
-
-    { name: "WebGLShaderPrecisionFormat", insecureContext: true, disabled: true },
-
-    { name: "WebGLTexture", insecureContext: true, disabled: true },
-
-    { name: "WebGLUniformLocation", insecureContext: true, disabled: true },
-
-    {name: "WebSocket", insecureContext: true},
-
-    {name: "Worker", insecureContext: true},
-
-    {name: "WorkerGlobalScope", insecureContext: true},
-
-    {name: "WorkerLocation", insecureContext: true},
-
-    {name: "WorkerNavigator", insecureContext: true},
-
-  ];
-
-
-function createInterfaceMap({ isNightly, isRelease, isDesktop, isAndroid, isInsecureContext, isFennec }) {
+var ecmaGlobals = [
+  { name: "Array", insecureContext: true },
+  { name: "ArrayBuffer", insecureContext: true },
+  { name: "Atomics", insecureContext: true, disabled: true },
+  { name: "BigInt", insecureContext: true },
+  { name: "BigInt64Array", insecureContext: true },
+  { name: "BigUint64Array", insecureContext: true },
+  { name: "Boolean", insecureContext: true },
+  { name: "ByteLengthQueuingStrategy", insecureContext: true },
+  { name: "CountQueuingStrategy", insecureContext: true },
+  { name: "DataView", insecureContext: true },
+  { name: "Date", insecureContext: true },
+  { name: "Error", insecureContext: true },
+  { name: "EvalError", insecureContext: true },
+  { name: "Float32Array", insecureContext: true },
+  { name: "Float64Array", insecureContext: true },
+  { name: "Function", insecureContext: true },
+  { name: "Infinity", insecureContext: true },
+  { name: "Int16Array", insecureContext: true },
+  { name: "Int32Array", insecureContext: true },
+  { name: "Int8Array", insecureContext: true },
+  { name: "InternalError", insecureContext: true },
+  { name: "Intl", insecureContext: true },
+  { name: "JSON", insecureContext: true },
+  { name: "Map", insecureContext: true },
+  { name: "MediaCapabilities", insecureContext: true },
+  { name: "MediaCapabilitiesInfo", insecureContext: true },
+  { name: "Math", insecureContext: true },
+  { name: "NaN", insecureContext: true },
+  { name: "Number", insecureContext: true },
+  { name: "Object", insecureContext: true },
+  { name: "Promise", insecureContext: true },
+  { name: "Proxy", insecureContext: true },
+  { name: "RangeError", insecureContext: true },
+  { name: "ReadableStream", insecureContext: true },
+  { name: "ReferenceError", insecureContext: true },
+  { name: "Reflect", insecureContext: true },
+  { name: "RegExp", insecureContext: true },
+  { name: "Set", insecureContext: true },
+  { name: "SharedArrayBuffer", insecureContext: true, disabled: true },
+  { name: "String", insecureContext: true },
+  { name: "Symbol", insecureContext: true },
+  { name: "SyntaxError", insecureContext: true },
+  { name: "TypedObject", insecureContext: true, nightly: true },
+  { name: "TypeError", insecureContext: true },
+  { name: "Uint16Array", insecureContext: true },
+  { name: "Uint32Array", insecureContext: true },
+  { name: "Uint8Array", insecureContext: true },
+  { name: "Uint8ClampedArray", insecureContext: true },
+  { name: "URIError", insecureContext: true },
+  { name: "WeakMap", insecureContext: true },
+  { name: "WeakSet", insecureContext: true },
+  {
+    name: "WebAssembly",
+    insecureContext: true,
+    disabled: !getJSTestingFunctions().wasmIsSupportedByHardware(),
+  },
+];
+
+
+
+
+var interfaceNamesInGlobalScope = [
+  
+  { name: "AbortController", insecureContext: true },
+  
+  { name: "AbortSignal", insecureContext: true },
+  
+  { name: "Blob", insecureContext: true },
+  
+  { name: "BroadcastChannel", insecureContext: true },
+  
+  { name: "Cache", insecureContext: true },
+  
+  { name: "CacheStorage", insecureContext: true },
+  
+  { name: "CloseEvent", insecureContext: true },
+  
+  { name: "Crypto", insecureContext: true },
+  
+  { name: "CustomEvent", insecureContext: true },
+  
+  { name: "DedicatedWorkerGlobalScope", insecureContext: true },
+  
+  { name: "Directory", insecureContext: true },
+  
+  { name: "DOMException", insecureContext: true },
+  
+  { name: "DOMMatrix", insecureContext: true },
+  
+  { name: "DOMMatrixReadOnly", insecureContext: true },
+  
+  { name: "DOMPoint", insecureContext: true },
+  
+  { name: "DOMPointReadOnly", insecureContext: true },
+  
+  { name: "DOMQuad", insecureContext: true },
+  
+  { name: "DOMRect", insecureContext: true },
+  
+  { name: "DOMRectReadOnly", insecureContext: true },
+  
+  { name: "DOMRequest", insecureContext: true },
+  
+  { name: "DOMStringList", insecureContext: true },
+  
+  { name: "ErrorEvent", insecureContext: true },
+  
+  { name: "Event", insecureContext: true },
+  
+  { name: "EventSource", insecureContext: true },
+  
+  { name: "EventTarget", insecureContext: true },
+  
+  { name: "File", insecureContext: true },
+  
+  { name: "FileList", insecureContext: true },
+  
+  { name: "FileReader", insecureContext: true },
+  
+  { name: "FileReaderSync", insecureContext: true },
+  
+  { name: "FormData", insecureContext: true },
+  
+  { name: "Headers", insecureContext: true },
+  
+  { name: "IDBCursor", insecureContext: true },
+  
+  { name: "IDBCursorWithValue", insecureContext: true },
+  
+  { name: "IDBDatabase", insecureContext: true },
+  
+  { name: "IDBFactory", insecureContext: true },
+  
+  { name: "IDBIndex", insecureContext: true },
+  
+  { name: "IDBKeyRange", insecureContext: true },
+  
+  { name: "IDBObjectStore", insecureContext: true },
+  
+  { name: "IDBOpenDBRequest", insecureContext: true },
+  
+  { name: "IDBRequest", insecureContext: true },
+  
+  { name: "IDBTransaction", insecureContext: true },
+  
+  { name: "IDBVersionChangeEvent", insecureContext: true },
+  
+  { name: "ImageBitmap", insecureContext: true },
+  
+  { name: "ImageBitmapRenderingContext", insecureContext: true },
+  
+  { name: "ImageData", insecureContext: true },
+  
+  { name: "MessageChannel", insecureContext: true },
+  
+  { name: "MessageEvent", insecureContext: true },
+  
+  { name: "MessagePort", insecureContext: true },
+  
+  { name: "NetworkInformation", insecureContext: true, android: true },
+  
+  { name: "Notification", insecureContext: true },
+  
+  { name: "OffscreenCanvas", insecureContext: true, disabled: true },
+  
+  { name: "Performance", insecureContext: true },
+  
+  { name: "PerformanceEntry", insecureContext: true },
+  
+  { name: "PerformanceMark", insecureContext: true },
+  
+  { name: "PerformanceMeasure", insecureContext: true },
+  
+  { name: "PerformanceObserver", insecureContext: true },
+  
+  { name: "PerformanceObserverEntryList", insecureContext: true },
+  
+  { name: "PerformanceResourceTiming", insecureContext: true },
+  
+  { name: "PerformanceServerTiming", insecureContext: false },
+  
+  { name: "ProgressEvent", insecureContext: true },
+  
+  { name: "PromiseRejectionEvent", insecureContext: true },
+  
+  { name: "PushManager", insecureContext: true, fennecOrDesktop: true },
+  
+  { name: "PushSubscription", insecureContext: true, fennecOrDesktop: true },
+  
+  {
+    name: "PushSubscriptionOptions",
+    insecureContext: true,
+    fennecOrDesktop: true,
+  },
+  
+  { name: "Request", insecureContext: true },
+  
+  { name: "Response", insecureContext: true },
+  
+  { name: "ServiceWorkerRegistration", insecureContext: true },
+  
+  { name: "StorageManager", fennec: false },
+  
+  { name: "SubtleCrypto", insecureContext: true },
+  
+  { name: "TextDecoder", insecureContext: true },
+  
+  { name: "TextEncoder", insecureContext: true },
+  
+  { name: "XMLHttpRequest", insecureContext: true },
+  
+  { name: "XMLHttpRequestEventTarget", insecureContext: true },
+  
+  { name: "XMLHttpRequestUpload", insecureContext: true },
+  
+  { name: "URL", insecureContext: true },
+  
+  { name: "URLSearchParams", insecureContext: true },
+  
+  { name: "WebGLActiveInfo", insecureContext: true, disabled: true },
+  
+  { name: "WebGLBuffer", insecureContext: true, disabled: true },
+  
+  { name: "WebGLContextEvent", insecureContext: true, disabled: true },
+  
+  { name: "WebGLFramebuffer", insecureContext: true, disabled: true },
+  
+  { name: "WebGLProgram", insecureContext: true, disabled: true },
+  
+  { name: "WebGLRenderbuffer", insecureContext: true, disabled: true },
+  
+  { name: "WebGLRenderingContext", insecureContext: true, disabled: true },
+  
+  { name: "WebGLShader", insecureContext: true, disabled: true },
+  
+  { name: "WebGLShaderPrecisionFormat", insecureContext: true, disabled: true },
+  
+  { name: "WebGLTexture", insecureContext: true, disabled: true },
+  
+  { name: "WebGLUniformLocation", insecureContext: true, disabled: true },
+  
+  { name: "WebSocket", insecureContext: true },
+  
+  { name: "Worker", insecureContext: true },
+  
+  { name: "WorkerGlobalScope", insecureContext: true },
+  
+  { name: "WorkerLocation", insecureContext: true },
+  
+  { name: "WorkerNavigator", insecureContext: true },
+  
+];
+
+
+function createInterfaceMap({
+  isNightly,
+  isRelease,
+  isDesktop,
+  isAndroid,
+  isInsecureContext,
+  isFennec,
+}) {
   var interfaceMap = {};
 
-  function addInterfaces(interfaces)
-  {
+  function addInterfaces(interfaces) {
     for (var entry of interfaces) {
-      if (typeof(entry) === "string") {
+      if (typeof entry === "string") {
         interfaceMap[entry] = !isInsecureContext;
       } else {
         ok(!("pref" in entry), "Bogus pref annotation for " + entry.name);
-        if ((entry.nightly === !isNightly) ||
-            (entry.nightlyAndroid === !(isAndroid && isNightly) && isAndroid) ||
-            (entry.desktop === !isDesktop) ||
-            (entry.android === !isAndroid && !entry.nightlyAndroid) ||
-            (entry.fennecOrDesktop === (isAndroid && !isFennec)) ||
-            (entry.fennec === !isFennec) ||
-            (entry.release === !isRelease) ||
-	    
-	    
-	    
-	    
-	    
-            (isInsecureContext && !Boolean(entry.insecureContext)) ||
-            entry.disabled) {
+        if (
+          entry.nightly === !isNightly ||
+          (entry.nightlyAndroid === !(isAndroid && isNightly) && isAndroid) ||
+          entry.desktop === !isDesktop ||
+          (entry.android === !isAndroid && !entry.nightlyAndroid) ||
+          entry.fennecOrDesktop === (isAndroid && !isFennec) ||
+          entry.fennec === !isFennec ||
+          entry.release === !isRelease ||
+          
+          
+          
+          
+          
+          (isInsecureContext && !Boolean(entry.insecureContext)) ||
+          entry.disabled
+        ) {
           interfaceMap[entry.name] = false;
         } else {
           interfaceMap[entry.name] = true;
@@ -321,21 +335,33 @@ function runTest(data) {
     if (!/^[A-Z]/.test(name)) {
       continue;
     }
-    ok(interfaceMap[name],
-       "If this is failing: DANGER, are you sure you want to expose the new interface " + name +
-       " to all webpages as a property on the worker? Do not make a change to this file without a " +
-       " review from a DOM peer for that specific change!!! (or a JS peer for changes to ecmaGlobals)");
+    ok(
+      interfaceMap[name],
+      "If this is failing: DANGER, are you sure you want to expose the new interface " +
+        name +
+        " to all webpages as a property on the worker? Do not make a change to this file without a " +
+        " review from a DOM peer for that specific change!!! (or a JS peer for changes to ecmaGlobals)"
+    );
     delete interfaceMap[name];
   }
   for (var name of Object.keys(interfaceMap)) {
-    ok(name in self === interfaceMap[name],
-       name + " should " + (interfaceMap[name] ? "" : " NOT") + " be defined on the global scope");
+    ok(
+      name in self === interfaceMap[name],
+      name +
+        " should " +
+        (interfaceMap[name] ? "" : " NOT") +
+        " be defined on the global scope"
+    );
     if (!interfaceMap[name]) {
       delete interfaceMap[name];
     }
   }
-  is(Object.keys(interfaceMap).length, 0,
-     "The following interface(s) are not enumerated: " + Object.keys(interfaceMap).join(", "));
+  is(
+    Object.keys(interfaceMap).length,
+    0,
+    "The following interface(s) are not enumerated: " +
+      Object.keys(interfaceMap).join(", ")
+  );
 }
 
 workerTestGetHelperData(function(data) {

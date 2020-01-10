@@ -1,7 +1,9 @@
 
 
 
-const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 const paymentSrv = Cc[
   "@mozilla.org/dom/payments/payment-request-service;1"

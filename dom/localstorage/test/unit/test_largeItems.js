@@ -52,16 +52,20 @@ async function testSteps() {
 
   const data = {};
   data.key = "foo";
-  data.value = getRandomString(globalLimitKB * 1024 - data.key.length -
-                               numberOfIterations.toString().length);
+  data.value = getRandomString(
+    globalLimitKB * 1024 -
+      data.key.length -
+      numberOfIterations.toString().length
+  );
 
   info("Setting pref");
 
   
   
   if (this.window) {
-    await SpecialPowers.pushPrefEnv(
-      { set: [["dom.storage.snapshot_reusing", false]] });
+    await SpecialPowers.pushPrefEnv({
+      set: [["dom.storage.snapshot_reusing", false]],
+    });
   } else {
     Services.prefs.setBoolPref("dom.storage.snapshot_reusing", false);
   }

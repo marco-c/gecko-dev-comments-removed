@@ -11,23 +11,38 @@ function promiseU2FRegister(tab, app_id) {
   challenge = bytesToBase64UrlSafe(challenge);
 
   
-  return ContentTask.spawn(tab.linkedBrowser, [app_id, challenge], async function ([app_id, challenge]) {
-    return new Promise(resolve => {
-      let version = "U2F_V2";
-      content.u2f.register(app_id, [{version, challenge}], [], resolve);
-    });
-  });
+  return ContentTask.spawn(
+    tab.linkedBrowser,
+    [app_id, challenge],
+    async function([app_id, challenge]) {
+      return new Promise(resolve => {
+        let version = "U2F_V2";
+        content.u2f.register(app_id, [{ version, challenge }], [], resolve);
+      });
+    }
+  );
   
 }
 
-add_task(async function () {
+add_task(async function() {
   
-  await SpecialPowers.pushPrefEnv({set: [["network.proxy.allow_hijacking_localhost", true],]});
+  await SpecialPowers.pushPrefEnv({
+    set: [["network.proxy.allow_hijacking_localhost", true]],
+  });
   
   Services.prefs.setBoolPref("security.webauth.u2f", true);
-  Services.prefs.setBoolPref("security.webauth.webauthn_enable_softtoken", true);
-  Services.prefs.setBoolPref("security.webauth.webauthn_enable_usbtoken", false);
-  Services.prefs.setBoolPref("security.webauth.webauthn_enable_android_fido2", false);
+  Services.prefs.setBoolPref(
+    "security.webauth.webauthn_enable_softtoken",
+    true
+  );
+  Services.prefs.setBoolPref(
+    "security.webauth.webauthn_enable_usbtoken",
+    false
+  );
+  Services.prefs.setBoolPref(
+    "security.webauth.webauthn_enable_android_fido2",
+    false
+  );
 
   
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);

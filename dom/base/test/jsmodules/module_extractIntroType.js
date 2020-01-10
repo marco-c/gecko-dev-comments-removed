@@ -1,5 +1,5 @@
 
 
 extractIntroType = function() {
-    debugger;
-}
+  debugger;
+};

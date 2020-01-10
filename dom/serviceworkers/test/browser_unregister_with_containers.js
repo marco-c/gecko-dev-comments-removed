@@ -6,10 +6,13 @@ const SCOPE = PAGE_URI + "?unregister_with_containers";
 const SW_SCRIPT = BASE_URI + "empty.js";
 
 function doRegister(browser) {
-  return ContentTask.spawn(browser, { script: SW_SCRIPT, scope: SCOPE },
+  return ContentTask.spawn(
+    browser,
+    { script: SW_SCRIPT, scope: SCOPE },
     async function(opts) {
-      let reg = await content.navigator.serviceWorker.register(opts.script,
-                                                               { scope: opts.scope });
+      let reg = await content.navigator.serviceWorker.register(opts.script, {
+        scope: opts.scope,
+      });
       let worker = reg.installing || reg.waiting || reg.active;
       await new Promise(resolve => {
         if (worker.state === "activated") {
@@ -64,20 +67,26 @@ async function checkUncontrolled(browser) {
 }
 
 add_task(async function test() {
-  await SpecialPowers.pushPrefEnv({"set": [
-    
-    
-    ["dom.ipc.processCount", 1],
-    ["dom.serviceWorkers.enabled", true],
-    ["dom.serviceWorkers.testing.enabled", true],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      
+      ["dom.ipc.processCount", 1],
+      ["dom.serviceWorkers.enabled", true],
+      ["dom.serviceWorkers.testing.enabled", true],
+    ],
+  });
 
   
-  let containerTab1 = BrowserTestUtils.addTab(gBrowser, PAGE_URI, { userContextId: 1 });
+  let containerTab1 = BrowserTestUtils.addTab(gBrowser, PAGE_URI, {
+    userContextId: 1,
+  });
   let containerBrowser1 = gBrowser.getBrowserForTab(containerTab1);
   await BrowserTestUtils.browserLoaded(containerBrowser1);
 
-  let containerTab2 = BrowserTestUtils.addTab(gBrowser, PAGE_URI, { userContextId: 2 });
+  let containerTab2 = BrowserTestUtils.addTab(gBrowser, PAGE_URI, {
+    userContextId: 2,
+  });
   let containerBrowser2 = gBrowser.getBrowserForTab(containerTab2);
   await BrowserTestUtils.browserLoaded(containerBrowser2);
 
@@ -93,11 +102,15 @@ add_task(async function test() {
   BrowserTestUtils.removeTab(containerTab2);
 
   
-  containerTab1 = BrowserTestUtils.addTab(gBrowser, SCOPE, { userContextId: 1 });
+  containerTab1 = BrowserTestUtils.addTab(gBrowser, SCOPE, {
+    userContextId: 1,
+  });
   containerBrowser1 = gBrowser.getBrowserForTab(containerTab1);
   await BrowserTestUtils.browserLoaded(containerBrowser1);
 
-  containerTab2 = BrowserTestUtils.addTab(gBrowser, SCOPE, { userContextId: 2 });
+  containerTab2 = BrowserTestUtils.addTab(gBrowser, SCOPE, {
+    userContextId: 2,
+  });
   containerBrowser2 = gBrowser.getBrowserForTab(containerTab2);
   await BrowserTestUtils.browserLoaded(containerBrowser2);
 
@@ -109,7 +122,9 @@ add_task(async function test() {
 
   
   
-  containerTab1 = BrowserTestUtils.addTab(gBrowser, PAGE_URI, { userContextId: 1 });
+  containerTab1 = BrowserTestUtils.addTab(gBrowser, PAGE_URI, {
+    userContextId: 1,
+  });
   containerBrowser1 = gBrowser.getBrowserForTab(containerTab1);
   await BrowserTestUtils.browserLoaded(containerBrowser1);
   await doUnregister(containerBrowser1);
@@ -122,7 +137,9 @@ add_task(async function test() {
 
   
   
-  containerTab2 = BrowserTestUtils.addTab(gBrowser, PAGE_URI, { userContextId: 2 });
+  containerTab2 = BrowserTestUtils.addTab(gBrowser, PAGE_URI, {
+    userContextId: 2,
+  });
   containerBrowser2 = gBrowser.getBrowserForTab(containerTab2);
   await BrowserTestUtils.browserLoaded(containerBrowser2);
   await doUnregister(containerBrowser2);

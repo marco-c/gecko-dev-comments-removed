@@ -1,15 +1,15 @@
-'use strict';
+"use strict";
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
-const isOSX = (Services.appinfo.OS === "Darwin");
+const isOSX = Services.appinfo.OS === "Darwin";
 const testConnectingToNonListeningPort = !isOSX;
 
 const SERVER_BACKLOG = -1;
 
-const SOCKET_EVENTS = ['open', 'data', 'drain', 'error', 'close'];
+const SOCKET_EVENTS = ["open", "data", "drain", "error", "close"];
 
 function concatUint8Arrays(a, b) {
   let newArr = new Uint8Array(a.length + b.length);
@@ -20,18 +20,31 @@ function concatUint8Arrays(a, b) {
 
 function assertUint8ArraysEqual(a, b, comparingWhat) {
   if (a.length !== b.length) {
-    ok(false, comparingWhat + ' arrays do not have the same length; ' +
-       a.length + ' versus ' + b.length);
+    ok(
+      false,
+      comparingWhat +
+        " arrays do not have the same length; " +
+        a.length +
+        " versus " +
+        b.length
+    );
     return;
   }
   for (let i = 0; i < a.length; i++) {
     if (a[i] !== b[i]) {
-      ok(false, comparingWhat + ' arrays differ at index ' + i +
-         a[i] + ' versus ' + b[i]);
+      ok(
+        false,
+        comparingWhat +
+          " arrays differ at index " +
+          i +
+          a[i] +
+          " versus " +
+          b[i]
+      );
       return;
     }
   }
-  ok(true, comparingWhat + ' arrays were equivalent.');
+  ok(true, comparingWhat + " arrays were equivalent.");
 }
 
 
@@ -47,7 +60,7 @@ function listenForEventsOnSocket(socket, socketType) {
   let receivedEvents = [];
   let receivedData = null;
   let handleGenericEvent = function(event) {
-    dump('(' + socketType + ' event: ' + event.type + ')\n');
+    dump("(" + socketType + " event: " + event.type + ")\n");
     if (pendingResolve && wantDataLength === null) {
       pendingResolve(event);
       pendingResolve = null;
@@ -63,32 +76,39 @@ function listenForEventsOnSocket(socket, socketType) {
     if (!wantDataAndClose) {
       handleGenericEvent(event);
     } else if (pendingResolve) {
-      dump('(' + socketType + ' event: close)\n');
+      dump("(" + socketType + " event: close)\n");
       pendingResolve(receivedData);
       pendingResolve = null;
       wantDataAndClose = false;
     }
-  }
+  };
   socket.ondata = function(event) {
-    dump('(' + socketType + ' event: ' + event.type + ' length: ' +
-         event.data.byteLength + ')\n');
-    ok(socketCompartmentInstanceOfArrayBuffer(event.data),
-       'payload is ArrayBuffer');
+    dump(
+      "(" +
+        socketType +
+        " event: " +
+        event.type +
+        " length: " +
+        event.data.byteLength +
+        ")\n"
+    );
+    ok(
+      socketCompartmentInstanceOfArrayBuffer(event.data),
+      "payload is ArrayBuffer"
+    );
     var arr = new Uint8Array(event.data);
     if (receivedData === null) {
       receivedData = arr;
     } else {
       receivedData = concatUint8Arrays(receivedData, arr);
     }
-    if (wantDataLength !== null &&
-        receivedData.length >= wantDataLength) {
+    if (wantDataLength !== null && receivedData.length >= wantDataLength) {
       pendingResolve(receivedData);
       pendingResolve = null;
       receivedData = null;
       wantDataLength = null;
     }
   };
-
 
   return {
     
@@ -99,14 +119,14 @@ function listenForEventsOnSocket(socket, socketType) {
 
     waitForEvent: function() {
       if (pendingResolve) {
-        throw new Error('only one wait allowed at a time.');
+        throw new Error("only one wait allowed at a time.");
       }
 
       if (receivedEvents.length) {
         return Promise.resolve(receivedEvents.shift());
       }
 
-      dump('(' + socketType + ' waiting for event)\n');
+      dump("(" + socketType + " waiting for event)\n");
       return new Promise(function(resolve, reject) {
         pendingResolve = resolve;
       });
@@ -119,14 +139,14 @@ function listenForEventsOnSocket(socket, socketType) {
 
     waitForDataWithAtLeastLength: function(length) {
       if (pendingResolve) {
-        throw new Error('only one wait allowed at a time.');
+        throw new Error("only one wait allowed at a time.");
       }
       if (receivedData && receivedData.length >= length) {
         let promise = Promise.resolve(receivedData);
         receivedData = null;
         return promise;
       }
-      dump('(' + socketType + ' waiting for ' + length + ' bytes)\n');
+      dump("(" + socketType + " waiting for " + length + " bytes)\n");
       return new Promise(function(resolve, reject) {
         pendingResolve = resolve;
         wantDataLength = length;
@@ -134,7 +154,7 @@ function listenForEventsOnSocket(socket, socketType) {
     },
     waitForAnyDataAndClose: function() {
       if (pendingResolve) {
-        throw new Error('only one wait allowed at a time.');
+        throw new Error("only one wait allowed at a time.");
       }
 
       return new Promise(function(resolve, reject) {
@@ -144,7 +164,7 @@ function listenForEventsOnSocket(socket, socketType) {
         receivedData = new Uint8Array();
         wantDataAndClose = true;
       });
-    }
+    },
   };
 }
 
@@ -163,12 +183,12 @@ function waitForConnection(listeningServer) {
       
       
       listeningServer.onconnect = function() {
-        ok(false, 'Received a connection when not expecting one.');
+        ok(false, "Received a connection when not expecting one.");
       };
-      ok(true, 'Listening server accepted socket');
+      ok(true, "Listening server accepted socket");
       resolve({
         socket: event.socket,
-        queue: listenForEventsOnSocket(event.socket, 'server')
+        queue: listenForEventsOnSocket(event.socket, "server"),
       });
     };
   });
@@ -183,7 +203,6 @@ function defer() {
   return deferred;
 }
 
-
 async function test_basics() {
   
   
@@ -191,24 +210,27 @@ async function test_basics() {
   let serverPort = 8085;
 
   
-  let listeningServer = createServer(serverPort,
-                                     { binaryType: 'arraybuffer' },
-                                     SERVER_BACKLOG);
+  let listeningServer = createServer(
+    serverPort,
+    { binaryType: "arraybuffer" },
+    SERVER_BACKLOG
+  );
 
   let connectedPromise = waitForConnection(listeningServer);
 
   
-  let clientSocket = createSocket('127.0.0.1', serverPort,
-                                  { binaryType: 'arraybuffer' });
-  let clientQueue = listenForEventsOnSocket(clientSocket, 'client');
+  let clientSocket = createSocket("127.0.0.1", serverPort, {
+    binaryType: "arraybuffer",
+  });
+  let clientQueue = listenForEventsOnSocket(clientSocket, "client");
 
   
-  is((await clientQueue.waitForEvent()).type, 'open', 'got open event');
-  is(clientSocket.readyState, 'open', 'client readyState is open');
+  is((await clientQueue.waitForEvent()).type, "open", "got open event");
+  is(clientSocket.readyState, "open", "client readyState is open");
 
   
   let { socket: serverSocket, queue: serverQueue } = await connectedPromise;
-  is(serverSocket.readyState, 'open', 'server readyState is open');
+  is(serverSocket.readyState, "open", "server readyState is open");
 
   
   
@@ -217,45 +239,74 @@ async function test_basics() {
   for (let i = 0; i < smallUint8Array.length; i++) {
     smallUint8Array[i] = i;
   }
-  is(clientSocket.send(smallUint8Array.buffer, 0, smallUint8Array.length), true,
-     'Client sending less than 64k, buffer should not be full.');
+  is(
+    clientSocket.send(smallUint8Array.buffer, 0, smallUint8Array.length),
+    true,
+    "Client sending less than 64k, buffer should not be full."
+  );
 
   let serverReceived = await serverQueue.waitForDataWithAtLeastLength(256);
-  assertUint8ArraysEqual(serverReceived, smallUint8Array,
-                         'Server received/client sent');
+  assertUint8ArraysEqual(
+    serverReceived,
+    smallUint8Array,
+    "Server received/client sent"
+  );
 
   
   
-  is(serverSocket.send(smallUint8Array.buffer, 0, smallUint8Array.length), true,
-     'Server sending less than 64k, buffer should not be full.');
+  is(
+    serverSocket.send(smallUint8Array.buffer, 0, smallUint8Array.length),
+    true,
+    "Server sending less than 64k, buffer should not be full."
+  );
 
   let clientReceived = await clientQueue.waitForDataWithAtLeastLength(256);
-  assertUint8ArraysEqual(clientReceived, smallUint8Array,
-                         'Client received/server sent');
+  assertUint8ArraysEqual(
+    clientReceived,
+    smallUint8Array,
+    "Client received/server sent"
+  );
 
   
   
   
-  is(clientSocket.send(smallUint8Array.buffer, 0, 7),
-     true, 'Client sending less than 64k, buffer should not be full.');
-  is(clientSocket.send(smallUint8Array.buffer, 7, smallUint8Array.length - 7),
-     true, 'Client sending less than 64k, buffer should not be full.');
+  is(
+    clientSocket.send(smallUint8Array.buffer, 0, 7),
+    true,
+    "Client sending less than 64k, buffer should not be full."
+  );
+  is(
+    clientSocket.send(smallUint8Array.buffer, 7, smallUint8Array.length - 7),
+    true,
+    "Client sending less than 64k, buffer should not be full."
+  );
 
   serverReceived = await serverQueue.waitForDataWithAtLeastLength(256);
-  assertUint8ArraysEqual(serverReceived, smallUint8Array,
-                         'Server received/client sent');
+  assertUint8ArraysEqual(
+    serverReceived,
+    smallUint8Array,
+    "Server received/client sent"
+  );
 
   
   
-  is(serverSocket.send(smallUint8Array.buffer, 0, 7),
-     true, 'Server sending less than 64k, buffer should not be full.');
-  is(serverSocket.send(smallUint8Array.buffer, 7, smallUint8Array.length - 7),
-     true, 'Server sending less than 64k, buffer should not be full.');
+  is(
+    serverSocket.send(smallUint8Array.buffer, 0, 7),
+    true,
+    "Server sending less than 64k, buffer should not be full."
+  );
+  is(
+    serverSocket.send(smallUint8Array.buffer, 7, smallUint8Array.length - 7),
+    true,
+    "Server sending less than 64k, buffer should not be full."
+  );
 
   clientReceived = await clientQueue.waitForDataWithAtLeastLength(256);
-  assertUint8ArraysEqual(clientReceived, smallUint8Array,
-                         'Client received/server sent');
-
+  assertUint8ArraysEqual(
+    clientReceived,
+    smallUint8Array,
+    "Client received/server sent"
+  );
 
   
   
@@ -267,48 +318,84 @@ async function test_basics() {
   
   for (let iSend = 0; iSend < 2; iSend++) {
     
-    is(clientSocket.send(bigUint8Array.buffer, 0, bigUint8Array.length), false,
-       'Client sending more than 64k should result in the buffer being full.');
-    is((await clientQueue.waitForEvent()).type, 'drain',
-       'The drain event should fire after a large send that indicated full.');
+    is(
+      clientSocket.send(bigUint8Array.buffer, 0, bigUint8Array.length),
+      false,
+      "Client sending more than 64k should result in the buffer being full."
+    );
+    is(
+      (await clientQueue.waitForEvent()).type,
+      "drain",
+      "The drain event should fire after a large send that indicated full."
+    );
 
     serverReceived = await serverQueue.waitForDataWithAtLeastLength(
-      bigUint8Array.length);
-    assertUint8ArraysEqual(serverReceived, bigUint8Array,
-                           'server received/client sent');
+      bigUint8Array.length
+    );
+    assertUint8ArraysEqual(
+      serverReceived,
+      bigUint8Array,
+      "server received/client sent"
+    );
 
     
-    is(serverSocket.send(bigUint8Array.buffer, 0, bigUint8Array.length), false,
-       'Server sending more than 64k should result in the buffer being full.');
-    is((await serverQueue.waitForEvent()).type, 'drain',
-       'The drain event should fire after a large send that indicated full.');
+    is(
+      serverSocket.send(bigUint8Array.buffer, 0, bigUint8Array.length),
+      false,
+      "Server sending more than 64k should result in the buffer being full."
+    );
+    is(
+      (await serverQueue.waitForEvent()).type,
+      "drain",
+      "The drain event should fire after a large send that indicated full."
+    );
 
     clientReceived = await clientQueue.waitForDataWithAtLeastLength(
-      bigUint8Array.length);
-    assertUint8ArraysEqual(clientReceived, bigUint8Array,
-                           'client received/server sent');
+      bigUint8Array.length
+    );
+    assertUint8ArraysEqual(
+      clientReceived,
+      bigUint8Array,
+      "client received/server sent"
+    );
   }
 
   
   serverSocket.close();
-  is(serverSocket.readyState, 'closing',
-     'readyState should be closing immediately after calling close');
+  is(
+    serverSocket.readyState,
+    "closing",
+    "readyState should be closing immediately after calling close"
+  );
 
-  is((await clientQueue.waitForEvent()).type, 'close',
-     'The client should get a close event when the server closes.');
-  is(clientSocket.readyState, 'closed',
-     'client readyState should be closed after close event');
-  is((await serverQueue.waitForEvent()).type, 'close',
-     'The server should get a close event when it closes itself.');
-  is(serverSocket.readyState, 'closed',
-     'server readyState should be closed after close event');
+  is(
+    (await clientQueue.waitForEvent()).type,
+    "close",
+    "The client should get a close event when the server closes."
+  );
+  is(
+    clientSocket.readyState,
+    "closed",
+    "client readyState should be closed after close event"
+  );
+  is(
+    (await serverQueue.waitForEvent()).type,
+    "close",
+    "The server should get a close event when it closes itself."
+  );
+  is(
+    serverSocket.readyState,
+    "closed",
+    "server readyState should be closed after close event"
+  );
 
   
   connectedPromise = waitForConnection(listeningServer);
-  clientSocket = createSocket('127.0.0.1', serverPort,
-                              { binaryType: 'arraybuffer' });
-  clientQueue = listenForEventsOnSocket(clientSocket, 'client');
-  is((await clientQueue.waitForEvent()).type, 'open', 'got open event');
+  clientSocket = createSocket("127.0.0.1", serverPort, {
+    binaryType: "arraybuffer",
+  });
+  clientQueue = listenForEventsOnSocket(clientSocket, "client");
+  is((await clientQueue.waitForEvent()).type, "open", "got open event");
 
   let connectedResult = await connectedPromise;
   
@@ -317,25 +404,40 @@ async function test_basics() {
 
   
   clientSocket.close();
-  is(clientSocket.readyState, 'closing',
-     'client readyState should be losing immediately after calling close');
+  is(
+    clientSocket.readyState,
+    "closing",
+    "client readyState should be losing immediately after calling close"
+  );
 
-  is((await clientQueue.waitForEvent()).type, 'close',
-     'The client should get a close event when it closes itself.');
-  is(clientSocket.readyState, 'closed',
-     'client readyState should be closed after the close event is received');
-  is((await serverQueue.waitForEvent()).type, 'close',
-     'The server should get a close event when the client closes.');
-  is(serverSocket.readyState, 'closed',
-     'server readyState should be closed after the close event is received');
-
+  is(
+    (await clientQueue.waitForEvent()).type,
+    "close",
+    "The client should get a close event when it closes itself."
+  );
+  is(
+    clientSocket.readyState,
+    "closed",
+    "client readyState should be closed after the close event is received"
+  );
+  is(
+    (await serverQueue.waitForEvent()).type,
+    "close",
+    "The server should get a close event when the client closes."
+  );
+  is(
+    serverSocket.readyState,
+    "closed",
+    "server readyState should be closed after the close event is received"
+  );
 
   
   connectedPromise = waitForConnection(listeningServer);
-  clientSocket = createSocket('127.0.0.1', serverPort,
-                              { binaryType: 'arraybuffer' });
-  clientQueue = listenForEventsOnSocket(clientSocket, 'client');
-  is((await clientQueue.waitForEvent()).type, 'open', 'got open event');
+  clientSocket = createSocket("127.0.0.1", serverPort, {
+    binaryType: "arraybuffer",
+  });
+  clientQueue = listenForEventsOnSocket(clientSocket, "client");
+  is((await clientQueue.waitForEvent()).type, "open", "got open event");
 
   connectedResult = await connectedPromise;
   
@@ -344,32 +446,48 @@ async function test_basics() {
 
   
   
-  is(clientSocket.send(bigUint8Array.buffer, 0, bigUint8Array.length), false,
-     'Client sending more than 64k should result in the buffer being full.');
+  is(
+    clientSocket.send(bigUint8Array.buffer, 0, bigUint8Array.length),
+    false,
+    "Client sending more than 64k should result in the buffer being full."
+  );
   clientSocket.close();
   
-  is((await clientQueue.waitForEvent()).type, 'drain',
-     'The drain event should fire after a large send that returned true.');
+  is(
+    (await clientQueue.waitForEvent()).type,
+    "drain",
+    "The drain event should fire after a large send that returned true."
+  );
   
-  is((await clientQueue.waitForEvent()).type, 'close',
-     'The close event should fire after the drain event.');
+  is(
+    (await clientQueue.waitForEvent()).type,
+    "close",
+    "The close event should fire after the drain event."
+  );
 
   
   serverReceived = await serverQueue.waitForDataWithAtLeastLength(
-    bigUint8Array.length);
-  assertUint8ArraysEqual(serverReceived, bigUint8Array,
-                         'server received/client sent');
+    bigUint8Array.length
+  );
+  assertUint8ArraysEqual(
+    serverReceived,
+    bigUint8Array,
+    "server received/client sent"
+  );
   
-  is((await serverQueue.waitForEvent()).type, 'close',
-     'The drain event should fire after a large send that returned true.');
-
+  is(
+    (await serverQueue.waitForEvent()).type,
+    "close",
+    "The drain event should fire after a large send that returned true."
+  );
 
   
   connectedPromise = waitForConnection(listeningServer);
-  clientSocket = createSocket('127.0.0.1', serverPort,
-                              { binaryType: 'string' });
-  clientQueue = listenForEventsOnSocket(clientSocket, 'client');
-  is((await clientQueue.waitForEvent()).type, 'open', 'got open event');
+  clientSocket = createSocket("127.0.0.1", serverPort, {
+    binaryType: "string",
+  });
+  clientQueue = listenForEventsOnSocket(clientSocket, "client");
+  is((await clientQueue.waitForEvent()).type, "open", "got open event");
 
   connectedResult = await connectedPromise;
   
@@ -380,22 +498,30 @@ async function test_basics() {
   
   
   bigUint8Array.toString = Object.prototype.toString;
-  is(clientSocket.send(bigUint8Array), true,
-     'Client sending a large non-string should only send a small string.');
+  is(
+    clientSocket.send(bigUint8Array),
+    true,
+    "Client sending a large non-string should only send a small string."
+  );
   clientSocket.close();
   
   serverReceived = await serverQueue.waitForDataWithAtLeastLength(
-    bigUint8Array.toString().length);
+    bigUint8Array.toString().length
+  );
   
-  is((await clientQueue.waitForEvent()).type, 'close',
-     'The close event should fire after the drain event.');
+  is(
+    (await clientQueue.waitForEvent()).type,
+    "close",
+    "The close event should fire after the drain event."
+  );
 
   
   connectedPromise = waitForConnection(listeningServer);
-  clientSocket = createSocket('127.0.0.1', serverPort,
-                               { binaryType: 'arraybuffer' });
-  clientQueue = listenForEventsOnSocket(clientSocket, 'client');
-  is((await clientQueue.waitForEvent()).type, 'open', 'got open event');
+  clientSocket = createSocket("127.0.0.1", serverPort, {
+    binaryType: "arraybuffer",
+  });
+  clientQueue = listenForEventsOnSocket(clientSocket, "client");
+  is((await clientQueue.waitForEvent()).type, "open", "got open event");
 
   connectedResult = await connectedPromise;
   
@@ -403,15 +529,25 @@ async function test_basics() {
   serverQueue = connectedResult.queue;
 
   
-  is(clientSocket.send(bigUint8Array.buffer, 0, bigUint8Array.length), false,
-     'Server sending more than 64k should result in the buffer being full.');
-  is(clientSocket.send(bigUint8Array.buffer, 0, bigUint8Array.length), false,
-     'Server sending more than 64k should result in the buffer being full.');
+  is(
+    clientSocket.send(bigUint8Array.buffer, 0, bigUint8Array.length),
+    false,
+    "Server sending more than 64k should result in the buffer being full."
+  );
+  is(
+    clientSocket.send(bigUint8Array.buffer, 0, bigUint8Array.length),
+    false,
+    "Server sending more than 64k should result in the buffer being full."
+  );
   clientSocket.closeImmediately();
 
   serverReceived = await serverQueue.waitForAnyDataAndClose();
 
-  is(serverReceived.length < (2 * bigUint8Array.length), true, 'Received array length less than sent array length');
+  is(
+    serverReceived.length < 2 * bigUint8Array.length,
+    true,
+    "Received array length less than sent array length"
+  );
 
   
   
@@ -421,12 +557,16 @@ async function test_basics() {
   
   if (testConnectingToNonListeningPort) {
     
-    clientSocket = createSocket('127.0.0.1', serverPort,
-                                { binaryType: 'arraybuffer' });
-    clientQueue = listenForEventsOnSocket(clientSocket, 'client');
-    is((await clientQueue.waitForEvent()).type, 'error', 'fail to connect');
-    is(clientSocket.readyState, 'closed',
-       'client readyState should be closed after the failure to connect');
+    clientSocket = createSocket("127.0.0.1", serverPort, {
+      binaryType: "arraybuffer",
+    });
+    clientQueue = listenForEventsOnSocket(clientSocket, "client");
+    is((await clientQueue.waitForEvent()).type, "error", "fail to connect");
+    is(
+      clientSocket.readyState,
+      "closed",
+      "client readyState should be closed after the failure to connect"
+    );
   }
 }
 

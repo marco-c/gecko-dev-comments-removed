@@ -1,8 +1,17 @@
-var gTestRoot = getRootDirectory(gTestPath).replace("chrome://mochitests/content/", "http://127.0.0.1:8888/");
+var gTestRoot = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content/",
+  "http://127.0.0.1:8888/"
+);
 
 function checkPaintCount(aCount) {
-  ok(aCount != 0, "paint count can't be greater than zero, count was " + aCount);
-  ok(aCount < kMaxPaints, "paint count should be within limits, count was " + aCount);
+  ok(
+    aCount != 0,
+    "paint count can't be greater than zero, count was " + aCount
+  );
+  ok(
+    aCount < kMaxPaints,
+    "paint count should be within limits, count was " + aCount
+  );
 }
 
 
@@ -16,25 +25,41 @@ add_task(async function() {
 
   
   
-  await SpecialPowers.pushPrefEnv({set: [["browser.tabs.remote.tabCacheSize", 0]]});
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.remote.tabCacheSize", 0]],
+  });
 
   setTestPluginEnabledState(Ci.nsIPluginTag.STATE_ENABLED, "Test Plug-in");
 
-  let pluginTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, gTestRoot + "plugin_test.html");
-  let homeTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:home");
+  let pluginTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    gTestRoot + "plugin_test.html"
+  );
+  let homeTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:home"
+  );
 
-  result = await ContentTask.spawn(pluginTab.linkedBrowser, null, async function() {
-    let doc = content.document;
-    let plugin = doc.getElementById("testplugin");
-    return !!plugin;
-  });
+  result = await ContentTask.spawn(
+    pluginTab.linkedBrowser,
+    null,
+    async function() {
+      let doc = content.document;
+      let plugin = doc.getElementById("testplugin");
+      return !!plugin;
+    }
+  );
   is(result, true, "plugin is loaded");
 
-  result = await ContentTask.spawn(pluginTab.linkedBrowser, null, async function() {
-    let doc = content.document;
-    let plugin = doc.getElementById("testplugin");
-    return !XPCNativeWrapper.unwrap(plugin).nativeWidgetIsVisible();
-  });
+  result = await ContentTask.spawn(
+    pluginTab.linkedBrowser,
+    null,
+    async function() {
+      let doc = content.document;
+      let plugin = doc.getElementById("testplugin");
+      return !XPCNativeWrapper.unwrap(plugin).nativeWidgetIsVisible();
+    }
+  );
   is(result, true, "plugin is hidden");
 
   
@@ -52,19 +77,27 @@ add_task(async function() {
   
   await waitForMs(100);
 
-  result = await ContentTask.spawn(pluginTab.linkedBrowser, null, async function() {
-    let doc = content.document;
-    let plugin = doc.getElementById("testplugin");
-    return XPCNativeWrapper.unwrap(plugin).nativeWidgetIsVisible();
-  });
+  result = await ContentTask.spawn(
+    pluginTab.linkedBrowser,
+    null,
+    async function() {
+      let doc = content.document;
+      let plugin = doc.getElementById("testplugin");
+      return XPCNativeWrapper.unwrap(plugin).nativeWidgetIsVisible();
+    }
+  );
   is(result, true, "plugin is visible");
 
   
-  result = await ContentTask.spawn(pluginTab.linkedBrowser, null, async function() {
-    let doc = content.document;
-    let plugin = doc.getElementById("testplugin");
-    return XPCNativeWrapper.unwrap(plugin).getPaintCount();
-  });
+  result = await ContentTask.spawn(
+    pluginTab.linkedBrowser,
+    null,
+    async function() {
+      let doc = content.document;
+      let plugin = doc.getElementById("testplugin");
+      return XPCNativeWrapper.unwrap(plugin).getPaintCount();
+    }
+  );
   checkPaintCount(result);
 
   
@@ -83,18 +116,26 @@ add_task(async function() {
   await waitForMs(100);
 
   
-  result = await ContentTask.spawn(pluginTab.linkedBrowser, null, async function() {
-    let doc = content.document;
-    let plugin = doc.getElementById("testplugin");
-    return XPCNativeWrapper.unwrap(plugin).getPaintCount();
-  });
+  result = await ContentTask.spawn(
+    pluginTab.linkedBrowser,
+    null,
+    async function() {
+      let doc = content.document;
+      let plugin = doc.getElementById("testplugin");
+      return XPCNativeWrapper.unwrap(plugin).getPaintCount();
+    }
+  );
   is(result, 0, "no paints, this is correct.");
 
-  result = await ContentTask.spawn(pluginTab.linkedBrowser, null, async function() {
-    let doc = content.document;
-    let plugin = doc.getElementById("testplugin");
-    return !XPCNativeWrapper.unwrap(plugin).nativeWidgetIsVisible();
-  });
+  result = await ContentTask.spawn(
+    pluginTab.linkedBrowser,
+    null,
+    async function() {
+      let doc = content.document;
+      let plugin = doc.getElementById("testplugin");
+      return !XPCNativeWrapper.unwrap(plugin).nativeWidgetIsVisible();
+    }
+  );
   is(result, true, "plugin is hidden");
 
   
@@ -110,11 +151,15 @@ add_task(async function() {
   await tabSwitchedPromise;
 
   
-  result = await ContentTask.spawn(pluginTab.linkedBrowser, null, async function() {
-    let doc = content.document;
-    let plugin = doc.getElementById("testplugin");
-    return XPCNativeWrapper.unwrap(plugin).getPaintCount();
-  });
+  result = await ContentTask.spawn(
+    pluginTab.linkedBrowser,
+    null,
+    async function() {
+      let doc = content.document;
+      let plugin = doc.getElementById("testplugin");
+      return XPCNativeWrapper.unwrap(plugin).getPaintCount();
+    }
+  );
   checkPaintCount(result);
 
   gBrowser.removeTab(homeTab);

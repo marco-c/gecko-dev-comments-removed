@@ -8,5 +8,5 @@ var p = new Promise(function(resolve, reject) {
   
   
   
-  while (true);
+  while (true) {}
 });

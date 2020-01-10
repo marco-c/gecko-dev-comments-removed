@@ -27,8 +27,7 @@ async function fillOrigin(principal, size) {
 
 
 
-async function testSteps()
-{
+async function testSteps() {
   
   
 
@@ -41,11 +40,16 @@ async function testSteps()
   await requestFinished(request);
 
   for (let persistOldestOrigin of [false, true]) {
-    info("Testing " + (persistOldestOrigin ? "with" : "without") +
-         " persisting the oldest origin");
+    info(
+      "Testing " +
+        (persistOldestOrigin ? "with" : "without") +
+        " persisting the oldest origin"
+    );
 
-    info("Step 1: Filling six separate origins to reach the global limit " +
-         "and trigger eviction");
+    info(
+      "Step 1: Filling six separate origins to reach the global limit " +
+        "and trigger eviction"
+    );
 
     for (let index = 1; index <= 6; index++) {
       let spec = "http://example" + index + ".com";

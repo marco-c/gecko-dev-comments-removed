@@ -1,8 +1,8 @@
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var modifyObserver = {
   observe: function(subject, topic, data) {
-    if (topic == 'http-on-modify-request') {
+    if (topic == "http-on-modify-request") {
       var testOk = false;
       try {
         
@@ -11,12 +11,11 @@ var modifyObserver = {
 
         
         testOk = ir.toString().includes(Ci.nsIInterfaceRequestor);
-      } catch (e) {
-      }
-      sendAsyncMessage('modify-request-completed', testOk);
-      Services.obs.removeObserver(modifyObserver, 'http-on-modify-request');
+      } catch (e) {}
+      sendAsyncMessage("modify-request-completed", testOk);
+      Services.obs.removeObserver(modifyObserver, "http-on-modify-request");
     }
-  }
+  },
 };
 
-Services.obs.addObserver(modifyObserver, 'http-on-modify-request');
+Services.obs.addObserver(modifyObserver, "http-on-modify-request");

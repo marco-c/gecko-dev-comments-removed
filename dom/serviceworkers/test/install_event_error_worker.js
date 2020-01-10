@@ -1,7 +1,9 @@
 
 oninstall = function(e) {
-  e.waitUntil( new Promise(function(resolve, reject) {
-    undefined.doSomething;
-    resolve();
-  }));
+  e.waitUntil(
+    new Promise(function(resolve, reject) {
+      undefined.doSomething;
+      resolve();
+    })
+  );
 };

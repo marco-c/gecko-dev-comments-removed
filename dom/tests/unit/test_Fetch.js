@@ -2,10 +2,13 @@
 
 
 Cu.importGlobalProperties(["fetch"]);
-const {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
+const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
-const BinaryInputStream = Components.Constructor("@mozilla.org/binaryinputstream;1",
-  "nsIBinaryInputStream", "setInputStream");
+const BinaryInputStream = Components.Constructor(
+  "@mozilla.org/binaryinputstream;1",
+  "nsIBinaryInputStream",
+  "setInputStream"
+);
 
 var server;
 
@@ -24,7 +27,7 @@ function createTestData(testPath) {
     response: {
       headers: {},
       contentType: "application/json",
-      body: "{\"Look\": \"Success!\"}",
+      body: '{"Look": "Success!"}',
       status: 200,
       statusText: "OK",
     },
@@ -77,8 +80,10 @@ add_test(function test_GetData() {
     try {
       
       for (let headerName of headerNames) {
-        Assert.equal(testData.request.headers[headerName],
-                     aRequest.getHeader(headerName));
+        Assert.equal(
+          testData.request.headers[headerName],
+          aRequest.getHeader(headerName)
+        );
       }
 
       
@@ -89,32 +94,37 @@ add_test(function test_GetData() {
   });
 
   
-  fetch(getBaseUrl() + testData.testPath, {headers: testData.request.headers})
+  fetch(getBaseUrl() + testData.testPath, { headers: testData.request.headers })
     .then(function(response) {
-    
-    Assert.ok(response.ok);
-    Assert.equal(response.status, testData.response.status);
-    Assert.equal(response.statusText, testData.response.statusText);
+      
+      Assert.ok(response.ok);
+      Assert.equal(response.status, testData.response.status);
+      Assert.equal(response.statusText, testData.response.statusText);
 
-    
-    Assert.equal(response.headers.get("Content-Type"),
-                 testData.response.contentType);
+      
+      Assert.equal(
+        response.headers.get("Content-Type"),
+        testData.response.contentType
+      );
 
-    
-    Assert.equal(response.headers.get("content-type"),
-                 testData.response.contentType);
+      
+      Assert.equal(
+        response.headers.get("content-type"),
+        testData.response.contentType
+      );
 
-    
-    response.text().then(function(text) {
-      Assert.equal(text, testData.response.body);
+      
+      response.text().then(function(text) {
+        Assert.equal(text, testData.response.body);
+        do_test_finished();
+        run_next_test();
+      });
+    })
+    .catch(function(e) {
+      do_report_unexpected_exception(e);
       do_test_finished();
       run_next_test();
     });
-  }).catch(function(e) {
-    do_report_unexpected_exception(e);
-    do_test_finished();
-    run_next_test();
-  });
 });
 
 
@@ -132,23 +142,24 @@ add_test(function test_GetDataNoInit() {
     }
   });
 
-  fetch(getBaseUrl() + testData.testPath, {headers: testData.request.headers})
+  fetch(getBaseUrl() + testData.testPath, { headers: testData.request.headers })
     .then(function(response) {
-    
-    Assert.ok(response.ok);
-    Assert.equal(response.status, testData.response.status);
+      
+      Assert.ok(response.ok);
+      Assert.equal(response.status, testData.response.status);
 
-    
-    response.text().then(function(text) {
-      Assert.equal(text, testData.response.body);
+      
+      response.text().then(function(text) {
+        Assert.equal(text, testData.response.body);
+        do_test_finished();
+        run_next_test();
+      });
+    })
+    .catch(function(e) {
+      do_report_unexpected_exception(e);
       do_test_finished();
       run_next_test();
     });
-  }).catch(function(e) {
-    do_report_unexpected_exception(e);
-    do_test_finished();
-    run_next_test();
-  });
 });
 
 
@@ -179,8 +190,10 @@ add_test(function test_get50x() {
   serverErrorData.response.statusText = "The server broke";
   serverErrorData.response.body = null;
 
-  server.registerPathHandler(serverErrorData.testPath,
-                             function(aRequest, aResponse) {
+  server.registerPathHandler(serverErrorData.testPath, function(
+    aRequest,
+    aResponse
+  ) {
     try {
       
       writeDataToResponse(serverErrorData.response, aResponse);
@@ -201,38 +214,44 @@ add_test(function test_get50x() {
 add_test(function test_getTestFailedConnect() {
   do_test_pending();
   
-  fetch("http://localhost:4/should/fail").then(response => {
-    do_throw("Request should not succeed");
-  }).catch(err => {
-    Assert.equal(true, err instanceof TypeError);
-    do_test_finished();
-    run_next_test();
-  });
+  fetch("http://localhost:4/should/fail")
+    .then(response => {
+      do_throw("Request should not succeed");
+    })
+    .catch(err => {
+      Assert.equal(true, err instanceof TypeError);
+      do_test_finished();
+      run_next_test();
+    });
 });
 
 add_test(function test_mozError() {
   do_test_pending();
   
-  fetch("http://localhost:4/should/fail", { mozErrors: true }).then(response => {
-    do_throw("Request should not succeed");
-  }).catch(err => {
-    Assert.equal(err.result, Cr.NS_ERROR_CONNECTION_REFUSED);
-    do_test_finished();
-    run_next_test();
-  });
+  fetch("http://localhost:4/should/fail", { mozErrors: true })
+    .then(response => {
+      do_throw("Request should not succeed");
+    })
+    .catch(err => {
+      Assert.equal(err.result, Cr.NS_ERROR_CONNECTION_REFUSED);
+      do_test_finished();
+      run_next_test();
+    });
 });
 
 add_test(function test_request_mozError() {
   do_test_pending();
   
   const r = new Request("http://localhost:4/should/fail", { mozErrors: true });
-  fetch(r).then(response => {
-    do_throw("Request should not succeed");
-  }).catch(err => {
-    Assert.equal(err.result, Cr.NS_ERROR_CONNECTION_REFUSED);
-    do_test_finished();
-    run_next_test();
-  });
+  fetch(r)
+    .then(response => {
+      do_throw("Request should not succeed");
+    })
+    .catch(err => {
+      Assert.equal(err.result, Cr.NS_ERROR_CONNECTION_REFUSED);
+      do_test_finished();
+      run_next_test();
+    });
 });
 
 
@@ -240,7 +259,7 @@ add_test(function test_PostJSONData() {
   do_test_pending();
 
   let testData = createTestData("/postJSONData");
-  testData.request.body = "{\"foo\": \"bar\"}";
+  testData.request.body = '{"foo": "bar"}';
 
   server.registerPathHandler(testData.testPath, function(aRequest, aResponse) {
     try {
@@ -264,18 +283,20 @@ add_test(function test_PostJSONData() {
     headers: {
       "Content-Type": "application/json",
     },
-  }).then(function(aResponse) {
-    Assert.ok(aResponse.ok);
-    Assert.equal(aResponse.status, testData.response.status);
-    Assert.equal(aResponse.statusText, testData.response.statusText);
+  })
+    .then(function(aResponse) {
+      Assert.ok(aResponse.ok);
+      Assert.equal(aResponse.status, testData.response.status);
+      Assert.equal(aResponse.statusText, testData.response.statusText);
 
-    do_test_finished();
-    run_next_test();
-  }).catch(function(e) {
-    do_report_unexpected_exception(e);
-    do_test_finished();
-    run_next_test();
-  });
+      do_test_finished();
+      run_next_test();
+    })
+    .catch(function(e) {
+      do_report_unexpected_exception(e);
+      do_test_finished();
+      run_next_test();
+    });
 });
 
 
@@ -310,22 +331,26 @@ add_test(function test_PostTextData() {
     headers: {
       "Content-Type": testData.request.contentType,
     },
-  }).then(function(aResponse) {
-    Assert.ok(aResponse.ok);
-    Assert.equal(aResponse.status, testData.response.status);
-    Assert.equal(aResponse.statusText, testData.response.statusText);
+  })
+    .then(function(aResponse) {
+      Assert.ok(aResponse.ok);
+      Assert.equal(aResponse.status, testData.response.status);
+      Assert.equal(aResponse.statusText, testData.response.statusText);
 
-    
-    Assert.equal(aResponse.headers.get(responseHeaderName),
-                 testData.response.headers[responseHeaderName]);
+      
+      Assert.equal(
+        aResponse.headers.get(responseHeaderName),
+        testData.response.headers[responseHeaderName]
+      );
 
-    do_test_finished();
-    run_next_test();
-  }).catch(function(e) {
-    do_report_unexpected_exception(e);
-    do_test_finished();
-    run_next_test();
-  });
+      do_test_finished();
+      run_next_test();
+    })
+    .catch(function(e) {
+      do_report_unexpected_exception(e);
+      do_test_finished();
+      run_next_test();
+    });
 });
 
 function run_test() {
@@ -336,6 +361,6 @@ function run_test() {
   run_next_test();
 
   registerCleanupFunction(function() {
-    server.stop(function() { });
+    server.stop(function() {});
   });
 }

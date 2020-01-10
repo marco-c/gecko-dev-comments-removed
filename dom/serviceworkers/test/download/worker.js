@@ -1,8 +1,8 @@
-addEventListener('install', function(evt) {
+addEventListener("install", function(evt) {
   evt.waitUntil(self.skipWaiting());
 });
 
-addEventListener('activate', function(evt) {
+addEventListener("activate", function(evt) {
   
   
   
@@ -10,21 +10,23 @@ addEventListener('activate', function(evt) {
   evt.waitUntil(clients.claim());
 });
 
-addEventListener('fetch', function(evt) {
+addEventListener("fetch", function(evt) {
   
   
-  if (!evt.request.url.includes('fake_download')) {
+  if (!evt.request.url.includes("fake_download")) {
     return;
   }
 
   
-  evt.respondWith(registration.unregister().then(function() {
-    return new Response('service worker generated download', {
-      headers: {
-        'Content-Disposition': 'attachment; filename="fake_download.bin"',
-        
-        'Content-Encoding': 'gzip',
-      }
-    });
-  }));
+  evt.respondWith(
+    registration.unregister().then(function() {
+      return new Response("service worker generated download", {
+        headers: {
+          "Content-Disposition": 'attachment; filename="fake_download.bin"',
+          
+          "Content-Encoding": "gzip",
+        },
+      });
+    })
+  );
 });

@@ -3,9 +3,10 @@ function run_test() {
   let pluginDefaultState = Services.prefs.getIntPref("plugin.default.state");
   
   Assert.notEqual(pluginDefaultState, Ci.nsIPluginTag.STATE_DISABLED);
-  let nonDefaultState = (pluginDefaultState != Ci.nsIPluginTag.STATE_ENABLED ?
-                         Ci.nsIPluginTag.STATE_ENABLED :
-                         Ci.nsIPluginTag.STATE_CLICKTOPLAY);
+  let nonDefaultState =
+    pluginDefaultState != Ci.nsIPluginTag.STATE_ENABLED
+      ? Ci.nsIPluginTag.STATE_ENABLED
+      : Ci.nsIPluginTag.STATE_CLICKTOPLAY;
   let testPlugin = get_test_plugintag();
   
   Assert.equal(testPlugin.enabledState, pluginDefaultState);

@@ -1,12 +1,15 @@
 
 
 
-
 function waitTabSwitched() {
   return new Promise(resolve => {
-    gBrowser.addEventListener("TabSwitchDone", function() {
-      executeSoon(resolve);
-    }, {once: true});
+    gBrowser.addEventListener(
+      "TabSwitchDone",
+      function() {
+        executeSoon(resolve);
+      },
+      { once: true }
+    );
   });
 }
 
@@ -21,7 +24,7 @@ function waitTabSwitched() {
 
 
 function waitForMs(aMs) {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     setTimeout(done, aMs);
     function done() {
       resolve(true);
@@ -51,11 +54,16 @@ function getPlatform() {
 
 function nativeVerticalWheelEventMsg() {
   switch (getPlatform()) {
-    case "windows": return 0x020A; 
-    case "mac": return 0; 
-    case "linux": return 4; 
+    case "windows":
+      return 0x020a; 
+    case "mac":
+      return 0; 
+    case "linux":
+      return 4; 
   }
-  throw new Error("Native wheel events not supported on platform " + getPlatform());
+  throw new Error(
+    "Native wheel events not supported on platform " + getPlatform()
+  );
 }
 
 
@@ -63,9 +71,13 @@ function nativeVerticalWheelEventMsg() {
 
 function waitScrollStart(aTarget) {
   return new Promise((resolve, reject) => {
-    aTarget.addEventListener("scroll", function(event) {
-      resolve(event);
-    }, {capture: true, once: true});
+    aTarget.addEventListener(
+      "scroll",
+      function(event) {
+        resolve(event);
+      },
+      { capture: true, once: true }
+    );
   });
 }
 
@@ -126,10 +138,10 @@ function getTestPlugin(aName) {
 
   
   for (let i = 0; i < tags.length; i++) {
-    if (tags[i].name == pluginName)
+    if (tags[i].name == pluginName) {
       return tags[i];
+    }
   }
   ok(false, "Unable to find plugin");
   return null;
 }
-

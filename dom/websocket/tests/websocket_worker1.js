@@ -1,18 +1,18 @@
-importScripts('websocket_helpers.js');
-importScripts('websocket_tests.js');
-importScripts('websocket_worker_helpers.js');
+importScripts("websocket_helpers.js");
+importScripts("websocket_tests.js");
+importScripts("websocket_worker_helpers.js");
 
 var tests = [
-  test1,  
-  test2,  
-  test3,  
-  test4,  
-  test5,  
-  test6,  
-  test7,  
-  test8,  
-          
-  test9,  
+  test1, 
+  test2, 
+  test3, 
+  test4, 
+  test5, 
+  test6, 
+  test7, 
+  test8, 
+  
+  test9, 
   test10, 
 ];
 

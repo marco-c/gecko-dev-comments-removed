@@ -3,7 +3,7 @@ function send_ping() {
 }
 send_ping(); 
 
-window.addEventListener("load", function () {
+window.addEventListener("load", function() {
   send_ping(); 
 
   

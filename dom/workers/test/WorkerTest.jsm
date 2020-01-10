@@ -2,9 +2,7 @@
 
 
 
-var EXPORTED_SYMBOLS = [
-  "WorkerTest"
-];
+var EXPORTED_SYMBOLS = ["WorkerTest"];
 
 var WorkerTest = {
   go: function(message, messageCallback, errorCallback) {
@@ -13,5 +11,5 @@ var WorkerTest = {
     worker.onerror = errorCallback;
     worker.postMessage(message);
     return worker;
-  }
+  },
 };

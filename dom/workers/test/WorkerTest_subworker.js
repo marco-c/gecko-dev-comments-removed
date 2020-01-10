@@ -3,13 +3,17 @@
 
 
 onmessage = function(event) {
-  let chromeURL = event.data.replace("test_chromeWorkerJSM.xul",
-                                     "WorkerTest_badworker.js");
+  let chromeURL = event.data.replace(
+    "test_chromeWorkerJSM.xul",
+    "WorkerTest_badworker.js"
+  );
 
-  let mochitestURL = event.data.replace("test_chromeWorkerJSM.xul",
-                                        "WorkerTest_badworker.js")
-                               .replace("chrome://mochitests/content/chrome",
-                                        "http://mochi.test:8888/tests");
+  let mochitestURL = event.data
+    .replace("test_chromeWorkerJSM.xul", "WorkerTest_badworker.js")
+    .replace(
+      "chrome://mochitests/content/chrome",
+      "http://mochi.test:8888/tests"
+    );
 
   
   let xhr = new XMLHttpRequest();
@@ -21,13 +25,13 @@ onmessage = function(event) {
   }
 
   
-  try{
+  try {
     new ChromeWorker(mochitestURL);
-  } catch(e) {
-    if (e.name === 'SecurityError') {
+  } catch (e) {
+    if (e.name === "SecurityError") {
       postMessage("Done");
       return;
     }
   }
-  throw('creating a chrome worker with a bad URL should throw a SecurityError');
+  throw "creating a chrome worker with a bad URL should throw a SecurityError";
 };

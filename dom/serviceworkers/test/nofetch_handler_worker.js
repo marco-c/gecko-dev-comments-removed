@@ -1,14 +1,14 @@
 function handleFetch(event) {
-  event.respondWith(new Response('intercepted'));
+  event.respondWith(new Response("intercepted"));
 }
 
 self.oninstall = function(event) {
-      addEventListener('fetch', handleFetch);
-      self.onfetch = handleFetch;
-}
+  addEventListener("fetch", handleFetch);
+  self.onfetch = handleFetch;
+};
 
 
 
-addEventListener('push', function() {})
-addEventListener('message', function() {})
-addEventListener('non-sw-event', function() {})
+addEventListener("push", function() {});
+addEventListener("message", function() {});
+addEventListener("non-sw-event", function() {});

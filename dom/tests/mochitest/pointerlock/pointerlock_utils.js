@@ -1,5 +1,5 @@
 
-var testName = location.pathname.split('/').pop();
+var testName = location.pathname.split("/").pop();
 
 
 window.ok = function(a, msg) {
@@ -34,16 +34,16 @@ window.info = function(msg) {
 var SimpleTest = SimpleTest || {};
 
 SimpleTest.waitForExplicitFinish = function() {
-  dump("[POINTERLOCK] Starting " + testName+ "\n");
+  dump("[POINTERLOCK] Starting " + testName + "\n");
 };
 
-SimpleTest.finish = function () {
-  dump("[POINTERLOCK] Finishing " + testName+ "\n");
+SimpleTest.finish = function() {
+  dump("[POINTERLOCK] Finishing " + testName + "\n");
   opener.nextTest();
 };
 
 addLoadEvent(function() {
-  if (typeof start !== 'undefined') {
+  if (typeof start !== "undefined") {
     SimpleTest.waitForFocus(start);
   }
 });
@@ -52,16 +52,18 @@ addLoadEvent(function() {
 
 
 function inFullscreenMode(win) {
-  return win.innerWidth == win.screen.width &&
-         win.innerHeight == win.screen.height;
+  return (
+    win.innerWidth == win.screen.width && win.innerHeight == win.screen.height
+  );
 }
 
 
 
 
 function inNormalMode(win) {
-  return win.innerWidth == win.normalSize.w &&
-         win.innerHeight == win.normalSize.h;
+  return (
+    win.innerWidth == win.normalSize.w && win.innerHeight == win.normalSize.h
+  );
 }
 
 
@@ -80,7 +82,7 @@ function addFullscreenChangeContinuation(type, callback, inDoc) {
   if (!topWin.normalSize) {
     topWin.normalSize = {
       w: window.innerWidth,
-      h: window.innerHeight
+      h: window.innerHeight,
     };
   }
   function checkCondition() {

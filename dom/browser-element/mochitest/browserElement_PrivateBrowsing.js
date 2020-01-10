@@ -41,10 +41,16 @@ function runTest() {
   
   
   createTest(false, "CLEAR", true)
-  .then(() => { return createTest(false, "EMPTY", false); })
-  .then(() => { return createTest(false, "bar", false); })
-  .then(() => { return createTest(true, "EMPTY", false); })
-  .then(SimpleTest.finish);
+    .then(() => {
+      return createTest(false, "EMPTY", false);
+    })
+    .then(() => {
+      return createTest(false, "bar", false);
+    })
+    .then(() => {
+      return createTest(true, "EMPTY", false);
+    })
+    .then(SimpleTest.finish);
 }
 
 addEventListener("testready", runTest);

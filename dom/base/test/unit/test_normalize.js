@@ -36,7 +36,6 @@ function test_element() {
   x.normalize();
   Assert.equal(x.childNodes.length, 0);
 
-
   
   x.appendChild(doc.createTextNode(""));
   x.appendChild(doc.createTextNode(""));
@@ -44,7 +43,6 @@ function test_element() {
 
   x.normalize();
   Assert.equal(x.childNodes.length, 0);
-
 
   
   x.appendChild(doc.createTextNode(""));
@@ -55,7 +53,6 @@ function test_element() {
   Assert.equal(x.childNodes.length, 1);
   Assert.equal(x.childNodes.item(0).nodeValue, "Guaraldi");
 
-
   
   clearKids(x);
   x.appendChild(doc.createTextNode("Guaraldi"));
@@ -64,7 +61,6 @@ function test_element() {
 
   x.normalize();
   Assert.equal(x.childNodes.item(0).nodeValue, "Guaraldi");
-
 
   
   clearKids(x);
@@ -77,7 +73,6 @@ function test_element() {
   Assert.equal(x.childNodes.length, 2);
   Assert.equal(x.childNodes.item(0).nodeValue, "Guaraldi");
   Assert.equal(x.childNodes.item(1).nodeName, "jazzy");
-
 
   
   clearKids(x);
@@ -98,8 +93,8 @@ function test_element() {
 
 
 
-
 function clearKids(node) {
-  while (node.hasChildNodes())
+  while (node.hasChildNodes()) {
     node.removeChild(node.childNodes.item(0));
+  }
 }

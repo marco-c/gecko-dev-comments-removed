@@ -7,4 +7,4 @@ function loop() {
 onactivate = function(e) {
   
   loop();
-}
+};

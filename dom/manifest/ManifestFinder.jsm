@@ -4,9 +4,12 @@
 
 "use strict";
 
-const {PromiseMessage} = ChromeUtils.import("resource://gre/modules/PromiseMessage.jsm");
+const { PromiseMessage } = ChromeUtils.import(
+  "resource://gre/modules/PromiseMessage.jsm"
+);
 
 var ManifestFinder = {
+  
   
 
 
@@ -27,14 +30,14 @@ var ManifestFinder = {
 
 
   async browserHasManifestLink(aBrowser) {
-      if (!isXULBrowser(aBrowser)) {
-        throw new TypeError("Invalid input.");
-      }
-      const msgKey = "DOM:WebManifest:hasManifestLink";
-      const mm = aBrowser.messageManager;
-      const reply = await PromiseMessage.send(mm, msgKey);
-      return reply.data.result;
-    },
+    if (!isXULBrowser(aBrowser)) {
+      throw new TypeError("Invalid input.");
+    }
+    const msgKey = "DOM:WebManifest:hasManifestLink";
+    const mm = aBrowser.messageManager;
+    const reply = await PromiseMessage.send(mm, msgKey);
+    return reply.data.result;
+  },
 };
 
 function isXULBrowser(aBrowser) {
@@ -42,7 +45,7 @@ function isXULBrowser(aBrowser) {
     return false;
   }
   const XUL = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-  return (aBrowser.namespaceURI === XUL && aBrowser.localName === "browser");
+  return aBrowser.namespaceURI === XUL && aBrowser.localName === "browser";
 }
 
 function checkForManifest(aWindow) {
@@ -59,5 +62,6 @@ function checkForManifest(aWindow) {
 }
 
 var EXPORTED_SYMBOLS = [
+  
   "ManifestFinder",
 ];

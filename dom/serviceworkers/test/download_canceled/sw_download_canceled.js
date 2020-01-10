@@ -26,71 +26,81 @@ function handleStream(evt, filename) {
   }
   const dataChunk = encoder.encode(strChunk);
 
-  evt.waitUntil(new Promise(resolve => {
-    let body = new ReadableStream({
-      start: controller => {
-        const closeStream = (why) => {
-          console.log("closing stream: " + JSON.stringify(why) + "\n");
-          clearInterval(intervalId);
-          resolve();
-          
-          if (why.why != "canceled") {
-            try {
-              controller.close();
-            } catch(ex) {
-              
-              
-              
-              
-              channel.postMessage({
-                what: filename,
-                why: "close-failure",
-                message: ex.message,
-                ticks: why.ticks
-              });
-              return;
-            }
-          }
-          
-          channel.postMessage(why);
-        };
-
-        controller.enqueue(dataChunk);
-        let count = 0;
-        let intervalId;
-        function tick() {
-          try {
+  evt.waitUntil(
+    new Promise(resolve => {
+      let body = new ReadableStream({
+        start: controller => {
+          const closeStream = why => {
+            console.log("closing stream: " + JSON.stringify(why) + "\n");
+            clearInterval(intervalId);
+            resolve();
             
-            if (count++ > MAX_TICK_COUNT) {
-              closeStream({
-                what: filename, why: "timeout", message: "timeout", ticks: count
-              });
-              return;
+            if (why.why != "canceled") {
+              try {
+                controller.close();
+              } catch (ex) {
+                
+                
+                
+                
+                channel.postMessage({
+                  what: filename,
+                  why: "close-failure",
+                  message: ex.message,
+                  ticks: why.ticks,
+                });
+                return;
+              }
             }
-            controller.enqueue(dataChunk);
-          } catch(e) {
-            closeStream({
-              what: filename, why: "canceled", message: e.message, ticks: count
-            });
+            
+            channel.postMessage(why);
+          };
+
+          controller.enqueue(dataChunk);
+          let count = 0;
+          let intervalId;
+          function tick() {
+            try {
+              
+              if (count++ > MAX_TICK_COUNT) {
+                closeStream({
+                  what: filename,
+                  why: "timeout",
+                  message: "timeout",
+                  ticks: count,
+                });
+                return;
+              }
+              controller.enqueue(dataChunk);
+            } catch (e) {
+              closeStream({
+                what: filename,
+                why: "canceled",
+                message: e.message,
+                ticks: count,
+              });
+            }
           }
-        }
-        
-        
-        
-        
-        
-        
-        intervalId = setInterval(tick, TICK_INTERVAL);
-        tick();
-      },
-    });
-    evt.respondWith(new Response(body, {
-      headers: {
-        "Content-Disposition": `attachment; filename="${filename}"`,
-        "Content-Type": "application/octet-stream"
-      }
-    }));
-  }));
+          
+          
+          
+          
+          
+          
+          intervalId = setInterval(tick, TICK_INTERVAL);
+          tick();
+        },
+      });
+      evt.respondWith(
+        new Response(body, {
+          headers: {
+            "Content-Disposition": `attachment; filename="${filename}"`,
+            "Content-Type": "application/octet-stream",
+          },
+        })
+      );
+    })
+  );
 }
 
 
@@ -101,22 +111,26 @@ function handleStream(evt, filename) {
 
 
 function handlePassThrough(evt, filename) {
-  evt.waitUntil((async () => {
-    console.log("issuing monitor fetch request");
-    const response = await fetch("server-stream-download.sjs?monitor");
-    console.log("monitor headers received, awaiting body");
-    const data = await response.json();
-    console.log("passthrough monitor fetch completed, notifying.");
-    channel.postMessage({
-      what: filename,
-      why: data.why,
-      message: data.message
-    });
-  })());
-  evt.respondWith(fetch("server-stream-download.sjs").then(response => {
-    console.log("server-stream-download.sjs Response received, propagating");
-    return response;
-  }));
+  evt.waitUntil(
+    (async () => {
+      console.log("issuing monitor fetch request");
+      const response = await fetch("server-stream-download.sjs?monitor");
+      console.log("monitor headers received, awaiting body");
+      const data = await response.json();
+      console.log("passthrough monitor fetch completed, notifying.");
+      channel.postMessage({
+        what: filename,
+        why: data.why,
+        message: data.message,
+      });
+    })()
+  );
+  evt.respondWith(
+    fetch("server-stream-download.sjs").then(response => {
+      console.log("server-stream-download.sjs Response received, propagating");
+      return response;
+    })
+  );
 }
 
 addEventListener("fetch", evt => {
@@ -127,7 +141,7 @@ addEventListener("fetch", evt => {
   if (evt.request.url.includes("sw-passthrough-download")) {
     return handlePassThrough(evt, "sw-passthrough-download");
   }
-})
+});
 
 addEventListener("message", evt => {
   if (evt.data === "claim") {

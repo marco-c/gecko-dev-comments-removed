@@ -16,7 +16,10 @@ function finishTest() {
 
 
 ok(typeof self.localStorage == "undefined", "localStorage should be undefined");
-ok(typeof self.sessionStorage == "undefined", "sessionStorage should be undefined");
+ok(
+  typeof self.sessionStorage == "undefined",
+  "sessionStorage should be undefined"
+);
 
 
 try {
@@ -31,31 +34,41 @@ try {
   var promise = caches.keys();
   ok(true, "WORKER getting caches didn't throw");
 
-  promise.then(function() {
-    ok(location.protocol == "https:", "WORKER The promise was not rejected");
-    workerTest();
-  }, function() {
-    ok(location.protocol != "https:", "WORKER The promise should not have been rejected");
-    workerTest();
-  });
+  promise.then(
+    function() {
+      ok(location.protocol == "https:", "WORKER The promise was not rejected");
+      workerTest();
+    },
+    function() {
+      ok(
+        location.protocol != "https:",
+        "WORKER The promise should not have been rejected"
+      );
+      workerTest();
+    }
+  );
 } catch (e) {
   ok(false, "WORKER getting caches should not have thrown");
 }
 
 
 function workerTest() {
-  if (location.hash == "#inner") { 
+  if (location.hash == "#inner") {
+    
     finishTest();
     return;
   }
   
   var worker = new Worker("workerStorageAllowed.js#inner");
-  worker.addEventListener('message', function(e) {
+  worker.addEventListener("message", function(e) {
     if (e.data == "done") {
       finishTest();
       return;
     }
 
-    ok(!e.data.match(/^FAILURE/), e.data + " (WORKER = workerStorageAllowed.js#inner)");
+    ok(
+      !e.data.match(/^FAILURE/),
+      e.data + " (WORKER = workerStorageAllowed.js#inner)"
+    );
   });
 }

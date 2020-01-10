@@ -53,9 +53,11 @@ function addBeforeUnloadListeners(browser, howMany = 1, frameDepth = 0) {
 
 function addOuterBeforeUnloadListeners(browser, howMany = 1, frameDepth = 1) {
   if (frameDepth == 0) {
-    throw new Error("When adding a beforeunload listener on an outer " +
-                    "window, the frame you're targeting needs to be at " +
-                    "depth > 0.");
+    throw new Error(
+      "When adding a beforeunload listener on an outer " +
+        "window, the frame you're targeting needs to be at " +
+        "depth > 0."
+    );
   }
 
   return controlFrameAt(browser, frameDepth, {
@@ -111,11 +113,17 @@ function removeBeforeUnloadListeners(browser, howMany = 1, frameDepth = 0) {
 
 
 
-function removeOuterBeforeUnloadListeners(browser, howMany = 1, frameDepth = 1) {
+function removeOuterBeforeUnloadListeners(
+  browser,
+  howMany = 1,
+  frameDepth = 1
+) {
   if (frameDepth == 0) {
-    throw new Error("When removing a beforeunload listener from an outer " +
-                    "window, the frame you're targeting needs to be at " +
-                    "depth > 0.");
+    throw new Error(
+      "When removing a beforeunload listener from an outer " +
+        "window, the frame you're targeting needs to be at " +
+        "depth > 0."
+    );
   }
 
   return controlFrameAt(browser, frameDepth, {
@@ -218,7 +226,9 @@ function removeSubframeFrom(browser, frameDepth = 0) {
 
 
 function controlFrameAt(browser, frameDepth, command) {
-  return ContentTask.spawn(browser, { frameDepth, command }, async function(args) {
+  return ContentTask.spawn(browser, { frameDepth, command }, async function(
+    args
+  ) {
     ChromeUtils.import("resource://testing-common/TestUtils.jsm", this);
 
     let { command: contentCommand, frameDepth: contentFrameDepth } = args;
@@ -287,7 +297,10 @@ function controlFrameAt(browser, frameDepth, command) {
       }
       case "RemoveSubframe": {
         let subframe = targetContent.document.getElementById("subframe");
-        Assert.ok(subframe, "Found subframe at frame depth of " + contentFrameDepth);
+        Assert.ok(
+          subframe,
+          "Found subframe at frame depth of " + contentFrameDepth
+        );
         subframe.remove();
 
         let destroyedOuterWindows = depth - contentFrameDepth;
@@ -380,8 +393,7 @@ async function prepareSubframes(browser, options) {
 
 
 function assertHasBeforeUnload(browser, expected) {
-  Assert.equal(browser.frameLoader.remoteTab.hasBeforeUnload,
-               expected);
+  Assert.equal(browser.frameLoader.remoteTab.hasBeforeUnload, expected);
 }
 
 
@@ -392,176 +404,181 @@ function assertHasBeforeUnload(browser, expected) {
 
 
 add_task(async function test_inner_window_scenarios() {
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: PAGE_URL,
-  }, async function(browser) {
-    Assert.ok(browser.isRemoteBrowser,
-              "This test only makes sense with out of process browsers.");
-    assertHasBeforeUnload(browser, false);
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: PAGE_URL,
+    },
+    async function(browser) {
+      Assert.ok(
+        browser.isRemoteBrowser,
+        "This test only makes sense with out of process browsers."
+      );
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    
-    await addBeforeUnloadListeners(browser);
-    assertHasBeforeUnload(browser, true);
-    await removeBeforeUnloadListeners(browser);
-    assertHasBeforeUnload(browser, false);
+      
+      
+      
+      await addBeforeUnloadListeners(browser);
+      assertHasBeforeUnload(browser, true);
+      await removeBeforeUnloadListeners(browser);
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    
-    await addBeforeUnloadListeners(browser, 3);
-    assertHasBeforeUnload(browser, true);
-    await removeBeforeUnloadListeners(browser); 
-    assertHasBeforeUnload(browser, true);
-    await removeBeforeUnloadListeners(browser); 
-    assertHasBeforeUnload(browser, true);
-    await removeBeforeUnloadListeners(browser); 
+      
+      
+      
+      await addBeforeUnloadListeners(browser, 3);
+      assertHasBeforeUnload(browser, true);
+      await removeBeforeUnloadListeners(browser); 
+      assertHasBeforeUnload(browser, true);
+      await removeBeforeUnloadListeners(browser); 
+      assertHasBeforeUnload(browser, true);
+      await removeBeforeUnloadListeners(browser); 
 
-    assertHasBeforeUnload(browser, false);
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    
-    await addBeforeUnloadListeners(browser, 5);
-    await navigateSubframe(browser, "http://example.com");
-    assertHasBeforeUnload(browser, false);
+      
+      
+      
+      await addBeforeUnloadListeners(browser, 5);
+      await navigateSubframe(browser, "http://example.com");
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    BrowserTestUtils.loadURI(browser, PAGE_URL);
-    await BrowserTestUtils.browserLoaded(browser);
+      
+      
+      BrowserTestUtils.loadURI(browser, PAGE_URL);
+      await BrowserTestUtils.browserLoaded(browser);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    await prepareSubframes(browser, [
-      { sandboxAttributes: null },
-      { sandboxAttributes: null },
-    ]);
-    
-    
-    
-    const TOP = 0;
-    const MIDDLE = 1;
-    const BOTTOM = 2;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      await prepareSubframes(browser, [
+        { sandboxAttributes: null },
+        { sandboxAttributes: null },
+      ]);
+      
+      
+      
+      const TOP = 0;
+      const MIDDLE = 1;
+      const BOTTOM = 2;
 
-    
-    assertHasBeforeUnload(browser, false);
+      
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    
-    
-    await addBeforeUnloadListeners(browser, 2, MIDDLE);
-    assertHasBeforeUnload(browser, true);
-    await addBeforeUnloadListeners(browser, 1, TOP);
-    assertHasBeforeUnload(browser, true);
-    await addBeforeUnloadListeners(browser, 5, BOTTOM);
-    assertHasBeforeUnload(browser, true);
+      
+      
+      
+      
+      await addBeforeUnloadListeners(browser, 2, MIDDLE);
+      assertHasBeforeUnload(browser, true);
+      await addBeforeUnloadListeners(browser, 1, TOP);
+      assertHasBeforeUnload(browser, true);
+      await addBeforeUnloadListeners(browser, 5, BOTTOM);
+      assertHasBeforeUnload(browser, true);
 
-    await removeBeforeUnloadListeners(browser, 1, TOP);
-    assertHasBeforeUnload(browser, true);
-    await removeBeforeUnloadListeners(browser, 5, BOTTOM);
-    assertHasBeforeUnload(browser, true);
-    await removeBeforeUnloadListeners(browser, 2, MIDDLE);
-    assertHasBeforeUnload(browser, false);
+      await removeBeforeUnloadListeners(browser, 1, TOP);
+      assertHasBeforeUnload(browser, true);
+      await removeBeforeUnloadListeners(browser, 5, BOTTOM);
+      assertHasBeforeUnload(browser, true);
+      await removeBeforeUnloadListeners(browser, 2, MIDDLE);
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    
-    
-    await addBeforeUnloadListeners(browser, 5, BOTTOM);
-    assertHasBeforeUnload(browser, true);
+      
+      
+      
+      
+      await addBeforeUnloadListeners(browser, 5, BOTTOM);
+      assertHasBeforeUnload(browser, true);
 
-    await navigateSubframe(browser, "http://example.com", BOTTOM);
-    assertHasBeforeUnload(browser, false);
+      await navigateSubframe(browser, "http://example.com", BOTTOM);
+      assertHasBeforeUnload(browser, false);
 
-    
-    await prepareSubframes(browser, [
-      { sandboxAttributes: null },
-      { sandboxAttributes: null },
-    ]);
+      
+      await prepareSubframes(browser, [
+        { sandboxAttributes: null },
+        { sandboxAttributes: null },
+      ]);
 
-    
-    
-    
-    await addBeforeUnloadListeners(browser, 3, MIDDLE);
-    await addBeforeUnloadListeners(browser, 1, BOTTOM);
-    assertHasBeforeUnload(browser, true);
-    await navigateSubframe(browser, "http://example.com", MIDDLE);
-    assertHasBeforeUnload(browser, false);
+      
+      
+      
+      await addBeforeUnloadListeners(browser, 3, MIDDLE);
+      await addBeforeUnloadListeners(browser, 1, BOTTOM);
+      assertHasBeforeUnload(browser, true);
+      await navigateSubframe(browser, "http://example.com", MIDDLE);
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    
-    await prepareSubframes(browser, [
-      { sandboxAttributes: null },
-      { sandboxAttributes: null },
-    ]);
-    await addBeforeUnloadListeners(browser, 3, MIDDLE);
-    await addBeforeUnloadListeners(browser, 1, BOTTOM);
-    assertHasBeforeUnload(browser, true);
-    await removeSubframeFrom(browser, MIDDLE);
-    assertHasBeforeUnload(browser, true);
-    await removeSubframeFrom(browser, TOP);
-    assertHasBeforeUnload(browser, false);
+      
+      
+      
+      await prepareSubframes(browser, [
+        { sandboxAttributes: null },
+        { sandboxAttributes: null },
+      ]);
+      await addBeforeUnloadListeners(browser, 3, MIDDLE);
+      await addBeforeUnloadListeners(browser, 1, BOTTOM);
+      assertHasBeforeUnload(browser, true);
+      await removeSubframeFrom(browser, MIDDLE);
+      assertHasBeforeUnload(browser, true);
+      await removeSubframeFrom(browser, TOP);
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    
-    await prepareSubframes(browser, [
-      { sandboxAttributes: null },
-      { sandboxAttributes: null },
-    ]);
-    await addBeforeUnloadListeners(browser, 3, MIDDLE);
-    await addBeforeUnloadListeners(browser, 1, BOTTOM);
-    assertHasBeforeUnload(browser, true);
-    await removeSubframeFrom(browser, TOP);
-    assertHasBeforeUnload(browser, false);
+      
+      
+      
+      await prepareSubframes(browser, [
+        { sandboxAttributes: null },
+        { sandboxAttributes: null },
+      ]);
+      await addBeforeUnloadListeners(browser, 3, MIDDLE);
+      await addBeforeUnloadListeners(browser, 1, BOTTOM);
+      assertHasBeforeUnload(browser, true);
+      await removeSubframeFrom(browser, TOP);
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    
-    await prepareSubframes(browser, [
-      { sandboxAttributes: "allow-scripts" },
-      { sandboxAttributes: "allow-scripts" },
-    ]);
+      
+      
+      
+      await prepareSubframes(browser, [
+        { sandboxAttributes: "allow-scripts" },
+        { sandboxAttributes: "allow-scripts" },
+      ]);
 
-    await addBeforeUnloadListeners(browser, 3, MIDDLE);
-    await addBeforeUnloadListeners(browser, 1, BOTTOM);
-    assertHasBeforeUnload(browser, false);
+      await addBeforeUnloadListeners(browser, 3, MIDDLE);
+      await addBeforeUnloadListeners(browser, 1, BOTTOM);
+      assertHasBeforeUnload(browser, false);
 
-    await removeBeforeUnloadListeners(browser, 3, MIDDLE);
-    await removeBeforeUnloadListeners(browser, 1, BOTTOM);
-    assertHasBeforeUnload(browser, false);
+      await removeBeforeUnloadListeners(browser, 3, MIDDLE);
+      await removeBeforeUnloadListeners(browser, 1, BOTTOM);
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    
-    await prepareSubframes(browser, [
-      { sandboxAttributes: "allow-scripts allow-modals" },
-      { sandboxAttributes: "allow-scripts allow-modals" },
-    ]);
+      
+      
+      
+      await prepareSubframes(browser, [
+        { sandboxAttributes: "allow-scripts allow-modals" },
+        { sandboxAttributes: "allow-scripts allow-modals" },
+      ]);
 
-    await addBeforeUnloadListeners(browser, 3, MIDDLE);
-    await addBeforeUnloadListeners(browser, 1, BOTTOM);
-    assertHasBeforeUnload(browser, true);
+      await addBeforeUnloadListeners(browser, 3, MIDDLE);
+      await addBeforeUnloadListeners(browser, 1, BOTTOM);
+      assertHasBeforeUnload(browser, true);
 
-    await removeBeforeUnloadListeners(browser, 1, BOTTOM);
-    assertHasBeforeUnload(browser, true);
-    await removeBeforeUnloadListeners(browser, 3, MIDDLE);
-    assertHasBeforeUnload(browser, false);
-  });
+      await removeBeforeUnloadListeners(browser, 1, BOTTOM);
+      assertHasBeforeUnload(browser, true);
+      await removeBeforeUnloadListeners(browser, 3, MIDDLE);
+      assertHasBeforeUnload(browser, false);
+    }
+  );
 });
 
 
@@ -571,189 +588,194 @@ add_task(async function test_inner_window_scenarios() {
 
 
 add_task(async function test_outer_window_scenarios() {
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: PAGE_URL,
-  }, async function(browser) {
-    Assert.ok(browser.isRemoteBrowser,
-              "This test only makes sense with out of process browsers.");
-    assertHasBeforeUnload(browser, false);
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: PAGE_URL,
+    },
+    async function(browser) {
+      Assert.ok(
+        browser.isRemoteBrowser,
+        "This test only makes sense with out of process browsers."
+      );
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    await prepareSubframes(browser, [
-      { sandboxAttributes: null },
-      { sandboxAttributes: null },
-    ]);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      await prepareSubframes(browser, [
+        { sandboxAttributes: null },
+        { sandboxAttributes: null },
+      ]);
 
-    
-    
-    
-    const TOP = 0;
-    const MIDDLE = 1;
-    const BOTTOM = 2;
+      
+      
+      
+      const TOP = 0;
+      const MIDDLE = 1;
+      const BOTTOM = 2;
 
-    
-    
-    
-    await addOuterBeforeUnloadListeners(browser);
-    assertHasBeforeUnload(browser, true);
+      
+      
+      
+      await addOuterBeforeUnloadListeners(browser);
+      assertHasBeforeUnload(browser, true);
 
-    await removeOuterBeforeUnloadListeners(browser);
-    assertHasBeforeUnload(browser, false);
+      await removeOuterBeforeUnloadListeners(browser);
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    
-    await addOuterBeforeUnloadListeners(browser, 3);
-    assertHasBeforeUnload(browser, true);
-    await removeOuterBeforeUnloadListeners(browser); 
-    assertHasBeforeUnload(browser, true);
-    await removeOuterBeforeUnloadListeners(browser); 
-    assertHasBeforeUnload(browser, true);
-    await removeOuterBeforeUnloadListeners(browser); 
+      
+      
+      
+      await addOuterBeforeUnloadListeners(browser, 3);
+      assertHasBeforeUnload(browser, true);
+      await removeOuterBeforeUnloadListeners(browser); 
+      assertHasBeforeUnload(browser, true);
+      await removeOuterBeforeUnloadListeners(browser); 
+      assertHasBeforeUnload(browser, true);
+      await removeOuterBeforeUnloadListeners(browser); 
 
-    assertHasBeforeUnload(browser, false);
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    
-    
-    await addOuterBeforeUnloadListeners(browser, 5);
-    await navigateSubframe(browser, "http://example.com", TOP);
-    assertHasBeforeUnload(browser, false);
+      
+      
+      
+      
+      await addOuterBeforeUnloadListeners(browser, 5);
+      await navigateSubframe(browser, "http://example.com", TOP);
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    BrowserTestUtils.loadURI(browser, PAGE_URL);
-    await BrowserTestUtils.browserLoaded(browser);
+      
+      
+      BrowserTestUtils.loadURI(browser, PAGE_URL);
+      await BrowserTestUtils.browserLoaded(browser);
 
-    
-    assertHasBeforeUnload(browser, false);
+      
+      assertHasBeforeUnload(browser, false);
 
-    await prepareSubframes(browser, [
-      { sandboxAttributes: null },
-      { sandboxAttributes: null },
-    ]);
+      await prepareSubframes(browser, [
+        { sandboxAttributes: null },
+        { sandboxAttributes: null },
+      ]);
 
-    
-    
-    
-    
-    await addOuterBeforeUnloadListeners(browser, 3, MIDDLE);
-    assertHasBeforeUnload(browser, true);
-    await addOuterBeforeUnloadListeners(browser, 7, BOTTOM);
-    assertHasBeforeUnload(browser, true);
+      
+      
+      
+      
+      await addOuterBeforeUnloadListeners(browser, 3, MIDDLE);
+      assertHasBeforeUnload(browser, true);
+      await addOuterBeforeUnloadListeners(browser, 7, BOTTOM);
+      assertHasBeforeUnload(browser, true);
 
-    await removeOuterBeforeUnloadListeners(browser, 7, BOTTOM);
-    assertHasBeforeUnload(browser, true);
-    await removeOuterBeforeUnloadListeners(browser, 3, MIDDLE);
-    assertHasBeforeUnload(browser, false);
+      await removeOuterBeforeUnloadListeners(browser, 7, BOTTOM);
+      assertHasBeforeUnload(browser, true);
+      await removeOuterBeforeUnloadListeners(browser, 3, MIDDLE);
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    
-    
-    
-    
-    await addOuterBeforeUnloadListeners(browser, 5, BOTTOM);
-    assertHasBeforeUnload(browser, true);
+      
+      
+      
+      
+      
+      
+      await addOuterBeforeUnloadListeners(browser, 5, BOTTOM);
+      assertHasBeforeUnload(browser, true);
 
-    
-    await navigateSubframe(browser, "http://example.com", BOTTOM);
-    assertHasBeforeUnload(browser, false);
+      
+      await navigateSubframe(browser, "http://example.com", BOTTOM);
+      assertHasBeforeUnload(browser, false);
 
-    
-    await prepareSubframes(browser, [
-      { sandboxAttributes: null },
-      { sandboxAttributes: null },
-    ]);
+      
+      await prepareSubframes(browser, [
+        { sandboxAttributes: null },
+        { sandboxAttributes: null },
+      ]);
 
-    
-    
-    
-    await addOuterBeforeUnloadListeners(browser, 3, MIDDLE);
-    await addOuterBeforeUnloadListeners(browser, 1, BOTTOM);
-    assertHasBeforeUnload(browser, true);
-    await navigateSubframe(browser, "http://example.com", MIDDLE);
-    assertHasBeforeUnload(browser, false);
+      
+      
+      
+      await addOuterBeforeUnloadListeners(browser, 3, MIDDLE);
+      await addOuterBeforeUnloadListeners(browser, 1, BOTTOM);
+      assertHasBeforeUnload(browser, true);
+      await navigateSubframe(browser, "http://example.com", MIDDLE);
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    
-    await prepareSubframes(browser, [
-      { sandboxAttributes: null },
-      { sandboxAttributes: null },
-    ]);
-    await addOuterBeforeUnloadListeners(browser, 3, MIDDLE);
-    await addOuterBeforeUnloadListeners(browser, 1, BOTTOM);
-    assertHasBeforeUnload(browser, true);
-    await removeSubframeFrom(browser, BOTTOM);
-    assertHasBeforeUnload(browser, true);
-    await removeSubframeFrom(browser, MIDDLE);
-    assertHasBeforeUnload(browser, false);
+      
+      
+      
+      await prepareSubframes(browser, [
+        { sandboxAttributes: null },
+        { sandboxAttributes: null },
+      ]);
+      await addOuterBeforeUnloadListeners(browser, 3, MIDDLE);
+      await addOuterBeforeUnloadListeners(browser, 1, BOTTOM);
+      assertHasBeforeUnload(browser, true);
+      await removeSubframeFrom(browser, BOTTOM);
+      assertHasBeforeUnload(browser, true);
+      await removeSubframeFrom(browser, MIDDLE);
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    
-    
-    await prepareSubframes(browser, [
-      { sandboxAttributes: null },
-      { sandboxAttributes: null },
-    ]);
-    await addOuterBeforeUnloadListeners(browser, 3, MIDDLE);
-    await addOuterBeforeUnloadListeners(browser, 1, BOTTOM);
-    assertHasBeforeUnload(browser, true);
-    await removeSubframeFrom(browser, TOP);
-    assertHasBeforeUnload(browser, false);
+      
+      
+      
+      
+      await prepareSubframes(browser, [
+        { sandboxAttributes: null },
+        { sandboxAttributes: null },
+      ]);
+      await addOuterBeforeUnloadListeners(browser, 3, MIDDLE);
+      await addOuterBeforeUnloadListeners(browser, 1, BOTTOM);
+      assertHasBeforeUnload(browser, true);
+      await removeSubframeFrom(browser, TOP);
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    
-    
-    
-    
-    await prepareSubframes(browser, [
-      { sandboxAttributes: "allow-same-origin allow-scripts" },
-      { sandboxAttributes: "allow-same-origin allow-scripts" },
-    ]);
+      
+      
+      
+      
+      
+      
+      await prepareSubframes(browser, [
+        { sandboxAttributes: "allow-same-origin allow-scripts" },
+        { sandboxAttributes: "allow-same-origin allow-scripts" },
+      ]);
 
-    await addOuterBeforeUnloadListeners(browser, 3, MIDDLE);
-    await addOuterBeforeUnloadListeners(browser, 1, BOTTOM);
-    assertHasBeforeUnload(browser, false);
+      await addOuterBeforeUnloadListeners(browser, 3, MIDDLE);
+      await addOuterBeforeUnloadListeners(browser, 1, BOTTOM);
+      assertHasBeforeUnload(browser, false);
 
-    await removeOuterBeforeUnloadListeners(browser, 3, MIDDLE);
-    await removeOuterBeforeUnloadListeners(browser, 1, BOTTOM);
-    assertHasBeforeUnload(browser, false);
+      await removeOuterBeforeUnloadListeners(browser, 3, MIDDLE);
+      await removeOuterBeforeUnloadListeners(browser, 1, BOTTOM);
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    
-    
-    
-    await prepareSubframes(browser, [
-      { sandboxAttributes: "allow-same-origin allow-scripts allow-modals" },
-      { sandboxAttributes: "allow-same-origin allow-scripts allow-modals" },
-    ]);
+      
+      
+      
+      
+      
+      await prepareSubframes(browser, [
+        { sandboxAttributes: "allow-same-origin allow-scripts allow-modals" },
+        { sandboxAttributes: "allow-same-origin allow-scripts allow-modals" },
+      ]);
 
-    await addOuterBeforeUnloadListeners(browser, 3, MIDDLE);
-    await addOuterBeforeUnloadListeners(browser, 1, BOTTOM);
-    assertHasBeforeUnload(browser, true);
+      await addOuterBeforeUnloadListeners(browser, 3, MIDDLE);
+      await addOuterBeforeUnloadListeners(browser, 1, BOTTOM);
+      assertHasBeforeUnload(browser, true);
 
-    await removeOuterBeforeUnloadListeners(browser, 1, BOTTOM);
-    assertHasBeforeUnload(browser, true);
-    await removeOuterBeforeUnloadListeners(browser, 3, MIDDLE);
-    assertHasBeforeUnload(browser, false);
-  });
+      await removeOuterBeforeUnloadListeners(browser, 1, BOTTOM);
+      assertHasBeforeUnload(browser, true);
+      await removeOuterBeforeUnloadListeners(browser, 3, MIDDLE);
+      assertHasBeforeUnload(browser, false);
+    }
+  );
 });
 
 
@@ -761,62 +783,67 @@ add_task(async function test_outer_window_scenarios() {
 
 
 add_task(async function test_mixed_inner_and_outer_window_scenarios() {
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: PAGE_URL,
-  }, async function(browser) {
-    Assert.ok(browser.isRemoteBrowser,
-              "This test only makes sense with out of process browsers.");
-    assertHasBeforeUnload(browser, false);
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: PAGE_URL,
+    },
+    async function(browser) {
+      Assert.ok(
+        browser.isRemoteBrowser,
+        "This test only makes sense with out of process browsers."
+      );
+      assertHasBeforeUnload(browser, false);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    await prepareSubframes(browser, [
-      { sandboxAttributes: null },
-      { sandboxAttributes: null },
-    ]);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      await prepareSubframes(browser, [
+        { sandboxAttributes: null },
+        { sandboxAttributes: null },
+      ]);
 
-    
-    
-    
-    const TOP = 0;
-    const MIDDLE = 1;
-    const BOTTOM = 2;
+      
+      
+      
+      const TOP = 0;
+      const MIDDLE = 1;
+      const BOTTOM = 2;
 
-    await addBeforeUnloadListeners(browser, 1, TOP);
-    assertHasBeforeUnload(browser, true);
-    await addBeforeUnloadListeners(browser, 2, MIDDLE);
-    assertHasBeforeUnload(browser, true);
-    await addBeforeUnloadListeners(browser, 5, BOTTOM);
-    assertHasBeforeUnload(browser, true);
+      await addBeforeUnloadListeners(browser, 1, TOP);
+      assertHasBeforeUnload(browser, true);
+      await addBeforeUnloadListeners(browser, 2, MIDDLE);
+      assertHasBeforeUnload(browser, true);
+      await addBeforeUnloadListeners(browser, 5, BOTTOM);
+      assertHasBeforeUnload(browser, true);
 
-    await addOuterBeforeUnloadListeners(browser, 3, MIDDLE);
-    assertHasBeforeUnload(browser, true);
-    await addOuterBeforeUnloadListeners(browser, 7, BOTTOM);
-    assertHasBeforeUnload(browser, true);
+      await addOuterBeforeUnloadListeners(browser, 3, MIDDLE);
+      assertHasBeforeUnload(browser, true);
+      await addOuterBeforeUnloadListeners(browser, 7, BOTTOM);
+      assertHasBeforeUnload(browser, true);
 
-    await removeBeforeUnloadListeners(browser, 5, BOTTOM);
-    assertHasBeforeUnload(browser, true);
+      await removeBeforeUnloadListeners(browser, 5, BOTTOM);
+      assertHasBeforeUnload(browser, true);
 
-    await removeBeforeUnloadListeners(browser, 2, MIDDLE);
-    assertHasBeforeUnload(browser, true);
+      await removeBeforeUnloadListeners(browser, 2, MIDDLE);
+      assertHasBeforeUnload(browser, true);
 
-    await removeOuterBeforeUnloadListeners(browser, 3, MIDDLE);
-    assertHasBeforeUnload(browser, true);
+      await removeOuterBeforeUnloadListeners(browser, 3, MIDDLE);
+      assertHasBeforeUnload(browser, true);
 
-    await removeBeforeUnloadListeners(browser, 1, TOP);
-    assertHasBeforeUnload(browser, true);
+      await removeBeforeUnloadListeners(browser, 1, TOP);
+      assertHasBeforeUnload(browser, true);
 
-    await removeOuterBeforeUnloadListeners(browser, 7, BOTTOM);
-    assertHasBeforeUnload(browser, false);
-  });
+      await removeOuterBeforeUnloadListeners(browser, 7, BOTTOM);
+      assertHasBeforeUnload(browser, false);
+    }
+  );
 });

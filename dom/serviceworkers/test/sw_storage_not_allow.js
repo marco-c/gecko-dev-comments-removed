@@ -1,34 +1,35 @@
 let clientId;
-addEventListener('fetch', function(event) {
-  event.respondWith(async function() {
-    if (event.request.url.includes('getClients')) {
-      
-      try {
-        await self.clients.matchAll();
-      } catch (e) {
+addEventListener("fetch", function(event) {
+  event.respondWith(
+    (async function() {
+      if (event.request.url.includes("getClients")) {
         
-      }
-    } else if (event.request.url.includes('getClient-stage1')) {
-      let clients = await self.clients.matchAll();
-      clientId = clients[0].id;
-    } else if (event.request.url.includes('getClient-stage2')) {
-      
-      try {
-        await self.clients.get(clientId);
-      } catch(e) {
+        try {
+          await self.clients.matchAll();
+        } catch (e) {
+          
+        }
+      } else if (event.request.url.includes("getClient-stage1")) {
+        let clients = await self.clients.matchAll();
+        clientId = clients[0].id;
+      } else if (event.request.url.includes("getClient-stage2")) {
         
+        try {
+          await self.clients.get(clientId);
+        } catch (e) {
+          
+        }
       }
-    }
 
-    
-    
-    return await fetch(event.request);
-  }());
+      
+      
+      return await fetch(event.request);
+    })()
+  );
 });
 
-addEventListener('message', function(event) {
-  if (event.data === 'claim') {
+addEventListener("message", function(event) {
+  if (event.data === "claim") {
     event.waitUntil(clients.claim());
   }
 });
-

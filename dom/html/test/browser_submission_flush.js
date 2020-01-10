@@ -5,13 +5,15 @@
 
 
 
-const kTestPage = "http://example.org/browser/dom/html/test/submission_flush.html";
+const kTestPage =
+  "http://example.org/browser/dom/html/test/submission_flush.html";
 
-const kPostActionPage = "http://example.org/browser/dom/html/test/post_action_page.html";
+const kPostActionPage =
+  "http://example.org/browser/dom/html/test/post_action_page.html";
 
-const kFormId = "test_form"
-const kFrameId = "test_frame"
-const kSubmitButtonId = "submit_button"
+const kFormId = "test_form";
+const kFrameId = "test_frame";
+const kSubmitButtonId = "submit_button";
 
 
 
@@ -22,60 +24,68 @@ async function runTest(aTestActions) {
   registerCleanupFunction(() => BrowserTestUtils.removeTab(tab));
 
   
-  let frame_url = await ContentTask.spawn(gBrowser.selectedBrowser,
-                          {kFormId, kFrameId, kSubmitButtonId, aTestActions},
-                          async function({kFormId, kFrameId, kSubmitButtonId,
-                                          aTestActions}) {
-    let form = content.document.getElementById(kFormId);
+  let frame_url = await ContentTask.spawn(
+    gBrowser.selectedBrowser,
+    { kFormId, kFrameId, kSubmitButtonId, aTestActions },
+    async function({ kFormId, kFrameId, kSubmitButtonId, aTestActions }) {
+      let form = content.document.getElementById(kFormId);
 
-    form.addEventListener("submit", (event) => {
+      form.addEventListener(
+        "submit",
+        event => {
+          
+          
+          
+          
+          form.submit();
+
+          if (aTestActions.setattr) {
+            for (let { attr, value } of aTestActions.setattr) {
+              form.setAttribute(attr, value);
+            }
+          }
+          if (aTestActions.unsetattr) {
+            for (let attr of aTestActions.unsetattr) {
+              form.removeAttribute(attr);
+            }
+          }
+        },
+        { capture: true, once: true }
+      );
+
+      
+      content.document.getElementById(kSubmitButtonId).click();
+
       
       
-      
-      
-      form.submit();
-
-      if (aTestActions.setattr) {
-        for (let {attr, value} of aTestActions.setattr) {
-          form.setAttribute(attr, value);
-        }
-      }
-      if (aTestActions.unsetattr) {
-        for (let attr of aTestActions.unsetattr) {
-          form.removeAttribute(attr);
-        }
-      }
-    }, {capture: true, once: true});
-
-    
-    content.document.getElementById(kSubmitButtonId).click();
-
-    
-    
-    let frame = content.document.getElementById(kFrameId);
-    await new Promise(resolve => {
-      frame.addEventListener("load", resolve, {once: true});
-    });
-    return frame.contentWindow.location.href;
-  });
+      let frame = content.document.getElementById(kFrameId);
+      await new Promise(resolve => {
+        frame.addEventListener("load", resolve, { once: true });
+      });
+      return frame.contentWindow.location.href;
+    }
+  );
   
-  is(frame_url, kPostActionPage,
-     "Form should have submitted with correct target and action");
+  is(
+    frame_url,
+    kPostActionPage,
+    "Form should have submitted with correct target and action"
+  );
 }
 
 add_task(async function() {
   info("Changing action should flush pending submissions");
-  await runTest({setattr: [{attr: "action", value: "about:blank"}]});
+  await runTest({ setattr: [{ attr: "action", value: "about:blank" }] });
 });
 
 add_task(async function() {
   info("Changing target should flush pending submissions");
-  await runTest({setattr: [{attr: "target", value: "_blank"}]});
+  await runTest({ setattr: [{ attr: "target", value: "_blank" }] });
 });
 
 add_task(async function() {
   info("Unsetting action should flush pending submissions");
-  await runTest({unsetattr: ["action"]});
+  await runTest({ unsetattr: ["action"] });
 });
 
 
@@ -83,5 +93,5 @@ add_task(async function() {
 
 add_task(async function() {
   info("Unsetting target should flush pending submissions");
-  await runTest({unsetattr: ["target"]});
+  await runTest({ unsetattr: ["target"] });
 });

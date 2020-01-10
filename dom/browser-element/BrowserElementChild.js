@@ -7,7 +7,7 @@
 
 "use strict";
 
-var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function debug(msg) {
   
@@ -22,7 +22,9 @@ function parentDocShell(docshell) {
     return null;
   }
   let treeitem = docshell.QueryInterface(Ci.nsIDocShellTreeItem);
-  return treeitem.parent ? treeitem.parent.QueryInterface(Ci.nsIDocShell) : null;
+  return treeitem.parent
+    ? treeitem.parent.QueryInterface(Ci.nsIDocShell)
+    : null;
 }
 
 function isTopBrowserElement(docShell) {
@@ -44,14 +46,23 @@ if (!BrowserElementIsReady) {
     if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
       
       if (isTopBrowserElement(docShell)) {
-        Services.scriptloader.loadSubScript("chrome://global/content/BrowserElementCopyPaste.js", this);
+        Services.scriptloader.loadSubScript(
+          "chrome://global/content/BrowserElementCopyPaste.js",
+          this
+        );
       }
     } else {
       
-      Services.scriptloader.loadSubScript("chrome://global/content/BrowserElementCopyPaste.js", this);
+      Services.scriptloader.loadSubScript(
+        "chrome://global/content/BrowserElementCopyPaste.js",
+        this
+      );
     }
 
-    Services.scriptloader.loadSubScript("chrome://global/content/BrowserElementChildPreload.js", this);
+    Services.scriptloader.loadSubScript(
+      "chrome://global/content/BrowserElementChildPreload.js",
+      this
+    );
   }
 
   function onDestroy() {
@@ -73,4 +84,4 @@ if (!BrowserElementIsReady) {
   debug("BE already loaded, abort");
 }
 
-sendAsyncMessage("browser-element-api:call", { "msg_name": "hello" });
+sendAsyncMessage("browser-element-api:call", { msg_name: "hello" });

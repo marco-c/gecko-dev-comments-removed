@@ -5,14 +5,14 @@ function callByScript() {
 
 
 
-importScripts('lorem_script.js', 'importscript.sjs');
+importScripts("lorem_script.js", "importscript.sjs");
 
-importScripts('importscript.sjs');
+importScripts("importscript.sjs");
 
 var missingScriptFailed = false;
 try {
-  importScripts(['there-is-nothing-here.js']);
-} catch(e) {
+  importScripts(["there-is-nothing-here.js"]);
+} catch (e) {
   missingScriptFailed = true;
 }
 
@@ -28,15 +28,15 @@ onmessage = function(e) {
 
     try {
       
-      importScripts(['importscript.sjs?unique=true']);
+      importScripts(["importscript.sjs?unique=true"]);
       res[0].postMessage("KO");
       return;
-    } catch(ex) {}
+    } catch (ex) {}
 
     try {
       
-      importScripts(['importscript.sjs']);
-    } catch(ex) {
+      importScripts(["importscript.sjs"]);
+    } catch (ex) {
       res[0].postMessage("KO");
       return;
     }

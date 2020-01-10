@@ -5,8 +5,9 @@ const CONTENT_CREATED = "ipc:content-created";
 
 
 async function spawnNewAndTest(recur, pids) {
-  await BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank", forceNewProcess: true },
-                                    async function(browser) {
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:blank", forceNewProcess: true },
+    async function(browser) {
       
       let newPid = browser.frameLoader.remoteTab.osPid;
       ok(!pids.has(newPid), "new tab is in its own process: " + recur);
@@ -20,14 +21,18 @@ async function spawnNewAndTest(recur, pids) {
         };
         Services.obs.addObserver(observer, CONTENT_CREATED);
 
-        await BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" }, function() {
-          
-          
-          
-          Services.obs.removeObserver(observer, CONTENT_CREATED);
-        });
+        await BrowserTestUtils.withNewTab(
+          { gBrowser, url: "about:blank" },
+          function() {
+            
+            
+            
+            Services.obs.removeObserver(observer, CONTENT_CREATED);
+          }
+        );
       }
-  });
+    }
+  );
 }
 
 add_task(async function test() {
@@ -36,5 +41,5 @@ add_task(async function test() {
 
   
   
-  await spawnNewAndTest(Math.max(maxCount + 1, 5), new Set([ curPid ]));
+  await spawnNewAndTest(Math.max(maxCount + 1, 5), new Set([curPid]));
 });

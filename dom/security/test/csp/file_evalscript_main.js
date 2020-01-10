@@ -1,9 +1,14 @@
 
 
 function logResult(str, passed) {
-  var elt = document.createElement('div');
+  var elt = document.createElement("div");
   var color = passed ? "#cfc;" : "#fcc";
-  elt.setAttribute('style', 'background-color:' + color + '; width:100%; border:1px solid black; padding:3px; margin:4px;');
+  elt.setAttribute(
+    "style",
+    "background-color:" +
+      color +
+      "; width:100%; border:1px solid black; padding:3px; margin:4px;"
+  );
   elt.innerHTML = str;
   document.body.appendChild(elt);
 }
@@ -13,142 +18,206 @@ window._testResults = {};
 
 var verifyZeroRetVal = (function(window) {
   return function(val, details) {
-    logResult((val === 0 ? "PASS: " : "FAIL: ") + "Blocked interval/timeout should have zero return value; " + details, val === 0);
+    logResult(
+      (val === 0 ? "PASS: " : "FAIL: ") +
+        "Blocked interval/timeout should have zero return value; " +
+        details,
+      val === 0
+    );
     window.parent.verifyZeroRetVal(val, details);
-  };})(window);
+  };
+})(window);
 
 
 var onevalexecuted = (function(window) {
-    return function(shouldrun, what, data) {
-      window._testResults[what] = "ran";
-      window.parent.scriptRan(shouldrun, what, data);
-      logResult((shouldrun ? "PASS: " : "FAIL: ") + what + " : " + data, shouldrun);
-    };})(window);
+  return function(shouldrun, what, data) {
+    window._testResults[what] = "ran";
+    window.parent.scriptRan(shouldrun, what, data);
+    logResult(
+      (shouldrun ? "PASS: " : "FAIL: ") + what + " : " + data,
+      shouldrun
+    );
+  };
+})(window);
 
 
 var onevalblocked = (function(window) {
-    return function(shouldrun, what, data) {
-      window._testResults[what] = "blocked";
-      window.parent.scriptBlocked(shouldrun, what, data);
-      logResult((shouldrun ? "FAIL: " : "PASS: ") + what + " : " + data, !shouldrun);
-    };})(window);
+  return function(shouldrun, what, data) {
+    window._testResults[what] = "blocked";
+    window.parent.scriptBlocked(shouldrun, what, data);
+    logResult(
+      (shouldrun ? "FAIL: " : "PASS: ") + what + " : " + data,
+      !shouldrun
+    );
+  };
+})(window);
 
 
 
-
-addEventListener('load', function() {
-  
-  
-  {
-    var str_setTimeoutWithStringRan = 'onevalexecuted(false, "setTimeout(String)", "setTimeout with a string was enabled.");';
-    function fcn_setTimeoutWithStringCheck() {
-      if (this._testResults["setTimeout(String)"] !== "ran") {
-        onevalblocked(false, "setTimeout(String)",
-                      "setTimeout with a string was blocked");
-      }
-    }
-    setTimeout(fcn_setTimeoutWithStringCheck.bind(window), 10);
-    var res = setTimeout(str_setTimeoutWithStringRan, 10);
-    verifyZeroRetVal(res, "setTimeout(String)");
-  }
-
-  
-  
-  {
-    var str_setIntervalWithStringRan = 'onevalexecuted(false, "setInterval(String)", "setInterval with a string was enabled.");';
-    function fcn_setIntervalWithStringCheck() {
-      if (this._testResults["setInterval(String)"] !== "ran") {
-        onevalblocked(false, "setInterval(String)",
-                      "setInterval with a string was blocked");
-      }
-    }
-    setTimeout(fcn_setIntervalWithStringCheck.bind(window), 10);
-    var res = setInterval(str_setIntervalWithStringRan, 10);
-    verifyZeroRetVal(res, "setInterval(String)");
-
-    
-    if (res != 0) {
-      setTimeout(function () { clearInterval(res); }, 15);
-    }
-  }
-
-  
-  
-  {
-    function fcn_setTimeoutWithFunctionRan() {
-      onevalexecuted(true, "setTimeout(function)",
-                    "setTimeout with a function was enabled.")
-    }
-    function fcn_setTimeoutWithFunctionCheck() {
-      if (this._testResults["setTimeout(function)"] !== "ran") {
-        onevalblocked(true, "setTimeout(function)",
-                      "setTimeout with a function was blocked");
-      }
-    }
-    setTimeout(fcn_setTimeoutWithFunctionRan.bind(window), 10);
-    setTimeout(fcn_setTimeoutWithFunctionCheck.bind(window), 10);
-  }
-
-  
-  try {
-    eval('onevalexecuted(false, "eval(String)", "eval() was enabled.");');
-  } catch (e) {
-    onevalblocked(false, "eval(String)",
-                  "eval() was blocked");
-  }
-
-  
-  try {
-    eval('onevalexecuted(false, "eval(String,scope)", "eval() was enabled.");',1);
-  } catch (e) {
-    onevalblocked(false, "eval(String,object)",
-                  "eval() with scope was blocked");
-  }
-
-  
-  try {
-    ['onevalexecuted(false, "[String, obj].sort(eval)", "eval() was enabled.");',1].sort(eval);
-  } catch (e) {
-    onevalblocked(false, "[String, obj].sort(eval)",
-                  "eval() with scope via sort was blocked");
-  }
-
-  
-  try {
-    [].sort.call(['onevalexecuted(false, "[String, obj].sort(eval)", "eval() was enabled.");',1], eval);
-  } catch (e) {
-    onevalblocked(false, "[].sort.call([String, obj], eval)",
-                  "eval() with scope via sort/call was blocked");
-  }
-
-  
-  try {
-    var fcn = new Function('onevalexecuted(false, "new Function(String)", "new Function(String) was enabled.");');
-    fcn();
-  } catch (e) {
-    onevalblocked(false, "new Function(String)",
-                  "new Function(String) was blocked.");
-  }
-
-  
-  {
+addEventListener(
+  "load",
+  function() {
     
     
-    var worked = false;
+    {
+      var str_setTimeoutWithStringRan =
+        'onevalexecuted(false, "setTimeout(String)", "setTimeout with a string was enabled.");';
+      function fcn_setTimeoutWithStringCheck() {
+        if (this._testResults["setTimeout(String)"] !== "ran") {
+          onevalblocked(
+            false,
+            "setTimeout(String)",
+            "setTimeout with a string was blocked"
+          );
+        }
+      }
+      setTimeout(fcn_setTimeoutWithStringCheck.bind(window), 10);
+      var res = setTimeout(str_setTimeoutWithStringRan, 10);
+      verifyZeroRetVal(res, "setTimeout(String)");
+    }
 
-    setTimeout(eval, 0, 'worked = true');
-    setTimeout(function(worked) {
-                  if (worked) {
-                    onevalexecuted(false, "setTimeout(eval, 0, str)",
-                                    "setTimeout(eval, 0, string) was enabled.");
-                  } else {
-                    onevalblocked(false, "setTimeout(eval, 0, str)",
-                                        "setTimeout(eval, 0, str) was blocked.");
-                  }
-                }, 0, worked);
-  }
+    
+    
+    {
+      var str_setIntervalWithStringRan =
+        'onevalexecuted(false, "setInterval(String)", "setInterval with a string was enabled.");';
+      function fcn_setIntervalWithStringCheck() {
+        if (this._testResults["setInterval(String)"] !== "ran") {
+          onevalblocked(
+            false,
+            "setInterval(String)",
+            "setInterval with a string was blocked"
+          );
+        }
+      }
+      setTimeout(fcn_setIntervalWithStringCheck.bind(window), 10);
+      var res = setInterval(str_setIntervalWithStringRan, 10);
+      verifyZeroRetVal(res, "setInterval(String)");
 
-}, false);
+      
+      if (res != 0) {
+        setTimeout(function() {
+          clearInterval(res);
+        }, 15);
+      }
+    }
 
+    
+    
+    {
+      function fcn_setTimeoutWithFunctionRan() {
+        onevalexecuted(
+          true,
+          "setTimeout(function)",
+          "setTimeout with a function was enabled."
+        );
+      }
+      function fcn_setTimeoutWithFunctionCheck() {
+        if (this._testResults["setTimeout(function)"] !== "ran") {
+          onevalblocked(
+            true,
+            "setTimeout(function)",
+            "setTimeout with a function was blocked"
+          );
+        }
+      }
+      setTimeout(fcn_setTimeoutWithFunctionRan.bind(window), 10);
+      setTimeout(fcn_setTimeoutWithFunctionCheck.bind(window), 10);
+    }
 
+    
+    try {
+      eval('onevalexecuted(false, "eval(String)", "eval() was enabled.");');
+    } catch (e) {
+      onevalblocked(false, "eval(String)", "eval() was blocked");
+    }
 
+    
+    try {
+      eval(
+        'onevalexecuted(false, "eval(String,scope)", "eval() was enabled.");',
+        1
+      );
+    } catch (e) {
+      onevalblocked(
+        false,
+        "eval(String,object)",
+        "eval() with scope was blocked"
+      );
+    }
+
+    
+    try {
+      [
+        'onevalexecuted(false, "[String, obj].sort(eval)", "eval() was enabled.");',
+        1,
+      ].sort(eval);
+    } catch (e) {
+      onevalblocked(
+        false,
+        "[String, obj].sort(eval)",
+        "eval() with scope via sort was blocked"
+      );
+    }
+
+    
+    try {
+      [].sort.call(
+        [
+          'onevalexecuted(false, "[String, obj].sort(eval)", "eval() was enabled.");',
+          1,
+        ],
+        eval
+      );
+    } catch (e) {
+      onevalblocked(
+        false,
+        "[].sort.call([String, obj], eval)",
+        "eval() with scope via sort/call was blocked"
+      );
+    }
+
+    
+    try {
+      var fcn = new Function(
+        'onevalexecuted(false, "new Function(String)", "new Function(String) was enabled.");'
+      );
+      fcn();
+    } catch (e) {
+      onevalblocked(
+        false,
+        "new Function(String)",
+        "new Function(String) was blocked."
+      );
+    }
+
+    
+    {
+      
+      
+      var worked = false;
+
+      setTimeout(eval, 0, "worked = true");
+      setTimeout(
+        function(worked) {
+          if (worked) {
+            onevalexecuted(
+              false,
+              "setTimeout(eval, 0, str)",
+              "setTimeout(eval, 0, string) was enabled."
+            );
+          } else {
+            onevalblocked(
+              false,
+              "setTimeout(eval, 0, str)",
+              "setTimeout(eval, 0, str) was blocked."
+            );
+          }
+        },
+        0,
+        worked
+      );
+    }
+  },
+  false
+);

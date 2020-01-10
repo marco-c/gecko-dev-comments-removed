@@ -54,16 +54,20 @@ function getToolbarsFromWindowChrome(win) {
 
 
 function testDefaultToolbars(toolbars) {
-  ok(toolbars.locationbar,
-     "locationbar should be visible on default window.open()");
-  ok(toolbars.menubar,
-     "menubar be visible on default window.open()");
-  ok(toolbars.personalbar,
-     "personalbar should be visible on default window.open()");
-  ok(toolbars.statusbar,
-     "statusbar should be visible on default window.open()");
-  ok(toolbars.toolbar,
-     "toolbar should be visible on default window.open()");
+  ok(
+    toolbars.locationbar,
+    "locationbar should be visible on default window.open()"
+  );
+  ok(toolbars.menubar, "menubar be visible on default window.open()");
+  ok(
+    toolbars.personalbar,
+    "personalbar should be visible on default window.open()"
+  );
+  ok(
+    toolbars.statusbar,
+    "statusbar should be visible on default window.open()"
+  );
+  ok(toolbars.toolbar, "toolbar should be visible on default window.open()");
 }
 
 
@@ -77,17 +81,18 @@ function testDefaultToolbars(toolbars) {
 
 function testNonDefaultContentToolbars(toolbars) {
   
-  ok(toolbars.locationbar,
-     "locationbar should be visible even with location=no");
-  ok(!toolbars.menubar,
-     "menubar shouldn't be visible when menubar=no");
-  ok(!toolbars.personalbar,
-     "personalbar shouldn't be visible when personalbar=no");
+  ok(
+    toolbars.locationbar,
+    "locationbar should be visible even with location=no"
+  );
+  ok(!toolbars.menubar, "menubar shouldn't be visible when menubar=no");
+  ok(
+    !toolbars.personalbar,
+    "personalbar shouldn't be visible when personalbar=no"
+  );
   
-  todo(!toolbars.statusbar,
-       "statusbar shouldn't be visible when status=no");
-  ok(!toolbars.toolbar,
-     "toolbar shouldn't be visible when toolbar=no");
+  todo(!toolbars.statusbar, "statusbar shouldn't be visible when status=no");
+  ok(!toolbars.toolbar, "toolbar shouldn't be visible when toolbar=no");
 }
 
 
@@ -99,16 +104,17 @@ function testNonDefaultContentToolbars(toolbars) {
 
 function testNonDefaultChromeToolbars(toolbars) {
   
-  ok(!toolbars.locationbar,
-     "locationbar should not be visible with location=no");
-  ok(!toolbars.menubar,
-     "menubar should not be visible with menubar=no");
-  ok(!toolbars.personalbar,
-     "personalbar should not be visible with personalbar=no");
-  ok(!toolbars.statusbar,
-     "statusbar should not be visible with status=no");
-  ok(!toolbars.toolbar,
-     "toolbar should not be visible with toolbar=no");
+  ok(
+    !toolbars.locationbar,
+    "locationbar should not be visible with location=no"
+  );
+  ok(!toolbars.menubar, "menubar should not be visible with menubar=no");
+  ok(
+    !toolbars.personalbar,
+    "personalbar should not be visible with personalbar=no"
+  );
+  ok(!toolbars.statusbar, "statusbar should not be visible with status=no");
+  ok(!toolbars.toolbar, "toolbar should not be visible with toolbar=no");
 }
 
 
@@ -121,40 +127,53 @@ function testNonDefaultChromeToolbars(toolbars) {
 
 
 add_task(async function() {
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: CONTENT_PAGE,
-  }, async function(browser) {
-    
-    let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
-    await BrowserTestUtils.synthesizeMouseAtCenter("#winOpenDefault", {}, browser);
-    let tab = await newTabPromise;
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: CONTENT_PAGE,
+    },
+    async function(browser) {
+      
+      let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
+      await BrowserTestUtils.synthesizeMouseAtCenter(
+        "#winOpenDefault",
+        {},
+        browser
+      );
+      let tab = await newTabPromise;
 
-    
-    let toolbars = await getToolbarsFromBrowserContent(gBrowser.selectedBrowser);
-    testDefaultToolbars(toolbars);
+      
+      let toolbars = await getToolbarsFromBrowserContent(
+        gBrowser.selectedBrowser
+      );
+      testDefaultToolbars(toolbars);
 
-    
-    BrowserTestUtils.removeTab(tab);
+      
+      BrowserTestUtils.removeTab(tab);
 
-    
-    let winPromise = BrowserTestUtils.waitForNewWindow({url: TARGET_PAGE});
-    await BrowserTestUtils.synthesizeMouseAtCenter("#winOpenNonDefault", {}, browser);
-    let popupWindow = await winPromise;
+      
+      let winPromise = BrowserTestUtils.waitForNewWindow({ url: TARGET_PAGE });
+      await BrowserTestUtils.synthesizeMouseAtCenter(
+        "#winOpenNonDefault",
+        {},
+        browser
+      );
+      let popupWindow = await winPromise;
 
-    let popupBrowser = popupWindow.gBrowser.selectedBrowser;
+      let popupBrowser = popupWindow.gBrowser.selectedBrowser;
 
-    
-    let popupToolbars = await getToolbarsFromBrowserContent(popupBrowser);
-    testNonDefaultContentToolbars(popupToolbars);
+      
+      let popupToolbars = await getToolbarsFromBrowserContent(popupBrowser);
+      testNonDefaultContentToolbars(popupToolbars);
 
-    
-    let chromeToolbars = getToolbarsFromWindowChrome(popupWindow);
-    testNonDefaultContentToolbars(chromeToolbars);
+      
+      let chromeToolbars = getToolbarsFromWindowChrome(popupWindow);
+      testNonDefaultContentToolbars(chromeToolbars);
 
-    
-    await BrowserTestUtils.closeWindow(popupWindow);
-  });
+      
+      await BrowserTestUtils.closeWindow(popupWindow);
+    }
+  );
 });
 
 
@@ -165,27 +184,34 @@ add_task(async function() {
 
 
 add_task(async function() {
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: CONTENT_PAGE,
-  }, async function(browser) {
-    
-    let winPromise = BrowserTestUtils.waitForNewWindow();
-    await BrowserTestUtils.synthesizeMouseAtCenter("#winOpenNoURLNonDefault", {}, browser);
-    let popupWindow = await winPromise;
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: CONTENT_PAGE,
+    },
+    async function(browser) {
+      
+      let winPromise = BrowserTestUtils.waitForNewWindow();
+      await BrowserTestUtils.synthesizeMouseAtCenter(
+        "#winOpenNoURLNonDefault",
+        {},
+        browser
+      );
+      let popupWindow = await winPromise;
 
-    
-    let popupBrowser = popupWindow.gBrowser.selectedBrowser;
-    let popupToolbars = await getToolbarsFromBrowserContent(popupBrowser);
-    testNonDefaultContentToolbars(popupToolbars);
+      
+      let popupBrowser = popupWindow.gBrowser.selectedBrowser;
+      let popupToolbars = await getToolbarsFromBrowserContent(popupBrowser);
+      testNonDefaultContentToolbars(popupToolbars);
 
-    
-    let chromeToolbars = getToolbarsFromWindowChrome(popupWindow);
-    testNonDefaultContentToolbars(chromeToolbars);
+      
+      let chromeToolbars = getToolbarsFromWindowChrome(popupWindow);
+      testNonDefaultContentToolbars(chromeToolbars);
 
-    
-    await BrowserTestUtils.closeWindow(popupWindow);
-  });
+      
+      await BrowserTestUtils.closeWindow(popupWindow);
+    }
+  );
 });
 
 
@@ -199,7 +225,9 @@ add_task(async function() {
 
 add_task(async function() {
   
-  let defaultWindowPromise = BrowserTestUtils.waitForNewWindow({url: TARGET_PAGE});
+  let defaultWindowPromise = BrowserTestUtils.waitForNewWindow({
+    url: TARGET_PAGE,
+  });
   window.open(TARGET_PAGE, "_blank");
   let defaultWindow = await defaultWindowPromise;
 
@@ -208,8 +236,11 @@ add_task(async function() {
   testDefaultToolbars(toolbars);
 
   
-  let features = "location=no, personalbar=no, toolbar=no, scrollbars=no, menubar=no, status=no";
-  let popupWindowPromise = BrowserTestUtils.waitForNewWindow({url: TARGET_PAGE});
+  let features =
+    "location=no, personalbar=no, toolbar=no, scrollbars=no, menubar=no, status=no";
+  let popupWindowPromise = BrowserTestUtils.waitForNewWindow({
+    url: TARGET_PAGE,
+  });
   window.open(TARGET_PAGE, "_blank", features);
   let popupWindow = await popupWindowPromise;
 

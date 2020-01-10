@@ -13,33 +13,33 @@ const framePath = "/tests/dom/tests/mochitest/storageevent/";
 
 window.addEventListener("message", onMessageReceived);
 
-function onMessageReceived(event)
-{
-
-  switch (event.data)
-  {
+function onMessageReceived(event) {
+  switch (event.data) {
     
     case "frame loaded":
-      if (--frameLoadsPending)
+      if (--frameLoadsPending) {
         break;
+      }
 
-      
+    
 
     
     case "perf":
-      if (callMasterFrame)
+      if (callMasterFrame) {
         masterFrame.postMessage("step", "*");
-      else if (slaveFrame)
+      } else if (slaveFrame) {
         slaveFrame.postMessage("step", "*");
-      else if (masterFrame.slaveFrame)
+      } else if (masterFrame.slaveFrame) {
         masterFrame.slaveFrame.postMessage("step", "*");
+      }
       callMasterFrame = !callMasterFrame;
       break;
 
     
     case "done":
-      if (testDone)
+      if (testDone) {
         break;
+      }
 
       testDone = true;
       SimpleTest.finish();
@@ -47,13 +47,15 @@ function onMessageReceived(event)
 
     
     default:
-      if (typeof event.data == "undefined")
-        break; 
-               
-      if (event.data.match(todoRegExp))
+      if (typeof event.data == "undefined") {
+        break;
+      } 
+      
+      if (event.data.match(todoRegExp)) {
         SimpleTest.todo(false, event.data);
-      else
+      } else {
         SimpleTest.ok(!event.data.match(failureRegExp), event.data);
+      }
       break;
   }
 }

@@ -3,16 +3,15 @@
 
 
 
-
 var testGenerator = testSteps();
 
 function* testSteps() {
-  const dbName = this.window ?
-                 window.location.pathname :
-                 "test_transaction_duplicate_store_names";
+  const dbName = this.window
+    ? window.location.pathname
+    : "test_transaction_duplicate_store_names";
   const dbVersion = 1;
   const objectStoreName = "foo";
-  const data = { };
+  const data = {};
   const dataKey = 1;
 
   let request = indexedDB.open(dbName, dbVersion);
@@ -30,7 +29,10 @@ function* testSteps() {
 
   db = event.target.result;
 
-  let transaction = db.transaction([objectStoreName, objectStoreName], "readwrite");
+  let transaction = db.transaction(
+    [objectStoreName, objectStoreName],
+    "readwrite"
+  );
   transaction.onerror = errorHandler;
   transaction.oncomplete = grabEventAndContinueHandler;
 

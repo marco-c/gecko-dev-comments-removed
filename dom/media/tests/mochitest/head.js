@@ -24,7 +24,9 @@ function updateConfigFromFakeAndLoopbackPrefs() {
     dump("TEST DEVICES: Got loopback audio: " + audioDevice + "\n");
   } else {
     WANT_FAKE_AUDIO = true;
-    dump("TEST DEVICES: No test device found in media.audio_loopback_dev, using fake audio streams.\n");
+    dump(
+      "TEST DEVICES: No test device found in media.audio_loopback_dev, using fake audio streams.\n"
+    );
   }
   let videoDevice = SpecialPowers.getCharPref("media.video_loopback_dev", "");
   if (videoDevice) {
@@ -32,7 +34,9 @@ function updateConfigFromFakeAndLoopbackPrefs() {
     dump("TEST DEVICES: Got loopback video: " + videoDevice + "\n");
   } else {
     WANT_FAKE_VIDEO = true;
-    dump("TEST DEVICES: No test device found in media.video_loopback_dev, using fake video streams.\n");
+    dump(
+      "TEST DEVICES: No test device found in media.video_loopback_dev, using fake video streams.\n"
+    );
   }
 }
 
@@ -104,7 +108,9 @@ function AudioStreamAnalyser(ac, stream) {
   this.analyser.smoothingTimeConstant = 0.2;
   this.analyser.fftSize = 1024;
   this.connectTrack = t => {
-    let source = this.audioContext.createMediaStreamSource(new MediaStream([t]));
+    let source = this.audioContext.createMediaStreamSource(
+      new MediaStream([t])
+    );
     this.sourceNodes.push(source);
     source.connect(this.analyser);
   };
@@ -130,7 +136,7 @@ AudioStreamAnalyser.prototype = {
 
 
   enableDebugCanvas: function() {
-    var cvs = this.debugCanvas = document.createElement("canvas");
+    var cvs = (this.debugCanvas = document.createElement("canvas"));
     const content = document.getElementById("content");
     content.insertBefore(cvs, content.children[0]);
 
@@ -139,15 +145,15 @@ AudioStreamAnalyser.prototype = {
     cvs.height = 128;
     cvs.style.border = "1px solid red";
 
-    var c = cvs.getContext('2d');
-    c.fillStyle = 'black';
+    var c = cvs.getContext("2d");
+    c.fillStyle = "black";
 
     var self = this;
     function render() {
       c.clearRect(0, 0, cvs.width, cvs.height);
       var array = self.getByteFrequencyData();
       for (var i = 0; i < array.length; i++) {
-        c.fillRect(i, (cvs.height - (array[i] / 2)), 1, cvs.height);
+        c.fillRect(i, cvs.height - array[i] / 2, 1, cvs.height);
       }
       if (!cvs.stopDrawing) {
         requestAnimationFrame(render);
@@ -192,10 +198,12 @@ AudioStreamAnalyser.prototype = {
 
 
 
-  waitForAnalysisSuccess: async function(analysisFunction,
-                                         cancel = wait(60000, new Error("Audio analysis timed out"))) {
+  waitForAnalysisSuccess: async function(
+    analysisFunction,
+    cancel = wait(60000, new Error("Audio analysis timed out"))
+  ) {
     let aborted = false;
-    cancel.then(() => aborted = true);
+    cancel.then(() => (aborted = true));
 
     
     await wait(200);
@@ -205,8 +213,7 @@ AudioStreamAnalyser.prototype = {
       if (aborted) {
         throw await cancel;
       }
-    }
-    while (!analysisFunction(this.getByteFrequencyData()));
+    } while (!analysisFunction(this.getByteFrequencyData()));
   },
 
   
@@ -217,9 +224,12 @@ AudioStreamAnalyser.prototype = {
 
 
   binIndexForFrequency: function(frequency) {
-    return 1 + Math.round(frequency *
-                          this.analyser.fftSize /
-                          this.audioContext.sampleRate);
+    return (
+      1 +
+      Math.round(
+        (frequency * this.analyser.fftSize) / this.audioContext.sampleRate
+      )
+    );
   },
 
   
@@ -229,10 +239,8 @@ AudioStreamAnalyser.prototype = {
 
 
   frequencyForBinIndex: function(index) {
-    return (index - 1) *
-           this.audioContext.sampleRate /
-           this.analyser.fftSize;
-  }
+    return ((index - 1) * this.audioContext.sampleRate) / this.analyser.fftSize;
+  },
 };
 
 
@@ -268,35 +276,38 @@ function createOscillatorStream(ac, frequency) {
 
 
 function realCreateHTML(meta) {
-  var test = document.getElementById('test');
+  var test = document.getElementById("test");
 
   
-  var elem = document.createElement('meta');
-  elem.setAttribute('charset', 'utf-8');
+  var elem = document.createElement("meta");
+  elem.setAttribute("charset", "utf-8");
   document.head.appendChild(elem);
 
-  var title = document.createElement('title');
+  var title = document.createElement("title");
   title.textContent = meta.title;
   document.head.appendChild(title);
 
   
-  var anchor = document.createElement('a');
+  var anchor = document.createElement("a");
   anchor.textContent = meta.title;
   if (meta.bug) {
-    anchor.setAttribute('href', 'https://bugzilla.mozilla.org/show_bug.cgi?id=' + meta.bug);
+    anchor.setAttribute(
+      "href",
+      "https://bugzilla.mozilla.org/show_bug.cgi?id=" + meta.bug
+    );
   } else {
-    anchor.setAttribute('target', '_blank');
+    anchor.setAttribute("target", "_blank");
   }
 
   document.body.insertBefore(anchor, test);
 
-  var display = document.createElement('p');
-  display.setAttribute('id', 'display');
+  var display = document.createElement("p");
+  display.setAttribute("id", "display");
   document.body.insertBefore(display, test);
 
-  var content = document.createElement('div');
-  content.setAttribute('id', 'content');
-  content.style.display = meta.visible ? 'block' : "none";
+  var content = document.createElement("div");
+  content.setAttribute("id", "content");
+  content.style.display = meta.visible ? "block" : "none";
   document.body.appendChild(content);
 }
 
@@ -311,14 +322,14 @@ function realCreateHTML(meta) {
 
 function createMediaElement(type, id) {
   const element = document.createElement(type);
-  element.setAttribute('id', id);
-  element.setAttribute('height', 100);
-  element.setAttribute('width', 150);
-  element.setAttribute('controls', 'controls');
-  element.setAttribute('autoplay', 'autoplay');
-  element.setAttribute('muted', 'muted');
+  element.setAttribute("id", id);
+  element.setAttribute("height", 100);
+  element.setAttribute("width", 150);
+  element.setAttribute("controls", "controls");
+  element.setAttribute("autoplay", "autoplay");
+  element.setAttribute("muted", "muted");
   element.muted = true;
-  document.getElementById('content').appendChild(element);
+  document.getElementById("content").appendChild(element);
 
   return element;
 }
@@ -333,7 +344,7 @@ function createMediaElement(type, id) {
 
 
 function getMediaElementForTrack(track, idPrefix) {
-  return document.getElementById(idPrefix + '_' + track.id);
+  return document.getElementById(idPrefix + "_" + track.id);
 }
 
 
@@ -347,7 +358,7 @@ function getMediaElementForTrack(track, idPrefix) {
 
 
 function createMediaElementForTrack(track, idPrefix) {
-  const id = idPrefix + '_' + track.id;
+  const id = idPrefix + "_" + track.id;
   const element = createMediaElement(track.kind, id);
   element.srcObject = new MediaStream([track]);
 
@@ -361,42 +372,50 @@ function createMediaElementForTrack(track, idPrefix) {
 
 
 
-
 function getUserMedia(constraints) {
   
   updateConfigFromFakeAndLoopbackPrefs();
-  if (!WANT_FAKE_AUDIO
-      && !constraints.fake
-      && constraints.audio
-      && !DISABLE_LOOPBACK_TONE) {
+  if (
+    !WANT_FAKE_AUDIO &&
+    !constraints.fake &&
+    constraints.audio &&
+    !DISABLE_LOOPBACK_TONE
+  ) {
     
     if (!DefaultLoopbackTone) {
       TEST_AUDIO_FREQ = 440;
-      DefaultLoopbackTone = new LoopbackTone(new AudioContext, TEST_AUDIO_FREQ);
+      DefaultLoopbackTone = new LoopbackTone(
+        new AudioContext(),
+        TEST_AUDIO_FREQ
+      );
       DefaultLoopbackTone.start();
     }
     
     
-    constraints.audio = Object.assign({}, {autoGainControl: false}
-                                        , {echoCancellation: false}
-                                        , {noiseSuppression: false}
-                                        , constraints.audio);
+    constraints.audio = Object.assign(
+      {},
+      { autoGainControl: false },
+      { echoCancellation: false },
+      { noiseSuppression: false },
+      constraints.audio
+    );
   } else {
     
     TEST_AUDIO_FREQ = 1000;
   }
   info("Call getUserMedia for " + JSON.stringify(constraints));
-  return navigator.mediaDevices.getUserMedia(constraints)
+  return navigator.mediaDevices
+    .getUserMedia(constraints)
     .then(stream => (checkMediaStreamTracks(constraints, stream), stream));
 }
 
 
 
 var setTestOptions;
-var testConfigured = new Promise(r => setTestOptions = r);
+var testConfigured = new Promise(r => (setTestOptions = r));
 
 function pushPrefs(...p) {
-  return SpecialPowers.pushPrefEnv({set: p});
+  return SpecialPowers.pushPrefEnv({ set: p });
 }
 
 function setupEnvironment() {
@@ -406,25 +425,25 @@ function setupEnvironment() {
   }
 
   var defaultMochitestPrefs = {
-    'set': [
+    set: [
       
       
-      ['media.navigator.mediadatadecoder_h264_enabled', false],
-      ['media.peerconnection.enabled', true],
-      ['media.peerconnection.identity.enabled', true],
-      ['media.peerconnection.identity.timeout', 120000],
-      ['media.peerconnection.ice.stun_client_maximum_transmits', 14],
-      ['media.peerconnection.ice.trickle_grace_period', 30000],
-      ['media.peerconnection.rtpsourcesapi.enabled', true],
-      ['media.navigator.permission.disabled', true],
+      ["media.navigator.mediadatadecoder_h264_enabled", false],
+      ["media.peerconnection.enabled", true],
+      ["media.peerconnection.identity.enabled", true],
+      ["media.peerconnection.identity.timeout", 120000],
+      ["media.peerconnection.ice.stun_client_maximum_transmits", 14],
+      ["media.peerconnection.ice.trickle_grace_period", 30000],
+      ["media.peerconnection.rtpsourcesapi.enabled", true],
+      ["media.navigator.permission.disabled", true],
       
       
-      ['media.navigator.streams.fake', WANT_FAKE_AUDIO || WANT_FAKE_VIDEO],
-      ['media.getusermedia.audiocapture.enabled', true],
-      ['media.getusermedia.screensharing.enabled', true],
-      ['media.getusermedia.window.focus_source.enabled', false],
-      ['media.recorder.audio_node.enabled', true]
-    ]
+      ["media.navigator.streams.fake", WANT_FAKE_AUDIO || WANT_FAKE_VIDEO],
+      ["media.getusermedia.audiocapture.enabled", true],
+      ["media.getusermedia.screensharing.enabled", true],
+      ["media.getusermedia.window.focus_source.enabled", false],
+      ["media.recorder.audio_node.enabled", true],
+    ],
   };
 
   const isAndroid = !!navigator.userAgent.includes("Android");
@@ -451,12 +470,13 @@ function setupEnvironment() {
 
 
 
-function run_test(is_initiator,timeout) {
-  var options = { is_local: is_initiator,
-                  is_remote: !is_initiator };
+function run_test(is_initiator, timeout) {
+  var options = { is_local: is_initiator, is_remote: !is_initiator };
 
   setTimeout(() => {
-    unexpectedEventArrived(new Error("PeerConnectionTest timed out after "+timeout+"s"));
+    unexpectedEventArrived(
+      new Error("PeerConnectionTest timed out after " + timeout + "s")
+    );
   }, timeout);
 
   
@@ -468,11 +488,17 @@ function run_test(is_initiator,timeout) {
 
 function runTestWhenReady(testFunc) {
   setupEnvironment();
-  return testConfigured.then(options => testFunc(options))
+  return testConfigured
+    .then(options => testFunc(options))
     .catch(e => {
-      ok(false, 'Error executing test: ' + e +
-        ((typeof e.stack === 'string') ?
-        (' ' + e.stack.split('\n').join(' ... ')) : ''));
+      ok(
+        false,
+        "Error executing test: " +
+          e +
+          (typeof e.stack === "string"
+            ? " " + e.stack.split("\n").join(" ... ")
+            : "")
+      );
       SimpleTest.finish();
     });
 }
@@ -487,18 +513,17 @@ function runTestWhenReady(testFunc) {
 
 
 
-
 function checkMediaStreamTracksByType(constraints, type, mediaStreamTracks) {
   if (constraints[type]) {
-    is(mediaStreamTracks.length, 1, 'One ' + type + ' track shall be present');
+    is(mediaStreamTracks.length, 1, "One " + type + " track shall be present");
 
     if (mediaStreamTracks.length) {
-      is(mediaStreamTracks[0].kind, type, 'Track kind should be ' + type);
-      ok(mediaStreamTracks[0].id, 'Track id should be defined');
-      ok(!mediaStreamTracks[0].muted, 'Track should not be muted');
+      is(mediaStreamTracks[0].kind, type, "Track kind should be " + type);
+      ok(mediaStreamTracks[0].id, "Track id should be defined");
+      ok(!mediaStreamTracks[0].muted, "Track should not be muted");
     }
   } else {
-    is(mediaStreamTracks.length, 0, 'No ' + type + ' tracks shall be present');
+    is(mediaStreamTracks.length, 0, "No " + type + " tracks shall be present");
   }
 }
 
@@ -511,10 +536,16 @@ function checkMediaStreamTracksByType(constraints, type, mediaStreamTracks) {
 
 
 function checkMediaStreamTracks(constraints, mediaStream) {
-  checkMediaStreamTracksByType(constraints, 'audio',
-    mediaStream.getAudioTracks());
-  checkMediaStreamTracksByType(constraints, 'video',
-    mediaStream.getVideoTracks());
+  checkMediaStreamTracksByType(
+    constraints,
+    "audio",
+    mediaStream.getAudioTracks()
+  );
+  checkMediaStreamTracksByType(
+    constraints,
+    "video",
+    mediaStream.getVideoTracks()
+  );
 }
 
 
@@ -525,46 +556,74 @@ function checkMediaStreamTracks(constraints, mediaStream) {
 
 
 function checkMediaStreamContains(mediaStream, tracks, message) {
-  message = message ? (message + ": ") : "";
-  tracks.forEach(t => ok(mediaStream.getTrackById(t.id),
-                         message + "MediaStream " + mediaStream.id +
-                         " contains track " + t.id));
-  is(mediaStream.getTracks().length, tracks.length,
-     message + "MediaStream " + mediaStream.id + " contains no extra tracks");
+  message = message ? message + ": " : "";
+  tracks.forEach(t =>
+    ok(
+      mediaStream.getTrackById(t.id),
+      message + "MediaStream " + mediaStream.id + " contains track " + t.id
+    )
+  );
+  is(
+    mediaStream.getTracks().length,
+    tracks.length,
+    message + "MediaStream " + mediaStream.id + " contains no extra tracks"
+  );
 }
 
 function checkMediaStreamCloneAgainstOriginal(clone, original) {
   isnot(clone.id.length, 0, "Stream clone should have an id string");
-  isnot(clone, original,
-        "Stream clone should be different from the original");
-  isnot(clone.id, original.id,
-        "Stream clone's id should be different from the original's");
-  is(clone.getAudioTracks().length, original.getAudioTracks().length,
-     "All audio tracks should get cloned");
-  is(clone.getVideoTracks().length, original.getVideoTracks().length,
-     "All video tracks should get cloned");
-  is(clone.active, original.active,
-     "Active state should be preserved");
-  original.getTracks()
-          .forEach(t => ok(!clone.getTrackById(t.id),
-                           "The clone's tracks should be originals"));
+  isnot(clone, original, "Stream clone should be different from the original");
+  isnot(
+    clone.id,
+    original.id,
+    "Stream clone's id should be different from the original's"
+  );
+  is(
+    clone.getAudioTracks().length,
+    original.getAudioTracks().length,
+    "All audio tracks should get cloned"
+  );
+  is(
+    clone.getVideoTracks().length,
+    original.getVideoTracks().length,
+    "All video tracks should get cloned"
+  );
+  is(clone.active, original.active, "Active state should be preserved");
+  original
+    .getTracks()
+    .forEach(t =>
+      ok(!clone.getTrackById(t.id), "The clone's tracks should be originals")
+    );
 }
 
 function checkMediaStreamTrackCloneAgainstOriginal(clone, original) {
-  isnot(clone.id.length, 0,
-        "Track clone should have an id string");
-  isnot(clone, original,
-        "Track clone should be different from the original");
-  isnot(clone.id, original.id,
-        "Track clone's id should be different from the original's");
-  is(clone.kind, original.kind,
-     "Track clone's kind should be same as the original's");
-  is(clone.enabled, original.enabled,
-     "Track clone's kind should be same as the original's");
-  is(clone.readyState, original.readyState,
-     "Track clone's readyState should be same as the original's");
-  is(clone.muted, original.muted,
-     "Track clone's muted state should be same as the original's");
+  isnot(clone.id.length, 0, "Track clone should have an id string");
+  isnot(clone, original, "Track clone should be different from the original");
+  isnot(
+    clone.id,
+    original.id,
+    "Track clone's id should be different from the original's"
+  );
+  is(
+    clone.kind,
+    original.kind,
+    "Track clone's kind should be same as the original's"
+  );
+  is(
+    clone.enabled,
+    original.enabled,
+    "Track clone's kind should be same as the original's"
+  );
+  is(
+    clone.readyState,
+    original.readyState,
+    "Track clone's readyState should be same as the original's"
+  );
+  is(
+    clone.muted,
+    original.muted,
+    "Track clone's muted state should be same as the original's"
+  );
 }
 
 
@@ -578,7 +637,7 @@ function wait(time, message) {
 function waitUntil(func, time) {
   return new Promise(resolve => {
     var interval = setInterval(() => {
-      if (func())  {
+      if (func()) {
         clearInterval(interval);
         resolve();
       }
@@ -588,7 +647,10 @@ function waitUntil(func, time) {
 
 
 var timeout = (promise, time, msg) =>
-  Promise.race([promise, wait(time).then(() => Promise.reject(new Error(msg)))]);
+  Promise.race([
+    promise,
+    wait(time).then(() => Promise.reject(new Error(msg))),
+  ]);
 
 
 
@@ -604,20 +666,21 @@ var addFinallyToPromise = promise => {
         return Promise.reject(error);
       }
     );
-  }
+  };
   return promise;
-}
+};
 
 
 var listenUntil = (target, eventName, onFire) => {
-  return new Promise(resolve => target.addEventListener(eventName,
-                                                        function callback(event) {
-    var result = onFire(event);
-    if (result) {
-      target.removeEventListener(eventName, callback);
-      resolve(result);
-    }
-  }));
+  return new Promise(resolve =>
+    target.addEventListener(eventName, function callback(event) {
+      var result = onFire(event);
+      if (result) {
+        target.removeEventListener(eventName, callback);
+        resolve(result);
+      }
+    })
+  );
 };
 
 
@@ -628,21 +691,25 @@ function mustThrowWith(msg, reason, f) {
   } catch (e) {
     is(e.name, reason, msg + " must throw: " + e.message);
   }
-};
+}
 
 
 function getSilentTrack() {
-  let ctx = new AudioContext(), oscillator = ctx.createOscillator();
+  let ctx = new AudioContext(),
+    oscillator = ctx.createOscillator();
   let dst = oscillator.connect(ctx.createMediaStreamDestination());
   oscillator.start();
-  return Object.assign(dst.stream.getAudioTracks()[0], {enabled: false});
+  return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false });
 }
 
-function getBlackTrack({width = 640, height = 480} = {}) {
-  let canvas = Object.assign(document.createElement("canvas"), {width, height});
-  canvas.getContext('2d').fillRect(0, 0, width, height);
+function getBlackTrack({ width = 640, height = 480 } = {}) {
+  let canvas = Object.assign(document.createElement("canvas"), {
+    width,
+    height,
+  });
+  canvas.getContext("2d").fillRect(0, 0, width, height);
   let stream = canvas.captureStream();
-  return Object.assign(stream.getVideoTracks()[0], {enabled: false});
+  return Object.assign(stream.getVideoTracks()[0], { enabled: false });
 }
 
 
@@ -667,19 +734,35 @@ function generateErrorCallback(message) {
   return aObj => {
     if (aObj) {
       if (aObj.name && aObj.message) {
-        ok(false, "Unexpected callback for '" + aObj.name +
-           "' with message = '" + aObj.message + "' at " +
-           JSON.stringify(stack));
+        ok(
+          false,
+          "Unexpected callback for '" +
+            aObj.name +
+            "' with message = '" +
+            aObj.message +
+            "' at " +
+            JSON.stringify(stack)
+        );
       } else {
-        ok(false, "Unexpected callback with = '" + aObj +
-           "' at: " + JSON.stringify(stack));
+        ok(
+          false,
+          "Unexpected callback with = '" +
+            aObj +
+            "' at: " +
+            JSON.stringify(stack)
+        );
       }
     } else {
-      ok(false, "Unexpected callback with message = '" + message +
-         "' at: " + JSON.stringify(stack));
+      ok(
+        false,
+        "Unexpected callback with message = '" +
+          message +
+          "' at: " +
+          JSON.stringify(stack)
+      );
     }
     throw new Error("Unexpected callback");
-  }
+  };
 }
 
 var unexpectedEventArrived;
@@ -700,11 +783,16 @@ function unexpectedEvent(message, eventName) {
   stack.shift(); 
 
   return e => {
-    var details = "Unexpected event '" + eventName + "' fired with message = '" +
-        message + "' at: " + JSON.stringify(stack);
+    var details =
+      "Unexpected event '" +
+      eventName +
+      "' fired with message = '" +
+      message +
+      "' at: " +
+      JSON.stringify(stack);
     ok(false, details);
     unexpectedEventArrived(new Error(details));
-  }
+  };
 }
 
 
@@ -722,7 +810,7 @@ function unexpectedEvent(message, eventName) {
 
 
 function createOneShotEventWrapper(wrapper, obj, event) {
-  var onx = 'on' + event;
+  var onx = "on" + event;
   var unexpected = unexpectedEvent(wrapper, event);
   wrapper[onx] = unexpected;
   obj[onx] = e => {
@@ -755,10 +843,13 @@ function haveEvents(target, name, count, cancel) {
   return Promise.race([
     (cancel || new Promise(() => {})).then(e => Promise.reject(e)),
     new Promise(resolve =>
-        target.addEventListener(name, listener = e => (--counter < 1 && resolve(e))))
-  ])
-  .then(e => (target.removeEventListener(name, listener), e));
-};
+      target.addEventListener(
+        name,
+        (listener = e => --counter < 1 && resolve(e))
+      )
+    ),
+  ]).then(e => (target.removeEventListener(name, listener), e));
+}
 
 
 
@@ -776,7 +867,7 @@ function haveEvents(target, name, count, cancel) {
 
 function haveEvent(target, name, cancel) {
   return haveEvents(target, name, 1, cancel);
-};
+}
 
 
 
@@ -793,10 +884,11 @@ function haveEvent(target, name, cancel) {
 
 
 function haveNoEvent(target, name, timeoutPromise) {
-  return haveEvent(target, name, timeoutPromise || wait(0))
-    .then(() => Promise.reject(new Error("Too many " + name + " events")),
-          () => {});
-};
+  return haveEvent(target, name, timeoutPromise || wait(0)).then(
+    () => Promise.reject(new Error("Too many " + name + " events")),
+    () => {}
+  );
+}
 
 
 
@@ -814,9 +906,10 @@ function haveNoEvent(target, name, timeoutPromise) {
 
 
 function haveEventsButNoMore(target, name, count, cancel) {
-  return haveEvents(target, name, count, cancel)
-    .then(e => haveNoEvent(target, name).then(() => e));
-};
+  return haveEvents(target, name, count, cancel).then(e =>
+    haveNoEvent(target, name).then(() => e)
+  );
+}
 
 
 
@@ -831,7 +924,7 @@ function haveEventsButNoMore(target, name, count, cancel) {
 
 function CommandChain(framework, commandList) {
   this._framework = framework;
-  this.commands = commandList || [ ];
+  this.commands = commandList || [];
 }
 
 CommandChain.prototype = {
@@ -839,21 +932,28 @@ CommandChain.prototype = {
 
 
 
-  execute: function () {
-    return this.commands.reduce((prev, next, i) => {
-      if (typeof next !== 'function' || !next.name) {
-        throw new Error('registered non-function' + next);
-      }
+  execute: function() {
+    return this.commands
+      .reduce((prev, next, i) => {
+        if (typeof next !== "function" || !next.name) {
+          throw new Error("registered non-function" + next);
+        }
 
-      return prev.then(() => {
-        info('Run step ' + (i + 1) + ': ' + next.name);
-        return Promise.race([ next(this._framework), rejectOnUnexpectedEvent ]);
-      });
-    }, Promise.resolve())
+        return prev.then(() => {
+          info("Run step " + (i + 1) + ": " + next.name);
+          return Promise.race([next(this._framework), rejectOnUnexpectedEvent]);
+        });
+      }, Promise.resolve())
       .catch(e =>
-             ok(false, 'Error in test execution: ' + e +
-                ((typeof e.stack === 'string') ?
-                 (' ' + e.stack.split('\n').join(' ... ')) : '')));
+        ok(
+          false,
+          "Error in test execution: " +
+            e +
+            (typeof e.stack === "string"
+              ? " " + e.stack.split("\n").join(" ... ")
+              : "")
+        )
+      );
   },
 
   
@@ -871,7 +971,7 @@ CommandChain.prototype = {
   indexOf: function(functionOrName, occurrence) {
     occurrence = occurrence || 0;
     return this.commands.findIndex(func => {
-      if (typeof functionOrName === 'string') {
+      if (typeof functionOrName === "string") {
         if (func.name !== functionOrName) {
           return false;
         }
@@ -917,13 +1017,16 @@ CommandChain.prototype = {
 
   _insertHelper: function(functionOrName, commands, delta, all, occurrence) {
     occurrence = occurrence || 0;
-    for (var index = this.mustHaveIndexOf(functionOrName, occurrence);
-         index !== -1;
-         index = this.indexOf(functionOrName, ++occurrence)) {
+    for (
+      var index = this.mustHaveIndexOf(functionOrName, occurrence);
+      index !== -1;
+      index = this.indexOf(functionOrName, ++occurrence)
+    ) {
       this.commands = [].concat(
         this.commands.slice(0, index + delta),
         commands,
-        this.commands.slice(index + delta));
+        this.commands.slice(index + delta)
+      );
       if (!all) {
         break;
       }
@@ -934,21 +1037,29 @@ CommandChain.prototype = {
 
 
   remove: function(functionOrName, occurrence) {
-    return this.commands.splice(this.mustHaveIndexOf(functionOrName, occurrence), 1);
+    return this.commands.splice(
+      this.mustHaveIndexOf(functionOrName, occurrence),
+      1
+    );
   },
 
   
 
 
   removeAfter: function(functionOrName, occurrence) {
-    return this.commands.splice(this.mustHaveIndexOf(functionOrName, occurrence) + 1);
+    return this.commands.splice(
+      this.mustHaveIndexOf(functionOrName, occurrence) + 1
+    );
   },
 
   
 
 
   removeBefore: function(functionOrName, occurrence) {
-    return this.commands.splice(0, this.mustHaveIndexOf(functionOrName, occurrence));
+    return this.commands.splice(
+      0,
+      this.mustHaveIndexOf(functionOrName, occurrence)
+    );
   },
 
   
@@ -980,7 +1091,7 @@ CommandChain.prototype = {
   
 
 
-  filterOut: function (id_match) {
+  filterOut: function(id_match) {
     this.commands = this.commands.filter(c => !id_match.test(c.name));
   },
 };
@@ -1009,8 +1120,8 @@ AudioStreamHelper.prototype = {
     var analyser = new AudioStreamAnalyser(this._context, stream);
     var freq = analyser.binIndexForFrequency(TEST_AUDIO_FREQ);
     return this.checkAudio(stream, analyser, array => array[freq] < 50);
-  }
-}
+  },
+};
 
 class VideoFrameEmitter {
   constructor(color1, color2, width, height) {
@@ -1021,7 +1132,10 @@ class VideoFrameEmitter {
       height = width;
     }
     this._helper = new CaptureStreamTestHelper2D(width, height);
-    this._canvas = this._helper.createAndAppendElement('canvas', 'source_canvas');
+    this._canvas = this._helper.createAndAppendElement(
+      "canvas",
+      "source_canvas"
+    );
     this._canvas.width = width;
     this._canvas.height = height;
     this._color1 = color1 ? color1 : this._helper.green;
@@ -1065,7 +1179,7 @@ class VideoFrameEmitter {
     this._started = true;
     this._intervalId = setInterval(() => {
       try {
-        this._helper.drawColor(this._canvas, i ? this._color1: this._color2);
+        this._helper.drawColor(this._canvas, i ? this._color1 : this._color2);
         i = 1 - i;
       } catch (e) {
         
@@ -1084,42 +1198,65 @@ class VideoFrameEmitter {
 
 class VideoStreamHelper {
   constructor() {
-    this._helper = new CaptureStreamTestHelper2D(50,50);
+    this._helper = new CaptureStreamTestHelper2D(50, 50);
   }
 
   async checkHasFrame(video, { offsetX, offsetY, threshold } = {}) {
     const h = this._helper;
-    await h.waitForPixel(video, px => {
-      let result = h.isOpaquePixelNot(px, h.black, threshold);
-      info("Checking that we have a frame, got [" +
-           Array.from(px) + "]. Ref=[" +
-           Array.from(h.black.data) + "]. Threshold=" + threshold +
-           ". Pass=" + result);
-      return result;
-    }, { offsetX, offsetY });
+    await h.waitForPixel(
+      video,
+      px => {
+        let result = h.isOpaquePixelNot(px, h.black, threshold);
+        info(
+          "Checking that we have a frame, got [" +
+            Array.from(px) +
+            "]. Ref=[" +
+            Array.from(h.black.data) +
+            "]. Threshold=" +
+            threshold +
+            ". Pass=" +
+            result
+        );
+        return result;
+      },
+      { offsetX, offsetY }
+    );
   }
 
-  async checkVideoPlaying(video, { offsetX = 10, offsetY = 10,
-                                   threshold = 16,
-                                 } = {}) {
+  async checkVideoPlaying(
+    video,
+    { offsetX = 10, offsetY = 10, threshold = 16 } = {}
+  ) {
     const h = this._helper;
     await this.checkHasFrame(video, { offsetX, offsetY, threshold });
     let startPixel = {
       data: h.getPixel(video, offsetX, offsetY),
       name: "startcolor",
     };
-    await h.waitForPixel(video, px => {
-      let result = h.isPixelNot(px, startPixel, threshold);
-      info("Checking playing, [" +
-           Array.from(px) + "] vs [" + Array.from(startPixel.data) +
-           "]. Threshold=" + threshold + " Pass=" + result);
-      return result;
-    }, { offsetX, offsetY });
+    await h.waitForPixel(
+      video,
+      px => {
+        let result = h.isPixelNot(px, startPixel, threshold);
+        info(
+          "Checking playing, [" +
+            Array.from(px) +
+            "] vs [" +
+            Array.from(startPixel.data) +
+            "]. Threshold=" +
+            threshold +
+            " Pass=" +
+            result
+        );
+        return result;
+      },
+      { offsetX, offsetY }
+    );
   }
 
-  async checkVideoPaused(video, { offsetX = 10, offsetY = 10,
-                                  threshold = 16, time = 5000,
-                                }={}) {
+  async checkVideoPaused(
+    video,
+    { offsetX = 10, offsetY = 10, threshold = 16, time = 5000 } = {}
+  ) {
     const h = this._helper;
     await this.checkHasFrame(video, { offsetX, offsetY, threshold });
     let startPixel = {
@@ -1127,24 +1264,39 @@ class VideoStreamHelper {
       name: "startcolor",
     };
     try {
-      await h.waitForPixel(video, px => {
+      await h.waitForPixel(
+        video,
+        px => {
           let result = h.isOpaquePixelNot(px, startPixel, threshold);
-          info("Checking paused, [" +
-               Array.from(px) + "] vs [" + Array.from(startPixel.data) +
-               "]. Threshold=" + threshold + " Pass=" + result);
+          info(
+            "Checking paused, [" +
+              Array.from(px) +
+              "] vs [" +
+              Array.from(startPixel.data) +
+              "]. Threshold=" +
+              threshold +
+              " Pass=" +
+              result
+          );
           return result;
-        }, { offsetX, offsetY, cancel: wait(time, "timeout") });
-      ok(false, "Frame changed within " + time/1000 + " seconds");
+        },
+        { offsetX, offsetY, cancel: wait(time, "timeout") }
+      );
+      ok(false, "Frame changed within " + time / 1000 + " seconds");
     } catch (e) {
-      is(e, "timeout", "Frame shouldn't change for " + time/1000 + " seconds");
+      is(
+        e,
+        "timeout",
+        "Frame shouldn't change for " + time / 1000 + " seconds"
+      );
     }
   }
 }
 
-(function(){
+(function() {
   var el = document.createElement("link");
   el.rel = "stylesheet";
   el.type = "text/css";
-  el.href= "/tests/SimpleTest/test.css";
+  el.href = "/tests/SimpleTest/test.css";
   document.head.appendChild(el);
-}());
+})();

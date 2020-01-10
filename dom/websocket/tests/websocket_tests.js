@@ -2,7 +2,9 @@
 function test1() {
   return new Promise(function(resolve, reject) {
     try {
-      var ws = CreateTestWS("http://mochi.test:8888/tests/dom/websocket/tests/file_websocket");
+      var ws = CreateTestWS(
+        "http://mochi.test:8888/tests/dom/websocket/tests/file_websocket"
+      );
       ok(false, "test1 failed");
     } catch (e) {
       ok(true, "test1 failed");
@@ -20,8 +22,14 @@ function test2() {
     var waitTest2Part1 = true;
     var waitTest2Part2 = true;
 
-    var ws1 = CreateTestWS("ws://sub2.test2.example.com/tests/dom/websocket/tests/file_websocket", "test-2.1");
-    var ws2 = CreateTestWS("ws://sub2.test2.example.com/tests/dom/websocket/tests/file_websocket", "test-2.2");
+    var ws1 = CreateTestWS(
+      "ws://sub2.test2.example.com/tests/dom/websocket/tests/file_websocket",
+      "test-2.1"
+    );
+    var ws2 = CreateTestWS(
+      "ws://sub2.test2.example.com/tests/dom/websocket/tests/file_websocket",
+      "test-2.2"
+    );
 
     var ws2CanConnect = false;
 
@@ -35,22 +43,22 @@ function test2() {
       ok(true, "ws1 open in test 2");
       ws2CanConnect = true;
       ws1.close();
-    }
+    };
 
     ws1.onclose = function(e) {
       waitTest2Part1 = false;
       maybeFinished();
-    }
+    };
 
     ws2.onopen = function() {
       ok(ws2CanConnect, "shouldn't connect yet in test-2!");
       ws2.close();
-    }
+    };
 
     ws2.onclose = function(e) {
       waitTest2Part2 = false;
       maybeFinished();
-    }
+    };
   });
 }
 
@@ -62,16 +70,16 @@ function test3() {
 
     ws.onopen = shouldNotOpen;
 
-    ws.onerror = function (e) {
+    ws.onerror = function(e) {
       hasError = true;
-    }
+    };
 
     ws.onclose = function(e) {
       shouldCloseNotCleanly(e);
       ok(hasError, "rcvd onerror event");
       is(e.code, 1006, "test-3 close code should be 1006 but is:" + e.code);
       resolve();
-    }
+    };
   });
 }
 
@@ -93,21 +101,36 @@ function test4() {
 function test5() {
   return new Promise(function(resolve, reject) {
     try {
-      var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "");
+      var ws = CreateTestWS(
+        "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+        ""
+      );
       ok(false, "couldn't accept an empty string in the protocol parameter");
     } catch (e) {
       ok(true, "couldn't accept an empty string in the protocol parameter");
     }
 
     try {
-      var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "\n");
-      ok(false, "couldn't accept any not printable ASCII character in the protocol parameter");
+      var ws = CreateTestWS(
+        "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+        "\n"
+      );
+      ok(
+        false,
+        "couldn't accept any not printable ASCII character in the protocol parameter"
+      );
     } catch (e) {
-      ok(true, "couldn't accept any not printable ASCII character in the protocol parameter");
+      ok(
+        true,
+        "couldn't accept any not printable ASCII character in the protocol parameter"
+      );
     }
 
     try {
-      var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test 5");
+      var ws = CreateTestWS(
+        "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+        "test 5"
+      );
       ok(false, "U+0020 not acceptable in protocol parameter");
     } catch (e) {
       ok(true, "U+0020 not acceptable in protocol parameter");
@@ -120,53 +143,63 @@ function test5() {
 
 function test6() {
   return new Promise(function(resolve, reject) {
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-6");
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      "test-6"
+    );
     var counter = 1;
 
     ws.onopen = function() {
       ws.send(counter);
-    }
+    };
 
     ws.onmessage = function(e) {
       if (counter == 5) {
         is(e.data, "あいうえお", "test-6 counter 5 data ok");
         ws.close();
       } else {
-        is(parseInt(e.data), counter+1, "bad counter");
+        is(parseInt(e.data), counter + 1, "bad counter");
         counter += 2;
         ws.send(counter);
       }
-    }
+    };
 
     ws.onclose = function(e) {
       shouldCloseCleanly(e);
       resolve();
-    }
+    };
   });
 }
 
 
 function test7() {
   return new Promise(function(resolve, reject) {
-    var ws = CreateTestWS("ws://sub2.test2.example.org/tests/dom/websocket/tests/file_websocket", "test-7");
+    var ws = CreateTestWS(
+      "ws://sub2.test2.example.org/tests/dom/websocket/tests/file_websocket",
+      "test-7"
+    );
     var gotmsg = false;
 
     ws.onopen = function() {
       ok(true, "test 7 open");
-    }
+    };
 
     ws.onmessage = function(e) {
       ok(true, "test 7 message");
-      is(e.origin, "ws://sub2.test2.example.org", "onmessage origin set to ws:// host");
+      is(
+        e.origin,
+        "ws://sub2.test2.example.org",
+        "onmessage origin set to ws:// host"
+      );
       gotmsg = true;
       ws.close();
-    }
+    };
 
     ws.onclose = function(e) {
       ok(gotmsg, "recvd message in test 7 before close");
       shouldCloseCleanly(e);
       resolve();
-    }
+    };
   });
 }
 
@@ -174,12 +207,15 @@ function test7() {
 
 function test8() {
   return new Promise(function(resolve, reject) {
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-8");
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      "test-8"
+    );
 
     ws.onopen = function() {
       is(ws.protocol, "test-8", "test-8 subprotocol selection");
       ws.close();
-    }
+    };
 
     ws.onclose = function(e) {
       shouldCloseCleanly(e);
@@ -188,14 +224,17 @@ function test8() {
       is(e.code, 1005, "test-8 close code has wrong value:" + e.code);
       is(e.reason, "", "test-8 close reason has wrong value:" + e.reason);
       resolve();
-    }
+    };
   });
 }
 
 
 function test9() {
   return new Promise(function(resolve, reject) {
-    var ws = CreateTestWS("ws://test2.example.org/tests/dom/websocket/tests/file_websocket", "test-9");
+    var ws = CreateTestWS(
+      "ws://test2.example.org/tests/dom/websocket/tests/file_websocket",
+      "test-9"
+    );
 
     ws._receivedErrorEvent = false;
 
@@ -203,13 +242,13 @@ function test9() {
 
     ws.onerror = function(e) {
       ws._receivedErrorEvent = true;
-    }
+    };
 
     ws.onclose = function(e) {
       ok(ws._receivedErrorEvent, "Didn't received the error event in test 9.");
       shouldCloseNotCleanly(e);
       resolve();
-    }
+    };
 
     ws.close();
   });
@@ -218,12 +257,15 @@ function test9() {
 
 function test10() {
   return new Promise(function(resolve, reject) {
-    var ws = CreateTestWS("ws://sub1.test1.example.com/tests/dom/websocket/tests/file_websocket", "test-10");
+    var ws = CreateTestWS(
+      "ws://sub1.test1.example.com/tests/dom/websocket/tests/file_websocket",
+      "test-10"
+    );
 
     ws.onclose = function(e) {
       shouldCloseCleanly(e);
       resolve();
-    }
+    };
 
     try {
       ws.send("client data");
@@ -232,48 +274,57 @@ function test10() {
       ok(true, "Couldn't send data before connecting!");
     }
 
-    ws.onopen = function()
-    {
+    ws.onopen = function() {
       ok(true, "test 10 opened");
       ws.close();
-    }
+    };
   });
 }
 
 
 function test11() {
   return new Promise(function(resolve, reject) {
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-11");
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      "test-11"
+    );
     is(ws.readyState, 0, "create bad readyState in test-11!");
 
     ws.onopen = function() {
       is(ws.readyState, 1, "open bad readyState in test-11!");
       ws.send("client data");
-    }
+    };
 
     ws.onmessage = function(e) {
       is(e.data, "server data", "bad received message in test-11!");
       ws.close(1000, "Have a nice day");
 
-     
-     
-     
-    }
+      
+      
+      
+    };
 
     ws.onclose = function(e) {
       is(ws.readyState, 3, "onclose bad readyState in test-11!");
       shouldCloseCleanly(e);
       is(e.code, 1000, "test 11 got wrong close code: " + e.code);
-      is(e.reason, "Have a nice day", "test 11 got wrong close reason: " + e.reason);
+      is(
+        e.reason,
+        "Have a nice day",
+        "test 11 got wrong close reason: " + e.reason
+      );
       resolve();
-    }
+    };
   });
 }
 
 
 function test12() {
   return new Promise(function(resolve, reject) {
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-12");
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      "test-12"
+    );
 
     ws.onopen = function() {
       try {
@@ -282,25 +333,36 @@ function test12() {
         ws.send("a\ud800b");
         ok(true, "ok to send an unpaired surrogate");
       } catch (e) {
-        ok(false, "shouldn't fail any more when sending an unpaired surrogate!");
+        ok(
+          false,
+          "shouldn't fail any more when sending an unpaired surrogate!"
+        );
       }
-    }
+    };
 
     ws.onmessage = function(msg) {
-      is(msg.data, "SUCCESS", "Unpaired surrogate in UTF-16 not converted in test-12");
+      is(
+        msg.data,
+        "SUCCESS",
+        "Unpaired surrogate in UTF-16 not converted in test-12"
+      );
       ws._gotMessage = true;
       
       ws.close(1000, "a\ud800b");
-    }
+    };
 
     ws.onclose = function(e) {
       is(ws.readyState, 3, "onclose bad readyState in test-12!");
       ok(ws._gotMessage, "didn't receive message!");
       shouldCloseCleanly(e);
       is(e.code, 1000, "test 12 got wrong close code: " + e.code);
-      is(e.reason, "a\ufffdb", "test 11 didn't get replacement char in close reason: " + e.reason);
+      is(
+        e.reason,
+        "a\ufffdb",
+        "test 11 didn't get replacement char in close reason: " + e.reason
+      );
       resolve();
-    }
+    };
   });
 }
 
@@ -311,17 +373,20 @@ function test13() {
     
     
 
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-13");
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      "test-13"
+    );
     ws._timesCalledOnError = 0;
 
     ws.onerror = function() {
       ws._timesCalledOnError++;
-    }
+    };
 
     ws.onclose = function(e) {
       ok(ws._timesCalledOnError > 0, "no error events");
       resolve();
-    }
+    };
   });
 }
 
@@ -329,11 +394,17 @@ function test13() {
 
 function test14() {
   return new Promise(function(resolve, reject) {
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-14");
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      "test-14"
+    );
 
     ws.onmessage = function() {
-      ok(false, "shouldn't received message after the server sent the close frame");
-    }
+      ok(
+        false,
+        "shouldn't received message after the server sent the close frame"
+      );
+    };
 
     ws.onclose = function(e) {
       shouldCloseCleanly(e);
@@ -349,40 +420,47 @@ function test15() {
     
 
 
-   resolve();
+    resolve();
 
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-15");
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      "test-15"
+    );
     ws.onclose = function(e) {
       shouldCloseNotCleanly(e);
       resolve();
-    }
+    };
 
     
-    ws.onerror = function() {
-    }
+    ws.onerror = function() {};
   });
 }
 
 
 function test16() {
   return new Promise(function(resolve, reject) {
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-16");
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      "test-16"
+    );
 
     ws.onopen = function() {
       ws.close();
-      ok(!ws.send("client data"), "shouldn't send message after calling close()");
-    }
+      ok(
+        !ws.send("client data"),
+        "shouldn't send message after calling close()"
+      );
+    };
 
     ws.onmessage = function() {
       ok(false, "shouldn't send message after calling close()");
-    }
+    };
 
-    ws.onerror = function() {
-    }
+    ws.onerror = function() {};
 
     ws.onclose = function() {
       resolve();
-    }
+    };
   });
 }
 
@@ -392,7 +470,10 @@ function test17() {
     var status_test17 = "not started";
 
     var test17func = function() {
-      var local_ws = new WebSocket("ws://sub1.test2.example.org/tests/dom/websocket/tests/file_websocket", "test-17");
+      var local_ws = new WebSocket(
+        "ws://sub1.test2.example.org/tests/dom/websocket/tests/file_websocket",
+        "test-17"
+      );
       status_test17 = "started";
 
       local_ws.onopen = function(e) {
@@ -421,7 +502,7 @@ function test17() {
 
       window._test17 = null;
       forcegc();
-    }
+    };
 
     window._test17 = test17func;
     window._test17();
@@ -435,14 +516,15 @@ function test17() {
 
 function test18() {
   return new Promise(function(resolve, reject) {
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket_http_resource.txt");
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket_http_resource.txt"
+    );
     ws.onopen = shouldNotOpen;
     ws.onerror = ignoreError;
-    ws.onclose = function(e)
-    {
+    ws.onclose = function(e) {
       shouldCloseNotCleanly(e);
       resolve();
-    }
+    };
   });
 }
 
@@ -450,14 +532,16 @@ function test18() {
 
 function test19() {
   return new Promise(function(resolve, reject) {
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-19");
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      "test-19"
+    );
     ws.onopen = shouldNotOpen;
     ws.onerror = ignoreError;
-    ws.onclose = function(e)
-    {
+    ws.onclose = function(e) {
       shouldCloseNotCleanly(e);
       resolve();
-    }
+    };
   });
 }
 
@@ -465,21 +549,24 @@ function test19() {
 function test20() {
   return new Promise(function(resolve, reject) {
     var test20func = function() {
-      var local_ws = new WebSocket("ws://sub1.test1.example.org/tests/dom/websocket/tests/file_websocket", "test-20");
+      var local_ws = new WebSocket(
+        "ws://sub1.test1.example.org/tests/dom/websocket/tests/file_websocket",
+        "test-20"
+      );
 
       local_ws.onerror = function() {
         ok(false, "onerror called on test " + current_test + "!");
-      }
+      };
 
       local_ws.onclose = function(e) {
         ok(true, "test 20 closed despite gc");
         resolve();
-      }
+      };
 
       local_ws = null;
       window._test20 = null;
       forcegc();
-    }
+    };
 
     window._test20 = test20func;
     window._test20();
@@ -491,7 +578,10 @@ function test20() {
 function test21() {
   return new Promise(function(resolve, reject) {
     var test21func = function() {
-      var local_ws = new WebSocket("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-21");
+      var local_ws = new WebSocket(
+        "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+        "test-21"
+      );
       var received_message = false;
 
       local_ws.onopen = function(e) {
@@ -499,11 +589,11 @@ function test21() {
         forcegc();
         e.target.onopen = null;
         forcegc();
-      }
+      };
 
       local_ws.onerror = function() {
         ok(false, "onerror called on test " + current_test + "!");
-      }
+      };
 
       local_ws.onmessage = function(e) {
         is(e.data, "server data", "Bad message in test-21");
@@ -511,18 +601,18 @@ function test21() {
         forcegc();
         e.target.onmessage = null;
         forcegc();
-      }
+      };
 
       local_ws.onclose = function(e) {
         shouldCloseCleanly(e);
         ok(received_message, "close transitioned through onmessage");
         resolve();
-      }
+      };
 
       local_ws = null;
       window._test21 = null;
       forcegc();
-    }
+    };
 
     window._test21 = test21func;
     window._test21();
@@ -535,7 +625,10 @@ function test22() {
     const pref_open = "network.websocket.timeout.open";
     SpecialPowers.setIntPref(pref_open, 5);
 
-    var ws = CreateTestWS("ws://sub2.test2.example.org/tests/dom/websocket/tests/file_websocket", "test-22");
+    var ws = CreateTestWS(
+      "ws://sub2.test2.example.org/tests/dom/websocket/tests/file_websocket",
+      "test-22"
+    );
 
     ws.onopen = shouldNotOpen;
     ws.onerror = ignoreError;
@@ -543,7 +636,7 @@ function test22() {
     ws.onclose = function(e) {
       shouldCloseNotCleanly(e);
       resolve();
-    }
+    };
 
     SpecialPowers.clearUserPref(pref_open);
   });
@@ -560,25 +653,30 @@ function test23() {
 
 function test24() {
   return new Promise(function(resolve, reject) {
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-does-not-exist");
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      "test-does-not-exist"
+    );
 
     ws.onopen = shouldNotOpen;
     ws.onclose = function(e) {
       shouldCloseNotCleanly(e);
       resolve();
-    }
+    };
 
-    ws.onerror = function() {
-    }
+    ws.onerror = function() {};
   });
 }
 
 
 function test25() {
   return new Promise(function(resolve, reject) {
-    var prots=[];
+    var prots = [];
 
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", prots);
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      prots
+    );
 
     
     
@@ -590,17 +688,20 @@ function test25() {
       is(ws.protocol, "", "test25 subprotocol selection");
       ok(true, "test 25 protocol array close");
       resolve();
-    }
+    };
   });
 }
 
 
 function test26() {
   return new Promise(function(resolve, reject) {
-    var prots=[""];
+    var prots = [""];
 
     try {
-      var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", prots);
+      var ws = CreateTestWS(
+        "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+        prots
+      );
       ok(false, "testing empty element sub protocol array");
     } catch (e) {
       ok(true, "testing empty sub element protocol array");
@@ -614,10 +715,13 @@ function test26() {
 
 function test27() {
   return new Promise(function(resolve, reject) {
-    var prots=["test27", ""];
+    var prots = ["test27", ""];
 
     try {
-      var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", prots);
+      var ws = CreateTestWS(
+        "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+        prots
+      );
       ok(false, "testing empty element mixed sub protocol array");
     } catch (e) {
       ok(true, "testing empty element mixed sub protocol array");
@@ -630,39 +734,45 @@ function test27() {
 
 function test28() {
   return new Promise(function(resolve, reject) {
-    var prots=["test28"];
+    var prots = ["test28"];
 
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", prots);
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      prots
+    );
 
     ws.onopen = function(e) {
       ok(true, "test 28 protocol array open");
       ws.close();
-    }
+    };
 
     ws.onclose = function(e) {
       is(ws.protocol, "test28", "test28 subprotocol selection");
       ok(true, "test 28 protocol array close");
       resolve();
-    }
+    };
   });
 }
 
 
 function test29() {
   return new Promise(function(resolve, reject) {
-    var prots=["test29a", "test29b"];
+    var prots = ["test29a", "test29b"];
 
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", prots);
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      prots
+    );
 
     ws.onopen = function(e) {
       ok(true, "test 29 protocol array open");
       ws.close();
-    }
+    };
 
     ws.onclose = function(e) {
       ok(true, "test 29 protocol array close");
       resolve();
-    }
+    };
   });
 }
 
@@ -670,18 +780,20 @@ function test29() {
 
 function test30() {
   return new Promise(function(resolve, reject) {
-    var prots=["test-does-not-exist"];
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", prots);
+    var prots = ["test-does-not-exist"];
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      prots
+    );
 
     ws.onopen = shouldNotOpen;
 
     ws.onclose = function(e) {
       shouldCloseNotCleanly(e);
       resolve();
-    }
+    };
 
-    ws.onerror = function() {
-    }
+    ws.onerror = function() {};
   });
 }
 
@@ -689,29 +801,35 @@ function test30() {
 
 function test31() {
   return new Promise(function(resolve, reject) {
-    var prots=["test-does-not-exist", "test31"];
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", prots);
+    var prots = ["test-does-not-exist", "test31"];
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      prots
+    );
 
     ws.onopen = function(e) {
       ok(true, "test 31 protocol array open");
       ws.close();
-    }
+    };
 
     ws.onclose = function(e) {
       is(ws.protocol, "test31", "test31 subprotocol selection");
       ok(true, "test 31 protocol array close");
       resolve();
-    }
+    };
   });
 }
 
 
 function test32() {
   return new Promise(function(resolve, reject) {
-    var prots=["test32","test32"];
+    var prots = ["test32", "test32"];
 
     try {
-      var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", prots);
+      var ws = CreateTestWS(
+        "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+        prots
+      );
       ok(false, "testing duplicated element sub protocol array");
     } catch (e) {
       ok(true, "testing duplicated sub element protocol array");
@@ -724,14 +842,17 @@ function test32() {
 
 function test33() {
   return new Promise(function(resolve, reject) {
-    var prots=["test33"];
+    var prots = ["test33"];
 
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", prots);
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      prots
+    );
 
     ws.onopen = function(e) {
       ok(true, "test 33 open");
-      ws.close(3131);   
-    }
+      ws.close(3131); 
+    };
 
     ws.onclose = function(e) {
       ok(true, "test 33 close");
@@ -739,52 +860,60 @@ function test33() {
       is(e.code, 3131, "test 33 got wrong close code: " + e.code);
       is(e.reason, "", "test 33 got wrong close reason: " + e.reason);
       resolve();
-    }
+    };
   });
 }
 
 
 function test34() {
   return new Promise(function(resolve, reject) {
-    var prots=["test-34"];
+    var prots = ["test-34"];
 
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", prots);
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      prots
+    );
 
     ws.onopen = function(e) {
       ok(true, "test 34 open");
       ws.close();
-    }
+    };
 
-    ws.onclose = function(e)
-    {
+    ws.onclose = function(e) {
       ok(true, "test 34 close");
       ok(e.wasClean, "test 34 closed cleanly");
       is(e.code, 1001, "test 34 custom server code");
       is(e.reason, "going away now", "test 34 custom server reason");
       resolve();
-    }
+    };
   });
 }
 
 
 function test35() {
   return new Promise(function(resolve, reject) {
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-35a");
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      "test-35a"
+    );
 
     ws.onopen = function(e) {
       ok(true, "test 35a open");
       ws.close(3500, "my code");
-    }
+    };
 
     ws.onclose = function(e) {
       ok(true, "test 35a close");
       ok(e.wasClean, "test 35a closed cleanly");
-      var wsb = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-35b");
+      var wsb = CreateTestWS(
+        "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+        "test-35b"
+      );
 
       wsb.onopen = function(event) {
         ok(true, "test 35b open");
         wsb.close();
-      }
+      };
 
       wsb.onclose = function(event) {
         ok(true, "test 35b close");
@@ -792,17 +921,20 @@ function test35() {
         is(event.code, 3501, "test 35 custom server code");
         is(event.reason, "my code", "test 35 custom server reason");
         resolve();
-      }
-    }
+      };
+    };
   });
 }
 
 
 function test36() {
   return new Promise(function(resolve, reject) {
-    var prots=["test-36"];
+    var prots = ["test-36"];
 
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", prots);
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      prots
+    );
 
     ws.onopen = function(e) {
       ok(true, "test 36 open");
@@ -814,123 +946,158 @@ function test36() {
         ok(true, "testing custom close code out of range");
         ws.close(3200);
       }
-    }
+    };
 
     ws.onclose = function(e) {
       ok(true, "test 36 close");
       ok(e.wasClean, "test 36 closed cleanly");
       resolve();
-    }
+    };
   });
 }
 
 
 function test37() {
   return new Promise(function(resolve, reject) {
-    var prots=["test-37"];
+    var prots = ["test-37"];
 
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", prots);
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      prots
+    );
 
     ws.onopen = function(e) {
       ok(true, "test 37 open");
 
       try {
-	ws.close(3100,"0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123");
+        ws.close(
+          3100,
+          "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123"
+        );
         ok(false, "testing custom close reason out of range");
       } catch (ex) {
         ok(true, "testing custom close reason out of range");
-        ws.close(3100,"012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012");
+        ws.close(
+          3100,
+          "012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012"
+        );
       }
-    }
+    };
 
     ws.onclose = function(e) {
       ok(true, "test 37 close");
       ok(e.wasClean, "test 37 closed cleanly");
 
-      var wsb = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-37b");
+      var wsb = CreateTestWS(
+        "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+        "test-37b"
+      );
 
       wsb.onopen = function(event) {
         
         ok(true, "test 37b open");
         try {
-          wsb.close(3101,"0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123");
+          wsb.close(
+            3101,
+            "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123"
+          );
           ok(false, "testing custom close reason out of range 37b");
         } catch (ex) {
           ok(true, "testing custom close reason out of range 37b");
           wsb.close();
         }
-      }
+      };
 
       wsb.onclose = function(event) {
         ok(true, "test 37b close");
         ok(event.wasClean, "test 37b closed cleanly");
 
-        var wsc = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-37c");
+        var wsc = CreateTestWS(
+          "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+          "test-37c"
+        );
 
         wsc.onopen = function(eventInner) {
           ok(true, "test 37c open");
           wsc.close();
-        }
+        };
 
         wsc.onclose = function(eventInner) {
-          isnot(eventInner.code, 3101, "test 37c custom server code not present");
-          is(eventInner.reason, "", "test 37c custom server reason not present");
+          isnot(
+            eventInner.code,
+            3101,
+            "test 37c custom server code not present"
+          );
+          is(
+            eventInner.reason,
+            "",
+            "test 37c custom server reason not present"
+          );
           resolve();
-        }
-      }
-    }
+        };
+      };
+    };
   });
 }
 
 
 function test38() {
   return new Promise(function(resolve, reject) {
-    var prots=["test-38"];
+    var prots = ["test-38"];
 
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", prots);
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      prots
+    );
 
     ws.onopen = function(e) {
       ok(true, "test 38 open");
       isnot(ws.extensions, undefined, "extensions attribute defined");
       
       ws.close();
-    }
+    };
 
     ws.onclose = function(e) {
       ok(true, "test 38 close");
       resolve();
-    }
+    };
   });
 }
 
 
 function test39() {
   return new Promise(function(resolve, reject) {
-    var prots=["test-39"];
+    var prots = ["test-39"];
 
-    var ws = CreateTestWS("wss://example.com/tests/dom/websocket/tests/file_websocket", prots);
+    var ws = CreateTestWS(
+      "wss://example.com/tests/dom/websocket/tests/file_websocket",
+      prots
+    );
     status_test39 = "started";
 
     ws.onopen = function(e) {
       status_test39 = "opened";
       ok(true, "test 39 open");
       ws.close();
-    }
+    };
 
     ws.onclose = function(e) {
       ok(true, "test 39 close");
       is(status_test39, "opened", "test 39 did open");
       resolve();
-    }
+    };
   });
 }
 
 
 function test40() {
   return new Promise(function(resolve, reject) {
-    var prots=["test-40"];
+    var prots = ["test-40"];
 
-    var ws = CreateTestWS("wss://nocert.example.com/tests/dom/websocket/tests/file_websocket", prots);
+    var ws = CreateTestWS(
+      "wss://nocert.example.com/tests/dom/websocket/tests/file_websocket",
+      prots
+    );
 
     status_test40 = "started";
     ws.onerror = ignoreError;
@@ -939,68 +1106,86 @@ function test40() {
       status_test40 = "opened";
       ok(false, "test 40 open");
       ws.close();
-    }
+    };
 
     ws.onclose = function(e) {
       ok(true, "test 40 close");
       is(status_test40, "started", "test 40 did not open");
       resolve();
-    }
+    };
   });
 }
 
 
 function test41() {
   return new Promise(function(resolve, reject) {
-    var ws = CreateTestWS("ws://example.com/tests/dom/websocket/tests/file_websocket", "test-41a", 1);
+    var ws = CreateTestWS(
+      "ws://example.com/tests/dom/websocket/tests/file_websocket",
+      "test-41a",
+      1
+    );
 
     ws.onopen = function(e) {
       ok(true, "test 41a open");
-      is(ws.url, "ws://example.com/tests/dom/websocket/tests/file_websocket",
-         "test 41a initial ws should not be redirected");
+      is(
+        ws.url,
+        "ws://example.com/tests/dom/websocket/tests/file_websocket",
+        "test 41a initial ws should not be redirected"
+      );
       ws.close();
-    }
+    };
 
     ws.onclose = function(e) {
       ok(true, "test 41a close");
 
       
-      var wsb = CreateTestWS("wss://example.com/tests/dom/websocket/tests/file_websocket", "test-41b", 1);
+      var wsb = CreateTestWS(
+        "wss://example.com/tests/dom/websocket/tests/file_websocket",
+        "test-41b",
+        1
+      );
 
       wsb.onopen = function(event) {
         ok(true, "test 41b open");
         wsb.close();
-      }
+      };
 
       wsb.onclose = function(event) {
         ok(true, "test 41b close");
 
         
-        var wsc = CreateTestWS("ws://example.com/tests/dom/websocket/tests/file_websocket", "test-41c");
+        var wsc = CreateTestWS(
+          "ws://example.com/tests/dom/websocket/tests/file_websocket",
+          "test-41c"
+        );
 
         wsc.onopen = function() {
           ok(true, "test 41c open");
-          is(wsc.url, "wss://example.com/tests/dom/websocket/tests/file_websocket",
-             "test 41c ws should be redirected by hsts to wss");
+          is(
+            wsc.url,
+            "wss://example.com/tests/dom/websocket/tests/file_websocket",
+            "test 41c ws should be redirected by hsts to wss"
+          );
           wsc.close();
-        }
+        };
 
         wsc.onclose = function() {
           ok(true, "test 41c close");
 
           
           const Ci = SpecialPowers.Ci;
-          var loadContext = SpecialPowers.wrap(window)
-                            .docShell
-                            .QueryInterface(Ci.nsILoadContext);
+          var loadContext = SpecialPowers.wrap(window).docShell.QueryInterface(
+            Ci.nsILoadContext
+          );
           var flags = 0;
-          if (loadContext.usePrivateBrowsing)
+          if (loadContext.usePrivateBrowsing) {
             flags |= Ci.nsISocketProvider.NO_PERMANENT_STORAGE;
+          }
           SpecialPowers.cleanUpSTSData("http://example.com", flags);
           resolve();
-         }
-       }
-    }
+        };
+      };
+    };
   });
 }
 
@@ -1009,66 +1194,77 @@ function test42() {
   return new Promise(function(resolve, reject) {
     
     
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-42");
-    var data = ["U+FFFE \ufffe",
-		"U+FFFF \uffff",
-		"U+10FFFF \udbff\udfff"];
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      "test-42"
+    );
+    var data = ["U+FFFE \ufffe", "U+FFFF \uffff", "U+10FFFF \udbff\udfff"];
     var index = 0;
 
     ws.onopen = function() {
       ws.send(data[0]);
       ws.send(data[1]);
       ws.send(data[2]);
-    }
+    };
 
     ws.onmessage = function(e) {
-      is(e.data, data[index], "bad received message in test-42! index="+index);
+      is(
+        e.data,
+        data[index],
+        "bad received message in test-42! index=" + index
+      );
       index++;
       if (index == 3) {
         ws.close();
       }
-    }
+    };
 
     ws.onclose = function(e) {
       resolve();
-    }
+    };
   });
 }
 
 
 function test43() {
   return new Promise(function(resolve, reject) {
-    var prots=["test-43"];
+    var prots = ["test-43"];
 
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", prots);
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      prots
+    );
 
     ws.onopen = function(e) {
       ok(true, "test 43 open");
       
       ws.binaryType = "arraybuffer";
       ws.binaryType = "blob";
-      ws.binaryType = "";  
+      ws.binaryType = ""; 
       is(ws.binaryType, "blob");
-      ws.binaryType = "ArrayBuffer";  
+      ws.binaryType = "ArrayBuffer"; 
       is(ws.binaryType, "blob");
-      ws.binaryType = "Blob";  
+      ws.binaryType = "Blob"; 
       is(ws.binaryType, "blob");
-      ws.binaryType = "mcfoofluu";  
+      ws.binaryType = "mcfoofluu"; 
       is(ws.binaryType, "blob");
       ws.close();
-    }
+    };
 
     ws.onclose = function(e) {
       ok(true, "test 43 close");
       resolve();
-    }
+    };
   });
 }
 
 
 function test44() {
   return new Promise(function(resolve, reject) {
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-44");
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      "test-44"
+    );
     is(ws.readyState, 0, "bad readyState in test-44!");
     ws.binaryType = "arraybuffer";
 
@@ -1081,20 +1277,23 @@ function test44() {
       view[1] = 0; 
       view[2] = 7;
       ws.send(buf);
-    }
+    };
 
     ws.onmessage = function(e) {
       ok(e.data instanceof ArrayBuffer, "Should receive an arraybuffer!");
       var view = new Uint8Array(e.data);
-      ok(view.length == 2 && view[0] == 0 && view[1] ==4, "testing Reply arraybuffer" );
+      ok(
+        view.length == 2 && view[0] == 0 && view[1] == 4,
+        "testing Reply arraybuffer"
+      );
       ws.close();
-    }
+    };
 
     ws.onclose = function(e) {
       is(ws.readyState, 3, "onclose bad readyState in test-44!");
       shouldCloseCleanly(e);
       resolve();
-    }
+    };
   });
 }
 
@@ -1102,14 +1301,17 @@ function test44() {
 function test45() {
   return new Promise(function(resolve, reject) {
     function test45Real(blobFile) {
-      var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-45");
+      var ws = CreateTestWS(
+        "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+        "test-45"
+      );
       is(ws.readyState, 0, "bad readyState in test-45!");
       
 
       ws.onopen = function() {
         is(ws.readyState, 1, "open bad readyState in test-45!");
         ws.send(blobFile);
-      }
+      };
 
       var test45blob;
 
@@ -1118,7 +1320,7 @@ function test45() {
         ok(test45blob instanceof Blob, "We should be receiving a Blob");
 
         ws.close();
-      }
+      };
 
       ws.onclose = function(e) {
         is(ws.readyState, 3, "onclose bad readyState in test-45!");
@@ -1127,54 +1329,62 @@ function test45() {
         
         var reader = new FileReader();
         reader.onload = function(event) {
-          is(reader.result, "flob", "response should be 'flob': got '"
-             + reader.result + "'");
-        }
+          is(
+            reader.result,
+            "flob",
+            "response should be 'flob': got '" + reader.result + "'"
+          );
+        };
 
         reader.onerror = function(event) {
           testFailed("Failed to read blob: error code = " + reader.error.code);
-        }
+        };
 
         reader.onloadend = function(event) {
           resolve();
-        }
+        };
 
         reader.readAsBinaryString(test45blob);
-      }
+      };
     }
 
-    SpecialPowers.createFiles([{name: "testBlobFile", data: "flob"}],
-    function(files) {
-      test45Real(files[0]);
-    },
-    function(msg) {
-      testFailed("Failed to create file for test45: " + msg);
-      resolve();
-    });
+    SpecialPowers.createFiles(
+      [{ name: "testBlobFile", data: "flob" }],
+      function(files) {
+        test45Real(files[0]);
+      },
+      function(msg) {
+        testFailed("Failed to create file for test45: " + msg);
+        resolve();
+      }
+    );
   });
 }
 
 
 function test46() {
   return new Promise(function(resolve, reject) {
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-46");
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      "test-46"
+    );
     is(ws.readyState, 0, "create bad readyState in test-46!");
 
     ws.onopen = function() {
       is(ws.readyState, 1, "open bad readyState in test-46!");
-      ws.close()
+      ws.close();
       is(ws.readyState, 2, "close must set readyState to 2 in test-46!");
-    }
+    };
 
     ws.onmessage = function(e) {
       ok(false, "received message after calling close in test-46!");
-    }
+    };
 
     ws.onclose = function(e) {
       is(ws.readyState, 3, "onclose bad readyState in test-46!");
       shouldCloseCleanly(e);
       resolve();
-    }
+    };
   });
 }
 
@@ -1182,34 +1392,48 @@ function test46() {
 function test47() {
   return new Promise(function(resolve, reject) {
     var hasError = false;
-    var ws = CreateTestWS("ws://another.websocket.server.that.probably.does.not.exist");
+    var ws = CreateTestWS(
+      "ws://another.websocket.server.that.probably.does.not.exist"
+    );
 
     ws.onopen = shouldNotOpen;
 
-    ws.onerror = function (e) {
-      is(ws.readyState, 3, "test-47: readyState should be CLOSED(3) in onerror: got "
-         + ws.readyState);
+    ws.onerror = function(e) {
+      is(
+        ws.readyState,
+        3,
+        "test-47: readyState should be CLOSED(3) in onerror: got " +
+          ws.readyState
+      );
       ok(!ws._withinClose, "onerror() called during close()!");
       hasError = true;
-    }
+    };
 
     ws.onclose = function(e) {
       shouldCloseNotCleanly(e);
       ok(hasError, "test-47: should have called onerror before onclose");
-      is(ws.readyState, 3, "test-47: readyState should be CLOSED(3) in onclose: got "
-         + ws.readyState);
+      is(
+        ws.readyState,
+        3,
+        "test-47: readyState should be CLOSED(3) in onclose: got " +
+          ws.readyState
+      );
       ok(!ws._withinClose, "onclose() called during close()!");
       is(e.code, 1006, "test-47 close code should be 1006 but is:" + e.code);
       resolve();
-    }
+    };
 
     
     
     ws._withinClose = 1;
     ws.close(3333, "Closed before we were open: error");
     ws._withinClose = 0;
-    is(ws.readyState, 2, "test-47: readyState should be CLOSING(2) after close(): got "
-       + ws.readyState);
+    is(
+      ws.readyState,
+      2,
+      "test-47: readyState should be CLOSING(2) after close(): got " +
+        ws.readyState
+    );
   });
 }
 
@@ -1220,7 +1444,10 @@ function test48() {
     const pref_close = "network.websocket.timeout.close";
     SpecialPowers.setIntPref(pref_close, 1);
 
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-48");
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      "test-48"
+    );
 
     ws.onopen = function() {
       ws.close();
@@ -1229,40 +1456,38 @@ function test48() {
       var curDate = null;
       do {
         curDate = new Date();
-      } while(curDate-date < 1500);
-
-    }
+      } while (curDate - date < 1500);
+    };
 
     ws.onclose = function(e) {
       ok(true, "ws close in test 48");
       resolve();
-    }
+    };
 
     SpecialPowers.clearUserPref(pref_close);
   });
 }
 
-function test49()
-{
+function test49() {
   return new Promise(function(resolve, reject) {
-    var ws = CreateTestWS("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket", "test-49");
+    var ws = CreateTestWS(
+      "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
+      "test-49"
+    );
     var gotError = 0;
     ok(ws.readyState == 0, "create bad readyState in test-49!");
 
-    ws.onopen = function()
-    {
-      ok(false, "Connection must fail in test-49")
-    }
+    ws.onopen = function() {
+      ok(false, "Connection must fail in test-49");
+    };
 
-    ws.onerror = function(e)
-    {
-      gotError = 1
-    }
+    ws.onerror = function(e) {
+      gotError = 1;
+    };
 
-    ws.onclose = function(e)
-    {
+    ws.onclose = function(e) {
       ok(gotError, "Should get error in test-49!");
       resolve();
-    }
+    };
   });
 }

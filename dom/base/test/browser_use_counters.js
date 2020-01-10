@@ -10,80 +10,121 @@ const gHttpTestRoot = "http://example.com/browser/dom/base/test/";
 var gOldContentCanRecord = false;
 var gOldParentCanRecord = false;
 add_task(async function test_initialize() {
-  let Telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(Ci.nsITelemetry);
-  gOldParentCanRecord = Telemetry.canRecordExtended
+  let Telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(
+    Ci.nsITelemetry
+  );
+  gOldParentCanRecord = Telemetry.canRecordExtended;
   Telemetry.canRecordExtended = true;
 
   
   
   
-  await SpecialPowers.pushPrefEnv({ set: [[ "dom.ipc.processCount", 1 ]] });
+  await SpecialPowers.pushPrefEnv({ set: [["dom.ipc.processCount", 1]] });
 
-  gOldContentCanRecord = await ContentTask.spawn(gBrowser.selectedBrowser, {}, function () {
-    let telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(Ci.nsITelemetry);
-    let old = telemetry.canRecordExtended;
-    telemetry.canRecordExtended = true;
-    return old;
-  });
+  gOldContentCanRecord = await ContentTask.spawn(
+    gBrowser.selectedBrowser,
+    {},
+    function() {
+      let telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(
+        Ci.nsITelemetry
+      );
+      let old = telemetry.canRecordExtended;
+      telemetry.canRecordExtended = true;
+      return old;
+    }
+  );
   info("canRecord for content: " + gOldContentCanRecord);
 });
 
 add_task(async function() {
   
-  await check_use_counter_iframe("file_use_counter_svg_getElementById.svg",
-                                 "SVGSVGELEMENT_GETELEMENTBYID");
-  await check_use_counter_iframe("file_use_counter_svg_currentScale.svg",
-                                 "SVGSVGELEMENT_CURRENTSCALE_getter");
-  await check_use_counter_iframe("file_use_counter_svg_currentScale.svg",
-                                 "SVGSVGELEMENT_CURRENTSCALE_setter");
+  await check_use_counter_iframe(
+    "file_use_counter_svg_getElementById.svg",
+    "SVGSVGELEMENT_GETELEMENTBYID"
+  );
+  await check_use_counter_iframe(
+    "file_use_counter_svg_currentScale.svg",
+    "SVGSVGELEMENT_CURRENTSCALE_getter"
+  );
+  await check_use_counter_iframe(
+    "file_use_counter_svg_currentScale.svg",
+    "SVGSVGELEMENT_CURRENTSCALE_setter"
+  );
 
   
   
   
   
-  await check_use_counter_iframe("file_use_counter_svg_getElementById.svg",
-                                 "SVGSVGELEMENT_GETELEMENTBYID", false);
-  await check_use_counter_iframe("file_use_counter_svg_currentScale.svg",
-                                 "SVGSVGELEMENT_CURRENTSCALE_getter", false);
-  await check_use_counter_iframe("file_use_counter_svg_currentScale.svg",
-                                 "SVGSVGELEMENT_CURRENTSCALE_setter", false);
+  await check_use_counter_iframe(
+    "file_use_counter_svg_getElementById.svg",
+    "SVGSVGELEMENT_GETELEMENTBYID",
+    false
+  );
+  await check_use_counter_iframe(
+    "file_use_counter_svg_currentScale.svg",
+    "SVGSVGELEMENT_CURRENTSCALE_getter",
+    false
+  );
+  await check_use_counter_iframe(
+    "file_use_counter_svg_currentScale.svg",
+    "SVGSVGELEMENT_CURRENTSCALE_setter",
+    false
+  );
 
   
   
   
-  await check_use_counter_img("file_use_counter_svg_getElementById.svg",
-                              "PROPERTY_FILL");
-  await check_use_counter_img("file_use_counter_svg_currentScale.svg",
-                              "PROPERTY_FILL");
+  await check_use_counter_img(
+    "file_use_counter_svg_getElementById.svg",
+    "PROPERTY_FILL"
+  );
+  await check_use_counter_img(
+    "file_use_counter_svg_currentScale.svg",
+    "PROPERTY_FILL"
+  );
 
   
   
-  await check_use_counter_direct("file_use_counter_svg_fill_pattern.svg",
-                                 "PROPERTY_FILLOPACITY", true);
+  await check_use_counter_direct(
+    "file_use_counter_svg_fill_pattern.svg",
+    "PROPERTY_FILLOPACITY",
+     true
+  );
 
   
   
-  await check_use_counter_direct("file_use_counter_svg_fill_pattern_internal.svg",
-                                 "PROPERTY_FILLOPACITY");
+  await check_use_counter_direct(
+    "file_use_counter_svg_fill_pattern_internal.svg",
+    "PROPERTY_FILLOPACITY"
+  );
   
   
   
 });
 
 add_task(async function() {
-  let Telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(Ci.nsITelemetry);
+  let Telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(
+    Ci.nsITelemetry
+  );
   Telemetry.canRecordExtended = gOldParentCanRecord;
 
-  await ContentTask.spawn(gBrowser.selectedBrowser, { oldCanRecord: gOldContentCanRecord }, async function(arg) {
-    const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
-    await new Promise(resolve => {
-      let telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(Ci.nsITelemetry);
-      telemetry.canRecordExtended = arg.oldCanRecord;
-      resolve();
-    });
-  });
+  await ContentTask.spawn(
+    gBrowser.selectedBrowser,
+    { oldCanRecord: gOldContentCanRecord },
+    async function(arg) {
+      const { PromiseUtils } = ChromeUtils.import(
+        "resource://gre/modules/PromiseUtils.jsm"
+      );
+      await new Promise(resolve => {
+        let telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(
+          Ci.nsITelemetry
+        );
+        telemetry.canRecordExtended = arg.oldCanRecord;
+        resolve();
+      });
+    }
+  );
 });
-
 
 function waitForDestroyedDocuments() {
   let deferred = PromiseUtils.defer();
@@ -93,19 +134,23 @@ function waitForDestroyedDocuments() {
 
 function waitForPageLoad(browser) {
   return ContentTask.spawn(browser, null, async function() {
-    const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
+    const { PromiseUtils } = ChromeUtils.import(
+      "resource://gre/modules/PromiseUtils.jsm"
+    );
     await new Promise(resolve => {
       let listener = () => {
         removeEventListener("load", listener, true);
         resolve();
-      }
+      };
       addEventListener("load", listener, true);
     });
   });
 }
 
 function grabHistogramsFromContent(use_counter_middlefix, page_before = null) {
-  let telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(Ci.nsITelemetry);
+  let telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(
+    Ci.nsITelemetry
+  );
   let gather = () => {
     let snapshots;
     if (Services.appinfo.browserTabsRemoteAutostart) {
@@ -113,7 +158,7 @@ function grabHistogramsFromContent(use_counter_middlefix, page_before = null) {
     } else {
       snapshots = telemetry.getSnapshotForHistograms("main", false).parent;
     }
-    let checkGet = (probe) => {
+    let checkGet = probe => {
       return snapshots[probe] ? snapshots[probe].sum : 0;
     };
     return [
@@ -128,32 +173,46 @@ function grabHistogramsFromContent(use_counter_middlefix, page_before = null) {
   }).then(gather, gather);
 }
 
-var check_use_counter_iframe = async function(file, use_counter_middlefix, check_documents=true) {
+var check_use_counter_iframe = async function(
+  file,
+  use_counter_middlefix,
+  check_documents = true
+) {
   info("checking " + file + " with histogram " + use_counter_middlefix);
 
-  let newTab = BrowserTestUtils.addTab(gBrowser,  "about:blank");
+  let newTab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   gBrowser.selectedTab = newTab;
   newTab.linkedBrowser.stop();
 
   
   
-  let [histogram_page_before, histogram_document_before,
-       histogram_docs_before, histogram_toplevel_docs_before] =
-      await grabHistogramsFromContent(use_counter_middlefix);
+  let [
+    histogram_page_before,
+    histogram_document_before,
+    histogram_docs_before,
+    histogram_toplevel_docs_before,
+  ] = await grabHistogramsFromContent(use_counter_middlefix);
 
-  BrowserTestUtils.loadURI(gBrowser.selectedBrowser, gHttpTestRoot + "file_use_counter_outer.html");
+  BrowserTestUtils.loadURI(
+    gBrowser.selectedBrowser,
+    gHttpTestRoot + "file_use_counter_outer.html"
+  );
   await waitForPageLoad(gBrowser.selectedBrowser);
 
   
-  await ContentTask.spawn(gBrowser.selectedBrowser, { file: file }, function(opts) {
-    const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
+  await ContentTask.spawn(gBrowser.selectedBrowser, { file: file }, function(
+    opts
+  ) {
+    const { PromiseUtils } = ChromeUtils.import(
+      "resource://gre/modules/PromiseUtils.jsm"
+    );
     let deferred = PromiseUtils.defer();
 
     let wu = content.window.windowUtils;
 
-    let iframe = content.document.getElementById('content');
+    let iframe = content.document.getElementById("content");
     iframe.src = opts.file;
-    let listener = (event) => {
+    let listener = event => {
       event.target.removeEventListener("load", listener, true);
 
       
@@ -178,22 +237,38 @@ var check_use_counter_iframe = async function(file, use_counter_middlefix, check
   await waitForDestroyedDocuments();
 
   
-  let [histogram_page_after, histogram_document_after,
-       histogram_docs_after, histogram_toplevel_docs_after] =
-      await grabHistogramsFromContent(use_counter_middlefix, histogram_page_before);
+  let [
+    histogram_page_after,
+    histogram_document_after,
+    histogram_docs_after,
+    histogram_toplevel_docs_after,
+  ] = await grabHistogramsFromContent(
+    use_counter_middlefix,
+    histogram_page_before
+  );
 
-  is(histogram_page_after, histogram_page_before + 1,
-     "page counts for " + use_counter_middlefix + " after are correct");
-  ok(histogram_toplevel_docs_after >= histogram_toplevel_docs_before + 1,
-     "top level document counts are correct");
+  is(
+    histogram_page_after,
+    histogram_page_before + 1,
+    "page counts for " + use_counter_middlefix + " after are correct"
+  );
+  ok(
+    histogram_toplevel_docs_after >= histogram_toplevel_docs_before + 1,
+    "top level document counts are correct"
+  );
   if (check_documents) {
-    is(histogram_document_after, histogram_document_before + 1,
-       "document counts for " + use_counter_middlefix + " after are correct");
+    is(
+      histogram_document_after,
+      histogram_document_before + 1,
+      "document counts for " + use_counter_middlefix + " after are correct"
+    );
   }
 };
 
 var check_use_counter_img = async function(file, use_counter_middlefix) {
-  info("checking " + file + " as image with histogram " + use_counter_middlefix);
+  info(
+    "checking " + file + " as image with histogram " + use_counter_middlefix
+  );
 
   let newTab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   gBrowser.selectedTab = newTab;
@@ -201,38 +276,50 @@ var check_use_counter_img = async function(file, use_counter_middlefix) {
 
   
   
-  let [histogram_page_before, histogram_document_before,
-       histogram_docs_before, histogram_toplevel_docs_before] =
-      await grabHistogramsFromContent(use_counter_middlefix);
+  let [
+    histogram_page_before,
+    histogram_document_before,
+    histogram_docs_before,
+    histogram_toplevel_docs_before,
+  ] = await grabHistogramsFromContent(use_counter_middlefix);
 
-  BrowserTestUtils.loadURI(gBrowser.selectedBrowser, gHttpTestRoot + "file_use_counter_outer.html");
+  BrowserTestUtils.loadURI(
+    gBrowser.selectedBrowser,
+    gHttpTestRoot + "file_use_counter_outer.html"
+  );
   await waitForPageLoad(gBrowser.selectedBrowser);
 
   
-  await ContentTask.spawn(gBrowser.selectedBrowser, { file: file }, async function(opts) {
-    const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
-    let deferred = PromiseUtils.defer();
+  await ContentTask.spawn(
+    gBrowser.selectedBrowser,
+    { file: file },
+    async function(opts) {
+      const { PromiseUtils } = ChromeUtils.import(
+        "resource://gre/modules/PromiseUtils.jsm"
+      );
+      let deferred = PromiseUtils.defer();
 
-    let img = content.document.getElementById('display');
-    img.src = opts.file;
-    let listener = (event) => {
-      img.removeEventListener("load", listener, true);
+      let img = content.document.getElementById("display");
+      img.src = opts.file;
+      let listener = event => {
+        img.removeEventListener("load", listener, true);
 
-      
-      
-      
-      let wu = content.window.windowUtils;
-      wu.forceUseCounterFlush(img);
+        
+        
+        
+        let wu = content.window.windowUtils;
+        wu.forceUseCounterFlush(img);
 
-      
-      wu.forceUseCounterFlush(content.document);
+        
+        wu.forceUseCounterFlush(content.document);
 
-      deferred.resolve();
-    };
-    img.addEventListener("load", listener, true);
+        deferred.resolve();
+      };
+      img.addEventListener("load", listener, true);
 
-    return deferred.promise;
-  });
+      return deferred.promise;
+    }
+  );
 
   
   gBrowser.removeTab(newTab);
@@ -243,37 +330,62 @@ var check_use_counter_img = async function(file, use_counter_middlefix) {
   await waitForDestroyedDocuments();
 
   
-  let [histogram_page_after, histogram_document_after,
-       histogram_docs_after, histogram_toplevel_docs_after] =
-      await grabHistogramsFromContent(use_counter_middlefix, histogram_page_before);
-  is(histogram_page_after, histogram_page_before + 1,
-     "page counts for " + use_counter_middlefix + " after are correct");
-  is(histogram_document_after, histogram_document_before + 1,
-     "document counts for " + use_counter_middlefix + " after are correct");
-  ok(histogram_toplevel_docs_after >= histogram_toplevel_docs_before + 1,
-     "top level document counts are correct");
+  let [
+    histogram_page_after,
+    histogram_document_after,
+    histogram_docs_after,
+    histogram_toplevel_docs_after,
+  ] = await grabHistogramsFromContent(
+    use_counter_middlefix,
+    histogram_page_before
+  );
+  is(
+    histogram_page_after,
+    histogram_page_before + 1,
+    "page counts for " + use_counter_middlefix + " after are correct"
+  );
+  is(
+    histogram_document_after,
+    histogram_document_before + 1,
+    "document counts for " + use_counter_middlefix + " after are correct"
+  );
+  ok(
+    histogram_toplevel_docs_after >= histogram_toplevel_docs_before + 1,
+    "top level document counts are correct"
+  );
   
   
-  ok(histogram_docs_after >= histogram_docs_before + 2,
-     "document counts are correct");
+  ok(
+    histogram_docs_after >= histogram_docs_before + 2,
+    "document counts are correct"
+  );
 };
 
-var check_use_counter_direct = async function(file, use_counter_middlefix, xfail=false) {
+var check_use_counter_direct = async function(
+  file,
+  use_counter_middlefix,
+  xfail = false
+) {
   info("checking " + file + " with histogram " + use_counter_middlefix);
 
-  let newTab = BrowserTestUtils.addTab(gBrowser,  "about:blank");
+  let newTab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   gBrowser.selectedTab = newTab;
   newTab.linkedBrowser.stop();
 
   
   
-  let [histogram_page_before, histogram_document_before,
-       histogram_docs_before, histogram_toplevel_docs_before] =
-      await grabHistogramsFromContent(use_counter_middlefix);
+  let [
+    histogram_page_before,
+    histogram_document_before,
+    histogram_docs_before,
+    histogram_toplevel_docs_before,
+  ] = await grabHistogramsFromContent(use_counter_middlefix);
 
   BrowserTestUtils.loadURI(gBrowser.selectedBrowser, gHttpTestRoot + file);
   await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
-    const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
+    const { PromiseUtils } = ChromeUtils.import(
+      "resource://gre/modules/PromiseUtils.jsm"
+    );
     await new Promise(resolve => {
       let listener = () => {
         removeEventListener("load", listener, true);
@@ -282,7 +394,7 @@ var check_use_counter_direct = async function(file, use_counter_middlefix, xfail
         wu.forceUseCounterFlush(content.document);
 
         setTimeout(resolve, 0);
-      }
+      };
       addEventListener("load", listener, true);
     });
   });
@@ -296,17 +408,33 @@ var check_use_counter_direct = async function(file, use_counter_middlefix, xfail
   await waitForDestroyedDocuments();
 
   
-  let [histogram_page_after, histogram_document_after,
-       histogram_docs_after, histogram_toplevel_docs_after] =
-      await grabHistogramsFromContent(use_counter_middlefix, histogram_page_before);
+  let [
+    histogram_page_after,
+    histogram_document_after,
+    histogram_docs_after,
+    histogram_toplevel_docs_after,
+  ] = await grabHistogramsFromContent(
+    use_counter_middlefix,
+    histogram_page_before
+  );
   if (!xfail) {
-    is(histogram_page_after, histogram_page_before + 1,
-       "page counts for " + use_counter_middlefix + " after are correct");
-    is(histogram_document_after, histogram_document_before + 1,
-       "document counts for " + use_counter_middlefix + " after are correct");
+    is(
+      histogram_page_after,
+      histogram_page_before + 1,
+      "page counts for " + use_counter_middlefix + " after are correct"
+    );
+    is(
+      histogram_document_after,
+      histogram_document_before + 1,
+      "document counts for " + use_counter_middlefix + " after are correct"
+    );
   }
-  ok(histogram_toplevel_docs_after >= histogram_toplevel_docs_before + 1,
-     "top level document counts are correct");
-  ok(histogram_docs_after >= histogram_docs_before + 1,
-     "document counts are correct");
+  ok(
+    histogram_toplevel_docs_after >= histogram_toplevel_docs_before + 1,
+    "top level document counts are correct"
+  );
+  ok(
+    histogram_docs_after >= histogram_docs_before + 1,
+    "document counts are correct"
+  );
 };

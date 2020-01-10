@@ -1,17 +1,24 @@
 function ok(a, msg) {
   dump("OK: " + !!a + "  =>  " + a + ": " + msg + "\n");
-  postMessage({type: 'status', status: !!a, msg: a + ": " + msg });
+  postMessage({ type: "status", status: !!a, msg: a + ": " + msg });
 }
 
 function workerTestDone() {
-  postMessage({ type: 'finish' });
+  postMessage({ type: "finish" });
 }
 
 ok(self.performance, "Performance object should exist.");
-ok(typeof self.performance.now == 'function', "Performance object should have a 'now' method.");
-var n = self.performance.now(), d = Date.now();
+ok(
+  typeof self.performance.now == "function",
+  "Performance object should have a 'now' method."
+);
+var n = self.performance.now(),
+  d = Date.now();
 ok(n >= 0, "The value of now() should be equal to or greater than 0.");
-ok(self.performance.now() >= n, "The value of now() should monotonically increase.");
+ok(
+  self.performance.now() >= n,
+  "The value of now() should monotonically increase."
+);
 
 
 
@@ -43,15 +50,19 @@ function checkAfterTimeout() {
   
   
   
-  ok(elapsedPerf > 0,
-     `Loose - the value of now() should increase after 2ms. ` +
-     `delta now(): ${elapsedPerf} ms`);
+  ok(
+    elapsedPerf > 0,
+    `Loose - the value of now() should increase after 2ms. ` +
+      `delta now(): ${elapsedPerf} ms`
+  );
 
   
   
-  ok(checks == 1,
-     `Strict - the value of now() should increase after one setTimeout. ` +
-     `iters: ${checks}, dt: ${elapsedTime}, now(): ${n2}`);
+  ok(
+    checks == 1,
+    `Strict - the value of now() should increase after one setTimeout. ` +
+      `iters: ${checks}, dt: ${elapsedTime}, now(): ${n2}`
+  );
 
   workerTestDone();
-};
+}

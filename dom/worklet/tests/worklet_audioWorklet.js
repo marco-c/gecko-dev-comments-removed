@@ -1,5 +1,7 @@
 class DummyProcessWorkletProcessor extends AudioWorkletProcessor {
-  constructor() { super(); }
+  constructor() {
+    super();
+  }
 
   process() {
     
@@ -9,4 +11,6 @@ class DummyProcessWorkletProcessor extends AudioWorkletProcessor {
 
 
 registerProcessor("sure!", DummyProcessWorkletProcessor);
-console.log(this instanceof AudioWorkletGlobalScope ? "So far so good" : "error");
+console.log(
+  this instanceof AudioWorkletGlobalScope ? "So far so good" : "error"
+);

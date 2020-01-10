@@ -1,6 +1,6 @@
 
 
-"use strict"
+"use strict";
 
 
 
@@ -27,7 +27,7 @@ async function checkForEventListenerLeaks(name, target) {
   
   await _eventListenerLeakStep(target, `${name} bfcache`, frame => {
     frame.src = "about:blank";
-    return new Promise(resolve => frame.onload = resolve);
+    return new Promise(resolve => (frame.onload = resolve));
   });
 
   
@@ -45,10 +45,10 @@ async function checkForEventListenerLeaks(name, target) {
 
 
 async function _withFrame(doc, url) {
-  let frame = doc.createElement('iframe');
+  let frame = doc.createElement("iframe");
   frame.src = url;
   doc.body.appendChild(frame);
-  await new Promise(resolve => frame.onload = resolve);
+  await new Promise(resolve => (frame.onload = resolve));
   return frame;
 }
 
@@ -77,6 +77,8 @@ async function _eventListenerLeakStep(target, name, extra) {
   await new Promise(resolve => SpecialPowers.exactGC(resolve));
   await new Promise(resolve => SpecialPowers.exactGC(resolve));
 
-  ok(!weakRef.get(), `iframe content window should be garbage collected - ${name}`);
+  ok(
+    !weakRef.get(),
+    `iframe content window should be garbage collected - ${name}`
+  );
 }
-

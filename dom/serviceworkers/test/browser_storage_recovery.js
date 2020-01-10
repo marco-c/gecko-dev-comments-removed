@@ -7,7 +7,6 @@
 
 
 
-
 const BASE_URI = "http://mochi.test:8888/browser/dom/serviceworkers/test/";
 const PAGE_URI = BASE_URI + "empty.html";
 const SCOPE = PAGE_URI + "?storage_recovery";
@@ -29,22 +28,26 @@ async function checkForUpdate(browser) {
 
 async function wipeStorage(u) {
   let uri = Services.io.newURI(u);
-  let principal =
-    Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
+  let principal = Services.scriptSecurityManager.createCodebasePrincipal(
+    uri,
+    {}
+  );
   let caches = new CacheStorage("chrome", principal);
   let list = await caches.keys();
   return Promise.all(list.map(c => caches.delete(c)));
 }
 
 add_task(async function setup() {
-  await SpecialPowers.pushPrefEnv({"set": [
-    
-    
-    ["dom.ipc.processCount", 1],
-    ["dom.serviceWorkers.enabled", true],
-    ["dom.serviceWorkers.testing.enabled", true],
-    ["dom.serviceWorkers.idle_timeout", 0],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      
+      ["dom.ipc.processCount", 1],
+      ["dom.serviceWorkers.enabled", true],
+      ["dom.serviceWorkers.testing.enabled", true],
+      ["dom.serviceWorkers.idle_timeout", 0],
+    ],
+  });
 
   
   await fetch(SW_SCRIPT + "?clear-redirect");
@@ -53,10 +56,13 @@ add_task(async function setup() {
   let browser = gBrowser.getBrowserForTab(tab);
   await BrowserTestUtils.browserLoaded(browser);
 
-  await ContentTask.spawn(browser, { script: SW_SCRIPT, scope: SCOPE },
+  await ContentTask.spawn(
+    browser,
+    { script: SW_SCRIPT, scope: SCOPE },
     async function(opts) {
-      let reg = await content.navigator.serviceWorker.register(opts.script,
-                                                               { scope: opts.scope });
+      let reg = await content.navigator.serviceWorker.register(opts.script, {
+        scope: opts.scope,
+      });
       let worker = reg.installing || reg.waiting || reg.active;
       await new Promise(resolve => {
         if (worker.state === "activated") {
@@ -137,7 +143,10 @@ add_task(async function wiped_and_failed_update_check() {
     let reg = await content.navigator.serviceWorker.getRegistration(uri);
     return !!reg;
   });
-  ok(!exists, "registration should be removed after scripts are wiped and update fails");
+  ok(
+    !exists,
+    "registration should be removed after scripts are wiped and update fails"
+  );
 
   
   

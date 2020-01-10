@@ -1,13 +1,15 @@
 SimpleTest.waitForExplicitFinish();
 
 
-var test = function (isContent) {
+var test = function(isContent) {
   
   
-  let eventDefs = [["mousedown", true],
-                   ["mouseup", true],
-                   ["mousedown", false],
-                   ["mouseup", false]];
+  let eventDefs = [
+    ["mousedown", true],
+    ["mouseup", true],
+    ["mousedown", false],
+    ["mouseup", false],
+  ];
 
   let testCounter = 0;
 
@@ -15,11 +17,19 @@ var test = function (isContent) {
   let setup;
 
   
-  let handleEvent = function (event, prefVal) {
+  let handleEvent = function(event, prefVal) {
     let resisting = prefVal && isContent;
     if (resisting) {
-      is(event.screenX, event.clientX, "event.screenX and event.clientX should be the same");
-      is(event.screenY, event.clientY, "event.screenY and event.clientY should be the same");
+      is(
+        event.screenX,
+        event.clientX,
+        "event.screenX and event.clientX should be the same"
+      );
+      is(
+        event.screenY,
+        event.clientY,
+        "event.screenY and event.clientY should be the same"
+      );
     } else {
       
       isnot(event.screenY, event.clientY, "event.screenY !== event.clientY");
@@ -36,14 +46,18 @@ var test = function (isContent) {
   
   
   
-  nextTest = function () {
+  nextTest = function() {
     let [eventType, prefVal] = eventDefs[testCounter];
-    SpecialPowers.pushPrefEnv({set:[["privacy.resistFingerprinting", prefVal]]},
-      function () {
+    SpecialPowers.pushPrefEnv(
+      { set: [["privacy.resistFingerprinting", prefVal]] },
+      function() {
         
         
         
-        let div = document.createElementNS("http://www.w3.org/1999/xhtml", "div");
+        let div = document.createElementNS(
+          "http://www.w3.org/1999/xhtml",
+          "div"
+        );
         div.style.width = "10px";
         div.style.height = "10px";
         div.style.backgroundColor = "red";
@@ -56,14 +70,14 @@ var test = function (isContent) {
           div.addEventListener(eventType, event => handleEvent(event, prefVal));
           
           
-          window.setTimeout(function () {
-            synthesizeMouseAtCenter(div, {type : eventType});
+          window.setTimeout(function() {
+            synthesizeMouseAtCenter(div, { type: eventType });
           }, 0);
         }, 0);
-      });
+      }
+    );
   };
 
   
   nextTest();
-
 };

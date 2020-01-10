@@ -7,7 +7,7 @@ var broadcast = function(message) {
     port = clients[i];
     port.postMessage(message);
   }
-}
+};
 
 onconnect = function(e) {
   clients.push(e.ports[0]);
@@ -19,11 +19,12 @@ onconnect = function(e) {
       if (msg.data == "StartFetchWithWrongIntegrity") {
         
         
-        fetch("SharedWorker_SRIFailed.html", {"integrity": "abc"}).then(
-            function () {
-                clients[0].postMessage('SRI_failed');
-            });
+        fetch("SharedWorker_SRIFailed.html", { integrity: "abc" }).then(
+          function() {
+            clients[0].postMessage("SRI_failed");
+          }
+        );
       }
-    }
+    };
   }
-}
+};

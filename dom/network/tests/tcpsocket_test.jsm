@@ -1,16 +1,18 @@
 var EXPORTED_SYMBOLS = [
-  'createSocket', 'createServer',
-  'socketCompartmentInstanceOfArrayBuffer'];
+  "createSocket",
+  "createServer",
+  "socketCompartmentInstanceOfArrayBuffer",
+];
 
 var createSocket = function(host, port, options) {
   return new TCPSocket(host, port, options);
-}
+};
 
 var createServer = function(port, options, backlog) {
   return new TCPServerSocket(port, options, backlog);
-}
+};
 
 
 var socketCompartmentInstanceOfArrayBuffer = function(obj) {
   return obj instanceof ArrayBuffer;
-}
+};

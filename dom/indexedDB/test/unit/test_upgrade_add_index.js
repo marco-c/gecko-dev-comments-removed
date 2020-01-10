@@ -34,8 +34,7 @@ const hasCrypto = "crypto" in this;
 
 
 
-function* testSteps()
-{
+function* testSteps() {
   
   const allData = [];
 
@@ -56,7 +55,10 @@ function* testSteps()
 
   
   info("opening initial database");
-  let request = indexedDB.open(this.window ? window.location.pathname : "Splendid Test", 1);
+  let request = indexedDB.open(
+    this.window ? window.location.pathname : "Splendid Test",
+    1
+  );
   request.onerror = errorHandler;
   request.onupgradeneeded = grabEventAndContinueHandler; 
   let event = yield undefined; 
@@ -81,7 +83,10 @@ function* testSteps()
 
   
   info("opening database for upgrade to v2");
-  request = indexedDB.open(this.window ? window.location.pathname : "Splendid Test", 2);
+  request = indexedDB.open(
+    this.window ? window.location.pathname : "Splendid Test",
+    2
+  );
   request.onerror = errorHandler;
   request.onupgradeneeded = grabEventAndContinueHandler; 
   event = yield undefined; 

@@ -9,8 +9,7 @@
 
 
 
-var ParseRtpPacket = (buffer) => {
-
+var ParseRtpPacket = buffer => {
   
   let view = new DataView(buffer);
 
@@ -38,20 +37,20 @@ var ParseRtpPacket = (buffer) => {
   let byte = view.getUint8(offset);
   offset++;
   
-  header.version = (0xC0 & byte) >> 6;
+  header.version = (0xc0 & byte) >> 6;
   
-  header.padding = (0x30 & byte) >> 5
+  header.padding = (0x30 & byte) >> 5;
   
-  header.extensionsPresent = ((0x10 & byte) >> 4) == 1;
+  header.extensionsPresent = (0x10 & byte) >> 4 == 1;
   
-  header.csrcCount = (0xF & byte);
+  header.csrcCount = 0xf & byte;
 
   byte = view.getUint8(offset);
   offset++;
   
-  header.marker =  (0x80 & byte) >> 7;
+  header.marker = (0x80 & byte) >> 7;
   
-  header.payloadType = (0x7F & byte);
+  header.payloadType = 0x7f & byte;
   
   header.sequenceNumber = view.getUint16(offset);
   offset += 2;
@@ -73,7 +72,7 @@ var ParseRtpPacket = (buffer) => {
   header.extensions = [];
   header.extensionPaddingBytes = 0;
   header.extensionsTotalLength = 0;
-  if ( header.extensionsPresent ) {
+  if (header.extensionsPresent) {
     
     
     
@@ -82,17 +81,18 @@ var ParseRtpPacket = (buffer) => {
     
     
     
-    let addExtension = (id, len) => header.extensions.push({
+    let addExtension = (id, len) =>
+      header.extensions.push({
         id: id,
         data: new DataView(buffer, offset, len),
-    });
+      });
     let extensionId = view.getUint16(offset);
     offset += 2;
     
     header.extensionsTotalLength = view.getUint16(offset) * 4;
     offset += 2;
     
-    if (extensionId != 0xBEDE) {
+    if (extensionId != 0xbede) {
       
       addExtension(extensionId, header.extensionsTotalLength);
       offset += header.extensionsTotalLength;
@@ -113,7 +113,7 @@ var ParseRtpPacket = (buffer) => {
           header.extensionPaddingBytes++;
           continue;
         }
-        let id = (byte & 0xF0) >> 4;
+        let id = (byte & 0xf0) >> 4;
         
         if (id == 15) {
           
@@ -121,11 +121,11 @@ var ParseRtpPacket = (buffer) => {
           break;
         }
         
-        let len = (byte & 0x0F) + 1;
+        let len = (byte & 0x0f) + 1;
         addExtension(id, len);
         offset += len;
       }
     }
   }
   return { type: "rtp", header: header, payload: new DataView(buffer, offset) };
-}
+};

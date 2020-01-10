@@ -3,12 +3,11 @@
 
 
 
-let {ForgetAboutSite} = ChromeUtils.import("resource://gre/modules/ForgetAboutSite.jsm");
+let { ForgetAboutSite } = ChromeUtils.import(
+  "resource://gre/modules/ForgetAboutSite.jsm"
+);
 
-const domains = [
-  "mochi.test:8888",
-  "www.example.com",
-];
+const domains = ["mochi.test:8888", "www.example.com"];
 
 const addPath = "/browser/dom/indexedDB/test/browser_forgetThisSiteAdd.html";
 const getPath = "/browser/dom/indexedDB/test/browser_forgetThisSiteGet.html";

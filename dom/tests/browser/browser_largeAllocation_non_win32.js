@@ -1,6 +1,9 @@
 let testDir = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
 
-Services.scriptloader.loadSubScript(testDir + "/helper_largeAllocation.js", this);
+Services.scriptloader.loadSubScript(
+  testDir + "/helper_largeAllocation.js",
+  this
+);
 
 
 add_task(async function() {

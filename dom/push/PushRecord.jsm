@@ -4,17 +4,27 @@
 
 "use strict";
 
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(this, "EventDispatcher",
-                               "resource://gre/modules/Messaging.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "EventDispatcher",
+  "resource://gre/modules/Messaging.jsm"
+);
 
-ChromeUtils.defineModuleGetter(this, "PlacesUtils",
-                               "resource://gre/modules/PlacesUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
-                               "resource://gre/modules/PrivateBrowsingUtils.jsm");
-
+ChromeUtils.defineModuleGetter(
+  this,
+  "PlacesUtils",
+  "resource://gre/modules/PlacesUtils.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "PrivateBrowsingUtils",
+  "resource://gre/modules/PrivateBrowsingUtils.jsm"
+);
 
 const EXPORTED_SYMBOLS = ["PushRecord"];
 
@@ -36,22 +46,24 @@ function PushRecord(props) {
   this.appServerKey = props.appServerKey;
   this.recentMessageIDs = props.recentMessageIDs;
   this.setQuota(props.quota);
-  this.ctime = (typeof props.ctime === "number") ? props.ctime : 0;
+  this.ctime = typeof props.ctime === "number" ? props.ctime : 0;
 }
 
 PushRecord.prototype = {
   setQuota(suggestedQuota) {
     if (this.quotaApplies()) {
       let quota = +suggestedQuota;
-      this.quota = quota >= 0 ? quota : prefs.getIntPref("maxQuotaPerSubscription");
+      this.quota =
+        quota >= 0 ? quota : prefs.getIntPref("maxQuotaPerSubscription");
     } else {
       this.quota = Infinity;
     }
   },
 
   resetQuota() {
-    this.quota = this.quotaApplies() ?
-                 prefs.getIntPref("maxQuotaPerSubscription") : Infinity;
+    this.quota = this.quotaApplies()
+      ? prefs.getIntPref("maxQuotaPerSubscription")
+      : Infinity;
   },
 
   updateQuota(lastVisit) {
@@ -70,8 +82,10 @@ PushRecord.prototype = {
       
       
       
-      let daysElapsed =
-        Math.max(0, (Date.now() - lastVisit) / 24 / 60 / 60 / 1000);
+      let daysElapsed = Math.max(
+        0,
+        (Date.now() - lastVisit) / 24 / 60 / 60 / 1000
+      );
       this.quota = Math.min(
         Math.round(8 * Math.pow(daysElapsed, -0.8)),
         prefs.getIntPref("maxQuotaPerSubscription")
@@ -150,7 +164,7 @@ PushRecord.prototype = {
       Ci.nsINavHistoryService.TRANSITION_REDIRECT_TEMPORARY,
     ].join(",");
 
-    let db =  await PlacesUtils.promiseDBConnection();
+    let db = await PlacesUtils.promiseDBConnection();
     
     
     
@@ -186,8 +200,9 @@ PushRecord.prototype = {
         continue;
       }
       
-      let tabs = window.gBrowser ? window.gBrowser.tabs :
-                 window.BrowserApp.tabs;
+      let tabs = window.gBrowser
+        ? window.gBrowser.tabs
+        : window.BrowserApp.tabs;
       for (let tab of tabs) {
         
         let tabURI = (tab.linkedBrowser || tab.browser).currentURI;
@@ -205,11 +220,16 @@ PushRecord.prototype = {
 
 
   hasPermission() {
-    if (this.systemRecord || prefs.getBoolPref("testing.ignorePermission", false)) {
+    if (
+      this.systemRecord ||
+      prefs.getBoolPref("testing.ignorePermission", false)
+    ) {
       return true;
     }
     let permission = Services.perms.testExactPermissionFromPrincipal(
-      this.principal, "desktop-notification");
+      this.principal,
+      "desktop-notification"
+    );
     return permission == Ci.nsIPermissionManager.ALLOW_ACTION;
   },
 
@@ -217,8 +237,7 @@ PushRecord.prototype = {
     if (!this.hasPermission()) {
       return Promise.resolve(false);
     }
-    return this.getLastVisit()
-      .then(lastVisit => lastVisit > this.lastPush);
+    return this.getLastVisit().then(lastVisit => lastVisit > this.lastPush);
   },
 
   quotaApplies() {
@@ -234,12 +253,15 @@ PushRecord.prototype = {
       return false;
     }
     return ChromeUtils.originAttributesMatchPattern(
-      this.principal.originAttributes, pattern);
+      this.principal.originAttributes,
+      pattern
+    );
   },
 
   hasAuthenticationSecret() {
-    return !!this.authenticationSecret &&
-           this.authenticationSecret.byteLength == 16;
+    return (
+      !!this.authenticationSecret && this.authenticationSecret.byteLength == 16
+    );
   },
 
   matchesAppServerKey(key) {
@@ -249,8 +271,10 @@ PushRecord.prototype = {
     if (!key) {
       return false;
     }
-    return this.appServerKey.length === key.length &&
-           this.appServerKey.every((value, index) => value === key[index]);
+    return (
+      this.appServerKey.length === key.length &&
+      this.appServerKey.every((value, index) => value === key[index])
+    );
   },
 
   toSubscription() {
@@ -282,8 +306,10 @@ Object.defineProperties(PushRecord.prototype, {
         let uri = Services.io.newURI(this.scope);
         
         let originSuffix = this.originAttributes || "";
-        principal = Services.scriptSecurityManager.createCodebasePrincipal(uri,
-          ChromeUtils.createOriginAttributesFromOrigin(originSuffix));
+        principal = Services.scriptSecurityManager.createCodebasePrincipal(
+          uri,
+          ChromeUtils.createOriginAttributesFromOrigin(originSuffix)
+        );
         principals.set(this, principal);
       }
       return principal;

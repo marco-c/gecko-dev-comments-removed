@@ -4,15 +4,17 @@
 
 
 const BASE_URI =
- "http://mochi.test:8888/browser/dom/serviceworkers/test/isolated/multi-e10s-update/";
+  "http://mochi.test:8888/browser/dom/serviceworkers/test/isolated/multi-e10s-update/";
 
 add_task(async function test_update() {
   info("Setting the prefs to having multi-e10s enabled");
-  await SpecialPowers.pushPrefEnv({"set": [
-    ["dom.ipc.processCount", 4],
-    ["dom.serviceWorkers.enabled", true],
-    ["dom.serviceWorkers.testing.enabled", true],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["dom.ipc.processCount", 4],
+      ["dom.serviceWorkers.enabled", true],
+      ["dom.serviceWorkers.testing.enabled", true],
+    ],
+  });
 
   let url = BASE_URI + "file_multie10s_update.html";
 
@@ -44,69 +46,72 @@ add_task(async function test_update() {
     content.fetch(url + "?release");
 
     
-    return content.navigator.serviceWorker.register(url)
+    return (
+      content.navigator.serviceWorker
+        .register(url)
 
-    
-    .then(function(r) {
-      content.registration = r;
-      return new content.window.Promise(resolve => {
-        let worker = r.installing;
-        worker.addEventListener('statechange', () => {
-          if (worker.state === 'installed') {
-            resolve(true);
-          }
-        });
-      });
-    })
-
-    
-    .then(() => {
-      return new content.window.Promise(resolveResults => {
         
-        
-        let updateCount = 0;
-        const uc = new content.window.BroadcastChannel('update');
-        
-        const updatesIssued = new Promise(resolveUpdatesIssued => {
-          uc.onmessage = function(e) {
-            updateCount++;
-            console.log("got update() number", updateCount);
-            if (updateCount === 2) {
-              resolveUpdatesIssued();
-            }
-          };
-        });
-
-        let results = [];
-        const rc = new content.window.BroadcastChannel('result');
-        
-        const oneFailed = new Promise(resolveOneFailed => {
-          rc.onmessage = function(e) {
-            console.log("got result", e.data);
-            results.push(e.data);
-            if (e.data === 1) {
-              resolveOneFailed();
-            }
-            if (results.length != 2) {
-              return;
-            }
-
-            resolveResults(results[0] + results[1]);
-          }
-        });
-
-        Promise.all([updatesIssued, oneFailed]).then(() => {
-          console.log("releasing update");
-          content.fetch(url + "?release").catch((ex) => {
-            console.error("problem releasing:", ex);
+        .then(function(r) {
+          content.registration = r;
+          return new content.window.Promise(resolve => {
+            let worker = r.installing;
+            worker.addEventListener("statechange", () => {
+              if (worker.state === "installed") {
+                resolve(true);
+              }
+            });
           });
-        });
+        })
 
         
-        const sc = new content.window.BroadcastChannel('start');
-        sc.postMessage('go');
-      });
-    });
+        .then(() => {
+          return new content.window.Promise(resolveResults => {
+            
+            
+            let updateCount = 0;
+            const uc = new content.window.BroadcastChannel("update");
+            
+            const updatesIssued = new Promise(resolveUpdatesIssued => {
+              uc.onmessage = function(e) {
+                updateCount++;
+                console.log("got update() number", updateCount);
+                if (updateCount === 2) {
+                  resolveUpdatesIssued();
+                }
+              };
+            });
+
+            let results = [];
+            const rc = new content.window.BroadcastChannel("result");
+            
+            const oneFailed = new Promise(resolveOneFailed => {
+              rc.onmessage = function(e) {
+                console.log("got result", e.data);
+                results.push(e.data);
+                if (e.data === 1) {
+                  resolveOneFailed();
+                }
+                if (results.length != 2) {
+                  return;
+                }
+
+                resolveResults(results[0] + results[1]);
+              };
+            });
+
+            Promise.all([updatesIssued, oneFailed]).then(() => {
+              console.log("releasing update");
+              content.fetch(url + "?release").catch(ex => {
+                console.error("problem releasing:", ex);
+              });
+            });
+
+            
+            const sc = new content.window.BroadcastChannel("start");
+            sc.postMessage("go");
+          });
+        })
+    );
   });
   
 
@@ -125,8 +130,9 @@ add_task(async function test_update() {
     
     
     await content.registration.unregister();
-    const { count } =
-      await content.fetch(url + "?get-and-clear-count").then(r => r.json());
+    const { count } = await content
+      .fetch(url + "?get-and-clear-count")
+      .then(r => r.json());
     return count;
   });
   

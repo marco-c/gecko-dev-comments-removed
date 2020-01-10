@@ -6,12 +6,11 @@
 
 
 function ok(cond, msg) {
-  dump("ok(" + cond + ", \"" + msg + "\")");
+  dump("ok(" + cond + ', "' + msg + '")');
   Assert.ok(!!cond, Components.stack.caller);
 }
 
-function finishTest()
-{
+function finishTest() {
   executeSoon(function() {
     do_test_finished();
   });

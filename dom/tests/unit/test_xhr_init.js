@@ -1,13 +1,13 @@
 function run_test() {
-    var x = new XMLHttpRequest({mozAnon: true, mozSystem: false});
-    Assert.ok(x.mozAnon);
-    Assert.ok(x.mozSystem); 
+  var x = new XMLHttpRequest({ mozAnon: true, mozSystem: false });
+  Assert.ok(x.mozAnon);
+  Assert.ok(x.mozSystem); 
 
-    x = new XMLHttpRequest({mozAnon: true});
-    Assert.ok(x.mozAnon);
-    Assert.ok(x.mozSystem);
+  x = new XMLHttpRequest({ mozAnon: true });
+  Assert.ok(x.mozAnon);
+  Assert.ok(x.mozSystem);
 
-    x = new XMLHttpRequest();
-    Assert.ok(!x.mozAnon);
-    Assert.ok(x.mozSystem);
+  x = new XMLHttpRequest();
+  Assert.ok(!x.mozAnon);
+  Assert.ok(x.mozSystem);
 }

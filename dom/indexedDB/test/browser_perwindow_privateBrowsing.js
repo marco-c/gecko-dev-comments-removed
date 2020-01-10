@@ -3,7 +3,8 @@
 
 
 
-const testPageURL = "http://mochi.test:8888/browser/" +
+const testPageURL =
+  "http://mochi.test:8888/browser/" +
   "dom/indexedDB/test/browser_permissionsPrompt.html";
 const notificationID = "indexedDB-permissions-prompt";
 

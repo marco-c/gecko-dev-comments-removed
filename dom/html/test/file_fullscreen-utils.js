@@ -1,18 +1,19 @@
 
 
 
-
 function inFullscreenMode(win) {
-  return win.innerWidth == win.screen.width &&
-         win.innerHeight == win.screen.height;
+  return (
+    win.innerWidth == win.screen.width && win.innerHeight == win.screen.height
+  );
 }
 
 
 
 
 function inNormalMode(win) {
-  return win.innerWidth == win.normalSize.w &&
-         win.innerHeight == win.normalSize.h;
+  return (
+    win.innerWidth == win.normalSize.w && win.innerHeight == win.normalSize.h
+  );
 }
 
 
@@ -31,7 +32,7 @@ function addFullscreenChangeContinuation(type, callback, inDoc) {
   if (!topWin.normalSize) {
     topWin.normalSize = {
       w: window.innerWidth,
-      h: window.innerHeight
+      h: window.innerHeight,
     };
   }
   function checkCondition() {
@@ -72,32 +73,36 @@ function addFullscreenChangeContinuation(type, callback, inDoc) {
 
 
 function addFullscreenErrorContinuation(callback, inDoc) {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     let doc = inDoc || document;
     let listener = function(event) {
       doc.removeEventListener("fullscreenerror", listener);
-      setTimeout(function(){
-        if(callback) {
+      setTimeout(function() {
+        if (callback) {
           callback(event);
         }
         resolve();
       }, 0);
     };
     doc.addEventListener("fullscreenerror", listener);
-  })
+  });
 }
 
 
 
 function waitForLoadAndPaint(win, callback) {
-  win.addEventListener("MozAfterPaint", function() {
-    
-    
-    
-    if (win.document.readyState == 'complete') {
-      callback();
-    } else {
-      win.addEventListener("load", callback, {once: true});
-    }
-  }, { once: true });
+  win.addEventListener(
+    "MozAfterPaint",
+    function() {
+      
+      
+      
+      if (win.document.readyState == "complete") {
+        callback();
+      } else {
+        win.addEventListener("load", callback, { once: true });
+      }
+    },
+    { once: true }
+  );
 }

@@ -3,8 +3,10 @@ const HELPER_PAGE_URL =
 const HELPER_PAGE_ORIGIN = "http://example.com/";
 
 let testDir = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
-Services.scriptloader.loadSubScript(testDir + "/helper_localStorage_e10s.js",
-                                    this);
+Services.scriptloader.loadSubScript(
+  testDir + "/helper_localStorage_e10s.js",
+  this
+);
 
 
 
@@ -14,7 +16,7 @@ Services.scriptloader.loadSubScript(testDir + "/helper_localStorage_e10s.js",
 
 
 
- 
+
 
 function waitForLocalStorageFlush() {
   if (Services.lsm.nextGenLocalStorageEnabled) {
@@ -70,13 +72,16 @@ function triggerAndWaitForLocalStorageFlush() {
 
 
 function clearOriginStorageEnsuringNoPreload() {
-  let principal =
-    Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(
-      HELPER_PAGE_ORIGIN);
+  let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(
+    HELPER_PAGE_ORIGIN
+  );
 
   if (Services.lsm.nextGenLocalStorageEnabled) {
-    let request =
-      Services.qms.clearStoragesForPrincipal(principal, "default", "ls");
+    let request = Services.qms.clearStoragesForPrincipal(
+      principal,
+      "default",
+      "ls"
+    );
     let promise = new Promise(resolve => {
       request.callback = () => {
         resolve();
@@ -88,7 +93,12 @@ function clearOriginStorageEnsuringNoPreload() {
   
   
   
-  let storage = Services.domStorageManager.createStorage(null, principal, principal, "");
+  let storage = Services.domStorageManager.createStorage(
+    null,
+    principal,
+    principal,
+    ""
+  );
   storage.clear();
 
   
@@ -101,14 +111,19 @@ async function verifyTabPreload(knownTab, expectStorageExists) {
     knownTab.tab.linkedBrowser,
     HELPER_PAGE_ORIGIN,
     function(origin) {
-      let principal =
-        Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(
-          origin);
+      let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(
+        origin
+      );
       if (Services.lsm.nextGenLocalStorageEnabled) {
         return Services.lsm.isPreloaded(principal);
       }
-      return !!Services.domStorageManager.getStorage(null, principal, principal);
-    });
+      return !!Services.domStorageManager.getStorage(
+        null,
+        principal,
+        principal
+      );
+    }
+  );
   is(storageExists, expectStorageExists, "Storage existence === preload");
 }
 
@@ -122,7 +137,8 @@ async function mutateTabStorage(knownTab, mutations, sentinelValue) {
     { mutations, sentinelValue },
     function(args) {
       return content.wrappedJSObject.mutateStorage(Cu.cloneInto(args, content));
-    });
+    }
+  );
 }
 
 
@@ -131,12 +147,11 @@ async function mutateTabStorage(knownTab, mutations, sentinelValue) {
 
 
 async function recordTabStorageEvents(knownTab, sentinelValue) {
-  await ContentTask.spawn(
-    knownTab.tab.linkedBrowser,
-    sentinelValue,
-    function(sentinelValue) {
-      return content.wrappedJSObject.listenForStorageEvents(sentinelValue);
-    });
+  await ContentTask.spawn(knownTab.tab.linkedBrowser, sentinelValue, function(
+    sentinelValue
+  ) {
+    return content.wrappedJSObject.listenForStorageEvents(sentinelValue);
+  });
 }
 
 
@@ -157,7 +172,8 @@ async function verifyTabStorageState(knownTab, expectedState, maybeSentinel) {
     maybeSentinel,
     function(maybeSentinel) {
       return content.wrappedJSObject.getStorageState(maybeSentinel);
-    });
+    }
+  );
 
   for (let [expectedKey, expectedValue] of Object.entries(expectedState)) {
     ok(actualState.hasOwnProperty(expectedKey), "key present: " + expectedKey);
@@ -184,7 +200,8 @@ async function verifyTabStorageEvents(knownTab, expectedEvents) {
     {},
     function() {
       return content.wrappedJSObject.returnAndClearStorageEvents();
-    });
+    }
+  );
 
   is(actualEvents.length, expectedEvents.length, "right number of events");
   for (let i = 0; i < actualEvents.length; i++) {
@@ -278,14 +295,26 @@ add_task(async function() {
 
   
   const knownTabs = new KnownTabs();
-  const writerTab = await openTestTabInOwnProcess(HELPER_PAGE_URL, "writer",
-    knownTabs);
-  const listenerTab = await openTestTabInOwnProcess(HELPER_PAGE_URL, "listener",
-    knownTabs);
-  const readerTab = await openTestTabInOwnProcess(HELPER_PAGE_URL, "reader",
-    knownTabs);
-  const lateWriteThenListenTab = await openTestTabInOwnProcess(HELPER_PAGE_URL,
-    "lateWriteThenListen", knownTabs);
+  const writerTab = await openTestTabInOwnProcess(
+    HELPER_PAGE_URL,
+    "writer",
+    knownTabs
+  );
+  const listenerTab = await openTestTabInOwnProcess(
+    HELPER_PAGE_URL,
+    "listener",
+    knownTabs
+  );
+  const readerTab = await openTestTabInOwnProcess(
+    HELPER_PAGE_URL,
+    "reader",
+    knownTabs
+  );
+  const lateWriteThenListenTab = await openTestTabInOwnProcess(
+    HELPER_PAGE_URL,
+    "lateWriteThenListen",
+    knownTabs
+  );
 
   
   await verifyTabPreload(writerTab, false);
@@ -335,9 +364,11 @@ add_task(async function() {
   
   
   await verifyTabStorageEvents(
-    listenerTab, initialWriteMutations, initialSentinel);
-  await verifyTabStorageState(
-    listenerTab, initialWriteState, noSentinelCheck);
+    listenerTab,
+    initialWriteMutations,
+    initialSentinel
+  );
+  await verifyTabStorageState(listenerTab, initialWriteState, noSentinelCheck);
   
   
   
@@ -368,14 +399,20 @@ add_task(async function() {
   await recordTabStorageEvents(listenerTab, lateWriteSentinel);
 
   await mutateTabStorage(
-    lateWriteThenListenTab, lateWriteMutations, lateWriteSentinel);
+    lateWriteThenListenTab,
+    lateWriteMutations,
+    lateWriteSentinel
+  );
 
   
   
   await verifyTabStorageState(writerTab, lateWriteState, lateWriteSentinel);
   
   await verifyTabStorageEvents(
-    listenerTab, lateWriteMutations, lateWriteSentinel);
+    listenerTab,
+    lateWriteMutations,
+    lateWriteSentinel
+  );
   await verifyTabStorageState(listenerTab, lateWriteState, noSentinelCheck);
   
   await verifyTabStorageState(readerTab, lateWriteState, lateWriteSentinel);
@@ -404,15 +441,24 @@ add_task(async function() {
   await verifyTabStorageState(writerTab, lastWriteState, noSentinelCheck);
   
   await verifyTabStorageEvents(
-    listenerTab, lastWriteMutations, lastWriteSentinel);
+    listenerTab,
+    lastWriteMutations,
+    lastWriteSentinel
+  );
   await verifyTabStorageState(listenerTab, lastWriteState, noSentinelCheck);
   
   await verifyTabStorageState(readerTab, lastWriteState, lastWriteSentinel);
   
   await verifyTabStorageEvents(
-    lateWriteThenListenTab, lastWriteMutations, lastWriteSentinel);
+    lateWriteThenListenTab,
+    lastWriteMutations,
+    lastWriteSentinel
+  );
   await verifyTabStorageState(
-    lateWriteThenListenTab, lastWriteState, noSentinelCheck);
+    lateWriteThenListenTab,
+    lastWriteState,
+    noSentinelCheck
+  );
 
   
   
@@ -425,8 +471,11 @@ add_task(async function() {
 
   
   info("late open preload check");
-  const lateOpenSeesPreload = await openTestTabInOwnProcess(HELPER_PAGE_URL,
-    "lateOpenSeesPreload", knownTabs);
+  const lateOpenSeesPreload = await openTestTabInOwnProcess(
+    HELPER_PAGE_URL,
+    "lateOpenSeesPreload",
+    knownTabs
+  );
   await verifyTabPreload(lateOpenSeesPreload, true);
 
   

@@ -5,8 +5,7 @@
 
 var testGenerator = testSteps();
 
-function* testSteps()
-{
+function* testSteps() {
   Services.prefs.setBoolPref("dom.indexedDB.storageOption.enabled", true);
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("dom.indexedDB.storageOption.enabled");
@@ -16,76 +15,70 @@ function* testSteps()
     
     
     
-    { dbName: "dbA",
-      dbOptions: { version: 1, storage: "persistent" } },
+    { dbName: "dbA", dbOptions: { version: 1, storage: "persistent" } },
 
     
     
     
-    { url: "http://localhost", dbName: "dbB",
-      dbOptions: { version: 1, storage: "temporary" } },
+    {
+      url: "http://localhost",
+      dbName: "dbB",
+      dbOptions: { version: 1, storage: "temporary" },
+    },
 
     
     
     
-    { attrs: { userContextId: 1 }, url: "http://localhost:81", dbName: "dbC",
-      dbOptions: { version: 1, storage: "default" } },
+    {
+      attrs: { userContextId: 1 },
+      url: "http://localhost:81",
+      dbName: "dbC",
+      dbOptions: { version: 1, storage: "default" },
+    },
 
     
     
     
-    { attrs: { userContextId: 1 }, url: "http://localhost:82", dbName: "dbD",
-      dbOptions: { version: 1, storage: "default" } },
-
-    
-    
-    
-    
-    { attrs: { userContextId: 1 }, url: "http://localhost:83", dbName: "dbE",
-      dbOptions: { version: 1, storage: "default" } },
-
-    
-    
-    
-    
-    { attrs: { userContextId: 1 }, url: "http://localhost:84", dbName: "dbF",
-      dbOptions: { version: 1, storage: "default" } },
-
-    
-    
-    
-    
-    
-    { attrs: { userContextId: 1 }, url: "http://localhost:85", dbName: "dbG",
-      dbOptions: { version: 1, storage: "default" } },
+    {
+      attrs: { userContextId: 1 },
+      url: "http://localhost:82",
+      dbName: "dbD",
+      dbOptions: { version: 1, storage: "default" },
+    },
 
     
     
     
     
-    
-    
-    { attrs: { userContextId: 1 }, url: "http://localhost:86", dbName: "dbH",
-      dbOptions: { version: 1, storage: "default" } },
+    {
+      attrs: { userContextId: 1 },
+      url: "http://localhost:83",
+      dbName: "dbE",
+      dbOptions: { version: 1, storage: "default" },
+    },
 
     
     
     
     
-    
-    
-    { attrs: { userContextId: 1 }, url: "http://localhost:87", dbName: "dbI",
-      dbOptions: { version: 1, storage: "default" } },
+    {
+      attrs: { userContextId: 1 },
+      url: "http://localhost:84",
+      dbName: "dbF",
+      dbOptions: { version: 1, storage: "default" },
+    },
 
     
     
     
     
     
-    
-    
-    { attrs: { userContextId: 1 }, url: "http://localhost:88", dbName: "dbJ",
-      dbOptions: { version: 1, storage: "default" } },
+    {
+      attrs: { userContextId: 1 },
+      url: "http://localhost:85",
+      dbName: "dbG",
+      dbOptions: { version: 1, storage: "default" },
+    },
 
     
     
@@ -93,9 +86,12 @@ function* testSteps()
     
     
     
-    
-    { attrs: { userContextId: 1 }, url: "http://localhost:89", dbName: "dbK",
-      dbOptions: { version: 1, storage: "default" } },
+    {
+      attrs: { userContextId: 1 },
+      url: "http://localhost:86",
+      dbName: "dbH",
+      dbOptions: { version: 1, storage: "default" },
+    },
 
     
     
@@ -103,22 +99,12 @@ function* testSteps()
     
     
     
-    
-    
-    { attrs: { userContextId: 1 }, url: "http://localhost:90", dbName: "dbL",
-      dbOptions: { version: 1, storage: "default" } },
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    { attrs: { userContextId: 1 }, url: "http://localhost:91", dbName: "dbM",
-      dbOptions: { version: 1, storage: "default" } },
+    {
+      attrs: { userContextId: 1 },
+      url: "http://localhost:87",
+      dbName: "dbI",
+      dbOptions: { version: 1, storage: "default" },
+    },
 
     
     
@@ -127,10 +113,12 @@ function* testSteps()
     
     
     
-    
-    
-    { attrs: { userContextId: 1 }, url: "http://localhost:92", dbName: "dbN",
-      dbOptions: { version: 1, storage: "default" } },
+    {
+      attrs: { userContextId: 1 },
+      url: "http://localhost:88",
+      dbName: "dbJ",
+      dbOptions: { version: 1, storage: "default" },
+    },
 
     
     
@@ -139,11 +127,12 @@ function* testSteps()
     
     
     
-    
-    
-    
-    { attrs: { userContextId: 1 }, url: "http://localhost:93", dbName: "dbO",
-      dbOptions: { version: 1, storage: "default" } },
+    {
+      attrs: { userContextId: 1 },
+      url: "http://localhost:89",
+      dbName: "dbK",
+      dbOptions: { version: 1, storage: "default" },
+    },
 
     
     
@@ -153,11 +142,12 @@ function* testSteps()
     
     
     
-    
-    
-    
-    { attrs: { userContextId: 1 }, url: "http://localhost:94", dbName: "dbP",
-      dbOptions: { version: 1, storage: "default" } },
+    {
+      attrs: { userContextId: 1 },
+      url: "http://localhost:90",
+      dbName: "dbL",
+      dbOptions: { version: 1, storage: "default" },
+    },
 
     
     
@@ -168,10 +158,12 @@ function* testSteps()
     
     
     
-    
-    
-    { attrs: { userContextId: 1 }, url: "http://localhost:95", dbName: "dbQ",
-      dbOptions: { version: 1, storage: "default" } },
+    {
+      attrs: { userContextId: 1 },
+      url: "http://localhost:91",
+      dbName: "dbM",
+      dbOptions: { version: 1, storage: "default" },
+    },
 
     
     
@@ -182,11 +174,12 @@ function* testSteps()
     
     
     
-    
-    
-    
-    { attrs: { userContextId: 1 }, url: "http://localhost:96", dbName: "dbR",
-      dbOptions: { version: 1, storage: "default" } },
+    {
+      attrs: { userContextId: 1 },
+      url: "http://localhost:92",
+      dbName: "dbN",
+      dbOptions: { version: 1, storage: "default" },
+    },
 
     
     
@@ -198,11 +191,12 @@ function* testSteps()
     
     
     
-    
-    
-    
-    { attrs: { userContextId: 1 }, url: "http://localhost:97", dbName: "dbS",
-      dbOptions: { version: 1, storage: "default" } },
+    {
+      attrs: { userContextId: 1 },
+      url: "http://localhost:93",
+      dbName: "dbO",
+      dbOptions: { version: 1, storage: "default" },
+    },
 
     
     
@@ -215,20 +209,104 @@ function* testSteps()
     
     
     
+    {
+      attrs: { userContextId: 1 },
+      url: "http://localhost:94",
+      dbName: "dbP",
+      dbOptions: { version: 1, storage: "default" },
+    },
+
     
     
-    { attrs: { userContextId: 1 }, url: "http://localhost:98", dbName: "dbT",
-      dbOptions: { version: 1, storage: "default" } },
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    {
+      attrs: { userContextId: 1 },
+      url: "http://localhost:95",
+      dbName: "dbQ",
+      dbOptions: { version: 1, storage: "default" },
+    },
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    {
+      attrs: { userContextId: 1 },
+      url: "http://localhost:96",
+      dbName: "dbR",
+      dbOptions: { version: 1, storage: "default" },
+    },
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    {
+      attrs: { userContextId: 1 },
+      url: "http://localhost:97",
+      dbName: "dbS",
+      dbOptions: { version: 1, storage: "default" },
+    },
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    {
+      attrs: { userContextId: 1 },
+      url: "http://localhost:98",
+      dbName: "dbT",
+      dbOptions: { version: 1, storage: "default" },
+    },
   ];
 
   function openDatabase(params) {
     let request;
     if ("url" in params) {
       let uri = Services.io.newURI(params.url);
-      let principal = Services.scriptSecurityManager
-        .createCodebasePrincipal(uri, params.attrs || {});
-      request = indexedDB.openForPrincipal(principal, params.dbName,
-                                           params.dbOptions);
+      let principal = Services.scriptSecurityManager.createCodebasePrincipal(
+        uri,
+        params.attrs || {}
+      );
+      request = indexedDB.openForPrincipal(
+        principal,
+        params.dbName,
+        params.dbOptions
+      );
     } else {
       request = indexedDB.open(params.dbName, params.dbOptions);
     }

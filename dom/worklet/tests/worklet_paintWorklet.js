@@ -1,3 +1,5 @@
 
 registerPaint("sure!", () => {});
-console.log(this instanceof PaintWorkletGlobalScope ? "So far so good" : "error");
+console.log(
+  this instanceof PaintWorkletGlobalScope ? "So far so good" : "error"
+);

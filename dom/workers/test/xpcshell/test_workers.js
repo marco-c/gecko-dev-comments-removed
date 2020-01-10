@@ -3,7 +3,6 @@
 
 
 
-
 var WORKER_SOURCE_URI = "chrome://workers/content/worker.js";
 do_load_manifest("data/chrome.manifest");
 
@@ -32,7 +31,6 @@ function talk_with_worker(worker) {
     worker.postMessage("START");
   });
 }
-
 
 add_task(function test_chrome_worker() {
   return talk_with_worker(new ChromeWorker(WORKER_SOURCE_URI));

@@ -3,10 +3,14 @@
 
 
 
-addEventListener("load", function(event) {
-  console.log("OnLoad external document");
-  prepareTest();
-}, false);
+addEventListener(
+  "load",
+  function(event) {
+    console.log("OnLoad external document");
+    prepareTest();
+  },
+  false
+);
 
 
 function prepareTest() {
@@ -17,22 +21,26 @@ function prepareTest() {
 
 function setImplicitPointerCapture(capture, callback) {
   console.log("SET dom.w3c_pointer_events.implicit_capture as " + capture);
-  SpecialPowers.pushPrefEnv({
-    "set": [
-      ["dom.w3c_pointer_events.implicit_capture", capture]
-    ]
-  }, callback);
+  SpecialPowers.pushPrefEnv(
+    {
+      set: [["dom.w3c_pointer_events.implicit_capture", capture]],
+    },
+    callback
+  );
 }
 
 function turnOnPointerEvents(callback) {
   console.log("SET dom.w3c_pointer_events.enabled as TRUE");
   console.log("SET layout.css.touch_action.enabled as TRUE");
-  SpecialPowers.pushPrefEnv({
-    "set": [
-      ["dom.w3c_pointer_events.enabled", true],
-      ["layout.css.touch_action.enabled", true]
-    ]
-  }, callback);
+  SpecialPowers.pushPrefEnv(
+    {
+      set: [
+        ["dom.w3c_pointer_events.enabled", true],
+        ["layout.css.touch_action.enabled", true],
+      ],
+    },
+    callback
+  );
 }
 
 var utils = SpecialPowers.Ci.nsIDOMWindowUtils;
@@ -41,34 +49,34 @@ var utils = SpecialPowers.Ci.nsIDOMWindowUtils;
 var MouseEventHelper = (function() {
   return {
     MOUSE_ID: utils.DEFAULT_MOUSE_POINTER_ID,
-    PEN_ID:   utils.DEFAULT_PEN_POINTER_ID,
+    PEN_ID: utils.DEFAULT_PEN_POINTER_ID,
     
     
     BUTTONS_STATE: utils.MOUSE_BUTTONS_NO_BUTTON,
 
     
-    BUTTON_NONE:   -1, 
-    BUTTON_LEFT:   utils.MOUSE_BUTTON_LEFT_BUTTON,
+    BUTTON_NONE: -1, 
+    BUTTON_LEFT: utils.MOUSE_BUTTON_LEFT_BUTTON,
     BUTTON_MIDDLE: utils.MOUSE_BUTTON_MIDDLE_BUTTON,
-    BUTTON_RIGHT:  utils.MOUSE_BUTTON_RIGHT_BUTTON,
+    BUTTON_RIGHT: utils.MOUSE_BUTTON_RIGHT_BUTTON,
 
     
-    BUTTONS_NONE:   utils.MOUSE_BUTTONS_NO_BUTTON,
-    BUTTONS_LEFT:   utils.MOUSE_BUTTONS_LEFT_BUTTON,
+    BUTTONS_NONE: utils.MOUSE_BUTTONS_NO_BUTTON,
+    BUTTONS_LEFT: utils.MOUSE_BUTTONS_LEFT_BUTTON,
     BUTTONS_MIDDLE: utils.MOUSE_BUTTONS_MIDDLE_BUTTON,
-    BUTTONS_RIGHT:  utils.MOUSE_BUTTONS_RIGHT_BUTTON,
-    BUTTONS_4TH:    utils.MOUSE_BUTTONS_4TH_BUTTON,
-    BUTTONS_5TH:    utils.MOUSE_BUTTONS_5TH_BUTTON,
+    BUTTONS_RIGHT: utils.MOUSE_BUTTONS_RIGHT_BUTTON,
+    BUTTONS_4TH: utils.MOUSE_BUTTONS_4TH_BUTTON,
+    BUTTONS_5TH: utils.MOUSE_BUTTONS_5TH_BUTTON,
 
     
     computeButtonsMaskFromButton: function(aButton) {
       
       
       var mask = [
-        this.BUTTONS_NONE,   
-        this.BUTTONS_LEFT,   
+        this.BUTTONS_NONE, 
+        this.BUTTONS_LEFT, 
         this.BUTTONS_MIDDLE, 
-        this.BUTTONS_RIGHT   
+        this.BUTTONS_RIGHT, 
       ][aButton + 1];
 
       ok(mask !== undefined, "Unrecognized button value caught!");
@@ -77,39 +85,46 @@ var MouseEventHelper = (function() {
 
     checkExitState: function() {
       ok(!this.BUTTONS_STATE, "Mismatched mousedown/mouseup caught.");
-    }
+    },
   };
-}) ();
+})();
 
 function createMouseEvent(aEventType, aParams) {
-  var eventObj = {type: aEventType};
+  var eventObj = { type: aEventType };
 
   
   eventObj.inputSource =
-    (aParams && "inputSource" in aParams) ? aParams.inputSource :
-                                          MouseEvent.MOZ_SOURCE_MOUSE;
+    aParams && "inputSource" in aParams
+      ? aParams.inputSource
+      : MouseEvent.MOZ_SOURCE_MOUSE;
   
   eventObj.id =
-    (eventObj.inputSource === MouseEvent.MOZ_SOURCE_MOUSE) ? MouseEventHelper.MOUSE_ID :
-                                                             MouseEventHelper.PEN_ID;
+    eventObj.inputSource === MouseEvent.MOZ_SOURCE_MOUSE
+      ? MouseEventHelper.MOUSE_ID
+      : MouseEventHelper.PEN_ID;
   
   var isButtonEvent = aEventType === "mouseup" || aEventType === "mousedown";
 
   
-  eventObj.button = isButtonEvent ? MouseEventHelper.BUTTON_LEFT
-                                  : MouseEventHelper.BUTTON_NONE;
+  eventObj.button = isButtonEvent
+    ? MouseEventHelper.BUTTON_LEFT
+    : MouseEventHelper.BUTTON_NONE;
 
   
   if (aParams && "button" in aParams) {
-    var hasButtonValue = (aParams.button !== MouseEventHelper.BUTTON_NONE);
-    ok(!isButtonEvent || hasButtonValue,
-       "Inappropriate |button| value caught.");
+    var hasButtonValue = aParams.button !== MouseEventHelper.BUTTON_NONE;
+    ok(
+      !isButtonEvent || hasButtonValue,
+      "Inappropriate |button| value caught."
+    );
     eventObj.button = aParams.button;
   }
 
   
-  var buttonsMask = MouseEventHelper.computeButtonsMaskFromButton(eventObj.button);
-  switch(aEventType) {
+  var buttonsMask = MouseEventHelper.computeButtonsMaskFromButton(
+    eventObj.button
+  );
+  switch (aEventType) {
     case "mousedown":
       MouseEventHelper.BUTTONS_STATE |= buttonsMask; 
       break;
@@ -138,12 +153,13 @@ function sendMouseEvent(int_win, elemId, mouseEventType, params) {
 
     
     
-    var offsetX = params && "offsetX" in params ? params.offsetX : rect.width / 2;
-    var offsetY = params && "offsetY" in params ? params.offsetY : rect.height / 2;
+    var offsetX =
+      params && "offsetX" in params ? params.offsetX : rect.width / 2;
+    var offsetY =
+      params && "offsetY" in params ? params.offsetY : rect.height / 2;
 
     console.log(elemId, eventObj);
     synthesizeMouse(elem, offsetX, offsetY, eventObj, int_win);
-
   } else {
     is(!!elem, true, "Document should have element with id: " + elemId);
   }
@@ -165,23 +181,23 @@ var TouchEventHelper = {
   
   checkExitState: function() {
     ok(!this.TOUCH_STATE, "Mismatched touchstart/touchend caught.");
-  }
-}
+  },
+};
 
 
 
 
 function sendTouchEvent(int_win, elemId, touchEventType, params) {
   var elem = int_win.document.getElementById(elemId);
-  if(!!elem) {
+  if (!!elem) {
     var rect = elem.getBoundingClientRect();
     var eventObj = {
       type: touchEventType,
-      id: TouchEventHelper.TOUCH_ID
+      id: TouchEventHelper.TOUCH_ID,
     };
 
     
-    switch(touchEventType) {
+    switch (touchEventType) {
       case "touchstart":
         TouchEventHelper.TOUCH_STATE = true; 
         break;
@@ -193,8 +209,10 @@ function sendTouchEvent(int_win, elemId, touchEventType, params) {
 
     
     
-    var offsetX = params && "offsetX" in params ? params.offsetX : rect.width / 2;
-    var offsetY = params && "offsetY" in params ? params.offsetY : rect.height / 2;
+    var offsetX =
+      params && "offsetX" in params ? params.offsetX : rect.width / 2;
+    var offsetY =
+      params && "offsetY" in params ? params.offsetY : rect.height / 2;
 
     console.log(elemId, eventObj);
     synthesizeTouch(elem, offsetX, offsetY, eventObj, int_win);
@@ -205,26 +223,31 @@ function sendTouchEvent(int_win, elemId, touchEventType, params) {
 
 
 function runTestInNewWindow(aFile) {
-  var testURL = location.href.substring(0, location.href.lastIndexOf('/') + 1) + aFile;
+  var testURL =
+    location.href.substring(0, location.href.lastIndexOf("/") + 1) + aFile;
   var testWindow = window.open(testURL, "_blank");
   var testDone = false;
 
   
   
   
-  testWindow.addEventListener("DOMContentLoaded", function() {
-    var e = testWindow.document.createElement('script');
-    e.type = 'text/javascript';
-    e.src = "mochitest_support_internal.js";
-    testWindow.document.getElementsByTagName('head')[0].appendChild(e);
-  }, {once: true});
+  testWindow.addEventListener(
+    "DOMContentLoaded",
+    function() {
+      var e = testWindow.document.createElement("script");
+      e.type = "text/javascript";
+      e.src = "mochitest_support_internal.js";
+      testWindow.document.getElementsByTagName("head")[0].appendChild(e);
+    },
+    { once: true }
+  );
 
   window.addEventListener("message", function(aEvent) {
-    switch(aEvent.data.type) {
+    switch (aEvent.data.type) {
       case "START":
         
         MouseEventHelper.MOUSE_ID = aEvent.data.message.mouseId;
-        MouseEventHelper.PEN_ID   = aEvent.data.message.penId;
+        MouseEventHelper.PEN_ID = aEvent.data.message.penId;
         TouchEventHelper.TOUCH_ID = aEvent.data.message.touchId;
 
         turnOnPointerEvents(() => {

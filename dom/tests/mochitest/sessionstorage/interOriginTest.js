@@ -8,23 +8,23 @@ const slavePath = "/tests/dom/tests/mochitest/sessionstorage/";
 
 window.addEventListener("message", onMessageReceived);
 
-function onMessageReceived(event)
-{
+function onMessageReceived(event) {
   
-  switch (event.data)
-  {
+  switch (event.data) {
     
     case "frame loaded":
-      if (--slaveLoadsPending)
+      if (--slaveLoadsPending) {
         break;
+      }
 
-      
+    
 
     
     case "perf":
       
-      if (event.data == "perf")
+      if (event.data == "perf") {
         doStep();
+      }
 
       slave.postMessage("step", slaveOrigin);
       break;

@@ -2,7 +2,7 @@ SimpleTest.waitForExplicitFinish();
 
 
 
-SpecialPowers.pushPrefEnv({"set": [["dom.netinfo.enabled", true]]}, () => {
+SpecialPowers.pushPrefEnv({ set: [["dom.netinfo.enabled", true]] }, () => {
   let iframe = document.createElement("iframe");
   iframe.id = "f1";
   iframe.src = "test_navigator_iframe.html";

@@ -21,260 +21,269 @@
 
 
 
-var ecmaGlobals =
-  [
-    "Array",
-    "ArrayBuffer",
-    {name: "Atomics", disabled: true},
-    "Boolean",
-    "BigInt",
-    "BigInt64Array",
-    "BigUint64Array",
-    {name: "ByteLengthQueuingStrategy", optional: true},
-    {name: "CountQueuingStrategy", optional: true},
-    "DataView",
-    "Date",
-    "Error",
-    "EvalError",
-    "Float32Array",
-    "Float64Array",
-    "Function",
-    "Infinity",
-    "Int16Array",
-    "Int32Array",
-    "Int8Array",
-    "InternalError",
-    "Intl",
-    "JSON",
-    "Map",
-    "Math",
-    "NaN",
-    "Number",
-    "Object",
-    "Promise",
-    "Proxy",
-    "RangeError",
-    {name: "ReadableStream", optional: true},
-    "ReferenceError",
-    "Reflect",
-    "RegExp",
-    "Set",
-    {name: "SharedArrayBuffer", disabled: true},
-    "String",
-    "Symbol",
-    "SyntaxError",
-    {name: "TypedObject", nightly: true},
-    "TypeError",
-    "Uint16Array",
-    "Uint32Array",
-    "Uint8Array",
-    "Uint8ClampedArray",
-    "URIError",
-    "WeakMap",
-    "WeakSet",
-    {name: "WebAssembly", optional: true}
-  ];
-
-
-
-
-var interfaceNamesInGlobalScope =
-  [
-
-    "AbortController",
-
-    "AbortSignal",
-
-    "Blob",
-
-    "BroadcastChannel",
-
-    "Cache",
-
-    "CacheStorage",
-
-    "Client",
-
-    "Clients",
-
-    "CloseEvent",
-
-    "Crypto",
-
-    "CustomEvent",
-
-    "Directory",
-
-    "DOMException",
-
-    "DOMMatrix",
-
-    "DOMMatrixReadOnly",
-
-    "DOMPoint",
-
-    "DOMPointReadOnly",
-
-    "DOMQuad",
-
-    "DOMRect",
-
-    "DOMRectReadOnly",
-
-    "DOMRequest",
-
-    "DOMStringList",
-
-    "ErrorEvent",
-
-    "Event",
-
-    "EventTarget",
-
-    "ExtendableEvent",
-
-    "ExtendableMessageEvent",
-
-    "FetchEvent",
-
-    "File",
-
-    "FileList",
-
-    "FileReader",
-
-    "FormData",
-
-    "Headers",
-
-    "IDBCursor",
-
-    "IDBCursorWithValue",
-
-    "IDBDatabase",
-
-    "IDBFactory",
-
-    "IDBIndex",
-
-    "IDBKeyRange",
-
-    "IDBObjectStore",
-
-    "IDBOpenDBRequest",
-
-    "IDBRequest",
-
-    "IDBTransaction",
-
-    "IDBVersionChangeEvent",
-
-    "ImageBitmap",
-
-    "ImageBitmapRenderingContext",
-
-    "ImageData",
-
-    "MediaCapabilities",
-
-    "MediaCapabilitiesInfo",
-
-    "MessageChannel",
-
-    "MessageEvent",
-
-    "MessagePort",
-
-    { name: "NetworkInformation", android: true },
-
-    "Notification",
-
-    "NotificationEvent",
-
-    "Performance",
-
-    "PerformanceEntry",
-
-    "PerformanceMark",
-
-    "PerformanceMeasure",
-
-    "PerformanceObserver",
-
-    "PerformanceObserverEntryList",
-
-    "PerformanceResourceTiming",
-
-    "PerformanceServerTiming",
-
-    "ProgressEvent",
-
-    "PromiseRejectionEvent",
-
-    { name: "PushEvent", fennecOrDesktop: true },
-
-    { name: "PushManager", fennecOrDesktop: true },
-
-    { name: "PushMessageData", fennecOrDesktop: true },
-
-    { name: "PushSubscription", fennecOrDesktop: true },
-
-    { name: "PushSubscriptionOptions", fennecOrDesktop: true },
-
-    "Request",
-
-    "Response",
-
-    "ServiceWorker",
-
-    "ServiceWorkerGlobalScope",
-
-    "ServiceWorkerRegistration",
-
-    {name: "StorageManager", fennec: false},
-
-    "SubtleCrypto",
-
-    "TextDecoder",
-
-    "TextEncoder",
-
-    "URL",
-
-    "URLSearchParams",
-
-    "WebSocket",
-
-    "WindowClient",
-
-    "WorkerGlobalScope",
-
-    "WorkerLocation",
-
-    "WorkerNavigator",
-
-  ];
-
-
-function createInterfaceMap({ isNightly, isRelease, isDesktop, isAndroid, isInsecureContext, isFennec }) {
+var ecmaGlobals = [
+  "Array",
+  "ArrayBuffer",
+  { name: "Atomics", disabled: true },
+  "Boolean",
+  "BigInt",
+  "BigInt64Array",
+  "BigUint64Array",
+  { name: "ByteLengthQueuingStrategy", optional: true },
+  { name: "CountQueuingStrategy", optional: true },
+  "DataView",
+  "Date",
+  "Error",
+  "EvalError",
+  "Float32Array",
+  "Float64Array",
+  "Function",
+  "Infinity",
+  "Int16Array",
+  "Int32Array",
+  "Int8Array",
+  "InternalError",
+  "Intl",
+  "JSON",
+  "Map",
+  "Math",
+  "NaN",
+  "Number",
+  "Object",
+  "Promise",
+  "Proxy",
+  "RangeError",
+  { name: "ReadableStream", optional: true },
+  "ReferenceError",
+  "Reflect",
+  "RegExp",
+  "Set",
+  { name: "SharedArrayBuffer", disabled: true },
+  "String",
+  "Symbol",
+  "SyntaxError",
+  { name: "TypedObject", nightly: true },
+  "TypeError",
+  "Uint16Array",
+  "Uint32Array",
+  "Uint8Array",
+  "Uint8ClampedArray",
+  "URIError",
+  "WeakMap",
+  "WeakSet",
+  { name: "WebAssembly", optional: true },
+];
+
+
+
+
+var interfaceNamesInGlobalScope = [
+  
+  "AbortController",
+  
+  "AbortSignal",
+  
+  "Blob",
+  
+  "BroadcastChannel",
+  
+  "Cache",
+  
+  "CacheStorage",
+  
+  "Client",
+  
+  "Clients",
+  
+  "CloseEvent",
+  
+  "Crypto",
+  
+  "CustomEvent",
+  
+  "Directory",
+  
+  "DOMException",
+  
+  "DOMMatrix",
+  
+  "DOMMatrixReadOnly",
+  
+  "DOMPoint",
+  
+  "DOMPointReadOnly",
+  
+  "DOMQuad",
+  
+  "DOMRect",
+  
+  "DOMRectReadOnly",
+  
+  "DOMRequest",
+  
+  "DOMStringList",
+  
+  "ErrorEvent",
+  
+  "Event",
+  
+  "EventTarget",
+  
+  "ExtendableEvent",
+  
+  "ExtendableMessageEvent",
+  
+  "FetchEvent",
+  
+  "File",
+  
+  "FileList",
+  
+  "FileReader",
+  
+  "FormData",
+  
+  "Headers",
+  
+  "IDBCursor",
+  
+  "IDBCursorWithValue",
+  
+  "IDBDatabase",
+  
+  "IDBFactory",
+  
+  "IDBIndex",
+  
+  "IDBKeyRange",
+  
+  "IDBObjectStore",
+  
+  "IDBOpenDBRequest",
+  
+  "IDBRequest",
+  
+  "IDBTransaction",
+  
+  "IDBVersionChangeEvent",
+  
+  "ImageBitmap",
+  
+  "ImageBitmapRenderingContext",
+  
+  "ImageData",
+  
+  "MediaCapabilities",
+  
+  "MediaCapabilitiesInfo",
+  
+  "MessageChannel",
+  
+  "MessageEvent",
+  
+  "MessagePort",
+  
+  { name: "NetworkInformation", android: true },
+  
+  "Notification",
+  
+  "NotificationEvent",
+  
+  "Performance",
+  
+  "PerformanceEntry",
+  
+  "PerformanceMark",
+  
+  "PerformanceMeasure",
+  
+  "PerformanceObserver",
+  
+  "PerformanceObserverEntryList",
+  
+  "PerformanceResourceTiming",
+  
+  "PerformanceServerTiming",
+  
+  "ProgressEvent",
+  
+  "PromiseRejectionEvent",
+  
+  { name: "PushEvent", fennecOrDesktop: true },
+  
+  { name: "PushManager", fennecOrDesktop: true },
+  
+  { name: "PushMessageData", fennecOrDesktop: true },
+  
+  { name: "PushSubscription", fennecOrDesktop: true },
+  
+  { name: "PushSubscriptionOptions", fennecOrDesktop: true },
+  
+  "Request",
+  
+  "Response",
+  
+  "ServiceWorker",
+  
+  "ServiceWorkerGlobalScope",
+  
+  "ServiceWorkerRegistration",
+  
+  { name: "StorageManager", fennec: false },
+  
+  "SubtleCrypto",
+  
+  "TextDecoder",
+  
+  "TextEncoder",
+  
+  "URL",
+  
+  "URLSearchParams",
+  
+  "WebSocket",
+  
+  "WindowClient",
+  
+  "WorkerGlobalScope",
+  
+  "WorkerLocation",
+  
+  "WorkerNavigator",
+  
+];
+
+
+function createInterfaceMap({
+  isNightly,
+  isRelease,
+  isDesktop,
+  isAndroid,
+  isInsecureContext,
+  isFennec,
+}) {
   var interfaceMap = {};
 
-  function addInterfaces(interfaces)
-  {
+  function addInterfaces(interfaces) {
     for (var entry of interfaces) {
-      if (typeof(entry) === "string") {
+      if (typeof entry === "string") {
         interfaceMap[entry] = true;
       } else {
         ok(!("pref" in entry), "Bogus pref annotation for " + entry.name);
-        if ((entry.nightly === !isNightly) ||
-            (entry.nightlyAndroid === !(isAndroid && isNightly) && isAndroid) ||
-            (entry.nonReleaseAndroid === !(isAndroid && !isRelease) && isAndroid) ||
-            (entry.desktop === !isDesktop) ||
-            (entry.android === !isAndroid && !entry.nonReleaseAndroid && !entry.nightlyAndroid) ||
-            (entry.fennecOrDesktop === (isAndroid && !isFennec)) ||
-            (entry.fennec === !isFennec) ||
-            (entry.release === !isRelease) ||
-            entry.disabled) {
+        if (
+          entry.nightly === !isNightly ||
+          (entry.nightlyAndroid === !(isAndroid && isNightly) && isAndroid) ||
+          (entry.nonReleaseAndroid === !(isAndroid && !isRelease) &&
+            isAndroid) ||
+          entry.desktop === !isDesktop ||
+          (entry.android === !isAndroid &&
+            !entry.nonReleaseAndroid &&
+            !entry.nightlyAndroid) ||
+          entry.fennecOrDesktop === (isAndroid && !isFennec) ||
+          entry.fennec === !isFennec ||
+          entry.release === !isRelease ||
+          entry.disabled
+        ) {
           interfaceMap[entry.name] = false;
         } else if (entry.optional) {
           interfaceMap[entry.name] = "optional";
@@ -298,25 +307,37 @@ function runTest(data) {
     if (!/^[A-Z]/.test(name)) {
       continue;
     }
-    ok(interfaceMap[name] === "optional" || interfaceMap[name],
-       "If this is failing: DANGER, are you sure you want to expose the new interface " + name +
-       " to all webpages as a property on the service worker? Do not make a change to this file without a " +
-       " review from a DOM peer for that specific change!!! (or a JS peer for changes to ecmaGlobals)");
+    ok(
+      interfaceMap[name] === "optional" || interfaceMap[name],
+      "If this is failing: DANGER, are you sure you want to expose the new interface " +
+        name +
+        " to all webpages as a property on the service worker? Do not make a change to this file without a " +
+        " review from a DOM peer for that specific change!!! (or a JS peer for changes to ecmaGlobals)"
+    );
     delete interfaceMap[name];
   }
   for (var name of Object.keys(interfaceMap)) {
     if (interfaceMap[name] === "optional") {
       delete interfaceMap[name];
     } else {
-      ok(name in self === interfaceMap[name],
-         name + " should " + (interfaceMap[name] ? "" : " NOT") + " be defined on the global scope");
+      ok(
+        name in self === interfaceMap[name],
+        name +
+          " should " +
+          (interfaceMap[name] ? "" : " NOT") +
+          " be defined on the global scope"
+      );
       if (!interfaceMap[name]) {
         delete interfaceMap[name];
       }
     }
   }
-  is(Object.keys(interfaceMap).length, 0,
-     "The following interface(s) are not enumerated: " + Object.keys(interfaceMap).join(", "));
+  is(
+    Object.keys(interfaceMap).length,
+    0,
+    "The following interface(s) are not enumerated: " +
+      Object.keys(interfaceMap).join(", ")
+  );
 }
 
 workerTestGetHelperData(function(data) {

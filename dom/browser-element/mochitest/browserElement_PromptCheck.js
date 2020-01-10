@@ -50,12 +50,16 @@ function runTest() {
         for (; i < 30; i++) { prompt(i); } \
        }); \
      }); \
-     </scr' + "ipt></body></html>";
-   
+     </scr' +
+    "ipt></body></html>";
+  
 }
 
 
 
 addEventListener("testready", function() {
-  SpecialPowers.pushPrefEnv({"set": [["dom.successive_dialog_time_limit", 10]]}, runTest);
+  SpecialPowers.pushPrefEnv(
+    { set: [["dom.successive_dialog_time_limit", 10]] },
+    runTest
+  );
 });

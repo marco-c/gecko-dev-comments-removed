@@ -1,13 +1,13 @@
 "use strict";
 
-self.onmessage = function (event) {
+self.onmessage = function(event) {
   if (event.data !== "resolve") {
     return;
   }
   
   
-  Promise.resolve().then(function () {
-    self.onmessage = function (e) {
+  Promise.resolve().then(function() {
+    self.onmessage = function(e) {
       if (e.data !== "pause") {
         return;
       }
@@ -15,11 +15,11 @@ self.onmessage = function (event) {
       
       
       
-      Promise.resolve().then(function () {
+      Promise.resolve().then(function() {
         postMessage("resumed");
       });
       debugger;
-    }
+    };
     postMessage("resolved");
   });
 };

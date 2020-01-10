@@ -19,8 +19,10 @@
 
 
 
-ChromeUtils.import('resource://gre/modules/Services.jsm');
-const { Downloads } = ChromeUtils.import("resource://gre/modules/Downloads.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Downloads } = ChromeUtils.import(
+  "resource://gre/modules/Downloads.jsm"
+);
 
 
 
@@ -63,19 +65,16 @@ async function performCanceledDownload(tab, path) {
   
   info(`triggering download of "${path}"`);
   
-  await ContentTask.spawn(
-    tab.linkedBrowser,
-    path,
-    function(path) {
-      
-      content.wrappedJSObject.trackStreamClosure(path);
-      
-      const link = content.document.createElement('a');
-      link.href = path;
-      link.download = path;
-      content.document.body.appendChild(link);
-      link.click();
-    });
+  await ContentTask.spawn(tab.linkedBrowser, path, function(path) {
+    
+    content.wrappedJSObject.trackStreamClosure(path);
+    
+    const link = content.document.createElement("a");
+    link.href = path;
+    link.download = path;
+    content.document.body.appendChild(link);
+    link.click();
+  });
   
 
   
@@ -86,12 +85,9 @@ async function performCanceledDownload(tab, path) {
   
   info(`wait for the ${path} stream to close.`);
   
-  const why = await ContentTask.spawn(
-    tab.linkedBrowser,
-    path,
-    function(path) {
-      return content.wrappedJSObject.streamClosed[path].promise;
-    });
+  const why = await ContentTask.spawn(tab.linkedBrowser, path, function(path) {
+    return content.wrappedJSObject.streamClosed[path].promise;
+  });
   
   is(why.why, "canceled", "Ensure the stream canceled instead of timing out.");
   
@@ -101,24 +97,27 @@ async function performCanceledDownload(tab, path) {
   info(`Cancellation reason: ${why.message} after ${why.ticks} ticks`);
 }
 
-const gTestRoot = getRootDirectory(gTestPath)
-  .replace("chrome://mochitests/content/", "http://mochi.test:8888/");
-
+const gTestRoot = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content/",
+  "http://mochi.test:8888/"
+);
 
 const PAGE_URL = `${gTestRoot}download_canceled/page_download_canceled.html`;
 
 add_task(async function interruptedDownloads() {
-  await SpecialPowers.pushPrefEnv({'set': [
-    ['dom.serviceWorkers.enabled', true],
-    ['dom.serviceWorkers.exemptFromPerDomainMax', true],
-    ['dom.serviceWorkers.testing.enabled', true],
-    ["javascript.options.streams", true],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["dom.serviceWorkers.enabled", true],
+      ["dom.serviceWorkers.exemptFromPerDomainMax", true],
+      ["dom.serviceWorkers.testing.enabled", true],
+      ["javascript.options.streams", true],
+    ],
+  });
 
   
   const tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
-    opening: PAGE_URL
+    opening: PAGE_URL,
   });
 
   
@@ -129,7 +128,8 @@ add_task(async function interruptedDownloads() {
     function() {
       
       return content.wrappedJSObject.controlled;
-    });
+    }
+  );
   is(controlled, "controlled", "page became controlled");
 
   
@@ -139,12 +139,9 @@ add_task(async function interruptedDownloads() {
   await performCanceledDownload(tab, "sw-stream-download");
 
   
-  await ContentTask.spawn(
-    tab.linkedBrowser,
-    null,
-    function() {
-      return content.wrappedJSObject.registration.unregister();
-    });
+  await ContentTask.spawn(tab.linkedBrowser, null, function() {
+    return content.wrappedJSObject.registration.unregister();
+  });
   BrowserTestUtils.removeTab(tab);
   await clearDownloads();
 });

@@ -1,14 +1,17 @@
 
 
-class EmptyWorkletProcessor extends AudioWorkletProcessor {
-}
+class EmptyWorkletProcessor extends AudioWorkletProcessor {}
 
 class NoProcessWorkletProcessor extends AudioWorkletProcessor {
-  constructor() { super(); }
+  constructor() {
+    super();
+  }
 }
 
 class BadDescriptorsWorkletProcessor extends AudioWorkletProcessor {
-  constructor() { super(); }
+  constructor() {
+    super();
+  }
 
   process() {
     
@@ -20,21 +23,28 @@ class BadDescriptorsWorkletProcessor extends AudioWorkletProcessor {
 }
 
 class GoodDescriptorsWorkletProcessor extends AudioWorkletProcessor {
-  constructor() { super(); }
+  constructor() {
+    super();
+  }
 
   process() {
     
   }
 
   static get parameterDescriptors() {
-    return [{
-      name: 'myParam', defaultValue: 0.707
-    }];
+    return [
+      {
+        name: "myParam",
+        defaultValue: 0.707,
+      },
+    ];
   }
 }
 
 class DummyProcessWorkletProcessor extends AudioWorkletProcessor {
-  constructor() { super(); }
+  constructor() {
+    super();
+  }
 
   process() {
     
@@ -42,82 +52,105 @@ class DummyProcessWorkletProcessor extends AudioWorkletProcessor {
 }
 
 class DescriptorsNoNameWorkletProcessor extends AudioWorkletProcessor {
-  constructor() { super(); }
+  constructor() {
+    super();
+  }
 
   process() {
     
   }
 
   static get parameterDescriptors() {
-    return [{
-      defaultValue: 0.707
-    }];
+    return [
+      {
+        defaultValue: 0.707,
+      },
+    ];
   }
 }
 
 class DescriptorsDefaultValueNotNumberWorkletProcessor extends AudioWorkletProcessor {
-  constructor() { super(); }
+  constructor() {
+    super();
+  }
 
   process() {
     
   }
 
   static get parameterDescriptors() {
-    return [{
-      name: "test",
-      defaultValue: "test"
-    }];
+    return [
+      {
+        name: "test",
+        defaultValue: "test",
+      },
+    ];
   }
 }
 
 class DescriptorsMinValueNotNumberWorkletProcessor extends AudioWorkletProcessor {
-  constructor() { super(); }
+  constructor() {
+    super();
+  }
 
   process() {
     
   }
 
   static get parameterDescriptors() {
-    return [{
-      name: "test",
-      minValue: "test"
-    }];
+    return [
+      {
+        name: "test",
+        minValue: "test",
+      },
+    ];
   }
 }
 
 class DescriptorsMaxValueNotNumberWorkletProcessor extends AudioWorkletProcessor {
-  constructor() { super(); }
+  constructor() {
+    super();
+  }
 
   process() {
     
   }
 
   static get parameterDescriptors() {
-    return [{
-      name: "test",
-      maxValue: "test"
-    }];
+    return [
+      {
+        name: "test",
+        maxValue: "test",
+      },
+    ];
   }
 }
 
 class DescriptorsDuplicatedNameWorkletProcessor extends AudioWorkletProcessor {
-  constructor() { super(); }
+  constructor() {
+    super();
+  }
 
   process() {
     
   }
 
   static get parameterDescriptors() {
-    return [{
-      name: "test",
-    }, {
-      name: "test",
-    }];
+    return [
+      {
+        name: "test",
+      },
+      {
+        name: "test",
+      },
+    ];
   }
 }
 
 class DescriptorsNotDictWorkletProcessor extends AudioWorkletProcessor {
-  constructor() { super(); }
+  constructor() {
+    super();
+  }
 
   process() {
     
@@ -129,53 +162,65 @@ class DescriptorsNotDictWorkletProcessor extends AudioWorkletProcessor {
 }
 
 class DescriptorsOutOfRangeMinWorkletProcessor extends AudioWorkletProcessor {
-  constructor() { super(); }
+  constructor() {
+    super();
+  }
 
   process() {
     
   }
 
   static get parameterDescriptors() {
-    return [{
-      name: 'test',
-      defaultValue: 0,
-      minValue: 1,
-      maxValue: 2,
-    }];
+    return [
+      {
+        name: "test",
+        defaultValue: 0,
+        minValue: 1,
+        maxValue: 2,
+      },
+    ];
   }
 }
 
 class DescriptorsOutOfRangeMaxWorkletProcessor extends AudioWorkletProcessor {
-  constructor() { super(); }
+  constructor() {
+    super();
+  }
 
   process() {
     
   }
 
   static get parameterDescriptors() {
-    return [{
-      name: 'test',
-      defaultValue: 3,
-      minValue: 1,
-      maxValue: 2,
-    }];
+    return [
+      {
+        name: "test",
+        defaultValue: 3,
+        minValue: 1,
+        maxValue: 2,
+      },
+    ];
   }
 }
 
 class DescriptorsBadRangeMaxWorkletProcessor extends AudioWorkletProcessor {
-  constructor() { super(); }
+  constructor() {
+    super();
+  }
 
   process() {
     
   }
 
   static get parameterDescriptors() {
-    return [{
-      name: 'test',
-      defaultValue: 1.5,
-      minValue: 2,
-      maxValue: 1,
-    }];
+    return [
+      {
+        name: "test",
+        defaultValue: 1.5,
+        minValue: 2,
+        maxValue: 1,
+      },
+    ];
   }
 }
 
@@ -184,7 +229,7 @@ class DescriptorsBadRangeMaxWorkletProcessor extends AudioWorkletProcessor {
 try {
   registerProcessor("sure!", () => {});
 } catch (e) {
-  console.log(e)
+  console.log(e);
 }
 
 
@@ -192,7 +237,7 @@ try {
 try {
   registerProcessor("", EmptyWorkletProcessor);
 } catch (e) {
-  console.log(e)
+  console.log(e);
 }
 
 
@@ -200,7 +245,7 @@ try {
 try {
   registerProcessor("my-worklet-processor", "");
 } catch (e) {
-  console.log(e)
+  console.log(e);
 }
 
 
@@ -208,7 +253,7 @@ try {
 try {
   registerProcessor("empty-worklet-processor", EmptyWorkletProcessor);
 } catch (e) {
-  console.log(e)
+  console.log(e);
 }
 
 
@@ -216,20 +261,26 @@ try {
 try {
   registerProcessor("no-worklet-processor", NoProcessWorkletProcessor);
 } catch (e) {
-  console.log(e)
+  console.log(e);
 }
 
 
 
 try {
-  registerProcessor("bad-descriptors-worklet-processor", BadDescriptorsWorkletProcessor);
+  registerProcessor(
+    "bad-descriptors-worklet-processor",
+    BadDescriptorsWorkletProcessor
+  );
 } catch (e) {
-  console.log(e)
+  console.log(e);
 }
 
 
 
-registerProcessor("good-descriptors-worklet-processor", GoodDescriptorsWorkletProcessor);
+registerProcessor(
+  "good-descriptors-worklet-processor",
+  GoodDescriptorsWorkletProcessor
+);
 
 
 
@@ -240,77 +291,104 @@ registerProcessor("dummy-worklet-processor", DummyProcessWorkletProcessor);
 try {
   registerProcessor("dummy-worklet-processor", DummyProcessWorkletProcessor);
 } catch (e) {
-  console.log(e)
+  console.log(e);
 }
 
 
 
 try {
-  registerProcessor("descriptors-no-name-worklet-processor", DescriptorsNoNameWorkletProcessor);
+  registerProcessor(
+    "descriptors-no-name-worklet-processor",
+    DescriptorsNoNameWorkletProcessor
+  );
 } catch (e) {
-  console.log(e)
+  console.log(e);
 }
 
 
 
 try {
-  registerProcessor("descriptors-default-value-not-number-worklet-processor", DescriptorsDefaultValueNotNumberWorkletProcessor);
+  registerProcessor(
+    "descriptors-default-value-not-number-worklet-processor",
+    DescriptorsDefaultValueNotNumberWorkletProcessor
+  );
 } catch (e) {
-  console.log(e)
+  console.log(e);
 }
 
 
 
 try {
-  registerProcessor("descriptors-min-value-not-number-worklet-processor", DescriptorsMinValueNotNumberWorkletProcessor);
+  registerProcessor(
+    "descriptors-min-value-not-number-worklet-processor",
+    DescriptorsMinValueNotNumberWorkletProcessor
+  );
 } catch (e) {
-  console.log(e)
+  console.log(e);
 }
 
 
 
 try {
-  registerProcessor("descriptors-max-value-not-number-worklet-processor", DescriptorsMaxValueNotNumberWorkletProcessor);
+  registerProcessor(
+    "descriptors-max-value-not-number-worklet-processor",
+    DescriptorsMaxValueNotNumberWorkletProcessor
+  );
 } catch (e) {
-  console.log(e)
+  console.log(e);
 }
 
 
 
 try {
-  registerProcessor("descriptors-duplicated-name-worklet-processor", DescriptorsDuplicatedNameWorkletProcessor);
+  registerProcessor(
+    "descriptors-duplicated-name-worklet-processor",
+    DescriptorsDuplicatedNameWorkletProcessor
+  );
 } catch (e) {
-  console.log(e)
+  console.log(e);
 }
 
 
 
 try {
-  registerProcessor("descriptors-not-dict-worklet-processor", DescriptorsNotDictWorkletProcessor);
+  registerProcessor(
+    "descriptors-not-dict-worklet-processor",
+    DescriptorsNotDictWorkletProcessor
+  );
 } catch (e) {
-  console.log(e)
+  console.log(e);
 }
 
 
 
 try {
-  registerProcessor("descriptors-out-of-range-min-worklet-processor", DescriptorsOutOfRangeMinWorkletProcessor);
+  registerProcessor(
+    "descriptors-out-of-range-min-worklet-processor",
+    DescriptorsOutOfRangeMinWorkletProcessor
+  );
 } catch (e) {
-  console.log(e)
+  console.log(e);
 }
 
 
 
 try {
-  registerProcessor("descriptors-out-of-range-max-worklet-processor", DescriptorsOutOfRangeMaxWorkletProcessor);
+  registerProcessor(
+    "descriptors-out-of-range-max-worklet-processor",
+    DescriptorsOutOfRangeMaxWorkletProcessor
+  );
 } catch (e) {
-  console.log(e)
+  console.log(e);
 }
 
 
 
 try {
-  registerProcessor("descriptors-bad-range-max-worklet-processor", DescriptorsBadRangeMaxWorkletProcessor);
+  registerProcessor(
+    "descriptors-bad-range-max-worklet-processor",
+    DescriptorsBadRangeMaxWorkletProcessor
+  );
 } catch (e) {
-  console.log(e)
+  console.log(e);
 }

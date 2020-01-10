@@ -13,7 +13,7 @@ function HTMLMenuBuilder() {
   this.root = null;
   this.items = {};
   this.nestedStack = [];
-};
+}
 
 
 
@@ -25,9 +25,8 @@ function HTMLMenuBuilder() {
 
 
 
-HTMLMenuBuilder.prototype =
-{
-  classID:        Components.ID("{51c65f5d-0de5-4edc-9058-60e50cef77f8}"),
+HTMLMenuBuilder.prototype = {
+  classID: Components.ID("{51c65f5d-0de5-4edc-9058-60e50cef77f8}"),
   QueryInterface: ChromeUtils.generateQI([Ci.nsIMenuBuilder]),
 
   currentNode: null,
@@ -43,16 +42,15 @@ HTMLMenuBuilder.prototype =
     if (!this.currentNode) {
       this.root = {
         type: "menu",
-        children: []
+        children: [],
       };
       this.currentNode = this.root;
-    }
-    else {
+    } else {
       let parent = this.currentNode;
       this.currentNode = {
         type: "menu",
         label: aLabel,
-        children: []
+        children: [],
       };
       parent.children.push(this.currentNode);
       this.nestedStack.push(parent);
@@ -71,7 +69,7 @@ HTMLMenuBuilder.prototype =
 
     let item = {
       type: "menuitem",
-      label: aElement.label
+      label: aElement.label,
     };
 
     let elementType = aElement.type;
@@ -103,7 +101,7 @@ HTMLMenuBuilder.prototype =
       return;
     }
 
-    this.currentNode.children.push({ type: "separator"});
+    this.currentNode.children.push({ type: "separator" });
   },
 
   undoAddSeparator: function() {
@@ -118,7 +116,9 @@ HTMLMenuBuilder.prototype =
   },
 
   closeContainer: function() {
-    this.currentNode = this.nestedStack.length ? this.nestedStack.pop() : this.root;
+    this.currentNode = this.nestedStack.length
+      ? this.nestedStack.pop()
+      : this.root;
   },
 
   click: function(id) {
@@ -126,7 +126,7 @@ HTMLMenuBuilder.prototype =
     if (item) {
       item.click();
     }
-  }
+  },
 };
 
 var EXPORTED_SYMBOLS = ["HTMLMenuBuilder"];

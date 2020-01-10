@@ -2,19 +2,16 @@ async function testCachedRedirectErrorMode() {
   
   const REDIRECTING_URL = "file_fetch_cached_redirect.html";
 
-  let firstResponse = await(fetch(REDIRECTING_URL, { redirect: "manual" }));
+  let firstResponse = await fetch(REDIRECTING_URL, { redirect: "manual" });
   
   try {
-    let secondResponse = await(fetch(REDIRECTING_URL, { redirect: "error" }));
-  } catch(ex) {
-
-  }
+    let secondResponse = await fetch(REDIRECTING_URL, { redirect: "error" });
+  } catch (ex) {}
 
   ok(true, "didn't crash");
 }
 
 function runTest() {
-  return Promise.resolve()
-    .then(testCachedRedirectErrorMode)
-    
+  return Promise.resolve().then(testCachedRedirectErrorMode);
+  
 }

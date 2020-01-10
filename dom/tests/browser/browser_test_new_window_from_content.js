@@ -35,16 +35,18 @@
 
 
 
-
 const kXULNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-const kContentDoc = "http://www.example.com/browser/dom/tests/browser/test_new_window_from_content_child.html";
+const kContentDoc =
+  "http://www.example.com/browser/dom/tests/browser/test_new_window_from_content_child.html";
 const kNewWindowPrefKey = "browser.link.open_newwindow";
 const kNewWindowRestrictionPrefKey = "browser.link.open_newwindow.restriction";
 const kSameTab = "same tab";
 const kNewWin = "new window";
 const kNewTab = "new tab";
 
-SpecialPowers.pushPrefEnv({"set": [["dom.require_user_interaction_for_beforeunload", false]]});
+SpecialPowers.pushPrefEnv({
+  set: [["dom.require_user_interaction_for_beforeunload", false]],
+});
 
 requestLongerTimeout(3);
 
@@ -56,12 +58,12 @@ requestLongerTimeout(3);
 
 
 const kWinOpenDefault = {
-
-
-
-                  1: [kSameTab, kNewWin, kSameTab],
-                  2: [kNewWin, kNewWin, kNewWin],
-                  3: [kNewTab, kNewWin, kNewTab],
+  
+  
+  
+  1: [kSameTab, kNewWin, kSameTab],
+  2: [kNewWin, kNewWin, kNewWin],
+  3: [kNewTab, kNewWin, kNewTab],
 };
 
 const kWinOpenNonDefault = {
@@ -79,13 +81,16 @@ const kTargetBlank = {
 
 
 var originalNewWindowPref = Services.prefs.getIntPref(kNewWindowPrefKey);
-var originalNewWindowRestrictionPref =
-  Services.prefs.getIntPref(kNewWindowRestrictionPrefKey);
+var originalNewWindowRestrictionPref = Services.prefs.getIntPref(
+  kNewWindowRestrictionPrefKey
+);
 
 registerCleanupFunction(function() {
   Services.prefs.setIntPref(kNewWindowPrefKey, originalNewWindowPref);
-  Services.prefs.setIntPref(kNewWindowRestrictionPrefKey,
-                            originalNewWindowRestrictionPref);
+  Services.prefs.setIntPref(
+    kNewWindowRestrictionPrefKey,
+    originalNewWindowRestrictionPref
+  );
 });
 
 
@@ -117,7 +122,9 @@ function prepareForResult(aBrowser, aExpectation) {
       })();
     case kNewWin:
       return (async function() {
-        let newWin = await BrowserTestUtils.waitForNewWindow({url: expectedSpec});
+        let newWin = await BrowserTestUtils.waitForNewWindow({
+          url: expectedSpec,
+        });
         let newBrowser = newWin.gBrowser.selectedBrowser;
         is(newBrowser.currentURI.spec, expectedSpec, "Should be at dummy.html");
         await BrowserTestUtils.closeWindow(newWin);
@@ -125,12 +132,18 @@ function prepareForResult(aBrowser, aExpectation) {
     case kNewTab:
       return (async function() {
         let newTab = await BrowserTestUtils.waitForNewTab(gBrowser);
-        is(newTab.linkedBrowser.currentURI.spec, expectedSpec,
-           "Should be at dummy.html");
+        is(
+          newTab.linkedBrowser.currentURI.spec,
+          expectedSpec,
+          "Should be at dummy.html"
+        );
         BrowserTestUtils.removeTab(newTab);
       })();
     default:
-      ok(false, "prepareForResult can't handle an expectation of " + aExpectation);
+      ok(
+        false,
+        "prepareForResult can't handle an expectation of " + aExpectation
+      );
       return Promise.resolve();
   }
 }
@@ -146,36 +159,50 @@ function prepareForResult(aBrowser, aExpectation) {
 
 
 function testLinkWithMatrix(aLinkSelector, aMatrix) {
-  return BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: kContentDoc,
-  }, async function(browser) {
-    
-    
-    
-    
-    
-    
-    
-    for (let newWindowPref in aMatrix) {
-      let expectations = aMatrix[newWindowPref];
-      for (let i = 0; i < expectations.length; ++i) {
-        let newWindowRestPref = i;
-        let expectation = expectations[i];
+  return BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: kContentDoc,
+    },
+    async function(browser) {
+      
+      
+      
+      
+      
+      
+      
+      for (let newWindowPref in aMatrix) {
+        let expectations = aMatrix[newWindowPref];
+        for (let i = 0; i < expectations.length; ++i) {
+          let newWindowRestPref = i;
+          let expectation = expectations[i];
 
-        Services.prefs.setIntPref("browser.link.open_newwindow", newWindowPref);
-        Services.prefs.setIntPref("browser.link.open_newwindow.restriction", newWindowRestPref);
-        info("Clicking on " + aLinkSelector);
-        info("Testing with browser.link.open_newwindow = " + newWindowPref + " and " +
-             "browser.link.open_newwindow.restriction = " + newWindowRestPref);
-        info("Expecting: " + expectation);
-        let resultPromise = prepareForResult(browser, expectation);
-        BrowserTestUtils.synthesizeMouseAtCenter(aLinkSelector, {}, browser);
-        await resultPromise;
-        info("Got expectation: " + expectation);
+          Services.prefs.setIntPref(
+            "browser.link.open_newwindow",
+            newWindowPref
+          );
+          Services.prefs.setIntPref(
+            "browser.link.open_newwindow.restriction",
+            newWindowRestPref
+          );
+          info("Clicking on " + aLinkSelector);
+          info(
+            "Testing with browser.link.open_newwindow = " +
+              newWindowPref +
+              " and " +
+              "browser.link.open_newwindow.restriction = " +
+              newWindowRestPref
+          );
+          info("Expecting: " + expectation);
+          let resultPromise = prepareForResult(browser, expectation);
+          BrowserTestUtils.synthesizeMouseAtCenter(aLinkSelector, {}, browser);
+          await resultPromise;
+          info("Got expectation: " + expectation);
+        }
       }
     }
-  });
+  );
 }
 
 add_task(async function test_window_open_with_defaults() {
