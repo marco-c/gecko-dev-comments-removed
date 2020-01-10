@@ -160,9 +160,6 @@ function isKeyIn(key, ...keys) {
 
 
 
-
-
-
 function editableField(options) {
   return editableItem(options, function(element, event) {
     if (!options.element.inplaceEditor) {
@@ -295,7 +292,6 @@ function InplaceEditor(options, event) {
     options.preserveTextStyles === undefined
       ? false
       : !!options.preserveTextStyles;
-  this.showSuggestCompletionOnEmpty = !!options.showSuggestCompletionOnEmpty;
 
   this._onBlur = this._onBlur.bind(this);
   this._onWindowBlur = this._onWindowBlur.bind(this);
@@ -1200,20 +1196,15 @@ InplaceEditor.prototype = {
     }
 
     if (isKeyIn(key, "BACK_SPACE", "DELETE", "LEFT", "RIGHT", "HOME", "END")) {
-      if (isPopupOpen && this.currentInputValue !== "") {
+      if (isPopupOpen) {
         this._hideAutocompletePopup();
       }
     } else if (
-      
-      
-      
-      
-      (event.key === " " && event.ctrlKey) ||
-      (!cycling &&
-        !multilineNavigation &&
-        !event.metaKey &&
-        !event.altKey &&
-        !event.ctrlKey)
+      !cycling &&
+      !multilineNavigation &&
+      !event.metaKey &&
+      !event.altKey &&
+      !event.ctrlKey
     ) {
       this._maybeSuggestCompletion(true);
     }
@@ -1403,11 +1394,6 @@ InplaceEditor.prototype = {
     
     if (this.change) {
       this.change(this.currentInputValue);
-    }
-
-    
-    if (this.currentInputValue === "" && this.showSuggestCompletionOnEmpty) {
-      this._maybeSuggestCompletion(false);
     }
   },
 
