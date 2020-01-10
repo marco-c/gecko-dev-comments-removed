@@ -5,21 +5,18 @@
 
 "use strict";
 
-const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-
-ChromeUtils.defineModuleGetter(
+loader.lazyRequireGetter(
   this,
   "Reflect",
-  "resource://gre/modules/reflect.jsm"
+  "resource://gre/modules/reflect.jsm",
+  true
 );
 
-this.EXPORTED_SYMBOLS = ["Parser"];
 
 
 
-
-this.Parser = function Parser() {
+const Parser = function Parser() {
   this._cache = new Map();
   this.errors = [];
   this.logExceptions = true;
@@ -106,6 +103,8 @@ Parser.prototype = {
   _cache: null,
   errors: null,
 };
+
+exports.Parser = Parser;
 
 
 
