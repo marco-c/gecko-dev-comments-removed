@@ -619,19 +619,19 @@ void BasicCompositor::DrawGeometry(
     gfx::Float aOpacity, const gfx::Matrix4x4& aTransform,
     const gfx::Rect& aVisibleRect, const bool aEnableAA) {
   RefPtr<DrawTarget> buffer = mRenderTarget->mDrawTarget;
-
-  
-  
-  RefPtr<DrawTarget> dest = buffer;
-
-  AutoRestoreTransform autoRestoreTransform(dest);
+  AutoRestoreTransform autoRestoreTransform(buffer);
 
   Matrix newTransform;
   Rect transformBounds;
   Matrix4x4 new3DTransform;
   IntPoint offset = mRenderTarget->GetOrigin();
 
+  
+  
+  RefPtr<DrawTarget> dest;
+
   if (aTransform.Is2D()) {
+    dest = buffer;
     newTransform = aTransform.As2D();
   } else {
     
