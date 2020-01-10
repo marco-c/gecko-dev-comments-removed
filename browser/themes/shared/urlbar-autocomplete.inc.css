@@ -9,7 +9,7 @@
 %define urlbarViewIconMarginEnd 8px
 %define urlbarViewFaviconOffset (@urlbarViewPadding@ + 16px  + @urlbarViewIconMarginEnd@)
 %define urlbarViewInlineStartPadding (@urlbarBreakoutHorizontalExtend@ - 16px  - @urlbarViewIconMarginEnd@ - 2px )
-%define urlbarViewHorizontalMargin 8px
+%define urlbarViewHorizontalMargin 6px
 
 :root {
   --autocomplete-popup-background: var(--arrowpanel-background);
