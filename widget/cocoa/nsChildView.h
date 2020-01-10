@@ -157,6 +157,8 @@ class WidgetRenderingContext;
 
   
   
+  
+  
   BOOL mNeedsGLUpdate;
 
   
@@ -166,6 +168,7 @@ class WidgetRenderingContext;
   
   nsIDragService* mDragService;
 
+  
   NSOpenGLContext* mGLContext;
 
   
