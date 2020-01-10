@@ -167,10 +167,6 @@ class BasicCompositor : public Compositor {
 
   void FinishPendingComposite() override;
 
-  virtual void RequestAllowFrameRecording(bool aWillRecord) override {
-    mRecordFrames = aWillRecord;
-  }
-
  private:
   template <typename Geometry>
   void DrawGeometry(const Geometry& aGeometry, const gfx::Rect& aRect,
@@ -189,19 +185,6 @@ class BasicCompositor : public Compositor {
   void EndRemoteDrawing();
 
   bool NeedsToDeferEndRemoteDrawing();
-
-  
-
-
-
-
-
-
-
-
-
-
-  bool ShouldRecordFrames() const;
 
   bool NeedToRecreateFullWindowRenderTarget() const;
 
@@ -229,7 +212,6 @@ class BasicCompositor : public Compositor {
 
   uint32_t mMaxTextureSize;
   bool mIsPendingEndRemoteDrawing;
-  bool mRecordFrames;
   bool mShouldInvalidateWindow = false;
 
   

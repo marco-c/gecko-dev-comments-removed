@@ -596,7 +596,9 @@ class Compositor : public TextureSourceProvider {
 
 
 
-  virtual void RequestAllowFrameRecording(bool aWillRecord) {}
+  virtual void RequestAllowFrameRecording(bool aWillRecord) {
+    mRecordFrames = aWillRecord;
+  }
 
   
 
@@ -652,6 +654,18 @@ class Compositor : public TextureSourceProvider {
   
 
 
+
+
+
+
+
+
+
+  bool ShouldRecordFrames() const;
+
+  
+
+
   TimeStamp mLastCompositionEndTime;
 
   DiagnosticTypes mDiagnosticTypes;
@@ -673,6 +687,8 @@ class Compositor : public TextureSourceProvider {
 
   gfx::Color mClearColor;
   gfx::Color mDefaultClearColor;
+
+  bool mRecordFrames = false;
 
  private:
   static LayersBackend sBackend;
