@@ -1582,8 +1582,8 @@ already_AddRefed<nsIContent> nsCSSFrameConstructor::CreateGeneratedContent(
         }
 
         nsAutoString temp;
-        nsContentUtils::GetMaybeLocalizedString(
-            nsContentUtils::eFORMS_PROPERTIES, "Submit", mDocument, temp);
+        nsContentUtils::GetLocalizedString(
+            nsContentUtils::eFORMS_PROPERTIES_MAYBESPOOF, "Submit", temp);
         return CreateGenConTextNode(aState, temp, nullptr);
       }
 
@@ -7871,9 +7871,8 @@ void nsCSSFrameConstructor::GetAlternateTextFor(Element* aElement, nsAtom* aTag,
 
     
     
-    nsContentUtils::GetMaybeLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
-                                            "Submit", aElement->OwnerDoc(),
-                                            aAltText);
+    nsContentUtils::GetLocalizedString(
+        nsContentUtils::eFORMS_PROPERTIES_MAYBESPOOF, "Submit", aAltText);
   }
 }
 

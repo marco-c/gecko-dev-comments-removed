@@ -215,8 +215,8 @@ static already_AddRefed<Element> MakeAnonButton(Document* aDoc,
 
   
   nsAutoString buttonTxt;
-  nsContentUtils::GetMaybeLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
-                                          labelKey, aDoc, buttonTxt);
+  nsContentUtils::GetLocalizedString(
+      nsContentUtils::eFORMS_PROPERTIES_MAYBESPOOF, labelKey, buttonTxt);
 
   
   
