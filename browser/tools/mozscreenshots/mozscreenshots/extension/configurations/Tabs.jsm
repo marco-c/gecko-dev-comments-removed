@@ -138,7 +138,7 @@ var Tabs = {
         });
         
         let scrolled = BrowserTestUtils.waitForEvent(
-          browserWindow.gBrowser.tabContainer,
+          browserWindow.gBrowser.tabContainer.arrowScrollbox,
           "scrollend"
         );
         browserWindow.gBrowser.tabContainer.arrowScrollbox.scrollByIndex(-100);
