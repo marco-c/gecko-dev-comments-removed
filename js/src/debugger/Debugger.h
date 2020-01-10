@@ -262,9 +262,9 @@ extern void CheckDebuggeeThing(JSObject* obj, bool invisibleOk);
 
 
 template <class Referent, class Wrapper, bool InvisibleKeysOk = false>
-class DebuggerWeakMap : private WeakMap<HeapPtr<Referent>, HeapPtr<Wrapper*>> {
+class DebuggerWeakMap : private WeakMap<HeapPtr<Referent*>, HeapPtr<Wrapper*>> {
  private:
-  typedef HeapPtr<Referent> Key;
+  typedef HeapPtr<Referent*> Key;
   typedef HeapPtr<Wrapper*> Value;
 
   typedef HashMap<JS::Zone*, uintptr_t, DefaultHasher<JS::Zone*>,
@@ -632,40 +632,40 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
-  typedef DebuggerWeakMap<JSObject*, DebuggerFrame> GeneratorWeakMap;
+  typedef DebuggerWeakMap<JSObject, DebuggerFrame> GeneratorWeakMap;
   GeneratorWeakMap generatorFrames;
 
   
-  typedef DebuggerWeakMap<JSScript*, DebuggerScript> ScriptWeakMap;
+  typedef DebuggerWeakMap<JSScript, DebuggerScript> ScriptWeakMap;
   ScriptWeakMap scripts;
 
-  using LazyScriptWeakMap = DebuggerWeakMap<LazyScript*, DebuggerScript>;
+  using LazyScriptWeakMap = DebuggerWeakMap<LazyScript, DebuggerScript>;
   LazyScriptWeakMap lazyScripts;
 
   using LazyScriptVector = JS::GCVector<LazyScript*>;
 
   
   
-  typedef DebuggerWeakMap<JSObject*, DebuggerSource, true> SourceWeakMap;
+  typedef DebuggerWeakMap<JSObject, DebuggerSource, true> SourceWeakMap;
   SourceWeakMap sources;
 
   
-  typedef DebuggerWeakMap<JSObject*, DebuggerObject> ObjectWeakMap;
+  typedef DebuggerWeakMap<JSObject, DebuggerObject> ObjectWeakMap;
   ObjectWeakMap objects;
 
   
-  typedef DebuggerWeakMap<JSObject*, DebuggerEnvironment> EnvironmentWeakMap;
+  typedef DebuggerWeakMap<JSObject, DebuggerEnvironment> EnvironmentWeakMap;
   EnvironmentWeakMap environments;
 
   
   
-  typedef DebuggerWeakMap<WasmInstanceObject*, DebuggerScript>
+  typedef DebuggerWeakMap<WasmInstanceObject, DebuggerScript>
       WasmInstanceScriptWeakMap;
   WasmInstanceScriptWeakMap wasmInstanceScripts;
 
   
   
-  typedef DebuggerWeakMap<WasmInstanceObject*, DebuggerSource>
+  typedef DebuggerWeakMap<WasmInstanceObject, DebuggerSource>
       WasmInstanceSourceWeakMap;
   WasmInstanceSourceWeakMap wasmInstanceSources;
 
