@@ -41,9 +41,7 @@ const debuggerSandbox = Cu.Sandbox(systemPrincipal, {
   
   
   
-  
-  
-  invisibleToDebugger: true,
+  freshCompartment: true,
 
   wantGlobalProperties: [
     "atob",
