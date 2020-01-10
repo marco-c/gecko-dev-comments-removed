@@ -145,6 +145,7 @@ function Editor(config) {
     cssProperties: null,
     
     disableSearchAddon: false,
+    maxHighlightLength: 1000,
   };
 
   
