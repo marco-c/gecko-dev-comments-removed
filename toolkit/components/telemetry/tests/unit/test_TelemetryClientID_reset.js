@@ -13,7 +13,7 @@ const { Preferences } = ChromeUtils.import(
 );
 
 const PING_FORMAT_VERSION = 4;
-const DELETION_REQUEST_PING_TYPE = "deletion-request";
+const OPTOUT_PING_TYPE = "optout";
 const TEST_PING_TYPE = "test-ping-type";
 
 function sendPing(addEnvironment = false) {
@@ -74,12 +74,8 @@ add_task(async function test_clientid_reset_after_reenabling() {
   Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, false);
 
   ping = await PingServer.promiseNextPing();
-  Assert.equal(
-    ping.type,
-    DELETION_REQUEST_PING_TYPE,
-    "The ping must be a deletion-request ping"
-  );
-  Assert.equal(ping.clientId, firstClientId);
+  Assert.equal(ping.type, OPTOUT_PING_TYPE, "The ping must be an optout ping");
+  Assert.ok(!("clientId" in ping));
   let clientId = await ClientID.getClientID();
   Assert.equal(TelemetryUtils.knownClientID, clientId);
 
@@ -138,12 +134,8 @@ add_task(async function test_clientid_canary_after_disabling() {
   Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, false);
 
   ping = await PingServer.promiseNextPing();
-  Assert.equal(
-    ping.type,
-    DELETION_REQUEST_PING_TYPE,
-    "The ping must be a deletion-request ping"
-  );
-  Assert.equal(ping.clientId, firstClientId);
+  Assert.equal(ping.type, OPTOUT_PING_TYPE, "The ping must be an optout ping");
+  Assert.ok(!("clientId" in ping));
   let clientId = await ClientID.getClientID();
   Assert.equal(TelemetryUtils.knownClientID, clientId);
 
