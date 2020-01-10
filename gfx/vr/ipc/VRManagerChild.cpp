@@ -184,6 +184,17 @@ void VRManagerChild::UpdateDisplayInfo(
       }
     }
     if (!found) {
+      
+      
+      
+      if (display->IsPresentationGenerationCurrent()) {
+        NotifyPresentationGenerationChangedInternal(
+            display->GetDisplayInfo().GetDisplayID());
+
+        RefPtr<VRManagerChild> vm = VRManagerChild::Get();
+        vm->FireDOMVRDisplayPresentChangeEvent(
+            display->GetDisplayInfo().GetDisplayID());
+      }
       display->NotifyDisconnected();
       disconnectedDisplays.AppendElement(
           display->GetDisplayInfo().GetDisplayID());

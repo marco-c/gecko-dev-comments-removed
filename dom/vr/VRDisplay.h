@@ -279,6 +279,10 @@ class VRDisplay final : public DOMEventTargetHelper, public nsIObserver {
   void GetDisplayName(nsAString& aDisplayName) const {
     aDisplayName = mDisplayName;
   }
+  
+  
+  
+  void UpdateDisplayClient(already_AddRefed<gfx::VRDisplayClient> aClient);
 
   static bool RefreshVRDisplays(uint64_t aWindowId);
   static void UpdateVRDisplays(nsTArray<RefPtr<VRDisplay> >& aDisplays,
