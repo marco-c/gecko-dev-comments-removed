@@ -34,7 +34,6 @@
 
 
 
-
 var x;
 var obj = {
     toString() {

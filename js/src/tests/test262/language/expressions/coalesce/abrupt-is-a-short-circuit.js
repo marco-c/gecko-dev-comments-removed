@@ -34,7 +34,6 @@
 
 
 
-
 var x;
 function poison() {
     throw new Test262Error('poison handled');
