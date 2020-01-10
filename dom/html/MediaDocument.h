@@ -16,6 +16,9 @@
 #define NSMEDIADOCUMENT_PROPERTIES_URI \
   "chrome://global/locale/layout/MediaDocument.properties"
 
+#define NSMEDIADOCUMENT_PROPERTIES_URI_en_US \
+  "resource://gre/res/locale/layout/MediaDocument.properties"
+
 namespace mozilla {
 namespace dom {
 
@@ -60,6 +63,10 @@ class MediaDocument : public nsHTMLDocument {
   nsresult LinkStylesheet(const nsAString& aStylesheet);
   nsresult LinkScript(const nsAString& aScript);
 
+  void FormatStringFromName(const char* aName,
+                            const nsTArray<nsString>& aParams,
+                            nsAString& aResult);
+
   
   
   
@@ -77,6 +84,7 @@ class MediaDocument : public nsHTMLDocument {
                              const nsAString& aStatus = EmptyString());
 
   nsCOMPtr<nsIStringBundle> mStringBundle;
+  nsCOMPtr<nsIStringBundle> mStringBundleEnglish;
   static const char* const sFormatNames[4];
 
  private:

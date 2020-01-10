@@ -683,12 +683,13 @@ static nsresult CreateErrorText(const char16_t* aDescription,
                                 const char16_t* aSourceURL,
                                 const uint32_t aLineNumber,
                                 const uint32_t aColNumber,
-                                nsString& aErrorString) {
+                                nsString& aErrorString, bool spoofEnglish) {
   aErrorString.Truncate();
 
   nsAutoString msg;
   nsresult rv = nsParserMsgUtils::GetLocalizedStringByName(
-      XMLPARSER_PROPERTIES, "XMLParsingError", msg);
+      spoofEnglish ? XMLPARSER_PROPERTIES_en_US : XMLPARSER_PROPERTIES,
+      "XMLParsingError", msg);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -729,8 +730,15 @@ nsresult nsExpatDriver::HandleError() {
   
   
   nsAutoString description;
-  nsParserMsgUtils::GetLocalizedStringByID(XMLPARSER_PROPERTIES, code,
-                                           description);
+  nsCOMPtr<Document> doc;
+  if (mOriginalSink) {
+    doc = do_QueryInterface(mOriginalSink->GetTarget());
+  }
+  bool spoofEnglish =
+      nsContentUtils::SpoofLocaleEnglish() && (!doc || !doc->AllowsL10n());
+  nsParserMsgUtils::GetLocalizedStringByID(
+      spoofEnglish ? XMLPARSER_PROPERTIES_en_US : XMLPARSER_PROPERTIES, code,
+      description);
 
   if (code == XML_ERROR_TAG_MISMATCH) {
     
@@ -766,8 +774,9 @@ nsresult nsExpatDriver::HandleError() {
     tagName.Append(nameStart, (nameEnd ? nameEnd : pos) - nameStart);
 
     nsAutoString msg;
-    nsParserMsgUtils::GetLocalizedStringByName(XMLPARSER_PROPERTIES, "Expected",
-                                               msg);
+    nsParserMsgUtils::GetLocalizedStringByName(
+        spoofEnglish ? XMLPARSER_PROPERTIES_en_US : XMLPARSER_PROPERTIES,
+        "Expected", msg);
 
     
     nsAutoString message;
@@ -781,7 +790,7 @@ nsresult nsExpatDriver::HandleError() {
 
   nsAutoString errorText;
   CreateErrorText(description.get(), XML_GetBase(mExpatParser), lineNumber,
-                  colNumber, errorText);
+                  colNumber, errorText, spoofEnglish);
 
   nsAutoString sourceText(mLastLine);
   AppendErrorPointer(colNumber, mLastLine.get(), sourceText);

@@ -99,6 +99,12 @@ let gWhitelist = [
     key: "PatternAttributeCompileFailure",
     type: "single-quote",
   },
+  
+  {
+    file: "dom.properties",
+    key: "PatternAttributeCompileFailure",
+    type: "single-quote",
+  },
   {
     file: "netError.dtd",
     key: "inadequateSecurityError.longDesc",
