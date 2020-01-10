@@ -553,28 +553,14 @@ impl FontContext {
         let mut bgra_pixels = self.convert_to_bgra(&pixels, texture_type, font.render_mode, bitmaps,
                                                    font.flags.contains(FontInstanceFlags::SUBPIXEL_BGR));
 
-        
-        
-        const GDI_GAMMA: u16 = 230;
-
         let FontInstancePlatformOptions { gamma, contrast, .. } = font.platform_options.unwrap_or_default();
-        let gdi_gamma = match font.render_mode {
-            FontRenderMode::Mono => GDI_GAMMA,
-            FontRenderMode::Alpha | FontRenderMode::Subpixel => {
-                if bitmaps || font.flags.contains(FontInstanceFlags::FORCE_GDI) {
-                    GDI_GAMMA
-                } else {
-                    gamma
-                }
-            }
-        };
         let gamma_lut = self.gamma_luts
-            .entry((gdi_gamma, contrast))
+            .entry((gamma, contrast))
             .or_insert_with(||
                 GammaLut::new(
                     contrast as f32 / 100.0,
-                    gdi_gamma as f32 / 100.0,
-                    gdi_gamma as f32 / 100.0,
+                    gamma as f32 / 100.0,
+                    gamma as f32 / 100.0,
                 ));
         gamma_lut.preblend(&mut bgra_pixels, font.color);
 
