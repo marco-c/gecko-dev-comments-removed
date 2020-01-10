@@ -198,6 +198,7 @@ ThirdPartyUtil::IsThirdPartyURI(nsIURI* aFirstURI, nsIURI* aSecondURI,
 
 
 
+
 NS_IMETHODIMP
 ThirdPartyUtil::IsThirdPartyWindow(mozIDOMWindowProxy* aWindow, nsIURI* aURI,
                                    bool* aResult) {
@@ -235,8 +236,15 @@ ThirdPartyUtil::IsThirdPartyWindow(mozIDOMWindowProxy* aWindow, nsIURI* aURI,
     
     
     if (parent == current) {
+      auto* const browsingContext = current->GetBrowsingContext();
+      MOZ_ASSERT(browsingContext);
+
       
-      *aResult = false;
+      
+      
+      
+      
+      *aResult = browsingContext->IsContentSubframe();
       return NS_OK;
     }
 
