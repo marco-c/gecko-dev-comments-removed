@@ -120,6 +120,10 @@ class ServiceWorkerRegistrationInfo final
     return mActiveWorker && mControlledClientsCounter;
   }
 
+  
+  
+  void ShutdownWorkers();
+
   void Clear();
 
   void ClearAsCorrupt();
@@ -231,6 +235,13 @@ class ServiceWorkerRegistrationInfo final
   static uint64_t GetNextId();
 
   static uint64_t GetNextVersion();
+
+  
+  
+  
+  
+  
+  void ForEachWorker(void (*aFunc)(RefPtr<ServiceWorkerInfo>&));
 };
 
 }  
