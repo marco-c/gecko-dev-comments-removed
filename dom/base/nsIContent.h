@@ -558,9 +558,12 @@ class nsIContent : public nsINode {
 
 
 
+
   virtual void DoneCreatingElement() {}
 
   
+
+
 
 
 
@@ -591,47 +594,6 @@ class nsIContent : public nsINode {
 
 
   virtual bool IsDoneAddingChildren() { return true; }
-
-  
-
-
-
-
-
-
-
-  static inline bool RequiresDoneCreatingElement(int32_t aNamespace,
-                                                 nsAtom* aName) {
-    if (aNamespace == kNameSpaceID_XHTML &&
-        (aName == nsGkAtoms::input || aName == nsGkAtoms::button ||
-         aName == nsGkAtoms::menuitem || aName == nsGkAtoms::audio ||
-         aName == nsGkAtoms::video)) {
-      MOZ_ASSERT(!RequiresDoneAddingChildren(
-          aNamespace, aName,
-          "Both DoneCreatingElement and DoneAddingChildren on a same element "
-          "isn't supported."));
-      return true;
-    }
-    return false;
-  }
-
-  
-
-
-
-
-
-
-
-  static inline bool RequiresDoneAddingChildren(int32_t aNamespace,
-                                                nsAtom* aName) {
-    return (aNamespace == kNameSpaceID_XHTML &&
-            (aName == nsGkAtoms::select || aName == nsGkAtoms::textarea ||
-             aName == nsGkAtoms::head || aName == nsGkAtoms::title ||
-             aName == nsGkAtoms::object || aName == nsGkAtoms::output)) ||
-           (aNamespace == kNameSpaceID_SVG && aName == nsGkAtoms::title) ||
-           (aNamespace == kNameSpaceID_XUL && aName == nsGkAtoms::linkset);
-  }
 
   
 
