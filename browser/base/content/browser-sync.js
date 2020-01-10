@@ -64,18 +64,6 @@ var gSync = {
   },
 
   getSendTabTargets() {
-    
-    
-    
-    
-    
-    
-    
-    let getClientRecord = () => undefined;
-    if (UIState.get().syncEnabled && Weave.Service.clientsEngine) {
-      getClientRecord = id =>
-        Weave.Service.clientsEngine.getClientByFxaDeviceId(id);
-    }
     let targets = [];
     if (!fxAccounts.device.recentDeviceList) {
       return targets;
@@ -84,8 +72,9 @@ var gSync = {
       if (d.isCurrentDevice) {
         continue;
       }
-
-      let clientRecord = getClientRecord(d.id);
+      let clientRecord = Weave.Service.clientsEngine.getClientByFxaDeviceId(
+        d.id
+      );
       if (clientRecord || fxAccounts.commands.sendTab.isDeviceCompatible(d)) {
         targets.push({
           clientRecord,
@@ -944,7 +933,7 @@ var gSync = {
       } else {
         
         type = target.type == "mobile" ? "phone" : target.type;
-        lastModified = new Date(target.lastAccessTime);
+        lastModified = null;
       }
       addTargetDevice(target.id, target.name, type, lastModified);
     }
