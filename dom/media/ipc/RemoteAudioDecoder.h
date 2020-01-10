@@ -35,14 +35,18 @@ class RemoteAudioDecoderParent final : public RemoteDecoderParent {
  protected:
   MediaResult ProcessDecodedData(const MediaDataDecoder::DecodedData& aData,
                                  DecodedOutputIPDL& aDecodedData) override;
+  void CleanupOnActorDestroy() override;
 
  private:
+  void ReleaseUsedShmems();
   
   
   
   
   
   const AudioInfo mAudioInfo;
+  ShmemPool mDecodedFramePool;
+  AutoTArray<ShmemBuffer, 4> mUsedShmems;
 };
 
 }  
