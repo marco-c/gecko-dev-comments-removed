@@ -522,7 +522,12 @@ class ContextMenuChild extends JSWindowActorChild {
 
     let defaultPrevented = aEvent.defaultPrevented;
 
-    if (!Services.prefs.getBoolPref("dom.event.contextmenu.enabled")) {
+    if (
+      
+      
+      !aEvent.composedTarget.nodePrincipal.isSystemPrincipal &&
+      !Services.prefs.getBoolPref("dom.event.contextmenu.enabled")
+    ) {
       let plugin = null;
 
       try {
