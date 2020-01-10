@@ -10,7 +10,7 @@
 
 
 
-const {PluralForm} = require("devtools/shared/plural-form");
+const { PluralForm } = require("devtools/shared/plural-form");
 
 function run_test() {
   

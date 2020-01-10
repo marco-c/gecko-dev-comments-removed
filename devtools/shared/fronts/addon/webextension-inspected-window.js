@@ -7,13 +7,17 @@ const {
   webExtensionInspectedWindowSpec,
 } = require("devtools/shared/specs/addon/webextension-inspected-window");
 
-const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
+const {
+  FrontClassWithSpec,
+  registerFront,
+} = require("devtools/shared/protocol");
 
 
 
 
-class WebExtensionInspectedWindowFront extends
-  FrontClassWithSpec(webExtensionInspectedWindowSpec) {
+class WebExtensionInspectedWindowFront extends FrontClassWithSpec(
+  webExtensionInspectedWindowSpec
+) {
   constructor(client) {
     super(client);
 

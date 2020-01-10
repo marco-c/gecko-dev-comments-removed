@@ -119,7 +119,7 @@ class Pool extends EventEmitter {
   }
 
   
-  * poolChildren() {
+  *poolChildren() {
     if (!this.__poolMap) {
       return;
     }

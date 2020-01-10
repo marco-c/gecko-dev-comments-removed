@@ -5,7 +5,9 @@
 "use strict";
 
 const { dumpn } = require("devtools/shared/DevToolsUtils");
-const { ConnectionManager } = require("devtools/shared/client/connection-manager");
+const {
+  ConnectionManager,
+} = require("devtools/shared/client/connection-manager");
 const { runCommand } = require("./run-command");
 
 
@@ -14,20 +16,21 @@ const forwardPort = function(deviceId, localPort, devicePort) {
   
   
   
-  return runCommand(`host-serial:${ deviceId }:forward:${ localPort };${ devicePort }`)
-             .then(function onSuccess(data) {
-               return data;
-             });
+  return runCommand(
+    `host-serial:${deviceId}:forward:${localPort};${devicePort}`
+  ).then(function onSuccess(data) {
+    return data;
+  });
 };
 
 
 
 const prepareTCPConnection = async function(deviceId, socketPath) {
   const port = ConnectionManager.getFreeTCPPort();
-  const local = `tcp:${ port }`;
+  const local = `tcp:${port}`;
   const remote = socketPath.startsWith("@")
-                   ? `localabstract:${ socketPath.substring(1) }`
-                   : `localfilesystem:${ socketPath }`;
+    ? `localabstract:${socketPath.substring(1)}`
+    : `localfilesystem:${socketPath}`;
   await forwardPort(deviceId, local, remote);
   return port;
 };

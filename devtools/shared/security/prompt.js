@@ -8,14 +8,20 @@
 
 var Services = require("Services");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
-loader.lazyRequireGetter(this, "AuthenticationResult",
-  "devtools/shared/security/auth", true);
+loader.lazyRequireGetter(
+  this,
+  "AuthenticationResult",
+  "devtools/shared/security/auth",
+  true
+);
 
-const {LocalizationHelper} = require("devtools/shared/l10n");
-const L10N = new LocalizationHelper("devtools/shared/locales/debugger.properties");
+const { LocalizationHelper } = require("devtools/shared/l10n");
+const L10N = new LocalizationHelper(
+  "devtools/shared/locales/debugger.properties"
+);
 
-var Client = exports.Client = {};
-var Server = exports.Server = {};
+var Client = (exports.Client = {});
+var Server = (exports.Server = {});
 
 
 
@@ -60,14 +66,20 @@ Client.defaultSendOOB = ({ authResult, oob }) => {
   const windowListener = {
     onOpenWindow(xulWindow) {
       const win = xulWindow.docShell.domWindow;
-      win.addEventListener("load", function() {
-        if (win.document.documentElement.getAttribute("id") != "commonDialog") {
-          return;
-        }
-        
-        promptWindow = win;
-        Services.wm.removeListener(windowListener);
-      }, {once: true});
+      win.addEventListener(
+        "load",
+        function() {
+          if (
+            win.document.documentElement.getAttribute("id") != "commonDialog"
+          ) {
+            return;
+          }
+          
+          promptWindow = win;
+          Services.wm.removeListener(windowListener);
+        },
+        { once: true }
+      );
     },
     onCloseWindow() {},
   };
@@ -75,8 +87,9 @@ Client.defaultSendOOB = ({ authResult, oob }) => {
 
   
   DevToolsUtils.executeSoon(() => {
-    prompt.confirmEx(null, title, msg, flags, null, null, null, null,
-                     { value: false });
+    prompt.confirmEx(null, title, msg, flags, null, null, null, null, {
+      value: false,
+    });
   });
 
   return {
@@ -118,21 +131,35 @@ Server.defaultAllowConnection = ({ client, server }) => {
   const title = L10N.getStr("remoteIncomingPromptTitle");
   const header = L10N.getStr("remoteIncomingPromptHeader");
   const clientEndpoint = `${client.host}:${client.port}`;
-  const clientMsg =
-    L10N.getFormatStr("remoteIncomingPromptClientEndpoint", clientEndpoint);
+  const clientMsg = L10N.getFormatStr(
+    "remoteIncomingPromptClientEndpoint",
+    clientEndpoint
+  );
   const serverEndpoint = `${server.host}:${server.port}`;
-  const serverMsg =
-    L10N.getFormatStr("remoteIncomingPromptServerEndpoint", serverEndpoint);
+  const serverMsg = L10N.getFormatStr(
+    "remoteIncomingPromptServerEndpoint",
+    serverEndpoint
+  );
   const footer = L10N.getStr("remoteIncomingPromptFooter");
   const msg = `${header}\n\n${clientMsg}\n${serverMsg}\n\n${footer}`;
   const disableButton = L10N.getStr("remoteIncomingPromptDisable");
   const prompt = Services.prompt;
-  const flags = prompt.BUTTON_POS_0 * prompt.BUTTON_TITLE_OK +
-              prompt.BUTTON_POS_1 * prompt.BUTTON_TITLE_CANCEL +
-              prompt.BUTTON_POS_2 * prompt.BUTTON_TITLE_IS_STRING +
-              prompt.BUTTON_POS_1_DEFAULT;
-  const result = prompt.confirmEx(null, title, msg, flags, null, null,
-                                disableButton, null, { value: false });
+  const flags =
+    prompt.BUTTON_POS_0 * prompt.BUTTON_TITLE_OK +
+    prompt.BUTTON_POS_1 * prompt.BUTTON_TITLE_CANCEL +
+    prompt.BUTTON_POS_2 * prompt.BUTTON_TITLE_IS_STRING +
+    prompt.BUTTON_POS_1_DEFAULT;
+  const result = prompt.confirmEx(
+    null,
+    title,
+    msg,
+    flags,
+    null,
+    null,
+    disableButton,
+    null,
+    { value: false }
+  );
   if (result === 0) {
     return AuthenticationResult.ALLOW;
   }
@@ -169,7 +196,10 @@ Server.defaultReceiveOOB = () => {
   
   input = input.value.trim();
   let sha256 = input.substring(0, 64);
-  sha256 = sha256.replace(/\w{2}/g, "$&:").slice(0, -1).toUpperCase();
+  sha256 = sha256
+    .replace(/\w{2}/g, "$&:")
+    .slice(0, -1)
+    .toUpperCase();
   const k = input.substring(64);
   return { sha256, k };
 };

@@ -5,11 +5,15 @@
 
 const { generateActorSpec } = require("devtools/shared/protocol");
 const { extend } = require("devtools/shared/extend");
-const { browsingContextTargetSpecPrototype } = require("devtools/shared/specs/targets/browsing-context");
+const {
+  browsingContextTargetSpecPrototype,
+} = require("devtools/shared/specs/targets/browsing-context");
 
 
-const frameTargetSpec = generateActorSpec(extend(browsingContextTargetSpecPrototype, {
-  typeName: "frameTarget",
-}));
+const frameTargetSpec = generateActorSpec(
+  extend(browsingContextTargetSpecPrototype, {
+    typeName: "frameTarget",
+  })
+);
 
 exports.frameTargetSpec = frameTargetSpec;

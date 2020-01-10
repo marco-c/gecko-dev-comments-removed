@@ -18,12 +18,12 @@ var workerCounter = 0;
 
 
 
-const HeapAnalysesClient = module.exports = function() {
+const HeapAnalysesClient = (module.exports = function() {
   this._worker = new DevToolsWorker(WORKER_URL, {
     name: `HeapAnalyses-${workerCounter++}`,
     verbose: DevToolsUtils.dumpv.wantVerbose,
   });
-};
+});
 
 
 
@@ -114,9 +114,11 @@ HeapAnalysesClient.prototype.getCreationTime = function(snapshotFilePath) {
 
 
 
-HeapAnalysesClient.prototype.takeCensus = function(snapshotFilePath,
-                                                    censusOptions,
-                                                    requestOptions = {}) {
+HeapAnalysesClient.prototype.takeCensus = function(
+  snapshotFilePath,
+  censusOptions,
+  requestOptions = {}
+) {
   return this._worker.performTask("takeCensus", {
     snapshotFilePath,
     censusOptions,
@@ -190,10 +192,12 @@ HeapAnalysesClient.prototype.getCensusIndividuals = function(opts) {
 
 
 
-HeapAnalysesClient.prototype.takeCensusDiff = function(firstSnapshotFilePath,
-                                                        secondSnapshotFilePath,
-                                                        censusOptions,
-                                                        requestOptions = {}) {
+HeapAnalysesClient.prototype.takeCensusDiff = function(
+  firstSnapshotFilePath,
+  secondSnapshotFilePath,
+  censusOptions,
+  requestOptions = {}
+) {
   return this._worker.performTask("takeCensusDiff", {
     firstSnapshotFilePath,
     secondSnapshotFilePath,

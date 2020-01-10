@@ -9,8 +9,10 @@
 
 
 
-var {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
-var {generateCssProperties} = require("devtools/server/actors/css-properties");
+var { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+var {
+  generateCssProperties,
+} = require("devtools/server/actors/css-properties");
 const InspectorUtils = require("InspectorUtils");
 
 
@@ -18,11 +20,13 @@ const InspectorUtils = require("InspectorUtils");
 dump("DEVTOOLS_CSS_DB_DELIMITER");
 
 
-dump(JSON.stringify({
-  cssProperties: cssProperties(),
-  preferences: preferences(),
-  pseudoElements: pseudoElements(),
-}));
+dump(
+  JSON.stringify({
+    cssProperties: cssProperties(),
+    preferences: preferences(),
+    pseudoElements: pseudoElements(),
+  })
+);
 
 dump("DEVTOOLS_CSS_DB_DELIMITER");
 
@@ -53,7 +57,7 @@ function cssProperties() {
 function preferences() {
   const prefs = InspectorUtils.getCSSPropertyPrefs();
   const result = [];
-  for (const {name, pref} of prefs) {
+  for (const { name, pref } of prefs) {
     result.push([name, pref]);
   }
   return result;

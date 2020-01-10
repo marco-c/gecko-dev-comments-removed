@@ -11,12 +11,9 @@ var Services = require("Services");
 var defer = require("devtools/shared/defer");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var { dumpn, dumpv } = DevToolsUtils;
-loader.lazyRequireGetter(this, "prompt",
-  "devtools/shared/security/prompt");
-loader.lazyRequireGetter(this, "cert",
-  "devtools/shared/security/cert");
-loader.lazyRequireGetter(this, "asyncStorage",
-  "devtools/shared/async-storage");
+loader.lazyRequireGetter(this, "prompt", "devtools/shared/security/prompt");
+loader.lazyRequireGetter(this, "cert", "devtools/shared/security/cert");
+loader.lazyRequireGetter(this, "asyncStorage", "devtools/shared/async-storage");
 
 
 
@@ -36,8 +33,7 @@ function createEnum(obj) {
 
 
 
-var AuthenticationResult = exports.AuthenticationResult = createEnum({
-
+var AuthenticationResult = (exports.AuthenticationResult = createEnum({
   
 
 
@@ -64,8 +60,7 @@ var AuthenticationResult = exports.AuthenticationResult = createEnum({
 
 
   ALLOW_PERSIST: null,
-
-});
+}));
 
 
 
@@ -86,13 +81,12 @@ var Authenticators = {};
 
 
 
-var Prompt = Authenticators.Prompt = {};
+var Prompt = (Authenticators.Prompt = {});
 
 Prompt.mode = "PROMPT";
 
 Prompt.Client = function() {};
 Prompt.Client.prototype = {
-
   mode: Prompt.mode,
 
   
@@ -140,12 +134,10 @@ Prompt.Client.prototype = {
 
 
   authenticate() {},
-
 };
 
 Prompt.Server = function() {};
 Prompt.Server.prototype = {
-
   mode: Prompt.mode,
 
   
@@ -236,7 +228,6 @@ Prompt.Server.prototype = {
 
 
   allowConnection: prompt.Server.defaultAllowConnection,
-
 };
 
 
@@ -257,13 +248,12 @@ Prompt.Server.prototype = {
 
 
 
-var OOBCert = Authenticators.OOBCert = {};
+var OOBCert = (Authenticators.OOBCert = {});
 
 OOBCert.mode = "OOB_CERT";
 
 OOBCert.Client = function() {};
 OOBCert.Client.prototype = {
-
   mode: OOBCert.mode,
 
   
@@ -300,9 +290,9 @@ OOBCert.Client.prototype = {
     
     
     dumpv("Validate server cert hash");
-    const serverCert = socket.securityInfo
-                             .QueryInterface(Ci.nsITransportSecurityInfo)
-                             .serverCert;
+    const serverCert = socket.securityInfo.QueryInterface(
+      Ci.nsITransportSecurityInfo
+    ).serverCert;
     const advertisedCert = cert;
     if (serverCert.sha256Fingerprint != advertisedCert.sha256) {
       dumpn("Server cert hash doesn't match advertisement");
@@ -345,7 +335,7 @@ OOBCert.Client.prototype = {
     };
 
     transport.hooks = {
-      onPacket: async (packet) => {
+      onPacket: async packet => {
         closeDialog();
         const { authResult } = packet;
         switch (authResult) {
@@ -411,8 +401,9 @@ OOBCert.Client.prototype = {
   _createRandom() {
     
     const length = 16;
-    const rng = Cc["@mozilla.org/security/random-generator;1"]
-              .createInstance(Ci.nsIRandomGenerator);
+    const rng = Cc["@mozilla.org/security/random-generator;1"].createInstance(
+      Ci.nsIRandomGenerator
+    );
     const bytes = rng.generateRandomBytes(length);
     return bytes.map(byte => byte.toString(16)).join("");
   },
@@ -436,12 +427,10 @@ OOBCert.Client.prototype = {
 
 
   sendOOB: prompt.Client.defaultSendOOB,
-
 };
 
 OOBCert.Server = function() {};
 OOBCert.Server.prototype = {
-
   mode: OOBCert.mode,
 
   
@@ -638,7 +627,6 @@ OOBCert.Server.prototype = {
 
 
   receiveOOB: prompt.Server.defaultReceiveOOB,
-
 };
 
 exports.Authenticators = {

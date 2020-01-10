@@ -3,9 +3,12 @@
 
 "use strict";
 
-const {Cu} = require("chrome");
-const {deviceSpec} = require("devtools/shared/specs/device");
-const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
+const { Cu } = require("chrome");
+const { deviceSpec } = require("devtools/shared/specs/device");
+const {
+  FrontClassWithSpec,
+  registerFront,
+} = require("devtools/shared/protocol");
 const defer = require("devtools/shared/defer");
 
 class DeviceFront extends FrontClassWithSpec(deviceSpec) {

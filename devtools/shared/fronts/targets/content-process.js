@@ -3,12 +3,18 @@
 
 "use strict";
 
-const {contentProcessTargetSpec} = require("devtools/shared/specs/targets/content-process");
-const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
+const {
+  contentProcessTargetSpec,
+} = require("devtools/shared/specs/targets/content-process");
+const {
+  FrontClassWithSpec,
+  registerFront,
+} = require("devtools/shared/protocol");
 const { TargetMixin } = require("./target-mixin");
 
-class ContentProcessTargetFront extends
-  TargetMixin(FrontClassWithSpec(contentProcessTargetSpec)) {
+class ContentProcessTargetFront extends TargetMixin(
+  FrontClassWithSpec(contentProcessTargetSpec)
+) {
   constructor(client) {
     super(client);
 

@@ -40,7 +40,7 @@ const memorySpec = generateActorSpec({
 
     
     
-    "allocations": {
+    allocations: {
       type: "allocations",
       data: Arg(0, "json"),
     },

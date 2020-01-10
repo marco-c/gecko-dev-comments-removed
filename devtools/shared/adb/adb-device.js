@@ -33,7 +33,9 @@ class AdbDevice {
 
     
     let socketInfos = rawSocketInfo.split(/\r?\n/);
-    socketInfos = socketInfos.filter(l => l.includes("firefox-debugger-socket"));
+    socketInfos = socketInfos.filter(l =>
+      l.includes("firefox-debugger-socket")
+    );
 
     
     const socketPaths = new Set();

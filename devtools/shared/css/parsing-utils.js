@@ -13,20 +13,25 @@
 
 "use strict";
 
-const {getCSSLexer} = require("devtools/shared/css/lexer");
+const { getCSSLexer } = require("devtools/shared/css/lexer");
 
-loader.lazyRequireGetter(this, "CSS_ANGLEUNIT", "devtools/shared/css/constants", true);
+loader.lazyRequireGetter(
+  this,
+  "CSS_ANGLEUNIT",
+  "devtools/shared/css/constants",
+  true
+);
 
-const SELECTOR_ATTRIBUTE = exports.SELECTOR_ATTRIBUTE = 1;
-const SELECTOR_ELEMENT = exports.SELECTOR_ELEMENT = 2;
-const SELECTOR_PSEUDO_CLASS = exports.SELECTOR_PSEUDO_CLASS = 3;
+const SELECTOR_ATTRIBUTE = (exports.SELECTOR_ATTRIBUTE = 1);
+const SELECTOR_ELEMENT = (exports.SELECTOR_ELEMENT = 2);
+const SELECTOR_PSEUDO_CLASS = (exports.SELECTOR_PSEUDO_CLASS = 3);
 const CSS_BLOCKS = { "(": ")", "[": "]", "{": "}" };
 
 
 
 
-const COMMENT_PARSING_HEURISTIC_BYPASS_CHAR =
-  exports.COMMENT_PARSING_HEURISTIC_BYPASS_CHAR = "!";
+const COMMENT_PARSING_HEURISTIC_BYPASS_CHAR = (exports.COMMENT_PARSING_HEURISTIC_BYPASS_CHAR =
+  "!");
 
 
 
@@ -97,7 +102,7 @@ function cssTokenizerWithLineColumn(string) {
         line: lineNumber,
         column: columnNumber,
       };
-      token.loc = {start: startLoc};
+      token.loc = { start: startLoc };
 
       result.push(token);
       prevToken = token;
@@ -153,8 +158,12 @@ function unescapeCSSComment(inputString) {
 
 
 
-function parseCommentDeclarations(isCssPropertyKnown, commentText, startOffset,
-                                  endOffset) {
+function parseCommentDeclarations(
+  isCssPropertyKnown,
+  commentText,
+  startOffset,
+  endOffset
+) {
   let commentOverride = false;
   if (commentText === "") {
     return [];
@@ -210,8 +219,13 @@ function parseCommentDeclarations(isCssPropertyKnown, commentText, startOffset,
   
   
   
-  const newDecls = parseDeclarationsInternal(isCssPropertyKnown, rewrittenText,
-                                           false, true, commentOverride);
+  const newDecls = parseDeclarationsInternal(
+    isCssPropertyKnown,
+    rewrittenText,
+    false,
+    true,
+    commentOverride
+  );
   for (const decl of newDecls) {
     decl.offsets[0] = rewrites[decl.offsets[0]];
     decl.offsets[1] = rewrites[decl.offsets[1]];
@@ -230,10 +244,14 @@ function parseCommentDeclarations(isCssPropertyKnown, commentText, startOffset,
 
 
 function getEmptyDeclaration() {
-  return {name: "", value: "", priority: "",
-          terminator: "",
-          offsets: [undefined, undefined],
-          colonOffsets: false};
+  return {
+    name: "",
+    value: "",
+    priority: "",
+    terminator: "",
+    offsets: [undefined, undefined],
+    colonOffsets: false,
+  };
 }
 
 
@@ -269,8 +287,13 @@ function cssTrim(str) {
 
 
 
-function parseDeclarationsInternal(isCssPropertyKnown, inputString,
-                                   parseComments, inComment, commentOverride) {
+function parseDeclarationsInternal(
+  isCssPropertyKnown,
+  inputString,
+  parseComments,
+  inComment,
+  commentOverride
+) {
   if (inputString === null || inputString === undefined) {
     throw new Error("empty input string");
   }
@@ -309,16 +332,23 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
         lastProp.offsets[0] = token.startOffset;
       }
       lastProp.offsets[1] = token.endOffset;
-    } else if (lastProp.name && !current && !importantState &&
-               !lastProp.priority && lastProp.colonOffsets[1]) {
+    } else if (
+      lastProp.name &&
+      !current &&
+      !importantState &&
+      !lastProp.priority &&
+      lastProp.colonOffsets[1]
+    ) {
       
       lastProp.colonOffsets[1] = token.endOffset;
     } else if (importantState === 1) {
       importantWS = true;
     }
 
-    if (token.tokenType === "symbol" &&
-        currentBlocks[currentBlocks.length - 1] === token.text) {
+    if (
+      token.tokenType === "symbol" &&
+      currentBlocks[currentBlocks.length - 1] === token.text
+    ) {
       
       currentBlocks.pop();
       current += token.text;
@@ -343,8 +373,11 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
 
         
         
-        if (inComment && !commentOverride &&
-            !isCssPropertyKnown(lastProp.name)) {
+        if (
+          inComment &&
+          !commentOverride &&
+          !isCssPropertyKnown(lastProp.name)
+        ) {
           lastProp.name = null;
           break;
         }
@@ -353,8 +386,11 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
         
         current += ":";
       }
-    } else if (token.tokenType === "symbol" && token.text === ";" &&
-               !currentBlocks.length) {
+    } else if (
+      token.tokenType === "symbol" &&
+      token.text === ";" &&
+      !currentBlocks.length
+    ) {
       lastProp.terminator = "";
       
       
@@ -406,11 +442,16 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
       }
     } else if (token.tokenType === "comment") {
       if (parseComments && !lastProp.name && !lastProp.value) {
-        const commentText = inputString.substring(token.startOffset + 2,
-                                                token.endOffset - 2);
-        const newDecls = parseCommentDeclarations(isCssPropertyKnown, commentText,
-                                                token.startOffset,
-                                                token.endOffset);
+        const commentText = inputString.substring(
+          token.startOffset + 2,
+          token.endOffset - 2
+        );
+        const newDecls = parseCommentDeclarations(
+          isCssPropertyKnown,
+          commentText,
+          token.startOffset,
+          token.endOffset
+        );
 
         
         const lastDecl = declarations.pop();
@@ -505,20 +546,34 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
 
 
 
-function parseDeclarations(isCssPropertyKnown, inputString,
-                           parseComments = false) {
-  return parseDeclarationsInternal(isCssPropertyKnown, inputString,
-                                   parseComments, false, false);
+function parseDeclarations(
+  isCssPropertyKnown,
+  inputString,
+  parseComments = false
+) {
+  return parseDeclarationsInternal(
+    isCssPropertyKnown,
+    inputString,
+    parseComments,
+    false,
+    false
+  );
 }
 
 
 
 
 
-function parseNamedDeclarations(isCssPropertyKnown, inputString,
-                                parseComments = false) {
-  return parseDeclarations(isCssPropertyKnown, inputString, parseComments)
-         .filter(item => !!item.name);
+function parseNamedDeclarations(
+  isCssPropertyKnown,
+  inputString,
+  parseComments = false
+) {
+  return parseDeclarations(
+    isCssPropertyKnown,
+    inputString,
+    parseComments
+  ).filter(item => !!item.name);
 }
 
 
@@ -640,8 +695,10 @@ function parsePseudoClassesAndAttributes(value) {
 
 
 function parseSingleValue(isCssPropertyKnown, value) {
-  const declaration = parseDeclarations(isCssPropertyKnown,
-                                      "a: " + value + ";")[0];
+  const declaration = parseDeclarations(
+    isCssPropertyKnown,
+    "a: " + value + ";"
+  )[0];
   return {
     value: declaration ? declaration.value : "",
     priority: declaration ? declaration.priority : "",
@@ -662,7 +719,7 @@ function getAngleValueInDegrees(angleValue, angleUnit) {
     case CSS_ANGLEUNIT.grad:
       return angleValue * 0.9;
     case CSS_ANGLEUNIT.rad:
-      return angleValue * 180 / Math.PI;
+      return (angleValue * 180) / Math.PI;
     case CSS_ANGLEUNIT.turn:
       return angleValue * 360;
     default:

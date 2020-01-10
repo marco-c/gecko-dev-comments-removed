@@ -10,7 +10,7 @@
 
 
 
-const {PluralForm} = require("devtools/shared/plural-form");
+const { PluralForm } = require("devtools/shared/plural-form");
 
 function run_test() {
   
@@ -18,7 +18,10 @@ function run_test() {
 
   
   for (let num = 0; num <= 200; num++) {
-    Assert.equal(num == 1 ? "word" : "words", PluralForm.get(num, "word;words"));
+    Assert.equal(
+      num == 1 ? "word" : "words",
+      PluralForm.get(num, "word;words")
+    );
   }
 
   

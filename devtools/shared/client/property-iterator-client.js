@@ -4,7 +4,10 @@
 
 "use strict";
 
-const {arg, DebuggerClient} = require("devtools/shared/client/debugger-client");
+const {
+  arg,
+  DebuggerClient,
+} = require("devtools/shared/client/debugger-client");
 
 
 
@@ -46,10 +49,13 @@ PropertyIteratorClient.prototype = {
 
 
 
-  names: DebuggerClient.requester({
-    type: "names",
-    indexes: arg(0),
-  }, {}),
+  names: DebuggerClient.requester(
+    {
+      type: "names",
+      indexes: arg(0),
+    },
+    {}
+  ),
 
   
 
@@ -61,11 +67,14 @@ PropertyIteratorClient.prototype = {
 
 
 
-  slice: DebuggerClient.requester({
-    type: "slice",
-    start: arg(0),
-    count: arg(1),
-  }, {}),
+  slice: DebuggerClient.requester(
+    {
+      type: "slice",
+      start: arg(0),
+      count: arg(1),
+    },
+    {}
+  ),
 
   
 
@@ -73,9 +82,12 @@ PropertyIteratorClient.prototype = {
 
 
 
-  all: DebuggerClient.requester({
-    type: "all",
-  }, {}),
+  all: DebuggerClient.requester(
+    {
+      type: "all",
+    },
+    {}
+  ),
 };
 
 module.exports = PropertyIteratorClient;

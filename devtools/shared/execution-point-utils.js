@@ -110,10 +110,12 @@ function pointEquals(pointA, pointB) {
 
 
 function positionEquals(posA, posB) {
-  return posA.kind == posB.kind
-      && posA.script == posB.script
-      && posA.offset == posB.offset
-      && posA.frameIndex == posB.frameIndex;
+  return (
+    posA.kind == posB.kind &&
+    posA.script == posB.script &&
+    posA.offset == posB.offset &&
+    posA.frameIndex == posB.frameIndex
+  );
 }
 
 
@@ -123,8 +125,12 @@ function positionSubsumes(posA, posB) {
     return true;
   }
 
-  if (posA.kind == "Break" && posB.kind == "OnStep" &&
-      posA.script == posB.script && posA.offset == posB.offset) {
+  if (
+    posA.kind == "Break" &&
+    posB.kind == "OnStep" &&
+    posA.script == posB.script &&
+    posA.offset == posB.offset
+  ) {
     return true;
   }
 

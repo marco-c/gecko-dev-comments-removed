@@ -9,136 +9,150 @@
 
 
 
-window.addEventListener("load", function() {
-  
-  const REQUEST_TIMEOUT = 5000;
+window.addEventListener(
+  "load",
+  function() {
+    
+    const REQUEST_TIMEOUT = 5000;
 
-  const emailInput = document.getElementById("email");
-  const newsletterErrors = document.getElementById("newsletter-errors");
-  const newsletterForm = document.getElementById("newsletter-form");
-  const newsletterPrivacySection = document.getElementById("newsletter-privacy");
-  const newsletterThanks = document.getElementById("newsletter-thanks");
+    const emailInput = document.getElementById("email");
+    const newsletterErrors = document.getElementById("newsletter-errors");
+    const newsletterForm = document.getElementById("newsletter-form");
+    const newsletterPrivacySection = document.getElementById(
+      "newsletter-privacy"
+    );
+    const newsletterThanks = document.getElementById("newsletter-thanks");
 
-  
-
-
-
-
+    
 
 
-  async function updateErrorPanel(errors) {
-    clearErrorPanel();
 
-    if (!errors || errors.length == 0) {
-      errors = [await document.l10n.formatValues([{id: "newsletter-error-unknown"}])];
+
+
+
+    async function updateErrorPanel(errors) {
+      clearErrorPanel();
+
+      if (!errors || errors.length == 0) {
+        errors = [
+          await document.l10n.formatValues([
+            { id: "newsletter-error-unknown" },
+          ]),
+        ];
+      }
+
+      
+      const fragment = document.createDocumentFragment();
+      for (const error of errors) {
+        const item = document.createElement("p");
+        item.classList.add("error");
+        item.appendChild(document.createTextNode(error));
+        fragment.appendChild(item);
+      }
+
+      newsletterErrors.appendChild(fragment);
+      newsletterErrors.classList.add("show");
     }
 
     
-    const fragment = document.createDocumentFragment();
-    for (const error of errors) {
-      const item = document.createElement("p");
-      item.classList.add("error");
-      item.appendChild(document.createTextNode(error));
-      fragment.appendChild(item);
+
+
+    function clearErrorPanel() {
+      newsletterErrors.classList.remove("show");
+      newsletterErrors.innerHTML = "";
     }
 
-    newsletterErrors.appendChild(fragment);
-    newsletterErrors.classList.add("show");
-  }
-
-  
-
-
-  function clearErrorPanel() {
-    newsletterErrors.classList.remove("show");
-    newsletterErrors.innerHTML = "";
-  }
-
-  
-  function onEmailInputFocus() {
     
-    const container = document.createElement("div");
-    container.style.cssText = "visibility: hidden; overflow: hidden; position: absolute";
-    newsletterPrivacySection.parentNode.appendChild(container);
+    function onEmailInputFocus() {
+      
+      const container = document.createElement("div");
+      container.style.cssText =
+        "visibility: hidden; overflow: hidden; position: absolute";
+      newsletterPrivacySection.parentNode.appendChild(container);
 
-    
-    const clone = newsletterPrivacySection.cloneNode(true);
-    container.appendChild(clone);
+      
+      const clone = newsletterPrivacySection.cloneNode(true);
+      container.appendChild(clone);
 
-    
-    clone.style.height = "auto";
-    const height = clone.offsetHeight;
+      
+      clone.style.height = "auto";
+      const height = clone.offsetHeight;
+
+      
+      container.remove();
+
+      
+      newsletterPrivacySection.classList.add("animate");
+      newsletterPrivacySection.style.cssText = `height: ${height}px; margin-bottom: 0;`;
+    }
 
     
-    container.remove();
+    function onFormSubmit(evt) {
+      evt.preventDefault();
+      evt.stopPropagation();
 
-    
-    newsletterPrivacySection.classList.add("animate");
-    newsletterPrivacySection.style.cssText = `height: ${height}px; margin-bottom: 0;`;
-  }
+      
+      clearErrorPanel();
 
-  
-  function onFormSubmit(evt) {
-    evt.preventDefault();
-    evt.stopPropagation();
+      const xhr = new XMLHttpRequest();
 
-    
-    clearErrorPanel();
+      xhr.onload = async function(r) {
+        if (r.target.status >= 200 && r.target.status < 300) {
+          const { response } = r.target;
 
-    const xhr = new XMLHttpRequest();
-
-    xhr.onload = async function(r) {
-      if (r.target.status >= 200 && r.target.status < 300) {
-        const {response} = r.target;
-
-        if (response.success === true) {
-          
-          newsletterForm.style.display = "none";
-          newsletterThanks.classList.add("show");
+          if (response.success === true) {
+            
+            newsletterForm.style.display = "none";
+            newsletterThanks.classList.add("show");
+          } else {
+            
+            updateErrorPanel(response.errors);
+          }
         } else {
-          
-          updateErrorPanel(response.errors);
+          const { status, statusText } = r.target;
+          const statusInfo = `${status} - ${statusText}`;
+          const error = await document.l10n.formatValues([
+            {
+              id: "newsletter-error-common",
+              args: { errorDescription: statusInfo },
+            },
+          ]);
+          updateErrorPanel([error]);
         }
-      } else {
-        const {status, statusText} = r.target;
-        const statusInfo = `${status} - ${statusText}`;
+      };
+
+      xhr.onerror = () => {
+        updateErrorPanel();
+      };
+
+      xhr.ontimeout = async () => {
         const error = await document.l10n.formatValues([
-          { id: "newsletter-error-common", args: { errorDescription: statusInfo } },
+          { id: "newsletter-error-timeout" },
         ]);
         updateErrorPanel([error]);
-      }
-    };
+      };
 
-    xhr.onerror = () => {
-      updateErrorPanel();
-    };
+      const url = newsletterForm.getAttribute("action");
 
-    xhr.ontimeout = async () => {
-      const error = await document.l10n.formatValues([
-        { id: "newsletter-error-timeout" },
-      ]);
-      updateErrorPanel([error]);
-    };
+      xhr.open("POST", url, true);
+      xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+      xhr.timeout = REQUEST_TIMEOUT;
+      xhr.responseType = "json";
 
-    const url = newsletterForm.getAttribute("action");
+      
+      const formData = new FormData(newsletterForm);
+      formData.append("source_url", document.location.href);
 
-    xhr.open("POST", url, true);
-    xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-    xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-    xhr.timeout = REQUEST_TIMEOUT;
-    xhr.responseType = "json";
+      const params = new URLSearchParams(formData);
+
+      
+      xhr.send(params.toString());
+    }
 
     
-    const formData = new FormData(newsletterForm);
-    formData.append("source_url", document.location.href);
-
-    const params = new URLSearchParams(formData);
-
-    
-    xhr.send(params.toString());
-  }
-
-  
-  newsletterForm.addEventListener("submit", onFormSubmit);
-  emailInput.addEventListener("focus", onEmailInputFocus);
-}, { once: true });
+    newsletterForm.addEventListener("submit", onFormSubmit);
+    emailInput.addEventListener("focus", onEmailInputFocus);
+  },
+  { once: true }
+);

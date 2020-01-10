@@ -3,7 +3,10 @@
 
 "use strict";
 
-const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
+const {
+  FrontClassWithSpec,
+  registerFront,
+} = require("devtools/shared/protocol");
 const { perfSpec } = require("devtools/shared/specs/perf");
 
 class PerfFront extends FrontClassWithSpec(perfSpec) {

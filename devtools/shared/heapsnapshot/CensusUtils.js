@@ -3,7 +3,9 @@
 
 "use strict";
 
-const { flatten } = require("resource://devtools/shared/ThreadSafeDevToolsUtils.js");
+const {
+  flatten,
+} = require("resource://devtools/shared/ThreadSafeDevToolsUtils.js");
 
 
 
@@ -11,7 +13,7 @@ const { flatten } = require("resource://devtools/shared/ThreadSafeDevToolsUtils.
 
 
 
-function Visitor() { }
+function Visitor() {}
 exports.Visitor = Visitor;
 
 
@@ -27,7 +29,7 @@ exports.Visitor = Visitor;
 
 
 
-Visitor.prototype.enter = function(breakdown, report, edge) { };
+Visitor.prototype.enter = function(breakdown, report, edge) {};
 
 
 
@@ -42,7 +44,7 @@ Visitor.prototype.enter = function(breakdown, report, edge) { };
 
 
 
-Visitor.prototype.exit = function(breakdown, report, edge) { };
+Visitor.prototype.exit = function(breakdown, report, edge) {};
 
 
 
@@ -58,7 +60,7 @@ Visitor.prototype.exit = function(breakdown, report, edge) { };
 
 
 
-Visitor.prototype.count = function(breakdown, report, edge) { };
+Visitor.prototype.count = function(breakdown, report, edge) {};
 
 
 
@@ -150,8 +152,11 @@ function recursiveWalk(breakdown, edge, report, visitor) {
     visitor.exit(breakdown, report, edge);
   } else {
     visitor.enter(breakdown, report, edge);
-    for (const { edge: ed, referent, breakdown: subBreakdown }
-      of getReportEdges(breakdown, report)) {
+    for (const {
+      edge: ed,
+      referent,
+      breakdown: subBreakdown,
+    } of getReportEdges(breakdown, report)) {
       recursiveWalk(subBreakdown, ed, referent, visitor);
     }
     visitor.exit(breakdown, report, edge);
@@ -323,8 +328,8 @@ DiffVisitor.prototype.count = function(breakdown, report, edge) {
   }
 };
 
-const basisTotalBytes = exports.basisTotalBytes = Symbol("basisTotalBytes");
-const basisTotalCount = exports.basisTotalCount = Symbol("basisTotalCount");
+const basisTotalBytes = (exports.basisTotalBytes = Symbol("basisTotalBytes"));
+const basisTotalCount = (exports.basisTotalCount = Symbol("basisTotalCount"));
 
 
 
@@ -488,8 +493,10 @@ exports.getReportLeaves = function(indices, breakdown, report) {
 exports.getCensusIndividuals = function(indices, countBreakdown, snapshot) {
   const bucketBreakdown = exports.countToBucketBreakdown(countBreakdown);
   const bucketReport = snapshot.takeCensus({ breakdown: bucketBreakdown });
-  const buckets = exports.getReportLeaves(indices,
-                                          bucketBreakdown,
-                                          bucketReport);
+  const buckets = exports.getReportLeaves(
+    indices,
+    bucketBreakdown,
+    bucketReport
+  );
   return flatten(buckets);
 };

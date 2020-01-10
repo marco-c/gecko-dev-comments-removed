@@ -20,9 +20,9 @@ const {
 
 
 types.addType("array-of-numbers-as-strings", {
-  write: (v) => v.join(","),
+  write: v => v.join(","),
   
-  read: (v) => typeof v === "string" ? v.split(",") : v,
+  read: v => (typeof v === "string" ? v.split(",") : v),
 });
 
 const timelineSpec = generateActorSpec({
@@ -43,7 +43,7 @@ const timelineSpec = generateActorSpec({
 
 
 
-    "markers": {
+    markers: {
       type: "markers",
       markers: Arg(0, "json"),
       endTime: Arg(1, "number"),
@@ -54,7 +54,7 @@ const timelineSpec = generateActorSpec({
 
 
 
-    "memory": {
+    memory: {
       type: "memory",
       delta: Arg(0, "number"),
       measurement: Arg(1, "json"),
@@ -65,7 +65,7 @@ const timelineSpec = generateActorSpec({
 
 
 
-    "ticks": {
+    ticks: {
       type: "ticks",
       delta: Arg(0, "number"),
       timestamps: Arg(1, "array-of-numbers-as-strings"),
@@ -76,7 +76,7 @@ const timelineSpec = generateActorSpec({
 
 
 
-    "frames": {
+    frames: {
       type: "frames",
       delta: Arg(0, "number"),
       frames: Arg(1, "json"),

@@ -4,7 +4,9 @@
 
 "use strict";
 
-const { RuntimeTypes } = require("devtools/client/webide/modules/runtime-types");
+const {
+  RuntimeTypes,
+} = require("devtools/client/webide/modules/runtime-types");
 const { prepareTCPConnection } = require("devtools/shared/adb/commands/index");
 const { shell } = require("devtools/shared/adb/commands/index");
 
@@ -94,9 +96,9 @@ class AdbRuntime {
     
     
     
-    return this._socketPath.startsWith("@") ?
-      this._socketPath.substr(1).split("/")[0] :
-      this._socketPath.split("/")[3];
+    return this._socketPath.startsWith("@")
+      ? this._socketPath.substr(1).split("/")[0]
+      : this._socketPath.split("/")[3];
   }
 }
 exports.AdbRuntime = AdbRuntime;

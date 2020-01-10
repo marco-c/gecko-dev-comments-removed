@@ -3,7 +3,12 @@
 
 "use strict";
 
-const { Arg, RetVal, generateActorSpec, types } = require("devtools/shared/protocol");
+const {
+  Arg,
+  RetVal,
+  generateActorSpec,
+  types,
+} = require("devtools/shared/protocol");
 
 const longstringType = types.getType("longstring");
 const arraybufferType = types.getType("arraybuffer");

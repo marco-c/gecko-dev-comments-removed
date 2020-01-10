@@ -133,14 +133,14 @@ const NUMBER_SIGN = "#".charCodeAt(0);
 const PERCENT_SIGN = "%".charCodeAt(0);
 const PLUS_SIGN = "+".charCodeAt(0);
 const QUESTION_MARK = "?".charCodeAt(0);
-const QUOTATION_MARK = "\"".charCodeAt(0);
+const QUOTATION_MARK = '"'.charCodeAt(0);
 const REVERSE_SOLIDUS = "\\".charCodeAt(0);
 const RIGHT_PARENTHESIS = ")".charCodeAt(0);
 const SOLIDUS = "/".charCodeAt(0);
 const TILDE = "~".charCodeAt(0);
 const VERTICAL_LINE = "|".charCodeAt(0);
 
-const UCS2_REPLACEMENT_CHAR = 0xFFFD;
+const UCS2_REPLACEMENT_CHAR = 0xfffd;
 
 const kImpliedEOFCharacters = [
   UCS2_REPLACEMENT_CHAR,
@@ -160,7 +160,7 @@ const kImpliedEOFCharacters = [
 
 
 function ensureValidChar(c) {
-  if (c >= 0x00110000 || (c & 0xFFF800) == 0xD800) {
+  if (c >= 0x00110000 || (c & 0xfff800) == 0xd800) {
     
     return UCS2_REPLACEMENT_CHAR;
   }
@@ -175,7 +175,7 @@ function ensureValidChar(c) {
 
 
 function stringToCodes(str) {
-  return Array.prototype.map.call(str, (c) => c.charCodeAt(0));
+  return Array.prototype.map.call(str, c => c.charCodeAt(0));
 }
 
 const IS_HEX_DIGIT = 0x01;
@@ -204,38 +204,150 @@ const SUIJX = S | U | I | J | X;
 
 
 const gLexTable = [
-
-    0,    S,    S,    S,    S,    S,    S,    S,
-
-    S,   SH,    V,    S,    V,    V,    S,    S,
-
-    S,    S,    S,    S,    S,    S,    S,    S,
-
-    S,    S,    S,    S,    S,    S,    S,    S,
-
-   SH,   SU,    0,   SU,   SU,   SU,   SU,    0,
-
-    S,    S,   SU,   SU,   SU,  SUI,   SU,   SU,
-
- SUIX, SUIX, SUIX, SUIX, SUIX, SUIX, SUIX, SUIX,
-
- SUIX, SUIX,   SU,   SU,   SU,   SU,   SU,   SU,
-
-   SU,SUIJX,SUIJX,SUIJX,SUIJX,SUIJX,SUIJX, SUIJ,
-
- SUIJ, SUIJ, SUIJ, SUIJ, SUIJ, SUIJ, SUIJ, SUIJ,
-
- SUIJ, SUIJ, SUIJ, SUIJ, SUIJ, SUIJ, SUIJ, SUIJ,
-
- SUIJ, SUIJ, SUIJ,   SU,    J,   SU,   SU, SUIJ,
-
-   SU,SUIJX,SUIJX,SUIJX,SUIJX,SUIJX,SUIJX, SUIJ,
-
- SUIJ, SUIJ, SUIJ, SUIJ, SUIJ, SUIJ, SUIJ, SUIJ,
-
- SUIJ, SUIJ, SUIJ, SUIJ, SUIJ, SUIJ, SUIJ, SUIJ,
-
- SUIJ, SUIJ, SUIJ,   SU,   SU,   SU,   SU,    S,
+  
+  0,
+  S,
+  S,
+  S,
+  S,
+  S,
+  S,
+  S,
+  
+  S,
+  SH,
+  V,
+  S,
+  V,
+  V,
+  S,
+  S,
+  
+  S,
+  S,
+  S,
+  S,
+  S,
+  S,
+  S,
+  S,
+  
+  S,
+  S,
+  S,
+  S,
+  S,
+  S,
+  S,
+  S,
+  
+  SH,
+  SU,
+  0,
+  SU,
+  SU,
+  SU,
+  SU,
+  0,
+  
+  S,
+  S,
+  SU,
+  SU,
+  SU,
+  SUI,
+  SU,
+  SU,
+  
+  SUIX,
+  SUIX,
+  SUIX,
+  SUIX,
+  SUIX,
+  SUIX,
+  SUIX,
+  SUIX,
+  
+  SUIX,
+  SUIX,
+  SU,
+  SU,
+  SU,
+  SU,
+  SU,
+  SU,
+  
+  SU,
+  SUIJX,
+  SUIJX,
+  SUIJX,
+  SUIJX,
+  SUIJX,
+  SUIJX,
+  SUIJ,
+  
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SU,
+  J,
+  SU,
+  SU,
+  SUIJ,
+  
+  SU,
+  SUIJX,
+  SUIJX,
+  SUIJX,
+  SUIJX,
+  SUIJX,
+  SUIJX,
+  SUIJ,
+  
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  
+  SUIJ,
+  SUIJ,
+  SUIJ,
+  SU,
+  SU,
+  SU,
+  SU,
+  S,
 ];
 
 
@@ -304,16 +416,18 @@ function IsIdentStart(ch) {
 
 
 function StartsIdent(aFirstChar, aSecondChar) {
-  return IsIdentStart(aFirstChar) ||
-    (aFirstChar == HYPHEN_MINUS && (aSecondChar == HYPHEN_MINUS ||
-                                    IsIdentStart(aSecondChar)));
+  return (
+    IsIdentStart(aFirstChar) ||
+    (aFirstChar == HYPHEN_MINUS &&
+      (aSecondChar == HYPHEN_MINUS || IsIdentStart(aSecondChar)))
+  );
 }
 
 
 
 
 function IsDigit(ch) {
-  return (ch >= DIGIT_ZERO) && (ch <= DIGIT_NINE);
+  return ch >= DIGIT_ZERO && ch <= DIGIT_NINE;
 }
 
 
@@ -351,12 +465,18 @@ function HexDigitValue(ch) {
 
 function MatchOperatorType(ch) {
   switch (ch) {
-    case TILDE: return eCSSToken_Includes;
-    case VERTICAL_LINE: return eCSSToken_Dashmatch;
-    case CIRCUMFLEX_ACCENT: return eCSSToken_Beginsmatch;
-    case DOLLAR_SIGN: return eCSSToken_Endsmatch;
-    case ASTERISK: return eCSSToken_Containsmatch;
-    default: return eCSSToken_Symbol;
+    case TILDE:
+      return eCSSToken_Includes;
+    case VERTICAL_LINE:
+      return eCSSToken_Dashmatch;
+    case CIRCUMFLEX_ACCENT:
+      return eCSSToken_Beginsmatch;
+    case DOLLAR_SIGN:
+      return eCSSToken_Endsmatch;
+    case ASTERISK:
+      return eCSSToken_Containsmatch;
+    default:
+      return eCSSToken_Symbol;
   }
 }
 
@@ -428,16 +548,23 @@ Scanner.prototype = {
 
     let eofChars = this.mEOFCharacters;
 
-    if (aPreserveBackslash &&
-        (eofChars & (eEOFCharacters_DropBackslash |
-                     eEOFCharacters_ReplacementChar)) != 0) {
-      eofChars &= ~(eEOFCharacters_DropBackslash |
-                    eEOFCharacters_ReplacementChar);
+    if (
+      aPreserveBackslash &&
+      (eofChars &
+        (eEOFCharacters_DropBackslash | eEOFCharacters_ReplacementChar)) !=
+        0
+    ) {
+      eofChars &= ~(
+        eEOFCharacters_DropBackslash | eEOFCharacters_ReplacementChar
+      );
       result += "\\";
     }
 
-    if ((eofChars & eEOFCharacters_DropBackslash) != 0 &&
-        result.length > 0 && result.endsWith("\\")) {
+    if (
+      (eofChars & eEOFCharacters_DropBackslash) != 0 &&
+      result.length > 0 &&
+      result.endsWith("\\")
+    ) {
       result = result.slice(0, -1);
     }
 
@@ -525,7 +652,7 @@ Scanner.prototype = {
 
       case eCSSToken_Dimension:
         resultToken.text = constructText();
-        
+      
       case eCSSToken_Number:
       case eCSSToken_Percentage:
         resultToken.number = token.mNumber;
@@ -595,9 +722,11 @@ Scanner.prototype = {
 
   AdvanceLine: function() {
     
-    if (this.mBuffer.charCodeAt(this.mOffset) == CARRIAGE_RETURN &&
-        this.mOffset + 1 < this.mCount &&
-        this.mBuffer.charCodeAt(this.mOffset + 1) == LINE_FEED) {
+    if (
+      this.mBuffer.charCodeAt(this.mOffset) == CARRIAGE_RETURN &&
+      this.mOffset + 1 < this.mCount &&
+      this.mBuffer.charCodeAt(this.mOffset + 1) == LINE_FEED
+    ) {
       this.mOffset += 2;
     } else {
       this.mOffset += 1;
@@ -616,7 +745,8 @@ Scanner.prototype = {
   SkipWhitespace: function() {
     for (;;) {
       const ch = this.Peek();
-      if (!IsWhitespace(ch)) { 
+      if (!IsWhitespace(ch)) {
+        
         break;
       }
       if (IsVertSpace(ch)) {
@@ -760,8 +890,10 @@ Scanner.prototype = {
     for (;;) {
       
       let n = this.mOffset;
-      while (n < this.mCount && IsOpenCharClass(this.mBuffer.charCodeAt(n),
-                                                aClass)) {
+      while (
+        n < this.mCount &&
+        IsOpenCharClass(this.mBuffer.charCodeAt(n), aClass)
+      ) {
         n++;
       }
       if (n > this.mOffset) {
@@ -849,8 +981,9 @@ Scanner.prototype = {
 
     const ch = this.Peek();
     if (IsIdentChar(ch) || ch == REVERSE_SOLIDUS) {
-      const type =
-          StartsIdent(ch, this.Peek(1)) ? eCSSToken_ID : eCSSToken_Hash;
+      const type = StartsIdent(ch, this.Peek(1))
+        ? eCSSToken_ID
+        : eCSSToken_Hash;
       aToken.mIdent.length = 0;
       if (this.GatherText(IS_IDCHAR, aToken.mIdent)) {
         aToken.mType = type;
@@ -891,13 +1024,13 @@ Scanner.prototype = {
     
     let expSign = 1;
 
-    aToken.mHasSign = (c == PLUS_SIGN || c == HYPHEN_MINUS);
+    aToken.mHasSign = c == PLUS_SIGN || c == HYPHEN_MINUS;
     if (aToken.mHasSign) {
       this.Advance();
       c = this.Peek();
     }
 
-    let gotDot = (c == FULL_STOP);
+    let gotDot = c == FULL_STOP;
 
     if (!gotDot) {
       
@@ -907,7 +1040,7 @@ Scanner.prototype = {
         c = this.Peek();
       } while (IsDigit(c));
 
-      gotDot = (c == FULL_STOP) && IsDigit(this.Peek(1));
+      gotDot = c == FULL_STOP && IsDigit(this.Peek(1));
     }
 
     if (gotDot) {
@@ -928,9 +1061,11 @@ Scanner.prototype = {
     if (c == LATIN_SMALL_LETTER_E || c == LATIN_CAPITAL_LETTER_E) {
       const expSignChar = this.Peek(1);
       const nextChar = this.Peek(2);
-      if (IsDigit(expSignChar) ||
-          ((expSignChar == HYPHEN_MINUS || expSignChar == PLUS_SIGN) &&
-           IsDigit(nextChar))) {
+      if (
+        IsDigit(expSignChar) ||
+        ((expSignChar == HYPHEN_MINUS || expSignChar == PLUS_SIGN) &&
+          IsDigit(nextChar))
+      ) {
         gotE = true;
         if (expSignChar == HYPHEN_MINUS) {
           expSign = -1;
@@ -1009,9 +1144,11 @@ Scanner.prototype = {
 
       const ch = this.Peek();
       if (ch == -1) {
-        this.AddEOFCharacters(aStop == QUOTATION_MARK ?
-                              eEOFCharacters_DoubleQuote :
-                              eEOFCharacters_SingleQuote);
+        this.AddEOFCharacters(
+          aStop == QUOTATION_MARK
+            ? eEOFCharacters_DoubleQuote
+            : eEOFCharacters_SingleQuote
+        );
         break; 
       }
       if (ch == aStop) {
@@ -1073,7 +1210,7 @@ Scanner.prototype = {
       } else {
         haveQues = true;
         low = low * 16 + 0x0;
-        high = high * 16 + 0xF;
+        high = high * 16 + 0xf;
       }
 
       i++;
@@ -1219,8 +1356,10 @@ Scanner.prototype = {
       aToken.mType = eCSSToken_Whitespace;
       return true;
     }
-    if (ch == SOLIDUS && 
-        this.Peek(1) == ASTERISK) {
+    if (
+      ch == SOLIDUS && 
+      this.Peek(1) == ASTERISK
+    ) {
       this.SkipComment();
       aToken.mType = eCSSToken_Comment;
       return true;
@@ -1282,10 +1421,12 @@ Scanner.prototype = {
     }
 
     
-    if (ch == LESS_THAN_SIGN &&
-        this.Peek(1) == EXCLAMATION_MARK &&
-        this.Peek(2) == HYPHEN_MINUS &&
-        this.Peek(3) == HYPHEN_MINUS) {
+    if (
+      ch == LESS_THAN_SIGN &&
+      this.Peek(1) == EXCLAMATION_MARK &&
+      this.Peek(2) == HYPHEN_MINUS &&
+      this.Peek(3) == HYPHEN_MINUS
+    ) {
       this.Advance(4);
       aToken.mType = eCSSToken_HTMLComment;
       aToken.mIdent = stringToCodes("<!--");

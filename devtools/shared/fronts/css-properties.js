@@ -3,13 +3,24 @@
 
 "use strict";
 
-loader.lazyRequireGetter(this, "CSS_PROPERTIES_DB",
-  "devtools/shared/css/properties-db", true);
+loader.lazyRequireGetter(
+  this,
+  "CSS_PROPERTIES_DB",
+  "devtools/shared/css/properties-db",
+  true
+);
 
-loader.lazyRequireGetter(this, "cssColors",
-  "devtools/shared/css/color-db", true);
+loader.lazyRequireGetter(
+  this,
+  "cssColors",
+  "devtools/shared/css/color-db",
+  true
+);
 
-const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
+const {
+  FrontClassWithSpec,
+  registerFront,
+} = require("devtools/shared/protocol");
 const { cssPropertiesSpec } = require("devtools/shared/specs/css-properties");
 
 
@@ -22,10 +33,17 @@ var NON_ASCII = "[^\\x00-\\x7F]";
 var ESCAPE = "\\\\[^\n\r]";
 var FIRST_CHAR = ["[_a-z]", NON_ASCII, ESCAPE].join("|");
 var TRAILING_CHAR = ["[_a-z0-9-]", NON_ASCII, ESCAPE].join("|");
-var IS_VARIABLE_TOKEN = new RegExp(`^--(${FIRST_CHAR})(${TRAILING_CHAR})*$`,
-                                   "i");
+var IS_VARIABLE_TOKEN = new RegExp(
+  `^--(${FIRST_CHAR})(${TRAILING_CHAR})*$`,
+  "i"
+);
 
-loader.lazyRequireGetter(this, "CSS_TYPES", "devtools/shared/css/constants", true);
+loader.lazyRequireGetter(
+  this,
+  "CSS_TYPES",
+  "devtools/shared/css/constants",
+  true
+);
 
 
 
@@ -85,15 +103,18 @@ function CssProperties(db) {
   this.pseudoElements = db.pseudoElements;
 
   
-  this.cssColor4ColorFunction = hasFeature(db.supportedFeature,
-                                           "css-color-4-color-function");
+  this.cssColor4ColorFunction = hasFeature(
+    db.supportedFeature,
+    "css-color-4-color-function"
+  );
 
   this.isKnown = this.isKnown.bind(this);
   this.isInherited = this.isInherited.bind(this);
   this.supportsType = this.supportsType.bind(this);
   this.isValidOnClient = this.isValidOnClient.bind(this);
-  this.supportsCssColor4ColorFunction =
-    this.supportsCssColor4ColorFunction.bind(this);
+  this.supportsCssColor4ColorFunction = this.supportsCssColor4ColorFunction.bind(
+    this
+  );
 
   
   this._dummyElements = new WeakMap();
@@ -159,8 +180,10 @@ CssProperties.prototype = {
 
 
   isInherited(property) {
-    return (this.properties[property] && this.properties[property].isInherited) ||
-            isCssVariable(property);
+    return (
+      (this.properties[property] && this.properties[property].isInherited) ||
+      isCssVariable(property)
+    );
   },
 
   
@@ -172,9 +195,11 @@ CssProperties.prototype = {
 
   supportsType(property, type) {
     const id = CSS_TYPES[type];
-    return this.properties[property] &&
+    return (
+      this.properties[property] &&
       (this.properties[property].supports.includes(type) ||
-       this.properties[property].supports.includes(id));
+        this.properties[property].supports.includes(id))
+    );
   },
 
   
@@ -249,8 +274,8 @@ const initCssProperties = async function(toolbox) {
   const db = await front.getCSSDatabase();
 
   const cssProperties = new CssProperties(normalizeCssData(db));
-  cachedCssProperties.set(client, {cssProperties, front});
-  return {cssProperties, front};
+  cachedCssProperties.set(client, { cssProperties, front });
+  return { cssProperties, front };
 };
 
 
@@ -261,9 +286,11 @@ const initCssProperties = async function(toolbox) {
 
 function getCssProperties(toolbox) {
   if (!cachedCssProperties.has(toolbox.target.client)) {
-    throw new Error("The CSS database has not been initialized, please make " +
-                    "sure initCssDatabase was called once before for this " +
-                    "toolbox.");
+    throw new Error(
+      "The CSS database has not been initialized, please make " +
+        "sure initCssDatabase was called once before for this " +
+        "toolbox."
+    );
   }
   return cachedCssProperties.get(toolbox.target.client).cssProperties;
 }
@@ -289,7 +316,7 @@ function normalizeCssData(db) {
   
   
   
-  if (typeof (db.from) == "string") {
+  if (typeof db.from == "string") {
     
     
     if (!db.properties) {
@@ -301,7 +328,10 @@ function normalizeCssData(db) {
     const missingSubproperties = !db.properties.background.subproperties;
     const missingIsInherited = !db.properties.font.isInherited;
 
-    const missingSomething = missingSupports || missingValues || missingSubproperties ||
+    const missingSomething =
+      missingSupports ||
+      missingValues ||
+      missingSubproperties ||
       missingIsInherited;
 
     if (missingSomething) {
@@ -313,11 +343,13 @@ function normalizeCssData(db) {
 
         
         if (missingSupports) {
-          db.properties[name].supports = CSS_PROPERTIES_DB.properties[name].supports;
+          db.properties[name].supports =
+            CSS_PROPERTIES_DB.properties[name].supports;
         }
         
         if (missingValues) {
-          db.properties[name].values = CSS_PROPERTIES_DB.properties[name].values;
+          db.properties[name].values =
+            CSS_PROPERTIES_DB.properties[name].values;
         }
         
         if (missingSubproperties) {

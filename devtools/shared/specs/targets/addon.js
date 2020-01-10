@@ -3,7 +3,7 @@
 
 "use strict";
 
-const {RetVal, generateActorSpec} = require("devtools/shared/protocol");
+const { RetVal, generateActorSpec } = require("devtools/shared/protocol");
 
 const addonTargetSpec = generateActorSpec({
   typeName: "addonTarget",

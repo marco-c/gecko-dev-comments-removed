@@ -3,9 +3,12 @@
 
 "use strict";
 
-const {screenshotSpec} = require("devtools/shared/specs/screenshot");
+const { screenshotSpec } = require("devtools/shared/specs/screenshot");
 const saveScreenshot = require("devtools/shared/screenshot/save");
-const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
+const {
+  FrontClassWithSpec,
+  registerFront,
+} = require("devtools/shared/protocol");
 
 class ScreenshotFront extends FrontClassWithSpec(screenshotSpec) {
   constructor(client) {

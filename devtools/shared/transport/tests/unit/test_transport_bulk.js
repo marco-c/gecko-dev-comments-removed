@@ -26,12 +26,12 @@ var test_bulk_transfer_transport = async function(transportFactory) {
   info("Starting bulk transfer test at " + new Date().toTimeString());
 
   let clientResolve;
-  const clientDeferred = new Promise((resolve) => {
+  const clientDeferred = new Promise(resolve => {
     clientResolve = resolve;
   });
 
   let serverResolve;
-  const serverDeferred = new Promise((resolve) => {
+  const serverDeferred = new Promise(resolve => {
     serverResolve = resolve;
   });
 
@@ -45,19 +45,22 @@ var test_bulk_transfer_transport = async function(transportFactory) {
   const transport = await transportFactory();
 
   
-  function write_data({copyFrom}) {
-    NetUtil.asyncFetch({
-      uri: NetUtil.newURI(getTestTempFile("bulk-input")),
-      loadUsingSystemPrincipal: true,
-    }, function(input, status) {
-      copyFrom(input).then(() => {
-        input.close();
-      });
-    });
+  function write_data({ copyFrom }) {
+    NetUtil.asyncFetch(
+      {
+        uri: NetUtil.newURI(getTestTempFile("bulk-input")),
+        loadUsingSystemPrincipal: true,
+      },
+      function(input, status) {
+        copyFrom(input).then(() => {
+          input.close();
+        });
+      }
+    );
   }
 
   
-  function on_bulk_packet({actor, type, length, copyTo}) {
+  function on_bulk_packet({ actor, type, length, copyTo }) {
     Assert.equal(actor, "root");
     Assert.equal(type, "file-stream");
     Assert.equal(length, reallyLong.length);
@@ -67,16 +70,18 @@ var test_bulk_transfer_transport = async function(transportFactory) {
 
     const output = FileUtils.openSafeFileOutputStream(outputFile);
 
-    copyTo(output).then(() => {
-      FileUtils.closeSafeFileOutputStream(output);
-      return verify();
-    }).then(() => {
-      
-      transport.hooks.onClosed = () => {
-        clientResolve();
-      };
-      transport.close();
-    });
+    copyTo(output)
+      .then(() => {
+        FileUtils.closeSafeFileOutputStream(output);
+        return verify();
+      })
+      .then(() => {
+        
+        transport.hooks.onClosed = () => {
+          clientResolve();
+        };
+        transport.close();
+      });
   }
 
   
@@ -98,11 +103,13 @@ var test_bulk_transfer_transport = async function(transportFactory) {
         }
       });
 
-      transport.startBulkSend({
-        actor: "root",
-        type: "file-stream",
-        length: reallyLong.length,
-      }).then(write_data);
+      transport
+        .startBulkSend({
+          actor: "root",
+          type: "file-stream",
+          length: reallyLong.length,
+        })
+        .then(write_data);
     },
 
     onClosed: function() {
@@ -127,19 +134,24 @@ function verify() {
   Assert.equal(outputFile.fileSize, reallyLong.length);
 
   
-  return new Promise((resolve) => {
-    NetUtil.asyncFetch({
-      uri: NetUtil.newURI(getTestTempFile("bulk-output")),
-      loadUsingSystemPrincipal: true,
-    }, input => {
-      const outputData = NetUtil.readInputStreamToString(input, reallyLong.length);
+  return new Promise(resolve => {
+    NetUtil.asyncFetch(
+      {
+        uri: NetUtil.newURI(getTestTempFile("bulk-output")),
+        loadUsingSystemPrincipal: true,
+      },
+      input => {
+        const outputData = NetUtil.readInputStreamToString(
+          input,
+          reallyLong.length
+        );
         
-      Assert.ok(outputData === reallyLong);
-      input.close();
-      resolve();
-    });
-  })
-  .then(cleanup_files);
+        Assert.ok(outputData === reallyLong);
+        input.close();
+        resolve();
+      }
+    );
+  }).then(cleanup_files);
 }
 
 function cleanup_files() {

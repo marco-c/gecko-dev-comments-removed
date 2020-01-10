@@ -9,14 +9,22 @@
 
 
 var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-var { Loader, Require, resolveURI, unload } =
-  ChromeUtils.import("resource://devtools/shared/base-loader.js");
-var { requireRawId } = ChromeUtils.import("resource://devtools/shared/loader-plugin-raw.jsm");
+var { Loader, Require, resolveURI, unload } = ChromeUtils.import(
+  "resource://devtools/shared/base-loader.js"
+);
+var { requireRawId } = ChromeUtils.import(
+  "resource://devtools/shared/loader-plugin-raw.jsm"
+);
 
-this.EXPORTED_SYMBOLS = ["DevToolsLoader", "devtools", "BuiltinProvider",
-                         "require", "loader",
-                         
-                         "StructuredCloneHolder"];
+this.EXPORTED_SYMBOLS = [
+  "DevToolsLoader",
+  "devtools",
+  "BuiltinProvider",
+  "require",
+  "loader",
+  
+  "StructuredCloneHolder",
+];
 
 
 
@@ -31,9 +39,9 @@ BuiltinProvider.prototype = {
   load: function() {
     const paths = {
       
-      "devtools": "resource://devtools",
+      devtools: "resource://devtools",
       
-      "acorn": "resource://devtools/shared/acorn",
+      acorn: "resource://devtools/shared/acorn",
       
       "acorn/util/walk": "resource://devtools/shared/acorn/walk.js",
       
@@ -171,7 +179,9 @@ DevToolsLoader.prototype = {
     this.require = Require(this._provider.loader, { id: "devtools" });
 
     
-    const { modules, globals } = this.require("devtools/shared/builtin-modules");
+    const { modules, globals } = this.require(
+      "devtools/shared/builtin-modules"
+    );
 
     
     
@@ -193,7 +203,10 @@ DevToolsLoader.prototype = {
 
     
     globals.loader.id = this.id;
-    Object.defineProperties(loader.globals, Object.getOwnPropertyDescriptors(globals));
+    Object.defineProperties(
+      loader.globals,
+      Object.getOwnPropertyDescriptors(globals)
+    );
 
     
     this.lazyGetter = globals.loader.lazyGetter;
@@ -206,8 +219,12 @@ DevToolsLoader.prototype = {
     
     if (globals.isReplaying) {
       const oldHook = this._provider.loader.requireHook;
-      const ReplayInspector = this.require("devtools/server/actors/replay/inspector");
-      this._provider.loader.requireHook = ReplayInspector.wrapRequireHook(oldHook);
+      const ReplayInspector = this.require(
+        "devtools/server/actors/replay/inspector"
+      );
+      this._provider.loader.requireHook = ReplayInspector.wrapRequireHook(
+        oldHook
+      );
     }
   },
 

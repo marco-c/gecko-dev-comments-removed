@@ -3,7 +3,13 @@
 
 "use strict";
 
-const {Arg, Option, RetVal, generateActorSpec, types} = require("devtools/shared/protocol");
+const {
+  Arg,
+  Option,
+  RetVal,
+  generateActorSpec,
+  types,
+} = require("devtools/shared/protocol");
 
 types.addDictType("available-breakpoint-group", {
   name: "string",

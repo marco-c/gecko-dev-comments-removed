@@ -3,7 +3,13 @@
 
 "use strict";
 
-const { types, generateActorSpec, RetVal, Arg, Option } = require("devtools/shared/protocol");
+const {
+  types,
+  generateActorSpec,
+  RetVal,
+  Arg,
+  Option,
+} = require("devtools/shared/protocol");
 
 types.addDictType("root.listWorkers", {
   workers: "array:workerTarget",

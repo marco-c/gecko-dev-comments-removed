@@ -109,8 +109,11 @@ RuleRewriter.prototype = {
     
     this.hasNewLine = /[\r\n]/.test(this.inputString);
     
-    this.declarations = parseNamedDeclarations(this.isCssPropertyKnown, this.inputString,
-                                               true);
+    this.declarations = parseNamedDeclarations(
+      this.isCssPropertyKnown,
+      this.inputString,
+      true
+    );
     this.decl = null;
     this.result = null;
   },
@@ -196,17 +199,19 @@ RuleRewriter.prototype = {
 
     
     const pushParen = (token, closer) => {
-      result = result + text.substring(previousOffset, token.startOffset) +
+      result =
+        result +
+        text.substring(previousOffset, token.startOffset) +
         text.substring(token.startOffset, token.endOffset);
       
       
       
-      parenStack.push({closer, offset: result.length - 1});
+      parenStack.push({ closer, offset: result.length - 1 });
       previousOffset = token.endOffset;
     };
 
     
-    const popSomeParens = (closer) => {
+    const popSomeParens = closer => {
       while (parenStack.length > 0) {
         const paren = parenStack.pop();
 
@@ -216,7 +221,9 @@ RuleRewriter.prototype = {
 
         
         
-        result = result.substring(0, paren.offset) + "\\" +
+        result =
+          result.substring(0, paren.offset) +
+          "\\" +
           result.substring(paren.offset);
         anySanitized = true;
       }
@@ -293,9 +300,11 @@ RuleRewriter.prototype = {
 
 
   skipWhitespaceBackward: function(string, index) {
-    for (--index;
-         index >= 0 && (string[index] === " " || string[index] === "\t");
-         --index) {
+    for (
+      --index;
+      index >= 0 && (string[index] === " " || string[index] === "\t");
+      --index
+    ) {
       
     }
     return index;
@@ -309,9 +318,12 @@ RuleRewriter.prototype = {
 
 
   maybeTerminateDecl: function(index) {
-    if (index < 0 || index >= this.declarations.length
-        
-        || ("commentOffsets" in this.declarations[index])) {
+    if (
+      index < 0 ||
+      index >= this.declarations.length ||
+      
+      "commentOffsets" in this.declarations[index]
+    ) {
       return;
     }
 
@@ -326,8 +338,8 @@ RuleRewriter.prototype = {
     if (termDecl.terminator) {
       
       
-      this.result = this.result.substring(0, endIndex) + termDecl.terminator +
-        trailingText;
+      this.result =
+        this.result.substring(0, endIndex) + termDecl.terminator + trailingText;
       
       
       
@@ -404,16 +416,19 @@ RuleRewriter.prototype = {
 
       
       
-      const commentNamePart =
-          this.inputString.substring(decl.offsets[0],
-                                     decl.colonOffsets[1]);
+      const commentNamePart = this.inputString.substring(
+        decl.offsets[0],
+        decl.colonOffsets[1]
+      );
       this.result += unescapeCSSComment(commentNamePart);
 
       
       
       
-      let newText = this.inputString.substring(decl.colonOffsets[1],
-                                               decl.offsets[1]);
+      let newText = this.inputString.substring(
+        decl.colonOffsets[1],
+        decl.offsets[1]
+      );
       newText = cssTrimRight(unescapeCSSComment(newText));
       this.result += this.sanitizeText(newText, index) + ";";
 
@@ -427,15 +442,27 @@ RuleRewriter.prototype = {
     } else {
       
       
-      const declText = this.inputString.substring(decl.offsets[0],
-                                                decl.offsets[1]);
-      this.result += "/*" + COMMENT_PARSING_HEURISTIC_BYPASS_CHAR +
-        " " + escapeCSSComment(declText) + " */";
+      const declText = this.inputString.substring(
+        decl.offsets[0],
+        decl.offsets[1]
+      );
+      this.result +=
+        "/*" +
+        COMMENT_PARSING_HEURISTIC_BYPASS_CHAR +
+        " " +
+        escapeCSSComment(declText) +
+        " */";
     }
     this.completeCopying(copyOffset);
 
     if (isEnabled) {
-      this.modifications.push({ type: "set", index, name, value: decl.value, priority });
+      this.modifications.push({
+        type: "set",
+        index,
+        name,
+        value: decl.value,
+        priority,
+      });
     } else {
       this.modifications.push({ type: "disable", index, name });
     }
@@ -472,8 +499,10 @@ RuleRewriter.prototype = {
     let newIndentation = "";
     if (this.hasNewLine) {
       if (this.declarations.length > 0) {
-        newIndentation = this.getIndentation(this.inputString,
-                                             this.declarations[0].offsets[0]);
+        newIndentation = this.getIndentation(
+          this.inputString,
+          this.declarations[0].offsets[0]
+        );
       } else if (this.defaultIndentation) {
         newIndentation = this.defaultIndentation;
       } else {
@@ -489,8 +518,10 @@ RuleRewriter.prototype = {
     
     let savedWhitespace = "";
     if (this.hasNewLine) {
-      const wsOffset = this.skipWhitespaceBackward(this.result,
-                                                 this.result.length);
+      const wsOffset = this.skipWhitespaceBackward(
+        this.result,
+        this.result.length
+      );
       if (this.result[wsOffset] === "\r" || this.result[wsOffset] === "\n") {
         savedWhitespace = this.result.substring(wsOffset + 1);
         this.result = this.result.substring(0, wsOffset + 1);
@@ -504,8 +535,12 @@ RuleRewriter.prototype = {
     newText += ";";
 
     if (!enabled) {
-      newText = "/*" + COMMENT_PARSING_HEURISTIC_BYPASS_CHAR + " " +
-        escapeCSSComment(newText) + " */";
+      newText =
+        "/*" +
+        COMMENT_PARSING_HEURISTIC_BYPASS_CHAR +
+        " " +
+        escapeCSSComment(newText) +
+        " */";
     }
 
     this.result += newIndentation + newText;
@@ -533,7 +568,13 @@ RuleRewriter.prototype = {
 
 
   createProperty: function(index, name, value, priority, enabled) {
-    this.editPromise = this.internalCreateProperty(index, name, value, priority, enabled);
+    this.editPromise = this.internalCreateProperty(
+      index,
+      name,
+      value,
+      priority,
+      enabled
+    );
     
     if (enabled) {
       this.modifications.push({ type: "set", index, name, value, priority });
@@ -564,9 +605,11 @@ RuleRewriter.prototype = {
 
     
     
-    this.result += this.inputString.substring(this.decl.offsets[0],
-                                              this.decl.colonOffsets[1]) +
-      this.sanitizeText(value, index);
+    this.result +=
+      this.inputString.substring(
+        this.decl.offsets[0],
+        this.decl.colonOffsets[1]
+      ) + this.sanitizeText(value, index);
 
     if (priority === "important") {
       this.result += " !important";
@@ -607,10 +650,15 @@ RuleRewriter.prototype = {
     
     
     if (this.hasNewLine) {
-      const nlOffset = this.skipWhitespaceBackward(this.result,
-                                                 this.decl.offsets[0]);
-      if (nlOffset < 0 || this.result[nlOffset] === "\r" ||
-          this.result[nlOffset] === "\n") {
+      const nlOffset = this.skipWhitespaceBackward(
+        this.result,
+        this.decl.offsets[0]
+      );
+      if (
+        nlOffset < 0 ||
+        this.result[nlOffset] === "\r" ||
+        this.result[nlOffset] === "\n"
+      ) {
         const trailingText = this.inputString.substring(copyOffset);
         const match = BLANK_LINE_RX.exec(trailingText);
         if (match) {
@@ -658,7 +706,7 @@ RuleRewriter.prototype = {
 
 
   getResult: function() {
-    return {changed: this.changedDeclarations, text: this.result};
+    return { changed: this.changedDeclarations, text: this.result };
   },
 };
 

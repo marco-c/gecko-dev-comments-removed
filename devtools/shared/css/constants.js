@@ -8,10 +8,10 @@
 
 
 exports.CSS_ANGLEUNIT = {
-  "deg": "deg",
-  "rad": "rad",
-  "grad": "grad",
-  "turn": "turn",
+  deg: "deg",
+  rad: "rad",
+  grad: "grad",
+  turn: "turn",
 };
 
 
@@ -19,9 +19,9 @@ exports.CSS_ANGLEUNIT = {
 
 
 exports.CSS_TYPES = {
- "color": 2,
- "gradient": 4,
- "timing-function": 10,
+  color: 2,
+  gradient: 4,
+  "timing-function": 10,
 };
 
 

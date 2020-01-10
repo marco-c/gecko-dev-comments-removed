@@ -4,8 +4,9 @@
 
 "use strict";
 
-const { DevToolsShim } =
-    ChromeUtils.import("chrome://devtools-startup/content/DevToolsShim.jsm");
+const { DevToolsShim } = ChromeUtils.import(
+  "chrome://devtools-startup/content/DevToolsShim.jsm"
+);
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
@@ -43,8 +44,10 @@ function createMockDevTools() {
 
 
 function checkCalls(mock, method, length, lastArgs) {
-  ok(mock.callLog[method].length === length,
-      "Devtools.on was called the expected number of times");
+  ok(
+    mock.callLog[method].length === length,
+    "Devtools.on was called the expected number of times"
+  );
 
   
   if (!lastArgs || length === 0) {
@@ -53,8 +56,10 @@ function checkCalls(mock, method, length, lastArgs) {
 
   for (let i = 0; i < lastArgs.length; i++) {
     const expectedArg = lastArgs[i];
-    ok(mock.callLog[method][length - 1][i] === expectedArg,
-        `Devtools.${method} was called with the expected argument (index ${i})`);
+    ok(
+      mock.callLog[method][length - 1][i] === expectedArg,
+      `Devtools.${method} was called with the expected argument (index ${i})`
+    );
   }
 }
 

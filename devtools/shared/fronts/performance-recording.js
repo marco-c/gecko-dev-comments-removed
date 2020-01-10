@@ -3,21 +3,38 @@
 
 "use strict";
 
-const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
-const { performanceRecordingSpec } = require("devtools/shared/specs/performance-recording");
+const {
+  FrontClassWithSpec,
+  registerFront,
+} = require("devtools/shared/protocol");
+const {
+  performanceRecordingSpec,
+} = require("devtools/shared/specs/performance-recording");
 
-loader.lazyRequireGetter(this, "PerformanceIO",
-  "devtools/client/performance/modules/io");
-loader.lazyRequireGetter(this, "PerformanceRecordingCommon",
-  "devtools/shared/performance/recording-common", true);
-loader.lazyRequireGetter(this, "RecordingUtils",
-  "devtools/shared/performance/recording-utils");
+loader.lazyRequireGetter(
+  this,
+  "PerformanceIO",
+  "devtools/client/performance/modules/io"
+);
+loader.lazyRequireGetter(
+  this,
+  "PerformanceRecordingCommon",
+  "devtools/shared/performance/recording-common",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "RecordingUtils",
+  "devtools/shared/performance/recording-utils"
+);
 
 
 
 
 
-class PerformanceRecordingFront extends FrontClassWithSpec(performanceRecordingSpec) {
+class PerformanceRecordingFront extends FrontClassWithSpec(
+  performanceRecordingSpec
+) {
   form(form) {
     this.actorID = form.actor;
     this._form = form;
@@ -41,7 +58,7 @@ class PerformanceRecordingFront extends FrontClassWithSpec(performanceRecordingS
     
     
     if (this._completed && !this._markersSorted) {
-      this._markers = this._markers.sort((a, b) => (a.start > b.start));
+      this._markers = this._markers.sort((a, b) => a.start > b.start);
       this._markersSorted = true;
     }
   }
@@ -145,8 +162,10 @@ class PerformanceRecordingFront extends FrontClassWithSpec(performanceRecordingS
 
 
 
-Object.defineProperties(PerformanceRecordingFront.prototype,
-  Object.getOwnPropertyDescriptors(PerformanceRecordingCommon));
+Object.defineProperties(
+  PerformanceRecordingFront.prototype,
+  Object.getOwnPropertyDescriptors(PerformanceRecordingCommon)
+);
 
 exports.PerformanceRecordingFront = PerformanceRecordingFront;
 registerFront(PerformanceRecordingFront);

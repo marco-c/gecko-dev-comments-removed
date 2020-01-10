@@ -3,7 +3,12 @@
 
 "use strict";
 
-const { Arg, Option, RetVal, generateActorSpec } = require("devtools/shared/protocol");
+const {
+  Arg,
+  Option,
+  RetVal,
+  generateActorSpec,
+} = require("devtools/shared/protocol");
 
 const perfDescription = {
   typeName: "perf",

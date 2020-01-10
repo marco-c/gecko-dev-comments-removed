@@ -3,7 +3,10 @@
 
 "use strict";
 
-const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
+const {
+  FrontClassWithSpec,
+  registerFront,
+} = require("devtools/shared/protocol");
 const { framerateSpec } = require("devtools/shared/specs/framerate");
 
 

@@ -8,13 +8,18 @@ const { Ci, Cc } = require("chrome");
 const nodeFilterConstants = require("devtools/shared/dom-node-filter-constants");
 
 const SHEET_TYPE = {
-  "agent": "AGENT_SHEET",
-  "user": "USER_SHEET",
-  "author": "AUTHOR_SHEET",
+  agent: "AGENT_SHEET",
+  user: "USER_SHEET",
+  author: "AUTHOR_SHEET",
 };
 
 
-loader.lazyRequireGetter(this, "setIgnoreLayoutChanges", "devtools/server/actors/reflow", true);
+loader.lazyRequireGetter(
+  this,
+  "setIgnoreLayoutChanges",
+  "devtools/server/actors/reflow",
+  true
+);
 exports.setIgnoreLayoutChanges = (...args) =>
   this.setIgnoreLayoutChanges(...args);
 
@@ -76,7 +81,7 @@ exports.isWindowIncluded = isWindowIncluded;
 
 
 
-const getFrameElement = (win) =>
+const getFrameElement = win =>
   isTopWindow(win) ? null : utilsFor(win).containerElement;
 exports.getFrameElement = getFrameElement;
 
@@ -151,7 +156,7 @@ exports.getFrameOffsets = getFrameOffsets;
 
 
 
-function getAdjustedQuads(boundaryWindow, node, region, {ignoreZoom} = {}) {
+function getAdjustedQuads(boundaryWindow, node, region, { ignoreZoom } = {}) {
   if (!node || !node.getBoxQuads) {
     return [];
   }
@@ -323,10 +328,10 @@ function getNodeBounds(boundaryWindow, node) {
   const height = node.offsetHeight * scale;
 
   return {
-    p1: {x: xOffset, y: yOffset},
-    p2: {x: xOffset + width, y: yOffset},
-    p3: {x: xOffset + width, y: yOffset + height},
-    p4: {x: xOffset, y: yOffset + height},
+    p1: { x: xOffset, y: yOffset },
+    p2: { x: xOffset + width, y: yOffset },
+    p3: { x: xOffset + width, y: yOffset + height },
+    p4: { x: xOffset, y: yOffset + height },
     top: yOffset,
     right: xOffset + width,
     bottom: yOffset + height,
@@ -350,8 +355,9 @@ function safelyGetContentWindow(frame) {
     return frame.contentWindow;
   }
 
-  const walker = Cc["@mozilla.org/inspector/deep-tree-walker;1"]
-               .createInstance(Ci.inIDeepTreeWalker);
+  const walker = Cc["@mozilla.org/inspector/deep-tree-walker;1"].createInstance(
+    Ci.inIDeepTreeWalker
+  );
   walker.showSubDocuments = true;
   walker.showDocumentsAsNodes = true;
   walker.init(frame, nodeFilterConstants.SHOW_ALL);
@@ -409,8 +415,10 @@ function isNodeConnected(node) {
   }
 
   try {
-    return !(node.compareDocumentPosition(node.ownerDocument.documentElement) &
-             node.DOCUMENT_POSITION_DISCONNECTED);
+    return !(
+      node.compareDocumentPosition(node.ownerDocument.documentElement) &
+      node.DOCUMENT_POSITION_DISCONNECTED
+    );
   } catch (e) {
     
     return false;
@@ -466,7 +474,7 @@ exports.getBindingParent = getBindingParent;
 
 
 
-const isAnonymous = (node) => getRootBindingParent(node) !== node;
+const isAnonymous = node => getRootBindingParent(node) !== node;
 exports.isAnonymous = isAnonymous;
 
 
@@ -476,7 +484,7 @@ exports.isAnonymous = isAnonymous;
 
 
 
-const hasBindingParent = (node) => !!getBindingParent(node);
+const hasBindingParent = node => !!getBindingParent(node);
 
 
 
@@ -488,7 +496,7 @@ const hasBindingParent = (node) => !!getBindingParent(node);
 
 
 
-const isNativeAnonymous = (node) =>
+const isNativeAnonymous = node =>
   hasBindingParent(node) && !(isXBLAnonymous(node) || isShadowAnonymous(node));
 
 exports.isNativeAnonymous = isNativeAnonymous;
@@ -508,7 +516,7 @@ function isXBLAnonymous(node) {
     return false;
   }
 
-  const anonNodes = [...node.ownerDocument.getAnonymousNodes(parent) || []];
+  const anonNodes = [...(node.ownerDocument.getAnonymousNodes(parent) || [])];
   return anonNodes.indexOf(node) > -1;
 }
 exports.isXBLAnonymous = isXBLAnonymous;
@@ -528,7 +536,10 @@ function isShadowAnonymous(node) {
 
   
   
-  return parent.openOrClosedShadowRoot && parent.openOrClosedShadowRoot.contains(node);
+  return (
+    parent.openOrClosedShadowRoot &&
+    parent.openOrClosedShadowRoot.contains(node)
+  );
 }
 exports.isShadowAnonymous = isShadowAnonymous;
 
@@ -539,7 +550,9 @@ exports.isShadowAnonymous = isShadowAnonymous;
 
 
 function isTemplateElement(node) {
-  return node.ownerGlobal && node instanceof node.ownerGlobal.HTMLTemplateElement;
+  return (
+    node.ownerGlobal && node instanceof node.ownerGlobal.HTMLTemplateElement
+  );
 }
 exports.isTemplateElement = isTemplateElement;
 
@@ -593,7 +606,8 @@ function isDirectShadowHostChild(node) {
     isMarkerPseudoElement(node) ||
     isBeforePseudoElement(node) ||
     isAfterPseudoElement(node) ||
-    isNativeAnonymous(node)) {
+    isNativeAnonymous(node)
+  ) {
     return false;
   }
 

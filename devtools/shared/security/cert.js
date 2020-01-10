@@ -12,14 +12,14 @@ var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 DevToolsUtils.defineLazyGetter(this, "localCertService", () => {
   
   Cc["@mozilla.org/psm;1"].getService(Ci.nsISupports);
-  return Cc["@mozilla.org/security/local-cert-service;1"]
-         .getService(Ci.nsILocalCertService);
+  return Cc["@mozilla.org/security/local-cert-service;1"].getService(
+    Ci.nsILocalCertService
+  );
 });
 
 const localCertName = "devtools";
 
 exports.local = {
-
   
 
 
@@ -62,5 +62,4 @@ exports.local = {
     });
     return deferred.promise;
   },
-
 };

@@ -75,7 +75,9 @@ CensusTreeNodeCacheValue.prototype = null;
 
 CensusTreeNodeCache.hashFrame = function(frame) {
   
-  return `FRAME,${frame.functionDisplayName},${frame.source},${frame.line},${frame.column},${frame.asyncCause}`;
+  return `FRAME,${frame.functionDisplayName},${frame.source},${frame.line},${
+    frame.column
+  },${frame.asyncCause}`;
 };
 
 
@@ -318,9 +320,11 @@ function values(cache) {
 }
 
 function isNonEmpty(node) {
-  return (node.children !== undefined && node.children.length)
-      || node.bytes !== 0
-      || node.count !== 0;
+  return (
+    (node.children !== undefined && node.children.length) ||
+    node.bytes !== 0 ||
+    node.count !== 0
+  );
 }
 
 
@@ -388,7 +392,9 @@ CensusTreeNodeVisitor.prototype.count = function(breakdown, report, edge) {
 
 CensusTreeNodeVisitor.prototype.root = function() {
   if (!this._root) {
-    throw new Error("Attempt to get the root before walking the census report!");
+    throw new Error(
+      "Attempt to get the root before walking the census report!"
+    );
   }
 
   if (this._nodeStack.length) {
@@ -468,10 +474,12 @@ CensusTreeNode.prototype = null;
 
 
 function compareByTotal(node1, node2) {
-  return Math.abs(node2.totalBytes) - Math.abs(node1.totalBytes)
-      || Math.abs(node2.totalCount) - Math.abs(node1.totalCount)
-      || Math.abs(node2.bytes) - Math.abs(node1.bytes)
-      || Math.abs(node2.count) - Math.abs(node1.count);
+  return (
+    Math.abs(node2.totalBytes) - Math.abs(node1.totalBytes) ||
+    Math.abs(node2.totalCount) - Math.abs(node1.totalCount) ||
+    Math.abs(node2.bytes) - Math.abs(node1.bytes) ||
+    Math.abs(node2.count) - Math.abs(node1.count)
+  );
 }
 
 
@@ -485,10 +493,12 @@ function compareByTotal(node1, node2) {
 
 
 function compareBySelf(node1, node2) {
-  return Math.abs(node2.bytes) - Math.abs(node1.bytes)
-      || Math.abs(node2.count) - Math.abs(node1.count)
-      || Math.abs(node2.totalBytes) - Math.abs(node1.totalBytes)
-      || Math.abs(node2.totalCount) - Math.abs(node1.totalCount);
+  return (
+    Math.abs(node2.bytes) - Math.abs(node1.bytes) ||
+    Math.abs(node2.count) - Math.abs(node1.count) ||
+    Math.abs(node2.totalBytes) - Math.abs(node1.totalBytes) ||
+    Math.abs(node2.totalCount) - Math.abs(node1.totalCount)
+  );
 }
 
 
@@ -515,8 +525,10 @@ function insertOrMergeNode(parentCacheValue, node) {
     
     
     
-    if (val.node.reportLeafIndex !== undefined &&
-        val.node.reportLeafIndex !== node.reportLeafIndex) {
+    if (
+      val.node.reportLeafIndex !== undefined &&
+      val.node.reportLeafIndex !== node.reportLeafIndex
+    ) {
       if (typeof val.node.reportLeafIndex === "number") {
         const oldIndex = val.node.reportLeafIndex;
         val.node.reportLeafIndex = new Set();
@@ -582,7 +594,7 @@ function invert(tree) {
     }
 
     path.pop();
-  }(tree));
+  })(tree);
 
   
   inverted.node.totalBytes = tree.totalBytes;
@@ -665,9 +677,11 @@ function makeFilterPredicate(filterString) {
     }
 
     if (isSavedFrame(node.name)) {
-      return node.name.source.includes(filterString)
-        || (node.name.functionDisplayName || "").includes(filterString)
-        || (node.name.asyncCause || "").includes(filterString);
+      return (
+        node.name.source.includes(filterString) ||
+        (node.name.functionDisplayName || "").includes(filterString) ||
+        (node.name.asyncCause || "").includes(filterString)
+      );
     }
 
     return String(node.name).includes(filterString);
@@ -704,11 +718,14 @@ function makeFilterPredicate(filterString) {
 
 
 
-exports.censusReportToCensusTreeNode = function(breakdown, report,
-                                                 options = {
-                                                   invert: false,
-                                                   filter: null,
-                                                 }) {
+exports.censusReportToCensusTreeNode = function(
+  breakdown,
+  report,
+  options = {
+    invert: false,
+    filter: null,
+  }
+) {
   
   
   censusTreeNodeIdCounter = 0;
@@ -743,7 +760,7 @@ exports.censusReportToCensusTreeNode = function(breakdown, report,
         ensureSorted(node.children[i]);
       }
     }
-  }(result));
+  })(result);
 
   return result;
 };

@@ -25,9 +25,7 @@ add_task(async function test() {
 
   dbg.memory.allocationSamplingProbability = 1;
 
-  for (const [func, n] of [ [g.f, 20],
-                          [g.g, 10],
-                          [g.h, 5] ]) {
+  for (const [func, n] of [[g.f, 20], [g.g, 10], [g.h, 5]]) {
     for (let i = 0; i < n; i++) {
       dbg.memory.trackingAllocationSites = true;
       
@@ -46,26 +44,24 @@ add_task(async function test() {
   
   
 
-  const { report } = await client.takeCensus(
-    snapshotFilePath,
-    {
-      breakdown: {
-        by: "objectClass",
+  const { report } = await client.takeCensus(snapshotFilePath, {
+    breakdown: {
+      by: "objectClass",
+      then: {
+        by: "allocationStack",
         then: {
-          by: "allocationStack",
-          then: {
-            by: "count",
-            bytes: true,
-            count: true,
-          },
-          noStack: {
-            by: "count",
-            bytes: true,
-            count: true,
-          },
+          by: "count",
+          bytes: true,
+          count: true,
+        },
+        noStack: {
+          by: "count",
+          bytes: true,
+          count: true,
         },
       },
-    });
+    },
+  });
 
   
 
@@ -77,7 +73,11 @@ add_task(async function test() {
   
   equal(Object.getPrototypeOf(map).constructor.name, "Map");
 
-  equal(map.size, 4, "Should have 4 allocation stacks (including the lack of a stack)");
+  equal(
+    map.size,
+    4,
+    "Should have 4 allocation stacks (including the lack of a stack)"
+  );
 
   
   
@@ -86,18 +86,26 @@ add_task(async function test() {
   map.forEach((v, k) => {
     if (k === "noStack") {
       
-    } else if (k.functionDisplayName === "f" &&
-               k.parent.functionDisplayName === "test") {
+    } else if (
+      k.functionDisplayName === "f" &&
+      k.parent.functionDisplayName === "test"
+    ) {
       stacks.f = k;
-    } else if (k.functionDisplayName === "g" &&
-               k.parent.functionDisplayName === "test") {
+    } else if (
+      k.functionDisplayName === "g" &&
+      k.parent.functionDisplayName === "test"
+    ) {
       stacks.g = k;
-    } else if (k.functionDisplayName === "h" &&
-               k.parent.functionDisplayName === "test") {
+    } else if (
+      k.functionDisplayName === "h" &&
+      k.parent.functionDisplayName === "test"
+    ) {
       stacks.h = k;
     } else {
       dumpn("Unexpected allocation stack:");
-      k.toString().split(/\n/g).forEach(s => dumpn(s));
+      k.toString()
+        .split(/\n/g)
+        .forEach(s => dumpn(s));
       ok(false);
     }
   });

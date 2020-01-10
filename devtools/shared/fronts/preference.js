@@ -3,8 +3,11 @@
 
 "use strict";
 
-const {preferenceSpec} = require("devtools/shared/specs/preference");
-const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
+const { preferenceSpec } = require("devtools/shared/specs/preference");
+const {
+  FrontClassWithSpec,
+  registerFront,
+} = require("devtools/shared/protocol");
 
 class PreferenceFront extends FrontClassWithSpec(preferenceSpec) {
   constructor(client) {

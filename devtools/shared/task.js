@@ -91,8 +91,12 @@ const defer = require("devtools/shared/defer");
 
 
 
-const ERRORS_TO_REPORT = ["EvalError", "RangeError", "ReferenceError",
-                          "TypeError"];
+const ERRORS_TO_REPORT = [
+  "EvalError",
+  "RangeError",
+  "ReferenceError",
+  "TypeError",
+];
 
 
 
@@ -199,7 +203,7 @@ var Task = {
 
 
   async: function(task) {
-    if (typeof (task) != "function") {
+    if (typeof task != "function") {
       throw new TypeError("task argument must be a function");
     }
 
@@ -221,13 +225,14 @@ var Task = {
 function createAsyncFunction(task) {
   const asyncFunction = function() {
     let result = task;
-    if (task && typeof (task) == "function") {
+    if (task && typeof task == "function") {
       if (task.isAsyncFunction) {
         throw new TypeError(
           "Cannot use an async function in place of a promise. " +
-          "You should either invoke the async function first " +
-          "or use 'Task.spawn' instead of 'Task.async' to start " +
-          "the Task and return its promise.");
+            "You should either invoke the async function first " +
+            "or use 'Task.spawn' instead of 'Task.async' to start " +
+            "the Task and return its promise."
+        );
       }
 
       try {
@@ -264,7 +269,7 @@ function createAsyncFunction(task) {
 
 function TaskImpl(iterator) {
   if (gMaintainStack) {
-    this._stack = (new Error()).stack;
+    this._stack = new Error().stack;
   }
   this.deferred = defer();
   this._iterator = iterator;
@@ -307,8 +312,9 @@ TaskImpl.prototype = {
 
       if (this._isStarGenerator) {
         try {
-          const result = sendResolved ? this._iterator.next(sendValue)
-                                    : this._iterator.throw(sendValue);
+          const result = sendResolved
+            ? this._iterator.next(sendValue)
+            : this._iterator.throw(sendValue);
 
           if (result.done) {
             
@@ -323,8 +329,9 @@ TaskImpl.prototype = {
         }
       } else {
         try {
-          const yielded = sendResolved ? this._iterator.send(sendValue)
-                                     : this._iterator.throw(sendValue);
+          const yielded = sendResolved
+            ? this._iterator.send(sendValue)
+            : this._iterator.throw(sendValue);
           this._handleResultValue(yielded);
         } catch (ex) {
           if (ex instanceof Task.Result) {
@@ -379,12 +386,11 @@ TaskImpl.prototype = {
       value = Task.spawn(value);
     }
 
-    if (value && typeof (value.then) == "function") {
+    if (value && typeof value.then == "function") {
       
       
       
-      value.then(this._run.bind(this, true),
-                  this._run.bind(this, false));
+      value.then(this._run.bind(this, true), this._run.bind(this, false));
     } else {
       
       
@@ -404,9 +410,11 @@ TaskImpl.prototype = {
     if (exception && typeof exception == "object" && "stack" in exception) {
       let stack = exception.stack;
 
-      if (gMaintainStack &&
-          exception._capturedTaskStack != this._stack &&
-          typeof stack == "string") {
+      if (
+        gMaintainStack &&
+        exception._capturedTaskStack != this._stack &&
+        typeof stack == "string"
+      ) {
         
 
         const bottomStack = this._stack;
@@ -422,8 +430,7 @@ TaskImpl.prototype = {
         stack = "Not available";
       }
 
-      if ("name" in exception &&
-          ERRORS_TO_REPORT.includes(exception.name)) {
+      if ("name" in exception && ERRORS_TO_REPORT.includes(exception.name)) {
         
         
         
@@ -454,7 +461,6 @@ TaskImpl.prototype = {
 };
 
 Task.Debugging = {
-
   
 
 

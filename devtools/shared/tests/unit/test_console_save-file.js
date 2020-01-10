@@ -5,7 +5,10 @@
 
 
 
-const { FileUtils } = ChromeUtils.import("resource://gre/modules/FileUtils.jsm", {});
+const { FileUtils } = ChromeUtils.import(
+  "resource://gre/modules/FileUtils.jsm",
+  {}
+);
 
 
 
@@ -28,8 +31,9 @@ add_task(async function test_save_file() {
 
 
 function convertToInputStream(content) {
-  const converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
-                    .createInstance(Ci.nsIScriptableUnicodeConverter);
+  const converter = Cc[
+    "@mozilla.org/intl/scriptableunicodeconverter"
+  ].createInstance(Ci.nsIScriptableUnicodeConverter);
   converter.charset = "UTF-8";
   return converter.convertToInputStream(content);
 }

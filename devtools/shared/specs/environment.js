@@ -3,7 +3,7 @@
 
 "use strict";
 
-const {Arg, RetVal, generateActorSpec} = require("devtools/shared/protocol");
+const { Arg, RetVal, generateActorSpec } = require("devtools/shared/protocol");
 
 const environmentSpec = generateActorSpec({
   typeName: "environment",

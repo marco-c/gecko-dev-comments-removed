@@ -27,25 +27,41 @@ function test_isTextMimeType() {
   Assert.equal(NetworkHelper.isTextMimeType("application/xml"), true);
 
   
-  Assert.equal(NetworkHelper
-    .isTextMimeType("application/vnd.tent.posts-feed.v0+json"), true);
-  Assert.equal(NetworkHelper
-    .isTextMimeType("application/vnd.tent.posts-feed.v0-json"), true);
+  Assert.equal(
+    NetworkHelper.isTextMimeType("application/vnd.tent.posts-feed.v0+json"),
+    true
+  );
+  Assert.equal(
+    NetworkHelper.isTextMimeType("application/vnd.tent.posts-feed.v0-json"),
+    true
+  );
   
-  Assert.equal(NetworkHelper
-    .isTextMimeType("application/vnd.tent.posts-feed.v0+xml"), true);
-  Assert.equal(NetworkHelper
-    .isTextMimeType("application/vnd.tent.posts-feed.v0-xml"), false);
+  Assert.equal(
+    NetworkHelper.isTextMimeType("application/vnd.tent.posts-feed.v0+xml"),
+    true
+  );
+  Assert.equal(
+    NetworkHelper.isTextMimeType("application/vnd.tent.posts-feed.v0-xml"),
+    false
+  );
   
-  Assert.equal(NetworkHelper.isTextMimeType("application/vnd.BIG-CORP+json"), true);
+  Assert.equal(
+    NetworkHelper.isTextMimeType("application/vnd.BIG-CORP+json"),
+    true
+  );
   
   Assert.equal(NetworkHelper.isTextMimeType("image/png"), false);
   
   Assert.equal(NetworkHelper.isTextMimeType("application/foo-+json"), false);
   Assert.equal(NetworkHelper.isTextMimeType("application/-foo+json"), false);
-  Assert.equal(NetworkHelper.isTextMimeType("application/foo--bar+json"), false);
+  Assert.equal(
+    NetworkHelper.isTextMimeType("application/foo--bar+json"),
+    false
+  );
 
   
-  Assert.equal(NetworkHelper
-    .isTextMimeType("application/vnd.google.safebrowsing-chunk"), false);
+  Assert.equal(
+    NetworkHelper.isTextMimeType("application/vnd.google.safebrowsing-chunk"),
+    false
+  );
 }

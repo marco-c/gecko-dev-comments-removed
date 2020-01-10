@@ -13,8 +13,10 @@ const Services = require("Services");
 
 const PSEUDOURI = "indexeddb://fx-devtools";
 const principaluri = Services.io.newURI(PSEUDOURI);
-const principal =
-  Services.scriptSecurityManager.createCodebasePrincipal(principaluri, {});
+const principal = Services.scriptSecurityManager.createCodebasePrincipal(
+  principaluri,
+  {}
+);
 
 
 

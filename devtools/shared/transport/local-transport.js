@@ -55,15 +55,22 @@ LocalDebuggerTransport.prototype = {
     this._deepFreeze(packet);
     const other = this.other;
     if (other) {
-      DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
-        
-        if (flags.wantLogging) {
-          dumpn("Received packet " + serial + ": " + JSON.stringify(packet, null, 2));
-        }
-        if (other.hooks) {
-          other.hooks.onPacket(packet);
-        }
-      }, "LocalDebuggerTransport instance's this.other.hooks.onPacket"));
+      DevToolsUtils.executeSoon(
+        DevToolsUtils.makeInfallible(() => {
+          
+          if (flags.wantLogging) {
+            dumpn(
+              "Received packet " +
+                serial +
+                ": " +
+                JSON.stringify(packet, null, 2)
+            );
+          }
+          if (other.hooks) {
+            other.hooks.onPacket(packet);
+          }
+        }, "LocalDebuggerTransport instance's this.other.hooks.onPacket")
+      );
     }
   },
 
@@ -76,7 +83,7 @@ LocalDebuggerTransport.prototype = {
 
 
 
-  startBulkSend: function({actor, type, length}) {
+  startBulkSend: function({ actor, type, length }) {
     const serial = this._serial.count++;
 
     dumpn("Sent bulk packet " + serial + " for actor " + actor);
@@ -87,53 +94,63 @@ LocalDebuggerTransport.prototype = {
 
     const pipe = new Pipe(true, true, 0, 0, null);
 
-    DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
-      dumpn("Received bulk packet " + serial);
-      if (!this.other.hooks) {
-        return;
-      }
+    DevToolsUtils.executeSoon(
+      DevToolsUtils.makeInfallible(() => {
+        dumpn("Received bulk packet " + serial);
+        if (!this.other.hooks) {
+          return;
+        }
 
-      
-      new Promise((receiverResolve) => {
-        const packet = {
-          actor: actor,
-          type: type,
-          length: length,
-          copyTo: (output) => {
-            const copying =
-            StreamUtils.copyStream(pipe.inputStream, output, length);
-            receiverResolve(copying);
-            return copying;
-          },
-          stream: pipe.inputStream,
-          done: receiverResolve,
-        };
+        
+        new Promise(receiverResolve => {
+          const packet = {
+            actor: actor,
+            type: type,
+            length: length,
+            copyTo: output => {
+              const copying = StreamUtils.copyStream(
+                pipe.inputStream,
+                output,
+                length
+              );
+              receiverResolve(copying);
+              return copying;
+            },
+            stream: pipe.inputStream,
+            done: receiverResolve,
+          };
 
-        this.other.hooks.onBulkPacket(packet);
-      })
-      
-      .then(() => pipe.inputStream.close(), this.close);
-    }, "LocalDebuggerTransport instance's this.other.hooks.onBulkPacket"));
+          this.other.hooks.onBulkPacket(packet);
+        })
+          
+          .then(() => pipe.inputStream.close(), this.close);
+      }, "LocalDebuggerTransport instance's this.other.hooks.onBulkPacket")
+    );
 
     
-    return new Promise((senderResolve) => {
+    return new Promise(senderResolve => {
       
       
       DevToolsUtils.executeSoon(() => {
-        return new Promise((copyResolve) => {
-          senderResolve({
-            copyFrom: (input) => {
-              const copying =
-              StreamUtils.copyStream(input, pipe.outputStream, length);
-              copyResolve(copying);
-              return copying;
-            },
-            stream: pipe.outputStream,
-            done: copyResolve,
-          });
-        })
-        
-        .then(() => pipe.outputStream.close(), this.close);
+        return (
+          new Promise(copyResolve => {
+            senderResolve({
+              copyFrom: input => {
+                const copying = StreamUtils.copyStream(
+                  input,
+                  pipe.outputStream,
+                  length
+                );
+                copyResolve(copying);
+                return copying;
+              },
+              stream: pipe.outputStream,
+              done: copyResolve,
+            });
+          })
+            
+            .then(() => pipe.outputStream.close(), this.close)
+        );
       });
     });
   },
@@ -174,8 +191,11 @@ LocalDebuggerTransport.prototype = {
       
       
       
-      if (object.hasOwnProperty(prop) && typeof object === "object" &&
-          !Object.isFrozen(object)) {
+      if (
+        object.hasOwnProperty(prop) &&
+        typeof object === "object" &&
+        !Object.isFrozen(object)
+      ) {
         this._deepFreeze(object[prop]);
       }
     }

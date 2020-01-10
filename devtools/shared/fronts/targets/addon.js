@@ -3,9 +3,17 @@
 
 "use strict";
 
-const {addonTargetSpec} = require("devtools/shared/specs/targets/addon");
-const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
-loader.lazyRequireGetter(this, "BrowsingContextTargetFront", "devtools/shared/fronts/targets/browsing-context", true);
+const { addonTargetSpec } = require("devtools/shared/specs/targets/addon");
+const {
+  FrontClassWithSpec,
+  registerFront,
+} = require("devtools/shared/protocol");
+loader.lazyRequireGetter(
+  this,
+  "BrowsingContextTargetFront",
+  "devtools/shared/fronts/targets/browsing-context",
+  true
+);
 
 class AddonTargetFront extends FrontClassWithSpec(addonTargetSpec) {
   constructor(client) {
@@ -40,10 +48,12 @@ class AddonTargetFront extends FrontClassWithSpec(addonTargetSpec) {
       
       return false;
     }
-    return this.type == "extension" &&
-           this.temporarilyInstalled &&
-           !this.isWebExtension &&
-           !this.isAPIExtension;
+    return (
+      this.type == "extension" &&
+      this.temporarilyInstalled &&
+      !this.isWebExtension &&
+      !this.isAPIExtension
+    );
   }
 
   
@@ -56,8 +66,10 @@ class AddonTargetFront extends FrontClassWithSpec(addonTargetSpec) {
 
 
   async connect() {
-    if (this.isWebExtension &&
-        this.client.mainRoot.traits.webExtensionAddonConnect) {
+    if (
+      this.isWebExtension &&
+      this.client.mainRoot.traits.webExtensionAddonConnect
+    ) {
       
       
       
@@ -66,7 +78,9 @@ class AddonTargetFront extends FrontClassWithSpec(addonTargetSpec) {
       
       
       const { form } = await super.connect();
-      const front = new BrowsingContextTargetFront(this.client, { actor: form.actor });
+      const front = new BrowsingContextTargetFront(this.client, {
+        actor: form.actor,
+      });
       front.form(form);
       this.manage(front);
       return front;

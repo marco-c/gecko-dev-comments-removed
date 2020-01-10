@@ -5,9 +5,12 @@
 
 "use strict";
 
-const {arg, DebuggerClient} = require("devtools/shared/client/debugger-client");
+const {
+  arg,
+  DebuggerClient,
+} = require("devtools/shared/client/debugger-client");
 const EventEmitter = require("devtools/shared/event-emitter");
-const {ThreadStateTypes} = require("devtools/shared/client/constants");
+const { ThreadStateTypes } = require("devtools/shared/client/constants");
 
 loader.lazyRequireGetter(
   this,
@@ -78,36 +81,39 @@ ThreadClient.prototype = {
 
 
 
-  _doResume: DebuggerClient.requester({
-    type: "resume",
-    resumeLimit: arg(0),
-    rewind: arg(1),
-  }, {
-    before: function(packet) {
-      this._assertPaused("resume");
-
-      
-      
-      this._previousState = this._state;
-      this._state = "resuming";
-
-      return packet;
+  _doResume: DebuggerClient.requester(
+    {
+      type: "resume",
+      resumeLimit: arg(0),
+      rewind: arg(1),
     },
-    after: function(response) {
-      if (response.error && this._state == "resuming") {
+    {
+      before: function(packet) {
+        this._assertPaused("resume");
+
         
         
-        
-        if (response.state) {
-          this._state = ThreadStateTypes[response.state];
-        } else {
-          this._state = this._previousState;
+        this._previousState = this._state;
+        this._state = "resuming";
+
+        return packet;
+      },
+      after: function(response) {
+        if (response.error && this._state == "resuming") {
+          
+          
+          
+          if (response.state) {
+            this._state = ThreadStateTypes[response.state];
+          } else {
+            this._state = this._previousState;
+          }
         }
-      }
-      delete this._previousState;
-      return response;
-    },
-  }),
+        delete this._previousState;
+        return response;
+      },
+    }
+  ),
 
   
 

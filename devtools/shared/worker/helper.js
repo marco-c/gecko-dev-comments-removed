@@ -14,7 +14,7 @@
   } else {
     root.workerHelper = factory();
   }
-}(this, function() {
+})(this, function() {
   
 
 
@@ -90,7 +90,10 @@
       function handleResponse(response) {
         
         if (response && typeof response.then === "function") {
-          response.then(val => self.postMessage({ id, response: val }), handleError);
+          response.then(
+            val => self.postMessage({ id, response: val }),
+            handleError
+          );
         } else if (response instanceof Error) {
           
           handleError(response);
@@ -130,4 +133,4 @@
   }
 
   return { createTask: createTask };
-}));
+});

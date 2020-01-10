@@ -11,12 +11,18 @@ const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { dumpn, dumpv } = DevToolsUtils;
 const flags = require("devtools/shared/flags");
 const StreamUtils = require("devtools/shared/transport/stream-utils");
-const { Packet, JSONPacket, BulkPacket } =
-  require("devtools/shared/transport/packets");
+const {
+  Packet,
+  JSONPacket,
+  BulkPacket,
+} = require("devtools/shared/transport/packets");
 
 loader.lazyGetter(this, "ScriptableInputStream", () => {
-  return CC("@mozilla.org/scriptableinputstream;1",
-          "nsIScriptableInputStream", "init");
+  return CC(
+    "@mozilla.org/scriptableinputstream;1",
+    "nsIScriptableInputStream",
+    "init"
+  );
 });
 
 const PACKET_HEADER_MAX = 200;
@@ -322,9 +328,12 @@ DebuggerTransport.prototype = {
 
   onInputStreamReady: DevToolsUtils.makeInfallible(function(stream) {
     try {
-      while (stream.available() && this._incomingEnabled &&
-             this._processIncoming(stream, stream.available())) {
-         
+      while (
+        stream.available() &&
+        this._incomingEnabled &&
+        this._processIncoming(stream, stream.available())
+      ) {
+        
       }
       this._waitForIncoming();
     } catch (e) {
@@ -367,8 +376,9 @@ DebuggerTransport.prototype = {
         
         this._incoming = Packet.fromHeader(this._incomingHeader, this);
         if (!this._incoming) {
-          throw new Error("No packet types for header: " +
-                        this._incomingHeader);
+          throw new Error(
+            "No packet types for header: " + this._incomingHeader
+          );
         }
       }
 
@@ -378,7 +388,8 @@ DebuggerTransport.prototype = {
         this._incoming.read(stream, this._scriptableInput);
       }
     } catch (e) {
-      const msg = "Error reading incoming packet: (" + e + " - " + e.stack + ")";
+      const msg =
+        "Error reading incoming packet: (" + e + " - " + e.stack + ")";
       dumpn(msg);
 
       
@@ -406,8 +417,11 @@ DebuggerTransport.prototype = {
 
   _readHeader: function() {
     const amountToRead = PACKET_HEADER_MAX - this._incomingHeader.length;
-    this._incomingHeader +=
-    StreamUtils.delimitedRead(this._scriptableInput, ":", amountToRead);
+    this._incomingHeader += StreamUtils.delimitedRead(
+      this._scriptableInput,
+      ":",
+      amountToRead
+    );
     if (flags.wantVerbose) {
       dumpv("Header read: " + this._incomingHeader);
     }
@@ -445,12 +459,14 @@ DebuggerTransport.prototype = {
 
 
   _onJSONObjectReady: function(object) {
-    DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
-    
-      if (this.active) {
-        this.hooks.onPacket(object);
-      }
-    }, "DebuggerTransport instance's this.hooks.onPacket"));
+    DevToolsUtils.executeSoon(
+      DevToolsUtils.makeInfallible(() => {
+        
+        if (this.active) {
+          this.hooks.onPacket(object);
+        }
+      }, "DebuggerTransport instance's this.hooks.onPacket")
+    );
   },
 
   
@@ -460,12 +476,14 @@ DebuggerTransport.prototype = {
 
 
   _onBulkReadReady: function(...args) {
-    DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
-    
-      if (this.active) {
-        this.hooks.onBulkPacket(...args);
-      }
-    }, "DebuggerTransport instance's this.hooks.onBulkPacket"));
+    DevToolsUtils.executeSoon(
+      DevToolsUtils.makeInfallible(() => {
+        
+        if (this.active) {
+          this.hooks.onBulkPacket(...args);
+        }
+      }, "DebuggerTransport instance's this.hooks.onBulkPacket")
+    );
   },
 
   
@@ -479,7 +497,6 @@ DebuggerTransport.prototype = {
     this._incomingHeader = "";
     this._incoming = null;
   },
-
 };
 
 exports.DebuggerTransport = DebuggerTransport;

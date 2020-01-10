@@ -11,14 +11,19 @@ const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 if (!isWorker) {
   loader.lazyImporter(this, "Parser", "resource://devtools/shared/Parser.jsm");
 }
-loader.lazyRequireGetter(this, "Reflect", "resource://gre/modules/reflect.jsm", true);
+loader.lazyRequireGetter(
+  this,
+  "Reflect",
+  "resource://gre/modules/reflect.jsm",
+  true
+);
 
 
 
 
-const MAX_AUTOCOMPLETE_ATTEMPTS = exports.MAX_AUTOCOMPLETE_ATTEMPTS = 100000;
+const MAX_AUTOCOMPLETE_ATTEMPTS = (exports.MAX_AUTOCOMPLETE_ATTEMPTS = 100000);
 
-const MAX_AUTOCOMPLETIONS = exports.MAX_AUTOCOMPLETIONS = 1500;
+const MAX_AUTOCOMPLETIONS = (exports.MAX_AUTOCOMPLETIONS = 1500);
 
 const STATE_NORMAL = Symbol("STATE_NORMAL");
 const STATE_QUOTE = Symbol("STATE_QUOTE");
@@ -131,15 +136,17 @@ function analyzeInputString(str) {
           
           
           if (
-            previousNonSpaceChar !== "." && nextNonSpaceChar !== "." &&
-            previousNonSpaceChar !== "[" && nextNonSpaceChar !== "[" &&
+            previousNonSpaceChar !== "." &&
+            nextNonSpaceChar !== "." &&
+            previousNonSpaceChar !== "[" &&
+            nextNonSpaceChar !== "[" &&
             !NO_AUTOCOMPLETE_PREFIXES.includes(currentLastStatement)
           ) {
-            start = i + (
-              nextNonSpaceCharIndex >= 0
+            start =
+              i +
+              (nextNonSpaceCharIndex >= 0
                 ? nextNonSpaceCharIndex
-                : (after.length + 1)
-            );
+                : after.length + 1);
           }
 
           
@@ -280,12 +287,9 @@ function JSPropertyProvider({
 
   
   
-  const {
-    err,
-    state,
-    lastStatement,
-    isElementAccess,
-  } = analyzeInputString(inputValue);
+  const { err, state, lastStatement, isElementAccess } = analyzeInputString(
+    inputValue
+  );
 
   
   if (err) {
@@ -304,15 +308,24 @@ function JSPropertyProvider({
     return null;
   }
 
-  if (NO_AUTOCOMPLETE_PREFIXES.some(prefix => lastStatement.startsWith(prefix + " "))) {
+  if (
+    NO_AUTOCOMPLETE_PREFIXES.some(prefix =>
+      lastStatement.startsWith(prefix + " ")
+    )
+  ) {
     return null;
   }
 
   const env = environment || dbgObject.asEnvironment();
   const completionPart = lastStatement;
   const lastDotIndex = completionPart.lastIndexOf(".");
-  const lastOpeningBracketIndex = isElementAccess ? completionPart.lastIndexOf("[") : -1;
-  const lastCompletionCharIndex = Math.max(lastDotIndex, lastOpeningBracketIndex);
+  const lastOpeningBracketIndex = isElementAccess
+    ? completionPart.lastIndexOf("[")
+    : -1;
+  const lastCompletionCharIndex = Math.max(
+    lastDotIndex,
+    lastOpeningBracketIndex
+  );
   const startQuoteRegex = /^('|"|`)/;
 
   
@@ -329,7 +342,8 @@ function JSPropertyProvider({
     const parsedExpression = completionPart.slice(0, lastCompletionCharIndex);
     const syntaxTree = parser.get(parsedExpression);
     const lastTree = syntaxTree.getLastSyntaxTree();
-    const lastBody = lastTree && lastTree.AST.body[lastTree.AST.body.length - 1];
+    const lastBody =
+      lastTree && lastTree.AST.body[lastTree.AST.body.length - 1];
 
     
     
@@ -403,7 +417,10 @@ function JSPropertyProvider({
       const lastPart = properties[properties.length - 1];
       const openBracketIndex = lastPart.lastIndexOf("[");
       matchProp = lastPart.substr(openBracketIndex + 1);
-      properties[properties.length - 1] = lastPart.substring(0, openBracketIndex);
+      properties[properties.length - 1] = lastPart.substring(
+        0,
+        openBracketIndex
+      );
     } else {
       matchProp = properties.pop().trimLeft();
     }
@@ -468,7 +485,8 @@ function JSPropertyProvider({
 
     const propPath = [firstProp].concat(properties.slice(0, index + 1));
     const authorized = authorizedEvaluations.some(
-      x => JSON.stringify(x) === JSON.stringify(propPath));
+      x => JSON.stringify(x) === JSON.stringify(propPath)
+    );
 
     if (!authorized && DevToolsUtils.isUnsafeGetter(obj, prop)) {
       
@@ -513,7 +531,7 @@ function JSPropertyProvider({
       }
     }
 
-    return {isElementAccess, matchProp, matches};
+    return { isElementAccess, matchProp, matches };
   };
 
   
@@ -558,7 +576,7 @@ function getPropertiesFromAstExpression(ast) {
   if (!ast) {
     return result;
   }
-  const {type, property, object, name} = ast;
+  const { type, property, object, name } = ast;
   if (type === "ThisExpression") {
     result.unshift("this");
   } else if (type === "Identifier" && name) {
@@ -581,32 +599,34 @@ function getPropertiesFromAstExpression(ast) {
 }
 
 function wrapMatchesInQuotes(matches, quote = `"`) {
-  return new Set([...matches].map(p => {
-    
-    p = JSON.stringify(p);
+  return new Set(
+    [...matches].map(p => {
+      
+      p = JSON.stringify(p);
 
-    
-    if (quote == `"`) {
-      return p;
-    }
+      
+      if (quote == `"`) {
+        return p;
+      }
 
-    
-    p = p.slice(1, -1);
+      
+      p = p.slice(1, -1);
 
-    
-    p = p.replace(/\\(?=")/g, "");
+      
+      p = p.replace(/\\(?=")/g, "");
 
-    
-    p = p.replace(new RegExp(quote, "g"), "\\$&");
+      
+      p = p.replace(new RegExp(quote, "g"), "\\$&");
 
-    
-    if (quote == "`") {
-      p = p.replace(/\${/g, "\\$&");
-    }
+      
+      if (quote == "`") {
+        p = p.replace(/\${/g, "\\$&");
+      }
 
-    
-    return `${quote}${p}${quote}`;
-  }));
+      
+      return `${quote}${p}${quote}`;
+    })
+  );
 }
 
 
@@ -642,7 +662,10 @@ function getArrayMemberProperty(obj, env, prop) {
   const arrayIndicesRegex = /\[[^\]]*\]/g;
   while ((result = arrayIndicesRegex.exec(prop)) !== null) {
     const indexWithBrackets = result[0];
-    const indexAsText = indexWithBrackets.substr(1, indexWithBrackets.length - 2);
+    const indexAsText = indexWithBrackets.substr(
+      1,
+      indexWithBrackets.length - 2
+    );
     const index = parseInt(indexAsText, 10);
 
     if (isNaN(index)) {
@@ -721,7 +744,7 @@ function getMatchedProps(obj, match) {
 
 
 
-function getMatchedPropsImpl(obj, match, {chainIterator, getProperties}) {
+function getMatchedPropsImpl(obj, match, { chainIterator, getProperties }) {
   const matches = new Set();
   let numProps = 0;
 
@@ -744,8 +767,10 @@ function getMatchedPropsImpl(obj, match, {chainIterator, getProperties}) {
     
     
     
-    if (numProps >= MAX_AUTOCOMPLETE_ATTEMPTS ||
-        matches.size >= MAX_AUTOCOMPLETIONS) {
+    if (
+      numProps >= MAX_AUTOCOMPLETE_ATTEMPTS ||
+      matches.size >= MAX_AUTOCOMPLETIONS
+    ) {
       break;
     }
 
@@ -784,7 +809,7 @@ function getMatchedPropsImpl(obj, match, {chainIterator, getProperties}) {
 
 
 
-function getExactMatchImpl(obj, name, {chainIterator, getProperty}) {
+function getExactMatchImpl(obj, name, { chainIterator, getProperty }) {
   
   const iter = chainIterator(obj);
   for (obj of iter) {
@@ -797,7 +822,7 @@ function getExactMatchImpl(obj, name, {chainIterator, getProperty}) {
 }
 
 var JSObjectSupport = {
-  chainIterator: function* (obj) {
+  chainIterator: function*(obj) {
     while (obj) {
       yield obj;
       try {
@@ -825,7 +850,7 @@ var JSObjectSupport = {
 };
 
 var DebuggerObjectSupport = {
-  chainIterator: function* (obj) {
+  chainIterator: function*(obj) {
     while (obj) {
       yield obj;
       try {
@@ -853,7 +878,7 @@ var DebuggerObjectSupport = {
 };
 
 var DebuggerEnvironmentSupport = {
-  chainIterator: function* (obj) {
+  chainIterator: function*(obj) {
     while (obj) {
       yield obj;
       obj = obj.parent;
@@ -886,8 +911,11 @@ var DebuggerEnvironmentSupport = {
     }
 
     
-    if (result === undefined || result.optimizedOut ||
-        result.missingArguments) {
+    if (
+      result === undefined ||
+      result.optimizedOut ||
+      result.missingArguments
+    ) {
       return null;
     }
     return { value: result };

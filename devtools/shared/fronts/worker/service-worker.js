@@ -3,8 +3,13 @@
 
 "use strict";
 
-const { serviceWorkerSpec } = require("devtools/shared/specs/worker/service-worker");
-const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
+const {
+  serviceWorkerSpec,
+} = require("devtools/shared/specs/worker/service-worker");
+const {
+  FrontClassWithSpec,
+  registerFront,
+} = require("devtools/shared/protocol");
 
 class ServiceWorkerFront extends FrontClassWithSpec(serviceWorkerSpec) {
   get fetch() {

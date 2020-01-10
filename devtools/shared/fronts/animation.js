@@ -72,7 +72,7 @@ class AnimationPlayerFront extends FrontClassWithSpec(animationPlayerSpec) {
 
 
   onChanged(partialState) {
-    const {state} = this.reconstructState(partialState);
+    const { state } = this.reconstructState(partialState);
     this.state = state;
   }
 
@@ -94,7 +94,7 @@ class AnimationPlayerFront extends FrontClassWithSpec(animationPlayerSpec) {
   getCurrentState() {
     this.currentStateHasChanged = false;
     return super.getCurrentState().then(partialData => {
-      const {state, hasChanged} = this.reconstructState(partialData);
+      const { state, hasChanged } = this.reconstructState(partialData);
       this.currentStateHasChanged = hasChanged;
       return state;
     });
@@ -112,7 +112,7 @@ class AnimationPlayerFront extends FrontClassWithSpec(animationPlayerSpec) {
     }
 
     data.absoluteValues = this.calculateAbsoluteValues(data);
-    return {state: data, hasChanged};
+    return { state: data, hasChanged };
   }
 
   calculateAbsoluteValues(data) {
@@ -155,22 +155,28 @@ class AnimationPlayerFront extends FrontClassWithSpec(animationPlayerSpec) {
       
       
       
-      endTime = (absoluteDelay > 0 ? absoluteDelay * 2 : 1);
+      endTime = absoluteDelay > 0 ? absoluteDelay * 2 : 1;
     } else {
-      endTime = absoluteDelay +
-                toRate(duration * (iterationCount || 1)) +
-                absoluteEndDelay;
+      endTime =
+        absoluteDelay +
+        toRate(duration * (iterationCount || 1)) +
+        absoluteEndDelay;
     }
 
-    const absoluteCreatedTime =
-      isPositivePlaybackRate ? createdTime : createdTime - endTime;
-    const absoluteCurrentTimeAtCreated =
-      isPositivePlaybackRate ? currentTimeAtCreated : endTime - currentTimeAtCreated;
-    const animationCurrentTime =
-      isPositivePlaybackRate ? currentTime : endTime - currentTime;
-    const absoluteCurrentTime = absoluteCreatedTime + toRate(animationCurrentTime);
+    const absoluteCreatedTime = isPositivePlaybackRate
+      ? createdTime
+      : createdTime - endTime;
+    const absoluteCurrentTimeAtCreated = isPositivePlaybackRate
+      ? currentTimeAtCreated
+      : endTime - currentTimeAtCreated;
+    const animationCurrentTime = isPositivePlaybackRate
+      ? currentTime
+      : endTime - currentTime;
+    const absoluteCurrentTime =
+      absoluteCreatedTime + toRate(animationCurrentTime);
     const absoluteStartTime = absoluteCreatedTime + Math.min(absoluteDelay, 0);
-    const absoluteStartTimeAtCreated = absoluteCreatedTime + absoluteCurrentTimeAtCreated;
+    const absoluteStartTimeAtCreated =
+      absoluteCreatedTime + absoluteCurrentTimeAtCreated;
     
     const endTimeWithNegativeEndDelay = endTime - Math.min(absoluteEndDelay, 0);
     const absoluteEndTime = absoluteCreatedTime + endTimeWithNegativeEndDelay;

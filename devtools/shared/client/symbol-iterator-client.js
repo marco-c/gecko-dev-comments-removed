@@ -4,7 +4,10 @@
 
 "use strict";
 
-const {arg, DebuggerClient} = require("devtools/shared/client/debugger-client");
+const {
+  arg,
+  DebuggerClient,
+} = require("devtools/shared/client/debugger-client");
 
 
 
@@ -44,11 +47,14 @@ SymbolIteratorClient.prototype = {
 
 
 
-  slice: DebuggerClient.requester({
-    type: "slice",
-    start: arg(0),
-    count: arg(1),
-  }, {}),
+  slice: DebuggerClient.requester(
+    {
+      type: "slice",
+      start: arg(0),
+      count: arg(1),
+    },
+    {}
+  ),
 
   
 
@@ -56,9 +62,12 @@ SymbolIteratorClient.prototype = {
 
 
 
-  all: DebuggerClient.requester({
-    type: "all",
-  }, {}),
+  all: DebuggerClient.requester(
+    {
+      type: "all",
+    },
+    {}
+  ),
 };
 
 module.exports = SymbolIteratorClient;

@@ -5,8 +5,9 @@
 
 
 
-const { loader, require } =
-  ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+const { loader, require } = ChromeUtils.import(
+  "resource://devtools/shared/Loader.jsm"
+);
 const defer = require("devtools/shared/defer");
 const Services = require("Services");
 const xpcInspector = require("xpcInspector");
@@ -14,7 +15,12 @@ const { DebuggerServer } = require("devtools/server/main");
 const { DebuggerClient } = require("devtools/shared/client/debugger-client");
 
 
-loader.lazyRequireGetter(this, "SocketListener", "devtools/shared/security/socket", true);
+loader.lazyRequireGetter(
+  this,
+  "SocketListener",
+  "devtools/shared/security/socket",
+  true
+);
 
 
 
@@ -53,9 +59,16 @@ var listener = {
     let string;
     try {
       message.QueryInterface(Ci.nsIScriptError);
-      dump(message.sourceName + ":" + message.lineNumber + ": " +
-           scriptErrorFlagsToKind(message.flags) + ": " +
-           message.errorMessage + "\n");
+      dump(
+        message.sourceName +
+          ":" +
+          message.lineNumber +
+          ": " +
+          scriptErrorFlagsToKind(message.flags) +
+          ": " +
+          message.errorMessage +
+          "\n"
+      );
       string = message.errorMessage;
     } catch (ex) {
       

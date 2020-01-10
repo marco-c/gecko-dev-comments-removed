@@ -3,7 +3,10 @@
 
 "use strict";
 
-const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
+const {
+  FrontClassWithSpec,
+  registerFront,
+} = require("devtools/shared/protocol");
 const { webSocketSpec } = require("devtools/shared/specs/websocket");
 
 
@@ -58,7 +61,13 @@ class WebSocketFront extends FrontClassWithSpec(webSocketSpec) {
 
 
   async _onWebSocketOpened(httpChannelId, effectiveURI, protocols, extensions) {
-    this.emit("webSocketOpened", httpChannelId, effectiveURI, protocols, extensions);
+    this.emit(
+      "webSocketOpened",
+      httpChannelId,
+      effectiveURI,
+      protocols,
+      extensions
+    );
   }
 
   
