@@ -53,12 +53,34 @@ class ProfilerMarker;
 
 class ProfileBufferEntry {
  public:
-  enum class Kind : uint8_t {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  using KindUnderlyingType = uint8_t;
+  enum class Kind : KindUnderlyingType {
     INVALID = 0,
 #define KIND(KIND, TYPE, SIZE) KIND,
     FOR_EACH_PROFILE_BUFFER_ENTRY_KIND(KIND)
 #undef KIND
-        LIMIT
+
+    
+    LEGACY_LIMIT,
+
+    
+    
+
+    
+    MarkerData = LEGACY_LIMIT,
+
+    MODERN_LIMIT
   };
 
   ProfileBufferEntry();

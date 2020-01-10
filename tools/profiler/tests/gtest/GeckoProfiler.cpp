@@ -586,11 +586,12 @@ TEST(GeckoProfiler, Markers)
     PROFILER_ADD_MARKER_WITH_PAYLOAD("M5", OTHER, GTestMarkerPayload, (i));
   }
   
+  
   ASSERT_EQ(GTestMarkerPayload::sNumCreated, 10);
-  ASSERT_EQ(GTestMarkerPayload::sNumSerialized, 0);
+  ASSERT_EQ(GTestMarkerPayload::sNumSerialized, 10);
   ASSERT_EQ(GTestMarkerPayload::sNumDeserialized, 0);
   ASSERT_EQ(GTestMarkerPayload::sNumStreamed, 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumDestroyed, 0);
+  ASSERT_EQ(GTestMarkerPayload::sNumDestroyed, 10);
 
   
   
@@ -620,11 +621,12 @@ TEST(GeckoProfiler, Markers)
   UniquePtr<char[]> profile = w.WriteFunc()->CopyData();
 
   
+  
   ASSERT_EQ(GTestMarkerPayload::sNumCreated, 10 + 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumSerialized, 0 + 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumDeserialized, 0 + 0);
+  ASSERT_EQ(GTestMarkerPayload::sNumSerialized, 10 + 0);
+  ASSERT_EQ(GTestMarkerPayload::sNumDeserialized, 0 + 10);
   ASSERT_EQ(GTestMarkerPayload::sNumStreamed, 0 + 10);
-  ASSERT_EQ(GTestMarkerPayload::sNumDestroyed, 0 + 0);
+  ASSERT_EQ(GTestMarkerPayload::sNumDestroyed, 10 + 10);
   for (int i = 0; i < 10; i++) {
     char buf[64];
     SprintfLiteral(buf, "\"gtest-%d\"", i);
@@ -675,10 +677,10 @@ TEST(GeckoProfiler, Markers)
 
   
   ASSERT_EQ(GTestMarkerPayload::sNumCreated, 10 + 0 + 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumSerialized, 0 + 0 + 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumDeserialized, 0 + 0 + 0);
+  ASSERT_EQ(GTestMarkerPayload::sNumSerialized, 10 + 0 + 0);
+  ASSERT_EQ(GTestMarkerPayload::sNumDeserialized, 0 + 10 + 0);
   ASSERT_EQ(GTestMarkerPayload::sNumStreamed, 0 + 10 + 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumDestroyed, 0 + 0 + 10);
+  ASSERT_EQ(GTestMarkerPayload::sNumDestroyed, 10 + 10 + 0);
 
   for (int i = 0; i < 10; i++) {
     PROFILER_ADD_MARKER_WITH_PAYLOAD("M5", OTHER, GTestMarkerPayload, (i));
@@ -695,10 +697,10 @@ TEST(GeckoProfiler, Markers)
   
   
   ASSERT_EQ(GTestMarkerPayload::sNumCreated, 10 + 0 + 0 + 10);
-  ASSERT_EQ(GTestMarkerPayload::sNumSerialized, 0 + 0 + 0 + 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumDeserialized, 0 + 0 + 0 + 0);
+  ASSERT_EQ(GTestMarkerPayload::sNumSerialized, 10 + 0 + 0 + 0);
+  ASSERT_EQ(GTestMarkerPayload::sNumDeserialized, 0 + 10 + 0 + 0);
   ASSERT_EQ(GTestMarkerPayload::sNumStreamed, 0 + 10 + 0 + 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumDestroyed, 0 + 0 + 10 + 10);
+  ASSERT_EQ(GTestMarkerPayload::sNumDestroyed, 10 + 10 + 0 + 10);
 }
 
 TEST(GeckoProfiler, DurationLimit)
@@ -725,11 +727,12 @@ TEST(GeckoProfiler, DurationLimit)
   ASSERT_TRUE(profiler_stream_json_for_this_process(w));
 
   
+  
   ASSERT_EQ(GTestMarkerPayload::sNumCreated, 2);
-  ASSERT_EQ(GTestMarkerPayload::sNumSerialized, 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumDeserialized, 0);
+  ASSERT_EQ(GTestMarkerPayload::sNumSerialized, 2);
+  ASSERT_EQ(GTestMarkerPayload::sNumDeserialized, 1);
   ASSERT_EQ(GTestMarkerPayload::sNumStreamed, 1);
-  ASSERT_EQ(GTestMarkerPayload::sNumDestroyed, 1);
+  ASSERT_EQ(GTestMarkerPayload::sNumDestroyed, 3);
 }
 
 #define COUNTER_NAME "TestCounter"
