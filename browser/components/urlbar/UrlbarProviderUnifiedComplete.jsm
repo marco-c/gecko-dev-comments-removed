@@ -286,14 +286,7 @@ function makeUrlbarResult(tokens, info) {
         );
       case "keyword": {
         let title = info.comment;
-        if (!title) {
-          
-          
-          title = Services.textToSubURI.unEscapeURIForUI(
-            "UTF-8",
-            action.params.url
-          );
-        } else if (tokens && tokens.length > 1) {
+        if (tokens && tokens.length > 1) {
           title = bundle.formatStringFromName("bookmarkKeywordSearch", [
             info.comment,
             tokens
