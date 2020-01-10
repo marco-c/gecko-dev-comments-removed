@@ -91,7 +91,6 @@ function checkIsModifiable(expected) {
     } else {
       is_element_hidden(getHtmlElem(".addon-detail-row-private-browsing"), "Private browsing should be hidden");
     }
-    checkHelpRow(".addon-detail-row-private-browsing", expected);
     return;
   }
   if (expected) {
@@ -106,12 +105,10 @@ function checkIsModifiable(expected) {
 
 function checkIsDisallowed(expected) {
   if (gManagerWindow.useHtmlViews) {
+    
     if (expected) {
-      is_element_visible(getHtmlElem(".addon-detail-row-private-browsing-disallowed"), "Private browsing should be disallowed");
-    } else {
-      is_element_hidden(getHtmlElem(".addon-detail-row-private-browsing-disallowed"), "Private browsing should not be disallowed");
+      is_element_hidden(getHtmlElem(".addon-detail-row-private-browsing"), "Private browsing cannot both be allowed and disallowed");
     }
-    checkHelpRow(".addon-detail-row-private-browsing-disallowed", expected);
     return;
   }
   if (expected) {
@@ -126,12 +123,10 @@ function checkIsDisallowed(expected) {
 
 function checkIsRequired(expected) {
   if (gManagerWindow.useHtmlViews) {
+    
     if (expected) {
-      is_element_visible(getHtmlElem(".addon-detail-row-private-browsing-required"), "Private browsing should be required");
-    } else {
-      is_element_hidden(getHtmlElem(".addon-detail-row-private-browsing-required"), "Private browsing should not be required");
+      is_element_hidden(getHtmlElem(".addon-detail-row-private-browsing"), "Private browsing cannot both be mutable and required");
     }
-    checkHelpRow(".addon-detail-row-private-browsing-required", expected);
     return;
   }
   if (expected) {
@@ -140,16 +135,6 @@ function checkIsRequired(expected) {
   } else {
     is_element_hidden(get("detail-privateBrowsing-required"), "Private required should be hidden");
     is_element_hidden(get("detail-privateBrowsing-required-footer"), "Private required footer should be hidden");
-  }
-}
-
-function checkHelpRow(selector, expected) {
-  let helpRow = getHtmlElem(`${selector} + .addon-detail-help-row`);
-  if (expected) {
-    is_element_visible(helpRow, `Help row should be shown: ${selector}`);
-    is_element_visible(helpRow.querySelector("a, [action='pb-learn-more']"), "Expected learn more link");
-  } else {
-    is_element_hidden(helpRow, `Help row should be hidden: ${selector}`);
   }
 }
 
@@ -506,48 +491,9 @@ async function test_addon_postinstall_incognito_hidden_checkbox(withHtmlViews) {
 
     await addon.uninstall();
   }
-
-  
-  
-  await test_incognito_of_privileged_addons();
-
   
 }
 
-
-async function test_incognito_of_privileged_addons() {
-  
-  
-  
-  let provider = new MockProvider();
-  provider.createAddons([{
-    name: "default incognito",
-    id: "default-incognito@mock",
-    incognito: "spanning", 
-    
-    permissions: 0,
-  }, {
-    name: "not_allowed incognito",
-    id: "not-allowed-incognito@mock",
-    incognito: "not_allowed",
-    
-    permissions: 0,
-  }]);
-
-  gManagerWindow = await open_manager("addons://detail/default-incognito%40mock");
-  checkIsModifiable(false);
-  checkIsRequired(true);
-  checkIsDisallowed(false);
-  await close_manager(gManagerWindow);
-
-  gManagerWindow = await open_manager("addons://detail/not-allowed-incognito%40mock");
-  checkIsModifiable(false);
-  checkIsRequired(false);
-  checkIsDisallowed(true);
-  await close_manager(gManagerWindow);
-
-  provider.unregister();
-}
 
 add_task(async function test_badge_and_toggle_incognito_on_XUL_aboutaddons() {
   await SpecialPowers.pushPrefEnv({
