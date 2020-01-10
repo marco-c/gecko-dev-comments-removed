@@ -1045,6 +1045,10 @@ class UrlbarView {
   }
 
   _on_resize() {
+    if (this.megabar) {
+      return;
+    }
+
     if (this._windowOuterWidth == this.window.outerWidth) {
       
       
