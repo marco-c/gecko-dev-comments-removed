@@ -62,6 +62,7 @@ async function performCanceledDownload(tab, path) {
 
   
   info(`triggering download of "${path}"`);
+  
   await ContentTask.spawn(
     tab.linkedBrowser,
     path,
@@ -75,6 +76,7 @@ async function performCanceledDownload(tab, path) {
       content.document.body.appendChild(link);
       link.click();
     });
+  
 
   
   info("waiting for download popup");
@@ -83,12 +85,14 @@ async function performCanceledDownload(tab, path) {
 
   
   info(`wait for the ${path} stream to close.`);
+  
   const why = await ContentTask.spawn(
     tab.linkedBrowser,
     path,
     function(path) {
       return content.wrappedJSObject.streamClosed[path].promise;
     });
+  
   is(why.why, "canceled", "Ensure the stream canceled instead of timing out.");
   
   

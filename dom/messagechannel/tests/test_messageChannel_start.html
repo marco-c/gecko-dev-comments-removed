@@ -190,13 +190,13 @@
     var events = 2;
 
     addEventListener('message', testOnMessageCloneCb, false);
-    function testOnMessageCloneCb(evt) {
+    function testOnMessageCloneCb(event) {
       a.port1.onmessage = function(evt) {
         ok(true, "This method should be called");
         testOnMessageCloneFinish();
       }
 
-      evt.data.onmessage = function(evt) {
+      event.data.onmessage = function(evt) {
         ok(true, "This method should be called");
         testOnMessageCloneFinish();
       }

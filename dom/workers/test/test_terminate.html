@@ -75,7 +75,7 @@
       ok(worker.onmessage === messageListener,
          "Correct listener after terminate");
 
-      worker.onmessage = function(event) { }
+      worker.onmessage = function(msg) { }
 
       interval = setInterval(testCount, 1000);
     }

@@ -15,8 +15,8 @@ onconnect = function(e) {
     clients[0].postMessage("Connected");
   } else if (clients.length == 2) {
     broadcast("BothConnected");
-    clients[0].onmessage = function(e) {
-      if (e.data == "StartFetchWithWrongIntegrity") {
+    clients[0].onmessage = function(msg) {
+      if (msg.data == "StartFetchWithWrongIntegrity") {
         
         
         fetch("SharedWorker_SRIFailed.html", {"integrity": "abc"}).then(

@@ -31,12 +31,12 @@ onmessage = function(e) {
       importScripts(['importscript.sjs?unique=true']);
       res[0].postMessage("KO");
       return;
-    } catch(e) {}
+    } catch(ex) {}
 
     try {
       
       importScripts(['importscript.sjs']);
-    } catch(e) {
+    } catch(ex) {
       res[0].postMessage("KO");
       return;
     }

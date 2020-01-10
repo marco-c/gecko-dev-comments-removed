@@ -36,6 +36,7 @@ add_task(async function test_update() {
   is(existingCount, 0, "Previous tests should have cleaned up!");
 
   info("Let's start the test...");
+  
   let status = await ContentTask.spawn(browser1, sw, function(url) {
     
     
@@ -107,6 +108,7 @@ add_task(async function test_update() {
       });
     });
   });
+  
 
   if (status == 0) {
     ok(false, "both succeeded. This is wrong.");
@@ -118,6 +120,7 @@ add_task(async function test_update() {
 
   
   
+  
   const count = await ContentTask.spawn(browser1, sw, async function(url) {
     
     
@@ -126,6 +129,7 @@ add_task(async function test_update() {
       await content.fetch(url + "?get-and-clear-count").then(r => r.json());
     return count;
   });
+  
   is(count, 2, "SW should have been fetched only twice");
 
   BrowserTestUtils.removeTab(tab1);

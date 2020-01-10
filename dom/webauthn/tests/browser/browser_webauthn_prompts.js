@@ -48,6 +48,7 @@ function verifyDirectCertificate(attestationObject) {
 }
 
 function promiseWebAuthnRegister(tab, attestation = "indirect") {
+  
   return ContentTask.spawn(tab.linkedBrowser, [attestation],
     ([attestation]) => {
       const cose_alg_ECDSA_w_SHA256 = -7;
@@ -70,6 +71,7 @@ function promiseWebAuthnRegister(tab, attestation = "indirect") {
       return content.navigator.credentials.create({publicKey})
         .then(cred => cred.response.attestationObject);
     });
+  
 }
 
 function promiseWebAuthnSign(tab) {

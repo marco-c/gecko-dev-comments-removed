@@ -7,8 +7,8 @@ self.onmessage = function (event) {
   
   
   Promise.resolve().then(function () {
-    self.onmessage = function (event) {
-      if (event.data !== "pause") {
+    self.onmessage = function (e) {
+      if (e.data !== "pause") {
         return;
       }
       
