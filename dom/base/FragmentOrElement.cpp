@@ -1114,23 +1114,23 @@ void nsIContent::SetXBLInsertionPoint(nsIContent* aContent) {
 
 #ifdef DEBUG
 void nsIContent::AssertAnonymousSubtreeRelatedInvariants() const {
-  NS_ASSERTION(!IsRootOfNativeAnonymousSubtree() ||
-                   (GetParent() && GetBindingParent() == GetParent()),
-               "root of native anonymous subtree must have parent equal "
-               "to binding parent");
-  NS_ASSERTION(!GetParent() || !IsInComposedDoc() ||
-                   ((GetBindingParent() == GetParent()) ==
-                    HasFlag(NODE_IS_ANONYMOUS_ROOT)) ||
-                   
-                   
-                   
-                   
-                   
-                   (GetBindingParent() &&
-                    (GetBindingParent() == GetParent()->GetBindingParent()) ==
-                        HasFlag(NODE_IS_ANONYMOUS_ROOT)),
-               "For connected nodes, flag and GetBindingParent() check "
-               "should match");
+  MOZ_ASSERT(!IsRootOfNativeAnonymousSubtree() ||
+                 (GetParent() && GetBindingParent() == GetParent()),
+             "root of native anonymous subtree must have parent equal "
+             "to binding parent");
+  MOZ_ASSERT(!GetParent() || !IsInComposedDoc() ||
+                 ((GetBindingParent() == GetParent()) ==
+                  HasFlag(NODE_IS_ANONYMOUS_ROOT)) ||
+                 
+                 
+                 
+                 
+                 
+                 (GetBindingParent() &&
+                  (GetBindingParent() == GetParent()->GetBindingParent()) ==
+                      HasFlag(NODE_IS_ANONYMOUS_ROOT)),
+             "For connected nodes, flag and GetBindingParent() check "
+             "should match");
 }
 #endif
 
