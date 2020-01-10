@@ -1745,6 +1745,27 @@ var Scratchpad = {
 
         this.editor.setFontSize(Services.prefs.getIntPref(EDITOR_FONT_SIZE));
 
+        
+        const deprecationWarning = document.createElement("a");
+        deprecationWarning.setAttribute(
+          "href",
+          "https://developer.mozilla.org/docs/Tools/Deprecated_tools#Scratchpad"
+        );
+        deprecationWarning.setAttribute("target", "_blank");
+        deprecationWarning.append(
+          this.strings.GetStringFromName("scratchpad.deprecated.label")
+        );
+
+        const deprecationFragment = document.createDocumentFragment();
+        deprecationFragment.append(deprecationWarning);
+
+        this.notificationBox.appendNotification(
+          deprecationFragment,
+          "scratchpad.deprecated",
+          null,
+          this.notificationBox.PRIORITY_WARNING_HIGH
+        );
+
         this.editor.on("change", this._onChanged);
         
         this.updateStatusBar = Scratchpad.updateStatusBar.bind(this);
