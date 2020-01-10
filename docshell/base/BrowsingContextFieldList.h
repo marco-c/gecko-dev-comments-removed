@@ -17,7 +17,6 @@
 MOZ_BC_FIELD_RACY(Name, nsString)
 MOZ_BC_FIELD_RACY(Closed, bool)
 MOZ_BC_FIELD(CrossOriginPolicy, nsILoadInfo::CrossOriginPolicy)
-MOZ_BC_FIELD(InheritedCrossOriginPolicy, nsILoadInfo::CrossOriginPolicy)
 MOZ_BC_FIELD(OpenerPolicy, nsILoadInfo::CrossOriginOpenerPolicy)
 
 
