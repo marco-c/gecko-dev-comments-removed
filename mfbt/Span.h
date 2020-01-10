@@ -35,25 +35,6 @@
 #  include <cstring>
 #  include <iterator>
 
-#  ifdef _MSC_VER
-#    pragma warning(push)
-
-
-#    pragma warning(disable : 4127)  // conditional expression is constant
-
-
-
-
-#    pragma warning( \
-        disable : 26481 26482 26483 26485 26490 26491 26492 26493 26495)
-
-#    if _MSC_VER < 1910
-#      pragma push_macro("constexpr")
-#      define constexpr
-
-#    endif  
-#  endif    
-
 namespace mozilla {
 
 
@@ -928,15 +909,5 @@ inline Span<const char16_t> MakeStringSpan(const char16_t* aZeroTerminated) {
 }
 
 }  
-
-#  ifdef _MSC_VER
-#    if _MSC_VER < 1910
-#      undef constexpr
-#      pragma pop_macro("constexpr")
-
-#    endif  
-
-#    pragma warning(pop)
-#  endif  
 
 #endif  
