@@ -206,29 +206,15 @@ ThirdPartyUtil::IsThirdPartyWindow(mozIDOMWindowProxy* aWindow, nsIURI* aURI,
 
   bool result;
 
-  nsCString bottomDomain =
-      GetBaseDomainFromWindow(nsPIDOMWindowOuter::From(aWindow));
-  if (bottomDomain.IsEmpty()) {
-    
-    
-    nsCOMPtr<nsIURI> currentURI;
-    nsresult rv = GetURIFromWindow(aWindow, getter_AddRefs(currentURI));
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    rv = GetBaseDomain(currentURI, bottomDomain);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-  }
-
   
   
   if (aURI && !NS_IsAboutBlank(aURI)) {
+    nsCOMPtr<nsIPrincipal> prin;
+    nsresult rv = GetPrincipalFromWindow(aWindow, getter_AddRefs(prin));
+    NS_ENSURE_SUCCESS(rv, rv);
     
-    nsresult rv = IsThirdPartyInternal(bottomDomain, aURI, &result);
-    if (NS_FAILED(rv)) return rv;
+    rv = prin->IsThirdPartyURI(aURI, &result);
+    NS_ENSURE_SUCCESS(rv, rv);
 
     if (result) {
       *aResult = true;
@@ -252,20 +238,17 @@ ThirdPartyUtil::IsThirdPartyWindow(mozIDOMWindowProxy* aWindow, nsIURI* aURI,
       return NS_OK;
     }
 
-    nsCString parentDomain = GetBaseDomainFromWindow(parent);
-    if (parentDomain.IsEmpty()) {
-      
-      
-      nsCOMPtr<nsIURI> parentURI;
-      nsresult rv = GetURIFromWindow(parent, getter_AddRefs(parentURI));
-      NS_ENSURE_SUCCESS(rv, rv);
+    nsCOMPtr<nsIPrincipal> currentPrincipal;
+    nsresult rv =
+        GetPrincipalFromWindow(current, getter_AddRefs(currentPrincipal));
+    NS_ENSURE_SUCCESS(rv, rv);
+    nsCOMPtr<nsIPrincipal> parentPrincipal;
+    rv = GetPrincipalFromWindow(parent, getter_AddRefs(parentPrincipal));
+    NS_ENSURE_SUCCESS(rv, rv);
 
-      rv = IsThirdPartyInternal(bottomDomain, parentURI, &result);
-      if (NS_FAILED(rv)) {
-        return rv;
-      }
-    } else {
-      result = IsThirdPartyInternal(bottomDomain, parentDomain);
+    rv = currentPrincipal->IsThirdPartyPrincipal(parentPrincipal, &result);
+    if (NS_FAILED(rv)) {
+      return rv;
     }
 
     if (result) {
@@ -330,18 +313,11 @@ ThirdPartyUtil::IsThirdPartyChannel(nsIChannel* aChannel, nsIURI* aURI,
                                 nsIContentPolicy::TYPE_DOCUMENT) {
         
         
-        nsCOMPtr<nsIURI> parentURI;
-        rv = loadInfo->LoadingPrincipal()->GetURI(getter_AddRefs(parentURI));
-        if (NS_SUCCEEDED(rv) && parentURI) {
-          
-          
-          rv = IsThirdPartyInternal(channelDomain, parentURI, &parentIsThird);
-          if (NS_FAILED(rv)) {
-            return rv;
-          }
-        } else {
-          
-          parentIsThird = true;
+
+        rv = loadInfo->LoadingPrincipal()->IsThirdPartyURI(channelURI,
+                                                           &parentIsThird);
+        if (NS_FAILED(rv)) {
+          return rv;
         }
       }
     } else {
