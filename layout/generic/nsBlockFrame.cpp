@@ -7316,7 +7316,12 @@ void nsBlockFrame::IsMarginRoot(bool* aBStartMarginRoot,
       *aBEndMarginRoot = false;
       return;
     }
+    
+    
+    
     if (parent->IsColumnSetFrame()) {
+      MOZ_ASSERT(!StaticPrefs::layout_css_column_span_enabled(),
+                 "Column contents always have BFC set!");
       *aBStartMarginRoot = GetPrevInFlow() == nullptr;
       *aBEndMarginRoot = GetNextInFlow() == nullptr;
       return;
