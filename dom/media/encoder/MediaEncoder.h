@@ -292,6 +292,10 @@ class MediaEncoder {
   
   nsTArray<RefPtr<EncodedFrame>> mEncodedVideoFrames;
 
+  
+  
+  uint64_t mAudioCodecDelay = 0;
+
   TimeStamp mStartTime;
   nsString mMIMEType;
   bool mInitialized;
