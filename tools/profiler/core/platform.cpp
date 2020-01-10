@@ -2846,6 +2846,12 @@ void SamplerThread::Run() {
               }
             }
 
+            ThreadResponsiveness* resp =
+                profiledThreadData->GetThreadResponsiveness();
+            if (resp) {
+              resp->Update();
+            }
+
             AUTO_PROFILER_STATS(gecko_SamplerThread_Run_DoPeriodicSample);
 
             TimeStamp now = TimeStamp::NowUnfuzzed();
@@ -2872,193 +2878,12 @@ void SamplerThread::Run() {
                   DoPeriodicSample(lock, *registeredThread, *profiledThreadData,
                                    now, aRegs, samplePos, localProfileBuffer);
 
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-
-
-
-
-
-
-
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-
-                  TimeDuration currentEventDelay;
-                  TimeDuration currentEventRunning;
-                  registeredThread->GetRunningEventDelay(currentEventDelay,
-                                                         currentEventRunning);
-
-                  
-                  
-
-                  
-                  
-                  
-                  
-                  unresponsiveDuration_ms =
-                      Some(currentEventDelay.ToMilliseconds() +
-                           currentEventRunning.ToMilliseconds());
+                  if (resp && resp->HasData()) {
+                    unresponsiveDuration_ms =
+                        Some(resp->GetUnresponsiveDuration(
+                            (now - CorePS::ProcessStartTime())
+                                .ToMilliseconds()));
+                  }
                 });
 
             
