@@ -142,7 +142,6 @@ class imgRequest final : public nsIStreamListener,
   
   nsresult GetURI(nsIURI** aURI);
   nsresult GetFinalURI(nsIURI** aURI);
-  bool IsScheme(const char* aScheme) const;
   bool IsChrome() const;
   bool IsData() const;
 
