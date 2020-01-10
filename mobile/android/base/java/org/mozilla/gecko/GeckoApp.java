@@ -1102,7 +1102,7 @@ public abstract class GeckoApp extends GeckoActivity
         mLayerView = (GeckoView) findViewById(R.id.layer_view);
         
         
-        mLayerView.setSaveFromParentEnabled(false);
+        mLayerView.setSaveEnabled(false);
 
         final GeckoSession session = new GeckoSession(
                 new GeckoSessionSettings.Builder()
