@@ -897,6 +897,7 @@ pref("toolkit.content-background-hang-monitor.disabled", false);
 
 
 
+
 #ifdef MOZILLA_OFFICIAL
 pref("browser.dom.window.dump.enabled", false, sticky);
 pref("devtools.console.stdout.chrome", false, sticky);
