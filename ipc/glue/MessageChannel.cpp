@@ -2697,8 +2697,7 @@ void MessageChannel::Close() {
 
     if (ChannelClosed == mChannelState) {
       
-      
-      MOZ_CRASH("Close() called on closed channel!");
+      return;
     }
 
     
