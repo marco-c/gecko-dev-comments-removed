@@ -41,7 +41,7 @@ class nsHttpConnectionInfo final : public ARefBase {
                        const nsACString& topWindowOrigin,
                        nsProxyInfo* proxyInfo,
                        const OriginAttributes& originAttributes,
-                       bool endToEndSSL = false, bool aIsHttp3 = false);
+                       bool endToEndSSL = false);
 
   
   
@@ -51,8 +51,7 @@ class nsHttpConnectionInfo final : public ARefBase {
                        const nsACString& topWindowOrigin,
                        nsProxyInfo* proxyInfo,
                        const OriginAttributes& originAttributes,
-                       const nsACString& routedHost, int32_t routedPort,
-                       bool aIsHttp3);
+                       const nsACString& routedHost, int32_t routedPort);
 
  private:
   virtual ~nsHttpConnectionInfo() {
@@ -194,8 +193,6 @@ class nsHttpConnectionInfo final : public ARefBase {
     mLessThanTls13 = aLessThanTls13;
   }
 
-  bool IsHttp3() const { return mIsHttp3; }
-
  private:
   
   nsHttpConnectionInfo(const nsACString& originHost, int32_t originPort,
@@ -203,19 +200,19 @@ class nsHttpConnectionInfo final : public ARefBase {
                        const nsACString& topWindowOrigin,
                        nsProxyInfo* proxyInfo,
                        const OriginAttributes& originAttributes,
-                       bool endToEndSSL, bool isolated, bool aIsHttp3);
+                       bool endToEndSSL, bool isolated);
   nsHttpConnectionInfo(const nsACString& originHost, int32_t originPort,
                        const nsACString& npnToken, const nsACString& username,
                        const nsACString& topWindowOrigin,
                        nsProxyInfo* proxyInfo,
                        const OriginAttributes& originAttributes,
                        const nsACString& routedHost, int32_t routedPort,
-                       bool isolated, bool aIsHttp3);
+                       bool isolated);
 
   void Init(const nsACString& host, int32_t port, const nsACString& npnToken,
             const nsACString& username, const nsACString& topWindowOrigin,
             nsProxyInfo* proxyInfo, const OriginAttributes& originAttributes,
-            bool EndToEndSSL, bool aIsHttp3);
+            bool EndToEndSSL);
   void SetOriginServer(const nsACString& host, int32_t port);
 
   nsCString mOrigin;
@@ -244,7 +241,6 @@ class nsHttpConnectionInfo final : public ARefBase {
   bool mLessThanTls13;  
                         
                         
-  bool mIsHttp3;
 
   
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsHttpConnectionInfo, override)
