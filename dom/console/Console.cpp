@@ -713,8 +713,6 @@ class ConsoleWorkerRunnable : public WorkerProxyToMainThreadRunnable,
 
   
   RefPtr<Console> mConsole;
-
-  ConsoleStructuredCloneData mClonedData;
 };
 
 
