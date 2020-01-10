@@ -1499,7 +1499,7 @@
         }
         this.name = name;
 
-        this.phase = (tests.is_aborted || tests.phase === tests.phases.COMPLETE) ?
+        this.phase = tests.is_aborted ?
             this.phases.COMPLETE : this.phases.INITIAL;
 
         this.status = this.NOTRUN;
@@ -1521,13 +1521,6 @@
         this.cleanup_callbacks = [];
         this._user_defined_cleanup_count = 0;
         this._done_callbacks = [];
-
-        
-        
-        
-        if (tests.phase === tests.phases.COMPLETE) {
-            return;
-        }
 
         tests.push(this);
     }
@@ -2679,7 +2672,7 @@
         if (this.phase < this.STARTED) {
             this.init();
         }
-        if (!this.enabled || this.phase === this.COMPLETE) {
+        if (!this.enabled) {
             return;
         }
         this.resolve_log();
