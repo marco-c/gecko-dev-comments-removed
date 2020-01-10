@@ -228,10 +228,6 @@ pref("browser.cache.offline.insecure.enable",  false);
 pref("browser.cache.offline.capacity",         512000);
 
 
-
-pref("offline-apps.quota.warn",        51200);
-
-
 pref("browser.download.forbid_open_with", false);
 
 
