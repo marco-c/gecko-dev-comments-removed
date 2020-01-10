@@ -328,10 +328,6 @@ class DocAccessible : public HyperTextAccessibleWrap,
   
 
 
-
-
-
-
   bool IsDependentID(dom::Element* aElement, const nsAString& aID) const {
     return GetRelProviders(aElement, aID);
   }
