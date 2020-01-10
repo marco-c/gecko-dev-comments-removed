@@ -151,13 +151,6 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     );
 
     
-    const connectPageEnabled = Services.prefs.getBoolPref(
-      "devtools.connectpage.enabled"
-    );
-    const connectEnabled = devtoolsRemoteEnabled && connectPageEnabled;
-    toggleMenuItem("menu_devtools_connect", connectEnabled);
-
-    
     try {
       const recordReplayEnabled = Services.prefs.getBoolPref(
         "devtools.recordreplay.enabled"
@@ -381,16 +374,6 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
   openAboutDebugging(gBrowser, hash) {
     const url = "about:debugging" + (hash ? "#" + hash : "");
     gBrowser.selectedTab = gBrowser.addTrustedTab(url);
-  },
-
-  
-
-
-  
-  openConnectScreen(gBrowser) {
-    gBrowser.selectedTab = gBrowser.addTrustedTab(
-      "chrome://devtools/content/framework/connect/connect.xhtml"
-    );
   },
 
   async _getContentProcessTarget(processId) {
