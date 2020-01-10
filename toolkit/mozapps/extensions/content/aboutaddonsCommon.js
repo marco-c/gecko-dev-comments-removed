@@ -25,6 +25,12 @@ function getBrowserElement() {
   return window.docShell.chromeEventHandler;
 }
 
+function promiseEvent(event, target, capture = false) {
+  return new Promise(resolve => {
+    target.addEventListener(event, resolve, {capture, once: true});
+  });
+}
+
 function attachUpdateHandler(install) {
   if (!WEBEXT_PERMISSION_PROMPTS) {
     return;
@@ -151,3 +157,18 @@ function showPermissionsPrompt(addon) {
     Services.obs.notifyObservers(subject, "webextension-permission-prompt");
   });
 }
+
+
+
+
+var gBrowser = {
+  getTabModalPromptBox(browser) {
+    const parentWindow = window.docShell.chromeEventHandler.ownerGlobal;
+
+    if (parentWindow.gBrowser) {
+      return parentWindow.gBrowser.getTabModalPromptBox(browser);
+    }
+
+    return null;
+  },
+};

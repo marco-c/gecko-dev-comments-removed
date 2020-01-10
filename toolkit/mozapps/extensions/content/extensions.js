@@ -98,12 +98,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "legacyExtensionsEnabled",
 document.addEventListener("load", initialize, true);
 window.addEventListener("unload", shutdown);
 
-function promiseEvent(event, target, capture = false) {
-  return new Promise(resolve => {
-    target.addEventListener(event, resolve, {capture, once: true});
-  });
-}
-
 var gPendingInitializations = 1;
 Object.defineProperty(this, "gIsInitializing", {
   get: () => gPendingInitializations > 0,
@@ -3778,21 +3772,6 @@ var gDragDrop = {
 
 
 
-var gBrowser = {
-  getTabModalPromptBox(browser) {
-    const parentWindow = window.docShell.chromeEventHandler.ownerGlobal;
-
-    if (parentWindow.gBrowser) {
-      return parentWindow.gBrowser.getTabModalPromptBox(browser);
-    }
-
-    return null;
-  },
-};
-
-
-
-
 {
   const UPDATE_POSITION_DELAY = 100;
 
@@ -3812,11 +3791,16 @@ const addonTypes = new Set([
   "extension", "theme", "plugin", "dictionary", "locale",
 ]);
 const htmlViewOpts = {
-  loadViewFn(type, param) {
-    let viewId = `addons://${type}/`;
-    if (param) {
-      viewId += encodeURIComponent(param);
+  loadViewFn(type, ...params) {
+    let viewId = `addons://${type}`;
+    if (params.length > 0) {
+      for (let param of params) {
+        viewId += "/" + encodeURIComponent(param);
+      }
+    } else {
+      viewId += "/";
     }
+
     gViewController.loadView(viewId);
   },
   replaceWithDefaultViewFn() {

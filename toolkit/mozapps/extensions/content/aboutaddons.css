@@ -362,6 +362,13 @@ panel-item-separator[hidden] {
   text-decoration: none;
 }
 
+.inline-options-stack {
+  
+  min-height: 250px;
+  width: 100%;
+  background-color: white;
+}
+
 addon-permissions-list > .addon-detail-row:first-of-type {
   border-top: none;
 }
