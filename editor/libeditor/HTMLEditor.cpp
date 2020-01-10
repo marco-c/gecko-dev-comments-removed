@@ -295,7 +295,20 @@ void HTMLEditor::PreDestroy(bool aDestroyingFrames) {
 
   
   
-  HideAnonymousEditingUIs();
+  PresShell* presShell = GetPresShell();
+  if (presShell && presShell->IsDestroying()) {
+    
+    
+    
+    RefPtr<HTMLEditor> self = this;
+    nsContentUtils::AddScriptRunner(
+        NS_NewRunnableFunction("HTMLEditor::PreDestroy", [self]() {
+          self->HideAnonymousEditingUIs();
+        }));
+  } else {
+    
+    HideAnonymousEditingUIs();
+  }
 
   EditorBase::PreDestroy(aDestroyingFrames);
 }
