@@ -75,7 +75,7 @@ AntiTracking.runTest(
   [["dom.storage_access.enabled", true]], 
   false, 
   false, 
-  false, 
+  Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER, 
   false, 
   "allow-scripts allow-same-origin allow-popups"
 );
@@ -98,7 +98,7 @@ AntiTracking.runTest(
   [["dom.storage_access.enabled", true]], 
   false, 
   false, 
-  false, 
+  0, 
   false, 
   "allow-scripts allow-same-origin allow-popups allow-storage-access-by-user-activation"
 );
@@ -125,7 +125,7 @@ AntiTracking.runTest(
   [["dom.storage_access.enabled", true]], 
   false, 
   false, 
-  0, 
+  Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER, 
   true, 
   null 
 );

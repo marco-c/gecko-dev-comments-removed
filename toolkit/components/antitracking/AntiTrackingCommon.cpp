@@ -446,6 +446,8 @@ void ReportBlockingToConsole(nsPIDOMWindowOuter* aWindow, nsIURI* aURI,
       [doc, sourceLine, lineNumber, columnNumber, uri, aRejectedReason]() {
         const char* message = nullptr;
         nsAutoCString category;
+        
+        
         switch (aRejectedReason) {
           case nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION:
             message = "CookieBlockedByPermission";
