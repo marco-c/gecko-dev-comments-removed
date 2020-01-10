@@ -48,10 +48,6 @@ class InactivePropertyHelper {
 
 
 
-
-
-
-
   get VALIDATORS() {
     return [
       
@@ -244,8 +240,6 @@ class InactivePropertyHelper {
         isRuleConcerned =
           validator.invalidProperties === "*" ||
           validator.invalidProperties.includes(property);
-      } else if (validator.validProperties) {
-        isRuleConcerned = !validator.validProperties.includes(property);
       }
 
       if (!isRuleConcerned) {
