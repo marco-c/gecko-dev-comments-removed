@@ -2,6 +2,7 @@
 
 
 
+from __future__ import absolute_import
 from firefox_puppeteer import PuppeteerMixin
 from firefox_puppeteer.ui.deck import Panel
 from marionette_harness import MarionetteTestCase

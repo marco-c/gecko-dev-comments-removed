@@ -2,6 +2,7 @@
 
 
 
+from __future__ import absolute_import
 from firefox_puppeteer import PuppeteerMixin
 from marionette_driver.errors import NoSuchElementException
 from marionette_harness import MarionetteTestCase

@@ -2,7 +2,8 @@
 
 
 
-from base import FirefoxUIArguments
+from __future__ import absolute_import
+from .base import FirefoxUIArguments
 
 
 class UpdateBaseArguments(object):

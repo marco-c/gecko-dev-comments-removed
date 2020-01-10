@@ -2,6 +2,7 @@
 
 
 
+from __future__ import absolute_import
 from firefox_puppeteer import PuppeteerMixin
 from firefox_puppeteer.errors import NoCertificateError
 from marionette_harness import MarionetteTestCase

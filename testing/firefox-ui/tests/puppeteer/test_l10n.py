@@ -2,6 +2,7 @@
 
 
 
+from __future__ import absolute_import
 from firefox_puppeteer import PuppeteerMixin
 from firefox_puppeteer.api.l10n import L10n
 from marionette_driver import By

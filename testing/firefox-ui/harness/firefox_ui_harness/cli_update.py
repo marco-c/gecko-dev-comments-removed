@@ -4,6 +4,7 @@
 
 
 
+from __future__ import absolute_import
 from marionette_harness.runtests import cli as mn_cli
 
 from firefox_ui_harness.arguments import UpdateArguments

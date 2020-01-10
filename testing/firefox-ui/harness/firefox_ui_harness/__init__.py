@@ -2,7 +2,9 @@
 
 
 
+from __future__ import absolute_import
+
 __version__ = '1.4.0'
 
-import cli_functional
-import cli_update
+from . import cli_functional
+from . import cli_update

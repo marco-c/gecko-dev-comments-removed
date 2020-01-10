@@ -2,6 +2,7 @@
 
 
 
+from __future__ import absolute_import
 from firefox_puppeteer import PuppeteerMixin
 from marionette_driver import Wait
 from marionette_harness import MarionetteTestCase, skip_if_e10s

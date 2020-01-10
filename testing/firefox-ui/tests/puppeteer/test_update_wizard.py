@@ -2,6 +2,7 @@
 
 
 
+from __future__ import absolute_import
 from firefox_puppeteer import PuppeteerMixin
 from firefox_puppeteer.ui.deck import Panel
 from firefox_puppeteer.ui.update_wizard import UpdateWizardDialog

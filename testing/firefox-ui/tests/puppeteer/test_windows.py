@@ -2,6 +2,7 @@
 
 
 
+from __future__ import absolute_import
 import firefox_puppeteer.errors as errors
 
 from firefox_puppeteer import PuppeteerMixin

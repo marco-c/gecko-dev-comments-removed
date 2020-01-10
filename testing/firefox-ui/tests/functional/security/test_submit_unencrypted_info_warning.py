@@ -2,6 +2,7 @@
 
 
 
+from __future__ import absolute_import
 from firefox_puppeteer import PuppeteerMixin
 from marionette_driver import By, expected, Wait
 from marionette_driver.errors import NoAlertPresentException

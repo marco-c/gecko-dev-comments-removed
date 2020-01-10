@@ -2,6 +2,7 @@
 
 
 
+from __future__ import absolute_import
 from firefox_puppeteer import PuppeteerMixin
 from firefox_puppeteer.ui.browser.window import BrowserWindow
 from marionette_driver import By, Wait
