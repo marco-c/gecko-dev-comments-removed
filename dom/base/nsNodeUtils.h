@@ -19,10 +19,8 @@ namespace mozilla {
 struct NonOwningAnimationTarget;
 namespace dom {
 class Animation;
-}  
-}  
 
-class nsNodeUtils {
+class MutationObservers {
  public:
   
 
@@ -30,8 +28,8 @@ class nsNodeUtils {
 
 
 
-  static void CharacterDataWillChange(nsIContent* aContent,
-                                      const CharacterDataChangeInfo&);
+  static void NotifyCharacterDataWillChange(nsIContent* aContent,
+                                            const CharacterDataChangeInfo&);
 
   
 
@@ -39,22 +37,8 @@ class nsNodeUtils {
 
 
 
-  static void CharacterDataChanged(nsIContent* aContent,
-                                   const CharacterDataChangeInfo&);
-
-  
-
-
-
-
-
-
-
-
-
-  static void AttributeWillChange(mozilla::dom::Element* aElement,
-                                  int32_t aNameSpaceID, nsAtom* aAttribute,
-                                  int32_t aModType);
+  static void NotifyCharacterDataChanged(nsIContent* aContent,
+                                         const CharacterDataChangeInfo&);
 
   
 
@@ -66,9 +50,9 @@ class nsNodeUtils {
 
 
 
-  static void AttributeChanged(mozilla::dom::Element* aElement,
-                               int32_t aNameSpaceID, nsAtom* aAttribute,
-                               int32_t aModType, const nsAttrValue* aOldValue);
+  static void NotifyAttributeWillChange(mozilla::dom::Element* aElement,
+                                        int32_t aNameSpaceID,
+                                        nsAtom* aAttribute, int32_t aModType);
 
   
 
@@ -77,9 +61,13 @@ class nsNodeUtils {
 
 
 
-  static void AttributeSetToCurrentValue(mozilla::dom::Element* aElement,
-                                         int32_t aNameSpaceID,
-                                         nsAtom* aAttribute);
+
+
+
+  static void NotifyAttributeChanged(mozilla::dom::Element* aElement,
+                                     int32_t aNameSpaceID, nsAtom* aAttribute,
+                                     int32_t aModType,
+                                     const nsAttrValue* aOldValue);
 
   
 
@@ -87,8 +75,10 @@ class nsNodeUtils {
 
 
 
-  static void ContentAppended(nsIContent* aContainer,
-                              nsIContent* aFirstNewContent);
+
+  static void NotifyAttributeSetToCurrentValue(mozilla::dom::Element* aElement,
+                                               int32_t aNameSpaceID,
+                                               nsAtom* aAttribute);
 
   
 
@@ -96,8 +86,8 @@ class nsNodeUtils {
 
 
 
-  static void NativeAnonymousChildListChange(nsIContent* aContent,
-                                             bool aIsRemove);
+  static void NotifyContentAppended(nsIContent* aContainer,
+                                    nsIContent* aFirstNewContent);
 
   
 
@@ -105,7 +95,16 @@ class nsNodeUtils {
 
 
 
-  static void ContentInserted(nsINode* aContainer, nsIContent* aChild);
+  static void NotifyNativeAnonymousChildListChange(nsIContent* aContent,
+                                                   bool aIsRemove);
+
+  
+
+
+
+
+
+  static void NotifyContentInserted(nsINode* aContainer, nsIContent* aChild);
   
 
 
@@ -113,14 +112,15 @@ class nsNodeUtils {
 
 
 
-  static void ContentRemoved(nsINode* aContainer, nsIContent* aChild,
-                             nsIContent* aPreviousSibling);
+  static void NotifyContentRemoved(nsINode* aContainer, nsIContent* aChild,
+                                   nsIContent* aPreviousSibling);
+
   
 
 
 
 
-  static inline void ParentChainChanged(nsIContent* aContent) {
+  static inline void NotifyParentChainChanged(nsIContent* aContent) {
     nsINode::nsSlots* slots = aContent->GetExistingSlots();
     if (slots && !slots->mMutationObservers.IsEmpty()) {
       NS_OBSERVER_AUTO_ARRAY_NOTIFY_OBSERVERS(slots->mMutationObservers,
@@ -128,7 +128,12 @@ class nsNodeUtils {
                                               ParentChainChanged, (aContent));
     }
   }
+};
+}  
+}  
 
+class nsNodeUtils {
+ public:
   
 
 
