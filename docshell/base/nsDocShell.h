@@ -486,6 +486,10 @@ class nsDocShell final : public nsDocLoader,
                                    const nsString* aInitiatorType,
                                    uint32_t aLoadType, uint32_t aCacheKey);
 
+  
+  static void MaybeNotifyKeywordSearchLoading(const nsString& aProvider,
+                                              const nsString& aKeyword);
+
  private:  
   friend class nsDSURIContentListener;
   friend class FramingChecker;
@@ -955,10 +959,6 @@ class nsDocShell final : public nsDocLoader,
   
   
   void AssertOriginAttributesMatchPrivateBrowsing();
-
-  
-  void MaybeNotifyKeywordSearchLoading(const nsString& aProvider,
-                                       const nsString& aKeyword);
 
   
   
