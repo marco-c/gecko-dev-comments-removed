@@ -469,6 +469,8 @@ struct Loader::Sheets {
   
   using CacheResult = Tuple<RefPtr<StyleSheet>, SheetState>;
   CacheResult Lookup(SheetLoadDataHashKey&, bool aSyncLoad);
+
+  size_t SizeOfIncludingThis(MallocSizeOf) const;
 };
 
 RefPtr<StyleSheet> Loader::Sheets::LookupInline(const nsAString& aBuffer) {
@@ -576,6 +578,39 @@ auto Loader::Sheets::Lookup(SheetLoadDataHashKey& aKey, bool aSyncLoad)
   }
 
   return {};
+}
+
+size_t Loader::Sheets::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
+  size_t n = aMallocSizeOf(this);
+
+  n += mCompleteSheets.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  for (auto iter = mCompleteSheets.ConstIter(); !iter.Done(); iter.Next()) {
+    
+    
+    
+    const StyleSheet* sheet = iter.UserData();
+    if (!sheet->GetOwnerNode() && !sheet->GetParentSheet()) {
+      n += sheet->SizeOfIncludingThis(aMallocSizeOf);
+    }
+  }
+
+  n += mInlineSheets.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  for (auto iter = mInlineSheets.ConstIter(); !iter.Done(); iter.Next()) {
+    n += iter.Key().SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+    
+    
+    const StyleSheet* sheet = iter.UserData();
+    MOZ_ASSERT(!sheet->GetParentSheet(), "How did an @import rule end up here?");
+    if (!sheet->GetOwnerNode()) {
+      n += sheet->SizeOfIncludingThis(aMallocSizeOf);
+    }
+  }
+
+  
+  
+  
+  
+  return n;
 }
 
 
@@ -2440,26 +2475,14 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(Loader, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(Loader, Release)
 
-size_t Loader::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
+size_t Loader::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
   size_t n = aMallocSizeOf(this);
 
   if (mSheets) {
-    n += mSheets->mCompleteSheets.ShallowSizeOfExcludingThis(aMallocSizeOf);
-    for (auto iter = mSheets->mCompleteSheets.ConstIter(); !iter.Done();
-         iter.Next()) {
-      
-      
-      
-      const StyleSheet* sheet = iter.UserData();
-      n += (sheet->GetOwnerNode() || sheet->GetParentSheet())
-               ? 0
-               : sheet->SizeOfIncludingThis(aMallocSizeOf);
-    }
+    n += mSheets->SizeOfIncludingThis(aMallocSizeOf);
   }
   n += mObservers.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
-  
-  
   
   
   
