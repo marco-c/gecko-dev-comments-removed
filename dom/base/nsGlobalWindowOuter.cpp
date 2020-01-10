@@ -6298,7 +6298,9 @@ void nsGlobalWindowOuter::FinalClose() {
   
   mIsClosed = true;
 
-  GetBrowsingContext()->SetClosed(true);
+  if (!mBrowsingContext->IsDiscarded()) {
+    mBrowsingContext->SetClosed(true);
+  }
 
   
   
