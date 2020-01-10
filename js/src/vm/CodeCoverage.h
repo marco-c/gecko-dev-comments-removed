@@ -31,11 +31,15 @@ class LCovSource {
   bool match(const char* name) const { return strcmp(name_.get(), name) == 0; }
 
   
+  
+  bool hadOutOfMemory() const { return hadOOM_; }
+
+  
   bool isComplete() const { return hasTopLevelScript_; }
 
   
   
-  bool writeScript(JSScript* script);
+  void writeScript(JSScript* script);
 
   
   
@@ -72,6 +76,7 @@ class LCovSource {
 
   
   bool hasTopLevelScript_ : 1;
+  bool hadOOM_ : 1;
 };
 
 class LCovRealm {
