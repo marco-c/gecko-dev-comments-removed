@@ -73,13 +73,14 @@ static void GenPrintf(DebugChannel channel, MacroAssembler& masm,
   UniqueChars str = JS_vsmprintf(fmt, ap);
   va_end(ap);
 
-  
-  
-  
-  
-  const char* text = str.release();
-
   GenPrint(channel, masm, Nothing(), [&](bool inWasm, Register temp) {
+    
+    
+    
+    
+    
+    const char* text = str.release();
+
     masm.movePtr(ImmPtr((void*)text, ImmPtr::NoCheckToken()), temp);
     masm.passABIArg(temp);
     if (inWasm) {
