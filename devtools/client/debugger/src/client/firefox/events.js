@@ -6,7 +6,6 @@
 
 import type {
   SourcePacket,
-  ResumedPacket,
   PausedPacket,
   ThreadClient,
   Actions,
@@ -74,7 +73,7 @@ async function paused(threadClient: ThreadClient, packet: PausedPacket) {
   }
 }
 
-function resumed(threadClient: ThreadClient, packet: ResumedPacket) {
+function resumed(threadClient: ThreadClient) {
   
   
   
@@ -83,7 +82,7 @@ function resumed(threadClient: ThreadClient, packet: ResumedPacket) {
     return;
   }
 
-  actions.resumed(packet);
+  actions.resumed(threadClient.actorID);
 }
 
 function newSource(threadClient: ThreadClient, { source }: SourcePacket) {

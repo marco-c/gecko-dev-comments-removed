@@ -217,7 +217,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   destroy: function() {
     dumpn("in ThreadActor.prototype.destroy");
     if (this._state == "paused") {
-      this.onResume();
+      this.doResume();
     }
 
     this._xhrBreakpoints = [];
@@ -852,9 +852,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
 
-  _handleResumeLimit: async function(request) {
-    let steppingType = request.resumeLimit.type;
-    const rewinding = request.rewind;
+  _handleResumeLimit: async function({rewind, resumeLimit}) {
+    let steppingType = resumeLimit.type;
+    const rewinding = rewind;
     if (!["break", "step", "next", "finish", "warp"].includes(steppingType)) {
       return Promise.reject({
         error: "badParameterType",
@@ -945,7 +945,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   
 
 
-  onResume: function(request) {
+  onResume: async function({resumeLimit, rewind}) {
     if (this._state !== "paused") {
       return {
         error: "wrongState",
@@ -968,53 +968,67 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       };
     }
 
-    const rewinding = request && request.rewind;
-    if (rewinding && !this.dbg.replaying) {
+    if (rewind && !this.dbg.replaying) {
       return {
         error: "cantRewind",
         message: "Can't rewind a debuggee that is not replaying.",
       };
     }
 
-    let resumeLimitHandled;
-    if (request && request.resumeLimit) {
-      resumeLimitHandled = this._handleResumeLimit(request);
-    } else {
-      this._clearSteppingHooks();
-      resumeLimitHandled = Promise.resolve(true);
-    }
-
-    return resumeLimitHandled.then(() => {
-      this.maybePauseOnExceptions();
+    try {
+      if (resumeLimit) {
+        await this._handleResumeLimit({resumeLimit, rewind});
+      } else {
+        this._clearSteppingHooks();
+      }
 
       
       
       if (this.dbg.replaying) {
-        if (request && request.resumeLimit && request.resumeLimit.type == "warp") {
-          this.dbg.replayTimeWarp(request.resumeLimit.target);
-        } else if (rewinding) {
+        if (resumeLimit && resumeLimit.type == "warp") {
+          this.dbg.replayTimeWarp(resumeLimit.target);
+        } else if (rewind) {
           this.dbg.replayResumeBackward();
         } else {
           this.dbg.replayResumeForward();
         }
       }
 
-      const packet = this._resumed();
-      this._popThreadPause();
-      
-      
-      if (Services.obs) {
-        Services.obs.notifyObservers(this, "devtools-thread-resumed");
-      }
-      return packet;
-    }, error => {
+      this.doResume();
+      return {};
+    } catch (error) {
       return error instanceof Error
-        ? { error: "unknownError",
+        ? {
+            error: "unknownError",
             message: DevToolsUtils.safeErrorString(error) }
         
         
         : error;
-    });
+    }
+  },
+
+  
+
+
+
+
+  doResume() {
+    this.maybePauseOnExceptions();
+    this._state = "running";
+
+    
+    this.conn.removeActorPool(this._pausePool);
+
+    this._pausePool = null;
+    this._pauseActor = null;
+    this._popThreadPause();
+    
+    
+    this.conn.sendActorEvent(this.actorID, "resumed");
+
+    if (Services.obs) {
+      Services.obs.notifyObservers(this, "devtools-thread-resumed");
+    }
   },
 
   
@@ -1278,18 +1292,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     return packet;
-  },
-
-  _resumed: function() {
-    this._state = "running";
-
-    
-    this.conn.removeActorPool(this._pausePool);
-
-    this._pausePool = null;
-    this._pauseActor = null;
-
-    return { from: this.actorID, type: "resumed" };
   },
 
   
