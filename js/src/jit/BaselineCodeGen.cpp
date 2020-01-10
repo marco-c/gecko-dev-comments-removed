@@ -292,13 +292,13 @@ MethodStatus BaselineCompiler::compile() {
   }
 
   UniquePtr<BaselineScript> baselineScript(
-      BaselineScript::New(script, warmUpCheckPrologueOffset_.offset(),
-                          profilerEnterFrameToggleOffset_.offset(),
-                          profilerExitFrameToggleOffset_.offset(),
-                          handler.retAddrEntries().length(),
-                          pcMappingIndexEntries.length(), pcEntries.length(),
-                          script->resumeOffsets().size(),
-                          traceLoggerToggleOffsets_.length()),
+      BaselineScript::New(
+          script, warmUpCheckPrologueOffset_.offset(),
+          profilerEnterFrameToggleOffset_.offset(),
+          profilerExitFrameToggleOffset_.offset(),
+          handler.retAddrEntries().length(), handler.osrEntries().length(),
+          pcMappingIndexEntries.length(), pcEntries.length(),
+          script->resumeOffsets().size(), traceLoggerToggleOffsets_.length()),
       JS::DeletePolicy<BaselineScript>(cx->runtime()));
   if (!baselineScript) {
     ReportOutOfMemory(cx);
@@ -319,6 +319,7 @@ MethodStatus BaselineCompiler::compile() {
   baselineScript->copyPCMappingEntries(pcEntries);
 
   baselineScript->copyRetAddrEntries(handler.retAddrEntries().begin());
+  baselineScript->copyOSREntries(handler.osrEntries().begin());
 
   
   if (cx->runtime()->jitRuntime()->isProfilerInstrumentationEnabled(
@@ -1321,26 +1322,38 @@ bool BaselineCodeGen<Handler>::emitInterruptCheck() {
 
 template <>
 bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
-  
-  
+  frame.assertSyncedStack();
 
+  
+  
+  
+  
+  JSScript* script = handler.script();
+  jsbytecode* pc = handler.pc();
+  if (JSOp(*pc) == JSOP_LOOPENTRY) {
+    uint32_t pcOffset = script->pcToOffset(pc);
+    uint32_t nativeOffset = masm.currentOffset();
+    if (!handler.osrEntries().emplaceBack(pcOffset, nativeOffset)) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+  }
+
+  
+  
   if (!handler.maybeIonCompileable()) {
     return true;
   }
-
-  frame.assertSyncedStack();
 
   Register scriptReg = R2.scratchReg();
   Register countReg = R0.scratchReg();
   Address warmUpCounterAddr(scriptReg, JSScript::offsetOfWarmUpCounter());
 
-  JSScript* script = handler.script();
   masm.movePtr(ImmGCPtr(script), scriptReg);
   masm.load32(warmUpCounterAddr, countReg);
   masm.add32(Imm32(1), countReg);
   masm.store32(countReg, warmUpCounterAddr);
 
-  jsbytecode* pc = handler.pc();
   if (JSOp(*pc) == JSOP_LOOPENTRY) {
     
     
