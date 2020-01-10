@@ -796,6 +796,11 @@ public class GeckoSession implements Parcelable {
                         type = PermissionDelegate.PERMISSION_DESKTOP_NOTIFICATION;
                     } else if ("persistent-storage".equals(typeString)) {
                         type = PermissionDelegate.PERMISSION_PERSISTENT_STORAGE;
+                    } else if ("midi".equals(typeString)) {
+                        
+                        
+                        callback.sendError("Unsupported");
+                        return;
                     } else {
                         throw new IllegalArgumentException("Unknown permission request: " + typeString);
                     }

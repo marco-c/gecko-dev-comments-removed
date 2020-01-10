@@ -42,7 +42,7 @@ pref("geckoview.console.enabled", false);
 pref("dom.capture.enabled", true);
 
 
-pref("dom.push.enabled", false);
+pref("dom.push.enabled", true);
 
 
 pref("dom.storageManager.enabled", true);

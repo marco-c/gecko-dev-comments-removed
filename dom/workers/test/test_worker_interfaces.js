@@ -213,14 +213,13 @@ var interfaceNamesInGlobalScope = [
   
   { name: "PromiseRejectionEvent", insecureContext: true },
   
-  { name: "PushManager", insecureContext: true, fennecOrDesktop: true },
+  { name: "PushManager", insecureContext: true },
   
-  { name: "PushSubscription", insecureContext: true, fennecOrDesktop: true },
+  { name: "PushSubscription", insecureContext: true },
   
   {
     name: "PushSubscriptionOptions",
     insecureContext: true,
-    fennecOrDesktop: true,
   },
   
   { name: "Request", insecureContext: true },
