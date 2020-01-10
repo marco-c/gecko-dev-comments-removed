@@ -1473,8 +1473,6 @@ pref("identity.fxaccounts.commands.missed.fetch_interval", 86400);
 pref("ui.key.menuAccessKeyFocuses", true);
 #endif
 
-pref("media.eme.hdcp-policy-check.enabled", false);
-
 
 
 pref("media.gmp.trial-create.enabled", true);

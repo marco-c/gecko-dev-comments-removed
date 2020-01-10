@@ -114,9 +114,6 @@ class nsGenericHTMLFrameElement : public nsGenericHTMLElement,
 
   void CreateRemoteFrameLoader(mozilla::dom::BrowserParent* aBrowserParent);
 
-  static void InitStatics();
-  static bool BrowserFramesEnabled();
-
   
 
 

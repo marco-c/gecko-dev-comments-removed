@@ -57,10 +57,10 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/StaticPrefs.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/TouchEvents.h"
 #include "mozilla/Unused.h"
-#include "Units.h"
 #include "nsBrowserStatusFilter.h"
 #include "nsContentUtils.h"
 #include "nsDocShell.h"
@@ -437,7 +437,7 @@ BrowserChild::Observe(nsISupports* aSubject, const char* aTopic,
       nsCOMPtr<Document> subject(do_QueryInterface(aSubject));
       nsCOMPtr<Document> doc(GetTopLevelDocument());
 
-      if (subject == doc && doc->IsTopLevelContentDocument()) {
+      if (subject == doc) {
         RefPtr<PresShell> presShell = doc->GetPresShell();
         if (presShell) {
           presShell->SetIsFirstPaint(true);
@@ -1791,7 +1791,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealTouchEvent(
 
   if (localEvent.mMessage == eTouchStart && AsyncPanZoomEnabled()) {
     nsCOMPtr<Document> document = GetTopLevelDocument();
-    if (StaticPrefs::TouchActionEnabled()) {
+    if (StaticPrefs::layout_css_touch_action_enabled()) {
       APZCCallbackHelper::SendSetAllowedTouchBehaviorNotification(
           mPuppetWidget, document, localEvent, aInputBlockId,
           mSetAllowedTouchBehaviorCallback);
@@ -2742,7 +2742,7 @@ bool BrowserChild::IsVisible() {
 }
 
 void BrowserChild::UpdateVisibility(bool aForceRepaint) {
-  bool shouldBeVisible = mIsTopLevel ? mRenderLayers : mEffectsInfo.IsVisible();
+  bool shouldBeVisible = mIsTopLevel ? mRenderLayers : mEffectsInfo.mVisible;
   bool isVisible = IsVisible();
 
   if (shouldBeVisible != isVisible) {
@@ -3328,17 +3328,6 @@ ScreenIntSize BrowserChild::GetInnerSize() {
   return ViewAs<ScreenPixel>(
       innerSize, PixelCastJustification::LayoutDeviceIsScreenForTabDims);
 };
-
-nsRect BrowserChild::GetVisibleRect() {
-  bool isForceRendering = mIsTopLevel && mRenderLayers;
-  if (isForceRendering && !mEffectsInfo.IsVisible()) {
-    
-    
-    return nsRect(nsPoint(), CSSPixel::ToAppUnits(mUnscaledInnerSize));
-  } else {
-    return mEffectsInfo.mVisibleRect;
-  }
-}
 
 ScreenIntRect BrowserChild::GetOuterRect() {
   LayoutDeviceIntRect outerRect =

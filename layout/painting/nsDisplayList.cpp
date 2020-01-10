@@ -889,7 +889,7 @@ static void AddAnimationsForDisplayItem(nsIFrame* aFrame,
           GroupAnimationsByProperty(matchedAnimations, propertySet);
   
   const bool hasMultipleTransformLikeProperties =
-      StaticPrefs::IndividualTransform() &&
+      StaticPrefs::layout_css_individual_transform_enabled() &&
       aType == DisplayItemType::TYPE_TRANSFORM;
   nsCSSPropertyIDSet nonAnimatingProperties =
       nsCSSPropertyIDSet::TransformLikeProperties();
@@ -2882,19 +2882,11 @@ FrameLayerBuilder* nsDisplayList::BuildLayers(nsDisplayListBuilder* aBuilder,
       rootLayer->SetScrollMetadata(nsTArray<ScrollMetadata>());
     }
 
-    float resolutionUniform = StaticPrefs::LayoutUseContainersForRootFrames()
-                                  ? presShell->GetResolution()
-                                  : 1.0f;
-    float resolutionX = resolutionUniform;
-    float resolutionY = resolutionUniform;
-
-    
-    if (BrowserChild* browserChild = BrowserChild::GetFrom(presShell)) {
-      resolutionX *= browserChild->GetEffectsInfo().mScaleX;
-      resolutionY *= browserChild->GetEffectsInfo().mScaleY;
-    }
-
-    ContainerLayerParameters containerParameters(resolutionX, resolutionY);
+    float rootLayerResolution = StaticPrefs::LayoutUseContainersForRootFrames()
+                                    ? presShell->GetResolution()
+                                    : 1.0f;
+    ContainerLayerParameters containerParameters(rootLayerResolution,
+                                                 rootLayerResolution);
 
     {
       PaintTelemetry::AutoRecord record(PaintTelemetry::Metric::Layerization);
@@ -2914,10 +2906,11 @@ FrameLayerBuilder* nsDisplayList::BuildLayers(nsDisplayListBuilder* aBuilder,
     if (!root) {
       return nullptr;
     }
-    
-    root->SetPostScale(1.0f / resolutionX, 1.0f / resolutionY);
     if (StaticPrefs::LayoutUseContainersForRootFrames()) {
-      root->SetScaleToResolution(resolutionUniform);
+      
+      root->SetPostScale(1.0f / containerParameters.mXScale,
+                         1.0f / containerParameters.mYScale);
+      root->SetScaleToResolution(containerParameters.mXScale);
     }
 
     auto callback = [root](ScrollableLayerGuid::ViewID aScrollId) -> bool {

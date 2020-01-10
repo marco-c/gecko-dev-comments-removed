@@ -1601,25 +1601,7 @@ class HTMLInputElement final : public nsGenericHTMLFormElementWithState,
 
 
 
-  static bool IsWebkitFileSystemEnabled();
-
-  
-
-
-
-  static bool IsDirPickerEnabled();
-
-  
-
-
-
   static bool IsExperimentalFormsEnabled();
-
-  
-
-
-
-  static bool IsInputDateTimeEnabled();
 
   
 

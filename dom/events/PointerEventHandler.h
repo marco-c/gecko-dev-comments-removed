@@ -45,9 +45,6 @@ class PointerEventHandler final {
   static void ReleaseStatics();
 
   
-  static bool IsPointerEventEnabled();
-
-  
   static bool IsPointerEventImplicitCaptureForTouchEnabled();
 
   

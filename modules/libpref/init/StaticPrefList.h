@@ -104,6 +104,12 @@
 
 
 
+#ifdef RELEASE_OR_BETA
+# define NOT_IN_RELEASE_OR_BETA_VALUE false
+#else
+# define NOT_IN_RELEASE_OR_BETA_VALUE true
+#endif
+
 
 
 
@@ -686,6 +692,18 @@ VARCACHE_PREF(
 
 
 
+
+VARCACHE_PREF(
+  Live,
+  "beacon.enabled",
+  beacon_enabled,
+  bool, true
+)
+
+
+
+
+
 PREF("browser.active_color", String, "")
 PREF("browser.anchor_color", String, "")
 
@@ -960,6 +978,30 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  Live,
+  "canvas.filters.enabled",
+  canvas_filters_enabled,
+  bool, true
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "canvas.focusring.enabled",
+  canvas_focusring_enabled,
+  bool, true
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "canvas.hitregions.enabled",
+  canvas_hitregions_enabled,
+  bool, false
+)
+
+
 
 
 
@@ -989,6 +1031,15 @@ VARCACHE_PREF(
 
 
 
+
+
+
+VARCACHE_PREF(
+  Live,
+  "device.sensors.enabled",
+  device_sensors_enabled,
+  bool, true
+)
 
 VARCACHE_PREF(
   Live,
@@ -1156,6 +1207,14 @@ VARCACHE_PREF(
 
 VARCACHE_PREF(
   Live,
+  "dom.battery.enabled",
+  dom_battery_enabled,
+  bool, true
+)
+
+
+VARCACHE_PREF(
+  Live,
   "dom.block_external_protocol_in_iframes",
   dom_block_external_protocol_in_iframes,
   bool, true
@@ -1214,6 +1273,14 @@ VARCACHE_PREF(
   Live,
   "dom.disable_open_during_load",
   dom_disable_open_during_load,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.enable_memory_stats",
+  dom_enable_memory_stats,
   bool, false
 )
 
@@ -1440,6 +1507,54 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  Live,
+  "dom.forms.datetime",
+  dom_forms_datetime,
+  bool, true
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.forms.inputmode",
+  dom_forms_inputmode,
+  bool, NOT_IN_RELEASE_OR_BETA_VALUE
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.input.dirpicker",
+  dom_input_dirpicker,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.inputevent.data.enabled",
+  dom_inputevent_data_enabled,
+  bool, true
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.inputevent.datatransfer.enabled",
+  dom_inputevent_datatransfer_enabled,
+  bool, true
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.inputevent.inputtype.enabled",
+  dom_inputevent_inputtype_enabled,
+  bool, true
+)
+
+
 
 
 #if !defined(DEBUG) && !defined(MOZ_ASAN) && !defined(MOZ_VALGRIND) && \
@@ -1485,6 +1600,24 @@ VARCACHE_PREF(
   bool, true
 )
 
+
+VARCACHE_PREF(
+  Live,
+  "dom.manifest.onappinstalled",
+  dom_manifest_onappinstalled,
+  bool, false
+)
+
+
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.media.autoplay.autoplay-policy-api",
+  dom_media_autoplay_autoplay_policy_api,
+  bool, false
+)
+
 VARCACHE_PREF(
   Live,
   "dom.meta-viewport.enabled",
@@ -1496,6 +1629,22 @@ VARCACHE_PREF(
   Live,
   "dom.metaElement.setCookie.allowed",
   dom_metaElement_setCookie_allowed,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.moduleScripts.enabled",
+  dom_moduleScripts_enabled,
+  bool, true
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.mozBrowserFramesEnabled",
+  dom_mozBrowserFramesEnabled,
   bool, false
 )
 
@@ -1523,6 +1672,14 @@ VARCACHE_PREF(
   RelaxedAtomicBool, PREF_VALUE
 )
 #undef PREF_VALUE
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.paintWorklet.enabled",
+  dom_paintWorklet_enabled,
+  bool, false
+)
 
 
 VARCACHE_PREF(
@@ -1576,32 +1733,89 @@ VARCACHE_PREF(
 
 VARCACHE_PREF(
   Live,
+  "dom.performance.time_to_contentful_paint.enabled",
+  dom_performance_time_to_contentful_paint_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.performance.time_to_dom_content_flushed.enabled",
+  dom_performance_time_to_dom_content_flushed_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.performance.time_to_first_interactive.enabled",
+  dom_performance_time_to_first_interactive_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.performance.time_to_non_blank_paint.enabled",
+  dom_performance_time_to_non_blank_paint_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.permissions.revoke.enable",
+  dom_permissions_revoke_enable,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
   "dom.placeholder.show_on_focus",
   dom_placeholder_show_on_focus,
   bool, true
 )
 
 
+
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.pointer-lock.enabled",
+  dom_pointer_lock_enabled,
+  bool, true
+)
+
+
+#if defined(ANDROID)
+# define PREF_VALUE NOT_IN_RELEASE_OR_BETA_VALUE
+#else
+# define PREF_VALUE false
+#endif
 VARCACHE_PREF(
   Live,
   "dom.presentation.enabled",
   dom_presentation_enabled,
-  bool, false
+  bool, PREF_VALUE
 )
 
 VARCACHE_PREF(
   Live,
   "dom.presentation.controller.enabled",
   dom_presentation_controller_enabled,
-  bool, false
+  bool, PREF_VALUE
 )
 
 VARCACHE_PREF(
   Live,
   "dom.presentation.receiver.enabled",
   dom_presentation_receiver_enabled,
-  bool, false
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
 VARCACHE_PREF(
   Live,
@@ -1633,6 +1847,14 @@ VARCACHE_PREF(
   "dom.push.enabled",
   dom_push_enabled,
   RelaxedAtomicBool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.registerContentHandler.enabled",
+  dom_registerContentHandler_enabled,
+  bool, false
 )
 
 
@@ -1796,6 +2018,14 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
+
+VARCACHE_PREF(
+  Live,
+  "dom.select_events.enabled",
+  dom_select_events_enabled,
+  bool, true
+)
+
 VARCACHE_PREF(
   Live,
   "dom.separate_event_queue_for_post_message.enabled",
@@ -1820,6 +2050,15 @@ VARCACHE_PREF(
   "dom.serviceWorkers.testing.enabled",
   dom_serviceWorkers_testing_enabled,
   RelaxedAtomicBool, false
+)
+
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.sidebar.enabled",
+  dom_sidebar_enabled,
+  bool, true
 )
 
 
@@ -1853,6 +2092,14 @@ VARCACHE_PREF(
 #undef PREF_VALUE
 
 
+VARCACHE_PREF(
+  Live,
+  "dom.storage.testing",
+  dom_storage_testing,
+  bool, false
+)
+
+
 
 #ifdef EARLY_BETA_OR_EARLIER
 #define PREF_VALUE true
@@ -1866,6 +2113,14 @@ VARCACHE_PREF(
   bool, PREF_VALUE
 )
 #undef PREF_VALUE
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.testing.selection.GetRangesForInterval",
+  dom_testing_selection_GetRangesForInterval,
+  bool, false
+)
 
 VARCACHE_PREF(
   Live,
@@ -1899,12 +2154,29 @@ VARCACHE_PREF(
   bool, false
 )
 
+
+VARCACHE_PREF(
+  Live,
+  "dom.visualviewport.enabled",
+  dom_visualviewport_enabled,
+  bool, false
+)
+
+
+
+
+#if defined(XP_WIN) || defined(XP_DARWIN) || !defined(RELEASE_OR_BETA)
+# define PREF_VALUE true
+#else
+# define PREF_VALUE false
+#endif
 VARCACHE_PREF(
   Once,
   "dom.vr.enabled",
   dom_vr_enabled,
-  bool, false
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
 VARCACHE_PREF(
   Live,
@@ -2097,6 +2369,14 @@ VARCACHE_PREF(
 #undef PREF_VALUE
 
 
+VARCACHE_PREF(
+  Live,
+  "dom.webdriver.enabled",
+  dom_webdriver_enabled,
+  bool, true
+)
+
+
 
 
 #ifdef ANDROID
@@ -2149,6 +2429,20 @@ VARCACHE_PREF(
   dom_webgpu_enable,
   bool, false
 )
+
+
+#if !defined(MOZ_WIDGET_ANDROID)
+# define PREF_VALUE true
+#else
+# define PREF_VALUE false
+#endif
+VARCACHE_PREF(
+  Live,
+  "dom.webkitBlink.filesystem.enabled",
+  dom_webkitBlink_filesystem_enabled,
+  bool, PREF_VALUE
+)
+#undef PREF_VALUE
 
 
 VARCACHE_PREF(
@@ -2208,6 +2502,14 @@ VARCACHE_PREF(
 
 VARCACHE_PREF(
   Live,
+  "dom.window.event.enabled",
+  dom_window_event_enabled,
+  bool, true
+)
+
+
+VARCACHE_PREF(
+  Live,
   "dom.window.open.noreferrer.enabled",
   dom_window_open_noreferrer_enabled,
   bool, true
@@ -2255,6 +2557,45 @@ VARCACHE_PREF(
   "dom.xhr.standard_content_type_normalization",
   dom_xhr_standard_content_type_normalization,
   RelaxedAtomicBool, true
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.xmldocument.async.enabled",
+  dom_xmldocument_async_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "dom.xmldocument.load.enabled",
+  dom_xmldocument_load_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "geo.enabled",
+  geo_enabled,
+  bool, true
+)
+
+
+
+VARCACHE_PREF(
+  Live,
+  "abc.def",
+  abc_def,
+  bool, true
+)
+VARCACHE_PREF(
+  Live,
+  "ghi.jkl",
+  ghi_jkl,
+  bool, true
 )
 
 
@@ -4250,6 +4591,14 @@ VARCACHE_PREF(
 
 VARCACHE_PREF(
   Live,
+  "layout.css.convertFromNode.enabled",
+  layout_css_convertFromNode_enabled,
+  bool, NOT_IN_RELEASE_OR_BETA_VALUE
+)
+
+
+VARCACHE_PREF(
+  Live,
   "layout.css.DOMMatrix.enabled",
   layout_css_DOMMatrix_enabled,
   bool, true
@@ -4335,7 +4684,15 @@ VARCACHE_PREF(
 VARCACHE_PREF(
   Live,
   "layout.css.individual-transform.enabled",
-  IndividualTransform,
+  layout_css_individual_transform_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "layout.css.initial-letter.enabled",
+  layout_css_initial_letter_enabled,
   bool, false
 )
 
@@ -4344,6 +4701,22 @@ VARCACHE_PREF(
   Live,
   "layout.css.line-height-moz-block-height.content.enabled",
   layout_css_line_height_moz_block_height_content_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "layout.css.motion-path.enabled",
+  layout_css_motion_path_enabled,
+  bool, NOT_IN_RELEASE_OR_BETA_VALUE
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "layout.css.moz-binding.content.enabled",
+  layout_css_moz_binding_content_enabled,
   bool, false
 )
 
@@ -4378,6 +4751,36 @@ VARCACHE_PREF(
   bool, false
 )
 
+
+#if defined(XP_MACOSX)
+# define PREF_VALUE true
+#else
+# define PREF_VALUE false
+#endif
+VARCACHE_PREF(
+  Live,
+  "layout.css.osx-font-smoothing.enabled",
+  layout_css_osx_font_smoothing_enabled,
+  bool, PREF_VALUE
+)
+#undef PREF_VALUE
+
+
+VARCACHE_PREF(
+  Live,
+  "layout.css.overflow-clip-box.enabled",
+  layout_css_overflow_clip_box_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "layout.css.overscroll-behavior.enabled",
+  layout_css_overscroll_behavior_enabled,
+  bool, true
+)
+
 VARCACHE_PREF(
   Live,
   "layout.css.paint-order.enabled",
@@ -4396,8 +4799,56 @@ VARCACHE_PREF(
 
 VARCACHE_PREF(
   Live,
+  "layout.css.prefixes.animations",
+  layout_css_prefixes_animations,
+  bool, true
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "layout.css.prefixes.border-image",
+  layout_css_prefixes_border_image,
+  bool, true
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "layout.css.prefixes.box-sizing",
+  layout_css_prefixes_box_sizing,
+  bool, true
+)
+
+
+VARCACHE_PREF(
+  Live,
   "layout.css.prefixes.device-pixel-ratio-webkit",
   layout_css_prefixes_device_pixel_ratio_webkit,
+  bool, true
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "layout.css.prefixes.font-features",
+  layout_css_prefixes_font_features,
+  bool, true
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "layout.css.prefixes.transforms",
+  layout_css_prefixes_transforms,
+  bool, true
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "layout.css.prefixes.transitions",
+  layout_css_prefixes_transitions,
   bool, true
 )
 
@@ -4414,6 +4865,22 @@ VARCACHE_PREF(
   "layout.css.scroll-behavior.damping-ratio",
   ScrollBehaviorDampingRatio,
   AtomicFloat, 1.0f
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "layout.css.scrollbar-color.enabled",
+  layout_css_scrollbar_color_enabled,
+  bool, true
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "layout.css.scrollbar-width.enabled",
+  layout_css_scrollbar_width_enabled,
+  bool, true
 )
 
 #ifdef NIGHTLY_BUILD
@@ -4472,11 +4939,16 @@ VARCACHE_PREF(
   bool, true
 )
 
+
+
+
+
+
 VARCACHE_PREF(
   Live,
   "layout.css.touch_action.enabled",
-  TouchActionEnabled,
-  RelaxedAtomicBool, false
+  layout_css_touch_action_enabled,
+  RelaxedAtomicBool, true
 )
 
 
@@ -4766,6 +5238,14 @@ VARCACHE_PREF(
   bool, PREF_VALUE
 )
 #undef PREF_VALUE
+
+
+VARCACHE_PREF(
+  Live,
+  "layout.css.text-justify.enabled",
+  layout_css_text_justify_enabled,
+  bool, true
+)
 
 
 VARCACHE_PREF(
@@ -5536,7 +6016,7 @@ VARCACHE_PREF(
 VARCACHE_PREF(
   Live,
   "media.videocontrols.lock-video-orientation",
-  MediaVideocontrolsLockVideoOrientation,
+  media_videocontrols_lock_video_orientation,
   bool, PREF_VALUE
 )
 #undef PREF_VALUE
@@ -5608,7 +6088,7 @@ VARCACHE_PREF(
 VARCACHE_PREF(
   Live,
   "media.test.video-suspend",
-  MediaTestVideoSuspend,
+  media_test_video_suspend,
   RelaxedAtomicBool, false
 )
 
@@ -5650,6 +6130,27 @@ VARCACHE_PREF(
   Live,
   "media.peerconnection.enabled",
   media_peerconnection_enabled,
+  bool, true
+)
+
+VARCACHE_PREF(
+  Live,
+  "media.peerconnection.dtmf.enabled",
+  media_peerconnection_dtmf_enabled,
+  bool, true
+)
+
+VARCACHE_PREF(
+  Live,
+  "media.peerconnection.identity.enabled",
+  media_peerconnection_identity_enabled,
+  bool, true
+)
+
+VARCACHE_PREF(
+  Live,
+  "media.peerconnection.rtpsourcesapi.enabled",
+  media_peerconnection_rtpsourcesapi_enabled,
   bool, true
 )
 
@@ -5702,6 +6203,61 @@ VARCACHE_PREF(
 #undef PREF_VALUE
 
 #endif 
+
+
+
+#ifdef NIGHTLY_BUILD
+# define PREF_VALUE true
+#else
+# define PREF_VALUE false
+#endif
+VARCACHE_PREF(
+  Live,
+  "media.allowed-to-play.enabled",
+  media_allowed_to_play_enabled,
+  bool, PREF_VALUE
+)
+#undef PREF_VALUE
+
+
+VARCACHE_PREF(
+  Live,
+  "media.eme.hdcp-policy-check.enabled",
+  media_eme_hdcp_policy_check_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "media.ondevicechange.enabled",
+  media_ondevicechange_enabled,
+  bool, true
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "media.seekToNextFrame.enabled",
+  media_seekToNextFrame_enabled,
+  bool, true
+)
+
+
+
+VARCACHE_PREF(
+  Live,
+  "media.setsinkid.enabled",
+  media_setsinkid_enabled,
+  bool, false
+)
+
+VARCACHE_PREF(
+  Live,
+  "media.useAudioChannelService.testing",
+  media_useAudioChannelService_testing,
+  bool, false
+)
 
 
 
@@ -5844,14 +6400,14 @@ VARCACHE_PREF(
 VARCACHE_PREF(
   Live,
   "network.cookie.thirdparty.sessionOnly",
-   network_cookie_thirdparty_sessionOnly,
+  network_cookie_thirdparty_sessionOnly,
   bool, false
 )
 
 VARCACHE_PREF(
   Live,
   "network.cookie.thirdparty.nonsecureSessionOnly",
-   network_cookie_thirdparty_nonsecureSessionOnly,
+  network_cookie_thirdparty_nonsecureSessionOnly,
   bool, false
 )
 
@@ -6352,6 +6908,18 @@ VARCACHE_PREF(
 
 
 
+VARCACHE_PREF(
+  Live,
+  "svg.transform-box.enabled",
+  svg_transform_box_enabled,
+  bool, true
+)
+
+
+
+
+
+
 
 
 VARCACHE_PREF(
@@ -6735,6 +7303,7 @@ VARCACHE_PREF(
   bool, PREF_VALUE
 )
 #undef PREF_VALUE
+
 
 
 

@@ -1405,7 +1405,7 @@ nsEventStatus AsyncPanZoomController::OnTouchMove(
       }
 
       MOZ_ASSERT(GetCurrentTouchBlock());
-      if (StaticPrefs::TouchActionEnabled() &&
+      if (StaticPrefs::layout_css_touch_action_enabled() &&
           GetCurrentTouchBlock()->TouchActionAllowsPanningXY()) {
         
         
@@ -3066,7 +3066,7 @@ nsEventStatus AsyncPanZoomController::StartPanning(
   angle = fabs(angle);                       
 
   RecursiveMutexAutoLock lock(mRecursiveMutex);
-  if (StaticPrefs::TouchActionEnabled()) {
+  if (StaticPrefs::layout_css_touch_action_enabled()) {
     HandlePanningWithTouchAction(angle);
   } else {
     if (GetAxisLockMode() == FREE) {

@@ -6,6 +6,7 @@
 
 #include "AsyncPanZoomController.h"   
 #include "LayersLogging.h"            
+#include "mozilla/StaticPrefs.h"
 #include "mozilla/gfx/Point.h"        
 #include "mozilla/layers/APZUtils.h"  
 #include "mozilla/layers/AsyncCompositionManager.h"  
@@ -272,7 +273,7 @@ CompositorHitTestInfo HitTestingTreeNode::HitTest(
     if (mEventRegions.mDTCRequiresTargetConfirmation) {
       result += CompositorHitTestFlags::eRequiresTargetConfirmation;
     }
-  } else if (StaticPrefs::TouchActionEnabled()) {
+  } else if (StaticPrefs::layout_css_touch_action_enabled()) {
     if (mEventRegions.mNoActionRegion.Contains(point.x, point.y)) {
       
       result += CompositorHitTestTouchActionMask;

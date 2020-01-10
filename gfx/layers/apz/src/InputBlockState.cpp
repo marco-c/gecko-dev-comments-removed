@@ -11,6 +11,7 @@
 #include "ScrollAnimationPhysics.h"  
 
 #include "mozilla/MouseEvents.h"
+#include "mozilla/StaticPrefs.h"
 #include "mozilla/Telemetry.h"                
 #include "mozilla/layers/IAPZCTreeManager.h"  
 #include "OverscrollHandoffState.h"
@@ -584,7 +585,7 @@ TouchBlockState::TouchBlockState(
       mInSlop(false),
       mTouchCounter(aCounter) {
   TBS_LOG("Creating %p\n", this);
-  if (!StaticPrefs::TouchActionEnabled()) {
+  if (!StaticPrefs::layout_css_touch_action_enabled()) {
     mAllowedTouchBehaviorSet = true;
   }
 }
@@ -616,7 +617,7 @@ bool TouchBlockState::HasAllowedTouchBehaviors() const {
 
 void TouchBlockState::CopyPropertiesFrom(const TouchBlockState& aOther) {
   TBS_LOG("%p copying properties from %p\n", this, &aOther);
-  if (StaticPrefs::TouchActionEnabled()) {
+  if (StaticPrefs::layout_css_touch_action_enabled()) {
     MOZ_ASSERT(aOther.mAllowedTouchBehaviorSet ||
                aOther.IsContentResponseTimerExpired());
     SetAllowedTouchBehaviors(aOther.mAllowedTouchBehaviors);
@@ -627,7 +628,8 @@ void TouchBlockState::CopyPropertiesFrom(const TouchBlockState& aOther) {
 bool TouchBlockState::HasReceivedAllContentNotifications() const {
   return CancelableBlockState::HasReceivedAllContentNotifications()
          
-         && (!StaticPrefs::TouchActionEnabled() || mAllowedTouchBehaviorSet);
+         && (!StaticPrefs::layout_css_touch_action_enabled() ||
+             mAllowedTouchBehaviorSet);
 }
 
 bool TouchBlockState::IsReadyForHandling() const {
@@ -635,7 +637,8 @@ bool TouchBlockState::IsReadyForHandling() const {
     return false;
   }
 
-  if (!StaticPrefs::TouchActionEnabled()) {
+  if (!StaticPrefs::layout_css_touch_action_enabled()) {
+    
     
     
     
@@ -673,7 +676,7 @@ void TouchBlockState::DispatchEvent(const InputData& aEvent) const {
 }
 
 bool TouchBlockState::TouchActionAllowsPinchZoom() const {
-  if (!StaticPrefs::TouchActionEnabled()) {
+  if (!StaticPrefs::layout_css_touch_action_enabled()) {
     return true;
   }
   
@@ -686,7 +689,7 @@ bool TouchBlockState::TouchActionAllowsPinchZoom() const {
 }
 
 bool TouchBlockState::TouchActionAllowsDoubleTapZoom() const {
-  if (!StaticPrefs::TouchActionEnabled()) {
+  if (!StaticPrefs::layout_css_touch_action_enabled()) {
     return true;
   }
   for (size_t i = 0; i < mAllowedTouchBehaviors.Length(); i++) {
@@ -698,7 +701,7 @@ bool TouchBlockState::TouchActionAllowsDoubleTapZoom() const {
 }
 
 bool TouchBlockState::TouchActionAllowsPanningX() const {
-  if (!StaticPrefs::TouchActionEnabled()) {
+  if (!StaticPrefs::layout_css_touch_action_enabled()) {
     return true;
   }
   if (mAllowedTouchBehaviors.IsEmpty()) {
@@ -710,7 +713,7 @@ bool TouchBlockState::TouchActionAllowsPanningX() const {
 }
 
 bool TouchBlockState::TouchActionAllowsPanningY() const {
-  if (!StaticPrefs::TouchActionEnabled()) {
+  if (!StaticPrefs::layout_css_touch_action_enabled()) {
     return true;
   }
   if (mAllowedTouchBehaviors.IsEmpty()) {
@@ -722,7 +725,7 @@ bool TouchBlockState::TouchActionAllowsPanningY() const {
 }
 
 bool TouchBlockState::TouchActionAllowsPanningXY() const {
-  if (!StaticPrefs::TouchActionEnabled()) {
+  if (!StaticPrefs::layout_css_touch_action_enabled()) {
     return true;
   }
   if (mAllowedTouchBehaviors.IsEmpty()) {

@@ -100,9 +100,6 @@ pref("browser.cache.compression_level", 0);
 pref("browser.download.forbid_open_with", false);
 
 
-pref("dom.registerContentHandler.enabled", false);
-
-
 pref("dom.registerProtocolHandler.insecure.enabled", false);
 
 
@@ -121,12 +118,6 @@ pref("dom.indexedDB.logging.profiler-marks", false);
 
 
 pref("dom.fileHandle.enabled", true);
-
-
-pref("dom.manifest.onappinstalled", false);
-
-
-pref("dom.select_events.enabled", true);
 
 
 #ifdef NIGHTLY_BUILD
@@ -151,27 +142,6 @@ pref("dom.serviceWorkers.update_delay", 1000);
 
 
 pref("dom.serviceWorkers.testUpdateOverOneDay", false);
-
-
-pref("dom.permissions.revoke.enable", false);
-
-
-pref("dom.performance.time_to_non_blank_paint.enabled", false);
-
-
-pref("dom.performance.time_to_contentful_paint.enabled", false);
-
-
-pref("dom.performance.time_to_dom_content_flushed.enabled", false);
-
-
-pref("dom.performance.time_to_first_interactive.enabled", false);
-
-
-
-
-
-pref("dom.pointer-lock.enabled", true);
 
 
 
@@ -209,13 +179,7 @@ pref("dom.keyboardevent.keypress.hack.use_legacy_keycode_and_charcode.addl", "")
 pref("dom.mouseevent.click.hack.use_legacy_non-primary_dispatch", "");
 
 
-pref("dom.inputevent.data.enabled", true);
-
-
 pref("dom.inputevent.datatransfer.enabled", true);
-
-
-pref("dom.inputevent.inputtype.enabled", true);
 
 #ifdef JS_BUILD_BINAST
 pref("dom.script_loader.binast_encoding.enabled", false);
@@ -226,9 +190,6 @@ pref("dom.script_loader.binast_encoding.enabled", false);
 
 pref("dom.script_loader.binast_encoding.domain.restrict.list", "*.facebook.com,static.xx.fbcdn.net,*.cloudflare.com,*.cloudflarestream.com,unpkg.com");
 #endif
-
-
-pref("dom.window.event.enabled", true);
 
 
 
@@ -402,8 +363,6 @@ pref("media.navigator.video.use_tmmbr", false);
 pref("media.navigator.audio.use_fec", true);
 pref("media.navigator.video.red_ulpfec_enabled", false);
 
-pref("media.peerconnection.dtmf.enabled", true);
-
 #ifdef NIGHTLY_BUILD
 pref("media.peerconnection.sdp.rust.enabled", true);
 pref("media.peerconnection.sdp.rust.compare", true);
@@ -469,14 +428,12 @@ pref("media.peerconnection.ice.link_local", false);
 pref("media.peerconnection.ice.force_interface", ""); 
 pref("media.peerconnection.ice.relay_only", false); 
 pref("media.peerconnection.use_document_iceservers", true);
-pref("media.peerconnection.identity.enabled", true);
 pref("media.peerconnection.identity.timeout", 10000);
 pref("media.peerconnection.ice.stun_client_maximum_transmits", 7);
 pref("media.peerconnection.ice.trickle_grace_period", 5000);
 pref("media.peerconnection.ice.no_host", false);
 pref("media.peerconnection.ice.default_address_only", false);
 pref("media.peerconnection.ice.proxy_only", false);
-pref("media.peerconnection.rtpsourcesapi.enabled", true);
 pref("media.peerconnection.turn.disable", false);
 
 
@@ -497,9 +454,6 @@ pref("media.getusermedia.agc", 1);
 
 pref("media.navigator.audio.full_duplex", true);
 #endif
-
-
-pref("dom.webdriver.enabled", true);
 
 #if !defined(ANDROID)
 pref("media.getusermedia.screensharing.enabled", true);
@@ -563,19 +517,6 @@ pref("media.autoplay.enabled.user-gestures-needed", false);
 
 
 
-#ifdef NIGHTLY_BUILD
-pref("media.allowed-to-play.enabled", true);
-#else
-pref("media.allowed-to-play.enabled", false);
-#endif
-
-
-
-
-pref("dom.media.autoplay.autoplay-policy-api", false);
-
-
-
 pref("media.video-queue.default-size", 10);
 
 
@@ -619,10 +560,6 @@ pref("media.av1.use-dav1d", false);
 #endif
 
 pref("media.webaudio.audiocontextoptions-samplerate.enabled", true);
-
-
-
-pref("media.setsinkid.enabled", false);
 
 
 pref("layers.amd-switchable-gfx.enabled", true);
@@ -962,11 +899,6 @@ pref("ui.scrollToClick", 0);
 #endif
 
 
-pref("canvas.focusring.enabled", true);
-pref("canvas.hitregions.enabled", false);
-pref("canvas.filters.enabled", true);
-
-
 
 
 
@@ -1263,7 +1195,6 @@ pref("dom.storage.shadow_writes", true);
 pref("dom.storage.snapshot_prefill", 16384);
 pref("dom.storage.snapshot_gradual_prefill", 4096);
 pref("dom.storage.snapshot_reusing", true);
-pref("dom.storage.testing", false);
 pref("dom.storage.client_validation", true);
 
 pref("dom.send_after_paint_to_content", false);
@@ -1304,9 +1235,6 @@ pref("dom.experimental_forms", false);
 pref("dom.forms.color", true);
 
 
-pref("dom.forms.datetime", true);
-
-
 
 pref("dom.forms.datetime.others", false);
 
@@ -1323,9 +1251,6 @@ pref("dom.forms.select.customstyling", false);
 pref("dom.forms.select.customstyling", true);
 #endif
 pref("dom.select_popup_in_parent.enabled", false);
-
-
-pref("dom.input.dirpicker", false);
 
 pref("dom.cycle_collector.incremental", true);
 
@@ -3009,15 +2934,6 @@ pref("layout.css.dpi", -1);
 pref("layout.css.devPixelsPerPx", "-1.0");
 
 
-pref("layout.css.initial-letter.enabled", false);
-
-
-pref("layout.css.scrollbar-color.enabled", true);
-
-
-pref("layout.css.scrollbar-width.enabled", true);
-
-
 
 pref("layout.css.scroll-snap.proximity-threshold", 200);
 
@@ -3032,37 +2948,8 @@ pref("layout.css.scroll-snap.prediction-max-velocity", 2000);
 pref("layout.css.scroll-snap.prediction-sensitivity", "0.750");
 
 
-#ifdef RELEASE_OR_BETA
-pref("layout.css.convertFromNode.enabled", false);
-#else
-pref("layout.css.convertFromNode.enabled", true);
-#endif
-
-
-pref("layout.css.text-justify.enabled", true);
-
-
 
 pref("layout.css.paint-order.enabled", true);
-
-
-pref("layout.css.prefixes.border-image", true);
-pref("layout.css.prefixes.transforms", true);
-pref("layout.css.prefixes.transitions", true);
-pref("layout.css.prefixes.animations", true);
-pref("layout.css.prefixes.box-sizing", true);
-pref("layout.css.prefixes.font-features", true);
-
-
-
-#ifdef XP_MACOSX
-pref("layout.css.osx-font-smoothing.enabled", true);
-#else
-pref("layout.css.osx-font-smoothing.enabled", false);
-#endif
-
-
-pref("layout.css.overflow-clip-box.enabled", false);
 
 
 pref("layout.css.outline-style-auto.enabled", false);
@@ -3088,16 +2975,6 @@ pref("layout.css.scroll-behavior.damping-ratio", "1.0");
 
 
 pref("layout.css.ruby.intercharacter.enabled", false);
-
-
-pref("layout.css.overscroll-behavior.enabled", true);
-
-
-#ifdef RELEASE_OR_BETA
-pref("layout.css.motion-path.enabled", false);
-#else
-pref("layout.css.motion-path.enabled", true);
-#endif
 
 
 
@@ -3366,8 +3243,6 @@ pref("svg.display-lists.painting.enabled", true);
 
 
 pref("svg.new-getBBox.enabled", false);
-
-pref("svg.transform-box.enabled", true);
 
 # This pref controls whether the 'context-fill' and 'context-stroke' keywords
 # can be used in SVG-as-an-image in the content processes to use the fill/
@@ -4906,8 +4781,6 @@ pref("webgl.perf.max-warnings", 0);
 pref("webgl.perf.max-acceptable-fb-status-invals", 0);
 pref("webgl.perf.spew-frame-allocs", true);
 
-pref("webgl.enable-webgl2", true);
-
 pref("webgl.enable-debug-renderer-info", true);
 pref("webgl.renderer-string-override", "");
 pref("webgl.vendor-string-override", "");
@@ -5111,13 +4984,7 @@ pref("layers.shared-buffer-provider.enabled", true);
 pref("layers.force-active", false);
 
 
-pref("geo.enabled", true);
-
-
 pref("geo.wifi.xhr.timeout", 60000);
-
-
-pref("device.sensors.enabled", true);
 
 
 pref("device.storage.enabled", false);
@@ -5246,9 +5113,6 @@ pref("dom.vibrator.max_vibrate_ms", 10000);
 pref("dom.vibrator.max_vibrate_list_len", 128);
 
 
-pref("dom.battery.enabled", true);
-
-
 
 pref("dom.push.loglevel", "Error");
 
@@ -5307,17 +5171,7 @@ pref("dom.w3c_pointer_events.dispatch_by_pointer_messages", false);
 pref("dom.w3c_pointer_events.implicit_capture", false);
 
 
-pref("media.ondevicechange.enabled", true);
-
-
 pref("media.ondevicechange.fakeDeviceChangeEvent.enabled", false);
-
-
-
-
-
-
-pref("layout.css.touch_action.enabled", true);
 
 
 
@@ -5339,13 +5193,6 @@ pref("io.activity.enabled", false);
 
 pref("jsloader.shareGlobal", true);
 
-
-
-#if defined(XP_WIN) || defined(XP_MACOSX) || !defined(RELEASE_OR_BETA)
-pref("dom.vr.enabled", true);
-#else
-pref("dom.vr.enabled", false);
-#endif
 
 
 
@@ -5553,12 +5400,6 @@ pref("captivedetect.maxWaitingTime", 5000);
 pref("captivedetect.pollingTime", 3000);
 pref("captivedetect.maxRetryCount", 5);
 
-#ifdef RELEASE_OR_BETA
-pref("dom.forms.inputmode", false);
-#else
-pref("dom.forms.inputmode", true);
-#endif
-
 
 pref("dom.mapped_arraybuffer.enabled", true);
 
@@ -5691,8 +5532,6 @@ pref("dom.wakelock.enabled", false);
 
 pref("identity.fxaccounts.auth.uri", "https://api.accounts.firefox.com/v1");
 
-pref("beacon.enabled", true);
-
 
 pref("dom.presentation.tcp_server.debug", false);
 pref("dom.presentation.discovery.enabled", false);
@@ -5713,9 +5552,6 @@ pref("intl.allow-insecure-text-input", false);
 
 
 pref("dom.meta-viewport.enabled", false);
-
-
-pref("dom.visualviewport.enabled", false);
 
 
 pref("browser.search.log", false);
@@ -5853,16 +5689,11 @@ pref("dom.input.fallbackUploadDir", "");
 
 pref("plugins.rewrite_youtube_embeds", true);
 
-
-pref("dom.mozBrowserFramesEnabled", false);
-
 pref("dom.audiochannel.audioCompeting", false);
 pref("dom.audiochannel.audioCompeting.allAgents", false);
 
 
 pref("media.default_volume", "1.0");
-
-pref("media.seekToNextFrame.enabled", true);
 
 
 pref("dom.maxHardwareConcurrency", 16);
@@ -5870,10 +5701,6 @@ pref("dom.maxHardwareConcurrency", 16);
 
 #if !defined(RELEASE_OR_BETA)
 pref("osfile.reset_worker_delay", 30000);
-#endif
-
-#if !defined(MOZ_WIDGET_ANDROID)
-pref("dom.webkitBlink.filesystem.enabled", true);
 #endif
 
 pref("media.block-autoplay-until-in-foreground", true);
@@ -5909,9 +5736,6 @@ pref("browser.sanitizer.loglevel", "Warn");
 
 
 pref("prompts.authentication_dialog_abuse_limit", 2);
-
-
-pref("dom.moduleScripts.enabled", true);
 
 
 
@@ -5991,10 +5815,6 @@ pref("dom.datatransfer.mozAtAPIs", false);
 #else
 pref("dom.datatransfer.mozAtAPIs", true);
 #endif
-
-
-
-pref("dom.sidebar.enabled", true);
 
 
 

@@ -34,8 +34,6 @@ class GamepadManager final : public nsIObserver {
   static bool IsServiceRunning();
   
   static already_AddRefed<GamepadManager> GetService();
-  
-  static bool IsAPIEnabled();
 
   void BeginShutdown();
   void StopMonitoring();
