@@ -31,7 +31,7 @@ this.LoginManagerContextMenu = {
 
 
 
-  addLoginsToMenu(inputElement, browser, documentURI) {
+  addLoginsToMenu(inputElementIdentifier, browser, documentURI) {
     let foundLogins = this._findLogins(documentURI);
 
     if (!foundLogins.length) {
@@ -58,7 +58,7 @@ this.LoginManagerContextMenu = {
 
       
       item.addEventListener("command", function(login, event) {
-        this._fillTargetField(login, inputElement, browser, documentURI);
+        this._fillTargetField(login, inputElementIdentifier, browser, documentURI);
       }.bind(this, login));
 
       fragment.appendChild(item);
@@ -158,12 +158,12 @@ this.LoginManagerContextMenu = {
 
 
 
-  _fillTargetField(login, inputElement, browser, documentURI) {
+  _fillTargetField(login, inputElementIdentifier, browser, documentURI) {
     LoginManagerParent.fillForm({
       browser,
+      inputElementIdentifier,
       loginFormOrigin: documentURI.displayPrePath,
       login,
-      inputElement,
     }).catch(Cu.reportError);
   },
 

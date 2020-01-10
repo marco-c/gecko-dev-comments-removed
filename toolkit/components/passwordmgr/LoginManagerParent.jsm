@@ -168,7 +168,7 @@ this.LoginManagerParent = {
 
 
 
-  async fillForm({ browser, loginFormOrigin, login, inputElement }) {
+  async fillForm({ browser, loginFormOrigin, login, inputElementIdentifier }) {
     let recipes = [];
     if (loginFormOrigin) {
       let formHost;
@@ -185,12 +185,12 @@ this.LoginManagerParent = {
     
     let jsLogins = [LoginHelper.loginToVanillaObject(login)];
 
-    let objects = inputElement ? {inputElement} : null;
     browser.messageManager.sendAsyncMessage("PasswordManager:fillForm", {
+      inputElementIdentifier,
       loginFormOrigin,
       logins: jsLogins,
       recipes,
-    }, objects);
+    });
   },
 
   
