@@ -66,6 +66,7 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref("network.trr.skip-AAAA-when-not-supported");
   Services.prefs.clearUserPref("network.trr.wait-for-A-and-AAAA");
   Services.prefs.clearUserPref("network.trr.excluded-domains");
+  Services.prefs.clearUserPref("captivedetect.canonicalURL");
 
   Services.prefs.clearUserPref("network.http.spdy.enabled");
   Services.prefs.clearUserPref("network.http.spdy.enabled.http2");
@@ -699,6 +700,17 @@ add_task(async function test24e() {
 });
 
 
+add_task(async function test24f() {
+  dns.clearCache(true);
+  Services.prefs.setCharPref(
+    "captivedetect.canonicalURL",
+    "http://test.detectportal.com/success.txt"
+  );
+
+  await new DNSListener("test.detectportal.com", "127.0.0.1");
+});
+
+
 
 add_task(async function test25() {
   dns.clearCache(true);
@@ -752,6 +764,22 @@ add_task(async function test25d() {
   );
 
   await new DNSListener("domain.other", "127.0.0.1");
+});
+
+
+add_task(async function test25e() {
+  dns.clearCache(true);
+  Services.prefs.setIntPref("network.trr.mode", 3); 
+  Services.prefs.setCharPref(
+    "captivedetect.canonicalURL",
+    "http://test.detectportal.com/success.txt"
+  );
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=192.192.192.192`
+  );
+
+  await new DNSListener("test.detectportal.com", "127.0.0.1");
 });
 
 
