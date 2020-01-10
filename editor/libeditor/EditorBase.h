@@ -91,7 +91,6 @@ class SplitNodeResult;
 class SplitNodeTransaction;
 class TextComposition;
 class TextEditor;
-class TextEditRules;
 class TextInputListener;
 class TextServicesDocument;
 class TypeInState;
@@ -990,8 +989,6 @@ class EditorBase : public nsIEditor,
 
  protected:  
   
-
-
 
 
 
@@ -2602,8 +2599,6 @@ class EditorBase : public nsIEditor,
   
   RefPtr<TextComposition> mComposition;
 
-  RefPtr<TextEditRules> mRules;
-
   RefPtr<TextInputListener> mTextInputListener;
 
   RefPtr<IMEContentObserver> mIMEContentObserver;
@@ -2669,7 +2664,6 @@ class EditorBase : public nsIEditor,
   friend class DeleteNodeTransaction;
   friend class DeleteRangeTransaction;
   friend class DeleteTextTransaction;
-  friend class HTMLEditRules;
   friend class HTMLEditUtils;
   friend class InsertNodeTransaction;
   friend class InsertTextTransaction;
@@ -2678,7 +2672,6 @@ class EditorBase : public nsIEditor,
   friend class ListItemElementSelectionState;
   friend class ParagraphStateAtSelection;
   friend class SplitNodeTransaction;
-  friend class TextEditRules;
   friend class TypeInState;
   friend class WSRunObject;
   friend class WSRunScanner;

@@ -636,8 +636,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
-
   
 
 
@@ -1148,7 +1146,6 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT nsresult SetPositionToStatic(Element& aElement);
 
   
-
 
 
 
@@ -2691,6 +2688,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   OnEndHandlingTopLevelEditSubActionInternal();
 
@@ -3487,9 +3485,6 @@ class HTMLEditor final : public TextEditor,
     bool mIsSafe;
     bool mDoDeleteSelection;
   };
-
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult InitRules() override;
 
   virtual void CreateEventListeners() override;
   virtual nsresult InstallEventListeners() override;
@@ -4379,7 +4374,6 @@ class HTMLEditor final : public TextEditor,
   friend class CSSEditUtils;
   friend class EditorBase;
   friend class EmptyEditableFunctor;
-  friend class HTMLEditRules;
   friend class ListElementSelectionState;
   friend class ListItemElementSelectionState;
   friend class ParagraphStateAtSelection;

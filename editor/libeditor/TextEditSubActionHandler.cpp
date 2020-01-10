@@ -3,9 +3,8 @@
 
 
 
-#include "mozilla/TextEditRules.h"
+#include "TextEditor.h"
 
-#include "HTMLEditRules.h"
 #include "TextEditUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/EditAction.h"
@@ -14,7 +13,6 @@
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/TextComposition.h"
-#include "mozilla/TextEditor.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/NodeFilterBinding.h"
@@ -50,32 +48,6 @@ using namespace dom;
     return EditActionCanceled(NS_OK);                                          \
   }
 
-
-
-
-
-TextEditRules::TextEditRules()
-    : mTextEditor(nullptr),
-      mData(nullptr),
-#ifdef DEBUG
-      mIsHandling(false),
-#endif  
-      mIsHTMLEditRules(false) {
-  InitFields();
-}
-
-void TextEditRules::InitFields() {
-  mTextEditor = nullptr;
-}
-
-HTMLEditRules* TextEditRules::AsHTMLEditRules() {
-  return mIsHTMLEditRules ? static_cast<HTMLEditRules*>(this) : nullptr;
-}
-
-const HTMLEditRules* TextEditRules::AsHTMLEditRules() const {
-  return mIsHTMLEditRules ? static_cast<const HTMLEditRules*>(this) : nullptr;
-}
-
 nsresult TextEditor::InitEditorContentAndSelection() {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
@@ -103,11 +75,6 @@ nsresult TextEditor::InitEditorContentAndSelection() {
     }
   }
 
-  return NS_OK;
-}
-
-nsresult TextEditRules::DetachEditor() {
-  mTextEditor = nullptr;
   return NS_OK;
 }
 
@@ -303,6 +270,7 @@ nsresult TextEditor::EnsureCaretNotAtEndOfTextNode() {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(IsPlaintextEditor());
 
+  
   
   
   
@@ -980,14 +948,6 @@ EditActionResult TextEditor::TruncateInsertionStringForMaxLength(
   
   aInsertionString.Truncate(newInsertionStringLength);
   return EditActionHandled();
-}
-
-bool TextEditRules::IsSingleLineEditor() const {
-  return mTextEditor ? mTextEditor->IsSingleLineEditor() : false;
-}
-
-bool TextEditRules::IsPlaintextEditor() const {
-  return mTextEditor ? mTextEditor->IsPlaintextEditor() : false;
 }
 
 bool TextEditor::CanEchoPasswordNow() const {

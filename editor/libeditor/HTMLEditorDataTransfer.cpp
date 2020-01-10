@@ -29,7 +29,6 @@
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/SelectionState.h"
-#include "mozilla/TextEditRules.h"
 #include "nsAString.h"
 #include "nsCOMPtr.h"
 #include "nsCRTGlue.h"  
@@ -92,7 +91,7 @@ static nsresult FindTargetNode(nsINode* aStart, nsCOMPtr<nsINode>& aResult);
 nsresult HTMLEditor::LoadHTML(const nsAString& aInputString) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  if (NS_WARN_IF(!mRules)) {
+  if (NS_WARN_IF(!mInitSucceeded)) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
@@ -197,7 +196,7 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
     bool aTrustedInput, bool aClearStyle) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  if (NS_WARN_IF(!mRules)) {
+  if (NS_WARN_IF(!mInitSucceeded)) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
@@ -1834,7 +1833,6 @@ nsresult HTMLEditor::PasteAsQuotationAsAction(int32_t aClipboardType,
     return rv;
   }
 
-  
   
   
   

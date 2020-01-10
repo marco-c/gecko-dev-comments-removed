@@ -14,7 +14,6 @@
 namespace mozilla {
 
 class HTMLEditor;
-class HTMLEditRules;
 
 
 
@@ -603,8 +602,6 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
   
   HTMLEditor* mHTMLEditor;
 
-  
-  friend class HTMLEditRules;
   
   friend class HTMLEditor;
 };

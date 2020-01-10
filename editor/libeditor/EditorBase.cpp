@@ -19,7 +19,6 @@
 #include "DeleteTextTransaction.h"          
 #include "EditAggregateTransaction.h"       
 #include "EditorEventListener.h"            
-#include "HTMLEditRules.h"                  
 #include "InsertNodeTransaction.h"          
 #include "InsertTextTransaction.h"          
 #include "JoinNodeTransaction.h"            

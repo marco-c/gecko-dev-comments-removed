@@ -395,8 +395,6 @@ class TextEditor : public EditorBase,
 
 
 
-
-
   
   MOZ_CAN_RUN_SCRIPT
   virtual nsresult RemoveAttributeOrEquivalent(
@@ -796,9 +794,6 @@ class TextEditor : public EditorBase,
 
   bool IsSafeToInsertData(Document* aSourceDoc);
 
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult InitRules();
-
   
 
 
@@ -925,7 +920,6 @@ class TextEditor : public EditorBase,
   friend class DeleteNodeTransaction;
   friend class EditorBase;
   friend class InsertNodeTransaction;
-  friend class TextEditRules;
 };
 
 }  
