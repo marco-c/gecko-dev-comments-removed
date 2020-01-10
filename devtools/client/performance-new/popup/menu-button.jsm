@@ -67,22 +67,6 @@ function toggle(document) {
 
 
 
-
-
-function getIframeFromEvent(event) {
-  const panelview = event.target;
-  const document = panelview.ownerDocument;
-
-  
-  const iframe = document.getElementById("PanelUI-profilerIframe");
-  if (!iframe) {
-    throw new Error("Unable to select the PanelUI-profilerIframe.");
-  }
-  return iframe;
-}
-
-
-
 const updateButtonColorForElement = buttonElement => () => {
   const isRunning = Services.profiler.IsActive();
 
@@ -109,9 +93,17 @@ function initialize() {
     viewId: "PanelUI-profiler",
     tooltiptext: "profiler-button.tooltiptext",
     onViewShowing: event => {
-      const iframe = getIframeFromEvent(event);
+      const panelview = event.target;
+      const document = panelview.ownerDocument;
+
+      
+      const iframe = document.createXULElement("iframe");
+      iframe.id = "PanelUI-profilerIframe";
+      iframe.className = "PanelUI-developer-iframe";
       iframe.src =
         "chrome://devtools/content/performance-new/popup/popup.xhtml";
+
+      panelview.appendChild(iframe);
 
       
       iframe.contentWindow.gClosePopup = () => {
@@ -138,10 +130,16 @@ function initialize() {
       );
     },
     onViewHiding(event) {
-      const iframe = getIframeFromEvent(event);
+      const document = event.target.ownerDocument;
+
       
+      const iframe = document.getElementById("PanelUI-profilerIframe");
+      if (!iframe) {
+        throw new Error("Unable to select the PanelUI-profilerIframe.");
+      }
+
       
-      iframe.src = "";
+      iframe.remove();
     },
     onBeforeCreated: document => {
       setMenuItemChecked(document, true);
