@@ -465,6 +465,10 @@ function BuildConditionSandbox(aURL) {
     sandbox.is64Bit = xr.is64Bit;
 
     
+    
+    sandbox.geckoview = (sandbox.Android && g.browserIsRemote);
+
+    
     sandbox.transparentScrollbars = xr.widgetToolkit == "gtk3";
 
     if (sandbox.Android) {
