@@ -22,10 +22,15 @@ class ClientInfo;
 
 
 
+
+
+
+
 nsresult AddClientChannelHelper(nsIChannel* aChannel,
                                 Maybe<ClientInfo>&& aReservedClientInfo,
                                 Maybe<ClientInfo>&& aInitialClientInfo,
-                                nsISerialEventTarget* aEventTarget);
+                                nsISerialEventTarget* aEventTarget,
+                                bool aManagedInParent);
 
 nsresult AddClientChannelHelperInParent(nsIChannel* aChannel,
                                         nsISerialEventTarget* aEventTarget);

@@ -21,6 +21,7 @@ namespace dom {
 
 class ClientManagerParent;
 class ClientSourceParent;
+class ClientHandleParent;
 class ContentParent;
 
 
@@ -30,6 +31,10 @@ class ClientManagerService final {
   
   
   nsDataHashtable<nsIDHashKey, ClientSourceParent*> mSourceTable;
+
+  
+  
+  nsDataHashtable<nsIDHashKey, nsTArray<ClientHandleParent*>> mPendingHandles;
 
   nsTArray<ClientManagerParent*> mManagerList;
 
@@ -52,6 +57,12 @@ class ClientManagerService final {
 
   ClientSourceParent* FindSource(
       const nsID& aID, const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
+
+  
+  
+  
+  void WaitForSource(ClientHandleParent* aHandle, const nsID& aID);
+  void StopWaitingForSource(ClientHandleParent* aHandle, const nsID& aID);
 
   void AddManager(ClientManagerParent* aManager);
 

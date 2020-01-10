@@ -52,6 +52,9 @@ class ClientManager final : public ClientThing<ClientManagerChild> {
       ClientType aType, nsISerialEventTarget* aEventTarget,
       const mozilla::ipc::PrincipalInfo& aPrincipal);
 
+  UniquePtr<ClientSource> CreateSourceInternal(
+      const ClientInfo& aClientInfo, nsISerialEventTarget* aEventTarget);
+
   already_AddRefed<ClientHandle> CreateHandleInternal(
       const ClientInfo& aClientInfo, nsISerialEventTarget* aSerialEventTarget);
 
@@ -83,6 +86,17 @@ class ClientManager final : public ClientThing<ClientManagerChild> {
   static UniquePtr<ClientSource> CreateSource(
       ClientType aType, nsISerialEventTarget* aEventTarget,
       const mozilla::ipc::PrincipalInfo& aPrincipal);
+
+  
+  
+  static UniquePtr<ClientSource> CreateSourceFromInfo(
+      const ClientInfo& aClientInfo, nsISerialEventTarget* aSerialEventTarget);
+
+  
+  
+  
+  static Maybe<ClientInfo> CreateInfo(ClientType aType,
+                                      nsIPrincipal* aPrincipal);
 
   static already_AddRefed<ClientHandle> CreateHandle(
       const ClientInfo& aClientInfo, nsISerialEventTarget* aSerialEventTarget);

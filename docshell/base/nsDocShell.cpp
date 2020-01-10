@@ -10691,13 +10691,17 @@ nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
 
   
   
+  RefPtr<net::DocumentChannelChild> docChannel = do_QueryObject(aChannel);
+
+  
+  
   
   
   
   Maybe<ClientInfo> noReservedClient;
-  rv = AddClientChannelHelper(aChannel, std::move(noReservedClient),
-                              GetInitialClientInfo(),
-                              win->EventTargetFor(TaskCategory::Other));
+  rv = AddClientChannelHelper(
+      aChannel, std::move(noReservedClient), GetInitialClientInfo(),
+      win->EventTargetFor(TaskCategory::Other), !!docChannel);
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = aURILoader->OpenURI(aChannel, aOpenFlags, this);

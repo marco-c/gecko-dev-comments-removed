@@ -27,6 +27,18 @@ using mozilla::ipc::PrincipalInfoToPrincipal;
 
 namespace {
 
+
+
+
+
+
+
+enum class Mode {
+  Mode_Default,
+  Mode_Child,
+  Mode_Parent,
+};
+
 class ClientChannelHelper final : public nsIInterfaceRequestor,
                                   public nsIChannelEventSink {
   nsCOMPtr<nsIInterfaceRequestor> mOuter;
@@ -69,29 +81,42 @@ class ClientChannelHelper final : public nsIInterfaceRequestor,
     
     
     if (NS_SUCCEEDED(rv)) {
-      if (reservedClient) {
-        newLoadInfo->GiveReservedClientSource(std::move(reservedClient));
-      }
-
       
       
       
-      else if (oldLoadInfo != newLoadInfo) {
-        const Maybe<ClientInfo>& reservedClientInfo =
-            oldLoadInfo->GetReservedClientInfo();
-
-        const Maybe<ClientInfo>& initialClientInfo =
-            oldLoadInfo->GetInitialClientInfo();
-
-        MOZ_DIAGNOSTIC_ASSERT(reservedClientInfo.isNothing() ||
-                              initialClientInfo.isNothing());
-
-        if (reservedClientInfo.isSome()) {
-          newLoadInfo->SetReservedClientInfo(reservedClientInfo.ref());
+      
+      
+      if (mMode == Mode::Mode_Child) {
+        Maybe<ClientInfo> newClientInfo = newLoadInfo->GetReservedClientInfo();
+        if (reservedClient && newClientInfo &&
+            reservedClient->Info() == *newClientInfo) {
+          newLoadInfo->GiveReservedClientSource(std::move(reservedClient));
+        }
+      } else {
+        if (reservedClient) {
+          newLoadInfo->GiveReservedClientSource(std::move(reservedClient));
         }
 
-        if (initialClientInfo.isSome()) {
-          newLoadInfo->SetInitialClientInfo(initialClientInfo.ref());
+        
+        
+        
+        else if (oldLoadInfo != newLoadInfo) {
+          const Maybe<ClientInfo>& reservedClientInfo =
+              oldLoadInfo->GetReservedClientInfo();
+
+          const Maybe<ClientInfo>& initialClientInfo =
+              oldLoadInfo->GetInitialClientInfo();
+
+          MOZ_DIAGNOSTIC_ASSERT(reservedClientInfo.isNothing() ||
+                                initialClientInfo.isNothing());
+
+          if (reservedClientInfo.isSome()) {
+            newLoadInfo->SetReservedClientInfo(reservedClientInfo.ref());
+          }
+
+          if (initialClientInfo.isSome()) {
+            newLoadInfo->SetInitialClientInfo(initialClientInfo.ref());
+          }
         }
       }
     }
@@ -111,12 +136,37 @@ class ClientChannelHelper final : public nsIInterfaceRequestor,
       
       
       
-      reservedClient.reset();
-      reservedClient = ClientManager::CreateSource(ClientType::Window,
-                                                   mEventTarget, principal);
-      MOZ_DIAGNOSTIC_ASSERT(reservedClient);
+      
+      
+      if (mMode == Mode::Mode_Parent) {
+        Maybe<ClientInfo> reservedInfo =
+            ClientManager::CreateInfo(ClientType::Window, principal);
+        if (reservedInfo) {
+          newLoadInfo->SetReservedClientInfo(*reservedInfo);
+        }
+      } else {
+        reservedClient.reset();
 
-      newLoadInfo->GiveReservedClientSource(std::move(reservedClient));
+        const Maybe<ClientInfo>& reservedClientInfo =
+            newLoadInfo->GetReservedClientInfo();
+        
+        
+        
+        
+        if (reservedClientInfo && mMode == Mode::Mode_Child) {
+          reservedClient = ClientManager::CreateSourceFromInfo(
+              *reservedClientInfo, mEventTarget);
+        } else {
+          
+          
+          
+          reservedClient = ClientManager::CreateSource(ClientType::Window,
+                                                       mEventTarget, principal);
+        }
+        MOZ_DIAGNOSTIC_ASSERT(reservedClient);
+
+        newLoadInfo->GiveReservedClientSource(std::move(reservedClient));
+      }
     }
 
     uint32_t redirectMode = nsIHttpChannelInternal::REDIRECT_MODE_MANUAL;
@@ -154,10 +204,12 @@ class ClientChannelHelper final : public nsIInterfaceRequestor,
 
  public:
   ClientChannelHelper(nsIInterfaceRequestor* aOuter,
-                      nsISerialEventTarget* aEventTarget)
-      : mOuter(aOuter), mEventTarget(aEventTarget) {}
+                      nsISerialEventTarget* aEventTarget, Mode aMode)
+      : mOuter(aOuter), mEventTarget(aEventTarget), mMode(aMode) {}
 
   NS_DECL_ISUPPORTS
+
+  Mode mMode;
 };
 
 NS_IMPL_ISUPPORTS(ClientChannelHelper, nsIInterfaceRequestor,
@@ -168,7 +220,8 @@ NS_IMPL_ISUPPORTS(ClientChannelHelper, nsIInterfaceRequestor,
 nsresult AddClientChannelHelper(nsIChannel* aChannel,
                                 Maybe<ClientInfo>&& aReservedClientInfo,
                                 Maybe<ClientInfo>&& aInitialClientInfo,
-                                nsISerialEventTarget* aEventTarget) {
+                                nsISerialEventTarget* aEventTarget,
+                                bool aManagedInParent) {
   MOZ_ASSERT(NS_IsMainThread());
 
   Maybe<ClientInfo> initialClientInfo(std::move(aInitialClientInfo));
@@ -230,8 +283,9 @@ nsresult AddClientChannelHelper(nsIChannel* aChannel,
     MOZ_DIAGNOSTIC_ASSERT(reservedClient);
   }
 
-  RefPtr<ClientChannelHelper> helper =
-      new ClientChannelHelper(outerCallbacks, aEventTarget);
+  RefPtr<ClientChannelHelper> helper = new ClientChannelHelper(
+      outerCallbacks, aEventTarget,
+      aManagedInParent ? Mode::Mode_Child : Mode::Mode_Default);
 
   
   
@@ -263,7 +317,7 @@ nsresult AddClientChannelHelperInParent(nsIChannel* aChannel,
   NS_ENSURE_SUCCESS(rv, rv);
 
   RefPtr<ClientChannelHelper> helper =
-      new ClientChannelHelper(outerCallbacks, aEventTarget);
+      new ClientChannelHelper(outerCallbacks, aEventTarget, Mode::Mode_Parent);
 
   
   
