@@ -55,6 +55,54 @@ extern bool CurrentThreadIsGCMarking();
 
 
 
+class CellColor {
+ public:
+  enum Color { White = 0, Gray = 1, Black = 2 };
+
+  CellColor() : color(White) {}
+
+  MOZ_IMPLICIT CellColor(MarkColor markColor)
+      : color(markColor == MarkColor::Black ? Black : Gray) {}
+
+  MOZ_IMPLICIT constexpr CellColor(Color c) : color(c) {}
+
+  MarkColor asMarkColor() const {
+    MOZ_ASSERT(color != White);
+    return color == Black ? MarkColor::Black : MarkColor::Gray;
+  }
+
+  
+  
+  bool operator<(const CellColor other) const { return color < other.color; }
+  bool operator>(const CellColor other) const { return color > other.color; }
+  bool operator<=(const CellColor other) const { return color <= other.color; }
+  bool operator>=(const CellColor other) const { return color >= other.color; }
+  bool operator!=(const CellColor other) const { return color != other.color; }
+  bool operator==(const CellColor other) const { return color == other.color; }
+  explicit operator bool() const { return color != White; }
+
+#if defined(JS_GC_ZEAL) || defined(DEBUG)
+  const char* name() const {
+    switch (color) {
+      case CellColor::White:
+        return "white";
+      case CellColor::Black:
+        return "black";
+      case CellColor::Gray:
+        return "gray";
+      default:
+        MOZ_CRASH("Unexpected cell color");
+    }
+  }
+#endif
+
+ private:
+  Color color;
+};
+
+
+
+
 
 
 
@@ -89,6 +137,12 @@ struct alignas(gc::CellAlignBytes) Cell {
   MOZ_ALWAYS_INLINE bool isMarkedGray() const;
   MOZ_ALWAYS_INLINE bool isMarked(gc::MarkColor color) const;
   MOZ_ALWAYS_INLINE bool isMarkedAtLeast(gc::MarkColor color) const;
+
+  MOZ_ALWAYS_INLINE CellColor color() const {
+    return isMarkedBlack()
+               ? CellColor::Black
+               : isMarkedGray() ? CellColor::Gray : CellColor::White;
+  }
 
   inline JSRuntime* runtimeFromMainThread() const;
 
@@ -168,6 +222,13 @@ class TenuredCell : public Cell {
   MOZ_ALWAYS_INLINE bool isMarkedAny() const;
   MOZ_ALWAYS_INLINE bool isMarkedBlack() const;
   MOZ_ALWAYS_INLINE bool isMarkedGray() const;
+
+  
+  MOZ_ALWAYS_INLINE CellColor color() const {
+    return isMarkedBlack()
+               ? CellColor::Black
+               : isMarkedGray() ? CellColor::Gray : CellColor::White;
+  }
 
   
   MOZ_ALWAYS_INLINE bool markIfUnmarked(
