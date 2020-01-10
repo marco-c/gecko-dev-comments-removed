@@ -37,10 +37,6 @@ use num_traits::NumCast;
 
 
 
-
-
-
-
 #[derive(EuclidMatrix)]
 #[repr(C)]
 pub struct TypedTransform3D<T, Src, Dst> {
@@ -56,10 +52,6 @@ pub struct TypedTransform3D<T, Src, Dst> {
 pub type Transform3D<T> = TypedTransform3D<T, UnknownUnit, UnknownUnit>;
 
 impl<T, Src, Dst> TypedTransform3D<T, Src, Dst> {
-    
-    
-    
-    
     
     
     
@@ -81,10 +73,6 @@ impl<T, Src, Dst> TypedTransform3D<T, Src, Dst> {
         }
     }
 
-    
-    
-    
-    
     
     
     
@@ -268,8 +256,6 @@ where T: Copy + Clone +
 
     
     
-    
-    
     pub fn post_mul<NewDst>(&self, mat: &TypedTransform3D<T, Dst, NewDst>) -> TypedTransform3D<T, Src, NewDst> {
         TypedTransform3D::row_major(
             self.m11 * mat.m11  +  self.m12 * mat.m21  +  self.m13 * mat.m31  +  self.m14 * mat.m41,
@@ -291,8 +277,6 @@ where T: Copy + Clone +
         )
     }
 
-    
-    
     
     
     pub fn pre_mul<NewSrc>(&self, mat: &TypedTransform3D<T, NewSrc, Src>) -> TypedTransform3D<T, NewSrc, Dst> {
@@ -426,8 +410,6 @@ where T: Copy + Clone +
     
     
     
-    
-    
     #[inline]
     pub fn transform_point2d_homogeneous(
         &self, p: &TypedPoint2D<T, Src>
@@ -440,7 +422,6 @@ where T: Copy + Clone +
         HomogeneousVector::new(x, y, z, w)
     }
 
-    
     
     
     
@@ -463,8 +444,6 @@ where T: Copy + Clone +
     
     
     
-    
-    
     #[inline]
     pub fn transform_vector2d(&self, v: &TypedVector2D<T, Src>) -> TypedVector2D<T, Dst> {
         vec2(
@@ -473,8 +452,6 @@ where T: Copy + Clone +
         )
     }
 
-    
-    
     
     
     
@@ -494,15 +471,11 @@ where T: Copy + Clone +
     
     
     
-    
-    
     #[inline]
     pub fn transform_point3d(&self, p: &TypedPoint3D<T, Src>) -> Option<TypedPoint3D<T, Dst>> {
         self.transform_point3d_homogeneous(p).to_point3d()
     }
 
-    
-    
     
     
     
@@ -691,10 +664,6 @@ where T: Copy + Clone +
 impl<T: Copy, Src, Dst> TypedTransform3D<T, Src, Dst> {
     
     
-    
-    
-    
-    
     pub fn to_row_major_array(&self) -> [T; 16] {
         [
             self.m11, self.m12, self.m13, self.m14,
@@ -705,10 +674,6 @@ impl<T: Copy, Src, Dst> TypedTransform3D<T, Src, Dst> {
     }
 
     
-    
-    
-    
-    
     pub fn to_column_major_array(&self) -> [T; 16] {
         [
             self.m11, self.m21, self.m31, self.m41,
@@ -718,10 +683,6 @@ impl<T: Copy, Src, Dst> TypedTransform3D<T, Src, Dst> {
         ]
     }
 
-    
-    
-    
-    
     
     
     
@@ -739,10 +700,6 @@ impl<T: Copy, Src, Dst> TypedTransform3D<T, Src, Dst> {
     
     
     
-    
-    
-    
-    
     pub fn to_column_arrays(&self) -> [[T; 4]; 4] {
         [
             [self.m11, self.m21, self.m31, self.m41],
@@ -753,10 +710,6 @@ impl<T: Copy, Src, Dst> TypedTransform3D<T, Src, Dst> {
     }
 
     
-    
-    
-    
-    
     pub fn from_array(array: [T; 16]) -> Self {
         Self::row_major(
             array[0],  array[1],  array[2],  array[3],
@@ -766,10 +719,6 @@ impl<T: Copy, Src, Dst> TypedTransform3D<T, Src, Dst> {
         )
     }
 
-    
-    
-    
-    
     
     pub fn from_row_arrays(array: [[T; 4]; 4]) -> Self {
         Self::row_major(

@@ -8,7 +8,7 @@
 
 
 use approxeq::ApproxEq;
-use num_traits::{Float, FloatConst, One, Zero, NumCast};
+use num_traits::{Float, FloatConst, One, Zero};
 use core::fmt;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
 use core::marker::PhantomData;
@@ -475,8 +475,8 @@ where
     where
         T: ApproxEq<T>,
     {
-        let eps = NumCast::from(1.0e-5).unwrap();
-        self.square_norm().approx_eq_eps(&T::one(), &eps)
+        
+        self.square_norm().approx_eq(&T::one())
     }
 
     

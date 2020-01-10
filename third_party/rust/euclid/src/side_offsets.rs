@@ -40,18 +40,6 @@ impl<T: fmt::Debug, U> fmt::Debug for TypedSideOffsets2D<T, U> {
     }
 }
 
-impl<T: Default, U> Default for TypedSideOffsets2D<T, U> {
-    fn default() -> Self {
-        TypedSideOffsets2D {
-            top: Default::default(),
-            right: Default::default(),
-            bottom: Default::default(),
-            left: Default::default(),
-            _unit: PhantomData,
-        }
-    }
-}
-
 
 pub type SideOffsets2D<T> = TypedSideOffsets2D<T, UnknownUnit>;
 
