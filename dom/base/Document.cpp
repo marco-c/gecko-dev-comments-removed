@@ -8763,6 +8763,9 @@ Document* Document::Open(const Optional<nsAString>& ,
 
   
   
+  
+  
+  
   if ((mParser && mParser->HasNonzeroScriptNestingLevel()) || mParserAborted) {
     return this;
   }
