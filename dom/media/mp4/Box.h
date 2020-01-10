@@ -17,6 +17,14 @@
 namespace mozilla {
 class ByteStream;
 
+class BumpAllocator {
+ public:
+  uint8_t* Allocate(size_t aNumBytes);
+
+ private:
+  nsTArray<nsTArray<uint8_t>> mBuffers;
+};
+
 class BoxContext {
  public:
   BoxContext(ByteStream* aSource, const MediaByteRangeSet& aByteRanges)
@@ -24,6 +32,12 @@ class BoxContext {
 
   RefPtr<ByteStream> mSource;
   const MediaByteRangeSet& mByteRanges;
+  BumpAllocator mAllocator;
+};
+
+struct ByteSlice {
+  uint8_t* mBytes;
+  size_t mSize;
 };
 
 class Box {
@@ -52,6 +66,10 @@ class Box {
 
   static const uint64_t kMAX_BOX_READ;
 
+  
+  
+  ByteSlice ReadAsSlice();
+
  private:
   bool Contains(MediaByteRange aRange) const;
   BoxContext* mContext;
@@ -64,14 +82,17 @@ class Box {
 
 
 
+
+
+
 class MOZ_RAII BoxReader {
  public:
   explicit BoxReader(Box& aBox)
-      : mBuffer(aBox.Read()), mReader(mBuffer.Elements(), mBuffer.Length()) {}
+      : mData(aBox.ReadAsSlice()), mReader(mData.mBytes, mData.mSize) {}
   BufferReader* operator->() { return &mReader; }
 
  private:
-  nsTArray<uint8_t> mBuffer;
+  ByteSlice mData;
   BufferReader mReader;
 };
 }  
