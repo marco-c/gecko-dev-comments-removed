@@ -28,10 +28,10 @@ class KeyPressEventModelCheckerChild extends ActorChild {
     
     
     
-    let model = HTMLDocument.KEYPRESS_EVENT_MODEL_DEFAULT;
+    let model = Document.KEYPRESS_EVENT_MODEL_DEFAULT;
     if (this._isOldOfficeOnlineServer(aEvent.target) ||
         this._isOldConfluence(aEvent.target.ownerGlobal)) {
-      model = HTMLDocument.KEYPRESS_EVENT_MODEL_SPLIT;
+      model = Document.KEYPRESS_EVENT_MODEL_SPLIT;
     }
     aEvent.target.setKeyPressEventModel(model);
   }

@@ -45,52 +45,6 @@ class nsIHTMLDocument : public nsISupports {
   
   virtual int32_t GetNumFormsSynchronous() = 0;
 
-  
-
-
-
-
-
-
-
-
-  virtual nsresult ChangeContentEditableCount(nsIContent* aElement,
-                                              int32_t aChange) = 0;
-
-  enum EditingState {
-    eTearingDown = -2,
-    eSettingUp = -1,
-    eOff = 0,
-    eDesignMode,
-    eContentEditable
-  };
-
-  
-
-
-  bool IsEditingOn() {
-    return GetEditingState() == eDesignMode ||
-           GetEditingState() == eContentEditable;
-  }
-
-  
-
-
-
-  virtual EditingState GetEditingState() = 0;
-
-  
-
-
-
-
-  virtual nsresult SetEditingState(EditingState aState) = 0;
-
-  
-
-
-  virtual void TearingDownEditor() = 0;
-
   virtual void SetIsXHTML(bool aXHTML) = 0;
 };
 

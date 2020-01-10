@@ -448,8 +448,7 @@ bool EditorBase::GetDesiredSpellCheckState() {
     
     
     
-    nsCOMPtr<nsIHTMLDocument> doc =
-        do_QueryInterface(content->GetComposedDoc());
+    Document* doc = content->GetComposedDoc();
     return doc && doc->IsEditingOn();
   }
 

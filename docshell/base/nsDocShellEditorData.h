@@ -12,7 +12,7 @@
 
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/RefPtr.h"
-#include "nsIHTMLDocument.h"
+#include "mozilla/dom/Document.h"
 
 class nsIDocShell;
 class nsEditingSession;
@@ -47,7 +47,7 @@ class nsDocShellEditorData {
 
   
   
-  nsIHTMLDocument::EditingState mDetachedEditingState;
+  mozilla::dom::Document::EditingState mDetachedEditingState;
 
   
   bool mMakeEditable;
