@@ -1580,6 +1580,13 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
+VARCACHE_PREF(
+  Live,
+  "dom.ipc.cpows.forbid-unsafe-from-browser",
+   dom_ipc_cpows_forbid_unsafe_from_browser,
+  bool, false
+)
+
 
 
 VARCACHE_PREF(
