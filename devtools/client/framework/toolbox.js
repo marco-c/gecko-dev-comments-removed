@@ -3021,6 +3021,54 @@ Toolbox.prototype = {
     return this._initInspector;
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getHighlighter(fromGrip = false) {
+    let pendingHighlight;
+    return {
+      highlight: async (nodeFront, options) => {
+        pendingHighlight = (async () => {
+          await this.initInspector();
+          if (!this.highlighter) {
+            return null;
+          }
+
+          if (fromGrip) {
+            nodeFront = await this.walker.gripToNodeFront(nodeFront);
+          }
+
+          return this.highlighter.highlight(nodeFront, options);
+        })();
+        return pendingHighlight;
+      },
+      unhighlight: async (forceHide) => {
+        if (pendingHighlight) {
+          await pendingHighlight;
+          pendingHighlight = null;
+        }
+
+        return this.highlighter
+          ? this.highlighter.unhighlight(forceHide)
+          : null;
+      },
+    };
+  },
+
   _onNewSelectedNodeFront: function() {
     
     
