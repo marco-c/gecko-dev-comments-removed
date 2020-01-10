@@ -167,13 +167,15 @@ class MarkupContextMenu {
       return;
     }
 
+    const nodeFront = this.selection.nodeFront;
+
     
     
     if (this.markup) {
-      this.markup.deleteNode(this.selection.nodeFront);
+      this.markup.deleteNode(nodeFront);
     } else {
       
-      this.walker.removeNode(this.selection.nodeFront);
+      nodeFront.walkerFront.removeNode(nodeFront);
     }
   }
 
