@@ -24,6 +24,11 @@ public class WebResponse extends WebMessage {
     
 
 
+    public static final long DEFAULT_READ_TIMEOUT_MS = 30000;
+
+    
+
+
     public final int statusCode;
 
     
@@ -42,6 +47,22 @@ public class WebResponse extends WebMessage {
         this.statusCode = builder.mStatusCode;
         this.redirected = builder.mRedirected;
         this.body = builder.mBody;
+
+        this.setReadTimeoutMillis(DEFAULT_READ_TIMEOUT_MS);
+    }
+
+    
+
+
+
+
+
+
+
+    public void setReadTimeoutMillis(final long millis) {
+        if (this.body != null && this.body instanceof GeckoInputStream) {
+            ((GeckoInputStream)this.body).setReadTimeoutMillis(millis);
+        }
     }
 
     
