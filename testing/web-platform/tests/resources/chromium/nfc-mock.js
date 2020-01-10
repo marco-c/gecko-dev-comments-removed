@@ -341,12 +341,16 @@ var WebNFCTest = (() => {
       this.reading_messages_.push({message: message,
           compatibility: toMojoNDEFCompatibility(compatibility)});
       
+      let ignoreRead = false;
+      if(this.push_options_ && this.push_options_.ignoreRead)
+        ignoreRead = this.push_options_.ignoreRead;
+      
       for (let watcher of this.watchers_) {
-        if (matchesWatchOptions(
-                message, message.compatibility, watcher.options)) {
+        if (!ignoreRead && matchesWatchOptions(
+            message, toMojoNDEFCompatibility(compatibility), watcher.options)) {
           this.client_.onWatch(
               [watcher.id], fake_tag_serial_number,
-              toMojoNDEFMessage(message.message));
+              toMojoNDEFMessage(message));
         }
       }
     }
