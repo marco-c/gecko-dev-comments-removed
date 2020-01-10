@@ -6,16 +6,28 @@
 #ifndef _SSLSERVERCERTVERIFICATION_H
 #define _SSLSERVERCERTVERIFICATION_H
 
+#include "mozilla/Maybe.h"
+#include "nsTArray.h"
 #include "seccomon.h"
 #include "prio.h"
 
 namespace mozilla {
 namespace psm {
 
+class TransportSecurityInfo;
+
 SECStatus AuthCertificateHook(void* arg, PRFileDesc* fd, PRBool checkSig,
                               PRBool isServer);
 
-}
+
+
+
+SECStatus AuthCertificateHookWithInfo(
+    TransportSecurityInfo* infoObject, const void* aPtrForLogging,
+    nsTArray<nsTArray<uint8_t>>& peerCertChain,
+    Maybe<nsTArray<nsTArray<uint8_t>>>& stapledOCSPResponses,
+    Maybe<nsTArray<uint8_t>>& sctsFromTLSExtension, uint32_t providerFlags);
+}  
 }  
 
 #endif

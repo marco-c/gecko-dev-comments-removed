@@ -87,7 +87,7 @@ class nsNSSSocketInfo final : public mozilla::psm::TransportSecurityInfo,
   };
   void SetCertVerificationWaiting();
   
-  void SetCertVerificationResult(PRErrorCode errorCode);
+  void SetCertVerificationResult(PRErrorCode errorCode) override;
 
   
   PRBool IsWaitingForCertVerification() const {
