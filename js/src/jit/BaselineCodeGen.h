@@ -357,6 +357,9 @@ class BaselineCodeGen {
   
   void loadScriptAtom(Register index, Register dest);
 
+  
+  void computeFrameSize(Register dest);
+
   void prepareVMCall();
 
   void storeFrameSizeAndPushDescriptor(uint32_t frameBaseSize, uint32_t argSize,
