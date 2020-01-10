@@ -391,8 +391,39 @@ async function wait_for_ping(callback, allowErrorPings, getFullPing = false) {
 }
 
 
-function sync_and_validate_telem(allowErrorPings, getFullPing = false) {
-  return wait_for_ping(() => Service.sync(), allowErrorPings, getFullPing);
+
+
+
+async function sync_and_validate_telem(fnValidate = null) {
+  let numErrors = 0;
+  let telem = get_sync_test_telemetry();
+  let oldSubmit = telem.submit;
+  try {
+    telem.submit = function(record) {
+      
+      
+      try {
+        
+        assert_valid_ping(record);
+        if (fnValidate) {
+          
+          
+          Assert.equal(record.syncs.length, 1);
+          fnValidate(record.syncs[0]);
+        } else {
+          
+          assert_success_ping(record);
+        }
+      } catch (ex) {
+        print("Failure in ping validation callback", ex, "\n", ex.stack);
+        numErrors += 1;
+      }
+    };
+    await Service.sync();
+    Assert.ok(numErrors == 0, "There were telemetry validation errors");
+  } finally {
+    telem.submit = oldSubmit;
+  }
 }
 
 
