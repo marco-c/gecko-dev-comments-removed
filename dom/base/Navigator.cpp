@@ -1402,7 +1402,8 @@ Promise* Navigator::Share(const ShareData& aData, ErrorResult& aRv) {
   
   
   
-  if (StaticPrefs::dom_webshare_requireinteraction() && !UserActivation::IsHandlingUserInput()) {
+  if (StaticPrefs::dom_webshare_requireinteraction() &&
+      !UserActivation::IsHandlingUserInput()) {
     NS_WARNING("Attempt to share not triggered by user activation");
     aRv.Throw(NS_ERROR_DOM_NOT_ALLOWED_ERR);
     return nullptr;
@@ -1488,15 +1489,61 @@ already_AddRefed<Promise> Navigator::GetVRDisplays(ErrorResult& aRv) {
     return nullptr;
   }
 
-  
-  
-  if (!VRDisplay::RefreshVRDisplays(win->WindowID())) {
-    p->MaybeReject(NS_ERROR_FAILURE);
-    return p.forget();
+  RefPtr<BrowserChild> browser(BrowserChild::GetFrom(mWindow));
+  if (!browser) {
+    MOZ_ASSERT(XRE_IsParentProcess());
+    FinishGetVRDisplays(true, p);
+  } else {
+    RefPtr<Navigator> self(this);
+    int browserID = browser->ChromeOuterWindowID();
+
+    browser->SendIsWindowSupportingWebVR(browserID)->Then(
+        GetCurrentThreadSerialEventTarget(), __func__,
+        [self, p](bool isSupported) {
+          self->FinishGetVRDisplays(isSupported, p);
+        },
+        [](const mozilla::ipc::ResponseRejectReason) {
+          MOZ_CRASH("Failed to make IPC call to IsWindowSupportingWebVR");
+        });
   }
 
-  mVRGetDisplaysPromises.AppendElement(p);
   return p.forget();
+}
+
+void Navigator::FinishGetVRDisplays(bool isWebVRSupportedInwindow, Promise* p) {
+  if (isWebVRSupportedInwindow) {
+    nsGlobalWindowInner* win = nsGlobalWindowInner::Cast(mWindow);
+
+    
+    
+    
+    
+    
+    if (!win->IsDying()) {
+      win->NotifyVREventListenerAdded();
+      
+      
+      
+      if (!VRDisplay::RefreshVRDisplays(win->WindowID())) {
+        
+        p->MaybeRejectWithTypeError(u"Failed to find attached VR displays.");
+      } else {
+        
+        mVRGetDisplaysPromises.AppendElement(p);
+      }
+    } else {
+      
+      
+      p->MaybeRejectWithTypeError(
+          u"Unable to return VRDisplays for a closed window.");
+    }
+  } else {
+    
+    
+    nsTArray<RefPtr<VRDisplay>> vrDisplaysEmpty;
+    p->MaybeResolve(vrDisplaysEmpty);
+  }
+  mVRGetDisplaysPromises.AppendElement(p);
 }
 
 void Navigator::GetActiveVRDisplays(
