@@ -357,6 +357,7 @@ class Query {
     
     
     if (
+      match.type != UrlbarUtils.RESULT_TYPE.KEYWORD &&
       match.payload.url &&
       match.payload.url.startsWith("javascript:") &&
       !this.context.searchString.startsWith("javascript:") &&
