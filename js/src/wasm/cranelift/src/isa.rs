@@ -94,7 +94,10 @@ impl<'env> EnvVariableFlags<'env> {
 
 
 
-fn make_shared_flags(env_flags: &Option<EnvVariableFlags>) -> settings::SetResult<settings::Flags> {
+fn make_shared_flags(
+    env: &StaticEnvironment,
+    env_flags: &Option<EnvVariableFlags>,
+) -> settings::SetResult<settings::Flags> {
     let mut sb = settings::builder();
 
     
@@ -110,7 +113,12 @@ fn make_shared_flags(env_flags: &Option<EnvVariableFlags>) -> settings::SetResul
     sb.set("baldrdash_prologue_words", "3")?;
 
     
-    sb.set("libcall_call_conv", "baldrdash")?;
+    let libcall_call_conv = if env.platformIsWindows {
+        "baldrdash_windows"
+    } else {
+        "baldrdash_system_v"
+    };
+    sb.set("libcall_call_conv", libcall_call_conv)?;
 
     
     
@@ -198,7 +206,7 @@ pub fn make_isa(env: &StaticEnvironment) -> DashResult<Box<dyn isa::TargetIsa>> 
     let env_flags = EnvVariableFlags::parse(&env_flags_str);
 
     
-    let shared_flags = make_shared_flags(&env_flags).map_err(BasicError::from)?;
+    let shared_flags = make_shared_flags(env, &env_flags).map_err(BasicError::from)?;
     let ib = make_isa_specific(env)?;
     Ok(ib.finish(shared_flags))
 }

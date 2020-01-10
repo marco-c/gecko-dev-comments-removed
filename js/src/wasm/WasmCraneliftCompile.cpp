@@ -289,6 +289,11 @@ CraneliftStaticEnvironment::CraneliftStaticEnvironment()
       hasBmi2(false),
       hasLzcnt(false),
 #endif
+#if defined(XP_WIN)
+      platformIsWindows(true),
+#else
+      platformIsWindows(false),
+#endif
       staticMemoryBound(
 #ifdef WASM_HUGE_MEMORY
           
