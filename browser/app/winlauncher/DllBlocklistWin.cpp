@@ -4,15 +4,15 @@
 
 
 
+#include "nsWindowsDllInterceptor.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/BinarySearch.h"
+#include "mozilla/ImportDir.h"
 #include "mozilla/NativeNt.h"
 #include "mozilla/Types.h"
-
-#include "DllBlocklist.h"
-#include "LoaderPrivateAPI.h"
-#include "ModuleLoadFrame.h"
+#include "mozilla/WindowsDllBlocklist.h"
+#include "mozilla/WinHeaderOnlyUtils.h"
 
 
 #define MOZ_LITERAL_UNICODE_STRING(s)                                        \
@@ -38,6 +38,8 @@ DLL_BLOCKLIST_DEFINITIONS_BEGIN
 DLL_BLOCKLIST_DEFINITIONS_END
 #endif
 
+extern uint32_t gBlocklistInitFlags;
+
 static const HANDLE kCurrentProcess = reinterpret_cast<HANDLE>(-1);
 
 class MOZ_STATIC_CLASS MOZ_TRIVIAL_CTOR_DTOR NativeNtBlockSet final {
@@ -54,7 +56,7 @@ class MOZ_STATIC_CLASS MOZ_TRIVIAL_CTOR_DTOR NativeNtBlockSet final {
 
  public:
   
-  constexpr NativeNtBlockSet() : mFirstEntry(nullptr) {}
+  NativeNtBlockSet() = default;
   ~NativeNtBlockSet() = default;
 
   void Add(const UNICODE_STRING& aName, uint64_t aVersion);
@@ -67,23 +69,36 @@ class MOZ_STATIC_CLASS MOZ_TRIVIAL_CTOR_DTOR NativeNtBlockSet final {
 
  private:
   NativeNtBlockSetEntry* mFirstEntry;
-  mozilla::nt::SRWLock mLock;
+  
+  
+  SRWLOCK mLock;
 };
 
 NativeNtBlockSet::NativeNtBlockSetEntry* NativeNtBlockSet::NewEntry(
     const UNICODE_STRING& aName, uint64_t aVersion,
     NativeNtBlockSet::NativeNtBlockSetEntry* aNextEntry) {
-  return mozilla::freestanding::RtlNew<NativeNtBlockSetEntry>(aName, aVersion,
-                                                              aNextEntry);
+  HANDLE processHeap = mozilla::nt::RtlGetProcessHeap();
+  if (!processHeap) {
+    return nullptr;
+  }
+
+  PVOID memory =
+      ::RtlAllocateHeap(processHeap, 0, sizeof(NativeNtBlockSetEntry));
+  if (!memory) {
+    return nullptr;
+  }
+
+  return new (memory) NativeNtBlockSetEntry(aName, aVersion, aNextEntry);
 }
 
 void NativeNtBlockSet::Add(const UNICODE_STRING& aName, uint64_t aVersion) {
-  mozilla::nt::AutoExclusiveLock lock(mLock);
+  ::RtlAcquireSRWLockExclusive(&mLock);
 
   for (NativeNtBlockSetEntry* entry = mFirstEntry; entry;
        entry = entry->mNext) {
     if (::RtlEqualUnicodeString(&entry->mName, &aName, TRUE) &&
         aVersion == entry->mVersion) {
+      ::RtlReleaseSRWLockExclusive(&mLock);
       return;
     }
   }
@@ -91,6 +106,8 @@ void NativeNtBlockSet::Add(const UNICODE_STRING& aName, uint64_t aVersion) {
   
   NativeNtBlockSetEntry* newEntry = NewEntry(aName, aVersion, mFirstEntry);
   mFirstEntry = newEntry;
+
+  ::RtlReleaseSRWLockExclusive(&mLock);
 }
 
 void NativeNtBlockSet::Write(HANDLE aFile) {
@@ -148,15 +165,8 @@ extern "C" void MOZ_EXPORT NativeNtBlockSet_Write(HANDLE aHandle) {
   gBlockSet.Write(aHandle);
 }
 
-enum class BlockAction {
-  Allow,
-  SubstituteLSP,
-  Error,
-  Deny,
-};
-
-static BlockAction CheckBlockInfo(const DllBlockInfo* aInfo, void* aBaseAddress,
-                                  uint64_t& aVersion) {
+static bool CheckBlockInfo(const DllBlockInfo* aInfo, void* aBaseAddress,
+                           uint64_t& aVersion) {
   aVersion = DllBlockInfo::ALL_VERSIONS;
 
   if (aInfo->mFlags &
@@ -164,59 +174,52 @@ static BlockAction CheckBlockInfo(const DllBlockInfo* aInfo, void* aBaseAddress,
     RTL_OSVERSIONINFOW osv = {sizeof(osv)};
     NTSTATUS ntStatus = ::RtlGetVersion(&osv);
     if (!NT_SUCCESS(ntStatus)) {
-      return BlockAction::Error;
+      
+      return false;
     }
 
     if (osv.dwMajorVersion < 8) {
-      return BlockAction::Allow;
+      return true;
     }
 
     if ((aInfo->mFlags & DllBlockInfo::BLOCK_WIN8_ONLY) &&
         (osv.dwMajorVersion > 8 ||
          (osv.dwMajorVersion == 8 && osv.dwMinorVersion > 0))) {
-      return BlockAction::Allow;
+      return true;
     }
   }
 
   
   
   if (aInfo->mFlags & DllBlockInfo::CHILD_PROCESSES_ONLY) {
-    return BlockAction::Allow;
+    return true;
   }
 
   if (aInfo->mMaxVersion == DllBlockInfo::ALL_VERSIONS) {
-    return BlockAction::Deny;
+    return false;
   }
 
   mozilla::nt::PEHeaders headers(aBaseAddress);
   if (!headers) {
-    return BlockAction::Error;
+    return false;
   }
 
   if (aInfo->mFlags & DllBlockInfo::USE_TIMESTAMP) {
     DWORD timestamp;
     if (!headers.GetTimeStamp(timestamp)) {
-      return BlockAction::Error;
+      return false;
     }
 
-    if (timestamp > aInfo->mMaxVersion) {
-      return BlockAction::Allow;
-    }
-
-    return BlockAction::Deny;
+    return timestamp > aInfo->mMaxVersion;
   }
 
   
   
   if (!headers.GetVersionInfo(aVersion)) {
-    return BlockAction::Error;
+    return false;
   }
 
-  if (aInfo->IsVersionBlocked(aVersion)) {
-    return BlockAction::Deny;
-  }
-
-  return BlockAction::Allow;
+  return !aInfo->IsVersionBlocked(aVersion);
 }
 
 struct DllBlockInfoComparator {
@@ -231,11 +234,10 @@ struct DllBlockInfoComparator {
   PCUNICODE_STRING mTarget;
 };
 
-static BlockAction IsDllAllowed(const UNICODE_STRING& aLeafName,
-                                void* aBaseAddress) {
+static bool IsDllAllowed(const UNICODE_STRING& aLeafName, void* aBaseAddress) {
   if (mozilla::nt::Contains12DigitHexString(aLeafName) ||
       mozilla::nt::IsFileNameAtLeast16HexDigits(aLeafName)) {
-    return BlockAction::Deny;
+    return false;
   }
 
   DECLARE_POINTER_TO_FIRST_DLL_BLOCKLIST_ENTRY(info);
@@ -245,39 +247,26 @@ static BlockAction IsDllAllowed(const UNICODE_STRING& aLeafName,
 
   size_t match;
   if (!BinarySearchIf(info, 0, infoNumEntries, comp, &match)) {
-    return BlockAction::Allow;
+    return true;
   }
 
   const DllBlockInfo& entry = info[match];
 
   uint64_t version;
-  BlockAction checkResult = CheckBlockInfo(&entry, aBaseAddress, version);
-  if (checkResult != BlockAction::Allow) {
+  if (!CheckBlockInfo(&entry, aBaseAddress, version)) {
     gBlockSet.Add(entry.mName, version);
+    return false;
   }
 
-  return checkResult;
+  return true;
 }
 
-namespace mozilla {
-namespace freestanding {
-
-CrossProcessDllInterceptor::FuncHookType<LdrLoadDllPtr> stub_LdrLoadDll;
-
-NTSTATUS NTAPI patched_LdrLoadDll(PWCHAR aDllPath, PULONG aFlags,
-                                  PUNICODE_STRING aDllName,
-                                  PHANDLE aOutHandle) {
-  ModuleLoadFrame frame(aDllName);
-
-  NTSTATUS ntStatus = stub_LdrLoadDll(aDllPath, aFlags, aDllName, aOutHandle);
-
-  return frame.SetLoadStatus(ntStatus, aOutHandle);
-}
-
-CrossProcessDllInterceptor::FuncHookType<NtMapViewOfSectionPtr>
+typedef decltype(&NtMapViewOfSection) NtMapViewOfSection_func;
+static mozilla::CrossProcessDllInterceptor::FuncHookType<
+    NtMapViewOfSection_func>
     stub_NtMapViewOfSection;
 
-NTSTATUS NTAPI patched_NtMapViewOfSection(
+static NTSTATUS NTAPI patched_NtMapViewOfSection(
     HANDLE aSection, HANDLE aProcess, PVOID* aBaseAddress, ULONG_PTR aZeroBits,
     SIZE_T aCommitSize, PLARGE_INTEGER aSectionOffset, PSIZE_T aViewSize,
     SECTION_INHERIT aInheritDisposition, ULONG aAllocationType,
@@ -311,35 +300,109 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
   }
 
   
-  nt::AllocatedUnicodeString sectionFileName(
-      gLoaderPrivateAPI.GetSectionName(*aBaseAddress));
-  if (sectionFileName.IsEmpty()) {
+  mozilla::nt::MemorySectionNameBuf buf;
+
+  ntStatus = ::NtQueryVirtualMemory(aProcess, *aBaseAddress, MemorySectionName,
+                                    &buf, sizeof(buf), nullptr);
+  if (!NT_SUCCESS(ntStatus)) {
     ::NtUnmapViewOfSection(aProcess, *aBaseAddress);
     return STATUS_ACCESS_DENIED;
   }
 
   
   UNICODE_STRING leaf;
-  nt::GetLeafName(&leaf, sectionFileName);
+  mozilla::nt::GetLeafName(&leaf, &buf.mSectionFileName);
 
   
-  BlockAction blockAction = IsDllAllowed(leaf, *aBaseAddress);
-
-  if (blockAction == BlockAction::Allow) {
-    ModuleLoadFrame::NotifySectionMap(std::move(sectionFileName), *aBaseAddress,
-                                      stubStatus);
+  if (IsDllAllowed(leaf, *aBaseAddress)) {
     return stubStatus;
-  }
-
-  if (blockAction == BlockAction::SubstituteLSP) {
-    
-    
-    ModuleLoadFrame::NotifyLSPSubstitutionRequired(&leaf);
   }
 
   ::NtUnmapViewOfSection(aProcess, *aBaseAddress);
   return STATUS_ACCESS_DENIED;
 }
 
-}  
+#if defined(_MSC_VER)
+extern "C" IMAGE_DOS_HEADER __ImageBase;
+#endif
+
+namespace mozilla {
+
+LauncherVoidResult InitializeDllBlocklistOOP(const wchar_t* aFullImagePath,
+                                             HANDLE aChildProcess) {
+  mozilla::CrossProcessDllInterceptor intcpt(aChildProcess);
+  intcpt.Init(L"ntdll.dll");
+  bool ok = stub_NtMapViewOfSection.SetDetour(
+      aChildProcess, intcpt, "NtMapViewOfSection", &patched_NtMapViewOfSection);
+  if (!ok) {
+    return LAUNCHER_ERROR_GENERIC();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  HMODULE ourModule;
+#if defined(_MSC_VER)
+  ourModule = reinterpret_cast<HMODULE>(&__ImageBase);
+#else
+  ourModule = ::GetModuleHandleW(nullptr);
+#endif
+
+  mozilla::nt::PEHeaders ourExeImage(ourModule);
+  if (!ourExeImage) {
+    return LAUNCHER_ERROR_FROM_WIN32(ERROR_BAD_EXE_FORMAT);
+  }
+
+  
+  
+  LauncherVoidResult importDirRestored = RestoreImportDirectory(
+      aFullImagePath, ourExeImage, aChildProcess, ourModule);
+  if (importDirRestored.isErr()) {
+    return importDirRestored;
+  }
+
+  Maybe<Span<IMAGE_THUNK_DATA>> ntdllThunks =
+      ourExeImage.GetIATThunksForModule("ntdll.dll");
+  if (!ntdllThunks) {
+    return LAUNCHER_ERROR_FROM_WIN32(ERROR_INVALID_DATA);
+  }
+
+  SIZE_T bytesWritten;
+
+  {  
+    PIMAGE_THUNK_DATA firstIatThunk = ntdllThunks.value().data();
+    SIZE_T iatLength = ntdllThunks.value().LengthBytes();
+
+    AutoVirtualProtect prot(firstIatThunk, iatLength, PAGE_READWRITE,
+                            aChildProcess);
+    if (!prot) {
+      return LAUNCHER_ERROR_FROM_MOZ_WINDOWS_ERROR(prot.GetError());
+    }
+
+    ok = !!::WriteProcessMemory(aChildProcess, firstIatThunk, firstIatThunk,
+                                iatLength, &bytesWritten);
+    if (!ok || bytesWritten != iatLength) {
+      return LAUNCHER_ERROR_FROM_LAST();
+    }
+  }
+
+  
+  uint32_t newFlags = eDllBlocklistInitFlagWasBootstrapped;
+  ok = !!::WriteProcessMemory(aChildProcess, &gBlocklistInitFlags, &newFlags,
+                              sizeof(newFlags), &bytesWritten);
+  if (!ok || bytesWritten != sizeof(newFlags)) {
+    return LAUNCHER_ERROR_FROM_LAST();
+  }
+
+  return Ok();
+}
+
 }  
