@@ -265,6 +265,10 @@ function initPage() {
     document.getElementById("netErrorButtonContainer").style.display = "none";
   }
 
+  
+  let event = new CustomEvent("AboutNetErrorLoad", { bubbles: true });
+  document.dispatchEvent(event);
+
   setNetErrorMessageFromCode();
   let learnMoreLink = document.getElementById("learnMoreLink");
   let baseURL = RPMGetFormatURLPref("app.support.baseURL");
@@ -321,11 +325,6 @@ function initPage() {
       span.textContent = document.location.hostname;
     }
   }
-
-  
-  
-  let event = new CustomEvent("AboutNetErrorLoad", { bubbles: true });
-  document.dispatchEvent(event);
 }
 
 function setupErrorUI() {
