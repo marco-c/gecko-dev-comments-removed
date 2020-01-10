@@ -62,16 +62,6 @@ class DecoderBenchmark final {
   uint64_t mLastDroppedFrames = 0;
 };
 
-class KeyUtil {
- public:
-  static nsCString CreateKey(const DecoderBenchmarkInfo& aBenchInfo);
-
- private:
-  static nsCString BitDepthToStr(uint8_t aBitDepth);
-  static nsCString FindLevel(const uint32_t aLevels[], const size_t length,
-                             uint32_t aValue);
-};
-
 }  
 
 #endif  
