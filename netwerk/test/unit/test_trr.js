@@ -349,6 +349,10 @@ add_task(async function test19() {
   Services.prefs.setIntPref("network.trr.mode", 1); 
   Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=none&cnameloop=true`);
   await new DNSListener("test19.example.com", "127.0.0.1");
+
+  Services.prefs.setIntPref("network.trr.mode", 1); 
+  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`);
+  await new DNSListener("bar.example.com", "127.0.0.1");
 });
 
 

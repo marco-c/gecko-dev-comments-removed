@@ -32,7 +32,7 @@ namespace net {
 class TRR;
 enum ResolverMode {
   MODE_NATIVEONLY,  
-  MODE_PARALLEL,    
+  MODE_RESERVED1,   
   MODE_TRRFIRST,    
   MODE_TRRONLY,     
   MODE_SHADOW,      
