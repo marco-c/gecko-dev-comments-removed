@@ -98,7 +98,37 @@ NSSCertDBTrustDomain::NSSCertDBTrustDomain(
 #endif
       mOCSPStaplingStatus(CertVerifier::OCSP_STAPLING_NEVER_CHECKED),
       mSCTListFromCertificate(),
-      mSCTListFromOCSPStapling() {
+      mSCTListFromOCSPStapling(),
+      mBuiltInRootsModule(SECMOD_FindModule(kRootModuleName)) {
+}
+
+static Result FindRootsWithSubject(UniqueSECMODModule& rootsModule,
+                                   SECItem subject,
+                                    Vector<Vector<uint8_t>>& roots) {
+  MOZ_ASSERT(rootsModule);
+  for (int slotIndex = 0; slotIndex < rootsModule->slotCount; slotIndex++) {
+    CERTCertificateList* rawResults = nullptr;
+    if (PK11_FindRawCertsWithSubject(rootsModule->slots[slotIndex], &subject,
+                                     &rawResults) != SECSuccess) {
+      return Result::FATAL_ERROR_LIBRARY_FAILURE;
+    }
+    
+    if (!rawResults) {
+      continue;
+    }
+    UniqueCERTCertificateList results(rawResults);
+    for (int certIndex = 0; certIndex < results->len; certIndex++) {
+      Vector<uint8_t> root;
+      if (!root.append(results->certs[certIndex].data,
+                       results->certs[certIndex].len)) {
+        return Result::FATAL_ERROR_NO_MEMORY;
+      }
+      if (!roots.append(std::move(root))) {
+        return Result::FATAL_ERROR_NO_MEMORY;
+      }
+    }
+  }
+  return Success;
 }
 
 
@@ -110,7 +140,8 @@ NSSCertDBTrustDomain::NSSCertDBTrustDomain(
 
 
 
-bool NSSCertDBTrustDomain::ShouldSkipSelfSignedNonTrustAnchor(Input certDER) {
+static bool ShouldSkipSelfSignedNonTrustAnchor(TrustDomain& trustDomain,
+                                               Input certDER) {
   BackCert cert(certDER, EndEntityOrCA::MustBeCA, nullptr);
   if (cert.Init() != Success) {
     return false;  
@@ -120,8 +151,8 @@ bool NSSCertDBTrustDomain::ShouldSkipSelfSignedNonTrustAnchor(Input certDER) {
     return false;
   }
   TrustLevel trust;
-  if (GetCertTrust(EndEntityOrCA::MustBeCA, CertPolicyId::anyPolicy, certDER,
-                   trust) != Success) {
+  if (trustDomain.GetCertTrust(EndEntityOrCA::MustBeCA, CertPolicyId::anyPolicy,
+                               certDER, trust) != Success) {
     return false;
   }
   
@@ -132,11 +163,11 @@ bool NSSCertDBTrustDomain::ShouldSkipSelfSignedNonTrustAnchor(Input certDER) {
   uint8_t digestBuf[MAX_DIGEST_SIZE_IN_BYTES];
   pkix::der::PublicKeyAlgorithm publicKeyAlg;
   SignedDigest signature;
-  if (DigestSignedData(*this, cert.GetSignedData(), digestBuf, publicKeyAlg,
-                       signature) != Success) {
+  if (DigestSignedData(trustDomain, cert.GetSignedData(), digestBuf,
+                       publicKeyAlg, signature) != Success) {
     return false;
   }
-  if (VerifySignedDigest(*this, publicKeyAlg, signature,
+  if (VerifySignedDigest(trustDomain, publicKeyAlg, signature,
                          cert.GetSubjectPublicKeyInfo()) != Success) {
     return false;
   }
@@ -145,10 +176,49 @@ bool NSSCertDBTrustDomain::ShouldSkipSelfSignedNonTrustAnchor(Input certDER) {
   return true;
 }
 
+static Result CheckCandidates(TrustDomain& trustDomain,
+                              TrustDomain::IssuerChecker& checker,
+                              Vector<Input>& candidates,
+                              Input* nameConstraintsInputPtr, bool& keepGoing) {
+  for (Input candidate : candidates) {
+    if (ShouldSkipSelfSignedNonTrustAnchor(trustDomain, candidate)) {
+      continue;
+    }
+    Result rv = checker.Check(candidate, nameConstraintsInputPtr, keepGoing);
+    if (rv != Success) {
+      return rv;
+    }
+    if (!keepGoing) {
+      return Success;
+    }
+  }
+
+  return Success;
+}
+
 Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
                                         IssuerChecker& checker, Time) {
-  Vector<Input> rootCandidates;
-  Vector<Input> intermediateCandidates;
+  SECItem encodedIssuerNameItem = UnsafeMapInputToSECItem(encodedIssuerName);
+  
+  ScopedAutoSECItem nameConstraints;
+  Input nameConstraintsInput;
+  Input* nameConstraintsInputPtr = nullptr;
+  SECStatus srv =
+      CERT_GetImposedNameConstraints(&encodedIssuerNameItem, &nameConstraints);
+  if (srv == SECSuccess) {
+    if (nameConstraintsInput.Init(nameConstraints.data, nameConstraints.len) !=
+        Success) {
+      return Result::FATAL_ERROR_LIBRARY_FAILURE;
+    }
+    nameConstraintsInputPtr = &nameConstraintsInput;
+  } else if (PR_GetError() != SEC_ERROR_EXTENSION_NOT_FOUND) {
+    return Result::FATAL_ERROR_LIBRARY_FAILURE;
+  }
+
+  
+  
+  Vector<Input> geckoRootCandidates;
+  Vector<Input> geckoIntermediateCandidates;
 
 #ifdef MOZ_NEW_CERT_STORAGE
   if (!mCertStorage) {
@@ -171,17 +241,69 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
       continue;  
     }
     
-    if (!intermediateCandidates.append(certDER)) {
+    if (!geckoIntermediateCandidates.append(certDER)) {
       return Result::FATAL_ERROR_NO_MEMORY;
     }
   }
 #endif
 
-  SECItem encodedIssuerNameItem = UnsafeMapInputToSECItem(encodedIssuerName);
+  
+  
+  Vector<Vector<uint8_t>> builtInRoots;
+  if (mBuiltInRootsModule) {
+    Result rv = FindRootsWithSubject(mBuiltInRootsModule, encodedIssuerNameItem,
+                                     builtInRoots);
+    if (rv != Success) {
+      return rv;
+    }
+    for (const auto& root : builtInRoots) {
+      Input rootInput;
+      rv = rootInput.Init(root.begin(), root.length());
+      if (rv != Success) {
+        continue;  
+      }
+      if (!geckoRootCandidates.append(rootInput)) {
+        return Result::FATAL_ERROR_NO_MEMORY;
+      }
+    }
+  } else {
+    MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
+            ("NSSCertDBTrustDomain::FindIssuer: no built-in roots module"));
+  }
+
+  for (const auto& thirdPartyRootInput : mThirdPartyRootInputs) {
+    if (!geckoRootCandidates.append(thirdPartyRootInput)) {
+      return Result::FATAL_ERROR_NO_MEMORY;
+    }
+  }
+
+  for (const auto& thirdPartyIntermediateInput :
+       mThirdPartyIntermediateInputs) {
+    if (!geckoIntermediateCandidates.append(thirdPartyIntermediateInput)) {
+      return Result::FATAL_ERROR_NO_MEMORY;
+    }
+  }
+
+  
+  if (!geckoRootCandidates.appendAll(geckoIntermediateCandidates)) {
+    return Result::FATAL_ERROR_NO_MEMORY;
+  }
+
+  bool keepGoing = true;
+  Result result = CheckCandidates(*this, checker, geckoRootCandidates,
+                                  nameConstraintsInputPtr, keepGoing);
+  if (result != Success) {
+    return result;
+  }
+  if (!keepGoing) {
+    return Success;
+  }
 
   
   
   
+  Vector<Input> nssRootCandidates;
+  Vector<Input> nssIntermediateCandidates;
   UniqueCERTCertList candidates(CERT_CreateSubjectCertList(
       nullptr, CERT_GetDefaultCertDB(), &encodedIssuerNameItem, 0, false));
   if (candidates) {
@@ -193,66 +315,22 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
         continue;  
       }
       if (n->cert->isRoot) {
-        if (!rootCandidates.append(certDER)) {
+        if (!nssRootCandidates.append(certDER)) {
           return Result::FATAL_ERROR_NO_MEMORY;
         }
       } else {
-        if (!intermediateCandidates.append(certDER)) {
+        if (!nssIntermediateCandidates.append(certDER)) {
           return Result::FATAL_ERROR_NO_MEMORY;
         }
       }
     }
   }
-
-  for (const auto& thirdPartyRootInput : mThirdPartyRootInputs) {
-    if (!rootCandidates.append(thirdPartyRootInput)) {
-      return Result::FATAL_ERROR_NO_MEMORY;
-    }
-  }
-
-  for (const auto& thirdPartyIntermediateInput :
-       mThirdPartyIntermediateInputs) {
-    if (!intermediateCandidates.append(thirdPartyIntermediateInput)) {
-      return Result::FATAL_ERROR_NO_MEMORY;
-    }
-  }
-
-  
-  ScopedAutoSECItem nameConstraints;
-  Input nameConstraintsInput;
-  Input* nameConstraintsInputPtr = nullptr;
-  SECStatus srv =
-      CERT_GetImposedNameConstraints(&encodedIssuerNameItem, &nameConstraints);
-  if (srv == SECSuccess) {
-    if (nameConstraintsInput.Init(nameConstraints.data, nameConstraints.len) !=
-        Success) {
-      return Result::FATAL_ERROR_LIBRARY_FAILURE;
-    }
-    nameConstraintsInputPtr = &nameConstraintsInput;
-  } else if (PR_GetError() != SEC_ERROR_EXTENSION_NOT_FOUND) {
-    return Result::FATAL_ERROR_LIBRARY_FAILURE;
-  }
-
-  
-  if (!rootCandidates.appendAll(intermediateCandidates)) {
+  if (!nssRootCandidates.appendAll(nssIntermediateCandidates)) {
     return Result::FATAL_ERROR_NO_MEMORY;
   }
 
-  for (Input candidate : rootCandidates) {
-    if (ShouldSkipSelfSignedNonTrustAnchor(candidate)) {
-      continue;
-    }
-    bool keepGoing;
-    Result rv = checker.Check(candidate, nameConstraintsInputPtr, keepGoing);
-    if (rv != Success) {
-      return rv;
-    }
-    if (!keepGoing) {
-      return Success;
-    }
-  }
-
-  return Success;
+  return CheckCandidates(*this, checker, nssRootCandidates,
+                         nameConstraintsInputPtr, keepGoing);
 }
 
 Result NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
