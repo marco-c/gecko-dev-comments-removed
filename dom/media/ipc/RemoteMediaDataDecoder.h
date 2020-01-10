@@ -42,16 +42,13 @@ class RemoteMediaDataDecoder
   ConversionRequired NeedsConversion() const override;
 
  private:
-  RemoteMediaDataDecoder(IRemoteDecoderChild* aChild, nsIThread* aManagerThread,
-                         AbstractThread* aAbstractManagerThread);
+  explicit RemoteMediaDataDecoder(IRemoteDecoderChild* aChild);
   ~RemoteMediaDataDecoder();
 
   
   
   
   RefPtr<IRemoteDecoderChild> mChild;
-  nsIThread* mManagerThread;
-  AbstractThread* mAbstractManagerThread;
   
   
   nsCString mDescription = NS_LITERAL_CSTRING("RemoteMediaDataDecoder");
