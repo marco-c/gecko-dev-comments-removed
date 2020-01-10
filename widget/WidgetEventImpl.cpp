@@ -662,12 +662,16 @@ bool WidgetMouseEvent::IsMiddleClickPasteEnabled() {
 
 double WidgetWheelEvent::ComputeOverriddenDelta(double aDelta,
                                                 bool aIsForVertical) {
-  if (!StaticPrefs::MouseWheelHasRootScrollDeltaOverride()) {
+  if (!StaticPrefs::
+          mousewheel_system_scroll_override_on_root_content_enabled()) {
     return aDelta;
   }
-  int32_t intFactor = aIsForVertical
-                          ? StaticPrefs::MouseWheelRootScrollVerticalFactor()
-                          : StaticPrefs::MouseWheelRootScrollHorizontalFactor();
+  int32_t intFactor =
+      aIsForVertical
+          ? StaticPrefs::
+                mousewheel_system_scroll_override_on_root_content_vertical_factor()
+          : StaticPrefs::
+                mousewheel_system_scroll_override_on_root_content_horizontal_factor();
   
   
   if (intFactor <= 100) {
