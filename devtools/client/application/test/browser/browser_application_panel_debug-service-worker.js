@@ -15,7 +15,7 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-const TAB_URL = URL_ROOT + "service-workers/debug.html";
+const TAB_URL = URL_ROOT + "resources/service-workers/debug.html";
 
 add_task(async function() {
   await enableApplicationPanel();
