@@ -6,8 +6,10 @@
 
 var EXPORTED_SYMBOLS = ["LightweightThemeChild"];
 
-const {ActorChild} = ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { ActorChild } = ChromeUtils.import(
+  "resource://gre/modules/ActorChild.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
@@ -74,12 +76,16 @@ class LightweightThemeChild extends ActorChild {
 
 
   update(outerWindowID, content) {
-    const event = Cu.cloneInto({
-      detail: {
-        data: Services.cpmm.sharedData.get(`theme/${outerWindowID}`),
+    const event = Cu.cloneInto(
+      {
+        detail: {
+          data: Services.cpmm.sharedData.get(`theme/${outerWindowID}`),
+        },
       },
-    }, content);
-    content.dispatchEvent(new content.CustomEvent("LightweightTheme:Set",
-                                                  event));
+      content
+    );
+    content.dispatchEvent(
+      new content.CustomEvent("LightweightTheme:Set", event)
+    );
   }
 }

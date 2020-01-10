@@ -6,11 +6,16 @@
 
 const EXPORTED_SYMBOLS = ["LinkHandlerChild"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {ActorChild} = ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { ActorChild } = ChromeUtils.import(
+  "resource://gre/modules/ActorChild.jsm"
+);
 
-ChromeUtils.defineModuleGetter(this, "FaviconLoader",
-  "resource:///modules/FaviconLoader.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "FaviconLoader",
+  "resource:///modules/FaviconLoader.jsm"
+);
 
 class LinkHandlerChild extends ActorChild {
   constructor(dispatcher) {
@@ -28,8 +33,11 @@ class LinkHandlerChild extends ActorChild {
   }
 
   addRootIcon() {
-    if (!this.seenTabIcon && Services.prefs.getBoolPref("browser.chrome.guess_favicon", true) &&
-        Services.prefs.getBoolPref("browser.chrome.site_icons", true)) {
+    if (
+      !this.seenTabIcon &&
+      Services.prefs.getBoolPref("browser.chrome.guess_favicon", true) &&
+      Services.prefs.getBoolPref("browser.chrome.site_icons", true)
+    ) {
       
       
       let pageURI = this.content.document.documentURIObject;
@@ -90,16 +98,18 @@ class LinkHandlerChild extends ActorChild {
     let rel = link.rel && link.rel.toLowerCase();
     
     
-    if (!rel || !link.href || !link.getAttribute("href"))
+    if (!rel || !link.href || !link.getAttribute("href")) {
       return;
+    }
 
     
     
     let iconAdded = false;
     let searchAdded = false;
     let rels = {};
-    for (let relString of rel.split(/\s+/))
+    for (let relString of rel.split(/\s+/)) {
       rels[relString] = true;
+    }
 
     for (let relVal in rels) {
       let isRichIcon = false;
@@ -110,7 +120,8 @@ class LinkHandlerChild extends ActorChild {
         case "fluid-icon":
           isRichIcon = true;
         case "icon":
-          if (iconAdded || link.hasAttribute("mask")) { 
+          if (iconAdded || link.hasAttribute("mask")) {
+            
             break;
           }
 
@@ -126,7 +137,10 @@ class LinkHandlerChild extends ActorChild {
           }
           break;
         case "search":
-          if (Services.policies && !Services.policies.isAllowed("installSearchEngine")) {
+          if (
+            Services.policies &&
+            !Services.policies.isAllowed("installSearchEngine")
+          ) {
             break;
           }
 
@@ -135,8 +149,11 @@ class LinkHandlerChild extends ActorChild {
             type = type.replace(/^\s+|\s*(?:;.*)?$/g, "");
 
             let re = /^(?:https?|ftp):/i;
-            if (type == "application/opensearchdescription+xml" && link.title &&
-                re.test(link.href)) {
+            if (
+              type == "application/opensearchdescription+xml" &&
+              link.title &&
+              re.test(link.href)
+            ) {
               let engine = { title: link.title, href: link.href };
               this.mm.sendAsyncMessage("Link:AddSearch", {
                 engine,
