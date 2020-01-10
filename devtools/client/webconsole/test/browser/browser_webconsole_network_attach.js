@@ -60,15 +60,3 @@ async function testNetworkMessage(messageNode) {
     messageNode.querySelector("#headers-panel .headers-overview")
   );
 }
-
-
-
-
-
-async function waitForLazyRequests(toolbox) {
-  const { ui } = toolbox.getCurrentPanel().hud;
-  const proxy = ui.proxy;
-  return waitUntil(() => {
-    return !proxy.networkDataProvider.lazyRequestData.size;
-  });
-}

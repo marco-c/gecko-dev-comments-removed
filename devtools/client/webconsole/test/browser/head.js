@@ -1520,3 +1520,14 @@ function toggleLayout(hud) {
   });
   return waitFor(() => isEditorModeEnabled(hud) === !enabled);
 }
+
+
+
+
+
+async function waitForLazyRequests(toolbox) {
+  const { wrapper } = toolbox.getCurrentPanel().hud.ui;
+  return waitUntil(() => {
+    return !wrapper.networkDataProvider.lazyRequestData.size;
+  });
+}

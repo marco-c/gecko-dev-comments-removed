@@ -346,15 +346,3 @@ function expandXhrMessage(node) {
   node.querySelector(".url").click();
   return waitFor(() => node.querySelector(".network-info"));
 }
-
-
-
-
-
-async function waitForLazyRequests(toolbox) {
-  const { ui } = toolbox.getCurrentPanel().hud;
-  const proxy = ui.proxy;
-  return waitUntil(() => {
-    return !proxy.networkDataProvider.lazyRequestData.size;
-  });
-}

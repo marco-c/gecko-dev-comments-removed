@@ -355,15 +355,6 @@ class WebConsoleConnectionProxy {
     this.webConsoleUI.wrapper.dispatchMessageUpdate(networkInfo, response);
   }
 
-  dispatchRequestUpdate(id, data) {
-    
-    if (!this.webConsoleUI) {
-      return Promise.resolve();
-    }
-
-    return this.webConsoleUI.wrapper.dispatchRequestUpdate(id, data);
-  }
-
   
 
 

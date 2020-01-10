@@ -4,8 +4,6 @@
 
 "use strict";
 
-const DataProvider = require("devtools/client/netmonitor/src/connector/firefox-data-provider");
-
 const {
   getAllNetworkMessagesUpdateById,
 } = require("devtools/client/webconsole/selectors/messages");
@@ -29,35 +27,15 @@ const {
 
 
 function enableNetProvider(webConsoleUI) {
-  let dataProvider;
   return next => (reducer, initialState, enhancer) => {
     function netProviderEnhancer(state, action) {
-      const proxy = webConsoleUI ? webConsoleUI.getProxy() : null;
-      if (!proxy) {
+      const dataProvider =
+        webConsoleUI &&
+        webConsoleUI.wrapper &&
+        webConsoleUI.wrapper.networkDataProvider;
+
+      if (!dataProvider) {
         return reducer(state, action);
-      }
-
-      const actions = {
-        updateRequest: (id, data, batch) => {
-          return proxy.dispatchRequestUpdate(id, data);
-        },
-      };
-
-      
-      
-      
-      if (!dataProvider && proxy.webConsoleClient) {
-        dataProvider = new DataProvider({
-          actions,
-          webConsoleClient: proxy.webConsoleClient,
-        });
-
-        
-        
-        
-        
-        
-        proxy.networkDataProvider = dataProvider;
       }
 
       const type = action.type;
