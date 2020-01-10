@@ -7685,6 +7685,9 @@ class Cursor final : public PBackgroundIDBCursorParent {
 
   void SetOptionalKeyRange(const Maybe<SerializedKeyRange>& aOptionalKeyRange,
                            bool* aOpen);
+
+  const Key& GetSortKey() const;
+  Key* GetModifiableSortKey();
 };
 
 class Cursor::CursorOpBase : public TransactionDatabaseOperationBase {
@@ -15132,7 +15135,7 @@ bool Cursor::VerifyRequestParams(const CursorRequestParams& aParams) const {
     return false;
   }
 
-  const Key& sortKey = IsLocaleAware() ? mLocaleAwarePosition : mPosition;
+  const Key& sortKey = GetSortKey();
 
   switch (aParams.type()) {
     case CursorRequestParams::TContinueParams: {
@@ -15418,6 +15421,12 @@ mozilla::ipc::IPCResult Cursor::RecvContinue(
 
   return IPC_OK();
 }
+
+const Key& Cursor::GetSortKey() const {
+  return IsLocaleAware() ? mLocaleAwarePosition : mPosition;
+}
+
+Key* Cursor::GetModifiableSortKey() { return &const_cast<Key&>(GetSortKey()); }
 
 
 
@@ -25765,8 +25774,10 @@ void Cursor::CursorOpBase::Cleanup() {
 nsresult Cursor::CursorOpBase::PopulateResponseFromStatement(
     mozIStorageStatement* const aStmt, const bool aInitializeResponse) {
   Transaction()->AssertIsOnConnectionThread();
-  MOZ_ASSERT(aInitializeResponse ==
-             (mResponse.type() == CursorResponse::T__None));
+  MOZ_ASSERT_IF(aInitializeResponse,
+                mResponse.type() == CursorResponse::T__None);
+  MOZ_ASSERT_IF(!aInitializeResponse,
+                mResponse.type() != CursorResponse::T__None);
   MOZ_ASSERT_IF(
       mFiles.IsEmpty() &&
           (mResponse.type() ==
@@ -25913,10 +25924,7 @@ nsresult Cursor::CursorOpBase::PopulateExtraResponses(
   
   
   Key previousKey =
-      IsUnique(mCursor->mDirection)
-          ? (mCursor->IsLocaleAware() ? mCursor->mLocaleAwarePosition
-                                      : mCursor->mPosition)
-          : Key{};
+      IsUnique(mCursor->mDirection) ? mCursor->GetSortKey() : Key{};
 
   uint32_t extraCount = 0;
   do {
@@ -25938,9 +25946,7 @@ nsresult Cursor::CursorOpBase::PopulateExtraResponses(
     }
 
     if (IsUnique(mCursor->mDirection)) {
-      const auto& currentKey = mCursor->IsLocaleAware()
-                                   ? mCursor->mLocaleAwarePosition
-                                   : mCursor->mPosition;
+      const auto& currentKey = mCursor->GetSortKey();
       const bool sameKey = previousKey == currentKey;
       previousKey = currentKey;
       if (sameKey) {
@@ -26618,8 +26624,7 @@ nsresult Cursor::ContinueOp::DoDatabaseWork(DatabaseConnection* aConnection) {
   
   
   
-  Key& currentKey = mCursor->IsLocaleAware() ? mCursor->mLocaleAwarePosition
-                                             : mCursor->mPosition;
+  Key& currentKey = *mCursor->GetModifiableSortKey();
 
   IDB_LOG_MARK_PARENT_TRANSACTION_REQUEST(
       "PRELOAD: ContinueOp: currentKey == %s", "currentKey",
