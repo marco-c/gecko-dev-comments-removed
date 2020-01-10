@@ -22,8 +22,8 @@ impl<'a> From<&'a str> for StringView {
     }
 }
 
-impl Into<Result<String,Box<Error>>> for StringView {
-    fn into(self) -> Result<String,Box<Error>> {
+impl Into<Result<String, Box<dyn Error>>> for StringView {
+    fn into(self) -> Result<String, Box<dyn Error>> {
 
         
         
