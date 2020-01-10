@@ -49,7 +49,6 @@ nsIContent* ExplicitChildIterator::GetNextChild() {
   } else if (mDefaultChild) {
     
     MOZ_ASSERT(mChild);
-    MOZ_ASSERT(mChild->IsActiveChildrenElement());
 
     mDefaultChild = mDefaultChild->GetNextSibling();
     if (mDefaultChild) {
@@ -75,18 +74,6 @@ nsIContent* ExplicitChildIterator::GetNextChild() {
     mIsFirst = false;
   } else if (mChild) {  
     mChild = mChild->GetNextSibling();
-  }
-
-  
-  
-  while (mChild) {
-    if (mChild->IsActiveChildrenElement()) {
-      MOZ_ASSERT_UNREACHABLE("This needs to be revisited");
-    } else {
-      
-      
-      break;
-    }
   }
 
   return mChild;
@@ -121,7 +108,6 @@ bool ExplicitChildIterator::Seek(const nsIContent* aChildToFind) {
     mIndexInInserted = 0;
     mDefaultChild = nullptr;
     mIsFirst = false;
-    MOZ_ASSERT(!mChild->IsActiveChildrenElement());
     return true;
   }
 
@@ -192,18 +178,6 @@ nsIContent* ExplicitChildIterator::GetPreviousChild() {
     }
 
     mChild = mParent->GetLastChild();
-  }
-
-  
-  
-  while (mChild) {
-    if (mChild->IsActiveChildrenElement()) {
-      MOZ_ASSERT_UNREACHABLE("This needs to be revisited");
-    } else {
-      
-      
-      break;
-    }
   }
 
   if (!mChild) {
