@@ -1861,7 +1861,16 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
 
     
     aMetrics.mCarriedOutBEndMargin.Zero();
-  } else if (aReflowInput.mStyleDisplay->IsContainSize()) {
+  } else if (!IsComboboxControlFrame() &&
+             aReflowInput.mStyleDisplay->IsContainSize()) {
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
