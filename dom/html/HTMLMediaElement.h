@@ -838,6 +838,14 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
+
+
+  void UpdateSrcStreamReportPlaybackEnded();
+
+  
+
+
+
   void NotifyMediaStreamTrackAdded(const RefPtr<MediaStreamTrack>& aTrack);
 
   
@@ -1329,6 +1337,12 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   Watchable<bool> mSrcStreamPlaybackEnded = {
       false, "HTMLMediaElement::mSrcStreamPlaybackEnded"};
+
+  
+  
+  
+  
+  bool mSrcStreamReportPlaybackEnded = false;
 
   
   
