@@ -467,7 +467,7 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
   friend class DestroyRunnable;
 
  public:
-  Session(MediaRecorder* aRecorder, int32_t aTimeSlice)
+  Session(MediaRecorder* aRecorder, uint32_t aTimeSlice)
       : mRecorder(aRecorder),
         mMediaStreamReady(false),
         mTimeSlice(aTimeSlice),
@@ -1224,9 +1224,7 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
   TimeStamp mLastBlobTimeStamp;
   
   
-  
-  
-  const int32_t mTimeSlice;
+  const uint32_t mTimeSlice;
   
   
   
@@ -1292,7 +1290,7 @@ void MediaRecorder::SetMimeType(const nsString& aMimeType) {
 
 void MediaRecorder::GetMimeType(nsString& aMimeType) { aMimeType = mMimeType; }
 
-void MediaRecorder::Start(const Optional<int32_t>& aTimeSlice,
+void MediaRecorder::Start(const Optional<uint32_t>& aTimeSlice,
                           ErrorResult& aResult) {
   LOG(LogLevel::Debug, ("MediaRecorder.Start %p", this));
 
@@ -1322,15 +1320,7 @@ void MediaRecorder::Start(const Optional<int32_t>& aTimeSlice,
     }
   }
 
-  int32_t timeSlice = 0;
-  if (aTimeSlice.WasPassed()) {
-    if (aTimeSlice.Value() < 0) {
-      aResult.Throw(NS_ERROR_INVALID_ARG);
-      return;
-    }
-
-    timeSlice = aTimeSlice.Value();
-  }
+  uint32_t timeSlice = aTimeSlice.WasPassed() ? aTimeSlice.Value() : 0;
   MediaRecorderReporter::AddMediaRecorder(this);
   mState = RecordingState::Recording;
   

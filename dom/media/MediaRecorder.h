@@ -71,7 +71,7 @@ class MediaRecorder final : public DOMEventTargetHelper,
   
   
   
-  void Start(const Optional<int32_t>& timeSlice, ErrorResult& aResult);
+  void Start(const Optional<uint32_t>& timeSlice, ErrorResult& aResult);
   
   
   void Stop(ErrorResult& aResult);
