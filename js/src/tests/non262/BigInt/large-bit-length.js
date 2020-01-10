@@ -1,7 +1,6 @@
 
 
 
-
 function test(thunk, result) {
     let val, err;
     try {

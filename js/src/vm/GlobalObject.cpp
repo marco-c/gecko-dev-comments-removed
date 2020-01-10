@@ -104,11 +104,6 @@ bool GlobalObject::skipDeselectedConstructor(JSContext* cx, JSProtoKey key) {
     case JSProto_CountQueuingStrategy:
       return !cx->realm()->creationOptions().getStreamsEnabled();
 
-    case JSProto_BigInt64Array:
-    case JSProto_BigUint64Array:
-    case JSProto_BigInt:
-      return !cx->realm()->creationOptions().getBigIntEnabled();
-
     
     case JSProto_Atomics:
     case JSProto_SharedArrayBuffer:
