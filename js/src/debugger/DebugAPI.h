@@ -117,6 +117,9 @@ class DebugAPI {
   static void traceAllForMovingGC(JSTracer* trc);
 
   
+  static void traceDebugScript(JSTracer* trc, JSScript* script);
+
+  
   
   
   
@@ -124,9 +127,6 @@ class DebugAPI {
 
   
   static MOZ_MUST_USE bool findSweepGroupEdges(JSRuntime* rt);
-
-  
-  static inline void sweepBreakpoints(JSFreeOp* fop, JSScript* script);
 
   
   static void destroyDebugScript(JSFreeOp* fop, JSScript* script);
@@ -366,7 +366,6 @@ class DebugAPI {
  private:
   static bool stepModeEnabledSlow(JSScript* script);
   static bool hasBreakpointsAtSlow(JSScript* script, jsbytecode* pc);
-  static void sweepBreakpointsSlow(JSFreeOp* fop, JSScript* script);
   static void slowPathOnNewScript(JSContext* cx, HandleScript script);
   static void slowPathOnNewGlobalObject(JSContext* cx,
                                         Handle<GlobalObject*> global);

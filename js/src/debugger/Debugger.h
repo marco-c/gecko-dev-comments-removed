@@ -1208,6 +1208,39 @@ struct Handler {
 class JSBreakpointSite;
 class WasmBreakpointSite;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class BreakpointSite {
   friend class DebugAPI;
   friend class Breakpoint;
@@ -1231,11 +1264,12 @@ class BreakpointSite {
       mozilla::DoublyLinkedList<js::Breakpoint, SiteLinkAccess<js::Breakpoint>>;
   BreakpointList breakpoints;
 
-  gc::Cell* owningCellUnbarriered();
+  gc::Cell* owningCell();
 
  protected:
   BreakpointSite(Type type);
   virtual ~BreakpointSite() {}
+  void finalize(JSFreeOp* fop);
 
  public:
   Breakpoint* firstBreakpoint() const;
@@ -1243,6 +1277,7 @@ class BreakpointSite {
   Type type() const { return type_; }
 
   bool isEmpty() const;
+  virtual void trace(JSTracer* trc);
   virtual void remove(JSFreeOp* fop) = 0;
   void destroyIfEmpty(JSFreeOp* fop) {
     if (isEmpty()) {
@@ -1259,26 +1294,29 @@ class BreakpointSite {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 class Breakpoint {
   friend class DebugAPI;
   friend class Debugger;
   friend class BreakpointSite;
 
  public:
+  
   Debugger* const debugger;
+
+  
+
+
+
+
+
+
+
+
+
+
+  HeapPtr<JSObject*> wrappedDebugger;
+
+  
   BreakpointSite* const site;
 
  private:
@@ -1286,7 +1324,11 @@ class Breakpoint {
 
 
 
-  js::PreBarrieredObject handler;
+
+
+
+
+  HeapPtr<JSObject*> handler;
 
   
 
@@ -1294,8 +1336,11 @@ class Breakpoint {
   mozilla::DoublyLinkedListElement<Breakpoint> debuggerLink;
   mozilla::DoublyLinkedListElement<Breakpoint> siteLink;
 
+  void trace(JSTracer* trc);
+
  public:
-  Breakpoint(Debugger* debugger, BreakpointSite* site, JSObject* handler);
+  Breakpoint(Debugger* debugger, HandleObject wrappedDebugger,
+             BreakpointSite* site, HandleObject handler);
 
   enum MayDestroySite { False, True };
 
@@ -1320,17 +1365,18 @@ class Breakpoint {
   Breakpoint* nextInDebugger();
   Breakpoint* nextInSite();
   JSObject* getHandler() const { return handler; }
-  PreBarrieredObject& getHandlerRef() { return handler; }
 };
 
 class JSBreakpointSite : public BreakpointSite {
  public:
-  JSScript* script;
+  HeapPtr<JSScript*> script;
   jsbytecode* const pc;
 
  public:
   JSBreakpointSite(JSScript* script, jsbytecode* pc);
 
+  void trace(JSTracer* trc) override;
+  void delete_(JSFreeOp* fop);
   void remove(JSFreeOp* fop) override;
 };
 
@@ -1341,12 +1387,14 @@ inline JSBreakpointSite* BreakpointSite::asJS() {
 
 class WasmBreakpointSite : public BreakpointSite {
  public:
-  WasmInstanceObject* instanceObject;
+  HeapPtr<WasmInstanceObject*> instanceObject;
   uint32_t offset;
 
  public:
   WasmBreakpointSite(WasmInstanceObject* instanceObject, uint32_t offset);
 
+  void trace(JSTracer* trc) override;
+  void delete_(JSFreeOp* fop);
   void remove(JSFreeOp* fop) override;
 
   wasm::Instance& instance() { return instanceObject->instance(); }

@@ -2045,11 +2045,16 @@ struct DebuggerScript::SetBreakpointMatcher {
   Debugger* dbg_;
   size_t offset_;
   RootedObject handler_;
+  RootedObject debuggerObject_;
 
  public:
   explicit SetBreakpointMatcher(JSContext* cx, Debugger* dbg, size_t offset,
                                 HandleObject handler)
-      : cx_(cx), dbg_(dbg), offset_(offset), handler_(cx, handler) {}
+      : cx_(cx),
+        dbg_(dbg),
+        offset_(offset),
+        handler_(cx, handler),
+        debuggerObject_(cx_, dbg_->toJSObject()) {}
 
   using ReturnType = bool;
 
@@ -2072,6 +2077,14 @@ struct DebuggerScript::SetBreakpointMatcher {
       return false;
     }
 
+    
+    
+    AutoRealm ar(cx_, script);
+    if (!cx_->compartment()->wrap(cx_, &handler_) ||
+        !cx_->compartment()->wrap(cx_, &debuggerObject_)) {
+      return false;
+    }
+
     jsbytecode* pc = script->offsetToPC(offset_);
     JSBreakpointSite* site =
         DebugScript::getOrCreateBreakpointSite(cx_, script, pc);
@@ -2079,7 +2092,7 @@ struct DebuggerScript::SetBreakpointMatcher {
       return false;
     }
 
-    if (!cx_->zone()->new_<Breakpoint>(dbg_, site, handler_)) {
+    if (!cx_->zone()->new_<Breakpoint>(dbg_, debuggerObject_, site, handler_)) {
       site->destroyIfEmpty(cx_->runtime()->defaultFreeOp());
       return false;
     }
@@ -2102,12 +2115,21 @@ struct DebuggerScript::SetBreakpointMatcher {
                                 JSMSG_DEBUG_BAD_OFFSET);
       return false;
     }
+
+    
+    
+    AutoRealm ar(cx_, wasmInstance);
+    if (!cx_->compartment()->wrap(cx_, &handler_) ||
+        !cx_->compartment()->wrap(cx_, &debuggerObject_)) {
+      return false;
+    }
+
     WasmBreakpointSite* site = instance.getOrCreateBreakpointSite(cx_, offset_);
     if (!site) {
       return false;
     }
 
-    if (!cx_->zone()->new_<Breakpoint>(dbg_, site, handler_)) {
+    if (!cx_->zone()->new_<Breakpoint>(dbg_, debuggerObject_, site, handler_)) {
       site->destroyIfEmpty(cx_->runtime()->defaultFreeOp());
       return false;
     }
@@ -2174,9 +2196,12 @@ bool DebuggerScript::CallData::getBreakpoints() {
     if (!pc || site->asJS()->pc == pc) {
       for (Breakpoint* bp = site->firstBreakpoint(); bp;
            bp = bp->nextInSite()) {
-        if (bp->debugger == dbg &&
-            !NewbornArrayPush(cx, arr, ObjectValue(*bp->getHandler()))) {
-          return false;
+        if (bp->debugger == dbg) {
+          RootedObject handler(cx, bp->getHandler());
+          if (!cx->compartment()->wrap(cx, &handler) ||
+              !NewbornArrayPush(cx, arr, ObjectValue(*handler))) {
+            return false;
+          }
         }
       }
     }
@@ -2188,14 +2213,24 @@ bool DebuggerScript::CallData::getBreakpoints() {
 class DebuggerScript::ClearBreakpointMatcher {
   JSContext* cx_;
   Debugger* dbg_;
-  JSObject* handler_;
+  RootedObject handler_;
 
  public:
   ClearBreakpointMatcher(JSContext* cx, Debugger* dbg, JSObject* handler)
-      : cx_(cx), dbg_(dbg), handler_(handler) {}
+      : cx_(cx), dbg_(dbg), handler_(cx, handler) {}
   using ReturnType = bool;
 
   ReturnType match(HandleScript script) {
+    
+    
+    
+    
+    
+    AutoRealm ar(cx_, script);
+    if (!cx_->compartment()->wrap(cx_, &handler_)) {
+      return false;
+    }
+
     DebugScript::clearBreakpointsIn(cx_->runtime()->defaultFreeOp(), script,
                                     dbg_, handler_);
     return true;
@@ -2212,6 +2247,16 @@ class DebuggerScript::ClearBreakpointMatcher {
     if (!instance.debugEnabled()) {
       return true;
     }
+
+    
+    
+    
+    
+    AutoRealm ar(cx_, instanceObj);
+    if (!cx_->compartment()->wrap(cx_, &handler_)) {
+      return false;
+    }
+
     instance.debug().clearBreakpointsIn(cx_->runtime()->defaultFreeOp(),
                                         instanceObj, dbg_, handler_);
     return true;

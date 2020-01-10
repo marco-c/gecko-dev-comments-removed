@@ -57,8 +57,6 @@ class Instance {
   const UniqueDebugState maybeDebug_;
   StructTypeDescrVector structTypeDescrs_;
 
-  friend void Zone::sweepBreakpoints(JSFreeOp*);
-
   
   const void** addressOfFuncTypeId(const FuncTypeIdDesc& funcTypeId) const;
   FuncImportTls& funcImportTls(const FuncImport& fi);
