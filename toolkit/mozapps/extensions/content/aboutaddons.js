@@ -132,6 +132,12 @@ const AddonCardListenerHandler = {
   },
 };
 
+function isAbuseReportSupported(addon) {
+  return ABUSE_REPORT_ENABLED &&
+    ["extension", "theme"].includes(addon.type) &&
+    !(addon.isBuiltin || addon.isSystem);
+}
+
 async function isAllowedInPrivateBrowsing(addon) {
   
   let perms = await ExtensionPermissions.get(addon.id);
@@ -633,7 +639,7 @@ class AddonOptions extends HTMLElement {
         el.hidden = !hasPermission(addon, "uninstall");
         break;
       case "report":
-        el.hidden = !ABUSE_REPORT_ENABLED || addon.isBuiltin || addon.isSystem;
+        el.hidden = !isAbuseReportSupported(addon);
         break;
       case "toggle-disabled": {
         let toggleDisabledAction = addon.userDisabled ? "enable" : "disable";
