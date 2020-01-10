@@ -8,6 +8,7 @@
 #include "js/CompilationAndEvaluation.h"  
 #include "js/SourceText.h"                
 #include "jsapi-tests/tests.h"
+#include "vm/HelperThreads.h"
 #include "vm/Monitor.h"
 #include "vm/MutexIDs.h"
 
