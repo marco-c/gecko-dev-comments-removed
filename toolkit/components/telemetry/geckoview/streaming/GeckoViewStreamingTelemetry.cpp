@@ -35,6 +35,7 @@ TimeStamp gBatchBegan;
 
 typedef nsDataHashtable<nsCStringHashKey, nsTArray<uint32_t>> HistogramBatch;
 HistogramBatch gBatch;
+HistogramBatch gCategoricalBatch;
 
 typedef nsDataHashtable<nsCStringHashKey, bool> BoolScalarBatch;
 BoolScalarBatch gBoolScalars;
@@ -56,12 +57,14 @@ class SendBatchRunnable : public Runnable {
  public:
   explicit SendBatchRunnable(RefPtr<StreamingTelemetryDelegate> aDelegate,
                              HistogramBatch&& aBatch,
+                             HistogramBatch&& aCategoricalBatch,
                              BoolScalarBatch&& aBoolScalars,
                              StringScalarBatch&& aStringScalars,
                              UintScalarBatch&& aUintScalars)
       : Runnable("SendBatchRunnable"),
         mDelegate(std::move(aDelegate)),
         mBatch(std::move(aBatch)),
+        mCategoricalBatch(std::move(aCategoricalBatch)),
         mBoolScalars(std::move(aBoolScalars)),
         mStringScalars(std::move(aStringScalars)),
         mUintScalars(std::move(aUintScalars)) {}
@@ -77,6 +80,14 @@ class SendBatchRunnable : public Runnable {
       mDelegate->ReceiveHistogramSamples(histogramName, samples);
     }
     mBatch.Clear();
+
+    for (auto iter = mCategoricalBatch.Iter(); !iter.Done(); iter.Next()) {
+      const nsCString& histogramName = PromiseFlatCString(iter.Key());
+      const nsTArray<uint32_t>& samples = iter.Data();
+
+      mDelegate->ReceiveCategoricalHistogramSamples(histogramName, samples);
+    }
+    mCategoricalBatch.Clear();
 
     for (auto iter = mBoolScalars.Iter(); !iter.Done(); iter.Next()) {
       const nsCString& scalarName = PromiseFlatCString(iter.Key());
@@ -103,6 +114,7 @@ class SendBatchRunnable : public Runnable {
  private:
   RefPtr<StreamingTelemetryDelegate> mDelegate;
   HistogramBatch mBatch;
+  HistogramBatch mCategoricalBatch;
   BoolScalarBatch mBoolScalars;
   StringScalarBatch mStringScalars;
   UintScalarBatch mUintScalars;
@@ -123,6 +135,8 @@ void SendBatch(const StaticMutexAutoLock& aLock) {
   
   HistogramBatch histogramCopy;
   gBatch.SwapElements(histogramCopy);
+  HistogramBatch categoricalCopy;
+  gCategoricalBatch.SwapElements(categoricalCopy);
   BoolScalarBatch boolScalarCopy;
   gBoolScalars.SwapElements(boolScalarCopy);
   StringScalarBatch stringScalarCopy;
@@ -130,8 +144,9 @@ void SendBatch(const StaticMutexAutoLock& aLock) {
   UintScalarBatch uintScalarCopy;
   gUintScalars.SwapElements(uintScalarCopy);
   RefPtr<SendBatchRunnable> runnable = new SendBatchRunnable(
-      gDelegate, std::move(histogramCopy), std::move(boolScalarCopy),
-      std::move(stringScalarCopy), std::move(uintScalarCopy));
+      gDelegate, std::move(histogramCopy), std::move(categoricalCopy),
+      std::move(boolScalarCopy), std::move(stringScalarCopy),
+      std::move(uintScalarCopy));
 
   
   NS_DispatchToMainThread(runnable);
@@ -151,11 +166,17 @@ void BatchCheck(const StaticMutexAutoLock& aLock) {
 }
 
 
-void HistogramAccumulate(const nsCString& aName, uint32_t aValue) {
+void HistogramAccumulate(const nsCString& aName, bool aIsCategorical,
+                         uint32_t aValue) {
   StaticMutexAutoLock lock(gMutex);
 
-  nsTArray<uint32_t>& samples = gBatch.GetOrInsert(aName);
-  samples.AppendElement(aValue);
+  if (aIsCategorical) {
+    nsTArray<uint32_t>& samples = gCategoricalBatch.GetOrInsert(aName);
+    samples.AppendElement(aValue);
+  } else {
+    nsTArray<uint32_t>& samples = gBatch.GetOrInsert(aName);
+    samples.AppendElement(aValue);
+  }
 
   BatchCheck(lock);
 }
