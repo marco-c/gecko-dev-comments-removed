@@ -2449,22 +2449,6 @@ class nsLayoutUtils {
 
 
 
-  static uint32_t FontSizeInflationEmPerLine() {
-    return sFontSizeInflationEmPerLine;
-  }
-
-  
-
-
-
-  static uint32_t FontSizeInflationMinTwips() {
-    return sFontSizeInflationMinTwips;
-  }
-
-  
-
-
-
   static uint32_t FontSizeInflationLineThreshold() {
     return sFontSizeInflationLineThreshold;
   }
@@ -2493,14 +2477,6 @@ class nsLayoutUtils {
 
   static uint32_t QuiescentFramesBeforeIdlePeriod() {
     return sQuiescentFramesBeforeIdlePeriod;
-  }
-
-  
-
-
-
-  static int32_t FontSizeInflationMappingIntercept() {
-    return sFontSizeInflationMappingIntercept;
   }
 
   
@@ -3049,10 +3025,7 @@ class nsLayoutUtils {
       const nsIFrame* aFrame);
 
  private:
-  static uint32_t sFontSizeInflationEmPerLine;
-  static uint32_t sFontSizeInflationMinTwips;
   static uint32_t sFontSizeInflationLineThreshold;
-  static int32_t sFontSizeInflationMappingIntercept;
   static bool sFontSizeInflationForceEnabled;
   static bool sFontSizeInflationDisabledInMasterProcess;
   static uint32_t sSystemFontScale;

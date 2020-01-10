@@ -3367,28 +3367,6 @@ pref("font.size.monospace.x-math", 13);
 
 
 
-pref("font.size.inflation.emPerLine", 0);
-
-
-
-
-
-
-
-
-
-
-pref("font.size.inflation.minTwips", 0);
-
-
-
-
-
-
-
-
-
-
 pref("font.size.inflation.forceEnabled", false);
 
 
@@ -3422,29 +3400,6 @@ pref("font.size.inflation.disabledInMasterProcess", false);
 
 
 pref("font.size.inflation.lineThreshold", 400);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pref("font.size.inflation.mappingIntercept", 1);
 
 
 
