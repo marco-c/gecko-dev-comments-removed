@@ -4584,9 +4584,36 @@ class HTMLMediaElement::MediaStreamTrackListener
     if (!mElement) {
       return;
     }
-    LOG(LogLevel::Debug, ("%p, mSrcStream %p became active", mElement.get(),
-                          mElement->mSrcStream.get()));
-    mElement->CheckAutoplayDataReady();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    LOG(LogLevel::Debug, ("%p, mSrcStream %p became active, checking if we "
+                          "need to run the load algorithm",
+                          mElement.get(), mElement->mSrcStream.get()));
+    if (!mElement->IsPlaybackEnded()) {
+      return;
+    }
+    if (!mElement->Autoplay()) {
+      return;
+    }
+    LOG(LogLevel::Info, ("%p, mSrcStream %p became active on autoplaying, "
+                         "ended element. Reloading.",
+                         mElement.get(), mElement->mSrcStream.get()));
+    mElement->DoLoad();
   }
 
   void NotifyInactive() override {
@@ -4737,7 +4764,6 @@ void HTMLMediaElement::SetupSrcMediaStreamPlayback(DOMMediaStream* aStream) {
 
   ChangeNetworkState(NETWORK_IDLE);
   ChangeDelayLoadStatus(false);
-  CheckAutoplayDataReady();
 
   
 }
@@ -5576,9 +5602,6 @@ bool HTMLMediaElement::CanActivateAutoplay() {
   
   
   
-  
-  
-  
 
   if (!HasAttr(kNameSpaceID_None, nsGkAtoms::autoplay)) {
     return false;
@@ -5618,10 +5641,7 @@ bool HTMLMediaElement::CanActivateAutoplay() {
     }
   }
 
-  bool hasData = (mDecoder && mReadyState >= HAVE_ENOUGH_DATA) ||
-                 (mSrcStream && mSrcStream->Active());
-
-  return hasData;
+  return mReadyState >= HAVE_ENOUGH_DATA;
 }
 
 void HTMLMediaElement::CheckAutoplayDataReady() {
