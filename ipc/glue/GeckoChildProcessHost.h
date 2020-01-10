@@ -140,7 +140,7 @@ class GeckoChildProcessHost : public ChildProcessHost {
   
   
   
-  static void StaticFillMacSandboxInfo(MacSandboxInfo& aInfo);
+  static bool StaticFillMacSandboxInfo(MacSandboxInfo& aInfo);
 
   
   static bool StartMacSandbox(int aArgc, char** aArgv,
@@ -215,12 +215,12 @@ class GeckoChildProcessHost : public ChildProcessHost {
   virtual bool IsMacSandboxLaunchEnabled() { return false; }
 
   
-  virtual void FillMacSandboxInfo(MacSandboxInfo& aInfo);
+  virtual bool FillMacSandboxInfo(MacSandboxInfo& aInfo);
 
   
   
   
-  virtual void AppendMacSandboxParams(StringVector& aArgs);
+  virtual bool AppendMacSandboxParams(StringVector& aArgs);
 #endif
 
  private:
