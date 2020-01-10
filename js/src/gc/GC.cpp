@@ -5595,7 +5595,9 @@ IncrementalProgress GCRuntime::markUntilBudgetExhausted(
   mozilla::recordreplay::AutoDisallowThreadEvents disallow;
 
   
-  gcstats::AutoPhase ap(stats(), phase);
+  
+  bool enable = TlsContext.get()->isMainThreadContext();
+  gcstats::AutoPhase ap(stats(), enable, phase);
 
 #ifdef DEBUG
   AutoSetThreadIsMarking threadIsMarking;
