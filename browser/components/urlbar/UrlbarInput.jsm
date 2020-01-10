@@ -45,7 +45,6 @@ class UrlbarInput {
 
   constructor(options = {}) {
     this.textbox = options.textbox;
-    this.textbox.clickSelectsAll = UrlbarPrefs.get("clickSelectsAll");
 
     this.window = this.textbox.ownerGlobal;
     this.document = this.window.document;
@@ -182,6 +181,8 @@ class UrlbarInput {
     this.inputField.controllers.insertControllerAt(0, this._copyCutController);
 
     this._initPasteAndGo();
+
+    this._ignoreFocus = true;
 
     
     this._compositionState = UrlbarUtils.COMPOSITION.NONE;
@@ -1296,12 +1297,23 @@ class UrlbarInput {
     if (this.getAttribute("pageproxystate") != "valid") {
       this.window.UpdatePopupNotificationsVisibility();
     }
+    
+    if (this.document.activeElement == this.inputField) {
+      this._ignoreFocus = true;
+    }
     this._resetSearchState();
   }
 
   _on_focus(event) {
     this._updateUrlTooltip();
     this.formatValue();
+
+    if (this._ignoreFocus) {
+      this._ignoreFocus = false;
+    } else if (UrlbarPrefs.get("clickSelectsAll") &&
+               this._compositionState != UrlbarUtils.COMPOSITION.COMPOSING) {
+      this.editor.selectAll();
+    }
 
     
     if (this.getAttribute("pageproxystate") != "valid") {
