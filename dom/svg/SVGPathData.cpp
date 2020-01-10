@@ -167,7 +167,7 @@ bool SVGPathData::GetDistancesFromOriginToEndsOfVisibleSegments(
 
     
     
-    if (!isfinite(state.length)) {
+    if (!std::isfinite(state.length)) {
       return false;
     }
 
