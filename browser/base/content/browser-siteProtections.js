@@ -1532,8 +1532,13 @@ var gProtectionsHandler = {
 
     
     if (!ContentBlockingAllowList.canHandle(gBrowser.selectedBrowser)) {
+      
+      
+      
+      gIdentityHandler._trackingProtectionIconContainer.hidden = true;
       return;
     }
+    gIdentityHandler._trackingProtectionIconContainer.hidden = false;
 
     
     let hasException = ContentBlockingAllowList.includes(
