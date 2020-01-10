@@ -90,7 +90,7 @@ class WindowGlobalParent final : public WindowGlobalActor,
   
   
   
-  nsFrameLoader* GetRootFrameLoader() { return mFrameLoader; }
+  already_AddRefed<nsFrameLoader> GetRootFrameLoader();
 
   
   nsIURI* GetDocumentURI() override { return mDocumentURI; }
@@ -165,7 +165,6 @@ class WindowGlobalParent final : public WindowGlobalActor,
   
   nsCOMPtr<nsIPrincipal> mDocumentPrincipal;
   nsCOMPtr<nsIURI> mDocumentURI;
-  RefPtr<nsFrameLoader> mFrameLoader;
   RefPtr<CanonicalBrowsingContext> mBrowsingContext;
   nsRefPtrHashtable<nsStringHashKey, JSWindowActorParent> mWindowActors;
   uint64_t mInnerWindowId;
