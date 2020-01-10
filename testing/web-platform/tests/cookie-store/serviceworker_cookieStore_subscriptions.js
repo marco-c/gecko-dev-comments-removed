@@ -11,7 +11,7 @@ self.addEventListener('install', (event) => {
     
     try {
       await cookieStore.subscribeToChanges([
-        { name: 'cookie-name1', matchType: 'equals', url: '/scope/path1' }]);
+        { name: 'cookie-name1', matchType: 'equals', url: '/cookie-store/path1' }]);
       await cookieStore.subscribeToChanges([
         { },  
         { name: 'cookie-prefix', matchType: 'starts-with' },

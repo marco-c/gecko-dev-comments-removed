@@ -8,7 +8,8 @@ self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     try {
       await cookieStore.subscribeToChanges([
-        { name: 'cookie-name', matchType: 'equals', url: '/scope/path' }]);
+        { name: 'cookie-name', matchType: 'equals',
+          url: '/cookie-store/scope/path' }]);
 
       
       
