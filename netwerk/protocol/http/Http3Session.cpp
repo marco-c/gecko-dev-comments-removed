@@ -328,6 +328,7 @@ nsresult Http3Session::ProcessEvents(uint32_t count, uint32_t* countWritten,
         break;
       case Http3Event::Tag::ConnectionClosed:
         LOG(("Http3Session::ProcessEvents - ConnectionClosed"));
+        CloseInternal(false);
         mState = CLOSED;
         break;
       default:
