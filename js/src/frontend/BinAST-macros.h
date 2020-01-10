@@ -12,51 +12,62 @@
 
 
 
-#define BINJS_TRY(EXPR)                            \
-  do {                                             \
-    if (!EXPR) return cx_->alreadyReportedError(); \
+#define BINJS_TRY(EXPR)                   \
+  do {                                    \
+    if (MOZ_UNLIKELY(!(EXPR))) {          \
+      return cx_->alreadyReportedError(); \
+    }                                     \
   } while (false)
 
 
 
 
 
-#define BINJS_TRY_VAR(VAR, EXPR)                  \
-  do {                                            \
-    VAR = EXPR;                                   \
-    if (!VAR) return cx_->alreadyReportedError(); \
+#define BINJS_TRY_VAR(VAR, EXPR)          \
+  do {                                    \
+    (VAR) = (EXPR);                       \
+    if (MOZ_UNLIKELY(!(VAR))) {           \
+      return cx_->alreadyReportedError(); \
+    }                                     \
   } while (false)
 
 
 
 
 
-#define BINJS_TRY_DECL(VAR, EXPR) \
-  auto VAR = EXPR;                \
-  if (!VAR) return cx_->alreadyReportedError();
+#define BINJS_TRY_DECL(VAR, EXPR)       \
+  auto (VAR) = (EXPR);                  \
+  if (MOZ_UNLIKELY(!(VAR))) {           \
+    return cx_->alreadyReportedError(); \
+  }
 
-#define BINJS_TRY_EMPL(VAR, EXPR)                            \
-  do {                                                       \
-    auto _tryEmplResult = EXPR;                              \
-    if (!_tryEmplResult) return cx_->alreadyReportedError(); \
-    VAR.emplace(_tryEmplResult.unwrap());                    \
+#define BINJS_TRY_EMPL(VAR, EXPR)           \
+  do {                                      \
+    auto _tryEmplResult = (EXPR);           \
+    if (MOZ_UNLIKELY(!_tryEmplResult)) {    \
+      return cx_->alreadyReportedError();   \
+    }                                       \
+    (VAR).emplace(_tryEmplResult.unwrap()); \
   } while (false)
 
 #define BINJS_MOZ_TRY_EMPLACE(VAR, EXPR)                 \
   do {                                                   \
-    auto _tryEmplResult = EXPR;                          \
-    if (_tryEmplResult.isErr())                          \
+    auto _tryEmplResult = (EXPR);                        \
+    if (MOZ_UNLIKELY(_tryEmplResult.isErr())) {          \
       return ::mozilla::Err(_tryEmplResult.unwrapErr()); \
-    VAR.emplace(_tryEmplResult.unwrap());                \
+    }                                                    \
+    (VAR).emplace(_tryEmplResult.unwrap());              \
   } while (false)
 
 
 
 
 
-#define BINJS_MOZ_TRY_DECL(VAR, EXPR)                            \
-  auto _##VAR = EXPR;                                            \
-  if (_##VAR.isErr()) return ::mozilla::Err(_##VAR.unwrapErr()); \
-  auto VAR = _##VAR.unwrap();
+#define BINJS_MOZ_TRY_DECL(VAR, EXPR)          \
+  auto _##VAR = (EXPR);                        \
+  if (MOZ_UNLIKELY(_##VAR.isErr())) {          \
+    return ::mozilla::Err(_##VAR.unwrapErr()); \
+  }                                            \
+  auto (VAR) = _##VAR.unwrap();
 
 #endif  
