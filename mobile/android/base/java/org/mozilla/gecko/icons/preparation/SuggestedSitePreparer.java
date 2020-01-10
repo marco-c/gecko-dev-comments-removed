@@ -8,6 +8,7 @@ import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
 
+import org.mozilla.gecko.BrowserLocaleManager;
 import org.mozilla.gecko.db.BrowserContract;
 import org.mozilla.gecko.db.BrowserDB;
 import org.mozilla.gecko.db.SuggestedSites;
@@ -95,7 +96,8 @@ public class SuggestedSitePreparer implements Preparer {
             return;
         }
 
-        if (!initialised) {
+        
+        if (!initialised || BrowserLocaleManager.getInstance().systemLocaleDidChange()) {
             initialised = initialise(request.getContext());
 
             if (!initialised) {
