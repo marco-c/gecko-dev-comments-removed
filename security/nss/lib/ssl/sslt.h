@@ -9,9 +9,10 @@
 #ifndef __sslt_h_
 #define __sslt_h_
 
+#include "certt.h"
+#include "keyhi.h"
 #include "prtypes.h"
 #include "secitem.h"
-#include "certt.h"
 
 typedef enum {
     ssl_hs_hello_request = 0,
@@ -267,6 +268,26 @@ typedef struct SSLExtraServerCertDataStr {
     
 
     const SECItem* signedCertTimestamps;
+
+    
+
+
+
+
+
+
+
+
+
+
+    const SECItem* delegCred;
+
+    
+
+
+
+
+    const SECKEYPrivateKey* delegCredPrivKey;
 } SSLExtraServerCertData;
 
 typedef struct SSLChannelInfoStr {
@@ -325,6 +346,11 @@ typedef struct SSLChannelInfoStr {
     
 
     PRBool resumed;
+
+    
+
+
+    PRBool peerDelegCred;
 
     
 
@@ -476,6 +502,7 @@ typedef enum {
     ssl_tls13_key_share_xtn = 51,
     ssl_next_proto_nego_xtn = 13172, 
     ssl_renegotiation_info_xtn = 0xff01,
+    ssl_delegated_credentials_xtn = 0xff02,
     ssl_tls13_short_header_xtn = 0xff03, 
     ssl_tls13_encrypted_sni_xtn = 0xffce,
 } SSLExtensionType;

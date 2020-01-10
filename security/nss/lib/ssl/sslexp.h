@@ -758,6 +758,36 @@ typedef PRTime(PR_CALLBACK *SSLTimeFunc)(void *arg);
                          (fd, f, arg))
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define SSL_DelegateCredential(cert, certPriv, dcPub, dcCertVerifyAlg,        \
+                               dcValidFor, now, out)                          \
+    SSL_EXPERIMENTAL_API("SSL_DelegateCredential",                            \
+                         (const CERTCertificate *_cert,                       \
+                          const SECKEYPrivateKey *_certPriv,                  \
+                          const SECKEYPublicKey *_dcPub,                      \
+                          SSLSignatureScheme _dcCertVerifyAlg,                \
+                          PRUint32 _dcValidFor,                               \
+                          PRTime _now,                                        \
+                          SECItem *_out),                                     \
+                         (cert, certPriv, dcPub, dcCertVerifyAlg, dcValidFor, \
+                          now, out))
+
+
 #define SSL_UseAltServerHelloType(fd, enable) SSL_DEPRECATED_EXPERIMENTAL_API
 #define SSL_SetupAntiReplay(a, b, c) SSL_DEPRECATED_EXPERIMENTAL_API
 #define SSL_InitAntiReplay(a, b, c) SSL_DEPRECATED_EXPERIMENTAL_API

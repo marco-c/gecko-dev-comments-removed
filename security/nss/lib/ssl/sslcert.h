@@ -41,6 +41,13 @@ typedef struct sslServerCertStr {
 
 
     SECItem signedCertTimestamps;
+
+    
+
+
+    SECItem delegCred;
+    
+    sslKeyPair *delegCredKeyPair;
 } sslServerCert;
 
 #define SSL_CERT_IS(c, t) ((c)->authTypes & (1 << (t)))

@@ -8,10 +8,11 @@
 
 #include "ssl.h"
 #include "sslimpl.h"
-#include "secoid.h"   
-#include "pk11func.h" 
-#include "nss.h"      
-#include "prinit.h"   
+#include "secoid.h"        
+#include "pk11func.h"      
+#include "nss.h"           
+#include "prinit.h"        
+#include "tls13subcerts.h" 
 
 
 
@@ -102,6 +103,8 @@ ssl_NewServerCert()
     sc->serverCertChain = NULL;
     sc->certStatusArray = NULL;
     sc->signedCertTimestamps.len = 0;
+    sc->delegCred.len = 0;
+    sc->delegCredKeyPair = NULL;
     return sc;
 }
 
@@ -148,8 +151,17 @@ ssl_CopyServerCert(const sslServerCert *oc)
     }
 
     if (SECITEM_CopyItem(NULL, &sc->signedCertTimestamps,
-                         &oc->signedCertTimestamps) != SECSuccess)
+                         &oc->signedCertTimestamps) != SECSuccess) {
         goto loser;
+    }
+
+    if (SECITEM_CopyItem(NULL, &sc->delegCred, &oc->delegCred) != SECSuccess) {
+        goto loser;
+    }
+    if (oc->delegCredKeyPair) {
+        sc->delegCredKeyPair = ssl_GetKeyPairRef(oc->delegCredKeyPair);
+    }
+
     return sc;
 loser:
     ssl_FreeServerCert(sc);
@@ -177,6 +189,12 @@ ssl_FreeServerCert(sslServerCert *sc)
     }
     if (sc->signedCertTimestamps.len) {
         SECITEM_FreeItem(&sc->signedCertTimestamps, PR_FALSE);
+    }
+    if (sc->delegCred.len) {
+        SECITEM_FreeItem(&sc->delegCred, PR_FALSE);
+    }
+    if (sc->delegCredKeyPair) {
+        ssl_FreeKeyPair(sc->delegCredKeyPair);
     }
     PORT_ZFree(sc, sizeof(*sc));
 }
@@ -312,6 +330,79 @@ ssl_PopulateSignedCertTimestamps(sslServerCert *sc,
 
 
 
+
+
+
+static SECStatus
+ssl_PopulateDelegatedCredential(sslServerCert *sc,
+                                const SECItem *delegCred,
+                                const SECKEYPrivateKey *delegCredPrivKey)
+{
+    sslDelegatedCredential *dc = NULL;
+
+    if (sc->delegCred.len) {
+        SECITEM_FreeItem(&sc->delegCred, PR_FALSE);
+    }
+
+    if (sc->delegCredKeyPair) {
+        ssl_FreeKeyPair(sc->delegCredKeyPair);
+        sc->delegCredKeyPair = NULL;
+    }
+
+    
+    if (delegCred && delegCredPrivKey) {
+        SECStatus rv;
+        SECKEYPublicKey *pub;
+        SECKEYPrivateKey *priv;
+
+        if (!delegCred->data || delegCred->len == 0) {
+            PORT_SetError(SEC_ERROR_INVALID_ARGS);
+            goto loser;
+        }
+
+        
+        rv = tls13_ReadDelegatedCredential(delegCred->data, delegCred->len, &dc);
+        if (rv != SECSuccess) {
+            goto loser;
+        }
+
+        
+        rv = SECITEM_CopyItem(NULL, &sc->delegCred, delegCred);
+        if (rv != SECSuccess) {
+            goto loser;
+        }
+
+        
+        priv = SECKEY_CopyPrivateKey(delegCredPrivKey);
+        if (!priv) {
+            goto loser;
+        }
+
+        
+        pub = SECKEY_ExtractPublicKey(dc->spki);
+        if (!pub) {
+            goto loser;
+        }
+
+        sc->delegCredKeyPair = ssl_NewKeyPair(priv, pub);
+
+        
+    } else if (delegCred || delegCredPrivKey) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        goto loser;
+    }
+
+    tls13_DestroyDelegatedCredential(dc);
+    return SECSuccess;
+
+loser:
+    tls13_DestroyDelegatedCredential(dc);
+    return SECFailure;
+}
+
+
+
+
 static void
 ssl_ClearMatchingCerts(sslSocket *ss, sslAuthTypeMask authTypes,
                        const sslNamedGroupDef *namedCurve)
@@ -377,6 +468,12 @@ ssl_ConfigCert(sslSocket *ss, sslAuthTypeMask authTypes,
     }
     rv = ssl_PopulateSignedCertTimestamps(sc, data->signedCertTimestamps);
     if (rv != SECSuccess) {
+        goto loser;
+    }
+    rv = ssl_PopulateDelegatedCredential(sc, data->delegCred,
+                                         data->delegCredPrivKey);
+    if (rv != SECSuccess) {
+        error_code = PORT_GetError();
         goto loser;
     }
     ssl_ClearMatchingCerts(ss, sc->authTypes, sc->namedCurve);
@@ -548,7 +645,7 @@ SSL_ConfigServerCert(PRFileDesc *fd, CERTCertificate *cert,
     sslKeyPair *keyPair;
     SECStatus rv;
     SSLExtraServerCertData dataCopy = {
-        ssl_auth_null, NULL, NULL, NULL
+        ssl_auth_null, NULL, NULL, NULL, NULL, NULL
     };
     sslAuthTypeMask authTypes;
 

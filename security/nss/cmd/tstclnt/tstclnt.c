@@ -213,6 +213,9 @@ printSecurityInfo(PRFileDesc *fd)
                         " %u\n",
                 scts->len);
     }
+    if (channel.peerDelegCred) {
+        fprintf(stderr, "Received a Delegated Credential\n");
+    }
 }
 
 static void
@@ -272,6 +275,7 @@ PrintParameterUsage()
     fprintf(stderr, "%-20s Enable false start.\n", "-g");
     fprintf(stderr, "%-20s Enable the cert_status extension (OCSP stapling).\n", "-T");
     fprintf(stderr, "%-20s Enable the signed_certificate_timestamp extension.\n", "-U");
+    fprintf(stderr, "%-20s Enable the delegated credentials extension.\n", "-B");
     fprintf(stderr, "%-20s Require fresh revocation info from side channel.\n"
                     "%-20s -F once means: require for server cert only\n"
                     "%-20s -F twice means: require for intermediates, too\n"
@@ -993,6 +997,7 @@ char *versionString = NULL;
 PRBool handshakeComplete = PR_FALSE;
 char *encryptedSNIKeys = NULL;
 PRBool enablePostHandshakeAuth = PR_FALSE;
+PRBool enableDelegatedCredentials = PR_FALSE;
 
 static int
 writeBytesToServer(PRFileDesc *s, const PRUint8 *buf, int nb)
@@ -1366,6 +1371,14 @@ run()
     }
 
     
+    rv = SSL_OptionSet(s, SSL_ENABLE_DELEGATED_CREDENTIALS, enableDelegatedCredentials);
+    if (rv != SECSuccess) {
+        SECU_PrintError(progName, "error enabling delegated credentials");
+        error = 1;
+        goto done;
+    }
+
+    
     if (enableExtendedMasterSecret) {
         rv = SSL_OptionSet(s, SSL_ENABLE_EXTENDED_MASTER_SECRET, PR_TRUE);
         if (rv != SECSuccess) {
@@ -1718,9 +1731,8 @@ main(int argc, char **argv)
     
 
 
-
     optstate = PL_CreateOptState(argc, argv,
-                                 "46A:CDEFGHI:J:KL:M:N:OP:QR:STUV:W:X:YZa:bc:d:fgh:m:n:op:qr:st:uvw:");
+                                 "46A:BCDEFGHI:J:KL:M:N:OP:QR:STUV:W:X:YZa:bc:d:fgh:m:n:op:qr:st:uvw:");
     while ((optstatus = PL_GetNextOpt(optstate)) == PL_OPT_OK) {
         switch (optstate->option) {
             case '?':
@@ -1741,6 +1753,10 @@ main(int argc, char **argv)
 
             case 'A':
                 requestFile = PORT_Strdup(optstate->value);
+                break;
+
+            case 'B':
+                enableDelegatedCredentials = PR_TRUE;
                 break;
 
             case 'C':

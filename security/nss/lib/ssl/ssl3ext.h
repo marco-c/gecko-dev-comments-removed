@@ -111,6 +111,19 @@ struct TLSExtensionDataStr {
     
     TLS13KeyShareEntry *peerEsniShare;
     PRUint8 esniNonce[TLS13_ESNI_NONCE_SIZE];
+
+    
+
+
+
+
+    sslDelegatedCredential *peerDelegCred;
+    
+    PRBool peerRequestedDelegCred;
+    
+
+
+    PRBool sendingDelegCredToPeer;
 };
 
 typedef struct TLSExtensionStr {
