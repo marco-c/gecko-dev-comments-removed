@@ -672,20 +672,22 @@ var ThirdPartyCookies = {
   },
 
   isDetected(state) {
-    if (this.behaviorPref == Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER) {
-      
-      
-      
+    if (this.isBlocking(state)) {
+      return true;
+    }
+
+    if (
+      this.behaviorPref == Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER ||
+      this.behaviorPref == Ci.nsICookieService.BEHAVIOR_ACCEPT
+    ) {
       return (
-        (state & Ci.nsIWebProgressListener.STATE_LOADED_TRACKING_CONTENT) != 0
+        (state & Ci.nsIWebProgressListener.STATE_COOKIES_LOADED_TRACKER) != 0
       );
     }
 
     
-    return (
-      this.isBlocking(state) ||
-      (state & Ci.nsIWebProgressListener.STATE_COOKIES_LOADED) != 0
-    );
+    
+    return (state & Ci.nsIWebProgressListener.STATE_COOKIES_LOADED) != 0;
   },
 
   async updateSubView() {
