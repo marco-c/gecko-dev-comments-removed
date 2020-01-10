@@ -888,13 +888,10 @@ using HuffmanTableValue =
     mozilla::Variant<HuffmanTableUnreachable,  
                      HuffmanTableInitializing, GenericHuffmanTable>;
 
-using HuffmanTableExplicitSymbolsListLength = GenericHuffmanTable;
-
 
 using HuffmanTableListLength =
     mozilla::Variant<HuffmanTableUnreachable,  
-                     HuffmanTableInitializing,
-                     HuffmanTableExplicitSymbolsListLength>;
+                     HuffmanTableInitializing, GenericHuffmanTable>;
 
 
 
