@@ -1246,9 +1246,7 @@ nsresult FontFaceSet::LogMessage(gfxUserFontEntry* aUserFontEntry,
   message.AppendLiteral(" source: ");
   message.Append(fontURI);
 
-  if (LOG_ENABLED()) {
-    LOG(("userfonts (%p) %s", mUserFontSet.get(), message.get()));
-  }
+  LOG(("userfonts (%p) %s", mUserFontSet.get(), message.get()));
 
   
   RawServoFontFaceRule* rule = FindRuleForUserFontEntry(aUserFontEntry);
