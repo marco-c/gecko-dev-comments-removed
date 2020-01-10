@@ -447,12 +447,12 @@ void jit::FinishOffThreadBuilder(JSRuntime* runtime, IonBuilder* builder,
 
   
   if (builder->script()->isIonCompilingOffThread()) {
-    IonScript* ion = nullptr;
+    builder->script()->clearIsIonCompilingOffThread(runtime);
+
     AbortReasonOr<Ok> status = builder->getOffThreadStatus();
     if (status.isErr() && status.unwrapErr() == AbortReason::Disable) {
-      ion = ION_DISABLED_SCRIPT;
+      builder->script()->disableIon(runtime);
     }
-    builder->script()->setIonScript(runtime, ion);
   }
 
   
@@ -1031,11 +1031,7 @@ const OsiIndex* IonScript::getOsiIndex(uint8_t* retAddr) const {
   return getOsiIndex(disp);
 }
 
-void IonScript::Trace(JSTracer* trc, IonScript* script) {
-  if (script != ION_DISABLED_SCRIPT) {
-    script->trace(trc);
-  }
-}
+void IonScript::Trace(JSTracer* trc, IonScript* script) { script->trace(trc); }
 
 void IonScript::Destroy(JSFreeOp* fop, IonScript* script) {
   
@@ -1945,7 +1941,7 @@ static AbortReason IonCompile(JSContext* cx, JSScript* script,
     }
 
     if (!recompile) {
-      builderScript->setIonScript(cx->runtime(), ION_COMPILING_SCRIPT);
+      builderScript->setIsIonCompilingOffThread(cx->runtime());
     }
 
     
@@ -2681,7 +2677,7 @@ void jit::InvalidateAll(JSFreeOp* fop, Zone* zone) {
 
 static void ClearIonScriptAfterInvalidation(JSContext* cx, JSScript* script,
                                             bool resetUses) {
-  script->setIonScript(cx->runtime(), nullptr);
+  script->clearIonScript(cx->defaultFreeOp());
 
   
   
@@ -2827,7 +2823,7 @@ void jit::FinishInvalidation(JSFreeOp* fop, JSScript* script) {
 
   
   IonScript* ion = script->ionScript();
-  script->setIonScript(fop, nullptr);
+  script->clearIonScript(fop);
 
   
   
@@ -2846,7 +2842,7 @@ void jit::ForbidCompilation(JSContext* cx, JSScript* script) {
     Invalidate(cx, script, false);
   }
 
-  script->setIonScript(cx->runtime(), ION_DISABLED_SCRIPT);
+  script->disableIon(cx->runtime());
 }
 
 AutoFlushICache* JSContext::autoFlushICache() const { return autoFlushICache_; }
