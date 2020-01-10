@@ -8,7 +8,7 @@
 
 
 
-var { Ci, Cu, components } = require("chrome");
+var { Ci, Cc, Cu, components } = require("chrome");
 var Services = require("Services");
 var flags = require("./flags");
 var {getStack, callFunctionWithAsyncStack} = require("devtools/shared/platform/stack");
@@ -737,6 +737,58 @@ exports.openFileStream = function(filePath) {
         resolve(stream);
       }
     );
+  });
+};
+
+
+
+
+
+
+exports.saveFileStream = function(filePath, istream) {
+  return new Promise((resolve, reject) => {
+    const ostream = FileUtils.openSafeFileOutputStream(filePath);
+    NetUtil.asyncCopy(istream, ostream, (status) => {
+      if (!components.isSuccessCode(status)) {
+        reject(new Error(`Could not save "${filePath}"`));
+        return;
+      }
+      FileUtils.closeSafeFileOutputStream(ostream);
+      resolve();
+    });
+  });
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+exports.showSaveFileDialog = function(parentWindow, suggestedFilename) {
+  const fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+
+  if (suggestedFilename) {
+    fp.defaultString = suggestedFilename;
+  }
+
+  fp.init(parentWindow, null, fp.modeSave);
+  fp.appendFilters(fp.filterAll);
+
+  return new Promise((resolve, reject) => {
+    fp.open((result) => {
+      if (result == Ci.nsIFilePicker.returnCancel) {
+        reject();
+      } else {
+        resolve(fp.file);
+      }
+    });
   });
 };
 
