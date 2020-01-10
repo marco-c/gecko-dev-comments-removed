@@ -367,7 +367,7 @@ class CompositorOGL final : public Compositor {
   
 
   void BeginFrame(const nsIntRegion& aInvalidRegion,
-                  const gfx::IntRect* aClipRectIn,
+                  const Maybe<gfx::IntRect>& aClipRect,
                   const gfx::IntRect& aRenderBounds,
                   const nsIntRegion& aOpaqueRegion, NativeLayer* aNativeLayer,
                   gfx::IntRect* aRenderBoundsOut = nullptr) override;
