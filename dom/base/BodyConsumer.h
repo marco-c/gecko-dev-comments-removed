@@ -4,12 +4,12 @@
 
 
 
-#ifndef mozilla_dom_FetchConsumer_h
-#define mozilla_dom_FetchConsumer_h
+#ifndef mozilla_dom_BodyConsumer_h
+#define mozilla_dom_BodyConsumer_h
 
-#include "Fetch.h"
 #include "mozilla/dom/AbortSignal.h"
 #include "mozilla/dom/MutableBlobStorage.h"
+#include "nsIInputStreamPump.h"
 #include "nsIObserver.h"
 #include "nsWeakReference.h"
 
@@ -23,18 +23,25 @@ class ThreadSafeWorkerRef;
 
 
 
-
-class FetchBodyConsumer final : public nsIObserver,
-                                public nsSupportsWeakReference,
-                                public AbortFollower {
+class BodyConsumer final : public nsIObserver,
+                           public nsSupportsWeakReference,
+                           public AbortFollower {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
+  enum ConsumeType {
+    CONSUME_ARRAYBUFFER,
+    CONSUME_BLOB,
+    CONSUME_FORMDATA,
+    CONSUME_JSON,
+    CONSUME_TEXT,
+  };
+
   static already_AddRefed<Promise> Create(
       nsIGlobalObject* aGlobal, nsIEventTarget* aMainThreadEventTarget,
       nsIInputStream* aBodyStream, AbortSignalImpl* aSignalImpl,
-      FetchConsumeType aType, const nsACString& aBodyBlobURISpec,
+      ConsumeType aType, const nsACString& aBodyBlobURISpec,
       const nsAString& aBodyLocalPath, const nsACString& aBodyMimeType,
       MutableBlobStorage::MutableBlobStorageType aBlobStorageType,
       ErrorResult& aRv);
@@ -64,14 +71,14 @@ class FetchBodyConsumer final : public nsIObserver,
   void Abort() override;
 
  private:
-  FetchBodyConsumer(
-      nsIEventTarget* aMainThreadEventTarget, nsIGlobalObject* aGlobalObject,
-      nsIInputStream* aBodyStream, Promise* aPromise, FetchConsumeType aType,
-      const nsACString& aBodyBlobURISpec, const nsAString& aBodyLocalPath,
-      const nsACString& aBodyMimeType,
-      MutableBlobStorage::MutableBlobStorageType aBlobStorageType);
+  BodyConsumer(nsIEventTarget* aMainThreadEventTarget,
+               nsIGlobalObject* aGlobalObject, nsIInputStream* aBodyStream,
+               Promise* aPromise, ConsumeType aType,
+               const nsACString& aBodyBlobURISpec,
+               const nsAString& aBodyLocalPath, const nsACString& aBodyMimeType,
+               MutableBlobStorage::MutableBlobStorageType aBlobStorageType);
 
-  ~FetchBodyConsumer();
+  ~BodyConsumer();
 
   nsresult GetBodyLocalFile(nsIFile** aFile) const;
 
@@ -95,7 +102,7 @@ class FetchBodyConsumer final : public nsIObserver,
   nsCOMPtr<nsIInputStreamPump> mConsumeBodyPump;
 
   
-  FetchConsumeType mConsumeType;
+  ConsumeType mConsumeType;
   RefPtr<Promise> mConsumePromise;
 
   
