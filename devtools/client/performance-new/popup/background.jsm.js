@@ -339,12 +339,13 @@ function getRecordingPreferencesFromBrowser() {
 
 
 
-function setRecordingPreferencesOnBrowser(settings) {
-  Services.prefs.setIntPref(ENTRIES_PREF, settings.entries);
-  Services.prefs.setIntPref(INTERVAL_PREF, settings.interval);
-  Services.prefs.setCharPref(FEATURES_PREF, JSON.stringify(settings.features));
-  Services.prefs.setCharPref(THREADS_PREF, JSON.stringify(settings.threads));
-  Services.prefs.setCharPref(OBJDIRS_PREF, JSON.stringify(settings.objdirs));
+function setRecordingPreferencesOnBrowser(prefs) {
+  Services.prefs.setIntPref(ENTRIES_PREF, prefs.entries);
+  
+  Services.prefs.setIntPref(INTERVAL_PREF, prefs.interval);
+  Services.prefs.setCharPref(FEATURES_PREF, JSON.stringify(prefs.features));
+  Services.prefs.setCharPref(THREADS_PREF, JSON.stringify(prefs.threads));
+  Services.prefs.setCharPref(OBJDIRS_PREF, JSON.stringify(prefs.objdirs));
 }
 
 const platform = AppConstants.platform;
