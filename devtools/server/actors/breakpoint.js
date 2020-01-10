@@ -118,11 +118,7 @@ BreakpointActor.prototype = {
           }
         );
       }
-
-      
-      if (options.logValue != "displayName") {
-        return;
-      }
+      return;
     }
 
     
@@ -224,8 +220,7 @@ BreakpointActor.prototype = {
       }
     }
 
-    
-    if (logValue && !this.threadActor.dbg.replaying) {
+    if (logValue) {
       return logEvent({
         threadActor: this.threadActor,
         frame,
