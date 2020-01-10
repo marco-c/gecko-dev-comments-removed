@@ -22,7 +22,6 @@ function check_channel(subject) {
 
 
 let gPrivateWin;
-let gPopupShown;
 async function test() {
   waitForExplicitFinish(); 
   Harness.installConfirmCallback = confirm_install;
@@ -56,10 +55,6 @@ async function test() {
   BrowserTestUtils.loadURI(
     gPrivateWin.gBrowser,
     TESTROOT + "installtrigger.html?" + triggers
-  );
-  gPopupShown = BrowserTestUtils.waitForEvent(
-    gPrivateWin.PanelUI.notificationPanel,
-    "popupshown"
   );
 }
 
@@ -102,16 +97,17 @@ const finish_test = async function(count) {
   is(results.return, "true", "installTrigger should have claimed success");
   is(results.status, "0", "Callback should have seen a success");
 
+  await TestUtils.waitForCondition(() =>
+    gPrivateWin.AppMenuNotifications._notifications.some(
+      n => n.id == "addon-installed"
+    )
+  );
   
   
-  await gPopupShown;
-  gPrivateWin.PanelUI.notificationPanel
-    .querySelector("popupnotification[popupid=addon-installed]")
-    .button.click();
+  gPrivateWin.AppMenuNotifications.removeNotification("addon-installed");
 
   
   await BrowserTestUtils.closeWindow(gPrivateWin);
   Harness.finish(gPrivateWin);
   gPrivateWin = null;
-  gPopupShown = null;
 };

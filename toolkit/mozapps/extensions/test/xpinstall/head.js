@@ -179,6 +179,7 @@ var Harness = {
     
     
     win.PanelUI.notificationPanel.hidePopup();
+    win.AppMenuNotifications.removeNotification("addon-installed");
     delete this._boundWin;
     finish();
   },
