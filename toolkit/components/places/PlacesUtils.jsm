@@ -1506,6 +1506,13 @@ var PlacesUtils = {
 
 
 
+  promiseUnsafeWritableDBConnection: () => gAsyncDBWrapperPromised,
+
+  
+
+
+
+
 
 
 
