@@ -1,5 +1,6 @@
 
 
+
 class Base {
   get accessor() {
     return this.constructor.name;

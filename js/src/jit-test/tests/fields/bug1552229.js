@@ -1,3 +1,5 @@
+
+
 let i = 0;
 function f(x) {
     assertEq(++i, x);

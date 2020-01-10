@@ -1,3 +1,5 @@
+
+
 class C {
     [Math.sqrt(16)];
     [Math.sqrt(8)] = 5 + 2;
