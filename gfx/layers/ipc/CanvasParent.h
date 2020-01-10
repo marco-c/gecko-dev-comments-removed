@@ -61,9 +61,9 @@ class CanvasParent final : public PCanvasParent {
 
   ipc::IPCResult RecvResumeTranslation();
 
-  void ActorDestroy(ActorDestroyReason why) final {}
+  void ActorDestroy(ActorDestroyReason why) final;
 
-  void DeallocPCanvasParent();
+  void ActorDealloc() final;
 
   
 
@@ -89,6 +89,7 @@ class CanvasParent final : public PCanvasParent {
 
   RefPtr<CanvasParent> mSelfRef;
   UniquePtr<CanvasTranslator> mTranslator;
+  volatile bool mTranslating = false;
 };
 
 }  

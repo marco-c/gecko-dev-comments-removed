@@ -16,10 +16,46 @@ namespace layers {
 
 class CanvasEventRingBuffer final : public gfx::EventRingBuffer {
  public:
-  CanvasEventRingBuffer() {}
+  
+
+
+
+
+  class WriterServices {
+   public:
+    virtual ~WriterServices() = default;
+
+    
+
+
+
+    virtual bool ReaderClosed() = 0;
+
+    
+
+
+    virtual void ResumeReader() = 0;
+  };
 
   
 
+
+
+
+  class ReaderServices {
+   public:
+    virtual ~ReaderServices() = default;
+
+    
+
+
+
+    virtual bool WriterClosed() = 0;
+  };
+
+  CanvasEventRingBuffer() {}
+
+  
 
 
 
@@ -35,7 +71,7 @@ class CanvasEventRingBuffer final : public gfx::EventRingBuffer {
                   ipc::SharedMemoryBasic::Handle* aReadHandle,
                   CrossProcessSemaphoreHandle* aReaderSem,
                   CrossProcessSemaphoreHandle* aWriterSem,
-                  const std::function<void()>& aResumeReaderCallback);
+                  UniquePtr<WriterServices> aWriterServices);
 
   
 
@@ -45,9 +81,11 @@ class CanvasEventRingBuffer final : public gfx::EventRingBuffer {
 
 
 
+
   bool InitReader(const ipc::SharedMemoryBasic::Handle& aReadHandle,
                   const CrossProcessSemaphoreHandle& aReaderSem,
-                  const CrossProcessSemaphoreHandle& aWriterSem);
+                  const CrossProcessSemaphoreHandle& aWriterSem,
+                  UniquePtr<ReaderServices> aReaderServices);
 
   bool good() const final { return mGood; }
 
@@ -70,7 +108,11 @@ class CanvasEventRingBuffer final : public gfx::EventRingBuffer {
 
 
 
-  bool WaitForDataToRead(TimeDuration aTimeout);
+
+
+
+
+  bool WaitForDataToRead(TimeDuration aTimeout, int32_t aRetryCount);
 
   int32_t ReadNextEvent();
 
@@ -91,7 +133,7 @@ class CanvasEventRingBuffer final : public gfx::EventRingBuffer {
 
 
 
-  bool WaitForCheckpoint(uint32_t aCheckpoint, TimeDuration aTimeout);
+  bool WaitForCheckpoint(uint32_t aCheckpoint);
 
   
 
@@ -155,7 +197,8 @@ class CanvasEventRingBuffer final : public gfx::EventRingBuffer {
 
   void IncrementWriteCountBy(uint32_t aCount);
 
-  bool WaitForReadCount(uint32_t aReadCount, TimeDuration aTimeout);
+  bool WaitForReadCount(uint32_t aReadCount, TimeDuration aTimeout,
+                        int32_t aRetryCount);
 
   bool WaitForAndRecalculateAvailableData();
 
@@ -173,7 +216,8 @@ class CanvasEventRingBuffer final : public gfx::EventRingBuffer {
   RefPtr<ipc::SharedMemoryBasic> mSharedMemory;
   UniquePtr<CrossProcessSemaphore> mReaderSemaphore;
   UniquePtr<CrossProcessSemaphore> mWriterSemaphore;
-  std::function<void()> mResumeReaderCallback;
+  UniquePtr<WriterServices> mWriterServices;
+  UniquePtr<ReaderServices> mReaderServices;
   char* mBuf = nullptr;
   uint32_t mOurCount = 0;
   WriteFooter* mWrite = nullptr;
@@ -189,9 +233,9 @@ class CanvasDrawEventRecorder final : public gfx::DrawEventRecorderPrivate {
   bool Init(base::ProcessId aOtherPid, ipc::SharedMemoryBasic::Handle* aHandle,
             CrossProcessSemaphoreHandle* aReaderSem,
             CrossProcessSemaphoreHandle* aWriterSem,
-            const std::function<void()>& aResumeReaderCallback) {
+            UniquePtr<CanvasEventRingBuffer::WriterServices> aWriterServices) {
     return mOutputStream.InitWriter(aOtherPid, aHandle, aReaderSem, aWriterSem,
-                                    aResumeReaderCallback);
+                                    std::move(aWriterServices));
   }
 
   void RecordEvent(const gfx::RecordedEvent& aEvent) final {
@@ -217,9 +261,8 @@ class CanvasDrawEventRecorder final : public gfx::DrawEventRecorderPrivate {
 
 
 
-
-  bool WaitForCheckpoint(uint32_t aCheckpoint, TimeDuration aTimeout) {
-    return mOutputStream.WaitForCheckpoint(aCheckpoint, aTimeout);
+  bool WaitForCheckpoint(uint32_t aCheckpoint) {
+    return mOutputStream.WaitForCheckpoint(aCheckpoint);
   }
 
  private:
