@@ -121,14 +121,6 @@ already_AddRefed<nsIInputStream> DeserializeIPCStream(
 
 
 class AutoIPCStream final {
-  Maybe<IPCStream> mInlineValue;
-  IPCStream* mValue;
-  Maybe<IPCStream>* mOptionalValue;
-  bool mTaken;
-  bool mDelayedStart;
-
-  bool IsSet() const;
-
  public:
   
   
@@ -142,6 +134,12 @@ class AutoIPCStream final {
   
   
   explicit AutoIPCStream(Maybe<IPCStream>& aTarget, bool aDelayedStart = false);
+
+  AutoIPCStream(const AutoIPCStream&) = delete;
+  AutoIPCStream(AutoIPCStream&&) = delete;
+
+  AutoIPCStream& operator=(const AutoIPCStream&) = delete;
+  AutoIPCStream& operator=(AutoIPCStream&&) = delete;
 
   ~AutoIPCStream();
 
@@ -175,9 +173,13 @@ class AutoIPCStream final {
   Maybe<IPCStream>& TakeOptionalValue();
 
  private:
-  AutoIPCStream(const AutoIPCStream& aOther) = delete;
-  AutoIPCStream& operator=(const AutoIPCStream& aOther) = delete;
-  AutoIPCStream& operator=(const AutoIPCStream&& aOther) = delete;
+  bool IsSet() const;
+
+  Maybe<IPCStream> mInlineValue;
+  IPCStream* const mValue = nullptr;
+  Maybe<IPCStream>* const mOptionalValue = nullptr;
+  bool mTaken = false;
+  const bool mDelayedStart;
 };
 
 template <>
