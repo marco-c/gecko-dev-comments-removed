@@ -139,9 +139,27 @@ def log_crashes(logger,
 
 ABORT_SIGNATURES = (
     "Abort(char const*)",
+    "GeckoCrash",
     "NS_DebugBreak",
+    
+    
+    
+    "core::ops::function::Fn::call",
+    "gkrust_shared::panic_hook",
+    "intentional_panic",
     "mozalloc_abort",
     "static void Abort(const char *)",
+)
+
+
+
+ABORT_SUBSTRINGS = (
+    
+    
+    "_panic_",
+    "core::panic::",
+    "core::result::unwrap_failed",
+    "std::panicking::",
 )
 
 
@@ -296,7 +314,9 @@ class CrashInfo(object):
                                 func = match.group(1).strip()
                                 signature = "@ %s" % func
 
-                                if func not in ABORT_SIGNATURES:
+                                if not (func in ABORT_SIGNATURES or
+                                        any(pat in func
+                                            for pat in ABORT_SUBSTRINGS)):
                                     break
                         break
             else:
