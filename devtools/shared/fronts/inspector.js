@@ -453,10 +453,9 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     if (!node.remoteFrame) {
       return super.children(node, options);
     }
-    
-    const target = await node.connectToRemoteFrame();
-    
-    const walker = (await target.getFront("inspector")).walker;
+    const remoteTarget = await node.connectToRemoteFrame();
+    const walker = (await remoteTarget.getFront("inspector")).walker;
+
     
     const documentNode = await walker.getRootNode();
 
@@ -469,6 +468,24 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
       hasFirst: true,
       hasLast: true,
     };
+  }
+
+  async reparentRemoteFrame() {
+    
+    const descriptorFront = this.targetFront.descriptorFront;
+    const parentTarget = await descriptorFront.getParentTarget();
+    
+    
+    const parentWalker = (await parentTarget.getFront("inspector")).walker;
+    
+    
+    const parentNode = (await parentWalker.getEmbedderElement(
+      descriptorFront.id
+    )).node;
+
+    
+    const documentNode = await this.getRootNode();
+    documentNode.reparent(parentNode);
   }
 }
 
@@ -597,7 +614,9 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
       for (const descriptor of frames) {
         const remoteTarget = await descriptor.getTarget();
         if (remoteTarget) {
+          
           const remoteInspectorFront = await remoteTarget.getFront("inspector");
+          await remoteInspectorFront.walker.reparentRemoteFrame();
           childInspectors.push(remoteInspectorFront);
         }
       }
