@@ -1878,6 +1878,12 @@ var gProtectionsHandler = {
     }
 
     
+    
+    if (!this._updatingFooter) {
+      this._protectionsPopupTrackersCounterBox.toggleAttribute("showing", true);
+    }
+
+    
     this.maybeUpdateEarliestRecordedDateTooltip();
   },
 
