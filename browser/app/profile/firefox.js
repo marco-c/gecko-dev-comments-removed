@@ -2109,7 +2109,11 @@ pref("devtools.serviceWorkers.testing.enabled", false);
 pref("devtools.netmonitor.enabled", true);
 
 
-pref("devtools.netmonitor.features.search", false);
+#if defined(NIGHTLY_BUILD)
+  pref("devtools.netmonitor.features.search", true);
+#else
+  pref("devtools.netmonitor.features.search", false);
+#endif
 
 
 pref("devtools.application.enabled", false);
