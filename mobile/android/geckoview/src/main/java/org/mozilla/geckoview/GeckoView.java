@@ -32,7 +32,6 @@ import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.KeyEvent;
@@ -55,7 +54,6 @@ public class GeckoView extends FrameLayout {
 
     protected final @NonNull Display mDisplay = new Display();
     protected @Nullable GeckoSession mSession;
-    protected @Nullable GeckoRuntime mRuntime;
     private boolean mStateSaved;
 
     protected @Nullable SurfaceView mSurfaceView;
@@ -329,7 +327,6 @@ public class GeckoView extends FrameLayout {
             mSession.setFocused(false);
         }
         mSession = null;
-        mRuntime = null;
         return session;
     }
 
@@ -341,32 +338,8 @@ public class GeckoView extends FrameLayout {
 
 
 
-
     @UiThread
     public void setSession(@NonNull final GeckoSession session) {
-        ThreadUtils.assertOnUiThread();
-
-        if (!session.isOpen()) {
-            throw new IllegalArgumentException("Session must be open before attaching");
-        }
-
-        setSession(session, session.getRuntime());
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-    @UiThread
-    public void setSession(@NonNull final GeckoSession session,
-                           @Nullable final GeckoRuntime runtime) {
         ThreadUtils.assertOnUiThread();
 
         if (mSession != null && mSession.isOpen()) {
@@ -376,17 +349,6 @@ public class GeckoView extends FrameLayout {
         releaseSession();
 
         mSession = session;
-        mRuntime = runtime;
-
-        if (session.isOpen()) {
-            if (runtime != null && runtime != session.getRuntime()) {
-                throw new IllegalArgumentException("Session was opened with non-matching runtime");
-            }
-            mRuntime = session.getRuntime();
-        } else if (runtime == null) {
-            throw new IllegalArgumentException("Session must be open before attaching");
-        }
-
         mDisplay.acquire(session.acquireDisplay());
 
         final Context context = getContext();
@@ -457,13 +419,13 @@ public class GeckoView extends FrameLayout {
 
     @Override
     public void onAttachedToWindow() {
-        if (mSession != null && mRuntime != null) {
-            if (!mSession.isOpen()) {
-                mSession.open(mRuntime);
+        if (mSession != null) {
+            final GeckoRuntime runtime = mSession.getRuntime();
+            if (runtime != null) {
+                runtime.orientationChanged();
             }
-            mRuntime.orientationChanged();
-        } else {
-            Log.w(LOGTAG, "No GeckoSession attached to this GeckoView instance. Call setSession to attach a GeckoSession to this instance.");
+
+
         }
 
         super.onAttachedToWindow();
@@ -479,24 +441,21 @@ public class GeckoView extends FrameLayout {
 
         
         mSession.releaseDisplay(mDisplay.release());
-
-        
-        if (!mStateSaved && mSession.isOpen()) {
-            mSession.close();
-        }
-
     }
 
     @Override
     protected void onConfigurationChanged(final Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
 
-        if (mRuntime != null) {
-            
-            
-            
-            mRuntime.orientationChanged(newConfig.orientation);
-            mRuntime.configurationChanged(newConfig);
+        if (mSession != null) {
+            final GeckoRuntime runtime = mSession.getRuntime();
+            if (runtime != null) {
+                
+                
+                
+                runtime.orientationChanged(newConfig.orientation);
+                runtime.configurationChanged(newConfig);
+            }
         }
     }
 
@@ -537,29 +496,8 @@ public class GeckoView extends FrameLayout {
             return;
         }
 
-        GeckoRuntime runtimeToRestore = savedSession.getRuntime();
         
-        
-        if (mRuntime == null) {
-            if (runtimeToRestore == null) {
-                
-                
-                runtimeToRestore = GeckoRuntime.getDefault(getContext());
-            }
-            setSession(savedSession, runtimeToRestore);
-        
-        
-        } else if (savedSession.isOpen() || !mSession.isOpen()) {
-            if (mSession.isOpen()) {
-                mSession.close();
-            }
-            mSession.transferFrom(savedSession);
-            if (runtimeToRestore != null) {
-                
-                
-                mRuntime = runtimeToRestore;
-            }
-        }
+        setSession(savedSession);
     }
 
     @Override
