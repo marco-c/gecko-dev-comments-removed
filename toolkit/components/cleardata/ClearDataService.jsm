@@ -84,6 +84,7 @@ const CookieCleaner = {
             cookie.host,
             cookie.name,
             cookie.path,
+            false,
             cookie.originAttributes
           );
           

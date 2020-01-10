@@ -199,7 +199,7 @@ async function testCookies(options) {
         {},
         Ci.nsICookie.SAMESITE_NONE
       );
-      Services.cookies.remove(domain, "x", "/", {});
+      Services.cookies.remove(domain, "x", "/", false, {});
       sendAsyncMessage("done");
     });
   });
@@ -259,7 +259,7 @@ async function testCookies(options) {
       }
 
       for (let cookie of cookies) {
-        cookieSvc.remove(cookie.host, cookie.name, "/", {});
+        cookieSvc.remove(cookie.host, cookie.name, "/", false, {});
       }
       
       assert.equal(getCookies(options.domain).length, 0, "cookies cleared");

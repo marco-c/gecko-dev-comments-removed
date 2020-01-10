@@ -698,7 +698,7 @@ Cookies.prototype = {
       
       if (host.length) {
         
-        Services.cookies.remove(host, name, path, {});
+        Services.cookies.remove(host, name, path, false, {});
         
         if (host[0] != "." && !hostIsIPAddress(host)) {
           host = "." + host;
