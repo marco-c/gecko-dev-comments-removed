@@ -307,6 +307,22 @@ function scheduleGC() {
   SpecialPowers.exactGC(continueToNextStep);
 }
 
+
+
+
+function* assertEventuallyWithGC(conditionFunctor, message) {
+  const maxGC = 100;
+  for (let i = 0; i < maxGC; ++i) {
+    if (conditionFunctor()) {
+      ok(true, message + " (after " + i + " garbage collections)");
+      return;
+    }
+    SpecialPowers.exactGC(continueToNextStep);
+    yield undefined;
+  }
+  ok(false, message + " (even after " + maxGC + " garbage collections)");
+}
+
 function isWasmSupported() {
   let testingFunctions = SpecialPowers.Cu.getJSTestingFunctions();
   return testingFunctions.wasmIsSupported();
