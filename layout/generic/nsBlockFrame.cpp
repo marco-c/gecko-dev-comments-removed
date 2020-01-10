@@ -3914,6 +3914,13 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
                aState.mPrevBEndMargin.get());
 #endif
       } else {
+        if (!frameReflowStatus.IsFullyComplete()) {
+          
+          
+          
+          frame->AddStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
+        }
+
         if ((aLine == mLines.front() && !GetPrevInFlow()) ||
             ShouldAvoidBreakInside(aState.mReflowInput)) {
           
