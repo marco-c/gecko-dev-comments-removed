@@ -2,8 +2,6 @@
 
 
 
-import { normalizeToKebabCase } from "../utils.js";
-
 export class InfoItem extends HTMLElement {
   constructor(item) {
     super();
@@ -25,7 +23,12 @@ export class InfoItem extends HTMLElement {
 
   render() {
     let label = this.shadowRoot.querySelector("label");
-    let labelText = normalizeToKebabCase(this.item.label);
+    let labelText = this.item.label
+      .replace(/\s+/g, "-")
+      .replace(/\./g, "")
+      .replace(/\//g, "")
+      .replace(/--/g, "-")
+      .toLowerCase();
     label.setAttribute("data-l10n-id", "certificate-viewer-" + labelText);
 
     this.classList.add(labelText);
