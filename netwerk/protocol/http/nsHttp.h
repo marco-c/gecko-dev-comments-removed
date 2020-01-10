@@ -113,6 +113,10 @@ const char kHttp3VersionHEX[] = "ff00000017";
 
 
 
+#define NS_HTTP_DISABLE_TRR (1 << 14)
+
+
+
 
 #define NS_HTTP_ALLOW_SPDY_WITHOUT_KEEPALIVE (1 << 15)
 
@@ -126,14 +130,6 @@ const char kHttp3VersionHEX[] = "ff00000017";
 
 
 #define NS_HTTP_DISABLE_IPV6 (1 << 18)
-
-
-#define NS_HTTP_TRR_MODE_MASK ((1 << 19) | (1 << 20))
-
-#define NS_HTTP_TRR_FLAGS_FROM_MODE(x) ((static_cast<uint32_t>(x) & 3) << 19)
-
-#define NS_HTTP_TRR_MODE_FROM_FLAGS(x) \
-  (static_cast<nsIRequest::TRRMode>((((x)&NS_HTTP_TRR_MODE_MASK) >> 19) & 3))
 
 
 

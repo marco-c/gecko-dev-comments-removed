@@ -288,10 +288,8 @@ nsresult AlertImageRequest::Start() {
   
   
   
-  int32_t loadFlags = nsIRequest::LOAD_NORMAL;
-  if (mInPrivateBrowsing) {
-    loadFlags = nsIRequest::LOAD_ANONYMOUS;
-  }
+  int32_t loadFlags =
+      mInPrivateBrowsing ? nsIRequest::LOAD_ANONYMOUS : nsIRequest::LOAD_NORMAL;
 
   rv = il->LoadImageXPCOM(
       mURI, nullptr, nullptr, mPrincipal, nullptr, this, nullptr, loadFlags,
