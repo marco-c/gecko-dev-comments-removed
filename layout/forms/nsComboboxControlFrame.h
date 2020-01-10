@@ -289,6 +289,11 @@ class nsComboboxControlFrame final : public nsBlockFrame,
   
   
   nscoord mDisplayISize;
+  
+  
+  
+  
+  nscoord mMaxDisplayISize;
 
   nsRevocableEventPtr<RedisplayTextEvent> mRedisplayTextEvent;
 
