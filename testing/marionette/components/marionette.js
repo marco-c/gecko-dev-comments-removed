@@ -89,6 +89,11 @@ const RECOMMENDED_PREFS = new Map([
   
   
   
+  ["browser.contentblocking.introCount", 99],
+
+  
+  
+  
   ["browser.download.panel.shown", true],
 
   
