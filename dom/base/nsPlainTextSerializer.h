@@ -241,10 +241,10 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
     OutputManager(int32_t aFlags, nsAString& aOutput);
 
-    
+    enum class StripTrailingWhitespaces { kMaybe, kNo };
 
-
-    void Append(const nsAString& aString);
+    void Append(const CurrentLine& aCurrentLine,
+                StripTrailingWhitespaces aStripTrailingWhitespaces);
 
     void AppendLineBreak();
 
@@ -253,6 +253,11 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
     uint32_t GetOutputLength() const;
 
    private:
+    
+
+
+    void Append(const nsAString& aString);
+
     nsAString& mOutput;
 
     bool mAtFirstColumn;
