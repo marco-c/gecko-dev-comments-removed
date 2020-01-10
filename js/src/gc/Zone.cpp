@@ -700,7 +700,8 @@ inline bool MemoryTracker::allowMultipleAssociations(MemoryUse use) const {
   
   
   return use == MemoryUse::RegExpSharedBytecode ||
-         use == MemoryUse::BreakpointSite || use == MemoryUse::ForOfPICStub;
+         use == MemoryUse::BreakpointSite || use == MemoryUse::Breakpoint ||
+         use == MemoryUse::ForOfPICStub;
 }
 
 void MemoryTracker::trackMemory(Cell* cell, size_t nbytes, MemoryUse use) {
