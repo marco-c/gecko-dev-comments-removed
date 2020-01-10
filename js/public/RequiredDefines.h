@@ -28,7 +28,4 @@
 #define __STDC_CONSTANT_MACROS
 #define __STDC_FORMAT_MACROS
 
-
-#include "mozilla/Char16.h"
-
 #endif 
