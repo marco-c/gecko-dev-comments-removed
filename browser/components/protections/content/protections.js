@@ -121,12 +121,18 @@ document.addEventListener("DOMContentLoaded", e => {
         count.id = "count" + i;
         count.setAttribute("role", "cell");
         count.textContent = content.total;
+        setTimeout(() => {
+          count.classList.add("animate");
+        }, 400);
         bar.appendChild(count);
         ariaOwnsString = count.id;
         currentColumnCount += 1;
         let barHeight = (content.total / largest) * 100;
         weekCount += content.total;
-        bar.style.height = `${barHeight}%`;
+        
+        setTimeout(() => {
+          bar.style.height = `${barHeight}%`;
+        }, 20);
         for (let type of dataTypes) {
           if (content[type]) {
             let dataHeight = (content[type] / content.total) * 100;
