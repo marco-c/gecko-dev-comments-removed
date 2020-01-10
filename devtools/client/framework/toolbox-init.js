@@ -97,6 +97,7 @@ async function initToolbox(url, host) {
     if (url.searchParams.has("target")) {
       
       
+      
 
       
       let iframe = host.wrappedJSObject
@@ -121,6 +122,8 @@ async function initToolbox(url, host) {
       await client.connect();
       
       target = await client.mainRoot.getTab({ tab });
+      
+      target.shouldCloseClient = true;
     } else {
       target = await targetFromURL(url);
       const toolbox = gDevTools.getToolbox(target);

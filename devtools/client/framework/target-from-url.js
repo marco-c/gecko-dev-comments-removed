@@ -54,8 +54,9 @@ exports.targetFromURL = async function targetFromURL(url) {
   const type = params.get("type");
   const chrome = params.has("chrome");
 
+  let target;
   try {
-    return await _targetFromURL(client, id, type, chrome);
+    target = await _targetFromURL(client, id, type, chrome);
   } catch (e) {
     if (!isCachedClient) {
       
@@ -64,6 +65,15 @@ exports.targetFromURL = async function targetFromURL(url) {
     }
     throw e;
   }
+
+  
+  
+  
+  
+  
+  target.shouldCloseClient = !isCachedClient;
+
+  return target;
 };
 
 async function _targetFromURL(client, id, type, chrome) {

@@ -453,7 +453,10 @@ function TargetMixin(parentClass) {
 
         this.threadFront = null;
 
-        if (this.isLocalTab) {
+        if (this.isLocalTab || this.shouldCloseClient) {
+          
+          
+          
           
           
           
