@@ -774,11 +774,20 @@ video > .caption-box {
 }
 
 
+
+
+
+
+
 ::cue {
   color: rgba(255, 255, 255, 1);
   white-space: pre-line;
   background-color: rgba(0, 0, 0, 0.8);
   font: var(--cue-font-size) sans-serif;
+  writing-mode: var(--cue-writing-mode, inherit) !important;
+  overflow-wrap: break-word !important;
+  
+
 }
 
 

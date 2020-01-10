@@ -542,9 +542,9 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
       
       
       if (supportPseudo) {
-        this.cueDiv.style.setProperty("--cue-font-size", this.fontSize);
+        this._applyDefaultStylesOnPseudoBackgroundNode();
       } else {
-        this._applyNonPseudoCueStyles();
+        this._applyDefaultStylesOnNonPseudoBackgroundNode();
       }
       this._applyDefaultStylesOnRootNode();
     }
@@ -601,7 +601,14 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
       return containerBox.height * 0.05 + "px";
     }
 
-    _applyNonPseudoCueStyles() {
+    _applyDefaultStylesOnPseudoBackgroundNode() {
+      
+      
+      this.cueDiv.style.setProperty("--cue-font-size", this.fontSize, "important");
+      this.cueDiv.style.setProperty("--cue-writing-mode", this._getCueWritingMode(), "important");
+    }
+
+    _applyDefaultStylesOnNonPseudoBackgroundNode() {
       
       
       
