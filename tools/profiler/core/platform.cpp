@@ -87,8 +87,8 @@
 #endif
 
 #if defined(GP_OS_android)
-#  include "FennecJNINatives.h"
-#  include "FennecJNIWrappers.h"
+#  include "GeneratedJNINatives.h"
+#  include "GeneratedJNIWrappers.h"
 #endif
 
 
@@ -461,12 +461,6 @@ class ActivePS {
   static uint32_t AdjustFeatures(uint32_t aFeatures, uint32_t aFilterCount) {
     
     aFeatures &= AvailableFeatures();
-
-#if defined(GP_OS_android)
-    if (!jni::IsFennec()) {
-      aFeatures &= ~ProfilerFeature::Java;
-    }
-#endif
 
     
     
@@ -2892,7 +2886,7 @@ void profiler_init(void* aStackTop) {
 #endif
 
 #if defined(GP_OS_android)
-    if (jni::IsFennec()) {
+    if (jni::IsAvailable()) {
       GeckoJavaSampler::Init();
     }
 #endif
