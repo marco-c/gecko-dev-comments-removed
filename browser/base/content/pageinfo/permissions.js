@@ -85,11 +85,6 @@ function initRow(aPartId) {
     return;
   }
 
-  
-  if (aPartId.startsWith("plugin") && state == SitePermissions.PROMPT_HIDE) {
-    defaultState == SitePermissions.UNKNOWN ? state = defaultState : state = SitePermissions.PROMPT;
-  }
-
   if (state != defaultState) {
     checkbox.checked = false;
     command.removeAttribute("disabled");
