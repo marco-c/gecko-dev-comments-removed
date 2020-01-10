@@ -270,11 +270,14 @@ TEST(GeckoProfiler, EnsureStarted)
   {
     
 
+    Maybe<ProfilerBufferInfo> info0 = profiler_get_buffer_info();
+    ASSERT_TRUE(info0->mRangeEnd > 0);
+
     
     PR_Sleep(PR_MillisecondsToInterval(500));
 
     Maybe<ProfilerBufferInfo> info1 = profiler_get_buffer_info();
-    ASSERT_TRUE(info1->mRangeEnd > 0);
+    ASSERT_TRUE(info1->mRangeEnd > info0->mRangeEnd);
 
     
     
@@ -288,8 +291,12 @@ TEST(GeckoProfiler, EnsureStarted)
 
     
     
+    
     Maybe<ProfilerBufferInfo> info2 = profiler_get_buffer_info();
     ASSERT_TRUE(info2->mRangeEnd >= info1->mRangeEnd);
+    ASSERT_TRUE(info2->mRangeEnd - info1->mRangeEnd <
+                info1->mRangeEnd - info0->mRangeEnd);
+    ASSERT_TRUE(info2->mRangeStart < info1->mRangeEnd);
   }
 
   {
@@ -309,8 +316,10 @@ TEST(GeckoProfiler, EnsureStarted)
                       PROFILER_DEFAULT_INTERVAL, differentFeatures, filters,
                       MOZ_ARRAY_LENGTH(filters));
 
+    
+    
     Maybe<ProfilerBufferInfo> info2 = profiler_get_buffer_info();
-    ASSERT_TRUE(info2->mRangeEnd < info1->mRangeEnd);
+    ASSERT_TRUE(info2->mRangeStart >= info1->mRangeEnd);
   }
 
   {

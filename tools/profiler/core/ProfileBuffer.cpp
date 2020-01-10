@@ -19,16 +19,25 @@ using namespace mozilla;
 
 static constexpr auto DuplicationBufferBytes = MakePowerOfTwo32<65536>();
 
-
-ProfileBuffer::ProfileBuffer(PowerOfTwo32 aCapacity)
-    : mEntries(BlocksRingBuffer::ThreadSafety::WithoutMutex, aCapacity),
+ProfileBuffer::ProfileBuffer(BlocksRingBuffer& aBuffer, PowerOfTwo32 aCapacity)
+    : mEntries(aBuffer),
       mDuplicationBuffer(MakeUnique<BlocksRingBuffer::Byte[]>(
-          DuplicationBufferBytes.Value())) {}
+          DuplicationBufferBytes.Value())) {
+  
+  
+  MOZ_ASSERT(mEntries.BufferLength().isNothing());
+  
+  mEntries.Set(aCapacity);
+}
 
 ProfileBuffer::~ProfileBuffer() {
   while (mStoredMarkers.peek()) {
     delete mStoredMarkers.popHead();
   }
+  
+  
+  mEntries.Reset();
+  MOZ_ASSERT(mEntries.BufferLength().isNothing());
 }
 
 

@@ -14,7 +14,10 @@
 
 TEST(ThreadProfile, InsertOneEntry)
 {
+  mozilla::BlocksRingBuffer blocksRingBuffer(
+      BlocksRingBuffer::ThreadSafety::WithMutex);
   auto pb = MakeUnique<ProfileBuffer>(
+      blocksRingBuffer,
       mozilla::PowerOfTwo32(2 * (1 + uint32_t(sizeof(ProfileBufferEntry)))));
   pb->AddEntry(ProfileBufferEntry::Time(123.1));
   ProfileBufferEntry entry = pb->GetEntry(pb->BufferRangeStart());
@@ -25,7 +28,10 @@ TEST(ThreadProfile, InsertOneEntry)
 
 TEST(ThreadProfile, InsertEntriesNoWrap)
 {
+  mozilla::BlocksRingBuffer blocksRingBuffer(
+      BlocksRingBuffer::ThreadSafety::WithMutex);
   auto pb = MakeUnique<ProfileBuffer>(
+      blocksRingBuffer,
       mozilla::PowerOfTwo32(100 * (1 + uint32_t(sizeof(ProfileBufferEntry)))));
   const int test_size = 50;
   for (int i = 0; i < test_size; i++) {

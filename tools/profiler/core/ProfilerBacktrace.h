@@ -16,14 +16,16 @@ class ThreadInfo;
 class UniqueStacks;
 
 namespace mozilla {
+class BlocksRingBuffer;
 class TimeStamp;
-}
+}  
 
 
 class ProfilerBacktrace {
  public:
   ProfilerBacktrace(const char* aName, int aThreadId,
-                    mozilla::UniquePtr<ProfileBuffer> aBuffer);
+                    UniquePtr<mozilla::BlocksRingBuffer> aBlocksRingBuffer,
+                    mozilla::UniquePtr<ProfileBuffer> aProfileBuffer);
   ~ProfilerBacktrace();
 
   
@@ -42,7 +44,10 @@ class ProfilerBacktrace {
 
   mozilla::UniqueFreePtr<char> mName;
   int mThreadId;
-  mozilla::UniquePtr<ProfileBuffer> mBuffer;
+  
+  
+  UniquePtr<mozilla::BlocksRingBuffer> mBlocksRingBuffer;
+  mozilla::UniquePtr<ProfileBuffer> mProfileBuffer;
 };
 
 #endif  
