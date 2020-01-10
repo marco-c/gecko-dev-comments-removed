@@ -1316,6 +1316,8 @@ char* nsHttpTransaction::LocateHttpStart(char* buf, uint32_t len,
   static const uint32_t HTTPHeaderLen = sizeof(HTTPHeader) - 1;
   static const char HTTP2Header[] = "HTTP/2.0";
   static const uint32_t HTTP2HeaderLen = sizeof(HTTP2Header) - 1;
+  static const char HTTP3Header[] = "HTTP/3.0";
+  static const uint32_t HTTP3HeaderLen = sizeof(HTTP3Header) - 1;
   
   static const char ICYHeader[] = "ICY ";
   static const uint32_t ICYHeaderLen = sizeof(ICYHeader) - 1;
@@ -1365,6 +1367,16 @@ char* nsHttpTransaction::LocateHttpStart(char* buf, uint32_t len,
     if (firstByte && !mInvalidResponseBytesRead && len >= HTTP2HeaderLen &&
         (PL_strncasecmp(buf, HTTP2Header, HTTP2HeaderLen) == 0)) {
       LOG(("nsHttpTransaction:: Identified HTTP/2.0 treating as 1.x\n"));
+      return buf;
+    }
+
+    
+    
+    
+
+    if (firstByte && !mInvalidResponseBytesRead && len >= HTTP3HeaderLen &&
+        (PL_strncasecmp(buf, HTTP3Header, HTTP3HeaderLen) == 0)) {
+      LOG(("nsHttpTransaction:: Identified HTTP/3.0 treating as 1.x\n"));
       return buf;
     }
 
@@ -1654,7 +1666,7 @@ nsresult nsHttpTransaction::HandleContentStart() {
         if ((mEarlyDataDisposition == EARLY_425) && !mDoNotTryEarlyData) {
           mDoNotTryEarlyData = true;
           mForceRestart = true;  
-          if (mConnection->Version() == HttpVersion::v2_0) {
+          if (mConnection->Version() >= HttpVersion::v2_0) {
             mReuseOnRestart = true;
           }
           return NS_ERROR_NET_RESET;
