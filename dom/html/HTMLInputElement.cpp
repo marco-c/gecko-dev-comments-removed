@@ -939,7 +939,7 @@ void HTMLInputElement::Shutdown() {
 HTMLInputElement::HTMLInputElement(
     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
     FromParser aFromParser, FromClone aFromClone)
-    : nsGenericHTMLFormElementWithState(std::move(aNodeInfo), aFromParser,
+    : nsGenericHTMLFormElementWithState(std::move(aNodeInfo),
                                         kInputDefaultType->value),
       mAutocompleteAttrState(nsContentUtils::eAutocompleteAttrState_Unknown),
       mAutocompleteInfoState(nsContentUtils::eAutocompleteAttrState_Unknown),
@@ -5894,8 +5894,9 @@ void HTMLInputElement::DoneCreatingElement() {
   
   
   
-  GenerateStateKey();
-  bool restoredCheckedState = !mInhibitRestoration && RestoreFormControlState();
+  bool restoredCheckedState = !mInhibitRestoration &&
+                              NS_SUCCEEDED(GenerateStateKey()) &&
+                              RestoreFormControlState();
 
   
   

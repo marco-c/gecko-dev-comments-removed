@@ -1697,18 +1697,6 @@ class Document : public nsINode,
 
   void SetKeyPressEventModel(uint16_t aKeyPressEventModel);
 
-  
-  
-  
-  
-  int32_t GetNextFormNumber() { return mNextFormNumber++; }
-
-  
-  
-  
-  
-  int32_t GetNextControlNumber() { return mNextControlNumber++; }
-
  protected:
   friend class nsUnblockOnloadEvent;
 
@@ -5208,10 +5196,6 @@ class Document : public nsINode,
 
   
   nsCOMPtr<nsIPrincipal> mIntrinsicStoragePrincipal;
-
-  
-  int32_t mNextFormNumber;
-  int32_t mNextControlNumber;
 
  public:
   
