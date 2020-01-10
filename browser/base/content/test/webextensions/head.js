@@ -419,13 +419,25 @@ async function interactiveUpdateTest(autoUpdate, checkFn) {
     if (manualUpdatePromise) {
       await manualUpdatePromise;
 
-      let list = win.document.getElementById("addon-list");
-
-      
-      list.clientHeight;
-
-      let item = list.itemChildren.find(_item => _item.value == ID);
-      EventUtils.synthesizeMouseAtCenter(item._updateBtn, {}, win);
+      if (win.useHtmlViews) {
+        
+        const availableUpdates = win.document.getElementById("updates-manualUpdatesFound-btn");
+        availableUpdates.click();
+        let doc = win.getHtmlBrowser().contentDocument;
+        let card = await BrowserTestUtils.waitForCondition(() => {
+         return doc.querySelector(`addon-card[addon-id="${ID}"]`);
+        }, `Wait addon card for "${ID}"`);
+        let updateBtn = card.querySelector('panel-item[action="install-update"]');
+        ok(updateBtn, `Found update button for "${ID}"`);
+        updateBtn.click();
+      } else {
+        
+        let list = win.document.getElementById("addon-list");
+        
+        list.clientHeight;
+        let item = list.itemChildren.find(_item => _item.value == ID);
+        EventUtils.synthesizeMouseAtCenter(item._updateBtn, {}, win);
+      }
     }
 
     return {promise};
