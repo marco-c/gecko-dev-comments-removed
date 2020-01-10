@@ -33,7 +33,15 @@ add_task(async function() {
   iframe.style.minWidth = "1px"; 
   is(iframe.clientWidth, panelWidth - 25, "The iframe fits within the available space");
 
+  
+  const expectedWidth = iframe.clientWidth;
   await cleanup(toolbox);
+  
+  
+  await waitUntil(() => {
+    const savedWidth = Services.prefs.getIntPref("devtools.toolbox.sidebar.width");
+    return savedWidth === expectedWidth;
+  });
 });
 
 add_task(async function() {
