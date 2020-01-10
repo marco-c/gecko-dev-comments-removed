@@ -925,6 +925,9 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   mozilla::gfx::IntSize mScreenSize;
 
   
+  int64_t mScreenPixels;
+
+  
   
   const gfxSkipChars kEmptySkipChars;
 };
