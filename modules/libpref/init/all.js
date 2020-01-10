@@ -2962,11 +2962,6 @@ pref("layout.testing.overlay-scrollbars.always-visible", false);
 
 
 
-pref("layout.interruptible-reflow.enabled", true);
-
-
-
-
 pref("layout.frame_rate", -1);
 
 
