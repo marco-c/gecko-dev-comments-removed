@@ -1112,7 +1112,7 @@ void nsIFrame::MarkNeedsDisplayItemRebuild() {
   SetFrameIsModified(true);
 
   MOZ_ASSERT(
-      PresContext()->LayoutPhaseCount(eLayoutPhase_DisplayListBuilding) == 0);
+      PresContext()->LayoutPhaseCount(nsLayoutPhase::DisplayListBuilding) == 0);
 
   
   
