@@ -21,24 +21,14 @@
 #include "js/GCVariant.h"
 #include "js/HashTable.h"
 #include "js/Promise.h"
-#include "js/Result.h"
-#include "js/RootingAPI.h"
 #include "js/Utility.h"
 #include "js/Wrapper.h"
 #include "proxy/DeadObjectProxy.h"
-#include "vm/GeneratorObject.h"
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"
 #include "vm/Realm.h"
 #include "vm/SavedStacks.h"
 #include "vm/Stack.h"
-
-
-
-
-
-
-#undef Yield
 
 namespace js {
 
@@ -95,165 +85,6 @@ enum class ResumeMode {
 
 
   Return,
-};
-
-
-
-
-
-
-
-
-
-
-class Completion {
- public:
-  struct Return {
-    explicit Return(const Value& value) : value(value) {}
-    Value value;
-
-    void trace(JSTracer* trc) {
-      JS::UnsafeTraceRoot(trc, &value, "js::Completion::Return::value");
-    }
-  };
-
-  struct Throw {
-    Throw(const Value& exception, SavedFrame* stack)
-        : exception(exception), stack(stack) {}
-    Value exception;
-    SavedFrame* stack;
-
-    void trace(JSTracer* trc) {
-      JS::UnsafeTraceRoot(trc, &exception, "js::Completion::Throw::exception");
-      JS::UnsafeTraceRoot(trc, &stack, "js::Completion::Throw::stack");
-    }
-  };
-
-  struct Terminate {
-    void trace(JSTracer* trc) {}
-  };
-
-  struct InitialYield {
-    explicit InitialYield(AbstractGeneratorObject* generatorObject)
-        : generatorObject(generatorObject) {}
-    AbstractGeneratorObject* generatorObject;
-
-    void trace(JSTracer* trc) {
-      JS::UnsafeTraceRoot(trc, &generatorObject,
-                          "js::Completion::InitialYield::generatorObject");
-    }
-  };
-
-  struct Yield {
-    Yield(AbstractGeneratorObject* generatorObject, const Value& iteratorResult)
-        : generatorObject(generatorObject), iteratorResult(iteratorResult) {}
-    AbstractGeneratorObject* generatorObject;
-    Value iteratorResult;
-
-    void trace(JSTracer* trc) {
-      JS::UnsafeTraceRoot(trc, &generatorObject,
-                          "js::Completion::Yield::generatorObject");
-      JS::UnsafeTraceRoot(trc, &iteratorResult,
-                          "js::Completion::Yield::iteratorResult");
-    }
-  };
-
-  struct Await {
-    Await(AbstractGeneratorObject* generatorObject, const Value& awaitee)
-        : generatorObject(generatorObject), awaitee(awaitee) {}
-    AbstractGeneratorObject* generatorObject;
-    Value awaitee;
-
-    void trace(JSTracer* trc) {
-      JS::UnsafeTraceRoot(trc, &generatorObject,
-                          "js::Completion::Await::generatorObject");
-      JS::UnsafeTraceRoot(trc, &awaitee, "js::Completion::Await::awaitee");
-    }
-  };
-
-  
-  
-  Completion() : variant(Terminate()) {}
-
-  
-  
-  
-  
-  explicit Completion(Return&& variant)
-      : variant(std::forward<Return>(variant)) {}
-  explicit Completion(Throw&& variant)
-      : variant(std::forward<Throw>(variant)) {}
-  explicit Completion(Terminate&& variant)
-      : variant(std::forward<Terminate>(variant)) {}
-  explicit Completion(InitialYield&& variant)
-      : variant(std::forward<InitialYield>(variant)) {}
-  explicit Completion(Yield&& variant)
-      : variant(std::forward<Yield>(variant)) {}
-  explicit Completion(Await&& variant)
-      : variant(std::forward<Await>(variant)) {}
-
-  
-  
-  static Completion fromJSResult(JSContext* cx, bool ok, const Value& rv);
-
-  
-  
-  static Completion fromJSFramePop(JSContext* cx, AbstractFramePtr frame,
-                                   const jsbytecode* pc, bool ok);
-
-  template <typename V>
-  bool is() const {
-    return variant.template is<V>();
-  }
-
-  template <typename V>
-  V& as() {
-    return variant.template as<V>();
-  }
-
-  template <typename V>
-  const V& as() const {
-    return variant.template as<V>();
-  }
-
-  void trace(JSTracer* trc);
-
-  
-  bool suspending() const {
-    return variant.is<InitialYield>() || variant.is<Yield>() ||
-           variant.is<Await>();
-  }
-
-  
-
-
-
-  AbstractGeneratorObject* maybeGeneratorObject() const;
-
-  
-
-  bool buildCompletionValue(JSContext* cx, Debugger* dbg,
-                            MutableHandleValue result) const;
-
-  
-
-
-
-  void toResumeMode(ResumeMode& resumeMode, MutableHandleValue value,
-                    MutableHandleSavedFrame exnStack) const;
-  
-
-
-
-  void updateForNextHandler(ResumeMode resumeMode, HandleValue value);
-
- private:
-  using Variant =
-      mozilla::Variant<Return, Throw, Terminate, InitialYield, Yield, Await>;
-  struct BuildValueMatcher;
-  struct ToResumeModeMatcher;
-
-  Variant variant;
 };
 
 typedef HashSet<WeakHeapPtrGlobalObject,
@@ -1318,6 +1149,46 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
+
+
+
+  static void resultToCompletion(JSContext* cx, bool ok, const Value& rv,
+                                 ResumeMode* resumeMode,
+                                 MutableHandleValue value,
+                                 MutableHandleSavedFrame exnStack);
+
+  
+
+
+
+
+
+
+  MOZ_MUST_USE bool newCompletionValue(JSContext* cx, ResumeMode resumeMode,
+                                       const Value& value, SavedFrame* exnStack,
+                                       MutableHandleValue result);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE bool receiveCompletionValue(mozilla::Maybe<AutoRealm>& ar,
+                                           bool ok, HandleValue val,
+                                           MutableHandleValue vp);
+
+  
+
+
+
+
   JSObject* wrapScript(JSContext* cx, HandleScript script);
 
   JSObject* wrapLazyScript(JSContext* cx, Handle<LazyScript*> script);
@@ -1524,10 +1395,9 @@ struct OnPopHandler : Handler {
 
 
 
-
   virtual bool onPop(JSContext* cx, HandleDebuggerFrame frame,
-                     const Completion& completion, ResumeMode& resumeMode,
-                     MutableHandleValue vp) = 0;
+                     ResumeMode& resumeMode, MutableHandleValue vp,
+                     HandleSavedFrame exnStack) = 0;
 };
 
 class ScriptedOnPopHandler final : public OnPopHandler {
@@ -1537,8 +1407,8 @@ class ScriptedOnPopHandler final : public OnPopHandler {
   virtual void drop() override;
   virtual void trace(JSTracer* tracer) override;
   virtual bool onPop(JSContext* cx, HandleDebuggerFrame frame,
-                     const Completion& completion, ResumeMode& resumeMode,
-                     MutableHandleValue vp) override;
+                     ResumeMode& resumeMode, MutableHandleValue vp,
+                     HandleSavedFrame exnStack) override;
 
  private:
   HeapPtr<JSObject*> object_;
@@ -1608,10 +1478,13 @@ class DebuggerFrame : public NativeObject {
                                             HandleDebuggerFrame frame,
                                             OnStepHandler* handler);
 
-  static MOZ_MUST_USE JS::Result<Completion> eval(
-      JSContext* cx, HandleDebuggerFrame frame,
-      mozilla::Range<const char16_t> chars, HandleObject bindings,
-      const EvalOptions& options);
+  static MOZ_MUST_USE bool eval(JSContext* cx, HandleDebuggerFrame frame,
+                                mozilla::Range<const char16_t> chars,
+                                HandleObject bindings,
+                                const EvalOptions& options,
+                                ResumeMode& resumeMode,
+                                MutableHandleValue value,
+                                MutableHandleSavedFrame exnStack);
 
   MOZ_MUST_USE bool requireLive(JSContext* cx);
   static MOZ_MUST_USE DebuggerFrame* checkThis(JSContext* cx,
@@ -1797,12 +1670,14 @@ class DebuggerObject : public NativeObject {
                                     bool& result);
   static MOZ_MUST_USE bool isFrozen(JSContext* cx, HandleDebuggerObject object,
                                     bool& result);
-  static MOZ_MUST_USE JS::Result<Completion> getProperty(
-      JSContext* cx, HandleDebuggerObject object, HandleId id,
-      HandleValue receiver);
-  static MOZ_MUST_USE JS::Result<Completion> setProperty(
-      JSContext* cx, HandleDebuggerObject object, HandleId id,
-      HandleValue value, HandleValue receiver);
+  static MOZ_MUST_USE bool getProperty(JSContext* cx,
+                                       HandleDebuggerObject object, HandleId id,
+                                       HandleValue receiver,
+                                       MutableHandleValue result);
+  static MOZ_MUST_USE bool setProperty(JSContext* cx,
+                                       HandleDebuggerObject object, HandleId id,
+                                       HandleValue value, HandleValue receiver,
+                                       MutableHandleValue result);
   static MOZ_MUST_USE bool getPrototypeOf(JSContext* cx,
                                           HandleDebuggerObject object,
                                           MutableHandleDebuggerObject result);
@@ -1829,15 +1704,16 @@ class DebuggerObject : public NativeObject {
   static MOZ_MUST_USE bool deleteProperty(JSContext* cx,
                                           HandleDebuggerObject object,
                                           HandleId id, ObjectOpResult& result);
-  static MOZ_MUST_USE mozilla::Maybe<Completion> call(
-      JSContext* cx, HandleDebuggerObject object, HandleValue thisv,
-      Handle<ValueVector> args);
+  static MOZ_MUST_USE bool call(JSContext* cx, HandleDebuggerObject object,
+                                HandleValue thisv, Handle<ValueVector> args,
+                                MutableHandleValue result);
   static MOZ_MUST_USE bool forceLexicalInitializationByName(
       JSContext* cx, HandleDebuggerObject object, HandleId id, bool& result);
-  static MOZ_MUST_USE JS::Result<Completion> executeInGlobal(
+  static MOZ_MUST_USE bool executeInGlobal(
       JSContext* cx, HandleDebuggerObject object,
       mozilla::Range<const char16_t> chars, HandleObject bindings,
-      const EvalOptions& options);
+      const EvalOptions& options, ResumeMode& resumeMode,
+      MutableHandleValue value, MutableHandleSavedFrame exnStack);
   static MOZ_MUST_USE bool makeDebuggeeValue(JSContext* cx,
                                              HandleDebuggerObject object,
                                              HandleValue value,
