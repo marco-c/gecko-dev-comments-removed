@@ -269,6 +269,14 @@ class App extends PureComponent {
   doResizeViewport(id, width, height) {
     
     
+    window.postMessage(
+      {
+        type: "viewport-resize",
+        width,
+        height,
+      },
+      "*"
+    );
     this.props.dispatch(resizeViewport(id, width, height));
   }
 
