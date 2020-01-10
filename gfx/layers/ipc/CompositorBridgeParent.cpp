@@ -2642,13 +2642,14 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvEndRecording(
 
   if (mLayerManager) {
     mLayerManager->SetCompositionRecorder(nullptr);
+    mCompositionRecorder->WriteCollectedFrames();
+  } else if (mWrBridge) {
+    
+    
+    
+    mWrBridge->WriteCollectedFrames();
   }
 
-  
-  
-  
-
-  mCompositionRecorder->WriteCollectedFrames();
   mCompositionRecorder = nullptr;
   *aOutSuccess = true;
   return IPC_OK();

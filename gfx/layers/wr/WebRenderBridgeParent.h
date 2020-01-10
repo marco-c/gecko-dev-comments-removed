@@ -300,6 +300,13 @@ class WebRenderBridgeParent final
   void SetCompositionRecorder(
       RefPtr<layers::WebRenderCompositionRecorder>&& aRecorder);
 
+  
+
+
+
+
+  void WriteCollectedFrames();
+
  private:
   class ScheduleSharedSurfaceRelease;
 
