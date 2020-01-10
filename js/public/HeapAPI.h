@@ -11,6 +11,7 @@
 
 #include "jspubtd.h"
 
+#include "js/GCAnnotations.h"
 #include "js/TraceKind.h"
 #include "js/Utility.h"
 
@@ -382,7 +383,7 @@ class JS_FRIEND_API GCCellPtr {
   JS::TraceKind outOfLineKind() const;
 
   uintptr_t ptr;
-};
+} JS_HAZ_GC_POINTER;
 
 
 
