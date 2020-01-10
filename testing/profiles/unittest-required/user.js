@@ -76,6 +76,8 @@ user_pref("browser.warnOnQuit", false);
 user_pref("browser.webapps.testing", true);
 user_pref("captivedetect.canonicalURL", "http://{server}/captive-detect/success.txt");
 
+user_pref("consoleservice.logcat", true);
+
 
 user_pref("datareporting.healthreport.documentServerURI", "http://{server}/healthreport/");
 user_pref("datareporting.healthreport.uploadEnabled", false);
