@@ -803,16 +803,6 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
   }
 
   
-  nsTArray<RefPtr<Notification>> notifications;
-  notifications.SwapElements(mNotifications);
-
-  uint32_t notificationCount = notifications.Length();
-  for (uint32_t idx = 0; idx < notificationCount; idx++) {
-    notifications[idx]->Process();
-    if (!mDocument) return;
-  }
-
-  
   
   mDocument->ProcessInvalidationList();
 
@@ -826,6 +816,20 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
     }
   }
   mRelocations.Clear();
+
+  
+  
+  
+  
+  
+  nsTArray<RefPtr<Notification>> notifications;
+  notifications.SwapElements(mNotifications);
+
+  uint32_t notificationCount = notifications.Length();
+  for (uint32_t idx = 0; idx < notificationCount; idx++) {
+    notifications[idx]->Process();
+    if (!mDocument) return;
+  }
 
   
   
