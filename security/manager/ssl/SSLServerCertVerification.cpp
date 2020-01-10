@@ -71,23 +71,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "SSLServerCertVerification.h"
 
 #include <cstring>
@@ -113,7 +96,6 @@
 #include "mozilla/net/DNS.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
-#include "nsIBadCertListener2.h"
 #include "nsICertOverrideService.h"
 #include "nsISiteSecurityService.h"
 #include "nsISocketProvider.h"
@@ -206,19 +188,6 @@ class SSLServerCertVerificationResult : public Runnable {
  private:
   const RefPtr<TransportSecurityInfo> mInfoObject;
   const PRErrorCode mErrorCode;
-};
-
-class NotifyCertProblemRunnable : public SyncRunnableBase {
- public:
-  NotifyCertProblemRunnable(uint64_t fdForLogging,
-                            TransportSecurityInfo* infoObject)
-      : mFdForLogging(fdForLogging), mInfoObject(infoObject) {}
-
-  virtual void RunOnTargetThread() override;
-
- private:
-  uint64_t mFdForLogging;
-  const RefPtr<TransportSecurityInfo> mInfoObject;
 };
 
 
@@ -481,66 +450,6 @@ static nsresult OverrideAllowedForHost(
   aOverrideAllowed = !strictTransportSecurityEnabled && !hasPinningInformation;
   return NS_OK;
 }
-
-void NotifyCertProblemRunnable::RunOnTargetThread() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-          ("[0x%" PRIx64 "][%p] NotifyCertProblemRunnable::RunOnTargetThread\n",
-           mFdForLogging, this));
-  
-  
-  Unused << mFdForLogging;
-
-  if (!NS_IsMainThread()) {
-    return;
-  }
-
-  nsAutoCString hostWithPortString(mInfoObject->GetHostName());
-  hostWithPortString.Append(':');
-  hostWithPortString.AppendInt(mInfoObject->GetPort());
-
-  
-  nsCOMPtr<nsISSLSocketControl> sslSocketControl = do_QueryInterface(
-      NS_ISUPPORTS_CAST(nsITransportSecurityInfo*, mInfoObject));
-  if (sslSocketControl) {
-    nsCOMPtr<nsIInterfaceRequestor> cb;
-    sslSocketControl->GetNotificationCallbacks(getter_AddRefs(cb));
-    if (cb) {
-      nsCOMPtr<nsIBadCertListener2> bcl = do_GetInterface(cb);
-      if (bcl) {
-        nsIInterfaceRequestor* csi =
-            static_cast<nsIInterfaceRequestor*>(mInfoObject);
-        bool suppressMessage = false;  
-        Unused << bcl->NotifyCertProblem(csi, mInfoObject, hostWithPortString,
-                                         &suppressMessage);
-      }
-    }
-  }
-}
-
-
-
-
-
-
-
-
-
-
-class NotifyCertProblemRunnableRunnable : public Runnable {
- public:
-  explicit NotifyCertProblemRunnableRunnable(
-      NotifyCertProblemRunnable* aRunnable)
-      : Runnable("psm::NotifyCertProblemRunnableRunnable"),
-        mNotifyCertProblemRunnable(aRunnable) {}
-
- private:
-  NS_IMETHOD Run() override {
-    return mNotifyCertProblemRunnable->DispatchToMainThreadAndWait();
-  }
-  RefPtr<NotifyCertProblemRunnable> mNotifyCertProblemRunnable;
-};
 
 class SSLServerCertVerificationJob : public Runnable {
  public:
@@ -1441,41 +1350,7 @@ SSLServerCertVerificationJob::Run() {
     mInfoObject->SetStatusErrorBits(nssCert, collectedErrors);
   }
 
-  if (finalError == 0) {
-    RefPtr<SSLServerCertVerificationResult> runnable(
-        new SSLServerCertVerificationResult(mInfoObject, 0));
-    runnable->Dispatch();
-    return NS_OK;
-  }
-
   
-  
-
-  
-  
-  RefPtr<NotifyCertProblemRunnable> runnable(
-      new NotifyCertProblemRunnable(addr, mInfoObject));
-
-  
-  
-  
-  
-
-  MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-          ("[0x%" PRIx64 "][%p] Before dispatching NotifyCertProblemRunnable\n",
-           addr, runnable.get()));
-
-  nsresult nrv;
-  nsCOMPtr<nsIEventTarget> stsTarget =
-      do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID, &nrv);
-  if (NS_SUCCEEDED(nrv)) {
-    nrv = stsTarget->Dispatch(new NotifyCertProblemRunnableRunnable(runnable),
-                              NS_DISPATCH_NORMAL);
-  }
-  if (NS_FAILED(nrv)) {
-    finalError = PR_INVALID_STATE_ERROR;
-  }
-
   RefPtr<SSLServerCertVerificationResult> resultRunnable(
       new SSLServerCertVerificationResult(mInfoObject, finalError));
   resultRunnable->Dispatch();
