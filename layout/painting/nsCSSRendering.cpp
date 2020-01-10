@@ -716,7 +716,16 @@ ImgDrawResult nsCSSRendering::CreateWebRenderCommandsForBorderWithStyleBorder(
   const nsStyleImage* image = &aStyleBorder.mBorderImageSource;
 
   
-  if (!image || image->GetType() != eStyleImageType_Image) {
+  if (!image) {
+    return ImgDrawResult::NOT_SUPPORTED;
+  }
+
+  
+  bool imageTypeSupported = false;
+  
+  
+
+  if (!imageTypeSupported) {
     return ImgDrawResult::NOT_SUPPORTED;
   }
 

@@ -185,9 +185,8 @@ bool nsDisplayFieldSetBorder::CreateWebRenderCommands(
     if (!legendRect.IsEmpty()) {
       
       auto appUnitsPerDevPixel = frame->PresContext()->AppUnitsPerDevPixel();
-      auto layoutRect = wr::ToRoundedLayoutRect(LayoutDeviceRect::FromAppUnits(
-          frame->GetVisualOverflowRectRelativeToSelf() + offset,
-          appUnitsPerDevPixel));
+      auto layoutRect = wr::ToRoundedLayoutRect(
+          LayoutDeviceRect::FromAppUnits(rect, appUnitsPerDevPixel));
 
       wr::ComplexClipRegion region;
       region.rect = wr::ToRoundedLayoutRect(
