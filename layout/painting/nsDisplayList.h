@@ -3453,6 +3453,11 @@ class nsDisplayList {
 
   template <typename Item, typename Comparator>
   void Sort(const Comparator& aComparator) {
+    if (Count() < 2) {
+      
+      return;
+    }
+
     
     
     
