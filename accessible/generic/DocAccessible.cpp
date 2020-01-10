@@ -1193,6 +1193,16 @@ Accessible* DocAccessible::GetAccessibleOrContainer(
       }
     }
 
+    
+    if (aNoContainerIfPruned && currNode->IsHTMLElement(nsGkAtoms::map)) {
+      if (nsIFrame* frame = currNode->AsContent()->GetPrimaryFrame()) {
+        if (nsLayoutUtils::GetAllInFlowRectsUnion(frame, frame->GetParent())
+                .IsEmpty()) {
+          return nullptr;
+        }
+      }
+    }
+
     if (Accessible* accessible = GetAccessible(currNode)) {
       return accessible;
     }
