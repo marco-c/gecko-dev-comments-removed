@@ -110,6 +110,31 @@ class FreeOp : public JSFreeOp {
       free_(cell, p, nbytes, use);
     }
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <class T>
+  void release(gc::Cell* cell, T* p, MemoryUse use) {
+    release(cell, p, sizeof(T), use);
+  }
+
+  
+  
+  
+  
+  
+  
+  template <class T>
+  void release(gc::Cell* cell, T* p, size_t nbytes, MemoryUse use);
 };
 
 }  
