@@ -2,10 +2,16 @@
 
 
 
+import os
+
+tooltool_url = 'http://taskcluster/tooltool.mozilla-releng.net/'
+if os.environ.get('TASKCLUSTER_ROOT_URL', 'https://taskcluster.net') != 'https://taskcluster.net':
+    
+    tooltool_url = 'http://taskcluster/tooltool.staging.mozilla-releng.net/'
 
 config = {
     "tooltool_manifest_path": "testing/config/tooltool-manifests/androidx86_7_0/releng.manifest",
-    "tooltool_servers": ['http://taskcluster/tooltool.mozilla-releng.net/'],
+    "tooltool_servers": [tooltool_url],
     "emulator_manifest": """
         [
         {
