@@ -204,6 +204,7 @@
   
   --theme-contrast-background: #fff697;
   --theme-contrast-color: black;
+  --theme-contrast-border: var(--yellow-60);
 }
 
 
@@ -319,4 +320,5 @@
   
   --theme-contrast-background: #605913; 
   --theme-contrast-color: white;
+  --theme-contrast-border: var(--yellow-65);
 }
