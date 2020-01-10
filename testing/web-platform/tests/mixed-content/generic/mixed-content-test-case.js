@@ -73,7 +73,7 @@ function MixedContentTestCase(scenario, description, sanityChecker) {
     
     
     subresourceType = 'fetch-request';
-    sourceContextList = [{sourceContextType: 'classic-data-worker'}];
+    sourceContextList = [{sourceContextType: 'worker-classic-data'}];
   }
 
   const originTypeConversion = {

@@ -1059,19 +1059,19 @@ function invokeRequest(subresource, sourceContextList) {
     "iframe": { 
       invoker: invokeFromIframe,
     },
-    "classic-worker": {
+    "worker-classic": {
       
       invoker: invokeFromWorker.bind(undefined, false, {}),
     },
-    "classic-data-worker": {
+    "worker-classic-data": {
       
       invoker: invokeFromWorker.bind(undefined, true, {}),
     },
-    "module-worker": {
+    "worker-module": {
       
       invoker: invokeFromWorker.bind(undefined, false, {type: 'module'}),
     },
-    "module-data-worker": {
+    "worker-module-data": {
       
       invoker: invokeFromWorker.bind(undefined, true, {type: 'module'}),
     },
