@@ -9711,7 +9711,6 @@ void nsFrame::ConsiderChildOverflow(nsOverflowAreas& aOverflowAreas,
     
     
     
-    
     nsRect childVisual = aChildFrame->GetVisualOverflowRect();
     nsOverflowAreas combined = nsOverflowAreas(childVisual, nsRect());
     aOverflowAreas.UnionWith(combined + aChildFrame->GetPosition());
