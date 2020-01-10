@@ -24,6 +24,7 @@
 #include "js/Promise.h"                                
 #include "js/Value.h"  
 #include "vm/Compartment.h"  
+#include "vm/Interpreter.h"  
 #include "vm/JSContext.h"    
 
 #include "builtin/streams/MiscellaneousOperations-inl.h"  
@@ -279,7 +280,7 @@ bool js::WritableStreamDefaultWriterRelease(
   Rooted<Value> releasedError(cx);
   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                             JSMSG_WRITABLESTREAM_CANT_RELEASE_ALREADY_CLOSED);
-  if (!cx->isExceptionPending() || !cx->getPendingException(&releasedError)) {
+  if (!cx->isExceptionPending() || !GetAndClearException(cx, &releasedError)) {
     return false;
   }
 
