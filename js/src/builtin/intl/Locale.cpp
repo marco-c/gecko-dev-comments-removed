@@ -60,10 +60,10 @@ static inline bool IsLocale(HandleValue v) {
 
 static size_t BaseNameLength(const LanguageTag& tag) {
   size_t baseNameLength = tag.language().length();
-  if (tag.script().length() > 0) {
+  if (tag.script().present()) {
     baseNameLength += 1 + tag.script().length();
   }
-  if (tag.region().length() > 0) {
+  if (tag.region().present()) {
     baseNameLength += 1 + tag.region().length();
   }
   for (const auto& variant : tag.variants()) {
@@ -330,19 +330,19 @@ static bool ApplyOptionsToTag(JSContext* cx, LanguageTag& tag,
   
 
   
-  if (language.length() > 0 || script.length() > 0 || region.length() > 0) {
+  if (language.present() || script.present() || region.present()) {
     
-    if (language.length() > 0) {
+    if (language.present()) {
       tag.setLanguage(language);
     }
 
     
-    if (script.length() > 0) {
+    if (script.present()) {
       tag.setScript(script);
     }
 
     
-    if (region.length() > 0) {
+    if (region.present()) {
       tag.setRegion(region);
     }
 

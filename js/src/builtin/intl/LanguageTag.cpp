@@ -265,12 +265,12 @@ bool LanguageTag::canonicalizeBaseName(JSContext* cx) {
   
   
   script_.toTitleCase();
-  MOZ_ASSERT(script().length() == 0 ||
+  MOZ_ASSERT(script().missing() ||
              IsStructurallyValidScriptTag(script().range()));
 
   
   region_.toUpperCase();
-  MOZ_ASSERT(region().length() == 0 ||
+  MOZ_ASSERT(region().missing() ||
              IsStructurallyValidRegionTag(region().range()));
 
   
@@ -325,7 +325,7 @@ bool LanguageTag::canonicalizeBaseName(JSContext* cx) {
   
 
   
-  if (region().length() > 0) {
+  if (region().present()) {
     if (!regionMapping(region_) && complexRegionMapping(region_)) {
       performComplexRegionMappings();
     }
@@ -652,14 +652,14 @@ static bool LanguageTagToString(JSContext* cx, const LanguageTag& tag,
   }
 
   
-  if (tag.script().length() > 0) {
+  if (tag.script().present()) {
     if (!sb.append('-') || !appendSubtag(tag.script())) {
       return false;
     }
   }
 
   
-  if (tag.region().length() > 0) {
+  if (tag.region().present()) {
     if (!sb.append('-') || !appendSubtag(tag.region())) {
       return false;
     }
@@ -763,7 +763,7 @@ bool LanguageTag::canonicalizeTransformExtension(
   
   
   
-  if (tag.language().length() > 0) {
+  if (tag.language().present()) {
     if (!sb.append('-')) {
       return false;
     }
@@ -829,14 +829,14 @@ static bool HasLikelySubtags(LikelySubtags likelySubtags,
   
   if (likelySubtags == LikelySubtags::Add) {
     return !tag.language().equalTo("und") &&
-           (tag.script().length() > 0 && !tag.script().equalTo("Zzzz")) &&
-           (tag.region().length() > 0 && !tag.region().equalTo("ZZ"));
+           (tag.script().present() && !tag.script().equalTo("Zzzz")) &&
+           (tag.region().present() && !tag.region().equalTo("ZZ"));
   }
 
   
   
-  return !tag.language().equalTo("und") && tag.script().length() == 0 &&
-         tag.region().length() == 0;
+  return !tag.language().equalTo("und") && tag.script().missing() &&
+         tag.region().missing();
 }
 
 
@@ -856,14 +856,14 @@ static bool CreateLocaleForLikelySubtags(const LanguageTag& tag,
   }
 
   
-  if (tag.script().length() > 0) {
+  if (tag.script().present()) {
     if (!locale.append('_') || !appendSubtag(tag.script())) {
       return false;
     }
   }
 
   
-  if (tag.region().length() > 0) {
+  if (tag.region().present()) {
     if (!locale.append('_') || !appendSubtag(tag.region())) {
       return false;
     }
