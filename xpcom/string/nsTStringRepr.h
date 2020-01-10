@@ -259,6 +259,10 @@ class nsTStringRepr {
 
   
   
+  bool EqualsLatin1(const char* aData, size_type aLength) const;
+
+  
+  
   
   
   

@@ -164,6 +164,17 @@ struct nsCharTraits<char16_t> {
     return 0;
   }
 
+  static bool equalsLatin1(const char_type* aStr1, const char* aStr2,
+                           const size_t aN) {
+    for (size_t i = aN; i > 0; --i, ++aStr1, ++aStr2) {
+      if (*aStr1 != static_cast<char_type>(*aStr2)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   
   
   
@@ -326,6 +337,11 @@ struct nsCharTraits<char> {
     }
 #endif
     return compare(aStr1, aStr2, aN);
+  }
+
+  static bool equalsLatin1(const char_type* aStr1, const char* aStr2,
+                           size_t aN) {
+    return memcmp(aStr1, aStr2, aN) == 0;
   }
 
   
