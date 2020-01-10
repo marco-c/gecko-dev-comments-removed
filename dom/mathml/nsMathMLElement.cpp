@@ -188,6 +188,9 @@ nsMapRuleToAttributesFunc nsMathMLElement::GetAttributeMappingFunction() const {
 bool nsMathMLElement::ParseNamedSpaceValue(const nsString& aString,
                                            nsCSSValue& aCSSValue,
                                            uint32_t aFlags) {
+  if (StaticPrefs::mathml_mathspace_names_disabled()) {
+    return false;
+  }
   int32_t i = 0;
   
   if (aString.EqualsLiteral("veryverythinmathspace")) {
