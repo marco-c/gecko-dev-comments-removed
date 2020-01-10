@@ -1,8 +1,6 @@
 
 
 
-
-
 const TEST_URL =
   "data:text/html,test for dynamically registering and unregistering tools";
 

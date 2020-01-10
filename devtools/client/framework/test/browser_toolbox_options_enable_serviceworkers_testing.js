@@ -4,8 +4,6 @@
 
 
 
-
-
 const ROOT_TEST_DIR = getRootDirectory(gTestPath);
 const FRAME_SCRIPT_URL =
   ROOT_TEST_DIR +

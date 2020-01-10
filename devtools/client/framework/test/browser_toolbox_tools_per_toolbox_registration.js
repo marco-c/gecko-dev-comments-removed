@@ -1,8 +1,6 @@
 
 
 
-
-
 const TEST_URL = `data:text/html,<!DOCTYPE html>
   <html>
     <head>

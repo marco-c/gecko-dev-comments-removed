@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 var { loader, require } = ChromeUtils.import(

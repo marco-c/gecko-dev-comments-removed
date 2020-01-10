@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const mimeSvc = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);

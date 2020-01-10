@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const { DevToolsShim } = ChromeUtils.import(

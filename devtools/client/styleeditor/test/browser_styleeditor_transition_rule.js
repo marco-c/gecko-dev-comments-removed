@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const TESTCASE_URI = TEST_BASE_HTTPS + "simple.html";

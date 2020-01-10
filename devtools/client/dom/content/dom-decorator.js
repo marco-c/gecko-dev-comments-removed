@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const { Property } = require("./reducers/grips");

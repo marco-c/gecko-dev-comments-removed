@@ -1,8 +1,6 @@
 
 
 
-
-
 const TEST_URL = "data:text/html,test custom host";
 
 add_task(async function() {

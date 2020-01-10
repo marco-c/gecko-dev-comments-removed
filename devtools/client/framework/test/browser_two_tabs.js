@@ -5,8 +5,6 @@
 
 
 
-
-
 var { DebuggerServer } = require("devtools/server/debugger-server");
 var { DebuggerClient } = require("devtools/shared/client/debugger-client");
 

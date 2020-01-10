@@ -3,7 +3,6 @@
 
 
 
-
 "use strict";
 
 const TEST_URI = CHROME_URL_ROOT + "doc_tableWidget_keyboard_interaction.xul";

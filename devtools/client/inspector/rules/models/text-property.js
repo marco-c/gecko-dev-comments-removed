@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { generateUUID } = require("devtools/shared/generate-uuid");

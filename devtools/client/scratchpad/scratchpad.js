@@ -15,7 +15,6 @@
 
 
 
-
 "use strict";
 
 const SCRATCHPAD_CONTEXT_CONTENT = 1;

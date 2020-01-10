@@ -2,7 +2,6 @@
 
 
 
-
 const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 const { FileUtils } = ChromeUtils.import(
   "resource://gre/modules/FileUtils.jsm"

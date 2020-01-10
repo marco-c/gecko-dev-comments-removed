@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 function generalEvent(groupID, eventType) {

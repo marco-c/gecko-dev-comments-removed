@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const { getRuleText } = require("devtools/server/actors/styles");

@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 const { ThreadStateTypes } = require("devtools/shared/client/constants");

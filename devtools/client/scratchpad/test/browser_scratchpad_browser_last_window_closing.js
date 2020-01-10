@@ -1,7 +1,6 @@
 
 
 
-
 const BUTTON_POSITION_CANCEL = 1;
 const BUTTON_POSITION_DONT_SAVE = 2;
 

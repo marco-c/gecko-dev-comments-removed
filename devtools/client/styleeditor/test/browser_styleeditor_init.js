@@ -4,7 +4,6 @@
 
 
 
-
 const TESTCASE_URI = TEST_BASE_HTTP + "simple.html";
 const EXPECTED_SHEETS = [
   {

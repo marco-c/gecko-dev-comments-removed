@@ -5,8 +5,6 @@
 
 
 
-
-
 const { Toolbox } = require("devtools/client/framework/toolbox");
 
 add_task(async function() {

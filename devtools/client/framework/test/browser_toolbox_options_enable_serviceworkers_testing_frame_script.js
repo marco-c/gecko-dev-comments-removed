@@ -5,8 +5,6 @@
 
 
 
-
-
 "use strict";
 
 function addMessageForwarder(name) {

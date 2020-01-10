@@ -4,8 +4,6 @@
 
 
 
-
-
 "use strict";
 
 const EXPECTED_RESULT =

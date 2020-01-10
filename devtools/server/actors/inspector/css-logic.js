@@ -25,8 +25,6 @@
 
 
 
-
-
 "use strict";
 
 const { Cu } = require("chrome");

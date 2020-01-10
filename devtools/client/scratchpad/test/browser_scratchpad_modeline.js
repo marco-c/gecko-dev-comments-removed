@@ -2,7 +2,6 @@
 
 
 
-
 var gScratchpad; 
 var gFile; 
 var DEVTOOLS_CHROME_ENABLED = "devtools.chrome.enabled";

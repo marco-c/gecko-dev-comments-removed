@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const constants = require("devtools/client/webconsole/constants");

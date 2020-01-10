@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const DBG_STRINGS_URI = "devtools/client/locales/debugger.properties";

@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 var WebConsoleUtils = require("devtools/client/webconsole/utils").Utils;

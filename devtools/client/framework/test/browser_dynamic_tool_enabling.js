@@ -3,8 +3,6 @@
 
 
 
-
-
 var gItemsToTest = {
   menu_browserToolbox: [
     "devtools.chrome.enabled",

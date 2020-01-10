@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const wasmparser = require("devtools/client/shared/vendor/WasmParser");

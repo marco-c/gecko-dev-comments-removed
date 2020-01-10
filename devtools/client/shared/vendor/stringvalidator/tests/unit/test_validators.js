@@ -4,7 +4,6 @@
 
 
 
-
  "use strict";
 
 var assert = require('devtools/client/shared/vendor/stringvalidator/util/assert').assert;

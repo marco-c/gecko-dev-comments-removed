@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { method } = require("devtools/shared/protocol");

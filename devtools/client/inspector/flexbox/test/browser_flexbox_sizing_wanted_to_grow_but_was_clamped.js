@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const { getStr } = require("devtools/client/inspector/layout/utils/l10n");

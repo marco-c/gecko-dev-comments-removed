@@ -3,7 +3,6 @@
 
 
 
-
 var gScratchpad;
 
 

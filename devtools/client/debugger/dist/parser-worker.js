@@ -1,7 +1,7 @@
 
 
 
-
+ 
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory();
@@ -8901,12 +8901,10 @@ function getVariables(dec) {
     
     
     
-    return dec.id.elements.filter(element => element).map(element => {
-      return {
-        name: t.isAssignmentPattern(element) ? element.left.name : element.name || element.argument && element.argument.name,
-        location: element.loc
-      };
-    }).filter(({ name }) => name);
+    return dec.id.elements.filter(element => element).map(element => ({
+      name: t.isAssignmentPattern(element) ? element.left.name : element.name || element.argument && element.argument.name,
+      location: element.loc
+    })).filter(({ name }) => name);
   }
 
   return [{
@@ -17521,15 +17519,14 @@ function findScopes(scopes, location) {
       break;
     }
   }
-  return found.map(i => {
-    return {
-      type: i.type,
-      displayName: i.displayName,
-      start: i.start,
-      end: i.end,
-      bindings: i.bindings
-    };
-  });
+  return found.map(i => ({
+    type: i.type,
+    scopeKind: i.scopeKind,
+    displayName: i.displayName,
+    start: i.start,
+    end: i.end,
+    bindings: i.bindings
+  }));
 }
 
 function compareLocations(a, b) {
@@ -50333,18 +50330,17 @@ function toParsedScopes(children, sourceId) {
   if (!children || children.length === 0) {
     return undefined;
   }
-  return children.map(scope => {
+  return children.map(scope => ({
     
     
-    return {
-      start: scope.loc.start,
-      end: scope.loc.end,
-      type: scope.type === "module" || scope.type === "function-body" ? "block" : scope.type,
-      displayName: scope.displayName,
-      bindings: scope.bindings,
-      children: toParsedScopes(scope.children, sourceId)
-    };
-  });
+    start: scope.loc.start,
+    end: scope.loc.end,
+    type: scope.type === "module" || scope.type === "function-body" ? "block" : scope.type,
+    scopeKind: "",
+    displayName: scope.displayName,
+    bindings: scope.bindings,
+    children: toParsedScopes(scope.children, sourceId)
+  }));
 }
 
 function createTempScope(type, displayName, parent, loc) {
@@ -50464,10 +50460,7 @@ function createGlobalScope(ast, sourceId) {
     end: fromBabelLocation(ast.loc.end, sourceId)
   });
 
-  return {
-    global,
-    lexical
-  };
+  return { global, lexical };
 }
 
 const scopeCollectionVisitor = {

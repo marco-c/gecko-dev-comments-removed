@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const { getTextAtLineColumn } = require("devtools/server/actors/styles");

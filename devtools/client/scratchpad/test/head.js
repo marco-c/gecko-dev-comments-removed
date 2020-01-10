@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const { FileUtils } = ChromeUtils.import(

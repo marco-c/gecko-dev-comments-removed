@@ -7,8 +7,6 @@
 
 
 
-
-
 export const Task = {
   
   async: function(task: any) {

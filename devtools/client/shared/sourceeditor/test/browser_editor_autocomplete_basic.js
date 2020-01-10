@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const AUTOCOMPLETION_PREF = "devtools.editor.autocomplete";

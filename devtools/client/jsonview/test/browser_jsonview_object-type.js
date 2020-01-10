@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const { ELLIPSIS } = require("devtools/shared/l10n");

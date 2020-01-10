@@ -4,8 +4,6 @@
 
 
 
-
-
 add_task(async function() {
   const dbg = await initDebugger("doc-audiocontext.html");
 

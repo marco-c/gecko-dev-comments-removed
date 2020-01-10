@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const l10n = require("devtools/client/webconsole/utils/l10n");

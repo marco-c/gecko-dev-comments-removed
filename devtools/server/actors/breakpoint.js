@@ -4,8 +4,6 @@
 
 
 
-
-
 "use strict";
 
 const { formatDisplayName } = require("devtools/server/actors/frame");

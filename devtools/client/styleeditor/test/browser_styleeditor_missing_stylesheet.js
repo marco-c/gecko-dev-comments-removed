@@ -5,7 +5,6 @@
 
 
 
-
 const TESTCASE_URI = TEST_BASE + "missing.html";
 
 add_task(async function() {

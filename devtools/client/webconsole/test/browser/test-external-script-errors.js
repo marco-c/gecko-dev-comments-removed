@@ -3,8 +3,6 @@
 
 
 
-
-
 function f() {
   bogus.g();
 }

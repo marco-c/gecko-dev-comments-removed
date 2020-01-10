@@ -1,8 +1,6 @@
 
 
 
-
-
 const PREF_DEVTOOLS_THEME = "devtools.theme";
 
 registerCleanupFunction(() => {

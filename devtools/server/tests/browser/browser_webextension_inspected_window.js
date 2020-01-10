@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const TEST_RELOAD_URL = `${MAIN_DOMAIN}/inspectedwindow-reload-target.sjs`;

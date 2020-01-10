@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const TEST_PAGE_URL = URL_ROOT + "page_array.html";

@@ -5,8 +5,6 @@
 
 
 
-
-
 var gClient, gThreadFront;
 var gNewChromeSource = promise.defer();
 

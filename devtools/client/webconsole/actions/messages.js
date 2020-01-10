@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { prepareMessage } = require("devtools/client/webconsole/utils/messages");

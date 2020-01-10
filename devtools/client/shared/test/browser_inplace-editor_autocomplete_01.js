@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 const AutocompletePopup = require("devtools/client/shared/autocomplete-popup");

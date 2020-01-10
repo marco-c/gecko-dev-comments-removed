@@ -9,8 +9,6 @@
 
 
 
-
-
 "use strict";
 
 const { getCSSLexer } = require("devtools/shared/css/lexer");

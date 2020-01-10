@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 Services.scriptloader.loadSubScript(

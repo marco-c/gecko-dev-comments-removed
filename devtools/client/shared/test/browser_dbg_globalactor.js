@@ -5,8 +5,6 @@
 
 
 
-
-
 "use strict";
 
 var { DebuggerServer } = require("devtools/server/debugger-server");

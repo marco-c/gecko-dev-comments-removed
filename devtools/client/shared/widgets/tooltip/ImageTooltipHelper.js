@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { LocalizationHelper } = require("devtools/shared/l10n");

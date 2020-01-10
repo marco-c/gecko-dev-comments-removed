@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { BreakpointActor } = require("devtools/server/actors/breakpoint");

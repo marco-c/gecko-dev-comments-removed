@@ -1,7 +1,6 @@
 
 
 
-
 var DEVTOOLS_CHROME_ENABLED = "devtools.chrome.enabled";
 
 function test() {

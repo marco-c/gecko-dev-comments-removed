@@ -3,8 +3,6 @@
 
 
 
-
-
 "use strict";
 
 const toolId1 = "testtool1";

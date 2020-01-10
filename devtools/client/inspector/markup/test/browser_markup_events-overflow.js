@@ -1,6 +1,5 @@
 
 
-
 "use strict";
 
 const TEST_URL = URL_ROOT + "doc_markup_events-overflow.html";

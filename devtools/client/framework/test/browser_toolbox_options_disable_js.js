@@ -3,8 +3,6 @@
 
 
 
-
-
 const TEST_URI = URL_ROOT + "browser_toolbox_options_disable_js.html";
 
 add_task(async function() {

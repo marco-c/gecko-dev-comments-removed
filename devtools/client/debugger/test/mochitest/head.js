@@ -31,8 +31,6 @@
 
 
 
-
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/shared/test/shared-head.js",
   this

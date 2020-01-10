@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 var protocol = require("devtools/shared/protocol");

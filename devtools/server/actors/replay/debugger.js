@@ -14,8 +14,6 @@
 
 
 
-
-
 "use strict";
 
 const RecordReplayControl = !isWorker && require("RecordReplayControl");

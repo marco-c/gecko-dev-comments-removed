@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const { require, loader } = ChromeUtils.import(

@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const L10N = new LocalizationHelper(

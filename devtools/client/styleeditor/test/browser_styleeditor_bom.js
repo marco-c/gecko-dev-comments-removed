@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const BOM_CSS = TEST_BASE_HTTPS + "utf-16.css";

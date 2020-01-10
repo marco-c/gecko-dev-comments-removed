@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 function testJumpToLine(ed, inputLine, expectCursor) {

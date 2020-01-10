@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const { VariablesView } = ChromeUtils.import(

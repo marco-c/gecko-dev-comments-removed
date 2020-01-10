@@ -6,8 +6,6 @@
 
 
 
-
-
 var URL = `${URL_ROOT}doc_viewsource.html`;
 var CSS_URL = `${URL_ROOT}doc_theme.css`;
 

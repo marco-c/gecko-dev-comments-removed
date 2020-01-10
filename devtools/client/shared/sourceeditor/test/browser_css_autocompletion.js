@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const CSSCompleter = require("devtools/client/shared/sourceeditor/css-autocompleter");

@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { Cc, Ci, Cr } = require("chrome");

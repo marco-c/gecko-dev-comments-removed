@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const URL1 = MAIN_DOMAIN + "navigate-first.html";

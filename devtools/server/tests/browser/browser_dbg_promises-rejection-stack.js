@@ -5,8 +5,6 @@
 
 
 
-
-
 "use strict";
 
 const TAB_URL = URL_ROOT + "doc_promise-get-rejection-stack.html";

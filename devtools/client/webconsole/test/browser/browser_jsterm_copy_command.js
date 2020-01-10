@@ -3,8 +3,6 @@
 
 
 
-
-
 "use strict";
 
 const text =

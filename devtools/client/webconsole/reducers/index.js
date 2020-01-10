@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const { autocomplete } = require("./autocomplete");

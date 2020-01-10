@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const DBG_XUL =

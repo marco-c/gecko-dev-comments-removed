@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const { SymbolActor } = require("devtools/server/actors/object/symbol");

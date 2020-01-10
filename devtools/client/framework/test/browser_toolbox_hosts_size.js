@@ -4,8 +4,6 @@
 
 
 
-
-
 const URL = "data:text/html;charset=utf8,test for host sizes";
 
 var { Toolbox } = require("devtools/client/framework/toolbox");

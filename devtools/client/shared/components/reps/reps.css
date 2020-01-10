@@ -97,7 +97,6 @@ html[dir="rtl"] .tree-node button:not(.expanded) {
 
 
 
-
 .theme-dark,
 .theme-light {
   --number-color: var(--theme-highlight-green);

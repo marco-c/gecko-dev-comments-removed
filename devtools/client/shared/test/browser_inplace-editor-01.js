@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 loadHelperScript("helper_inplace_editor.js");

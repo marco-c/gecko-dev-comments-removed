@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { gDevTools } = require("devtools/client/framework/devtools");

@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const TEST_JSON_FILE = "simple_json.json";

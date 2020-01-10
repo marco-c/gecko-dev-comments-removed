@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 exports.FETCH_PROPERTIES = "FETCH_PROPERTIES";

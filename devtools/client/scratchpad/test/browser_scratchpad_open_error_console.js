@@ -1,7 +1,6 @@
 
 
 
-
 const {
   BrowserConsoleManager,
 } = require("devtools/client/webconsole/browser-console-manager");

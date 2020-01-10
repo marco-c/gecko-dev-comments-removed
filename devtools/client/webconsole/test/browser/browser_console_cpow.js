@@ -3,8 +3,6 @@
 
 
 
-
-
 "use strict";
 
 const ObjectClient = require("devtools/shared/client/object-client");

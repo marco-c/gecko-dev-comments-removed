@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 loader.lazyRequireGetter(this, "Menu", "devtools/client/framework/menu");

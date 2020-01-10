@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { Component } = require("devtools/client/shared/vendor/react");

@@ -1,8 +1,6 @@
 
 
 
-
-
 function findNode(dbg, text) {
   for (let index = 0;; index++) {
     var elem = findElement(dbg, "scopeNode", index);

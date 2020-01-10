@@ -1,8 +1,6 @@
 
 
 
-
-
 const TEST_URL = "data:text/html,test for toolbox being ready";
 
 add_task(async function() {

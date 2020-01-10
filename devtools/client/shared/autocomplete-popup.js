@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 const EventEmitter = require("devtools/shared/event-emitter");

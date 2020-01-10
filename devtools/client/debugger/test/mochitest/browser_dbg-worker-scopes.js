@@ -5,8 +5,6 @@
 
 
 
-
-
 const { PromiseTestUtils } = ChromeUtils.import(
   "resource://testing-common/PromiseTestUtils.jsm"
 );

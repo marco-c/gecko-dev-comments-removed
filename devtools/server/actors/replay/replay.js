@@ -19,8 +19,6 @@
 
 
 
-
-
 "use strict";
 
 const CC = Components.Constructor;

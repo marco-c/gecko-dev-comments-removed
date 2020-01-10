@@ -4,8 +4,6 @@
 
 
 
-
-
 "use strict";
 
 const { PrefObserver } = require("devtools/client/shared/prefs");

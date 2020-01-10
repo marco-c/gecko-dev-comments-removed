@@ -1,8 +1,6 @@
 
 
 
-
-
 function test() {
   const { ToolSidebar } = require("devtools/client/framework/sidebar");
 

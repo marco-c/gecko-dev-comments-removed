@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { ActorPool } = require("devtools/server/actors/common");

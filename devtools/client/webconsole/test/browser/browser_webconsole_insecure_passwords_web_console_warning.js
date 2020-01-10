@@ -4,8 +4,6 @@
 
 
 
-
-
 "use strict";
 
 const INSECURE_IFRAME_URI =

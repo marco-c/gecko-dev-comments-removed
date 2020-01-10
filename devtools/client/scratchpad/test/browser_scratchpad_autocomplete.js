@@ -3,7 +3,6 @@
 
 
 
-
 const source = "0x1.";
 const completions = ["toExponential", "toFixed", "toString"];
 

@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const ALL_CHANNELS = Ci.nsITelemetry.DATASET_ALL_CHANNELS;

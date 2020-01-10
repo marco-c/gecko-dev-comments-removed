@@ -2,8 +2,6 @@
 
 
 
-
-
 function test() {
   waitForExplicitFinish();
 

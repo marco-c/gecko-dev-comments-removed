@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const Menu = require("devtools/client/framework/menu");

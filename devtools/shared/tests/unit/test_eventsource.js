@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const eventSource = require("devtools/shared/client/event-source");

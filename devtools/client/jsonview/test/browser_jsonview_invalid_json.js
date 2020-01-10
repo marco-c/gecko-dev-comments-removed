@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const TEST_JSON_URL = URL_ROOT + "invalid_json.json";

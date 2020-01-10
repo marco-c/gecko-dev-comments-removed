@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { Utils: WebConsoleUtils } = require("devtools/client/webconsole/utils");

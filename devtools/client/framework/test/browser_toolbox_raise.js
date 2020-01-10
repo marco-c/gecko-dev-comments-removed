@@ -1,8 +1,6 @@
 
 
 
-
-
 const TEST_URL = "data:text/html,test for opening toolbox in different hosts";
 
 var { Toolbox } = require("devtools/client/framework/toolbox");

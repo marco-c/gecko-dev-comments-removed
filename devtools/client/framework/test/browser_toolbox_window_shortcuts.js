@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 var Startup = Cc["@mozilla.org/devtools/startup-clh;1"].getService(

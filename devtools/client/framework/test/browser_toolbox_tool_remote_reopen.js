@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const { DebuggerServer } = require("devtools/server/debugger-server");

@@ -1,6 +1,5 @@
 
 
-
 "use strict";
 
 const TEST_URI = URL_ROOT + "doc_browser_fontinspector.html";

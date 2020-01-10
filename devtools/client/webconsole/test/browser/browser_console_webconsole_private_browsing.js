@@ -4,8 +4,6 @@
 
 
 
-
-
 "use strict";
 
 const NON_PRIVATE_MESSAGE = "This is not a private message";

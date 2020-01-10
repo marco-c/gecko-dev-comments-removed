@@ -6,8 +6,6 @@
 
 
 
-
-
 const CHROME_PAGE =
   "chrome://mochitests/content/browser/devtools/client/framework/" +
   "test/test_chrome_page.html";

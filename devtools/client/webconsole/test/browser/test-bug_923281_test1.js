@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 console.log("Sample log.");
