@@ -56,19 +56,20 @@ function test_simple_breakpoint() {
     
     await gThreadFront.resume();
     Assert.equal(lastMessage.level, "logPointError");
-    Assert.equal(lastMessage.arguments[0], "c is not defined");
+    Assert.equal(
+      lastMessage.arguments[0],
+      "[Logpoint threw]: c is not defined"
+    );
     finishClient(gClient);
   });
 
   
-  Cu.evalInSandbox(
-    "debugger;\n" + 
-    "var a = 'three';\n" + 
-      "var b = 2;\n", 
-    gDebuggee,
-    "1.8",
-    "test.js",
-    1
-  );
+  Cu.evalInSandbox("debugger;\n" + 
+                   "var a = 'three';\n" +  
+                   "var b = 2;\n", 
+                   gDebuggee,
+                   "1.8",
+                   "test.js",
+                   1);
   
 }

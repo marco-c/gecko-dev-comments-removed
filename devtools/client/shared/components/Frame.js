@@ -204,6 +204,27 @@ class Frame extends Component {
       }
     }
 
+    
+    
+    if (frame.options) {
+      let locationPrefix;
+      if (frame.options.logPoint) {
+        locationPrefix = "Logpoint @ ";
+      }
+
+      if (locationPrefix) {
+        sourceElements.push(
+          dom.span(
+            {
+              key: "locationPrefix",
+              className: "frame-link-prefix",
+            },
+            locationPrefix
+          )
+        );
+      }
+    }
+
     let displaySource = showFullSourceUrl ? unicodeLong : unicodeShort;
     if (isSourceMapped) {
       displaySource = getSourceMappedFile(displaySource);
