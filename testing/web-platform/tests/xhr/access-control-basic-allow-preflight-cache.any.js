@@ -1,21 +1,14 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Preflight cache should allow second request without preflight OPTIONS request</title>
-    <script src="/resources/testharness.js"></script>
-    <script src="/resources/testharnessreport.js"></script>
-    <script src="/common/get-host-info.sub.js"></script>
-    <script src="/common/utils.js"></script>
-  </head>
-  <body>
-    <script type="text/javascript">
+
+
+
+
     const uuid = token();
 
     async_test(function(test) {
       const xhr = new XMLHttpRequest;
       xhr.onerror = test.unreached_func("FAIL: Network error.");
       xhr.onload = test.step_func(function() {
-        // Token reset.  We can start the test now.
+        
         assert_equals(xhr.responseText, "PASS");
         firstRequest();
       });
@@ -40,6 +33,3 @@
         xhr.send();
       }
     }, "Preflight cache should allow second request");
-    </script>
-  </body>
-</html>

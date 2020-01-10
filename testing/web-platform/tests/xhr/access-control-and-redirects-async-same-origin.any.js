@@ -1,13 +1,6 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Tests that asynchronous XMLHttpRequests handle redirects according to the CORS standard.</title>
-    <script src="/resources/testharness.js"></script>
-    <script src="/resources/testharnessreport.js"></script>
-    <script src="/common/get-host-info.sub.js"></script>
-  </head>
-  <body>
-    <script>
+
+
+
     function runTest(test, path, credentials, expectSuccess) {
       const xhr = new XMLHttpRequest();
       xhr.withCredentials = credentials;
@@ -29,43 +22,40 @@
     const succeeds = true;
     const fails = false;
 
-    // Test simple same origin requests that receive cross origin redirects.
+    
 
-    // The redirect response passes the access check.
+    
     async_test(t => {
       runTest(t, "/xhr/resources/access-control-basic-allow-star.py",
           withoutCredentials, succeeds)
     }, "Request without credentials is redirected to a cross-origin response with Access-Control-Allow-Origin=* (with star)");
 
-    // The redirect response fails the access check because credentials were sent.
+    
     async_test(t => {
       runTest(t, "/xhr/resources/access-control-basic-allow-star.py",
           withCredentials, fails)
     }, "Request with credentials is redirected to a cross-origin response with Access-Control-Allow-Origin=* (with star)");
 
-    // The redirect response passes the access check.
+    
     async_test(t => {
       runTest(t, "/xhr/resources/access-control-basic-allow.py",
           withoutCredentials, succeeds)
     }, "Request without credentials is redirected to a cross-origin response with a specific Access-Control-Allow-Origin");
 
-    // The redirect response passes the access check.
+    
     async_test(t => {
       runTest(t, "/xhr/resources/access-control-basic-allow.py",
           withCredentials, succeeds)
     }, "Request with credentials is redirected to a cross-origin response with a specific Access-Control-Allow-Origin");
 
-    // forbidding credentials. The redirect response passes the access check.
+    
     async_test(t => {
       runTest(t, "/xhr/resources/access-control-basic-allow-no-credentials.py",
           withoutCredentials, succeeds)
     }, "Request without credentials is redirected to a cross-origin response with a specific Access-Control-Allow-Origin (no credentials)");
 
-    // forbidding credentials. The redirect response fails the access check.
+    
     async_test(t => {
       runTest(t, "/xhr/resources/access-control-basic-allow-no-credentials.py",
           withCredentials, fails)
     }, "Request with credentials is redirected to a cross-origin response with a specific Access-Control-Allow-Origin (no credentials)");
-    </script>
-  </body>
-</html>

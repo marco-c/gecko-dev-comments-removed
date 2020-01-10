@@ -1,22 +1,15 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Preflight cache should be invalidated on timeout</title>
-    <meta name="timeout" content="long">
-    <script src="/resources/testharness.js"></script>
-    <script src="/resources/testharnessreport.js"></script>
-    <script src="/common/get-host-info.sub.js"></script>
-    <script src="/common/utils.js"></script>
-  </head>
-  <body>
-    <script type="text/javascript">
+
+
+
+
+
     const uuid = token();
     let xhr = new XMLHttpRequest;
 
     async_test(function(test) {
       xhr.onerror = test.unreached_func("FAIL: Network error.");
       xhr.onload = test.step_func(function() {
-        // Token reset.  We can start the test now.
+        
         assert_equals(xhr.responseText, "PASS");
         firstRequest();
       });
@@ -27,7 +20,7 @@
       function firstRequest() {
         xhr.onload = test.step_func(function() {
           assert_equals(xhr.responseText, "PASS: First PUT request.");
-          step_timeout(secondRequest, 3000); // 3 seconds
+          step_timeout(secondRequest, 3000); 
         });
         xhr.open("PUT", get_host_info().HTTP_REMOTE_ORIGIN + "/xhr/resources/access-control-basic-preflight-cache-timeout.py?token=" + uuid, true);
         xhr.send();
@@ -42,6 +35,3 @@
         xhr.send();
       }
     }, "Preflight cache should be invalidated on timeout");
-    </script>
-  </body>
-</html>
