@@ -179,6 +179,8 @@ Maybe<nsStyleLinkElement::SheetInfo> SVGStyleElement::GetStyleSheetInfo() {
   nsAutoString title;
   nsAutoString media;
   GetTitleAndMediaForElement(*this, title, media);
+  nsCOMPtr<nsIReferrerInfo> referrerInfo = new ReferrerInfo();
+  referrerInfo->InitWithNode(this);
 
   return Some(SheetInfo{
       *OwnerDoc(),
@@ -187,9 +189,9 @@ Maybe<nsStyleLinkElement::SheetInfo> SVGStyleElement::GetStyleSheetInfo() {
       
       
       nullptr,
-      net::ReferrerPolicy::RP_Unset,
       
       
+      referrerInfo.forget(),
       AttrValueToCORSMode(GetParsedAttr(nsGkAtoms::crossorigin)),
       title,
       media,

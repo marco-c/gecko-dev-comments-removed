@@ -11,6 +11,7 @@
 #include "mozilla/dom/SVGAnimateMotionElement.h"
 #include "mozilla/dom/SVGPathElement.h"
 #include "nsContentUtils.h"
+#include "nsIReferrerInfo.h"
 #include "mozilla/dom/SVGMPathElementBinding.h"
 #include "nsIURI.h"
 
@@ -203,10 +204,10 @@ void SVGMPathElement::UpdateHrefTarget(nsIContent* aParent,
     
     
     
-    
-    mPathTracker.ResetToURIFragmentID(aParent, targetURI,
-                                      OwnerDoc()->GetDocumentURI(),
-                                      OwnerDoc()->GetReferrerPolicy());
+    nsCOMPtr<nsIReferrerInfo> referrerInfo =
+        ReferrerInfo::CreateForSVGResources(OwnerDoc());
+
+    mPathTracker.ResetToURIFragmentID(aParent, targetURI, referrerInfo);
   } else {
     
     

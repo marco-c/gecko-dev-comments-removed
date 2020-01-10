@@ -1796,8 +1796,11 @@ nsresult nsXULPrototypeElement::SetAttrAt(uint32_t aPos,
     
     
     
-    RefPtr<URLExtraData> data = new URLExtraData(
-        aDocumentURI, aDocumentURI, principal, mozilla::net::RP_Unset);
+    nsCOMPtr<nsIReferrerInfo> referrerInfo =
+        new mozilla::dom::ReferrerInfo(aDocumentURI, mozilla::net::RP_Unset);
+
+    RefPtr<URLExtraData> data =
+        new URLExtraData(aDocumentURI, referrerInfo, principal);
     RefPtr<DeclarationBlock> declaration = DeclarationBlock::FromCssText(
         aValue, data, eCompatibility_FullStandards, nullptr);
     if (declaration) {

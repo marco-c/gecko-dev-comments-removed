@@ -2200,6 +2200,32 @@ bool nsContentUtils::ContentIsHostIncludingDescendantOf(
   return false;
 }
 
+bool nsContentUtils::ContentIsShadowIncludingDescendantOf(
+    const nsINode* aPossibleDescendant, const nsINode* aPossibleAncestor) {
+  MOZ_ASSERT(aPossibleDescendant, "The possible descendant is null!");
+  MOZ_ASSERT(aPossibleAncestor, "The possible ancestor is null!");
+
+  if (aPossibleAncestor == aPossibleDescendant->GetComposedDoc()) {
+    return true;
+  }
+
+  do {
+    if (aPossibleDescendant == aPossibleAncestor) {
+      return true;
+    }
+
+    if (aPossibleDescendant->NodeType() == nsINode::DOCUMENT_FRAGMENT_NODE) {
+      ShadowRoot* shadowRoot =
+          ShadowRoot::FromNode(const_cast<nsINode*>(aPossibleDescendant));
+      aPossibleDescendant = shadowRoot ? shadowRoot->GetHost() : nullptr;
+    } else {
+      aPossibleDescendant = aPossibleDescendant->GetParentNode();
+    }
+  } while (aPossibleDescendant);
+
+  return false;
+}
+
 
 bool nsContentUtils::ContentIsCrossDocDescendantOf(nsINode* aPossibleDescendant,
                                                    nsINode* aPossibleAncestor) {
@@ -2259,7 +2285,7 @@ nsINode* nsContentUtils::Retarget(nsINode* aTargetA, nsINode* aTargetB) {
     }
 
     
-    if (aTargetB->IsShadowIncludingInclusiveDescendantOf(root)) {
+    if (nsContentUtils::ContentIsShadowIncludingDescendantOf(aTargetB, root)) {
       
       return aTargetA;
     }
@@ -3341,10 +3367,10 @@ int32_t nsContentUtils::CORSModeToLoadImageFlags(mozilla::CORSMode aMode) {
 nsresult nsContentUtils::LoadImage(
     nsIURI* aURI, nsINode* aContext, Document* aLoadingDocument,
     nsIPrincipal* aLoadingPrincipal, uint64_t aRequestContextID,
-    nsIURI* aReferrer, net::ReferrerPolicy aReferrerPolicy,
-    imgINotificationObserver* aObserver, int32_t aLoadFlags,
-    const nsAString& initiatorType, imgRequestProxy** aRequest,
-    uint32_t aContentPolicyType, bool aUseUrgentStartForChannel) {
+    nsIReferrerInfo* aReferrerInfo, imgINotificationObserver* aObserver,
+    int32_t aLoadFlags, const nsAString& initiatorType,
+    imgRequestProxy** aRequest, uint32_t aContentPolicyType,
+    bool aUseUrgentStartForChannel) {
   MOZ_ASSERT(aURI, "Must have a URI");
   MOZ_ASSERT(aContext, "Must have a context");
   MOZ_ASSERT(aLoadingDocument, "Must have a document");
@@ -3366,10 +3392,13 @@ nsresult nsContentUtils::LoadImage(
 
   
   
+  nsCOMPtr<nsIURI> referrer = aReferrerInfo->GetOriginalReferrer();
+  auto referrerPolicy = static_cast<mozilla::net::ReferrerPolicy>(
+      aReferrerInfo->GetReferrerPolicy());
   return imgLoader->LoadImage(aURI,               
                               documentURI,        
-                              aReferrer,          
-                              aReferrerPolicy,    
+                              referrer,           
+                              referrerPolicy,     
                               aLoadingPrincipal,  
                               aRequestContextID,  
                               loadGroup,          

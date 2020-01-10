@@ -748,12 +748,19 @@ nsresult nsContentSink::ProcessStyleLinkFromHeader(
     return NS_OK;
   }
 
+  
+  
+  net::ReferrerPolicy policy =
+      net::AttributeReferrerPolicyFromString(aReferrerPolicy);
+  nsCOMPtr<nsIReferrerInfo> referrerInfo =
+      ReferrerInfo::CreateFromDocumentAndPolicyOverride(mDocument, policy);
+
   Loader::SheetInfo info{
       *mDocument,
       nullptr,
       url.forget(),
       nullptr,
-      net::AttributeReferrerPolicyFromString(aReferrerPolicy),
+      referrerInfo.forget(),
       CORS_NONE,
       aTitle,
       aMedia,

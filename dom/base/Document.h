@@ -320,8 +320,8 @@ class ExternalResourceMap {
 
 
 
-  Document* RequestResource(nsIURI* aURI, nsIURI* aReferrer,
-                            uint32_t aReferrerPolicy, nsINode* aRequestingNode,
+  Document* RequestResource(nsIURI* aURI, nsIReferrerInfo* aReferrerInfo,
+                            nsINode* aRequestingNode,
                             Document* aDisplayDocument,
                             ExternalResourceLoad** aPendingLoad);
 
@@ -378,8 +378,8 @@ class ExternalResourceMap {
 
 
 
-    nsresult StartLoad(nsIURI* aURI, nsIURI* aReferrer,
-                       uint32_t aReferrerPolicy, nsINode* aRequestingNode);
+    nsresult StartLoad(nsIURI* aURI, nsIReferrerInfo* aReferrerInfo,
+                       nsINode* aRequestingNode);
     
 
 
@@ -2806,9 +2806,8 @@ class Document : public nsINode,
 
 
 
-
-  Document* RequestExternalResource(nsIURI* aURI, nsIURI* aReferrer,
-                                    uint32_t aReferrerPolicy,
+  Document* RequestExternalResource(nsIURI* aURI,
+                                    nsIReferrerInfo* aReferrerInfo,
                                     nsINode* aRequestingNode,
                                     ExternalResourceLoad** aPendingLoad);
 
@@ -4408,6 +4407,7 @@ class Document : public nsINode,
 
   
   RefPtr<URLExtraData> mCachedURLData;
+  nsCOMPtr<nsIReferrerInfo> mCachedReferrerInfo;
 
   nsWeakPtr mDocumentLoadGroup;
 

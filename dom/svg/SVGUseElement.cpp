@@ -244,8 +244,8 @@ bool SVGUseElement::IsCyclicReferenceTo(const Element& aTarget) const {
   if (mOriginal && mOriginal->IsCyclicReferenceTo(aTarget)) {
     return true;
   }
-  for (nsINode* parent = GetParentOrShadowHostNode(); parent;
-       parent = parent->GetParentOrShadowHostNode()) {
+  for (nsINode* parent = GetParentOrHostNode(); parent;
+       parent = parent->GetParentOrHostNode()) {
     if (parent == &aTarget) {
       return true;
     }
@@ -338,9 +338,11 @@ void SVGUseElement::UpdateShadowTree() {
 
   
   
-  mContentURLData = new URLExtraData(
-      baseURI.forget(), do_AddRef(OwnerDoc()->GetDocumentURI()),
-      do_AddRef(NodePrincipal()), mozilla::net::RP_Unset);
+  nsCOMPtr<nsIReferrerInfo> referrerInfo = new mozilla::dom::ReferrerInfo();
+  referrerInfo->InitWithNode(this);
+
+  mContentURLData = new URLExtraData(baseURI.forget(), referrerInfo.forget(),
+                                     do_AddRef(NodePrincipal()));
 
   targetElement->AddMutationObserver(this);
 }
@@ -422,10 +424,10 @@ void SVGUseElement::LookupHref() {
   nsCOMPtr<nsIURI> targetURI;
   nsContentUtils::NewURIWithDocumentCharset(getter_AddRefs(targetURI), href,
                                             GetComposedDoc(), baseURI);
-  
-  mReferencedElementTracker.ResetToURIFragmentID(
-      this, targetURI, OwnerDoc()->GetDocumentURI(),
-      OwnerDoc()->GetReferrerPolicy());
+  nsCOMPtr<nsIReferrerInfo> referrerInfo =
+      ReferrerInfo::CreateForSVGResources(OwnerDoc());
+
+  mReferencedElementTracker.ResetToURIFragmentID(this, targetURI, referrerInfo);
 }
 
 void SVGUseElement::TriggerReclone() {

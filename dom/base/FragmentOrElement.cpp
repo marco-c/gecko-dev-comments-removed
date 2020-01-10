@@ -357,9 +357,10 @@ already_AddRefed<URLExtraData> nsIContent::GetURLDataForStyleAttr(
   }
   if (aSubjectPrincipal && aSubjectPrincipal != NodePrincipal()) {
     
-    return MakeAndAddRef<URLExtraData>(
-        OwnerDoc()->GetDocBaseURI(), OwnerDoc()->GetDocumentURI(),
-        aSubjectPrincipal, OwnerDoc()->GetReferrerPolicy());
+    nsCOMPtr<nsIReferrerInfo> referrerInfo =
+        ReferrerInfo::CreateForInternalCSSResources(OwnerDoc());
+    return MakeAndAddRef<URLExtraData>(OwnerDoc()->GetDocBaseURI(),
+                                       referrerInfo, aSubjectPrincipal);
   }
   
   
@@ -759,7 +760,7 @@ static nsINode* FindChromeAccessOnlySubtreeOwner(nsINode* aNode) {
     aNode = aNode->GetParentNode();
   }
 
-  return aNode ? aNode->GetParentOrShadowHostNode() : nullptr;
+  return aNode ? aNode->GetParentOrHostNode() : nullptr;
 }
 
 already_AddRefed<nsINode> FindChromeAccessOnlySubtreeOwner(
@@ -990,8 +991,8 @@ void nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
           
           
           if (targetInKnownToBeHandledScope &&
-              IsShadowIncludingInclusiveDescendantOf(
-                  targetInKnownToBeHandledScope->SubtreeRoot())) {
+              nsContentUtils::ContentIsShadowIncludingDescendantOf(
+                  this, targetInKnownToBeHandledScope->SubtreeRoot())) {
             
             
             

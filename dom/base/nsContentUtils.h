@@ -109,6 +109,7 @@ class nsAttrValue;
 class nsITransferable;
 class nsPIWindowRoot;
 class nsIWindowProvider;
+class nsIReferrerInfo;
 
 struct JSRuntime;
 
@@ -342,6 +343,13 @@ class nsContentUtils {
 
 
   static bool ContentIsHostIncludingDescendantOf(
+      const nsINode* aPossibleDescendant, const nsINode* aPossibleAncestor);
+
+  
+
+
+
+  static bool ContentIsShadowIncludingDescendantOf(
       const nsINode* aPossibleDescendant, const nsINode* aPossibleAncestor);
 
   
@@ -869,14 +877,12 @@ class nsContentUtils {
 
 
 
-
-
   static nsresult LoadImage(
       nsIURI* aURI, nsINode* aContext, Document* aLoadingDocument,
       nsIPrincipal* aLoadingPrincipal, uint64_t aRequestContextID,
-      nsIURI* aReferrer, mozilla::net::ReferrerPolicy aReferrerPolicy,
-      imgINotificationObserver* aObserver, int32_t aLoadFlags,
-      const nsAString& initiatorType, imgRequestProxy** aRequest,
+      nsIReferrerInfo* aReferrerInfo, imgINotificationObserver* aObserver,
+      int32_t aLoadFlags, const nsAString& initiatorType,
+      imgRequestProxy** aRequest,
       uint32_t aContentPolicyType = nsIContentPolicy::TYPE_INTERNAL_IMAGE,
       bool aUseUrgentStartForChannel = false);
 

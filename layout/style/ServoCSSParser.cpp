@@ -69,10 +69,12 @@ already_AddRefed<URLExtraData> ServoCSSParser::GetURLExtraData(
     Document* aDocument) {
   MOZ_ASSERT(aDocument);
 
+  nsCOMPtr<nsIReferrerInfo> referrerInfo =
+      ReferrerInfo::CreateForInternalCSSResources(aDocument);
+
   
   RefPtr<URLExtraData> url = new URLExtraData(
-      aDocument->GetDocumentURI(), aDocument->GetDocumentURI(),
-      aDocument->NodePrincipal(), aDocument->GetReferrerPolicy());
+      aDocument->GetDocumentURI(), referrerInfo, aDocument->NodePrincipal());
   return url.forget();
 }
 

@@ -480,8 +480,10 @@ already_AddRefed<URLExtraData> FontFace::GetURLExtraData() const {
 
   
   
-  RefPtr<URLExtraData> url =
-      new URLExtraData(base, docURI, principal, net::RP_Unset);
+  nsCOMPtr<nsIReferrerInfo> referrerInfo =
+      new mozilla::dom::ReferrerInfo(docURI, net::RP_Unset);
+
+  RefPtr<URLExtraData> url = new URLExtraData(base, referrerInfo, principal);
   return url.forget();
 }
 

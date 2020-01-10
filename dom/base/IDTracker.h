@@ -15,6 +15,7 @@
 #include "nsThreadUtils.h"
 
 class nsIURI;
+class nsIReferrerInfo;
 
 namespace mozilla {
 namespace dom {
@@ -62,9 +63,8 @@ class IDTracker {
 
 
 
-
-  void ResetToURIFragmentID(nsIContent* aFrom, nsIURI* aURI, nsIURI* aReferrer,
-                            uint32_t aReferrerPolicy, bool aWatch = true,
+  void ResetToURIFragmentID(nsIContent* aFrom, nsIURI* aURI,
+                            nsIReferrerInfo* aReferrerInfo, bool aWatch = true,
                             bool aReferenceImage = false);
 
   
