@@ -43,7 +43,7 @@ var Normandy = {
   studyPrefsChanged: {},
   rolloutPrefsChanged: {},
 
-  async init() {
+  async init({ runAsync = true } = {}) {
     
     await NormandyMigrations.applyAll();
     this.rolloutPrefsChanged = this.applyStartupPrefs(
@@ -53,8 +53,16 @@ var Normandy = {
       STARTUP_EXPERIMENT_PREFS_BRANCH
     );
 
-    
-    Services.obs.addObserver(this, UI_AVAILABLE_NOTIFICATION);
+    if (runAsync) {
+      Services.obs.addObserver(this, UI_AVAILABLE_NOTIFICATION);
+    } else {
+      
+      try {
+        Services.obs.removeObserver(this, UI_AVAILABLE_NOTIFICATION);
+      } catch (e) {}
+
+      await this.finishInit();
+    }
   },
 
   observe(subject, topic, data) {
