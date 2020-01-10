@@ -863,6 +863,13 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
+
+
+  SideBits mFixedPosSidesForInputBlock;
+  
+
+
+
   int32_t mRetainedTouchIdentifier;
   
 
