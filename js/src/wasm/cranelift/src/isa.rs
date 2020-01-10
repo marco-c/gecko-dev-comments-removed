@@ -21,6 +21,8 @@
 
 
 
+use std::env;
+
 use cranelift_codegen::isa;
 use cranelift_codegen::settings::{self, Configurable};
 
@@ -39,10 +41,60 @@ impl From<settings::SetError> for BasicError {
     }
 }
 
+struct EnvVariableFlags<'env> {
+    opt_level: Option<&'env str>,
+    jump_tables: Option<bool>,
+}
+
+#[inline]
+fn str_to_bool(value: &str) -> bool {
+    value == "true" || value == "on" || value == "yes" || value == "1"
+}
+
+impl<'env> EnvVariableFlags<'env> {
+    fn parse(input: &'env Result<String, env::VarError>) -> Option<Self> {
+        let input = match input {
+            Ok(input) => input.as_str(),
+            Err(_) => return None,
+        };
+
+        let mut flags = EnvVariableFlags {
+            opt_level: None,
+            jump_tables: None,
+        };
+
+        for entry in input.split(",") {
+            if let Some(equals_index) = entry.find("=") {
+                let (key, value) = entry.split_at(equals_index);
+
+                
+                let value = &value[1..];
+
+                match key {
+                    "opt_level" => {
+                        
+                        flags.opt_level = Some(value);
+                    }
+                    "jump_tables" => {
+                        flags.jump_tables = Some(str_to_bool(value));
+                    }
+                    _ => {
+                        warn!("Unknown setting with key {}", key);
+                    }
+                }
+            } else {
+                warn!("Missing = in pair: {}", entry);
+            }
+        }
+
+        Some(flags)
+    }
+}
 
 
 
-fn make_shared_flags() -> settings::SetResult<settings::Flags> {
+
+fn make_shared_flags(env_flags: &Option<EnvVariableFlags>) -> settings::SetResult<settings::Flags> {
     let mut sb = settings::builder();
 
     
@@ -71,10 +123,23 @@ fn make_shared_flags() -> settings::SetResult<settings::Flags> {
     sb.set("probestack_enabled", "false")?;
 
     
-    sb.set("opt_level", "best")?;
+    let opt_level = match env_flags {
+        Some(env_flags) => env_flags.opt_level,
+        None => None,
+    }
+    .unwrap_or("best");
+    sb.set("opt_level", opt_level)?;
 
     
-    sb.set("jump_tables_enabled", "true")?;
+    let jump_tables_enabled = match env_flags {
+        Some(env_flags) => env_flags.jump_tables,
+        None => None,
+    }
+    .unwrap_or(true);
+    sb.set(
+        "jump_tables_enabled",
+        if jump_tables_enabled { "true" } else { "false" },
+    )?;
 
     Ok(settings::Flags::new(sb))
 }
@@ -126,7 +191,11 @@ fn make_isa_specific(_env: &StaticEnvironment) -> DashResult<isa::Builder> {
 
 pub fn make_isa(env: &StaticEnvironment) -> DashResult<Box<dyn isa::TargetIsa>> {
     
-    let shared_flags = make_shared_flags().map_err(BasicError::from)?;
+    let env_flags_str = std::env::var("CRANELIFT_FLAGS");
+    let env_flags = EnvVariableFlags::parse(&env_flags_str);
+
+    
+    let shared_flags = make_shared_flags(&env_flags).map_err(BasicError::from)?;
     let ib = make_isa_specific(env)?;
     Ok(ib.finish(shared_flags))
 }
