@@ -33,6 +33,11 @@ struct AspectRatio {
     return NSCoordSaturatingNonnegativeMultiply(aCoord, mRatio);
   }
 
+  float ApplyToFloat(float aFloat) const {
+    MOZ_DIAGNOSTIC_ASSERT(*this);
+    return mRatio * aFloat;
+  }
+
   
   MOZ_MUST_USE AspectRatio Inverted() const {
     return *this ? AspectRatio(1.0f / mRatio) : *this;

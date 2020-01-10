@@ -339,10 +339,44 @@ nsSize nsImageRenderer::ComputeConstrainedSize(
     return aConstrainingSize;
   }
 
-  auto constrainingRatio =
-      AspectRatio::FromSize(aConstrainingSize.width, aConstrainingSize.height);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const float constraintWidth = float(aConstrainingSize.width);
+  const float hypotheticalWidth =
+      aIntrinsicRatio.ApplyToFloat(aConstrainingSize.height);
+
   nsSize size;
-  if ((aFitType == CONTAIN) == (constrainingRatio < aIntrinsicRatio)) {
+  if ((aFitType == CONTAIN) == (constraintWidth < hypotheticalWidth)) {
     size.width = aConstrainingSize.width;
     size.height = aIntrinsicRatio.Inverted().ApplyTo(aConstrainingSize.width);
     
