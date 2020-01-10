@@ -12,6 +12,7 @@
 #include "lowkeyi.h"
 #include "secoid.h"
 #include "secerr.h"
+#include "pkcs11i.h"
 
 
 
@@ -624,6 +625,10 @@ sftk_startup_tests(void)
                         (PRFuncPtr)&sftk_fips_RSA_PowerUpSelfTest)) {
         
 
+        return;
+    }
+    rv = sftk_fips_IKE_PowerUpSelfTests();
+    if (rv != SECSuccess) {
         return;
     }
     sftk_self_tests_success = PR_TRUE;

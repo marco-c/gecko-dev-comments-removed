@@ -3,12 +3,19 @@
 
 
 import * as try_syntax from "./try_syntax";
+import * as queue from "./queue";
 import extend from "./extend";
 
 const main = async () => {
   
   if (process.env.TC_PROJECT == "nss-try") {
     await try_syntax.initFilter();
+  } else {
+    
+    
+    queue.filter(task => {
+      return task.symbol != "coverity";
+    });
   }
 
   

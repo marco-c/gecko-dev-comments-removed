@@ -99,39 +99,7 @@ sftk_Space(void *data, PRBool freeit)
 
 
 
-static CK_RV
-sftk_MapCryptError(int error)
-{
-    switch (error) {
-        case SEC_ERROR_INVALID_ARGS:
-        case SEC_ERROR_BAD_DATA: 
-            return CKR_ARGUMENTS_BAD;
-        case SEC_ERROR_INPUT_LEN:
-            return CKR_DATA_LEN_RANGE;
-        case SEC_ERROR_OUTPUT_LEN:
-            return CKR_BUFFER_TOO_SMALL;
-        case SEC_ERROR_LIBRARY_FAILURE:
-            return CKR_GENERAL_ERROR;
-        case SEC_ERROR_NO_MEMORY:
-            return CKR_HOST_MEMORY;
-        case SEC_ERROR_BAD_SIGNATURE:
-            return CKR_SIGNATURE_INVALID;
-        case SEC_ERROR_INVALID_KEY:
-            return CKR_KEY_SIZE_RANGE;
-        case SEC_ERROR_BAD_KEY:        
-            return CKR_KEY_SIZE_RANGE; 
-        case SEC_ERROR_UNSUPPORTED_EC_POINT_FORM:
-            return CKR_TEMPLATE_INCONSISTENT;
-        case SEC_ERROR_UNSUPPORTED_KEYALG:
-            return CKR_MECHANISM_INVALID;
-        case SEC_ERROR_UNSUPPORTED_ELLIPTIC_CURVE:
-            return CKR_DOMAIN_PARAMS_INVALID;
-        
-        case SEC_ERROR_NEED_RANDOM:
-            return CKR_FUNCTION_FAILED;
-    }
-    return CKR_DEVICE_ERROR;
-}
+
 
 
 static CK_RV
@@ -2162,9 +2130,12 @@ sftk_InitCBCMac(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism,
     CK_RC5_MAC_GENERAL_PARAMS *rc5_mac;
 #endif
     unsigned char ivBlock[SFTK_MAX_BLOCK_SIZE];
+    unsigned char k2[SFTK_MAX_BLOCK_SIZE];
+    unsigned char k3[SFTK_MAX_BLOCK_SIZE];
     SFTKSessionContext *context;
     CK_RV crv;
     unsigned int blockSize;
+    PRBool isXCBC = PR_FALSE;
 
     switch (pMechanism->mechanism) {
         case CKM_RC2_MAC_GENERAL:
@@ -2268,6 +2239,26 @@ sftk_InitCBCMac(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism,
             cbc_mechanism.pParameter = &ivBlock;
             cbc_mechanism.ulParameterLen = blockSize;
             break;
+        case CKM_AES_XCBC_MAC_96:
+        case CKM_AES_XCBC_MAC:
+            
+
+            mac_bytes = pMechanism->mechanism == CKM_AES_XCBC_MAC_96 ? 12 : 16;
+            blockSize = 16;
+            PORT_Memset(ivBlock, 0, blockSize);
+            cbc_mechanism.mechanism = CKM_AES_CBC;
+            cbc_mechanism.pParameter = &ivBlock;
+            cbc_mechanism.ulParameterLen = blockSize;
+            
+            isXCBC = PR_TRUE;
+            
+
+
+            crv = sftk_aes_xcbc_new_keys(hSession, hKey, &hKey, k2, k3);
+            if (crv != CKR_OK) {
+                return crv;
+            }
+            break;
         default:
             return CKR_FUNCTION_NOT_SUPPORTED;
     }
@@ -2277,24 +2268,43 @@ sftk_InitCBCMac(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism,
     if (mac_bytes == SFTK_INVALID_MAC_SIZE)
         mac_bytes = blockSize >> 1;
     else {
-        if (mac_bytes > blockSize)
-            return CKR_MECHANISM_PARAM_INVALID;
+        if (mac_bytes > blockSize) {
+            crv = CKR_MECHANISM_PARAM_INVALID;
+            goto fail;
+        }
     }
 
     crv = sftk_CryptInit(hSession, &cbc_mechanism, hKey,
                          CKA_ENCRYPT, 
                          keyUsage, contextType, PR_TRUE);
     if (crv != CKR_OK)
-        return crv;
+        goto fail;
     crv = sftk_GetContext(hSession, &context, contextType, PR_TRUE, NULL);
 
     
     PORT_Assert(crv == CKR_OK);
     if (crv != CKR_OK)
-        return crv;
+        goto fail;
     context->blockSize = blockSize;
     context->macSize = mac_bytes;
+    context->isXCBC = isXCBC;
+    if (isXCBC) {
+        
+        PORT_Memcpy(context->k2, k2, blockSize);
+        PORT_Memcpy(context->k3, k3, blockSize);
+        PORT_Memset(k2, 0, blockSize);
+        PORT_Memset(k3, 0, blockSize);
+        
+        NSC_DestroyObject(hSession, hKey);
+    }
     return CKR_OK;
+fail:
+    if (isXCBC) {
+        PORT_Memset(k2, 0, blockSize);
+        PORT_Memset(k3, 0, blockSize);
+        NSC_DestroyObject(hSession, hKey); 
+    }
+    return crv;
 }
 
 
@@ -2910,6 +2920,13 @@ sftk_MACFinal(SFTKSessionContext *ctx)
 {
     unsigned int padLen = ctx->padDataLength;
     
+    if (ctx->isXCBC) {
+        CK_RV crv = sftk_xcbc_mac_pad(ctx->padBuf, padLen, ctx->blockSize,
+                                      ctx->k2, ctx->k3);
+        if (crv != CKR_OK)
+            return crv;
+        return sftk_MACBlock(ctx, ctx->padBuf);
+    }
     if (padLen) {
         
         PORT_Memset(ctx->padBuf + padLen, 0, ctx->blockSize - padLen);
@@ -2948,7 +2965,7 @@ sftk_MACUpdate(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pPart,
             blkSize - context->padDataLength;
 
         
-        if (ulPartLen < minInput) {
+        if (ulPartLen <= minInput) {
             PORT_Memcpy(residual, pPart, ulPartLen);
             context->padDataLength += ulPartLen;
             goto cleanup;
@@ -2962,7 +2979,7 @@ sftk_MACUpdate(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pPart,
                 goto terminate;
         }
         
-        while (ulPartLen >= blkSize) {
+        while (ulPartLen > blkSize) {
             if (CKR_OK != (crv = sftk_MACBlock(context, pPart)))
                 goto terminate;
             ulPartLen -= blkSize;
@@ -6566,6 +6583,10 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
             extractValue = PR_FALSE;
             classType = CKO_PRIVATE_KEY;
             break;
+        case CKM_NSS_PUB_FROM_PRIV:
+            extractValue = PR_FALSE;
+            classType = CKO_PUBLIC_KEY;
+            break;
         case CKM_NSS_JPAKE_FINAL_SHA1:   
         case CKM_NSS_JPAKE_FINAL_SHA256: 
         case CKM_NSS_JPAKE_FINAL_SHA384: 
@@ -6607,6 +6628,73 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
     }
 
     switch (mechanism) {
+        
+
+        case CKM_NSS_PUB_FROM_PRIV: {
+            NSSLOWKEYPrivateKey *privKey;
+            NSSLOWKEYPublicKey *pubKey;
+            int error;
+
+            crv = sftk_GetULongAttribute(sourceKey, CKA_KEY_TYPE, &keyType);
+            if (crv != CKR_OK) {
+                break;
+            }
+
+            
+
+            privKey = sftk_GetPrivKey(sourceKey, keyType, &crv);
+            if (privKey == NULL) {
+                break;
+            }
+            pubKey = nsslowkey_ConvertToPublicKey(privKey);
+            if (pubKey == NULL) {
+                error = PORT_GetError();
+                crv = sftk_MapCryptError(error);
+                break;
+            }
+            crv = sftk_PutPubKey(key, sourceKey, keyType, pubKey);
+            nsslowkey_DestroyPublicKey(pubKey);
+            break;
+        }
+        case CKM_NSS_IKE_PRF_DERIVE:
+            if (pMechanism->ulParameterLen !=
+                sizeof(CK_NSS_IKE_PRF_DERIVE_PARAMS)) {
+                crv = CKR_MECHANISM_PARAM_INVALID;
+                break;
+            }
+            crv = sftk_ike_prf(hSession, att,
+                               (CK_NSS_IKE_PRF_DERIVE_PARAMS *)pMechanism->pParameter, key);
+            break;
+        case CKM_NSS_IKE1_PRF_DERIVE:
+            if (pMechanism->ulParameterLen !=
+                sizeof(CK_NSS_IKE1_PRF_DERIVE_PARAMS)) {
+                crv = CKR_MECHANISM_PARAM_INVALID;
+                break;
+            }
+            crv = sftk_ike1_prf(hSession, att,
+                                (CK_NSS_IKE1_PRF_DERIVE_PARAMS *)pMechanism->pParameter,
+                                key, keySize);
+            break;
+        case CKM_NSS_IKE1_APP_B_PRF_DERIVE:
+            if (pMechanism->ulParameterLen !=
+                sizeof(CK_MECHANISM_TYPE)) {
+                crv = CKR_MECHANISM_PARAM_INVALID;
+                break;
+            }
+            crv = sftk_ike1_appendix_b_prf(hSession, att,
+                                           (CK_MECHANISM_TYPE *)pMechanism->pParameter,
+                                           key, keySize);
+            break;
+        case CKM_NSS_IKE_PRF_PLUS_DERIVE:
+            if (pMechanism->ulParameterLen !=
+                sizeof(CK_NSS_IKE_PRF_PLUS_DERIVE_PARAMS)) {
+                crv = CKR_MECHANISM_PARAM_INVALID;
+                break;
+            }
+            crv = sftk_ike_prf_plus(hSession, att,
+                                    (CK_NSS_IKE_PRF_PLUS_DERIVE_PARAMS *)pMechanism->pParameter,
+                                    key, keySize);
+            break;
         
 
 

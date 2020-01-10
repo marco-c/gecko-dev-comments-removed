@@ -233,6 +233,14 @@
 #define CKM_NSS_CHACHA20_CTR (CKM_NSS + 33)
 
 
+#define CKM_NSS_IKE_PRF_PLUS_DERIVE (CKM_NSS + 34)
+#define CKM_NSS_IKE_PRF_DERIVE (CKM_NSS + 35)
+#define CKM_NSS_IKE1_PRF_DERIVE (CKM_NSS + 36)
+#define CKM_NSS_IKE1_APP_B_PRF_DERIVE (CKM_NSS + 37)
+
+#define CKM_NSS_PUB_FROM_PRIV (CKM_NSS + 40)
+
+
 
 
 
@@ -342,6 +350,72 @@ typedef struct CK_NSS_HKDFParams {
     CK_BYTE_PTR pInfo;
     CK_ULONG ulInfoLen;
 } CK_NSS_HKDFParams;
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct CK_NSS_IKE_PRF_PLUS_DERIVE_PARAMS {
+    CK_MECHANISM_TYPE prfMechanism;
+    CK_BBOOL bHasSeedKey;
+    CK_OBJECT_HANDLE hSeedKey;
+    CK_BYTE_PTR pSeedData;
+    CK_ULONG ulSeedDataLen;
+} CK_NSS_IKE_PRF_PLUS_DERIVE_PARAMS;
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct CK_NSS_IKE_PRF_DERIVE_PARAMS {
+    CK_MECHANISM_TYPE prfMechanism;
+    CK_BBOOL bDataAsKey;
+    CK_BBOOL bRekey;
+    CK_BYTE_PTR pNi;
+    CK_ULONG ulNiLen;
+    CK_BYTE_PTR pNr;
+    CK_ULONG ulNrLen;
+    CK_OBJECT_HANDLE hNewKey;
+} CK_NSS_IKE_PRF_DERIVE_PARAMS;
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct CK_NSS_IKE1_PRF_DERIVE_PARAMS {
+    CK_MECHANISM_TYPE prfMechanism;
+    CK_BBOOL bHasPrevKey;
+    CK_OBJECT_HANDLE hKeygxy;
+    CK_OBJECT_HANDLE hPrevKey;
+    CK_BYTE_PTR pCKYi;
+    CK_ULONG ulCKYiLen;
+    CK_BYTE_PTR pCKYr;
+    CK_ULONG ulCKYrLen;
+    CK_BYTE keyNumber;
+} CK_NSS_IKE1_PRF_DERIVE_PARAMS;
 
 
 
