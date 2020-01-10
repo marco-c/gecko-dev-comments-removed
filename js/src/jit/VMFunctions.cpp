@@ -21,6 +21,7 @@
 #include "vm/Interpreter.h"
 #include "vm/SelfHosting.h"
 #include "vm/TraceLogging.h"
+#include "vm/TypedArrayObject.h"
 
 #include "debugger/DebugAPI-inl.h"
 #include "jit/BaselineFrame-inl.h"
@@ -1620,6 +1621,20 @@ bool CheckIsCallable(JSContext* cx, HandleValue v, CheckIsCallableKind kind) {
   return true;
 }
 
+static bool MaybeTypedArrayIndexString(jsid id) {
+  MOZ_ASSERT(JSID_IS_ATOM(id) || JSID_IS_SYMBOL(id));
+
+  if (MOZ_LIKELY(JSID_IS_ATOM(id))) {
+    JSAtom* str = JSID_TO_ATOM(id);
+    if (str->length() > 0) {
+      
+      
+      return CanStartTypedArrayIndex(str->latin1OrTwoByteChar(0));
+    }
+  }
+  return false;
+}
+
 template <bool HandleMissing>
 static MOZ_ALWAYS_INLINE bool GetNativeDataPropertyPure(JSContext* cx,
                                                         NativeObject* obj,
@@ -1646,6 +1661,13 @@ static MOZ_ALWAYS_INLINE bool GetNativeDataPropertyPure(JSContext* cx,
     if (MOZ_UNLIKELY(!obj->is<PlainObject>())) {
       if (ClassMayResolveId(cx->names(), obj->getClass(), id, obj)) {
         return false;
+      }
+
+      
+      if (obj->is<TypedArrayObject>()) {
+        if (MaybeTypedArrayIndexString(id)) {
+          return false;
+        }
       }
     }
 
@@ -1832,10 +1854,20 @@ bool HasNativeDataPropertyPure(JSContext* cx, JSObject* obj, Value* vp) {
       }
 
       
-      
-      if (MOZ_UNLIKELY(
-              ClassMayResolveId(cx->names(), obj->getClass(), id, obj))) {
-        return false;
+      if (MOZ_UNLIKELY(!obj->is<PlainObject>())) {
+        
+        
+        if (ClassMayResolveId(cx->names(), obj->getClass(), id, obj)) {
+          return false;
+        }
+
+        
+        
+        if (obj->is<TypedArrayObject>()) {
+          if (MaybeTypedArrayIndexString(id)) {
+            return false;
+          }
+        }
       }
     } else if (obj->is<TypedObject>()) {
       if (obj->as<TypedObject>().typeDescr().hasProperty(cx->names(), id)) {
