@@ -34,6 +34,7 @@ import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.IntentUtils;
 import org.mozilla.gecko.util.ThreadUtils;
 
+import android.annotation.TargetApi;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
@@ -58,10 +59,14 @@ import android.support.annotation.UiThread;
 import android.util.Base64;
 import android.util.Log;
 import android.util.LongSparseArray;
+import android.util.SparseArray;
 import android.view.Surface;
 import android.view.inputmethod.CursorAnchorInfo;
 import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
+import android.view.View;
+import android.view.ViewStructure;
+import android.view.autofill.AutofillManager;
 
 public class GeckoSession implements Parcelable {
     private static final String LOGTAG = "GeckoSession";
@@ -121,6 +126,7 @@ public class GeckoSession implements Parcelable {
     private OverscrollEdgeEffect mOverscroll;
     private DynamicToolbarAnimator mToolbar;
     private CompositorController mController;
+    private AutofillSupport mAutofillSupport;
 
     private boolean mAttachedCompositor;
     private boolean mCompositorReady;
@@ -1523,7 +1529,7 @@ public class GeckoSession implements Parcelable {
             mTextInput.onWindowChanged(mWindow);
         }
         if ((change == WINDOW_CLOSE || change == WINDOW_TRANSFER_OUT) && !inProgress) {
-            mTextInput.clearAutoFill();
+            getAutofillSupport().clearAutoFill();
         }
     }
 
@@ -5103,59 +5109,12 @@ public class GeckoSession implements Parcelable {
         @UiThread
         default void updateCursorAnchorInfo(@NonNull GeckoSession session,
                                             @NonNull CursorAnchorInfo info) {}
-
-        
-        int AUTO_FILL_NOTIFY_STARTED = 0;
-        
-        int AUTO_FILL_NOTIFY_COMMITTED = 1;
-        
-        int AUTO_FILL_NOTIFY_CANCELED = 2;
-        
-        int AUTO_FILL_NOTIFY_VIEW_ADDED = 3;
-        
-        int AUTO_FILL_NOTIFY_VIEW_REMOVED = 4;
-        
-        int AUTO_FILL_NOTIFY_VIEW_UPDATED = 5;
-        
-        int AUTO_FILL_NOTIFY_VIEW_ENTERED = 6;
-        
-        int AUTO_FILL_NOTIFY_VIEW_EXITED = 7;
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default void notifyAutoFill(@NonNull GeckoSession session,
-                                    @AutoFillNotification int notification,
-                                    int virtualId) {}
     }
 
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({TextInputDelegate.RESTART_REASON_FOCUS, TextInputDelegate.RESTART_REASON_BLUR,
             TextInputDelegate.RESTART_REASON_CONTENT_CHANGE})
              @interface RestartReason {}
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({
-            TextInputDelegate.AUTO_FILL_NOTIFY_STARTED,
-            TextInputDelegate.AUTO_FILL_NOTIFY_COMMITTED,
-            TextInputDelegate.AUTO_FILL_NOTIFY_CANCELED,
-            TextInputDelegate.AUTO_FILL_NOTIFY_VIEW_ADDED,
-            TextInputDelegate.AUTO_FILL_NOTIFY_VIEW_REMOVED,
-            TextInputDelegate.AUTO_FILL_NOTIFY_VIEW_UPDATED,
-            TextInputDelegate.AUTO_FILL_NOTIFY_VIEW_ENTERED,
-            TextInputDelegate.AUTO_FILL_NOTIFY_VIEW_EXITED})
-     @interface AutoFillNotification {}
 
      void onSurfaceChanged(final Surface surface, final int x, final int y, final int width,
                                         final int height) {
@@ -5375,7 +5334,7 @@ public class GeckoSession implements Parcelable {
         mViewportTop = scrollY;
         mViewportZoom = zoom;
 
-        mTextInput.onScreenMetricsUpdated();
+        getAutofillSupport().onScreenMetricsUpdated();
     }
 
      void onWindowBoundsChanged() {
@@ -5628,4 +5587,98 @@ public class GeckoSession implements Parcelable {
                 HistoryDelegate.VISIT_UNRECOVERABLE_ERROR
             })
      @interface VisitFlags {}
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({
+            AutofillDelegate.AUTO_FILL_NOTIFY_STARTED,
+            AutofillDelegate.AUTO_FILL_NOTIFY_COMMITTED,
+            AutofillDelegate.AUTO_FILL_NOTIFY_CANCELED,
+            AutofillDelegate.AUTO_FILL_NOTIFY_VIEW_ADDED,
+            AutofillDelegate.AUTO_FILL_NOTIFY_VIEW_REMOVED,
+            AutofillDelegate.AUTO_FILL_NOTIFY_VIEW_UPDATED,
+            AutofillDelegate.AUTO_FILL_NOTIFY_VIEW_ENTERED,
+            AutofillDelegate.AUTO_FILL_NOTIFY_VIEW_EXITED})
+     @interface AutofillNotification {}
+
+    public interface AutofillDelegate {
+
+        
+        int AUTO_FILL_NOTIFY_STARTED = 0;
+        
+        int AUTO_FILL_NOTIFY_COMMITTED = 1;
+        
+        int AUTO_FILL_NOTIFY_CANCELED = 2;
+        
+        int AUTO_FILL_NOTIFY_VIEW_ADDED = 3;
+        
+        int AUTO_FILL_NOTIFY_VIEW_REMOVED = 4;
+        
+        int AUTO_FILL_NOTIFY_VIEW_UPDATED = 5;
+        
+        int AUTO_FILL_NOTIFY_VIEW_ENTERED = 6;
+        
+        int AUTO_FILL_NOTIFY_VIEW_EXITED = 7;
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+        @UiThread
+        default void onAutofill(@NonNull GeckoSession session,
+                                @GeckoSession.AutofillNotification int notification,
+                                int virtualId) {}
+    }
+
+    private AutofillSupport getAutofillSupport() {
+        if (mAutofillSupport == null) {
+            mAutofillSupport = new AutofillSupport(this);
+        }
+
+        return mAutofillSupport;
+    }
+
+    
+
+
+
+
+    @UiThread
+    public void setAutofillDelegate(final @Nullable AutofillDelegate delegate) {
+        getAutofillSupport().setDelegate(delegate);
+    }
+
+    
+
+
+    @UiThread
+    public @Nullable AutofillDelegate getAutofillDelegate() {
+        return getAutofillSupport().getDelegate();
+    }
+
+    
+
+
+
+
+    @UiThread
+    public void autofill(final @NonNull SparseArray<CharSequence> values) {
+        getAutofillSupport().autofill(values);
+    }
+
+    @TargetApi(23)
+    @UiThread
+    public void provideAutofillVirtualStructure(@Nullable final View view,
+                                                @NonNull final ViewStructure structure,
+                                                final int flags) {
+        getAutofillSupport().provideAutofillVirtualStructure(view, structure, flags);
+    }
 }
