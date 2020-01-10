@@ -55,11 +55,11 @@ class MFTDecoder final {
   
   
   HRESULT Input(const uint8_t* aData, uint32_t aDataSize,
-                int64_t aTimestampUsecs, int64_t aDurationUsecs);
+                int64_t aTimestampUsecs);
   HRESULT Input(IMFSample* aSample);
 
   HRESULT CreateInputSample(const uint8_t* aData, uint32_t aDataSize,
-                            int64_t aTimestampUsecs, int64_t aDurationUsecs,
+                            int64_t aTimestampUsecs,
                             RefPtr<IMFSample>* aOutSample);
 
   
