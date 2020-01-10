@@ -6104,6 +6104,34 @@ AttachDecision CompareIRGenerator::tryAttachBigIntNumber(ValOperandId lhsId,
   return AttachDecision::Attach;
 }
 
+AttachDecision CompareIRGenerator::tryAttachBigIntString(ValOperandId lhsId,
+                                                         ValOperandId rhsId) {
+  
+  if (!(lhsVal_.isBigInt() && rhsVal_.isString()) &&
+      !(rhsVal_.isBigInt() && lhsVal_.isString())) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  MOZ_ASSERT(op_ != JSOP_STRICTEQ && op_ != JSOP_STRICTNE);
+
+  if (lhsVal_.isBigInt()) {
+    BigIntOperandId bigIntId = writer.guardToBigInt(lhsId);
+    StringOperandId strId = writer.guardToString(rhsId);
+
+    writer.compareBigIntStringResult(op_, bigIntId, strId);
+  } else {
+    StringOperandId strId = writer.guardToString(lhsId);
+    BigIntOperandId bigIntId = writer.guardToBigInt(rhsId);
+
+    writer.compareStringBigIntResult(op_, strId, bigIntId);
+  }
+  writer.returnFromIC();
+
+  trackAttached("BigIntString");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CompareIRGenerator::tryAttachStub() {
   MOZ_ASSERT(cacheKind_ == CacheKind::Compare);
   MOZ_ASSERT(IsEqualityOp(op_) || IsRelationalOp(op_));
@@ -6119,7 +6147,6 @@ AttachDecision CompareIRGenerator::tryAttachStub() {
   ValOperandId lhsId(writer.setInputOperandId(lhsIndex));
   ValOperandId rhsId(writer.setInputOperandId(rhsIndex));
 
-  
   
   
   
@@ -6165,6 +6192,7 @@ AttachDecision CompareIRGenerator::tryAttachStub() {
 
   TRY_ATTACH(tryAttachBigIntInt32(lhsId, rhsId));
   TRY_ATTACH(tryAttachBigIntNumber(lhsId, rhsId));
+  TRY_ATTACH(tryAttachBigIntString(lhsId, rhsId));
 
   trackAttached(IRGenerator::NotAttached);
   return AttachDecision::NoAction;
