@@ -41,6 +41,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 try:
     from urllib2 import urlopen
 except ImportError:
@@ -149,7 +150,7 @@ def install_webkitgtk_from_apt_repository(channel):
     
     run(["sudo", "apt-key", "adv", "--fetch-keys", "https://webkitgtk.org/debian/apt.key"])
     with open("/tmp/webkitgtk.list", "w") as f:
-        f.write("deb [arch=amd64] https://webkitgtk.org/debian buster-wpt-webkit-updates %s\n" % channel)
+        f.write("deb [arch=amd64] https://webkitgtk.org/apt bionic-wpt-webkit-updates %s\n" % channel)
     run(["sudo", "mv", "/tmp/webkitgtk.list", "/etc/apt/sources.list.d/"])
     with open("/tmp/99webkitgtk", "w") as f:
         f.write("Package: *\nPin: origin webkitgtk.org\nPin-Priority: 1999\n")
@@ -157,12 +158,27 @@ def install_webkitgtk_from_apt_repository(channel):
     
     run(["sudo", "apt-get", "-qqy", "update"])
     run(["sudo", "apt-get", "-qqy", "upgrade"])
-    run(["sudo", "apt-get", "-qqy", "-t", "buster-wpt-webkit-updates", "install", "webkit2gtk-driver"])
+    run(["sudo", "apt-get", "-qqy", "-t", "bionic-wpt-webkit-updates", "install", "webkit2gtk-driver"])
+
+
+def install_webkitgtk_from_tarball_bundle(channel):
+    with tempfile.NamedTemporaryFile(suffix=".tar.xz") as temp_tarball:
+        resp = urlopen("https://webkitgtk.org/built-products/nightly/webkitgtk-nightly-build-last.tar.xz")
+        while True:
+            chunk = resp.read(16*1024)
+            if not chunk:
+                break
+            temp_tarball.write(chunk)
+        temp_tarball.flush()
+        run(["sudo", "tar", "xfa", temp_tarball.name, "-C", "/"])
+    
+    run(["sudo", "apt-get", "-qqy", "update"])
+    run(["sudo", "/opt/webkitgtk/nightly/install-dependencies"])
 
 
 def install_webkitgtk(channel):
     if channel in ("experimental", "dev", "nightly"):
-        raise NotImplementedError("Still can't install from release channel: %s" % channel)
+        install_webkitgtk_from_tarball_bundle(channel)
     elif channel in ("beta", "stable"):
         install_webkitgtk_from_apt_repository(channel)
     else:
