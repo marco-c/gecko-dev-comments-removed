@@ -9,7 +9,6 @@ const { SitePermissions } = ChromeUtils.import(
 );
 
 var gPermPrincipal;
-var gUsageRequest;
 
 
 var gPermissions = SitePermissions.listPermissions()
@@ -54,11 +53,6 @@ function onLoadPermission(uri, principal) {
 
 function onUnloadPermission() {
   Services.obs.removeObserver(permissionObserver, "perm-changed");
-
-  if (gUsageRequest) {
-    gUsageRequest.cancel();
-    gUsageRequest = null;
-  }
 }
 
 function initRow(aPartId) {
