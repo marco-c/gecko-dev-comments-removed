@@ -182,7 +182,7 @@ class SplitBox extends Component {
         : x - nodeBounds.left;
 
       this.setState({
-        width: size,
+        width: this.getConstrainedSizeInPx(size, nodeBounds.width),
       });
     } else {
       size = endPanelControl
@@ -190,9 +190,32 @@ class SplitBox extends Component {
         : y - nodeBounds.top;
 
       this.setState({
-        height: size,
+        height: this.getConstrainedSizeInPx(size, nodeBounds.height),
       });
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  getConstrainedSizeInPx(requestedSize, splitBoxWidthOrHeight) {
+    let minSize = this.props.minSize + "";
+
+    if (minSize.endsWith("%")) {
+      minSize = (parseFloat(minSize) / 100) * splitBoxWidthOrHeight;
+    } else if (minSize.endsWith("px")) {
+      minSize = parseFloat(minSize);
+    }
+    return Math.max(requestedSize, minSize);
   }
 
   
