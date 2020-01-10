@@ -123,6 +123,7 @@ function evalCode() {
     "" + function runTest() { 
       doStuff(                
         function (n) {        
+          (() => {})();       
           debugger;           
         }                     
       );                      

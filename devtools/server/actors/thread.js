@@ -63,6 +63,8 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this._observingNetwork = false;
     this._eventBreakpoints = [];
 
+    this._priorPause = null;
+
     this._options = {
       autoBlackBox: false,
     };
@@ -535,6 +537,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       };
       const pkt = onPacket(packet);
 
+      this._priorPause = pkt;
       this.conn.send(pkt);
     } catch (error) {
       reportError(error);
@@ -656,6 +659,26 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     return result;
   },
 
+  hasMoved: function(newLocation, newType) {
+    if (!this._priorPause) {
+      return true;
+    }
+
+    
+    
+    
+    
+    const { type } = this._priorPause.why;
+
+    if (type == newType) {
+      return true;
+    }
+
+    const { line, column } = this._priorPause.frame.where;
+    return line !== newLocation.line
+      || column !== newLocation.column;
+  },
+
   
   
   _intraFrameLocationIsStepTarget: function(startLocation, script, offset) {
@@ -673,10 +696,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     
-    const lineChanged = startLocation.line !== location.line;
-    const columnChanged =
-      startLocation.column !== location.column;
-    if (!lineChanged && !columnChanged) {
+    if (!this.hasMoved(location)) {
       return false;
     }
 
@@ -1478,12 +1498,16 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
   onDebuggerStatement: function(frame) {
-    
-    
-    const { sourceActor } = this.sources.getFrameLocation(frame);
-    const url = sourceActor ? sourceActor.url : null;
+    const location = this.sources.getFrameLocation(frame);
+    const url = location.sourceActor.url;
 
-    if (this.skipBreakpoints || this.sources.isBlackBoxed(url) || frame.onStep) {
+    
+    
+    
+    
+    if (!this.hasMoved(location, "debuggerStatement")
+        || this.skipBreakpoints
+        || this.sources.isBlackBoxed(url)) {
       return undefined;
     }
 
