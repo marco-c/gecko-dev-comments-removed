@@ -1614,14 +1614,19 @@ class nsDisplayListBuilder {
 
 
   void AddWindowOpaqueRegion(nsIFrame* aFrame, const nsRect& aBounds) {
-    mWindowOpaqueRegion.Add(aFrame, aBounds);
+    if (IsRetainingDisplayList()) {
+      mRetainedWindowOpaqueRegion.Add(aFrame, aBounds);
+      return;
+    }
+    mWindowOpaqueRegion.Or(mWindowOpaqueRegion, aBounds);
   }
   
 
 
 
   const nsRegion GetWindowOpaqueRegion() {
-    return mWindowOpaqueRegion.ToRegion();
+    return IsRetainingDisplayList() ? mRetainedWindowOpaqueRegion.ToRegion()
+                                    : mWindowOpaqueRegion;
   }
 
   void SetGlassDisplayItem(nsDisplayItem* aItem);
@@ -1930,11 +1935,12 @@ class nsDisplayListBuilder {
   WeakFrameRegion mRetainedWindowNoDraggingRegion;
 
   
-  WeakFrameRegion mWindowOpaqueRegion;
+  WeakFrameRegion mRetainedWindowOpaqueRegion;
 
   
   LayoutDeviceIntRegion mWindowDraggingRegion;
   LayoutDeviceIntRegion mWindowNoDraggingRegion;
+  nsRegion mWindowOpaqueRegion;
 
   
   
