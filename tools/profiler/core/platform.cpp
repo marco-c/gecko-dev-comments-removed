@@ -59,7 +59,6 @@
 #include "mozilla/Tuple.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
-#include "BaseProfiler.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsIHttpProtocolHandler.h"
@@ -855,29 +854,11 @@ class ActivePS {
   static void ClearExpiredExitProfiles(PSLockRef) {
     uint64_t bufferRangeStart = sInstance->mBuffer->mRangeStart;
     
-#ifdef MOZ_BASE_PROFILER
-    if (bufferRangeStart != 0 && sInstance->mBaseProfileThreads) {
-      sInstance->mBaseProfileThreads.reset();
-    }
-#endif
     sInstance->mExitProfiles.eraseIf(
         [bufferRangeStart](const ExitProfile& aExitProfile) {
           return aExitProfile.mBufferPositionAtGatherTime < bufferRangeStart;
         });
   }
-
-#ifdef MOZ_BASE_PROFILER
-  static void AddBaseProfileThreads(PSLockRef aLock,
-                                    UniquePtr<char[]> aBaseProfileThreads) {
-    sInstance->mBaseProfileThreads = std::move(aBaseProfileThreads);
-  }
-
-  static UniquePtr<char[]> MoveBaseProfileThreads(PSLockRef aLock) {
-    ClearExpiredExitProfiles(aLock);
-
-    return std::move(sInstance->mBaseProfileThreads);
-  }
-#endif
 
   static void AddExitProfile(PSLockRef aLock, const nsCString& aExitProfile) {
     ClearExpiredExitProfiles(aLock);
@@ -971,11 +952,6 @@ class ActivePS {
   
   
   bool mWasPaused;
-#endif
-
-#ifdef MOZ_BASE_PROFILER
-  
-  UniquePtr<char[]> mBaseProfileThreads;
 #endif
 
   struct ExitProfile {
@@ -2141,14 +2117,6 @@ static void locked_profiler_stream_json_for_this_process(
       java::GeckoJavaSampler::Unpause();
     }
 #endif
-
-#ifdef MOZ_BASE_PROFILER
-    UniquePtr<char[]> baseProfileThreads =
-        ActivePS::MoveBaseProfileThreads(aLock);
-    if (baseProfileThreads) {
-      aWriter.Splice(baseProfileThreads.get());
-    }
-#endif
   }
   aWriter.EndArray();
 
@@ -2239,9 +2207,6 @@ static void PrintUsageThenExit(int aExitCode) {
       "\n"
       "  MOZ_PROFILER_HELP\n"
       "  If set to any value, prints this message.\n"
-#ifdef MOZ_BASE_PROFILER
-      "  Use MOZ_BASE_PROFILER_HELP for BaseProfiler help.\n"
-#endif
       "\n"
       "  MOZ_LOG\n"
       "  Enables logging. The levels of logging available are\n"
@@ -3195,24 +3160,6 @@ void GetProfilerEnvVarsForChildProcess(
     }
   }
   aSetEnv("MOZ_PROFILER_STARTUP_FILTERS", filtersString.c_str());
-
-#ifdef MOZ_BASE_PROFILER
-  
-  auto copyEnv = [&](const char* aName) {
-    const char* env = getenv(aName);
-    if (!env) {
-      return;
-    }
-    aSetEnv(aName, env);
-  };
-  copyEnv("MOZ_BASE_PROFILER_STARTUP");
-  copyEnv("MOZ_BASE_PROFILER_STARTUP_ENTRIES");
-  copyEnv("MOZ_BASE_PROFILER_STARTUP_DURATION");
-  copyEnv("MOZ_BASE_PROFILER_STARTUP_INTERVAL");
-  copyEnv("MOZ_BASE_PROFILER_STARTUP_FEATURES_BITFIELD");
-  copyEnv("MOZ_BASE_PROFILER_STARTUP_FEATURES");
-  copyEnv("MOZ_BASE_PROFILER_STARTUP_FILTERS");
-#endif
 }
 
 }  
@@ -3377,36 +3324,6 @@ static void locked_profiler_start(PSLockRef aLock, uint32_t aCapacity,
 
   ActivePS::Create(aLock, capacity, interval, aFeatures, aFilters, aFilterCount,
                    duration);
-
-  
-  MOZ_ASSERT(ActivePS::Exists(aLock));
-
-#ifdef MOZ_BASE_PROFILER
-  if (baseprofiler::profiler_is_active()) {
-    
-    
-    
-    
-    UniquePtr<char[]> baseprofile = baseprofiler::profiler_get_profile(
-         0,  false,
-         true);
-
-    
-    
-    
-    
-    
-    
-    baseprofiler::profiler_stop();
-
-    if (baseprofile && baseprofile.get()[0] != '\0') {
-      
-      
-      
-      ActivePS::AddBaseProfileThreads(aLock, std::move(baseprofile));
-    }
-  }
-#endif
 
   
   int tid = profiler_current_thread_id();
