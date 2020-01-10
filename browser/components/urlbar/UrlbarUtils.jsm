@@ -434,6 +434,19 @@ var UrlbarUtils = {
       );
     });
   },
+
+  
+
+
+
+
+  isPasteEvent(event) {
+    return (
+      event.inputType &&
+      (event.inputType.startsWith("insertFromPaste") ||
+        event.inputType == "insertFromYank")
+    );
+  },
 };
 
 XPCOMUtils.defineLazyGetter(UrlbarUtils.ICON, "DEFAULT", () => {

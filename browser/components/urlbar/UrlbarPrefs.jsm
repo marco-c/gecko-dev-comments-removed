@@ -67,6 +67,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["doubleClickSelectsAll", false],
 
   
+  ["eventTelemetry.enabled", false],
+
+  
   ["filter.javascript", true],
 
   
@@ -102,6 +105,7 @@ const PREF_URLBAR_DEFAULTS = new Map([
   
   ["openintab", false],
 
+  
   ["openViewOnFocus", false],
 
   
