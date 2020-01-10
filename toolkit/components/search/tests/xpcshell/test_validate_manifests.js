@@ -31,7 +31,7 @@ async function getSearchExtensions() {
     .slice(2)
     .reduce((acc, line) => {
       let parts = line.split(" ");
-      if (parts.length > 2 && parts[1] !== "list.json") {
+      if (parts.length > 2 && !parts[1].endsWith(".json")) {
         
         
         acc.push(parts[1].split("/")[0]);
