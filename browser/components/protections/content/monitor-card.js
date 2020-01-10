@@ -22,11 +22,9 @@ export default class MonitorClass {
   }
 
   init() {
-    RPMAddMessageListener("SendUserLoginsData", ({ data }) => {
-      
-      this.getMonitorData(data);
-      RPMSendAsyncMessage("FetchMonitorData");
-    });
+    
+    this.getMonitorData();
+    RPMSendAsyncMessage("FetchMonitorData");
 
     let monitorReportLink = this.doc.getElementById("full-report-link");
     monitorReportLink.addEventListener("click", () => {
@@ -51,13 +49,10 @@ export default class MonitorClass {
 
 
 
-
-
-
-  getMonitorData(loginData) {
+  getMonitorData() {
     RPMAddMessageListener("SendMonitorData", ({ data: monitorData }) => {
       
-      this.buildContent(loginData, monitorData);
+      this.buildContent(monitorData);
 
       
       const monitorUI = this.doc.querySelector(".card.monitor-card.loading");
@@ -65,19 +60,18 @@ export default class MonitorClass {
     });
   }
 
-  buildContent(loginData, monitorData) {
-    const { numLogins } = loginData;
+  buildContent(monitorData) {
     const headerContent = this.doc.querySelector(
       "#monitor-header-content span"
     );
     const monitorCard = this.doc.querySelector(".card.monitor-card");
-    if (numLogins > 0 && !monitorData.error) {
+    if (!monitorData.error) {
       monitorCard.classList.add("has-logins");
       headerContent.setAttribute(
         "data-l10n-id",
         "monitor-header-content-signed-in"
       );
-      this.renderContentForUserWithLogins(monitorData);
+      this.renderContentForUserWithAccount(monitorData);
     } else {
       monitorCard.classList.add("no-logins");
       const signUpForMonitorLink = this.doc.getElementById(
@@ -111,7 +105,7 @@ export default class MonitorClass {
       : MONITOR_URL;
   }
 
-  renderContentForUserWithLogins(monitorData) {
+  renderContentForUserWithAccount(monitorData) {
     const monitorCardBody = this.doc.querySelector(
       ".card.monitor-card .card-body"
     );
