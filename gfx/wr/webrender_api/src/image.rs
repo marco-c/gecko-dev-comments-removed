@@ -298,13 +298,13 @@ pub trait BlobImageResources {
 
 pub trait BlobImageHandler: Send {
     
-    fn create_blob_rasterizer(&mut self) -> Box<AsyncBlobImageRasterizer>;
+    fn create_blob_rasterizer(&mut self) -> Box<dyn AsyncBlobImageRasterizer>;
 
     
     
     fn prepare_resources(
         &mut self,
-        services: &BlobImageResources,
+        services: &dyn BlobImageResources,
         requests: &[BlobImageParams],
     );
 
