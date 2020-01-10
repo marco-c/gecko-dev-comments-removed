@@ -400,7 +400,7 @@ MarkupView.prototype = {
 
   init: async function() {
     try {
-      this.inspectorFronts = await this.inspector.inspectorFront.getAllInspectorFronts();
+      this.inspectorFronts = await this.inspector.getAllInspectorFronts();
     } catch (e) {
       
       

@@ -23,10 +23,10 @@ loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 
 class NodePicker extends EventEmitter {
-  constructor(target, selection) {
+  constructor(targetList, selection) {
     super();
 
-    this.target = target;
+    this.targetList = targetList;
     this.selection = selection;
 
     
@@ -80,8 +80,10 @@ class NodePicker extends EventEmitter {
 
     
     
-    const inspectorFront = await this.target.getFront("inspector");
-    this._currentInspectorFronts = await inspectorFront.getAllInspectorFronts();
+    this._currentInspectorFronts = await this.targetList.getAllFronts(
+      this.targetList.TYPES.FRAME,
+      "inspector"
+    );
 
     for (const { walker, highlighter } of this._currentInspectorFronts) {
       walker.on("picker-node-hovered", this._onHovered);

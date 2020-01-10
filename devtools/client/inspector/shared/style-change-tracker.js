@@ -33,7 +33,7 @@ class InspectorStyleChangeTracker {
     try {
       
       
-      this.inspectorFronts = await this.inspector.inspectorFront.getAllInspectorFronts();
+      this.inspectorFronts = await this.inspector.getAllInspectorFronts();
     } catch (e) {
       
       

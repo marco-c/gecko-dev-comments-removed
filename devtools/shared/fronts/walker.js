@@ -454,10 +454,33 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     };
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
   async reparentRemoteFrame() {
     
     const descriptorFront = this.targetFront.descriptorFront;
+    
+    
+    if (!descriptorFront.getParentTarget) {
+      return;
+    }
     const parentTarget = await descriptorFront.getParentTarget();
+    
+    if (parentTarget == this.targetFront) {
+      return;
+    }
     
     
     const parentWalker = (await parentTarget.getFront("inspector")).walker;

@@ -176,6 +176,8 @@ function Inspector(toolbox) {
   this._handleRejectionIfNotDestroyed = this._handleRejectionIfNotDestroyed.bind(
     this
   );
+  this._onTargetAvailable = this._onTargetAvailable.bind(this);
+  this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
   this._onBeforeNavigate = this._onBeforeNavigate.bind(this);
   this._onMarkupFrameLoad = this._onMarkupFrameLoad.bind(this);
   this._updateSearchResultsLabel = this._updateSearchResultsLabel.bind(this);
@@ -220,17 +222,11 @@ Inspector.prototype = {
       this.currentTarget.threadFront.on("resumed", this.handleThreadResumed);
     }
 
-    await this.initInspectorFront();
-
-    this.currentTarget.on("will-navigate", this._onBeforeNavigate);
-
-    await Promise.all([
-      this._getCssProperties(),
-      this._getPageStyle(),
-      this._getDefaultSelection(),
-      this._getAccessibilityFront(),
-      this._getChangesFront(),
-    ]);
+    await this.toolbox.targetList.watchTargets(
+      [this.toolbox.targetList.TYPES.FRAME],
+      this._onTargetAvailable,
+      this._onTargetDestroyed
+    );
 
     
     
@@ -243,14 +239,76 @@ Inspector.prototype = {
     return this._deferredOpen();
   },
 
-  async initInspectorFront() {
-    this.inspectorFront = await this.currentTarget.getFront("inspector");
+  async _onTargetAvailable(type, targetFront, isTopLevel) {
+    
+    if (!isTopLevel) {
+      return;
+    }
+
+    await this.initInspectorFront(targetFront);
+
+    targetFront.on("will-navigate", this._onBeforeNavigate);
+
+    await Promise.all([
+      this._getCssProperties(),
+      this._getPageStyle(),
+      this._getDefaultSelection(),
+      this._getAccessibilityFront(),
+      this._getChangesFront(),
+    ]);
+    this.reflowTracker = new ReflowTracker(this.currentTarget);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (this.isReady) {
+      this.onNewRoot();
+    }
+  },
+
+  _onTargetDestroyed(type, targetFront, isTopLevel) {
+    
+    if (!isTopLevel) {
+      return;
+    }
+    targetFront.off("will-navigate", this._onBeforeNavigate);
+
+    this._defaultNode = null;
+    this.selection.setNodeFront(null);
+
+    this.reflowTracker.destroy();
+    this.reflowTracker = null;
+  },
+
+  async initInspectorFront(targetFront) {
+    this.inspectorFront = await targetFront.getFront("inspector");
     this.highlighter = this.inspectorFront.highlighter;
     this.walker = this.inspectorFront.walker;
   },
 
   get toolbox() {
     return this._toolbox;
+  },
+
+  
+
+
+
+
+
+
+  async getAllInspectorFronts() {
+    return this.toolbox.targetList.getAllFronts(
+      this.toolbox.targetList.TYPES.FRAME,
+      "inspector"
+    );
   },
 
   get highlighters() {
@@ -506,7 +564,7 @@ Inspector.prototype = {
 
 
   get currentTarget() {
-    return this._target;
+    return this.toolbox.targetList.targetFront;
   },
 
   
@@ -1418,7 +1476,7 @@ Inspector.prototype = {
 
     this._selectionCssSelectors = {
       selectors: cssSelectors,
-      url: this._target.url,
+      url: this.currentTarget.url,
     };
   },
 
@@ -1429,7 +1487,7 @@ Inspector.prototype = {
   get selectionCssSelectors() {
     if (
       this._selectionCssSelectors &&
-      this._selectionCssSelectors.url === this._target.url
+      this._selectionCssSelectors.url === this.currentTarget.url
     ) {
       return this._selectionCssSelectors.selectors;
     }
@@ -1671,9 +1729,14 @@ Inspector.prototype = {
     this.teardownToolbar();
 
     this.breadcrumbs.destroy();
-    this.reflowTracker.destroy();
     this.styleChangeTracker.destroy();
     this.searchboxShortcuts.destroy();
+
+    this.toolbox.targetList.unwatchTargets(
+      [this.toolbox.targetList.TYPES.FRAME],
+      this._onTargetAvailable,
+      this._onTargetDestroyed
+    );
 
     this._is3PaneModeChromeEnabled = null;
     this._is3PaneModeEnabled = null;

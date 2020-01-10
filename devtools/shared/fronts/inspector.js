@@ -19,7 +19,6 @@ const TELEMETRY_EYEDROPPER_OPENED_MENU =
 const SHOW_ALL_ANONYMOUS_CONTENT_PREF =
   "devtools.inspector.showAllAnonymousContent";
 const SHOW_UA_SHADOW_ROOTS_PREF = "devtools.inspector.showUserAgentShadowRoots";
-const BROWSER_FISSION_ENABLED_PREF = "devtools.browsertoolbox.fission";
 const CONTENT_FISSION_ENABLED_PREF = "devtools.contenttoolbox.fission";
 const USE_NEW_BOX_MODEL_HIGHLIGHTER_PREF =
   "devtools.inspector.use-new-box-model-highlighter";
@@ -50,16 +49,6 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     ]);
   }
 
-  get isBrowserFissionEnabled() {
-    if (this._isBrowserFissionEnabled === undefined) {
-      this._isBrowserFissionEnabled = Services.prefs.getBoolPref(
-        BROWSER_FISSION_ENABLED_PREF
-      );
-    }
-
-    return this._isBrowserFissionEnabled;
-  }
-
   get isContentFissionEnabled() {
     if (this._isContentFissionEnabled === undefined) {
       this._isContentFissionEnabled = Services.prefs.getBoolPref(
@@ -81,6 +70,11 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
       showAllAnonymousContent,
       showUserAgentShadowRoots,
     });
+
+    
+    
+    
+    await this.walker.reparentRemoteFrame();
   }
 
   async _getHighlighter() {
@@ -149,48 +143,6 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     } else {
       telemetry.getHistogramById(TELEMETRY_EYEDROPPER_OPENED).add(true);
     }
-  }
-
-  
-
-
-
-
-
-
-
-
-  async getChildInspectors() {
-    const childInspectors = [];
-    const target = this.targetFront;
-
-    
-    if (this.isBrowserFissionEnabled && target.chrome && !target.isAddon) {
-      const { frames } = await target.listRemoteFrames();
-      
-      for (const descriptor of frames) {
-        const remoteTarget = await descriptor.getTarget();
-        if (remoteTarget) {
-          
-          const remoteInspectorFront = await remoteTarget.getFront("inspector");
-          await remoteInspectorFront.walker.reparentRemoteFrame();
-          childInspectors.push(remoteInspectorFront);
-        }
-      }
-    }
-    return childInspectors;
-  }
-
-  
-
-
-
-
-
-
-  async getAllInspectorFronts() {
-    const remoteInspectors = await this.getChildInspectors();
-    return [this, ...remoteInspectors];
   }
 
   
