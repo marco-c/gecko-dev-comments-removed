@@ -533,6 +533,7 @@ nsAsyncResolveRequest::AsyncApplyFilters::OnProxyFilterResult(
   }
 
   mFilterCalledBack = true;
+  mProxyInfo = aProxyInfo;
 
   if (mProcessingInLoop) {
     
@@ -546,8 +547,6 @@ nsAsyncResolveRequest::AsyncApplyFilters::OnProxyFilterResult(
     LOG(("  canceled"));
     return NS_OK;
   }
-
-  mProxyInfo = aProxyInfo;
 
   if (mNextFilterIndex == mFiltersCopy.Length()) {
     
