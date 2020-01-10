@@ -1672,13 +1672,13 @@ CanvasRenderingContext2D::GetSurfaceSnapshot(gfxAlphaType* aOutAlphaType) {
     *aOutAlphaType = (mOpaque ? gfxAlphaType::Opaque : gfxAlphaType::Premult);
   }
 
-  if (!mBufferProvider) {
-    if (!EnsureTarget()) {
-      MOZ_ASSERT(
-          mTarget == sErrorTarget,
-          "On EnsureTarget failure mTarget should be set to sErrorTarget.");
-      return mTarget->Snapshot();
-    }
+  
+  
+  if (!EnsureTarget()) {
+    MOZ_ASSERT(
+        mTarget == sErrorTarget,
+        "On EnsureTarget failure mTarget should be set to sErrorTarget.");
+    return mTarget->Snapshot();
   }
 
   
