@@ -310,7 +310,7 @@ uint64_t Accessible::VisibilityState() const {
   if (!frame) {
     
     
-    if (mContent->IsElement() && mContent->AsElement()->IsDisplayContents()) {
+    if (nsCoreUtils::IsDisplayContents(mContent)) {
       return states::OFFSCREEN;
     }
     return states::INVISIBLE;
@@ -1918,7 +1918,7 @@ void Accessible::AppendTextTo(nsAString& aText, uint32_t aStartOffset,
 
   nsIFrame* frame = GetFrame();
   if (!frame) {
-    if (mContent->IsElement() && mContent->AsElement()->IsDisplayContents()) {
+    if (nsCoreUtils::IsDisplayContents(mContent)) {
       aText += kEmbeddedObjectChar;
     }
     return;
