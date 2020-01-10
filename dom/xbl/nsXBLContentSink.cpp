@@ -776,8 +776,11 @@ nsresult nsXBLContentSink::AddAttributesToXULPrototype(
   
   nsXULPrototypeAttribute* attrs = nullptr;
   if (aAttsCount > 0) {
-    attrs = aElement->mAttributes.AppendElements(aAttsCount);
+    attrs = new nsXULPrototypeAttribute[aAttsCount];
   }
+
+  aElement->mAttributes = attrs;
+  aElement->mNumAttributes = aAttsCount;
 
   
   RefPtr<nsAtom> prefix, localName;

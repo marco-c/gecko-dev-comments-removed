@@ -132,7 +132,6 @@ class nsViewportInfo;
 class nsIGlobalObject;
 class nsIXULWindow;
 class nsXULPrototypeDocument;
-class nsXULPrototypeElement;
 struct nsFont;
 
 namespace mozilla {
@@ -2408,11 +2407,6 @@ class Document : public nsINode,
 
 
   bool LoadedFromPrototype() const { return mPrototypeDocument; }
-  
-
-
-
-  nsXULPrototypeDocument* GetPrototype() const { return mPrototypeDocument; }
 
   bool IsTopLevelContentDocument() const { return mIsTopLevelContentDocument; }
   void SetIsTopLevelContentDocument(bool aIsTopLevelContentDocument) {
@@ -5294,9 +5288,6 @@ class Document : public nsINode,
   js::ExpandoAndGeneration mExpandoAndGeneration;
 
   bool HasPendingInitialTranslation() { return mPendingInitialTranslation; }
-
-  nsRefPtrHashtable<nsRefPtrHashKey<Element>, nsXULPrototypeElement>
-      mL10nProtoElements;
 
   void TraceProtos(JSTracer* aTrc);
 };
