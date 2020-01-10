@@ -1342,9 +1342,7 @@ static bool IsSignatureSeparator(const nsAString& aString) {
 
 
 void nsPlainTextSerializer::EndLine(bool aSoftLineBreak, bool aBreakBySpace) {
-  uint32_t currentlinelength = mCurrentLine.mContent.mValue.Length();
-
-  if (aSoftLineBreak && 0 == currentlinelength) {
+  if (aSoftLineBreak && mCurrentLine.mContent.mValue.IsEmpty()) {
     
     return;
   }
