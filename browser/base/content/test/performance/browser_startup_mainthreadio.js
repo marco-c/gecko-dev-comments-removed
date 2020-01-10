@@ -427,13 +427,6 @@ const startupPhases = {
     },
     {
       
-      path: "/etc/mime.types",
-      condition: LINUX,
-      read: 1,
-      close: 1,
-    },
-    {
-      
       path: "XREAppDist:distribution.ini",
       condition: WIN,
       stat: 1,
