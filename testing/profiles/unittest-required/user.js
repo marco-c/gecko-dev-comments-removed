@@ -219,6 +219,9 @@ user_pref("test.mousescroll", true);
 user_pref("toolkit.telemetry.bhrPing.enabled", false);
 
 
+user_pref("toolkit.telemetry.eventping.enabled", true);
+
+
 user_pref("toolkit.telemetry.firstShutdownPing.enabled", false);
 
 
@@ -246,3 +249,4 @@ user_pref("security.data_uri.block_toplevel_data_uri_navigations", false);
 
 
 user_pref("security.data_uri.block_toplevel_data_uri_navigations", false);
+
