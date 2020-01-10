@@ -179,14 +179,8 @@ OfflineCacheUpdateChild::Init(nsIURI* aManifestURI, nsIURI* aDocumentURI,
   LOG(("OfflineCacheUpdateChild::Init [%p]", this));
 
   
-  bool match;
-  rv = aManifestURI->SchemeIs("http", &match);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (!match) {
-    rv = aManifestURI->SchemeIs("https", &match);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (!match) return NS_ERROR_ABORT;
+  if (!aManifestURI->SchemeIs("http") && !aManifestURI->SchemeIs("https")) {
+    return NS_ERROR_ABORT;
   }
 
   mManifestURI = aManifestURI;
