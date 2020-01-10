@@ -199,7 +199,6 @@ class VirtualenvManager(object):
         write output to.
         """
         env = dict(os.environ)
-        env.pop('PYTHONDONTWRITEBYTECODE', None)
 
         args = [python, self.virtualenv_script_path,
                 
@@ -379,8 +378,7 @@ class VirtualenvManager(object):
         
         
         
-        IGNORE_ENV_VARIABLES = ('CC', 'CXX', 'CFLAGS', 'CXXFLAGS', 'LDFLAGS',
-                                'PYTHONDONTWRITEBYTECODE')
+        IGNORE_ENV_VARIABLES = ('CC', 'CXX', 'CFLAGS', 'CXXFLAGS', 'LDFLAGS')
 
         try:
             old_target = os.environ.get('MACOSX_DEPLOYMENT_TARGET', None)
