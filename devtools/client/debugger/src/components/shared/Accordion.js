@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
-
-
-
-
+// @flow
 import React, { cloneElement, Component } from "react";
 import AccessibleImage from "./AccessibleImage";
 
@@ -21,20 +21,7 @@ type AccordionItem = {
 
 type Props = { items: Array<Object> };
 
-type State = {
-  opened: boolean[],
-  created: boolean[],
-};
-
-class Accordion extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      opened: props.items.map(item => item.opened),
-      created: [],
-    };
-  }
-
+class Accordion extends Component<Props> {
   handleHeaderClick(i: number) {
     const item = this.props.items[i];
     const opened = !item.opened;
@@ -44,8 +31,8 @@ class Accordion extends Component<Props, State> {
       item.onToggle(opened);
     }
 
-    
-    
+    // We force an update because otherwise the accordion
+    // would not re-render
     this.forceUpdate();
   }
 
