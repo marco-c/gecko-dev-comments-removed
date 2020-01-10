@@ -12,8 +12,7 @@
 namespace mozilla {
 namespace net {
 
-
-
+class Http3Session;
 
 
 #define NS_QUICSOCKETCONTROL_IID                     \
@@ -37,8 +36,7 @@ class QuicSocketControl final : public CommonSocketControl {
   void SetInfo(uint16_t aCipherSuite, uint16_t aProtocolVersion,
                uint16_t aKeaGroup, uint16_t aSignatureScheme);
 
-  
-  
+  void SetAuthenticationCallback(Http3Session* aHttp3Session);
   void CallAuthenticated();
 
   void HandshakeCompleted();
