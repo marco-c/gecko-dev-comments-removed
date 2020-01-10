@@ -1293,7 +1293,6 @@ pref("browser.newtab.preload", true);
 pref("browser.newtabpage.enabled", true);
 
 
-pref("browser.newtabpage.activity-stream.prerender", true);
 #ifndef RELEASE_OR_BETA
 pref("browser.newtabpage.activity-stream.debug", false);
 #endif
