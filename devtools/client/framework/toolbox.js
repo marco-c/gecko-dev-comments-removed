@@ -1114,15 +1114,28 @@ Toolbox.prototype = {
     
     
     
-    if (
+    const isInInput =
       e.originalTarget.closest("input[type=text]") ||
       e.originalTarget.closest("input[type=search]") ||
       e.originalTarget.closest("input:not([type])") ||
       e.originalTarget.closest(".devtools-input") ||
-      e.originalTarget.closest("textarea")
+      e.originalTarget.closest("textarea");
+
+    const doc = e.originalTarget.ownerDocument;
+    const isHTMLPanel = doc.documentElement.namespaceURI === HTML_NS;
+
+    if (
+      
+      isInInput ||
+      
+      
+      isHTMLPanel
     ) {
       e.stopPropagation();
       e.preventDefault();
+    }
+
+    if (isInInput) {
       this.openTextBoxContextMenu(e.screenX, e.screenY);
     }
   },
