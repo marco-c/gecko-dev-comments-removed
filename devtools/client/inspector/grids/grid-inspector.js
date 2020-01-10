@@ -309,13 +309,23 @@ class GridInspector {
 
 
 
-  
   async updateGridPanel() {
     
     if (!this.inspector || !this.store) {
       return;
     }
 
+    try {
+      await this._updateGridPanel();
+    } catch (e) {
+      this._throwUnlessDestroyed(
+        e,
+        "Inspector destroyed while executing updateGridPanel"
+      );
+    }
+  }
+
+  async _updateGridPanel() {
     const gridFronts = await this.getGrids();
 
     if (!gridFronts.length) {
@@ -573,14 +583,10 @@ class GridInspector {
       
       await this.updateGridPanel(newGridFronts);
     } catch (e) {
-      if (!this.inspector) {
-        
-        
-        console.warn("Inspector destroyed while executing onReflow callback");
-      } else {
-        
-        throw e;
-      }
+      this._throwUnlessDestroyed(
+        e,
+        "Inspector destroyed while executing onReflow callback"
+      );
     }
   }
 
@@ -759,6 +765,26 @@ class GridInspector {
       if (grid.highlighted) {
         this.highlighters.showGridHighlighter(grid.nodeFront);
       }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  _throwUnlessDestroyed(error, message) {
+    if (!this.inspector) {
+      console.warn(message);
+    } else {
+      
+      throw error;
     }
   }
 
