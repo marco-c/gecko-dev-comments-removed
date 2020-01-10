@@ -51,6 +51,11 @@ const ServiceWorkerRegistrationActor = protocol.ActorClassWithSpec(
       this._conn = conn;
       this._registration = registration;
       this._pushSubscriptionActor = null;
+
+      
+      
+      this._preventedShutdown = false;
+
       this._registration.addListener(this);
 
       this._createServiceWorkerActors();
@@ -96,6 +101,16 @@ const ServiceWorkerRegistrationActor = protocol.ActorClassWithSpec(
 
     destroy() {
       protocol.Actor.prototype.destroy.call(this);
+
+      
+      if (
+        swm.isParentInterceptEnabled() &&
+        this._registration.activeWorker &&
+        this._preventedShutdown
+      ) {
+        this.allowShutdown();
+      }
+
       Services.obs.removeObserver(this, PushService.subscriptionModifiedTopic);
       this._registration.removeListener(this);
       this._registration = null;
@@ -229,6 +244,7 @@ const ServiceWorkerRegistrationActor = protocol.ActorClassWithSpec(
 
       
       this._registration.activeWorker.attachDebugger();
+      this._preventedShutdown = true;
     },
 
     
@@ -251,6 +267,7 @@ const ServiceWorkerRegistrationActor = protocol.ActorClassWithSpec(
       }
 
       this._registration.activeWorker.detachDebugger();
+      this._preventedShutdown = false;
     },
 
     getPushSubscription() {
