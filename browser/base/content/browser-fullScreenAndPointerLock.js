@@ -252,13 +252,6 @@ var PointerLock = {
 };
 
 var FullScreen = {
-  _MESSAGES: [
-    "DOMFullscreen:Request",
-    "DOMFullscreen:NewOrigin",
-    "DOMFullscreen:Exit",
-    "DOMFullscreen:Painted",
-  ],
-
   _permissionNotificationIDs: Object.values(PermissionUI)
     .filter(value => value.prototype && value.prototype.notificationID)
     .map(value => value.prototype.notificationID)
@@ -273,24 +266,14 @@ var FullScreen = {
     );
 
     
-    window.addEventListener("fullscreen", this, true);
-    window.addEventListener("willenterfullscreen", this, true);
-    window.addEventListener("willexitfullscreen", this, true);
-    window.addEventListener(
-      "MozDOMFullscreen:Entered",
-      this,
-       true,
-       false
-    );
-    window.addEventListener(
-      "MozDOMFullscreen:Exited",
-      this,
-       true,
-       false
-    );
-    for (let type of this._MESSAGES) {
-      window.messageManager.addMessageListener(type, this);
-    }
+    addEventListener("fullscreen", this, true);
+
+    
+    
+    
+    
+    addEventListener("willenterfullscreen", this, true);
+    addEventListener("willexitfullscreen", this, true);
 
     if (window.fullScreen) {
       this.toggle();
@@ -298,9 +281,6 @@ var FullScreen = {
   },
 
   uninit() {
-    for (let type of this._MESSAGES) {
-      window.messageManager.removeMessageListener(type, this);
-    }
     this.cleanup();
   },
 
@@ -396,28 +376,6 @@ var FullScreen = {
       case "fullscreen":
         this.toggle();
         break;
-      case "MozDOMFullscreen:Entered": {
-        
-        
-        
-        
-        
-        
-        let browser;
-        if (event.target.ownerGlobal == window) {
-          browser = event.target;
-        } else {
-          browser = event.target.ownerGlobal.docShell.chromeEventHandler;
-        }
-
-        TelemetryStopwatch.start("FULLSCREEN_CHANGE_MS");
-        this.enterDomFullscreen(browser);
-        break;
-      }
-      case "MozDOMFullscreen:Exited":
-        TelemetryStopwatch.start("FULLSCREEN_CHANGE_MS");
-        this.cleanupDomFullscreen();
-        break;
     }
   },
 
@@ -454,33 +412,7 @@ var FullScreen = {
     }
   },
 
-  receiveMessage(aMessage) {
-    let browser = aMessage.target;
-    switch (aMessage.name) {
-      case "DOMFullscreen:Request": {
-        window.windowUtils.remoteFrameFullscreenChanged(browser);
-        break;
-      }
-      case "DOMFullscreen:NewOrigin": {
-        
-        if (document.fullscreen) {
-          PointerlockFsWarning.showFullScreen(aMessage.data.originNoSuffix);
-        }
-        break;
-      }
-      case "DOMFullscreen:Exit": {
-        window.windowUtils.remoteFrameFullscreenReverted();
-        break;
-      }
-      case "DOMFullscreen:Painted": {
-        Services.obs.notifyObservers(window, "fullscreen-painted");
-        TelemetryStopwatch.finish("FULLSCREEN_CHANGE_MS");
-        break;
-      }
-    }
-  },
-
-  enterDomFullscreen(aBrowser) {
+  enterDomFullscreen(aBrowser, aActor) {
     if (!document.fullscreenElement) {
       return;
     }
@@ -498,7 +430,7 @@ var FullScreen = {
     
     
     if (this._isRemoteBrowser(aBrowser)) {
-      aBrowser.messageManager.sendAsyncMessage("DOMFullscreen:Entered");
+      aActor.sendAsyncMessage("DOMFullscreen:Entered", {});
     }
 
     
@@ -541,11 +473,6 @@ var FullScreen = {
     
     
     
-    window.addEventListener("activate", this);
-
-    
-    
-    
     if (gXPInstallObserver.removeAllNotifications(aBrowser)) {
       
       gXPInstallObserver.logWarningFullScreenInstallBlocked();
@@ -567,20 +494,19 @@ var FullScreen = {
     }
   },
 
-  cleanupDomFullscreen() {
+  cleanupDomFullscreen(aActor) {
     PopupNotifications.panel.removeEventListener(
       "popupshowing",
       () => this._handlePermPromptShow(),
       true
     );
-    window.messageManager.broadcastAsyncMessage("DOMFullscreen:CleanUp");
+    aActor.sendAsyncMessage("DOMFullscreen:CleanUp", {});
 
     PointerlockFsWarning.close();
     gBrowser.tabContainer.removeEventListener(
       "TabSelect",
       this.exitDomFullScreen
     );
-    window.removeEventListener("activate", this);
 
     document.documentElement.removeAttribute("inDOMFullscreen");
   },
@@ -597,9 +523,11 @@ var FullScreen = {
   _expandCallback() {
     FullScreen.showNavToolbox();
   },
+
   onMouseEnter() {
-    FullScreen.hideNavToolbox();
+    this.hideNavToolbox();
   },
+
   _keyToggleCallback(aEvent) {
     
     

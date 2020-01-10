@@ -1170,29 +1170,19 @@ var gIdentityHandler = {
     }
 
     
+    
     if (document.fullscreen) {
       
       
       
       
-      let exitedEventReceived = false;
-      window.messageManager.addMessageListener(
-        "DOMFullscreen:Painted",
-        function listener() {
-          if (!exitedEventReceived) {
-            return;
-          }
-          window.messageManager.removeMessageListener(
-            "DOMFullscreen:Painted",
-            listener
-          );
-          gIdentityHandler._openPopup(event);
-        }
-      );
+      this._exitedEventReceived = false;
+      this._event = event;
+      Services.obs.addObserver(this, "fullscreen-painted");
       window.addEventListener(
         "MozDOMFullscreen:Exited",
         () => {
-          exitedEventReceived = true;
+          this._exitedEventReceived = true;
         },
         { once: true }
       );
@@ -1260,16 +1250,29 @@ var gIdentityHandler = {
   },
 
   observe(subject, topic, data) {
-    
-    
-    if (
-      topic == "perm-changed" &&
-      subject &&
-      SitePermissions.listPermissions().includes(
-        subject.QueryInterface(Ci.nsIPermission).type
-      )
-    ) {
-      this.refreshIdentityBlock();
+    switch (topic) {
+      case "perm-changed": {
+        
+        
+        if (
+          subject &&
+          SitePermissions.listPermissions().includes(
+            subject.QueryInterface(Ci.nsIPermission).type
+          )
+        ) {
+          this.refreshIdentityBlock();
+        }
+        break;
+      }
+      case "fullscreen-painted": {
+        if (subject != window || !this._exitedEventReceived) {
+          return;
+        }
+        Services.obs.removeObserver(this, "fullscreen-painted");
+        this._openPopup(this._event);
+        delete this._event;
+        break;
+      }
     }
   },
 
