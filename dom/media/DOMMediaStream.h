@@ -91,6 +91,16 @@ class DOMMediaStream : public DOMEventTargetHelper,
 
 
     virtual void NotifyInactive(){};
+
+    
+
+
+    virtual void NotifyAudible(){};
+
+    
+
+
+    virtual void NotifyInaudible(){};
   };
 
   explicit DOMMediaStream(nsPIDOMWindowInner* aWindow);
@@ -197,6 +207,12 @@ class DOMMediaStream : public DOMEventTargetHelper,
   void NotifyInactive();
 
   
+  void NotifyAudible();
+
+  
+  void NotifyInaudible();
+
+  
   void NotifyTrackAdded(const RefPtr<MediaStreamTrack>& aTrack);
 
   
@@ -226,6 +242,9 @@ class DOMMediaStream : public DOMEventTargetHelper,
 
   
   bool mActive;
+
+  
+  bool mAudible;
 
   
   
