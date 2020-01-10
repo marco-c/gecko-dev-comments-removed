@@ -57,25 +57,6 @@ function findBreakpointAtLocation(
 }
 
 
-function findClosestBreakpointToCursor(lineBreakpoints, cursorPosition) {
-  const closestBreakpoint = lineBreakpoints.reduce((closestBp, currentBp) => {
-    
-    if (typeof closestBp === "object") {
-      const currentColumn = currentBp.generatedLocation.column;
-      const closestColumn = closestBp.generatedLocation.column;
-      
-      if (currentColumn && closestColumn) {
-        const currentDistance = Math.abs(currentColumn - cursorPosition.column);
-        const closestDistance = Math.abs(closestColumn - cursorPosition.column);
-
-        return currentDistance < closestDistance ? currentBp : closestBp;
-      }
-    }
-  }, lineBreakpoints[0] || {});
-  return closestBreakpoint;
-}
-
-
 
 
 
@@ -102,9 +83,4 @@ export function getBreakpointsAtLine(state: State, line: number): Breakpoint[] {
   return breakpoints.filter(
     breakpoint => getLocation(breakpoint, selectedSource).line === line
   );
-}
-
-export function getClosestBreakpoint(state: State, cursorPosition: Object) {
-  const lineBreakpoints = getBreakpointsAtLine(state, cursorPosition.line);
-  return findClosestBreakpointToCursor(lineBreakpoints, cursorPosition);
 }
