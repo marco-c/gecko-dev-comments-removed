@@ -3,10 +3,26 @@
 const dns = Cc["@mozilla.org/network/dns-service;1"].getService(
   Ci.nsIDNSService
 );
+const { MockRegistrar } = ChromeUtils.import(
+  "resource://testing-common/MockRegistrar.jsm"
+);
 const mainThread = Services.tm.currentThread;
 
 const defaultOriginAttributes = {};
 let h2Port = null;
+
+async function SetParentalControlEnabled(aEnabled) {
+  let parentalControlsService = {
+    parentalControlsEnabled: aEnabled,
+    QueryInterface: ChromeUtils.generateQI([Ci.nsIParentalControlsService]),
+  };
+  let cid = MockRegistrar.register(
+    "@mozilla.org/parental-controls-service;1",
+    parentalControlsService
+  );
+  dns.reloadParentalControlEnabled();
+  MockRegistrar.unregister(cid);
+}
 
 add_task(function setup() {
   dump("start!\n");
@@ -48,6 +64,8 @@ add_task(function setup() {
     Ci.nsIX509CertDB
   );
   addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
+
+  SetParentalControlEnabled(false);
 });
 
 registerCleanupFunction(() => {
@@ -711,6 +729,14 @@ add_task(async function test24f() {
 });
 
 
+add_task(async function test24g() {
+  dns.clearCache(true);
+  await SetParentalControlEnabled(true);
+  await new DNSListener("www.example.com", "127.0.0.1");
+  await SetParentalControlEnabled(false);
+});
+
+
 
 add_task(async function test25() {
   dns.clearCache(true);
@@ -780,6 +806,15 @@ add_task(async function test25e() {
   );
 
   await new DNSListener("test.detectportal.com", "127.0.0.1");
+});
+
+
+add_task(async function test25f() {
+  dns.clearCache(true);
+  Services.prefs.setIntPref("network.trr.mode", 3); 
+  await SetParentalControlEnabled(true);
+  await new DNSListener("www.example.com", "127.0.0.1");
+  await SetParentalControlEnabled(false);
 });
 
 

@@ -547,6 +547,8 @@ static const char kPrefGetTtl[] = "network.dns.get-ttl";
 static const char kPrefNativeIsLocalhost[] = "network.dns.native-is-localhost";
 static const char kPrefThreadIdleTime[] =
     "network.dns.resolver-thread-extra-idle-time-seconds";
+static const char kPrefSkipTRRParentalControl[] =
+    "network.dns.skipTRR-when-parental-control-enabled";
 static bool sGetTtlEnabled = false;
 mozilla::Atomic<bool, mozilla::Relaxed> gNativeIsLocalhost;
 
@@ -576,6 +578,7 @@ nsHostResolver::nsHostResolver(uint32_t maxCacheEntries,
       mLock("nsHostResolver.mLock"),
       mIdleTaskCV(mLock, "nsHostResolver.mIdleTaskCV"),
       mEvictionQSize(0),
+      mSkipTRRWhenParentalControlEnabled(true),
       mShutdown(true),
       mNumIdleTasks(0),
       mActiveTaskCount(0),
@@ -599,6 +602,8 @@ nsresult nsHostResolver::Init() {
 
   mShutdown = false;
   mNCS = NetworkConnectivityService::GetSingleton();
+  mSkipTRRWhenParentalControlEnabled =
+      Preferences::GetBool(kPrefSkipTRRParentalControl, true);
 
   
   
@@ -1402,7 +1407,9 @@ nsresult nsHostResolver::NameLookup(nsHostRecord* rec) {
   
   bool skipTRR = true;
   if (gTRRService) {
-    skipTRR = gTRRService->IsExcludedFromTRR(rec->host);
+    skipTRR = gTRRService->IsExcludedFromTRR(rec->host) ||
+              (mSkipTRRWhenParentalControlEnabled &&
+               gTRRService->ParentalControlEnabled());
   }
 
   if (rec->flags & RES_DISABLE_TRR) {
