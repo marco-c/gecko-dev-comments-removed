@@ -50,6 +50,10 @@ function encodeEnvVar(name, value) {
   return Uint8Array.of(...encode(name), ...encode("="), ...encode(value), 0);
 }
 
+function platformSupportsDisclaimedSpawn() {
+  return AppConstants.isPlatformAndVersionAtLeast("macosx", 18);
+}
+
 
 
 
@@ -107,11 +111,19 @@ var Subprocess = {
 
 
 
+
+
+
+
+
+
+
   call(options) {
     options = Object.assign({}, options);
 
     options.stderr = options.stderr || "ignore";
     options.workdir = options.workdir || null;
+    options.disclaim = options.disclaim || false;
 
     let environment = {};
     if (!options.environment || options.environmentAppend) {
@@ -127,6 +139,10 @@ var Subprocess = {
     );
 
     options.arguments = Array.from(options.arguments || []);
+
+    if (options.disclaim && !platformSupportsDisclaimedSpawn()) {
+      options.disclaim = false;
+    }
 
     return Promise.resolve(
       SubprocessImpl.isExecutableFile(options.command)

@@ -93,6 +93,12 @@ const SubprocessConstants = {
 
 
   ERROR_BAD_EXECUTABLE: 0xff7a0003,
+  
+
+
+
+
+  ERROR_INVALID_OPTION: 0xff7a0004,
 };
 
 Object.freeze(SubprocessConstants);
