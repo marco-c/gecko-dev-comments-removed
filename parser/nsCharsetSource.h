@@ -23,6 +23,7 @@ enum {
   kCharsetFromOtherComponent,
   kCharsetFromParentForced,  
   kCharsetFromUserForced,    
+  kCharsetFromUserForcedAutoDetection
   kCharsetFromByteOrderMark,
   kCharsetFromUtf8OnlyMime,  
   kCharsetFromBuiltIn,       
