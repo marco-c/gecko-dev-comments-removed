@@ -10,6 +10,7 @@
 
 #include <stdint.h>  
 
+#include "builtin/streams/QueueWithSizes.h"  
 #include "gc/Heap.h"
 #include "js/ArrayBuffer.h"  
 #include "js/PropertySpec.h"
@@ -117,9 +118,6 @@ inline static MOZ_MUST_USE T* TargetFromHandler(CallArgs& args) {
               .toObject()
               .as<T>();
 }
-
-inline static MOZ_MUST_USE bool ResetQueue(
-    JSContext* cx, Handle<ReadableStreamController*> unwrappedContainer);
 
 inline static MOZ_MUST_USE bool InvokeOrNoop(JSContext* cx, HandleValue O,
                                              HandlePropertyName P,
@@ -268,32 +266,6 @@ class PullIntoDescriptor : public NativeObject {
 
 const JSClass PullIntoDescriptor::class_ = {
     "PullIntoDescriptor", JSCLASS_HAS_RESERVED_SLOTS(SlotCount)};
-
-class QueueEntry : public NativeObject {
- private:
-  enum Slots { Slot_Value = 0, Slot_Size, SlotCount };
-
- public:
-  static const JSClass class_;
-
-  Value value() { return getFixedSlot(Slot_Value); }
-  double size() { return getFixedSlot(Slot_Size).toNumber(); }
-
-  static QueueEntry* create(JSContext* cx, HandleValue value, double size) {
-    Rooted<QueueEntry*> entry(cx, NewBuiltinClassInstance<QueueEntry>(cx));
-    if (!entry) {
-      return nullptr;
-    }
-
-    entry->setFixedSlot(Slot_Value, value);
-    entry->setFixedSlot(Slot_Size, NumberValue(size));
-
-    return entry;
-  }
-};
-
-const JSClass QueueEntry::class_ = {"QueueEntry",
-                                    JSCLASS_HAS_RESERVED_SLOTS(SlotCount)};
 
 
 
@@ -2653,10 +2625,6 @@ static MOZ_MUST_USE JSObject* ReadableStreamControllerCancelSteps(
   return result;
 }
 
-inline static MOZ_MUST_USE bool DequeueValue(
-    JSContext* cx, Handle<ReadableStreamController*> unwrappedContainer,
-    MutableHandleValue chunk);
-
 
 
 
@@ -3041,10 +3009,6 @@ static MOZ_MUST_USE bool ReadableStreamDefaultControllerClose(
 
   return true;
 }
-
-static MOZ_MUST_USE bool EnqueueValueWithSize(
-    JSContext* cx, Handle<ReadableStreamController*> unwrappedContainer,
-    HandleValue value, HandleValue sizeVal);
 
 
 
@@ -4193,119 +4157,6 @@ static const JSFunctionSpec CountQueuingStrategy_methods[] = {
 CLASS_SPEC(CountQueuingStrategy, 1, 0, 0, 0, JS_NULL_CLASS_OPS);
 
 #undef CLASS_SPEC
-
-
-
-
-
-
-inline static MOZ_MUST_USE bool DequeueValue(
-    JSContext* cx, Handle<ReadableStreamController*> unwrappedContainer,
-    MutableHandleValue chunk) {
-  
-  
-  
-  Rooted<ListObject*> unwrappedQueue(cx, unwrappedContainer->queue());
-  MOZ_ASSERT(unwrappedQueue->length() > 0);
-
-  
-  
-  
-  Rooted<QueueEntry*> unwrappedPair(
-      cx, &unwrappedQueue->popFirstAs<QueueEntry>(cx));
-  MOZ_ASSERT(unwrappedPair);
-
-  
-  
-  
-  
-  
-  double totalSize = unwrappedContainer->queueTotalSize();
-  totalSize -= unwrappedPair->size();
-  if (totalSize < 0) {
-    totalSize = 0;
-  }
-  unwrappedContainer->setQueueTotalSize(totalSize);
-
-  
-  RootedValue val(cx, unwrappedPair->value());
-  if (!cx->compartment()->wrap(cx, &val)) {
-    return false;
-  }
-  chunk.set(val);
-  return true;
-}
-
-
-
-
-static MOZ_MUST_USE bool EnqueueValueWithSize(
-    JSContext* cx, Handle<ReadableStreamController*> unwrappedContainer,
-    HandleValue value, HandleValue sizeVal) {
-  cx->check(value, sizeVal);
-
-  
-  
-  
-  double size;
-  if (!ToNumber(cx, sizeVal, &size)) {
-    return false;
-  }
-
-  
-  
-  if (size < 0 || mozilla::IsNaN(size) || mozilla::IsInfinite(size)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_NUMBER_MUST_BE_FINITE_NON_NEGATIVE, "size");
-    return false;
-  }
-
-  
-  
-  {
-    AutoRealm ar(cx, unwrappedContainer);
-    Rooted<ListObject*> queue(cx, unwrappedContainer->queue());
-    RootedValue wrappedVal(cx, value);
-    if (!cx->compartment()->wrap(cx, &wrappedVal)) {
-      return false;
-    }
-
-    QueueEntry* entry = QueueEntry::create(cx, wrappedVal, size);
-    if (!entry) {
-      return false;
-    }
-    RootedValue val(cx, ObjectValue(*entry));
-    if (!queue->append(cx, val)) {
-      return false;
-    }
-  }
-
-  
-  
-  unwrappedContainer->setQueueTotalSize(unwrappedContainer->queueTotalSize() +
-                                        size);
-
-  return true;
-}
-
-
-
-
-inline static MOZ_MUST_USE bool ResetQueue(
-    JSContext* cx, Handle<ReadableStreamController*> unwrappedContainer) {
-  
-  
-  
-  if (!StoreNewListInFixedSlot(cx, unwrappedContainer,
-                               StreamController::Slot_Queue)) {
-    return false;
-  }
-
-  
-  unwrappedContainer->setQueueTotalSize(0);
-
-  return true;
-}
 
 
 
