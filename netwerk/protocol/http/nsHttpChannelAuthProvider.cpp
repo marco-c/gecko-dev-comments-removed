@@ -1432,6 +1432,11 @@ bool nsHttpChannelAuthProvider::ConfirmAuth(const char* bundleKey,
   
   
   
+  
+
+  if (!StaticPrefs::network_auth_confirmAuth_enabled()) {
+    return true;
+  }
 
   uint32_t loadFlags;
   nsresult rv = mAuthChannel->GetLoadFlags(&loadFlags);
