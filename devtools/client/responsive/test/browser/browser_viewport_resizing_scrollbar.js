@@ -87,7 +87,7 @@ addRDMTask(TEST_URL, async function({ ui, manager }) {
 
     
     await setViewportSize(ui, manager, 300, 600);
-    const initialSnapshot = await snapshotWindow(browser.contentWindow);
+    const initialSnapshot = snapshotWindow(browser.contentWindow);
 
     
     await setViewportSize(ui, manager, 600, 300);
@@ -99,7 +99,7 @@ addRDMTask(TEST_URL, async function({ ui, manager }) {
 
     
     await setViewportSize(ui, manager, 300, 600);
-    const finalSnapshot = await snapshotWindow(browser.contentWindow);
+    const finalSnapshot = snapshotWindow(browser.contentWindow);
 
     const result = compareSnapshots(initialSnapshot, finalSnapshot, true);
     is(result[2], result[1], "Window snapshots should match.");
