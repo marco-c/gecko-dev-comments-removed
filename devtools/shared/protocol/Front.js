@@ -40,6 +40,9 @@ class Front extends Pool {
   constructor(conn = null) {
     super(conn);
     this.actorID = null;
+    
+    
+    this.targetFront = null;
     this._requests = [];
 
     
@@ -71,6 +74,7 @@ class Front extends Pool {
     super.destroy();
     this.clearEvents();
     this.actorID = null;
+    this.targetFront = null;
     this._frontListeners = null;
     this._beforeListeners = null;
   }
