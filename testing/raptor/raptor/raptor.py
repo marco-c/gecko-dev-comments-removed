@@ -137,9 +137,9 @@ class Raptor(object):
 
         
         self.results_handler = RaptorResultsHandler()
+        self.start_control_server()
 
         self.build_browser_profile()
-        self.start_control_server()
 
     @property
     def profile_data_dir(self):
@@ -269,6 +269,7 @@ class Raptor(object):
 
         
         self.config['local_profile_dir'] = self.profile.profile
+        self.control_server.user_profile = self.profile
 
     def start_control_server(self):
         self.control_server = RaptorControlServer(self.results_handler, self.debug_mode)
@@ -519,6 +520,7 @@ class RaptorDesktop(Raptor):
     def start_runner_proc(self):
         
         self.runner.start()
+
         proc = self.runner.process_handler
         self.output_handler.proc = proc
 
@@ -665,6 +667,7 @@ class RaptorDesktopFirefox(RaptorDesktop):
         
         if self.config['gecko_profile'] is True:
             self._init_gecko_profiling(test)
+            
             
             
             
