@@ -179,8 +179,6 @@ class UrlbarInput {
 
     this.dropmarker.addEventListener("mousedown", this);
 
-    this.window.addEventListener("resize", this);
-
     
     
     this.view.panel.addEventListener("command", this, true);
@@ -210,7 +208,6 @@ class UrlbarInput {
       this.removeEventListener(name, this);
     }
     this.dropmarker.removeEventListener("mousedown", this);
-    this.window.removeEventListener("resize", this);
 
     this.endLayoutBreakout(true);
 
@@ -1678,22 +1675,6 @@ class UrlbarInput {
       allowAutofill,
       resetSearchState: false,
       event,
-    });
-  }
-
-  async _on_resize(event) {
-    if (!(this.megabar && this._layoutBreakoutPlaceholder)) {
-      return;
-    }
-
-    let px = number => number.toFixed(2) + "px";
-    let width = await this.window.promiseDocumentFlushed(() => {
-      
-      
-      return this.textbox.closest("#urlbar-container").clientWidth;
-    });
-    this.window.requestAnimationFrame(() => {
-      this.textbox.style.setProperty("--urlbar-width", px(width));
     });
   }
 
