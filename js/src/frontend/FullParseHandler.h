@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef frontend_FullParseHandler_h
 #define frontend_FullParseHandler_h
@@ -10,7 +10,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/PodOperations.h"
 
-#include <cstddef>  
+#include <cstddef>  // std::nullptr_t
 #include <string.h>
 
 #include "frontend/ParseNode.h"
@@ -26,14 +26,14 @@ namespace frontend {
 class TokenStreamAnyChars;
 
 enum class SourceKind {
-  
+  // We are parsing from a text source (Parser.h)
   Text,
-  
+  // We are parsing from a binary source (BinASTParser.h)
   Binary,
 };
 
-
-
+// Parse handler used when generating a full parse tree for all code which the
+// parser encounters.
 class FullParseHandler {
   ParseNodeAllocator allocator;
 
@@ -41,15 +41,15 @@ class FullParseHandler {
     return static_cast<ParseNode*>(allocator.allocNode(size));
   }
 
-  
-
-
-
-
-
-
-
-
+  /*
+   * If this is a full parse to construct the bytecode for a function that
+   * was previously lazily parsed, we still don't want to full parse the
+   * inner functions. These members are used for this functionality:
+   *
+   * - lazyOuterFunction_ holds the lazyScript for this current parse
+   * - lazyInnerFunctionIndex is used as we skip over inner functions
+   *   (see skipLazyInnerFunction),
+   */
   const Rooted<LazyScript*> lazyOuterFunction_;
   size_t lazyInnerFunctionIndex;
 
@@ -58,10 +58,10 @@ class FullParseHandler {
   const SourceKind sourceKind_;
 
  public:
-  
+  /* new_ methods for creating parse nodes. These report OOM on context. */
   JS_DECLARE_NEW_METHODS(new_, allocParseNode, inline)
 
-  
+  // FIXME: Use ListNode instead of ListNodeType as an alias (bug 1489008).
   using Node = ParseNode*;
 
 #define DECLARE_TYPE(typeName, longTypeName, asMethodName) \
@@ -77,7 +77,7 @@ class FullParseHandler {
   }
 
   bool isFunctionCall(Node node) {
-    
+    // Note: super() is a special form, *not* a function call.
     return node->isKind(ParseNodeKind::CallExpr);
   }
 
@@ -87,10 +87,10 @@ class FullParseHandler {
   }
 
   static bool isParenthesizedDestructuringPattern(Node node) {
-    
-    
-    
-    
+    // Technically this isn't a destructuring pattern at all -- the grammar
+    // doesn't treat it as such.  But we need to know when this happens to
+    // consider it a SyntaxError rather than an invalid-left-hand-side
+    // ReferenceError.
     return node->isInParens() && (node->isKind(ParseNodeKind::ObjectExpr) ||
                                   node->isKind(ParseNodeKind::ArrayExpr));
   }
@@ -111,11 +111,11 @@ class FullParseHandler {
   FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
 #undef DECLARE_AS
 
-  
-  
-  
-  
-  
+  // The FullParseHandler may be used to create nodes for text sources
+  // (from Parser.h) or for binary sources (from BinASTParser.h). In the latter
+  // case, some common assumptions on offsets are incorrect, e.g. in `a + b`,
+  // `a`, `b` and `+` may be stored in any order. We use `sourceKind()`
+  // to determine whether we need to check these assumptions.
   SourceKind sourceKind() const { return sourceKind_; }
 
   NameNodeType newName(PropertyName* name, const TokenPos& pos, JSContext* cx) {
@@ -136,9 +136,9 @@ class FullParseHandler {
     return new_<NumericLiteral>(value, decimalPoint, pos);
   }
 
-  
-  
-  
+  // The Boxer object here is any object that can allocate BigIntBoxes.
+  // Specifically, a Boxer has a .newBigIntBox(T) method that accepts a
+  // BigInt* argument and returns a BigIntBox*.
   template <class Boxer>
   BigIntLiteralType newBigInt(BigInt* bi, const TokenPos& pos, Boxer& boxer) {
     BigIntBox* box = boxer.newBigIntBox(bi);
@@ -183,10 +183,10 @@ class FullParseHandler {
     addArrayElement(callSiteObj, cookedNode);
     addArrayElement(callSiteObj->rawNodes(), rawNode);
 
-    
-
-
-
+    /*
+     * We don't know when the last noSubstTemplate will come in, and we
+     * don't want to deal with this outside this method
+     */
     setEndPosition(callSiteObj, callSiteObj->rawNodes());
   }
 
@@ -202,9 +202,9 @@ class FullParseHandler {
     return new_<RawUndefinedLiteral>(pos);
   }
 
-  
-  
-  
+  // The Boxer object here is any object that can allocate ObjectBoxes.
+  // Specifically, a Boxer has a .newObjectBox(T) method that accepts a
+  // Rooted<RegExpObject*> argument and returns an ObjectBox*.
   template <class Boxer>
   RegExpLiteralType newRegExp(RegExpObject* reobj, const TokenPos& pos,
                               Boxer& boxer) {
@@ -270,7 +270,7 @@ class FullParseHandler {
     return ParseNode::appendOrCreateList(kind, left, right, this, pc);
   }
 
-  
+  // Expressions
 
   ListNodeType newArrayLiteral(uint32_t begin) {
     return new_<ListNode>(ParseNodeKind::ArrayExpr, TokenPos(begin, begin + 1));
@@ -283,7 +283,7 @@ class FullParseHandler {
     if (!elision) {
       return false;
     }
-    addList( literal,  elision);
+    addList(/* list = */ literal, /* kid = */ elision);
     literal->setHasArrayHoleOrSpread();
     literal->setHasNonConstInitializer();
     return true;
@@ -297,7 +297,7 @@ class FullParseHandler {
     if (!spread) {
       return false;
     }
-    addList( literal,  spread);
+    addList(/* list = */ literal, /* kid = */ spread);
     literal->setHasArrayHoleOrSpread();
     literal->setHasNonConstInitializer();
     return true;
@@ -307,7 +307,7 @@ class FullParseHandler {
     if (!element->isConstant()) {
       literal->setHasNonConstInitializer();
     }
-    addList( literal,  element);
+    addList(/* list = */ literal, /* kid = */ element);
   }
 
   CallNodeType newCall(Node callee, Node args, JSOp callOp) {
@@ -360,15 +360,15 @@ class FullParseHandler {
                                          Node expr) {
     MOZ_ASSERT(literal->isKind(ParseNodeKind::ObjectExpr));
 
-    
-    
+    // Object literals with mutated [[Prototype]] are non-constant so that
+    // singleton objects will have Object.prototype as their [[Prototype]].
     literal->setHasNonConstInitializer();
 
     UnaryNode* mutation = newUnary(ParseNodeKind::MutateProto, begin, expr);
     if (!mutation) {
       return false;
     }
-    addList( literal,  mutation);
+    addList(/* list = */ literal, /* kid = */ mutation);
     return true;
   }
 
@@ -386,7 +386,7 @@ class FullParseHandler {
       literal->setHasNonConstInitializer();
     }
 
-    addList( literal,  propdef);
+    addList(/* list = */ literal, /* kid = */ propdef);
   }
 
   MOZ_MUST_USE bool addPropertyDefinition(ListNodeType literal, Node key,
@@ -411,7 +411,7 @@ class FullParseHandler {
     if (!propdef) {
       return false;
     }
-    addList( literal,  propdef);
+    addList(/* list = */ literal, /* kid = */ propdef);
     return true;
   }
 
@@ -424,7 +424,7 @@ class FullParseHandler {
     if (!spread) {
       return false;
     }
-    addList( literal,  spread);
+    addList(/* list = */ literal, /* kid = */ spread);
     return true;
   }
 
@@ -441,7 +441,7 @@ class FullParseHandler {
       return false;
     }
 
-    addList( literal,  propdef);
+    addList(/* list = */ literal, /* kid = */ propdef);
     return true;
   }
 
@@ -466,14 +466,14 @@ class FullParseHandler {
   MOZ_MUST_USE bool addClassMemberDefinition(ListNodeType memberList,
                                              Node member) {
     MOZ_ASSERT(memberList->isKind(ParseNodeKind::ClassMemberList));
-    
+    // Constructors can be surrounded by LexicalScopes.
     MOZ_ASSERT(member->isKind(ParseNodeKind::ClassMethod) ||
                member->isKind(ParseNodeKind::ClassField) ||
                (member->isKind(ParseNodeKind::LexicalScope) &&
                 member->as<LexicalScopeNode>().scopeBody()->isKind(
                     ParseNodeKind::ClassMethod)));
 
-    addList( memberList,  member);
+    addList(/* list = */ memberList, /* kid = */ member);
     return true;
   }
 
@@ -486,10 +486,10 @@ class FullParseHandler {
                        FunctionSyntaxKind::ClassConstructor ||
                    node->scopeBody()->as<ClassMethod>().method().syntaxKind() ==
                        FunctionSyntaxKind::DerivedClassConstructor);
-        
-        
-        
-        
+        // Check isEmptyScope instead of asserting, because this function must
+        // be idempotent: when parsing via asm.js, this function is called, then
+        // later, after asm.js parsing fails, this function is called again on
+        // the same scope. (See bug 1555979)
         if (!node->isEmptyScope()) {
           MOZ_ASSERT(node->scopeBindings()->length == 1);
           MOZ_ASSERT(node->scopeBindings()->trailingNames[0].name() ==
@@ -520,7 +520,7 @@ class FullParseHandler {
     return new_<UnaryNode>(ParseNodeKind::AwaitExpr, pos, value);
   }
 
-  
+  // Statements
 
   ListNodeType newStatementList(const TokenPos& pos) {
     return new_<ListNode>(ParseNodeKind::StatementList, pos);
@@ -536,11 +536,11 @@ class FullParseHandler {
   void addStatementToList(ListNodeType list, Node stmt) {
     MOZ_ASSERT(list->isKind(ParseNodeKind::StatementList));
 
-    addList( list,  stmt);
+    addList(/* list = */ list, /* kid = */ stmt);
 
     if (isFunctionStmt(stmt)) {
-      
-      
+      // Notify the emitter that the block contains body-level function
+      // definitions that should be processed before the rest of nodes.
       list->setHasTopLevelFunctionDeclarations();
     }
   }
@@ -553,7 +553,7 @@ class FullParseHandler {
   void addCaseStatementToList(ListNodeType list, CaseClauseType caseClause) {
     MOZ_ASSERT(list->isKind(ParseNodeKind::StatementList));
 
-    addList( list,  caseClause);
+    addList(/* list = */ list, /* kid = */ caseClause);
 
     if (caseClause->statementList()->hasTopLevelFunctionDeclarations()) {
       list->setHasTopLevelFunctionDeclarations();
@@ -571,8 +571,8 @@ class FullParseHandler {
     }
 
     ParseNode* genInit =
-        newAssignment(ParseNodeKind::AssignExpr,  genName,
-                       makeGen);
+        newAssignment(ParseNodeKind::AssignExpr, /* lhs = */ genName,
+                      /* rhs = */ makeGen);
     if (!genInit) {
       return false;
     }
@@ -821,11 +821,11 @@ class FullParseHandler {
     funbox->functionNode = funNode;
   }
   void addFunctionFormalParameter(FunctionNodeType funNode, Node argpn) {
-    addList( funNode->body(),  argpn);
+    addList(/* list = */ funNode->body(), /* kid = */ argpn);
   }
   void setFunctionBody(FunctionNodeType funNode, LexicalScopeNodeType body) {
     MOZ_ASSERT(funNode->body()->isKind(ParseNodeKind::ParamsBody));
-    addList( funNode->body(),  body);
+    addList(/* list = */ funNode->body(), /* kid = */ body);
   }
 
   ModuleNodeType newModule(const TokenPos& pos) {
@@ -833,8 +833,8 @@ class FullParseHandler {
   }
 
   LexicalScopeNodeType newLexicalScope(LexicalScope::Data* bindings,
-                                       Node body) {
-    return new_<LexicalScopeNode>(bindings, body);
+                                       Node body, ScopeKind kind = ScopeKind::Lexical) {
+    return new_<LexicalScopeNode>(bindings, body, kind);
   }
 
   CallNodeType newNewExpression(uint32_t begin, Node ctor, Node args,
@@ -1044,7 +1044,7 @@ inline bool FullParseHandler::setLastFunctionFormalParameterDefault(
   return true;
 }
 
-}  
-}  
+}  // namespace frontend
+}  // namespace js
 
-#endif 
+#endif /* frontend_FullParseHandler_h */
