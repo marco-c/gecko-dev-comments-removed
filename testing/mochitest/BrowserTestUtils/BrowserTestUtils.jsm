@@ -1160,51 +1160,28 @@ var BrowserTestUtils = {
 
 
 
+
+
+
   waitForContentEvent(
     browser,
     eventName,
     capture = false,
     checkFn,
-    wantsUntrusted = false
+    wantUntrusted = false
   ) {
-    let parameters = {
-      eventName,
-      capture,
-      checkFnSource: checkFn ? checkFn.toSource() : null,
-      wantsUntrusted,
-    };
-    
-    return ContentTask.spawn(browser, parameters, function({
-      eventName,
-      capture,
-      checkFnSource,
-      wantsUntrusted,
-    }) {
-      let checkFn;
-      if (checkFnSource) {
-        checkFn = eval(`(() => (${checkFnSource}))()`);
-      }
-      return new Promise((resolve, reject) => {
-        addEventListener(
-          eventName,
-          function listener(event) {
-            let completion = resolve;
-            try {
-              if (checkFn && !checkFn(event)) {
-                return;
-              }
-            } catch (e) {
-              completion = () => reject(e);
-            }
-            removeEventListener(eventName, listener, capture);
-            completion();
-          },
-          capture,
-          wantsUntrusted
-        );
-      });
+    return new Promise(resolve => {
+      let removeEventListener = this.addContentEventListener(
+        browser,
+        eventName,
+        () => {
+          removeEventListener();
+          resolve();
+        },
+        { capture, wantUntrusted },
+        checkFn
+      );
     });
-    
   },
 
   
@@ -1261,7 +1238,10 @@ var BrowserTestUtils = {
   ) {
     let id = gListenerId++;
     let contentEventListeners = this._contentEventListeners;
-    contentEventListeners.set(id, { listener, browser });
+    contentEventListeners.set(id, {
+      listener,
+      browsingContext: browser.browsingContext,
+    });
 
     let eventListenerState = this._contentEventListenerSharedState;
     eventListenerState.set(id, {
@@ -1296,12 +1276,12 @@ var BrowserTestUtils = {
 
 
 
-  _receivedContentEventListener(listenerId, browser) {
+  _receivedContentEventListener(listenerId, browsingContext) {
     let listenerData = this._contentEventListeners.get(listenerId);
     if (!listenerData) {
       return;
     }
-    if (listenerData.browser != browser) {
+    if (listenerData.browsingContext != browsingContext) {
       return;
     }
     listenerData.listener();
