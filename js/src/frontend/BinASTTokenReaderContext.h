@@ -50,6 +50,12 @@ struct NormalizedInterfaceAndField {
                      : identity) {}
 };
 
+template <typename T>
+struct Split {
+  T prefix;
+  T suffix;
+};
+
 
 
 
@@ -82,6 +88,14 @@ struct HuffmanLookup {
   
   
   uint32_t leadingBits(const uint8_t bitLength) const;
+
+  
+  
+  
+  
+  
+  
+  Split<HuffmanLookup> split(const uint8_t prefixBitLength) const;
 
   
   
@@ -410,9 +424,17 @@ class MapBasedHuffmanTable {
 template <typename T>
 class SingleLookupHuffmanTable {
  public:
+  
+  
+  
+  using InternalIndex = uint8_t;
+
+  
+  static const uint8_t MAX_BIT_LENGTH = sizeof(InternalIndex) * 8;
+
   explicit SingleLookupHuffmanTable(JSContext* cx)
-      : values(cx), saturated(cx), maxBitLength(-1) {}
-  SingleLookupHuffmanTable(SingleLookupHuffmanTable&& other) noexcept = default;
+      : values(cx), saturated(cx), largestBitLength(-1) {}
+  SingleLookupHuffmanTable(SingleLookupHuffmanTable&& other) = default;
 
   
   JS::Result<Ok> initWithSingleValue(JSContext* cx, T&& value);
@@ -459,12 +481,6 @@ class SingleLookupHuffmanTable {
   Iterator begin() const { return Iterator(values.begin()); }
   Iterator end() const { return Iterator(values.end()); }
 
- public:
-  
-  
-  
-  using InternalIndex = uint8_t;
-
  private:
   
   
@@ -484,10 +500,243 @@ class SingleLookupHuffmanTable {
   
   
   
-  uint8_t maxBitLength;
+  uint8_t largestBitLength;
 
   friend class HuffmanPreludeReader;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T, typename Subtable, uint8_t PrefixBitLength>
+class MultiLookupHuffmanTable {
+ public:
+  
+  static const uint8_t MAX_BIT_LENGTH =
+      PrefixBitLength + Subtable::MAX_BIT_LENGTH;
+
+  explicit MultiLookupHuffmanTable(JSContext* cx)
+      : cx_(cx),
+        values(cx),
+        subTables(cx),
+        largestBitLength(-1)
+#ifdef DEBUG
+        ,
+        control(cx)
+#endif  
+  {
+  }
+  MultiLookupHuffmanTable(MultiLookupHuffmanTable&& other) = default;
+
+  
+  
+  
+  
+  JS::Result<Ok> initStart(JSContext* cx, size_t numberOfSymbols,
+                           uint8_t largestBitLength);
+
+  JS::Result<Ok> initComplete();
+
+  
+  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bits_length, T&& value);
+
+  MultiLookupHuffmanTable() = delete;
+  MultiLookupHuffmanTable(MultiLookupHuffmanTable&) = delete;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  HuffmanEntry<const T*> lookup(HuffmanLookup key) const;
+
+  
+  size_t length() const { return values.length(); }
+
+  
+  struct Iterator {
+    explicit Iterator(const HuffmanEntry<T>* position);
+    void operator++();
+    const T* operator*() const;
+    bool operator==(const Iterator& other) const;
+    bool operator!=(const Iterator& other) const;
+
+   private:
+    const HuffmanEntry<T>* position;
+  };
+  Iterator begin() const { return Iterator(values.begin()); }
+  Iterator end() const { return Iterator(values.end()); }
+
+ public:
+  
+  
+  
+  using InternalIndex = uint8_t;
+
+ private:
+  JSContext* cx_;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  Vector<HuffmanEntry<T>> values;
+
+  
+  
+  
+  
+  
+  
+  
+  Vector<Subtable> subTables;
+
+  
+  
+  
+  
+  uint8_t largestBitLength;
+
+#ifdef DEBUG
+  MapBasedHuffmanTable<T> control;
+#endif  
+
+  friend class HuffmanPreludeReader;
+};
+
+
+template <typename T>
+using TwoLookupsHuffmanTable = MultiLookupHuffmanTable<
+    T,
+    SingleLookupHuffmanTable< size_t>,
+    6>;
+
+
+template <typename T>
+using ThreeLookupsHuffmanTable = MultiLookupHuffmanTable<
+    T, TwoLookupsHuffmanTable< size_t>, 6>;
 
 
 
@@ -525,7 +774,8 @@ struct GenericHuffmanTable {
 
   struct Iterator {
     explicit Iterator(typename SingleLookupHuffmanTable<T>::Iterator&&);
-    explicit Iterator(typename MapBasedHuffmanTable<T>::Iterator&&);
+    explicit Iterator(typename TwoLookupsHuffmanTable<T>::Iterator&&);
+    explicit Iterator(typename ThreeLookupsHuffmanTable<T>::Iterator&&);
     Iterator(Iterator&&) = default;
     Iterator(const Iterator&) = default;
     void operator++();
@@ -535,7 +785,8 @@ struct GenericHuffmanTable {
 
    private:
     mozilla::Variant<typename SingleLookupHuffmanTable<T>::Iterator,
-                     typename MapBasedHuffmanTable<T>::Iterator>
+                     typename TwoLookupsHuffmanTable<T>::Iterator,
+                     typename ThreeLookupsHuffmanTable<T>::Iterator>
         implementation;
   };
 
@@ -554,8 +805,8 @@ struct GenericHuffmanTable {
   HuffmanEntry<const T*> lookup(HuffmanLookup key) const;
 
  private:
-  mozilla::Variant<SingleLookupHuffmanTable<T>, MapBasedHuffmanTable<T>,
-                   HuffmanTableUnreachable>
+  mozilla::Variant<SingleLookupHuffmanTable<T>, TwoLookupsHuffmanTable<T>,
+                   ThreeLookupsHuffmanTable<T>, HuffmanTableUnreachable>
       implementation;
 };
 
