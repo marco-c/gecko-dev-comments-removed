@@ -1237,6 +1237,18 @@ class AsyncPanZoomController {
 
   static bool CanHandleScrollOffsetUpdate(PanZoomState aState);
 
+  
+
+
+
+
+
+
+
+
+  bool ShouldCancelAnimationForScrollUpdate(
+      const Maybe<CSSPoint>& aRelativeDelta);
+
  private:
   friend class StateChangeNotificationBlocker;
   
