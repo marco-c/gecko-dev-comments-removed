@@ -1470,10 +1470,20 @@ class SpecialPowersAPI extends JSWindowActorChild {
 
 
 
-  spawn(frame, args, task) {
+
+  spawn(target, args, task) {
+    let browsingContext;
+    if (BrowsingContext.isInstance(target)) {
+      browsingContext = target;
+    } else if (Element.isInstance(target)) {
+      browsingContext = target.browsingContext;
+    } else {
+      browsingContext = BrowsingContext.getFromWindow(target);
+    }
+
     let {caller} = Components.stack;
     return this.sendQuery("Spawn", {
-      browsingContext: frame.browsingContext,
+      browsingContext,
       args,
       task: String(task),
       caller: {
