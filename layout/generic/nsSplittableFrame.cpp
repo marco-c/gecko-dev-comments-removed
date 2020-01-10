@@ -230,11 +230,10 @@ nsIFrame::LogicalSides nsSplittableFrame::GetLogicalSkipSides(
     
     
     
-
     if (NS_UNCONSTRAINEDSIZE != aReflowInput->AvailableBSize()) {
-      nscoord effectiveCH = this->GetEffectiveComputedBSize(*aReflowInput);
-      if (effectiveCH != NS_UNCONSTRAINEDSIZE &&
-          effectiveCH > aReflowInput->AvailableBSize()) {
+      nscoord effectiveBSize = GetEffectiveComputedBSize(*aReflowInput);
+      if (effectiveBSize != NS_UNCONSTRAINEDSIZE &&
+          effectiveBSize > aReflowInput->AvailableBSize()) {
         
         
         skip |= eLogicalSideBitsBEnd;
@@ -245,6 +244,12 @@ nsIFrame::LogicalSides nsSplittableFrame::GetLogicalSkipSides(
     if (nif && !IS_TRUE_OVERFLOW_CONTAINER(nif)) {
       skip |= eLogicalSideBitsBEnd;
     }
+  }
+
+  
+  
+  if (HasColumnSpanSiblings()) {
+    skip |= eLogicalSideBitsBEnd;
   }
 
   return skip;
