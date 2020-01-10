@@ -19,6 +19,13 @@
 #include "mozilla/HashFunctions.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/PresShell.h"
+#include "gfxFont.h"
+#include "ScaledFontBase.h"
+#include "SkTextBlob.h"
+#include "SkTypeface.h"
+#include "SkFont.h"
+#include "SkPoint.h"
+#include "SkScalar.h"
 
 #include "BorderConsts.h"
 #include "nsStyleConsts.h"
@@ -3715,6 +3722,256 @@ Rect nsCSSRendering::ExpandPaintingRectForDecorationLine(
   return rect;
 }
 
+
+
+static bool GetSkFontFromGfxFont(DrawTarget& aDrawTarget, gfxFont* aFont,
+                                 SkFont& aSkFont) {
+  RefPtr<ScaledFont> scaledFont = aFont->GetScaledFont(&aDrawTarget);
+  if (!scaledFont) {
+    return false;
+  }
+
+  ScaledFontBase* fontBase = static_cast<ScaledFontBase*>(scaledFont.get());
+
+  SkTypeface* typeface = fontBase->GetSkTypeface();
+  if (!typeface) {
+    return false;
+  }
+
+  aSkFont = SkFont(sk_ref_sp(typeface), SkFloatToScalar(fontBase->GetSize()));
+  return true;
+}
+
+
+
+static void GetPositioning(
+    const nsCSSRendering::PaintDecorationLineParams& aParams, const Rect& aRect,
+    SkScalar aBounds[], SkPoint& aTextPos) {
+  
+  SkScalar upperLine, lowerLine;
+
+  
+  
+  
+  if (aParams.decoration == mozilla::StyleTextDecorationLine_OVERLINE) {
+    aTextPos = {aParams.pt.x,
+                aParams.pt.y + aParams.offset + (2 * aParams.lineSize.height)};
+    lowerLine = aTextPos.fY - aParams.offset + aParams.defaultLineThickness;
+    upperLine = lowerLine - aRect.Height();
+  } else {
+    aTextPos = {aParams.pt.x,
+                aParams.pt.y - aParams.offset - aParams.lineSize.height};
+    upperLine = aTextPos.fY - aParams.offset;
+    lowerLine = upperLine + aRect.Height();
+  }
+
+  
+  Float linePadding = 0.75f;
+  aBounds[0] = upperLine - linePadding;
+  aBounds[1] = lowerLine + linePadding;
+}
+
+
+static SkPoint GlyphPosition(const gfxTextRun::DetailedGlyph& aGlyph,
+                             const SkPoint& aTextPos,
+                             int32_t aAppUnitsPerDevPixel) {
+  SkPoint point = {aGlyph.mOffset.x, aGlyph.mOffset.y};
+
+  
+  point.fX /= (float)aAppUnitsPerDevPixel;
+  point.fY /= (float)aAppUnitsPerDevPixel;
+
+  
+  point.fX += aTextPos.fX;
+  point.fY += aTextPos.fY;
+  return point;
+}
+
+
+
+
+
+
+
+static uint32_t CountAllGlyphs(
+    const gfxTextRun* aTextRun,
+    const gfxTextRun::CompressedGlyph* aCompressedGlyph, uint32_t aStringStart,
+    uint32_t aStringEnd) {
+  bool hasDetailed = aTextRun->HasDetailedGlyphs();
+  uint32_t totalGlyphCount = 0;
+
+  if (!hasDetailed) {
+    return aStringEnd - aStringStart;
+  }
+
+  for (const gfxTextRun::CompressedGlyph* cg = aCompressedGlyph + aStringStart;
+       cg < aCompressedGlyph + aStringEnd; ++cg) {
+    totalGlyphCount += cg->IsSimpleGlyph() ? 1 : cg->GetGlyphCount();
+  }
+
+  return totalGlyphCount;
+}
+
+static void AddDetailedGlyph(const SkTextBlobBuilder::RunBuffer& aRunBuffer,
+                             const gfxTextRun::DetailedGlyph& aGlyph,
+                             int aIndex, float aAppUnitsPerDevPixel,
+                             SkPoint& aTextPos) {
+  
+  aRunBuffer.glyphs[aIndex] = aGlyph.mGlyphID;
+
+  
+  SkPoint position = GlyphPosition(aGlyph, aTextPos, aAppUnitsPerDevPixel);
+  aRunBuffer.pos[2 * aIndex] = position.fX;
+  aRunBuffer.pos[(2 * aIndex) + 1] = position.fY;
+
+  
+  aTextPos.fX += ((float)aGlyph.mAdvance / aAppUnitsPerDevPixel);
+}
+
+static void AddSimpleGlyph(const SkTextBlobBuilder::RunBuffer& aRunBuffer,
+                           const gfxTextRun::CompressedGlyph& aGlyph,
+                           int aIndex, float aAppUnitsPerDevPixel,
+                           SkPoint& aTextPos) {
+  aRunBuffer.glyphs[aIndex] = aGlyph.GetSimpleGlyph();
+
+  
+  aRunBuffer.pos[2 * aIndex] = aTextPos.fX;
+  aRunBuffer.pos[(2 * aIndex) + 1] = aTextPos.fY;
+
+  
+  aTextPos.fX += ((float)aGlyph.GetSimpleAdvance() / aAppUnitsPerDevPixel);
+}
+
+
+
+
+static sk_sp<const SkTextBlob> CreateTextBlob(
+    const gfxTextRun* aTextRun,
+    const gfxTextRun::CompressedGlyph* aCompressedGlyph, const SkFont& aFont,
+    const gfxTextRun::PropertyProvider::Spacing* aSpacing,
+    uint32_t aStringStart, uint32_t aStringEnd, float aAppUnitsPerDevPixel,
+    SkPoint& aTextPos, int32_t& aSpacingOffset) {
+  
+  uint32_t len =
+      CountAllGlyphs(aTextRun, aCompressedGlyph, aStringStart, aStringEnd);
+  MOZ_ASSERT(len > 0, "there must be at least one glyph for skip ink");
+  SkTextBlobBuilder builder;
+  const SkTextBlobBuilder::RunBuffer& run = builder.allocRunPos(aFont, len);
+
+  bool hasDetailed = aTextRun->HasDetailedGlyphs();
+
+  
+  
+  bool isRTL = aTextRun->IsRightToLeft();
+  uint32_t currIndex = isRTL ? aStringEnd - 1 : aStringStart;  
+  
+  
+  int step = isRTL ? -1 : 1;
+  uint32_t limit = isRTL ? aStringStart : aStringEnd - 1;
+
+  uint32_t i = 0;  
+  while (true) {
+    
+    aTextPos.fX +=
+        isRTL ? aSpacing[aSpacingOffset].mAfter / aAppUnitsPerDevPixel
+              : aSpacing[aSpacingOffset].mBefore / aAppUnitsPerDevPixel;
+
+    if (aCompressedGlyph[currIndex].IsSimpleGlyph()) {
+      MOZ_ASSERT(i < len, "glyph count error!");
+      AddSimpleGlyph(run, aCompressedGlyph[currIndex], i, aAppUnitsPerDevPixel,
+                     aTextPos);
+      i++;
+    } else if (hasDetailed) {
+      
+      uint32_t count = aCompressedGlyph[currIndex].GetGlyphCount();
+      if (count > 0) {
+        gfxTextRun::DetailedGlyph* detailGlyph =
+            aTextRun->GetDetailedGlyphs(currIndex);
+        for (uint32_t d = isRTL ? count - 1 : 0; count; count--, d += step) {
+          MOZ_ASSERT(i < len, "glyph count error!");
+          AddDetailedGlyph(run, detailGlyph[d], i, aAppUnitsPerDevPixel,
+                           aTextPos);
+          i++;
+        }
+      }
+    }
+    aTextPos.fX += isRTL
+                       ? aSpacing[aSpacingOffset].mBefore / aAppUnitsPerDevPixel
+                       : aSpacing[aSpacingOffset].mAfter / aAppUnitsPerDevPixel;
+    aSpacingOffset += step;
+
+    if (currIndex == limit) {
+      break;
+    }
+    currIndex += step;
+  }
+
+  return builder.make();
+}
+
+
+
+
+
+
+static void GetTextIntercepts(const sk_sp<const SkTextBlob>& aBlob,
+                              const SkScalar aBounds[],
+                              nsTArray<SkScalar>& aIntercepts) {
+  
+  int count = aBlob->getIntercepts(aBounds, nullptr);
+  if (count < 2) {
+    return;
+  }
+  aBlob->getIntercepts(aBounds, aIntercepts.AppendElements(count));
+}
+
+
+
+
+
+
+
+static void SkipInk(nsIFrame* aFrame, DrawTarget& aDrawTarget,
+                    const nsCSSRendering::PaintDecorationLineParams& aParams,
+                    const nsTArray<SkScalar>& aIntercepts, Rect& aRect) {
+  nsCSSRendering::PaintDecorationLineParams clipParams = aParams;
+  double padding = 2.0 * aParams.lineSize.height;
+  int length = aIntercepts.Length();
+
+  SkScalar startIntercept = 0;
+  SkScalar endIntercept = 0;
+
+  for (int i = 0; i <= length; i += 2) {
+    
+    startIntercept = (i > 0) ? aIntercepts[i - 1] : aParams.pt.x - padding;
+    endIntercept = (i < length)
+                       ? aIntercepts[i]
+                       : aParams.pt.x + aParams.lineSize.width + padding;
+
+    
+    
+    
+    clipParams.lineSize.width =
+        (endIntercept - startIntercept) - (2.0 * padding);
+    aRect.width = clipParams.lineSize.width;
+
+    
+    
+    if (clipParams.lineSize.width <
+        std::max(0.5 * clipParams.lineSize.height, 1.0)) {
+      continue;
+    }
+
+    
+    
+    clipParams.pt.x = startIntercept + padding;
+    aRect.x = clipParams.pt.x;
+
+    nsCSSRendering::PaintDecorationLineInternal(aFrame, aDrawTarget, clipParams,
+                                                aRect);
+  }
+}
+
 void nsCSSRendering::PaintDecorationLine(
     nsIFrame* aFrame, DrawTarget& aDrawTarget,
     const PaintDecorationLineParams& aParams) {
@@ -3733,6 +3990,89 @@ void nsCSSRendering::PaintDecorationLine(
     return;
   }
 
+  
+  
+  mozilla::StyleTextDecorationSkipInk skipInk =
+      aFrame->StyleText()->mTextDecorationSkipInk;
+  bool skipInkEnabled =
+      skipInk == mozilla::StyleTextDecorationSkipInk::Auto &&
+      aParams.decoration != StyleTextDecorationLine_LINE_THROUGH &&
+      StaticPrefs::layout_css_text_decoration_skip_ink_enabled();
+
+  if (!skipInkEnabled || aParams.glyphRange.Length() == 0) {
+    PaintDecorationLineInternal(aFrame, aDrawTarget, aParams, rect);
+    return;
+  }
+
+  
+  nsTextFrame* textFrame = nullptr;
+  if (aFrame->IsTextFrame()) {
+    textFrame = static_cast<nsTextFrame*>(aFrame);
+  } else {
+    PaintDecorationLineInternal(aFrame, aDrawTarget, aParams, rect);
+    return;
+  }
+
+  
+  gfxTextRun* textRun =
+      textFrame->GetTextRun(nsTextFrame::TextRunType::eInflated);
+
+  
+  int32_t appUnitsPerDevPixel = aFrame->PresContext()->AppUnitsPerDevPixel();
+
+  
+  gfxTextRun::CompressedGlyph* characterGlyphs = textRun->GetCharacterGlyphs();
+
+  
+  SkPoint textPos = {0, 0};
+  SkScalar bounds[] = {0, 0};
+  GetPositioning(aParams, rect, bounds, textPos);
+
+  
+  nsTArray<SkScalar> intercepts;
+
+  
+  AutoTArray<gfxTextRun::PropertyProvider::Spacing, 64> spacing;
+  spacing.SetLength(aParams.glyphRange.Length());
+  if (aParams.provider != nullptr) {
+    aParams.provider->GetSpacing(aParams.glyphRange, spacing.Elements());
+  }
+
+  
+  
+  bool isRTL = textRun->IsRightToLeft();
+  int32_t spacingOffset = isRTL ? aParams.glyphRange.Length() - 1 : 0;
+  gfxTextRun::GlyphRunIterator iter(textRun, aParams.glyphRange, isRTL);
+
+  while (iter.NextRun()) {
+    
+    SkFont font;
+    if (!GetSkFontFromGfxFont(aDrawTarget, iter.GetGlyphRun()->mFont, font)) {
+      PaintDecorationLineInternal(aFrame, aDrawTarget, aParams, rect);
+      return;
+    }
+
+    
+    sk_sp<const SkTextBlob> textBlob =
+        CreateTextBlob(textRun, characterGlyphs, font, spacing.Elements(),
+                       iter.GetStringStart(), iter.GetStringEnd(),
+                       (float)appUnitsPerDevPixel, textPos, spacingOffset);
+
+    
+    GetTextIntercepts(textBlob, bounds, intercepts);
+  }
+  bool needsSkipInk = intercepts.Length() > 0;
+
+  if (needsSkipInk) {
+    SkipInk(aFrame, aDrawTarget, aParams, intercepts, rect);
+  } else {
+    PaintDecorationLineInternal(aFrame, aDrawTarget, aParams, rect);
+  }
+}
+
+void nsCSSRendering::PaintDecorationLineInternal(
+    nsIFrame* aFrame, DrawTarget& aDrawTarget,
+    const PaintDecorationLineParams& aParams, Rect aRect) {
   Float lineThickness = std::max(NS_round(aParams.lineSize.height), 1.0);
 
   Color color = ToDeviceColor(aParams.color);
@@ -3754,22 +4094,22 @@ void nsCSSRendering::PaintDecorationLine(
     case NS_STYLE_TEXT_DECORATION_STYLE_DOUBLE:
       break;
     case NS_STYLE_TEXT_DECORATION_STYLE_DASHED: {
-      autoPopClips.PushClipRect(rect);
+      autoPopClips.PushClipRect(aRect);
       Float dashWidth = lineThickness * DOT_LENGTH * DASH_LENGTH;
       dash[0] = dashWidth;
       dash[1] = dashWidth;
       strokeOptions.mDashPattern = dash;
       strokeOptions.mDashLength = MOZ_ARRAY_LENGTH(dash);
       strokeOptions.mLineCap = CapStyle::BUTT;
-      rect = ExpandPaintingRectForDecorationLine(
-          aFrame, aParams.style, rect, aParams.icoordInFrame, dashWidth * 2,
+      aRect = ExpandPaintingRectForDecorationLine(
+          aFrame, aParams.style, aRect, aParams.icoordInFrame, dashWidth * 2,
           aParams.vertical);
       
-      rect.width += dashWidth;
+      aRect.width += dashWidth;
       break;
     }
     case NS_STYLE_TEXT_DECORATION_STYLE_DOTTED: {
-      autoPopClips.PushClipRect(rect);
+      autoPopClips.PushClipRect(aRect);
       Float dashWidth = lineThickness * DOT_LENGTH;
       if (lineThickness > 2.0) {
         dash[0] = 0.f;
@@ -3781,15 +4121,15 @@ void nsCSSRendering::PaintDecorationLine(
       }
       strokeOptions.mDashPattern = dash;
       strokeOptions.mDashLength = MOZ_ARRAY_LENGTH(dash);
-      rect = ExpandPaintingRectForDecorationLine(
-          aFrame, aParams.style, rect, aParams.icoordInFrame, dashWidth * 2,
+      aRect = ExpandPaintingRectForDecorationLine(
+          aFrame, aParams.style, aRect, aParams.icoordInFrame, dashWidth * 2,
           aParams.vertical);
       
-      rect.width += dashWidth;
+      aRect.width += dashWidth;
       break;
     }
     case NS_STYLE_TEXT_DECORATION_STYLE_WAVY:
-      autoPopClips.PushClipRect(rect);
+      autoPopClips.PushClipRect(aRect);
       if (lineThickness > 2.0) {
         drawOptions.mAntialiasMode = AntialiasMode::SUBPIXEL;
       } else {
@@ -3806,17 +4146,17 @@ void nsCSSRendering::PaintDecorationLine(
 
   
   if (aParams.vertical) {
-    rect.x += lineThickness / 2;
+    aRect.x += lineThickness / 2;
   } else {
-    rect.y += lineThickness / 2;
+    aRect.y += lineThickness / 2;
   }
 
   switch (aParams.style) {
     case NS_STYLE_TEXT_DECORATION_STYLE_SOLID:
     case NS_STYLE_TEXT_DECORATION_STYLE_DOTTED:
     case NS_STYLE_TEXT_DECORATION_STYLE_DASHED: {
-      Point p1 = rect.TopLeft();
-      Point p2 = aParams.vertical ? rect.BottomLeft() : rect.TopRight();
+      Point p1 = aRect.TopLeft();
+      Point p2 = aParams.vertical ? aRect.BottomLeft() : aRect.TopRight();
       if (textDrawer) {
         textDrawer->AppendDecoration(p1, p2, lineThickness, aParams.vertical,
                                      color, aParams.style);
@@ -3840,17 +4180,17 @@ void nsCSSRendering::PaintDecorationLine(
 
 
 
-      Point p1a = rect.TopLeft();
-      Point p2a = aParams.vertical ? rect.BottomLeft() : rect.TopRight();
+      Point p1a = aRect.TopLeft();
+      Point p2a = aParams.vertical ? aRect.BottomLeft() : aRect.TopRight();
 
       if (aParams.vertical) {
-        rect.width -= lineThickness;
+        aRect.width -= lineThickness;
       } else {
-        rect.height -= lineThickness;
+        aRect.height -= lineThickness;
       }
 
-      Point p1b = aParams.vertical ? rect.TopRight() : rect.BottomLeft();
-      Point p2b = rect.BottomRight();
+      Point p1b = aParams.vertical ? aRect.TopRight() : aRect.BottomLeft();
+      Point p2b = aRect.BottomRight();
 
       if (textDrawer) {
         textDrawer->AppendDecoration(p1a, p2a, lineThickness, aParams.vertical,
@@ -3898,9 +4238,9 @@ void nsCSSRendering::PaintDecorationLine(
 
 
 
-      Float& rectICoord = aParams.vertical ? rect.y : rect.x;
-      Float& rectISize = aParams.vertical ? rect.height : rect.width;
-      const Float rectBSize = aParams.vertical ? rect.width : rect.height;
+      Float& rectICoord = aParams.vertical ? aRect.y : aRect.x;
+      Float& rectISize = aParams.vertical ? aRect.height : aRect.width;
+      const Float rectBSize = aParams.vertical ? aRect.width : aRect.height;
 
       const Float adv = rectBSize - lineThickness;
       const Float flatLengthAtVertex =
@@ -3908,16 +4248,16 @@ void nsCSSRendering::PaintDecorationLine(
 
       
       const Float cycleLength = 2 * (adv + flatLengthAtVertex);
-      rect = ExpandPaintingRectForDecorationLine(aFrame, aParams.style, rect,
-                                                 aParams.icoordInFrame,
-                                                 cycleLength, aParams.vertical);
+      aRect = ExpandPaintingRectForDecorationLine(
+          aFrame, aParams.style, aRect, aParams.icoordInFrame, cycleLength,
+          aParams.vertical);
 
       if (textDrawer) {
         
-        Float& rectBCoord = aParams.vertical ? rect.x : rect.y;
+        Float& rectBCoord = aParams.vertical ? aRect.x : aRect.y;
         rectBCoord -= lineThickness / 2;
 
-        textDrawer->AppendWavyDecoration(rect, lineThickness, aParams.vertical,
+        textDrawer->AppendWavyDecoration(aRect, lineThickness, aParams.vertical,
                                          color);
         return;
       }
@@ -3935,7 +4275,7 @@ void nsCSSRendering::PaintDecorationLine(
 
       rectICoord += lineThickness / 2.0;
 
-      Point pt(rect.TopLeft());
+      Point pt(aRect.TopLeft());
       Float& ptICoord = aParams.vertical ? pt.y : pt.x;
       Float& ptBCoord = aParams.vertical ? pt.x : pt.y;
       if (aParams.vertical) {

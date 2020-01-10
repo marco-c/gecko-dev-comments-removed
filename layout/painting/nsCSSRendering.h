@@ -20,6 +20,7 @@
 #include "nsIFrame.h"
 #include "nsImageRenderer.h"
 #include "nsCSSRenderingBorders.h"
+#include "gfxTextRun.h"
 
 class gfxContext;
 class nsPresContext;
@@ -602,6 +603,8 @@ struct nsCSSRendering {
     uint8_t style = NS_STYLE_TEXT_DECORATION_STYLE_NONE;
     bool vertical = false;
     bool sidewaysLeft = false;
+    gfxTextRun::Range glyphRange;
+    gfxTextRun::PropertyProvider* provider;
   };
 
   struct PaintDecorationLineParams : DecorationRectParams {
@@ -617,6 +620,24 @@ struct nsCSSRendering {
   };
 
   
+
+
+
+
+
+
+
+
+
+
+
+  static void PaintDecorationLineInternal(
+      nsIFrame* aFrame, DrawTarget& aDrawTarget,
+      const PaintDecorationLineParams& aParams, Rect aRect);
+
+  
+
+
 
 
 
