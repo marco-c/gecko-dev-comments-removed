@@ -133,6 +133,10 @@ bool nsPresContext::IsDOMPaintEventPending() {
 void nsPresContext::ForceReflowForFontInfoUpdate() {
   
   
+  DeviceContext()->FlushFontCache();
+
+  
+  
   
   PreferenceChanged("font.internaluseonly.changed");
 }
