@@ -721,7 +721,9 @@ falling back to not using job objects for managing child processes""", file=sys.
         self.keywordargs = kwargs
         self.read_buffer = ''
 
-        if env is None:
+        
+        
+        if env is None and not (six.PY3 and isWin):
             env = os.environ.copy()
         self.env = env
 
