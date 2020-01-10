@@ -78,6 +78,7 @@ add_task(async function test() {
 });
 
 async function do_test(value, setValueFn, inPrivateWindow) {
+  info(`Search ${value} in a ${inPrivateWindow ? "private" : "normal"} window`);
   let win = await BrowserTestUtils.openNewBrowserWindow({
     private: inPrivateWindow,
   });
@@ -86,7 +87,6 @@ async function do_test(value, setValueFn, inPrivateWindow) {
   await setValueFn(value, win);
 
   EventUtils.synthesizeKey("KEY_Enter", {}, win);
-  await BrowserTestUtils.browserLoaded(win.gBrowser.selectedBrowser);
 
   
   let escapedValue = encodeURIComponent(value).replace("%20", "+");
@@ -94,6 +94,12 @@ async function do_test(value, setValueFn, inPrivateWindow) {
     ? kPrivateSearchEngineURL
     : kSearchEngineURL;
   let expectedURL = searchEngineUrl.replace("{searchTerms}", escapedValue);
+  await BrowserTestUtils.browserLoaded(
+    win.gBrowser.selectedBrowser,
+    false,
+    expectedURL
+  );
+  
   Assert.equal(
     win.gBrowser.selectedBrowser.currentURI.spec,
     expectedURL,
