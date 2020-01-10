@@ -166,11 +166,6 @@ class nsPluginHost final : public nsIPluginHost,
   static bool IsTypeWhitelisted(const char* aType);
 
   
-  
-  
-  static bool ShouldLoadTypeInParent(const nsACString& aMimeType);
-
-  
 
 
 
