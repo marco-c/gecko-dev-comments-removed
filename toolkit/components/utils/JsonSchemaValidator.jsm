@@ -39,10 +39,7 @@ var JsonSchemaValidator = {
 };
 
 function validateAndParseParamRecursive(param, properties) {
-  
-  
-  
-  if (properties.enum && typeof param !== "boolean") {
+  if (properties.enum) {
     if (properties.enum.includes(param)) {
       return [true, param];
     }

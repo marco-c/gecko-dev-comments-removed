@@ -584,53 +584,18 @@ var Policies = {
 
   DisplayMenuBar: {
     onBeforeUIStartup(manager, param) {
-      let value;
-      if (
-        typeof param === "boolean" ||
-        param == "default-on" ||
-        param == "default-off"
-      ) {
-        switch (param) {
-          case "default-on":
-            value = "false";
-            break;
-          case "default-off":
-            value = "true";
-            break;
-          default:
-            value = (!param).toString();
-            break;
-        }
-        
-        
-        
-        runOncePerModification("displayMenuBar", value, () => {
-          gXulStore.setValue(
-            BROWSER_DOCUMENT_URL,
-            "toolbar-menubar",
-            "autohide",
-            value
-          );
-        });
-      } else {
-        switch (param) {
-          case "always":
-            value = "false";
-            break;
-          case "never":
-            
-            setAndLockPref("ui.key.menuAccessKeyFocuses", false);
-            value = "true";
-            break;
-        }
+      let value = (!param).toString();
+      
+      
+      
+      runOncePerModification("displayMenuBar", value, () => {
         gXulStore.setValue(
           BROWSER_DOCUMENT_URL,
           "toolbar-menubar",
           "autohide",
           value
         );
-        manager.disallowFeature("hideShowMenuBar");
-      }
+      });
     },
   },
 
