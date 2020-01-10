@@ -5050,7 +5050,8 @@ ssl3_SendClientHello(sslSocket *ss, sslClientHelloType type)
     }
 
     
-    if (type == client_hello_initial) {
+    if (type == client_hello_initial ||
+        type == client_hello_renegotiation) {
         rv = ssl3_GetNewRandom(ss->ssl3.hs.client_random);
         if (rv != SECSuccess) {
             goto loser; 
