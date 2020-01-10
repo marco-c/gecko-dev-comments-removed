@@ -1215,12 +1215,12 @@ Accessible* DocAccessible::GetAccessibleOrDescendant(nsINode* aNode) const {
   Accessible* acc = GetAccessible(aNode);
   if (acc) return acc;
 
-  acc = GetContainerAccessible(aNode);
-  if (acc == this && aNode == mContent) {
+  if (aNode == mContent || aNode == mDocumentNode->GetRootElement()) {
     
-    return acc;
+    return const_cast<DocAccessible*>(this);
   }
 
+  acc = GetContainerAccessible(aNode);
   if (acc) {
     
     
