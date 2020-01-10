@@ -40,8 +40,13 @@ const AVAILABLE_UA_OVERRIDES = [
     domain: "Enhanced Search",
     bug: "1567945",
     config: {
-      matches: /^https?:\/\/(www|encrypted|maps|news|images)\.google(\.com?)?\.([a-z])+?($|\/)/,
-      blocks: /^https?:\/\/www\.google(\.com?)?\.([a-z])+?\/serviceworker($|\/)/,
+      matches: [
+        ...getMatchPatternsForGoogleURL("images.google"),
+        ...getMatchPatternsForGoogleURL("maps.google"),
+        ...getMatchPatternsForGoogleURL("news.google"),
+        ...getMatchPatternsForGoogleURL("www.google"),
+      ],
+      blocks: [...getMatchPatternsForGoogleURL("www.google", "serviceworker")],
       permanentPref: "enable_enhanced_search",
       telemetryKey: "enhancedSearch",
       experiment: "enhanced-search-experiment",
