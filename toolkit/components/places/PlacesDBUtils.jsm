@@ -144,11 +144,16 @@ var PlacesDBUtils = {
     return PlacesUtils.withConnectionWrapper(
       "PlacesDBUtils: invalidate caches",
       async db => {
-        let idsWithInvalidGuidsRows = await db.execute(`
-        SELECT id FROM moz_bookmarks
-        WHERE guid IS NULL OR
-              NOT IS_VALID_GUID(guid)`);
-        for (let row of idsWithInvalidGuidsRows) {
+        let idsWithStaleGuidsRows = await db.execute(
+          `SELECT id FROM moz_bookmarks
+           WHERE guid IS NULL OR
+                 NOT IS_VALID_GUID(guid) OR
+                 (type = :bookmark_type AND fk IS NULL) OR
+                 (type <> :bookmark_type AND fk NOT NULL) OR
+                 type IS NULL`,
+          { bookmark_type: PlacesUtils.bookmarks.TYPE_BOOKMARK }
+        );
+        for (let row of idsWithStaleGuidsRows) {
           let id = row.getResultByName("id");
           PlacesUtils.invalidateCachedGuidFor(id);
         }
@@ -403,26 +408,6 @@ var PlacesDBUtils = {
       },
 
       
-      
-      {
-        query: `DELETE FROM moz_bookmarks WHERE guid NOT IN (
-          :rootGuid, :menuGuid, :toolbarGuid, :unfiledGuid, :tagsGuid  /* skip roots */
-        ) AND id IN (
-          SELECT b.id FROM moz_bookmarks b
-          WHERE fk NOT NULL AND b.type = :bookmark_type
-            AND NOT EXISTS (SELECT url FROM moz_places WHERE id = b.fk LIMIT 1)
-        )`,
-        params: {
-          bookmark_type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
-          rootGuid: PlacesUtils.bookmarks.rootGuid,
-          menuGuid: PlacesUtils.bookmarks.menuGuid,
-          toolbarGuid: PlacesUtils.bookmarks.toolbarGuid,
-          unfiledGuid: PlacesUtils.bookmarks.unfiledGuid,
-          tagsGuid: PlacesUtils.bookmarks.tagsGuid,
-        },
-      },
-
-      
       {
         query: `DELETE FROM moz_bookmarks WHERE guid NOT IN (
           :rootGuid, :menuGuid, :toolbarGuid, :unfiledGuid, :tagsGuid  /* skip roots */
@@ -488,10 +473,36 @@ var PlacesDBUtils = {
       
       
       
+      
+      {
+        query: `INSERT OR IGNORE INTO moz_bookmarks_deleted(guid, dateRemoved)
+                SELECT guid, :dateRemoved
+                FROM moz_bookmarks
+                WHERE syncStatus <> :syncStatus AND
+                      ((type IN (:folder_type, :separator_type) AND
+                        fk NOTNULL) OR
+                       (type = :bookmark_type AND
+                        fk IS NULL) OR
+                       type IS NULL)`,
+        params: {
+          dateRemoved: PlacesUtils.toPRTime(new Date()),
+          syncStatus: PlacesUtils.bookmarks.SYNC_STATUS.NEW,
+          bookmark_type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+          folder_type: PlacesUtils.bookmarks.TYPE_FOLDER,
+          separator_type: PlacesUtils.bookmarks.TYPE_SEPARATOR,
+        },
+      },
+
+      
+      
+      
+      
+      
+      
       {
         query: `UPDATE moz_bookmarks
-        SET type = :bookmark_type,
-            syncChangeCounter = syncChangeCounter + 1
+        SET guid = GENERATE_GUID(),
+            type = :bookmark_type
         WHERE guid NOT IN (
           :rootGuid, :menuGuid, :toolbarGuid, :unfiledGuid, :tagsGuid  /* skip roots */
         ) AND id IN (
@@ -516,8 +527,8 @@ var PlacesDBUtils = {
       
       {
         query: `UPDATE moz_bookmarks
-        SET type = :folder_type,
-            syncChangeCounter = syncChangeCounter + 1
+        SET guid = GENERATE_GUID(),
+            type = :folder_type
         WHERE guid NOT IN (
           :rootGuid, :menuGuid, :toolbarGuid, :unfiledGuid, :tagsGuid  /* skip roots */
         ) AND id IN (
@@ -525,6 +536,27 @@ var PlacesDBUtils = {
           WHERE type = :bookmark_type
             AND fk IS NULL
         )`,
+        params: {
+          bookmark_type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+          folder_type: PlacesUtils.bookmarks.TYPE_FOLDER,
+          rootGuid: PlacesUtils.bookmarks.rootGuid,
+          menuGuid: PlacesUtils.bookmarks.menuGuid,
+          toolbarGuid: PlacesUtils.bookmarks.toolbarGuid,
+          unfiledGuid: PlacesUtils.bookmarks.unfiledGuid,
+          tagsGuid: PlacesUtils.bookmarks.tagsGuid,
+        },
+      },
+
+      
+      
+      
+      {
+        query: `UPDATE moz_bookmarks
+        SET guid = GENERATE_GUID(),
+            type = CASE WHEN fk NOT NULL THEN :bookmark_type ELSE :folder_type END
+        WHERE guid NOT IN (
+         :rootGuid, :menuGuid, :toolbarGuid, :unfiledGuid, :tagsGuid  /* skip roots */
+        ) AND type IS NULL`,
         params: {
           bookmark_type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
           folder_type: PlacesUtils.bookmarks.TYPE_FOLDER,
@@ -554,6 +586,28 @@ var PlacesDBUtils = {
         params: {
           bookmark_type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
           separator_type: PlacesUtils.bookmarks.TYPE_SEPARATOR,
+          rootGuid: PlacesUtils.bookmarks.rootGuid,
+          menuGuid: PlacesUtils.bookmarks.menuGuid,
+          toolbarGuid: PlacesUtils.bookmarks.toolbarGuid,
+          unfiledGuid: PlacesUtils.bookmarks.unfiledGuid,
+          tagsGuid: PlacesUtils.bookmarks.tagsGuid,
+        },
+      },
+
+      
+      
+      
+      
+      
+      {
+        query: `DELETE FROM moz_bookmarks AS b
+        WHERE b.guid NOT IN (
+          :rootGuid, :menuGuid, :toolbarGuid, :unfiledGuid, :tagsGuid  /* skip roots */
+        ) AND b.fk NOT NULL
+          AND b.type = :bookmark_type
+          AND NOT EXISTS (SELECT 1 FROM moz_places h WHERE h.id = b.fk)`,
+        params: {
+          bookmark_type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
           rootGuid: PlacesUtils.bookmarks.rootGuid,
           menuGuid: PlacesUtils.bookmarks.menuGuid,
           toolbarGuid: PlacesUtils.bookmarks.toolbarGuid,
@@ -829,7 +883,7 @@ var PlacesDBUtils = {
     
     cleanupStatements.unshift({
       query: `CREATE TEMP TRIGGER IF NOT EXISTS moz_bm_sync_change_temp_trigger
-      AFTER UPDATE of guid, parent, position ON moz_bookmarks
+      AFTER UPDATE OF guid, parent, position ON moz_bookmarks
       FOR EACH ROW
       BEGIN
         UPDATE moz_bookmarks

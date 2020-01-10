@@ -103,7 +103,7 @@ function addBookmark(
              :guid, :sync_status, :change_counter)`
   );
   stmt.params.place_id = aPlaceId || null;
-  stmt.params.type = aType || bs.TYPE_BOOKMARK;
+  stmt.params.type = aType || null;
   stmt.params.parent = aParent || gUnfiledFolderId;
   stmt.params.keyword_id = aKeywordId || null;
   stmt.params.folder_type = aFolderType || null;
@@ -177,7 +177,7 @@ tests.push({
     
     this._placeId = addPlace();
     
-    this._bookmarkId = addBookmark(this._placeId);
+    this._bookmarkId = addBookmark(this._placeId, bs.TYPE_BOOKMARK);
     
     let stmt = mDBConn.createStatement(
       `INSERT INTO moz_anno_attributes (name)
@@ -230,7 +230,7 @@ tests.push({
     
     this._placeId = addPlace();
     
-    this._bookmarkId = addBookmark(this._placeId);
+    this._bookmarkId = addBookmark(this._placeId, bs.TYPE_BOOKMARK);
     
     let stmt = mDBConn.createStatement(
       "INSERT INTO moz_anno_attributes (name) VALUES (:anno)"
@@ -398,7 +398,7 @@ tests.push({
 
 
 tests.push({
-  name: "D.1",
+  name: "D.9",
   desc: "Remove items without a valid place",
 
   _validItemId: null,
@@ -413,14 +413,14 @@ tests.push({
     
     this.placeId = addPlace();
     
-    this._validItemId = addBookmark(this.placeId);
+    this._validItemId = addBookmark(this.placeId, bs.TYPE_BOOKMARK);
     
-    this._invalidItemId = addBookmark(1337);
+    this._invalidItemId = addBookmark(1337, bs.TYPE_BOOKMARK);
     
     
     this._invalidSyncedItemId = addBookmark(
       1337,
-      null,
+      bs.TYPE_BOOKMARK,
       bs.bookmarksMenuFolder,
       null,
       null,
@@ -428,6 +428,9 @@ tests.push({
       "bookmarkAAAA",
       PlacesUtils.bookmarks.SYNC_STATUS.NORMAL
     );
+    
+    
+    this._invalidWrongTypeItemId = addBookmark(1337, bs.TYPE_FOLDER);
 
     this._changeCounterStmt = mDBConn.createStatement(`
       SELECT syncChangeCounter FROM moz_bookmarks WHERE id = :id`);
@@ -446,11 +449,15 @@ tests.push({
     Assert.ok(stmt.executeStep());
     stmt.reset();
     
-    stmt.params.item_id = this._invalidItemId;
-    Assert.ok(!stmt.executeStep());
-    stmt.reset();
-    stmt.params.item_id = this._invalidSyncedItemId;
-    Assert.ok(!stmt.executeStep());
+    for (let id of [
+      this._invalidItemId,
+      this._invalidSyncedItemId,
+      this._invalidWrongTypeItemId,
+    ]) {
+      stmt.params.item_id = id;
+      Assert.ok(!stmt.executeStep());
+      stmt.reset();
+    }
     stmt.finalize();
 
     this._changeCounterStmt.params.id = bs.bookmarksMenuFolder;
@@ -469,7 +476,7 @@ tests.push({
 
 
 tests.push({
-  name: "D.2",
+  name: "D.1",
   desc: "Remove items that are not uri bookmarks from tag containers",
 
   _tagId: null,
@@ -520,7 +527,7 @@ tests.push({
 
 
 tests.push({
-  name: "D.3",
+  name: "D.2",
   desc: "Remove empty tags",
 
   _tagId: null,
@@ -569,7 +576,7 @@ tests.push({
 
 
 tests.push({
-  name: "D.4",
+  name: "D.3",
   desc: "Move orphan items to unsorted folder",
 
   _orphanBookmarkId: null,
@@ -644,35 +651,168 @@ tests.push({
 
 
 tests.push({
-  name: "D.6",
-  desc: "Fix wrong item types | bookmarks",
+  name: "D.5",
+  desc: "Fix wrong item types | folders and separators",
 
   _separatorId: null,
+  _separatorGuid: null,
   _folderId: null,
+  _folderGuid: null,
+  _syncedFolderId: null,
+  _syncedFolderGuid: null,
   _placeId: null,
 
-  setup() {
+  async setup() {
     
     this._placeId = addPlace();
     
     this._separatorId = addBookmark(this._placeId, bs.TYPE_SEPARATOR);
+    this._separatorGuid = await PlacesUtils.promiseItemGuid(this._separatorId);
     
     this._folderId = addBookmark(this._placeId, bs.TYPE_FOLDER);
+    this._folderGuid = await PlacesUtils.promiseItemGuid(this._folderId);
+    
+    this._syncedFolderId = addBookmark(
+      this._placeId,
+      bs.TYPE_FOLDER,
+      bs.toolbarFolder,
+      null,
+      null,
+      null,
+      "itemAAAAAAAA",
+      PlacesUtils.bookmarks.SYNC_STATUS.NORMAL
+    );
+    this._syncedFolderGuid = await PlacesUtils.promiseItemGuid(
+      this._syncedFolderId
+    );
   },
 
-  check() {
+  async check() {
     
     let stmt = mDBConn.createStatement(
-      "SELECT id FROM moz_bookmarks WHERE id = :item_id AND type = :type"
+      `SELECT id, guid, syncChangeCounter
+       FROM moz_bookmarks
+       WHERE id = :item_id AND type = :type`
     );
     stmt.params.item_id = this._separatorId;
     stmt.params.type = bs.TYPE_BOOKMARK;
     Assert.ok(stmt.executeStep());
     stmt.reset();
-    stmt.params.item_id = this._folderId;
+    let expected = [
+      {
+        id: this._folderId,
+        oldGuid: this._folderGuid,
+      },
+      {
+        id: this._syncedFolderId,
+        oldGuid: this._syncedFolderGuid,
+      },
+    ];
+    for (let { id, oldGuid } of expected) {
+      stmt.params.item_id = id;
+      stmt.params.type = bs.TYPE_BOOKMARK;
+      Assert.ok(stmt.executeStep());
+      Assert.notEqual(stmt.row.guid, oldGuid);
+      Assert.equal(stmt.row.syncChangeCounter, 1);
+      await Assert.rejects(
+        PlacesUtils.promiseItemId(oldGuid),
+        /no item found for the given GUID/
+      );
+      stmt.reset();
+    }
+    stmt.finalize();
+
+    let tombstones = await PlacesTestUtils.fetchSyncTombstones();
+    Assert.deepEqual(tombstones.map(info => info.guid), ["itemAAAAAAAA"]);
+  },
+});
+
+
+
+tests.push({
+  name: "D.6",
+  desc: "Fix wrong item types | bookmarks",
+
+  _validBookmarkId: null,
+  _validBookmarkGuid: null,
+  _invalidBookmarkId: null,
+  _invalidBookmarkGuid: null,
+  _invalidSyncedBookmarkId: null,
+  _invalidSyncedBookmarkGuid: null,
+  _placeId: null,
+
+  async setup() {
+    
+    this._placeId = addPlace();
+    
+    this._validBookmarkId = addBookmark(this._placeId, bs.TYPE_BOOKMARK);
+    this._validBookmarkGuid = await PlacesUtils.promiseItemGuid(
+      this._validBookmarkId
+    );
+    
+    this._invalidBookmarkId = addBookmark(null, bs.TYPE_BOOKMARK);
+    this._invalidBookmarkGuid = await PlacesUtils.promiseItemGuid(
+      this._invalidBookmarkId
+    );
+    
+    this._invalidSyncedBookmarkId = addBookmark(
+      null,
+      bs.TYPE_BOOKMARK,
+      bs.toolbarFolder,
+      null,
+      null,
+      null,
+      "bookmarkAAAA",
+      PlacesUtils.bookmarks.SYNC_STATUS.NORMAL
+    );
+    this._invalidSyncedBookmarkGuid = await PlacesUtils.promiseItemGuid(
+      this._invalidSyncedBookmarkId
+    );
+  },
+
+  async check() {
+    
+    let stmt = mDBConn.createStatement(`
+      SELECT id, guid, syncChangeCounter
+      FROM moz_bookmarks
+      WHERE id = :item_id AND type = :type`);
+    stmt.params.item_id = this._validBookmarkId;
     stmt.params.type = bs.TYPE_BOOKMARK;
     Assert.ok(stmt.executeStep());
+    Assert.equal(stmt.row.syncChangeCounter, 0);
+    Assert.equal(
+      await PlacesUtils.promiseItemId(this._validBookmarkGuid),
+      this._validBookmarkId
+    );
+    stmt.reset();
+
+    
+    let expected = [
+      {
+        id: this._invalidBookmarkId,
+        oldGuid: this._invalidBookmarkGuid,
+      },
+      {
+        id: this._invalidSyncedBookmarkId,
+        oldGuid: this._invalidSyncedBookmarkGuid,
+      },
+    ];
+    for (let { id, oldGuid } of expected) {
+      stmt.params.item_id = id;
+      stmt.params.type = bs.TYPE_FOLDER;
+      Assert.ok(stmt.executeStep());
+      Assert.notEqual(stmt.row.guid, oldGuid);
+      Assert.equal(stmt.row.syncChangeCounter, 1);
+      await Assert.rejects(
+        PlacesUtils.promiseItemId(oldGuid),
+        /no item found for the given GUID/
+      );
+      stmt.reset();
+    }
     stmt.finalize();
+
+    let tombstones = await PlacesTestUtils.fetchSyncTombstones();
+    Assert.deepEqual(tombstones.map(info => info.guid), ["bookmarkAAAA"]);
   },
 });
 
@@ -680,45 +820,115 @@ tests.push({
 
 tests.push({
   name: "D.7",
-  desc: "Fix wrong item types | bookmarks",
+  desc: "Fix missing item types",
 
-  _validBookmarkId: null,
-  _invalidBookmarkId: null,
   _placeId: null,
+  _bookmarkId: null,
+  _bookmarkGuid: null,
+  _syncedBookmarkId: null,
+  _syncedBookmarkGuid: null,
+  _folderId: null,
+  _folderGuid: null,
+  _syncedFolderId: null,
+  _syncedFolderGuid: null,
 
-  setup() {
+  async setup() {
+    
+    
     
     this._placeId = addPlace();
+    this._bookmarkId = addBookmark(this._placeId);
+    this._bookmarkGuid = await PlacesUtils.promiseItemGuid(this._bookmarkId);
+    this._syncedBookmarkId = addBookmark(
+      this._placeId,
+      null,
+      bs.toolbarFolder,
+      null,
+      null,
+      null,
+      "bookmarkAAAA",
+      PlacesUtils.bookmarks.SYNC_STATUS.NORMAL
+    );
+    this._syncedBookmarkGuid = await PlacesUtils.promiseItemGuid(
+      this._syncedBookmarkId
+    );
+
     
-    this._validBookmarkId = addBookmark(this._placeId, bs.TYPE_BOOKMARK);
     
-    this._invalidBookmarkId = addBookmark(null, bs.TYPE_BOOKMARK);
+    this._folderId = addBookmark();
+    this._folderGuid = await PlacesUtils.promiseItemGuid(this._folderId);
+    this._syncedFolderId = addBookmark(
+      null,
+      null,
+      bs.toolbarFolder,
+      null,
+      null,
+      null,
+      "folderBBBBBB",
+      PlacesUtils.bookmarks.SYNC_STATUS.NORMAL
+    );
+    this._syncedFolderGuid = await PlacesUtils.promiseItemGuid(
+      this._syncedFolderId
+    );
   },
 
-  check() {
-    
+  async check() {
     let stmt = mDBConn.createStatement(`
-      SELECT id, syncChangeCounter
+      SELECT id, guid, type, syncChangeCounter
       FROM moz_bookmarks
-      WHERE id = :item_id AND type = :type`);
-    stmt.params.item_id = this._validBookmarkId;
-    stmt.params.type = bs.TYPE_BOOKMARK;
-    Assert.ok(stmt.executeStep());
-    Assert.equal(stmt.row.syncChangeCounter, 0);
-    stmt.reset();
-    
-    stmt.params.item_id = this._invalidBookmarkId;
-    stmt.params.type = bs.TYPE_FOLDER;
-    Assert.ok(stmt.executeStep());
-    Assert.equal(stmt.row.syncChangeCounter, 1);
+      WHERE id = :item_id`);
+    let expected = [
+      {
+        id: this._bookmarkId,
+        oldGuid: this._bookmarkGuid,
+        type: bs.TYPE_BOOKMARK,
+        syncChangeCounter: 1,
+      },
+      {
+        id: this._syncedBookmarkId,
+        oldGuid: this._syncedBookmarkGuid,
+        type: bs.TYPE_BOOKMARK,
+        syncChangeCounter: 1,
+      },
+      {
+        id: this._folderId,
+        oldGuid: this._folderGuid,
+        type: bs.TYPE_FOLDER,
+        syncChangeCounter: 1,
+      },
+      {
+        id: this._syncedFolderId,
+        oldGuid: this._syncedFolderGuid,
+        type: bs.TYPE_FOLDER,
+        syncChangeCounter: 1,
+      },
+    ];
+    for (let { id, oldGuid, type, syncChangeCounter } of expected) {
+      stmt.params.item_id = id;
+      Assert.ok(stmt.executeStep());
+      Assert.equal(stmt.row.type, type);
+      Assert.equal(stmt.row.syncChangeCounter, syncChangeCounter);
+      Assert.notEqual(stmt.row.guid, oldGuid);
+      await Assert.rejects(
+        PlacesUtils.promiseItemId(oldGuid),
+        /no item found for the given GUID/
+      );
+      stmt.reset();
+    }
     stmt.finalize();
+
+    let tombstones = await PlacesTestUtils.fetchSyncTombstones();
+    Assert.deepEqual(tombstones.map(info => info.guid), [
+      "bookmarkAAAA",
+      "folderBBBBBB",
+    ]);
   },
 });
 
 
 
 tests.push({
-  name: "D.9",
+  name: "D.8",
   desc: "Fix wrong parents",
 
   _bookmarkId: null,
@@ -914,7 +1124,7 @@ tests.push({
 
 
 tests.push({
-  name: "D.12",
+  name: "D.13",
   desc: "Fix empty-named tags",
   _taggedItemIds: {},
 
@@ -1176,7 +1386,7 @@ tests.push({
     
     this._placeId = addPlace();
     
-    this._bookmarkId = addBookmark(this._placeId);
+    this._bookmarkId = addBookmark(this._placeId, bs.TYPE_BOOKMARK);
     
     let stmt = mDBConn.createStatement(
       "INSERT INTO moz_anno_attributes (name) VALUES (:anno)"
@@ -1239,7 +1449,7 @@ tests.push({
     
     this._placeId = addPlace();
     
-    this._bookmarkId = addBookmark(this._placeId);
+    this._bookmarkId = addBookmark(this._placeId, bs.TYPE_BOOKMARK);
     
     let stmt = mDBConn.createStatement(
       "INSERT INTO moz_anno_attributes (name) VALUES (:anno)"
@@ -2136,8 +2346,9 @@ tests.push({
   desc: "drop tombstones for bookmarks that aren't deleted",
 
   async setup() {
+    let placeId = addPlace();
     addBookmark(
-      null,
+      placeId,
       bs.TYPE_BOOKMARK,
       bs.bookmarksMenuFolder,
       null,
