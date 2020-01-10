@@ -213,6 +213,7 @@ def update_data_file(topsrcdir):
     
     env.update({
         'CPPFLAGS': ('-DU_NO_DEFAULT_INCLUDE_UTF_HEADERS=1 ' +
+                     '-DU_HIDE_OBSOLETE_UTF_OLD_H=1' +
                      '-DUCONFIG_NO_LEGACY_CONVERSION ' +
                      '-DUCONFIG_NO_TRANSLITERATION ' +
                      '-DUCONFIG_NO_REGULAR_EXPRESSIONS ' +
