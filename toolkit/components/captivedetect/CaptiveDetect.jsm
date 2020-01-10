@@ -31,6 +31,8 @@ function URLFetcher(url, timeout) {
   xhr.channel.loadFlags |= Ci.nsIRequest.LOAD_ANONYMOUS;
   
   xhr.channel.loadFlags |= Ci.nsIRequest.LOAD_DISABLE_TRR;
+  
+  xhr.channel.loadFlags |= Ci.nsIChannel.LOAD_BYPASS_URL_CLASSIFIER;
 
   
   xhr.channel.QueryInterface(Ci.nsIHttpChannel).redirectionLimit = 0;
