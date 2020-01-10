@@ -216,6 +216,8 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
 
   bool HasOpener() const;
 
+  bool HadOriginalOpener() const { return mHadOriginalOpener; }
+
   
 
 
@@ -481,9 +483,7 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
           uintptr_t(this) - offsetof(BrowsingContext, mLocation));
     }
 
-    already_AddRefed<nsIDocShell> GetDocShell() override {
-      return nullptr;
-    }
+    already_AddRefed<nsIDocShell> GetDocShell() override { return nullptr; }
   };
 
   
