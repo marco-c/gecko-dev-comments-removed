@@ -491,11 +491,11 @@ cleanup:
 
 
 
-#define MAX_ST_SEED_BITS (HASH_LENGTH_MAX * PR_BITS_PER_BYTE)
 static SECStatus
 makePrimefromPrimesShaweTaylor(
     HASH_HashType hashtype,          
     unsigned int length,             
+    unsigned int seedlen,            
     mp_int *c0,                      
     mp_int *q,                       
     mp_int *prime,                   
@@ -569,11 +569,10 @@ makePrimefromPrimesShaweTaylor(
     for (i = 0; i < iterations; i++) {
         
         CHECK_SEC_OK(addToSeedThenHash(hashtype, prime_seed, i,
-                                       MAX_ST_SEED_BITS, &x[(iterations - i - 1) * hashlen]));
+                                       seedlen, &x[(iterations - i - 1) * hashlen]));
     }
     
-    CHECK_SEC_OK(addToSeed(prime_seed, iterations, MAX_ST_SEED_BITS,
-                           prime_seed));
+    CHECK_SEC_OK(addToSeed(prime_seed, iterations, seedlen, prime_seed));
     
 
 
@@ -645,13 +644,11 @@ step_23:
 
 
     for (i = 0; i < iterations; i++) {
-        
         CHECK_SEC_OK(addToSeedThenHash(hashtype, prime_seed, i,
-                                       MAX_ST_SEED_BITS, &x[(iterations - i - 1) * hashlen]));
+                                       seedlen, &x[(iterations - i - 1) * hashlen]));
     }
     
-    CHECK_SEC_OK(addToSeed(prime_seed, iterations, MAX_ST_SEED_BITS,
-                           prime_seed));
+    CHECK_SEC_OK(addToSeed(prime_seed, iterations, seedlen, prime_seed));
     
     CHECK_MPI_OK(mp_read_unsigned_octets(&a, x, iterations * hashlen));
     CHECK_MPI_OK(mp_sub_d(&c, (mp_digit)3, &z)); 
@@ -742,6 +739,7 @@ makePrimefromSeedShaweTaylor(
     int hashlen = HASH_ResultLen(hashtype);
     int outlen = hashlen * PR_BITS_PER_BYTE;
     int offset;
+    int seedlen = input_seed->len * 8; 
     unsigned char bit, mask;
     unsigned char x[HASH_LENGTH_MAX * 2];
     mp_digit dummy;
@@ -775,7 +773,7 @@ makePrimefromSeedShaweTaylor(
             goto cleanup;
         }
         
-        rv = makePrimefromPrimesShaweTaylor(hashtype, length, &c0, &one,
+        rv = makePrimefromPrimesShaweTaylor(hashtype, length, seedlen, &c0, &one,
                                             prime, prime_seed, prime_gen_counter);
         goto cleanup; 
     }
@@ -787,8 +785,7 @@ makePrimefromSeedShaweTaylor(
 step_5:
     
     CHECK_SEC_OK(HASH_HashBuf(hashtype, x, prime_seed->data, prime_seed->len));
-    CHECK_SEC_OK(addToSeedThenHash(hashtype, prime_seed, 1,
-                                   MAX_ST_SEED_BITS, &x[hashlen]));
+    CHECK_SEC_OK(addToSeedThenHash(hashtype, prime_seed, 1, seedlen, &x[hashlen]));
     for (i = 0; i < hashlen; i++) {
         x[i] = x[i] ^ x[i + hashlen];
     }
@@ -817,7 +814,7 @@ step_5:
     
     (*prime_gen_counter)++;
     
-    CHECK_SEC_OK(addToSeed(prime_seed, 2, MAX_ST_SEED_BITS, prime_seed));
+    CHECK_SEC_OK(addToSeed(prime_seed, 2, seedlen, prime_seed));
     
 
 
@@ -890,7 +887,8 @@ findQfromSeed(
     mp_int *Q_,                 
     unsigned int *qseed_len,    
     HASH_HashType *hashtypePtr, 
-    pqgGenType *typePtr)        
+    pqgGenType *typePtr,        
+    unsigned int *qgen_counter) 
 {
     HASH_HashType hashtype;
     SECItem firstseed = { 0, 0, 0 };
@@ -964,6 +962,7 @@ findQfromSeed(
             *qseed_len = qseed.len;
             *hashtypePtr = hashtype;
             *typePtr = FIPS186_3_ST_TYPE;
+            *qgen_counter = count;
             SECITEM_FreeItem(&qseed, PR_FALSE);
             return SECSuccess;
         }
@@ -1390,19 +1389,26 @@ step_5:
         CHECK_SEC_OK(makePrimefromSeedShaweTaylor(hashtype, (L + 1) / 2 + 1,
                                                   &qseed, &p0, &pseed, &pgen_counter));
         
-        CHECK_SEC_OK(makePrimefromPrimesShaweTaylor(hashtype, L,
+        CHECK_SEC_OK(makePrimefromPrimesShaweTaylor(hashtype, L, seedBytes * 8,
                                                     &p0, &Q, &P, &pseed, &pgen_counter));
 
         
-        seed->len = firstseed.len + qseed.len + pseed.len;
+        if ((qseed.len > firstseed.len) || (pseed.len > firstseed.len)) {
+            PORT_SetError(SEC_ERROR_LIBRARY_FAILURE); 
+            goto cleanup;
+        }
+        
+
+
+        seed->len = firstseed.len * 3;
         seed->data = PORT_ArenaZAlloc(verify->arena, seed->len);
         if (seed->data == NULL) {
             goto cleanup;
         }
         PORT_Memcpy(seed->data, firstseed.data, firstseed.len);
-        PORT_Memcpy(seed->data + firstseed.len, pseed.data, pseed.len);
-        PORT_Memcpy(seed->data + firstseed.len + pseed.len, qseed.data, qseed.len);
-        counter = 0; 
+        PORT_Memcpy(seed->data + 2 * firstseed.len - pseed.len, pseed.data, pseed.len);
+        PORT_Memcpy(seed->data + 3 * firstseed.len - qseed.len, qseed.data, qseed.len);
+        counter = (qgen_counter << 16) | pgen_counter;
 
         
         goto generate_G;
@@ -1622,6 +1628,7 @@ PQG_VerifyParams(const PQGParams *params,
     int j;
     unsigned int counter_max = 0; 
     unsigned int qseed_len;
+    unsigned int qgen_counter_ = 0;
     SECItem pseed_ = { 0, 0, 0 };
     HASH_HashType hashtype;
     pqgGenType type;
@@ -1701,24 +1708,30 @@ PQG_VerifyParams(const PQGParams *params,
     
     
     
-    CHECKPARAM((vfy->counter == -1) || (vfy->counter < counter_max));
-    
-    g = vfy->seed.len * 8;
-    CHECKPARAM(g >= N && g < counter_max / 2);
     
     
 
+    
+    
+
+    g = vfy->seed.len * 8;
     CHECKPARAM(findQfromSeed(L, N, g, &vfy->seed, &Q, &Q_, &qseed_len,
-                             &hashtype, &type) == SECSuccess);
+                             &hashtype, &type, &qgen_counter_) == SECSuccess);
     CHECKPARAM(mp_cmp(&Q, &Q_) == 0);
+    
+    if ((type == FIPS186_1_TYPE) || (type == FIPS186_3_TYPE)) {
+        CHECKPARAM((vfy->counter == -1) || (vfy->counter < counter_max));
+        CHECKPARAM(g >= N && g < counter_max / 2);
+    }
     if (type == FIPS186_3_ST_TYPE) {
         SECItem qseed = { 0, 0, 0 };
         SECItem pseed = { 0, 0, 0 };
         unsigned int first_seed_len;
-        unsigned int pgen_counter = 0;
+        unsigned int pgen_counter_ = 0;
+        unsigned int qgen_counter = (vfy->counter >> 16) & 0xffff;
+        unsigned int pgen_counter = (vfy->counter) & 0xffff;
 
         
-
 
 
 
@@ -1739,10 +1752,11 @@ PQG_VerifyParams(const PQGParams *params,
         first_seed_len = vfy->seed.len / 3;
         CHECKPARAM(qseed_len < vfy->seed.len);
         CHECKPARAM(first_seed_len * 8 > N - 1);
-        CHECKPARAM(first_seed_len + qseed_len < vfy->seed.len);
+        CHECKPARAM(first_seed_len * 8 < counter_max / 2);
+        CHECKPARAM(first_seed_len >= qseed_len);
         qseed.len = qseed_len;
         qseed.data = vfy->seed.data + vfy->seed.len - qseed.len;
-        pseed.len = vfy->seed.len - (first_seed_len + qseed_len);
+        pseed.len = first_seed_len;
         pseed.data = vfy->seed.data + first_seed_len;
 
         
@@ -1754,14 +1768,34 @@ PQG_VerifyParams(const PQGParams *params,
 
 
         CHECK_SEC_OK(makePrimefromSeedShaweTaylor(hashtype, (L + 1) / 2 + 1,
-                                                  &qseed, &p0, &pseed_, &pgen_counter));
+                                                  &qseed, &p0, &pseed_, &pgen_counter_));
         
-        CHECK_SEC_OK(makePrimefromPrimesShaweTaylor(hashtype, L,
-                                                    &p0, &Q_, &P_, &pseed_, &pgen_counter));
+        CHECK_SEC_OK(makePrimefromPrimesShaweTaylor(hashtype, L, first_seed_len * 8,
+                                                    &p0, &Q_, &P_, &pseed_, &pgen_counter_));
         CHECKPARAM(mp_cmp(&P, &P_) == 0);
         
 
+        if (pseed.len > pseed_.len) {
+            
+            int extra = pseed.len - pseed_.len;
+            int i;
+            for (i = 0; i < extra; i++) {
+                if (pseed.data[i] != 0) {
+                    *result = SECFailure;
+                    goto cleanup;
+                }
+            }
+            pseed.data += extra;
+            pseed.len -= extra;
+            
+        }
         CHECKPARAM(SECITEM_CompareItem(&pseed, &pseed_) == SECEqual);
+        if (vfy->counter != -1) {
+            CHECKPARAM(pgen_counter < counter_max);
+            CHECKPARAM(qgen_counter < counter_max);
+            CHECKPARAM((pgen_counter_ == pgen_counter));
+            CHECKPARAM((qgen_counter_ == qgen_counter));
+        }
     } else if (vfy->counter == -1) {
         
 

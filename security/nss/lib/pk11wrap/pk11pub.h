@@ -878,6 +878,17 @@ PK11_GetAllSlotsForCert(CERTCertificate *cert, void *arg);
 
 
 
+
+
+
+
+SECStatus
+PK11_FindRawCertsWithSubject(PK11SlotInfo *slot, SECItem *derSubject,
+                             CERTCertificateList **results);
+
+
+
+
 SECItem *
 PK11_GetLowLevelKeyIDForCert(PK11SlotInfo *slot,
                              CERTCertificate *cert, void *pwarg);

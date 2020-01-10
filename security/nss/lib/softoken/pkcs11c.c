@@ -4728,6 +4728,13 @@ sftk_PairwiseConsistencyCheck(CK_SESSION_HANDLE hSession,
         }
 
         
+        if ((signature_length >= pairwise_digest_length) &&
+            (PORT_Memcmp(known_digest, signature + (signature_length - pairwise_digest_length), pairwise_digest_length) == 0)) {
+            PORT_Free(signature);
+            return CKR_DEVICE_ERROR;
+        }
+
+        
         crv = NSC_VerifyInit(hSession, &mech, publicKey->handle);
         if (crv != CKR_OK) {
             PORT_Free(signature);
@@ -7562,20 +7569,34 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
 
         case CKM_DH_PKCS_DERIVE: {
             SECItem derived, dhPublic;
-            SECItem dhPrime, dhValue;
+            SECItem dhPrime, dhSubPrime, dhValue;
             
             
             crv = sftk_Attribute2SecItem(NULL, &dhPrime, sourceKey, CKA_PRIME);
-            if (crv != SECSuccess)
+            if (crv != CKR_OK)
                 break;
             crv = sftk_Attribute2SecItem(NULL, &dhValue, sourceKey, CKA_VALUE);
-            if (crv != SECSuccess) {
+            if (crv != CKR_OK) {
                 PORT_Free(dhPrime.data);
                 break;
             }
 
             dhPublic.data = pMechanism->pParameter;
             dhPublic.len = pMechanism->ulParameterLen;
+
+            
+
+            crv = sftk_Attribute2SecItem(NULL, &dhSubPrime, sourceKey, CKA_SUBPRIME);
+            if (crv == CKR_OK) {
+                rv = KEA_Verify(&dhPublic, &dhPrime, &dhSubPrime);
+                PORT_Free(dhSubPrime.data);
+                if (rv != SECSuccess) {
+                    crv = CKR_ARGUMENTS_BAD;
+                    PORT_Free(dhPrime.data);
+                    PORT_Free(dhValue.data);
+                    break;
+                }
+            }
 
             
             rv = DH_Derive(&dhPublic, &dhPrime, &dhValue, &derived, keySize);
@@ -7586,6 +7607,7 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
             if (rv == SECSuccess) {
                 sftk_forceAttribute(key, CKA_VALUE, derived.data, derived.len);
                 PORT_ZFree(derived.data, derived.len);
+                crv = CKR_OK;
             } else
                 crv = CKR_HOST_MEMORY;
 
