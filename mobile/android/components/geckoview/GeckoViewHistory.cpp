@@ -10,6 +10,7 @@
 #include "nsXULAppAPI.h"
 
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/ResultExtensions.h"
 
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Element.h"
@@ -222,75 +223,18 @@ GeckoViewHistory::Notify(nsITimer* aTimer) {
   return NS_OK;
 }
 
-NS_IMETHODIMP
-GeckoViewHistory::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
-  if (!aLink || !aURI) {
-    return NS_OK;
+Result<Ok, nsresult> GeckoViewHistory::StartVisitedQuery(nsIURI* aURI) {
+  mNewURIs.PutEntry(aURI);
+  if (!mQueryVisitedStateTimer) {
+    mQueryVisitedStateTimer = NS_NewTimer();
   }
-
-  auto entry = mTrackedURIs.LookupForAdd(aURI);
-  if (entry) {
-    
-    TrackedURI& trackedURI = entry.Data();
-    trackedURI.mLinks.AppendElement(aLink);
-
-    if (trackedURI.mVisited) {
-      
-      DispatchNotifyVisited(aURI, GetLinkDocument(*aLink));
-    }
-  } else {
-    
-    
-    
-    
-    
-    
-    entry.OrInsert([aLink]() {
-      TrackedURI trackedURI;
-      trackedURI.mLinks.AppendElement(aLink);
-      return trackedURI;
-    });
-    mNewURIs.PutEntry(aURI);
-    if (!mQueryVisitedStateTimer) {
-      mQueryVisitedStateTimer = NS_NewTimer();
-    }
-    Unused << NS_WARN_IF(NS_FAILED(mQueryVisitedStateTimer->InitWithCallback(
-        this, GET_VISITS_WAIT_MS, nsITimer::TYPE_ONE_SHOT)));
-  }
-
-  return NS_OK;
+  
+  return ToResult(mQueryVisitedStateTimer->InitWithCallback(
+      this, GET_VISITS_WAIT_MS, nsITimer::TYPE_ONE_SHOT));
 }
 
-NS_IMETHODIMP
-GeckoViewHistory::UnregisterVisitedCallback(nsIURI* aURI, Link* aLink) {
-  if (!aLink || !aURI) {
-    return NS_OK;
-  }
-
-  if (auto entry = mTrackedURIs.Lookup(aURI)) {
-    TrackedURI& trackedURI = entry.Data();
-    if (!trackedURI.mLinks.IsEmpty()) {
-      nsTObserverArray<Link*>::BackwardIterator iter(trackedURI.mLinks);
-      while (iter.HasMore()) {
-        Link* link = iter.GetNext();
-        if (link == aLink) {
-          iter.Remove();
-          break;
-        }
-      }
-    }
-
-    if (trackedURI.mLinks.IsEmpty()) {
-      
-      
-      
-      entry.Remove();
-    }
-  }
-
+void GeckoViewHistory::CancelVisitedQueryIfPossible(nsIURI* aURI) {
   mNewURIs.RemoveEntry(aURI);
-
-  return NS_OK;
 }
 
 

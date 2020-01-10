@@ -6,6 +6,7 @@
 #define mozilla_BaseHistory_h
 
 #include "IHistory.h"
+#include "mozilla/Result.h"
 
 
 
@@ -22,8 +23,7 @@ class BaseHistory : public IHistory {
 
 
 
-  void NotifyVisitedForDocument(nsIURI*,
-                                dom::Document*);
+  void NotifyVisitedForDocument(nsIURI*, dom::Document*);
 
   
 
@@ -31,6 +31,18 @@ class BaseHistory : public IHistory {
 
   void DispatchNotifyVisited(nsIURI*, dom::Document*);
 
+  
+  
+  NS_IMETHODIMP RegisterVisitedCallback(nsIURI*, dom::Link*) final;
+  NS_IMETHODIMP UnregisterVisitedCallback(nsIURI*, dom::Link*) final;
+
+  
+  
+  virtual Result<Ok, nsresult> StartVisitedQuery(nsIURI*) = 0;
+
+  
+  
+  virtual void CancelVisitedQueryIfPossible(nsIURI*) = 0;
 
   static dom::Document* GetLinkDocument(dom::Link&);
 

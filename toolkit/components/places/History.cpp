@@ -1932,6 +1932,10 @@ void History::AppendToRecentlyVisitedURIs(nsIURI* aURI, bool aHidden) {
   }
 }
 
+Result<Ok, nsresult> History::StartVisitedQuery(nsIURI* aURI) {
+  return ToResult(VisitedQuery::Start(aURI));
+}
+
 
 
 
@@ -2063,90 +2067,6 @@ History::VisitURI(nsIWidget* aWidget, nsIURI* aURI, nsIURI* aLastVisitedURI,
 
     rv = InsertVisitedURIs::Start(dbConn, placeArray);
     NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-History::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
-  MOZ_ASSERT(NS_IsMainThread());
-  NS_ASSERTION(aURI, "Must pass a non-null URI!");
-  if (XRE_IsContentProcess()) {
-    MOZ_ASSERT(aLink, "Must pass a non-null Link!");
-  }
-
-  
-  auto entry = mTrackedURIs.LookupForAdd(aURI);
-  MOZ_DIAGNOSTIC_ASSERT(!entry || !entry.Data().mLinks.IsEmpty(),
-                        "An empty key was kept around in our hashtable!");
-  if (!entry) {
-    
-    
-    
-    nsresult rv = VisitedQuery::Start(aURI);
-
-    
-    
-    
-    
-    if (NS_FAILED(rv) || !aLink) {
-      entry.OrRemove();
-      return rv;
-    }
-  }
-  
-  
-  
-  else if (!aLink) {
-    MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess(),
-                          "We should only ever get a null Link "
-                          "in the parent process!");
-    return NS_OK;
-  }
-
-  TrackedURI& trackedURI = entry.OrInsert([] { return TrackedURI {}; });
-
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(!trackedURI.mLinks.Contains(aLink),
-                        "Already tracking this Link object!");
-
-  
-  trackedURI.mLinks.AppendElement(aLink);
-
-  
-  
-  
-  if (trackedURI.mVisited) {
-    DispatchNotifyVisited(aURI, GetLinkDocument(*aLink));
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-History::UnregisterVisitedCallback(nsIURI* aURI, Link* aLink) {
-  MOZ_ASSERT(NS_IsMainThread());
-  
-  NS_ASSERTION(aURI, "Must pass a non-null URI!");
-  NS_ASSERTION(aLink, "Must pass a non-null Link object!");
-
-  
-  auto entry = mTrackedURIs.Lookup(aURI);
-  if (!entry) {
-    MOZ_ASSERT_UNREACHABLE("Trying to unregister URI that wasn't registered!");
-    return NS_ERROR_UNEXPECTED;
-  }
-  ObserverArray& observers = entry.Data().mLinks;
-  if (!observers.RemoveElement(aLink)) {
-    MOZ_ASSERT_UNREACHABLE("Trying to unregister node that wasn't registered!");
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  
-  if (observers.IsEmpty()) {
-    entry.Remove();
   }
 
   return NS_OK;
