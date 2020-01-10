@@ -5,6 +5,133 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function timeoutPromise(t, ms) {
   return new Promise(resolve => { t.step_timeout(resolve, ms); });
 }
@@ -70,8 +197,16 @@ function xhrRequest(url, responseType) {
 
 function setAttributes(el, attrs) {
   attrs = attrs || {}
-  for (var attr in attrs)
-    el.setAttribute(attr, attrs[attr]);
+  for (var attr in attrs) {
+    if (attr !== 'src')
+      el.setAttribute(attr, attrs[attr]);
+  }
+  
+  
+  for (var attr in attrs) {
+    if (attr === 'src')
+      el.setAttribute(attr, attrs[attr]);
+  }
 }
 
 
@@ -255,6 +390,33 @@ function wrapResult(server_data) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function requestViaIframe(url, additionalAttributes) {
   const iframe = createElement(
       "iframe",
@@ -274,40 +436,23 @@ function requestViaIframe(url, additionalAttributes) {
 
 
 
-function requestViaImage(url) {
-  return createRequestViaElement("img", {"src": url}, document.body);
+function requestViaImage(url, additionalAttributes) {
+  const img = createElement(
+      "img",
+      
+      Object.assign({"src": url, "crossOrigin": "Anonymous"}, additionalAttributes),
+      document.body, true);
+  return img.eventPromise.then(() => wrapResult(decodeImageData(img)));
 }
 
 
-function loadImageInWindow(src, attributes, w) {
-  return new Promise((resolve, reject) => {
-    var image = new w.Image();
-    image.crossOrigin = "Anonymous";
-    image.onload = function() {
-      resolve(image);
-    };
+function decodeImageData(img) {
+  var canvas = document.createElement("canvas");
+  var context = canvas.getContext('2d');
+  context.drawImage(img, 0, 0);
+  var imgData = context.getImageData(0, 0, img.clientWidth, img.clientHeight);
+  const rgba = imgData.data;
 
-    
-    if (attributes) {
-      for (var attr in attributes) {
-        image[attr] = attributes[attr];
-      }
-    }
-
-    image.src = src;
-    w.document.body.appendChild(image)
-  });
-}
-
-function extractImageData(img) {
-    var canvas = document.createElement("canvas");
-    var context = canvas.getContext('2d');
-    context.drawImage(img, 0, 0);
-    var imgData = context.getImageData(0, 0, img.clientWidth, img.clientHeight);
-    return imgData.data;
-}
-
-function decodeImageData(rgba) {
   let decodedBytes = new Uint8ClampedArray(rgba.length);
   let decodedLength = 0;
 
@@ -347,62 +492,6 @@ function decodeImageData(rgba) {
   var string_data = (new TextDecoder("ascii")).decode(decodedBytes);
 
   return JSON.parse(string_data);
-}
-
-
-
-
-
-function requestViaImageForReferrerPolicy(url, attributes, referrerPolicy) {
-  
-  
-  
-  
-  
-  
-
-  var iframeWithoutOwnPolicy = document.createElement('iframe');
-  var noSrcDocPolicy = new Promise((resolve, reject) => {
-        iframeWithoutOwnPolicy.srcdoc = "Hello, world.";
-        iframeWithoutOwnPolicy.onload = resolve;
-        document.body.appendChild(iframeWithoutOwnPolicy);
-      })
-    .then(() => {
-        var nextUrl = url + "&cache_destroyer2=" + (new Date()).getTime();
-        return loadImageInWindow(nextUrl, attributes,
-                                 iframeWithoutOwnPolicy.contentWindow);
-      })
-    .then(function (img) {
-        return decodeImageData(extractImageData(img));
-      });
-
-  
-  var iframePolicy = (referrerPolicy === "no-referrer") ? "unsafe-url" : "no-referrer";
-  var iframeWithOwnPolicy = document.createElement('iframe');
-  var srcDocPolicy = new Promise((resolve, reject) => {
-        iframeWithOwnPolicy.srcdoc = "<meta name='referrer' content='" + iframePolicy + "'>Hello world.";
-        iframeWithOwnPolicy.onload = resolve;
-        document.body.appendChild(iframeWithOwnPolicy);
-      })
-    .then(() => {
-        var nextUrl = url + "&cache_destroyer3=" + (new Date()).getTime();
-        return loadImageInWindow(nextUrl, null,
-                                 iframeWithOwnPolicy.contentWindow);
-      })
-    .then(function (img) {
-        return decodeImageData(extractImageData(img));
-      });
-
-  var pagePolicy = loadImageInWindow(url, attributes, window)
-    .then(function (img) {
-        return decodeImageData(extractImageData(img));
-      });
-
-  return Promise.all([noSrcDocPolicy, srcDocPolicy, pagePolicy]).then(values => {
-    assert_equals(values[0].headers.referer, values[2].headers.referer, "Referrer inside 'srcdoc' without its own policy should be the same as embedder's referrer.");
-    assert_equals((iframePolicy === "no-referrer" ? undefined : document.location.href), values[1].headers.referer, "Referrer inside 'srcdoc' should use the iframe's policy if it has one");
-    return wrapResult(values[2]);
-  });
 }
 
 
@@ -746,6 +835,14 @@ function requestViaWebSocket(url) {
 }
 
 
+
+
+
+
+
+
+
+
 const subresourceMap = {
   "a-tag": {
     path: "/common/security-features/subresource/document.py",
@@ -778,7 +875,6 @@ const subresourceMap = {
   "img-tag": {
     path: "/common/security-features/subresource/image.py",
     invoker: requestViaImage,
-    invokerForReferrerPolicy: requestViaImageForReferrerPolicy,
   },
   "link-css-tag": {
     path: "/common/security-features/subresource/empty.py",
@@ -854,6 +950,35 @@ for (const workletType of ['animation', 'audio', 'layout', 'paint']) {
     };
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function getRequestURLs(subresourceType, originType, redirectionType) {
   const key = guid();
   const value = guid();
@@ -873,6 +998,122 @@ function getRequestURLs(subresourceType, originType, redirectionType) {
     announceUrl: stashEndpoint + "&action=put&value=" + value,
     assertUrl: stashEndpoint + "&action=take",
   };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function invokeRequest(subresource, sourceContextList) {
+  if (sourceContextList.length === 0) {
+    
+
+    const additionalAttributes = {};
+    
+    for (const policyDelivery of (subresource.policyDeliveries || [])) {
+      
+      
+      if (policyDelivery.deliveryType === "attr") {
+        additionalAttributes[policyDelivery.key] = policyDelivery.value;
+      } else if (policyDelivery.deliveryType === "rel-noref") {
+        additionalAttributes["rel"] = "noreferrer";
+      }
+    }
+
+    return subresourceMap[subresource.subresourceType].invoker(
+        subresource.url,
+        additionalAttributes)
+      .then(result => Object.assign(
+          {sourceContextUrl: location.toString()},
+          result));
+  }
+
+  
+  const sourceContextMap = {
+    "srcdoc": { 
+      invoker: invokeFromIframe,
+    },
+    "iframe": { 
+      invoker: invokeFromIframe,
+    },
+  };
+
+  return sourceContextMap[sourceContextList[0].sourceContextType].invoker(
+      subresource, sourceContextList);
+}
+
+
+
+
+
+
+
+
+
+function invokeFromIframe(subresource, sourceContextList) {
+  const currentSourceContext = sourceContextList.shift();
+  const frameUrl =
+    "/common/security-features/scope/document.py?policyDeliveries=" +
+    encodeURIComponent(JSON.stringify(
+        currentSourceContext.policyDeliveries || []));
+
+  let promise;
+  if (currentSourceContext.sourceContextType === 'srcdoc') {
+    promise = fetch(frameUrl)
+      .then(r => r.text())
+      .then(srcdoc => {
+          return createElement("iframe", {srcdoc: srcdoc}, document.body, true);
+        });
+  } else if (currentSourceContext.sourceContextType === 'iframe') {
+    promise = Promise.resolve(
+        createElement("iframe", {src: frameUrl}, document.body, true));
+  }
+
+  return promise
+    .then(iframe => {
+        return iframe.eventPromise
+          .then(() => {
+              const promise = bindEvents2(
+                  window, "message", iframe, "error", window, "error");
+              iframe.contentWindow.postMessage(
+                  {subresource: subresource,
+                   sourceContextList: sourceContextList},
+                  "*");
+              return promise;
+            })
+          .then(event => {
+              if (event.data.error)
+                return Promise.reject(event.data.error);
+              return event.data;
+            });
+      });
 }
 
 

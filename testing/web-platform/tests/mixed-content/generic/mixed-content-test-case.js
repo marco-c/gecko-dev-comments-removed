@@ -22,6 +22,17 @@ function getSubresourceOrigin(originType) {
   const wsPort = getNormalizedPort(parseInt("{{ports[ws][0]}}", 10));
   const wssPort = getNormalizedPort(parseInt("{{ports[wss][0]}}", 10));
 
+  
+
+
+
+
+
+
+
+
+
+
   const originMap = {
     "same-https": httpsProtocol + "://" + sameOriginHost + httpsPort,
     "same-http": httpProtocol + "://" + sameOriginHost + httpPort,
@@ -63,7 +74,6 @@ function MixedContentTestCase(scenario, description, sanityChecker) {
   const urls = getRequestURLs(scenario.subresource,
                               originTypeConversion[scenario.origin],
                               scenario.redirection);
-  const invoker = subresourceMap[scenario.subresource].invoker;
   const checkResult = _ => {
     
     return xhrRequest(urls.assertUrl)
@@ -76,11 +86,18 @@ function MixedContentTestCase(scenario, description, sanityChecker) {
   };
 
   function runTest() {
+    
+    const subresource = {
+      subresourceType: scenario.subresource,
+      url: urls.testUrl,
+      policyDeliveries: []
+    };
+
     promise_test(() => {
       return xhrRequest(urls.announceUrl)
         
         
-        .then(_ => invoker(urls.testUrl))
+        .then(_ => invokeRequest(subresource, []))
         
         
         .then(checkResult, checkResult);

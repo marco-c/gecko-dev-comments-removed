@@ -17,6 +17,17 @@ function getSubresourceOrigin(originType) {
   const wsPort = getNormalizedPort(parseInt("{{ports[ws][0]}}", 10));
   const wssPort = getNormalizedPort(parseInt("{{ports[wss][0]}}", 10));
 
+  
+
+
+
+
+
+
+
+
+
+
   const originMap = {
     "same-https": httpsProtocol + "://" + sameOriginHost + httpsPort,
     "same-http": httpProtocol + "://" + sameOriginHost + httpPort,
@@ -65,24 +76,20 @@ function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
       scenario.subresource,
       originTypeConversion[scenario.origin + '-' + scenario.target_protocol],
       scenario.redirection);
-  const invoker =
-      subresourceMap[scenario.subresource].invokerForReferrerPolicy ||
-      subresourceMap[scenario.subresource].invoker;
-  const checkResult = result => {
-    const referrerUrlResolver = {
-      "omitted": function() {
-        return undefined;
-      },
-      "origin": function() {
-        return self.origin + "/";
-      },
-      "stripped-referrer": function() {
-        return stripUrlForUseAsReferrer(location.toString());
-      }
-    };
-    const expectedReferrerUrl =
-      referrerUrlResolver[scenario.referrer_url]();
 
+  const referrerUrlResolver = {
+    "omitted": function(sourceUrl) {
+      return undefined;
+    },
+    "origin": function(sourceUrl) {
+      return new URL(sourceUrl).origin + "/";
+    },
+    "stripped-referrer": function(sourceUrl) {
+      return stripUrlForUseAsReferrer(sourceUrl);
+    }
+  };
+
+  const checkResult = (expectedReferrerUrl, result) => {
     
     sanityChecker.checkSubresourceResult(scenario, urls.testUrl, result);
 
@@ -98,21 +105,83 @@ function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
   };
 
   function runTest() {
+    const deliveryTypeConversion = {
+      "attr-referrer": "attr",
+      "rel-noreferrer": "rel-noref",
+      
+      
+    };
+
+    
+    const delivery = {
+        deliveryType: deliveryTypeConversion[scenario.delivery_method],
+        key: "referrerPolicy",
+        value: scenario.referrer_policy};
+
+    
+    const subresource = {
+      subresourceType: scenario.subresource,
+      url: urls.testUrl,
+      policyDeliveries: [delivery]
+    };
+
+    const expectedReferrer =
+      referrerUrlResolver[scenario.referrer_url](location.toString());
+
+    
     promise_test(_ => {
-      
-      
-      var elementAttributesForDeliveryMethod = {
-        "attr-referrer":  {referrerPolicy: scenario.referrer_policy},
-        "rel-noreferrer": {rel: "noreferrer"}
-      };
-      var deliveryMethod = scenario.delivery_method;
-      let elementAttributes = {};
-      if (deliveryMethod in elementAttributesForDeliveryMethod) {
-        elementAttributes = elementAttributesForDeliveryMethod[deliveryMethod];
-      }
-      return invoker(urls.testUrl, elementAttributes, scenario.referrer_policy)
-        .then(checkResult);
-    }, testDescription);
+        return invokeRequest(subresource, [])
+          .then(result => checkResult(expectedReferrer, result));
+      }, testDescription);
+
+    
+    
+    
+    if (scenario.subresource !== "img-tag") {
+      return;
+    }
+
+    
+    
+    promise_test(_ => {
+        
+        const sourceContextList = [{sourceContextType: "srcdoc"}];
+
+        return invokeRequest(subresource, sourceContextList)
+          .then(result => checkResult(expectedReferrer, result));
+      }, testDescription + " (srcdoc iframe inherits parent)");
+
+    
+    
+    promise_test(_ => {
+        
+        
+        const overridingPolicy =
+            scenario.referrer_policy === "no-referrer" ? "unsafe-url"
+                                                       : "no-referrer";
+        const overrridingExpectedReferrer =
+          referrerUrlResolver[overridingPolicy === "no-referrer"
+                              ? "omitted"
+                              : "stripped-referrer"](location.toString());
+
+        
+        const subresourceWithoutDelivery = {
+          subresourceType: scenario.subresource,
+          url: urls.testUrl
+        };
+
+        
+        
+        const sourceContextList = [{
+            sourceContextType: "srcdoc",
+            policyDeliveries: [{deliveryType: "meta",
+                                key: "referrerPolicy",
+                                value: overridingPolicy}]
+          }];
+
+        return invokeRequest(subresourceWithoutDelivery, sourceContextList)
+          .then(result => checkResult(overrridingExpectedReferrer, result));
+      }, testDescription + " (overridden by srcdoc iframe)");
   }
 
   return {start: runTest};
