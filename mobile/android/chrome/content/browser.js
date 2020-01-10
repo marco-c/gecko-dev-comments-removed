@@ -3827,15 +3827,15 @@ Tab.prototype = {
     
     
     
-    let flags = Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE |
-                Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY;
+    let loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE |
+                    Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY;
     if (this.originalURI && !this.originalURI.equals(currentURI)) {
       
       url = this.originalURI.spec;
     }
     let loadURIOptions = {
       triggeringPrincipal: this.browser.contentPrincipal,
-      loadFlags: flags,
+      loadFlags,
     };
     this.browser.docShell.loadURI(url, loadURIOptions);
   },
