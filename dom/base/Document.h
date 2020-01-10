@@ -913,6 +913,11 @@ class Document : public nsINode,
   
 
 
+  Result<nsCOMPtr<nsIURI>, nsresult> ResolveWithBaseURI(const nsAString& aURI);
+
+  
+
+
 
 
 
