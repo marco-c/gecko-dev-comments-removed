@@ -950,10 +950,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
   
   
-  MOZ_ASSERT_IF(windowIsNew, newDocShell);
+  MOZ_DIAGNOSTIC_ASSERT(!windowIsNew || newDocShell);
   
   
-  MOZ_ASSERT_IF(isNewToplevelWindow, newDocShell);
+  MOZ_DIAGNOSTIC_ASSERT(!isNewToplevelWindow || newDocShell);
 
   
   
