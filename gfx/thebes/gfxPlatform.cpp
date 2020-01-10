@@ -1109,33 +1109,33 @@ void gfxPlatform::Init() {
   }
 }
 
-static bool IsFeatureSupported(long aFeature) {
+static bool IsFeatureSupported(long aFeature, bool aDefault) {
   nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
   nsCString blockId;
   int32_t status;
   if (!NS_SUCCEEDED(gfxInfo->GetFeatureStatus(aFeature, blockId, &status))) {
-    return true;
+    return aDefault;
   }
-  return status != nsIGfxInfo::FEATURE_STATUS_OK;
+  return status == nsIGfxInfo::FEATURE_STATUS_OK;
 }
 
 bool gfxPlatform::IsDXInterop2Blocked() {
-  return IsFeatureSupported(nsIGfxInfo::FEATURE_DX_INTEROP2);
+  return !IsFeatureSupported(nsIGfxInfo::FEATURE_DX_INTEROP2, false);
 }
 
 
 bool gfxPlatform::IsDXNV12Blocked() {
-  return IsFeatureSupported(nsIGfxInfo::FEATURE_DX_NV12);
+  return !IsFeatureSupported(nsIGfxInfo::FEATURE_DX_NV12, false);
 }
 
 
 bool gfxPlatform::IsDXP010Blocked() {
-  return IsFeatureSupported(nsIGfxInfo::FEATURE_DX_P010);
+  return !IsFeatureSupported(nsIGfxInfo::FEATURE_DX_P010, false);
 }
 
 
 bool gfxPlatform::IsDXP016Blocked() {
-  return IsFeatureSupported(nsIGfxInfo::FEATURE_DX_P016);
+  return !IsFeatureSupported(nsIGfxInfo::FEATURE_DX_P016, false);
 }
 
 
@@ -3116,6 +3116,10 @@ void gfxPlatform::InitWebRenderConfig() {
     }
   }
 #endif
+
+  
+  gfxVars::SetUseGLSwizzle(IsFeatureSupported(nsIGfxInfo::FEATURE_GL_SWIZZLE, true));
+
   
   
   gfxUtils::RemoveShaderCacheFromDiskIfNecessary();
