@@ -12,8 +12,9 @@ class ChromeXRTest {
     return Promise.resolve(this.mockVRService_.addRuntime(init_params));
   }
 
-  simulateDeviceDisconnection(device) {
-    this.mockVRService_.removeRuntime(device);
+  disconnectAllDevices() {
+    this.mockVRService_.removeAllRuntimes(device);
+    return Promise.resolve();
   }
 
   simulateUserActivation(callback) {
@@ -60,11 +61,11 @@ class MockVRService {
     return runtime;
   }
 
-  removeRuntime(runtime) {
-    
-    
-    
-    
+  removeAllRuntimes() {
+    if (this.client_) {
+      this.client_.onDeviceChanged();
+    }
+
     this.runtimes_ = [];
   }
 
@@ -151,6 +152,8 @@ class MockRuntime {
 
     this.framesOfReference = {};
 
+    
+    
     if (fakeDeviceInit.supportsImmersive) {
       this.displayInfo_ = this.getImmersiveDisplayInfo();
     } else {
@@ -160,16 +163,16 @@ class MockRuntime {
     if (fakeDeviceInit.supportsEnvironmentIntegration) {
       this.displayInfo_.capabilities.canProvideEnvironmentIntegration = true;
     }
+
+    if (fakeDeviceInit.viewerOrigin != null) {
+      this.setViewerOrigin(fakeDeviceInit.viewerOrigin);
+    }
+
+    this.setViews(fakeDeviceInit.views);
   }
 
   
-  setXRPresentationFrameData(poseMatrix, views) {
-    if (poseMatrix == null) {
-      this.pose_ = null;
-    } else {
-      this.setPoseFromMatrix(poseMatrix);
-    }
-
+  setViews(views) {
     if (views) {
       let changed = false;
       for (let i = 0; i < views.length; i++) {
@@ -182,17 +185,18 @@ class MockRuntime {
         }
       }
 
-      if (changed) {
+      if (changed && this.sessionClient_.ptr.isBound()) {
         this.sessionClient_.onChanged(this.displayInfo_);
       }
     }
   }
 
-
-  setPoseFromMatrix(poseMatrix) {
+  setViewerOrigin(origin, emulatedPosition = false) {
+    let p = origin.position;
+    let q = origin.orientation;
     this.pose_ = {
-      orientation: null,
-      position: null,
+      orientation: { x: q[0], y: q[1], z: q[2], w: q[3] },
+      position: { x: p[0], y: p[1], z: p[2] },
       angularVelocity: null,
       linearVelocity: null,
       angularAcceleration: null,
@@ -200,37 +204,13 @@ class MockRuntime {
       inputState: null,
       poseIndex: 0
     };
-
-    let pose = this.poseFromMatrix(poseMatrix);
-    for (let field in pose) {
-      if (this.pose_.hasOwnProperty(field)) {
-        this.pose_[field] = pose[field];
-      }
-    }
   }
 
-  poseFromMatrix(m) {
-    let m00 = m[0];
-    let m11 = m[5];
-    let m22 = m[10];
-
-    
-    let orientation = new gfx.mojom.Quaternion();
-    orientation.w = Math.sqrt(Math.max(0, 1 + m00 + m11 + m22)) / 2;
-    orientation.x = Math.sqrt(Math.max(0, 1 + m00 - m11 - m22)) / 2;
-    orientation.y = Math.sqrt(Math.max(0, 1 - m00 + m11 - m22)) / 2;
-    orientation.z = Math.sqrt(Math.max(0, 1 - m00 - m11 + m22)) / 2;
-
-    let position = new gfx.mojom.Point3F();
-    position.x = m[12];
-    position.y = m[13];
-    position.z = m[14];
-
-    return {
-      orientation, position
-    }
+  clearViewerOrigin() {
+    this.pose_ = null;
   }
 
+  
   getNonImmersiveDisplayInfo() {
     let displayInfo = this.getImmersiveDisplayInfo();
 
@@ -296,6 +276,8 @@ class MockRuntime {
     let upTan = (1 + m[9]) / m[5];
     let downTan = (1 - m[9]) / m[5];
 
+    let offset = fakeXRViewInit.viewOffset.position;
+
     return {
       fieldOfView: {
         upDegrees: toDegrees(upTan),
@@ -303,9 +285,9 @@ class MockRuntime {
         leftDegrees: toDegrees(leftTan),
         rightDegrees: toDegrees(rightTan)
       },
-      offset: { x: 0, y: 0, z: 0 },
-      renderWidth: 20,
-      renderHeight: 20
+      offset: { x: offset[0], y: offset[1], z: offset[2] },
+      renderWidth: fakeXRViewInit.resolution.width,
+      renderHeight: fakeXRViewInit.resolution.height
     };
   }
 
@@ -405,6 +387,7 @@ class MockRuntime {
   };
 }
 
+
 class MockXRPresentationProvider {
   constructor() {
     this.binding_ = new mojo.Binding(device.mojom.XRPresentationProvider, this);
@@ -448,4 +431,21 @@ class MockXRPresentationProvider {
   }
 }
 
+
+
+
 let XRTest = new ChromeXRTest();
+
+
+
+
+if ((typeof legacy_vr_test === 'undefined') || !legacy_vr_test) {
+  
+  
+  
+  if (navigator.xr) {
+    navigator.xr.test = XRTest;
+  }
+} else {
+  navigator.vr = { test: XRTest };
+}
