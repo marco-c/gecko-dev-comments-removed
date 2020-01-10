@@ -581,7 +581,7 @@ class gfxFontEntry {
   nsDataHashtable<nsPtrHashKey<const void>, void*>* mGrTableMap = nullptr;
 
   
-  hb_blob_t* const kTrakTableUninitialized = (hb_blob_t* const)(intptr_t(-1));
+  hb_blob_t* const kTrakTableUninitialized = (hb_blob_t*)(intptr_t(-1));
   hb_blob_t* mTrakTable = kTrakTableUninitialized;
   bool TrakTableInitialized() const {
     return mTrakTable != kTrakTableUninitialized;
