@@ -914,6 +914,11 @@ Result<Completion> js::DebuggerGenericEval(
   }
 
   
+  
+  AutoNoteDebuggerEvaluationWithOnNativeCallHook noteEvaluation(
+      cx, dbg->observesNativeCalls() ? dbg : nullptr);
+
+  
   LeaveDebuggeeNoExecute nnx(cx);
   RootedValue rval(cx);
   AbstractFramePtr frame = iter ? iter->abstractFramePtr() : NullFramePtr();
