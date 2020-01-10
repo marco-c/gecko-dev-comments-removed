@@ -477,6 +477,11 @@ async function checkClickOnNode(
 ) {
   info("checking click on node location");
 
+  
+  
+  
+  await waitForTime(1000);
+
   const onSourceInDebuggerOpened = once(hud, "source-in-debugger-opened");
 
   EventUtils.sendMouseEvent(
