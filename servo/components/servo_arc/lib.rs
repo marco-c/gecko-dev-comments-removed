@@ -53,25 +53,6 @@ use std::sync::atomic::Ordering::{Acquire, Relaxed, Release};
 use std::{isize, usize};
 
 
-macro_rules! offset_of {
-    ($container:path, $field:ident) => {{
-        // Make sure the field actually exists. This line ensures that a compile-time error is
-        // generated if $field is accessed through a Deref impl.
-        let $container { $field: _, .. };
-
-        // Create an (invalid) instance of the container and calculate the offset to its
-        // field. Using a null pointer might be UB if `&(*(0 as *const T)).field` is interpreted to
-        // be nullptr deref.
-        let invalid: $container = ::std::mem::uninitialized();
-        let offset = &invalid.$field as *const _ as usize - &invalid as *const _ as usize;
-
-        // Do not run destructors on the made up invalid instance.
-        ::std::mem::forget(invalid);
-        offset as isize
-    }};
-}
-
-
 
 
 
@@ -196,6 +177,14 @@ struct ArcInner<T: ?Sized> {
 unsafe impl<T: ?Sized + Sync + Send> Send for ArcInner<T> {}
 unsafe impl<T: ?Sized + Sync + Send> Sync for ArcInner<T> {}
 
+
+fn data_offset<T>() -> usize {
+    let size = size_of::<ArcInner<()>>();
+    let align = align_of::<T>();
+    
+    size.wrapping_add(align).wrapping_sub(1) & !align.wrapping_sub(1)
+}
+
 impl<T> Arc<T> {
     
     #[inline]
@@ -251,7 +240,7 @@ impl<T> Arc<T> {
     unsafe fn from_raw(ptr: *const T) -> Self {
         
         
-        let ptr = (ptr as *const u8).offset(-offset_of!(ArcInner<T>, data));
+        let ptr = (ptr as *const u8).sub(data_offset::<T>());
         Arc {
             p: ptr::NonNull::new_unchecked(ptr as *mut ArcInner<T>),
             phantom: PhantomData,
