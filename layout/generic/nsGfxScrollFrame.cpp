@@ -1991,7 +1991,7 @@ void ScrollFrameHelper::AsyncScroll::InitSmoothScroll(
   
   if (!mAnimationPhysics || aOrigin != mOrigin) {
     mOrigin = aOrigin;
-    if (StaticPrefs::general_smoothScroll_msdPhysics_enabled()) {
+    if (StaticPrefs::SmoothScrollMSDPhysicsEnabled()) {
       mAnimationPhysics =
           MakeUnique<ScrollAnimationMSDPhysics>(aInitialPosition);
     } else {
@@ -4756,6 +4756,51 @@ void ScrollFrameHelper::ReloadChildFrames() {
   }
 }
 
+already_AddRefed<Element> ScrollFrameHelper::MakeScrollbar(
+    NodeInfo* aNodeInfo, bool aVertical, AnonymousContentKey& aKey) {
+  MOZ_ASSERT(aNodeInfo);
+  MOZ_ASSERT(
+      aNodeInfo->Equals(nsGkAtoms::scrollbar, nullptr, kNameSpaceID_XUL));
+
+  static constexpr nsLiteralString kOrientValues[2] = {
+      NS_LITERAL_STRING("horizontal"),
+      NS_LITERAL_STRING("vertical"),
+  };
+
+  aKey = AnonymousContentKey::Type_Scrollbar;
+  if (aVertical) {
+    aKey |= AnonymousContentKey::Flag_Vertical;
+  }
+
+  RefPtr<Element> e;
+  NS_TrustedNewXULElement(getter_AddRefs(e), do_AddRef(aNodeInfo));
+
+#ifdef DEBUG
+  
+  
+  
+  e->SetProperty(nsGkAtoms::restylableAnonymousNode,
+                 reinterpret_cast<void*>(true));
+#endif  
+
+  e->SetAttr(kNameSpaceID_None, nsGkAtoms::orient, kOrientValues[aVertical],
+             false);
+  e->SetAttr(kNameSpaceID_None, nsGkAtoms::clickthrough,
+             NS_LITERAL_STRING("always"), false);
+
+  if (mIsRoot) {
+    e->SetProperty(nsGkAtoms::docLevelNativeAnonymousContent,
+                   reinterpret_cast<void*>(true));
+    e->SetAttr(kNameSpaceID_None, nsGkAtoms::root_, NS_LITERAL_STRING("true"),
+               false);
+
+    
+    aKey = AnonymousContentKey::None;
+  }
+
+  return e.forget();
+}
+
 bool ScrollFrameHelper::IsForTextControlWithNoScrollbars() const {
   nsIFrame* parent = mOuter->GetParent();
   
@@ -4773,6 +4818,8 @@ bool ScrollFrameHelper::IsForTextControlWithNoScrollbars() const {
 
 nsresult ScrollFrameHelper::CreateAnonymousContent(
     nsTArray<nsIAnonymousContentCreator::ContentInfo>& aElements) {
+  typedef nsIAnonymousContentCreator::ContentInfo ContentInfo;
+
   nsPresContext* presContext = mOuter->PresContext();
 
   
@@ -4833,62 +4880,28 @@ nsresult ScrollFrameHelper::CreateAnonymousContent(
 
   nsNodeInfoManager* nodeInfoManager =
       presContext->Document()->NodeInfoManager();
-  RefPtr<NodeInfo> nodeInfo = nodeInfoManager->GetNodeInfo(
-      nsGkAtoms::scrollbar, nullptr, kNameSpaceID_XUL, nsINode::ELEMENT_NODE);
-  NS_ENSURE_TRUE(nodeInfo, NS_ERROR_OUT_OF_MEMORY);
 
-  if (canHaveHorizontal) {
-    RefPtr<NodeInfo> ni = nodeInfo;
-    NS_TrustedNewXULElement(getter_AddRefs(mHScrollbarContent), ni.forget());
-#ifdef DEBUG
-    
-    
-    
-    mHScrollbarContent->SetProperty(nsGkAtoms::restylableAnonymousNode,
-                                    reinterpret_cast<void*>(true));
-#endif  
+  {
+    RefPtr<NodeInfo> nodeInfo = nodeInfoManager->GetNodeInfo(
+        nsGkAtoms::scrollbar, nullptr, kNameSpaceID_XUL, nsINode::ELEMENT_NODE);
+    NS_ENSURE_TRUE(nodeInfo, NS_ERROR_OUT_OF_MEMORY);
 
-    mHScrollbarContent->SetAttr(kNameSpaceID_None, nsGkAtoms::orient,
-                                NS_LITERAL_STRING("horizontal"), false);
-    mHScrollbarContent->SetAttr(kNameSpaceID_None, nsGkAtoms::clickthrough,
-                                NS_LITERAL_STRING("always"), false);
-    if (mIsRoot) {
-      mHScrollbarContent->SetProperty(nsGkAtoms::docLevelNativeAnonymousContent,
-                                      reinterpret_cast<void*>(true));
-
-      mHScrollbarContent->SetAttr(kNameSpaceID_None, nsGkAtoms::root_,
-                                  NS_LITERAL_STRING("true"), false);
+    if (canHaveHorizontal) {
+      AnonymousContentKey key;
+      mHScrollbarContent = MakeScrollbar(nodeInfo,  false, key);
+      aElements.AppendElement(ContentInfo(mHScrollbarContent, key));
     }
-    if (!aElements.AppendElement(mHScrollbarContent))
-      return NS_ERROR_OUT_OF_MEMORY;
-  }
 
-  if (canHaveVertical) {
-    RefPtr<NodeInfo> ni = nodeInfo;
-    NS_TrustedNewXULElement(getter_AddRefs(mVScrollbarContent), ni.forget());
-#ifdef DEBUG
-    
-    
-    
-    mVScrollbarContent->SetProperty(nsGkAtoms::restylableAnonymousNode,
-                                    reinterpret_cast<void*>(true));
-#endif  
-
-    mVScrollbarContent->SetAttr(kNameSpaceID_None, nsGkAtoms::orient,
-                                NS_LITERAL_STRING("vertical"), false);
-    mVScrollbarContent->SetAttr(kNameSpaceID_None, nsGkAtoms::clickthrough,
-                                NS_LITERAL_STRING("always"), false);
-    if (mIsRoot) {
-      mVScrollbarContent->SetProperty(nsGkAtoms::docLevelNativeAnonymousContent,
-                                      reinterpret_cast<void*>(true));
-      mVScrollbarContent->SetAttr(kNameSpaceID_None, nsGkAtoms::root_,
-                                  NS_LITERAL_STRING("true"), false);
+    if (canHaveVertical) {
+      AnonymousContentKey key;
+      mVScrollbarContent = MakeScrollbar(nodeInfo,  true, key);
+      aElements.AppendElement(ContentInfo(mVScrollbarContent, key));
     }
-    if (!aElements.AppendElement(mVScrollbarContent))
-      return NS_ERROR_OUT_OF_MEMORY;
   }
 
   if (isResizable) {
+    AnonymousContentKey key = AnonymousContentKey::Type_Resizer;
+
     RefPtr<NodeInfo> nodeInfo;
     nodeInfo = nodeInfoManager->GetNodeInfo(
         nsGkAtoms::resizer, nullptr, kNameSpaceID_XUL, nsINode::ELEMENT_NODE);
@@ -4901,20 +4914,25 @@ nsresult ScrollFrameHelper::CreateAnonymousContent(
       case StyleResize::Horizontal:
         if (IsScrollbarOnRight()) {
           dir.AssignLiteral("right");
+          key |= AnonymousContentKey::Flag_Resizer_Right;
         } else {
           dir.AssignLiteral("left");
         }
         break;
       case StyleResize::Vertical:
         dir.AssignLiteral("bottom");
+        key |= AnonymousContentKey::Flag_Resizer_Bottom;
         if (!IsScrollbarOnRight()) {
           mResizerContent->SetAttr(kNameSpaceID_None, nsGkAtoms::flip,
                                    EmptyString(), false);
+          key |= AnonymousContentKey::Flag_Resizer_Flip;
         }
         break;
       case StyleResize::Both:
+        key |= AnonymousContentKey::Flag_Resizer_Bottom;
         if (IsScrollbarOnRight()) {
           dir.AssignLiteral("bottomright");
+          key |= AnonymousContentKey::Flag_Resizer_Right;
         } else {
           dir.AssignLiteral("bottomleft");
         }
@@ -4940,12 +4958,13 @@ nsresult ScrollFrameHelper::CreateAnonymousContent(
     mResizerContent->SetAttr(kNameSpaceID_None, nsGkAtoms::clickthrough,
                              NS_LITERAL_STRING("always"), false);
 
-    if (!aElements.AppendElement(mResizerContent))
-      return NS_ERROR_OUT_OF_MEMORY;
+    aElements.AppendElement(ContentInfo(mResizerContent, key));
   }
 
   if (canHaveHorizontal && canHaveVertical) {
-    nodeInfo =
+    AnonymousContentKey key = AnonymousContentKey::Type_ScrollCorner;
+
+    RefPtr<NodeInfo> nodeInfo =
         nodeInfoManager->GetNodeInfo(nsGkAtoms::scrollcorner, nullptr,
                                      kNameSpaceID_XUL, nsINode::ELEMENT_NODE);
     NS_TrustedNewXULElement(getter_AddRefs(mScrollCornerContent),
@@ -4955,8 +4974,15 @@ nsresult ScrollFrameHelper::CreateAnonymousContent(
           nsGkAtoms::docLevelNativeAnonymousContent,
           reinterpret_cast<void*>(true));
     }
-    if (!aElements.AppendElement(mScrollCornerContent))
-      return NS_ERROR_OUT_OF_MEMORY;
+    aElements.AppendElement(ContentInfo(mScrollCornerContent, key));
+  }
+
+  
+  
+  if (mOuter->GetContent()->IsHTMLElement(nsGkAtoms::select)) {
+    for (auto& info : aElements) {
+      info.mKey = AnonymousContentKey::None;
+    }
   }
 
   return NS_OK;
@@ -5376,13 +5402,8 @@ void ScrollFrameHelper::PostOverflowEvent() {
     return;
   }
 
-  nsRootPresContext* rpc = mOuter->PresContext()->GetRootPresContext();
-  if (!rpc) {
-    return;
-  }
-
   mAsyncScrollPortEvent = new AsyncScrollPortEvent(this);
-  rpc->AddWillPaintObserver(mAsyncScrollPortEvent.get());
+  nsContentUtils::AddScriptRunner(mAsyncScrollPortEvent.get());
 }
 
 nsIFrame* ScrollFrameHelper::GetFrameForDir() const {

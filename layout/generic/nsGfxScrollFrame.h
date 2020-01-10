@@ -513,11 +513,16 @@ class ScrollFrameHelper : public nsIReflowCallback {
   void UpdateMinimumScaleSize(const nsRect& aScrollableOverflow,
                               const nsSize& aICBSize);
 
+
   
   
   
   
   nsSize TrueOuterSize() const;
+
+  already_AddRefed<Element> MakeScrollbar(dom::NodeInfo* aNodeInfo,
+                                          bool aVertical,
+                                          AnonymousContentKey& aKey);
 
   
   nsCOMPtr<mozilla::dom::Element> mHScrollbarContent;
