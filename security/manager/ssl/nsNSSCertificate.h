@@ -49,6 +49,28 @@ class nsNSSCertificate final : public nsIX509Cert,
   static nsresult GetDbKey(const mozilla::UniqueCERTCertificate& cert,
                            nsACString& aDbKey);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static nsresult SegmentCertificateChain(
+       const nsTArray<RefPtr<nsIX509Cert>>& aCertList,
+       nsCOMPtr<nsIX509Cert>& aRoot,
+       nsTArray<RefPtr<nsIX509Cert>>& aIntermediates,
+       nsCOMPtr<nsIX509Cert>& aEndEntity);
+
+  
+  
+  
+  static nsresult GetRootCertificate(
+      const nsTArray<RefPtr<nsIX509Cert>>& aCertList,
+       nsCOMPtr<nsIX509Cert>& aRoot);
+
  private:
   virtual ~nsNSSCertificate();
 

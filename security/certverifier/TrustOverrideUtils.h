@@ -78,7 +78,7 @@ static bool CertMatchesStaticData(const CERTCertificate* cert,
 
 template <size_t T>
 static nsresult CheckForSymantecDistrust(
-    const nsCOMPtr<nsIX509CertList>& intCerts,
+    const nsTArray<RefPtr<nsIX509Cert>>& intCerts,
     const nsCOMPtr<nsIX509Cert>& eeCert, const PRTime& permitAfterDate,
     const DataAndLength (&whitelist)[T],
      bool& isDistrusted) {
@@ -113,21 +113,14 @@ static nsresult CheckForSymantecDistrust(
     }
   }
 
-  
-  RefPtr<nsNSSCertList> intCertList = intCerts->GetCertList();
-
-  return intCertList->ForEachCertificateInChain(
-      [&isDistrusted, &whitelist](nsCOMPtr<nsIX509Cert> aCert, bool aHasMore,
-                                   bool& aContinue) {
-        
-        UniqueCERTCertificate nssCert(aCert->GetCert());
-        if (CertSPKIIsInList(nssCert.get(), whitelist)) {
-          
-          isDistrusted = false;
-          aContinue = false;
-        }
-        return NS_OK;
-      });
+  for (const auto& cert : intCerts) {
+    UniqueCERTCertificate nssCert(cert->GetCert());
+    if (CertSPKIIsInList(nssCert.get(), whitelist)) {
+      isDistrusted = false;
+      break;
+    }
+  }
+  return NS_OK;
 }
 
 #endif  

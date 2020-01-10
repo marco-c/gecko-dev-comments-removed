@@ -34,7 +34,7 @@ class PublicKeyPinningService {
 
 
   static nsresult ChainHasValidPins(
-      const RefPtr<nsNSSCertList>& certList, const char* hostname,
+      const nsTArray<RefPtr<nsIX509Cert>>& certList, const char* hostname,
       mozilla::pkix::Time time, bool enforceTestMode,
       const OriginAttributes& originAttributes,
        bool& chainHasValidPins,
@@ -44,9 +44,10 @@ class PublicKeyPinningService {
 
 
 
-  static nsresult ChainMatchesPinset(const RefPtr<nsNSSCertList>& certList,
-                                     const nsTArray<nsCString>& aSHA256keys,
-                                      bool& chainMatchesPinset);
+  static nsresult ChainMatchesPinset(
+      const nsTArray<RefPtr<nsIX509Cert>>& certList,
+      const nsTArray<nsCString>& aSHA256keys,
+       bool& chainMatchesPinset);
 
   
 
