@@ -24,6 +24,13 @@ Services.prefs.setBoolPref("browser.safebrowsing.phishing.enabled", true);
 Services.prefs.setBoolPref("browser.safebrowsing.provider.test.disableBackoff", true);
 
 
+Services.prefs.setCharPref("urlclassifier.phishTable", "test-phish-simple");
+Services.prefs.setCharPref("urlclassifier.malwareTable", "test-harmful-simple,test-malware-simple,test-unwanted-simple");
+Services.prefs.setCharPref("urlclassifier.blockedTable", "test-block-simple");
+Services.prefs.setCharPref("urlclassifier.trackingTable", "test-track-simple");
+Services.prefs.setCharPref("urlclassifier.trackingWhitelistTable", "test-trackwhite-simple");
+
+
 Services.prefs.setCharPref("urlclassifier.disallow_completions", "");
 
 

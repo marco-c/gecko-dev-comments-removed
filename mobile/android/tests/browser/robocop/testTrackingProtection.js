@@ -40,43 +40,7 @@ function promiseLoadEvent(browser, url, eventType = "load", runBeforeLoad) {
 
 
 
-
-
-
 var TABLE = "urlclassifier.trackingTable";
-
-
-function doUpdate() {
-  
-  var testData = "tracking.example.com/";
-  var testUpdate =
-    "n:1000\ni:test-track-simple\nad:1\n" +
-    "a:524:32:" + testData.length + "\n" +
-    testData;
-
-  let dbService = Cc["@mozilla.org/url-classifier/dbservice;1"].getService(Ci.nsIUrlClassifierDBService);
-
-  return new Promise((resolve, reject) => {
-    let listener = {
-      QueryInterface: ChromeUtils.generateQI([Ci.nsIUrlClassifierUpdateObserver]),
-      updateUrlRequested: function(url) { },
-      streamFinished: function(status) { },
-      updateError: function(errorCode) {
-        ok(false, "Couldn't update classifier.");
-        resolve();
-      },
-      updateSuccess: function(requestedTimeout) {
-        resolve();
-      },
-    };
-
-    dbService.beginUpdate(listener, "test-track-simple", "");
-    dbService.beginStream("", "");
-    dbService.updateStream(testUpdate);
-    dbService.finishStream();
-    dbService.finishUpdate();
-  });
-}
 
 var BrowserApp = Services.wm.getMostRecentWindow("navigator:browser").BrowserApp;
 
@@ -94,8 +58,7 @@ add_task(async function test_tracking_pb() {
   });
 
   
-  Services.prefs.setCharPref(TABLE, "test-track-simple");
-  await doUpdate();
+  Services.prefs.setCharPref(TABLE, "moztest-track-simple");
 
   
   await promiseLoadEvent(browser, "http://tracking.example.org/tests/robocop/tracking_good.html");

@@ -860,8 +860,13 @@ nsresult Classifier::RegenActiveTables() {
 
   mActiveTablesCache.Clear();
 
+  
   nsTArray<nsCString> foundTables;
   nsresult rv = ScanStoreDir(mRootStoreDirectory, foundTables);
+  Unused << NS_WARN_IF(NS_FAILED(rv));
+
+  
+  rv = AddMozEntries(foundTables);
   Unused << NS_WARN_IF(NS_FAILED(rv));
 
   for (const auto& table : foundTables) {
@@ -881,6 +886,30 @@ nsresult Classifier::RegenActiveTables() {
          table.get()));
 
     mActiveTablesCache.AppendElement(table);
+  }
+
+  return NS_OK;
+}
+
+nsresult Classifier::AddMozEntries(nsTArray<nsCString>& aTables) {
+  nsTArray<nsLiteralCString> tables = {
+      NS_LITERAL_CSTRING("moztest-phish-simple"),
+      NS_LITERAL_CSTRING("moztest-malware-simple"),
+      NS_LITERAL_CSTRING("moztest-unwanted-simple"),
+      NS_LITERAL_CSTRING("moztest-harmful-simple"),
+      NS_LITERAL_CSTRING("moztest-track-simple"),
+      NS_LITERAL_CSTRING("moztest-trackwhite-simple"),
+      NS_LITERAL_CSTRING("moztest-block-simple"),
+  };
+
+  for (const auto& table : tables) {
+    RefPtr<LookupCache> c = GetLookupCache(table, false);
+    RefPtr<LookupCacheV2> lookupCache = LookupCache::Cast<LookupCacheV2>(c);
+    if (!lookupCache || lookupCache->IsPrimed()) {
+      continue;
+    }
+
+    aTables.AppendElement(table);
   }
 
   return NS_OK;
@@ -1176,6 +1205,12 @@ nsresult Classifier::UpdateHashStore(TableUpdateArray& aUpdates,
 
   LOG(("Classifier::UpdateHashStore(%s)", PromiseFlatCString(aTable).get()));
 
+  
+  
+  
+  
+  MOZ_ASSERT(!nsUrlClassifierUtils::IsMozTestTable(aTable));
+
   HashStore store(aTable, GetProvider(aTable), mUpdatingDirectory);
 
   if (!CheckValidUpdate(aUpdates, store.TableName())) {
@@ -1276,6 +1311,9 @@ nsresult Classifier::UpdateTableV4(TableUpdateArray& aUpdates,
   if (ShouldAbort()) {
     return NS_ERROR_UC_UPDATE_SHUTDOWNING;
   }
+
+  
+  MOZ_ASSERT(!nsUrlClassifierUtils::IsMozTestTable(aTable));
 
   LOG(("Classifier::UpdateTableV4(%s)", PromiseFlatCString(aTable).get()));
 

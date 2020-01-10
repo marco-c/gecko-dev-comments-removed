@@ -177,10 +177,18 @@ LookupCache::LookupCache(const nsACString& aTableName,
 
 nsresult LookupCache::Open() {
   LOG(("Loading PrefixSet for %s", mTableName.get()));
-  nsresult rv = LoadPrefixSet();
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsresult rv;
+  if (nsUrlClassifierUtils::IsMozTestTable(mTableName)) {
+    
+    
+    rv = LoadMozEntries();
+  } else {
+    rv = LoadPrefixSet();
+  }
 
-  return NS_OK;
+  Unused << NS_WARN_IF(NS_FAILED(rv));
+
+  return rv;
 }
 
 nsresult LookupCache::Init() {
@@ -861,6 +869,62 @@ nsresult LookupCacheV2::ClearLegacyFile() { return NS_ERROR_NOT_IMPLEMENTED; }
 
 nsCString LookupCacheV2::GetPrefixSetSuffix() const {
   return NS_LITERAL_CSTRING(".vlpset");
+}
+
+
+
+
+nsresult LookupCacheV2::LoadMozEntries() {
+  
+  if (!IsEmpty() || IsPrimed()) {
+    return NS_OK;
+  }
+
+  nsTArray<nsLiteralCString> entries;
+
+  if (mTableName.EqualsLiteral("moztest-phish-simple")) {
+    
+    entries.AppendElement(
+        NS_LITERAL_CSTRING("itisatrap.org/firefox/its-a-trap.html"));
+  } else if (mTableName.EqualsLiteral("moztest-malware-simple")) {
+    
+    entries.AppendElement(
+        NS_LITERAL_CSTRING("itisatrap.org/firefox/its-an-attack.html"));
+  } else if (mTableName.EqualsLiteral("moztest-unwanted-simple")) {
+    
+    entries.AppendElement(
+        NS_LITERAL_CSTRING("itisatrap.org/firefox/unwanted.html"));
+  } else if (mTableName.EqualsLiteral("moztest-harmful-simple")) {
+    
+    entries.AppendElement(
+        NS_LITERAL_CSTRING("itisatrap.org/firefox/harmful.html"));
+  } else if (mTableName.EqualsLiteral("moztest-track-simple")) {
+    
+    entries.AppendElement(NS_LITERAL_CSTRING("trackertest.org/"));
+    entries.AppendElement(NS_LITERAL_CSTRING("itisatracker.org/"));
+  } else if (mTableName.EqualsLiteral("moztest-trackwhite-simple")) {
+    
+    entries.AppendElement(
+        NS_LITERAL_CSTRING("itisatrap.org/?resource=itisatracker.org"));
+  } else if (mTableName.EqualsLiteral("moztest-block-simple")) {
+    
+    entries.AppendElement(
+        NS_LITERAL_CSTRING("itisatrap.org/firefox/blocked.html"));
+  } else {
+    MOZ_ASSERT_UNREACHABLE();
+  }
+
+  AddPrefixArray prefix;
+  AddCompleteArray completes;
+  for (const auto& entry : entries) {
+    AddComplete add;
+    if (NS_FAILED(add.complete.FromPlaintext(entry))) {
+      continue;
+    }
+    completes.AppendElement(add, fallible);
+  }
+
+  return Build(prefix, completes);
 }
 
 }  

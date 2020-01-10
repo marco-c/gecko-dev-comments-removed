@@ -9,6 +9,8 @@
 
 let dbService = Cc["@mozilla.org/url-classifier/dbservice;1"]
                 .getService(Ci.nsIUrlClassifierDBService);
+let listmanager = Cc["@mozilla.org/url-classifier/listmanager;1"].
+                    getService(Ci.nsIUrlListManager);
 
 if (typeof(classifierHelper) == "undefined") {
   var classifierHelper = {};
@@ -34,27 +36,16 @@ classifierHelper._updatesToCleanup = [];
 
 
 classifierHelper.waitForInit = function() {
-  
-  const table = "test-phish-simple";
-  const url = "http://itisatrap.org/firefox/its-a-trap.html";
-  let principal = Services.scriptSecurityManager.createCodebasePrincipal(
-    Services.io.newURI(url), {});
-
   return new Promise(function(resolve, reject) {
-    Services.obs.addObserver(function() {
-      resolve();
-    }, "mozentries-update-finished");
+    function checkForInit() {
+      if (listmanager.isRegistered()) {
+        resolve();
+      } else {
+        setTimeout(() => { checkForInit(); }, 1000);
+      }
+    }
 
-    let listener = {
-      QueryInterface: ChromeUtils.generateQI(["nsIUrlClassifierUpdateObserver"]),
-
-      handleEvent(value) {
-        if (value === table) {
-          resolve();
-        }
-      },
-    };
-    dbService.lookup(principal, table, listener);
+    checkForInit();
   });
 };
 

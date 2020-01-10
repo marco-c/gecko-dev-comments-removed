@@ -306,9 +306,12 @@ static const struct {
     {"goog-passwordwhite-proto", CSD_WHITELIST},  
 
     
-    {"test-phish-proto", SOCIAL_ENGINEERING_PUBLIC},  
-    {"test-unwanted-proto", UNWANTED_SOFTWARE},       
-    {"test-passwordwhite-proto", CSD_WHITELIST},      
+    {"moztest-phish-proto", SOCIAL_ENGINEERING_PUBLIC},  
+    {"test-phish-proto", SOCIAL_ENGINEERING_PUBLIC},     
+    {"moztest-unwanted-proto", UNWANTED_SOFTWARE},       
+    {"test-unwanted-proto", UNWANTED_SOFTWARE},          
+    {"moztest-passwordwhite-proto", CSD_WHITELIST},      
+    {"test-passwordwhite-proto", CSD_WHITELIST},         
 };
 
 NS_IMETHODIMP
@@ -344,7 +347,8 @@ nsUrlClassifierUtils::GetProvider(const nsACString& aTableName,
                                   nsACString& aProvider) {
   MutexAutoLock lock(mProviderDictLock);
   nsCString* provider = nullptr;
-  if (StringBeginsWith(aTableName, NS_LITERAL_CSTRING("test"))) {
+
+  if (IsTestTable(aTableName)) {
     aProvider = NS_LITERAL_CSTRING(TESTING_TABLE_PROVIDER_NAME);
   } else if (mProviderDict.Get(aTableName, &provider)) {
     aProvider = provider ? *provider : EmptyCString();
@@ -1086,4 +1090,19 @@ bool nsUrlClassifierUtils::SpecialEncode(const nsACString& url,
 
 bool nsUrlClassifierUtils::ShouldURLEscape(const unsigned char c) const {
   return c <= 32 || c == '%' || c >= 127;
+}
+
+
+
+
+bool nsUrlClassifierUtils::IsMozTestTable(const nsACString& aTableName) {
+  return StringBeginsWith(aTableName, NS_LITERAL_CSTRING("moztest-"));
+}
+
+
+
+
+bool nsUrlClassifierUtils::IsTestTable(const nsACString& aTableName) {
+  return IsMozTestTable(aTableName) ||
+         StringBeginsWith(aTableName, NS_LITERAL_CSTRING("test"));
 }

@@ -1228,7 +1228,7 @@ nsUrlClassifierLookupCallback::LookupComplete(
       
       
       if ((!gethashUrl.IsEmpty() ||
-           StringBeginsWith(result->mTableName, NS_LITERAL_CSTRING("test"))) &&
+           nsUrlClassifierUtils::IsTestTable(result->mTableName)) &&
           mDBService->GetCompleter(result->mTableName,
                                    getter_AddRefs(completer))) {
         

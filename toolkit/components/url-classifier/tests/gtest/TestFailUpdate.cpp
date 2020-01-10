@@ -7,7 +7,7 @@
 using namespace mozilla;
 using namespace mozilla::safebrowsing;
 
-static const char* kFilesInV2[] = {".pset", ".sbstore"};
+static const char* kFilesInV2[] = {".vlpset", ".sbstore"};
 static const char* kFilesInV4[] = {".vlpset", ".metadata"};
 
 #define V2_TABLE "gtest-malware-simple"
