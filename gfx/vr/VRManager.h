@@ -20,6 +20,7 @@ class VRLayerParent;
 class VRManagerParent;
 class VRServiceHost;
 class VRThread;
+class VRShMem;
 
 enum class VRManagerState : uint32_t {
   Disabled,  
@@ -131,7 +132,6 @@ class VRManager {
   bool mVRDisplaysRequestedNonFocus;
   bool mVRControllersRequested;
   bool mFrameStarted;
-  volatile VRExternalShmem* mExternalShmem;
   uint32_t mTaskInterval;
   RefPtr<nsITimer> mTaskTimer;
   mozilla::Monitor mCurrentSubmitTaskMonitor;
@@ -139,14 +139,13 @@ class VRManager {
   uint64_t mLastSubmittedFrameId;
   uint64_t mLastStartedFrame;
   bool mEnumerationCompleted;
-#if defined(XP_MACOSX)
-  int mShmemFD;
-#elif defined(XP_WIN)
-  base::ProcessHandle mShmemFile;
-  HANDLE mMutex;
-#endif
-#if !defined(MOZ_WIDGET_ANDROID)
+
+  
+  
+  VRShMem* mShmem;
   bool mVRProcessEnabled;
+
+#if !defined(MOZ_WIDGET_ANDROID)
   RefPtr<VRServiceHost> mServiceHost;
 #endif
 
