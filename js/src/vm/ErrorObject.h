@@ -27,6 +27,7 @@
 #include "vm/Shape.h"
 
 namespace js {
+class ArrayObject;
 
 class ErrorObject : public NativeObject {
   static JSObject* createProto(JSContext* cx, JSProtoKey key);
@@ -118,11 +119,32 @@ class ErrorObject : public NativeObject {
   static bool setStack_impl(JSContext* cx, const CallArgs& args);
 };
 
+class AggregateErrorObject : public ErrorObject {
+  friend class ErrorObject;
+
+  
+  static const uint32_t AGGREGATE_ERRORS_SLOT = ErrorObject::RESERVED_SLOTS;
+  static const uint32_t RESERVED_SLOTS = AGGREGATE_ERRORS_SLOT + 1;
+
+ public:
+  ArrayObject* aggregateErrors() const;
+  void setAggregateErrors(ArrayObject* errors);
+
+  
+  static bool getErrors(JSContext* cx, unsigned argc, Value* vp);
+  static bool getErrors_impl(JSContext* cx, const CallArgs& args);
+};
+
 }  
 
 template <>
 inline bool JSObject::is<js::ErrorObject>() const {
   return js::ErrorObject::isErrorClass(getClass());
+}
+
+template <>
+inline bool JSObject::is<js::AggregateErrorObject>() const {
+  return hasClass(js::ErrorObject::classForType(JSEXN_AGGREGATEERR));
 }
 
 #endif  
