@@ -566,7 +566,19 @@ FxAccountsInternal.prototype = {
       await this.signOut();
       return currentState.resolve(null);
     }
-    if (!this.isUserEmailVerified(data)) {
+    if (this.isUserEmailVerified(data)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      if (!Services.prefs.prefHasUserValue("services.sync.username") && data.email) {
+        Services.prefs.setStringPref("services.sync.username", data.email);
+      }
+    } else {
       
       
       
