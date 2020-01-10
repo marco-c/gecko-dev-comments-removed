@@ -534,19 +534,16 @@ static bool IsLikelyCustomElement(const nsXULElement& aElement) {
 
 static bool MayNeedToLoadXBLBinding(const Document& aDocument,
                                     const Element& aElement) {
-  
-  
+  auto* xulElem = nsXULElement::FromNode(aElement);
+  if (!xulElem) {
+    return false;
+  }
   
   
   if (!aDocument.GetPresShell() || aElement.GetPrimaryFrame()) {
     return false;
   }
-
-  if (auto* xulElem = nsXULElement::FromNode(aElement)) {
-    return !IsLikelyCustomElement(*xulElem);
-  }
-
-  return aElement.IsAnyOfHTMLElements(nsGkAtoms::object, nsGkAtoms::embed);
+  return !IsLikelyCustomElement(*xulElem);
 }
 
 StyleUrlOrNone Element::GetBindingURL(Document* aDocument) {
