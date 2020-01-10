@@ -361,7 +361,12 @@ void nsLayoutStylesheetCache::InitSharedSheetsInParent() {
   if (void* p = base::SharedMemory::FindFreeAddressSpace(2 * kOffset)) {
     address = reinterpret_cast<void*>(uintptr_t(p) + kOffset);
   }
-  if (!mSharedMemory->mShm.Map(kSharedMemorySize, address)) {
+
+  bool parentMapped = mSharedMemory->mShm.Map(kSharedMemorySize, address);
+  Telemetry::Accumulate(Telemetry::SHARED_MEMORY_UA_SHEETS_MAPPED_PARENT,
+                        parentMapped);
+
+  if (!parentMapped) {
     
     
     
@@ -407,7 +412,10 @@ void nsLayoutStylesheetCache::InitSharedSheetsInParent() {
   
   
   
-  mSharedMemory->mShm.Map(kSharedMemorySize, address);
+  bool parentRemapped = mSharedMemory->mShm.Map(kSharedMemorySize, address);
+  Telemetry::Accumulate(
+      Telemetry::SHARED_MEMORY_UA_SHEETS_MAPPED_PARENT_AFTER_FREEZE,
+      parentRemapped);
 
   
   
@@ -666,9 +674,14 @@ void nsLayoutStylesheetCache::BuildPreferenceSheet(
   MOZ_ASSERT(!sSharedMemory, "Shouldn't call this more than once");
 
   RefPtr<Shm> shm = new Shm();
-  if (shm->mShm.SetHandle(aHandle,  true) &&
-      shm->mShm.Map(kSharedMemorySize, reinterpret_cast<void*>(aAddress))) {
-    sSharedMemory = shm.forget();
+  if (shm->mShm.SetHandle(aHandle,  true)) {
+    bool contentMapped =
+        shm->mShm.Map(kSharedMemorySize, reinterpret_cast<void*>(aAddress));
+    Telemetry::Accumulate(Telemetry::SHARED_MEMORY_UA_SHEETS_MAPPED_CHILD,
+                          contentMapped);
+    if (contentMapped) {
+      sSharedMemory = shm.forget();
+    }
   }
 }
 
