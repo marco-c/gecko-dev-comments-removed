@@ -34,6 +34,7 @@ class nsContainerFrame;
 class nsFirstLineFrame;
 class nsFirstLetterFrame;
 class nsCSSAnonBoxPseudoStaticAtom;
+class nsPageSequenceFrame;
 
 class nsPageContentFrame;
 struct PendingBinding;
@@ -342,7 +343,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   nsIFrame* GetRootElementStyleFrame() { return mRootElementStyleFrame; }
-  nsIFrame* GetPageSequenceFrame() { return mPageSequenceFrame; }
+  nsPageSequenceFrame* GetPageSequenceFrame() { return mPageSequenceFrame; }
 
   
   nsContainerFrame* GetDocElementContainingBlock() {
@@ -2125,7 +2126,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   nsContainerFrame* mDocElementContainingBlock;
-  nsIFrame* mPageSequenceFrame;
+  nsPageSequenceFrame* mPageSequenceFrame;
 
   
   mozilla::ArenaAllocator<4096, 8> mFCItemPool;

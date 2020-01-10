@@ -67,7 +67,7 @@
 #include "nsWindowSizes.h"
 #include "nsCOMPtr.h"
 #include "nsReadableUtils.h"
-#include "nsIPageSequenceFrame.h"
+#include "nsPageSequenceFrame.h"
 #include "nsIPermissionManager.h"
 #include "nsIMozBrowserFrame.h"
 #include "nsCaret.h"
@@ -2440,9 +2440,8 @@ nsIScrollableFrame* PresShell::GetRootScrollFrameAsScrollable() const {
   return scrollableFrame;
 }
 
-nsIPageSequenceFrame* PresShell::GetPageSequenceFrame() const {
-  nsIFrame* frame = mFrameConstructor->GetPageSequenceFrame();
-  return do_QueryFrame(frame);
+nsPageSequenceFrame* PresShell::GetPageSequenceFrame() const {
+  return mFrameConstructor->GetPageSequenceFrame();
 }
 
 nsCanvasFrame* PresShell::GetCanvasFrame() const {
@@ -7318,19 +7317,11 @@ nsIFrame* PresShell::EventHandler::MaybeFlushThrottledStyles(
     return aFrameForPresShell;
   }
 
-  PresShell* rootPresShell = mPresShell->GetRootPresShell();
-  if (NS_WARN_IF(!rootPresShell)) {
-    return nullptr;
-  }
-  Document* rootDocument = rootPresShell->GetDocument();
-  if (NS_WARN_IF(!rootDocument)) {
-    return nullptr;
-  }
-
   AutoWeakFrame weakFrameForPresShell(aFrameForPresShell);
   {  
     nsAutoScriptBlocker scriptBlocker;
-    FlushThrottledStyles(rootDocument, nullptr);
+    FlushThrottledStyles(mPresShell->GetRootPresShell()->GetDocument(),
+                         nullptr);
   }
 
   if (weakFrameForPresShell.IsAlive()) {

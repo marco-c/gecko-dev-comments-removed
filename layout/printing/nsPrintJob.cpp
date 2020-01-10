@@ -92,7 +92,7 @@ static const char kPrintingPromptService[] =
 #include "nsDeviceContextSpecProxy.h"
 #include "nsViewManager.h"
 
-#include "nsIPageSequenceFrame.h"
+#include "nsPageSequenceFrame.h"
 #include "nsIURL.h"
 #include "nsIContentViewerEdit.h"
 #include "nsIInterfaceRequestor.h"
@@ -325,9 +325,7 @@ static nsresult GetSeqFrameAndCountPagesInternal(
     return NS_ERROR_FAILURE;
   }
 
-  
-  nsIPageSequenceFrame* seqFrame = aPO->mPresShell->GetPageSequenceFrame();
-  aSeqFrame = do_QueryFrame(seqFrame);
+  aSeqFrame = aPO->mPresShell->GetPageSequenceFrame();
   if (!aSeqFrame) {
     return NS_ERROR_FAILURE;
   }
@@ -1724,7 +1722,7 @@ nsresult nsPrintJob::SetupToPrintContent() {
   if (mIsCreatingPrintPreview) {
     
     
-    nsIPageSequenceFrame* seqFrame =
+    nsPageSequenceFrame* seqFrame =
         printData->mPrintObject->mPresShell->GetPageSequenceFrame();
     if (seqFrame) {
       seqFrame->StartPrint(printData->mPrintObject->mPresContext,
@@ -1964,10 +1962,9 @@ nsresult nsPrintJob::UpdateSelectionAndShrinkPrintObject(
   
   
   if (mPrt->mShrinkToFit && aDocumentIsTopLevel) {
-    nsIPageSequenceFrame* pageSequence =
-        aPO->mPresShell->GetPageSequenceFrame();
-    NS_ENSURE_STATE(pageSequence);
-    pageSequence->GetSTFPercent(aPO->mShrinkRatio);
+    nsPageSequenceFrame* pageSeqFrame = aPO->mPresShell->GetPageSequenceFrame();
+    NS_ENSURE_STATE(pageSeqFrame);
+    aPO->mShrinkRatio = pageSeqFrame->GetSTFPercent();
     
     nsAutoString contentType;
     aPO->mPresShell->GetDocument()->GetContentType(contentType);
@@ -2235,9 +2232,7 @@ void nsPrintJob::CalcNumPrintablePages(int32_t& aNumPages) {
     
     
     if (po->mPresContext && po->mPresContext->IsRootPaginatedDocument()) {
-      nsIPageSequenceFrame* pageSequence =
-          po->mPresShell->GetPageSequenceFrame();
-      nsIFrame* seqFrame = do_QueryFrame(pageSequence);
+      nsPageSequenceFrame* seqFrame = po->mPresShell->GetPageSequenceFrame();
       if (seqFrame) {
         aNumPages += seqFrame->PrincipalChildList().GetLength();
       }
@@ -2414,8 +2409,8 @@ nsresult nsPrintJob::DoPrint(const UniquePtr<nsPrintObject>& aPO) {
 
   {
     
-    nsIPageSequenceFrame* pageSequence = poPresShell->GetPageSequenceFrame();
-    NS_ASSERTION(nullptr != pageSequence, "no page sequence frame");
+    nsPageSequenceFrame* seqFrame = poPresShell->GetPageSequenceFrame();
+    MOZ_ASSERT(seqFrame, "no page sequence frame");
 
     
     printData->mPreparingForPrint = false;
@@ -2441,15 +2436,14 @@ nsresult nsPrintJob::DoPrint(const UniquePtr<nsPrintObject>& aPO) {
     nsAutoString docURLStr;
     GetDisplayTitleAndURL(aPO, docTitleStr, docURLStr, eDocTitleDefBlank);
 
-    nsIFrame* seqFrame = do_QueryFrame(pageSequence);
     if (!seqFrame) {
       SetIsPrinting(false);
       return NS_ERROR_FAILURE;
     }
 
     mPageSeqFrame = seqFrame;
-    pageSequence->StartPrint(poPresContext, printData->mPrintSettings,
-                             docTitleStr, docURLStr);
+    seqFrame->StartPrint(poPresContext, printData->mPrintSettings, docTitleStr,
+                         docURLStr);
 
     
     PR_PL(("Scheduling Print of PO: %p (%s) \n", aPO.get(),
@@ -2523,7 +2517,7 @@ bool nsPrintJob::PrePrintPage() {
   
   
   bool done = false;
-  nsIPageSequenceFrame* pageSeqFrame = do_QueryFrame(mPageSeqFrame.GetFrame());
+  nsPageSequenceFrame* pageSeqFrame = do_QueryFrame(mPageSeqFrame.GetFrame());
   nsresult rv = pageSeqFrame->PrePrintNextPage(mPagePrintTimer, &done);
   if (NS_FAILED(rv)) {
     
@@ -2568,13 +2562,12 @@ bool nsPrintJob::PrintPage(nsPrintObject* aPO, bool& aInRange) {
   }
 
   int32_t pageNum, numPages, endPage;
-  nsIPageSequenceFrame* pageSeqFrame = do_QueryFrame(mPageSeqFrame.GetFrame());
-  pageSeqFrame->GetCurrentPageNum(&pageNum);
-  pageSeqFrame->GetNumPages(&numPages);
+  nsPageSequenceFrame* pageSeqFrame = do_QueryFrame(mPageSeqFrame.GetFrame());
+  pageNum = pageSeqFrame->GetCurrentPageNum();
+  numPages = pageSeqFrame->GetNumPages();
 
   bool donePrinting;
-  bool isDoingPrintRange;
-  pageSeqFrame->IsDoingPrintRange(&isDoingPrintRange);
+  bool isDoingPrintRange = pageSeqFrame->IsDoingPrintRange();
   if (isDoingPrintRange) {
     int32_t fromPage;
     int32_t toPage;
@@ -2749,8 +2742,7 @@ bool nsPrintJob::DonePrintingPages(nsPrintObject* aPO, nsresult aResult) {
   
   
   if (mPageSeqFrame.IsAlive()) {
-    nsIPageSequenceFrame* pageSeqFrame =
-        do_QueryFrame(mPageSeqFrame.GetFrame());
+    nsPageSequenceFrame* pageSeqFrame = do_QueryFrame(mPageSeqFrame.GetFrame());
     pageSeqFrame->ResetPrintCanvasList();
   }
 
@@ -3377,7 +3369,7 @@ static void DumpPrintObjectsList(const nsTArray<nsPrintObject*>& aDocList) {
     if (po->mPresShell) {
       rootFrame = po->mPresShell->GetRootFrame();
       while (rootFrame != nullptr) {
-        nsIPageSequenceFrame* sqf = do_QueryFrame(rootFrame);
+        nsPageSequenceFrame* sqf = do_QueryFrame(rootFrame);
         if (sqf) {
           break;
         }

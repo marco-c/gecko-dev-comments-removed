@@ -16,8 +16,8 @@
 #include "nsGkAtoms.h"
 #include "nsPageContentFrame.h"
 #include "nsDisplayList.h"
-#include "nsSimplePageSequenceFrame.h"  
-#include "nsTextFormatter.h"  
+#include "nsPageSequenceFrame.h"  
+#include "nsTextFormatter.h"      
 #include "nsBidiUtils.h"
 #include "nsIPrintSettings.h"
 

@@ -80,7 +80,7 @@ class nsIDocShell;
 class nsIFrame;
 class nsILayoutHistoryState;
 class nsINode;
-class nsIPageSequenceFrame;
+class nsPageSequenceFrame;
 class nsIReflowCallback;
 class nsIScrollableFrame;
 class nsITimer;
@@ -453,7 +453,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  nsIPageSequenceFrame* GetPageSequenceFrame() const;
+  nsPageSequenceFrame* GetPageSequenceFrame() const;
 
   
 
