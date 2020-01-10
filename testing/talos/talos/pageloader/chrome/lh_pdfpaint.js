@@ -1,0 +1,22 @@
+
+
+
+function _pdfPaintHandler() {
+  content.window.addEventListener(
+    "pagerendered",
+    e => {
+      sendAsyncMessage("PageLoader:LoadEvent", {
+        time: e.detail.time,
+        name: "pdfpaint",
+      });
+    },
+    { once: true }
+  );
+}
+
+addEventListener(
+  "load",
+  
+  contentLoadHandlerCallback(_pdfPaintHandler),
+  true
+);
