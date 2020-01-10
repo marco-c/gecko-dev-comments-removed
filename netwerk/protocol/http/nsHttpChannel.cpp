@@ -10436,7 +10436,15 @@ void nsHttpChannel::ReEvaluateReferrerAfterTrackingStatusIsKnown() {
             referrerInfo->CloneWithNewPolicy(ReferrerPolicy::_empty);
         
         
-        SetReferrerInfo(newReferrerInfo, false, true, false);
+        
+        SetReferrerInfoInternal(newReferrerInfo, false, true, true);
+
+        nsCOMPtr<nsIParentChannel> parentChannel;
+        NS_QueryNotificationCallbacks(this, parentChannel);
+        RefPtr<HttpChannelParent> httpParent = do_QueryObject(parentChannel);
+        if (httpParent) {
+          httpParent->OverrideReferrerInfoDuringBeginConnect(newReferrerInfo);
+        }
       }
     }
   }

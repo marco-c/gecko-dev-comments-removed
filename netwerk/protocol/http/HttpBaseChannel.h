@@ -447,8 +447,11 @@ class HttpBaseChannel : public nsHashPropertyBag,
     mUploadStreamHasHeaders = hasHeaders;
   }
 
-  virtual nsresult SetReferrerHeader(const nsACString& aReferrer) {
-    ENSURE_CALLED_BEFORE_CONNECT();
+  virtual nsresult SetReferrerHeader(const nsACString& aReferrer,
+                                     bool aRespectBeforeConnect = true) {
+    if (aRespectBeforeConnect) {
+      ENSURE_CALLED_BEFORE_CONNECT();
+    }
     return mRequestHead.SetHeader(nsHttp::Referer, aReferrer);
   }
 
@@ -470,8 +473,8 @@ class HttpBaseChannel : public nsHashPropertyBag,
   
   
   
-  nsresult SetReferrerInfo(nsIReferrerInfo* aReferrerInfo, bool aClone,
-                           bool aCompute, bool aSetOriginal = true);
+  nsresult SetReferrerInfoInternal(nsIReferrerInfo* aReferrerInfo, bool aClone,
+                                   bool aCompute, bool aRespectBeforeConnect);
 
   struct ReplacementChannelConfig {
     ReplacementChannelConfig() = default;
@@ -604,10 +607,6 @@ class HttpBaseChannel : public nsHashPropertyBag,
   nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
   nsCOMPtr<nsIProgressEventSink> mProgressSink;
   nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
-  
-  
-  
-  nsCOMPtr<nsIReferrerInfo> mOriginalReferrerInfo;
   nsCOMPtr<nsIApplicationCache> mApplicationCache;
   nsCOMPtr<nsIURI> mAPIRedirectToURI;
   nsCOMPtr<nsIURI> mProxyURI;

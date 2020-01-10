@@ -3337,6 +3337,19 @@ mozilla::ipc::IPCResult HttpChannelChild::RecvAltDataCacheInputStreamAvailable(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult
+HttpChannelChild::RecvOverrideReferrerInfoDuringBeginConnect(
+    nsIReferrerInfo* aReferrerInfo) {
+  
+  
+  
+  
+  
+  Unused << SetReferrerInfoInternal(aReferrerInfo, false, true, false);
+
+  return IPC_OK();
+}
+
 
 
 
@@ -3765,11 +3778,14 @@ nsresult HttpChannelChild::AsyncCallImpl(
   return rv;
 }
 
-nsresult HttpChannelChild::SetReferrerHeader(const nsACString& aReferrer) {
+nsresult HttpChannelChild::SetReferrerHeader(const nsACString& aReferrer,
+                                             bool aRespectBeforeConnect) {
   
   
   
-  ENSURE_CALLED_BEFORE_ASYNC_OPEN();
+  if (aRespectBeforeConnect) {
+    ENSURE_CALLED_BEFORE_ASYNC_OPEN();
+  }
 
   
   for (int i = mClientSetRequestHeaders.Length() - 1; i >= 0; --i) {
@@ -3779,7 +3795,7 @@ nsresult HttpChannelChild::SetReferrerHeader(const nsACString& aReferrer) {
     }
   }
 
-  return HttpBaseChannel::SetReferrerHeader(aReferrer);
+  return HttpBaseChannel::SetReferrerHeader(aReferrer, aRespectBeforeConnect);
 }
 
 class CancelEvent final : public NeckoTargetChannelEvent<HttpChannelChild> {
