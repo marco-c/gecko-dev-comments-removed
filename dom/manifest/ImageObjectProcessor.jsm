@@ -34,6 +34,8 @@ function ImageObjectProcessor(aErrors, aExtractor, aBundle) {
   this.domBundle = aBundle;
 }
 
+const iconPurposes = Object.freeze(["any", "maskable"]);
+
 
 Object.defineProperties(ImageObjectProcessor, {
   decimals: {
@@ -64,20 +66,111 @@ ImageObjectProcessor.prototype.process = function(
   const images = [];
   const value = extractor.extractValue(spec);
   if (Array.isArray(value)) {
-    
     value
-      .filter((item, index) => !!processSrcMember(item, aBaseURL, index))
       .map(toImageObject)
+      
+      .filter(image => image)
       .forEach(image => images.push(image));
   }
   return images;
 
-  function toImageObject(aImageSpec) {
-    return {
-      src: processSrcMember(aImageSpec, aBaseURL),
-      type: processTypeMember(aImageSpec),
-      sizes: processSizesMember(aImageSpec),
+  function toImageObject(aImageSpec, index) {
+    let img; 
+    try {
+      
+      const src = processSrcMember(aImageSpec, aBaseURL, index);
+      
+      const purpose = processPurposeMember(aImageSpec, index);
+      const type = processTypeMember(aImageSpec);
+      const sizes = processSizesMember(aImageSpec);
+      img = {
+        src,
+        purpose,
+        type,
+        sizes,
+      };
+    } catch (err) {
+      
+    }
+    return img;
+  }
+
+  function processPurposeMember(aImage, index) {
+    const spec = {
+      objectName: "image",
+      object: aImage,
+      property: "purpose",
+      expectedType: "string",
+      trim: true,
+      throwTypeError: true,
     };
+
+    
+    let value;
+    try {
+      value = extractor.extractValue(spec);
+    } catch (err) {
+      return ["any"];
+    }
+
+    
+    if (!value) {
+      return ["any"];
+    }
+
+    const keywords = value.split(/\s+/);
+
+    
+    if (keywords.length === 0) {
+      return ["any"];
+    }
+
+    
+    const purposes = new Set();
+    const unknownPurposes = new Set();
+    const repeatedPurposes = new Set();
+
+    for (const keyword of keywords) {
+      const canonicalKeyword = keyword.toLowerCase();
+
+      if (purposes.has(canonicalKeyword)) {
+        repeatedPurposes.add(keyword);
+        continue;
+      }
+
+      iconPurposes.includes(canonicalKeyword)
+        ? purposes.add(canonicalKeyword)
+        : unknownPurposes.add(keyword);
+    }
+
+    
+    if (unknownPurposes.size) {
+      const warn = domBundle.formatStringFromName(
+        "ManifestImageUnsupportedPurposes",
+        [aMemberName, index, [...unknownPurposes].join(" ")]
+      );
+      errors.push({ warn });
+    }
+
+    
+    if (repeatedPurposes.size) {
+      const warn = domBundle.formatStringFromName(
+        "ManifestImageRepeatedPurposes",
+        [aMemberName, index, [...repeatedPurposes].join(" ")]
+      );
+      errors.push({ warn });
+    }
+
+    if (purposes.size === 0) {
+      const warn = domBundle.formatStringFromName("ManifestImageUnusable", [
+        aMemberName,
+        index,
+      ]);
+      errors.push({ warn });
+      throw new TypeError(warn);
+    }
+
+    return [...purposes];
   }
 
   function processTypeMember(aImage) {
@@ -108,9 +201,15 @@ ImageObjectProcessor.prototype.process = function(
       property: "src",
       expectedType: "string",
       trim: false,
+      throwTypeError: true,
     };
     const value = extractor.extractValue(spec);
     let url;
+    if (typeof value === "undefined" || value === "") {
+      
+      
+      throw new TypeError();
+    }
     if (value && value.length) {
       try {
         url = new URL(value, aBaseURL).href;
@@ -120,6 +219,7 @@ ImageObjectProcessor.prototype.process = function(
           [aMemberName, index, "src", value]
         );
         errors.push({ warn });
+        throw e;
       }
     }
     return url;

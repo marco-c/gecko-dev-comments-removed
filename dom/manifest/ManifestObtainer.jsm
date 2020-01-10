@@ -69,14 +69,18 @@ var ManifestObtainer = {
 
 
 
-  contentObtainManifest(aContent, aOptions = { checkConformance: false }) {
+  async contentObtainManifest(
+    aContent,
+    aOptions = { checkConformance: false }
+  ) {
     if (!aContent || isXULBrowser(aContent)) {
       const err = new TypeError("Invalid input. Expected a DOM Window.");
       return Promise.reject(err);
     }
-    return fetchManifest(aContent).then(response =>
-      processResponse(response, aContent, aOptions)
-    );
+    const response = await fetchManifest(aContent);
+    const result = await processResponse(response, aContent, aOptions);
+    const clone = Cu.cloneInto(result, aContent);
+    return clone;
   },
 };
 

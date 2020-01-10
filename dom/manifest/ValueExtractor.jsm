@@ -28,7 +28,16 @@ ValueExtractor.prototype = {
   
   
   
-  extractValue({ expectedType, object, objectName, property, trim }) {
+  
+  extractValue(options) {
+    const {
+      expectedType,
+      object,
+      objectName,
+      property,
+      throwTypeError,
+      trim,
+    } = options;
     const value = object[property];
     const isArray = Array.isArray(value);
     
@@ -40,6 +49,9 @@ ValueExtractor.prototype = {
           [objectName, property, expectedType]
         );
         this.errors.push({ warn });
+        if (throwTypeError) {
+          throw new TypeError(warn);
+        }
       }
       return undefined;
     }
