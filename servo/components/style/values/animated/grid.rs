@@ -62,10 +62,7 @@ impl Animate for TrackSize {
     }
 }
 
-impl Animate for generics::TrackRepeat<LengthPercentage, Integer>
-where
-    generics::RepeatCount<Integer>: PartialEq,
-{
+impl Animate for generics::TrackRepeat<LengthPercentage, Integer> {
     fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
         
         
