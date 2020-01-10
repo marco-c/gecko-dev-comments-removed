@@ -575,7 +575,7 @@ nsPluginStreamListenerPeer::AsyncOnChannelRedirect(
     if (NS_FAILED(rv)) {
       return rv;
     }
-    if (responseStatus == 307) {
+    if (responseStatus == 307 || responseStatus == 308) {
       nsAutoCString method;
       rv = oldHttpChannel->GetRequestMethod(method);
       if (NS_FAILED(rv)) {
