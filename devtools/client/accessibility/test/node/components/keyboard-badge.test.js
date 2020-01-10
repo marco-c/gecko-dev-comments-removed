@@ -13,11 +13,11 @@ const Provider = createFactory(
 );
 const {
   setupStore,
-} = require("devtools/client/accessibility/test/jest/helpers");
+} = require("devtools/client/accessibility/test/node/helpers");
 
 const Badge = require("devtools/client/accessibility/components/Badge");
-const TextLabelBadgeClass = require("devtools/client/accessibility/components/TextLabelBadge");
-const TextLabelBadge = createFactory(TextLabelBadgeClass);
+const KeyboardBadgeClass = require("devtools/client/accessibility/components/KeyboardBadge");
+const KeyboardBadge = createFactory(KeyboardBadgeClass);
 const {
   accessibility: { SCORES },
 } = require("devtools/shared/constants");
@@ -25,20 +25,20 @@ const {
 function testBadge(wrapper) {
   expect(wrapper.html()).toMatchSnapshot();
   expect(wrapper.children().length).toBe(1);
-  const textLabelBadge = wrapper.find(TextLabelBadgeClass);
-  const badge = textLabelBadge.childAt(0);
+  const keyboardBadge = wrapper.find(KeyboardBadgeClass);
+  const badge = keyboardBadge.childAt(0);
   expect(badge.type()).toBe(Badge);
   expect(badge.props()).toMatchObject({
-    label: "accessibility.badge.textLabel",
-    tooltip: "accessibility.badge.textLabel.tooltip",
+    label: "accessibility.badge.keyboard",
+    tooltip: "accessibility.badge.keyboard.tooltip",
   });
 }
 
-describe("TextLabelBadge component:", () => {
+describe("KeyboardBadge component:", () => {
   const store = setupStore();
 
   it("error render", () => {
-    const wrapper = shallow(TextLabelBadge({ error: true }));
+    const wrapper = shallow(KeyboardBadge({ error: true }));
     expect(wrapper.html()).toMatchSnapshot();
     expect(wrapper.isEmptyRender()).toBe(true);
   });
@@ -47,7 +47,7 @@ describe("TextLabelBadge component:", () => {
     const wrapper = mount(
       Provider(
         { store },
-        TextLabelBadge({
+        KeyboardBadge({
           score: SCORES.FAIL,
         })
       )
@@ -60,21 +60,8 @@ describe("TextLabelBadge component:", () => {
     const wrapper = mount(
       Provider(
         { store },
-        TextLabelBadge({
+        KeyboardBadge({
           score: SCORES.WARNING,
-        })
-      )
-    );
-
-    testBadge(wrapper);
-  });
-
-  it("best practices render", () => {
-    const wrapper = mount(
-      Provider(
-        { store },
-        TextLabelBadge({
-          score: SCORES.BEST_PRACTICES,
         })
       )
     );
