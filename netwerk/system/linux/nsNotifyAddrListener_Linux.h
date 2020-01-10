@@ -3,19 +3,28 @@
 
 
 
-#ifndef NSNOTIFYADDRLISTENER_H_
-#define NSNOTIFYADDRLISTENER_H_
+#ifndef NSNOTIFYADDRLISTENER_LINUX_H_
+#define NSNOTIFYADDRLISTENER_LINUX_H_
 
-#include <windows.h>
-#include <winsock2.h>
-#include <iptypes.h>
+#include <sys/socket.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <linux/netlink.h>
+#include <linux/rtnetlink.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+
 #include "nsINetworkLinkService.h"
 #include "nsIRunnable.h"
 #include "nsIObserver.h"
 #include "nsThreadUtils.h"
 #include "nsCOMPtr.h"
-#include "mozilla/TimeStamp.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/TimeStamp.h"
+#include "nsITimer.h"
+#include "nsClassHashtable.h"
 
 class nsNotifyAddrListener : public nsINetworkLinkService,
                              public nsIRunnable,
@@ -29,16 +38,14 @@ class nsNotifyAddrListener : public nsINetworkLinkService,
   NS_DECL_NSIOBSERVER
 
   nsNotifyAddrListener();
-
   nsresult Init(void);
-  void CheckLinkStatus(void);
 
- protected:
+ private:
   class ChangeEvent : public mozilla::Runnable {
    public:
     NS_DECL_NSIRUNNABLE
     ChangeEvent(nsINetworkLinkService* aService, const char* aEventID)
-        : Runnable("nsNotifyAddrListener::ChangeEvent"),
+        : mozilla::Runnable("nsNotifyAddrListener::ChangeEvent"),
           mService(aService),
           mEventID(aEventID) {}
 
@@ -47,58 +54,51 @@ class nsNotifyAddrListener : public nsINetworkLinkService,
     const char* mEventID;
   };
 
-  bool mLinkUp;
-  bool mStatusKnown;
-  bool mCheckAttempted;
-
+  
   nsresult Shutdown(void);
-  nsresult SendEvent(const char* aEventID);
-
-  DWORD CheckAdaptersAddresses(void);
-
-  
-  bool CheckICSGateway(PIP_ADAPTER_ADDRESSES aAdapter);
-  bool CheckICSStatus(PWCHAR aAdapterName);
-
-  nsCOMPtr<nsIThread> mThread;
-
- private:
-  
-  DWORD nextCoalesceWaitTime();
 
   
   nsresult NetworkChanged();
 
   
+  nsresult SendEvent(const char* aEventID);
+
+  
   void calculateNetworkId(void);
-  bool findMac(char* gateway);
 
   mozilla::Mutex mMutex;
   nsCString mNetworkId;
 
-  HANDLE mCheckEvent;
+  
+  void checkLink(void);
 
   
-  bool mShutdown;
+  void OnNetlinkMessage(int NetlinkSocket);
+
+  nsCOMPtr<nsIThread> mThread;
 
   
-  
-  ULONG mIPInterfaceChecksum;
+  bool mLinkUp;
 
   
-  mozilla::TimeStamp mStartTime;
+  bool mStatusKnown;
+
+  
+  int mShutdownPipe[2];
 
   
   bool mAllowChangedEvent;
-
-  
-  bool mIPv6Changes;
 
   
   bool mCoalescingActive;
 
   
   mozilla::TimeStamp mChangeTime;
+
+  
+  
+  
+  nsClassHashtable<nsCStringHashKey, struct ifaddrmsg> mAddressInfo;
 };
 
 #endif 

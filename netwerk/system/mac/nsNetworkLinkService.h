@@ -30,6 +30,9 @@ class nsNetworkLinkService : public nsINetworkLinkService, public nsIObserver {
   bool mLinkUp;
   bool mStatusKnown;
 
+  
+  bool mAllowChangedEvent;
+
   SCNetworkReachabilityRef mReachability;
   CFRunLoopRef mCFRunLoop;
   CFRunLoopSourceRef mRunLoopSource;
