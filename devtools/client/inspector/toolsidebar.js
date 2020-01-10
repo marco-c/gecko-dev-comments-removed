@@ -134,31 +134,6 @@ ToolSidebar.prototype = {
 
 
 
-
-
-  addFrameTab: function(id, title, url, selected, index) {
-    const panel = this.InspectorTabPanel({
-      id: id,
-      idPrefix: this.TABPANEL_ID_PREFIX,
-      key: id,
-      title: title,
-      url: url,
-      onMount: this.onSidePanelMounted.bind(this),
-      onUnmount: this.onSidePanelUnmounted.bind(this),
-    });
-
-    this.addTab(id, title, panel, selected, index);
-  },
-
-  
-
-
-
-
-
-
-
-
   queueTab: function(id, title, panel, selected, index) {
     this._tabbar.queueTab(id, title, selected, panel, null, index);
     this.emit("new-tab-registered", id);
@@ -192,73 +167,8 @@ ToolSidebar.prototype = {
 
 
 
-
-
-
-  queueFrameTab: function(id, title, url, selected, index) {
-    const panel = this.InspectorTabPanel({
-      id: id,
-      idPrefix: this.TABPANEL_ID_PREFIX,
-      key: id,
-      title: title,
-      url: url,
-      onMount: this.onSidePanelMounted.bind(this),
-      onUnmount: this.onSidePanelUnmounted.bind(this),
-    });
-
-    this.queueTab(id, title, panel, selected, index);
-  },
-
-  onSidePanelMounted: function(content, props) {
-    const iframe = content.querySelector("iframe");
-    if (!iframe || iframe.getAttribute("src")) {
-      return;
-    }
-
-    const onIFrameLoaded = event => {
-      iframe.removeEventListener("load", onIFrameLoaded, true);
-
-      const doc = event.target;
-      const win = doc.defaultView;
-      if ("setPanel" in win) {
-        win.setPanel(this._toolPanel, iframe);
-      }
-      this.emit(props.id + "-ready");
-    };
-
-    iframe.addEventListener("load", onIFrameLoaded, true);
-    iframe.setAttribute("src", props.url);
-  },
-
-  onSidePanelUnmounted: function(content, props) {
-    const iframe = content.querySelector("iframe");
-    if (!iframe || !iframe.hasAttribute("src")) {
-      return;
-    }
-
-    const win = iframe.contentWindow;
-    if ("destroy" in win) {
-      win.destroy(this._toolPanel, iframe);
-    }
-
-    iframe.removeAttribute("src");
-  },
-
-  
-
-
-
-
-
-
-
   async removeTab(tabId, tabPanelId) {
     this._tabbar.removeTab(tabId);
-
-    const win = this.getWindowForTab(tabId);
-    if (win && "destroy" in win) {
-      await win.destroy();
-    }
 
     this.emit("tab-unregistered", tabId);
   },
@@ -407,46 +317,13 @@ ToolSidebar.prototype = {
   
 
 
-  getWindowForTab: function(id) {
-    
-    const panel = this.getTabPanel(id);
-    if (
-      !panel ||
-      !panel.firstElementChild ||
-      !panel.firstElementChild.contentWindow
-    ) {
-      return null;
-    }
-
-    return panel.firstElementChild.contentWindow;
-  },
-
-  
-
-
-  async destroy() {
+  destroy() {
     if (this._destroyed) {
       return;
     }
     this._destroyed = true;
 
     this.emit("destroy");
-
-    
-    
-    
-    const tabpanels = [...this._tabbox.querySelectorAll(".tab-panel-box")];
-    for (const panel of tabpanels) {
-      const iframe = panel.querySelector("iframe");
-      if (!iframe) {
-        continue;
-      }
-      const win = iframe.contentWindow;
-      if (win && "destroy" in win) {
-        await win.destroy();
-      }
-      panel.remove();
-    }
 
     if (this._currentTool && this._telemetry) {
       const sessionId = this._toolPanel._toolbox.sessionId;
