@@ -1475,6 +1475,9 @@ class nsINode : public mozilla::dom::EventTarget {
     
     ElementHasCustomElementData,
     
+    
+    ElementCreatedFromPrototypeAndHasUnmodifiedL10n,
+    
     BooleanFlagCount
   };
 
@@ -1609,6 +1612,16 @@ class nsINode : public mozilla::dom::EventTarget {
   void SetHasCustomElementData() { SetBoolFlag(ElementHasCustomElementData); }
   bool HasCustomElementData() const {
     return GetBoolFlag(ElementHasCustomElementData);
+  }
+
+  void SetElementCreatedFromPrototypeAndHasUnmodifiedL10n() {
+    SetBoolFlag(ElementCreatedFromPrototypeAndHasUnmodifiedL10n);
+  }
+  bool HasElementCreatedFromPrototypeAndHasUnmodifiedL10n() {
+    return GetBoolFlag(ElementCreatedFromPrototypeAndHasUnmodifiedL10n);
+  }
+  void ClearElementCreatedFromPrototypeAndHasUnmodifiedL10n() {
+    ClearBoolFlag(ElementCreatedFromPrototypeAndHasUnmodifiedL10n);
   }
 
  protected:
