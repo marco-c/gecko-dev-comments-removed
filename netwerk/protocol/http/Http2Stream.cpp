@@ -449,13 +449,15 @@ nsresult Http2Stream::ParseHttpRequestHeaders(const char* buf, uint32_t avail,
       cache = requestContext->GetSpdyPushCache();
     }
 
+    RefPtr<Http2PushedStreamWrapper> pushedStreamWrapper;
     Http2PushedStream* pushedStream = nullptr;
 
     
     
     
     nsHttpTransaction* trans = mTransaction->QueryHttpTransaction();
-    if (trans && (pushedStream = trans->TakePushedStream())) {
+    if (trans && (pushedStreamWrapper = trans->TakePushedStream()) &&
+        (pushedStream = pushedStreamWrapper->GetStream())) {
       if (pushedStream->mSession == mSession) {
         LOG3(("Pushed Stream match based on OnPush correlation %p",
               pushedStream));
