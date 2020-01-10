@@ -76,6 +76,9 @@ class WebrtcVideoConduit
   
   static const unsigned int CODEC_PLNAME_SIZE;
 
+  
+  static bool HasH264Hardware();
+
   MediaConduitErrorCode SetLocalRTPExtensions(
       MediaSessionConduitLocalDirection aDirection,
       const RtpExtList& aExtensions) override;
