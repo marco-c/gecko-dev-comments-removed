@@ -3074,8 +3074,6 @@ pref("input_event_queue.count_for_prediction", 9);
 
 pref("plugins.load_appdir_plugins", false);
 
-pref("plugins.click_to_play", false);
-
 
 pref("plugins.navigator.hidden_ctp_plugin", "");
 
