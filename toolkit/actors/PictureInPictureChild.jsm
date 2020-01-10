@@ -916,13 +916,14 @@ class PictureInPictureChild extends ActorChild {
 
     
     
-    playerVideo.style.height = "100vh";
-    playerVideo.style.width = "100vw";
-
-    
-    playerVideo.style.margin = "0";
+    playerVideo.setAttribute("style", "");
     doc.body.style.overflow = "hidden";
     doc.body.style.margin = "0";
+
+    
+    
+    playerVideo.style.height = "100vh";
+    playerVideo.style.width = "100vw";
 
     doc.body.appendChild(playerVideo);
 
