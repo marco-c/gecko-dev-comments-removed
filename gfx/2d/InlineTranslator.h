@@ -64,8 +64,15 @@ class InlineTranslator : public Translator {
   }
 
   GradientStops* LookupGradientStops(ReferencePtr aRefPtr) final {
-    GradientStops* result = mGradientStops.GetWeak(aRefPtr);
-    MOZ_ASSERT(result);
+    DebugOnly<bool> found;
+    GradientStops* result = mGradientStops.GetWeak(aRefPtr
+#if defined(DEBUG)
+                                                   ,
+                                                   &found
+#endif
+    );
+    
+    MOZ_ASSERT(found);
     return result;
   }
 
