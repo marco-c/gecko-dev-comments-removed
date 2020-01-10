@@ -722,9 +722,7 @@ nscoord nsComboboxControlFrame::GetIntrinsicISize(
   if (MOZ_LIKELY(mDisplayFrame)) {
     if (isContainSize) {
       
-      
-      
-      displayISize = mDisplayFrame->IntrinsicISizeOffsets().hPadding;
+      displayISize = mDisplayFrame->IntrinsicISizeOffsets().padding;
     } else {
       displayISize = nsLayoutUtils::IntrinsicForContainer(aRenderingContext,
                                                           mDisplayFrame, aType);

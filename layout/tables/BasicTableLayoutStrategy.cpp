@@ -98,8 +98,7 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
     
 
     
-    nsIFrame::IntrinsicISizeOffsetData offsets =
-        aFrame->IntrinsicISizeOffsets();
+    nsIFrame::IntrinsicSizeOffsetData offsets = aFrame->IntrinsicISizeOffsets();
 
     
     
@@ -109,11 +108,11 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
     
     
     if (isQuirks || stylePos->mBoxSizing == StyleBoxSizing::Content) {
-      boxSizingToBorderEdge = offsets.hPadding + offsets.hBorder;
+      boxSizingToBorderEdge = offsets.padding + offsets.border;
     } else {
       
-      minCoord += offsets.hPadding + offsets.hBorder;
-      prefCoord += offsets.hPadding + offsets.hBorder;
+      minCoord += offsets.padding + offsets.border;
+      prefCoord += offsets.padding + offsets.border;
     }
   } else {
     minCoord = 0;

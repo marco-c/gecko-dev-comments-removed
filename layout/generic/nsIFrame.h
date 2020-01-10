@@ -2362,13 +2362,19 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-  struct IntrinsicISizeOffsetData {
-    nscoord hPadding, hBorder, hMargin;
-
-    IntrinsicISizeOffsetData() : hPadding(0), hBorder(0), hMargin(0) {}
+  struct IntrinsicSizeOffsetData {
+    nscoord padding = 0;
+    nscoord border = 0;
+    nscoord margin = 0;
   };
-  virtual IntrinsicISizeOffsetData IntrinsicISizeOffsets(
+
+  
+
+
+
+
+
+  virtual IntrinsicSizeOffsetData IntrinsicISizeOffsets(
       nscoord aPercentageBasis = NS_UNCONSTRAINEDSIZE) = 0;
 
   
@@ -2377,7 +2383,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  IntrinsicISizeOffsetData IntrinsicBSizeOffsets(
+  IntrinsicSizeOffsetData IntrinsicBSizeOffsets(
       nscoord aPercentageBasis = NS_UNCONSTRAINEDSIZE);
 
   virtual mozilla::IntrinsicSize GetIntrinsicSize() = 0;
