@@ -960,11 +960,13 @@ LoginManagerPrompter.prototype = {
 
 
 
+
+
   _showLoginCaptureDoorhanger(
     login,
     type,
     showOptions = {},
-    { notifySaved = false } = {}
+    { notifySaved = false, messageStringID } = {}
   ) {
     let { browser } = this._getNotifyWindow();
     if (!browser) {
@@ -989,6 +991,10 @@ LoginManagerPrompter.prototype = {
 
     let initialMsgNames =
       type == "password-save" ? saveMsgNames : changeMsgNames;
+
+    if (messageStringID) {
+      changeMsgNames.prompt = messageStringID;
+    }
 
     let brandBundle = Services.strings.createBundle(BRAND_BUNDLE);
     let brandShortName = brandBundle.GetStringFromName("brandShortName");
@@ -1452,6 +1458,19 @@ LoginManagerPrompter.prototype = {
     login.formActionOrigin = aNewLogin.formActionOrigin;
     login.password = aNewLogin.password;
     login.username = aNewLogin.username;
+
+    let messageStringID;
+    if (
+      aOldLogin.username === "" &&
+      login.username !== "" &&
+      login.password == aOldLogin.password
+    ) {
+      
+      
+      
+      messageStringID = "updateLoginMsgAddUsername";
+    }
+
     this._showLoginCaptureDoorhanger(
       login,
       "password-change",
@@ -1461,6 +1480,7 @@ LoginManagerPrompter.prototype = {
       },
       {
         notifySaved,
+        messageStringID,
       }
     );
 
