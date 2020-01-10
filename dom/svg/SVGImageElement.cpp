@@ -267,7 +267,8 @@ already_AddRefed<Path> SVGImageElement::BuildPath(PathBuilder* aBuilder) {
   
   
   
-  MOZ_CRASH("There is no reason to call BuildPath for SVGImageElement");
+  MOZ_ASSERT_UNREACHABLE(
+      "There is no reason to call BuildPath for SVGImageElement");
   return nullptr;
 }
 
