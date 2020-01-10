@@ -47,9 +47,11 @@ using JS::Rooted;
 using JS::UndefinedHandleValue;
 using JS::Value;
 
+using js::IsCallable;
 using js::ListObject;
 using js::NewHandler;
 using js::PeekQueueValue;
+using js::PromiseObject;
 using js::TargetFromHandler;
 using js::WritableStream;
 using js::WritableStreamCloseQueuedOrInFlight;
@@ -655,12 +657,51 @@ bool js::WritableStreamDefaultControllerErrorIfNeeded(
   return true;
 }
 
+
+
 static MOZ_MUST_USE JSObject* PerformCloseAlgorithm(
     JSContext* cx,
     Handle<WritableStreamDefaultController*> unwrappedController) {
   
-  JS_ReportErrorASCII(cx, "boo");
-  return nullptr;
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  if (unwrappedController->closeMethod().isUndefined()) {
+    return PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
+  }
+
+  
+
+  
+  MOZ_ASSERT(IsCallable(unwrappedController->closeMethod()));
+
+  
+  
+  
+  Rooted<Value> closeMethod(cx, unwrappedController->closeMethod());
+  if (!cx->compartment()->wrap(cx, &closeMethod)) {
+    return nullptr;
+  }
+
+  Rooted<Value> underlyingSink(cx, unwrappedController->underlyingSink());
+  if (!cx->compartment()->wrap(cx, &underlyingSink)) {
+    return nullptr;
+  }
+
+  return PromiseCall(cx, closeMethod, underlyingSink);
 }
 
 static MOZ_MUST_USE JSObject* PerformWriteAlgorithm(
