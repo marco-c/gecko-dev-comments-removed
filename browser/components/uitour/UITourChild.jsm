@@ -96,7 +96,9 @@ class UITourChild extends ActorChild {
       return true;
     }
 
-    return this.isTestingOrigin(uri);
+    
+    
+    return uri.host == "www.mozilla.org" || this.isTestingOrigin(uri);
   }
 
   receiveMessage(aMessage) {
