@@ -257,6 +257,12 @@ void MediaEngineTabVideoSource::Draw() {
     return;
   }
 
+  if (mTrackMain->IsDestroyed()) {
+    
+    
+    return;
+  }
+
   if (mWindow) {
     if (mScrollWithPage || mViewportWidth == INT32_MAX) {
       mWindow->GetInnerWidth(&mViewportWidth);
