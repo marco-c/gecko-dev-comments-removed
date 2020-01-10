@@ -53,54 +53,45 @@ class UAOverrides {
     }
 
     const { blocks, matches, telemetryKey, uaTransformer } = override.config;
-    
-    
-    const regex = matches instanceof RegExp && matches;
-    const urls = regex ? ["*://*/*"] : matches;
     const listener = details => {
-      if (!regex || details.url.match(regex)) {
-        
-        
-        if (
-          !override.config.experiment ||
-          override.experimentActive ||
-          override.permanentPrefEnabled === true
-        ) {
-          if (telemetryKey && !details.frameId) {
-            
-            
-            
-            browser.sharedPreferences.setBoolPref(`${telemetryKey}Used`, true);
-          }
+      
+      
+      if (
+        !override.config.experiment ||
+        override.experimentActive ||
+        override.permanentPrefEnabled === true
+      ) {
+        if (telemetryKey && !details.frameId) {
+          
+          
+          
+          browser.sharedPreferences.setBoolPref(`${telemetryKey}Used`, true);
+        }
 
-          for (const header of details.requestHeaders) {
-            if (header.name.toLowerCase() === "user-agent") {
-              header.value = uaTransformer(header.value);
-            }
+        for (const header of details.requestHeaders) {
+          if (header.name.toLowerCase() === "user-agent") {
+            header.value = uaTransformer(header.value);
           }
         }
       }
       return { requestHeaders: details.requestHeaders };
     };
 
-    browser.webRequest.onBeforeSendHeaders.addListener(listener, { urls }, [
-      "blocking",
-      "requestHeaders",
-    ]);
+    browser.webRequest.onBeforeSendHeaders.addListener(
+      listener,
+      { urls: matches },
+      ["blocking", "requestHeaders"]
+    );
 
     const listeners = { onBeforeSendHeaders: listener };
     if (blocks) {
-      const bregex = blocks instanceof RegExp && blocks;
-      const burls = bregex ? ["*://*/*"] : blocks;
-
       const blistener = details => {
-        const cancel = !bregex || !!details.url.match(bregex);
-        return { cancel };
+        return { cancel: true };
       };
 
       browser.webRequest.onBeforeRequest.addListener(
         blistener,
-        { urls: burls },
+        { urls: blocks },
         ["blocking"]
       );
 
