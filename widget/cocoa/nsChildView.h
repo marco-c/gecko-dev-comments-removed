@@ -562,8 +562,6 @@ class nsChildView final : public nsBaseWidget {
 
   virtual LayoutDeviceIntPoint GetClientOffset() override;
 
-  virtual LayoutDeviceIntRegion GetOpaqueWidgetRegion() override;
-
   void DispatchAPZWheelInputEvent(mozilla::InputData& aEvent, bool aCanTriggerSwipe);
   nsEventStatus DispatchAPZInputEvent(mozilla::InputData& aEvent);
 
@@ -620,8 +618,6 @@ class nsChildView final : public nsBaseWidget {
   LayoutDeviceIntRect RectContainingTitlebarControls();
   void UpdateVibrancy(const nsTArray<ThemeGeometry>& aThemeGeometries);
   mozilla::VibrancyManager& EnsureVibrancyManager();
-
-  void UpdateInternalOpaqueRegion();
 
   nsIWidget* GetWidgetForListenerEvents();
 
@@ -734,9 +730,6 @@ class nsChildView final : public nsBaseWidget {
   mozilla::DataMutex<WidgetCompositingState> mCompositingState;
 
   RefPtr<mozilla::CancelableRunnable> mUnsuspendAsyncCATransactionsRunnable;
-
-  
-  mozilla::DataMutex<mozilla::LayoutDeviceIntRegion> mOpaqueRegion;
 
   
   
