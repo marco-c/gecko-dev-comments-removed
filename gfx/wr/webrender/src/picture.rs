@@ -273,12 +273,6 @@ struct TilePreUpdateContext {
 
 struct TilePostUpdateContext<'a> {
     
-    debug_flags: DebugFlags,
-
-    
-    global_device_pixel_scale: DevicePixelScale,
-
-    
     global_screen_world_rect: WorldRect,
 
     
@@ -291,25 +285,13 @@ struct TilePostUpdateContext<'a> {
     opacity_bindings: &'a FastHashMap<PropertyBindingId, OpacityBindingInfo>,
 
     
-    pic_to_world_mapper: SpaceMapper<PicturePixel, WorldPixel>,
-
-    
     current_tile_size: DeviceIntSize,
 }
 
 
 struct TilePostUpdateState<'a> {
     
-    scratch: &'a mut PrimitiveScratchBuffer,
-
-    
-    dirty_region: &'a mut DirtyRegion,
-
-    
-    resource_cache: &'a mut ResourceCache,
-
-    
-    gpu_cache: &'a mut GpuCache,
+    resource_cache: &'a ResourceCache,
 }
 
 
@@ -660,7 +642,7 @@ impl Tile {
         let is_simple_prim = self.current_descriptor.prims.len() == 1 && self.is_opaque;
 
         
-        let mut surface = if is_simple_prim {
+        let surface = if is_simple_prim {
             
             
             
@@ -691,90 +673,6 @@ impl Tile {
                 }
             }
         };
-
-        if let TileSurface::Texture { ref handle, .. } = surface {
-            
-            if state.resource_cache.texture_cache.is_allocated(handle) {
-                
-                
-                
-                
-                
-                
-                
-                
-                state.resource_cache.texture_cache.request(handle, state.gpu_cache);
-            } else {
-                
-                
-                self.is_valid = false;
-                self.dirty_rect = self.rect;
-            }
-        }
-
-        
-        self.world_dirty_rect = ctx.pic_to_world_mapper.map(&self.dirty_rect).expect("bug");
-
-        if ctx.debug_flags.contains(DebugFlags::PICTURE_CACHING_DBG) {
-            self.root.draw_debug_rects(
-                &ctx.pic_to_world_mapper,
-                self.is_opaque,
-                state.scratch,
-                ctx.global_device_pixel_scale,
-            );
-
-            let label_offset = DeviceVector2D::new(20.0, 30.0);
-            let tile_device_rect = self.world_rect * ctx.global_device_pixel_scale;
-            if tile_device_rect.size.height >= label_offset.y {
-                state.scratch.push_debug_string(
-                    tile_device_rect.origin + label_offset,
-                    debug_colors::RED,
-                    format!("{:?}: is_opaque={} surface={}",
-                            self.id,
-                            self.is_opaque,
-                            surface.kind(),
-                    ),
-                );
-            }
-        }
-
-        
-        if !self.is_valid {
-            
-            if let TileSurface::Texture { ref mut handle, ref mut visibility_mask } = surface {
-                if !state.resource_cache.texture_cache.is_allocated(handle) {
-                    state.resource_cache.texture_cache.update_picture_cache(
-                        ctx.current_tile_size,
-                        handle,
-                        state.gpu_cache,
-                    );
-                }
-
-                *visibility_mask = PrimitiveVisibilityMask::empty();
-                let dirty_region_index = state.dirty_region.dirty_rects.len();
-
-                
-                
-                
-                
-                
-                if dirty_region_index < PrimitiveVisibilityMask::MAX_DIRTY_REGIONS {
-                    visibility_mask.set_visible(dirty_region_index);
-
-                    state.dirty_region.push(
-                        self.world_dirty_rect,
-                        *visibility_mask,
-                    );
-                } else {
-                    visibility_mask.set_visible(PrimitiveVisibilityMask::MAX_DIRTY_REGIONS - 1);
-
-                    state.dirty_region.include_rect(
-                        PrimitiveVisibilityMask::MAX_DIRTY_REGIONS - 1,
-                        self.world_dirty_rect,
-                    );
-                }
-            }
-        }
 
         
         self.surface = Some(surface);
@@ -1808,29 +1706,16 @@ impl TileCacheInstance {
             });
         }
 
-        let pic_to_world_mapper = SpaceMapper::new_with_target(
-            ROOT_SPATIAL_NODE_INDEX,
-            self.spatial_node_index,
-            frame_context.global_screen_world_rect,
-            frame_context.clip_scroll_tree,
-        );
-
         let ctx = TilePostUpdateContext {
-            debug_flags: frame_context.debug_flags,
-            global_device_pixel_scale: frame_context.global_device_pixel_scale,
             global_screen_world_rect: frame_context.global_screen_world_rect,
             backdrop: self.backdrop,
             spatial_nodes: &self.spatial_nodes,
             opacity_bindings: &self.opacity_bindings,
-            pic_to_world_mapper,
             current_tile_size: self.current_tile_size,
         };
 
         let mut state = TilePostUpdateState {
             resource_cache: frame_state.resource_cache,
-            gpu_cache: frame_state.gpu_cache,
-            scratch: frame_state.scratch,
-            dirty_region: &mut self.dirty_region,
         };
 
         
@@ -2736,6 +2621,7 @@ impl PicturePrimitive {
         parent_subpixel_mode: SubpixelMode,
         frame_state: &mut FrameBuildingState,
         frame_context: &FrameBuildingContext,
+        scratch: &mut PrimitiveScratchBuffer,
     ) -> Option<(PictureContext, PictureState, PrimitiveList)> {
         if !self.is_visible() {
             return None;
@@ -3080,12 +2966,92 @@ impl PicturePrimitive {
                                 frame_state.resource_cache.set_image_active(*image_key);
                             }
 
+                            let surface = tile.surface.as_mut().expect("no tile surface set!");
+
+                            if frame_context.debug_flags.contains(DebugFlags::PICTURE_CACHING_DBG) {
+                                tile.root.draw_debug_rects(
+                                    &map_pic_to_world,
+                                    tile.is_opaque,
+                                    scratch,
+                                    frame_context.global_device_pixel_scale,
+                                );
+
+                                let label_offset = DeviceVector2D::new(20.0, 30.0);
+                                let tile_device_rect = tile.world_rect * frame_context.global_device_pixel_scale;
+                                if tile_device_rect.size.height >= label_offset.y {
+                                    scratch.push_debug_string(
+                                        tile_device_rect.origin + label_offset,
+                                        debug_colors::RED,
+                                        format!("{:?}: is_opaque={} surface={}",
+                                                tile.id,
+                                                tile.is_opaque,
+                                                surface.kind(),
+                                        ),
+                                    );
+                                }
+                            }
+
+                            if let TileSurface::Texture { ref handle, .. } = surface {
+                                
+                                if frame_state.resource_cache.texture_cache.is_allocated(handle) {
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    frame_state.resource_cache.texture_cache.request(handle, frame_state.gpu_cache);
+                                } else {
+                                    
+                                    
+                                    tile.is_valid = false;
+                                    tile.dirty_rect = tile.rect;
+                                }
+                            }
+
+                            
+                            tile.world_dirty_rect = map_pic_to_world.map(&tile.dirty_rect).expect("bug");
+
                             if tile.is_valid {
                                 continue;
                             }
 
-                            let surface = tile.surface.as_ref().expect("no tile surface set!");
-                            if let TileSurface::Texture { ref handle, visibility_mask } = surface {
+                            
+                            if let TileSurface::Texture { ref mut handle, ref mut visibility_mask } = surface {
+                                if !frame_state.resource_cache.texture_cache.is_allocated(handle) {
+                                    frame_state.resource_cache.texture_cache.update_picture_cache(
+                                        tile_cache.current_tile_size,
+                                        handle,
+                                        frame_state.gpu_cache,
+                                    );
+                                }
+
+                                *visibility_mask = PrimitiveVisibilityMask::empty();
+                                let dirty_region_index = tile_cache.dirty_region.dirty_rects.len();
+
+                                
+                                
+                                
+                                
+                                
+                                if dirty_region_index < PrimitiveVisibilityMask::MAX_DIRTY_REGIONS {
+                                    visibility_mask.set_visible(dirty_region_index);
+
+                                    tile_cache.dirty_region.push(
+                                        tile.world_dirty_rect,
+                                        *visibility_mask,
+                                    );
+                                } else {
+                                    visibility_mask.set_visible(PrimitiveVisibilityMask::MAX_DIRTY_REGIONS - 1);
+
+                                    tile_cache.dirty_region.include_rect(
+                                        PrimitiveVisibilityMask::MAX_DIRTY_REGIONS - 1,
+                                        tile.world_dirty_rect,
+                                    );
+                                }
+
                                 let content_origin_f = tile.world_rect.origin * device_pixel_scale;
                                 let content_origin = content_origin_f.round();
                                 debug_assert!((content_origin_f.x - content_origin.x).abs() < 0.01);
