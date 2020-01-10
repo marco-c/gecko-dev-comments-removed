@@ -45,42 +45,57 @@ add_task(async function run_test() {
 
     _("Prefs record contains only prefs that should be synced.");
     record = await store.createRecord(PREFS_GUID, "prefs");
-    Assert.equal(record.value["testing.int"], 123);
-    Assert.equal(record.value["testing.string"], "ohai");
-    Assert.equal(record.value["testing.bool"], true);
+    Assert.strictEqual(record.value["testing.int"], 123);
+    Assert.strictEqual(record.value["testing.string"], "ohai");
+    Assert.strictEqual(record.value["testing.bool"], true);
     
-    Assert.equal(record.value["testing.nonexistent"], null);
+    Assert.strictEqual(record.value["testing.nonexistent"], null);
     
-    Assert.equal(record.value["testing.default"], null);
-    Assert.equal(false, "testing.turned.off" in record.value);
-    Assert.equal(false, "testing.not.turned.on" in record.value);
-    
-    
-    Assert.equal(record.value["testing.unsynced.url"], null);
-    
-    Assert.equal(record.value["testing.synced.url"], "https://www.example.com");
+    Assert.strictEqual(record.value["testing.default"], null);
+    Assert.strictEqual(record.value["testing.turned.off"], undefined);
+    Assert.strictEqual(record.value["testing.not.turned.on"], undefined);
 
-    _("Prefs record contains non-default pref sync prefs too.");
-    Assert.equal(record.value["services.sync.prefs.sync.testing.int"], null);
-    Assert.equal(record.value["services.sync.prefs.sync.testing.string"], null);
-    Assert.equal(record.value["services.sync.prefs.sync.testing.bool"], null);
-    Assert.equal(record.value["services.sync.prefs.sync.testing.dont.change"], null);
-    Assert.equal(record.value["services.sync.prefs.sync.testing.synced.url"], null);
+    _("Prefs record contains the correct control prefs.");
     
-    Assert.equal(record.value["services.sync.prefs.sync.testing.turned.off"], false);
-    Assert.equal(record.value["services.sync.prefs.sync.testing.nonexistent"], null);
-    Assert.equal(record.value["services.sync.prefs.sync.testing.default"], null);
     
-    Assert.equal(record.value["services.sync.prefs.sync.testing.unsynced.url"], null);
+    Assert.strictEqual(record.value["services.sync.prefs.sync.testing.int"], null);
+    Assert.strictEqual(record.value["services.sync.prefs.sync.testing.string"], null);
+    Assert.strictEqual(record.value["services.sync.prefs.sync.testing.bool"], null);
+    Assert.strictEqual(record.value["services.sync.prefs.sync.testing.dont.change"], null);
+    Assert.strictEqual(record.value["services.sync.prefs.sync.testing.nonexistent"], null);
+    Assert.strictEqual(record.value["services.sync.prefs.sync.testing.default"], null);
+
+    
+    Assert.strictEqual(record.value["services.sync.prefs.sync.testing.turned.off"], false);
+
+    _("Unsyncable prefs are treated correctly.");
+    
+    
+    
+    Assert.strictEqual(record.value["testing.unsynced.url"], undefined);
+    Assert.strictEqual(record.value["services.sync.prefs.sync.testing.unsynced.url"], undefined);
+    
+    Assert.strictEqual(record.value["testing.synced.url"], "https://www.example.com");
+    Assert.strictEqual(record.value["services.sync.prefs.sync.testing.synced.url"], null);
 
     _("Update some prefs, including one that's to be reset/deleted.");
-    Svc.Prefs.set("testing.deleteme", "I'm going to be deleted!");
+    
+    
+    prefs.set("testing.deleted-without-control-pref", "I'm deleted-without-control-pref");
+    
+    prefs.set("testing.deleted-with-local-control-pref", "I'm deleted-with-local-control-pref");
+    prefs.set("services.sync.prefs.sync.testing.deleted-with-local-control-pref", true);
+    
+    prefs.set("testing.deleted-with-incoming-control-pref", "I'm deleted-with-incoming-control-pref");
     record = new PrefRec("prefs", PREFS_GUID);
     record.value = {
       "testing.int": 42,
       "testing.string": "im in ur prefs",
       "testing.bool": false,
-      "testing.deleteme": null,
+      "testing.deleted-without-control-pref": null,
+      "testing.deleted-with-local-control-pref": null,
+      "testing.deleted-with-incoming-control-pref": null,
+      "services.sync.prefs.sync.testing.deleted-with-incoming-control-pref": true,
       "testing.somepref": "im a new pref from other device",
       "services.sync.prefs.sync.testing.somepref": true,
       
@@ -90,15 +105,18 @@ add_task(async function run_test() {
       "testing.unsynced.url": "https://www.example.com/2",
     };
     await store.update(record);
-    Assert.equal(prefs.get("testing.int"), 42);
-    Assert.equal(prefs.get("testing.string"), "im in ur prefs");
-    Assert.equal(prefs.get("testing.bool"), false);
-    Assert.equal(prefs.get("testing.deleteme"), undefined);
-    Assert.equal(prefs.get("testing.dont.change"), "Please don't change me.");
-    Assert.equal(prefs.get("testing.somepref"), "im a new pref from other device");
-    Assert.equal(prefs.get("testing.synced.url"), "https://www.example.com");
-    Assert.equal(prefs.get("testing.unsynced.url"), "https://www.example.com/2");
-    Assert.equal(Svc.Prefs.get("prefs.sync.testing.somepref"), true);
+    
+    Assert.strictEqual(prefs.get("testing.int"), 42);
+    Assert.strictEqual(prefs.get("testing.string"), "im in ur prefs");
+    Assert.strictEqual(prefs.get("testing.bool"), false);
+    Assert.strictEqual(prefs.get("testing.deleted-without-control-pref"), "I'm deleted-without-control-pref");
+    Assert.strictEqual(prefs.get("testing.deleted-with-local-control-pref"), undefined);
+    Assert.strictEqual(prefs.get("testing.deleted-with-incoming-control-pref"), undefined);
+    Assert.strictEqual(prefs.get("testing.dont.change"), "Please don't change me.");
+    Assert.strictEqual(prefs.get("testing.somepref"), "im a new pref from other device");
+    Assert.strictEqual(prefs.get("testing.synced.url"), "https://www.example.com");
+    Assert.strictEqual(prefs.get("testing.unsynced.url"), "https://www.example.com/2");
+    Assert.strictEqual(Svc.Prefs.get("prefs.sync.testing.somepref"), true);
 
     _("Only the current app's preferences are applied.");
     record = new PrefRec("prefs", "some-fake-app");
