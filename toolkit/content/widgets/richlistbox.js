@@ -1047,8 +1047,5 @@
     Ci.nsIDOMXULSelectControlItemElement,
   ]);
 
-  
-  if (document.documentURI != "about:addons") {
-    customElements.define("richlistitem", MozElements.MozRichlistitem);
-  }
+  customElements.define("richlistitem", MozElements.MozRichlistitem);
 }
