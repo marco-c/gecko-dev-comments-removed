@@ -896,7 +896,8 @@ class WorkerPrivate : public RelativeTimeline {
                 bool aIsChromeWorker, WorkerType aWorkerType,
                 const nsAString& aWorkerName,
                 const nsACString& aServiceWorkerScope,
-                WorkerLoadInfo& aLoadInfo, nsString&& aId);
+                WorkerLoadInfo& aLoadInfo, nsString&& aId,
+                const nsID& aAgentClusterId);
 
   ~WorkerPrivate();
 
@@ -984,6 +985,8 @@ class WorkerPrivate : public RelativeTimeline {
   
   
   void DispatchCancelingRunnable();
+
+  const nsID& AgentClusterId() const { return mAgentClusterId; }
 
   class EventTarget;
   friend class EventTarget;
@@ -1100,6 +1103,10 @@ class WorkerPrivate : public RelativeTimeline {
 
   TimeStamp mCreationTimeStamp;
   DOMHighResTimeStamp mCreationTimeHighRes;
+
+  
+  
+  const nsID mAgentClusterId;
 
   
   struct WorkerThreadAccessible {

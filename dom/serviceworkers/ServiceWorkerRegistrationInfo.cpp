@@ -786,6 +786,10 @@ void ServiceWorkerRegistrationInfo::ClearWhenIdle() {
       });
 }
 
+const nsID& ServiceWorkerRegistrationInfo::AgentClusterId() const {
+  return mAgentClusterId;
+}
+
 
 uint64_t ServiceWorkerRegistrationInfo::GetNextId() {
   MOZ_ASSERT(NS_IsMainThread());

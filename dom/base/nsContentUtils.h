@@ -1152,6 +1152,11 @@ class nsContentUtils {
 
   static nsresult GenerateUUIDInPlace(nsID& aUUID);
 
+  
+
+
+  static nsID GenerateUUID();
+
   static bool PrefetchPreloadEnabled(nsIDocShell* aDocShell);
 
   static void ExtractErrorValues(JSContext* aCx, JS::Handle<JS::Value> aValue,

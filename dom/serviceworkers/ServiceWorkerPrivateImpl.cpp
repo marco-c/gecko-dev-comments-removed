@@ -348,6 +348,8 @@ nsresult ServiceWorkerPrivateImpl::Initialize() {
   mRemoteWorkerData.storageAccess() = storageAccess;
   mRemoteWorkerData.serviceWorkerData() = std::move(serviceWorkerData);
 
+  mRemoteWorkerData.agentClusterId() = regInfo->AgentClusterId();
+
   
   rv = RefreshRemoteWorkerData(regInfo);
 
