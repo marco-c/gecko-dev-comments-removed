@@ -42,7 +42,7 @@ const EXTENSION_DATA = {
         
         
         
-        return new Promise(async (resolve, reject) => {
+        return new Promise((resolve, reject) => {
           setTimeout(resolve, 0);
         });
       },

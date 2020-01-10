@@ -467,35 +467,35 @@ function execute_test_in_sidebar(test) {
   });
 }
 
-function open_properties_dialog(test) {
-  return new Promise(async resolve => {
-    var sidebar = document.getElementById("sidebar");
+async function open_properties_dialog(test) {
+  var sidebar = document.getElementById("sidebar");
 
-    
-    if (test.sidebar == SIDEBAR_HISTORY_ID) {
-      sidebar.contentDocument.getElementById(test.historyView).doCommand();
-    }
+  
+  if (test.sidebar == SIDEBAR_HISTORY_ID) {
+    sidebar.contentDocument.getElementById(test.historyView).doCommand();
+  }
 
-    
-    var sidebarTreeID =
-      test.sidebar == SIDEBAR_BOOKMARKS_ID
-        ? SIDEBAR_BOOKMARKS_TREE_ID
-        : SIDEBAR_HISTORY_TREE_ID;
-    var tree = sidebar.contentDocument.getElementById(sidebarTreeID);
-    
-    
-    await BrowserTestUtils.waitForCondition(
-      () => tree,
-      "Sidebar tree has been loaded"
-    );
+  
+  var sidebarTreeID =
+    test.sidebar == SIDEBAR_BOOKMARKS_ID
+      ? SIDEBAR_BOOKMARKS_TREE_ID
+      : SIDEBAR_HISTORY_TREE_ID;
+  var tree = sidebar.contentDocument.getElementById(sidebarTreeID);
+  
+  
+  await BrowserTestUtils.waitForCondition(
+    () => tree,
+    "Sidebar tree has been loaded"
+  );
 
-    
-    test.selectNode(tree);
-    Assert.ok(
-      tree.selectedNode,
-      "We have a places node selected: " + tree.selectedNode.title
-    );
+  
+  test.selectNode(tree);
+  Assert.ok(
+    tree.selectedNode,
+    "We have a places node selected: " + tree.selectedNode.title
+  );
 
+  return new Promise(resolve => {
     
     function windowObserver(observerWindow, aTopic, aData) {
       if (aTopic != "domwindowopened") {
@@ -549,6 +549,9 @@ function open_properties_dialog(test) {
     );
 
     
-    tree.controller.doCommand(command);
+    
+    executeSoon(() => {
+      tree.controller.doCommand(command);
+    });
   });
 }

@@ -966,6 +966,7 @@ var ActivityStreamProvider = {
     return Promise.all(
       aLinks.map(
         link =>
+          
           new Promise(async resolve => {
             
             if (link.type === "pocket") {
