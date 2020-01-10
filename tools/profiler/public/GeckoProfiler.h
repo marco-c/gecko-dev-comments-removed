@@ -77,7 +77,6 @@
 #  include "mozilla/Attributes.h"
 #  include "mozilla/GuardObjects.h"
 #  include "mozilla/Maybe.h"
-#  include "mozilla/PowerOfTwo.h"
 #  include "mozilla/Sprintf.h"
 #  include "mozilla/ThreadLocal.h"
 #  include "mozilla/TimeStamp.h"
@@ -238,20 +237,20 @@ bool IsThreadBeingProfiled();
 
 
 
-static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_ENTRIES =
+static constexpr uint32_t PROFILER_DEFAULT_ENTRIES =
 #  if !defined(ARCH_ARMV6)
-    mozilla::MakePowerOfTwo32<1u << 20>();  
+    1u << 20;  
 #  else
-    mozilla::MakePowerOfTwo32<1u << 17>();  // 131'072
+    1u << 17;  // 131'072
 #  endif
 
 
 
-static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_STARTUP_ENTRIES =
+static constexpr uint32_t PROFILER_DEFAULT_STARTUP_ENTRIES =
 #  if !defined(ARCH_ARMV6)
-    mozilla::MakePowerOfTwo32<1u << 22>();  
+    1u << 22;  
 #  else
-    mozilla::MakePowerOfTwo32<1u << 17>();  
+    1u << 17;  
 #  endif
 
 #  define PROFILER_DEFAULT_DURATION 20
@@ -287,7 +286,7 @@ void profiler_shutdown();
 
 
 void profiler_start(
-    mozilla::PowerOfTwo32 aCapacity, double aInterval, uint32_t aFeatures,
+    uint32_t aCapacity, double aInterval, uint32_t aFeatures,
     const char** aFilters, uint32_t aFilterCount,
     const mozilla::Maybe<double>& aDuration = mozilla::Nothing());
 
@@ -301,7 +300,7 @@ void profiler_stop();
 
 
 void profiler_ensure_started(
-    mozilla::PowerOfTwo32 aCapacity, double aInterval, uint32_t aFeatures,
+    uint32_t aCapacity, double aInterval, uint32_t aFeatures,
     const char** aFilters, uint32_t aFilterCount,
     const mozilla::Maybe<double>& aDuration = mozilla::Nothing());
 

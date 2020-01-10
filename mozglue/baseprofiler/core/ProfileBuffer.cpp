@@ -17,11 +17,17 @@
 namespace mozilla {
 namespace baseprofiler {
 
-ProfileBuffer::ProfileBuffer(PowerOfTwo32 aCapacity)
-    : mEntries(MakeUnique<ProfileBufferEntry[]>(aCapacity.Value())),
-      mEntryIndexMask(aCapacity.Mask()),
-      mRangeStart(0),
-      mRangeEnd(0) {}
+ProfileBuffer::ProfileBuffer(uint32_t aCapacity)
+    : mEntryIndexMask(0), mRangeStart(0), mRangeEnd(0), mCapacity(0) {
+  
+  
+  const uint32_t UINT32_MAX_POWER_OF_TWO = 1 << 31;
+  MOZ_RELEASE_ASSERT(aCapacity <= UINT32_MAX_POWER_OF_TWO,
+                     "aCapacity is larger than what we support");
+  mCapacity = RoundUpPow2(aCapacity);
+  mEntryIndexMask = mCapacity - 1;
+  mEntries = MakeUnique<ProfileBufferEntry[]>(mCapacity);
+}
 
 ProfileBuffer::~ProfileBuffer() {
   while (mStoredMarkers.peek()) {
@@ -35,7 +41,7 @@ void ProfileBuffer::AddEntry(const ProfileBufferEntry& aEntry) {
 
   
   
-  if (mRangeEnd - mRangeStart > mEntryIndexMask.MaskValue() + 1) {
+  if (mRangeEnd - mRangeStart > mCapacity) {
     mRangeStart++;
   }
 }

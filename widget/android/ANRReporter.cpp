@@ -28,8 +28,8 @@ bool ANRReporter::RequestNativeStack(bool aUnwind) {
   const char* NATIVE_STACK_THREADS[] = {"GeckoMain", "Compositor"};
 
   
-  profiler_start( PowerOfTwo<uint32_t>(100),  10000,
-                 features, NATIVE_STACK_THREADS,
+  profiler_start( 100,  10000, features,
+                 NATIVE_STACK_THREADS,
                  sizeof(NATIVE_STACK_THREADS) / sizeof(char*));
 #endif
   return true;

@@ -10,7 +10,6 @@
 #include "ProfilerMarker.h"
 
 #include "mozilla/Maybe.h"
-#include "mozilla/PowerOfTwo.h"
 
 
 
@@ -29,7 +28,8 @@ class ProfileBuffer final {
  public:
   
   
-  explicit ProfileBuffer(mozilla::PowerOfTwo32 aCapacity);
+  
+  explicit ProfileBuffer(uint32_t aCapacity);
 
   ~ProfileBuffer();
 
@@ -114,7 +114,7 @@ class ProfileBuffer final {
   mozilla::UniquePtr<ProfileBufferEntry[]> mEntries;
 
   
-  mozilla::PowerOfTwoMask32 mEntryIndexMask;
+  uint32_t mEntryIndexMask;
 
  public:
   
@@ -134,6 +134,9 @@ class ProfileBuffer final {
   
   uint64_t mRangeStart;
   uint64_t mRangeEnd;
+
+  
+  uint32_t mCapacity;
 
   
   ProfilerMarkerLinkedList mStoredMarkers;
