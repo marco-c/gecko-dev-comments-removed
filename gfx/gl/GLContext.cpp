@@ -1746,16 +1746,6 @@ GLFormats GLContext::ChooseGLFormats(const SurfaceCaps& caps) const {
     }
   }
 
-  uint32_t msaaLevel = StaticPrefs::MSAALevel();
-  GLsizei samples = msaaLevel * msaaLevel;
-  samples = std::min(samples, mMaxSamples);
-
-  
-  if (WorkAroundDriverBugs() && samples == 1) {
-    samples = 0;
-  }
-  formats.samples = samples;
-
   
   formats.depthStencil = 0;
   if (IsSupported(GLFeature::packed_depth_stencil)) {
@@ -2898,6 +2888,15 @@ void GLContext::OnImplicitMakeCurrentFailure(const char* const funcName) {
   gfxCriticalError() << "Ignoring call to " << funcName << " with failed"
                      << " mImplicitMakeCurrent.";
 }
+
+
+
+
+
+SurfaceCaps::SurfaceCaps() = default;
+SurfaceCaps::SurfaceCaps(const SurfaceCaps& other) = default;
+SurfaceCaps& SurfaceCaps::operator=(const SurfaceCaps& other) = default;
+SurfaceCaps::~SurfaceCaps() = default;
 
 } 
 } 
