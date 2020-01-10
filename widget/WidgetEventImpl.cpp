@@ -193,16 +193,19 @@ Command GetInternalCommand(const char* aCommandName,
   
   
   if (!strcmp(aCommandName, "cmd_align")) {
-    if (NS_WARN_IF(!aCommandParams)) {
-      return Command::DoNothing;
+    if (!aCommandParams) {
+      
+      
+      
+      return Command::FormatJustify;
     }
     nsAutoCString cValue;
     nsresult rv = aCommandParams->GetCString("state_attribute", cValue);
     if (NS_FAILED(rv)) {
       nsString value;  
       rv = aCommandParams->GetString("state_attribute", value);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return Command::DoNothing;
+      if (NS_FAILED(rv)) {
+        return Command::FormatJustifyNone;
       }
       cValue = NS_ConvertUTF16toUTF8(value);
     }
@@ -217,6 +220,9 @@ Command GetInternalCommand(const char* aCommandName,
     }
     if (cValue.LowerCaseEqualsASCII("justify")) {
       return Command::FormatJustifyFull;
+    }
+    if (cValue.IsEmpty()) {
+      return Command::FormatJustifyNone;
     }
     return Command::DoNothing;
   }
