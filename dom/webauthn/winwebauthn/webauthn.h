@@ -66,7 +66,13 @@ extern "C" {
 
 
 
-#define WEBAUTHN_API_CURRENT_VERSION    WEBAUTHN_API_VERSION_1
+#define WEBAUTHN_API_VERSION_2          2
+
+
+
+
+
+#define WEBAUTHN_API_CURRENT_VERSION    WEBAUTHN_API_VERSION_2
 
 
 
@@ -259,6 +265,36 @@ typedef const WEBAUTHN_CREDENTIAL_LIST *PCWEBAUTHN_CREDENTIAL_LIST;
 
 
 #define WEBAUTHN_EXTENSIONS_IDENTIFIER_HMAC_SECRET                  L"hmac-secret"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define WEBAUTHN_USER_VERIFICATION_ANY                                          0
+#define WEBAUTHN_USER_VERIFICATION_OPTIONAL                                     1
+#define WEBAUTHN_USER_VERIFICATION_OPTIONAL_WITH_CREDENTIAL_ID_LIST             2
+#define WEBAUTHN_USER_VERIFICATION_REQUIRED                                     3
+
+typedef struct _WEBAUTHN_CRED_PROTECT_EXTENSION_IN {
+    
+    DWORD dwCredProtect;
+    
+    BOOL bRequireCredProtect;
+} WEBAUTHN_CRED_PROTECT_EXTENSION_IN, *PWEBAUTHN_CRED_PROTECT_EXTENSION_IN;
+typedef const WEBAUTHN_CRED_PROTECT_EXTENSION_IN *PCWEBAUTHN_CRED_PROTECT_EXTENSION_IN;
+
+
+#define WEBAUTHN_EXTENSIONS_IDENTIFIER_CRED_PROTECT                 L"credProtect"
 
 
 
