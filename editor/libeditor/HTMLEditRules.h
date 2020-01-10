@@ -126,17 +126,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult DeleteNodeIfCollapsedText(nsINode& aNode);
-
-  
-
-
-
-
-
-
-
 
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult WillDeleteSelection(
