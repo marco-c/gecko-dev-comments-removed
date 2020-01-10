@@ -202,6 +202,10 @@ class FunctionFlags {
   bool isLambda() const { return hasFlags(LAMBDA); }
   bool isInterpretedLazy() const { return hasFlags(INTERPRETED_LAZY); }
 
+  bool isNamedLambda(JSAtom* atom) const {
+    return isLambda() && atom && !hasInferredName() && !hasGuessedAtom();
+  }
+
   
   
   
@@ -502,10 +506,7 @@ class JSFunction : public js::NativeObject {
   
   bool isBuiltin() const { return isBuiltinNative() || isSelfHostedBuiltin(); }
 
-  bool isNamedLambda() const {
-    return isLambda() && displayAtom() && !hasInferredName() &&
-           !hasGuessedAtom();
-  }
+  bool isNamedLambda() const { return flags_.isNamedLambda(displayAtom()); }
 
   bool hasLexicalThis() const { return isArrow(); }
 
@@ -558,6 +559,7 @@ class JSFunction : public js::NativeObject {
   JSAtom* explicitName() const {
     return (hasInferredName() || hasGuessedAtom()) ? nullptr : atom_.get();
   }
+
   JSAtom* explicitOrInferredName() const {
     return hasGuessedAtom() ? nullptr : atom_.get();
   }
