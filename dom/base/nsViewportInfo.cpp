@@ -11,6 +11,11 @@
 using namespace mozilla;
 
 void nsViewportInfo::ConstrainViewportValues() {
+  
+  
+  MOZ_ASSERT(mMinZoom > CSSToScreenScale(0.0f), "zoom factor must be positive");
+  MOZ_ASSERT(mMaxZoom > CSSToScreenScale(0.0f), "zoom factor must be positive");
+
   if (mDefaultZoom > mMaxZoom) {
     mDefaultZoomValid = false;
     mDefaultZoom = mMaxZoom;
