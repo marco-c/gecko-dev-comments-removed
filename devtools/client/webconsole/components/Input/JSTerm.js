@@ -795,10 +795,6 @@ class JSTerm extends Component {
 
 
 
-
-
-
-
   requestEvaluation(str, options = {}) {
     
     
