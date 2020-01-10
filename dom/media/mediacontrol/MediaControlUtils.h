@@ -1,0 +1,20 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_MediaControlUtils_h
+#define mozilla_dom_MediaControlUtils_h
+
+#include "MediaController.h"
+#include "MediaControlService.h"
+
+mozilla::LazyLogModule gMediaControlLog("MediaControl");
+
+#undef LOG
+#define LOG(msg, ...)                        \
+  MOZ_LOG(gMediaControlLog, LogLevel::Debug, \
+          ("MediaControlUtils, " msg, ##__VA_ARGS__))
+
+#endif  
