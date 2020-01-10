@@ -81,6 +81,13 @@
 
 
 
+html|input {
+  margin: revert;
+}
+
+
+
+
 
 html|button, html|select, html|input {
   font: message-box;
