@@ -2003,7 +2003,7 @@ bool BytecodeEmitter::emitCallIncDec(UnaryNode* incDec) {
 
   
   
-  return emitUint16Operand(JSOP_THROWMSG, JSMSG_ASSIGN_TO_CALL);
+  return emitUint16Operand(JSOP_THROWMSG, JSMSG_BAD_LEFTSIDE_OF_ASS);
 }
 
 bool BytecodeEmitter::emitDouble(double d) {
@@ -4252,7 +4252,7 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
 
       
       
-      if (!emitUint16Operand(JSOP_THROWMSG, JSMSG_ASSIGN_TO_CALL)) {
+      if (!emitUint16Operand(JSOP_THROWMSG, JSMSG_BAD_LEFTSIDE_OF_ASS)) {
         return false;
       }
 
