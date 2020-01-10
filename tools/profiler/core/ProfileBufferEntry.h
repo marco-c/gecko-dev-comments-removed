@@ -42,6 +42,7 @@ class ProfilerCodeAddressService;
   MACRO(Resume, double, sizeof(double))                              \
   MACRO(ThreadId, int, sizeof(int))                                  \
   MACRO(Time, double, sizeof(double))                                \
+  MACRO(TimeBeforeCompactStack, double, sizeof(double))              \
   MACRO(CounterId, void*, sizeof(void*))                             \
   MACRO(CounterKey, uint64_t, sizeof(uint64_t))                      \
   MACRO(Number, uint64_t, sizeof(uint64_t))                          \
@@ -77,6 +78,12 @@ class ProfileBufferEntry {
 
     
     MarkerData = LEGACY_LIMIT,
+
+    
+    
+    
+    
+    CompactStack,
 
     MODERN_LIMIT
   };
