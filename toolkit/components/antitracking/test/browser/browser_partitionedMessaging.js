@@ -1,6 +1,6 @@
 
 
-PartitionedStorageHelper.runTest(
+PartitionedStorageHelper.runTestInNormalAndPrivateMode(
   "BroadcastChannel",
   async (win3rdParty, win1stParty, allowed) => {
     let a = new win3rdParty.BroadcastChannel("hello");

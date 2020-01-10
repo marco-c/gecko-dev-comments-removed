@@ -15511,23 +15511,12 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   
   
 
-  if (nsContentUtils::IsInPrivateBrowsing(this)) {
-    
-    
-    promise->MaybeRejectWithUndefined();
-    return promise.forget();
-  }
-
   if (CookieSettings()->GetRejectThirdPartyTrackers() && inner) {
     
     if (StorageDisabledByAntiTracking(this, nullptr)) {
       
       
       DebugOnly<bool> isOnAllowList = false;
-      
-      
-      
-      MOZ_ASSERT_IF(parent, !nsContentUtils::IsInPrivateBrowsing(parent));
       MOZ_ASSERT_IF(
           NS_SUCCEEDED(AntiTrackingCommon::IsOnContentBlockingAllowList(
               parent->GetDocumentURI(), false, isOnAllowList)),

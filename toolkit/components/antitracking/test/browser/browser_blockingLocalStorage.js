@@ -25,7 +25,7 @@ AntiTracking.runTestInNormalAndPrivateMode(
   }
 );
 
-AntiTracking.runTest(
+AntiTracking.runTestInNormalAndPrivateMode(
   "localStorage and Storage Access API",
   async _ => {
     

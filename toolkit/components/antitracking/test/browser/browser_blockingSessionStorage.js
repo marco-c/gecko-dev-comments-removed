@@ -40,7 +40,7 @@ AntiTracking.runTestInNormalAndPrivateMode(
   0
 );
 
-AntiTracking.runTest(
+AntiTracking.runTestInNormalAndPrivateMode(
   "sessionStorage and Storage Access API",
   async _ => {
     
