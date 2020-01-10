@@ -313,7 +313,10 @@ void HTMLTrackElement::LoadResource(RefPtr<WebVTTListener>&& aWebVTTListener) {
   
   
   
-  CORSMode corsMode = mMediaParent ? mMediaParent->GetCORSMode() : CORS_NONE;
+  CORSMode corsMode =
+      mMediaParent ? AttrValueToCORSMode(
+                         mMediaParent->GetParsedAttr(nsGkAtoms::crossorigin))
+                   : CORS_NONE;
 
   
   nsSecurityFlags secFlags;
