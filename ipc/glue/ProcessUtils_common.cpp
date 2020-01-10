@@ -24,32 +24,36 @@ SharedPreferenceSerializer::~SharedPreferenceSerializer() {
 SharedPreferenceSerializer::SharedPreferenceSerializer(
     SharedPreferenceSerializer&& aOther)
     : mPrefMapSize(aOther.mPrefMapSize),
+      mPrefsLength(aOther.mPrefsLength),
       mPrefMapHandle(std::move(aOther.mPrefMapHandle)),
-      mShm(std::move(aOther.mShm)),
-      mPrefs(std::move(aOther.mPrefs)) {
+      mPrefsHandle(std::move(aOther.mPrefsHandle)) {
   MOZ_COUNT_CTOR(SharedPreferenceSerializer);
 }
 
 bool SharedPreferenceSerializer::SerializeToSharedMemory() {
   mPrefMapHandle =
-      Preferences::EnsureSnapshot(&mPrefMapSize).ClonePlatformHandle();
+      Preferences::EnsureSnapshot(&mPrefMapSize).TakePlatformHandle();
 
   
-  Preferences::SerializePreferences(mPrefs);
+  nsAutoCStringN<1024> prefs;
+  Preferences::SerializePreferences(prefs);
+  mPrefsLength = prefs.Length();
 
+  base::SharedMemory shm;
   
-  if (!mShm.Create(mPrefs.Length())) {
+  if (!shm.Create(prefs.Length())) {
     NS_ERROR("failed to create shared memory in the parent");
     return false;
   }
-  if (!mShm.Map(mPrefs.Length())) {
+  if (!shm.Map(prefs.Length())) {
     NS_ERROR("failed to map shared memory in the parent");
     return false;
   }
 
   
-  memcpy(static_cast<char*>(mShm.memory()), mPrefs.get(), mPrefs.Length());
+  memcpy(static_cast<char*>(shm.memory()), prefs.get(), mPrefsLength);
 
+  mPrefsHandle = shm.TakeHandle();
   return true;
 }
 
@@ -65,11 +69,10 @@ void SharedPreferenceSerializer::AddSharedPrefCmdLineArgs(
 #if defined(XP_WIN)
   
   
-  HANDLE prefsHandle = GetSharedMemoryHandle();
-  procHost.AddHandleToShare(prefsHandle);
+  procHost.AddHandleToShare(GetPrefsHandle().get());
   procHost.AddHandleToShare(GetPrefMapHandle().get());
   aExtraOpts.push_back("-prefsHandle");
-  aExtraOpts.push_back(formatPtrArg(prefsHandle).get());
+  aExtraOpts.push_back(formatPtrArg(GetPrefsHandle().get()).get());
   aExtraOpts.push_back("-prefMapHandle");
   aExtraOpts.push_back(formatPtrArg(GetPrefMapHandle().get()).get());
 #else
@@ -80,13 +83,13 @@ void SharedPreferenceSerializer::AddSharedPrefCmdLineArgs(
   
   
   
-  procHost.AddFdToRemap(GetSharedMemoryHandle().fd, kPrefsFileDescriptor);
+  procHost.AddFdToRemap(GetPrefsHandle().get(), kPrefsFileDescriptor);
   procHost.AddFdToRemap(GetPrefMapHandle().get(), kPrefMapFileDescriptor);
 #endif
 
   
   aExtraOpts.push_back("-prefsLen");
-  aExtraOpts.push_back(formatPtrArg(GetPrefLength()).get());
+  aExtraOpts.push_back(formatPtrArg(GetPrefsLength()).get());
   aExtraOpts.push_back("-prefMapSize");
   aExtraOpts.push_back(formatPtrArg(GetPrefMapSize()).get());
 }
