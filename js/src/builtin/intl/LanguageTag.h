@@ -36,8 +36,6 @@ namespace js {
 
 namespace intl {
 
-#ifdef DEBUG
-
 
 
 
@@ -57,6 +55,7 @@ bool IsStructurallyValidScriptTag(const mozilla::Range<const CharT>& script);
 template <typename CharT>
 bool IsStructurallyValidRegionTag(const mozilla::Range<const CharT>& region);
 
+#ifdef DEBUG
 
 
 
@@ -251,7 +250,6 @@ class MOZ_STACK_CLASS LanguageTag final {
   
 
 
-
   template <size_t N>
   void setLanguage(const char (&language)[N]) {
     mozilla::Range<const char> range(language, N - 1);
@@ -262,14 +260,12 @@ class MOZ_STACK_CLASS LanguageTag final {
   
 
 
-
   void setLanguage(const LanguageSubtag& language) {
     MOZ_ASSERT(IsStructurallyValidLanguageTag(language.range()));
     language_.set(language.range());
   }
 
   
-
 
 
   template <size_t N>
@@ -290,7 +286,6 @@ class MOZ_STACK_CLASS LanguageTag final {
   }
 
   
-
 
 
   template <size_t N>
@@ -594,26 +589,20 @@ class MOZ_STACK_CLASS LanguageTagParser final {
     return 1 <= tok.length() && tok.length() <= 8;
   }
 
-  enum class BaseNameParsing : bool { Normal, WithinTransformExtension };
-
   
   
   static JS::Result<bool> internalParseBaseName(JSContext* cx,
                                                 LanguageTagParser& ts,
-                                                LanguageTag& tag, Token& tok,
-                                                BaseNameParsing parseType);
+                                                LanguageTag& tag, Token& tok);
 
-  
-  
   
   
   
   static JS::Result<bool> parseBaseName(JSContext* cx, LanguageTagParser& ts,
                                         LanguageTag& tag, Token& tok) {
-    return internalParseBaseName(cx, ts, tag, tok, BaseNameParsing::Normal);
+    return internalParseBaseName(cx, ts, tag, tok);
   }
 
-  
   
   
   
@@ -629,12 +618,10 @@ class MOZ_STACK_CLASS LanguageTagParser final {
   static JS::Result<JS::Ok> parseTlangInTransformExtension(
       JSContext* cx, LanguageTagParser& ts, LanguageTag& tag, Token& tok) {
     MOZ_ASSERT(ts.isLanguage(tok));
-    return internalParseBaseName(cx, ts, tag, tok,
-                                 BaseNameParsing::WithinTransformExtension)
-        .map([](bool parsed) {
-          MOZ_ASSERT(parsed);
-          return JS::Ok();
-        });
+    return internalParseBaseName(cx, ts, tag, tok).map([](bool parsed) {
+      MOZ_ASSERT(parsed);
+      return JS::Ok();
+    });
   }
 
   friend class LanguageTag;
@@ -702,10 +689,8 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(LanguageTagParser::TokenKind)
 
 
 
-
-MOZ_MUST_USE bool ParseStandaloneLanguagTag(JS::Handle<JSLinearString*> str,
-                                            LanguageSubtag& result);
-
+MOZ_MUST_USE bool ParseStandaloneLanguageTag(JS::Handle<JSLinearString*> str,
+                                             LanguageSubtag& result);
 
 
 
@@ -713,7 +698,6 @@ MOZ_MUST_USE bool ParseStandaloneLanguagTag(JS::Handle<JSLinearString*> str,
 
 MOZ_MUST_USE bool ParseStandaloneScriptTag(JS::Handle<JSLinearString*> str,
                                            ScriptSubtag& result);
-
 
 
 

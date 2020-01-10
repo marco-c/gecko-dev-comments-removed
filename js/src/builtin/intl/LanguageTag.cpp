@@ -43,7 +43,6 @@ using namespace js::intl::LanguageTagLimits;
 
 using ConstCharRange = mozilla::Range<const char>;
 
-#ifdef DEBUG
 template <typename CharT>
 bool IsStructurallyValidLanguageTag(
     const mozilla::Range<const CharT>& language) {
@@ -54,7 +53,7 @@ bool IsStructurallyValidLanguageTag(
   size_t length = language.length();
   const CharT* str = language.begin().get();
   return ((2 <= length && length <= 3) || (5 <= length && length <= 8)) &&
-         std::all_of(str, str + length, mozilla::IsAsciiLowercaseAlpha<CharT>);
+         std::all_of(str, str + length, mozilla::IsAsciiAlpha<CharT>);
 }
 
 template bool IsStructurallyValidLanguageTag(
@@ -70,9 +69,8 @@ bool IsStructurallyValidScriptTag(const mozilla::Range<const CharT>& script) {
   
   size_t length = script.length();
   const CharT* str = script.begin().get();
-  return length == 4 && mozilla::IsAsciiUppercaseAlpha<CharT>(str[0]) &&
-         std::all_of(str + 1, str + length,
-                     mozilla::IsAsciiLowercaseAlpha<CharT>);
+  return length == 4 &&
+         std::all_of(str, str + length, mozilla::IsAsciiAlpha<CharT>);
 }
 
 template bool IsStructurallyValidScriptTag(
@@ -88,8 +86,8 @@ bool IsStructurallyValidRegionTag(const mozilla::Range<const CharT>& region) {
   
   size_t length = region.length();
   const CharT* str = region.begin().get();
-  return (length == 2 && std::all_of(str, str + length,
-                                     mozilla::IsAsciiUppercaseAlpha<CharT>)) ||
+  return (length == 2 &&
+          std::all_of(str, str + length, mozilla::IsAsciiAlpha<CharT>)) ||
          (length == 3 &&
           std::all_of(str, str + length, mozilla::IsAsciiDigit<CharT>));
 }
@@ -99,6 +97,7 @@ template bool IsStructurallyValidRegionTag(
 template bool IsStructurallyValidRegionTag(
     const mozilla::Range<const char16_t>& region);
 
+#ifdef DEBUG
 bool IsStructurallyValidVariantTag(const ConstCharRange& variant) {
   
   size_t length = variant.length();
@@ -260,13 +259,17 @@ bool LanguageTag::canonicalizeBaseName(JSContext* cx) {
   
 
   
-  
-  
-  
-  
+  language_.toLowerCase();
   MOZ_ASSERT(IsStructurallyValidLanguageTag(language().range()));
+
+  
+  
+  script_.toTitleCase();
   MOZ_ASSERT(script().length() == 0 ||
              IsStructurallyValidScriptTag(script().range()));
+
+  
+  region_.toUpperCase();
   MOZ_ASSERT(region().length() == 0 ||
              IsStructurallyValidRegionTag(region().range()));
 
@@ -1089,51 +1092,15 @@ UniqueChars LanguageTagParser::chars(JSContext* cx, size_t index,
 
 
 
-
-
-
-
-
-
-
-
-
-JS::Result<bool> LanguageTagParser::internalParseBaseName(
-    JSContext* cx, LanguageTagParser& ts, LanguageTag& tag, Token& tok,
-    BaseNameParsing parseType) {
-#ifdef DEBUG
-  auto isAsciiLowerCase = [](const auto& range) {
-    
-    JS::AutoSuppressGCAnalysis nogc;
-
-    const char* ptr = range.begin().get();
-    size_t length = range.length();
-    return std::all_of(ptr, ptr + length, mozilla::IsAsciiLowercaseAlpha<char>);
-  };
-  auto isAsciiDigit = [](const auto& range) {
-    
-    JS::AutoSuppressGCAnalysis nogc;
-
-    const char* ptr = range.begin().get();
-    size_t length = range.length();
-    return std::all_of(ptr, ptr + length, mozilla::IsAsciiDigit<char>);
-  };
-#endif
-
+JS::Result<bool> LanguageTagParser::internalParseBaseName(JSContext* cx,
+                                                          LanguageTagParser& ts,
+                                                          LanguageTag& tag,
+                                                          Token& tok) {
   if (ts.isLanguage(tok)) {
     ts.copyChars(tok, tag.language_);
 
-    
-    if (parseType == BaseNameParsing::Normal) {
-      tag.language_.toLowerCase();
-    } else {
-      MOZ_ASSERT(isAsciiLowerCase(tag.language_.range()));
-    }
-
     tok = ts.nextToken();
   } else {
-    MOZ_ASSERT(parseType == BaseNameParsing::Normal);
-
     
     return false;
   }
@@ -1141,27 +1108,11 @@ JS::Result<bool> LanguageTagParser::internalParseBaseName(
   if (ts.isScript(tok)) {
     ts.copyChars(tok, tag.script_);
 
-    
-    
-    if (parseType == BaseNameParsing::Normal) {
-      tag.script_.toTitleCase();
-    } else {
-      MOZ_ASSERT(isAsciiLowerCase(tag.script_.range()));
-    }
-
     tok = ts.nextToken();
   }
 
   if (ts.isRegion(tok)) {
     ts.copyChars(tok, tag.region_);
-
-    
-    if (parseType == BaseNameParsing::Normal) {
-      tag.region_.toUpperCase();
-    } else {
-      MOZ_ASSERT_IF(tok.length() == 2, isAsciiLowerCase(tag.region_.range()));
-      MOZ_ASSERT_IF(tok.length() == 3, isAsciiDigit(tag.region_.range()));
-    }
 
     tok = ts.nextToken();
   }
@@ -1534,85 +1485,52 @@ bool LanguageTagParser::canParseUnicodeExtensionType(
   return tok.isNone();
 }
 
-bool ParseStandaloneLanguagTag(HandleLinearString str, LanguageSubtag& result) {
-  auto isLanguage = [](const auto* language, size_t length) {
-    
-    JS::AutoSuppressGCAnalysis nogc;
-
-    using T = std::remove_pointer_t<decltype(language)>;
-    return length >= 2 && length != 4 && length <= 8 &&
-           std::all_of(language, language + length, mozilla::IsAsciiAlpha<T>);
-  };
-
+bool ParseStandaloneLanguageTag(HandleLinearString str,
+                                LanguageSubtag& result) {
   JS::AutoCheckCannotGC nogc;
   if (str->hasLatin1Chars()) {
-    if (!isLanguage(str->latin1Chars(nogc), str->length())) {
+    if (!IsStructurallyValidLanguageTag(str->latin1Range(nogc))) {
       return false;
     }
     result.set(str->latin1Range(nogc));
   } else {
-    if (!isLanguage(str->twoByteChars(nogc), str->length())) {
+    if (!IsStructurallyValidLanguageTag(str->twoByteRange(nogc))) {
       return false;
     }
     result.set(str->twoByteRange(nogc));
   }
-  result.toLowerCase();
   return true;
 }
 
 bool ParseStandaloneScriptTag(HandleLinearString str, ScriptSubtag& result) {
-  auto isScript = [](const auto* script, size_t length) {
-    
-    JS::AutoSuppressGCAnalysis nogc;
-
-    using T = std::remove_pointer_t<decltype(script)>;
-    return length == ScriptLength &&
-           std::all_of(script, script + ScriptLength, mozilla::IsAsciiAlpha<T>);
-  };
-
   JS::AutoCheckCannotGC nogc;
   if (str->hasLatin1Chars()) {
-    if (!isScript(str->latin1Chars(nogc), str->length())) {
+    if (!IsStructurallyValidScriptTag(str->latin1Range(nogc))) {
       return false;
     }
     result.set(str->latin1Range(nogc));
   } else {
-    if (!isScript(str->twoByteChars(nogc), str->length())) {
+    if (!IsStructurallyValidScriptTag(str->twoByteRange(nogc))) {
       return false;
     }
     result.set(str->twoByteRange(nogc));
   }
-  result.toTitleCase();
   return true;
 }
 
 bool ParseStandaloneRegionTag(HandleLinearString str, RegionSubtag& result) {
-  auto isRegion = [](const auto* region, size_t length) {
-    
-    JS::AutoSuppressGCAnalysis nogc;
-
-    using T = std::remove_pointer_t<decltype(region)>;
-    return (length == AlphaRegionLength &&
-            std::all_of(region, region + AlphaRegionLength,
-                        mozilla::IsAsciiAlpha<T>)) ||
-           (length == DigitRegionLength &&
-            std::all_of(region, region + DigitRegionLength,
-                        mozilla::IsAsciiDigit<T>));
-  };
-
   JS::AutoCheckCannotGC nogc;
   if (str->hasLatin1Chars()) {
-    if (!isRegion(str->latin1Chars(nogc), str->length())) {
+    if (!IsStructurallyValidRegionTag(str->latin1Range(nogc))) {
       return false;
     }
     result.set(str->latin1Range(nogc));
   } else {
-    if (!isRegion(str->twoByteChars(nogc), str->length())) {
+    if (!IsStructurallyValidRegionTag(str->twoByteRange(nogc))) {
       return false;
     }
     result.set(str->twoByteRange(nogc));
   }
-  result.toUpperCase();
   return true;
 }
 
