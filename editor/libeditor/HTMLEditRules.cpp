@@ -4727,7 +4727,9 @@ nsresult HTMLEditRules::WillRemoveList(bool* aCancel, bool* aHandled) {
       }
     } else if (HTMLEditUtils::IsList(curNode)) {
       
-      nsresult rv = RemoveListStructure(MOZ_KnownLive(*curNode->AsElement()));
+      nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                        .DestroyListStructureRecursively(
+                            MOZ_KnownLive(*curNode->AsElement()));
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -10228,10 +10230,13 @@ nsresult HTMLEditor::LiftUpListItemElement(
                                LiftUpFromAllParentListElements::Yes);
 }
 
-nsresult HTMLEditRules::RemoveListStructure(Element& aListElement) {
-  MOZ_ASSERT(IsEditorDataAvailable());
+nsresult HTMLEditor::DestroyListStructureRecursively(Element& aListElement) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(HTMLEditUtils::IsList(&aListElement));
 
+  
+  
+  
   while (aListElement.GetFirstChild()) {
     OwningNonNull<nsIContent> child = *aListElement.GetFirstChild();
 
@@ -10244,10 +10249,9 @@ nsresult HTMLEditRules::RemoveListStructure(Element& aListElement) {
       
       
       
-      nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                        .LiftUpListItemElement(
-                            MOZ_KnownLive(*child->AsElement()),
-                            HTMLEditor::LiftUpFromAllParentListElements::Yes);
+      nsresult rv = LiftUpListItemElement(
+          MOZ_KnownLive(*child->AsElement()),
+          HTMLEditor::LiftUpFromAllParentListElements::Yes);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -10255,7 +10259,8 @@ nsresult HTMLEditRules::RemoveListStructure(Element& aListElement) {
     }
 
     if (HTMLEditUtils::IsList(child)) {
-      nsresult rv = RemoveListStructure(MOZ_KnownLive(*child->AsElement()));
+      nsresult rv =
+          DestroyListStructureRecursively(MOZ_KnownLive(*child->AsElement()));
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -10266,9 +10271,8 @@ nsresult HTMLEditRules::RemoveListStructure(Element& aListElement) {
     
     
     
-    nsresult rv =
-        MOZ_KnownLive(HTMLEditorRef()).DeleteNodeWithTransaction(*child);
-    if (NS_WARN_IF(!CanHandleEditAction())) {
+    nsresult rv = DeleteNodeWithTransaction(*child);
+    if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -10277,9 +10281,8 @@ nsresult HTMLEditRules::RemoveListStructure(Element& aListElement) {
   }
 
   
-  nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                    .RemoveBlockContainerWithTransaction(aListElement);
-  if (NS_WARN_IF(!CanHandleEditAction())) {
+  nsresult rv = RemoveBlockContainerWithTransaction(aListElement);
+  if (NS_WARN_IF(Destroyed())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
   if (NS_WARN_IF(NS_FAILED(rv))) {
