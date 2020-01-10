@@ -6,8 +6,9 @@
 
 #include "frontend/BinASTTokenReaderContext.h"
 
-#include "mozilla/Result.h"     
-#include "mozilla/ScopeExit.h"  
+#include "mozilla/IntegerTypeTraits.h"  
+#include "mozilla/Result.h"             
+#include "mozilla/ScopeExit.h"          
 
 #include <string.h>  
 
@@ -1785,8 +1786,15 @@ JS::Result<Ok> HuffmanTableImplementationGeneric<T>::init(
     JSContext* cx, size_t numberOfSymbols, uint8_t maxBitLength) {
   MOZ_ASSERT(this->implementation.template is<
              HuffmanTableUnreachable>());  
-  if (maxBitLength > MAX_BIT_LENGTH_IN_SATURATED_TABLE ||
-      numberOfSymbols > 256) {
+  if (
+      
+      
+      maxBitLength > MAX_BIT_LENGTH_IN_SATURATED_TABLE ||
+      
+      
+      numberOfSymbols >
+          mozilla::MaxValue<typename HuffmanTableImplementationSaturated<
+              T>::InternalIndex>::value) {
     this->implementation = {
         mozilla::VariantType<HuffmanTableImplementationMap<T>>{}, cx};
     MOZ_TRY(this->implementation.template as<HuffmanTableImplementationMap<T>>()
