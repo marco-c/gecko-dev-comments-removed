@@ -570,6 +570,9 @@ void VRManager::EnumerateVRDisplays() {
       
       
       
+      if (!mShmem->GetExternalShmem()) {
+        mShmem->CreateShMemForAndroid();
+      }
       if (mShmem->GetExternalShmem()) {
         mState = VRManagerState::Enumeration;
       }
