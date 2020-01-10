@@ -1316,7 +1316,24 @@ void nsWindow::NativeMoveResizeWaylandPopup(GdkPoint* aPosition,
     hints = GdkAnchorHints(hints | GDK_ANCHOR_RESIZE);
   }
 
+  
+  
+  static auto sGtkWidgetIsVisible =
+      (gboolean(*)(GtkWidget*))dlsym(RTLD_DEFAULT, "gtk_widget_is_visible");
+
+  bool isWidgetVisible =
+      (sGtkWidgetIsVisible != nullptr) && sGtkWidgetIsVisible(mShell);
+  if (isWidgetVisible) {
+    HideWaylandWindow();
+  }
+
   sGdkWindowMoveToRect(gdkWindow, &rect, rectAnchor, menuAnchor, hints, 0, 0);
+
+  if (isWidgetVisible) {
+    
+    
+    gtk_widget_show(mShell);
+  }
 }
 
 void nsWindow::NativeMove() {
