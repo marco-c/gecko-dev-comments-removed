@@ -89,6 +89,10 @@ class nsBinaryInputStream final : public nsIObjectInputStream {
 
  private:
   
+  
+  nsresult ReadBytesToBuffer(uint32_t aLength, uint8_t* aBuffer);
+
+  
   virtual ~nsBinaryInputStream() {}
 };
 
