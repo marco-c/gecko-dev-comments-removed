@@ -4,62 +4,220 @@
 
 
 
-
-
-SpecialPowers.pushPrefEnv({
-  set: [["extensions.htmlaboutaddons.enabled", false]],
-});
-
-function test() {
-  waitForExplicitFinish();
-  run_next_test();
+async function loadDetail(aWindow, id) {
+  let loaded = wait_for_view_load(aWindow, undefined, true);
+  
+  if (aWindow.useHtmlViews) {
+    let browser = await aWindow.getHtmlBrowser();
+    let card = browser.contentDocument.querySelector(
+      `addon-card[addon-id="${id}"]`);
+    EventUtils.synthesizeMouseAtCenter(card, {}, browser.contentWindow);
+  } else {
+    let card = aWindow.document.querySelector(`.addon.card[value="${id}"]`);
+    EventUtils.synthesizeMouseAtCenter(card, {}, aWindow);
+  }
+  await loaded;
 }
 
-function end_test() {
-  finish();
-}
-
-add_test(async function() {
+async function checkCompatibility(hboxSelector, buttonSelector) {
   info("Testing compatibility checking warning");
 
   info("Setting checkCompatibility to false");
   AddonManager.checkCompatibility = false;
 
-  let aWindow = await open_manager("addons://list/extension");
-  var hbox = aWindow.document.querySelector("#list-view hbox.global-warning-checkcompatibility");
-  is_element_visible(hbox, "Check Compatibility warning hbox should be visible");
-  var button = aWindow.document.querySelector("#list-view button.global-warning-checkcompatibility");
-  is_element_visible(button, "Check Compatibility warning button should be visible");
+  let id = "test@mochi.test";
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: {applications: {gecko: {id}}},
+    useAddonManager: "temporary",
+  });
+  await extension.startup();
 
+  let aWindow = await open_manager("addons://list/extension");
+  let hbox = aWindow.document.querySelector(hboxSelector);
+  let button = aWindow.document.querySelector(buttonSelector);
+
+  function checkMessage(visible) {
+    if (visible) {
+      is_element_visible(hbox, "Check Compatibility warning hbox should be visible");
+      is_element_visible(button, "Check Compatibility warning button should be visible");
+    } else {
+      is_element_hidden(hbox, "Check Compatibility warning hbox should be hidden");
+      is_element_hidden(button, "Check Compatibility warning button should be hidden");
+    }
+  }
+
+  
+  checkMessage(true);
+
+  
+  await loadDetail(aWindow, id);
+  checkMessage(true);
+
+  
+  let views = ["plugin", "theme"];
+  let categoryUtilities = new CategoryUtilities(aWindow);
+  for (let view of views) {
+    await categoryUtilities.openType(view);
+    checkMessage(true);
+  }
+
+  
   info("Clicking 'Enable' button");
   EventUtils.synthesizeMouse(button, 2, 2, { }, aWindow);
   is(AddonManager.checkCompatibility, true, "Check Compatibility pref should be cleared");
-  is_element_hidden(hbox, "Check Compatibility warning hbox should be hidden");
-  is_element_hidden(button, "Check Compatibility warning button should be hidden");
+  checkMessage(false);
 
   await close_manager(aWindow);
-  run_next_test();
-});
+  await extension.unload();
+}
 
-add_test(async function() {
+async function checkSecurity(hboxSelector, buttonSelector) {
   info("Testing update security checking warning");
 
   var pref = "extensions.checkUpdateSecurity";
   info("Setting " + pref + " pref to false");
   Services.prefs.setBoolPref(pref, false);
 
-  let aWindow = await open_manager(null);
-  var hbox = aWindow.document.querySelector("#list-view hbox.global-warning-updatesecurity");
-  is_element_visible(hbox, "Check Update Security warning hbox should be visible");
-  var button = aWindow.document.querySelector("#list-view button.global-warning-updatesecurity");
-  is_element_visible(button, "Check Update Security warning button should be visible");
+  let id = "test-security@mochi.test";
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: {applications: {gecko: {id}}},
+    useAddonManager: "temporary",
+  });
+  await extension.startup();
 
+  let aWindow = await open_manager("addons://list/extension");
+  let hbox = aWindow.document.querySelector(hboxSelector);
+  let button = aWindow.document.querySelector(buttonSelector);
+
+  function checkMessage(visible) {
+    if (visible) {
+      is_element_visible(hbox, "Check Update Security warning hbox should be visible");
+      is_element_visible(button, "Check Update Security warning button should be visible");
+    } else {
+      is_element_hidden(hbox, "Check Update Security warning hbox should be hidden");
+      is_element_hidden(button, "Check Update Security warning button should be hidden");
+    }
+  }
+
+  
+  checkMessage(true);
+
+  
+  await loadDetail(aWindow, id);
+  checkMessage(true);
+
+  
+  let views = ["plugin", "theme"];
+  let categoryUtilities = new CategoryUtilities(aWindow);
+  for (let view of views) {
+    await categoryUtilities.openType(view);
+    checkMessage(true);
+  }
+
+  
   info("Clicking 'Enable' button");
   EventUtils.synthesizeMouse(button, 2, 2, { }, aWindow);
   is(Services.prefs.prefHasUserValue(pref), false, "Check Update Security pref should be cleared");
-  is_element_hidden(hbox, "Check Update Security warning hbox should be hidden");
-  is_element_hidden(button, "Check Update Security warning button should be hidden");
+  checkMessage(false);
 
   await close_manager(aWindow);
-  run_next_test();
+  await extension.unload();
+}
+
+async function checkSafeMode(hboxSelector) {
+  info("Testing safe mode warning");
+
+  let id = "test-safemode@mochi.test";
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: {applications: {gecko: {id}}},
+    useAddonManager: "temporary",
+  });
+  await extension.startup();
+
+  let aWindow = await open_manager("addons://list/extension");
+  let hbox = aWindow.document.querySelector(hboxSelector);
+
+  function checkMessage(visible) {
+    if (visible) {
+      is_element_visible(hbox, "Check safe mode warning hbox should be visible");
+    } else {
+      is_element_hidden(hbox, "Check safe mode warning hbox should be hidden");
+    }
+  }
+
+  
+  checkMessage(false);
+
+  
+  aWindow.document.getElementById("addons-page").setAttribute("warning", "safemode");
+
+  
+  await loadDetail(aWindow, id);
+  checkMessage(true);
+
+  
+  let categoryUtilities = new CategoryUtilities(aWindow);
+  await categoryUtilities.openType("theme");
+  checkMessage(true);
+  await categoryUtilities.openType("plugin");
+  checkMessage(false);
+
+  await close_manager(aWindow);
+  await extension.unload();
+}
+
+add_task(async function testCompatCheckXUL() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.htmlaboutaddons.enabled", false]],
+  });
+  await checkCompatibility(
+    "#list-view hbox.global-warning-checkcompatibility",
+    "#list-view button.global-warning-checkcompatibility");
+  
+});
+
+add_task(async function testCompatCheckHTML() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.htmlaboutaddons.enabled", true]],
+  });
+  await checkCompatibility(
+    "#html-view .global-warning-checkcompatibility",
+    "#html-view .global-warning-checkcompatibility button");
+  
+});
+
+add_task(async function testSecurityCheckXUL() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.htmlaboutaddons.enabled", false]],
+  });
+  await checkSecurity(
+    "#list-view hbox.global-warning-updatesecurity",
+    "#list-view button.global-warning-updatesecurity");
+  
+});
+
+add_task(async function testSecurityCheckHTML() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.htmlaboutaddons.enabled", true]],
+  });
+  await checkSecurity(
+    "#html-view .global-warning-updatesecurity",
+    "#html-view .global-warning-updatesecurity button");
+  
+});
+
+add_task(async function testSafeModeXUL() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.htmlaboutaddons.enabled", false]],
+  });
+  await checkSafeMode("#list-view hbox.global-warning-safemode");
+  
+});
+
+add_task(async function testSafeModeHTML() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.htmlaboutaddons.enabled", true]],
+  });
+  await checkSafeMode("#html-view .global-warning-safemode");
+  
 });

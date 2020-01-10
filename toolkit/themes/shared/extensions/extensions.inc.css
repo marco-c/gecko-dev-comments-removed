@@ -103,6 +103,10 @@
   margin-bottom: 10px;
 }
 
+.html-alert-container {
+  margin-bottom: 0;
+}
+
 .alert-spacer-before {
   -moz-box-flex: 1;
 }
@@ -426,6 +430,7 @@ button.warning {
 
 
   max-width: 628px;
+  min-width: 628px;
 }
 
 .legacy-warning {
