@@ -794,6 +794,15 @@ VARCACHE_PREF(
 )
 
 
+
+VARCACHE_PREF(
+  Live,
+  "browser.cache.memory.max_entry_size",
+   browser_cache_memory_max_entry_size,
+  RelaxedAtomicInt32, 5 * 1024
+)
+
+
 VARCACHE_PREF(
   Live,
   "browser.contentblocking.allowlist.storage.enabled",
