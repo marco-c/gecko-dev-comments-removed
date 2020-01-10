@@ -324,9 +324,6 @@ class UrlbarInput {
 
 
 
-
-
-
   handleCommand(event, openWhere, openParams = {}, triggeringPrincipal = null) {
     let isMouseEvent = event instanceof this.window.MouseEvent;
     if (isMouseEvent && event.button == 2) {
