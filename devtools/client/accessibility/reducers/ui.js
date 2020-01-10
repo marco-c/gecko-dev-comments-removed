@@ -1,7 +1,10 @@
 
 
 
+
 "use strict";
+
+const Services = require("Services");
 
 const {
   AUDIT,
@@ -13,7 +16,10 @@ const {
   UNHIGHLIGHT,
   UPDATE_CAN_BE_DISABLED,
   UPDATE_CAN_BE_ENABLED,
+  UPDATE_PREF,
   UPDATE_DETAILS,
+  PREF_KEYS,
+  PREFS,
 } = require("../constants");
 
 const TreeView = require("devtools/client/shared/components/tree/TreeView");
@@ -29,6 +35,11 @@ function getInitialState() {
     selected: null,
     highlighted: null,
     expanded: new Set(),
+    [PREFS.SCROLL_INTO_VIEW]: Services.prefs.getBoolPref(
+      PREF_KEYS[PREFS.SCROLL_INTO_VIEW],
+      false
+    ),
+    supports: {},
   };
 }
 
@@ -45,6 +56,8 @@ function ui(state = getInitialState(), action) {
       return onCanBeDisabledChange(state, action);
     case UPDATE_CAN_BE_ENABLED:
       return onCanBeEnabledChange(state, action);
+    case UPDATE_PREF:
+      return onPrefChange(state, action);
     case UPDATE_DETAILS:
       return onUpdateDetails(state, action);
     case HIGHLIGHT:
@@ -152,9 +165,27 @@ function onCanBeEnabledChange(state, { canBeEnabled }) {
 
 
 
+function onPrefChange(state, { name, value }) {
+  return {
+    ...state,
+    [name]: value,
+  };
+}
+
+
+
+
+
+
+
 function onReset(state, { accessibility, supports }) {
   const { enabled, canBeDisabled, canBeEnabled } = accessibility;
-  const newState = { ...state, enabled, canBeDisabled, canBeEnabled };
+  const newState = {
+    ...getInitialState(),
+    enabled,
+    canBeDisabled,
+    canBeEnabled,
+  };
   if (supports) {
     newState.supports = supports;
   }

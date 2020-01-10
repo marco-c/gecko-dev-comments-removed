@@ -65,7 +65,7 @@ const tests = [
   {
     desc: "Click on the all filter.",
     setup: async ({ doc }) => {
-      await toggleFilter(doc, 1);
+      await toggleMenuItem(doc, 0, 1);
     },
     expected: {
       tree: [
@@ -88,7 +88,7 @@ const tests = [
   {
     desc: "Click on the all filter again.",
     setup: async ({ doc }) => {
-      await toggleFilter(doc, 1);
+      await toggleMenuItem(doc, 0, 1);
     },
     expected: {
       tree: [

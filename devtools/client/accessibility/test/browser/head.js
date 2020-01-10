@@ -28,7 +28,10 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-const { ORDERED_PROPS } = require("devtools/client/accessibility/constants");
+const {
+  ORDERED_PROPS,
+  PREF_KEYS,
+} = require("devtools/client/accessibility/constants");
 
 
 Services.prefs.setBoolPref("devtools.accessibility.enabled", true);
@@ -413,7 +416,44 @@ async function checkSidebarState(store, expectedState) {
 
 
 
-async function checkToolbarState(doc, expected) {
+
+
+
+
+async function checkToolbarPrefsState(doc, toolbarPrefValues, store) {
+  info("Checking toolbar prefs state.");
+  const [hasExpectedStructure] = await Promise.all([
+    
+    BrowserTestUtils.waitForCondition(() => {
+      return Object.keys(toolbarPrefValues).every(
+        name =>
+          Services.prefs.getBoolPref(PREF_KEYS[name], false) ===
+          toolbarPrefValues[name]
+      );
+    }, "Wait for the right prefs state."),
+    
+    waitUntilState(store, ({ ui }) => {
+      for (const name in toolbarPrefValues) {
+        if (ui[name] !== toolbarPrefValues[name]) {
+          return false;
+        }
+      }
+
+      ok(true, "UI pref state is correct.");
+      return true;
+    }),
+  ]);
+  ok(hasExpectedStructure, "Prefs state is correct.");
+}
+
+
+
+
+
+
+
+
+async function checkToolbarState(doc, activeToolbarFilters) {
   info("Checking toolbar state.");
   const hasExpectedStructure = await BrowserTestUtils.waitForCondition(
     () =>
@@ -421,7 +461,8 @@ async function checkToolbarState(doc, expected) {
         ...doc.querySelectorAll("#accessibility-tree-filters-menu .command"),
       ].every(
         (filter, i) =>
-          (expected[i] ? "true" : null) === filter.getAttribute("aria-checked")
+          (activeToolbarFilters[i] ? "true" : null) ===
+          filter.getAttribute("aria-checked")
       ),
     "Wait for the right toolbar state."
   );
@@ -520,35 +561,41 @@ async function toggleRow(doc, rowNumber) {
 
 
 
-async function toggleFilter(doc, filterIndex) {
+
+
+
+
+async function toggleMenuItem(doc, menuButtonIndex, menuItemIndex) {
   const win = doc.defaultView;
-  const menuButton = doc.querySelectorAll(".toolbar-menu-button")[0];
-  const filter = doc.querySelectorAll(
-    "#accessibility-tree-filters-menu .command"
-  )[filterIndex];
+  const menuButton = doc.querySelectorAll(".toolbar-menu-button")[
+    menuButtonIndex
+  ];
+  const menuItem = doc
+    .querySelectorAll(".tooltip-container")
+    [menuButtonIndex].querySelectorAll(".command")[menuItemIndex];
   const expected =
-    filter.getAttribute("aria-checked") === "true" ? null : "true";
+    menuItem.getAttribute("aria-checked") === "true" ? null : "true";
 
   
   EventUtils.synthesizeMouseAtCenter(menuButton, {}, win);
   await BrowserTestUtils.waitForCondition(
-    () => !!filter.offsetParent,
-    "Filter is visible."
+    () => !!menuItem.offsetParent,
+    "Menu item is visible."
   );
 
-  EventUtils.synthesizeMouseAtCenter(filter, {}, win);
+  EventUtils.synthesizeMouseAtCenter(menuItem, {}, win);
   await BrowserTestUtils.waitForCondition(
-    () => expected === filter.getAttribute("aria-checked"),
-    "Filter updated."
+    () => expected === menuItem.getAttribute("aria-checked"),
+    "Menu item updated."
   );
 }
 
 async function findAccessibleFor(
-  { toolbox: { walker: domWalker }, panel: { walker: a11yWalker } },
+  { toolbox: { walker: domWalker }, panel: { walker: accessibilityWalker } },
   selector
 ) {
   const node = await domWalker.querySelector(domWalker.rootNode, selector);
-  return a11yWalker.getAccessibleFor(node);
+  return accessibilityWalker.getAccessibleFor(node);
 }
 
 async function selectAccessibleForNode(env, selector) {
@@ -575,6 +622,17 @@ async function selectAccessibleForNode(env, selector) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 async function runA11yPanelTests(tests, env) {
   for (const { desc, setup, expected } of tests) {
     info(desc);
@@ -583,7 +641,13 @@ async function runA11yPanelTests(tests, env) {
       await setup(env);
     }
 
-    const { tree, sidebar, audit, toolbar } = expected;
+    const {
+      tree,
+      sidebar,
+      audit,
+      toolbarPrefValues,
+      activeToolbarFilters,
+    } = expected;
     if (tree) {
       await checkTreeState(env.doc, tree);
     }
@@ -592,8 +656,12 @@ async function runA11yPanelTests(tests, env) {
       await checkSidebarState(env.store, sidebar);
     }
 
-    if (toolbar) {
-      await checkToolbarState(env.doc, toolbar);
+    if (activeToolbarFilters) {
+      await checkToolbarState(env.doc, activeToolbarFilters);
+    }
+
+    if (toolbarPrefValues) {
+      await checkToolbarPrefsState(env.doc, toolbarPrefValues, env.store);
     }
 
     if (typeof audit !== "undefined") {
