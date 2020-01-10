@@ -99,15 +99,24 @@ class MediaTrackDemuxer : public DecoderDoctorLifeLogger<MediaTrackDemuxer> {
   class SamplesHolder {
    public:
     NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SamplesHolder)
-    nsTArray<RefPtr<MediaRawData>> mSamples;
 
     void AppendSample(RefPtr<MediaRawData>& aSample) {
       MOZ_DIAGNOSTIC_ASSERT(aSample->HasValidTime());
       mSamples.AppendElement(aSample);
     }
 
+    const nsTArray<RefPtr<MediaRawData>>& GetSamples() const {
+      return mSamples;
+    }
+
+    
+    
+    
+    nsTArray<RefPtr<MediaRawData>>& GetMovableSamples() { return mSamples; }
+
    private:
     ~SamplesHolder() {}
+    nsTArray<RefPtr<MediaRawData>> mSamples;
   };
 
   class SkipFailureHolder {
