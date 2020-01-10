@@ -8,17 +8,71 @@
 
 #include "builtin/streams/WritableStreamDefaultControllerOperations.h"
 
+#include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
 
 #include "jsapi.h"  
 
+#include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/WritableStream.h"  
+#include "js/RootingAPI.h"                   
+#include "js/Value.h"                        
+#include "vm/JSContext.h"                    
+#include "vm/Runtime.h"                      
+
 #include "vm/JSObject-inl.h"                 
 
 using JS::Handle;
+using JS::Rooted;
 using JS::Value;
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+MOZ_MUST_USE bool js::SetUpWritableStreamDefaultController(
+    JSContext* cx, Handle<WritableStream*> stream, SinkAlgorithms algorithms,
+    Handle<Value> underlyingSink, Handle<Value> writeMethod,
+    Handle<Value> closeMethod, Handle<Value> abortMethod, double highWaterMark,
+    Handle<Value> size) {
+  
+  JS_ReportErrorASCII(cx, "epic fail");
+  return false;
+}
 
 
 
@@ -29,6 +83,51 @@ MOZ_MUST_USE bool js::SetUpWritableStreamDefaultControllerFromUnderlyingSink(
     JSContext* cx, Handle<WritableStream*> stream, Handle<Value> underlyingSink,
     double highWaterMark, Handle<Value> sizeAlgorithm) {
   
-  JS_ReportErrorASCII(cx, "epic fail");
-  return false;
+  MOZ_ASSERT(!underlyingSink.isUndefined());
+
+  
+  
+  
+
+  
+  
+  
+  SinkAlgorithms sinkAlgorithms = SinkAlgorithms::Script;
+
+  
+  
+  
+  Rooted<Value> writeMethod(cx);
+  if (!CreateAlgorithmFromUnderlyingMethod(cx, underlyingSink,
+                                           "WritableStream sink.write method",
+                                           cx->names().write, &writeMethod)) {
+    return false;
+  }
+
+  
+  
+  
+  Rooted<Value> closeMethod(cx);
+  if (!CreateAlgorithmFromUnderlyingMethod(cx, underlyingSink,
+                                           "WritableStream sink.close method",
+                                           cx->names().close, &closeMethod)) {
+    return false;
+  }
+
+  
+  
+  
+  Rooted<Value> abortMethod(cx);
+  if (!CreateAlgorithmFromUnderlyingMethod(cx, underlyingSink,
+                                           "WritableStream sink.abort method",
+                                           cx->names().abort, &abortMethod)) {
+    return false;
+  }
+
+  
+  
+  
+  return SetUpWritableStreamDefaultController(
+      cx, stream, sinkAlgorithms, underlyingSink, writeMethod, closeMethod,
+      abortMethod, highWaterMark, sizeAlgorithm);
 }
