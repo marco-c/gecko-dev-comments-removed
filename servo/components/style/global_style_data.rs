@@ -12,6 +12,7 @@ use crate::shared_lock::SharedRwLock;
 use crate::thread_state;
 use rayon;
 use std::env;
+use parking_lot::{RwLock, RwLockReadGuard};
 
 
 pub struct GlobalStyleData {
@@ -28,7 +29,10 @@ pub struct StyleThreadPool {
     pub num_threads: usize,
 
     
-    pub style_thread_pool: Option<rayon::ThreadPool>,
+    
+    
+    
+    style_thread_pool: RwLock<Option<rayon::ThreadPool>>,
 }
 
 fn thread_name(index: usize) -> String {
@@ -54,6 +58,21 @@ fn thread_shutdown(_: usize) {
     unsafe {
         bindings::Gecko_UnregisterProfilerThread();
         bindings::Gecko_SetJemallocThreadLocalArena(false);
+    }
+}
+
+impl StyleThreadPool {
+    
+    pub fn shutdown(&self) {
+        let _ = self.style_thread_pool.write().take();
+    }
+
+    
+    
+    
+    
+    pub fn pool(&self) -> RwLockReadGuard<Option<rayon::ThreadPool>> {
+        self.style_thread_pool.read()
     }
 }
 
@@ -113,10 +132,11 @@ lazy_static! {
         };
 
         StyleThreadPool {
-            num_threads: num_threads,
-            style_thread_pool: pool,
+            num_threads,
+            style_thread_pool: RwLock::new(pool),
         }
     };
+
     /// Global style data
     pub static ref GLOBAL_STYLE_DATA: GlobalStyleData = GlobalStyleData {
         shared_lock: SharedRwLock::new_leaked(),

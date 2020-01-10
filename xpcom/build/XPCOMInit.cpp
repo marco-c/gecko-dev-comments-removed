@@ -88,6 +88,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/CountingAllocatorBase.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/ServoStyleConsts.h"
 
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 
@@ -769,7 +770,19 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 
   GkRust_Shutdown();
 
+#ifdef NS_FREE_PERMANENT_DATA
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Servo_ShutdownThreadPool();
   NS_ShutdownAtomTable();
+#endif
 
   NS_IF_RELEASE(gDebug);
 
