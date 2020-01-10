@@ -234,6 +234,8 @@ pref("browser.download.forbid_open_with", false);
 pref("dom.registerProtocolHandler.insecure.enabled", false);
 
 
+pref("dom.indexedDB.enabled", true);
+
 pref("dom.indexedDB.experimental", false);
 
 pref("dom.indexedDB.logging.enabled", true);
@@ -829,7 +831,6 @@ pref("devtools.recordreplay.allowRepaintFailures", true);
 pref("devtools.recordreplay.includeSystemScripts", false);
 pref("devtools.recordreplay.logging", false);
 pref("devtools.recordreplay.loggingFull", false);
-pref("devtools.recordreplay.fastLogpoints", false);
 
 
 pref("view_source.syntax_highlight", true);
@@ -4642,6 +4643,9 @@ pref("dom.datatransfer.mozAtAPIs", false);
 pref("fission.rebuild_frameloaders_on_remoteness_change", false);
 
 
+pref("fission.sessionHistoryInParent", true);
+
+
 
 
 
@@ -4850,12 +4854,6 @@ pref("devtools.errorconsole.deprecation_warnings", true);
   
   pref("devtools.chrome.enabled", true, sticky);
   pref("devtools.debugger.remote-enabled", true, sticky);
-#endif
-
-#if defined(MOZ_DEV_EDITION) || defined(NIGHTLY_BUILD)
-  pref("devtools.debugger.features.watchpoints", true);
-#else
-  pref("devtools.debugger.features.watchpoints", false);
 #endif
 
 
