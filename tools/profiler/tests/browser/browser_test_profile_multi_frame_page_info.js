@@ -2,7 +2,7 @@
 
 
 
-add_task(async function test_profile_single_frame_page_info() {
+add_task(async function test_profile_multi_frame_page_info() {
   if (!AppConstants.MOZ_GECKO_PROFILER) {
     return;
   }
@@ -11,7 +11,8 @@ add_task(async function test_profile_single_frame_page_info() {
   await Services.profiler.ClearAllPages();
   startProfiler();
 
-  const url = BASE_URL + "single_frame.html";
+  
+  const url = BASE_URL + "multi_frame.html";
   let contentPid;
   await BrowserTestUtils.withNewTab(url, async function(contentBrowser) {
     contentPid = await ContentTask.spawn(contentBrowser, null, () => {
@@ -22,20 +23,29 @@ add_task(async function test_profile_single_frame_page_info() {
   const profile = await Services.profiler.getProfileDataAsync();
   Services.profiler.StopProfiler();
 
-  let pageFound = false;
+  let foundPage = 0;
   
   let contentProcess = profile.processes.find(
     p => p.threads[0].pid == contentPid
   );
   for (const page of contentProcess.pages) {
+    
     if (page.url == url) {
       Assert.equal(page.url, url);
       Assert.equal(typeof page.docshellId, "string");
       Assert.equal(typeof page.historyId, "number");
       Assert.equal(page.isSubFrame, false);
-      pageFound = true;
-      break;
+      foundPage++;
+    }
+
+    
+    if (page.url == BASE_URL + "single_frame.html") {
+      Assert.equal(page.url, BASE_URL + "single_frame.html");
+      Assert.equal(typeof page.docshellId, "string");
+      Assert.equal(typeof page.historyId, "number");
+      Assert.equal(page.isSubFrame, true);
+      foundPage++;
     }
   }
-  Assert.equal(pageFound, true);
+  Assert.equal(foundPage, 2);
 });
