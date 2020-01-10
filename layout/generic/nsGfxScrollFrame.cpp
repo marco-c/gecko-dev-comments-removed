@@ -2114,6 +2114,7 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter, bool aIsRoot)
       mSuppressScrollbarRepaints(false),
       mIsUsingMinimumScaleSize(false),
       mMinimumScaleSizeChanged(false),
+      mProcessingScrollEvent(false),
       mVelocityQueue(aOuter->PresContext()) {
   if (LookAndFeel::GetInt(LookAndFeel::eIntID_UseOverlayScrollbars) != 0) {
     mScrollbarActivity = new ScrollbarActivity(do_QueryFrame(aOuter));
@@ -5226,6 +5227,16 @@ void ScrollFrameHelper::FireScrollEvent() {
     PostScrollEvent( true);
     return;
   }
+
+  bool oldProcessing = mProcessingScrollEvent;
+  AutoWeakFrame weakFrame(mOuter);
+  auto RestoreProcessingScrollEvent = mozilla::MakeScopeExit([&] {
+    if (weakFrame.IsAlive()) {  
+      mProcessingScrollEvent = oldProcessing;
+    }
+  });
+
+  mProcessingScrollEvent = true;
 
   ActiveLayerTracker::SetCurrentScrollHandlerFrame(mOuter);
   WidgetGUIEvent event(true, eScroll, nullptr);

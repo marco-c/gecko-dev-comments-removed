@@ -205,6 +205,8 @@ class ScrollFrameHelper : public nsIReflowCallback {
     return mRestorePos != nsPoint(-1, -1);
   }
 
+  bool IsProcessingScrollEvent() const { return mProcessingScrollEvent; }
+
  protected:
   nsRect GetVisualScrollRange() const;
 
@@ -699,6 +701,9 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
   
   bool mMinimumScaleSizeChanged : 1;
+
+  
+  bool mProcessingScrollEvent : 1;
 
   mozilla::layout::ScrollVelocityQueue mVelocityQueue;
 
