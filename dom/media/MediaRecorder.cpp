@@ -449,37 +449,55 @@ nsString SelectMimeType(bool aHasVideo, bool aHasAudio,
   Maybe<MediaContainerType> constrainedType =
       MakeMediaContainerType(aConstrainedMimeType);
 
-  nsCString majorType;
-  {
-    
-    if (constrainedType) {
-      MOZ_ASSERT_IF(aHasVideo, constrainedType->Type().HasVideoMajorType());
-      MOZ_ASSERT(!constrainedType->Type().HasApplicationMajorType());
-      majorType = constrainedType->Type().AsString();
-    } else if (aHasVideo) {
-      majorType = NS_LITERAL_CSTRING(VIDEO_WEBM);
-    } else {
-      majorType = NS_LITERAL_CSTRING(AUDIO_OGG);
-    }
-  }
+  
+  
+  MOZ_ASSERT_IF(constrainedType && aHasVideo,
+                constrainedType->Type().HasVideoMajorType());
+  
+  MOZ_ASSERT_IF(constrainedType,
+                !constrainedType->Type().HasApplicationMajorType());
 
-  nsString codecs;
-  {
-    if (constrainedType && constrainedType->ExtendedType().HaveCodecs()) {
-      codecs = constrainedType->ExtendedType().Codecs().AsString();
-    } else {
-      if (aHasVideo && aHasAudio) {
-        codecs = NS_LITERAL_STRING("\"vp8, opus\"");
+  nsString result;
+  if (constrainedType && constrainedType->ExtendedType().HaveCodecs()) {
+    
+    
+    result = NS_ConvertUTF8toUTF16(constrainedType->OriginalString());
+  } else {
+    
+    
+    
+
+    
+    
+    MOZ_ASSERT_IF(constrainedType,
+                  !constrainedType->ExtendedType().HaveCodecs());
+
+    nsCString majorType;
+    {
+      if (constrainedType) {
+        
+        
+        majorType = constrainedType->Type().AsString();
       } else if (aHasVideo) {
-        codecs = NS_LITERAL_STRING("vp8");
+        majorType = NS_LITERAL_CSTRING(VIDEO_WEBM);
       } else {
-        codecs = NS_LITERAL_STRING("opus");
+        majorType = NS_LITERAL_CSTRING(AUDIO_OGG);
       }
     }
-  }
 
-  nsString result = NS_ConvertUTF8toUTF16(nsPrintfCString(
-      "%s; codecs=%s", majorType.get(), NS_ConvertUTF16toUTF8(codecs).get()));
+    nsCString codecs;
+    {
+      if (aHasVideo && aHasAudio) {
+        codecs = NS_LITERAL_CSTRING("\"vp8, opus\"");
+      } else if (aHasVideo) {
+        codecs = NS_LITERAL_CSTRING("vp8");
+      } else {
+        codecs = NS_LITERAL_CSTRING("opus");
+      }
+    }
+    result = NS_ConvertUTF8toUTF16(
+        nsPrintfCString("%s; codecs=%s", majorType.get(), codecs.get()));
+  }
 
   MOZ_ASSERT_IF(aHasAudio,
                 CanRecordAudioTrackWith(MakeMediaContainerType(result),
