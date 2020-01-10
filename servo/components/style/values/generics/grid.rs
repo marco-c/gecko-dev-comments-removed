@@ -5,7 +5,6 @@
 
 
 
-use crate::{Atom, Zero};
 use crate::parser::{Parse, ParserContext};
 use crate::values::computed::{Context, ToComputedValue};
 use crate::values::specified;
@@ -13,16 +12,8 @@ use crate::values::specified::grid::parse_line_names;
 use crate::values::{CSSFloat, CustomIdent};
 use cssparser::Parser;
 use std::fmt::{self, Write};
-use std::{cmp, mem, usize};
+use std::{mem, usize};
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
-
-
-
-
-
-pub const MIN_GRID_LINE: i32 = -10000;
-
-pub const MAX_GRID_LINE: i32 = 10000;
 
 
 
@@ -38,48 +29,36 @@ pub const MAX_GRID_LINE: i32 = 10000;
     ToResolvedValue,
     ToShmem,
 )]
-#[repr(C)]
-pub struct GenericGridLine<Integer> {
-    
-    
-    
-    pub ident: Atom,
-    
-    
-    
-    
-    
-    
-    
-    pub line_num: Integer,
+pub struct GridLine<Integer> {
     
     pub is_span: bool,
+    
+    
+    
+    pub ident: Option<CustomIdent>,
+    
+    pub line_num: Option<Integer>,
 }
 
-pub use self::GenericGridLine as GridLine;
-
-impl<Integer> GridLine<Integer>
-where
-    Integer: Zero,
-{
+impl<Integer> GridLine<Integer> {
     
     pub fn auto() -> Self {
         Self {
             is_span: false,
-            line_num: Zero::zero(),
-            ident: atom!(""),
+            line_num: None,
+            ident: None,
         }
     }
 
     
     pub fn is_auto(&self) -> bool {
-        self.ident == atom!("") && self.line_num.is_zero() && !self.is_span
+        self.ident.is_none() && self.line_num.is_none() && !self.is_span
     }
 }
 
 impl<Integer> ToCss for GridLine<Integer>
 where
-    Integer: ToCss + Zero,
+    Integer: ToCss,
 {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
@@ -93,18 +72,18 @@ where
             dest.write_str("span")?;
         }
 
-        if !self.line_num.is_zero() {
+        if let Some(ref i) = self.line_num {
             if self.is_span {
                 dest.write_str(" ")?;
             }
-            self.line_num.to_css(dest)?;
+            i.to_css(dest)?;
         }
 
-        if self.ident != atom!("") {
-            if self.is_span || !self.line_num.is_zero() {
+        if let Some(ref s) = self.ident {
+            if self.is_span || self.line_num.is_some() {
                 dest.write_str(" ")?;
             }
-            CustomIdent(self.ident.clone()).to_css(dest)?;
+            s.to_css(dest)?;
         }
 
         Ok(())
@@ -135,26 +114,25 @@ impl Parse for GridLine<specified::Integer> {
                     return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
 
-                if !grid_line.line_num.is_zero() || grid_line.ident != atom!("") {
+                if grid_line.line_num.is_some() || grid_line.ident.is_some() {
                     val_before_span = true;
                 }
 
                 grid_line.is_span = true;
             } else if let Ok(i) = input.try(|i| specified::Integer::parse(context, i)) {
                 
-                let value = i.value();
-                if value == 0 || val_before_span || !grid_line.line_num.is_zero() {
+                if i.value() == 0 || val_before_span || grid_line.line_num.is_some() {
                     return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
 
-                grid_line.line_num = specified::Integer::new(cmp::max(MIN_GRID_LINE, cmp::min(value, MAX_GRID_LINE)));
+                grid_line.line_num = Some(i);
             } else if let Ok(name) = input.try(|i| i.expect_ident_cloned()) {
-                if val_before_span || grid_line.ident != atom!("") {
+                if val_before_span || grid_line.ident.is_some() {
                     return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
                 
                 
-                grid_line.ident = CustomIdent::from_ident(location, &name, &["auto"])?.0;
+                grid_line.ident = Some(CustomIdent::from_ident(location, &name, &["auto"])?);
             } else {
                 break;
             }
@@ -165,12 +143,12 @@ impl Parse for GridLine<specified::Integer> {
         }
 
         if grid_line.is_span {
-            if !grid_line.line_num.is_zero() {
-                if grid_line.line_num.value() <= 0 {
+            if let Some(i) = grid_line.line_num {
+                if i.value() <= 0 {
                     
                     return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
-            } else if grid_line.ident == atom!("") {
+            } else if grid_line.ident.is_none() {
                 
                 return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
             }

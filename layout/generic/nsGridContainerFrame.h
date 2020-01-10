@@ -286,6 +286,9 @@ class nsGridContainerFrame final : public nsContainerFrame {
   nsGridContainerFrame* ParentGridContainerForSubgrid() const;
 
  protected:
+  static const uint32_t kAutoLine;
+  
+  static const uint32_t kTranslatedMaxLine;
   typedef mozilla::LogicalPoint LogicalPoint;
   typedef mozilla::LogicalRect LogicalRect;
   typedef mozilla::LogicalSize LogicalSize;
