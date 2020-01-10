@@ -2,11 +2,7 @@
 <html  lang="en" >
 <head>
 <meta charset="utf-8">
-<title>shaping: isolation, auto</title>
-<meta name="assert" content="Shaping MUST be broken across inline box boundaries when isolation occurs.">
-<link rel="author" title="Richard Ishida" href="mailto:ishida@w3.org">
-<link rel="help" href="https://drafts.csswg.org/css-text/#boundary-shaping">
-<link rel="match" href="reference/shaping-012-ref.html">
+<title>reference</title>
 <style type="text/css">
 @font-face {
     font-family: 'csstest_noto';
@@ -19,11 +15,7 @@
 <body>
 <p class="instructions">Test passes if the three Arabic characters in each box DON'T join, making the two boxes identical.</p>
 
-<div class="test" lang="ar" dir="rtl">ع<span dir="auto">ع</span>ع</div>
-<div class="ref" lang="ar" dir="rtl">ع&zwnj;ع&zwnj;ع</div>
-
-
-
-
+<div class="ref" lang="ar" dir="rtl">ععع</div>
+<div class="ref" lang="ar" dir="rtl">ععع</div>
 </body>
 </html>
