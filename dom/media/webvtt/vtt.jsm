@@ -1179,73 +1179,82 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     rootOfCues.style.bottom = "0";
     overlay.appendChild(rootOfCues);
 
-    let boxPositions = [],
+    if (divState == DIV_COMPUTING_STATE.REUSE_AND_CLEAR) {
+      LOG(`clear display but reuse cues' display state.`);
+      for (let cue of cues) {
+        rootOfCues.appendChild(cue.displayState);
+      }
+    } else if (divState == DIV_COMPUTING_STATE.COMPUTE_AND_CLEAR) {
+      LOG(`clear display and recompute cues' display state.`);
+      let boxPositions = [],
         containerBox = new BoxPosition(rootOfCues);
 
-    let styleBox, cue, controlBarBox;
-    if (controlBarShown) {
-      controlBarBox = new BoxPosition(controlBar);
+      let styleBox, cue, controlBarBox;
+      if (controlBarShown) {
+        controlBarBox = new BoxPosition(controlBar);
+        
+        boxPositions.push(controlBarBox);
+      }
+
       
-      boxPositions.push(controlBarBox);
-    }
+      
+      let regionNodeBoxes = {};
+      let regionNodeBox;
 
-    
-    
-    let regionNodeBoxes = {};
-    let regionNodeBox;
+      LOG(`lastDisplayedCueNums=${lastDisplayedCueNums}, currentCueNums=${cues.length}`);
+      lastDisplayedCueNums = cues.length;
+      for (let i = 0; i < cues.length; i++) {
+        cue = cues[i];
+        if (cue.region != null) {
+         
+          styleBox = new RegionCueStyleBox(window, cue);
 
-    LOG(`=== processCues, ` +
-        `lastDisplayedCueNums=${lastDisplayedCueNums}, currentCueNums=${cues.length} ===`);
-    lastDisplayedCueNums = cues.length;
-    for (let i = 0; i < cues.length; i++) {
-      cue = cues[i];
-      if (cue.region != null) {
-       
-        styleBox = new RegionCueStyleBox(window, cue);
-
-        if (!regionNodeBoxes[cue.region.id]) {
-          
-          
-          let adjustContainerBox = new BoxPosition(rootOfCues);
-          if (controlBarShown) {
-            adjustContainerBox.height -= controlBarBox.height;
-            adjustContainerBox.bottom += controlBarBox.height;
+          if (!regionNodeBoxes[cue.region.id]) {
+            
+            
+            let adjustContainerBox = new BoxPosition(rootOfCues);
+            if (controlBarShown) {
+              adjustContainerBox.height -= controlBarBox.height;
+              adjustContainerBox.bottom += controlBarBox.height;
+            }
+            regionNodeBox = new RegionNodeBox(window, cue.region, adjustContainerBox);
+            regionNodeBoxes[cue.region.id] = regionNodeBox;
           }
-          regionNodeBox = new RegionNodeBox(window, cue.region, adjustContainerBox);
-          regionNodeBoxes[cue.region.id] = regionNodeBox;
-        }
-        
-        let currentRegionBox = regionNodeBoxes[cue.region.id];
-        let currentRegionNodeDiv = currentRegionBox.div;
-        
-        
-        
-        if (cue.region.scroll == "up" && currentRegionNodeDiv.childElementCount > 0) {
-          styleBox.div.style.transitionProperty = "top";
-          styleBox.div.style.transitionDuration = "0.433s";
-        }
-
-        currentRegionNodeDiv.appendChild(styleBox.div);
-        rootOfCues.appendChild(currentRegionNodeDiv);
-        cue.displayState = styleBox.div;
-        boxPositions.push(new BoxPosition(currentRegionBox));
-      } else {
-        
-        styleBox = new CueStyleBox(window, cue, containerBox);
-        rootOfCues.appendChild(styleBox.div);
-
-        
-        
-        
-        let cueBox = adjustBoxPosition(styleBox, containerBox, controlBarBox, boxPositions);
-        if (cueBox) {
+          
+          let currentRegionBox = regionNodeBoxes[cue.region.id];
+          let currentRegionNodeDiv = currentRegionBox.div;
           
           
+          
+          if (cue.region.scroll == "up" && currentRegionNodeDiv.childElementCount > 0) {
+            styleBox.div.style.transitionProperty = "top";
+            styleBox.div.style.transitionDuration = "0.433s";
+          }
+
+          currentRegionNodeDiv.appendChild(styleBox.div);
+          rootOfCues.appendChild(currentRegionNodeDiv);
           cue.displayState = styleBox.div;
-          boxPositions.push(cueBox);
-          LOG(`cue ${i}, ` + cueBox.getBoxInfoInChars());
+          boxPositions.push(new BoxPosition(currentRegionBox));
+        } else {
+          
+          styleBox = new CueStyleBox(window, cue, containerBox);
+          rootOfCues.appendChild(styleBox.div);
+
+          
+          
+          
+          let cueBox = adjustBoxPosition(styleBox, containerBox, controlBarBox, boxPositions);
+          if (cueBox) {
+            
+            
+            cue.displayState = styleBox.div;
+            boxPositions.push(cueBox);
+            LOG(`cue ${i}, ` + cueBox.getBoxInfoInChars());
+          }
         }
       }
+    } else {
+      LOG(`[ERROR] unknown div computing state`);
     }
   };
 
