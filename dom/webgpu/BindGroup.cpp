@@ -3,18 +3,17 @@
 
 
 
-#include "mozilla/dom/WebGPUBinding.h"
 #include "BindGroup.h"
 
 #include "Device.h"
+#include "mozilla/dom/WebGPUBinding.h"
 
 namespace mozilla {
 namespace webgpu {
 
 BindGroup::~BindGroup() = default;
 
-GPU_IMPL_CYCLE_COLLECTION(BindGroup, mParent)
-GPU_IMPL_JS_WRAP(BindGroup)
+WEBGPU_IMPL_GOOP_0(BindGroup)
 
 }  
 }  

@@ -3,7 +3,7 @@
 
 
 
-#include "ShaderModule.h"
+#include "AttachmentState.h"
 
 #include "Device.h"
 #include "mozilla/dom/WebGPUBinding.h"
@@ -11,9 +11,9 @@
 namespace mozilla {
 namespace webgpu {
 
-ShaderModule::~ShaderModule() = default;
+AttachmentState::~AttachmentState() = default;
 
-WEBGPU_IMPL_GOOP_0(ShaderModule)
+WEBGPU_IMPL_GOOP_0(AttachmentState)
 
 }  
 }  

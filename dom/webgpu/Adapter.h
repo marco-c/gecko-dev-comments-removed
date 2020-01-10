@@ -3,8 +3,8 @@
 
 
 
-#ifndef GPU_Adapter_H_
-#define GPU_Adapter_H_
+#ifndef WEBGPU_Adapter_H_
+#define WEBGPU_Adapter_H_
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "nsString.h"
@@ -12,20 +12,18 @@
 
 namespace mozilla {
 namespace dom {
-class Promise;
-struct GPUDeviceDescriptor;
-struct GPUExtensions;
-struct GPUFeatures;
+struct WebGPUDeviceDescriptor;
+struct WebGPUExtensions;
+struct WebGPUFeatures;
 }  
 
 namespace webgpu {
 class Device;
 class Instance;
 
-class Adapter final : public ObjectBase, public ChildOf<Instance> {
+class Adapter final : public ChildOf<Instance> {
  public:
-  GPU_DECL_CYCLE_COLLECTION(Adapter)
-  GPU_DECL_JS_WRAP(Adapter)
+  WEBGPU_DECL_GOOP(Adapter)
 
   const nsString mName;
 
@@ -35,6 +33,11 @@ class Adapter final : public ObjectBase, public ChildOf<Instance> {
 
  public:
   void GetName(nsString& out) const { out = mName; }
+
+  void Extensions(dom::WebGPUExtensions& out) const;
+  void Features(dom::WebGPUFeatures& out) const;
+  already_AddRefed<Device> CreateDevice(
+      const dom::WebGPUDeviceDescriptor& desc) const;
 };
 
 }  

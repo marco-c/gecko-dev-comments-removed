@@ -3,29 +3,35 @@
 
 
 
-#ifndef GPU_Queue_H_
-#define GPU_Queue_H_
+#ifndef WEBGPU_Queue_H_
+#define WEBGPU_Queue_H_
 
 #include "nsWrapperCache.h"
 #include "ObjectModel.h"
 
 namespace mozilla {
+namespace dom {
+template <typename T>
+class Sequence;
+}  
+
 namespace webgpu {
 
 class CommandBuffer;
 class Device;
 class Fence;
 
-class Queue final : public ObjectBase, public ChildOf<Device> {
+class Queue final : public ChildOf<Device> {
  public:
-  GPU_DECL_CYCLE_COLLECTION(Queue)
-  GPU_DECL_JS_WRAP(Queue)
+  WEBGPU_DECL_GOOP(Queue)
 
  private:
   Queue() = delete;
   virtual ~Queue();
 
  public:
+  void Submit(const dom::Sequence<OwningNonNull<CommandBuffer>>& buffers) const;
+  already_AddRefed<Fence> InsertFence() const;
 };
 
 }  

@@ -3,18 +3,17 @@
 
 
 
-#include "mozilla/dom/WebGPUBinding.h"
 #include "PipelineLayout.h"
 
 #include "Device.h"
+#include "mozilla/dom/WebGPUBinding.h"
 
 namespace mozilla {
 namespace webgpu {
 
 PipelineLayout::~PipelineLayout() = default;
 
-GPU_IMPL_CYCLE_COLLECTION(PipelineLayout, mParent)
-GPU_IMPL_JS_WRAP(PipelineLayout)
+WEBGPU_IMPL_GOOP_0(PipelineLayout)
 
 }  
 }  

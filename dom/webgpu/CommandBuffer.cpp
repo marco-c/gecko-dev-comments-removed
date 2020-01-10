@@ -3,18 +3,17 @@
 
 
 
-#include "mozilla/dom/WebGPUBinding.h"
 #include "CommandBuffer.h"
 
 #include "Device.h"
+#include "mozilla/dom/WebGPUBinding.h"
 
 namespace mozilla {
 namespace webgpu {
 
 CommandBuffer::~CommandBuffer() = default;
 
-GPU_IMPL_CYCLE_COLLECTION(CommandBuffer, mParent)
-GPU_IMPL_JS_WRAP(CommandBuffer)
+WEBGPU_IMPL_GOOP_0(CommandBuffer)
 
 }  
 }  

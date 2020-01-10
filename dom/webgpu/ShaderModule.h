@@ -3,8 +3,8 @@
 
 
 
-#ifndef GPU_ShaderModule_H_
-#define GPU_ShaderModule_H_
+#ifndef WEBGPU_ShaderModule_H_
+#define WEBGPU_ShaderModule_H_
 
 #include "nsWrapperCache.h"
 #include "ObjectModel.h"
@@ -14,10 +14,9 @@ namespace webgpu {
 
 class Device;
 
-class ShaderModule final : public ObjectBase, public ChildOf<Device> {
+class ShaderModule final : public ChildOf<Device> {
  public:
-  GPU_DECL_CYCLE_COLLECTION(ShaderModule)
-  GPU_DECL_JS_WRAP(ShaderModule)
+  WEBGPU_DECL_GOOP(ShaderModule)
 
  private:
   ShaderModule() = delete;

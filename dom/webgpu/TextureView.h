@@ -3,8 +3,8 @@
 
 
 
-#ifndef GPU_TextureView_H_
-#define GPU_TextureView_H_
+#ifndef WEBGPU_TEXTURE_VIEW_H_
+#define WEBGPU_TEXTURE_VIEW_H_
 
 #include "nsWrapperCache.h"
 #include "ObjectModel.h"
@@ -14,10 +14,9 @@ namespace webgpu {
 
 class Device;
 
-class TextureView final : public ObjectBase, public ChildOf<Device> {
+class TextureView final : public ChildOf<Device> {
  public:
-  GPU_DECL_CYCLE_COLLECTION(TextureView)
-  GPU_DECL_JS_WRAP(TextureView)
+  WEBGPU_DECL_GOOP(TextureView)
 
  private:
   TextureView() = delete;

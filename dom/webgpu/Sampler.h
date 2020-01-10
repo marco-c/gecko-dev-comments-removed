@@ -3,8 +3,8 @@
 
 
 
-#ifndef GPU_SAMPLER_H_
-#define GPU_SAMPLER_H_
+#ifndef WEBGPU_SAMPLER_H_
+#define WEBGPU_SAMPLER_H_
 
 #include "nsWrapperCache.h"
 #include "ObjectModel.h"
@@ -14,10 +14,9 @@ namespace webgpu {
 
 class Device;
 
-class Sampler final : public ObjectBase, public ChildOf<Device> {
+class Sampler final : public ChildOf<Device> {
  public:
-  GPU_DECL_CYCLE_COLLECTION(Sampler)
-  GPU_DECL_JS_WRAP(Sampler)
+  WEBGPU_DECL_GOOP(Sampler)
 
  private:
   Sampler() = delete;

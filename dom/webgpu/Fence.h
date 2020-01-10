@@ -3,8 +3,8 @@
 
 
 
-#ifndef GPU_Fence_H_
-#define GPU_Fence_H_
+#ifndef WEBGPU_Fence_H_
+#define WEBGPU_Fence_H_
 
 #include "nsWrapperCache.h"
 #include "ObjectModel.h"
@@ -17,16 +17,17 @@ namespace webgpu {
 
 class Device;
 
-class Fence final : public ObjectBase, public ChildOf<Device> {
+class Fence final : public ChildOf<Device> {
  public:
-  GPU_DECL_CYCLE_COLLECTION(Fence)
-  GPU_DECL_JS_WRAP(Fence)
+  WEBGPU_DECL_GOOP(Fence)
 
  private:
   Fence() = delete;
   virtual ~Fence();
 
  public:
+  bool Wait(double milliseconds) const;
+  already_AddRefed<dom::Promise> Promise() const;
 };
 
 }  
