@@ -59,6 +59,11 @@ ChromeUtils.defineModuleGetter(
   "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "ClientID",
+  "resource://gre/modules/ClientID.jsm"
+);
 
 XPCOMUtils.defineLazyServiceGetters(this, {
   gUUIDGenerator: ["@mozilla.org/uuid-generator;1", "nsIUUIDGenerator"],
@@ -71,7 +76,6 @@ XPCOMUtils.defineLazyServiceGetters(this, {
 const ACTIVITY_STREAM_ID = "activity-stream";
 const ACTIVITY_STREAM_ENDPOINT_PREF =
   "browser.newtabpage.activity-stream.telemetry.ping.endpoint";
-const ACTIVITY_STREAM_ROUTER_ID = "activity-stream-router";
 const DOMWINDOW_OPENED_TOPIC = "domwindowopened";
 const DOMWINDOW_UNLOAD_TOPIC = "unload";
 const TAB_PINNED_EVENT = "TabPinned";
@@ -94,6 +98,10 @@ const EVENTS_TELEMETRY_PREF = "telemetry.ut.events";
 const STRUCTURED_INGESTION_TELEMETRY_PREF = "telemetry.structuredIngestion";
 const STRUCTURED_INGESTION_ENDPOINT_PREF =
   "telemetry.structuredIngestion.endpoint";
+
+
+const STRUCTURED_INGESTION_NAMESPACE_AS = "activity-stream";
+const STRUCTURED_INGESTION_NAMESPACE_MS = "messaging-system";
 
 this.TelemetryFeed = class TelemetryFeed {
   constructor(options) {
@@ -120,6 +128,13 @@ this.TelemetryFeed = class TelemetryFeed {
 
   get structuredIngestionEndpointBase() {
     return this._prefs.get(STRUCTURED_INGESTION_ENDPOINT_PREF);
+  }
+
+  get telemetryClientId() {
+    Object.defineProperty(this, "telemetryClientId", {
+      value: ClientID.getClientID(),
+    });
+    return this.telemetryClientId;
   }
 
   init() {
@@ -248,19 +263,6 @@ this.TelemetryFeed = class TelemetryFeed {
       }),
     });
     return this.pingCentre;
-  }
-
-  
-
-
-
-
-
-  get pingCentreForASRouter() {
-    Object.defineProperty(this, "pingCentreForASRouter", {
-      value: new PingCentre({ topic: ACTIVITY_STREAM_ROUTER_ID }),
-    });
-    return this.pingCentreForASRouter;
   }
 
   
@@ -419,7 +421,12 @@ this.TelemetryFeed = class TelemetryFeed {
         tiles: impressionSets[source],
       });
       this.sendEvent(payload);
-      this.sendStructuredIngestionEvent(payload, "impression-stats", "1");
+      this.sendStructuredIngestionEvent(
+        payload,
+        STRUCTURED_INGESTION_NAMESPACE_AS,
+        "impression-stats",
+        "1"
+      );
     });
   }
 
@@ -447,7 +454,12 @@ this.TelemetryFeed = class TelemetryFeed {
         loaded: tiles.length,
       });
       this.sendEvent(payload);
-      this.sendStructuredIngestionEvent(payload, "impression-stats", "1");
+      this.sendStructuredIngestionEvent(
+        payload,
+        STRUCTURED_INGESTION_NAMESPACE_AS,
+        "impression-stats",
+        "1"
+      );
     });
   }
 
@@ -510,7 +522,6 @@ this.TelemetryFeed = class TelemetryFeed {
   createSpocsFillPing(data) {
     return Object.assign(this.createPing(null), data, {
       impression_id: this._impressionId,
-      client_id: "n/a",
       session_id: "n/a",
     });
   }
@@ -552,20 +563,31 @@ this.TelemetryFeed = class TelemetryFeed {
 
 
 
-  createASRouterEvent(action) {
-    const ping = {
-      client_id: "n/a",
+  async createASRouterEvent(action) {
+    let event = {
+      ...action.data,
       addon_version: Services.appinfo.appBuildID,
       locale: Services.locale.appLocaleAsLangTag,
-      impression_id: this._impressionId,
     };
-    const event = Object.assign(ping, action.data);
-    if (event.action === "cfr_user_event") {
-      return this.applyCFRPolicy(event);
-    } else if (event.action === "snippets_user_event") {
-      return this.applySnippetsPolicy(event);
-    } else if (event.action === "onboarding_user_event") {
-      return this.applyOnboardingPolicy(event);
+    if (event.event_context && typeof event.event_context === "object") {
+      event.event_context = JSON.stringify(event.event_context);
+    }
+    switch (event.action) {
+      case "cfr_user_event":
+        event = await this.applyCFRPolicy(event);
+        break;
+      case "snippets_user_event":
+        event = await this.applySnippetsPolicy(event);
+        break;
+      case "onboarding_user_event":
+        event = await this.applyOnboardingPolicy(event);
+        break;
+      case "asrouter_undesired_event":
+        event = this.applyUndesiredEventPolicy(event);
+        break;
+      default:
+        event = { ping: event };
+        break;
     }
     return event;
   }
@@ -576,44 +598,44 @@ this.TelemetryFeed = class TelemetryFeed {
 
 
 
-  applyCFRPolicy(ping) {
+  async applyCFRPolicy(ping) {
     if (
       UpdateUtils.getUpdateChannel(true) === "release" &&
       !this.isInCFRCohort
     ) {
-      ping.message_id = ping.bucket_id || "n/a";
-      ping.client_id = "n/a";
+      ping.message_id = "n/a";
       ping.impression_id = this._impressionId;
     } else {
-      ping.impression_id = "n/a";
-      
-      delete ping.client_id;
+      ping.client_id = await this.telemetryClientId;
     }
-    
-    delete ping.bucket_id;
-    return ping;
+    delete ping.action;
+    return { ping, pingType: "cfr" };
   }
 
   
 
 
 
-  applySnippetsPolicy(ping) {
-    
-    delete ping.client_id;
-    ping.impression_id = "n/a";
-    return ping;
+  async applySnippetsPolicy(ping) {
+    ping.client_id = await this.telemetryClientId;
+    delete ping.action;
+    return { ping, pingType: "snippets" };
   }
 
   
 
 
 
-  applyOnboardingPolicy(ping) {
-    
-    delete ping.client_id;
-    ping.impression_id = "n/a";
-    return ping;
+  async applyOnboardingPolicy(ping) {
+    ping.client_id = await this.telemetryClientId;
+    delete ping.action;
+    return { ping, pingType: "onboarding" };
+  }
+
+  applyUndesiredEventPolicy(ping) {
+    ping.impression_id = this._impressionId;
+    delete ping.action;
+    return { ping, pingType: "undesired-events" };
   }
 
   sendEvent(event_object) {
@@ -637,30 +659,23 @@ this.TelemetryFeed = class TelemetryFeed {
 
 
 
-  _generateStructuredIngestionEndpoint(pingType, version) {
+
+  _generateStructuredIngestionEndpoint(namespace, pingType, version) {
     const uuid = gUUIDGenerator.generateUUID().toString();
     
     
     const docID = uuid.slice(1, -1);
-    const extension = `${pingType}/${version}/${docID}`;
+    const extension = `${namespace}/${pingType}/${version}/${docID}`;
     return `${this.structuredIngestionEndpointBase}/${extension}`;
   }
 
-  sendStructuredIngestionEvent(event_object, pingType, version) {
+  sendStructuredIngestionEvent(eventObject, namespace, pingType, version) {
     if (this.telemetryEnabled && this.structuredIngestionTelemetryEnabled) {
       this.pingCentre.sendStructuredIngestionPing(
-        event_object,
-        this._generateStructuredIngestionEndpoint(pingType, version),
+        eventObject,
+        this._generateStructuredIngestionEndpoint(namespace, pingType, version),
         { filter: ACTIVITY_STREAM_ID }
       );
-    }
-  }
-
-  sendASRouterEvent(event_object) {
-    if (this.telemetryEnabled) {
-      this.pingCentreForASRouter.sendPing(event_object, {
-        filter: ACTIVITY_STREAM_ID,
-      });
     }
   }
 
@@ -670,7 +685,12 @@ this.TelemetryFeed = class TelemetryFeed {
       action.data
     );
     this.sendEvent(payload);
-    this.sendStructuredIngestionEvent(payload, "impression-stats", "1");
+    this.sendStructuredIngestionEvent(
+      payload,
+      STRUCTURED_INGESTION_NAMESPACE_AS,
+      "impression-stats",
+      "1"
+    );
   }
 
   handleUserEvent(action) {
@@ -679,9 +699,18 @@ this.TelemetryFeed = class TelemetryFeed {
     this.sendUTEvent(userEvent, this.utEvents.sendUserEvent);
   }
 
-  handleASRouterUserEvent(action) {
-    let event = this.createASRouterEvent(action);
-    this.sendASRouterEvent(event);
+  async handleASRouterUserEvent(action) {
+    const { ping, pingType } = await this.createASRouterEvent(action);
+    if (!pingType) {
+      Cu.reportError("Unknown ping type for ASRouter telemetry");
+      return;
+    }
+    this.sendStructuredIngestionEvent(
+      ping,
+      STRUCTURED_INGESTION_NAMESPACE_MS,
+      pingType,
+      "1"
+    );
   }
 
   handleUndesiredEvent(action) {
@@ -904,7 +933,12 @@ this.TelemetryFeed = class TelemetryFeed {
 
   handleDiscoveryStreamSpocsFill(data) {
     const payload = this.createSpocsFillPing(data);
-    this.sendStructuredIngestionEvent(payload, "spoc-fills", "1");
+    this.sendStructuredIngestionEvent(
+      payload,
+      STRUCTURED_INGESTION_NAMESPACE_AS,
+      "spoc-fills",
+      "1"
+    );
   }
 
   
@@ -975,9 +1009,6 @@ this.TelemetryFeed = class TelemetryFeed {
     }
     if (Object.prototype.hasOwnProperty.call(this, "utEvents")) {
       this.utEvents.uninit();
-    }
-    if (Object.prototype.hasOwnProperty.call(this, "pingCentreForASRouter")) {
-      this.pingCentreForASRouter.uninit();
     }
 
     

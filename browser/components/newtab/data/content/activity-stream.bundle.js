@@ -2009,7 +2009,7 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
 
   sendClick(event) {
     const metric = {
-      value: event.target.dataset.metric,
+      event_context: event.target.dataset.metric,
       
       
       id: "NEWTAB_FOOTER_BAR_CONTENT"
@@ -8956,7 +8956,6 @@ var ModalOverlay = __webpack_require__(21);
 
 
 
-
 class DSPrivacyModal_DSPrivacyModal extends external_React_default.a.PureComponent {
   constructor(props) {
     super(props);
@@ -8988,12 +8987,11 @@ class DSPrivacyModal_DSPrivacyModal extends external_React_default.a.PureCompone
       "data-l10n-id": "newtab-privacy-modal-header"
     }), external_React_default.a.createElement("p", {
       "data-l10n-id": "newtab-privacy-modal-paragraph"
-    }), external_React_default.a.createElement(SafeAnchor_SafeAnchor, {
-      onLinkClick: this.onLinkClick,
-      url: "https://www.mozilla.org/en-US/privacy/firefox/"
-    }, external_React_default.a.createElement("span", {
-      "data-l10n-id": "newtab-privacy-modal-link"
-    }))), external_React_default.a.createElement("section", {
+    }), external_React_default.a.createElement("a", {
+      "data-l10n-id": "newtab-privacy-modal-link",
+      onClick: this.onLinkClick,
+      href: "https://www.mozilla.org/en-US/privacy/firefox/"
+    })), external_React_default.a.createElement("section", {
       className: "actions"
     }, external_React_default.a.createElement("button", {
       className: "done",
