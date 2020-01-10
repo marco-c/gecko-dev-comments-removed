@@ -918,14 +918,6 @@ impl TextureCache {
 
     
     
-    pub fn get_allocated_size(&self, handle: &TextureCacheHandle) -> Option<usize> {
-        self.entries.get_opt(handle).map(|entry| {
-            (entry.format.bytes_per_pixel() * entry.size.area()) as usize
-        })
-    }
-
-    
-    
     
     
     
