@@ -2220,7 +2220,7 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
         sendUserActionTelemetry: this.sendUserActionTelemetry,
         executeAction: ASRouterUtils.executeAction,
         dispatch: this.props.dispatch,
-        onBlock: this.onBlockById(this.state.message.id),
+        onBlockById: ASRouterUtils.blockById,
         onDismiss: this.onDismissById(this.state.message.id),
         fxaEndpoint: this.props.fxaEndpoint,
         fetchFlowParams: this.fetchFlowParams
@@ -13545,7 +13545,9 @@ var addUtmParams = __webpack_require__(22);
 
 
 
+ 
 
+const TRANSITION_LENGTH = 500;
 const FLUENT_FILES = ["branding/brand.ftl", "browser/branding/brandings.ftl", "browser/branding/sync-brand.ftl", "browser/newtab/onboarding.ftl"];
 const helpers = {
   selectInterruptAndTriplets(message = {}) {
@@ -13673,9 +13675,9 @@ class FirstRun_FirstRun extends external_React_default.a.PureComponent {
       isTripletsContainerVisible: false
     }); 
 
-    if (this.props.message.template === "extended_triplets") {
-      this.props.onBlock();
-    }
+    setTimeout(() => {
+      this.props.onBlockById("EXTENDED_TRIPLETS_1");
+    }, TRANSITION_LENGTH);
   }
 
   render() {
@@ -13704,6 +13706,7 @@ class FirstRun_FirstRun extends external_React_default.a.PureComponent {
       onNextScene: this.closeInterrupt,
       UTMTerm: UTMTerm,
       sendUserActionTelemetry: sendUserActionTelemetry,
+      executeAction: executeAction,
       dispatch: dispatch,
       flowParams: flowParams,
       onDismiss: this.closeInterrupt,

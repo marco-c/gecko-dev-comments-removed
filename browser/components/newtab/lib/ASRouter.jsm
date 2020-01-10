@@ -94,6 +94,11 @@ const TRAILHEAD_CONFIG = {
   },
   LOCALES: ["en-US", "en-GB", "en-CA", "de", "de-DE", "fr", "fr-FR"],
   EXPERIMENT_RATIOS: [["", 0], ["interrupts", 1], ["triplets", 3]],
+  
+  
+  
+  EXPERIMENT_RATIOS_FOR_EXTENDED_TRIPLETS: [["control", 99], ["holdback", 1]],
+  EXTENDED_TRIPLETS_EXPERIMENT_PREF: "trailhead.extendedTriplets.experiment",
 };
 
 const INCOMING_MESSAGE_NAME = "ASRouter:child-to-parent";
@@ -490,6 +495,8 @@ class _ASRouter {
       trailheadTriplet: "",
       messages: [],
       errors: [],
+      extendedTripletsInitialized: false,
+      showExtendedTriplets: true,
     };
     this._triggerHandler = this._triggerHandler.bind(this);
     this._localProviders = localProviders;
@@ -986,6 +993,40 @@ class _ASRouter {
       type: at.TRAILHEAD_ENROLL_EVENT,
       data,
     });
+  }
+
+  async setupExtendedTriplets() {
+    
+    if (this.state.extendedTripletsInitialized) {
+      return;
+    }
+
+    let branch = Services.prefs.getStringPref(
+      TRAILHEAD_CONFIG.EXTENDED_TRIPLETS_EXPERIMENT_PREF,
+      ""
+    );
+    if (!branch) {
+      const { userId } = ClientEnvironment;
+      branch = await chooseBranch(
+        `${userId}-extended-triplets-experiment`,
+        TRAILHEAD_CONFIG.EXPERIMENT_RATIOS_FOR_EXTENDED_TRIPLETS
+      );
+      Services.prefs.setStringPref(
+        TRAILHEAD_CONFIG.EXTENDED_TRIPLETS_EXPERIMENT_PREF,
+        branch
+      );
+    }
+
+    
+    const experimentName = `activity-stream-extended-triplets`;
+    TelemetryEnvironment.setExperimentActive(experimentName, branch);
+
+    const state = { extendedTripletsInitialized: true };
+    
+    if (branch === "holdback") {
+      state.showExtendedTriplets = false;
+    }
+    await this.setState(state);
   }
 
   async setupTrailhead() {
@@ -1823,11 +1864,24 @@ class _ASRouter {
       }));
     } else {
       
-      message =
-        (await this.handleMessageRequest({
-          provider: "onboarding",
-          template: "extended_triplets",
-        })) || (await this.handleMessageRequest({ provider: "snippets" }));
+      message = await this.handleMessageRequest({
+        provider: "onboarding",
+        template: "extended_triplets",
+      });
+
+      
+      
+      
+      if (message) {
+        await this.setupExtendedTriplets();
+      }
+
+      
+      
+      if (!message || !this.state.showExtendedTriplets) {
+        message = await this.handleMessageRequest({ provider: "snippets" });
+      }
+
       await this.setState({ lastMessageId: message ? message.id : null });
     }
 
