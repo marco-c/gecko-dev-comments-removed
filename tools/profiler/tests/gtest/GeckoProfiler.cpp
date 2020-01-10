@@ -18,6 +18,7 @@
 #include "js/Initialization.h"
 #include "js/Printf.h"
 #include "jsapi.h"
+#include "json/json.h"
 #include "mozilla/BlocksRingBufferGeckoExtensions.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "nsIThread.h"
@@ -25,7 +26,7 @@
 
 #include "gtest/gtest.h"
 
-#include <string.h>
+#include <cstring>
 
 
 
@@ -580,15 +581,17 @@ TEST(GeckoProfiler, Markers)
   profiler_start(PROFILER_DEFAULT_ENTRIES, PROFILER_DEFAULT_INTERVAL, features,
                  filters, MOZ_ARRAY_LENGTH(filters));
 
-  profiler_tracing("A", "B", JS::ProfilingCategoryPair::OTHER, TRACING_EVENT);
-  PROFILER_TRACING("A", "C", OTHER, TRACING_INTERVAL_START);
-  PROFILER_TRACING("A", "C", OTHER, TRACING_INTERVAL_END);
+  profiler_tracing("A", "tracing event", JS::ProfilingCategoryPair::OTHER,
+                   TRACING_EVENT);
+  PROFILER_TRACING("A", "tracing start", OTHER, TRACING_INTERVAL_START);
+  PROFILER_TRACING("A", "tracing end", OTHER, TRACING_INTERVAL_END);
 
   UniqueProfilerBacktrace bt = profiler_get_backtrace();
-  profiler_tracing("B", "A", JS::ProfilingCategoryPair::OTHER, TRACING_EVENT,
+  profiler_tracing("B", "tracing event with stack",
+                   JS::ProfilingCategoryPair::OTHER, TRACING_EVENT,
                    std::move(bt));
 
-  { AUTO_PROFILER_TRACING("C", "A", OTHER); }
+  { AUTO_PROFILER_TRACING("C", "auto tracing", OTHER); }
 
   PROFILER_ADD_MARKER("M1", OTHER);
   PROFILER_ADD_MARKER_WITH_PAYLOAD("M2", OTHER, TracingMarkerPayload,
@@ -604,11 +607,11 @@ TEST(GeckoProfiler, Markers)
   }
   
   
-  ASSERT_EQ(GTestMarkerPayload::sNumCreated, 10);
-  ASSERT_EQ(GTestMarkerPayload::sNumSerialized, 10);
-  ASSERT_EQ(GTestMarkerPayload::sNumDeserialized, 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumStreamed, 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumDestroyed, 10);
+  EXPECT_EQ(GTestMarkerPayload::sNumCreated, 10);
+  EXPECT_EQ(GTestMarkerPayload::sNumSerialized, 10);
+  EXPECT_EQ(GTestMarkerPayload::sNumDeserialized, 0);
+  EXPECT_EQ(GTestMarkerPayload::sNumStreamed, 0);
+  EXPECT_EQ(GTestMarkerPayload::sNumDestroyed, 10);
 
   
   
@@ -624,8 +627,11 @@ TEST(GeckoProfiler, Markers)
   okstr1[kMax - 1] = '\0';
   okstr2[kMax - 1] = '\0';
   longstr[kMax] = '\0';
+  
   AUTO_PROFILER_LABEL_DYNAMIC_CSTR("", LAYOUT, okstr1.get());
+  
   AUTO_PROFILER_LABEL_DYNAMIC_CSTR("okstr2", LAYOUT, okstr2.get());
+  
   AUTO_PROFILER_LABEL_DYNAMIC_CSTR("", LAYOUT, longstr.get());
 
   
@@ -633,33 +639,255 @@ TEST(GeckoProfiler, Markers)
   PR_Sleep(PR_MillisecondsToInterval(500));
 
   SpliceableChunkedJSONWriter w;
-  ASSERT_TRUE(profiler_stream_json_for_this_process(w));
+  w.Start();
+  EXPECT_TRUE(profiler_stream_json_for_this_process(w));
+  w.End();
+
+  
+  
+  EXPECT_EQ(GTestMarkerPayload::sNumCreated, 10 + 0);
+  EXPECT_EQ(GTestMarkerPayload::sNumSerialized, 10 + 0);
+  EXPECT_EQ(GTestMarkerPayload::sNumDeserialized, 0 + 10);
+  EXPECT_EQ(GTestMarkerPayload::sNumStreamed, 0 + 10);
+  EXPECT_EQ(GTestMarkerPayload::sNumDestroyed, 10 + 10);
 
   UniquePtr<char[]> profile = w.WriteFunc()->CopyData();
+  ASSERT_TRUE(!!profile.get());
+
+  
+  enum State {
+    S_tracing_event,
+    S_tracing_start,
+    S_tracing_end,
+    S_tracing_event_with_stack,
+    S_tracing_auto_tracing_start,
+    S_tracing_auto_tracing_end,
+    S_M1,
+    S_tracing_M2_C,
+    S_M3,
+    S_tracing_M4_C_stack,
+    S_M5_gtest0,
+    S_M5_gtest1,
+    S_M5_gtest2,
+    S_M5_gtest3,
+    S_M5_gtest4,
+    S_M5_gtest5,
+    S_M5_gtest6,
+    S_M5_gtest7,
+    S_M5_gtest8,
+    S_M5_gtest9,
+
+    S_LAST,
+  } state = State(0);
+
+  
+  Json::Value parsedRoot;
+  Json::CharReaderBuilder builder;
+  const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+  ASSERT_TRUE(reader->parse(profile.get(), strchr(profile.get(), '\0'),
+                            &parsedRoot, nullptr));
+
+  
+  const Json::Value& root = parsedRoot;
+  ASSERT_TRUE(root.isObject());
+
+  
 
   
   
-  ASSERT_EQ(GTestMarkerPayload::sNumCreated, 10 + 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumSerialized, 10 + 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumDeserialized, 0 + 10);
-  ASSERT_EQ(GTestMarkerPayload::sNumStreamed, 0 + 10);
-  ASSERT_EQ(GTestMarkerPayload::sNumDestroyed, 10 + 10);
-  for (int i = 0; i < 10; i++) {
-    char buf[64];
-    SprintfLiteral(buf, "\"gtest-%d\"", i);
-    ASSERT_TRUE(strstr(profile.get(), buf));
+#define EXPECT_EQ_JSON(GETTER, TYPE, VALUE)  \
+  if ((GETTER).isNull()) {                   \
+    EXPECT_FALSE((GETTER).isNull());         \
+  } else if (!(GETTER).is##TYPE()) {         \
+    EXPECT_TRUE((GETTER).is##TYPE());        \
+  } else {                                   \
+    EXPECT_EQ((GETTER).as##TYPE(), (VALUE)); \
   }
 
-  
-  ASSERT_TRUE(strstr(profile.get(), okstr1.get()));
+  {
+    const Json::Value& threads = root["threads"];
+    ASSERT_TRUE(!threads.isNull());
+    ASSERT_TRUE(threads.isArray());
+    ASSERT_EQ(threads.size(), 1u);
+
+    
+
+    {
+      const Json::Value& thread0 = threads[0];
+      ASSERT_TRUE(thread0.isObject());
+
+      
+
+      
+      
+      const Json::Value& stringTable = thread0["stringTable"];
+      ASSERT_TRUE(stringTable.isArray());
+
+      
+      bool foundOkstr1 = false;
+      bool foundOkstr2 = false;
+      const std::string okstr2Label = std::string("okstr2 ") + okstr2.get();
+      bool foundTooLong = false;
+      for (const auto& s : stringTable) {
+        ASSERT_TRUE(s.isString());
+        std::string sString = s.asString();
+        if (sString == okstr1.get()) {
+          EXPECT_FALSE(foundOkstr1);
+          foundOkstr1 = true;
+        } else if (sString == okstr2Label) {
+          EXPECT_FALSE(foundOkstr2);
+          foundOkstr2 = true;
+        } else if (sString == "(too long)") {
+          EXPECT_FALSE(foundTooLong);
+          foundTooLong = true;
+        } else {
+          EXPECT_NE(sString, longstr.get());
+        }
+      }
+      EXPECT_TRUE(foundOkstr1);
+      EXPECT_TRUE(foundOkstr2);
+      EXPECT_TRUE(foundTooLong);
+
+      {
+        const Json::Value& markers = thread0["markers"];
+        ASSERT_TRUE(markers.isObject());
+
+        
+
+        {
+          const Json::Value& data = markers["data"];
+          ASSERT_TRUE(data.isArray());
+
+          
+
+          for (const Json::Value& marker : data) {
+            ASSERT_TRUE(marker.isArray());
+            ASSERT_GE(marker.size(), 3u);
+            ASSERT_LE(marker.size(), 4u);
+
+            
+
+            ASSERT_TRUE(marker[0].isUInt());  
+            const Json::Value& name = stringTable[marker[0].asUInt()];
+            ASSERT_TRUE(name.isString());
+            std::string nameString = name.asString();
+
+            EXPECT_TRUE(marker[1].isNumeric());  
+
+            EXPECT_TRUE(marker[2].isUInt());  
+
+            if (marker.size() == 3u) {
+              
+              
+              if (nameString == "M1") {
+                ASSERT_EQ(state, S_M1);
+                state = State(state + 1);
+              } else if (nameString == "M3") {
+                ASSERT_EQ(state, S_M3);
+                state = State(state + 1);
+              }
+            } else {
+              
+              
+              const Json::Value& payload = marker[3];
+              ASSERT_TRUE(payload.isObject());
+
+              
+
+              
+              const Json::Value& type = payload["type"];
+              ASSERT_TRUE(type.isString());
+              std::string typeString = type.asString();
+
+              if (nameString == "tracing event") {
+                EXPECT_EQ(state, S_tracing_event);
+                state = State(S_tracing_event + 1);
+                EXPECT_EQ(typeString, "tracing");
+                EXPECT_EQ_JSON(payload["category"], String, "A");
+                EXPECT_TRUE(payload["interval"].isNull());
+                EXPECT_TRUE(payload["stack"].isNull());
+              } else if (nameString == "tracing start") {
+                EXPECT_EQ(state, S_tracing_start);
+                state = State(S_tracing_start + 1);
+                EXPECT_EQ(typeString, "tracing");
+                EXPECT_EQ_JSON(payload["category"], String, "A");
+                EXPECT_EQ_JSON(payload["interval"], String, "start");
+                EXPECT_TRUE(payload["stack"].isNull());
+              } else if (nameString == "tracing end") {
+                EXPECT_EQ(state, S_tracing_end);
+                state = State(S_tracing_end + 1);
+                EXPECT_EQ(typeString, "tracing");
+                EXPECT_EQ_JSON(payload["category"], String, "A");
+                EXPECT_EQ_JSON(payload["interval"], String, "end");
+                EXPECT_TRUE(payload["stack"].isNull());
+              } else if (nameString == "tracing event with stack") {
+                EXPECT_EQ(state, S_tracing_event_with_stack);
+                state = State(S_tracing_event_with_stack + 1);
+                EXPECT_EQ(typeString, "tracing");
+                EXPECT_EQ_JSON(payload["category"], String, "B");
+                EXPECT_TRUE(payload["interval"].isNull());
+                EXPECT_TRUE(payload["stack"].isObject());
+              } else if (nameString == "auto tracing") {
+                switch (state) {
+                  case S_tracing_auto_tracing_start:
+                    state = State(S_tracing_auto_tracing_start + 1);
+                    EXPECT_EQ_JSON(payload["category"], String, "C");
+                    EXPECT_EQ_JSON(payload["interval"], String, "start");
+                    EXPECT_TRUE(payload["stack"].isNull());
+                    break;
+                  case S_tracing_auto_tracing_end:
+                    state = State(S_tracing_auto_tracing_end + 1);
+                    EXPECT_EQ_JSON(payload["category"], String, "C");
+                    EXPECT_EQ_JSON(payload["interval"], String, "end");
+                    ASSERT_TRUE(payload["stack"].isNull());
+                    break;
+                  default:
+                    EXPECT_TRUE(state == S_tracing_auto_tracing_start ||
+                                state == S_tracing_auto_tracing_end);
+                    break;
+                }
+              } else if (nameString == "M2") {
+                EXPECT_EQ(state, S_tracing_M2_C);
+                state = State(S_tracing_M2_C + 1);
+                EXPECT_EQ(typeString, "tracing");
+                EXPECT_EQ_JSON(payload["category"], String, "C");
+                EXPECT_TRUE(payload["interval"].isNull());
+                EXPECT_TRUE(payload["stack"].isNull());
+              } else if (nameString == "M4") {
+                EXPECT_EQ(state, S_tracing_M4_C_stack);
+                state = State(S_tracing_M4_C_stack + 1);
+                EXPECT_EQ(typeString, "tracing");
+                EXPECT_EQ_JSON(payload["category"], String, "C");
+                EXPECT_TRUE(payload["interval"].isNull());
+                EXPECT_TRUE(payload["stack"].isObject());
+              } else if (nameString == "M5") {
+                EXPECT_EQ(typeString, "gtest");
+                
+                ASSERT_EQ(payload.size(), 2u);
+                const auto itEnd = payload.end();
+                for (auto it = payload.begin(); it != itEnd; ++it) {
+                  std::string key = it.name();
+                  if (key != "type") {
+                    const Json::Value& value = *it;
+                    ASSERT_TRUE(value.isInt());
+                    int valueInt = value.asInt();
+                    
+                    EXPECT_EQ(state, State(S_M5_gtest0 + valueInt));
+                    state = State(state + 1);
+                    EXPECT_EQ(key,
+                              std::string("gtest-") + std::to_string(valueInt));
+                  }
+                }
+              }
+            }  
+          }    
+        }      
+      }        
+    }          
+  }            
 
   
-  
-  ASSERT_TRUE(strstr(profile.get(), "okstr2 bbbbbbbbb"));
-
-  
-  ASSERT_TRUE(!strstr(profile.get(), longstr.get()));
-  ASSERT_TRUE(strstr(profile.get(), "(too long)"));
+  EXPECT_EQ(state, S_LAST);
 
   Maybe<ProfilerBufferInfo> info = profiler_get_buffer_info();
   MOZ_RELEASE_ASSERT(info.isSome());
@@ -693,12 +921,13 @@ TEST(GeckoProfiler, Markers)
   profiler_stop();
 
   
-  ASSERT_EQ(GTestMarkerPayload::sNumCreated, 10 + 0 + 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumSerialized, 10 + 0 + 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumDeserialized, 0 + 10 + 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumStreamed, 0 + 10 + 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumDestroyed, 10 + 10 + 0);
+  EXPECT_EQ(GTestMarkerPayload::sNumCreated, 10 + 0 + 0);
+  EXPECT_EQ(GTestMarkerPayload::sNumSerialized, 10 + 0 + 0);
+  EXPECT_EQ(GTestMarkerPayload::sNumDeserialized, 0 + 10 + 0);
+  EXPECT_EQ(GTestMarkerPayload::sNumStreamed, 0 + 10 + 0);
+  EXPECT_EQ(GTestMarkerPayload::sNumDestroyed, 10 + 10 + 0);
 
+  
   for (int i = 0; i < 10; i++) {
     PROFILER_ADD_MARKER_WITH_PAYLOAD("M5", OTHER, GTestMarkerPayload, (i));
   }
@@ -707,17 +936,17 @@ TEST(GeckoProfiler, Markers)
   profiler_start(PROFILER_DEFAULT_ENTRIES, PROFILER_DEFAULT_INTERVAL, features,
                  filters, MOZ_ARRAY_LENGTH(filters));
 
-  ASSERT_TRUE(profiler_stream_json_for_this_process(w));
+  EXPECT_TRUE(profiler_stream_json_for_this_process(w));
 
   profiler_stop();
 
   
   
-  ASSERT_EQ(GTestMarkerPayload::sNumCreated, 10 + 0 + 0 + 10);
-  ASSERT_EQ(GTestMarkerPayload::sNumSerialized, 10 + 0 + 0 + 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumDeserialized, 0 + 10 + 0 + 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumStreamed, 0 + 10 + 0 + 0);
-  ASSERT_EQ(GTestMarkerPayload::sNumDestroyed, 10 + 10 + 0 + 10);
+  EXPECT_EQ(GTestMarkerPayload::sNumCreated, 10 + 0 + 0 + 10);
+  EXPECT_EQ(GTestMarkerPayload::sNumSerialized, 10 + 0 + 0 + 0);
+  EXPECT_EQ(GTestMarkerPayload::sNumDeserialized, 0 + 10 + 0 + 0);
+  EXPECT_EQ(GTestMarkerPayload::sNumStreamed, 0 + 10 + 0 + 0);
+  EXPECT_EQ(GTestMarkerPayload::sNumDestroyed, 10 + 10 + 0 + 10);
 }
 
 TEST(GeckoProfiler, DurationLimit)
