@@ -2,6 +2,8 @@
 
 
 
+PromiseTestUtils.whitelistRejectionsGlobally(/Connection closed/);
+
 
 add_task(async function() {
   const dbg = await initDebugger("doc-bfcache1.html");
