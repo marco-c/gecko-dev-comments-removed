@@ -4,9 +4,6 @@
 
 "use strict";
 
-var Services = require("Services");
-var { gDevTools } = require("devtools/client/framework/devtools");
-
 
 
 
@@ -92,40 +89,6 @@ exports.viewSourceInDebugger = async function(
 
   exports.viewSource(toolbox, sourceURL, sourceLine, sourceColumn);
   return false;
-};
-
-
-
-
-
-
-
-
-
-exports.viewSourceInScratchpad = async function(sourceURL, sourceLine) {
-  
-  for (const win of Services.wm.getEnumerator("devtools:scratchpad")) {
-    if (!win.closed && win.Scratchpad.uniqueName === sourceURL) {
-      win.focus();
-      win.Scratchpad.editor.setCursor({ line: sourceLine, ch: 0 });
-      return;
-    }
-  }
-
-  
-  for (const toolbox of gDevTools.getToolboxes()) {
-    const scratchpadPanel = toolbox.getPanel("scratchpad");
-    if (scratchpadPanel) {
-      const { scratchpad } = scratchpadPanel;
-      if (scratchpad.uniqueName === sourceURL) {
-        toolbox.selectTool("scratchpad");
-        toolbox.raise();
-        scratchpad.editor.focus();
-        scratchpad.editor.setCursor({ line: sourceLine, ch: 0 });
-        return;
-      }
-    }
-  }
 };
 
 

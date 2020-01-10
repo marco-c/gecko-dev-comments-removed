@@ -57,27 +57,6 @@ function getSourceActor(aSources, aURL) {
 
 
 
-async function openScratchpadWindow() {
-  const win = ScratchpadManager.openScratchpad();
-
-  await once(win, "load");
-
-  return new Promise(resolve => {
-    win.Scratchpad.addObserver({
-      onReady: function() {
-        win.Scratchpad.removeObserver(this);
-        resolve(win);
-      },
-    });
-  });
-}
-
-
-
-
-
-
-
 
 function waitForContentMessage(name) {
   info("Expecting message " + name + " from content");

@@ -25,11 +25,6 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "viewSource",
-  "devtools/client/shared/view-source"
-);
-loader.lazyRequireGetter(
-  this,
   "openDocLink",
   "devtools/client/shared/link",
   true
@@ -265,17 +260,6 @@ class WebConsole {
 
 
 
-  viewSourceInScratchpad(sourceURL, sourceLine) {
-    viewSource.viewSourceInScratchpad(sourceURL, sourceLine);
-  }
-
-  
-
-
-
-
-
-
 
 
 
@@ -389,13 +373,6 @@ class WebConsole {
 
       this.recordEvent("jump_to_source");
       this.emit("source-in-debugger-opened");
-    }
-  }
-
-  async onViewSourceInScratchpad(frame) {
-    if (this.toolbox) {
-      await this.toolbox.viewSourceInScratchpad(frame.url, frame.line);
-      this.recordEvent("jump_to_source");
     }
   }
 

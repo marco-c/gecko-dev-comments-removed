@@ -143,13 +143,6 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
       modifiers,
     },
     
-    {
-      id: "scratchpad",
-      shortcut: KeyShortcutsBundle.GetStringFromName("scratchpad.commandkey"),
-      modifiers: "shift",
-    },
-
-    
     
 
     

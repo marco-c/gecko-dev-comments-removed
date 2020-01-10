@@ -135,22 +135,6 @@ add_task(async function() {
 
 
 add_task(async function() {
-  ok(
-    sourceUtils.isScratchpadScheme("Scratchpad/1"),
-    "Scratchpad/1 identified as scratchpad"
-  );
-  ok(
-    sourceUtils.isScratchpadScheme("Scratchpad/20"),
-    "Scratchpad/20 identified as scratchpad"
-  );
-  ok(
-    !sourceUtils.isScratchpadScheme("http://www.mozilla.org"),
-    "http://www.mozilla.org not identified as scratchpad"
-  );
-});
-
-
-add_task(async function() {
   
   const longMalformedURL = `example.com${new Array(100)
     .fill("/a")

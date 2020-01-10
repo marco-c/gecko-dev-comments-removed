@@ -1989,7 +1989,6 @@ pref("devtools.command-button-pick.enabled", true);
 pref("devtools.command-button-frames.enabled", true);
 pref("devtools.command-button-splitconsole.enabled", true);
 pref("devtools.command-button-paintflashing.enabled", false);
-pref("devtools.command-button-scratchpad.enabled", false);
 pref("devtools.command-button-responsive.enabled", true);
 pref("devtools.command-button-screenshot.enabled", false);
 pref("devtools.command-button-rulers.enabled", false);
@@ -2195,23 +2194,6 @@ pref("devtools.netmonitor.har.enableAutoExportToFile", false);
 #endif
 
 
-
-
-
-
-
-
-
-
-
-pref("devtools.scratchpad.recentFilesMax", 10);
-pref("devtools.scratchpad.lineNumbers", true);
-pref("devtools.scratchpad.wrapText", false);
-pref("devtools.scratchpad.showTrailingSpace", false);
-pref("devtools.scratchpad.editorFontSize", 12);
-pref("devtools.scratchpad.enableAutocompletion", true);
-
-
 pref("devtools.storage.enabled", true);
 
 
@@ -2225,9 +2207,6 @@ pref("devtools.styleeditor.transitions", true);
 
 pref("devtools.screenshot.clipboard.enabled", false);
 pref("devtools.screenshot.audio.enabled", true);
-
-
-pref("devtools.scratchpad.enabled", false);
 
 
 pref("devtools.dom.enabled", false);

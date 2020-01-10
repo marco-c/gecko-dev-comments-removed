@@ -68,11 +68,6 @@ loader.lazyImporter(
   "BrowserToolboxProcess",
   "resource://devtools/client/framework/ToolboxProcess.jsm"
 );
-loader.lazyImporter(
-  this,
-  "ScratchpadManager",
-  "resource://devtools/client/scratchpad/scratchpad-manager.jsm"
-);
 
 const { LocalizationHelper } = require("devtools/shared/l10n");
 const L10N = new LocalizationHelper(
@@ -321,7 +316,6 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
 
 
 
-
   async onKeyShortcut(window, key, startTime) {
     
     
@@ -356,9 +350,6 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
         ResponsiveUIManager.toggle(window, window.gBrowser.selectedTab, {
           trigger: "shortcut",
         });
-        break;
-      case "scratchpad":
-        ScratchpadManager.openScratchpad();
         break;
     }
   },

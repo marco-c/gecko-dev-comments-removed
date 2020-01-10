@@ -15,7 +15,6 @@ const {
 const {
   getSourceNames,
   parseURL,
-  isScratchpadScheme,
   getSourceMappedFile,
 } = require("devtools/client/shared/source-utils");
 const { LocalizationHelper } = require("devtools/shared/l10n");
@@ -160,11 +159,7 @@ class Frame extends Component {
     
     
     
-    
-    const isLinkable =
-      !!(isScratchpadScheme(source) || parseURL(source)) ||
-      isSourceMapped ||
-      sourceId;
+    const isLinkable = !!parseURL(source) || isSourceMapped || sourceId;
     const elements = [];
     const sourceElements = [];
     let sourceEl;

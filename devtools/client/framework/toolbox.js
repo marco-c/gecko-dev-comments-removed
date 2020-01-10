@@ -3914,19 +3914,6 @@ Toolbox.prototype = {
 
 
 
-
-
-
-
-
-  viewSourceInScratchpad: function(sourceURL, sourceLine) {
-    return viewSource.viewSourceInScratchpad(sourceURL, sourceLine);
-  },
-
-  
-
-
-
   viewSource: function(sourceURL, sourceLine) {
     return viewSource.viewSource(this, sourceURL, sourceLine);
   },

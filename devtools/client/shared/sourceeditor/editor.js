@@ -36,9 +36,6 @@ const VALID_KEYMAPS = new Map([
 
 const MAX_VERTICAL_OFFSET = 3;
 
-
-
-const RE_SCRATCHPAD_ERROR = /(?:@Scratchpad\/\d+:|\()(\d+):?(\d+)?(?:\)|\n)/;
 const RE_JUMP_TO_LINE = /^(\d+):?(\d+)?/;
 const AUTOCOMPLETE_MARK_CLASSNAME = "cm-auto-complete-shadow-text";
 
@@ -1094,20 +1091,6 @@ Editor.prototype = {
 
     div.appendChild(txt);
     div.appendChild(inp);
-
-    if (!this.hasMultipleSelections()) {
-      const cm = editors.get(this);
-      const sel = cm.getSelection();
-      
-      
-      
-      const match = sel.match(RE_SCRATCHPAD_ERROR);
-      if (match) {
-        const [, line, column] = match;
-        inp.value = column ? line + ":" + column : line;
-        inp.selectionStart = inp.selectionEnd = inp.value.length;
-      }
-    }
 
     this.openDialog(div, line => {
       

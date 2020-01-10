@@ -32,11 +32,6 @@ loader.lazyRequireGetter(
 loader.lazyRequireGetter(this, "Telemetry", "devtools/client/shared/telemetry");
 loader.lazyImporter(
   this,
-  "ScratchpadManager",
-  "resource://devtools/client/scratchpad/scratchpad-manager.jsm"
-);
-loader.lazyImporter(
-  this,
   "BrowserToolboxProcess",
   "resource://devtools/client/framework/ToolboxProcess.jsm"
 );
@@ -430,30 +425,12 @@ DevTools.prototype = {
   saveDevToolsSession: function(state) {
     state.browserConsole = BrowserConsoleManager.getBrowserConsoleSessionState();
     state.browserToolbox = BrowserToolboxProcess.getBrowserToolboxSessionState();
-
-    
-    state.scratchpads = [];
-    if (
-      Cu.isModuleLoaded(
-        "resource://devtools/client/scratchpad/scratchpad-manager.jsm"
-      )
-    ) {
-      state.scratchpads = ScratchpadManager.getSessionState();
-    }
   },
 
   
 
 
-  restoreDevToolsSession: function({
-    scratchpads,
-    browserConsole,
-    browserToolbox,
-  }) {
-    if (scratchpads) {
-      ScratchpadManager.restoreSession(scratchpads);
-    }
-
+  restoreDevToolsSession: function({ browserConsole, browserToolbox }) {
     if (browserToolbox) {
       BrowserToolboxProcess.init();
     }

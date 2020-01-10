@@ -141,7 +141,6 @@ function test_restore_session_apis() {
   
   const sessionWithoutDevTools = {};
   const sessionWithDevTools = {
-    scratchpads: [{}],
     browserConsole: true,
   };
 
