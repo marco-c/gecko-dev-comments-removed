@@ -4,7 +4,10 @@ module.exports = {
   
   "extends": "../../../../.eslintrc.mochitests.js",
   "overrides": [{
-    "files": ["test-dynamic-import.js"],
+    "files": [
+      "test-dynamic-import.js",
+      "test-error-worklet.js",
+    ],
     "parserOptions": {
       "sourceType": "module",
     },
