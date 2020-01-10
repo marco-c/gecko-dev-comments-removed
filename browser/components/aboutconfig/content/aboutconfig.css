@@ -54,15 +54,30 @@
   background-repeat: no-repeat;
   background-position: 9px center;
   background-size: 12px 12px;
-  padding-inline-start: 30px;
   z-index: 1;
   
-  margin-right: 0;
-  margin-left: 0;
+  margin-inline: 0;
+  text-align: match-parent;
+  
+  direction: ltr;
 }
 
-#about-config-search:dir(rtl) {
+#about-config-search:placeholder-shown {
+  
+
+
+  direction: inherit;
+}
+
+:root:dir(ltr) #about-config-search {
+  
+
+  padding-left: 30px;
+}
+
+:root:dir(rtl) #about-config-search {
   background-position-x: right 9px;
+  padding-right: 30px;
 }
 
 #show-all {
@@ -116,8 +131,17 @@
 }
 
 #prefs > tr > th {
-  text-align: unset;
-  padding-inline-start: 30px;
+  direction: ltr;
+  text-align: match-parent;
+}
+
+#prefs > tr:dir(ltr) > th {
+  
+  padding-left: 30px;
+}
+
+#prefs > tr:dir(rtl) > th {
+  padding-right: 30px;
 }
 
 #prefs > tr.deleted > th {
