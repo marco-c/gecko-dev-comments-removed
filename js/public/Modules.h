@@ -97,7 +97,16 @@ extern JS_PUBLIC_API JSObject* CompileModule(
 
 
 
-extern JS_PUBLIC_API JSObject* CompileModule(
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API JSObject* CompileModuleDontInflate(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<mozilla::Utf8Unit>& srcBuf);
 
