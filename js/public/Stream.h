@@ -177,8 +177,30 @@ extern JS_PUBLIC_API JSObject* NewReadableDefaultStreamObject(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 extern JS_PUBLIC_API JSObject* NewReadableExternalSourceStreamObject(
     JSContext* cx, ReadableStreamUnderlyingSource* underlyingSource,
+    void* nsISupportsObject_alreadyAddreffed = nullptr,
     HandleObject proto = nullptr);
 
 
