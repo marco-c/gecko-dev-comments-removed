@@ -60,7 +60,7 @@ MOZ_ALWAYS_INLINE bool AtomMarkingRuntime::inlinedMarkAtomInternal(
     cx->zone()->markedAtoms().setBit(bit);
   }
 
-  if (!cx->helperThread()) {
+  if (!cx->isHelperThreadContext()) {
     
     
     

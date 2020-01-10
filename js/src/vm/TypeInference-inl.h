@@ -1066,7 +1066,7 @@ inline void HeapTypeSet::newPropertyState(const AutoSweepObjectGroup& sweep,
   checkMagic();
 
   
-  if (!cx->helperThread()) {
+  if (!cx->isHelperThreadContext()) {
     TypeConstraint* constraint = constraintList(sweep);
     while (constraint) {
       constraint->newPropertyState(cx, this);

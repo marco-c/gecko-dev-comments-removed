@@ -2269,7 +2269,7 @@ void EmptyShape::insertInitialShape(JSContext* cx, HandleShape shape,
 
 
 
-  if (!cx->helperThread()) {
+  if (!cx->isHelperThreadContext()) {
     cx->caches().newObjectCache.invalidateEntriesForShape(cx, shape, proto);
   }
 }

@@ -35,7 +35,7 @@ bool XDRCoderBase::validateResultCode(JSContext* cx,
                                       JS::TranscodeResult code) const {
   
   
-  if (cx->helperThread()) {
+  if (cx->isHelperThreadContext()) {
     return true;
   }
   return cx->isExceptionPending() == bool(code == JS::TranscodeResult_Throw);

@@ -133,7 +133,7 @@ bool GlobalObject::resolveConstructor(JSContext* cx,
     return resolveOffThreadConstructor(cx, global, key);
   }
 
-  MOZ_ASSERT(!cx->helperThread());
+  MOZ_ASSERT(!cx->isHelperThreadContext());
 
   
   
@@ -345,7 +345,7 @@ JSObject* GlobalObject::createObject(JSContext* cx,
     return createOffThreadObject(cx, global, slot);
   }
 
-  MOZ_ASSERT(!cx->helperThread());
+  MOZ_ASSERT(!cx->isHelperThreadContext());
   if (!init(cx, global)) {
     return nullptr;
   }

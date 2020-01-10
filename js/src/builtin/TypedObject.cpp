@@ -2601,7 +2601,7 @@ bool StoreReferenceAny::store(JSContext* cx, GCPtrValue* heap, const Value& v,
   
   
   if (!v.isUndefined()) {
-    if (!cx->helperThread()) {
+    if (!cx->isHelperThreadContext()) {
       AddTypePropertyId(cx, obj, id, v);
     } else if (!HasTypePropertyId(obj, id, v)) {
       return false;
@@ -2620,7 +2620,7 @@ bool StoreReferenceObject::store(JSContext* cx, GCPtrObject* heap,
   
   
   if (v.isObject()) {
-    if (!cx->helperThread()) {
+    if (!cx->isHelperThreadContext()) {
       AddTypePropertyId(cx, obj, id, v);
     } else if (!HasTypePropertyId(obj, id, v)) {
       return false;

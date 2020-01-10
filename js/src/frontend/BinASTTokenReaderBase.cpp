@@ -57,7 +57,7 @@ ErrorResult<JS::Error&> BinASTTokenReaderBase::raiseInvalidField(
 }
 
 bool BinASTTokenReaderBase::hasRaisedError() const {
-  if (cx_->helperThread()) {
+  if (cx_->isHelperThreadContext()) {
     
     
     return cx_->isCompileErrorPending();

@@ -205,7 +205,7 @@ static MOZ_ALWAYS_INLINE MOZ_MUST_USE T* SetNewObjectMetadata(JSContext* cx,
 
   
   
-  if (!cx->helperThread()) {
+  if (!cx->isHelperThreadContext()) {
     if (MOZ_UNLIKELY(cx->realm()->hasAllocationMetadataBuilder()) &&
         !cx->zone()->suppressAllocationMetadataBuilder) {
       
