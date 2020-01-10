@@ -101,18 +101,17 @@ elif system.startswith(('MINGW', 'MSYS_NT')):
 elif system == "Linux":
     
     
+    
+    
     try:
-        import distro
+        from distro import linux_distribution
     except ImportError:
-        pass
-    
-    
-    if hasattr(distro, "linux_distribution"):
-        (distribution, os_version, codename) = distro.linux_distribution()
-    elif hasattr(platform, "linux_distribution"):
-        (distribution, os_version, codename) = platform.linux_distribution()
-    else:
-        (distribution, os_version, codename) = platform.dist()
+        from platform import linux_distribution
+
+    output = linux_distribution()
+    (distribution, os_version, codename) = tuple(
+        str(item.title()) for item in output)
+
     if not processor:
         processor = machine
     version = "%s %s" % (distribution, os_version)
