@@ -37,7 +37,7 @@ use smallvec::SmallVec;
 use std::{mem, u8};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::texture_cache::TextureCacheHandle;
-use crate::util::{TransformedRectKind, MatrixHelpers, MaxRect, scale_factors, VecHelper};
+use crate::util::{TransformedRectKind, MatrixHelpers, MaxRect, scale_factors, VecHelper, subtract_rect};
 use crate::filterdata::{FilterDataHandle};
 
 
@@ -139,6 +139,8 @@ pub struct PictureCacheState {
     spatial_nodes: FastHashMap<SpatialNodeIndex, SpatialNodeDependency>,
     
     opacity_bindings: FastHashMap<PropertyBindingId, OpacityBindingInfo>,
+    
+    root_transform: TransformKey,
 }
 
 
@@ -1132,6 +1134,8 @@ pub struct TileCacheInstance {
     
     
     shared_clip_chain: ClipChainId,
+    
+    root_transform: TransformKey,
 }
 
 impl TileCacheInstance {
@@ -1166,6 +1170,7 @@ impl TileCacheInstance {
             backdrop: BackdropInfo::empty(),
             subpixel_mode: SubpixelMode::Allow,
             fract_offset: PictureVector2D::zero(),
+            root_transform: TransformKey::Local,
             shared_clips,
             shared_clip_chain,
         }
@@ -1282,6 +1287,7 @@ impl TileCacheInstance {
         if let Some(prev_state) = frame_state.retained_tiles.caches.remove(&self.slice) {
             self.tiles.extend(prev_state.tiles);
             self.fract_offset = prev_state.fract_offset;
+            self.root_transform = prev_state.root_transform;
             self.spatial_nodes = prev_state.spatial_nodes;
             self.opacity_bindings = prev_state.opacity_bindings;
         }
@@ -1690,6 +1696,21 @@ impl TileCacheInstance {
         self.dirty_region.clear();
 
         
+        
+        
+        let root_transform = frame_context
+            .clip_scroll_tree
+            .get_relative_transform(
+                self.spatial_node_index,
+                ROOT_SPATIAL_NODE_INDEX,
+            )
+            .into();
+        let root_transform_changed = root_transform != self.root_transform;
+        if root_transform_changed {
+            self.root_transform = root_transform;
+        }
+
+        
         let mut old_spatial_nodes = mem::replace(&mut self.spatial_nodes, FastHashMap::default());
 
         
@@ -1752,7 +1773,50 @@ impl TileCacheInstance {
                 &ctx,
                 &mut state,
             ) {
+                
+                
+                
+                if !root_transform_changed && !tile.dirty_rect.is_empty() {
+                    state.scratch.dirty_rects.push(
+                        (tile.world_dirty_rect * frame_context.global_device_pixel_scale).to_i32()
+                    );
+                }
+
                 self.tiles_to_draw.push(*key);
+            }
+        }
+
+        
+        
+        
+        if root_transform_changed {
+            scratch.dirty_rects.push(
+                (frame_context.global_screen_world_rect * frame_context.global_device_pixel_scale).to_i32()
+            );
+        } else {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let world_clip_rect = ctx.pic_to_world_mapper
+                .map(&self.local_clip_rect)
+                .expect("bug - unable to map picture clip rect to world");
+            let mut non_cached_rects = Vec::new();
+            subtract_rect(
+                &ctx.global_screen_world_rect,
+                &world_clip_rect,
+                &mut non_cached_rects,
+            );
+            for rect in non_cached_rects {
+                scratch.dirty_rects.push(
+                    (rect * frame_context.global_device_pixel_scale).to_i32()
+                );
             }
         }
 
@@ -2568,6 +2632,7 @@ impl PicturePrimitive {
                         spatial_nodes: tile_cache.spatial_nodes,
                         opacity_bindings: tile_cache.opacity_bindings,
                         fract_offset: tile_cache.fract_offset,
+                        root_transform: tile_cache.root_transform,
                     },
                 );
             }
@@ -4406,4 +4471,3 @@ impl TileNode {
         }
     }
 }
-

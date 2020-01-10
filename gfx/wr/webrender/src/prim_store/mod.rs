@@ -1693,6 +1693,9 @@ pub struct PrimitiveScratchBuffer {
     pub recorded_dirty_regions: Vec<RecordedDirtyRegion>,
 
     
+    pub dirty_rects: Vec<DeviceIntRect>,
+
+    
     pub debug_items: Vec<DebugItem>,
 }
 
@@ -1706,6 +1709,7 @@ impl PrimitiveScratchBuffer {
             segment_instances: SegmentInstanceStorage::new(0),
             gradient_tiles: GradientTileStorage::new(0),
             recorded_dirty_regions: Vec::new(),
+            dirty_rects: Vec::new(),
             debug_items: Vec::new(),
             prim_info: Vec::new(),
         }
@@ -1742,6 +1746,7 @@ impl PrimitiveScratchBuffer {
         self.debug_items.clear();
 
         assert!(self.recorded_dirty_regions.is_empty(), "Should have sent to Renderer");
+        assert!(self.dirty_rects.is_empty(), "Should have sent to Renderer");
     }
 
     #[allow(dead_code)]

@@ -578,6 +578,7 @@ impl FrameBuilder {
             has_texture_cache_tasks,
             prim_headers,
             recorded_dirty_regions: mem::replace(&mut scratch.recorded_dirty_regions, Vec::new()),
+            dirty_rects: mem::replace(&mut scratch.dirty_rects, Vec::new()),
             debug_items: mem::replace(&mut scratch.debug_items, Vec::new()),
         }
     }
@@ -929,6 +930,10 @@ pub struct Frame {
     
     #[cfg_attr(feature = "serde", serde(skip))]
     pub recorded_dirty_regions: Vec<RecordedDirtyRegion>,
+
+    
+    #[cfg_attr(feature = "serde", serde(skip))]
+    pub dirty_rects: Vec<DeviceIntRect>,
 
     
     pub debug_items: Vec<DebugItem>,
