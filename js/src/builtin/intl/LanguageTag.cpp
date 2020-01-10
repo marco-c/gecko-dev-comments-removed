@@ -101,14 +101,11 @@ template bool IsStructurallyValidRegionTag(
 
 bool IsStructurallyValidVariantTag(const ConstCharRange& variant) {
   
-  auto isAsciiLowercaseAlphanumeric = [](char c) {
-    return mozilla::IsAsciiLowercaseAlpha(c) || mozilla::IsAsciiDigit(c);
-  };
   size_t length = variant.length();
   const char* str = variant.begin().get();
   return ((5 <= length && length <= 8) ||
           (length == 4 && mozilla::IsAsciiDigit(str[0]))) &&
-         std::all_of(str, str + length, isAsciiLowercaseAlphanumeric);
+         std::all_of(str, str + length, mozilla::IsAsciiAlphanumeric<char>);
 }
 
 bool IsStructurallyValidUnicodeExtensionTag(const ConstCharRange& extension) {
@@ -266,27 +263,45 @@ bool LanguageTag::canonicalizeBaseName(JSContext* cx) {
   
   
   
+  
   MOZ_ASSERT(IsStructurallyValidLanguageTag(language().range()));
   MOZ_ASSERT(script().length() == 0 ||
              IsStructurallyValidScriptTag(script().range()));
   MOZ_ASSERT(region().length() == 0 ||
              IsStructurallyValidRegionTag(region().range()));
-#ifdef DEBUG
-  auto validVariant = [](const auto& variant) {
-    const char* str = variant.get();
-    return IsStructurallyValidVariantTag({str, strlen(str)});
-  };
-  MOZ_ASSERT(std::all_of(variants().begin(), variants().end(), validVariant));
-#endif
+
+  
+  for (UniqueChars& variant : variants_) {
+    char* variantChars = variant.get();
+    size_t variantLength = strlen(variantChars);
+    AsciiToLowerCase(variantChars, variantLength, variantChars);
+
+    MOZ_ASSERT(IsStructurallyValidVariantTag({variantChars, variantLength}));
+  }
 
   
   
 
   
 
-  
-  if (!SortAlphabetically(cx, variants_)) {
-    return false;
+  if (variants_.length() > 1) {
+    
+    if (!SortAlphabetically(cx, variants_)) {
+      return false;
+    }
+
+    
+    
+    const UniqueChars* duplicate = std::adjacent_find(
+        variants().begin(), variants().end(), [](const auto& a, const auto& b) {
+          return strcmp(a.get(), b.get()) == 0;
+        });
+    if (duplicate != variants().end()) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_DUPLICATE_VARIANT_SUBTAG,
+                                duplicate->get());
+      return false;
+    }
   }
 
   
@@ -1080,6 +1095,9 @@ UniqueChars LanguageTagParser::chars(JSContext* cx, size_t index,
 
 
 
+
+
+
 JS::Result<bool> LanguageTagParser::internalParseBaseName(
     JSContext* cx, LanguageTagParser& ts, LanguageTag& tag, Token& tok,
     BaseNameParsing parseType) {
@@ -1155,28 +1173,6 @@ JS::Result<bool> LanguageTagParser::internalParseBaseName(
     if (!variant) {
       return cx->alreadyReportedOOM();
     }
-
-    if (parseType == BaseNameParsing::Normal) {
-      
-      
-      
-      
-      AsciiToLowerCase(variant.get(), tok.length(), variant.get());
-
-      
-      
-      
-      
-      
-      for (const auto& seenVariant : variants) {
-        if (strcmp(variant.get(), seenVariant.get()) == 0) {
-          return false;
-        }
-      }
-    } else {
-      
-    }
-
     if (!variants.append(std::move(variant))) {
       return cx->alreadyReportedOOM();
     }
