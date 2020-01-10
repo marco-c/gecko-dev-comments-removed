@@ -161,6 +161,20 @@ impl From<FilterOp> for Filter {
     }
 }
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq)]
+pub enum Swizzle {
+    Rgba,
+    Bgra,
+}
+
+impl Default for Swizzle {
+    fn default() -> Self {
+        Swizzle::Rgba
+    }
+}
+
 
 
 
@@ -210,7 +224,7 @@ pub enum TextureSource {
     
     Invalid,
     
-    TextureCache(CacheTextureId),
+    TextureCache(CacheTextureId, Swizzle),
     
     External(ExternalImageData),
     
@@ -220,7 +234,7 @@ pub enum TextureSource {
     
     
     
-    RenderTaskCache(SavedTargetIndex),
+    RenderTaskCache(SavedTargetIndex, Swizzle),
 }
 
 

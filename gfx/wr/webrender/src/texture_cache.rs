@@ -7,12 +7,15 @@ use api::{DebugFlags, ImageDescriptor};
 use api::units::*;
 #[cfg(test)]
 use api::IdNamespace;
-use crate::device::{TextureFilter, total_gpu_bytes_allocated};
+use crate::device::{TextureFilter, TextureFormatPair, total_gpu_bytes_allocated};
 use crate::freelist::{FreeList, FreeListHandle, UpsertResult, WeakFreeListHandle};
 use crate::gpu_cache::{GpuCache, GpuCacheHandle};
 use crate::gpu_types::{ImageSource, UvRectKind};
-use crate::internal_types::{CacheTextureId, FastHashMap, LayerIndex, TextureUpdateList, TextureUpdateSource};
-use crate::internal_types::{TextureSource, TextureCacheAllocInfo, TextureCacheUpdate};
+use crate::internal_types::{
+    CacheTextureId, FastHashMap, LayerIndex, Swizzle,
+    TextureUpdateList, TextureUpdateSource, TextureSource,
+    TextureCacheAllocInfo, TextureCacheUpdate,
+};
 use crate::profiler::{ResourceProfileCounter, TextureCacheProfileCounters};
 use crate::render_backend::{FrameId, FrameStamp};
 use crate::resource_cache::{CacheItem, CachedImageData};
@@ -28,7 +31,7 @@ pub const TEXTURE_REGION_DIMENSIONS: i32 = 512;
 const PICTURE_TEXTURE_ADD_SLICES: usize = 4;
 
 
-const PICTURE_TILE_FORMAT: ImageFormat = ImageFormat::BGRA8;
+const PICTURE_TILE_FORMAT: ImageFormat = ImageFormat::RGBA8;
 
 
 const TEXTURE_REGION_PIXELS: usize =
@@ -109,8 +112,9 @@ struct CacheEntry {
     
     uv_rect_handle: GpuCacheHandle,
     
-    format: ImageFormat,
+    input_format: ImageFormat,
     filter: TextureFilter,
+    swizzle: Swizzle,
     
     texture_id: CacheTextureId,
     
@@ -127,6 +131,7 @@ impl CacheEntry {
         texture_id: CacheTextureId,
         last_access: FrameStamp,
         params: &CacheAllocParams,
+        swizzle: Swizzle,
     ) -> Self {
         CacheEntry {
             size: params.descriptor.size,
@@ -134,8 +139,9 @@ impl CacheEntry {
             last_access,
             details: EntryDetails::Standalone,
             texture_id,
-            format: params.descriptor.format,
+            input_format: params.descriptor.format,
             filter: params.filter,
+            swizzle,
             uv_rect_handle: GpuCacheHandle::new(),
             eviction_notice: None,
             uv_rect_kind: params.uv_rect_kind,
@@ -227,39 +233,39 @@ impl EvictionNotice {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 struct SharedTextures {
-    array_rgba8_nearest: TextureArray,
-    array_a8_linear: TextureArray,
-    array_a16_linear: TextureArray,
-    array_rgba8_linear: TextureArray,
+    array_color8_nearest: TextureArray,
+    array_alpha8_linear: TextureArray,
+    array_alpha16_linear: TextureArray,
+    array_color8_linear: TextureArray,
 }
 
 impl SharedTextures {
     
-    fn new() -> Self {
+    fn new(color_formats: TextureFormatPair<ImageFormat>) -> Self {
         Self {
             
             
             
-            array_a8_linear: TextureArray::new(
-                ImageFormat::R8,
+            array_alpha8_linear: TextureArray::new(
+                TextureFormatPair::from(ImageFormat::R8),
                 TextureFilter::Linear,
             ),
             
             
-            array_a16_linear: TextureArray::new(
-                ImageFormat::R16,
+            array_alpha16_linear: TextureArray::new(
+                TextureFormatPair::from(ImageFormat::R16),
                 TextureFilter::Linear,
             ),
             
-            array_rgba8_linear: TextureArray::new(
-                ImageFormat::BGRA8,
+            array_color8_linear: TextureArray::new(
+                color_formats.clone(),
                 TextureFilter::Linear,
             ),
             
             
             
-            array_rgba8_nearest: TextureArray::new(
-                ImageFormat::BGRA8,
+            array_color8_nearest: TextureArray::new(
+                color_formats,
                 TextureFilter::Nearest,
             ),
         }
@@ -267,36 +273,58 @@ impl SharedTextures {
 
     
     fn size_in_bytes(&self) -> usize {
-        self.array_a8_linear.size_in_bytes() +
-        self.array_a16_linear.size_in_bytes() +
-        self.array_rgba8_linear.size_in_bytes() +
-        self.array_rgba8_nearest.size_in_bytes()
+        self.array_alpha8_linear.size_in_bytes() +
+        self.array_alpha16_linear.size_in_bytes() +
+        self.array_color8_linear.size_in_bytes() +
+        self.array_color8_nearest.size_in_bytes()
     }
 
     
     fn empty_region_bytes(&self) -> usize {
-        self.array_a8_linear.empty_region_bytes() +
-        self.array_a16_linear.empty_region_bytes() +
-        self.array_rgba8_linear.empty_region_bytes() +
-        self.array_rgba8_nearest.empty_region_bytes()
+        self.array_alpha8_linear.empty_region_bytes() +
+        self.array_alpha16_linear.empty_region_bytes() +
+        self.array_color8_linear.empty_region_bytes() +
+        self.array_color8_nearest.empty_region_bytes()
     }
 
     
     fn clear(&mut self, updates: &mut TextureUpdateList) {
-        self.array_a8_linear.clear(updates);
-        self.array_a16_linear.clear(updates);
-        self.array_rgba8_linear.clear(updates);
-        self.array_rgba8_nearest.clear(updates);
+        self.array_alpha8_linear.clear(updates);
+        self.array_alpha16_linear.clear(updates);
+        self.array_color8_linear.clear(updates);
+        self.array_color8_nearest.clear(updates);
     }
 
     
-    fn select(&mut self, format: ImageFormat, filter: TextureFilter) -> &mut TextureArray {
-        match (format, filter) {
-            (ImageFormat::R8, TextureFilter::Linear) => &mut self.array_a8_linear,
-            (ImageFormat::R16, TextureFilter::Linear) => &mut self.array_a16_linear,
-            (ImageFormat::BGRA8, TextureFilter::Linear) => &mut self.array_rgba8_linear,
-            (ImageFormat::BGRA8, TextureFilter::Nearest) => &mut self.array_rgba8_nearest,
-            (_, _) => unreachable!(),
+    fn select(
+        &mut self, external_format: ImageFormat, filter: TextureFilter
+    ) -> (&mut TextureArray, Swizzle) {
+        match external_format {
+            ImageFormat::R8 => {
+                assert_eq!(filter, TextureFilter::Linear);
+                (&mut self.array_alpha8_linear, Swizzle::default())
+            }
+            ImageFormat::R16 => {
+                assert_eq!(filter, TextureFilter::Linear);
+                (&mut self.array_alpha16_linear, Swizzle::default())
+            }
+            ImageFormat::RGBA8 |
+            ImageFormat::BGRA8 => {
+                let array = match filter {
+                    TextureFilter::Linear => &mut self.array_color8_linear,
+                    TextureFilter::Nearest => &mut self.array_color8_nearest,
+                    _ => panic!("Unexpexcted filter {:?}", filter),
+                };
+                let swizzle = if array.formats.external == external_format {
+                    Swizzle::default()
+                } else {
+                    
+                    
+                    Swizzle::Bgra
+                };
+                (array, swizzle)
+            }
+            _ => panic!("Unexpected format {:?}", external_format),
         }
     }
 }
@@ -489,6 +517,9 @@ pub struct TextureCache {
     max_texture_layers: usize,
 
     
+    bgra_swizzle: Swizzle,
+
+    
     debug_flags: DebugFlags,
 
     
@@ -531,6 +562,8 @@ impl TextureCache {
         mut max_texture_layers: usize,
         picture_tile_sizes: &[DeviceIntSize],
         initial_size: DeviceIntSize,
+        color_formats: TextureFormatPair<ImageFormat>,
+        bgra_swizzle: Swizzle,
     ) -> Self {
         if cfg!(target_os = "macos") {
             
@@ -585,13 +618,19 @@ impl TextureCache {
             picture_textures.push(picture_texture);
         }
 
+        
+        
+        
+        assert!(color_formats.internal != ImageFormat::BGRA8 || bgra_swizzle == Swizzle::default());
+
         TextureCache {
-            shared_textures: SharedTextures::new(),
+            shared_textures: SharedTextures::new(color_formats),
             picture_textures,
             reached_reclaim_threshold: None,
             entries: FreeList::new(),
             max_texture_size,
             max_texture_layers,
+            bgra_swizzle,
             debug_flags: DebugFlags::empty(),
             next_id: CacheTextureId(next_texture_id),
             pending_updates,
@@ -606,8 +645,19 @@ impl TextureCache {
     
     
     #[cfg(test)]
-    pub fn new_for_testing(max_texture_size: i32, max_texture_layers: usize) -> Self {
-        let mut cache = Self::new(max_texture_size, max_texture_layers, &[], DeviceIntSize::zero());
+    pub fn new_for_testing(
+        max_texture_size: i32,
+        max_texture_layers: usize,
+        image_format: ImageFormat,
+    ) -> Self {
+        let mut cache = Self::new(
+            max_texture_size,
+            max_texture_layers,
+            &[],
+            DeviceIntSize::zero(),
+            TextureFormatPair::from(image_format),
+            Swizzle::default(),
+        );
         let mut now = FrameStamp::first(DocumentId::new(IdNamespace(1), 1));
         now.advance();
         cache.begin_frame(now);
@@ -765,14 +815,14 @@ impl TextureCache {
         self.expire_old_entries(EntryKind::Standalone, threshold);
         self.expire_old_entries(EntryKind::Picture, threshold);
 
-        self.shared_textures.array_a8_linear
-            .update_profile(&mut texture_cache_profile.pages_a8_linear);
-        self.shared_textures.array_a16_linear
-            .update_profile(&mut texture_cache_profile.pages_a16_linear);
-        self.shared_textures.array_rgba8_linear
-            .update_profile(&mut texture_cache_profile.pages_rgba8_linear);
-        self.shared_textures.array_rgba8_nearest
-            .update_profile(&mut texture_cache_profile.pages_rgba8_nearest);
+        self.shared_textures.array_alpha8_linear
+            .update_profile(&mut texture_cache_profile.pages_alpha8_linear);
+        self.shared_textures.array_alpha16_linear
+            .update_profile(&mut texture_cache_profile.pages_alpha16_linear);
+        self.shared_textures.array_color8_linear
+            .update_profile(&mut texture_cache_profile.pages_color8_linear);
+        self.shared_textures.array_color8_nearest
+            .update_profile(&mut texture_cache_profile.pages_color8_nearest);
 
         
         
@@ -830,6 +880,16 @@ impl TextureCache {
         self.picture_textures.iter().map(|pt| pt.size).collect()
     }
 
+    #[cfg(feature = "replay")]
+    pub fn color_formats(&self) -> TextureFormatPair<ImageFormat> {
+        self.shared_textures.array_color8_linear.formats.clone()
+    }
+
+    #[cfg(feature = "replay")]
+    pub fn bgra_swizzle(&self) -> Swizzle {
+        self.bgra_swizzle
+    }
+
     pub fn pending_updates(&mut self) -> TextureUpdateList {
         mem::replace(&mut self.pending_updates, TextureUpdateList::new())
     }
@@ -858,7 +918,7 @@ impl TextureCache {
         
         let realloc = match self.entries.get_opt(handle) {
             Some(entry) => {
-                entry.size != descriptor.size || entry.format != descriptor.format
+                entry.size != descriptor.size || entry.input_format != descriptor.format
             }
             None => {
                 
@@ -920,7 +980,7 @@ impl TextureCache {
     
     pub fn get_allocated_size(&self, handle: &TextureCacheHandle) -> Option<usize> {
         self.entries.get_opt(handle).map(|entry| {
-            (entry.format.bytes_per_pixel() * entry.size.area()) as usize
+            (entry.input_format.bytes_per_pixel() * entry.size.area()) as usize
         })
     }
 
@@ -930,10 +990,10 @@ impl TextureCache {
     
     
     pub fn get(&self, handle: &TextureCacheHandle) -> CacheItem {
-        let (texture_id, layer_index, uv_rect, uv_rect_handle) = self.get_cache_location(handle);
+        let (texture_id, layer_index, uv_rect, swizzle, uv_rect_handle) = self.get_cache_location(handle);
         CacheItem {
             uv_rect_handle,
-            texture_id: TextureSource::TextureCache(texture_id),
+            texture_id: TextureSource::TextureCache(texture_id, swizzle),
             uv_rect,
             texture_layer: layer_index as i32,
         }
@@ -947,7 +1007,7 @@ impl TextureCache {
     pub fn get_cache_location(
         &self,
         handle: &TextureCacheHandle,
-    ) -> (CacheTextureId, LayerIndex, DeviceIntRect, GpuCacheHandle) {
+    ) -> (CacheTextureId, LayerIndex, DeviceIntRect, Swizzle, GpuCacheHandle) {
         let entry = self.entries
             .get_opt(handle)
             .expect("BUG: was dropped from cache or not updated!");
@@ -956,6 +1016,7 @@ impl TextureCache {
         (entry.texture_id,
          layer_index as usize,
          DeviceIntRect::new(origin, entry.size),
+         entry.swizzle,
          entry.uv_rect_handle)
     }
 
@@ -1068,7 +1129,7 @@ impl TextureCache {
             }
             EntryDetails::Cache { origin, layer_index } => {
                 
-                let texture_array = self.shared_textures.select(entry.format, entry.filter);
+                let (texture_array, _swizzle) = self.shared_textures.select(entry.input_format, entry.filter);
                 let region = &mut texture_array.regions[layer_index];
 
                 if self.debug_flags.contains(
@@ -1091,10 +1152,10 @@ impl TextureCache {
     
     fn allocate_from_shared_cache(
         &mut self,
-        params: &CacheAllocParams
+        params: &CacheAllocParams,
     ) -> Option<CacheEntry> {
         
-        let texture_array = self.shared_textures.select(
+        let (texture_array, swizzle) = self.shared_textures.select(
             params.descriptor.format,
             params.filter,
         );
@@ -1108,7 +1169,7 @@ impl TextureCache {
             let info = TextureCacheAllocInfo {
                 width: TEXTURE_REGION_DIMENSIONS,
                 height: TEXTURE_REGION_DIMENSIONS,
-                format: params.descriptor.format,
+                format: texture_array.formats.internal,
                 filter: texture_array.filter,
                 layer_count: 1,
                 is_shared_cache: true,
@@ -1122,31 +1183,17 @@ impl TextureCache {
 
         
         
-        texture_array.alloc(params, self.now)
+        texture_array.alloc(params, self.now, swizzle)
     }
 
     
     
     pub fn is_allowed_in_shared_cache(
         &self,
-        filter: TextureFilter,
+        _filter: TextureFilter,
         descriptor: &ImageDescriptor,
     ) -> bool {
         let mut allowed_in_shared_cache = true;
-
-        
-        
-        if descriptor.format == ImageFormat::RGBA8 {
-            allowed_in_shared_cache = false;
-        }
-
-        
-        
-        
-        if filter == TextureFilter::Nearest &&
-           descriptor.format != ImageFormat::BGRA8 {
-            allowed_in_shared_cache = false;
-        }
 
         
         
@@ -1180,10 +1227,18 @@ impl TextureCache {
         };
         self.pending_updates.push_alloc(texture_id, info);
 
+        
+        let swizzle = if params.descriptor.format == ImageFormat::BGRA8 {
+            self.bgra_swizzle
+        } else {
+            Swizzle::default()
+        };
+
         CacheEntry::new_standalone(
             texture_id,
             self.now,
             params,
+            swizzle,
         )
     }
 
@@ -1219,7 +1274,10 @@ impl TextureCache {
         
         
         let num_regions = self.shared_textures
-            .select(params.descriptor.format, params.filter).regions.len();
+            .select(params.descriptor.format, params.filter)
+            .0
+            .regions
+            .len();
         let threshold = if num_regions == self.max_texture_layers {
             EvictionThresholdBuilder::new(self.now).max_frames(1).build()
         } else {
@@ -1234,14 +1292,14 @@ impl TextureCache {
 
         let added_layer = {
             
-            let texture_array =
+            let (texture_array, _swizzle) =
                 self.shared_textures.select(params.descriptor.format, params.filter);
             
             if num_regions < self.max_texture_layers as usize {
                 let info = TextureCacheAllocInfo {
                     width: TEXTURE_REGION_DIMENSIONS,
                     height: TEXTURE_REGION_DIMENSIONS,
-                    format: params.descriptor.format,
+                    format: texture_array.formats.internal,
                     filter: texture_array.filter,
                     layer_count: (num_regions + 1) as i32,
                     is_shared_cache: true,
@@ -1351,6 +1409,14 @@ impl TextureCache {
             .get_opt_mut(handle)
             .expect("BUG: handle must be valid now")
             .update_gpu_cache(gpu_cache);
+    }
+
+    pub fn shared_alpha_expected_format(&self) -> ImageFormat {
+        self.shared_textures.array_alpha8_linear.formats.external
+    }
+
+    pub fn shared_color_expected_format(&self) -> ImageFormat {
+        self.shared_textures.array_color8_linear.formats.external
     }
 }
 
@@ -1500,7 +1566,7 @@ impl TextureRegion {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 struct TextureArray {
     filter: TextureFilter,
-    format: ImageFormat,
+    formats: TextureFormatPair<ImageFormat>,
     regions: Vec<TextureRegion>,
     empty_regions: usize,
     texture_id: Option<CacheTextureId>,
@@ -1508,11 +1574,11 @@ struct TextureArray {
 
 impl TextureArray {
     fn new(
-        format: ImageFormat,
+        formats: TextureFormatPair<ImageFormat>,
         filter: TextureFilter,
     ) -> Self {
         TextureArray {
-            format,
+            formats,
             filter,
             regions: Vec::new(),
             empty_regions: 0,
@@ -1522,13 +1588,13 @@ impl TextureArray {
 
     
     fn size_in_bytes(&self) -> usize {
-        let bpp = self.format.bytes_per_pixel() as usize;
+        let bpp = self.formats.internal.bytes_per_pixel() as usize;
         self.regions.len() * TEXTURE_REGION_PIXELS * bpp
     }
 
     
     fn empty_region_bytes(&self) -> usize {
-        let bpp = self.format.bytes_per_pixel() as usize;
+        let bpp = self.formats.internal.bytes_per_pixel() as usize;
         self.empty_regions * TEXTURE_REGION_PIXELS * bpp
     }
 
@@ -1557,6 +1623,7 @@ impl TextureArray {
         &mut self,
         params: &CacheAllocParams,
         now: FrameStamp,
+        swizzle: Swizzle,
     ) -> Option<CacheEntry> {
         
         
@@ -1610,8 +1677,9 @@ impl TextureArray {
                 last_access: now,
                 details,
                 uv_rect_handle: GpuCacheHandle::new(),
-                format: self.format,
+                input_format: params.descriptor.format,
                 filter: self.filter,
+                swizzle,
                 texture_id: self.texture_id.unwrap(),
                 eviction_notice: None,
                 uv_rect_kind: params.uv_rect_kind,
@@ -1694,8 +1762,9 @@ impl WholeTextureArray {
                 layer_index,
             },
             uv_rect_handle,
-            format: self.format,
+            input_format: self.format,
             filter: self.filter,
+            swizzle: Swizzle::default(),
             texture_id,
             eviction_notice: None,
             uv_rect_kind: UvRectKind::Rect,
