@@ -343,7 +343,7 @@ SharedArrayBufferObject* SharedArrayBufferObject::createFromNewRawBuffer(
   return obj;
 }
 
-static const ClassOps SharedArrayBufferObjectClassOps = {
+static const JSClassOps SharedArrayBufferObjectClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 

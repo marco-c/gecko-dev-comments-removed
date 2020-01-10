@@ -32,7 +32,7 @@ using js::intl::IcuLocale;
 
 
 
-const ClassOps RelativeTimeFormatObject::classOps_ = {
+const JSClassOps RelativeTimeFormatObject::classOps_ = {
     nullptr, 
     nullptr, 
     nullptr, 

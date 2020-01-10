@@ -34,17 +34,17 @@ static void resc_trace(JSTracer* trc, JSObject* obj) {
   }
 }
 
-static const ClassOps RegExpStaticsObjectClassOps = {nullptr, 
-                                                     nullptr, 
-                                                     nullptr, 
-                                                     nullptr, 
-                                                     nullptr, 
-                                                     nullptr, 
-                                                     resc_finalize,
-                                                     nullptr, 
-                                                     nullptr, 
-                                                     nullptr, 
-                                                     resc_trace};
+static const JSClassOps RegExpStaticsObjectClassOps = {
+    nullptr,                
+    nullptr,                
+    nullptr,                
+    nullptr,                
+    nullptr,                
+    nullptr,                
+    resc_finalize, nullptr, 
+    nullptr,                
+    nullptr,                
+    resc_trace};
 
 const Class RegExpStaticsObject::class_ = {
     "RegExpStatics", JSCLASS_HAS_PRIVATE | JSCLASS_FOREGROUND_FINALIZE,

@@ -3152,13 +3152,14 @@ class CloneBufferObject : public NativeObject {
   }
 };
 
-static const ClassOps CloneBufferObjectClassOps = {nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   CloneBufferObject::Finalize};
+static const JSClassOps CloneBufferObjectClassOps = {
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    CloneBufferObject::Finalize};
 
 const Class CloneBufferObject::class_ = {
     "CloneBuffer",

@@ -2130,7 +2130,7 @@ bool TypedArrayObject::getElements(JSContext* cx,
 
 
 
-static const ClassOps TypedArrayClassOps = {
+static const JSClassOps TypedArrayClassOps = {
     nullptr,                      
     nullptr,                      
     nullptr,                      

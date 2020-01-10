@@ -287,7 +287,7 @@ void js::UnmapBufferMemory(void* base, size_t mappedSize) {
 
 
 
-static const ClassOps ArrayBufferObjectClassOps = {
+static const JSClassOps ArrayBufferObjectClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 

@@ -984,7 +984,7 @@ size_t ArgumentsObject::objectMoved(JSObject* dst, JSObject* src) {
 
 
 
-const ClassOps MappedArgumentsObject::classOps_ = {
+const JSClassOps MappedArgumentsObject::classOps_ = {
     nullptr, 
     ArgumentsObject::obj_delProperty,
     MappedArgumentsObject::obj_enumerate,
@@ -1020,7 +1020,7 @@ const Class MappedArgumentsObject::class_ = {
 
 
 
-const ClassOps UnmappedArgumentsObject::classOps_ = {
+const JSClassOps UnmappedArgumentsObject::classOps_ = {
     nullptr, 
     ArgumentsObject::obj_delProperty,
     UnmappedArgumentsObject::obj_enumerate,

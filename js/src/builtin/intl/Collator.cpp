@@ -39,13 +39,13 @@ using js::intl::ReportInternalError;
 using js::intl::SharedIntlData;
 using js::intl::StringsAreEqual;
 
-const ClassOps CollatorObject::classOps_ = {nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            CollatorObject::finalize};
+const JSClassOps CollatorObject::classOps_ = {nullptr, 
+                                              nullptr, 
+                                              nullptr, 
+                                              nullptr, 
+                                              nullptr, 
+                                              nullptr, 
+                                              CollatorObject::finalize};
 
 const Class CollatorObject::class_ = {
     js_Object_str,

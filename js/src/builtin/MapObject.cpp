@@ -124,13 +124,14 @@ HashableValue HashableValue::trace(JSTracer* trc) const {
 
 namespace {} 
 
-static const ClassOps MapIteratorObjectClassOps = {nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   MapIteratorObject::finalize};
+static const JSClassOps MapIteratorObjectClassOps = {
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    MapIteratorObject::finalize};
 
 static const ClassExtension MapIteratorObjectClassExtension = {
     MapIteratorObject::objectMoved};
@@ -370,17 +371,17 @@ JSObject* MapIteratorObject::createResultPair(JSContext* cx) {
 
 
 
-const ClassOps MapObject::classOps_ = {nullptr,  
-                                       nullptr,  
-                                       nullptr,  
-                                       nullptr,  
-                                       nullptr,  
-                                       nullptr,  
-                                       finalize,
-                                       nullptr,  
-                                       nullptr,  
-                                       nullptr,  
-                                       trace};
+const JSClassOps MapObject::classOps_ = {nullptr,  
+                                         nullptr,  
+                                         nullptr,  
+                                         nullptr,  
+                                         nullptr,  
+                                         nullptr,  
+                                         finalize,
+                                         nullptr,  
+                                         nullptr,  
+                                         nullptr,  
+                                         trace};
 
 const ClassSpec MapObject::classSpec_ = {
     GenericCreateConstructor<MapObject::construct, 0, gc::AllocKind::FUNCTION>,
@@ -905,13 +906,14 @@ bool MapObject::clear(JSContext* cx, HandleObject obj) {
 
 
 
-static const ClassOps SetIteratorObjectClassOps = {nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   nullptr, 
-                                                   SetIteratorObject::finalize};
+static const JSClassOps SetIteratorObjectClassOps = {
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    SetIteratorObject::finalize};
 
 static const ClassExtension SetIteratorObjectClassExtension = {
     SetIteratorObject::objectMoved};
@@ -1119,17 +1121,17 @@ JSObject* SetIteratorObject::createResult(JSContext* cx) {
 
 
 
-const ClassOps SetObject::classOps_ = {nullptr,  
-                                       nullptr,  
-                                       nullptr,  
-                                       nullptr,  
-                                       nullptr,  
-                                       nullptr,  
-                                       finalize,
-                                       nullptr,  
-                                       nullptr,  
-                                       nullptr,  
-                                       trace};
+const JSClassOps SetObject::classOps_ = {nullptr,  
+                                         nullptr,  
+                                         nullptr,  
+                                         nullptr,  
+                                         nullptr,  
+                                         nullptr,  
+                                         finalize,
+                                         nullptr,  
+                                         nullptr,  
+                                         nullptr,  
+                                         trace};
 
 const ClassSpec SetObject::classSpec_ = {
     GenericCreateConstructor<SetObject::construct, 0, gc::AllocKind::FUNCTION>,

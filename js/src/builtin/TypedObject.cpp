@@ -205,14 +205,14 @@ const Class js::TypedProto::class_ = {
 
 
 
-static const ClassOps ScalarTypeDescrClassOps = {nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 TypeDescr::finalize,
-                                                 ScalarTypeDescr::call};
+static const JSClassOps ScalarTypeDescrClassOps = {nullptr, 
+                                                   nullptr, 
+                                                   nullptr, 
+                                                   nullptr, 
+                                                   nullptr, 
+                                                   nullptr, 
+                                                   TypeDescr::finalize,
+                                                   ScalarTypeDescr::call};
 
 const Class js::ScalarTypeDescr::class_ = {
     "Scalar",
@@ -358,14 +358,15 @@ TypeDescr* GlobalObject::getOrCreateReferenceTypeDescr(
 
 
 
-static const ClassOps ReferenceTypeDescrClassOps = {nullptr, 
-                                                    nullptr, 
-                                                    nullptr, 
-                                                    nullptr, 
-                                                    nullptr, 
-                                                    nullptr, 
-                                                    TypeDescr::finalize,
-                                                    ReferenceTypeDescr::call};
+static const JSClassOps ReferenceTypeDescrClassOps = {
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    TypeDescr::finalize,
+    ReferenceTypeDescr::call};
 
 const Class js::ReferenceTypeDescr::class_ = {
     "Reference",
@@ -498,16 +499,16 @@ static TypedProto* CreatePrototypeObjectForComplexTypeInstance(
                                              SingletonObject);
 }
 
-static const ClassOps ArrayTypeDescrClassOps = {nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                TypeDescr::finalize,
-                                                nullptr, 
-                                                nullptr, 
-                                                TypedObject::construct};
+static const JSClassOps ArrayTypeDescrClassOps = {nullptr, 
+                                                  nullptr, 
+                                                  nullptr, 
+                                                  nullptr, 
+                                                  nullptr, 
+                                                  nullptr, 
+                                                  TypeDescr::finalize,
+                                                  nullptr, 
+                                                  nullptr, 
+                                                  TypedObject::construct};
 
 const Class ArrayTypeDescr::class_ = {
     "ArrayType",
@@ -747,16 +748,16 @@ bool js::IsTypedObjectArray(JSObject& obj) {
 
 
 
-static const ClassOps StructTypeDescrClassOps = {nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 TypeDescr::finalize,
-                                                 StructTypeDescr::call,
-                                                 nullptr, 
-                                                 TypedObject::construct};
+static const JSClassOps StructTypeDescrClassOps = {nullptr, 
+                                                   nullptr, 
+                                                   nullptr, 
+                                                   nullptr, 
+                                                   nullptr, 
+                                                   nullptr, 
+                                                   TypeDescr::finalize,
+                                                   StructTypeDescr::call,
+                                                   nullptr, 
+                                                   TypedObject::construct};
 
 const Class StructTypeDescr::class_ = {
     "StructType",
@@ -2279,7 +2280,7 @@ const ObjectOps TypedObject::objectOps_ = {
 };
 
 #define DEFINE_TYPEDOBJ_CLASS(Name, Trace, Moved)                          \
-  static const ClassOps Name##ClassOps = {                                 \
+  static const JSClassOps Name##ClassOps = {                               \
       nullptr, /* addProperty */                                           \
       nullptr, /* delProperty */                                           \
       nullptr, /* enumerate   */                                           \

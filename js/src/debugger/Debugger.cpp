@@ -530,7 +530,7 @@ static void GlobalDebuggerVectorHolder_finalize(JSFreeOp* fop, JSObject* obj) {
   fop->delete_(obj, debuggers, MemoryUse::GlobalDebuggerVector);
 }
 
-static const ClassOps GlobalDebuggerVectorHolder_classOps = {
+static const JSClassOps GlobalDebuggerVectorHolder_classOps = {
     nullptr,
     nullptr,
     nullptr,
@@ -3854,17 +3854,17 @@ bool DebuggerWeakMap<UnbarrieredKey, Wrapper, InvisibleKeysOk>::
   return true;
 }
 
-const ClassOps Debugger::classOps_ = {nullptr, 
-                                      nullptr, 
-                                      nullptr, 
-                                      nullptr, 
-                                      nullptr, 
-                                      nullptr, 
-                                      nullptr, 
-                                      nullptr, 
-                                      nullptr, 
-                                      nullptr, 
-                                      Debugger::traceObject};
+const JSClassOps Debugger::classOps_ = {nullptr, 
+                                        nullptr, 
+                                        nullptr, 
+                                        nullptr, 
+                                        nullptr, 
+                                        nullptr, 
+                                        nullptr, 
+                                        nullptr, 
+                                        nullptr, 
+                                        nullptr, 
+                                        Debugger::traceObject};
 
 const Class Debugger::class_ = {
     "Debugger",

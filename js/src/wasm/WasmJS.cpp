@@ -657,13 +657,13 @@ static bool GetLimits(JSContext* cx, HandleObject obj, uint32_t maxInitial,
 
 
 
-const ClassOps WasmModuleObject::classOps_ = {nullptr, 
-                                              nullptr, 
-                                              nullptr, 
-                                              nullptr, 
-                                              nullptr, 
-                                              nullptr, 
-                                              WasmModuleObject::finalize};
+const JSClassOps WasmModuleObject::classOps_ = {nullptr, 
+                                                nullptr, 
+                                                nullptr, 
+                                                nullptr, 
+                                                nullptr, 
+                                                nullptr, 
+                                                WasmModuleObject::finalize};
 
 const Class WasmModuleObject::class_ = {
     "WebAssembly.Module",
@@ -1176,17 +1176,17 @@ const Module& WasmModuleObject::module() const {
 
 
 
-const ClassOps WasmInstanceObject::classOps_ = {nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                WasmInstanceObject::finalize,
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                WasmInstanceObject::trace};
+const JSClassOps WasmInstanceObject::classOps_ = {nullptr, 
+                                                  nullptr, 
+                                                  nullptr, 
+                                                  nullptr, 
+                                                  nullptr, 
+                                                  nullptr, 
+                                                  WasmInstanceObject::finalize,
+                                                  nullptr, 
+                                                  nullptr, 
+                                                  nullptr, 
+                                                  WasmInstanceObject::trace};
 
 const Class WasmInstanceObject::class_ = {
     "WebAssembly.Instance",
@@ -1603,13 +1603,13 @@ uint32_t wasm::ExportedFunctionToFuncIndex(JSFunction* fun) {
 
 
 
-const ClassOps WasmMemoryObject::classOps_ = {nullptr, 
-                                              nullptr, 
-                                              nullptr, 
-                                              nullptr, 
-                                              nullptr, 
-                                              nullptr, 
-                                              WasmMemoryObject::finalize};
+const JSClassOps WasmMemoryObject::classOps_ = {nullptr, 
+                                                nullptr, 
+                                                nullptr, 
+                                                nullptr, 
+                                                nullptr, 
+                                                nullptr, 
+                                                WasmMemoryObject::finalize};
 
 const Class WasmMemoryObject::class_ = {
     "WebAssembly.Memory",
@@ -1943,17 +1943,17 @@ bool js::wasm::IsSharedWasmMemoryObject(JSObject* obj) {
 
 
 
-const ClassOps WasmTableObject::classOps_ = {nullptr, 
-                                             nullptr, 
-                                             nullptr, 
-                                             nullptr, 
-                                             nullptr, 
-                                             nullptr, 
-                                             WasmTableObject::finalize,
-                                             nullptr, 
-                                             nullptr, 
-                                             nullptr, 
-                                             WasmTableObject::trace};
+const JSClassOps WasmTableObject::classOps_ = {nullptr, 
+                                               nullptr, 
+                                               nullptr, 
+                                               nullptr, 
+                                               nullptr, 
+                                               nullptr, 
+                                               WasmTableObject::finalize,
+                                               nullptr, 
+                                               nullptr, 
+                                               nullptr, 
+                                               WasmTableObject::trace};
 
 const Class WasmTableObject::class_ = {
     "WebAssembly.Table",
@@ -2318,17 +2318,17 @@ Table& WasmTableObject::table() const {
 
 
 
-const ClassOps WasmGlobalObject::classOps_ = {nullptr, 
-                                              nullptr, 
-                                              nullptr, 
-                                              nullptr, 
-                                              nullptr, 
-                                              nullptr, 
-                                              WasmGlobalObject::finalize,
-                                              nullptr, 
-                                              nullptr, 
-                                              nullptr, 
-                                              WasmGlobalObject::trace};
+const JSClassOps WasmGlobalObject::classOps_ = {nullptr, 
+                                                nullptr, 
+                                                nullptr, 
+                                                nullptr, 
+                                                nullptr, 
+                                                nullptr, 
+                                                WasmGlobalObject::finalize,
+                                                nullptr, 
+                                                nullptr, 
+                                                nullptr, 
+                                                WasmGlobalObject::trace};
 
 const Class WasmGlobalObject::class_ = {
     "WebAssembly.Global",
@@ -3422,7 +3422,7 @@ class ResolveResponseClosure : public NativeObject {
   static const unsigned PROMISE_OBJ_SLOT = 1;
   static const unsigned INSTANTIATE_SLOT = 2;
   static const unsigned IMPORT_OBJ_SLOT = 3;
-  static const ClassOps classOps_;
+  static const JSClassOps classOps_;
 
   static void finalize(JSFreeOp* fop, JSObject* obj) {
     auto& closure = obj->as<ResolveResponseClosure>();
@@ -3468,7 +3468,7 @@ class ResolveResponseClosure : public NativeObject {
   }
 };
 
-const ClassOps ResolveResponseClosure::classOps_ = {
+const JSClassOps ResolveResponseClosure::classOps_ = {
     nullptr, 
     nullptr, 
     nullptr, 

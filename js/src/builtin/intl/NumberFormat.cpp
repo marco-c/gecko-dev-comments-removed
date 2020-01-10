@@ -58,13 +58,13 @@ using js::intl::IcuLocale;
 
 using JS::AutoStableStringChars;
 
-const ClassOps NumberFormatObject::classOps_ = {nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                nullptr, 
-                                                NumberFormatObject::finalize};
+const JSClassOps NumberFormatObject::classOps_ = {nullptr, 
+                                                  nullptr, 
+                                                  nullptr, 
+                                                  nullptr, 
+                                                  nullptr, 
+                                                  nullptr, 
+                                                  NumberFormatObject::finalize};
 
 const Class NumberFormatObject::class_ = {
     js_Object_str,
