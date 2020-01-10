@@ -96,10 +96,10 @@ class MediaPipeline : public sigslot::has_slots<> {
   void Shutdown_m();
 
   void UpdateTransport_m(const std::string& aTransportId,
-                         nsAutoPtr<MediaPipelineFilter> aFilter);
+                         UniquePtr<MediaPipelineFilter>&& aFilter);
 
   void UpdateTransport_s(const std::string& aTransportId,
-                         nsAutoPtr<MediaPipelineFilter> aFilter);
+                         UniquePtr<MediaPipelineFilter>&& aFilter);
 
   
   
@@ -254,10 +254,10 @@ class MediaPipeline : public sigslot::has_slots<> {
   std::string mDescription;
 
   
-  nsAutoPtr<MediaPipelineFilter> mFilter;
-  const nsAutoPtr<webrtc::RtpHeaderParser> mRtpParser;
+  UniquePtr<MediaPipelineFilter> mFilter;
+  const UniquePtr<webrtc::RtpHeaderParser> mRtpParser;
 
-  nsAutoPtr<PacketDumper> mPacketDumper;
+  UniquePtr<PacketDumper> mPacketDumper;
 
  private:
   
