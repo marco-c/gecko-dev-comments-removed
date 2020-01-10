@@ -4,7 +4,6 @@
 
 "use strict";
 
-const defer = require("devtools/shared/defer");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const {
   getStack,
@@ -183,18 +182,17 @@ DebuggerClient.prototype = {
 
 
   connect: function(onConnected) {
-    const deferred = defer();
+    return new Promise(resolve => {
+      this.once("connected", (applicationType, traits) => {
+        this.traits = traits;
+        if (onConnected) {
+          onConnected(applicationType, traits);
+        }
+        resolve([applicationType, traits]);
+      });
 
-    this.once("connected", (applicationType, traits) => {
-      this.traits = traits;
-      if (onConnected) {
-        onConnected(applicationType, traits);
-      }
-      deferred.resolve([applicationType, traits]);
+      this._transport.ready();
     });
-
-    this._transport.ready();
-    return deferred.promise;
   },
 
   
@@ -208,36 +206,37 @@ DebuggerClient.prototype = {
 
 
   close: function(onClosed) {
-    const deferred = defer();
-    if (onClosed) {
-      deferred.promise.then(onClosed);
-    }
+    const promise = new Promise(resolve => {
+      
+      
+      this._eventsEnabled = false;
 
-    
-    
-    this._eventsEnabled = false;
+      const cleanup = () => {
+        if (this._transport) {
+          this._transport.close();
+        }
+        this._transport = null;
+      };
 
-    const cleanup = () => {
-      if (this._transport) {
-        this._transport.close();
+      
+      
+      
+      if (this._closed) {
+        cleanup();
+        resolve();
+        return;
       }
-      this._transport = null;
-    };
 
-    
-    
-    
-    if (this._closed) {
+      this.once("closed", resolve);
+
       cleanup();
-      deferred.resolve();
-      return deferred.promise;
+    });
+
+    if (onClosed) {
+      promise.then(onClosed);
     }
 
-    this.once("closed", deferred.resolve);
-
-    cleanup();
-
-    return deferred.promise;
+    return promise;
   },
 
   
