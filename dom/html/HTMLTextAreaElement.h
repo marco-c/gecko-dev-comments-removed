@@ -8,18 +8,17 @@
 #define mozilla_dom_HTMLTextAreaElement_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/TextControlState.h"
+#include "mozilla/TextEditor.h"
+#include "mozilla/dom/HTMLFormElement.h"
+#include "mozilla/dom/HTMLInputElementBinding.h"
 #include "nsITextControlElement.h"
 #include "nsIControllers.h"
 #include "nsCOMPtr.h"
 #include "nsGenericHTMLElement.h"
 #include "nsStubMutationObserver.h"
 #include "nsIConstraintValidation.h"
-#include "mozilla/dom/HTMLFormElement.h"
-#include "mozilla/dom/HTMLInputElementBinding.h"
 #include "nsGkAtoms.h"
-
-#include "mozilla/TextEditor.h"
-#include "nsTextEditorState.h"
 
 class nsIControllers;
 class nsPresContext;
@@ -306,7 +305,7 @@ class HTMLTextAreaElement final : public nsGenericHTMLFormElementWithState,
   nsString mFocusedValue;
 
   
-  nsTextEditorState mState;
+  TextControlState mState;
 
   NS_IMETHOD SelectAll(nsPresContext* aPresContext);
   

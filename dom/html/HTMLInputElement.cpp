@@ -67,6 +67,7 @@
 #include "mozilla/EventStates.h"
 #include "mozilla/MappedDeclarations.h"
 #include "mozilla/InternalMutationEvent.h"
+#include "mozilla/TextControlState.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/TouchEvents.h"
@@ -97,7 +98,6 @@
 #include "nsContentUtils.h"
 #include "mozilla/dom/DirectionalityUtils.h"
 #include "nsRadioVisitor.h"
-#include "nsTextEditorState.h"
 
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/Preferences.h"
@@ -937,14 +937,14 @@ static nsresult FireEventForAccessibility(HTMLInputElement* aTarget,
                                           EventMessage aEventMessage);
 #endif
 
-nsTextEditorState* HTMLInputElement::sCachedTextEditorState = nullptr;
+TextControlState* HTMLInputElement::sCachedTextControlState = nullptr;
 bool HTMLInputElement::sShutdown = false;
 
 
-void HTMLInputElement::ReleaseTextEditorState(nsTextEditorState* aState) {
-  if (!sShutdown && !sCachedTextEditorState) {
+void HTMLInputElement::ReleaseTextControlState(TextControlState* aState) {
+  if (!sShutdown && !sCachedTextControlState) {
     aState->PrepareForReuse();
-    sCachedTextEditorState = aState;
+    sCachedTextControlState = aState;
   } else {
     delete aState;
   }
@@ -953,8 +953,8 @@ void HTMLInputElement::ReleaseTextEditorState(nsTextEditorState* aState) {
 
 void HTMLInputElement::Shutdown() {
   sShutdown = true;
-  delete sCachedTextEditorState;
-  sCachedTextEditorState = nullptr;
+  delete sCachedTextControlState;
+  sCachedTextControlState = nullptr;
 }
 
 
@@ -1000,7 +1000,7 @@ HTMLInputElement::HTMLInputElement(
 
   
   mInputData.mState =
-      nsTextEditorState::Construct(this, &sCachedTextEditorState);
+      TextControlState::Construct(this, &sCachedTextControlState);
 
   void* memory = mInputTypeMem;
   mInputType = InputType::Create(this, mType, memory);
@@ -1031,7 +1031,7 @@ void HTMLInputElement::FreeData() {
     mInputData.mValue = nullptr;
   } else {
     UnbindFromFrame(nullptr);
-    ReleaseTextEditorState(mInputData.mState);
+    ReleaseTextControlState(mInputData.mState);
     mInputData.mState = nullptr;
   }
 
@@ -1041,7 +1041,7 @@ void HTMLInputElement::FreeData() {
   }
 }
 
-nsTextEditorState* HTMLInputElement::GetEditorState() const {
+TextControlState* HTMLInputElement::GetEditorState() const {
   if (!IsSingleLineTextControl(false)) {
     return nullptr;
   }
@@ -1108,7 +1108,7 @@ nsresult HTMLInputElement::Clone(dom::NodeInfo* aNodeInfo,
         nsAutoString value;
         GetNonFileValueInternal(value);
         
-        rv = it->SetValueInternal(value, nsTextEditorState::eSetValue_Notify);
+        rv = it->SetValueInternal(value, TextControlState::eSetValue_Notify);
         NS_ENSURE_SUCCESS(rv, rv);
       }
       break;
@@ -1610,9 +1610,9 @@ void HTMLInputElement::SetValue(const nsAString& aValue, CallerType aCallerType,
           (IsExperimentalMobileType(mType) || IsDateTimeInputType(mType))
               ? nullptr
               : &currentValue,
-          nsTextEditorState::eSetValue_ByContent |
-              nsTextEditorState::eSetValue_Notify |
-              nsTextEditorState::eSetValue_MoveCursorToEndIfValueChanged);
+          TextControlState::eSetValue_ByContent |
+              TextControlState::eSetValue_Notify |
+              TextControlState::eSetValue_MoveCursorToEndIfValueChanged);
       if (NS_FAILED(rv)) {
         aRv.Throw(rv);
         return;
@@ -1624,9 +1624,9 @@ void HTMLInputElement::SetValue(const nsAString& aValue, CallerType aCallerType,
     } else {
       nsresult rv = SetValueInternal(
           aValue,
-          nsTextEditorState::eSetValue_ByContent |
-              nsTextEditorState::eSetValue_Notify |
-              nsTextEditorState::eSetValue_MoveCursorToEndIfValueChanged);
+          TextControlState::eSetValue_ByContent |
+              TextControlState::eSetValue_Notify |
+              TextControlState::eSetValue_MoveCursorToEndIfValueChanged);
       if (NS_FAILED(rv)) {
         aRv.Throw(rv);
         return;
@@ -2221,16 +2221,16 @@ void HTMLInputElement::SetUserInput(const nsAString& aValue,
     return;
   }
 
-  bool isInputEventDispatchedByTextEditorState =
+  bool isInputEventDispatchedByTextControlState =
       GetValueMode() == VALUE_MODE_VALUE && IsSingleLineTextControl(false);
 
   nsresult rv = SetValueInternal(
-      aValue, nsTextEditorState::eSetValue_BySetUserInput |
-                  nsTextEditorState::eSetValue_Notify |
-                  nsTextEditorState::eSetValue_MoveCursorToEndIfValueChanged);
+      aValue, TextControlState::eSetValue_BySetUserInput |
+                  TextControlState::eSetValue_Notify |
+                  TextControlState::eSetValue_MoveCursorToEndIfValueChanged);
   NS_ENSURE_SUCCESS_VOID(rv);
 
-  if (!isInputEventDispatchedByTextEditorState) {
+  if (!isInputEventDispatchedByTextControlState) {
     DebugOnly<nsresult> rvIgnored = nsContentUtils::DispatchInputEvent(this);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                          "Failed to dispatch input event");
@@ -2247,7 +2247,7 @@ void HTMLInputElement::SetUserInput(const nsAString& aValue,
 nsIEditor* HTMLInputElement::GetEditor() { return GetTextEditorFromState(); }
 
 TextEditor* HTMLInputElement::GetTextEditorFromState() {
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   if (state) {
     return state->GetTextEditor();
   }
@@ -2259,7 +2259,7 @@ HTMLInputElement::GetTextEditor() { return GetTextEditorFromState(); }
 
 NS_IMETHODIMP_(TextEditor*)
 HTMLInputElement::GetTextEditorWithoutCreation() {
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   if (!state) {
     return nullptr;
   }
@@ -2268,7 +2268,7 @@ HTMLInputElement::GetTextEditorWithoutCreation() {
 
 NS_IMETHODIMP_(nsISelectionController*)
 HTMLInputElement::GetSelectionController() {
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   if (state) {
     return state->GetSelectionController();
   }
@@ -2276,7 +2276,7 @@ HTMLInputElement::GetSelectionController() {
 }
 
 nsFrameSelection* HTMLInputElement::GetConstFrameSelection() {
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   if (state) {
     return state->GetConstFrameSelection();
   }
@@ -2285,7 +2285,7 @@ nsFrameSelection* HTMLInputElement::GetConstFrameSelection() {
 
 NS_IMETHODIMP
 HTMLInputElement::BindToFrame(nsTextControlFrame* aFrame) {
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   if (state) {
     return state->BindToFrame(aFrame);
   }
@@ -2294,7 +2294,7 @@ HTMLInputElement::BindToFrame(nsTextControlFrame* aFrame) {
 
 NS_IMETHODIMP_(void)
 HTMLInputElement::UnbindFromFrame(nsTextControlFrame* aFrame) {
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   if (state && aFrame) {
     state->UnbindFromFrame(aFrame);
   }
@@ -2302,7 +2302,7 @@ HTMLInputElement::UnbindFromFrame(nsTextControlFrame* aFrame) {
 
 NS_IMETHODIMP
 HTMLInputElement::CreateEditor() {
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   if (state) {
     return state->PrepareEditor();
   }
@@ -2311,7 +2311,7 @@ HTMLInputElement::CreateEditor() {
 
 NS_IMETHODIMP_(void)
 HTMLInputElement::UpdateOverlayTextVisibility(bool aNotify) {
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   if (state) {
     state->UpdateOverlayTextVisibility(aNotify);
   }
@@ -2319,7 +2319,7 @@ HTMLInputElement::UpdateOverlayTextVisibility(bool aNotify) {
 
 NS_IMETHODIMP_(bool)
 HTMLInputElement::GetPlaceholderVisibility() {
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   if (!state) {
     return false;
   }
@@ -2329,7 +2329,7 @@ HTMLInputElement::GetPlaceholderVisibility() {
 
 NS_IMETHODIMP_(void)
 HTMLInputElement::SetPreviewValue(const nsAString& aValue) {
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   if (state) {
     state->SetPreviewText(aValue, true);
   }
@@ -2337,7 +2337,7 @@ HTMLInputElement::SetPreviewValue(const nsAString& aValue) {
 
 NS_IMETHODIMP_(void)
 HTMLInputElement::GetPreviewValue(nsAString& aValue) {
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   if (state) {
     state->GetPreviewText(aValue);
   }
@@ -2360,7 +2360,7 @@ HTMLInputElement::IsPreviewEnabled() { return mIsPreviewEnabled; }
 
 NS_IMETHODIMP_(bool)
 HTMLInputElement::GetPreviewVisibility() {
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   if (!state) {
     return false;
   }
@@ -2630,7 +2630,7 @@ nsresult HTMLInputElement::SetValueInternal(const nsAString& aValue,
   
   nsIContent* parent = GetParent();
   if (parent && parent->IsXULElement()) {
-    aFlags |= nsTextEditorState::eSetValue_ForXUL;
+    aFlags |= TextControlState::eSetValue_ForXUL;
   }
 
   switch (GetValueMode()) {
@@ -2645,7 +2645,7 @@ nsresult HTMLInputElement::SetValueInternal(const nsAString& aValue,
       }
       
 
-      bool setValueChanged = !!(aFlags & nsTextEditorState::eSetValue_Notify);
+      bool setValueChanged = !!(aFlags & TextControlState::eSetValue_Notify);
       if (setValueChanged) {
         SetValueChanged(true);
       }
@@ -2665,7 +2665,7 @@ nsresult HTMLInputElement::SetValueInternal(const nsAString& aValue,
         
         
         
-        if (aFlags & nsTextEditorState::eSetValue_ByContent) {
+        if (aFlags & TextControlState::eSetValue_ByContent) {
           MaybeUpdateAllValidityStates(!mDoneCreating);
         }
       } else {
@@ -2690,7 +2690,7 @@ nsresult HTMLInputElement::SetValueInternal(const nsAString& aValue,
         } else if ((mType == NS_FORM_INPUT_TIME ||
                     mType == NS_FORM_INPUT_DATE) &&
                    !IsExperimentalMobileType(mType) &&
-                   !(aFlags & nsTextEditorState::eSetValue_BySetUserInput)) {
+                   !(aFlags & TextControlState::eSetValue_BySetUserInput)) {
           if (Element* dateTimeBoxElement = GetDateTimeBoxElement()) {
             AsyncEventDispatcher* dispatcher = new AsyncEventDispatcher(
                 dateTimeBoxElement,
@@ -3063,7 +3063,7 @@ void HTMLInputElement::Select() {
     return;
   }
 
-  nsTextEditorState* tes = GetEditorState();
+  TextControlState* tes = GetEditorState();
   if (tes) {
     RefPtr<nsFrameSelection> fs = tes->GetConstFrameSelection();
     if (fs && fs->MouseDownRecorded()) {
@@ -3436,7 +3436,7 @@ nsresult HTMLInputElement::PreHandleEvent(EventChainVisitor& aVisitor) {
     if (IsExperimentalMobileType(mType)) {
       nsAutoString aValue;
       GetNonFileValueInternal(aValue);
-      rv = SetValueInternal(aValue, nsTextEditorState::eSetValue_Internal);
+      rv = SetValueInternal(aValue, TextControlState::eSetValue_Internal);
       NS_ENSURE_SUCCESS(rv, rv);
     }
     FireChangeEventIfNeeded();
@@ -3453,8 +3453,8 @@ nsresult HTMLInputElement::PreHandleEvent(EventChainVisitor& aVisitor) {
     numberControlFrame->GetValueOfAnonTextControl(value);
     numberControlFrame->HandlingInputEvent(true);
     AutoWeakFrame weakNumberControlFrame(numberControlFrame);
-    rv = SetValueInternal(value, nsTextEditorState::eSetValue_BySetUserInput |
-                                     nsTextEditorState::eSetValue_Notify);
+    rv = SetValueInternal(value, TextControlState::eSetValue_BySetUserInput |
+                                     TextControlState::eSetValue_Notify);
     NS_ENSURE_SUCCESS(rv, rv);
     if (weakNumberControlFrame.IsAlive()) {
       numberControlFrame->HandlingInputEvent(false);
@@ -3516,8 +3516,8 @@ void HTMLInputElement::CancelRangeThumbDrag(bool aIsForUserEvent) {
     mInputType->ConvertNumberToString(mRangeThumbDragStartValue, val);
     
     
-    SetValueInternal(val, nsTextEditorState::eSetValue_BySetUserInput |
-                              nsTextEditorState::eSetValue_Notify);
+    SetValueInternal(val, TextControlState::eSetValue_BySetUserInput |
+                              TextControlState::eSetValue_Notify);
     nsRangeFrame* frame = do_QueryFrame(GetPrimaryFrame());
     if (frame) {
       frame->UpdateForValueChange();
@@ -3537,8 +3537,8 @@ void HTMLInputElement::SetValueOfRangeForUserEvent(Decimal aValue) {
   mInputType->ConvertNumberToString(aValue, val);
   
   
-  SetValueInternal(val, nsTextEditorState::eSetValue_BySetUserInput |
-                            nsTextEditorState::eSetValue_Notify);
+  SetValueInternal(val, TextControlState::eSetValue_BySetUserInput |
+                            TextControlState::eSetValue_Notify);
   nsRangeFrame* frame = do_QueryFrame(GetPrimaryFrame());
   if (frame) {
     frame->UpdateForValueChange();
@@ -3630,8 +3630,8 @@ void HTMLInputElement::StepNumberControlForUserEvent(int32_t aDirection) {
   mInputType->ConvertNumberToString(newValue, newVal);
   
   
-  SetValueInternal(newVal, nsTextEditorState::eSetValue_BySetUserInput |
-                               nsTextEditorState::eSetValue_Notify);
+  SetValueInternal(newVal, TextControlState::eSetValue_BySetUserInput |
+                               TextControlState::eSetValue_Notify);
 
   DebugOnly<nsresult> rvIgnored = nsContentUtils::DispatchInputEvent(this);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
@@ -4437,7 +4437,7 @@ class TypeChangeSelectionRangeFlagDeterminer {
         !previouslySelectable && nowSelectable;
     const uint32_t flag =
         moveCursorToBeginAndSetDirectionForward
-            ? nsTextEditorState::
+            ? TextControlState::
                   eSetValue_MoveCursorToBeginSetSelectionDirectionForward
             : 0;
     return flag;
@@ -4497,7 +4497,7 @@ void HTMLInputElement::HandleTypeChange(uint8_t aNewType, bool aNotify) {
     GetValue(aOldValue, CallerType::NonSystem);
   }
 
-  nsTextEditorState::SelectionProperties sp;
+  TextControlState::SelectionProperties sp;
 
   if (GetEditorState()) {
     mInputData.mState->SyncUpSelectionPropertiesBeforeDestruction();
@@ -4512,7 +4512,7 @@ void HTMLInputElement::HandleTypeChange(uint8_t aNewType, bool aNotify) {
 
   if (IsSingleLineTextControl()) {
     mInputData.mState =
-        nsTextEditorState::Construct(this, &sCachedTextEditorState);
+        TextControlState::Construct(this, &sCachedTextControlState);
     if (!sp.IsDefault()) {
       mInputData.mState->SetSelectionProperties(sp);
     }
@@ -4552,7 +4552,7 @@ void HTMLInputElement::HandleTypeChange(uint8_t aNewType, bool aNotify) {
         
         
         SetValueInternal(
-            value, nsTextEditorState::eSetValue_Internal | selectionRangeFlag);
+            value, TextControlState::eSetValue_Internal | selectionRangeFlag);
       }
       break;
     case VALUE_MODE_FILENAME:
@@ -5521,7 +5521,7 @@ void HTMLInputElement::SetSelectionRange(uint32_t aSelectionStart,
     return;
   }
 
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   MOZ_ASSERT(state, "SupportsTextSelection() returned true!");
   state->SetSelectionRange(aSelectionStart, aSelectionEnd, aDirection, aRv);
 }
@@ -5533,7 +5533,7 @@ void HTMLInputElement::SetRangeText(const nsAString& aReplacement,
     return;
   }
 
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   MOZ_ASSERT(state, "SupportsTextSelection() returned true!");
   state->SetRangeText(aReplacement, aRv);
 }
@@ -5547,7 +5547,7 @@ void HTMLInputElement::SetRangeText(const nsAString& aReplacement,
     return;
   }
 
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   MOZ_ASSERT(state, "SupportsTextSelection() returned true!");
   state->SetRangeText(aReplacement, aStart, aEnd, aSelectMode, aRv);
 }
@@ -5557,8 +5557,8 @@ void HTMLInputElement::GetValueFromSetRangeText(nsAString& aValue) {
 }
 
 nsresult HTMLInputElement::SetValueFromSetRangeText(const nsAString& aValue) {
-  return SetValueInternal(aValue, nsTextEditorState::eSetValue_ByContent |
-                                      nsTextEditorState::eSetValue_Notify);
+  return SetValueInternal(aValue, TextControlState::eSetValue_ByContent |
+                                      TextControlState::eSetValue_Notify);
 }
 
 Nullable<uint32_t> HTMLInputElement::GetSelectionStart(ErrorResult& aRv) {
@@ -5587,7 +5587,7 @@ void HTMLInputElement::SetSelectionStart(
     return;
   }
 
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   MOZ_ASSERT(state, "SupportsTextSelection() returned true!");
   state->SetSelectionStart(aSelectionStart, aRv);
 }
@@ -5618,7 +5618,7 @@ void HTMLInputElement::SetSelectionEnd(const Nullable<uint32_t>& aSelectionEnd,
     return;
   }
 
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   MOZ_ASSERT(state, "SupportsTextSelection() returned true!");
   state->SetSelectionEnd(aSelectionEnd, aRv);
 }
@@ -5626,7 +5626,7 @@ void HTMLInputElement::SetSelectionEnd(const Nullable<uint32_t>& aSelectionEnd,
 void HTMLInputElement::GetSelectionRange(uint32_t* aSelectionStart,
                                          uint32_t* aSelectionEnd,
                                          ErrorResult& aRv) {
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   if (!state) {
     
     aRv.Throw(NS_ERROR_UNEXPECTED);
@@ -5643,7 +5643,7 @@ void HTMLInputElement::GetSelectionDirection(nsAString& aDirection,
     return;
   }
 
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   MOZ_ASSERT(state, "SupportsTextSelection came back true!");
   state->GetSelectionDirectionString(aDirection, aRv);
 }
@@ -5655,7 +5655,7 @@ void HTMLInputElement::SetSelectionDirection(const nsAString& aDirection,
     return;
   }
 
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   MOZ_ASSERT(state, "SupportsTextSelection came back true!");
   state->SetSelectionDirection(aDirection, aRv);
 }
@@ -5690,7 +5690,7 @@ nsresult HTMLInputElement::SetDefaultValueAsValue() {
 
   
   
-  return SetValueInternal(resetVal, nsTextEditorState::eSetValue_Internal);
+  return SetValueInternal(resetVal, TextControlState::eSetValue_Internal);
 }
 
 void HTMLInputElement::SetDirectionFromValue(bool aNotify) {
@@ -5969,7 +5969,7 @@ void HTMLInputElement::DoneCreatingElement() {
     
     
     
-    SetValueInternal(aValue, nsTextEditorState::eSetValue_Internal);
+    SetValueInternal(aValue, TextControlState::eSetValue_Internal);
 
     if (IsDateOrTime(mType)) {
       
@@ -6187,7 +6187,7 @@ bool HTMLInputElement::RestoreState(PresState* aState) {
         
         
         SetValueInternal(inputState.get_nsString(),
-                         nsTextEditorState::eSetValue_Notify);
+                         TextControlState::eSetValue_Notify);
       }
       break;
   }
@@ -6789,7 +6789,7 @@ HTMLInputElement::GetRows() { return DEFAULT_ROWS; }
 
 NS_IMETHODIMP_(void)
 HTMLInputElement::GetDefaultValueFromContent(nsAString& aValue) {
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   if (state) {
     GetDefaultValue(aValue);
     
@@ -6806,7 +6806,7 @@ HTMLInputElement::ValueChanged() const { return mValueChanged; }
 NS_IMETHODIMP_(void)
 HTMLInputElement::GetTextEditorValue(nsAString& aValue,
                                      bool aIgnoreWrap) const {
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   if (state) {
     state->GetValue(aValue, aIgnoreWrap);
   }
@@ -6814,7 +6814,7 @@ HTMLInputElement::GetTextEditorValue(nsAString& aValue,
 
 NS_IMETHODIMP_(void)
 HTMLInputElement::InitializeKeyboardEventListeners() {
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   if (state) {
     state->InitializeKeyboardEventListeners();
   }
@@ -6843,7 +6843,7 @@ HTMLInputElement::OnValueChanged(bool aNotify, ValueChangeKind aKind) {
 NS_IMETHODIMP_(bool)
 HTMLInputElement::HasCachedSelection() {
   bool isCached = false;
-  nsTextEditorState* state = GetEditorState();
+  TextControlState* state = GetEditorState();
   if (state) {
     isCached = state->IsSelectionCached() &&
                state->HasNeverInitializedBefore() &&

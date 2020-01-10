@@ -8,24 +8,24 @@
 #define mozilla_dom_HTMLInputElement_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Decimal.h"
+#include "mozilla/TextControlState.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/Variant.h"
+#include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/HTMLFormElement.h"  
+#include "mozilla/dom/HTMLInputElementBinding.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/dom/UnionTypes.h"
 #include "nsGenericHTMLElement.h"
 #include "nsImageLoadingContent.h"
 #include "nsITextControlElement.h"
 #include "nsITimer.h"
 #include "nsCOMPtr.h"
 #include "nsIConstraintValidation.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/HTMLFormElement.h"  
-#include "mozilla/dom/HTMLInputElementBinding.h"
-#include "mozilla/dom/Promise.h"
-#include "mozilla/dom/UnionTypes.h"
 #include "nsIFilePicker.h"
 #include "nsIContentPrefService2.h"
-#include "mozilla/Decimal.h"
 #include "nsContentUtils.h"
-#include "nsTextEditorState.h"
-#include "mozilla/Variant.h"
 #include "SingleLineTextInputTypes.h"
 #include "NumericInputTypes.h"
 #include "CheckableInputTypes.h"
@@ -314,7 +314,7 @@ class HTMLInputElement final : public nsGenericHTMLFormElementWithState,
     MOZ_ASSERT(mType == NS_FORM_INPUT_NUMBER);
     mSelectionCached = false;
   }
-  nsTextEditorState::SelectionProperties& GetSelectionProperties() {
+  TextControlState::SelectionProperties& GetSelectionProperties() {
     MOZ_ASSERT(mType == NS_FORM_INPUT_NUMBER);
     return mSelectionProperties;
   }
@@ -1085,7 +1085,7 @@ class HTMLInputElement final : public nsGenericHTMLFormElementWithState,
   bool DoesAutocompleteApply() const;
 
   void FreeData();
-  nsTextEditorState* GetEditorState() const;
+  TextControlState* GetEditorState() const;
 
   mozilla::TextEditor* GetTextEditorFromState();
 
@@ -1456,7 +1456,7 @@ class HTMLInputElement final : public nsGenericHTMLFormElementWithState,
     
 
 
-    nsTextEditorState* mState;
+    TextControlState* mState;
   } mInputData;
 
   struct FileData;
@@ -1490,7 +1490,7 @@ class HTMLInputElement final : public nsGenericHTMLFormElementWithState,
 
 
 
-  nsTextEditorState::SelectionProperties mSelectionProperties;
+  TextControlState::SelectionProperties mSelectionProperties;
 
   
 
@@ -1661,9 +1661,9 @@ class HTMLInputElement final : public nsGenericHTMLFormElementWithState,
     RefPtr<HTMLInputElement> mInput;
   };
 
-  static void ReleaseTextEditorState(nsTextEditorState* aState);
+  static void ReleaseTextControlState(TextControlState* aState);
 
-  static nsTextEditorState* sCachedTextEditorState;
+  static TextControlState* sCachedTextControlState;
   static bool sShutdown;
 };
 
