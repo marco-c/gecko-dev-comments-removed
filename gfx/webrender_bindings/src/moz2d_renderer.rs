@@ -8,7 +8,8 @@
 
 use webrender::api::*;
 use webrender::api::units::{BlobDirtyRect, BlobToDeviceTranslation, DeviceIntRect};
-use bindings::{ByteSlice, MutByteSlice, wr_moz2d_render_cb, ArcVecU8, gecko_profiler_start_marker, gecko_profiler_end_marker};
+use bindings::{ByteSlice, MutByteSlice, wr_moz2d_render_cb, ArcVecU8};
+use bindings::{BlobRenderStatus, gecko_profiler_start_marker, gecko_profiler_end_marker};
 use rayon::ThreadPool;
 use rayon::prelude::*;
 
@@ -579,7 +580,7 @@ fn rasterize_blob(job: Job) -> (BlobImageRequest, BlobImageResult) {
     assert!(descriptor.rect.size.width > 0 && descriptor.rect.size.height  > 0);
 
     let result = unsafe {
-        if wr_moz2d_render_cb(
+        match wr_moz2d_render_cb(
             ByteSlice::new(&job.commands[..]),
             descriptor.format,
             &descriptor.rect,
@@ -589,18 +590,27 @@ fn rasterize_blob(job: Job) -> (BlobImageRequest, BlobImageResult) {
             dirty_rect.as_ref(),
             MutByteSlice::new(output.as_mut_slice()),
         ) {
-            
-            
-            let dirty_rect = job.dirty_rect.to_subrect_of(&descriptor.rect);
-            let tx: BlobToDeviceTranslation = (-descriptor.rect.origin.to_vector()).into();
-            let rasterized_rect = tx.transform_rect(&dirty_rect);
+            BlobRenderStatus::Ok => {
+                
+                
+                let local_dirty_rect = job.dirty_rect.to_subrect_of(&descriptor.rect);
+                let tx: BlobToDeviceTranslation = (-descriptor.rect.origin.to_vector()).into();
+                let rasterized_rect = tx.transform_rect(&local_dirty_rect);
 
-            Ok(RasterizedBlobImage {
-                rasterized_rect,
-                data: Arc::new(output),
-            })
-        } else {
-            panic!("Moz2D replay problem");
+                Ok(RasterizedBlobImage {
+                    rasterized_rect,
+                    data: Some(Arc::new(output)),
+                })
+            }
+            BlobRenderStatus::Empty => {
+                Ok(RasterizedBlobImage {
+                    rasterized_rect: DeviceIntRect::zero(),
+                    data: None,
+                })
+            }
+            BlobRenderStatus::Error => {
+                panic!("Moz2D replay problem");
+            }
         }
     };
 

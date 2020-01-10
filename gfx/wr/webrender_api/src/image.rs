@@ -490,7 +490,10 @@ pub struct RasterizedBlobImage {
     
     pub rasterized_rect: DeviceIntRect,
     
-    pub data: Arc<Vec<u8>>,
+    
+    
+    
+    pub data: Option<Arc<Vec<u8>>>,
 }
 
 
