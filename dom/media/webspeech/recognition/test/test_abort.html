@@ -42,11 +42,11 @@
     };
 
     if (nextEventIdx >= eventsToAbortOn.indexOf("speechstart")) {
-        expectedEvents["speechstart"] = null;
+        expectedEvents.speechstart = null;
     }
 
     if (nextEventIdx >= eventsToAbortOn.indexOf("speechend")) {
-        expectedEvents["speechend"] = null;
+        expectedEvents.speechend = null;
     }
 
     info("Aborting on " + nextEvent);
