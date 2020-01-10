@@ -643,7 +643,6 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
-  
   MOZ_INIT_OUTSIDE_CTOR
   nscoord mComputedMinWidth, mComputedMaxWidth;
   MOZ_INIT_OUTSIDE_CTOR
