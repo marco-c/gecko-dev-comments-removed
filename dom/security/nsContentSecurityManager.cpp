@@ -37,7 +37,7 @@ static mozilla::LazyLogModule sCSMLog("CSMLog");
 
 
 
-static nsLiteralCString evalWhitelist[] = {
+static nsLiteralCString evalAllowlist[] = {
     
     NS_LITERAL_CSTRING("resource://testing-common/sinon-7.2.7.js"),
     
@@ -195,8 +195,8 @@ void nsContentSecurityManager::AssertEvalNotUsingSystemPrincipal(
       fileName_.SetLength(fileNameIndex);
     }
 
-    for (const nsLiteralCString& whitelistEntry : evalWhitelist) {
-      if (fileName_.Equals(whitelistEntry)) {
+    for (const nsLiteralCString& allowlistEntry : evalAllowlist) {
+      if (fileName_.Equals(allowlistEntry)) {
         return;
       }
     }
