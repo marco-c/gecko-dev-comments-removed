@@ -255,8 +255,6 @@ constexpr auto kSQLiteJournalSuffix = NS_LITERAL_STRING(".sqlite-journal");
 constexpr auto kSQLiteSHMSuffix = NS_LITERAL_STRING(".sqlite-shm");
 constexpr auto kSQLiteWALSuffix = NS_LITERAL_STRING(".sqlite-wal");
 
-const char kPrefIndexedDBEnabled[] = "dom.indexedDB.enabled";
-
 const char kPrefFileHandleEnabled[] = "dom.fileHandle.enabled";
 
 constexpr auto kPermissionStringBase = NS_LITERAL_CSTRING("indexedDB-chrome-");
@@ -19650,16 +19648,6 @@ nsresult FactoryOp::CheckPermission(
       if (aContentParent) {
         
         aContentParent->KillHard("IndexedDB CheckPermission 0");
-      }
-
-      return NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR;
-    }
-
-    if (NS_WARN_IF(!Preferences::GetBool(kPrefIndexedDBEnabled, false))) {
-      if (aContentParent) {
-        
-        
-        aContentParent->KillHard("IndexedDB CheckPermission 1");
       }
 
       return NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR;

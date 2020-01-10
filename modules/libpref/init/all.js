@@ -234,8 +234,6 @@ pref("browser.download.forbid_open_with", false);
 pref("dom.registerProtocolHandler.insecure.enabled", false);
 
 
-pref("dom.indexedDB.enabled", true);
-
 pref("dom.indexedDB.experimental", false);
 
 pref("dom.indexedDB.logging.enabled", true);
