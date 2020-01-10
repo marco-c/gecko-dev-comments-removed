@@ -2369,8 +2369,6 @@ static MOZ_MUST_USE bool CommonStaticAllRace(JSContext* cx, CallArgs& args,
   }
 
   
-
-  
   bool done, result;
   switch (mode) {
     case IterationMode::All:
@@ -2641,13 +2639,30 @@ static MOZ_MUST_USE bool CommonPerformPromiseAllRace(
   
   bool iterationMayHaveSideEffects = !iterator.isOptimizedDenseArrayIteration();
 
-  
-  
-  
-  bool isDefaultPromiseState = C == promiseCtor;
-  bool validatePromiseState = true;
-
   PromiseLookup& promiseLookup = cx->realm()->promiseLookup;
+
+  
+  
+  
+  bool isDefaultPromiseState =
+      C == promiseCtor && promiseLookup.isDefaultPromiseState(cx);
+  bool validatePromiseState = iterationMayHaveSideEffects;
+
+  RootedValue promiseResolve(cx, UndefinedValue());
+  if (!isDefaultPromiseState) {
+    
+    
+    if (!GetProperty(cx, C, C, cx->names().resolve, &promiseResolve)) {
+      return false;
+    }
+
+    
+    
+    if (!IsCallable(promiseResolve)) {
+      ReportIsNotFunction(cx, promiseResolve);
+      return false;
+    }
+  }
 
   RootedValue CVal(cx, ObjectValue(*C));
   RootedValue resolveFunVal(cx);
@@ -2658,7 +2673,7 @@ static MOZ_MUST_USE bool CommonPerformPromiseAllRace(
   
   RootedValue nextValueOrNextPromise(cx);
   RootedObject nextPromiseObj(cx);
-  RootedValue resolveOrThen(cx);
+  RootedValue thenVal(cx);
   RootedObject thenSpeciesOrBlockedPromise(cx);
   Rooted<PromiseCapability> thenCapability(cx);
 
@@ -2725,17 +2740,25 @@ static MOZ_MUST_USE bool CommonPerformPromiseAllRace(
 
         nextPromise.setObject(*res);
       }
-    } else {
+    } else if (promiseResolve.isUndefined()) {
       
       
       
+
       
-      RootedValue& staticResolve = resolveOrThen;
-      if (!GetProperty(cx, C, CVal, cx->names().resolve, &staticResolve)) {
+      
+      
+      JSObject* res =
+          CommonStaticResolveRejectImpl(cx, CVal, nextValue, ResolveMode);
+      if (!res) {
         return false;
       }
 
-      if (!Call(cx, staticResolve, CVal, nextValue, &nextPromise)) {
+      nextPromise.setObject(*res);
+    } else {
+      
+      
+      if (!Call(cx, promiseResolve, CVal, nextValue, &nextPromise)) {
         return false;
       }
     }
@@ -2762,7 +2785,6 @@ static MOZ_MUST_USE bool CommonPerformPromiseAllRace(
       return false;
     }
 
-    RootedValue& thenVal = resolveOrThen;
     bool isBuiltinThen;
     if (getThen) {
       
