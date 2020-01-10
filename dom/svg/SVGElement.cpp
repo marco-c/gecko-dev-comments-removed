@@ -1127,13 +1127,23 @@ void MappedAttrParser::ParseMappedAttrValue(nsAtom* aMappedAttrName,
         ParsingMode::AllowUnitlessLength,
         mElement->OwnerDoc()->GetCompatibilityMode(), mLoader, {});
 
-    
-    
-    
     if (changed) {
-      UseCounter useCounter = nsCSSProps::UseCounterFor(propertyID);
-      MOZ_ASSERT(useCounter != eUseCounter_UNKNOWN);
-      mElement->OwnerDoc()->SetUseCounter(useCounter);
+      
+      
+      if (nsCSSProps::IsShorthand(propertyID)) {
+        CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(subprop, propertyID,
+                                             CSSEnabledState::ForAllContent) {
+          UseCounter useCounter = nsCSSProps::UseCounterFor(*subprop);
+          if (useCounter != eUseCounter_UNKNOWN) {
+            mElement->OwnerDoc()->SetUseCounter(useCounter);
+          }
+        }
+      } else {
+        UseCounter useCounter = nsCSSProps::UseCounterFor(propertyID);
+        if (useCounter != eUseCounter_UNKNOWN) {
+          mElement->OwnerDoc()->SetUseCounter(useCounter);
+        }
+      }
     }
     return;
   }
