@@ -62,39 +62,7 @@ function debug(msg) {
 
 
 
-function ResponsiveUI(manager, window, tab) {
-  this.manager = manager;
-  this.browserWindow = window;
-  this.tab = tab;
-  this.inited = this.init();
-}
-
-ResponsiveUI.prototype = {
-  
-
-
-  browserWindow: null,
-
-  
-
-
-  tab: null,
-
-  
-
-
-  inited: null,
-
-  
-
-
-  destroying: false,
-
-  
-
-
-  destroyed: false,
-
+class ResponsiveUI {
   
 
 
@@ -102,7 +70,32 @@ ResponsiveUI.prototype = {
 
 
 
-  toolWindow: null,
+
+  constructor(manager, window, tab) {
+    this.manager = manager;
+    
+    this.browserWindow = window;
+    
+    this.tab = tab;
+
+    
+    this.destroying = false;
+    
+    this.destroyed = false;
+    
+
+
+
+
+
+
+    this.toolWindow = null;
+
+    
+    this.inited = this.init();
+
+    EventEmitter.decorate(this);
+  }
 
   
 
@@ -190,7 +183,7 @@ ResponsiveUI.prototype = {
     message.post(this.toolWindow, "post-init");
 
     debug("Init done");
-  },
+  }
 
   
 
@@ -276,7 +269,7 @@ ResponsiveUI.prototype = {
     this.destroyed = true;
 
     return true;
-  },
+  }
 
   async connectToServer() {
     
@@ -287,7 +280,7 @@ ResponsiveUI.prototype = {
     await this.client.connect();
     const targetFront = await this.client.mainRoot.getTab();
     this.emulationFront = await targetFront.getFront("emulation");
-  },
+  }
 
   
 
@@ -299,13 +292,13 @@ ResponsiveUI.prototype = {
       });
       Services.prefs.setBoolPref(RELOAD_NOTIFICATION_PREF, false);
     }
-  },
+  }
 
   reloadOnChange(id) {
     this.showReloadNotification();
     const pref = RELOAD_CONDITION_PREF_PREFIX + id;
     return Services.prefs.getBoolPref(pref, false);
-  },
+  }
 
   handleEvent(event) {
     const { browserWindow, tab, toolWindow } = this;
@@ -326,7 +319,7 @@ ResponsiveUI.prototype = {
         });
         break;
     }
-  },
+  }
 
   handleMessage(event) {
     if (event.origin !== "chrome://devtools") {
@@ -365,7 +358,7 @@ ResponsiveUI.prototype = {
         this.onResizeViewport(event);
         break;
     }
-  },
+  }
 
   async onChangeDevice(event) {
     const { pixelRatio, touch, userAgent } = event.data.device;
@@ -388,19 +381,19 @@ ResponsiveUI.prototype = {
     }
     
     this.emit("device-changed");
-  },
+  }
 
   async onChangeNetworkThrottling(event) {
     const { enabled, profile } = event.data;
     await this.updateNetworkThrottling(enabled, profile);
     
     this.emit("network-throttling-changed");
-  },
+  }
 
   onChangePixelRatio(event) {
     const { pixelRatio } = event.data;
     this.updateDPPX(pixelRatio);
-  },
+  }
 
   async onChangeTouchSimulation(event) {
     const { enabled } = event.data;
@@ -412,7 +405,7 @@ ResponsiveUI.prototype = {
     }
     
     this.emit("touch-simulation-changed");
-  },
+  }
 
   async onChangeUserAgent(event) {
     const { userAgent } = event.data;
@@ -423,7 +416,7 @@ ResponsiveUI.prototype = {
       this.getViewportBrowser().reload();
     }
     this.emit("user-agent-changed");
-  },
+  }
 
   onContentResize(event) {
     const { width, height } = event.data;
@@ -431,12 +424,12 @@ ResponsiveUI.prototype = {
       width,
       height,
     });
-  },
+  }
 
   onExit() {
     const { browserWindow, tab } = this;
     this.manager.closeIfNeeded(browserWindow, tab);
-  },
+  }
 
   async onRemoveDeviceAssociation() {
     let reloadNeeded = false;
@@ -451,7 +444,7 @@ ResponsiveUI.prototype = {
     }
     
     this.emit("device-association-removed");
-  },
+  }
 
   onResizeViewport(event) {
     const { width, height } = event.data;
@@ -459,12 +452,12 @@ ResponsiveUI.prototype = {
       width,
       height,
     });
-  },
+  }
 
   async onRotateViewport(event) {
     const { orientationType: type, angle, isViewportRotated } = event.data;
     await this.updateScreenOrientation(type, angle, isViewportRotated);
-  },
+  }
 
   
 
@@ -522,7 +515,7 @@ ResponsiveUI.prototype = {
     if (reloadNeeded) {
       this.getViewportBrowser().reload();
     }
-  },
+  }
 
   
 
@@ -538,7 +531,7 @@ ResponsiveUI.prototype = {
     }
     await this.emulationFront.setDPPXOverride(dppx);
     return false;
-  },
+  }
 
   
 
@@ -560,7 +553,7 @@ ResponsiveUI.prototype = {
       latency,
     });
     return false;
-  },
+  }
 
   
 
@@ -573,7 +566,7 @@ ResponsiveUI.prototype = {
       return this.emulationFront.clearUserAgentOverride();
     }
     return this.emulationFront.setUserAgentOverride(userAgent);
-  },
+  }
 
   
 
@@ -607,7 +600,7 @@ ResponsiveUI.prototype = {
       reloadNeeded |= await this.emulationFront.clearMetaViewportOverride();
     }
     return reloadNeeded;
-  },
+  }
 
   
 
@@ -643,14 +636,14 @@ ResponsiveUI.prototype = {
     if (!isViewportRotated) {
       this.emit("only-viewport-orientation-changed");
     }
-  },
+  }
 
   
 
 
   getViewportSize() {
     return this.toolWindow.getViewportSize();
-  },
+  }
 
   
 
@@ -658,30 +651,28 @@ ResponsiveUI.prototype = {
   async setViewportSize(size) {
     await this.inited;
     this.toolWindow.setViewportSize(size);
-  },
+  }
 
   
 
 
   getViewportBrowser() {
     return this.toolWindow.getViewportBrowser();
-  },
+  }
 
   
 
 
   getViewportMessageManager() {
     return this.getViewportBrowser().messageManager;
-  },
+  }
 
   
 
 
   getInitialViewportOrientation(viewport) {
     return getOrientation(viewport, viewport);
-  },
-};
-
-EventEmitter.decorate(ResponsiveUI.prototype);
+  }
+}
 
 module.exports = ResponsiveUI;
