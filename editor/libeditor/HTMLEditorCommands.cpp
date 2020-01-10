@@ -615,45 +615,38 @@ nsresult FontFaceStateCommand::SetState(HTMLEditor* aHTMLEditor,
     return NS_ERROR_INVALID_ARG;
   }
 
-  
-  
-  
-  
-  
-  if (!aPrincipal) {
-    if (aNewState.EqualsLiteral("tt")) {
-      
-      nsresult rv = aHTMLEditor->SetInlinePropertyAsAction(
-          *nsGkAtoms::tt, nullptr, EmptyString(), aPrincipal);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-      
-      rv = aHTMLEditor->RemoveInlinePropertyAsAction(
-          *nsGkAtoms::font, nsGkAtoms::face, aPrincipal);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "RemoveInlinePropertyAsAction() failed");
-      return rv;
-    }
-
+  if (aNewState.EqualsLiteral("tt")) {
     
-    nsresult rv = aHTMLEditor->RemoveInlinePropertyAsAction(
-        *nsGkAtoms::tt, nullptr, aPrincipal);
+    nsresult rv = aHTMLEditor->SetInlinePropertyAsAction(
+        *nsGkAtoms::tt, nullptr, EmptyString(), aPrincipal);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-  }
-
-  if (aNewState.IsEmpty() || aNewState.EqualsLiteral("normal")) {
-    nsresult rv = aHTMLEditor->RemoveInlinePropertyAsAction(
-        *nsGkAtoms::font, nsGkAtoms::face, aPrincipal);
+    
+    rv = aHTMLEditor->RemoveInlinePropertyAsAction(*nsGkAtoms::font,
+                                                   nsGkAtoms::face, aPrincipal);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "RemoveInlinePropertyAsAction() failed");
     return rv;
   }
 
-  nsresult rv = aHTMLEditor->SetInlinePropertyAsAction(
-      *nsGkAtoms::font, nsGkAtoms::face, aNewState, aPrincipal);
+  
+  nsresult rv = aHTMLEditor->RemoveInlinePropertyAsAction(*nsGkAtoms::tt,
+                                                          nullptr, aPrincipal);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  if (aNewState.IsEmpty() || aNewState.EqualsLiteral("normal")) {
+    rv = aHTMLEditor->RemoveInlinePropertyAsAction(*nsGkAtoms::font,
+                                                   nsGkAtoms::face, aPrincipal);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "RemoveInlinePropertyAsAction() failed");
+    return rv;
+  }
+
+  rv = aHTMLEditor->SetInlinePropertyAsAction(*nsGkAtoms::font, nsGkAtoms::face,
+                                              aNewState, aPrincipal);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "SetInlinePropertyAsAction() failed");
   return rv;
 }
