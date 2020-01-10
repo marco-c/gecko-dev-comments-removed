@@ -446,6 +446,24 @@ class LayerManagerComposite final : public HostLayerManager {
                                gfx::IntRect aClipRect, bool aGrayscaleEffect,
                                bool aInvertEffect, float aContrastEffect);
 
+  
+
+
+
+
+
+
+
+
+
+
+  void PlaceNativeLayers(const gfx::IntRegion& aRegion, bool aOpaque,
+                         std::deque<RefPtr<NativeLayer>>* aLayersToRecycle,
+                         gfx::IntRegion* aWindowInvalidRegion);
+  void PlaceNativeLayer(const gfx::IntRect& aRect, bool aOpaque,
+                        std::deque<RefPtr<NativeLayer>>* aLayersToRecycle,
+                        gfx::IntRegion* aWindowInvalidRegion);
+
   bool mUnusedApzTransformWarning;
   bool mDisabledApzWarning;
   RefPtr<Compositor> mCompositor;
@@ -466,7 +484,7 @@ class LayerManagerComposite final : public HostLayerManager {
   CompositorScreenshotGrabber mProfilerScreenshotGrabber;
   RefPtr<TextRenderer> mTextRenderer;
   RefPtr<NativeLayerRoot> mNativeLayerRoot;
-  RefPtr<NativeLayer> mNativeLayerForEntireWindow;
+  std::deque<RefPtr<NativeLayer>> mNativeLayers;
 
 #ifdef USE_SKIA
   
