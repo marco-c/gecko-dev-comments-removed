@@ -307,31 +307,10 @@ void nsSVGImageFrame::PaintSVG(gfxContext& aContext,
                        (mState & NS_FRAME_IS_NONDISPLAY),
                    "Display lists handle dirty rect intersection test");
       dirtyRect = ToAppUnits(*aDirtyRect, appUnitsPerDevPx);
-
       
-      
-      Rect dir(dirtyRect.x, dirtyRect.y, dirtyRect.width, dirtyRect.height);
-      dir.Scale(1.f / AppUnitsPerCSSPixel());
-
-      
-      
-      
-      
-      auto mat = SVGContentUtils::GetCTM(
-          static_cast<SVGImageElement*>(GetContent()), false);
-      if (mat.IsSingular()) {
-        return;
-      }
-
-      mat.Invert();
-      dir = mat.TransformRect(dir);
-
-      
-      dir.MoveBy(-x, -y);
-
-      dir.Scale(AppUnitsPerCSSPixel());
-      dir.Round();
-      dirtyRect = nsRect(dir.x, dir.y, dir.width, dir.height);
+      nsRect rootRect = nsSVGUtils::TransformFrameRectToOuterSVG(
+          mRect, aTransform, PresContext());
+      dirtyRect.MoveBy(-rootRect.TopLeft());
     }
 
     uint32_t flags = aImgParams.imageFlags;
