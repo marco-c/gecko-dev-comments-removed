@@ -93,7 +93,6 @@ class UrlbarInput {
     this.lastQueryContextPromise = Promise.resolve();
     this._actionOverrideKeyCount = 0;
     this._autofillPlaceholder = "";
-    this._deletedEndOfAutofillPlaceholder = false;
     this._lastSearchString = "";
     this._resultForCurrentValue = null;
     this._suppressStartQuery = false;
@@ -190,8 +189,6 @@ class UrlbarInput {
       this.inputField.removeEventListener(name, this);
     }
     this.removeEventListener("mousedown", this);
-
-    this.editor.removeEditActionListener(this);
 
     this.view.panel.remove();
 
@@ -701,31 +698,6 @@ class UrlbarInput {
 
   
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  WillDeleteSelection(selection) {
-    this._deletedEndOfAutofillPlaceholder =
-      selection &&
-      selection.getRangeAt(0).endOffset ==
-        this._autofillPlaceholder.length &&
-      this._autofillPlaceholder.endsWith(String(selection));
-  }
-
-  
-
   get focused() {
     return this.textbox.getAttribute("focused") == "true";
   }
@@ -822,18 +794,8 @@ class UrlbarInput {
 
 
 
-
-
-  _maybeAutofillOnInput(value, deletedAutofilledSubstring) {
-    
-    
-    let lastSearchStartsWithNewSearch =
-      value.length < this._lastSearchString.length &&
-      this._lastSearchString.startsWith(value);
-    let allowAutofill =
-      !lastSearchStartsWithNewSearch &&
-      !deletedAutofilledSubstring &&
-      this.selectionEnd == value.length;
+  _maybeAutofillOnInput(value) {
+    let allowAutofill = this.selectionEnd == value.length;
 
     
     
@@ -1345,16 +1307,11 @@ class UrlbarInput {
     }
   }
 
-  _on_input() {
+  _on_input(event) {
     let value = this.textValue;
     this.valueIsTyped = true;
-    let valueIsPasted = this._valueIsPasted;
-    this._valueIsPasted = false;
     this._untrimmedValue = value;
     this.window.gBrowser.userTypedValue = value;
-
-    let deletedEndOfAutofillPlaceholder = this._deletedEndOfAutofillPlaceholder;
-    this._deletedEndOfAutofillPlaceholder = false;
 
     let compositionState = this._compositionState;
     let compositionClosedPopup = this._compositionClosedPopup;
@@ -1393,10 +1350,13 @@ class UrlbarInput {
       return;
     }
 
-    let deletedAutofilledSubstring =
-      deletedEndOfAutofillPlaceholder && value == this._lastSearchString;
-    let allowAutofill = !valueIsPasted &&
-      this._maybeAutofillOnInput(value, deletedAutofilledSubstring);
+    
+    
+    let allowAutofill =
+      !!event.data &&
+      !event.inputType.startsWith("insertFromPaste") &&
+      event.inputType != "insertFromYank" &&
+      this._maybeAutofillOnInput(value);
 
     this.startQuery({
       searchString: value,
@@ -1407,18 +1367,8 @@ class UrlbarInput {
   }
 
   _on_select(event) {
-    if (!this.window.windowUtils.isHandlingUserInput) {
-      
-      
-      
-      
-      
-      
-      this.editor.addEditActionListener(this);
-      return;
-    }
-
-    if (!Services.clipboard.supportsSelectionClipboard()) {
+    if (!this.window.windowUtils.isHandlingUserInput ||
+        !Services.clipboard.supportsSelectionClipboard()) {
       return;
     }
 
@@ -1462,7 +1412,7 @@ class UrlbarInput {
     if (!originalPasteData) {
       return;
     }
-    this._valueIsPasted = true;
+
     let oldValue = this.inputField.value;
     let oldStart = oldValue.substring(0, this.selectionStart);
     

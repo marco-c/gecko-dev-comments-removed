@@ -319,8 +319,11 @@ class UrlbarAbstraction {
 
 
   fireInputEvent() {
-    let event = this.window.document.createEvent("Events");
-    event.initEvent("input", true, true);
+    
+    
+    let event = new InputEvent("input", {
+      data: this.urlbar.value[this.urlbar.value.length - 1] || null,
+    });
     this.urlbar.inputField.dispatchEvent(event);
   }
 
