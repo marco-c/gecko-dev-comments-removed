@@ -76,7 +76,7 @@ enum StructuredCloneTags {
   SCTAG_DOM_DOMRECT,
   
   
-  SCTAG_DOM_DOMRECT_READONLY,
+  SCTAG_DOM_DOMRECTREADONLY,
 
   
   
