@@ -49,10 +49,6 @@ static bool IsEvalCacheCandidate(JSScript* script) {
 
   
   
-  if (script->hasSingletons()) {
-    return false;
-  }
-
   for (JS::GCCellPtr gcThing : script->gcthings()) {
     if (gcThing.is<JSObject>()) {
       return false;

@@ -2020,7 +2020,6 @@ class JSScript : public js::gc::TenuredCell {
     HasCallSiteObj = 1 << 7,
 
     
-    HasSingletons = 1 << 8,
 
     FunctionHasThisBinding = 1 << 9,
     FunctionHasExtraBodyVarScope = 1 << 10,
@@ -2441,7 +2440,6 @@ class JSScript : public js::gc::TenuredCell {
     return hasFlag(ImmutableFlags::HasCallSiteObj);
   }
 
-  bool hasSingletons() const { return hasFlag(ImmutableFlags::HasSingletons); }
   bool treatAsRunOnce() const {
     return hasFlag(ImmutableFlags::TreatAsRunOnce);
   }
