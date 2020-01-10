@@ -1334,8 +1334,30 @@ this.DownloadSource.prototype = {
 
 
 
+
+
+
+
+
+
+
+
+
+
+  allowHttpStatus: null,
+
+  
+
+
+
+
   toSerializable() {
     if (this.adjustChannel) {
+      
+      return null;
+    }
+
+    if (this.allowHttpStatus) {
       
       return null;
     }
@@ -1362,6 +1384,11 @@ this.DownloadSource.prototype = {
     return serializable;
   },
 };
+
+
+
+
+
 
 
 
@@ -1417,6 +1444,10 @@ this.DownloadSource.fromSerializable = function(aSerializable) {
     }
     if ("adjustChannel" in aSerializable) {
       source.adjustChannel = aSerializable.adjustChannel;
+    }
+
+    if ("allowHttpStatus" in aSerializable) {
+      source.allowHttpStatus = aSerializable.allowHttpStatus;
     }
 
     deserializeUnknownProperties(
@@ -2099,6 +2130,19 @@ this.DownloadCopySaver.prototype = {
             
             
             this.download._blockedByParentalControls = true;
+            aRequest.cancel(Cr.NS_BINDING_ABORTED);
+            return;
+          }
+
+          
+          
+          
+          
+          if (
+            download.source.allowHttpStatus &&
+            aRequest instanceof Ci.nsIHttpChannel &&
+            !download.source.allowHttpStatus(download, aRequest.responseStatus)
+          ) {
             aRequest.cancel(Cr.NS_BINDING_ABORTED);
             return;
           }
