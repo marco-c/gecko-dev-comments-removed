@@ -2650,6 +2650,13 @@ class nsContentUtils {
 
 
 
+  static bool IsNodeInEditableRegion(nsINode* aNode);
+
+  
+
+
+
+
   static mozilla::LogModule* DOMDumpLog();
 
   

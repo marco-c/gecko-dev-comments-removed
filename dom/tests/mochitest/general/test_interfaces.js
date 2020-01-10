@@ -632,6 +632,8 @@ var interfaceNamesInGlobalScope = [
   
   { name: "Location", insecureContext: true },
   
+  { name: "MathMLElement", insecureContext: true },
+  
   { name: "MediaCapabilities", insecureContext: true },
   
   { name: "MediaCapabilitiesInfo", insecureContext: true },
