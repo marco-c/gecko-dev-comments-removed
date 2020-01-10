@@ -191,14 +191,6 @@ let SyncedTabsInternal = {
     }
   },
 
-  get loginFailed() {
-    if (!weaveXPCService.ready) {
-      log.debug("Sync isn't yet ready; assuming the login didn't fail");
-      return false;
-    }
-    return Weave.Status.login == Weave.LOGIN_FAILED_LOGIN_REJECTED;
-  },
-
   
   get isConfiguredToSyncTabs() {
     if (!weaveXPCService.ready) {
@@ -241,11 +233,6 @@ var SyncedTabs = {
   
   get hasSyncedThisSession() {
     return this._internal.hasSyncedThisSession;
-  },
-
-  
-  get loginFailed() {
-    return this._internal.loginFailed;
   },
 
   
