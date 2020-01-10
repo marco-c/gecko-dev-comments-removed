@@ -53,6 +53,11 @@ const NPDrawingModel kDefaultDrawingModel = NPDrawingModelCoreGraphics;
 const NPDrawingModel kDefaultDrawingModel = static_cast<NPDrawingModel>(0);
 #endif
 
+#if defined(OS_WIN)
+static const DWORD NPAPI_INVALID_WPARAM = 0xffffffff;
+#endif
+
+
 
 
 
