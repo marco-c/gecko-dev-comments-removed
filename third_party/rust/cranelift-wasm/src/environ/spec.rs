@@ -134,6 +134,17 @@ pub trait FuncEnvironment {
     
     
     
+    fn reference_type(&self) -> ir::Type {
+        match self.pointer_type() {
+            ir::types::I32 => ir::types::R32,
+            ir::types::I64 => ir::types::R64,
+            _ => panic!("unsupported pointer type"),
+        }
+    }
+
+    
+    
+    
     
     
     

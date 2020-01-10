@@ -16,7 +16,9 @@ pub enum CallConv {
     
     WindowsFastcall,
     
-    Baldrdash,
+    BaldrdashSystemV,
+    
+    BaldrdashWindows,
     
     Probestack,
 }
@@ -40,8 +42,25 @@ impl CallConv {
             LibcallCallConv::Cold => CallConv::Cold,
             LibcallCallConv::SystemV => CallConv::SystemV,
             LibcallCallConv::WindowsFastcall => CallConv::WindowsFastcall,
-            LibcallCallConv::Baldrdash => CallConv::Baldrdash,
+            LibcallCallConv::BaldrdashSystemV => CallConv::BaldrdashSystemV,
+            LibcallCallConv::BaldrdashWindows => CallConv::BaldrdashWindows,
             LibcallCallConv::Probestack => CallConv::Probestack,
+        }
+    }
+
+    
+    pub fn extends_windows_fastcall(&self) -> bool {
+        match self {
+            CallConv::WindowsFastcall | CallConv::BaldrdashWindows => true,
+            _ => false,
+        }
+    }
+
+    
+    pub fn extends_baldrdash(&self) -> bool {
+        match self {
+            CallConv::BaldrdashSystemV | CallConv::BaldrdashWindows => true,
+            _ => false,
         }
     }
 }
@@ -53,7 +72,8 @@ impl fmt::Display for CallConv {
             CallConv::Cold => "cold",
             CallConv::SystemV => "system_v",
             CallConv::WindowsFastcall => "windows_fastcall",
-            CallConv::Baldrdash => "baldrdash",
+            CallConv::BaldrdashSystemV => "baldrdash_system_v",
+            CallConv::BaldrdashWindows => "baldrdash_windows",
             CallConv::Probestack => "probestack",
         })
     }
@@ -67,7 +87,8 @@ impl str::FromStr for CallConv {
             "cold" => Ok(CallConv::Cold),
             "system_v" => Ok(CallConv::SystemV),
             "windows_fastcall" => Ok(CallConv::WindowsFastcall),
-            "baldrdash" => Ok(CallConv::Baldrdash),
+            "baldrdash_system_v" => Ok(CallConv::BaldrdashSystemV),
+            "baldrdash_windows" => Ok(CallConv::BaldrdashWindows),
             "probestack" => Ok(CallConv::Probestack),
             _ => Err(()),
         }

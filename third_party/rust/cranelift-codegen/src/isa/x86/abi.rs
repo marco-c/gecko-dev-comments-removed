@@ -55,7 +55,7 @@ impl Args {
         shared_flags: &shared_settings::Flags,
         isa_flags: &isa_settings::Flags,
     ) -> Self {
-        let offset = if let CallConv::WindowsFastcall = call_conv {
+        let offset = if call_conv.extends_windows_fastcall() {
             
             
             32
@@ -109,7 +109,7 @@ impl ArgAssigner for Args {
         }
 
         
-        if ty.is_int() && self.call_conv == CallConv::Baldrdash {
+        if ty.is_int() && self.call_conv.extends_baldrdash() {
             match arg.purpose {
                 
                 ArgumentPurpose::VMContext => {
@@ -134,7 +134,7 @@ impl ArgAssigner for Args {
         }
 
         
-        let fpr_offset = if self.call_conv == CallConv::WindowsFastcall {
+        let fpr_offset = if self.call_conv.extends_windows_fastcall() {
             
             
             
@@ -143,6 +143,7 @@ impl ArgAssigner for Args {
         } else {
             &mut self.fpr_used
         };
+
         if ty.is_float() && *fpr_offset < self.fpr_limit {
             let reg = FPR.unit(*fpr_offset);
             *fpr_offset += 1;
@@ -176,7 +177,7 @@ pub fn legalize_signature(
         }
         PointerWidth::U64 => {
             bits = 64;
-            args = if sig.call_conv == CallConv::WindowsFastcall {
+            args = if sig.call_conv.extends_windows_fastcall() {
                 Args::new(
                     bits,
                     &ARG_GPRS_WIN_FASTCALL_X64[..],
@@ -200,7 +201,7 @@ pub fn legalize_signature(
 
     legalize_args(&mut sig.params, &mut args);
 
-    let (regs, fpr_limit) = if sig.call_conv == CallConv::WindowsFastcall {
+    let (regs, fpr_limit) = if sig.call_conv.extends_windows_fastcall() {
         
         (&RET_GPRS_WIN_FASTCALL_X64[..], 1)
     } else {
@@ -250,7 +251,7 @@ fn callee_saved_gprs(isa: &dyn TargetIsa, call_conv: CallConv) -> &'static [RU] 
         PointerWidth::U16 => panic!(),
         PointerWidth::U32 => &[RU::rbx, RU::rsi, RU::rdi],
         PointerWidth::U64 => {
-            if call_conv == CallConv::WindowsFastcall {
+            if call_conv.extends_windows_fastcall() {
                 
                 
                 
@@ -322,7 +323,9 @@ pub fn prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> Codege
             system_v_prologue_epilogue(func, isa)
         }
         CallConv::WindowsFastcall => fastcall_prologue_epilogue(func, isa),
-        CallConv::Baldrdash => baldrdash_prologue_epilogue(func, isa),
+        CallConv::BaldrdashSystemV | CallConv::BaldrdashWindows => {
+            baldrdash_prologue_epilogue(func, isa)
+        }
         CallConv::Probestack => unimplemented!("probestack calling convention"),
     }
 }
@@ -336,7 +339,14 @@ fn baldrdash_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> 
     
     let stack_align = 16;
     let word_size = StackSize::from(isa.pointer_bytes());
-    let bytes = StackSize::from(isa.flags().baldrdash_prologue_words()) * word_size;
+    let shadow_store_size = if func.signature.call_conv.extends_windows_fastcall() {
+        32
+    } else {
+        0
+    };
+
+    let bytes =
+        StackSize::from(isa.flags().baldrdash_prologue_words()) * word_size + shadow_store_size;
 
     let mut ss = ir::StackSlotData::new(ir::StackSlotKind::IncomingArg, bytes);
     ss.offset = Some(-(bytes as StackOffset));

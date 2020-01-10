@@ -13,9 +13,11 @@
 
 
 
-
 use super::{Addend, CodeInfo, CodeOffset, CodeSink, Reloc};
-use crate::ir::{ExternalName, JumpTable, SourceLoc, TrapCode};
+use crate::binemit::stackmap::Stackmap;
+use crate::ir::entities::Value;
+use crate::ir::{ExternalName, Function, JumpTable, SourceLoc, TrapCode};
+use crate::isa::TargetIsa;
 use core::ptr::write_unaligned;
 
 
@@ -36,6 +38,7 @@ pub struct MemoryCodeSink<'a> {
     offset: isize,
     relocs: &'a mut dyn RelocSink,
     traps: &'a mut dyn TrapSink,
+    stackmaps: &'a mut dyn StackmapSink,
     
     pub info: CodeInfo,
 }
@@ -49,6 +52,7 @@ impl<'a> MemoryCodeSink<'a> {
         data: *mut u8,
         relocs: &'a mut dyn RelocSink,
         traps: &'a mut dyn TrapSink,
+        stackmaps: &'a mut dyn StackmapSink,
     ) -> Self {
         Self {
             data,
@@ -61,6 +65,7 @@ impl<'a> MemoryCodeSink<'a> {
             },
             relocs,
             traps,
+            stackmaps,
         }
     }
 }
@@ -149,6 +154,12 @@ impl<'a> CodeSink for MemoryCodeSink<'a> {
         self.info.rodata_size = self.offset() - (self.info.jumptables_size + self.info.code_size);
         self.info.total_size = self.offset();
     }
+
+    fn add_stackmap(&mut self, val_list: &[Value], func: &Function, isa: &dyn TargetIsa) {
+        let ofs = self.offset();
+        let stackmap = Stackmap::from_values(&val_list, func, isa);
+        self.stackmaps.add_stackmap(ofs, stackmap);
+    }
 }
 
 
@@ -157,4 +168,17 @@ pub struct NullTrapSink {}
 
 impl TrapSink for NullTrapSink {
     fn trap(&mut self, _offset: CodeOffset, _srcloc: SourceLoc, _code: TrapCode) {}
+}
+
+
+pub trait StackmapSink {
+    
+    fn add_stackmap(&mut self, _: CodeOffset, _: Stackmap);
+}
+
+
+pub struct NullStackmapSink {}
+
+impl StackmapSink for NullStackmapSink {
+    fn add_stackmap(&mut self, _: CodeOffset, _: Stackmap) {}
 }
