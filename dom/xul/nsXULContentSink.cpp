@@ -67,13 +67,14 @@ XULContentSinkImpl::ContextStack::~ContextStack() {
   }
 }
 
-void XULContentSinkImpl::ContextStack::Push(nsXULPrototypeNode* aNode,
-                                            State aState) {
+nsresult XULContentSinkImpl::ContextStack::Push(nsXULPrototypeNode* aNode,
+                                                State aState) {
   Entry* entry = new Entry(aNode, aState, mTop);
 
   mTop = entry;
 
   ++mDepth;
+  return NS_OK;
 }
 
 nsresult XULContentSinkImpl::ContextStack::Pop(State* aState) {
@@ -298,7 +299,7 @@ nsresult XULContentSinkImpl::FlushText(bool aCreateTextNode) {
     
     if (mState != eInDocumentElement || mContextStack.Depth() == 0) break;
 
-    RefPtr<nsXULPrototypeText> text = new nsXULPrototypeText();
+    nsXULPrototypeText* text = new nsXULPrototypeText();
     text->mValue.Assign(mText, mTextLength);
     if (stripWhitespace) text->mValue.Trim(" \t\n\r");
 
@@ -307,7 +308,8 @@ nsresult XULContentSinkImpl::FlushText(bool aCreateTextNode) {
     rv = mContextStack.GetTopChildren(&children);
     if (NS_FAILED(rv)) return rv;
 
-    children->AppendElement(text.forget());
+    
+    children->AppendElement(text);
   } while (0);
 
   
@@ -335,6 +337,15 @@ nsresult XULContentSinkImpl::NormalizeAttributeString(
                                      nsINode::ATTRIBUTE_NODE);
   aName.SetTo(ni);
 
+  return NS_OK;
+}
+
+nsresult XULContentSinkImpl::CreateElement(mozilla::dom::NodeInfo* aNodeInfo,
+                                           nsXULPrototypeElement** aResult) {
+  nsXULPrototypeElement* element = new nsXULPrototypeElement();
+  element->mNodeInfo = aNodeInfo;
+
+  *aResult = element;
   return NS_OK;
 }
 
@@ -616,6 +627,8 @@ nsresult XULContentSinkImpl::OpenRoot(const char16_t** aAttributes,
   NS_ASSERTION(mState == eInProlog, "how'd we get here?");
   if (mState != eInProlog) return NS_ERROR_UNEXPECTED;
 
+  nsresult rv;
+
   if (aNodeInfo->Equals(nsGkAtoms::script, kNameSpaceID_XHTML) ||
       aNodeInfo->Equals(nsGkAtoms::script, kNameSpaceID_XUL)) {
     MOZ_LOG(gContentSinkLog, LogLevel::Error,
@@ -625,14 +638,32 @@ nsresult XULContentSinkImpl::OpenRoot(const char16_t** aAttributes,
   }
 
   
-  RefPtr<nsXULPrototypeElement> element = new nsXULPrototypeElement(aNodeInfo);
+  nsXULPrototypeElement* element;
+  rv = CreateElement(aNodeInfo, &element);
+
+  if (NS_FAILED(rv)) {
+    if (MOZ_LOG_TEST(gContentSinkLog, LogLevel::Error)) {
+      nsAutoString anodeC;
+      aNodeInfo->GetName(anodeC);
+      MOZ_LOG(gContentSinkLog, LogLevel::Error,
+              ("xul: unable to create element '%s' at line %d",
+               NS_ConvertUTF16toUTF8(anodeC).get(),
+               -1));  
+    }
+
+    return rv;
+  }
 
   
   
-  mContextStack.Push(element, mState);
+  rv = mContextStack.Push(element, mState);
+  if (NS_FAILED(rv)) {
+    element->Release();
+    return rv;
+  }
 
   
-  nsresult rv = AddAttributes(aAttributes, aAttrLen, element);
+  rv = AddAttributes(aAttributes, aAttrLen, element);
   if (NS_FAILED(rv)) return rv;
 
   mState = eInDocumentElement;
@@ -643,13 +674,29 @@ nsresult XULContentSinkImpl::OpenTag(const char16_t** aAttributes,
                                      const uint32_t aAttrLen,
                                      const uint32_t aLineNumber,
                                      mozilla::dom::NodeInfo* aNodeInfo) {
+  nsresult rv;
+
   
-  RefPtr<nsXULPrototypeElement> element = new nsXULPrototypeElement(aNodeInfo);
+  nsXULPrototypeElement* element;
+  rv = CreateElement(aNodeInfo, &element);
+
+  if (NS_FAILED(rv)) {
+    if (MOZ_LOG_TEST(gContentSinkLog, LogLevel::Error)) {
+      nsAutoString anodeC;
+      aNodeInfo->GetName(anodeC);
+      MOZ_LOG(gContentSinkLog, LogLevel::Error,
+              ("xul: unable to create element '%s' at line %d",
+               NS_ConvertUTF16toUTF8(anodeC).get(), aLineNumber));
+    }
+
+    return rv;
+  }
 
   
   nsPrototypeArray* children = nullptr;
-  nsresult rv = mContextStack.GetTopChildren(&children);
+  rv = mContextStack.GetTopChildren(&children);
   if (NS_FAILED(rv)) {
+    delete element;
     return rv;
   }
 
@@ -676,7 +723,8 @@ nsresult XULContentSinkImpl::OpenTag(const char16_t** aAttributes,
 
   
   
-  mContextStack.Push(element, mState);
+  rv = mContextStack.Push(element, mState);
+  if (NS_FAILED(rv)) return rv;
 
   mState = eInDocumentElement;
   return NS_OK;
