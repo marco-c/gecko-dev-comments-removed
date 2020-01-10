@@ -13,6 +13,28 @@
   const { AppConstants } = ChromeUtils.import(
     "resource://gre/modules/AppConstants.jsm"
   );
+  let LazyConstants = {};
+  ChromeUtils.defineModuleGetter(
+    LazyConstants,
+    "PluralForm",
+    "resource://gre/modules/PluralForm.jsm"
+  );
+
+  const PREFS_TO_OBSERVE_BOOL = new Map([
+    ["findAsYouType", "accessibility.typeaheadfind"],
+    ["manualFAYT", "accessibility.typeaheadfind.manual"],
+    ["typeAheadLinksOnly", "accessibility.typeaheadfind.linksonly"],
+    ["entireWord", "findbar.entireword"],
+    ["highlightAll", "findbar.highlightAll"],
+    ["useModalHighlight", "findbar.modalHighlight"],
+  ]);
+  const PREFS_TO_OBSERVE_INT = new Map([
+    ["typeAheadCaseSensitive", "accessibility.typeaheadfind.casesensitive"],
+  ]);
+  const PREFS_TO_OBSERVE_ALL = new Map([
+    ...PREFS_TO_OBSERVE_BOOL,
+    ...PREFS_TO_OBSERVE_INT,
+  ]);
 
   class MozFindbar extends XULElement {
     constructor() {
@@ -39,19 +61,26 @@
       <hbox anonid="findbar-container" class="findbar-container" flex="1" align="center">
         <hbox anonid="findbar-textbox-wrapper" align="stretch">
           <html:input anonid="findbar-textbox" class="findbar-textbox findbar-find-fast" />
-          <toolbarbutton anonid="find-previous" class="findbar-find-previous tabbable" data-l10n-attrs="tooltiptext" data-l10n-id="findbar-previous" oncommand="onFindAgainCommand(true);" disabled="true" />
-          <toolbarbutton anonid="find-next" class="findbar-find-next tabbable" data-l10n-id="findbar-next" oncommand="onFindAgainCommand(false);" disabled="true" />
+          <toolbarbutton anonid="find-previous" class="findbar-find-previous tabbable"
+            data-l10n-attrs="tooltiptext" data-l10n-id="findbar-previous"
+            oncommand="onFindAgainCommand(true);" disabled="true" />
+          <toolbarbutton anonid="find-next" class="findbar-find-next tabbable"
+            data-l10n-id="findbar-next" oncommand="onFindAgainCommand(false);" disabled="true" />
         </hbox>
-        <toolbarbutton anonid="highlight" class="findbar-highlight findbar-button tabbable" data-l10n-id="findbar-highlight-all2" oncommand="toggleHighlight(this.checked);" type="checkbox" />
-        <toolbarbutton anonid="find-case-sensitive" class="findbar-case-sensitive findbar-button tabbable" data-l10n-id="findbar-case-sensitive" oncommand="_setCaseSensitivity(this.checked ? 1 : 0);" type="checkbox" />
-        <toolbarbutton anonid="find-entire-word" class="findbar-entire-word findbar-button tabbable" data-l10n-id="findbar-entire-word" oncommand="toggleEntireWord(this.checked);" type="checkbox" />
+        <toolbarbutton anonid="highlight" class="findbar-highlight findbar-button tabbable"
+          data-l10n-id="findbar-highlight-all2" oncommand="toggleHighlight(this.checked);" type="checkbox" />
+        <toolbarbutton anonid="find-case-sensitive" class="findbar-case-sensitive findbar-button tabbable"
+          data-l10n-id="findbar-case-sensitive" oncommand="_setCaseSensitivity(this.checked ? 1 : 0);" type="checkbox" />
+        <toolbarbutton anonid="find-entire-word" class="findbar-entire-word findbar-button tabbable"
+          data-l10n-id="findbar-entire-word" oncommand="toggleEntireWord(this.checked);" type="checkbox" />
         <label anonid="match-case-status" class="findbar-find-fast" />
         <label anonid="entire-word-status" class="findbar-find-fast" />
         <label anonid="found-matches" class="findbar-find-fast found-matches" hidden="true" />
         <image anonid="find-status-icon" class="findbar-find-fast find-status-icon" />
         <description anonid="find-status" control="findbar-textbox" class="findbar-find-fast findbar-find-status" />
       </hbox>
-      <toolbarbutton anonid="find-closebutton" class="findbar-closebutton close-icon" data-l10n-id="findbar-find-button-close" oncommand="close();" />
+      <toolbarbutton anonid="find-closebutton" class="findbar-closebutton close-icon"
+        data-l10n-id="findbar-find-button-close" oncommand="close();" />
     `);
     }
 
@@ -72,7 +101,7 @@
 
       this.FIND_LINKS = 2;
 
-      this.__findMode = 0;
+      this._findMode = 0;
 
       this._flashFindBar = 0;
 
@@ -86,61 +115,7 @@
 
       this._browser = null;
 
-      this.__prefsvc = null;
-
-      this._observer = {
-        _self: this,
-
-        QueryInterface: ChromeUtils.generateQI([
-          "nsIObserver",
-          "nsISupportsWeakReference",
-        ]),
-
-        observe(aSubject, aTopic, aPrefName) {
-          if (aTopic != "nsPref:changed") {
-            return;
-          }
-
-          let prefsvc = this._self._prefsvc;
-
-          switch (aPrefName) {
-            case "accessibility.typeaheadfind":
-              this._self._findAsYouType = prefsvc.getBoolPref(aPrefName);
-              break;
-            case "accessibility.typeaheadfind.manual":
-              this._self._manualFAYT = prefsvc.getBoolPref(aPrefName);
-              break;
-            case "accessibility.typeaheadfind.timeout":
-              this._self.quickFindTimeoutLength = prefsvc.getIntPref(aPrefName);
-              break;
-            case "accessibility.typeaheadfind.linksonly":
-              this._self._typeAheadLinksOnly = prefsvc.getBoolPref(aPrefName);
-              break;
-            case "accessibility.typeaheadfind.casesensitive":
-              this._self._setCaseSensitivity(prefsvc.getIntPref(aPrefName));
-              break;
-            case "findbar.entireword":
-              this._self._entireWord = prefsvc.getBoolPref(aPrefName);
-              this._self.toggleEntireWord(this._self._entireWord, true);
-              break;
-            case "findbar.highlightAll":
-              this._self.toggleHighlight(prefsvc.getBoolPref(aPrefName), true);
-              break;
-            case "findbar.modalHighlight":
-              this._self._useModalHighlight = prefsvc.getBoolPref(aPrefName);
-              if (this._self.browser.finder) {
-                this._self.browser.finder.onModalHighlightChange(
-                  this._self._useModalHighlight
-                );
-              }
-              break;
-          }
-        },
-      };
-
       this._destroyed = false;
-
-      this._pluralForm = null;
 
       this._strBundle = null;
 
@@ -154,7 +129,7 @@
 
       this._foundURL = null;
 
-      let prefsvc = this._prefsvc;
+      let prefsvc = Services.prefs;
 
       this.quickFindTimeoutLength = prefsvc.getIntPref(
         "accessibility.typeaheadfind.timeout"
@@ -162,53 +137,23 @@
       this._flashFindBar = prefsvc.getIntPref(
         "accessibility.typeaheadfind.flashBar"
       );
-      this._useModalHighlight = prefsvc.getBoolPref("findbar.modalHighlight");
 
-      prefsvc.addObserver("accessibility.typeaheadfind", this._observer);
-      prefsvc.addObserver("accessibility.typeaheadfind.manual", this._observer);
-      prefsvc.addObserver(
-        "accessibility.typeaheadfind.linksonly",
-        this._observer
-      );
-      prefsvc.addObserver(
-        "accessibility.typeaheadfind.casesensitive",
-        this._observer
-      );
-      prefsvc.addObserver("findbar.entireword", this._observer);
-      prefsvc.addObserver("findbar.highlightAll", this._observer);
-      prefsvc.addObserver("findbar.modalHighlight", this._observer);
-
-      this._findAsYouType = prefsvc.getBoolPref("accessibility.typeaheadfind");
-      this._manualFAYT = prefsvc.getBoolPref(
-        "accessibility.typeaheadfind.manual"
-      );
-      this._typeAheadLinksOnly = prefsvc.getBoolPref(
-        "accessibility.typeaheadfind.linksonly"
-      );
-      this._typeAheadCaseSensitive = prefsvc.getIntPref(
-        "accessibility.typeaheadfind.casesensitive"
-      );
-      this._entireWord = prefsvc.getBoolPref("findbar.entireword");
-      this._highlightAll = prefsvc.getBoolPref("findbar.highlightAll");
-
-      
-      this.nsITypeAheadFind = Ci.nsITypeAheadFind;
-      this.nsISelectionController = Ci.nsISelectionController;
-      this._findSelection = this.nsISelectionController.SELECTION_FIND;
+      let observe = (this._observe = this.observe.bind(this));
+      for (let [propName, prefName] of PREFS_TO_OBSERVE_ALL) {
+        prefsvc.addObserver(prefName, observe);
+        let prefGetter = PREFS_TO_OBSERVE_BOOL.has(propName) ? "Bool" : "Int";
+        this["_" + propName] = prefsvc[`get${prefGetter}Pref`](prefName);
+      }
 
       this._findResetTimeout = -1;
 
       
       
       if (this.getAttribute("browserid")) {
-        setTimeout(
-          function(aSelf) {
-            
-            aSelf.browser = aSelf.browser;
-          },
-          0,
-          this
-        );
+        setTimeout(() => {
+          
+          this.browser = this.browser;
+        }, 0);
       }
 
       window.addEventListener("unload", this.destroy);
@@ -237,7 +182,7 @@
       this._findField.addEventListener("keypress", event => {
         switch (event.keyCode) {
           case KeyEvent.DOM_VK_RETURN:
-            if (this._findMode == this.FIND_NORMAL) {
+            if (this.findMode == this.FIND_NORMAL) {
               let findString = this._findField;
               if (!findString.value) {
                 return;
@@ -255,7 +200,7 @@
           case KeyEvent.DOM_VK_TAB:
             let shouldHandle =
               !event.altKey && !event.ctrlKey && !event.metaKey;
-            if (shouldHandle && this._findMode != this.FIND_NORMAL) {
+            if (shouldHandle && this.findMode != this.FIND_NORMAL) {
               this._finishFAYT(event);
             }
             break;
@@ -305,7 +250,7 @@
 
       this._findField.addEventListener("compositionend", event => {
         this._isIMEComposing = false;
-        if (this._findMode != this.FIND_NORMAL) {
+        if (this.findMode != this.FIND_NORMAL) {
           this._setFindCloseTimeout();
         }
       });
@@ -325,14 +270,14 @@
       });
     }
 
-    set _findMode(val) {
-      this.__findMode = val;
+    set findMode(val) {
+      this._findMode = val;
       this._updateBrowserWithState();
       return val;
     }
 
-    get _findMode() {
-      return this.__findMode;
+    get findMode() {
+      return this._findMode;
     }
 
     set prefillWithSelection(val) {
@@ -342,10 +287,6 @@
 
     get prefillWithSelection() {
       return this.getAttribute("prefillwithselection") != "false";
-    }
-
-    get findMode() {
-      return this._findMode;
     }
 
     get hasTransactions() {
@@ -406,20 +347,6 @@
       return this._browser;
     }
 
-    get _prefsvc() {
-      return Services.prefs;
-    }
-
-    get pluralForm() {
-      if (!this._pluralForm) {
-        this._pluralForm = ChromeUtils.import(
-          "resource://gre/modules/PluralForm.jsm",
-          {}
-        ).PluralForm;
-      }
-      return this._pluralForm;
-    }
-
     get strBundle() {
       if (!this._strBundle) {
         this._strBundle = Services.strings.createBundle(
@@ -427,6 +354,45 @@
         );
       }
       return this._strBundle;
+    }
+
+    observe(subject, topic, prefName) {
+      if (topic != "nsPref:changed") {
+        return;
+      }
+
+      let prefsvc = Services.prefs;
+
+      switch (prefName) {
+        case "accessibility.typeaheadfind":
+          this._findAsYouType = prefsvc.getBoolPref(prefName);
+          break;
+        case "accessibility.typeaheadfind.manual":
+          this._manualFAYT = prefsvc.getBoolPref(prefName);
+          break;
+        case "accessibility.typeaheadfind.timeout":
+          this.quickFindTimeoutLength = prefsvc.getIntPref(prefName);
+          break;
+        case "accessibility.typeaheadfind.linksonly":
+          this._typeAheadLinksOnly = prefsvc.getBoolPref(prefName);
+          break;
+        case "accessibility.typeaheadfind.casesensitive":
+          this._setCaseSensitivity(prefsvc.getIntPref(prefName));
+          break;
+        case "findbar.entireword":
+          this._entireWord = prefsvc.getBoolPref(prefName);
+          this.toggleEntireWord(this._entireWord, true);
+          break;
+        case "findbar.highlightAll":
+          this.toggleHighlight(prefsvc.getBoolPref(prefName), true);
+          break;
+        case "findbar.modalHighlight":
+          this._useModalHighlight = prefsvc.getBoolPref(prefName);
+          if (this.browser.finder) {
+            this.browser.finder.onModalHighlightChange(this._useModalHighlight);
+          }
+          break;
+      }
     }
 
     getElement(aAnonymousID) {
@@ -449,25 +415,14 @@
         this.browser.finder.destroy();
       }
 
+      
       this.browser = null;
 
-      let prefsvc = this._prefsvc;
-      prefsvc.removeObserver("accessibility.typeaheadfind", this._observer);
-      prefsvc.removeObserver(
-        "accessibility.typeaheadfind.manual",
-        this._observer
-      );
-      prefsvc.removeObserver(
-        "accessibility.typeaheadfind.linksonly",
-        this._observer
-      );
-      prefsvc.removeObserver(
-        "accessibility.typeaheadfind.casesensitive",
-        this._observer
-      );
-      prefsvc.removeObserver("findbar.entireword", this._observer);
-      prefsvc.removeObserver("findbar.highlightAll", this._observer);
-      prefsvc.removeObserver("findbar.modalHighlight", this._observer);
+      let prefsvc = Services.prefs;
+      let observe = this._observe;
+      for (let [, prefName] of PREFS_TO_OBSERVE_ALL) {
+        prefsvc.removeObserver(prefName, observe);
+      }
 
       
       this._cancelTimers();
@@ -505,7 +460,7 @@
         this._quickFindTimeout = null;
       } else {
         this._quickFindTimeout = setTimeout(() => {
-          if (this._findMode != this.FIND_NORMAL) {
+          if (this.findMode != this.FIND_NORMAL) {
             this.close();
           }
           this._quickFindTimeout = null;
@@ -517,8 +472,6 @@
     
 
 
-
-
     _updateMatchesCount() {
       if (!this._dispatchFindEvent("matchescount")) {
         return;
@@ -526,7 +479,7 @@
 
       this.browser.finder.requestMatchesCount(
         this._findField.value,
-        this._findMode == this.FIND_LINKS
+        this.findMode == this.FIND_LINKS
       );
     }
 
@@ -538,14 +491,14 @@
 
 
 
-    toggleHighlight(aHighlight, aFromPrefObserver) {
-      if (aHighlight === this._highlightAll) {
+    toggleHighlight(highlight, fromPrefObserver) {
+      if (highlight === this._highlightAll) {
         return;
       }
 
-      this.browser.finder.onHighlightAllChange(aHighlight);
+      this.browser.finder.onHighlightAllChange(highlight);
 
-      this._setHighlightAll(aHighlight, aFromPrefObserver);
+      this._setHighlightAll(highlight, fromPrefObserver);
 
       if (!this._dispatchFindEvent("highlightallchange")) {
         return;
@@ -553,18 +506,18 @@
 
       let word = this._findField.value;
       
-      if (aHighlight && !word) {
+      if (highlight && !word) {
         return;
       }
 
       this.browser.finder.highlight(
-        aHighlight,
+        highlight,
         word,
-        this._findMode == this.FIND_LINKS
+        this.findMode == this.FIND_LINKS
       );
 
       
-      this._updateMatchesCount(this.nsITypeAheadFind.FIND_FOUND);
+      this._updateMatchesCount(Ci.nsITypeAheadFind.FIND_FOUND);
     }
 
     
@@ -575,14 +528,14 @@
 
 
 
-    _setHighlightAll(aHighlight, aFromPrefObserver) {
-      if (typeof aHighlight != "boolean") {
-        aHighlight = this._highlightAll;
+    _setHighlightAll(highlight, fromPrefObserver) {
+      if (typeof highlight != "boolean") {
+        highlight = this._highlightAll;
       }
-      if (aHighlight !== this._highlightAll) {
-        this._highlightAll = aHighlight;
-        if (!aFromPrefObserver) {
-          this._prefsvc.setBoolPref("findbar.highlightAll", aHighlight);
+      if (highlight !== this._highlightAll) {
+        this._highlightAll = highlight;
+        if (!fromPrefObserver) {
+          Services.prefs.setBoolPref("findbar.highlightAll", highlight);
         }
       }
       let checkbox = this.getElement("highlight");
@@ -597,8 +550,10 @@
 
 
 
-    _updateCaseSensitivity(aString) {
-      let val = aString || this._findField.value;
+
+
+    _updateCaseSensitivity(str) {
+      let val = str || this._findField.value;
 
       let caseSensitive = this._shouldBeCaseSensitive(val);
       let checkbox = this.getElement("find-case-sensitive");
@@ -610,7 +565,7 @@
       
       
       let hideCheckbox =
-        this._findMode != this.FIND_NORMAL ||
+        this.findMode != this.FIND_NORMAL ||
         (this._typeAheadCaseSensitive != 0 &&
           this._typeAheadCaseSensitive != 1);
       checkbox.hidden = hideCheckbox;
@@ -627,8 +582,9 @@
 
 
 
-    _setCaseSensitivity(aCaseSensitivity) {
-      this._typeAheadCaseSensitive = aCaseSensitivity;
+
+    _setCaseSensitivity(caseSensitivity) {
+      this._typeAheadCaseSensitive = caseSensitivity;
       this._updateCaseSensitivity();
       this._findFailedString = null;
       this._find();
@@ -649,7 +605,7 @@
 
       
       
-      let hideCheckbox = this._findMode != this.FIND_NORMAL;
+      let hideCheckbox = this.findMode != this.FIND_NORMAL;
       checkbox.hidden = hideCheckbox;
       statusLabel.hidden = !hideCheckbox;
 
@@ -661,10 +617,11 @@
 
 
 
-    toggleEntireWord(aEntireWord, aFromPrefObserver) {
-      if (!aFromPrefObserver) {
+
+    toggleEntireWord(entireWord, fromPrefObserver) {
+      if (!fromPrefObserver) {
         
-        this._prefsvc.setBoolPref("findbar.entireword", aEntireWord);
+        Services.prefs.setBoolPref("findbar.entireword", entireWord);
         return;
       }
 
@@ -681,27 +638,22 @@
 
 
 
-    open(aMode) {
-      if (aMode != undefined) {
-        this._findMode = aMode;
+
+    open(mode) {
+      if (mode != undefined) {
+        this.findMode = mode;
       }
 
       if (!this._notFoundStr) {
-        var stringsBundle = this.strBundle;
-        this._notFoundStr = stringsBundle.GetStringFromName("NotFound");
-        this._wrappedToTopStr = stringsBundle.GetStringFromName("WrappedToTop");
-        this._wrappedToBottomStr = stringsBundle.GetStringFromName(
-          "WrappedToBottom"
-        );
-        this._normalFindStr = stringsBundle.GetStringFromName("NormalFind");
-        this._fastFindStr = stringsBundle.GetStringFromName("FastFind");
-        this._fastFindLinksStr = stringsBundle.GetStringFromName(
-          "FastFindLinks"
-        );
-        this._caseSensitiveStr = stringsBundle.GetStringFromName(
-          "CaseSensitive"
-        );
-        this._entireWordStr = stringsBundle.GetStringFromName("EntireWord");
+        var bundle = this.strBundle;
+        this._notFoundStr = bundle.GetStringFromName("NotFound");
+        this._wrappedToTopStr = bundle.GetStringFromName("WrappedToTop");
+        this._wrappedToBottomStr = bundle.GetStringFromName("WrappedToBottom");
+        this._normalFindStr = bundle.GetStringFromName("NormalFind");
+        this._fastFindStr = bundle.GetStringFromName("FastFind");
+        this._fastFindLinksStr = bundle.GetStringFromName("FastFindLinks");
+        this._caseSensitiveStr = bundle.GetStringFromName("CaseSensitive");
+        this._entireWordStr = bundle.GetStringFromName("EntireWord");
       }
 
       this._findFailedString = null;
@@ -711,7 +663,7 @@
         this.removeAttribute("noanim");
         this.hidden = false;
 
-        this._updateStatusUI(this.nsITypeAheadFind.FIND_FOUND);
+        this._updateStatusUI(Ci.nsITypeAheadFind.FIND_FOUND);
 
         let event = document.createEvent("Events");
         event.initEvent("findbaropen", true, false);
@@ -727,12 +679,16 @@
     
 
 
-    close(aNoAnim) {
+
+
+
+
+    close(noAnim) {
       if (this.hidden) {
         return;
       }
 
-      if (aNoAnim) {
+      if (noAnim) {
         this.setAttribute("noanim", true);
       }
       this.hidden = true;
@@ -764,22 +720,22 @@
       this._enableFindButtons(false);
     }
 
-    _dispatchKeypressEvent(aTarget, fakeEvent) {
-      if (!aTarget) {
+    _dispatchKeypressEvent(target, fakeEvent) {
+      if (!target) {
         return;
       }
 
       
       
       
-      let event = new aTarget.ownerGlobal.KeyboardEvent(
+      let event = new target.ownerGlobal.KeyboardEvent(
         fakeEvent.type,
         fakeEvent
       );
-      aTarget.dispatchEvent(event);
+      target.dispatchEvent(event);
     }
 
-    _updateStatusUIBar(aFoundURL) {
+    _updateStatusUIBar(foundURL) {
       if (!this._xulBrowserWindow) {
         try {
           this._xulBrowserWindow = window.docShell.treeOwner
@@ -793,24 +749,24 @@
 
       
       
-      this._xulBrowserWindow.setOverLink(aFoundURL || "", null);
+      this._xulBrowserWindow.setOverLink(foundURL || "", null);
       return true;
     }
 
-    _finishFAYT(aKeypressEvent) {
+    _finishFAYT(keypressEvent) {
       this.browser.finder.focusContent();
 
-      if (aKeypressEvent) {
-        aKeypressEvent.preventDefault();
+      if (keypressEvent) {
+        keypressEvent.preventDefault();
       }
 
-      this.browser.finder.keyPress(aKeypressEvent);
+      this.browser.finder.keyPress(keypressEvent);
 
       this.close();
       return true;
     }
 
-    _shouldBeCaseSensitive(aString) {
+    _shouldBeCaseSensitive(str) {
       if (this._typeAheadCaseSensitive == 0) {
         return false;
       }
@@ -818,11 +774,11 @@
         return true;
       }
 
-      return aString != aString.toLowerCase();
+      return str != str.toLowerCase();
     }
 
     onMouseUp() {
-      if (!this.hidden && this._findMode != this.FIND_NORMAL) {
+      if (!this.hidden && this.findMode != this.FIND_NORMAL) {
         this.close();
       }
     }
@@ -831,24 +787,27 @@
 
 
 
-    _onBrowserKeypress(aFakeEvent) {
+
+
+
+    _onBrowserKeypress(fakeEvent) {
       const FAYT_LINKS_KEY = "'";
       const FAYT_TEXT_KEY = "/";
 
       if (!this.hidden && this._findField == document.activeElement) {
-        this._dispatchKeypressEvent(this._findField, aFakeEvent);
+        this._dispatchKeypressEvent(this._findField, fakeEvent);
         return;
       }
 
-      if (this._findMode != this.FIND_NORMAL && this._quickFindTimeout) {
+      if (this.findMode != this.FIND_NORMAL && this._quickFindTimeout) {
         this._findField.select();
         this._findField.focus();
-        this._dispatchKeypressEvent(this._findField, aFakeEvent);
+        this._dispatchKeypressEvent(this._findField, fakeEvent);
         return;
       }
 
-      let key = aFakeEvent.charCode
-        ? String.fromCharCode(aFakeEvent.charCode)
+      let key = fakeEvent.charCode
+        ? String.fromCharCode(fakeEvent.charCode)
         : null;
       let manualstartFAYT =
         (key == FAYT_LINKS_KEY || key == FAYT_TEXT_KEY) && this._manualFAYT;
@@ -870,9 +829,9 @@
         this._findField.focus();
 
         if (autostartFAYT) {
-          this._dispatchKeypressEvent(this._findField, aFakeEvent);
+          this._dispatchKeypressEvent(this._findField, fakeEvent);
         } else {
-          this._updateStatusUI(this.nsITypeAheadFind.FIND_FOUND);
+          this._updateStatusUI(Ci.nsITypeAheadFind.FIND_FOUND);
         }
       }
     }
@@ -882,7 +841,7 @@
         this._browser.sendMessageToActor(
           "Findbar:UpdateState",
           {
-            findMode: this._findMode,
+            findMode: this.findMode,
             isOpenAndFocused:
               !this.hidden && document.activeElement == this._findField,
             hasQuickFindTimeout: !!this._quickFindTimeout,
@@ -903,7 +862,7 @@
 
 
     _updateFindUI() {
-      let showMinimalUI = this._findMode != this.FIND_NORMAL;
+      let showMinimalUI = this.findMode != this.FIND_NORMAL;
 
       let nodes = this.getElement("findbar-container").children;
       let wrapper = this.getElement("findbar-textbox-wrapper");
@@ -928,23 +887,22 @@
         this._findField.classList.remove("minimal");
       }
 
-      if (this._findMode == this.FIND_TYPEAHEAD) {
+      if (this.findMode == this.FIND_TYPEAHEAD) {
         this._findField.placeholder = this._fastFindStr;
-      } else if (this._findMode == this.FIND_LINKS) {
+      } else if (this.findMode == this.FIND_LINKS) {
         this._findField.placeholder = this._fastFindLinksStr;
       } else {
         this._findField.placeholder = this._normalFindStr;
       }
     }
 
-    _find(aValue) {
+    _find(value) {
       if (!this._dispatchFindEvent("")) {
         return;
       }
 
-      let val = aValue || this._findField.value;
+      let val = value || this._findField.value;
 
-      
       
       
       this.browser._lastSearchString = val;
@@ -973,12 +931,12 @@
 
         this.browser.finder.fastFind(
           val,
-          this._findMode == this.FIND_LINKS,
-          this._findMode != this.FIND_NORMAL
+          this.findMode == this.FIND_LINKS,
+          this.findMode != this.FIND_NORMAL
         );
       }
 
-      if (this._findMode != this.FIND_NORMAL) {
+      if (this.findMode != this.FIND_NORMAL) {
         this._setFindCloseTimeout();
       }
 
@@ -1013,35 +971,35 @@
       );
     }
 
-    _findAgain(aFindPrevious) {
+    _findAgain(findPrevious) {
       this.browser.finder.findAgain(
         this._findField.value,
-        aFindPrevious,
-        this._findMode == this.FIND_LINKS,
-        this._findMode != this.FIND_NORMAL
+        findPrevious,
+        this.findMode == this.FIND_LINKS,
+        this.findMode != this.FIND_NORMAL
       );
     }
 
-    _updateStatusUI(res, aFindPrevious) {
+    _updateStatusUI(res, findPrevious) {
       switch (res) {
-        case this.nsITypeAheadFind.FIND_WRAPPED:
+        case Ci.nsITypeAheadFind.FIND_WRAPPED:
           this._findStatusIcon.setAttribute("status", "wrapped");
-          this._findStatusDesc.textContent = aFindPrevious
+          this._findStatusDesc.textContent = findPrevious
             ? this._wrappedToBottomStr
             : this._wrappedToTopStr;
           this._findField.removeAttribute("status");
           break;
-        case this.nsITypeAheadFind.FIND_NOTFOUND:
+        case Ci.nsITypeAheadFind.FIND_NOTFOUND:
           this._findStatusIcon.setAttribute("status", "notfound");
           this._findStatusDesc.textContent = this._notFoundStr;
           this._findField.setAttribute("status", "notfound");
           break;
-        case this.nsITypeAheadFind.FIND_PENDING:
+        case Ci.nsITypeAheadFind.FIND_PENDING:
           this._findStatusIcon.setAttribute("status", "pending");
           this._findStatusDesc.textContent = "";
           this._findField.removeAttribute("status");
           break;
-        case this.nsITypeAheadFind.FIND_FOUND:
+        case Ci.nsITypeAheadFind.FIND_FOUND:
         default:
           this._findStatusIcon.removeAttribute("status");
           this._findStatusDesc.textContent = "";
@@ -1050,22 +1008,21 @@
       }
     }
 
-    updateControlState(aResult, aFindPrevious) {
-      this._updateStatusUI(aResult, aFindPrevious);
+    updateControlState(result, findPrevious) {
+      this._updateStatusUI(result, findPrevious);
       this._enableFindButtons(
-        aResult !== this.nsITypeAheadFind.FIND_NOTFOUND &&
-          !!this._findField.value
+        result !== Ci.nsITypeAheadFind.FIND_NOTFOUND && !!this._findField.value
       );
     }
 
-    _dispatchFindEvent(aType, aFindPrevious) {
+    _dispatchFindEvent(type, findPrevious) {
       let event = document.createEvent("CustomEvent");
-      event.initCustomEvent("find" + aType, true, true, {
+      event.initCustomEvent("find" + type, true, true, {
         query: this._findField.value,
         caseSensitive: !!this._typeAheadCaseSensitive,
         entireWord: this._entireWord,
         highlightAll: this._highlightAll,
-        findPrevious: aFindPrevious,
+        findPrevious,
       });
       return this.dispatchEvent(event);
     }
@@ -1078,10 +1035,13 @@
 
 
 
-    startFind(aMode) {
-      let prefsvc = this._prefsvc;
+
+
+
+    startFind(mode) {
+      let prefsvc = Services.prefs;
       let userWantsPrefill = true;
-      this.open(aMode);
+      this.open(mode);
 
       if (this._flashFindBar) {
         this._flashFindBarTimeout = setInterval(() => this._flash(), 500);
@@ -1141,7 +1101,8 @@
 
 
 
-    onFindAgainCommand(aFindPrevious) {
+
+    onFindAgainCommand(findPrevious) {
       let findString =
         this._browser.finder.searchString || this._findField.value;
       if (!findString) {
@@ -1152,7 +1113,7 @@
       
       
       
-      if (!this._dispatchFindEvent("again", aFindPrevious)) {
+      if (!this._dispatchFindEvent("again", findPrevious)) {
         return undefined;
       }
 
@@ -1163,7 +1124,7 @@
       if (this._findField.value != this._browser.finder.searchString) {
         this._find(this._findField.value);
       } else {
-        this._findAgain(aFindPrevious);
+        this._findAgain(findPrevious);
         if (this._useModalHighlight) {
           this.open();
           this._findField.focus();
@@ -1175,6 +1136,8 @@
 
     
 
+
+
     onFindSelectionCommand() {
       this.browser.finder.setSearchStringToSelection().then(searchInfo => {
         if (searchInfo.selectedText) {
@@ -1184,9 +1147,8 @@
     }
 
     _onFindFieldFocus() {
-      let prefsvc = this._prefsvc;
       const kPref = "accessibility.typeaheadfind.prefillwithselection";
-      if (this.prefillWithSelection && prefsvc.getBoolPref(kPref)) {
+      if (this.prefillWithSelection && Services.prefs.getBoolPref(kPref)) {
         return;
       }
 
@@ -1218,22 +1180,26 @@
 
 
 
-    onFindResult(aData) {
-      if (aData.result == this.nsITypeAheadFind.FIND_NOTFOUND) {
+
+
+
+
+    onFindResult(data) {
+      if (data.result == Ci.nsITypeAheadFind.FIND_NOTFOUND) {
         
-        if (aData.storeResult && this.open()) {
+        if (data.storeResult && this.open()) {
           this._findField.select();
           this._findField.focus();
         }
-        this._findFailedString = aData.searchString;
+        this._findFailedString = data.searchString;
       } else {
         this._findFailedString = null;
       }
 
-      this._updateStatusUI(aData.result, aData.findBackwards);
-      this._updateStatusUIBar(aData.linkURL);
+      this._updateStatusUI(data.result, data.findBackwards);
+      this._updateStatusUIBar(data.linkURL);
 
-      if (this._findMode != this.FIND_NORMAL) {
+      if (this.findMode != this.FIND_NORMAL) {
         this._setFindCloseTimeout();
       }
     }
@@ -1244,23 +1210,24 @@
 
 
 
-    onMatchesCountResult(aResult) {
-      if (aResult.total !== 0) {
-        if (aResult.total == -1) {
-          this._foundMatches.value = this.pluralForm
-            .get(
-              aResult.limit,
-              this.strBundle.GetStringFromName("FoundMatchesCountLimit")
-            )
-            .replace("#1", aResult.limit);
+
+
+
+
+    onMatchesCountResult(result) {
+      if (result.total !== 0) {
+        if (result.total == -1) {
+          this._foundMatches.value = LazyConstants.PluralForm.get(
+            result.limit,
+            this.strBundle.GetStringFromName("FoundMatchesCountLimit")
+          ).replace("#1", result.limit);
         } else {
-          this._foundMatches.value = this.pluralForm
-            .get(
-              aResult.total,
-              this.strBundle.GetStringFromName("FoundMatches")
-            )
-            .replace("#1", aResult.current)
-            .replace("#2", aResult.total);
+          this._foundMatches.value = LazyConstants.PluralForm.get(
+            result.total,
+            this.strBundle.GetStringFromName("FoundMatches")
+          )
+            .replace("#1", result.current)
+            .replace("#2", result.total);
         }
         this._foundMatches.hidden = false;
       } else {
@@ -1273,29 +1240,29 @@
       
     }
 
-    onCurrentSelection(aSelectionString, aIsInitialSelection) {
+    onCurrentSelection(selectionString, isInitialSelection) {
       
       
-      if (aIsInitialSelection && !this._startFindDeferred) {
+      if (isInitialSelection && !this._startFindDeferred) {
         return;
       }
 
       if (
         AppConstants.platform == "macosx" &&
-        aIsInitialSelection &&
-        !aSelectionString
+        isInitialSelection &&
+        !selectionString
       ) {
         let clipboardSearchString = this.browser.finder.clipboardSearchString;
         if (clipboardSearchString) {
-          aSelectionString = clipboardSearchString;
+          selectionString = clipboardSearchString;
         }
       }
 
-      if (aSelectionString) {
-        this._findField.value = aSelectionString;
+      if (selectionString) {
+        this._findField.value = selectionString;
       }
 
-      if (aIsInitialSelection) {
+      if (isInitialSelection) {
         this._enableFindButtons(!!this._findField.value);
         this._findField.select();
         this._findField.focus();
