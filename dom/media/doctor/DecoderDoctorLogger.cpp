@@ -89,6 +89,11 @@ void DecoderDoctorLogger::PanicInternal(const char* aReason, bool aDontBlock) {
 
 
 bool DecoderDoctorLogger::EnsureLogIsEnabled() {
+#ifdef RELEASE_OR_BETA
+  
+  
+  return false;
+#else
   for (;;) {
     LogState state = static_cast<LogState>(sLogState);
     switch (state) {
@@ -137,6 +142,7 @@ bool DecoderDoctorLogger::EnsureLogIsEnabled() {
     }
     
   }
+#endif
 }
 
 
