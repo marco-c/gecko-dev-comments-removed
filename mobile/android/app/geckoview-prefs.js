@@ -56,3 +56,6 @@ pref("browser.safebrowsing.features.fingerprinting.update", true);
 
 
 pref("ui.android.mouse_as_touch", 2);
+
+
+pref("security.webauth.webauthn_enable_android_fido2", false);

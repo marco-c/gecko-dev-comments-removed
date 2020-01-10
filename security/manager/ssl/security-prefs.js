@@ -121,13 +121,8 @@ pref("security.pki.certificate_transparency.mode", 0);
 
 
 
-pref("security.webauth.webauthn_enable_softtoken", false);
 
-#ifdef FENNEC_NIGHTLY
-pref("security.webauth.webauthn_enable_android_fido2", true);
-#else
-pref("security.webauth.webauthn_enable_android_fido2", false);
-#endif
+pref("security.webauth.webauthn_enable_softtoken", false);
 
 #ifdef MOZ_WIDGET_ANDROID
 
