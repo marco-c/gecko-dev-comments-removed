@@ -15,7 +15,6 @@
 
 class nsIChannel;
 class nsICookieSettings;
-class nsIHttpChannel;
 class nsIPermission;
 class nsIPrincipal;
 class nsIURI;
@@ -60,7 +59,7 @@ class AntiTrackingCommon final {
   
   
   
-  static bool IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel,
+  static bool IsFirstPartyStorageAccessGrantedFor(nsIChannel* aChannel,
                                                   nsIURI* aURI,
                                                   uint32_t* aRejectedReason);
 
