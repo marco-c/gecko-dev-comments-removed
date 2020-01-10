@@ -16,7 +16,9 @@ function run_test() {
   
   ok(!SSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri2, 0));
 
-  let secInfo = new FakeTransportSecurityInfo();
+  let secInfo = Cc[
+    "@mozilla.org/security/transportsecurityinfo;1"
+  ].createInstance(Ci.nsITransportSecurityInfo);
   SSService.processHeader(
     Ci.nsISiteSecurityService.HEADER_HSTS,
     uri,
