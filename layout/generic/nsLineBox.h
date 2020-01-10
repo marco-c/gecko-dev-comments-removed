@@ -272,6 +272,11 @@ class nsLineBox final : public nsLineLink {
   void ClearHasLineClampEllipsis() { mFlags.mHasLineClampEllipsis = false; }
   bool HasLineClampEllipsis() const { return mFlags.mHasLineClampEllipsis; }
 
+  
+  void SetMovedFragments() { mFlags.mMovedFragments = true; }
+  void ClearMovedFragments() { mFlags.mMovedFragments = false; }
+  bool MovedFragments() const { return mFlags.mMovedFragments; }
+
  private:
   
   static const uint32_t kMinChildCountForHashtable = 200;
@@ -624,6 +629,9 @@ class nsLineBox final : public nsLineLink {
     
     
     bool mHasLineClampEllipsis : 1;
+    
+    
+    bool mMovedFragments : 1;
     StyleClear mBreakType;
   };
 
