@@ -71,7 +71,7 @@ SourceMapURLService.prototype._getLoadingPromise = function() {
         );
 
       
-      const loadingPromise = this._toolbox.threadClient.getSources().then(
+      const loadingPromise = this._toolbox.threadFront.getSources().then(
         ({ sources }) => {
           
           

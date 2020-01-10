@@ -221,9 +221,9 @@ function findTab(tabs, title) {
   return null;
 }
 
-function waitForNewSource(threadClient, url) {
+function waitForNewSource(threadFront, url) {
   dump("Waiting for new source with url '" + url + "'.\n");
-  return waitForEvent(threadClient, "newSource", function(packet) {
+  return waitForEvent(threadFront, "newSource", function(packet) {
     return packet.source.url === url;
   });
 }
@@ -233,14 +233,14 @@ function attachThread(targetFront, options = {}) {
   return targetFront.attachThread(options);
 }
 
-function resume(threadClient) {
+function resume(threadFront) {
   dump("Resuming thread.\n");
-  return threadClient.resume();
+  return threadFront.resume();
 }
 
-function getSources(threadClient) {
+function getSources(threadFront) {
   dump("Getting sources.\n");
-  return threadClient.getSources();
+  return threadFront.getSources();
 }
 
 function findSource(sources, url) {
@@ -253,9 +253,9 @@ function findSource(sources, url) {
   return null;
 }
 
-function waitForPause(threadClient) {
+function waitForPause(threadFront) {
   dump("Waiting for pause.\n");
-  return waitForEvent(threadClient, "paused");
+  return waitForEvent(threadFront, "paused");
 }
 
 function waitForProperty(dbg, property) {
@@ -268,9 +268,9 @@ function waitForProperty(dbg, property) {
   });
 }
 
-function setBreakpoint(threadClient, location) {
+function setBreakpoint(threadFront, location) {
   dump("Setting breakpoint.\n");
-  return threadClient.setBreakpoint(location, {});
+  return threadFront.setBreakpoint(location, {});
 }
 
 function getPrototypeAndProperties(objClient) {
@@ -413,17 +413,17 @@ async function attachTestTab(client, title) {
 
 async function attachTestThread(client, title, callback = () => {}) {
   const targetFront = await attachTestTab(client, title);
-  const threadClient = await targetFront.getFront("context");
-  const onPaused = threadClient.once("paused");
+  const threadFront = await targetFront.getFront("context");
+  const onPaused = threadFront.once("paused");
   await targetFront.attachThread({
     autoBlackBox: true,
   });
   const response = await onPaused;
-  Assert.equal(threadClient.state, "paused", "Thread client is paused");
+  Assert.equal(threadFront.state, "paused", "Thread client is paused");
   Assert.ok("why" in response);
   Assert.equal(response.why.type, "attached");
-  callback(response, targetFront, threadClient);
-  return { targetFront, threadClient };
+  callback(response, targetFront, threadFront);
+  return { targetFront, threadFront };
 }
 
 
@@ -431,10 +431,10 @@ async function attachTestThread(client, title, callback = () => {}) {
 
 
 async function attachTestTabAndResume(client, title, callback = () => {}) {
-  const { targetFront, threadClient } = await attachTestThread(client, title);
-  const response = await threadClient.resume();
-  callback(response, targetFront, threadClient);
-  return { targetFront, threadClient };
+  const { targetFront, threadFront } = await attachTestThread(client, title);
+  const response = await threadFront.resume();
+  callback(response, targetFront, threadFront);
+  return { targetFront, threadFront };
 }
 
 
@@ -650,9 +650,9 @@ const assert = Assert.ok.bind(Assert);
 
 
 
-function waitForEvent(threadClient, type, predicate) {
+function waitForEvent(threadFront, type, predicate) {
   if (!predicate) {
-    return threadClient.once(type);
+    return threadFront.once(type);
   }
 
   return new Promise(function(resolve) {
@@ -660,10 +660,10 @@ function waitForEvent(threadClient, type, predicate) {
       if (!predicate(packet)) {
         return;
       }
-      threadClient.off(type, listener);
+      threadFront.off(type, listener);
       resolve(packet);
     }
-    threadClient.on(type, listener);
+    threadFront.on(type, listener);
   });
 }
 
@@ -683,8 +683,8 @@ function waitForEvent(threadClient, type, predicate) {
 
 
 
-function executeOnNextTickAndWaitForPause(action, threadClient) {
-  const paused = waitForPause(threadClient);
+function executeOnNextTickAndWaitForPause(action, threadFront) {
+  const paused = waitForPause(threadFront);
   executeSoon(action);
   return paused;
 }
@@ -699,9 +699,9 @@ function evalCallback(debuggeeGlobal, func) {
 
 
 
-function interrupt(threadClient) {
+function interrupt(threadFront) {
   dumpn("Interrupting.");
-  return threadClient.interrupt();
+  return threadFront.interrupt();
 }
 
 
@@ -712,9 +712,9 @@ function interrupt(threadClient) {
 
 
 
-function resumeAndWaitForPause(threadClient) {
-  const paused = waitForPause(threadClient);
-  return resume(threadClient).then(() => paused);
+function resumeAndWaitForPause(threadFront) {
+  const paused = waitForPause(threadFront);
+  return resume(threadFront).then(() => paused);
 }
 
 
@@ -724,10 +724,10 @@ function resumeAndWaitForPause(threadClient) {
 
 
 
-function stepIn(threadClient) {
+function stepIn(threadFront) {
   dumpn("Stepping in.");
-  const paused = waitForPause(threadClient);
-  return threadClient.stepIn().then(() => paused);
+  const paused = waitForPause(threadFront);
+  return threadFront.stepIn().then(() => paused);
 }
 
 
@@ -737,9 +737,9 @@ function stepIn(threadClient) {
 
 
 
-function stepOver(threadClient) {
+function stepOver(threadFront) {
   dumpn("Stepping over.");
-  return threadClient.stepOver().then(() => waitForPause(threadClient));
+  return threadFront.stepOver().then(() => waitForPause(threadFront));
 }
 
 
@@ -750,9 +750,9 @@ function stepOver(threadClient) {
 
 
 
-function stepOut(threadClient) {
+function stepOut(threadFront) {
   dumpn("Stepping out.");
-  return threadClient.stepOut().then(() => waitForPause(threadClient));
+  return threadFront.stepOut().then(() => waitForPause(threadFront));
 }
 
 
@@ -764,9 +764,9 @@ function stepOut(threadClient) {
 
 
 
-function getFrames(threadClient, first, count) {
+function getFrames(threadFront, first, count) {
   dumpn("Getting frames.");
-  return threadClient.getFrames(first, count);
+  return threadFront.getFrames(first, count);
 }
 
 
@@ -813,27 +813,27 @@ function getSourceContent(sourceFront) {
 
 
 
-async function getSource(threadClient, url) {
-  const source = await getSourceForm(threadClient, url);
+async function getSource(threadFront, url) {
+  const source = await getSourceForm(threadFront, url);
   if (source) {
-    return threadClient.source(source);
+    return threadFront.source(source);
   }
 
   throw new Error("source not found");
 }
 
-async function getSourceById(threadClient, id) {
-  const form = await getSourceFormById(threadClient, id);
-  return threadClient.source(form);
+async function getSourceById(threadFront, id) {
+  const form = await getSourceFormById(threadFront, id);
+  return threadFront.source(form);
 }
 
-async function getSourceForm(threadClient, url) {
-  const { sources } = await threadClient.getSources();
+async function getSourceForm(threadFront, url) {
+  const { sources } = await threadFront.getSources();
   return sources.find(s => s.url === url);
 }
 
-async function getSourceFormById(threadClient, id) {
-  const { sources } = await threadClient.getSources();
+async function getSourceFormById(threadFront, id) {
+  const { sources } = await threadFront.getSources();
   return sources.find(source => source.actor == id);
 }
 
@@ -895,16 +895,16 @@ async function setupTestFromUrl(url) {
   const targetFront = findTab(tabs, "test");
   await targetFront.attach();
 
-  const [, threadClient] = await attachThread(targetFront);
-  await resume(threadClient);
+  const [, threadFront] = await attachThread(targetFront);
+  await resume(threadFront);
 
   const sourceUrl = getFileUrl(url);
-  const promise = waitForNewSource(threadClient, sourceUrl);
+  const promise = waitForNewSource(threadFront, sourceUrl);
   loadSubScript(sourceUrl, global);
   const { source } = await promise;
 
-  const sourceFront = threadClient.source(source);
-  return { global, debuggerClient, threadClient, sourceFront };
+  const sourceFront = threadFront.source(source);
+  return { global, debuggerClient, threadFront, sourceFront };
 }
 
 
@@ -929,13 +929,13 @@ async function setupTestFromUrl(url) {
 
 
 
-function threadClientTest(test, options = {}) {
+function threadFrontTest(test, options = {}) {
   let { principal, doNotRunWorker } = options;
   if (!principal) {
     principal = systemPrincipal;
   }
 
-  async function runThreadClientTestWithServer(server, test) {
+  async function runThreadFrontTestWithServer(server, test) {
     
     initTestDebuggerServer(server);
 
@@ -952,13 +952,13 @@ function threadClientTest(test, options = {}) {
 
     
     
-    const { targetFront, threadClient } = await attachTestTabAndResume(
+    const { targetFront, threadFront } = await attachTestTabAndResume(
       client,
       scriptName
     );
 
     
-    await test({ threadClient, debuggee, client, server, targetFront });
+    await test({ threadFront, debuggee, client, server, targetFront });
 
     
     await client.close();
@@ -970,13 +970,13 @@ function threadClientTest(test, options = {}) {
   }
 
   return async () => {
-    dump(">>> Run thread client test against a regular DebuggerServer\n");
-    await runThreadClientTestWithServer(DebuggerServer, test);
+    dump(">>> Run thread front test against a regular DebuggerServer\n");
+    await runThreadFrontTestWithServer(DebuggerServer, test);
 
     
     if (!doNotRunWorker) {
-      dump(">>> Run thread client test against a worker DebuggerServer\n");
-      await runThreadClientTestWithServer(WorkerDebuggerServer, test);
+      dump(">>> Run thread front test against a worker DebuggerServer\n");
+      await runThreadFrontTestWithServer(WorkerDebuggerServer, test);
     }
   };
 }

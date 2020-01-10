@@ -9,21 +9,18 @@
 
 
 add_task(
-  threadClientTest(async ({ threadClient, debuggee }) => {
+  threadFrontTest(async ({ threadFront, debuggee }) => {
     (async () => {
       info("Wait for the debugger statement to be hit");
-      let packet = await waitForPause(threadClient);
-      const source = await getSourceById(
-        threadClient,
-        packet.frame.where.actor
-      );
+      let packet = await waitForPause(threadFront);
+      const source = await getSourceById(threadFront, packet.frame.where.actor);
 
       const location = { sourceUrl: source.url, line: debuggee.line0 + 3 };
 
-      threadClient.setBreakpoint(location, {});
+      threadFront.setBreakpoint(location, {});
 
-      await threadClient.resume();
-      packet = await waitForPause(threadClient);
+      await threadFront.resume();
+      packet = await waitForPause(threadFront);
 
       info("Paused at the breakpoint");
       Assert.equal(packet.type, "paused");
@@ -35,7 +32,7 @@ add_task(
       Assert.equal(debuggee.a, 1);
       Assert.equal(debuggee.b, undefined);
 
-      await threadClient.resume();
+      await threadFront.resume();
     })();
 
     
@@ -44,15 +41,15 @@ add_task(
 
 
     do_timeout(0, () => {
-    
-    Cu.evalInSandbox(
-      "var line0 = Error().lineNumber;\n" +
-        "debugger;\n" +   
-        "var a = 1;\n" +  
-        "var b = 2;\n",   
-        debuggee
-    );
-    
+      
+      Cu.evalInSandbox(
+        "var line0 = Error().lineNumber;\n" +
+          "debugger;\n" +   
+          "var a = 1;\n" +  
+          "var b = 2;\n",   
+          debuggee
+      );
+      
     });
   })
 );

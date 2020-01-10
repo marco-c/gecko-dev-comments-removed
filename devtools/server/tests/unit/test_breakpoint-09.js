@@ -9,19 +9,19 @@
 
 
 add_task(
-  threadClientTest(({ threadClient, client, debuggee }) => {
+  threadFrontTest(({ threadFront, client, debuggee }) => {
     return new Promise(resolve => {
       let done = false;
-      threadClient.once("paused", async function(packet) {
+      threadFront.once("paused", async function(packet) {
         const source = await getSourceById(
-          threadClient,
+          threadFront,
           packet.frame.where.actor
         );
         const location = { sourceUrl: source.url, line: debuggee.line0 + 2 };
 
-        threadClient.setBreakpoint(location, {});
+        threadFront.setBreakpoint(location, {});
         await client.waitForRequestsToSettle();
-        threadClient.once("paused", async function(packet) {
+        threadFront.once("paused", async function(packet) {
           
           Assert.equal(packet.frame.where.actor, source.actorID);
           Assert.equal(packet.frame.where.line, location.line);
@@ -30,35 +30,35 @@ add_task(
           Assert.equal(debuggee.a, undefined);
 
           
-          threadClient.removeBreakpoint(location);
+          threadFront.removeBreakpoint(location);
           await client.waitForRequestsToSettle();
           done = true;
-          threadClient.once("paused", function(packet) {
+          threadFront.once("paused", function(packet) {
             
-            threadClient.resume().then(function() {
+            threadFront.resume().then(function() {
               Assert.ok(false);
             });
           });
-          await threadClient.resume();
+          await threadFront.resume();
           resolve();
         });
 
         
-        await threadClient.resume();
+        await threadFront.resume();
       });
 
       
-    Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
-                     "function foo(stop) {\n" + 
-                     "  this.a = 1;\n" +        
-                     "  if (stop) return;\n" +  
-                     "  delete this.a;\n" +     
-                     "  foo(true);\n" +         
-                     "}\n" +                    
-                     "debugger;\n" +            
-                     "foo();\n",                
-                     debuggee);
-    
+      Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
+                       "function foo(stop) {\n" + 
+                       "  this.a = 1;\n" +        
+                       "  if (stop) return;\n" +  
+                       "  delete this.a;\n" +     
+                       "  foo(true);\n" +         
+                       "}\n" +                    
+                       "debugger;\n" +            
+                       "foo();\n",                
+                       debuggee);
+      
       if (!done) {
         Assert.ok(false);
       }

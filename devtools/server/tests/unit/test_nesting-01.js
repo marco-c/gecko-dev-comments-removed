@@ -18,12 +18,12 @@ function run_test() {
     attachTestTabAndResume(gClient, "test-nesting", function(
       response,
       targetFront,
-      threadClient
+      threadFront
     ) {
       
       
       gThreadActor = gClient._transport._serverConnection.getActor(
-        threadClient.actorID
+        threadFront.actorID
       );
 
       test_nesting();

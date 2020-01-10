@@ -14,11 +14,11 @@ var gBpActor;
 var gCount;
 
 add_task(
-  threadClientTest(({ threadClient, debuggee }) => {
+  threadFrontTest(({ threadFront, debuggee }) => {
     return new Promise(resolve => {
-      threadClient.once("paused", async function(packet) {
+      threadFront.once("paused", async function(packet) {
         const source = await getSourceById(
-          threadClient,
+          threadFront,
           packet.frame.where.actor
         );
         const location = { line: debuggee.line0 + 3 };
@@ -65,9 +65,8 @@ add_task(
 
           
           
-          threadClient.once("paused", function(packet) {
+          threadFront.once("paused", function(packet) {
             
-            Assert.equal(packet.type, "paused");
             Assert.equal(packet.frame.where.actor, source.actor);
             Assert.equal(packet.frame.where.line, location.line + 1);
             Assert.equal(packet.why.type, "breakpoint");
@@ -76,17 +75,17 @@ add_task(
             Assert.equal(debuggee.a, 1);
             Assert.equal(debuggee.b, undefined);
 
-            threadClient.once("paused", function(packet) {
+            threadFront.once("paused", function(packet) {
               
               Assert.ok(false);
             });
-            threadClient.resume().then(function() {
+            threadFront.resume().then(function() {
               
               do_timeout(1000, resolve);
             });
           });
           
-          threadClient.resume();
+          threadFront.resume();
         });
       }
     });

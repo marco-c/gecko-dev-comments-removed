@@ -10,11 +10,11 @@
 
 
 add_task(
-  threadClientTest(({ threadClient, debuggee }) => {
+  threadFrontTest(({ threadFront, debuggee }) => {
     return new Promise(resolve => {
-      threadClient.once("paused", async function(packet) {
+      threadFront.once("paused", async function(packet) {
         const source = await getSourceById(
-          threadClient,
+          threadFront,
           packet.frame.where.actor
         );
         const location = { line: debuggee.line0 + 6 };
@@ -24,9 +24,8 @@ add_task(
           Assert.equal(response.actualLocation.source.actor, source.actor);
           Assert.equal(response.actualLocation.line, location.line + 1);
 
-          threadClient.once("paused", function(packet) {
+          threadFront.once("paused", function(packet) {
             
-            Assert.equal(packet.type, "paused");
             Assert.equal(packet.frame.where.actor, source.actor);
             Assert.equal(packet.frame.where.line, location.line + 1);
             Assert.equal(packet.why.type, "breakpoint");
@@ -37,31 +36,31 @@ add_task(
 
             
             bpClient.remove(function(response) {
-              threadClient.resume().then(resolve);
+              threadFront.resume().then(resolve);
             });
           });
 
           
-          threadClient.resume();
+          threadFront.resume();
         });
       });
 
       
-    Cu.evalInSandbox(
-      "var line0 = Error().lineNumber;\n" +
-      "function foo() {\n" + 
-      "  bar();\n" +         
-      "}\n" +                
-      "function bar() {\n" + 
-      "  this.a = 1;\n" +    
-      "  // A comment.\n" +  
-      "  this.b = 2;\n" +    
-      "}\n" +                
-      "debugger;\n" +        
-      "foo();\n",           
-      debuggee
-    );
-    
+      Cu.evalInSandbox(
+        "var line0 = Error().lineNumber;\n" +
+        "function foo() {\n" + 
+        "  bar();\n" +         
+        "}\n" +                
+        "function bar() {\n" + 
+        "  this.a = 1;\n" +    
+        "  // A comment.\n" +  
+        "  this.b = 2;\n" +    
+        "}\n" +                
+        "debugger;\n" +        
+        "foo();\n",           
+        debuggee
+      );
+      
     });
   })
 );

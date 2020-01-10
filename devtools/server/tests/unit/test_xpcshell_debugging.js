@@ -31,30 +31,30 @@ add_task(async function() {
 
   
   const front = await client.mainRoot.getMainProcess();
-  const [, threadClient] = await front.attachThread();
+  const [, threadFront] = await front.attachThread();
   const onResumed = new Promise(resolve => {
-    threadClient.once("paused", packet => {
+    threadFront.once("paused", packet => {
       equal(
         packet.why.type,
         "breakpoint",
         "yay - hit the breakpoint at the first line in our script"
       );
       
-      threadClient.once("paused", packet => {
+      threadFront.once("paused", packet => {
         equal(
           packet.why.type,
           "debuggerStatement",
           "yay - hit the 'debugger' statement in our script"
         );
-        threadClient.resume().then(resolve);
+        threadFront.resume().then(resolve);
       });
-      threadClient.resume();
+      threadFront.resume();
     });
   });
 
   
   
-  threadClient.resume().then(() => {
+  threadFront.resume().then(() => {
     
     ok(testResumed);
     

@@ -60,7 +60,7 @@ function TargetMixin(parentClass) {
       this._onNewSource = this._onNewSource.bind(this);
 
       this.activeConsole = null;
-      this.threadClient = null;
+      this.threadFront = null;
 
       this._client = client;
 
@@ -431,20 +431,20 @@ function TargetMixin(parentClass) {
         );
       }
       if (this.getTrait("hasThreadFront")) {
-        this.threadClient = await this.getFront("context");
+        this.threadFront = await this.getFront("context");
       } else {
         
         
-        this.threadClient = new ThreadClient(this._client, this._threadActor);
-        this.fronts.set("context", this.threadClient);
-        this.threadClient.actorID = this._threadActor;
-        this.manage(this.threadClient);
+        this.threadFront = new ThreadClient(this._client, this._threadActor);
+        this.fronts.set("context", this.threadFront);
+        this.threadFront.actorID = this._threadActor;
+        this.manage(this.threadFront);
       }
-      const result = await this.threadClient.attach(options);
+      const result = await this.threadFront.attach(options);
 
-      this.threadClient.on("newSource", this._onNewSource);
+      this.threadFront.on("newSource", this._onNewSource);
 
-      return [result, this.threadClient];
+      return [result, this.threadFront];
     }
 
     
@@ -492,8 +492,8 @@ function TargetMixin(parentClass) {
       this.off("tabDetached", this.destroy);
 
       
-      if (this.threadClient) {
-        this.threadClient.off("newSource", this._onNewSource);
+      if (this.threadFront) {
+        this.threadFront.off("newSource", this._onNewSource);
       }
 
       
@@ -570,7 +570,7 @@ function TargetMixin(parentClass) {
 
         this._teardownRemoteListeners();
 
-        this.threadClient = null;
+        this.threadFront = null;
 
         if (this.isLocalTab) {
           
@@ -610,7 +610,7 @@ function TargetMixin(parentClass) {
 
     _cleanup() {
       this.activeConsole = null;
-      this.threadClient = null;
+      this.threadFront = null;
       this._client = null;
       this._tab = null;
 

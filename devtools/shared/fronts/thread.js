@@ -33,7 +33,7 @@ loader.lazyRequireGetter(
 
 
 
-class ThreadClient extends FrontClassWithSpec(threadSpec) {
+class ThreadFront extends FrontClassWithSpec(threadSpec) {
   constructor(client) {
     super(client);
     this.client = client;
@@ -345,5 +345,5 @@ class ThreadClient extends FrontClassWithSpec(threadSpec) {
   }
 }
 
-exports.ThreadClient = ThreadClient;
-registerFront(ThreadClient);
+exports.ThreadFront = ThreadFront;
+registerFront(ThreadFront);

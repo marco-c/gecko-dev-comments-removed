@@ -7,7 +7,7 @@
 import type {
   SourcePacket,
   PausedPacket,
-  ThreadClient,
+  ThreadFront,
   Actions,
   TabTarget,
 } from "./types";
@@ -18,7 +18,7 @@ import sourceQueue from "../../utils/source-queue";
 const CALL_STACK_PAGE_SIZE = 1000;
 
 type Dependencies = {
-  threadClient: ThreadClient,
+  threadFront: ThreadFront,
   tabTarget: TabTarget,
   actions: Actions,
 };
@@ -26,23 +26,23 @@ type Dependencies = {
 let actions: Actions;
 let isInterrupted: boolean;
 
-function addThreadEventListeners(client: ThreadClient) {
+function addThreadEventListeners(thread: ThreadFront) {
   Object.keys(clientEvents).forEach(eventName => {
-    client.on(eventName, clientEvents[eventName].bind(null, client));
+    thread.on(eventName, clientEvents[eventName].bind(null, thread));
   });
 }
 
 function setupEvents(dependencies: Dependencies) {
-  const threadClient = dependencies.threadClient;
+  const threadFront = dependencies.threadFront;
   const tabTarget = dependencies.tabTarget;
   actions = dependencies.actions;
   sourceQueue.initialize(actions);
 
-  addThreadEventListeners(threadClient);
+  addThreadEventListeners(threadFront);
   tabTarget.on("workerListChanged", workerListChanged);
 }
 
-async function paused(threadClient: ThreadClient, packet: PausedPacket) {
+async function paused(threadFront: ThreadFront, packet: PausedPacket) {
   
   
   
@@ -55,7 +55,7 @@ async function paused(threadClient: ThreadClient, packet: PausedPacket) {
   let response;
   try {
     
-    response = await threadClient.getFrames(0, CALL_STACK_PAGE_SIZE);
+    response = await threadFront.getFrames(0, CALL_STACK_PAGE_SIZE);
   } catch (e) {
     console.log(e);
     return;
@@ -67,13 +67,13 @@ async function paused(threadClient: ThreadClient, packet: PausedPacket) {
   }
 
   if (why.type != "alreadyPaused") {
-    const pause = createPause(threadClient.actor, packet, response);
+    const pause = createPause(threadFront.actor, packet, response);
     await sourceQueue.flush();
     actions.paused(pause);
   }
 }
 
-function resumed(threadClient: ThreadClient) {
+function resumed(threadFront: ThreadFront) {
   
   
   
@@ -82,13 +82,13 @@ function resumed(threadClient: ThreadClient) {
     return;
   }
 
-  actions.resumed(threadClient.actorID);
+  actions.resumed(threadFront.actorID);
 }
 
-function newSource(threadClient: ThreadClient, { source }: SourcePacket) {
+function newSource(threadFront: ThreadFront, { source }: SourcePacket) {
   sourceQueue.queue({
     type: "generated",
-    data: prepareSourcePayload(threadClient, source),
+    data: prepareSourcePayload(threadFront, source),
   });
 }
 

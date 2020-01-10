@@ -315,7 +315,7 @@ export type FunctionGrip = {|
 
 export type SourceClient = {
   source: () => { source: any, contentType?: string },
-  _activeThread: ThreadClient,
+  _activeThread: ThreadFront,
   actor: string,
   getBreakpointPositionsCompressed: (range: ?Range) => Promise<any>,
   prettyPrint: number => Promise<*>,
@@ -339,7 +339,7 @@ export type ObjectClient = {
 
 
 
-export type ThreadClient = {
+export type ThreadFront = {
   resume: Function => Promise<*>,
   stepIn: Function => Promise<*>,
   stepOver: Function => Promise<*>,

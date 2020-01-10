@@ -10,11 +10,11 @@
 
 
 add_task(
-  threadClientTest(({ threadClient, client, debuggee }) => {
+  threadFrontTest(({ threadFront, client, debuggee }) => {
     return new Promise(resolve => {
-      threadClient.once("paused", async function(packet) {
+      threadFront.once("paused", async function(packet) {
         const source = await getSourceById(
-          threadClient,
+          threadFront,
           packet.frame.where.actor
         );
         const location = {
@@ -23,17 +23,17 @@ add_task(
           column: 5,
         };
 
-        threadClient.setBreakpoint(location, {});
+        threadFront.setBreakpoint(location, {});
         await client.waitForRequestsToSettle();
 
-        threadClient.once("paused", async function(packet) {
+        threadFront.once("paused", async function(packet) {
           
           Assert.equal(packet.why.type, "breakpoint");
           
           Assert.equal(debuggee.i, 0);
 
           
-          threadClient.removeBreakpoint(location);
+          threadFront.removeBreakpoint(location);
           await client.waitForRequestsToSettle();
 
           const location2 = {
@@ -41,39 +41,39 @@ add_task(
             line: debuggee.line0 + 3,
             column: 12,
           };
-          threadClient.setBreakpoint(location2, {});
+          threadFront.setBreakpoint(location2, {});
           await client.waitForRequestsToSettle();
 
-          threadClient.once("paused", async function(packet) {
+          threadFront.once("paused", async function(packet) {
             
             Assert.equal(packet.why.type, "breakpoint");
             
             Assert.equal(debuggee.i, 1);
 
             
-            threadClient.removeBreakpoint(location2);
+            threadFront.removeBreakpoint(location2);
             await client.waitForRequestsToSettle();
 
-            threadClient.resume().then(resolve);
+            threadFront.resume().then(resolve);
           });
 
           
-          await threadClient.resume();
+          await threadFront.resume();
         });
 
         
-        await threadClient.resume();
+        await threadFront.resume();
       });
 
       
-    Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
-                     "debugger;\n" +                      
-                     "var a, i = 0;\n" +                  
-                     "for (i = 1; i <= 2; i++) {\n" +     
-                     "  a = i;\n" +                       
-                     "}\n",                               
-                     debuggee);
-    
+      Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
+                       "debugger;\n" +                      
+                       "var a, i = 0;\n" +                  
+                       "for (i = 1; i <= 2; i++) {\n" +     
+                       "  a = i;\n" +                       
+                       "}\n",                               
+                       debuggee);
+      
     });
   })
 );

@@ -11,13 +11,13 @@ import type {
   FramesResponse,
   FramePacket,
   SourcePayload,
-  ThreadClient,
+  ThreadFront,
 } from "./types";
 
 import { clientCommands } from "./commands";
 
 export function prepareSourcePayload(
-  client: ThreadClient,
+  client: ThreadFront,
   source: SourcePayload
 ): GeneratedSourceData {
   

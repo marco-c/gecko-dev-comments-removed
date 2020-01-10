@@ -9,19 +9,19 @@
 
 
 add_task(
-  threadClientTest(({ threadClient, client, debuggee }) => {
+  threadFrontTest(({ threadFront, client, debuggee }) => {
     return new Promise(resolve => {
-      threadClient.once("paused", async function(packet) {
+      threadFront.once("paused", async function(packet) {
         const source = await getSourceById(
-          threadClient,
+          threadFront,
           packet.frame.where.actor
         );
         const location = { sourceUrl: source.url, line: debuggee.line0 + 3 };
 
-        threadClient.setBreakpoint(location, {});
+        threadFront.setBreakpoint(location, {});
         await client.waitForRequestsToSettle();
 
-        threadClient.once("paused", async function(packet) {
+        threadFront.once("paused", async function(packet) {
           
           Assert.equal(packet.frame.where.actor, source.actor);
           Assert.equal(packet.frame.where.line, location.line);
@@ -31,26 +31,26 @@ add_task(
           Assert.equal(debuggee.b, undefined);
 
           
-          threadClient.removeBreakpoint(location);
+          threadFront.removeBreakpoint(location);
           await client.waitForRequestsToSettle();
-          threadClient.resume().then(resolve);
+          threadFront.resume().then(resolve);
         });
 
         
-        await threadClient.resume();
+        await threadFront.resume();
       });
 
       
-    Cu.evalInSandbox(
-      "var line0 = Error().lineNumber;\n" +
-      "function foo() {\n" + 
-      "  this.a = 1;\n" +    
-      "  this.b = 2;\n" +    
-      "}\n" +                
-      "debugger;\n" +        
-      "foo();\n",            
-      debuggee
-    );
+      Cu.evalInSandbox(
+        "var line0 = Error().lineNumber;\n" +
+        "function foo() {\n" + 
+        "  this.a = 1;\n" +    
+        "  this.b = 2;\n" +    
+        "}\n" +                
+        "debugger;\n" +        
+        "foo();\n",            
+        debuggee
+      );
       
     });
   })

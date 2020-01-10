@@ -8,9 +8,9 @@
 const SOURCE_URL = getFileUrl("source-03.js");
 
 add_task(
-  threadClientTest(
-    async ({ threadClient, server }) => {
-      const promise = waitForNewSource(threadClient, SOURCE_URL);
+  threadFrontTest(
+    async ({ threadFront, server }) => {
+      const promise = waitForNewSource(threadFront, SOURCE_URL);
 
       
       
@@ -38,21 +38,21 @@ add_task(
 
       
       
-      await setBreakpoint(threadClient, {
+      await setBreakpoint(threadFront, {
         sourceUrl: SOURCE_URL,
         line: 4,
       });
 
-      const { sources } = await getSources(threadClient);
+      const { sources } = await getSources(threadFront);
       Assert.equal(sources.length, 1);
 
       
       
       let pausedOne = false;
       let onResumed = null;
-      threadClient.once("paused", function(packet) {
+      threadFront.once("paused", function(packet) {
         pausedOne = true;
-        onResumed = resume(threadClient);
+        onResumed = resume(threadFront);
       });
       Cu.evalInSandbox("init()", debuggee1, "1.8", "test.js", 1);
       await onResumed;
@@ -61,9 +61,9 @@ add_task(
       
       
       let pausedTwo = false;
-      threadClient.once("paused", function(packet) {
+      threadFront.once("paused", function(packet) {
         pausedTwo = true;
-        onResumed = resume(threadClient);
+        onResumed = resume(threadFront);
       });
       Cu.evalInSandbox("init()", debuggee2, "1.8", "test.js", 1);
       await onResumed;

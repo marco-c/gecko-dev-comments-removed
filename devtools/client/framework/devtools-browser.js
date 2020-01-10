@@ -542,36 +542,36 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
       const target = await TargetFactory.forTab(tab);
 
       gDevTools.showToolbox(target, "jsdebugger").then(toolbox => {
-        const threadClient = toolbox.threadClient;
+        const threadFront = toolbox.threadFront;
 
         
         
-        switch (threadClient.state) {
+        switch (threadFront.state) {
           case "paused":
             
-            threadClient.resumeThenPause();
+            threadFront.resumeThenPause();
             callback();
             break;
           case "attached":
             
-            threadClient.interrupt().then(() => {
-              threadClient.resumeThenPause();
+            threadFront.interrupt().then(() => {
+              threadFront.resumeThenPause();
               callback();
             });
             break;
           case "resuming":
             
-            threadClient.once("resumed", () => {
-              threadClient.interrupt().then(() => {
-                threadClient.resumeThenPause();
+            threadFront.once("resumed", () => {
+              threadFront.interrupt().then(() => {
+                threadFront.resumeThenPause();
                 callback();
               });
             });
             break;
           default:
             throw Error(
-              "invalid thread client state in slow script debug handler: " +
-                threadClient.state
+              "invalid thread front state in slow script debug handler: " +
+                threadFront.state
             );
         }
       });

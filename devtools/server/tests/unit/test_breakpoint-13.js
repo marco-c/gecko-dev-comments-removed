@@ -10,16 +10,16 @@
 
 
 add_task(
-  threadClientTest(({ threadClient, debuggee }) => {
+  threadFrontTest(({ threadFront, debuggee }) => {
     return new Promise(resolve => {
-      threadClient.once("paused", async function(packet) {
+      threadFront.once("paused", async function(packet) {
         const source = await getSourceById(
-          threadClient,
+          threadFront,
           packet.frame.where.actor
         );
         const location = { sourceUrl: source.url, line: debuggee.line0 + 2 };
 
-        threadClient.setBreakpoint(location, {});
+        threadFront.setBreakpoint(location, {});
 
         const testCallbacks = [
           function(packet) {
@@ -59,32 +59,32 @@ add_task(
         ];
 
         for (const callback of testCallbacks) {
-          const waiter = waitForPause(threadClient);
-          threadClient.stepIn();
+          const waiter = waitForPause(threadFront);
+          threadFront.stepIn();
           const packet = await waiter;
           callback(packet);
         }
 
         
-        const waiter = waitForPause(threadClient);
-        threadClient.stepIn();
+        const waiter = waitForPause(threadFront);
+        threadFront.stepIn();
         await waiter;
-        threadClient.removeBreakpoint(location);
+        threadFront.removeBreakpoint(location);
 
-        threadClient.resume().then(resolve);
+        threadFront.resume().then(resolve);
       });
 
       
-    Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
-                     "function foo() {\n" + 
-                     "  this.a = 1;\n" +    
-                     "}\n" +                
-                     "debugger;\n" +        
-                     "foo();\n" +           
-                     "debugger;\n" +        
-                     "var b = 2;\n",        
-                     debuggee);
-    
+      Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
+                       "function foo() {\n" + 
+                       "  this.a = 1;\n" +    
+                       "}\n" +                
+                       "debugger;\n" +        
+                       "foo();\n" +           
+                       "debugger;\n" +        
+                       "var b = 2;\n",        
+                       debuggee);
+      
     });
   })
 );
