@@ -440,7 +440,7 @@ class AsyncTabSwitcher {
       !this.loadTimer;
 
     if (!needSpinner && this.spinnerTab) {
-      this.spinnerHidden();
+      this.noteSpinnerHidden();
       this.tabbrowser.tabpanels.removeAttribute("pendingpaint");
       this.spinnerTab.linkedBrowser.removeAttribute("pendingpaint");
       this.spinnerTab = null;
@@ -448,7 +448,7 @@ class AsyncTabSwitcher {
       if (this.spinnerTab) {
         this.spinnerTab.linkedBrowser.removeAttribute("pendingpaint");
       } else {
-        this.spinnerDisplayed();
+        this.noteSpinnerDisplayed();
       }
       this.spinnerTab = showTab;
       this.tabbrowser.tabpanels.setAttribute("pendingpaint", "true");
@@ -475,14 +475,7 @@ class AsyncTabSwitcher {
             
             this.switchPaintId = this.window.windowUtils.lastTransactionId + 1;
           } else {
-            
-            
-            
-            
-            TelemetryStopwatch.cancel(
-              "FX_TAB_SWITCH_COMPOSITE_E10S_MS",
-              this.window
-            );
+            this.noteMakingTabVisibleWithoutLayers();
           }
 
           this.tabbrowser._adjustFocusAfterTabSwitch(showTab);
@@ -600,7 +593,7 @@ class AsyncTabSwitcher {
       this.blankTab = null;
     }
     if (this.spinnerTab && !this.spinnerTab.linkedBrowser) {
-      this.spinnerHidden();
+      this.noteSpinnerHidden();
       this.spinnerTab = null;
     }
     if (this.loadingTab && !this.loadingTab.linkedBrowser) {
@@ -807,29 +800,7 @@ class AsyncTabSwitcher {
       this.switchPaintId != -1,
       event.transactionId >= this.switchPaintId
     );
-    if (this.switchPaintId != -1 && event.transactionId >= this.switchPaintId) {
-      if (
-        TelemetryStopwatch.running(
-          "FX_TAB_SWITCH_COMPOSITE_E10S_MS",
-          this.window
-        )
-      ) {
-        let time = TelemetryStopwatch.timeElapsed(
-          "FX_TAB_SWITCH_COMPOSITE_E10S_MS",
-          this.window
-        );
-        if (time != -1) {
-          TelemetryStopwatch.finish(
-            "FX_TAB_SWITCH_COMPOSITE_E10S_MS",
-            this.window
-          );
-          this.log("DEBUG: tab switch time including compositing = " + time);
-        }
-      }
-      this.addMarker("AsyncTabSwitch:Composited");
-      this.switchPaintId = -1;
-    }
-
+    this.notePaint(event);
     this.maybeVisibleTabs.clear();
   }
 
@@ -867,7 +838,7 @@ class AsyncTabSwitcher {
     }
   }
 
-  noteTabRemoved(tab) {
+  onTabRemoved(tab) {
     if (this.lastVisibleTab == tab) {
       this.handleEvent({ type: "tabRemoved", tab });
     }
@@ -875,7 +846,7 @@ class AsyncTabSwitcher {
 
   
   
-  onTabRemoved(tab) {
+  onTabRemovedImpl(tab) {
     this.lastVisibleTab = null;
   }
 
@@ -1057,31 +1028,7 @@ class AsyncTabSwitcher {
     }
 
     let tabState = this.getTabState(tab);
-    if (gTabWarmingEnabled) {
-      let warmingState = "disqualified";
-
-      if (this.canWarmTab(tab)) {
-        if (tabState == this.STATE_LOADING) {
-          warmingState = "stillLoading";
-        } else if (tabState == this.STATE_LOADED) {
-          warmingState = "loaded";
-        } else if (
-          tabState == this.STATE_UNLOADING ||
-          tabState == this.STATE_UNLOADED
-        ) {
-          
-          
-          
-          
-          
-          warmingState = "notWarmed";
-        }
-      }
-
-      Services.telemetry
-        .getHistogramById("FX_TAB_SWITCH_REQUEST_TAB_WARMING_STATE")
-        .add(warmingState);
-    }
+    this.noteTabRequested(tab, tabState);
 
     this.logState("requestTab " + this.tinfo(tab));
     this.startTabSwitch();
@@ -1141,7 +1088,7 @@ class AsyncTabSwitcher {
           this.onLoadTimeout();
           break;
         case "tabRemoved":
-          this.onTabRemoved(event.tab);
+          this.onTabRemovedImpl(event.tab);
           break;
         case "MozLayerTreeReady":
           this.onLayersReady(event.originalTarget);
@@ -1179,16 +1126,7 @@ class AsyncTabSwitcher {
 
 
   startTabSwitch() {
-    TelemetryStopwatch.cancel("FX_TAB_SWITCH_TOTAL_E10S_MS", this.window);
-    TelemetryStopwatch.start("FX_TAB_SWITCH_TOTAL_E10S_MS", this.window);
-
-    if (
-      TelemetryStopwatch.running("FX_TAB_SWITCH_COMPOSITE_E10S_MS", this.window)
-    ) {
-      TelemetryStopwatch.cancel("FX_TAB_SWITCH_COMPOSITE_E10S_MS", this.window);
-    }
-    TelemetryStopwatch.start("FX_TAB_SWITCH_COMPOSITE_E10S_MS", this.window);
-    this.addMarker("AsyncTabSwitch:Start");
+    this.noteStartTabSwitch();
     this.switchInProgress = true;
   }
 
@@ -1209,58 +1147,9 @@ class AsyncTabSwitcher {
         this.maybePromoteTabInLayerCache(this.requestedTab);
       }
 
-      
-      
-      let time = TelemetryStopwatch.timeElapsed(
-        "FX_TAB_SWITCH_TOTAL_E10S_MS",
-        this.window
-      );
-      if (time != -1) {
-        TelemetryStopwatch.finish("FX_TAB_SWITCH_TOTAL_E10S_MS", this.window);
-        this.log("DEBUG: tab switch time = " + time);
-        this.addMarker("AsyncTabSwitch:Finish");
-      }
+      this.noteFinishTabSwitch();
       this.switchInProgress = false;
     }
-  }
-
-  spinnerDisplayed() {
-    this.assert(!this.spinnerTab);
-    let browser = this.requestedTab.linkedBrowser;
-    this.assert(browser.isRemoteBrowser);
-    TelemetryStopwatch.start("FX_TAB_SWITCH_SPINNER_VISIBLE_MS", this.window);
-    
-    
-    TelemetryStopwatch.start(
-      "FX_TAB_SWITCH_SPINNER_VISIBLE_LONG_MS",
-      this.window
-    );
-    this.addMarker("AsyncTabSwitch:SpinnerShown");
-    Services.telemetry
-      .getHistogramById("FX_TAB_SWITCH_SPINNER_VISIBLE_TRIGGER")
-      .add(this._loadTimerClearedBy);
-    if (AppConstants.NIGHTLY_BUILD) {
-      Services.obs.notifyObservers(null, "tabswitch-spinner");
-    }
-  }
-
-  spinnerHidden() {
-    this.assert(this.spinnerTab);
-    this.log(
-      "DEBUG: spinner time = " +
-        TelemetryStopwatch.timeElapsed(
-          "FX_TAB_SWITCH_SPINNER_VISIBLE_MS",
-          this.window
-        )
-    );
-    TelemetryStopwatch.finish("FX_TAB_SWITCH_SPINNER_VISIBLE_MS", this.window);
-    TelemetryStopwatch.finish(
-      "FX_TAB_SWITCH_SPINNER_VISIBLE_LONG_MS",
-      this.window
-    );
-    this.addMarker("AsyncTabSwitch:SpinnerHidden");
-    
-    this._loadTimerClearedBy = "none";
   }
 
   addMarker(marker) {
@@ -1447,5 +1336,131 @@ class AsyncTabSwitcher {
     } else {
       Services.console.logStringMessage(logString);
     }
+  }
+
+  noteMakingTabVisibleWithoutLayers() {
+    
+    
+    
+    
+    TelemetryStopwatch.cancel("FX_TAB_SWITCH_COMPOSITE_E10S_MS", this.window);
+  }
+
+  notePaint(event) {
+    if (this.switchPaintId != -1 && event.transactionId >= this.switchPaintId) {
+      if (
+        TelemetryStopwatch.running(
+          "FX_TAB_SWITCH_COMPOSITE_E10S_MS",
+          this.window
+        )
+      ) {
+        let time = TelemetryStopwatch.timeElapsed(
+          "FX_TAB_SWITCH_COMPOSITE_E10S_MS",
+          this.window
+        );
+        if (time != -1) {
+          TelemetryStopwatch.finish(
+            "FX_TAB_SWITCH_COMPOSITE_E10S_MS",
+            this.window
+          );
+        }
+      }
+      this.addMarker("AsyncTabSwitch:Composited");
+      this.switchPaintId = -1;
+    }
+  }
+
+  noteTabRequested(tab, tabState) {
+    if (gTabWarmingEnabled) {
+      let warmingState = "disqualified";
+
+      if (this.canWarmTab(tab)) {
+        if (tabState == this.STATE_LOADING) {
+          warmingState = "stillLoading";
+        } else if (tabState == this.STATE_LOADED) {
+          warmingState = "loaded";
+        } else if (
+          tabState == this.STATE_UNLOADING ||
+          tabState == this.STATE_UNLOADED
+        ) {
+          
+          
+          
+          
+          
+          warmingState = "notWarmed";
+        }
+      }
+
+      Services.telemetry
+        .getHistogramById("FX_TAB_SWITCH_REQUEST_TAB_WARMING_STATE")
+        .add(warmingState);
+    }
+  }
+
+  noteStartTabSwitch() {
+    TelemetryStopwatch.cancel("FX_TAB_SWITCH_TOTAL_E10S_MS", this.window);
+    TelemetryStopwatch.start("FX_TAB_SWITCH_TOTAL_E10S_MS", this.window);
+
+    if (
+      TelemetryStopwatch.running("FX_TAB_SWITCH_COMPOSITE_E10S_MS", this.window)
+    ) {
+      TelemetryStopwatch.cancel("FX_TAB_SWITCH_COMPOSITE_E10S_MS", this.window);
+    }
+    TelemetryStopwatch.start("FX_TAB_SWITCH_COMPOSITE_E10S_MS", this.window);
+    this.addMarker("AsyncTabSwitch:Start");
+  }
+
+  noteFinishTabSwitch() {
+    
+    
+    let time = TelemetryStopwatch.timeElapsed(
+      "FX_TAB_SWITCH_TOTAL_E10S_MS",
+      this.window
+    );
+    if (time != -1) {
+      TelemetryStopwatch.finish("FX_TAB_SWITCH_TOTAL_E10S_MS", this.window);
+      this.log("DEBUG: tab switch time = " + time);
+      this.addMarker("AsyncTabSwitch:Finish");
+    }
+  }
+
+  noteSpinnerDisplayed() {
+    this.assert(!this.spinnerTab);
+    let browser = this.requestedTab.linkedBrowser;
+    this.assert(browser.isRemoteBrowser);
+    TelemetryStopwatch.start("FX_TAB_SWITCH_SPINNER_VISIBLE_MS", this.window);
+    
+    
+    TelemetryStopwatch.start(
+      "FX_TAB_SWITCH_SPINNER_VISIBLE_LONG_MS",
+      this.window
+    );
+    this.addMarker("AsyncTabSwitch:SpinnerShown");
+    Services.telemetry
+      .getHistogramById("FX_TAB_SWITCH_SPINNER_VISIBLE_TRIGGER")
+      .add(this._loadTimerClearedBy);
+    if (AppConstants.NIGHTLY_BUILD) {
+      Services.obs.notifyObservers(null, "tabswitch-spinner");
+    }
+  }
+
+  noteSpinnerHidden() {
+    this.assert(this.spinnerTab);
+    this.log(
+      "DEBUG: spinner time = " +
+        TelemetryStopwatch.timeElapsed(
+          "FX_TAB_SWITCH_SPINNER_VISIBLE_MS",
+          this.window
+        )
+    );
+    TelemetryStopwatch.finish("FX_TAB_SWITCH_SPINNER_VISIBLE_MS", this.window);
+    TelemetryStopwatch.finish(
+      "FX_TAB_SWITCH_SPINNER_VISIBLE_LONG_MS",
+      this.window
+    );
+    this.addMarker("AsyncTabSwitch:SpinnerHidden");
+    
+    this._loadTimerClearedBy = "none";
   }
 }
