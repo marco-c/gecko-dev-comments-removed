@@ -844,7 +844,12 @@ class PictureInPictureChild extends ActorChild {
     }
 
     let doc = this.content.document;
+    
+    
+    
+    
     let playerVideo = originatingVideo.cloneNode();
+    playerVideo.pause();
     playerVideo.removeAttribute("controls");
 
     
