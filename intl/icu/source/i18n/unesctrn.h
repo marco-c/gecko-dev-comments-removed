@@ -77,7 +77,7 @@ class UnescapeTransliterator : public Transliterator {
     
 
 
-    virtual Transliterator* clone() const;
+    virtual UnescapeTransliterator* clone() const;
 
     
 

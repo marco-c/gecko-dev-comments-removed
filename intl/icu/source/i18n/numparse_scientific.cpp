@@ -12,6 +12,7 @@
 #include "numparse_types.h"
 #include "numparse_scientific.h"
 #include "static_unicode_sets.h"
+#include "string_segment.h"
 
 using namespace icu;
 using namespace icu::numparse;
@@ -33,7 +34,8 @@ inline const UnicodeSet& plusSignSet() {
 
 ScientificMatcher::ScientificMatcher(const DecimalFormatSymbols& dfs, const Grouper& grouper)
         : fExponentSeparatorString(dfs.getConstSymbol(DecimalFormatSymbols::kExponentialSymbol)),
-          fExponentMatcher(dfs, grouper, PARSE_FLAG_INTEGER_ONLY | PARSE_FLAG_GROUPING_DISABLED) {
+          fExponentMatcher(dfs, grouper, PARSE_FLAG_INTEGER_ONLY | PARSE_FLAG_GROUPING_DISABLED),
+          fIgnorablesMatcher(PARSE_FLAG_STRICT_IGNORABLES) {
 
     const UnicodeString& minusSign = dfs.getConstSymbol(DecimalFormatSymbols::kMinusSignSymbol);
     if (minusSignSet().contains(minusSign)) {
@@ -63,15 +65,25 @@ bool ScientificMatcher::match(StringSegment& segment, ParsedNumber& result, UErr
 
     
     
-    int overlap1 = segment.getCommonPrefixLength(fExponentSeparatorString);
-    if (overlap1 == fExponentSeparatorString.length()) {
+    int32_t initialOffset = segment.getOffset();
+    int32_t overlap = segment.getCommonPrefixLength(fExponentSeparatorString);
+    if (overlap == fExponentSeparatorString.length()) {
         
 
         
-        if (segment.length() == overlap1) {
+        if (segment.length() == overlap) {
             return true;
         }
-        segment.adjustOffset(overlap1);
+        segment.adjustOffset(overlap);
+
+        
+        
+        
+        fIgnorablesMatcher.match(segment, result, status);
+        if (segment.length() == 0) {
+            segment.setOffset(initialOffset);
+            return true;
+        }
 
         
         int8_t exponentSign = 1;
@@ -81,24 +93,37 @@ bool ScientificMatcher::match(StringSegment& segment, ParsedNumber& result, UErr
         } else if (segment.startsWith(plusSignSet())) {
             segment.adjustOffsetByCodePoint();
         } else if (segment.startsWith(fCustomMinusSign)) {
-            
-            int32_t overlap2 = segment.getCommonPrefixLength(fCustomMinusSign);
-            if (overlap2 != fCustomMinusSign.length()) {
+            overlap = segment.getCommonPrefixLength(fCustomMinusSign);
+            if (overlap != fCustomMinusSign.length()) {
                 
-                segment.adjustOffset(-overlap1);
+                segment.setOffset(initialOffset);
                 return true;
             }
             exponentSign = -1;
-            segment.adjustOffset(overlap2);
+            segment.adjustOffset(overlap);
         } else if (segment.startsWith(fCustomPlusSign)) {
-            
-            int32_t overlap2 = segment.getCommonPrefixLength(fCustomPlusSign);
-            if (overlap2 != fCustomPlusSign.length()) {
+            overlap = segment.getCommonPrefixLength(fCustomPlusSign);
+            if (overlap != fCustomPlusSign.length()) {
                 
-                segment.adjustOffset(-overlap1);
+                segment.setOffset(initialOffset);
                 return true;
             }
-            segment.adjustOffset(overlap2);
+            segment.adjustOffset(overlap);
+        }
+
+        
+        if (segment.length() == 0) {
+            segment.setOffset(initialOffset);
+            return true;
+        }
+
+        
+        
+        
+        fIgnorablesMatcher.match(segment, result, status);
+        if (segment.length() == 0) {
+            segment.setOffset(initialOffset);
+            return true;
         }
 
         
@@ -113,11 +138,11 @@ bool ScientificMatcher::match(StringSegment& segment, ParsedNumber& result, UErr
             result.flags |= FLAG_HAS_EXPONENT;
         } else {
             
-            segment.adjustOffset(-overlap1);
+            segment.setOffset(initialOffset);
         }
         return digitsReturnValue;
 
-    } else if (overlap1 == segment.length()) {
+    } else if (overlap == segment.length()) {
         
         return true;
     }

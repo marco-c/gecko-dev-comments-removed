@@ -191,8 +191,8 @@ RuleBasedTransliterator::~RuleBasedTransliterator() {
     }
 }
 
-Transliterator* 
-RuleBasedTransliterator::clone(void) const {
+RuleBasedTransliterator*
+RuleBasedTransliterator::clone() const {
     return new RuleBasedTransliterator(*this);
 }
 
@@ -253,7 +253,7 @@ RuleBasedTransliterator::handleTransliterate(Replaceable& text, UTransPosition& 
     
     
 
-    static UMutex transliteratorDataMutex = U_MUTEX_INITIALIZER;
+    static UMutex transliteratorDataMutex;
     UBool needToLock;
     {
         Mutex m;

@@ -519,7 +519,7 @@ UBool RuleBasedBreakIterator::BreakCache::populatePreceding(UErrorCode &status) 
                     
                     position = fBI->handleNext();   
                 }
-            };
+            }
             positionStatusIdx = fBI->fRuleStatusIndex;
         }
     } while (position >= fromPosition);

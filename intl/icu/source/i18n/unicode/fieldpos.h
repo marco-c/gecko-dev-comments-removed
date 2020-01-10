@@ -26,6 +26,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -287,6 +289,8 @@ FieldPosition::operator!=(const FieldPosition& copy) const
 }
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

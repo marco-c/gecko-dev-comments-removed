@@ -16,6 +16,10 @@
 #ifndef REP_H
 #define REP_H
 
+#include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
+
 #include "unicode/uobject.h"
 
 
@@ -196,9 +200,6 @@ public:
 
 
 
-
-
-
     virtual Replaceable *clone() const;
 
 protected:
@@ -259,5 +260,7 @@ Replaceable::char32At(int32_t offset) const {
 
 
 U_NAMESPACE_END
+
+#endif
 
 #endif

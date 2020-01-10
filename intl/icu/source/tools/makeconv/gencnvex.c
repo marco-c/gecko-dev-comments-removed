@@ -107,12 +107,17 @@ CnvExtClose(NewConverter *cnvData) {
 static UBool
 CnvExtIsValid(NewConverter *cnvData,
         const uint8_t *bytes, int32_t length) {
+    
+    (void)cnvData;
+    (void)bytes;
+    (void)length;
     return FALSE;
 }
 
 static uint32_t
 CnvExtWrite(NewConverter *cnvData, const UConverterStaticData *staticData,
             UNewDataMemory *pData, int32_t tableType) {
+    (void) staticData; 
     CnvExtData *extData=(CnvExtData *)cnvData;
     int32_t length, top, headerSize;
 
@@ -121,7 +126,7 @@ CnvExtWrite(NewConverter *cnvData, const UConverterStaticData *staticData,
     if(tableType&TABLE_BASE) {
         headerSize=0;
     } else {
-        _MBCSHeader header={ { 0, 0, 0, 0 }, 0, 0, 0, 0, 0, 0, 0 };
+        _MBCSHeader header={ { 0, 0, 0, 0 }, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
         
         length=(int32_t)uprv_strlen(extData->ucm->baseName)+1;

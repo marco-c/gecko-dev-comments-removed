@@ -16,6 +16,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -195,7 +197,7 @@ public:
 
 
 
-    virtual DateIntervalInfo* clone(void) const;
+    virtual DateIntervalInfo* clone() const;
 
     
 
@@ -514,6 +516,8 @@ DateIntervalInfo::operator!=(const DateIntervalInfo& other) const {
 U_NAMESPACE_END
 
 #endif
+
+#endif 
 
 #endif
 

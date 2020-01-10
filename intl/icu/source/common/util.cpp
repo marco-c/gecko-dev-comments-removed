@@ -276,6 +276,16 @@ int32_t ICU_Utility::parsePattern(const UnicodeString& pat,
     return -1; 
 }
 
+int32_t ICU_Utility::parseAsciiInteger(const UnicodeString& str, int32_t& pos) {
+    int32_t result = 0;
+    UChar c;
+    while (pos < str.length() && (c = str.charAt(pos)) >= u'0' && c <= u'9') {
+        result = result * 10 + (c - u'0');
+        pos++;
+    }
+    return result;
+}
+
 
 
 

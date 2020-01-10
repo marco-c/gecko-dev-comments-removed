@@ -126,8 +126,14 @@ struct DecimalFormatWarehouse {
 
 
 struct DecimalFormatFields : public UMemory {
+
+    DecimalFormatFields() {}
+
+    DecimalFormatFields(const DecimalFormatProperties& propsToCopy)
+        : properties(propsToCopy) {}
+
     
-    LocalPointer<DecimalFormatProperties> properties;
+    DecimalFormatProperties properties;
 
     
     LocalPointer<const DecimalFormatSymbols> symbols;
@@ -136,7 +142,7 @@ struct DecimalFormatFields : public UMemory {
 
 
 
-    LocalPointer<LocalizedNumberFormatter> formatter;
+    LocalizedNumberFormatter formatter;
 
     
     std::atomic<::icu::numparse::impl::NumberParserImpl*> atomicParser = {};
@@ -148,7 +154,7 @@ struct DecimalFormatFields : public UMemory {
     DecimalFormatWarehouse warehouse;
 
     
-    LocalPointer<DecimalFormatProperties> exportedProperties;
+    DecimalFormatProperties exportedProperties;
 
     
     bool canUseFastFormat = false;

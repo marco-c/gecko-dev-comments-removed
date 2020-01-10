@@ -66,6 +66,7 @@ typedef enum UTraceFunctionNumber {
     UTRACE_FUNCTION_START=0,
     UTRACE_U_INIT=UTRACE_FUNCTION_START,
     UTRACE_U_CLEANUP,
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -83,6 +84,7 @@ typedef enum UTraceFunctionNumber {
     UTRACE_UCNV_FLUSH_CACHE,
     UTRACE_UCNV_LOAD,
     UTRACE_UCNV_UNLOAD,
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -101,13 +103,80 @@ typedef enum UTraceFunctionNumber {
     UTRACE_UCOL_STRCOLLITER,
     UTRACE_UCOL_OPEN_FROM_SHORT_STRING,
     UTRACE_UCOL_STRCOLLUTF8, 
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
 
 
-    UTRACE_COLLATION_LIMIT
+    UTRACE_COLLATION_LIMIT,
 #endif  
+
+#ifndef U_HIDE_DRAFT_API
+
+    
+
+
+
+    UTRACE_UDATA_START=0x3000,
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    UTRACE_UDATA_RESOURCE=UTRACE_UDATA_START,
+
+    
+
+
+
+
+
+    UTRACE_UDATA_BUNDLE,
+
+    
+
+
+
+
+
+
+    UTRACE_UDATA_DATA_FILE,
+
+    
+
+
+
+
+
+
+
+
+
+
+    UTRACE_UDATA_RES_FILE,
+
+#endif  
+
+#ifndef U_HIDE_INTERNAL_API
+    
+
+
+
+    UTRACE_RES_DATA_LIMIT,
+#endif  
+
 } UTraceFunctionNumber;
 
 

@@ -259,7 +259,7 @@
   
   
   
-  #define TODIGIT(u, cut, c, pow) {       \
+  #define TODIGIT(u, cut, c, pow) UPRV_BLOCK_MACRO_BEGIN { \
     *(c)='0';                             \
     pow=DECPOWERS[cut]*2;                 \
     if ((u)>pow) {                        \
@@ -272,7 +272,7 @@
     if ((u)>=pow) {(u)-=pow; *(c)+=2;}    \
     pow/=2;                               \
     if ((u)>=pow) {(u)-=pow; *(c)+=1;}    \
-    }
+    } UPRV_BLOCK_MACRO_END
 
   
   

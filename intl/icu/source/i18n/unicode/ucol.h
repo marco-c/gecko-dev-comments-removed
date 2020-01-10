@@ -344,11 +344,13 @@ typedef enum {
 
     
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
 
      UCOL_ATTRIBUTE_COUNT
+#endif  
 } UColAttribute;
 
 

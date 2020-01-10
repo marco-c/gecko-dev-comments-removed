@@ -33,7 +33,7 @@ int32_t getRoundingMagnitudeSignificant(const DecimalQuantity &value, int maxSig
     if (maxSig == -1) {
         return INT32_MIN;
     }
-    int magnitude = value.isZero() ? 0 : value.getMagnitude();
+    int magnitude = value.isZeroish() ? 0 : value.getMagnitude();
     return magnitude - maxSig + 1;
 }
 
@@ -45,7 +45,7 @@ int32_t getDisplayMagnitudeFraction(int minFrac) {
 }
 
 int32_t getDisplayMagnitudeSignificant(const DecimalQuantity &value, int minSig) {
-    int magnitude = value.isZero() ? 0 : value.getMagnitude();
+    int magnitude = value.isZeroish() ? 0 : value.getMagnitude();
     return magnitude - minSig + 1;
 }
 
@@ -307,7 +307,7 @@ int32_t
 RoundingImpl::chooseMultiplierAndApply(impl::DecimalQuantity &input, const impl::MultiplierProducer &producer,
                                   UErrorCode &status) {
     
-    U_ASSERT(!input.isZero());
+    U_ASSERT(!input.isZeroish());
 
     
     int magnitude = input.getMagnitude();
@@ -316,7 +316,7 @@ RoundingImpl::chooseMultiplierAndApply(impl::DecimalQuantity &input, const impl:
     apply(input, status);
 
     
-    if (input.isZero() || U_FAILURE(status)) {
+    if (input.isZeroish() || U_FAILURE(status)) {
         return multiplier;
     }
 
@@ -374,7 +374,7 @@ void RoundingImpl::apply(impl::DecimalQuantity &value, UErrorCode& status) const
             value.setMinFraction(
                     uprv_max(0, -getDisplayMagnitudeSignificant(value, fPrecision.fUnion.fracSig.fMinSig)));
             
-            if (value.isZero() && fPrecision.fUnion.fracSig.fMinSig > 0) {
+            if (value.isZeroish() && fPrecision.fUnion.fracSig.fMinSig > 0) {
                 value.setMinInteger(1);
             }
             break;
@@ -436,7 +436,7 @@ void RoundingImpl::apply(impl::DecimalQuantity &value, UErrorCode& status) const
 void RoundingImpl::apply(impl::DecimalQuantity &value, int32_t minInt, UErrorCode ) {
     
     U_ASSERT(isSignificantDigits());
-    U_ASSERT(value.isZero());
+    U_ASSERT(value.isZeroish());
     value.setMinFraction(fPrecision.fUnion.fracSig.fMinSig - minInt);
 }
 

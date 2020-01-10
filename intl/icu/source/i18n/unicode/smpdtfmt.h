@@ -28,6 +28,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -865,7 +867,7 @@ public:
 
 
 
-    virtual Format* clone(void) const;
+    virtual SimpleDateFormat* clone() const;
 
     
 
@@ -1643,7 +1645,7 @@ private:
 
     UBool fHaveDefaultCentury;
 
-    BreakIterator* fCapitalizationBrkIter;
+    const BreakIterator* fCapitalizationBrkIter;
 };
 
 inline UDate
@@ -1653,6 +1655,8 @@ SimpleDateFormat::get2DigitYearStart(UErrorCode& ) const
 }
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

@@ -18,6 +18,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -272,7 +274,7 @@ public:
 
 
 
-    virtual BreakIterator* clone() const;
+    virtual RuleBasedBreakIterator* clone() const;
 
     
 
@@ -536,6 +538,7 @@ public:
 
     static UClassID U_EXPORT2 getStaticClassID(void);
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -562,10 +565,10 @@ public:
 
 
 
-    virtual BreakIterator *  createBufferClone(void *stackBuffer,
-                                               int32_t &BufferSize,
-                                               UErrorCode &status);
-
+    virtual RuleBasedBreakIterator *createBufferClone(void *stackBuffer,
+                                                      int32_t &BufferSize,
+                                                      UErrorCode &status);
+#endif  
 
     
 
@@ -693,6 +696,8 @@ inline UBool RuleBasedBreakIterator::operator!=(const BreakIterator& that) const
 }
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

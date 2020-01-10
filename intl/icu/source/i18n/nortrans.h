@@ -44,7 +44,7 @@ class NormalizationTransliterator : public Transliterator {
 
 
 
-    virtual Transliterator* clone(void) const;
+    virtual NormalizationTransliterator* clone() const;
 
     
 

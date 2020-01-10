@@ -28,6 +28,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 #if !UCONFIG_NO_FORMATTING
 
 #include "unicode/calendar.h"
@@ -301,7 +303,7 @@ public:
 
 
 
-    virtual Calendar* clone(void) const;
+    virtual GregorianCalendar* clone() const;
 
     
 
@@ -350,6 +352,7 @@ public:
 
     virtual UBool isEquivalentTo(const Calendar& other) const;
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -362,6 +365,7 @@ public:
 
 
     virtual void roll(EDateFields field, int32_t amount, UErrorCode& status);
+#endif  
 
     
 
@@ -771,6 +775,8 @@ public:
 };
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

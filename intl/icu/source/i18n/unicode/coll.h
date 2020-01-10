@@ -54,6 +54,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 #if !UCONFIG_NO_COLLATION
 
 #include "unicode/uobject.h"
@@ -204,6 +206,7 @@ public:
 
     
     
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -220,6 +223,7 @@ public:
         EQUAL = UCOL_EQUAL,  
         GREATER = UCOL_GREATER  
     };
+#endif  
 
     
 
@@ -265,7 +269,7 @@ public:
 
 
 
-    virtual Collator* clone(void) const = 0;
+    virtual Collator* clone() const = 0;
 
     
 
@@ -323,6 +327,7 @@ public:
 
     static Collator* U_EXPORT2 createInstance(const Locale& loc, UErrorCode& err);
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -336,6 +341,7 @@ public:
 
     virtual EComparisonResult compare(const UnicodeString& source,
                                       const UnicodeString& target) const;
+#endif  
 
     
 
@@ -353,6 +359,7 @@ public:
                                       const UnicodeString& target,
                                       UErrorCode &status) const = 0;
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -368,6 +375,7 @@ public:
     virtual EComparisonResult compare(const UnicodeString& source,
                                       const UnicodeString& target,
                                       int32_t length) const;
+#endif  
 
     
 
@@ -387,6 +395,7 @@ public:
                                       int32_t length,
                                       UErrorCode &status) const = 0;
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -423,6 +432,7 @@ public:
     virtual EComparisonResult compare(const char16_t* source, int32_t sourceLength,
                                       const char16_t* target, int32_t targetLength)
                                       const;
+#endif  
 
     
 
@@ -527,6 +537,7 @@ public:
 
     virtual int32_t hashCode(void) const = 0;
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -540,6 +551,7 @@ public:
 
 
     virtual Locale getLocale(ULocDataLocaleType type, UErrorCode& status) const = 0;
+#endif  
 
     
 
@@ -576,6 +588,7 @@ public:
 
     UBool equals(const UnicodeString& source, const UnicodeString& target) const;
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -607,6 +620,7 @@ public:
 
 
     virtual void setStrength(ECollationStrength newStrength);
+#endif  
 
     
 
@@ -904,6 +918,7 @@ public:
 
     virtual UColReorderCode getMaxVariable() const;
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -951,6 +966,7 @@ public:
 
 
     virtual void setVariableTop(uint32_t varTop, UErrorCode &status) = 0;
+#endif  
 
     
 
@@ -972,6 +988,7 @@ public:
 
     virtual UnicodeSet *getTailoredSet(UErrorCode &status) const;
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -979,7 +996,8 @@ public:
 
 
 
-    virtual Collator* safeClone(void) const;
+    virtual Collator* safeClone() const;
+#endif  
 
     
 
@@ -1268,6 +1286,8 @@ public:
 
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

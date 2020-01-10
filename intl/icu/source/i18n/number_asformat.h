@@ -45,7 +45,7 @@ class U_I18N_API LocalizedNumberFormatterAsFormat : public Format {
     
 
 
-    Format* clone() const U_OVERRIDE;
+    LocalizedNumberFormatterAsFormat* clone() const U_OVERRIDE;
 
     
 

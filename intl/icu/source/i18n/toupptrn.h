@@ -50,7 +50,7 @@ class UppercaseTransliterator : public CaseMapTransliterator {
 
 
 
-    virtual Transliterator* clone(void) const;
+    virtual UppercaseTransliterator* clone() const;
 
     
 

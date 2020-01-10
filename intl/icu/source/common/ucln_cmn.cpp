@@ -65,9 +65,20 @@ U_CFUNC void
 ucln_common_registerCleanup(ECleanupCommonType type,
                             cleanupFunc *func)
 {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     U_ASSERT(UCLN_COMMON_START < type && type < UCLN_COMMON_COUNT);
-    if (UCLN_COMMON_START < type && type < UCLN_COMMON_COUNT)
-    {
+    if (type == UCLN_COMMON_MUTEX) {
+        gCommonCleanupFunctions[type] = func;
+    } else if (UCLN_COMMON_START < type && type < UCLN_COMMON_COUNT)  {
         icu::Mutex m;     
         gCommonCleanupFunctions[type] = func;
     }

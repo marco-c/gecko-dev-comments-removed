@@ -20,6 +20,9 @@
 #define __UOBJECT_H__
 
 #include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
+
 #include "unicode/platform.h"
 
 
@@ -43,7 +46,7 @@
 
 
 #ifndef U_NO_THROW
-#define U_NO_THROW throw()
+#define U_NO_THROW U_NOEXCEPT
 #endif
 
 
@@ -217,9 +220,6 @@ public:
 
 
 
-
-
-
 class U_COMMON_API UObject : public UMemory {
 public:
     
@@ -318,5 +318,7 @@ protected:
 #endif  
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif

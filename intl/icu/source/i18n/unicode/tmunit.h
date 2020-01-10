@@ -16,6 +16,9 @@
 
 
 
+#include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
 
 #include "unicode/measunit.h"
 
@@ -70,7 +73,7 @@ public:
 
 
 
-    virtual UObject* clone() const;
+    virtual TimeUnit* clone() const;
 
     
 
@@ -129,6 +132,8 @@ private:
 
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

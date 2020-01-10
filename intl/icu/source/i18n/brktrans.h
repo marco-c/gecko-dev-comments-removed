@@ -54,7 +54,7 @@ public:
 
 
 
-    virtual Transliterator* clone(void) const;
+    virtual BreakTransliterator* clone() const;
 
     virtual const UnicodeString &getInsertion() const;
 

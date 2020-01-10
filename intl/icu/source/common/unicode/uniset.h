@@ -13,6 +13,10 @@
 #ifndef UNICODESET_H
 #define UNICODESET_H
 
+#include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
+
 #include "unicode/ucpmap.h"
 #include "unicode/unifilt.h"
 #include "unicode/unistr.h"
@@ -501,7 +505,7 @@ public:
 
 
 
-    virtual UnicodeFunctor* clone() const;
+    virtual UnicodeSet* clone() const;
 
     
 
@@ -579,7 +583,7 @@ public:
 
 
 
-    UnicodeFunctor *freeze();
+    UnicodeSet *freeze();
 
     
 
@@ -589,7 +593,7 @@ public:
 
 
 
-    UnicodeFunctor *cloneAsThawed() const;
+    UnicodeSet *cloneAsThawed() const;
 
     
     
@@ -1651,11 +1655,10 @@ private:
                      const UnicodeSet* inclusions,
                      UErrorCode &status);
 
-#ifndef U_HIDE_DRAFT_API   
+    
     void applyIntPropertyValue(const UCPMap *map,
                                UCPMapValueFilter *filter, const void *context,
                                UErrorCode &errorCode);
-#endif  
 
     
 
@@ -1735,5 +1738,7 @@ inline int32_t UnicodeSet::spanBack(const UnicodeString &s, int32_t limit, USetS
 }
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif

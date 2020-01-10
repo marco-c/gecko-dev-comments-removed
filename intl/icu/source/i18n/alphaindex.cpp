@@ -260,8 +260,7 @@ AlphabeticIndex::ImmutableIndex *AlphabeticIndex::buildImmutableIndex(UErrorCode
     
     
     LocalPointer<BucketList> immutableBucketList(createBucketList(errorCode));
-    LocalPointer<RuleBasedCollator> coll(
-        static_cast<RuleBasedCollator *>(collatorPrimaryOnly_->clone()));
+    LocalPointer<RuleBasedCollator> coll(collatorPrimaryOnly_->clone());
     if (immutableBucketList.isNull() || coll.isNull()) {
         errorCode = U_MEMORY_ALLOCATION_ERROR;
         return NULL;
@@ -907,7 +906,7 @@ void AlphabeticIndex::init(const Locale *locale, UErrorCode &status) {
             return;
         }
     }
-    collatorPrimaryOnly_ = static_cast<RuleBasedCollator *>(collator_->clone());
+    collatorPrimaryOnly_ = collator_->clone();
     if (collatorPrimaryOnly_ == NULL) {
         status = U_MEMORY_ALLOCATION_ERROR;
         return;
@@ -958,7 +957,7 @@ collatorComparator(const void *context, const void *left, const void *right) {
     }
     if (leftString == NULL) {
         return 1;
-    };
+    }
     if (rightString == NULL) {
         return -1;
     }

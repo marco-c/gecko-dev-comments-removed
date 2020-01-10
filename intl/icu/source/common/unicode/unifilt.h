@@ -12,6 +12,10 @@
 #ifndef UNIFILT_H
 #define UNIFILT_H
 
+#include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
+
 #include "unicode/unifunct.h"
 #include "unicode/unimatch.h"
 
@@ -73,6 +77,14 @@ public:
 
 
 
+    virtual UnicodeFilter* clone() const = 0;
+
+    
+
+
+
+
+
 
     virtual UBool contains(UChar32 c) const = 0;
 
@@ -118,5 +130,7 @@ protected:
 
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif

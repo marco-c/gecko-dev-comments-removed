@@ -28,8 +28,11 @@
 
 
 
-#include <cstddef>
 #include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
+
+#include <cstddef>
 #include "unicode/char16ptr.h"
 #include "unicode/rep.h"
 #include "unicode/std_string.h"
@@ -203,6 +206,8 @@ class UnicodeStringAppendable;
 #ifndef UNISTR_OBJECT_SIZE
 # define UNISTR_OBJECT_SIZE 64
 #endif
+
+
 
 
 
@@ -2099,7 +2104,6 @@ public:
 
 
 
-
   void setToBogus();
 
   
@@ -2538,7 +2542,10 @@ public:
 
 
 
-  inline UnicodeString& remove(void);
+
+
+
+  inline UnicodeString& remove();
 
   
 
@@ -3037,8 +3044,8 @@ public:
 
 
 
-  UnicodeString(const uint16_t *text, int32_t length) :
-      UnicodeString(ConstChar16Ptr(text), length) {}
+  UnicodeString(const uint16_t *text, int32_t textLength) :
+      UnicodeString(ConstChar16Ptr(text), textLength) {}
 #endif
 
 #if U_SIZEOF_WCHAR_T==2 || defined(U_IN_DOXYGEN)
@@ -3050,8 +3057,8 @@ public:
 
 
 
-  UnicodeString(const wchar_t *text, int32_t length) :
-      UnicodeString(ConstChar16Ptr(text), length) {}
+  UnicodeString(const wchar_t *text, int32_t textLength) :
+      UnicodeString(ConstChar16Ptr(text), textLength) {}
 #endif
 
   
@@ -3061,7 +3068,7 @@ public:
 
 
 
-  inline UnicodeString(const std::nullptr_t text, int32_t length);
+  inline UnicodeString(const std::nullptr_t text, int32_t textLength);
 
   
 
@@ -3272,7 +3279,7 @@ public:
 
 
 
-  UnicodeString(const char *src, int32_t length, enum EInvariant inv);
+  UnicodeString(const char *src, int32_t textLength, enum EInvariant inv);
 
 
   
@@ -3331,10 +3338,7 @@ public:
 
 
 
-
-
-
-  virtual Replaceable *clone() const;
+  virtual UnicodeString *clone() const;
 
   
 
@@ -4747,5 +4751,7 @@ UnicodeString::reverse(int32_t start,
 { return doReverse(start, _length); }
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif

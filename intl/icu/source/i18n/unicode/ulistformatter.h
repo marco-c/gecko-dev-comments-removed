@@ -41,7 +41,7 @@ struct UFormattedList;
 
 
 typedef struct UFormattedList UFormattedList;
-#endif 
+#endif  
 
 #ifndef U_HIDE_DRAFT_API
 

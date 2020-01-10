@@ -751,6 +751,12 @@ uloc_getDisplayName(const char* localeID,
 
 
 
+
+
+
+
+
+
 U_STABLE const char* U_EXPORT2
 uloc_getAvailable(int32_t n);
 
@@ -761,6 +767,72 @@ uloc_getAvailable(int32_t n);
 
 
 U_STABLE int32_t U_EXPORT2 uloc_countAvailable(void);
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+typedef enum ULocAvailableType {
+  
+
+
+
+
+
+  ULOC_AVAILABLE_DEFAULT,
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ULOC_AVAILABLE_ONLY_LEGACY_ALIASES,
+
+  
+
+
+
+
+
+  ULOC_AVAILABLE_WITH_LEGACY_ALIASES,
+
+#ifndef U_HIDE_INTERNAL_API
+  
+
+
+  ULOC_AVAILABLE_COUNT
+#endif
+} ULocAvailableType;
+
+
+
+
+
+
+
+
+
+
+
+
+U_DRAFT UEnumeration* U_EXPORT2
+uloc_openAvailableByType(ULocAvailableType type, UErrorCode* status);
+
+#endif 
 
 
 

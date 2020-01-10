@@ -47,7 +47,7 @@ public:
 
 
 
-    virtual Transliterator* clone(void) const;
+    virtual RemoveTransliterator* clone() const;
 
     
 

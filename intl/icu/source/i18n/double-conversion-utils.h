@@ -42,10 +42,12 @@
 
 
 #include "uassert.h"
-#define ASSERT U_ASSERT
-
-#ifndef UNIMPLEMENTED
-#define UNIMPLEMENTED() (abort())
+#ifndef DOUBLE_CONVERSION_ASSERT
+#define DOUBLE_CONVERSION_ASSERT(condition)         \
+    U_ASSERT(condition);
+#endif
+#ifndef DOUBLE_CONVERSION_UNIMPLEMENTED
+#define DOUBLE_CONVERSION_UNIMPLEMENTED() (abort())
 #endif
 #ifndef DOUBLE_CONVERSION_NO_RETURN
 #ifdef _MSC_VER
@@ -54,16 +56,23 @@
 #define DOUBLE_CONVERSION_NO_RETURN __attribute__((noreturn))
 #endif
 #endif
-#ifndef UNREACHABLE
+#ifndef DOUBLE_CONVERSION_UNREACHABLE
 #ifdef _MSC_VER
 void DOUBLE_CONVERSION_NO_RETURN abort_noreturn();
 inline void abort_noreturn() { abort(); }
-#define UNREACHABLE()   (abort_noreturn())
+#define DOUBLE_CONVERSION_UNREACHABLE()   (abort_noreturn())
 #else
-#define UNREACHABLE()   (abort())
+#define DOUBLE_CONVERSION_UNREACHABLE()   (abort())
 #endif
 #endif
 
+#ifndef DOUBLE_CONVERSION_UNUSED
+#ifdef __GNUC__
+#define DOUBLE_CONVERSION_UNUSED __attribute__((unused))
+#else
+#define DOUBLE_CONVERSION_UNUSED
+#endif
+#endif
 
 
 
@@ -99,9 +108,9 @@ inline void abort_noreturn() { abort(); }
     defined(_POWER) || defined(_ARCH_PPC) || defined(_ARCH_PPC64) || \
     defined(__sparc__) || defined(__sparc) || defined(__s390__) || \
     defined(__SH4__) || defined(__alpha__) || \
-    defined(_MIPS_ARCH_MIPS32R2) || \
+    defined(_MIPS_ARCH_MIPS32R2) || defined(__ARMEB__) ||\
     defined(__AARCH64EL__) || defined(__aarch64__) || defined(__AARCH64EB__) || \
-    defined(__riscv) || \
+    defined(__riscv) || defined(__e2k__) || \
     defined(__or1k__) || defined(__arc__) || \
     defined(__EMSCRIPTEN__)
 #define DOUBLE_CONVERSION_CORRECT_DOUBLE_OPERATIONS 1
@@ -142,23 +151,23 @@ typedef uint16_t uc16;
 
 
 
-#define UINT64_2PART_C(a, b) (((static_cast<uint64_t>(a) << 32) + 0x##b##u))
+#define DOUBLE_CONVERSION_UINT64_2PART_C(a, b) (((static_cast<uint64_t>(a) << 32) + 0x##b##u))
 
 
 
 
 
 
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(a)                                   \
+#ifndef DOUBLE_CONVERSION_ARRAY_SIZE
+#define DOUBLE_CONVERSION_ARRAY_SIZE(a)                                   \
   ((sizeof(a) / sizeof(*(a))) /                         \
   static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
 #endif
 
 
 
-#ifndef DC_DISALLOW_COPY_AND_ASSIGN
-#define DC_DISALLOW_COPY_AND_ASSIGN(TypeName)      \
+#ifndef DOUBLE_CONVERSION_DISALLOW_COPY_AND_ASSIGN
+#define DOUBLE_CONVERSION_DISALLOW_COPY_AND_ASSIGN(TypeName)      \
   TypeName(const TypeName&);                    \
   void operator=(const TypeName&)
 #endif
@@ -169,10 +178,10 @@ typedef uint16_t uc16;
 
 
 
-#ifndef DC_DISALLOW_IMPLICIT_CONSTRUCTORS
-#define DC_DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName) \
+#ifndef DOUBLE_CONVERSION_DISALLOW_IMPLICIT_CONSTRUCTORS
+#define DOUBLE_CONVERSION_DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName) \
   TypeName();                                    \
-  DC_DISALLOW_COPY_AND_ASSIGN(TypeName)
+  DOUBLE_CONVERSION_DISALLOW_COPY_AND_ASSIGN(TypeName)
 #endif
 
 
@@ -180,25 +189,9 @@ U_NAMESPACE_BEGIN
 
 namespace double_conversion {
 
-static const int kCharSize = sizeof(char);
-
-
-template <typename T>
-static T Max(T a, T b) {
-  return a < b ? b : a;
-}
-
-
-
-template <typename T>
-static T Min(T a, T b) {
-  return a < b ? a : b;
-}
-
-
 inline int StrLength(const char* string) {
   size_t length = strlen(string);
-  ASSERT(length == static_cast<size_t>(static_cast<int>(length)));
+  DOUBLE_CONVERSION_ASSERT(length == static_cast<size_t>(static_cast<int>(length)));
   return static_cast<int>(length);
 }
 
@@ -208,15 +201,15 @@ class Vector {
  public:
   Vector() : start_(NULL), length_(0) {}
   Vector(T* data, int len) : start_(data), length_(len) {
-    ASSERT(len == 0 || (len > 0 && data != NULL));
+    DOUBLE_CONVERSION_ASSERT(len == 0 || (len > 0 && data != NULL));
   }
 
   
   
   Vector<T> SubVector(int from, int to) {
-    ASSERT(to <= length_);
-    ASSERT(from < to);
-    ASSERT(0 <= from);
+    DOUBLE_CONVERSION_ASSERT(to <= length_);
+    DOUBLE_CONVERSION_ASSERT(from < to);
+    DOUBLE_CONVERSION_ASSERT(0 <= from);
     return Vector<T>(start() + from, to - from);
   }
 
@@ -231,13 +224,18 @@ class Vector {
 
   
   T& operator[](int index) const {
-    ASSERT(0 <= index && index < length_);
+    DOUBLE_CONVERSION_ASSERT(0 <= index && index < length_);
     return start_[index];
   }
 
   T& first() { return start_[0]; }
 
   T& last() { return start_[length_ - 1]; }
+
+  void pop_back() {
+    DOUBLE_CONVERSION_ASSERT(!is_empty());
+    --length_;
+  }
 
  private:
   T* start_;
@@ -259,7 +257,7 @@ class StringBuilder {
 
   
   int position() const {
-    ASSERT(!is_finalized());
+    DOUBLE_CONVERSION_ASSERT(!is_finalized());
     return position_;
   }
 
@@ -270,8 +268,8 @@ class StringBuilder {
   
   
   void AddCharacter(char c) {
-    ASSERT(c != '\0');
-    ASSERT(!is_finalized() && position_ < buffer_.length());
+    DOUBLE_CONVERSION_ASSERT(c != '\0');
+    DOUBLE_CONVERSION_ASSERT(!is_finalized() && position_ < buffer_.length());
     buffer_[position_++] = c;
   }
 
@@ -284,9 +282,9 @@ class StringBuilder {
   
   
   void AddSubstring(const char* s, int n) {
-    ASSERT(!is_finalized() && position_ + n < buffer_.length());
-    ASSERT(static_cast<size_t>(n) <= strlen(s));
-    memmove(&buffer_[position_], s, n * kCharSize);
+    DOUBLE_CONVERSION_ASSERT(!is_finalized() && position_ + n < buffer_.length());
+    DOUBLE_CONVERSION_ASSERT(static_cast<size_t>(n) <= strlen(s));
+    memmove(&buffer_[position_], s, n);
     position_ += n;
   }
 
@@ -301,13 +299,13 @@ class StringBuilder {
 
   
   char* Finalize() {
-    ASSERT(!is_finalized() && position_ < buffer_.length());
+    DOUBLE_CONVERSION_ASSERT(!is_finalized() && position_ < buffer_.length());
     buffer_[position_] = '\0';
     
     
-    ASSERT(strlen(buffer_.start()) == static_cast<size_t>(position_));
+    DOUBLE_CONVERSION_ASSERT(strlen(buffer_.start()) == static_cast<size_t>(position_));
     position_ = -1;
-    ASSERT(is_finalized());
+    DOUBLE_CONVERSION_ASSERT(is_finalized());
     return buffer_.start();
   }
 
@@ -317,7 +315,7 @@ class StringBuilder {
 
   bool is_finalized() const { return position_ < 0; }
 
-  DC_DISALLOW_IMPLICIT_CONSTRUCTORS(StringBuilder);
+  DOUBLE_CONVERSION_DISALLOW_IMPLICIT_CONSTRUCTORS(StringBuilder);
 };
 
 
@@ -345,13 +343,14 @@ class StringBuilder {
 
 
 template <class Dest, class Source>
-inline Dest BitCast(const Source& source) {
+Dest BitCast(const Source& source) {
   
   
 #if __cplusplus >= 201103L
   static_assert(sizeof(Dest) == sizeof(Source),
                 "source and destination size mismatch");
 #else
+  DOUBLE_CONVERSION_UNUSED
   typedef char VerifySizesAreEqual[sizeof(Dest) == sizeof(Source) ? 1 : -1];
 #endif
 
@@ -361,7 +360,7 @@ inline Dest BitCast(const Source& source) {
 }
 
 template <class Dest, class Source>
-inline Dest BitCast(Source* source) {
+Dest BitCast(Source* source) {
   return BitCast<Dest>(reinterpret_cast<uintptr_t>(source));
 }
 

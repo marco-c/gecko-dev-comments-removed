@@ -582,6 +582,7 @@ getTagNumber(const char *tag, uint16_t tagLen) {
 
 static void
 addOfficialTaggedStandards(char *line, int32_t lineLen) {
+    (void) lineLen; 
     char *atag;
     char *endTagExp;
     char *tag;

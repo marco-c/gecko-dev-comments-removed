@@ -18,7 +18,7 @@
 #include "fphdlimp.h"
 #include "util.h"
 #include "uvectr32.h"
-#include "number_stringbuilder.h"
+#include "formatted_string_builder.h"
 
 
 
@@ -68,6 +68,8 @@ U_NAMESPACE_BEGIN
 
 
 
+
+
 class FormattedValueFieldPositionIteratorImpl : public UMemory, public FormattedValue {
 public:
 
@@ -112,12 +114,21 @@ private:
 };
 
 
-class FormattedValueNumberStringBuilderImpl : public UMemory, public FormattedValue {
+
+
+
+
+
+
+
+
+
+class U_I18N_API FormattedValueStringBuilderImpl : public UMemory, public FormattedValue {
 public:
 
-    FormattedValueNumberStringBuilderImpl(number::impl::Field numericField);
+    FormattedValueStringBuilderImpl(FormattedStringBuilder::Field numericField);
 
-    virtual ~FormattedValueNumberStringBuilderImpl();
+    virtual ~FormattedValueStringBuilderImpl();
 
     
 
@@ -126,17 +137,25 @@ public:
     Appendable& appendTo(Appendable& appendable, UErrorCode& status) const U_OVERRIDE;
     UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const U_OVERRIDE;
 
-    inline number::impl::NumberStringBuilder& getStringRef() {
+    
+    UBool nextFieldPosition(FieldPosition& fp, UErrorCode& status) const;
+    void getAllFieldPositions(FieldPositionIteratorHandler& fpih, UErrorCode& status) const;
+    inline FormattedStringBuilder& getStringRef() {
         return fString;
     }
-
-    inline const number::impl::NumberStringBuilder& getStringRef() const {
+    inline const FormattedStringBuilder& getStringRef() const {
         return fString;
     }
 
 private:
-    number::impl::NumberStringBuilder fString;
-    number::impl::Field fNumericField;
+    FormattedStringBuilder fString;
+    FormattedStringBuilder::Field fNumericField;
+
+    bool nextPositionImpl(ConstrainedFieldPosition& cfpos, FormattedStringBuilder::Field numericField, UErrorCode& status) const;
+    static bool isIntOrGroup(FormattedStringBuilder::Field field);
+    static bool isNumericField(FormattedStringBuilder::Field field);
+    int32_t trimBack(int32_t limit) const;
+    int32_t trimFront(int32_t start) const;
 };
 
 

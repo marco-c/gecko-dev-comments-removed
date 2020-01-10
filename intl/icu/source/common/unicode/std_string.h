@@ -27,11 +27,15 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 #if defined(__GLIBCXX__)
 namespace std { class type_info; }
 #endif
 #include <string>
+
+#endif 
 
 #endif  

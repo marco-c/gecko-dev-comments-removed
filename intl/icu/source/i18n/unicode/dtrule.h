@@ -11,6 +11,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -126,7 +128,7 @@ public:
 
 
 
-    DateTimeRule* clone(void) const;
+    DateTimeRule* clone() const;
 
     
 
@@ -245,6 +247,8 @@ public:
 };
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

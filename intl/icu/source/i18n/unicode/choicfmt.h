@@ -26,19 +26,22 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
 
 
 #if !UCONFIG_NO_FORMATTING
-#ifndef U_HIDE_DEPRECATED_API
 
 #include "unicode/fieldpos.h"
 #include "unicode/format.h"
 #include "unicode/messagepattern.h"
 #include "unicode/numfmt.h"
 #include "unicode/unistr.h"
+
+#ifndef U_HIDE_DEPRECATED_API
 
 U_NAMESPACE_BEGIN
 
@@ -248,7 +251,7 @@ public:
 
 
 
-    virtual Format* clone(void) const;
+    virtual ChoiceFormat* clone() const;
 
     
 
@@ -590,6 +593,8 @@ private:
 U_NAMESPACE_END
 
 #endif  
+#endif 
+
 #endif 
 
 #endif 

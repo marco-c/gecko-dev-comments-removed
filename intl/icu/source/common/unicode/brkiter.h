@@ -29,6 +29,10 @@
 
 
 
+#include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
+
 #if UCONFIG_NO_BREAK_ITERATION
 
 U_NAMESPACE_BEGIN
@@ -135,7 +139,7 @@ public:
 
 
 
-    virtual BreakIterator* clone(void) const = 0;
+    virtual BreakIterator* clone() const = 0;
 
     
 
@@ -493,6 +497,7 @@ public:
     static UnicodeString& U_EXPORT2 getDisplayName(const Locale& objectLocale,
                                          UnicodeString& name);
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -515,6 +520,7 @@ public:
     virtual BreakIterator *  createBufferClone(void *stackBuffer,
                                                int32_t &BufferSize,
                                                UErrorCode &status) = 0;
+#endif  
 
 #ifndef U_HIDE_DEPRECATED_API
 
@@ -655,6 +661,8 @@ inline UBool BreakIterator::isBufferClone()
 #endif 
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

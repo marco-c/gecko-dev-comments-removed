@@ -91,7 +91,7 @@ public:
 
 
 
-    virtual Calendar* clone(void) const;
+    virtual TaiwanCalendar* clone() const;
 
 public:
     

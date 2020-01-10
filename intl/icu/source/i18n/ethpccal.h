@@ -141,7 +141,7 @@ public:
 
 
 
-    virtual Calendar* clone() const;
+    virtual EthiopicCalendar* clone() const;
 
     
 

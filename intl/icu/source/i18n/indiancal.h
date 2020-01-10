@@ -186,7 +186,7 @@ public:
   
 
   
-  virtual Calendar* clone() const;
+  virtual IndianCalendar* clone() const;
 
  private:
   

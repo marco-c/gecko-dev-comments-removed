@@ -12,10 +12,13 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 #if !UCONFIG_NO_FORMATTING
-#ifndef U_HIDE_DRAFT_API
 
 #include "unicode/measunit.h"
+
+#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -72,7 +75,7 @@ public:
 
 
 
-    virtual UObject* clone() const;
+    virtual NoUnit* clone() const;
 
     
 
@@ -104,6 +107,8 @@ private:
 U_NAMESPACE_END
 
 #endif  
+#endif 
+
 #endif 
 
 #endif 

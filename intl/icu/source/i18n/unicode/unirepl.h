@@ -14,6 +14,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -95,5 +97,7 @@ class U_I18N_API UnicodeReplacer  {
 };
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif

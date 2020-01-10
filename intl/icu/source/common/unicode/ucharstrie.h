@@ -24,6 +24,9 @@
 
 
 #include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
+
 #include "unicode/unistr.h"
 #include "unicode/uobject.h"
 #include "unicode/ustringtrie.h"
@@ -93,6 +96,41 @@ public:
         remainingMatchLength_=-1;
         return *this;
     }
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+    uint64_t getState64() const {
+        return (static_cast<uint64_t>(remainingMatchLength_ + 2) << kState64RemainingShift) |
+            (uint64_t)(pos_ - uchars_);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    UCharsTrie &resetToState64(uint64_t state) {
+        remainingMatchLength_ = static_cast<int32_t>(state >> kState64RemainingShift) - 2;
+        pos_ = uchars_ + (state & kState64PosMask);
+        return *this;
+    }
+#endif  
 
     
 
@@ -560,6 +598,13 @@ private:
 
     static const int32_t kMaxTwoUnitDelta=((kThreeUnitDeltaLead-kMinTwoUnitDeltaLead)<<16)-1;  
 
+    
+    
+    
+    
+    static constexpr int32_t kState64RemainingShift = 59;
+    static constexpr uint64_t kState64PosMask = (UINT64_C(1) << kState64RemainingShift) - 1;
+
     char16_t *ownedArray_;
 
     
@@ -574,5 +619,7 @@ private:
 };
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif  

@@ -278,11 +278,11 @@ UnicodeSet& UnicodeSet::copyFrom(const UnicodeSet& o, UBool asThawed) {
 
 
 
-UnicodeFunctor* UnicodeSet::clone() const {
+UnicodeSet* UnicodeSet::clone() const {
     return new UnicodeSet(*this);
 }
 
-UnicodeFunctor *UnicodeSet::cloneAsThawed() const {
+UnicodeSet *UnicodeSet::cloneAsThawed() const {
     return new UnicodeSet(*this, TRUE);
 }
 
@@ -2172,7 +2172,7 @@ void UnicodeSet::setPattern(const char16_t *newPat, int32_t newPatLen) {
     
 }
 
-UnicodeFunctor *UnicodeSet::freeze() {
+UnicodeSet *UnicodeSet::freeze() {
     if(!isFrozen() && !isBogus()) {
         compact();
 

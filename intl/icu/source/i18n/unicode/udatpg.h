@@ -88,11 +88,13 @@ typedef enum UDateTimePatternField {
 
     
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
 
     UDATPG_FIELD_COUNT
+#endif  
 } UDateTimePatternField;
 
 

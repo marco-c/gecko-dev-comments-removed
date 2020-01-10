@@ -11,7 +11,7 @@
 #include "number_types.h"
 #include "unicode/stringpiece.h"
 #include "unicode/unistr.h"
-#include "number_stringbuilder.h"
+#include "formatted_string_builder.h"
 #include "unicode/uniset.h"
 
 U_NAMESPACE_BEGIN namespace number {
@@ -143,7 +143,7 @@ class U_I18N_API AffixUtils {
 
 
 
-    static int32_t unescape(const UnicodeString& affixPattern, NumberStringBuilder& output,
+    static int32_t unescape(const UnicodeString& affixPattern, FormattedStringBuilder& output,
                             int32_t position, const SymbolProvider& provider, Field field,
                             UErrorCode& status);
 

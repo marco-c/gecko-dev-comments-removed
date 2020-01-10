@@ -13,6 +13,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -183,6 +185,7 @@ public:
   Normalizer(const CharacterIterator& iter, UNormalizationMode mode);
 #endif  
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
   
 
 
@@ -195,7 +198,7 @@ public:
 
 
   virtual ~Normalizer();
-
+#endif  
 
   
   
@@ -599,7 +602,7 @@ public:
 
 
 
-  Normalizer*        clone(void) const;
+  Normalizer*        clone() const;
 
   
 
@@ -723,12 +726,14 @@ public:
   static UClassID U_EXPORT2 getStaticClassID();
 #endif  
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
   
 
 
 
 
   virtual UClassID getDynamicClassID() const;
+#endif  
 
 private:
   
@@ -803,6 +808,8 @@ Normalizer::compare(const UnicodeString &s1, const UnicodeString &s2,
 }
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

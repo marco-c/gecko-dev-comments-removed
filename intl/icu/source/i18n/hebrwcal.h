@@ -192,7 +192,7 @@ public:
 
 
 
-    virtual Calendar* clone(void) const;
+    virtual HebrewCalendar* clone() const;
     
 public:
     

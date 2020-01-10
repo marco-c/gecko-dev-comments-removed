@@ -71,7 +71,7 @@ public:
 
 
 
-    virtual Format* clone(void) const;
+    virtual RelativeDateFormat* clone() const;
 
     
 

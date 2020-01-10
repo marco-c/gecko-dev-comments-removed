@@ -249,7 +249,7 @@ static UDate getUTCtime_real() {
 }
 
 static UDate getUTCtime_fake() {
-    static UMutex fakeClockMutex = U_MUTEX_INTIALIZER;
+    static UMutex fakeClockMutex;
     umtx_lock(&fakeClockMutex);
     if(!fakeClock_set) {
         UDate real = getUTCtime_real();
@@ -1315,11 +1315,10 @@ uprv_pathIsAbsolute(const char *path)
 # endif
 #endif
 
-#if U_PLATFORM_HAS_WINUWP_API != 0
+#if defined(ICU_DATA_DIR_WINDOWS)
 
 static BOOL U_CALLCONV getIcuDataDirectoryUnderWindowsDirectory(char* directoryBuffer, UINT bufferLength)
 {
-#if defined(ICU_DATA_DIR_WINDOWS)
     wchar_t windowsPath[MAX_PATH];
     char windowsPathUtf8[MAX_PATH];
 
@@ -1346,7 +1345,6 @@ static BOOL U_CALLCONV getIcuDataDirectoryUnderWindowsDirectory(char* directoryB
             }
         }
     }
-#endif
 
     return FALSE;
 }
@@ -1380,9 +1378,9 @@ static void U_CALLCONV dataDirectoryInitFn() {
 
 #   if !defined(ICU_NO_USER_DATA_OVERRIDE) && !UCONFIG_NO_FILE_IO
     
-#       if U_PLATFORM_HAS_WINUWP_API == 0  
+#     if U_PLATFORM_HAS_WINUWP_API == 0  
         path=getenv("ICU_DATA");
-#       endif
+#     endif
 #   endif
 
     
@@ -1411,7 +1409,7 @@ static void U_CALLCONV dataDirectoryInitFn() {
     }
 #endif
 
-#if U_PLATFORM_HAS_WINUWP_API != 0  && defined(ICU_DATA_DIR_WINDOWS)
+#if defined(ICU_DATA_DIR_WINDOWS)
     char datadir_path_buffer[MAX_PATH];
     if (getIcuDataDirectoryUnderWindowsDirectory(datadir_path_buffer, UPRV_LENGTHOF(datadir_path_buffer))) {
         path = datadir_path_buffer;
@@ -1461,12 +1459,17 @@ static void U_CALLCONV TimeZoneDataDirInitFn(UErrorCode &status) {
 
     const char *dir = "";
 
-#if U_PLATFORM_HAS_WINUWP_API != 0
+#if U_PLATFORM_HAS_WINUWP_API == 1
+
+
+# if defined(ICU_DATA_DIR_WINDOWS)
     
     char datadir_path_buffer[MAX_PATH];
     if (getIcuDataDirectoryUnderWindowsDirectory(datadir_path_buffer, UPRV_LENGTHOF(datadir_path_buffer))) {
         dir = datadir_path_buffer;
     }
+# endif
+
 #else
     dir = getenv("ICU_TIMEZONE_FILES_DIR");
 #endif 
@@ -1560,6 +1563,10 @@ static const char *uprv_getPOSIXIDForCategory(int category)
     {
         
         posixID = "en_US_POSIX";
+        
+        
+        
+        
     }
     return posixID;
 }
@@ -1632,7 +1639,7 @@ uprv_getDefaultLocaleID()
 
     
     
-    char *correctedPOSIXLocale = static_cast<char *>(uprv_malloc(uprv_strlen(posixID) + 1 + 1));
+    char *correctedPOSIXLocale = static_cast<char *>(uprv_malloc(uprv_strlen(posixID) + 10 + 1));
     if (correctedPOSIXLocale == nullptr) {
         return nullptr;
     }
@@ -1641,11 +1648,18 @@ uprv_getDefaultLocaleID()
     char *limit;
     if ((limit = uprv_strchr(correctedPOSIXLocale, '.')) != nullptr) {
         *limit = 0;
-        if ((limit = uprv_strchr(correctedPOSIXLocale, '@')) != nullptr) {
-            *limit = 0;
-        }
+    }
+    if ((limit = uprv_strchr(correctedPOSIXLocale, '@')) != nullptr) {
+        *limit = 0;
     }
 
+    if ((uprv_strcmp("C", correctedPOSIXLocale) == 0) 
+        || (uprv_strcmp("POSIX", correctedPOSIXLocale) == 0)) {
+      
+      
+      uprv_strcpy(correctedPOSIXLocale, "en_US_POSIX");
+    }
+ 
     
     const char *p;
     if ((p = uprv_strrchr(posixID, '@')) != nullptr) {
@@ -1668,7 +1682,7 @@ uprv_getDefaultLocaleID()
         if ((q = uprv_strchr(p, '.')) != nullptr) {
             
             int32_t len = (int32_t)(uprv_strlen(correctedPOSIXLocale) + (q-p));
-            uprv_strncat(correctedPOSIXLocale, p, q-p);
+            uprv_strncat(correctedPOSIXLocale, p, q-p); 
             correctedPOSIXLocale[len] = 0;
         }
         else {
@@ -2053,7 +2067,7 @@ int_getDefaultCodepage()
     static char codepage[64];
     DWORD codepageNumber = 0;
 
-#if U_PLATFORM_HAS_WINUWP_API > 0
+#if U_PLATFORM_HAS_WINUWP_API == 1
     
     
     

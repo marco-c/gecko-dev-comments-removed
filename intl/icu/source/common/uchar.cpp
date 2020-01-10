@@ -40,7 +40,7 @@
 
 
 
-#define GET_PROPS(c, result) ((result)=UTRIE2_GET16(&propsTrie, c));
+#define GET_PROPS(c, result) ((result)=UTRIE2_GET16(&propsTrie, c))
 
 
 

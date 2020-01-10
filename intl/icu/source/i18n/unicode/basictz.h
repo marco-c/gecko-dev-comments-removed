@@ -16,6 +16,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 #if !UCONFIG_NO_FORMATTING
 
 #include "unicode/timezone.h"
@@ -40,6 +42,14 @@ public:
 
 
     virtual ~BasicTimeZone();
+
+    
+
+
+
+
+
+    virtual BasicTimeZone* clone() const = 0;
 
     
 
@@ -208,6 +218,8 @@ protected:
 };
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

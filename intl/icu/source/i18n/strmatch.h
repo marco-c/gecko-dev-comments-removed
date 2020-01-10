@@ -78,7 +78,7 @@ class StringMatcher : public UnicodeFunctor, public UnicodeMatcher, public Unico
 
 
 
-    virtual UnicodeFunctor* clone() const;
+    virtual StringMatcher* clone() const;
 
     
 

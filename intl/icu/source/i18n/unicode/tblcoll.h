@@ -64,6 +64,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 #if !UCONFIG_NO_COLLATION
 
 #include "unicode/coll.h"
@@ -228,7 +230,7 @@ public:
 
 
 
-    virtual Collator* clone(void) const;
+    virtual RuleBasedCollator* clone() const;
 
     
 
@@ -389,6 +391,7 @@ public:
 
     virtual int32_t hashCode() const;
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -400,6 +403,7 @@ public:
 
 
     virtual Locale getLocale(ULocDataLocaleType type, UErrorCode& status) const;
+#endif  
 
     
 
@@ -545,6 +549,7 @@ public:
 
     virtual UColReorderCode getMaxVariable() const;
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -592,6 +597,7 @@ public:
 
 
     virtual void setVariableTop(uint32_t varTop, UErrorCode &status);
+#endif  
 
     
 
@@ -874,4 +880,7 @@ private:
 U_NAMESPACE_END
 
 #endif  
+
+#endif 
+
 #endif  

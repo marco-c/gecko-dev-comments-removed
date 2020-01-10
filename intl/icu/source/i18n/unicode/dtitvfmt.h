@@ -16,6 +16,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -432,7 +434,7 @@ public:
 
 
 
-    virtual Format* clone(void) const;
+    virtual DateIntervalFormat* clone() const;
 
     
 
@@ -1148,6 +1150,8 @@ DateIntervalFormat::operator!=(const Format& other) const  {
 }
 
 U_NAMESPACE_END
+
+#endif
 
 #endif
 

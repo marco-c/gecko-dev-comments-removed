@@ -25,6 +25,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -334,6 +336,8 @@ CollationKey::getByteArray(int32_t &count) const
 }
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

@@ -98,7 +98,7 @@ public:
     
 
 
-    virtual Transliterator* clone(void) const;
+    virtual CompoundTransliterator* clone() const;
 
     
 

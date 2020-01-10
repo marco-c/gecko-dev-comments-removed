@@ -8,7 +8,7 @@
 #include <cstdlib>
 #include "number_scientific.h"
 #include "number_utils.h"
-#include "number_stringbuilder.h"
+#include "formatted_string_builder.h"
 #include "unicode/unum.h"
 #include "number_microprops.h"
 
@@ -36,7 +36,7 @@ void ScientificModifier::set(int32_t exponent, const ScientificHandler *handler)
     fHandler = handler;
 }
 
-int32_t ScientificModifier::apply(NumberStringBuilder &output, int32_t , int32_t rightIndex,
+int32_t ScientificModifier::apply(FormattedStringBuilder &output, int32_t , int32_t rightIndex,
                                   UErrorCode &status) const {
     
     int i = rightIndex;
@@ -124,8 +124,14 @@ void ScientificHandler::processQuantity(DecimalQuantity &quantity, MicroProps &m
     if (U_FAILURE(status)) { return; }
 
     
+    if (quantity.isInfinite() || quantity.isNaN()) {
+        micros.modInner = &micros.helpers.emptyStrongModifier;
+        return;
+    }
+
+    
     int32_t exponent;
-    if (quantity.isZero()) {
+    if (quantity.isZeroish()) {
         if (fSettings.fRequireMinInt && micros.rounder.isSignificantDigits()) {
             
             micros.rounder.apply(quantity, fSettings.fEngineeringInterval, status);

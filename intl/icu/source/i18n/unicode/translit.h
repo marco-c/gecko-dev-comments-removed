@@ -14,6 +14,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -1585,6 +1587,8 @@ inline Transliterator::Token Transliterator::pointerToken(void* p) {
 #endif  
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

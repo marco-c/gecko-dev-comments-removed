@@ -131,6 +131,8 @@
 
 
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
+
 
 
 
@@ -154,6 +156,8 @@ typedef enum {
   
   UNORM_MODE_COUNT
 } UNormalizationMode;
+
+#endif  
 
 #ifndef U_HIDE_DEPRECATED_API
 

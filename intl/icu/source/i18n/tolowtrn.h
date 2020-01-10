@@ -50,7 +50,7 @@ class LowercaseTransliterator : public CaseMapTransliterator {
 
 
 
-    virtual Transliterator* clone(void) const;
+    virtual LowercaseTransliterator* clone() const;
 
     
 

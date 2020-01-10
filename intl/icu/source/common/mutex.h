@@ -50,28 +50,26 @@ U_NAMESPACE_BEGIN
 
 
 
+
+
+
 class U_COMMON_API Mutex : public UMemory {
 public:
-  inline Mutex(UMutex *mutex = NULL);
-  inline ~Mutex();
+    Mutex(UMutex *mutex = nullptr) : fMutex(mutex) {
+        umtx_lock(fMutex);
+    }
+    ~Mutex() {
+        umtx_unlock(fMutex);
+    }
+
+    Mutex(const Mutex &other) = delete; 
+    Mutex &operator=(const Mutex &other) = delete; 
+    void *operator new(size_t s) = delete;  
 
 private:
-  UMutex   *fMutex;
-
-  Mutex(const Mutex &other); 
-  Mutex &operator=(const Mutex &other); 
+    UMutex   *fMutex;
 };
 
-inline Mutex::Mutex(UMutex *mutex)
-  : fMutex(mutex)
-{
-  umtx_lock(fMutex);
-}
-
-inline Mutex::~Mutex()
-{
-  umtx_unlock(fMutex);
-}
 
 U_NAMESPACE_END
 

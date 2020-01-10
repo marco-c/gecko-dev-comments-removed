@@ -28,10 +28,12 @@
 #define DCFMTSYM_H
 
 #include "unicode/utypes.h"
-#include "unicode/uchar.h"
+
+#if U_SHOW_CPLUSPLUS_API
 
 #if !UCONFIG_NO_FORMATTING
 
+#include "unicode/uchar.h"
 #include "unicode/uobject.h"
 #include "unicode/locid.h"
 #include "unicode/numsys.h"
@@ -456,11 +458,9 @@ private:
 
 
 
-
     UnicodeString fSymbols[kFormatSymbolCount];
 
     
-
 
 
     UnicodeString fNoSymbol;
@@ -579,6 +579,8 @@ DecimalFormatSymbols::getCurrencyPattern() const {
 #endif 
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

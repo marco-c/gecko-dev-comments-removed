@@ -3572,19 +3572,10 @@ _ISO_2022_WriteSub(UConverterFromUnicodeArgs *args, int32_t offsetIndex, UErrorC
 
 
 
-
-
-
-
-
-
-
-
 struct cloneStruct
 {
     UConverter cnv;
     UConverter currentConverter;
-    UAlignedMemory deadSpace;
     UConverterDataISO2022 mydata;
 };
 
@@ -3601,6 +3592,10 @@ _ISO_2022_SafeClone(
     struct cloneStruct * localClone;
     UConverterDataISO2022 *cnvData;
     int32_t i, size;
+
+    if (U_FAILURE(*status)){
+        return nullptr;
+    }
 
     if (*pBufferSize == 0) { 
         *pBufferSize = (int32_t)sizeof(struct cloneStruct);
@@ -3619,7 +3614,7 @@ _ISO_2022_SafeClone(
     
 
     if(cnvData->currentConverter != NULL) {
-        size = (int32_t)(sizeof(UConverter) + sizeof(UAlignedMemory)); 
+        size = (int32_t)sizeof(UConverter);
         localClone->mydata.currentConverter =
             ucnv_safeClone(cnvData->currentConverter,
                             &localClone->currentConverter,

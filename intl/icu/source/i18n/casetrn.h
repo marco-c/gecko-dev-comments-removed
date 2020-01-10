@@ -58,7 +58,7 @@ public:
 
 
 
-    virtual Transliterator* clone(void) const = 0;
+    virtual CaseMapTransliterator* clone() const = 0;
 
     
 

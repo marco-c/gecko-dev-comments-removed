@@ -26,6 +26,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -259,6 +261,14 @@ public:
 
 
     virtual ~NumberFormat();
+
+    
+
+
+
+
+
+    virtual NumberFormat* clone() const = 0;
 
     
 
@@ -631,6 +641,8 @@ public:
                        ParsePosition& parsePosition) const = 0;
 
     
+
+
 
 
 
@@ -1252,6 +1264,8 @@ NumberFormat::isLenient() const
 }
 
 U_NAMESPACE_END
+
+#endif
 
 #endif
 

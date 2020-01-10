@@ -15,6 +15,9 @@
 #define __RELDATEFMT_H
 
 #include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
+
 #include "unicode/uobject.h"
 #include "unicode/udisplaycontext.h"
 #include "unicode/ureldatefmt.h"
@@ -166,12 +169,24 @@ typedef enum UDateAbsoluteUnit {
 
     UDAT_ABSOLUTE_NOW,
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
 
     UDAT_ABSOLUTE_QUARTER,
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+    UDAT_ABSOLUTE_HOUR,
+
+    
+
+
+
+    UDAT_ABSOLUTE_MINUTE,
 #endif 
 
 #ifndef U_HIDE_DEPRECATED_API
@@ -179,7 +194,7 @@ typedef enum UDateAbsoluteUnit {
 
 
 
-    UDAT_ABSOLUTE_UNIT_COUNT = UDAT_ABSOLUTE_NOW + 2
+    UDAT_ABSOLUTE_UNIT_COUNT = UDAT_ABSOLUTE_NOW + 4
 #endif  
 } UDateAbsoluteUnit;
 
@@ -246,6 +261,7 @@ class SharedPluralRules;
 class SharedBreakIterator;
 class NumberFormat;
 class UnicodeString;
+class FormattedRelativeDateTime;
 class FormattedRelativeDateTimeData;
 
 #ifndef U_HIDE_DRAFT_API
@@ -743,4 +759,7 @@ U_NAMESPACE_END
 
 #endif 
 #endif 
+
+#endif 
+
 #endif 

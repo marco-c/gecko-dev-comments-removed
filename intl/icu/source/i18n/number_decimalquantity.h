@@ -147,13 +147,16 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
     int32_t getMagnitude() const;
 
     
-    bool isZero() const;
+
+
+
+    bool isZeroish() const;
 
     
     bool isNegative() const;
 
     
-    int8_t signum() const;
+    Signum signum() const;
 
     
     bool isInfinite() const U_OVERRIDE;

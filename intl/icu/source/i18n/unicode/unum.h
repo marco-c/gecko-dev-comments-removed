@@ -338,11 +338,13 @@ enum UCurrencySpacing {
 
     
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
 
     UNUM_CURRENCY_SPACING_COUNT
+#endif  
 };
 typedef enum UCurrencySpacing UCurrencySpacing; 
 

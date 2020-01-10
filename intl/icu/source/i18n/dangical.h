@@ -66,7 +66,7 @@ class DangiCalendar : public ChineseCalendar {
 
 
 
-  virtual Calendar* clone() const;
+  virtual DangiCalendar* clone() const;
 
   
   

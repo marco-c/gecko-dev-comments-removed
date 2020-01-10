@@ -317,7 +317,7 @@ inline uint16_t initializePatternCETable(UStringSearch *strsrch,
         uprv_free(pattern->ces);
     }
 
-    uint16_t  offset      = 0;
+    uint32_t  offset      = 0;
     uint16_t  result      = 0;
     int32_t   ce;
 
@@ -388,7 +388,7 @@ inline uint16_t initializePatternPCETable(UStringSearch *strsrch,
         uprv_free(pattern->pces);
     }
 
-    uint16_t  offset = 0;
+    uint32_t  offset = 0;
     uint16_t  result = 0;
     int64_t   pce;
 
@@ -3544,7 +3544,12 @@ const CEI *CEIBuffer::get(int32_t index) {
     
     
     if (index != limitIx) {
-        UPRV_UNREACHABLE;
+        U_ASSERT(FALSE);
+        
+        
+        
+        
+        return NULL;
     }
 
     
@@ -3581,7 +3586,12 @@ const CEI *CEIBuffer::getPrevious(int32_t index) {
     
     
     if (index != limitIx) {
-        UPRV_UNREACHABLE;
+        U_ASSERT(FALSE);
+        
+        
+        
+        
+        return NULL;
     }
 
     

@@ -11,6 +11,9 @@
 #define UCHRITER_H
 
 #include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
+
 #include "unicode/chariter.h"
 
 
@@ -132,7 +135,7 @@ public:
 
 
 
-  virtual CharacterIterator* clone(void) const;
+  virtual UCharCharacterIterator* clone() const;
 
   
 
@@ -384,4 +387,7 @@ protected:
 };
 
 U_NAMESPACE_END
+
+#endif 
+
 #endif

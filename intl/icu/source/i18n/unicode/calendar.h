@@ -29,6 +29,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -184,7 +186,7 @@ class BasicTimeZone;
 
 class U_I18N_API Calendar : public UObject {
 public:
-
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -227,6 +229,7 @@ public:
         FIELD_COUNT = UCAL_FIELD_COUNT 
 #endif 
     };
+#endif  
 
 #ifndef U_HIDE_DEPRECATED_API
     
@@ -287,7 +290,7 @@ public:
 
 
 
-    virtual Calendar* clone(void) const = 0;
+    virtual Calendar* clone() const = 0;
 
     
 
@@ -518,6 +521,7 @@ public:
 
     UBool after(const Calendar& when, UErrorCode& status) const;
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -539,6 +543,7 @@ public:
 
 
     virtual void add(EDateFields field, int32_t amount, UErrorCode& status);
+#endif  
 
     
 
@@ -632,6 +637,7 @@ public:
 
     inline void roll(UCalendarDateFields field, UBool up, UErrorCode& status);
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -664,6 +670,7 @@ public:
 
 
     virtual void roll(EDateFields field, int32_t amount, UErrorCode& status);
+#endif  
 
     
 
@@ -698,6 +705,7 @@ public:
 
     virtual void roll(UCalendarDateFields field, int32_t amount, UErrorCode& status);
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -754,6 +762,7 @@ public:
 
 
     virtual int32_t fieldDifference(UDate when, EDateFields field, UErrorCode& status);
+#endif  
 
     
 
@@ -1010,6 +1019,7 @@ public:
 
     uint8_t getMinimalDaysInFirstWeek(void) const;
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -1019,6 +1029,7 @@ public:
 
 
     virtual int32_t getMinimum(EDateFields field) const;
+#endif  
 
     
 
@@ -1030,6 +1041,7 @@ public:
 
     virtual int32_t getMinimum(UCalendarDateFields field) const;
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -1039,6 +1051,7 @@ public:
 
 
     virtual int32_t getMaximum(EDateFields field) const;
+#endif  
 
     
 
@@ -1050,6 +1063,7 @@ public:
 
     virtual int32_t getMaximum(UCalendarDateFields field) const;
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -1059,6 +1073,7 @@ public:
 
 
     virtual int32_t getGreatestMinimum(EDateFields field) const;
+#endif  
 
     
 
@@ -1070,6 +1085,7 @@ public:
 
     virtual int32_t getGreatestMinimum(UCalendarDateFields field) const;
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -1079,6 +1095,7 @@ public:
 
 
     virtual int32_t getLeastMaximum(EDateFields field) const;
+#endif  
 
     
 
@@ -1895,11 +1912,13 @@ protected:
 
     int32_t     fFields[UCAL_FIELD_COUNT];
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
 
     UBool      fIsSet[UCAL_FIELD_COUNT];
+#endif  
 
     
 
@@ -2282,11 +2301,9 @@ private:
 
 
 
-
     void validateFields(UErrorCode &status);
 
     
-
 
 
 
@@ -2526,6 +2543,8 @@ inline int32_t  Calendar::weekNumber(int32_t dayOfPeriod, int32_t dayOfWeek)
 #endif  
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif
 

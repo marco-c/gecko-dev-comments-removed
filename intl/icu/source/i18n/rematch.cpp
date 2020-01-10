@@ -2069,7 +2069,7 @@ int32_t  RegexMatcher::split(UText *input,
     
     if (U_FAILURE(status)) {
         return 0;
-    };
+    }
 
     if (destCapacity < 1) {
         status = U_ILLEGAL_ARGUMENT_ERROR;
@@ -3807,9 +3807,11 @@ GC_Done:
             {
                 
                 
-                U_ASSERT(opValue>=0 && opValue+1<fPattern->fDataSize);
+                U_ASSERT(opValue>=0 && opValue+3<fPattern->fDataSize);
                 fData[opValue]   = fStack->size();
                 fData[opValue+1] = fp->fInputIdx;
+                fData[opValue+2] = fActiveStart;
+                fData[opValue+3] = fActiveLimit;
                 fActiveStart     = fLookStart;          
                 fActiveLimit     = fLookLimit;          
             }
@@ -3819,7 +3821,7 @@ GC_Done:
             {
                 
                 
-                U_ASSERT(opValue>=0 && opValue+1<fPattern->fDataSize);
+                U_ASSERT(opValue>=0 && opValue+3<fPattern->fDataSize);
                 int32_t stackSize = fStack->size();
                 int32_t newStackSize =(int32_t)fData[opValue];
                 U_ASSERT(stackSize >= newStackSize);
@@ -3839,8 +3841,10 @@ GC_Done:
 
                 
                 
-                fActiveStart = fRegionStart;
-                fActiveLimit = fRegionLimit;
+                fActiveStart = fData[opValue+2];
+                fActiveLimit = fData[opValue+3];
+                U_ASSERT(fActiveStart >= 0);
+                U_ASSERT(fActiveLimit <= fInputLength);
             }
             break;
 
@@ -3918,15 +3922,17 @@ GC_Done:
                 
                 
                 
-                U_ASSERT(opValue>=0 && opValue+1<fPattern->fDataSize);
+                U_ASSERT(opValue>=0 && opValue+4<fPattern->fDataSize);
                 fData[opValue]   = fStack->size();
                 fData[opValue+1] = fp->fInputIdx;
                 
-                fData[opValue+2] = -1;
                 
-                
+                fData[opValue+2] = fActiveStart;
                 fData[opValue+3] = fActiveLimit;
+                fActiveStart     = fRegionStart;
                 fActiveLimit     = fp->fInputIdx;
+                
+                fData[opValue+4] = -1;
             }
             break;
 
@@ -3949,8 +3955,8 @@ GC_Done:
                 U_ASSERT(minML >= 0);
 
                 
-                U_ASSERT(opValue>=0 && opValue+1<fPattern->fDataSize);
-                int64_t  &lbStartIdx = fData[opValue+2];
+                U_ASSERT(opValue>=0 && opValue+4<fPattern->fDataSize);
+                int64_t  &lbStartIdx = fData[opValue+4];
                 if (lbStartIdx < 0) {
                     
                     lbStartIdx = fp->fInputIdx - minML;
@@ -3976,10 +3982,10 @@ GC_Done:
                     
                     
                     fp = (REStackFrame *)fStack->popFrame(fFrameSize);
-                    int64_t restoreInputLen = fData[opValue+3];
-                    U_ASSERT(restoreInputLen >= fActiveLimit);
-                    U_ASSERT(restoreInputLen <= fInputLength);
-                    fActiveLimit = restoreInputLen;
+                    fActiveStart = fData[opValue+2];
+                    fActiveLimit = fData[opValue+3];
+                    U_ASSERT(fActiveStart >= 0);
+                    U_ASSERT(fActiveLimit <= fInputLength);
                     break;
                 }
 
@@ -3993,7 +3999,7 @@ GC_Done:
         case URX_LB_END:
             
             {
-                U_ASSERT(opValue>=0 && opValue+1<fPattern->fDataSize);
+                U_ASSERT(opValue>=0 && opValue+4<fPattern->fDataSize);
                 if (fp->fInputIdx != fActiveLimit) {
                     
                     
@@ -4007,10 +4013,10 @@ GC_Done:
                 
                 
                 
-                int64_t originalInputLen = fData[opValue+3];
-                U_ASSERT(originalInputLen >= fActiveLimit);
-                U_ASSERT(originalInputLen <= fInputLength);
-                fActiveLimit = originalInputLen;
+                fActiveStart = fData[opValue+2];
+                fActiveLimit = fData[opValue+3];
+                U_ASSERT(fActiveStart >= 0);
+                U_ASSERT(fActiveLimit <= fInputLength);
             }
             break;
 
@@ -4035,8 +4041,8 @@ GC_Done:
                 U_ASSERT(continueLoc > fp->fPatIdx);
 
                 
-                U_ASSERT(opValue>=0 && opValue+1<fPattern->fDataSize);
-                int64_t  &lbStartIdx = fData[opValue+2];
+                U_ASSERT(opValue>=0 && opValue+4<fPattern->fDataSize);
+                int64_t  &lbStartIdx = fData[opValue+4];
                 if (lbStartIdx < 0) {
                     
                     lbStartIdx = fp->fInputIdx - minML;
@@ -4061,10 +4067,10 @@ GC_Done:
                     
                     
                     
-                    int64_t restoreInputLen = fData[opValue+3];
-                    U_ASSERT(restoreInputLen >= fActiveLimit);
-                    U_ASSERT(restoreInputLen <= fInputLength);
-                    fActiveLimit = restoreInputLen;
+                    fActiveStart = fData[opValue+2];
+                    fActiveLimit = fData[opValue+3];
+                    U_ASSERT(fActiveStart >= 0);
+                    U_ASSERT(fActiveLimit <= fInputLength);
                     fp->fPatIdx = continueLoc;
                     break;
                 }
@@ -4079,7 +4085,7 @@ GC_Done:
         case URX_LBN_END:
             
             {
-                U_ASSERT(opValue>=0 && opValue+1<fPattern->fDataSize);
+                U_ASSERT(opValue>=0 && opValue+4<fPattern->fDataSize);
                 if (fp->fInputIdx != fActiveLimit) {
                     
                     
@@ -4096,10 +4102,10 @@ GC_Done:
                 
                 
                 
-                int64_t originalInputLen = fData[opValue+3];
-                U_ASSERT(originalInputLen >= fActiveLimit);
-                U_ASSERT(originalInputLen <= fInputLength);
-                fActiveLimit = originalInputLen;
+                fActiveStart = fData[opValue+2];
+                fActiveLimit = fData[opValue+3];
+                U_ASSERT(fActiveStart >= 0);
+                U_ASSERT(fActiveLimit <= fInputLength);
 
                 
                 
@@ -5338,9 +5344,11 @@ GC_Done:
             {
                 
                 
-                U_ASSERT(opValue>=0 && opValue+1<fPattern->fDataSize);
+                U_ASSERT(opValue>=0 && opValue+3<fPattern->fDataSize);
                 fData[opValue]   = fStack->size();
                 fData[opValue+1] = fp->fInputIdx;
+                fData[opValue+2] = fActiveStart;
+                fData[opValue+3] = fActiveLimit;
                 fActiveStart     = fLookStart;          
                 fActiveLimit     = fLookLimit;          
             }
@@ -5350,7 +5358,7 @@ GC_Done:
             {
                 
                 
-                U_ASSERT(opValue>=0 && opValue+1<fPattern->fDataSize);
+                U_ASSERT(opValue>=0 && opValue+3<fPattern->fDataSize);
                 int32_t stackSize = fStack->size();
                 int32_t newStackSize = (int32_t)fData[opValue];
                 U_ASSERT(stackSize >= newStackSize);
@@ -5370,8 +5378,10 @@ GC_Done:
 
                 
                 
-                fActiveStart = fRegionStart;
-                fActiveLimit = fRegionLimit;
+                fActiveStart = fData[opValue+2];
+                fActiveLimit = fData[opValue+3];
+                U_ASSERT(fActiveStart >= 0);
+                U_ASSERT(fActiveLimit <= fInputLength);
             }
             break;
 
@@ -5436,15 +5446,17 @@ GC_Done:
                 
                 
                 
-                U_ASSERT(opValue>=0 && opValue+1<fPattern->fDataSize);
+                U_ASSERT(opValue>=0 && opValue+4<fPattern->fDataSize);
                 fData[opValue]   = fStack->size();
                 fData[opValue+1] = fp->fInputIdx;
                 
-                fData[opValue+2] = -1;
                 
-                
+                fData[opValue+2] = fActiveStart;
                 fData[opValue+3] = fActiveLimit;
+                fActiveStart     = fRegionStart;
                 fActiveLimit     = fp->fInputIdx;
+                
+                fData[opValue+4] = -1;
             }
             break;
 
@@ -5462,8 +5474,8 @@ GC_Done:
                 U_ASSERT(minML >= 0);
 
                 
-                U_ASSERT(opValue>=0 && opValue+1<fPattern->fDataSize);
-                int64_t  &lbStartIdx = fData[opValue+2];
+                U_ASSERT(opValue>=0 && opValue+4<fPattern->fDataSize);
+                int64_t  &lbStartIdx = fData[opValue+4];
                 if (lbStartIdx < 0) {
                     
                     lbStartIdx = fp->fInputIdx - minML;
@@ -5485,10 +5497,10 @@ GC_Done:
                     
                     
                     fp = (REStackFrame *)fStack->popFrame(fFrameSize);
-                    int64_t restoreInputLen = fData[opValue+3];
-                    U_ASSERT(restoreInputLen >= fActiveLimit);
-                    U_ASSERT(restoreInputLen <= fInputLength);
-                    fActiveLimit = restoreInputLen;
+                    fActiveStart = fData[opValue+2];
+                    fActiveLimit = fData[opValue+3];
+                    U_ASSERT(fActiveStart >= 0);
+                    U_ASSERT(fActiveLimit <= fInputLength);
                     break;
                 }
 
@@ -5502,7 +5514,7 @@ GC_Done:
         case URX_LB_END:
             
             {
-                U_ASSERT(opValue>=0 && opValue+1<fPattern->fDataSize);
+                U_ASSERT(opValue>=0 && opValue+4<fPattern->fDataSize);
                 if (fp->fInputIdx != fActiveLimit) {
                     
                     
@@ -5516,10 +5528,10 @@ GC_Done:
                 
                 
                 
-                int64_t originalInputLen = fData[opValue+3];
-                U_ASSERT(originalInputLen >= fActiveLimit);
-                U_ASSERT(originalInputLen <= fInputLength);
-                fActiveLimit = originalInputLen;
+                fActiveStart = fData[opValue+2];
+                fActiveLimit = fData[opValue+3];
+                U_ASSERT(fActiveStart >= 0);
+                U_ASSERT(fActiveLimit <= fInputLength);
             }
             break;
 
@@ -5539,8 +5551,8 @@ GC_Done:
                 U_ASSERT(continueLoc > fp->fPatIdx);
 
                 
-                U_ASSERT(opValue>=0 && opValue+1<fPattern->fDataSize);
-                int64_t  &lbStartIdx = fData[opValue+2];
+                U_ASSERT(opValue>=0 && opValue+4<fPattern->fDataSize);
+                int64_t  &lbStartIdx = fData[opValue+4];
                 if (lbStartIdx < 0) {
                     
                     lbStartIdx = fp->fInputIdx - minML;
@@ -5561,10 +5573,10 @@ GC_Done:
                     
                     
                     
-                    int64_t restoreInputLen = fData[opValue+3];
-                    U_ASSERT(restoreInputLen >= fActiveLimit);
-                    U_ASSERT(restoreInputLen <= fInputLength);
-                    fActiveLimit = restoreInputLen;
+                    fActiveStart = fData[opValue+2];
+                    fActiveLimit = fData[opValue+3];
+                    U_ASSERT(fActiveStart >= 0);
+                    U_ASSERT(fActiveLimit <= fInputLength);
                     fp->fPatIdx = continueLoc;
                     break;
                 }
@@ -5579,7 +5591,7 @@ GC_Done:
         case URX_LBN_END:
             
             {
-                U_ASSERT(opValue>=0 && opValue+1<fPattern->fDataSize);
+                U_ASSERT(opValue>=0 && opValue+4<fPattern->fDataSize);
                 if (fp->fInputIdx != fActiveLimit) {
                     
                     
@@ -5596,10 +5608,10 @@ GC_Done:
                 
                 
                 
-                int64_t originalInputLen = fData[opValue+3];
-                U_ASSERT(originalInputLen >= fActiveLimit);
-                U_ASSERT(originalInputLen <= fInputLength);
-                fActiveLimit = originalInputLen;
+                fActiveStart = fData[opValue+2];
+                fActiveLimit = fData[opValue+3];
+                U_ASSERT(fActiveStart >= 0);
+                U_ASSERT(fActiveLimit <= fInputLength);
 
                 
                 

@@ -52,7 +52,7 @@ class TitlecaseTransliterator : public CaseMapTransliterator {
 
 
 
-    virtual Transliterator* clone(void) const;
+    virtual TitlecaseTransliterator* clone() const;
 
     
 

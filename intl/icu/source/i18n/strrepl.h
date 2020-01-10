@@ -111,7 +111,7 @@ class StringReplacer : public UnicodeFunctor, public UnicodeReplacer {
     
 
 
-    virtual UnicodeFunctor* clone() const;
+    virtual StringReplacer* clone() const;
 
     
 

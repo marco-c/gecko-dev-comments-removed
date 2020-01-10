@@ -923,11 +923,13 @@ typedef enum UDateFormatBooleanAttribute {
 
     
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
 
     UDAT_BOOLEAN_ATTRIBUTE_COUNT = 4
+#endif  
 } UDateFormatBooleanAttribute;
 
 

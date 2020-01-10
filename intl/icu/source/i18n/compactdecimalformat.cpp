@@ -30,9 +30,9 @@ CompactDecimalFormat::CompactDecimalFormat(const Locale& inLocale, UNumberCompac
         : DecimalFormat(new DecimalFormatSymbols(inLocale, status), status) {
     if (U_FAILURE(status)) return;
     
-    fields->properties->compactStyle = style;
-    fields->properties->groupingSize = -2; 
-    fields->properties->minimumGroupingDigits = 2;
+    fields->properties.compactStyle = style;
+    fields->properties.groupingSize = -2; 
+    fields->properties.minimumGroupingDigits = 2;
     touch(status);
 }
 
@@ -45,7 +45,7 @@ CompactDecimalFormat& CompactDecimalFormat::operator=(const CompactDecimalFormat
     return *this;
 }
 
-Format* CompactDecimalFormat::clone() const {
+CompactDecimalFormat* CompactDecimalFormat::clone() const {
     return new CompactDecimalFormat(*this);
 }
 

@@ -28,6 +28,12 @@
 
 
 #include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
+
+#include <cstddef>
+#include <type_traits>
+
 #include "unicode/uobject.h"
 #include "unicode/std_string.h"
 
@@ -74,6 +80,33 @@ class U_COMMON_API StringPiece : public UMemory {
 
   StringPiece(const std::string& str)
     : ptr_(str.data()), length_(static_cast<int32_t>(str.size())) { }
+#ifndef U_HIDE_DRAFT_API
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename T,
+            typename = typename std::enable_if<
+                std::is_same<decltype(T().data()), const char*>::value &&
+                std::is_same<decltype(T().size()), size_t>::value>::type>
+  StringPiece(T str)
+      : ptr_(str.data()), length_(static_cast<int32_t>(str.size())) {}
+#endif  
   
 
 
@@ -220,5 +253,7 @@ inline UBool operator!=(const StringPiece& x, const StringPiece& y) {
 }
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif  

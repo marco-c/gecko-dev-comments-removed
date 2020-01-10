@@ -54,6 +54,11 @@ double Strtod(Vector<const char> buffer, int exponent);
 
 float Strtof(Vector<const char> buffer, int exponent);
 
+
+
+
+double StrtodTrimmed(Vector<const char> trimmed, int exponent);
+
 }  
 
 

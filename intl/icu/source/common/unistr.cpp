@@ -332,7 +332,7 @@ Replaceable::clone() const {
 }
 
 
-Replaceable *
+UnicodeString *
 UnicodeString::clone() const {
   return new UnicodeString(*this);
 }

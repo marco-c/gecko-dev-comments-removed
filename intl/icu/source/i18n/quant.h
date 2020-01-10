@@ -45,7 +45,7 @@ class Quantifier : public UnicodeFunctor, public UnicodeMatcher {
 
 
 
-    virtual UnicodeFunctor* clone() const;
+    virtual Quantifier* clone() const;
 
     
 

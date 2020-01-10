@@ -49,7 +49,7 @@ public:
 
 
 
-    virtual Transliterator* clone(void) const;
+    virtual NameUnicodeTransliterator* clone() const;
 
     
 

@@ -16,6 +16,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -448,7 +450,7 @@ public:
 
 
 
-    virtual Format* clone(void) const;
+    virtual PluralFormat* clone() const;
 
    
 
@@ -539,9 +541,6 @@ private:
         virtual UnicodeString select(void *context, double number, UErrorCode& ec) const = 0;
     };
 
-    
-
-
     class U_I18N_API PluralSelectorAdapter : public PluralSelector {
       public:
         PluralSelectorAdapter() : pluralRules(NULL) {
@@ -549,7 +548,7 @@ private:
 
         virtual ~PluralSelectorAdapter();
 
-        virtual UnicodeString select(void *context, double number, UErrorCode& ) const; 
+        virtual UnicodeString select(void *context, double number, UErrorCode& ) const;
 
         void reset();
 
@@ -573,7 +572,7 @@ private:
     UnicodeString& format(const Formattable& numberObject, double number,
                           UnicodeString& appendTo,
                           FieldPosition& pos,
-                          UErrorCode& status) const; 
+                          UErrorCode& status) const;
 
     
 
@@ -598,6 +597,8 @@ private:
 };
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

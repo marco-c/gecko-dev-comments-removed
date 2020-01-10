@@ -15,6 +15,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 #if !UCONFIG_NO_FORMATTING
 
 #include "unicode/measure.h"
@@ -79,7 +81,7 @@ class U_I18N_API CurrencyAmount: public Measure {
 
 
 
-    virtual UObject* clone() const;
+    virtual CurrencyAmount* clone() const;
 
     
 
@@ -129,4 +131,7 @@ inline const char16_t* CurrencyAmount::getISOCurrency() const {
 U_NAMESPACE_END
 
 #endif 
+
+#endif 
+
 #endif 

@@ -15,6 +15,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 #if !UCONFIG_NO_FORMATTING
 
 #include "unicode/format.h"
@@ -151,7 +153,7 @@ class U_I18N_API MeasureFormat : public Format {
 
 
 
-    virtual Format *clone() const;
+    virtual MeasureFormat *clone() const;
 
     
 
@@ -163,6 +165,7 @@ class U_I18N_API MeasureFormat : public Format {
             FieldPosition &pos,
             UErrorCode &status) const;
 
+#ifndef U_FORCE_HIDE_DRAFT_API
     
 
 
@@ -173,6 +176,7 @@ class U_I18N_API MeasureFormat : public Format {
             const UnicodeString &source,
             Formattable &reslt,
             ParsePosition &pos) const;
+#endif  
 
     
 
@@ -382,17 +386,12 @@ class U_I18N_API MeasureFormat : public Format {
         int32_t bitMap,   
         UnicodeString &appendTo,
         UErrorCode &status) const;
-
-    UnicodeString &formatNumeric(
-        UDate date,
-        const DateFormat &dateFmt,
-        UDateFormatField smallestField,
-        const Formattable &smallestAmount,
-        UnicodeString &appendTo,
-        UErrorCode &status) const;
 };
 
 U_NAMESPACE_END
 
 #endif 
+
+#endif 
+
 #endif 

@@ -15,8 +15,10 @@
 #define __DTINTRV_H__
 
 #include "unicode/utypes.h"
-#include "unicode/uobject.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
+#include "unicode/uobject.h"
 
 
 
@@ -156,5 +158,7 @@ DateInterval::operator!=(const DateInterval& other) const {
 
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif

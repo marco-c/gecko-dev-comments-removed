@@ -15,6 +15,9 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
+
 
 
 
@@ -102,7 +105,7 @@ public:
 
 
 
-    Format* clone() const U_OVERRIDE;
+    CompactDecimalFormat* clone() const U_OVERRIDE;
 
     using DecimalFormat::format;
 
@@ -184,6 +187,8 @@ public:
 };
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

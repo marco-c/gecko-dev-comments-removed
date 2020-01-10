@@ -115,7 +115,7 @@ class EscapeTransliterator : public Transliterator {
     
 
 
-    virtual Transliterator* clone() const;
+    virtual EscapeTransliterator* clone() const;
 
     
 

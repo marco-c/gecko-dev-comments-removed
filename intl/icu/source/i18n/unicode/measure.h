@@ -15,6 +15,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -72,7 +74,7 @@ class U_I18N_API Measure: public UObject {
 
 
 
-    virtual UObject* clone() const;
+    virtual Measure* clone() const;
 
     
 
@@ -158,4 +160,7 @@ inline const MeasureUnit& Measure::getUnit() const {
 U_NAMESPACE_END
 
 #endif 
+
+#endif 
+
 #endif 

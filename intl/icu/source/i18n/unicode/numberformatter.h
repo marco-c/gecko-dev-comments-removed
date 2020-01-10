@@ -1,15 +1,19 @@
 
 
 
-#include "unicode/utypes.h"
-
-#if !UCONFIG_NO_FORMATTING
 #ifndef __NUMBERFORMATTER_H__
 #define __NUMBERFORMATTER_H__
 
+#include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
+
+#if !UCONFIG_NO_FORMATTING
+
 #include "unicode/appendable.h"
-#include "unicode/dcfmtsym.h"
+#include "unicode/bytestream.h"
 #include "unicode/currunit.h"
+#include "unicode/dcfmtsym.h"
 #include "unicode/fieldpos.h"
 #include "unicode/formattedvalue.h"
 #include "unicode/fpositer.h"
@@ -21,8 +25,6 @@
 #include "unicode/unum.h"
 #include "unicode/unumberformatter.h"
 #include "unicode/uobject.h"
-
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -85,6 +87,7 @@ U_NAMESPACE_BEGIN
 
 class IFixedDecimal;
 class FieldPositionIteratorHandler;
+class FormattedStringBuilder;
 
 namespace numparse {
 namespace impl {
@@ -142,7 +145,6 @@ class MultiplierProducer;
 class RoundingImpl;
 class ScientificHandler;
 class Modifier;
-class NumberStringBuilder;
 class AffixPatternProvider;
 class NumberPropertyMapper;
 struct DecimalFormatProperties;
@@ -1343,7 +1345,7 @@ class U_I18N_API Padder : public UMemory {
     }
 
     int32_t padAndApply(const impl::Modifier &mod1, const impl::Modifier &mod2,
-                        impl::NumberStringBuilder &string, int32_t leftIndex, int32_t rightIndex,
+                        FormattedStringBuilder &string, int32_t leftIndex, int32_t rightIndex,
                         UErrorCode &status) const;
 
     
@@ -2080,6 +2082,7 @@ class U_I18N_API NumberFormatterSettings {
 
     UnicodeString toSkeleton(UErrorCode& status) const;
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2101,6 +2104,7 @@ class U_I18N_API NumberFormatterSettings {
 
 
     LocalPointer<Derived> clone() &&;
+#endif  
 
     
 
@@ -2407,11 +2411,14 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
   public:
 
     
+#ifndef U_FORCE_HIDE_DRAFT_API
+    
 
 
 
     FormattedNumber()
         : fData(nullptr), fErrorCode(U_INVALID_STATE_ERROR) {}
+#endif  
 
     
 
@@ -2465,6 +2472,7 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
     
     UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const U_OVERRIDE;
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2516,6 +2524,30 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
 
 
     void getAllFieldPositions(FieldPositionIterator &iterator, UErrorCode &status) const;
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    template<typename StringClass>
+    inline StringClass toDecimalNumber(UErrorCode& status) const;
+#endif 
 
 #ifndef U_HIDE_INTERNAL_API
 
@@ -2551,11 +2583,25 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
         : fData(nullptr), fErrorCode(errorCode) {}
 
     
+    void toDecimalNumber(ByteSink& sink, UErrorCode& status) const;
+
+    
     friend class LocalizedNumberFormatter;
 
     
     friend struct impl::UFormattedNumberImpl;
 };
+
+#ifndef U_HIDE_DRAFT_API
+
+template<typename StringClass>
+StringClass FormattedNumber::toDecimalNumber(UErrorCode& status) const {
+    StringClass result;
+    StringByteSink<StringClass> sink(&result);
+    toDecimalNumber(sink, status);
+    return result;
+};
+#endif 
 
 
 
@@ -2600,6 +2646,7 @@ class U_I18N_API NumberFormatter final {
 
     static UnlocalizedNumberFormatter forSkeleton(const UnicodeString& skeleton, UErrorCode& status);
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2619,6 +2666,7 @@ class U_I18N_API NumberFormatter final {
 
     static UnlocalizedNumberFormatter forSkeleton(const UnicodeString& skeleton,
                                                   UParseError& perror, UErrorCode& status);
+#endif
 
     
 
@@ -2629,8 +2677,9 @@ class U_I18N_API NumberFormatter final {
 }  
 U_NAMESPACE_END
 
-#endif  
-
 #endif 
 
 #endif 
+
+#endif
+

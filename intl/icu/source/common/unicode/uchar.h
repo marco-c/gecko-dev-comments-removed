@@ -2578,8 +2578,6 @@ typedef enum UVerticalOrientation {
 U_STABLE UBool U_EXPORT2
 u_hasBinaryProperty(UChar32 c, UProperty which);
 
-#ifndef U_HIDE_DRAFT_API
-
 
 
 
@@ -2597,8 +2595,6 @@ u_hasBinaryProperty(UChar32 c, UProperty which);
 
 U_CAPI const USet * U_EXPORT2
 u_getBinaryPropertySet(UProperty property, UErrorCode *pErrorCode);
-
-#endif  
 
 
 
@@ -2757,8 +2753,6 @@ u_getIntPropertyMinValue(UProperty which);
 U_STABLE int32_t U_EXPORT2
 u_getIntPropertyMaxValue(UProperty which);
 
-#ifndef U_HIDE_DRAFT_API
-
 
 
 
@@ -2776,8 +2770,6 @@ u_getIntPropertyMaxValue(UProperty which);
 
 U_CAPI const UCPMap * U_EXPORT2
 u_getIntPropertyMap(UProperty property, UErrorCode *pErrorCode);
-
-#endif  
 
 
 
@@ -3195,7 +3187,6 @@ u_isISOControl(UChar32 c);
 
 U_STABLE UBool U_EXPORT2
 u_isprint(UChar32 c);
-
 
 
 

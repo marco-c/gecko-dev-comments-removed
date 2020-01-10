@@ -48,7 +48,7 @@ class U_I18N_API ImmutablePatternModifier : public MicroPropsGenerator, public U
 
     void applyToMicros(MicroProps& micros, const DecimalQuantity& quantity, UErrorCode& status) const;
 
-    const Modifier* getModifier(int8_t signum, StandardPlural::Form plural) const;
+    const Modifier* getModifier(Signum signum, StandardPlural::Form plural) const;
 
   private:
     ImmutablePatternModifier(AdoptingModifierStore* pm, const PluralRules* rules,
@@ -142,7 +142,7 @@ class U_I18N_API MutablePatternModifier
 
 
 
-    void setNumberProperties(int8_t signum, StandardPlural::Form plural);
+    void setNumberProperties(Signum signum, StandardPlural::Form plural);
 
     
 
@@ -184,7 +184,7 @@ class U_I18N_API MutablePatternModifier
 
     void processQuantity(DecimalQuantity &, MicroProps &micros, UErrorCode &status) const U_OVERRIDE;
 
-    int32_t apply(NumberStringBuilder &output, int32_t leftIndex, int32_t rightIndex,
+    int32_t apply(FormattedStringBuilder &output, int32_t leftIndex, int32_t rightIndex,
                   UErrorCode &status) const U_OVERRIDE;
 
     int32_t getPrefixLength() const U_OVERRIDE;
@@ -223,7 +223,7 @@ class U_I18N_API MutablePatternModifier
     const PluralRules *fRules;
 
     
-    int8_t fSignum;
+    Signum fSignum;
     StandardPlural::Form fPlural;
 
     
@@ -248,9 +248,9 @@ class U_I18N_API MutablePatternModifier
 
     ConstantMultiFieldModifier *createConstantModifier(UErrorCode &status);
 
-    int32_t insertPrefix(NumberStringBuilder &sb, int position, UErrorCode &status);
+    int32_t insertPrefix(FormattedStringBuilder &sb, int position, UErrorCode &status);
 
-    int32_t insertSuffix(NumberStringBuilder &sb, int position, UErrorCode &status);
+    int32_t insertSuffix(FormattedStringBuilder &sb, int position, UErrorCode &status);
 
     void prepareAffix(bool isPrefix);
 };

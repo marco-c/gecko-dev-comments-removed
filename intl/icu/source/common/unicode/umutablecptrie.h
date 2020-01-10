@@ -9,8 +9,6 @@
 
 #include "unicode/utypes.h"
 
-#ifndef U_HIDE_DRAFT_API
-
 #include "unicode/localpointer.h"
 #include "unicode/ucpmap.h"
 #include "unicode/ucptrie.h"
@@ -237,5 +235,4 @@ umutablecptrie_buildImmutable(UMutableCPTrie *trie, UCPTrieType type, UCPTrieVal
 
 U_CDECL_END
 
-#endif  
 #endif

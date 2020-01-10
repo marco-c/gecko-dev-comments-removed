@@ -94,7 +94,7 @@ public:
 
 
 
-    virtual Calendar* clone(void) const;
+    virtual BuddhistCalendar* clone() const;
 
 public:
     

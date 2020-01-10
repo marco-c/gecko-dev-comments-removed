@@ -23,6 +23,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 #if !UCONFIG_NO_FORMATTING
 
 #include "unicode/udat.h"
@@ -220,6 +222,14 @@ public:
 
 
     virtual ~DateFormat();
+
+    
+
+
+
+
+
+    virtual DateFormat* clone() const = 0;
 
     
 
@@ -950,6 +960,8 @@ public:
 };
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

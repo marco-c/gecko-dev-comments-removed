@@ -13,6 +13,10 @@
 #ifndef DBBI_H
 #define DBBI_H
 
+#include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
+
 #include "unicode/rbbi.h"
 
 #if !UCONFIG_NO_BREAK_ITERATION
@@ -36,6 +40,8 @@ typedef RuleBasedBreakIterator DictionaryBasedBreakIterator;
 #endif  
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

@@ -9,8 +9,6 @@
 
 #include "unicode/utypes.h"
 
-#ifndef U_HIDE_DRAFT_API
-
 #include "unicode/localpointer.h"
 #include "unicode/ucpmap.h"
 #include "unicode/utf8.h"
@@ -216,25 +214,6 @@ ucptrie_openFromBinary(UCPTrieType type, UCPTrieValueWidth valueWidth,
 U_CAPI void U_EXPORT2
 ucptrie_close(UCPTrie *trie);
 
-#if U_SHOW_CPLUSPLUS_API
-
-U_NAMESPACE_BEGIN
-
-
-
-
-
-
-
-
-
-
-U_DEFINE_LOCAL_OPEN_POINTER(LocalUCPTriePointer, UCPTrie, ucptrie_close);
-
-U_NAMESPACE_END
-
-#endif
-
 
 
 
@@ -403,7 +382,7 @@ ucptrie_toBinary(const UCPTrie *trie, void *data, int32_t capacity, UErrorCode *
 
 
 
-#define UCPTRIE_FAST_U16_NEXT(trie, dataAccess, src, limit, c, result) { \
+#define UCPTRIE_FAST_U16_NEXT(trie, dataAccess, src, limit, c, result) UPRV_BLOCK_MACRO_BEGIN { \
     (c) = *(src)++; \
     int32_t __index; \
     if (!U16_IS_SURROGATE(c)) { \
@@ -419,7 +398,7 @@ ucptrie_toBinary(const UCPTrie *trie, void *data, int32_t capacity, UErrorCode *
         } \
     } \
     (result) = dataAccess(trie, __index); \
-}
+} UPRV_BLOCK_MACRO_END
 
 
 
@@ -434,7 +413,7 @@ ucptrie_toBinary(const UCPTrie *trie, void *data, int32_t capacity, UErrorCode *
 
 
 
-#define UCPTRIE_FAST_U16_PREV(trie, dataAccess, start, src, c, result) { \
+#define UCPTRIE_FAST_U16_PREV(trie, dataAccess, start, src, c, result) UPRV_BLOCK_MACRO_BEGIN { \
     (c) = *--(src); \
     int32_t __index; \
     if (!U16_IS_SURROGATE(c)) { \
@@ -450,7 +429,7 @@ ucptrie_toBinary(const UCPTrie *trie, void *data, int32_t capacity, UErrorCode *
         } \
     } \
     (result) = dataAccess(trie, __index); \
-}
+} UPRV_BLOCK_MACRO_END
 
 
 
@@ -468,7 +447,7 @@ ucptrie_toBinary(const UCPTrie *trie, void *data, int32_t capacity, UErrorCode *
 
 
 
-#define UCPTRIE_FAST_U8_NEXT(trie, dataAccess, src, limit, result) { \
+#define UCPTRIE_FAST_U8_NEXT(trie, dataAccess, src, limit, result) UPRV_BLOCK_MACRO_BEGIN { \
     int32_t __lead = (uint8_t)*(src)++; \
     if (!U8_IS_SINGLE(__lead)) { \
         uint8_t __t1, __t2, __t3; \
@@ -496,7 +475,7 @@ ucptrie_toBinary(const UCPTrie *trie, void *data, int32_t capacity, UErrorCode *
         } \
     } \
     (result) = dataAccess(trie, __lead); \
-}
+} UPRV_BLOCK_MACRO_END
 
 
 
@@ -514,7 +493,7 @@ ucptrie_toBinary(const UCPTrie *trie, void *data, int32_t capacity, UErrorCode *
 
 
 
-#define UCPTRIE_FAST_U8_PREV(trie, dataAccess, start, src, result) { \
+#define UCPTRIE_FAST_U8_PREV(trie, dataAccess, start, src, result) UPRV_BLOCK_MACRO_BEGIN { \
     int32_t __index = (uint8_t)*--(src); \
     if (!U8_IS_SINGLE(__index)) { \
         __index = ucptrie_internalU8PrevIndex((trie), __index, (const uint8_t *)(start), \
@@ -523,7 +502,7 @@ ucptrie_toBinary(const UCPTrie *trie, void *data, int32_t capacity, UErrorCode *
         __index >>= 3; \
     } \
     (result) = dataAccess(trie, __index); \
-}
+} UPRV_BLOCK_MACRO_END
 
 
 
@@ -642,5 +621,24 @@ ucptrie_internalU8PrevIndex(const UCPTrie *trie, UChar32 c,
 U_CDECL_END
 
 #endif  
+
+#if U_SHOW_CPLUSPLUS_API
+
+U_NAMESPACE_BEGIN
+
+
+
+
+
+
+
+
+
+
+U_DEFINE_LOCAL_OPEN_POINTER(LocalUCPTriePointer, UCPTrie, ucptrie_close);
+
+U_NAMESPACE_END
+
 #endif  
+
 #endif

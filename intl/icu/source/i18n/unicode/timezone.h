@@ -31,6 +31,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -315,14 +317,7 @@ public:
 
     static TimeZone* U_EXPORT2 createDefault(void);
 
-#define ICU_TZ_HAS_RECREATE_DEFAULT
-    static void U_EXPORT2 recreateDefault();
-
     
-
-
-
-
 
 
 
@@ -335,8 +330,6 @@ public:
 
 #ifndef U_HIDE_SYSTEM_API
     
-
-
 
 
 
@@ -729,6 +722,7 @@ public:
 
     virtual UBool useDaylightTime(void) const = 0;
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -743,6 +737,7 @@ public:
 
 
     virtual UBool inDaylightTime(UDate date, UErrorCode& status) const = 0;
+#endif  
 
     
 
@@ -761,7 +756,7 @@ public:
 
 
 
-    virtual TimeZone* clone(void) const = 0;
+    virtual TimeZone* clone() const = 0;
 
     
 
@@ -972,6 +967,8 @@ TimeZone::setID(const UnicodeString& ID)
     fID = ID;
 }
 U_NAMESPACE_END
+
+#endif
 
 #endif
 

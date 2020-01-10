@@ -31,6 +31,7 @@
 #include "ucln_cmn.h"
 #include "cmemory.h"
 #include "cstring.h"
+#include "mutex.h"
 #include "uhash.h"
 #include "unicode/uenum.h"
 #include "uenumimp.h"
@@ -38,6 +39,7 @@
 #include "umutex.h"
 #include "putilimp.h"
 #include "uassert.h"
+#include "uresdata.h"
 
 using namespace icu;
 
@@ -47,12 +49,9 @@ using namespace icu;
 
 
 static UHashtable *cache = NULL;
-static icu::UInitOnce gCacheInitOnce;
+static icu::UInitOnce gCacheInitOnce = U_INITONCE_INITIALIZER;
 
-static UMutex *resbMutex() {
-    static UMutex m = U_MUTEX_INITIALIZER;
-    return &m;
-}
+static UMutex resbMutex;
 
 
 static int32_t U_CALLCONV hashEntry(const UHashTok parm) {
@@ -96,13 +95,12 @@ static UBool chopLocale(char *name) {
 
 
 static void entryIncrease(UResourceDataEntry *entry) {
-    umtx_lock(resbMutex());
+    Mutex lock(&resbMutex);
     entry->fCountExisting++;
     while(entry->fParent != NULL) {
       entry = entry->fParent;
       entry->fCountExisting++;
     }
-    umtx_unlock(resbMutex());
 }
 
 
@@ -184,9 +182,8 @@ static int32_t ures_flushCache()
     
 
 
-    umtx_lock(resbMutex());
+    Mutex lock(&resbMutex);
     if (cache == NULL) {
-        umtx_unlock(resbMutex());
         return 0;
     }
 
@@ -218,7 +215,6 @@ static int32_t ures_flushCache()
 
 
     } while(deletedMore);
-    umtx_unlock(resbMutex());
 
     return rbDeletedNum;
 }
@@ -232,9 +228,8 @@ U_CAPI UBool U_EXPORT2 ures_dumpCacheContents(void) {
   const UHashElement *e;
   UResourceDataEntry *resB;
   
-    umtx_lock(resbMutex());
+    Mutex lock(&resbMutex);
     if (cache == NULL) {
-      umtx_unlock(resbMutex());
       fprintf(stderr,"%s:%d: RB Cache is NULL.\n", __FILE__, __LINE__);
       return FALSE;
     }
@@ -253,9 +248,6 @@ U_CAPI UBool U_EXPORT2 ures_dumpCacheContents(void) {
     }
     
     fprintf(stderr,"%s:%d: RB Cache still contains %d items.\n", __FILE__, __LINE__, uhash_count(cache));
-
-    umtx_unlock(resbMutex());
-    
     return cacheNotEmpty;
 }
 
@@ -401,7 +393,8 @@ static UResourceDataEntry *init_entry(const char *localeID, const char *path, UE
                 
                 aliasres = res_getResource(&(r->fData), "%%ALIAS");
                 if (aliasres != RES_BOGUS) {
-                    const UChar *alias = res_getString(&(r->fData), aliasres, &aliasLen);
+                    
+                    const UChar *alias = res_getStringNoTrace(&(r->fData), aliasres, &aliasLen);
                     if(alias != NULL && aliasLen > 0) { 
                         u_UCharsToChars(alias, aliasName, aliasLen+1);
                         r->fAlias = init_entry(aliasName, path, status);
@@ -542,7 +535,8 @@ loadParentsExceptRoot(UResourceDataEntry *&t1,
         Resource parentRes = res_getResource(&t1->fData, "%%Parent");
         if (parentRes != RES_BOGUS) {  
             int32_t parentLocaleLen = 0;
-            const UChar *parentLocaleName = res_getString(&(t1->fData), parentRes, &parentLocaleLen);
+            
+            const UChar *parentLocaleName = res_getStringNoTrace(&(t1->fData), parentRes, &parentLocaleLen);
             if(parentLocaleName != NULL && 0 < parentLocaleLen && parentLocaleLen < nameCapacity) {
                 u_UCharsToChars(parentLocaleName, name, parentLocaleLen + 1);
                 if (uprv_strcmp(name, kRootLocaleName) == 0) {
@@ -666,107 +660,105 @@ static UResourceDataEntry *entryOpen(const char* path, const char* localeID,
         }
     }
  
-    umtx_lock(resbMutex());
-    { 
-        
-        r = findFirstExisting(path, name, &isRoot, &hasChopped, &isDefault, &intStatus);
+    Mutex lock(&resbMutex);    
 
+    
+    r = findFirstExisting(path, name, &isRoot, &hasChopped, &isDefault, &intStatus);
+
+    
+    if (intStatus == U_MEMORY_ALLOCATION_ERROR) {
+        *status = intStatus;
+        goto finish;
+    }
+
+    if(r != NULL) { 
+        t1 = r;
+        hasRealData = TRUE;
+        if ( usingUSRData ) {  
+            UErrorCode usrStatus = U_ZERO_ERROR;
+            UResourceDataEntry *u1 = init_entry(t1->fName, usrDataPath, &usrStatus);
+            
+            if (intStatus == U_MEMORY_ALLOCATION_ERROR) {
+                *status = intStatus;
+                goto finish;
+            }
+            if ( u1 != NULL ) {
+                if(u1->fBogus == U_ZERO_ERROR) {
+                    u1->fParent = t1;
+                    r = u1;
+                } else {
+                    
+                    u1->fCountExisting = 0;
+                }
+            }
+        }
+        if (hasChopped && !isRoot) {
+            if (!loadParentsExceptRoot(t1, name, UPRV_LENGTHOF(name), usingUSRData, usrDataPath, status)) {
+                goto finish;
+            }
+        }
+    }
+
+    
+    
+    if(r==NULL && openType == URES_OPEN_LOCALE_DEFAULT_ROOT && !isDefault && !isRoot) {
+        
+        uprv_strcpy(name, uloc_getDefault());
+        r = findFirstExisting(path, name, &isRoot, &hasChopped, &isDefault, &intStatus);
         
         if (intStatus == U_MEMORY_ALLOCATION_ERROR) {
             *status = intStatus;
-            goto finishUnlock;
+            goto finish;
         }
-
+        intStatus = U_USING_DEFAULT_WARNING;
         if(r != NULL) { 
             t1 = r;
             hasRealData = TRUE;
-            if ( usingUSRData ) {  
-                UErrorCode usrStatus = U_ZERO_ERROR;
-                UResourceDataEntry *u1 = init_entry(t1->fName, usrDataPath, &usrStatus);
-                
-                if (intStatus == U_MEMORY_ALLOCATION_ERROR) {
-                    *status = intStatus;
-                    goto finishUnlock;
-                }
-                if ( u1 != NULL ) {
-                    if(u1->fBogus == U_ZERO_ERROR) {
-                        u1->fParent = t1;
-                        r = u1;
-                    } else {
-                        
-                        u1->fCountExisting = 0;
-                    }
-                }
-            }
+            isDefault = TRUE;
+            
             if (hasChopped && !isRoot) {
                 if (!loadParentsExceptRoot(t1, name, UPRV_LENGTHOF(name), usingUSRData, usrDataPath, status)) {
-                    goto finishUnlock;
+                    goto finish;
                 }
             }
         }
+    }
 
+    
+    
+    if(r == NULL) {
+        uprv_strcpy(name, kRootLocaleName);
+        r = findFirstExisting(path, name, &isRoot, &hasChopped, &isDefault, &intStatus);
         
-        
-        if(r==NULL && openType == URES_OPEN_LOCALE_DEFAULT_ROOT && !isDefault && !isRoot) {
-            
-            uprv_strcpy(name, uloc_getDefault());
-            r = findFirstExisting(path, name, &isRoot, &hasChopped, &isDefault, &intStatus);
-            
-            if (intStatus == U_MEMORY_ALLOCATION_ERROR) {
-                *status = intStatus;
-                goto finishUnlock;
-            }
+        if (intStatus == U_MEMORY_ALLOCATION_ERROR) {
+            *status = intStatus;
+            goto finish;
+        }
+        if(r != NULL) {
+            t1 = r;
             intStatus = U_USING_DEFAULT_WARNING;
-            if(r != NULL) { 
-                t1 = r;
-                hasRealData = TRUE;
-                isDefault = TRUE;
-                
-                if (hasChopped && !isRoot) {
-                    if (!loadParentsExceptRoot(t1, name, UPRV_LENGTHOF(name), usingUSRData, usrDataPath, status)) {
-                        goto finishUnlock;
-                    }
-                }
-            } 
+            hasRealData = TRUE;
+        } else { 
+            *status = U_MISSING_RESOURCE_ERROR;
+            goto finish;
         }
-
-        
-        
-        if(r == NULL) {
-            uprv_strcpy(name, kRootLocaleName);
-            r = findFirstExisting(path, name, &isRoot, &hasChopped, &isDefault, &intStatus);
-            
-            if (intStatus == U_MEMORY_ALLOCATION_ERROR) {
-                *status = intStatus;
-                goto finishUnlock;
-            }
-            if(r != NULL) {
-                t1 = r;
-                intStatus = U_USING_DEFAULT_WARNING;
-                hasRealData = TRUE;
-            } else { 
-                *status = U_MISSING_RESOURCE_ERROR;
-                goto finishUnlock;
-            }
-        } else if(!isRoot && uprv_strcmp(t1->fName, kRootLocaleName) != 0 &&
-                t1->fParent == NULL && !r->fData.noFallback) {
-            if (!insertRootBundle(t1, status)) {
-                goto finishUnlock;
-            }
-            if(!hasRealData) {
-                r->fBogus = U_USING_DEFAULT_WARNING;
-            }
+    } else if(!isRoot && uprv_strcmp(t1->fName, kRootLocaleName) != 0 &&
+            t1->fParent == NULL && !r->fData.noFallback) {
+        if (!insertRootBundle(t1, status)) {
+            goto finish;
         }
-
-        
-        while(r != NULL && !isRoot && t1->fParent != NULL) {
-            t1->fParent->fCountExisting++;
-            t1 = t1->fParent;
+        if(!hasRealData) {
+            r->fBogus = U_USING_DEFAULT_WARNING;
         }
-    } 
-finishUnlock:
-    umtx_unlock(resbMutex());
+    }
 
+    
+    while(r != NULL && !isRoot && t1->fParent != NULL) {
+        t1->fParent->fCountExisting++;
+        t1 = t1->fParent;
+    }
+
+finish:
     if(U_SUCCESS(*status)) {
         if(intStatus != U_ZERO_ERROR) {
             *status = intStatus;  
@@ -790,7 +782,7 @@ entryOpenDirect(const char* path, const char* localeID, UErrorCode* status) {
         return NULL;
     }
 
-    umtx_lock(resbMutex());
+    Mutex lock(&resbMutex);
     
     UResourceDataEntry *r = init_entry(localeID, path, status);
     if(U_SUCCESS(*status)) {
@@ -828,7 +820,6 @@ entryOpenDirect(const char* path, const char* localeID, UErrorCode* status) {
             t1 = t1->fParent;
         }
     }
-    umtx_unlock(resbMutex());
     return r;
 }
 
@@ -871,9 +862,8 @@ static void entryCloseInt(UResourceDataEntry *resB) {
 
 
 static void entryClose(UResourceDataEntry *resB) {
-  umtx_lock(resbMutex());
+  Mutex lock(&resbMutex);
   entryCloseInt(resB);
-  umtx_unlock(resbMutex());
 }
 
 
@@ -1177,6 +1167,7 @@ static UResourceBundle *init_resb_result(const ResourceData *rdata, Resource r,
                     if(mainRes != result) {
                         ures_close(mainRes);
                     }
+                    ResourceTracer(resB).maybeTrace("getalias");
                     return result;
                 }
             } else {
@@ -1256,6 +1247,7 @@ static UResourceBundle *init_resb_result(const ResourceData *rdata, Resource r,
     
     uprv_memmove(&resB->fResData, rdata, sizeof(ResourceData));
     resB->fSize = res_countArrayItems(&(resB->fResData), resB->fRes);
+    ResourceTracer(resB).trace("get");
     return resB;
 }
 
@@ -1304,7 +1296,7 @@ U_CAPI const UChar* U_EXPORT2 ures_getString(const UResourceBundle* resB, int32_
         *status = U_ILLEGAL_ARGUMENT_ERROR;
         return NULL;
     }
-    s = res_getString(&(resB->fResData), resB->fRes, len);
+    s = res_getString({resB}, &(resB->fResData), resB->fRes, len);
     if (s == NULL) {
         *status = U_RESOURCE_TYPE_MISMATCH;
     }
@@ -1393,7 +1385,7 @@ U_CAPI const uint8_t* U_EXPORT2 ures_getBinary(const UResourceBundle* resB, int3
     *status = U_ILLEGAL_ARGUMENT_ERROR;
     return NULL;
   }
-  p = res_getBinary(&(resB->fResData), resB->fRes, len);
+  p = res_getBinary({resB}, &(resB->fResData), resB->fRes, len);
   if (p == NULL) {
     *status = U_RESOURCE_TYPE_MISMATCH;
   }
@@ -1410,7 +1402,7 @@ U_CAPI const int32_t* U_EXPORT2 ures_getIntVector(const UResourceBundle* resB, i
     *status = U_ILLEGAL_ARGUMENT_ERROR;
     return NULL;
   }
-  p = res_getIntVector(&(resB->fResData), resB->fRes, len);
+  p = res_getIntVector({resB}, &(resB->fResData), resB->fRes, len);
   if (p == NULL) {
     *status = U_RESOURCE_TYPE_MISMATCH;
   }
@@ -1431,7 +1423,7 @@ U_CAPI int32_t U_EXPORT2 ures_getInt(const UResourceBundle* resB, UErrorCode *st
     *status = U_RESOURCE_TYPE_MISMATCH;
     return 0xffffffff;
   }
-  return RES_GET_INT(resB->fRes);
+  return res_getInt({resB}, resB->fRes);
 }
 
 U_CAPI uint32_t U_EXPORT2 ures_getUInt(const UResourceBundle* resB, UErrorCode *status) {
@@ -1446,7 +1438,7 @@ U_CAPI uint32_t U_EXPORT2 ures_getUInt(const UResourceBundle* resB, UErrorCode *
     *status = U_RESOURCE_TYPE_MISMATCH;
     return 0xffffffff;
   }
-  return RES_GET_UINT(resB->fRes);
+  return res_getUInt({resB}, resB->fRes);
 }
 
 U_CAPI UResType U_EXPORT2 ures_getType(const UResourceBundle *resB) {
@@ -1457,10 +1449,18 @@ U_CAPI UResType U_EXPORT2 ures_getType(const UResourceBundle *resB) {
 }
 
 U_CAPI const char * U_EXPORT2 ures_getKey(const UResourceBundle *resB) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if(resB == NULL) {
     return NULL;
   }
-  
   return(resB->fKey);
 }
 
@@ -1480,7 +1480,7 @@ static const UChar* ures_getStringWithAlias(const UResourceBundle *resB, Resourc
     ures_close(tempRes);
     return result;
   } else {
-    return res_getString(&(resB->fResData), r, len); 
+    return res_getString({resB, sIndex}, &(resB->fResData), r, len); 
   }
 }
 
@@ -1516,7 +1516,7 @@ U_CAPI const UChar* U_EXPORT2 ures_getNextString(UResourceBundle *resB, int32_t*
     switch(RES_GET_TYPE(resB->fRes)) {
     case URES_STRING:
     case URES_STRING_V2:
-      return res_getString(&(resB->fResData), resB->fRes, len); 
+      return res_getString({resB}, &(resB->fResData), resB->fRes, len);
     case URES_TABLE:
     case URES_TABLE16:
     case URES_TABLE32:
@@ -1661,7 +1661,7 @@ U_CAPI const UChar* U_EXPORT2 ures_getStringByIndex(const UResourceBundle *resB,
         switch(RES_GET_TYPE(resB->fRes)) {
         case URES_STRING:
         case URES_STRING_V2:
-            return res_getString(&(resB->fResData), resB->fRes, len);
+            return res_getString({resB}, &(resB->fResData), resB->fRes, len);
         case URES_TABLE:
         case URES_TABLE16:
         case URES_TABLE32:
@@ -1953,10 +1953,10 @@ void getAllItemsWithFallback(
     
     
     
-    value.pResData = &bundle->fResData;
+    value.setData(&bundle->fResData);
     UResourceDataEntry *parentEntry = bundle->fData->fParent;
     UBool hasParent = parentEntry != NULL && U_SUCCESS(parentEntry->fBogus);
-    value.setResource(bundle->fRes);
+    value.setResource(bundle->fRes, ResourceTracer(bundle));
     sink.put(bundle->fKey, value, !hasParent, errorCode);
     if (hasParent) {
         
@@ -2001,31 +2001,60 @@ void getAllItemsWithFallback(
 
 }  
 
+
+
+
+
+
+
+
+
+
 U_CAPI void U_EXPORT2
-ures_getAllItemsWithFallback(const UResourceBundle *bundle, const char *path,
-                             icu::ResourceSink &sink, UErrorCode &errorCode) {
+ures_getValueWithFallback(const UResourceBundle *bundle, const char *path,
+                          UResourceBundle *tempFillIn,
+                          ResourceDataValue &value, UErrorCode &errorCode) {
     if (U_FAILURE(errorCode)) { return; }
-    if (path == NULL) {
+    if (path == nullptr) {
         errorCode = U_ILLEGAL_ARGUMENT_ERROR;
         return;
     }
-    UResourceBundle stackBundle;
-    ures_initStackObject(&stackBundle);
     const UResourceBundle *rb;
     if (*path == 0) {
         
         rb = bundle;
     } else {
-        rb = ures_getByKeyWithFallback(bundle, path, &stackBundle, &errorCode);
+        rb = ures_getByKeyWithFallback(bundle, path, tempFillIn, &errorCode);
         if (U_FAILURE(errorCode)) {
-            ures_close(&stackBundle);
+            return;
+        }
+    }
+    value.setData(&rb->fResData);
+    value.setResource(rb->fRes, ResourceTracer(rb));
+}
+
+U_CAPI void U_EXPORT2
+ures_getAllItemsWithFallback(const UResourceBundle *bundle, const char *path,
+                             icu::ResourceSink &sink, UErrorCode &errorCode) {
+    if (U_FAILURE(errorCode)) { return; }
+    if (path == nullptr) {
+        errorCode = U_ILLEGAL_ARGUMENT_ERROR;
+        return;
+    }
+    StackUResourceBundle stackBundle;
+    const UResourceBundle *rb;
+    if (*path == 0) {
+        
+        rb = bundle;
+    } else {
+        rb = ures_getByKeyWithFallback(bundle, path, stackBundle.getAlias(), &errorCode);
+        if (U_FAILURE(errorCode)) {
             return;
         }
     }
     
     ResourceDataValue value;
     getAllItemsWithFallback(rb, value, sink, errorCode);
-    ures_close(&stackBundle);
 }
 
 U_CAPI UResourceBundle* U_EXPORT2 ures_getByKey(const UResourceBundle *resB, const char* inKey, UResourceBundle *fillIn, UErrorCode *status) {
@@ -2108,7 +2137,7 @@ U_CAPI const UChar* U_EXPORT2 ures_getStringByKey(const UResourceBundle *resB, c
                     switch (RES_GET_TYPE(res)) {
                     case URES_STRING:
                     case URES_STRING_V2:
-                        return res_getString(rd, res, len);
+                        return res_getString({resB, key}, rd, res, len);
                     case URES_ALIAS:
                       {
                         const UChar* result = 0;
@@ -2130,7 +2159,7 @@ U_CAPI const UChar* U_EXPORT2 ures_getStringByKey(const UResourceBundle *resB, c
             switch (RES_GET_TYPE(res)) {
             case URES_STRING:
             case URES_STRING_V2:
-                return res_getString(&(resB->fResData), res, len);
+                return res_getString({resB, key}, &(resB->fResData), res, len);
             case URES_ALIAS:
               {
                 const UChar* result = 0;
@@ -2151,6 +2180,7 @@ U_CAPI const UChar* U_EXPORT2 ures_getStringByKey(const UResourceBundle *resB, c
         
         const ResourceData *rd = getFallbackData(resB, &key, &realData, &res, status);
         if(U_SUCCESS(*status)) {
+            
             return res_getString(rd, res, len);
         } else {
             *status = U_MISSING_RESOURCE_ERROR;
@@ -2295,6 +2325,8 @@ ures_openWithType(UResourceBundle *r, const char* path, const char* localeID,
     r->fRes = r->fResData.rootRes;
     r->fSize = res_countArrayItems(&(r->fResData), r->fRes);
     r->fIndex = -1;
+
+    ResourceTracer(r).traceOpen();
 
     return r;
 }

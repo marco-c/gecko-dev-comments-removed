@@ -78,8 +78,6 @@
 
 
 
-#ifndef U_HIDE_DRAFT_API
-
 
 
 
@@ -165,9 +163,7 @@ typedef enum UNumberUnitWidth {
 
             UNUM_UNIT_WIDTH_COUNT
 } UNumberUnitWidth;
-#endif  
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -270,10 +266,6 @@ typedef enum UNumberGroupingStrategy {
 } UNumberGroupingStrategy;
 
 
-#endif  
-
-#ifndef U_HIDE_DRAFT_API
-
 
 
 
@@ -357,6 +349,7 @@ typedef enum UNumberSignDisplay {
 
 
 
+
             UNUM_SIGN_ACCOUNTING_EXCEPT_ZERO,
 
     
@@ -366,9 +359,7 @@ typedef enum UNumberSignDisplay {
 
             UNUM_SIGN_COUNT
 } UNumberSignDisplay;
-#endif  
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -403,7 +394,6 @@ typedef enum UNumberDecimalSeparatorDisplay {
 
             UNUM_DECIMAL_SEPARATOR_COUNT
 } UNumberDecimalSeparatorDisplay;
-#endif  
 
 struct UNumberFormatter;
 
@@ -647,6 +637,13 @@ unumf_resultNextFieldPosition(const UFormattedNumber* uresult, UFieldPosition* u
 U_STABLE void U_EXPORT2
 unumf_resultGetAllFieldPositions(const UFormattedNumber* uresult, UFieldPositionIterator* ufpositer,
                                  UErrorCode* ec);
+
+
+
+
+
+
+
 
 
 

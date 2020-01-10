@@ -18,9 +18,12 @@
 #ifndef SELFMT
 #define SELFMT
 
+#include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
+
 #include "unicode/messagepattern.h"
 #include "unicode/numfmt.h"
-#include "unicode/utypes.h"
 
 
 
@@ -272,7 +275,7 @@ public:
 
 
 
-    virtual Format* clone(void) const;
+    virtual SelectFormat* clone() const;
 
     
 
@@ -362,6 +365,8 @@ private:
 };
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

@@ -28,6 +28,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -672,6 +674,7 @@ public:
 
     virtual UBool useDaylightTime(void) const;
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
@@ -687,6 +690,7 @@ public:
 
 
     virtual UBool inDaylightTime(UDate date, UErrorCode& status) const;
+#endif  
 
     
 
@@ -703,7 +707,7 @@ public:
 
 
 
-    virtual TimeZone* clone(void) const;
+    virtual SimpleTimeZone* clone() const;
 
     
 
@@ -926,6 +930,8 @@ SimpleTimeZone::getOffset(UDate date, UBool local, int32_t& rawOffsetRef,
 }
 
 U_NAMESPACE_END
+
+#endif
 
 #endif
 

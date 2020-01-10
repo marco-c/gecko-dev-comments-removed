@@ -691,36 +691,36 @@ static int16_t countOnes(uint32_t* mask, int32_t len) {
 
 
 static UEnumeration *selectForMask(const UConverterSelector* sel,
-                                   uint32_t *mask, UErrorCode *status) {
+                                   uint32_t *theMask, UErrorCode *status) {
+  LocalMemory<uint32_t> mask(theMask);
   
   
-  struct Enumerator* result = (Enumerator*)uprv_malloc(sizeof(Enumerator));
-  if (result == NULL) {
-    uprv_free(mask);
+  LocalMemory<Enumerator> result(static_cast<Enumerator *>(uprv_malloc(sizeof(Enumerator))));
+  if (result.isNull()) {
     *status = U_MEMORY_ALLOCATION_ERROR;
-    return NULL;
+    return nullptr;
   }
-  result->index = NULL;  
+  result->index = nullptr;  
   result->length = result->cur = 0;
   result->sel = sel;
 
-  UEnumeration *en = (UEnumeration *)uprv_malloc(sizeof(UEnumeration));
-  if (en == NULL) {
+  LocalMemory<UEnumeration> en(static_cast<UEnumeration *>(uprv_malloc(sizeof(UEnumeration))));
+  if (en.isNull()) {
     
-    uprv_free(mask);
-    uprv_free(result);
     *status = U_MEMORY_ALLOCATION_ERROR;
-    return NULL;
+    return nullptr;
   }
-  memcpy(en, &defaultEncodings, sizeof(UEnumeration));
-  en->context = result;
-
+  memcpy(en.getAlias(), &defaultEncodings, sizeof(UEnumeration));
+  
   int32_t columns = (sel->encodingsCount+31)/32;
-  int16_t numOnes = countOnes(mask, columns);
+  int16_t numOnes = countOnes(mask.getAlias(), columns);
   
   if (numOnes > 0) {
-    result->index = (int16_t*) uprv_malloc(numOnes * sizeof(int16_t));
-
+    result->index = static_cast<int16_t*>(uprv_malloc(numOnes * sizeof(int16_t)));
+    if (result->index == nullptr) {
+      *status = U_MEMORY_ALLOCATION_ERROR;
+      return nullptr;
+    }
     int32_t i, j;
     int16_t k = 0;
     for (j = 0 ; j < columns; j++) {
@@ -734,8 +734,8 @@ static UEnumeration *selectForMask(const UConverterSelector* sel,
     }
   } 
     
-  uprv_free(mask);
-  return en;
+  en->context = result.orphan();
+  return en.orphan();
 }
 
 

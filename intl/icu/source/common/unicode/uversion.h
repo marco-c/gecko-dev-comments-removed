@@ -63,50 +63,41 @@ typedef uint8_t UVersionInfo[U_MAX_VERSION_LENGTH];
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifdef __cplusplus
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #   if U_DISABLE_RENAMING
 #       define U_ICU_NAMESPACE icu
         namespace U_ICU_NAMESPACE { }
@@ -116,8 +107,8 @@ typedef uint8_t UVersionInfo[U_MAX_VERSION_LENGTH];
         namespace icu = U_ICU_NAMESPACE;
 #   endif
 
-#   define U_NAMESPACE_BEGIN extern "C++" { namespace U_ICU_NAMESPACE {
-#   define U_NAMESPACE_END } }
+#   define U_NAMESPACE_BEGIN namespace U_ICU_NAMESPACE {
+#   define U_NAMESPACE_END }
 #   define U_NAMESPACE_USE using namespace U_ICU_NAMESPACE;
 #   define U_NAMESPACE_QUALIFIER U_ICU_NAMESPACE::
 
@@ -133,12 +124,7 @@ typedef uint8_t UVersionInfo[U_MAX_VERSION_LENGTH];
 #   if U_USING_ICU_NAMESPACE
         U_NAMESPACE_USE
 #   endif
-#else
-#   define U_NAMESPACE_BEGIN
-#   define U_NAMESPACE_END
-#   define U_NAMESPACE_USE
-#   define U_NAMESPACE_QUALIFIER
-#endif
+#endif 
 
 
 

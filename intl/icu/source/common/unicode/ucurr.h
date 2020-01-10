@@ -193,6 +193,7 @@ ucurr_getName(const UChar* currency,
 
 
 
+
 U_STABLE const UChar* U_EXPORT2
 ucurr_getPluralName(const UChar* currency,
                     const char* locale,

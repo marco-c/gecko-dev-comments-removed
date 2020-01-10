@@ -313,7 +313,7 @@ UXMLParser::parseFile(const char *filename, UErrorCode &errorCode) {
             
             flush=TRUE;
         }
-    };
+    }
 
 exit:
     ucnv_close(cnv);

@@ -14,6 +14,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -26,7 +28,6 @@
 #include "unicode/search.h"
 
 U_NAMESPACE_BEGIN
-
 
 
 
@@ -412,7 +413,7 @@ public:
 
 
 
-    virtual SearchIterator * safeClone(void) const;
+    virtual StringSearch * safeClone() const;
     
     
 
@@ -499,6 +500,8 @@ private :
 };
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

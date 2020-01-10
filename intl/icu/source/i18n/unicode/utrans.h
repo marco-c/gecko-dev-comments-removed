@@ -467,7 +467,6 @@ utrans_transIncremental(const UTransliterator* trans,
 
 
 
-
 U_STABLE void U_EXPORT2 
 utrans_transUChars(const UTransliterator* trans,
                    UChar* text,

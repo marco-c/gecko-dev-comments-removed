@@ -29,6 +29,9 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
+
 
 
 
@@ -896,7 +899,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    Format* clone(void) const U_OVERRIDE;
+    DecimalFormat* clone() const U_OVERRIDE;
 
     
 
@@ -1331,7 +1334,6 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
     virtual void setMultiplier(int32_t newValue);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1366,7 +1368,6 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
     void setMultiplierScale(int32_t newValue);
-#endif  
 
     
 
@@ -2020,12 +2021,14 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
     void setCurrency(const char16_t* theCurrency, UErrorCode& ec) U_OVERRIDE;
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
 
 
     virtual void setCurrency(const char16_t* theCurrency);
+#endif  
 
     
 
@@ -2113,22 +2116,6 @@ class U_I18N_API DecimalFormat : public NumberFormat {
     const number::LocalizedNumberFormatter* toNumberFormatter(UErrorCode& status) const;
 #endif  
 
-#ifndef U_HIDE_DEPRECATED_API
-    
-
-
-
-
-
-
-
-
-
-
-
-    const number::LocalizedNumberFormatter& toNumberFormatter() const;
-#endif  
-
     
 
 
@@ -2213,6 +2200,8 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 };
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

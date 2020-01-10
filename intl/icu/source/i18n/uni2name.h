@@ -48,7 +48,7 @@ class UnicodeNameTransliterator : public Transliterator {
     
 
 
-    virtual Transliterator* clone(void) const;
+    virtual UnicodeNameTransliterator* clone() const;
 
     
 

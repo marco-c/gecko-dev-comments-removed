@@ -145,6 +145,42 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef UPRV_BLOCK_MACRO_BEGIN
+#define UPRV_BLOCK_MACRO_BEGIN do
+#endif
+
+
+
+
+
+
+#ifndef UPRV_BLOCK_MACRO_END
+#define UPRV_BLOCK_MACRO_END while (FALSE)
+#endif
+
+
+
+
+
 #ifndef INT8_MIN
 
 #   define INT8_MIN        ((int8_t)(-128))

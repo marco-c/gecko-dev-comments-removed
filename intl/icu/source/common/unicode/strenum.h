@@ -12,6 +12,10 @@
 #ifndef STRENUM_H
 #define STRENUM_H
 
+#include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
+
 #include "unicode/uobject.h"
 #include "unicode/unistr.h"
 
@@ -63,9 +67,6 @@ public:
     virtual ~StringEnumeration();
 
     
-
-
-
 
 
 
@@ -273,6 +274,8 @@ protected:
 };
 
 U_NAMESPACE_END
+
+#endif 
 
 
 #endif

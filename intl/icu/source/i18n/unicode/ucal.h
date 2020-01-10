@@ -441,11 +441,13 @@ enum UCalendarDateFields {
 
     
 
+#ifndef U_FORCE_HIDE_DEPRECATED_API
     
 
 
 
-  UCAL_FIELD_COUNT,
+    UCAL_FIELD_COUNT,
+#endif  
 
  
 
@@ -656,6 +658,42 @@ ucal_getDefaultTimeZone(UChar* result, int32_t resultCapacity, UErrorCode* ec);
 
 U_STABLE void U_EXPORT2
 ucal_setDefaultTimeZone(const UChar* zoneID, UErrorCode* ec);
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_DRAFT int32_t U_EXPORT2
+ucal_getHostTimeZone(UChar *result, int32_t resultCapacity, UErrorCode *ec);
+
+#endif 
 
 
 

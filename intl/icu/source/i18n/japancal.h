@@ -116,7 +116,7 @@ public:
 
 
 
-    virtual Calendar* clone(void) const;
+    virtual JapaneseCalendar* clone() const;
 
     
 

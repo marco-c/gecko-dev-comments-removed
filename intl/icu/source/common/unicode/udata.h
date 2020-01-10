@@ -264,25 +264,6 @@ udata_openChoice(const char *path, const char *type, const char *name,
 U_STABLE void U_EXPORT2
 udata_close(UDataMemory *pData);
 
-#if U_SHOW_CPLUSPLUS_API
-
-U_NAMESPACE_BEGIN
-
-
-
-
-
-
-
-
-
-
-U_DEFINE_LOCAL_OPEN_POINTER(LocalUDataMemoryPointer, UDataMemory, udata_close);
-
-U_NAMESPACE_END
-
-#endif
-
 
 
 
@@ -433,5 +414,24 @@ U_STABLE void U_EXPORT2
 udata_setFileAccess(UDataFileAccess access, UErrorCode *status);
 
 U_CDECL_END
+
+#if U_SHOW_CPLUSPLUS_API
+
+U_NAMESPACE_BEGIN
+
+
+
+
+
+
+
+
+
+
+U_DEFINE_LOCAL_OPEN_POINTER(LocalUDataMemoryPointer, UDataMemory, udata_close);
+
+U_NAMESPACE_END
+
+#endif  
 
 #endif

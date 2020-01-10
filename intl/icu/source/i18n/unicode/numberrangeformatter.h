@@ -1,9 +1,14 @@
 
 
 
-#if !UCONFIG_NO_FORMATTING
 #ifndef __NUMBERRANGEFORMATTER_H__
 #define __NUMBERRANGEFORMATTER_H__
+
+#include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
+
+#if !UCONFIG_NO_FORMATTING
 
 #include <atomic>
 #include "unicode/appendable.h"
@@ -11,8 +16,6 @@
 #include "unicode/formattedvalue.h"
 #include "unicode/fpositer.h"
 #include "unicode/numberformatter.h"
-
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -446,6 +449,7 @@ class U_I18N_API NumberRangeFormatterSettings {
 
     Derived identityFallback(UNumberRangeIdentityFallback identityFallback) &&;
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -467,6 +471,7 @@ class U_I18N_API NumberRangeFormatterSettings {
 
 
     LocalPointer<Derived> clone() &&;
+#endif  
 
     
 
@@ -651,7 +656,7 @@ class U_I18N_API LocalizedNumberRangeFormatter
     void formatImpl(impl::UFormattedNumberRangeData& results, bool equalBeforeRounding,
                     UErrorCode& status) const;
 
-#endif
+#endif  
 
     
 
@@ -722,6 +727,7 @@ class U_I18N_API FormattedNumberRange : public UMemory, public FormattedValue {
     
     UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const U_OVERRIDE;
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -799,6 +805,7 @@ class U_I18N_API FormattedNumberRange : public UMemory, public FormattedValue {
 
 
     UnicodeString getSecondDecimal(UErrorCode& status) const;
+#endif 
 
     
 
@@ -851,7 +858,6 @@ class U_I18N_API FormattedNumberRange : public UMemory, public FormattedValue {
     
 
 
-
     explicit FormattedNumberRange(impl::UFormattedNumberRangeData *results)
         : fData(results), fErrorCode(U_ZERO_ERROR) {}
 
@@ -900,8 +906,9 @@ class U_I18N_API NumberRangeFormatter final {
 }  
 U_NAMESPACE_END
 
-#endif  
-
 #endif 
 
 #endif 
+
+#endif 
+

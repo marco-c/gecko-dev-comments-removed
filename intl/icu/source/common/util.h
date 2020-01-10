@@ -192,6 +192,15 @@ class U_COMMON_API ICU_Utility  {
 
 
 
+    static int32_t parseAsciiInteger(const UnicodeString& str, int32_t& pos);
+
+    
+
+
+
+
+
+
 
 
 

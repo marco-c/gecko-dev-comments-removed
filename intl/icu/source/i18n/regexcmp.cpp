@@ -576,9 +576,13 @@ UBool RegexCompile::doParseActions(int32_t action)
         
         
         
+        
+        
+        
+        
         {
             fixLiterals();
-            int32_t dataLoc = allocateData(2);
+            int32_t dataLoc = allocateData(4);
             appendOp(URX_LA_START, dataLoc);
             appendOp(URX_STATE_SAVE, fRXPat->fCompiledPat->size()+ 2);
             appendOp(URX_JMP, fRXPat->fCompiledPat->size()+ 3);
@@ -608,9 +612,14 @@ UBool RegexCompile::doParseActions(int32_t action)
         
         
         
+        
+        
+        
+        
+        
         {
             fixLiterals();
-            int32_t dataLoc = allocateData(2);
+            int32_t dataLoc = allocateData(4);
             appendOp(URX_LA_START, dataLoc);
             appendOp(URX_STATE_SAVE, 0);    
             appendOp(URX_NOP, 0);
@@ -646,12 +655,14 @@ UBool RegexCompile::doParseActions(int32_t action)
             
             
             
+            
+            
 
             
             fixLiterals();
 
             
-            int32_t dataLoc = allocateData(4);
+            int32_t dataLoc = allocateData(5);
 
             
             appendOp(URX_LB_START, dataLoc);
@@ -698,12 +709,14 @@ UBool RegexCompile::doParseActions(int32_t action)
             
             
             
+            
+            
 
             
             fixLiterals();
 
             
-            int32_t dataLoc = allocateData(4);
+            int32_t dataLoc = allocateData(5);
 
             
             appendOp(URX_LB_START, dataLoc);
@@ -2285,7 +2298,7 @@ void  RegexCompile::handleCloseParen() {
                 error(U_REGEX_LOOK_BEHIND_LIMIT);
                 break;
             }
-            if (minML == INT32_MAX && maxML == 0) {
+            if (minML == INT32_MAX) {
                 
                 
                 
@@ -2328,7 +2341,7 @@ void  RegexCompile::handleCloseParen() {
                 error(U_REGEX_LOOK_BEHIND_LIMIT);
                 break;
             }
-            if (minML == INT32_MAX && maxML == 0) {
+            if (minML == INT32_MAX) {
                 
                 
                 
@@ -3381,7 +3394,7 @@ int32_t   RegexCompile::minMatchLength(int32_t start, int32_t end) {
                 
                 
                 
-                int32_t  depth = (opType == URX_LA_START? 2: 1);;
+                int32_t  depth = (opType == URX_LA_START? 2: 1);
                 for (;;) {
                     loc++;
                     op = (int32_t)fRXPat->fCompiledPat->elementAti(loc);
@@ -3462,7 +3475,6 @@ int32_t   RegexCompile::maxMatchLength(int32_t start, int32_t end) {
     }
     U_ASSERT(start <= end);
     U_ASSERT(end < fRXPat->fCompiledPat->size());
-
 
     int32_t    loc;
     int32_t    op;
@@ -3700,21 +3712,15 @@ int32_t   RegexCompile::maxMatchLength(int32_t start, int32_t end) {
             {
                 
                 
-                int32_t  depth = 0;
-                for (;;) {
-                    loc++;
+                int32_t dataLoc = URX_VAL(op);
+                for (loc = loc + 1; loc < end; ++loc) {
                     op = (int32_t)fRXPat->fCompiledPat->elementAti(loc);
-                    if (URX_TYPE(op) == URX_LA_START || URX_TYPE(op) == URX_LB_START) {
-                        depth++;
+                    int32_t opType = URX_TYPE(op);
+                    if ((opType == URX_LA_END || opType == URX_LBN_END) && (URX_VAL(op) == dataLoc)) {
+                        break;
                     }
-                    if (URX_TYPE(op) == URX_LA_END || URX_TYPE(op)==URX_LBN_END) {
-                        if (depth == 0) {
-                            break;
-                        }
-                        depth--;
-                    }
-                    U_ASSERT(loc < end);
                 }
+                U_ASSERT(loc < end);
             }
             break;
 

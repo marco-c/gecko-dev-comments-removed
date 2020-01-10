@@ -14,6 +14,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -37,7 +39,6 @@ struct USearch;
 typedef struct USearch USearch;
 
 U_NAMESPACE_BEGIN
-
 
 
 
@@ -570,6 +571,8 @@ inline UBool SearchIterator::operator!=(const SearchIterator &that) const
    return !operator==(that); 
 }
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

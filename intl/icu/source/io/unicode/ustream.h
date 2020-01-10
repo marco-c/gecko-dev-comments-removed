@@ -17,6 +17,10 @@
 #ifndef USTREAM_H
 #define USTREAM_H
 
+#include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
+
 #include "unicode/unistr.h"
 
 #if !UCONFIG_NO_CONVERSION  
@@ -59,5 +63,7 @@ U_NAMESPACE_END
 #endif
 
 
+
+#endif 
 
 #endif

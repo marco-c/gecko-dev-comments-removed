@@ -15,6 +15,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 #if !UCONFIG_NO_FORMATTING
 
 #include "unicode/unistr.h"
@@ -62,7 +64,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-    virtual UObject* clone() const;
+    virtual MeasureUnit* clone() const;
 
     
 
@@ -604,7 +606,6 @@ class U_I18N_API MeasureUnit: public UObject {
     static MeasureUnit getPartPerMillion();
 #endif  
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -613,7 +614,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createPercent(UErrorCode &status);
-#endif  
 
 #ifndef U_HIDE_DRAFT_API
     
@@ -624,7 +624,6 @@ class U_I18N_API MeasureUnit: public UObject {
     static MeasureUnit getPercent();
 #endif 
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -633,7 +632,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createPermille(UErrorCode &status);
-#endif  
 
 #ifndef U_HIDE_DRAFT_API
     
@@ -878,7 +876,6 @@ class U_I18N_API MeasureUnit: public UObject {
     static MeasureUnit getMegabyte();
 #endif  
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -887,7 +884,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createPetabyte(UErrorCode &status);
-#endif  
 
 #ifndef U_HIDE_DRAFT_API
     
@@ -979,7 +975,14 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createDayPerson(UErrorCode &status);
-#endif  
+
+    
+
+
+
+
+    static MeasureUnit getDayPerson();
+#endif 
 
 #ifndef U_HIDE_DRAFT_API
     
@@ -987,7 +990,16 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-    static MeasureUnit getDayPerson();
+
+
+    static MeasureUnit *createDecade(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getDecade();
 #endif 
 
     
@@ -1089,9 +1101,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createMonthPerson(UErrorCode &status);
-#endif  
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1163,9 +1173,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createWeekPerson(UErrorCode &status);
-#endif  
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1201,9 +1209,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createYearPerson(UErrorCode &status);
-#endif  
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1436,6 +1442,24 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
+    static MeasureUnit *createThermUs(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getThermUs();
+#endif 
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
     static MeasureUnit *createNewton(UErrorCode &status);
 
     
@@ -1535,6 +1559,132 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getMegahertz();
 #endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createDotPerCentimeter(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getDotPerCentimeter();
+#endif 
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createDotPerInch(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getDotPerInch();
+#endif 
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createEm(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getEm();
+#endif 
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createMegapixel(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getMegapixel();
+#endif 
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createPixel(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getPixel();
+#endif 
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createPixelPerCentimeter(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getPixelPerCentimeter();
+#endif 
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createPixelPerInch(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getPixelPerInch();
+#endif 
 
     
 
@@ -2310,7 +2460,6 @@ class U_I18N_API MeasureUnit: public UObject {
     static MeasureUnit getWatt();
 #endif  
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2319,7 +2468,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createAtmosphere(UErrorCode &status);
-#endif  
 
 #ifndef U_HIDE_DRAFT_API
     
@@ -2328,6 +2476,24 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getAtmosphere();
+#endif 
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createBar(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getBar();
 #endif 
 
     
@@ -2437,6 +2603,24 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getMillimeterOfMercury();
 #endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createPascal(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getPascal();
+#endif 
 
     
 
@@ -3164,4 +3348,7 @@ private:
 U_NAMESPACE_END
 
 #endif 
+
+#endif 
+
 #endif 

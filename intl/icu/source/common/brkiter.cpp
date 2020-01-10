@@ -277,7 +277,7 @@ ICUBreakIteratorService::~ICUBreakIteratorService() {}
 
 U_NAMESPACE_END
 
-static icu::UInitOnce gInitOnceBrkiter;
+static icu::UInitOnce gInitOnceBrkiter = U_INITONCE_INITIALIZER;
 static icu::ICULocaleService* gService = NULL;
 
 

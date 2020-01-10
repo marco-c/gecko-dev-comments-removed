@@ -16,10 +16,14 @@
 
 
 
-#include "unicode/measure.h"
-#include "unicode/tmunit.h"
+#include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
 
 #if !UCONFIG_NO_FORMATTING
+
+#include "unicode/measure.h"
+#include "unicode/tmunit.h"
 
 U_NAMESPACE_BEGIN
 
@@ -83,7 +87,7 @@ public:
 
 
 
-    virtual UObject* clone() const;
+    virtual TimeUnitAmount* clone() const;
 
     
     
@@ -162,6 +166,8 @@ TimeUnitAmount::operator!=(const UObject& other) const {
 }
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

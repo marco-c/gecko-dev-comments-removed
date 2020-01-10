@@ -144,7 +144,7 @@ public:
 
 
 
-    virtual Transliterator* clone(void) const;
+    virtual RuleBasedTransliterator* clone() const;
 
 protected:
     

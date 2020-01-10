@@ -9,12 +9,13 @@
 
 #include "unicode/uobject.h"
 #include "number_decimalquantity.h"
+#include "string_segment.h"
 
-U_NAMESPACE_BEGIN namespace numparse {
+U_NAMESPACE_BEGIN
+namespace numparse {
 namespace impl {
 
 
-class StringSegment;
 class ParsedNumber;
 
 typedef int32_t result_flags_t;
@@ -50,6 +51,7 @@ enum ParseFlags {
     
     PARSE_FLAG_NO_FOREIGN_CURRENCY = 0x2000,
     PARSE_FLAG_ALLOW_INFINITE_RECURSION = 0x4000,
+    PARSE_FLAG_STRICT_IGNORABLES = 0x8000,
 };
 
 
@@ -166,115 +168,6 @@ class U_I18N_API ParsedNumber {
     void populateFormattable(Formattable& output, parse_flags_t parseFlags) const;
 
     bool isBetterThan(const ParsedNumber& other);
-};
-
-
-
-
-
-
-
-
-
-class U_I18N_API StringSegment : public UMemory {
-  public:
-    StringSegment(const UnicodeString& str, bool ignoreCase);
-
-    int32_t getOffset() const;
-
-    void setOffset(int32_t start);
-
-    
-
-
-
-
-
-
-
-    void adjustOffset(int32_t delta);
-
-    
-
-
-    void adjustOffsetByCodePoint();
-
-    void setLength(int32_t length);
-
-    void resetLength();
-
-    int32_t length() const;
-
-    char16_t charAt(int32_t index) const;
-
-    UChar32 codePointAt(int32_t index) const;
-
-    UnicodeString toUnicodeString() const;
-
-    const UnicodeString toTempUnicodeString() const;
-
-    
-
-
-
-
-
-
-
-    UChar32 getCodePoint() const;
-
-    
-
-
-
-
-
-    bool startsWith(UChar32 otherCp) const;
-
-    
-
-
-    bool startsWith(const UnicodeSet& uniset) const;
-
-    
-
-
-
-    bool startsWith(const UnicodeString& other) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    int32_t getCommonPrefixLength(const UnicodeString& other);
-
-    
-
-
-
-    int32_t getCaseSensitivePrefixLength(const UnicodeString& other);
-
-    bool operator==(const UnicodeString& other) const;
-
-  private:
-    const UnicodeString& fStr;
-    int32_t fStart;
-    int32_t fEnd;
-    bool fFoldCase;
-
-    int32_t getPrefixLengthInternal(const UnicodeString& other, bool foldCase);
-
-    static bool codePointsEqual(UChar32 cp1, UChar32 cp2, bool foldCase);
 };
 
 

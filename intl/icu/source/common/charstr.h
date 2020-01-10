@@ -82,9 +82,23 @@ public:
 
     const char *data() const { return buffer.getAlias(); }
     char *data() { return buffer.getAlias(); }
+    
+
+
+
+    char *cloneData(UErrorCode &errorCode) const;
+
+    bool operator==(StringPiece other) const {
+        return len == other.length() && (len == 0 || uprv_memcmp(data(), other.data(), len) == 0);
+    }
+    bool operator!=(StringPiece other) const {
+        return !operator==(other);
+    }
 
     
     int32_t lastIndexOf(char c) const;
+
+    bool contains(StringPiece s) const;
 
     CharString &clear() { len=0; buffer[0]=0; return *this; }
     CharString &truncate(int32_t newLength);

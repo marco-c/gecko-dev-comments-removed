@@ -21,6 +21,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -418,7 +420,7 @@ public:
 
 
 
-    virtual Format* clone(void) const;
+    virtual MessageFormat* clone() const;
 
     
 
@@ -1087,7 +1089,7 @@ private:
     class U_I18N_API DummyFormat : public Format {
     public:
         virtual UBool operator==(const Format&) const;
-        virtual Format* clone() const;
+        virtual DummyFormat* clone() const;
         virtual UnicodeString& format(const Formattable& obj,
                               UnicodeString& appendTo,
                               UErrorCode& status) const;
@@ -1108,6 +1110,8 @@ private:
 };
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

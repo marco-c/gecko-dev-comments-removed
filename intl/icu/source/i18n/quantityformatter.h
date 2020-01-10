@@ -26,12 +26,7 @@ class PluralRules;
 class NumberFormat;
 class Formattable;
 class FieldPosition;
-
-namespace number {
-namespace impl {
-class NumberStringBuilder;
-}
-}
+class FormattedStringBuilder;
 
 
 
@@ -144,7 +139,7 @@ public:
             double quantity,
             const NumberFormat& fmt,
             const PluralRules& rules,
-            number::impl::NumberStringBuilder& output,
+            FormattedStringBuilder& output,
             StandardPlural::Form& pluralForm,
             UErrorCode& status);
 

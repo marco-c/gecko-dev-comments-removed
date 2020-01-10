@@ -286,7 +286,7 @@ fIsGregorian(source.fIsGregorian), fInvertGregorian(source.fInvertGregorian)
 
 
 
-Calendar* GregorianCalendar::clone() const
+GregorianCalendar* GregorianCalendar::clone() const
 {
     return new GregorianCalendar(*this);
 }
@@ -324,26 +324,26 @@ GregorianCalendar::setGregorianChange(UDate date, UErrorCode& status)
     if (U_FAILURE(status)) 
         return;
 
-    fGregorianCutover = date;
+    
+    
+    
+    
+    
+    
+    double cutoverDay = ClockMath::floorDivide(date, (double)kOneDay);
 
     
     
     
-    
-    
-    
-    int32_t cutoverDay = (int32_t)ClockMath::floorDivide(fGregorianCutover, (double)kOneDay);
-    fNormalizedGregorianCutover = cutoverDay * kOneDay;
-
-    
-    
-    
-    
-    
-    
-    
-    if (cutoverDay < 0 && fNormalizedGregorianCutover > 0) {
-        fNormalizedGregorianCutover = (cutoverDay + 1) * kOneDay;
+    if (cutoverDay <= INT32_MIN) {
+        cutoverDay = INT32_MIN;
+        fGregorianCutover = fNormalizedGregorianCutover = cutoverDay * kOneDay;
+    } else if (cutoverDay >= INT32_MAX) {
+        cutoverDay = INT32_MAX;
+        fGregorianCutover = fNormalizedGregorianCutover = cutoverDay * kOneDay;
+    } else {
+        fNormalizedGregorianCutover = cutoverDay * kOneDay;
+        fGregorianCutover = date;
     }
 
     
@@ -360,7 +360,7 @@ GregorianCalendar::setGregorianChange(UDate date, UErrorCode& status)
     fGregorianCutoverYear = cal->get(UCAL_YEAR, status);
     if (cal->get(UCAL_ERA, status) == BC) 
         fGregorianCutoverYear = 1 - fGregorianCutoverYear;
-    fCutoverJulianDay = cutoverDay;
+    fCutoverJulianDay = (int32_t)cutoverDay;
     delete cal;
 }
 

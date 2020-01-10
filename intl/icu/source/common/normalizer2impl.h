@@ -245,9 +245,7 @@ private:
 
 class U_COMMON_API Normalizer2Impl : public UObject {
 public:
-    Normalizer2Impl() : normTrie(NULL), fCanonIterData(NULL) {
-        fCanonIterDataInitOnce.reset();
-    }
+    Normalizer2Impl() : normTrie(NULL), fCanonIterData(NULL) { }
     virtual ~Normalizer2Impl();
 
     void init(const int32_t *inIndexes, const UCPTrie *inTrie,
@@ -723,7 +721,7 @@ private:
     const uint16_t *extraData;  
     const uint8_t *smallFCD;  
 
-    UInitOnce       fCanonIterDataInitOnce;
+    UInitOnce       fCanonIterDataInitOnce = U_INITONCE_INITIALIZER;
     CanonIterData  *fCanonIterData;
 };
 

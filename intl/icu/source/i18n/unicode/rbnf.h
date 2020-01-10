@@ -12,6 +12,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -696,7 +698,7 @@ public:
 
 
 
-  virtual Format* clone(void) const;
+  virtual RuleBasedNumberFormat* clone() const;
 
   
 
@@ -866,28 +868,6 @@ public:
                                 UErrorCode& status) const;
 
 protected:
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual UnicodeString& format(const number::impl::DecimalQuantity &number,
-                                  UnicodeString& appendTo,
-                                  FieldPositionIterator* posIter,
-                                  UErrorCode& status) const;
-
     
 
 
@@ -1132,6 +1112,8 @@ RuleBasedNumberFormat::getDefaultRuleSet() const {
 
 U_NAMESPACE_END
 
+
+#endif
 
 #endif
 

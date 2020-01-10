@@ -1428,7 +1428,7 @@ u_unescape(const char *src, UChar *dest, int32_t destCapacity) {
 
 
 
-#define __TERMINATE_STRING(dest, destCapacity, length, pErrorCode)      \
+#define __TERMINATE_STRING(dest, destCapacity, length, pErrorCode) UPRV_BLOCK_MACRO_BEGIN { \
     if(pErrorCode!=NULL && U_SUCCESS(*pErrorCode)) {                    \
         /* not a public function, so no complete argument checking */   \
                                                                         \
@@ -1448,7 +1448,8 @@ u_unescape(const char *src, UChar *dest, int32_t destCapacity) {
             /* even the string itself did not fit - set an error code */ \
             *pErrorCode=U_BUFFER_OVERFLOW_ERROR;                        \
         }                                                               \
-    }
+    } \
+} UPRV_BLOCK_MACRO_END
 
 U_CAPI int32_t U_EXPORT2
 u_terminateUChars(UChar *dest, int32_t destCapacity, int32_t length, UErrorCode *pErrorCode) {
@@ -1488,7 +1489,7 @@ u_terminateWChars(wchar_t *dest, int32_t destCapacity, int32_t length, UErrorCod
 
 
 
-#define STRING_HASH(TYPE, STR, STRLEN, DEREF) \
+#define STRING_HASH(TYPE, STR, STRLEN, DEREF) UPRV_BLOCK_MACRO_BEGIN { \
     uint32_t hash = 0;                        \
     const TYPE *p = (const TYPE*) STR;        \
     if (p != NULL) {                          \
@@ -1500,7 +1501,8 @@ u_terminateWChars(wchar_t *dest, int32_t destCapacity, int32_t length, UErrorCod
             p += inc;                         \
         }                                     \
     }                                         \
-    return static_cast<int32_t>(hash)
+    return static_cast<int32_t>(hash);        \
+} UPRV_BLOCK_MACRO_END
 
 
 U_CAPI int32_t U_EXPORT2

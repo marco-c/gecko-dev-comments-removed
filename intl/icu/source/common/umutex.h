@@ -23,6 +23,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
+#include <type_traits>
 
 #include "unicode/utypes.h"
 #include "unicode/uclean.h"
@@ -40,6 +41,7 @@
 
 
 
+
 #if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN && !defined(U_IN_DOXYGEN)
 #if defined(__clang__) || defined(_MSC_VER)
   #if defined(__clang__)
@@ -48,12 +50,14 @@
     #pragma clang diagnostic ignored "-Winstantiation-after-specialization"
   #endif
 template struct U_COMMON_API std::atomic<int32_t>;
+template struct U_COMMON_API std::atomic<std::mutex *>;
   #if defined(__clang__)
     #pragma clang diagnostic pop
   #endif
 #elif defined(__GNUC__)
 
 template struct std::atomic<int32_t>;
+template struct std::atomic<std::mutex *>;
 #endif
 #endif
 
@@ -183,45 +187,74 @@ template<class T> void umtx_initOnce(UInitOnce &uio, void (U_CALLCONV *fp)(T, UE
 
 
 
+#if (defined(_CPPLIB_VER) && !defined(_MSVC_STL_VERSION)) || \
+    (defined(_MSVC_STL_VERSION) && _MSVC_STL_VERSION < 142)
+    
+#   define UMUTEX_CONSTEXPR
+#else
+#   define UMUTEX_CONSTEXPR constexpr
+#endif
 
 
 
 
 
 
-struct UMutex : public icu::UMemory {
-    UMutex() = default;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class U_COMMON_API UMutex {
+public:
+    UMUTEX_CONSTEXPR UMutex() {}
     ~UMutex() = default;
+
     UMutex(const UMutex &other) = delete;
     UMutex &operator =(const UMutex &other) = delete;
+    void *operator new(size_t) = delete;
 
-    std::mutex   fMutex = {};    
     
+    void lock() {
+        std::mutex *m = fMutex.load(std::memory_order_acquire);
+        if (m == nullptr) { m = getMutex(); }
+        m->lock();
+    }
+    void unlock() { fMutex.load(std::memory_order_relaxed)->unlock(); }
+
+    static void cleanup();
+
+private:
+    alignas(std::mutex) char fStorage[sizeof(std::mutex)] {};
+    std::atomic<std::mutex *> fMutex { nullptr };
+
+    
+
+
+    UMutex *fListLink { nullptr };
+    static UMutex *gListHead;
+
+    
+
+
+
+    std::mutex *getMutex();
 };
-
-
-struct UConditionVar : public icu::UMemory {
-	U_COMMON_API UConditionVar();
-	U_COMMON_API ~UConditionVar();
-    UConditionVar(const UConditionVar &other) = delete;
-    UConditionVar &operator =(const UConditionVar &other) = delete;
-
-    std::condition_variable_any fCV;
-};
-
-#define U_MUTEX_INITIALIZER {}
-#define U_CONDITION_INITIALIZER {}
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -236,30 +269,6 @@ U_INTERNAL void U_EXPORT2 umtx_lock(UMutex* mutex);
 
 
 U_INTERNAL void U_EXPORT2 umtx_unlock (UMutex* mutex);
-
-
-
-
-
-
-
-
-
-
-U_INTERNAL void U_EXPORT2 umtx_condWait(UConditionVar *cond, UMutex *mutex);
-
-
-
-
-
-
-
-U_INTERNAL void U_EXPORT2 umtx_condBroadcast(UConditionVar *cond);
-
-
-
-
-U_INTERNAL void U_EXPORT2 umtx_condSignal(UConditionVar *cond);
 
 
 U_NAMESPACE_END

@@ -202,14 +202,14 @@ bocu1TrailToByte[BOCU1_TRAIL_CONTROLS_COUNT]={
 
 
 
-#define NEGDIVMOD(n, d, m) { \
+#define NEGDIVMOD(n, d, m) UPRV_BLOCK_MACRO_BEGIN { \
     (m)=(n)%(d); \
     (n)/=(d); \
     if((m)<0) { \
         --(n); \
         (m)+=(d); \
     } \
-}
+} UPRV_BLOCK_MACRO_END
 
 
 

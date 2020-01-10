@@ -16,6 +16,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 #if !UCONFIG_NO_FORMATTING
 
 #include "unicode/uobject.h"
@@ -45,7 +47,7 @@ public:
 
 
 
-    virtual TimeZoneRule* clone(void) const = 0;
+    virtual TimeZoneRule* clone() const = 0;
 
     
 
@@ -229,7 +231,7 @@ public:
 
 
 
-    virtual InitialTimeZoneRule* clone(void) const;
+    virtual InitialTimeZoneRule* clone() const;
 
     
 
@@ -440,7 +442,7 @@ public:
 
 
 
-    virtual AnnualTimeZoneRule* clone(void) const;
+    virtual AnnualTimeZoneRule* clone() const;
 
     
 
@@ -656,7 +658,7 @@ public:
 
 
 
-    virtual TimeArrayTimeZoneRule* clone(void) const;
+    virtual TimeArrayTimeZoneRule* clone() const;
 
     
 
@@ -822,6 +824,8 @@ public:
 
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

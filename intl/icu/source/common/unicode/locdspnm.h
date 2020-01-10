@@ -12,6 +12,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 
 
 
@@ -203,5 +205,7 @@ inline LocaleDisplayNames* LocaleDisplayNames::createInstance(const Locale& loca
 U_NAMESPACE_END
 
 #endif
+
+#endif 
 
 #endif

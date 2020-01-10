@@ -145,7 +145,7 @@ public:
 
 
 
-    virtual Calendar* clone(void) const;
+    virtual CopticCalendar* clone() const;
 
     
 

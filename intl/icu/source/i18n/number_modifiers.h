@@ -12,7 +12,7 @@
 #include "unicode/uniset.h"
 #include "unicode/simpleformatter.h"
 #include "standardplural.h"
-#include "number_stringbuilder.h"
+#include "formatted_string_builder.h"
 #include "number_types.h"
 
 U_NAMESPACE_BEGIN namespace number {
@@ -28,7 +28,7 @@ class U_I18N_API ConstantAffixModifier : public Modifier, public UObject {
                           bool strong)
             : fPrefix(prefix), fSuffix(suffix), fField(field), fStrong(strong) {}
 
-    int32_t apply(NumberStringBuilder &output, int32_t leftIndex, int32_t rightIndex,
+    int32_t apply(FormattedStringBuilder &output, int32_t leftIndex, int32_t rightIndex,
                   UErrorCode &status) const U_OVERRIDE;
 
     int32_t getPrefixLength() const U_OVERRIDE;
@@ -64,7 +64,7 @@ class U_I18N_API SimpleModifier : public Modifier, public UMemory {
     
     SimpleModifier();
 
-    int32_t apply(NumberStringBuilder &output, int32_t leftIndex, int32_t rightIndex,
+    int32_t apply(FormattedStringBuilder &output, int32_t leftIndex, int32_t rightIndex,
                   UErrorCode &status) const U_OVERRIDE;
 
     int32_t getPrefixLength() const U_OVERRIDE;
@@ -100,7 +100,7 @@ class U_I18N_API SimpleModifier : public Modifier, public UMemory {
 
 
     int32_t
-    formatAsPrefixSuffix(NumberStringBuilder& result, int32_t startIndex, int32_t endIndex,
+    formatAsPrefixSuffix(FormattedStringBuilder& result, int32_t startIndex, int32_t endIndex,
                          UErrorCode& status) const;
 
     
@@ -115,7 +115,7 @@ class U_I18N_API SimpleModifier : public Modifier, public UMemory {
 
 
     static int32_t
-    formatTwoArgPattern(const SimpleFormatter& compiled, NumberStringBuilder& result,
+    formatTwoArgPattern(const SimpleFormatter& compiled, FormattedStringBuilder& result,
                         int32_t index, int32_t* outPrefixLength, int32_t* outSuffixLength,
                         Field field, UErrorCode& status);
 
@@ -136,8 +136,8 @@ class U_I18N_API SimpleModifier : public Modifier, public UMemory {
 class U_I18N_API ConstantMultiFieldModifier : public Modifier, public UMemory {
   public:
     ConstantMultiFieldModifier(
-            const NumberStringBuilder &prefix,
-            const NumberStringBuilder &suffix,
+            const FormattedStringBuilder &prefix,
+            const FormattedStringBuilder &suffix,
             bool overwrite,
             bool strong,
             const Modifier::Parameters parameters)
@@ -148,8 +148,8 @@ class U_I18N_API ConstantMultiFieldModifier : public Modifier, public UMemory {
         fParameters(parameters) {}
 
     ConstantMultiFieldModifier(
-            const NumberStringBuilder &prefix,
-            const NumberStringBuilder &suffix,
+            const FormattedStringBuilder &prefix,
+            const FormattedStringBuilder &suffix,
             bool overwrite,
             bool strong)
       : fPrefix(prefix),
@@ -157,7 +157,7 @@ class U_I18N_API ConstantMultiFieldModifier : public Modifier, public UMemory {
         fOverwrite(overwrite),
         fStrong(strong) {}
 
-    int32_t apply(NumberStringBuilder &output, int32_t leftIndex, int32_t rightIndex,
+    int32_t apply(FormattedStringBuilder &output, int32_t leftIndex, int32_t rightIndex,
                   UErrorCode &status) const U_OVERRIDE;
 
     int32_t getPrefixLength() const U_OVERRIDE;
@@ -175,8 +175,8 @@ class U_I18N_API ConstantMultiFieldModifier : public Modifier, public UMemory {
   protected:
     
     
-    NumberStringBuilder fPrefix;
-    NumberStringBuilder fSuffix;
+    FormattedStringBuilder fPrefix;
+    FormattedStringBuilder fSuffix;
     bool fOverwrite;
     bool fStrong;
     Modifier::Parameters fParameters;
@@ -187,19 +187,19 @@ class U_I18N_API CurrencySpacingEnabledModifier : public ConstantMultiFieldModif
   public:
     
     CurrencySpacingEnabledModifier(
-            const NumberStringBuilder &prefix,
-            const NumberStringBuilder &suffix,
+            const FormattedStringBuilder &prefix,
+            const FormattedStringBuilder &suffix,
             bool overwrite,
             bool strong,
             const DecimalFormatSymbols &symbols,
             UErrorCode &status);
 
-    int32_t apply(NumberStringBuilder &output, int32_t leftIndex, int32_t rightIndex,
+    int32_t apply(FormattedStringBuilder &output, int32_t leftIndex, int32_t rightIndex,
                   UErrorCode &status) const U_OVERRIDE;
 
     
     static int32_t
-    applyCurrencySpacing(NumberStringBuilder &output, int32_t prefixStart, int32_t prefixLen,
+    applyCurrencySpacing(FormattedStringBuilder &output, int32_t prefixStart, int32_t prefixLen,
                          int32_t suffixStart, int32_t suffixLen, const DecimalFormatSymbols &symbols,
                          UErrorCode &status);
 
@@ -218,7 +218,7 @@ class U_I18N_API CurrencySpacingEnabledModifier : public ConstantMultiFieldModif
     };
 
     
-    static int32_t applyCurrencySpacingAffix(NumberStringBuilder &output, int32_t index, EAffix affix,
+    static int32_t applyCurrencySpacingAffix(FormattedStringBuilder &output, int32_t index, EAffix affix,
                                              const DecimalFormatSymbols &symbols, UErrorCode &status);
 
     static UnicodeSet
@@ -234,7 +234,7 @@ class U_I18N_API EmptyModifier : public Modifier, public UMemory {
   public:
     explicit EmptyModifier(bool isStrong) : fStrong(isStrong) {}
 
-    int32_t apply(NumberStringBuilder &output, int32_t leftIndex, int32_t rightIndex,
+    int32_t apply(FormattedStringBuilder &output, int32_t leftIndex, int32_t rightIndex,
                   UErrorCode &status) const U_OVERRIDE {
         (void)output;
         (void)leftIndex;
@@ -289,7 +289,7 @@ class U_I18N_API AdoptingModifierStore : public ModifierStore, public UMemory {
     
 
 
-    void adoptModifier(int8_t signum, StandardPlural::Form plural, const Modifier *mod) {
+    void adoptModifier(Signum signum, StandardPlural::Form plural, const Modifier *mod) {
         U_ASSERT(mods[getModIndex(signum, plural)] == nullptr);
         mods[getModIndex(signum, plural)] = mod;
     }
@@ -298,13 +298,13 @@ class U_I18N_API AdoptingModifierStore : public ModifierStore, public UMemory {
 
 
 
-    void adoptModifierWithoutPlural(int8_t signum, const Modifier *mod) {
+    void adoptModifierWithoutPlural(Signum signum, const Modifier *mod) {
         U_ASSERT(mods[getModIndex(signum, DEFAULT_STANDARD_PLURAL)] == nullptr);
         mods[getModIndex(signum, DEFAULT_STANDARD_PLURAL)] = mod;
     }
 
     
-    const Modifier *getModifier(int8_t signum, StandardPlural::Form plural) const U_OVERRIDE {
+    const Modifier *getModifier(Signum signum, StandardPlural::Form plural) const U_OVERRIDE {
         const Modifier* modifier = mods[getModIndex(signum, plural)];
         if (modifier == nullptr && plural != DEFAULT_STANDARD_PLURAL) {
             modifier = mods[getModIndex(signum, DEFAULT_STANDARD_PLURAL)];
@@ -313,7 +313,7 @@ class U_I18N_API AdoptingModifierStore : public ModifierStore, public UMemory {
     }
 
     
-    const Modifier *getModifierWithoutPlural(int8_t signum) const {
+    const Modifier *getModifierWithoutPlural(Signum signum) const {
         return mods[getModIndex(signum, DEFAULT_STANDARD_PLURAL)];
     }
 
@@ -321,7 +321,7 @@ class U_I18N_API AdoptingModifierStore : public ModifierStore, public UMemory {
     
     const Modifier *mods[3 * StandardPlural::COUNT] = {};
 
-    inline static int32_t getModIndex(int8_t signum, StandardPlural::Form plural) {
+    inline static int32_t getModIndex(Signum signum, StandardPlural::Form plural) {
         U_ASSERT(signum >= -1 && signum <= 1);
         U_ASSERT(plural >= 0 && plural < StandardPlural::COUNT);
         return static_cast<int32_t>(plural) * 3 + (signum + 1);

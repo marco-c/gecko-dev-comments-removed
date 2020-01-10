@@ -45,7 +45,7 @@ public:
 
 
 
-    virtual Transliterator* clone(void) const;
+    virtual NullTransliterator* clone() const;
 
     
 

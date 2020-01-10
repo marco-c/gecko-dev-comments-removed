@@ -51,20 +51,21 @@ namespace double_conversion {
 
 
 
+
 class DiyFp {
  public:
   static const int kSignificandSize = 64;
 
   DiyFp() : f_(0), e_(0) {}
-  DiyFp(uint64_t significand, int exponent) : f_(significand), e_(exponent) {}
+  DiyFp(const uint64_t significand, const int32_t exponent) : f_(significand), e_(exponent) {}
 
   
   
   
   
   void Subtract(const DiyFp& other) {
-    ASSERT(e_ == other.e_);
-    ASSERT(f_ >= other.f_);
+    DOUBLE_CONVERSION_ASSERT(e_ == other.e_);
+    DOUBLE_CONVERSION_ASSERT(f_ >= other.f_);
     f_ -= other.f_;
   }
 
@@ -77,9 +78,27 @@ class DiyFp {
     return result;
   }
 
-
   
-  void Multiply(const DiyFp& other);
+  void Multiply(const DiyFp& other) {
+    
+    
+    
+    
+    const uint64_t kM32 = 0xFFFFFFFFU;
+    const uint64_t a = f_ >> 32;
+    const uint64_t b = f_ & kM32;
+    const uint64_t c = other.f_ >> 32;
+    const uint64_t d = other.f_ & kM32;
+    const uint64_t ac = a * c;
+    const uint64_t bc = b * c;
+    const uint64_t ad = a * d;
+    const uint64_t bd = b * d;
+    
+    
+    const uint64_t tmp = (bd >> 32) + (ad & kM32) + (bc & kM32) + (1U << 31);
+    e_ += other.e_ + 64;
+    f_ = ac + (ad >> 32) + (bc >> 32) + (tmp >> 32);
+  }
 
   
   static DiyFp Times(const DiyFp& a, const DiyFp& b) {
@@ -89,13 +108,13 @@ class DiyFp {
   }
 
   void Normalize() {
-    ASSERT(f_ != 0);
+    DOUBLE_CONVERSION_ASSERT(f_ != 0);
     uint64_t significand = f_;
-    int exponent = e_;
+    int32_t exponent = e_;
 
     
     
-    const uint64_t k10MSBits = UINT64_2PART_C(0xFFC00000, 00000000);
+    const uint64_t k10MSBits = DOUBLE_CONVERSION_UINT64_2PART_C(0xFFC00000, 00000000);
     while ((significand & k10MSBits) == 0) {
       significand <<= 10;
       exponent -= 10;
@@ -115,16 +134,16 @@ class DiyFp {
   }
 
   uint64_t f() const { return f_; }
-  int e() const { return e_; }
+  int32_t e() const { return e_; }
 
   void set_f(uint64_t new_value) { f_ = new_value; }
-  void set_e(int new_value) { e_ = new_value; }
+  void set_e(int32_t new_value) { e_ = new_value; }
 
  private:
-  static const uint64_t kUint64MSB = UINT64_2PART_C(0x80000000, 00000000);
+  static const uint64_t kUint64MSB = DOUBLE_CONVERSION_UINT64_2PART_C(0x80000000, 00000000);
 
   uint64_t f_;
-  int e_;
+  int32_t e_;
 };
 
 }  

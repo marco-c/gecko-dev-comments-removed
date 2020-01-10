@@ -18,8 +18,9 @@
 
 
 
+#if U_SHOW_CPLUSPLUS_API
+
 #if !UCONFIG_NO_FORMATTING
-#ifndef U_HIDE_DEPRECATED_API
 
 #include "unicode/unistr.h"
 #include "unicode/tmunit.h"
@@ -28,6 +29,7 @@
 #include "unicode/numfmt.h"
 #include "unicode/plurrule.h"
 
+#ifndef U_HIDE_DEPRECATED_API
 
 
 
@@ -124,7 +126,7 @@ public:
 
 
 
-    virtual Format* clone(void) const;
+    virtual TimeUnitFormat* clone() const;
 
     
 
@@ -242,6 +244,8 @@ TimeUnitFormat::operator!=(const Format& other) const  {
 U_NAMESPACE_END
 
 #endif 
+#endif 
+
 #endif 
 
 #endif 

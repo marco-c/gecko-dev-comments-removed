@@ -70,7 +70,7 @@ class FunctionReplacer : public UnicodeFunctor, public UnicodeReplacer {
     
 
 
-    virtual UnicodeFunctor* clone() const;
+    virtual FunctionReplacer* clone() const;
 
     
 

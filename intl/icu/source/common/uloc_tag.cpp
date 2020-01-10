@@ -1558,10 +1558,8 @@ _appendLDMLExtensionAsKeywords(const char* ldmlext, ExtensionListEntry** appendT
                 return;
             }
 
-            if (!_addAttributeToList(&attrFirst, attr)) {
-                *status = U_ILLEGAL_ARGUMENT_ERROR;
-                return;
-            }
+            
+            _addAttributeToList(&attrFirst, attr);
 
             
             pTag += len;
