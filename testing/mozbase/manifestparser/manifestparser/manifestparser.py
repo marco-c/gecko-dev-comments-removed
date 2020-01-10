@@ -201,8 +201,29 @@ class ManifestParser(object):
             test = data
             test['name'] = section
 
+            def relative_to_root(path):
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                if path.startswith(rootdir):
+                    return path[len(rootdir):]
+                else:
+                    return relpath(path, rootdir)
+
             
             test['manifest'] = filename
+            test['manifest_relpath'] = None
+            if test['manifest']:
+                test['manifest_relpath'] = relative_to_root(normalize_path(test['manifest']))
 
             
             path = test.get('path', section)
@@ -217,23 +238,7 @@ class ManifestParser(object):
                     path = os.path.join(here, path)
                     if '..' in path:
                         path = os.path.normpath(path)
-
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                if path.startswith(rootdir):
-                    _relpath = path[len(rootdir):]
-                else:
-                    _relpath = relpath(path, rootdir)
+                _relpath = relative_to_root(path)
 
             test['path'] = path
             test['relpath'] = _relpath
@@ -493,7 +498,15 @@ class ManifestParser(object):
             print('[%s]' % path, file=fp)
 
             
-            reserved = ['path', 'name', 'here', 'manifest', 'relpath', 'ancestor-manifest']
+            reserved = [
+                'path',
+                'name',
+                'here',
+                'manifest',
+                'manifest_relpath',
+                'relpath',
+                'ancestor-manifest'
+            ]
             for key in sorted(test.keys()):
                 if key in reserved:
                     continue
