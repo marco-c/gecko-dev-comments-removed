@@ -1,3 +1,5 @@
+from six import text_type
+
 def main(request, response):
   if "clear-vary-value-override-cookie" in request.GET:
     response.unset_cookie("vary-value-override")
@@ -15,7 +17,7 @@ def main(request, response):
   
   cookie_vary = request.cookies.get("vary-value-override");
   if cookie_vary:
-    response.headers.set("vary", cookie_vary)
+    response.headers.set("vary", text_type(cookie_vary))
   else:
     
     query_vary = request.GET.first("vary", default="")
