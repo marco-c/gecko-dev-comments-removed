@@ -2635,23 +2635,11 @@ pref("mousewheel.autodir.honourroot", false);
 
 
 
-pref("general.smoothScroll.mouseWheel.durationMinMS", 200);
-pref("general.smoothScroll.mouseWheel.durationMaxMS", 400);
-pref("general.smoothScroll.pixels.durationMinMS", 150);
-pref("general.smoothScroll.pixels.durationMaxMS", 150);
-pref("general.smoothScroll.lines.durationMinMS", 150);
-pref("general.smoothScroll.lines.durationMaxMS", 150);
-pref("general.smoothScroll.pages.durationMinMS", 150);
-pref("general.smoothScroll.pages.durationMaxMS", 150);
 pref("general.smoothScroll.scrollbars.durationMinMS", 150);
 pref("general.smoothScroll.scrollbars.durationMaxMS", 150);
-pref("general.smoothScroll.other.durationMinMS", 150);
-pref("general.smoothScroll.other.durationMaxMS", 150);
 
-pref("general.smoothScroll.mouseWheel", true);
 pref("general.smoothScroll.pixels", true);
 pref("general.smoothScroll.lines", true);
-pref("general.smoothScroll.pages", true);
 pref("general.smoothScroll.scrollbars", true);
 pref("general.smoothScroll.other", true);
 
