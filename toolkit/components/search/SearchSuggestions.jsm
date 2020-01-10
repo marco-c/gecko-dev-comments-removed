@@ -50,6 +50,9 @@ SuggestAutoComplete.prototype = {
 
 
 
+
+
+
   onResultsReturned(results) {
     let finalResults = [];
     let finalComments = [];
@@ -85,6 +88,12 @@ SuggestAutoComplete.prototype = {
 
 
 
+
+
+
+
+
+
   onResultsReady(searchString, results, comments, formHistoryResult) {
     if (this._listener) {
       
@@ -110,6 +119,9 @@ SuggestAutoComplete.prototype = {
   },
 
   
+
+
+
 
 
 
@@ -170,6 +182,16 @@ SuggestAutoComplete.prototype = {
   },
 
   
+
+
+
+
+
+
+
+
+
+
 
 
   _triggerSearch(searchString, searchParam, listener, privacyMode) {

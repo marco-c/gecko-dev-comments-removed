@@ -133,6 +133,8 @@ var SearchUtils = {
 
 
 
+
+
   makeChannel(url) {
     try {
       let uri = typeof url == "string" ? Services.io.newURI(url) : url;

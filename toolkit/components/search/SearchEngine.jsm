@@ -94,6 +94,8 @@ var OS_UNSUPPORTED_PARAMS = [
 
 
 
+
+
 function limitURILength(str, len) {
   len = len || 140;
   if (str.length > len) {
@@ -101,6 +103,7 @@ function limitURILength(str, len) {
   }
   return str;
 }
+
 
 
 
@@ -302,6 +305,8 @@ function sanitizeName(name) {
 
 
 
+
+
 function getMozParamPref(prefName) {
   let branch = Services.prefs.getDefaultBranch(
     SearchUtils.BROWSER_SEARCH_PREF + "param."
@@ -327,6 +332,7 @@ function QueryParameter(name, value, purpose) {
   this.value = value;
   this.purpose = purpose;
 }
+
 
 
 
@@ -609,6 +615,8 @@ EngineURL.prototype = {
 
 
 
+
+
   toJSON() {
     var json = {
       template: this.template,
@@ -816,8 +824,6 @@ SearchEngine.prototype = {
 
 
 
-
-
   async _initFromFile(file) {
     if (!file || !(await OS.File.exists(file.path))) {
       SearchUtils.fail(
@@ -866,8 +872,6 @@ SearchEngine.prototype = {
   },
 
   
-
-
 
 
 
@@ -988,6 +992,9 @@ SearchEngine.prototype = {
 
   _onLoad(bytes, engine) {
     
+
+
+
 
 
 
@@ -1768,6 +1775,7 @@ SearchEngine.prototype = {
 
 
 
+
   get identifier() {
     
     return this._isDefault ? this._shortName : null;
@@ -2126,6 +2134,7 @@ SearchEngine.prototype = {
   
 
 
+
   getURLParsingInfo() {
     let responseType =
       AppConstants.platform == "android"
@@ -2186,6 +2195,9 @@ SearchEngine.prototype = {
   },
 
   
+
+
+
 
 
 

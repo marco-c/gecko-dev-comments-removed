@@ -533,6 +533,7 @@ function makeURI(urlSpec) {
 
 
 
+
 function makeChannel(url) {
   try {
     let uri = typeof url == "string" ? Services.io.newURI(url) : url;
@@ -723,6 +724,9 @@ SearchService.prototype = {
   },
 
   
+
+
+
 
 
 
@@ -1009,6 +1013,8 @@ SearchService.prototype = {
 
 
 
+
+
   async _loadEngines(cache, isReload) {
     SearchUtils.log("_loadEngines: start");
     Services.obs.notifyObservers(
@@ -1117,6 +1123,10 @@ SearchService.prototype = {
 
 
 
+
+
+
+
   async ensureBuiltinExtension(id, locales = [DEFAULT_TAG]) {
     SearchUtils.log("ensureBuiltinExtension: " + id);
     try {
@@ -1145,6 +1155,8 @@ SearchService.prototype = {
 
 
 
+
+
   _enginesToLocales(engines) {
     let engineLocales = new Map();
     for (let engine of engines) {
@@ -1158,6 +1170,8 @@ SearchService.prototype = {
   },
 
   
+
+
 
 
 
@@ -1179,8 +1193,6 @@ SearchService.prototype = {
   },
 
   
-
-
 
 
 
@@ -1326,9 +1338,6 @@ SearchService.prototype = {
   },
 
   
-
-
-
 
 
   async _readCacheFile() {
@@ -1594,7 +1603,7 @@ SearchService.prototype = {
 
 
   async _findEngines() {
-    SearchUtils.log("_findEngines: looking for engines in JARs");
+    SearchUtils.log("_findEngines: looking for engines in list.json");
 
     let chan = makeChannel(this._listJSONURL);
     if (!chan) {
@@ -1945,6 +1954,9 @@ SearchService.prototype = {
   },
 
   
+
+
+
 
 
 
@@ -2795,6 +2807,15 @@ SearchService.prototype = {
   },
 
   
+
+
+
+
+
+
+
+
+
 
 
 

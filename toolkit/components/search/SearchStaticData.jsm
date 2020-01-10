@@ -34,6 +34,7 @@ var SearchStaticData = {
 
 
 
+
   getAlternateDomains(aDomain) {
     return !gGoogleDomains.includes(aDomain) ? [] : gGoogleDomains;
   },

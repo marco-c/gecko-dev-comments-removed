@@ -49,6 +49,8 @@ Services.prefs.addObserver(BROWSER_SUGGEST_PREF, function(
 
 
 
+
+
 function uuid() {
   let uuid = UUIDGenerator.generateUUID().toString();
   return uuid.slice(1, uuid.length - 1);
@@ -288,6 +290,18 @@ this.SearchSuggestionController.prototype = {
   
 
 
+
+
+
+
+
+
+
+
+
+
+
+
   _fetchRemote(searchTerm, engine, privateMode, userContextId) {
     let deferredResponse = PromiseUtils.defer();
     this._request = new XMLHttpRequest();
@@ -346,6 +360,9 @@ this.SearchSuggestionController.prototype = {
   },
 
   
+
+
+
 
 
 

@@ -78,6 +78,9 @@ function configureToLoadJarEngines() {
 
 
 
+
+
+
 function useTestEngines(folder) {
   let searchExtensions = do_get_cwd();
   searchExtensions.append("data");
@@ -136,6 +139,8 @@ async function forceExpiration() {
 
 
 
+
+
 function removeCacheFile() {
   let file = do_get_profile().clone();
   file.append(CACHE_FILENAME);
@@ -145,6 +150,8 @@ function removeCacheFile() {
   }
   return false;
 }
+
+
 
 
 
@@ -247,6 +254,12 @@ function parseJsonFromStream(aInputStream) {
 
 
 
+
+
+
+
+
+
 function readJSONFile(aFile) {
   let stream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(
     Ci.nsIFileInputStream
@@ -261,6 +274,9 @@ function readJSONFile(aFile) {
   }
   return false;
 }
+
+
+
 
 
 
@@ -285,6 +301,7 @@ function isSubObjectOf(expectedObj, actualObj) {
 
 
 var gDataUrl;
+
 
 
 
@@ -449,6 +466,8 @@ var addTestEngines = async function(aItems) {
 
   return engines;
 };
+
+
 
 
 

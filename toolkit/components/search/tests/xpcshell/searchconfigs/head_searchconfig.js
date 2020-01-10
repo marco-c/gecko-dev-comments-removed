@@ -523,6 +523,7 @@ class SearchConfigTest {
 
 
 
+
   assertOk(value, message) {
     if (!value || this._testDebug) {
       Assert.ok(value, message);

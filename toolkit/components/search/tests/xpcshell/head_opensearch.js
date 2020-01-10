@@ -11,6 +11,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 
+
+
+
 function installAddonEngine(name = "engine-addon") {
   const XRE_EXTENSIONS_DIR_LIST = "XREExtDL";
   const profD = do_get_profile().QueryInterface(Ci.nsIFile);
