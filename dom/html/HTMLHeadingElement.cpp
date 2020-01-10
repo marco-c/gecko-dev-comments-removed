@@ -8,6 +8,7 @@
 #include "mozilla/dom/HTMLHeadingElementBinding.h"
 
 #include "mozilla/MappedDeclarations.h"
+#include "mozilla/StaticPrefs_accessibility.h"
 #include "nsGkAtoms.h"
 #include "nsStyleConsts.h"
 #include "nsMappedAttributes.h"
@@ -25,6 +26,35 @@ NS_IMPL_ELEMENT_CLONE(HTMLHeadingElement)
 JSObject* HTMLHeadingElement::WrapNode(JSContext* aCx,
                                        JS::Handle<JSObject*> aGivenProto) {
   return HTMLHeadingElement_Binding::Wrap(aCx, this, aGivenProto);
+}
+
+int32_t HTMLHeadingElement::AccessibilityLevel() const {
+  int32_t level = BaseAccessibilityLevel();
+  if (!StaticPrefs::accessibility_heading_element_level_changes_enabled()) {
+    return level;
+  }
+
+  
+  
+  
+  
+  
+  nsAtom* name = NodeInfo()->NameAtom();
+  nsINode* parent = GetParentNode();
+  const bool considerAncestors =
+      name == nsGkAtoms::h1 ||
+      (parent && parent->IsHTMLElement(nsGkAtoms::hgroup));
+  if (!considerAncestors) {
+    return level;
+  }
+
+  for (; parent; parent = parent->GetParentNode()) {
+    if (parent->IsAnyOfHTMLElements(nsGkAtoms::section, nsGkAtoms::article,
+                                    nsGkAtoms::aside, nsGkAtoms::nav)) {
+      level++;
+    }
+  }
+  return level;
 }
 
 bool HTMLHeadingElement::ParseAttribute(int32_t aNamespaceID,
