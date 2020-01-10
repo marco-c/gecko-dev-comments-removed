@@ -551,6 +551,13 @@ DebuggerClient.prototype = {
     }
 
     
+    if (!this.traits.hasThreadFront &&
+        packet.from.includes("context")) {
+      this.sendToDeprecatedThreadClient(packet);
+      return;
+    }
+
+    
     
     const front = this.getActor(packet.from);
     if (front) {
@@ -558,24 +565,12 @@ DebuggerClient.prototype = {
       return;
     }
 
-    if (this._clients.has(packet.from) && packet.type) {
-      const client = this._clients.get(packet.from);
-      const type = packet.type;
-      if (client.events.includes(type)) {
-        client.emit(type, packet);
-        
-        return;
-      }
-    }
-
     let activeRequest;
     
     
     
     if (this._activeRequests.has(packet.from) &&
-        !(packet.type in UnsolicitedNotifications) &&
-        !(packet.type == ThreadStateTypes.paused &&
-          packet.why.type in UnsolicitedPauses)) {
+        !(packet.type in UnsolicitedNotifications)) {
       activeRequest = this._activeRequests.get(packet.from);
       this._activeRequests.delete(packet.from);
     }
@@ -584,13 +579,6 @@ DebuggerClient.prototype = {
     
     
     this._attemptNextRequest(packet.from);
-
-    
-    if (packet.type in ThreadStateTypes &&
-        this._clients.has(packet.from) &&
-        typeof this._clients.get(packet.from)._onThreadState == "function") {
-      this._clients.get(packet.from)._onThreadState(packet);
-    }
 
     
     
@@ -606,6 +594,54 @@ DebuggerClient.prototype = {
       } else {
         emitReply();
       }
+    }
+  },
+
+  
+  
+  
+  sendToDeprecatedThreadClient(packet) {
+    const deprecatedThreadClient = this.getActor(packet.from);
+    if (deprecatedThreadClient && packet.type) {
+      const type = packet.type;
+      if (deprecatedThreadClient.events.includes(type)) {
+        deprecatedThreadClient.emit(type, packet);
+        
+        return;
+      }
+    }
+
+    let activeRequest;
+    
+    
+    
+    if (this._activeRequests.has(packet.from) &&
+        !(packet.type == ThreadStateTypes.paused &&
+          packet.why.type in UnsolicitedPauses)) {
+      activeRequest = this._activeRequests.get(packet.from);
+      this._activeRequests.delete(packet.from);
+    }
+
+    
+    
+    
+    this._attemptNextRequest(packet.from);
+
+    
+    if (packet.type in ThreadStateTypes &&
+        deprecatedThreadClient &&
+        typeof deprecatedThreadClient._onThreadState == "function") {
+      deprecatedThreadClient._onThreadState(packet);
+    }
+
+    
+    
+    if (packet.type) {
+      this.emit(packet.type, packet);
+    }
+
+    if (activeRequest) {
+      activeRequest.emit("json-reply", packet);
     }
   },
 

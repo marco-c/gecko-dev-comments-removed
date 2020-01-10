@@ -227,10 +227,18 @@ ThreadClient.prototype = {
 
   detach: DebuggerClient.requester({
     type: "detach",
-  }, {
-    after: function(response) {
-      return response;
-    },
+  }),
+
+  destroy: function() {
+    return this.detach();
+  },
+
+  
+
+
+  attach: DebuggerClient.requester({
+    type: "attach",
+    options: arg(0),
   }),
 
   
@@ -341,7 +349,7 @@ ThreadClient.prototype = {
     
     
     
-    this._lastPausePacket = packet;
+    this._lastPausePacket = packet.type === "resumed" ? null : packet;
     this._clearPauseGrips();
     packet.type === ThreadStateTypes.detached && this._clearThreadGrips();
     this.client._eventsEnabled && this.emit(packet.type, packet);
