@@ -20,6 +20,7 @@
 #include "nsCSSPropertyID.h"
 #include "nsStyleStructFwd.h"
 #include "nsCSSKeywords.h"
+#include "mozilla/UseCounter.h"
 #include "mozilla/CSSEnabledState.h"
 #include "mozilla/CSSPropFlags.h"
 #include "mozilla/EnumTypeTraits.h"
@@ -109,6 +110,14 @@ class nsCSSProps {
 
   
   static nsCSSFontDesc LookupFontDesc(const nsAString& aProperty);
+
+  
+  static mozilla::UseCounter UseCounterFor(nsCSSPropertyID aProperty) {
+    MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT_with_aliases,
+               "out of range");
+    return mozilla::UseCounter(size_t(mozilla::eUseCounter_FirstCSSProperty) +
+                               size_t(aProperty));
+  }
 
   
   
