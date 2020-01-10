@@ -385,7 +385,7 @@ this.AntiTracking = {
 
       if (options.allowList) {
         info("Disabling content blocking for this page");
-        win.ContentBlocking.disableForCurrentPage();
+        win.gProtectionsHandler.disableForCurrentPage();
 
         
         await BrowserTestUtils.browserLoaded(browser);
@@ -558,7 +558,7 @@ this.AntiTracking = {
 
       if (options.allowList) {
         info("Enabling content blocking for this page");
-        win.ContentBlocking.enableForCurrentPage();
+        win.gProtectionsHandler.enableForCurrentPage();
 
         
         await BrowserTestUtils.browserLoaded(browser);
