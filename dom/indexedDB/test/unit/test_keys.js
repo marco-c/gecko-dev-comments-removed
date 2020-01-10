@@ -32,6 +32,7 @@ function* testSteps() {
   let store = db.createObjectStore("store");
 
   
+  
   var keys = [
     -1 / 0,
     -1.7e308,
