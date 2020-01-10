@@ -11,23 +11,10 @@
 #include "ProfileJSONWriter.h"
 #include "ThreadInfo.h"
 
-ProfilerBacktrace::ProfilerBacktrace(
-    const char* aName, int aThreadId,
-    UniquePtr<mozilla::BlocksRingBuffer> aBlocksRingBuffer,
-    mozilla::UniquePtr<ProfileBuffer> aProfileBuffer)
-    : mName(strdup(aName)),
-      mThreadId(aThreadId),
-      mBlocksRingBuffer(std::move(aBlocksRingBuffer)),
-      mProfileBuffer(std::move(aProfileBuffer)) {
+ProfilerBacktrace::ProfilerBacktrace(const char* aName, int aThreadId,
+                                     mozilla::UniquePtr<ProfileBuffer> aBuffer)
+    : mName(strdup(aName)), mThreadId(aThreadId), mBuffer(std::move(aBuffer)) {
   MOZ_COUNT_CTOR(ProfilerBacktrace);
-  MOZ_ASSERT(
-      !!mBlocksRingBuffer,
-      "ProfilerBacktrace only takes a non-null UniquePtr<BlocksRingBuffer>");
-  MOZ_ASSERT(
-      !!mProfileBuffer,
-      "ProfilerBacktrace only takes a non-null UniquePtr<ProfileBuffer>");
-  MOZ_ASSERT(!mBlocksRingBuffer->IsThreadSafe(),
-             "ProfilerBacktrace only takes a non-thread-safe BlocksRingBuffer");
 }
 
 ProfilerBacktrace::~ProfilerBacktrace() { MOZ_COUNT_DTOR(ProfilerBacktrace); }
@@ -39,7 +26,7 @@ void ProfilerBacktrace::StreamJSON(SpliceableJSONWriter& aWriter,
   
   
   
-  StreamSamplesAndMarkers(mName.get(), mThreadId, *mProfileBuffer, aWriter,
+  StreamSamplesAndMarkers(mName.get(), mThreadId, *mBuffer.get(), aWriter,
                           NS_LITERAL_CSTRING(""), aProcessStartTime,
                            mozilla::TimeStamp(),
                            mozilla::TimeStamp(),

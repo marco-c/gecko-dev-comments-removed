@@ -207,10 +207,6 @@ class RacyFeatures {
 
   static void SetInactive() { sActiveAndFeatures = 0; }
 
-  static void SetPaused() { sActiveAndFeatures |= Paused; }
-
-  static void SetUnpaused() { sActiveAndFeatures &= ~Paused; }
-
   static bool IsActive() { return uint32_t(sActiveAndFeatures) & Active; }
 
   static bool IsActiveWithFeature(uint32_t aFeature) {
@@ -223,18 +219,12 @@ class RacyFeatures {
     return (af & Active) && !(af & ProfilerFeature::Privacy);
   }
 
-  static bool IsActiveAndUnpausedWithoutPrivacy() {
-    uint32_t af = sActiveAndFeatures;  
-    return (af & Active) && !(af & (Paused | ProfilerFeature::Privacy));
-  }
-
  private:
-  static constexpr uint32_t Active = 1u << 31;
-  static constexpr uint32_t Paused = 1u << 30;
+  static const uint32_t Active = 1u << 31;
 
 
 #  define NO_OVERLAP(n_, str_, Name_, desc_) \
-    static_assert(ProfilerFeature::Name_ != Paused, "bad feature value");
+    static_assert(ProfilerFeature::Name_ != Active, "bad Active value");
 
   PROFILER_FOR_EACH_FEATURE(NO_OVERLAP);
 
@@ -262,7 +252,7 @@ static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_ENTRIES =
 #  if !defined(ARCH_ARMV6)
     mozilla::MakePowerOfTwo32<1u << 20>();  
 #  else
-    mozilla::MakePowerOfTwo32<1u << 17>();  // 131'072 entries = 1MB
+    mozilla::MakePowerOfTwo32<1u << 17>();  // 131'072
 #  endif
 
 
@@ -432,19 +422,6 @@ void profiler_clear_js_context();
 
 inline bool profiler_is_active() {
   return mozilla::profiler::detail::RacyFeatures::IsActive();
-}
-
-
-
-
-
-
-
-
-
-inline bool profiler_can_accept_markers() {
-  return mozilla::profiler::detail::RacyFeatures::
-      IsActiveAndUnpausedWithoutPrivacy();
 }
 
 
@@ -714,19 +691,18 @@ void profiler_add_marker(const char* aMarkerName,
 
 
 
-#  define PROFILER_ADD_MARKER_WITH_PAYLOAD(                            \
-      markerName, categoryPair, PayloadType, parenthesizedPayloadArgs) \
-    do {                                                               \
-      AUTO_PROFILER_STATS(add_marker_with_##PayloadType);              \
-      ::profiler_add_marker(markerName,                                \
-                            ::JS::ProfilingCategoryPair::categoryPair, \
-                            PayloadType parenthesizedPayloadArgs);     \
+#  define PROFILER_ADD_MARKER_WITH_PAYLOAD(                             \
+      markerName, categoryPair, PayloadType, parenthesizedPayloadArgs)  \
+    do {                                                                \
+      AUTO_PROFILER_STATS(add_marker_with_##PayloadType);               \
+      ::profiler_add_marker(                                            \
+          markerName, ::JS::ProfilingCategoryPair::categoryPair,        \
+          ::mozilla::MakeUnique<PayloadType> parenthesizedPayloadArgs); \
     } while (false)
 
 void profiler_add_marker(const char* aMarkerName,
                          JS::ProfilingCategoryPair aCategoryPair,
-                         const ProfilerMarkerPayload& aPayload);
-
+                         mozilla::UniquePtr<ProfilerMarkerPayload> aPayload);
 void profiler_add_js_marker(const char* aMarkerName);
 void profiler_add_js_allocation_marker(JS::RecordAllocationInfo&& info);
 

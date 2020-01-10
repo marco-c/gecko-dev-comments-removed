@@ -8,8 +8,6 @@
 
 #ifdef MOZ_BASE_PROFILER
 
-#  include "BaseProfileJSONWriter.h"
-#  include "BaseProfilerMarkerPayload.h"
 #  include "mozilla/BlocksRingBuffer.h"
 #  include "mozilla/leb128iterator.h"
 #  include "mozilla/ModuloBuffer.h"
@@ -486,75 +484,6 @@ void TestModuloBuffer() {
     MOZ_RELEASE_ASSERT(buffer[i] == uint8_t('A' + i));
   }
 
-  
-  
-  
-  
-  auto TestReadInto = [](MB::Index aReadFrom, MB::Index aWriteTo,
-                         MB::Length aBytes) {
-    constexpr uint32_t TRISize = 16;
-
-    
-    uint8_t input[TRISize + 1] = "ABCDEFGHIJKLMNOP";
-    const MB mbInput(input, MakePowerOfTwo32<TRISize>());
-
-    
-    uint8_t output[TRISize + 1] = "abcdefghijklmnop";
-    MB mbOutput(output, MakePowerOfTwo32<TRISize>());
-
-    
-    auto writer = mbOutput.WriterAt(aWriteTo);
-    mbInput.ReaderAt(aReadFrom).ReadInto(writer, aBytes);
-
-    
-    uint8_t outputCheck[TRISize + 1] = "abcdefghijklmnop";
-    MB mbOutputCheck(outputCheck, MakePowerOfTwo32<TRISize>());
-    auto readerCheck = mbInput.ReaderAt(aReadFrom);
-    auto writerCheck = mbOutputCheck.WriterAt(aWriteTo);
-    for (MB::Length i = 0; i < aBytes; ++i) {
-      *writerCheck++ = *readerCheck++;
-    }
-
-    
-    for (uint32_t i = 0; i < TRISize; ++i) {
-#  ifdef TEST_MODULOBUFFER_FAILURE_DEBUG
-      
-      if (output[i] != outputCheck[i]) {
-        printf(
-            "*** from=%u to=%u bytes=%u i=%u\ninput:  '%s'\noutput: "
-            "'%s'\ncheck:  '%s'\n",
-            unsigned(aReadFrom), unsigned(aWriteTo), unsigned(aBytes),
-            unsigned(i), input, output, outputCheck);
-      }
-#  endif
-      MOZ_RELEASE_ASSERT(output[i] == outputCheck[i]);
-    }
-
-#  ifdef TEST_MODULOBUFFER_HELPER
-    
-    printf("*** from=%u to=%u bytes=%u output: %s\n", unsigned(aReadFrom),
-           unsigned(aWriteTo), unsigned(aBytes), output);
-#  endif
-
-    return std::string(reinterpret_cast<const char*>(output));
-  };
-
-  
-  constexpr uint32_t TRISize = 16;
-  MOZ_RELEASE_ASSERT(TestReadInto(0, 0, 0) == "abcdefghijklmnop");
-  MOZ_RELEASE_ASSERT(TestReadInto(0, 0, TRISize) == "ABCDEFGHIJKLMNOP");
-  MOZ_RELEASE_ASSERT(TestReadInto(0, 5, TRISize) == "LMNOPABCDEFGHIJK");
-  MOZ_RELEASE_ASSERT(TestReadInto(5, 0, TRISize) == "FGHIJKLMNOPABCDE");
-
-  
-  for (MB::Index r = 0; r < TRISize; ++r) {
-    for (MB::Index w = 0; w < TRISize; ++w) {
-      for (MB::Length len = 0; len < TRISize; ++len) {
-        TestReadInto(r, w, len);
-      }
-    }
-  }
-
   printf("TestModuloBuffer done\n");
 }
 
@@ -583,8 +512,7 @@ void TestBlocksRingBufferAPI() {
 
   
   {
-    BlocksRingBuffer rb(BlocksRingBuffer::ThreadSafety::WithMutex,
-                        &buffer[MBSize], MakePowerOfTwo32<MBSize>(),
+    BlocksRingBuffer rb(&buffer[MBSize], MakePowerOfTwo32<MBSize>(),
                         [&](BlocksRingBuffer::EntryReader& aReader) {
                           lastDestroyed = aReader.ReadObject<uint32_t>();
                         });
@@ -898,53 +826,10 @@ void TestBlocksRingBufferAPI() {
     
     VERIFY_START_END_DESTROYED(26, 31, 0);
 
-    {
-      
-      uint8_t buffer2[MBSize];
-      BlocksRingBuffer rb2(BlocksRingBuffer::ThreadSafety::WithoutMutex,
-                           buffer2, MakePowerOfTwo32<MBSize>());
-      rb2.PutObject(uint32_t(7));
-      rb2.PutObject(uint32_t(8));
-      
-      VERIFY_START_END_DESTROYED(26, 31, 0);
-
-      
-      
-      rb.AppendContents(rb2);
-      
-      
-      VERIFY_START_END_DESTROYED(26, 41, 0);
-
-      
-      
-      rb.AppendContents(rb2);
-      
-      
-      VERIFY_START_END_DESTROYED(36, 51, 7);
-
-      
-      
-    }
-    VERIFY_START_END_DESTROYED(36, 51, 7);
-
-    
-    rb.ReadAt(bi6, [](Maybe<BlocksRingBuffer::EntryReader>&& aMaybeReader) {
-      MOZ_RELEASE_ASSERT(aMaybeReader.isNothing());
-    });
-
-    
-    count = 0;
-    uint32_t expected[3] = {8, 7, 8};
-    rb.ReadEach([&](BlocksRingBuffer::EntryReader& aReader) {
-      MOZ_RELEASE_ASSERT(count < 3);
-      MOZ_RELEASE_ASSERT(aReader.ReadObject<uint32_t>() == expected[count++]);
-    });
-    MOZ_RELEASE_ASSERT(count == 3);
-
     
     
   }
-  MOZ_RELEASE_ASSERT(lastDestroyed == 8);
+  MOZ_RELEASE_ASSERT(lastDestroyed == 6);
 
   
   uint32_t changed = 0;
@@ -969,7 +854,7 @@ void TestBlocksRingBufferUnderlyingBufferChanges() {
   printf("TestBlocksRingBufferUnderlyingBufferChanges...\n");
 
   
-  BlocksRingBuffer rb(BlocksRingBuffer::ThreadSafety::WithMutex);
+  BlocksRingBuffer rb;
 
   
   BlocksRingBuffer::BlockIndex bi;
@@ -1175,8 +1060,7 @@ void TestBlocksRingBufferThreading() {
   for (size_t i = 0; i < MBSize * 3; ++i) {
     buffer[i] = uint8_t('A' + i);
   }
-  BlocksRingBuffer rb(BlocksRingBuffer::ThreadSafety::WithMutex,
-                      &buffer[MBSize], MakePowerOfTwo32<MBSize>(),
+  BlocksRingBuffer rb(&buffer[MBSize], MakePowerOfTwo32<MBSize>(),
                       [&](BlocksRingBuffer::EntryReader& aReader) {
                         lastDestroyed = aReader.ReadObject<int>();
                       });
@@ -1264,8 +1148,7 @@ void TestBlocksRingBufferSerialization() {
   for (size_t i = 0; i < MBSize * 3; ++i) {
     buffer[i] = uint8_t('A' + i);
   }
-  BlocksRingBuffer rb(BlocksRingBuffer::ThreadSafety::WithMutex,
-                      &buffer[MBSize], MakePowerOfTwo32<MBSize>());
+  BlocksRingBuffer rb(&buffer[MBSize], MakePowerOfTwo32<MBSize>());
 
   
 #  define THE_ANSWER "The answer is "
@@ -1395,8 +1278,7 @@ void TestBlocksRingBufferSerialization() {
   for (size_t i = 0; i < MBSize2 * 3; ++i) {
     buffer2[i] = uint8_t('B' + i);
   }
-  BlocksRingBuffer rb2(BlocksRingBuffer::ThreadSafety::WithoutMutex,
-                       &buffer2[MBSize2], MakePowerOfTwo32<MBSize2>());
+  BlocksRingBuffer rb2(&buffer2[MBSize2], MakePowerOfTwo32<MBSize2>());
   rb2.PutObject(rb);
 
   
@@ -1404,8 +1286,7 @@ void TestBlocksRingBufferSerialization() {
   for (size_t i = 0; i < MBSize * 3; ++i) {
     buffer3[i] = uint8_t('C' + i);
   }
-  BlocksRingBuffer rb3(BlocksRingBuffer::ThreadSafety::WithoutMutex,
-                       &buffer3[MBSize], MakePowerOfTwo32<MBSize>());
+  BlocksRingBuffer rb3(&buffer3[MBSize], MakePowerOfTwo32<MBSize>());
   rb2.ReadEach(
       [&](BlocksRingBuffer::EntryReader& aER) { aER.ReadIntoObject(rb3); });
 
@@ -1478,101 +1359,6 @@ void TestBlocksRingBufferSerialization() {
   printf("TestBlocksRingBufferSerialization done\n");
 }
 
-class BaseTestMarkerPayload : public baseprofiler::ProfilerMarkerPayload {
- public:
-  explicit BaseTestMarkerPayload(int aData) : mData(aData) {}
-
-  int GetData() const { return mData; }
-
-  
-  static UniquePtr<ProfilerMarkerPayload> Deserialize(
-      BlocksRingBuffer::EntryReader& aEntryReader);
-  BlocksRingBuffer::Length TagAndSerializationBytes() const override;
-  void SerializeTagAndPayload(
-      BlocksRingBuffer::EntryWriter& aEntryWriter) const override;
-  void StreamPayload(
-      ::mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
-      const ::mozilla::TimeStamp& aProcessStartTime,
-      ::mozilla::baseprofiler::UniqueStacks& aUniqueStacks) const override;
-
- private:
-  BaseTestMarkerPayload(CommonProps&& aProps, int aData)
-      : baseprofiler::ProfilerMarkerPayload(std::move(aProps)), mData(aData) {}
-
-  int mData;
-};
-
-
-UniquePtr<baseprofiler::ProfilerMarkerPayload>
-BaseTestMarkerPayload::Deserialize(
-    BlocksRingBuffer::EntryReader& aEntryReader) {
-  CommonProps props = DeserializeCommonProps(aEntryReader);
-  int data = aEntryReader.ReadObject<int>();
-  return UniquePtr<baseprofiler::ProfilerMarkerPayload>(
-      new BaseTestMarkerPayload(std::move(props), data));
-}
-
-BlocksRingBuffer::Length BaseTestMarkerPayload::TagAndSerializationBytes()
-    const {
-  return CommonPropsTagAndSerializationBytes() + sizeof(int);
-}
-
-void BaseTestMarkerPayload::SerializeTagAndPayload(
-    BlocksRingBuffer::EntryWriter& aEntryWriter) const {
-  static const DeserializerTag tag = TagForDeserializer(Deserialize);
-  SerializeTagAndCommonProps(tag, aEntryWriter);
-  aEntryWriter.WriteObject(mData);
-}
-
-void BaseTestMarkerPayload::StreamPayload(
-    baseprofiler::SpliceableJSONWriter& aWriter,
-    const TimeStamp& aProcessStartTime,
-    baseprofiler::UniqueStacks& aUniqueStacks) const {
-  aWriter.IntProperty("data", mData);
-}
-
-void TestProfilerMarkerSerialization() {
-  printf("TestProfilerMarkerSerialization...\n");
-
-  constexpr uint32_t MBSize = 256;
-  uint8_t buffer[MBSize * 3];
-  for (size_t i = 0; i < MBSize * 3; ++i) {
-    buffer[i] = uint8_t('A' + i);
-  }
-  BlocksRingBuffer rb(BlocksRingBuffer::ThreadSafety::WithMutex,
-                      &buffer[MBSize], MakePowerOfTwo32<MBSize>());
-
-  constexpr int data = 42;
-  {
-    BaseTestMarkerPayload payload(data);
-    rb.PutObject(
-        static_cast<const baseprofiler::ProfilerMarkerPayload*>(&payload));
-  }
-
-  int read = 0;
-  rb.ReadEach([&](BlocksRingBuffer::EntryReader& aER) {
-    UniquePtr<baseprofiler::ProfilerMarkerPayload> payload =
-        aER.ReadObject<UniquePtr<baseprofiler::ProfilerMarkerPayload>>();
-    MOZ_RELEASE_ASSERT(!!payload);
-    ++read;
-    BaseTestMarkerPayload* testPayload =
-        static_cast<BaseTestMarkerPayload*>(payload.get());
-    MOZ_RELEASE_ASSERT(testPayload);
-    MOZ_RELEASE_ASSERT(testPayload->GetData() == data);
-  });
-  MOZ_RELEASE_ASSERT(read == 1);
-
-  
-  for (size_t i = 0; i < MBSize; ++i) {
-    MOZ_RELEASE_ASSERT(buffer[i] == uint8_t('A' + i));
-  }
-  for (size_t i = MBSize * 2; i < MBSize * 3; ++i) {
-    MOZ_RELEASE_ASSERT(buffer[i] == uint8_t('A' + i));
-  }
-
-  printf("TestProfilerMarkerSerialization done\n");
-}
-
 
 static constexpr size_t NextDepth(size_t aDepth) {
   constexpr size_t MAX_DEPTH = 128;
@@ -1628,7 +1414,6 @@ void TestProfiler() {
   TestBlocksRingBufferUnderlyingBufferChanges();
   TestBlocksRingBufferThreading();
   TestBlocksRingBufferSerialization();
-  TestProfilerMarkerSerialization();
 
   {
     printf("profiler_init()...\n");
@@ -1658,15 +1443,8 @@ void TestProfiler() {
     std::thread threadFib([]() {
       AUTO_BASE_PROFILER_REGISTER_THREAD("fibonacci");
       SleepMilli(5);
-      auto cause =
-#  if defined(__linux__) || defined(__ANDROID__)
-          
-          decltype(baseprofiler::profiler_get_backtrace()){};
-#  else
-          baseprofiler::profiler_get_backtrace();
-#  endif
       AUTO_BASE_PROFILER_TEXT_MARKER_CAUSE("fibonacci", "First leaf call",
-                                           OTHER, std::move(cause));
+                                           OTHER, nullptr);
       static const unsigned long long fibStart = 37;
       printf("Fibonacci(%llu)...\n", fibStart);
       AUTO_BASE_PROFILER_LABEL("Label around Fibonacci", OTHER);
@@ -1708,53 +1486,6 @@ void TestProfiler() {
       AUTO_BASE_PROFILER_THREAD_SLEEP;
       threadCancelFib.join();
     }
-
-    
-    baseprofiler::profiler_add_marker(
-        "TracingMarkerPayload", baseprofiler::ProfilingCategoryPair::OTHER,
-        baseprofiler::TracingMarkerPayload("category",
-                                           baseprofiler::TRACING_EVENT));
-
-    auto cause =
-#  if defined(__linux__) || defined(__ANDROID__)
-        
-        decltype(baseprofiler::profiler_get_backtrace()){};
-#  else
-        baseprofiler::profiler_get_backtrace();
-#  endif
-    baseprofiler::profiler_add_marker(
-        "FileIOMarkerPayload", baseprofiler::ProfilingCategoryPair::OTHER,
-        baseprofiler::FileIOMarkerPayload(
-            "operation", "source", "filename", TimeStamp::NowUnfuzzed(),
-            TimeStamp::NowUnfuzzed(), std::move(cause)));
-
-    baseprofiler::profiler_add_marker(
-        "UserTimingMarkerPayload", baseprofiler::ProfilingCategoryPair::OTHER,
-        baseprofiler::UserTimingMarkerPayload("name", TimeStamp::NowUnfuzzed(),
-                                              Nothing{}, Nothing{}));
-
-    baseprofiler::profiler_add_marker(
-        "HangMarkerPayload", baseprofiler::ProfilingCategoryPair::OTHER,
-        baseprofiler::HangMarkerPayload(TimeStamp::NowUnfuzzed(),
-                                        TimeStamp::NowUnfuzzed()));
-
-    baseprofiler::profiler_add_marker(
-        "LongTaskMarkerPayload", baseprofiler::ProfilingCategoryPair::OTHER,
-        baseprofiler::LongTaskMarkerPayload(TimeStamp::NowUnfuzzed(),
-                                            TimeStamp::NowUnfuzzed()));
-
-    {
-      std::string s = "text payload";
-      baseprofiler::profiler_add_marker(
-          "TextMarkerPayload", baseprofiler::ProfilingCategoryPair::OTHER,
-          baseprofiler::TextMarkerPayload(s, TimeStamp::NowUnfuzzed(),
-                                          TimeStamp::NowUnfuzzed()));
-    }
-
-    baseprofiler::profiler_add_marker(
-        "LogMarkerPayload", baseprofiler::ProfilingCategoryPair::OTHER,
-        baseprofiler::LogMarkerPayload("module", "text",
-                                       TimeStamp::NowUnfuzzed()));
 
     printf("Sleep 1s...\n");
     {

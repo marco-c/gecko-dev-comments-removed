@@ -94,7 +94,7 @@ void ProfilerScreenshots::SubmitScreenshot(
        originalSize, scaledSize, timeStamp]() {
         
         
-        if (profiler_can_accept_markers()) {
+        {
           DataSourceSurface::ScopedMap scopedMap(backingSurface,
                                                  DataSourceSurface::READ);
           RefPtr<DataSourceSurface> surf =

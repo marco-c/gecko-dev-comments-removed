@@ -10,69 +10,45 @@
 
 #  include "ProfileBuffer.h"
 
+#  include "ProfilerMarker.h"
+
 #  include "mozilla/MathAlgorithms.h"
 
 namespace mozilla {
 namespace baseprofiler {
 
-
-static constexpr auto DuplicationBufferBytes = MakePowerOfTwo32<65536>();
-
-ProfileBuffer::ProfileBuffer(BlocksRingBuffer& aBuffer, PowerOfTwo32 aCapacity)
-    : mEntries(aBuffer),
-      mDuplicationBuffer(MakeUnique<BlocksRingBuffer::Byte[]>(
-          DuplicationBufferBytes.Value())) {
-  
-  
-  MOZ_ASSERT(mEntries.BufferLength().isNothing());
-  
-  mEntries.Set(aCapacity);
-}
-
-ProfileBuffer::ProfileBuffer(BlocksRingBuffer& aBuffer) : mEntries(aBuffer) {
-  
-  MOZ_ASSERT(mEntries.BufferLength().isSome());
-}
+ProfileBuffer::ProfileBuffer(PowerOfTwo32 aCapacity)
+    : mEntries(MakeUnique<ProfileBufferEntry[]>(aCapacity.Value())),
+      mEntryIndexMask(aCapacity.Mask()),
+      mRangeStart(0),
+      mRangeEnd(0) {}
 
 ProfileBuffer::~ProfileBuffer() {
-  
-  
-  mEntries.Reset();
-  MOZ_ASSERT(mEntries.BufferLength().isNothing());
-}
-
-
-BlocksRingBuffer::BlockIndex ProfileBuffer::AddEntry(
-    BlocksRingBuffer& aBlocksRingBuffer, const ProfileBufferEntry& aEntry) {
-  switch (aEntry.GetKind()) {
-#  define SWITCH_KIND(KIND, TYPE, SIZE)                      \
-    case ProfileBufferEntry::Kind::KIND: {                   \
-      return aBlocksRingBuffer.PutFrom(&aEntry, 1 + (SIZE)); \
-      break;                                                 \
-    }
-
-    FOR_EACH_PROFILE_BUFFER_ENTRY_KIND(SWITCH_KIND)
-
-#  undef SWITCH_KIND
-    default:
-      MOZ_ASSERT(false, "Unhandled baseprofiler::ProfilerBuffer entry KIND");
-      return BlockIndex{};
+  while (mStoredMarkers.peek()) {
+    delete mStoredMarkers.popHead();
   }
 }
 
 
-uint64_t ProfileBuffer::AddEntry(const ProfileBufferEntry& aEntry) {
-  return AddEntry(mEntries, aEntry).ConvertToU64();
-}
+void ProfileBuffer::AddEntry(const ProfileBufferEntry& aEntry) {
+  GetEntry(mRangeEnd++) = aEntry;
 
-
-BlocksRingBuffer::BlockIndex ProfileBuffer::AddThreadIdEntry(
-    BlocksRingBuffer& aBlocksRingBuffer, int aThreadId) {
-  return AddEntry(aBlocksRingBuffer, ProfileBufferEntry::ThreadId(aThreadId));
+  
+  
+  if (mRangeEnd - mRangeStart > mEntryIndexMask.MaskValue() + 1) {
+    mRangeStart++;
+  }
 }
 
 uint64_t ProfileBuffer::AddThreadIdEntry(int aThreadId) {
-  return AddThreadIdEntry(mEntries, aThreadId).ConvertToU64();
+  uint64_t pos = mRangeEnd;
+  AddEntry(ProfileBufferEntry::ThreadId(aThreadId));
+  return pos;
+}
+
+void ProfileBuffer::AddStoredMarker(ProfilerMarker* aStoredMarker) {
+  aStoredMarker->SetPositionInBuffer(mRangeEnd);
+  mStoredMarkers.insert(aStoredMarker);
 }
 
 void ProfileBuffer::CollectCodeLocation(
@@ -112,15 +88,27 @@ void ProfileBuffer::CollectCodeLocation(
   }
 }
 
-size_t ProfileBuffer::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
+void ProfileBuffer::DeleteExpiredStoredMarkers() {
+  AUTO_PROFILER_STATS(base_ProfileBuffer_DeleteExpiredStoredMarkers);
+
   
   
-  
-  return mEntries.SizeOfExcludingThis(aMallocSizeOf);
+  while (mStoredMarkers.peek() &&
+         mStoredMarkers.peek()->HasExpired(mRangeStart)) {
+    delete mStoredMarkers.popHead();
+  }
 }
 
 size_t ProfileBuffer::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
-  return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
+  size_t n = aMallocSizeOf(this);
+  n += aMallocSizeOf(mEntries.get());
+
+  
+  
+  
+  
+
+  return n;
 }
 
 void ProfileBuffer::CollectOverheadStats(TimeDuration aSamplingTime,
@@ -164,15 +152,9 @@ void ProfileBuffer::CollectOverheadStats(TimeDuration aSamplingTime,
 }
 
 ProfilerBufferInfo ProfileBuffer::GetProfilerBufferInfo() const {
-  return {BufferRangeStart(),
-          BufferRangeEnd(),
-          mEntries.BufferLength()->Value() / 8,  
-          mIntervalsNs,
-          mOverheadsNs,
-          mLockingsNs,
-          mCleaningsNs,
-          mCountersNs,
-          mThreadsNs};
+  return {mRangeStart,  mRangeEnd,    mEntryIndexMask.MaskValue() + 1,
+          mIntervalsNs, mOverheadsNs, mLockingsNs,
+          mCleaningsNs, mCountersNs,  mThreadsNs};
 }
 
 

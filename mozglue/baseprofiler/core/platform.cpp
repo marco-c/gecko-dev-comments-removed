@@ -261,12 +261,7 @@ class CorePS {
  private:
   CorePS()
       : mMainThreadId(profiler_current_thread_id()),
-        mProcessStartTime(TimeStamp::ProcessCreation()),
-        
-        
-        
-        
-        mCoreBlocksRingBuffer(BlocksRingBuffer::ThreadSafety::WithMutex)
+        mProcessStartTime(TimeStamp::ProcessCreation())
 #  ifdef USE_LUL_STACKWALK
         ,
         mLul(nullptr)
@@ -323,9 +318,6 @@ class CorePS {
 
   
   PS_GET_LOCKLESS(TimeStamp, ProcessStartTime)
-
-  
-  PS_GET_LOCKLESS(BlocksRingBuffer&, CoreBlocksRingBuffer)
 
   PS_GET(const Vector<UniquePtr<RegisteredThread>>&, RegisteredThreads)
 
@@ -416,17 +408,6 @@ class CorePS {
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  BlocksRingBuffer mCoreBlocksRingBuffer;
-
-  
-  
   Vector<UniquePtr<RegisteredThread>> mRegisteredThreads;
 
   
@@ -487,13 +468,11 @@ class ActivePS {
         mDuration(aDuration),
         mInterval(aInterval),
         mFeatures(AdjustFeatures(aFeatures, aFilterCount)),
-        
-        mProfileBuffer(
-            MakeUnique<ProfileBuffer>(CorePS::CoreBlocksRingBuffer(),
-                                      PowerOfTwo32(aCapacity.Value() * 8))),
+        mBuffer(MakeUnique<ProfileBuffer>(aCapacity))
         
         
         
+        ,
         mSamplerThread(NewSamplerThread(aLock, mGeneration, aInterval))
 #  undef HAS_FEATURE
         ,
@@ -584,7 +563,7 @@ class ActivePS {
   static size_t SizeOf(PSLockRef, MallocSizeOf aMallocSizeOf) {
     size_t n = aMallocSizeOf(sInstance);
 
-    n += sInstance->mProfileBuffer->SizeOfIncludingThis(aMallocSizeOf);
+    n += sInstance->mBuffer->SizeOfIncludingThis(aMallocSizeOf);
 
     
     
@@ -623,7 +602,7 @@ class ActivePS {
 
   PS_GET(const Vector<std::string>&, Filters)
 
-  static ProfileBuffer& Buffer(PSLockRef) { return *sInstance->mProfileBuffer; }
+  static ProfileBuffer& Buffer(PSLockRef) { return *sInstance->mBuffer.get(); }
 
   static const Vector<LiveProfiledThreadData>& LiveProfiledThreads(PSLockRef) {
     return sInstance->mLiveProfiledThreads;
@@ -711,7 +690,7 @@ class ActivePS {
       LiveProfiledThreadData& thread = sInstance->mLiveProfiledThreads[i];
       if (thread.mRegisteredThread == aRegisteredThread) {
         thread.mProfiledThreadData->NotifyUnregistered(
-            sInstance->mProfileBuffer->BufferRangeEnd());
+            sInstance->mBuffer->mRangeEnd);
         MOZ_RELEASE_ASSERT(sInstance->mDeadProfiledThreads.append(
             std::move(thread.mProfiledThreadData)));
         sInstance->mLiveProfiledThreads.erase(
@@ -728,7 +707,7 @@ class ActivePS {
 #  endif
 
   static void DiscardExpiredDeadProfiledThreads(PSLockRef) {
-    uint64_t bufferRangeStart = sInstance->mProfileBuffer->BufferRangeStart();
+    uint64_t bufferRangeStart = sInstance->mBuffer->mRangeStart;
     
     sInstance->mDeadProfiledThreads.eraseIf(
         [bufferRangeStart](
@@ -747,7 +726,7 @@ class ActivePS {
     for (size_t i = 0; i < registeredPages.length(); i++) {
       RefPtr<PageInformation>& page = registeredPages[i];
       if (page->DocShellId() == aRegisteredDocShellId) {
-        page->NotifyUnregistered(sInstance->mProfileBuffer->BufferRangeEnd());
+        page->NotifyUnregistered(sInstance->mBuffer->mRangeEnd);
         MOZ_RELEASE_ASSERT(
             sInstance->mDeadProfiledPages.append(std::move(page)));
         registeredPages.erase(&registeredPages[i--]);
@@ -756,7 +735,7 @@ class ActivePS {
   }
 
   static void DiscardExpiredPages(PSLockRef) {
-    uint64_t bufferRangeStart = sInstance->mProfileBuffer->BufferRangeStart();
+    uint64_t bufferRangeStart = sInstance->mBuffer->mRangeStart;
     
     
     sInstance->mDeadProfiledPages.eraseIf(
@@ -774,7 +753,7 @@ class ActivePS {
   }
 
   static void ClearExpiredExitProfiles(PSLockRef) {
-    uint64_t bufferRangeStart = sInstance->mProfileBuffer->BufferRangeStart();
+    uint64_t bufferRangeStart = sInstance->mBuffer->mRangeStart;
     
     sInstance->mExitProfiles.eraseIf(
         [bufferRangeStart](const ExitProfile& aExitProfile) {
@@ -785,8 +764,8 @@ class ActivePS {
   static void AddExitProfile(PSLockRef aLock, const std::string& aExitProfile) {
     ClearExpiredExitProfiles(aLock);
 
-    MOZ_RELEASE_ASSERT(sInstance->mExitProfiles.append(ExitProfile{
-        aExitProfile, sInstance->mProfileBuffer->BufferRangeEnd()}));
+    MOZ_RELEASE_ASSERT(sInstance->mExitProfiles.append(
+        ExitProfile{aExitProfile, sInstance->mBuffer->mRangeEnd}));
   }
 
   static Vector<std::string> MoveExitProfiles(PSLockRef aLock) {
@@ -843,7 +822,7 @@ class ActivePS {
 
   
   
-  const UniquePtr<ProfileBuffer> mProfileBuffer;
+  const UniquePtr<ProfileBuffer> mBuffer;
 
   
   
@@ -902,12 +881,6 @@ void RacyFeatures::SetInactive() { sActiveAndFeatures = 0; }
 bool RacyFeatures::IsActive() { return uint32_t(sActiveAndFeatures) & Active; }
 
 
-void RacyFeatures::SetPaused() { sActiveAndFeatures |= Paused; }
-
-
-void RacyFeatures::SetUnpaused() { sActiveAndFeatures &= ~Paused; }
-
-
 bool RacyFeatures::IsActiveWithFeature(uint32_t aFeature) {
   uint32_t af = sActiveAndFeatures;  
   return (af & Active) && (af & aFeature);
@@ -917,12 +890,6 @@ bool RacyFeatures::IsActiveWithFeature(uint32_t aFeature) {
 bool RacyFeatures::IsActiveWithoutPrivacy() {
   uint32_t af = sActiveAndFeatures;  
   return (af & Active) && !(af & ProfilerFeature::Privacy);
-}
-
-
-bool RacyFeatures::IsActiveAndUnpausedWithoutPrivacy() {
-  uint32_t af = sActiveAndFeatures;  
-  return (af & Active) && !(af & (Paused | ProfilerFeature::Privacy));
 }
 
 
@@ -1426,17 +1393,24 @@ static void DoNativeBacktrace(PSLockRef aLock,
 
 static inline void DoSharedSample(PSLockRef aLock, bool aIsSynchronous,
                                   RegisteredThread& aRegisteredThread,
-                                  const Registers& aRegs, uint64_t aSamplePos,
+                                  const TimeStamp& aNow, const Registers& aRegs,
+                                  Maybe<uint64_t>* aLastSample,
                                   ProfileBuffer& aBuffer) {
   
 
-  MOZ_ASSERT(!aBuffer.IsThreadSafe(),
-             "Mutexes cannot be used inside this critical section");
-
   MOZ_RELEASE_ASSERT(ActivePS::Exists(aLock));
 
+  uint64_t samplePos =
+      aBuffer.AddThreadIdEntry(aRegisteredThread.Info()->ThreadId());
+  if (aLastSample) {
+    *aLastSample = Some(samplePos);
+  }
+
+  TimeDuration delta = aNow - CorePS::ProcessStartTime();
+  aBuffer.AddEntry(ProfileBufferEntry::Time(delta.ToMilliseconds()));
+
   ProfileBufferCollector collector(aBuffer, ActivePS::Features(aLock),
-                                   aSamplePos);
+                                   samplePos);
   NativeStack nativeStack;
 #  if defined(HAVE_NATIVE_UNWIND)
   if (ActivePS::FeatureStackWalk(aLock)) {
@@ -1463,28 +1437,29 @@ static void DoSyncSample(PSLockRef aLock, RegisteredThread& aRegisteredThread,
                          ProfileBuffer& aBuffer) {
   
 
-  uint64_t samplePos =
-      aBuffer.AddThreadIdEntry(aRegisteredThread.Info()->ThreadId());
-
-  TimeDuration delta = aNow - CorePS::ProcessStartTime();
-  aBuffer.AddEntry(ProfileBufferEntry::Time(delta.ToMilliseconds()));
-
-  DoSharedSample(aLock,  true, aRegisteredThread, aRegs,
-                 samplePos, aBuffer);
+  DoSharedSample(aLock,  true, aRegisteredThread, aNow,
+                 aRegs,  nullptr, aBuffer);
 }
-
-
 
 
 static void DoPeriodicSample(PSLockRef aLock,
                              RegisteredThread& aRegisteredThread,
                              ProfiledThreadData& aProfiledThreadData,
-                             const Registers& aRegs, uint64_t aSamplePos,
-                             ProfileBuffer& aBuffer) {
+                             const TimeStamp& aNow, const Registers& aRegs) {
   
 
-  DoSharedSample(aLock,  false, aRegisteredThread, aRegs,
-                 aSamplePos, aBuffer);
+  ProfileBuffer& buffer = ActivePS::Buffer(aLock);
+
+  DoSharedSample(aLock,  false, aRegisteredThread, aNow,
+                 aRegs, &aProfiledThreadData.LastSample(), buffer);
+
+  ProfilerMarkerLinkedList* pendingMarkersList =
+      aRegisteredThread.RacyRegisteredThread().GetPendingMarkers();
+  while (pendingMarkersList && pendingMarkersList->peek()) {
+    ProfilerMarker* marker = pendingMarkersList->popHead();
+    buffer.AddStoredMarker(marker);
+    buffer.AddEntry(ProfileBufferEntry::Marker(marker));
+  }
 }
 
 
@@ -1632,18 +1607,9 @@ static void locked_profiler_stream_json_for_this_process(
 
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
 
-  AUTO_PROFILER_STATS(base_locked_profiler_stream_json_for_this_process);
-
-  const double collectionStartMs = profiler_time();
+  double collectionStart = profiler_time();
 
   ProfileBuffer& buffer = ActivePS::Buffer(aLock);
-
-  
-  Maybe<double> durationS = ActivePS::Duration(aLock);
-  if (durationS.isSome()) {
-    const double durationStartMs = collectionStartMs - *durationS * 1000;
-    buffer.DiscardSamplesBeforeTime(durationStartMs);
-  }
 
   if (!aOnlyThreads) {
     
@@ -1691,15 +1657,15 @@ static void locked_profiler_stream_json_for_this_process(
     aWriter.EndArray();
   }
 
-  const double collectionEndMs = profiler_time();
+  double collectionEnd = profiler_time();
 
   
   
   
   
   
-  buffer.AddEntry(ProfileBufferEntry::CollectionStart(collectionStartMs));
-  buffer.AddEntry(ProfileBufferEntry::CollectionEnd(collectionEndMs));
+  buffer.AddEntry(ProfileBufferEntry::CollectionStart(collectionStart));
+  buffer.AddEntry(ProfileBufferEntry::CollectionEnd(collectionEnd));
 }
 
 bool profiler_stream_json_for_this_process(SpliceableJSONWriter& aWriter,
@@ -1770,7 +1736,7 @@ static void PrintUsageThenExit(int aExitCode) {
       "  first started.\n"
       "  If unset, the platform default is used:\n"
       "  %u entries per process, or %u when MOZ_BASE_PROFILER_STARTUP is set.\n"
-      "  (8 bytes per entry -> %u or %u total bytes per process)\n"
+      "  (%zu bytes per entry -> %zu or %zu total bytes per process)\n"
       "\n"
       "  MOZ_BASE_PROFILER_STARTUP_DURATION=<1..>\n"
       "  If MOZ_BASE_PROFILER_STARTUP is set, specifies the maximum life time\n"
@@ -1801,8 +1767,10 @@ static void PrintUsageThenExit(int aExitCode) {
       "default/unavailable)\n",
       unsigned(BASE_PROFILER_DEFAULT_ENTRIES.Value()),
       unsigned(BASE_PROFILER_DEFAULT_STARTUP_ENTRIES.Value()),
-      unsigned(BASE_PROFILER_DEFAULT_ENTRIES.Value() * 8),
-      unsigned(BASE_PROFILER_DEFAULT_STARTUP_ENTRIES.Value() * 8));
+      sizeof(ProfileBufferEntry),
+      sizeof(ProfileBufferEntry) * BASE_PROFILER_DEFAULT_ENTRIES.Value(),
+      sizeof(ProfileBufferEntry) *
+          BASE_PROFILER_DEFAULT_STARTUP_ENTRIES.Value());
 
 #  define PRINT_FEATURE(n_, str_, Name_, desc_)                             \
     printf("    %c %5u: \"%s\" (%s)\n",                                     \
@@ -1970,18 +1938,6 @@ void SamplerThread::Run() {
 
   
   
-  
-  
-  BlocksRingBuffer localBlocksRingBuffer(
-      BlocksRingBuffer::ThreadSafety::WithoutMutex);
-  ProfileBuffer localProfileBuffer(localBlocksRingBuffer,
-                                   MakePowerOfTwo32<65536>());
-
-  
-  auto previousState = localBlocksRingBuffer.GetState();
-
-  
-  
   TimeDuration lastSleepOvershoot = 0;
   TimeStamp sampleStart = TimeStamp::NowUnfuzzed();
 
@@ -2004,6 +1960,7 @@ void SamplerThread::Run() {
 
       ActivePS::ClearExpiredExitProfiles(lock);
 
+      ActivePS::Buffer(lock).DeleteExpiredStoredMarkers();
       TimeStamp expiredMarkersCleaned = TimeStamp::NowUnfuzzed();
 
       if (!ActivePS::IsPaused(lock)) {
@@ -2015,6 +1972,7 @@ void SamplerThread::Run() {
 
         
         const Vector<BaseProfilerCount*>& counters = CorePS::Counters(lock);
+        TimeStamp now = TimeStamp::NowUnfuzzed();
         for (auto& counter : counters) {
           
           buffer.AddEntry(ProfileBufferEntry::CounterId(counter));
@@ -2055,46 +2013,12 @@ void SamplerThread::Run() {
 
           AUTO_PROFILER_STATS(base_SamplerThread_Run_DoPeriodicSample);
 
-          TimeStamp now = TimeStamp::NowUnfuzzed();
-
-          
-          
-          
-          uint64_t samplePos =
-              buffer.AddThreadIdEntry(registeredThread->Info()->ThreadId());
-          profiledThreadData->LastSample() = Some(samplePos);
-
-          
-          
-          TimeDuration delta = now - CorePS::ProcessStartTime();
-          buffer.AddEntry(ProfileBufferEntry::Time(delta.ToMilliseconds()));
-
+          now = TimeStamp::NowUnfuzzed();
           mSampler.SuspendAndSampleAndResumeThread(
               lock, *registeredThread, [&](const Registers& aRegs) {
                 DoPeriodicSample(lock, *registeredThread, *profiledThreadData,
-                                 aRegs, samplePos, localProfileBuffer);
+                                 now, aRegs);
               });
-
-          
-          auto state = localBlocksRingBuffer.GetState();
-          if (state.mClearedBlockCount != previousState.mClearedBlockCount) {
-            LOG("Stack sample too big for local storage, needed %u bytes",
-                unsigned(state.mRangeEnd.ConvertToU64() -
-                         previousState.mRangeEnd.ConvertToU64()));
-          } else if (state.mRangeEnd.ConvertToU64() -
-                         previousState.mRangeEnd.ConvertToU64() >=
-                     CorePS::CoreBlocksRingBuffer().BufferLength()->Value()) {
-            LOG("Stack sample too big for profiler storage, needed %u bytes",
-                unsigned(state.mRangeEnd.ConvertToU64() -
-                         previousState.mRangeEnd.ConvertToU64()));
-          } else {
-            CorePS::CoreBlocksRingBuffer().AppendContents(
-                localBlocksRingBuffer);
-          }
-
-          
-          localBlocksRingBuffer.Clear();
-          previousState = localBlocksRingBuffer.GetState();
         }
 
 #  if defined(USE_LUL_STACKWALK)
@@ -2111,6 +2035,14 @@ void SamplerThread::Run() {
                                     expiredMarkersCleaned - lockAcquired,
                                     countersSampled - expiredMarkersCleaned,
                                     threadsSampled - countersSampled);
+      }
+
+      Maybe<double> duration = ActivePS::Duration(lock);
+      if (duration) {
+        ActivePS::Buffer(lock).DiscardSamplesBeforeTime(
+            (TimeStamp::NowUnfuzzed() - TimeDuration::FromSeconds(*duration) -
+             CorePS::ProcessStartTime())
+                .ToMilliseconds());
       }
     }
     
@@ -2739,9 +2671,8 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
   
   
   
-  
   PowerOfTwo32 capacity =
-      (aCapacity.Value() >= 8192u) ? aCapacity : BASE_PROFILER_DEFAULT_ENTRIES;
+      (aCapacity.Value() >= 1024u) ? aCapacity : BASE_PROFILER_DEFAULT_ENTRIES;
   Maybe<double> duration = aDuration;
 
   if (aDuration && *aDuration <= 0) {
@@ -2945,7 +2876,6 @@ void profiler_pause() {
       return;
     }
 
-    RacyFeatures::SetPaused();
     ActivePS::SetIsPaused(lock, true);
     ActivePS::Buffer(lock).AddEntry(ProfileBufferEntry::Pause(profiler_time()));
   }
@@ -2966,7 +2896,6 @@ void profiler_resume() {
     ActivePS::Buffer(lock).AddEntry(
         ProfileBufferEntry::Resume(profiler_time()));
     ActivePS::SetIsPaused(lock, false);
-    RacyFeatures::SetUnpaused();
   }
 }
 
@@ -3188,31 +3117,26 @@ UniqueProfilerBacktrace profiler_get_backtrace() {
 #  endif
 
   
-  auto bufferManager = MakeUnique<BlocksRingBuffer>(
-      BlocksRingBuffer::ThreadSafety::WithoutMutex);
-  auto buffer =
-      MakeUnique<ProfileBuffer>(*bufferManager, MakePowerOfTwo32<65536>());
+  auto buffer = MakeUnique<ProfileBuffer>(MakePowerOfTwo32<1024>());
 
   DoSyncSample(lock, *registeredThread, now, regs, *buffer.get());
 
-  return UniqueProfilerBacktrace(new ProfilerBacktrace(
-      "SyncProfile", tid, std::move(bufferManager), std::move(buffer)));
+  return UniqueProfilerBacktrace(
+      new ProfilerBacktrace("SyncProfile", tid, std::move(buffer)));
 }
 
 void ProfilerBacktraceDestructor::operator()(ProfilerBacktrace* aBacktrace) {
   delete aBacktrace;
 }
 
-static void racy_profiler_add_marker(const char* aMarkerName,
-                                     ProfilingCategoryPair aCategoryPair,
-                                     const ProfilerMarkerPayload* aPayload) {
+static void racy_profiler_add_marker(
+    const char* aMarkerName, ProfilingCategoryPair aCategoryPair,
+    UniquePtr<ProfilerMarkerPayload> aPayload) {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   
-  if (!profiler_can_accept_markers()) {
-    return;
-  }
-
+  
+  
   
   
   
@@ -3227,28 +3151,33 @@ static void racy_profiler_add_marker(const char* aMarkerName,
                          ? aPayload->GetStartTime()
                          : TimeStamp::NowUnfuzzed();
   TimeDuration delta = origin - CorePS::ProcessStartTime();
-  CorePS::CoreBlocksRingBuffer().PutObjects(
-      ProfileBufferEntry::Kind::MarkerData, racyRegisteredThread->ThreadId(),
-      WrapBlocksRingBufferUnownedCString(aMarkerName),
-      static_cast<uint32_t>(aCategoryPair), aPayload, delta.ToMilliseconds());
+  racyRegisteredThread->AddPendingMarker(
+      aMarkerName, aCategoryPair, std::move(aPayload), delta.ToMilliseconds());
 }
 
 void profiler_add_marker(const char* aMarkerName,
                          ProfilingCategoryPair aCategoryPair,
-                         const ProfilerMarkerPayload& aPayload) {
-  racy_profiler_add_marker(aMarkerName, aCategoryPair, &aPayload);
+                         UniquePtr<ProfilerMarkerPayload> aPayload) {
+  MOZ_RELEASE_ASSERT(CorePS::Exists());
+
+  
+  if (!RacyFeatures::IsActiveWithoutPrivacy()) {
+    return;
+  }
+
+  racy_profiler_add_marker(aMarkerName, aCategoryPair, std::move(aPayload));
 }
 
 void profiler_add_marker(const char* aMarkerName,
                          ProfilingCategoryPair aCategoryPair) {
-  racy_profiler_add_marker(aMarkerName, aCategoryPair, nullptr);
+  profiler_add_marker(aMarkerName, aCategoryPair, nullptr);
 }
 
 
 
 void profiler_add_js_marker(const char* aMarkerName) {
   AUTO_PROFILER_STATS(base_add_marker);
-  profiler_add_marker(aMarkerName, ProfilingCategoryPair::JS);
+  profiler_add_marker(aMarkerName, ProfilingCategoryPair::JS, nullptr);
 }
 
 
@@ -3259,41 +3188,39 @@ void profiler_add_marker_for_thread(int aThreadId,
                                     UniquePtr<ProfilerMarkerPayload> aPayload) {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
-  if (!profiler_can_accept_markers()) {
+  PSAutoLock lock;
+  if (!ActivePS::Exists(lock)) {
     return;
   }
-
-#  ifdef DEBUG
-  {
-    PSAutoLock lock;
-    if (!ActivePS::Exists(lock)) {
-      return;
-    }
-
-    
-    bool realThread = false;
-    const Vector<UniquePtr<RegisteredThread>>& registeredThreads =
-        CorePS::RegisteredThreads(lock);
-    for (auto& thread : registeredThreads) {
-      RefPtr<ThreadInfo> info = thread->Info();
-      if (info->ThreadId() == aThreadId) {
-        realThread = true;
-        break;
-      }
-    }
-    MOZ_ASSERT(realThread, "Invalid thread id");
-  }
-#  endif
 
   
   TimeStamp origin = (aPayload && !aPayload->GetStartTime().IsNull())
                          ? aPayload->GetStartTime()
                          : TimeStamp::NowUnfuzzed();
   TimeDuration delta = origin - CorePS::ProcessStartTime();
-  CorePS::CoreBlocksRingBuffer().PutObjects(
-      ProfileBufferEntry::Kind::MarkerData, aThreadId,
-      WrapBlocksRingBufferUnownedCString(aMarkerName),
-      static_cast<uint32_t>(aCategoryPair), aPayload, delta.ToMilliseconds());
+  ProfilerMarker* marker =
+      new ProfilerMarker(aMarkerName, aCategoryPair, aThreadId,
+                         std::move(aPayload), delta.ToMilliseconds());
+
+#  ifdef DEBUG
+  
+  bool realThread = false;
+  const Vector<UniquePtr<RegisteredThread>>& registeredThreads =
+      CorePS::RegisteredThreads(lock);
+  for (auto& thread : registeredThreads) {
+    RefPtr<ThreadInfo> info = thread->Info();
+    if (info->ThreadId() == aThreadId) {
+      realThread = true;
+      break;
+    }
+  }
+  MOZ_ASSERT(realThread, "Invalid thread id");
+#  endif
+
+  
+  ProfileBuffer& buffer = ActivePS::Buffer(lock);
+  buffer.AddStoredMarker(marker);
+  buffer.AddEntry(ProfileBufferEntry::Marker(marker));
 }
 
 void profiler_tracing(const char* aCategoryString, const char* aMarkerName,
@@ -3305,14 +3232,14 @@ void profiler_tracing(const char* aCategoryString, const char* aMarkerName,
   VTUNE_TRACING(aMarkerName, aKind);
 
   
-  if (!profiler_can_accept_markers()) {
+  if (!RacyFeatures::IsActiveWithoutPrivacy()) {
     return;
   }
 
   AUTO_PROFILER_STATS(base_add_marker_with_TracingMarkerPayload);
-  profiler_add_marker(aMarkerName, aCategoryPair,
-                      TracingMarkerPayload(aCategoryString, aKind, aDocShellId,
-                                           aDocShellHistoryId));
+  auto payload = MakeUnique<TracingMarkerPayload>(
+      aCategoryString, aKind, aDocShellId, aDocShellHistoryId);
+  racy_profiler_add_marker(aMarkerName, aCategoryPair, std::move(payload));
 }
 
 void profiler_tracing(const char* aCategoryString, const char* aMarkerName,
@@ -3325,15 +3252,15 @@ void profiler_tracing(const char* aCategoryString, const char* aMarkerName,
   VTUNE_TRACING(aMarkerName, aKind);
 
   
-  if (!profiler_can_accept_markers()) {
+  if (!RacyFeatures::IsActiveWithoutPrivacy()) {
     return;
   }
 
   AUTO_PROFILER_STATS(base_add_marker_with_TracingMarkerPayload);
-  profiler_add_marker(
-      aMarkerName, aCategoryPair,
-      TracingMarkerPayload(aCategoryString, aKind, aDocShellId,
-                           aDocShellHistoryId, std::move(aCause)));
+  auto payload =
+      MakeUnique<TracingMarkerPayload>(aCategoryString, aKind, aDocShellId,
+                                       aDocShellHistoryId, std::move(aCause));
+  racy_profiler_add_marker(aMarkerName, aCategoryPair, std::move(payload));
 }
 
 void profiler_add_text_marker(const char* aMarkerName, const std::string& aText,
@@ -3346,8 +3273,8 @@ void profiler_add_text_marker(const char* aMarkerName, const std::string& aText,
   AUTO_PROFILER_STATS(base_add_marker_with_TextMarkerPayload);
   profiler_add_marker(
       aMarkerName, aCategoryPair,
-      TextMarkerPayload(aText, aStartTime, aEndTime, aDocShellId,
-                        aDocShellHistoryId, std::move(aCause)));
+      MakeUnique<TextMarkerPayload>(aText, aStartTime, aEndTime, aDocShellId,
+                                    aDocShellHistoryId, std::move(aCause)));
 }
 
 

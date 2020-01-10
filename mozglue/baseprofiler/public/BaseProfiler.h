@@ -200,25 +200,18 @@ class RacyFeatures {
 
   MFBT_API static void SetInactive();
 
-  MFBT_API static void SetPaused();
-
-  MFBT_API static void SetUnpaused();
-
   MFBT_API static bool IsActive();
 
   MFBT_API static bool IsActiveWithFeature(uint32_t aFeature);
 
   MFBT_API static bool IsActiveWithoutPrivacy();
 
-  MFBT_API static bool IsActiveAndUnpausedWithoutPrivacy();
-
  private:
-  static constexpr uint32_t Active = 1u << 31;
-  static constexpr uint32_t Paused = 1u << 30;
+  static const uint32_t Active = 1u << 31;
 
 
 #  define NO_OVERLAP(n_, str_, Name_, desc_) \
-    static_assert(ProfilerFeature::Name_ != Paused, "bad feature value");
+    static_assert(ProfilerFeature::Name_ != Active, "bad Active value");
 
   BASE_PROFILER_FOR_EACH_FEATURE(NO_OVERLAP);
 
@@ -245,7 +238,7 @@ static constexpr PowerOfTwo32 BASE_PROFILER_DEFAULT_ENTRIES =
 #  if !defined(ARCH_ARMV6)
     MakePowerOfTwo32<1u << 20>();  
 #  else
-    MakePowerOfTwo32<1u << 17>();  // 131'072 entries = 1MB
+    MakePowerOfTwo32<1u << 17>();  // 131'072
 #  endif
 
 
@@ -254,7 +247,7 @@ static constexpr PowerOfTwo32 BASE_PROFILER_DEFAULT_STARTUP_ENTRIES =
 #  if !defined(ARCH_ARMV6)
     MakePowerOfTwo32<1u << 22>();  
 #  else
-    MakePowerOfTwo32<1u << 17>();  // 131'072 = 1MB
+    MakePowerOfTwo32<1u << 17>();  // 131'072
 #  endif
 
 #  define BASE_PROFILER_DEFAULT_DURATION 20
@@ -408,19 +401,6 @@ MFBT_API void profiler_thread_wake();
 
 inline bool profiler_is_active() {
   return baseprofiler::detail::RacyFeatures::IsActive();
-}
-
-
-
-
-
-
-
-
-
-inline bool profiler_can_accept_markers() {
-  return baseprofiler::detail::RacyFeatures::
-      IsActiveAndUnpausedWithoutPrivacy();
 }
 
 
@@ -732,13 +712,12 @@ MFBT_API void profiler_add_marker(const char* aMarkerName,
       ::mozilla::baseprofiler::profiler_add_marker(                     \
           markerName,                                                   \
           ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair, \
-          PayloadType parenthesizedPayloadArgs);                        \
+          ::mozilla::MakeUnique<PayloadType> parenthesizedPayloadArgs); \
     } while (false)
 
 MFBT_API void profiler_add_marker(const char* aMarkerName,
                                   ProfilingCategoryPair aCategoryPair,
-                                  const ProfilerMarkerPayload& aPayload);
-
+                                  UniquePtr<ProfilerMarkerPayload> aPayload);
 MFBT_API void profiler_add_js_marker(const char* aMarkerName);
 
 

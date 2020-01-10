@@ -6,12 +6,20 @@
 #ifndef MOZ_PROFILE_BUFFER_H
 #define MOZ_PROFILE_BUFFER_H
 
-#include "GeckoProfiler.h"
 #include "ProfileBufferEntry.h"
+#include "ProfilerMarker.h"
 
-#include "mozilla/BlocksRingBuffer.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PowerOfTwo.h"
+
+
+
+
+
+
+
+
+
 
 
 
@@ -21,27 +29,12 @@ class ProfileBuffer final {
  public:
   
   
-  
-  
-  
-  using BlockIndex = mozilla::BlocksRingBuffer::BlockIndex;
-
-  
-  
-  
-  ProfileBuffer(mozilla::BlocksRingBuffer& aBuffer,
-                mozilla::PowerOfTwo32 aCapacity);
-
-  
-  
-  explicit ProfileBuffer(mozilla::BlocksRingBuffer& aBuffer);
+  explicit ProfileBuffer(mozilla::PowerOfTwo32 aCapacity);
 
   ~ProfileBuffer();
 
-  bool IsThreadSafe() const { return mEntries.IsThreadSafe(); }
-
   
-  uint64_t AddEntry(const ProfileBufferEntry& aEntry);
+  void AddEntry(const ProfileBufferEntry& aEntry);
 
   
   
@@ -98,28 +91,16 @@ class ProfileBuffer final {
 
   void DiscardSamplesBeforeTime(double aTime);
 
+  void AddStoredMarker(ProfilerMarker* aStoredMarker);
+
   
-  ProfileBufferEntry GetEntry(uint64_t aPosition) const {
-    ProfileBufferEntry entry;
-    mEntries.Read([&](mozilla::BlocksRingBuffer::Reader* aReader) {
-      
-      MOZ_ASSERT(aReader);
-      for (mozilla::BlocksRingBuffer::EntryReader er : *aReader) {
-        if (er.CurrentBlockIndex().ConvertToU64() > aPosition) {
-          
-          return;
-        }
-        if (er.CurrentBlockIndex().ConvertToU64() == aPosition) {
-          MOZ_RELEASE_ASSERT(er.RemainingBytes() <= sizeof(entry));
-          er.Read(&entry, er.RemainingBytes());
-          return;
-        }
-      }
-    });
-    return entry;
+  void DeleteExpiredStoredMarkers();
+
+  
+  ProfileBufferEntry& GetEntry(uint64_t aPosition) const {
+    return mEntries[aPosition & mEntryIndexMask];
   }
 
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
   void CollectOverheadStats(mozilla::TimeDuration aSamplingTime,
@@ -134,18 +115,11 @@ class ProfileBuffer final {
   
   
   
-  static BlockIndex AddEntry(mozilla::BlocksRingBuffer& aBlocksRingBuffer,
-                             const ProfileBufferEntry& aEntry);
+  
+  mozilla::UniquePtr<ProfileBufferEntry[]> mEntries;
 
   
-  
-  
-  
-  static BlockIndex AddThreadIdEntry(
-      mozilla::BlocksRingBuffer& aBlocksRingBuffer, int aThreadId);
-
-  
-  mozilla::BlocksRingBuffer& mEntries;
+  mozilla::PowerOfTwoMask32 mEntryIndexMask;
 
  public:
   
@@ -161,20 +135,15 @@ class ProfileBuffer final {
   
   
   
-  uint64_t BufferRangeStart() const {
-    return mEntries.GetState().mRangeStart.ConvertToU64();
-  }
-  uint64_t BufferRangeEnd() const {
-    return mEntries.GetState().mRangeEnd.ConvertToU64();
-  }
+  
+  
+  uint64_t mRangeStart;
+  uint64_t mRangeEnd;
+
+  
+  ProfilerMarkerLinkedList mStoredMarkers;
 
  private:
-  
-  
-  
-  
-  mozilla::UniquePtr<mozilla::BlocksRingBuffer::Byte[]> mWorkerBuffer;
-
   double mFirstSamplingTimeNs = 0.0;
   double mLastSamplingTimeNs = 0.0;
   ProfilerStats mIntervalsNs;
@@ -202,7 +171,7 @@ class ProfileBufferCollector final : public ProfilerStackCollector {
   }
 
   mozilla::Maybe<uint64_t> BufferRangeStart() override {
-    return mozilla::Some(mBuf.BufferRangeStart());
+    return mozilla::Some(mBuf.mRangeStart);
   }
 
   virtual void CollectNativeLeafAddr(void* aAddr) override;
