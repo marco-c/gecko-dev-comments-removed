@@ -884,7 +884,7 @@ add_task(async function() {
     });
   }
 
-  let tmpPath = expandWhitelistPath(MAC ? "TmpD:" : "/dev/shm").toLowerCase();
+  let tmpPath = expandWhitelistPath("TmpD:").toLowerCase();
   let shouldPass = true;
   for (let phase in phases) {
     let whitelist = startupPhases[phase];
@@ -919,15 +919,25 @@ add_task(async function() {
         continue;
       }
 
-      if (!WIN) {
-        if (filename == "/dev/urandom") {
-          continue;
-        }
+      if (!WIN && filename == "/dev/urandom") {
+        continue;
+      }
 
-        
-        if (filename.startsWith(tmpPath + "/org.chromium.")) {
-          continue;
-        }
+      
+      
+      if (LINUX && filename.startsWith("/dev/shm/")) {
+        continue;
+      }
+
+      
+      
+      
+      
+      
+      
+      if (MAC && (filename.startsWith(tmpPath + "/org.chromium.") ||
+                  filename.startsWith(tmpPath + "/org.mozilla.ipc."))) {
+        continue;
       }
 
       let expected = false;
