@@ -2,7 +2,22 @@
 
 
 
-const CURRENT_MIRROR_SCHEMA_VERSION = 6;
+const CURRENT_MIRROR_SCHEMA_VERSION = 7;
+
+async function getIndexNames(db, table, schema = "mirror") {
+  let rows = await db.execute(`PRAGMA ${schema}.index_list(${table})`);
+  let names = [];
+  for (let row of rows) {
+    
+    
+    let wasCreated = row.getResultByIndex(3) == "c";
+    if (wasCreated) {
+      
+      names.push(row.getResultByIndex(1));
+    }
+  }
+  return names.sort();
+}
 
 
 add_task(async function test_migrate_from_5_to_current() {
@@ -21,6 +36,20 @@ add_task(async function test_migrate_from_5_to_current() {
     schemaVersion,
     CURRENT_MIRROR_SCHEMA_VERSION,
     "Should upgrade mirror schema to current version"
+  );
+
+  let itemsIndexNames = await getIndexNames(buf.db, "items");
+  deepEqual(
+    itemsIndexNames,
+    ["itemKeywords", "itemURLs"],
+    "Should add two indexes on items"
+  );
+
+  let structureIndexNames = await getIndexNames(buf.db, "structure");
+  deepEqual(
+    structureIndexNames,
+    ["structurePositions"],
+    "Should add an index on structure"
   );
 
   let changesToUpload = await buf.apply();

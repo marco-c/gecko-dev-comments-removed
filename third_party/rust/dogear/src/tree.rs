@@ -499,52 +499,10 @@ impl<'b> ItemBuilder<'b> {
         b.by_parent_guid(parent_guid)
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[inline]
     pub fn by_structure(self, parent_guid: &Guid) -> Result<&'b mut Builder> {
-        let parent_index = match self.0.entry_index_by_guid.get(parent_guid) {
-            Some(&parent_index) if self.0.entries[parent_index].item.is_folder() => parent_index,
-            _ => {
-                return Err(ErrorKind::InvalidParent(
-                    self.0.entries[self.1].item.guid.clone(),
-                    parent_guid.clone(),
-                )
-                .into());
-            }
-        };
-        self.0.entries[self.1].parents_by(&[
-            BuilderParentBy::Children(parent_index),
-            BuilderParentBy::KnownItem(parent_index),
-        ])?;
-        self.0.entries[parent_index]
-            .children
-            .push(BuilderEntryChild::Exists(self.1));
-        Ok(self.0)
+        let b = ParentBuilder(self.0, BuilderEntryChild::Exists(self.1));
+        b.by_structure(parent_guid)
     }
 }
 
@@ -591,6 +549,56 @@ impl<'b> ParentBuilder<'b> {
                 return Err(ErrorKind::MissingItem(child_guid.clone()).into());
             }
         }
+        Ok(self.0)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn by_structure(self, parent_guid: &Guid) -> Result<&'b mut Builder> {
+        let parent_index = match self.0.entry_index_by_guid.get(parent_guid) {
+            Some(&parent_index) if self.0.entries[parent_index].item.is_folder() => parent_index,
+            _ => {
+                let child_guid = match &self.1 {
+                    BuilderEntryChild::Exists(index) => &self.0.entries[*index].item.guid,
+                    BuilderEntryChild::Missing(guid) => guid,
+                };
+                return Err(
+                    ErrorKind::InvalidParent(child_guid.clone(), parent_guid.clone()).into(),
+                );
+            }
+        };
+        if let BuilderEntryChild::Exists(child_index) = &self.1 {
+            self.0.entries[*child_index].parents_by(&[
+                BuilderParentBy::Children(parent_index),
+                BuilderParentBy::KnownItem(parent_index),
+            ])?;
+        }
+        self.0.entries[parent_index].children.push(self.1);
         Ok(self.0)
     }
 }
