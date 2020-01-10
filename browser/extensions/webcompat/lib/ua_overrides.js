@@ -56,18 +56,20 @@ class UAOverrides {
     const listener = details => {
       
       
+      if (!details.frameId && override.shouldSendDetailedTelemetry) {
+        
+        
+        
+        browser.sharedPreferences.setBoolPref(`${telemetryKey}Used`, true);
+      }
+
+      
+      
       if (
         !override.config.experiment ||
         override.experimentActive ||
         override.permanentPrefEnabled === true
       ) {
-        if (telemetryKey && !details.frameId) {
-          
-          
-          
-          browser.sharedPreferences.setBoolPref(`${telemetryKey}Used`, true);
-        }
-
         for (const header of details.requestHeaders) {
           if (header.name.toLowerCase() === "user-agent") {
             header.value = uaTransformer(header.value);
@@ -102,6 +104,12 @@ class UAOverrides {
 
     
     if (telemetryKey) {
+      const { version } = browser.runtime.getManifest();
+      browser.sharedPreferences.setCharPref(`${telemetryKey}Version`, version);
+    }
+
+    
+    if (override.shouldSendDetailedTelemetry) {
       browser.sharedPreferences.setBoolPref(`${telemetryKey}Ready`, true);
     }
   }
@@ -127,6 +135,12 @@ class UAOverrides {
     if (override.permanentPrefEnabled === false) {
       shouldBeActive = false;
     }
+
+    
+    
+    override.shouldSendDetailedTelemetry =
+      override.config.telemetryKey &&
+      (override.experimentActive || override.permanentPrefEnabled);
 
     
     
@@ -165,10 +179,22 @@ class UAOverrides {
         override.availableOnPlatform = true;
 
         
-        
+        override.experimentActive = false;
         const experiment = override.config.experiment;
-        override.experimentActive =
-          experiment && (await browser.experiments.isActive(experiment));
+        if (experiment) {
+          
+          
+          
+          const branches = Array.isArray(experiment)
+            ? experiment
+            : [experiment];
+          for (const branch of branches) {
+            if (await browser.experiments.isActive(branch)) {
+              override.experimentActive = true;
+              break;
+            }
+          }
+        }
 
         
         
