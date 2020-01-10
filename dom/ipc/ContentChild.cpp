@@ -1350,7 +1350,17 @@ void ContentChild::InitXPCOM(
 
   ClientManager::Startup();
 
-  RemoteWorkerService::Initialize();
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!IsWebCoopCoepRemoteType(GetRemoteType())) {
+    RemoteWorkerService::Initialize();
+  }
 
   nsCOMPtr<nsIConsoleService> svc(do_GetService(NS_CONSOLESERVICE_CONTRACTID));
   if (!svc) {
