@@ -126,9 +126,6 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
       : null;
 
     
-    await super.show();
-
-    
     if (this.activeSwatch) {
       this.currentSwatchColor = this.activeSwatch.nextSibling;
       this._originalColor = this.currentSwatchColor.textContent;
@@ -139,6 +136,9 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
       this.spectrum.on("changed", this._onSpectrumColorChange);
       this.spectrum.updateUI();
     }
+
+    
+    await super.show();
 
     const eyeButton = this.tooltip.container.querySelector(
       "#eyedropper-button"
@@ -160,11 +160,6 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
       learnMoreButton.addEventListener("click", this._openDocLink);
       learnMoreButton.addEventListener("keydown", e => e.stopPropagation());
     }
-
-    
-    
-    
-    this.tooltip.updateContainerBounds(super.tooltipAnchor);
 
     
     

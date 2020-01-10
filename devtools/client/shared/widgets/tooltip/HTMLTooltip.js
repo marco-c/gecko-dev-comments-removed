@@ -591,9 +591,10 @@ HTMLTooltip.prototype = {
     let preferredHeight;
     if (this.preferredHeight === "auto") {
       if (measuredHeight) {
-        this.container.style.height = "auto";
+        
         preferredHeight = measuredHeight;
       } else {
+        this.container.style.height = "auto";
         ({ height: preferredHeight } = this._measureContainerSize());
       }
       preferredHeight += verticalMargin;
@@ -623,9 +624,7 @@ HTMLTooltip.prototype = {
       this.preferredHeight === Infinity
     );
 
-    if (!this.useXulWrapper) {
-      this.container.style.height = height + "px";
-    }
+    this.container.style.height = height + "px";
 
     return { left, top };
   },
