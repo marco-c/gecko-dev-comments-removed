@@ -919,6 +919,8 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   virtual void FinishFullscreenChange(bool aIsFullscreen) = 0;
 
+  virtual void ForceFullScreenInWidget() = 0;
+
   
   
 

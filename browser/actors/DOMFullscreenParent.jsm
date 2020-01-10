@@ -71,13 +71,15 @@ class DOMFullscreenParent extends JSWindowActorParent {
         
         
         
-        window.gXPInstallObserver.removeAllNotifications(browser);
+        if (window.gXPInstallObserver) {
+          window.gXPInstallObserver.removeAllNotifications(browser);
+        }
 
         TelemetryStopwatch.start("FULLSCREEN_CHANGE_MS");
         window.FullScreen.enterDomFullscreen(browser, this);
         break;
       }
-      case "MozDOMFullscreen:Exited":
+      case "MozDOMFullscreen:Exited": {
         TelemetryStopwatch.start("FULLSCREEN_CHANGE_MS");
         if (!this.requestOrigin) {
           this.requestOrigin = this;
@@ -85,6 +87,7 @@ class DOMFullscreenParent extends JSWindowActorParent {
         window.FullScreen.cleanupDomFullscreen(this);
         this.removeListeners(window);
         break;
+      }
     }
   }
 

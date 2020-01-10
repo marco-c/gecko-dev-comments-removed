@@ -85,6 +85,12 @@ nsFxrCommandLineHandler::Handle(nsICommandLine* aCmdLine) {
     FxRWindowManager::GetInstance()->AddWindow(newWindowOuter);
 
     
+    
+    
+    
+    newWindowOuter->ForceFullScreenInWidget();
+
+    
     mozilla::gfx::VRShMem shmem(nullptr, true );
     if (shmem.JoinShMem()) {
       mozilla::gfx::VRWindowState windowState = {0};
