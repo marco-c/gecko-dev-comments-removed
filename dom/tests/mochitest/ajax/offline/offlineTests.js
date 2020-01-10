@@ -59,8 +59,6 @@ fetch: function(callback)
 
 var OfflineTest = {
 
-_allowedByDefault: false,
-
 _hasSlave: false,
 
 
@@ -74,17 +72,7 @@ _SJSsStated: [],
 
 setupChild: function()
 {
-  if (this._allowedByDefault) {
-    this._masterWindow = window;
-    return true;
-  }
-
-  if (window.parent.OfflineTest._hasSlave) {
-    return false;
-  }
-
-  this._masterWindow = window.top;
-
+  this._masterWindow = window;
   return true;
 },
 
@@ -97,41 +85,8 @@ setupChild: function()
 
 setup: function()
 {
-  try {
-    this._allowedByDefault = SpecialPowers.getBoolPref("offline-apps.allow_by_default");
-  } catch (e) {}
-
-  if (this._allowedByDefault) {
     this._masterWindow = window;
-
     return true;
-  }
-
-  if (!window.opener || !window.opener.OfflineTest ||
-      !window.opener.OfflineTest._hasSlave) {
-    
-    
-    
-    
-    
-    
-
-    if (SpecialPowers.testPermission("offline-app", Ci.nsIPermissionManager.ALLOW_ACTION, document)) {
-      ok(false, "Previous test failed to clear offline-app permission!  Expect failures.");
-    }
-    SpecialPowers.addPermission("offline-app", Ci.nsIPermissionManager.ALLOW_ACTION, document);
-
-    
-    
-    this._hasSlave = true;
-    window.open(window.location, "offlinetest");
-
-    return false;
-  }
-
-  this._masterWindow = window.opener;
-
-  return true;
 },
 
 teardownAndFinish: function()
@@ -160,16 +115,7 @@ teardown: function(callback)
 
 finish: function()
 {
-  if (this._allowedByDefault) {
-    SimpleTest.executeSoon(SimpleTest.finish);
-  } else if (this._masterWindow) {
-    
-    this._masterWindow.SimpleTest.executeSoon(this._masterWindow.OfflineTest.finish);
-    window.close();
-  } else {
-    
-    SimpleTest.finish();
-  }
+  SimpleTest.executeSoon(SimpleTest.finish);
 },
 
 
