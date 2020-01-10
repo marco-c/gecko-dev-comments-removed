@@ -112,7 +112,7 @@ HarBuilder.prototype = {
 
     entry.request = await this.buildRequest(file);
     entry.response = await this.buildResponse(file);
-    entry.cache = await this.buildCache(file);
+    entry.cache = this.buildCache(file);
     entry.timings = eventTimings ? eventTimings.timings : {};
 
     
@@ -403,19 +403,18 @@ HarBuilder.prototype = {
     return content;
   },
 
-  buildCache: async function(file) {
+  buildCache: function(file) {
     const cache = {};
 
-    
-    if (file.status !== "304") {
+    if (!file.fromCache) {
       return cache;
     }
 
-    if (file.responseCacheAvailable && this._options.requestData) {
-      const responseCache = await this._options.requestData(file.id, "responseCache");
-      if (responseCache.cache) {
-        cache.afterRequest = this.buildCacheEntry(responseCache.cache);
-      }
+    
+    
+
+    if (file.cacheEntry) {
+      cache.afterRequest = this.buildCacheEntry(file.cacheEntry);
     } else {
       cache.afterRequest = null;
     }
@@ -426,12 +425,10 @@ HarBuilder.prototype = {
   buildCacheEntry: function(cacheEntry) {
     const cache = {};
 
-    if (typeof cacheEntry !== "undefined") {
-      cache.expires = cacheEntry.expires;
-      cache.lastAccess = cacheEntry.lastFetched;
-      cache.eTag = "";
-      cache.hitCount = cacheEntry.fetchCount;
-    }
+    cache.expires = findValue(cacheEntry, "Expires");
+    cache.lastAccess = findValue(cacheEntry, "Last Fetched");
+    cache.eTag = "";
+    cache.hitCount = findValue(cacheEntry, "Fetch Count");
 
     return cache;
   },
