@@ -4,6 +4,7 @@
 
 
 
+
 var BUGNUMBER = 312385;
 var summary = 'Generic methods with null or undefined |this|';
 var actual = '';
