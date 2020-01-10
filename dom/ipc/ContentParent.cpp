@@ -703,12 +703,22 @@ uint32_t ContentParent::GetPoolSize(const nsAString& aContentProcessType) {
 
 uint32_t ContentParent::GetMaxProcessCount(
     const nsAString& aContentProcessType) {
-  if (aContentProcessType.EqualsLiteral("web")) {
+  
+  
+  int32_t equalIdx = aContentProcessType.FindChar(L'=');
+  if (equalIdx == kNotFound) {
+    equalIdx = aContentProcessType.Length();
+  }
+  const nsDependentSubstring processTypePrefix =
+      StringHead(aContentProcessType, equalIdx);
+
+  
+  if (processTypePrefix.EqualsLiteral("web")) {
     return GetMaxWebProcessCount();
   }
 
   nsAutoCString processCountPref("dom.ipc.processCount.");
-  processCountPref.Append(NS_ConvertUTF16toUTF8(aContentProcessType));
+  AppendUTF16toUTF8(processTypePrefix, processCountPref);
 
   int32_t maxContentParents;
   if (NS_FAILED(
