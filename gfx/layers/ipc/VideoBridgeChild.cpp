@@ -11,8 +11,7 @@
 namespace mozilla {
 namespace layers {
 
-StaticRefPtr<VideoBridgeChild> sVideoBridgeToParentProcess;
-StaticRefPtr<VideoBridgeChild> sVideoBridgeToGPUProcess;
+StaticRefPtr<VideoBridgeChild> sVideoBridge;
 
 
 void VideoBridgeChild::StartupForGPUProcess() {
@@ -23,25 +22,17 @@ void VideoBridgeChild::StartupForGPUProcess() {
                                 base::GetCurrentProcId(), &parentPipe,
                                 &childPipe);
 
-  VideoBridgeChild::OpenToGPUProcess(std::move(childPipe));
+  VideoBridgeChild::Open(std::move(childPipe));
   VideoBridgeParent::Open(std::move(parentPipe), VideoBridgeSource::GpuProcess);
 }
 
-void VideoBridgeChild::OpenToParentProcess(
-    Endpoint<PVideoBridgeChild>&& aEndpoint) {
-  sVideoBridgeToParentProcess = new VideoBridgeChild();
+void VideoBridgeChild::Open(Endpoint<PVideoBridgeChild>&& aEndpoint) {
+  
+  
+  MOZ_ASSERT(!sVideoBridge);
+  sVideoBridge = new VideoBridgeChild();
 
-  if (!aEndpoint.Bind(sVideoBridgeToParentProcess)) {
-    
-    MOZ_CRASH("Failed to bind VideoBridgeChild to endpoint");
-  }
-}
-
-void VideoBridgeChild::OpenToGPUProcess(
-    Endpoint<PVideoBridgeChild>&& aEndpoint) {
-  sVideoBridgeToGPUProcess = new VideoBridgeChild();
-
-  if (!aEndpoint.Bind(sVideoBridgeToGPUProcess)) {
+  if (!aEndpoint.Bind(sVideoBridge)) {
     
     MOZ_CRASH("Failed to bind VideoBridgeChild to endpoint");
   }
@@ -49,13 +40,9 @@ void VideoBridgeChild::OpenToGPUProcess(
 
 
 void VideoBridgeChild::Shutdown() {
-  if (sVideoBridgeToParentProcess) {
-    sVideoBridgeToParentProcess->Close();
-    sVideoBridgeToParentProcess = nullptr;
-  }
-  if (sVideoBridgeToGPUProcess) {
-    sVideoBridgeToGPUProcess->Close();
-    sVideoBridgeToGPUProcess = nullptr;
+  if (sVideoBridge) {
+    sVideoBridge->Close();
+    sVideoBridge = nullptr;
   }
 }
 
@@ -66,13 +53,7 @@ VideoBridgeChild::VideoBridgeChild()
 
 VideoBridgeChild::~VideoBridgeChild() {}
 
-VideoBridgeChild* VideoBridgeChild::GetSingletonToParentProcess() {
-  return sVideoBridgeToParentProcess;
-}
-
-VideoBridgeChild* VideoBridgeChild::GetSingletonToGPUProcess() {
-  return sVideoBridgeToGPUProcess;
-}
+VideoBridgeChild* VideoBridgeChild::GetSingleton() { return sVideoBridge; }
 
 bool VideoBridgeChild::AllocUnsafeShmem(
     size_t aSize, ipc::SharedMemory::SharedMemoryType aType,
