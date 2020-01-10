@@ -1019,6 +1019,13 @@ var PanelMultiView = class extends AssociatedToNode {
 
     
     details.phase = TRANSITION_PHASES.TRANSITION;
+
+    
+    
+    if (viewNode.getAttribute("mainview")) {
+      this._viewContainer.style.removeProperty("min-height");
+    }
+
     this._viewStack.style.transform =
       "translateX(" + (moveToLeft ? "" : "-") + deltaX + "px)";
 
