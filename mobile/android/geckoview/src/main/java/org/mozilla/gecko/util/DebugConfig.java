@@ -10,6 +10,7 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import org.mozilla.gecko.GeckoThread;
+import org.mozilla.gecko.annotation.ReflectionTarget;
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
@@ -24,6 +25,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
+
+
+@ReflectionTarget
 public class DebugConfig {
     private static final String LOGTAG = "GeckoDebugConfig";
 
