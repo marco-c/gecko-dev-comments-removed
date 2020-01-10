@@ -654,6 +654,11 @@ var gViewController = {
   currentViewId: "",
   currentViewObj: null,
   currentViewRequest: 0,
+  
+  
+  
+  
+  nextHistoryEntryId: Math.floor(Math.random() * 2 ** 32),
   viewObjects: {},
   viewChangeCallback: null,
   initialViewSelected: false,
@@ -766,6 +771,7 @@ var gViewController = {
     var state = {
       view: aViewId,
       previousView: this.currentViewId,
+      historyEntryId: ++this.nextHistoryEntryId,
       isKeyboardNavigation,
     };
     if (!isRefresh) {
@@ -785,6 +791,7 @@ var gViewController = {
     var state = {
       view: aViewId,
       previousView: null,
+      historyEntryId: ++this.nextHistoryEntryId,
     };
     gHistory.replaceState(state);
     this.loadViewInternal(aViewId, null, state);
@@ -794,6 +801,7 @@ var gViewController = {
     var state = {
       view: aViewId,
       previousView: null,
+      historyEntryId: ++this.nextHistoryEntryId,
     };
     gHistory.replaceState(state);
 

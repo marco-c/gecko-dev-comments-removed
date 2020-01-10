@@ -1396,6 +1396,11 @@ class AddonDetails extends HTMLElement {
           }
           break;
       }
+
+      
+      
+      
+      ScrollOffsets.canRestore = this.deck.selectedViewName === "details";
     }
   }
 
@@ -3170,6 +3175,40 @@ function getTelemetryViewName(el) {
 
 
 
+
+var ScrollOffsets = {
+  _key: null,
+  _offsets: new Map(),
+  canRestore: true,
+
+  setView(historyEntryId) {
+    this._key = historyEntryId;
+    this.canRestore = true;
+  },
+
+  getPosition() {
+    if (!this.canRestore) {
+      return { top: 0, left: 0 };
+    }
+    let { scrollTop: top, scrollLeft: left } = document.documentElement;
+    return { top, left };
+  },
+
+  save() {
+    if (this._key) {
+      this._offsets.set(this._key, this.getPosition());
+    }
+  },
+
+  restore() {
+    let { top = 0, left = 0 } = this._offsets.get(this._key) || {};
+    window.scrollTo({ top, left, behavior: "auto" });
+  },
+};
+
+
+
+
 function initialize(opts) {
   mainEl = document.getElementById("main");
   loadViewFn = opts.loadViewFn;
@@ -3193,7 +3232,7 @@ function initialize(opts) {
 
 
 
-async function show(type, param, { isKeyboardNavigation }) {
+async function show(type, param, { isKeyboardNavigation, historyEntryId }) {
   let container = document.createElement("div");
   container.setAttribute("current-view", type);
   if (type == "list") {
@@ -3222,10 +3261,26 @@ async function show(type, param, { isKeyboardNavigation }) {
   } else {
     throw new Error(`Unknown view type: ${type}`);
   }
+
+  ScrollOffsets.save();
+  ScrollOffsets.setView(historyEntryId);
   mainEl.textContent = "";
   mainEl.appendChild(container);
+
+  
+  
+  
+  
+  return new Promise(resolve => {
+    window.requestAnimationFrame(() => {
+      ScrollOffsets.restore();
+      resolve();
+    });
+  });
 }
 
 function hide() {
+  ScrollOffsets.save();
+  ScrollOffsets.setView(null);
   mainEl.textContent = "";
 }
