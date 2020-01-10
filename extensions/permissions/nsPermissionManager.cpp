@@ -478,7 +478,9 @@ nsresult UpgradeHostToOriginAndInsert(
     
     
     
-    if (uri->SchemeIs("moz-nullprincipal")) {
+    bool nullpScheme = false;
+    if (NS_SUCCEEDED(uri->SchemeIs("moz-nullprincipal", &nullpScheme)) &&
+        nullpScheme) {
       NS_WARNING("A moz-nullprincipal: permission is being discarded.");
       return NS_OK;
     }

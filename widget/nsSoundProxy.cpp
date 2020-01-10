@@ -18,8 +18,10 @@ nsSoundProxy::Play(nsIURL* aURL) {
   MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Content);
 
   nsCOMPtr<nsIURI> soundURI(aURL);
+  bool isChrome = false;
   
-  if (!soundURI || !soundURI->SchemeIs("chrome")) {
+  if (!soundURI || NS_FAILED(soundURI->SchemeIs("chrome", &isChrome)) ||
+      !isChrome) {
     return NS_ERROR_FAILURE;
   }
 

@@ -688,6 +688,8 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
         "security.view-source.reachable-from-inner-protocol");
   }
 
+  bool targetIsViewSource = false;
+
   if (sourceScheme.LowerCaseEqualsLiteral(NS_NULLPRINCIPAL_SCHEME)) {
     
     if (sourceURI == aTargetURI) {
@@ -695,7 +697,9 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
     }
   } else if (sViewSourceReachableFromInner &&
              sourceScheme.EqualsIgnoreCase(targetScheme.get()) &&
-             aTargetURI->SchemeIs("view-source")) {
+             NS_SUCCEEDED(
+                 aTargetURI->SchemeIs("view-source", &targetIsViewSource)) &&
+             targetIsViewSource) {
     
     return NS_OK;
   } else if (sourceScheme.EqualsIgnoreCase("file") &&
@@ -944,7 +948,9 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
     }
 
     
-    if (aSourceBaseURI->SchemeIs("chrome")) {
+    bool isChrome = false;
+    if (NS_SUCCEEDED(aSourceBaseURI->SchemeIs("chrome", &isChrome)) &&
+        isChrome) {
       return NS_OK;
     }
 
