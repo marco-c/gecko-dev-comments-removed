@@ -184,10 +184,25 @@ class SharedIntlData {
 
   using LocaleSet = GCHashSet<Locale, LocaleHasher, SystemAllocPolicy>;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   LocaleSet supportedLocales;
+
+  
+  
   LocaleSet collatorSupportedLocales;
-  LocaleSet dateTimeFormatSupportedLocales;
-  LocaleSet numberFormatSupportedLocales;
 
   bool supportedLocalesInitialized = false;
 
