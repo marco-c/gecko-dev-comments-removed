@@ -22,8 +22,8 @@ add_task(async () => {
   const profile = await Services.profiler.getProfileDataAsync();
   const [thread] = profile.threads;
   const { samples } = thread;
-  const message = "Responsiveness > 0 not found.";
-  let SAMPLE_STACK_SLOT = thread.samples.schema.responsiveness;
+  const message = "eventDelay > 0 not found.";
+  let SAMPLE_STACK_SLOT = thread.samples.schema.eventDelay;
 
   for (let i = 0; i < samples.data.length; i++) {
     if (samples.data[i][SAMPLE_STACK_SLOT] > 0) {
