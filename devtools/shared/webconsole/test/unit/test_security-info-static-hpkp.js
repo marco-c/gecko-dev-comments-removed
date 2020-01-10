@@ -19,8 +19,10 @@ Object.defineProperty(this, "NetworkHelper", {
 
 const wpl = Ci.nsIWebProgressListener;
 
+
+
+
 const MockSecurityInfo = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsITransportSecurityInfo]),
   securityState: wpl.STATE_IS_SECURE,
   errorCode: 0,
   cipherName: "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
