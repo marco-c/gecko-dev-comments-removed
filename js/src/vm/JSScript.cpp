@@ -3616,6 +3616,7 @@ void JSScript::freeScriptData() { scriptData_ = nullptr; }
 
 
 
+
 bool JSScript::shareScriptData(JSContext* cx) {
   RuntimeScriptData* rsd = scriptData();
   MOZ_ASSERT(rsd);
@@ -3623,11 +3624,12 @@ bool JSScript::shareScriptData(JSContext* cx) {
 
   
   
-  SharedScriptDataHasher::Lookup lookup(rsd);
+  RuntimeScriptDataHasher::Lookup lookup(rsd);
 
   AutoLockScriptData lock(cx->runtime());
 
-  ScriptDataTable::AddPtr p = cx->scriptDataTable(lock).lookupForAdd(lookup);
+  RuntimeScriptDataTable::AddPtr p =
+      cx->scriptDataTable(lock).lookupForAdd(lookup);
   if (p) {
     MOZ_ASSERT(rsd != *p);
     scriptData_ = *p;
@@ -3652,9 +3654,9 @@ void js::SweepScriptData(JSRuntime* rt) {
   
 
   AutoLockScriptData lock(rt);
-  ScriptDataTable& table = rt->scriptDataTable(lock);
+  RuntimeScriptDataTable& table = rt->scriptDataTable(lock);
 
-  for (ScriptDataTable::Enum e(table); !e.empty(); e.popFront()) {
+  for (RuntimeScriptDataTable::Enum e(table); !e.empty(); e.popFront()) {
     RuntimeScriptData* scriptData = e.front();
     if (scriptData->refCount() == 1) {
       scriptData->Release();
@@ -3666,7 +3668,7 @@ void js::SweepScriptData(JSRuntime* rt) {
 void js::FreeScriptData(JSRuntime* rt) {
   AutoLockScriptData lock(rt);
 
-  ScriptDataTable& table = rt->scriptDataTable(lock);
+  RuntimeScriptDataTable& table = rt->scriptDataTable(lock);
 
   
   MOZ_ASSERT_IF(rt->gc.shutdownCollectedEverything(), table.empty());
@@ -3680,7 +3682,7 @@ void js::FreeScriptData(JSRuntime* rt) {
   }
 #endif
 
-  for (ScriptDataTable::Enum e(table); !e.empty(); e.popFront()) {
+  for (RuntimeScriptDataTable::Enum e(table); !e.empty(); e.popFront()) {
 #ifdef DEBUG
     if (++numLive <= maxCells) {
       RuntimeScriptData* scriptData = e.front();

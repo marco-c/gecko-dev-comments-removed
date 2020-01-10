@@ -1766,7 +1766,7 @@ class alignas(uint32_t) SharedScriptData final {
   SharedScriptData& operator=(const SharedScriptData&) = delete;
 };
 
-struct SharedScriptDataHasher;
+struct RuntimeScriptDataHasher;
 
 
 class RuntimeScriptData final {
@@ -1786,7 +1786,7 @@ class RuntimeScriptData final {
 
   friend class ::JSScript;
   friend class js::SharedScriptData;
-  friend struct js::SharedScriptDataHasher;
+  friend struct js::RuntimeScriptDataHasher;
 
  private:
   
@@ -1858,7 +1858,7 @@ class RuntimeScriptData final {
 
 
 
-struct SharedScriptDataHasher {
+struct RuntimeScriptDataHasher {
   using Lookup = RefPtr<RuntimeScriptData>;
 
   static HashNumber hash(const Lookup& l) {
@@ -1878,8 +1878,8 @@ struct SharedScriptDataHasher {
 
 class AutoLockScriptData;
 
-using ScriptDataTable =
-    HashSet<RuntimeScriptData*, SharedScriptDataHasher, SystemAllocPolicy>;
+using RuntimeScriptDataTable =
+    HashSet<RuntimeScriptData*, RuntimeScriptDataHasher, SystemAllocPolicy>;
 
 extern void SweepScriptData(JSRuntime* rt);
 
