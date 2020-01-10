@@ -129,6 +129,25 @@ static nsIScriptGlobalObject* GetGlobalObject(nsIChannel* aChannel) {
   return global;
 }
 
+static bool AllowedByCSP(nsIContentSecurityPolicy* aCSP) {
+  if (!aCSP) {
+    return true;
+  }
+
+  bool allowsInlineScript = true;
+  nsresult rv = aCSP->GetAllowsInline(nsIContentPolicy::TYPE_SCRIPT,
+                                      EmptyString(),  
+                                      true,           
+                                      nullptr,        
+                                      nullptr,        
+                                      EmptyString(),  
+                                      0,              
+                                      0,              
+                                      &allowsInlineScript);
+
+  return (NS_SUCCEEDED(rv) && allowsInlineScript);
+}
+
 nsresult nsJSThunk::EvaluateScript(
     nsIChannel* aChannel,
     mozilla::dom::PopupBlocker::PopupControlState aPopupState,
@@ -161,40 +180,12 @@ nsresult nsJSThunk::EvaluateScript(
   
   
   
+  
+  
   nsCOMPtr<nsIContentSecurityPolicy> csp = loadInfo->GetCspToInherit();
-  if (csp) {
-    bool allowsInlineScript = true;
-    rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_SCRIPT,
-                              EmptyString(),  
-                              true,           
-                              nullptr,        
-                              nullptr,        
-                              EmptyString(),  
-                              0,              
-                              0,              
-                              &allowsInlineScript);
-
-    
-    if (NS_FAILED(rv) || !allowsInlineScript) {
-      return NS_ERROR_DOM_RETVAL_UNDEFINED;
-    }
+  if (!AllowedByCSP(csp)) {
+    return NS_ERROR_DOM_RETVAL_UNDEFINED;
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
   
   nsIScriptGlobalObject* global = GetGlobalObject(aChannel);
@@ -212,10 +203,34 @@ nsresult nsJSThunk::EvaluateScript(
 
   mozilla::dom::Document* targetDoc = innerWin->GetExtantDoc();
 
-  
-  
-  if (targetDoc && targetDoc->HasScriptsBlockedBySandbox()) {
-    return NS_ERROR_DOM_RETVAL_UNDEFINED;
+  if (targetDoc) {
+    
+    
+    if (targetDoc->HasScriptsBlockedBySandbox()) {
+      return NS_ERROR_DOM_RETVAL_UNDEFINED;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (targetDoc->NodePrincipal()->Subsumes(loadInfo->TriggeringPrincipal())) {
+      nsCOMPtr<nsIContentSecurityPolicy> targetCSP = targetDoc->GetCsp();
+      if (!AllowedByCSP(targetCSP)) {
+        return NS_ERROR_DOM_RETVAL_UNDEFINED;
+      }
+    }
   }
 
   
