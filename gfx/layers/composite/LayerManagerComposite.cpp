@@ -1078,6 +1078,8 @@ void LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion,
 
   
   mPayload.Clear();
+
+  mCompositor->WaitForGPU();
 }
 
 #if defined(MOZ_WIDGET_ANDROID)
