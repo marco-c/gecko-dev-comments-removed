@@ -15,6 +15,14 @@ namespace dom {
 
 class BrowsingContext;
 
+enum class MediaControlActions : uint32_t {
+  ePlay,
+  ePause,
+  eStop,
+  
+  eActionsNum,
+};
+
 
 
 
