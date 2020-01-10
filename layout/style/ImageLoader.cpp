@@ -138,8 +138,13 @@ void ImageLoader::AssociateRequestToFrame(imgIRequest* aRequest,
       
       
       uint32_t status = 0;
+      
+      
+      
       if (NS_SUCCEEDED(aRequest->GetImageStatus(&status)) &&
+          !(status & imgIRequest::STATUS_FRAME_COMPLETE) &&
           !(status & imgIRequest::STATUS_ERROR)) {
+        
         
         fwfToModify->mFlags |= REQUEST_HAS_BLOCKED_ONLOAD;
 
@@ -150,34 +155,26 @@ void ImageLoader::AssociateRequestToFrame(imgIRequest* aRequest,
         
         
         
+
         
-        if (status & imgIRequest::STATUS_FRAME_COMPLETE) {
-          RequestReflowOnFrame(fwfToModify, aRequest);
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        nsCOMPtr<imgIContainer> imgContainer;
+        aRequest->GetImage(getter_AddRefs(imgContainer));
+        if (imgContainer) {
+          imgContainer->RequestDecodeForSize(
+              gfx::IntSize(0, 0), imgIContainer::DECODE_FLAGS_DEFAULT);
         } else {
           
           
-          
-
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          nsCOMPtr<imgIContainer> imgContainer;
-          aRequest->GetImage(getter_AddRefs(imgContainer));
-          if (imgContainer) {
-            imgContainer->RequestDecodeForSize(
-                gfx::IntSize(0, 0), imgIContainer::DECODE_FLAGS_DEFAULT);
-          } else {
-            
-            
-            aRequest->StartDecoding(imgIContainer::FLAG_NONE);
-          }
+          aRequest->StartDecoding(imgIContainer::FLAG_NONE);
         }
       }
     }
