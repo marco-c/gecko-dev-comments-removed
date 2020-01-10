@@ -10,3 +10,8 @@ user_pref("geckoview.console.enabled", true);
 
 
 user_pref("dom.push.connection.enabled", false);
+
+
+user_pref("browser.dom.window.dump.enabled", true);
+user_pref("devtools.console.stdout.chrome", true);
+user_pref("devtools.console.stdout.content", true);

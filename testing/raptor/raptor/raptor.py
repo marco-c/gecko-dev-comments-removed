@@ -192,14 +192,28 @@ class Raptor(object):
 
     def wait_for_test_finish(self, test, timeout):
         
+        
+        
+        
+
+        
         timeout = int(timeout / 1000) * int(test.get('page_cycles', 1))
         
         
         timeout += (int(self.post_startup_delay / 1000) + 10)
 
         
+        
+        
+        if test.get('type') == "pageload":
+            timeout += (10 * int(test.get('page_cycles', 1)))
+
+        
         if self.config['gecko_profile'] is True:
             timeout += 5 * 60
+
+        
+        timeout += 60
 
         elapsed_time = 0
         while not self.control_server._finished:
