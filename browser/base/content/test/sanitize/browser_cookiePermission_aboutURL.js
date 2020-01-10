@@ -77,7 +77,7 @@ add_task(async function deleteStorageOnlyCustomPermissionInAboutURL() {
 
   
   let uri = Services.io.newURI("about:newtab");
-  Services.perms.add(uri, "cookie", Ci.nsICookiePermission.ACCESS_SESSION);
+  PermissionTestUtils.add(uri, "cookie", Ci.nsICookiePermission.ACCESS_SESSION);
 
   
   await SiteDataTestUtils.addToIndexedDB("about:newtab", "foo", "bar", {});
@@ -102,5 +102,5 @@ add_task(async function deleteStorageOnlyCustomPermissionInAboutURL() {
     };
   });
 
-  Services.perms.remove(uri, "cookie");
+  PermissionTestUtils.remove(uri, "cookie");
 });
