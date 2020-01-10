@@ -1389,6 +1389,29 @@ class ScriptSourceObject : public NativeObject {
   };
 };
 
+
+
+
+
+class BaseScript : public gc::TenuredCell {
+ protected:
+  
+  
+  
+  uint8_t* jitCodeRaw_ = nullptr;
+
+  explicit BaseScript(uint8_t* stubEntry)
+    : jitCodeRaw_(stubEntry) { }
+
+ public:
+  uint8_t* jitCodeRaw() const { return jitCodeRaw_; }
+
+  
+  static constexpr size_t offsetOfJitCodeRaw() {
+    return offsetof(BaseScript, jitCodeRaw_);
+  }
+};
+
 enum class GeneratorKind : bool { NotGenerator, Generator };
 enum class FunctionAsyncKind : bool { SyncFunction, AsyncFunction };
 
@@ -1903,13 +1926,8 @@ struct DeletePolicy<js::PrivateScriptData>
 
 } 
 
-class JSScript : public js::gc::TenuredCell {
+class JSScript : public js::BaseScript {
  private:
-  
-  
-  
-  uint8_t* jitCodeRaw_ = nullptr;
-
   
   RefPtr<js::RuntimeScriptData> scriptData_ = {};
 
@@ -2676,10 +2694,6 @@ class JSScript : public js::gc::TenuredCell {
     return offsetof(JSScript, baseline);
   }
   static size_t offsetOfIonScript() { return offsetof(JSScript, ion); }
-  static constexpr size_t offsetOfJitCodeRaw() {
-    return offsetof(JSScript, jitCodeRaw_);
-  }
-  uint8_t* jitCodeRaw() const { return jitCodeRaw_; }
 
   
   
@@ -3240,12 +3254,7 @@ class alignas(uintptr_t) LazyScriptData final {
 
 
 
-class LazyScript : public gc::TenuredCell {
-  
-  
-  
-  uint8_t* jitCodeRaw_ = nullptr;
-
+class LazyScript : public BaseScript {
   
   
   
@@ -3617,10 +3626,6 @@ class LazyScript : public gc::TenuredCell {
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) {
     return mallocSizeOf(lazyData_);
-  }
-
-  static constexpr size_t offsetOfJitCodeRaw() {
-    return offsetof(LazyScript, jitCodeRaw_);
   }
 
   uint32_t immutableFlags() const { return immutableFlags_; }
