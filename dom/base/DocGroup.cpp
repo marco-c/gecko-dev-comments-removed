@@ -49,8 +49,9 @@ void DocGroup::RemoveDocument(Document* aDocument) {
   mDocuments.RemoveElement(aDocument);
 }
 
-DocGroup::DocGroup(TabGroup* aTabGroup, const nsACString& aKey)
-    : mKey(aKey), mTabGroup(aTabGroup) {
+DocGroup::DocGroup(TabGroup* aTabGroup, const nsACString& aKey,
+                   const nsID& aAgentClusterId)
+    : mKey(aKey), mTabGroup(aTabGroup), mAgentClusterId(aAgentClusterId) {
   
   
   mPerformanceCounter =
