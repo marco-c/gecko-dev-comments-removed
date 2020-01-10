@@ -413,35 +413,9 @@ void NotificationController::ScheduleChildDocBinding(DocAccessible* aDocument) {
 }
 
 void NotificationController::ScheduleContentInsertion(
-    nsIContent* aStartChildNode, nsIContent* aEndChildNode) {
-  
-  
-  
-  nsINode* parent = aStartChildNode->GetFlattenedTreeParentNode();
-  if (!parent) {
-    return;
-  }
-
-  Accessible* container = mDocument->AccessibleOrTrueContainer(parent);
-  if (!container) {
-    return;
-  }
-
-  AutoTArray<nsCOMPtr<nsIContent>, 10> list;
-  for (nsIContent* node = aStartChildNode; node != aEndChildNode;
-       node = node->GetNextSibling()) {
-    MOZ_ASSERT(parent == node->GetFlattenedTreeParentNode());
-    
-    
-    
-    if (node->GetPrimaryFrame() ||
-        (node->IsElement() && node->AsElement()->IsDisplayContents())) {
-      list.AppendElement(node);
-    }
-  }
-
-  if (!list.IsEmpty()) {
-    mContentInsertions.LookupOrAdd(container)->AppendElements(list);
+    Accessible* aContainer, nsTArray<nsCOMPtr<nsIContent>>& aInsertions) {
+  if (!aInsertions.IsEmpty()) {
+    mContentInsertions.LookupOrAdd(aContainer)->AppendElements(aInsertions);
     ScheduleProcessing();
   }
 }

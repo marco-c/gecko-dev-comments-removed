@@ -1266,12 +1266,36 @@ void DocAccessible::ContentInserted(nsIContent* aStartChildNode,
                                     nsIContent* aEndChildNode) {
   
   
-  if (mNotificationController && HasLoadState(eTreeConstructed)) {
-    
-    
-    mNotificationController->ScheduleContentInsertion(aStartChildNode,
-                                                      aEndChildNode);
+  if (!mNotificationController || !HasLoadState(eTreeConstructed)) {
+    return;
   }
+
+  
+  
+  
+  nsINode* parent = aStartChildNode->GetFlattenedTreeParentNode();
+  if (!parent) {
+    return;
+  }
+
+  Accessible* container = AccessibleOrTrueContainer(parent);
+  if (!container) {
+    return;
+  }
+
+  AutoTArray<nsCOMPtr<nsIContent>, 10> list;
+  for (nsIContent* node = aStartChildNode; node != aEndChildNode;
+       node = node->GetNextSibling()) {
+    MOZ_ASSERT(parent == node->GetFlattenedTreeParentNode());
+    
+    
+    
+    if (node->GetPrimaryFrame() || nsCoreUtils::IsDisplayContents(node)) {
+      list.AppendElement(node);
+    }
+  }
+
+  mNotificationController->ScheduleContentInsertion(container, list);
 }
 
 void DocAccessible::RecreateAccessible(nsIContent* aContent) {

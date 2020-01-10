@@ -191,8 +191,8 @@ class NotificationController final : public EventQueue,
   
 
 
-  void ScheduleContentInsertion(nsIContent* aStartChildNode,
-                                nsIContent* aEndChildNode);
+  void ScheduleContentInsertion(Accessible* aContainer,
+                                nsTArray<nsCOMPtr<nsIContent>>& aInsertions);
 
   
 
