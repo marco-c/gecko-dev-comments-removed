@@ -18,8 +18,8 @@ const { LongStringActor } = require("devtools/server/actors/object/long-string")
 const { createValueGrip, stringIsLong } = require("devtools/server/actors/object/utils");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const ErrorDocs = require("devtools/server/actors/errordocs");
-const { evalWithDebugger } = require("devtools/server/actors/webconsole/eval-with-debugger");
 
+loader.lazyRequireGetter(this, "evalWithDebugger", "devtools/server/actors/webconsole/eval-with-debugger", true);
 loader.lazyRequireGetter(this, "NetworkMonitorActor", "devtools/server/actors/network-monitor", true);
 loader.lazyRequireGetter(this, "ConsoleProgressListener", "devtools/server/actors/webconsole/listeners/console-progress", true);
 loader.lazyRequireGetter(this, "StackTraceCollector", "devtools/server/actors/network-monitor/stack-trace-collector", true);
@@ -897,7 +897,7 @@ WebConsoleActor.prototype =
 
 
 
-  evaluateJSAsync: function(request) {
+  evaluateJSAsync: async function(request) {
     
     
 
@@ -908,16 +908,21 @@ WebConsoleActor.prototype =
       resultID: resultID,
     });
 
-    
-    const response = this.evaluateJS(request);
-    response.resultID = resultID;
+    try {
+      
+      let response = this.evaluateJS(request);
+      response.resultID = resultID;
 
-    this._waitForResultAndSend(response).catch(e =>
+      
+      response = await this._maybeWaitForResponseResult(response);
+      
+      this.conn.sendActorEvent(this.actorID, "evaluationResult", response);
+    } catch (e) {
       DevToolsUtils.reportException(
         "evaluateJSAsync",
         Error(`Encountered error while waiting for Helper Result: ${e}`)
-      )
-    );
+      );
+    }
   },
 
   
@@ -934,48 +939,46 @@ WebConsoleActor.prototype =
 
 
 
+  _maybeWaitForResponseResult: async function(response) {
+    if (!response) {
+      return response;
+    }
 
-  _waitForResultAndSend: async function(response) {
-    let updateTimestamp = false;
+    const thenable = obj => obj && typeof obj.then === "function";
+    const waitForHelperResult = response.helperResult && thenable(response.helperResult);
+    const waitForAwaitResult = response.awaitResult && thenable(response.awaitResult);
+
+    if (!waitForAwaitResult && !waitForHelperResult) {
+      return response;
+    }
 
     
-    if (
-      response.helperResult && typeof response.helperResult.then == "function"
-    ) {
+    if (waitForHelperResult) {
       response.helperResult = await response.helperResult;
-      updateTimestamp = true;
-    } else if (response.awaitResult && typeof response.awaitResult.then === "function") {
+    } else if (waitForAwaitResult) {
       let result;
       try {
         result = await response.awaitResult;
+
+        
+        
+        const dbgResult = this.makeDebuggeeValue(result);
+        response.result = this.createValueGrip(dbgResult);
       } catch (e) {
         
         
         response.topLevelAwaitRejected = true;
       }
 
-      if (!response.topLevelAwaitRejected) {
-        
-        
-        const dbgResult = this.makeDebuggeeValue(result);
-        response.result = this.createValueGrip(dbgResult);
-      }
-
       
       delete response.awaitResult;
-
-      updateTimestamp = true;
-    }
-
-    if (updateTimestamp) {
-      
-      
-      response.timestamp = Date.now();
     }
 
     
     
-    this.conn.sendActorEvent(this.actorID, "evaluationResult", response);
+    response.timestamp = Date.now();
+
+    return response;
   },
 
   

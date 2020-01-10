@@ -1175,6 +1175,13 @@ DebuggerServerConnection.prototype = {
         throw new Error(`Connection closed, pending response from '${from}', ` +
                         `type '${type}' failed`);
       }
+
+      
+      
+      if (!response) {
+        return;
+      }
+
       if (!response.from) {
         response.from = from;
       }
