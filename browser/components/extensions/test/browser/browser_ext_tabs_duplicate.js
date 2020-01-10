@@ -182,7 +182,8 @@ add_task(async function testDuplicateResolvePromiseRightAway() {
 
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
-      permissions: ["tabs"],
+      
+      permissions: ["tabs", "http://mochi.test/"],
     },
 
     background: async function() {
@@ -207,6 +208,12 @@ add_task(async function testDuplicateResolvePromiseRightAway() {
             if (resolvedRightAway === null) {
               resolvedRightAway = true;
             }
+
+            
+            
+            let code = "document.URL";
+            let [result] = await browser.tabs.executeScript(tab.id, { code });
+            browser.test.assertEq(tab.url, result, "executeScript result");
 
             await browser.tabs.remove([tabs[1].id, tab.id]);
             if (resolvedRightAway) {
