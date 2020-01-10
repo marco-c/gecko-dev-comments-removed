@@ -254,7 +254,7 @@ class ComputedStyle {
 
 
   template <typename T, typename S>
-  nscolor GetVisitedDependentColor(T S::*aField);
+  nscolor GetVisitedDependentColor(T S::*aField) const;
 
   
 
