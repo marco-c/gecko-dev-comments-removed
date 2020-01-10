@@ -1243,6 +1243,10 @@ pref("privacy.trackingprotection.enabled",  false);
 
 pref("privacy.trackingprotection.pbmode.enabled",  true);
 
+#ifdef NIGHTLY_BUILD
+pref("privacy.trackingprotection.origin_telemetry.enabled", true);
+#endif
+
 pref("privacy.firstparty.isolate",                        false);
 
 
