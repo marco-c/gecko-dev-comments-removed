@@ -1017,16 +1017,6 @@ pref("extensions.spellcheck.inline.max-misspellings", 500);
 
 
 
-
-
-
-
-pref("editor.resizing.enabled_by_default", false);
-pref("editor.inline_table_editing.enabled_by_default", false);
-pref("editor.positioning.enabled_by_default", false);
-
-
-
 pref("editor.use_div_for_default_newlines",  true);
 
 
