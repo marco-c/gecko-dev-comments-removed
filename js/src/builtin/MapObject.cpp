@@ -29,8 +29,6 @@ using namespace js;
 using mozilla::IsNaN;
 using mozilla::NumberEqualsInt32;
 
-using JS::DoubleNaNValue;
-
 
 
 bool HashableValue::setValue(JSContext* cx, HandleValue v) {
