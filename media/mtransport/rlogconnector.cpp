@@ -29,13 +29,14 @@ extern "C" {
 
 static int ringbuffer_vlog(int facility, int level, const char* format,
                            va_list ap) {
-  MOZ_ASSERT(mozilla::RLogConnector::GetInstance());
-  
-  
-  char temp[4096];
-  VsprintfLiteral(temp, format, ap);
+  if (mozilla::RLogConnector::GetInstance()->ShouldLog(level)) {
+    
+    
+    char temp[4096];
+    VsprintfLiteral(temp, format, ap);
 
-  mozilla::RLogConnector::GetInstance()->Log(level, std::string(temp));
+    mozilla::RLogConnector::GetInstance()->Log(level, std::string(temp));
+  }
   return 0;
 }
 
@@ -75,14 +76,16 @@ void RLogConnector::SetLogLimit(uint32_t new_limit) {
   RemoveOld();
 }
 
+bool RLogConnector::ShouldLog(int level) const {
+  return level <= LOG_INFO ||
+         MOZ_LOG_TEST(getLogModule(), rLogLvlToMozLogLvl(level));
+}
+
 void RLogConnector::Log(int level, std::string&& log) {
   MOZ_MTLOG(rLogLvlToMozLogLvl(level), log);
-
-  if (level <= LOG_INFO) {
-    OffTheBooksMutexAutoLock lock(mutex_);
-    if (disableCount_ == 0) {
-      AddMsg(std::move(log));
-    }
+  OffTheBooksMutexAutoLock lock(mutex_);
+  if (disableCount_ == 0) {
+    AddMsg(std::move(log));
   }
 }
 
