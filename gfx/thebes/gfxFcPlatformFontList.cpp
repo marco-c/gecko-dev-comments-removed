@@ -2376,12 +2376,11 @@ bool gfxFcPlatformFontList::PrefFontListsUseOnlyGenerics() {
   static const char kFontNamePrefix[] = "font.name.";
 
   bool prefFontsUseOnlyGenerics = true;
-  uint32_t count;
-  char** names;
-  nsresult rv = Preferences::GetRootBranch()->GetChildList(kFontNamePrefix,
-                                                           &count, &names);
-  if (NS_SUCCEEDED(rv) && count) {
-    for (size_t i = 0; i < count; i++) {
+  nsTArray<nsCString> names;
+  nsresult rv =
+      Preferences::GetRootBranch()->GetChildList(kFontNamePrefix, names);
+  if (NS_SUCCEEDED(rv)) {
+    for (auto& name : names) {
       
       
       
@@ -2393,12 +2392,13 @@ bool gfxFcPlatformFontList::PrefFontListsUseOnlyGenerics() {
       
       
 
-      nsDependentCString prefName(names[i] + ArrayLength(kFontNamePrefix) - 1);
+      nsDependentCSubstring prefName =
+          Substring(name, ArrayLength(kFontNamePrefix) - 1);
       nsCCharSeparatedTokenizer tokenizer(prefName, '.');
       const nsDependentCSubstring& generic = tokenizer.nextToken();
       const nsDependentCSubstring& langGroup = tokenizer.nextToken();
       nsAutoCString fontPrefValue;
-      Preferences::GetCString(names[i], fontPrefValue);
+      Preferences::GetCString(name.get(), fontPrefValue);
       if (fontPrefValue.IsEmpty()) {
         
         
@@ -2414,7 +2414,6 @@ bool gfxFcPlatformFontList::PrefFontListsUseOnlyGenerics() {
         break;
       }
     }
-    NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(count, names);
   }
   return prefFontsUseOnlyGenerics;
 }

@@ -35,16 +35,14 @@ NS_IMPL_ISUPPORTS(LogModulePrefWatcher, nsIObserver)
 
 
 static void ResetExistingPrefs() {
-  uint32_t count;
-  char** names;
-  nsresult rv = Preferences::GetRootBranch()->GetChildList(kLoggingPrefPrefix,
-                                                           &count, &names);
-  if (NS_SUCCEEDED(rv) && count) {
-    for (size_t i = 0; i < count; i++) {
+  nsTArray<nsCString> names;
+  nsresult rv =
+      Preferences::GetRootBranch()->GetChildList(kLoggingPrefPrefix, names);
+  if (NS_SUCCEEDED(rv)) {
+    for (auto& name : names) {
       
-      Preferences::ClearUser(names[i]);
+      Preferences::ClearUser(name.get());
     }
-    NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(count, names);
   }
 }
 
@@ -112,14 +110,12 @@ static void LoadExistingPrefs() {
     return;
   }
 
-  uint32_t count;
-  char** names;
-  nsresult rv = root->GetChildList(kLoggingPrefPrefix, &count, &names);
-  if (NS_SUCCEEDED(rv) && count) {
-    for (size_t i = 0; i < count; i++) {
-      LoadPrefValue(names[i]);
+  nsTArray<nsCString> names;
+  nsresult rv = root->GetChildList(kLoggingPrefPrefix, names);
+  if (NS_SUCCEEDED(rv)) {
+    for (auto& name : names) {
+      LoadPrefValue(name.get());
     }
-    NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(count, names);
   }
 }
 

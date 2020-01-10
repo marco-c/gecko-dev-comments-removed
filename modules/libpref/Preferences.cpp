@@ -2575,24 +2575,15 @@ nsPrefBranch::DeleteBranch(const char* aStartingAt) {
 }
 
 NS_IMETHODIMP
-nsPrefBranch::GetChildList(const char* aStartingAt, uint32_t* aCount,
-                           char*** aChildArray) {
-  char** outArray;
-  int32_t numPrefs;
-  int32_t dwIndex;
-  AutoTArray<nsCString, 32> prefArray;
-
+nsPrefBranch::GetChildList(const char* aStartingAt,
+                           nsTArray<nsCString>& aChildArray) {
   NS_ENSURE_ARG(aStartingAt);
-  NS_ENSURE_ARG_POINTER(aCount);
-  NS_ENSURE_ARG_POINTER(aChildArray);
 
   MOZ_ASSERT(NS_IsMainThread());
 
-  *aChildArray = nullptr;
-  *aCount = 0;
-
   
   
+  AutoTArray<nsCString, 32> prefArray;
 
   const PrefName& parent = GetPrefName(aStartingAt);
   size_t parentLen = parent.Length();
@@ -2604,22 +2595,12 @@ nsPrefBranch::GetChildList(const char* aStartingAt, uint32_t* aCount,
 
   
   
-  numPrefs = prefArray.Length();
-
-  if (numPrefs) {
-    outArray = (char**)moz_xmalloc(numPrefs * sizeof(char*));
-
-    for (dwIndex = 0; dwIndex < numPrefs; ++dwIndex) {
-      
-      
-      const nsCString& element = prefArray[dwIndex];
-      outArray[dwIndex] =
-          (char*)moz_xmemdup(element.get() + mPrefRoot.Length(),
-                             element.Length() - mPrefRoot.Length() + 1);
-    }
-    *aChildArray = outArray;
+  aChildArray.SetCapacity(prefArray.Length());
+  for (auto& element : prefArray) {
+    
+    
+    aChildArray.AppendElement(Substring(element, mPrefRoot.Length()));
   }
-  *aCount = numPrefs;
 
   return NS_OK;
 }
