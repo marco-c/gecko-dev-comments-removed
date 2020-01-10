@@ -23,6 +23,11 @@ const { LocalizationHelper } = require("devtools/shared/l10n");
 const L10N = new LocalizationHelper(
   "devtools/client/locales/toolbox.properties"
 );
+loader.lazyImporter(
+  this,
+  "BrowserToolboxProcess",
+  "resource://devtools/client/framework/ToolboxProcess.jsm"
+);
 
 
 
@@ -129,6 +134,7 @@ window.addEventListener(
   async function() {
     gShortcuts = new KeyShortcuts({ window });
     gShortcuts.on("CmdOrCtrl+W", onCloseCommand);
+    gShortcuts.on("CmdOrCtrl+Alt+Shift+I", onDebugBrowserToolbox);
 
     const statusMessageContainer = document.getElementById(
       "status-message-title"
@@ -160,6 +166,16 @@ window.addEventListener(
 
 function onCloseCommand(event) {
   window.close();
+}
+
+
+
+
+
+
+
+function onDebugBrowserToolbox() {
+  BrowserToolboxProcess.init();
 }
 
 async function openToolbox(target) {
