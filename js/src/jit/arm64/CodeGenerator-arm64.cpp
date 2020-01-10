@@ -598,7 +598,7 @@ void CodeGenerator::visitDivConstantI(LDivConstantI* ins) {
     masm.Mov(const32, d);
     masm.Msub(const32, output32, const32, lhs32);
     
-    masm.Cmp(const32, const32);
+    masm.Cmp(const32, wzr);
     auto bailoutCond = Assembler::NonZero;
 
     
@@ -608,7 +608,7 @@ void CodeGenerator::visitDivConstantI(LDivConstantI* ins) {
       
       
       
-      masm.Ccmp(lhs32, lhs32, vixl::ZFlag, Assembler::Zero);
+      masm.Ccmp(lhs32, wzr, vixl::ZFlag, Assembler::Zero);
       bailoutCond = Assembler::Zero;
     }
 
