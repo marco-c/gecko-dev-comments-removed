@@ -39,19 +39,11 @@ let gListenerId = 0;
 
 
 
-
-
-
-
-
-
 function addContentEventListenerWithMessageManager(
   browser,
   eventName,
   listener,
-  listenerOptions = {},
-  checkFn,
-  autoremove = true
+  checkFn
 ) {
   let id = gListenerId++;
   let checkFnSource = checkFn
@@ -63,7 +55,7 @@ function addContentEventListenerWithMessageManager(
   
 
   
-  function frameScript(id, eventName, listenerOptions, checkFnSource) {
+  function frameScript(id, eventName, checkFnSource) {
     let checkFn;
     if (checkFnSource) {
       checkFn = eval(`(() => (${unescape(checkFnSource)}))()`);
@@ -78,17 +70,16 @@ function addContentEventListenerWithMessageManager(
     function removeListener(msg) {
       if (msg.data == id) {
         removeMessageListener("ContentEventListener:Remove", removeListener);
-        removeEventListener(eventName, listener, listenerOptions);
+        removeEventListener(eventName, listener);
       }
     }
     addMessageListener("ContentEventListener:Remove", removeListener);
-    addEventListener(eventName, listener, listenerOptions);
+    addEventListener(eventName, listener);
   }
   
 
-  let frameScriptSource = `data:,(${frameScript.toString()})(${id}, "${eventName}", ${uneval(
-    listenerOptions
-  )}, "${checkFnSource}")`;
+  let frameScriptSource = `data:,(${frameScript.toString()})(${id}, "${eventName}",
+     "${checkFnSource}")`;
 
   let mm = Services.mm;
 
@@ -109,18 +100,12 @@ function addContentEventListenerWithMessageManager(
     mm.removeMessageListener("ContentEventListener:Run", runListener);
     mm.broadcastAsyncMessage("ContentEventListener:Remove", id);
     mm.removeDelayedFrameScript(frameScriptSource);
-    if (autoremove) {
-      Services.obs.removeObserver(cleanupObserver, "message-manager-close");
-    }
   };
 
   function cleanupObserver(subject, topic, data) {
     if (subject == browser.messageManager) {
       unregisterFunction();
     }
-  }
-  if (autoremove) {
-    Services.obs.addObserver(cleanupObserver, "message-manager-close");
   }
 
   mm.loadFrameScript(frameScriptSource, true);
@@ -175,17 +160,13 @@ function prepareForVisibilityEvents(browser, expectedOrder) {
       browser,
       "pagehide",
       () => eventListener("pagehide"),
-      {},
-      checkFn,
-       false
+      checkFn
     );
     rmvShow = addContentEventListenerWithMessageManager(
       browser,
       "pageshow",
       () => eventListener("pageshow"),
-      {},
-      checkFn,
-       false
+      checkFn
     );
   });
 }
