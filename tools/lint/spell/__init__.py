@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import, print_function
+
 import os
 import signal
 import re
@@ -16,6 +18,7 @@ from mozfile import which
 from mozlint import result
 from mozlint.util import pip
 from mozprocess import ProcessHandlerMixin
+from six import PY3
 
 here = os.path.abspath(os.path.dirname(__file__))
 CODESPELL_REQUIREMENTS_PATH = os.path.join(here, 'codespell_requirements.txt')
@@ -43,7 +46,7 @@ class CodespellProcess(ProcessHandlerMixin):
         self.config = config
         kwargs = {
             'processOutputLine': [self.process_line],
-            'universal_newlines': True,
+            'universal_newlines': PY3,
         }
         ProcessHandlerMixin.__init__(self, *args, **kwargs)
 

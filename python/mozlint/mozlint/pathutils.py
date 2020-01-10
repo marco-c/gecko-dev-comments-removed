@@ -2,6 +2,8 @@
 
 
 
+from __future__ import unicode_literals, absolute_import
+
 import os
 
 from mozpack import path as mozpath

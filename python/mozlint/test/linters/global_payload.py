@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import, print_function
+
 from mozlint import result
 from mozpack.files import FileFinder
 import mozpack.path as mozpath
