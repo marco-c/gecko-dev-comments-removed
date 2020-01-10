@@ -15,15 +15,15 @@ function check_wave(v, enabled) {
   check("audio/wave; codecs=7", "probably");
   
   check("audio/wave; codecs=", "maybe");
-  check("audio/wave; codecs=\"\"", "maybe");
+  check('audio/wave; codecs=""', "maybe");
 
   
   check("audio/wave; codecs=0", "");
   check("audio/wave; codecs=2", "");
   check("audio/wave; codecs=xyz,1", "");
   check("audio/wave; codecs=1,xyz", "");
-  check("audio/wave; codecs=\"xyz, 1\"", "");
+  check('audio/wave; codecs="xyz, 1"', "");
   
   check("audio/wave; codecs=,", "");
-  check("audio/wave; codecs=\"0, 1,\"", "");
+  check('audio/wave; codecs="0, 1,"', "");
 }

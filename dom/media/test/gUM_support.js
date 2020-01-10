@@ -9,17 +9,26 @@ async function pushGetUserMediaTestPrefs({
   fakeAudio = false,
   fakeVideo = false,
   loopbackAudio = false,
-  loopbackVideo = false}) {
+  loopbackVideo = false,
+}) {
   
   if (!fakeAudio && !loopbackAudio) {
-    throw new Error("pushGetUserMediaTestPrefs: Should have fake or loopback audio!");
+    throw new Error(
+      "pushGetUserMediaTestPrefs: Should have fake or loopback audio!"
+    );
   } else if (fakeAudio && loopbackAudio) {
-    throw new Error("pushGetUserMediaTestPrefs: Should not have both fake and loopback audio!");
+    throw new Error(
+      "pushGetUserMediaTestPrefs: Should not have both fake and loopback audio!"
+    );
   }
   if (!fakeVideo && !loopbackVideo) {
-    throw new Error("pushGetUserMediaTestPrefs: Should have fake or loopback video!");
+    throw new Error(
+      "pushGetUserMediaTestPrefs: Should have fake or loopback video!"
+    );
   } else if (fakeVideo && loopbackVideo) {
-    throw new Error("pushGetUserMediaTestPrefs: Should not have both fake and loopback video!");
+    throw new Error(
+      "pushGetUserMediaTestPrefs: Should not have both fake and loopback video!"
+    );
   }
 
   let testPrefs = [];
@@ -32,10 +41,15 @@ async function pushGetUserMediaTestPrefs({
   if (loopbackAudio) {
     
     
-    let audioLoopDev = SpecialPowers.getCharPref("media.audio_loopback_dev", "");
+    let audioLoopDev = SpecialPowers.getCharPref(
+      "media.audio_loopback_dev",
+      ""
+    );
     if (!audioLoopDev) {
-      throw new Error("pushGetUserMediaTestPrefs: Loopback audio requested but " +
-        "media.audio_loopback_dev does not appear to be set!");
+      throw new Error(
+        "pushGetUserMediaTestPrefs: Loopback audio requested but " +
+          "media.audio_loopback_dev does not appear to be set!"
+      );
     }
   }
   if (fakeVideo) {
@@ -47,18 +61,23 @@ async function pushGetUserMediaTestPrefs({
   if (loopbackVideo) {
     
     
-    let videoLoopDev = SpecialPowers.getCharPref("media.video_loopback_dev", "");
+    let videoLoopDev = SpecialPowers.getCharPref(
+      "media.video_loopback_dev",
+      ""
+    );
     if (!videoLoopDev) {
-      throw new Error("pushGetUserMediaTestPrefs: Loopback video requested but " +
-        "media.video_loopback_dev does not appear to be set!");
+      throw new Error(
+        "pushGetUserMediaTestPrefs: Loopback video requested but " +
+          "media.video_loopback_dev does not appear to be set!"
+      );
     }
   }
   if (loopbackAudio || loopbackVideo) {
     
     
-    testPrefs.push(['media.navigator.permission.disabled', true]);
+    testPrefs.push(["media.navigator.permission.disabled", true]);
   }
-  return SpecialPowers.pushPrefEnv({set: testPrefs});
+  return SpecialPowers.pushPrefEnv({ set: testPrefs });
 }
 
 
