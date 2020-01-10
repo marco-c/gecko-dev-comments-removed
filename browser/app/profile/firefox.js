@@ -1897,3 +1897,16 @@ pref("corroborator.enabled", false);
 #else
 pref("corroborator.enabled", true);
 #endif
+
+
+pref("privacy.socialtracking.notification.enabled", true);
+
+pref("privacy.socialtracking.notification.session.pageload.min", 4);
+
+pref("privacy.socialtracking.notification.lastSeen", 0);
+
+pref("privacy.socialtracking.notification.period.min", 172800000);
+
+pref("privacy.socialtracking.notification.counter", 0);
+
+pref("privacy.socialtracking.notification.max", 5);
