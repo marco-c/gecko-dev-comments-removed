@@ -17,8 +17,6 @@
 
 
 
-#include <wchar.h>
-
 namespace mozilla {
 
 
