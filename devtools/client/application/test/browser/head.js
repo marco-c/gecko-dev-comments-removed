@@ -81,3 +81,12 @@ async function waitForWorkerRegistration(swTab) {
     })
   );
 }
+
+
+
+
+function selectPage(panel, page) {
+  info(`Selecting application page: ${page}`);
+  const actions = panel.panelWin.Application.actions;
+  actions.updateSelectedPage(page);
+}

@@ -15,8 +15,10 @@ add_task(async function() {
   await enableApplicationPanel();
 
   const { panel, toolbox } = await openNewTabAndApplicationPanel(TAB_URL);
-
   const doc = panel.panelWin.document;
+
+  
+  selectPage(panel, "service-workers");
 
   
   await toolbox.switchHost(Toolbox.HostType.WINDOW);
