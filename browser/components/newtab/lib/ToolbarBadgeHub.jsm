@@ -184,7 +184,7 @@ class _ToolbarBadgeHub {
         "mousedown",
         this.removeAllNotifications
       );
-      event.target.removeEventListener("click", this.removeAllNotifications);
+      event.target.removeEventListener("keypress", this.removeAllNotifications);
       
       
       if (this.state.notification) {
@@ -262,7 +262,7 @@ class _ToolbarBadgeHub {
       
       toolbarbutton.addEventListener("mousedown", this.removeAllNotifications);
       
-      toolbarbutton.addEventListener("click", this.removeAllNotifications);
+      toolbarbutton.addEventListener("keypress", this.removeAllNotifications);
       this.state = { notification: { id: message.id } };
 
       return toolbarbutton;

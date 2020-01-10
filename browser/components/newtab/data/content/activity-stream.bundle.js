@@ -13726,7 +13726,7 @@ const dedupe = new Dedupe(site => site && site.url);
 const INITIAL_STATE = {
   App: {
     
-    initialized: false,
+    initialized: false
   },
   ASRouter: {
     initialized: false
