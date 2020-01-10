@@ -144,32 +144,6 @@ td > ol:-moz-only-whitespace:-moz-last-node, th > ol:-moz-only-whitespace:-moz-l
 }
 
 
-
-
-:not(dl) > dd {
-  display: inline;
-  margin: 0;
-}
-
-:not(dl) > dd:before {
-  display: inline;
-  white-space: pre;
-  font-size: 1px;
-  line-height: 0;
-  content: "\A  ";
-  margin-inline-end: 40px;
-}
-
-
-
-
-dl > dl {
-  display: block;
-  margin-inline-start: 40px;
-}
-
-
-
 img[align=left]:dir(ltr), img[align=right]:dir(rtl) {
   margin-inline-end: 3px;
 }
