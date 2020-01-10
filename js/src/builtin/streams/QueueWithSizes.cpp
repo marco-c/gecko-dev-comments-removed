@@ -14,7 +14,7 @@
 
 #include "jsapi.h"  
 
-#include "builtin/streams/ReadableStreamController.h"  
+#include "builtin/streams/StreamController.h"  
 #include "js/Class.h"         
 #include "js/Conversions.h"   
 #include "js/RootingAPI.h"    
@@ -69,9 +69,9 @@ const JSClass QueueEntry::class_ = {"QueueEntry",
 
 
 
-MOZ_MUST_USE bool js::DequeueValue(
-    JSContext* cx, Handle<ReadableStreamController*> unwrappedContainer,
-    MutableHandle<Value> chunk) {
+MOZ_MUST_USE bool js::DequeueValue(JSContext* cx,
+                                   Handle<StreamController*> unwrappedContainer,
+                                   MutableHandle<Value> chunk) {
   
   
   
@@ -111,7 +111,7 @@ MOZ_MUST_USE bool js::DequeueValue(
 
 
 MOZ_MUST_USE bool js::EnqueueValueWithSize(
-    JSContext* cx, Handle<ReadableStreamController*> unwrappedContainer,
+    JSContext* cx, Handle<StreamController*> unwrappedContainer,
     Handle<Value> value, Handle<Value> sizeVal) {
   cx->check(value, sizeVal);
 
@@ -162,8 +162,8 @@ MOZ_MUST_USE bool js::EnqueueValueWithSize(
 
 
 
-MOZ_MUST_USE bool js::ResetQueue(
-    JSContext* cx, Handle<ReadableStreamController*> unwrappedContainer) {
+MOZ_MUST_USE bool js::ResetQueue(JSContext* cx,
+                                 Handle<StreamController*> unwrappedContainer) {
   
   
   

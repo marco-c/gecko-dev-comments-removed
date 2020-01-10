@@ -22,6 +22,7 @@
 #include "builtin/streams/ReadableStreamInternals.h"  
 #include "builtin/streams/ReadableStreamOperations.h"  
 #include "builtin/streams/ReadableStreamReader.h"  
+#include "builtin/streams/StreamController.h"      
 #include "gc/Zone.h"        
 #include "js/GCAPI.h"       
 #include "js/RootingAPI.h"  

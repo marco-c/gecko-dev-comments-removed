@@ -18,26 +18,26 @@ struct JSContext;
 
 namespace js {
 
-class ReadableStreamController;
+class StreamController;
 
 
 
 
 extern MOZ_MUST_USE bool DequeueValue(
-    JSContext* cx, JS::Handle<ReadableStreamController*> unwrappedContainer,
+    JSContext* cx, JS::Handle<StreamController*> unwrappedContainer,
     JS::MutableHandle<JS::Value> chunk);
 
 
 
 extern MOZ_MUST_USE bool EnqueueValueWithSize(
-    JSContext* cx, JS::Handle<ReadableStreamController*> unwrappedContainer,
+    JSContext* cx, JS::Handle<StreamController*> unwrappedContainer,
     JS::Handle<JS::Value> value, JS::Handle<JS::Value> sizeVal);
 
 
 
 
 extern MOZ_MUST_USE bool ResetQueue(
-    JSContext* cx, JS::Handle<ReadableStreamController*> unwrappedContainer);
+    JSContext* cx, JS::Handle<StreamController*> unwrappedContainer);
 
 }  
 

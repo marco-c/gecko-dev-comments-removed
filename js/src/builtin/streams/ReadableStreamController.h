@@ -14,6 +14,7 @@
 #include <stdint.h>  
 
 #include "builtin/streams/ReadableStream.h"  
+#include "builtin/streams/StreamController.h"  
 #include "js/Class.h"                        
 #include "js/RootingAPI.h"                   
 #include "js/Stream.h"  
@@ -22,33 +23,6 @@
 #include "vm/NativeObject.h"  
 
 namespace js {
-
-
-
-
-class StreamController : public NativeObject {
- public:
-  
-
-
-
-
-
-
-
-
-  enum Slots { Slot_Queue, Slot_TotalSize, SlotCount };
-
-  ListObject* queue() const {
-    return &getFixedSlot(Slot_Queue).toObject().as<ListObject>();
-  }
-  double queueTotalSize() const {
-    return getFixedSlot(Slot_TotalSize).toNumber();
-  }
-  void setQueueTotalSize(double size) {
-    setFixedSlot(Slot_TotalSize, JS::NumberValue(size));
-  }
-};
 
 class ReadableStreamController : public StreamController {
  public:
@@ -263,12 +237,6 @@ extern bool ControllerStartFailedHandler(JSContext* cx, unsigned argc,
                                          JS::Value* vp);
 
 }  
-
-template <>
-inline bool JSObject::is<js::StreamController>() const {
-  return is<js::ReadableStreamDefaultController>() ||
-         is<js::ReadableByteStreamController>();
-}
 
 template <>
 inline bool JSObject::is<js::ReadableStreamController>() const {
