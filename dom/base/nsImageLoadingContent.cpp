@@ -528,7 +528,7 @@ void nsImageLoadingContent::MaybeForceSyncDecoding(
     
     TimeStamp now = TimeStamp::Now();
     TimeDuration threshold = TimeDuration::FromMilliseconds(
-        StaticPrefs::ImageInferSrcAnimationThresholdMS());
+        StaticPrefs::image_infer_src_animation_threshold_ms());
 
     
     

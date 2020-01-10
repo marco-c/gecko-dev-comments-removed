@@ -43,8 +43,8 @@ TEST_F(ImageSurfaceCache, Factor2) {
 
   
   
-  ASSERT_LT(length,
-            static_cast<uint64_t>(StaticPrefs::ImageMemDecodeBytesAtATime()));
+  ASSERT_LT(length, static_cast<uint64_t>(
+                        StaticPrefs::image_mem_decode_bytes_at_a_time()));
 
   
   rv = image->OnImageDataAvailable(nullptr, nullptr, inputStream, 0,
@@ -73,7 +73,7 @@ TEST_F(ImageSurfaceCache, Factor2) {
 
   
   
-  int32_t threshold = StaticPrefs::ImageCacheFactor2ThresholdSurfaces();
+  int32_t threshold = StaticPrefs::image_cache_factor2_threshold_surfaces();
   ASSERT_TRUE(threshold >= 0);
 
   

@@ -347,7 +347,7 @@ LookupResult RasterImage::LookupFrame(const IntSize& aSize, uint32_t aFlags,
     
     
     MOZ_ASSERT(aPlaybackType != PlaybackType::eAnimated ||
-                   StaticPrefs::ImageMemAnimatedDiscardable() ||
+                   StaticPrefs::image_mem_animated_discardable() ||
                    !mAnimationState || mAnimationState->KnownFrameCount() < 1,
                "Animated frames should be locked");
 
@@ -415,7 +415,7 @@ RasterImage::WillDrawOpaqueNow() {
   }
 
   if (mAnimationState) {
-    if (!StaticPrefs::ImageMemAnimatedDiscardable()) {
+    if (!StaticPrefs::image_mem_animated_discardable()) {
       
       return true;
     } else {
@@ -471,7 +471,7 @@ void RasterImage::OnSurfaceDiscardedInternal(bool aAnimatedFramesDiscarded) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (aAnimatedFramesDiscarded && mAnimationState) {
-    MOZ_ASSERT(StaticPrefs::ImageMemAnimatedDiscardable());
+    MOZ_ASSERT(StaticPrefs::image_mem_animated_discardable());
     ReleaseImageContainer();
     gfx::IntRect rect =
         mAnimationState->UpdateState(mAnimationFinished, this, mSize);
@@ -716,7 +716,7 @@ bool RasterImage::SetMetadata(const ImageMetadata& aMetadata,
     mAnimationState.emplace(mAnimationMode);
     mFrameAnimator = MakeUnique<FrameAnimator>(this, mSize);
 
-    if (!StaticPrefs::ImageMemAnimatedDiscardable()) {
+    if (!StaticPrefs::image_mem_animated_discardable()) {
       
       
       LockImage();
@@ -1020,7 +1020,7 @@ RasterImage::GetKeys(nsTArray<nsCString>& keys) {
 void RasterImage::Discard() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(CanDiscard(), "Asked to discard but can't");
-  MOZ_ASSERT(!mAnimationState || StaticPrefs::ImageMemAnimatedDiscardable(),
+  MOZ_ASSERT(!mAnimationState || StaticPrefs::image_mem_animated_discardable(),
              "Asked to discard for animated image");
 
   
@@ -1042,7 +1042,7 @@ void RasterImage::Discard() {
 bool RasterImage::CanDiscard() {
   return mAllSourceData &&
          
-         (!mAnimationState || StaticPrefs::ImageMemAnimatedDiscardable());
+         (!mAnimationState || StaticPrefs::image_mem_animated_discardable());
 }
 
 NS_IMETHODIMP
@@ -1320,7 +1320,7 @@ bool RasterImage::CanDownscaleDuringDecode(const IntSize& aSize,
   
   
   if (!mHasSize || mTransient || !HaveSkia() ||
-      !StaticPrefs::ImageDownscaleDuringDecodeEnabled() ||
+      !StaticPrefs::image_downscale_during_decode_enabled() ||
       !(aFlags & imgIContainer::FLAG_HIGH_QUALITY_SCALING)) {
     return false;
   }

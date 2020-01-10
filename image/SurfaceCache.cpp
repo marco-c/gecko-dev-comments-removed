@@ -410,7 +410,7 @@ class ImageSurfaceCache {
     
     
     int32_t thresholdSurfaces =
-        StaticPrefs::ImageCacheFactor2ThresholdSurfaces();
+        StaticPrefs::image_cache_factor2_threshold_surfaces();
     if (thresholdSurfaces < 0 ||
         mSurfaces.Count() <= static_cast<uint32_t>(thresholdSurfaces)) {
       return;
@@ -1056,7 +1056,7 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
     
     DoUnlockSurfaces(
         WrapNotNull(cache),
-         !StaticPrefs::ImageMemAnimatedDiscardable(),
+         !StaticPrefs::image_mem_animated_discardable(),
         aAutoLock);
   }
 
@@ -1378,17 +1378,18 @@ void SurfaceCache::Initialize() {
   
   
   uint32_t surfaceCacheExpirationTimeMS =
-      StaticPrefs::ImageMemSurfaceCacheMinExpirationMS();
+      StaticPrefs::image_mem_surfacecache_min_expiration_ms();
 
   
   
   
   
   uint32_t surfaceCacheDiscardFactor =
-      max(StaticPrefs::ImageMemSurfaceCacheDiscardFactor(), 1u);
+      max(StaticPrefs::image_mem_surfacecache_discard_factor(), 1u);
 
   
-  uint64_t surfaceCacheMaxSizeKB = StaticPrefs::ImageMemSurfaceCacheMaxSizeKB();
+  uint64_t surfaceCacheMaxSizeKB =
+      StaticPrefs::image_mem_surfacecache_max_size_kb();
 
   
   
@@ -1399,7 +1400,7 @@ void SurfaceCache::Initialize() {
   
   
   uint32_t surfaceCacheSizeFactor =
-      max(StaticPrefs::ImageMemSurfaceCacheSizeFactor(), 1u);
+      max(StaticPrefs::image_mem_surfacecache_size_factor(), 1u);
 
   
   uint64_t memorySize = PR_GetPhysicalMemorySize();
@@ -1637,7 +1638,8 @@ IntSize SurfaceCache::ClampVectorSize(const IntSize& aSize) {
   
   
   
-  int32_t maxSizeKB = StaticPrefs::ImageCacheMaxRasterizedSVGThresholdKB();
+  int32_t maxSizeKB =
+      StaticPrefs::image_cache_max_rasterized_svg_threshold_kb();
   if (maxSizeKB <= 0) {
     return aSize;
   }
