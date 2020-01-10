@@ -159,34 +159,6 @@ class nsNodeUtils {
 
 
 
-
-
-
-  static already_AddRefed<nsINode> Clone(
-      nsINode* aNode, bool aDeep, nsNodeInfoManager* aNewNodeInfoManager,
-      nsCOMArray<nsINode>* aNodesWithProperties, mozilla::ErrorResult& aError) {
-    return CloneAndAdopt(aNode, true, aDeep, aNewNodeInfoManager, nullptr,
-                         aNodesWithProperties, nullptr, aError);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   static void Adopt(nsINode* aNode, nsNodeInfoManager* aNewNodeInfoManager,
                     JS::Handle<JSObject*> aReparentScope,
                     nsCOMArray<nsINode>& aNodesWithProperties,
@@ -218,7 +190,6 @@ class nsNodeUtils {
     nsMutationGuard::DidMutate();
   }
 
- private:
   
 
 
@@ -259,6 +230,7 @@ class nsNodeUtils {
       nsCOMArray<nsINode>* aNodesWithProperties, nsINode* aParent,
       mozilla::ErrorResult& aError);
 
+ private:
   enum class AnimationMutationType { Added, Changed, Removed };
   
 
