@@ -1909,4 +1909,4 @@ pref("privacy.socialtracking.notification.period.min", 172800000);
 
 pref("privacy.socialtracking.notification.counter", 0);
 
-pref("privacy.socialtracking.notification.max", 5);
+pref("privacy.socialtracking.notification.max", 2);
