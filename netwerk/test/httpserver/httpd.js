@@ -898,7 +898,25 @@ class NodeServer {
   
   
   
-  static execute(command) {
+  
+  
+
+  
+  static fork() {
+    return this.sendCommand("", "/fork");
+  }
+  
+  static execute(id, command) {
+    return this.sendCommand(command, `/execute/${id}`);
+  }
+  
+  static kill(id) {
+    return this.sendCommand("", `/kill/${id}`);
+  }
+
+  
+  
+  static sendCommand(command, path) {
     let env = Cc["@mozilla.org/process/environment;1"].getService(
       Ci.nsIEnvironment
     );
@@ -908,7 +926,7 @@ class NodeServer {
     }
 
     let req = new XMLHttpRequest();
-    req.open("POST", `http://127.0.0.1:${h2Port}/execute`);
+    req.open("POST", `http://127.0.0.1:${h2Port}${path}`);
 
     
     
