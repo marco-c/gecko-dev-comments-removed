@@ -23,6 +23,14 @@ using namespace mozilla::dom;
 #define ANCHOR_LOG(...)
 
 
+
+
+
+
+
+
+
+
 namespace mozilla {
 namespace layout {
 
@@ -194,7 +202,7 @@ void ScrollAnchorContainer::SelectAnchor() {
 
   AUTO_PROFILER_LABEL("ScrollAnchorContainer::SelectAnchor", LAYOUT);
   ANCHOR_LOG(
-      "Selecting anchor for %p with scroll-port=%s.\n", this,
+      "Selecting anchor for with scroll-port=%s.\n",
       mozilla::ToString(mScrollFrame->GetVisualOptimalViewingRect()).c_str());
 
   const nsStyleDisplay* disp = Frame()->StyleDisplay();
@@ -340,8 +348,8 @@ void ScrollAnchorContainer::ApplyAdjustments() {
     return;
   }
 
-  ANCHOR_LOG("Applying anchor adjustment of %d in %s for %p and anchor %p.\n",
-             logicalAdjustment, writingMode.DebugString(), this, mAnchorNode);
+  ANCHOR_LOG("Applying anchor adjustment of %d in %s with anchor %p.\n",
+             logicalAdjustment, writingMode.DebugString(), mAnchorNode);
 
   nsPoint physicalAdjustment;
   switch (writingMode.GetBlockDir()) {
