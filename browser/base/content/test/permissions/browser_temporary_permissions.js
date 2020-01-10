@@ -3,10 +3,6 @@
 
 "use strict";
 
-const { E10SUtils } = ChromeUtils.import(
-  "resource://gre/modules/E10SUtils.jsm"
-);
-
 const ORIGIN = "https://example.com";
 const PERMISSIONS_PAGE =
   getRootDirectory(gTestPath).replace("chrome://mochitests/content", ORIGIN) +
@@ -72,15 +68,30 @@ add_task(async function testTempPermissionSubframes() {
     );
 
     
-    await ContentTask.spawn(browser, uri.host, function(host) {
-      E10SUtils.wrapHandlingUserInput(content, true, function() {
-        let frame = content.document.getElementById("frame");
-        let frameDoc = frame.contentWindow.document;
+    await ContentTask.spawn(browser, uri.host, async function(host0) {
+      
+      
+      if (content.SpecialPowers.useRemoteSubframes) {
+        for (let i = 0; i < 200; i++) {
+          await new Promise(resolve => content.setTimeout(resolve, 0));
+        }
+      }
 
-        
-        Assert.notEqual(frameDoc.location.host, host);
+      let frame = content.document.getElementById("frame");
 
-        frameDoc.getElementById("geo").click();
+      await content.SpecialPowers.spawn(frame, [host0], async function(host) {
+        const { E10SUtils } = ChromeUtils.import(
+          "resource://gre/modules/E10SUtils.jsm"
+        );
+
+        E10SUtils.wrapHandlingUserInput(this.content, true, function() {
+          let frameDoc = this.content.document;
+
+          
+          Assert.notEqual(frameDoc.location.host, host);
+
+          frameDoc.getElementById("geo").click();
+        });
       });
     });
 
