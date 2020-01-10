@@ -229,8 +229,6 @@ class InspectorUtils {
                                  const nsAString& aPseudoClass);
   static void ClearPseudoClassLocks(GlobalObject& aGlobal, Element& aElement);
 
-  static bool IsElementThemed(GlobalObject& aGlobal, Element& aElement);
-
   
 
 
