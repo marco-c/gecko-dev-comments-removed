@@ -73,13 +73,11 @@ function pointPrecedes(pointA, pointB) {
     return false;
   }
 
-  assert("frameIndex" in posA && "frameIndex" in posB);
-  assert("script" in posA && "script" in posB);
-
   
   
-  if (posA.kind == "EnterFrame" || posB.kind == "EnterFrame") {
-    return posA.kind == "EnterFrame";
+  
+  if ("frameIndex" in posA != "frameIndex" in posB) {
+    return "frameIndex" in posB;
   }
 
   
@@ -89,6 +87,7 @@ function pointPrecedes(pointA, pointB) {
   
   
   
+  assert("frameIndex" in posA && "frameIndex" in posB);
   if (posA.frameIndex != posB.frameIndex) {
     return posA.frameIndex > posB.frameIndex;
   }
@@ -107,43 +106,6 @@ function pointPrecedes(pointA, pointB) {
 
 function pointEquals(pointA, pointB) {
   return !pointPrecedes(pointA, pointB) && !pointPrecedes(pointB, pointA);
-}
-
-
-function pointToString(point) {
-  if (point.position) {
-    return `${point.checkpoint}:${point.progress}:${positionToString(
-      point.position
-    )}`;
-  }
-  return `${point.checkpoint}:${point.progress}`;
-}
-
-
-function pointArrayIncludes(points, point) {
-  return points.some(p => pointEquals(point, p));
-}
-
-
-
-
-
-function findClosestPoint(points, point, before, inclusive) {
-  let result = null;
-  for (const p of points) {
-    if (inclusive && pointEquals(p, point)) {
-      return p;
-    }
-    if (before ? pointPrecedes(p, point) : pointPrecedes(point, p)) {
-      if (
-        !result ||
-        (before ? pointPrecedes(result, p) : pointPrecedes(p, result))
-      ) {
-        result = p;
-      }
-    }
-  }
-  return result;
 }
 
 
@@ -172,37 +134,19 @@ function positionSubsumes(posA, posB) {
     return true;
   }
 
-  
-  if (
-    posA.kind == "EnterFrame" &&
-    posB.kind == "EnterFrame" &&
-    !posA.script &&
-    posB.script
-  ) {
-    return true;
-  }
-
   return false;
-}
-
-function positionToString(pos) {
-  return `${pos.kind}:${pos.script}:${pos.offset}:${pos.frameIndex}`;
 }
 
 function assert(v) {
   if (!v) {
     dump(`Assertion failed: ${Error().stack}\n`);
-    throw new Error(`Assertion failed! ${Error().stack}`);
+    throw new Error("Assertion failed!");
   }
 }
 
 this.EXPORTED_SYMBOLS = [
   "pointPrecedes",
   "pointEquals",
-  "pointToString",
-  "pointArrayIncludes",
-  "findClosestPoint",
   "positionEquals",
   "positionSubsumes",
-  "positionToString",
 ];

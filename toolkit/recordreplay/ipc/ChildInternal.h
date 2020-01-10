@@ -60,10 +60,6 @@ void SendResetMiddlemanCalls();
 
 bool CurrentRepaintCannotFail();
 
-
-
-bool Repaint(nsAString& aData);
-
 }  
 }  
 }  

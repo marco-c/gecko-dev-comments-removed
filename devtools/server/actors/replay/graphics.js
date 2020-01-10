@@ -45,7 +45,7 @@ function getCanvas(window) {
   return window.middlemanCanvas;
 }
 
-function updateWindowCanvas(window, buffer, width, height) {
+function updateWindowCanvas(window, buffer, width, height, hadFailure) {
   
   const canvas = getCanvas(window);
 
@@ -67,39 +67,29 @@ function updateWindowCanvas(window, buffer, width, height) {
   const imageData = cx.getImageData(0, 0, width, height);
   imageData.data.set(graphicsData);
   cx.putImageData(imageData, 0, 0);
+
+  
+  
+  if (hadFailure) {
+    cx.fillStyle = "red";
+    cx.font = "48px serif";
+    cx.fillText("PAINT FAILURE", 10, 50);
+  }
 }
 
-function clearWindowCanvas(window) {
-  const canvas = getCanvas(window);
-
-  const cx = canvas.getContext("2d");
-  cx.clearRect(0, 0, canvas.width, canvas.height);
-}
 
 
 
-
-function UpdateCanvas(buffer, width, height) {
+function UpdateCanvas(buffer, width, height, hadFailure) {
   try {
     
     for (const window of Services.ww.getWindowEnumerator()) {
-      updateWindowCanvas(window, buffer, width, height);
+      updateWindowCanvas(window, buffer, width, height, hadFailure);
     }
   } catch (e) {
-    dump(`Middleman Graphics UpdateCanvas Exception: ${e}\n`);
+    dump("Middleman Graphics UpdateCanvas Exception: " + e + "\n");
   }
 }
 
 
-function ClearCanvas() {
-  try {
-    for (const window of Services.ww.getWindowEnumerator()) {
-      clearWindowCanvas(window);
-    }
-  } catch (e) {
-    dump(`Middleman Graphics ClearCanvas Exception: ${e}\n`);
-  }
-}
-
-
-var EXPORTED_SYMBOLS = ["UpdateCanvas", "ClearCanvas"];
+var EXPORTED_SYMBOLS = ["UpdateCanvas"];

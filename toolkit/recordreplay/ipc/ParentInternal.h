@@ -71,23 +71,6 @@ static Monitor* gMonitor;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 extern void* gGraphicsMemory;
 
 void InitializeGraphicsMemory();
@@ -95,17 +78,8 @@ void SendGraphicsMemoryToChild();
 
 
 
-void UpdateGraphicsAfterPaint(const PaintMessage& aMsg);
 
-
-
-void UpdateGraphicsAfterRepaint(const nsACString& imageData);
-
-
-void RestoreMainGraphics();
-
-
-void ClearGraphics();
+void UpdateGraphicsInUIProcess(const PaintMessage* aMsg);
 
 
 

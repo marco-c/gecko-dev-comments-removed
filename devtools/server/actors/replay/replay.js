@@ -35,7 +35,6 @@ const sandbox = Cu.Sandbox(
 Cu.evalInSandbox(
   "Components.utils.import('resource://gre/modules/jsdebugger.jsm');" +
     "Components.utils.import('resource://gre/modules/Services.jsm');" +
-    "Components.utils.import('resource://devtools/shared/execution-point-utils.js');" +
     "addDebuggerToGlobal(this);",
   sandbox
 );
@@ -45,22 +44,15 @@ const {
   Services,
   InspectorUtils,
   CSSRule,
-  pointPrecedes,
-  pointEquals,
-  findClosestPoint,
 } = sandbox;
 
 const dbg = new Debugger();
-const gFirstGlobal = dbg.makeGlobalObjectReference(sandbox);
-const gAllGlobals = [];
+const firstGlobal = dbg.makeGlobalObjectReference(sandbox);
 
 
 dbg.onNewGlobalObject = function(global) {
   try {
     dbg.addDebuggee(global);
-    gAllGlobals.push(global);
-
-    scanningOnNewGlobal(global);
   } catch (e) {
     
     
@@ -189,8 +181,7 @@ const gScripts = new IdMap();
 const gNewScripts = [];
 
 function addScript(script) {
-  const id = gScripts.add(script);
-  script.setInstrumentationId(id);
+  gScripts.add(script);
   script.getChildScripts().forEach(addScript);
 }
 
@@ -213,11 +204,6 @@ function considerScript(script) {
   return RecordReplayControl.shouldUpdateProgressCounter(script.url);
 }
 
-function setEmptyInstrumentationId(script) {
-  script.setInstrumentationId(0);
-  script.getChildScripts().foreach(setEmptyInstrumentationId);
-}
-
 dbg.onNewScript = function(script) {
   if (RecordReplayControl.areThreadEventsDisallowed()) {
     
@@ -225,12 +211,16 @@ dbg.onNewScript = function(script) {
   }
 
   if (!considerScript(script)) {
-    setEmptyInstrumentationId(script);
     return;
   }
 
   addScript(script);
   addScriptSource(script.source);
+
+  
+  
+  
+  RecordReplayControl.advanceProgressCounter();
 
   if (gManifest.kind == "resume") {
     gNewScripts.push(getScriptData(gScripts.getId(script)));
@@ -382,217 +372,28 @@ function NewTimeWarpTarget() {
 
 
 
+const gScannedScripts = new Set();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function scanningOnNewGlobal(global) {
-  global.setInstrumentation(
-    global.makeDebuggeeNativeFunction(
-      RecordReplayControl.instrumentationCallback
-    ),
-    ["main", "entry", "breakpoint", "exit"]
-  );
-
-  if (RecordReplayControl.isScanningScripts()) {
-    global.setInstrumentationActive(true);
-  }
-}
-
-
-function ScriptResumeFrame(script) {
-  
-  
-  
-  
-  RecordReplayControl.setFrameDepth(countScriptFrames() - 1);
-  RecordReplayControl.onResumeFrame("", script);
-}
-
-function startScanningAllScripts() {
-  if (RecordReplayControl.isScanningScripts()) {
-    return;
-  }
-  RecordReplayControl.setScanningScripts(true);
-
-  for (const global of gAllGlobals) {
-    global.setInstrumentationActive(true);
-  }
-
-  
-  
-  
-  
-  
-  
-  dbg.onExceptionUnwind = frame => {
-    if (considerScript(frame.script)) {
-      frame.onPop = () => {
-        const script = gScripts.getId(frame.script);
-        RecordReplayControl.setFrameDepth(countScriptFrames());
-        RecordReplayControl.onExitFrame("", script);
-      };
-    }
-  };
-}
-
-function stopScanningAllScripts() {
-  if (!RecordReplayControl.isScanningScripts()) {
-    return;
-  }
-  RecordReplayControl.setScanningScripts(false);
-
-  for (const global of gAllGlobals) {
-    global.setInstrumentationActive(false);
-  }
-
-  dbg.onExceptionUnwind = undefined;
-}
-
-
-
-
-
-function findScriptHits(position, startpoint, endpoint) {
-  const { kind, script, offset, frameIndex: bpFrameIndex } = position;
-  const hits = [];
-  for (let checkpoint = startpoint; checkpoint < endpoint; checkpoint++) {
-    const allHits = RecordReplayControl.findScriptHits(
-      checkpoint,
-      script,
-      offset
-    );
-    for (const { progress, frameIndex } of allHits) {
-      switch (kind) {
-        case "OnStep":
-          if (bpFrameIndex != frameIndex) {
-            continue;
-          }
-        
-        case "Break":
-          hits.push({
-            checkpoint,
-            progress,
-            position: { kind: "OnStep", script, offset, frameIndex },
-          });
-      }
-    }
-  }
-  return hits;
-}
-
-function findAllScriptHits(script, frameIndex, offsets, startpoint, endpoint) {
-  const allHits = [];
+function startScanningScript(script) {
+  const id = gScripts.getId(script);
+  const offsets = script.getPossibleBreakpointOffsets();
+  let lastFrame = null,
+    lastFrameIndex = 0;
   for (const offset of offsets) {
-    const position = {
-      kind: "OnStep",
-      script,
-      offset,
-      frameIndex,
+    const handler = {
+      hit(frame) {
+        let frameIndex;
+        if (frame == lastFrame) {
+          frameIndex = lastFrameIndex;
+        } else {
+          lastFrame = frame;
+          lastFrameIndex = frameIndex = countScriptFrames() - 1;
+        }
+        RecordReplayControl.addScriptHit(id, offset, frameIndex);
+      },
     };
-
-    const hits = findScriptHits(position, startpoint, endpoint);
-    allHits.push(...hits);
+    script.setBreakpoint(offset, handler);
   }
-  return allHits;
-}
-
-function findChangeFrames(checkpoint, which, kind, frameIndex, maybeScript) {
-  const hits = RecordReplayControl.findChangeFrames(checkpoint, which);
-  return hits
-    .filter(
-      hit =>
-        hit.frameIndex == frameIndex &&
-        (!maybeScript || hit.script == maybeScript)
-    )
-    .map(({ script, progress }) => ({
-      checkpoint,
-      progress,
-      position: { kind, script, frameIndex },
-    }));
-}
-
-function findFrameSteps({ targetPoint, breakpointOffsets }) {
-  const {
-    checkpoint,
-    position: { script, frameIndex: targetIndex },
-  } = targetPoint;
-
-  
-  let entryPoint;
-  if (targetPoint.position.kind == "EnterFrame") {
-    entryPoint = targetPoint;
-  } else {
-    const entryHits = [
-      ...findChangeFrames(checkpoint, 0, "EnterFrame", targetIndex, script),
-      ...findChangeFrames(checkpoint, 2, "EnterFrame", targetIndex, script),
-    ];
-
-    
-    
-    
-    entryPoint = findClosestPoint(
-      entryHits,
-      targetPoint,
-       true,
-       true
-    );
-    assert(entryPoint);
-  }
-
-  
-  const exitHits = findChangeFrames(
-    checkpoint,
-    1,
-    "OnPop",
-    targetIndex,
-    script
-  );
-  const exitPoint = findClosestPoint(
-    exitHits,
-    targetPoint,
-     false,
-     true
-  );
-
-  
-  
-  
-  const breakpointHits = findAllScriptHits(
-    script,
-    targetIndex,
-    breakpointOffsets,
-    checkpoint,
-    checkpoint + 1
-  );
-  const enterFrameHits = findChangeFrames(
-    checkpoint,
-    0,
-    "EnterFrame",
-    targetIndex + 1
-  );
-  const steps = breakpointHits.concat(enterFrameHits).filter(point => {
-    return pointPrecedes(entryPoint, point) && pointPrecedes(point, exitPoint);
-  });
-  steps.push(entryPoint, exitPoint);
-
-  steps.sort((pointA, pointB) => {
-    return pointPrecedes(pointB, pointA);
-  });
-
-  return steps;
 }
 
 
@@ -600,7 +401,7 @@ function findFrameSteps({ targetPoint, breakpointOffsets }) {
 
 
 
-let gHasEnterFrameHandler = false;
+let gPositionHandlerKinds = Object.create(null);
 
 
 
@@ -620,7 +421,7 @@ function clearPositionHandlers() {
   dbg.clearAllBreakpoints();
   dbg.onEnterFrame = undefined;
 
-  gHasEnterFrameHandler = false;
+  gPositionHandlerKinds = Object.create(null);
   gPendingPcHandlers.length = 0;
   gInstalledPcHandlers.length = 0;
   gOnPopFilters.length = 0;
@@ -631,6 +432,14 @@ function installPendingHandlers() {
   gPendingPcHandlers.length = 0;
 
   pending.forEach(ensurePositionHandler);
+}
+
+
+
+function hitGlobalHandler(kind, frame) {
+  if (gPositionHandlerKinds[kind]) {
+    positionHit({ kind }, frame);
+  }
 }
 
 
@@ -648,14 +457,7 @@ function onPopFrame(completion) {
 
 function onEnterFrame(frame) {
   if (considerScript(frame.script)) {
-    if (gHasEnterFrameHandler) {
-      ensurePositionHandler({
-        kind: "OnStep",
-        script: gScripts.getId(frame.script),
-        frameIndex: countScriptFrames() - 1,
-        offset: frame.script.mainOffset,
-      });
-    }
+    hitGlobalHandler("EnterFrame", frame);
 
     gOnPopFilters.forEach(filter => {
       if (filter(frame)) {
@@ -679,6 +481,8 @@ function addOnPopFilter(filter) {
 }
 
 function ensurePositionHandler(position) {
+  gPositionHandlerKinds[position.kind] = true;
+
   switch (position.kind) {
     case "Break":
     case "OnStep":
@@ -692,12 +496,6 @@ function ensurePositionHandler(position) {
           gPendingPcHandlers.push(position);
           return;
         }
-
-        
-        
-        
-        
-        debugScript.mainOffset;
       }
 
       const match = function({ script, offset }) {
@@ -713,14 +511,6 @@ function ensurePositionHandler(position) {
 
       debugScript.setBreakpoint(position.offset, {
         hit(frame) {
-          if (position.offset == debugScript.mainOffset) {
-            positionHit({
-              kind: "EnterFrame",
-              script: position.script,
-              frameIndex: countScriptFrames() - 1,
-            });
-          }
-
           positionHit(
             {
               kind: "OnStep",
@@ -739,7 +529,6 @@ function ensurePositionHandler(position) {
       break;
     case "EnterFrame":
       dbg.onEnterFrame = onEnterFrame;
-      gHasEnterFrameHandler = true;
       break;
   }
 }
@@ -841,7 +630,7 @@ function makeDebuggeeValue(value) {
       
       
       
-      return gFirstGlobal.makeDebuggeeValue(value);
+      return firstGlobal.makeDebuggeeValue(value);
     }
   }
   return value;
@@ -899,13 +688,43 @@ const gManifestStartHandlers = {
   },
 
   findHits({ position, startpoint, endpoint }) {
-    RecordReplayControl.manifestFinished(
-      findScriptHits(position, startpoint, endpoint)
-    );
+    const { kind, script, offset, frameIndex: bpFrameIndex } = position;
+    const hits = [];
+    const allHits = RecordReplayControl.findScriptHits(script, offset);
+    for (const { checkpoint, progress, frameIndex } of allHits) {
+      if (checkpoint >= startpoint && checkpoint < endpoint) {
+        switch (kind) {
+          case "OnStep":
+            if (bpFrameIndex != frameIndex) {
+              continue;
+            }
+          
+          case "Break":
+            hits.push({
+              checkpoint,
+              progress,
+              position: { kind: "OnStep", script, offset, frameIndex },
+            });
+        }
+      }
+    }
+    RecordReplayControl.manifestFinished(hits);
   },
 
-  findFrameSteps(info) {
-    RecordReplayControl.manifestFinished(findFrameSteps(info));
+  findFrameSteps({ entryPoint }) {
+    assert(entryPoint.position.kind == "EnterFrame");
+    const frameIndex = countScriptFrames() - 1;
+    const script = getFrameData(frameIndex).script;
+    const offsets = gScripts.getObject(script).getPossibleBreakpointOffsets();
+    for (const offset of offsets) {
+      ensurePositionHandler({ kind: "OnStep", script, offset, frameIndex });
+    }
+    ensurePositionHandler({ kind: "EnterFrame" });
+    ensurePositionHandler({ kind: "OnPop", script, frameIndex });
+
+    gFrameSteps = [entryPoint];
+    gFrameStepsFrameIndex = frameIndex;
+    RecordReplayControl.resumeExecution();
   },
 
   flushRecording() {
@@ -933,13 +752,6 @@ const gManifestStartHandlers = {
     RecordReplayControl.manifestFinished();
   },
 
-  getPauseData() {
-    divergeFromRecording();
-    const data = getPauseData();
-    data.paintData = RecordReplayControl.repaint();
-    RecordReplayControl.manifestFinished(data);
-  },
-
   hitLogpoint({ text, condition }) {
     divergeFromRecording();
 
@@ -954,11 +766,7 @@ const gManifestStartHandlers = {
 
     const rv = frame.eval(text);
     const converted = convertCompletionValue(rv, { snapshot: true });
-
-    const data = getPauseData();
-    data.paintData = RecordReplayControl.repaint();
-
-    RecordReplayControl.manifestFinished({ result: converted, data });
+    RecordReplayControl.manifestFinished({ result: converted });
   },
 };
 
@@ -980,7 +788,7 @@ function ManifestStart(manifest) {
 
 function BeforeCheckpoint() {
   clearPositionHandlers();
-  stopScanningAllScripts();
+  gScannedScripts.clear();
 }
 
 const FirstCheckpointId = 1;
@@ -1057,7 +865,12 @@ const gManifestPrepareAfterCheckpointHandlers = {
   },
 
   scanRecording() {
-    startScanningAllScripts();
+    dbg.onEnterFrame = frame => {
+      if (considerScript(frame.script) && !gScannedScripts.has(frame.script)) {
+        startScanningScript(frame.script);
+        gScannedScripts.add(frame.script);
+      }
+    };
   },
 };
 
@@ -1065,7 +878,10 @@ function processManifestAfterCheckpoint(point, restoredCheckpoint) {
   
   
   if (restoredCheckpoint) {
-    RecordReplayControl.manifestFinished({ restoredCheckpoint, point });
+    RecordReplayControl.manifestFinished({
+      restoredCheckpoint,
+      point: currentExecutionPoint(),
+    });
   }
 
   if (!gManifest) {
@@ -1096,6 +912,11 @@ function AfterCheckpoint(id, restoredCheckpoint) {
 }
 
 
+let gFrameSteps = null;
+
+let gFrameStepsFrameIndex = 0;
+
+
 
 const gManifestPositionHandlers = {
   resume(manifest, point) {
@@ -1108,9 +929,33 @@ const gManifestPositionHandlers = {
   },
 
   runToPoint({ endpoint }, point) {
-    if (pointEquals(point, endpoint)) {
+    if (
+      point.progress == endpoint.progress &&
+      point.position.frameIndex == endpoint.position.frameIndex
+    ) {
       clearPositionHandlers();
       RecordReplayControl.manifestFinished({ point });
+    }
+  },
+
+  findFrameSteps(_, point) {
+    switch (point.position.kind) {
+      case "OnStep":
+        gFrameSteps.push(point);
+        break;
+      case "EnterFrame":
+        if (countScriptFrames() == gFrameStepsFrameIndex + 2) {
+          gFrameSteps.push(point);
+        }
+        break;
+      case "OnPop":
+        gFrameSteps.push(point);
+        clearPositionHandlers();
+        RecordReplayControl.manifestFinished({
+          point,
+          frameSteps: gFrameSteps,
+        });
+        break;
     }
   },
 };
@@ -1141,6 +986,7 @@ function getScriptData(id) {
     displayName: script.displayName,
     url: script.url,
     format: script.format,
+    firstBreakpointOffset: script.getPossibleBreakpointOffsets()[0],
   };
 }
 
@@ -1177,7 +1023,6 @@ function getFrameData(index) {
     }
   }
 
-  const script = gScripts.getId(frame.script);
   return {
     index,
     type: frame.type,
@@ -1186,7 +1031,7 @@ function getFrameData(index) {
     generator: frame.generator,
     constructing: frame.constructing,
     this: convertValue(frame.this),
-    script,
+    script: gScripts.getId(frame.script),
     offset: frame.offset,
     arguments: _arguments,
   };
@@ -1445,14 +1290,13 @@ function getPauseData() {
   }
 
   for (let i = 0; i < numFrames; i++) {
-    const dbgFrame = scriptFrameForIndex(i);
     const frame = getFrameData(i);
     const script = gScripts.getObject(frame.script);
     rv.frames.push(frame);
     rv.offsetMetadata.push({
       scriptId: frame.script,
       offset: frame.offset,
-      metadata: script.getOffsetMetadata(dbgFrame.offset),
+      metadata: script.getOffsetMetadata(frame.offset),
     });
     addScript(frame.script);
     addValue(frame.this, true);
@@ -1585,13 +1429,6 @@ const gRequestHandlers = {
   getPossibleBreakpoints: forwardToScript("getPossibleBreakpoints"),
   getPossibleBreakpointOffsets: forwardToScript("getPossibleBreakpointOffsets"),
 
-  frameStepsInfo(request) {
-    const script = gScripts.getObject(request.script);
-    return {
-      breakpointOffsets: script.getPossibleBreakpointOffsets(),
-    };
-  },
-
   frameEvaluate(request) {
     divergeFromRecording();
     const frame = scriptFrameForIndex(request.index);
@@ -1703,5 +1540,4 @@ var EXPORTED_SYMBOLS = [
   "BeforeCheckpoint",
   "AfterCheckpoint",
   "NewTimeWarpTarget",
-  "ScriptResumeFrame",
 ];
