@@ -3,9 +3,10 @@
 
 
 use api::ColorF;
-use api::units::{DeviceRect, DeviceIntSize, DeviceIntRect, DeviceIntPoint};
+use api::units::{DeviceRect, DeviceIntSize, DeviceIntRect, DeviceIntPoint, WorldRect, DevicePixelScale};
 use crate::gpu_types::{ZBufferId, ZBufferIdGenerator};
 use crate::picture::{ResolvedSurfaceTexture, SurfaceTextureDescriptor};
+use std::ops;
 
 
 
@@ -123,6 +124,14 @@ impl Default for CompositorKind {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
+struct Occluder {
+    slice: usize,
+    device_rect: DeviceIntRect,
+}
+
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CompositeState {
     pub opaque_tiles: Vec<CompositeTile>,
     pub alpha_tiles: Vec<CompositeTile>,
@@ -142,6 +151,10 @@ pub struct CompositeState {
     pub compositor_kind: CompositorKind,
     
     pub picture_caching_is_enabled: bool,
+    
+    global_device_pixel_scale: DevicePixelScale,
+    
+    occluders: Vec<Occluder>,
 }
 
 impl CompositeState {
@@ -150,6 +163,7 @@ impl CompositeState {
     pub fn new(
         compositor_kind: CompositorKind,
         mut picture_caching_is_enabled: bool,
+        global_device_pixel_scale: DevicePixelScale,
     ) -> Self {
         
         
@@ -169,6 +183,8 @@ impl CompositeState {
             native_surface_updates: Vec::new(),
             compositor_kind,
             picture_caching_is_enabled,
+            global_device_pixel_scale,
+            occluders: Vec::new(),
         }
     }
 
@@ -208,6 +224,52 @@ impl CompositeState {
                 details: NativeSurfaceOperationDetails::DestroySurface,
             }
         );
+    }
+
+    
+    
+    pub fn register_occluder(
+        &mut self,
+        slice: usize,
+        rect: WorldRect,
+    ) {
+        let device_rect = (rect * self.global_device_pixel_scale).round().to_i32();
+
+        self.occluders.push(Occluder {
+            device_rect,
+            slice,
+        });
+    }
+
+    
+    
+    pub fn is_tile_occluded(
+        &self,
+        slice: usize,
+        rect: WorldRect,
+    ) -> bool {
+        
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+
+        
+        let device_rect = (rect * self.global_device_pixel_scale).round().to_i32();
+        let ref_area = device_rect.size.width * device_rect.size.height;
+
+        
+        let cover_area = area_of_occluders(&self.occluders, slice, &device_rect);
+        debug_assert!(cover_area <= ref_area);
+
+        
+        ref_area == cover_area
     }
 }
 
@@ -310,4 +372,113 @@ pub trait Compositor {
     
     
     fn end_frame(&mut self);
+}
+
+
+
+fn area_of_occluders(
+    occluders: &[Occluder],
+    slice: usize,
+    clip_rect: &DeviceIntRect,
+) -> i32 {
+    
+    
+    
+
+    let mut area = 0;
+
+    
+    #[derive(Debug)]
+    enum EventKind {
+        Begin,
+        End,
+    }
+
+    
+    #[derive(Debug)]
+    struct Event {
+        y: i32,
+        x_range: ops::Range<i32>,
+        kind: EventKind,
+    }
+
+    impl Event {
+        fn new(y: i32, kind: EventKind, x0: i32, x1: i32) -> Self {
+            Event {
+                y,
+                x_range: ops::Range {
+                    start: x0,
+                    end: x1,
+                },
+                kind,
+            }
+        }
+    }
+
+    
+    let mut events = Vec::with_capacity(occluders.len() * 2);
+    for occluder in occluders {
+        
+        if occluder.slice > slice {
+            
+            
+            if let Some(rect) = occluder.device_rect.intersection(clip_rect) {
+                let x0 = rect.origin.x;
+                let x1 = x0 + rect.size.width;
+                events.push(Event::new(rect.origin.y, EventKind::Begin, x0, x1));
+                events.push(Event::new(rect.origin.y + rect.size.height, EventKind::End, x0, x1));
+            }
+        }
+    }
+
+    
+    if events.is_empty() {
+        return 0;
+    }
+
+    
+    events.sort_by_key(|e| e.y);
+    let mut active: Vec<ops::Range<i32>> = Vec::new();
+    let mut cur_y = events[0].y;
+
+    
+    for event in &events {
+        
+        let dy = event.y - cur_y;
+
+        
+        if dy != 0 && !active.is_empty() {
+            assert!(dy > 0);
+
+            
+            active.sort_by_key(|i| i.start);
+            let mut query = 0;
+            let mut cur = active[0].start;
+
+            
+            for interval in &active {
+                cur = interval.start.max(cur);
+                query += (interval.end - cur).max(0);
+                cur = cur.max(interval.end);
+            }
+
+            
+            area += query * dy;
+        }
+
+        
+        match event.kind {
+            EventKind::Begin => {
+                active.push(event.x_range.clone());
+            }
+            EventKind::End => {
+                let index = active.iter().position(|i| *i == event.x_range).unwrap();
+                active.remove(index);
+            }
+        }
+
+        cur_y = event.y;
+    }
+
+    area
 }
