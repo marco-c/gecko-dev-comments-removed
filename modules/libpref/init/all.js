@@ -2254,13 +2254,10 @@ pref("security.dialog_enable_delay", 1000);
 pref("security.notification_enable_delay", 500);
 
 #if defined(DEBUG) && !defined(ANDROID)
+  pref("csp.about_uris_without_csp", "blank,printpreview,srcdoc,downloads,preferences,sync-log");
   
-  
+  pref("csp.overrule_about_uris_without_csp_whitelist", false);
   pref("csp.skip_about_page_has_csp_assert", false);
-  
-  
-  
-  pref("csp.skip_about_page_csp_allowlist_and_assert", false);
 #endif
 
 #ifdef EARLY_BETA_OR_EARLIER
