@@ -20,47 +20,6 @@ const gElements = {
 
 let numberOfLogins = 0;
 
-let searchParamsChanged = false;
-let { protocol, pathname, searchParams } = new URL(document.location);
-
-recordTelemetryEvent({
-  method: "open_management",
-  object: searchParams.get("entryPoint") || "direct",
-});
-
-if (searchParams.has("entryPoint")) {
-  
-  
-  
-  searchParams.delete("entryPoint");
-  searchParamsChanged = true;
-}
-
-if (searchParams.has("filter")) {
-  let filter = searchParams.get("filter");
-  if (!filter) {
-    
-    
-    searchParams.delete("filter");
-    searchParamsChanged = true;
-  }
-}
-
-if (searchParamsChanged) {
-  let newURL = protocol + pathname;
-  let params = searchParams.toString();
-  if (params) {
-    newURL += "?" + params;
-  }
-  window.location.replace(newURL);
-} else if (searchParams.has("filter")) {
-  
-  
-  gElements.loginFilter.value = searchParams.get("filter");
-}
-
-gElements.loginFilter.focus();
-
 function updateNoLogins() {
   document.documentElement.classList.toggle("no-logins", numberOfLogins == 0);
   gElements.loginList.classList.toggle("no-logins", numberOfLogins == 0);
@@ -135,4 +94,50 @@ window.addEventListener("AboutLoginsChromeToContent", event => {
   }
 });
 
-document.dispatchEvent(new CustomEvent("AboutLoginsInit", { bubbles: true }));
+
+
+let searchParamsChanged = false;
+let { protocol, pathname, searchParams } = new URL(document.location);
+
+recordTelemetryEvent({
+  method: "open_management",
+  object: searchParams.get("entryPoint") || "direct",
+});
+
+if (searchParams.has("entryPoint")) {
+  
+  
+  
+  searchParams.delete("entryPoint");
+  searchParamsChanged = true;
+}
+
+if (searchParams.has("filter")) {
+  let filter = searchParams.get("filter");
+  if (!filter) {
+    
+    
+    searchParams.delete("filter");
+    searchParamsChanged = true;
+  }
+}
+
+if (searchParamsChanged) {
+  let newURL = protocol + pathname;
+  let params = searchParams.toString();
+  if (params) {
+    newURL += "?" + params;
+  }
+  
+  
+  window.location.replace(newURL);
+} else if (searchParams.has("filter")) {
+  
+  
+  gElements.loginFilter.value = searchParams.get("filter");
+}
+
+if (!searchParamsChanged) {
+  gElements.loginFilter.focus();
+  document.dispatchEvent(new CustomEvent("AboutLoginsInit", { bubbles: true }));
+}
