@@ -5,40 +5,55 @@
 
 "use strict";
 
-
-
-
-
-
-
-
-
-
-
-
-
-function appendStyleSheet(xulDocument, url) {
-  const styleSheetAttr = `href="${url}" type="text/css"`;
-  const styleSheet = xulDocument.createProcessingInstruction(
-    "xml-stylesheet",
-    styleSheetAttr
-  );
-  const loadPromise = new Promise((resolve, reject) => {
-    function onload() {
-      styleSheet.removeEventListener("load", onload);
-      styleSheet.removeEventListener("error", onerror);
-      resolve();
-    }
-    function onerror() {
-      styleSheet.removeEventListener("load", onload);
-      styleSheet.removeEventListener("error", onerror);
-      reject("Failed to load theme file " + url);
-    }
-
-    styleSheet.addEventListener("load", onload);
-    styleSheet.addEventListener("error", onerror);
+function stylesheetLoadPromise(styleSheet, url) {
+  return new Promise((resolve, reject) => {
+    styleSheet.addEventListener("load", resolve, { once: true });
+    styleSheet.addEventListener("error", reject, { once: true });
   });
-  xulDocument.insertBefore(styleSheet, xulDocument.documentElement);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function appendStyleSheet(doc, url) {
+  if (doc.head) {
+    const styleSheet = doc.createElement("link");
+    styleSheet.setAttribute("rel", "stylesheet");
+    styleSheet.setAttribute("href", url);
+    const loadPromise = stylesheetLoadPromise(styleSheet);
+
+    
+    
+    
+    
+    
+    
+    const globalSheet = doc.head.querySelector(
+      "link[href='chrome://global/skin/global.css']"
+    );
+    if (globalSheet) {
+      globalSheet.after(styleSheet);
+    } else {
+      doc.head.prepend(styleSheet);
+    }
+    return { styleSheet, loadPromise };
+  }
+
+  const styleSheet = doc.createProcessingInstruction(
+    "xml-stylesheet",
+    `href="${url}" type="text/css"`
+  );
+  const loadPromise = stylesheetLoadPromise(styleSheet);
+  doc.insertBefore(styleSheet, doc.documentElement);
   return { styleSheet, loadPromise };
 }
 
