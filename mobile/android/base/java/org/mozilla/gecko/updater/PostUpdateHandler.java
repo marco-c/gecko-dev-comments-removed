@@ -5,54 +5,57 @@
 
 package org.mozilla.gecko.updater;
 
-import android.content.res.AssetManager;
 import android.content.SharedPreferences;
+import android.content.res.AssetManager;
+import android.os.Bundle;
 import android.util.Log;
 
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.BrowserApp;
-import org.mozilla.gecko.BuildConfig;
-import org.mozilla.gecko.delegates.BrowserAppDelegateWithReference;
 import org.mozilla.gecko.GeckoSharedPrefs;
 import org.mozilla.gecko.preferences.GeckoPreferences;
 import org.mozilla.gecko.util.IOUtils;
-import org.mozilla.gecko.util.ThreadUtils;
+import org.mozilla.gecko.util.StrictModeContext;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
 
 
 
-public class PostUpdateHandler extends BrowserAppDelegateWithReference {
+
+
+
+
+public class PostUpdateHandler {
     private static final String LOGTAG = "GeckoPostUpdateHandler";
     private static final boolean DEBUG = false;
 
-    @Override
-    public void onStart(final BrowserApp browserApp) {
-        ThreadUtils.postToBackgroundThread(new Runnable() {
-            @Override
-            public void run() {
-                final SharedPreferences prefs = GeckoSharedPrefs.forApp(browserApp);
+    @SuppressWarnings("try")
+    public void onCreate(final BrowserApp browserApp, final Bundle savedInstanceState) {
+        
+        
+        
+        try (StrictModeContext unused = StrictModeContext.allowDiskWrites()) {
+            final SharedPreferences prefs = GeckoSharedPrefs.forApp(browserApp);
+
+            
+            if (!AppConstants.MOZ_APP_BUILDID.equals(prefs.getString(GeckoPreferences.PREFS_APP_UPDATE_LAST_BUILD_ID, null))) {
+                if (DEBUG) {
+                    Log.d(LOGTAG, "Build ID changed since last start: '" +
+                            AppConstants.MOZ_APP_BUILDID +
+                            "', '" +
+                            prefs.getString(GeckoPreferences.PREFS_APP_UPDATE_LAST_BUILD_ID, null)
+                            + "'");
+                }
 
                 
-                if (!AppConstants.MOZ_APP_BUILDID.equals(prefs.getString(GeckoPreferences.PREFS_APP_UPDATE_LAST_BUILD_ID, null))) {
-                    if (DEBUG) {
-                        Log.d(LOGTAG, "Build ID changed since last start: '" +
-                                AppConstants.MOZ_APP_BUILDID +
-                                "', '" +
-                                prefs.getString(GeckoPreferences.PREFS_APP_UPDATE_LAST_BUILD_ID, null)
-                                + "'");
-                    }
-
-                    
-                    copyFeaturesFromAPK(browserApp);
-                }
+                copyFeaturesFromAPK(browserApp);
             }
-        });
+        }
     }
 
     

@@ -329,7 +329,6 @@ public class BrowserApp extends GeckoApp
             new ScreenshotDelegate(),
             new BookmarkStateChangeDelegate(),
             new ReaderViewBookmarkPromotion(),
-            new PostUpdateHandler(),
             mTelemetryCorePingDelegate,
             mTelemetryActivationPingDelegate,
             new OfflineTabStatusDelegate(),
@@ -649,6 +648,11 @@ public class BrowserApp extends GeckoApp
         
         final GeckoApplication app = (GeckoApplication) getApplication();
         app.prepareLightweightTheme();
+
+        
+        
+        
+        new PostUpdateHandler().onCreate(this, savedInstanceState);
 
         super.onCreate(savedInstanceState);
 
