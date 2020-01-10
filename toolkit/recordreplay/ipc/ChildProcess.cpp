@@ -30,11 +30,7 @@ void ChildProcessInfo::SetIntroductionMessage(IntroductionMessage* aMessage) {
 
 ChildProcessInfo::ChildProcessInfo(
     const Maybe<RecordingProcessData>& aRecordingProcessData)
-    : mChannel(nullptr),
-      mRecording(aRecordingProcessData.isSome()),
-      mPaused(false),
-      mHasBegunFatalError(false),
-      mHasFatalError(false) {
+    : mRecording(aRecordingProcessData.isSome()) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   static bool gFirst = false;
@@ -48,7 +44,7 @@ ChildProcessInfo::ChildProcessInfo(
 
 ChildProcessInfo::~ChildProcessInfo() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
-  if (IsRecording()) {
+  if (IsRecording() && !HasCrashed()) {
     SendMessage(TerminateMessage());
   }
 }
@@ -96,6 +92,7 @@ void ChildProcessInfo::OnIncomingMessage(const Message& aMsg) {
 
 void ChildProcessInfo::SendMessage(Message&& aMsg) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(!HasCrashed());
 
   
   MOZ_RELEASE_ASSERT(IsPaused() || aMsg.CanBeSentWhileUnpaused());
@@ -190,6 +187,20 @@ void ChildProcessInfo::OnCrash(const char* aWhy) {
   CrashReporter::AnnotateCrashReport(
       CrashReporter::Annotation::RecordReplayError, nsAutoCString(aWhy));
 
+  if (!IsRecording()) {
+    
+    
+    dom::ContentChild::GetSingleton()->SendGenerateReplayCrashReport(GetId());
+
+    
+    if (js::RecoverFromCrash(this)) {
+      
+      
+      mHasFatalError = true;
+      return;
+    }
+  }
+
   
   
   if (mHasFatalError) {
@@ -279,33 +290,34 @@ void ChildProcessInfo::WaitUntilPaused() {
       if (IsPaused()) {
         return;
       }
+    } else if (HasCrashed()) {
+      
+      return;
+    } else if (gChildrenAreDebugging || IsRecording()) {
+      
+      
+      
+      gMonitor->Wait();
     } else {
-      if (gChildrenAreDebugging || IsRecording()) {
-        
-        
-        
-        gMonitor->Wait();
-      } else {
-        TimeStamp deadline =
-            mLastMessageTime + TimeDuration::FromSeconds(HangSeconds);
-        if (TimeStamp::Now() >= deadline) {
-          MonitorAutoUnlock unlock(*gMonitor);
-          if (!sentTerminateMessage) {
-            
-            
-            
-            
-            CrashReporter::AnnotateCrashReport(
-                CrashReporter::Annotation::RecordReplayHang, true);
-            SendMessage(TerminateMessage());
-            sentTerminateMessage = true;
-          } else {
-            
-            
-            OnCrash("Child process non-responsive");
-          }
-        }
+      TimeStamp deadline =
+          mLastMessageTime + TimeDuration::FromSeconds(HangSeconds);
+      if (TimeStamp::Now() < deadline) {
         gMonitor->WaitUntil(deadline);
+      } else {
+        MonitorAutoUnlock unlock(*gMonitor);
+        if (!sentTerminateMessage) {
+          
+          
+          
+          CrashReporter::AnnotateCrashReport(
+              CrashReporter::Annotation::RecordReplayHang, true);
+          SendMessage(TerminateMessage());
+          sentTerminateMessage = true;
+        } else {
+          
+          
+          OnCrash("Child process non-responsive");
+        }
       }
     }
   }

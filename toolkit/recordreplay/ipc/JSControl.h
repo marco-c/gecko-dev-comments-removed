@@ -78,6 +78,9 @@ void BeforeCheckpoint();
 void AfterCheckpoint(size_t aCheckpoint, bool aRestoredCheckpoint);
 
 
+bool RecoverFromCrash(parent::ChildProcessInfo* aChild);
+
+
 
 
 void BeginIdleTime();

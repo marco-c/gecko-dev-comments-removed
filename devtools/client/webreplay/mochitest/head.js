@@ -24,7 +24,7 @@ const EXAMPLE_URL =
 async function attachDebugger(tab) {
   const target = await TargetFactory.forTab(tab);
   const toolbox = await gDevTools.showToolbox(target, "jsdebugger");
-  return { toolbox, target };
+  return { toolbox, tab, target };
 }
 
 async function attachRecordingDebugger(
@@ -44,6 +44,12 @@ async function attachRecordingDebugger(
 
   await threadFront.interrupt();
   return { ...dbg, tab, threadFront, target };
+}
+
+async function shutdownDebugger(dbg) {
+  await waitForRequestsToSettle(dbg);
+  await dbg.toolbox.destroy();
+  await gBrowser.removeTab(dbg.tab);
 }
 
 
@@ -170,4 +176,4 @@ PromiseTestUtils.whitelistRejectionsGlobally(
 
 
 
-requestLongerTimeout(120);
+requestLongerTimeout(4);

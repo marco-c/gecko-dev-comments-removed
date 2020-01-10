@@ -37,6 +37,7 @@ const {
   positionEquals,
   positionSubsumes,
   setInterval,
+  setTimeout,
 } = sandbox;
 
 const InvalidCheckpointId = 0;
@@ -133,6 +134,9 @@ function ChildProcess(id, recording) {
   this.divergedFromRecording = false;
 
   
+  this.crashed = false;
+
+  
   
   this.manifest = {
     onFinished: ({ point }) => {
@@ -149,7 +153,7 @@ function ChildProcess(id, recording) {
   this.manifestSendTime = Date.now();
 
   
-  this.asyncManifestInfo = new AsyncManifestChildInfo();
+  this.asyncManifest = null;
 }
 
 ChildProcess.prototype = {
@@ -176,6 +180,7 @@ ChildProcess.prototype = {
   
   
   sendManifest(manifest) {
+    assert(!this.crashed);
     assert(this.paused);
     this.paused = false;
     this.manifest = manifest;
@@ -183,6 +188,24 @@ ChildProcess.prototype = {
 
     dumpv(`SendManifest #${this.id} ${stringify(manifest.contents)}`);
     RecordReplayControl.sendManifest(this.id, manifest.contents);
+
+    
+    
+    
+    
+    if (this != gMainChild) {
+      
+      
+      let waitDuration = 30 * 1000;
+      if (manifest.expectedDuration) {
+        waitDuration += manifest.expectedDuration;
+      }
+      setTimeout(() => {
+        if (!this.crashed && this.manifest == manifest) {
+          this.waitUntilPaused();
+        }
+      }, waitDuration);
+    }
   },
 
   
@@ -200,6 +223,10 @@ ChildProcess.prototype = {
     this.manifest.onFinished(response);
     this.manifest = null;
     maybeDumpStatistics();
+
+    if (this != gMainChild) {
+      pokeChildSoon(this);
+    }
   },
 
   
@@ -348,11 +375,6 @@ function sendAsyncManifest(manifest) {
   });
 }
 
-function AsyncManifestChildInfo() {
-  
-  this.inProgressManifest = null;
-}
-
 
 function pickAsyncManifest(child, lowPriority) {
   const worklist = asyncManifestWorklist(lowPriority);
@@ -403,8 +425,8 @@ function pickAsyncManifest(child, lowPriority) {
 
 function processAsyncManifest(child) {
   
-  let manifest = child.asyncManifestInfo.inProgressManifest;
-  child.asyncManifestInfo.inProgressManifest = null;
+  let manifest = child.asyncManifest;
+  child.asyncManifest = null;
 
   if (manifest && child == gActiveChild) {
     
@@ -423,18 +445,19 @@ function processAsyncManifest(child) {
     }
   }
 
+  child.asyncManifest = manifest;
+
   if (manifest.point && maybeReachPoint(child, manifest.point)) {
     
-    child.asyncManifestInfo.inProgressManifest = manifest;
     return true;
   }
 
   child.sendManifest({
     contents: manifest.contents(child),
     onFinished: data => {
+      child.asyncManifest = null;
       manifest.onFinished(child, data);
       manifest.resolve();
-      pokeChildSoon(child);
     },
     destination: manifest.destination,
     expectedDuration: manifest.expectedDuration,
@@ -532,21 +555,6 @@ function addCheckpoint(checkpoint, duration) {
 
 
 
-function restoreCheckpoint(child, target) {
-  assert(child.savedCheckpoints.has(target));
-  child.sendManifest({
-    contents: { kind: "restoreCheckpoint", target },
-    onFinished({ restoredCheckpoint }) {
-      assert(restoredCheckpoint);
-      child.divergedFromRecording = false;
-      pokeChildSoon(child);
-    },
-    destination: checkpointExecutionPoint(target),
-  });
-}
-
-
-
 
 function maybeReachPoint(child, endpoint) {
   if (
@@ -555,33 +563,45 @@ function maybeReachPoint(child, endpoint) {
   ) {
     return false;
   }
+
   if (child.divergedFromRecording || child.pausePoint().position) {
-    restoreCheckpoint(
-      child,
-      child.lastSavedCheckpoint(child.pausePoint().checkpoint)
-    );
+    restoreCheckpointPriorTo(child.pausePoint().checkpoint);
     return true;
   }
+
   if (endpoint.checkpoint < child.pauseCheckpoint()) {
-    restoreCheckpoint(child, child.lastSavedCheckpoint(endpoint.checkpoint));
+    restoreCheckpointPriorTo(endpoint.checkpoint);
     return true;
   }
+
   child.sendManifest({
     contents: {
       kind: "runToPoint",
       endpoint,
       needSaveCheckpoints: child.flushNeedSaveCheckpoints(),
     },
-    onFinished() {
-      pokeChildSoon(child);
-    },
+    onFinished() {},
     destination: endpoint,
     expectedDuration: checkpointRangeDuration(
       child.pausePoint().checkpoint,
       endpoint.checkpoint
     ),
   });
+
   return true;
+
+  
+  function restoreCheckpointPriorTo(target) {
+    target = child.lastSavedCheckpoint(target);
+    child.sendManifest({
+      contents: { kind: "restoreCheckpoint", target },
+      onFinished({ restoredCheckpoint }) {
+        assert(restoredCheckpoint);
+        child.divergedFromRecording = false;
+      },
+      destination: checkpointExecutionPoint(target),
+    });
+  }
 }
 
 function nextSavedCheckpoint(checkpoint) {
@@ -619,7 +639,7 @@ function checkpointExecutionPoint(checkpoint) {
 
 
 function pokeChild(child) {
-  assert(!child.recording);
+  assert(child != gMainChild);
 
   if (!child.paused) {
     return;
@@ -630,12 +650,14 @@ function pokeChild(child) {
   }
 
   if (child == gActiveChild) {
-    sendChildToPausePoint(child);
+    sendActiveChildToPausePoint();
     return;
   }
 
   
-  maybeReachPoint(child, checkpointExecutionPoint(gLastFlushCheckpoint));
+  if (gLastFlushCheckpoint) {
+    maybeReachPoint(child, checkpointExecutionPoint(gLastFlushCheckpoint));
+  }
 }
 
 function pokeChildSoon(child) {
@@ -986,6 +1008,7 @@ const PauseModes = {
 
   
   
+  
   ARRIVING: "ARRIVING",
 
   
@@ -998,14 +1021,12 @@ const PauseModes = {
 let gPauseMode = PauseModes.RUNNING;
 
 
+
 let gPausePoint = null;
 
 
+
 const gDebuggerRequests = [];
-
-
-
-let gSyncDebuggerRequests = false;
 
 function setPauseState(mode, point, child) {
   assert(mode);
@@ -1015,11 +1036,6 @@ function setPauseState(mode, point, child) {
   gPauseMode = mode;
   gPausePoint = point;
   gActiveChild = child;
-
-  if (mode != PauseModes.PAUSED) {
-    gDebuggerRequests.length = 0;
-    gSyncDebuggerRequests = false;
-  }
 
   if (mode == PauseModes.ARRIVING) {
     updateNearbyPoints();
@@ -1031,6 +1047,7 @@ function setPauseState(mode, point, child) {
 
 
 function setReplayingPauseTarget(point) {
+  assert(!gDebuggerRequests.length);
   setPauseState(PauseModes.ARRIVING, point, closestChild(point.checkpoint));
 
   gDebugger._onPause();
@@ -1038,33 +1055,37 @@ function setReplayingPauseTarget(point) {
   findFrameSteps(point);
 }
 
-
-function pauseReplayingChild(child, point) {
-  do {
-    child.waitUntilPaused();
-  } while (maybeReachPoint(child, point));
-
-  setPauseState(PauseModes.PAUSED, point, child);
-}
-
-function sendChildToPausePoint(child) {
-  assert(child.paused && child == gActiveChild);
+function sendActiveChildToPausePoint() {
+  assert(gActiveChild.paused);
 
   switch (gPauseMode) {
     case PauseModes.PAUSED:
-      assert(pointEquals(child.pausePoint(), gPausePoint));
+      assert(pointEquals(gActiveChild.pausePoint(), gPausePoint));
       return;
 
     case PauseModes.ARRIVING:
-      if (pointEquals(child.pausePoint(), gPausePoint)) {
+      if (pointEquals(gActiveChild.pausePoint(), gPausePoint)) {
         setPauseState(PauseModes.PAUSED, gPausePoint, gActiveChild);
+
+        
+        if (gDebuggerRequests.length) {
+          gActiveChild.sendManifest({
+            contents: {
+              kind: "batchDebuggerRequest",
+              requests: gDebuggerRequests,
+            },
+            onFinished(finishData) {
+              assert(!finishData || !finishData.restoredCheckpoint);
+            },
+          });
+        }
       } else {
-        maybeReachPoint(child, gPausePoint);
+        maybeReachPoint(gActiveChild, gPausePoint);
       }
       return;
 
     default:
-      throw new Error(`Unexpected pause mode: ${gPauseMode}`);
+      ThrowError(`Unexpected pause mode: ${gPauseMode}`);
   }
 }
 
@@ -1083,6 +1104,12 @@ function waitUntilPauseFinishes() {
     }
     pokeChild(gActiveChild);
   }
+}
+
+
+function pauseReplayingChild(child, point) {
+  setPauseState(PauseModes.ARRIVING, point, child);
+  waitUntilPauseFinishes();
 }
 
 
@@ -1162,6 +1189,7 @@ async function finishResume() {
 
 
 function resume(forward) {
+  gDebuggerRequests.length = 0;
   if (gActiveChild.recording) {
     if (forward) {
       maybeResumeRecording();
@@ -1187,8 +1215,77 @@ function resume(forward) {
 
 
 function timeWarp(point) {
+  gDebuggerRequests.length = 0;
   setReplayingPauseTarget(point);
   Services.cpmm.sendAsyncMessage("TimeWarpFinished");
+}
+
+
+
+
+
+
+const MaxCrashes = 4;
+
+
+let gNumCrashes = 0;
+
+
+function ChildCrashed(id) {
+  dumpv(`Child Crashed: ${id}`);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const child = gReplayingChildren[id];
+  if (
+    !child ||
+    !child.manifest ||
+    (child == gActiveChild && gPauseMode == PauseModes.PAUSED)
+  ) {
+    ThrowError("Cannot recover from crashed child");
+  }
+
+  if (++gNumCrashes > MaxCrashes) {
+    ThrowError("Too many crashes");
+  }
+
+  delete gReplayingChildren[id];
+  child.crashed = true;
+
+  
+  const newChild = spawnReplayingChild();
+  pokeChildSoon(newChild);
+
+  
+  for (const checkpoint of child.savedCheckpoints) {
+    newChild.addSavedCheckpoint(checkpoint);
+  }
+
+  
+  for (const checkpoint of child.scannedCheckpoints) {
+    scanRecording(checkpoint);
+  }
+
+  
+  if (child.asyncManifest) {
+    sendAsyncManifest(child.asyncManifest);
+  }
+
+  
+  
+  if (child == gActiveChild) {
+    assert(gPauseMode == PauseModes.ARRIVING);
+    gActiveChild = closestChild(gPausePoint.checkpoint);
+    pokeChildSoon(gActiveChild);
+  }
 }
 
 
@@ -1522,13 +1619,19 @@ function setMainChild() {
 
 
 
+function spawnReplayingChild() {
+  const id = RecordReplayControl.spawnReplayingChild();
+  const child = new ChildProcess(id, false);
+  gReplayingChildren[id] = child;
+  return child;
+}
+
 
 const NumReplayingChildren = 4;
 
 function spawnReplayingChildren() {
   for (let i = 0; i < NumReplayingChildren; i++) {
-    const id = RecordReplayControl.spawnReplayingChild();
-    gReplayingChildren[id] = new ChildProcess(id, false);
+    spawnReplayingChild();
   }
   addSavedCheckpoint(FirstCheckpointId);
 }
@@ -1669,17 +1772,6 @@ const gControl = {
   sendRequest(request) {
     waitUntilPauseFinishes();
 
-    if (gSyncDebuggerRequests) {
-      gActiveChild.sendManifest({
-        contents: { kind: "batchDebuggerRequest", requests: gDebuggerRequests },
-        onFinished(finishData) {
-          assert(!finishData || !finishData.restoredCheckpoint);
-        },
-      });
-      gActiveChild.waitUntilPaused();
-      gSyncDebuggerRequests = false;
-    }
-
     let data;
     gActiveChild.sendManifest({
       contents: { kind: "debuggerRequest", request },
@@ -1694,13 +1786,6 @@ const gControl = {
       
       
       pauseReplayingChild(gActiveChild, gPausePoint);
-      gActiveChild.sendManifest({
-        contents: { kind: "batchDebuggerRequest", requests: gDebuggerRequests },
-        onFinished(finishData) {
-          assert(!finishData || !finishData.restoredCheckpoint);
-        },
-      });
-      gActiveChild.waitUntilPaused();
       return { unhandledDivergence: true };
     }
 
@@ -1747,11 +1832,13 @@ const gControl = {
   cachedPoints,
 
   getPauseData() {
-    if (!gDebuggerRequests.length) {
-      assert(!gSyncDebuggerRequests);
+    
+    
+    if (gPauseMode == PauseModes.ARRIVING && !gDebuggerRequests.length) {
       const data = maybeGetPauseData(gPausePoint);
       if (data) {
-        gSyncDebuggerRequests = true;
+        
+        
         gDebuggerRequests.push({ type: "pauseData" });
         return data;
       }
@@ -1907,4 +1994,5 @@ var EXPORTED_SYMBOLS = [
   "ManifestFinished",
   "BeforeSaveRecording",
   "AfterSaveRecording",
+  "ChildCrashed",
 ];

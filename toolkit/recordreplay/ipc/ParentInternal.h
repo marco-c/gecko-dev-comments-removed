@@ -151,21 +151,21 @@ struct RecordingProcessData {
 
 class ChildProcessInfo {
   
-  Channel* mChannel;
+  Channel* mChannel = nullptr;
 
   
   TimeStamp mLastMessageTime;
 
   
-  bool mRecording;
+  bool mRecording = false;
 
   
-  bool mPaused;
+  bool mPaused = false;
 
   
   
-  bool mHasBegunFatalError;
-  bool mHasFatalError;
+  bool mHasBegunFatalError = false;
+  bool mHasFatalError = false;
 
   void OnIncomingMessage(const Message& aMsg);
 
@@ -184,6 +184,7 @@ class ChildProcessInfo {
   size_t GetId() { return mChannel->GetId(); }
   bool IsRecording() { return mRecording; }
   bool IsPaused() { return mPaused; }
+  bool HasCrashed() { return mHasFatalError; }
 
   
   void SendMessage(Message&& aMessage);
