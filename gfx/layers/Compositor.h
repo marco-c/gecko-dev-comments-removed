@@ -431,6 +431,12 @@ class Compositor : public TextureSourceProvider {
 
 
 
+
+
+
+
+
+
   virtual void NormalDrawingDone() {}
 
   

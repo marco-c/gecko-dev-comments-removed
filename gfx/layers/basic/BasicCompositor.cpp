@@ -963,25 +963,6 @@ void BasicCompositor::BeginFrame(
   RefPtr<CompositingRenderTarget> target =
       CreateRenderTargetForWindow(mInvalidRect, clearRect, bufferMode);
 
-  if (ShouldRecordFrames()) {
-    IntSize windowSize = rect.ToUnknownRect().Size();
-
-    
-    
-    
-    if (!mFullWindowRenderTarget ||
-        mFullWindowRenderTarget->mDrawTarget->GetSize() != windowSize) {
-      
-      
-      
-      RefPtr<gfx::DrawTarget> drawTarget = mDrawTarget->CreateSimilarDrawTarget(
-          windowSize, mDrawTarget->GetFormat());
-
-      mFullWindowRenderTarget =
-          new BasicCompositingRenderTarget(drawTarget, rect);
-    }
-  }
-
   mDrawTarget->PopClip();
 
   if (!target) {
@@ -996,6 +977,26 @@ void BasicCompositor::BeginFrame(
   
   mRenderTarget->mDrawTarget->SetTransform(
       Matrix::Translation(-mRenderTarget->GetOrigin()));
+
+  if (ShouldRecordFrames()) {
+    IntSize windowSize = rect.ToUnknownRect().Size();
+
+    
+    
+    
+    if (!mFullWindowRenderTarget ||
+        mFullWindowRenderTarget->mDrawTarget->GetSize() != windowSize) {
+      
+      
+      
+      RefPtr<gfx::DrawTarget> drawTarget =
+          mRenderTarget->mDrawTarget->CreateSimilarDrawTarget(
+              windowSize, mRenderTarget->mDrawTarget->GetFormat());
+
+      mFullWindowRenderTarget =
+          new BasicCompositingRenderTarget(drawTarget, rect);
+    }
+  }
 
   gfxUtils::ClipToRegion(mRenderTarget->mDrawTarget,
                          mInvalidRegion.ToUnknownRegion());
@@ -1060,38 +1061,21 @@ void BasicCompositor::TryToEndRemoteDrawing(bool aForceToEnd) {
     return;
   }
 
-  if (mRenderTarget->mDrawTarget != mDrawTarget || mFullWindowRenderTarget) {
-    RefPtr<SourceSurface> source;
-
+  if (mRenderTarget->mDrawTarget != mDrawTarget) {
     
     
+    RefPtr<SourceSurface> source = mWidget->EndBackBufferDrawing();
     IntPoint srcOffset = mRenderTarget->GetOrigin();
     IntPoint dstOffset = mTarget ? mTargetBounds.TopLeft() : IntPoint();
 
-    if (mRenderTarget->mDrawTarget != mDrawTarget) {
-      source = mWidget->EndBackBufferDrawing();
-
-      
-      
-      
-      for (auto iter = mInvalidRegion.RectIter(); !iter.Done(); iter.Next()) {
-        const LayoutDeviceIntRect& r = iter.Get();
-        mDrawTarget->CopySurface(source, r.ToUnknownRect() - srcOffset,
-                                 r.TopLeft().ToUnknownPoint() - dstOffset);
-      }
-    } else {
-      source = mRenderTarget->mDrawTarget->Snapshot();
-    }
-
-    if (mFullWindowRenderTarget) {
-      for (auto iter = mInvalidRegion.RectIter(); !iter.Done(); iter.Next()) {
-        const LayoutDeviceIntRect& r = iter.Get();
-        mFullWindowRenderTarget->mDrawTarget->CopySurface(
-            source, r.ToUnknownRect() - srcOffset,
-            r.TopLeft().ToUnknownPoint() - dstOffset);
-      }
-
-      mFullWindowRenderTarget->mDrawTarget->Flush();
+    
+    
+    
+    
+    for (auto iter = mInvalidRegion.RectIter(); !iter.Done(); iter.Next()) {
+      const LayoutDeviceIntRect& r = iter.Get();
+      mDrawTarget->CopySurface(source, r.ToUnknownRect() - srcOffset,
+                               r.TopLeft().ToUnknownPoint() - dstOffset);
     }
   }
 
@@ -1102,6 +1086,22 @@ void BasicCompositor::TryToEndRemoteDrawing(bool aForceToEnd) {
   mDrawTarget = nullptr;
   mRenderTarget = nullptr;
   mIsPendingEndRemoteDrawing = false;
+}
+
+void BasicCompositor::NormalDrawingDone() {
+  if (!mFullWindowRenderTarget) {
+    return;
+  }
+
+  
+  RefPtr<SourceSurface> source = mRenderTarget->mDrawTarget->Snapshot();
+  IntPoint srcOffset = mRenderTarget->GetOrigin();
+  for (auto iter = mInvalidRegion.RectIter(); !iter.Done(); iter.Next()) {
+    IntRect r = iter.Get().ToUnknownRect();
+    mFullWindowRenderTarget->mDrawTarget->CopySurface(source, r - srcOffset,
+                                                      r.TopLeft());
+  }
+  mFullWindowRenderTarget->mDrawTarget->Flush();
 }
 
 bool BasicCompositor::NeedsToDeferEndRemoteDrawing() {
