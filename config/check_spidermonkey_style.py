@@ -102,6 +102,7 @@ included_inclnames_to_ignore = set([
     'unicode/unistr.h',         
     'unicode/unorm2.h',         
     'unicode/unum.h',           
+    'unicode/unumberformatter.h',  
     'unicode/unumsys.h',        
     'unicode/upluralrules.h',   
     'unicode/ureldatefmt.h',    
