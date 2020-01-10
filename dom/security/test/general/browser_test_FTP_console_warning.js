@@ -7,77 +7,20 @@ function scopedCuImport(path) {
   ChromeUtils.import(path, scope);
   return scope;
 }
-const { loader, require } = scopedCuImport(
-  "resource://devtools/shared/Loader.jsm"
-);
-const { TargetFactory } = require("devtools/client/framework/target");
-const { Utils: WebConsoleUtils } = require("devtools/client/webconsole/utils");
-let { gDevTools } = require("devtools/client/framework/devtools");
-let promise = require("promise");
 
-
-
-
-
-
-
-
-var openToolboxForTab = async function(tab, toolId, hostType) {
-  info("Opening the toolbox");
-
-  let toolbox;
-  let target = await TargetFactory.forTab(tab);
-  await target.attach();
-
-  
-  toolbox = gDevTools.getToolbox(target);
-  if (toolbox) {
-    if (!toolId || (toolId && toolbox.getPanel(toolId))) {
-      info("Toolbox is already opened");
-      return toolbox;
-    }
-  }
-
-  
-  toolbox = await gDevTools.showToolbox(target, toolId, hostType);
-
-  
-  await new Promise(resolve => waitForFocus(resolve, toolbox.win));
-
-  info("Toolbox opened and focused");
-
-  return toolbox;
-};
-
-function console_observer(subject, topic, data) {
-  var message = subject.wrappedJSObject.arguments[0];
-  ok(false, message);
-}
-
-var webconsole = null;
 
 
 var seen_files = ["a.html", "b.html", "c.html", "d.png"];
 
-function on_new_message(new_messages) {
-  for (let message of new_messages) {
-    let elem = message.node;
-    let text = elem.textContent;
-
-    if (
-      text.includes("Loading FTP subresource within http(s) page not allowed")
-    ) {
-      
-      seen_files = seen_files.filter(file => {
-        return !text.includes(file);
-      });
-    }
-  }
-}
-
-async function do_cleanup() {
-  if (webconsole) {
-    webconsole.ui.off("new-messages", on_new_message);
+function on_new_message(msgObj) {
+  let text = msgObj.message;
+  if (
+    text.includes("Loading FTP subresource within http(s) page not allowed")
+  ) {
+    
+    seen_files = seen_files.filter(file => {
+      return !text.includes(file);
+    });
   }
 }
 
@@ -91,29 +34,12 @@ add_task(async function() {
   
   
   requestLongerTimeout(4);
-  registerCleanupFunction(do_cleanup);
 
-  let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
-    "about:blank"
-  );
-
-  let toolbox = await openToolboxForTab(tab, "webconsole");
-  ok(toolbox, "Got toolbox");
-  let hud = toolbox.getCurrentPanel().hud;
-  ok(hud, "Got hud");
-
-  if (!webconsole) {
-    registerCleanupFunction(do_cleanup);
-    hud.ui.on("new-messages", on_new_message);
-    webconsole = hud;
-  }
+  Services.console.registerListener(on_new_message);
 
   await BrowserTestUtils.loadURI(gBrowser.selectedBrowser, kTestURI);
-
   await BrowserTestUtils.waitForCondition(() => seen_files.length === 0);
-
   is(seen_files.length, 0, "All FTP subresources should be blocked");
 
-  BrowserTestUtils.removeTab(tab);
+  Services.console.unregisterListener(on_new_message);
 });
