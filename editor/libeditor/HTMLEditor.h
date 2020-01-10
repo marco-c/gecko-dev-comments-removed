@@ -1300,6 +1300,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   SplitInlinesAndCollectEditTargetNodes(
       nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
@@ -1426,6 +1427,44 @@ class HTMLEditor final : public TextEditor,
                                                     aEditSubAction);
     nsresult rv = SplitInlinesAndCollectEditTargetNodes(
         extendedSelectionRanges, aOutArrayOfNodes, aEditSubAction);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "SplitInlinesAndCollectEditTargetNodes() failed");
+    return rv;
+  }
+
+  
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  SplitInlinesAndCollectEditTargetNodesInOneHardLine(
+      const EditorDOMPoint& aPointInOneHardLine,
+      nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
+      EditSubAction aEditSubAction) {
+    if (NS_WARN_IF(!aPointInOneHardLine.IsSet())) {
+      return NS_ERROR_INVALID_ARG;
+    }
+    RefPtr<nsRange> oneLineRange = CreateRangeExtendedToHardLineStartAndEnd(
+        aPointInOneHardLine.ToRawRangeBoundary(),
+        aPointInOneHardLine.ToRawRangeBoundary(), aEditSubAction);
+    if (!oneLineRange) {
+      
+      ErrorResult error;
+      oneLineRange =
+          nsRange::Create(aPointInOneHardLine.ToRawRangeBoundary(),
+                          aPointInOneHardLine.ToRawRangeBoundary(), error);
+      if (NS_WARN_IF(error.Failed())) {
+        return error.StealNSResult();
+      }
+    }
+    AutoTArray<RefPtr<nsRange>, 1> arrayOfLineRanges;
+    arrayOfLineRanges.AppendElement(oneLineRange);
+    nsresult rv = SplitInlinesAndCollectEditTargetNodes(
+        arrayOfLineRanges, aOutArrayOfNodes, aEditSubAction);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "SplitInlinesAndCollectEditTargetNodes() failed");
     return rv;
