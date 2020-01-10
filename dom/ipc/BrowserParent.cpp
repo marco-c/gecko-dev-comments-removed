@@ -3923,29 +3923,30 @@ void BrowserParent::OnSubFrameCrashed() {
   mBrowsingContext->PostOrderWalk([&](auto* aContext) {
     
     
-    
+    for (auto it = aContext->GetChildren().rbegin();
+         it != aContext->GetChildren().rend(); it++) {
+      RefPtr<BrowsingContext> context = *it;
+      if (context->Canonical()->IsOwnedByProcess(processId)) {
+        
+        
+        
+        auto resolve = [context](bool) {};
+        auto reject = [context](ResponseRejectReason) {};
+        context->Group()->EachOtherParent(manager, [&](auto* aParent) {
+          aParent->SendDetachBrowsingContext(context->Id(), resolve, reject);
+        });
 
+        context->Detach( true);
+      }
+    }
+
+    
+    
+    
     aContext->Group()->EachOtherParent(manager, [&](auto* aParent) {
       Unused << aParent->SendCacheBrowsingContextChildren(aContext);
     });
     aContext->CacheChildren( true);
-
-    
-    
-    
-    if (aContext->Canonical()->IsOwnedByProcess(processId)) {
-      
-      
-      
-      RefPtr<BrowsingContext> context = aContext;
-      auto resolve = [context](bool) {};
-      auto reject = [context](ResponseRejectReason) {};
-      aContext->Group()->EachOtherParent(manager, [&](auto* aParent) {
-        aParent->SendDetachBrowsingContext(aContext->Id(), resolve, reject);
-      });
-
-      aContext->Detach( true);
-    }
   });
 
   MOZ_DIAGNOSTIC_ASSERT(!mBrowsingContext->GetChildren().Length());
