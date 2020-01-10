@@ -426,8 +426,8 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  nsresult AddZIndexAsAction(int32_t aChange,
-                             nsIPrincipal* aPrincipal = nullptr);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  AddZIndexAsAction(int32_t aChange, nsIPrincipal* aPrincipal = nullptr);
 
   MOZ_CAN_RUN_SCRIPT nsresult SetBackgroundColorAsAction(
       const nsAString& aColor, nsIPrincipal* aPrincipal = nullptr);
@@ -2686,6 +2686,15 @@ class HTMLEditor final : public TextEditor,
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
   SetSelectionToStaticAsSubAction();
+
+  
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  AddZIndexAsSubAction(int32_t aChange);
 
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(

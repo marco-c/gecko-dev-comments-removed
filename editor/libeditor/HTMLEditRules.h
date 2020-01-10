@@ -113,20 +113,6 @@ class HTMLEditRules : public TextEditRules {
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult DidDeleteSelection();
 
-  
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult WillRelativeChangeZIndex(int32_t aChange, bool* aCancel,
-                                                 bool* aHandled);
-
   nsresult AppendInnerFormatNodes(nsTArray<OwningNonNull<nsINode>>& aArray,
                                   nsINode* aNode);
   nsresult GetFormatString(nsINode* aNode, nsAString& outFormat);
