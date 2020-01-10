@@ -14,5 +14,7 @@
 %placesDTD;
 <!ENTITY % syncBrandDTD SYSTEM "chrome:
 %syncBrandDTD;
+<!ENTITY % reportphishDTD SYSTEM "chrome:
+%reportphishDTD;
 <!ENTITY % editBookmarkOverlayDTD SYSTEM "chrome:
 %editBookmarkOverlayDTD;
