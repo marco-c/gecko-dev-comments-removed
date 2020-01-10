@@ -10,7 +10,7 @@
 #define builtin_intl_LanguageTag_h
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Range.h"
+#include "mozilla/Span.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/TypedEnumBits.h"
 #include "mozilla/Variant.h"
@@ -40,38 +40,36 @@ namespace intl {
 
 
 template <typename CharT>
-bool IsStructurallyValidLanguageTag(
-    const mozilla::Range<const CharT>& language);
+bool IsStructurallyValidLanguageTag(mozilla::Span<const CharT> language);
 
 
 
 
 template <typename CharT>
-bool IsStructurallyValidScriptTag(const mozilla::Range<const CharT>& script);
+bool IsStructurallyValidScriptTag(mozilla::Span<const CharT> script);
 
 
 
 
 template <typename CharT>
-bool IsStructurallyValidRegionTag(const mozilla::Range<const CharT>& region);
+bool IsStructurallyValidRegionTag(mozilla::Span<const CharT> region);
 
 #ifdef DEBUG
 
 
 
-bool IsStructurallyValidVariantTag(const mozilla::Range<const char>& variant);
+bool IsStructurallyValidVariantTag(mozilla::Span<const char> variant);
 
 
 
 
 bool IsStructurallyValidUnicodeExtensionTag(
-    const mozilla::Range<const char>& extension);
+    mozilla::Span<const char> extension);
 
 
 
 
-bool IsStructurallyValidPrivateUseTag(
-    const mozilla::Range<const char>& privateUse);
+bool IsStructurallyValidPrivateUseTag(mozilla::Span<const char> privateUse);
 
 #endif
 
@@ -151,13 +149,13 @@ class LanguageTagSubtag final {
   bool missing() const { return length_ == 0; }
   bool present() const { return length_ > 0; }
 
-  mozilla::Range<const char> range() const { return {chars_, length_}; }
+  mozilla::Span<const char> span() const { return {chars_, length_}; }
 
   template <typename CharT>
-  void set(const mozilla::Range<const CharT>& str) {
-    MOZ_ASSERT(str.length() <= Length);
-    std::copy_n(str.begin().get(), str.length(), chars_);
-    length_ = str.length();
+  void set(mozilla::Span<const CharT> str) {
+    MOZ_ASSERT(str.size() <= Length);
+    std::copy_n(str.data(), str.size(), chars_);
+    length_ = str.size();
   }
 
   
@@ -232,8 +230,7 @@ class MOZ_STACK_CLASS LanguageTag final {
   MOZ_MUST_USE bool updateGrandfatheredMappings(JSContext* cx);
 
   static const char* replaceUnicodeExtensionType(
-      const mozilla::Range<const char>& key,
-      const mozilla::Range<const char>& type);
+      mozilla::Span<const char> key, mozilla::Span<const char> type);
 
  public:
   explicit LanguageTag(JSContext* cx) : variants_(cx), extensions_(cx) {}
@@ -262,17 +259,17 @@ class MOZ_STACK_CLASS LanguageTag final {
 
   template <size_t N>
   void setLanguage(const char (&language)[N]) {
-    mozilla::Range<const char> range(language, N - 1);
-    MOZ_ASSERT(IsStructurallyValidLanguageTag(range));
-    language_.set(range);
+    mozilla::Span<const char> span(language, N - 1);
+    MOZ_ASSERT(IsStructurallyValidLanguageTag(span));
+    language_.set(span);
   }
 
   
 
 
   void setLanguage(const LanguageSubtag& language) {
-    MOZ_ASSERT(IsStructurallyValidLanguageTag(language.range()));
-    language_.set(language.range());
+    MOZ_ASSERT(IsStructurallyValidLanguageTag(language.span()));
+    language_.set(language.span());
   }
 
   
@@ -280,9 +277,9 @@ class MOZ_STACK_CLASS LanguageTag final {
 
   template <size_t N>
   void setScript(const char (&script)[N]) {
-    mozilla::Range<const char> range(script, N - 1);
-    MOZ_ASSERT(IsStructurallyValidScriptTag(range));
-    script_.set(range);
+    mozilla::Span<const char> span(script, N - 1);
+    MOZ_ASSERT(IsStructurallyValidScriptTag(span));
+    script_.set(span);
   }
 
   
@@ -290,9 +287,8 @@ class MOZ_STACK_CLASS LanguageTag final {
 
 
   void setScript(const ScriptSubtag& script) {
-    MOZ_ASSERT(script.missing() ||
-               IsStructurallyValidScriptTag(script.range()));
-    script_.set(script.range());
+    MOZ_ASSERT(script.missing() || IsStructurallyValidScriptTag(script.span()));
+    script_.set(script.span());
   }
 
   
@@ -300,9 +296,9 @@ class MOZ_STACK_CLASS LanguageTag final {
 
   template <size_t N>
   void setRegion(const char (&region)[N]) {
-    mozilla::Range<const char> range(region, N - 1);
-    MOZ_ASSERT(IsStructurallyValidRegionTag(range));
-    region_.set(range);
+    mozilla::Span<const char> span(region, N - 1);
+    MOZ_ASSERT(IsStructurallyValidRegionTag(span));
+    region_.set(span);
   }
 
   
@@ -310,9 +306,8 @@ class MOZ_STACK_CLASS LanguageTag final {
 
 
   void setRegion(const RegionSubtag& region) {
-    MOZ_ASSERT(region.missing() ||
-               IsStructurallyValidRegionTag(region.range()));
-    region_.set(region.range());
+    MOZ_ASSERT(region.missing() || IsStructurallyValidRegionTag(region.span()));
+    region_.set(region.span());
   }
 
   
@@ -475,10 +470,10 @@ class MOZ_STACK_CLASS LanguageTagParser final {
     size_t length = tok.length();
     if (locale_.is<const JS::Latin1Char*>()) {
       using T = const JS::Latin1Char;
-      subtag.set(mozilla::Range<T>(locale_.as<T*>() + index, length));
+      subtag.set(mozilla::MakeSpan(locale_.as<T*>() + index, length));
     } else {
       using T = const char16_t;
-      subtag.set(mozilla::Range<T>(locale_.as<T*>() + index, length));
+      subtag.set(mozilla::MakeSpan(locale_.as<T*>() + index, length));
     }
   }
 
@@ -659,14 +654,14 @@ class MOZ_STACK_CLASS LanguageTagParser final {
   
   
   static JS::Result<bool> parseTransformExtension(
-      JSContext* cx, mozilla::Range<const char> extension, LanguageTag& tag,
+      JSContext* cx, mozilla::Span<const char> extension, LanguageTag& tag,
       TFieldVector& fields);
 
   
   
   
   static JS::Result<bool> parseUnicodeExtension(
-      JSContext* cx, mozilla::Range<const char> extension,
+      JSContext* cx, mozilla::Span<const char> extension,
       AttributesVector& attributes, KeywordsVector& keywords);
 
  public:
@@ -682,11 +677,11 @@ class MOZ_STACK_CLASS LanguageTagParser final {
 
   
   
-  static bool parseBaseName(JSContext* cx, mozilla::Range<const char> locale,
+  static bool parseBaseName(JSContext* cx, mozilla::Span<const char> locale,
                             LanguageTag& tag);
 
   
-  static bool canParseUnicodeExtension(mozilla::Range<const char> extension);
+  static bool canParseUnicodeExtension(mozilla::Span<const char> extension);
 
   
   static bool canParseUnicodeExtensionType(JSLinearString* unicodeType);
