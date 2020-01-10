@@ -631,6 +631,9 @@ class BaselineCompiler final : private BaselineCompilerCodeGen {
 
   js::Vector<PCMappingEntry, 16, SystemAllocPolicy> pcMappingEntries_;
 
+  
+  ResumeOffsetEntryVector resumeOffsetEntries_;
+
   CodeOffset profilerPushToggleOffset_;
 
   CodeOffset traceLoggerScriptTextIdOffset_;

@@ -91,6 +91,28 @@ struct PCMappingIndexEntry {
 };
 
 
+class BasePCToNativeEntry {
+  uint32_t pcOffset_;
+  uint32_t nativeOffset_;
+
+ public:
+  BasePCToNativeEntry(uint32_t pcOffset, uint32_t nativeOffset)
+      : pcOffset_(pcOffset), nativeOffset_(nativeOffset) {}
+  uint32_t pcOffset() const { return pcOffset_; }
+  uint32_t nativeOffset() const { return nativeOffset_; }
+};
+
+
+
+class ResumeOffsetEntry : public BasePCToNativeEntry {
+ public:
+  using BasePCToNativeEntry::BasePCToNativeEntry;
+};
+
+using ResumeOffsetEntryVector =
+    Vector<ResumeOffsetEntry, 16, SystemAllocPolicy>;
+
+
 #if defined(JS_CODEGEN_ARM)
 
 
@@ -259,15 +281,9 @@ struct BaselineScript final {
 
   
   
-  class OSREntry {
-    uint32_t pcOffset_;
-    uint32_t nativeOffset_;
-
+  class OSREntry : public BasePCToNativeEntry {
    public:
-    OSREntry(uint32_t pcOffset, uint32_t nativeOffset)
-        : pcOffset_(pcOffset), nativeOffset_(nativeOffset) {}
-    uint32_t pcOffset() const { return pcOffset_; }
-    uint32_t nativeOffset() const { return nativeOffset_; }
+    using BasePCToNativeEntry::BasePCToNativeEntry;
   };
 
  private:
@@ -382,7 +398,8 @@ struct BaselineScript final {
 
   
   
-  void computeResumeNativeOffsets(JSScript* script);
+  void computeResumeNativeOffsets(JSScript* script,
+                                  const ResumeOffsetEntryVector& entries);
 
   PCMappingIndexEntry& pcMappingIndexEntry(size_t index);
   CompactBufferReader pcMappingReader(size_t indexEntry);
