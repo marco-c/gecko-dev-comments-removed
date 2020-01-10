@@ -449,6 +449,15 @@ class SpecialPowersAPIParent extends JSWindowActorParent {
     throw new Error(`Unexpected preference type: ${type}`);
   }
 
+  _toggleMuteAudio(aMuted) {
+    let browser = this.browsingContext.top.embedderElement;
+    if (aMuted) {
+      browser.mute();
+    } else {
+      browser.unmute();
+    }
+  }
+
   
 
 
@@ -459,6 +468,8 @@ class SpecialPowersAPIParent extends JSWindowActorParent {
     
     
     switch (aMessage.name) {
+      case "SPToggleMuteAudio":
+        return this._toggleMuteAudio(aMessage.data.mute);
       case "PushPrefEnv":
         return this.pushPrefEnv(aMessage.data);
 
