@@ -3,9 +3,13 @@
 
 
 
+#ifndef nsUrlClassifierGTestCommon_h__
+#define nsUrlClassifierGTestCommon_h__
+
 #include "Entries.h"
 #include "nsIFile.h"
 #include "nsTArray.h"
+
 #include "gtest/gtest.h"
 
 using namespace mozilla::safebrowsing;
@@ -59,7 +63,7 @@ _Prefix CreatePrefixFromURL(const char* aURL, uint8_t aPrefixSize);
 _Prefix CreatePrefixFromURL(const nsCString& aURL, uint8_t aPrefixSize);
 
 
-void CheckContent(LookupCacheV4* aCache, PrefixStringMap& aExpected);
+void CheckContent(LookupCacheV4* cache, const _PrefixArray& aPrefixArray);
 
 
 
@@ -80,3 +84,5 @@ RefPtr<Classifier> GetClassifier();
 
 nsresult BuildLookupCache(const RefPtr<Classifier>& aClassifier,
                           const nsACString& aTable, _PrefixArray& aPrefixArray);
+
+#endif  

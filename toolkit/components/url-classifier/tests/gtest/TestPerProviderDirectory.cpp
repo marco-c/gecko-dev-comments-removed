@@ -3,11 +3,12 @@
 
 
 
-#include "gtest/gtest.h"
 #include "HashStore.h"
 #include "LookupCache.h"
 #include "LookupCacheV4.h"
 #include "nsAppDirectoryServiceDefs.h"
+
+#include "Common.h"
 
 namespace mozilla {
 namespace safebrowsing {

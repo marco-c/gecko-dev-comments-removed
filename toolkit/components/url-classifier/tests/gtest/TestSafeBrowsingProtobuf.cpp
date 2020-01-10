@@ -3,8 +3,9 @@
 
 
 
-#include "gtest/gtest.h"
 #include "safebrowsing.pb.h"
+
+#include "Common.h"
 
 TEST(UrlClassifierProtobuf, Empty)
 {

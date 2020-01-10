@@ -3,9 +3,10 @@
 
 
 
-#include "gtest/gtest.h"
 #include "mozilla/EndianUtils.h"
 #include "ProtocolParser.h"
+
+#include "Common.h"
 
 typedef FetchThreatListUpdatesResponse_ListUpdateResponse ListUpdateResponse;
 

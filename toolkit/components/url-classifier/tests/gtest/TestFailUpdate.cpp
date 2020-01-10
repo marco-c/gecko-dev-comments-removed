@@ -3,12 +3,12 @@
 
 
 
-#include "string.h"
-
-#include "gtest/gtest.h"
 #include "HashStore.h"
 #include "mozilla/Unused.h"
 #include "nsPrintfCString.h"
+#include "string.h"
+
+#include "Common.h"
 
 static const char* kFilesInV2[] = {".vlpset", ".sbstore"};
 static const char* kFilesInV4[] = {".vlpset", ".metadata"};

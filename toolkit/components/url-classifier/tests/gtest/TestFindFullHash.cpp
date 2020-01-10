@@ -3,10 +3,11 @@
 
 
 
-#include "gtest/gtest.h"
 #include "mozilla/Base64.h"
 #include "nsUrlClassifierUtils.h"
 #include "safebrowsing.pb.h"
+
+#include "Common.h"
 
 template <size_t N>
 static void ToBase64EncodedStringArray(nsCString (&aInput)[N],

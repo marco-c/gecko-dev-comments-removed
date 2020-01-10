@@ -3,9 +3,7 @@
 
 
 
-#include "Common.h"
 #include "Classifier.h"
-#include "gtest/gtest.h"
 #include "HashStore.h"
 #include "mozilla/Components.h"
 #include "mozilla/Unused.h"
@@ -14,6 +12,8 @@
 #include "nsIThread.h"
 #include "nsThreadUtils.h"
 #include "string.h"
+
+#include "Common.h"
 
 #define GTEST_SAFEBROWSING_DIR NS_LITERAL_CSTRING("safebrowsing")
 #define GTEST_TABLE NS_LITERAL_CSTRING("gtest-malware-proto")

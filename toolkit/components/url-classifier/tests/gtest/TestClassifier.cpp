@@ -4,8 +4,9 @@
 
 
 #include "Classifier.h"
-#include "Common.h"
 #include "LookupCacheV4.h"
+
+#include "Common.h"
 
 static void TestReadNoiseEntries(RefPtr<Classifier> classifier,
                                  const nsCString& aTable, const nsCString& aURL,

@@ -3,16 +3,15 @@
 
 
 
-#include "Common.h"
-#include "gtest/gtest.h"
+#include "LookupCacheV4.h"
 #include "mozilla/Preferences.h"
 #include <mozilla/RefPtr.h>
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsClassHashtable.h"
-#include "nsIFile.h"
 #include "nsString.h"
-#include "nsTArray.h"
 #include "VariableLengthPrefixSet.h"
+
+#include "Common.h"
 
 
 static nsCString CreateFullHash(const nsACString& in) {
@@ -136,7 +135,7 @@ class UrlClassifierPrefixSetTest : public ::testing::TestWithParam<uint32_t> {
     
     static const char prefKey[] =
         "browser.safebrowsing.prefixset.max_array_size";
-    Preferences::SetUint(prefKey, GetParam());
+    mozilla::Preferences::SetUint(prefKey, GetParam());
 
     mCache = SetupLookupCache(NS_LITERAL_CSTRING("test"));
   }

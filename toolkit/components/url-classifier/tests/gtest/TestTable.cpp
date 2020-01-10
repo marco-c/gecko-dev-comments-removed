@@ -3,8 +3,9 @@
 
 
 
-#include "gtest/gtest.h"
 #include "nsUrlClassifierDBService.h"
+
+#include "Common.h"
 
 static void TestResponseCode(const char* table, nsresult result) {
   nsCString tableName(table);

@@ -3,8 +3,9 @@
 
 
 
-#include "Entries.h"
 #include "mozilla/EndianUtils.h"
+
+#include "Common.h"
 
 TEST(UrlClassifierHash, ToFromUint32)
 {

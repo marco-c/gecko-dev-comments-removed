@@ -3,6 +3,9 @@
 
 
 
+#include "Classifier.h"
+#include "LookupCacheV4.h"
+
 #include "Common.h"
 
 static void TestHasPrefix(const nsCString& aURL, bool aExpectedHas,
