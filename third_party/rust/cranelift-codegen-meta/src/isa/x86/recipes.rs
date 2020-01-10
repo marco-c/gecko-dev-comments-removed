@@ -1024,6 +1024,18 @@ pub(crate) fn define<'shared>(
     );
 
     
+    recipes.add_template_recipe(
+        EncodingRecipeBuilder::new("u_id_z", f_unary_imm, 1)
+            .operands_out(vec![gpr])
+            .emit(
+                r#"
+                    {{PUT_OP}}(bits, rex2(out_reg0, out_reg0), sink);
+                    modrm_rr(out_reg0, out_reg0, sink);
+                "#,
+            ),
+    );
+
+    
     {
         let format = formats.get(f_unary_ieee32);
         recipes.add_template_recipe(

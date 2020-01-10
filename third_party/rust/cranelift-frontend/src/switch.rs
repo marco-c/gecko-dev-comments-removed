@@ -38,6 +38,7 @@ type EntryIndex = u64;
 
 
 
+
 #[derive(Debug, Default)]
 pub struct Switch {
     cases: HashMap<EntryIndex, Ebb>,
@@ -288,13 +289,16 @@ impl ContiguousCaseRange {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::frontend::FunctionBuilderContext;
     use cranelift_codegen::ir::Function;
     use std::string::ToString;
 
     macro_rules! setup {
         ($default:expr, [$($index:expr,)*]) => {{
-            let func = {
-                let mut bx = FunctionBuilder::new(Function::new());
+            let mut func = Function::new();
+            let mut func_ctx = FunctionBuilderContext::new();
+            {
+                let mut bx = FunctionBuilder::new(&mut func, &mut func_ctx);
                 let ebb = bx.create_ebb();
                 bx.switch_to_block(ebb);
                 let val = bx.ins().iconst(types::I8, 0);
@@ -304,9 +308,7 @@ mod tests {
                     switch.set_entry($index, ebb);
                 )*
                 switch.emit(&mut bx, val, Ebb::with_number($default).unwrap());
-                bx.seal_all_blocks();
-                bx.finalize()
-            };
+            }
             func
                 .to_string()
                 .trim_start_matches("function u0:0() fast {\n")

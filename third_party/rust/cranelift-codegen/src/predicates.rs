@@ -13,6 +13,12 @@ use crate::ir;
 
 
 #[allow(dead_code)]
+pub fn is_zero_int<T: Into<i64>>(x: T) -> bool {
+    x.into() == 0
+}
+
+
+#[allow(dead_code)]
 pub fn is_zero_64_bit_float<T: Into<ir::immediates::Ieee64>>(x: T) -> bool {
     let x64 = x.into();
     x64.bits() == 0

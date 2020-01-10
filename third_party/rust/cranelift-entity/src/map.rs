@@ -83,16 +83,19 @@ where
     }
 
     
+    #[inline(always)]
     pub fn get(&self, k: K) -> Option<&V> {
         self.elems.get(k.index())
     }
 
     
+    #[inline(always)]
     pub fn is_empty(&self) -> bool {
         self.elems.is_empty()
     }
 
     
+    #[inline(always)]
     pub fn clear(&mut self) {
         self.elems.clear()
     }
@@ -123,7 +126,6 @@ where
     }
 
     
-    #[inline]
     pub fn resize(&mut self, n: usize) {
         self.elems.resize(n, self.default.clone());
     }
@@ -139,8 +141,9 @@ where
 {
     type Output = V;
 
+    #[inline(always)]
     fn index(&self, k: K) -> &V {
-        self.get(k).unwrap_or(&self.default)
+        self.elems.get(k.index()).unwrap_or(&self.default)
     }
 }
 
@@ -152,11 +155,11 @@ where
     K: EntityRef,
     V: Clone,
 {
-    #[inline]
+    #[inline(always)]
     fn index_mut(&mut self, k: K) -> &mut V {
         let i = k.index();
         if i >= self.elems.len() {
-            self.resize(i + 1);
+            self.elems.resize(i + 1, self.default.clone());
         }
         &mut self.elems[i]
     }
