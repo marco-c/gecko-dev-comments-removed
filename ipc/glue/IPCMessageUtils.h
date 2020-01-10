@@ -992,12 +992,10 @@ struct ParamTraits<mozilla::Variant<Ts...>> {
       if (tag == N - 1) {
         
         
-        typename mozilla::detail::Nth<N - 1, Ts...>::Type val;
-        if (ReadParam(msg, iter, &val)) {
-          *result = mozilla::AsVariant(val);
-          return true;
-        }
-        return false;
+        
+        
+        
+        return ReadParam(msg, iter, &result->template emplace<N - 1>());
       } else {
         return Next::Read(msg, iter, tag, result);
       }

@@ -9,6 +9,7 @@
 
 #include "chrome/common/ipc_message_utils.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Variant.h"
 
 namespace mozilla {
 namespace ipc {
@@ -347,6 +348,75 @@ struct IPDLParamTraits<Tuple<Ts...>> {
                            IProtocol* aActor, Tuple<Ts...>& aResult,
                            std::index_sequence<Is...>) {
     return ReadIPDLParamList(aMsg, aIter, aActor, &Get<Is>(aResult)...);
+  }
+};
+
+template <class... Ts>
+struct IPDLParamTraits<mozilla::Variant<Ts...>> {
+  typedef mozilla::Variant<Ts...> paramType;
+  using Tag = typename mozilla::detail::VariantTag<Ts...>::Type;
+
+  static void Write(IPC::Message* aMsg, IProtocol* aActor,
+                    const paramType& aParam) {
+    WriteIPDLParam(aMsg, aActor, aParam.tag);
+    aParam.match(
+        [aMsg, aActor](const auto& t) { WriteIPDLParam(aMsg, aActor, t); });
+  }
+
+  static void Write(IPC::Message* aMsg, IProtocol* aActor, paramType&& aParam) {
+    WriteIPDLParam(aMsg, aActor, aParam.tag);
+    aParam.match([aMsg, aActor](auto& t) {
+      WriteIPDLParam(aMsg, aActor, std::move(t));
+    });
+  }
+
+  
+  
+  
+  template <size_t N, typename dummy = void>
+  struct VariantReader {
+    using Next = VariantReader<N - 1>;
+
+    static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
+                     IProtocol* aActor, Tag aTag, paramType* aResult) {
+      
+      
+      
+      
+      if (aTag == N - 1) {
+        
+        
+        
+        
+        
+        return ReadIPDLParam(aMsg, aIter, aActor,
+                             &aResult->template emplace<N - 1>());
+      }
+      return Next::Read(aMsg, aIter, aActor, aTag, aResult);
+    }
+
+  };  
+
+  
+  
+  
+  template <typename dummy>
+  struct VariantReader<0, dummy> {
+    static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
+                     IProtocol* aActor, Tag aTag, paramType* aResult) {
+      return false;
+    }
+  };
+
+  static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
+                   IProtocol* aActor, paramType* aResult) {
+    Tag tag;
+    if (!ReadIPDLParam(aMsg, aIter, aActor, &tag)) {
+      return false;
+    }
+
+    return VariantReader<sizeof...(Ts)>::Read(aMsg, aIter, aActor, tag,
+                                              aResult);
   }
 };
 
