@@ -15,6 +15,9 @@ const {
   WS_RESET_COLUMNS,
 } = require("../constants");
 
+const { getDisplayedFrames } = require("../selectors/index");
+const PAGE_SIZE_ITEM_COUNT_RATIO = 5;
+
 
 
 
@@ -104,6 +107,37 @@ function toggleWebSocketsColumn(column) {
   };
 }
 
+
+
+
+
+
+
+function selectFrameDelta(delta) {
+  return (dispatch, getState) => {
+    const state = getState();
+    const frames = getDisplayedFrames(state);
+
+    if (frames.length === 0) {
+      return;
+    }
+
+    const selIndex = frames.findIndex(
+      r => r === state.webSockets.selectedFrame
+    );
+
+    if (delta === "PAGE_DOWN") {
+      delta = Math.ceil(frames.length / PAGE_SIZE_ITEM_COUNT_RATIO);
+    } else if (delta === "PAGE_UP") {
+      delta = -Math.ceil(frames.length / PAGE_SIZE_ITEM_COUNT_RATIO);
+    }
+
+    const newIndex = Math.min(Math.max(0, selIndex + delta), frames.length - 1);
+    const newItem = frames[newIndex];
+    dispatch(selectFrame(newItem));
+  };
+}
+
 module.exports = {
   addFrame,
   selectFrame,
@@ -113,4 +147,5 @@ module.exports = {
   setFrameFilterText,
   resetWebSocketsColumns,
   toggleWebSocketsColumn,
+  selectFrameDelta,
 };
