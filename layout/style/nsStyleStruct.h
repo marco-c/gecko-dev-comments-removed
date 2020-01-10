@@ -1623,17 +1623,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   }
   bool IsListItem() const { return IsListItem(mDisplay); }
 
-  bool IsBlockInsideStyle() const {
-    return mozilla::StyleDisplay::Block == mDisplay ||
-           mozilla::StyleDisplay::ListItem == mDisplay ||
-           mozilla::StyleDisplay::InlineBlock == mDisplay ||
-           mozilla::StyleDisplay::TableCaption == mDisplay ||
-           mozilla::StyleDisplay::FlowRoot == mDisplay;
-    
-    
-    
-  }
-
   bool IsInlineInsideStyle() const {
     auto inside = DisplayInside();
     return inside == mozilla::StyleDisplayInside::Inline ||
@@ -1809,7 +1798,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   
   
   
-  inline bool IsBlockInside(const nsIFrame* aContextFrame) const;
   inline bool IsBlockOutside(const nsIFrame* aContextFrame) const;
   inline bool IsInlineOutside(const nsIFrame* aContextFrame) const;
   inline bool IsOriginalDisplayInlineOutside(
