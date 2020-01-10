@@ -1120,18 +1120,24 @@ class MOZ_RAII AutoScratchRegisterMaybeOutput {
 
 
 
+
 class MOZ_RAII AutoCallVM {
   MacroAssembler& masm_;
   CacheIRCompiler* compiler_;
   CacheRegisterAllocator& allocator_;
+  mozilla::Maybe<AutoOutputRegister> output_;
 
   
   mozilla::Maybe<AutoStubFrame> stubFrame_;
-  mozilla::Maybe<AutoScratchRegister> scratch_;
+  mozilla::Maybe<AutoScratchRegisterMaybeOutput> scratch_;
 
   
-  mozilla::Maybe<AutoOutputRegister> output_;
   mozilla::Maybe<AutoSaveLiveRegisters> save_;
+
+  void storeResult(JSValueType returnType);
+
+  template <typename Fn>
+  void storeResult();
 
  public:
   AutoCallVM(MacroAssembler& masm, CacheIRCompiler* compiler,
@@ -1139,7 +1145,11 @@ class MOZ_RAII AutoCallVM {
 
   void prepare();
 
-  ~AutoCallVM();
+  template <typename Fn, Fn fn>
+  void call() {
+    compiler_->callVM<Fn, fn>(masm_);
+    storeResult<Fn>();
+  }
 };
 
 
