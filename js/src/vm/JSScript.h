@@ -3246,6 +3246,11 @@ class LazyScript : public gc::TenuredCell {
   
   
   
+  uint8_t* jitCodeRaw_ = nullptr;
+
+  
+  
+  
   WeakHeapPtrScript script_;
   friend void js::gc::SweepLazyScripts(GCParallelTask* task);
 
@@ -3369,10 +3374,10 @@ class LazyScript : public gc::TenuredCell {
   uint32_t lineno_;
   uint32_t column_;
 
-  LazyScript(JSFunction* fun, ScriptSourceObject& sourceObject,
-             LazyScriptData* data, uint32_t immutableFlags,
-             uint32_t sourceStart, uint32_t sourceEnd, uint32_t toStringStart,
-             uint32_t lineno, uint32_t column);
+  LazyScript(JSFunction* fun, uint8_t* stubEntry,
+             ScriptSourceObject& sourceObject, LazyScriptData* data,
+             uint32_t immutableFlags, uint32_t sourceStart, uint32_t sourceEnd,
+             uint32_t toStringStart, uint32_t lineno, uint32_t column);
 
   
   
@@ -3615,6 +3620,10 @@ class LazyScript : public gc::TenuredCell {
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) {
     return mallocSizeOf(lazyData_);
+  }
+
+  static constexpr size_t offsetOfJitCodeRaw() {
+    return offsetof(LazyScript, jitCodeRaw_);
   }
 
   uint32_t immutableFlags() const { return immutableFlags_; }
