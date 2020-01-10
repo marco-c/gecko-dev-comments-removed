@@ -1223,7 +1223,7 @@ bool ChromeTooltipListener::WebProgressShowedTooltip(
     
     Document* document = lastUsed->GetDocument();
     if (document) {
-      document = document->GetParentDocument();
+      document = document->GetInProcessParentDocument();
     }
     if (!document) {
       break;

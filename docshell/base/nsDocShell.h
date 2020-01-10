@@ -328,7 +328,7 @@ class nsDocShell final : public nsDocLoader,
   
   
   void TriggerParentCheckDocShellIsEmpty() {
-    RefPtr<nsDocShell> parent = GetParentDocshell();
+    RefPtr<nsDocShell> parent = GetInProcessParentDocshell();
     if (parent) {
       parent->DocLoaderIsEmpty(true);
     }
@@ -934,7 +934,7 @@ class nsDocShell final : public nsDocLoader,
                               nsIDocShellTreeItem** aResult);
 
   
-  already_AddRefed<nsDocShell> GetParentDocshell();
+  already_AddRefed<nsDocShell> GetInProcessParentDocshell();
 
   
   

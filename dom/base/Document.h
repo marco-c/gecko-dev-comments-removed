@@ -1447,7 +1447,7 @@ class Document : public nsINode,
 
 
 
-  Document* GetParentDocument() const { return mParentDocument; }
+  Document* GetInProcessParentDocument() const { return mParentDocument; }
 
   
 
@@ -3864,8 +3864,8 @@ class Document : public nsINode,
 
 
   bool StyleOrLayoutObservablyDependsOnParentDocumentLayout() const {
-    return GetParentDocument() &&
-           GetDocGroup() == GetParentDocument()->GetDocGroup();
+    return GetInProcessParentDocument() &&
+           GetDocGroup() == GetInProcessParentDocument()->GetDocGroup();
   }
 
   void AddIntersectionObserver(DOMIntersectionObserver* aObserver) {

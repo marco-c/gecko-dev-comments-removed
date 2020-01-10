@@ -449,7 +449,7 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument) {
   if (!isRootDoc) {
     
     
-    parentDocAcc = GetDocAccessible(aDocument->GetParentDocument());
+    parentDocAcc = GetDocAccessible(aDocument->GetInProcessParentDocument());
     NS_ASSERTION(parentDocAcc, "Can't create an accessible for the document!");
     if (!parentDocAcc) return nullptr;
   }

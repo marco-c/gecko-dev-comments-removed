@@ -1128,12 +1128,12 @@ bool PaymentRequest::InFullyActiveDocument() {
 
   
   
-  Document* parentDoc = doc->GetParentDocument();
+  Document* parentDoc = doc->GetInProcessParentDocument();
   while (parentDoc) {
     if (parentDoc && !parentDoc->IsCurrentActiveDocument()) {
       return false;
     }
-    parentDoc = parentDoc->GetParentDocument();
+    parentDoc = parentDoc->GetInProcessParentDocument();
   }
   return true;
 }

@@ -78,7 +78,7 @@ PostMessageEvent::Run() {
   
   
   if (nsCOMPtr<nsPIDOMWindowOuter> topWindow =
-          targetWindow->GetOuterWindow()->GetTop()) {
+          targetWindow->GetOuterWindow()->GetInProcessTop()) {
     if (nsCOMPtr<nsPIDOMWindowInner> topInner =
             topWindow->GetCurrentInnerWindow()) {
       if (topInner->GetExtantDoc() &&

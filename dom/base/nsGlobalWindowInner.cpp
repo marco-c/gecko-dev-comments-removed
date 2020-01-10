@@ -1843,7 +1843,7 @@ void nsGlobalWindowInner::UpdateParentTarget() {
       nsContentUtils::TryGetBrowserChildGlobal(frameElement);
 
   if (!eventTarget) {
-    nsGlobalWindowOuter* topWin = GetScriptableTopInternal();
+    nsGlobalWindowOuter* topWin = GetInProcessScriptableTopInternal();
     if (topWin) {
       frameElement = topWin->GetFrameElementInternal();
       eventTarget = nsContentUtils::TryGetBrowserChildGlobal(frameElement);
@@ -1897,10 +1897,10 @@ void nsGlobalWindowInner::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
 }
 
 bool nsGlobalWindowInner::DialogsAreBeingAbused() {
-  NS_ASSERTION(
-      GetScriptableTopInternal() &&
-          GetScriptableTopInternal()->GetCurrentInnerWindowInternal() == this,
-      "DialogsAreBeingAbused called with invalid window");
+  NS_ASSERTION(GetInProcessScriptableTopInternal() &&
+                   GetInProcessScriptableTopInternal()
+                           ->GetCurrentInnerWindowInternal() == this,
+               "DialogsAreBeingAbused called with invalid window");
 
   if (mLastDialogQuitTime.IsNull() || nsContentUtils::IsCallerChrome()) {
     return false;
@@ -2087,7 +2087,7 @@ nsIPrincipal* nsGlobalWindowInner::GetPrincipal() {
   
 
   nsCOMPtr<nsIScriptObjectPrincipal> objPrincipal =
-      do_QueryInterface(GetParentInternal());
+      do_QueryInterface(GetInProcessParentInternal());
 
   if (objPrincipal) {
     return objPrincipal->GetPrincipal();
@@ -2110,7 +2110,7 @@ nsIPrincipal* nsGlobalWindowInner::GetEffectiveStoragePrincipal() {
   
 
   nsCOMPtr<nsIScriptObjectPrincipal> objPrincipal =
-      do_QueryInterface(GetParentInternal());
+      do_QueryInterface(GetInProcessParentInternal());
 
   if (objPrincipal) {
     return objPrincipal->GetEffectiveStoragePrincipal();
@@ -2281,7 +2281,7 @@ bool nsGlobalWindowInner::ShouldReportForServiceWorkerScope(
     const nsAString& aScope) {
   bool result = false;
 
-  nsPIDOMWindowOuter* topOuter = GetScriptableTop();
+  nsPIDOMWindowOuter* topOuter = GetInProcessScriptableTop();
   NS_ENSURE_TRUE(topOuter, false);
 
   nsGlobalWindowInner* topInner =
@@ -2480,7 +2480,8 @@ void nsPIDOMWindowInner::TryToCacheTopInnerWindow() {
 
   MOZ_ASSERT(window);
 
-  if (nsCOMPtr<nsPIDOMWindowOuter> topOutter = window->GetScriptableTop()) {
+  if (nsCOMPtr<nsPIDOMWindowOuter> topOutter =
+          window->GetInProcessScriptableTop()) {
     mTopInnerWindow = topOutter->GetCurrentInnerWindow();
   }
 }
@@ -2631,8 +2632,8 @@ Nullable<WindowProxyHolder> nsGlobalWindowInner::GetParent(
 
 
 
-nsPIDOMWindowOuter* nsGlobalWindowInner::GetScriptableParent() {
-  FORWARD_TO_OUTER(GetScriptableParent, (), nullptr);
+nsPIDOMWindowOuter* nsGlobalWindowInner::GetInProcessScriptableParent() {
+  FORWARD_TO_OUTER(GetInProcessScriptableParent, (), nullptr);
 }
 
 
@@ -2642,8 +2643,9 @@ nsPIDOMWindowOuter* nsGlobalWindowInner::GetScriptableParent() {
 
 
 
-nsPIDOMWindowOuter* nsGlobalWindowInner::GetScriptableTop() {
-  FORWARD_TO_OUTER(GetScriptableTop, (), nullptr);
+
+nsPIDOMWindowOuter* nsGlobalWindowInner::GetInProcessScriptableTop() {
+  FORWARD_TO_OUTER(GetInProcessScriptableTop, (), nullptr);
 }
 
 void nsGlobalWindowInner::GetContent(JSContext* aCx,
@@ -5397,14 +5399,14 @@ nsGlobalWindowInner::CallState nsGlobalWindowInner::CallOnChildren(
   }
 
   int32_t childCount = 0;
-  docShell->GetChildCount(&childCount);
+  docShell->GetInProcessChildCount(&childCount);
 
   
   
   AutoTArray<nsCOMPtr<nsIDocShellTreeItem>, 8> children;
   for (int32_t i = 0; i < childCount; ++i) {
     nsCOMPtr<nsIDocShellTreeItem> childShell;
-    docShell->GetChildAt(i, getter_AddRefs(childShell));
+    docShell->GetInProcessChildAt(i, getter_AddRefs(childShell));
     if (childShell) {
       children.AppendElement(childShell);
     }
@@ -5566,14 +5568,14 @@ nsresult nsGlobalWindowInner::FireDelayedDOMEvents() {
   nsCOMPtr<nsIDocShell> docShell = GetDocShell();
   if (docShell) {
     int32_t childCount = 0;
-    docShell->GetChildCount(&childCount);
+    docShell->GetInProcessChildCount(&childCount);
 
     
     
     AutoTArray<nsCOMPtr<nsIDocShellTreeItem>, 8> children;
     for (int32_t i = 0; i < childCount; ++i) {
       nsCOMPtr<nsIDocShellTreeItem> childShell;
-      docShell->GetChildAt(i, getter_AddRefs(childShell));
+      docShell->GetInProcessChildAt(i, getter_AddRefs(childShell));
       if (childShell) {
         children.AppendElement(childShell);
       }
@@ -5594,13 +5596,13 @@ nsresult nsGlobalWindowInner::FireDelayedDOMEvents() {
 
 
 
-nsPIDOMWindowOuter* nsGlobalWindowInner::GetParentInternal() {
+nsPIDOMWindowOuter* nsGlobalWindowInner::GetInProcessParentInternal() {
   nsGlobalWindowOuter* outer = GetOuterWindowInternal();
   if (!outer) {
     
     return nullptr;
   }
-  return outer->GetParentInternal();
+  return outer->GetInProcessParentInternal();
 }
 
 nsIPrincipal* nsGlobalWindowInner::GetTopLevelPrincipal() {
@@ -5609,7 +5611,7 @@ nsIPrincipal* nsGlobalWindowInner::GetTopLevelPrincipal() {
     return nullptr;
   }
 
-  nsPIDOMWindowOuter* topLevelOuterWindow = GetTopInternal();
+  nsPIDOMWindowOuter* topLevelOuterWindow = GetInProcessTopInternal();
   if (!topLevelOuterWindow) {
     return nullptr;
   }
@@ -5640,7 +5642,7 @@ nsIPrincipal* nsGlobalWindowInner::GetTopLevelStorageAreaPrincipal() {
     return nullptr;
   }
 
-  nsPIDOMWindowOuter* outerWindow = GetParentInternal();
+  nsPIDOMWindowOuter* outerWindow = GetInProcessParentInternal();
   if (!outerWindow) {
     
     return nullptr;

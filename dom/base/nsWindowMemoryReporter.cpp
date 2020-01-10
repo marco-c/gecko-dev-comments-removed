@@ -230,8 +230,9 @@ static void CollectWindowReports(nsGlobalWindowInner* aWindow,
   nsCOMPtr<nsIURI> location;
   if (aWindow->GetOuterWindow()) {
     
-    MOZ_ASSERT(!!aWindow->GetTopInternal() == !!aWindow->GetDocShell());
-    top = aWindow->GetTopInternal();
+    MOZ_ASSERT(!!aWindow->GetInProcessTopInternal() ==
+               !!aWindow->GetDocShell());
+    top = aWindow->GetInProcessTopInternal();
     if (top) {
       location = GetWindowURI(top);
     }
@@ -819,7 +820,7 @@ void nsWindowMemoryReporter::CheckForGhostWindows(
     
     
     nsGlobalWindowInner* window = iter.UserData();
-    if (!window->GetOuterWindow() || !window->GetTopInternal()) {
+    if (!window->GetOuterWindow() || !window->GetInProcessTopInternal()) {
       
       continue;
     }
@@ -849,7 +850,7 @@ void nsWindowMemoryReporter::CheckForGhostWindows(
     
     nsCOMPtr<nsPIDOMWindowOuter> top;
     if (window->GetOuterWindow()) {
-      top = window->GetOuterWindow()->GetTop();
+      top = window->GetOuterWindow()->GetInProcessTop();
     }
 
     if (top) {

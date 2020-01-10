@@ -19,7 +19,7 @@ static bool ShouldPersistAttribute(Element* aElement, nsAtom* aAttribute) {
   if (aElement->IsXULElement(nsGkAtoms::window)) {
     
     
-    if (aElement->OwnerDoc()->GetParentDocument()) {
+    if (aElement->OwnerDoc()->GetInProcessParentDocument()) {
       return true;
     }
     

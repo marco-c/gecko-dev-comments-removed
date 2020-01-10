@@ -64,7 +64,7 @@ AudioChannelAgent::InitWithWeakCallback(
 }
 
 nsresult AudioChannelAgent::FindCorrectWindow(nsPIDOMWindowInner* aWindow) {
-  mWindow = aWindow->GetScriptableTop();
+  mWindow = aWindow->GetInProcessScriptableTop();
   if (NS_WARN_IF(!mWindow)) {
     return NS_OK;
   }
@@ -76,7 +76,7 @@ nsresult AudioChannelAgent::FindCorrectWindow(nsPIDOMWindowInner* aWindow) {
   
   
   
-  nsCOMPtr<nsPIDOMWindowOuter> outerParent = mWindow->GetParent();
+  nsCOMPtr<nsPIDOMWindowOuter> outerParent = mWindow->GetInProcessParent();
   if (!outerParent || outerParent == mWindow) {
     return NS_OK;
   }

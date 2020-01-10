@@ -193,7 +193,8 @@ nsCString ImageCacheKey::GetTopLevelBaseDomain(Document* aDocument,
   
   if (!AntiTrackingCommon::MaybeIsFirstPartyStorageAccessGrantedFor(
           aDocument->GetInnerWindow(), aURI)) {
-    nsPIDOMWindowOuter* top = aDocument->GetInnerWindow()->GetScriptableTop();
+    nsPIDOMWindowOuter* top =
+        aDocument->GetInnerWindow()->GetInProcessScriptableTop();
     nsPIDOMWindowInner* topInner = top ? top->GetCurrentInnerWindow() : nullptr;
     if (!topInner) {
       return aDocument

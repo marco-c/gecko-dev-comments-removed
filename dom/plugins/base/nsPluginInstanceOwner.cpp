@@ -2813,7 +2813,8 @@ NS_IMETHODIMP nsPluginInstanceOwner::CreateWidget(void) {
       
       if (XRE_IsContentProcess()) {
         if (nsCOMPtr<nsPIDOMWindowOuter> window = doc->GetWindow()) {
-          if (nsCOMPtr<nsPIDOMWindowOuter> topWindow = window->GetTop()) {
+          if (nsCOMPtr<nsPIDOMWindowOuter> topWindow =
+                  window->GetInProcessTop()) {
             dom::BrowserChild* tc = dom::BrowserChild::GetFrom(topWindow);
             if (tc) {
               

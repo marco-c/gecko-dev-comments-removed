@@ -1954,7 +1954,7 @@ void nsJSContext::MaybeRunNextCollectorSlice(nsIDocShell* aDocShell,
   }
 
   nsCOMPtr<nsIDocShellTreeItem> root;
-  aDocShell->GetSameTypeRootTreeItem(getter_AddRefs(root));
+  aDocShell->GetInProcessSameTypeRootTreeItem(getter_AddRefs(root));
   if (root == aDocShell) {
     
     return;

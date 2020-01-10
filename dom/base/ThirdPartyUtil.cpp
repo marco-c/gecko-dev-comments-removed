@@ -199,7 +199,7 @@ ThirdPartyUtil::IsThirdPartyWindow(mozIDOMWindowProxy* aWindow, nsIURI* aURI,
   do {
     
     
-    nsPIDOMWindowOuter* parent = current->GetScriptableParent();
+    nsPIDOMWindowOuter* parent = current->GetInProcessScriptableParent();
     
     
     

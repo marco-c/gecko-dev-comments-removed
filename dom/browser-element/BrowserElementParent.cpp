@@ -231,7 +231,7 @@ BrowserElementParent::OpenWindowInProcess(BrowsingContext* aOpenerWindow,
   
   
   nsCOMPtr<nsPIDOMWindowOuter> win =
-      aOpenerWindow->GetDOMWindow()->GetScriptableTop();
+      aOpenerWindow->GetDOMWindow()->GetInProcessScriptableTop();
 
   nsCOMPtr<Element> openerFrameElement = win->GetFrameElementInternal();
   NS_ENSURE_TRUE(openerFrameElement, BrowserElementParent::OPEN_WINDOW_IGNORED);

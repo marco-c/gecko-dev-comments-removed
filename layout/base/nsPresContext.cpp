@@ -612,7 +612,7 @@ nsresult nsPresContext::Init(nsDeviceContext* aDeviceContext) {
     mRefreshDriver =
         mDocument->GetDisplayDocument()->GetPresContext()->RefreshDriver();
   } else {
-    dom::Document* parent = mDocument->GetParentDocument();
+    dom::Document* parent = mDocument->GetInProcessParentDocument();
     
     
     
@@ -625,7 +625,7 @@ nsresult nsPresContext::Init(nsDeviceContext* aDeviceContext) {
       nsCOMPtr<nsIDocShellTreeItem> ourItem = mDocument->GetDocShell();
       if (ourItem) {
         nsCOMPtr<nsIDocShellTreeItem> parentItem;
-        ourItem->GetSameTypeParent(getter_AddRefs(parentItem));
+        ourItem->GetInProcessSameTypeParent(getter_AddRefs(parentItem));
         if (parentItem) {
           Element* containingElement =
               parent->FindContentForSubDocument(mDocument);

@@ -118,7 +118,7 @@ bool FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
   if (!aPolicy.LowerCaseEqualsLiteral("deny") &&
       !aPolicy.LowerCaseEqualsLiteral("sameorigin")) {
     nsCOMPtr<nsIDocShellTreeItem> root;
-    curDocShellItem->GetSameTypeRootTreeItem(getter_AddRefs(root));
+    curDocShellItem->GetInProcessSameTypeRootTreeItem(getter_AddRefs(root));
     ReportError("XFOInvalid", root, uri, aPolicy);
     return true;
   }
@@ -140,7 +140,8 @@ bool FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
 
   
   
-  nsCOMPtr<nsPIDOMWindowOuter> topWindow = thisWindow->GetScriptableTop();
+  nsCOMPtr<nsPIDOMWindowOuter> topWindow =
+      thisWindow->GetInProcessScriptableTop();
 
   
   if (thisWindow == topWindow) {
@@ -155,8 +156,8 @@ bool FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
   
   
   
-  while (NS_SUCCEEDED(
-             curDocShellItem->GetParent(getter_AddRefs(parentDocShellItem))) &&
+  while (NS_SUCCEEDED(curDocShellItem->GetInProcessParent(
+             getter_AddRefs(parentDocShellItem))) &&
          parentDocShellItem) {
     nsCOMPtr<nsIDocShell> curDocShell = do_QueryInterface(curDocShellItem);
     if (curDocShell && curDocShell->GetIsMozBrowser()) {

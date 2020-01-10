@@ -1642,7 +1642,7 @@ bool nsGlobalWindowOuter::ComputeIsSecureContext(Document* aDocument,
 
   bool hadNonSecureContextCreator = false;
 
-  nsPIDOMWindowOuter* parentOuterWin = GetScriptableParent();
+  nsPIDOMWindowOuter* parentOuterWin = GetInProcessScriptableParent();
   MOZ_ASSERT(parentOuterWin, "How can we get here? No docShell somehow?");
   if (nsGlobalWindowOuter::Cast(parentOuterWin) != this) {
     
@@ -1652,7 +1652,7 @@ bool nsGlobalWindowOuter::ComputeIsSecureContext(Document* aDocument,
     
     
     
-    Document* creatorDoc = aDocument->GetParentDocument();
+    Document* creatorDoc = aDocument->GetInProcessParentDocument();
     if (!creatorDoc) {
       return false;  
     }
@@ -1795,7 +1795,7 @@ static JS::RealmCreationOptions& SelectZone(
   }
 
   if (aNewInner->GetOuterWindow()) {
-    nsGlobalWindowOuter* top = aNewInner->GetTopInternal();
+    nsGlobalWindowOuter* top = aNewInner->GetInProcessTopInternal();
     if (top == aNewInner->GetOuterWindow()) {
       
       
@@ -2405,13 +2405,14 @@ void nsGlobalWindowOuter::SetDocShell(nsDocShell* aDocShell) {
   mDocShell = aDocShell;
   mBrowsingContext = aDocShell->GetBrowsingContext();
 
-  nsCOMPtr<nsPIDOMWindowOuter> parentWindow = GetScriptableParentOrNull();
+  nsCOMPtr<nsPIDOMWindowOuter> parentWindow =
+      GetInProcessScriptableParentOrNull();
   MOZ_RELEASE_ASSERT(!parentWindow || !mTabGroup ||
                      mTabGroup ==
                          nsGlobalWindowOuter::Cast(parentWindow)->mTabGroup);
 
   mTopLevelOuterContentWindow =
-      !mIsChrome && GetScriptableTopInternal() == this;
+      !mIsChrome && GetInProcessScriptableTopInternal() == this;
 
   
   
@@ -2425,7 +2426,7 @@ void nsGlobalWindowOuter::SetDocShell(nsDocShell* aDocShell) {
     
     
     
-    nsCOMPtr<nsPIDOMWindowOuter> parentWindow = GetParent();
+    nsCOMPtr<nsPIDOMWindowOuter> parentWindow = GetInProcessParent();
     if (parentWindow.get() != this) {
       mChromeEventHandler = parentWindow->GetChromeEventHandler();
     } else {
@@ -2587,7 +2588,7 @@ void nsGlobalWindowOuter::UpdateParentTarget() {
   mMessageManager = nsContentUtils::TryGetBrowserChildGlobal(frameElement);
 
   if (!mMessageManager) {
-    nsGlobalWindowOuter* topWin = GetScriptableTopInternal();
+    nsGlobalWindowOuter* topWin = GetInProcessScriptableTopInternal();
     if (topWin) {
       frameElement = topWin->GetFrameElementInternal();
       mMessageManager = nsContentUtils::TryGetBrowserChildGlobal(frameElement);
@@ -2615,7 +2616,7 @@ void nsGlobalWindowOuter::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
 }
 
 bool nsGlobalWindowOuter::ShouldPromptToBlockDialogs() {
-  nsGlobalWindowOuter* topWindowOuter = GetScriptableTopInternal();
+  nsGlobalWindowOuter* topWindowOuter = GetInProcessScriptableTopInternal();
   if (!topWindowOuter) {
     NS_ASSERTION(!mDocShell,
                  "ShouldPromptToBlockDialogs() called without a top window?");
@@ -2632,7 +2633,7 @@ bool nsGlobalWindowOuter::ShouldPromptToBlockDialogs() {
 }
 
 bool nsGlobalWindowOuter::AreDialogsEnabled() {
-  nsGlobalWindowOuter* topWindowOuter = GetScriptableTopInternal();
+  nsGlobalWindowOuter* topWindowOuter = GetInProcessScriptableTopInternal();
   if (!topWindowOuter) {
     NS_ERROR("AreDialogsEnabled() called without a top window?");
     return false;
@@ -2700,7 +2701,7 @@ bool nsGlobalWindowOuter::ConfirmDialogIfNeeded() {
 }
 
 void nsGlobalWindowOuter::DisableDialogs() {
-  nsGlobalWindowOuter* topWindowOuter = GetScriptableTopInternal();
+  nsGlobalWindowOuter* topWindowOuter = GetInProcessScriptableTopInternal();
   if (!topWindowOuter) {
     NS_ERROR("DisableDialogs() called without a top window?");
     return;
@@ -2715,7 +2716,7 @@ void nsGlobalWindowOuter::DisableDialogs() {
 }
 
 void nsGlobalWindowOuter::EnableDialogs() {
-  nsGlobalWindowOuter* topWindowOuter = GetScriptableTopInternal();
+  nsGlobalWindowOuter* topWindowOuter = GetInProcessScriptableTopInternal();
   if (!topWindowOuter) {
     NS_ERROR("EnableDialogs() called without a top window?");
     return;
@@ -2784,7 +2785,7 @@ nsIPrincipal* nsGlobalWindowOuter::GetPrincipal() {
   
 
   nsCOMPtr<nsIScriptObjectPrincipal> objPrincipal =
-      do_QueryInterface(GetParentInternal());
+      do_QueryInterface(GetInProcessParentInternal());
 
   if (objPrincipal) {
     return objPrincipal->GetPrincipal();
@@ -2807,7 +2808,7 @@ nsIPrincipal* nsGlobalWindowOuter::GetEffectiveStoragePrincipal() {
   
 
   nsCOMPtr<nsIScriptObjectPrincipal> objPrincipal =
-      do_QueryInterface(GetParentInternal());
+      do_QueryInterface(GetInProcessParentInternal());
 
   if (objPrincipal) {
     return objPrincipal->GetEffectiveStoragePrincipal();
@@ -2951,7 +2952,7 @@ void nsPIDOMWindowOuter::SetServiceWorkersTestingEnabled(bool aEnabled) {
   
   
 #ifdef DEBUG
-  nsCOMPtr<nsPIDOMWindowOuter> topWindow = GetScriptableTop();
+  nsCOMPtr<nsPIDOMWindowOuter> topWindow = GetInProcessScriptableTop();
   MOZ_ASSERT_IF(aEnabled, this == topWindow);
 #endif
   mServiceWorkersTestingEnabled = aEnabled;
@@ -2960,7 +2961,7 @@ void nsPIDOMWindowOuter::SetServiceWorkersTestingEnabled(bool aEnabled) {
 bool nsPIDOMWindowOuter::GetServiceWorkersTestingEnabled() {
   
   
-  nsCOMPtr<nsPIDOMWindowOuter> topWindow = GetScriptableTop();
+  nsCOMPtr<nsPIDOMWindowOuter> topWindow = GetInProcessScriptableTop();
   if (!topWindow) {
     return false;
   }
@@ -2979,7 +2980,7 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::GetParentOuter() {
 
 
 
-nsPIDOMWindowOuter* nsGlobalWindowOuter::GetScriptableParent() {
+nsPIDOMWindowOuter* nsGlobalWindowOuter::GetInProcessScriptableParent() {
   if (!mDocShell) {
     return nullptr;
   }
@@ -2988,7 +2989,7 @@ nsPIDOMWindowOuter* nsGlobalWindowOuter::GetScriptableParent() {
     return this;
   }
 
-  nsCOMPtr<nsPIDOMWindowOuter> parent = GetParent();
+  nsCOMPtr<nsPIDOMWindowOuter> parent = GetInProcessParent();
   return parent;
 }
 
@@ -2996,8 +2997,8 @@ nsPIDOMWindowOuter* nsGlobalWindowOuter::GetScriptableParent() {
 
 
 
-nsPIDOMWindowOuter* nsGlobalWindowOuter::GetScriptableParentOrNull() {
-  nsPIDOMWindowOuter* parent = GetScriptableParent();
+nsPIDOMWindowOuter* nsGlobalWindowOuter::GetInProcessScriptableParentOrNull() {
+  nsPIDOMWindowOuter* parent = GetInProcessScriptableParent();
   return (nsGlobalWindowOuter::Cast(parent) == this) ? nullptr : parent;
 }
 
@@ -3005,7 +3006,7 @@ nsPIDOMWindowOuter* nsGlobalWindowOuter::GetScriptableParentOrNull() {
 
 
 
-already_AddRefed<nsPIDOMWindowOuter> nsGlobalWindowOuter::GetParent() {
+already_AddRefed<nsPIDOMWindowOuter> nsGlobalWindowOuter::GetInProcessParent() {
   if (!mDocShell) {
     return nullptr;
   }
@@ -3041,9 +3042,9 @@ static nsresult GetTopImpl(nsGlobalWindowOuter* aWin, nsIURI* aURIBeingLoaded,
     prevParent = parent;
 
     if (aScriptable) {
-      parent = parent->GetScriptableParent();
+      parent = parent->GetInProcessScriptableParent();
     } else {
-      parent = parent->GetParent();
+      parent = parent->GetInProcessParent();
     }
 
     if (aExcludingExtensionAccessibleContentFrames) {
@@ -3099,7 +3100,8 @@ static nsresult GetTopImpl(nsGlobalWindowOuter* aWin, nsIURI* aURIBeingLoaded,
 
 
 
-nsPIDOMWindowOuter* nsGlobalWindowOuter::GetScriptableTop() {
+
+nsPIDOMWindowOuter* nsGlobalWindowOuter::GetInProcessScriptableTop() {
   nsCOMPtr<nsPIDOMWindowOuter> window;
   GetTopImpl(this,  nullptr, getter_AddRefs(window),
               true,
@@ -3107,7 +3109,7 @@ nsPIDOMWindowOuter* nsGlobalWindowOuter::GetScriptableTop() {
   return window.get();
 }
 
-already_AddRefed<nsPIDOMWindowOuter> nsGlobalWindowOuter::GetTop() {
+already_AddRefed<nsPIDOMWindowOuter> nsGlobalWindowOuter::GetInProcessTop() {
   nsCOMPtr<nsPIDOMWindowOuter> window;
   GetTopImpl(this,  nullptr, getter_AddRefs(window),
               false,
@@ -3161,7 +3163,7 @@ already_AddRefed<nsPIDOMWindowOuter> nsGlobalWindowOuter::GetContentInternal(
   
   
   if (mDocShell && mDocShell->GetIsInMozBrowser()) {
-    nsCOMPtr<nsPIDOMWindowOuter> domWindow(GetScriptableTop());
+    nsCOMPtr<nsPIDOMWindowOuter> domWindow(GetInProcessScriptableTop());
     return domWindow.forget();
   }
 
@@ -3181,7 +3183,8 @@ already_AddRefed<nsPIDOMWindowOuter> nsGlobalWindowOuter::GetContentInternal(
       baseWin->GetVisibility(&visible);
 
       if (!visible) {
-        mDocShell->GetSameTypeRootTreeItem(getter_AddRefs(primaryContent));
+        mDocShell->GetInProcessSameTypeRootTreeItem(
+            getter_AddRefs(primaryContent));
       }
     }
   }
@@ -4464,7 +4467,8 @@ bool nsGlobalWindowOuter::SetWidgetFullscreen(FullscreenReason aReason,
                                               bool aIsFullscreen,
                                               nsIWidget* aWidget,
                                               nsIScreen* aScreen) {
-  MOZ_ASSERT(this == GetTopInternal(), "Only topmost window should call this");
+  MOZ_ASSERT(this == GetInProcessTopInternal(),
+             "Only topmost window should call this");
   MOZ_ASSERT(!GetFrameElementInternal(), "Content window should not call this");
   MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
 
@@ -4946,7 +4950,7 @@ void nsGlobalWindowOuter::FocusOuter() {
   
   
   nsCOMPtr<nsIDocShellTreeItem> parentDsti;
-  mDocShell->GetParent(getter_AddRefs(parentDsti));
+  mDocShell->GetInProcessParent(getter_AddRefs(parentDsti));
 
   
   nsCOMPtr<nsPIDOMWindowOuter> parent =
@@ -5620,7 +5624,7 @@ bool nsGlobalWindowOuter::PopupWhitelisted() {
     return true;
   }
 
-  nsCOMPtr<nsPIDOMWindowOuter> parent = GetParent();
+  nsCOMPtr<nsPIDOMWindowOuter> parent = GetInProcessParent();
   if (parent == this) {
     return false;
   }
@@ -5687,7 +5691,7 @@ void nsGlobalWindowOuter::FireAbuseEvents(
     const nsAString& aPopupWindowFeatures) {
   
 
-  nsCOMPtr<nsPIDOMWindowOuter> window = GetTop();
+  nsCOMPtr<nsPIDOMWindowOuter> window = GetInProcessTop();
   if (!window) {
     return;
   }
@@ -6374,7 +6378,7 @@ void nsGlobalWindowOuter::ReallyCloseWindow() {
 void nsGlobalWindowOuter::EnterModalState() {
   
   
-  nsGlobalWindowOuter* topWin = GetScriptableTopInternal();
+  nsGlobalWindowOuter* topWin = GetInProcessScriptableTopInternal();
 
   if (!topWin) {
     NS_ERROR("Uh, EnterModalState() called w/o a reachable top window?");
@@ -6437,7 +6441,7 @@ void nsGlobalWindowOuter::EnterModalState() {
 }
 
 void nsGlobalWindowOuter::LeaveModalState() {
-  nsGlobalWindowOuter* topWin = GetScriptableTopInternal();
+  nsGlobalWindowOuter* topWin = GetInProcessScriptableTopInternal();
 
   if (!topWin) {
     NS_ERROR("Uh, LeaveModalState() called w/o a reachable top window?");
@@ -6479,7 +6483,7 @@ void nsGlobalWindowOuter::LeaveModalState() {
 }
 
 bool nsGlobalWindowOuter::IsInModalState() {
-  nsGlobalWindowOuter* topWin = GetScriptableTopInternal();
+  nsGlobalWindowOuter* topWin = GetInProcessScriptableTopInternal();
 
   if (!topWin) {
     
@@ -6718,7 +6722,7 @@ EventListenerManager* nsGlobalWindowOuter::GetExistingListenerManager() const {
 
 
 nsPIDOMWindowOuter* nsGlobalWindowOuter::GetPrivateParent() {
-  nsCOMPtr<nsPIDOMWindowOuter> parent = GetParent();
+  nsCOMPtr<nsPIDOMWindowOuter> parent = GetInProcessParent();
 
   if (this == parent) {
     nsCOMPtr<nsIContent> chromeElement(do_QueryInterface(mChromeEventHandler));
@@ -6735,7 +6739,7 @@ nsPIDOMWindowOuter* nsGlobalWindowOuter::GetPrivateParent() {
 }
 
 nsPIDOMWindowOuter* nsGlobalWindowOuter::GetPrivateRoot() {
-  nsCOMPtr<nsPIDOMWindowOuter> top = GetTop();
+  nsCOMPtr<nsPIDOMWindowOuter> top = GetInProcessTop();
 
   nsCOMPtr<nsIContent> chromeElement(do_QueryInterface(mChromeEventHandler));
   if (chromeElement) {
@@ -6743,7 +6747,7 @@ nsPIDOMWindowOuter* nsGlobalWindowOuter::GetPrivateRoot() {
     if (doc) {
       nsCOMPtr<nsPIDOMWindowOuter> parent = doc->GetWindow();
       if (parent) {
-        top = parent->GetTop();
+        top = parent->GetInProcessTop();
       }
     }
   }
@@ -7080,8 +7084,8 @@ nsresult nsGlobalWindowOuter::FireDelayedDOMEvents() {
 
 
 
-nsPIDOMWindowOuter* nsGlobalWindowOuter::GetParentInternal() {
-  nsCOMPtr<nsPIDOMWindowOuter> parent = GetParent();
+nsPIDOMWindowOuter* nsGlobalWindowOuter::GetInProcessParentInternal() {
+  nsCOMPtr<nsPIDOMWindowOuter> parent = GetInProcessParent();
 
   if (parent && parent != this) {
     return parent;
@@ -7444,7 +7448,7 @@ void nsGlobalWindowOuter::EnsureSizeAndPositionUpToDate() {
   
   
   if (mDoc && mDoc->StyleOrLayoutObservablyDependsOnParentDocumentLayout()) {
-    RefPtr<Document> parent = mDoc->GetParentDocument();
+    RefPtr<Document> parent = mDoc->GetInProcessParentDocument();
     parent->FlushPendingNotifications(FlushType::Layout);
   }
 }
@@ -7723,7 +7727,7 @@ mozilla::dom::TabGroup* nsGlobalWindowOuter::TabGroupOuter() {
     
     nsCOMPtr<nsPIDOMWindowOuter> piOpener = do_QueryReferent(mOpener);
     nsPIDOMWindowOuter* opener = GetSanitizedOpener(piOpener);
-    nsPIDOMWindowOuter* parent = GetScriptableParentOrNull();
+    nsPIDOMWindowOuter* parent = GetInProcessScriptableParentOrNull();
     MOZ_ASSERT(!parent || !opener,
                "Only one of parent and opener may be provided");
 
@@ -7758,7 +7762,7 @@ mozilla::dom::TabGroup* nsGlobalWindowOuter::TabGroupOuter() {
       MOZ_ASSERT(mTabGroup == TabGroup::GetChromeTabGroup());
     } else {
       
-      RefPtr<nsPIDOMWindowOuter> parent = GetScriptableParentOrNull();
+      RefPtr<nsPIDOMWindowOuter> parent = GetInProcessScriptableParentOrNull();
       MOZ_ASSERT_IF(parent, parent->TabGroup() == mTabGroup);
       nsCOMPtr<nsPIDOMWindowOuter> piOpener = do_QueryReferent(mOpener);
       nsPIDOMWindowOuter* opener = GetSanitizedOpener(piOpener);
@@ -7805,7 +7809,8 @@ nsGlobalWindowOuter::TemporarilyDisableDialogs::TemporarilyDisableDialogs(
   MOZ_GUARD_OBJECT_NOTIFIER_INIT;
 
   MOZ_ASSERT(aWindow);
-  nsGlobalWindowOuter* topWindowOuter = aWindow->GetScriptableTopInternal();
+  nsGlobalWindowOuter* topWindowOuter =
+      aWindow->GetInProcessScriptableTopInternal();
   if (!topWindowOuter) {
     NS_ERROR(
         "nsGlobalWindowOuter::TemporarilyDisableDialogs used without a top "

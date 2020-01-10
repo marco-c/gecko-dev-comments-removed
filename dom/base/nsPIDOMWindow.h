@@ -348,8 +348,8 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   virtual mozilla::dom::CustomElementRegistry* CustomElements() = 0;
 
   
-  virtual nsPIDOMWindowOuter* GetScriptableTop() = 0;
-  virtual nsPIDOMWindowOuter* GetScriptableParent() = 0;
+  virtual nsPIDOMWindowOuter* GetInProcessScriptableTop() = 0;
+  virtual nsPIDOMWindowOuter* GetInProcessScriptableParent() = 0;
   virtual already_AddRefed<nsPIWindowRoot> GetTopWindowRoot() = 0;
 
   mozilla::dom::EventTarget* GetChromeEventHandler() const {
@@ -785,17 +785,18 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
 
 
-  virtual already_AddRefed<nsPIDOMWindowOuter> GetTop() = 0;  
-  virtual already_AddRefed<nsPIDOMWindowOuter> GetParent() = 0;
-  virtual nsPIDOMWindowOuter* GetScriptableTop() = 0;
-  virtual nsPIDOMWindowOuter* GetScriptableParent() = 0;
+  virtual already_AddRefed<nsPIDOMWindowOuter>
+  GetInProcessTop() = 0;  
+  virtual already_AddRefed<nsPIDOMWindowOuter> GetInProcessParent() = 0;
+  virtual nsPIDOMWindowOuter* GetInProcessScriptableTop() = 0;
+  virtual nsPIDOMWindowOuter* GetInProcessScriptableParent() = 0;
   virtual already_AddRefed<nsPIWindowRoot> GetTopWindowRoot() = 0;
 
   
 
 
 
-  virtual nsPIDOMWindowOuter* GetScriptableParentOrNull() = 0;
+  virtual nsPIDOMWindowOuter* GetInProcessScriptableParentOrNull() = 0;
 
   virtual bool IsTopLevelWindowActive() = 0;
 
