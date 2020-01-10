@@ -128,8 +128,9 @@ inline LauncherVoidResult ShellExecuteByExplorer(const _bstr_t& aPath,
   
   
   
+  
   hr = ::CoAllowSetForegroundWindow(shellDisp, nullptr);
-  MOZ_ASSERT(SUCCEEDED(hr));
+  MOZ_ASSERT(SUCCEEDED(hr) || hr == E_ACCESSDENIED);
 
   
   
