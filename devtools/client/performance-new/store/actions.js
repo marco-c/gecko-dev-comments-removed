@@ -131,8 +131,11 @@ exports.startRecording = () => {
   return (dispatch, getState) => {
     const recordingSettings = selectors.getRecordingSettings(getState());
     const perfFront = selectors.getPerfFront(getState());
-    perfFront.startProfiler(recordingSettings);
+    
+    
+    
     dispatch(changeRecordingState(REQUEST_TO_START_RECORDING));
+    perfFront.startProfiler(recordingSettings);
   };
 };
 
@@ -260,11 +263,17 @@ async function getSymbolTableFromLocalBinary(objdirs, filename, breakpadId) {
 
 
 
-exports.getProfileAndStopProfiler = () => {
+
+exports.getProfileAndStopProfiler = window => {
   return async (dispatch, getState) => {
     const perfFront = selectors.getPerfFront(getState());
     dispatch(changeRecordingState(REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER));
     const profile = await perfFront.getProfileAndStopProfiler();
+
+    if (window.gClosePopup) {
+      
+      window.gClosePopup();
+    }
 
     const libraryGetter = createLibraryMap(profile);
     async function getSymbolTable(debugName, breakpadId) {

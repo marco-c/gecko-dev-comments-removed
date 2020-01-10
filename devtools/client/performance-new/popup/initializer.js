@@ -22,12 +22,72 @@ const { require } = BrowserLoader({
 
 
 
+const {
+  getRecordingPreferencesFromBrowser,
+  setRecordingPreferencesOnBrowser,
+} = ChromeUtils.import(
+  "resource://devtools/client/performance-new/popup/background.jsm"
+);
 
+const { receiveProfile } = require("devtools/client/performance-new/browser");
 
-
-
-const { initializePopup } = require("./popup");
+const Perf = require("devtools/client/performance-new/components/Perf");
+const ReactDOM = require("devtools/client/shared/vendor/react-dom");
+const React = require("devtools/client/shared/vendor/react");
+const createStore = require("devtools/client/shared/redux/create-store");
+const selectors = require("devtools/client/performance-new/store/selectors");
+const reducers = require("devtools/client/performance-new/store/reducers");
+const actions = require("devtools/client/performance-new/store/actions");
+const { Provider } = require("devtools/client/shared/vendor/react-redux");
+const {
+  ActorReadyGeckoProfilerInterface,
+} = require("devtools/server/performance-new/gecko-profiler-interface");
 
 document.addEventListener("DOMContentLoaded", () => {
-  initializePopup();
+  gInit();
 });
+
+
+
+
+
+
+
+async function gInit(perfFront, preferenceFront) {
+  const store = createStore(reducers);
+
+  
+  
+  store.dispatch(
+    actions.initializeStore({
+      perfFront: new ActorReadyGeckoProfilerInterface(),
+      receiveProfile,
+      
+      
+      recordingSettingsFromPreferences: getRecordingPreferencesFromBrowser(
+        selectors.getRecordingSettings(store.getState())
+      ),
+      
+      setRecordingPreferences: () =>
+        setRecordingPreferencesOnBrowser(
+          selectors.getRecordingSettings(store.getState())
+        ),
+      isPopup: true,
+    })
+  );
+
+  ReactDOM.render(
+    React.createElement(Provider, { store }, React.createElement(Perf)),
+    document.querySelector("#root")
+  );
+
+  resizeWindow();
+}
+
+function resizeWindow() {
+  window.requestAnimationFrame(() => {
+    if (window.gResizePopup) {
+      window.gResizePopup(document.body.clientHeight);
+    }
+  });
+}
