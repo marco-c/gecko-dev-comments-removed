@@ -1611,6 +1611,9 @@ pref("browser.contentblocking.reportBreakage.url", "https://tracking-protection-
 pref("browser.contentblocking.report.lockwise.enabled", true);
 
 
+pref("browser.contentblocking.report.monitor.enabled", true);
+
+
 #ifdef NIGHTLY_BUILD
 pref("browser.protections_panel.enabled", true);
 #endif

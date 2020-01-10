@@ -5,6 +5,7 @@
 
 
 import LockwiseCard from "./lockwise-card.js";
+import MonitorCard from "./monitor-card.js";
 
 document.addEventListener("DOMContentLoaded", e => {
   let todayInMs = Date.now();
@@ -29,7 +30,7 @@ document.addEventListener("DOMContentLoaded", e => {
   });
 
   
-  RPMSendAsyncMessage("GetEnabledLockwiseCard");
+  RPMSendAsyncMessage("GetEnabledPrefs");
 
   let createGraph = data => {
     let dateInMS = data.earliestDate
@@ -150,7 +151,19 @@ document.addEventListener("DOMContentLoaded", e => {
   });
 
   
-  RPMAddMessageListener("SendEnabledLockWiseCardPref", message => {
+  RPMAddMessageListener("SendEnabledMonitorCardPref", message => {
+    if (message.data.isEnabled) {
+      const monitorCard = new MonitorCard(document);
+      monitorCard.init();
+    }
+
+    
+    const monitorUI = document.querySelector(".monitor-card");
+    monitorUI.dataset.enabled = message.data.isEnabled;
+  });
+
+  
+  RPMAddMessageListener("SendEnabledLockwiseCardPref", message => {
     if (message.data.isEnabled) {
       const lockwiseCard = new LockwiseCard(document);
       lockwiseCard.init();
@@ -160,4 +173,8 @@ document.addEventListener("DOMContentLoaded", e => {
     const lockwiseUI = document.querySelector(".lockwise-card");
     lockwiseUI.dataset.enabled = message.data.isEnabled;
   });
+
+  
+  
+  RPMSendAsyncMessage("FetchUserLoginsData");
 });
