@@ -17,7 +17,7 @@ function test() {
     Services.prefs.clearUserPref("browser.preferences.instantApply");
   });
 
-  let connectionURL = "chrome://browser/content/preferences/connection.xul";
+  let connectionURL = "chrome://browser/content/preferences/connection.xhtml";
 
   
 

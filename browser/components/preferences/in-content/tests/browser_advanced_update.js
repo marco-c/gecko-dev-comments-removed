@@ -133,7 +133,7 @@ add_task(async function() {
   
   is(dialogOverlay.style.visibility, "", "The dialog should be invisible");
   let promiseSubDialogLoaded = promiseLoadSubDialog(
-    "chrome://mozapps/content/update/history.xul"
+    "chrome://mozapps/content/update/history.xhtml"
   );
   showBtn.doCommand();
   await promiseSubDialogLoaded;

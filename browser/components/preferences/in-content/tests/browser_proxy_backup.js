@@ -28,7 +28,7 @@ function test() {
     }
   });
 
-  let connectionURL = "chrome://browser/content/preferences/connection.xul";
+  let connectionURL = "chrome://browser/content/preferences/connection.xhtml";
 
   
   Services.prefs.setIntPref("network.proxy.type", 1);

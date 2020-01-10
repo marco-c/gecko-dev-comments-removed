@@ -294,7 +294,7 @@ var gSyncPane = {
       params.disconnectFun = () => this.disconnectSync();
     }
     gSubDialog.open(
-      "chrome://browser/content/preferences/in-content/syncChooseWhatToSync.xul",
+      "chrome://browser/content/preferences/in-content/syncChooseWhatToSync.xhtml",
       "" ,
       params ,
       event => {
@@ -558,7 +558,7 @@ var gSyncPane = {
 
   pairAnotherDevice() {
     gSubDialog.open(
-      "chrome://browser/content/preferences/in-content/fxaPairDevice.xul",
+      "chrome://browser/content/preferences/in-content/fxaPairDevice.xhtml",
       "resizable=no" ,
       null ,
       null 
