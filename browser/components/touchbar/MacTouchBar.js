@@ -47,6 +47,11 @@ function execCommand(commandName, telemetryKey) {
   if (command) {
     command.doCommand();
   }
+
+  if (!telemetryKey) {
+    return;
+  }
+
   let telemetry = Services.telemetry.getHistogramById(
     "TOUCHBAR_BUTTON_PRESSES"
   );
