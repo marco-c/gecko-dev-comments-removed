@@ -19,6 +19,7 @@
 #include "MediaDataDemuxer.h"
 #include "MediaResult.h"
 #include "MediaSourceDecoder.h"
+#include "MediaSpan.h"
 #include "SourceBufferTask.h"
 #include "TimeUnits.h"
 #include "nsAutoPtr.h"
@@ -200,7 +201,7 @@ class TrackBuffersManager final
 
   
   
-  RefPtr<MediaByteBuffer> mInputBuffer;
+  Maybe<MediaSpan> mInputBuffer;
   
   
   
@@ -221,7 +222,9 @@ class TrackBuffersManager final
   nsAutoPtr<ContainerParser> mParser;
 
   
+  void AppendDataToCurrentInputBuffer(const MediaSpan& aData);
   void AppendDataToCurrentInputBuffer(MediaByteBuffer* aData);
+
   RefPtr<MediaByteBuffer> mInitData;
   
   
