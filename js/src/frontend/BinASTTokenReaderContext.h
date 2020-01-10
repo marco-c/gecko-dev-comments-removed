@@ -1193,16 +1193,58 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
 
 
 
-  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(BinASTKind& tag,
-                                               const FieldOrRootContext&);
-  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(BinASTKind& tag,
-                                               const FieldOrListContext&);
-  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(BinASTKind& tag,
-                                               const RootContext&);
-  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(BinASTKind& tag,
-                                               const ListContext&);
-  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(BinASTKind& tag,
-                                               const FieldContext&);
+  MOZ_MUST_USE JS::Result<Ok> enterInterface(BinASTKind& tag) {
+    
+    MOZ_ASSERT(tag != BinASTKind::_Uninitialized);
+    return Ok();
+  }
+  MOZ_MUST_USE JS::Result<Ok> enterInterface(BinASTKind& tag,
+                                             const FieldOrRootContext&) {
+    return enterInterface(tag);
+  }
+  MOZ_MUST_USE JS::Result<Ok> enterInterface(BinASTKind& tag,
+                                             const FieldOrListContext&) {
+    return enterInterface(tag);
+  }
+  MOZ_MUST_USE JS::Result<Ok> enterInterface(BinASTKind& tag,
+                                             const RootContext&) {
+    return enterInterface(tag);
+  }
+  MOZ_MUST_USE JS::Result<Ok> enterInterface(BinASTKind& tag,
+                                             const ListContext&) {
+    return enterInterface(tag);
+  }
+  MOZ_MUST_USE JS::Result<Ok> enterInterface(BinASTKind& tag,
+                                             const FieldContext&) {
+    return enterInterface(tag);
+  }
+  MOZ_MUST_USE JS::Result<Ok> enterOptionalInterface(
+      BinASTKind& tag, const FieldOrRootContext& context) {
+    return enterSum(tag, context);
+  }
+  MOZ_MUST_USE JS::Result<Ok> enterOptionalInterface(
+      BinASTKind& tag, const FieldOrListContext& context) {
+    return enterSum(tag, context);
+  }
+  MOZ_MUST_USE JS::Result<Ok> enterOptionalInterface(
+      BinASTKind& tag, const RootContext& context) {
+    return enterSum(tag, context);
+  }
+  MOZ_MUST_USE JS::Result<Ok> enterOptionalInterface(
+      BinASTKind& tag, const ListContext& context) {
+    return enterSum(tag, context);
+  }
+  MOZ_MUST_USE JS::Result<Ok> enterOptionalInterface(
+      BinASTKind& tag, const FieldContext& context) {
+    return enterSum(tag, context);
+  }
+  MOZ_MUST_USE JS::Result<Ok> enterSum(BinASTKind& tag,
+                                       const FieldOrRootContext&);
+  MOZ_MUST_USE JS::Result<Ok> enterSum(BinASTKind& tag,
+                                       const FieldOrListContext&);
+  MOZ_MUST_USE JS::Result<Ok> enterSum(BinASTKind& tag, const RootContext&);
+  MOZ_MUST_USE JS::Result<Ok> enterSum(BinASTKind& tag, const ListContext&);
+  MOZ_MUST_USE JS::Result<Ok> enterSum(BinASTKind& tag, const FieldContext&);
 
   
 
