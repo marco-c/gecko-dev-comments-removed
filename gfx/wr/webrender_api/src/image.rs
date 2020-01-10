@@ -309,10 +309,10 @@ pub trait BlobImageHandler: Send {
     );
 
     
-    fn add(&mut self, key: BlobImageKey, data: Arc<BlobImageData>, visible_rect: &DeviceIntRect, tiling: Option<TileSize>);
+    fn add(&mut self, key: BlobImageKey, data: Arc<BlobImageData>, tiling: Option<TileSize>);
 
     
-    fn update(&mut self, key: BlobImageKey, data: Arc<BlobImageData>, visible_rect: &DeviceIntRect, dirty_rect: &BlobDirtyRect);
+    fn update(&mut self, key: BlobImageKey, data: Arc<BlobImageData>, dirty_rect: &BlobDirtyRect);
 
     
     fn delete(&mut self, key: BlobImageKey);
