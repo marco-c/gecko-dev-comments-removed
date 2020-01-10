@@ -183,7 +183,7 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   
   
   
-  void LoadURI(BrowsingContext* aAccessor, nsDocShellLoadState* aLoadState);
+  nsresult LoadURI(BrowsingContext* aAccessor, nsDocShellLoadState* aLoadState);
 
   
   
