@@ -675,6 +675,8 @@ class Document : public nsINode,
 
 
 
+
+
   nsIURI* GetDocumentURI() const { return mDocumentURI; }
 
   
@@ -901,8 +903,7 @@ class Document : public nsINode,
     return GetFallbackBaseURI();
   }
 
-  already_AddRefed<nsIURI> GetBaseURI(
-      bool aTryUseXHRDocBaseURI = false) const final;
+  nsIURI* GetBaseURI(bool aTryUseXHRDocBaseURI = false) const final;
 
   void SetBaseURI(nsIURI* aURI);
 

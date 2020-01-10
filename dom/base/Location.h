@@ -152,7 +152,7 @@ class Location final : public nsISupports, public nsWrapperCache {
 
   
   
-  already_AddRefed<nsIURI> GetSourceBaseURL();
+  nsIURI* GetSourceBaseURL();
 
   
   

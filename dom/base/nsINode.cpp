@@ -117,20 +117,6 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-bool nsINode::IsInclusiveDescendantOf(const nsINode* aNode) const {
-  MOZ_ASSERT(aNode, "The node is nullptr.");
-
-  const nsINode* node = this;
-  do {
-    if (node == aNode) {
-      return true;
-    }
-    node = node->GetParentNode();
-  } while (node);
-
-  return false;
-}
-
 nsINode::nsSlots::nsSlots() : mWeakReference(nullptr) {}
 
 nsINode::nsSlots::~nsSlots() {
@@ -625,7 +611,7 @@ nsresult nsINode::GetBaseURI(nsAString& aURI) const {
 
 void nsINode::GetBaseURIFromJS(nsAString& aURI, CallerType aCallerType,
                                ErrorResult& aRv) const {
-  nsCOMPtr<nsIURI> baseURI = GetBaseURI(aCallerType == CallerType::System);
+  nsIURI* baseURI = GetBaseURI(aCallerType == CallerType::System);
   nsAutoCString spec;
   if (baseURI) {
     nsresult res = baseURI->GetSpec(spec);
@@ -637,9 +623,7 @@ void nsINode::GetBaseURIFromJS(nsAString& aURI, CallerType aCallerType,
   CopyUTF8toUTF16(spec, aURI);
 }
 
-already_AddRefed<nsIURI> nsINode::GetBaseURIObject() const {
-  return GetBaseURI(true);
-}
+nsIURI* nsINode::GetBaseURIObject() const { return GetBaseURI(true); }
 
 void nsINode::LookupPrefix(const nsAString& aNamespaceURI, nsAString& aPrefix) {
   Element* element = GetNameSpaceElement();
@@ -2476,7 +2460,7 @@ bool nsINode::Contains(const nsINode* aOther) const {
     return false;
   }
 
-  return other->IsInclusiveDescendantOf(this);
+  return nsContentUtils::ContentIsDescendantOf(other, this);
 }
 
 uint32_t nsINode::Length() const {
@@ -2554,7 +2538,7 @@ inline static Element* FindMatchingElementWithId(
       continue;
     }
 
-    if (!element->IsInclusiveDescendantOf(&aRoot)) {
+    if (!nsContentUtils::ContentIsDescendantOf(element, &aRoot)) {
       continue;
     }
 

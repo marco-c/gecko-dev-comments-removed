@@ -422,13 +422,6 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  bool IsInclusiveDescendantOf(const nsINode* aNode) const;
-
-  
-
-
-
-
   inline mozilla::dom::DocumentFragment* AsDocumentFragment();
   inline const mozilla::dom::DocumentFragment* AsDocumentFragment() const;
 
@@ -1222,10 +1215,8 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-
-  virtual already_AddRefed<nsIURI> GetBaseURI(
-      bool aTryUseXHRDocBaseURI = false) const = 0;
-  already_AddRefed<nsIURI> GetBaseURIObject() const;
+  virtual nsIURI* GetBaseURI(bool aTryUseXHRDocBaseURI = false) const = 0;
+  nsIURI* GetBaseURIObject() const;
 
   
 
@@ -1325,9 +1316,10 @@ class nsINode : public mozilla::dom::EventTarget {
 
   nsIContent* GetNextNodeImpl(const nsINode* aRoot,
                               const bool aSkipChildren) const {
+    
+    
 #ifdef DEBUG
     if (aRoot) {
-      
       const nsINode* cur = this;
       for (; cur; cur = cur->GetParentNode())
         if (cur == aRoot) break;
@@ -1367,9 +1359,10 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
   nsIContent* GetPreviousContent(const nsINode* aRoot = nullptr) const {
+    
+    
 #ifdef DEBUG
     if (aRoot) {
-      
       const nsINode* cur = this;
       for (; cur; cur = cur->GetParentNode())
         if (cur == aRoot) break;

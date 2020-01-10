@@ -675,8 +675,7 @@ class nsIContent : public nsINode {
   }
 
   
-  virtual already_AddRefed<nsIURI> GetBaseURI(
-      bool aTryUseXHRDocBaseURI = false) const override;
+  nsIURI* GetBaseURI(bool aTryUseXHRDocBaseURI = false) const override;
 
   
   nsIURI* GetBaseURIForStyleAttr() const;

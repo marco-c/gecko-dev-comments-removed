@@ -810,7 +810,7 @@ void Location::Assign(const nsAString& aUrl, nsIPrincipal& aSubjectPrincipal,
   DoSetHref(aUrl, aSubjectPrincipal, false, aRv);
 }
 
-already_AddRefed<nsIURI> Location::GetSourceBaseURL() {
+nsIURI* Location::GetSourceBaseURL() {
   Document* doc = GetEntryDocument();
   
   
