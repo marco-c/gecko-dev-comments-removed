@@ -155,12 +155,6 @@ EventQueuePriority PrioritizedEventQueue::SelectQueue(
 already_AddRefed<nsIRunnable> PrioritizedEventQueue::GetEvent(
     EventQueuePriority* aPriority, const MutexAutoLock& aProofOfLock,
     mozilla::TimeDuration* aHypotheticalInputEventDelay) {
-#ifndef RELEASE_OR_BETA
-  
-  
-  *mNextIdleDeadline = TimeStamp();
-#endif
-
   EventQueuePriority queue = SelectQueue(true, aProofOfLock);
   auto guard = MakeScopeExit([&] {
     mIdlePeriodState.ForgetPendingTaskGuarantee();
@@ -241,12 +235,6 @@ already_AddRefed<nsIRunnable> PrioritizedEventQueue::GetEvent(
         if (idleEvent) {
           idleEvent->SetDeadline(idleDeadline);
         }
-
-#ifndef RELEASE_OR_BETA
-        
-        
-        *mNextIdleDeadline = idleDeadline;
-#endif
       }
       break;
   }  

@@ -69,15 +69,6 @@ class PrioritizedEventQueue final : public AbstractEventQueue {
   
   void SetMutexRef(Mutex& aMutex) { mMutex = &aMutex; }
 
-#ifndef RELEASE_OR_BETA
-  
-  
-  
-  void SetNextIdleDeadlineRef(TimeStamp& aDeadline) {
-    mNextIdleDeadline = &aDeadline;
-  }
-#endif
-
   void EnableInputEventPrioritization(const MutexAutoLock& aProofOfLock) final;
   void FlushInputEventPrioritization(const MutexAutoLock& aProofOfLock) final;
   void SuspendInputEventPrioritization(const MutexAutoLock& aProofOfLock) final;
@@ -116,12 +107,6 @@ class PrioritizedEventQueue final : public AbstractEventQueue {
 
   TimeDuration mLastEventDelay;
   TimeStamp mLastEventStart;
-
-#ifndef RELEASE_OR_BETA
-  
-  
-  TimeStamp* mNextIdleDeadline = nullptr;
-#endif
 
   
   

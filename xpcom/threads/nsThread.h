@@ -123,10 +123,6 @@ class nsThread : public nsIThreadInternal,
     EventQueue()->ResumeInputEventPrioritization();
   }
 
-#ifndef RELEASE_OR_BETA
-  mozilla::TimeStamp& NextIdleDeadlineRef() { return mNextIdleDeadline; }
-#endif
-
   mozilla::SynchronizedEventQueue* EventQueue() { return mEvents.get(); }
 
   bool ShuttingDown() { return mShutdownContext != nullptr; }
@@ -249,7 +245,6 @@ class nsThread : public nsIThreadInternal,
   
   
   mozilla::TimeStamp mCurrentEventStart;
-  mozilla::TimeStamp mNextIdleDeadline;
 
   
   
