@@ -215,9 +215,7 @@ BrowserCLH.prototype = {
       let nodePrincipal = event.target.nodePrincipal;
       
       
-      return (
-        nodePrincipal.isNullPrincipal || nodePrincipal.URI.schemeIs("about")
-      );
+      return nodePrincipal.isNullPrincipal || nodePrincipal.schemeIs("about");
     }
 
     let options = {
