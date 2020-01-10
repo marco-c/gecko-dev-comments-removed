@@ -1,12 +1,12 @@
 
 
 
-
-
-
-
-
 EnableEngines(["history"]);
+
+
+
+
+
 
 var phases = {
   phase1: "profile1",
