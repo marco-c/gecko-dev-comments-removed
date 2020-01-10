@@ -114,23 +114,6 @@ static AnimatedGeometryRoot* SelectAGRForFrame(
   return data && data->mModifiedAGR ? data->mModifiedAGR.get() : nullptr;
 }
 
-bool AnyContentAncestorModified(nsIFrame* aFrame, nsIFrame* aStopAtFrame) {
-  nsIFrame* f = aFrame;
-  while (f) {
-    if (f->IsFrameModified()) {
-      return true;
-    }
-
-    if (aStopAtFrame && f == aStopAtFrame) {
-      break;
-    }
-
-    f = nsLayoutUtils::GetDisplayListParent(f);
-  }
-
-  return false;
-}
-
 
 
 
@@ -139,8 +122,8 @@ bool AnyContentAncestorModified(nsIFrame* aFrame, nsIFrame* aStopAtFrame) {
 
 bool RetainedDisplayListBuilder::PreProcessDisplayList(
     RetainedDisplayList* aList, AnimatedGeometryRoot* aAGR,
-    PartialUpdateResult& aUpdated, nsIFrame* aOuterFrame, uint32_t aCallerKey,
-    uint32_t aNestingDepth, bool aKeepLinked) {
+    PartialUpdateResult& aUpdated, uint32_t aCallerKey, uint32_t aNestingDepth,
+    bool aKeepLinked) {
   
   
   
@@ -196,8 +179,7 @@ bool RetainedDisplayListBuilder::PreProcessDisplayList(
       }
     }
 
-    if (!item->CanBeReused() || item->HasDeletedFrame() ||
-        AnyContentAncestorModified(item->FrameForInvalidation(), aOuterFrame)) {
+    if (!item->CanBeReused() || item->HasDeletedFrame()) {
       if (initializeOldItems) {
         aList->mOldItems.AppendElement(OldItemInfo(nullptr));
       } else {
@@ -249,10 +231,9 @@ bool RetainedDisplayListBuilder::PreProcessDisplayList(
         keepLinked = true;
       }
 
-      if (!PreProcessDisplayList(item->GetChildren(),
-                                 SelectAGRForFrame(f, aAGR), aUpdated,
-                                 item->Frame(), item->GetPerFrameKey(),
-                                 aNestingDepth + 1, keepLinked)) {
+      if (!PreProcessDisplayList(
+              item->GetChildren(), SelectAGRForFrame(f, aAGR), aUpdated,
+              item->GetPerFrameKey(), aNestingDepth + 1, keepLinked)) {
         MOZ_RELEASE_ASSERT(
             !aKeepLinked,
             "Can't early return since we need to move the out list back");
@@ -312,6 +293,23 @@ void RetainedDisplayListBuilder::IncrementSubDocPresShellPaintCount(
   MOZ_ASSERT(presShell);
 
   mBuilder.IncrementPresShellPaintCount(presShell);
+}
+
+bool AnyContentAncestorModified(nsIFrame* aFrame, nsIFrame* aStopAtFrame) {
+  nsIFrame* f = aFrame;
+  while (f) {
+    if (f->IsFrameModified()) {
+      return true;
+    }
+
+    if (aStopAtFrame && f == aStopAtFrame) {
+      break;
+    }
+
+    f = nsLayoutUtils::GetDisplayListParent(f);
+  }
+
+  return false;
 }
 
 static Maybe<const ActiveScrolledRoot*> SelectContainerASR(
@@ -622,12 +620,10 @@ class MergeState {
     return false;
   }
 
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   bool HasModifiedFrame(nsDisplayItem* aItem) {
     nsIFrame* stopFrame = mOuterItem ? mOuterItem->Frame() : nullptr;
     return AnyContentAncestorModified(aItem->FrameForInvalidation(), stopFrame);
   }
-#endif
 
   void UpdateContainerASR(nsDisplayItem* aItem) {
     mContainerASR = SelectContainerASR(
@@ -665,7 +661,7 @@ class MergeState {
   void ProcessOldNode(OldListIndex aNode,
                       nsTArray<MergedListIndex>&& aDirectPredecessors) {
     nsDisplayItem* item = mOldItems[aNode.val].mItem;
-    if (mOldItems[aNode.val].IsChanged()) {
+    if (mOldItems[aNode.val].IsChanged() || HasModifiedFrame(item)) {
       if (item && item->IsGlassItem() &&
           item == mBuilder->Builder()->GetGlassDisplayItem()) {
         mBuilder->Builder()->ClearGlassDisplayItem();
@@ -1301,12 +1297,8 @@ bool RetainedDisplayListBuilder::ComputeRebuildRegion(
     }
   }
 
-  
-  
-  aModifiedFrames.AppendElements(extraFrames);
-
   for (nsIFrame* f : extraFrames) {
-    f->SetFrameIsModified(true);
+    mBuilder.MarkFrameModifiedDuringBuilding(f);
 
     if (!ProcessFrame(f, &mBuilder, mBuilder.RootReferenceFrame(),
                       aOutFramesWithProps, true, aOutDirty, aOutModifiedAGR)) {
@@ -1362,18 +1354,21 @@ bool RetainedDisplayListBuilder::ShouldBuildPartial(
   return true;
 }
 
-void RetainedDisplayListBuilder::InvalidateCaretFramesIfNeeded() {
+void RetainedDisplayListBuilder::InvalidateCaretFramesIfNeeded(
+    nsTArray<nsIFrame*>& aModifiedFrames) {
   if (mPreviousCaret == mBuilder.GetCaretFrame()) {
     
     return;
   }
 
-  if (mPreviousCaret) {
-    mPreviousCaret->MarkNeedsDisplayItemRebuild();
+  if (mPreviousCaret &&
+      mBuilder.MarkFrameModifiedDuringBuilding(mPreviousCaret)) {
+    aModifiedFrames.AppendElement(mPreviousCaret);
   }
 
-  if (mBuilder.GetCaretFrame()) {
-    mBuilder.GetCaretFrame()->MarkNeedsDisplayItemRebuild();
+  if (mBuilder.GetCaretFrame() &&
+      mBuilder.MarkFrameModifiedDuringBuilding(mBuilder.GetCaretFrame())) {
+    aModifiedFrames.AppendElement(mBuilder.GetCaretFrame());
   }
 
   mPreviousCaret = mBuilder.GetCaretFrame();
@@ -1421,8 +1416,6 @@ PartialUpdateResult RetainedDisplayListBuilder::AttemptPartialUpdate(
     MarkFramesWithItemsAndImagesModified(&mList);
   }
 
-  InvalidateCaretFramesIfNeeded();
-
   mBuilder.EnterPresShell(mBuilder.RootReferenceFrame());
 
   
@@ -1435,6 +1428,10 @@ PartialUpdateResult RetainedDisplayListBuilder::AttemptPartialUpdate(
 
   
   bool shouldBuildPartial = ShouldBuildPartial(modifiedFrames.Frames());
+
+  if (shouldBuildPartial) {
+    InvalidateCaretFramesIfNeeded(modifiedFrames.Frames());
+  }
 
   nsRect modifiedDirty;
   AnimatedGeometryRoot* modifiedAGR = nullptr;

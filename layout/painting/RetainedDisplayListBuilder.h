@@ -194,7 +194,7 @@ struct RetainedDisplayListBuilder {
   
 
 
-  void InvalidateCaretFramesIfNeeded();
+  void InvalidateCaretFramesIfNeeded(nsTArray<nsIFrame*>& aModifiedFrames);
 
   
 
@@ -215,7 +215,6 @@ struct RetainedDisplayListBuilder {
   bool PreProcessDisplayList(RetainedDisplayList* aList,
                              AnimatedGeometryRoot* aAGR,
                              PartialUpdateResult& aUpdated,
-                             nsIFrame* aOuterFrame = nullptr,
                              uint32_t aCallerKey = 0,
                              uint32_t aNestingDepth = 0,
                              bool aKeepLinked = false);
