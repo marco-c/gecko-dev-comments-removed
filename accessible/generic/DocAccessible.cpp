@@ -2390,7 +2390,7 @@ bool DocAccessible::IsLoadEventTarget() const {
     
     
     nsCOMPtr<nsIDocShellTreeItem> rootTreeItem;
-    treeItem->GetRootTreeItem(getter_AddRefs(rootTreeItem));
+    treeItem->GetInProcessRootTreeItem(getter_AddRefs(rootTreeItem));
     if (parentTreeItem == rootTreeItem) return true;
 
     
