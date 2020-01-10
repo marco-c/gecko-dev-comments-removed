@@ -19,6 +19,9 @@ class UserActivation final {
     None,
     
     
+    HasBeenActivated,
+    
+    
     FullActivated,
     EndGuard_
   };
