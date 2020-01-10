@@ -6,6 +6,8 @@ var EXPORTED_SYMBOLS = ["Async"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+const Timer = Components.Constructor("@mozilla.org/timer;1", "nsITimer");
+
 
 
 
@@ -174,6 +176,10 @@ var Async = {
   asyncObserver(log, obj) {
     return new AsyncObserver(log, obj);
   },
+
+  watchdog() {
+    return new Watchdog();
+  },
 };
 
 
@@ -229,5 +235,71 @@ class AsyncObserver extends AsyncQueueCaller {
 
   promiseObserversComplete() {
     return this.promiseCallsComplete();
+  }
+}
+
+
+
+
+
+
+class Watchdog {
+  constructor() {
+    this.controller = new AbortController();
+    this.timer = new Timer();
+
+    
+
+
+
+
+
+
+    this.abortReason = null;
+  }
+
+  
+
+
+
+
+
+
+  get signal() {
+    return this.controller.signal;
+  }
+
+  
+
+
+
+
+
+  start(delay) {
+    if (!this.signal.aborted) {
+      Services.obs.addObserver(this, "quit-application");
+      this.timer.init(this, delay, Ci.nsITimer.TYPE_ONE_SHOT);
+    }
+  }
+
+  
+
+
+
+  stop() {
+    if (!this.signal.aborted) {
+      Services.obs.removeObserver(this, "quit-application");
+      this.timer.cancel();
+    }
+  }
+
+  observe(subject, topic, data) {
+    if (topic == "timer-callback") {
+      this.abortReason = "timeout";
+    } else if (topic == "quit-application") {
+      this.abortReason = "shutdown";
+    }
+    this.stop();
+    this.controller.abort();
   }
 }

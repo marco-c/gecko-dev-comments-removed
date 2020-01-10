@@ -85,6 +85,10 @@ XPCOMUtils.defineLazyGetter(this, "IGNORED_SOURCES", () => [
 
 const BUFFERED_BOOKMARK_VALIDATOR_VERSION = 2;
 
+
+
+const BUFFERED_BOOKMARK_APPLY_TIMEOUT_MS = 5 * 60 * 60 * 1000; 
+
 function isSyncedRootNode(node) {
   return (
     node.root == "bookmarksMenuFolder" ||
@@ -449,7 +453,8 @@ BaseBookmarksEngine.prototype = {
       if (
         Async.isShutdownException(ex) ||
         ex.status > 0 ||
-        ex.name == "MergeConflictError"
+        ex.name == "MergeConflictError" ||
+        ex.name == "InterruptedError"
       ) {
         
         
@@ -837,6 +842,10 @@ BufferedBookmarksEngine.prototype = {
   
   _defaultSort: "oldest",
 
+  
+  
+  _applyTimeout: BUFFERED_BOOKMARK_APPLY_TIMEOUT_MS,
+
   async _ensureCurrentSyncID(newSyncID) {
     await super._ensureCurrentSyncID(newSyncID);
     let buf = await this._store.ensureOpenMirror();
@@ -875,12 +884,24 @@ BufferedBookmarksEngine.prototype = {
   async _processIncoming(newitems) {
     await super._processIncoming(newitems);
     let buf = await this._store.ensureOpenMirror();
-    let recordsToUpload = await buf.apply({
-      remoteTimeSeconds: Resource.serverTime,
-      weakUpload: [...this._needWeakUpload.keys()],
-    });
-    this._needWeakUpload.clear();
-    this._modified.replace(recordsToUpload);
+
+    let watchdog = Async.watchdog();
+    watchdog.start(this._applyTimeout);
+
+    try {
+      let recordsToUpload = await buf.apply({
+        remoteTimeSeconds: Resource.serverTime,
+        weakUpload: [...this._needWeakUpload.keys()],
+        signal: watchdog.signal,
+      });
+      this._modified.replace(recordsToUpload);
+    } finally {
+      watchdog.stop();
+      if (watchdog.abortReason) {
+        this._log.warn(`Aborting bookmark merge: ${watchdog.abortReason}`);
+      }
+      this._needWeakUpload.clear();
+    }
   },
 
   async _reconcile(item) {
