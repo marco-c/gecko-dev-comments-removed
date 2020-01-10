@@ -138,7 +138,7 @@ struct CustomElementDefinition {
                           CustomElementConstructor* aConstructor,
                           nsTArray<RefPtr<nsAtom>>&& aObservedAttributes,
                           UniquePtr<LifecycleCallbacks>&& aCallbacks,
-                          bool aDisableInternals);
+                          bool aDisableInternals, bool aDisableShadow);
 
   
   
@@ -161,6 +161,9 @@ struct CustomElementDefinition {
 
   
   bool mDisableInternals = false;
+
+  
+  bool mDisableShadow = false;
 
   
   

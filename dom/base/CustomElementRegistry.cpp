@@ -839,6 +839,7 @@ void CustomElementRegistry::Define(
   nsTArray<RefPtr<nsAtom>> observedAttributes;
   AutoTArray<RefPtr<nsAtom>, 2> disabledFeatures;
   bool disableInternals = false;
+  bool disableShadow = false;
   {  
     
 
@@ -923,6 +924,11 @@ void CustomElementRegistry::Define(
       
       disableInternals = disabledFeatures.Contains(
           static_cast<nsStaticAtom*>(nsGkAtoms::internals));
+
+      
+      
+      disableShadow = disabledFeatures.Contains(
+          static_cast<nsStaticAtom*>(nsGkAtoms::shadow));
     }
   }  
 
@@ -946,7 +952,7 @@ void CustomElementRegistry::Define(
   RefPtr<CustomElementDefinition> definition = new CustomElementDefinition(
       nameAtom, localNameAtom, nameSpaceID, &aFunctionConstructor,
       std::move(observedAttributes), std::move(callbacksHolder),
-      disableInternals);
+      disableInternals, disableShadow);
 
   CustomElementDefinition* def = definition.get();
   mCustomDefinitions.Put(nameAtom, definition.forget());
@@ -1083,8 +1089,19 @@ already_AddRefed<Promise> CustomElementRegistry::WhenDefined(
 namespace {
 
 MOZ_CAN_RUN_SCRIPT
-static void DoUpgrade(Element* aElement, CustomElementConstructor* aConstructor,
+static void DoUpgrade(Element* aElement, CustomElementDefinition* aDefinition,
+                      CustomElementConstructor* aConstructor,
                       ErrorResult& aRv) {
+  if (aDefinition->mDisableShadow && aElement->GetShadowRoot()) {
+    aRv.ThrowDOMException(
+        NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+        nsPrintfCString(
+            "Custom element upgrade to '%s' is disabled due to shadow root "
+            "already exists",
+            NS_ConvertUTF16toUTF8(aDefinition->mType->GetUTF16String()).get()));
+    return;
+  }
+
   JS::Rooted<JS::Value> constructResult(RootingCx());
   
   
@@ -1155,7 +1172,8 @@ void CustomElementRegistry::Upgrade(Element* aElement,
   AutoConstructionStackEntry acs(aDefinition->mConstructionStack, aElement);
 
   
-  DoUpgrade(aElement, MOZ_KnownLive(aDefinition->mConstructor), aRv);
+  DoUpgrade(aElement, aDefinition, MOZ_KnownLive(aDefinition->mConstructor),
+            aRv);
   if (aRv.Failed()) {
     data->mState = CustomElementData::State::eFailed;
     
@@ -1436,14 +1454,16 @@ CustomElementDefinition::CustomElementDefinition(
     nsAtom* aType, nsAtom* aLocalName, int32_t aNamespaceID,
     CustomElementConstructor* aConstructor,
     nsTArray<RefPtr<nsAtom>>&& aObservedAttributes,
-    UniquePtr<LifecycleCallbacks>&& aCallbacks, bool aDisableInternals)
+    UniquePtr<LifecycleCallbacks>&& aCallbacks, bool aDisableInternals,
+    bool aDisableShadow)
     : mType(aType),
       mLocalName(aLocalName),
       mNamespaceID(aNamespaceID),
       mConstructor(aConstructor),
       mObservedAttributes(std::move(aObservedAttributes)),
       mCallbacks(std::move(aCallbacks)),
-      mDisableInternals(aDisableInternals) {}
+      mDisableInternals(aDisableInternals),
+      mDisableShadow(aDisableShadow) {}
 
 }  
 }  
