@@ -781,20 +781,27 @@ class SharedFTFace : public external::AtomicRefCounted<SharedFTFace> {
 
   bool Lock(void* aOwner = nullptr) {
     mLock.Lock();
-    if (mLockOwner == aOwner || !aOwner) {
-      return true;
-    } else {
-      mLockOwner = aOwner;
-      return false;
-    }
+    return !aOwner || mLastLockOwner.exchange(aOwner) == aOwner;
   }
   void Unlock() { mLock.Unlock(); }
+
+  
+
+
+  void ForgetLockOwner(void* aOwner) {
+    if (aOwner) {
+      mLastLockOwner.compareExchange(aOwner, nullptr);
+    }
+  }
 
  private:
   FT_Face mFace;
   SharedFTFaceData* mData;
   Mutex mLock;
-  void* mLockOwner;
+  
+  
+  
+  Atomic<void*> mLastLockOwner;
 };
 #endif
 
