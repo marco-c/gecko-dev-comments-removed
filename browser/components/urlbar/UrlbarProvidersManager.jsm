@@ -455,8 +455,13 @@ function getAcceptableMatchSources(context) {
       case UrlbarUtils.RESULT_SOURCE.SEARCH:
         if (
           restrictTokenType === UrlbarTokenizer.TYPE.RESTRICT_SEARCH ||
-          (!restrictTokenType && UrlbarPrefs.get("suggest.searches"))
+          !restrictTokenType
         ) {
+          
+          
+          
+          
+          
           acceptedSources.push(source);
         }
         break;
