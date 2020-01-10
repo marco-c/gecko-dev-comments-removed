@@ -8,6 +8,7 @@
 
 #include "builtin/streams/WritableStreamDefaultWriter-inl.h"
 
+#include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
 
 #include "jsapi.h"        
@@ -42,6 +43,7 @@ using js::WritableStream;
 using js::WritableStreamCloseQueuedOrInFlight;
 using js::WritableStreamDefaultWriter;
 using js::WritableStreamDefaultWriterGetDesiredSize;
+using js::WritableStreamDefaultWriterRelease;
 using js::WritableStreamDefaultWriterWrite;
 
 
@@ -204,6 +206,50 @@ static MOZ_MUST_USE bool WritableStream_close(JSContext* cx, unsigned argc,
 
 
 
+static MOZ_MUST_USE bool WritableStream_releaseLock(JSContext* cx,
+                                                    unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  
+  Rooted<WritableStreamDefaultWriter*> unwrappedWriter(
+      cx,
+      UnwrapAndTypeCheckThis<WritableStreamDefaultWriter>(cx, args, "close"));
+  if (!unwrappedWriter) {
+    return false;
+  }
+
+  
+  
+  if (!unwrappedWriter->hasStream()) {
+    args.rval().setUndefined();
+    return true;
+  }
+
+  
+#ifdef DEBUG
+  {
+    WritableStream* unwrappedStream =
+        UnwrapStreamFromWriter(cx, unwrappedWriter);
+    if (!unwrappedStream) {
+      return false;
+    }
+    MOZ_ASSERT(unwrappedStream->hasWriter());
+  }
+#endif
+
+  
+  if (!WritableStreamDefaultWriterRelease(cx, unwrappedWriter)) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+
+
+
 static MOZ_MUST_USE bool WritableStream_write(JSContext* cx, unsigned argc,
                                               Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -244,6 +290,7 @@ static const JSPropertySpec WritableStreamDefaultWriter_properties[] = {
 
 static const JSFunctionSpec WritableStreamDefaultWriter_methods[] = {
     JS_FN("close", WritableStream_close, 0, 0),
+    JS_FN("releaseLock", WritableStream_releaseLock, 0, 0),
     JS_FN("write", WritableStream_write, 1, 0), JS_FS_END};
 
 JS_STREAMS_CLASS_SPEC(WritableStreamDefaultWriter, 0, SlotCount,
