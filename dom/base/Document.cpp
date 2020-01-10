@@ -8677,7 +8677,7 @@ nsIHTMLCollection* Document::Anchors() {
 
 mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> Document::Open(
     const nsAString& aURL, const nsAString& aName, const nsAString& aFeatures,
-    bool aReplace, ErrorResult& rv) {
+    ErrorResult& rv) {
   MOZ_ASSERT(nsContentUtils::CanCallerAccess(this),
              "XOW should have caught this!");
 
@@ -8694,7 +8694,6 @@ mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> Document::Open(
   }
   RefPtr<nsGlobalWindowOuter> win = nsGlobalWindowOuter::Cast(outer);
   nsCOMPtr<nsPIDOMWindowOuter> newWindow;
-  
   rv = win->OpenJS(aURL, aName, aFeatures, getter_AddRefs(newWindow));
   if (!newWindow) {
     return nullptr;
@@ -8703,7 +8702,8 @@ mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> Document::Open(
 }
 
 Document* Document::Open(const Optional<nsAString>& ,
-                         const nsAString& , ErrorResult& aError) {
+                         const Optional<nsAString>& ,
+                         ErrorResult& aError) {
   
   
 
@@ -9081,7 +9081,7 @@ void Document::WriteCommon(const nsAString& aText, bool aNewlineTerminate,
       return;
     }
 
-    Open(Optional<nsAString>(), EmptyString(), aRv);
+    Open({}, {}, aRv);
 
     
     
