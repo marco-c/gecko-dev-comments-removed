@@ -54,6 +54,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
   sort(context) {
     
     
+    
     let searchInPrivateWindowIndex = context.results.findIndex(
       r => r.type == UrlbarUtils.RESULT_TYPE.SEARCH && r.payload.inPrivateWindow
     );
@@ -62,7 +63,9 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       (context.results.length == 1 ||
         context.results.some(
           r =>
-            r.type != UrlbarUtils.RESULT_TYPE.SEARCH || r.payload.keywordOffer
+            r.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
+            r.payload.keywordOffer ||
+            (r.heuristic && r.payload.keyword)
         ))
     ) {
       
