@@ -152,7 +152,7 @@ class Page extends ContentProcessDomain {
         break;
 
       case "pageshow":
-        this.emit("Page.loadEventFired", { timestamp, frameId });
+        this.emit("Page.loadEventFired", { timestamp });
         
         this.emit("Page.navigatedWithinDocument", { frameId, url });
         this.emit("Page.frameStoppedLoading", { frameId });
