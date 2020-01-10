@@ -1220,7 +1220,6 @@ const char* nsProtocolProxyService::ExtractProxyInfo(const char* start,
       break;
   }
   if (type) {
-    const char *host = nullptr, *hostEnd = nullptr;
     int32_t port = -1;
 
     
@@ -1253,10 +1252,18 @@ const char* nsProtocolProxyService::ExtractProxyInfo(const char* start,
     nsCOMPtr<nsIURI> pacURI;
 
     nsAutoCString urlHost;
-    if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(pacURI), maybeURL)) &&
-        NS_SUCCEEDED(pacURI->GetAsciiHost(urlHost)) && !urlHost.IsEmpty()) {
+    
+    if (NS_FAILED(NS_NewURI(getter_AddRefs(pacURI), maybeURL)) ||
+        NS_FAILED(pacURI->GetAsciiHost(urlHost)) || urlHost.IsEmpty()) {
       
+      maybeURL.Insert("http://", 0);
 
+      if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(pacURI), maybeURL))) {
+        pacURI->GetAsciiHost(urlHost);
+      }
+    }
+
+    if (!urlHost.IsEmpty()) {
       pi->mHost = urlHost;
 
       int32_t tPort;
@@ -1264,24 +1271,8 @@ const char* nsProtocolProxyService::ExtractProxyInfo(const char* start,
         port = tPort;
       }
       pi->mPort = port;
-    } else {
-      
-      if (start < end) {
-        host = start;
-        hostEnd = strchr(host, ':');
-        if (!hostEnd || hostEnd > end) {
-          hostEnd = end;
-          
-        } else {
-          port = atoi(hostEnd + 1);
-        }
-      }
-      
-      if (host) {
-        pi->mHost.Assign(host, hostEnd - host);
-        pi->mPort = port;
-      }
     }
+
     NS_ADDREF(*result = pi);
   }
 
