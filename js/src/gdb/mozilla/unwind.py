@@ -53,6 +53,16 @@ SizeOfFramePrefix = {
 }
 
 
+
+
+class UnwinderTypeCacheFrameType(object):
+    def __init__(self, tc):
+        self.tc = tc
+
+    def __getattr__(self, name):
+        return self.tc.__getattr__("FrameType::" + name)
+
+
 class UnwinderTypeCache(object):
     
     
@@ -68,6 +78,8 @@ class UnwinderTypeCache(object):
     def __getattr__(self, name):
         if self.d is None:
             self.initialize()
+        if name == "frame_type":
+            return UnwinderTypeCacheFrameType(self)
         return self.d[name]
 
     def value(self, name):
@@ -346,7 +358,7 @@ class UnwinderState(object):
                        self.typecache.FRAME_HEADER_SIZE_MASK)
         header_size = header_size * self.typecache.void_starstar.sizeof
         frame_type = long(value & self.typecache.FRAMETYPE_MASK)
-        if frame_type == self.typecache.CppToJSJit:
+        if frame_type == self.typecache.frame_type.CppToJSJit:
             
             
             
@@ -422,7 +434,7 @@ class UnwinderState(object):
             return None
 
         exit_sp = pending_frame.read_register(self.SP_REGISTER)
-        frame_type = self.typecache.Exit
+        frame_type = self.typecache.frame_type.Exit
         return self.create_frame(pc, exit_sp, packedExitFP, frame_type, pending_frame)
 
     
@@ -451,7 +463,7 @@ class UnwinderState(object):
             return None
 
         if self.next_sp is not None:
-            if self.next_type == self.typecache.CppToJSJit:
+            if self.next_type == self.typecache.frame_type.CppToJSJit:
                 return self.unwind_entry_frame(pc, pending_frame)
             return self.unwind_ordinary(pc, pending_frame)
         
