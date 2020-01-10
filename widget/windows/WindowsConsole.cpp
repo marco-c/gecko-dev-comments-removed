@@ -10,23 +10,41 @@
 
 namespace mozilla {
 
+static void AssignStdHandle(const char* aPath, const char* aMode, FILE* aStream,
+                            DWORD aStdHandle) {
+  
+  
+  const int fd = _fileno(aStream);
+  if (fd == -2) {
+    freopen(aPath, aMode, aStream);
+    return;
+  }
+  if (fd < 0) {
+    return;
+  }
+
+  const HANDLE handle = reinterpret_cast<HANDLE>(_get_osfhandle(fd));
+  if (handle == INVALID_HANDLE_VALUE) {
+    return;
+  }
+
+  const HANDLE oldHandle = GetStdHandle(aStdHandle);
+  if (handle == oldHandle) {
+    return;
+  }
+
+  SetStdHandle(aStdHandle, handle);
+}
+
 
 void UseParentConsole() {
   if (AttachConsole(ATTACH_PARENT_PROCESS)) {
     
     
+    AssignStdHandle("CONOUT$", "w", stdout, STD_OUTPUT_HANDLE);
     
-    
-    if (_fileno(stdout) == -2) {
-      freopen("CONOUT$", "w", stdout);
-    }
-    
-    if (_fileno(stderr) == -2) {
-      freopen("CONOUT$", "w", stderr);
-    }
-    if (_fileno(stdin) == -2) {
-      freopen("CONIN$", "r", stdin);
-    }
+    AssignStdHandle("CONOUT$", "w", stderr, STD_ERROR_HANDLE);
+    AssignStdHandle("CONIN$", "r", stdin, STD_INPUT_HANDLE);
   }
 }
 
