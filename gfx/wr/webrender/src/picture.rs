@@ -2947,11 +2947,17 @@ impl PicturePrimitive {
                         for key in &tile_cache.tiles_to_draw {
                             let tile = tile_cache.tiles.get_mut(key).expect("bug: no tile found!");
 
+                            
+                            
+                            
+                            
+                            
+                            
+                            for image_key in &tile.current_descriptor.image_keys {
+                                frame_state.resource_cache.set_image_active(*image_key);
+                            }
+
                             if tile.is_valid {
-                                
-                                for image_key in &tile.current_descriptor.image_keys {
-                                    frame_state.resource_cache.set_image_active(*image_key);
-                                }
                                 continue;
                             }
 
