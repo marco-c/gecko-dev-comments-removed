@@ -19,12 +19,14 @@
 
 
 function getFileContents(aFile) {
-  let fstream = Cc["@mozilla.org/network/file-input-stream;1"].
-                createInstance(Ci.nsIFileInputStream);
+  let fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(
+    Ci.nsIFileInputStream
+  );
   fstream.init(aFile, -1, 0, 0);
 
-  let bstream = Cc["@mozilla.org/binaryinputstream;1"].
-                createInstance(Ci.nsIBinaryInputStream);
+  let bstream = Cc["@mozilla.org/binaryinputstream;1"].createInstance(
+    Ci.nsIBinaryInputStream
+  );
   bstream.setInputStream(fstream);
   return bstream.readBytes(bstream.available());
 }

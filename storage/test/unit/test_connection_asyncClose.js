@@ -30,7 +30,6 @@
 
 
 
-
 add_task(async function test_asyncClose_does_not_complete_before_statements() {
   let db = Services.storage.openDatabase(getTestDB());
   let stmt = db.createStatement("SELECT * FROM sqlite_master");
@@ -41,8 +40,10 @@ add_task(async function test_asyncClose_does_not_complete_before_statements() {
   
   
   await asyncClose(db);
-  equal((await asyncStatementPromise),
-        Ci.mozIStorageStatementCallback.REASON_FINISHED);
+  equal(
+    await asyncStatementPromise,
+    Ci.mozIStorageStatementCallback.REASON_FINISHED
+  );
 });
 
 

@@ -4,11 +4,15 @@
 
 function setup() {
   
-  getOpenedDatabase().createTable("test_bug444233",
-                                  "id INTEGER PRIMARY KEY, value TEXT");
+  getOpenedDatabase().createTable(
+    "test_bug444233",
+    "id INTEGER PRIMARY KEY, value TEXT"
+  );
 
   
-  var stmt = createStatement("INSERT INTO test_bug444233 (value) VALUES (:value)");
+  var stmt = createStatement(
+    "INSERT INTO test_bug444233 (value) VALUES (:value)"
+  );
   stmt.params.value = "value1";
   stmt.execute();
   stmt.finalize();
@@ -48,4 +52,3 @@ function run_test() {
   test_bug444233();
   cleanup();
 }
-

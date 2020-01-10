@@ -12,25 +12,22 @@
 
 
 function test_params_enumerate() {
-  let stmt = createStatement(
-    "SELECT * FROM test WHERE id IN (:a, :b, :c)"
-  );
+  let stmt = createStatement("SELECT * FROM test WHERE id IN (:a, :b, :c)");
 
   
   let expected = [0, 1, 2, "a", "b", "c", "length"];
   let index = 0;
   for (let name in stmt.params) {
-    if (name == "QueryInterface")
+    if (name == "QueryInterface") {
       continue;
+    }
     Assert.equal(name, expected[index++]);
   }
   Assert.equal(index, 7);
 }
 
 function test_params_prototype() {
-  let stmt = createStatement(
-    "SELECT * FROM sqlite_master"
-  );
+  let stmt = createStatement("SELECT * FROM sqlite_master");
 
   
   
@@ -42,9 +39,7 @@ function test_params_prototype() {
 }
 
 function test_row_prototype() {
-  let stmt = createStatement(
-    "SELECT * FROM sqlite_master"
-  );
+  let stmt = createStatement("SELECT * FROM sqlite_master");
 
   Assert.ok(stmt.executeStep());
 
@@ -59,9 +54,7 @@ function test_row_prototype() {
 }
 
 function test_row_enumerate() {
-  let stmt = createStatement(
-    "SELECT * FROM test"
-  );
+  let stmt = createStatement("SELECT * FROM test");
 
   Assert.ok(stmt.executeStep());
 
@@ -82,9 +75,13 @@ function test_row_enumerate() {
   let savedOffRow = stmt.row;
   stmt = null;
   Cu.forceGC();
-  Assert.throws(() => { return savedOffRow.string; },
-                /NS_ERROR_NOT_INITIALIZED/,
-                "GC'ed statement should throw");
+  Assert.throws(
+    () => {
+      return savedOffRow.string;
+    },
+    /NS_ERROR_NOT_INITIALIZED/,
+    "GC'ed statement should throw"
+  );
 }
 
 function test_params_gets_sync() {
@@ -142,9 +139,7 @@ function run_test() {
 
   
   getOpenedDatabase().executeSimpleSQL(
-    "CREATE TABLE test (" +
-      "id INTEGER PRIMARY KEY, string TEXT" +
-    ")"
+    "CREATE TABLE test (" + "id INTEGER PRIMARY KEY, string TEXT" + ")"
   );
   getOpenedDatabase().executeSimpleSQL(
     "INSERT INTO test (id, string) VALUES (123, 'foo')"

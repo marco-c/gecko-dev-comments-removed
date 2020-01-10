@@ -16,9 +16,10 @@ add_task(async function test_failsafe_close_of_async_connection() {
   let db = getOpenedDatabase();
 
   
-  let callbackInvoked = new Promise((resolve) => {
-    db.executeSimpleSQLAsync("CREATE TABLE test (id INTEGER)",
-                             { handleCompletion: resolve });
+  let callbackInvoked = new Promise(resolve => {
+    db.executeSimpleSQLAsync("CREATE TABLE test (id INTEGER)", {
+      handleCompletion: resolve,
+    });
   });
 
   

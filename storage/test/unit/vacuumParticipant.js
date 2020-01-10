@@ -4,8 +4,10 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
@@ -30,8 +32,7 @@ function vacuumParticipant() {
   Services.obs.addObserver(this, "test-options");
 }
 
-vacuumParticipant.prototype =
-{
+vacuumParticipant.prototype = {
   classDescription: "vacuumParticipant",
   classID: Components.ID("{52aa0b22-b82f-4e38-992a-c3675a3355d2}"),
   contractID: "@unit.test.com/test-vacuum-participant;1",
