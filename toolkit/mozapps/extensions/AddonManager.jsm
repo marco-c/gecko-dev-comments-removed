@@ -87,7 +87,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 
 Services.ppmm.loadProcessScript(
-  "data:,ChromeUtils.import('resource://gre/modules/ExtensionProcessScript.jsm')",
+  "resource://gre/modules/extensionProcessScriptLoader.js",
   true
 );
 
