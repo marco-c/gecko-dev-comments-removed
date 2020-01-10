@@ -727,16 +727,20 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
 
   bool constrainBSize =
       (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE) &&
+
+      
       (aFlags & AbsPosReflowFlags::ConstrainHeight) &&
+
+      
       
       !aDelegatingFrame->IsInlineFrame() &&
+
+      
       
       
       (aKidFrame->GetLogicalRect(aContainingBlock.Size()).BStart(wm) <=
        aReflowInput.AvailableBSize());
-  
-  
-  
+
   if (constrainBSize) {
     kidReflowInput.AvailableBSize() =
         aReflowInput.AvailableBSize() -
