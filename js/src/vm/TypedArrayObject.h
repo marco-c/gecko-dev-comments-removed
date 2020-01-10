@@ -243,9 +243,13 @@ inline size_t TypedArrayObject::bytesPerElement() const {
 template <typename CharT>
 bool StringIsTypedArrayIndex(mozilla::Range<const CharT> s, uint64_t* indexp);
 
+
+
+
+
 template <typename CharT>
 inline bool CanStartTypedArrayIndex(CharT ch) {
-  return mozilla::IsAsciiDigit(ch) || ch == '-';
+  return mozilla::IsAsciiDigit(ch) || ch == '-' || ch == 'N' || ch == 'I';
 }
 
 inline bool IsTypedArrayIndex(jsid id, uint64_t* indexp) {

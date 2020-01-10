@@ -29,8 +29,23 @@ assertEq(x[9999999999999999999999], "twelve");
 
 
 
+
 x["Infinity"] = "twelve";
-assertEq(x["Infinity"], "twelve");
+assertEq(x["Infinity"], undefined);
 
 x["-Infinity"] = "twelve";
-assertEq(x["-Infinity"], "twelve");
+assertEq(x["-Infinity"], undefined);
+
+x["NaN"] = "twelve";
+assertEq(x["NaN"], undefined);
+
+
+
+x["+Infinity"] = "twelve";
+assertEq(x["+Infinity"], "twelve");
+
+x["+NaN"] = "twelve";
+assertEq(x["+NaN"], "twelve");
+
+x["-NaN"] = "twelve";
+assertEq(x["-NaN"], "twelve");

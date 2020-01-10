@@ -33,3 +33,13 @@ test(has)("100");
 
 test(has)(4294967296);
 test(has)("4294967296");
+
+
+test(has)(Infinity);
+test(has)("Infinity");
+
+test(has)(-Infinity);
+test(has)("-Infinity");
+
+test(has)(NaN);
+test(has)("NaN");

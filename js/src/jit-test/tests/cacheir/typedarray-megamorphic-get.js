@@ -33,3 +33,13 @@ test(get)("100");
 
 test(get)(4294967296);
 test(get)("4294967296");
+
+
+test(get)(Infinity);
+test(get)("Infinity");
+
+test(get)(-Infinity);
+test(get)("-Infinity");
+
+test(get)(NaN);
+test(get)("NaN");
