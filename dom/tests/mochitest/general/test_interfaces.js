@@ -922,6 +922,8 @@ var interfaceNamesInGlobalScope =
 
     {name: "SpecialPowers", insecureContext: true},
 
+    {name: "StaticRange", insecureContext: true},
+
     {name: "StereoPannerNode", insecureContext: true},
 
     {name: "Storage", insecureContext: true},

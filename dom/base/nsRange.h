@@ -164,7 +164,10 @@ class nsRange final : public mozilla::dom::AbstractRange,
   template <typename SPT, typename SRT, typename EPT, typename ERT>
   nsresult SetStartAndEnd(
       const mozilla::RangeBoundaryBase<SPT, SRT>& aStartBoundary,
-      const mozilla::RangeBoundaryBase<EPT, ERT>& aEndBoundary);
+      const mozilla::RangeBoundaryBase<EPT, ERT>& aEndBoundary) {
+    return AbstractRange::SetStartAndEndInternal(aStartBoundary, aEndBoundary,
+                                                 this);
+  }
 
   
 
@@ -350,9 +353,21 @@ class nsRange final : public mozilla::dom::AbstractRange,
   void UnregisterCommonAncestor(nsINode* aNode, bool aIsUnlinking);
 
   
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   template <typename SPT, typename SRT, typename EPT, typename ERT>
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void DoSetRange(
       const mozilla::RangeBoundaryBase<SPT, SRT>& aStartBoundary,
@@ -422,6 +437,8 @@ class nsRange final : public mozilla::dom::AbstractRange,
   
   nsIContent* MOZ_NON_OWNING_REF mNextStartRef;
   nsIContent* MOZ_NON_OWNING_REF mNextEndRef;
+
+  friend class mozilla::dom::AbstractRange;
 };
 
 #endif 
