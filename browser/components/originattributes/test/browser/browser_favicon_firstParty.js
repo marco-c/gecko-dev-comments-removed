@@ -2,6 +2,10 @@
 
 
 
+if (Services.prefs.getBoolPref("fission.autostart")) {
+  requestLongerTimeout(2);
+}
+
 const CC = Components.Constructor;
 
 const { PlacesUtils } = ChromeUtils.import(

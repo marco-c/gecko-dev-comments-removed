@@ -1,3 +1,7 @@
+if (Services.prefs.getBoolPref("fission.autostart")) {
+  requestLongerTimeout(2);
+}
+
 add_task(async function setup() {
   Services.prefs.setBoolPref("privacy.firstparty.isolate", true);
   Services.prefs.setBoolPref("signon.management.page.enabled", true);
@@ -194,10 +198,7 @@ add_task(async function test_aboutURL() {
         !(flags & Ci.nsIAboutModule.HIDE_FROM_ABOUTABOUT) &&
         !networkURLs.includes(aboutType) &&
         
-        aboutType !== "newtab" &&
-        
-        
-        aboutType !== "protections"
+        aboutType !== "newtab"
       ) {
         aboutURLs.push(aboutType);
       }

@@ -1,6 +1,10 @@
 
 
 
+if (Services.prefs.getBoolPref("fission.autostart")) {
+  requestLongerTimeout(2);
+}
+
 const DEFAULT_PROCESS_COUNT = Services.prefs
   .getDefaultBranch(null)
   .getIntPref("dom.ipc.processCount");

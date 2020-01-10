@@ -2,6 +2,10 @@
 
 
 
+if (Services.prefs.getBoolPref("fission.autostart")) {
+  requestLongerTimeout(2);
+}
+
 let EventUtils = {};
 Services.scriptloader.loadSubScript(
   "chrome://mochikit/content/tests/SimpleTest/EventUtils.js",
