@@ -7,18 +7,18 @@
 #ifndef nsProxyRelease_h__
 #define nsProxyRelease_h__
 
-#include "nsIEventTarget.h"
-#include "nsIThread.h"
-#include "nsCOMPtr.h"
-#include "nsAutoPtr.h"
 #include "MainThreadUtils.h"
-#include "nsPrintfCString.h"
-#include "nsThreadUtils.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Move.h"
 #include "mozilla/SystemGroup.h"
 #include "mozilla/TypeTraits.h"
 #include "mozilla/Unused.h"
+#include "nsAutoPtr.h"
+#include "nsCOMPtr.h"
+#include "nsIEventTarget.h"
+#include "nsIThread.h"
+#include "nsPrintfCString.h"
+#include "nsThreadUtils.h"
 
 #ifdef XPCOM_GLUE_AVOID_NSPR
 #  error NS_ProxyRelease implementation depends on NSPR.
@@ -225,7 +225,7 @@ class MOZ_IS_SMARTPTR_TO_REFCOUNTED nsMainThreadPtrHolder final {
   
   nsMainThreadPtrHolder(const char* aName, T* aPtr, bool aStrict = true,
                         nsIEventTarget* aMainThreadEventTarget = nullptr)
-      : mRawPtr(nullptr),
+      : mRawPtr(aPtr),
         mStrict(aStrict),
         mMainThreadEventTarget(aMainThreadEventTarget)
 #ifndef RELEASE_OR_BETA
@@ -236,7 +236,7 @@ class MOZ_IS_SMARTPTR_TO_REFCOUNTED nsMainThreadPtrHolder final {
     
     
     MOZ_ASSERT(!mStrict || NS_IsMainThread());
-    NS_IF_ADDREF(mRawPtr = aPtr);
+    NS_IF_ADDREF(mRawPtr);
   }
   nsMainThreadPtrHolder(const char* aName, already_AddRefed<T> aPtr,
                         bool aStrict = true,
@@ -252,6 +252,11 @@ class MOZ_IS_SMARTPTR_TO_REFCOUNTED nsMainThreadPtrHolder final {
     
     
   }
+
+  
+  
+  T& operator=(nsMainThreadPtrHolder& aOther) = delete;
+  nsMainThreadPtrHolder(const nsMainThreadPtrHolder& aOther) = delete;
 
  private:
   
@@ -274,7 +279,7 @@ class MOZ_IS_SMARTPTR_TO_REFCOUNTED nsMainThreadPtrHolder final {
   }
 
  public:
-  T* get() {
+  T* get() const {
     
     if (mStrict && MOZ_UNLIKELY(!NS_IsMainThread())) {
       NS_ERROR("Can't dereference nsMainThreadPtrHolder off main thread");
@@ -292,27 +297,20 @@ class MOZ_IS_SMARTPTR_TO_REFCOUNTED nsMainThreadPtrHolder final {
 
  private:
   
-  T* mRawPtr;
+  T* mRawPtr = nullptr;
 
   
-  bool mStrict;
+  bool mStrict = true;
 
   nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
 
 #ifndef RELEASE_OR_BETA
   const char* mName = nullptr;
 #endif
-
-  
-  
-  T& operator=(nsMainThreadPtrHolder& aOther);
-  nsMainThreadPtrHolder(const nsMainThreadPtrHolder& aOther);
 };
 
 template <class T>
 class MOZ_IS_SMARTPTR_TO_REFCOUNTED nsMainThreadPtrHandle {
-  RefPtr<nsMainThreadPtrHolder<T>> mPtr;
-
  public:
   nsMainThreadPtrHandle() : mPtr(nullptr) {}
   MOZ_IMPLICIT nsMainThreadPtrHandle(decltype(nullptr)) : mPtr(nullptr) {}
@@ -364,17 +362,10 @@ class MOZ_IS_SMARTPTR_TO_REFCOUNTED nsMainThreadPtrHandle {
   bool operator==(decltype(nullptr)) const { return mPtr == nullptr; }
   bool operator!=(decltype(nullptr)) const { return mPtr != nullptr; }
   bool operator!() const { return !mPtr || !*mPtr; }
+
+ private:
+  RefPtr<nsMainThreadPtrHolder<T>> mPtr;
 };
-
-namespace mozilla {
-
-template <typename T>
-using PtrHolder = nsMainThreadPtrHolder<T>;
-
-template <typename T>
-using PtrHandle = nsMainThreadPtrHandle<T>;
-
-}  
 
 class nsCycleCollectionTraversalCallback;
 template <typename T>
