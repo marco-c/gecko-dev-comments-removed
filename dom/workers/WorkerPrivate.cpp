@@ -1468,6 +1468,12 @@ void WorkerPrivate::EnableDebugger() {
 void WorkerPrivate::DisableDebugger() {
   AssertIsOnParentThread();
 
+  
+  
+  if (!NS_IsMainThread()) {
+    WaitForIsDebuggerRegistered(true);
+  }
+
   if (NS_FAILED(UnregisterWorkerDebugger(this))) {
     NS_WARNING("Failed to unregister worker debugger!");
   }
