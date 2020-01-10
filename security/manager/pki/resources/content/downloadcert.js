@@ -57,7 +57,7 @@ function onLoad() {
 
 
 function viewCert() {
-  viewCertHelper(window, gCert);
+  viewCertHelper(window, gCert, "window");
 }
 
 
