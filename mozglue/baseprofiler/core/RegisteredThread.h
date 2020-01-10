@@ -12,10 +12,7 @@
 #include "BaseProfilerMarkerPayload.h"
 #include "ThreadInfo.h"
 
-#include "js/TraceLoggerAPI.h"
-#include "jsapi.h"
 #include "mozilla/UniquePtr.h"
-#include "nsIEventTarget.h"
 
 
 
@@ -25,11 +22,9 @@
 class RacyRegisteredThread final {
  public:
   explicit RacyRegisteredThread(int aThreadId)
-      : mThreadId(aThreadId), mSleep(AWAKE), mIsBeingProfiled(false) {
-    MOZ_COUNT_CTOR(RacyRegisteredThread);
-  }
+      : mThreadId(aThreadId), mSleep(AWAKE), mIsBeingProfiled(false) {}
 
-  ~RacyRegisteredThread() { MOZ_COUNT_DTOR(RacyRegisteredThread); }
+  ~RacyRegisteredThread() {}
 
   void SetIsBeingProfiled(bool aIsBeingProfiled) {
     mIsBeingProfiled = aIsBeingProfiled;
@@ -164,7 +159,7 @@ class RacyRegisteredThread final {
 
 class RegisteredThread final {
  public:
-  RegisteredThread(ThreadInfo* aInfo, nsIEventTarget* aThread, void* aStackTop);
+  RegisteredThread(ThreadInfo* aInfo, void* aStackTop);
   ~RegisteredThread();
 
   class RacyRegisteredThread& RacyRegisteredThread() {
@@ -179,89 +174,7 @@ class RegisteredThread final {
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-  
-  
-  void SetJSContext(JSContext* aContext) {
-    
-
-    MOZ_ASSERT(aContext && !mContext);
-
-    mContext = aContext;
-
-    
-    
-    js::SetContextProfilingStack(aContext,
-                                 &RacyRegisteredThread().ProfilingStack());
-  }
-
-  void ClearJSContext() {
-    
-    mContext = nullptr;
-  }
-
-  JSContext* GetJSContext() const { return mContext; }
-
   const RefPtr<ThreadInfo> Info() const { return mThreadInfo; }
-  const nsCOMPtr<nsIEventTarget> GetEventTarget() const { return mThread; }
-
-  
-  
-  
-  void StartJSSampling(uint32_t aJSFlags) {
-    
-
-    MOZ_RELEASE_ASSERT(mJSSampling == INACTIVE ||
-                       mJSSampling == INACTIVE_REQUESTED);
-    mJSSampling = ACTIVE_REQUESTED;
-    mJSFlags = aJSFlags;
-  }
-
-  
-  
-  void StopJSSampling() {
-    
-
-    MOZ_RELEASE_ASSERT(mJSSampling == ACTIVE ||
-                       mJSSampling == ACTIVE_REQUESTED);
-    mJSSampling = INACTIVE_REQUESTED;
-  }
-
-  
-  void PollJSSampling() {
-    
-
-    
-    if (mContext) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (mJSSampling == ACTIVE_REQUESTED) {
-        mJSSampling = ACTIVE;
-        js::EnableContextProfilingStack(mContext, true);
-        JS_SetGlobalJitCompilerOption(mContext,
-                                      JSJITCOMPILER_TRACK_OPTIMIZATIONS,
-                                      TrackOptimizationsEnabled());
-        if (JSTracerEnabled()) {
-          JS::StartTraceLogger(mContext);
-        }
-        js::RegisterContextProfilingEventMarker(mContext,
-                                                profiler_add_js_marker);
-
-      } else if (mJSSampling == INACTIVE_REQUESTED) {
-        mJSSampling = INACTIVE;
-        js::EnableContextProfilingStack(mContext, false);
-        if (JSTracerEnabled()) {
-          JS::StopTraceLogger(mContext);
-        }
-      }
-    }
-  }
 
  private:
   class RacyRegisteredThread mRacyRegisteredThread;
@@ -270,68 +183,6 @@ class RegisteredThread final {
   const void* mStackTop;
 
   const RefPtr<ThreadInfo> mThreadInfo;
-  const nsCOMPtr<nsIEventTarget> mThread;
-
-  
-  
-  JSContext* mContext;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  enum {
-    INACTIVE = 0,
-    ACTIVE_REQUESTED = 1,
-    ACTIVE = 2,
-    INACTIVE_REQUESTED = 3,
-  } mJSSampling;
-
-  uint32_t mJSFlags;
-
-  bool TrackOptimizationsEnabled() {
-    return mJSFlags & uint32_t(JSSamplingFlags::TrackOptimizations);
-  }
-
-  bool JSTracerEnabled() {
-    return mJSFlags & uint32_t(JSSamplingFlags::TraceLogging);
-  }
 };
 
 #endif  
