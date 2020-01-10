@@ -9,8 +9,6 @@ package org.mozilla.geckoview;
 import android.support.annotation.AnyThread;
 import android.support.annotation.NonNull;
 
-import java.util.Arrays;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -67,7 +65,9 @@ public final class RuntimeTelemetry {
     
 
 
-    public static class Metric {
+
+
+    public static class Metric<T> {
         
 
 
@@ -76,21 +76,22 @@ public final class RuntimeTelemetry {
         
 
 
-        public final @NonNull long[] values;
+        public final @NonNull T value;
 
-          Metric(final String name, final long[] values) {
+          Metric(final String name, final T value) {
             this.name = name;
-            this.values = values;
+            this.value = value;
         }
 
         @Override
         public String toString() {
-            return "name: " + name + ", values: " + Arrays.toString(values);
+            return "name: " + name + ", value: " + value;
         }
 
+        
         protected Metric() {
-            this.name = null;
-            this.values = null;
+            name = null;
+            value = null;
         }
     }
 
@@ -106,7 +107,31 @@ public final class RuntimeTelemetry {
 
 
         @AnyThread
-        default void onTelemetryReceived(final @NonNull Metric metric) {}
+        default void onHistogram(final @NonNull Metric<long[]> metric) {}
+
+        
+
+
+
+
+        @AnyThread
+        default void onBooleanScalar(final @NonNull Metric<Boolean> metric) {}
+
+        
+
+
+
+
+        @AnyThread
+        default void onLongScalar(final @NonNull Metric<Long> metric) {}
+
+        
+
+
+
+
+        @AnyThread
+        default void onStringScalar(final @NonNull Metric<String> metric) {}
     }
 
     
@@ -142,13 +167,40 @@ public final class RuntimeTelemetry {
         private static native void registerDelegateProxy(Proxy proxy);
 
         @WrapForJNI(calledFrom = "gecko")
-         void dispatchTelemetry(
+         void dispatchHistogram(
                 final String name, final long[] values) {
             if (mDelegate == null) {
                 
                 return;
             }
-            mDelegate.onTelemetryReceived(new Metric(name, values));
+            mDelegate.onHistogram(new Metric<>(name, values));
+        }
+
+        @WrapForJNI(calledFrom = "gecko")
+             void dispatchStringScalar(
+                final String name, final String value) {
+            if (mDelegate == null) {
+                return;
+            }
+            mDelegate.onStringScalar(new Metric<>(name, value));
+        }
+
+        @WrapForJNI(calledFrom = "gecko")
+             void dispatchBooleanScalar(
+                final String name, final boolean value) {
+            if (mDelegate == null) {
+                return;
+            }
+            mDelegate.onBooleanScalar(new Metric<>(name, value));
+        }
+
+        @WrapForJNI(calledFrom = "gecko")
+             void dispatchLongScalar(
+                final String name, final long value) {
+            if (mDelegate == null) {
+                return;
+            }
+            mDelegate.onLongScalar(new Metric<>(name, value));
         }
 
         @Override 

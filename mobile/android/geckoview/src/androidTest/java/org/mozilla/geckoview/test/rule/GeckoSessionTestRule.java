@@ -2038,6 +2038,19 @@ public class GeckoSessionTestRule implements TestRule {
         void setArgs(JSONObject object) throws JSONException;
     }
 
+    
+
+
+
+
+
+    public <T> void setScalar(final String id, final T value) {
+        webExtensionApiCall("SetScalar", args -> {
+            args.put("id", id);
+            args.put("value", value);
+        });
+    }
+
     private Object webExtensionApiCall(final String apiName, SetArgs argsSetter) {
         
         UiThreadUtils.waitForCondition(() -> RuntimeCreator.backgroundPort() != null,
