@@ -33,7 +33,7 @@ const float kDecelerationRate = 2.3582018f;
 
 
 static float GetFlingFriction() {
-  return StaticPrefs::APZChromeFlingPhysicsFriction();
+  return StaticPrefs::apz_android_chrome_fling_physics_friction();
 }
 
 
@@ -41,7 +41,8 @@ static float GetInflexion() {
   
   
   
-  const float inflexion = StaticPrefs::APZChromeFlingPhysicsInflexion();
+  const float inflexion =
+      StaticPrefs::apz_android_chrome_fling_physics_inflexion();
   if (inflexion < 0.0f) {
     return 0.0f;
   }
@@ -54,7 +55,7 @@ static float GetInflexion() {
 
 
 static float GetThresholdForFlingEnd() {
-  return StaticPrefs::APZChromeFlingPhysicsStopThreshold();
+  return StaticPrefs::apz_android_chrome_fling_physics_stop_threshold();
 }
 
 static double ComputeSplineDeceleration(ParentLayerCoord aVelocity,

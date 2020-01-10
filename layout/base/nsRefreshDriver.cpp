@@ -1866,7 +1866,7 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
   
   
   
-  if (StaticPrefs::APZPeekMessages()) {
+  if (StaticPrefs::apz_peek_messages_enabled()) {
     nsLayoutUtils::UpdateDisplayPortMarginsFromPendingMessages();
   }
 

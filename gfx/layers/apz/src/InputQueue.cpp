@@ -319,7 +319,7 @@ nsEventStatus InputQueue::ReceiveKeyboardInput(
 
   
   
-  return StaticPrefs::APZKeyboardPassiveListeners()
+  return StaticPrefs::apz_keyboard_passive_listeners()
              ? nsEventStatus_eConsumeDoDefault
              : nsEventStatus_eConsumeNoDefault;
 }
@@ -552,7 +552,7 @@ void InputQueue::ScheduleMainThreadTimeout(
   RefPtr<Runnable> timeoutTask = NewRunnableMethod<uint64_t>(
       "layers::InputQueue::MainThreadTimeout", this,
       &InputQueue::MainThreadTimeout, aBlock->GetBlockId());
-  int32_t timeout = StaticPrefs::APZContentResponseTimeout();
+  int32_t timeout = StaticPrefs::apz_content_response_timeout();
   if (timeout == 0) {
     
     

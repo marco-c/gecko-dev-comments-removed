@@ -6008,7 +6008,7 @@ void PresShell::Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
     return;
   }
 
-  if (StaticPrefs::APZKeyboardEnabled()) {
+  if (StaticPrefs::apz_keyboard_enabled()) {
     
     
     

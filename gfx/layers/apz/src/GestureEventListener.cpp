@@ -297,7 +297,7 @@ nsEventStatus GestureEventListener::HandleInputTouchMove() {
         CancelLongTapTimeoutTask();
         CancelMaxTapTimeoutTask();
         mSingleTapSent = Nothing();
-        if (!StaticPrefs::APZOneTouchPinchEnabled()) {
+        if (!StaticPrefs::apz_one_touch_pinch_enabled()) {
           
           
           SetState(GESTURE_NONE);
@@ -629,7 +629,7 @@ void GestureEventListener::CreateMaxTapTimeoutTask() {
 
   mMaxTapTimeoutTask = task;
   mAsyncPanZoomController->PostDelayedTask(task.forget(),
-                                           StaticPrefs::APZMaxTapTime());
+                                           StaticPrefs::apz_max_tap_time());
 }
 
 }  

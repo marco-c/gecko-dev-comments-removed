@@ -133,7 +133,8 @@ nsresult nsWindowBase::SynthesizeNativeTouchPoint(
     uint32_t aPointerOrientation, nsIObserver* aObserver) {
   AutoObserverNotifier notifier(aObserver, "touchpoint");
 
-  if (StaticPrefs::APZTestFailsWithNativeInjection() || !InitTouchInjection()) {
+  if (StaticPrefs::apz_test_fails_with_native_injection() ||
+      !InitTouchInjection()) {
     
     
     

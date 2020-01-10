@@ -55,7 +55,7 @@ AndroidSpecificState::AndroidSpecificState() {
 AsyncPanZoomAnimation* AndroidSpecificState::CreateFlingAnimation(
     AsyncPanZoomController& aApzc, const FlingHandoffState& aHandoffState,
     float aPLPPI) {
-  if (StaticPrefs::APZUseChromeFlingPhysics()) {
+  if (StaticPrefs::apz_android_chrome_fling_physics_enabled()) {
     return new GenericFlingAnimation<AndroidFlingPhysics>(
         aApzc, aHandoffState.mChain, aHandoffState.mIsHandoff,
         aHandoffState.mScrolledApzc, aPLPPI);
@@ -68,7 +68,7 @@ AsyncPanZoomAnimation* AndroidSpecificState::CreateFlingAnimation(
 
 UniquePtr<VelocityTracker> AndroidSpecificState::CreateVelocityTracker(
     Axis* aAxis) {
-  if (StaticPrefs::APZUseChromeFlingPhysics()) {
+  if (StaticPrefs::apz_android_chrome_fling_physics_enabled()) {
     return MakeUnique<AndroidVelocityTracker>();
   }
   return MakeUnique<SimpleVelocityTracker>(aAxis);
@@ -76,6 +76,7 @@ UniquePtr<VelocityTracker> AndroidSpecificState::CreateVelocityTracker(
 
 
 void AndroidSpecificState::InitializeGlobalState() {
+  
   
   
   AndroidFlingPhysics::InitializeGlobalState();
@@ -167,8 +168,9 @@ StackScrollerFlingAnimation::StackScrollerFlingAnimation(
     
     
     TimeDuration flingDuration = TimeStamp::Now() - state->mLastFling;
-    if (flingDuration.ToMilliseconds() < StaticPrefs::APZFlingAccelInterval() &&
-        velocity.Length() >= StaticPrefs::APZFlingAccelMinVelocity()) {
+    if (flingDuration.ToMilliseconds() <
+            StaticPrefs::apz_fling_accel_interval_ms() &&
+        velocity.Length() >= StaticPrefs::apz_fling_accel_interval_ms()) {
       bool unused = false;
       mOverScroller->ComputeScrollOffset(flingDuration.ToMilliseconds(),
                                          &unused);
@@ -244,7 +246,7 @@ bool StackScrollerFlingAnimation::DoSample(FrameMetrics& aFrameMetrics,
 
   
   if (!shouldContinueFling ||
-      (speed < StaticPrefs::APZFlingStoppedThreshold())) {
+      (speed < StaticPrefs::apz_fling_stopped_threshold())) {
     if (shouldContinueFling) {
       
       

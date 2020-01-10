@@ -161,7 +161,8 @@ class APZCPinchLockingTester : public APZCPinchTester {
 
   void twoFingerPan() {
     ScreenCoord panDistance =
-        StaticPrefs::APZPinchLockScrollLockThreshold() * 1.2 * tm->GetDPI();
+        StaticPrefs::apz_pinch_lock_scroll_lock_threshold() * 1.2 *
+        tm->GetDPI();
 
     mFocus = ScreenIntPoint((int)(mFocus.x + panDistance), (int)(mFocus.y));
 
@@ -174,7 +175,8 @@ class APZCPinchLockingTester : public APZCPinchTester {
 
   void twoFingerZoom() {
     float pinchDistance =
-        StaticPrefs::APZPinchLockSpanBreakoutThreshold() * 1.2 * tm->GetDPI();
+        StaticPrefs::apz_pinch_lock_span_breakout_threshold() * 1.2 *
+        tm->GetDPI();
 
     float newSpan = mSpan + pinchDistance;
 
@@ -191,7 +193,8 @@ class APZCPinchLockingTester : public APZCPinchTester {
 
     
     float pinchDistance =
-        StaticPrefs::APZPinchLockSpanBreakoutThreshold() * 0.8 * tm->GetDPI();
+        StaticPrefs::apz_pinch_lock_span_breakout_threshold() * 0.8 *
+        tm->GetDPI();
     apzc->ReceiveInputEvent(
         CreatePinchGestureInput(PinchGestureInput::PINCHGESTURE_SCALE, mFocus,
                                 mSpan + pinchDistance, mSpan, mcc->Time()),

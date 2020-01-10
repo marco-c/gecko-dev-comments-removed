@@ -65,7 +65,7 @@ nsEventStatus APZInputBridge::ReceiveInputEvent(
       
       
       
-      if (StaticPrefs::APZAllowZooming()) {
+      if (StaticPrefs::apz_allow_zooming()) {
         mouseEvent.mIgnoreRootScrollFrame = true;
       }
 

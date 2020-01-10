@@ -758,7 +758,7 @@ bool nsLayoutUtils::AllowZoomingForDocument(
   
   
   
-  return StaticPrefs::APZAllowZooming() ||
+  return StaticPrefs::apz_allow_zooming() ||
          (aDocument && aDocument->InRDMPane() &&
           nsLayoutUtils::ShouldHandleMetaViewport(aDocument));
 }
@@ -1050,7 +1050,7 @@ bool nsLayoutUtils::ShouldDisableApzForElement(nsIContent* aContent) {
   if (!doc) {
     return false;
   }
-  return StaticPrefs::APZDisableForScrollLinkedEffects() &&
+  return StaticPrefs::apz_disable_for_scroll_linked_effects() &&
          doc->HasScrollLinkedEffect();
 }
 
@@ -9253,7 +9253,7 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
       aScrollFrame ? aScrollFrame : aForFrame, isRootContentDocRootScrollFrame,
       metrics));
 
-  if (StaticPrefs::APZPrintTree() || StaticPrefs::apz_test_logging_enabled()) {
+  if (StaticPrefs::apz_printtree() || StaticPrefs::apz_test_logging_enabled()) {
     if (nsIContent* content =
             frameForCompositionBoundsCalculation->GetContent()) {
       nsAutoString contentDescription;
