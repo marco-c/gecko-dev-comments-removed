@@ -236,7 +236,7 @@ GenerateKeyPairInner()
   }
   PK11RSAGenParams params;
   params.keySizeInBits = 2048;
-  params.pe = 3;
+  params.pe = 65537;
 
   
   

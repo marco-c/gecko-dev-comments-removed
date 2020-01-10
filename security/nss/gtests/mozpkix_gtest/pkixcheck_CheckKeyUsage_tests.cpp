@@ -166,8 +166,8 @@ void ASSERT_SimpleCase(uint8_t unusedBits, uint8_t bits, KeyUsage usage)
 
   
   
-  NAMED_SIMPLE_KU(notGood, unusedBits,
-                  static_cast<uint8_t>((~bits >> unusedBits) << unusedBits));
+  uint8_t paddingBits = (static_cast<uint8_t>(~bits) >> unusedBits) << unusedBits;
+  NAMED_SIMPLE_KU(notGood, unusedBits, paddingBits);
   ASSERT_BAD(CheckKeyUsage(EndEntityOrCA::MustBeEndEntity, &notGood, usage));
   ASSERT_BAD(CheckKeyUsage(EndEntityOrCA::MustBeCA, &notGood, usage));
 
