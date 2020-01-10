@@ -643,17 +643,24 @@ void JSJitProfilingFrameIterator::fixBaselineReturnAddress() {
   
   
   
-  
-  jsbytecode* overridePC = bl->maybeOverridePc();
-  if (overridePC && !bl->runningInInterpreter()) {
-    PCMappingSlotInfo slotInfo;
+  if (jsbytecode* overridePC = bl->maybeOverridePc()) {
     JSScript* script = bl->script();
-    BaselineScript* blScript = script->baselineScript();
-    resumePCinCurrentFrame_ =
-        blScript->nativeCodeForPC(script, overridePC, &slotInfo);
+    if (bl->runningInInterpreter()) {
+      
+      
+      
+      JitRuntime* jrt = script->runtimeFromAnyThread()->jitRuntime();
+      resumePCinCurrentFrame_ =
+          jrt->baselineInterpreter().interpretOpAddr().value;
+    } else {
+      PCMappingSlotInfo slotInfo;
+      BaselineScript* blScript = script->baselineScript();
+      resumePCinCurrentFrame_ =
+          blScript->nativeCodeForPC(script, overridePC, &slotInfo);
+      
+      
+    }
 
-    
-    
     return;
   }
 }
