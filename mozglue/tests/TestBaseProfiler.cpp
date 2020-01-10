@@ -512,7 +512,8 @@ void TestBlocksRingBufferAPI() {
 
   
   {
-    BlocksRingBuffer rb(&buffer[MBSize], MakePowerOfTwo32<MBSize>(),
+    BlocksRingBuffer rb(BlocksRingBuffer::ThreadSafety::WithMutex,
+                        &buffer[MBSize], MakePowerOfTwo32<MBSize>(),
                         [&](BlocksRingBuffer::EntryReader& aReader) {
                           lastDestroyed = aReader.ReadObject<uint32_t>();
                         });
@@ -854,7 +855,7 @@ void TestBlocksRingBufferUnderlyingBufferChanges() {
   printf("TestBlocksRingBufferUnderlyingBufferChanges...\n");
 
   
-  BlocksRingBuffer rb;
+  BlocksRingBuffer rb(BlocksRingBuffer::ThreadSafety::WithMutex);
 
   
   BlocksRingBuffer::BlockIndex bi;
@@ -1060,7 +1061,8 @@ void TestBlocksRingBufferThreading() {
   for (size_t i = 0; i < MBSize * 3; ++i) {
     buffer[i] = uint8_t('A' + i);
   }
-  BlocksRingBuffer rb(&buffer[MBSize], MakePowerOfTwo32<MBSize>(),
+  BlocksRingBuffer rb(BlocksRingBuffer::ThreadSafety::WithMutex,
+                      &buffer[MBSize], MakePowerOfTwo32<MBSize>(),
                       [&](BlocksRingBuffer::EntryReader& aReader) {
                         lastDestroyed = aReader.ReadObject<int>();
                       });
@@ -1148,7 +1150,8 @@ void TestBlocksRingBufferSerialization() {
   for (size_t i = 0; i < MBSize * 3; ++i) {
     buffer[i] = uint8_t('A' + i);
   }
-  BlocksRingBuffer rb(&buffer[MBSize], MakePowerOfTwo32<MBSize>());
+  BlocksRingBuffer rb(BlocksRingBuffer::ThreadSafety::WithMutex,
+                      &buffer[MBSize], MakePowerOfTwo32<MBSize>());
 
   
 #  define THE_ANSWER "The answer is "
@@ -1278,7 +1281,8 @@ void TestBlocksRingBufferSerialization() {
   for (size_t i = 0; i < MBSize2 * 3; ++i) {
     buffer2[i] = uint8_t('B' + i);
   }
-  BlocksRingBuffer rb2(&buffer2[MBSize2], MakePowerOfTwo32<MBSize2>());
+  BlocksRingBuffer rb2(BlocksRingBuffer::ThreadSafety::WithoutMutex,
+                       &buffer2[MBSize2], MakePowerOfTwo32<MBSize2>());
   rb2.PutObject(rb);
 
   
@@ -1286,7 +1290,8 @@ void TestBlocksRingBufferSerialization() {
   for (size_t i = 0; i < MBSize * 3; ++i) {
     buffer3[i] = uint8_t('C' + i);
   }
-  BlocksRingBuffer rb3(&buffer3[MBSize], MakePowerOfTwo32<MBSize>());
+  BlocksRingBuffer rb3(BlocksRingBuffer::ThreadSafety::WithoutMutex,
+                       &buffer3[MBSize], MakePowerOfTwo32<MBSize>());
   rb2.ReadEach(
       [&](BlocksRingBuffer::EntryReader& aER) { aER.ReadIntoObject(rb3); });
 
