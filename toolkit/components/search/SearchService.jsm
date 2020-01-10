@@ -1664,15 +1664,12 @@ SearchService.prototype = {
 
     let engineSelector = new SearchEngineSelector();
     let locale = Services.locale.appLocaleAsBCP47;
-    
-    
-    
-    let region = Services.prefs.getCharPref("browser.search.region", "us");
+    let region = Services.prefs.getCharPref("browser.search.region", "default");
 
     await engineSelector.init();
     let { engines, privateDefault } = engineSelector.fetchEngineConfiguration(
-      region,
-      locale
+      locale,
+      region
     );
 
     this._searchDefault = engines[0].engineName;

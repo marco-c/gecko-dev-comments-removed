@@ -53,10 +53,7 @@ class SearchEngineSelector {
 
 
 
-  fetchEngineConfiguration(region, locale) {
-    if (!region || !locale) {
-      throw new Error("region and locale parameters required");
-    }
+  fetchEngineConfiguration(locale, region = "default") {
     log(`fetchEngineConfiguration ${region}:${locale}`);
     let cohort = Services.prefs.getCharPref("browser.search.cohort", null);
     let engines = [];
