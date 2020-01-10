@@ -695,14 +695,6 @@ bool Debugger::hasAnyLiveHooks(JSRuntime* rt) const {
   }
 
   
-  for (FrameMap::Range r = frames.all(); !r.empty(); r.popFront()) {
-    DebuggerFrame& frameObj = r.front().value()->as<DebuggerFrame>();
-    if (frameObj.hasAnyLiveHooks()) {
-      return true;
-    }
-  }
-
-  
   for (GeneratorWeakMap::Range r = generatorFrames.all(); !r.empty();
        r.popFront()) {
     JSObject* key = r.front().key();
@@ -3665,6 +3657,32 @@ bool DebugAPI::edgeIsInDebuggerWeakmap(JSRuntime* rt, JSObject* src,
 #endif
 
 
+void DebugAPI::traceFramesWithLiveHooks(JSTracer* tracer) {
+  JSRuntime* rt = tracer->runtime();
+
+  
+  
+  
+  
+  for (Debugger* dbg : rt->debuggerList()) {
+    
+    
+    if (!dbg->zone()->isGCMarking() && !tracer->isCallbackTracer()) {
+      continue;
+    }
+
+    for (Debugger::FrameMap::Range r = dbg->frames.all(); !r.empty();
+         r.popFront()) {
+      HeapPtr<DebuggerFrame*>& frameobj = r.front().value();
+      MOZ_ASSERT(frameobj->isLiveMaybeForwarded());
+      if (frameobj->hasAnyLiveHooks()) {
+        TraceEdge(tracer, &frameobj, "Debugger.Frame with live hooks");
+      }
+    }
+  }
+}
+
+
 
 
 
@@ -3795,6 +3813,10 @@ void Debugger::trace(JSTracer* trc) {
 
   TraceNullableEdge(trc, &uncaughtExceptionHook, "hooks");
 
+  
+  
+  
+  
   
   
   

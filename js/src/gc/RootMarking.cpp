@@ -411,6 +411,10 @@ void js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc,
   HelperThreadState().trace(trc);
 
   
+  
+  DebugAPI::traceFramesWithLiveHooks(trc);
+
+  
   if (!JS::RuntimeHeapIsMinorCollecting()) {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK_EMBEDDING);
 
