@@ -30,11 +30,12 @@ using namespace mozilla::gfx;
 
 
 
+#define SHMEM_VERSION "0.0.2"
 #ifdef XP_WIN
-static const char* kShmemName = "moz.gecko.vr_ext.0.0.1";
-static LPCTSTR kMutexName = TEXT("mozilla::vr::ShmemMutex");
+static const char* kShmemName = "moz.gecko.vr_ext." SHMEM_VERSION;
+static LPCTSTR kMutexName = TEXT("mozilla::vr::ShmemMutex" SHMEM_VERSION);
 #elif defined(XP_MACOSX)
-static const char* kShmemName = "/moz.gecko.vr_ext.0.0.1";
+static const char* kShmemName = "/moz.gecko.vr_ext." SHMEM_VERSION;
 #endif  
 
 #if !defined(MOZ_WIDGET_ANDROID)
@@ -571,3 +572,34 @@ void VRShMem::PullSystemState(
   }  
 }
 #endif    
+
+void VRShMem::PushWindowState(VRWindowState& aState) {
+#if defined(XP_WIN)
+  if (!mExternalShmem) {
+    return;
+  }
+
+  bool status = true;
+  WaitForMutex lock(mMutex);
+  status = lock.GetStatus();
+  if (status) {
+    memcpy((void*)&(mExternalShmem->windowState), (void*)&aState,
+           sizeof(VRWindowState));
+  }
+#endif  
+}
+void VRShMem::PullWindowState(VRWindowState& aState) {
+#if defined(XP_WIN)
+  if (!mExternalShmem) {
+    return;
+  }
+
+  bool status = true;
+  WaitForMutex lock(mMutex);
+  status = lock.GetStatus();
+  if (status) {
+    memcpy((void*)&aState, (void*)&(mExternalShmem->windowState),
+           sizeof(VRWindowState));
+  }
+#endif  
+}

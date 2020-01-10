@@ -430,6 +430,23 @@ struct VRSystemState {
   VRControllerState controllerState[kVRControllerMaxCount];
 };
 
+
+struct VRWindowState {
+  
+  uint64_t hwndFx;
+  uint32_t widthFx;
+  uint32_t heightFx;
+  VRLayerTextureHandle textureFx;
+
+  
+  uint32_t dxgiAdapterHost;
+  uint32_t widthHost;
+  uint32_t heightHost;
+
+  
+  char signalName[32];
+};
+
 struct VRExternalShmem {
   int32_t version;
   int32_t size;
@@ -455,6 +472,9 @@ struct VRExternalShmem {
   int64_t geckoGenerationB;
   int64_t servoGenerationB;
 #endif  
+#if defined(XP_WIN)
+  VRWindowState windowState;
+#endif
 #ifdef MOZILLA_INTERNAL_API
   void Clear() volatile {
 
