@@ -13,7 +13,7 @@ use std::iter::{self, Iterator};
 use std::string::ToString;
 use std::vec;
 use syn::spanned::Spanned;
-use syn::{Lit, LitStr};
+use syn::{Lit, LitStr, Path};
 
 mod kind;
 
@@ -33,6 +33,11 @@ pub struct Error {
     locations: Vec<String>,
     
     span: Option<Span>,
+}
+
+
+fn path_to_string(path: &syn::Path) -> String {
+    path.segments.iter().map(|s| s.ident.to_string()).collect::<Vec<String>>().join("::")
 }
 
 
@@ -56,6 +61,12 @@ impl Error {
     }
 
     
+    
+    pub fn duplicate_field_path(path: &Path) -> Self {
+        Error::duplicate_field(&path_to_string(path))
+    }
+
+    
     pub fn missing_field(name: &str) -> Self {
         Error::new(ErrorKind::MissingField(name.into()))
     }
@@ -64,6 +75,12 @@ impl Error {
     
     pub fn unknown_field(name: &str) -> Self {
         Error::new(ErrorKind::UnknownField(name.into()))
+    }
+
+    
+    
+    pub fn unknown_field_path(path: &Path) -> Self {
+        Error::unknown_field(&path_to_string(path))
     }
 
     
@@ -225,6 +242,13 @@ impl Error {
     pub fn at<T: fmt::Display>(mut self, location: T) -> Self {
         self.locations.insert(0, location.to_string());
         self
+    }
+
+    
+    
+    
+    pub fn at_path(self, path: &Path) -> Self {
+        self.at(path_to_string(path))
     }
 
     

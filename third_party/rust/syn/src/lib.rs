@@ -222,47 +222,59 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/syn/0.15.30")]
-#![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
-#![cfg_attr(feature = "cargo-clippy", deny(clippy, clippy_pedantic))]
 
-#![cfg_attr(
-    feature = "cargo-clippy",
-    allow(
-        block_in_if_condition_stmt,
-        cognitive_complexity,
-        const_static_lifetime,
-        deprecated_cfg_attr,
-        doc_markdown,
-        eval_order_dependence,
-        large_enum_variant,
-        needless_pass_by_value,
-        never_loop,
-        redundant_field_names,
-        too_many_arguments,
-    )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/syn/1.0.5")]
+#![deny(clippy::all, clippy::pedantic)]
+
+#![allow(
+    clippy::block_in_if_condition_stmt,
+    clippy::cognitive_complexity,
+    clippy::doc_markdown,
+    clippy::eval_order_dependence,
+    clippy::inherent_to_string,
+    clippy::large_enum_variant,
+    clippy::needless_pass_by_value,
+    clippy::never_loop,
+    clippy::suspicious_op_assign_impl,
+    clippy::too_many_arguments,
+    clippy::trivially_copy_pass_by_ref
 )]
 
-#![cfg_attr(
-    feature = "cargo-clippy",
-    allow(
-        cast_possible_truncation,
-        cast_possible_wrap,
-        empty_enum,
-        if_not_else,
-        items_after_statements,
-        module_name_repetitions,
-        shadow_unrelated,
-        similar_names,
-        single_match_else,
-        unseparated_literal_suffix,
-        use_self,
-        used_underscore_binding,
-    )
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::empty_enum,
+    clippy::if_not_else,
+    clippy::items_after_statements,
+    clippy::module_name_repetitions,
+    clippy::shadow_unrelated,
+    clippy::similar_names,
+    clippy::single_match_else,
+    clippy::unseparated_literal_suffix,
+    clippy::use_self,
+    clippy::used_underscore_binding
 )]
 
 #[cfg(all(
-    not(all(target_arch = "wasm32", target_os = "unknown")),
+    not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "wasi"))),
     feature = "proc-macro"
 ))]
 extern crate proc_macro;
@@ -272,6 +284,7 @@ extern crate unicode_xid;
 #[cfg(feature = "printing")]
 extern crate quote;
 
+#[cfg(any(feature = "full", feature = "derive"))]
 #[macro_use]
 mod macros;
 
@@ -285,109 +298,120 @@ pub mod group;
 pub mod token;
 
 mod ident;
-pub use ident::Ident;
+pub use crate::ident::Ident;
 
 #[cfg(any(feature = "full", feature = "derive"))]
 mod attr;
 #[cfg(any(feature = "full", feature = "derive"))]
-pub use attr::{AttrStyle, Attribute, AttributeArgs, Meta, MetaList, MetaNameValue, NestedMeta};
+pub use crate::attr::{
+    AttrStyle, Attribute, AttributeArgs, Meta, MetaList, MetaNameValue, NestedMeta,
+};
+
+#[cfg(any(feature = "full", feature = "derive"))]
+mod bigint;
 
 #[cfg(any(feature = "full", feature = "derive"))]
 mod data;
 #[cfg(any(feature = "full", feature = "derive"))]
-pub use data::{
+pub use crate::data::{
     Field, Fields, FieldsNamed, FieldsUnnamed, Variant, VisCrate, VisPublic, VisRestricted,
     Visibility,
 };
 
 #[cfg(any(feature = "full", feature = "derive"))]
 mod expr;
-#[cfg(any(feature = "full", feature = "derive"))]
-pub use expr::{
-    Expr, ExprArray, ExprAssign, ExprAssignOp, ExprAsync, ExprBinary, ExprBlock, ExprBox,
-    ExprBreak, ExprCall, ExprCast, ExprClosure, ExprContinue, ExprField, ExprForLoop, ExprGroup,
-    ExprIf, ExprInPlace, ExprIndex, ExprLet, ExprLit, ExprLoop, ExprMacro, ExprMatch,
-    ExprMethodCall, ExprParen, ExprPath, ExprRange, ExprReference, ExprRepeat, ExprReturn,
-    ExprStruct, ExprTry, ExprTryBlock, ExprTuple, ExprType, ExprUnary, ExprUnsafe, ExprVerbatim,
-    ExprWhile, ExprYield, Index, Member,
-};
-
 #[cfg(feature = "full")]
-pub use expr::{
-    Arm, Block, FieldPat, FieldValue, GenericMethodArgument, Label, Local, MethodTurbofish, Pat,
-    PatBox, PatIdent, PatLit, PatMacro, PatPath, PatRange, PatRef, PatSlice, PatStruct, PatTuple,
-    PatTupleStruct, PatVerbatim, PatWild, RangeLimits, Stmt,
+pub use crate::expr::{
+    Arm, FieldValue, GenericMethodArgument, Label, MethodTurbofish, RangeLimits,
+};
+#[cfg(any(feature = "full", feature = "derive"))]
+pub use crate::expr::{
+    Expr, ExprArray, ExprAssign, ExprAssignOp, ExprAsync, ExprAwait, ExprBinary, ExprBlock,
+    ExprBox, ExprBreak, ExprCall, ExprCast, ExprClosure, ExprContinue, ExprField, ExprForLoop,
+    ExprGroup, ExprIf, ExprIndex, ExprLet, ExprLit, ExprLoop, ExprMacro, ExprMatch, ExprMethodCall,
+    ExprParen, ExprPath, ExprRange, ExprReference, ExprRepeat, ExprReturn, ExprStruct, ExprTry,
+    ExprTryBlock, ExprTuple, ExprType, ExprUnary, ExprUnsafe, ExprWhile, ExprYield, Index, Member,
 };
 
 #[cfg(any(feature = "full", feature = "derive"))]
 mod generics;
 #[cfg(any(feature = "full", feature = "derive"))]
-pub use generics::{
+pub use crate::generics::{
     BoundLifetimes, ConstParam, GenericParam, Generics, LifetimeDef, PredicateEq,
     PredicateLifetime, PredicateType, TraitBound, TraitBoundModifier, TypeParam, TypeParamBound,
     WhereClause, WherePredicate,
 };
 #[cfg(all(any(feature = "full", feature = "derive"), feature = "printing"))]
-pub use generics::{ImplGenerics, Turbofish, TypeGenerics};
+pub use crate::generics::{ImplGenerics, Turbofish, TypeGenerics};
 
 #[cfg(feature = "full")]
 mod item;
 #[cfg(feature = "full")]
-pub use item::{
-    ArgCaptured, ArgSelf, ArgSelfRef, FnArg, FnDecl, ForeignItem, ForeignItemFn, ForeignItemMacro,
-    ForeignItemStatic, ForeignItemType, ForeignItemVerbatim, ImplItem, ImplItemConst,
-    ImplItemExistential, ImplItemMacro, ImplItemMethod, ImplItemType, ImplItemVerbatim, Item,
-    ItemConst, ItemEnum, ItemExistential, ItemExternCrate, ItemFn, ItemForeignMod, ItemImpl,
-    ItemMacro, ItemMacro2, ItemMod, ItemStatic, ItemStruct, ItemTrait, ItemTraitAlias, ItemType,
-    ItemUnion, ItemUse, ItemVerbatim, MethodSig, TraitItem, TraitItemConst, TraitItemMacro,
-    TraitItemMethod, TraitItemType, TraitItemVerbatim, UseGlob, UseGroup, UseName, UsePath,
-    UseRename, UseTree,
+pub use crate::item::{
+    FnArg, ForeignItem, ForeignItemFn, ForeignItemMacro, ForeignItemStatic, ForeignItemType,
+    ImplItem, ImplItemConst, ImplItemMacro, ImplItemMethod, ImplItemType, Item, ItemConst,
+    ItemEnum, ItemExternCrate, ItemFn, ItemForeignMod, ItemImpl, ItemMacro, ItemMacro2, ItemMod,
+    ItemStatic, ItemStruct, ItemTrait, ItemTraitAlias, ItemType, ItemUnion, ItemUse, Receiver,
+    Signature, TraitItem, TraitItemConst, TraitItemMacro, TraitItemMethod, TraitItemType, UseGlob,
+    UseGroup, UseName, UsePath, UseRename, UseTree,
 };
 
 #[cfg(feature = "full")]
 mod file;
 #[cfg(feature = "full")]
-pub use file::File;
+pub use crate::file::File;
 
 mod lifetime;
-pub use lifetime::Lifetime;
+pub use crate::lifetime::Lifetime;
 
 #[cfg(any(feature = "full", feature = "derive"))]
 mod lit;
 #[cfg(any(feature = "full", feature = "derive"))]
-pub use lit::{
-    FloatSuffix, IntSuffix, Lit, LitBool, LitByte, LitByteStr, LitChar, LitFloat, LitInt, LitStr,
-    LitVerbatim, StrStyle,
+pub use crate::lit::{
+    Lit, LitBool, LitByte, LitByteStr, LitChar, LitFloat, LitInt, LitStr, StrStyle,
 };
 
 #[cfg(any(feature = "full", feature = "derive"))]
 mod mac;
 #[cfg(any(feature = "full", feature = "derive"))]
-pub use mac::{Macro, MacroDelimiter};
+pub use crate::mac::{Macro, MacroDelimiter};
 
 #[cfg(any(feature = "full", feature = "derive"))]
 mod derive;
 #[cfg(feature = "derive")]
-pub use derive::{Data, DataEnum, DataStruct, DataUnion, DeriveInput};
+pub use crate::derive::{Data, DataEnum, DataStruct, DataUnion, DeriveInput};
 
 #[cfg(any(feature = "full", feature = "derive"))]
 mod op;
 #[cfg(any(feature = "full", feature = "derive"))]
-pub use op::{BinOp, UnOp};
+pub use crate::op::{BinOp, UnOp};
+
+#[cfg(feature = "full")]
+mod stmt;
+#[cfg(feature = "full")]
+pub use crate::stmt::{Block, Local, Stmt};
 
 #[cfg(any(feature = "full", feature = "derive"))]
 mod ty;
 #[cfg(any(feature = "full", feature = "derive"))]
-pub use ty::{
-    Abi, BareFnArg, BareFnArgName, ReturnType, Type, TypeArray, TypeBareFn, TypeGroup,
-    TypeImplTrait, TypeInfer, TypeMacro, TypeNever, TypeParen, TypePath, TypePtr, TypeReference,
-    TypeSlice, TypeTraitObject, TypeTuple, TypeVerbatim,
+pub use crate::ty::{
+    Abi, BareFnArg, ReturnType, Type, TypeArray, TypeBareFn, TypeGroup, TypeImplTrait, TypeInfer,
+    TypeMacro, TypeNever, TypeParen, TypePath, TypePtr, TypeReference, TypeSlice, TypeTraitObject,
+    TypeTuple, Variadic,
+};
+
+#[cfg(feature = "full")]
+mod pat;
+#[cfg(feature = "full")]
+pub use crate::pat::{
+    FieldPat, Pat, PatBox, PatIdent, PatLit, PatMacro, PatOr, PatPath, PatRange, PatReference,
+    PatRest, PatSlice, PatStruct, PatTuple, PatTupleStruct, PatType, PatWild,
 };
 
 #[cfg(any(feature = "full", feature = "derive"))]
 mod path;
 #[cfg(any(feature = "full", feature = "derive"))]
-pub use path::{
+pub use crate::path::{
     AngleBracketedGenericArguments, Binding, Constraint, GenericArgument,
     ParenthesizedGenericArguments, Path, PathArguments, PathSegment, QSelf,
 };
@@ -407,7 +431,7 @@ pub mod parse_quote;
 
 
 #[cfg(all(
-    not(all(target_arch = "wasm32", target_os = "unknown")),
+    not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "wasi"))),
     feature = "parsing",
     feature = "proc-macro"
 ))]
@@ -450,7 +474,92 @@ mod gen {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "visit")]
+    #[rustfmt::skip]
     pub mod visit;
 
     
@@ -487,7 +596,66 @@ mod gen {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "visit-mut")]
+    #[rustfmt::skip]
     pub mod visit_mut;
 
     
@@ -525,20 +693,70 @@ mod gen {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "fold")]
+    #[rustfmt::skip]
     pub mod fold;
 
     #[cfg(any(feature = "full", feature = "derive"))]
     #[path = "../gen_helper.rs"]
     mod helper;
 }
-pub use gen::*;
+pub use crate::gen::*;
 
 
 #[doc(hidden)]
 pub mod export;
 
-mod keyword;
+mod custom_keyword;
+mod custom_punctuation;
+mod sealed;
 
 #[cfg(feature = "parsing")]
 mod lookahead;
@@ -555,14 +773,19 @@ mod thread;
 
 
 
-#[cfg(any(feature = "parsing", feature = "full", feature = "derive"))]
-#[allow(non_camel_case_types)]
+#[allow(dead_code, non_camel_case_types)]
 struct private;
+
+
+#[cfg(feature = "parsing")]
+mod rustdoc_workaround {
+    pub use crate::parse::{self as parse_module};
+}
 
 
 
 mod error;
-pub use error::{Error, Result};
+pub use crate::error::{Error, Result};
 
 
 
@@ -606,14 +829,13 @@ pub use error::{Error, Result};
 
 
 #[cfg(all(
-    not(all(target_arch = "wasm32", target_os = "unknown")),
+    not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "wasi"))),
     feature = "parsing",
     feature = "proc-macro"
 ))]
 pub fn parse<T: parse::Parse>(tokens: proc_macro::TokenStream) -> Result<T> {
     parse::Parser::parse(T::parse, tokens)
 }
-
 
 
 
@@ -703,7 +925,7 @@ pub fn parse_str<T: parse::Parse>(s: &str) -> Result<T> {
 #[cfg(all(feature = "parsing", feature = "full"))]
 pub fn parse_file(mut content: &str) -> Result<File> {
     
-    const BOM: &'static str = "\u{feff}";
+    const BOM: &str = "\u{feff}";
     if content.starts_with(BOM) {
         content = &content[BOM.len()..];
     }

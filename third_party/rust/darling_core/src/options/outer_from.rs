@@ -1,7 +1,7 @@
 use syn::{self, Field, Ident, Meta};
 
 use options::{Core, DefaultExpression, ForwardAttrs, ParseAttribute, ParseData};
-use util::IdentList;
+use util::PathList;
 use {FromMeta, Result};
 
 
@@ -17,7 +17,7 @@ pub struct OuterFrom {
     pub container: Core,
 
     
-    pub attr_names: IdentList,
+    pub attr_names: PathList,
 
     
     
@@ -42,24 +42,20 @@ impl OuterFrom {
 
 impl ParseAttribute for OuterFrom {
     fn parse_nested(&mut self, mi: &Meta) -> Result<()> {
-        match mi.name().to_string().as_str() {
-            "attributes" => {
-                self.attr_names = FromMeta::from_meta(mi)?;
-                Ok(())
-            }
-            "forward_attrs" => {
-                self.forward_attrs = FromMeta::from_meta(mi)?;
-                Ok(())
-            }
-            "from_ident" => {
-                
-                
-                self.container.default = Some(DefaultExpression::Trait);
-                self.from_ident = true;
-                Ok(())
-            }
-            _ => self.container.parse_nested(mi),
+        let path = mi.path();
+        if path.is_ident("attributes") {
+            self.attr_names = FromMeta::from_meta(mi)?;
+        } else if path.is_ident("forward_attrs") {
+            self.forward_attrs = FromMeta::from_meta(mi)?;
+        } else if path.is_ident("from_ident") {
+            
+            
+            self.container.default = Some(DefaultExpression::Trait);
+            self.from_ident = true;
+        } else {
+            return self.container.parse_nested(mi)
         }
+        Ok(())
     }
 }
 

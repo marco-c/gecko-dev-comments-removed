@@ -36,6 +36,13 @@
 
 
 
+
+
+
+
+
+
+
 #[macro_export(local_inner_macros)]
 macro_rules! parse_macro_input {
     ($tokenstream:ident as $ty:ty) => {
@@ -54,7 +61,7 @@ macro_rules! parse_macro_input {
 
 
 
-use parse::{Parse, ParseStream, Parser, Result};
+use crate::parse::{Parse, ParseStream, Parser, Result};
 use proc_macro::TokenStream;
 
 
@@ -79,7 +86,7 @@ impl<T: Parse> ParseMacroInput for T {
 
 
 #[cfg(any(feature = "full", feature = "derive"))]
-use AttributeArgs;
+use crate::AttributeArgs;
 
 #[cfg(any(feature = "full", feature = "derive"))]
 impl ParseMacroInput for AttributeArgs {

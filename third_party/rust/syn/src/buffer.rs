@@ -8,17 +8,16 @@
 
 
 #[cfg(all(
-    not(all(target_arch = "wasm32", target_os = "unknown")),
+    not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "wasi"))),
     feature = "proc-macro"
 ))]
-use proc_macro as pm;
+use crate::proc_macro as pm;
 use proc_macro2::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 
 use std::marker::PhantomData;
 use std::ptr;
 
-use private;
-use Lifetime;
+use crate::Lifetime;
 
 
 
@@ -102,7 +101,7 @@ impl TokenBuffer {
     
     
     #[cfg(all(
-        not(all(target_arch = "wasm32", target_os = "unknown")),
+        not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "wasi"))),
         feature = "proc-macro"
     ))]
     pub fn new(stream: pm::TokenStream) -> TokenBuffer {
@@ -184,8 +183,8 @@ impl<'a> Cursor<'a> {
         }
 
         Cursor {
-            ptr: ptr,
-            scope: scope,
+            ptr,
+            scope,
             marker: PhantomData,
         }
     }
@@ -208,7 +207,7 @@ impl<'a> Cursor<'a> {
     
     
     fn ignore_none(&mut self) {
-        if let Entry::Group(ref group, ref buf) = *self.entry() {
+        if let Entry::Group(group, buf) = self.entry() {
             if group.delimiter() == Delimiter::None {
                 
                 
@@ -238,7 +237,7 @@ impl<'a> Cursor<'a> {
             self.ignore_none();
         }
 
-        if let Entry::Group(ref group, ref buf) = *self.entry() {
+        if let Entry::Group(group, buf) = self.entry() {
             if group.delimiter() == delim {
                 return Some((buf.begin(), group.span(), unsafe { self.bump() }));
             }
@@ -251,8 +250,8 @@ impl<'a> Cursor<'a> {
     
     pub fn ident(mut self) -> Option<(Ident, Cursor<'a>)> {
         self.ignore_none();
-        match *self.entry() {
-            Entry::Ident(ref ident) => Some((ident.clone(), unsafe { self.bump() })),
+        match self.entry() {
+            Entry::Ident(ident) => Some((ident.clone(), unsafe { self.bump() })),
             _ => None,
         }
     }
@@ -261,10 +260,8 @@ impl<'a> Cursor<'a> {
     
     pub fn punct(mut self) -> Option<(Punct, Cursor<'a>)> {
         self.ignore_none();
-        match *self.entry() {
-            Entry::Punct(ref op) if op.as_char() != '\'' => {
-                Some((op.clone(), unsafe { self.bump() }))
-            }
+        match self.entry() {
+            Entry::Punct(op) if op.as_char() != '\'' => Some((op.clone(), unsafe { self.bump() })),
             _ => None,
         }
     }
@@ -273,8 +270,8 @@ impl<'a> Cursor<'a> {
     
     pub fn literal(mut self) -> Option<(Literal, Cursor<'a>)> {
         self.ignore_none();
-        match *self.entry() {
-            Entry::Literal(ref lit) => Some((lit.clone(), unsafe { self.bump() })),
+        match self.entry() {
+            Entry::Literal(lit) => Some((lit.clone(), unsafe { self.bump() })),
             _ => None,
         }
     }
@@ -283,14 +280,14 @@ impl<'a> Cursor<'a> {
     
     pub fn lifetime(mut self) -> Option<(Lifetime, Cursor<'a>)> {
         self.ignore_none();
-        match *self.entry() {
-            Entry::Punct(ref op) if op.as_char() == '\'' && op.spacing() == Spacing::Joint => {
+        match self.entry() {
+            Entry::Punct(op) if op.as_char() == '\'' && op.spacing() == Spacing::Joint => {
                 let next = unsafe { self.bump() };
                 match next.ident() {
                     Some((ident, rest)) => {
                         let lifetime = Lifetime {
                             apostrophe: op.span(),
-                            ident: ident,
+                            ident,
                         };
                         Some((lifetime, rest))
                     }
@@ -321,11 +318,11 @@ impl<'a> Cursor<'a> {
     
     
     pub fn token_tree(self) -> Option<(TokenTree, Cursor<'a>)> {
-        let tree = match *self.entry() {
-            Entry::Group(ref group, _) => group.clone().into(),
-            Entry::Literal(ref lit) => lit.clone().into(),
-            Entry::Ident(ref ident) => ident.clone().into(),
-            Entry::Punct(ref op) => op.clone().into(),
+        let tree = match self.entry() {
+            Entry::Group(group, _) => group.clone().into(),
+            Entry::Literal(lit) => lit.clone().into(),
+            Entry::Ident(ident) => ident.clone().into(),
+            Entry::Punct(op) => op.clone().into(),
             Entry::End(..) => {
                 return None;
             }
@@ -337,30 +334,30 @@ impl<'a> Cursor<'a> {
     
     
     pub fn span(self) -> Span {
-        match *self.entry() {
-            Entry::Group(ref group, _) => group.span(),
-            Entry::Literal(ref l) => l.span(),
-            Entry::Ident(ref t) => t.span(),
-            Entry::Punct(ref o) => o.span(),
+        match self.entry() {
+            Entry::Group(group, _) => group.span(),
+            Entry::Literal(l) => l.span(),
+            Entry::Ident(t) => t.span(),
+            Entry::Punct(o) => o.span(),
             Entry::End(..) => Span::call_site(),
         }
     }
 }
 
-impl private {
-    #[cfg(procmacro2_semver_exempt)]
-    pub fn open_span_of_group(cursor: Cursor) -> Span {
-        match *cursor.entry() {
-            Entry::Group(ref group, _) => group.span_open(),
-            _ => cursor.span(),
-        }
-    }
+pub(crate) fn same_scope(a: Cursor, b: Cursor) -> bool {
+    a.scope == b.scope
+}
 
-    #[cfg(procmacro2_semver_exempt)]
-    pub fn close_span_of_group(cursor: Cursor) -> Span {
-        match *cursor.entry() {
-            Entry::Group(ref group, _) => group.span_close(),
-            _ => cursor.span(),
-        }
+pub(crate) fn open_span_of_group(cursor: Cursor) -> Span {
+    match cursor.entry() {
+        Entry::Group(group, _) => group.span_open(),
+        _ => cursor.span(),
+    }
+}
+
+pub(crate) fn close_span_of_group(cursor: Cursor) -> Span {
+    match cursor.entry() {
+        Entry::Group(group, _) => group.span_close(),
+        _ => cursor.span(),
     }
 }

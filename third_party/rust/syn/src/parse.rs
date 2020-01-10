@@ -188,6 +188,9 @@
 
 
 
+#[path = "discouraged.rs"]
+pub mod discouraged;
+
 use std::cell::Cell;
 use std::fmt::{self, Debug, Display};
 use std::marker::PhantomData;
@@ -197,21 +200,20 @@ use std::rc::Rc;
 use std::str::FromStr;
 
 #[cfg(all(
-    not(all(target_arch = "wasm32", target_os = "unknown")),
+    not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "wasi"))),
     feature = "proc-macro"
 ))]
-use proc_macro;
+use crate::proc_macro;
 use proc_macro2::{self, Delimiter, Group, Literal, Punct, Span, TokenStream, TokenTree};
 
-use buffer::{Cursor, TokenBuffer};
-use error;
-use lookahead;
-use private;
-use punctuated::Punctuated;
-use token::Token;
+use crate::buffer::{Cursor, TokenBuffer};
+use crate::error;
+use crate::lookahead;
+use crate::punctuated::Punctuated;
+use crate::token::Token;
 
-pub use error::{Error, Result};
-pub use lookahead::{Lookahead1, Peek};
+pub use crate::error::{Error, Result};
+pub use crate::lookahead::{Lookahead1, Peek};
 
 
 
@@ -226,7 +228,6 @@ pub trait Parse: Sized {
 
 
 pub type ParseStream<'a> = &'a ParseBuffer<'a>;
-
 
 
 
@@ -365,15 +366,13 @@ impl<'c, 'a> StepCursor<'c, 'a> {
     }
 }
 
-impl private {
-    pub fn advance_step_cursor<'c, 'a>(proof: StepCursor<'c, 'a>, to: Cursor<'c>) -> Cursor<'a> {
-        
-        
-        
-        
-        let _ = proof;
-        unsafe { mem::transmute::<Cursor<'c>, Cursor<'a>>(to) }
-    }
+pub(crate) fn advance_step_cursor<'c, 'a>(proof: StepCursor<'c, 'a>, to: Cursor<'c>) -> Cursor<'a> {
+    
+    
+    
+    
+    let _ = proof;
+    unsafe { mem::transmute::<Cursor<'c>, Cursor<'a>>(to) }
 }
 
 fn skip(input: ParseStream) -> bool {
@@ -390,24 +389,22 @@ fn skip(input: ParseStream) -> bool {
         .unwrap()
 }
 
-impl private {
-    pub fn new_parse_buffer(
-        scope: Span,
-        cursor: Cursor,
-        unexpected: Rc<Cell<Option<Span>>>,
-    ) -> ParseBuffer {
-        ParseBuffer {
-            scope: scope,
-            
-            cell: Cell::new(unsafe { mem::transmute::<Cursor, Cursor<'static>>(cursor) }),
-            marker: PhantomData,
-            unexpected: unexpected,
-        }
+pub(crate) fn new_parse_buffer(
+    scope: Span,
+    cursor: Cursor,
+    unexpected: Rc<Cell<Option<Span>>>,
+) -> ParseBuffer {
+    ParseBuffer {
+        scope,
+        
+        cell: Cell::new(unsafe { mem::transmute::<Cursor, Cursor<'static>>(cursor) }),
+        marker: PhantomData,
+        unexpected,
     }
+}
 
-    pub fn get_unexpected(buffer: &ParseBuffer) -> Rc<Cell<Option<Span>>> {
-        buffer.unexpected.clone()
-    }
+pub(crate) fn get_unexpected(buffer: &ParseBuffer) -> Rc<Cell<Option<Span>>> {
+    buffer.unexpected.clone()
 }
 
 impl<'a> ParseBuffer<'a> {
@@ -457,6 +454,7 @@ impl<'a> ParseBuffer<'a> {
         function(self)
     }
 
+    
     
     
     
@@ -837,6 +835,12 @@ impl<'a> ParseBuffer<'a> {
     
     
     
+    
+    
+    
+    
+    
+    
     pub fn fork(&self) -> Self {
         ParseBuffer {
             scope: self.scope,
@@ -1062,7 +1066,7 @@ pub trait Parser: Sized {
     
     
     #[cfg(all(
-        not(all(target_arch = "wasm32", target_os = "unknown")),
+        not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "wasi"))),
         feature = "proc-macro"
     ))]
     fn parse(self, tokens: proc_macro::TokenStream) -> Result<Self::Output> {
@@ -1081,13 +1085,26 @@ pub trait Parser: Sized {
     fn parse_str(self, s: &str) -> Result<Self::Output> {
         self.parse2(proc_macro2::TokenStream::from_str(s)?)
     }
+
+    
+    #[doc(hidden)]
+    fn __parse_scoped(self, scope: Span, tokens: TokenStream) -> Result<Self::Output> {
+        let _ = scope;
+        self.parse2(tokens)
+    }
+
+    
+    #[doc(hidden)]
+    fn __parse_stream(self, input: ParseStream) -> Result<Self::Output> {
+        input.parse().and_then(|tokens| self.parse2(tokens))
+    }
 }
 
 fn tokens_to_parse_buffer(tokens: &TokenBuffer) -> ParseBuffer {
     let scope = Span::call_site();
     let cursor = tokens.begin();
     let unexpected = Rc::new(Cell::new(None));
-    private::new_parse_buffer(scope, cursor, unexpected)
+    new_parse_buffer(scope, cursor, unexpected)
 }
 
 impl<F, T> Parser for F
@@ -1106,5 +1123,71 @@ where
         } else {
             Err(state.error("unexpected token"))
         }
+    }
+
+    #[doc(hidden)]
+    fn __parse_scoped(self, scope: Span, tokens: TokenStream) -> Result<Self::Output> {
+        let buf = TokenBuffer::new2(tokens);
+        let cursor = buf.begin();
+        let unexpected = Rc::new(Cell::new(None));
+        let state = new_parse_buffer(scope, cursor, unexpected);
+        let node = self(&state)?;
+        state.check_unexpected()?;
+        if state.is_empty() {
+            Ok(node)
+        } else {
+            Err(state.error("unexpected token"))
+        }
+    }
+
+    #[doc(hidden)]
+    fn __parse_stream(self, input: ParseStream) -> Result<Self::Output> {
+        self(input)
+    }
+}
+
+pub(crate) fn parse_scoped<F: Parser>(f: F, scope: Span, tokens: TokenStream) -> Result<F::Output> {
+    f.__parse_scoped(scope, tokens)
+}
+
+pub(crate) fn parse_stream<F: Parser>(f: F, input: ParseStream) -> Result<F::Output> {
+    f.__parse_stream(input)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct Nothing;
+
+impl Parse for Nothing {
+    fn parse(_input: ParseStream) -> Result<Self> {
+        Ok(Nothing)
     }
 }

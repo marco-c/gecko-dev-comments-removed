@@ -1,6 +1,8 @@
 use std;
-use std::fmt::{self, Display};
+use std::fmt::{self, Debug, Display};
 use std::iter::FromIterator;
+use std::slice;
+use std::vec;
 
 use proc_macro2::{
     Delimiter, Group, Ident, LexError, Literal, Punct, Spacing, Span, TokenStream, TokenTree,
@@ -9,10 +11,8 @@ use proc_macro2::{
 use quote::ToTokens;
 
 #[cfg(feature = "parsing")]
-use buffer::Cursor;
-#[cfg(all(procmacro2_semver_exempt, feature = "parsing"))]
-use private;
-use thread::ThreadBound;
+use crate::buffer::Cursor;
+use crate::thread::ThreadBound;
 
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -24,8 +24,70 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 
 
-#[derive(Debug)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone)]
 pub struct Error {
+    messages: Vec<ErrorMessage>,
+}
+
+struct ErrorMessage {
     
     
     
@@ -49,11 +111,11 @@ impl Error {
     /// Use `Error::new` when the error needs to be triggered on some span other
     /// than where the parse stream is currently positioned.
     ///
-    /// [`ParseStream::error`]: struct.ParseBuffer.html#method.error
+    /// [`ParseStream::error`]: crate::parse::ParseBuffer::error
     ///
     /// # Example
     ///
-    /// ```edition2018
+    /// ```
     /// use syn::{Error, Ident, LitStr, Result, Token};
     /// use syn::parse::ParseStream;
     ///
@@ -74,9 +136,11 @@ impl Error {
     /// ```
     pub fn new<T: Display>(span: Span, message: T) -> Self {
         Error {
-            start_span: ThreadBound::new(span),
-            end_span: ThreadBound::new(span),
-            message: message.to_string(),
+            messages: vec![ErrorMessage {
+                start_span: ThreadBound::new(span),
+                end_span: ThreadBound::new(span),
+                message: message.to_string(),
+            }],
         }
     }
 
@@ -99,9 +163,11 @@ impl Error {
         let start = iter.next().map_or_else(Span::call_site, |t| t.span());
         let end = iter.last().map_or(start, |t| t.span());
         Error {
-            start_span: ThreadBound::new(start),
-            end_span: ThreadBound::new(end),
-            message: message.to_string(),
+            messages: vec![ErrorMessage {
+                start_span: ThreadBound::new(start),
+                end_span: ThreadBound::new(end),
+                message: message.to_string(),
+            }],
         }
     }
 
@@ -111,23 +177,15 @@ impl Error {
     /// if called from a different thread than the one on which the `Error` was
     /// originally created.
     pub fn span(&self) -> Span {
-        let start = match self.start_span.get() {
+        let start = match self.messages[0].start_span.get() {
             Some(span) => *span,
             None => return Span::call_site(),
         };
-
-        #[cfg(procmacro2_semver_exempt)]
-        {
-            let end = match self.end_span.get() {
-                Some(span) => *span,
-                None => return Span::call_site(),
-            };
-            start.join(end).unwrap_or(start)
-        }
-        #[cfg(not(procmacro2_semver_exempt))]
-        {
-            start
-        }
+        let end = match self.messages[0].end_span.get() {
+            Some(span) => *span,
+            None => return Span::call_site(),
+        };
+        start.join(end).unwrap_or(start)
     }
 
     /// Render the error as an invocation of [`compile_error!`].
@@ -136,8 +194,22 @@ impl Error {
     /// this method correctly in a procedural macro.
     ///
     /// [`compile_error!`]: https://doc.rust-lang.org/std/macro.compile_error.html
-    /// [`parse_macro_input!`]: ../macro.parse_macro_input.html
     pub fn to_compile_error(&self) -> TokenStream {
+        self.messages
+            .iter()
+            .map(ErrorMessage::to_compile_error)
+            .collect()
+    }
+
+    /// Add another error message to self such that when `to_compile_error()` is
+    /// called, both errors will be emitted together.
+    pub fn combine(&mut self, another: Error) {
+        self.messages.extend(another.messages)
+    }
+}
+
+impl ErrorMessage {
+    fn to_compile_error(&self) -> TokenStream {
         let start = self
             .start_span
             .get()
@@ -173,21 +245,40 @@ pub fn new_at<T: Display>(scope: Span, cursor: Cursor, message: T) -> Error {
     if cursor.eof() {
         Error::new(scope, format!("unexpected end of input, {}", message))
     } else {
-        #[cfg(procmacro2_semver_exempt)]
-        let span = private::open_span_of_group(cursor);
-        #[cfg(not(procmacro2_semver_exempt))]
-        let span = cursor.span();
+        let span = crate::buffer::open_span_of_group(cursor);
         Error::new(span, message)
+    }
+}
+
+impl Debug for Error {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        if self.messages.len() == 1 {
+            formatter
+                .debug_tuple("Error")
+                .field(&self.messages[0])
+                .finish()
+        } else {
+            formatter
+                .debug_tuple("Error")
+                .field(&self.messages)
+                .finish()
+        }
+    }
+}
+
+impl Debug for ErrorMessage {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        Debug::fmt(&self.message, formatter)
     }
 }
 
 impl Display for Error {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str(&self.message)
+        formatter.write_str(&self.messages[0].message)
     }
 }
 
-impl Clone for Error {
+impl Clone for ErrorMessage {
     fn clone(&self) -> Self {
         let start = self
             .start_span
@@ -195,7 +286,7 @@ impl Clone for Error {
             .cloned()
             .unwrap_or_else(Span::call_site);
         let end = self.end_span.get().cloned().unwrap_or_else(Span::call_site);
-        Error {
+        ErrorMessage {
             start_span: ThreadBound::new(start),
             end_span: ThreadBound::new(end),
             message: self.message.clone(),
@@ -212,5 +303,55 @@ impl std::error::Error for Error {
 impl From<LexError> for Error {
     fn from(err: LexError) -> Self {
         Error::new(Span::call_site(), format!("{:?}", err))
+    }
+}
+
+impl IntoIterator for Error {
+    type Item = Error;
+    type IntoIter = IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter {
+            messages: self.messages.into_iter(),
+        }
+    }
+}
+
+pub struct IntoIter {
+    messages: vec::IntoIter<ErrorMessage>,
+}
+
+impl Iterator for IntoIter {
+    type Item = Error;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        Some(Error {
+            messages: vec![self.messages.next()?],
+        })
+    }
+}
+
+impl<'a> IntoIterator for &'a Error {
+    type Item = Error;
+    type IntoIter = Iter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        Iter {
+            messages: self.messages.iter(),
+        }
+    }
+}
+
+pub struct Iter<'a> {
+    messages: slice::Iter<'a, ErrorMessage>,
+}
+
+impl<'a> Iterator for Iter<'a> {
+    type Item = Error;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        Some(Error {
+            messages: vec![self.messages.next()?.clone()],
+        })
     }
 }

@@ -3,12 +3,9 @@
 
 
 
-pub use syn::{parse_str, parse, DeriveInput};
-pub use proc_macro::TokenStream as TokenStream;
+pub use proc_macro::TokenStream;
 pub use proc_macro2::TokenStream as TokenStream2;
-
-
-
+pub use syn::{parse, parse_str, DeriveInput};
 
 
 
@@ -61,17 +58,68 @@ macro_rules! decl_derive {
         #[allow(non_snake_case)]
         pub fn $derives(
             i: $crate::macros::TokenStream
-        ) -> $crate::macros::TokenStream
-        {
-            let parsed = $crate::macros::parse::<$crate::macros::DeriveInput>(i)
-                .expect(concat!("Failed to parse input to `#[derive(",
-                                stringify!($derives),
-                                ")]`"));
-            $inner($crate::Structure::new(&parsed)).into()
+        ) -> $crate::macros::TokenStream {
+            match $crate::macros::parse::<$crate::macros::DeriveInput>(i) {
+                Ok(p) => {
+                    match $crate::Structure::try_new(&p) {
+                        Ok(s) => $crate::MacroResult::into_stream($inner(s)),
+                        Err(e) => e.to_compile_error().into(),
+                    }
+                }
+                Err(e) => e.to_compile_error().into(),
+            }
         }
     };
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[macro_export]
+macro_rules! decl_attribute {
+    ([$attribute:ident] => $inner:path) => {
+        #[proc_macro_attribute]
+        pub fn $attribute(
+            attr: $crate::macros::TokenStream,
+            i: $crate::macros::TokenStream,
+        ) -> $crate::macros::TokenStream {
+            match $crate::macros::parse::<$crate::macros::DeriveInput>(i) {
+                Ok(p) => match $crate::Structure::try_new(&p) {
+                    Ok(s) => $crate::MacroResult::into_stream($inner(attr.into(), s)),
+                    Err(e) => e.to_compile_error().into(),
+                },
+                Err(e) => e.to_compile_error().into(),
+            }
+        }
+    };
+}
 
 
 
@@ -113,7 +161,7 @@ macro_rules! test_derive {
                 $($o)*
             }
 
-            test_derive!($name { $($i)* } expands to { $($o)* } no_build);
+            $crate::test_derive!($name { $($i)* } expands to { $($o)* } no_build);
         }
     };
 
@@ -121,11 +169,20 @@ macro_rules! test_derive {
         {
             let i = stringify!( $($i)* );
             let parsed = $crate::macros::parse_str::<$crate::macros::DeriveInput>(i)
-                .expect(concat!("Failed to parse input to `#[derive(",
-                                stringify!($name),
-                                ")]`"));
+                .expect(concat!(
+                    "Failed to parse input to `#[derive(",
+                    stringify!($name),
+                    ")]`",
+                ));
 
-            let res = $name($crate::Structure::new(&parsed));
+            let raw_res = $name($crate::Structure::new(&parsed));
+            let res = $crate::MacroResult::into_result(raw_res)
+                .expect(concat!(
+                    "Procedural macro failed for `#[derive(",
+                    stringify!($name),
+                    ")]`",
+                ));
+
             let expected = stringify!( $($o)* )
                 .parse::<$crate::macros::TokenStream2>()
                 .expect("output should be a valid TokenStream");
@@ -146,270 +203,6 @@ got:
                     $crate::unpretty_print(&res),
                 );
             }
-            // assert_eq!(res, expected_toks)
         }
     };
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(feature = "simple-derive")]
-#[macro_export]
-macro_rules! simple_derive {
-    
-    (
-        $iname:ident impl $path:path { $($rest:tt)* }
-    ) => {
-        simple_derive!(__I [$iname, $path] { $($rest)* } [] []);
-    };
-
-    
-    (
-        __I $opt:tt {
-            filter($s:ident) {
-                $($body:tt)*
-            }
-            $($rest:tt)*
-        } [$($done:tt)*] [$($filter:tt)*]
-    ) => {
-        simple_derive!(
-            __I $opt { $($rest)* } [$($done)*] [
-                $($filter)*
-                [
-                    st_name = $s,
-                    body = {
-                        $($body)*
-                    },
-                ]
-            ]
-        );
-    };
-
-    
-    (
-        __I $opt:tt {
-            fn $fn_name:ident (&self as $s:ident $($params:tt)*) $(-> $t:ty)* {
-                $($body:tt)*
-            }
-            $($rest:tt)*
-        } [$($done:tt)*] [$($filter:tt)*]
-    ) => {
-        simple_derive!(
-            __I $opt { $($rest)* } [
-                $($done)*
-                [
-                    st_name = $s,
-                    bind_style = Ref,
-                    body = { $($body)* },
-                    result = result,
-                    expanded = {
-                        fn $fn_name(&self $($params)*) $(-> $t)* {
-                            match *self { #result }
-                        }
-                    },
-                ]
-            ] [$($filter)*]
-        );
-    };
-
-    
-    (
-        __I $opt:tt {
-            fn $fn_name:ident (&mut self as $s:ident $($params:tt)*) $(-> $t:ty)* {
-                $($body:tt)*
-            }
-            $($rest:tt)*
-        } [$($done:tt)*] [$($filter:tt)*]
-    ) => {
-        simple_derive!(
-            __I $opt { $($rest)* } [
-                $($done)*
-                [
-                    st_name = $s,
-                    bind_style = RefMut,
-                    body = { $($body)* },
-                    result = result,
-                    expanded = {
-                        fn $fn_name(&mut self $($params)*) $(-> $t)* {
-                            match *self { #result }
-                        }
-                    },
-                ]
-            ] [$($filter)*]
-        );
-    };
-
-    
-    (
-        __I $opt:tt {
-            fn $fn_name:ident (self as $s:ident $($params:tt)*) $(-> $t:ty)* {
-                $($body:tt)*
-            }
-            $($rest:tt)*
-        } [$($done:tt)*] [$($filter:tt)*]
-    ) => {
-        simple_derive!(
-            __I $opt { $($rest)* } [
-                $($done)*
-                [
-                    st_name = $s,
-                    bind_style = Move,
-                    body = { $($body)* },
-                    result = result,
-                    expanded = {
-                        fn $fn_name(self $($params)*) $(-> $t)* {
-                            match self { #result }
-                        }
-                    },
-                ]
-            ] [$($filter)*]
-        );
-    };
-
-    
-
-    
-    (
-        __I [$iname:ident, $path:path] {} [$(
-            [
-                st_name = $st_name:ident,
-                bind_style = $bind_style:ident,
-                body = $body:tt,
-                result = $result:ident,
-                expanded = { $($expanded:tt)* },
-            ]
-        )*] [$(
-            [
-                st_name = $filter_st_name:ident,
-                body = $filter_body:tt,
-            ]
-        )*]
-    ) => {
-        fn $iname(mut st: $crate::Structure) -> $crate::macros::TokenStream2 {
-            let _ = &mut st; // Silence the unused mut warning
-
-            // Filter/transform the `Structure` object before cloning it for
-            // individual methods.
-            $(
-                {
-                    let $filter_st_name = &mut st;
-                    $filter_body
-                }
-            )*
-
-            // Clone the `Structure` object and set the correct binding style,
-            // then perform method specific expansion.
-            $(
-                let $result = {
-                    let mut $st_name = st.clone();
-                    $st_name.bind_with(|_| ::synstructure::BindStyle::$bind_style);
-                    let $result = {
-                        $body
-                    };
-                    quote!{ $($expanded)* }
-                };
-            )*
-
-            st.bound_impl(quote!($path), quote!{
-                $(#$result)*
-            })
-        }
-    }
 }

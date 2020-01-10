@@ -149,43 +149,27 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 extern crate proc_macro;
-extern crate proc_macro2;
-#[macro_use]
-extern crate quote;
-#[macro_use]
-extern crate syn;
-extern crate unicode_xid;
 
 use std::collections::HashSet;
 
-use syn::{
-    Generics, Ident, Attribute, Field, Fields, Expr, DeriveInput,
-    TraitBound, WhereClause, GenericParam, Data, WherePredicate,
-    TypeParamBound, Type, TypeMacro, FieldsUnnamed, FieldsNamed,
-    PredicateType, TypePath, token, punctuated,
-};
+use syn::parse::{ParseStream, Parser};
 use syn::visit::{self, Visit};
+use syn::{
+    braced, punctuated, token, Attribute, Data, DeriveInput, Error, Expr, Field, Fields,
+    FieldsNamed, FieldsUnnamed, GenericParam, Generics, Ident, PredicateType, Result, Token,
+    TraitBound, Type, TypeMacro, TypeParamBound, TypePath, WhereClause, WherePredicate,
+};
 
+use quote::{quote_spanned, format_ident, ToTokens};
 
 
 #[doc(hidden)]
-pub use quote::*;
-use proc_macro2::{TokenStream, TokenTree};
+pub use quote::quote;
 
 use unicode_xid::UnicodeXID;
 
-use proc_macro2::Span;
+use proc_macro2::{Span, TokenStream, TokenTree};
 
 
 
@@ -223,7 +207,7 @@ pub enum BindStyle {
 
 impl ToTokens for BindStyle {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        match *self {
+        match self {
             BindStyle::Move => {}
             BindStyle::MoveMut => quote_spanned!(Span::call_site() => mut).to_tokens(tokens),
             BindStyle::Ref => quote_spanned!(Span::call_site() => ref).to_tokens(tokens),
@@ -249,9 +233,8 @@ fn fetch_generics<'a>(set: &[bool], generics: &'a Generics) -> Vec<&'a Ident> {
     let mut tys = vec![];
     for (&seen, param) in set.iter().zip(generics.params.iter()) {
         if seen {
-            match *param {
-                GenericParam::Type(ref tparam) => tys.push(&tparam.ident),
-                _ => {}
+            if let GenericParam::Type(tparam) = param {
+                tys.push(&tparam.ident)
             }
         }
     }
@@ -262,30 +245,48 @@ fn fetch_generics<'a>(set: &[bool], generics: &'a Generics) -> Vec<&'a Ident> {
 fn sanitize_ident(s: &str) -> Ident {
     let mut res = String::with_capacity(s.len());
     for mut c in s.chars() {
-        if ! UnicodeXID::is_xid_continue(c) { c = '_' }
+        if !UnicodeXID::is_xid_continue(c) {
+            c = '_'
+        }
         
-        if res.ends_with('_') && c == '_' { continue }
+        if res.ends_with('_') && c == '_' {
+            continue;
+        }
         res.push(c);
     }
     Ident::new(&res, Span::call_site())
 }
 
 
-fn merge_generics(into: &mut Generics, from: &Generics) {
+fn merge_generics(into: &mut Generics, from: &Generics) -> Result<()> {
     
-    'outer: for p in &from.params {
+    for p in &from.params {
         for op in &into.params {
             match (op, p) {
-                (&GenericParam::Type(ref otp), &GenericParam::Type(ref tp)) => {
+                (GenericParam::Type(otp), GenericParam::Type(tp)) => {
                     
                     if otp.ident == tp.ident {
-                        panic!("Attempted to merge conflicting generic params: {} and {}", quote!{#op}, quote!{#p});
+                        return Err(Error::new_spanned(
+                            p,
+                            format!(
+                                "Attempted to merge conflicting generic parameters: {} and {}",
+                                quote!(#op),
+                                quote!(#p)
+                            ),
+                        ));
                     }
                 }
-                (&GenericParam::Lifetime(ref olp), &GenericParam::Lifetime(ref lp)) => {
+                (GenericParam::Lifetime(olp), GenericParam::Lifetime(lp)) => {
                     
                     if olp.lifetime == lp.lifetime {
-                        panic!("Attempted to merge conflicting generic params: {} and {}", quote!{#op}, quote!{#p});
+                        return Err(Error::new_spanned(
+                            p,
+                            format!(
+                                "Attempted to merge conflicting generic parameters: {} and {}",
+                                quote!(#op),
+                                quote!(#p)
+                            ),
+                        ));
                     }
                 }
                 
@@ -296,10 +297,29 @@ fn merge_generics(into: &mut Generics, from: &Generics) {
     }
 
     
-    if let Some(ref from_clause) = from.where_clause {
+    if let Some(from_clause) = &from.where_clause {
         into.make_where_clause()
             .predicates
             .extend(from_clause.predicates.iter().cloned());
+    }
+
+    Ok(())
+}
+
+
+
+
+fn get_or_insert_with<T, F>(opt: &mut Option<T>, f: F) -> &mut T
+where
+    F: FnOnce() -> T,
+{
+    if opt.is_none() {
+        *opt = Some(f());
+    }
+
+    match opt {
+        Some(v) => v,
+        None => unreachable!(),
     }
 }
 
@@ -357,26 +377,15 @@ impl<'a> BindingInfo<'a> {
     
     
     
-    
-    
-    
-    
-    
     pub fn pat(&self) -> TokenStream {
         let BindingInfo {
-            ref binding,
-            ref style,
+            binding,
+            style,
             ..
-        } = *self;
+        } = self;
         quote!(#style #binding)
     }
 
-    
-    
-    
-    
-    
-    
     
     
     
@@ -433,7 +442,7 @@ pub struct VariantInfo<'a> {
 
 
 
-fn get_ty_params<'a>(field: &Field, generics: &Generics) -> Vec<bool> {
+fn get_ty_params(field: &Field, generics: &Generics) -> Vec<bool> {
     
     
     struct BoundTypeLocator<'a> {
@@ -446,7 +455,7 @@ fn get_ty_params<'a>(field: &Field, generics: &Generics) -> Vec<bool> {
         
         fn visit_ident(&mut self, id: &Ident) {
             for (idx, i) in self.generics.params.iter().enumerate() {
-                if let GenericParam::Type(ref tparam) = *i {
+                if let GenericParam::Type(tparam) = i {
                     if tparam.ident == *id {
                         self.result[idx] = true;
                     }
@@ -466,7 +475,7 @@ fn get_ty_params<'a>(field: &Field, generics: &Generics) -> Vec<bool> {
 
     let mut btl = BoundTypeLocator {
         result: vec![false; generics.params.len()],
-        generics: generics,
+        generics,
     };
 
     btl.visit_type(&field.ty);
@@ -476,23 +485,26 @@ fn get_ty_params<'a>(field: &Field, generics: &Generics) -> Vec<bool> {
 
 impl<'a> VariantInfo<'a> {
     fn new(ast: VariantAst<'a>, prefix: Option<&'a Ident>, generics: &'a Generics) -> Self {
-        let bindings = match *ast.fields {
+        let bindings = match ast.fields {
             Fields::Unit => vec![],
-            Fields::Unnamed(FieldsUnnamed { unnamed: ref fields, .. }) |
-            Fields::Named(FieldsNamed { named: ref fields, .. }) => {
-                fields.into_iter()
+            Fields::Unnamed(FieldsUnnamed {
+                unnamed: fields,
+                ..
+            })
+            | Fields::Named(FieldsNamed {
+                named: fields, ..
+            }) => {
+                fields
+                    .into_iter()
                     .enumerate()
                     .map(|(i, field)| {
                         BindingInfo {
                             
                             
-                            binding: Ident::new(
-                                &format!("__binding_{}", i),
-                                Span::call_site(),
-                            ),
+                            binding: format_ident!("__binding_{}", i),
                             style: BindStyle::Ref,
-                            field: field,
-                            generics: generics,
+                            field,
+                            generics,
                             seen_generics: get_ty_params(field, generics),
                         }
                     })
@@ -501,11 +513,11 @@ impl<'a> VariantInfo<'a> {
         };
 
         VariantInfo {
-            prefix: prefix,
-            bindings: bindings,
+            prefix,
+            bindings,
             omitted_fields: false,
-            ast: ast,
-            generics: generics,
+            ast,
+            generics,
         }
     }
 
@@ -550,11 +562,6 @@ impl<'a> VariantInfo<'a> {
     
     
     
-    
-    
-    
-    
-    
     pub fn pat(&self) -> TokenStream {
         let mut t = TokenStream::new();
         if let Some(prefix) = self.prefix {
@@ -562,43 +569,34 @@ impl<'a> VariantInfo<'a> {
             quote!(::).to_tokens(&mut t);
         }
         self.ast.ident.to_tokens(&mut t);
-        match *self.ast.fields {
+        match self.ast.fields {
             Fields::Unit => {
-                assert!(self.bindings.len() == 0);
+                assert!(self.bindings.is_empty());
             }
-            Fields::Unnamed(..) => {
-                token::Paren(Span::call_site()).surround(&mut t, |t| {
-                    for binding in &self.bindings {
-                        binding.pat().to_tokens(t);
-                        quote!(,).to_tokens(t);
-                    }
-                    if self.omitted_fields {
-                        quote!(..).to_tokens(t);
-                    }
-                })
-            }
-            Fields::Named(..) => {
-                token::Brace(Span::call_site()).surround(&mut t, |t| {
-                    for binding in &self.bindings {
-                        binding.field.ident.to_tokens(t);
-                        quote!(:).to_tokens(t);
-                        binding.pat().to_tokens(t);
-                        quote!(,).to_tokens(t);
-                    }
-                    if self.omitted_fields {
-                        quote!(..).to_tokens(t);
-                    }
-                })
-            }
+            Fields::Unnamed(..) => token::Paren(Span::call_site()).surround(&mut t, |t| {
+                for binding in &self.bindings {
+                    binding.pat().to_tokens(t);
+                    quote!(,).to_tokens(t);
+                }
+                if self.omitted_fields {
+                    quote!(..).to_tokens(t);
+                }
+            }),
+            Fields::Named(..) => token::Brace(Span::call_site()).surround(&mut t, |t| {
+                for binding in &self.bindings {
+                    binding.field.ident.to_tokens(t);
+                    quote!(:).to_tokens(t);
+                    binding.pat().to_tokens(t);
+                    quote!(,).to_tokens(t);
+                }
+                if self.omitted_fields {
+                    quote!(..).to_tokens(t);
+                }
+            }),
         }
         t
     }
 
-    
-    
-    
-    
-    
     
     
     
@@ -642,9 +640,9 @@ impl<'a> VariantInfo<'a> {
         }
         self.ast.ident.to_tokens(&mut t);
 
-        match *self.ast.fields {
+        match &self.ast.fields {
             Fields::Unit => (),
-            Fields::Unnamed(FieldsUnnamed { ref unnamed, .. }) => {
+            Fields::Unnamed(FieldsUnnamed { unnamed, .. }) => {
                 token::Paren::default().surround(&mut t, |t| {
                     for (i, field) in unnamed.into_iter().enumerate() {
                         func(field, i).to_tokens(t);
@@ -652,7 +650,7 @@ impl<'a> VariantInfo<'a> {
                     }
                 })
             }
-            Fields::Named(FieldsNamed { ref named, .. }) => {
+            Fields::Named(FieldsNamed { named, .. }) => {
                 token::Brace::default().surround(&mut t, |t| {
                     for (i, field) in named.into_iter().enumerate() {
                         field.ident.to_tokens(t);
@@ -694,14 +692,9 @@ impl<'a> VariantInfo<'a> {
     
     
     
-    
-    
-    
-    
-    
     pub fn each<F, R>(&self, mut f: F) -> TokenStream
     where
-        F: FnMut(&BindingInfo) -> R,
+        F: FnMut(&BindingInfo<'_>) -> R,
         R: ToTokens,
     {
         let pat = self.pat();
@@ -742,14 +735,9 @@ impl<'a> VariantInfo<'a> {
     
     
     
-    
-    
-    
-    
-    
     pub fn fold<F, I, R>(&self, init: I, mut f: F) -> TokenStream
     where
-        F: FnMut(TokenStream, &BindingInfo) -> R,
+        F: FnMut(TokenStream, &BindingInfo<'_>) -> R,
         I: ToTokens,
         R: ToTokens,
     {
@@ -798,15 +786,9 @@ impl<'a> VariantInfo<'a> {
     
     
     
-    
-    
-    
-    
-    
-    
     pub fn filter<F>(&mut self, f: F) -> &mut Self
     where
-        F: FnMut(&BindingInfo) -> bool,
+        F: FnMut(&BindingInfo<'_>) -> bool,
     {
         let before_len = self.bindings.len();
         self.bindings.retain(f);
@@ -857,14 +839,9 @@ impl<'a> VariantInfo<'a> {
     
     
     
-    
-    
-    
-    
-    
     pub fn bind_with<F>(&mut self, mut f: F) -> &mut Self
     where
-        F: FnMut(&BindingInfo) -> BindStyle,
+        F: FnMut(&BindingInfo<'_>) -> BindStyle,
     {
         for binding in &mut self.bindings {
             binding.style = f(&binding);
@@ -872,11 +849,6 @@ impl<'a> VariantInfo<'a> {
         self
     }
 
-    
-    
-    
-    
-    
     
     
     
@@ -948,12 +920,6 @@ impl<'a> VariantInfo<'a> {
     
     
     
-    
-    
-    
-    
-    
-    
     pub fn referenced_ty_params(&self) -> Vec<&'a Ident> {
         let mut flags = Vec::new();
         for binding in &self.bindings {
@@ -971,31 +937,45 @@ pub struct Structure<'a> {
     omitted_variants: bool,
     ast: &'a DeriveInput,
     extra_impl: Vec<GenericParam>,
+    extra_predicates: Vec<WherePredicate>,
     add_bounds: AddBounds,
 }
 
 impl<'a> Structure<'a> {
     
     
+    
+    
+    
+    
+    
     pub fn new(ast: &'a DeriveInput) -> Self {
-        let variants = match ast.data {
-            Data::Enum(ref data) => {
-                (&data.variants).into_iter()
-                    .map(|v| {
-                        VariantInfo::new(
-                            VariantAst {
-                                attrs: &v.attrs,
-                                ident: &v.ident,
-                                fields: &v.fields,
-                                discriminant: &v.discriminant
-                            },
-                            Some(&ast.ident),
-                            &ast.generics,
-                        )
-                    })
-                    .collect::<Vec<_>>()
-            }
-            Data::Struct(ref data) => {
+        Self::try_new(ast).expect("Unable to create synstructure::Structure")
+    }
+
+    
+    
+    
+    
+    
+    pub fn try_new(ast: &'a DeriveInput) -> Result<Self> {
+        let variants = match &ast.data {
+            Data::Enum(data) => (&data.variants)
+                .into_iter()
+                .map(|v| {
+                    VariantInfo::new(
+                        VariantAst {
+                            attrs: &v.attrs,
+                            ident: &v.ident,
+                            fields: &v.fields,
+                            discriminant: &v.discriminant,
+                        },
+                        Some(&ast.ident),
+                        &ast.generics,
+                    )
+                })
+                .collect::<Vec<_>>(),
+            Data::Struct(data) => {
                 
                 
                 
@@ -1005,32 +985,33 @@ impl<'a> Structure<'a> {
                 unsafe impl Sync for UnsafeMakeSync {}
                 static NONE_DISCRIMINANT: UnsafeMakeSync = UnsafeMakeSync(None);
 
-                vec![
-                    VariantInfo::new(
-                        VariantAst {
-                            attrs: &ast.attrs,
-                            ident: &ast.ident,
-                            fields: &data.fields,
-                            discriminant: &NONE_DISCRIMINANT.0,
-                        },
-                        None,
-                        &ast.generics,
-                    ),
-                ]
+                vec![VariantInfo::new(
+                    VariantAst {
+                        attrs: &ast.attrs,
+                        ident: &ast.ident,
+                        fields: &data.fields,
+                        discriminant: &NONE_DISCRIMINANT.0,
+                    },
+                    None,
+                    &ast.generics,
+                )]
             }
             Data::Union(_) => {
-                panic!("synstructure does not handle untagged unions \
-                    (https://github.com/mystor/synstructure/issues/6)");
+                return Err(Error::new_spanned(
+                    ast,
+                    "unexpected unsupported untagged union",
+                ));
             }
         };
 
-        Structure {
-            variants: variants,
+        Ok(Structure {
+            variants,
             omitted_variants: false,
-            ast: ast,
+            ast,
             extra_impl: vec![],
+            extra_predicates: vec![],
             add_bounds: AddBounds::Both,
-        }
+        })
     }
 
     
@@ -1085,14 +1066,9 @@ impl<'a> Structure<'a> {
     
     
     
-    
-    
-    
-    
-    
     pub fn each<F, R>(&self, mut f: F) -> TokenStream
     where
-        F: FnMut(&BindingInfo) -> R,
+        F: FnMut(&BindingInfo<'_>) -> R,
         R: ToTokens,
     {
         let mut t = TokenStream::new();
@@ -1138,14 +1114,9 @@ impl<'a> Structure<'a> {
     
     
     
-    
-    
-    
-    
-    
     pub fn fold<F, I, R>(&self, init: I, mut f: F) -> TokenStream
     where
-        F: FnMut(TokenStream, &BindingInfo) -> R,
+        F: FnMut(TokenStream, &BindingInfo<'_>) -> R,
         I: ToTokens,
         R: ToTokens,
     {
@@ -1193,14 +1164,9 @@ impl<'a> Structure<'a> {
     
     
     
-    
-    
-    
-    
-    
     pub fn each_variant<F, R>(&self, mut f: F) -> TokenStream
     where
-        F: FnMut(&VariantInfo) -> R,
+        F: FnMut(&VariantInfo<'_>) -> R,
         R: ToTokens,
     {
         let mut t = TokenStream::new();
@@ -1252,15 +1218,9 @@ impl<'a> Structure<'a> {
     
     
     
-    
-    
-    
-    
-    
-    
     pub fn filter<F>(&mut self, mut f: F) -> &mut Self
     where
-        F: FnMut(&BindingInfo) -> bool,
+        F: FnMut(&BindingInfo<'_>) -> bool,
     {
         for variant in &mut self.variants {
             variant.filter(&mut f);
@@ -1272,6 +1232,46 @@ impl<'a> Structure<'a> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn add_where_predicate(&mut self, pred: WherePredicate) -> &mut Self {
+        self.extra_predicates.push(pred);
+        self
+    }
+
     
     
     
@@ -1350,14 +1350,9 @@ impl<'a> Structure<'a> {
     
     
     
-    
-    
-    
-    
-    
     pub fn filter_variants<F>(&mut self, f: F) -> &mut Self
     where
-        F: FnMut(&VariantInfo) -> bool,
+        F: FnMut(&VariantInfo<'_>) -> bool,
     {
         let before_len = self.variants.len();
         self.variants.retain(f);
@@ -1408,14 +1403,9 @@ impl<'a> Structure<'a> {
     
     
     
-    
-    
-    
-    
-    
     pub fn bind_with<F>(&mut self, mut f: F) -> &mut Self
     where
-        F: FnMut(&BindingInfo) -> BindStyle,
+        F: FnMut(&BindingInfo<'_>) -> BindStyle,
     {
         for variant in &mut self.variants {
             variant.bind_with(&mut f);
@@ -1423,11 +1413,6 @@ impl<'a> Structure<'a> {
         self
     }
 
-    
-    
-    
-    
-    
     
     
     
@@ -1474,12 +1459,6 @@ impl<'a> Structure<'a> {
         self
     }
 
-    
-    
-    
-    
-    
-    
     
     
     
@@ -1555,11 +1534,6 @@ impl<'a> Structure<'a> {
     
     
     
-    
-    
-    
-    
-    
     pub fn add_impl_generic(&mut self, param: GenericParam) -> &mut Self {
         self.extra_impl.push(param);
         self
@@ -1579,30 +1553,36 @@ impl<'a> Structure<'a> {
         where_clause: &mut Option<WhereClause>,
         mode: AddBounds,
     ) {
-        let mut seen = HashSet::new();
-        let mut pred = |ty: Type| if !seen.contains(&ty) {
-            seen.insert(ty.clone());
+        
+        if !self.extra_predicates.is_empty() {
+            let clause = get_or_insert_with(&mut *where_clause, || WhereClause {
+                where_token: Default::default(),
+                predicates: punctuated::Punctuated::new(),
+            });
+            clause
+                .predicates
+                .extend(self.extra_predicates.iter().cloned());
+        }
 
-            
-            
-            
-            if where_clause.is_none() {
-                *where_clause = Some(WhereClause {
+        let mut seen = HashSet::new();
+        let mut pred = |ty: Type| {
+            if !seen.contains(&ty) {
+                seen.insert(ty.clone());
+
+                
+                let clause = get_or_insert_with(&mut *where_clause, || WhereClause {
                     where_token: Default::default(),
                     predicates: punctuated::Punctuated::new(),
                 });
+                clause.predicates.push(WherePredicate::Type(PredicateType {
+                    lifetimes: None,
+                    bounded_ty: ty,
+                    colon_token: Default::default(),
+                    bounds: Some(punctuated::Pair::End(TypeParamBound::Trait(bound.clone())))
+                        .into_iter()
+                        .collect(),
+                }));
             }
-            let clause = where_clause.as_mut().unwrap();
-
-            
-            clause.predicates.push(WherePredicate::Type(PredicateType {
-                lifetimes: None,
-                bounded_ty: ty,
-                colon_token: Default::default(),
-                bounds: Some(punctuated::Pair::End(TypeParamBound::Trait(bound.clone())))
-                    .into_iter()
-                    .collect(),
-            }));
         };
 
         for variant in &self.variants {
@@ -1695,11 +1675,7 @@ impl<'a> Structure<'a> {
     
     
     
-    
-    
-    
-    
-    pub fn bound_impl<P: ToTokens,B: ToTokens>(&self, path: P, body: B) -> TokenStream {
+    pub fn bound_impl<P: ToTokens, B: ToTokens>(&self, path: P, body: B) -> TokenStream {
         self.impl_internal(
             path.into_token_stream(),
             body.into_token_stream(),
@@ -1708,10 +1684,6 @@ impl<'a> Structure<'a> {
         )
     }
 
-    
-    
-    
-    
     
     
     
@@ -1833,10 +1805,6 @@ impl<'a> Structure<'a> {
     
     
     
-    
-    
-    
-    
     pub fn unbound_impl<P: ToTokens, B: ToTokens>(&self, path: P, body: B) -> TokenStream {
         self.impl_internal(
             path.into_token_stream(),
@@ -1846,10 +1814,6 @@ impl<'a> Structure<'a> {
         )
     }
 
-    
-    
-    
-    
     
     
     
@@ -1925,7 +1889,7 @@ impl<'a> Structure<'a> {
         let (impl_generics, _, _) = gen_clone.split_for_impl();
         let (_, ty_generics, where_clause) = self.ast.generics.split_for_impl();
 
-        let bound = syn::parse2::<TraitBound>(path.into())
+        let bound = syn::parse2::<TraitBound>(path)
             .expect("`path` argument must be a valid rust trait bound");
 
         let mut where_clause = where_clause.cloned();
@@ -1943,14 +1907,15 @@ impl<'a> Structure<'a> {
         
         let mut extern_crate = quote!();
         if bound.path.leading_colon.is_none() {
-            if let Some(ref seg) = bound.path.segments.first() {
-                let seg = seg.value();
+            if let Some(seg) = bound.path.segments.first() {
+                let seg = &seg.ident;
                 extern_crate = quote! { extern crate #seg; };
             }
         }
 
         quote! {
             #[allow(non_upper_case_globals)]
+            #[doc(hidden)]
             const #dummy_const: () = {
                 #extern_crate
                 #safety impl #impl_generics #bound for #name #ty_generics #where_clause {
@@ -2127,64 +2092,124 @@ impl<'a> Structure<'a> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn gen_impl(&self, cfg: TokenStream) -> TokenStream {
-        use syn::parse::{Parser, ParseStream, Result};
+        Parser::parse2(
+            |input: ParseStream<'_>| -> Result<TokenStream> { self.gen_impl_parse(input, true) },
+            cfg,
+        )
+        .expect("Failed to parse gen_impl")
+    }
+
+    fn gen_impl_parse(&self, input: ParseStream<'_>, wrap: bool) -> Result<TokenStream> {
+        fn parse_prefix(input: ParseStream<'_>) -> Result<Option<Token![unsafe]>> {
+            if input.parse::<Ident>()? != "gen" {
+                return Err(input.error("Expected keyword `gen`"));
+            }
+            let safety = input.parse::<Option<Token![unsafe]>>()?;
+            let _ = input.parse::<Token![impl]>()?;
+            Ok(safety)
+        }
+
+        let mut before = vec![];
+        loop {
+            if parse_prefix(&input.fork()).is_ok() {
+                break;
+            }
+            before.push(input.parse::<TokenTree>()?);
+        }
 
         
-        let do_parse = |input: ParseStream| -> Result<TokenStream> {
-            
-            let parse_prefix = |input: ParseStream| -> Result<_> {
-                if input.parse::<Ident>()? != "gen" {
-                    return Err(input.error(""));
-                }
-                let safety = input.parse::<Option<Token![unsafe]>>()?;
-                let _ = input.parse::<Token![impl]>()?;
-                Ok(safety)
-            };
+        let safety = parse_prefix(input)?;
 
-            let mut before = vec![];
-            loop {
-                if let Ok(_) = parse_prefix(&input.fork()) {
-                    break;
-                }
-                before.push(input.parse::<TokenTree>()?);
+        
+        let mut generics = input.parse::<Generics>()?;
+
+        
+        let bound = input.parse::<TraitBound>()?;
+
+        
+        let _ = input.parse::<Token![for]>()?;
+        let _ = input.parse::<Token![@]>()?;
+        let _ = input.parse::<Token![Self]>()?;
+
+        
+        generics.where_clause = input.parse()?;
+
+        
+        let body;
+        braced!(body in input);
+        let body = body.parse::<TokenStream>()?;
+
+        
+        
+        let maybe_next_impl = self.gen_impl_parse(&input.fork(), false);
+
+        
+        
+        let mut after = input.parse::<TokenStream>()?;
+        if let Ok(stream) = maybe_next_impl {
+            after = stream;
+        }
+        assert!(input.is_empty(), "Should've consumed the rest of our input");
+
+        
+        let name = &self.ast.ident;
+
+        
+        
+        if let Err(err) = merge_generics(&mut generics, &self.ast.generics) {
+            
+            
+            return Ok(err.to_compile_error());
+        }
+
+        self.add_trait_bounds(&bound, &mut generics.where_clause, self.add_bounds);
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+        let (_, ty_generics, _) = self.ast.generics.split_for_impl();
+
+        let generated = quote! {
+            #(#before)*
+            #safety impl #impl_generics #bound for #name #ty_generics #where_clause {
+                #body
             }
+            #after
+        };
 
-            
-            let safety = parse_prefix(input)?;
-
-            
-            let mut generics = input.parse::<Generics>()?;
-
-            
-            let bound = input.parse::<TraitBound>()?;
-
-            
-            let _ = input.parse::<Token![for]>()?;
-            let _ = input.parse::<Token![@]>()?;
-            let _ = input.parse::<Token![Self]>()?;
-
-            
-            generics.where_clause = input.parse()?;
-
-            
-            let body;
-            braced!(body in input);
-            let body = body.parse::<TokenStream>()?;
-
-            
-            let after = input.parse::<TokenStream>()?;
-
-            
-            let name = &self.ast.ident;
-
-            
-            
-            merge_generics(&mut generics, &self.ast.generics);
-            self.add_trait_bounds(&bound, &mut generics.where_clause, self.add_bounds);
-            let (impl_generics, _, where_clause) = generics.split_for_impl();
-            let (_, ty_generics, _) = self.ast.generics.split_for_impl();
-
+        if wrap {
             let dummy_const: Ident = sanitize_ident(&format!(
                 "_DERIVE_{}_FOR_{}",
                 (&bound).into_token_stream(),
@@ -2194,20 +2219,14 @@ impl<'a> Structure<'a> {
             Ok(quote! {
                 #[allow(non_upper_case_globals)]
                 const #dummy_const: () = {
-                    #(#before)*
-                    #safety impl #impl_generics #bound for #name #ty_generics #where_clause {
-                        #body
-                    }
-                    #after
+                    #generated
                 };
             })
-        };
-        Parser::parse2(do_parse, cfg).expect("Failed to parse gen_impl")
+        } else {
+            Ok(generated)
+        }
     }
 }
-
-
-
 
 
 
@@ -2266,18 +2285,76 @@ pub fn unpretty_print<T: std::fmt::Display>(ts: T) -> String {
     let mut s = &raw_s[..];
     let mut indent = 0;
     while let Some(i) = s.find(&['(', '{', '[', ')', '}', ']', ';'][..]) {
-        match &s[i..i + 1] {
+        match &s[i..=i] {
             "(" | "{" | "[" => indent += 1,
             ")" | "}" | "]" => indent -= 1,
             _ => {}
         }
-        res.push_str(&s[..i + 1]);
+        res.push_str(&s[..=i]);
         res.push('\n');
         for _ in 0..indent {
             res.push_str("    ");
         }
-        s = s[i + 1..].trim_left_matches(' ');
+        s = trim_start_matches(&s[i + 1..], ' ');
     }
     res.push_str(s);
     res
+}
+
+
+
+
+#[allow(deprecated)]
+fn trim_start_matches(s: &str, c: char) -> &str {
+    s.trim_left_matches(c)
+}
+
+
+
+pub trait MacroResult {
+    
+    fn into_result(self) -> Result<TokenStream>;
+
+    
+    
+    
+    
+    
+    fn into_stream(self) -> proc_macro::TokenStream;
+}
+
+impl MacroResult for proc_macro::TokenStream {
+    fn into_result(self) -> Result<TokenStream> {
+        Ok(self.into())
+    }
+
+    fn into_stream(self) -> proc_macro::TokenStream {
+        self
+    }
+}
+
+impl MacroResult for TokenStream {
+    fn into_result(self) -> Result<TokenStream> {
+        Ok(self)
+    }
+
+    fn into_stream(self) -> proc_macro::TokenStream {
+        self.into()
+    }
+}
+
+impl<T: MacroResult> MacroResult for Result<T> {
+    fn into_result(self) -> Result<TokenStream> {
+        match self {
+            Ok(v) => v.into_result(),
+            Err(err) => Err(err),
+        }
+    }
+
+    fn into_stream(self) -> proc_macro::TokenStream {
+        match self {
+            Ok(v) => v.into_stream(),
+            Err(err) => err.to_compile_error().into(),
+        }
+    }
 }

@@ -2,10 +2,11 @@ use std::cell::RefCell;
 
 use proc_macro2::{Delimiter, Span};
 
-use buffer::Cursor;
-use error::{self, Error};
-use span::IntoSpans;
-use token::Token;
+use crate::buffer::Cursor;
+use crate::error::{self, Error};
+use crate::sealed::lookahead::Sealed;
+use crate::span::IntoSpans;
+use crate::token::Token;
 
 
 
@@ -65,8 +66,8 @@ pub struct Lookahead1<'a> {
 
 pub fn new(scope: Span, cursor: Cursor) -> Lookahead1 {
     Lookahead1 {
-        scope: scope,
-        cursor: cursor,
+        scope,
+        cursor,
         comparisons: RefCell::new(Vec::new()),
     }
 }
@@ -84,6 +85,7 @@ fn peek_impl(
 }
 
 impl<'a> Lookahead1<'a> {
+    
     
     
     
@@ -141,13 +143,13 @@ impl<'a> Lookahead1<'a> {
 
 
 
-pub trait Peek: private::Sealed {
+pub trait Peek: Sealed {
     
     #[doc(hidden)]
     type Token: Token;
 }
 
-impl<F: FnOnce(TokenMarker) -> T, T: Token> Peek for F {
+impl<F: Copy + FnOnce(TokenMarker) -> T, T: Token> Peek for F {
     type Token = T;
 }
 
@@ -163,8 +165,4 @@ pub fn is_delimiter(cursor: Cursor, delimiter: Delimiter) -> bool {
     cursor.group(delimiter).is_some()
 }
 
-mod private {
-    use super::{Token, TokenMarker};
-    pub trait Sealed {}
-    impl<F: FnOnce(TokenMarker) -> T, T: Token> Sealed for F {}
-}
+impl<F: Copy + FnOnce(TokenMarker) -> T, T: Token> Sealed for F {}

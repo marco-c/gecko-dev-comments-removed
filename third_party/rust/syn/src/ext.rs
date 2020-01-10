@@ -4,7 +4,13 @@
 
 use proc_macro2::Ident;
 
-use parse::{ParseStream, Result};
+use crate::parse::{ParseStream, Result};
+
+use crate::buffer::Cursor;
+use crate::parse::Peek;
+use crate::sealed::lookahead;
+use crate::token::CustomToken;
+
 
 
 
@@ -39,7 +45,47 @@ pub trait IdentExt: Sized + private::Sealed {
     
     
     
+    
+    
+    
     fn parse_any(input: ParseStream) -> Result<Self>;
+
+    
+    
+    
+    
+    
+    #[allow(non_upper_case_globals)]
+    const peek_any: private::PeekFn = private::PeekFn;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn unraw(&self) -> Ident;
 }
 
 impl IdentExt for Ident {
@@ -49,7 +95,32 @@ impl IdentExt for Ident {
             None => Err(cursor.error("expected ident")),
         })
     }
+
+    fn unraw(&self) -> Ident {
+        let string = self.to_string();
+        if string.starts_with("r#") {
+            Ident::new(&string[2..], self.span())
+        } else {
+            self.clone()
+        }
+    }
 }
+
+impl Peek for private::PeekFn {
+    type Token = private::IdentAny;
+}
+
+impl CustomToken for private::IdentAny {
+    fn peek(cursor: Cursor) -> bool {
+        cursor.ident().is_some()
+    }
+
+    fn display() -> &'static str {
+        "identifier"
+    }
+}
+
+impl lookahead::Sealed for private::PeekFn {}
 
 mod private {
     use proc_macro2::Ident;
@@ -57,4 +128,8 @@ mod private {
     pub trait Sealed {}
 
     impl Sealed for Ident {}
+
+    #[derive(Copy, Clone)]
+    pub struct PeekFn;
+    pub struct IdentAny;
 }
