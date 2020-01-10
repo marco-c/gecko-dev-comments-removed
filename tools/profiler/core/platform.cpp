@@ -244,16 +244,36 @@ class PSMutex : private ::mozilla::detail::MutexImpl {
  public:
   PSMutex()
       : ::mozilla::detail::MutexImpl(
-            ::mozilla::recordreplay::Behavior::DontPreserve),
-        mIsLocked(false) {}
+            ::mozilla::recordreplay::Behavior::DontPreserve) {}
+
   void Lock() {
-    ::mozilla::detail::MutexImpl::lock();
+    const int tid = baseprofiler::profiler_current_thread_id();
+    MOZ_ASSERT(tid != 0);
+
     
-    mIsLocked = true;
+    
+    
+    
+    
+    MOZ_ASSERT(mOwningThreadId != tid);
+
+    ::mozilla::detail::MutexImpl::lock();
+
+    
+    MOZ_ASSERT(mOwningThreadId == 0);
+    
+    mOwningThreadId = tid;
   }
 
   void Unlock() {
-    mIsLocked = false;
+    
+    
+    AssertCurrentThreadOwns();
+
+    
+    
+    mOwningThreadId = 0;
+
     ::mozilla::detail::MutexImpl::unlock();
   }
 
@@ -266,27 +286,26 @@ class PSMutex : private ::mozilla::detail::MutexImpl {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool CouldBeLockedOnCurrentThread() const { return mIsLocked; }
+  bool IsLockedOnCurrentThread() const {
+    return mOwningThreadId == baseprofiler::profiler_current_thread_id();
+  }
 
+  void AssertCurrentThreadOwns() const {
+    MOZ_ASSERT(IsLockedOnCurrentThread());
+  }
+
+  void AssertCurrentThreadDoesNotOwn() const {
+    MOZ_ASSERT(!IsLockedOnCurrentThread());
+  }
+
+ private:
   
   
-  Atomic<bool, MemoryOrdering::Relaxed, recordreplay::Behavior::DontPreserve>
-      mIsLocked;
+  
+  
+  Atomic<int, MemoryOrdering::SequentiallyConsistent,
+         recordreplay::Behavior::DontPreserve>
+      mOwningThreadId{0};
 };
 
 
@@ -4350,12 +4369,8 @@ void profiler_add_js_allocation_marker(JS::RecordAllocationInfo&& info) {
                                 profiler_get_backtrace()));
 }
 
-
-
-
-
-bool profiler_could_be_locked_on_current_thread() {
-  return gPSMutex.CouldBeLockedOnCurrentThread();
+bool profiler_is_locked_on_current_thread() {
+  return gPSMutex.IsLockedOnCurrentThread();
 }
 
 void profiler_add_native_allocation_marker(const int64_t aSize) {

@@ -125,7 +125,17 @@ class ThreadIntercept {
   
   
   static bool IsBlocked_() {
-    return tlsIsBlocked.get() || profiler_could_be_locked_on_current_thread();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return tlsIsBlocked.get() || profiler_is_locked_on_current_thread();
   }
 
  public:
