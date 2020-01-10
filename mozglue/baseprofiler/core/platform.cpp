@@ -1970,18 +1970,6 @@ void SamplerThread::Run() {
 
   
   
-  const bool noStackSampling = []() {
-    PSAutoLock lock;
-    if (!ActivePS::Exists(lock)) {
-      
-      
-      return false;
-    }
-    return ActivePS::FeatureNoStackSampling(lock);
-  }();
-
-  
-  
   
   
   BlocksRingBuffer localBlocksRingBuffer(
@@ -2019,6 +2007,9 @@ void SamplerThread::Run() {
       TimeStamp expiredMarkersCleaned = TimeStamp::NowUnfuzzed();
 
       if (!ActivePS::IsPaused(lock)) {
+        const Vector<LiveProfiledThreadData>& liveThreads =
+            ActivePS::LiveProfiledThreads(lock);
+
         TimeDuration delta = sampleStart - CorePS::ProcessStartTime();
         ProfileBuffer& buffer = ActivePS::Buffer(lock);
 
@@ -2043,72 +2034,67 @@ void SamplerThread::Run() {
         }
         TimeStamp countersSampled = TimeStamp::NowUnfuzzed();
 
-        if (!noStackSampling) {
-          const Vector<LiveProfiledThreadData>& liveThreads =
-              ActivePS::LiveProfiledThreads(lock);
+        for (auto& thread : liveThreads) {
+          RegisteredThread* registeredThread = thread.mRegisteredThread;
+          ProfiledThreadData* profiledThreadData =
+              thread.mProfiledThreadData.get();
+          RefPtr<ThreadInfo> info = registeredThread->Info();
 
-          for (auto& thread : liveThreads) {
-            RegisteredThread* registeredThread = thread.mRegisteredThread;
-            ProfiledThreadData* profiledThreadData =
-                thread.mProfiledThreadData.get();
-            RefPtr<ThreadInfo> info = registeredThread->Info();
-
-            
-            
-            
-            if (registeredThread->RacyRegisteredThread()
-                    .CanDuplicateLastSampleDueToSleep()) {
-              bool dup_ok = ActivePS::Buffer(lock).DuplicateLastSample(
-                  info->ThreadId(), CorePS::ProcessStartTime(),
-                  profiledThreadData->LastSample());
-              if (dup_ok) {
-                continue;
-              }
+          
+          
+          
+          if (registeredThread->RacyRegisteredThread()
+                  .CanDuplicateLastSampleDueToSleep()) {
+            bool dup_ok = ActivePS::Buffer(lock).DuplicateLastSample(
+                info->ThreadId(), CorePS::ProcessStartTime(),
+                profiledThreadData->LastSample());
+            if (dup_ok) {
+              continue;
             }
-
-            AUTO_PROFILER_STATS(base_SamplerThread_Run_DoPeriodicSample);
-
-            TimeStamp now = TimeStamp::NowUnfuzzed();
-
-            
-            
-            
-            uint64_t samplePos =
-                buffer.AddThreadIdEntry(registeredThread->Info()->ThreadId());
-            profiledThreadData->LastSample() = Some(samplePos);
-
-            
-            
-            TimeDuration delta = now - CorePS::ProcessStartTime();
-            buffer.AddEntry(ProfileBufferEntry::Time(delta.ToMilliseconds()));
-
-            mSampler.SuspendAndSampleAndResumeThread(
-                lock, *registeredThread, [&](const Registers& aRegs) {
-                  DoPeriodicSample(lock, *registeredThread, *profiledThreadData,
-                                   aRegs, samplePos, localProfileBuffer);
-                });
-
-            
-            auto state = localBlocksRingBuffer.GetState();
-            if (state.mClearedBlockCount != previousState.mClearedBlockCount) {
-              LOG("Stack sample too big for local storage, needed %u bytes",
-                  unsigned(state.mRangeEnd.ConvertToU64() -
-                           previousState.mRangeEnd.ConvertToU64()));
-            } else if (state.mRangeEnd.ConvertToU64() -
-                           previousState.mRangeEnd.ConvertToU64() >=
-                       CorePS::CoreBlocksRingBuffer().BufferLength()->Value()) {
-              LOG("Stack sample too big for profiler storage, needed %u bytes",
-                  unsigned(state.mRangeEnd.ConvertToU64() -
-                           previousState.mRangeEnd.ConvertToU64()));
-            } else {
-              CorePS::CoreBlocksRingBuffer().AppendContents(
-                  localBlocksRingBuffer);
-            }
-
-            
-            localBlocksRingBuffer.Clear();
-            previousState = localBlocksRingBuffer.GetState();
           }
+
+          AUTO_PROFILER_STATS(base_SamplerThread_Run_DoPeriodicSample);
+
+          TimeStamp now = TimeStamp::NowUnfuzzed();
+
+          
+          
+          
+          uint64_t samplePos =
+              buffer.AddThreadIdEntry(registeredThread->Info()->ThreadId());
+          profiledThreadData->LastSample() = Some(samplePos);
+
+          
+          
+          TimeDuration delta = now - CorePS::ProcessStartTime();
+          buffer.AddEntry(ProfileBufferEntry::Time(delta.ToMilliseconds()));
+
+          mSampler.SuspendAndSampleAndResumeThread(
+              lock, *registeredThread, [&](const Registers& aRegs) {
+                DoPeriodicSample(lock, *registeredThread, *profiledThreadData,
+                                 aRegs, samplePos, localProfileBuffer);
+              });
+
+          
+          auto state = localBlocksRingBuffer.GetState();
+          if (state.mClearedBlockCount != previousState.mClearedBlockCount) {
+            LOG("Stack sample too big for local storage, needed %u bytes",
+                unsigned(state.mRangeEnd.ConvertToU64() -
+                         previousState.mRangeEnd.ConvertToU64()));
+          } else if (state.mRangeEnd.ConvertToU64() -
+                         previousState.mRangeEnd.ConvertToU64() >=
+                     CorePS::CoreBlocksRingBuffer().BufferLength()->Value()) {
+            LOG("Stack sample too big for profiler storage, needed %u bytes",
+                unsigned(state.mRangeEnd.ConvertToU64() -
+                         previousState.mRangeEnd.ConvertToU64()));
+          } else {
+            CorePS::CoreBlocksRingBuffer().AppendContents(
+                localBlocksRingBuffer);
+          }
+
+          
+          localBlocksRingBuffer.Clear();
+          previousState = localBlocksRingBuffer.GetState();
         }
 
 #  if defined(USE_LUL_STACKWALK)

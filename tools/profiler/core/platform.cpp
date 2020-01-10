@@ -236,6 +236,17 @@ static uint32_t StartupExtraDefaultFeatures() {
 }
 
 
+static constexpr bool FeaturesImplyStackSampling(uint32_t aFeatures) {
+  
+  
+  
+  
+  
+  return aFeatures & (ProfilerFeature::JS | ProfilerFeature::Leaf |
+                      ProfilerFeature::StackWalk);
+}
+
+
 
 
 
@@ -2574,14 +2585,12 @@ void SamplerThread::Run() {
 
   
   
-  const bool noStackSampling = []() {
+  const bool stackSamplingRequired = []() {
     PSAutoLock lock(gPSMutex);
     if (!ActivePS::Exists(lock)) {
-      
-      
       return false;
     }
-    return ActivePS::FeatureNoStackSampling(lock);
+    return FeaturesImplyStackSampling(ActivePS::Features(lock));
   }();
 
   
@@ -2647,7 +2656,7 @@ void SamplerThread::Run() {
         }
         TimeStamp countersSampled = TimeStamp::NowUnfuzzed();
 
-        if (!noStackSampling) {
+        if (stackSamplingRequired) {
           const Vector<LiveProfiledThreadData>& liveThreads =
               ActivePS::LiveProfiledThreads(lock);
 
