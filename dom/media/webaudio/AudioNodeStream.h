@@ -13,6 +13,10 @@
 #include "AudioBlock.h"
 #include "AudioSegment.h"
 
+namespace WebCore {
+class Reverb;
+}  
+
 namespace mozilla {
 
 namespace dom {
@@ -92,6 +96,7 @@ class AudioNodeStream : public ProcessedMediaStream {
   void SetInt32Parameter(uint32_t aIndex, int32_t aValue);
   void SetThreeDPointParameter(uint32_t aIndex, const dom::ThreeDPoint& aValue);
   void SetBuffer(AudioChunk&& aBuffer);
+  void SetReverb(WebCore::Reverb* aReverb, uint32_t aImpulseChannelCount);
   
   void SendTimelineEvent(uint32_t aIndex,
                          const dom::AudioTimelineEvent& aEvent);
