@@ -592,6 +592,10 @@ class VirtualenvManager(object):
             b'PIPENV_IGNORE_VIRTUALENVS': b'1',
             b'WORKON_HOME': str(os.path.normpath(os.path.join(self.topobjdir, '_virtualenvs'))),
         })
+        
+        
+        
+        env.pop('LC_CTYPE', None)
 
         if python is not None:
             env[b'PIPENV_DEFAULT_PYTHON_VERSION'] = str(python)
