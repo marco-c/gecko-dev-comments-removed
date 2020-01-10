@@ -1011,42 +1011,48 @@ class RTCPeerConnection {
     
     
     
-    let p = (async () => {
-      
+    const validate = async () => {
       await this._lastIdentityValidation;
-      try {
-        const msg = await this._remoteIdp.verifyIdentityFromSDP(sdp, origin);
-        
-        if (this._impl.peerIdentity && (!msg || msg.identity !== this._impl.peerIdentity)) {
-          throw new this._win.DOMException(
-            "Peer Identity mismatch, expected: " + this._impl.peerIdentity,
-            "IncompatibleSessionDescriptionError");
-        }
-
-        if (msg) {
-          
-          this._impl.peerIdentity = msg.identity;
-          this._resolvePeerIdentity(Cu.cloneInto({
-            idp: this._remoteIdp.provider,
-            name: msg.identity,
-          }, this._win));
-        }
-      } catch (e) {
-        this._rejectPeerIdentity(e);
-        
-        
-        
-        if (!this._impl.peerIdentity) {
-          this._resetPeerIdentityPromise();
-        }
-        throw e;
+      const msg = await this._remoteIdp.verifyIdentityFromSDP(sdp, origin);
+      
+      if (this._impl.peerIdentity && (!msg || msg.identity !== this._impl.peerIdentity)) {
+        throw new this._win.DOMException(
+          "Peer Identity mismatch, expected: " + this._impl.peerIdentity,
+          "OperationError");
       }
-    })();
-    this._lastIdentityValidation = p.catch(() => {});
+
+      if (msg) {
+        
+        this._impl.peerIdentity = msg.identity;
+        this._resolvePeerIdentity(Cu.cloneInto({
+          idp: this._remoteIdp.provider,
+          name: msg.identity,
+        }, this._win));
+      }
+    };
+
+    const haveValidation = validate();
+
+    
+    this._lastIdentityValidation = haveValidation.catch(() => {});
+
+    
+    
+    
+    haveValidation.catch(e => {
+      this._rejectPeerIdentity(e);
+
+      
+      
+      
+      if (!this._impl.peerIdentity) {
+        this._resetPeerIdentityPromise();
+      }
+    });
 
     
     if (this._impl.peerIdentity) {
-      await p;
+      await haveValidation;
     }
   }
 
