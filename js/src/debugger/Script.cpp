@@ -2043,6 +2043,22 @@ struct DebuggerScript::SetBreakpointMatcher {
   RootedObject handler_;
   RootedObject debuggerObject_;
 
+  bool wrapCrossCompartmentEdges() {
+    if (!cx_->compartment()->wrap(cx_, &handler_) ||
+        !cx_->compartment()->wrap(cx_, &debuggerObject_)) {
+      return false;
+    }
+
+    
+    
+    if (IsDeadProxyObject(handler_) || IsDeadProxyObject(debuggerObject_)) {
+      ReportAccessDenied(cx_);
+      return false;
+    }
+
+    return true;
+  }
+
  public:
   explicit SetBreakpointMatcher(JSContext* cx, Debugger* dbg, size_t offset,
                                 HandleObject handler)
@@ -2076,8 +2092,7 @@ struct DebuggerScript::SetBreakpointMatcher {
     
     
     AutoRealm ar(cx_, script);
-    if (!cx_->compartment()->wrap(cx_, &handler_) ||
-        !cx_->compartment()->wrap(cx_, &debuggerObject_)) {
+    if (!wrapCrossCompartmentEdges()) {
       return false;
     }
 
@@ -2115,8 +2130,7 @@ struct DebuggerScript::SetBreakpointMatcher {
     
     
     AutoRealm ar(cx_, wasmInstance);
-    if (!cx_->compartment()->wrap(cx_, &handler_) ||
-        !cx_->compartment()->wrap(cx_, &debuggerObject_)) {
+    if (!wrapCrossCompartmentEdges()) {
       return false;
     }
 
