@@ -106,6 +106,9 @@ class alignas(uintptr_t) JitScript final {
   js::UniquePtr<Vector<DependentWasmImport>> dependentWasmImports_;
 
   
+  const char* profileString_ = nullptr;
+
+  
   uint32_t typeSetOffset_ = 0;
 
   
@@ -150,7 +153,8 @@ class alignas(uintptr_t) JitScript final {
 
  public:
   JitScript(JSScript* script, uint32_t typeSetOffset,
-            uint32_t bytecodeTypeMapOffset, uint32_t allocBytes);
+            uint32_t bytecodeTypeMapOffset, uint32_t allocBytes,
+            const char* profileString);
 
 #ifdef DEBUG
   ~JitScript() {
@@ -201,6 +205,13 @@ class alignas(uintptr_t) JitScript final {
   bool active() const { return flags_.active; }
   void setActive() { flags_.active = true; }
   void resetActive() { flags_.active = false; }
+
+  void ensureProfileString(JSContext* cx, JSScript* script);
+
+  const char* profileString() const {
+    MOZ_ASSERT(profileString_);
+    return profileString_;
+  }
 
   
   StackTypeSet* typeArray(const js::AutoSweepJitScript& sweep) {

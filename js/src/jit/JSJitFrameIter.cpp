@@ -10,6 +10,7 @@
 #include "jit/BaselineIC.h"
 #include "jit/JitcodeMap.h"
 #include "jit/JitFrames.h"
+#include "jit/JitScript.h"
 #include "jit/Safepoints.h"
 
 using namespace js;
@@ -509,12 +510,16 @@ JSJitProfilingFrameIterator::JSJitProfilingFrameIterator(JSContext* cx,
     }
   }
 
-  MOZ_ASSERT(frameScript()->hasBaselineScript());
-
   
   
   type_ = FrameType::BaselineJS;
-  resumePCinCurrentFrame_ = frameScript()->baselineScript()->method()->raw();
+  if (frameScript()->hasBaselineScript()) {
+    resumePCinCurrentFrame_ = frameScript()->baselineScript()->method()->raw();
+  } else {
+    MOZ_ASSERT(JitOptions.baselineInterpreter);
+    resumePCinCurrentFrame_ =
+        cx->runtime()->jitRuntime()->baselineInterpreter().codeRaw();
+  }
 }
 
 template <typename ReturnType = CommonFrameLayout*>
@@ -565,7 +570,7 @@ bool JSJitProfilingFrameIterator::tryInitWithTable(JitcodeGlobalTable* table,
   JSScript* callee = frameScript();
 
   MOZ_ASSERT(entry->isIon() || entry->isBaseline() || entry->isIonCache() ||
-             entry->isDummy());
+             entry->isBaselineInterpreter() || entry->isDummy());
 
   
   if (entry->isDummy()) {
@@ -594,6 +599,12 @@ bool JSJitProfilingFrameIterator::tryInitWithTable(JitcodeGlobalTable* table,
       return false;
     }
 
+    type_ = FrameType::BaselineJS;
+    resumePCinCurrentFrame_ = pc;
+    return true;
+  }
+
+  if (entry->isBaselineInterpreter()) {
     type_ = FrameType::BaselineJS;
     resumePCinCurrentFrame_ = pc;
     return true;
@@ -632,15 +643,41 @@ void JSJitProfilingFrameIterator::fixBaselineReturnAddress() {
   
   
   
-  if (jsbytecode* override = bl->maybeOverridePc()) {
+  
+  jsbytecode* overridePC = bl->maybeOverridePc();
+  if (overridePC && !bl->runningInInterpreter()) {
     PCMappingSlotInfo slotInfo;
     JSScript* script = bl->script();
+    BaselineScript* blScript = script->baselineScript();
     resumePCinCurrentFrame_ =
-        script->baselineScript()->nativeCodeForPC(script, override, &slotInfo);
+        blScript->nativeCodeForPC(script, overridePC, &slotInfo);
 
     
     
     return;
+  }
+}
+
+const char* JSJitProfilingFrameIterator::baselineInterpreterLabel() const {
+  MOZ_ASSERT(type_ == FrameType::BaselineJS);
+  return frameScript()->jitScript()->profileString();
+}
+
+void JSJitProfilingFrameIterator::baselineInterpreterScriptPC(
+    JSScript** script, jsbytecode** pc) const {
+  MOZ_ASSERT(type_ == FrameType::BaselineJS);
+  BaselineFrame* blFrame =
+      (BaselineFrame*)(fp_ - BaselineFrame::FramePointerOffset -
+                       BaselineFrame::Size());
+  *script = frameScript();
+  *pc = (*script)->code();
+
+  if (blFrame->runningInInterpreter() &&
+      blFrame->interpreterScript() == *script) {
+    jsbytecode* interpPC = blFrame->interpreterPC();
+    if ((*script)->containsPC(interpPC)) {
+      *pc = interpPC;
+    }
   }
 }
 

@@ -6924,6 +6924,21 @@ bool BaselineInterpreterGenerator::generate(BaselineInterpreter& interpreter) {
     }
 
     
+    {
+      JitcodeGlobalEntry::BaselineInterpreterEntry entry;
+      entry.init(code, code->raw(), code->rawEnd());
+
+      JitcodeGlobalTable* globalTable =
+          cx->runtime()->jitRuntime()->getJitcodeGlobalTable();
+      if (!globalTable->addEntry(entry)) {
+        ReportOutOfMemory(cx);
+        return false;
+      }
+
+      code->setHasBytecodeMap();
+    }
+
+    
     for (CodeOffset off : tableLabels_) {
       Assembler::PatchDataWithValueCheck(CodeLocationLabel(code, off),
                                          ImmPtr(code->raw() + tableOffset_),
@@ -6943,6 +6958,10 @@ bool BaselineInterpreterGenerator::generate(BaselineInterpreter& interpreter) {
         profilerExitFrameToggleOffset_.offset(),
         handler.debuggeeCheckOffset().offset(), std::move(debugTrapOffsets_),
         std::move(handler.codeCoverageOffsets()));
+  }
+
+  if (cx->runtime()->geckoProfiler().enabled()) {
+    interpreter.toggleProfilerInstrumentation(true);
   }
 
   if (coverage::IsLCovEnabled()) {
