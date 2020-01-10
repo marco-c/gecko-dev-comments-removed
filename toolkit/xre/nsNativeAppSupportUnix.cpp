@@ -326,21 +326,19 @@ void nsNativeAppSupportUnix::SaveYourselfCB(SmcConn smc_conn,
   }
 
   bool status = false;
-  if (save_style != SmSaveGlobal) {
-    nsCOMPtr<nsISupportsPRBool> didSaveSession =
-        do_CreateInstance(NS_SUPPORTS_PRBOOL_CONTRACTID);
+  nsCOMPtr<nsISupportsPRBool> didSaveSession =
+      do_CreateInstance(NS_SUPPORTS_PRBOOL_CONTRACTID);
 
-    if (!didSaveSession) {
-      SmcSaveYourselfDone(smc_conn, True);
-      return;
-    }
-
-    
-    didSaveSession->SetData(false);
-    obsServ->NotifyObservers(didSaveSession, "session-save", nullptr);
-
-    didSaveSession->GetData(&status);
+  if (!didSaveSession) {
+    SmcSaveYourselfDone(smc_conn, True);
+    return;
   }
+
+  
+  didSaveSession->SetData(false);
+  obsServ->NotifyObservers(didSaveSession, "session-save", nullptr);
+
+  didSaveSession->GetData(&status);
 
   
   
