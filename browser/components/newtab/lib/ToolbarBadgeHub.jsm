@@ -38,7 +38,19 @@ ChromeUtils.defineModuleGetter(
   "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "setInterval",
+  "resource://gre/modules/Timer.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "clearInterval",
+  "resource://gre/modules/Timer.jsm"
+);
 
+
+const SYSTEM_TICK_INTERVAL = 5 * 60 * 1000;
 const notificationsByWindow = new WeakMap();
 
 class _ToolbarBadgeHub {
@@ -48,6 +60,7 @@ class _ToolbarBadgeHub {
     this.state = null;
     this.prefs = {
       WHATSNEW_TOOLBAR_PANEL: "browser.messaging-system.whatsNewPanel.enabled",
+      HOMEPAGE_OVERRIDE_PREF: "browser.startup.homepage_override.once",
     };
     this.removeAllNotifications = this.removeAllNotifications.bind(this);
     this.removeToolbarNotification = this.removeToolbarNotification.bind(this);
@@ -55,6 +68,7 @@ class _ToolbarBadgeHub {
     this.registerBadgeToAllWindows = this.registerBadgeToAllWindows.bind(this);
     this._sendTelemetry = this._sendTelemetry.bind(this);
     this.sendUserEventTelemetry = this.sendUserEventTelemetry.bind(this);
+    this.checkHomepageOverridePref = this.checkHomepageOverridePref.bind(this);
 
     this._handleMessageRequest = null;
     this._addImpression = null;
@@ -64,18 +78,56 @@ class _ToolbarBadgeHub {
 
   async init(
     waitForInitialized,
-    { handleMessageRequest, addImpression, blockMessageById, dispatch }
+    {
+      handleMessageRequest,
+      addImpression,
+      blockMessageById,
+      unblockMessageById,
+      dispatch,
+    }
   ) {
     this._handleMessageRequest = handleMessageRequest;
     this._blockMessageById = blockMessageById;
+    this._unblockMessageById = unblockMessageById;
     this._addImpression = addImpression;
     this._dispatch = dispatch;
-    this.state = {};
     
     await waitForInitialized;
     this.messageRequest("toolbarBadgeUpdate");
     
     Services.prefs.addObserver(this.prefs.WHATSNEW_TOOLBAR_PANEL, this);
+    const _intervalId = setInterval(
+      () => this.checkHomepageOverridePref(),
+      SYSTEM_TICK_INTERVAL
+    );
+    this.state = { _intervalId };
+  }
+
+  
+
+
+
+
+  checkHomepageOverridePref() {
+    const prefValue = Services.prefs.getStringPref(
+      this.prefs.HOMEPAGE_OVERRIDE_PREF,
+      ""
+    );
+    if (prefValue) {
+      
+      
+      
+      Services.prefs.clearUserPref(this.prefs.HOMEPAGE_OVERRIDE_PREF);
+      let message_id;
+      try {
+        message_id = JSON.parse(prefValue).message_id;
+      } catch (e) {}
+      if (message_id) {
+        this._unblockMessageById(message_id);
+      }
+    }
+
+    this.messageRequest("momentsUpdate");
   }
 
   observe(aSubject, aTopic, aPrefName) {
@@ -86,13 +138,37 @@ class _ToolbarBadgeHub {
     }
   }
 
-  executeAction({ id }) {
+  executeAction({ id, data, message_id }) {
     switch (id) {
       case "show-whatsnew-button":
         ToolbarPanelHub.enableToolbarButton();
         ToolbarPanelHub.enableAppmenuButton();
         break;
+      case "moments-wnp":
+        const { url, expireDelta } = data;
+        let { expire } = data;
+        if (!expire) {
+          expire = this.getExpirationDate(expireDelta);
+        }
+        Services.prefs.setStringPref(
+          this.prefs.HOMEPAGE_OVERRIDE_PREF,
+          JSON.stringify({ message_id, url, expire })
+        );
+        
+        this._blockMessageById(message_id);
+        break;
     }
+  }
+
+  
+
+
+
+
+
+
+  getExpirationDate(expireDelta) {
+    return Date.now() + expireDelta;
   }
 
   _clearBadgeTimeout() {
@@ -154,7 +230,7 @@ class _ToolbarBadgeHub {
   addToolbarNotification(win, message) {
     const document = win.browser.ownerDocument;
     if (message.content.action) {
-      this.executeAction(message.content.action);
+      this.executeAction({ ...message.content.action, message_id: message.id });
     }
     let toolbarbutton = document.getElementById(message.content.target);
     if (toolbarbutton) {
@@ -199,7 +275,9 @@ class _ToolbarBadgeHub {
       },
       win => {
         const el = notificationsByWindow.get(win);
-        this.removeToolbarNotification(el);
+        if (el) {
+          this.removeToolbarNotification(el);
+        }
         notificationsByWindow.delete(win);
       }
     );
@@ -257,6 +335,7 @@ class _ToolbarBadgeHub {
 
   uninit() {
     this._clearBadgeTimeout();
+    clearInterval(this.state._intervalId);
     this.state = null;
     Services.prefs.removeObserver(this.prefs.WHATSNEW_TOOLBAR_PANEL, this);
   }
