@@ -27,7 +27,7 @@ var InlineSpellCheckerContent = {
     } else {
       
       spellChecker = this._spellChecker =
-        new InlineSpellChecker(event.target.editor);
+        new InlineSpellChecker(event.composedTarget.editor);
     }
 
     this._spellChecker.initFromEvent(event.rangeParent, event.rangeOffset);
