@@ -1,38 +1,38 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//! The high-level module responsible for interfacing with the GPU.
+//!
+//! Much of WebRender's design is driven by separating work into different
+//! threads. To avoid the complexities of multi-threaded GPU access, we restrict
+//! all communication with the GPU to one thread, the render thread. But since
+//! issuing GPU commands is often a bottleneck, we move everything else (i.e.
+//! the computation of what commands to issue) to another thread, the
+//! RenderBackend thread. The RenderBackend, in turn, may delegate work to other
+//! thread (like the SceneBuilder threads or Rayon workers), but the
+//! Render-vs-RenderBackend distinction is the most important.
+//!
+//! The consumer is responsible for initializing the render thread before
+//! calling into WebRender, which means that this module also serves as the
+//! initial entry point into WebRender, and is responsible for spawning the
+//! various other threads discussed above. That said, WebRender initialization
+//! returns both the `Renderer` instance as well as a channel for communicating
+//! directly with the `RenderBackend`. Aside from a few high-level operations
+//! like 'render now', most of interesting commands from the consumer go over
+//! that channel and operate on the `RenderBackend`.
+//!
+//! ## Space conversion guidelines
+//! At this stage, we shuld be operating with `DevicePixel` and `FramebufferPixel` only.
+//! "Framebuffer" space represents the final destination of our rendeing,
+//! and it happens to be Y-flipped on OpenGL. The conversion is done as follows:
+//!   - for rasterized primitives, the orthographics projection transforms
+//! the content rectangle to -1 to 1
+//!   - the viewport transformation is setup to map the whole range to
+//! the framebuffer rectangle provided by the document view, stored in `DrawTarget`
+//!   - all the direct framebuffer operations, like blitting, reading pixels, and setting
+//! up the scissor, are accepting already transformed coordinates, which we can get by
+//! calling `DrawTarget::to_framebuffer_rect`
 
 use api::{ApiMsg, BlobImageHandler, ColorF, ColorU, MixBlendMode};
 use api::{DocumentId, Epoch, ExternalImageId};
@@ -120,21 +120,21 @@ cfg_if! {
 
 const DEFAULT_BATCH_LOOKBACK_COUNT: usize = 10;
 
-
+/// Is only false if no WR instances have ever been created.
 static HAS_BEEN_INITIALIZED: AtomicBool = AtomicBool::new(false);
 
-
+/// Returns true if a WR instance has ever been initialized in this process.
 pub fn wr_has_been_initialized() -> bool {
     HAS_BEEN_INITIALIZED.load(Ordering::SeqCst)
 }
 
 pub const MAX_VERTEX_TEXTURE_WIDTH: usize = 1024;
-
-
-
+/// Enabling this toggle would force the GPU cache scattered texture to
+/// be resized every frame, which enables GPU debuggers to see if this
+/// is performed correctly.
 const GPU_CACHE_RESIZE_TEST: bool = false;
 
-
+/// Number of GPU blocks per UV rectangle provided for an image.
 pub const BLOCKS_PER_UV_RECT: usize = 2;
 
 const GPU_TAG_BRUSH_LINEAR_GRADIENT: GpuProfileTag = GpuProfileTag {
@@ -223,9 +223,9 @@ const GPU_SAMPLER_TAG_TRANSPARENT: GpuProfileTag = GpuProfileTag {
     color: debug_colors::BLACK,
 };
 
-
-
-
+/// The clear color used for the texture cache when the debug display is enabled.
+/// We use a shade of blue so that we can still identify completely blue items in
+/// the texture cache.
 const TEXTURE_CACHE_DBG_CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.8, 1.0];
 
 impl BatchKind {
@@ -303,11 +303,11 @@ impl From<GlyphFormat> for ShaderColorMode {
     }
 }
 
-
-
-
-
-
+/// Enumeration of the texture samplers used across the various WebRender shaders.
+///
+/// Each variant corresponds to a uniform declared in shader source. We only bind
+/// the variants we need for a given shader, so not every variant is bound for every
+/// batch.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub(crate) enum TextureSampler {
     Color0,
@@ -463,10 +463,10 @@ pub(crate) mod desc {
                 count: 4,
                 kind: VertexAttributeKind::F32,
             },
-            
-            
-            
-            
+            // TODO(gw): We should probably pack these as u32 colors instead
+            //           of passing as full float vec4 here. It won't make much
+            //           difference in real world, since these are only invoked
+            //           rarely, when creating the cache.
             VertexAttribute {
                 name: "aColor0",
                 count: 4,
@@ -785,7 +785,7 @@ pub enum ImageBufferKind {
     Texture2DArray = 3,
 }
 
-
+//TODO: those types are the same, so let's merge them
 impl From<TextureTarget> for ImageBufferKind {
     fn from(target: TextureTarget) -> Self {
         match target {
@@ -859,54 +859,54 @@ impl GpuGlyphRenderer {
 #[cfg(not(feature = "pathfinder"))]
 struct StenciledGlyphPage;
 
-
-
+/// A Texture that has been initialized by the `device` module and is ready to
+/// be used.
 struct ActiveTexture {
     texture: Texture,
     saved_index: Option<SavedTargetIndex>,
 }
 
-
-
-
-
-
+/// Helper struct for resolving device Textures for use during rendering passes.
+///
+/// Manages the mapping between the at-a-distance texture handles used by the
+/// `RenderBackend` (which does not directly interface with the GPU) and actual
+/// device texture handles.
 struct TextureResolver {
-    
+    /// A map to resolve texture cache IDs to native textures.
     texture_cache_map: FastHashMap<CacheTextureId, Texture>,
 
-    
+    /// Map of external image IDs to native textures.
     external_images: FastHashMap<(ExternalImageId, u8), ExternalTexture>,
 
-    
-    
-    
+    /// A special 1x1 dummy texture used for shaders that expect to work with
+    /// the output of the previous pass but are actually running in the first
+    /// pass.
     dummy_cache_texture: Texture,
 
-    
+    /// The outputs of the previous pass, if applicable.
     prev_pass_color: Option<ActiveTexture>,
     prev_pass_alpha: Option<ActiveTexture>,
 
-    
-    
-    
-    
-    
+    /// Saved render targets from previous passes. This is used when a pass
+    /// needs access to the result of a pass other than the immediately-preceding
+    /// one. In this case, the `RenderTask` will get a non-`None` `saved_index`,
+    /// which will cause the resulting render target to be persisted in this list
+    /// (at that index) until the end of the frame.
     saved_targets: Vec<Texture>,
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    /// Pool of idle render target textures ready for re-use.
+    ///
+    /// Naively, it would seem like we only ever need two pairs of (color,
+    /// alpha) render targets: one for the output of the previous pass (serving
+    /// as input to the current pass), and one for the output of the current
+    /// pass. However, there are cases where the output of one pass is used as
+    /// the input to multiple future passes. For example, drop-shadows draw the
+    /// picture in pass X, then reference it in pass X+1 to create the blurred
+    /// shadow, and pass the results of both X and X+1 to pass X+2 draw the
+    /// actual content.
+    ///
+    /// See the comments in `allocate_target_texture` for more insight on why
+    /// reuse is a win.
     render_target_pool: Vec<Texture>,
 }
 
@@ -953,34 +953,34 @@ impl TextureResolver {
     }
 
     fn end_frame(&mut self, device: &mut Device, frame_id: GpuFrameId) {
-        
+        // return the cached targets to the pool
         self.end_pass(device, None, None);
-        
+        // return the saved targets as well
         while let Some(target) = self.saved_targets.pop() {
             self.return_to_pool(device, target);
         }
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // GC the render target pool.
+        //
+        // We use a simple scheme whereby we drop any texture that hasn't been used
+        // in the last 30 frames. This should generally prevent any sustained build-
+        // up of unused textures, unless we don't generate frames for a long period.
+        // This can happen when the window is minimized, and we probably want to
+        // flush all the WebRender caches in that case [1].
+        //
+        // [1] https://bugzilla.mozilla.org/show_bug.cgi?id=1494099
         self.retain_targets(device, |texture| texture.used_recently(frame_id, 30));
     }
 
-    
+    /// Transfers ownership of a render target back to the pool.
     fn return_to_pool(&mut self, device: &mut Device, target: Texture) {
         device.invalidate_render_target(&target);
         self.render_target_pool.push(target);
     }
 
-    
+    /// Drops all targets from the render target pool that do not satisfy the predicate.
     pub fn retain_targets<F: Fn(&Texture) -> bool>(&mut self, device: &mut Device, f: F) {
-        
+        // We can't just use retain() because `Texture` requires manual cleanup.
         let mut tmp = SmallVec::<[Texture; 8]>::new();
         for target in self.render_target_pool.drain(..) {
             if f(&target) {
@@ -998,10 +998,10 @@ impl TextureResolver {
         a8_texture: Option<ActiveTexture>,
         rgba8_texture: Option<ActiveTexture>,
     ) {
-        
-        
-        
-        
+        // If we have cache textures from previous pass, return them to the pool.
+        // Also assign the pool index of those cache textures to last pass's index because this is
+        // the result of last pass.
+        // Note: the order here is important, needs to match the logic in `RenderPass::build()`.
         if let Some(at) = self.prev_pass_color.take() {
             if let Some(index) = at.saved_index {
                 assert_eq!(self.saved_targets.len(), index.0);
@@ -1019,13 +1019,13 @@ impl TextureResolver {
             }
         }
 
-        
-        
+        // We have another pass to process, make these textures available
+        // as inputs to the next pass.
         self.prev_pass_color = rgba8_texture;
         self.prev_pass_alpha = a8_texture;
     }
 
-    
+    // Bind a source texture to the device.
     fn bind(&self, texture_id: &TextureSource, sampler: TextureSampler, device: &mut Device) {
         match *texture_id {
             TextureSource::Invalid => {}
@@ -1060,9 +1060,9 @@ impl TextureResolver {
         }
     }
 
-    
-    
-    
+    // Get the real (OpenGL) texture ID for a given source texture.
+    // For a texture cache texture, the IDs are stored in a vector
+    // map for fast access.
     fn resolve(&self, texture_id: &TextureSource) -> Option<&Texture> {
         match *texture_id {
             TextureSource::Invalid => None,
@@ -1093,8 +1093,8 @@ impl TextureResolver {
     fn report_memory(&self) -> MemoryReport {
         let mut report = MemoryReport::default();
 
-        
-        
+        // We're reporting GPU memory rather than heap-allocations, so we don't
+        // use size_of_op.
         for t in self.texture_cache_map.values() {
             report.texture_cache_textures += t.size_in_bytes();
         }
@@ -1120,12 +1120,12 @@ pub enum BlendMode {
     Advanced(MixBlendMode),
 }
 
-
+/// Tracks the state of each row in the GPU cache texture.
 struct CacheRow {
-    
-    
+    /// Mirrored block data on CPU for this row. We store a copy of
+    /// the data on the CPU side to improve upload batching.
     cpu_blocks: Box<[GpuBlockData; MAX_VERTEX_TEXTURE_WIDTH]>,
-    
+    /// True if this row is dirty.
     is_dirty: bool,
 }
 
@@ -1138,34 +1138,34 @@ impl CacheRow {
     }
 }
 
-
-
+/// The bus over which CPU and GPU versions of the GPU cache
+/// get synchronized.
 enum GpuCacheBus {
-    
-    
+    /// PBO-based updates, currently operate on a row granularity.
+    /// Therefore, are subject to fragmentation issues.
     PixelBuffer {
-        
+        /// PBO used for transfers.
         buffer: PBO,
-        
+        /// Per-row data.
         rows: Vec<CacheRow>,
     },
-    
-    
+    /// Shader-based scattering updates. Currently rendered by a set
+    /// of points into the GPU texture, each carrying a `GpuBlockData`.
     Scatter {
-        
+        /// Special program to run the scattered update.
         program: Program,
-        
+        /// VAO containing the source vertex buffers.
         vao: CustomVAO,
-        
+        /// VBO for positional data, supplied as normalized `u16`.
         buf_position: VBO<[u16; 2]>,
-        
+        /// VBO for gpu block data.
         buf_value: VBO<GpuBlockData>,
-        
+        /// Currently stored block count.
         count: usize,
     },
 }
 
-
+/// The device-specific representation of the cache texture in gpu_cache.rs
 struct GpuCacheTexture {
     texture: Option<Texture>,
     bus: GpuCacheBus,
@@ -1173,31 +1173,31 @@ struct GpuCacheTexture {
 
 impl GpuCacheTexture {
 
-    
-    
+    /// Ensures that we have an appropriately-sized texture. Returns true if a
+    /// new texture was created.
     fn ensure_texture(&mut self, device: &mut Device, height: i32) {
-        
+        // If we already have a texture that works, we're done.
         if self.texture.as_ref().map_or(false, |t| t.get_dimensions().height >= height) {
             if GPU_CACHE_RESIZE_TEST {
-                
+                // Special debug mode - resize the texture even though it's fine.
             } else {
                 return;
             }
         }
 
-        
+        // Take the old texture, if any.
         let blit_source = self.texture.take();
 
-        
+        // Create the new texture.
         assert!(height >= 2, "Height is too small for ANGLE");
         let new_size = DeviceIntSize::new(MAX_VERTEX_TEXTURE_WIDTH as _, height);
-        
-        
-        
-        
-        
-        
-        
+        // If glCopyImageSubData is supported, this texture doesn't need
+        // to be a render target. This prevents GL errors due to framebuffer
+        // incompleteness on devices that don't support RGBAF32 render targets.
+        // TODO(gw): We still need a proper solution for the subset of devices
+        //           that don't support glCopyImageSubData *OR* rendering to a
+        //           RGBAF32 render target. These devices will currently fail
+        //           to resize the GPU cache texture.
         let supports_copy_image_sub_data = device.get_capabilities().supports_copy_image_sub_data;
         let rt_info =  if supports_copy_image_sub_data {
             None
@@ -1214,7 +1214,7 @@ impl GpuCacheTexture {
             1,
         );
 
-        
+        // Blit the contents of the previous texture, if applicable.
         if let Some(blit_source) = blit_source {
             device.blit_renderable_texture(&mut texture, &blit_source);
             device.delete_texture(blit_source);
@@ -1232,8 +1232,8 @@ impl GpuCacheTexture {
             )?;
             let buf_position = device.create_vbo();
             let buf_value = device.create_vbo();
-            
-            
+            //Note: the vertex attributes have to be supplied in the same order
+            // as for program creation, but each assigned to a different stream.
             let vao = device.create_custom_vao(&[
                 buf_position.stream_with(&desc::GPU_CACHE_UPDATE.vertex_attributes[0..1]),
                 buf_value   .stream_with(&desc::GPU_CACHE_UPDATE.vertex_attributes[1..2]),
@@ -1316,17 +1316,17 @@ impl GpuCacheTexture {
                         } => {
                             let row = address.v as usize;
 
-                            
-                            
+                            // Ensure that the CPU-side shadow copy of the GPU cache data has enough
+                            // rows to apply this patch.
                             while rows.len() <= row {
-                                
+                                // Add a new row.
                                 rows.push(CacheRow::new());
                             }
 
-                            
+                            // This row is dirty (needs to be updated in GPU texture).
                             rows[row].is_dirty = true;
 
-                            
+                            // Copy the blocks from the patch array in the shadow CPU copy.
                             let block_offset = address.u as usize;
                             let data = &mut rows[row].cpu_blocks;
                             for i in 0 .. block_count {
@@ -1342,9 +1342,9 @@ impl GpuCacheTexture {
                 ref mut count,
                 ..
             } => {
-                
-                
-                
+                //TODO: re-use this heap allocation
+                // Unused positions will be left as 0xFFFF, which translates to
+                // (1.0, 1.0) in the vertex output position and gets culled out
                 let mut position_data = vec![[!0u16; 2]; updates.blocks.len()];
                 let size = self.texture.as_ref().unwrap().get_dimensions().to_usize();
 
@@ -1355,7 +1355,7 @@ impl GpuCacheTexture {
                             block_count,
                             address,
                         } => {
-                            
+                            // Convert the absolute texel position into normalized
                             let y = ((2*address.v as usize + 1) << 15) / size.height;
                             for i in 0 .. block_count {
                                 let x = ((2*address.u as usize + 2*i + 1) << 15) / size.width;
@@ -1446,12 +1446,12 @@ impl<T> VertexDataTexture<T> {
         }
     }
 
-    
+    /// Returns a borrow of the GPU texture. Panics if it hasn't been initialized.
     fn texture(&self) -> &Texture {
         self.texture.as_ref().unwrap()
     }
 
-    
+    /// Returns an estimate of the GPU memory consumed by this VertexDataTexture.
     fn size_in_bytes(&self) -> usize {
         self.texture.as_ref().map_or(0, |t| t.size_in_bytes())
     }
@@ -1461,7 +1461,7 @@ impl<T> VertexDataTexture<T> {
         let texels_per_item = mem::size_of::<T>() / 16;
         let items_per_row = MAX_VERTEX_TEXTURE_WIDTH / texels_per_item;
 
-        
+        // Ensure we always end up with a texture when leaving this method.
         if data.is_empty() {
             if self.texture.is_some() {
                 return;
@@ -1469,9 +1469,9 @@ impl<T> VertexDataTexture<T> {
             data.push(unsafe { mem::uninitialized() });
         }
 
-        
-        
-        
+        // Extend the data array to be a multiple of the row size.
+        // This ensures memory safety when the array is passed to
+        // OpenGL to upload to the GPU.
         if items_per_row != 0 {
             while data.len() % items_per_row != 0 {
                 data.push(unsafe { mem::uninitialized() });
@@ -1483,17 +1483,17 @@ impl<T> VertexDataTexture<T> {
         let needed_height = (data.len() / items_per_row) as i32;
         let existing_height = self.texture.as_ref().map_or(0, |t| t.get_dimensions().height);
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // Create a new texture if needed.
+        //
+        // These textures are generally very small, which is why we don't bother
+        // with incremental updates and just re-upload every frame. For most pages
+        // they're one row each, and on stress tests like css-francine they end up
+        // in the 6-14 range. So we size the texture tightly to what we need (usually
+        // 1), and shrink it if the waste would be more than 10 rows. This helps
+        // with memory overhead, especially because there are several instances of
+        // these textures per Renderer.
         if needed_height > existing_height || needed_height + 10 < existing_height {
-            
+            // Drop the existing texture, if any.
             if let Some(t) = self.texture.take() {
                 device.delete_texture(t);
             }
@@ -1502,8 +1502,8 @@ impl<T> VertexDataTexture<T> {
                 TextureTarget::Default,
                 self.format,
                 width,
-                
-                
+                // Ensure height is at least two to work around
+                // https://bugs.chromium.org/p/angleproject/issues/detail?id=3039
                 needed_height.max(2),
                 TextureFilter::Nearest,
                 None,
@@ -1562,7 +1562,7 @@ impl LazyInitializedDebugRenderer {
             match DebugRenderer::new(device) {
                 Ok(renderer) => { self.debug_renderer = Some(renderer); }
                 Err(_) => {
-                    
+                    // The shader compilation code already logs errors.
                     self.failed = true;
                 }
             }
@@ -1571,7 +1571,7 @@ impl LazyInitializedDebugRenderer {
         self.debug_renderer.as_mut()
     }
 
-    
+    /// Returns mut ref to `DebugRenderer` if one already exists, otherwise returns `None`.
     pub fn try_get_mut<'a>(&'a mut self) -> Option<&'a mut DebugRenderer> {
         self.debug_renderer.as_mut()
     }
@@ -1583,8 +1583,8 @@ impl LazyInitializedDebugRenderer {
     }
 }
 
-
-
+// NB: If you add more VAOs here, be sure to deinitialize them in
+// `Renderer::deinit()` below.
 pub struct RendererVAOs {
     prim_vao: VAO,
     blur_vao: VAO,
@@ -1597,11 +1597,11 @@ pub struct RendererVAOs {
 }
 
 
-
-
-
-
-
+/// The renderer is responsible for submitting to the GPU the work prepared by the
+/// RenderBackend.
+///
+/// We have a separate `Renderer` instance for each instance of WebRender (generally
+/// one per OS window), and all instances share the same thread.
 pub struct Renderer {
     result_rx: Receiver<ResultMsg>,
     debug_server: Box<dyn DebugServer>,
@@ -1644,9 +1644,9 @@ pub struct Renderer {
     render_task_texture: VertexDataTexture<RenderTaskData>,
     gpu_cache_texture: GpuCacheTexture,
 
-    
-    
-    
+    /// When the GPU cache debugger is enabled, we keep track of the live blocks
+    /// in the GPU cache so that we can use them for the debug display. This
+    /// member stores those live blocks, indexed by row.
     gpu_cache_debug_chunks: Vec<Vec<GpuCacheDebugChunk>>,
 
     gpu_cache_frame_id: FrameId,
@@ -1654,28 +1654,28 @@ pub struct Renderer {
 
     pipeline_info: PipelineInfo,
 
-    
+    // Manages and resolves source textures IDs to real texture IDs.
     texture_resolver: TextureResolver,
 
-    
+    // A PBO used to do asynchronous texture cache uploads.
     texture_cache_upload_pbo: PBO,
 
     dither_matrix_texture: Option<Texture>,
 
-    
-    
+    /// Optional trait object that allows the client
+    /// application to provide external buffers for image data.
     external_image_handler: Option<Box<dyn ExternalImageHandler>>,
 
-    
-    
-    
+    /// Optional trait object that allows the client
+    /// application to provide a texture handle to
+    /// copy the WR output to.
     output_image_handler: Option<Box<dyn OutputImageHandler>>,
 
-    
-    
+    /// Optional function pointers for measuring memory used by a given
+    /// heap-allocated pointer.
     size_of_ops: Option<MallocSizeOfOps>,
 
-    
+    // Currently allocated FBOs for output frames.
     output_targets: FastHashMap<u32, FrameOutput>,
 
     pub renderer_errors: Vec<RendererError>,
@@ -1683,28 +1683,28 @@ pub struct Renderer {
     pub(in crate) async_frame_recorder: Option<AsyncScreenshotGrabber>,
     pub(in crate) async_screenshots: Option<AsyncScreenshotGrabber>,
 
-    
-    
+    /// List of profile results from previous frames. Can be retrieved
+    /// via get_frame_profiles().
     cpu_profiles: VecDeque<CpuProfile>,
     gpu_profiles: VecDeque<GpuProfile>,
 
-    
+    /// Notification requests to be fulfilled after rendering.
     notifications: Vec<NotificationRequest>,
 
     device_size: Option<DeviceIntSize>,
 
-    
+    /// A lazily created texture for the zoom debugging widget.
     zoom_debug_texture: Option<Texture>,
 
-    
-    
+    /// The current mouse position. This is used for debugging
+    /// functionality only, such as the debug zoom widget.
     cursor_position: DeviceIntPoint,
 
-    
-    
+    /// Guards to check if we might be rendering a frame with expired texture
+    /// cache entries.
     shared_texture_cache_cleared: bool,
 
-    
+    /// The set of documents which we've seen a publish for since last render.
     documents_seen: FastHashSet<DocumentId>,
 
     #[cfg(feature = "capture")]
@@ -1740,23 +1740,23 @@ impl From<ResourceCacheError> for RendererError {
 }
 
 impl Renderer {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    /// Initializes WebRender and creates a `Renderer` and `RenderApiSender`.
+    ///
+    /// # Examples
+    /// Initializes a `Renderer` with some reasonable values. For more information see
+    /// [`RendererOptions`][rendereroptions].
+    ///
+    /// ```rust,ignore
+    /// # use webrender::renderer::Renderer;
+    /// # use std::path::PathBuf;
+    /// let opts = webrender::RendererOptions {
+    ///    device_pixel_ratio: 1.0,
+    ///    resource_override_path: None,
+    ///    enable_aa: false,
+    /// };
+    /// let (renderer, sender) = Renderer::new(opts);
+    /// ```
+    /// [rendereroptions]: struct.RendererOptions.html
     pub fn new(
         gl: Rc<dyn gl::Gl>,
         notifier: Box<dyn RenderNotifier>,
@@ -1790,8 +1790,8 @@ impl Renderer {
         let use_dual_source_blending =
             supports_dual_source_blending &&
             options.allow_dual_source_blending &&
-            
-            
+            // If using pixel local storage, subpixel AA isn't supported (we disable it on all
+            // mobile devices explicitly anyway).
             !device.get_capabilities().supports_pixel_local_storage;
         let ext_blend_equation_advanced =
             options.allow_advanced_blend_equation &&
@@ -1799,15 +1799,15 @@ impl Renderer {
         let ext_blend_equation_advanced_coherent =
             device.supports_extension("GL_KHR_blend_equation_advanced_coherent");
 
-        
+        // 512 is the minimum that the texture cache can work with.
         const MIN_TEXTURE_SIZE: i32 = 512;
         if let Some(user_limit) = options.max_texture_size {
             assert!(user_limit >= MIN_TEXTURE_SIZE);
             device.clamp_max_texture_size(user_limit);
         }
         if device.max_texture_size() < MIN_TEXTURE_SIZE {
-            
-            
+            // Broken GL contexts can return a max texture size of zero (See #1260).
+            // Better to gracefully fail now than panic as soon as a texture is allocated.
             error!(
                 "Device reporting insufficient max texture size ({})",
                 device.max_texture_size()
@@ -3815,7 +3815,7 @@ impl Renderer {
                 self.device.blit_render_target_invert_y(
                     draw_target.into(),
                     draw_target.to_framebuffer_rect(src_rect.translate(&-content_origin.to_vector())),
-                    DrawTarget::External { fbo: fbo_id, size: output_size.into() },
+                    DrawTarget::External { fbo: fbo_id, size: output_size },
                     output_size.into(),
                 );
                 handler.unlock(output.pipeline_id);
