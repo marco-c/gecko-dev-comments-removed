@@ -1,116 +1,108 @@
 
 
-const DEFAULT_VIEWER_URL = "https://profiler.firefox.com";
+
+"use strict";
+
+
+
+
+
+
+
+
+
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { AppConstants } = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const Loader = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+
+const { loader } = Loader;
+
+
+
+
+ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
+ChromeUtils.defineModuleGetter(this, "ProfilerGetSymbols",
+  "resource://gre/modules/ProfilerGetSymbols.jsm");
+loader.lazyRequireGetter(this, "receiveProfile",
+  "devtools/client/performance-new/browser", true);
+
+
+
+const PROFILER_STATE_PREF = "devtools.performance.popup";
 const DEFAULT_WINDOW_LENGTH = 20; 
 
-const tabToConnectionMap = new Map();
 
-var profilerState;
-var profileViewerURL = DEFAULT_VIEWER_URL;
-var isMigratedToNewUrl;
+const symbolCache = new Map();
+
+const primeSymbolStore = libs => {
+  for (const {path, debugName, debugPath, breakpadId} of libs) {
+    symbolCache.set(`${debugName}/${breakpadId}`, {path, debugPath});
+  }
+};
+
+const state = intializeState();
 
 function adjustState(newState) {
   
   
   newState = JSON.parse(JSON.stringify(newState));
-  Object.assign(window.profilerState, newState);
-  browser.storage.local.set({ profilerState: window.profilerState });
-}
+  Object.assign(state, newState);
 
-function makeProfileAvailableToTab(profile, port) {
-  port.postMessage({ type: "ProfilerConnectToPage", payload: profile });
-
-  port.onMessage.addListener(async message => {
-    if (message.type === "ProfilerGetSymbolTable") {
-      const { debugName, breakpadId } = message;
-      try {
-        const [
-          addresses,
-          index,
-          buffer,
-        ] = await browser.geckoProfiler.getSymbols(debugName, breakpadId);
-
-        port.postMessage({
-          type: "ProfilerGetSymbolTableReply",
-          status: "success",
-          result: [addresses, index, buffer],
-          debugName,
-          breakpadId,
-        });
-      } catch (e) {
-        port.postMessage({
-          type: "ProfilerGetSymbolTableReply",
-          status: "error",
-          error: `${e}`,
-          debugName,
-          breakpadId,
-        });
-      }
-    }
-  });
-}
-
-async function createAndWaitForTab(url) {
-  const tabPromise = browser.tabs.create({
-    active: true,
-    url,
-  });
-
-  return tabPromise;
-}
-
-function getProfilePreferablyAsArrayBuffer() {
-  
-  
-  if ("getProfileAsArrayBuffer" in browser.geckoProfiler) {
-    return browser.geckoProfiler.getProfileAsArrayBuffer();
+  try {
+    Services.prefs.setStringPref(PROFILER_STATE_PREF,
+      JSON.stringify(state));
+  } catch (error) {
+    console.error("Unable to save the profiler state for the popup.");
+    throw error;
   }
-  return browser.geckoProfiler.getProfile();
+}
+
+function getSymbols(debugName, breakpadId) {
+  if (symbolCache.size === 0) {
+    primeSymbolStore(Services.profiler.sharedLibraries);
+  }
+
+  const cachedLibInfo = symbolCache.get(`${debugName}/${breakpadId}`);
+  if (!cachedLibInfo) {
+    throw new Error(
+      `The library ${debugName} ${breakpadId} is not in the ` +
+      "Services.profiler.sharedLibraries list, so the local path for it is not known " +
+      "and symbols for it can not be obtained. This usually happens if a content " +
+      "process uses a library that's not used in the parent process - " +
+      "Services.profiler.sharedLibraries only knows about libraries in the " +
+      "parent process.");
+  }
+
+  const {path, debugPath} = cachedLibInfo;
+  if (!OS.Path.split(path).absolute) {
+    throw new Error(
+      "Services.profiler.sharedLibraries did not contain an absolute path for " +
+      `the library ${debugName} ${breakpadId}, so symbols for this library can not ` +
+      "be obtained.");
+  }
+
+  return ProfilerGetSymbols.getSymbolTable(path, debugPath, breakpadId);
 }
 
 async function captureProfile() {
+  if (!state.isRunning) {
+    
+    return;
+  }
   
   
-  await browser.geckoProfiler.pause().catch(() => {});
+  Services.profiler.PauseSampling();
 
-  const profilePromise = getProfilePreferablyAsArrayBuffer().catch(
+  const profile = await Services.profiler.getProfileDataAsArrayBuffer().catch(
     e => {
       console.error(e);
       return {};
     }
   );
 
-  const tabOpenPromise = createAndWaitForTab(profileViewerURL + "/from-addon");
+  receiveProfile(profile, getSymbols);
 
-  try {
-    const [profile, tab] = await Promise.all([profilePromise, tabOpenPromise]);
-
-    const connection = tabToConnectionMap.get(tab.id);
-
-    if (connection) {
-      
-      
-      
-      
-      makeProfileAvailableToTab(profile, connection.port);
-    } else {
-      
-      
-      
-      tabToConnectionMap.set(tab.id, { profile });
-    }
-  } catch (e) {
-    console.error(e);
-    
-    
-    
-  }
-
-  try {
-    await browser.geckoProfiler.resume();
-  } catch (e) {
-    console.error(e);
-  }
+  Services.profiler.ResumeSampling();
 }
 
 
@@ -122,185 +114,152 @@ function getEnabledFeatures(features, threads) {
   if (threads.length > 0) {
     enabledFeatures.push("threads");
   }
-  const supportedFeatures = Object.values(
-    browser.geckoProfiler.ProfilerFeature
-  );
+  const supportedFeatures = Services.profiler.GetFeatures([]);
   return enabledFeatures.filter(feature => supportedFeatures.includes(feature));
 }
 
-async function startProfiler() {
-  const settings = window.profilerState;
-  const threads = settings.threads.split(",");
-  const options = {
-    bufferSize: settings.buffersize,
-    interval: settings.interval,
-    features: getEnabledFeatures(settings.features, threads),
-    threads,
-  };
-  if (
-    browser.geckoProfiler.supports &&
-    browser.geckoProfiler.supports.WINDOWLENGTH
-  ) {
-    options.windowLength =
-      settings.windowLength !== settings.infiniteWindowLength
-        ? settings.windowLength
-        : 0;
-  }
-  await browser.geckoProfiler.start(options);
+function startProfiler() {
+  const threads = state.threads.split(",");
+  const features = getEnabledFeatures(state.features, threads);
+  const windowLength = state.windowLength !== state.infiniteWindowLength
+  ? state.windowLength
+  : 0;
+
+  const { buffersize, interval } = state;
+
+  Services.profiler.StartProfiler(buffersize, interval, features, threads, windowLength);
 }
 
 async function stopProfiler() {
-  await browser.geckoProfiler.stop();
+  Services.profiler.StopProfiler();
+}
+
+function toggleProfiler() {
+  if (state.isRunning) {
+    stopProfiler();
+  } else {
+    startProfiler();
+  }
+}
+
+function restartProfiler() {
+  stopProfiler();
+  startProfiler();
 }
 
 
-async function restartProfiler() {
-  await stopProfiler();
-  await startProfiler();
-}
+const isRunningObserver = {
+  _observers: new Set(),
 
-(async () => {
-  const storageResults = await browser.storage.local.get({
-    profilerState: null,
-    profileViewerURL: DEFAULT_VIEWER_URL,
-    
-    
-    isMigratedToNewUrl: false,
-  });
+  observe(subject, topic, data) {
+    switch (topic) {
+      case "profiler-started":
+      case "profiler-stopped":
+        
+        const isRunningPromise = Promise.resolve(topic === "profiler-started");
+        for (const observer of this._observers) {
+          isRunningPromise.then(observer);
+        }
+        break;
+    }
+  },
 
+  _startListening() {
+    Services.obs.addObserver(this, "profiler-started");
+    Services.obs.addObserver(this, "profiler-stopped");
+  },
+
+  _stopListening() {
+    Services.obs.removeObserver(this, "profiler-started");
+    Services.obs.removeObserver(this, "profiler-stopped");
+  },
+
+  addObserver(observer) {
+    if (this._observers.size === 0) {
+      this._startListening();
+    }
+
+    this._observers.add(observer);
+    
+    Promise.resolve(Services.profiler.IsActive()).then(observer);
+  },
+
+  removeObserver(observer) {
+    if (this._observers.delete(observer) && this._observers.size === 0) {
+      this._stopListening();
+    }
+  },
+};
+
+function getStoredStateOrNull() {
   
-  window.profilerState = storageResults.profilerState;
-  window.profileViewerURL = storageResults.profileViewerURL;
-
-  if (!storageResults.isMigratedToNewUrl) {
-    if (window.profileViewerURL.startsWith("https://perf-html.io")) {
-      
-      
-      window.profileViewerURL = DEFAULT_VIEWER_URL;
-    }
-    
-    
-    await browser.storage.local.set({
-      isMigratedToNewUrl: true,
-      profileViewerURL: window.profileViewerURL,
-    });
+  const storedStateString = Services.prefs.getStringPref(PROFILER_STATE_PREF, "");
+  if (storedStateString === "") {
+    return null;
   }
 
-  if (!window.profilerState) {
-    window.profilerState = {};
-
-    const features = {
-      java: false,
-      js: true,
-      leaf: true,
-      mainthreadio: false,
-      memory: false,
-      privacy: false,
-      responsiveness: true,
-      screenshots: false,
-      seqstyle: false,
-      stackwalk: true,
-      tasktracer: false,
-      trackopts: false,
-      jstracer: false,
-    };
-
-    const platform = await browser.runtime.getPlatformInfo();
-    switch (platform.os) {
-      case "mac":
-        
-        features.screenshots = true;
-        break;
-      case "android":
-        
-        features.java = true;
-        break;
-    }
-
-    adjustState({
-      isRunning: false,
-      settingsOpen: false,
-      buffersize: 10000000, 
-      windowLength: DEFAULT_WINDOW_LENGTH,
-      interval: 1,
-      features,
-      threads: "GeckoMain,Compositor",
-    });
-  } else if (window.profilerState.windowLength === undefined) {
+  try {
     
-    
-    
-    adjustState({
-      windowLength: DEFAULT_WINDOW_LENGTH,
-    });
+    return JSON.parse(storedStateString);
+  } catch (error) {
+    console.error(`Could not parse the stored state for the profile in the ` +
+      `preferences ${PROFILER_STATE_PREF}`);
+  }
+  return null;
+}
+
+function intializeState() {
+  const storedState = getStoredStateOrNull();
+  if (storedState) {
+    return storedState;
   }
 
-  browser.geckoProfiler.onRunning.addListener(isRunning => {
-    adjustState({ isRunning });
+  const features = {
+    java: false,
+    js: true,
+    leaf: true,
+    mainthreadio: false,
+    memory: false,
+    privacy: false,
+    responsiveness: true,
+    screenshots: false,
+    seqstyle: false,
+    stackwalk: true,
+    tasktracer: false,
+    trackopts: false,
+    jstracer: false,
+  };
 
+  if (AppConstants.platform === "android") {
     
-    
-    
-    
-    browser.browserAction.setIcon({
-      path: isRunning ? "icons/toolbar_on.png" : null,
-    });
+    features.java = true;
+  }
 
-    browser.browserAction.setTitle({
-      title: isRunning ? "Gecko Profiler (on)" : null,
-    });
+  return {
+    isRunning: false,
+    settingsOpen: false,
+    buffersize: 10000000, 
+    windowLength: DEFAULT_WINDOW_LENGTH,
+    interval: 1,
+    features,
+    threads: "GeckoMain,Compositor",
+  };
+}
 
-    for (const popup of browser.extension.getViews({ type: "popup" })) {
-      popup.renderState(window.profilerState);
-    }
-  });
+isRunningObserver.addObserver(isRunning => {
+  adjustState({ isRunning });
+});
 
-  browser.storage.onChanged.addListener(changes => {
-    if (changes.profileViewerURL) {
-      profileViewerURL = changes.profileViewerURL.newValue;
-    }
-  });
+const platform = AppConstants.platform;
 
-  browser.commands.onCommand.addListener(command => {
-    if (command === "ToggleProfiler") {
-      if (window.profilerState.isRunning) {
-        stopProfiler();
-      } else {
-        startProfiler();
-      }
-    } else if (command === "CaptureProfile") {
-      if (window.profilerState.isRunning) {
-        captureProfile();
-      }
-    }
-  });
-
-  browser.runtime.onConnect.addListener(port => {
-    const tabId = port.sender.tab.id;
-    const connection = tabToConnectionMap.get(tabId);
-    if (connection && connection.profile) {
-      makeProfileAvailableToTab(connection.profile, port);
-    } else {
-      tabToConnectionMap.set(tabId, { port });
-    }
-  });
-
-  browser.tabs.onRemoved.addListener(tabId => {
-    tabToConnectionMap.delete(tabId);
-  });
-
-  browser.webNavigation.onDOMContentLoaded.addListener(
-    async ({ frameId, tabId, url }) => {
-      if (frameId !== 0) {
-        return;
-      }
-      if (url.startsWith(profileViewerURL)) {
-        browser.tabs.executeScript(tabId, { file: "content.js" });
-      } else {
-        
-        
-        tabToConnectionMap.delete(tabId);
-      }
-    }
-  );
-})();
+var EXPORTED_SYMBOLS = [
+  "adjustState",
+  "captureProfile",
+  "state",
+  "startProfiler",
+  "stopProfiler",
+  "restartProfiler",
+  "toggleProfiler",
+  "isRunningObserver",
+  "platform",
+];
