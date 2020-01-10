@@ -2310,6 +2310,8 @@ pref("services.settings.security.onecrl.checked", 0);
 
 pref("extensions.abuseReport.enabled", true);
 
+pref("extensions.abuseReport.amWebAPI.enabled", false);
+
 pref("extensions.abuseReport.openDialog", false);
 pref("extensions.abuseReport.url", "https://services.addons.mozilla.org/api/v4/abuse/report/addon/");
 pref("extensions.abuseReport.amoDetailsURL", "https://services.addons.mozilla.org/api/v4/addons/addon/");

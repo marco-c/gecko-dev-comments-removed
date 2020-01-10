@@ -15,6 +15,9 @@ const PREF_ABUSE_REPORT_OPEN_DIALOG = "extensions.abuseReport.openDialog";
 const PREF_AMO_DETAILS_API_URL = "extensions.abuseReport.amoDetailsURL";
 
 
+const DIALOG_WINDOW_NAME = "addons-abuse-report-dialog";
+
+
 const MAX_STRING_LENGTH = 255;
 
 
@@ -361,6 +364,16 @@ const AbuseReporter = {
 
 
 
+  getOpenDialog() {
+    return Services.ww.getWindowByName(DIALOG_WINDOW_NAME, null);
+  },
+
+  
+
+
+
+
+
 
 
 
@@ -388,8 +401,7 @@ const AbuseReporter = {
       throw new Error("Abuse Reporter dialog cancelled, opener tab closed");
     }
 
-    const windowName = "addons-abuse-report-dialog";
-    const dialogWin = Services.ww.getWindowByName(windowName, null);
+    const dialogWin = this.getOpenDialog();
 
     if (dialogWin) {
       
@@ -455,7 +467,7 @@ const AbuseReporter = {
     win = Services.ww.openWindow(
       chromeWin,
       "chrome://mozapps/content/extensions/abuse-report-frame.html",
-      windowName,
+      DIALOG_WINDOW_NAME,
       
       
       

@@ -114,6 +114,12 @@ async function installTestExtension(
   return extension;
 }
 
+function handleSubmitRequest({ request, response }) {
+  response.setStatusLine(request.httpVersion, 200, "OK");
+  response.setHeader("Content-Type", "application/json", false);
+  response.write("{}");
+}
+
 const AbuseReportTestUtils = {
   _mockProvider: null,
   _mockServer: null,
