@@ -36,6 +36,58 @@ registerCleanupFunction(
 
 
 
+function verifyLogins(expectedLogins = []) {
+  let allLogins = Services.logins.getAllLogins();
+  is(
+    allLogins.length,
+    expectedLogins.length,
+    "Check actual number of logins matches the number of provided expected property-sets"
+  );
+  for (let i = 0; i < expectedLogins.length; i++) {
+    
+    let expected = expectedLogins[i];
+    if (expected) {
+      let login = allLogins[i];
+      if (typeof expected.timesUsed !== "undefined") {
+        is(login.timesUsed, expected.timesUsed, "Check timesUsed");
+      }
+      if (typeof expected.passwordLength !== "undefined") {
+        is(
+          login.password.length,
+          expected.passwordLength,
+          "Check passwordLength"
+        );
+      }
+      if (typeof expected.username !== "undefined") {
+        is(login.username, expected.username, "Check username");
+      }
+      if (typeof expected.password !== "undefined") {
+        info(
+          `verifyLogins, login has password: ${login.password}, expects: ${
+            expected.password
+          }`
+        );
+        is(login.password, expected.password, "Check password");
+      }
+      if (typeof expected.usedSince !== "undefined") {
+        ok(login.timeLastUsed > expected.usedSince, "Check timeLastUsed");
+      }
+      if (typeof expected.passwordChangedSince !== "undefined") {
+        ok(
+          login.timePasswordChanged > expected.passwordChangedSince,
+          "Check timePasswordChanged"
+        );
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
 
 
 
@@ -155,6 +207,23 @@ function getCaptureDoorhanger(
   return notification;
 }
 
+async function getCaptureDoorhangerThatMayOpen(
+  aKind,
+  popupNotifications = PopupNotifications,
+  browser = null
+) {
+  let notif = getCaptureDoorhanger(aKind, popupNotifications, browser);
+  if (notif && !notif.dismissed) {
+    if (popupNotifications.panel.state !== "open") {
+      await BrowserTestUtils.waitForEvent(
+        popupNotifications.panel,
+        "popupshown"
+      );
+    }
+  }
+  return notif;
+}
+
 
 
 
@@ -182,6 +251,18 @@ function clickDoorhangerButton(aPopup, aButtonIndex) {
       .querySelectorAll("menuitem")
       [aButtonIndex].doCommand();
   }
+}
+
+async function cleanupDoorhanger(notif) {
+  let PN = notif ? notif.owner : PopupNotifications;
+  if (notif) {
+    notif.remove();
+  }
+  let promiseHidden = PN.isPanelOpen
+    ? BrowserTestUtils.waitForEvent(PN.panel, "popuphidden")
+    : Promise.resolve;
+  PN.panel.hidePopup();
+  await promiseHidden;
 }
 
 
