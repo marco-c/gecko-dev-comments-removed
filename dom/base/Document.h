@@ -573,6 +573,8 @@ class Document : public nsINode,
     return mIntrinsicStoragePrincipal;
   }
 
+  void ClearActiveStoragePrincipal() { mActiveStoragePrincipal = nullptr; }
+
   nsIPrincipal* GetContentBlockingAllowListPrincipal() const {
     return mContentBlockingAllowListPrincipal;
   }
@@ -5342,6 +5344,11 @@ class Document : public nsINode,
 
   
   nsCOMPtr<nsIPrincipal> mIntrinsicStoragePrincipal;
+
+  
+  
+  
+  mutable nsCOMPtr<nsIPrincipal> mActiveStoragePrincipal;
 
   
   nsCOMPtr<nsIPrincipal> mContentBlockingAllowListPrincipal;
