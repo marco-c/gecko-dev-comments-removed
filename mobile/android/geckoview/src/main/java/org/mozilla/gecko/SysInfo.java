@@ -5,15 +5,15 @@
 
 package org.mozilla.gecko;
 
+import android.app.ActivityManager;
+import android.app.ActivityManager.MemoryInfo;
+import android.content.Context;
 import android.util.Log;
 
 import org.mozilla.gecko.util.StrictModeContext;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 
 import java.util.regex.Pattern;
 
@@ -81,92 +81,26 @@ public final class SysInfo {
 
 
 
-    private static boolean matchMemText(final byte[] buffer, final int index,
-                                        final int bufferLength, final byte[] text) {
-        final int N = text.length;
-        if ((index + N) >= bufferLength) {
-            return false;
-        }
-        for (int i = 0; i < N; i++) {
-            if (buffer[index + i] != text[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    
 
 
 
-
-
-
-
-
-
-    private static int extractMemValue(final byte[] buffer, final int offset, final int length) {
-        if (offset >= length) {
-            return 0;
-        }
-
-        int i = offset;
-        while (i < length && buffer[i] != '\n') {
-            if (buffer[i] >= '0' && buffer[i] <= '9') {
-                int start = i++;
-                while (i < length && buffer[i] >= '0' && buffer[i] <= '9') {
-                    ++i;
-                }
-                return Integer.parseInt(new String(buffer, start, i - start), 10);
-            }
-            ++i;
-        }
-        return 0;
-    }
-
-    
-
-
-
-
-
-
-
-    @SuppressWarnings("try")
-    public static int getMemSize() {
+    public static int getMemSize(final Context context) {
         if (totalRAM >= 0) {
             return totalRAM;
         }
 
-        
-        final byte[] MEMTOTAL = {'M', 'e', 'm', 'T', 'o', 't', 'a', 'l'};
+        final MemoryInfo memInfo = new MemoryInfo();
+
+        final ActivityManager am = (ActivityManager) context
+                                   .getSystemService(Context.ACTIVITY_SERVICE);
+        am.getMemoryInfo(memInfo);
 
         
-        try (StrictModeContext unused = StrictModeContext.allowDiskReads()) {
-            final byte[] buffer = new byte[MEMINFO_BUFFER_SIZE_BYTES];
-            final FileInputStream is = new FileInputStream("/proc/meminfo");
-            try {
-                final int length = is.read(buffer);
+        totalRAM = (int)(memInfo.totalMem / (1024 * 1024));
 
-                for (int i = 0; i < length; i++) {
-                    if (matchMemText(buffer, i, length, MEMTOTAL)) {
-                        i += 8;
-                        totalRAM = extractMemValue(buffer, i, length) / 1024;
-                        Log.d(LOG_TAG, "System memory: " + totalRAM + "MB.");
-                        return totalRAM;
-                    }
-                }
-            } finally {
-                is.close();
-            }
+        Log.d(LOG_TAG, "System memory: " + totalRAM + "MB.");
 
-            Log.w(LOG_TAG, "Did not find MemTotal line in /proc/meminfo.");
-            return totalRAM = 0;
-        } catch (FileNotFoundException f) {
-            return totalRAM = 0;
-        } catch (IOException e) {
-            return totalRAM = 0;
-        }
+        return totalRAM;
     }
 
     
