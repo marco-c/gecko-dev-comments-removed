@@ -684,7 +684,13 @@ class BaselineInterpreterHandler {
   Label codeCoverageAtPCLabel_;
 
   
+  BaselineInterpreter::ICReturnOffsetVector icReturnOffsets_;
+
+  
   BaselineInterpreter::CallVMOffsets callVMOffsets_;
+
+  
+  mozilla::Maybe<JSOp> currentOp_;
 
  public:
   using FrameInfoT = InterpreterFrameInfo;
@@ -703,6 +709,14 @@ class BaselineInterpreterHandler {
     return debugInstrumentationOffsets_;
   }
   CodeOffsetVector& codeCoverageOffsets() { return codeCoverageOffsets_; }
+
+  BaselineInterpreter::ICReturnOffsetVector& icReturnOffsets() {
+    return icReturnOffsets_;
+  }
+
+  void setCurrentOp(JSOp op) { currentOp_.emplace(op); }
+  void resetCurrentOp() { currentOp_.reset(); }
+  mozilla::Maybe<JSOp> currentOp() const { return currentOp_; }
 
   
   jsbytecode* maybePC() const { return nullptr; }

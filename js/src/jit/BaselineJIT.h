@@ -529,6 +529,20 @@ static const unsigned BASELINE_MAX_ARGS_LENGTH = 20000;
 
 
 class BaselineInterpreter {
+ public:
+  struct CallVMOffsets {
+    uint32_t debugPrologueOffset = 0;
+    uint32_t debugEpilogueOffset = 0;
+    uint32_t debugAfterYieldOffset = 0;
+  };
+  struct ICReturnOffset {
+    uint32_t offset;
+    JSOp op;
+    ICReturnOffset(uint32_t offset, JSOp op) : offset(offset), op(op) {}
+  };
+  using ICReturnOffsetVector = Vector<ICReturnOffset, 0, SystemAllocPolicy>;
+
+ private:
   
   JitCode* code_ = nullptr;
 
@@ -553,15 +567,10 @@ class BaselineInterpreter {
   
   CodeOffsetVector codeCoverageOffsets_;
 
- public:
   
-  struct CallVMOffsets {
-    uint32_t debugPrologueOffset = 0;
-    uint32_t debugEpilogueOffset = 0;
-    uint32_t debugAfterYieldOffset = 0;
-  };
+  ICReturnOffsetVector icReturnOffsets_;
 
- private:
+  
   CallVMOffsets callVMOffsets_;
 
   uint8_t* codeAtOffset(uint32_t offset) const {
@@ -583,6 +592,7 @@ class BaselineInterpreter {
             CodeOffsetVector&& debugInstrumentationOffsets,
             CodeOffsetVector&& debugTrapOffsets,
             CodeOffsetVector&& codeCoverageOffsets,
+            ICReturnOffsetVector&& icReturnOffsets,
             const CallVMOffsets& callVMOffsets);
 
   uint8_t* codeRaw() const { return code_->raw(); }
@@ -596,6 +606,8 @@ class BaselineInterpreter {
   uint8_t* retAddrForDebugAfterYieldCallVM() const {
     return codeAtOffset(callVMOffsets_.debugAfterYieldOffset);
   }
+
+  uint8_t* retAddrForIC(JSOp op) const;
 
   TrampolinePtr interpretOpAddr() const {
     return TrampolinePtr(codeAtOffset(interpretOpOffset_));
