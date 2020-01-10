@@ -722,8 +722,8 @@ class nsContentUtils {
   
   static nsIPrincipal* ObjectPrincipal(JSObject* aObj);
 
-  static nsresult GenerateStateKey(nsIContent* aContent, Document* aDocument,
-                                   nsACString& aKey);
+  static void GenerateStateKey(nsIContent* aContent, Document* aDocument,
+                               nsACString& aKey);
 
   
 

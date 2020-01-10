@@ -1566,16 +1566,14 @@ nsComboboxControlFrame::RestoreState(PresState* aState) {
 
 
 
-NS_IMETHODIMP
-nsComboboxControlFrame::GenerateStateKey(nsIContent* aContent,
-                                         Document* aDocument,
-                                         nsACString& aKey) {
-  nsresult rv = nsContentUtils::GenerateStateKey(aContent, aDocument, aKey);
-  if (NS_FAILED(rv) || aKey.IsEmpty()) {
-    return rv;
+void nsComboboxControlFrame::GenerateStateKey(nsIContent* aContent,
+                                              Document* aDocument,
+                                              nsACString& aKey) {
+  nsContentUtils::GenerateStateKey(aContent, aDocument, aKey);
+  if (aKey.IsEmpty()) {
+    return;
   }
   aKey.AppendLiteral("CCF");
-  return NS_OK;
 }
 
 

@@ -1106,7 +1106,7 @@ class nsGenericHTMLFormElementWithState : public nsGenericHTMLFormElement {
  protected:
   
 
-  nsresult GenerateStateKey();
+  void GenerateStateKey();
 
   
 

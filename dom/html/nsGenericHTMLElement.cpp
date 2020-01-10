@@ -2484,24 +2484,19 @@ nsGenericHTMLFormElementWithState::nsGenericHTMLFormElementWithState(
   mStateKey.SetIsVoid(true);
 }
 
-nsresult nsGenericHTMLFormElementWithState::GenerateStateKey() {
+void nsGenericHTMLFormElementWithState::GenerateStateKey() {
   
   if (!mStateKey.IsVoid()) {
-    return NS_OK;
+    return;
   }
 
   Document* doc = GetUncomposedDoc();
   if (!doc) {
-    return NS_OK;
+    return;
   }
 
   
-  nsresult rv = nsContentUtils::GenerateStateKey(this, doc, mStateKey);
-
-  if (NS_FAILED(rv)) {
-    mStateKey.SetIsVoid(true);
-    return rv;
-  }
+  nsContentUtils::GenerateStateKey(this, doc, mStateKey);
 
   
   
@@ -2509,7 +2504,6 @@ nsresult nsGenericHTMLFormElementWithState::GenerateStateKey() {
     
     mStateKey += "-C";
   }
-  return NS_OK;
 }
 
 PresState* nsGenericHTMLFormElementWithState::GetPrimaryPresState() {
