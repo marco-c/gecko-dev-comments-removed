@@ -397,7 +397,10 @@ html, body, #app, #memory-tool {
 }
 
 .children-pointer {
-  padding-inline-end: 5px;
+  display: inline-block;
+  
+
+  padding-right: 5px;
 }
 
 .children-pointer:dir(rtl) {
