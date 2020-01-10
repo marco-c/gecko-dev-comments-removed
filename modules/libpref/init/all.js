@@ -4868,6 +4868,10 @@ pref("alerts.useSystemBackend", true);
 #endif
 
 
+#ifdef XP_MACOSX
+
+pref("full-screen-api.macos-native-full-screen", false);
+#endif
 
 pref("full-screen-api.ignore-widgets", false);
 pref("full-screen-api.pointer-lock.enabled", true);
