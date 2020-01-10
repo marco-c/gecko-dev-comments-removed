@@ -140,6 +140,13 @@ impl WritingMode {
                         TextOrientation::Mixed => {},
                         TextOrientation::Upright => {
                             flags.insert(WritingMode::UPRIGHT);
+
+                            
+                            
+                            
+                            
+                            
+                            
                             flags.remove(WritingMode::RTL);
                             flags.remove(WritingMode::INLINE_REVERSED);
                         },
