@@ -2195,7 +2195,6 @@ const filterListType = {
     test(t => {
       const idlName = propertyToIDL(property);
       const target = createTestElement(t, setup);
-      target.style.color = "rgba(255, 0, 0, 0.4)";
       const animation = target.animate(
         { [idlName]:
           ['blur(0px)',
@@ -2206,7 +2205,7 @@ const filterListType = {
         [{ time: 500,
            
            
-           expected: 'blur(5px) drop-shadow(rgba(85, 0, 170, 0.6) 5px 5px 5px' }]);
+           expected: 'blur(5px) drop-shadow(rgba(0, 0, 255, 0.4) 5px 5px 5px' }]);
     }, `${property}: interpolate different length of filter-function-list`
        + ' with drop-shadow function');
 
