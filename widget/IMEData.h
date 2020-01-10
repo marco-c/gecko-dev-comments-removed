@@ -322,6 +322,8 @@ struct InputContextAction final {
     
     CAUSE_TOUCH,
     
+    CAUSE_LONGPRESS,
+    
     
     CAUSE_UNKNOWN_DURING_NON_KEYBOARD_INPUT,
     
@@ -388,6 +390,7 @@ struct InputContextAction final {
       case CAUSE_KEY:
       case CAUSE_MOUSE:
       case CAUSE_TOUCH:
+      case CAUSE_LONGPRESS:
       case CAUSE_UNKNOWN_DURING_NON_KEYBOARD_INPUT:
       case CAUSE_UNKNOWN_DURING_KEYBOARD_INPUT:
         return true;
