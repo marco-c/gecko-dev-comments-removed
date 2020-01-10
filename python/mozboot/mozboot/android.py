@@ -2,7 +2,8 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
+
+from __future__ import absolute_import, print_function
 
 import errno
 import os
@@ -280,7 +281,7 @@ def ensure_android_packages(sdkmanager_tool, packages=None, no_interactive=False
 
     
     
-    yes = '\n'.join(['y']*100).encode("UTF-8")
+    yes = '\n'.join(['y']*100)
     proc = subprocess.Popen(args,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT,

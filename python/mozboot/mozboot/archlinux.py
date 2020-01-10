@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import absolute_import, print_function
 
 import os
 import sys
@@ -17,12 +17,6 @@ from mozboot.linux_common import (
     SccacheInstall,
     StyloInstall,
 )
-
-
-
-
-if sys.version_info < (3,):
-    input = raw_input
 
 
 class ArchlinuxBootstrapper(NodeInstall, StyloInstall, SccacheInstall,
@@ -196,7 +190,7 @@ class ArchlinuxBootstrapper(NodeInstall, StyloInstall, SccacheInstall,
                   'This is potentially unsecure so I recommend that you carefully '
                   'read each package description and check the sources.'
                   'These packages will be built in ' + path + '.')
-            choice = input('Do you want to continue? (yes/no) [no]')
+            choice = raw_input('Do you want to continue? (yes/no) [no]')
             if choice != 'yes':
                 sys.exit(1)
 

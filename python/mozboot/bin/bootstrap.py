@@ -10,39 +10,35 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
+
+
+
+from __future__ import absolute_import, print_function
 
 WRONG_PYTHON_VERSION_MESSAGE = '''
-Bootstrap currently only runs on Python 2.7 or Python 3.5+.
-Please try re-running with python2.7 or python3.5+.
+Bootstrap currently only runs on Python 2.7 or Python 2.6.
+Please try re-running with python2.7 or python2.6.
 
 If these aren't available on your system, you may need to install them.
-Look for a "python2" or "python3.5" package in your package manager.
+Look for a "python2" or "python27" package in your package manager.
 '''
 
 import sys
-
-major, minor = sys.version_info[:2]
-if (major == 2 and minor < 7) or (major == 3 and minor < 5):
+if sys.version_info[:2] not in [(2, 6), (2, 7)]:
     print(WRONG_PYTHON_VERSION_MESSAGE)
     sys.exit(1)
 
 import os
 import shutil
+from StringIO import StringIO
 import tempfile
-import zipfile
-
-from io import BytesIO
-from optparse import OptionParser
-
-
-
-
 try:
     from urllib2 import urlopen
 except ImportError:
     from urllib.request import urlopen
+import zipfile
 
+from optparse import OptionParser
 
 
 
@@ -71,7 +67,7 @@ def fetch_files(repo_url, repo_rev, repo_type):
     if repo_type == 'hgweb':
         url = repo_url + '/archive/%s.zip/python/mozboot' % repo_rev
         req = urlopen(url=url, timeout=30)
-        data = BytesIO(req.read())
+        data = StringIO(req.read())
         data.seek(0)
         zip = zipfile.ZipFile(data, 'r')
         for f in zip.infolist():
@@ -158,9 +154,6 @@ def main(args):
                       'instead of using the default interactive prompt.')
     parser.add_option('--no-interactive', dest='no_interactive', action='store_true',
                       help='Answer yes to any (Y/n) interactive prompts.')
-    parser.add_option('--debug', dest='debug', action='store_true',
-                      help='Print extra runtime information useful for debugging and '
-                      'bug reports.')
 
     options, leftover = parser.parse_args(args)
 
@@ -172,14 +165,8 @@ def main(args):
             print('Could not load the bootstrap Python environment.\n')
             print('This should never happen. Consider filing a bug.\n')
             print('\n')
-
-            if options.debug:
-                
-                raise
-
             print(e)
             return 1
-
         dasboot = cls(choice=options.application_choice, no_interactive=options.no_interactive,
                       vcs=options.vcs)
         dasboot.bootstrap()
