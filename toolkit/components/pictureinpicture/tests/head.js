@@ -268,13 +268,17 @@ async function prepareForToggleClick(browser, videoID) {
 
 
 
-async function testToggle(testURL, expectations) {
+
+
+
+async function testToggle(testURL, expectations, prepFn = async () => {}) {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
       url: testURL,
     },
     async browser => {
+      await prepFn(browser);
       await ensureVideosReady(browser);
 
       for (let [videoID, canToggle] of Object.entries(expectations)) {
