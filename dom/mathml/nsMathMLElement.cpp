@@ -82,13 +82,13 @@ nsresult nsMathMLElement::BindToTree(BindContext& aContext, nsINode& aParent) {
 
   
   
-  if (IsInUncomposedDoc()) {
-    aContext.OwnerDoc().RegisterPendingLinkUpdate(this);
+  if (Document* doc = aContext.GetUncomposedDoc()) {
+    doc->RegisterPendingLinkUpdate(this);
   }
 
   
-  if (IsInComposedDoc()) {
-    aContext.OwnerDoc().SetMathMLEnabled();
+  if (Document* doc = aContext.GetComposedDoc()) {
+    doc->SetMathMLEnabled();
   }
 
   return rv;

@@ -25,6 +25,22 @@ struct MOZ_STACK_CLASS BindContext final {
   Document& OwnerDoc() const { return mDoc; }
 
   
+  
+  
+  bool InComposedDoc() const { return mInComposedDoc; }
+
+  
+  
+  
+  bool InUncomposedDoc() const { return mInUncomposedDoc; }
+
+  Document* GetComposedDoc() const { return mInComposedDoc ? &mDoc : nullptr; }
+
+  Document* GetUncomposedDoc() const {
+    return mInUncomposedDoc ? &mDoc : nullptr;
+  }
+
+  
   bool SubtreeRootChanges() const { return mSubtreeRootChanges; }
 
   
@@ -35,10 +51,12 @@ struct MOZ_STACK_CLASS BindContext final {
   
   explicit BindContext(nsINode& aParentNode)
       : mDoc(*aParentNode.OwnerDoc()),
-        mSubtreeRootChanges(true),
         mBindingParent(aParentNode.IsContent()
                            ? aParentNode.AsContent()->GetBindingParent()
-                           : nullptr) {}
+                           : nullptr),
+        mInComposedDoc(aParentNode.IsInComposedDoc()),
+        mInUncomposedDoc(aParentNode.IsInUncomposedDoc()),
+        mSubtreeRootChanges(true) {}
 
   
   
@@ -48,30 +66,42 @@ struct MOZ_STACK_CLASS BindContext final {
   
   explicit BindContext(ShadowRoot& aShadowRoot)
       : mDoc(*aShadowRoot.OwnerDoc()),
-        mSubtreeRootChanges(false),
-        mBindingParent(aShadowRoot.Host()) {}
+        mBindingParent(aShadowRoot.Host()),
+        mInComposedDoc(aShadowRoot.IsInComposedDoc()),
+        mInUncomposedDoc(false),
+        mSubtreeRootChanges(false) {}
 
   
   
   enum ForNativeAnonymous { ForNativeAnonymous };
   BindContext(Element& aParentElement, enum ForNativeAnonymous)
       : mDoc(*aParentElement.OwnerDoc()),
-        mSubtreeRootChanges(true),
-        mBindingParent(&aParentElement) {}
+        mBindingParent(&aParentElement),
+        mInComposedDoc(aParentElement.IsInComposedDoc()),
+        mInUncomposedDoc(aParentElement.IsInUncomposedDoc()),
+        mSubtreeRootChanges(true) {
+    MOZ_ASSERT(mInComposedDoc, "Binding NAC in a disconnected subtree?");
+  }
 
   
   BindContext(nsXBLBinding& aBinding, Element& aParentElement)
       : mDoc(*aParentElement.OwnerDoc()),
-        mSubtreeRootChanges(true),
-        mBindingParent(aBinding.GetBoundElement()) {}
+        mBindingParent(aBinding.GetBoundElement()),
+        mInComposedDoc(aParentElement.IsInComposedDoc()),
+        mInUncomposedDoc(aParentElement.IsInUncomposedDoc()),
+        mSubtreeRootChanges(true) {}
 
  private:
   Document& mDoc;
 
+  Element* const mBindingParent;
+
+  const bool mInComposedDoc;
+  const bool mInUncomposedDoc;
+
   
   
   const bool mSubtreeRootChanges;
-  Element* const mBindingParent;
 };
 
 }  

@@ -568,9 +568,8 @@ nsresult nsObjectLoadingContent::BindToTree(BindContext& aContext,
                                             nsINode& aParent) {
   nsImageLoadingContent::BindToTree(aContext, aParent);
   
-  
-  if (aParent.IsInUncomposedDoc()) {
-    aContext.OwnerDoc().AddPlugin(this);
+  if (Document* doc = aContext.GetUncomposedDoc()) {
+    doc->AddPlugin(this);
   }
   return NS_OK;
 }

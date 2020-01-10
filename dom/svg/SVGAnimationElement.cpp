@@ -140,9 +140,8 @@ nsresult SVGAnimationElement::BindToTree(BindContext& aContext,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  if (IsInComposedDoc()) {
-    if (SMILAnimationController* controller =
-            aContext.OwnerDoc().GetAnimationController()) {
+  if (Document* doc = aContext.GetComposedDoc()) {
+    if (SMILAnimationController* controller = doc->GetAnimationController()) {
       controller->RegisterAnimationElement(this);
     }
     const nsAttrValue* href =

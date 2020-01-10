@@ -371,9 +371,8 @@ nsresult SVGSVGElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   SMILAnimationController* smilController = nullptr;
 
   
-  
-  if (aParent.IsInUncomposedDoc()) {
-    if ((smilController = aContext.OwnerDoc().GetAnimationController())) {
+  if (Document* doc = aContext.GetUncomposedDoc()) {
+    if ((smilController = doc->GetAnimationController())) {
       
       if (WillBeOutermostSVG(aParent, aContext.GetBindingParent())) {
         
