@@ -136,20 +136,14 @@ a {
 
 
 
-
-
-.message::before {
+.message:hover::before {
   content: "";
   position: absolute;
   inset-inline: 0;
   top: 0;
   bottom: 0;
+  background: var(--theme-highlight-blue);
   width: 3px;
-  background-color: none;
-}
-
-.message:hover::before {
-  background-color: var(--theme-highlight-blue);
 }
 
 
