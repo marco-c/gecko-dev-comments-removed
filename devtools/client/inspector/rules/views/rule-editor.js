@@ -253,15 +253,7 @@ RuleEditor.prototype = {
         this._ruleViewIsEditing = this.ruleView.isEditing;
       });
 
-      code.addEventListener("click", event => {
-        
-        if (
-          event.target.localName === "input" &&
-          event.target.type === "checkbox"
-        ) {
-          return;
-        }
-
+      code.addEventListener("click", () => {
         const selection = this.doc.defaultView.getSelection();
         if (selection.isCollapsed && !this._ruleViewIsEditing) {
           this.newProperty();
