@@ -1728,6 +1728,21 @@ APZCTreeManager::GetTouchInputBlockAPZC(
   return apzc.forget();
 }
 
+
+
+
+
+bool MayHaveApzAwareListeners(CompositorHitTestInfo aHitResult) {
+  
+  if (gfx::gfxVars::UseWebRender()) {
+    return aHitResult.contains(CompositorHitTestFlags::eApzAwareListeners);
+  }
+  
+  
+  
+  return !((aHitResult & CompositorHitTestDispatchToContent).isEmpty());
+}
+
 APZEventResult APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput) {
   APZEventResult result;  
   aInput.mHandledByAPZ = true;
@@ -1819,6 +1834,8 @@ APZEventResult APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput) {
           mApzcForInputBlock, TargetConfirmationFlags{mHitResultForInputBlock},
           aInput, &result.mInputBlockId,
           touchBehaviors.IsEmpty() ? Nothing() : Some(touchBehaviors));
+      result.mHitRegionWithApzAwareListeners =
+          MayHaveApzAwareListeners(mHitResultForInputBlock);
 
       
       

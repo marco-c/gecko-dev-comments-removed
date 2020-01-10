@@ -61,6 +61,17 @@ struct APZEventResult {
 
 
   uint64_t mInputBlockId;
+  
+
+
+
+
+
+
+
+
+
+  bool mHitRegionWithApzAwareListeners;
 };
 
 
