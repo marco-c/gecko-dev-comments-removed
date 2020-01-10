@@ -11,7 +11,11 @@ const EXPORTED_SYMBOLS = ["LoginTestUtils"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-const { Assert } = ChromeUtils.import("resource://testing-common/Assert.jsm");
+let { Assert: AssertCls } = ChromeUtils.import(
+  "resource://testing-common/Assert.jsm"
+);
+let Assert = AssertCls;
+
 const { TestUtils } = ChromeUtils.import(
   "resource://testing-common/TestUtils.jsm"
 );
@@ -23,6 +27,10 @@ const LoginInfo = Components.Constructor(
 );
 
 this.LoginTestUtils = {
+  setAssertReporter(reporterFunc) {
+    Assert = new AssertCls(Cu.waiveXrays(reporterFunc));
+  },
+
   
 
 
