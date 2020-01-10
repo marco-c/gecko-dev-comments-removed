@@ -205,22 +205,11 @@ nsresult XPathResult::SetExprResult(txAExprResult* aExprResult,
 
 void XPathResult::Invalidate(const nsIContent* aChangeRoot) {
   nsCOMPtr<nsINode> contextNode = do_QueryReferent(mContextNode);
-  if (contextNode && aChangeRoot && aChangeRoot->GetBindingParent()) {
-    
-    
-    
-    
-    nsIContent* ctxBindingParent = nullptr;
-    if (contextNode->IsContent()) {
-      ctxBindingParent = contextNode->AsContent()->GetBindingParent();
-    } else if (auto* attr = Attr::FromNode(contextNode)) {
-      if (Element* parent = attr->GetElement()) {
-        ctxBindingParent = parent->GetBindingParent();
-      }
-    }
-    if (ctxBindingParent != aChangeRoot->GetBindingParent()) {
-      return;
-    }
+  
+  
+  if (contextNode && aChangeRoot &&
+      !nsContentUtils::IsInSameAnonymousTree(contextNode, aChangeRoot)) {
+    return;
   }
 
   mInvalidIteratorState = true;
