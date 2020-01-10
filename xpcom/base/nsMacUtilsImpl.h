@@ -58,6 +58,8 @@ class nsMacUtilsImpl final : public nsIMacUtils {
   static StaticAutoPtr<nsCString> sCachedAppPath;
   
   static StaticMutex sCachedAppPathMutex;
+  
+  static nsresult ClearCachedAppPathOnShutdown();
 #endif
 
   enum TCSMStatus { TCSM_Unknown = 0, TCSM_Available, TCSM_Unavailable };
