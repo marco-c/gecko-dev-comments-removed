@@ -30,8 +30,7 @@ PrioritizedEventQueue::~PrioritizedEventQueue() = default;
 
 void PrioritizedEventQueue::PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
                                      EventQueuePriority aPriority,
-                                     const MutexAutoLock& aProofOfLock,
-                                     mozilla::TimeDuration* aDelay) {
+                                     const MutexAutoLock& aProofOfLock) {
   
   RefPtr<nsIRunnable> event(aEvent);
   EventQueuePriority priority = aPriority;
@@ -46,24 +45,22 @@ void PrioritizedEventQueue::PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
 
   switch (priority) {
     case EventQueuePriority::High:
-      mHighQueue->PutEvent(event.forget(), priority, aProofOfLock, aDelay);
+      mHighQueue->PutEvent(event.forget(), priority, aProofOfLock);
       break;
     case EventQueuePriority::Input:
-      mInputQueue->PutEvent(event.forget(), priority, aProofOfLock, aDelay);
+      mInputQueue->PutEvent(event.forget(), priority, aProofOfLock);
       break;
     case EventQueuePriority::MediumHigh:
-      mMediumHighQueue->PutEvent(event.forget(), priority, aProofOfLock,
-                                 aDelay);
+      mMediumHighQueue->PutEvent(event.forget(), priority, aProofOfLock);
       break;
     case EventQueuePriority::Normal:
-      mNormalQueue->PutEvent(event.forget(), priority, aProofOfLock, aDelay);
+      mNormalQueue->PutEvent(event.forget(), priority, aProofOfLock);
       break;
     case EventQueuePriority::DeferredTimers:
-      mDeferredTimersQueue->PutEvent(event.forget(), priority, aProofOfLock,
-                                     aDelay);
+      mDeferredTimersQueue->PutEvent(event.forget(), priority, aProofOfLock);
       break;
     case EventQueuePriority::Idle:
-      mIdleQueue->PutEvent(event.forget(), priority, aProofOfLock, aDelay);
+      mIdleQueue->PutEvent(event.forget(), priority, aProofOfLock);
       break;
     case EventQueuePriority::Count:
       MOZ_CRASH("EventQueuePriority::Count isn't a valid priority");
@@ -147,14 +144,8 @@ EventQueuePriority PrioritizedEventQueue::SelectQueue(
   return queue;
 }
 
-
-
-
-
-
 already_AddRefed<nsIRunnable> PrioritizedEventQueue::GetEvent(
-    EventQueuePriority* aPriority, const MutexAutoLock& aProofOfLock,
-    mozilla::TimeDuration* aHypotheticalInputEventDelay) {
+    EventQueuePriority* aPriority, const MutexAutoLock& aProofOfLock) {
 #ifndef RELEASE_OR_BETA
   
   
@@ -174,85 +165,64 @@ already_AddRefed<nsIRunnable> PrioritizedEventQueue::GetEvent(
     *aPriority = queue;
   }
 
+  if (queue == EventQueuePriority::High) {
+    nsCOMPtr<nsIRunnable> event = mHighQueue->GetEvent(aPriority, aProofOfLock);
+    MOZ_ASSERT(event);
+    mInputHandlingStartTime = TimeStamp();
+    mProcessHighPriorityQueue = false;
+    return event.forget();
+  }
+
+  if (queue == EventQueuePriority::Input) {
+    nsCOMPtr<nsIRunnable> event =
+        mInputQueue->GetEvent(aPriority, aProofOfLock);
+    MOZ_ASSERT(event);
+    return event.forget();
+  }
+
+  if (queue == EventQueuePriority::MediumHigh) {
+    nsCOMPtr<nsIRunnable> event =
+        mMediumHighQueue->GetEvent(aPriority, aProofOfLock);
+    return event.forget();
+  }
+
+  if (queue == EventQueuePriority::Normal) {
+    nsCOMPtr<nsIRunnable> event =
+        mNormalQueue->GetEvent(aPriority, aProofOfLock);
+    return event.forget();
+  }
+
   
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIRunnable> event;
-  switch (queue) {
-    default:
-      MOZ_CRASH();
-      break;
+  MOZ_ASSERT(queue == EventQueuePriority::Idle ||
+             queue == EventQueuePriority::DeferredTimers);
 
-    case EventQueuePriority::High:
-      event = mHighQueue->GetEvent(aPriority, aProofOfLock,
-                                   aHypotheticalInputEventDelay);
-      MOZ_ASSERT(event);
-      mInputHandlingStartTime = TimeStamp();
-      mProcessHighPriorityQueue = false;
-      break;
+  if (mIdleQueue->IsEmpty(aProofOfLock) &&
+      mDeferredTimersQueue->IsEmpty(aProofOfLock)) {
+    mIdlePeriodState.RanOutOfTasks(*mMutex);
+    return nullptr;
+  }
 
-    case EventQueuePriority::Input:
-      event = mInputQueue->GetEvent(aPriority, aProofOfLock,
-                                    aHypotheticalInputEventDelay);
-      MOZ_ASSERT(event);
-      break;
+  TimeStamp idleDeadline = mIdlePeriodState.GetDeadlineForIdleTask(*mMutex);
+  if (!idleDeadline) {
+    return nullptr;
+  }
 
-      
-      
-      
-      
-    case EventQueuePriority::MediumHigh:
-      event = mMediumHighQueue->GetEvent(aPriority, aProofOfLock);
-      *aHypotheticalInputEventDelay = TimeDuration();
-      break;
-
-    case EventQueuePriority::Normal:
-      event = mNormalQueue->GetEvent(aPriority, aProofOfLock);
-      *aHypotheticalInputEventDelay = TimeDuration();
-      break;
-
-    case EventQueuePriority::Idle:
-    case EventQueuePriority::DeferredTimers:
-      *aHypotheticalInputEventDelay = TimeDuration();
-      
-      
-
-      if (mIdleQueue->IsEmpty(aProofOfLock) &&
-          mDeferredTimersQueue->IsEmpty(aProofOfLock)) {
-        mIdlePeriodState.RanOutOfTasks(*mMutex);
-        return nullptr;
-      }
-
-      TimeStamp idleDeadline = mIdlePeriodState.GetDeadlineForIdleTask(*mMutex);
-      if (!idleDeadline) {
-        return nullptr;
-      }
-
-      event = mDeferredTimersQueue->GetEvent(aPriority, aProofOfLock);
-      if (!event) {
-        event = mIdleQueue->GetEvent(aPriority, aProofOfLock);
-      }
-      if (event) {
-        nsCOMPtr<nsIIdleRunnable> idleEvent = do_QueryInterface(event);
-        if (idleEvent) {
-          idleEvent->SetDeadline(idleDeadline);
-        }
+  nsCOMPtr<nsIRunnable> event =
+      mDeferredTimersQueue->GetEvent(aPriority, aProofOfLock);
+  if (!event) {
+    event = mIdleQueue->GetEvent(aPriority, aProofOfLock);
+  }
+  if (event) {
+    nsCOMPtr<nsIIdleRunnable> idleEvent = do_QueryInterface(event);
+    if (idleEvent) {
+      idleEvent->SetDeadline(idleDeadline);
+    }
 
 #ifndef RELEASE_OR_BETA
-        
-        
-        *mNextIdleDeadline = idleDeadline;
+    
+    
+    *mNextIdleDeadline = idleDeadline;
 #endif
-      }
-      break;
-  }  
-
-  if (!event) {
-    *aHypotheticalInputEventDelay = TimeDuration();
   }
 
   return event.forget();

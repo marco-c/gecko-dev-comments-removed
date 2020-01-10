@@ -6,7 +6,7 @@
 
 #include "RegisteredThread.h"
 
-RegisteredThread::RegisteredThread(ThreadInfo* aInfo, nsIThread* aThread,
+RegisteredThread::RegisteredThread(ThreadInfo* aInfo, nsIEventTarget* aThread,
                                    void* aStackTop)
     : mRacyRegisteredThread(aInfo->ThreadId()),
       mPlatformData(AllocPlatformData(aInfo->ThreadId())),
@@ -17,9 +17,6 @@ RegisteredThread::RegisteredThread(ThreadInfo* aInfo, nsIThread* aThread,
       mJSSampling(INACTIVE),
       mJSFlags(0) {
   MOZ_COUNT_CTOR(RegisteredThread);
-
-  
-  
 
   
 #if defined(GP_OS_darwin)

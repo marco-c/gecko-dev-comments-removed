@@ -30,7 +30,6 @@
 
 
 #  define AUTO_PROFILER_INIT
-#  define AUTO_PROFILER_INIT2
 
 #  define PROFILER_REGISTER_THREAD(name)
 #  define PROFILER_UNREGISTER_THREAD()
@@ -301,12 +300,8 @@ static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_STARTUP_ENTRIES =
 
 
 void profiler_init(void* stackTop);
-void profiler_init_threadmanager();
-
 
 #  define AUTO_PROFILER_INIT mozilla::AutoProfilerInit PROFILER_RAII
-
-#  define AUTO_PROFILER_INIT2 mozilla::AutoProfilerInit2 PROFILER_RAII
 
 
 
@@ -960,17 +955,6 @@ class MOZ_RAII AutoProfilerInit {
   }
 
   ~AutoProfilerInit() { profiler_shutdown(); }
-
- private:
-  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
-};
-
-class MOZ_RAII AutoProfilerInit2 {
- public:
-  explicit AutoProfilerInit2(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM) {
-    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    profiler_init_threadmanager();
-  }
 
  private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER

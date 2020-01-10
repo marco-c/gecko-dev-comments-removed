@@ -14,7 +14,6 @@
 #include "nsThreadUtils.h"
 #include "nsString.h"
 #include "nsTObserverArray.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/MemoryReporting.h"
@@ -89,12 +88,6 @@ class nsThread : public nsIThreadInternal,
   
   
   bool ShutdownRequired() { return mShutdownRequired; }
-
-  
-  
-  void SetPoolThreadFreePtr(mozilla::Atomic<bool, mozilla::Relaxed>* aPtr) {
-    mIsAPoolThreadFree = aPtr;
-  }
 
   void SetScriptObserver(mozilla::CycleCollectedJSContext* aScriptObserver);
 
@@ -235,7 +228,6 @@ class nsThread : public nsIThreadInternal,
   int8_t mPriority;
 
   bool mIsMainThread;
-  mozilla::Atomic<bool, mozilla::Relaxed>* mIsAPoolThreadFree;
 
   
   bool mCanInvokeJS;
@@ -245,17 +237,8 @@ class nsThread : public nsIThreadInternal,
   
   nsCOMPtr<nsIRunnable> mCurrentEvent;
 
-  
-  
-  
   mozilla::TimeStamp mCurrentEventStart;
   mozilla::TimeStamp mNextIdleDeadline;
-
-  
-  
-  
-  mozilla::TimeDuration mLastEventDelay;
-  mozilla::TimeStamp mLastEventStart;
 
 #ifdef EARLY_BETA_OR_EARLIER
   nsCString mNameForWakeupTelemetry;

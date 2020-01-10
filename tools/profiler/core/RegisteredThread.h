@@ -140,7 +140,7 @@ class RacyRegisteredThread final {
 
 class RegisteredThread final {
  public:
-  RegisteredThread(ThreadInfo* aInfo, nsIThread* aThread, void* aStackTop);
+  RegisteredThread(ThreadInfo* aInfo, nsIEventTarget* aThread, void* aStackTop);
   ~RegisteredThread();
 
   class RacyRegisteredThread& RacyRegisteredThread() {
@@ -179,7 +179,6 @@ class RegisteredThread final {
 
   const RefPtr<ThreadInfo> Info() const { return mThreadInfo; }
   const nsCOMPtr<nsIEventTarget> GetEventTarget() const { return mThread; }
-  void ResetMainThread(nsIThread* aThread) { mThread = aThread; }
 
   
   
@@ -255,7 +254,7 @@ class RegisteredThread final {
   const void* mStackTop;
 
   const RefPtr<ThreadInfo> mThreadInfo;
-  nsCOMPtr<nsIThread> mThread;
+  const nsCOMPtr<nsIEventTarget> mThread;
 
   
   
