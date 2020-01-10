@@ -231,15 +231,14 @@ describe("Highlights Feed", () => {
         {url: "https://site5.com", type: "pocket", date_added: Date.now() - 100}, 
         {url: "https://site6.com", type: "bookmark", bookmarkGuid: "1234", date_added: Date.now() - 40}, 
       ];
+      const expectedChronological = [4, 6, 0, 5];
+      const expectedHistory = [1, 2, 3];
 
       let highlights = await fetchHighlights();
-      assert.equal(highlights[0].url, links[4].url);
-      assert.equal(highlights[1].url, links[6].url);
-      assert.equal(highlights[2].url, links[1].url);
-      assert.equal(highlights[3].url, links[0].url);
-      assert.equal(highlights[4].url, links[5].url);
-      assert.equal(highlights[5].url, links[2].url);
-      assert.equal(highlights[6].url, links[3].url);
+
+      [...expectedChronological, ...expectedHistory].forEach((link, index) => {
+        assert.propertyVal(highlights[index], "url", links[link].url, `highlight[${index}] should be link[${link}]`);
+      });
     });
     it("should fetch Highlights if TopSites are not enabled", async () => {
       sandbox.spy(feed.linksCache, "request");

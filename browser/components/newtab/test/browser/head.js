@@ -86,10 +86,12 @@ function addContentHelpers() {
 
 
 
-    openContextMenuAndGetOptions(selector) {
+    async openContextMenuAndGetOptions(selector) {
       const item = document.querySelector(selector);
       const contextButton = item.querySelector(".context-menu-button");
       contextButton.click();
+      
+      await new Promise(r => content.requestAnimationFrame(r));
 
       const contextMenu = item.querySelector(".context-menu");
       const contextMenuList = contextMenu.querySelector(".context-menu-list");
