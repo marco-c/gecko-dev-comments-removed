@@ -97,6 +97,7 @@ beforeEach(async () => {
   clearHistory();
   clearDocuments();
   prefs.projectDirectoryRoot = "";
+  prefs.expressions = [];
 
   
   setupHelper({ selectors: {} });
