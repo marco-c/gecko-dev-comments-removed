@@ -25,6 +25,9 @@ const STRINGS_ADD_BY_TYPE = {
   String: "about-config-pref-add-type-string",
 };
 
+
+const MAX_PLACEABLE_LENGTH = 2500;
+
 let gDefaultBranch = Services.prefs.getDefaultBranch("");
 let gFilterPrefsTask = new DeferredTask(
   () => filterPrefs(),
@@ -198,12 +201,20 @@ class PrefRow {
       
       span.setAttribute("aria-hidden", "true");
       let outerSpan = document.createElement("span");
-      let spanL10nId = this.hasUserValue
-        ? "about-config-pref-accessible-value-custom"
-        : "about-config-pref-accessible-value-default";
-      document.l10n.setAttributes(outerSpan, spanL10nId, {
-        value: "" + this.value,
-      });
+      if (this.type == "String" && this.value.length > MAX_PLACEABLE_LENGTH) {
+        
+        
+        
+        
+        outerSpan.setAttribute("aria-label", this.value);
+      } else {
+        let spanL10nId = this.hasUserValue
+          ? "about-config-pref-accessible-value-custom"
+          : "about-config-pref-accessible-value-default";
+        document.l10n.setAttributes(outerSpan, spanL10nId, {
+          value: "" + this.value,
+        });
+      }
       outerSpan.appendChild(span);
       this.valueCell.textContent = "";
       this.valueCell.append(outerSpan);
