@@ -835,15 +835,14 @@ void nsDocShell::MaybeHandleSubframeHistory(nsDocShellLoadState* aLoadState) {
   bool dynamicallyAddedChild = mDynamicallyCreated;
 
   if (!dynamicallyAddedChild && !oshe && currentSH) {
-    currentSH->HasDynamicallyAddedChild(&dynamicallyAddedChild);
-  }
-
-  if (!dynamicallyAddedChild) {
     
     
     nsCOMPtr<nsISHEntry> shEntry;
-    parentDS->GetChildSHEntry(mChildOffset, getter_AddRefs(shEntry));
-    aLoadState->SetSHEntry(shEntry);
+    currentSH->GetChildSHEntryIfHasNoDynamicallyAddedChild(
+        mChildOffset, getter_AddRefs(shEntry));
+    if (shEntry) {
+      aLoadState->SetSHEntry(shEntry);
+    }
   }
 
   
@@ -3274,52 +3273,6 @@ nsDocShell::FindChildWithName(const nsAString& aName, bool aRecurse,
     }
   }
   return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocShell::GetChildSHEntry(int32_t aChildOffset, nsISHEntry** aResult) {
-  nsresult rv = NS_OK;
-
-  NS_ENSURE_ARG_POINTER(aResult);
-  *aResult = nullptr;
-
-  
-  
-
-  if (mLSHE) {
-    
-
-
-
-
-    bool parentExpired = mLSHE->GetExpirationStatus();
-
-    
-
-
-    uint32_t loadType = mLSHE->GetLoadType();
-    
-    
-    if (IsForceReloadType(loadType) || loadType == LOAD_REFRESH) {
-      return rv;
-    }
-
-    
-
-
-    if (parentExpired && (loadType == LOAD_RELOAD_NORMAL)) {
-      
-      *aResult = nullptr;
-      return rv;
-    }
-
-    
-    rv = mLSHE->GetChildAt(aChildOffset, aResult);
-    if (*aResult) {
-      (*aResult)->SetLoadType(loadType);
-    }
-  }
-  return rv;
 }
 
 NS_IMETHODIMP

@@ -739,6 +739,43 @@ nsSHEntry::GetChildAt(int32_t aIndex, nsISHEntry** aResult) {
   return NS_OK;
 }
 
+NS_IMETHODIMP_(void)
+nsSHEntry::GetChildSHEntryIfHasNoDynamicallyAddedChild(int32_t aChildOffset,
+                                                       nsISHEntry** aChild) {
+  *aChild = nullptr;
+
+  bool dynamicallyAddedChild = false;
+  HasDynamicallyAddedChild(&dynamicallyAddedChild);
+  if (dynamicallyAddedChild) {
+    return;
+  }
+
+  
+  
+  if (IsForceReloadType(mLoadType) || mLoadType == LOAD_REFRESH) {
+    return;
+  }
+
+  
+
+
+
+
+
+
+  if (mShared->mExpired && (mLoadType == LOAD_RELOAD_NORMAL)) {
+    
+    *aChild = nullptr;
+    return;
+  }
+  
+  GetChildAt(aChildOffset, aChild);
+  if (*aChild) {
+    
+    (*aChild)->SetLoadType(mLoadType);
+  }
+}
+
 NS_IMETHODIMP
 nsSHEntry::ReplaceChild(nsISHEntry* aNewEntry) {
   NS_ENSURE_STATE(aNewEntry);
