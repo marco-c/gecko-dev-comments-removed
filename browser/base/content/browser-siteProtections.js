@@ -980,21 +980,27 @@ var gProtectionsHandler = {
       "protections-popup-tp-switch"
     ));
   },
-  get _protectionPopupSettingsButton() {
-    delete this._protectionPopupSettingsButton;
-    return (this._protectionPopupSettingsButton = document.getElementById(
+  get _protectionsPopupSettingsButton() {
+    delete this._protectionsPopupSettingsButton;
+    return (this._protectionsPopupSettingsButton = document.getElementById(
       "protections-popup-settings-button"
     ));
   },
-  get _protectionPopupFooter() {
-    delete this._protectionPopupFooter;
-    return (this._protectionPopupFooter = document.getElementById(
+  get _protectionsPopupFooter() {
+    delete this._protectionsPopupFooter;
+    return (this._protectionsPopupFooter = document.getElementById(
       "protections-popup-footer"
     ));
   },
-  get _protectionPopupTrackersCounterDescription() {
-    delete this._protectionPopupTrackersCounterDescription;
-    return (this._protectionPopupTrackersCounterDescription = document.getElementById(
+  get _protectionsPopupTrackersCounterBox() {
+    delete this._protectionsPopupTrackersCounterBox;
+    return (this._protectionsPopupTrackersCounterBox = document.getElementById(
+      "protections-popup-trackers-blocked-counter-box"
+    ));
+  },
+  get _protectionsPopupTrackersCounterDescription() {
+    delete this._protectionsPopupTrackersCounterDescription;
+    return (this._protectionsPopupTrackersCounterDescription = document.getElementById(
       "protections-popup-trackers-blocked-counter-description"
     ));
   },
@@ -1230,6 +1236,12 @@ var gProtectionsHandler = {
     if (event.target == this._protectionsPopup) {
       window.removeEventListener("focus", this, true);
       gIdentityHandler._trackingProtectionIconContainer.removeAttribute("open");
+
+      
+      this._protectionsPopupTrackersCounterBox.toggleAttribute(
+        "showing",
+        false
+      );
     }
   },
 
@@ -1251,6 +1263,10 @@ var gProtectionsHandler = {
       return;
     }
     this._updatingFooter = true;
+
+    
+    const trackerCount = await TrackingDBService.sumAllEvents();
+    this.setTrackersBlockedCounter(trackerCount);
 
     
     
@@ -1458,12 +1474,6 @@ var gProtectionsHandler = {
 
     
     this.maybeUpdateEarliestRecordedDateTooltip();
-
-    
-    
-    
-    
-    this.setTrackersBlockedCounter(244051);
   },
 
   disableForCurrentPage() {
@@ -1523,10 +1533,19 @@ var gProtectionsHandler = {
   },
 
   setTrackersBlockedCounter(trackerCount) {
-    this._protectionPopupTrackersCounterDescription.textContent =
-      
-      
-      `${trackerCount.toLocaleString()} Blocked`;
+    let forms = gNavigatorBundle.getString(
+      "protections.footer.blockedTrackerCounter.description"
+    );
+    this._protectionsPopupTrackersCounterDescription.textContent = PluralForm.get(
+      trackerCount,
+      forms
+    ).replace("#1", trackerCount);
+
+    
+    this._protectionsPopupTrackersCounterBox.toggleAttribute(
+      "showing",
+      trackerCount != 0
+    );
   },
 
   
