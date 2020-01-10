@@ -555,6 +555,8 @@ void BrowserParent::AddWindowListeners() {
       if (eventTarget) {
         eventTarget->AddEventListener(NS_LITERAL_STRING("MozUpdateWindowPos"),
                                       this, false, false);
+        eventTarget->AddEventListener(NS_LITERAL_STRING("fullscreenchange"),
+                                      this, false, false);
       }
     }
   }
@@ -567,6 +569,8 @@ void BrowserParent::RemoveWindowListeners() {
     nsCOMPtr<EventTarget> eventTarget = window->GetTopWindowRoot();
     if (eventTarget) {
       eventTarget->RemoveEventListener(NS_LITERAL_STRING("MozUpdateWindowPos"),
+                                       this, false);
+      eventTarget->RemoveEventListener(NS_LITERAL_STRING("fullscreenchange"),
                                        this, false);
     }
   }
@@ -3437,10 +3441,14 @@ bool BrowserParent::DeallocPPaymentRequestParent(
 }
 
 nsresult BrowserParent::HandleEvent(Event* aEvent) {
+  if (mIsDestroyed) {
+    return NS_OK;
+  }
+
   nsAutoString eventType;
   aEvent->GetType(eventType);
-
-  if (eventType.EqualsLiteral("MozUpdateWindowPos") && !mIsDestroyed) {
+  if (eventType.EqualsLiteral("MozUpdateWindowPos")
+      || eventType.EqualsLiteral("fullscreenchange")) {
     
     
     return UpdatePosition();
