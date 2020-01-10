@@ -152,8 +152,8 @@ VRManager::VRManager()
 
 void VRManager::OpenShmem() {
   if (mShmem == nullptr) {
-    mShmem = (new VRShMem(nullptr, mVRProcessEnabled, XRE_IsParentProcess()));
-    mShmem->CreateShMem();
+    mShmem = new VRShMem(nullptr, true );
+    mShmem->CreateShMem(mVRProcessEnabled );
 
 #if !defined(MOZ_WIDGET_ANDROID)
     
