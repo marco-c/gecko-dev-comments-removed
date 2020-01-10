@@ -26,10 +26,8 @@ async function enableSecondBreakpoint(dbg) {
 
 async function shiftClickDisable(dbg) {
   let bpMarkers = await waitForAllElements(dbg, "columnBreakpoints");
-  debugger;
   shiftClickElement(dbg, "columnBreakpoints");
   bpMarkers = findAllElements(dbg, "columnBreakpoints");
-  debugger;
   assertClass(bpMarkers[0], "disabled");
 }
 

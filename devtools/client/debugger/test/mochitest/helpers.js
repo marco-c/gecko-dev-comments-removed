@@ -553,6 +553,7 @@ async function clearDebuggerPreferences(prefs = []) {
 
 
 
+
 async function initDebugger(url, ...sources) {
   await clearDebuggerPreferences();
   const toolbox = await openNewTabAndToolbox(EXAMPLE_URL + url, "jsdebugger");
@@ -862,6 +863,15 @@ function findBreakpoint(dbg, url, line) {
   return dbg.selectors.getBreakpointsForSource(source.id, line)[0];
 }
 
+
+function findColumnBreakpoint(dbg, url, line, column) {
+  const source = findSource(dbg, url);
+  const lineBreakpoints = dbg.selectors.getBreakpointsForSource(source.id, line);
+  return lineBreakpoints.find(bp => {
+    return bp.generatedLocation.column === column;
+  });
+}
+
 async function loadAndAddBreakpoint(dbg, filename, line, column) {
   const {
     selectors: { getBreakpoint, getBreakpointCount, getBreakpointsMap },
@@ -1071,6 +1081,8 @@ const startKey = isMac
 const keyMappings = {
   close: { code: "w", modifiers: cmdOrCtrl },
   debugger: { code: "s", modifiers: shiftOrAlt },
+  
+  toggleCondPanel: { code: "b", modifiers: cmdShift },
   inspector: { code: "c", modifiers: shiftOrAlt },
   quickOpen: { code: "p", modifiers: cmdOrCtrl },
   quickOpenFunc: { code: "o", modifiers: cmdShift },
@@ -1429,7 +1441,6 @@ function selectContextMenuItem(dbg, selector) {
 
 async function typeInPanel(dbg, text) {
   await waitForElement(dbg, "conditionalPanelInput");
-
   
   pressKey(dbg, "End");
   type(dbg, text);
