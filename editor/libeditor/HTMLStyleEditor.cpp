@@ -538,8 +538,13 @@ nsresult HTMLEditor::SetInlinePropertyOnNode(nsIContent& aNode,
   NS_ENSURE_STATE(aNode.GetParentNode());
   OwningNonNull<nsINode> parent = *aNode.GetParentNode();
 
-  nsresult rv = RemoveStyleInside(aNode, &aProperty, aAttribute);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (aNode.IsElement()) {
+    nsresult rv = RemoveStyleInside(MOZ_KnownLive(*aNode.AsElement()),
+                                    &aProperty, aAttribute);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
 
   if (aNode.GetParentNode()) {
     
@@ -563,8 +568,11 @@ nsresult HTMLEditor::SetInlinePropertyOnNode(nsIContent& aNode,
   }
 
   for (auto& node : nodesToSet) {
-    rv = SetInlinePropertyOnNodeImpl(node, aProperty, aAttribute, aValue);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsresult rv =
+        SetInlinePropertyOnNodeImpl(node, aProperty, aAttribute, aValue);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   return NS_OK;
@@ -832,7 +840,7 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   
   
-  {
+  if (splitResultAtStartOfNextNode.GetPreviousNode()->IsElement()) {
     
     
     
@@ -840,11 +848,9 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
     
     AutoTrackDOMPoint tracker(RangeUpdaterRef(), &pointToPutCaret);
     nsresult rv = RemoveStyleInside(
-        MOZ_KnownLive(*splitResultAtStartOfNextNode.GetPreviousNode()),
+        MOZ_KnownLive(
+            *splitResultAtStartOfNextNode.GetPreviousNode()->AsElement()),
         aProperty, aAttribute);
-    if (NS_WARN_IF(Destroyed())) {
-      return EditResult(NS_ERROR_EDITOR_DESTROYED);
-    }
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return EditResult(rv);
     }
@@ -852,120 +858,151 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   return EditResult(pointToPutCaret);
 }
 
-nsresult HTMLEditor::RemoveStyleInside(nsIContent& aNode, nsAtom* aProperty,
-                                       nsAtom* aAttribute,
-                                       const bool aChildrenOnly ) {
-  if (!aNode.IsElement()) {
-    return NS_OK;
-  }
-
+nsresult HTMLEditor::RemoveStyleInside(Element& aElement, nsAtom* aProperty,
+                                       nsAtom* aAttribute) {
   
-  RefPtr<nsIContent> child = aNode.GetFirstChild();
+  RefPtr<nsIContent> child = aElement.GetFirstChild();
   while (child) {
     
-    nsCOMPtr<nsIContent> next = child->GetNextSibling();
-    nsresult rv = RemoveStyleInside(*child, aProperty, aAttribute);
-    NS_ENSURE_SUCCESS(rv, rv);
-    child = next.forget();
+    
+    
+    nsCOMPtr<nsIContent> nextSibling = child->GetNextSibling();
+    if (child->IsElement()) {
+      nsresult rv = RemoveStyleInside(MOZ_KnownLive(*child->AsElement()),
+                                      aProperty, aAttribute);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    }
+    child = nextSibling.forget();
   }
 
   
-  if (!aChildrenOnly &&
-      
-      ((aProperty && aNode.NodeInfo()->NameAtom() == aProperty) ||
-       
-       (aProperty == nsGkAtoms::href && HTMLEditUtils::IsLink(&aNode)) ||
-       
-       (aProperty == nsGkAtoms::name && HTMLEditUtils::IsNamedAnchor(&aNode)) ||
-       
-       (!aProperty && IsEditable(&aNode) &&
-        HTMLEditUtils::IsRemovableInlineStyleElement(*aNode.AsElement())))) {
+  bool removeHTMLStyle = false;
+  if (aProperty) {
+    removeHTMLStyle =
+        
+        aElement.NodeInfo()->NameAtom() == aProperty ||
+        
+        (aProperty == nsGkAtoms::href && HTMLEditUtils::IsLink(&aElement)) ||
+        
+        (aProperty == nsGkAtoms::name &&
+         HTMLEditUtils::IsNamedAnchor(&aElement));
+  }
+  
+  
+  else if (IsEditable(&aElement)) {
+    
+    removeHTMLStyle = HTMLEditUtils::IsRemovableInlineStyleElement(aElement);
+  }
+
+  if (removeHTMLStyle) {
     
     
     if (!aAttribute) {
-      bool hasStyleAttr =
-          aNode.AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::style);
-      bool hasClassAttr =
-          aNode.AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::_class);
-      if (aProperty && (hasStyleAttr || hasClassAttr)) {
+      
+      
+      
+      if (aProperty &&
+          (aElement.HasAttr(kNameSpaceID_None, nsGkAtoms::style) ||
+           aElement.HasAttr(kNameSpaceID_None, nsGkAtoms::_class))) {
         
         
-        
-        
-        RefPtr<Element> spanNode =
-            InsertContainerWithTransaction(aNode, *nsGkAtoms::span);
-        if (NS_WARN_IF(!spanNode)) {
+        RefPtr<Element> spanElement =
+            InsertContainerWithTransaction(aElement, *nsGkAtoms::span);
+        if (NS_WARN_IF(Destroyed())) {
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
+        if (NS_WARN_IF(!spanElement)) {
           return NS_ERROR_FAILURE;
         }
-        nsresult rv = CloneAttributeWithTransaction(
-            *nsGkAtoms::style, *spanNode, MOZ_KnownLive(*aNode.AsElement()));
+        nsresult rv = CloneAttributeWithTransaction(*nsGkAtoms::style,
+                                                    *spanElement, aElement);
+        if (NS_WARN_IF(Destroyed())) {
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
-        rv = CloneAttributeWithTransaction(*nsGkAtoms::_class, *spanNode,
-                                           MOZ_KnownLive(*aNode.AsElement()));
+        rv = CloneAttributeWithTransaction(*nsGkAtoms::_class, *spanElement,
+                                           aElement);
+        if (NS_WARN_IF(Destroyed())) {
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
       }
-      nsresult rv =
-          RemoveContainerWithTransaction(MOZ_KnownLive(*aNode.AsElement()));
-      NS_ENSURE_SUCCESS(rv, rv);
-    } else if (aNode.IsElement()) {
-      
-      if (aNode.AsElement()->HasAttr(kNameSpaceID_None, aAttribute)) {
-        
-        
-        if (IsOnlyAttribute(aNode.AsElement(), aAttribute)) {
-          nsresult rv =
-              RemoveContainerWithTransaction(MOZ_KnownLive(*aNode.AsElement()));
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return rv;
-          }
-        } else {
-          nsresult rv = RemoveAttributeWithTransaction(
-              MOZ_KnownLive(*aNode.AsElement()), *aAttribute);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return rv;
-          }
-        }
+      nsresult rv = RemoveContainerWithTransaction(aElement);
+      if (NS_WARN_IF(Destroyed())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
       }
     }
-  }
-
-  if (!aChildrenOnly &&
-      CSSEditUtils::IsCSSEditableProperty(&aNode, aProperty, aAttribute)) {
     
     
-    
-    if (aNode.IsElement()) {
-      bool hasAttribute = CSSEditUtils::HaveCSSEquivalentStyles(
-          aNode, aProperty, aAttribute, CSSEditUtils::eSpecified);
-      if (hasAttribute) {
-        
-        
-        
-        mCSSEditUtils->RemoveCSSEquivalentToHTMLStyle(
-            MOZ_KnownLive(aNode.AsElement()), aProperty, aAttribute, nullptr,
-            false);
-        
-        
-        RemoveElementIfNoStyleOrIdOrClass(MOZ_KnownLive(*aNode.AsElement()));
+    else if (aElement.HasAttr(kNameSpaceID_None, aAttribute)) {
+      if (IsOnlyAttribute(&aElement, aAttribute)) {
+        nsresult rv = RemoveContainerWithTransaction(aElement);
+        if (NS_WARN_IF(Destroyed())) {
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
+      } else {
+        nsresult rv = RemoveAttributeWithTransaction(aElement, *aAttribute);
+        if (NS_WARN_IF(Destroyed())) {
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
     }
   }
 
   
-  if (aChildrenOnly) {
-    return NS_OK;
-  }
-  if (aProperty == nsGkAtoms::font &&
-      (aNode.IsHTMLElement(nsGkAtoms::big) ||
-       aNode.IsHTMLElement(nsGkAtoms::small)) &&
-      aAttribute == nsGkAtoms::size) {
+  
+  
+  if (CSSEditUtils::IsCSSEditableProperty(&aElement, aProperty, aAttribute) &&
+      CSSEditUtils::HaveCSSEquivalentStyles(aElement, aProperty, aAttribute,
+                                            CSSEditUtils::eSpecified)) {
     
-    return RemoveContainerWithTransaction(MOZ_KnownLive(*aNode.AsElement()));
+    mCSSEditUtils->RemoveCSSEquivalentToHTMLStyle(&aElement, aProperty,
+                                                  aAttribute, nullptr, false);
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    
+    
+    if (aElement.IsAnyOfHTMLElements(nsGkAtoms::span, nsGkAtoms::font) &&
+        !HTMLEditor::HasStyleOrIdOrClassAttribute(aElement)) {
+      DebugOnly<nsresult> rvIgnored = RemoveContainerWithTransaction(aElement);
+      if (NS_WARN_IF(Destroyed())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rvIgnored),
+          "RemoveContainerWithTransaction() failed, but ignored");
+    }
   }
+
+  
+  
+  if (aProperty == nsGkAtoms::font && aAttribute == nsGkAtoms::size &&
+      aElement.IsAnyOfHTMLElements(nsGkAtoms::big, nsGkAtoms::small)) {
+    nsresult rv = RemoveContainerWithTransaction(aElement);
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "RemoveContainerWithTransaction() failed");
+    return rv;
+  }
+
   return NS_OK;
 }
 
@@ -1583,9 +1620,12 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
       }
 
       for (auto& content : arrayOfContents) {
-        nsresult rv = RemoveStyleInside(content, aProperty, aAttribute);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
+        if (content->IsElement()) {
+          nsresult rv = RemoveStyleInside(MOZ_KnownLive(*content->AsElement()),
+                                          aProperty, aAttribute);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return rv;
+          }
         }
         
         
@@ -2089,32 +2129,16 @@ HTMLEditor::GetIsCSSEnabled(bool* aIsCSSEnabled) {
   return NS_OK;
 }
 
-static bool HasNonEmptyAttribute(Element* aElement, nsAtom* aName) {
-  MOZ_ASSERT(aElement);
-
+inline bool HasNonEmptyAttribute(Element& aElement, nsStaticAtom& aAttribute) {
   nsAutoString value;
-  return aElement->GetAttr(kNameSpaceID_None, aName, value) && !value.IsEmpty();
+  return aElement.GetAttr(kNameSpaceID_None, &aAttribute, value) &&
+         !value.IsEmpty();
 }
 
-bool HTMLEditor::HasStyleOrIdOrClass(Element* aElement) {
-  MOZ_ASSERT(aElement);
-
-  
-  
-  return HasNonEmptyAttribute(aElement, nsGkAtoms::style) ||
-         HasNonEmptyAttribute(aElement, nsGkAtoms::_class) ||
-         HasNonEmptyAttribute(aElement, nsGkAtoms::id);
-}
-
-nsresult HTMLEditor::RemoveElementIfNoStyleOrIdOrClass(Element& aElement) {
-  
-  if ((!aElement.IsHTMLElement(nsGkAtoms::span) &&
-       !aElement.IsHTMLElement(nsGkAtoms::font)) ||
-      HasStyleOrIdOrClass(&aElement)) {
-    return NS_OK;
-  }
-
-  return RemoveContainerWithTransaction(aElement);
+bool HTMLEditor::HasStyleOrIdOrClassAttribute(Element& aElement) {
+  return HasNonEmptyAttribute(aElement, *nsGkAtoms::style) ||
+         HasNonEmptyAttribute(aElement, *nsGkAtoms::_class) ||
+         HasNonEmptyAttribute(aElement, *nsGkAtoms::id);
 }
 
 }  
