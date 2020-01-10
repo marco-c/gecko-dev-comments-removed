@@ -11306,6 +11306,10 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
     }
     newSHEntry->SetURI(aNewURI);
     newSHEntry->SetOriginalURI(aNewURI);
+    
+    
+    
+    newSHEntry->SetResultPrincipalURI(nullptr);
     newSHEntry->SetLoadReplace(false);
   }
 
@@ -13214,6 +13218,10 @@ nsDocShell::ResumeRedirectedLoad(uint64_t aIdentifier, int32_t aHistoryIndex) {
   cpcl->RegisterCallback(
       aIdentifier, [self, aHistoryIndex](nsIChildChannel* aChannel) {
         if (NS_WARN_IF(self->mIsBeingDestroyed)) {
+          nsCOMPtr<nsIRequest> request = do_QueryInterface(aChannel);
+          if (request) {
+            request->Cancel(NS_BINDING_ABORTED);
+          }
           return;
         }
 
