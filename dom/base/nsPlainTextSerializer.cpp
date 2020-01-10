@@ -1306,11 +1306,12 @@ void nsPlainTextSerializer::MaybeWrapAndOutputCompleteLines() {
 
       
       
-      nsAutoString restOfLine;
+      nsAutoString restOfContent;
       if (nsCRT::IsAsciiSpace(mCurrentLine.mContent.CharAt(goodSpace))) {
-        mCurrentLine.mContent.Right(restOfLine, contentLength - goodSpace - 1);
+        mCurrentLine.mContent.Right(restOfContent,
+                                    contentLength - goodSpace - 1);
       } else {
-        mCurrentLine.mContent.Right(restOfLine, contentLength - goodSpace);
+        mCurrentLine.mContent.Right(restOfContent, contentLength - goodSpace);
       }
       
       const bool breakBySpace = mCurrentLine.mContent.CharAt(goodSpace) == ' ';
@@ -1319,7 +1320,7 @@ void nsPlainTextSerializer::MaybeWrapAndOutputCompleteLines() {
       mCurrentLine.mContent.Truncate();
       
       if (mSettings.HasFlag(nsIDocumentEncoder::OutputFormatFlowed)) {
-        if (!restOfLine.IsEmpty() && IsSpaceStuffable(restOfLine.get()) &&
+        if (!restOfContent.IsEmpty() && IsSpaceStuffable(restOfContent.get()) &&
             mCurrentLine.mCiteQuoteLevel ==
                 0  
         ) {
@@ -1328,7 +1329,7 @@ void nsPlainTextSerializer::MaybeWrapAndOutputCompleteLines() {
           
         }
       }
-      mCurrentLine.mContent.Append(restOfLine);
+      mCurrentLine.mContent.Append(restOfContent);
       currentLineContentWidth = GetUnicharStringWidth(mCurrentLine.mContent);
       mEmptyLines = -1;
     } else {
