@@ -7034,10 +7034,15 @@ static bool TypeFailureWarning(frontend::ParserBase& parser, const char* str) {
   return false;
 }
 
+
+
+static bool IsAsmJSCompilerAvailable(JSContext* cx) {
+  return HasCompilerSupport(cx) && IonCanCompile() && cx->options().wasmIon();
+}
+
 static bool EstablishPreconditions(JSContext* cx,
                                    frontend::ParserBase& parser) {
-  
-  if (!HasCompilerSupport(cx) || !IonCanCompile()) {
+  if (!IsAsmJSCompilerAvailable(cx)) {
     return TypeFailureWarning(parser, "Disabled by lack of compiler support");
   }
 
@@ -7160,9 +7165,7 @@ bool js::IsAsmJSStrictModeModuleOrFunction(JSFunction* fun) {
 bool js::IsAsmJSCompilationAvailable(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
-  
-  bool available =
-      HasCompilerSupport(cx) && IonCanCompile() && cx->options().asmJS();
+  bool available = cx->options().asmJS() && IsAsmJSCompilerAvailable(cx);
 
   args.rval().set(BooleanValue(available));
   return true;
