@@ -20,17 +20,60 @@ class WorkletNodeEngine final : public AudioNodeEngine {
   explicit WorkletNodeEngine(AudioWorkletNode* aNode)
       : AudioNodeEngine(aNode) {}
 
-  void ConstructProcessor(AudioWorkletImpl* aWorkletImpl,
-                          const nsAString& aName,
-                          StructuredCloneHolder* aOptionsSerialization);
+  MOZ_CAN_RUN_SCRIPT
+  void ConstructProcessor(
+      AudioWorkletImpl* aWorkletImpl, const nsAString& aName,
+      NotNull<StructuredCloneHolder*> aOptionsSerialization);
 
-  void NotifyForcedShutdown() override {}
+  void NotifyForcedShutdown() override { ReleaseJSResources(); }
+
+ private:
+  void SendProcessorError();
+
+  void ReleaseJSResources() {
+    mGlobal = nullptr;
+    mProcessor.reset();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<AudioWorkletGlobalScope> mGlobal;
+  JS::PersistentRooted<JSObject*> mProcessor;
 };
+
+void WorkletNodeEngine::SendProcessorError() {
+  
+
+
+
+
+
+
+  
+
+
+
+  ReleaseJSResources();
+}
 
 void WorkletNodeEngine::ConstructProcessor(
     AudioWorkletImpl* aWorkletImpl, const nsAString& aName,
-    StructuredCloneHolder* aOptionsSerialization) {
-  
+    NotNull<StructuredCloneHolder*> aOptionsSerialization) {
+  RefPtr<AudioWorkletGlobalScope> global = aWorkletImpl->GetGlobalScope();
+  MOZ_ASSERT(global);  
+  JS::RootingContext* cx = RootingCx();
+  mProcessor.init(cx);
+  if (!global->ConstructProcessor(aName, aOptionsSerialization, &mProcessor)) {
+    SendProcessorError();
+    return;
+  }
+  mGlobal = std::move(global);
 }
 
 AudioWorkletNode::AudioWorkletNode(AudioContext* aAudioContext,
@@ -131,12 +174,16 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
   auto workletImpl = static_cast<AudioWorkletImpl*>(worklet->Impl());
   audioWorkletNode->mStream->SendRunnable(NS_NewRunnableFunction(
       "WorkletNodeEngine::ConstructProcessor",
+      
+      
       [stream = audioWorkletNode->mStream,
        workletImpl = RefPtr<AudioWorkletImpl>(workletImpl),
-       name = nsString(aName), options = std::move(optionsSerialization)]() {
-        auto engine = static_cast<WorkletNodeEngine*>(stream->Engine());
-        engine->ConstructProcessor(workletImpl, name, options.get());
-      }));
+       name = nsString(aName), options = std::move(optionsSerialization)]()
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+            auto engine = static_cast<WorkletNodeEngine*>(stream->Engine());
+            engine->ConstructProcessor(workletImpl, name,
+                                       WrapNotNull(options.get()));
+          }));
 
   return audioWorkletNode.forget();
 }

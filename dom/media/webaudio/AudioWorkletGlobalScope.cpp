@@ -11,6 +11,7 @@
 #include "AudioWorkletImpl.h"
 #include "jsapi.h"
 #include "mozilla/dom/AudioWorkletGlobalScopeBinding.h"
+#include "mozilla/dom/StructuredCloneHolder.h"
 #include "mozilla/dom/WorkletPrincipal.h"
 #include "mozilla/dom/AudioParamDescriptorBinding.h"
 #include "nsPrintfCString.h"
@@ -284,6 +285,75 @@ AudioParamDescriptorMap AudioWorkletGlobalScope::DescriptorsFromJS(
   }
 
   return res;
+}
+
+bool AudioWorkletGlobalScope::ConstructProcessor(
+    const nsAString& aName,
+    NotNull<StructuredCloneHolder*> aOptionsSerialization,
+    JS::MutableHandle<JSObject*> aRetProcessor) {
+  
+
+
+
+  AutoJSAPI jsapi;
+  if (NS_WARN_IF(!jsapi.Init(this))) {
+    return false;
+  }
+  JSContext* cx = jsapi.cx();
+  ErrorResult rv;
+  
+
+
+
+
+  
+
+
+
+  JS::Rooted<JS::Value> optionsVal(cx);
+  aOptionsSerialization->Read(this, cx, &optionsVal, rv);
+  if (rv.MaybeSetPendingException(cx)) {
+    return false;
+  }
+  
+
+
+
+  RefPtr<AudioWorkletProcessorConstructor> processorConstructor =
+      mNameToProcessorMap.Get(aName);
+  
+  
+  MOZ_ASSERT(processorConstructor);
+  
+
+
+
+  
+  
+  JS::Rooted<JSObject*> options(cx, &optionsVal.toObject());
+  
+  
+  
+  RefPtr<AudioWorkletProcessor> processor = processorConstructor->Construct(
+      options, rv, "AudioWorkletProcessor construction",
+      CallbackFunction::eReportExceptions);
+  if (rv.Failed()) {
+    rv.SuppressException();  
+    return false;
+  }
+  
+
+
+
+
+
+  JS::Rooted<JS::Value> processorVal(cx);
+  if (NS_WARN_IF(!ToJSValue(cx, processor, &processorVal))) {
+    return false;
+  }
+  MOZ_ASSERT(processorVal.isObject());
+  aRetProcessor.set(&processorVal.toObject());
+  return true;
 }
 
 }  
