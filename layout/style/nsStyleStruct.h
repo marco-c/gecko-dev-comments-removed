@@ -950,7 +950,7 @@ struct nsStyleGridLine {
   
   bool mHasSpan;
   int32_t mInteger;    
-  nsCString mLineName;  
+  RefPtr<nsAtom> mLineName;  
 
   
   
@@ -959,10 +959,7 @@ struct nsStyleGridLine {
   static const int32_t kMaxLine = 10000;
 
   nsStyleGridLine()
-      : mHasSpan(false),
-        mInteger(0)
-  
-  {}
+      : mHasSpan(false), mInteger(0), mLineName(nsGkAtoms::_empty) {}
 
   nsStyleGridLine(const nsStyleGridLine& aOther) { (*this) = aOther; }
 
@@ -978,7 +975,7 @@ struct nsStyleGridLine {
   }
 
   bool IsAuto() const {
-    bool haveInitialValues = mInteger == 0 && mLineName.IsEmpty();
+    bool haveInitialValues = mInteger == 0 && mLineName == nsGkAtoms::_empty;
     MOZ_ASSERT(!(haveInitialValues && mHasSpan),
                "should not have 'span' when other components are "
                "at their initial values");
@@ -1027,11 +1024,11 @@ struct nsStyleGridLine {
 
 
 struct nsStyleGridTemplate {
-  nsTArray<nsTArray<nsCString>> mLineNameLists;
+  nsTArray<nsTArray<RefPtr<nsAtom>>> mLineNameLists;
   nsTArray<nsStyleCoord> mMinTrackSizingFunctions;
   nsTArray<nsStyleCoord> mMaxTrackSizingFunctions;
-  nsTArray<nsCString> mRepeatAutoLineNameListBefore;
-  nsTArray<nsCString> mRepeatAutoLineNameListAfter;
+  nsTArray<RefPtr<nsAtom>> mRepeatAutoLineNameListBefore;
+  nsTArray<RefPtr<nsAtom>> mRepeatAutoLineNameListAfter;
   int16_t mRepeatAutoIndex;  
   bool mIsAutoFill : 1;
   bool mIsSubgrid : 1;

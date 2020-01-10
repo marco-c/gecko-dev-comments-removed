@@ -941,9 +941,10 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
 
 
 
-  uint32_t FindNamedLine(const nsCString& aName, int32_t* aNth,
-                         uint32_t aFromIndex,
+  uint32_t FindNamedLine(nsAtom* aName, int32_t* aNth, uint32_t aFromIndex,
                          const nsTArray<uint32_t>& aImplicitLines) const {
+    MOZ_ASSERT(aName);
+    MOZ_ASSERT(aName != nsGkAtoms::_empty);
     MOZ_ASSERT(aNth && *aNth != 0);
     if (*aNth > 0) {
       return FindLine(aName, aNth, aFromIndex, aImplicitLines);
@@ -964,7 +965,7 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
 
 
 
-  void FindNamedAreas(const nsACString& aName, LogicalSide aSide,
+  void FindNamedAreas(nsAtom* aName, LogicalSide aSide,
                       nsTArray<uint32_t>& aImplicitLines) const {
     
     bool sameDirectionAsThis = true;
@@ -1017,10 +1018,10 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
 
 
 
-  bool HasImplicitNamedArea(const nsCString& aName) const {
+  bool HasImplicitNamedArea(nsAtom* aName) const {
     const auto* map = this;
     do {
-      if (map->mAreas && map->mAreas->Contains(aName)) {
+      if (map->mAreas && map->mAreas->has(aName)) {
         return true;
       }
       map = map->mParentLineNameMap;
@@ -1039,7 +1040,7 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
   
 
 
-  uint32_t FindLine(const nsCString& aName, int32_t* aNth, uint32_t aFromIndex,
+  uint32_t FindLine(nsAtom* aName, int32_t* aNth, uint32_t aFromIndex,
                     const nsTArray<uint32_t>& aImplicitLines) const {
     MOZ_ASSERT(aNth && *aNth > 0);
     int32_t nth = *aNth;
@@ -1074,7 +1075,7 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
   
 
 
-  uint32_t RFindLine(const nsCString& aName, int32_t* aNth, uint32_t aFromIndex,
+  uint32_t RFindLine(nsAtom* aName, int32_t* aNth, uint32_t aFromIndex,
                      const nsTArray<uint32_t>& aImplicitLines) const {
     MOZ_ASSERT(aNth && *aNth > 0);
     if (MOZ_UNLIKELY(aFromIndex == 0)) {
@@ -1112,7 +1113,7 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
   }
 
   
-  bool Contains(uint32_t aIndex, const nsCString& aName) const {
+  bool Contains(uint32_t aIndex, nsAtom* aName) const {
     const auto* map = this;
     while (true) {
       if (aIndex < map->mTemplateLinesEnd && map->HasNameAt(aIndex, aName)) {
@@ -1131,7 +1132,7 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
   }
 
   
-  bool HasNameAt(uint32_t aIndex, const nsCString& aName) const {
+  bool HasNameAt(uint32_t aIndex, nsAtom* aName) const {
     if (!mHasRepeatAuto) {
       return mLineNameLists[aIndex].Contains(aName);
     }
@@ -1167,8 +1168,8 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
 
 
 
-  uint32_t FindNamedArea(const nsACString& aName, LogicalSide aSide,
-                         int32_t aMin, int32_t aMax) const {
+  uint32_t FindNamedArea(nsAtom* aName, LogicalSide aSide, int32_t aMin,
+                         int32_t aMax) const {
     if (const NamedArea* area = FindNamedArea(aName)) {
       int32_t start = IsBlock(aSide) ? area->rows.start : area->columns.start;
       int32_t end = IsBlock(aSide) ? area->rows.end : area->columns.end;
@@ -1197,13 +1198,13 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
 
 
 
-  const NamedArea* FindNamedArea(const nsACString& aName) const {
+  const NamedArea* FindNamedArea(nsAtom* aName) const {
     if (mStylePosition->mGridTemplateAreas.IsNone()) {
       return nullptr;
     }
     const auto areas = mStylePosition->mGridTemplateAreas.AsAreas();
     for (const NamedArea& area : areas->areas.AsSpan()) {
-      if (area.name.AsString() == aName) {
+      if (area.name.AsAtom() == aName) {
         return &area;
       }
     }
@@ -1213,9 +1214,9 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
   
   const nsStylePosition* mStylePosition;
   const ImplicitNamedAreas* mAreas;
-  const nsTArray<nsTArray<nsCString>>& mLineNameLists;
-  const nsTArray<nsCString>& mRepeatAutoLineNameListBefore;
-  const nsTArray<nsCString>& mRepeatAutoLineNameListAfter;
+  const nsTArray<nsTArray<RefPtr<nsAtom>>>& mLineNameLists;
+  const nsTArray<RefPtr<nsAtom>>& mRepeatAutoLineNameListBefore;
+  const nsTArray<RefPtr<nsAtom>>& mRepeatAutoLineNameListAfter;
   
   const uint32_t mRepeatAutoStart;
   
@@ -2103,13 +2104,13 @@ struct nsGridContainerFrame::Tracks {
     return size;
   }
 
-  nsTArray<nsCString> GetExplicitLineNamesAtIndex(
+  nsTArray<RefPtr<nsAtom>> GetExplicitLineNamesAtIndex(
       const nsStyleGridTemplate& aGridTemplate,
       const TrackSizingFunctions& aFunctions, uint32_t aIndex) {
-    nsTArray<nsCString> lineNames;
+    nsTArray<RefPtr<nsAtom>> lineNames;
 
     bool hasRepeatAuto = aGridTemplate.HasRepeatAuto();
-    const nsTArray<nsTArray<nsCString>>& lineNameLists =
+    const nsTArray<nsTArray<RefPtr<nsAtom>>>& lineNameLists =
         aGridTemplate.mLineNameLists;
 
     if (!hasRepeatAuto) {
@@ -2710,28 +2711,27 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::Grid {
                          const LineNameMap& aRowLineNameMap,
                          const nsStylePosition* aStyle);
 
-  bool HasImplicitNamedArea(const nsCString& aName) const {
-    return mAreas && mAreas->Contains(aName);
+  bool HasImplicitNamedArea(nsAtom* aName) const {
+    return mAreas && mAreas->has(aName);
   }
 
   
   
-  static bool IsNameWithSuffix(const nsCString& aString,
-                               const nsCString& aSuffix,
+  static bool IsNameWithSuffix(nsAtom* aString, const nsString& aSuffix,
                                uint32_t* aIndex) {
-    if (StringEndsWith(aString, aSuffix)) {
-      *aIndex = aString.Length() - aSuffix.Length();
+    if (StringEndsWith(nsDependentAtomString(aString), aSuffix)) {
+      *aIndex = aString->GetLength() - aSuffix.Length();
       return *aIndex != 0;
     }
     return false;
   }
 
-  static bool IsNameWithEndSuffix(const nsCString& aString, uint32_t* aIndex) {
-    return IsNameWithSuffix(aString, NS_LITERAL_CSTRING("-end"), aIndex);
+  static bool IsNameWithEndSuffix(nsAtom* aString, uint32_t* aIndex) {
+    return IsNameWithSuffix(aString, NS_LITERAL_STRING("-end"), aIndex);
   }
 
-  static bool IsNameWithStartSuffix(const nsCString& aString, uint32_t* aIndex) {
-    return IsNameWithSuffix(aString, NS_LITERAL_CSTRING("-start"), aIndex);
+  static bool IsNameWithStartSuffix(nsAtom* aString, uint32_t* aIndex) {
+    return IsNameWithSuffix(aString, NS_LITERAL_STRING("-start"), aIndex);
   }
 
   
@@ -3328,7 +3328,7 @@ nsContainerFrame* NS_NewGridContainerFrame(PresShell* aPresShell,
 }
 
 void nsGridContainerFrame::AddImplicitNamedAreas(
-    const nsTArray<nsTArray<nsCString>>& aLineNameLists) {
+    const nsTArray<nsTArray<RefPtr<nsAtom>>>& aLineNameLists) {
   
   
   const uint32_t len =
@@ -3336,12 +3336,13 @@ void nsGridContainerFrame::AddImplicitNamedAreas(
   nsTHashtable<nsStringHashKey> currentStarts;
   ImplicitNamedAreas* areas = GetImplicitNamedAreas();
   for (uint32_t i = 0; i < len; ++i) {
-    for (const nsCString& name : aLineNameLists[i]) {
+    for (nsAtom* name : aLineNameLists[i]) {
       uint32_t indexOfSuffix;
       if (Grid::IsNameWithStartSuffix(name, &indexOfSuffix) ||
           Grid::IsNameWithEndSuffix(name, &indexOfSuffix)) {
         
-        nsDependentCSubstring areaName(name, 0, indexOfSuffix);
+        nsDependentSubstring areaName(nsDependentAtomString(name), 0,
+                                      indexOfSuffix);
 
         
         if (!areas) {
@@ -3349,15 +3350,14 @@ void nsGridContainerFrame::AddImplicitNamedAreas(
           SetProperty(ImplicitNamedAreasProperty(), areas);
         }
 
-        NamedArea area;
-        if (!areas->Get(areaName, &area)) {
-          
-          
-          Servo_MakeOwnedStr(&area.name, &areaName);
-          area.rows = {0, 0};
-          area.columns = {0, 0};
-
-          areas->Put(areaName, area);
+        RefPtr<nsAtom> name = NS_Atomize(areaName);
+        auto addPtr = areas->lookupForAdd(name);
+        if (!addPtr) {
+          if (!areas->add(
+                  addPtr, name,
+                  NamedArea{StyleAtom(do_AddRef(name)), {0, 0}, {0, 0}})) {
+            MOZ_CRASH("OOM while adding grid name lists");
+          }
         }
       }
     }
@@ -3370,11 +3370,11 @@ void nsGridContainerFrame::InitImplicitNamedAreas(
   if (areas) {
     
     
-    areas->Clear();
+    areas->clear();
   }
   AddImplicitNamedAreas(aStyle->GridTemplateColumns().mLineNameLists);
   AddImplicitNamedAreas(aStyle->GridTemplateRows().mLineNameLists);
-  if (areas && areas->Count() == 0) {
+  if (areas && areas->count() == 0) {
     DeleteProperty(ImplicitNamedAreasProperty());
   }
 }
@@ -3385,7 +3385,7 @@ int32_t nsGridContainerFrame::Grid::ResolveLine(
     const nsStylePosition* aStyle) {
   MOZ_ASSERT(!aLine.IsAuto());
   int32_t line = 0;
-  if (aLine.mLineName.IsEmpty()) {
+  if (aLine.mLineName == nsGkAtoms::_empty) {
     MOZ_ASSERT(aNth != 0, "css-grid 9.2: <integer> must not be zero.");
     line = int32_t(aFromIndex) + aNth;
   } else {
@@ -3402,14 +3402,14 @@ int32_t nsGridContainerFrame::Grid::ResolveLine(
         
         
         
-        nsAutoCString lineName(aLine.mLineName);
+        nsAutoString lineName(nsDependentAtomString(aLine.mLineName));
         if (IsStart(aSide)) {
           lineName.AppendLiteral("-start");
         } else {
           lineName.AppendLiteral("-end");
         }
-        line =
-            aNameMap.FindNamedLine(lineName, &aNth, aFromIndex, implicitLines);
+        RefPtr<nsAtom> name = NS_Atomize(lineName);
+        line = aNameMap.FindNamedLine(name, &aNth, aFromIndex, implicitLines);
       }
     }
 
@@ -3421,8 +3421,9 @@ int32_t nsGridContainerFrame::Grid::ResolveLine(
       if (useStart || IsNameWithEndSuffix(aLine.mLineName, &index)) {
         auto side = MakeLogicalSide(
             GetAxis(aSide), useStart ? eLogicalEdgeStart : eLogicalEdgeEnd);
-        aNameMap.FindNamedAreas(nsDependentCSubstring(aLine.mLineName, 0, index),
-                                side, implicitLines);
+        RefPtr<nsAtom> name = NS_Atomize(nsDependentSubstring(
+            nsDependentAtomString(aLine.mLineName), 0, index));
+        aNameMap.FindNamedAreas(name, side, implicitLines);
       }
       line = aNameMap.FindNamedLine(aLine.mLineName, &aNth, aFromIndex,
                                     implicitLines);
@@ -3459,7 +3460,7 @@ nsGridContainerFrame::Grid::ResolveLineRangeHelper(
   if (aStart.mHasSpan) {
     if (aEnd.mHasSpan || aEnd.IsAuto()) {
       
-      if (aStart.mLineName.IsEmpty()) {
+      if (aStart.mLineName == nsGkAtoms::_empty) {
         
         
         return LinePair(kAutoLine, aStart.mInteger);
@@ -3493,7 +3494,7 @@ nsGridContainerFrame::Grid::ResolveLineRangeHelper(
       return LinePair(start, 1);  
     }
     if (aEnd.mHasSpan) {
-      if (aEnd.mLineName.IsEmpty()) {
+      if (aEnd.mLineName == nsGkAtoms::_empty) {
         
         MOZ_ASSERT(aEnd.mInteger != 0);
         return LinePair(start, aEnd.mInteger);
@@ -3519,7 +3520,7 @@ nsGridContainerFrame::Grid::ResolveLineRangeHelper(
   int32_t nth = aEnd.mInteger == 0 ? 1 : aEnd.mInteger;
   if (aEnd.mHasSpan) {
     if (MOZ_UNLIKELY(start < 0)) {
-      if (aEnd.mLineName.IsEmpty()) {
+      if (aEnd.mLineName == nsGkAtoms::_empty) {
         return LinePair(start, start + nth);
       }
       from = 0;
@@ -4291,14 +4292,14 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
   
   if (mAreas &&
       aState.mFrame->HasAnyStateBits(NS_STATE_GRID_GENERATE_COMPUTED_VALUES)) {
-    for (auto iter = mAreas->Iter(); !iter.Done(); iter.Next()) {
-      auto& areaInfo = iter.Data();
+    for (auto iter = mAreas->iter(); !iter.done(); iter.next()) {
+      auto& areaInfo = iter.get().value();
 
       
       
       
       nsStyleGridLine lineStartAndEnd;
-      lineStartAndEnd.mLineName = areaInfo.name.AsString();
+      lineStartAndEnd.mLineName = areaInfo.name.AsAtom();
 
       LineRange columnLines =
           ResolveLineRange(lineStartAndEnd, lineStartAndEnd, colLineNameMap,
@@ -7335,10 +7336,10 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
     uint32_t capacity = gridReflowInput.mCols.mSizes.Length();
     const nsStyleGridTemplate& gridColTemplate =
         gridReflowInput.mGridStyle->GridTemplateColumns();
-    nsTArray<nsTArray<nsCString>> columnLineNames(capacity);
+    nsTArray<nsTArray<RefPtr<nsAtom>>> columnLineNames(capacity);
     for (col = 0; col <= gridReflowInput.mCols.mSizes.Length(); col++) {
       
-      nsTArray<nsCString> explicitNames =
+      nsTArray<RefPtr<nsAtom>> explicitNames =
           gridReflowInput.mCols.GetExplicitLineNamesAtIndex(
               gridColTemplate, gridReflowInput.mColFunctions,
               col - gridReflowInput.mColFunctions.mExplicitGridOffset);
@@ -7346,7 +7347,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
       columnLineNames.AppendElement(explicitNames);
     }
     
-    nsTArray<nsCString> colNamesFollowingRepeat;
+    nsTArray<RefPtr<nsAtom>> colNamesFollowingRepeat;
     if (gridColTemplate.HasRepeatAuto()) {
       
       
@@ -7367,10 +7368,10 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
     capacity = gridReflowInput.mRows.mSizes.Length();
     const nsStyleGridTemplate& gridRowTemplate =
         gridReflowInput.mGridStyle->GridTemplateRows();
-    nsTArray<nsTArray<nsCString>> rowLineNames(capacity);
+    nsTArray<nsTArray<RefPtr<nsAtom>>> rowLineNames(capacity);
     for (row = 0; row <= gridReflowInput.mRows.mSizes.Length(); row++) {
       
-      nsTArray<nsCString> explicitNames =
+      nsTArray<RefPtr<nsAtom>> explicitNames =
           gridReflowInput.mRows.GetExplicitLineNamesAtIndex(
               gridRowTemplate, gridReflowInput.mRowFunctions,
               row - gridReflowInput.mRowFunctions.mExplicitGridOffset);
@@ -7378,7 +7379,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
       rowLineNames.AppendElement(explicitNames);
     }
     
-    nsTArray<nsCString> rowNamesFollowingRepeat;
+    nsTArray<RefPtr<nsAtom>> rowNamesFollowingRepeat;
     if (gridRowTemplate.HasRepeatAuto()) {
       
       
