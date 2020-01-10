@@ -154,11 +154,6 @@ var oldStyleLanguageTagMappings = {
     "zh-TW": "zh-Hant-TW",
 };
 
-var localeCandidateCache = {
-    runtimeDefaultLocale: undefined,
-    candidateDefaultLocale: undefined,
-};
-
 var localeCache = {
     runtimeDefaultLocale: undefined,
     defaultLocale: undefined,
@@ -169,14 +164,15 @@ var localeCache = {
 
 
 
-
-function DefaultLocaleIgnoringAvailableLocales() {
-    const runtimeDefaultLocale = RuntimeDefaultLocale();
-    if (runtimeDefaultLocale === localeCandidateCache.runtimeDefaultLocale)
-        return localeCandidateCache.candidateDefaultLocale;
+function DefaultLocale() {
+    if (IsRuntimeDefaultLocale(localeCache.runtimeDefaultLocale))
+        return localeCache.defaultLocale;
 
     
     
+    
+    
+    var runtimeDefaultLocale = RuntimeDefaultLocale();
     var candidate = intl_TryValidateAndCanonicalizeLanguageTag(runtimeDefaultLocale);
     if (candidate === null) {
         candidate = lastDitchLocale();
@@ -191,30 +187,19 @@ function DefaultLocaleIgnoringAvailableLocales() {
     }
 
     
-    localeCandidateCache.candidateDefaultLocale = candidate;
-    localeCandidateCache.runtimeDefaultLocale = runtimeDefaultLocale;
-
-    assertIsValidAndCanonicalLanguageTag(candidate, "the candidate locale");
-    assert(startOfUnicodeExtensions(candidate) < 0,
-           "the candidate must not contain a Unicode extension sequence");
-
-    return candidate;
-}
-
-
-
-
-
-
-function DefaultLocale() {
-    if (IsRuntimeDefaultLocale(localeCache.runtimeDefaultLocale))
-        return localeCache.defaultLocale;
-
     
     
     
-    var runtimeDefaultLocale = RuntimeDefaultLocale();
-    var candidate = DefaultLocaleIgnoringAvailableLocales();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     var locale;
     if (BestAvailableLocaleIgnoringDefault(callFunction(collatorInternalProperties.availableLocales,
                                                         collatorInternalProperties),
@@ -235,6 +220,7 @@ function DefaultLocale() {
     assert(startOfUnicodeExtensions(locale) < 0,
            "the computed default locale must not contain a Unicode extension sequence");
 
+    
     localeCache.defaultLocale = locale;
     localeCache.runtimeDefaultLocale = runtimeDefaultLocale;
 
