@@ -710,8 +710,6 @@ inline bool IsInAutomation() {
   return sAutomationPrefIsSet && AreNonLocalConnectionsDisabled();
 }
 
-void InitializeJSContext();
-
 
 
 

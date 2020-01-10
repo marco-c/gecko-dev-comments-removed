@@ -73,13 +73,9 @@ struct Module;
 
 
 
-
-
-
 XPCOM_API(nsresult)
 NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
-             nsIDirectoryServiceProvider* aAppFileLocationProvider,
-             bool aInitJSContext = true);
+             nsIDirectoryServiceProvider* aAppFileLocationProvider);
 
 
 
