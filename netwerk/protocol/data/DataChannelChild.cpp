@@ -31,7 +31,7 @@ DataChannelChild::ConnectParent(uint32_t aId) {
   }
 
   
-  AddIPDLReference();
+  mIPCOpen = true;
   return NS_OK;
 }
 
@@ -49,11 +49,6 @@ DataChannelChild::CompleteRedirectSetup(nsIStreamListener* aListener,
     Unused << Send__delete__(this);
   }
   return NS_OK;
-}
-
-void DataChannelChild::AddIPDLReference() {
-  AddRef();  
-  mIPCOpen = true;
 }
 
 void DataChannelChild::ActorDestroy(ActorDestroyReason why) {
