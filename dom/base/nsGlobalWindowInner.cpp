@@ -4482,10 +4482,12 @@ Storage* nsGlobalWindowInner::GetLocalStorage(ErrorResult& aError) {
   
   
   
+  
   if ((StoragePartitioningEnabled(access, cookieSettings) ||
        !ShouldPartitionStorage(access)) &&
       (!mLocalStorage ||
-       mLocalStorage->Type() == Storage::ePartitionedLocalStorage)) {
+       mLocalStorage->Type() == Storage::ePartitionedLocalStorage ||
+       mLocalStorage->StoragePrincipal() != GetEffectiveStoragePrincipal())) {
     RefPtr<Storage> storage;
 
     if (NextGenLocalStorageEnabled()) {
@@ -6963,8 +6965,7 @@ void nsGlobalWindowInner::StorageAccessGranted() {
   
   
 
-  if (mLocalStorage &&
-      mLocalStorage->Type() == Storage::ePartitionedLocalStorage) {
+  if (mLocalStorage) {
     IgnoredErrorResult error;
     GetLocalStorage(error);
     if (NS_WARN_IF(error.Failed())) {
