@@ -481,12 +481,24 @@ bool MaybeCrossOriginObject<Base>::hasInstance(JSContext* cx,
 
   
   
-  JSAutoRealm ar(cx, proxy);
-  JS::Rooted<JS::Value> val(cx, v);
-  if (!MaybeWrapValue(cx, &val)) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  JS::Rooted<JSObject*> proxyWrap(cx, proxy);
+  if (!MaybeWrapObject(cx, &proxyWrap)) {
     return false;
   }
-  return JS::InstanceofOperator(cx, proxy, val, bp);
+  
+  
+  
+  
+  return JS::InstanceofOperator(cx, proxyWrap, v, bp);
 }
 
 
