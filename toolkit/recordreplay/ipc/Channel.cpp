@@ -246,6 +246,13 @@ void Channel::SendMessage(Message&& aMsg) {
     aMsg.mReceiveTime = (receiveTime - mStartTime).ToMilliseconds();
   }
 
+  
+  Maybe<MonitorAutoLock> lock;
+  if (aMsg.mType != MessageType::BeginFatalError &&
+      aMsg.mType != MessageType::FatalError) {
+    lock.emplace(mMonitor);
+  }
+
   const char* ptr = (const char*)&aMsg;
   size_t nbytes = aMsg.mSize;
   while (nbytes) {
