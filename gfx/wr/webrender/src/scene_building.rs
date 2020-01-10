@@ -683,72 +683,15 @@ impl<'a> SceneBuilder<'a> {
             }
         }
 
-        let prim_list = remaining_prims;
-
-        
-        
-        let pic_key = PictureKey::new(
-            PrimitiveFlags::IS_BACKFACE_VISIBLE,
-            LayoutSize::zero(),
-            Picture {
-                composite_mode_key: PictureCompositeKey::Identity,
-            },
-        );
-
-        let pic_data_handle = self.interners
-            .picture
-            .intern(&pic_key, || {
-                PrimitiveSceneData {
-                    prim_size: LayoutSize::zero(),
-                    flags: PrimitiveFlags::IS_BACKFACE_VISIBLE,
-                }
-            }
-            );
-
-        
-        
-        
-        
-        
-        
-        let mut parent_clip_chain_id = ClipChainId::NONE;
-        for clip_handle in &shared_clips {
-            parent_clip_chain_id = self.clip_store.add_clip_chain_node(
-                *clip_handle,
-                parent_clip_chain_id,
-            );
-        }
-
-        let tile_cache = Box::new(TileCacheInstance::new(
+        let instance = create_tile_cache(
             0,
             main_scroll_root,
+            remaining_prims,
             self.config.background_color,
             shared_clips,
-            parent_clip_chain_id,
-        ));
-
-        let pic_index = self.prim_store.pictures.alloc().init(PicturePrimitive::new_image(
-            Some(PictureCompositeMode::TileCache { }),
-            Picture3DContext::Out,
-            None,
-            true,
-            PrimitiveFlags::IS_BACKFACE_VISIBLE,
-            RasterSpace::Screen,
-            prim_list,
-            main_scroll_root,
-            Some(tile_cache),
-            PictureOptions::default(),
-        ));
-
-        let instance = PrimitiveInstance::new(
-            LayoutPoint::zero(),
-            LayoutRect::max_rect(),
-            PrimitiveInstanceKind::Picture {
-                data_handle: pic_data_handle,
-                pic_index: PictureIndex(pic_index),
-                segment_instance_index: SegmentInstanceIndex::INVALID,
-            },
-            parent_clip_chain_id,
+            &mut self.interners,
+            &mut self.prim_store,
+            &mut self.clip_store,
         );
 
         
@@ -2013,71 +1956,22 @@ impl<'a> SceneBuilder<'a> {
             !self.found_explicit_tile_cache &&
             self.config.enable_picture_caching {
 
-            let scroll_root = ROOT_SPATIAL_NODE_INDEX;
-
-            
-            
-            let pic_key = PictureKey::new(
-                PrimitiveFlags::IS_BACKFACE_VISIBLE,
-                LayoutSize::zero(),
-                Picture {
-                    composite_mode_key: PictureCompositeKey::Identity,
-                },
-            );
-
-            let pic_data_handle = self.interners
-                .picture
-                .intern(&pic_key, || {
-                    PrimitiveSceneData {
-                        prim_size: LayoutSize::zero(),
-                        flags: PrimitiveFlags::IS_BACKFACE_VISIBLE,
-                    }
-                }
-                );
-
-            
-            
-            
-            
-            
-            
-            let tile_cache = TileCacheInstance::new(
+            let instance = create_tile_cache(
                 0,
                 ROOT_SPATIAL_NODE_INDEX,
+                stacking_context.prim_list,
                 self.config.background_color,
                 Vec::new(),
-                ClipChainId::NONE,
-            );
-
-            let pic_index = self.prim_store.pictures.alloc().init(PicturePrimitive::new_image(
-                Some(PictureCompositeMode::TileCache {}),
-                Picture3DContext::Out,
-                None,
-                true,
-                PrimitiveFlags::IS_BACKFACE_VISIBLE,
-                RasterSpace::Screen,
-                stacking_context.prim_list,
-                scroll_root,
-                Some(Box::new(tile_cache)),
-                PictureOptions::default(),
-            ));
-
-            let instance = PrimitiveInstance::new(
-                LayoutPoint::zero(),
-                LayoutRect::max_rect(),
-                PrimitiveInstanceKind::Picture {
-                    data_handle: pic_data_handle,
-                    pic_index: PictureIndex(pic_index),
-                    segment_instance_index: SegmentInstanceIndex::INVALID,
-                },
-                ClipChainId::NONE,
+                &mut self.interners,
+                &mut self.prim_store,
+                &mut self.clip_store,
             );
 
             let mut prim_list = PrimitiveList::empty();
             prim_list.add_prim(
                 instance,
                 LayoutSize::zero(),
-                scroll_root,
+                ROOT_SPATIAL_NODE_INDEX,
                 PrimitiveFlags::IS_BACKFACE_VISIBLE,
             );
             stacking_context.prim_list = prim_list;
@@ -3939,5 +3833,84 @@ fn process_repeat_size(
         } else {
             repeat_size.height
         },
+    )
+}
+
+
+
+fn create_tile_cache(
+    slice: usize,
+    scroll_root: SpatialNodeIndex,
+    prim_list: PrimitiveList,
+    background_color: Option<ColorF>,
+    shared_clips: Vec<ClipDataHandle>,
+    interners: &mut Interners,
+    prim_store: &mut PrimitiveStore,
+    clip_store: &mut ClipStore,
+) -> PrimitiveInstance {
+    
+    
+    let pic_key = PictureKey::new(
+        PrimitiveFlags::IS_BACKFACE_VISIBLE,
+        LayoutSize::zero(),
+        Picture {
+            composite_mode_key: PictureCompositeKey::Identity,
+        },
+    );
+
+    let pic_data_handle = interners
+        .picture
+        .intern(&pic_key, || {
+            PrimitiveSceneData {
+                prim_size: LayoutSize::zero(),
+                flags: PrimitiveFlags::IS_BACKFACE_VISIBLE,
+            }
+        }
+        );
+
+    
+    
+    
+    
+    
+    
+    let mut parent_clip_chain_id = ClipChainId::NONE;
+    for clip_handle in &shared_clips {
+        parent_clip_chain_id = clip_store.add_clip_chain_node(
+            *clip_handle,
+            parent_clip_chain_id,
+        );
+    }
+
+    let tile_cache = Box::new(TileCacheInstance::new(
+        slice,
+        scroll_root,
+        background_color,
+        shared_clips,
+        parent_clip_chain_id,
+    ));
+
+    let pic_index = prim_store.pictures.alloc().init(PicturePrimitive::new_image(
+        Some(PictureCompositeMode::TileCache { }),
+        Picture3DContext::Out,
+        None,
+        true,
+        PrimitiveFlags::IS_BACKFACE_VISIBLE,
+        RasterSpace::Screen,
+        prim_list,
+        scroll_root,
+        Some(tile_cache),
+        PictureOptions::default(),
+    ));
+
+    PrimitiveInstance::new(
+        LayoutPoint::zero(),
+        LayoutRect::max_rect(),
+        PrimitiveInstanceKind::Picture {
+            data_handle: pic_data_handle,
+            pic_index: PictureIndex(pic_index),
+            segment_instance_index: SegmentInstanceIndex::INVALID,
+        },
+        parent_clip_chain_id,
     )
 }
