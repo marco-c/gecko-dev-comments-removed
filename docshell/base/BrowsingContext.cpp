@@ -792,8 +792,13 @@ void BrowsingContext::Location(JSContext* aCx,
 
 nsresult BrowsingContext::LoadURI(BrowsingContext* aAccessor,
                                   nsDocShellLoadState* aLoadState) {
-  MOZ_DIAGNOSTIC_ASSERT(!IsDiscarded());
-  MOZ_DIAGNOSTIC_ASSERT(!aAccessor || !aAccessor->IsDiscarded());
+  
+  
+  
+  
+  if (IsDiscarded() || (aAccessor && aAccessor->IsDiscarded())) {
+    return NS_OK;
+  }
 
   if (mDocShell) {
     return mDocShell->LoadURI(aLoadState);

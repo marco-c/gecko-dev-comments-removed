@@ -647,6 +647,19 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       parentWindow ? parentWindow->GetBrowsingContext() : nullptr);
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  if (parentBC && parentBC->IsDiscarded()) {
+    return NS_ERROR_ABORT;
+  }
+
+  
   newBC = GetBrowsingContextByName(name, aForceNoOpener, parentBC);
 
   
