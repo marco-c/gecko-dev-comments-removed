@@ -61,7 +61,7 @@ TEST(DOM_L10n_Overlays, Initial)
   elem->AppendChild(*span, rv);
 
   
-  L10nValue translation;
+  L10nMessage translation;
   translation.mValue.AssignLiteral(
       "Hello <a data-l10n-name=\"link\">World</a>.");
 
