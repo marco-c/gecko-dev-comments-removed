@@ -5,6 +5,7 @@
 
 
 #include "Blob.h"
+#include "EmptyBlobImpl.h"
 #include "File.h"
 #include "MemoryBlobImpl.h"
 #include "mozilla/dom/BlobBinding.h"
@@ -70,6 +71,14 @@ Blob* Blob::Create(nsISupports* aParent, BlobImpl* aImpl) {
   MOZ_ASSERT(aImpl);
 
   return aImpl->IsFile() ? new File(aParent, aImpl) : new Blob(aParent, aImpl);
+}
+
+
+already_AddRefed<Blob> Blob::CreateEmptyBlob(nsISupports* aParent,
+                                             const nsAString& aContentType) {
+  RefPtr<Blob> blob = Blob::Create(aParent, new EmptyBlobImpl(aContentType));
+  MOZ_ASSERT(!blob->mImpl->IsFile());
+  return blob.forget();
 }
 
 
