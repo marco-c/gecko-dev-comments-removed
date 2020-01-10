@@ -17,6 +17,7 @@ class GeckoChildProcessHost;
 }
 
 
+
 enum class ProcType {
   
   Web,
@@ -35,7 +36,8 @@ enum class ProcType {
   Socket,
   RemoteSandboxBroker,
   
-  Unknown
+  Unknown,
+  Max = Unknown,
 };
 
 struct ThreadInfo {
