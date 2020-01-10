@@ -1385,17 +1385,18 @@ void js::Nursery::maybeResizeNursery(JS::GCReason reason) {
 
   const size_t minNurseryBytes = roundSize(tunables().gcMinNurseryBytes());
   MOZ_ASSERT(minNurseryBytes >= ArenaSize);
+  const size_t maxNurseryBytes = roundSize(tunables().gcMaxNurseryBytes());
+  MOZ_ASSERT(maxNurseryBytes >= ArenaSize);
 
   
   
   
   size_t lowLimit = Max(minNurseryBytes, capacity() / 2);
   size_t highLimit =
-      Min((CheckedInt<size_t>(chunkCountLimit()) * ChunkSize).value(),
-          (CheckedInt<size_t>(capacity()) * 2).value());
+      Min(maxNurseryBytes, (CheckedInt<size_t>(capacity()) * 2).value());
   newCapacity = roundSize(mozilla::Clamp(newCapacity, lowLimit, highLimit));
 
-  if (maxChunkCount() < chunkCountLimit() && promotionRate > GrowThreshold &&
+  if (capacity() < maxNurseryBytes && promotionRate > GrowThreshold &&
       newCapacity > capacity()) {
     growAllocableSpace(newCapacity);
   } else if (capacity() >= minNurseryBytes + SubChunkStep &&
@@ -1420,31 +1421,14 @@ bool js::Nursery::maybeResizeExact(JS::GCReason reason) {
 #endif
 
   MOZ_ASSERT(tunables().gcMaxNurseryBytes() >= ArenaSize);
-  CheckedInt<unsigned> newMaxNurseryChunksChecked =
-      (JS_ROUND(CheckedInt<size_t>(tunables().gcMaxNurseryBytes()), ChunkSize) /
-       ChunkSize)
-          .toChecked<unsigned>();
-  if (!newMaxNurseryChunksChecked.isValid()) {
+  const size_t newMaxNurseryBytes = roundSize(tunables().gcMaxNurseryBytes());
+  MOZ_ASSERT(newMaxNurseryBytes >= ArenaSize);
+
+  if (capacity_ > newMaxNurseryBytes) {
     
     
-    newMaxNurseryChunksChecked = 1;
-  }
-  unsigned newMaxNurseryChunks = newMaxNurseryChunksChecked.value();
-  if (newMaxNurseryChunks == 0) {
-    
-    newMaxNurseryChunks = 1;
-  }
-  if (newMaxNurseryChunks != chunkCountLimit_) {
-    chunkCountLimit_ = newMaxNurseryChunks;
-    
-    if (JS_HOWMANY(capacity_, gc::ChunkSize) > newMaxNurseryChunks) {
-      
-      static_assert(NurseryChunkUsableSize < ChunkSize,
-                    "Usable size must be smaller than total size or this "
-                    "calculation might overflow");
-      shrinkAllocableSpace(newMaxNurseryChunks * ChunkSize);
-      return true;
-    }
+    shrinkAllocableSpace(newMaxNurseryBytes);
+    return true;
   }
 
   const size_t minNurseryBytes = roundSize(tunables().gcMinNurseryBytes());
