@@ -92,11 +92,13 @@ nsresult DefaultServerNicknameForCert(const CERTCertificate* cert,
 
 
 
-nsresult BuildRevocationCheckArrays(const UniqueCERTCertificate& cert,
-                                     nsTArray<uint8_t>& issuerBytes,
-                                     nsTArray<uint8_t>& serialBytes,
-                                     nsTArray<uint8_t>& subjectBytes,
-                                     nsTArray<uint8_t>& pubKeyBytes);
+
+pkix::Result BuildRevocationCheckArrays(pkix::Input certDER,
+                                        pkix::EndEntityOrCA endEntityOrCA,
+                                         nsTArray<uint8_t>& issuerBytes,
+                                         nsTArray<uint8_t>& serialBytes,
+                                         nsTArray<uint8_t>& subjectBytes,
+                                         nsTArray<uint8_t>& pubKeyBytes);
 #else
 
 
@@ -116,11 +118,14 @@ nsresult BuildRevocationCheckArrays(const UniqueCERTCertificate& cert,
 
 
 
-nsresult BuildRevocationCheckStrings(const CERTCertificate* cert,
-                                      nsCString& encIssuer,
-                                      nsCString& encSerial,
-                                      nsCString& encSubject,
-                                      nsCString& encPubKey);
+
+
+pkix::Result BuildRevocationCheckStrings(pkix::Input certDER,
+                                         pkix::EndEntityOrCA endEntityOrCA,
+                                          nsCString& encIssuer,
+                                          nsCString& encSerial,
+                                          nsCString& encSubject,
+                                          nsCString& encPubKey);
 #endif
 
 void SaveIntermediateCerts(const UniqueCERTCertList& certList);
