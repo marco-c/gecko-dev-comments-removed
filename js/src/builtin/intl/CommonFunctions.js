@@ -843,21 +843,8 @@ function CanonicalizeLanguageTagObject(localeObj) {
     }
 
     
-    updateLangTagMappings(localeObj);
-
     
-    
-    var language = localeObj.language;
-    if (hasOwn(language, languageMappings))
-        localeObj.language = languageMappings[language];
-
-    
-
-    
-    
-    var region = localeObj.region;
-    if (region && hasOwn(region, regionMappings))
-        localeObj.region = regionMappings[region];
+    updateLocaleIdMappings(localeObj);
 
     
     
@@ -1195,14 +1182,15 @@ function ValidateAndCanonicalizeLanguageTag(locale) {
         
         
         
+        if (!hasOwn(locale, complexLanguageMappings)) {
+            
+            locale = hasOwn(locale, languageMappings)
+                     ? languageMappings[locale]
+                     : locale;
+            assert(locale === CanonicalizeLanguageTag(locale), "expected same canonicalization");
 
-        
-        locale = hasOwn(locale, languageMappings)
-                 ? languageMappings[locale]
-                 : locale;
-        assert(locale === CanonicalizeLanguageTag(locale), "expected same canonicalization");
-
-        return locale;
+            return locale;
+        }
     }
 
     var localeObj = parseLanguageTag(locale);
