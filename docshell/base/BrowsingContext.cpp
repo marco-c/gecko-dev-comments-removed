@@ -132,10 +132,7 @@ already_AddRefed<BrowsingContext> BrowsingContext::Create(
   
   
   context->mName = aName;
-  if (aOpener) {
-    context->mOpenerId = aOpener->Id();
-    context->mHadOriginalOpener = true;
-  }
+  context->mOpenerId = aOpener ? aOpener->Id() : 0;
   context->mEmbedderPolicy = nsILoadInfo::EMBEDDER_POLICY_NULL;
 
   BrowsingContext* inherit = aParent ? aParent : aOpener;

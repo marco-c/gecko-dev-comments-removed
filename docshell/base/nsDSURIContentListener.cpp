@@ -16,7 +16,6 @@
 #include "nsError.h"
 #include "nsContentSecurityManager.h"
 #include "nsDocShellLoadTypes.h"
-#include "nsGlobalWindowOuter.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIMultiPartChannel.h"
 
@@ -49,11 +48,10 @@ nsIInterfaceRequestor* MaybeCloseWindowHelper::MaybeCloseWindow() {
   if (mShouldCloseWindow) {
     
     
-    nsCOMPtr<nsPIDOMWindowOuter> opener =
-        nsGlobalWindowOuter::Cast(window)->GetSameProcessOpener();
+    nsCOMPtr<nsPIDOMWindowOuter> opener = window->GetOpener();
 
     if (opener && !opener->Closed()) {
-      mContentContext = do_QueryInterface(opener);
+      mContentContext = do_GetInterface(opener);
 
       
       

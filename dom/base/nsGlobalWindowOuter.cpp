@@ -1095,6 +1095,7 @@ nsGlobalWindowOuter::nsGlobalWindowOuter(uint64_t aWindowID)
       mIsClosed(false),
       mInClose(false),
       mHavePendingClose(false),
+      mHadOriginalOpener(false),
       mIsPopupSpam(false),
       mBlockScriptedClosingFlag(false),
       mWasOffline(false),
@@ -1297,7 +1298,10 @@ void nsGlobalWindowOuter::CleanUp() {
 
   ClearControllers();
 
-  mContext = nullptr;             
+  mOpener = nullptr;  
+  if (mContext) {
+    mContext = nullptr;  
+  }
   mChromeEventHandler = nullptr;  
   mParentTarget = nullptr;
   mMessageManager = nullptr;
@@ -2514,6 +2518,70 @@ void nsGlobalWindowOuter::DetachFromDocShell() {
   CleanUp();
 }
 
+void nsGlobalWindowOuter::SetOpenerWindow(nsPIDOMWindowOuter* aOpener,
+                                          bool aOriginalOpener) {
+  nsWeakPtr opener = do_GetWeakReference(aOpener);
+  if (opener == mOpener) {
+    MOZ_DIAGNOSTIC_ASSERT(!aOpener || !aOpener->GetDocShell() ||
+                          (GetBrowsingContext() &&
+                           aOpener->GetBrowsingContext() &&
+                           aOpener->GetBrowsingContext()->Id() ==
+                               GetBrowsingContext()->GetOpenerId()));
+    return;
+  }
+
+  NS_ASSERTION(!aOriginalOpener || !mSetOpenerWindowCalled,
+               "aOriginalOpener is true, but not first call to "
+               "SetOpenerWindow!");
+  NS_ASSERTION(aOpener || !aOriginalOpener,
+               "Shouldn't set mHadOriginalOpener if aOpener is null");
+
+  mOpener = opener.forget();
+  NS_ASSERTION(mOpener || !aOpener, "Opener must support weak references!");
+
+  if (mDocShell) {
+    MOZ_DIAGNOSTIC_ASSERT(
+        !aOriginalOpener || !aOpener ||
+        
+        
+        
+        
+        
+        
+        nsGlobalWindowOuter::Cast(aOpener)->IsClosedOrClosing() ||
+        
+        
+        IsClosedOrClosing() ||
+        aOpener->GetBrowsingContext()->Id() ==
+            GetBrowsingContext()->GetOpenerId());
+    
+    
+    GetBrowsingContext()->SetOpener(aOpener ? aOpener->GetBrowsingContext()
+                                            : nullptr);
+  }
+
+  
+  
+  
+  nsPIDOMWindowOuter* contentOpener = GetSanitizedOpener(aOpener);
+
+  
+  mozilla::Unused << contentOpener;
+  MOZ_DIAGNOSTIC_ASSERT(
+      !contentOpener || !mTabGroup ||
+      mTabGroup == nsGlobalWindowOuter::Cast(contentOpener)->mTabGroup);
+
+  if (aOriginalOpener) {
+    MOZ_ASSERT(!mHadOriginalOpener,
+               "Probably too late to call ComputeIsSecureContext again");
+    mHadOriginalOpener = true;
+  }
+
+#ifdef DEBUG
+  mSetOpenerWindowCalled = true;
+#endif
+}
+
 void nsGlobalWindowOuter::UpdateParentTarget() {
   
   
@@ -3222,49 +3290,63 @@ nsresult nsGlobalWindowOuter::GetControllers(nsIControllers** aResult) {
   FORWARD_TO_INNER(GetControllers, (aResult), NS_ERROR_UNEXPECTED);
 }
 
-already_AddRefed<BrowsingContext>
-nsGlobalWindowOuter::GetOpenerBrowsingContext() {
-  RefPtr<BrowsingContext> bc(GetBrowsingContext());
-  if (bc->IsDiscarded()) {
+nsPIDOMWindowOuter* nsGlobalWindowOuter::GetSanitizedOpener(
+    nsPIDOMWindowOuter* aOpener) {
+  if (!aOpener) {
     return nullptr;
   }
 
-  RefPtr<BrowsingContext> opener = bc->GetOpener();
-  MOZ_DIAGNOSTIC_ASSERT(!opener ||
-                        opener->Group() == GetBrowsingContext()->Group());
-  if (!opener || opener->Group() != GetBrowsingContext()->Group()) {
+  nsGlobalWindowOuter* win = nsGlobalWindowOuter::Cast(aOpener);
+
+  
+  if (win->IsChromeWindow()) {
     return nullptr;
   }
 
   
-  if (nsContentUtils::LegacyIsCallerChromeOrNativeCode() &&
-      GetPrincipal() == nsContentUtils::GetSystemPrincipal()) {
-    auto* openerWin = nsGlobalWindowOuter::Cast(opener->GetDOMWindow());
-    if (!openerWin ||
-        openerWin->GetPrincipal() != nsContentUtils::GetSystemPrincipal()) {
-      return nullptr;
+  
+  
+  nsCOMPtr<nsIDocShell> openerDocShell = aOpener->GetDocShell();
+
+  if (openerDocShell) {
+    nsCOMPtr<nsIDocShellTreeItem> openerRootItem;
+    openerDocShell->GetInProcessRootTreeItem(getter_AddRefs(openerRootItem));
+    nsCOMPtr<nsIDocShell> openerRootDocShell(do_QueryInterface(openerRootItem));
+    if (openerRootDocShell) {
+      nsIDocShell::AppType appType = openerRootDocShell->GetAppType();
+      if (appType != nsIDocShell::APP_TYPE_MAIL) {
+        return aOpener;
+      }
     }
   }
 
+  return nullptr;
+}
+
+nsPIDOMWindowOuter* nsGlobalWindowOuter::GetOpenerWindowOuter() {
+  nsCOMPtr<nsPIDOMWindowOuter> opener = do_QueryReferent(mOpener);
+
+  if (!opener) {
+    return nullptr;
+  }
+
+  
+  if (nsContentUtils::LegacyIsCallerChromeOrNativeCode()) {
+    
+    if (GetPrincipal() == nsContentUtils::GetSystemPrincipal() &&
+        nsGlobalWindowOuter::Cast(opener)->GetPrincipal() !=
+            nsContentUtils::GetSystemPrincipal()) {
+      return nullptr;
+    }
+    return opener;
+  }
+
+  return GetSanitizedOpener(opener);
+}
+
+already_AddRefed<nsPIDOMWindowOuter> nsGlobalWindowOuter::GetOpener() {
+  nsCOMPtr<nsPIDOMWindowOuter> opener = GetOpenerWindowOuter();
   return opener.forget();
-}
-
-nsPIDOMWindowOuter* nsGlobalWindowOuter::GetSameProcessOpener() {
-  if (RefPtr<BrowsingContext> opener = GetOpenerBrowsingContext()) {
-    return opener->GetDOMWindow();
-  }
-  return nullptr;
-}
-
-Nullable<WindowProxyHolder> nsGlobalWindowOuter::GetOpenerWindowOuter() {
-  if (RefPtr<BrowsingContext> opener = GetOpenerBrowsingContext()) {
-    return WindowProxyHolder(opener.forget());
-  }
-  return nullptr;
-}
-
-Nullable<WindowProxyHolder> nsGlobalWindowOuter::GetOpener() {
-  return GetOpenerWindowOuter();
 }
 
 void nsGlobalWindowOuter::GetStatusOuter(nsAString& aStatus) {
@@ -4648,7 +4730,7 @@ bool nsGlobalWindowOuter::CanMoveResizeWindows(CallerType aCallerType) {
   if (aCallerType != CallerType::System) {
     
     
-    if (!HadOriginalOpener()) {
+    if (!mHadOriginalOpener) {
       return false;
     }
 
@@ -4880,15 +4962,13 @@ void nsGlobalWindowOuter::FocusOuter() {
 
   nsCOMPtr<nsPIDOMWindowInner> caller = do_QueryInterface(GetEntryGlobal());
   nsPIDOMWindowOuter* callerOuter = caller ? caller->GetOuterWindow() : nullptr;
-  BrowsingContext* callerBC =
-      callerOuter ? callerOuter->GetBrowsingContext() : nullptr;
-  RefPtr<BrowsingContext> openerBC = GetOpenerBrowsingContext();
+  nsCOMPtr<nsPIDOMWindowOuter> opener = GetOpener();
 
   
   
   
   bool canFocus = CanSetProperty("dom.disable_window_flip") ||
-                  (openerBC == callerBC &&
+                  (opener == callerOuter &&
                    RevisePopupAbuseLevel(PopupBlocker::GetPopupControlState()) <
                        PopupBlocker::openBlocked);
 
@@ -6193,7 +6273,7 @@ void nsGlobalWindowOuter::CloseOuter(bool aTrustedCaller) {
     NS_ENSURE_SUCCESS_VOID(rv);
 
     if (!StringBeginsWith(url, NS_LITERAL_STRING("about:neterror")) &&
-        !HadOriginalOpener() && !aTrustedCaller) {
+        !mHadOriginalOpener && !aTrustedCaller) {
       bool allowClose =
           mAllowScriptsToClose ||
           Preferences::GetBool("dom.allow_scripts_to_close_windows", true);
@@ -7694,8 +7774,8 @@ mozilla::dom::TabGroup* nsGlobalWindowOuter::TabGroupOuter() {
     
     
     
-    RefPtr<BrowsingContext> openerBC = GetBrowsingContext()->GetOpener();
-    nsPIDOMWindowOuter* opener = openerBC ? openerBC->GetDOMWindow() : nullptr;
+    nsCOMPtr<nsPIDOMWindowOuter> piOpener = do_QueryReferent(mOpener);
+    nsPIDOMWindowOuter* opener = GetSanitizedOpener(piOpener);
     nsPIDOMWindowOuter* parent = GetInProcessScriptableParentOrNull();
     MOZ_ASSERT(!parent || !opener,
                "Only one of parent and opener may be provided");
@@ -7733,11 +7813,9 @@ mozilla::dom::TabGroup* nsGlobalWindowOuter::TabGroupOuter() {
       
       RefPtr<nsPIDOMWindowOuter> parent = GetInProcessScriptableParentOrNull();
       MOZ_ASSERT_IF(parent, parent->TabGroup() == mTabGroup);
-
-      RefPtr<BrowsingContext> openerBC = GetBrowsingContext()->GetOpener();
-      nsPIDOMWindowOuter* opener =
-          openerBC ? openerBC->GetDOMWindow() : nullptr;
-      MOZ_ASSERT_IF(opener && Cast(opener) != this,
+      nsCOMPtr<nsPIDOMWindowOuter> piOpener = do_QueryReferent(mOpener);
+      nsPIDOMWindowOuter* opener = GetSanitizedOpener(piOpener);
+      MOZ_ASSERT_IF(opener && nsGlobalWindowOuter::Cast(opener) != this,
                     opener->TabGroup() == mTabGroup);
     }
     mIsValidatingTabGroup = false;

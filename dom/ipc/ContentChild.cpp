@@ -961,17 +961,16 @@ nsresult ContentChild::ProvideWindowCommon(
   
   
   RefPtr<TabGroup> tabGroup;
-  RefPtr<BrowsingContext> openerBC;
   if (aTabOpener && !aForceNoOpener) {
     
     tabGroup = aTabOpener->TabGroup();
-    if (aParent) {
-      openerBC = nsPIDOMWindowOuter::From(aParent)->GetBrowsingContext();
-    }
   } else {
     tabGroup = new TabGroup();
   }
 
+  RefPtr<BrowsingContext> openerBC =
+      aParent ? nsPIDOMWindowOuter::From(aParent)->GetBrowsingContext()
+              : nullptr;
   RefPtr<BrowsingContext> browsingContext = BrowsingContext::Create(
       nullptr, openerBC, aName, BrowsingContext::Type::Content);
 
@@ -1099,25 +1098,17 @@ nsresult ContentChild::ProvideWindowCommon(
     newChild->SetMaxTouchPoints(maxTouchPoints);
     newChild->SetHasSiblings(hasSiblings);
 
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-    if (nsCOMPtr<nsPIDOMWindowOuter> outer =
-            do_GetInterface(newChild->WebNavigation())) {
-      BrowsingContext* bc = outer->GetBrowsingContext();
-      auto parentBC =
-          aParent
-              ? nsPIDOMWindowOuter::From(aParent)->GetBrowsingContext()->Id()
-              : 0;
-
-      if (aForceNoOpener) {
-        MOZ_DIAGNOSTIC_ASSERT(!*aWindowIsNew || !bc->HadOriginalOpener());
-        MOZ_DIAGNOSTIC_ASSERT(bc->GetOpenerId() == 0);
-      } else {
-        MOZ_DIAGNOSTIC_ASSERT(!*aWindowIsNew ||
-                              bc->HadOriginalOpener() == !!parentBC);
-        MOZ_DIAGNOSTIC_ASSERT(bc->GetOpenerId() == parentBC);
-      }
+    
+    
+    
+    
+    nsCOMPtr<mozIDOMWindowProxy> windowProxy =
+        do_GetInterface(newChild->WebNavigation());
+    if (!aForceNoOpener && windowProxy && aParent) {
+      nsPIDOMWindowOuter* outer = nsPIDOMWindowOuter::From(windowProxy);
+      nsPIDOMWindowOuter* parent = nsPIDOMWindowOuter::From(aParent);
+      outer->SetOpenerWindow(parent, *aWindowIsNew);
     }
-#endif
 
     
     
