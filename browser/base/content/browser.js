@@ -8942,58 +8942,39 @@ var gPrivateBrowsingUI = {
     
     document.getElementById("Tools:Sanitize").setAttribute("disabled", "true");
 
-    if (window.location.href == AppConstants.BROWSER_CHROME_URL) {
-      
-      let docElement = document.documentElement;
-      if (!PrivateBrowsingUtils.permanentPrivateBrowsing) {
-        docElement.setAttribute(
-          "title",
-          docElement.getAttribute("title_privatebrowsing")
-        );
-        docElement.setAttribute(
-          "titlemodifier",
-          docElement.getAttribute("titlemodifier_privatebrowsing")
-        );
-      }
+    if (window.location.href != AppConstants.BROWSER_CHROME_URL) {
+      return;
+    }
+
+    
+    let docElement = document.documentElement;
+    if (!PrivateBrowsingUtils.permanentPrivateBrowsing) {
       docElement.setAttribute(
-        "privatebrowsingmode",
-        PrivateBrowsingUtils.permanentPrivateBrowsing
-          ? "permanent"
-          : "temporary"
+        "title",
+        docElement.getAttribute("title_privatebrowsing")
       );
-      gBrowser.updateTitlebar();
+      docElement.setAttribute(
+        "titlemodifier",
+        docElement.getAttribute("titlemodifier_privatebrowsing")
+      );
+    }
+    docElement.setAttribute(
+      "privatebrowsingmode",
+      PrivateBrowsingUtils.permanentPrivateBrowsing ? "permanent" : "temporary"
+    );
+    gBrowser.updateTitlebar();
 
-      if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
-        
-        [
-          { normal: "menu_newNavigator", private: "menu_newPrivateWindow" },
-        ].forEach(function(menu) {
-          let newWindow = document.getElementById(menu.normal);
-          let newPrivateWindow = document.getElementById(menu.private);
-          if (newWindow && newPrivateWindow) {
-            newPrivateWindow.hidden = true;
-            newWindow.label = newPrivateWindow.label;
-            newWindow.accessKey = newPrivateWindow.accessKey;
-            newWindow.command = newPrivateWindow.command;
-          }
-        });
+    if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
+      
+      let newWindow = document.getElementById("menu_newNavigator");
+      let newPrivateWindow = document.getElementById("menu_newPrivateWindow");
+      if (newWindow && newPrivateWindow) {
+        newPrivateWindow.hidden = true;
+        newWindow.label = newPrivateWindow.label;
+        newWindow.accessKey = newPrivateWindow.accessKey;
+        newWindow.command = newPrivateWindow.command;
       }
     }
-
-    let urlBarSearchParam =
-      gURLBar.getAttribute("autocompletesearchparam") || "";
-    if (
-      !PrivateBrowsingUtils.permanentPrivateBrowsing &&
-      !urlBarSearchParam.includes("disable-private-actions")
-    ) {
-      
-      
-      urlBarSearchParam += " disable-private-actions";
-    }
-    if (!urlBarSearchParam.includes("private-window")) {
-      urlBarSearchParam += " private-window";
-    }
-    gURLBar.setAttribute("autocompletesearchparam", urlBarSearchParam);
   },
 };
 
