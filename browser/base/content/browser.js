@@ -4403,7 +4403,7 @@ const BrowserSearch = {
     
     
     this._updateURLBarPlaceholderFromDefaultEngine(
-      PrivateBrowsingUtils.isWindowPrivate(window),
+      this._usePrivateSettings,
       
       
       true
@@ -4439,22 +4439,29 @@ const BrowserSearch = {
         this._removeMaybeOfferedEngine(engineName);
         break;
       case "engine-default":
-        if (
-          this._searchInitComplete &&
-          !PrivateBrowsingUtils.isWindowPrivate(window)
-        ) {
+        if (this._searchInitComplete && !this._usePrivateSettings) {
           this._updateURLBarPlaceholder(engineName, false);
         }
         break;
       case "engine-default-private":
-        if (
-          this._searchInitComplete &&
-          PrivateBrowsingUtils.isWindowPrivate(window)
-        ) {
+        if (this._searchInitComplete && this._usePrivateSettings) {
           this._updateURLBarPlaceholder(engineName, true);
         }
         break;
     }
+  },
+
+  
+
+
+
+  get _usePrivateSettings() {
+    return (
+      Services.prefs.getBoolPref(
+        "browser.search.separatePrivateDefault",
+        true
+      ) && PrivateBrowsingUtils.isWindowPrivate(window)
+    );
   },
 
   _addMaybeOfferedEngine(engineName) {
@@ -4514,7 +4521,7 @@ const BrowserSearch = {
   initPlaceHolder() {
     const prefName =
       "browser.urlbar.placeholderName" +
-      (PrivateBrowsingUtils.isWindowPrivate(window) ? ".private" : "");
+      (this._usePrivateSettings ? ".private" : "");
     let engineName = Services.prefs.getStringPref(prefName, "");
     if (engineName) {
       

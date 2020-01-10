@@ -34,6 +34,13 @@ XPCOMUtils.defineLazyServiceGetters(this, {
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
+  "gSeparatePrivateDefault",
+  SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
   "gGeoSpecificDefaultsEnabled",
   SearchUtils.BROWSER_SEARCH_PREF + "geoSpecificDefaults",
   false
@@ -663,16 +670,6 @@ SearchService.prototype = {
   _metaData: {},
 
   
-  
-  
-  get _separatePrivateDefault() {
-    return (
-      this._separatePrivateDefaultPrefValue &&
-      this._separatePrivateDefaultEnabledPrefValue
-    );
-  },
-
-  
 
 
 
@@ -725,22 +722,6 @@ SearchService.prototype = {
 
   async _init(skipRegionCheck) {
     SearchUtils.log("_init start");
-
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "_separatePrivateDefaultPrefValue",
-      SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
-      false,
-      this._onSeparateDefaultPrefChanged.bind(this)
-    );
-
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "_separatePrivateDefaultEnabledPrefValue",
-      SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
-      false,
-      this._onSeparateDefaultPrefChanged.bind(this)
-    );
 
     try {
       
@@ -988,7 +969,7 @@ SearchService.prototype = {
 
 
   get originalPrivateDefaultEngine() {
-    return this._originalDefaultEngine(this._separatePrivateDefault);
+    return this._originalDefaultEngine(gSeparatePrivateDefault);
   },
 
   resetToOriginalDefaultEngine() {
@@ -1302,17 +1283,9 @@ SearchService.prototype = {
         this._currentEngine,
         SearchUtils.MODIFIED_TYPE.DEFAULT
       );
-      
-      
-      if (!this._separatePrivateDefault) {
-        SearchUtils.notifyAction(
-          this._currentEngine,
-          SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
-        );
-      }
     }
     if (
-      this._separatePrivateDefault &&
+      gSeparatePrivateDefault &&
       prevPrivateEngine &&
       this.defaultPrivateEngine !== prevPrivateEngine
     ) {
@@ -2649,7 +2622,7 @@ SearchService.prototype = {
     
     
     if (
-      this._separatePrivateDefault &&
+      gSeparatePrivateDefault &&
       engineToRemove == this.defaultPrivateEngine
     ) {
       this._currentPrivateEngine = null;
@@ -2921,14 +2894,6 @@ SearchService.prototype = {
       this[currentEngine],
       SearchUtils.MODIFIED_TYPE[privateMode ? "DEFAULT_PRIVATE" : "DEFAULT"]
     );
-    
-    
-    if (!privateMode && !this._separatePrivateDefault) {
-      SearchUtils.notifyAction(
-        this[currentEngine],
-        SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
-      );
-    }
   },
 
   get defaultEngine() {
@@ -2940,11 +2905,11 @@ SearchService.prototype = {
   },
 
   get defaultPrivateEngine() {
-    return this._getEngineDefault(this._separatePrivateDefault);
+    return this._getEngineDefault(gSeparatePrivateDefault);
   },
 
   set defaultPrivateEngine(newEngine) {
-    this._setEngineDefault(this._separatePrivateDefault, newEngine);
+    this._setEngineDefault(gSeparatePrivateDefault, newEngine);
   },
 
   async getDefault() {
@@ -2965,19 +2930,6 @@ SearchService.prototype = {
   async setDefaultPrivate(engine) {
     await this.init(true);
     return (this.defaultPrivateEngine = engine);
-  },
-
-  _onSeparateDefaultPrefChanged() {
-    
-    
-    if (this.defaultEngine != this._getEngineDefault(true)) {
-      SearchUtils.notifyAction(
-        
-        
-        this.defaultPrivateEngine,
-        SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
-      );
-    }
   },
 
   async _getEngineInfo(engine) {
@@ -3107,7 +3059,7 @@ SearchService.prototype = {
       defaultSearchEngineData,
     };
 
-    if (this._separatePrivateDefault) {
+    if (gSeparatePrivateDefault) {
       let [
         privateShortName,
         defaultPrivateSearchEngineData,

@@ -108,10 +108,6 @@ class SearchConfigTest {
     
     
     Services.prefs.setBoolPref(
-      SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
-      true
-    );
-    Services.prefs.setBoolPref(
       SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
       true
     );

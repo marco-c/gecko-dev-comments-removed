@@ -13,13 +13,6 @@ add_task(async function setup() {
   await AddonTestUtils.promiseStartupManager();
 });
 
-function promiseDefaultNotification() {
-  return SearchTestUtils.promiseSearchNotification(
-    SearchUtils.MODIFIED_TYPE.DEFAULT,
-    SearchUtils.TOPIC_ENGINE_MODIFIED
-  );
-}
-
 add_task(async function test_defaultEngine() {
   let search = Services.search;
   await search.init();
@@ -31,19 +24,11 @@ add_task(async function test_defaultEngine() {
     { name: "A second test engine", xmlFileName: "engine2.xml" },
   ]);
 
-  let promise = promiseDefaultNotification();
   search.defaultEngine = engine1;
-  Assert.equal(await promise, engine1);
   Assert.equal(search.defaultEngine, engine1);
-
-  promise = promiseDefaultNotification();
   search.defaultEngine = engine2;
-  Assert.equal(await promise, engine2);
   Assert.equal(search.defaultEngine, engine2);
-
-  promise = promiseDefaultNotification();
   search.defaultEngine = engine1;
-  Assert.equal(await promise, engine1);
   Assert.equal(search.defaultEngine, engine1);
 
   
@@ -59,8 +44,6 @@ add_task(async function test_defaultEngine() {
 
   
   
-  promise = promiseDefaultNotification();
   search.defaultEngine = engine1;
-  Assert.equal(await promise, engine1);
   Assert.equal(search.defaultEngine, engine2);
 });
