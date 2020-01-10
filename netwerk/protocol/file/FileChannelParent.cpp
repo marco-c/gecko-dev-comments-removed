@@ -23,7 +23,7 @@ bool FileChannelParent::Init(const uint32_t& channelId) {
 }
 
 NS_IMETHODIMP
-FileChannelParent::SetParentListener(HttpChannelParentListener* aListener) {
+FileChannelParent::SetParentListener(ParentChannelListener* aListener) {
   
   return NS_OK;
 }

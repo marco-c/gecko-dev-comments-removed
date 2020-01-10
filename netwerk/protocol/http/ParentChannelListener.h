@@ -1,0 +1,93 @@
+
+
+
+
+
+
+
+#ifndef mozilla_net_ParentChannelListener_h
+#define mozilla_net_ParentChannelListener_h
+
+#include "nsIInterfaceRequestor.h"
+#include "nsINetworkInterceptController.h"
+#include "nsIStreamListener.h"
+
+namespace mozilla {
+namespace net {
+
+#define PARENT_CHANNEL_LISTENER                      \
+  {                                                  \
+    0xa4e2c10c, 0xceba, 0x457f, {                    \
+      0xa8, 0x0d, 0x78, 0x2b, 0x23, 0xba, 0xbd, 0x16 \
+    }                                                \
+  }
+
+
+
+
+
+class ParentChannelListener final : public nsIInterfaceRequestor,
+                                    public nsIStreamListener,
+                                    public nsINetworkInterceptController {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIINTERFACEREQUESTOR
+  NS_DECL_NSIREQUESTOBSERVER
+  NS_DECL_NSISTREAMLISTENER
+  NS_DECL_NSINETWORKINTERCEPTCONTROLLER
+
+  NS_DECLARE_STATIC_IID_ACCESSOR(PARENT_CHANNEL_LISTENER)
+
+  explicit ParentChannelListener(nsIStreamListener* aListener);
+
+  
+  MOZ_MUST_USE nsresult DivertTo(nsIStreamListener* aListener);
+  MOZ_MUST_USE nsresult SuspendForDiversion();
+
+  void SetupInterception(const nsHttpResponseHead& aResponseHead);
+  void SetupInterceptionAfterRedirect(bool aShouldIntercept);
+  void ClearInterceptedChannel(nsIStreamListener* aListener);
+
+  
+  void SetListenerAfterRedirect(nsIStreamListener* aListener);
+
+ private:
+  virtual ~ParentChannelListener();
+
+  
+  MOZ_MUST_USE nsresult ResumeForDiversion();
+
+  
+  
+  
+  
+  nsCOMPtr<nsIStreamListener> mNextListener;
+  
+  bool mSuspendedForDiversion;
+
+  
+  
+  bool mShouldIntercept;
+  
+  bool mShouldSuspendIntercept;
+  
+  
+  
+  bool mInterceptCanceled;
+
+  nsAutoPtr<nsHttpResponseHead> mSynthesizedResponseHead;
+
+  
+  nsCOMPtr<nsIInterceptedChannel> mInterceptedChannel;
+
+  
+  
+  nsCOMPtr<nsINetworkInterceptController> mInterceptController;
+};
+
+NS_DEFINE_STATIC_IID_ACCESSOR(ParentChannelListener, PARENT_CHANNEL_LISTENER)
+
+}  
+}  
+
+#endif  

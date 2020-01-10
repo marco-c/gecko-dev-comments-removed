@@ -1,0 +1,325 @@
+
+
+
+
+
+
+
+#include "HttpLog.h"
+
+#include "ParentChannelListener.h"
+#include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/ServiceWorkerInterceptController.h"
+#include "mozilla/dom/ServiceWorkerUtils.h"
+#include "mozilla/net/HttpChannelParent.h"
+#include "mozilla/net/RedirectChannelRegistrar.h"
+#include "mozilla/Unused.h"
+#include "nsIAuthPrompt.h"
+#include "nsIAuthPrompt2.h"
+#include "nsIHttpHeaderVisitor.h"
+#include "nsIRemoteTab.h"
+#include "nsIPromptFactory.h"
+#include "nsIWindowWatcher.h"
+#include "nsQueryObject.h"
+
+using mozilla::Unused;
+using mozilla::dom::ServiceWorkerInterceptController;
+using mozilla::dom::ServiceWorkerParentInterceptEnabled;
+
+namespace mozilla {
+namespace net {
+
+ParentChannelListener::ParentChannelListener(nsIStreamListener* aListener)
+    : mNextListener(aListener),
+      mSuspendedForDiversion(false),
+      mShouldIntercept(false),
+      mShouldSuspendIntercept(false),
+      mInterceptCanceled(false) {
+  LOG(("ParentChannelListener::ParentChannelListener [this=%p, next=%p]", this,
+       aListener));
+
+  if (ServiceWorkerParentInterceptEnabled()) {
+    mInterceptController = new ServiceWorkerInterceptController();
+  }
+}
+
+ParentChannelListener::~ParentChannelListener() {
+  LOG(("ParentChannelListener::~ParentChannelListener %p", this));
+}
+
+
+
+
+
+NS_IMPL_ADDREF(ParentChannelListener)
+NS_IMPL_RELEASE(ParentChannelListener)
+NS_INTERFACE_MAP_BEGIN(ParentChannelListener)
+  NS_INTERFACE_MAP_ENTRY(nsIInterfaceRequestor)
+  NS_INTERFACE_MAP_ENTRY(nsIStreamListener)
+  NS_INTERFACE_MAP_ENTRY(nsIRequestObserver)
+  NS_INTERFACE_MAP_ENTRY(nsINetworkInterceptController)
+  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIInterfaceRequestor)
+  NS_INTERFACE_MAP_ENTRY_CONCRETE(ParentChannelListener)
+NS_INTERFACE_MAP_END
+
+
+
+
+
+NS_IMETHODIMP
+ParentChannelListener::OnStartRequest(nsIRequest* aRequest) {
+  MOZ_RELEASE_ASSERT(!mSuspendedForDiversion,
+                     "Cannot call OnStartRequest if suspended for diversion!");
+
+  if (!mNextListener) return NS_ERROR_UNEXPECTED;
+
+  LOG(("ParentChannelListener::OnStartRequest [this=%p]\n", this));
+  return mNextListener->OnStartRequest(aRequest);
+}
+
+NS_IMETHODIMP
+ParentChannelListener::OnStopRequest(nsIRequest* aRequest,
+                                     nsresult aStatusCode) {
+  MOZ_RELEASE_ASSERT(!mSuspendedForDiversion,
+                     "Cannot call OnStopRequest if suspended for diversion!");
+
+  if (!mNextListener) return NS_ERROR_UNEXPECTED;
+
+  LOG(("ParentChannelListener::OnStopRequest: [this=%p status=%" PRIu32 "]\n",
+       this, static_cast<uint32_t>(aStatusCode)));
+  nsresult rv = mNextListener->OnStopRequest(aRequest, aStatusCode);
+
+  mNextListener = nullptr;
+  return rv;
+}
+
+
+
+
+
+NS_IMETHODIMP
+ParentChannelListener::OnDataAvailable(nsIRequest* aRequest,
+                                       nsIInputStream* aInputStream,
+                                       uint64_t aOffset, uint32_t aCount) {
+  MOZ_RELEASE_ASSERT(!mSuspendedForDiversion,
+                     "Cannot call OnDataAvailable if suspended for diversion!");
+
+  if (!mNextListener) return NS_ERROR_UNEXPECTED;
+
+  LOG(("ParentChannelListener::OnDataAvailable [this=%p]\n", this));
+  return mNextListener->OnDataAvailable(aRequest, aInputStream, aOffset,
+                                        aCount);
+}
+
+
+
+
+
+NS_IMETHODIMP
+ParentChannelListener::GetInterface(const nsIID& aIID, void** result) {
+  if (aIID.Equals(NS_GET_IID(nsINetworkInterceptController))) {
+    return QueryInterface(aIID, result);
+  }
+
+  nsCOMPtr<nsIInterfaceRequestor> ir;
+  if (mNextListener && NS_SUCCEEDED(CallQueryInterface(mNextListener.get(),
+                                                       getter_AddRefs(ir)))) {
+    return ir->GetInterface(aIID, result);
+  }
+
+  if (aIID.Equals(NS_GET_IID(nsIAuthPrompt)) ||
+      aIID.Equals(NS_GET_IID(nsIAuthPrompt2))) {
+    nsresult rv;
+    nsCOMPtr<nsIPromptFactory> wwatch =
+        do_GetService(NS_WINDOWWATCHER_CONTRACTID, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    return wwatch->GetPrompt(nullptr, aIID, reinterpret_cast<void**>(result));
+  }
+
+  return NS_NOINTERFACE;
+}
+
+void ParentChannelListener::SetListenerAfterRedirect(
+    nsIStreamListener* aListener) {
+  mInterceptCanceled = false;
+  mNextListener = aListener;
+}
+
+
+
+
+
+NS_IMETHODIMP
+ParentChannelListener::ShouldPrepareForIntercept(nsIURI* aURI,
+                                                 nsIChannel* aChannel,
+                                                 bool* aShouldIntercept) {
+  
+  
+  if (mInterceptController) {
+    return mInterceptController->ShouldPrepareForIntercept(aURI, aChannel,
+                                                           aShouldIntercept);
+  }
+  *aShouldIntercept = mShouldIntercept;
+  return NS_OK;
+}
+
+class HeaderVisitor final : public nsIHttpHeaderVisitor {
+  nsCOMPtr<nsIInterceptedChannel> mChannel;
+  ~HeaderVisitor() = default;
+
+ public:
+  explicit HeaderVisitor(nsIInterceptedChannel* aChannel)
+      : mChannel(aChannel) {}
+
+  NS_DECL_ISUPPORTS
+
+  NS_IMETHOD VisitHeader(const nsACString& aHeader,
+                         const nsACString& aValue) override {
+    mChannel->SynthesizeHeader(aHeader, aValue);
+    return NS_OK;
+  }
+};
+
+NS_IMPL_ISUPPORTS(HeaderVisitor, nsIHttpHeaderVisitor)
+
+class FinishSynthesizedResponse : public Runnable {
+  nsCOMPtr<nsIInterceptedChannel> mChannel;
+
+ public:
+  explicit FinishSynthesizedResponse(nsIInterceptedChannel* aChannel)
+      : Runnable("net::FinishSynthesizedResponse"), mChannel(aChannel) {}
+
+  NS_IMETHOD Run() override {
+    
+    
+    
+    mChannel->StartSynthesizedResponse(nullptr, nullptr, nullptr,
+                                       EmptyCString(), false);
+    mChannel->FinishSynthesizedResponse();
+    return NS_OK;
+  }
+};
+
+NS_IMETHODIMP
+ParentChannelListener::ChannelIntercepted(nsIInterceptedChannel* aChannel) {
+  
+  
+  if (mInterceptController) {
+    return mInterceptController->ChannelIntercepted(aChannel);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (mInterceptCanceled) {
+    nsCOMPtr<nsIRunnable> r = NewRunnableMethod<nsresult>(
+        "ParentChannelListener::CancelInterception", aChannel,
+        &nsIInterceptedChannel::CancelInterception, NS_BINDING_ABORTED);
+    MOZ_ALWAYS_SUCCEEDS(SystemGroup::Dispatch(TaskCategory::Other, r.forget()));
+    return NS_OK;
+  }
+
+  if (mShouldSuspendIntercept) {
+    mInterceptedChannel = aChannel;
+    return NS_OK;
+  }
+
+  nsAutoCString statusText;
+  mSynthesizedResponseHead->StatusText(statusText);
+  aChannel->SynthesizeStatus(mSynthesizedResponseHead->Status(), statusText);
+  nsCOMPtr<nsIHttpHeaderVisitor> visitor = new HeaderVisitor(aChannel);
+  DebugOnly<nsresult> rv = mSynthesizedResponseHead->VisitHeaders(
+      visitor, nsHttpHeaderArray::eFilterResponse);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+  nsCOMPtr<nsIRunnable> event = new FinishSynthesizedResponse(aChannel);
+  NS_DispatchToCurrentThread(event);
+
+  mSynthesizedResponseHead = nullptr;
+
+  MOZ_ASSERT(mNextListener);
+  RefPtr<HttpChannelParent> channel = do_QueryObject(mNextListener);
+  MOZ_ASSERT(channel);
+  channel->ResponseSynthesized();
+
+  return NS_OK;
+}
+
+
+
+nsresult ParentChannelListener::SuspendForDiversion() {
+  if (NS_WARN_IF(mSuspendedForDiversion)) {
+    MOZ_ASSERT(!mSuspendedForDiversion, "Cannot SuspendForDiversion twice!");
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  
+  
+  mSuspendedForDiversion = true;
+
+  return NS_OK;
+}
+
+nsresult ParentChannelListener::ResumeForDiversion() {
+  MOZ_RELEASE_ASSERT(mSuspendedForDiversion, "Must already be suspended!");
+
+  
+  mSuspendedForDiversion = false;
+
+  return NS_OK;
+}
+
+nsresult ParentChannelListener::DivertTo(nsIStreamListener* aListener) {
+  MOZ_ASSERT(aListener);
+  MOZ_RELEASE_ASSERT(mSuspendedForDiversion, "Must already be suspended!");
+
+  
+  
+  
+  mInterceptCanceled = false;
+
+  mNextListener = aListener;
+
+  return ResumeForDiversion();
+}
+
+void ParentChannelListener::SetupInterception(
+    const nsHttpResponseHead& aResponseHead) {
+  mSynthesizedResponseHead = new nsHttpResponseHead(aResponseHead);
+  mShouldIntercept = true;
+}
+
+void ParentChannelListener::SetupInterceptionAfterRedirect(
+    bool aShouldIntercept) {
+  mShouldIntercept = aShouldIntercept;
+  if (mShouldIntercept) {
+    
+    
+    mShouldSuspendIntercept = true;
+  }
+}
+
+void ParentChannelListener::ClearInterceptedChannel(
+    nsIStreamListener* aListener) {
+  
+  
+  
+  if (!SameCOMIdentity(mNextListener, aListener)) {
+    return;
+  }
+  if (mInterceptedChannel) {
+    mInterceptedChannel->CancelInterception(NS_ERROR_INTERCEPTION_FAILED);
+    mInterceptedChannel = nullptr;
+  }
+  
+  
+  mInterceptCanceled = true;
+}
+
+}  
+}  

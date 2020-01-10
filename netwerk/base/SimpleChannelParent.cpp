@@ -23,7 +23,7 @@ bool SimpleChannelParent::Init(const uint32_t& channelId) {
 }
 
 NS_IMETHODIMP
-SimpleChannelParent::SetParentListener(HttpChannelParentListener* aListener) {
+SimpleChannelParent::SetParentListener(ParentChannelListener* aListener) {
   
   return NS_OK;
 }

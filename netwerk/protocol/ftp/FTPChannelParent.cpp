@@ -490,7 +490,7 @@ FTPChannelParent::OnDataAvailable(nsIRequest* aRequest,
 
 
 NS_IMETHODIMP
-FTPChannelParent::SetParentListener(HttpChannelParentListener* aListener) {
+FTPChannelParent::SetParentListener(ParentChannelListener* aListener) {
   
   return NS_OK;
 }
