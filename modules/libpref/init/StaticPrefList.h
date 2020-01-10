@@ -2780,14 +2780,6 @@ VARCACHE_PREF(
 )
 
 
-VARCACHE_PREF(
-  Live,
-  "geo.enabled",
-  geo_enabled,
-  bool, true
-)
-
-
 
 VARCACHE_PREF(
   Live,
@@ -3060,6 +3052,18 @@ VARCACHE_PREF(
   "general.smoothScroll.msdPhysics.regularSpringConstant",
    general_smoothScroll_msdPhysics_regularSpringConstant,
   RelaxedAtomicInt32, 1000
+)
+
+
+
+
+
+
+VARCACHE_PREF(
+  Live,
+  "geo.enabled",
+  geo_enabled,
+  bool, true
 )
 
 
