@@ -57,10 +57,8 @@ void IDTracker::ResetToURIFragmentID(nsIContent* aFromContent, nsIURI* aURI,
   if (NS_FAILED(rv) || ref.IsEmpty()) {
     return;
   }
-  rv = NS_OK;
 
-  nsIContent* bindingParent = aFromContent->GetBindingParent();
-  if (bindingParent && !aFromContent->IsInShadowTree()) {
+  if (aFromContent->IsInNativeAnonymousSubtree()) {
     
     
     
