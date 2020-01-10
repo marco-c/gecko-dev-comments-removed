@@ -90,9 +90,14 @@ nsGIFDecoder2::nsGIFDecoder2(RasterImage* aImage)
       mColormapSize(0),
       mColorMask('\0'),
       mGIFOpen(false),
-      mSawTransparency(false) {
+      mSawTransparency(false),
+      mSwizzleFn(nullptr) {
   
   memset(&mGIFStruct, 0, sizeof(mGIFStruct));
+
+  
+  mSwizzleFn = SwizzleRow(SurfaceFormat::R8G8B8, SurfaceFormat::B8G8R8A8);
+  MOZ_ASSERT(mSwizzleFn);
 }
 
 nsGIFDecoder2::~nsGIFDecoder2() { free(mGIFStruct.local_colormap); }
@@ -393,6 +398,10 @@ Tuple<int32_t, Maybe<WriteState>> nsGIFDecoder2::YieldPixels(
 
 
 void nsGIFDecoder2::ConvertColormap(uint32_t* aColormap, uint32_t aColors) {
+  if (!aColors) {
+    return;
+  }
+
   
   if (!(GetSurfaceFlags() & SurfaceFlags::NO_COLORSPACE_CONVERSION) &&
       gfxPlatform::GetCMSMode() == eCMSMode_All) {
@@ -403,39 +412,9 @@ void nsGIFDecoder2::ConvertColormap(uint32_t* aColormap, uint32_t aColors) {
   }
 
   
-  
-  uint8_t* from = ((uint8_t*)aColormap) + 3 * aColors;
-  uint32_t* to = aColormap + aColors;
-
-  
-
-  
-  if (!aColors) {
-    return;
-  }
-  uint32_t c = aColors;
-
-  
-  
-  for (; (NS_PTR_TO_UINT32(from) & 0x3) && c; --c) {
-    from -= 3;
-    *--to = gfxPackedPixel(0xFF, from[0], from[1], from[2]);
-  }
-
-  
-  while (c >= 4) {
-    from -= 12;
-    to -= 4;
-    c -= 4;
-    GFX_BLOCK_RGB_TO_FRGB(from, to);
-  }
-
-  
-  
-  while (c--) {
-    from -= 3;
-    *--to = gfxPackedPixel(0xFF, from[0], from[1], from[2]);
-  }
+  MOZ_ASSERT(mSwizzleFn);
+  uint8_t* data = reinterpret_cast<uint8_t*>(aColormap);
+  mSwizzleFn(data, data, aColors);
 }
 
 LexerResult nsGIFDecoder2::DoDecode(SourceBufferIterator& aIterator,
