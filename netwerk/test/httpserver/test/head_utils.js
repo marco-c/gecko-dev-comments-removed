@@ -386,9 +386,9 @@ function RawTest(host, port, data, responseCheck) {
     throw new Error("bad data length");
   }
 
-  
   if (
     !data.every(function(v) {
+      
       return /^[\x00-\xff]*$/.test(v);
     })
   ) {

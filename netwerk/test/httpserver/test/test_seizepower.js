@@ -150,25 +150,30 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
   ];
 });
 
+
 var data0 = "GET /raw-data HTTP/1.0\r\n" + "\r\n";
 function checkRawData(data) {
   Assert.equal(data, "Raw data!");
 }
+
 
 var data1 = "GET /called-too-late HTTP/1.0\r\n" + "\r\n";
 function checkTooLate(data) {
   Assert.equal(LineIterator(data).next().value, "too-late passed");
 }
 
+
 var data2 = "GET /exceptions HTTP/1.0\r\n" + "\r\n";
 function checkExceptions(data) {
   Assert.equal("exceptions test passed", data);
 }
 
+
 var data3 = "GET /async-seizure HTTP/1.0\r\n" + "\r\n";
 function checkAsyncSeizure(data) {
   Assert.equal(data, "async seizure passed");
 }
+
 
 var data4 = "GET /seize-after-async HTTP/1.0\r\n" + "\r\n";
 function checkSeizeAfterAsync(data) {

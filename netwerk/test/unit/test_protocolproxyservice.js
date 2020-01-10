@@ -921,6 +921,7 @@ function myipaddress2_callback(pi) {
 
 function run_failed_script_test() {
   
+  
   var pac = "data:text/plain," + "\nfor(;\n";
 
   var channel = NetUtil.newChannel({

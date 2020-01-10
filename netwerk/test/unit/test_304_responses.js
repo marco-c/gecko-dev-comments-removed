@@ -88,6 +88,7 @@ add_test(function test_304_stored_in_cache() {
       cacheEntry.setMetaDataElement("request-method", "GET");
       cacheEntry.setMetaDataElement(
         "response-head",
+        
         "HTTP/1.1 304 Not Modified\r\n" + "\r\n"
       );
       cacheEntry.metaDataReady();
