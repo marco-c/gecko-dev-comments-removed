@@ -651,11 +651,6 @@ pref("apz.overscroll.stretch_factor", "0.35");
   pref("gfx.hidpi.enabled", 2);
 #endif
 
-
-pref("layout.scroll.root-frame-containers", false);
-
-pref("layout.scrollbars.always-layerize-track", false);
-
 pref("gfx.color_management.display_profile", "");
 
 pref("gfx.downloadable_fonts.enabled", true);
@@ -2630,46 +2625,10 @@ pref("layout.word_select.stop_at_underscore", false);
 pref("layout.selection.caret_style", 0);
 
 
-pref("layout.css.report_errors", true);
-
-
 
 
 
 pref("layout.css.dpi", -1);
-
-
-
-pref("layout.css.scroll-snap.proximity-threshold", 200);
-
-
-
-pref("layout.css.scroll-snap.prediction-max-velocity", 2000);
-
-
-
-
-
-pref("layout.css.scroll-snap.prediction-sensitivity", "0.750");
-
-
-pref("layout.css.scroll-behavior.enabled", true);
-
-
-
-
-pref("layout.css.scroll-behavior.spring-constant", "250.0");
-
-
-
-
-
-
-
-
-
-
-pref("layout.css.scroll-behavior.damping-ratio", "1.0");
 
 
 
@@ -2680,11 +2639,6 @@ pref("layout.scrollbar.side", 0);
 
 
 pref("layout.testing.overlay-scrollbars.always-visible", false);
-
-
-
-
-pref("layout.frame_rate", -1);
 
 
 pref("layout.spammy_warnings.enabled", false);
