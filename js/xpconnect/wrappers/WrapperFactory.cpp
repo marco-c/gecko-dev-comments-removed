@@ -182,17 +182,10 @@ static bool MaybeWrapWindowProxy(JSContext* cx, HandleObject origObj,
   if (bc->IsInProcess()) {
     
     
-    MOZ_ASSERT(bc->GetWindowProxy());
+    
+    MOZ_RELEASE_ASSERT(isWindowProxy);
 
-    if (isWindowProxy) {
-      retObj.set(obj);
-    } else {
-      
-      
-      
-      
-      retObj.set(JS_NewDeadWrapper(cx));
-    }
+    retObj.set(obj);
   } else {
     
     

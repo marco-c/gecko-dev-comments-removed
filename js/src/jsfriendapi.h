@@ -2684,6 +2684,22 @@ extern JS_FRIEND_API uint64_t GetGCHeapUsageForObjectZone(JSObject* obj);
 
 extern JS_FRIEND_API bool GlobalHasInstrumentation(JSObject* global);
 
+class JS_FRIEND_API CompartmentTransplantCallback {
+ public:
+  virtual JSObject* getObjectToTransplant(JS::Compartment* compartment) = 0;
+};
+
+
+
+
+
+
+
+
+extern JS_FRIEND_API void RemapRemoteWindowProxies(
+    JSContext* cx, CompartmentTransplantCallback* callback,
+    JS::MutableHandleObject newTarget);
+
 } 
 
 #endif 

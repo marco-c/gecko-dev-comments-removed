@@ -141,6 +141,15 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
 
   
   
+  
+  
+  
+  
+  void CleanUpDanglingRemoteOuterWindowProxies(
+      JSContext* aCx, JS::MutableHandle<JSObject*> aOuter);
+
+  
+  
   Element* GetEmbedderElement() const { return mEmbedderElement; }
   void SetEmbedderElement(Element* aEmbedder);
 
@@ -491,6 +500,10 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   
   
   bool mIsDiscarded : 1;
+
+  
+  
+  bool mDanglingRemoteOuterProxies : 1;
 };
 
 
