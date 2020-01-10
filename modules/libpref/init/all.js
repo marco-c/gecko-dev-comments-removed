@@ -2286,18 +2286,10 @@ pref("font.language.group",                 "chrome://global/locale/intl.propert
 #ifdef MOZ_WIDGET_ANDROID
   
   
-  #ifdef EARLY_BETA_OR_EARLIER
-    pref("intl.ime.hack.on_any_apps.fire_key_events_for_composition", true);
-  #else // #ifdef EARLY_BETA_OR_EARLIER
-    pref("intl.ime.hack.on_any_apps.fire_key_events_for_composition", false);
-  #endif // #ifdef EARLY_BETA_OR_EARLIER #else
-  
-  
   
   
   pref("intl.ime.hack.on_ime_unaware_apps.fire_key_events_for_composition", true);
-#else // MOZ_WIDGET_ANDROID
-  pref("intl.ime.hack.on_any_apps.fire_key_events_for_composition", false);
+#else
   pref("intl.ime.hack.on_ime_unaware_apps.fire_key_events_for_composition", false);
 #endif // MOZ_WIDGET_ANDROID
 
