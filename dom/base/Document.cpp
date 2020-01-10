@@ -5238,6 +5238,12 @@ already_AddRefed<PresShell> Document::CreatePresShell(
 
   UpdateFrameRequestCallbackSchedulingState();
 
+  if (mDocumentL10n) {
+    
+    
+    mDocumentL10n->OnCreatePresShell();
+  }
+
   
   
   

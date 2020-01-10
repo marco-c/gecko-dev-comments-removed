@@ -46,6 +46,13 @@ class Mutations final : public nsStubMutationObserver,
 
   void Disconnect();
 
+  
+
+
+
+
+  void OnCreatePresShell();
+
  protected:
   bool mObserving = false;
   bool mRefreshObserver = false;
