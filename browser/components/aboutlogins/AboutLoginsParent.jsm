@@ -55,8 +55,6 @@ const ABOUT_LOGINS_ORIGIN = "about:logins";
 const MASTER_PASSWORD_NOTIFICATION_ID = "master-password-login-required";
 const PASSWORD_SYNC_NOTIFICATION_ID = "enable-password-sync";
 
-const HIDE_MOBILE_FOOTER_PREF = "signon.management.page.hideMobileFooter";
-
 
 
 const EXPECTED_ABOUTLOGINS_REMOTE_TYPE = E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE;
@@ -125,10 +123,6 @@ var AboutLoginsParent = {
         Services.logins.removeLogin(login);
         break;
       }
-      case "AboutLogins:HideFooter": {
-        Services.prefs.setBoolPref(HIDE_MOBILE_FOOTER_PREF, true);
-        break;
-      }
       case "AboutLogins:SyncEnable": {
         message.target.ownerGlobal.gSync.openFxAEmailFirstPage(
           "password-manager"
@@ -170,12 +164,9 @@ var AboutLoginsParent = {
       case "AboutLogins:OpenMobileAndroid": {
         const MOBILE_ANDROID_URL_PREF =
           "signon.management.page.mobileAndroidURL";
-        const linkTrackingSource = message.data.source;
-        let MOBILE_ANDROID_URL = Services.prefs.getStringPref(
+        const MOBILE_ANDROID_URL = Services.prefs.getStringPref(
           MOBILE_ANDROID_URL_PREF
         );
-        
-        MOBILE_ANDROID_URL += linkTrackingSource;
         message.target.ownerGlobal.openWebLinkIn(MOBILE_ANDROID_URL, "tab", {
           relatedToCurrent: true,
         });
@@ -183,10 +174,9 @@ var AboutLoginsParent = {
       }
       case "AboutLogins:OpenMobileIos": {
         const MOBILE_IOS_URL_PREF = "signon.management.page.mobileAppleURL";
-        const linkTrackingSource = message.data.source;
-        let MOBILE_IOS_URL = Services.prefs.getStringPref(MOBILE_IOS_URL_PREF);
-        
-        MOBILE_IOS_URL += linkTrackingSource;
+        const MOBILE_IOS_URL = Services.prefs.getStringPref(
+          MOBILE_IOS_URL_PREF
+        );
         message.target.ownerGlobal.openWebLinkIn(MOBILE_IOS_URL, "tab", {
           relatedToCurrent: true,
         });
@@ -277,147 +267,6 @@ var AboutLoginsParent = {
           let syncState = this.getSyncState();
           messageManager.sendAsyncMessage("AboutLogins:SyncState", syncState);
           this.updatePasswordSyncNotificationState();
-
-          
-          
-          const appStoreLocales = [
-            "az",
-            "ar",
-            "bg",
-            "cs",
-            "da",
-            "de",
-            "el",
-            "en",
-            "es-mx",
-            "es",
-            "et",
-            "fi",
-            "fr",
-            "he",
-            "hu",
-            "id",
-            "it",
-            "ja",
-            "ko",
-            "lt",
-            "lv",
-            "my",
-            "nb",
-            "nl",
-            "nn",
-            "pl",
-            "pt-br",
-            "pt-pt",
-            "ro",
-            "ru",
-            "si",
-            "sk",
-            "sv",
-            "th",
-            "tl",
-            "tr",
-            "vi",
-            "zh-hans",
-            "zh-hant",
-          ];
-
-          
-          
-          const playStoreLocales = [
-            "af",
-            "ar",
-            "az",
-            "be",
-            "bg",
-            "bn",
-            "bs",
-            "ca",
-            "cs",
-            "da",
-            "de",
-            "el",
-            "en",
-            "es",
-            "et",
-            "eu",
-            "fa",
-            "fr",
-            "gl",
-            "gu",
-            "he",
-            "hi",
-            "hr",
-            "hu",
-            "hy",
-            "id",
-            "is",
-            "it",
-            "ja",
-            "ka",
-            "kk",
-            "km",
-            "kn",
-            "ko",
-            "lo",
-            "lt",
-            "lv",
-            "mk",
-            "mr",
-            "ms",
-            "my",
-            "nb",
-            "ne",
-            "nl",
-            "nn",
-            "pa",
-            "pl",
-            "pt-br",
-            "pt",
-            "ro",
-            "ru",
-            "si",
-            "sk",
-            "sl",
-            "sq",
-            "sr",
-            "sv",
-            "ta",
-            "te",
-            "th",
-            "tl",
-            "tr",
-            "uk",
-            "ur",
-            "uz",
-            "vi",
-            "zh-cn",
-            "zh-tw",
-          ];
-
-          const playStoreBadgeLanguage = Services.locale.negotiateLanguages(
-            Services.locale.appLocalesAsBCP47,
-            playStoreLocales,
-            "en-US",
-            Services.locale.langNegStrategyLookup
-          );
-
-          const appStoreBadgeLanguage = Services.locale.negotiateLanguages(
-            Services.locale.appLocalesAsBCP47,
-            appStoreLocales,
-            "en-US",
-            Services.locale.langNegStrategyLookup
-          );
-
-          const selectedBadgeLanguages = {
-            appStoreBadge: appStoreBadgeLanguage,
-            playStoreBadge: playStoreBadgeLanguage,
-          };
-
-          messageManager.sendAsyncMessage(
-            "AboutLogins:LocalizeBadges",
-            selectedBadgeLanguages
-          );
 
           if (BREACH_ALERTS_ENABLED) {
             const breachesByLoginGUID = await LoginHelper.getBreachesForLogins(
