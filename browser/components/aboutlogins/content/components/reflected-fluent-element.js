@@ -3,33 +3,8 @@
 
 
 export default class ReflectedFluentElement extends HTMLElement {
-  _isReflectedAttributePresent(attr) {
-    return this.constructor.reflectedFluentIDs.includes(attr.name);
-  }
-
   connectedCallback() {
-    this.reflectFluentStrings();
-  }
-
-  
-
-
-
-  reflectFluentStrings() {
-    for (let reflectedFluentID of this.constructor.reflectedFluentIDs) {
-      if (this.hasAttribute(reflectedFluentID)) {
-        if (this.handleSpecialCaseFluentString &&
-            this.handleSpecialCaseFluentString(reflectedFluentID)) {
-          continue;
-        }
-
-        let attrValue = this.getAttribute(reflectedFluentID);
-        
-        
-        let shadowedElement = this.shadowRoot.querySelector("." + reflectedFluentID);
-        shadowedElement.textContent = attrValue;
-      }
-    }
+    this._reflectFluentStrings();
   }
 
   
@@ -55,6 +30,31 @@ export default class ReflectedFluentElement extends HTMLElement {
     
     let shadowedElement = this.shadowRoot.querySelector("." + attr);
     shadowedElement.textContent = newValue;
+  }
+
+  _isReflectedAttributePresent(attr) {
+    return this.constructor.reflectedFluentIDs.includes(attr.name);
+  }
+
+  
+
+
+
+  _reflectFluentStrings() {
+    for (let reflectedFluentID of this.constructor.reflectedFluentIDs) {
+      if (this.hasAttribute(reflectedFluentID)) {
+        if (this.handleSpecialCaseFluentString &&
+            this.handleSpecialCaseFluentString(reflectedFluentID)) {
+          continue;
+        }
+
+        let attrValue = this.getAttribute(reflectedFluentID);
+        
+        
+        let shadowedElement = this.shadowRoot.querySelector("." + reflectedFluentID);
+        shadowedElement.textContent = attrValue;
+      }
+    }
   }
 }
 customElements.define("reflected-fluent-element", ReflectedFluentElement);
