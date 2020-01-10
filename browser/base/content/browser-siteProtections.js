@@ -1238,13 +1238,6 @@ var gProtectionsHandler = {
   onPopupShown(event) {
     if (event.target == this._protectionsPopup) {
       window.addEventListener("focus", this, true);
-
-      
-      
-      gIdentityHandler._trackingProtectionIconContainer.setAttribute(
-        "open",
-        "true"
-      );
     }
   },
 
@@ -1566,6 +1559,13 @@ var gProtectionsHandler = {
         { once: true }
       );
     }
+
+    
+    
+    gIdentityHandler._trackingProtectionIconContainer.setAttribute(
+      "open",
+      "true"
+    );
 
     
     if (gIdentityHandler._identityPopup.state != "closed") {
