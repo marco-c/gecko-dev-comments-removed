@@ -356,6 +356,7 @@ function HTMLTooltip(
   this._onXulPanelHidden = this._onXulPanelHidden.bind(this);
 
   this.container = this._createContainer();
+  this.container.classList.toggle("tooltip-container-xul", this.useXulWrapper);
 
   if (this.useXulWrapper) {
     
