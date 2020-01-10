@@ -5,16 +5,25 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [ "ContentClick" ];
+var EXPORTED_SYMBOLS = ["ContentClick"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(this, "PlacesUIUtils",
-                               "resource:///modules/PlacesUIUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
-                               "resource://gre/modules/PrivateBrowsingUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "E10SUtils",
-                               "resource://gre/modules/E10SUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PlacesUIUtils",
+  "resource:///modules/PlacesUIUtils.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "PrivateBrowsingUtils",
+  "resource://gre/modules/PrivateBrowsingUtils.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "E10SUtils",
+  "resource://gre/modules/E10SUtils.jsm"
+);
 
 var ContentClick = {
   
@@ -39,8 +48,10 @@ var ContentClick = {
 
     if (!json.href) {
       
-      if (Services.prefs.getBoolPref("middlemouse.contentLoadURL") &&
-          !Services.prefs.getBoolPref("general.autoScroll")) {
+      if (
+        Services.prefs.getBoolPref("middlemouse.contentLoadURL") &&
+        !Services.prefs.getBoolPref("general.autoScroll")
+      ) {
         window.middleMousePaste(json);
       }
       return;
@@ -58,14 +69,18 @@ var ContentClick = {
     
     
     try {
-      if (!PrivateBrowsingUtils.isWindowPrivate(window))
+      if (!PrivateBrowsingUtils.isWindowPrivate(window)) {
         PlacesUIUtils.markPageAsFollowedLink(json.href);
-    } catch (ex) {  }
+      }
+    } catch (ex) {
+      
+    }
 
     
     var where = window.whereToOpenLink(json);
-    if (where == "current")
+    if (where == "current") {
       return;
+    }
 
     
 

@@ -9,9 +9,12 @@
 
 var EXPORTED_SYMBOLS = ["HomePage"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
-                               "resource://gre/modules/PrivateBrowsingUtils.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PrivateBrowsingUtils",
+  "resource://gre/modules/PrivateBrowsingUtils.jsm"
+);
 
 const kPrefName = "browser.startup.homepage";
 
@@ -26,8 +29,7 @@ function getHomepagePref(useDefault) {
     
     
     
-    homePage = prefs.getComplexValue(kPrefName,
-                                     Ci.nsIPrefLocalizedString).data;
+    homePage = prefs.getComplexValue(kPrefName, Ci.nsIPrefLocalizedString).data;
   } catch (ex) {}
 
   if (!homePage) {
@@ -47,15 +49,26 @@ function getHomepagePref(useDefault) {
 let HomePage = {
   get(aWindow) {
     let homePages = getHomepagePref();
-    if (PrivateBrowsingUtils.permanentPrivateBrowsing ||
-        (aWindow && PrivateBrowsingUtils.isWindowPrivate(aWindow))) {
+    if (
+      PrivateBrowsingUtils.permanentPrivateBrowsing ||
+      (aWindow && PrivateBrowsingUtils.isWindowPrivate(aWindow))
+    ) {
       
       
-      let extensionControlled = Services.prefs.getBoolPref("browser.startup.homepage_override.extensionControlled", false);
-      let privateAllowed = Services.prefs.getBoolPref("browser.startup.homepage_override.privateAllowed", false);
+      let extensionControlled = Services.prefs.getBoolPref(
+        "browser.startup.homepage_override.extensionControlled",
+        false
+      );
+      let privateAllowed = Services.prefs.getBoolPref(
+        "browser.startup.homepage_override.privateAllowed",
+        false
+      );
       
       
-      if (!privateAllowed && (extensionControlled || homePages.includes("moz-extension://"))) {
+      if (
+        !privateAllowed &&
+        (extensionControlled || homePages.includes("moz-extension://"))
+      ) {
         return this.getDefault();
       }
     }

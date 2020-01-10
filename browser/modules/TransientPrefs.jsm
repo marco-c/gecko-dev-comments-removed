@@ -6,9 +6,11 @@
 
 var EXPORTED_SYMBOLS = ["TransientPrefs"];
 
-const {Preferences} = ChromeUtils.import("resource://gre/modules/Preferences.jsm");
+const { Preferences } = ChromeUtils.import(
+  "resource://gre/modules/Preferences.jsm"
+);
 
-var prefVisibility = new Map;
+var prefVisibility = new Map();
 
 
 
@@ -16,8 +18,9 @@ var prefVisibility = new Map;
 
 var TransientPrefs = {
   prefShouldBeVisible(prefName) {
-    if (Preferences.isSet(prefName))
+    if (Preferences.isSet(prefName)) {
       prefVisibility.set(prefName, true);
+    }
 
     return !!prefVisibility.get(prefName);
   },

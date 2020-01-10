@@ -5,7 +5,9 @@
 
 this.EXPORTED_SYMBOLS = ["AsanReporter"];
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
@@ -33,8 +35,9 @@ XPCOMUtils.defineLazyGetter(this, "asanDumpDir", () => {
 
 this.AsanReporter = {
   init() {
-    if (this.initialized)
+    if (this.initialized) {
       return;
+    }
     this.initialized = true;
 
     
@@ -54,11 +57,11 @@ this.AsanReporter = {
 
   observe(aSubject, aTopic, aData) {
     if (aTopic == "ipc:content-shutdown") {
-        aSubject.QueryInterface(Ci.nsIPropertyBag2);
-        if (!aSubject.get("abnormal")) {
-          return;
-        }
-        processDirectory();
+      aSubject.QueryInterface(Ci.nsIPropertyBag2);
+      if (!aSubject.get("abnormal")) {
+        return;
+      }
+      processDirectory();
     }
   },
 };
@@ -70,116 +73,125 @@ function processDirectory() {
   
   
   
-  iterator.forEach(
-    (entry) => {
-      if (entry.name.indexOf("ff_asan_log.") == 0
-        && !entry.name.includes("submitted")) {
+  iterator
+    .forEach(entry => {
+      if (
+        entry.name.indexOf("ff_asan_log.") == 0 &&
+        !entry.name.includes("submitted")
+      ) {
         results.push(entry);
       }
-    }
-  ).then(
-    () => {
-      iterator.close();
-      logger.info("Processing " + results.length + " reports...");
+    })
+    .then(
+      () => {
+        iterator.close();
+        logger.info("Processing " + results.length + " reports...");
 
-      
-      
-      
-      let requests = Promise.resolve();
-      results.forEach(
-        (result) => {
+        
+        
+        
+        let requests = Promise.resolve();
+        results.forEach(result => {
           requests = requests.then(
             
             
             
-            () => submitReport(result.path).then(
-              () => { logger.info("Successfully submitted " + result.path); },
-              (e) => { logger.error("Failed to submit " + result.path + ". Reason: " + e); },
-            )
+            () =>
+              submitReport(result.path).then(
+                () => {
+                  logger.info("Successfully submitted " + result.path);
+                },
+                e => {
+                  logger.error(
+                    "Failed to submit " + result.path + ". Reason: " + e
+                  );
+                }
+              )
           );
-        }
-      );
+        });
 
-      requests.then(() => logger.info("Done processing reports."));
-    },
-    (e) => {
-      iterator.close();
-      logger.error("Error while iterating over report files: " + e);
-    }
-  );
+        requests.then(() => logger.info("Done processing reports."));
+      },
+      e => {
+        iterator.close();
+        logger.error("Error while iterating over report files: " + e);
+      }
+    );
 }
 
 function submitReport(reportFile) {
   logger.info("Processing " + reportFile);
-  return OS.File.read(reportFile).then(submitToServer).then(
-    () => {
+  return OS.File.read(reportFile)
+    .then(submitToServer)
+    .then(() => {
       
       return OS.File.move(reportFile, reportFile + ".submitted");
-    }
-  );
+    });
 }
 
 function submitToServer(data) {
   return new Promise(function(resolve, reject) {
-      logger.debug("Setting up XHR request");
-      let client = Services.prefs.getStringPref(PREF_CLIENT_ID);
-      let api_url = Services.prefs.getStringPref(PREF_API_URL);
-      let auth_token = Services.prefs.getStringPref(PREF_AUTH_TOKEN, null);
+    logger.debug("Setting up XHR request");
+    let client = Services.prefs.getStringPref(PREF_CLIENT_ID);
+    let api_url = Services.prefs.getStringPref(PREF_API_URL);
+    let auth_token = Services.prefs.getStringPref(PREF_AUTH_TOKEN, null);
 
-      let decoder = new TextDecoder();
+    let decoder = new TextDecoder();
 
-      if (!client) {
-        client = "unknown";
-      }
+    if (!client) {
+      client = "unknown";
+    }
 
-      let versionArr = [
-        Services.appinfo.version,
-        Services.appinfo.appBuildID,
-        (AppConstants.SOURCE_REVISION_URL || "unknown"),
-      ];
+    let versionArr = [
+      Services.appinfo.version,
+      Services.appinfo.appBuildID,
+      AppConstants.SOURCE_REVISION_URL || "unknown",
+    ];
 
+    
+    
+    let product_version = versionArr.join("-");
+    let os = AppConstants.platform;
+
+    let reportObj = {
+      rawStdout: "",
+      rawStderr: "",
+      rawCrashData: decoder.decode(data),
       
+      platform: "x86-64",
+      product: "mozilla-central-asan-nightly",
+      product_version,
+      os,
+      client,
+      tool: "asan-nightly-program",
+    };
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", api_url, true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+
+    
+    if (auth_token) {
+      xhr.setRequestHeader("Authorization", "Token " + auth_token);
+    } else {
       
-      let product_version = versionArr.join("-");
-      let os = AppConstants.platform;
+      xhr.channel.loadFlags |= Ci.nsIRequest.LOAD_ANONYMOUS;
+    }
 
-      let reportObj = {
-        rawStdout: "",
-        rawStderr: "",
-        rawCrashData: decoder.decode(data),
-        
-        platform: "x86-64",
-        product: "mozilla-central-asan-nightly",
-        product_version,
-        os,
-        client,
-        tool: "asan-nightly-program",
-      };
-
-      var xhr = new XMLHttpRequest();
-      xhr.open("POST", api_url, true);
-      xhr.setRequestHeader("Content-Type", "application/json");
-
-      
-      if (auth_token) {
-        xhr.setRequestHeader("Authorization", "Token " + auth_token);
-      } else {
-        
-        xhr.channel.loadFlags |= Ci.nsIRequest.LOAD_ANONYMOUS;
-      }
-
-      xhr.onreadystatechange = function() {
-        if (xhr.readyState == 4) {
-          if (xhr.status == "201") {
-            logger.debug("XHR: OK");
-            resolve(xhr);
-          } else {
-            logger.debug("XHR: Status: " + xhr.status + " Response: " + xhr.responseText);
-            reject(xhr);
-          }
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState == 4) {
+        if (xhr.status == "201") {
+          logger.debug("XHR: OK");
+          resolve(xhr);
+        } else {
+          logger.debug(
+            "XHR: Status: " + xhr.status + " Response: " + xhr.responseText
+          );
+          reject(xhr);
         }
-      };
+      }
+    };
 
-      xhr.send(JSON.stringify(reportObj));
+    xhr.send(JSON.stringify(reportObj));
   });
 }

@@ -13,7 +13,7 @@ async function checkPermissionCombinations(combinations) {
 
   await BrowserTestUtils.withNewTab(uri.spec, function(browser) {
     let id = "geo";
-    for (let {reverse, states, result} of combinations) {
+    for (let { reverse, states, result } of combinations) {
       let loop = () => {
         for (let [state, scope] of states) {
           SitePermissions.set(uri, id, state, scope, browser);
@@ -34,15 +34,15 @@ async function checkPermissionCombinations(combinations) {
 
 
 add_task(async function testDefaultScope() {
-  await checkPermissionCombinations([{
-    states: [
-      [SitePermissions.ALLOW, null],
-    ],
-    result: {
-      state: SitePermissions.ALLOW,
-      scope: SitePermissions.SCOPE_PERSISTENT,
+  await checkPermissionCombinations([
+    {
+      states: [[SitePermissions.ALLOW, null]],
+      result: {
+        state: SitePermissions.ALLOW,
+        scope: SitePermissions.SCOPE_PERSISTENT,
+      },
     },
-  }]);
+  ]);
 });
 
 
@@ -59,7 +59,8 @@ add_task(async function testScopeOverrides() {
         state: SitePermissions.BLOCK,
         scope: SitePermissions.SCOPE_SESSION,
       },
-    }, {
+    },
+    {
       states: [
         [SitePermissions.BLOCK, SitePermissions.SCOPE_SESSION],
         [SitePermissions.ALLOW, SitePermissions.SCOPE_PERSISTENT],
@@ -68,8 +69,8 @@ add_task(async function testScopeOverrides() {
         state: SitePermissions.ALLOW,
         scope: SitePermissions.SCOPE_PERSISTENT,
       },
-
-    }, {
+    },
+    {
       reverse: true,
       states: [
         [SitePermissions.BLOCK, SitePermissions.SCOPE_TEMPORARY],
@@ -79,7 +80,8 @@ add_task(async function testScopeOverrides() {
         state: SitePermissions.ALLOW,
         scope: SitePermissions.SCOPE_SESSION,
       },
-    }, {
+    },
+    {
       reverse: true,
       states: [
         [SitePermissions.BLOCK, SitePermissions.SCOPE_TEMPORARY],
@@ -96,17 +98,19 @@ add_task(async function testScopeOverrides() {
 
 
 add_task(async function testClearTempPermission() {
-  await checkPermissionCombinations([{
-    states: [
-      [SitePermissions.BLOCK, SitePermissions.SCOPE_TEMPORARY],
-      [SitePermissions.ALLOW, SitePermissions.SCOPE_PERSISTENT],
-      [SitePermissions.UNKNOWN, SitePermissions.SCOPE_TEMPORARY],
-    ],
-    result: {
-      state: SitePermissions.UNKNOWN,
-      scope: SitePermissions.SCOPE_PERSISTENT,
+  await checkPermissionCombinations([
+    {
+      states: [
+        [SitePermissions.BLOCK, SitePermissions.SCOPE_TEMPORARY],
+        [SitePermissions.ALLOW, SitePermissions.SCOPE_PERSISTENT],
+        [SitePermissions.UNKNOWN, SitePermissions.SCOPE_TEMPORARY],
+      ],
+      result: {
+        state: SitePermissions.UNKNOWN,
+        scope: SitePermissions.SCOPE_PERSISTENT,
+      },
     },
-  }]);
+  ]);
 });
 
 
@@ -121,7 +125,8 @@ add_task(async function testStateOverride() {
         state: SitePermissions.BLOCK,
         scope: SitePermissions.SCOPE_PERSISTENT,
       },
-    }, {
+    },
+    {
       states: [
         [SitePermissions.BLOCK, SitePermissions.SCOPE_PERSISTENT],
         [SitePermissions.ALLOW, SitePermissions.SCOPE_PERSISTENT],
@@ -133,4 +138,3 @@ add_task(async function testStateOverride() {
     },
   ]);
 });
-

@@ -7,8 +7,10 @@
 
 var EXPORTED_SYMBOLS = ["ProcessHangMonitor"];
 
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
@@ -87,7 +89,9 @@ var ProcessHangMonitor = {
 
       report.beginStartingDebugger();
 
-      let svc = Cc["@mozilla.org/dom/slow-script-debug;1"].getService(Ci.nsISlowScriptDebug);
+      let svc = Cc["@mozilla.org/dom/slow-script-debug;1"].getService(
+        Ci.nsISlowScriptDebug
+      );
       let handler = svc.remoteActivationHandler;
       handler.handleSlowScriptDebug(report.scriptBrowser, callback);
     });
@@ -179,19 +183,23 @@ var ProcessHangMonitor = {
 
     
     let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-    timer.initWithCallback(() => {
-      for (let [stashedReport, otherTimer] of this._pausedReports) {
-        if (otherTimer === timer) {
-          this.removePausedReport(stashedReport);
+    timer.initWithCallback(
+      () => {
+        for (let [stashedReport, otherTimer] of this._pausedReports) {
+          if (otherTimer === timer) {
+            this.removePausedReport(stashedReport);
 
-          
-          
-          this._activeReports.add(report);
-          this.updateWindows();
-          break;
+            
+            
+            this._activeReports.add(report);
+            this.updateWindows();
+            break;
+          }
         }
-      }
-    }, this.WAIT_EXPIRATION_TIME, timer.TYPE_ONE_SHOT);
+      },
+      this.WAIT_EXPIRATION_TIME,
+      timer.TYPE_ONE_SHOT
+    );
 
     this._pausedReports.set(report, timer);
 
@@ -244,7 +252,7 @@ var ProcessHangMonitor = {
         
         
         let win = subject.QueryInterface(Ci.nsIDOMWindow);
-        let listener = (ev) => {
+        let listener = ev => {
           win.removeEventListener("load", listener, true);
           this.updateWindows();
         };
@@ -273,7 +281,7 @@ var ProcessHangMonitor = {
   },
 
   onWindowClosed(win) {
-    let maybeStopHang = (report) => {
+    let maybeStopHang = report => {
       if (report.hangType == report.SLOW_SCRIPT) {
         let hungBrowserWindow = null;
         try {
@@ -305,7 +313,7 @@ var ProcessHangMonitor = {
       }
     }
 
-    for (let [pausedReport ] of this._pausedReports) {
+    for (let [pausedReport] of this._pausedReports) {
       if (maybeStopHang(pausedReport)) {
         this.removePausedReport(pausedReport);
       }
@@ -321,7 +329,7 @@ var ProcessHangMonitor = {
 
     this._activeReports = new Set();
 
-    for (let [pausedReport ] of this._pausedReports) {
+    for (let [pausedReport] of this._pausedReports) {
       this.stopHang(pausedReport);
       this.removePausedReport(pausedReport);
     }
@@ -345,7 +353,7 @@ var ProcessHangMonitor = {
 
   findPausedReport(browser) {
     let frameLoader = browser.frameLoader;
-    for (let [report ] of this._pausedReports) {
+    for (let [report] of this._pausedReports) {
       if (report.isReportForBrowser(frameLoader)) {
         return report;
       }
@@ -420,15 +428,17 @@ var ProcessHangMonitor = {
 
 
   showNotification(win, report) {
-    let notification =
-        win.gHighPriorityNotificationBox.getNotificationWithValue("process-hang");
+    let notification = win.gHighPriorityNotificationBox.getNotificationWithValue(
+      "process-hang"
+    );
     if (notification) {
       return;
     }
 
     let bundle = win.gNavigatorBundle;
 
-    let buttons = [{
+    let buttons = [
+      {
         label: bundle.getString("processHang.button_stop.label"),
         accessKey: bundle.getString("processHang.button_stop.accessKey"),
         callback() {
@@ -441,26 +451,35 @@ var ProcessHangMonitor = {
         callback() {
           ProcessHangMonitor.waitLonger(win);
         },
-      }];
+      },
+    ];
 
     let message = bundle.getString("processHang.label");
     if (report.addonId) {
-      let aps = Cc["@mozilla.org/addons/policy-service;1"].getService(Ci.nsIAddonPolicyService);
+      let aps = Cc["@mozilla.org/addons/policy-service;1"].getService(
+        Ci.nsIAddonPolicyService
+      );
 
       let doc = win.document;
       let brandBundle = doc.getElementById("bundle_brand");
 
       let addonName = aps.getExtensionName(report.addonId);
 
-      let label = bundle.getFormattedString("processHang.add-on.label",
-                                            [addonName, brandBundle.getString("brandShortName")]);
+      let label = bundle.getFormattedString("processHang.add-on.label", [
+        addonName,
+        brandBundle.getString("brandShortName"),
+      ]);
 
       let linkText = bundle.getString("processHang.add-on.learn-more.text");
-      let linkURL = "https://support.mozilla.org/kb/warning-unresponsive-script#w_other-causes";
+      let linkURL =
+        "https://support.mozilla.org/kb/warning-unresponsive-script#w_other-causes";
 
-      let link = doc.createXULElement("label", {is: "text-link"});
+      let link = doc.createXULElement("label", { is: "text-link" });
       link.setAttribute("role", "link");
-      link.setAttribute("onclick", `openTrustedLinkIn(${JSON.stringify(linkURL)}, "tab")`);
+      link.setAttribute(
+        "onclick",
+        `openTrustedLinkIn(${JSON.stringify(linkURL)}, "tab")`
+      );
       link.setAttribute("value", linkText);
 
       message = doc.createDocumentFragment();
@@ -469,7 +488,9 @@ var ProcessHangMonitor = {
 
       buttons.unshift({
         label: bundle.getString("processHang.button_stop_sandbox.label"),
-        accessKey: bundle.getString("processHang.button_stop_sandbox.accessKey"),
+        accessKey: bundle.getString(
+          "processHang.button_stop_sandbox.accessKey"
+        ),
         callback() {
           ProcessHangMonitor.stopGlobal(win);
         },
@@ -486,17 +507,22 @@ var ProcessHangMonitor = {
       });
     }
 
-    win.gHighPriorityNotificationBox.appendNotification(message, "process-hang",
+    win.gHighPriorityNotificationBox.appendNotification(
+      message,
+      "process-hang",
       "chrome://browser/content/aboutRobots-icon.png",
-      win.gHighPriorityNotificationBox.PRIORITY_WARNING_HIGH, buttons);
+      win.gHighPriorityNotificationBox.PRIORITY_WARNING_HIGH,
+      buttons
+    );
   },
 
   
 
 
   hideNotification(win) {
-    let notification =
-        win.gHighPriorityNotificationBox.getNotificationWithValue("process-hang");
+    let notification = win.gHighPriorityNotificationBox.getNotificationWithValue(
+      "process-hang"
+    );
     if (notification) {
       win.gHighPriorityNotificationBox.removeNotification(notification);
     }
@@ -508,12 +534,20 @@ var ProcessHangMonitor = {
 
   trackWindow(win) {
     win.gBrowser.tabContainer.addEventListener("TabSelect", this, true);
-    win.gBrowser.tabContainer.addEventListener("TabRemotenessChange", this, true);
+    win.gBrowser.tabContainer.addEventListener(
+      "TabRemotenessChange",
+      this,
+      true
+    );
   },
 
   untrackWindow(win) {
     win.gBrowser.tabContainer.removeEventListener("TabSelect", this, true);
-    win.gBrowser.tabContainer.removeEventListener("TabRemotenessChange", this, true);
+    win.gBrowser.tabContainer.removeEventListener(
+      "TabRemotenessChange",
+      this,
+      true
+    );
   },
 
   handleEvent(event) {

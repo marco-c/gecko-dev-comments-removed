@@ -6,15 +6,25 @@
 
 
 add_task(async function() {
-  let expectedURL = Services.prefs.getCharPref("app.support.baseURL") +
+  let expectedURL =
+    Services.prefs.getCharPref("app.support.baseURL") +
     "live-bookmarks-migration";
-  let newTabExpected = BrowserTestUtils.waitForNewTab(gBrowser, expectedURL, true);
-  let {LiveBookmarkMigrator} = ChromeUtils.import("resource:///modules/LiveBookmarkMigrator.jsm");
+  let newTabExpected = BrowserTestUtils.waitForNewTab(
+    gBrowser,
+    expectedURL,
+    true
+  );
+  let { LiveBookmarkMigrator } = ChromeUtils.import(
+    "resource:///modules/LiveBookmarkMigrator.jsm"
+  );
   LiveBookmarkMigrator._openSUMOPage();
   await newTabExpected;
   
   
-  is(gBrowser.selectedBrowser.currentURI.spec, expectedURL, "Should have opened the right page");
+  is(
+    gBrowser.selectedBrowser.currentURI.spec,
+    expectedURL,
+    "Should have opened the right page"
+  );
   gBrowser.removeCurrentTab();
 });
-

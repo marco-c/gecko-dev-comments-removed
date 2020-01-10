@@ -1,13 +1,22 @@
-
-ChromeUtils.defineModuleGetter(this, "PlacesTestUtils",
-                               "resource://testing-common/PlacesTestUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "TelemetryTestUtils",
-                               "resource://testing-common/TelemetryTestUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PlacesTestUtils",
+  "resource://testing-common/PlacesTestUtils.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "TelemetryTestUtils",
+  "resource://testing-common/TelemetryTestUtils.jsm"
+);
 
 const SINGLE_TRY_TIMEOUT = 100;
 const NUMBER_OF_TRIES = 30;
 
-function waitForConditionPromise(condition, timeoutMsg, tryCount = NUMBER_OF_TRIES) {
+function waitForConditionPromise(
+  condition,
+  timeoutMsg,
+  tryCount = NUMBER_OF_TRIES
+) {
   return new Promise((resolve, reject) => {
     let tries = 0;
     function checkCondition() {
@@ -32,7 +41,7 @@ function waitForConditionPromise(condition, timeoutMsg, tryCount = NUMBER_OF_TRI
 }
 
 function waitForCondition(condition, nextTest, errorMsg) {
-  waitForConditionPromise(condition, errorMsg).then(nextTest, (reason) => {
+  waitForConditionPromise(condition, errorMsg).then(nextTest, reason => {
     ok(false, reason + (reason.stack ? "\n" + reason.stack : ""));
   });
 }
@@ -48,7 +57,10 @@ function waitForCondition(condition, nextTest, errorMsg) {
 
 
 let typeInSearchField = async function(browser, text, fieldName) {
-  await ContentTask.spawn(browser, [fieldName, text], async function([contentFieldName, contentText]) {
+  await ContentTask.spawn(browser, [fieldName, text], async function([
+    contentFieldName,
+    contentText,
+  ]) {
     
     let searchInput = content.document.getElementById(contentFieldName);
     searchInput.focus();
@@ -112,8 +124,10 @@ function makeMockPermissionRequest(browser) {
 
 
 function clickMainAction() {
-  let removePromise =
-    BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popuphidden");
+  let removePromise = BrowserTestUtils.waitForEvent(
+    PopupNotifications.panel,
+    "popuphidden"
+  );
   let popupNotification = getPopupNotificationNode();
   popupNotification.button.click();
   return removePromise;
@@ -133,8 +147,10 @@ function clickMainAction() {
 
 
 function clickSecondaryAction(actionIndex) {
-  let removePromise =
-    BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popuphidden");
+  let removePromise = BrowserTestUtils.waitForEvent(
+    PopupNotifications.panel,
+    "popuphidden"
+  );
   let popupNotification = getPopupNotificationNode();
   if (!actionIndex) {
     popupNotification.secondaryButton.click();
@@ -143,8 +159,10 @@ function clickSecondaryAction(actionIndex) {
 
   return (async function() {
     
-    let dropdownPromise =
-      BrowserTestUtils.waitForEvent(popupNotification.menupopup, "popupshown");
+    let dropdownPromise = BrowserTestUtils.waitForEvent(
+      popupNotification.menupopup,
+      "popupshown"
+    );
     await EventUtils.synthesizeMouseAtCenter(popupNotification.menubutton, {});
     await dropdownPromise;
 
@@ -152,7 +170,9 @@ function clickSecondaryAction(actionIndex) {
     
     
     
-    let actionMenuItem = popupNotification.querySelectorAll("menuitem")[actionIndex - 1];
+    let actionMenuItem = popupNotification.querySelectorAll("menuitem")[
+      actionIndex - 1
+    ];
     await EventUtils.synthesizeMouseAtCenter(actionMenuItem, {});
     await removePromise;
   })();
@@ -169,8 +189,11 @@ function getPopupNotificationNode() {
   
   
   let popupNotifications = PopupNotifications.panel.childNodes;
-  Assert.equal(popupNotifications.length, 1,
-               "Should be showing a <xul:popupnotification>");
+  Assert.equal(
+    popupNotifications.length,
+    1,
+    "Should be showing a <xul:popupnotification>"
+  );
   return popupNotifications[0];
 }
 
@@ -179,9 +202,11 @@ function getPopupNotificationNode() {
 
 
 
-
 async function disableNonReleaseActions() {
   if (!["release", "esr"].includes(AppConstants.MOZ_UPDATE_CHANNEL)) {
-    SpecialPowers.Services.prefs.setBoolPref("extensions.webcompat-reporter.enabled", false);
+    SpecialPowers.Services.prefs.setBoolPref(
+      "extensions.webcompat-reporter.enabled",
+      false
+    );
   }
 }

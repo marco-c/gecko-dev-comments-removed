@@ -5,12 +5,17 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "URICountListener",
-                               "resource:///modules/BrowserUsageTelemetry.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "URICountListener",
+  "resource:///modules/BrowserUsageTelemetry.jsm"
+);
 
 add_task(async function test_uniqueDomainsVisitedInPast24Hours() {
   
-  await SpecialPowers.pushPrefEnv({set: [["network.proxy.allow_hijacking_localhost", true]]});
+  await SpecialPowers.pushPrefEnv({
+    set: [["network.proxy.allow_hijacking_localhost", true]],
+  });
   registerCleanupFunction(async () => {
     info("Cleaning up");
     URICountListener.resetUniqueDomainsVisitedInPast24Hours();
@@ -18,35 +23,58 @@ add_task(async function test_uniqueDomainsVisitedInPast24Hours() {
 
   URICountListener.resetUniqueDomainsVisitedInPast24Hours();
   let startingCount = URICountListener.uniqueDomainsVisitedInPast24Hours;
-  is(startingCount, 0, "We should have no domains recorded in the history right after resetting");
+  is(
+    startingCount,
+    0,
+    "We should have no domains recorded in the history right after resetting"
+  );
 
   
   let win = await BrowserTestUtils.openNewBrowserWindow();
-  await BrowserTestUtils.openNewForegroundTab(win.gBrowser, "http://example.com");
+  await BrowserTestUtils.openNewForegroundTab(
+    win.gBrowser,
+    "http://example.com"
+  );
 
-  await BrowserTestUtils.openNewForegroundTab(win.gBrowser, "http://test1.example.com");
-  is(URICountListener.uniqueDomainsVisitedInPast24Hours, startingCount + 1,
-     "test1.example.com should only count as a unique visit if example.com wasn't visited before");
+  await BrowserTestUtils.openNewForegroundTab(
+    win.gBrowser,
+    "http://test1.example.com"
+  );
+  is(
+    URICountListener.uniqueDomainsVisitedInPast24Hours,
+    startingCount + 1,
+    "test1.example.com should only count as a unique visit if example.com wasn't visited before"
+  );
 
   await BrowserTestUtils.openNewForegroundTab(win.gBrowser, "http://127.0.0.1");
-  is(URICountListener.uniqueDomainsVisitedInPast24Hours, startingCount + 1,
-     "127.0.0.1 should not count as a unique visit");
+  is(
+    URICountListener.uniqueDomainsVisitedInPast24Hours,
+    startingCount + 1,
+    "127.0.0.1 should not count as a unique visit"
+  );
 
   
-  await SpecialPowers.pushPrefEnv({set: [["browser.engagement.recent_visited_origins.expiry", 1]]});
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.engagement.recent_visited_origins.expiry", 1]],
+  });
 
   
-  await BrowserTestUtils.openNewForegroundTab(win.gBrowser, "http://xn--exmple-cua.test");
-  is(URICountListener.uniqueDomainsVisitedInPast24Hours, startingCount + 2,
-     "www.exämple.test should count as a unique visit");
+  await BrowserTestUtils.openNewForegroundTab(
+    win.gBrowser,
+    "http://xn--exmple-cua.test"
+  );
+  is(
+    URICountListener.uniqueDomainsVisitedInPast24Hours,
+    startingCount + 2,
+    "www.exämple.test should count as a unique visit"
+  );
 
   let countBefore = URICountListener.uniqueDomainsVisitedInPast24Hours;
 
   await new Promise(resolve => {
     setTimeout(_ => {
       let countAfter = URICountListener.uniqueDomainsVisitedInPast24Hours;
-      is(countAfter, countBefore - 1,
-         "The expiry should work correctly");
+      is(countAfter, countBefore - 1, "The expiry should work correctly");
       resolve();
     }, 1100);
   });
@@ -55,4 +83,3 @@ add_task(async function test_uniqueDomainsVisitedInPast24Hours() {
   BrowserTestUtils.removeTab(win.gBrowser.selectedTab);
   await BrowserTestUtils.closeWindow(win);
 });
-

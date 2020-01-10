@@ -2,13 +2,16 @@
 
 
 
-var EXPORTED_SYMBOLS = [ "SitePermissions" ];
+var EXPORTED_SYMBOLS = ["SitePermissions"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
-var gStringBundle =
-  Services.strings.createBundle("chrome://browser/locale/sitePermissions.properties");
+var gStringBundle = Services.strings.createBundle(
+  "chrome://browser/locale/sitePermissions.properties"
+);
 
 
 
@@ -43,11 +46,18 @@ const TemporaryPermissions = {
       delete entry[baseDomain][id];
       return null;
     }
-    if (permission.timeStamp + SitePermissions.temporaryPermissionExpireTime < Date.now()) {
+    if (
+      permission.timeStamp + SitePermissions.temporaryPermissionExpireTime <
+      Date.now()
+    ) {
       delete entry[baseDomain][id];
       return null;
     }
-    return {id, state: permission.state, scope: SitePermissions.SCOPE_TEMPORARY};
+    return {
+      id,
+      state: permission.state,
+      scope: SitePermissions.SCOPE_TEMPORARY,
+    };
   },
 
   
@@ -55,8 +65,10 @@ const TemporaryPermissions = {
     try {
       return Services.eTLD.getBaseDomain(uri);
     } catch (error) {
-      if (error.result !== Cr.NS_ERROR_HOST_IS_IP_ADDRESS &&
-          error.result !== Cr.NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS) {
+      if (
+        error.result !== Cr.NS_ERROR_HOST_IS_IP_ADDRESS &&
+        error.result !== Cr.NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS
+      ) {
         throw error;
       }
       return uri.host;
@@ -76,7 +88,7 @@ const TemporaryPermissions = {
     if (!entry[baseDomain]) {
       entry[baseDomain] = {};
     }
-    entry[baseDomain][id] = {timeStamp: Date.now(), state};
+    entry[baseDomain][id] = { timeStamp: Date.now(), state };
   },
 
   
@@ -151,7 +163,6 @@ const TemporaryPermissions = {
 
 
 const GloballyBlockedPermissions = {
-
   _stateByBrowser: new WeakMap(),
 
   set(browser, id) {
@@ -172,20 +183,28 @@ const GloballyBlockedPermissions = {
     
     
     
-    browser.addProgressListener({
-      QueryInterface: ChromeUtils.generateQI([Ci.nsIWebProgressListener,
-                                              Ci.nsISupportsWeakReference]),
-      onLocationChange(aWebProgress, aRequest, aLocation, aFlags) {
-        let hasLeftPage = aLocation.prePath != prePath ||
+    browser.addProgressListener(
+      {
+        QueryInterface: ChromeUtils.generateQI([
+          Ci.nsIWebProgressListener,
+          Ci.nsISupportsWeakReference,
+        ]),
+        onLocationChange(aWebProgress, aRequest, aLocation, aFlags) {
+          let hasLeftPage =
+            aLocation.prePath != prePath ||
             !(aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT);
-        let isReload = !!(aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_RELOAD);
+          let isReload = !!(
+            aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_RELOAD
+          );
 
-        if (aWebProgress.isTopLevel && (hasLeftPage || isReload)) {
-          GloballyBlockedPermissions.remove(browser, id, prePath);
-          browser.removeProgressListener(this);
-        }
+          if (aWebProgress.isTopLevel && (hasLeftPage || isReload)) {
+            GloballyBlockedPermissions.remove(browser, id, prePath);
+            browser.removeProgressListener(this);
+          }
+        },
       },
-    }, Ci.nsIWebProgress.NOTIFY_LOCATION);
+      Ci.nsIWebProgress.NOTIFY_LOCATION
+    );
   },
 
   
@@ -268,10 +287,13 @@ var SitePermissions = {
 
 
   getAllByURI(uri) {
-    if (!(uri instanceof Ci.nsIURI))
+    if (!(uri instanceof Ci.nsIURI)) {
       throw new Error("uri parameter should be an nsIURI");
+    }
 
-    let principal = uri ? Services.scriptSecurityManager.createCodebasePrincipal(uri, {}) : null;
+    let principal = uri
+      ? Services.scriptSecurityManager.createCodebasePrincipal(uri, {})
+      : null;
     return this.getAllByPrincipal(principal);
   },
 
@@ -298,7 +320,7 @@ var SitePermissions = {
       
       if (gPermissionObject[permission.type]) {
         
-        if ((permission.type == "canvas") && !this.resistFingerprinting) {
+        if (permission.type == "canvas" && !this.resistFingerprinting) {
           continue;
         }
 
@@ -371,8 +393,12 @@ var SitePermissions = {
 
 
   getAllPermissionDetailsForBrowser(browser) {
-    return this.getAllForBrowser(browser).map(({id, scope, state}) =>
-      ({id, scope, state, label: this.getPermissionLabel(id)}));
+    return this.getAllForBrowser(browser).map(({ id, scope, state }) => ({
+      id,
+      scope,
+      state,
+      label: this.getPermissionLabel(id),
+    }));
   },
 
   
@@ -401,11 +427,14 @@ var SitePermissions = {
 
 
   isSupportedPrincipal(principal) {
-    return principal && principal.URI &&
-      ["http", "https", "moz-extension"].includes(principal.URI.scheme);
+    return (
+      principal &&
+      principal.URI &&
+      ["http", "https", "moz-extension"].includes(principal.URI.scheme)
+    );
   },
 
- 
+  
 
 
 
@@ -450,17 +479,29 @@ var SitePermissions = {
 
 
   getAvailableStates(permissionID) {
-    if (permissionID in gPermissionObject &&
-        gPermissionObject[permissionID].states)
+    if (
+      permissionID in gPermissionObject &&
+      gPermissionObject[permissionID].states
+    ) {
       return gPermissionObject[permissionID].states;
+    }
 
     
 
 
-    if (this.getDefault(permissionID) == this.UNKNOWN)
-      return [ SitePermissions.UNKNOWN, SitePermissions.ALLOW, SitePermissions.BLOCK ];
+    if (this.getDefault(permissionID) == this.UNKNOWN) {
+      return [
+        SitePermissions.UNKNOWN,
+        SitePermissions.ALLOW,
+        SitePermissions.BLOCK,
+      ];
+    }
 
-    return [ SitePermissions.PROMPT, SitePermissions.ALLOW, SitePermissions.BLOCK ];
+    return [
+      SitePermissions.PROMPT,
+      SitePermissions.ALLOW,
+      SitePermissions.BLOCK,
+    ];
   },
 
   
@@ -474,9 +515,12 @@ var SitePermissions = {
   getDefault(permissionID) {
     
     
-    if (permissionID in gPermissionObject &&
-        gPermissionObject[permissionID].getDefault)
+    if (
+      permissionID in gPermissionObject &&
+      gPermissionObject[permissionID].getDefault
+    ) {
       return gPermissionObject[permissionID].getDefault();
+    }
 
     
     return this._defaultPrefBranch.getIntPref(permissionID, this.UNKNOWN);
@@ -492,8 +536,10 @@ var SitePermissions = {
 
 
   setDefault(permissionID, state) {
-    if (permissionID in gPermissionObject &&
-        gPermissionObject[permissionID].setDefault) {
+    if (
+      permissionID in gPermissionObject &&
+      gPermissionObject[permissionID].setDefault
+    ) {
       return gPermissionObject[permissionID].setDefault(state);
     }
     let key = "permissions.default." + permissionID;
@@ -519,14 +565,19 @@ var SitePermissions = {
 
 
   get(uri, permissionID, browser) {
-    if ((!uri && !browser) || (uri && !(uri instanceof Ci.nsIURI)))
-      throw new Error("uri parameter should be an nsIURI or a browser parameter is needed");
+    if ((!uri && !browser) || (uri && !(uri instanceof Ci.nsIURI))) {
+      throw new Error(
+        "uri parameter should be an nsIURI or a browser parameter is needed"
+      );
+    }
 
-    let principal = uri ? Services.scriptSecurityManager.createCodebasePrincipal(uri, {}) : null;
+    let principal = uri
+      ? Services.scriptSecurityManager.createCodebasePrincipal(uri, {})
+      : null;
     return this.getForPrincipal(principal, permissionID, browser);
   },
 
- 
+  
 
 
 
@@ -550,11 +601,21 @@ var SitePermissions = {
     let result = { state: defaultState, scope: this.SCOPE_PERSISTENT };
     if (this.isSupportedPrincipal(principal)) {
       let permission = null;
-      if (permissionID in gPermissionObject &&
-        gPermissionObject[permissionID].exactHostMatch) {
-        permission = Services.perms.getPermissionObject(principal, permissionID, true);
+      if (
+        permissionID in gPermissionObject &&
+        gPermissionObject[permissionID].exactHostMatch
+      ) {
+        permission = Services.perms.getPermissionObject(
+          principal,
+          permissionID,
+          true
+        );
       } else {
-        permission = Services.perms.getPermissionObject(principal, permissionID, false);
+        permission = Services.perms.getPermissionObject(
+          principal,
+          permissionID,
+          false
+        );
       }
 
       if (permission) {
@@ -601,10 +662,15 @@ var SitePermissions = {
 
 
   set(uri, permissionID, state, scope = this.SCOPE_PERSISTENT, browser = null) {
-    if ((!uri && !browser) || (uri && !(uri instanceof Ci.nsIURI)))
-      throw new Error("uri parameter should be an nsIURI or a browser parameter is needed");
+    if ((!uri && !browser) || (uri && !(uri instanceof Ci.nsIURI))) {
+      throw new Error(
+        "uri parameter should be an nsIURI or a browser parameter is needed"
+      );
+    }
 
-    let principal = uri ? Services.scriptSecurityManager.createCodebasePrincipal(uri, {}) : null;
+    let principal = uri
+      ? Services.scriptSecurityManager.createCodebasePrincipal(uri, {})
+      : null;
     return this.setForPrincipal(principal, permissionID, state, scope, browser);
   },
 
@@ -626,10 +692,18 @@ var SitePermissions = {
 
 
 
-  setForPrincipal(principal, permissionID, state, scope = this.SCOPE_PERSISTENT, browser = null) {
+  setForPrincipal(
+    principal,
+    permissionID,
+    state,
+    scope = this.SCOPE_PERSISTENT,
+    browser = null
+  ) {
     if (scope == this.SCOPE_GLOBAL && state == this.BLOCK) {
       GloballyBlockedPermissions.set(browser, permissionID);
-      browser.dispatchEvent(new browser.ownerGlobal.CustomEvent("PermissionStateChange"));
+      browser.dispatchEvent(
+        new browser.ownerGlobal.CustomEvent("PermissionStateChange")
+      );
       return;
     }
 
@@ -644,7 +718,9 @@ var SitePermissions = {
     }
 
     if (state == this.ALLOW_COOKIES_FOR_SESSION && permissionID != "cookie") {
-      throw new Error("ALLOW_COOKIES_FOR_SESSION can only be set on the cookie permission");
+      throw new Error(
+        "ALLOW_COOKIES_FOR_SESSION can only be set on the cookie permission"
+      );
     }
 
     
@@ -658,17 +734,22 @@ var SitePermissions = {
       
       
       if (state != this.BLOCK) {
-        throw new Error("'Block' is the only permission we can save temporarily on a browser");
+        throw new Error(
+          "'Block' is the only permission we can save temporarily on a browser"
+        );
       }
 
       if (!browser) {
-        throw new Error("TEMPORARY scoped permissions require a browser object");
+        throw new Error(
+          "TEMPORARY scoped permissions require a browser object"
+        );
       }
 
       TemporaryPermissions.set(browser, permissionID, state);
 
-      browser.dispatchEvent(new browser.ownerGlobal
-                                       .CustomEvent("PermissionStateChange"));
+      browser.dispatchEvent(
+        new browser.ownerGlobal.CustomEvent("PermissionStateChange")
+      );
     } else if (this.isSupportedPrincipal(principal)) {
       let perms_scope = Services.perms.EXPIRE_NEVER;
       if (scope == this.SCOPE_SESSION) {
@@ -677,7 +758,12 @@ var SitePermissions = {
         perms_scope = Services.perms.EXPIRE_POLICY;
       }
 
-      Services.perms.addFromPrincipal(principal, permissionID, state, perms_scope);
+      Services.perms.addFromPrincipal(
+        principal,
+        permissionID,
+        state,
+        perms_scope
+      );
     }
   },
 
@@ -695,10 +781,15 @@ var SitePermissions = {
 
 
   remove(uri, permissionID, browser) {
-    if ((!uri && !browser) || (uri && !(uri instanceof Ci.nsIURI)))
-      throw new Error("uri parameter should be an nsIURI or a browser parameter is needed");
+    if ((!uri && !browser) || (uri && !(uri instanceof Ci.nsIURI))) {
+      throw new Error(
+        "uri parameter should be an nsIURI or a browser parameter is needed"
+      );
+    }
 
-    let principal = uri ? Services.scriptSecurityManager.createCodebasePrincipal(uri, {}) : null;
+    let principal = uri
+      ? Services.scriptSecurityManager.createCodebasePrincipal(uri, {})
+      : null;
     return this.removeFromPrincipal(principal, permissionID, browser);
   },
 
@@ -715,16 +806,18 @@ var SitePermissions = {
 
 
   removeFromPrincipal(principal, permissionID, browser) {
-    if (this.isSupportedPrincipal(principal))
+    if (this.isSupportedPrincipal(principal)) {
       Services.perms.removeFromPrincipal(principal, permissionID);
+    }
 
     
     if (TemporaryPermissions.get(browser, permissionID)) {
       
       TemporaryPermissions.remove(browser, permissionID);
       
-      browser.dispatchEvent(new browser.ownerGlobal
-                                       .CustomEvent("PermissionStateChange"));
+      browser.dispatchEvent(
+        new browser.ownerGlobal.CustomEvent("PermissionStateChange")
+      );
     }
   },
 
@@ -766,8 +859,10 @@ var SitePermissions = {
       
       return null;
     }
-    if ("labelID" in gPermissionObject[permissionID] &&
-        gPermissionObject[permissionID].labelID === null) {
+    if (
+      "labelID" in gPermissionObject[permissionID] &&
+      gPermissionObject[permissionID].labelID === null
+    ) {
       
       return null;
     }
@@ -788,8 +883,10 @@ var SitePermissions = {
   getMultichoiceStateLabel(permissionID, state) {
     
     
-    if (permissionID in gPermissionObject &&
-        gPermissionObject[permissionID].getMultichoiceStateLabel) {
+    if (
+      permissionID in gPermissionObject &&
+      gPermissionObject[permissionID].getMultichoiceStateLabel
+    ) {
       return gPermissionObject[permissionID].getMultichoiceStateLabel(state);
     }
 
@@ -800,7 +897,9 @@ var SitePermissions = {
       case this.ALLOW:
         return gStringBundle.GetStringFromName("state.multichoice.allow");
       case this.ALLOW_COOKIES_FOR_SESSION:
-        return gStringBundle.GetStringFromName("state.multichoice.allowForSession");
+        return gStringBundle.GetStringFromName(
+          "state.multichoice.allowForSession"
+        );
       case this.BLOCK:
         return gStringBundle.GetStringFromName("state.multichoice.block");
       default:
@@ -826,15 +925,30 @@ var SitePermissions = {
       case this.PROMPT:
         return gStringBundle.GetStringFromName("state.current.prompt");
       case this.ALLOW:
-        if (scope && scope != this.SCOPE_PERSISTENT && scope != this.SCOPE_POLICY)
-          return gStringBundle.GetStringFromName("state.current.allowedTemporarily");
+        if (
+          scope &&
+          scope != this.SCOPE_PERSISTENT &&
+          scope != this.SCOPE_POLICY
+        ) {
+          return gStringBundle.GetStringFromName(
+            "state.current.allowedTemporarily"
+          );
+        }
         return gStringBundle.GetStringFromName("state.current.allowed");
       case this.ALLOW_COOKIES_FOR_SESSION:
-        return gStringBundle.GetStringFromName("state.current.allowedForSession");
+        return gStringBundle.GetStringFromName(
+          "state.current.allowedForSession"
+        );
       case this.BLOCK:
-        if (scope && scope != this.SCOPE_PERSISTENT && scope != this.SCOPE_POLICY &&
-            scope != this.SCOPE_GLOBAL) {
-          return gStringBundle.GetStringFromName("state.current.blockedTemporarily");
+        if (
+          scope &&
+          scope != this.SCOPE_PERSISTENT &&
+          scope != this.SCOPE_POLICY &&
+          scope != this.SCOPE_GLOBAL
+        ) {
+          return gStringBundle.GetStringFromName(
+            "state.current.blockedTemporarily"
+          );
         }
         return gStringBundle.GetStringFromName("state.current.blocked");
       default:
@@ -869,8 +983,10 @@ var gPermissionObject = {
   "autoplay-media": {
     exactHostMatch: true,
     getDefault() {
-      let pref = Services.prefs.getIntPref("media.autoplay.default",
-                                            Ci.nsIAutoplay.BLOCKED);
+      let pref = Services.prefs.getIntPref(
+        "media.autoplay.default",
+        Ci.nsIAutoplay.BLOCKED
+      );
       if (pref == Ci.nsIAutoplay.ALLOWED) {
         return SitePermissions.ALLOW;
       }
@@ -897,28 +1013,46 @@ var gPermissionObject = {
     getMultichoiceStateLabel(state) {
       switch (state) {
         case SitePermissions.AUTOPLAY_BLOCKED_ALL:
-          return gStringBundle.GetStringFromName("state.multichoice.autoplayblockall");
+          return gStringBundle.GetStringFromName(
+            "state.multichoice.autoplayblockall"
+          );
         case SitePermissions.BLOCK:
-          return gStringBundle.GetStringFromName("state.multichoice.autoplayblock");
+          return gStringBundle.GetStringFromName(
+            "state.multichoice.autoplayblock"
+          );
         case SitePermissions.ALLOW:
-          return gStringBundle.GetStringFromName("state.multichoice.autoplayallow");
+          return gStringBundle.GetStringFromName(
+            "state.multichoice.autoplayallow"
+          );
       }
       throw new Error(`Unkown state: ${state}`);
     },
   },
 
-  "image": {
-    states: [ SitePermissions.ALLOW, SitePermissions.BLOCK ],
+  image: {
+    states: [SitePermissions.ALLOW, SitePermissions.BLOCK],
   },
 
-  "cookie": {
-    states: [ SitePermissions.ALLOW, SitePermissions.ALLOW_COOKIES_FOR_SESSION, SitePermissions.BLOCK ],
+  cookie: {
+    states: [
+      SitePermissions.ALLOW,
+      SitePermissions.ALLOW_COOKIES_FOR_SESSION,
+      SitePermissions.BLOCK,
+    ],
     getDefault() {
-      if (Services.prefs.getIntPref("network.cookie.cookieBehavior") == Ci.nsICookieService.BEHAVIOR_REJECT)
+      if (
+        Services.prefs.getIntPref("network.cookie.cookieBehavior") ==
+        Ci.nsICookieService.BEHAVIOR_REJECT
+      ) {
         return SitePermissions.BLOCK;
+      }
 
-      if (Services.prefs.getIntPref("network.cookie.lifetimePolicy") == Ci.nsICookieService.ACCEPT_SESSION)
+      if (
+        Services.prefs.getIntPref("network.cookie.lifetimePolicy") ==
+        Ci.nsICookieService.ACCEPT_SESSION
+      ) {
         return SitePermissions.ALLOW_COOKIES_FOR_SESSION;
+      }
 
       return SitePermissions.ALLOW;
     },
@@ -929,54 +1063,55 @@ var gPermissionObject = {
     labelID: "desktop-notification3",
   },
 
-  "camera": {
+  camera: {
     exactHostMatch: true,
   },
 
-  "microphone": {
+  microphone: {
     exactHostMatch: true,
   },
 
-  "screen": {
+  screen: {
     exactHostMatch: true,
-    states: [ SitePermissions.UNKNOWN, SitePermissions.BLOCK ],
+    states: [SitePermissions.UNKNOWN, SitePermissions.BLOCK],
   },
 
-  "popup": {
+  popup: {
     getDefault() {
-      return Services.prefs.getBoolPref("dom.disable_open_during_load") ?
-               SitePermissions.BLOCK : SitePermissions.ALLOW;
+      return Services.prefs.getBoolPref("dom.disable_open_during_load")
+        ? SitePermissions.BLOCK
+        : SitePermissions.ALLOW;
     },
-    states: [ SitePermissions.ALLOW, SitePermissions.BLOCK ],
+    states: [SitePermissions.ALLOW, SitePermissions.BLOCK],
   },
 
-  "install": {
+  install: {
     getDefault() {
-      return Services.prefs.getBoolPref("xpinstall.whitelist.required") ?
-               SitePermissions.UNKNOWN : SitePermissions.ALLOW;
+      return Services.prefs.getBoolPref("xpinstall.whitelist.required")
+        ? SitePermissions.UNKNOWN
+        : SitePermissions.ALLOW;
     },
   },
 
-  "geo": {
+  geo: {
     exactHostMatch: true,
   },
 
   "focus-tab-by-prompt": {
     exactHostMatch: true,
-    states: [ SitePermissions.UNKNOWN, SitePermissions.ALLOW ],
+    states: [SitePermissions.UNKNOWN, SitePermissions.ALLOW],
   },
   "persistent-storage": {
     exactHostMatch: true,
   },
 
-  "shortcuts": {
-    states: [ SitePermissions.ALLOW, SitePermissions.BLOCK ],
+  shortcuts: {
+    states: [SitePermissions.ALLOW, SitePermissions.BLOCK],
   },
 
-  "canvas": {
-  },
+  canvas: {},
 
-  "midi": {
+  midi: {
     exactHostMatch: true,
   },
 
@@ -1000,8 +1135,16 @@ if (!Services.prefs.getBoolPref("dom.webmidi.enabled")) {
   delete gPermissionObject["midi-sysex"];
 }
 
-XPCOMUtils.defineLazyPreferenceGetter(SitePermissions, "temporaryPermissionExpireTime",
-                                      "privacy.temporary_permission_expire_time_ms", 3600 * 1000);
-XPCOMUtils.defineLazyPreferenceGetter(SitePermissions, "resistFingerprinting",
-                                      "privacy.resistFingerprinting", false,
-                                      SitePermissions.onResistFingerprintingChanged.bind(SitePermissions));
+XPCOMUtils.defineLazyPreferenceGetter(
+  SitePermissions,
+  "temporaryPermissionExpireTime",
+  "privacy.temporary_permission_expire_time_ms",
+  3600 * 1000
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  SitePermissions,
+  "resistFingerprinting",
+  "privacy.resistFingerprinting",
+  false,
+  SitePermissions.onResistFingerprintingChanged.bind(SitePermissions)
+);

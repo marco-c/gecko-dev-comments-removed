@@ -3,8 +3,10 @@
 
 
 "use strict";
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
 
 
@@ -62,14 +64,18 @@ function checkLoadURIStr(aURL) {
   try {
     let ssm = Services.scriptSecurityManager;
     let principal = ssm.createNullPrincipal({});
-    ssm.checkLoadURIStrWithPrincipal(principal, aURL.href, ssm.DISALLOW_INHERIT_PRINCIPAL);
+    ssm.checkLoadURIStrWithPrincipal(
+      principal,
+      aURL.href,
+      ssm.DISALLOW_INHERIT_PRINCIPAL
+    );
   } catch (e) {
     return false;
   }
   return true;
 }
 
-var EXPORTED_SYMBOLS = [ "ContentMetaHandler" ];
+var EXPORTED_SYMBOLS = ["ContentMetaHandler"];
 
 
 
@@ -94,7 +100,6 @@ var ContentMetaHandler = {
     });
   },
 
-
   handleMetaTag(metaTag, chromeGlobal, metaTags) {
     const url = metaTag.ownerDocument.documentURI;
 
@@ -107,8 +112,8 @@ var ContentMetaHandler = {
     let tag = name || prop;
 
     const entry = metaTags.get(url) || {
-      description: {value: null, currMaxScore: -1},
-      image: {value: null, currMaxScore: -1},
+      description: { value: null, currMaxScore: -1 },
+      image: { value: null, currMaxScore: -1 },
       timeout: null,
     };
 
@@ -149,22 +154,30 @@ var ContentMetaHandler = {
       
       
       entry.timeout = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-      entry.timeout.initWithCallback(() => {
-        entry.timeout = null;
+      entry.timeout.initWithCallback(
+        () => {
+          entry.timeout = null;
 
-        
-        chromeGlobal.sendAsyncMessage("Meta:SetPageInfo", {
-          url,
-          description: entry.description.value,
-          previewImageURL: entry.image.value,
-        });
+          
+          chromeGlobal.sendAsyncMessage("Meta:SetPageInfo", {
+            url,
+            description: entry.description.value,
+            previewImageURL: entry.image.value,
+          });
 
-        
-        let metadataSize = entry.description.value ? entry.description.value.length : 0;
-        metadataSize += entry.image.value ? entry.image.value.length : 0;
-        Services.telemetry.getHistogramById("PAGE_METADATA_SIZE").add(metadataSize);
-        metaTags.delete(url);
-      }, TIMEOUT_DELAY, Ci.nsITimer.TYPE_ONE_SHOT);
+          
+          let metadataSize = entry.description.value
+            ? entry.description.value.length
+            : 0;
+          metadataSize += entry.image.value ? entry.image.value.length : 0;
+          Services.telemetry
+            .getHistogramById("PAGE_METADATA_SIZE")
+            .add(metadataSize);
+          metaTags.delete(url);
+        },
+        TIMEOUT_DELAY,
+        Ci.nsITimer.TYPE_ONE_SHOT
+      );
     }
   },
 };
