@@ -105,7 +105,7 @@ class GeckoViewNavigation extends GeckoViewModule {
         this.browser.gotoIndex(aData.index);
         break;
       case "GeckoView:LoadUri":
-        const { uri, referrerUri, referrerSessionId, flags } = aData;
+        const { uri, referrer, flags } = aData;
 
         let navFlags = 0;
 
@@ -138,72 +138,34 @@ class GeckoViewNavigation extends GeckoViewModule {
           this.moduleManager.updateRemoteTypeForURI(uri);
         }
 
-        let triggeringPrincipal, referrerInfo, csp;
-        if (referrerSessionId) {
-          const referrerWindow = Services.ww.getWindowByName(
-            referrerSessionId,
-            this.window
-          );
-          triggeringPrincipal = referrerWindow.browser.contentPrincipal;
-          csp = referrerWindow.browser.csp;
-
-          const referrerPolicy = referrerWindow.browser.referrerInfo
-            ? referrerWindow.browser.referrerInfo.referrerPolicy
-            : Ci.nsIHttpChannel.REFERRER_POLICY_UNSET;
-
-          referrerInfo = new ReferrerInfo(
-            referrerPolicy,
-            true,
-            referrerWindow.browser.documentURI
-          );
-        } else {
-          try {
-            const parsedUri = Services.io.newURI(uri);
-            if (
-              parsedUri.schemeIs("about") ||
-              parsedUri.schemeIs("data") ||
-              parsedUri.schemeIs("file") ||
-              parsedUri.schemeIs("resource") ||
-              parsedUri.schemeIs("moz-extension")
-            ) {
-              
-              triggeringPrincipal = Services.scriptSecurityManager.createContentPrincipal(
-                parsedUri,
-                {}
-              );
-            }
-          } catch (ignored) {}
-
-          referrerInfo = createReferrerInfo(referrerUri);
-        }
-
+        let parsedUri;
+        let triggeringPrincipal;
+        try {
+          parsedUri = Services.io.newURI(uri);
+          if (
+            parsedUri.schemeIs("about") ||
+            parsedUri.schemeIs("data") ||
+            parsedUri.schemeIs("file") ||
+            parsedUri.schemeIs("resource") ||
+            parsedUri.schemeIs("moz-extension")
+          ) {
+            
+            triggeringPrincipal = Services.scriptSecurityManager.createContentPrincipal(
+              parsedUri,
+              {}
+            );
+          }
+        } catch (ignored) {}
         if (!triggeringPrincipal) {
           triggeringPrincipal = Services.scriptSecurityManager.createNullPrincipal(
             {}
           );
         }
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        this.browser.loadURI(uri, {
+        this.browser.loadURI(parsedUri ? parsedUri.spec : uri, {
           flags: navFlags,
-          referrerInfo,
+          referrerInfo: createReferrerInfo(referrer),
           triggeringPrincipal,
-          csp,
         });
         break;
       case "GeckoView:Reload":
@@ -413,7 +375,6 @@ class GeckoViewNavigation extends GeckoViewModule {
     aFlags,
     aTriggeringPrincipal,
     aCsp,
-    aReferrerInfo,
     aNextRemoteTabId
   ) {
     debug`handleOpenUri: uri=${aUri && aUri.spec}
@@ -453,11 +414,9 @@ class GeckoViewNavigation extends GeckoViewModule {
       return null;
     }
 
-    
     browser.loadURI(aUri.spec, {
       triggeringPrincipal: aTriggeringPrincipal,
       csp: aCsp,
-      referrerInfo: aReferrerInfo,
     });
     return browser;
   }
@@ -471,7 +430,6 @@ class GeckoViewNavigation extends GeckoViewModule {
       aFlags,
       aTriggeringPrincipal,
       aCsp,
-      null,
       null
     );
     return browser && browser.contentWindow;
@@ -486,7 +444,6 @@ class GeckoViewNavigation extends GeckoViewModule {
       aFlags,
       aParams.triggeringPrincipal,
       aParams.csp,
-      aParams.referrerInfo,
       aNextRemoteTabId
     );
     return browser;
