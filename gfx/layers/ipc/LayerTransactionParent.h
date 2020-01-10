@@ -34,9 +34,9 @@ class CompositorBridgeParentBase;
 class LayerTransactionParent final : public PLayerTransactionParent,
                                      public CompositableParentManager,
                                      public ShmemAllocator {
-  typedef InfallibleTArray<Edit> EditArray;
-  typedef InfallibleTArray<OpDestroy> OpDestroyArray;
-  typedef InfallibleTArray<PluginWindowData> PluginsArray;
+  typedef nsTArray<Edit> EditArray;
+  typedef nsTArray<OpDestroy> OpDestroyArray;
+  typedef nsTArray<PluginWindowData> PluginsArray;
 
   friend class PLayerTransactionParent;
 
@@ -85,7 +85,7 @@ class LayerTransactionParent final : public PLayerTransactionParent,
 
   
   void SendAsyncMessage(
-      const InfallibleTArray<AsyncParentMessageData>& aMessage) override;
+      const nsTArray<AsyncParentMessageData>& aMessage) override;
 
   void SendPendingAsyncMessages() override;
 

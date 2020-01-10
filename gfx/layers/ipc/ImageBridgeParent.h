@@ -41,8 +41,8 @@ class ImageBridgeParent final : public PImageBridgeParent,
                                 public CompositableParentManager,
                                 public ShmemAllocator {
  public:
-  typedef InfallibleTArray<CompositableOperation> EditArray;
-  typedef InfallibleTArray<OpDestroy> OpDestroyArray;
+  typedef nsTArray<CompositableOperation> EditArray;
+  typedef nsTArray<OpDestroy> OpDestroyArray;
 
  protected:
   ImageBridgeParent(MessageLoop* aLoop, ProcessId aChildProcessId);
@@ -66,7 +66,7 @@ class ImageBridgeParent final : public PImageBridgeParent,
 
   
   void SendAsyncMessage(
-      const InfallibleTArray<AsyncParentMessageData>& aMessage) override;
+      const nsTArray<AsyncParentMessageData>& aMessage) override;
 
   void NotifyNotUsed(PTextureParent* aTexture,
                      uint64_t aTransactionId) override;

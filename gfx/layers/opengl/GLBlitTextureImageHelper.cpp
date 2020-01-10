@@ -145,7 +145,7 @@ void GLBlitTextureImageHelper::BlitTextureImage(TextureImage* aSrc,
 
         
         
-        InfallibleTArray<RectTriangles::coord>& coords = rects.vertCoords();
+        nsTArray<RectTriangles::coord>& coords = rects.vertCoords();
 
         for (unsigned int i = 0; i < coords.Length(); ++i) {
           coords[i].x = (coords[i].x * (dx1 - dx0)) + dx0;
