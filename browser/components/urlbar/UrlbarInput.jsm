@@ -490,6 +490,7 @@ class UrlbarInput {
 
 
   pickResult(result, event) {
+    let originalUntrimmedValue = this.untrimmedValue;
     let isCanonized = this.setValueFromResult(result, event);
     let where = this._whereToOpen(event);
     let openParams = {
@@ -517,6 +518,34 @@ class UrlbarInput {
     openParams.postData = postData;
 
     switch (result.type) {
+      case UrlbarUtils.RESULT_TYPE.URL: {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (
+          result.heuristic &&
+          UrlbarPrefs.get("browser.fixup.dns_first_for_single_words") &&
+          UrlbarUtils.looksLikeSingleWordHost(originalUntrimmedValue)
+        ) {
+          url = originalUntrimmedValue;
+        }
+        break;
+      }
       case UrlbarUtils.RESULT_TYPE.KEYWORD: {
         
         
@@ -573,6 +602,37 @@ class UrlbarInput {
           this.startQuery();
           return;
         }
+
+        if (
+          result.heuristic &&
+          UrlbarUtils.looksLikeSingleWordHost(originalUntrimmedValue)
+        ) {
+          
+          
+          
+          
+          
+          
+          let flags =
+            Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
+            Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
+          
+          try {
+            let fixupInfo = Services.uriFixup.getFixupURIInfo(
+              originalUntrimmedValue.trim(),
+              flags
+            );
+            this.window.gKeywordURIFixup({
+              target: this.window.gBrowser.selectedBrowser,
+              data: fixupInfo,
+            });
+          } catch (ex) {
+            Cu.reportError(
+              `An error occured while trying to fixup "${originalUntrimmedValue.trim()}": ${ex}`
+            );
+          }
+        }
+
         const actionDetails = {
           isSuggestion: !!result.payload.suggestion,
           alias: result.payload.keyword,

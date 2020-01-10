@@ -159,6 +159,10 @@ var UrlbarUtils = {
   TITLE_TAGS_SEPARATOR: "\x1F",
 
   
+  
+  REGEXP_SINGLE_WORD: /^[^\s.?@:/]+\.?$/,
+
+  
 
 
 
@@ -461,6 +465,19 @@ var UrlbarUtils = {
       (event.inputType.startsWith("insertFromPaste") ||
         event.inputType == "insertFromYank")
     );
+  },
+
+  
+
+
+
+
+
+
+
+  looksLikeSingleWordHost(value) {
+    let str = value.trim();
+    return this.REGEXP_SINGLE_WORD.test(str);
   },
 };
 

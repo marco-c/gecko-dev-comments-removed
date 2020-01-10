@@ -1256,7 +1256,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 function gKeywordURIFixup({ target: browser, data: fixupInfo }) {
-  let deserializeURI = spec => (spec ? makeURI(spec) : null);
+  let deserializeURI = url => {
+    if (url instanceof Ci.nsIURI) {
+      return url;
+    }
+    return url ? makeURI(url) : null;
+  };
 
   
   

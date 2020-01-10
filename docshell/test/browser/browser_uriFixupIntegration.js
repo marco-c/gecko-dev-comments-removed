@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { UrlbarTestUtils } = ChromeUtils.import(
+  "resource://testing-common/UrlbarTestUtils.jsm"
+);
+
 const kSearchEngineID = "browser_urifixup_search_engine";
 const kSearchEngineURL = "http://example.com/?search={searchTerms}";
 
@@ -32,27 +36,48 @@ add_task(async function setup() {
 });
 
 add_task(async function test() {
+  
+  
+  const setValueFns = [
+    value => {
+      gURLBar.value = value;
+    },
+    value => {
+      return UrlbarTestUtils.promiseAutocompleteResultPopup({
+        window,
+        waitForFocus,
+        value,
+      });
+    },
+  ];
+
   for (let searchParams of ["foo bar", "brokenprotocol:somethingelse"]) {
-    
-    gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:blank");
-    await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+    for (let setValueFn of setValueFns) {
+      
+      gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:blank");
+      await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
-    
-    gURLBar.value = searchParams;
-    gURLBar.focus();
-    EventUtils.synthesizeKey("KEY_Enter");
-    await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+      
+      gURLBar.focus();
+      await setValueFn(searchParams);
 
-    
-    let escapedParams = encodeURIComponent(searchParams).replace("%20", "+");
-    let expectedURL = kSearchEngineURL.replace("{searchTerms}", escapedParams);
-    is(
-      gBrowser.selectedBrowser.currentURI.spec,
-      expectedURL,
-      "New tab should have loaded with expected url."
-    );
+      EventUtils.synthesizeKey("KEY_Enter");
+      await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
-    
-    gBrowser.removeCurrentTab();
+      
+      let escapedParams = encodeURIComponent(searchParams).replace("%20", "+");
+      let expectedURL = kSearchEngineURL.replace(
+        "{searchTerms}",
+        escapedParams
+      );
+      is(
+        gBrowser.selectedBrowser.currentURI.spec,
+        expectedURL,
+        "New tab should have loaded with expected url."
+      );
+
+      
+      gBrowser.removeCurrentTab();
+    }
   }
 });
