@@ -176,7 +176,7 @@ function isDefaultIcon(icon) {
 
 function checkPermissionString(string, key, param, msg) {
   let localizedString = param ?
-                        gBrowserBundle.formatStringFromName(key, [param], 1) :
+                        gBrowserBundle.formatStringFromName(key, [param]) :
                         gBrowserBundle.GetStringFromName(key);
 
   

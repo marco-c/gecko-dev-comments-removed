@@ -55,7 +55,7 @@ class MOZ_STACK_CLASS ErrorReporter final {
   void ReportUnexpected(const char* aMessage);
   
   void ReportUnexpectedUnescaped(const char* aMessage,
-                                 const nsAutoString& aParam);
+                                 const nsTArray<nsString>& aParam);
 
  private:
   void OutputError();

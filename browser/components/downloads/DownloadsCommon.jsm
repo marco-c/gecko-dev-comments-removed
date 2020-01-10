@@ -153,15 +153,13 @@ var DownloadsCommon = {
         strings[stringName] = function() {
           
           return sb.formatStringFromName(stringName,
-                                         Array.from(arguments),
-                                         arguments.length);
+                                         Array.from(arguments));
         };
       } else if (stringName in kDownloadsStringsRequiringPluralForm) {
         strings[stringName] = function(aCount) {
           
           let formattedString = sb.formatStringFromName(stringName,
-                                         Array.from(arguments),
-                                         arguments.length);
+                                         Array.from(arguments));
           return PluralForm.get(aCount, formattedString);
         };
       } else {

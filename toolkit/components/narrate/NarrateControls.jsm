@@ -269,13 +269,13 @@ NarrateControls.prototype = {
         
         
         return gStrings.formatStringFromName("voiceLabel",
-          [this._getLanguageName(voice.lang) || voice.name, voice.lang], 2);
+          [this._getLanguageName(voice.lang) || voice.name, voice.lang]);
       default:
         
         
         
         return gStrings.formatStringFromName("voiceLabel",
-          [voice.name, this._getLanguageName(voice.lang) || voice.lang], 2);
+          [voice.name, this._getLanguageName(voice.lang) || voice.lang]);
     }
   },
 

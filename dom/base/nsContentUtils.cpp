@@ -3604,7 +3604,14 @@ nsresult nsContentUtils::FormatLocalizedString(PropertiesFile aFile,
     return bundle->GetStringFromName(aKey, aResult);
   }
 
-  return bundle->FormatStringFromName(aKey, aParams, aParamsLength, aResult);
+  
+  
+  
+  nsTArray<nsString> params(aParamsLength);
+  for (uint32_t i = 0; i < aParamsLength; ++i) {
+    params.AppendElement(aParams[i]);
+  }
+  return bundle->FormatStringFromName(aKey, params, aResult);
 }
 
 

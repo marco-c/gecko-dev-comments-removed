@@ -180,12 +180,11 @@ bool nsCSPParser::atValidPathChar() {
 
 void nsCSPParser::logWarningErrorToConsole(uint32_t aSeverityFlag,
                                            const char* aProperty,
-                                           const char16_t* aParams[],
-                                           uint32_t aParamsLength) {
+                                           const nsTArray<nsString>& aParams) {
   CSPPARSERLOG(("nsCSPParser::logWarningErrorToConsole: %s", aProperty));
   
   
-  mCSPContext->logToConsole(aProperty, aParams, aParamsLength,
+  mCSPContext->logToConsole(aProperty, aParams,
                             EmptyString(),   
                             EmptyString(),   
                             0,               
@@ -230,9 +229,9 @@ bool nsCSPParser::port() {
 
   
   if (!accept(isNumberToken)) {
-    const char16_t* params[] = {mCurToken.get()};
+    AutoTArray<nsString, 1> params = {mCurToken};
     logWarningErrorToConsole(nsIScriptError::warningFlag, "couldntParsePort",
-                             params, ArrayLength(params));
+                             params);
     return false;
   }
   
@@ -265,10 +264,9 @@ bool nsCSPParser::subPath(nsCSPHostSrc* aCspHost) {
       
       resetCurValue();
     } else if (!atValidPathChar()) {
-      const char16_t* params[] = {mCurToken.get()};
+      AutoTArray<nsString, 1> params = {mCurToken};
       logWarningErrorToConsole(nsIScriptError::warningFlag,
-                               "couldntParseInvalidSource", params,
-                               ArrayLength(params));
+                               "couldntParseInvalidSource", params);
       return false;
     }
     
@@ -304,10 +302,9 @@ bool nsCSPParser::path(nsCSPHostSrc* aCspHost) {
   resetCurValue();
 
   if (!accept(SLASH)) {
-    const char16_t* params[] = {mCurToken.get()};
+    AutoTArray<nsString, 1> params = {mCurToken};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
-                             "couldntParseInvalidSource", params,
-                             ArrayLength(params));
+                             "couldntParseInvalidSource", params);
     return false;
   }
   if (atEndOfPath()) {
@@ -321,10 +318,9 @@ bool nsCSPParser::path(nsCSPHostSrc* aCspHost) {
   
   
   if (peek(SLASH)) {
-    const char16_t* params[] = {mCurToken.get()};
+    AutoTArray<nsString, 1> params = {mCurToken};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
-                             "couldntParseInvalidSource", params,
-                             ArrayLength(params));
+                             "couldntParseInvalidSource", params);
     return false;
   }
   return subPath(aCspHost);
@@ -373,29 +369,26 @@ nsCSPHostSrc* nsCSPParser::host() {
     }
     
     if (!accept(DOT)) {
-      const char16_t* params[] = {mCurToken.get()};
+      AutoTArray<nsString, 1> params = {mCurToken};
       logWarningErrorToConsole(nsIScriptError::warningFlag,
-                               "couldntParseInvalidHost", params,
-                               ArrayLength(params));
+                               "couldntParseInvalidHost", params);
       return nullptr;
     }
   }
 
   
   if (!hostChar()) {
-    const char16_t* params[] = {mCurToken.get()};
+    AutoTArray<nsString, 1> params = {mCurToken};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
-                             "couldntParseInvalidHost", params,
-                             ArrayLength(params));
+                             "couldntParseInvalidHost", params);
     return nullptr;
   }
 
   
   if (!subHost()) {
-    const char16_t* params[] = {mCurToken.get()};
+    AutoTArray<nsString, 1> params = {mCurToken};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
-                             "couldntParseInvalidHost", params,
-                             ArrayLength(params));
+                             "couldntParseInvalidHost", params);
     return nullptr;
   }
 
@@ -403,10 +396,9 @@ nsCSPHostSrc* nsCSPParser::host() {
   if (CSP_IsQuotelessKeyword(mCurValue)) {
     nsString keyword = mCurValue;
     ToLowerCase(keyword);
-    const char16_t* params[] = {mCurToken.get(), keyword.get()};
+    AutoTArray<nsString, 2> params = {mCurToken, keyword};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
-                             "hostNameMightBeKeyword", params,
-                             ArrayLength(params));
+                             "hostNameMightBeKeyword", params);
   }
 
   
@@ -437,10 +429,9 @@ nsCSPBaseSrc* nsCSPParser::keywordSource() {
     if (!CSP_IsDirective(mCurDir[0],
                          nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE)) {
       
-      const char16_t* params[] = {u"strict-dynamic"};
+      AutoTArray<nsString, 1> params = {NS_LITERAL_STRING("strict-dynamic")};
       logWarningErrorToConsole(nsIScriptError::warningFlag,
-                               "ignoringStrictDynamic", params,
-                               ArrayLength(params));
+                               "ignoringStrictDynamic", params);
       return nullptr;
     }
     mStrictDynamic = true;
@@ -456,10 +447,9 @@ nsCSPBaseSrc* nsCSPParser::keywordSource() {
     
     
     if (mUnsafeInlineKeywordSrc) {
-      const char16_t* params[] = {mCurToken.get()};
+      AutoTArray<nsString, 1> params = {mCurToken};
       logWarningErrorToConsole(nsIScriptError::warningFlag,
-                               "ignoringDuplicateSrc", params,
-                               ArrayLength(params));
+                               "ignoringDuplicateSrc", params);
       return nullptr;
     }
     
@@ -671,10 +661,9 @@ nsCSPBaseSrc* nsCSPParser::sourceExpression() {
     
     
     if (!accept(SLASH) || !accept(SLASH)) {
-      const char16_t* params[] = {mCurToken.get()};
+      AutoTArray<nsString, 1> params = {mCurToken};
       logWarningErrorToConsole(nsIScriptError::warningFlag,
-                               "failedToParseUnrecognizedSource", params,
-                               ArrayLength(params));
+                               "failedToParseUnrecognizedSource", params);
       return nullptr;
     }
   }
@@ -747,10 +736,10 @@ void nsCSPParser::sourceList(nsTArray<nsCSPBaseSrc*>& outSrcs) {
     }
     
     else {
-      const char16_t* params[] = {CSP_EnumToUTF16Keyword(CSP_NONE)};
+      AutoTArray<nsString, 1> params;
+      params.AppendElement(CSP_EnumToUTF16Keyword(CSP_NONE));
       logWarningErrorToConsole(nsIScriptError::warningFlag,
-                               "ignoringUnknownOption", params,
-                               ArrayLength(params));
+                               "ignoringUnknownOption", params);
     }
   }
 }
@@ -774,10 +763,9 @@ void nsCSPParser::reportURIList(nsCSPDirective* aDir) {
 
     
     if (NS_FAILED(rv)) {
-      const char16_t* params[] = {mCurToken.get()};
+      AutoTArray<nsString, 1> params = {mCurToken};
       logWarningErrorToConsole(nsIScriptError::warningFlag,
-                               "couldNotParseReportURI", params,
-                               ArrayLength(params));
+                               "couldNotParseReportURI", params);
       continue;
     }
 
@@ -787,10 +775,9 @@ void nsCSPParser::reportURIList(nsCSPDirective* aDir) {
   }
 
   if (srcs.Length() == 0) {
-    const char16_t* directiveName[] = {mCurToken.get()};
+    AutoTArray<nsString, 1> directiveName = {mCurToken};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
-                             "ignoringDirectiveWithNoValues", directiveName,
-                             ArrayLength(directiveName));
+                             "ignoringDirectiveWithNoValues", directiveName);
     delete aDir;
     return;
   }
@@ -817,10 +804,9 @@ void nsCSPParser::sandboxFlagList(nsCSPDirective* aDir) {
                   NS_ConvertUTF16toUTF8(mCurValue).get()));
 
     if (!nsContentUtils::IsValidSandboxFlag(mCurToken)) {
-      const char16_t* params[] = {mCurToken.get()};
+      AutoTArray<nsString, 1> params = {mCurToken};
       logWarningErrorToConsole(nsIScriptError::warningFlag,
-                               "couldntParseInvalidSandboxFlag", params,
-                               ArrayLength(params));
+                               "couldntParseInvalidSandboxFlag", params);
       continue;
     }
 
@@ -854,10 +840,9 @@ nsCSPDirective* nsCSPParser::directiveName() {
 
   
   if (!CSP_IsValidDirective(mCurToken)) {
-    const char16_t* params[] = {mCurToken.get()};
+    AutoTArray<nsString, 1> params = {mCurToken};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
-                             "couldNotProcessUnknownDirective", params,
-                             ArrayLength(params));
+                             "couldNotProcessUnknownDirective", params);
     return nullptr;
   }
 
@@ -867,19 +852,18 @@ nsCSPDirective* nsCSPParser::directiveName() {
   
   if (CSP_IsDirective(mCurToken,
                       nsIContentSecurityPolicy::REFLECTED_XSS_DIRECTIVE)) {
-    const char16_t* params[] = {mCurToken.get()};
+    AutoTArray<nsString, 1> params = {mCurToken};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
-                             "notSupportingDirective", params,
-                             ArrayLength(params));
+                             "notSupportingDirective", params);
     return nullptr;
   }
 
   
   
   if (mPolicy->hasDirective(CSP_StringToCSPDirective(mCurToken))) {
-    const char16_t* params[] = {mCurToken.get()};
+    AutoTArray<nsString, 1> params = {mCurToken};
     logWarningErrorToConsole(nsIScriptError::warningFlag, "duplicateDirective",
-                             params, ArrayLength(params));
+                             params);
     return nullptr;
   }
 
@@ -894,10 +878,9 @@ nsCSPDirective* nsCSPParser::directiveName() {
        (CSP_IsDirective(mCurToken,
                         nsIContentSecurityPolicy::SANDBOX_DIRECTIVE)))) {
     
-    const char16_t* params[] = {mCurToken.get()};
+    AutoTArray<nsString, 1> params = {mCurToken};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
-                             "ignoringSrcFromMetaCSP", params,
-                             ArrayLength(params));
+                             "ignoringSrcFromMetaCSP", params);
     return nullptr;
   }
 
@@ -919,10 +902,9 @@ nsCSPDirective* nsCSPParser::directiveName() {
   
   if (CSP_IsDirective(mCurToken,
                       nsIContentSecurityPolicy::CHILD_SRC_DIRECTIVE)) {
-    const char16_t* params[] = {mCurToken.get()};
+    AutoTArray<nsString, 1> params = {mCurToken};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
-                             "deprecatedChildSrcDirective", params,
-                             ArrayLength(params));
+                             "deprecatedChildSrcDirective", params);
     mChildSrc = new nsCSPChildSrcDirective(CSP_StringToCSPDirective(mCurToken));
     return mChildSrc;
   }
@@ -966,10 +948,9 @@ void nsCSPParser::directive() {
   
   
   if (mCurDir.Length() < 1) {
-    const char16_t* params[] = {u"directive missing"};
+    AutoTArray<nsString, 1> params = {NS_LITERAL_STRING("directive missing")};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
-                             "failedToParseUnrecognizedSource", params,
-                             ArrayLength(params));
+                             "failedToParseUnrecognizedSource", params);
     return;
   }
 
@@ -989,10 +970,10 @@ void nsCSPParser::directive() {
   
   if (cspDir->equals(nsIContentSecurityPolicy::BLOCK_ALL_MIXED_CONTENT)) {
     if (mCurDir.Length() > 1) {
-      const char16_t* params[] = {u"block-all-mixed-content"};
+      AutoTArray<nsString, 1> params = {
+          NS_LITERAL_STRING("block-all-mixed-content")};
       logWarningErrorToConsole(nsIScriptError::warningFlag,
-                               "ignoreSrcForDirective", params,
-                               ArrayLength(params));
+                               "ignoreSrcForDirective", params);
     }
     
     mPolicy->addDirective(cspDir);
@@ -1003,10 +984,10 @@ void nsCSPParser::directive() {
   
   if (cspDir->equals(nsIContentSecurityPolicy::UPGRADE_IF_INSECURE_DIRECTIVE)) {
     if (mCurDir.Length() > 1) {
-      const char16_t* params[] = {u"upgrade-insecure-requests"};
+      AutoTArray<nsString, 1> params = {
+          NS_LITERAL_STRING("upgrade-insecure-requests")};
       logWarningErrorToConsole(nsIScriptError::warningFlag,
-                               "ignoreSrcForDirective", params,
-                               ArrayLength(params));
+                               "ignoreSrcForDirective", params);
     }
     
     mPolicy->addUpgradeInsecDir(
@@ -1072,29 +1053,26 @@ void nsCSPParser::directive() {
           !StringBeginsWith(
               srcStr, nsDependentString(CSP_EnumToUTF16Keyword(CSP_NONCE))) &&
           !StringBeginsWith(srcStr, NS_LITERAL_STRING("'sha"))) {
-        const char16_t* params[] = {srcStr.get()};
+        AutoTArray<nsString, 1> params = {srcStr};
         logWarningErrorToConsole(nsIScriptError::warningFlag,
-                                 "ignoringSrcForStrictDynamic", params,
-                                 ArrayLength(params));
+                                 "ignoringSrcForStrictDynamic", params);
       }
     }
     
     
     if (!mHasHashOrNonce) {
-      const char16_t* params[] = {mCurDir[0].get()};
+      AutoTArray<nsString, 1> params = {mCurDir[0]};
       logWarningErrorToConsole(nsIScriptError::warningFlag,
-                               "strictDynamicButNoHashOrNonce", params,
-                               ArrayLength(params));
+                               "strictDynamicButNoHashOrNonce", params);
     }
   } else if (mHasHashOrNonce && mUnsafeInlineKeywordSrc &&
              (cspDir->equals(nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE) ||
               cspDir->equals(nsIContentSecurityPolicy::STYLE_SRC_DIRECTIVE))) {
     mUnsafeInlineKeywordSrc->invalidate();
     
-    const char16_t* params[] = {u"'unsafe-inline'"};
+    AutoTArray<nsString, 1> params = {NS_LITERAL_STRING("'unsafe-inline'")};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
-                             "ignoringSrcWithinScriptStyleSrc", params,
-                             ArrayLength(params));
+                             "ignoringSrcWithinScriptStyleSrc", params);
   }
 
   
@@ -1176,11 +1154,10 @@ nsCSPPolicy* nsCSPParser::parseContentSecurityPolicy(
       nsAutoCString prePath;
       nsresult rv = aSelfURI->GetPrePath(prePath);
       NS_ENSURE_SUCCESS(rv, policy);
-      NS_ConvertUTF8toUTF16 unicodePrePath(prePath);
-      const char16_t* params[] = {unicodePrePath.get()};
+      AutoTArray<nsString, 1> params;
+      CopyUTF8toUTF16(prePath, *params.AppendElement());
       parser.logWarningErrorToConsole(nsIScriptError::warningFlag,
-                                      "reportURInotInReportOnlyHeader", params,
-                                      ArrayLength(params));
+                                      "reportURInotInReportOnlyHeader", params);
     }
   }
 
