@@ -578,7 +578,7 @@ nsresult HTMLEditRules::AfterEditInner() {
     }
     if (reapplyCachedStyle) {
       HTMLEditorRef().mTypeInState->UpdateSelState(SelectionRefPtr());
-      rv = MOZ_KnownLive(HTMLEditorRef()).ReapplyCachedStyles();
+      rv = ReapplyCachedStyles();
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -1284,7 +1284,7 @@ nsresult HTMLEditRules::WillInsert(bool* aCancel) {
       case EditSubAction::eInsertText:
       case EditSubAction::eInsertTextComingFromIME:
       case EditSubAction::eDeleteSelectedContent: {
-        nsresult rv = MOZ_KnownLive(HTMLEditorRef()).ReapplyCachedStyles();
+        nsresult rv = ReapplyCachedStyles();
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -9169,15 +9169,15 @@ nsresult HTMLEditor::GetInlineStyles(nsINode& aNode,
   return NS_OK;
 }
 
-nsresult HTMLEditor::ReapplyCachedStyles() {
-  MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
+nsresult HTMLEditRules::ReapplyCachedStyles() {
+  MOZ_ASSERT(IsEditorDataAvailable());
 
   
   
   
 
   
-  bool useCSS = IsCSSEnabled();
+  bool useCSS = HTMLEditorRef().IsCSSEnabled();
 
   if (!SelectionRefPtr()->RangeCount()) {
     
@@ -9196,7 +9196,8 @@ nsresult HTMLEditor::ReapplyCachedStyles() {
   }
 
   AutoStyleCacheArray styleCacheArrayAtInsertionPoint;
-  nsresult rv = GetInlineStyles(*selNode, styleCacheArrayAtInsertionPoint);
+  nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                    .GetInlineStyles(*selNode, styleCacheArrayAtInsertionPoint);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv == NS_ERROR_EDITOR_DESTROYED ? NS_ERROR_EDITOR_DESTROYED : NS_OK;
   }
@@ -9204,7 +9205,7 @@ nsresult HTMLEditor::ReapplyCachedStyles() {
   for (size_t i = 0; i < styleCacheArrayAtInsertionPoint.Length(); ++i) {
     StyleCache& styleCacheAtInsertionPoint = styleCacheArrayAtInsertionPoint[i];
     StyleCache& styleCacheBeforeEdit =
-        TopLevelEditSubActionDataRef().mCachedInlineStyles[i];
+        HTMLEditorRef().TopLevelEditSubActionDataRef().mCachedInlineStyles[i];
     if (styleCacheBeforeEdit.mPresent) {
       bool bFirst, bAny, bAll;
       bFirst = bAny = bAll = false;
@@ -9215,16 +9216,16 @@ nsresult HTMLEditor::ReapplyCachedStyles() {
         bAny = CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(
             selNode, styleCacheBeforeEdit.mTag, styleCacheBeforeEdit.mAttr,
             curValue, CSSEditUtils::eComputed);
-        if (NS_WARN_IF(Destroyed())) {
+        if (NS_WARN_IF(!CanHandleEditAction())) {
           return NS_ERROR_EDITOR_DESTROYED;
         }
       }
       if (!bAny) {
         
-        nsresult rv = GetInlinePropertyBase(
+        nsresult rv = HTMLEditorRef().GetInlinePropertyBase(
             *styleCacheBeforeEdit.mTag, styleCacheBeforeEdit.mAttr,
             &styleCacheBeforeEdit.mValue, &bFirst, &bAny, &bAll, &curValue);
-        if (NS_WARN_IF(Destroyed())) {
+        if (NS_WARN_IF(!CanHandleEditAction())) {
           return NS_ERROR_EDITOR_DESTROYED;
         }
         if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -9233,13 +9234,13 @@ nsresult HTMLEditor::ReapplyCachedStyles() {
       }
       
       
-      if ((!bAny ||
-           IsStyleCachePreservingSubAction(GetTopLevelEditSubAction())) &&
+      if ((!bAny || IsStyleCachePreservingSubAction(
+                        HTMLEditorRef().GetTopLevelEditSubAction())) &&
           (!styleCacheAtInsertionPoint.mPresent ||
            styleCacheAtInsertionPoint.mValue != styleCacheBeforeEdit.mValue)) {
-        mTypeInState->SetProp(styleCacheBeforeEdit.mTag,
-                              styleCacheBeforeEdit.mAttr,
-                              styleCacheBeforeEdit.mValue);
+        HTMLEditorRef().mTypeInState->SetProp(styleCacheBeforeEdit.mTag,
+                                              styleCacheBeforeEdit.mAttr,
+                                              styleCacheBeforeEdit.mValue);
       }
     }
   }
