@@ -497,23 +497,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-
-
-  template <typename PT, typename CT>
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult SplitParagraph(
-      Element& aParentDivOrP,
-      const EditorDOMPointBase<PT, CT>& aStartOfRightNode, nsIContent* aBRNode);
-
-  
-
-
-
-
-
-
-
-
-
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult ReturnInListItem(Element& aListItem, nsINode& aNode,
                                          int32_t aOffset);

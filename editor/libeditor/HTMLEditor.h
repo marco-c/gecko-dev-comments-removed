@@ -1780,6 +1780,24 @@ class HTMLEditor final : public TextEditor,
   bool IsEmptyBlockElement(Element& aElement,
                            IgnoreSingleBR aIgnoreSingleBR) const;
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename PT, typename CT>
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult SplitParagraph(
+      Element& aParentDivOrP,
+      const EditorDOMPointBase<PT, CT>& aStartOfRightNode, nsIContent* aBRNode);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
