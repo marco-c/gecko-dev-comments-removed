@@ -87,7 +87,6 @@ enum class ResumeMode {
   Return,
 };
 
-
 typedef HashSet<WeakHeapPtrGlobalObject,
                 MovableCellHasher<WeakHeapPtrGlobalObject>, ZoneAllocPolicy>
     WeakGlobalObjectSet;
@@ -384,6 +383,12 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 #ifdef DEBUG
   static void assertThingIsNotGray(Debugger* dbg) { return; }
 #endif
+  
+
+
+
+  static bool isObservedByDebuggerTrackingAllocations(
+      const GlobalObject& debuggee);
 
  private:
   GCPtrNativeObject object; 
@@ -441,13 +446,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
   static bool cannotTrackAllocations(const GlobalObject& global);
-
-  
-
-
-
-  static bool isObservedByDebuggerTrackingAllocations(
-      const GlobalObject& global);
 
   
 

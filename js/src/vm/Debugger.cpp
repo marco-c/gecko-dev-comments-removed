@@ -3298,7 +3298,12 @@ void Debugger::removeAllocationsTracking(GlobalObject& global) {
     return;
   }
 
-  global.realm()->forgetAllocationMetadataBuilder();
+  if (!global.realm()->runtimeFromMainThread()->recordAllocationCallback) {
+    
+    
+    
+    global.realm()->forgetAllocationMetadataBuilder();
+  }
 }
 
 bool Debugger::addAllocationsTrackingForAllDebuggees(JSContext* cx) {
