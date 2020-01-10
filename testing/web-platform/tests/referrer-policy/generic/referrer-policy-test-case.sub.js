@@ -51,6 +51,41 @@ function stripUrlForUseAsReferrer(url) {
   return url.replace(/#.*$/, "");
 }
 
+function invokeScenario(scenario, sourceContextList) {
+  const originTypeConversion = {
+    "same-origin-http": "same-http",
+    "same-origin-https": "same-https",
+    "cross-origin-http": "cross-http",
+    "cross-origin-https": "cross-https"
+  };
+  const urls = getRequestURLs(
+    scenario.subresource,
+    originTypeConversion[scenario.origin + '-' + scenario.target_protocol],
+    scenario.redirection);
+
+  const deliveryTypeConversion = {
+    "attr-referrer": "attr",
+    "rel-noreferrer": "rel-noref",
+    
+    
+  };
+
+  
+  const delivery = {
+      deliveryType: deliveryTypeConversion[scenario.delivery_method],
+      key: "referrerPolicy",
+      value: scenario.referrer_policy};
+
+  
+  const subresource = {
+    subresourceType: scenario.subresource,
+    url: urls.testUrl,
+    policyDeliveries: [delivery]
+  };
+
+  return invokeRequest(subresource, sourceContextList || []);
+}
+
 function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
   
   if (scenario.subresource == "fetch-request" && !window.fetch) {
@@ -66,17 +101,6 @@ function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
   
   sanityChecker.checkScenario(scenario);
 
-  const originTypeConversion = {
-    "same-origin-http": "same-http",
-    "same-origin-https": "same-https",
-    "cross-origin-http": "cross-http",
-    "cross-origin-https": "cross-https"
-  };
-  const urls = getRequestURLs(
-      scenario.subresource,
-      originTypeConversion[scenario.origin + '-' + scenario.target_protocol],
-      scenario.redirection);
-
   const referrerUrlResolver = {
     "omitted": function(sourceUrl) {
       return undefined;
@@ -89,15 +113,16 @@ function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
     }
   };
 
-  const checkResult = (expectedReferrerUrl, result) => {
-    
-    sanityChecker.checkSubresourceResult(scenario, urls.testUrl, result);
+  const checkResult = (expectation, result) => {
+    let currentURL = location.toString();
+    const expectedReferrerUrl =
+      referrerUrlResolver[expectation](currentURL);
 
     
     assert_equals(result.referrer,
                   expectedReferrerUrl,
                   "Reported Referrer URL is '" +
-                  scenario.referrer_url + "'.");
+                  expectation + "'.");
     assert_equals(result.headers.referer,
                   expectedReferrerUrl,
                   "Reported Referrer URL from HTTP header is '" +
@@ -105,30 +130,6 @@ function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
   };
 
   function runTest() {
-    const deliveryTypeConversion = {
-      "attr-referrer": "attr",
-      "rel-noreferrer": "rel-noref",
-      
-      
-    };
-
-    
-    const delivery = {
-        deliveryType: deliveryTypeConversion[scenario.delivery_method],
-        key: "referrerPolicy",
-        value: scenario.referrer_policy};
-
-    
-    const subresource = {
-      subresourceType: scenario.subresource,
-      url: urls.testUrl,
-      policyDeliveries: [delivery]
-    };
-
-    let currentURL = location.toString();
-    const expectedReferrer =
-      referrerUrlResolver[scenario.referrer_url](currentURL);
-
     function historyBackPromise(t, scenario) {
       history.back();
       return new Promise(resolve => {
@@ -148,43 +149,37 @@ function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
 
     
     promise_test(_ => {
-      return invokeRequest(subresource, [])
-        .then(result => checkResult(expectedReferrer, result));
+      return invokeScenario(scenario)
+        .then(result => checkResult(scenario.referrer_url, result));
     }, testDescription);
 
+    
+    
+    
     
     
     if (scenario.referrer_url == "stripped-referrer") {
       promise_test(t => {
         history.pushState(null, null, "/");
         history.replaceState(null, null, "A".repeat(4096 - location.href.length - 1));
-        const expectedReferrer = location.href;
-        
-        subresource.url += "&-1";
-        return invokeRequest(subresource, [])
-          .then(result => checkResult(location.href, result))
+        return invokeScenario(scenario)
+          .then(result => checkResult(scenario.referrer_url, result))
           .finally(_ => historyBackPromise(t, scenario));
       }, "`Referer` header with length < 4k is not stripped to an origin.");
 
       promise_test(t => {
         history.pushState(null, null, "/");
         history.replaceState(null, null, "A".repeat(4096 - location.href.length));
-        const expectedReferrer = location.href;
-        
-        subresource.url += "&0";
-        return invokeRequest(subresource, [])
-          .then(result => checkResult(expectedReferrer, result))
+        return invokeScenario(scenario)
+          .then(result => checkResult(scenario.referrer_url, result))
           .finally(_ => historyBackPromise(t, scenario));
       }, "`Referer` header with length == 4k is not stripped to an origin.");
 
       promise_test(t => {
-        const originString = referrerUrlResolver["origin"](currentURL);
         history.pushState(null, null, "/");
         history.replaceState(null, null, "A".repeat(4096 - location.href.length + 1));
-        
-        subresource.url += "&+1";
-        return invokeRequest(subresource, [])
-          .then(result => checkResult(originString, result))
+        return invokeScenario(scenario)
+          .then(result => checkResult("origin", result))
           .finally(_ => historyBackPromise(t, scenario));
       }, "`Referer` header with length > 4k is stripped to an origin.");
     }
@@ -202,8 +197,8 @@ function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
         
         const sourceContextList = [{sourceContextType: "srcdoc"}];
 
-        return invokeRequest(subresource, sourceContextList)
-          .then(result => checkResult(expectedReferrer, result));
+        return invokeScenario(scenario, sourceContextList)
+          .then(result => checkResult(scenario.referrer_url, result));
       }, testDescription + " (srcdoc iframe inherits parent)");
 
     
@@ -214,16 +209,14 @@ function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
         const overridingPolicy =
             scenario.referrer_policy === "no-referrer" ? "unsafe-url"
                                                        : "no-referrer";
-        const overrridingExpectedReferrer =
-          referrerUrlResolver[overridingPolicy === "no-referrer"
-                              ? "omitted"
-                              : "stripped-referrer"](location.toString());
+        const overrridingExpectation =
+            overridingPolicy === "no-referrer" ? "omitted"
+                                               : "stripped-referrer";
 
+        const scenarioWithoutDelivery = Object.assign({}, scenario);
         
-        const subresourceWithoutDelivery = {
-          subresourceType: scenario.subresource,
-          url: urls.testUrl
-        };
+        
+        scenarioWithoutDelivery.delivery_method = null;
 
         
         
@@ -234,8 +227,8 @@ function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
                                 value: overridingPolicy}]
           }];
 
-        return invokeRequest(subresourceWithoutDelivery, sourceContextList)
-          .then(result => checkResult(overrridingExpectedReferrer, result));
+        return invokeScenario(scenarioWithoutDelivery, sourceContextList)
+          .then(result => checkResult(overrridingExpectation, result));
       }, testDescription + " (overridden by srcdoc iframe)");
   }
 
