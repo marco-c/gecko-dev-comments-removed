@@ -2261,6 +2261,12 @@ AttachDecision GetPropIRGenerator::tryAttachTypedElement(
   }
 
   
+  if (obj->is<TypedArrayObject>() &&
+      Scalar::isBigIntType(obj->as<TypedArrayObject>().type())) {
+    return AttachDecision::NoAction;
+  }
+
+  
   
   if (IsPrimitiveArrayTypedObject(obj) && cx_->zone()->detachedTypedObjects) {
     return AttachDecision::NoAction;
@@ -3880,6 +3886,12 @@ AttachDecision SetPropIRGenerator::tryAttachSetTypedElement(
   }
 
   if (!rhsVal_.isNumber()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (obj->is<TypedArrayObject>() &&
+      Scalar::isBigIntType(obj->as<TypedArrayObject>().type())) {
     return AttachDecision::NoAction;
   }
 
