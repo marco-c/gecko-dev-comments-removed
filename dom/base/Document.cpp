@@ -1247,7 +1247,6 @@ Document::Document(const char* aContentType)
       mHasMixedActiveContentBlocked(false),
       mHasMixedDisplayContentLoaded(false),
       mHasMixedDisplayContentBlocked(false),
-      mHasMixedContentObjectSubrequest(false),
       mHasCSP(false),
       mHasUnsafeEvalCSP(false),
       mHasUnsafeInlineCSP(false),
@@ -1750,15 +1749,6 @@ Document::~Document() {
         mixedContentLevel = MIXED_DISPLAY_CONTENT;
       }
       Accumulate(Telemetry::MIXED_CONTENT_PAGE_LOAD, mixedContentLevel);
-
-      
-      if (mHasMixedContentObjectSubrequest) {
-        
-        Accumulate(Telemetry::MIXED_CONTENT_OBJECT_SUBREQUEST, 1);
-      } else {
-        
-        Accumulate(Telemetry::MIXED_CONTENT_OBJECT_SUBREQUEST, 0);
-      }
 
       
       if (mHasCSP) {

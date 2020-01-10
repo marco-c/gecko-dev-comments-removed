@@ -971,7 +971,6 @@ nsresult nsMixedContentBlocker::ShouldLoad(
     if (!sBlockMixedObjectSubrequest) {
       rootDoc->WarnOnceAbout(Document::eMixedDisplayObjectSubrequest);
     }
-    rootDoc->SetHasMixedContentObjectSubrequest(true);
   }
 
   

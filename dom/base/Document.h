@@ -1091,14 +1091,6 @@ class Document : public nsINode,
   
 
 
-  void SetHasMixedContentObjectSubrequest(
-      bool aHasMixedContentObjectSubrequest) {
-    mHasMixedContentObjectSubrequest = aHasMixedContentObjectSubrequest;
-  }
-
-  
-
-
   void SetHasCSP(bool aHasCSP) { mHasCSP = aHasCSP; }
 
   
@@ -4711,10 +4703,6 @@ class Document : public nsINode,
   
   
   bool mHasMixedDisplayContentBlocked : 1;
-
-  
-  
-  bool mHasMixedContentObjectSubrequest : 1;
 
   
   bool mHasCSP : 1;
