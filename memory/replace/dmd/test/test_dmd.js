@@ -6,12 +6,15 @@
 
 "use strict";
 
-const {FileUtils} = ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { FileUtils } = ChromeUtils.import(
+  "resource://gre/modules/FileUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
-var gEnv = Cc["@mozilla.org/process/environment;1"]
-             .getService(Ci.nsIEnvironment);
+var gEnv = Cc["@mozilla.org/process/environment;1"].getService(
+  Ci.nsIEnvironment
+);
 var gPythonName = gEnv.get("PYTHON");
 
 
@@ -37,10 +40,12 @@ var gDmdScriptFile = getExecutable("dmd.py");
 var gScanTestFile = FileUtils.getFile("CurWorkD", ["scan-test.py"]);
 
 function readFile(aFile) {
-  let fstream = Cc["@mozilla.org/network/file-input-stream;1"]
-                  .createInstance(Ci.nsIFileInputStream);
-  let cstream = Cc["@mozilla.org/intl/converter-input-stream;1"]
-                  .createInstance(Ci.nsIConverterInputStream);
+  let fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(
+    Ci.nsIFileInputStream
+  );
+  let cstream = Cc["@mozilla.org/intl/converter-input-stream;1"].createInstance(
+    Ci.nsIConverterInputStream
+  );
   fstream.init(aFile, -1, 0, 0);
   cstream.init(fstream, "UTF-8", 0, 0);
 
@@ -58,10 +63,9 @@ function readFile(aFile) {
 }
 
 function runProcess(aExeFile, aArgs) {
-  let process = Cc["@mozilla.org/process/util;1"]
-                  .createInstance(Ci.nsIProcess);
+  let process = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
   process.init(aExeFile);
-  process.run(true, aArgs, aArgs.length);
+  process.run( true, aArgs, aArgs.length);
   return process.exitValue;
 }
 
@@ -69,14 +73,15 @@ function test(aPrefix, aArgs) {
   
   
   let expectedFile = FileUtils.getFile("CurWorkD", [aPrefix + "-expected.txt"]);
-  let actualFile   = FileUtils.getFile("CurWorkD", [aPrefix + "-actual.txt"]);
+  let actualFile = FileUtils.getFile("CurWorkD", [aPrefix + "-actual.txt"]);
 
   
 
   let args = [
     gDmdScriptFile.path,
     "--filter-stacks-for-testing",
-    "-o", actualFile.path,
+    "-o",
+    actualFile.path,
   ].concat(aArgs);
 
   runProcess(new FileUtils.File(gPythonName), args);
@@ -88,12 +93,15 @@ function test(aPrefix, aArgs) {
 
   let success;
   try {
-    let rv = runProcess(new FileUtils.File("/usr/bin/diff"),
-                        ["-u", expectedFile.path, actualFile.path]);
+    let rv = runProcess(new FileUtils.File("/usr/bin/diff"), [
+      "-u",
+      expectedFile.path,
+      actualFile.path,
+    ]);
     success = rv == 0;
   } catch (e) {
     let expectedData = readFile(expectedFile);
-    let actualData   = readFile(actualFile);
+    let actualData = readFile(actualFile);
     success = expectedData === actualData;
     if (!success) {
       expectedData = expectedData.split("\n");
@@ -114,10 +122,7 @@ function test(aPrefix, aArgs) {
 
 
 function scanTest(aJsonFilePath, aExtraArgs) {
-  let args = [
-    gScanTestFile.path,
-    aJsonFilePath,
-  ].concat(aExtraArgs);
+  let args = [gScanTestFile.path, aJsonFilePath].concat(aExtraArgs);
 
   return runProcess(new FileUtils.File(gPythonName), args) == 0;
 }
@@ -165,7 +170,10 @@ function run_test() {
   let is64Bit = Services.appinfo.is64Bit;
   let basicScanFileName = "basic-scan-" + (is64Bit ? "64" : "32");
   test(basicScanFileName, ["--clamp-contents", jsonFile.path]);
-  ok(scanTest(jsonFile.path, ["--clamp-contents"]), "Scan with address clamping");
+  ok(
+    scanTest(jsonFile.path, ["--clamp-contents"]),
+    "Scan with address clamping"
+  );
 
   
   
@@ -182,41 +190,39 @@ function run_test() {
   
   
   jsonFile = FileUtils.getFile("CurWorkD", ["script-max-frames.json"]);
-  test("script-max-frames-8",
-       [jsonFile.path]); 
-  test("script-max-frames-3",
-       ["--max-frames=3", "--no-fix-stacks", jsonFile.path]);
-  test("script-max-frames-1",
-       ["--max-frames=1", jsonFile.path]);
+  test("script-max-frames-8", [jsonFile.path]); 
+  test("script-max-frames-3", [
+    "--max-frames=3",
+    "--no-fix-stacks",
+    jsonFile.path,
+  ]);
+  test("script-max-frames-1", ["--max-frames=1", jsonFile.path]);
 
   
   
   
   jsonFile = FileUtils.getFile("CurWorkD", ["script-sort-by.json.gz"]);
-  test("script-sort-by-usable",
-       ["--sort-by=usable", jsonFile.path]);
-  test("script-sort-by-req",
-       ["--sort-by=req", "--no-fix-stacks", jsonFile.path]);
-  test("script-sort-by-slop",
-       ["--sort-by=slop", jsonFile.path]);
-  test("script-sort-by-num-blocks",
-       ["--sort-by=num-blocks", jsonFile.path]);
+  test("script-sort-by-usable", ["--sort-by=usable", jsonFile.path]);
+  test("script-sort-by-req", [
+    "--sort-by=req",
+    "--no-fix-stacks",
+    jsonFile.path,
+  ]);
+  test("script-sort-by-slop", ["--sort-by=slop", jsonFile.path]);
+  test("script-sort-by-num-blocks", ["--sort-by=num-blocks", jsonFile.path]);
 
   
   
   jsonFile = FileUtils.getFile("CurWorkD", ["script-ignore-alloc-fns.json"]);
-  test("script-ignore-alloc-fns",
-       ["--ignore-alloc-fns", jsonFile.path]);
+  test("script-ignore-alloc-fns", ["--ignore-alloc-fns", jsonFile.path]);
 
   
-  jsonFile  = FileUtils.getFile("CurWorkD", ["script-diff-live1.json"]);
+  jsonFile = FileUtils.getFile("CurWorkD", ["script-diff-live1.json"]);
   jsonFile2 = FileUtils.getFile("CurWorkD", ["script-diff-live2.json"]);
-  test("script-diff-live",
-       [jsonFile.path, jsonFile2.path]);
+  test("script-diff-live", [jsonFile.path, jsonFile2.path]);
 
   
-  jsonFile  = FileUtils.getFile("CurWorkD", ["script-diff-dark-matter1.json"]);
+  jsonFile = FileUtils.getFile("CurWorkD", ["script-diff-dark-matter1.json"]);
   jsonFile2 = FileUtils.getFile("CurWorkD", ["script-diff-dark-matter2.json"]);
-  test("script-diff-dark-matter",
-       [jsonFile.path, jsonFile2.path]);
+  test("script-diff-dark-matter", [jsonFile.path, jsonFile2.path]);
 }
