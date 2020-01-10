@@ -2,6 +2,12 @@
 
 
 
+
+:host([hidden]),
+[hidden] {
+  display: none !important;
+}
+
 .alternate-button {
   background-color: transparent;
 }
