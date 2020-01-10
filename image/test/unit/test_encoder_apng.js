@@ -1064,6 +1064,7 @@ function makeDataURL(encoder, mimetype) {
 
 
 const toBase64Table =
+  
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" + "0123456789+/";
 const base64Pad = "=";
 function toBase64(data) {

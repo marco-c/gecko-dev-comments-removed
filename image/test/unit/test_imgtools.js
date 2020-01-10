@@ -367,6 +367,7 @@ function run_test() {
     
     testnum++;
     testdesc =
+      
       "test encoding a scaled ICO with format options " + "(format=bmp;bpp=32)";
 
     
@@ -416,6 +417,7 @@ function run_test() {
     
     testnum++;
     testdesc =
+      
       "test encoding a scaled ICO with format options " + "(format=bmp;bpp=24)";
 
     
