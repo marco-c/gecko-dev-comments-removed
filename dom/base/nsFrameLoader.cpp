@@ -318,7 +318,7 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
   RefPtr<BrowsingContext> parentContext = parentDocShell->GetBrowsingContext();
 
   
-  if (NS_WARN_IF(!parentContext) || parentContext->GetClosed()) {
+  if (NS_WARN_IF(!parentContext) || parentContext->IsDiscarded()) {
     return nullptr;
   }
 

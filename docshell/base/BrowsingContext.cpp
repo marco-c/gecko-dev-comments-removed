@@ -65,6 +65,10 @@ void BrowsingContext::Unregister() {
   MOZ_DIAGNOSTIC_ASSERT(mGroup);
   mGroup->Unregister(this);
   mIsDiscarded = true;
+
+  
+  
+  mClosed = true;
 }
 
 BrowsingContext* BrowsingContext::Top() {
@@ -327,7 +331,7 @@ void BrowsingContext::PrepareForProcessChange() {
            XRE_IsParentProcess() ? "Parent" : "Child", Id()));
 
   MOZ_ASSERT(mIsInProcess, "Must currently be an in-process frame");
-  MOZ_ASSERT(!mClosed, "We're already closed?");
+  MOZ_ASSERT(!mIsDiscarded, "We're already closed?");
 
   mIsInProcess = false;
 

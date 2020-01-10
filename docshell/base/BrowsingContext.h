@@ -128,6 +128,11 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
 
   
   
+  
+  bool IsDiscarded() const { return mIsDiscarded; }
+
+  
+  
   nsIDocShell* GetDocShell() { return mDocShell; }
   void SetDocShell(nsIDocShell* aDocShell);
   void ClearDocShell() { mDocShell = nullptr; }

@@ -72,7 +72,7 @@ already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
 
   
   
-  if (bc->GetClosed()) {
+  if (bc->IsDiscarded()) {
     wgc->ActorDestroy(FailedConstructor);
     return wgc.forget();
   }
