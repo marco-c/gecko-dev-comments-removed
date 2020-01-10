@@ -310,6 +310,21 @@ function listenToConnected(pc) {
 }
 
 
+
+function waitForConnectionStateChange(pc, wantedStates) {
+  return new Promise((resolve) => {
+    if (wantedStates.includes(pc.connectionState)) {
+      resolve();
+      return;
+    }
+    pc.addEventListener('connectionstatechange', () => {
+      if (wantedStates.includes(pc.connectionState))
+        resolve();
+    });
+  });
+}
+
+
 function listenForSSRCs(t, receiver) {
   return new Promise((resolve) => {
     function listen() {
