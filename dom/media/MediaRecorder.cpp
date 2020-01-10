@@ -1267,25 +1267,26 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
                           timeDelta.ToSeconds());
 
     mShutdownPromise = ShutdownPromise::CreateAndResolve(true, __func__);
-    RefPtr<Session> self = this;
 
     if (mEncoder) {
-      auto& encoder = mEncoder;
-      encoder->Cancel();
-
       MOZ_RELEASE_ASSERT(mEncoderListener);
-      auto& encoderListener = mEncoderListener;
-      mShutdownPromise = mShutdownPromise->Then(
-          mEncoderThread, __func__,
-          [encoder, encoderListener]() {
-            encoder->UnregisterListener(encoderListener);
-            encoderListener->Forget();
-            return ShutdownPromise::CreateAndResolve(true, __func__);
-          },
-          []() {
-            MOZ_ASSERT_UNREACHABLE("Unexpected reject");
-            return ShutdownPromise::CreateAndReject(false, __func__);
-          });
+      mShutdownPromise =
+          mShutdownPromise
+              ->Then(mEncoderThread, __func__,
+                     [encoder = mEncoder, encoderListener = mEncoderListener] {
+                       
+                       
+                       encoder->UnregisterListener(encoderListener);
+                       encoderListener->Forget();
+                       return ShutdownPromise::CreateAndResolve(true, __func__);
+                     })
+              ->Then(mMainThread, __func__,
+                     [encoder = mEncoder] { return encoder->Cancel(); })
+              ->Then(mEncoderThread, __func__, [] {
+                
+                
+                return ShutdownPromise::CreateAndResolve(true, __func__);
+              });
     }
 
     
@@ -1303,8 +1304,8 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
 
     
     mShutdownPromise = mShutdownPromise->Then(
-        GetCurrentThreadSerialEventTarget(), __func__,
-        [self]() {
+        mMainThread, __func__,
+        [self = RefPtr<Session>(this)]() {
           self->mRecorder->RemoveSession(self);
           return ShutdownPromise::CreateAndResolve(true, __func__);
         },
@@ -1314,10 +1315,11 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
         });
 
     if (mEncoderThread) {
-      RefPtr<TaskQueue>& encoderThread = mEncoderThread;
       mShutdownPromise = mShutdownPromise->Then(
-          GetCurrentThreadSerialEventTarget(), __func__,
-          [encoderThread]() { return encoderThread->BeginShutdown(); },
+          mMainThread, __func__,
+          [encoderThread = mEncoderThread]() {
+            return encoderThread->BeginShutdown();
+          },
           []() {
             MOZ_ASSERT_UNREACHABLE("Unexpected reject");
             return ShutdownPromise::CreateAndReject(false, __func__);
