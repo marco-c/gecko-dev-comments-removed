@@ -555,6 +555,10 @@ class ProxyScriptContext extends BaseContext {
     return true;
   }
 
+  logActivity(type, name, data) {
+    
+  }
+
   get principal() {
     return this.extension.principal;
   }
