@@ -10902,10 +10902,10 @@ nsresult HTMLEditRules::WillAbsolutePosition(bool* aCancel, bool* aHandled) {
     }
   }
 
-  rv = PrepareToMakeElementAbsolutePosition(
-      aHandled,
-      address_of(
-          HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement));
+  rv =
+      MOZ_KnownLive(HTMLEditorRef())
+          .MoveSelectedContentsToDivElementToMakeItAbsolutePosition(address_of(
+              HTMLEditorRef().TopLevelEditSubActionDataRef().mNewBlockElement));
   
   
   
@@ -10938,26 +10938,22 @@ nsresult HTMLEditRules::WillAbsolutePosition(bool* aCancel, bool* aHandled) {
   return rv;
 }
 
-nsresult HTMLEditRules::PrepareToMakeElementAbsolutePosition(
-    bool* aHandled, RefPtr<Element>* aTargetElement) {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  MOZ_ASSERT(aHandled);
+nsresult HTMLEditor::MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
+    RefPtr<Element>* aTargetElement) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(aTargetElement);
 
-  AutoSelectionRestorer restoreSelectionLater(HTMLEditorRef());
+  AutoSelectionRestorer restoreSelectionLater(*this);
 
   AutoTArray<RefPtr<nsRange>, 4> arrayOfRanges;
-  HTMLEditorRef().GetSelectionRangesExtendedToHardLineStartAndEnd(
+  GetSelectionRangesExtendedToHardLineStartAndEnd(
       arrayOfRanges, EditSubAction::eSetPositionToAbsolute);
 
   
-  nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
-  nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                    .SplitInlinesAndCollectEditTargetNodes(
-                        arrayOfRanges, arrayOfNodes,
-                        EditSubAction::eSetPositionToAbsolute,
-                        HTMLEditor::CollectNonEditableNodes::Yes);
+  AutoTArray<OwningNonNull<nsINode>, 64> arrayOfNodes;
+  nsresult rv = SplitInlinesAndCollectEditTargetNodes(
+      arrayOfRanges, arrayOfNodes, EditSubAction::eSetPositionToAbsolute,
+      CollectNonEditableNodes::Yes);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -10965,42 +10961,37 @@ nsresult HTMLEditRules::PrepareToMakeElementAbsolutePosition(
   
   
   
-  if (HTMLEditorRef().IsEmptyOneHardLine(arrayOfNodes)) {
+  if (IsEmptyOneHardLine(arrayOfNodes)) {
     nsRange* firstRange = SelectionRefPtr()->GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
       return NS_ERROR_FAILURE;
     }
 
-    EditorDOMPoint atStartOfSelection(firstRange->StartRef());
-    if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
+    EditorDOMPoint atCaret(firstRange->StartRef());
+    if (NS_WARN_IF(!atCaret.IsSet())) {
       return NS_ERROR_FAILURE;
     }
 
     
     SplitNodeResult splitNodeResult =
-        MOZ_KnownLive(HTMLEditorRef())
-            .MaybeSplitAncestorsForInsertWithTransaction(*nsGkAtoms::div,
-                                                         atStartOfSelection);
+        MaybeSplitAncestorsForInsertWithTransaction(*nsGkAtoms::div, atCaret);
     if (NS_WARN_IF(splitNodeResult.Failed())) {
       return splitNodeResult.Rv();
     }
-    RefPtr<Element> positionedDiv =
-        MOZ_KnownLive(HTMLEditorRef())
-            .CreateNodeWithTransaction(*nsGkAtoms::div,
-                                       splitNodeResult.SplitPoint());
-    if (NS_WARN_IF(!CanHandleEditAction())) {
+    RefPtr<Element> newDivElement = CreateNodeWithTransaction(
+        *nsGkAtoms::div, splitNodeResult.SplitPoint());
+    if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
-    if (NS_WARN_IF(!positionedDiv)) {
+    if (NS_WARN_IF(!newDivElement)) {
       return NS_ERROR_FAILURE;
     }
     
-    *aTargetElement = positionedDiv;
     
     while (!arrayOfNodes.IsEmpty()) {
       OwningNonNull<nsINode> curNode = arrayOfNodes[0];
-      rv = MOZ_KnownLive(HTMLEditorRef()).DeleteNodeWithTransaction(*curNode);
-      if (NS_WARN_IF(!CanHandleEditAction())) {
+      rv = DeleteNodeWithTransaction(*curNode);
+      if (NS_WARN_IF(Destroyed())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
       if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -11009,24 +11000,27 @@ nsresult HTMLEditRules::PrepareToMakeElementAbsolutePosition(
       arrayOfNodes.RemoveElementAt(0);
     }
     
-    *aHandled = true;
-    
     restoreSelectionLater.Abort();
     ErrorResult error;
-    SelectionRefPtr()->Collapse(RawRangeBoundary(positionedDiv, 0), error);
-    if (NS_WARN_IF(!CanHandleEditAction())) {
+    SelectionRefPtr()->Collapse(RawRangeBoundary(newDivElement, 0), error);
+    if (NS_WARN_IF(Destroyed())) {
       error.SuppressException();
       return NS_ERROR_EDITOR_DESTROYED;
     }
-    if (NS_WARN_IF(error.Failed())) {
-      return error.StealNSResult();
-    }
-    return NS_OK;
+    *aTargetElement = std::move(newDivElement);
+    NS_WARNING_ASSERTION(!error.Failed(), "Selection::Collapse() failed");
+    return error.StealNSResult();
   }
 
   
   
-  nsCOMPtr<Element> curList, curPositionedDiv, indentedLI;
+  RefPtr<Element> targetDivElement;
+  
+  
+  RefPtr<Element> createdListElement;
+  
+  
+  RefPtr<Element> handledListItemElement;
   for (OwningNonNull<nsINode>& curNode : arrayOfNodes) {
     
     EditorDOMPoint atCurNode(curNode);
@@ -11035,63 +11029,57 @@ nsresult HTMLEditRules::PrepareToMakeElementAbsolutePosition(
     }
 
     
-    if (!HTMLEditorRef().IsEditable(curNode)) {
+    if (!IsEditable(curNode)) {
       continue;
     }
 
-    nsCOMPtr<nsIContent> sibling;
-
+    
+    
     
     if (HTMLEditUtils::IsList(atCurNode.GetContainer())) {
       
       
-      if (curList) {
-        sibling = HTMLEditorRef().GetPriorHTMLSibling(curNode);
-      }
-
-      if (!curList || (sibling && sibling != curList)) {
-        nsAtom* containerName =
+      
+      
+      nsIContent* previousEditableContent =
+          createdListElement ? GetPriorHTMLSibling(curNode) : nullptr;
+      if (!createdListElement ||
+          (previousEditableContent &&
+           previousEditableContent != createdListElement)) {
+        nsAtom* ULOrOLOrDLTagName =
             atCurNode.GetContainer()->NodeInfo()->NameAtom();
-        
         SplitNodeResult splitNodeResult =
-            MOZ_KnownLive(HTMLEditorRef())
-                .MaybeSplitAncestorsForInsertWithTransaction(
-                    MOZ_KnownLive(*containerName), atCurNode);
+            MaybeSplitAncestorsForInsertWithTransaction(
+                MOZ_KnownLive(*ULOrOLOrDLTagName), atCurNode);
         if (NS_WARN_IF(splitNodeResult.Failed())) {
           return splitNodeResult.Rv();
         }
-        if (!curPositionedDiv) {
-          curPositionedDiv =
-              MOZ_KnownLive(HTMLEditorRef())
-                  .CreateNodeWithTransaction(*nsGkAtoms::div,
-                                             splitNodeResult.SplitPoint());
-          if (NS_WARN_IF(!CanHandleEditAction())) {
+        if (!targetDivElement) {
+          targetDivElement = CreateNodeWithTransaction(
+              *nsGkAtoms::div, splitNodeResult.SplitPoint());
+          if (NS_WARN_IF(Destroyed())) {
             return NS_ERROR_EDITOR_DESTROYED;
           }
-          NS_WARNING_ASSERTION(
-              curPositionedDiv,
-              "Failed to create current positioned div element");
-          *aTargetElement = curPositionedDiv;
+          if (NS_WARN_IF(!targetDivElement)) {
+            return NS_ERROR_FAILURE;
+          }
         }
-        EditorDOMPoint atEndOfCurPositionedDiv;
-        atEndOfCurPositionedDiv.SetToEndOf(curPositionedDiv);
-        curList = MOZ_KnownLive(HTMLEditorRef())
-                      .CreateNodeWithTransaction(MOZ_KnownLive(*containerName),
-                                                 atEndOfCurPositionedDiv);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
+        createdListElement = CreateNodeWithTransaction(
+            MOZ_KnownLive(*ULOrOLOrDLTagName),
+            EditorDOMPoint::AtEndOf(*targetDivElement));
+        if (NS_WARN_IF(Destroyed())) {
           return NS_ERROR_EDITOR_DESTROYED;
         }
-        if (NS_WARN_IF(!curList)) {
+        if (NS_WARN_IF(!createdListElement)) {
           return NS_ERROR_FAILURE;
         }
-        
-        
       }
       
-      rv = MOZ_KnownLive(HTMLEditorRef())
-               .MoveNodeToEndWithTransaction(
-                   MOZ_KnownLive(*curNode->AsContent()), *curList);
-      if (NS_WARN_IF(!CanHandleEditAction())) {
+      
+      
+      rv = MoveNodeToEndWithTransaction(MOZ_KnownLive(*curNode->AsContent()),
+                                        *createdListElement);
+      if (NS_WARN_IF(Destroyed())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
       if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -11103,120 +11091,112 @@ nsresult HTMLEditRules::PrepareToMakeElementAbsolutePosition(
     
     
     
-    
-    
-    
-    RefPtr<Element> listItem =
-        curNode->IsContent()
-            ? HTMLEditorRef().GetNearestAncestorListItemElement(
-                  *curNode->AsContent())
-            : nullptr;
-    if (listItem) {
-      if (indentedLI == listItem) {
+    if (RefPtr<Element> listItemElement =
+            curNode->IsContent()
+                ? GetNearestAncestorListItemElement(*curNode->AsContent())
+                : nullptr) {
+      if (handledListItemElement == listItemElement) {
         
         continue;
       }
       
       
-      if (curList) {
-        sibling = HTMLEditorRef().GetPriorHTMLSibling(listItem);
-      }
-
-      if (!curList || (sibling && sibling != curList)) {
-        EditorDOMPoint atListItem(listItem);
+      nsIContent* previousEditableContent =
+          createdListElement ? GetPriorHTMLSibling(listItemElement) : nullptr;
+      if (!createdListElement ||
+          (previousEditableContent &&
+           previousEditableContent != createdListElement)) {
+        EditorDOMPoint atListItem(listItemElement);
         if (NS_WARN_IF(!atListItem.IsSet())) {
           return NS_ERROR_FAILURE;
         }
+        
+        
         nsAtom* containerName =
             atListItem.GetContainer()->NodeInfo()->NameAtom();
-        
         SplitNodeResult splitNodeResult =
-            MOZ_KnownLive(HTMLEditorRef())
-                .MaybeSplitAncestorsForInsertWithTransaction(
-                    MOZ_KnownLive(*containerName), atListItem);
+            MaybeSplitAncestorsForInsertWithTransaction(
+                MOZ_KnownLive(*containerName), atListItem);
         if (NS_WARN_IF(splitNodeResult.Failed())) {
           return splitNodeResult.Rv();
         }
-        if (!curPositionedDiv) {
-          curPositionedDiv = MOZ_KnownLive(HTMLEditorRef())
-                                 .CreateNodeWithTransaction(
-                                     *nsGkAtoms::div,
-                                     EditorDOMPoint(atListItem.GetContainer()));
-          if (NS_WARN_IF(!CanHandleEditAction())) {
+        if (!targetDivElement) {
+          targetDivElement = CreateNodeWithTransaction(
+              *nsGkAtoms::div, EditorDOMPoint(atListItem.GetContainer()));
+          if (NS_WARN_IF(Destroyed())) {
             return NS_ERROR_EDITOR_DESTROYED;
           }
-          NS_WARNING_ASSERTION(
-              curPositionedDiv,
-              "Failed to create current positioned div element");
-          *aTargetElement = curPositionedDiv;
+          if (NS_WARN_IF(!targetDivElement)) {
+            return NS_ERROR_FAILURE;
+          }
         }
-        EditorDOMPoint atEndOfCurPositionedDiv;
-        atEndOfCurPositionedDiv.SetToEndOf(curPositionedDiv);
-        curList = MOZ_KnownLive(HTMLEditorRef())
-                      .CreateNodeWithTransaction(MOZ_KnownLive(*containerName),
-                                                 atEndOfCurPositionedDiv);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
+        
+        createdListElement = CreateNodeWithTransaction(
+            MOZ_KnownLive(*containerName),
+            EditorDOMPoint::AtEndOf(*targetDivElement));
+        if (NS_WARN_IF(Destroyed())) {
           return NS_ERROR_EDITOR_DESTROYED;
         }
-        if (NS_WARN_IF(!curList)) {
+        if (NS_WARN_IF(!createdListElement)) {
           return NS_ERROR_FAILURE;
         }
       }
-      rv = MOZ_KnownLive(HTMLEditorRef())
-               .MoveNodeToEndWithTransaction(*listItem, *curList);
-      if (NS_WARN_IF(!CanHandleEditAction())) {
+      
+      
+      
+      rv = MoveNodeToEndWithTransaction(*listItemElement, *createdListElement);
+      if (NS_WARN_IF(Destroyed())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-      
-      indentedLI = listItem;
+      handledListItemElement = std::move(listItemElement);
       continue;
     }
 
-    
-    if (!curPositionedDiv) {
+    if (!targetDivElement) {
+      
+      
+      
+      
+      
       if (curNode->IsHTMLElement(nsGkAtoms::div)) {
-        curPositionedDiv = curNode->AsElement();
-        *aTargetElement = curPositionedDiv;
-        curList = nullptr;
+        targetDivElement = curNode->AsElement();
+        MOZ_ASSERT(!createdListElement);
+        MOZ_ASSERT(!handledListItemElement);
         continue;
       }
+      
+      
       SplitNodeResult splitNodeResult =
-          MOZ_KnownLive(HTMLEditorRef())
-              .MaybeSplitAncestorsForInsertWithTransaction(*nsGkAtoms::div,
-                                                           atCurNode);
+          MaybeSplitAncestorsForInsertWithTransaction(*nsGkAtoms::div,
+                                                      atCurNode);
       if (NS_WARN_IF(splitNodeResult.Failed())) {
         return splitNodeResult.Rv();
       }
-      curPositionedDiv = MOZ_KnownLive(HTMLEditorRef())
-                             .CreateNodeWithTransaction(
-                                 *nsGkAtoms::div, splitNodeResult.SplitPoint());
-      if (NS_WARN_IF(!CanHandleEditAction())) {
+      targetDivElement = CreateNodeWithTransaction(
+          *nsGkAtoms::div, splitNodeResult.SplitPoint());
+      if (NS_WARN_IF(Destroyed())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
-      if (NS_WARN_IF(!curPositionedDiv)) {
+      if (NS_WARN_IF(!targetDivElement)) {
         return NS_ERROR_FAILURE;
       }
-      
-      *aTargetElement = curPositionedDiv;
-      
     }
 
-    
-    rv = MOZ_KnownLive(HTMLEditorRef())
-             .MoveNodeToEndWithTransaction(MOZ_KnownLive(*curNode->AsContent()),
-                                           *curPositionedDiv);
-    if (NS_WARN_IF(!CanHandleEditAction())) {
+    rv = MoveNodeToEndWithTransaction(MOZ_KnownLive(*curNode->AsContent()),
+                                      *targetDivElement);
+    if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
     
-    curList = nullptr;
+    createdListElement = nullptr;
   }
+  *aTargetElement = std::move(targetDivElement);
   return NS_OK;
 }
 
