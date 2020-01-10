@@ -173,8 +173,4 @@ class JSFreeOp {
   void queueForFreeLater(void* p);
 };
 
-namespace js {
-using FreeOp = JSFreeOp;
-}  
-
 #endif  
