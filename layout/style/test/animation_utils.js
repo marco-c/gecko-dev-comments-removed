@@ -516,6 +516,7 @@ const ExpectComparisonTo = {
           };
           break;
         }
+      
       case "transform":
         normalize = convertTo3dMatrix;
         compare = matricesRoughlyEqual;
