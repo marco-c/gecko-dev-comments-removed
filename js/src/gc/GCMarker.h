@@ -455,7 +455,7 @@ class GCMarker : public JSTracer {
 
 
 
-  MainThreadOrGCTaskData<bool> linearWeakMarkingDisabled_;
+  MainThreadData<bool> linearWeakMarkingDisabled_;
 
   
   size_t markCount;
