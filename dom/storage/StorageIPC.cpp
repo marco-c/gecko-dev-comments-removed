@@ -69,9 +69,11 @@ void LocalStorageCacheChild::ActorDestroy(ActorDestroyReason aWhy) {
 }
 
 mozilla::ipc::IPCResult LocalStorageCacheChild::RecvObserve(
-    const PrincipalInfo& aPrincipalInfo, const uint32_t& aPrivateBrowsingId,
-    const nsString& aDocumentURI, const nsString& aKey,
-    const nsString& aOldValue, const nsString& aNewValue) {
+    const PrincipalInfo& aPrincipalInfo,
+    const PrincipalInfo& aCachePrincipalInfo,
+    const uint32_t& aPrivateBrowsingId, const nsString& aDocumentURI,
+    const nsString& aKey, const nsString& aOldValue,
+    const nsString& aNewValue) {
   AssertIsOnOwningThread();
 
   nsresult rv;
@@ -81,11 +83,19 @@ mozilla::ipc::IPCResult LocalStorageCacheChild::RecvObserve(
     return IPC_FAIL_NO_REASON(this);
   }
 
-  Storage::NotifyChange( nullptr, principal, aKey, aOldValue,
-                        aNewValue,
-                         u"localStorage", aDocumentURI,
-                         !!aPrivateBrowsingId,
-                         true);
+  nsCOMPtr<nsIPrincipal> cachePrincipal =
+      PrincipalInfoToPrincipal(aCachePrincipalInfo, &rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return IPC_FAIL_NO_REASON(this);
+  }
+
+  if (StorageUtils::PrincipalsEqual(principal, cachePrincipal)) {
+    Storage::NotifyChange( nullptr, principal, aKey, aOldValue,
+                          aNewValue,
+                           u"localStorage", aDocumentURI,
+                           !!aPrivateBrowsingId,
+                           true);
+  }
 
   return IPC_OK();
 }
@@ -453,8 +463,8 @@ mozilla::ipc::IPCResult SessionStorageObserverChild::RecvObserve(
 }
 
 LocalStorageCacheParent::LocalStorageCacheParent(
-    const PrincipalInfo& aPrincipalInfo, const nsACString& aOriginKey,
-    uint32_t aPrivateBrowsingId)
+    const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
+    const nsACString& aOriginKey, uint32_t aPrivateBrowsingId)
     : mPrincipalInfo(aPrincipalInfo),
       mOriginKey(aOriginKey),
       mPrivateBrowsingId(aPrivateBrowsingId),
@@ -512,9 +522,14 @@ mozilla::ipc::IPCResult LocalStorageCacheParent::RecvNotify(
 
   for (LocalStorageCacheParent* localStorageCacheParent : *array) {
     if (localStorageCacheParent != this) {
+      
+      
+      
+      
+      
       Unused << localStorageCacheParent->SendObserve(
-          mPrincipalInfo, mPrivateBrowsingId, aDocumentURI, aKey, aOldValue,
-          aNewValue);
+          mPrincipalInfo, localStorageCacheParent->PrincipalInfo(),
+          mPrivateBrowsingId, aKey, aDocumentURI, aOldValue, aNewValue);
     }
   }
 
