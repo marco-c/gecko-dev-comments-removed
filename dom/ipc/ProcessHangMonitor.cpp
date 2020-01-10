@@ -384,7 +384,13 @@ bool HangMonitorChild::InterruptCallback() {
   
   
   JS::RootedObject global(mContext, JS::CurrentGlobalOrNull(mContext));
-  RefPtr<nsGlobalWindowInner> win = xpc::WindowOrNull(global);
+  nsIPrincipal* principal = xpc::GetObjectPrincipal(global);
+  if (principal && (principal->IsSystemPrincipal() ||
+                    principal->GetIsAddonOrExpandedAddonPrincipal())) {
+    return true;
+  }
+
+  nsCOMPtr<nsPIDOMWindowInner> win = xpc::WindowOrNull(global);
   if (!win) {
     return true;
   }
@@ -409,10 +415,17 @@ bool HangMonitorChild::InterruptCallback() {
   }
 
   if (cancelContentJS) {
+    js::AutoAssertNoContentJS nojs(mContext);
+    TabId currentJSTabId = BrowserChild::GetFrom(win)->GetTabId();
+    if (currentJSTabId != cancelContentJSTab) {
+      
+      
+      return true;
+    }
+
     RefPtr<BrowserChild> browserChild =
         BrowserChild::FindBrowserChild(cancelContentJSTab);
     if (browserChild) {
-      js::AutoAssertNoContentJS nojs(mContext);
       nsresult rv;
       nsCOMPtr<nsIURI> uri;
 

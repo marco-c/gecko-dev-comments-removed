@@ -357,7 +357,10 @@ NS_IMETHODIMP
 BrowserHost::MaybeCancelContentJSExecutionFromScript(
     nsIRemoteTab::NavigationType aNavigationType,
     JS::Handle<JS::Value> aCancelContentJSOptions, JSContext* aCx) {
-  if (!mRoot) {
+  
+  
+  
+  if (!mRoot || mRoot->CreatingWindow()) {
     return NS_OK;
   }
   dom::CancelContentJSOptions cancelContentJSOptions;

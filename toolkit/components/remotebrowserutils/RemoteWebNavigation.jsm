@@ -12,10 +12,6 @@ ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
 ChromeUtils.defineModuleGetter(this, "E10SUtils",
   "resource://gre/modules/E10SUtils.jsm");
 
-function makeURI(url) {
-  return Services.io.newURI(url);
-}
-
 function RemoteWebNavigation() {
   this.wrappedJSObject = this;
   this._cancelContentJSEpoch = 1;
@@ -77,14 +73,18 @@ RemoteWebNavigation.prototype = {
   },
   loadURI(aURI, aLoadURIOptions) {
     let uri;
+    try {
+      let fixup = Cc["@mozilla.org/docshell/urifixup;1"].getService();
+      let fixupFlags = fixup.webNavigationFlagsToFixupFlags(
+        aURI, aLoadURIOptions.loadFlags);
+      uri = fixup.createFixupURI(aURI, fixupFlags);
 
-    
-    
-    
-    
-    if (aURI.startsWith("http:") || aURI.startsWith("https:")) {
-      try {
-        uri = makeURI(aURI);
+      
+      
+      
+      
+      
+      if (uri.schemeIs("http") || uri.schemeIs("https")) {
         let principal = aLoadURIOptions.triggeringPrincipal;
         
         
@@ -97,10 +97,10 @@ RemoteWebNavigation.prototype = {
           principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, attrs);
         }
         Services.io.speculativeConnect(uri, principal, null);
-      } catch (ex) {
-        
-        
       }
+    } catch (ex) {
+      
+      
     }
 
     let cancelContentJSEpoch = this._cancelContentJSEpoch++;
@@ -138,7 +138,7 @@ RemoteWebNavigation.prototype = {
   _currentURI: null,
   get currentURI() {
     if (!this._currentURI) {
-      this._currentURI = makeURI("about:blank");
+      this._currentURI = Services.io.newURI("about:blank");
     }
 
     return this._currentURI;

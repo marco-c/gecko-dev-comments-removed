@@ -193,6 +193,13 @@ class BrowserParent final : public PBrowserParent,
 
 
 
+
+  bool CreatingWindow() const { return mCreatingWindow; }
+
+  
+
+
+
   template <typename Callback>
   void VisitAll(Callback aCallback) {
     aCallback(this);

@@ -3916,10 +3916,6 @@ nsresult nsDocShell::LoadURI(const nsAString& aURI,
   nsCOMPtr<nsIInputStream> postData(aLoadURIOptions.mPostData);
   nsresult rv = NS_OK;
 
-  
-  
-  
-
   NS_ConvertUTF16toUTF8 uriString(aURI);
   
   uriString.Trim(" ");
@@ -3931,24 +3927,19 @@ nsresult nsDocShell::LoadURI(const nsAString& aURI,
     return NS_ERROR_FAILURE;
   }
 
-  rv = NS_NewURI(getter_AddRefs(uri), uriString);
-  if (uri) {
-    loadFlags &= ~LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
-  }
-
   nsCOMPtr<nsIURIFixupInfo> fixupInfo;
   if (sURIFixup) {
+    uint32_t fixupFlags;
+    rv = sURIFixup->WebNavigationFlagsToFixupFlags(uriString, loadFlags,
+                                                   &fixupFlags);
+    NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+
     
     
-    
-    
-    uint32_t fixupFlags = 0;
-    if (loadFlags & LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP) {
-      fixupFlags |= nsIURIFixup::FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
+    if (!(fixupFlags & nsIURIFixup::FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP)) {
+      loadFlags &= ~LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
     }
-    if (loadFlags & LOAD_FLAGS_FIXUP_SCHEME_TYPOS) {
-      fixupFlags |= nsIURIFixup::FIXUP_FLAG_FIX_SCHEME_TYPOS;
-    }
+
     nsCOMPtr<nsIInputStream> fixupStream;
     rv = sURIFixup->GetFixupURIInfo(uriString, fixupFlags,
                                     getter_AddRefs(fixupStream),
@@ -3973,9 +3964,11 @@ nsresult nsDocShell::LoadURI(const nsAString& aURI,
                               PromiseFlatString(aURI).get());
       }
     }
+  } else {
+    
+    rv = NS_NewURI(getter_AddRefs(uri), uriString);
+    loadFlags &= ~LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
   }
-  
-  
 
   if (NS_ERROR_MALFORMED_URI == rv) {
     if (DisplayLoadError(rv, uri, PromiseFlatString(aURI).get(), nullptr) &&
