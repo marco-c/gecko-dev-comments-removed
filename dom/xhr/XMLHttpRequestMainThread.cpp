@@ -2005,7 +2005,9 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest* request) {
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    mResponseXML->SetReferrer(NS_LITERAL_CSTRING(""));
+    nsCOMPtr<nsIReferrerInfo> referrerInfo =
+        new ReferrerInfo(nullptr, true, mResponseXML->GetReferrerPolicy());
+    mResponseXML->SetReferrerInfo(referrerInfo);
 
     mXMLParserStreamListener = listener;
     rv = mXMLParserStreamListener->OnStartRequest(request);

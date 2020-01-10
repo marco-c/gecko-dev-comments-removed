@@ -73,21 +73,11 @@ const char kRPS_Always[] = "always";
 
 inline ReferrerPolicy ReferrerPolicyFromString(const nsAString& content) {
   if (content.IsEmpty()) {
-    return RP_No_Referrer;
+    return RP_Unset;
   }
 
   nsString lowerContent(content);
   ToLowerCase(lowerContent);
-  
-  
-
-  uint16_t numStr =
-      (sizeof(kReferrerPolicyString) / sizeof(kReferrerPolicyString[0]));
-  for (uint16_t i = 0; i < numStr; i++) {
-    if (lowerContent.EqualsASCII(kReferrerPolicyString[i])) {
-      return static_cast<ReferrerPolicy>(i);
-    }
-  }
 
   if (lowerContent.EqualsLiteral(kRPS_Never)) {
     return RP_No_Referrer;
@@ -101,6 +91,17 @@ inline ReferrerPolicy ReferrerPolicyFromString(const nsAString& content) {
   if (lowerContent.EqualsLiteral(kRPS_Always)) {
     return RP_Unsafe_URL;
   }
+  
+  
+
+  uint16_t numStr =
+      (sizeof(kReferrerPolicyString) / sizeof(kReferrerPolicyString[0]));
+  for (uint16_t i = 0; i < numStr; i++) {
+    if (lowerContent.EqualsASCII(kReferrerPolicyString[i])) {
+      return static_cast<ReferrerPolicy>(i);
+    }
+  }
+
   
   return RP_Unset;
 }

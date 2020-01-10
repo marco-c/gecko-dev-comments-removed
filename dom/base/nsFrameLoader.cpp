@@ -89,6 +89,7 @@
 #include "mozilla/dom/SessionStoreListener.h"
 #include "mozilla/gfx/CrossProcessPaint.h"
 #include "mozilla/jsipc/CrossProcessObjectWrappers.h"
+#include "mozilla/layout/RenderFrame.h"
 #include "mozilla/ServoCSSParser.h"
 #include "mozilla/ServoStyleSet.h"
 #include "nsGenericHTMLFrameElement.h"
@@ -622,51 +623,20 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
     loadState->SetCsp(csp);
   }
 
-  nsCOMPtr<nsIURI> referrer;
-
   nsAutoString srcdoc;
   bool isSrcdoc =
       mOwnerContent->IsHTMLElement(nsGkAtoms::iframe) &&
       mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::srcdoc, srcdoc);
 
   if (isSrcdoc) {
-    nsAutoString referrerStr;
-    mOwnerContent->OwnerDoc()->GetReferrer(referrerStr);
-    rv = NS_NewURI(getter_AddRefs(referrer), referrerStr);
-
     loadState->SetSrcdocData(srcdoc);
     nsCOMPtr<nsIURI> baseURI = mOwnerContent->GetBaseURI();
     loadState->SetBaseURI(baseURI);
-  } else {
-    rv = mOwnerContent->NodePrincipal()->GetURI(getter_AddRefs(referrer));
-    NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  
-  
-  
-  
-  if (referrer) {
-    bool isNullPrincipalScheme;
-    rv = referrer->SchemeIs(NS_NULLPRINCIPAL_SCHEME, &isNullPrincipalScheme);
-    if (NS_SUCCEEDED(rv) && !isNullPrincipalScheme) {
-      
-      
-      
-      
-      net::ReferrerPolicy referrerPolicy =
-          mOwnerContent->OwnerDoc()->GetReferrerPolicy();
-      HTMLIFrameElement* iframe = HTMLIFrameElement::FromNode(mOwnerContent);
-      if (iframe) {
-        net::ReferrerPolicy iframeReferrerPolicy =
-            iframe->GetReferrerPolicyAsEnum();
-        if (iframeReferrerPolicy != net::RP_Unset) {
-          referrerPolicy = iframeReferrerPolicy;
-        }
-      }
-      loadState->SetReferrerInfo(new ReferrerInfo(referrer, referrerPolicy));
-    }
-  }
+  nsCOMPtr<nsIReferrerInfo> referrerInfo = new ReferrerInfo();
+  referrerInfo->InitWithNode(mOwnerContent);
+  loadState->SetReferrerInfo(referrerInfo);
 
   
   int32_t flags = nsIWebNavigation::LOAD_FLAGS_NONE;
@@ -2812,7 +2782,13 @@ BrowserBridgeChild* nsFrameLoader::GetBrowserBridgeChild() const {
 
 mozilla::layers::LayersId nsFrameLoader::GetLayersId() const {
   MOZ_ASSERT(mIsRemoteFrame);
-  return mRemoteBrowser->GetLayersId();
+  if (auto* browserParent = GetBrowserParent()) {
+    return browserParent->GetRenderFrame()->GetLayersId();
+  }
+  if (auto* browserBridgeChild = GetBrowserBridgeChild()) {
+    return browserBridgeChild->GetLayersId();
+  }
+  return mozilla::layers::LayersId{};
 }
 
 void nsFrameLoader::ActivateRemoteFrame(ErrorResult& aRv) {

@@ -577,12 +577,6 @@ nsresult nsHTMLDocument::StartDocumentLoad(const char* aCommand,
   nsHtml5TreeOpExecutor* executor = nullptr;
   if (loadAsHtml5) {
     executor = static_cast<nsHtml5TreeOpExecutor*>(mParser->GetContentSink());
-    if (mReferrerPolicySet) {
-      
-      
-      executor->SetSpeculationReferrerPolicy(
-          static_cast<ReferrerPolicy>(mReferrerPolicy));
-    }
   }
 
   if (forceUtf8) {

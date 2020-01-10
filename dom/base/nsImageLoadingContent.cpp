@@ -1146,14 +1146,6 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
   nsLoadFlags loadFlags =
       aLoadFlags | nsContentUtils::CORSModeToLoadImageFlags(GetCORSMode());
 
-  
-  
-  
-  net::ReferrerPolicy referrerPolicy = aDocument->GetReferrerPolicy();
-  net::ReferrerPolicy imgReferrerPolicy = GetImageReferrerPolicy();
-  if (imgReferrerPolicy != net::RP_Unset) {
-    referrerPolicy = imgReferrerPolicy;
-  }
 
   RefPtr<imgRequestProxy>& req = PrepareNextRequest(aImageLoadType);
   nsCOMPtr<nsIContent> content =
@@ -1172,10 +1164,14 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
 
   nsCOMPtr<nsINode> thisNode =
       do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
+  nsCOMPtr<nsIReferrerInfo> referrerInfo = new ReferrerInfo();
+  referrerInfo->InitWithNode(thisNode);
+  nsCOMPtr<nsIURI> referrer = referrerInfo->GetOriginalReferrer();
   nsresult rv = nsContentUtils::LoadImage(
-      aNewURI, thisNode, aDocument, triggeringPrincipal, 0,
-      aDocument->GetDocumentURIAsReferrer(), referrerPolicy, this, loadFlags,
-      content->LocalName(), getter_AddRefs(req), policyType,
+      aNewURI, thisNode, aDocument, triggeringPrincipal, 0, referrer,
+      static_cast<mozilla::net::ReferrerPolicy>(
+          referrerInfo->GetReferrerPolicy()),
+      this, loadFlags, content->LocalName(), getter_AddRefs(req), policyType,
       mUseUrgentStartForChannel);
 
   

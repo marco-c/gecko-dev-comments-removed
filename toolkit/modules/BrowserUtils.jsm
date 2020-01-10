@@ -252,29 +252,6 @@ var BrowserUtils = {
 
 
 
-  linkHasNoReferrer(linkNode) {
-    
-    
-    
-    if (!linkNode)
-      return true;
-
-    let rel = linkNode.getAttribute("rel");
-    if (!rel)
-      return false;
-
-    
-    
-    let values = rel.split(/[ \t\r\n\f]/);
-    return values.includes("noreferrer");
-  },
-
-  
-
-
-
-
-
   mimeTypeIsTextBased(mimeType) {
     return mimeType.startsWith("text/") ||
            mimeType.endsWith("+xml") ||

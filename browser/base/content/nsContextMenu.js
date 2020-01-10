@@ -35,6 +35,7 @@ function openContextMenu(aMessage) {
   let data = aMessage.data;
   let browser = aMessage.target;
   let spellInfo = data.spellInfo;
+  let frameReferrerInfo = data.frameReferrerInfo;
 
   
   
@@ -50,14 +51,12 @@ function openContextMenu(aMessage) {
   let documentURIObject = makeURI(data.docLocation,
                                   data.charSet,
                                   makeURI(data.baseURI));
-  let referrerInfo = new ReferrerInfo(
-    data.referrerPolicy,
-    !data.context.linkHasNoReferrer,
-    documentURIObject);
-  let frameReferrerInfo = new ReferrerInfo(
-    data.referrerPolicy,
-    !data.context.linkHasNoReferrer,
-    data.referrer ? makeURI(data.referrer) : null);
+
+  if (frameReferrerInfo) {
+    frameReferrerInfo =
+      E10SUtils.deserializeReferrerInfo(frameReferrerInfo);
+  }
+
   gContextMenuContentData = { context: data.context,
                               isRemote: data.isRemote,
                               popupNodeSelectors: data.popupNodeSelectors,
@@ -69,7 +68,7 @@ function openContextMenu(aMessage) {
                               documentURIObject,
                               docLocation: data.docLocation,
                               charSet: data.charSet,
-                              referrerInfo,
+                              referrerInfo: E10SUtils.deserializeReferrerInfo(data.referrerInfo),
                               frameReferrerInfo,
                               contentType: data.contentType,
                               contentDisposition: data.contentDisposition,

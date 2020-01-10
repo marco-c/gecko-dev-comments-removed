@@ -48,6 +48,7 @@
 #include "nsContentListDeclarations.h"
 #include "nsExpirationTracker.h"
 #include "nsClassHashtable.h"
+#include "ReferrerInfo.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/dom/BrowsingContext.h"
@@ -728,6 +729,16 @@ class Document : public nsINode,
   
 
 
+  nsIReferrerInfo* ReferrerInfo() const { return GetReferrerInfo(); }
+
+  nsIReferrerInfo* GetReferrerInfo() const { return mReferrerInfo; }
+
+  nsIReferrerInfo* GetPreloadReferrerInfo() const {
+    return mPreloadReferrerInfo;
+  }
+  
+
+
 
 
   ReferrerPolicyEnum GetReferrerPolicy() const;
@@ -763,7 +774,38 @@ class Document : public nsINode,
     return mUpgradeInsecureRequests;
   }
 
-  void SetReferrer(const nsACString& aReferrer) { mReferrer = aReferrer; }
+  void SetReferrerInfo(nsIReferrerInfo* aReferrerInfo) {
+    mReferrerInfo = aReferrerInfo;
+  }
+
+  
+
+
+
+
+  void UpdateReferrerInfoFromMeta(const nsAString& aMetaReferrer,
+                                  bool aPreload) {
+    net::ReferrerPolicy policy =
+        mozilla::net::ReferrerPolicyFromString(aMetaReferrer);
+    
+    
+    if (policy == mozilla::net::RP_Unset) {
+      return;
+    }
+
+    MOZ_ASSERT(mReferrerInfo);
+    MOZ_ASSERT(mPreloadReferrerInfo);
+
+    if (aPreload) {
+      mPreloadReferrerInfo =
+          static_cast<mozilla::dom::ReferrerInfo*>((mPreloadReferrerInfo).get())
+              ->CloneWithNewPolicy(policy);
+    } else {
+      mReferrerInfo =
+          static_cast<mozilla::dom::ReferrerInfo*>((mReferrerInfo).get())
+              ->CloneWithNewPolicy(policy);
+    }
+  }
 
   
 
@@ -1617,6 +1659,8 @@ class Document : public nsINode,
   nsresult InitCSP(nsIChannel* aChannel);
 
   nsresult InitFeaturePolicy(nsIChannel* aChannel);
+
+  nsresult InitReferrerInfo(nsIChannel* aChannel);
 
   void PostUnblockOnloadEvent();
 
@@ -4152,7 +4196,9 @@ class Document : public nsINode,
   already_AddRefed<nsIChannel> CreateDummyChannelForCookies(
       nsIURI* aCodebaseURI);
 
-  nsCString mReferrer;
+  nsCOMPtr<nsIReferrerInfo> mPreloadReferrerInfo;
+  nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
+
   nsString mLastModified;
 
   nsCOMPtr<nsIURI> mDocumentURI;
@@ -4168,9 +4214,6 @@ class Document : public nsINode,
   RefPtr<URLExtraData> mCachedURLData;
 
   nsWeakPtr mDocumentLoadGroup;
-
-  bool mReferrerPolicySet;
-  ReferrerPolicyEnum mReferrerPolicy;
 
   bool mBlockAllMixedContent;
   bool mBlockAllMixedContentPreloads;
