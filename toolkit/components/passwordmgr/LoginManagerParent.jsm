@@ -70,13 +70,13 @@ this.LoginManagerParent = {
   } = {}) {
     let logins;
     let matchData = {
-      hostname: formOrigin,
+      origin: formOrigin,
       schemeUpgrades: LoginHelper.schemeUpgrades,
       acceptDifferentSubdomains,
     };
     if (!ignoreActionAndRealm) {
       if (typeof(formActionOrigin) != "undefined") {
-        matchData.formSubmitURL = formActionOrigin;
+        matchData.formActionOrigin = formActionOrigin;
       } else if (typeof(httpRealm) != "undefined") {
         matchData.httpRealm = httpRealm;
       }
@@ -127,15 +127,7 @@ this.LoginManagerParent = {
 
       case "PasswordManager:onFormSubmit": {
         
-        this.onFormSubmit({hostname: data.hostname,
-                           formSubmitURL: data.formSubmitURL,
-                           autoFilledLoginGuid: data.autoFilledLoginGuid,
-                           usernameField: data.usernameField,
-                           newPasswordField: data.newPasswordField,
-                           oldPasswordField: data.oldPasswordField,
-                           openerTopWindowID: data.openerTopWindowID,
-                           dismissedPrompt: data.dismissedPrompt,
-                           target: msg.target});
+        this.onFormSubmit(msg.target, data);
         break;
       }
 
@@ -406,15 +398,21 @@ this.LoginManagerParent = {
     return generatedPW;
   },
 
-  onFormSubmit({hostname, formSubmitURL, autoFilledLoginGuid,
-                usernameField, newPasswordField,
-                oldPasswordField, openerTopWindowID,
-                dismissedPrompt, target}) {
+  onFormSubmit(browser, {
+    origin,
+    formActionOrigin,
+    autoFilledLoginGuid,
+    usernameField,
+    newPasswordField,
+    oldPasswordField,
+    openerTopWindowID,
+    dismissedPrompt,
+  }) {
     function getPrompter() {
       let prompterSvc = Cc["@mozilla.org/login-manager/prompter;1"].
                         createInstance(Ci.nsILoginManagerPrompter);
-      prompterSvc.init(target.ownerGlobal);
-      prompterSvc.browser = target;
+      prompterSvc.init(browser.ownerGlobal);
+      prompterSvc.browser = browser;
 
       for (let win of Services.wm.getEnumerator(null)) {
         let tabbrowser = win.gBrowser;
@@ -431,7 +429,7 @@ this.LoginManagerParent = {
     }
 
     function recordLoginUse(login) {
-      if (!target || PrivateBrowsingUtils.isBrowserPrivate(target)) {
+      if (!browser || PrivateBrowsingUtils.isBrowserPrivate(browser)) {
         
         return;
       }
@@ -443,14 +441,14 @@ this.LoginManagerParent = {
       Services.logins.modifyLogin(login, propBag);
     }
 
-    if (!Services.logins.getLoginSavingEnabled(hostname)) {
-      log("(form submission ignored -- saving is disabled for:", hostname, ")");
+    if (!Services.logins.getLoginSavingEnabled(origin)) {
+      log("(form submission ignored -- saving is disabled for:", origin, ")");
       return;
     }
 
     let formLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].
                     createInstance(Ci.nsILoginInfo);
-    formLogin.init(hostname, formSubmitURL, null,
+    formLogin.init(origin, formActionOrigin, null,
                    (usernameField ? usernameField.value : ""),
                    newPasswordField.value,
                    (usernameField ? usernameField.name : ""),
@@ -472,8 +470,8 @@ this.LoginManagerParent = {
 
     
     
-    let logins = this._searchAndDedupeLogins(hostname, {
-      formActionOrigin: formSubmitURL,
+    let logins = this._searchAndDedupeLogins(origin, {
+      formActionOrigin,
     });
 
     

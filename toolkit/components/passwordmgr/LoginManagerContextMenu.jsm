@@ -92,7 +92,7 @@ this.LoginManagerContextMenu = {
 
   _findLogins(documentURI) {
     let searchParams = {
-      hostname: documentURI.displayPrePath,
+      origin: documentURI.displayPrePath,
       schemeUpgrades: LoginHelper.schemeUpgrades,
     };
     let logins = LoginHelper.searchLoginsWithObject(searchParams);

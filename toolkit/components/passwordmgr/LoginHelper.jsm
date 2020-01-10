@@ -90,15 +90,15 @@ this.LoginHelper = {
 
 
 
-  checkHostnameValue(aHostname) {
+  checkOriginValue(aOrigin) {
     
     
     
-    if (aHostname == "." ||
-        aHostname.includes("\r") ||
-        aHostname.includes("\n") ||
-        aHostname.includes("\0")) {
-      throw new Error("Invalid hostname");
+    if (aOrigin == "." ||
+        aOrigin.includes("\r") ||
+        aOrigin.includes("\n") ||
+        aOrigin.includes("\0")) {
+      throw new Error("Invalid origin");
     }
   },
 
@@ -111,9 +111,9 @@ this.LoginHelper = {
 
   checkLoginValues(aLogin) {
     function badCharacterPresent(l, c) {
-      return ((l.formSubmitURL && l.formSubmitURL.includes(c)) ||
+      return ((l.formActionOrigin && l.formActionOrigin.includes(c)) ||
               (l.httpRealm && l.httpRealm.includes(c)) ||
-                                  l.hostname.includes(c) ||
+                                  l.origin.includes(c) ||
                                   l.usernameField.includes(c) ||
                                   l.passwordField.includes(c));
     }
@@ -141,15 +141,15 @@ this.LoginHelper = {
 
     
     if (aLogin.usernameField == "." ||
-        aLogin.formSubmitURL == ".") {
+        aLogin.formActionOrigin == ".") {
       throw new Error("login values can't be periods");
     }
 
     
     
     
-    if (aLogin.hostname.includes(" (")) {
-      throw new Error("bad parens in hostname");
+    if (aLogin.origin.includes(" (")) {
+      throw new Error("bad parens in origin");
     }
   },
 
@@ -310,25 +310,25 @@ this.LoginHelper = {
     }
 
     if (ignoreSchemes) {
-      let login1HostPort = this.maybeGetHostPortForURL(aLogin1.hostname);
-      let login2HostPort = this.maybeGetHostPortForURL(aLogin2.hostname);
+      let login1HostPort = this.maybeGetHostPortForURL(aLogin1.origin);
+      let login2HostPort = this.maybeGetHostPortForURL(aLogin2.origin);
       if (login1HostPort != login2HostPort) {
         return false;
       }
 
-      if (aLogin1.formSubmitURL != "" && aLogin2.formSubmitURL != "" &&
-          this.maybeGetHostPortForURL(aLogin1.formSubmitURL) !=
-          this.maybeGetHostPortForURL(aLogin2.formSubmitURL)) {
+      if (aLogin1.formActionOrigin != "" && aLogin2.formActionOrigin != "" &&
+          this.maybeGetHostPortForURL(aLogin1.formActionOrigin) !=
+          this.maybeGetHostPortForURL(aLogin2.formActionOrigin)) {
         return false;
       }
     } else {
-      if (aLogin1.hostname != aLogin2.hostname) {
+      if (aLogin1.origin != aLogin2.origin) {
         return false;
       }
 
       
-      if (aLogin1.formSubmitURL != "" && aLogin2.formSubmitURL != "" &&
-          aLogin1.formSubmitURL != aLogin2.formSubmitURL) {
+      if (aLogin1.formActionOrigin != "" && aLogin2.formActionOrigin != "" &&
+          aLogin1.formActionOrigin != aLogin2.formActionOrigin) {
         return false;
       }
     }
@@ -367,8 +367,8 @@ this.LoginHelper = {
       
       
       newLogin = aOldStoredLogin.clone();
-      newLogin.init(aNewLoginData.hostname,
-                    aNewLoginData.formSubmitURL, aNewLoginData.httpRealm,
+      newLogin.init(aNewLoginData.origin,
+                    aNewLoginData.formActionOrigin, aNewLoginData.httpRealm,
                     aNewLoginData.username, aNewLoginData.password,
                     aNewLoginData.usernameField, aNewLoginData.passwordField);
       newLogin.QueryInterface(Ci.nsILoginMetaInfo);
@@ -395,9 +395,9 @@ this.LoginHelper = {
       for (let prop of aNewLoginData.enumerator) {
         switch (prop.name) {
           
-          case "hostname":
+          case "origin":
           case "httpRealm":
-          case "formSubmitURL":
+          case "formActionOrigin":
           case "username":
           case "password":
           case "usernameField":
@@ -426,8 +426,8 @@ this.LoginHelper = {
     }
 
     
-    if (newLogin.hostname == null || newLogin.hostname.length == 0) {
-      throw new Error("Can't add a login with a null or empty hostname.");
+    if (newLogin.origin == null || newLogin.origin.length == 0) {
+      throw new Error("Can't add a login with a null or empty origin.");
     }
 
     
@@ -439,19 +439,19 @@ this.LoginHelper = {
       throw new Error("Can't add a login with a null or empty password.");
     }
 
-    if (newLogin.formSubmitURL || newLogin.formSubmitURL == "") {
+    if (newLogin.formActionOrigin || newLogin.formActionOrigin == "") {
       
       if (newLogin.httpRealm != null) {
-        throw new Error("Can't add a login with both a httpRealm and formSubmitURL.");
+        throw new Error("Can't add a login with both a httpRealm and formActionOrigin.");
       }
     } else if (newLogin.httpRealm) {
       
-      if (newLogin.formSubmitURL != null) {
-        throw new Error("Can't add a login with both a httpRealm and formSubmitURL.");
+      if (newLogin.formActionOrigin != null) {
+        throw new Error("Can't add a login with both a httpRealm and formActionOrigin.");
       }
     } else {
       
-      throw new Error("Can't add a login without a httpRealm or formSubmitURL.");
+      throw new Error("Can't add a login without a httpRealm or formActionOrigin.");
     }
 
     
@@ -477,13 +477,13 @@ this.LoginHelper = {
     for (let login of logins) {
       let key = this.getUniqueKeyForLogin(login, ["hostPort", "username"]);
       let hasHTTPSlogin = hasHTTPSByHostPortUsername.get(key) || false;
-      let loginURI = Services.io.newURI(login.hostname);
+      let loginURI = Services.io.newURI(login.origin);
       hasHTTPSByHostPortUsername.set(key, loginURI.scheme == "https" || hasHTTPSlogin);
     }
 
     return logins.filter((login) => {
       let key = this.getUniqueKeyForLogin(login, ["hostPort", "username"]);
-      let loginURI = Services.io.newURI(login.hostname);
+      let loginURI = Services.io.newURI(login.origin);
       if (loginURI.scheme == "http" && hasHTTPSByHostPortUsername.get(key)) {
         
         
@@ -504,7 +504,7 @@ this.LoginHelper = {
     return uniqueKeys.reduce((prev, key) => {
       let val = null;
       if (key == "hostPort") {
-        val = Services.io.newURI(login.hostname).hostPort;
+        val = Services.io.newURI(login.origin).hostPort;
       } else {
         val = login[key];
       }
@@ -589,8 +589,8 @@ this.LoginHelper = {
             if (!preferredFormActionOrigin) {
               break;
             }
-            if (LoginHelper.isOriginMatching(existingLogin.formSubmitURL, preferredFormActionOrigin, {schemeUpgrades: LoginHelper.schemeUpgrades}) &&
-                !LoginHelper.isOriginMatching(login.formSubmitURL, preferredFormActionOrigin, {schemeUpgrades: LoginHelper.schemeUpgrades})) {
+            if (LoginHelper.isOriginMatching(existingLogin.formActionOrigin, preferredFormActionOrigin, {schemeUpgrades: LoginHelper.schemeUpgrades}) &&
+                !LoginHelper.isOriginMatching(login.formActionOrigin, preferredFormActionOrigin, {schemeUpgrades: LoginHelper.schemeUpgrades})) {
               return false;
             }
             break;
@@ -602,8 +602,8 @@ this.LoginHelper = {
 
             try {
               
-              let existingLoginURI = Services.io.newURI(existingLogin.hostname);
-              let loginURI = Services.io.newURI(login.hostname);
+              let existingLoginURI = Services.io.newURI(existingLogin.origin);
+              let loginURI = Services.io.newURI(login.origin);
               
               
               if (loginURI.scheme == existingLoginURI.scheme ||
@@ -616,15 +616,15 @@ this.LoginHelper = {
             } catch (ex) {
               
               log.debug("dedupeLogins/shouldReplaceExisting: Error comparing schemes:",
-                        existingLogin.hostname, login.hostname,
+                        existingLogin.origin, login.origin,
                         "preferredOrigin:", preferredOrigin, ex);
             }
             break;
           }
           case "subdomain": {
             
-            let existingLoginURI = Services.io.newURI(existingLogin.hostname);
-            let newLoginURI = Services.io.newURI(login.hostname);
+            let existingLoginURI = Services.io.newURI(existingLogin.origin);
+            let newLoginURI = Services.io.newURI(login.origin);
             let preferredOriginURI = Services.io.newURI(preferredOrigin);
             if (existingLoginURI.hostPort != preferredOriginURI.hostPort &&
                 newLoginURI.hostPort == preferredOriginURI.hostPort) {
@@ -762,8 +762,8 @@ this.LoginHelper = {
     for (let loginData of loginDatas) {
       
       let login = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(Ci.nsILoginInfo);
-      login.init(loginData.hostname,
-                 loginData.formSubmitURL || (typeof(loginData.httpRealm) == "string" ? null : ""),
+      login.init(loginData.origin,
+                 loginData.formActionOrigin || (typeof(loginData.httpRealm) == "string" ? null : ""),
                  typeof(loginData.httpRealm) == "string" ? loginData.httpRealm : null,
                  loginData.username,
                  loginData.password,
@@ -788,9 +788,9 @@ this.LoginHelper = {
       
       
       
-      let newLogins = loginMap.get(login.hostname) || [];
+      let newLogins = loginMap.get(login.origin) || [];
       if (!newLogins) {
-        loginMap.set(login.hostname, newLogins);
+        loginMap.set(login.origin, newLogins);
       } else {
         if (newLogins.some(l => login.matches(l, false ))) {
           continue;
@@ -817,8 +817,8 @@ this.LoginHelper = {
 
       
       
-      let existingLogins = Services.logins.findLogins(login.hostname,
-                                                      login.formSubmitURL,
+      let existingLogins = Services.logins.findLogins(login.origin,
+                                                      login.formActionOrigin,
                                                       login.httpRealm);
       
       
@@ -886,9 +886,10 @@ this.LoginHelper = {
 
 
   vanillaObjectToLogin(login) {
-    let formLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].
-                    createInstance(Ci.nsILoginInfo);
-    formLogin.init(login.hostname, login.formSubmitURL,
+    let formLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(Ci.nsILoginInfo);
+    
+    formLogin.init(login.origin || login.hostname,
+                   "formSubmitURL" in login ? login.formSubmitURL : login.formActionOrigin,
                    login.httpRealm, login.username,
                    login.password, login.usernameField,
                    login.passwordField);

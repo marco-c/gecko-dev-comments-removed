@@ -140,11 +140,11 @@ LoginManagerPromptFactory.prototype = {
     
     var prompt = this._asyncPrompts[hashKey];
     var prompter = prompt.prompter;
-    var [hostname, httpRealm] = prompter._getAuthTarget(prompt.channel, prompt.authInfo);
-    var hasLogins = (Services.logins.countLogins(hostname, null, httpRealm) > 0);
-    if (!hasLogins && LoginHelper.schemeUpgrades && hostname.startsWith("https://")) {
-      let httpHostname = hostname.replace(/^https:\/\//, "http://");
-      hasLogins = (Services.logins.countLogins(httpHostname, null, httpRealm) > 0);
+    var [origin, httpRealm] = prompter._getAuthTarget(prompt.channel, prompt.authInfo);
+    var hasLogins = (Services.logins.countLogins(origin, null, httpRealm) > 0);
+    if (!hasLogins && LoginHelper.schemeUpgrades && origin.startsWith("https://")) {
+      let httpOrigin = origin.replace(/^https:\/\//, "http://");
+      hasLogins = (Services.logins.countLogins(httpOrigin, null, httpRealm) > 0);
     }
     if (hasLogins && Services.logins.uiBusy) {
       this.log("_doAsyncPrompt:run bypassed, master password UI busy");
@@ -365,15 +365,15 @@ LoginManagerPrompter.prototype = {
     var selectedLogin = null;
     var checkBox = { value: false };
     var checkBoxLabel = null;
-    var [hostname, realm, unused] = this._getRealmInfo(aPasswordRealm);
+    var [origin, realm, unused] = this._getRealmInfo(aPasswordRealm);
 
     
-    if (hostname) {
+    if (origin) {
       var canRememberLogin = false;
       if (this._allowRememberLogin) {
         canRememberLogin = (aSavePassword ==
                             Ci.nsIAuthPrompt.SAVE_PASSWORD_PERMANENTLY) &&
-                           Services.logins.getLoginSavingEnabled(hostname);
+                           Services.logins.getLoginSavingEnabled(origin);
       }
 
       
@@ -382,7 +382,7 @@ LoginManagerPrompter.prototype = {
       }
 
       
-      foundLogins = Services.logins.findLogins(hostname, null, realm);
+      foundLogins = Services.logins.findLogins(origin, null, realm);
 
       
       
@@ -412,7 +412,7 @@ LoginManagerPrompter.prototype = {
                                                        aDialogTitle, aText, aUsername, aPassword,
                                                        checkBoxLabel, checkBox);
 
-    if (!ok || !checkBox.value || !hostname) {
+    if (!ok || !checkBox.value || !origin) {
       return ok;
     }
 
@@ -430,7 +430,7 @@ LoginManagerPrompter.prototype = {
     
     let newLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].
                    createInstance(Ci.nsILoginInfo);
-    newLogin.init(hostname, null, realm,
+    newLogin.init(origin, null, realm,
                   aUsername.value, aPassword.value, "", "");
     if (!selectedLogin) {
       
@@ -468,15 +468,15 @@ LoginManagerPrompter.prototype = {
 
     var checkBox = { value: false };
     var checkBoxLabel = null;
-    var [hostname, realm, username] = this._getRealmInfo(aPasswordRealm);
+    var [origin, realm, username] = this._getRealmInfo(aPasswordRealm);
 
     username = decodeURIComponent(username);
 
     
-    if (hostname && !this._inPrivateBrowsing) {
+    if (origin && !this._inPrivateBrowsing) {
       var canRememberLogin = (aSavePassword ==
                               Ci.nsIAuthPrompt.SAVE_PASSWORD_PERMANENTLY) &&
-                             Services.logins.getLoginSavingEnabled(hostname);
+                             Services.logins.getLoginSavingEnabled(origin);
 
       
       if (canRememberLogin) {
@@ -485,7 +485,7 @@ LoginManagerPrompter.prototype = {
 
       if (!aPassword.value) {
         
-        var foundLogins = Services.logins.findLogins(hostname, null, realm);
+        var foundLogins = Services.logins.findLogins(origin, null, realm);
 
         
         
@@ -505,10 +505,10 @@ LoginManagerPrompter.prototype = {
                                             aText, aPassword,
                                             checkBoxLabel, checkBox);
 
-    if (ok && checkBox.value && hostname && aPassword.value) {
+    if (ok && checkBox.value && origin && aPassword.value) {
       var newLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].
                      createInstance(Ci.nsILoginInfo);
-      newLogin.init(hostname, null, realm, username,
+      newLogin.init(origin, null, realm, username,
                     aPassword.value, "", "");
 
       this.log("New login seen for " + realm);
@@ -547,9 +547,9 @@ LoginManagerPrompter.prototype = {
       pathname = uri.pathQueryRef;
     }
 
-    var formattedHostname = this._getFormattedHostname(uri);
+    var formattedOrigin = this._getFormattedOrigin(uri);
 
-    return [formattedHostname, formattedHostname + pathname, uri.username];
+    return [formattedOrigin, formattedOrigin + pathname, uri.username];
   },
 
   
@@ -581,11 +581,11 @@ LoginManagerPrompter.prototype = {
       
       this._removeLoginNotifications();
 
-      var [hostname, httpRealm] = this._getAuthTarget(aChannel, aAuthInfo);
+      var [origin, httpRealm] = this._getAuthTarget(aChannel, aAuthInfo);
 
       
       foundLogins = LoginHelper.searchLoginsWithObject({
-        hostname,
+        origin,
         httpRealm,
         schemeUpgrades: LoginHelper.schemeUpgrades,
       });
@@ -594,7 +594,7 @@ LoginManagerPrompter.prototype = {
         "scheme",
         "timePasswordChanged",
       ];
-      foundLogins = LoginHelper.dedupeLogins(foundLogins, ["username"], resolveBy, hostname);
+      foundLogins = LoginHelper.dedupeLogins(foundLogins, ["username"], resolveBy, origin);
       this.log(foundLogins.length, "matching logins remain after deduping");
 
       
@@ -615,7 +615,7 @@ LoginManagerPrompter.prototype = {
         checkbox.value = true;
       }
 
-      var canRememberLogin = Services.logins.getLoginSavingEnabled(hostname);
+      var canRememberLogin = Services.logins.getLoginSavingEnabled(origin);
       if (!this._allowRememberLogin) {
         canRememberLogin = false;
       }
@@ -642,7 +642,7 @@ LoginManagerPrompter.prototype = {
       let topLevelHost = browser.currentURI.host;
       baseDomain = PromptAbuseHelper.getBaseDomainOrFallback(topLevelHost);
     } catch (e) {
-      baseDomain = PromptAbuseHelper.getBaseDomainOrFallback(hostname);
+      baseDomain = PromptAbuseHelper.getBaseDomainOrFallback(origin);
     }
 
     if (!ok) {
@@ -697,11 +697,11 @@ LoginManagerPrompter.prototype = {
       
       let newLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].
                      createInstance(Ci.nsILoginInfo);
-      newLogin.init(hostname, null, httpRealm,
+      newLogin.init(origin, null, httpRealm,
                     username, password, "", "");
       if (!selectedLogin) {
         this.log("New login seen for " + username +
-                 " @ " + hostname + " (" + httpRealm + ")");
+                 " @ " + origin + " (" + httpRealm + ")");
 
         if (notifyObj) {
           this._showLoginCaptureDoorhanger(newLogin, "password-save", {
@@ -713,7 +713,7 @@ LoginManagerPrompter.prototype = {
         }
       } else if (password != selectedLogin.password) {
         this.log("Updating password for " + username +
-                 " @ " + hostname + " (" + httpRealm + ")");
+                 " @ " + origin + " (" + httpRealm + ")");
         if (notifyObj) {
           this._showChangeLoginNotification(notifyObj,
                                             selectedLogin, newLogin);
@@ -745,9 +745,9 @@ LoginManagerPrompter.prototype = {
 
       cancelable = this._newAsyncPromptConsumer(aCallback, aContext);
 
-      var [hostname, httpRealm] = this._getAuthTarget(aChannel, aAuthInfo);
+      var [origin, httpRealm] = this._getAuthTarget(aChannel, aAuthInfo);
 
-      var hashKey = aLevel + "|" + hostname + "|" + httpRealm;
+      var hashKey = aLevel + "|" + origin + "|" + httpRealm;
       this.log("Async prompt key = " + hashKey);
       var asyncPrompt = this._factory._asyncPrompts[hashKey];
       if (asyncPrompt) {
@@ -865,7 +865,7 @@ LoginManagerPrompter.prototype = {
 
     let brandBundle = Services.strings.createBundle(BRAND_BUNDLE);
     let brandShortName = brandBundle.GetStringFromName("brandShortName");
-    let host = this._getShortDisplayHost(login.hostname);
+    let host = this._getShortDisplayHost(login.origin);
     let promptMsg = type == "password-save" ? this._getLocalizedString(saveMsgNames.prompt, [brandShortName, host])
                                             : this._getLocalizedString(changeMsgNames.prompt);
 
@@ -895,8 +895,8 @@ LoginManagerPrompter.prototype = {
 
     let updateButtonLabel = () => {
       let foundLogins = LoginHelper.searchLoginsWithObject({
-        formSubmitURL: login.formSubmitURL,
-        hostname: login.hostname,
+        formActionOrigin: login.formActionOrigin,
+        origin: login.origin,
         httpRealm: login.httpRealm,
         schemeUpgrades: LoginHelper.schemeUpgrades,
       });
@@ -968,8 +968,8 @@ LoginManagerPrompter.prototype = {
 
     let persistData = () => {
       let foundLogins = LoginHelper.searchLoginsWithObject({
-        formSubmitURL: login.formSubmitURL,
-        hostname: login.hostname,
+        formActionOrigin: login.formActionOrigin,
+        origin: login.origin,
         httpRealm: login.httpRealm,
         schemeUpgrades: LoginHelper.schemeUpgrades,
       });
@@ -979,13 +979,13 @@ LoginManagerPrompter.prototype = {
         "scheme",
         "timePasswordChanged",
       ];
-      logins = LoginHelper.dedupeLogins(logins, ["username"], resolveBy, login.hostname);
+      logins = LoginHelper.dedupeLogins(logins, ["username"], resolveBy, login.origin);
 
       if (logins.length == 0) {
         
         
-        Services.logins.addLogin(new LoginInfo(login.hostname,
-                                               login.formSubmitURL,
+        Services.logins.addLogin(new LoginInfo(login.origin,
+                                               login.formActionOrigin,
                                                login.httpRealm,
                                                login.username,
                                                login.password,
@@ -1037,7 +1037,7 @@ LoginManagerPrompter.prototype = {
         callback: () => {
           histogram.add(PROMPT_NEVER);
           Services.obs.notifyObservers(null, "weave:telemetry:histogram", histogramName);
-          Services.logins.setLoginSavingEnabled(login.hostname, false);
+          Services.logins.setLoginSavingEnabled(login.origin, false);
           browser.focus();
         },
       });
@@ -1127,7 +1127,7 @@ LoginManagerPrompter.prototype = {
         (Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_1) +
         (Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_2);
 
-    var displayHost = this._getShortDisplayHost(aLogin.hostname);
+    var displayHost = this._getShortDisplayHost(aLogin.origin);
 
     var dialogText;
     if (aLogin.username) {
@@ -1154,10 +1154,10 @@ LoginManagerPrompter.prototype = {
     
     
     if (userChoice == 2) {
-      this.log("Disabling " + aLogin.hostname + " logins by request.");
-      Services.logins.setLoginSavingEnabled(aLogin.hostname, false);
+      this.log("Disabling " + aLogin.origin + " logins by request.");
+      Services.logins.setLoginSavingEnabled(aLogin.origin, false);
     } else if (userChoice == 0) {
-      this.log("Saving login for " + aLogin.hostname);
+      this.log("Saving login for " + aLogin.origin);
       Services.logins.addLogin(aLogin);
     } else {
       
@@ -1209,8 +1209,8 @@ LoginManagerPrompter.prototype = {
 
 
   _showChangeLoginNotification(aNotifyObj, aOldLogin, aNewLogin, dismissed = false) {
-    aOldLogin.hostname = aNewLogin.hostname;
-    aOldLogin.formSubmitURL = aNewLogin.formSubmitURL;
+    aOldLogin.origin = aNewLogin.origin;
+    aOldLogin.formActionOrigin = aNewLogin.formActionOrigin;
     aOldLogin.password = aNewLogin.password;
     aOldLogin.username = aNewLogin.username;
     this._showLoginCaptureDoorhanger(aOldLogin, "password-change", {dismissed});
@@ -1280,8 +1280,8 @@ LoginManagerPrompter.prototype = {
       this.log("Updating password for user " + selectedLogin.username);
       var newLoginWithUsername = Cc["@mozilla.org/login-manager/loginInfo;1"].
                      createInstance(Ci.nsILoginInfo);
-      newLoginWithUsername.init(aNewLogin.hostname,
-                                aNewLogin.formSubmitURL, aNewLogin.httpRealm,
+      newLoginWithUsername.init(aNewLogin.origin,
+                                aNewLogin.formActionOrigin, aNewLogin.httpRealm,
                                 selectedLogin.username, aNewLogin.password,
                                 selectedLogin.usernameField, aNewLogin.passwordField);
       this._updateLogin(selectedLogin, newLoginWithUsername);
@@ -1301,8 +1301,8 @@ LoginManagerPrompter.prototype = {
     var propBag = Cc["@mozilla.org/hash-property-bag;1"].
                   createInstance(Ci.nsIWritablePropertyBag);
     if (aNewLogin) {
-      propBag.setProperty("formSubmitURL", aNewLogin.formSubmitURL);
-      propBag.setProperty("hostname", aNewLogin.hostname);
+      propBag.setProperty("formActionOrigin", aNewLogin.formActionOrigin);
+      propBag.setProperty("origin", aNewLogin.origin);
       propBag.setProperty("password", aNewLogin.password);
       propBag.setProperty("username", aNewLogin.username);
       
@@ -1434,7 +1434,7 @@ LoginManagerPrompter.prototype = {
 
 
 
-  _getFormattedHostname(aURI) {
+  _getFormattedOrigin(aURI) {
     let uri;
     if (aURI instanceof Ci.nsIURI) {
       uri = aURI;
@@ -1477,7 +1477,7 @@ LoginManagerPrompter.prototype = {
 
 
   _getAuthTarget(aChannel, aAuthInfo) {
-    var hostname, realm;
+    var origin, realm;
 
     
     
@@ -1496,28 +1496,28 @@ LoginManagerPrompter.prototype = {
       
       var idnService = Cc["@mozilla.org/network/idn-service;1"].
                        getService(Ci.nsIIDNService);
-      hostname = "moz-proxy://" +
+      origin = "moz-proxy://" +
                   idnService.convertUTF8toACE(info.host) +
                   ":" + info.port;
       realm = aAuthInfo.realm;
       if (!realm) {
-        realm = hostname;
+        realm = origin;
       }
 
-      return [hostname, realm];
+      return [origin, realm];
     }
 
-    hostname = this._getFormattedHostname(aChannel.URI);
+    origin = this._getFormattedOrigin(aChannel.URI);
 
     
     
     
     realm = aAuthInfo.realm;
     if (!realm) {
-      realm = hostname;
+      realm = origin;
     }
 
-    return [hostname, realm];
+    return [origin, realm];
   },
 
 
