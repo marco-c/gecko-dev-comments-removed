@@ -15138,5 +15138,17 @@ nsIPrincipal* Document::EffectiveStoragePrincipal() const {
   return mIntrinsicStoragePrincipal;
 }
 
+void Document::SetIsInitialDocument(bool aIsInitialDocument) {
+  mIsInitialDocumentInWindow = aIsInitialDocument;
+
+  
+  
+  if (RefPtr<nsPIDOMWindowInner> inner = GetInnerWindow()) {
+    if (RefPtr<WindowGlobalChild> wgc = inner->GetWindowGlobalChild()) {
+      wgc->SendSetIsInitialDocument(aIsInitialDocument);
+    }
+  }
+}
+
 }  
 }  
