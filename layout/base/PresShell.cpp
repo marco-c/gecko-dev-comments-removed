@@ -3994,6 +3994,7 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
     "Event",
     "Content",
     "ContentAndNotify",
+    "Style",
     
     
     "Style",
@@ -4016,7 +4017,7 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
 #  endif
 #endif
 
-  NS_ASSERTION(flushType >= FlushType::Frames, "Why did we get called?");
+  NS_ASSERTION(flushType >= FlushType::Style, "Why did we get called?");
 
   mNeedStyleFlush = false;
   mNeedThrottledAnimationFlush =

@@ -20,22 +20,20 @@ namespace mozilla {
 
 
 enum class FlushType : uint8_t {
-  None = 0,             
-  Event = 1,            
-  Content = 2,          
-  ContentAndNotify = 3, 
+  None,             
+  Event,            
+  Content,          
+  ContentAndNotify, 
 
 
-  Style = 4,            
-  Frames = Style,
-  EnsurePresShellInitAndFrames =
-      5,                   
-  InterruptibleLayout = 6, 
+  Style,            
+  Frames,           
+  EnsurePresShellInitAndFrames, 
 
+  InterruptibleLayout, 
 
-  Layout = 7,              
-
-  Display = 8,             
+  Layout,              
+  Display,             
   Count
 };
 
