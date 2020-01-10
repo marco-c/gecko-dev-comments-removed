@@ -281,6 +281,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   void GetApzSupportInfo(mozilla::widget::InfoObject& aObj);
   void GetTilesSupportInfo(mozilla::widget::InfoObject& aObj);
   void GetFrameStats(mozilla::widget::InfoObject& aObj);
+  void GetCMSSupportInfo(mozilla::widget::InfoObject& aObj);
 
   
   
@@ -911,6 +912,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   mozilla::widget::GfxInfoCollector<gfxPlatform> mApzSupportCollector;
   mozilla::widget::GfxInfoCollector<gfxPlatform> mTilesInfoCollector;
   mozilla::widget::GfxInfoCollector<gfxPlatform> mFrameStatsCollector;
+  mozilla::widget::GfxInfoCollector<gfxPlatform> mCMSInfoCollector;
 
   nsTArray<mozilla::layers::FrameStats> mFrameStats;
 
