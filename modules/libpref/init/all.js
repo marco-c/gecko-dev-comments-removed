@@ -1349,8 +1349,6 @@ pref("network.http.referer.trimmingPolicy", 0);
 
 pref("network.http.referer.XOriginTrimmingPolicy", 0);
 
-pref("network.http.referer.XOriginPolicy", 0);
-
 
 
 pref("network.http.sendOriginHeader", 2);
