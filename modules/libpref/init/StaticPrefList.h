@@ -770,6 +770,19 @@ VARCACHE_PREF(
 PREF("browser.display.focus_text_color", String, "")
 PREF("browser.display.foreground_color", String, "")
 
+VARCACHE_PREF(
+  Live,
+  "browser.display.show_focus_rings",
+  browser_display_show_focus_rings,
+  bool,
+  
+#if defined(XP_MACOSX) || defined(ANDROID)
+  false
+#else
+  true
+#endif
+)
+
 
 
 VARCACHE_PREF(
