@@ -2252,6 +2252,7 @@ pref("devtools.webconsole.timestampMessages", false);
 
 
 pref("devtools.webconsole.input.editor", false);
+pref("devtools.browserconsole.input.editor", false);
 
 
 pref("devtools.webconsole.input.editorWidth", 0);

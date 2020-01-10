@@ -70,7 +70,7 @@ const prefs = {
       
       INPUT_HISTORY_COUNT: "devtools.webconsole.inputHistoryCount",
       
-      EDITOR: "devtools.webconsole.input.editor",
+      EDITOR: "input.editor",
       
       CONTENT_MESSAGES: "devtools.browserconsole.contentMessages",
       
