@@ -114,11 +114,12 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
   
   inline bool MayWrap() {
-    return mWrapColumn && ((mFlags & nsIDocumentEncoder::OutputFormatted) ||
-                           (mFlags & nsIDocumentEncoder::OutputWrap));
+    return mWrapColumn &&
+           ((mSettings.mFlags & nsIDocumentEncoder::OutputFormatted) ||
+            (mSettings.mFlags & nsIDocumentEncoder::OutputWrap));
   }
   inline bool MayBreakLines() {
-    return !(mFlags & nsIDocumentEncoder::OutputDisallowLineBreaking);
+    return !(mSettings.mFlags & nsIDocumentEncoder::OutputDisallowLineBreaking);
   }
 
   inline bool DoOutput() const { return mHeadLevel == 0; }
@@ -148,7 +149,26 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   uint32_t mHeadLevel;
   bool mAtFirstColumn;
 
-  bool mStructs;  
+  struct Settings {
+    
+    bool mStructs = true;
+
+    
+    int32_t mHeaderStrategy = 1; 
+
+
+
+
+
+    
+    int32_t mFlags = 0;
+
+    
+    bool mWithRubyAnnotation = false;
+  };
+
+  Settings mSettings;
+
 
   
   
@@ -160,7 +180,6 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   
   nsString mInIndentString;
   int32_t mCiteQuoteLevel;
-  int32_t mFlags;
   int32_t mFloatingLines;  
 
   
@@ -191,15 +210,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
   bool mPreformattedBlockBoundary;
 
-  
-  bool mWithRubyAnnotation;
-
   nsString mURL;
-  int32_t mHeaderStrategy;   
-
-
-
-
   int32_t mHeaderCounter[7]; 
 
 
