@@ -46,8 +46,13 @@ class FullParseHandler {
 
 
 
+
+
+
+
   const Rooted<LazyScript*> lazyOuterFunction_;
   size_t lazyInnerFunctionIndex;
+
   size_t lazyClosedOverBindingIndex;
 
   const SourceKind sourceKind_;
