@@ -35,6 +35,10 @@ class UrlbarView {
     this.document = this.panel.ownerDocument;
     this.window = this.document.defaultView;
 
+    if (this.input.megabar) {
+      this.panel.classList.add("megabar");
+    }
+
     this._mainContainer = this.panel.querySelector(".urlbarView-body-inner");
     this._rows = this.panel.querySelector("#urlbarView-results");
 
@@ -423,66 +427,76 @@ class UrlbarView {
 
     this.panel.removeAttribute("actionoverride");
 
-    
+    let inputRect = this._getBoundsWithoutFlushing(this.input.textbox);
+
     let px = number => number.toFixed(2) + "px";
-    let documentRect = this._getBoundsWithoutFlushing(
-      this.document.documentElement
-    );
-    let width = documentRect.right - documentRect.left;
-    this.panel.setAttribute("width", width);
+    let width;
+    if (this.input.megabar) {
+      
+      width = inputRect.width;
+    } else {
+      
+      let documentRect = this._getBoundsWithoutFlushing(
+        this.document.documentElement
+      );
+      width = documentRect.right - documentRect.left;
+
+      
+      
+      
+      
+      let boundToCheck = this.window.RTL_UI ? "right" : "left";
+      let startOffset = Math.abs(
+        inputRect[boundToCheck] - documentRect[boundToCheck]
+      );
+      let alignSiteIcons = startOffset / width <= 0.3 || startOffset <= 250;
+
+      if (alignSiteIcons) {
+        
+        let boundToCheckEnd = this.window.RTL_UI ? "left" : "right";
+        let endOffset = Math.abs(
+          inputRect[boundToCheckEnd] - documentRect[boundToCheckEnd]
+        );
+        if (endOffset > startOffset * 2) {
+          
+          
+          
+          endOffset = startOffset;
+        }
+
+        
+        
+        
+        let alignIcon;
+        if (this.input.getAttribute("pageproxystate") === "valid") {
+          alignIcon = this.document.getElementById(
+            "tracking-protection-icon-box"
+          );
+        } else {
+          alignIcon = this.document.getElementById("identity-icon");
+        }
+        let alignRect = this._getBoundsWithoutFlushing(alignIcon);
+        let start = this.window.RTL_UI
+          ? documentRect.right - alignRect.right
+          : alignRect.left;
+
+        this.panel.style.setProperty("--item-padding-start", px(start));
+        this.panel.style.setProperty("--item-padding-end", px(endOffset));
+      } else {
+        this.panel.style.removeProperty("--item-padding-start");
+        this.panel.style.removeProperty("--item-padding-end");
+      }
+    }
+
+    this.panel.style.width = px(width);
     this._mainContainer.style.maxWidth = px(width);
 
     
     
-    
-    
-    let boundToCheck = this.window.RTL_UI ? "right" : "left";
-    let inputRect = this._getBoundsWithoutFlushing(this.input.textbox);
-    let startOffset = Math.abs(
-      inputRect[boundToCheck] - documentRect[boundToCheck]
-    );
-    let alignSiteIcons = startOffset / width <= 0.3 || startOffset <= 250;
-    if (alignSiteIcons) {
-      
-      let boundToCheckEnd = this.window.RTL_UI ? "left" : "right";
-      let endOffset = Math.abs(
-        inputRect[boundToCheckEnd] - documentRect[boundToCheckEnd]
-      );
-      if (endOffset > startOffset * 2) {
-        
-        
-        
-        endOffset = startOffset;
-      }
-
-      
-      
-      
-      let alignIcon;
-      if (this.input.getAttribute("pageproxystate") === "valid") {
-        alignIcon = this.document.getElementById(
-          "tracking-protection-icon-box"
-        );
-      } else {
-        alignIcon = this.document.getElementById("identity-icon");
-      }
-      let alignRect = this._getBoundsWithoutFlushing(alignIcon);
-      let start = this.window.RTL_UI
-        ? documentRect.right - alignRect.right
-        : alignRect.left;
-
-      this.panel.style.setProperty("--item-padding-start", px(start));
-      this.panel.style.setProperty("--item-padding-end", px(endOffset));
-    } else {
-      this.panel.style.removeProperty("--item-padding-start");
-      this.panel.style.removeProperty("--item-padding-end");
-    }
-
-    
-    let toolbarRect = this._getBoundsWithoutFlushing(
-      this.input.textbox.closest("toolbar")
-    );
-    this.panel.style.top = px(toolbarRect.bottom);
+    let alignmentRect = this.input.megabar
+      ? this._getBoundsWithoutFlushing(this.input.textbox)
+      : this._getBoundsWithoutFlushing(this.input.textbox.closest("toolbar"));
+    this.panel.style.top = px(alignmentRect.bottom);
 
     this.panel.removeAttribute("hidden");
     this.input.inputField.setAttribute("aria-expanded", "true");
