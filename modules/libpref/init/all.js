@@ -1250,8 +1250,11 @@ pref("dom.storage.enabled", true);
 
 
 
-
+#ifdef EARLY_BETA_OR_EARLIER
 pref("dom.storage.next_gen", true);
+#else
+pref("dom.storage.next_gen", false);
+#endif
 pref("dom.storage.default_quota",      5120);
 pref("dom.storage.shadow_writes", true);
 pref("dom.storage.snapshot_prefill", 16384);
@@ -2630,7 +2633,7 @@ pref("security.dialog_enable_delay", 1000);
 pref("security.notification_enable_delay", 500);
 
 #if defined(DEBUG) && !defined(ANDROID)
-pref("csp.about_uris_without_csp", "blank,printpreview,srcdoc,addons,cache-entry,config,crashes,debugging,devtools,downloads,home,networking,newtab,performance,plugins,profiles,restartrequired,serviceworkers,sessionrestore,support,sync-log,telemetry,url-classifier,welcomeback");
+pref("csp.about_uris_without_csp", "blank,printpreview,srcdoc,addons,cache-entry,config,debugging,devtools,downloads,home,networking,newtab,performance,plugins,profiles,restartrequired,serviceworkers,sessionrestore,support,sync-log,telemetry,url-classifier,welcomeback");
 
 pref("csp.overrule_about_uris_without_csp_whitelist", false);
 pref("csp.skip_about_page_has_csp_assert", false);
