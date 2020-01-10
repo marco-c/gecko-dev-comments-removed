@@ -21,8 +21,8 @@ function run_test() {
   AddonTestUtils.createAppInfo("XPCShell", "xpcshell@tests.mozilla.org", "1", "");
 
   
-  BlocklistGlobal.ExtensionBlocklistRS._ensureInitialized();
-  BlocklistGlobal.PluginBlocklistRS._ensureInitialized();
+  BlocklistGlobal.ExtensionBlocklistRS.ensureInitialized();
+  BlocklistGlobal.PluginBlocklistRS.ensureInitialized();
   BlocklistGlobal.GfxBlocklistRS._ensureInitialized();
 
   gBlocklistClients = [

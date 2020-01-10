@@ -512,7 +512,7 @@ this.PluginBlocklistRS = {
   },
 
   async _ensureEntries() {
-    await this._ensureInitialized();
+    await this.ensureInitialized();
     if (!this._entries && gBlocklistEnabled) {
       await this._updateEntries();
 
@@ -564,7 +564,7 @@ this.PluginBlocklistRS = {
     return entry;
   },
 
-  async _ensureInitialized() {
+  async ensureInitialized() {
     if (!gBlocklistEnabled || this._initialized) {
       return;
     }
@@ -587,7 +587,7 @@ this.PluginBlocklistRS = {
 
   async _onUpdate() {
     let oldEntries = this._entries || [];
-    await this._ensureInitialized();
+    await this.ensureInitialized();
     await this._updateEntries();
     const pluginHost = Cc["@mozilla.org/plugin/host;1"].
                          getService(Ci.nsIPluginHost);
@@ -883,7 +883,7 @@ this.PluginBlocklistRS = {
 
 this.ExtensionBlocklistRS = {
   async _ensureEntries() {
-    await this._ensureInitialized();
+    await this.ensureInitialized();
     if (!this._entries && gBlocklistEnabled) {
       await this._updateEntries();
     }
@@ -940,7 +940,7 @@ this.ExtensionBlocklistRS = {
     return entry;
   },
 
-  async _ensureInitialized() {
+  async ensureInitialized() {
     if (!gBlocklistEnabled || this._initialized) {
       return;
     }
@@ -963,7 +963,7 @@ this.ExtensionBlocklistRS = {
 
   async _onUpdate() {
     let oldEntries = this._entries || [];
-    await this._ensureInitialized();
+    await this.ensureInitialized();
     await this._updateEntries();
 
     const types = ["extension", "theme", "locale", "dictionary", "service"];
@@ -2531,6 +2531,8 @@ let BlocklistRS = {
   loadBlocklistAsync() {
     
     GfxBlocklistRS.checkForEntries();
+    ExtensionBlocklistRS.ensureInitialized();
+    PluginBlocklistRS.ensureInitialized();
     
     
     gLoadingWasTriggered = true;

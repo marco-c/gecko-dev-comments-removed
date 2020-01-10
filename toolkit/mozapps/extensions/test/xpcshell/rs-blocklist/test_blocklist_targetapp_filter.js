@@ -25,7 +25,7 @@ function run_test() {
   AddonTestUtils.createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "58", "");
   
   
-  BlocklistGlobal.PluginBlocklistRS._ensureInitialized();
+  BlocklistGlobal.PluginBlocklistRS.ensureInitialized();
   
   client = RemoteSettings("plugins", { bucketName: "blocklists" });
 
