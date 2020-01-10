@@ -260,9 +260,9 @@ void nsImageBoxFrame::UpdateImage() {
     
     
     auto* display = StyleDisplay();
-    if (!(display->HasAppearance() && nsBox::gTheme &&
-          nsBox::gTheme->ThemeSupportsWidget(nullptr, this,
-                                             display->mAppearance))) {
+    nsITheme* theme;
+    if (!(display->HasAppearance() && (theme = presContext->GetTheme()) &&
+          theme->ThemeSupportsWidget(nullptr, this, display->mAppearance))) {
       
       imgRequestProxy* styleRequest = StyleList()->GetListStyleImage();
       if (styleRequest) {
@@ -624,8 +624,9 @@ void nsImageBoxFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
 
   
   const nsStyleDisplay* disp = StyleDisplay();
-  if (disp->HasAppearance() && nsBox::gTheme &&
-      nsBox::gTheme->ThemeSupportsWidget(nullptr, this, disp->mAppearance))
+  nsITheme* theme;
+  if (disp->HasAppearance() && (theme = PresContext()->GetTheme()) &&
+      theme->ThemeSupportsWidget(nullptr, this, disp->mAppearance))
     return;
 
   
