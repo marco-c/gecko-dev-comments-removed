@@ -13,42 +13,17 @@ add_task(async function() {
   
   
   
-  
-  
-  
-  
-  
-  
-  let keepAliveCount = 0;
-  try {
-    keepAliveCount = SpecialPowers.getIntPref("dom.ipc.keepProcessesAlive.web");
-  } catch (ex) {
-    
-  }
-  let safeProcessCount = keepAliveCount + 2;
-  info(
-    "dom.ipc.keepProcessesAlive.web is " +
-      keepAliveCount +
-      ", boosting " +
-      "process count temporarily to " +
-      safeProcessCount
-  );
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["dom.ipc.processCount", safeProcessCount],
-      ["dom.ipc.processCount.web", safeProcessCount],
-    ],
-  });
 
   addPerm("http://example.com", "perm1");
   addPerm("http://foo.bar.example.com", "perm2");
   addPerm("about:home", "perm3");
   addPerm("https://example.com", "perm4");
   
+  
   addPerm("https://somerandomwebsite.com", "document");
 
   await BrowserTestUtils.withNewTab(
-    { gBrowser, url: "about:blank" },
+    { gBrowser, url: "about:blank", forceNewProcess: true },
     async function(aBrowser) {
       await ContentTask.spawn(aBrowser, null, async function() {
         
