@@ -497,7 +497,7 @@ exports.registerFront = function(cls) {
 
 
 
-async function getFront(client, typeName, form, target = null) {
+function getFront(client, typeName, form, target = null) {
   const type = types.getType(typeName);
   if (!type) {
     throw new Error(`No spec for front type '${typeName}'.`);
@@ -521,13 +521,19 @@ async function getFront(client, typeName, form, target = null) {
         ` actor's form.`
     );
   }
-
+  
+  
+  
+  
   if (!target) {
-    await instance.manage(instance);
+    instance.manage(instance);
   } else {
-    await target.manage(instance);
+    target.manage(instance);
   }
 
+  if (typeof instance.initialize == "function") {
+    return instance.initialize().then(() => instance);
+  }
   return instance;
 }
 exports.getFront = getFront;

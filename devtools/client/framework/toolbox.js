@@ -217,6 +217,8 @@ function Toolbox(
   this._toolStartups = new Map();
   this._inspectorExtensionSidebars = new Map();
 
+  this._initInspector = null;
+  this._inspector = null;
   this._netMonitorAPI = null;
 
   
@@ -297,10 +299,6 @@ function Toolbox(
   this._target.on("navigate", this._refreshHostTitle);
   this._target.on("frame-update", this._updateFrames);
   this._target.on("inspect-object", this._onInspectObject);
-
-  this._target.onFront("inspector", async inspectorFront => {
-    registerWalkerListeners(this.store, inspectorFront.walker);
-  });
 
   this.on("host-changed", this._refreshHostTitle);
   this.on("select", this._onToolSelected);
@@ -523,6 +521,14 @@ Toolbox.prototype = {
 
   get doc() {
     return this.win.document;
+  },
+
+  
+
+
+
+  get inspectorFront() {
+    return this._inspector;
   },
 
   
@@ -1911,19 +1917,19 @@ Toolbox.prototype = {
 
 
   updateToolboxButtons() {
-    const inspectorFront = this.target.getCachedFront("inspectorFront");
+    const inspector = this.inspectorFront;
     
     
     const hasHighlighters =
-      inspectorFront &&
-      (inspectorFront.hasHighlighter("RulersHighlighter") ||
-        inspectorFront.hasHighlighter("MeasuringToolHighlighter"));
+      inspector &&
+      (inspector.hasHighlighter("RulersHighlighter") ||
+        inspector.hasHighlighter("MeasuringToolHighlighter"));
     if (hasHighlighters || this.isPaintFlashing) {
       if (this.isPaintFlashing) {
         this.togglePaintFlashing();
       }
       if (hasHighlighters) {
-        inspectorFront.destroyHighlighters();
+        inspector.destroyHighlighters();
       }
       this.component.setToolboxButtons(this.toolbarButtons);
     }
@@ -2159,7 +2165,7 @@ Toolbox.prototype = {
     
     
     
-    if (!this.target.getCachedFront("inspector")) {
+    if (!this._inspector) {
       return;
     }
 
@@ -2190,7 +2196,7 @@ Toolbox.prototype = {
 
     
     
-    if (!this.target.getCachedFront("inspector")) {
+    if (!this._inspector) {
       return;
     }
 
@@ -2230,6 +2236,10 @@ Toolbox.prototype = {
 
 
   loadTool: function(id) {
+    if (id === "inspector" && !this._inspector) {
+      this.initInspector();
+    }
+
     let iframe = this.doc.getElementById("toolbox-panel-iframe-" + id);
     if (iframe) {
       const panel = this._toolPanels.get(id);
@@ -2272,6 +2282,18 @@ Toolbox.prototype = {
       }
 
       const onLoad = async () => {
+        if (id === "inspector") {
+          await this._initInspector;
+
+          
+          
+          
+          
+          if (!this._inspector || !iframe.contentWindow) {
+            return;
+          }
+        }
+
         
         iframe.style.visibility = "visible";
 
@@ -3280,6 +3302,24 @@ Toolbox.prototype = {
 
 
 
+  initInspector: function() {
+    if (!this._initInspector) {
+      this._initInspector = async function() {
+        
+        
+        
+        
+        this._inspector = await this.target.getFront("inspector");
+        registerWalkerListeners(this.store, this._inspector.walker);
+      }.bind(this)();
+    }
+    return this._initInspector;
+  },
+
+  
+
+
+
 
 
 
@@ -3368,6 +3408,23 @@ Toolbox.prototype = {
       const panel = this.getPanel("webconsole");
       panel.hud.ui.inspectObjectActor(objectActor);
     }
+  },
+
+  
+
+
+
+
+  destroyInspector: function() {
+    if (!this._inspector) {
+      return;
+    }
+
+    
+    
+    this._inspector.destroy();
+
+    this._inspector = null;
   },
 
   
@@ -3533,6 +3590,9 @@ Toolbox.prototype = {
         settleAll(outstanding)
           .catch(console.error)
           .then(async () => {
+            
+            this.destroyInspector();
+
             this.selection.destroy();
             this.selection = null;
 
