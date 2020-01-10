@@ -76,9 +76,6 @@ class GMPContentParent final : public PGMPContentParent, public GMPSharedMem {
   PGMPVideoEncoderParent* AllocPGMPVideoEncoderParent() override;
   bool DeallocPGMPVideoEncoderParent(PGMPVideoEncoderParent* aActor) override;
 
-  PChromiumCDMParent* AllocPChromiumCDMParent() override;
-  bool DeallocPChromiumCDMParent(PChromiumCDMParent* aActor) override;
-
   void CloseIfUnused();
   
   

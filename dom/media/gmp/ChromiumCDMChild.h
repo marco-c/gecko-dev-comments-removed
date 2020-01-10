@@ -20,7 +20,9 @@ class ChromiumCDMChild : public PChromiumCDMChild,
                          public cdm::Host_9,
                          public cdm::Host_10 {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ChromiumCDMChild);
+  
+  
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ChromiumCDMChild, final);
 
   explicit ChromiumCDMChild(GMPContentChild* aPlugin);
 

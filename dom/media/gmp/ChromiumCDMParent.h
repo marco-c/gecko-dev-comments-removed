@@ -36,7 +36,9 @@ class ChromiumCDMParent final : public PChromiumCDMParent,
  public:
   typedef MozPromise<bool, MediaResult,  true> InitPromise;
 
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ChromiumCDMParent)
+  
+  
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ChromiumCDMParent, final)
 
   ChromiumCDMParent(GMPContentParent* aContentParent, uint32_t aPluginId);
 
