@@ -51,8 +51,6 @@ pref("browser.cache.disk_cache_ssl",        true);
 
 pref("browser.cache.check_doc_frequency",   3);
 
-pref("browser.cache.disk.preload_chunk_count", 4); 
-
 pref("browser.cache.frecency_half_life_hours", 6);
 
 

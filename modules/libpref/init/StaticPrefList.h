@@ -776,6 +776,15 @@ VARCACHE_PREF(
 )
 
 
+
+VARCACHE_PREF(
+  Live,
+  "browser.cache.disk.preload_chunk_count",
+   browser_cache_disk_preload_chunk_count,
+  RelaxedAtomicUint32, 4  
+)
+
+
 VARCACHE_PREF(
   Live,
   "browser.contentblocking.allowlist.storage.enabled",
