@@ -18,6 +18,7 @@
 #include "mozilla/Preferences.h"
 #include "nsZipArchive.h"
 #include "mozilla/Services.h"
+#include "mozilla/Telemetry.h"
 #include "nsIObserverService.h"
 #include "nsCRT.h"
 #include "nsAppDirectoryServiceDefs.h"
@@ -29,6 +30,13 @@ using namespace mozilla;
 static const char kIntlHyphenationAliasPrefix[] = "intl.hyphenation-alias.";
 static const char kMemoryPressureNotification[] = "memory-pressure";
 
+
+
+
+
+static const char kParentShuttingDownNotification[] = "profile-before-change";
+static const char kChildShuttingDownNotification[] = "content-child-shutdown";
+
 class HyphenReporter final : public nsIMemoryReporter,
                              public CountingAllocatorBase<HyphenReporter> {
  private:
@@ -36,6 +44,11 @@ class HyphenReporter final : public nsIMemoryReporter,
 
  public:
   NS_DECL_ISUPPORTS
+
+  
+  static uint32_t MemoryAllocatedInKB() {
+    return (MemoryAllocated() + 1023) / 1024;
+  }
 
   NS_IMETHOD CollectReports(nsIHandleReportCallback* aHandleReport,
                             nsISupports* aData, bool aAnonymize) override {
@@ -78,20 +91,21 @@ void hnj_free(void* aPtr) { HyphenReporter::CountingFree(aPtr); }
 
 nsHyphenationManager* nsHyphenationManager::sInstance = nullptr;
 
-NS_IMPL_ISUPPORTS(nsHyphenationManager::MemoryPressureObserver, nsIObserver)
+NS_IMPL_ISUPPORTS(nsHyphenationManager, nsIObserver)
 
 NS_IMETHODIMP
-nsHyphenationManager::MemoryPressureObserver::Observe(nsISupports* aSubject,
-                                                      const char* aTopic,
-                                                      const char16_t* aData) {
+nsHyphenationManager::Observe(nsISupports* aSubject, const char* aTopic,
+                              const char16_t* aData) {
   if (!nsCRT::strcmp(aTopic, kMemoryPressureNotification)) {
     
     
-    
-    
-    if (nsHyphenationManager::sInstance) {
-      nsHyphenationManager::sInstance->mHyphenators.Clear();
-    }
+    Telemetry::Accumulate(Telemetry::HYPHENATION_MEMORY,
+                          HyphenReporter::MemoryAllocatedInKB());
+    nsHyphenationManager::sInstance->mHyphenators.Clear();
+  } else if (!nsCRT::strcmp(aTopic, kParentShuttingDownNotification) ||
+             !nsCRT::strcmp(aTopic, kChildShuttingDownNotification)) {
+    Telemetry::Accumulate(Telemetry::HYPHENATION_MEMORY,
+                          HyphenReporter::MemoryAllocatedInKB());
   }
   return NS_OK;
 }
@@ -102,7 +116,10 @@ nsHyphenationManager* nsHyphenationManager::Instance() {
 
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
     if (obs) {
-      obs->AddObserver(new MemoryPressureObserver, kMemoryPressureNotification,
+      obs->AddObserver(sInstance, kMemoryPressureNotification, false);
+      obs->AddObserver(sInstance,
+                       XRE_IsParentProcess() ? kParentShuttingDownNotification
+                                             : kChildShuttingDownNotification,
                        false);
     }
 
@@ -112,8 +129,17 @@ nsHyphenationManager* nsHyphenationManager::Instance() {
 }
 
 void nsHyphenationManager::Shutdown() {
-  delete sInstance;
-  sInstance = nullptr;
+  if (sInstance) {
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    if (obs) {
+      obs->RemoveObserver(sInstance, kMemoryPressureNotification);
+      obs->RemoveObserver(sInstance, XRE_IsParentProcess()
+                                         ? kParentShuttingDownNotification
+                                         : kChildShuttingDownNotification);
+    }
+    delete sInstance;
+    sInstance = nullptr;
+  }
 }
 
 nsHyphenationManager::nsHyphenationManager() {
