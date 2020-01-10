@@ -284,6 +284,9 @@ add_task(async function setup() {
       ["extensions.htmlaboutaddons.discover.enabled", true],
       
       
+      ["extensions.htmlaboutaddons.recommendations.enabled", false],
+      
+      
       ["browser.discovery.enabled", false],
     ],
   });

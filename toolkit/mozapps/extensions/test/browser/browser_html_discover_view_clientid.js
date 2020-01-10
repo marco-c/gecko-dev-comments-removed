@@ -54,6 +54,11 @@ add_task(async function setup() {
       ["app.support.baseURL", `${serverBaseUrl}sumo/`],
       ["extensions.htmlaboutaddons.discover.enabled", true],
       ["extensions.htmlaboutaddons.enabled", true],
+      
+      
+      
+      
+      ["extensions.htmlaboutaddons.recommendations.enabled", false],
     ],
   });
 });
@@ -143,6 +148,14 @@ add_task(async function clientid_from_private_window() {
 });
 
 add_task(async function clientid_enabled_from_extension_list() {
+  await SpecialPowers.pushPrefEnv({
+    
+    set: [
+      ["extensions.htmlaboutaddons.discover.enabled", false],
+      ["extensions.htmlaboutaddons.recommendations.enabled", true],
+    ],
+  });
+
   
   
   Services.prefs.setCharPref(PREF_UI_LASTCATEGORY, "addons://list/extension");
@@ -164,9 +177,18 @@ add_task(async function clientid_enabled_from_extension_list() {
   await recommendations.loadCardsIfNeeded();
 
   await closeView(win);
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function clientid_enabled_from_theme_list() {
+  await SpecialPowers.pushPrefEnv({
+    
+    set: [
+      ["extensions.htmlaboutaddons.discover.enabled", false],
+      ["extensions.htmlaboutaddons.recommendations.enabled", true],
+    ],
+  });
+
   
   
   Services.prefs.setCharPref(PREF_UI_LASTCATEGORY, "addons://list/theme");
@@ -188,4 +210,5 @@ add_task(async function clientid_enabled_from_theme_list() {
      "Moz-Client-Id is now sent for extensions");
 
   await closeView(win);
+  await SpecialPowers.popPrefEnv();
 });

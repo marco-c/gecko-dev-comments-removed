@@ -48,6 +48,10 @@ add_task(async function setup() {
     set: [
       ["extensions.getAddons.discovery.api_url", TEST_API_URL],
       ["extensions.htmlaboutaddons.discover.enabled", true],
+      
+      
+      
+      ["extensions.htmlaboutaddons.recommendations.enabled", false],
     ],
   });
 });
