@@ -216,6 +216,23 @@ using ScriptAndCountsVector = GCVector<ScriptAndCounts, 0, SystemAllocPolicy>;
 
 class AutoLockScriptData;
 
+
+
+
+
+struct SelfHostedLazyScript {
+  SelfHostedLazyScript() = default;
+
+  
+  
+  
+  uint8_t* jitCodeRaw_ = nullptr;
+
+  static constexpr size_t offsetOfJitCodeRaw() {
+    return offsetof(SelfHostedLazyScript, jitCodeRaw_);
+  }
+};
+
 }  
 
 struct JSRuntime : public js::MallocProvider<JSRuntime> {
@@ -383,6 +400,11 @@ struct JSRuntime : public js::MallocProvider<JSRuntime> {
 
   
   js::MainThreadData<JS::WarningReporter> warningReporter;
+
+  
+  
+  
+  js::UnprotectedData<js::SelfHostedLazyScript> selfHostedLazyScript;
 
  private:
   

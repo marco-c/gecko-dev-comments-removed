@@ -224,6 +224,11 @@ bool JitRuntime::initialize(JSContext* cx) {
     return false;
   }
 
+  
+  
+  cx->runtime()->selfHostedLazyScript.ref().jitCodeRaw_ =
+      interpreterStub().value;
+
   return true;
 }
 
