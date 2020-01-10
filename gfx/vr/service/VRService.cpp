@@ -5,7 +5,6 @@
 
 
 #include "VRService.h"
-#include "../VRShMem.h"
 #include "mozilla/StaticPrefs.h"
 #include "../gfxVRMutex.h"
 #include "base/thread.h"  
@@ -61,15 +60,21 @@ already_AddRefed<VRService> VRService::Create(
 VRService::VRService(volatile VRExternalShmem* aShmem)
     : mSystemState{},
       mBrowserState{},
+      mBrowserGeneration(0),
       mServiceThread(nullptr),
       mShutdownRequested(false),
+      mAPIShmem(aShmem),
+      mTargetShmemFile(0),
       mLastHapticState{},
-      mFrameStartTime{} {
+      mFrameStartTime{},
+#if defined(XP_WIN)
+      mMutex(NULL),
+#endif
+      mVRProcessEnabled(aShmem == nullptr) {
   
   
   
   
-  mShmem = new VRShMem(aShmem, aShmem == nullptr, XRE_IsParentProcess());
 }
 
 VRService::~VRService() {
@@ -79,12 +84,35 @@ VRService::~VRService() {
 }
 
 void VRService::Refresh() {
-  if (mShmem != nullptr && mShmem->IsDisplayStateShutdown()) {
+  if (!mAPIShmem) {
+    return;
+  }
+
+  if (mAPIShmem->state.displayState.shutdown) {
     Stop();
   }
 }
 
 void VRService::Start() {
+#if defined(XP_WIN)
+  
+  
+  
+  if (!mMutex && !XRE_IsParentProcess()) {
+    mMutex = OpenMutex(MUTEX_ALL_ACCESS,  
+                       false,             
+                       TEXT("mozilla::vr::ShmemMutex"));  
+
+    if (mMutex == NULL) {
+      nsAutoCString msg;
+      msg.AppendPrintf("VRService OpenMutex error \"%lu\".", GetLastError());
+      NS_WARNING(msg.get());
+      MOZ_ASSERT(false);
+    }
+    MOZ_ASSERT(GetLastError() == 0);
+  }
+#endif
+
   if (!mServiceThread) {
     
 
@@ -127,17 +155,63 @@ void VRService::Stop() {
     delete mServiceThread;
     mServiceThread = nullptr;
   }
-
-  if (mShmem != nullptr) {
-    mShmem->LeaveShMem();
-    delete mShmem;
-    mShmem = nullptr;
+  if (mTargetShmemFile) {
+#if defined(XP_WIN)
+    CloseHandle(mTargetShmemFile);
+#endif
+    mTargetShmemFile = 0;
   }
-
+  if (mVRProcessEnabled && mAPIShmem) {
+#if defined(XP_WIN)
+    UnmapViewOfFile((void*)mAPIShmem);
+#endif
+    mAPIShmem = nullptr;
+  }
+#if defined(XP_WIN)
+  if (mMutex) {
+    CloseHandle(mMutex);
+    mMutex = NULL;
+  }
+#endif
   mSession = nullptr;
 }
 
-bool VRService::InitShmem() { return mShmem->JoinShMem(); }
+bool VRService::InitShmem() {
+  if (!mVRProcessEnabled) {
+    return true;
+  }
+
+#if defined(XP_WIN)
+  const char* kShmemName = "moz.gecko.vr_ext.0.0.1";
+  base::ProcessHandle targetHandle = 0;
+
+  
+  targetHandle = OpenFileMappingA(FILE_MAP_ALL_ACCESS,  
+                                  FALSE,        
+                                  kShmemName);  
+
+  MOZ_ASSERT(GetLastError() == 0);
+
+  LARGE_INTEGER length;
+  length.QuadPart = sizeof(VRExternalShmem);
+  mAPIShmem = (VRExternalShmem*)MapViewOfFile(
+      reinterpret_cast<base::ProcessHandle>(
+          targetHandle),    
+      FILE_MAP_ALL_ACCESS,  
+      0, 0, length.QuadPart);
+  MOZ_ASSERT(GetLastError() == 0);
+  
+  mTargetShmemFile = targetHandle;
+  if (!mAPIShmem) {
+    MOZ_ASSERT(mAPIShmem);
+    return false;
+  }
+#else
+  
+#endif
+
+  return true;
+}
 
 bool VRService::IsInServiceThread() {
   return (mServiceThread != nullptr) &&
@@ -373,9 +447,81 @@ void VRService::UpdateHaptics() {
 }
 
 void VRService::PushState(const mozilla::gfx::VRSystemState& aState) {
-  mShmem->PushSystemState(aState);
+  if (!mAPIShmem) {
+    return;
+  }
+  
+  
+  
+  
+
+#if defined(MOZ_WIDGET_ANDROID)
+  if (pthread_mutex_lock((pthread_mutex_t*)&(mExternalShmem->systemMutex)) ==
+      0) {
+    
+    
+    
+    
+    memcpy((void*)&mAPIShmem->state, &aState, sizeof(VRSystemState));
+    pthread_mutex_unlock((pthread_mutex_t*)&(mExternalShmem->systemMutex));
+  }
+#else
+  bool state = true;
+#  if defined(XP_WIN)
+  if (!XRE_IsParentProcess()) {
+    WaitForMutex lock(mMutex);
+    state = lock.GetStatus();
+  }
+#  endif  
+  if (state) {
+    mAPIShmem->generationA++;
+    memcpy((void*)&mAPIShmem->state, &aState, sizeof(VRSystemState));
+    mAPIShmem->generationB++;
+  }
+#endif    
 }
 
 void VRService::PullState(mozilla::gfx::VRBrowserState& aState) {
-  mShmem->PullBrowserState(aState);
+  if (!mAPIShmem) {
+    return;
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+
+#if defined(MOZ_WIDGET_ANDROID)
+  if (pthread_mutex_lock((pthread_mutex_t*)&(mExternalShmem->geckoMutex)) ==
+      0) {
+    memcpy(&aState, &tmp.geckoState, sizeof(VRBrowserState));
+    pthread_mutex_unlock((pthread_mutex_t*)&(mExternalShmem->geckoMutex));
+  }
+#else
+  bool status = true;
+#  if defined(XP_WIN)
+  if (!XRE_IsParentProcess()) {
+    WaitForMutex lock(mMutex);
+    status = lock.GetStatus();
+  }
+#  endif  
+  if (status) {
+    VRExternalShmem tmp;
+    if (mAPIShmem->geckoGenerationA != mBrowserGeneration) {
+      
+      
+      
+      
+      memcpy(&tmp, (void*)mAPIShmem, sizeof(VRExternalShmem));
+      if (tmp.geckoGenerationA == tmp.geckoGenerationB &&
+          tmp.geckoGenerationA != 0) {
+        memcpy(&aState, &tmp.geckoState, sizeof(VRBrowserState));
+        mBrowserGeneration = tmp.geckoGenerationA;
+      }
+    }
+  }
+#endif    
 }

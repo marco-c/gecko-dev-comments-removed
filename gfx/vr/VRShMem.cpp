@@ -32,7 +32,6 @@ using namespace mozilla::gfx;
 
 #ifdef XP_WIN
 static const char* kShmemName = "moz.gecko.vr_ext.0.0.1";
-static LPCTSTR kMutexName = TEXT("mozilla::vr::ShmemMutex");
 #elif defined(XP_MACOSX)
 static const char* kShmemName = "/moz.gecko.vr_ext.0.0.1";
 #endif  
@@ -49,10 +48,10 @@ void YieldThread() {
 }  
 #endif  
 
-VRShMem::VRShMem(volatile VRExternalShmem* aShmem, bool aVRProcessEnabled,
+VRShMem::VRShMem(volatile VRExternalShmem* aShmem, bool aSameProcess,
                  bool aIsParentProcess)
     : mExternalShmem(aShmem),
-      mVRProcessEnabled(aVRProcessEnabled)
+      mSameProcess(aSameProcess)
 #if defined(XP_WIN)
       ,
       mIsParentProcess(aIsParentProcess)
@@ -69,30 +68,18 @@ VRShMem::VRShMem(volatile VRExternalShmem* aShmem, bool aVRProcessEnabled,
   
   
   
-  MOZ_ASSERT(aShmem == nullptr || !aVRProcessEnabled);
-}
+  
+  if (!(aShmem == nullptr || aSameProcess)) {
+    
+  }
 
-
-
-
-
-
-volatile VRExternalShmem* VRShMem::GetExternalShmem() const {
-  MOZ_ASSERT(!mVRProcessEnabled);
-#if defined(XP_MACOSX)
-  MOZ_ASSERT(mShmemFD == 0);
-#elif defined(XP_WIN)
-  MOZ_ASSERT(mShmemFile == nullptr);
-#endif
-  return mExternalShmem;
-}
-
-bool VRShMem::IsDisplayStateShutdown() const {
   
   
-  return mExternalShmem != nullptr &&
-         mExternalShmem->state.displayState.shutdown;
+  
+  
+  
 }
+
 
 
 void VRShMem::CreateShMem() {
@@ -101,9 +88,9 @@ void VRShMem::CreateShMem() {
   }
 #if defined(XP_WIN)
   if (mMutex == nullptr) {
-    mMutex = CreateMutex(nullptr,      
-                         false,        
-                         kMutexName);  
+    mMutex = CreateMutex(nullptr,  
+                         false,    
+                         TEXT("mozilla::vr::ShmemMutex"));  
     if (mMutex == nullptr) {
 #  ifdef MOZILLA_INTERNAL_API
       nsAutoCString msg;
@@ -126,11 +113,17 @@ void VRShMem::CreateShMem() {
   
   
   
-  if (!mVRProcessEnabled) {
+  if (mSameProcess) {
     
     
     mExternalShmem = new VRExternalShmem();
-    ClearShMem();
+#  ifdef MOZILLA_INTERNAL_API
+    
+    
+    mExternalShmem->Clear();
+#  endif
+    
+    
     return;
   }
 #endif
@@ -215,21 +208,11 @@ void VRShMem::CreateShMem() {
 #endif
 }
 
-void VRShMem::ClearShMem() {
-  if (mExternalShmem != nullptr) {
-#ifdef MOZILLA_INTERNAL_API
-    
-    mExternalShmem->Clear();
-#else
-    memset((void*)mExternalShmem, 0, sizeof(VRExternalShmem));
-#endif
-  }
-}
 
 
 void VRShMem::CloseShMem() {
 #if !defined(MOZ_WIDGET_ANDROID)
-  if (!mVRProcessEnabled) {
+  if (mSameProcess) {
     if (mExternalShmem) {
       delete mExternalShmem;
       mExternalShmem = nullptr;
@@ -258,51 +241,25 @@ void VRShMem::CloseShMem() {
 #elif defined(MOZ_WIDGET_ANDROID)
   mExternalShmem = NULL;
 #endif
-
-#if defined(XP_WIN)
-  
-  if (mMutex) {
-    CloseHandle(mMutex);
-    mMutex = nullptr;
-  }
-#endif
 }
 
 
 
 
 bool VRShMem::JoinShMem() {
-#if defined(XP_WIN)
   
-  
-  
-  if (!mMutex && !mIsParentProcess) {
-    mMutex = OpenMutex(MUTEX_ALL_ACCESS,  
-                       false,             
-                       kMutexName);       
-
-    if (mMutex == nullptr) {
-#  ifdef MOZILLA_INTERNAL_API
-      nsAutoCString msg;
-      msg.AppendPrintf("VRService OpenMutex error \"%lu\".", GetLastError());
-      NS_WARNING(msg.get());
-#  endif
-      MOZ_ASSERT(false);
-    }
-    MOZ_ASSERT(GetLastError() == 0);
-  }
-#endif
-
-  if (!mVRProcessEnabled) {
+  if (mSameProcess) {
     return true;
   }
 
 #if defined(XP_WIN)
+  const char* kShmemName = "moz.gecko.vr_ext.0.0.1";
+  base::ProcessHandle targetHandle = 0;
+
   
-  base::ProcessHandle targetHandle =
-      OpenFileMappingA(FILE_MAP_ALL_ACCESS,  
-                       FALSE,                
-                       kShmemName);          
+  targetHandle = OpenFileMappingA(FILE_MAP_ALL_ACCESS,  
+                                  FALSE,        
+                                  kShmemName);  
 
   MOZ_ASSERT(GetLastError() == 0);
 
@@ -325,10 +282,33 @@ bool VRShMem::JoinShMem() {
   
   
   
-  MOZ_ASSERT(false, "JoinShMem not implemented");
 #endif
+
+#if defined(XP_WIN)
+  
+  
+  
+  
+  if (!mMutex && !mIsParentProcess) {
+    mMutex = OpenMutex(MUTEX_ALL_ACCESS,  
+                       false,             
+                       TEXT("mozilla::vr::ShmemMutex"));  
+
+    if (mMutex == nullptr) {
+#  ifdef MOZILLA_INTERNAL_API
+      nsAutoCString msg;
+      msg.AppendPrintf("VRService OpenMutex error \"%lu\".", GetLastError());
+      NS_WARNING(msg.get());
+#  endif
+      MOZ_ASSERT(false);
+    }
+    MOZ_ASSERT(GetLastError() == 0);
+  }
+#endif
+
   return true;
 }
+
 
 
 void VRShMem::LeaveShMem() {
@@ -339,7 +319,8 @@ void VRShMem::LeaveShMem() {
   }
 #endif
 
-  if (mExternalShmem != nullptr && mVRProcessEnabled) {
+  
+  if (mExternalShmem != nullptr && !mSameProcess) {
 #if defined(XP_WIN)
     UnmapViewOfFile((void*)mExternalShmem);
 #endif
@@ -352,6 +333,7 @@ void VRShMem::LeaveShMem() {
   }
 #endif
 }
+
 
 void VRShMem::PushBrowserState(VRBrowserState& aBrowserState,
                                bool aNotifyCond) {
@@ -383,6 +365,7 @@ void VRShMem::PushBrowserState(VRBrowserState& aBrowserState,
 #endif    
 }
 
+
 void VRShMem::PullBrowserState(mozilla::gfx::VRBrowserState& aState) {
   if (!mExternalShmem) {
     return;
@@ -406,10 +389,10 @@ void VRShMem::PullBrowserState(mozilla::gfx::VRBrowserState& aState) {
 
 
 
-  MOZ_ASSERT(false, "PullBrowserState not implemented");
 #else
   bool status = true;
 #  if defined(XP_WIN)
+  
   if (!mIsParentProcess) {
     
     
@@ -435,6 +418,7 @@ void VRShMem::PullBrowserState(mozilla::gfx::VRBrowserState& aState) {
 #endif    
 }
 
+
 void VRShMem::PushSystemState(const mozilla::gfx::VRSystemState& aState) {
   if (!mExternalShmem) {
     return;
@@ -447,7 +431,6 @@ void VRShMem::PushSystemState(const mozilla::gfx::VRSystemState& aState) {
 #if defined(MOZ_WIDGET_ANDROID)
   
   
-  MOZ_ASSERT(false, "JoinShMem not implemented");
   
 
 
@@ -462,9 +445,8 @@ void VRShMem::PushSystemState(const mozilla::gfx::VRSystemState& aState) {
 #else
   bool lockState = true;
 #  if defined(XP_WIN)
+  
   if (!mIsParentProcess) {
-    
-    
     WaitForMutex lock(mMutex);
     lockState = lock.GetStatus();
   }
@@ -476,6 +458,7 @@ void VRShMem::PushSystemState(const mozilla::gfx::VRSystemState& aState) {
   }
 #endif    
 }
+
 
 #if defined(MOZ_WIDGET_ANDROID)
 void VRShMem::PullSystemState(
