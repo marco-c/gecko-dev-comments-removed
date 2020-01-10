@@ -2130,9 +2130,8 @@ LogicalSize ReflowInput::ComputeContainingBlockRectangle(
           aContainingBlockRI->ComputedLogicalPadding().BStartEnd(wm);
     }
   } else {
-    auto IsQuirky = [&](const StyleSize& aSize) -> bool {
-      return aSize.ConvertsToPercentage() &&
-             !aSize.AsLengthPercentage().was_calc;
+    auto IsQuirky = [](const StyleSize& aSize) -> bool {
+      return aSize.ConvertsToPercentage();
     };
     
     

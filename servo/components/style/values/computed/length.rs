@@ -85,17 +85,12 @@ pub struct LengthPercentage {
     
     #[animation(constant)]
     pub has_percentage: bool,
-    
-    
-    
-    
-    
-    
-    
-    
-    #[animation(constant)]
-    pub was_calc: bool,
 }
+
+
+
+
+
 
 
 
@@ -133,7 +128,6 @@ impl LengthPercentage {
             length,
             percentage,
             AllowedNumericType::All,
-             false,
         )
     }
 
@@ -148,14 +142,12 @@ impl LengthPercentage {
         length: Length,
         percentage: Option<Percentage>,
         clamping_mode: AllowedNumericType,
-        was_calc: bool,
     ) -> Self {
         Self {
             clamping_mode,
             length,
             percentage: percentage.unwrap_or_default(),
             has_percentage: percentage.is_some(),
-            was_calc,
         }
     }
 
@@ -279,7 +271,6 @@ impl specified::CalcLengthPercentage {
             Length::new(length.min(f32::MAX).max(f32::MIN)),
             self.percentage,
             self.clamping_mode,
-             true,
         )
     }
 
@@ -375,35 +366,29 @@ impl LengthPercentage {
     }
 
     
-    
-    
-    
     #[inline]
     pub fn clamp_to_non_negative(self) -> Self {
-        if self.was_calc {
+        if let Some(p) = self.specified_percentage() {
+            
+            if self.length.is_zero() {
+                return Self::with_clamping_mode(
+                    Length::zero(),
+                    Some(p.clamp_to_non_negative()),
+                    AllowedNumericType::NonNegative,
+                );
+            }
+
             return Self::with_clamping_mode(
                 self.length,
-                self.specified_percentage(),
+                Some(p),
                 AllowedNumericType::NonNegative,
-                self.was_calc,
-            );
-        }
-
-        debug_assert!(!self.has_percentage || self.unclamped_length() == Length::zero());
-        if let Some(p) = self.specified_percentage() {
-            return Self::with_clamping_mode(
-                Length::zero(),
-                Some(p.clamp_to_non_negative()),
-                AllowedNumericType::NonNegative,
-                self.was_calc,
-            );
+            )
         }
 
         Self::with_clamping_mode(
             self.length.clamp_to_non_negative(),
             None,
             AllowedNumericType::NonNegative,
-            self.was_calc,
         )
     }
 }
