@@ -57,6 +57,11 @@ class nsNetworkLinkService : public nsINetworkLinkService, public nsIObserver {
 
   
   mozilla::TimeStamp mNetworkChangeTime;
+
+  
+  mozilla::TimeStamp mChangeTime_1min;
+  
+  mozilla::TimeStamp mChangeTime_5min;
 };
 
 #endif 
