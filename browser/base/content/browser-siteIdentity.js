@@ -656,32 +656,8 @@ var gIdentityHandler = {
   
 
 
-
-
-  _hasInvalidPageProxyState() {
-    return (
-      !this._uriHasHost &&
-      this._uri &&
-      isBlankPageURL(this._uri.spec) &&
-      !this._uri.schemeIs("moz-extension")
-    );
-  },
-
-  
-
-
   refreshIdentityBlock() {
     if (!this._identityBox) {
-      return;
-    }
-
-    
-    
-    
-    
-    
-    
-    if (this._hasInvalidPageProxyState()) {
       return;
     }
 
