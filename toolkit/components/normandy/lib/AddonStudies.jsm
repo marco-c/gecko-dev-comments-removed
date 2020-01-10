@@ -160,8 +160,6 @@ var AddonStudies = {
   },
 
   async init() {
-    await this.migrations();
-
     
     
     const activeStudies = (await this.getAll()).filter(study => study.active);
@@ -179,48 +177,52 @@ var AddonStudies = {
     });
   },
 
-  async migrations() {
+  
+
+
+
+
+
+
+  async migrateAddonStudyFieldsToSlugAndUserFacingFields() {
     const db = await getDatabase();
-    const oldVersion =
-      (await db.objectStore(VERSION_STORE_NAME, "readonly").get("version")) ||
-      0;
+    const studies = await db.objectStore(STORE_NAME, "readonly").getAll();
 
-    if (oldVersion < 2) {
-      log.debug(`Running data migrations from ${oldVersion} to 2`);
-      
-      const studies = await db.objectStore(STORE_NAME, "readonly").getAll();
-
-      const writePromises = [];
-      const objectStore = db.objectStore(STORE_NAME, "readwrite");
-
-      for (const study of studies) {
-        
-        if (!study.slug) {
-          study.slug = study.name;
-        }
-
-        
-        if (study.name && !study.userFacingName) {
-          study.userFacingName = study.name;
-          delete study.name;
-        }
-        if (study.description && !study.userFacingDescription) {
-          study.userFacingDescription = study.description;
-          delete study.description;
-        }
-
-        
-        if (!study.branch) {
-          study.branch = AddonStudies.NO_BRANCHES_MARKER;
-        }
-
-        writePromises.push(objectStore.put(study));
-      }
-
-      await Promise.all(writePromises);
+    
+    if (studies.length === 0) {
+      return;
     }
 
-    await db.objectStore(VERSION_STORE_NAME, "readwrite").put("version", 2);
+    
+    
+    const writePromises = [];
+    const objectStore = db.objectStore(STORE_NAME, "readwrite");
+
+    for (const study of studies) {
+      
+      if (!study.slug) {
+        study.slug = study.name;
+      }
+
+      
+      if (study.name && !study.userFacingName) {
+        study.userFacingName = study.name;
+      }
+      delete study.name;
+      if (study.description && !study.userFacingDescription) {
+        study.userFacingDescription = study.description;
+      }
+      delete study.description;
+
+      
+      if (!study.branch) {
+        study.branch = AddonStudies.NO_BRANCHES_MARKER;
+      }
+
+      writePromises.push(objectStore.put(study));
+    }
+
+    await Promise.all(writePromises);
   },
 
   

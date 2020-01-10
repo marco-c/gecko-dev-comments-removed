@@ -42,9 +42,9 @@ var Normandy = {
   studyPrefsChanged: {},
   rolloutPrefsChanged: {},
 
-  init() {
+  async init() {
     
-    NormandyMigrations.applyAll();
+    await NormandyMigrations.applyAll();
     this.rolloutPrefsChanged = this.applyStartupPrefs(
       STARTUP_ROLLOUT_PREFS_BRANCH
     );
