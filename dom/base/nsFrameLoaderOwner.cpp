@@ -15,6 +15,7 @@
 #include "mozilla/dom/HTMLIFrameElement.h"
 #include "mozilla/dom/MozFrameLoaderOwnerBinding.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/EventStateManager.h"
 
@@ -65,8 +66,9 @@ bool nsFrameLoaderOwner::ShouldPreserveBrowsingContext(
          StaticPrefs::fission_preserve_browsing_contexts();
 }
 
-void nsFrameLoaderOwner::ChangeRemoteness(
-    const mozilla::dom::RemotenessOptions& aOptions, mozilla::ErrorResult& rv) {
+void nsFrameLoaderOwner::ChangeRemotenessCommon(
+    bool aPreserveContext, const nsAString& aRemoteType,
+    std::function<void()>& aFrameLoaderInit, mozilla::ErrorResult& aRv) {
   RefPtr<mozilla::dom::BrowsingContext> bc;
   bool networkCreated = false;
 
@@ -83,14 +85,12 @@ void nsFrameLoaderOwner::ChangeRemoteness(
   
   Document* doc = owner->OwnerDoc();
   doc->BlockOnload();
-  auto cleanup = MakeScopeExit([&]() {
-    doc->UnblockOnload(false);
-  });
+  auto cleanup = MakeScopeExit([&]() { doc->UnblockOnload(false); });
 
   
   
   if (mFrameLoader) {
-    if (ShouldPreserveBrowsingContext(aOptions)) {
+    if (aPreserveContext) {
       bc = mFrameLoader->GetBrowsingContext();
       mFrameLoader->SkipBrowsingContextDetach();
     }
@@ -103,31 +103,18 @@ void nsFrameLoaderOwner::ChangeRemoteness(
   }
 
   mFrameLoader =
-      nsFrameLoader::Recreate(owner, bc, aOptions.mRemoteType, networkCreated);
-
+      nsFrameLoader::Recreate(owner, bc, aRemoteType, networkCreated);
   if (NS_WARN_IF(!mFrameLoader)) {
+    aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
 
-  if (aOptions.mError.WasPassed()) {
-    nsCOMPtr<nsIURI> uri;
-    rv = NS_NewURI(getter_AddRefs(uri), "about:blank");
-    if (NS_WARN_IF(rv.Failed())) {
-      return;
-    }
-
-    nsDocShell* docShell = mFrameLoader->GetDocShell(rv);
-    if (NS_WARN_IF(rv.Failed())) {
-      return;
-    }
-    bool displayed = false;
-    docShell->DisplayLoadError(static_cast<nsresult>(aOptions.mError.Value()),
-                               uri, u"about:blank", nullptr, &displayed);
-
-  } else if (aOptions.mPendingSwitchID.WasPassed()) {
-    mFrameLoader->ResumeLoad(aOptions.mPendingSwitchID.Value());
-  } else {
-    mFrameLoader->LoadFrame(false);
+  
+  
+  
+  aFrameLoaderInit();
+  if (NS_WARN_IF(aRv.Failed())) {
+    return;
   }
 
   
@@ -150,12 +137,82 @@ void nsFrameLoaderOwner::ChangeRemoteness(
     eventManager->RecomputeMouseEnterStateForRemoteFrame(*owner);
   }
 
+  if (owner->IsXULElement()) {
+    
+    
+    
+    
+    
+    (new mozilla::AsyncEventDispatcher(
+         owner, NS_LITERAL_STRING("XULFrameLoaderCreated"),
+         mozilla::CanBubble::eYes, mozilla::ChromeOnlyDispatch::eYes))
+        ->RunDOMEventWhenSafe();
+  }
+}
+
+void nsFrameLoaderOwner::ChangeRemoteness(
+    const mozilla::dom::RemotenessOptions& aOptions, mozilla::ErrorResult& rv) {
+  std::function<void()> frameLoaderInit = [&] {
+    if (aOptions.mError.WasPassed()) {
+      nsCOMPtr<nsIURI> uri;
+      rv = NS_NewURI(getter_AddRefs(uri), "about:blank");
+      if (NS_WARN_IF(rv.Failed())) {
+        return;
+      }
+
+      nsDocShell* docShell = mFrameLoader->GetDocShell(rv);
+      if (NS_WARN_IF(rv.Failed())) {
+        return;
+      }
+      bool displayed = false;
+      docShell->DisplayLoadError(static_cast<nsresult>(aOptions.mError.Value()),
+                                 uri, u"about:blank", nullptr, &displayed);
+
+    } else if (aOptions.mPendingSwitchID.WasPassed()) {
+      mFrameLoader->ResumeLoad(aOptions.mPendingSwitchID.Value());
+    } else {
+      mFrameLoader->LoadFrame(false);
+    }
+  };
+
+  ChangeRemotenessCommon(ShouldPreserveBrowsingContext(aOptions),
+                         aOptions.mRemoteType, frameLoaderInit, rv);
+}
+
+void nsFrameLoaderOwner::ChangeRemotenessWithBridge(
+    mozilla::ipc::ManagedEndpoint<mozilla::dom::PBrowserBridgeChild> aEndpoint,
+    uint64_t aTabId, mozilla::ErrorResult& rv) {
+  MOZ_ASSERT(XRE_IsContentProcess());
+  if (NS_WARN_IF(!mFrameLoader)) {
+    rv.Throw(NS_ERROR_UNEXPECTED);
+    return;
+  }
+
+  std::function<void()> frameLoaderInit = [&] {
+    RefPtr<BrowsingContext> browsingContext = mFrameLoader->mBrowsingContext;
+    RefPtr<BrowserBridgeChild> bridge =
+        new BrowserBridgeChild(mFrameLoader, browsingContext, TabId(aTabId));
+    Document* ownerDoc = mFrameLoader->GetOwnerDoc();
+    if (NS_WARN_IF(!ownerDoc)) {
+      rv.Throw(NS_ERROR_UNEXPECTED);
+      return;
+    }
+
+    RefPtr<BrowserChild> browser =
+        BrowserChild::GetFrom(ownerDoc->GetDocShell());
+    if (!browser->BindPBrowserBridgeEndpoint(std::move(aEndpoint), bridge)) {
+      rv.Throw(NS_ERROR_UNEXPECTED);
+      return;
+    }
+
+    RefPtr<BrowserBridgeHost> host = bridge->FinishInit();
+    browsingContext->SetEmbedderElement(mFrameLoader->GetOwnerContent());
+    mFrameLoader->mRemoteBrowser = host;
+  };
+
   
   
-  
-  
-  (new mozilla::AsyncEventDispatcher(
-       owner, NS_LITERAL_STRING("XULFrameLoaderCreated"),
-       mozilla::CanBubble::eYes, mozilla::ChromeOnlyDispatch::eYes))
-      ->RunDOMEventWhenSafe();
+  ChangeRemotenessCommon(
+       true, NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE),
+      frameLoaderInit, rv);
 }
