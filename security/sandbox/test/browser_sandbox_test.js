@@ -11,7 +11,7 @@ function test() {
   );
 
   
-  var processTypes = ["tab"];
+  var processTypes = ["tab", "gpu"];
 
   
   Services.obs.addObserver(function result(subject, topic, data) {
