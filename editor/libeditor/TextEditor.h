@@ -600,9 +600,7 @@ class TextEditor : public EditorBase,
     if (!GetSpellCheckRestartPoint().IsSet()) {
       return NS_OK;  
     }
-    nsresult rv = HandleInlineSpellCheck(
-        GetSpellCheckRestartPoint().GetContainer(),
-        GetSpellCheckRestartPoint().Offset(), nullptr, 0, nullptr, 0);
+    nsresult rv = HandleInlineSpellCheck(GetSpellCheckRestartPoint());
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to spellcheck");
     ClearSpellCheckRestartPoint();
     return rv;

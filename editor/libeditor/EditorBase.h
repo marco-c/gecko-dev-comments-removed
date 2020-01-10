@@ -97,6 +97,7 @@ class CreateNodeResultBase;
 typedef CreateNodeResultBase<dom::Element> CreateElementResult;
 
 namespace dom {
+class AbstractRange;
 class DataTransfer;
 class DragEvent;
 class Element;
@@ -621,6 +622,9 @@ class EditorBase : public nsIEditor,
     RefPtr<RangeItem> mSelectedRange;
 
     
+    RefPtr<nsRange> mChangedRange;
+
+    
     
     
     
@@ -662,6 +666,7 @@ class EditorBase : public nsIEditor,
       }
       mNewBlockElement = nullptr;
       mSelectedRange->Clear();
+      mChangedRange->Reset();
       mCachedInlineStyles.Clear();
       mDidDeleteSelection = false;
       mDidDeleteNonCollapsedRange = false;
@@ -1930,11 +1935,9 @@ class EditorBase : public nsIEditor,
     mAllowsTransactionsToChangeSelection = aAllow;
   }
 
-  nsresult HandleInlineSpellCheck(nsINode* previousSelectedNode,
-                                  uint32_t previousSelectedOffset,
-                                  nsINode* aStartContainer,
-                                  uint32_t aStartOffset, nsINode* aEndContainer,
-                                  uint32_t aEndOffset);
+  nsresult HandleInlineSpellCheck(
+      const EditorDOMPoint& aPreviouslySelectedStart,
+      const dom::AbstractRange* aRange = nullptr);
 
   
 

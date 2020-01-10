@@ -51,6 +51,7 @@
 #include "mozilla/TextServicesDocument.h"  
 #include "mozilla/TextEvents.h"
 #include "mozilla/TransactionManager.h"  
+#include "mozilla/dom/AbstractRange.h"   
 #include "mozilla/dom/CharacterData.h"   
 #include "mozilla/dom/DataTransfer.h"    
 #include "mozilla/dom/Element.h"         
@@ -4623,21 +4624,22 @@ nsresult EditorBase::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
   return NS_OK;
 }
 
-nsresult EditorBase::HandleInlineSpellCheck(nsINode* previousSelectedNode,
-                                            uint32_t previousSelectedOffset,
-                                            nsINode* aStartContainer,
-                                            uint32_t aStartOffset,
-                                            nsINode* aEndContainer,
-                                            uint32_t aEndOffset) {
+nsresult EditorBase::HandleInlineSpellCheck(
+    const EditorDOMPoint& aPreviouslySelectedStart,
+    const AbstractRange* aRange) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (!mInlineSpellChecker) {
     return NS_OK;
   }
   return mInlineSpellChecker->SpellCheckAfterEditorChange(
-      GetTopLevelEditSubAction(), *SelectionRefPtr(), previousSelectedNode,
-      previousSelectedOffset, aStartContainer, aStartOffset, aEndContainer,
-      aEndOffset);
+      GetTopLevelEditSubAction(), *SelectionRefPtr(),
+      aPreviouslySelectedStart.GetContainer(),
+      aPreviouslySelectedStart.Offset(),
+      aRange ? aRange->GetStartContainer() : nullptr,
+      aRange ? aRange->StartOffset() : 0,
+      aRange ? aRange->GetEndContainer() : nullptr,
+      aRange ? aRange->EndOffset() : 0);
 }
 
 Element* EditorBase::FindSelectionRoot(nsINode* aNode) const {
@@ -5263,6 +5265,7 @@ EditorBase::AutoEditActionDataSetter::AutoEditActionDataSetter(
 
     
     
+    
 
     mDirectionOfTopLevelEditSubAction =
         mParentData->mDirectionOfTopLevelEditSubAction;
@@ -5277,6 +5280,8 @@ EditorBase::AutoEditActionDataSetter::AutoEditActionDataSetter(
       mTopLevelEditSubActionData.mSelectedRange =
           mEditorBase.AsHTMLEditor()
               ->GetSelectedRangeItemForTopLevelEditSubAction();
+      mTopLevelEditSubActionData.mChangedRange =
+          mEditorBase.AsHTMLEditor()->GetChangedRangeForTopLevelEditSubAction();
     }
   }
   mEditorBase.mEditActionData = this;

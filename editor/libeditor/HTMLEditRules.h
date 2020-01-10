@@ -1139,8 +1139,10 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
-  InsertBRElementToEmptyListItemsAndTableCellsInChangedRange();
+  InsertBRElementToEmptyListItemsAndTableCellsInRange(
+      const RawRangeBoundary& aStartRef, const RawRangeBoundary& aEndRef);
 
   
 
@@ -1322,7 +1324,6 @@ class HTMLEditRules : public TextEditRules {
 
  protected:
   HTMLEditor* mHTMLEditor;
-  RefPtr<nsRange> mDocChangeRange;
   bool mInitialized;
   bool mListenerEnabled;
   bool mReturnInEmptyLIKillsList;

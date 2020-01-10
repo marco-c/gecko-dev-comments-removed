@@ -2559,12 +2559,29 @@ class HTMLEditor final : public TextEditor,
     return do_AddRef(mSelectedRangeForTopLevelEditSubAction);
   }
 
+  
+
+
+
+
+
+
+
+  already_AddRefed<nsRange> GetChangedRangeForTopLevelEditSubAction() const {
+    if (!mChangedRangeForTopLevelEditSubAction) {
+      mChangedRangeForTopLevelEditSubAction = new nsRange(GetDocument());
+    }
+    return do_AddRef(mChangedRangeForTopLevelEditSubAction);
+  }
+
  protected:
   RefPtr<TypeInState> mTypeInState;
   RefPtr<ComposerCommandsUpdater> mComposerCommandsUpdater;
 
   
   mutable RefPtr<RangeItem> mSelectedRangeForTopLevelEditSubAction;
+  
+  mutable RefPtr<nsRange> mChangedRangeForTopLevelEditSubAction;
 
   bool mCRInParagraphCreatesParagraph;
 

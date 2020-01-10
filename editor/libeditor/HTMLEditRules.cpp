@@ -199,7 +199,6 @@ HTMLEditRules::HTMLEditRules()
 
 void HTMLEditRules::InitFields() {
   mHTMLEditor = nullptr;
-  mDocChangeRange = nullptr;
   mReturnInEmptyLIKillsList = true;
   mUtilRange = nullptr;
   mJoinOffset = 0;
@@ -238,28 +237,18 @@ nsresult HTMLEditRules::Init(TextEditor* aTextEditor) {
   
   mReturnInEmptyLIKillsList = !returnInEmptyLIKillsList.EqualsLiteral("false");
 
+  Element* rootElement = HTMLEditorRef().GetRoot();
+  if (NS_WARN_IF(!rootElement && !HTMLEditorRef().GetDocument())) {
+    return NS_ERROR_FAILURE;
+  }
+
   
-  nsCOMPtr<nsINode> node = HTMLEditorRef().GetRoot();
-  if (!node) {
-    node = HTMLEditorRef().GetDocument();
-    if (NS_WARN_IF(!node)) {
-      return NS_ERROR_FAILURE;
-    }
-  }
+  mUtilRange = new nsRange(HTMLEditorRef().GetDocument());
 
-  mUtilRange = new nsRange(node);
-
-  if (!mDocChangeRange) {
-    mDocChangeRange = new nsRange(node);
-  }
-
-  if (node->IsElement()) {
-    ErrorResult error;
-    mDocChangeRange->SelectNode(*node, error);
-    if (NS_WARN_IF(error.Failed())) {
-      return error.StealNSResult();
-    }
-    nsresult rv = InsertBRElementToEmptyListItemsAndTableCellsInChangedRange();
+  if (rootElement) {
+    nsresult rv = InsertBRElementToEmptyListItemsAndTableCellsInRange(
+        RawRangeBoundary(rootElement, 0),
+        RawRangeBoundary(rootElement, rootElement->GetChildCount()));
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
@@ -325,10 +314,6 @@ nsresult HTMLEditRules::BeforeEdit() {
       HTMLEditorRef().TopLevelEditSubActionDataRef().mSelectedRange);
 
   
-  if (mDocChangeRange) {
-    
-    mDocChangeRange->Reset();
-  }
   if (mUtilRange) {
     
     mUtilRange->Reset();
@@ -439,21 +424,9 @@ nsresult HTMLEditRules::AfterEditInner() {
       break;
   }
 
-  nsCOMPtr<nsINode> rangeStartContainer, rangeEndContainer;
-  uint32_t rangeStartOffset = 0, rangeEndOffset = 0;
-  
-  bool bDamagedRange = false;
-  if (mDocChangeRange) {
-    rangeStartContainer = mDocChangeRange->GetStartContainer();
-    rangeEndContainer = mDocChangeRange->GetEndContainer();
-    rangeStartOffset = mDocChangeRange->StartOffset();
-    rangeEndOffset = mDocChangeRange->EndOffset();
-    if (rangeStartContainer && rangeEndContainer) {
-      bDamagedRange = true;
-    }
-  }
-
-  if (bDamagedRange &&
+  if (HTMLEditorRef()
+          .TopLevelEditSubActionDataRef()
+          .mChangedRange->IsPositioned() &&
       HTMLEditorRef().GetTopLevelEditSubAction() != EditSubAction::eUndo &&
       HTMLEditorRef().GetTopLevelEditSubAction() != EditSubAction::eRedo) {
     
@@ -461,7 +434,8 @@ nsresult HTMLEditRules::AfterEditInner() {
     AutoTransactionsConserveSelection dontChangeMySelection(HTMLEditorRef());
 
     
-    PromoteRange(*mDocChangeRange, HTMLEditorRef().GetTopLevelEditSubAction());
+    PromoteRange(*HTMLEditorRef().TopLevelEditSubActionDataRef().mChangedRange,
+                 HTMLEditorRef().GetTopLevelEditSubAction());
 
     
     
@@ -487,7 +461,15 @@ nsresult HTMLEditRules::AfterEditInner() {
     }
 
     
-    nsresult rv = InsertBRElementToEmptyListItemsAndTableCellsInChangedRange();
+    nsresult rv = InsertBRElementToEmptyListItemsAndTableCellsInRange(
+        HTMLEditorRef()
+            .TopLevelEditSubActionDataRef()
+            .mChangedRange->StartRef()
+            .AsRaw(),
+        HTMLEditorRef()
+            .TopLevelEditSubActionDataRef()
+            .mChangedRange->EndRef()
+            .AsRaw());
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
@@ -501,9 +483,11 @@ nsresult HTMLEditRules::AfterEditInner() {
       case EditSubAction::eInsertTextComingFromIME:
         break;
       default: {
-        RefPtr<nsRange> docChangeRange = mDocChangeRange;
         nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                          .CollapseAdjacentTextNodes(docChangeRange);
+                          .CollapseAdjacentTextNodes(
+                              MOZ_KnownLive(HTMLEditorRef()
+                                                .TopLevelEditSubActionDataRef()
+                                                .mChangedRange));
         if (NS_WARN_IF(!CanHandleEditAction())) {
           return NS_ERROR_EDITOR_DESTROYED;
         }
@@ -643,11 +627,8 @@ nsresult HTMLEditRules::AfterEditInner() {
   rv = HTMLEditorRef().HandleInlineSpellCheck(
       HTMLEditorRef()
           .TopLevelEditSubActionDataRef()
-          .mSelectedRange->mStartContainer,
-      HTMLEditorRef()
-          .TopLevelEditSubActionDataRef()
-          .mSelectedRange->mStartOffset,
-      rangeStartContainer, rangeStartOffset, rangeEndContainer, rangeEndOffset);
+          .mSelectedRange->StartPoint(),
+      HTMLEditorRef().TopLevelEditSubActionDataRef().mChangedRange);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1467,12 +1448,11 @@ nsresult HTMLEditRules::WillInsertText(EditSubAction aEditSubAction,
       
       return NS_OK;
     }
-    if (!mDocChangeRange) {
-      mDocChangeRange = new nsRange(compositionStartPoint.GetContainer());
-    }
-    rv = mDocChangeRange->SetStartAndEnd(
-        compositionStartPoint.ToRawRangeBoundary(),
-        compositionEndPoint.ToRawRangeBoundary());
+    rv = HTMLEditorRef()
+             .TopLevelEditSubActionDataRef()
+             .mChangedRange->SetStartAndEnd(
+                 compositionStartPoint.ToRawRangeBoundary(),
+                 compositionEndPoint.ToRawRangeBoundary());
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -1675,20 +1655,19 @@ nsresult HTMLEditRules::WillInsertText(EditSubAction aEditSubAction,
 
   
   
-  if (!mDocChangeRange) {
-    mDocChangeRange = new nsRange(pointToInsert.GetContainer());
-  }
-
   if (currentPoint.IsSet()) {
-    rv = mDocChangeRange->SetStartAndEnd(pointToInsert.ToRawRangeBoundary(),
-                                         currentPoint.ToRawRangeBoundary());
+    rv = HTMLEditorRef()
+             .TopLevelEditSubActionDataRef()
+             .mChangedRange->SetStartAndEnd(pointToInsert.ToRawRangeBoundary(),
+                                            currentPoint.ToRawRangeBoundary());
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
     return NS_OK;
   }
 
-  rv = mDocChangeRange->CollapseTo(pointToInsert);
+  rv = HTMLEditorRef().TopLevelEditSubActionDataRef().mChangedRange->CollapseTo(
+      pointToInsert);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -9295,15 +9274,15 @@ nsresult HTMLEditRules::ReapplyCachedStyles() {
   return NS_OK;
 }
 
-nsresult
-HTMLEditRules::InsertBRElementToEmptyListItemsAndTableCellsInChangedRange() {
+nsresult HTMLEditRules::InsertBRElementToEmptyListItemsAndTableCellsInRange(
+    const RawRangeBoundary& aStartRef, const RawRangeBoundary& aEndRef) {
   MOZ_ASSERT(IsEditorDataAvailable());
 
   
   nsTArray<OwningNonNull<nsINode>> nodeArray;
   EmptyEditableFunctor functor(&HTMLEditorRef());
   DOMIterator iter;
-  if (NS_WARN_IF(NS_FAILED(iter.Init(*mDocChangeRange)))) {
+  if (NS_WARN_IF(NS_FAILED(iter.Init(aStartRef, aEndRef)))) {
     return NS_ERROR_FAILURE;
   }
   iter.AppendList(functor, nodeArray);
@@ -9741,7 +9720,8 @@ nsresult HTMLEditRules::RemoveEmptyNodesInChangedRange() {
   
 
   PostContentIterator postOrderIter;
-  nsresult rv = postOrderIter.Init(mDocChangeRange);
+  nsresult rv = postOrderIter.Init(
+      HTMLEditorRef().TopLevelEditSubActionDataRef().mChangedRange);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -10174,56 +10154,61 @@ nsresult HTMLEditRules::UpdateDocChangeRange(nsRange* aRange) {
   }
   if (!HTMLEditorRef().IsDescendantOfRoot(atStart.Container())) {
     
+    
     return NS_OK;
   }
 
-  if (!mDocChangeRange) {
+  
+  ErrorResult error;
+  int16_t result = HTMLEditorRef()
+                       .TopLevelEditSubActionDataRef()
+                       .mChangedRange->CompareBoundaryPoints(
+                           Range_Binding::START_TO_START, *aRange, error);
+  if (error.ErrorCodeIs(NS_ERROR_NOT_INITIALIZED)) {
     
-    mDocChangeRange = aRange->CloneRange();
-  } else {
     
-    ErrorResult error;
-    int16_t result = mDocChangeRange->CompareBoundaryPoints(
-        Range_Binding::START_TO_START, *aRange, error);
-    if (error.ErrorCodeIs(NS_ERROR_NOT_INITIALIZED)) {
-      
-      
-      
-      
-      result = 1;
-      error.SuppressException();
-    }
+    
+    
+    result = 1;
+    error.SuppressException();
+  }
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
+
+  
+  
+  if (result > 0) {
+    HTMLEditorRef().TopLevelEditSubActionDataRef().mChangedRange->SetStart(
+        atStart.AsRaw(), error);
     if (NS_WARN_IF(error.Failed())) {
       return error.StealNSResult();
-    }
-
-    
-    if (result > 0) {
-      mDocChangeRange->SetStart(atStart.AsRaw(), error);
-      if (NS_WARN_IF(error.Failed())) {
-        return error.StealNSResult();
-      }
-    }
-
-    
-    result = mDocChangeRange->CompareBoundaryPoints(Range_Binding::END_TO_END,
-                                                    *aRange, error);
-    if (NS_WARN_IF(error.Failed())) {
-      return error.StealNSResult();
-    }
-
-    
-    if (result < 0) {
-      const RangeBoundary& atEnd = aRange->EndRef();
-      if (NS_WARN_IF(!atEnd.IsSet())) {
-        return NS_ERROR_FAILURE;
-      }
-      mDocChangeRange->SetEnd(atEnd.AsRaw(), error);
-      if (NS_WARN_IF(error.Failed())) {
-        return error.StealNSResult();
-      }
     }
   }
+
+  
+  result = HTMLEditorRef()
+               .TopLevelEditSubActionDataRef()
+               .mChangedRange->CompareBoundaryPoints(Range_Binding::END_TO_END,
+                                                     *aRange, error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
+
+  
+  
+  if (result < 0) {
+    const RangeBoundary& atEnd = aRange->EndRef();
+    if (NS_WARN_IF(!atEnd.IsSet())) {
+      return NS_ERROR_FAILURE;
+    }
+    HTMLEditorRef().TopLevelEditSubActionDataRef().mChangedRange->SetEnd(
+        atEnd.AsRaw(), error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
+  }
+
   return NS_OK;
 }
 
