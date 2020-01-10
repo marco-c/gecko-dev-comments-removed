@@ -34,6 +34,13 @@ SRIScriptTest.prototype.execute = function() {
     document.body.appendChild(e);
 };
 
+function set_extra_attributes(element, attrs) {
+  
+  for (const [attr_name, attr_val] of Object.entries(attrs)) {
+    element[attr_name] = attr_val;
+  }
+}
+
 function buildElementFromDestination(resource_url, destination, attrs) {
   
   let element;
@@ -45,24 +52,22 @@ function buildElementFromDestination(resource_url, destination, attrs) {
   switch (destination) {
     case "script":
       element = document.createElement(destination);
+      set_extra_attributes(element, attrs);
       element.src = resource_url;
       break;
     case "style":
       element = document.createElement('link');
+      set_extra_attributes(element, attrs);
       element.rel = 'stylesheet';
       element.href = resource_url;
       break;
     case "image":
       element = document.createElement('img');
+      set_extra_attributes(element, attrs);
       element.src = resource_url;
       break;
     default:
       assert_unreached("INVALID DESTINATION");
-  }
-
-  
-  for (const [attr_name, attr_val] of Object.entries(attrs)) {
-    element[attr_name] = attr_val;
   }
 
   return element;
