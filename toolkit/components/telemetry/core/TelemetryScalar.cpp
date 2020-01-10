@@ -826,6 +826,8 @@ class KeyedScalar {
  public:
   typedef mozilla::Pair<nsCString, nsCOMPtr<nsIVariant>> KeyValuePair;
 
+  
+  
   explicit KeyedScalar(const BaseScalarInfo& info)
       : mScalarName(info.name()), mMaximumNumberOfKeys(kMaximumNumberOfKeys){};
   ~KeyedScalar() = default;
