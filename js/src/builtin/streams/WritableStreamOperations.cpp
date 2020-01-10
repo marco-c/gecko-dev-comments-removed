@@ -16,6 +16,7 @@
 #include "builtin/Promise.h"                 
 #include "builtin/streams/WritableStream.h"  
 #include "builtin/streams/WritableStreamDefaultController.h"  
+#include "builtin/streams/WritableStreamWriterOperations.h"  
 #include "js/Promise.h"      
 #include "js/RootingAPI.h"   
 #include "js/Value.h"        
@@ -158,6 +159,9 @@ MOZ_MUST_USE bool js::WritableStreamDealWithRejection(
   return WritableStreamFinishErroring(cx, unwrappedStream);
 }
 
+static bool WritableStreamHasOperationMarkedInFlight(
+    const WritableStream* unwrappedStream);
+
 
 
 
@@ -196,18 +200,31 @@ MOZ_MUST_USE bool js::WritableStreamStartErroring(
   
   
   
-  
-  
-  
-  
-  JS_ReportErrorASCII(cx, "epic fail");
-  return false;
-}
+  if (unwrappedStream->hasWriter()) {
+    Rooted<WritableStreamDefaultWriter*> unwrappedWriter(
+        cx, UnwrapWriterFromStream(cx, unwrappedStream));
+    if (!unwrappedWriter) {
+      return false;
+    }
 
-#ifdef DEBUG
-static bool WritableStreamHasOperationMarkedInFlight(
-    const WritableStream* unwrappedStream);
-#endif
+    if (!WritableStreamDefaultWriterEnsureReadyPromiseRejected(
+            cx, unwrappedWriter, reason)) {
+      return false;
+    }
+  }
+
+  
+  
+  
+  if (!WritableStreamHasOperationMarkedInFlight(unwrappedStream) &&
+      unwrappedController->started()) {
+    if (!WritableStreamFinishErroring(cx, unwrappedStream)) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 
 
@@ -427,7 +444,6 @@ bool js::WritableStreamCloseQueuedOrInFlight(
   return unwrappedStream->haveCloseRequestOrInFlightCloseRequest();
 }
 
-#ifdef DEBUG
 
 
 
@@ -440,7 +456,6 @@ bool WritableStreamHasOperationMarkedInFlight(
   return unwrappedStream->haveInFlightWriteRequest() ||
          unwrappedStream->haveInFlightCloseRequest();
 }
-#endif  
 
 
 

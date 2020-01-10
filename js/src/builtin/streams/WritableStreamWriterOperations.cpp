@@ -117,6 +117,20 @@ JSObject* js::WritableStreamDefaultWriterClose(
 
 
 
+MOZ_MUST_USE bool js::WritableStreamDefaultWriterEnsureReadyPromiseRejected(
+    JSContext* cx, Handle<WritableStreamDefaultWriter*> unwrappedWriter,
+    Handle<Value> error) {
+  cx->check(error);
+
+  
+  JS_ReportErrorASCII(cx, "epic fail");
+  return false;
+}
+
+
+
+
+
 bool js::WritableStreamDefaultWriterGetDesiredSize(
     JSContext* cx, Handle<WritableStreamDefaultWriter*> unwrappedWriter,
     MutableHandle<Value> size) {
