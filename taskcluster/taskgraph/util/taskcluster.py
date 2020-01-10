@@ -24,7 +24,7 @@ testing = False
 
 
 
-PRODUCTION_TASKCLUSTER_ROOT_URL = 'https://taskcluster.net'
+PRODUCTION_TASKCLUSTER_ROOT_URL = 'https://firefox-ci-tc.services.mozilla.com'
 
 
 CONCURRENCY = 50
