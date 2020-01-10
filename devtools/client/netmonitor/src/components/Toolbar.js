@@ -290,7 +290,12 @@ class Toolbar extends Component {
     const { searchPanelOpen } = this.props;
 
     
-    if (!Services.prefs.getBoolPref("devtools.netmonitor.features.search")) {
+    if (
+      !Services.prefs.getBoolPref("devtools.netmonitor.features.search") &&
+      !Services.prefs.getBoolPref(
+        "devtools.netmonitor.features.requestBlocking"
+      )
+    ) {
       return null;
     }
 

@@ -1,0 +1,15 @@
+
+
+
+
+"use strict";
+
+const { Component } = require("devtools/client/shared/vendor/react");
+
+class NetworkActionBar extends Component {
+  render() {
+    return "";
+  }
+}
+
+module.exports = NetworkActionBar;
