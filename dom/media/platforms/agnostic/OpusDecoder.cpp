@@ -86,6 +86,14 @@ RefPtr<MediaDataDecoder::InitPromise> OpusDataDecoder::Init() {
       mOpusParser->mRate, mOpusParser->mChannels, mOpusParser->mStreams,
       mOpusParser->mCoupledStreams, mMappingTable.Elements(), &r);
 
+  if (!mOpusDecoder) {
+    OPUS_DEBUG("Error creating decoder!");
+    return InitPromise::CreateAndReject(
+        MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                    RESULT_DETAIL("Error creating decoder!")),
+        __func__);
+  }
+
   
   
   
