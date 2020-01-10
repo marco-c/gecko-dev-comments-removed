@@ -83,6 +83,19 @@ function removeSheetForBackgroundCalculation(win) {
   removeSheet(win, HIGHLIGHTER_STYLES_SHEET);
 }
 
+
+
+
+
+
+
+
+
+function isWebRenderEnabled(win) {
+  return win.windowUtils && win.windowUtils.layerManagerType === "WebRender";
+}
+
 exports.isDefunct = isDefunct;
 exports.loadSheetForBackgroundCalculation = loadSheetForBackgroundCalculation;
 exports.removeSheetForBackgroundCalculation = removeSheetForBackgroundCalculation;
+exports.isWebRenderEnabled = isWebRenderEnabled;
