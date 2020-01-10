@@ -45,8 +45,12 @@ class EbmlComposer {
   
 
 
-  void ExtractBuffer(nsTArray<nsTArray<uint8_t> >* aDestBufs,
+  void ExtractBuffer(nsTArray<nsTArray<uint8_t>>* aDestBufs,
                      uint32_t aFlag = 0);
+  
+
+
+  bool WritingCluster() const { return !mCurrentCluster.IsEmpty(); }
 
  private:
   
@@ -54,24 +58,17 @@ class EbmlComposer {
   
   
   
+  nsTArray<nsTArray<uint8_t>> mCurrentCluster;
   
-  nsTArray<nsTArray<uint8_t> > mClusters;
+  uint64_t mCurrentClusterLengthLoc = 0;
   
-  nsTArray<nsTArray<uint8_t> > mFinishedClusters;
+  uint64_t mCurrentClusterTimecode = 0;
+
+  
+  nsTArray<nsTArray<uint8_t>> mFinishedClusters;
 
   
   bool mMetadataFinished = false;
-  
-  bool mWritingCluster = false;
-  
-  size_t mClusterHeaderIndex = 0;
-  
-  uint64_t mClusterLengthLoc = 0;
-  
-  nsTArray<uint8_t> mCodecPrivateData;
-
-  
-  uint64_t mClusterTimecode = 0;
 
   
   int mWidth = 0;
@@ -79,10 +76,13 @@ class EbmlComposer {
   int mDisplayWidth = 0;
   int mDisplayHeight = 0;
   bool mHasVideo = false;
+
   
   float mSampleFreq = 0;
   int mChannels = 0;
   bool mHasAudio = false;
+  
+  nsTArray<uint8_t> mCodecPrivateData;
 };
 
 }  
