@@ -46,7 +46,7 @@ function BreakpointActor(threadActor, location) {
 BreakpointActor.prototype = {
   setOptions(options) {
     for (const [script, offsets] of this.scripts) {
-      this._updateOptionsForScript(script, offsets, options);
+      this._newOffsetsOrOptions(script, offsets, this.options, options);
     }
 
     this.options = options;
@@ -71,11 +71,7 @@ BreakpointActor.prototype = {
 
   addScript: function(script, offsets) {
     this.scripts.set(script, offsets.concat(this.scripts.get(offsets) || []));
-    for (const offset of offsets) {
-      script.setBreakpoint(offset, this);
-    }
-
-    this._updateOptionsForScript(script, offsets, this.options);
+    this._newOffsetsOrOptions(script, offsets, null, this.options);
   },
 
   
@@ -89,11 +85,19 @@ BreakpointActor.prototype = {
   },
 
   
-  
-  _updateOptionsForScript(script, offsets, options) {
+
+
+  _newOffsetsOrOptions(script, offsets, oldOptions, options) {
     
     
     if (this.threadActor.dbg.replaying && options.logValue) {
+      if (
+        oldOptions &&
+        oldOptions.logValue == options.logValue &&
+        oldOptions.condition == options.condition
+      ) {
+        return;
+      }
       for (const offset of offsets) {
         const { lineNumber, columnNumber } = script.getOffsetLocation(offset);
         script.replayVirtualConsoleLog(
@@ -113,6 +117,15 @@ BreakpointActor.prototype = {
           }
         );
       }
+      return;
+    }
+
+    
+    
+    
+    for (const offset of offsets) {
+      script.clearBreakpoint(this, offset);
+      script.setBreakpoint(offset, this);
     }
   },
 
@@ -202,12 +215,6 @@ BreakpointActor.prototype = {
     const reason = { type: "breakpoint", actors: [this.actorID] };
     const { condition, logValue } = this.options || {};
 
-    
-    
-    if (logValue && this.threadActor.dbg.replaying) {
-      return undefined;
-    }
-
     if (condition) {
       const { result, message } = this.checkCondition(frame, condition);
 
@@ -228,6 +235,9 @@ BreakpointActor.prototype = {
     }
 
     if (logValue) {
+      
+      assert(!isReplaying);
+
       const displayName = formatDisplayName(frame);
       const completion = frame.evalWithBindings(`[${logValue}]`, {
         displayName,

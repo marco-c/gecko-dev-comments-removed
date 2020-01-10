@@ -163,20 +163,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         this._dbg.replayingOnForcedPause = this.replayingOnForcedPause.bind(
           this
         );
-        const sendProgress = throttle((recording, executionPoint) => {
-          if (this.attached) {
-            this.conn.send({
-              type: "progress",
-              from: this.actorID,
-              recording,
-              executionPoint,
-            });
-          }
-        }, 100);
-        this._dbg.replayingOnPositionChange = this.replayingOnPositionChange.bind(
-          this,
-          sendProgress
-        );
+        this._dbg.replayingOnPositionChange = this._makeReplayingOnPositionChange();
       }
       
       this._dbg.enabled = this._state != "detached";
@@ -1849,10 +1836,23 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
 
-  replayingOnPositionChange: function(sendProgress) {
-    const recording = this.dbg.replayIsRecording();
-    const executionPoint = this.dbg.replayCurrentExecutionPoint();
-    sendProgress(recording, executionPoint);
+  _makeReplayingOnPositionChange() {
+    return throttle(() => {
+      if (this.attached) {
+        const recording = this.dbg.replayIsRecording();
+        const executionPoint = this.dbg.replayCurrentExecutionPoint();
+        const unscannedRegions = this.dbg.replayUnscannedRegions();
+        const cachedPoints = this.dbg.replayCachedPoints();
+        this.conn.send({
+          type: "progress",
+          from: this.actorID,
+          recording,
+          executionPoint,
+          unscannedRegions,
+          cachedPoints,
+        });
+      }
+    }, 100);
   },
 
   
