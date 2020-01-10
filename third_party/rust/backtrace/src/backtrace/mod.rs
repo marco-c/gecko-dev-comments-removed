@@ -1,5 +1,6 @@
-use core::ffi::c_void;
-use core::fmt;
+use std::fmt;
+
+use std::os::raw::c_void;
 
 
 
@@ -35,34 +36,9 @@ use core::fmt;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(feature = "std")]
-pub fn trace<F: FnMut(&Frame) -> bool>(cb: F) {
-    let _guard = crate::lock::lock();
-    unsafe { trace_unsynchronized(cb) }
-}
-
-
-
-
-
-
-
-
-
-
-pub unsafe fn trace_unsynchronized<F: FnMut(&Frame) -> bool>(mut cb: F) {
+#[inline(never)] 
+                 
+pub fn trace<F: FnMut(&Frame) -> bool>(mut cb: F) {
     trace_imp(&mut cb)
 }
 
@@ -72,9 +48,8 @@ pub unsafe fn trace_unsynchronized<F: FnMut(&Frame) -> bool>(mut cb: F) {
 
 
 
-#[derive(Clone)]
 pub struct Frame {
-    pub(crate) inner: FrameImp,
+    inner: FrameImp,
 }
 
 impl Frame {
@@ -112,38 +87,27 @@ impl fmt::Debug for Frame {
     }
 }
 
-cfg_if::cfg_if! {
-    if #[cfg(
-        any(
-            all(
-                unix,
-                not(target_os = "emscripten"),
-                not(all(target_os = "ios", target_arch = "arm")),
-                feature = "libunwind",
-            ),
-            target_env = "sgx",
-        )
-    )] {
+cfg_if! {
+    if #[cfg(all(unix,
+                 not(target_os = "emscripten"),
+                 not(all(target_os = "ios", target_arch = "arm")),
+                 feature = "libunwind"))] {
         mod libunwind;
         use self::libunwind::trace as trace_imp;
-        pub(crate) use self::libunwind::Frame as FrameImp;
-    } else if #[cfg(
-        all(
-            unix,
-            not(target_os = "emscripten"),
-            feature = "unix-backtrace",
-        )
-    )] {
+        use self::libunwind::Frame as FrameImp;
+    } else if #[cfg(all(unix,
+                        not(target_os = "emscripten"),
+                        feature = "unix-backtrace"))] {
         mod unix_backtrace;
         use self::unix_backtrace::trace as trace_imp;
-        pub(crate) use self::unix_backtrace::Frame as FrameImp;
-    } else if #[cfg(all(windows, feature = "dbghelp", not(target_vendor = "uwp")))] {
+        use self::unix_backtrace::Frame as FrameImp;
+    } else if #[cfg(all(windows, feature = "dbghelp"))] {
         mod dbghelp;
         use self::dbghelp::trace as trace_imp;
-        pub(crate) use self::dbghelp::Frame as FrameImp;
+        use self::dbghelp::Frame as FrameImp;
     } else {
         mod noop;
         use self::noop::trace as trace_imp;
-        pub(crate) use self::noop::Frame as FrameImp;
+        use self::noop::Frame as FrameImp;
     }
 }
