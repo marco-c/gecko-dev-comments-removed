@@ -19,6 +19,7 @@
 #include "mozilla/TouchEvents.h"          
 #include "mozilla/WheelHandlingHelper.h"  
                                           
+#include "nsLayoutUtils.h"                
 
 namespace mozilla {
 namespace layers {
@@ -116,7 +117,7 @@ APZEventResult APZInputBridge::ReceiveInputEvent(WidgetInputEvent& aEvent) {
       if (Maybe<APZWheelAction> action = ActionForWheelEvent(&wheelEvent)) {
         ScrollWheelInput::ScrollMode scrollMode =
             ScrollWheelInput::SCROLLMODE_INSTANT;
-        if (StaticPrefs::general_smoothScroll() &&
+        if (nsLayoutUtils::IsSmoothScrollingEnabled() &&
             ((wheelEvent.mDeltaMode ==
                   dom::WheelEvent_Binding::DOM_DELTA_LINE &&
               StaticPrefs::general_smoothScroll_mouseWheel()) ||
