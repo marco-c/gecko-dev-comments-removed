@@ -147,6 +147,7 @@ FRAME_CLASSES = [
     Frame("nsXULLabelFrame", "XULLabel", NOT_LEAF),
     Frame("nsXULScrollFrame", "Scroll", NOT_LEAF),
     Frame("ViewportFrame", "Viewport", NOT_LEAF),
+    Frame("WBRFrame", "Wbr", LEAF),
 
     
     AbstractFrame("nsContainerFrame"),
