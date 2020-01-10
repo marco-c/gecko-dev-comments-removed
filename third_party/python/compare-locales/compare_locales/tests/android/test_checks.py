@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 
 
 
@@ -67,6 +68,19 @@ class SimpleStringsTest(BaseHelper):
                     "or one CDATA surrounded by whitespace",
                     "android"
                  ),
+            )
+        )
+
+    def test_bad_encoding(self):
+        self._test(
+            ANDROID_WRAPPER % 'touché'.encode('latin-1'),
+            (
+                (
+                    "warning",
+                    24,
+                    "\ufffd in: foo",
+                    "encodings"
+                ),
             )
         )
 
