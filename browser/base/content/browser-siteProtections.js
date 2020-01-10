@@ -17,6 +17,11 @@ var gProtectionsHandler = {
     delete this._protectionsIconBox;
     return this._protectionsIconBox = document.getElementById("tracking-protection-icon-animatable-box");
   },
+  get _protectionsPopupMainView() {
+    delete this._protectionsPopupMainView;
+    return this._protectionsPopupMainView =
+      document.getElementById("protections-popup-mainView");
+  },
   get _protectionsPopupMainViewHeaderLabel() {
     delete this._protectionsPopupMainViewHeaderLabel;
     return this._protectionsPopupMainViewHeaderLabel =
@@ -47,6 +52,13 @@ var gProtectionsHandler = {
     return this._protectionPopupTrackersCounterDescription =
       document.getElementById("protections-popup-trackers-blocked-counter-description");
   },
+  get _protectionsPopupToastTimeout() {
+    delete this._protectionsPopupToastTimeout;
+    XPCOMUtils.defineLazyPreferenceGetter(this, "_protectionsPopupToastTimeout",
+                                          "browser.protections_panel.toast.timeout",
+                                          5000);
+    return this._protectionsPopupToastTimeout;
+  },
 
   handleProtectionsButtonEvent(event) {
     event.stopPropagation();
@@ -56,18 +68,7 @@ var gProtectionsHandler = {
       return; 
     }
 
-    
-    
-    this._protectionsPopup.hidden = false;
-
-    
-    this.refreshProtectionsPopup();
-
-    
-    PanelMultiView.openPopup(this._protectionsPopup, gIdentityHandler._identityIcon, {
-      position: "bottomcenter topleft",
-      triggerEvent: event,
-    }).catch(Cu.reportError);
+    this.showProtectionsPopup({event});
   },
 
   onPopupShown(event) {
@@ -162,5 +163,54 @@ var gProtectionsHandler = {
       
       
       `Trackers blocked this week: ${trackerCount.toLocaleString()}`;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  showProtectionsPopup(options = {}) {
+    const {event, toast} = options;
+
+    
+    
+    if (this._toastPanelTimer) {
+      clearTimeout(this._toastPanelTimer);
+      delete this._toastPanelTimer;
+    }
+
+    
+    
+    this._protectionsPopup.hidden = false;
+
+    this._protectionsPopup.toggleAttribute("toast", !!toast);
+    if (!toast) {
+      
+      this.refreshProtectionsPopup();
+    }
+
+    if (toast) {
+      this._protectionsPopup.addEventListener("popupshown", () => {
+        this._toastPanelTimer = setTimeout(() => {
+          PanelMultiView.hidePopup(this._protectionsPopup);
+          delete this._toastPanelTimer;
+        }, this._protectionsPopupToastTimeout);
+      }, {once: true});
+    }
+
+    
+    PanelMultiView.openPopup(this._protectionsPopup, gIdentityHandler._identityIcon, {
+      position: "bottomcenter topleft",
+      triggerEvent: event,
+    }).catch(Cu.reportError);
   },
 };
