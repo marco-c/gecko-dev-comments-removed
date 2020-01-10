@@ -46,11 +46,6 @@
 namespace mozilla {
 namespace dom {
 
-namespace {
-
-Atomic<uintptr_t> gIDGenerator(0);
-}  
-
 
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(Promise)
