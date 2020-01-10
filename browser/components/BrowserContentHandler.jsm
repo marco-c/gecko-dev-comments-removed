@@ -47,6 +47,10 @@ XPCOMUtils.defineLazyGlobalGetters(this, [URL]);
 
 const NEWINSTALL_PAGE = "about:newinstall";
 
+
+const ONCE_DOMAINS = ["mozilla.org", "firefox.com"];
+const ONCE_PREF = "browser.startup.homepage_override.once";
+
 function shouldLoadURI(aURI) {
   if (aURI && !aURI.schemeIs("chrome")) {
     return true;
@@ -691,18 +695,44 @@ nsBrowserContentHandler.prototype = {
     }
 
     
-    const ONCE_PREF = "browser.startup.homepage_override.once";
     if (isStartup && overridePage == "" && prefb.prefHasUserValue(ONCE_PREF)) {
       try {
         
         const { expire, url } = JSON.parse(
           Services.urlFormatter.formatURLPref(ONCE_PREF)
         );
-        if (!(Date.now() > expire) && typeof url == "string") {
-          overridePage = url;
+        if (!(Date.now() > expire)) {
+          
+          overridePage = url
+            .split("|")
+            .map(val => {
+              try {
+                return new URL(val);
+              } catch (ex) {
+                
+                Cu.reportError(`Invalid once url: ${ex}`);
+                return null;
+              }
+            })
+            .filter(
+              parsed =>
+                parsed &&
+                parsed.protocol == "https:" &&
+                
+                ONCE_DOMAINS.includes(
+                  Services.eTLD.getBaseDomainFromHost(parsed.host)
+                )
+            )
+            .join("|");
+
+          
+          if (overridePage != url) {
+            Cu.reportError(`Mismatched once urls: ${url}`);
+          }
         }
       } catch (ex) {
         
+        Cu.reportError(`Invalid once pref: ${ex}`);
       } finally {
         prefb.clearUserPref(ONCE_PREF);
       }
