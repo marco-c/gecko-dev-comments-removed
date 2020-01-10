@@ -72,7 +72,7 @@ function run_test() {
   }
 
   
-  var perms = pm.all;
+  var perms = Array.from(pm.enumerator);
   Assert.equal(perms.length, hosts.length);
 
   
@@ -96,7 +96,7 @@ function run_test() {
   Assert.equal(perms.length, 0);
 
   
-  Assert.equal(pm.all.length, 0);
+  Assert.equal(pm.enumerator.hasMoreElements(), false);
 
   
   var utf8 = "b\u00FCcher.dolske.org"; 
@@ -106,14 +106,15 @@ function run_test() {
     {}
   );
   pm.addFromPrincipal(principal, "utf8", 1);
-  Assert.notEqual(Services.perms.all.length, 0);
-  var ace = Services.perms.all[0];
+  var enumerator = pm.enumerator;
+  Assert.equal(enumerator.hasMoreElements(), true);
+  var ace = enumerator.getNext().QueryInterface(Ci.nsIPermission);
   Assert.equal(ace.principal.URI.asciiHost, aceref);
-  Assert.equal(Services.perms.all.length > 1, false);
+  Assert.equal(enumerator.hasMoreElements(), false);
 
   
   pm.removeAll();
-  Assert.equal(Services.perms.all.length, 0);
+  Assert.equal(pm.enumerator.hasMoreElements(), false);
 
   principal = secMan.createContentPrincipalFromOrigin(
     "https://www.example.com"
@@ -125,5 +126,5 @@ function run_test() {
   
   perm = pm.getPermissionObject(principal, "offline-app", true);
   pm.removePermission(perm);
-  Assert.equal(Services.perms.all.length, 0);
+  Assert.equal(pm.enumerator.hasMoreElements(), false);
 }
