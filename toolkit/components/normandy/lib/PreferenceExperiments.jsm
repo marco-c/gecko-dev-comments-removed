@@ -246,9 +246,9 @@ var PreferenceExperiments = {
         ) {
           
           log.info(
-            `Stopping experiment "${experiment.name}" because its value changed`
+            `Stopping experiment "${experiment.slug}" because its value changed`
           );
-          await this.stop(experiment.name, {
+          await this.stop(experiment.slug, {
             resetValue: false,
             reason: "user-preference-changed-sideload",
           });
@@ -262,13 +262,13 @@ var PreferenceExperiments = {
 
       
       TelemetryEnvironment.setExperimentActive(
-        experiment.name,
+        experiment.slug,
         experiment.branch,
         { type: EXPERIMENT_TYPE_PREFIX + experiment.experimentType }
       );
 
       
-      this.startObserver(experiment.name, experiment.preferences);
+      this.startObserver(experiment.slug, experiment.preferences);
     }
   },
 
@@ -332,7 +332,13 @@ var PreferenceExperiments = {
         const experiments = {};
 
         for (const exp of mockExperiments) {
-          experiments[exp.name] = exp;
+          if (exp.name) {
+            throw new Error(
+              "Preference experiments 'name' field has been replaced by 'slug' and 'userFacingName', please update."
+            );
+          }
+
+          experiments[exp.slug] = exp;
         }
         const data = { experiments };
 
@@ -382,7 +388,8 @@ var PreferenceExperiments = {
 
 
   async start({
-    name,
+    name = null, 
+    slug,
     actionName,
     branch,
     preferences,
@@ -390,15 +397,21 @@ var PreferenceExperiments = {
     userFacingName = null,
     userFacingDescription = null,
   }) {
-    log.debug(`PreferenceExperiments.start(${name}, ${branch})`);
+    if (name) {
+      throw new Error(
+        "Preference experiments 'name' field has been replaced by 'slug' and 'userFacingName', please update."
+      );
+    }
+
+    log.debug(`PreferenceExperiments.start(${slug}, ${branch})`);
 
     const store = await ensureStorage();
-    if (name in store.data.experiments) {
-      TelemetryEvents.sendEvent("enrollFailed", "preference_study", name, {
+    if (slug in store.data.experiments) {
+      TelemetryEvents.sendEvent("enrollFailed", "preference_study", slug, {
         reason: "name-conflict",
       });
       throw new Error(
-        `A preference experiment named "${name}" already exists.`
+        `A preference experiment with the slug "${slug}" already exists.`
       );
     }
 
@@ -414,7 +427,7 @@ var PreferenceExperiments = {
     );
 
     if (preferencesWithConflicts.length > 0) {
-      TelemetryEvents.sendEvent("enrollFailed", "preference_study", name, {
+      TelemetryEvents.sendEvent("enrollFailed", "preference_study", slug, {
         reason: "pref-conflict",
       });
       throw new Error(
@@ -425,7 +438,7 @@ var PreferenceExperiments = {
     }
 
     if (experimentType.length > MAX_EXPERIMENT_SUBTYPE_LENGTH) {
-      TelemetryEvents.sendEvent("enrollFailed", "preference_study", name, {
+      TelemetryEvents.sendEvent("enrollFailed", "preference_study", slug, {
         reason: "experiment-type-too-long",
       });
       throw new Error(
@@ -441,7 +454,7 @@ var PreferenceExperiments = {
       const { preferenceBranchType, preferenceType } = preferenceInfo;
       const preferenceBranch = PreferenceBranchType[preferenceBranchType];
       if (!preferenceBranch) {
-        TelemetryEvents.sendEvent("enrollFailed", "preference_study", name, {
+        TelemetryEvents.sendEvent("enrollFailed", "preference_study", slug, {
           reason: "invalid-branch",
         });
         throw new Error(
@@ -453,7 +466,7 @@ var PreferenceExperiments = {
       const givenPrefType = PREFERENCE_TYPE_MAP[preferenceType];
 
       if (!preferenceType || !givenPrefType) {
-        TelemetryEvents.sendEvent("enrollFailed", "preference_study", name, {
+        TelemetryEvents.sendEvent("enrollFailed", "preference_study", slug, {
           reason: "invalid-type",
         });
         throw new Error(
@@ -465,7 +478,7 @@ var PreferenceExperiments = {
         prevPrefType !== Services.prefs.PREF_INVALID &&
         prevPrefType !== givenPrefType
       ) {
-        TelemetryEvents.sendEvent("enrollFailed", "preference_study", name, {
+        TelemetryEvents.sendEvent("enrollFailed", "preference_study", slug, {
           reason: "invalid-type",
         });
         throw new Error(
@@ -497,11 +510,11 @@ var PreferenceExperiments = {
         preferenceValue
       );
     }
-    PreferenceExperiments.startObserver(name, preferences);
+    PreferenceExperiments.startObserver(slug, preferences);
 
     
     const experiment = {
-      name,
+      slug,
       actionName,
       branch,
       expired: false,
@@ -512,13 +525,13 @@ var PreferenceExperiments = {
       userFacingDescription,
     };
 
-    store.data.experiments[name] = experiment;
+    store.data.experiments[slug] = experiment;
     store.saveSoon();
 
-    TelemetryEnvironment.setExperimentActive(name, branch, {
+    TelemetryEnvironment.setExperimentActive(slug, branch, {
       type: EXPERIMENT_TYPE_PREFIX + experimentType,
     });
-    TelemetryEvents.sendEvent("enroll", "preference_study", name, {
+    TelemetryEvents.sendEvent("enroll", "preference_study", slug, {
       experimentType,
       branch,
     });
@@ -534,12 +547,12 @@ var PreferenceExperiments = {
 
 
 
-  startObserver(experimentName, preferences) {
-    log.debug(`PreferenceExperiments.startObserver(${experimentName})`);
+  startObserver(experimentSlug, preferences) {
+    log.debug(`PreferenceExperiments.startObserver(${experimentSlug})`);
 
-    if (experimentObservers.has(experimentName)) {
+    if (experimentObservers.has(experimentSlug)) {
       throw new Error(
-        `An observer for the preference experiment ${experimentName} is already active.`
+        `An observer for the preference experiment ${experimentSlug} is already active.`
       );
     }
 
@@ -553,14 +566,14 @@ var PreferenceExperiments = {
           preferenceType
         );
         if (newValue !== preferenceValue) {
-          PreferenceExperiments.stop(experimentName, {
+          PreferenceExperiments.stop(experimentSlug, {
             resetValue: false,
             reason: "user-preference-changed",
           }).catch(Cu.reportError);
         }
       },
     };
-    experimentObservers.set(experimentName, observerInfo);
+    experimentObservers.set(experimentSlug, observerInfo);
     for (const preferenceName of Object.keys(preferences)) {
       Services.prefs.addObserver(preferenceName, observerInfo);
     }
@@ -571,9 +584,9 @@ var PreferenceExperiments = {
 
 
 
-  hasObserver(experimentName) {
-    log.debug(`PreferenceExperiments.hasObserver(${experimentName})`);
-    return experimentObservers.has(experimentName);
+  hasObserver(experimentSlug) {
+    log.debug(`PreferenceExperiments.hasObserver(${experimentSlug})`);
+    return experimentObservers.has(experimentSlug);
   },
 
   
@@ -582,20 +595,20 @@ var PreferenceExperiments = {
 
 
 
-  stopObserver(experimentName) {
-    log.debug(`PreferenceExperiments.stopObserver(${experimentName})`);
+  stopObserver(experimentSlug) {
+    log.debug(`PreferenceExperiments.stopObserver(${experimentSlug})`);
 
-    if (!experimentObservers.has(experimentName)) {
+    if (!experimentObservers.has(experimentSlug)) {
       throw new Error(
-        `No observer for the preference experiment ${experimentName} found.`
+        `No observer for the preference experiment ${experimentSlug} found.`
       );
     }
 
-    const observer = experimentObservers.get(experimentName);
+    const observer = experimentObservers.get(experimentSlug);
     for (const preferenceName of Object.keys(observer.preferences)) {
       Services.prefs.removeObserver(preferenceName, observer);
     }
-    experimentObservers.delete(experimentName);
+    experimentObservers.delete(experimentSlug);
   },
 
   
@@ -618,17 +631,17 @@ var PreferenceExperiments = {
 
 
 
-  async markLastSeen(experimentName) {
-    log.debug(`PreferenceExperiments.markLastSeen(${experimentName})`);
+  async markLastSeen(experimentSlug) {
+    log.debug(`PreferenceExperiments.markLastSeen(${experimentSlug})`);
 
     const store = await ensureStorage();
-    if (!(experimentName in store.data.experiments)) {
+    if (!(experimentSlug in store.data.experiments)) {
       throw new Error(
-        `Could not find a preference experiment named "${experimentName}"`
+        `Could not find a preference experiment with the slug "${experimentSlug}"`
       );
     }
 
-    store.data.experiments[experimentName].lastSeen = new Date().toJSON();
+    store.data.experiments[experimentSlug].lastSeen = new Date().toJSON();
     store.saveSoon();
   },
 
@@ -647,42 +660,42 @@ var PreferenceExperiments = {
 
 
 
-  async stop(experimentName, { resetValue = true, reason = "unknown" } = {}) {
+  async stop(experimentSlug, { resetValue = true, reason = "unknown" } = {}) {
     log.debug(
-      `PreferenceExperiments.stop(${experimentName}, {resetValue: ${resetValue}, reason: ${reason}})`
+      `PreferenceExperiments.stop(${experimentSlug}, {resetValue: ${resetValue}, reason: ${reason}})`
     );
     if (reason === "unknown") {
-      log.warn(`experiment ${experimentName} ending for unknown reason`);
+      log.warn(`experiment ${experimentSlug} ending for unknown reason`);
     }
 
     const store = await ensureStorage();
-    if (!(experimentName in store.data.experiments)) {
+    if (!(experimentSlug in store.data.experiments)) {
       TelemetryEvents.sendEvent(
         "unenrollFailed",
         "preference_study",
-        experimentName,
+        experimentSlug,
         { reason: "does-not-exist" }
       );
       throw new Error(
-        `Could not find a preference experiment named "${experimentName}"`
+        `Could not find a preference experiment with the slug "${experimentSlug}"`
       );
     }
 
-    const experiment = store.data.experiments[experimentName];
+    const experiment = store.data.experiments[experimentSlug];
     if (experiment.expired) {
       TelemetryEvents.sendEvent(
         "unenrollFailed",
         "preference_study",
-        experimentName,
+        experimentSlug,
         { reason: "already-unenrolled" }
       );
       throw new Error(
-        `Cannot stop preference experiment "${experimentName}" because it is already expired`
+        `Cannot stop preference experiment "${experimentSlug}" because it is already expired`
       );
     }
 
-    if (PreferenceExperiments.hasObserver(experimentName)) {
-      PreferenceExperiments.stopObserver(experimentName);
+    if (PreferenceExperiments.hasObserver(experimentSlug)) {
+      PreferenceExperiments.stopObserver(experimentSlug);
     }
 
     if (resetValue) {
@@ -708,7 +721,7 @@ var PreferenceExperiments = {
           preferences.clearUserPref(preferenceName);
         } else {
           log.warn(
-            `Can't revert pref ${preferenceName} for experiment ${experimentName} ` +
+            `Can't revert pref ${preferenceName} for experiment ${experimentSlug} ` +
               `because it had no default value. ` +
               `Preference will be reset at the next restart.`
           );
@@ -721,8 +734,8 @@ var PreferenceExperiments = {
     experiment.expired = true;
     store.saveSoon();
 
-    TelemetryEnvironment.setExperimentInactive(experimentName);
-    TelemetryEvents.sendEvent("unenroll", "preference_study", experimentName, {
+    TelemetryEnvironment.setExperimentInactive(experimentSlug);
+    TelemetryEvents.sendEvent("unenroll", "preference_study", experimentSlug, {
       didResetValue: resetValue ? "true" : "false",
       branch: experiment.branch,
       reason,
@@ -753,16 +766,16 @@ var PreferenceExperiments = {
 
 
 
-  async get(experimentName) {
-    log.debug(`PreferenceExperiments.get(${experimentName})`);
+  async get(experimentSlug) {
+    log.debug(`PreferenceExperiments.get(${experimentSlug})`);
     const store = await ensureStorage();
-    if (!(experimentName in store.data.experiments)) {
+    if (!(experimentSlug in store.data.experiments)) {
       throw new Error(
-        `Could not find a preference experiment named "${experimentName}"`
+        `Could not find a preference experiment with the slug "${experimentSlug}"`
       );
     }
 
-    return this._cloneExperiment(store.data.experiments[experimentName]);
+    return this._cloneExperiment(store.data.experiments[experimentSlug]);
   },
 
   
@@ -792,10 +805,10 @@ var PreferenceExperiments = {
 
 
 
-  async has(experimentName) {
-    log.debug(`PreferenceExperiments.has(${experimentName})`);
+  async has(experimentSlug) {
+    log.debug(`PreferenceExperiments.has(${experimentSlug})`);
     const store = await ensureStorage();
-    return experimentName in store.data.experiments;
+    return experimentSlug in store.data.experiments;
   },
 
   
@@ -869,6 +882,20 @@ var PreferenceExperiments = {
           
           
           experiment.actionName = "SinglePreferenceExperimentAction";
+        }
+      }
+      storage.saveSoon();
+    },
+
+    async migration04RenameNameToSlug(storage = null) {
+      if (!storage) {
+        storage = await ensureStorage();
+      }
+      
+      for (const experiment of Object.values(storage.data.experiments)) {
+        if (experiment.name && !experiment.slug) {
+          experiment.slug = experiment.name;
+          delete experiment.name;
         }
       }
       storage.saveSoon();
