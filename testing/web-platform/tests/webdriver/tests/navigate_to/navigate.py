@@ -33,8 +33,9 @@ def test_file_protocol(session, server_config):
     
     path = server_config["doc_root"]
     if platform_name == "windows":
-        path = path.replace("\\", "/")
-    url = u"file:///{}".format(path)
+        
+        path = "/{}".format(path.replace("\\", "/"))
+    url = u"file://{}".format(path)
 
     response = navigate_to(session, url)
     assert_success(response)
