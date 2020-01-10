@@ -3747,6 +3747,8 @@ void Preferences::InitSnapshot(const FileDescriptor& aHandle, size_t aSize) {
   MOZ_ASSERT(!gSharedMap);
 
   gSharedMap = new SharedPrefMap(aHandle, aSize);
+
+  StaticPrefs::InitStaticPrefsFromShared();
 }
 
 
@@ -4475,30 +4477,14 @@ struct PreferencesInternalMethods {
 
 
 
- Result<Ok, const char*> Preferences::InitInitialObjects(
-    bool aIsStartup) {
+
+Result<Ok, const char*> Preferences::InitInitialObjects(bool aIsStartup) {
   
   
   StaticPrefs::InitAll(aIsStartup);
 
   if (!XRE_IsParentProcess()) {
-    MOZ_ASSERT(gSharedMap);
-
-    
-    
-    
-    
-    
-    
-    for (auto& pref : gSharedMap->Iter()) {
-      if (pref.HasUserValue() || pref.DefaultChanged()) {
-        NotifyCallbacks(pref.Name(), PrefWrapper(pref));
-      }
-    }
-
-    if (aIsStartup) {
-      StaticPrefs::InitOncePrefsFromShared();
-    }
+    MOZ_DIAGNOSTIC_ASSERT(gSharedMap);
 
 #ifdef DEBUG
     
@@ -5376,13 +5362,32 @@ static void InitVarCachePref(StaticPrefs::UpdatePolicy aPolicy,
                              const nsACString& aName, T* aCache,
                              StripAtomic<T> aDefaultValue, bool aIsStartup,
                              bool aSetValue) {
-  if (aSetValue) {
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (aSetValue && MOZ_LIKELY(aPolicy != StaticPrefs::UpdatePolicy::Skip)) {
     SetPref(PromiseFlatCString(aName).get(), aDefaultValue);
+    if (MOZ_LIKELY(aPolicy == StaticPrefs::UpdatePolicy::Live)) {
+      *aCache = aDefaultValue;
+    }
   }
 
-  *aCache = aDefaultValue;
-  if (MOZ_LIKELY(aIsStartup) &&
-      MOZ_LIKELY(aPolicy == StaticPrefs::UpdatePolicy::Live)) {
+  if (MOZ_LIKELY(aPolicy == StaticPrefs::UpdatePolicy::Live) &&
+      MOZ_LIKELY(aIsStartup)) {
     AddVarCache(aCache, aName, aDefaultValue, true);
   }
 }
@@ -5522,12 +5527,11 @@ void StaticPrefs::InitOncePrefs() {
 #ifdef DEBUG
 #  define VARCACHE_PREF(policy, name, id, cpp_type, value)                    \
     if (UpdatePolicy::policy == UpdatePolicy::Once) {                         \
+      MOZ_ASSERT(gOnceStaticPrefsAntiFootgun);                                \
       StaticPrefs::sVarCache_##id = PreferencesInternalMethods::GetPref(      \
           name, StripAtomic<cpp_type>(value));                                \
       auto checkPref = [&]() {                                                \
-        if (!sOncePrefRead) {                                                 \
-          return;                                                             \
-        }                                                                     \
+        MOZ_ASSERT(sOncePrefRead);                                            \
         StripAtomic<cpp_type> staticPrefValue = StaticPrefs::id();            \
         StripAtomic<cpp_type> preferenceValue =                               \
             PreferencesInternalMethods::GetPref(                              \
@@ -5642,7 +5646,7 @@ void StaticPrefs::RegisterOncePrefs(SharedPrefMapBuilder& aBuilder) {
 }
 
 
-void StaticPrefs::InitOncePrefsFromShared() {
+void StaticPrefs::InitStaticPrefsFromShared() {
   MOZ_ASSERT(!XRE_IsParentProcess());
   MOZ_DIAGNOSTIC_ASSERT(gSharedMap,
                         "Must be called once gSharedMap has been created");
@@ -5660,15 +5664,26 @@ void StaticPrefs::InitOncePrefsFromShared() {
   
   
   
+  
+  
+  
+  
+  
+  
 
 #define PREF(name, cpp_type, value)
-#define VARCACHE_PREF(policy, name, id, cpp_type, value)             \
-  if (UpdatePolicy::policy == UpdatePolicy::Once) {                  \
-    StripAtomic<cpp_type> val;                                       \
-    MOZ_DIAGNOSTIC_ALWAYS_TRUE(                                      \
-        NS_SUCCEEDED(PreferencesInternalMethods::GetSharedPrefValue( \
-            ONCE_PREF_NAME(name), &val)));                           \
-    StaticPrefs::sVarCache_##id = val;                               \
+#define VARCACHE_PREF(policy, name, id, cpp_type, value)               \
+  if (UpdatePolicy::policy != UpdatePolicy::Skip) {                    \
+    StripAtomic<cpp_type> val;                                         \
+    nsresult rv;                                                       \
+    if (UpdatePolicy::policy == UpdatePolicy::Once) {                  \
+      rv = PreferencesInternalMethods::GetSharedPrefValue(             \
+          ONCE_PREF_NAME(name), &val);                                 \
+    } else {                                                           \
+      rv = PreferencesInternalMethods::GetSharedPrefValue(name, &val); \
+    }                                                                  \
+    MOZ_DIAGNOSTIC_ALWAYS_TRUE(NS_SUCCEEDED(rv));                      \
+    StaticPrefs::sVarCache_##id = val;                                 \
   }
 #include "mozilla/StaticPrefList.h"
 #undef PREF
