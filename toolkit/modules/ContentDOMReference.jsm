@@ -60,7 +60,7 @@ var ContentDOMReference = {
     }
 
     let identifier = JSON.parse(data);
-    this.revoke(identifier);
+    this._revoke(identifier);
   },
 
   
@@ -129,21 +129,13 @@ var ContentDOMReference = {
 
 
 
-
-
-  revoke(identifier) {
+  _revoke(identifier) {
     let browsingContext = BrowsingContext.get(identifier.browsingContextId);
     let {id} = identifier;
 
     let mappings = gRegistry.get(browsingContext);
     if (!mappings) {
       return;
-    }
-
-    let element = this._resolveIDToElement(browsingContext, id);
-    if (element) {
-      mappings.elementToID.delete(element);
-      finalizerRoots.delete(element);
     }
 
     mappings.IDToElement.delete(id);
