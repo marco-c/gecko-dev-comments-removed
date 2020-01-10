@@ -349,8 +349,10 @@ class UrlbarController {
           }
           if (executeAction) {
             this.userSelectionBehavior = "arrow";
-            this.engagementEvent.start(event);
-            this.input.startQuery({ searchString: this.input.value });
+            this.input.startQuery({
+              searchString: this.input.value,
+              event,
+            });
           }
         }
         event.preventDefault();
@@ -615,7 +617,10 @@ class TelemetryEvent {
 
 
 
-  start(event) {
+
+
+
+  start(event, searchString = null) {
     
     
     if (!this._category || this._startEventInfo) {
@@ -625,7 +630,8 @@ class TelemetryEvent {
       Cu.reportError("Must always provide an event");
       return;
     }
-    if (!["input", "drop", "mousedown", "keydown"].includes(event.type)) {
+    const validEvents = ["command", "drop", "input", "keydown", "mousedown"];
+    if (!validEvents.includes(event.type)) {
       Cu.reportError("Can't start recording from event type: " + event.type);
       return;
     }
@@ -637,11 +643,22 @@ class TelemetryEvent {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+
     let interactionType = "topsites";
     if (event.type == "input") {
       interactionType = UrlbarUtils.isPasteEvent(event) ? "pasted" : "typed";
     } else if (event.type == "drop") {
       interactionType = "dropped";
+    } else if (searchString) {
+      interactionType = "typed";
     }
 
     this._startEventInfo = {

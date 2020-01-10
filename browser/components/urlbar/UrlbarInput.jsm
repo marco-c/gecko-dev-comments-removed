@@ -704,24 +704,32 @@ class UrlbarInput {
 
 
 
+
+
+
   startQuery({
     allowAutofill = true,
     searchString = null,
     resetSearchState = true,
+    event = null,
   } = {}) {
+    if (!searchString) {
+      searchString =
+        this.getAttribute("pageproxystate") == "valid" ? "" : this.value;
+    } else if (!this.value.startsWith(searchString)) {
+      throw new Error("The current value doesn't start with the search string");
+    }
+
+    if (event) {
+      this.controller.engagementEvent.start(event, searchString);
+    }
+
     if (this._suppressStartQuery) {
       return;
     }
 
     if (resetSearchState) {
       this._resetSearchState();
-    }
-
-    if (!searchString) {
-      searchString =
-        this.getAttribute("pageproxystate") == "valid" ? "" : this.value;
-    } else if (!this.value.startsWith(searchString)) {
-      throw new Error("The current value doesn't start with the search string");
     }
 
     this._lastSearchString = searchString;
@@ -1585,9 +1593,9 @@ class UrlbarInput {
         this.editor.selectAll();
         event.preventDefault();
       } else if (this.openViewOnFocusForCurrentTab && !this.view.isOpen) {
-        this.controller.engagementEvent.start(event);
         this.startQuery({
           allowAutofill: false,
+          event,
         });
       }
       return;
@@ -1598,9 +1606,9 @@ class UrlbarInput {
         this.view.close();
       } else {
         this.focus();
-        this.controller.engagementEvent.start(event);
         this.startQuery({
           allowAutofill: false,
+          event,
         });
         this._maybeSelectAll();
       }
@@ -1652,8 +1660,6 @@ class UrlbarInput {
       return;
     }
 
-    this.controller.engagementEvent.start(event);
-
     
     
     let allowAutofill =
@@ -1665,6 +1671,7 @@ class UrlbarInput {
       searchString: value,
       allowAutofill,
       resetSearchState: false,
+      event,
     });
   }
 
