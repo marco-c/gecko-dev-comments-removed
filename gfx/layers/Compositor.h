@@ -179,6 +179,7 @@ enum SurfaceInitMode { INIT_MODE_NONE, INIT_MODE_CLEAR };
 
 
 
+
 class Compositor : public TextureSourceProvider {
  protected:
   virtual ~Compositor();
@@ -202,20 +203,6 @@ class Compositor : public TextureSourceProvider {
 
 
   virtual bool CanUseCanvasLayerForSize(const gfx::IntSize& aSize) = 0;
-
-  
-
-
-
-
-
-
-  void SetTargetContext(gfx::DrawTarget* aTarget, const gfx::IntRect& aRect) {
-    mTarget = aTarget;
-    mTargetBounds = aRect;
-  }
-  gfx::DrawTarget* GetTargetContext() const { return mTarget; }
-  void ClearTargetContext() { mTarget = nullptr; }
 
   typedef uint32_t MakeCurrentFlags;
   static const MakeCurrentFlags ForceMakeCurrent = 0x1;
@@ -409,12 +396,36 @@ class Compositor : public TextureSourceProvider {
 
 
 
-
-
   virtual Maybe<gfx::IntRect> BeginFrameForWindow(
       const nsIntRegion& aInvalidRegion, const Maybe<gfx::IntRect>& aClipRect,
       const gfx::IntRect& aRenderBounds, const nsIntRegion& aOpaqueRegion,
       NativeLayer* aNativeLayer) = 0;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual Maybe<gfx::IntRect> BeginFrameForTarget(
+      const nsIntRegion& aInvalidRegion, const Maybe<gfx::IntRect>& aClipRect,
+      const gfx::IntRect& aRenderBounds, const nsIntRegion& aOpaqueRegion,
+      gfx::DrawTarget* aTarget, const gfx::IntRect& aTargetBounds) = 0;
 
   
 
@@ -593,9 +604,6 @@ class Compositor : public TextureSourceProvider {
   size_t mPixelsFilled;
 
   ScreenRotation mScreenRotation;
-
-  RefPtr<gfx::DrawTarget> mTarget;
-  gfx::IntRect mTargetBounds;
 
   widget::CompositorWidget* mWidget;
 

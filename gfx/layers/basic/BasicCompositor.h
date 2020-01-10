@@ -128,6 +128,11 @@ class BasicCompositor : public Compositor {
                                           const gfx::IntRect& aRenderBounds,
                                           const nsIntRegion& aOpaqueRegion,
                                           NativeLayer* aNativeLayer) override;
+  Maybe<gfx::IntRect> BeginFrameForTarget(
+      const nsIntRegion& aInvalidRegion, const Maybe<gfx::IntRect>& aClipRect,
+      const gfx::IntRect& aRenderBounds, const nsIntRegion& aOpaqueRegion,
+      gfx::DrawTarget* aTarget, const gfx::IntRect& aTargetBounds) override;
+
   void NormalDrawingDone() override;
   void EndFrame() override;
 
@@ -204,7 +209,6 @@ class BasicCompositor : public Compositor {
   
   
   
-  
   RefPtr<NativeLayer> mCurrentNativeLayer;
 
 #ifdef XP_MACOSX
@@ -218,6 +222,10 @@ class BasicCompositor : public Compositor {
   uint32_t mMaxTextureSize;
   bool mIsPendingEndRemoteDrawing;
   bool mRecordFrames;
+
+  
+  
+  bool mFrameIsForTarget = false;
 
   
   
