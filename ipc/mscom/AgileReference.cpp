@@ -34,12 +34,87 @@ HRESULT WINAPI RoGetAgileReference(AgileReferenceOptions options, REFIID riid,
 
 namespace mozilla {
 namespace mscom {
+namespace detail {
 
-AgileReference::AgileReference() : mIid(), mGitCookie(0) {}
+GlobalInterfaceTableCookie::GlobalInterfaceTableCookie(IUnknown* aObject,
+                                                       REFIID aIid,
+                                                       HRESULT& aOutHResult)
+    : mCookie(0) {
+  IGlobalInterfaceTable* git = ObtainGit();
+  MOZ_ASSERT(git);
+  if (!git) {
+    aOutHResult = E_POINTER;
+    return;
+  }
+
+  aOutHResult = git->RegisterInterfaceInGlobal(aObject, aIid, &mCookie);
+  MOZ_ASSERT(SUCCEEDED(aOutHResult));
+}
+
+GlobalInterfaceTableCookie::~GlobalInterfaceTableCookie() {
+  IGlobalInterfaceTable* git = ObtainGit();
+  MOZ_ASSERT(git);
+  if (!git) {
+    return;
+  }
+
+  DebugOnly<HRESULT> hr = git->RevokeInterfaceFromGlobal(mCookie);
+#if defined(MOZILLA_INTERNAL_API)
+  NS_WARNING_ASSERTION(
+      SUCCEEDED(hr),
+      nsPrintfCString("IGlobalInterfaceTable::RevokeInterfaceFromGlobal failed "
+                      "with HRESULT 0x%08lX",
+                      ((HRESULT)hr))
+          .get());
+#else
+  MOZ_ASSERT(SUCCEEDED(hr));
+#endif  
+  mCookie = 0;
+}
+
+HRESULT GlobalInterfaceTableCookie::GetInterface(REFIID aIid,
+                                                 void** aOutInterface) const {
+  IGlobalInterfaceTable* git = ObtainGit();
+  MOZ_ASSERT(git);
+  if (!git) {
+    return E_UNEXPECTED;
+  }
+
+  MOZ_ASSERT(IsValid());
+  return git->GetInterfaceFromGlobal(mCookie, aIid, aOutInterface);
+}
+
+
+IGlobalInterfaceTable* GlobalInterfaceTableCookie::ObtainGit() {
+  
+  
+  static IGlobalInterfaceTable* sGit = []() -> IGlobalInterfaceTable* {
+    IGlobalInterfaceTable* result = nullptr;
+    DebugOnly<HRESULT> hr = ::CoCreateInstance(
+        CLSID_StdGlobalInterfaceTable, nullptr, CLSCTX_INPROC_SERVER,
+        IID_IGlobalInterfaceTable, reinterpret_cast<void**>(&result));
+    MOZ_ASSERT(SUCCEEDED(hr));
+    return result;
+  }();
+
+  return sGit;
+}
+
+}  
+
+AgileReference::AgileReference() : mIid(), mHResult(E_NOINTERFACE) {}
 
 AgileReference::AgileReference(REFIID aIid, IUnknown* aObject)
-    : mIid(aIid), mGitCookie(0) {
+    : mIid(aIid), mHResult(E_UNEXPECTED) {
   AssignInternal(aObject);
+}
+
+AgileReference::AgileReference(AgileReference&& aOther)
+    : mIid(aOther.mIid),
+      mAgileRef(std::move(aOther.mAgileRef)),
+      mGitCookie(std::move(aOther.mGitCookie)),
+      mHResult(aOther.mHResult) {
+  aOther.mHResult = CO_E_RELEASED;
 }
 
 void AgileReference::Assign(REFIID aIid, IUnknown* aObject) {
@@ -66,74 +141,49 @@ void AgileReference::AssignInternal(IUnknown* aObject) {
   MOZ_ASSERT(aObject);
 
   if (pRoGetAgileReference &&
-      SUCCEEDED(pRoGetAgileReference(AGILEREFERENCE_DEFAULT, mIid, aObject,
-                                     getter_AddRefs(mAgileRef)))) {
+      SUCCEEDED(mHResult =
+                    pRoGetAgileReference(AGILEREFERENCE_DEFAULT, mIid, aObject,
+                                         getter_AddRefs(mAgileRef)))) {
     return;
   }
 
-  IGlobalInterfaceTable* git = ObtainGit();
-  MOZ_ASSERT(git);
-  if (!git) {
-    return;
-  }
-
-  DebugOnly<HRESULT> hr =
-      git->RegisterInterfaceInGlobal(aObject, mIid, &mGitCookie);
-  MOZ_ASSERT(SUCCEEDED(hr));
-}
-
-AgileReference::AgileReference(AgileReference&& aOther)
-    : mIid(aOther.mIid),
-      mAgileRef(std::move(aOther.mAgileRef)),
-      mGitCookie(aOther.mGitCookie) {
-  aOther.mGitCookie = 0;
+  mGitCookie = new detail::GlobalInterfaceTableCookie(aObject, mIid, mHResult);
+  MOZ_ASSERT(mGitCookie->IsValid());
 }
 
 AgileReference::~AgileReference() { Clear(); }
 
 void AgileReference::Clear() {
   mIid = {};
+  mAgileRef = nullptr;
+  mGitCookie = nullptr;
+  mHResult = E_NOINTERFACE;
+}
 
-  if (!mGitCookie) {
-    mAgileRef = nullptr;
-    return;
-  }
-
-  IGlobalInterfaceTable* git = ObtainGit();
-  MOZ_ASSERT(git);
-  if (!git) {
-    return;
-  }
-
-  DebugOnly<HRESULT> hr = git->RevokeInterfaceFromGlobal(mGitCookie);
-#if defined(MOZILLA_INTERNAL_API)
-  NS_WARNING_ASSERTION(
-      SUCCEEDED(hr),
-      nsPrintfCString("IGlobalInterfaceTable::RevokeInterfaceFromGlobal failed "
-                      "with HRESULT "
-                      "0x%08lX",
-                      ((HRESULT)hr))
-          .get());
-#else
-  MOZ_ASSERT(SUCCEEDED(hr));
-#endif  
-  mGitCookie = 0;
+AgileReference& AgileReference::operator=(const AgileReference& aOther) {
+  Clear();
+  mIid = aOther.mIid;
+  mAgileRef = aOther.mAgileRef;
+  mGitCookie = aOther.mGitCookie;
+  mHResult = aOther.mHResult;
+  return *this;
 }
 
 AgileReference& AgileReference::operator=(AgileReference&& aOther) {
   Clear();
   mIid = aOther.mIid;
-  aOther.mIid = {};
   mAgileRef = std::move(aOther.mAgileRef);
-  mGitCookie = aOther.mGitCookie;
-  aOther.mGitCookie = 0;
+  mGitCookie = std::move(aOther.mGitCookie);
+  mHResult = aOther.mHResult;
+  aOther.mHResult = CO_E_RELEASED;
   return *this;
 }
 
 HRESULT
 AgileReference::Resolve(REFIID aIid, void** aOutInterface) const {
   MOZ_ASSERT(aOutInterface);
-  MOZ_ASSERT(mAgileRef || mGitCookie);
+  
+  MOZ_ASSERT((mAgileRef || mGitCookie) && !(mAgileRef && mGitCookie));
   MOZ_ASSERT(IsCOMInitializedOnCurrentThread());
 
   if (!aOutInterface) {
@@ -151,15 +201,9 @@ AgileReference::Resolve(REFIID aIid, void** aOutInterface) const {
     return E_UNEXPECTED;
   }
 
-  IGlobalInterfaceTable* git = ObtainGit();
-  MOZ_ASSERT(git);
-  if (!git) {
-    return E_UNEXPECTED;
-  }
-
   RefPtr<IUnknown> originalInterface;
-  HRESULT hr = git->GetInterfaceFromGlobal(mGitCookie, mIid,
-                                           getter_AddRefs(originalInterface));
+  HRESULT hr =
+      mGitCookie->GetInterface(mIid, getter_AddRefs(originalInterface));
   if (FAILED(hr)) {
     return hr;
   }
@@ -172,22 +216,6 @@ AgileReference::Resolve(REFIID aIid, void** aOutInterface) const {
   
   
   return originalInterface->QueryInterface(aIid, aOutInterface);
-}
-
-
-IGlobalInterfaceTable* AgileReference::ObtainGit() {
-  
-  
-  static IGlobalInterfaceTable* sGit = []() -> IGlobalInterfaceTable* {
-    IGlobalInterfaceTable* result = nullptr;
-    DebugOnly<HRESULT> hr = ::CoCreateInstance(
-        CLSID_StdGlobalInterfaceTable, nullptr, CLSCTX_INPROC_SERVER,
-        IID_IGlobalInterfaceTable, reinterpret_cast<void**>(&result));
-    MOZ_ASSERT(SUCCEEDED(hr));
-    return result;
-  }();
-
-  return sGit;
 }
 
 }  
