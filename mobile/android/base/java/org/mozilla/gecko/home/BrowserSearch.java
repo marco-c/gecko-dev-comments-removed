@@ -455,7 +455,7 @@ public class BrowserSearch extends HomeFragment
             
             final int position = -1;
 
-            new RemoveItemTask(getActivity(), info, position).execute();
+            new RemoveItemTask(getActivity(), info, position, getContext(), this).execute();
             return true;
         }
 
