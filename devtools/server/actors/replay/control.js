@@ -1989,6 +1989,13 @@ function maybeDumpStatistics() {
 
 
 
+function getPreference(name) {
+  return Services.prefs.getBoolPref(`devtools.recordreplay.${name}`);
+}
+
+const loggingFullEnabled = getPreference("loggingFull");
+const loggingEnabled = loggingFullEnabled || getPreference("logging");
+
 
 function ConnectDebugger(dbg) {
   gDebugger = dbg;
@@ -2003,7 +2010,9 @@ function currentTime() {
 }
 
 function dumpv(str) {
-  
+  if (loggingEnabled) {
+    dump(`[ReplayControl ${currentTime()}] ${str}\n`);
+  }
 }
 
 function assert(v) {
@@ -2020,7 +2029,7 @@ function ThrowError(msg) {
 
 function stringify(object) {
   const str = JSON.stringify(object);
-  if (str && str.length >= 4096) {
+  if (str && str.length >= 4096 && !loggingFullEnabled) {
     return `${str.substr(0, 4096)} TRIMMED ${str.length}`;
   }
   return str;
