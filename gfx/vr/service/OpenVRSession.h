@@ -68,14 +68,19 @@ struct ControllerInfo {
   ControllerAction mActionB_Pressed;
   ControllerAction mActionB_Touched;
 
+  
   ControllerAction mActionThumbstick_Analog;
   ControllerAction mActionThumbstick_Pressed;
   ControllerAction mActionThumbstick_Touched;
 
+  
   ControllerAction mActionFingerIndex_Value;
   ControllerAction mActionFingerMiddle_Value;
   ControllerAction mActionFingerRing_Value;
   ControllerAction mActionFingerPinky_Value;
+
+  
+  ControllerAction mActionBumper_Pressed;
 };
 
 class OpenVRSession : public VRSession {

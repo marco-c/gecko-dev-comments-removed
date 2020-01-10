@@ -11,7 +11,6 @@ namespace mozilla {
 namespace gfx {
 
 struct OpenVRWMRBinding {
-  
   const char* binding =
       
   "{\n"
