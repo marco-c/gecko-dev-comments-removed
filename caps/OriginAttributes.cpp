@@ -202,7 +202,8 @@ class MOZ_STACK_CLASS PopulateFromSuffixIterator final
     
     
     
-    mOriginAttributes->mPrivateBrowsingId = 0;
+    mOriginAttributes->mPrivateBrowsingId =
+        nsIScriptSecurityManager::DEFAULT_PRIVATE_BROWSING_ID;
   }
 
   bool URLParamsIterator(const nsAString& aName,
