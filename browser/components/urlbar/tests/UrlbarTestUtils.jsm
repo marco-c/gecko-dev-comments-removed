@@ -181,6 +181,15 @@ var UrlbarTestUtils = {
 
 
 
+  getSelectedElementIndex(win) {
+    return win.gURLBar.view.selectedElementIndex;
+  },
+
+  
+
+
+
+
 
   getSelectedRow(win) {
     return win.gURLBar.view._getSelectedRow() || null;

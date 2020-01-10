@@ -286,7 +286,7 @@ class UrlbarController {
       let { queryContext } = this._lastQueryContextWrapper;
       let handled = this.view.oneOffSearchButtons.handleKeyPress(
         event,
-        this.view.visibleRowCount,
+        this.view.visibleElementCount,
         this.view.allowEmptySelection,
         queryContext.searchString
       );
@@ -463,7 +463,7 @@ class UrlbarController {
 
 
   recordSelectedResult(event, result) {
-    let resultIndex = result ? result.uiIndex : -1;
+    let resultIndex = result ? result.rowIndex : -1;
     let selectedResult = -1;
     if (resultIndex >= 0) {
       

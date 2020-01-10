@@ -57,7 +57,7 @@ class UrlbarResult {
     this.source = resultSource;
 
     
-    this.uiIndex = -1;
+    this.rowIndex = -1;
 
     
     
