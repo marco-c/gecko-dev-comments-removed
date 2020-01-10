@@ -612,9 +612,8 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin,
 
     def start_pulseaudio(self):
         command = []
-        if (os.environ.get('NEED_PULSEAUDIO') == 'true' and self._is_debian()):
-            
-            
+        
+        if (os.environ.get('NEED_PULSEAUDIO') == 'true'):
             command.extend([
                 'pulseaudio',
                 '--daemonize',
@@ -624,12 +623,16 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin,
                 '--exit-idle-time=-1'
             ])
 
-        
-        if self._is_debian():
-            self._kill_named_proc('pulseaudio')
-            self.run_command(command)
-        self.run_command('pactl load-module module-null-sink')
-        self.run_command('pactl list modules short')
+            
+            
+            if self._is_debian():
+                self._kill_named_proc('pulseaudio')
+                self.run_command(command)
+
+            
+            
+            self.run_command('pactl load-module module-null-sink')
+            self.run_command('pactl list modules short')
 
     def stage_files(self):
         for category in SUITE_CATEGORIES:
