@@ -170,7 +170,10 @@ class ProfileBuffer final {
 
  private:
   
-  mozilla::UniquePtr<mozilla::BlocksRingBuffer::Byte[]> mDuplicationBuffer;
+  
+  
+  
+  mozilla::UniquePtr<mozilla::BlocksRingBuffer::Byte[]> mWorkerBuffer;
 
   double mFirstSamplingTimeNs = 0.0;
   double mLastSamplingTimeNs = 0.0;

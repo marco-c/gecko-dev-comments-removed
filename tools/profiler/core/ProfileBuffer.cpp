@@ -16,12 +16,12 @@
 using namespace mozilla;
 
 
-static constexpr auto DuplicationBufferBytes = MakePowerOfTwo32<65536>();
+static constexpr auto WorkerBufferBytes = MakePowerOfTwo32<65536>();
 
 ProfileBuffer::ProfileBuffer(BlocksRingBuffer& aBuffer, PowerOfTwo32 aCapacity)
     : mEntries(aBuffer),
-      mDuplicationBuffer(MakeUnique<BlocksRingBuffer::Byte[]>(
-          DuplicationBufferBytes.Value())) {
+      mWorkerBuffer(
+          MakeUnique<BlocksRingBuffer::Byte[]>(WorkerBufferBytes.Value())) {
   
   
   MOZ_ASSERT(mEntries.BufferLength().isNothing());
