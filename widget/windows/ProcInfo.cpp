@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/ProcInfo.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
@@ -16,7 +16,7 @@ typedef HRESULT(WINAPI* GETTHREADDESCRIPTION)(HANDLE hThread,
 namespace mozilla {
 
 uint64_t ToNanoSeconds(const FILETIME& aFileTime) {
-  
+  // FILETIME values are 100-nanoseconds units, converting
   ULARGE_INTEGER usec = {{aFileTime.dwLowDateTime, aFileTime.dwHighDateTime}};
   return usec.QuadPart * 100;
 }
@@ -27,15 +27,15 @@ void AppendThreads(ProcInfo* info) {
       reinterpret_cast<GETTHREADDESCRIPTION>(::GetProcAddress(
           ::GetModuleHandleW(L"Kernel32.dll"), "GetThreadDescription"));
 
-  
+  // Take a snapshot of all running threads, system-wide.
   nsAutoHandle hThreadSnap(CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0));
   if (!hThreadSnap) {
     return;
   }
   te32.dwSize = sizeof(THREADENTRY32);
 
-  
-  
+  // Retrieve information about the first thread,
+  // and exit if unsuccessful
   if (!Thread32First(hThreadSnap.get(), &te32)) {
     return;
   }
@@ -73,8 +73,7 @@ void AppendThreads(ProcInfo* info) {
 }
 
 RefPtr<ProcInfoPromise> GetProcInfo(base::ProcessId pid, int32_t childId,
-                                    const ProcType& type,
-                                    ipc::GeckoChildProcessHost* childProcess) {
+                                    const ProcType& type) {
   auto holder = MakeUnique<MozPromiseHolder<ProcInfoPromise>>();
   RefPtr<ProcInfoPromise> promise = holder->Ensure(__func__);
 
@@ -136,4 +135,4 @@ RefPtr<ProcInfoPromise> GetProcInfo(base::ProcessId pid, int32_t childId,
   return promise;
 }
 
-}  
+}  // namespace mozilla
