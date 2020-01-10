@@ -393,6 +393,12 @@ class Browsertime(Perftest):
     def run_test_setup(self, test):
         super(Browsertime, self).run_test_setup(test)
 
+        if test.get('type') == "benchmark":
+            
+            self.benchmark = Benchmark(self.config, test)
+            test['test_url'] = test['test_url'].replace('<host>', self.benchmark.host)
+            test['test_url'] = test['test_url'].replace('<port>', self.benchmark.port)
+
         if test.get('playback') is not None:
             self.start_playback(test)
 
@@ -475,6 +481,7 @@ class Browsertime(Perftest):
 
         
         
+
         cmd = ([self.browsertime_node, self.browsertime_browsertimejs] +
                self.driver_paths +
                browsertime_script +
@@ -482,14 +489,23 @@ class Browsertime(Perftest):
                 '--skipHar',
                 '--video', self.browsertime_video and 'true' or 'false',
                 '--visualMetrics', 'false',
+                
                 '--timeouts.pageLoad', str(timeout),
+                
+                '--timeouts.script', str(timeout * int(test.get("page_cycles", 1))),
                 '-vv',
                 '--resultDir', self.results_handler.result_dir_for_test(test),
                 '-n', str(test.get('browser_cycles', 1))])
 
+        if test.get('type') == "benchmark":
+            cmd.extend(['--script',
+                        os.path.join(os.path.dirname(__file__), "..",
+                                     "browsertime", "browsertime_benchmark.js")
+                        ])
+
         LOG.info('timeout (s): {}'.format(timeout))
         LOG.info('browsertime cwd: {}'.format(os.getcwd()))
-        LOG.info('browsertime cmd: {}'.format(cmd))
+        LOG.info('browsertime cmd: {}'.format(" ".join(cmd)))
         if self.browsertime_video:
             LOG.info('browsertime_ffmpeg: {}'.format(self.browsertime_ffmpeg))
 

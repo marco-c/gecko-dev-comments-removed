@@ -4,7 +4,6 @@
 
 
 
-
 """output raptor test results"""
 from __future__ import absolute_import, print_function
 
@@ -1208,6 +1207,49 @@ class RaptorOutput(PerftestOutput):
 class BrowsertimeOutput(PerftestOutput):
     """class for browsertime output"""
 
+    def parseSpeedometerOutput(self, test):
+        
+        
+
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        _subtests = {}
+        data = test['measurements']['speedometer']
+        for page_cycle in data:
+            for sub, replicates in page_cycle.iteritems():
+                
+                if sub not in _subtests.keys():
+                    
+                    _subtests[sub] = {'unit': test['subtest_unit'],
+                                      'alertThreshold': float(test['alert_threshold']),
+                                      'lowerIsBetter': test['subtest_lower_is_better'],
+                                      'name': sub,
+                                      'replicates': []}
+                _subtests[sub]['replicates'].extend([round(x, 3) for x in replicates])
+
+        vals = []
+        subtests = []
+        names = _subtests.keys()
+        names.sort(reverse=True)
+        for name in names:
+            _subtests[name]['value'] = filters.median(_subtests[name]['replicates'])
+            subtests.append(_subtests[name])
+            vals.append([_subtests[name]['value'], name])
+
+        return subtests, vals
+
     def summarize(self, test_names):
         """
         Summarize the parsed browsertime test output, and format accordingly so the output can
@@ -1241,71 +1283,6 @@ class BrowsertimeOutput(PerftestOutput):
         the Browsertime-provided statistics, instead of calcuating our own geomeans from the
         replicates.
         """
-        LOG.info("preparing browsertime results for output")
-
-        
-        if len(self.results) == 0:
-            LOG.error("no browsertime test results found for %s" %
-                      ', '.join(test_names))
-            return
-
-        test_results = {
-            'framework': {
-                'name': 'browsertime',
-            }
-        }
-
-        
-        suites = {}
-
-        for test in self.results:
-            
-            if test["type"] != "browsertime-pageload":
-                LOG.error("output.summarize received unsupported test results type for %s" %
-                          test['name'])
-                continue
-
-            if test['name'] not in suites:
-                suite = {
-                    'name': test['name'],
-                    'type': test['type'],
-                    'extraOptions': test['extra_options'],
-                    'lowerIsBetter': test['lower_is_better'],
-                    'unit': test['unit'],
-                    'alertThreshold': float(test['alert_threshold']),
-                    
-                    'subtests': {}
-                }
-
-                
-                if 'alert_change_type' in test:
-                    suite['alertChangeType'] = test['alert_change_type']
-
-                suites[test['name']] = suite
-            else:
-                suite = suites[test['name']]
-
-            for measurement_name, replicates in test['measurements'].iteritems():
-                if measurement_name not in suite['subtests']:
-                    subtest = {}
-                    subtest['name'] = measurement_name
-                    subtest['lowerIsBetter'] = test['subtest_lower_is_better']
-                    subtest['alertThreshold'] = float(test['alert_threshold'])
-                    subtest['unit'] = test['subtest_unit']
-
-                    
-                    
-                    if self.subtest_alert_on is not None:
-                        if measurement_name in self.subtest_alert_on:
-                            LOG.info("turning on subtest alerting for measurement type: %s"
-                                     % measurement_name)
-                            subtest['shouldAlert'] = True
-                    subtest['replicates'] = []
-                    suite['subtests'][measurement_name] = subtest
-                else:
-                    subtest = suite['subtests'][measurement_name]
-
-                subtest['replicates'].extend(replicates)
 
         
         def _process(subtest):
@@ -1327,7 +1304,81 @@ class BrowsertimeOutput(PerftestOutput):
                                                         testname=test['name'])
             return suite
 
-        suites = [_process_suite(s) for s in suites.values()]
+        LOG.info("preparing browsertime results for output")
+
+        
+        if len(self.results) == 0:
+            LOG.error("no browsertime test results found for %s" %
+                      ', '.join(test_names))
+            return
+
+        test_results = {
+            'framework': {
+                'name': 'browsertime',
+            }
+        }
+
+        
+        suites = {}
+
+        for test in self.results:
+            if test['name'] not in suites:
+                suite = {
+                    'name': test['name'],
+                    'type': test['type'],
+                    'extraOptions': test['extra_options'],
+                    'lowerIsBetter': test['lower_is_better'],
+                    'unit': test['unit'],
+                    'alertThreshold': float(test['alert_threshold']),
+                    
+                    'subtests': {}
+                }
+
+                
+                if 'alert_change_type' in test:
+                    suite['alertChangeType'] = test['alert_change_type']
+
+                suites[test['name']] = suite
+            else:
+                suite = suites[test['name']]
+
+            if ("pageload" or "scenario") in test['type']:
+                for measurement_name, replicates in test['measurements'].iteritems():
+                    if measurement_name not in suite['subtests']:
+                        subtest = {}
+                        subtest['name'] = measurement_name
+                        subtest['lowerIsBetter'] = test['subtest_lower_is_better']
+                        subtest['alertThreshold'] = float(test['alert_threshold'])
+                        subtest['unit'] = test['subtest_unit']
+
+                        
+                        
+                        if self.subtest_alert_on is not None:
+                            if measurement_name in self.subtest_alert_on:
+                                LOG.info("turning on subtest alerting for measurement type: %s"
+                                         % measurement_name)
+                                subtest['shouldAlert'] = True
+                        subtest['replicates'] = []
+                        suite['subtests'][measurement_name] = subtest
+                    else:
+                        subtest = suite['subtests'][measurement_name]
+
+                    subtest['replicates'].extend(replicates)
+
+            elif "benchmark" in test['type']:
+                if 'speedometer' in test['name']:
+                    subtests, vals = self.parseSpeedometerOutput(test)
+
+                suite['subtests'] = subtests
+                
+                if len(subtests) > 1:
+                    suite['value'] = self.construct_summary(vals, testname=test['name'])
+                subtests.sort(key=lambda subtest: subtest['name'])
+
+        
+        suites = [s if "benchmark" in test['type'] else _process_suite(s)
+                  for s in suites.values()]
+
         suites.sort(key=lambda suite: suite['name'])
 
         test_results['suites'] = suites
