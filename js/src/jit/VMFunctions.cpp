@@ -1015,12 +1015,21 @@ bool DebugAfterYield(JSContext* cx, BaselineFrame* frame, jsbytecode* pc,
 bool GeneratorThrowOrReturn(JSContext* cx, BaselineFrame* frame,
                             Handle<AbstractGeneratorObject*> genObj,
                             HandleValue arg, uint32_t resumeKindArg) {
-  
-  
-  
   JSScript* script = frame->script();
   uint32_t offset = script->resumeOffsets()[genObj->resumeIndex()];
   jsbytecode* pc = script->offsetToPC(offset);
+
+  
+  
+  if (!script->hasBaselineScript()) {
+    MOZ_ASSERT(jit::JitOptions.baselineInterpreter);
+    MOZ_ASSERT(!frame->runningInInterpreter());
+    frame->initInterpFieldsForGeneratorThrowOrReturn(script, pc);
+  }
+
+  
+  
+  
   frame->setOverridePc(pc);
 
   
