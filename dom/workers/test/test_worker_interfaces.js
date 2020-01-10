@@ -311,7 +311,7 @@ function createInterfaceMap({
           
           
           
-          (isInsecureContext && !Boolean(entry.insecureContext)) ||
+          (isInsecureContext && !entry.insecureContext) ||
           entry.disabled
         ) {
           interfaceMap[entry.name] = false;

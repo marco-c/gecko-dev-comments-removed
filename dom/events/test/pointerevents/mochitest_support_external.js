@@ -189,7 +189,7 @@ var TouchEventHelper = {
 
 function sendTouchEvent(int_win, elemId, touchEventType, params) {
   var elem = int_win.document.getElementById(elemId);
-  if (!!elem) {
+  if (elem) {
     var rect = elem.getBoundingClientRect();
     var eventObj = {
       type: touchEventType,
