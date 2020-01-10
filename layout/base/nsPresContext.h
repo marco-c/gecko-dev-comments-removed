@@ -348,17 +348,6 @@ class nsPresContext : public nsISupports,
   nsIDocShell* GetDocShell() const;
 
   
-  void SetLinkHandler(nsILinkHandler* aHandler) { mLinkHandler = aHandler; }
-  nsILinkHandler* GetLinkHandler() { return mLinkHandler; }
-
-  
-
-
-
-
-  virtual void Detach();
-
-  
 
 
 
@@ -1135,10 +1124,6 @@ class nsPresContext : public nsISupports,
   RefPtr<nsAtom> mMediaEmulated;
   RefPtr<gfxFontFeatureValueSet> mFontFeatureValuesLookup;
 
-  
-  
-  nsILinkHandler* MOZ_NON_OWNING_REF mLinkHandler;
-
  public:
   
   
@@ -1304,7 +1289,6 @@ class nsRootPresContext final : public nsPresContext {
  public:
   nsRootPresContext(mozilla::dom::Document* aDocument, nsPresContextType aType);
   virtual ~nsRootPresContext();
-  virtual void Detach() override;
 
   
 

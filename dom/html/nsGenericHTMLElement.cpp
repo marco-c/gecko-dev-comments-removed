@@ -523,12 +523,10 @@ bool nsGenericHTMLElement::CheckHandleEventForAnchorsPreconditions(
     EventChainVisitor& aVisitor) {
   MOZ_ASSERT(nsCOMPtr<Link>(do_QueryObject(this)),
              "should be called only when |this| implements |Link|");
-
   if (!aVisitor.mPresContext) {
     
     
-    
-    return false;
+    return IsInComposedDoc() || IsHTMLElement(nsGkAtoms::a);
   }
 
   

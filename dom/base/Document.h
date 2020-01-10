@@ -1367,6 +1367,9 @@ class Document : public nsINode,
 
   void DisableCookieAccess() { mDisableCookieAccess = true; }
 
+  void SetLinkHandlingEnabled(bool aValue) { mLinksEnabled = aValue; }
+  bool LinkHandlingEnabled() { return mLinksEnabled; }
+
   
 
 
@@ -4660,6 +4663,10 @@ class Document : public nsINode,
 
   
   bool mEncodingMenuDisabled : 1;
+
+  
+  
+  bool mLinksEnabled : 1;
 
   
   bool mIsSVGGlyphsDocument : 1;
