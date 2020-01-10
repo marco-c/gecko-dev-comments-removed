@@ -505,6 +505,8 @@ impl Tile {
         
 
         
+        self.is_same_content = true;
+
         
         
         if ctx.fract_changed || ctx.background_color != self.background_color {
