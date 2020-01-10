@@ -94,6 +94,12 @@ const startupPhases = {
       maxCount: 1,
     },
     {
+      name: "PWebRenderBridge::Msg_GetSnapshot",
+      condition: WIN && WEBRENDER,
+      ignoreIfUnused: true, 
+      maxCount: 1,
+    },
+    {
       name: "PCompositorBridge::Msg_WillClose",
       condition: WIN,
       ignoreIfUnused: true, 
