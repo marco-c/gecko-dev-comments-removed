@@ -932,7 +932,7 @@ class FontInspector {
     
     
     
-    if (!this.ruleViewTool.isSidebarActive()) {
+    if (!this.ruleViewTool.isPanelVisible()) {
       await this.ruleView.selectElement(this.node, false);
     }
 
