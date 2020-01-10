@@ -465,30 +465,6 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     needsOwnLayer = true;
   }
 
-  if (subdocRootFrame && aBuilder->IsRetainingDisplayList()) {
-    
-    
-    
-    
-    
-    if (mPreviousCaret != aBuilder->GetCaretFrame()) {
-      dirty = visible;
-      aBuilder->MarkFrameModifiedDuringBuilding(subdocRootFrame);
-      aBuilder->RebuildAllItemsInCurrentSubtree();
-      
-      
-      
-      
-      if (mPreviousCaret) {
-        aBuilder->MarkFrameModifiedDuringBuilding(mPreviousCaret);
-      }
-      if (aBuilder->GetCaretFrame()) {
-        aBuilder->MarkFrameModifiedDuringBuilding(aBuilder->GetCaretFrame());
-      }
-    }
-    mPreviousCaret = aBuilder->GetCaretFrame();
-  }
-
   nsDisplayList childItems;
 
   {

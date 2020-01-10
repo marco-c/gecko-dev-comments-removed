@@ -1297,8 +1297,12 @@ bool RetainedDisplayListBuilder::ComputeRebuildRegion(
     }
   }
 
+  
+  
+  aModifiedFrames.AppendElements(extraFrames);
+
   for (nsIFrame* f : extraFrames) {
-    mBuilder.MarkFrameModifiedDuringBuilding(f);
+    f->SetFrameIsModified(true);
 
     if (!ProcessFrame(f, &mBuilder, mBuilder.RootReferenceFrame(),
                       aOutFramesWithProps, true, aOutDirty, aOutModifiedAGR)) {
@@ -1354,21 +1358,18 @@ bool RetainedDisplayListBuilder::ShouldBuildPartial(
   return true;
 }
 
-void RetainedDisplayListBuilder::InvalidateCaretFramesIfNeeded(
-    nsTArray<nsIFrame*>& aModifiedFrames) {
+void RetainedDisplayListBuilder::InvalidateCaretFramesIfNeeded() {
   if (mPreviousCaret == mBuilder.GetCaretFrame()) {
     
     return;
   }
 
-  if (mPreviousCaret &&
-      mBuilder.MarkFrameModifiedDuringBuilding(mPreviousCaret)) {
-    aModifiedFrames.AppendElement(mPreviousCaret);
+  if (mPreviousCaret) {
+    mPreviousCaret->MarkNeedsDisplayItemRebuild();
   }
 
-  if (mBuilder.GetCaretFrame() &&
-      mBuilder.MarkFrameModifiedDuringBuilding(mBuilder.GetCaretFrame())) {
-    aModifiedFrames.AppendElement(mBuilder.GetCaretFrame());
+  if (mBuilder.GetCaretFrame()) {
+    mBuilder.GetCaretFrame()->MarkNeedsDisplayItemRebuild();
   }
 
   mPreviousCaret = mBuilder.GetCaretFrame();
@@ -1416,6 +1417,8 @@ PartialUpdateResult RetainedDisplayListBuilder::AttemptPartialUpdate(
     MarkFramesWithItemsAndImagesModified(&mList);
   }
 
+  InvalidateCaretFramesIfNeeded();
+
   mBuilder.EnterPresShell(mBuilder.RootReferenceFrame());
 
   
@@ -1428,10 +1431,6 @@ PartialUpdateResult RetainedDisplayListBuilder::AttemptPartialUpdate(
 
   
   bool shouldBuildPartial = ShouldBuildPartial(modifiedFrames.Frames());
-
-  if (shouldBuildPartial) {
-    InvalidateCaretFramesIfNeeded(modifiedFrames.Frames());
-  }
 
   nsRect modifiedDirty;
   AnimatedGeometryRoot* modifiedAGR = nullptr;

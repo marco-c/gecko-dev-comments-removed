@@ -194,7 +194,7 @@ struct RetainedDisplayListBuilder {
   
 
 
-  void InvalidateCaretFramesIfNeeded(nsTArray<nsIFrame*>& aModifiedFrames);
+  void InvalidateCaretFramesIfNeeded();
 
   
 
