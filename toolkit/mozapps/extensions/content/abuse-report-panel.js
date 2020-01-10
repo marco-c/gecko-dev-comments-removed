@@ -782,6 +782,18 @@ if (IS_DIALOG_WINDOW) {
     deferredReportPanel,
   } = window.arguments[0].wrappedJSObject;
 
+  window.addEventListener(
+    "unload",
+    () => {
+      
+      
+      
+      deferredReport.resolve({ userCancelled: true });
+      deferredReportPanel.reject(new Error("report dialog closed"));
+    },
+    { once: true }
+  );
+
   document.l10n.setAttributes(
     document.querySelector("head > title"),
     "abuse-report-dialog-title",
@@ -800,6 +812,11 @@ if (IS_DIALOG_WINDOW) {
   el.addEventListener(
     "abuse-report:cancel",
     () => {
+      
+      
+      
+      deferredReportPanel.resolve(el);
+      
       deferredReport.resolve({ userCancelled: true });
     },
     { once: true }
