@@ -910,6 +910,14 @@ var ExtensionTestUtils = {
       "services.settings.server",
       "http://localhost:7777/remote-settings-dummy/v1"
     );
+    
+    
+    
+    
+    Services.prefs.setStringPref(
+      "services.settings.default_bucket",
+      "nonexistent-bucket-foo"
+    );
   },
 
   addonManagerStarted: false,
