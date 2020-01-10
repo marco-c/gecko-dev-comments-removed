@@ -566,7 +566,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
     HitTestingTreeNodeAutoLock mScrollbarNode;
     
     
-    SideBits mFixedPosSides = eSideBitsNone;
+    SideBits mFixedPosSides = SideBits::eNone;
 
     HitTestResult() = default;
     
@@ -872,7 +872,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  SideBits mFixedPosSidesForInputBlock = eSideBitsNone;
+  SideBits mFixedPosSidesForInputBlock = SideBits::eNone;
   
 
 

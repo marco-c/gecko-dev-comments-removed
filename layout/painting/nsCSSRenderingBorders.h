@@ -151,7 +151,7 @@ class nsCSSBorderRenderer final {
 
   
   
-  bool AreBorderSideFinalStylesSame(uint8_t aSides);
+  bool AreBorderSideFinalStylesSame(mozilla::SideBits aSides);
 
   
   bool IsSolidCornerStyle(mozilla::StyleBorderStyle aStyle,
@@ -207,7 +207,7 @@ class nsCSSBorderRenderer final {
   
   void FillSolidBorder(const Rect& aOuterRect, const Rect& aInnerRect,
                        const RectCornerRadii& aBorderRadii,
-                       const Float* aBorderSizes, int aSides,
+                       const Float* aBorderSizes, mozilla::SideBits aSides,
                        const ColorPattern& aColor);
 
   
@@ -216,7 +216,7 @@ class nsCSSBorderRenderer final {
 
   
   
-  void DrawBorderSides(int aSides);
+  void DrawBorderSides(mozilla::SideBits aSides);
 
   
   void SetupDashedOptions(StrokeOptions* aStrokeOptions, Float aDash[2],

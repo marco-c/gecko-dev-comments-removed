@@ -513,22 +513,16 @@ namespace mozilla {
 
 enum Side { eSideTop, eSideRight, eSideBottom, eSideLeft };
 
-enum SideBits {
-  eSideBitsNone = 0,
-  eSideBitsTop = 1 << eSideTop,
-  eSideBitsRight = 1 << eSideRight,
-  eSideBitsBottom = 1 << eSideBottom,
-  eSideBitsLeft = 1 << eSideLeft,
-  eSideBitsTopBottom = eSideBitsTop | eSideBitsBottom,
-  eSideBitsLeftRight = eSideBitsLeft | eSideBitsRight,
-  eSideBitsAll = eSideBitsTopBottom | eSideBitsLeftRight
+enum class SideBits {
+  eNone = 0,
+  eTop = 1 << eSideTop,
+  eRight = 1 << eSideRight,
+  eBottom = 1 << eSideBottom,
+  eLeft = 1 << eSideLeft,
+  eTopBottom = SideBits::eTop | SideBits::eBottom,
+  eLeftRight = SideBits::eLeft | SideBits::eRight,
+  eAll = SideBits::eTopBottom | SideBits::eLeftRight
 };
-
-
-
-
-
-
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(SideBits)
 
