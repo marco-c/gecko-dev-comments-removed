@@ -425,7 +425,9 @@ bool FunctionScriptEmitter::prepareForParameters() {
     
     
     
-    bce_->switchToMain();
+    if (!bce_->switchToMain()) {
+      return false;
+    }
   }
 
   if (!functionEmitterScope_->enterFunction(bce_, funbox_)) {
@@ -438,7 +440,9 @@ bool FunctionScriptEmitter::prepareForParameters() {
   }
 
   if (!funbox_->hasParameterExprs) {
-    bce_->switchToMain();
+    if (!bce_->switchToMain()) {
+      return false;
+    }
   }
 
   
@@ -524,7 +528,7 @@ bool FunctionScriptEmitter::emitAsyncFunctionRejectEpilogue() {
     
     return false;
   }
-  if (!bce_->emit1(JSOP_FINALYIELDRVAL)) {
+  if (!bce_->emitYieldOp(JSOP_FINALYIELDRVAL)) {
     
     return false;
   }
@@ -720,7 +724,7 @@ bool FunctionScriptEmitter::emitEndBody() {
   
   
   
-  if (!bce_->emit1(JSOP_RETRVAL)) {
+  if (!bce_->emitReturnRval()) {
     
     return false;
   }

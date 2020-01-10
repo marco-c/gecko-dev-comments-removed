@@ -128,6 +128,10 @@ bool TryEmitter::emitCatch() {
     return false;
   }
 
+  if (!instrumentEntryPoint()) {
+    return false;
+  }
+
 #ifdef DEBUG
   state_ = State::Catch;
 #endif
@@ -225,6 +229,10 @@ bool TryEmitter::emitFinally(
     }
   }
 
+  if (!instrumentEntryPoint()) {
+    return false;
+  }
+
 #ifdef DEBUG
   state_ = State::Finally;
 #endif
@@ -295,5 +303,17 @@ bool TryEmitter::emitEnd() {
 #ifdef DEBUG
   state_ = State::End;
 #endif
+  return true;
+}
+
+bool TryEmitter::instrumentEntryPoint() {
+  
+  
+  
+  
+  if (bce_->sc->isFunctionBox() &&
+      bce_->sc->asFunctionBox()->isAsync()) {
+    return bce_->emitInstrumentation(InstrumentationKind::Entry);
+  }
   return true;
 }

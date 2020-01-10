@@ -134,6 +134,9 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   uint32_t introductionOffset = 0;
   bool hasIntroductionInfo = false;
 
+  
+  uint32_t instrumentationKinds = 0;
+
  protected:
   TransitiveCompileOptions() = default;
 
