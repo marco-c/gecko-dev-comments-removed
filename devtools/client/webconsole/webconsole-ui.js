@@ -347,21 +347,6 @@ class WebConsoleUI {
 
 
 
-
-  onLocationChange(uri, title) {
-    this.contentLocation = uri;
-    if (this.hud.onLocationChange) {
-      this.hud.onLocationChange(uri, title);
-    }
-  }
-
-  
-
-
-
-
-
-
   _releaseObject(actor) {
     if (this.proxy) {
       this.proxy.releaseActor(actor);
@@ -394,10 +379,6 @@ class WebConsoleUI {
 
 
   async handleTabNavigated(packet) {
-    if (packet.url) {
-      this.onLocationChange(packet.url, packet.title);
-    }
-
     if (!packet.nativeConsoleAPI) {
       this.logWarningAboutReplacedAPI();
     }
@@ -410,9 +391,6 @@ class WebConsoleUI {
 
   handleTabWillNavigate(packet) {
     this.wrapper.dispatchTabWillNavigate(packet);
-    if (packet.url) {
-      this.onLocationChange(packet.url, packet.title);
-    }
   }
 }
 
