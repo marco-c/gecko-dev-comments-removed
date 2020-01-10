@@ -3694,8 +3694,9 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 
         
         
+        
         GdkScreen* screen = gdk_screen_get_default();
-        if (gdk_screen_is_composited(screen)) {
+        if (gdk_screen_is_composited(screen) && !mIsPIPWindow) {
           
           
           
