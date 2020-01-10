@@ -141,14 +141,6 @@ class MediaDecoderOwner {
 
   
   
-  virtual void ConstructMediaTracks(const MediaInfo* aInfo) = 0;
-
-  
-  
-  virtual void RemoveMediaTracks() = 0;
-
-  
-  
   virtual void NotifyWaitingForKey() {}
 
   
