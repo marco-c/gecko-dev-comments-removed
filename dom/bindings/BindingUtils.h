@@ -3134,6 +3134,43 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
 bool IsGetterEnabled(JSContext* aCx, JS::Handle<JSObject*> aObj,
                      JSJitGetterOp aGetter,
                      const Prefable<const JSPropertySpec>* aAttributes);
+
+
+class StringIdChars {
+ public:
+  
+  
+  StringIdChars(JS::AutoRequireNoGC& nogc, JSLinearString* str) {
+    mIsLatin1 = js::LinearStringHasLatin1Chars(str);
+    if (mIsLatin1) {
+      mLatin1Chars = js::GetLatin1LinearStringChars(nogc, str);
+    } else {
+      mTwoByteChars = js::GetTwoByteLinearStringChars(nogc, str);
+    }
+#ifdef DEBUG
+    mLength = js::GetLinearStringLength(str);
+#endif  
+  }
+
+  MOZ_ALWAYS_INLINE char16_t operator[](size_t index) {
+    MOZ_ASSERT(index < mLength);
+    if (mIsLatin1) {
+      return mLatin1Chars[index];
+    }
+    return mTwoByteChars[index];
+  }
+
+ private:
+  bool mIsLatin1;
+  union {
+    const JS::Latin1Char* mLatin1Chars;
+    const char16_t* mTwoByteChars;
+  };
+#ifdef DEBUG
+  size_t mLength;
+#endif  
+};
+
 }  
 
 }  
