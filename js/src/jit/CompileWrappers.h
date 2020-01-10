@@ -35,7 +35,6 @@ class CompileRuntime {
   
   GeckoProfilerRuntime& geckoProfiler();
 
-  bool jitSupportsFloatingPoint();
   bool hadOutOfMemory();
   bool profilingScripts();
 

@@ -96,7 +96,7 @@ class JitContext {
 };
 
 
-MOZ_MUST_USE bool InitializeIon();
+MOZ_MUST_USE bool InitializeJit();
 
 
 JitContext* GetJitContext();
@@ -168,7 +168,7 @@ static inline bool IsIonEnabled(JSContext* cx) {
   return false;
 #else
   return cx->options().ion() && cx->options().baseline() &&
-         cx->runtime()->jitSupportsFloatingPoint;
+         JitOptions.supportsFloatingPoint;
 #endif
 }
 
@@ -209,8 +209,6 @@ size_t SizeOfIonData(JSScript* script, mozilla::MallocSizeOf mallocSizeOf);
 void DestroyJitScripts(FreeOp* fop, JSScript* script);
 void TraceJitScripts(JSTracer* trc, JSScript* script);
 
-bool JitSupportsFloatingPoint();
-bool JitSupportsUnalignedAccesses();
 bool JitSupportsSimd();
 bool JitSupportsAtomics();
 
