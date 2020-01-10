@@ -772,6 +772,20 @@ class Element : public FragmentOrElement {
 
 
 
+  inline bool HasNonEmptyAttr(int32_t aNameSpaceID, const nsAtom* aName) const;
+
+  bool HasNonEmptyAttr(const nsAtom* aAttr) const {
+    return HasNonEmptyAttr(kNameSpaceID_None, aAttr);
+  }
+
+  
+
+
+
+
+
+
+
 
 
   inline bool AttrValueIs(int32_t aNameSpaceID, const nsAtom* aName,
@@ -1986,6 +2000,15 @@ inline bool Element::HasAttr(int32_t aNameSpaceID, const nsAtom* aName) const {
                "must have a real namespace ID!");
 
   return mAttrs.IndexOfAttr(aName, aNameSpaceID) >= 0;
+}
+
+inline bool Element::HasNonEmptyAttr(int32_t aNameSpaceID,
+                                     const nsAtom* aName) const {
+  MOZ_ASSERT(aNameSpaceID > kNameSpaceID_Unknown, "Must have namespace");
+  MOZ_ASSERT(aName, "Must have attribute name");
+
+  const nsAttrValue* val = mAttrs.GetAttr(aName, aNameSpaceID);
+  return val && !val->IsEmptyString();
 }
 
 inline bool Element::AttrValueIs(int32_t aNameSpaceID, const nsAtom* aName,
