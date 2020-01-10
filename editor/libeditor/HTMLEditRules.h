@@ -229,23 +229,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-
-
-
-  template <typename PT, typename CT>
-  nsIContent* FindNearEditableNode(const EditorDOMPointBase<PT, CT>& aPoint,
-                                   nsIEditor::EDirection aDirection);
-
-  
-
-
-
-
-
-
-
-
-
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult RemoveEmptyNodesInChangedRange();
 

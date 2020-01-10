@@ -2575,6 +2575,23 @@ class HTMLEditor final : public TextEditor,
 
   bool StartOrEndOfSelectionRangesIsIn(nsIContent& aContent) const;
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename PT, typename CT>
+  nsIContent* FindNearEditableContent(const EditorDOMPointBase<PT, CT>& aPoint,
+                                      nsIEditor::EDirection aDirection);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
