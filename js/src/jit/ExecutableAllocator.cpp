@@ -258,9 +258,11 @@ void ExecutableAllocator::addSizeOfCode(JS::CodeSizes* sizes) const {
 
 
 void ExecutableAllocator::reprotectPool(JSRuntime* rt, ExecutablePool* pool,
-                                        ProtectionSetting protection) {
+                                        ProtectionSetting protection,
+                                        MustFlushICache flushICache) {
   char* start = pool->m_allocation.pages;
-  if (!ReprotectRegion(start, pool->m_freePtr - start, protection)) {
+  if (!ReprotectRegion(start, pool->m_freePtr - start, protection,
+                       flushICache)) {
     MOZ_CRASH();
   }
 }
@@ -290,7 +292,7 @@ void ExecutableAllocator::poisonCode(JSRuntime* rt,
     
     
     if (!pool->isMarked()) {
-      reprotectPool(rt, pool, ProtectionSetting::Writable);
+      reprotectPool(rt, pool, ProtectionSetting::Writable, MustFlushICache::No);
       pool->mark();
     }
 
@@ -302,10 +304,12 @@ void ExecutableAllocator::poisonCode(JSRuntime* rt,
   }
 
   
+  
   for (size_t i = 0; i < ranges.length(); i++) {
     ExecutablePool* pool = ranges[i].pool;
     if (pool->isMarked()) {
-      reprotectPool(rt, pool, ProtectionSetting::Executable);
+      reprotectPool(rt, pool, ProtectionSetting::Executable,
+                    MustFlushICache::No);
       pool->unmark();
     }
     pool->release();
