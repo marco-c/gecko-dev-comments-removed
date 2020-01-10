@@ -835,7 +835,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         }
 
         final int fontSizePercentage = Math.round(fontSizeFactor * 100);
-        mFontSizeFactor.commit(fontSizePercentage);
+        mFontSizeFactor.commit(Math.round(fontSizePercentage));
         if (getFontInflationEnabled()) {
             final int scaledFontInflation = Math.round(FONT_INFLATION_BASE_VALUE * fontSizeFactor);
             mFontInflationMinTwips.commit(scaledFontInflation);
@@ -869,7 +869,18 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+
+
+
     public @NonNull GeckoRuntimeSettings setFontInflationEnabled(final boolean enabled) {
+        if (getAutomaticFontSizeAdjustment()) {
+            throw new IllegalStateException("Not allowed when automatic font size adjustment is enabled");
+        }
+        return setFontInflationEnabledInternal(enabled);
+    }
+
+     @NonNull GeckoRuntimeSettings setFontInflationEnabledInternal(final boolean enabled) {
         final int minTwips =
                 enabled ? Math.round(FONT_INFLATION_BASE_VALUE * getFontSizeFactor()) : 0;
         mFontInflationMinTwips.commit(minTwips);
