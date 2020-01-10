@@ -51,13 +51,6 @@ const { addDebuggerToGlobal } = ChromeUtils.import(
   "resource://gre/modules/jsdebugger.jsm"
 );
 
-const { AddonTestUtils } = ChromeUtils.import(
-  "resource://testing-common/AddonTestUtils.jsm"
-);
-const { getAppInfo } = ChromeUtils.import(
-  "resource://testing-common/AppInfo.jsm"
-);
-
 const systemPrincipal = Cc["@mozilla.org/systemprincipal;1"].createInstance(
   Ci.nsIPrincipal
 );
@@ -67,21 +60,16 @@ var { loadSubScript, loadSubScriptWithOptions } = Services.scriptloader;
 
 
 
-
-
-
-async function startupAddonsManager() {
+function startupAddonsManager() {
   
   const profileDir = do_get_profile().clone();
   profileDir.append("extensions");
 
-  
-  
-  AddonTestUtils.init(globalThis);
-  AddonTestUtils.overrideCertDB();
-  AddonTestUtils.appInfo = getAppInfo();
+  const internalManager = Cc["@mozilla.org/addons/integration;1"]
+    .getService(Ci.nsIObserver)
+    .QueryInterface(Ci.nsITimerCallback);
 
-  await AddonTestUtils.promiseStartupManager();
+  internalManager.observe(null, "addons-startup", null);
 }
 
 async function createTargetForFakeTab(title) {
