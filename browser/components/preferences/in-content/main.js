@@ -3183,6 +3183,7 @@ class HandlerInfoWrapper {
         if (this instanceof InternalHandlerInfoWrapper) {
           return "ask";
         }
+        break;
 
       case kActionUsePlugin:
         return "plugin";
@@ -3201,8 +3202,8 @@ class HandlerInfoWrapper {
         if (gMainPane.isValidHandlerApp(preferredApp)) {
           return gMainPane._getIconURLForHandlerApp(preferredApp);
         }
-      
 
+      
       
       
       default:

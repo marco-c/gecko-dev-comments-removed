@@ -1875,6 +1875,7 @@ class _ASRouter {
           target,
           action.data && action.data.trigger
         );
+        break;
       case "BLOCK_MESSAGE_BY_ID":
         await this.blockMessageById(action.data.id);
         
