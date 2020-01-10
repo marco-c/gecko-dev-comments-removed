@@ -288,7 +288,8 @@ impl Default for FontInstanceOptions {
 #[derive(Clone, Copy, Debug, Deserialize, Hash, Eq, MallocSizeOf, PartialEq, PartialOrd, Ord, Serialize)]
 pub struct FontInstancePlatformOptions {
     pub gamma: u16, 
-    pub contrast: u16, 
+    pub contrast: u8, 
+    pub cleartype_level: u8, 
 }
 
 #[cfg(target_os = "windows")]
@@ -297,6 +298,7 @@ impl Default for FontInstancePlatformOptions {
         FontInstancePlatformOptions {
             gamma: 180, 
             contrast: 100,
+            cleartype_level: 100,
         }
     }
 }
