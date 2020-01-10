@@ -927,9 +927,17 @@ class AsyncScrollbarDragStarter final : public nsAPostRefreshObserver {
   AsyncDragMetrics mDragMetrics;
 };
 
-static bool UsesSVGEffects(nsIFrame* aFrame) {
-  return aFrame->StyleEffects()->HasFilters() ||
-         nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(aFrame);
+static bool UsesSVGEffectsNotSupportedInCompositor(nsIFrame* aFrame) {
+  
+  
+  if (aFrame->StyleEffects()->HasFilters()) {
+    return !gfx::gfxVars::UseWebRender() ||
+           !nsSVGIntegrationUtils::CanCreateWebRenderFiltersForFrame(aFrame);
+  }
+  if (nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(aFrame)) {
+    return !gfx::gfxVars::UseWebRender();
+  }
+  return false;
 }
 
 static bool ScrollFrameWillBuildScrollInfoLayer(nsIFrame* aScrollFrame) {
@@ -938,14 +946,9 @@ static bool ScrollFrameWillBuildScrollInfoLayer(nsIFrame* aScrollFrame) {
 
 
 
-  if (gfx::gfxVars::UseWebRender()) {
-    
-    
-    return false;
-  }
   nsIFrame* current = aScrollFrame;
   while (current) {
-    if (UsesSVGEffects(current)) {
+    if (UsesSVGEffectsNotSupportedInCompositor(current)) {
       return true;
     }
     current = nsLayoutUtils::GetParentOrPlaceholderForCrossDoc(current);
