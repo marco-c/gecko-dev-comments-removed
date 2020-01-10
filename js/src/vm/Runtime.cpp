@@ -847,62 +847,7 @@ JS_FRIEND_API bool JS::IsProfilingEnabledForContext(JSContext* cx) {
   return cx->runtime()->geckoProfiler().enabled();
 }
 
-JS_FRIEND_API void JS::EnableRecordingAllocations(
-    JSContext* cx, JS::RecordAllocationsCallback callback, double probability) {
-  MOZ_ASSERT(cx);
-  MOZ_ASSERT(cx->isMainThreadContext());
-  cx->runtime()->startRecordingAllocations(probability, callback);
-}
-
-JS_FRIEND_API void JS::DisableRecordingAllocations(JSContext* cx) {
-  MOZ_ASSERT(cx);
-  MOZ_ASSERT(cx->isMainThreadContext());
-  cx->runtime()->stopRecordingAllocations();
-}
-
 JS_PUBLIC_API void JS::shadow::RegisterWeakCache(
     JSRuntime* rt, detail::WeakCacheBase* cachep) {
   rt->registerWeakCache(cachep);
-}
-
-void JSRuntime::startRecordingAllocations(
-    double probability, JS::RecordAllocationsCallback callback) {
-  allocationSamplingProbability = probability;
-  recordAllocationCallback = callback;
-
-  
-  for (RealmsIter realm(this); !realm.done(); realm.next()) {
-    realm->setAllocationMetadataBuilder(&SavedStacks::metadataBuilder);
-    realm->chooseAllocationSamplingProbability();
-  }
-}
-
-void JSRuntime::stopRecordingAllocations() {
-  recordAllocationCallback = nullptr;
-  
-  for (RealmsIter realm(this); !realm.done(); realm.next()) {
-    js::GlobalObject* global = realm->maybeGlobal();
-    if (!realm->isDebuggee() || !global ||
-        !Debugger::isObservedByDebuggerTrackingAllocations(*global)) {
-      
-      
-      realm->forgetAllocationMetadataBuilder();
-    }
-  }
-}
-
-
-
-void JSRuntime::ensureRealmIsRecordingAllocations(
-    Handle<GlobalObject*> global) {
-  if (recordAllocationCallback) {
-    if (!global->realm()->isRecordingAllocations()) {
-      
-      global->realm()->setAllocationMetadataBuilder(
-          &SavedStacks::metadataBuilder);
-    }
-    
-    
-    global->realm()->chooseAllocationSamplingProbability();
-  }
 }

@@ -605,7 +605,6 @@ class JS::Realm : public JS::shadow::Realm {
   const void* addressOfMetadataBuilder() const {
     return &allocationMetadataBuilder_;
   }
-  bool isRecordingAllocations();
   void setAllocationMetadataBuilder(
       const js::AllocationMetadataBuilder* builder);
   void forgetAllocationMetadataBuilder();
@@ -796,7 +795,6 @@ class JS::Realm : public JS::shadow::Realm {
 
   js::SavedStacks& savedStacks() { return savedStacks_; }
 
-  
   
   
   

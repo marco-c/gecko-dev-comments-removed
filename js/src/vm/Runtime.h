@@ -29,7 +29,6 @@
 #include "gc/GCRuntime.h"
 #include "gc/Tracer.h"
 #include "irregexp/RegExpStack.h"
-#include "js/AllocationRecording.h"
 #include "js/BuildId.h"  
 #include "js/Debug.h"
 #include "js/experimental/SourceHook.h"  
@@ -525,11 +524,6 @@ struct JSRuntime : public js::MallocProvider<JSRuntime> {
   
   js::MainThreadData<size_t> numRealms;
 
-  
-  
-  js::MainThreadData<JS::RecordAllocationsCallback> recordAllocationCallback;
-  js::MainThreadData<double> allocationSamplingProbability;
-
  private:
   
   js::MainThreadData<size_t> numDebuggeeRealms_;
@@ -545,11 +539,6 @@ struct JSRuntime : public js::MallocProvider<JSRuntime> {
 
   void incrementNumDebuggeeRealmsObservingCoverage();
   void decrementNumDebuggeeRealmsObservingCoverage();
-
-  void startRecordingAllocations(double probability,
-                                 JS::RecordAllocationsCallback callback);
-  void stopRecordingAllocations();
-  void ensureRealmIsRecordingAllocations(JS::Handle<js::GlobalObject*> global);
 
   
   js::MainThreadData<const JSLocaleCallbacks*> localeCallbacks;
