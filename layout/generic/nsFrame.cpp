@@ -630,6 +630,9 @@ void nsFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                   NS_FRAME_MAY_BE_TRANSFORMED |
                   NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR));
     
+
+    
+    mHasColumnSpanSiblings = aPrevInFlow->HasColumnSpanSiblings();
   } else {
     PresContext()->ConstructedFrame();
   }

@@ -10785,11 +10785,13 @@ void nsCSSFrameConstructor::FinishBuildingColumns(
                  prevColumnSet->GetParent() == aColumnSetWrapper,
              "Should have established column hierarchy!");
 
+  
+  
+  
+  prevColumnSet->SetHasColumnSpanSiblings(true);
+
   nsFrameList finalList;
   while (aColumnContentSiblings.NotEmpty()) {
-    
-    prevColumnSet->SetHasColumnSpanSiblings(true);
-
     nsIFrame* f = aColumnContentSiblings.RemoveFirstChild();
     if (f->IsColumnSpan()) {
       
@@ -10799,12 +10801,18 @@ void nsCSSFrameConstructor::FinishBuildingColumns(
       auto* continuingColumnSet = static_cast<nsContainerFrame*>(
           CreateContinuingFrame(mPresShell->GetPresContext(), prevColumnSet,
                                 aColumnSetWrapper, false));
+      MOZ_ASSERT(continuingColumnSet->HasColumnSpanSiblings(),
+                 "The bit should propagate to the next continuation!");
+
       f->SetParent(continuingColumnSet);
       SetInitialSingleChild(continuingColumnSet, f);
       finalList.AppendFrame(aColumnSetWrapper, continuingColumnSet);
       prevColumnSet = continuingColumnSet;
     }
   }
+
+  
+  prevColumnSet->SetHasColumnSpanSiblings(false);
 
   aColumnSetWrapper->AppendFrames(kPrincipalList, finalList);
 }
@@ -10843,13 +10851,16 @@ nsFrameList nsCSSFrameConstructor::CreateColumnSpanSiblings(
 
   nsFrameList siblings;
   nsContainerFrame* lastNonColumnSpanWrapper = aInitialBlock;
+
+  
+  
+  
+  
+  lastNonColumnSpanWrapper->SetHasColumnSpanSiblings(true);
   do {
     MOZ_ASSERT(aChildList.NotEmpty(), "Why call this if child list is empty?");
     MOZ_ASSERT(aChildList.FirstChild()->IsColumnSpan(),
                "Must have the child starting with column-span!");
-
-    
-    lastNonColumnSpanWrapper->SetHasColumnSpanSiblings(true);
 
     
     
@@ -10879,6 +10890,8 @@ nsFrameList nsCSSFrameConstructor::CreateColumnSpanSiblings(
                               lastNonColumnSpanWrapper, parentFrame, false));
     nonColumnSpanWrapper->AddStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR |
                                        NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
+    MOZ_ASSERT(nonColumnSpanWrapper->HasColumnSpanSiblings(),
+               "The bit should propagate to the next continuation!");
 
     if (aChildList.NotEmpty()) {
       nsFrameList nonColumnSpanKids =
@@ -10896,6 +10909,10 @@ nsFrameList nsCSSFrameConstructor::CreateColumnSpanSiblings(
 
     lastNonColumnSpanWrapper = nonColumnSpanWrapper;
   } while (aChildList.NotEmpty());
+
+  
+  
+  lastNonColumnSpanWrapper->SetHasColumnSpanSiblings(false);
 
   return siblings;
 }
