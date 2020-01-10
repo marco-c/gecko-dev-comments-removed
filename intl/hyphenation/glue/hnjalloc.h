@@ -10,19 +10,6 @@
 
 
 
-#include "mozilla/mozalloc.h"
-
-#define hnj_malloc(size) moz_xmalloc(size)
-#define hnj_realloc(p, size) moz_xrealloc(p, size)
-#define hnj_free(p) free(p)
-
-
-
-
-
-
-
-
 #include <stdio.h> 
 
 #undef FILE
@@ -39,6 +26,10 @@ typedef struct hnjFile_ hnjFile;
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+void* hnj_malloc(size_t size);
+void* hnj_realloc(void* ptr, size_t size);
+void hnj_free(void* ptr);
 
 hnjFile* hnjFopen(const char* aURISpec, const char* aMode);
 
