@@ -386,6 +386,10 @@ pref("browser.search.hiddenOneOffs", "");
 
 pref("browser.search.widget.inNavBar", false);
 
+
+
+pref("browser.search.separatePrivateDefault.ui.enabled", false);
+
 pref("browser.sessionhistory.max_entries", 50);
 
 
