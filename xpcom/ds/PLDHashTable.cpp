@@ -187,10 +187,6 @@ PLDHashTable::PLDHashTable(const PLDHashTableOps* aOps, uint32_t aEntrySize,
       mEntrySize(aEntrySize),
       mEntryCount(0),
       mRemovedCount(0)
-#ifdef DEBUG
-      ,
-      mChecker()
-#endif
 {
   
   
