@@ -1337,6 +1337,9 @@ void Grouper::ConstructItemInsideInactive(
 
   
   
+  
+  
+  
   IntRect oldClippedImageBounds = aGroup->mClippedImageBounds;
   aGroup->mClippedImageBounds =
       aGroup->mClippedImageBounds.Intersect(data->mRect);
