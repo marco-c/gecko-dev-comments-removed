@@ -129,6 +129,8 @@ async function getSymbolsFromThisBrowser(debugName, breakpadId) {
 
 
 
+
+
 async function captureProfile() {
   if (!Services.profiler.IsActive()) {
     
@@ -153,6 +155,10 @@ async function captureProfile() {
   Services.profiler.StopProfiler();
 }
 
+
+
+
+
 function startProfiler() {
   const {
     entries,
@@ -174,9 +180,13 @@ function startProfiler() {
 
 
 
+
+
 function stopProfiler() {
   Services.profiler.StopProfiler();
 }
+
+
 
 
 
