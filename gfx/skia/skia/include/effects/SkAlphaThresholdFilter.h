@@ -8,9 +8,10 @@
 #ifndef SkAlphaThresholdFilter_DEFINED
 #define SkAlphaThresholdFilter_DEFINED
 
-#include "SkImageFilter.h"
+#include "include/core/SkImageFilter.h"
 
 class SkRegion;
+
 
 class SK_API SkAlphaThresholdFilter {
 public:
@@ -27,6 +28,9 @@ public:
 
 
     static void RegisterFlattenables();
+
+private:
+    SkAlphaThresholdFilter() = delete;
 };
 
 #endif

@@ -5,7 +5,7 @@
 
 
 
-#include "SkStreamBuffer.h"
+#include "src/codec/SkStreamBuffer.h"
 
 SkStreamBuffer::SkStreamBuffer(std::unique_ptr<SkStream> stream)
     : fStream(std::move(stream))

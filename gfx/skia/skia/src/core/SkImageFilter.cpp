@@ -5,37 +5,318 @@
 
 
 
-#include "SkImageFilter.h"
+#include "include/core/SkImageFilter.h"
 
-#include "SkCanvas.h"
-#include "SkFuzzLogging.h"
-#include "SkImageFilterCache.h"
-#include "SkLocalMatrixImageFilter.h"
-#include "SkMatrixImageFilter.h"
-#include "SkReadBuffer.h"
-#include "SkRect.h"
-#include "SkSafe32.h"
-#include "SkSpecialImage.h"
-#include "SkSpecialSurface.h"
-#include "SkValidationUtils.h"
-#include "SkWriteBuffer.h"
+#include "include/core/SkCanvas.h"
+#include "include/core/SkRect.h"
+#include "include/effects/SkComposeImageFilter.h"
+#include "include/private/SkSafe32.h"
+#include "src/core/SkFuzzLogging.h"
+#include "src/core/SkImageFilterCache.h"
+#include "src/core/SkImageFilter_Base.h"
+#include "src/core/SkLocalMatrixImageFilter.h"
+#include "src/core/SkMatrixImageFilter.h"
+#include "src/core/SkReadBuffer.h"
+#include "src/core/SkSpecialImage.h"
+#include "src/core/SkSpecialSurface.h"
+#include "src/core/SkValidationUtils.h"
+#include "src/core/SkWriteBuffer.h"
 #if SK_SUPPORT_GPU
-#include "GrColorSpaceXform.h"
-#include "GrContext.h"
-#include "GrContextPriv.h"
-#include "GrFixedClip.h"
-#include "GrRecordingContext.h"
-#include "GrRecordingContextPriv.h"
-#include "GrRenderTargetContext.h"
-#include "GrTextureProxy.h"
-#include "SkGr.h"
+#include "include/gpu/GrContext.h"
+#include "include/private/GrRecordingContext.h"
+#include "src/gpu/GrColorSpaceXform.h"
+#include "src/gpu/GrContextPriv.h"
+#include "src/gpu/GrFixedClip.h"
+#include "src/gpu/GrRecordingContextPriv.h"
+#include "src/gpu/GrRenderTargetContext.h"
+#include "src/gpu/GrTextureProxy.h"
+#include "src/gpu/SkGr.h"
 #endif
 #include <atomic>
 
-void SkImageFilter::CropRect::applyTo(const SkIRect& imageBounds,
-                                      const SkMatrix& ctm,
-                                      bool embiggen,
-                                      SkIRect* cropped) const {
+
+
+
+
+
+
+
+
+
+int SkImageFilter::countInputs() const { return as_IFB(this)->fInputs.count(); }
+
+
+
+
+
+const SkImageFilter* SkImageFilter::getInput(int i) const {
+    SkASSERT(i < this->countInputs());
+    return as_IFB(this)->fInputs[i].get();
+}
+
+bool SkImageFilter::isColorFilterNode(SkColorFilter** filterPtr) const {
+    return as_IFB(this)->onIsColorFilterNode(filterPtr);
+}
+
+SkIRect SkImageFilter::filterBounds(const SkIRect& src, const SkMatrix& ctm,
+                                    MapDirection direction, const SkIRect* inputRect) const {
+    
+    
+    
+    skif::Mapping mapping(SkMatrix::I(), ctm);
+    if (kReverse_MapDirection == direction) {
+        skif::LayerSpace<SkIRect> targetOutput(src);
+        skif::LayerSpace<SkIRect> content(inputRect ? *inputRect : src);
+        return SkIRect(as_IFB(this)->onGetInputLayerBounds(mapping, targetOutput, content));
+    } else {
+        SkASSERT(!inputRect);
+        skif::LayerSpace<SkIRect> content(src);
+        skif::LayerSpace<SkIRect> output = as_IFB(this)->onGetOutputLayerBounds(mapping, content);
+        
+        SkIRect dst;
+        as_IFB(this)->getCropRect().applyTo(
+                SkIRect(output), ctm, as_IFB(this)->affectsTransparentBlack(), &dst);
+        return dst;
+    }
+}
+
+SkRect SkImageFilter::computeFastBounds(const SkRect& src) const {
+    if (0 == this->countInputs()) {
+        return src;
+    }
+    SkRect combinedBounds = this->getInput(0) ? this->getInput(0)->computeFastBounds(src) : src;
+    for (int i = 1; i < this->countInputs(); i++) {
+        const SkImageFilter* input = this->getInput(i);
+        if (input) {
+            combinedBounds.join(input->computeFastBounds(src));
+        } else {
+            combinedBounds.join(src);
+        }
+    }
+    return combinedBounds;
+}
+
+bool SkImageFilter::canComputeFastBounds() const {
+    if (as_IFB(this)->affectsTransparentBlack()) {
+        return false;
+    }
+    for (int i = 0; i < this->countInputs(); i++) {
+        const SkImageFilter* input = this->getInput(i);
+        if (input && !input->canComputeFastBounds()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool SkImageFilter::asAColorFilter(SkColorFilter** filterPtr) const {
+    SkASSERT(nullptr != filterPtr);
+    if (!this->isColorFilterNode(filterPtr)) {
+        return false;
+    }
+    if (nullptr != this->getInput(0) || (*filterPtr)->affectsTransparentBlack()) {
+        (*filterPtr)->unref();
+        return false;
+    }
+    return true;
+}
+
+sk_sp<SkImageFilter> SkImageFilter::MakeMatrixFilter(const SkMatrix& matrix,
+                                                     SkFilterQuality filterQuality,
+                                                     sk_sp<SkImageFilter> input) {
+    return SkMatrixImageFilter::Make(matrix, filterQuality, std::move(input));
+}
+
+sk_sp<SkImageFilter> SkImageFilter::makeWithLocalMatrix(const SkMatrix& matrix) const {
+    return SkLocalMatrixImageFilter::Make(matrix, this->refMe());
+}
+
+
+
+
+
+SK_USE_FLUENT_IMAGE_FILTER_TYPES
+
+static int32_t next_image_filter_unique_id() {
+    static std::atomic<int32_t> nextID{1};
+
+    int32_t id;
+    do {
+        id = nextID++;
+    } while (id == 0);
+    return id;
+}
+
+SkImageFilter_Base::SkImageFilter_Base(sk_sp<SkImageFilter> const* inputs,
+                                       int inputCount, const CropRect* cropRect)
+        : fUsesSrcInput(false)
+        , fUniqueID(next_image_filter_unique_id()) {
+    fCropRect = cropRect ? *cropRect : CropRect(SkRect(), 0x0);
+
+    fInputs.reset(inputCount);
+
+    for (int i = 0; i < inputCount; ++i) {
+        if (!inputs[i] || as_IFB(inputs[i])->fUsesSrcInput) {
+            fUsesSrcInput = true;
+        }
+        fInputs[i] = inputs[i];
+    }
+}
+
+SkImageFilter_Base::~SkImageFilter_Base() {
+    SkImageFilterCache::Get()->purgeByImageFilter(this);
+}
+
+bool SkImageFilter_Base::Common::unflatten(SkReadBuffer& buffer, int expectedCount) {
+    const int count = buffer.readInt();
+    if (!buffer.validate(count >= 0)) {
+        return false;
+    }
+    if (!buffer.validate(expectedCount < 0 || count == expectedCount)) {
+        return false;
+    }
+
+    SkASSERT(fInputs.empty());
+    for (int i = 0; i < count; i++) {
+        fInputs.push_back(buffer.readBool() ? buffer.readImageFilter() : nullptr);
+        if (!buffer.isValid()) {
+            return false;
+        }
+    }
+    SkRect rect;
+    buffer.readRect(&rect);
+    if (!buffer.isValid() || !buffer.validate(SkIsValidRect(rect))) {
+        return false;
+    }
+
+    uint32_t flags = buffer.readUInt();
+    fCropRect = CropRect(rect, flags);
+    return buffer.isValid();
+}
+
+void SkImageFilter_Base::flatten(SkWriteBuffer& buffer) const {
+    buffer.writeInt(fInputs.count());
+    for (int i = 0; i < fInputs.count(); i++) {
+        const SkImageFilter* input = this->getInput(i);
+        buffer.writeBool(input != nullptr);
+        if (input != nullptr) {
+            buffer.writeFlattenable(input);
+        }
+    }
+    buffer.writeRect(fCropRect.rect());
+    buffer.writeUInt(fCropRect.flags());
+}
+
+skif::FilterResult<For::kOutput> SkImageFilter_Base::filterImage(const skif::Context& context) const {
+    
+    
+    
+    
+    SkASSERT(context.source().layerOrigin().x() == 0 && context.source().layerOrigin().y() == 0);
+
+    skif::FilterResult<For::kOutput> result;
+    if (!context.isValid()) {
+        return result;
+    }
+
+    uint32_t srcGenID = fUsesSrcInput ? context.sourceImage()->uniqueID() : 0;
+    const SkIRect srcSubset = fUsesSrcInput ? context.sourceImage()->subset()
+                                            : SkIRect::MakeWH(0, 0);
+
+    SkImageFilterCacheKey key(fUniqueID, context.mapping().layerMatrix(), context.clipBounds(),
+                              srcGenID, srcSubset);
+    if (context.cache() && context.cache()->get(key, &result)) {
+        return result;
+    }
+
+    result = this->onFilterImage(context);
+
+#if SK_SUPPORT_GPU
+    if (context.gpuBacked() && result.image() && !result.image()->isTextureBacked()) {
+        
+        
+        auto asTexture = result.image()->makeTextureImage(context.getContext());
+        result = skif::FilterResult<For::kOutput>(std::move(asTexture), result.layerOrigin());
+    }
+#endif
+
+    if (context.cache()) {
+        context.cache()->set(key, this, result);
+    }
+
+    return result;
+}
+
+skif::LayerSpace<SkIRect> SkImageFilter_Base::getInputBounds(
+        const skif::Mapping& mapping, const skif::DeviceSpace<SkRect>& desiredOutput,
+        const skif::ParameterSpace<SkRect>* knownContentBounds) const {
+    
+    skif::LayerSpace<SkIRect> desiredBounds = mapping.deviceToLayer(desiredOutput).roundOut();
+    
+    
+    skif::LayerSpace<SkIRect> contentBounds =
+            knownContentBounds ? mapping.paramToLayer(*knownContentBounds).roundOut()
+                               : desiredBounds;
+
+    
+    skif::LayerSpace<SkIRect> requiredInput = this->onGetInputLayerBounds(
+            mapping, desiredBounds, contentBounds);
+    
+    
+    if (knownContentBounds && !this->affectsTransparentBlack()) {
+        if (!requiredInput.intersect(contentBounds)) {
+            
+            return skif::LayerSpace<SkIRect>(SkIRect::MakeEmpty());
+        }
+    }
+    return requiredInput;
+}
+
+skif::DeviceSpace<SkIRect> SkImageFilter_Base::getOutputBounds(
+        const skif::Mapping& mapping, const skif::ParameterSpace<SkRect>& contentBounds) const {
+    
+    skif::LayerSpace<SkRect> layerContent = mapping.paramToLayer(contentBounds);
+    
+    skif::LayerSpace<SkIRect> filterOutput = this->onGetOutputLayerBounds(
+            mapping, layerContent.roundOut());
+    
+    
+    SkIRect dst;
+    as_IFB(this)->getCropRect().applyTo(
+            SkIRect(filterOutput), mapping.layerMatrix(),
+            as_IFB(this)->affectsTransparentBlack(), &dst);
+
+    
+    return mapping.layerToDevice(skif::LayerSpace<SkIRect>(dst));
+}
+
+
+
+skif::FilterResult<For::kOutput> SkImageFilter_Base::onFilterImage(const skif::Context& context) const {
+    SkIPoint origin;
+    auto image = this->onFilterImage(context, &origin);
+    return skif::FilterResult<For::kOutput>(std::move(image), skif::LayerSpace<SkIPoint>(origin));
+}
+
+bool SkImageFilter_Base::canHandleComplexCTM() const {
+    
+    
+    
+    if (this->cropRectIsSet() || !this->onCanHandleComplexCTM()) {
+        return false;
+    }
+    const int count = this->countInputs();
+    for (int i = 0; i < count; ++i) {
+        const SkImageFilter_Base* input = as_IFB(this->getInput(i));
+        if (input && !input->canHandleComplexCTM()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void SkImageFilter::CropRect::applyTo(const SkIRect& imageBounds, const SkMatrix& ctm,
+                                      bool embiggen, SkIRect* cropped) const {
     *cropped = imageBounds;
     if (fFlags) {
         SkRect devCropR;
@@ -70,194 +351,242 @@ void SkImageFilter::CropRect::applyTo(const SkIRect& imageBounds,
     }
 }
 
-
-
-static int32_t next_image_filter_unique_id() {
-    static std::atomic<int32_t> nextID{1};
-
-    int32_t id;
-    do {
-        id = nextID++;
-    } while (id == 0);
-    return id;
-}
-
-bool SkImageFilter::Common::unflatten(SkReadBuffer& buffer, int expectedCount) {
-    const int count = buffer.readInt();
-    if (!buffer.validate(count >= 0)) {
-        return false;
-    }
-    if (!buffer.validate(expectedCount < 0 || count == expectedCount)) {
-        return false;
-    }
-
-    SkASSERT(fInputs.empty());
-    for (int i = 0; i < count; i++) {
-        fInputs.push_back(buffer.readBool() ? buffer.readImageFilter() : nullptr);
-        if (!buffer.isValid()) {
-            return false;
-        }
-    }
-    SkRect rect;
-    buffer.readRect(&rect);
-    if (!buffer.isValid() || !buffer.validate(SkIsValidRect(rect))) {
-        return false;
-    }
-
-    uint32_t flags = buffer.readUInt();
-    fCropRect = CropRect(rect, flags);
-    return buffer.isValid();
+bool SkImageFilter_Base::applyCropRect(const Context& ctx, const SkIRect& srcBounds,
+                                       SkIRect* dstBounds) const {
+    SkIRect tmpDst = this->onFilterNodeBounds(srcBounds, ctx.ctm(), kForward_MapDirection, nullptr);
+    fCropRect.applyTo(tmpDst, ctx.ctm(), this->affectsTransparentBlack(), dstBounds);
+    
+    
+    
+    
+    
+    return dstBounds->intersect(ctx.clipBounds());
 }
 
 
 
-void SkImageFilter::init(sk_sp<SkImageFilter> const* inputs,
-                         int inputCount,
-                         const CropRect* cropRect) {
-    fCropRect = cropRect ? *cropRect : CropRect(SkRect(), 0x0);
+static sk_sp<SkSpecialImage> pad_image(SkSpecialImage* src, const SkImageFilter_Base::Context& ctx,
+                                       int newWidth, int newHeight, int offX, int offY) {
+    
+    
+    
 
-    fInputs.reset(inputCount);
-
-    for (int i = 0; i < inputCount; ++i) {
-        if (!inputs[i] || inputs[i]->usesSrcInput()) {
-            fUsesSrcInput = true;
-        }
-        fInputs[i] = inputs[i];
-    }
-}
-
-SkImageFilter::SkImageFilter(sk_sp<SkImageFilter> const* inputs,
-                             int inputCount,
-                             const CropRect* cropRect)
-    : fUsesSrcInput(false)
-    , fUniqueID(next_image_filter_unique_id()) {
-    this->init(inputs, inputCount, cropRect);
-}
-
-SkImageFilter::~SkImageFilter() {
-    SkImageFilterCache::Get()->purgeByImageFilter(this);
-}
-
-SkImageFilter::SkImageFilter(int inputCount, SkReadBuffer& buffer)
-    : fUsesSrcInput(false)
-    , fCropRect(SkRect(), 0x0)
-    , fUniqueID(next_image_filter_unique_id()) {
-    Common common;
-    if (common.unflatten(buffer, inputCount)) {
-        this->init(common.inputs(), common.inputCount(), &common.cropRect());
-    }
-}
-
-void SkImageFilter::flatten(SkWriteBuffer& buffer) const {
-    buffer.writeInt(fInputs.count());
-    for (int i = 0; i < fInputs.count(); i++) {
-        SkImageFilter* input = this->getInput(i);
-        buffer.writeBool(input != nullptr);
-        if (input != nullptr) {
-            buffer.writeFlattenable(input);
-        }
-    }
-    buffer.writeRect(fCropRect.rect());
-    buffer.writeUInt(fCropRect.flags());
-}
-
-sk_sp<SkSpecialImage> SkImageFilter::filterImage(SkSpecialImage* src, const Context& context,
-                                                 SkIPoint* offset) const {
-    SkASSERT(src && offset);
-    if (!context.isValid()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    sk_sp<SkSpecialSurface> surf(ctx.makeSurface(SkISize::Make(newWidth, newHeight)));
+    if (!surf) {
         return nullptr;
     }
 
-    uint32_t srcGenID = fUsesSrcInput ? src->uniqueID() : 0;
-    const SkIRect srcSubset = fUsesSrcInput ? src->subset() : SkIRect::MakeWH(0, 0);
-    SkImageFilterCacheKey key(fUniqueID, context.ctm(), context.clipBounds(), srcGenID, srcSubset);
-    if (context.cache()) {
-        sk_sp<SkSpecialImage> result = context.cache()->get(key, offset);
-        if (result) {
-            return result;
-        }
-    }
+    SkCanvas* canvas = surf->getCanvas();
+    SkASSERT(canvas);
 
-    sk_sp<SkSpecialImage> result(this->onFilterImage(src, context, offset));
+    canvas->clear(0x0);
 
-#if SK_SUPPORT_GPU
-    if (src->isTextureBacked() && result && !result->isTextureBacked()) {
-        
-        
-        auto context = src->getContext();
-        result = result->makeTextureImage(context);
-    }
-#endif
+    src->draw(canvas, offX, offY, nullptr);
 
-    if (result && context.cache()) {
-        context.cache()->set(key, result.get(), *offset, this);
-    }
-
-    return result;
+    return surf->makeImageSnapshot();
 }
 
-SkIRect SkImageFilter::filterBounds(const SkIRect& src, const SkMatrix& ctm,
-                                    MapDirection direction, const SkIRect* inputRect) const {
-    if (kReverse_MapDirection == direction) {
-        SkIRect bounds = this->onFilterNodeBounds(src, ctm, direction, inputRect);
-        return this->onFilterBounds(bounds, ctm, direction, &bounds);
+sk_sp<SkSpecialImage> SkImageFilter_Base::applyCropRectAndPad(const Context& ctx,
+                                                              SkSpecialImage* src,
+                                                              SkIPoint* srcOffset,
+                                                              SkIRect* bounds) const {
+    const SkIRect srcBounds = SkIRect::MakeXYWH(srcOffset->x(), srcOffset->y(),
+                                                src->width(), src->height());
+
+    if (!this->applyCropRect(ctx, srcBounds, bounds)) {
+        return nullptr;
+    }
+
+    if (srcBounds.contains(*bounds)) {
+        return sk_sp<SkSpecialImage>(SkRef(src));
     } else {
-        SkASSERT(!inputRect);
-        SkIRect bounds = this->onFilterBounds(src, ctm, direction, nullptr);
-        bounds = this->onFilterNodeBounds(bounds, ctm, direction, nullptr);
-        SkIRect dst;
-        this->getCropRect().applyTo(bounds, ctm, this->affectsTransparentBlack(), &dst);
-        return dst;
+        sk_sp<SkSpecialImage> img(pad_image(src, ctx, bounds->width(), bounds->height(),
+                                            Sk32_sat_sub(srcOffset->x(), bounds->x()),
+                                            Sk32_sat_sub(srcOffset->y(), bounds->y())));
+        *srcOffset = SkIPoint::Make(bounds->x(), bounds->y());
+        return img;
     }
 }
 
-SkRect SkImageFilter::computeFastBounds(const SkRect& src) const {
-    if (0 == this->countInputs()) {
+
+
+
+SkIRect SkImageFilter_Base::onFilterBounds(const SkIRect& src, const SkMatrix& ctm,
+                                           MapDirection dir, const SkIRect* inputRect) const {
+    if (this->countInputs() < 1) {
         return src;
     }
-    SkRect combinedBounds = this->getInput(0) ? this->getInput(0)->computeFastBounds(src) : src;
-    for (int i = 1; i < this->countInputs(); i++) {
-        SkImageFilter* input = this->getInput(i);
-        if (input) {
-            combinedBounds.join(input->computeFastBounds(src));
+
+    SkIRect totalBounds;
+    for (int i = 0; i < this->countInputs(); ++i) {
+        const SkImageFilter* filter = this->getInput(i);
+        SkIRect rect = filter ? filter->filterBounds(src, ctm, dir, inputRect) : src;
+        if (0 == i) {
+            totalBounds = rect;
         } else {
-            combinedBounds.join(src);
+            totalBounds.join(rect);
         }
     }
-    return combinedBounds;
+
+    return totalBounds;
 }
 
-bool SkImageFilter::canComputeFastBounds() const {
-    if (this->affectsTransparentBlack()) {
-        return false;
+SkIRect SkImageFilter_Base::onFilterNodeBounds(const SkIRect& src, const SkMatrix&,
+                                               MapDirection, const SkIRect*) const {
+    return src;
+}
+
+skif::LayerSpace<SkIRect> SkImageFilter_Base::visitInputLayerBounds(
+        const skif::Mapping& mapping, const skif::LayerSpace<SkIRect>& desiredOutput,
+        const skif::LayerSpace<SkIRect>& contentBounds) const {
+    if (this->countInputs() < 1) {
+        
+        
+        
+        
+        return desiredOutput;
     }
-    for (int i = 0; i < this->countInputs(); i++) {
-        SkImageFilter* input = this->getInput(i);
-        if (input && !input->canComputeFastBounds()) {
-            return false;
+
+    skif::LayerSpace<SkIRect> netInput;
+    for (int i = 0; i < this->countInputs(); ++i) {
+        const SkImageFilter* filter = this->getInput(i);
+        
+        
+        skif::LayerSpace<SkIRect> requiredInput =
+                filter ? as_IFB(filter)->onGetInputLayerBounds(mapping, desiredOutput,
+                                                               contentBounds)
+                       : desiredOutput;
+        
+        if (i == 0) {
+            netInput = requiredInput;
+        } else {
+            netInput.join(requiredInput);
         }
     }
-    return true;
+    return netInput;
+}
+
+skif::LayerSpace<SkIRect> SkImageFilter_Base::visitOutputLayerBounds(
+        const skif::Mapping& mapping, const skif::LayerSpace<SkIRect>& contentBounds) const {
+    if (this->countInputs() < 1) {
+        
+        
+        
+        return contentBounds;
+    }
+
+    skif::LayerSpace<SkIRect> netOutput;
+    for (int i = 0; i < this->countInputs(); ++i) {
+        const SkImageFilter* filter = this->getInput(i);
+        
+        
+        skif::LayerSpace<SkIRect> output =
+                filter ? as_IFB(filter)->onGetOutputLayerBounds(mapping, contentBounds)
+                       : contentBounds;
+        
+        if (i == 0) {
+            netOutput = output;
+        } else {
+            netOutput.join(output);
+        }
+    }
+    return netOutput;
+}
+
+skif::LayerSpace<SkIRect> SkImageFilter_Base::onGetInputLayerBounds(
+        const skif::Mapping& mapping, const skif::LayerSpace<SkIRect>& desiredOutput,
+        const skif::LayerSpace<SkIRect>& contentBounds, VisitChildren recurse) const {
+    
+    
+    SkIRect content = SkIRect(contentBounds);
+    SkIRect input = this->onFilterNodeBounds(SkIRect(desiredOutput), mapping.layerMatrix(),
+                                             kReverse_MapDirection, &content);
+    if (recurse == VisitChildren::kYes) {
+        SkIRect aggregate = this->onFilterBounds(input, mapping.layerMatrix(),
+                                                 kReverse_MapDirection, &input);
+        return skif::LayerSpace<SkIRect>(aggregate);
+    } else {
+        return skif::LayerSpace<SkIRect>(input);
+    }
+}
+
+skif::LayerSpace<SkIRect> SkImageFilter_Base::onGetOutputLayerBounds(
+        const skif::Mapping& mapping, const skif::LayerSpace<SkIRect>& contentBounds) const {
+    
+    SkIRect aggregate = this->onFilterBounds(SkIRect(contentBounds), mapping.layerMatrix(),
+                                             kForward_MapDirection, nullptr);
+    SkIRect output = this->onFilterNodeBounds(aggregate, mapping.layerMatrix(),
+                                              kForward_MapDirection, nullptr);
+    return skif::LayerSpace<SkIRect>(output);
+}
+
+template<skif::Usage kU>
+skif::FilterResult<kU> SkImageFilter_Base::filterInput(int index, const skif::Context& ctx) const {
+    
+    SkASSERT(kU != skif::Usage::kInput0 || index == 0);
+    SkASSERT(kU != skif::Usage::kInput1 || index == 1);
+
+    const SkImageFilter* input = this->getInput(index);
+    if (!input) {
+        
+        return static_cast<skif::FilterResult<kU>>(ctx.source());
+    }
+
+    skif::FilterResult<For::kOutput> result = as_IFB(input)->filterImage(this->mapContext(ctx));
+    SkASSERT(!result.image() || ctx.gpuBacked() == result.image()->isTextureBacked());
+
+    
+    return static_cast<skif::FilterResult<kU>>(std::move(result));
+}
+
+
+template skif::FilterResult<For::kInput> SkImageFilter_Base::filterInput(int, const skif::Context&) const;
+template skif::FilterResult<For::kInput0> SkImageFilter_Base::filterInput(int, const skif::Context&) const;
+template skif::FilterResult<For::kInput1> SkImageFilter_Base::filterInput(int, const skif::Context&) const;
+
+SkImageFilter_Base::Context SkImageFilter_Base::mapContext(const Context& ctx) const {
+    
+    
+    
+    skif::LayerSpace<SkIRect> childOutput = this->onGetInputLayerBounds(
+            ctx.mapping(), ctx.desiredOutput(), ctx.desiredOutput(), VisitChildren::kNo);
+    return ctx.withNewDesiredOutput(childOutput);
 }
 
 #if SK_SUPPORT_GPU
-sk_sp<SkSpecialImage> SkImageFilter::DrawWithFP(GrRecordingContext* context,
-                                                std::unique_ptr<GrFragmentProcessor> fp,
-                                                const SkIRect& bounds,
-                                                const OutputProperties& outputProperties) {
+sk_sp<SkSpecialImage> SkImageFilter_Base::DrawWithFP(GrRecordingContext* context,
+                                                     std::unique_ptr<GrFragmentProcessor> fp,
+                                                     const SkIRect& bounds,
+                                                     SkColorType colorType,
+                                                     const SkColorSpace* colorSpace,
+                                                     GrProtected isProtected) {
     GrPaint paint;
     paint.addColorFragmentProcessor(std::move(fp));
     paint.setPorterDuffXPFactory(SkBlendMode::kSrc);
 
-    sk_sp<SkColorSpace> colorSpace = sk_ref_sp(outputProperties.colorSpace());
-    GrPixelConfig config = SkColorType2GrPixelConfig(outputProperties.colorType());
-    GrBackendFormat format =
-            context->priv().caps()->getBackendFormatFromColorType(
-                    outputProperties.colorType());
-    sk_sp<GrRenderTargetContext> renderTargetContext(
-        context->priv().makeDeferredRenderTargetContext(
-                                format, SkBackingFit::kApprox, bounds.width(), bounds.height(),
-                                config, std::move(colorSpace)));
+    auto renderTargetContext =
+            context->priv().makeDeferredRenderTargetContext(SkBackingFit::kApprox,
+                                                            bounds.width(),
+                                                            bounds.height(),
+                                                            SkColorTypeToGrColorType(colorType),
+                                                            sk_ref_sp(colorSpace),
+                                                            1,
+                                                            GrMipMapped::kNo,
+                                                            kBottomLeft_GrSurfaceOrigin,
+                                                            nullptr,
+                                                            SkBudgeted::kYes,
+                                                            isProtected);
     if (!renderTargetContext) {
         return nullptr;
     }
@@ -271,66 +600,27 @@ sk_sp<SkSpecialImage> SkImageFilter::DrawWithFP(GrRecordingContext* context,
 
     return SkSpecialImage::MakeDeferredFromGpu(
             context, dstIRect, kNeedNewImageUniqueID_SpecialImage,
-            renderTargetContext->asTextureProxyRef(),
-            renderTargetContext->colorSpaceInfo().refColorSpace());
-}
-#endif
-
-bool SkImageFilter::asAColorFilter(SkColorFilter** filterPtr) const {
-    SkASSERT(nullptr != filterPtr);
-    if (!this->isColorFilterNode(filterPtr)) {
-        return false;
-    }
-    if (nullptr != this->getInput(0) || (*filterPtr)->affectsTransparentBlack()) {
-        (*filterPtr)->unref();
-        return false;
-    }
-    return true;
+            renderTargetContext->asTextureProxyRef(), renderTargetContext->colorInfo().colorType(),
+            renderTargetContext->colorInfo().refColorSpace());
 }
 
-bool SkImageFilter::canHandleComplexCTM() const {
-    if (!this->onCanHandleComplexCTM()) {
-        return false;
-    }
-    const int count = this->countInputs();
-    for (int i = 0; i < count; ++i) {
-        SkImageFilter* input = this->getInput(i);
-        if (input && !input->canHandleComplexCTM()) {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool SkImageFilter::applyCropRect(const Context& ctx, const SkIRect& srcBounds,
-                                  SkIRect* dstBounds) const {
-    SkIRect tmpDst = this->onFilterNodeBounds(srcBounds, ctx.ctm(), kForward_MapDirection, nullptr);
-    fCropRect.applyTo(tmpDst, ctx.ctm(), this->affectsTransparentBlack(), dstBounds);
-    
-    
-    
-    
-    
-    return dstBounds->intersect(ctx.clipBounds());
-}
-
-#if SK_SUPPORT_GPU
-sk_sp<SkSpecialImage> SkImageFilter::ImageToColorSpace(SkSpecialImage* src,
-                                                       const OutputProperties& outProps) {
+sk_sp<SkSpecialImage> SkImageFilter_Base::ImageToColorSpace(SkSpecialImage* src,
+                                                            SkColorType colorType,
+                                                            SkColorSpace* colorSpace) {
     
     
     
     
     
     auto colorSpaceXform = GrColorSpaceXform::Make(src->getColorSpace(),  src->alphaType(),
-                                                   outProps.colorSpace(), kPremul_SkAlphaType);
+                                                   colorSpace, kPremul_SkAlphaType);
 
     if (!colorSpaceXform) {
         
         return sk_ref_sp(src);
     }
 
-    sk_sp<SkSpecialSurface> surf(src->makeSurface(outProps,
+    sk_sp<SkSpecialSurface> surf(src->makeSurface(colorType, colorSpace,
                                                   SkISize::Make(src->width(), src->height())));
     if (!surf) {
         return sk_ref_sp(src);
@@ -347,136 +637,10 @@ sk_sp<SkSpecialImage> SkImageFilter::ImageToColorSpace(SkSpecialImage* src,
 
 
 
-static sk_sp<SkSpecialImage> pad_image(SkSpecialImage* src,
-                                       const SkImageFilter::OutputProperties& outProps,
-                                       int newWidth, int newHeight, int offX, int offY) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    sk_sp<SkSpecialSurface> surf(src->makeSurface(outProps, SkISize::Make(newWidth, newHeight)));
-    if (!surf) {
-        return nullptr;
-    }
-
-    SkCanvas* canvas = surf->getCanvas();
-    SkASSERT(canvas);
-
-    canvas->clear(0x0);
-
-    src->draw(canvas, offX, offY, nullptr);
-
-    return surf->makeImageSnapshot();
-}
-
-sk_sp<SkSpecialImage> SkImageFilter::applyCropRectAndPad(const Context& ctx,
-                                                         SkSpecialImage* src,
-                                                         SkIPoint* srcOffset,
-                                                         SkIRect* bounds) const {
-    const SkIRect srcBounds = SkIRect::MakeXYWH(srcOffset->x(), srcOffset->y(),
-                                                src->width(), src->height());
-
-    if (!this->applyCropRect(ctx, srcBounds, bounds)) {
-        return nullptr;
-    }
-
-    if (srcBounds.contains(*bounds)) {
-        return sk_sp<SkSpecialImage>(SkRef(src));
-    } else {
-        sk_sp<SkSpecialImage> img(pad_image(src, ctx.outputProperties(),
-                                            bounds->width(), bounds->height(),
-                                            Sk32_sat_sub(srcOffset->x(), bounds->x()),
-                                            Sk32_sat_sub(srcOffset->y(), bounds->y())));
-        *srcOffset = SkIPoint::Make(bounds->x(), bounds->y());
-        return img;
-    }
-}
-
-SkIRect SkImageFilter::onFilterBounds(const SkIRect& src, const SkMatrix& ctm,
-                                      MapDirection dir, const SkIRect* inputRect) const {
-    if (this->countInputs() < 1) {
-        return src;
-    }
-
-    SkIRect totalBounds;
-    for (int i = 0; i < this->countInputs(); ++i) {
-        SkImageFilter* filter = this->getInput(i);
-        SkIRect rect = filter ? filter->filterBounds(src, ctm, dir, inputRect) : src;
-        if (0 == i) {
-            totalBounds = rect;
-        } else {
-            totalBounds.join(rect);
-        }
-    }
-
-    return totalBounds;
-}
-
-SkIRect SkImageFilter::onFilterNodeBounds(const SkIRect& src, const SkMatrix&,
-                                          MapDirection, const SkIRect*) const {
-    return src;
-}
-
-
-SkImageFilter::Context SkImageFilter::mapContext(const Context& ctx) const {
-    SkIRect clipBounds = this->onFilterNodeBounds(ctx.clipBounds(), ctx.ctm(),
-                                                  MapDirection::kReverse_MapDirection,
-                                                  &ctx.clipBounds());
-    return Context(ctx.ctm(), clipBounds, ctx.cache(), ctx.outputProperties());
-}
-
-sk_sp<SkImageFilter> SkImageFilter::MakeMatrixFilter(const SkMatrix& matrix,
-                                                     SkFilterQuality filterQuality,
-                                                     sk_sp<SkImageFilter> input) {
-    return SkMatrixImageFilter::Make(matrix, filterQuality, std::move(input));
-}
-
-sk_sp<SkImageFilter> SkImageFilter::makeWithLocalMatrix(const SkMatrix& matrix) const {
-    
-    
-    
-    SkImageFilter* nonConstThis = const_cast<SkImageFilter*>(this);
-    return SkLocalMatrixImageFilter::Make(matrix, sk_ref_sp<SkImageFilter>(nonConstThis));
-}
-
-sk_sp<SkSpecialImage> SkImageFilter::filterInput(int index,
-                                                 SkSpecialImage* src,
-                                                 const Context& ctx,
-                                                 SkIPoint* offset) const {
-    SkImageFilter* input = this->getInput(index);
-    if (!input) {
-        return sk_sp<SkSpecialImage>(SkRef(src));
-    }
-
-    sk_sp<SkSpecialImage> result(input->filterImage(src, this->mapContext(ctx), offset));
-
-    SkASSERT(!result || src->isTextureBacked() == result->isTextureBacked());
-
-    return result;
-}
-
-void SkImageFilter::PurgeCache() {
-    SkImageFilterCache::Get()->purge();
-}
-
-
-
-SkIRect SkImageFilter::DetermineRepeatedSrcBound(const SkIRect& srcBounds,
-                                                 const SkIVector& filterOffset,
-                                                 const SkISize& filterSize,
-                                                 const SkIRect& originalSrcBounds) {
+SkIRect SkImageFilter_Base::DetermineRepeatedSrcBound(const SkIRect& srcBounds,
+                                                      const SkIVector& filterOffset,
+                                                      const SkISize& filterSize,
+                                                      const SkIRect& originalSrcBounds) {
     SkIRect tmp = srcBounds;
     tmp.adjust(-filterOffset.fX, -filterOffset.fY,
                filterSize.fWidth - filterOffset.fX, filterSize.fHeight - filterOffset.fY);
@@ -491,4 +655,59 @@ SkIRect SkImageFilter::DetermineRepeatedSrcBound(const SkIRect& srcBounds,
     }
 
     return tmp;
+}
+
+void SkImageFilter_Base::PurgeCache() {
+    SkImageFilterCache::Get()->purge();
+}
+
+static sk_sp<SkImageFilter> apply_ctm_to_filter(sk_sp<SkImageFilter> input, const SkMatrix& ctm,
+                                                SkMatrix* remainder) {
+    if (ctm.isScaleTranslate() || as_IFB(input)->canHandleComplexCTM()) {
+        
+        *remainder = ctm;
+        return input;
+    }
+
+    
+    
+    
+    SkMatrix ctmToEmbed;
+    SkSize scale;
+    if (ctm.decomposeScale(&scale, &ctmToEmbed)) {
+        
+        
+        remainder->setScale(scale.fWidth, scale.fHeight);
+
+        
+        
+        
+        
+        
+        
+        
+        ctmToEmbed.preScale(scale.fWidth, scale.fHeight);
+        ctmToEmbed.postScale(1.f / scale.fWidth, 1.f / scale.fHeight);
+    } else {
+        
+        
+        
+        
+        
+        
+        
+        if (ctm.hasPerspective()) {
+                *remainder = ctm;
+            return input;
+        }
+
+        ctmToEmbed = ctm;
+        remainder->setIdentity();
+    }
+
+    return SkMatrixImageFilter::Make(ctmToEmbed, kLow_SkFilterQuality, input);
+}
+
+sk_sp<SkImageFilter> SkImageFilter_Base::applyCTM(const SkMatrix& ctm, SkMatrix* remainder) const {
+    return apply_ctm_to_filter(this->refMe(), ctm, remainder);
 }

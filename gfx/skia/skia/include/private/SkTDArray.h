@@ -9,9 +9,9 @@
 #ifndef SkTDArray_DEFINED
 #define SkTDArray_DEFINED
 
-#include "SkMalloc.h"
-#include "SkTo.h"
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
+#include "include/private/SkMalloc.h"
+#include "include/private/SkTo.h"
 
 #include <initializer_list>
 #include <utility>
@@ -325,8 +325,8 @@ public:
 
 private:
     T*      fArray;
-    int     fReserve;
-    int     fCount;
+    int     fReserve;   
+    int     fCount;     
 
     
 

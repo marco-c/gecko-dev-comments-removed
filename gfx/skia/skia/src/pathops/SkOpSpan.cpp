@@ -4,10 +4,10 @@
 
 
 
-#include "SkOpCoincidence.h"
-#include "SkOpContour.h"
-#include "SkOpSegment.h"
-#include "SkPathWriter.h"
+#include "src/pathops/SkOpCoincidence.h"
+#include "src/pathops/SkOpContour.h"
+#include "src/pathops/SkOpSegment.h"
+#include "src/pathops/SkPathWriter.h"
 
 bool SkOpPtT::alias() const {
     return this->span()->ptT() != this;

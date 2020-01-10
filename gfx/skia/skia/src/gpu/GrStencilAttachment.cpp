@@ -5,8 +5,8 @@
 
 
 
-#include "GrStencilAttachment.h"
-#include "GrResourceKey.h"
+#include "include/private/GrResourceKey.h"
+#include "src/gpu/GrStencilAttachment.h"
 
 void GrStencilAttachment::ComputeSharedStencilAttachmentKey(int width, int height, int sampleCnt,
                                                             GrUniqueKey* key) {

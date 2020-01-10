@@ -4,11 +4,11 @@
 
 
 
-#include "SkOpSegment.h"
-#include "SkOpSpan.h"
-#include "SkPathOpsPoint.h"
-#include "SkPathWriter.h"
-#include "SkTSort.h"
+#include "src/core/SkTSort.h"
+#include "src/pathops/SkOpSegment.h"
+#include "src/pathops/SkOpSpan.h"
+#include "src/pathops/SkPathOpsPoint.h"
+#include "src/pathops/SkPathWriter.h"
 
 
 SkPathWriter::SkPathWriter(SkPath& path)

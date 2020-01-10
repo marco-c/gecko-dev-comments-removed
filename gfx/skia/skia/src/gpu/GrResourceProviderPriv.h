@@ -8,7 +8,7 @@
 #ifndef GrResourceProviderPriv_DEFINED
 #define GrResourceProviderPriv_DEFINED
 
-#include "GrResourceProvider.h"
+#include "src/gpu/GrResourceProvider.h"
 
 
 

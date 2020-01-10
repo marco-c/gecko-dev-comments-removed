@@ -8,9 +8,9 @@
 #ifndef GrVkTexture_DEFINED
 #define GrVkTexture_DEFINED
 
-#include "GrTexture.h"
-#include "GrVkImage.h"
-#include "vk/GrVkTypes.h"
+#include "include/gpu/GrTexture.h"
+#include "include/gpu/vk/GrVkTypes.h"
+#include "src/gpu/vk/GrVkImage.h"
 
 class GrVkGpu;
 class GrVkImageView;
@@ -54,7 +54,7 @@ protected:
         return false;
     }
 
-    void willRemoveLastRefOrPendingIO() override;
+    void willRemoveLastRef() override;
 
 private:
     GrVkTexture(GrVkGpu*, SkBudgeted, const GrSurfaceDesc&, const GrVkImageInfo&,
@@ -62,7 +62,7 @@ private:
                 GrMipMapsStatus);
     GrVkTexture(GrVkGpu*, const GrSurfaceDesc&, const GrVkImageInfo&, sk_sp<GrVkImageLayout>,
                 const GrVkImageView*, GrMipMapsStatus, GrBackendObjectOwnership, GrWrapCacheable,
-                GrIOType);
+                GrIOType, bool isExternal);
 
     
     

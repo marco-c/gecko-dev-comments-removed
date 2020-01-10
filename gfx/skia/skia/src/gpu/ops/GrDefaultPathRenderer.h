@@ -8,15 +8,15 @@
 #ifndef GrDefaultPathRenderer_DEFINED
 #define GrDefaultPathRenderer_DEFINED
 
-#include "GrPathRenderer.h"
-#include "GrPathStencilSettings.h"
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
+#include "src/gpu/GrPathRenderer.h"
+#include "src/gpu/ops/GrPathStencilSettings.h"
 
 
 
 
 
-class SK_API GrDefaultPathRenderer : public GrPathRenderer {
+class GrDefaultPathRenderer : public GrPathRenderer {
 public:
     GrDefaultPathRenderer();
 

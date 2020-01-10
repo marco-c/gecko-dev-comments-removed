@@ -5,7 +5,7 @@
 
 
 
-#include "SkFontLCDConfig.h"
+#include "include/core/SkFontLCDConfig.h"
 
 static SkFontLCDConfig::LCDOrientation gLCDOrientation = SkFontLCDConfig::kHorizontal_LCDOrientation;
 static SkFontLCDConfig::LCDOrder gLCDOrder = SkFontLCDConfig::kRGB_LCDOrder;

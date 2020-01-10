@@ -8,31 +8,27 @@
 #ifndef GrDrawingManager_DEFINED
 #define GrDrawingManager_DEFINED
 
-#include "GrBufferAllocPool.h"
-#include "GrDeferredUpload.h"
-#include "GrPathRenderer.h"
-#include "GrPathRendererChain.h"
-#include "GrResourceCache.h"
-#include "SkSurface.h"
-#include "SkTArray.h"
-#include "text/GrTextContext.h"
+#include <set>
+#include "include/core/SkSurface.h"
+#include "include/private/SkTArray.h"
+#include "src/gpu/GrBufferAllocPool.h"
+#include "src/gpu/GrDeferredUpload.h"
+#include "src/gpu/GrPathRenderer.h"
+#include "src/gpu/GrPathRendererChain.h"
+#include "src/gpu/GrResourceCache.h"
+#include "src/gpu/text/GrTextContext.h"
 
 class GrCoverageCountingPathRenderer;
 class GrOnFlushCallbackObject;
 class GrOpFlushState;
+class GrOpsTask;
 class GrRecordingContext;
 class GrRenderTargetContext;
 class GrRenderTargetProxy;
-class GrRenderTargetOpList;
 class GrSoftwarePathRenderer;
 class GrTextureContext;
-class GrTextureOpList;
+class GrTextureResolveRenderTask;
 class SkDeferredDisplayList;
-
-
-
-
-
 
 class GrDrawingManager {
 public:
@@ -40,18 +36,50 @@ public:
 
     void freeGpuResources();
 
-    sk_sp<GrRenderTargetContext> makeRenderTargetContext(sk_sp<GrSurfaceProxy>,
-                                                         sk_sp<SkColorSpace>,
-                                                         const SkSurfaceProps*,
-                                                         bool managedOpList = true);
-    sk_sp<GrTextureContext> makeTextureContext(sk_sp<GrSurfaceProxy>, sk_sp<SkColorSpace>);
+    std::unique_ptr<GrRenderTargetContext> makeRenderTargetContext(sk_sp<GrSurfaceProxy>,
+                                                                   GrColorType,
+                                                                   sk_sp<SkColorSpace>,
+                                                                   const SkSurfaceProps*,
+                                                                   bool managedOpsTask = true);
+    std::unique_ptr<GrTextureContext> makeTextureContext(sk_sp<GrSurfaceProxy>,
+                                                         GrColorType,
+                                                         SkAlphaType,
+                                                         sk_sp<SkColorSpace>);
+
+    
+    
+    sk_sp<GrOpsTask> newOpsTask(sk_sp<GrRenderTargetProxy>, bool managedOpsTask);
+
+    
+    
+    
+    GrTextureResolveRenderTask* newTextureResolveRenderTask(const GrCaps&);
 
     
     
     
     
-    sk_sp<GrRenderTargetOpList> newRTOpList(GrRenderTargetProxy* rtp, bool managedOpList);
-    sk_sp<GrTextureOpList> newTextureOpList(GrTextureProxy* textureProxy);
+    
+    void newWaitRenderTask(sk_sp<GrSurfaceProxy> proxy, std::unique_ptr<sk_sp<GrSemaphore>[]>,
+                           int numSemaphores);
+
+    
+    
+    
+    
+    
+    void newTransferFromRenderTask(sk_sp<GrSurfaceProxy> srcProxy, const SkIRect& srcRect,
+                                   GrColorType surfaceColorType, GrColorType dstColorType,
+                                   sk_sp<GrGpuBuffer> dstBuffer, size_t dstOffset);
+
+    
+    
+    
+    
+    
+    
+    bool newCopyRenderTask(sk_sp<GrSurfaceProxy> srcProxy, const SkIRect& srcRect,
+                           sk_sp<GrSurfaceProxy> dstProxy, const SkIPoint& dstPoint);
 
     GrRecordingContext* getContext() { return fContext; }
 
@@ -72,11 +100,15 @@ public:
 
     static bool ProgramUnitTest(GrContext* context, int maxStages, int maxLevels);
 
-    GrSemaphoresSubmitted prepareSurfaceForExternalIO(GrSurfaceProxy*,
-                                                      SkSurface::BackendSurfaceAccess access,
-                                                      SkSurface::FlushFlags flags,
-                                                      int numSemaphores,
-                                                      GrBackendSemaphore backendSemaphores[]);
+    GrSemaphoresSubmitted flushSurfaces(GrSurfaceProxy* proxies[],
+                                        int cnt,
+                                        SkSurface::BackendSurfaceAccess access,
+                                        const GrFlushInfo& info);
+    GrSemaphoresSubmitted flushSurface(GrSurfaceProxy* proxy,
+                                       SkSurface::BackendSurfaceAccess access,
+                                       const GrFlushInfo& info) {
+        return this->flushSurfaces(&proxy, 1, access, info);
+    }
 
     void addOnFlushCallbackObject(GrOnFlushCallbackObject*);
 
@@ -84,15 +116,16 @@ public:
     void testingOnly_removeOnFlushCallbackObject(GrOnFlushCallbackObject*);
 #endif
 
-    void moveOpListsToDDL(SkDeferredDisplayList* ddl);
-    void copyOpListsFromDDL(const SkDeferredDisplayList*, GrRenderTargetProxy* newDest);
+    void moveRenderTasksToDDL(SkDeferredDisplayList* ddl);
+    void copyRenderTasksFromDDL(const SkDeferredDisplayList*, GrRenderTargetProxy* newDest);
 
 private:
     
-    class OpListDAG {
+    
+    class RenderTaskDAG {
     public:
-        OpListDAG(bool explicitlyAllocating, GrContextOptions::Enable sortOpLists);
-        ~OpListDAG();
+        RenderTaskDAG(bool sortRenderTasks);
+        ~RenderTaskDAG();
 
         
         
@@ -112,47 +145,56 @@ private:
         
         
         
-        void removeOpList(int index);
-        void removeOpLists(int startIndex, int stopIndex);
+        void removeRenderTask(int index);
+        void removeRenderTasks(int startIndex, int stopIndex);
 
-        bool empty() const { return fOpLists.empty(); }
-        int numOpLists() const { return fOpLists.count(); }
+        bool empty() const { return fRenderTasks.empty(); }
+        int numRenderTasks() const { return fRenderTasks.count(); }
 
-        GrOpList* opList(int index) { return fOpLists[index].get(); }
-        const GrOpList* opList(int index) const { return fOpLists[index].get(); }
+        bool isUsed(GrSurfaceProxy*) const;
 
-        GrOpList* back() { return fOpLists.back().get(); }
-        const GrOpList* back() const { return fOpLists.back().get(); }
+        GrRenderTask* renderTask(int index) { return fRenderTasks[index].get(); }
+        const GrRenderTask* renderTask(int index) const { return fRenderTasks[index].get(); }
 
-        void add(sk_sp<GrOpList>);
-        void add(const SkTArray<sk_sp<GrOpList>>&);
+        GrRenderTask* back() { return fRenderTasks.back().get(); }
+        const GrRenderTask* back() const { return fRenderTasks.back().get(); }
 
-        void swap(SkTArray<sk_sp<GrOpList>>* opLists);
+        GrRenderTask* add(sk_sp<GrRenderTask>);
+        GrRenderTask* addBeforeLast(sk_sp<GrRenderTask>);
+        void add(const SkTArray<sk_sp<GrRenderTask>>&);
 
-        bool sortingOpLists() const { return fSortOpLists; }
+        void swap(SkTArray<sk_sp<GrRenderTask>>* renderTasks);
+
+        bool sortingRenderTasks() const { return fSortRenderTasks; }
 
     private:
-        SkTArray<sk_sp<GrOpList>> fOpLists;
-        bool                      fSortOpLists;
+        SkTArray<sk_sp<GrRenderTask>> fRenderTasks;
+        bool                          fSortRenderTasks;
     };
 
     GrDrawingManager(GrRecordingContext*, const GrPathRendererChain::Options&,
                      const GrTextContext::Options&,
-                     bool explicitlyAllocating, GrContextOptions::Enable sortRenderTargets,
-                     GrContextOptions::Enable reduceOpListSplitting);
+                     bool sortRenderTasks,
+                     bool reduceOpsTaskSplitting);
 
     bool wasAbandoned() const;
 
     void cleanup();
 
     
-    bool executeOpLists(int startIndex, int stopIndex, GrOpFlushState*, int* numOpListsExecuted);
+    
+    
+    void closeRenderTasksForNewRenderTask(GrSurfaceProxy* target);
 
-    GrSemaphoresSubmitted flush(GrSurfaceProxy* proxy,
+    
+    bool executeRenderTasks(int startIndex, int stopIndex, GrOpFlushState*,
+                            int* numRenderTasksExecuted);
+
+    GrSemaphoresSubmitted flush(GrSurfaceProxy* proxies[],
+                                int numProxies,
                                 SkSurface::BackendSurfaceAccess access,
-                                SkSurface::FlushFlags flags,
-                                int numSemaphores,
-                                GrBackendSemaphore backendSemaphores[]);
+                                const GrFlushInfo&,
+                                const GrPrepareForExternalIORequests&);
 
     SkDEBUGCODE(void validate() const);
 
@@ -172,12 +214,12 @@ private:
     
     sk_sp<GrBufferAllocPool::CpuBufferCache> fCpuBufferCache;
 
-    OpListDAG                         fDAG;
-    GrOpList*                         fActiveOpList = nullptr;
+    RenderTaskDAG                     fDAG;
+    GrOpsTask*                        fActiveOpsTask = nullptr;
     
-    SkSTArray<8, uint32_t, true>      fFlushingOpListIDs;
+    SkSTArray<8, uint32_t, true>      fFlushingRenderTaskIDs;
     
-    SkSTArray<8, sk_sp<GrOpList>>     fOnFlushCBOpLists;
+    SkSTArray<4, sk_sp<GrRenderTask>> fOnFlushRenderTasks;
 
     std::unique_ptr<GrTextContext>    fTextContext;
 
@@ -186,9 +228,19 @@ private:
 
     GrTokenTracker                    fTokenTracker;
     bool                              fFlushing;
-    bool                              fReduceOpListSplitting;
+    bool                              fReduceOpsTaskSplitting;
 
     SkTArray<GrOnFlushCallbackObject*> fOnFlushCBObjects;
+
+    void addDDLTarget(GrSurfaceProxy* proxy) { fDDLTargets.insert(proxy); }
+    bool isDDLTarget(GrSurfaceProxy* proxy) { return fDDLTargets.find(proxy) != fDDLTargets.end(); }
+    void clearDDLTargets() { fDDLTargets.clear(); }
+
+    
+    
+    
+    
+    std::set<GrSurfaceProxy*> fDDLTargets;
 };
 
 #endif

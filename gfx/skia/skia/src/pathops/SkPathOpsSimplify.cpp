@@ -4,11 +4,11 @@
 
 
 
-#include "SkAddIntersections.h"
-#include "SkOpCoincidence.h"
-#include "SkOpEdgeBuilder.h"
-#include "SkPathOpsCommon.h"
-#include "SkPathWriter.h"
+#include "src/pathops/SkAddIntersections.h"
+#include "src/pathops/SkOpCoincidence.h"
+#include "src/pathops/SkOpEdgeBuilder.h"
+#include "src/pathops/SkPathOpsCommon.h"
+#include "src/pathops/SkPathWriter.h"
 
 static bool bridgeWinding(SkOpContourHead* contourList, SkPathWriter* writer) {
     bool unsortable = false;

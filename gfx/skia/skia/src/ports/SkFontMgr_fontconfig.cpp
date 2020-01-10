@@ -5,25 +5,25 @@
 
 
 
-#include "SkAdvancedTypefaceMetrics.h"
-#include "SkDataTable.h"
-#include "SkFixed.h"
-#include "SkFontDescriptor.h"
-#include "SkFontHost_FreeType_common.h"
-#include "SkFontMgr.h"
-#include "SkFontStyle.h"
-#include "SkMakeUnique.h"
-#include "SkMath.h"
-#include "SkMutex.h"
-#include "SkOSFile.h"
-#include "SkRefCnt.h"
-#include "SkStream.h"
-#include "SkString.h"
-#include "SkTDArray.h"
-#include "SkTemplates.h"
-#include "SkTypeface.h"
-#include "SkTypefaceCache.h"
-#include "SkTypes.h"
+#include "include/core/SkDataTable.h"
+#include "include/core/SkFontMgr.h"
+#include "include/core/SkFontStyle.h"
+#include "include/core/SkMath.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkStream.h"
+#include "include/core/SkString.h"
+#include "include/core/SkTypeface.h"
+#include "include/core/SkTypes.h"
+#include "include/private/SkFixed.h"
+#include "include/private/SkMutex.h"
+#include "include/private/SkTDArray.h"
+#include "include/private/SkTemplates.h"
+#include "src/core/SkAdvancedTypefaceMetrics.h"
+#include "src/core/SkFontDescriptor.h"
+#include "src/core/SkMakeUnique.h"
+#include "src/core/SkOSFile.h"
+#include "src/core/SkTypefaceCache.h"
+#include "src/ports/SkFontHost_FreeType_common.h"
 
 #include <fontconfig/fontconfig.h>
 #include <string.h>
@@ -40,7 +40,7 @@ class SkData;
 #endif
 
 #ifdef SK_DEBUG
-#    include "SkTLS.h"
+#    include "src/core/SkTLS.h"
 #endif
 
 
@@ -64,7 +64,10 @@ namespace {
 
 
 
-SK_DECLARE_STATIC_MUTEX(gFCMutex);
+static SkMutex& f_c_mutex() {
+    static SkMutex& mutex = *(new SkMutex);
+    return mutex;
+}
 
 #ifdef SK_DEBUG
 void* CreateThreadFcLocked() { return new bool(false); }
@@ -75,19 +78,19 @@ void DeleteThreadFcLocked(void* v) { delete static_cast<bool*>(v); }
 
 class FCLocker {
     
-    static void lock() {
+    static void lock() SK_NO_THREAD_SAFETY_ANALYSIS {
         if (FcGetVersion() < 21091) {
-            gFCMutex.acquire();
+            f_c_mutex().acquire();
         } else {
             SkDEBUGCODE(bool* threadLocked = THREAD_FC_LOCKED);
             SkASSERT(false == *threadLocked);
             SkDEBUGCODE(*threadLocked = true);
         }
     }
-    static void unlock() {
+    static void unlock() SK_NO_THREAD_SAFETY_ANALYSIS {
         AssertHeld();
         if (FcGetVersion() < 21091) {
-            gFCMutex.release();
+            f_c_mutex().release();
         } else {
             SkDEBUGCODE(*THREAD_FC_LOCKED = false);
         }
@@ -109,7 +112,7 @@ public:
 
     static void AssertHeld() { SkDEBUGCODE(
         if (FcGetVersion() < 21091) {
-            gFCMutex.assertHeld();
+            f_c_mutex().assertHeld();
         } else {
             SkASSERT(true == *THREAD_FC_LOCKED);
         }
@@ -463,10 +466,12 @@ private:
 
 class SkTypeface_fontconfig : public SkTypeface_FreeType {
 public:
-    static sk_sp<SkTypeface_fontconfig> Make(SkAutoFcPattern pattern) {
-        return sk_sp<SkTypeface_fontconfig>(new SkTypeface_fontconfig(std::move(pattern)));
+    static sk_sp<SkTypeface_fontconfig> Make(SkAutoFcPattern pattern, SkString sysroot) {
+        return sk_sp<SkTypeface_fontconfig>(new SkTypeface_fontconfig(std::move(pattern),
+                                                                      std::move(sysroot)));
     }
-    mutable SkAutoFcPattern fPattern;
+    mutable SkAutoFcPattern fPattern;  
+    const SkString fSysroot;
 
     void onGetFamilyName(SkString* familyName) const override {
         *familyName = get_string(fPattern, FC_FAMILY);
@@ -484,7 +489,17 @@ public:
     std::unique_ptr<SkStreamAsset> onOpenStream(int* ttcIndex) const override {
         FCLocker lock;
         *ttcIndex = get_int(fPattern, FC_INDEX, 0);
-        return SkStream::MakeFromFile(get_string(fPattern, FC_FILE));
+        const char* filename = get_string(fPattern, FC_FILE);
+        
+        SkString resolvedFilename;
+        if (!fSysroot.isEmpty()) {
+            resolvedFilename = fSysroot;
+            resolvedFilename += filename;
+            if (sk_exists(resolvedFilename.c_str(), kRead_SkFILE_Flag)) {
+                filename = resolvedFilename.c_str();
+            }
+        }
+        return SkStream::MakeFromFile(filename);
     }
 
     void onFilterRec(SkScalerContextRec* rec) const override {
@@ -550,19 +565,21 @@ public:
     }
 
 private:
-    SkTypeface_fontconfig(SkAutoFcPattern pattern)
+    SkTypeface_fontconfig(SkAutoFcPattern pattern, SkString sysroot)
         : INHERITED(skfontstyle_from_fcpattern(pattern),
                     FC_PROPORTIONAL != get_int(pattern, FC_SPACING, FC_PROPORTIONAL))
         , fPattern(std::move(pattern))
+        , fSysroot(std::move(sysroot))
     { }
 
     typedef SkTypeface_FreeType INHERITED;
 };
 
 class SkFontMgr_fontconfig : public SkFontMgr {
-    mutable SkAutoFcConfig fFC;
-    sk_sp<SkDataTable> fFamilyNames;
-    SkTypeface_FreeType::Scanner fScanner;
+    mutable SkAutoFcConfig fFC;  
+    const SkString fSysroot;
+    const sk_sp<SkDataTable> fFamilyNames;
+    const SkTypeface_FreeType::Scanner fScanner;
 
     class StyleSet : public SkFontStyleSet {
     public:
@@ -685,11 +702,11 @@ class SkFontMgr_fontconfig : public SkFontMgr {
 
     sk_sp<SkTypeface> createTypefaceFromFcPattern(FcPattern* pattern) const {
         FCLocker::AssertHeld();
-        SkAutoMutexAcquire ama(fTFCacheMutex);
+        SkAutoMutexExclusive ama(fTFCacheMutex);
         sk_sp<SkTypeface> face = fTFCache.findByProcAndRef(FindByFcPattern, pattern);
         if (!face) {
             FcPatternReference(pattern);
-            face = SkTypeface_fontconfig::Make(SkAutoFcPattern(pattern));
+            face = SkTypeface_fontconfig::Make(SkAutoFcPattern(pattern), fSysroot);
             if (face) {
                 
                 FCLocker::Suspend suspend;
@@ -703,6 +720,7 @@ public:
     
     explicit SkFontMgr_fontconfig(FcConfig* config)
         : fFC(config ? config : FcInitLoadConfigAndFonts())
+        , fSysroot(reinterpret_cast<const char*>(FcConfigGetSysRoot(fFC)))
         , fFamilyNames(GetFamilyNames(fFC)) { }
 
     ~SkFontMgr_fontconfig() override {
@@ -758,11 +776,29 @@ protected:
         return false;
     }
 
-    static bool FontAccessible(FcPattern* font) {
+    bool FontAccessible(FcPattern* font) const {
         
         const char* filename = get_string(font, FC_FILE, nullptr);
         if (nullptr == filename) {
             return false;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!fSysroot.isEmpty()) {
+            SkString resolvedFilename;
+            resolvedFilename = fSysroot;
+            resolvedFilename += filename;
+            if (sk_exists(resolvedFilename.c_str(), kRead_SkFILE_Flag)) {
+                return true;
+            }
         }
         return sk_exists(filename, kRead_SkFILE_Flag);
     }

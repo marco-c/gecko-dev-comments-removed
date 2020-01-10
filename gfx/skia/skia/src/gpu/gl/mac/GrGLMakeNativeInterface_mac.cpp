@@ -4,12 +4,12 @@
 
 
 
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
 #if defined(SK_BUILD_FOR_MAC)
 
 
-#include "gl/GrGLInterface.h"
-#include "gl/GrGLAssembleInterface.h"
+#include "include/gpu/gl/GrGLAssembleInterface.h"
+#include "include/gpu/gl/GrGLInterface.h"
 
 #include <dlfcn.h>
 

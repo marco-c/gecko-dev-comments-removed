@@ -4,7 +4,7 @@
 
 
 
-#include "SkPathOpsCubic.h"
+#include "src/pathops/SkPathOpsCubic.h"
 
 static bool rotate(const SkDCubic& cubic, int zero, int index, SkDCubic& rotPath) {
     double dy = cubic[index].fY - cubic[zero].fY;

@@ -8,8 +8,8 @@
 #ifndef SkSFNTHeader_DEFINED
 #define SkSFNTHeader_DEFINED
 
-#include "SkEndian.h"
-#include "SkOTTableTypes.h"
+#include "src/core/SkEndian.h"
+#include "src/sfnt/SkOTTableTypes.h"
 
 
 typedef uint16_t SK_SFNT_USHORT;

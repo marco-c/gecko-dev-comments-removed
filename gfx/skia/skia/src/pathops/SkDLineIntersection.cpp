@@ -4,8 +4,8 @@
 
 
 
-#include "SkIntersections.h"
-#include "SkPathOpsLine.h"
+#include "src/pathops/SkIntersections.h"
+#include "src/pathops/SkPathOpsLine.h"
 
 #include <utility>
 

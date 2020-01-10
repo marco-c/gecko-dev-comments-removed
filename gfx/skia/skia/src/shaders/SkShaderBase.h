@@ -8,27 +8,43 @@
 #ifndef SkShaderBase_DEFINED
 #define SkShaderBase_DEFINED
 
-#include "SkFilterQuality.h"
-#include "SkMask.h"
-#include "SkMatrix.h"
-#include "SkNoncopyable.h"
-#include "SkShader.h"
-#include "SkTLazy.h"
+#include "include/core/SkFilterQuality.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkShader.h"
+#include "include/private/SkNoncopyable.h"
+#include "src/core/SkEffectPriv.h"
+#include "src/core/SkMask.h"
+#include "src/core/SkTLazy.h"
 
 #if SK_SUPPORT_GPU
-#include "GrFPArgs.h"
+#include "src/gpu/GrFPArgs.h"
 #endif
 
 class GrContext;
-class GrColorSpaceInfo;
 class GrFragmentProcessor;
 class SkArenaAlloc;
 class SkColorSpace;
-class SkColorSpaceXformer;
 class SkImage;
 struct SkImageInfo;
 class SkPaint;
 class SkRasterPipeline;
+
+
+
+
+
+
+
+
+
+
+
+class SkStageUpdater {
+public:
+    virtual ~SkStageUpdater() {}
+
+    virtual bool update(const SkMatrix& ctm, const SkMatrix* localM) = 0;
+};
 
 class SkShaderBase : public SkShader {
 public:
@@ -152,24 +168,7 @@ public:
     bool asLuminanceColor(SkColor*) const;
 
     
-
-
-    sk_sp<SkShader> makeColorSpace(SkColorSpaceXformer* xformer) const {
-        return this->onMakeColorSpace(xformer);
-    }
-
-    struct StageRec {
-        SkRasterPipeline*   fPipeline;
-        SkArenaAlloc*       fAlloc;
-        SkColorType         fDstColorType;
-        SkColorSpace*       fDstCS;         
-        const SkPaint&      fPaint;
-        const SkMatrix*     fLocalM;        
-        SkMatrix            fCTM;
-    };
-
-    
-    bool appendStages(const StageRec&) const;
+    bool appendStages(const SkStageRec&) const;
 
     bool SK_WARN_UNUSED_RESULT computeTotalInverse(const SkMatrix& ctm,
                                                    const SkMatrix* outerLocalMatrix,
@@ -182,9 +181,10 @@ public:
     SkTCopyOnFirstWrite<SkMatrix> totalLocalMatrix(const SkMatrix* preLocalMatrix,
                                                    const SkMatrix* postLocalMatrix = nullptr) const;
 
-    virtual SkImage* onIsAImage(SkMatrix*, TileMode[2]) const {
+    virtual SkImage* onIsAImage(SkMatrix*, SkTileMode[2]) const {
         return nullptr;
     }
+    virtual SkPicture* isAPicture(SkMatrix*, SkTileMode[2], SkRect* tile) const { return nullptr; }
 
     static Type GetFlattenableType() { return kSkShaderBase_Type; }
     Type getFlattenableType() const override { return GetFlattenableType(); }
@@ -195,6 +195,16 @@ public:
                 SkFlattenable::Deserialize(GetFlattenableType(), data, size, procs).release()));
     }
     static void RegisterFlattenables();
+
+    
+
+
+
+    virtual sk_sp<SkShader> makeAsALocalMatrixShader(SkMatrix* localMatrix) const;
+
+    SkStageUpdater* appendUpdatableStages(const SkStageRec& rec) const {
+        return this->onAppendUpdatableStages(rec);
+    }
 
 protected:
     SkShaderBase(const SkMatrix* localMatrix = nullptr);
@@ -209,25 +219,16 @@ protected:
     virtual Context* onMakeContext(const ContextRec&, SkArenaAlloc*) const {
         return nullptr;
     }
-
-    
-
-
-    virtual Context* onMakeBurstPipelineContext(const ContextRec&, SkArenaAlloc*) const {
-        return nullptr;
-    }
 #endif
 
     virtual bool onAsLuminanceColor(SkColor*) const {
         return false;
     }
 
-    virtual sk_sp<SkShader> onMakeColorSpace(SkColorSpaceXformer*) const {
-        return sk_ref_sp(const_cast<SkShaderBase*>(this));
-    }
-
     
-    virtual bool onAppendStages(const StageRec&) const;
+    virtual bool onAppendStages(const SkStageRec&) const;
+
+    virtual SkStageUpdater* onAppendUpdatableStages(const SkStageRec&) const { return nullptr; }
 
 private:
     

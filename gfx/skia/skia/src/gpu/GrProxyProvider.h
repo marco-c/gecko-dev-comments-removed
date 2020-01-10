@@ -8,10 +8,10 @@
 #ifndef GrProxyProvider_DEFINED
 #define GrProxyProvider_DEFINED
 
-#include "GrResourceKey.h"
-#include "GrTextureProxy.h"
-#include "GrTypes.h"
-#include "SkTDynamicHash.h"
+#include "include/gpu/GrTypes.h"
+#include "include/private/GrResourceKey.h"
+#include "src/core/SkTDynamicHash.h"
+#include "src/gpu/GrTextureProxy.h"
 
 class GrImageContext;
 class GrBackendRenderTarget;
@@ -23,6 +23,8 @@ class SkImage;
 
 class GrProxyProvider {
 public:
+    using UseAllocator = GrSurfaceProxy::UseAllocator;
+
     GrProxyProvider(GrImageContext*);
 
     ~GrProxyProvider();
@@ -54,7 +56,12 @@ public:
 
 
 
-    sk_sp<GrTextureProxy> findOrCreateProxyByUniqueKey(const GrUniqueKey&, GrSurfaceOrigin);
+
+
+    sk_sp<GrTextureProxy> findOrCreateProxyByUniqueKey(const GrUniqueKey&,
+                                                       GrColorType colorType,
+                                                       GrSurfaceOrigin,
+                                                       UseAllocator = UseAllocator::kYes);
 
     
 
@@ -62,43 +69,35 @@ public:
 
 
     sk_sp<GrTextureProxy> createTextureProxy(
-            sk_sp<SkImage> srcImage, GrSurfaceDescFlags, int sampleCnt, SkBudgeted, SkBackingFit,
+            sk_sp<SkImage> srcImage, int sampleCnt, SkBudgeted, SkBackingFit,
             GrInternalSurfaceFlags = GrInternalSurfaceFlags::kNone);
 
     
 
 
-
-
-
-
-    sk_sp<GrTextureProxy> createMipMapProxy(const GrBackendFormat&, const GrSurfaceDesc&,
-                                            GrSurfaceOrigin, SkBudgeted);
+    sk_sp<GrTextureProxy> createProxyFromBitmap(const SkBitmap& bitmap, GrMipMapped);
 
     
 
 
-    sk_sp<GrTextureProxy> createMipMapProxyFromBitmap(const SkBitmap& bitmap);
+    sk_sp<GrTextureProxy> createProxy(const GrBackendFormat&,
+                                      const GrSurfaceDesc&,
+                                      GrRenderable,
+                                      int renderTargetSampleCnt,
+                                      GrSurfaceOrigin,
+                                      GrMipMapped,
+                                      SkBackingFit,
+                                      SkBudgeted,
+                                      GrProtected,
+                                      GrInternalSurfaceFlags = GrInternalSurfaceFlags::kNone,
+                                      UseAllocator useAllocator = UseAllocator::kYes);
 
     
 
 
-    sk_sp<GrTextureProxy> createProxy(const GrBackendFormat&, const GrSurfaceDesc&, GrSurfaceOrigin,
-                                      GrMipMapped, SkBackingFit, SkBudgeted,
-                                      GrInternalSurfaceFlags);
-
-    sk_sp<GrTextureProxy> createProxy(
-                            const GrBackendFormat& format, const GrSurfaceDesc& desc,
-                            GrSurfaceOrigin origin, SkBackingFit fit, SkBudgeted budgeted,
-                            GrInternalSurfaceFlags surfaceFlags = GrInternalSurfaceFlags::kNone) {
-        return this->createProxy(format, desc, origin, GrMipMapped::kNo, fit, budgeted,
-                                 surfaceFlags);
-    }
-
-    
-
-
-    sk_sp<GrTextureProxy> createProxy(sk_sp<SkData>, const GrSurfaceDesc& desc);
+    sk_sp<GrTextureProxy> createCompressedTextureProxy(int width, int height, SkBudgeted budgeted,
+                                                       SkImage::CompressionType compressionType,
+                                                       sk_sp<SkData> data);
 
     
     typedef void* ReleaseContext;
@@ -108,7 +107,7 @@ public:
 
 
 
-    sk_sp<GrTextureProxy> wrapBackendTexture(const GrBackendTexture&, GrSurfaceOrigin,
+    sk_sp<GrTextureProxy> wrapBackendTexture(const GrBackendTexture&, GrColorType, GrSurfaceOrigin,
                                              GrWrapOwnership, GrWrapCacheable, GrIOType,
                                              ReleaseProc = nullptr, ReleaseContext = nullptr);
 
@@ -116,39 +115,38 @@ public:
 
 
     sk_sp<GrTextureProxy> wrapRenderableBackendTexture(const GrBackendTexture&, GrSurfaceOrigin,
-                                                       int sampleCnt, GrWrapOwnership,
-                                                       GrWrapCacheable, ReleaseProc,
-                                                       ReleaseContext);
+                                                       int sampleCnt, GrColorType,
+                                                       GrWrapOwnership, GrWrapCacheable,
+                                                       ReleaseProc = nullptr,
+                                                       ReleaseContext = nullptr);
 
     
 
 
-    sk_sp<GrSurfaceProxy> wrapBackendRenderTarget(const GrBackendRenderTarget&, GrSurfaceOrigin,
-                                                  ReleaseProc, ReleaseContext);
+    sk_sp<GrSurfaceProxy> wrapBackendRenderTarget(const GrBackendRenderTarget&, GrColorType,
+                                                  GrSurfaceOrigin,
+                                                  ReleaseProc = nullptr, ReleaseContext = nullptr);
 
     
 
 
-    sk_sp<GrSurfaceProxy> wrapBackendTextureAsRenderTarget(const GrBackendTexture& backendTex,
-                                                           GrSurfaceOrigin origin,
+    sk_sp<GrSurfaceProxy> wrapBackendTextureAsRenderTarget(const GrBackendTexture&,
+                                                           GrColorType,
+                                                           GrSurfaceOrigin,
                                                            int sampleCnt);
 
     sk_sp<GrRenderTargetProxy> wrapVulkanSecondaryCBAsRenderTarget(const SkImageInfo&,
                                                                    const GrVkDrawableInfo&);
 
-    using LazyInstantiateCallback = std::function<sk_sp<GrSurface>(GrResourceProvider*)>;
-
-    enum class Renderable : bool {
-        kNo = false,
-        kYes = true
-    };
+    using LazyInstantiationKeyMode = GrSurfaceProxy::LazyInstantiationKeyMode;
+    using LazyCallbackResult = GrSurfaceProxy::LazyCallbackResult;
+    using LazyInstantiateCallback = GrSurfaceProxy::LazyInstantiateCallback;
 
     struct TextureInfo {
         GrMipMapped fMipMapped;
         GrTextureType fTextureType;
     };
 
-    using LazyInstantiationType = GrSurfaceProxy::LazyInstantiationType;
     
 
 
@@ -159,37 +157,48 @@ public:
 
 
 
-    sk_sp<GrTextureProxy> createLazyProxy(LazyInstantiateCallback&&, const GrBackendFormat&,
-                                          const GrSurfaceDesc&, GrSurfaceOrigin, GrMipMapped,
-                                          GrInternalSurfaceFlags, SkBackingFit, SkBudgeted,
-                                          LazyInstantiationType);
-
-    sk_sp<GrTextureProxy> createLazyProxy(LazyInstantiateCallback&&, const GrBackendFormat&,
-                                          const GrSurfaceDesc&, GrSurfaceOrigin, GrMipMapped,
-                                          GrInternalSurfaceFlags, SkBackingFit, SkBudgeted);
-
-    sk_sp<GrTextureProxy> createLazyProxy(LazyInstantiateCallback&&, const GrBackendFormat&,
-                                          const GrSurfaceDesc&, GrSurfaceOrigin, GrMipMapped,
-                                          SkBackingFit, SkBudgeted);
+    sk_sp<GrTextureProxy> createLazyProxy(LazyInstantiateCallback&&,
+                                          const GrBackendFormat&,
+                                          const GrSurfaceDesc&,
+                                          GrRenderable,
+                                          int renderTargetSampleCnt,
+                                          GrSurfaceOrigin,
+                                          GrMipMapped,
+                                          GrMipMapsStatus,
+                                          GrInternalSurfaceFlags,
+                                          SkBackingFit,
+                                          SkBudgeted,
+                                          GrProtected,
+                                          UseAllocator);
 
     
     sk_sp<GrRenderTargetProxy> createLazyRenderTargetProxy(LazyInstantiateCallback&&,
                                                            const GrBackendFormat&,
                                                            const GrSurfaceDesc&,
+                                                           int renderTargetSampleCnt,
                                                            GrSurfaceOrigin origin,
                                                            GrInternalSurfaceFlags,
                                                            const TextureInfo*,
+                                                           GrMipMapsStatus,
                                                            SkBackingFit,
                                                            SkBudgeted,
-                                                           bool wrapsVkSecondaryCB);
+                                                           GrProtected,
+                                                           bool wrapsVkSecondaryCB,
+                                                           UseAllocator useAllocator);
 
     
 
 
 
     static sk_sp<GrTextureProxy> MakeFullyLazyProxy(LazyInstantiateCallback&&,
-                                                    const GrBackendFormat&, Renderable,
-                                                    GrSurfaceOrigin, GrPixelConfig, const GrCaps&);
+                                                    const GrBackendFormat&,
+                                                    GrRenderable,
+                                                    int renderTargetSampleCnt,
+                                                    GrProtected,
+                                                    GrSurfaceOrigin,
+                                                    GrPixelConfig,
+                                                    const GrCaps&,
+                                                    UseAllocator);
 
     
     
@@ -236,9 +245,28 @@ public:
     
 
 
-    sk_sp<GrTextureProxy> testingOnly_createInstantiatedProxy(const GrSurfaceDesc&, GrSurfaceOrigin,
-                                                              SkBackingFit, SkBudgeted);
-    sk_sp<GrTextureProxy> testingOnly_createWrapped(sk_sp<GrTexture>, GrSurfaceOrigin);
+
+    sk_sp<GrTextureProxy> testingOnly_createInstantiatedProxy(const SkISize& size,
+                                                              GrColorType colorType,
+                                                              const GrBackendFormat& format,
+                                                              GrRenderable renderable,
+                                                              int renderTargetSampleCnt,
+                                                              GrSurfaceOrigin origin,
+                                                              SkBackingFit fit,
+                                                              SkBudgeted budgeted,
+                                                              GrProtected isProtected);
+
+    
+    sk_sp<GrTextureProxy> testingOnly_createInstantiatedProxy(const SkISize& size,
+                                                              GrColorType colorType,
+                                                              GrRenderable renderable,
+                                                              int renderTargetSampleCnt,
+                                                              GrSurfaceOrigin origin,
+                                                              SkBackingFit fit,
+                                                              SkBudgeted budgeted,
+                                                              GrProtected isProtected);
+
+    sk_sp<GrTextureProxy> testingOnly_createWrapped(sk_sp<GrTexture>, GrColorType, GrSurfaceOrigin);
 #endif
 
 private:
@@ -247,7 +275,9 @@ private:
 
     bool isAbandoned() const;
 
-    sk_sp<GrTextureProxy> createWrapped(sk_sp<GrTexture> tex, GrSurfaceOrigin origin);
+    
+    sk_sp<GrTextureProxy> createWrapped(sk_sp<GrTexture> tex, GrColorType, GrSurfaceOrigin origin,
+                                        UseAllocator useAllocator);
 
     struct UniquelyKeyedProxyHashTraits {
         static const GrUniqueKey& GetKey(const GrTextureProxy& p) { return p.getUniqueKey(); }

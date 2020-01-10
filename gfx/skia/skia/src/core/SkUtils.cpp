@@ -5,7 +5,7 @@
 
 
 
-#include "SkUtils.h"
+#include "src/core/SkUtils.h"
 
 template <typename T>
 static SkUnichar next(const T** srcPtr, unsigned N, SkUnichar (*fn)(const T**, const T*)) {

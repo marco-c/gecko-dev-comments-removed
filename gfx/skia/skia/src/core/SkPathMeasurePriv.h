@@ -8,9 +8,9 @@
 #ifndef SkPathMeasurePriv_DEFINED
 #define SkPathMeasurePriv_DEFINED
 
-#include "SkPath.h"
-#include "SkPoint.h"
-#include "SkGeometry.h"
+#include "include/core/SkPath.h"
+#include "include/core/SkPoint.h"
+#include "src/core/SkGeometry.h"
 
 
 

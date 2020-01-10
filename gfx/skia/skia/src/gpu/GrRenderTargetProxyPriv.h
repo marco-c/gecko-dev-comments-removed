@@ -8,7 +8,7 @@
 #ifndef GrRenderTargetProxyPriv_DEFINED
 #define GrRenderTargetProxyPriv_DEFINED
 
-#include "GrRenderTargetProxy.h"
+#include "src/gpu/GrRenderTargetProxy.h"
 
 
 
@@ -16,6 +16,9 @@
 class GrRenderTargetProxyPriv {
 public:
     void setGLRTFBOIDIs0() {
+        
+        SkASSERT(!fRenderTargetProxy->requiresManualMSAAResolve());
+        SkASSERT(!fRenderTargetProxy->asTextureProxy());
         fRenderTargetProxy->setGLRTFBOIDIs0();
     }
 

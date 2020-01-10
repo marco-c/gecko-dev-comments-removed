@@ -4,15 +4,15 @@
 
 
 
-#include "SkGeometry.h"
-#include "SkLineParameters.h"
-#include "SkPathOpsConic.h"
-#include "SkPathOpsCubic.h"
-#include "SkPathOpsCurve.h"
-#include "SkPathOpsLine.h"
-#include "SkPathOpsQuad.h"
-#include "SkPathOpsRect.h"
-#include "SkTSort.h"
+#include "src/core/SkGeometry.h"
+#include "src/core/SkTSort.h"
+#include "src/pathops/SkLineParameters.h"
+#include "src/pathops/SkPathOpsConic.h"
+#include "src/pathops/SkPathOpsCubic.h"
+#include "src/pathops/SkPathOpsCurve.h"
+#include "src/pathops/SkPathOpsLine.h"
+#include "src/pathops/SkPathOpsQuad.h"
+#include "src/pathops/SkPathOpsRect.h"
 
 const int SkDCubic::gPrecisionUnit = 256;  
 

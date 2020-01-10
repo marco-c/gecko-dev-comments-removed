@@ -7,10 +7,10 @@
 #ifndef GrBackendTextureImageGenerator_DEFINED
 #define GrBackendTextureImageGenerator_DEFINED
 
-#include "SkImageGenerator.h"
-
-#include "GrBackendSurface.h"
-#include "SkMutex.h"
+#include "include/core/SkImageGenerator.h"
+#include "include/gpu/GrBackendSurface.h"
+#include "include/private/GrResourceKey.h"
+#include "include/private/SkMutex.h"
 
 class GrSemaphore;
 
@@ -52,12 +52,7 @@ private:
 
     class RefHelper : public SkNVRefCnt<RefHelper> {
     public:
-        RefHelper(GrTexture* texture, uint32_t owningContextID)
-            : fOriginalTexture(texture)
-            , fOwningContextID(owningContextID)
-            , fBorrowedTexture(nullptr)
-            , fBorrowingContextReleaseProc(nullptr)
-            , fBorrowingContextID(SK_InvalidGenID) {}
+        RefHelper(GrTexture*, uint32_t owningContextID);
 
         ~RefHelper();
 
@@ -66,8 +61,7 @@ private:
 
         
         
-        
-        GrTexture*           fBorrowedTexture;
+        GrUniqueKey         fBorrowedTextureKey;
         
         
         
@@ -86,7 +80,6 @@ private:
     sk_sp<GrSemaphore>   fSemaphore;
 
     GrBackendTexture     fBackendTexture;
-    GrPixelConfig        fConfig;
     GrSurfaceOrigin      fSurfaceOrigin;
 
     typedef SkImageGenerator INHERITED;

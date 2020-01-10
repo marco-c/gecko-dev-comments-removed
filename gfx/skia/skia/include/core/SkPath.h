@@ -5,22 +5,13 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 #ifndef SkPath_DEFINED
 #define SkPath_DEFINED
 
-#include "SkMatrix.h"
-#include "../private/SkPathRef.h"
-#include "../private/SkTo.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkPathTypes.h"
+#include "include/private/SkPathRef.h"
+#include "include/private/SkTo.h"
 
 #include <initializer_list>
 
@@ -64,8 +55,8 @@ public:
 
 
     enum Direction : int {
-        kCW_Direction,  
-        kCCW_Direction, 
+        kCW_Direction  = static_cast<int>(SkPathDirection::kCW),
+        kCCW_Direction = static_cast<int>(SkPathDirection::kCCW)
     };
 
     
@@ -170,10 +161,10 @@ public:
 
 
     enum FillType {
-        kWinding_FillType,        
-        kEvenOdd_FillType,        
-        kInverseWinding_FillType, 
-        kInverseEvenOdd_FillType, 
+        kWinding_FillType        = static_cast<int>(SkPathFillType::kWinding),
+        kEvenOdd_FillType        = static_cast<int>(SkPathFillType::kEvenOdd),
+        kInverseWinding_FillType = static_cast<int>(SkPathFillType::kInverseWinding),
+        kInverseEvenOdd_FillType = static_cast<int>(SkPathFillType::kInverseEvenOdd)
     };
 
     
@@ -221,9 +212,9 @@ public:
 
 
     enum Convexity : uint8_t {
-        kUnknown_Convexity, 
-        kConvex_Convexity,  
-        kConcave_Convexity, 
+        kUnknown_Convexity = static_cast<int>(SkPathConvexityType::kUnknown),
+        kConvex_Convexity  = static_cast<int>(SkPathConvexityType::kConvex),
+        kConcave_Convexity = static_cast<int>(SkPathConvexityType::kConcave),
     };
 
     
@@ -469,6 +460,12 @@ public:
 
 
     int getVerbs(uint8_t verbs[], int max) const;
+
+    
+
+
+
+    size_t approximateBytesUsed() const;
 
     
 
@@ -1055,19 +1052,6 @@ public:
 
 
 
-
-
-    bool isNestedFillRects(SkRect rect[2], Direction dirs[2] = nullptr) const;
-
-    
-
-
-
-
-
-
-
-
     SkPath& addRect(const SkRect& rect, Direction dir = kCW_Direction);
 
     
@@ -1369,10 +1353,10 @@ public:
 
 
     enum SegmentMask {
-        kLine_SegmentMask  = 1 << 0, 
-        kQuad_SegmentMask  = 1 << 1, 
-        kConic_SegmentMask = 1 << 2, 
-        kCubic_SegmentMask = 1 << 3, 
+        kLine_SegmentMask  = kLine_SkPathSegmentMask,
+        kQuad_SegmentMask  = kQuad_SkPathSegmentMask,
+        kConic_SegmentMask = kConic_SkPathSegmentMask,
+        kCubic_SegmentMask = kCubic_SkPathSegmentMask,
     };
 
     
@@ -1390,13 +1374,13 @@ public:
 
 
     enum Verb {
-        kMove_Verb,  
-        kLine_Verb,  
-        kQuad_Verb,  
-        kConic_Verb, 
-        kCubic_Verb, 
-        kClose_Verb, 
-        kDone_Verb,  
+        kMove_Verb  = static_cast<int>(SkPathVerb::kMove),
+        kLine_Verb  = static_cast<int>(SkPathVerb::kLine),
+        kQuad_Verb  = static_cast<int>(SkPathVerb::kQuad),
+        kConic_Verb = static_cast<int>(SkPathVerb::kConic),
+        kCubic_Verb = static_cast<int>(SkPathVerb::kCubic),
+        kClose_Verb = static_cast<int>(SkPathVerb::kClose),
+        kDone_Verb  = static_cast<int>(SkPathVerb::kDone),
     };
 
     
@@ -1442,19 +1426,11 @@ public:
 
 
 
+        Verb next(SkPoint pts[4]);
 
-
-
-
-
-
-
-
-        Verb next(SkPoint pts[4], bool doConsumeDegenerates = true, bool exact = false) {
-            if (doConsumeDegenerates) {
-                this->consumeDegenerateSegments(exact);
-            }
-            return this->doNext(pts);
+        
+        Verb next(SkPoint pts[4], bool , bool  = false) {
+            return this->next(pts);
         }
 
         
@@ -1507,9 +1483,6 @@ public:
 
         inline const SkPoint& cons_moveTo();
         Verb autoClose(SkPoint pts[2]);
-        void consumeDegenerateSegments(bool exact);
-        Verb doNext(SkPoint pts[4]);
-
     };
 
     
@@ -1685,7 +1658,6 @@ private:
     mutable std::atomic<uint8_t>   fFirstDirection; 
     uint8_t                        fFillType    : 2;
     uint8_t                        fIsVolatile  : 1;
-    uint8_t                        fIsBadForDAA : 1;
 
     
 
@@ -1701,8 +1673,7 @@ private:
 
     size_t writeToMemoryAsRRect(void* buffer) const;
     size_t readAsRRect(const void*, size_t);
-    size_t readFromMemory_LE3(const void*, size_t);
-    size_t readFromMemory_EQ4(const void*, size_t);
+    size_t readFromMemory_EQ4Or5(const void*, size_t);
 
     friend class Iter;
     friend class SkPathPriv;
@@ -1732,9 +1703,6 @@ private:
     SkDEBUGCODE(void validate() const { SkASSERT(this->isValidImpl()); } )
     bool isValidImpl() const;
     SkDEBUGCODE(void validateRef() const { fPathRef->validate(); } )
-
-    bool isRectContour(bool allowPartial, int* currVerb, const SkPoint** pts,
-                       bool* isClosed, Direction* direction, SkRect* rect) const;
 
     
     bool isZeroLengthSincePoint(int startPtIndex) const;
@@ -1766,6 +1734,7 @@ private:
     friend class SkAutoPathBoundsUpdate;
     friend class SkAutoDisableOvalCheck;
     friend class SkAutoDisableDirectionCheck;
+    friend class SkPathEdgeIter;
     friend class SkPathWriter;
     friend class SkOpBuilder;
     friend class SkBench_AddPathTest; 

@@ -8,12 +8,17 @@
 #ifndef SkSVGCanvas_DEFINED
 #define SkSVGCanvas_DEFINED
 
-#include "SkCanvas.h"
+#include "include/core/SkCanvas.h"
 
 class SkWStream;
 
 class SK_API SkSVGCanvas {
 public:
+    enum {
+        kConvertTextToPaths_Flag = 0x01, 
+        kNoPrettyXML_Flag        = 0x02, 
+    };
+
     
 
 
@@ -25,7 +30,7 @@ public:
 
 
 
-    static std::unique_ptr<SkCanvas> Make(const SkRect& bounds, SkWStream*);
+    static std::unique_ptr<SkCanvas> Make(const SkRect& bounds, SkWStream*, uint32_t flags = 0);
 };
 
 #endif

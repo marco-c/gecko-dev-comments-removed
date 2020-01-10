@@ -5,24 +5,14 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 #ifndef SkTextBlob_DEFINED
 #define SkTextBlob_DEFINED
 
-#include "../private/SkTemplates.h"
-#include "SkFont.h"
-#include "SkPaint.h"
-#include "SkString.h"
-#include "SkRefCnt.h"
+#include "include/core/SkFont.h"
+#include "include/core/SkPaint.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkString.h"
+#include "include/private/SkTemplates.h"
 
 #include <atomic>
 
@@ -36,6 +26,9 @@ struct SkDeserialProcs;
 
 
 class SK_API SkTextBlob final : public SkNVRefCnt<SkTextBlob> {
+private:
+    class RunRecord;
+
 public:
 
     
@@ -87,7 +80,7 @@ public:
 
 
     static sk_sp<SkTextBlob> MakeFromText(const void* text, size_t byteLength, const SkFont& font,
-                                          SkTextEncoding encoding = kUTF8_SkTextEncoding);
+                                          SkTextEncoding encoding = SkTextEncoding::kUTF8);
 
     
 
@@ -107,7 +100,7 @@ public:
 
 
     static sk_sp<SkTextBlob> MakeFromString(const char* string, const SkFont& font,
-                                            SkTextEncoding encoding = kUTF8_SkTextEncoding) {
+                                            SkTextEncoding encoding = SkTextEncoding::kUTF8) {
         if (!string) {
             return nullptr;
         }
@@ -126,13 +119,11 @@ public:
 
 
 
-
     static sk_sp<SkTextBlob> MakeFromPosTextH(const void* text, size_t byteLength,
                                       const SkScalar xpos[], SkScalar constY, const SkFont& font,
-                                      SkTextEncoding encoding = kUTF8_SkTextEncoding);
+                                      SkTextEncoding encoding = SkTextEncoding::kUTF8);
 
     
-
 
 
 
@@ -145,12 +136,11 @@ public:
 
     static sk_sp<SkTextBlob> MakeFromPosText(const void* text, size_t byteLength,
                                              const SkPoint pos[], const SkFont& font,
-                                             SkTextEncoding encoding = kUTF8_SkTextEncoding);
+                                             SkTextEncoding encoding = SkTextEncoding::kUTF8);
 
-    
     static sk_sp<SkTextBlob> MakeFromRSXform(const void* text, size_t byteLength,
                                              const SkRSXform xform[], const SkFont& font,
-                                             SkTextEncoding encoding = kUTF8_SkTextEncoding);
+                                             SkTextEncoding encoding = SkTextEncoding::kUTF8);
 
     
 
@@ -199,9 +189,28 @@ public:
     static sk_sp<SkTextBlob> Deserialize(const void* data, size_t size,
                                          const SkDeserialProcs& procs);
 
+    class SK_API Iter {
+    public:
+        struct Run {
+            SkTypeface*     fTypeface;
+            int             fGlyphCount;
+            const uint16_t* fGlyphIndices;
+        };
+
+        Iter(const SkTextBlob&);
+
+        
+
+
+
+        bool next(Run*);
+
+    private:
+        const RunRecord* fRunRecord;
+    };
+
 private:
     friend class SkNVRefCnt<SkTextBlob>;
-    class RunRecord;
 
     enum GlyphPositioning : uint8_t;
 
@@ -286,7 +295,6 @@ public:
 
         
         SkPoint*    points() const { return reinterpret_cast<SkPoint*>(pos); }
-        
         SkRSXform*  xforms() const { return reinterpret_cast<SkRSXform*>(pos); }
     };
 

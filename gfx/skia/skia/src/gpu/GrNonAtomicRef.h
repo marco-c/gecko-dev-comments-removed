@@ -8,9 +8,9 @@
 #ifndef GrNonAtomicRef_DEFINED
 #define GrNonAtomicRef_DEFINED
 
-#include "SkNoncopyable.h"
-#include "SkRefCnt.h"
-#include "SkTArray.h"
+#include "include/core/SkRefCnt.h"
+#include "include/private/SkNoncopyable.h"
+#include "include/private/SkTArray.h"
 
 
 
@@ -30,6 +30,10 @@ public:
 #endif
 
     bool unique() const { return 1 == fRefCnt; }
+
+    
+    
+    int refCnt() const { return fRefCnt; }
 
     void ref() const {
         

@@ -8,20 +8,19 @@
 #ifndef GrOp_DEFINED
 #define GrOp_DEFINED
 
-#include "GrGpuResource.h"
-#include "GrNonAtomicRef.h"
-#include "GrTracing.h"
-#include "GrXferProcessor.h"
-#include "SkMatrix.h"
-#include "SkRect.h"
-#include "SkString.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkString.h"
+#include "include/gpu/GrGpuResource.h"
+#include "src/gpu/GrNonAtomicRef.h"
+#include "src/gpu/GrTracing.h"
+#include "src/gpu/GrXferProcessor.h"
 #include <atomic>
 #include <new>
 
 class GrCaps;
-class GrGpuCommandBuffer;
 class GrOpFlushState;
-class GrRenderTargetOpList;
+class GrOpsRenderPass;
 
 
 
@@ -69,24 +68,9 @@ public:
 
     virtual const char* name() const = 0;
 
-    typedef std::function<void(GrSurfaceProxy*)> VisitProxyFunc;
+    using VisitProxyFunc = std::function<void(GrTextureProxy*, GrMipMapped)>;
 
-    
-
-
-
-    enum class VisitorType : unsigned {
-        
-
-
-
-        kAllocatorGather,
-        
-
-
-        kOther,
-    };
-    virtual void visitProxies(const VisitProxyFunc&, VisitorType = VisitorType::kOther) const {
+    virtual void visitProxies(const VisitProxyFunc&) const {
         
     }
 
@@ -173,11 +157,18 @@ public:
 
 
 
+
+    void prePrepare(GrRecordingContext* context) { this->onPrePrepare(context); }
+
+    
+
+
+
     void prepare(GrOpFlushState* state) { this->onPrepare(state); }
 
     
     void execute(GrOpFlushState* state, const SkRect& chainBounds) {
-        TRACE_EVENT0("skia", name());
+        TRACE_EVENT0("skia.gpu", name());
         this->onExecute(state, chainBounds);
     }
 
@@ -262,23 +253,23 @@ protected:
 
 
 
-    enum class IsZeroArea : bool {
+    enum class IsHairline : bool {
         kNo = false,
         kYes = true
     };
 
-    void setBounds(const SkRect& newBounds, HasAABloat aabloat, IsZeroArea zeroArea) {
+    void setBounds(const SkRect& newBounds, HasAABloat aabloat, IsHairline zeroArea) {
         fBounds = newBounds;
         this->setBoundsFlags(aabloat, zeroArea);
     }
     void setTransformedBounds(const SkRect& srcBounds, const SkMatrix& m,
-                              HasAABloat aabloat, IsZeroArea zeroArea) {
+                              HasAABloat aabloat, IsHairline zeroArea) {
         m.mapRect(&fBounds, srcBounds);
         this->setBoundsFlags(aabloat, zeroArea);
     }
     void makeFullScreen(GrSurfaceProxy* proxy) {
         this->setBounds(SkRect::MakeIWH(proxy->width(), proxy->height()),
-                        HasAABloat::kNo, IsZeroArea::kNo);
+                        HasAABloat::kNo, IsHairline::kNo);
     }
 
     static uint32_t GenOpClassID() { return GenID(&gCurrOpClassID); }
@@ -298,6 +289,8 @@ private:
         return CombineResult::kCannotCombine;
     }
 
+    
+    virtual void onPrePrepare(GrRecordingContext*) {}
     virtual void onPrepare(GrOpFlushState*) = 0;
     
     
@@ -312,10 +305,10 @@ private:
         return id;
     }
 
-    void setBoundsFlags(HasAABloat aabloat, IsZeroArea zeroArea) {
+    void setBoundsFlags(HasAABloat aabloat, IsHairline zeroArea) {
         fBoundsFlags = 0;
         fBoundsFlags |= (HasAABloat::kYes == aabloat) ? kAABloat_BoundsFlag : 0;
-        fBoundsFlags |= (IsZeroArea ::kYes == zeroArea) ? kZeroArea_BoundsFlag : 0;
+        fBoundsFlags |= (IsHairline ::kYes == zeroArea) ? kZeroArea_BoundsFlag : 0;
     }
 
     enum {

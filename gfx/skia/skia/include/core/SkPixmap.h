@@ -5,22 +5,12 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 #ifndef SkPixmap_DEFINED
 #define SkPixmap_DEFINED
 
-#include "SkColor.h"
-#include "SkFilterQuality.h"
-#include "SkImageInfo.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkFilterQuality.h"
+#include "include/core/SkImageInfo.h"
 
 class SkData;
 struct SkMask;
@@ -158,6 +148,11 @@ public:
 
 
     int height() const { return fInfo.height(); }
+
+    
+
+
+    SkISize dimensions() const { return fInfo.dimensions(); }
 
     
 
@@ -358,7 +353,8 @@ public:
 
     const uint16_t* addrF16() const {
         SkASSERT(8 == fInfo.bytesPerPixel());
-        SkASSERT(kRGBA_F16_SkColorType == fInfo.colorType());
+        SkASSERT(kRGBA_F16_SkColorType     == fInfo.colorType() ||
+                 kRGBA_F16Norm_SkColorType == fInfo.colorType());
         return reinterpret_cast<const uint16_t*>(fPixels);
     }
 
@@ -450,7 +446,8 @@ public:
 
 
     const uint16_t* addrF16(int x, int y) const {
-        SkASSERT(kRGBA_F16_SkColorType == fInfo.colorType());
+        SkASSERT(kRGBA_F16_SkColorType     == fInfo.colorType() ||
+                 kRGBA_F16Norm_SkColorType == fInfo.colorType());
         return reinterpret_cast<const uint16_t*>(this->addr64(x, y));
     }
 

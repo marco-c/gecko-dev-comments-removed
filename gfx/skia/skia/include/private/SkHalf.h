@@ -8,8 +8,8 @@
 #ifndef SkHalf_DEFINED
 #define SkHalf_DEFINED
 
-#include "SkNx.h"
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
+#include "include/private/SkNx.h"
 
 
 

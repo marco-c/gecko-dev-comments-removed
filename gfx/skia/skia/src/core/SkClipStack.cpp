@@ -5,16 +5,16 @@
 
 
 
-#include "SkCanvas.h"
-#include "SkClipStack.h"
-#include "SkPath.h"
-#include "SkPathOps.h"
-#include "SkClipOpPriv.h"
+#include "include/core/SkCanvas.h"
+#include "include/core/SkPath.h"
+#include "include/pathops/SkPathOps.h"
+#include "src/core/SkClipOpPriv.h"
+#include "src/core/SkClipStack.h"
 #include <atomic>
 #include <new>
 
 #if SK_SUPPORT_GPU
-#include "GrProxyProvider.h"
+#include "src/gpu/GrProxyProvider.h"
 #endif
 
 SkClipStack::Element::Element(const Element& that) {
@@ -960,13 +960,18 @@ void SkClipStack::getConservativeBounds(int offsetX,
 }
 
 bool SkClipStack::isRRect(const SkRect& bounds, SkRRect* rrect, bool* aa) const {
-    
-    
-    int cnt = fDeque.count();
-    if (!cnt || cnt > 5) {
+    const Element* back = static_cast<const Element*>(fDeque.back());
+    if (!back) {
+        
         return false;
     }
-    const Element* back = static_cast<const Element*>(fDeque.back());
+    
+    if (back->fIsIntersectionOfRects && back->fFiniteBoundType == BoundsType::kNormal_BoundsType) {
+        rrect->setRect(back->fFiniteBound);
+        *aa = back->isAA();
+        return true;
+    }
+
     if (back->getDeviceSpaceType() != SkClipStack::Element::DeviceSpaceType::kRect &&
         back->getDeviceSpaceType() != SkClipStack::Element::DeviceSpaceType::kRRect) {
         return false;
@@ -980,6 +985,12 @@ bool SkClipStack::isRRect(const SkRect& bounds, SkRRect* rrect, bool* aa) const 
     if (back->getOp() == kIntersect_SkClipOp) {
         SkRect backBounds;
         if (!backBounds.intersect(bounds, back->asDeviceSpaceRRect().rect())) {
+            return false;
+        }
+        
+        
+        int cnt = fDeque.count();
+        if (cnt > 17) {
             return false;
         }
         if (cnt > 1) {

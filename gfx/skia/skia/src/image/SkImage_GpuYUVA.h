@@ -8,10 +8,10 @@
 #ifndef SkImage_GpuYUVA_DEFINED
 #define SkImage_GpuYUVA_DEFINED
 
-#include "GrBackendSurface.h"
-#include "GrContext.h"
-#include "SkCachedData.h"
-#include "SkImage_GpuBase.h"
+#include "include/gpu/GrBackendSurface.h"
+#include "include/gpu/GrContext.h"
+#include "src/core/SkCachedData.h"
+#include "src/image/SkImage_GpuBase.h"
 
 class GrTexture;
 struct SkYUVASizeInfo;
@@ -25,38 +25,38 @@ public:
     friend class GrYUVAImageTextureMaker;
 
     SkImage_GpuYUVA(sk_sp<GrContext>, int width, int height, uint32_t uniqueID, SkYUVColorSpace,
-                    sk_sp<GrTextureProxy> proxies[], int numProxies, const SkYUVAIndex[4],
-                    GrSurfaceOrigin, sk_sp<SkColorSpace>);
+                    sk_sp<GrTextureProxy> proxies[], GrColorType proxyColorTypes[], int numProxies,
+                    const SkYUVAIndex[4], GrSurfaceOrigin, sk_sp<SkColorSpace>);
     ~SkImage_GpuYUVA() override;
 
-    SkImageInfo onImageInfo() const override;
+    GrSemaphoresSubmitted onFlush(GrContext*, const GrFlushInfo&) override;
 
     
     
     GrTextureProxy* peekProxy() const override;
     sk_sp<GrTextureProxy> asTextureProxyRef(GrRecordingContext*) const override;
 
-    virtual bool onIsTextureBacked() const override { return SkToBool(fProxies[0].get()); }
+    virtual bool onIsTextureBacked() const override { return fProxies[0] || fRGBProxy; }
 
     sk_sp<SkImage> onMakeColorTypeAndColorSpace(GrRecordingContext*,
                                                 SkColorType, sk_sp<SkColorSpace>) const final;
 
+    sk_sp<SkImage> onReinterpretColorSpace(sk_sp<SkColorSpace>) const final;
+
     virtual bool isYUVA() const override { return true; }
-    virtual bool asYUVATextureProxiesRef(sk_sp<GrTextureProxy> proxies[4],
-                                         SkYUVAIndex yuvaIndices[4],
-                                         SkYUVColorSpace* yuvColorSpace) const override {
-        for (int i = 0; i < 4; ++i) {
-            proxies[i] = fProxies[i];
-            yuvaIndices[i] = fYUVAIndices[i];
-        }
-        *yuvColorSpace = fYUVColorSpace;
-        return true;
-    }
 
     bool setupMipmapsForPlanes(GrRecordingContext*) const;
 
     
     sk_sp<GrTextureProxy> asMippedTextureProxyRef(GrRecordingContext*) const;
+
+#if GR_TEST_UTILS
+    bool testingOnly_IsFlattened() const {
+        
+        SkASSERT(SkToBool(fRGBProxy) != SkToBool(fProxies[0]));
+        return SkToBool(fRGBProxy);
+    }
+#endif
 
     
 
@@ -73,7 +73,8 @@ public:
                                                  PromiseImageTextureFulfillProc textureFulfillProc,
                                                  PromiseImageTextureReleaseProc textureReleaseProc,
                                                  PromiseImageTextureDoneProc textureDoneProc,
-                                                 PromiseImageTextureContext textureContexts[]);
+                                                 PromiseImageTextureContext textureContexts[],
+                                                 PromiseImageApiVersion);
 
 private:
     SkImage_GpuYUVA(const SkImage_GpuYUVA* image, sk_sp<SkColorSpace>);
@@ -81,11 +82,15 @@ private:
     
     
     mutable sk_sp<GrTextureProxy>    fProxies[4];
+    mutable GrColorType              fProxyColorTypes[4];
     int                              fNumProxies;
     SkYUVAIndex                      fYUVAIndices[4];
     const SkYUVColorSpace            fYUVColorSpace;
     GrSurfaceOrigin                  fOrigin;
-    const sk_sp<SkColorSpace>        fTargetColorSpace;
+    
+    
+    
+    const sk_sp<SkColorSpace> fFromColorSpace;
 
     
     

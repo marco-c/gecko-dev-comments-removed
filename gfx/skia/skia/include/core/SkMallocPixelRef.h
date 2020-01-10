@@ -8,27 +8,16 @@
 #ifndef SkMallocPixelRef_DEFINED
 #define SkMallocPixelRef_DEFINED
 
-#include "SkPixelRef.h"
-#include "SkRefCnt.h"
-#include "SkTypes.h"
+#include "include/core/SkPixelRef.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkTypes.h"
 class SkData;
 struct SkImageInfo;
 
 
 
 
-class SK_API SkMallocPixelRef : public SkPixelRef {
-public:
-    
-
-
-
-
-
-
-
-    static sk_sp<SkPixelRef> MakeDirect(const SkImageInfo&, void* addr, size_t rowBytes);
-
+namespace SkMallocPixelRef {
     
 
 
@@ -39,12 +28,7 @@ public:
 
 
 
-    static sk_sp<SkPixelRef> MakeAllocate(const SkImageInfo&, size_t rowBytes);
-
-    
-
-
-    static sk_sp<SkPixelRef> MakeZeroed(const SkImageInfo&, size_t rowBytes);
+    SK_API sk_sp<SkPixelRef> MakeAllocate(const SkImageInfo&, size_t rowBytes);
 
     
 
@@ -53,41 +37,6 @@ public:
 
 
 
-
-
-
-
-
-    typedef void (*ReleaseProc)(void* addr, void* context);
-    static sk_sp<SkPixelRef> MakeWithProc(const SkImageInfo& info, size_t rowBytes, void* addr,
-                                          ReleaseProc proc, void* context);
-
-    
-
-
-
-
-
-
-
-    static sk_sp<SkPixelRef> MakeWithData(const SkImageInfo&, size_t rowBytes, sk_sp<SkData> data);
-
-protected:
-    ~SkMallocPixelRef() override;
-
-private:
-    
-    static sk_sp<SkPixelRef> MakeUsing(void*(*alloc)(size_t),
-                                       const SkImageInfo&,
-                                       size_t rowBytes);
-
-    ReleaseProc fReleaseProc;
-    void*       fReleaseProcContext;
-
-    SkMallocPixelRef(const SkImageInfo&, void* addr, size_t rb, ReleaseProc proc, void* context);
-
-    typedef SkPixelRef INHERITED;
-};
-
-
+    SK_API sk_sp<SkPixelRef> MakeWithData(const SkImageInfo&, size_t rowBytes, sk_sp<SkData> data);
+}
 #endif

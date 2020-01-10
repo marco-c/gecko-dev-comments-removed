@@ -8,12 +8,14 @@
 #ifndef SkSpecialImage_DEFINED
 #define SkSpecialImage_DEFINED
 
-#include "SkNextID.h"
-#include "SkRefCnt.h"
-#include "SkSurfaceProps.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkSurfaceProps.h"
+#include "src/core/SkNextID.h"
 
-#include "SkImageFilter.h" 
-#include "SkImageInfo.h"   
+#if SK_SUPPORT_GPU
+#include "include/private/GrTypesPriv.h"
+#endif
 
 class GrRecordingContext;
 class GrTextureProxy;
@@ -55,6 +57,7 @@ public:
 
     uint32_t uniqueID() const { return fUniqueID; }
     virtual SkAlphaType alphaType() const = 0;
+    virtual SkColorType colorType() const = 0;
     virtual size_t getSize() const = 0;
 
     
@@ -62,7 +65,7 @@ public:
 
 
 
-    sk_sp<SkSpecialImage> makeTextureImage(GrRecordingContext*);
+    sk_sp<SkSpecialImage> makeTextureImage(GrRecordingContext*) const;
 
     
 
@@ -84,6 +87,7 @@ public:
                                                      const SkIRect& subset,
                                                      uint32_t uniqueID,
                                                      sk_sp<GrTextureProxy>,
+                                                     GrColorType,
                                                      sk_sp<SkColorSpace>,
                                                      const SkSurfaceProps* = nullptr,
                                                      SkAlphaType at = kPremul_SkAlphaType);
@@ -92,7 +96,8 @@ public:
     
 
 
-    sk_sp<SkSpecialSurface> makeSurface(const SkImageFilter::OutputProperties& outProps,
+    sk_sp<SkSpecialSurface> makeSurface(SkColorType colorType,
+                                        const SkColorSpace* colorSpace,
                                         const SkISize& size,
                                         SkAlphaType at = kPremul_SkAlphaType,
                                         const SkSurfaceProps* props = nullptr) const;
@@ -101,11 +106,15 @@ public:
 
 
 
-    sk_sp<SkSurface> makeTightSurface(const SkImageFilter::OutputProperties& outProps,
+
+
+    sk_sp<SkSurface> makeTightSurface(SkColorType colorType,
+                                      const SkColorSpace* colorSpace,
                                       const SkISize& size,
                                       SkAlphaType at = kPremul_SkAlphaType) const;
 
     
+
 
 
 
@@ -136,11 +145,12 @@ public:
 
 
 
+
+
     sk_sp<GrTextureProxy> asTextureProxyRef(GrRecordingContext*) const;
 #endif
 
     
-
 
 
 

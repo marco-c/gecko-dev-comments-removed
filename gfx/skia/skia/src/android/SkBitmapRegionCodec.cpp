@@ -5,10 +5,10 @@
 
 
 
-#include "SkAndroidCodec.h"
-#include "SkBitmapRegionCodec.h"
-#include "SkBitmapRegionDecoderPriv.h"
-#include "SkCodecPriv.h"
+#include "include/codec/SkAndroidCodec.h"
+#include "src/android/SkBitmapRegionCodec.h"
+#include "src/android/SkBitmapRegionDecoderPriv.h"
+#include "src/codec/SkCodecPriv.h"
 
 SkBitmapRegionCodec::SkBitmapRegionCodec(SkAndroidCodec* codec)
     : INHERITED(codec->getInfo().width(), codec->getInfo().height())
@@ -50,8 +50,8 @@ bool SkBitmapRegionCodec::decodeRegion(SkBitmap* bitmap, SkBRDAllocator* allocat
 
     
     SkAlphaType dstAlphaType = fCodec->computeOutputAlphaType(requireUnpremul);
-    SkImageInfo decodeInfo = SkImageInfo::Make(scaledSize.width(), scaledSize.height(),
-                                               dstColorType, dstAlphaType, dstColorSpace);
+    SkImageInfo decodeInfo =
+            SkImageInfo::Make(scaledSize, dstColorType, dstAlphaType, dstColorSpace);
 
     
     int scaledOutX = 0;

@@ -8,9 +8,9 @@
 #ifndef SkAtlasTextFont_DEFINED
 #define SkAtlasTextFont_DEFINED
 
-#include "SkFont.h"
-#include "SkRefCnt.h"
-#include "SkTypeface.h"
+#include "include/core/SkFont.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkTypeface.h"
 
 
 class SK_API SkAtlasTextFont : public SkRefCnt {

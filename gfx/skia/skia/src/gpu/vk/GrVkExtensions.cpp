@@ -5,13 +5,13 @@
 
 
 
-#include "vk/GrVkExtensions.h"
+#include "include/gpu/vk/GrVkExtensions.h"
 
 
-#include "vk/GrVkBackendContext.h"
+#include "include/gpu/vk/GrVkBackendContext.h"
 
-#include "SkTSearch.h"
-#include "SkTSort.h"
+#include "src/core/SkTSearch.h"
+#include "src/core/SkTSort.h"
 
 
 static int find_info(const SkTArray<GrVkExtensions::Info>& infos, const char ext[]) {

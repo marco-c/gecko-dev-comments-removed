@@ -8,8 +8,8 @@
 #ifndef GrBitmapTextureMaker_DEFINED
 #define GrBitmapTextureMaker_DEFINED
 
-#include "GrTextureMaker.h"
-#include "SkBitmap.h"
+#include "include/core/SkBitmap.h"
+#include "src/gpu/GrTextureMaker.h"
 
 
 
@@ -25,9 +25,6 @@ protected:
 
     void makeCopyKey(const CopyParams& copyParams, GrUniqueKey* copyKey) override;
     void didCacheCopy(const GrUniqueKey& copyKey, uint32_t contextUniqueID) override;
-
-    SkAlphaType alphaType() const override;
-    SkColorSpace* colorSpace() const override;
 
 private:
     const SkBitmap  fBitmap;

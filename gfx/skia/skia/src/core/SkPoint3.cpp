@@ -5,7 +5,7 @@
 
 
 
-#include "SkPoint3.h"
+#include "include/core/SkPoint3.h"
 
 
 static inline float get_length_squared(float x, float y, float z) {

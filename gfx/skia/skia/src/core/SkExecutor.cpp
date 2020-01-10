@@ -5,17 +5,17 @@
 
 
 
-#include "SkExecutor.h"
-#include "SkMakeUnique.h"
-#include "SkMutex.h"
-#include "SkSemaphore.h"
-#include "SkSpinlock.h"
-#include "SkTArray.h"
+#include "include/core/SkExecutor.h"
+#include "include/private/SkMutex.h"
+#include "include/private/SkSemaphore.h"
+#include "include/private/SkSpinlock.h"
+#include "include/private/SkTArray.h"
+#include "src/core/SkMakeUnique.h"
 #include <deque>
 #include <thread>
 
 #if defined(SK_BUILD_FOR_WIN)
-    #include "SkLeanWindows.h"
+    #include "src/core/SkLeanWindows.h"
     static int num_cores() {
         SYSTEM_INFO sysinfo;
         GetNativeSystemInfo(&sysinfo);
@@ -37,14 +37,24 @@ class SkTrivialExecutor final : public SkExecutor {
     }
 };
 
-static SkTrivialExecutor gTrivial;
-static SkExecutor* gDefaultExecutor = &gTrivial;
+static SkExecutor* gDefaultExecutor = nullptr;
 
+void SetDefaultTrivialExecutor() {
+    static SkTrivialExecutor *gTrivial = new SkTrivialExecutor();
+    gDefaultExecutor = gTrivial;
+}
 SkExecutor& SkExecutor::GetDefault() {
+    if (!gDefaultExecutor) {
+        SetDefaultTrivialExecutor();
+    }
     return *gDefaultExecutor;
 }
 void SkExecutor::SetDefault(SkExecutor* executor) {
-    gDefaultExecutor = executor ? executor : &gTrivial;
+    if (executor) {
+        gDefaultExecutor = executor;
+    } else {
+        SetDefaultTrivialExecutor();
+    }
 }
 
 
@@ -83,7 +93,7 @@ public:
     virtual void add(std::function<void(void)> work) override {
         
         {
-            SkAutoExclusive lock(fWorkLock);
+            SkAutoMutexExclusive lock(fWorkLock);
             fWork.emplace_back(std::move(work));
         }
         
@@ -102,7 +112,7 @@ private:
     bool do_work() {
         std::function<void(void)> work;
         {
-            SkAutoExclusive lock(fWorkLock);
+            SkAutoMutexExclusive lock(fWorkLock);
             SkASSERT(!fWork.empty());        
             work = pop(&fWork);
         }

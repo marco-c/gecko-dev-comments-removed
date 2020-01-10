@@ -5,23 +5,23 @@
 
 
 
-#include "SkPictureData.h"
+#include "src/core/SkPictureData.h"
 
-#include "SkAutoMalloc.h"
-#include "SkImageGenerator.h"
-#include "SkMakeUnique.h"
-#include "SkPictureRecord.h"
-#include "SkPicturePriv.h"
-#include "SkReadBuffer.h"
-#include "SkTextBlobPriv.h"
-#include "SkTypeface.h"
-#include "SkWriteBuffer.h"
-#include "SkTo.h"
+#include "include/core/SkImageGenerator.h"
+#include "include/core/SkTypeface.h"
+#include "include/private/SkTo.h"
+#include "src/core/SkAutoMalloc.h"
+#include "src/core/SkMakeUnique.h"
+#include "src/core/SkPicturePriv.h"
+#include "src/core/SkPictureRecord.h"
+#include "src/core/SkReadBuffer.h"
+#include "src/core/SkTextBlobPriv.h"
+#include "src/core/SkWriteBuffer.h"
 
 #include <new>
 
 #if SK_SUPPORT_GPU
-#include "GrContext.h"
+#include "include/gpu/GrContext.h"
 #endif
 
 template <typename T> int SafeCount(const T* obj) {
@@ -64,7 +64,7 @@ SkPictureData::SkPictureData(const SkPictureRecord& record,
 
 
 
-#include "SkStream.h"
+#include "include/core/SkStream.h"
 
 static size_t compute_chunk_size(SkFlattenable::Factory* array, int count) {
     size_t size = 4;  
@@ -144,21 +144,23 @@ void SkPictureData::WriteTypefaces(SkWStream* stream, const SkRefCntSet& rec,
     }
 }
 
-void SkPictureData::flattenToBuffer(SkWriteBuffer& buffer) const {
+void SkPictureData::flattenToBuffer(SkWriteBuffer& buffer, bool textBlobsOnly) const {
     int i, n;
 
-    if ((n = fPaints.count()) > 0) {
-        write_tag_size(buffer, SK_PICT_PAINT_BUFFER_TAG, n);
-        for (i = 0; i < n; i++) {
-            buffer.writePaint(fPaints[i]);
+    if (!textBlobsOnly) {
+        if ((n = fPaints.count()) > 0) {
+            write_tag_size(buffer, SK_PICT_PAINT_BUFFER_TAG, n);
+            for (i = 0; i < n; i++) {
+                buffer.writePaint(fPaints[i]);
+            }
         }
-    }
 
-    if ((n = fPaths.count()) > 0) {
-        write_tag_size(buffer, SK_PICT_PATH_BUFFER_TAG, n);
-        buffer.writeInt(n);
-        for (int i = 0; i < n; i++) {
-            buffer.writePath(fPaths[i]);
+        if ((n = fPaths.count()) > 0) {
+            write_tag_size(buffer, SK_PICT_PATH_BUFFER_TAG, n);
+            buffer.writeInt(n);
+            for (int i = 0; i < n; i++) {
+                buffer.writePath(fPaths[i]);
+            }
         }
     }
 
@@ -169,17 +171,19 @@ void SkPictureData::flattenToBuffer(SkWriteBuffer& buffer) const {
         }
     }
 
-    if (!fVertices.empty()) {
-        write_tag_size(buffer, SK_PICT_VERTICES_BUFFER_TAG, fVertices.count());
-        for (const auto& vert : fVertices) {
-            buffer.writeDataAsByteArray(vert->encode().get());
+    if (!textBlobsOnly) {
+        if (!fVertices.empty()) {
+            write_tag_size(buffer, SK_PICT_VERTICES_BUFFER_TAG, fVertices.count());
+            for (const auto& vert : fVertices) {
+                buffer.writeDataAsByteArray(vert->encode().get());
+            }
         }
-    }
 
-    if (!fImages.empty()) {
-        write_tag_size(buffer, SK_PICT_IMAGE_BUFFER_TAG, fImages.count());
-        for (const auto& img : fImages) {
-            buffer.writeImage(img.get());
+        if (!fImages.empty()) {
+            write_tag_size(buffer, SK_PICT_IMAGE_BUFFER_TAG, fImages.count());
+            for (const auto& img : fImages) {
+                buffer.writeImage(img.get());
+            }
         }
     }
 }
@@ -196,8 +200,13 @@ static SkSerialProcs skip_typeface_proc(const SkSerialProcs& procs) {
     return newProcs;
 }
 
+
+
+
+
+
 void SkPictureData::serialize(SkWStream* stream, const SkSerialProcs& procs,
-                              SkRefCntSet* topLevelTypeFaceSet) const {
+                              SkRefCntSet* topLevelTypeFaceSet, bool textBlobsOnly) const {
     
     write_tag_size(stream, SK_PICT_READER_TAG, fOpData->size());
     stream->write(fOpData->bytes(), fOpData->size());
@@ -213,7 +222,7 @@ void SkPictureData::serialize(SkWStream* stream, const SkSerialProcs& procs,
     buffer.setFactoryRecorder(sk_ref_sp(&factSet));
     buffer.setSerialProcs(skip_typeface_proc(procs));
     buffer.setTypefaceRecorder(sk_ref_sp(typefaceSet));
-    this->flattenToBuffer(buffer);
+    this->flattenToBuffer(buffer, textBlobsOnly);
 
     
     
@@ -224,18 +233,17 @@ void SkPictureData::serialize(SkWStream* stream, const SkSerialProcs& procs,
         size_t bytesWritten() const override { return fBytesWritten; }
     } devnull;
     for (const auto& pic : fPictures) {
-        pic->serialize(&devnull, nullptr, typefaceSet);
+        pic->serialize(&devnull, nullptr, typefaceSet,  true);
     }
+    if (textBlobsOnly) { return; } 
 
     
     
     WriteFactories(stream, factSet);
-    if (typefaceSet == &localTypefaceSet) {
-        
-        
-        
-        WriteTypefaces(stream, *typefaceSet, procs);
-    }
+    
+    
+    
+    WriteTypefaces(stream, *typefaceSet, procs);
 
     
     write_tag_size(stream, SK_PICT_BUFFER_SIZE_TAG, buffer.bytesWritten());
@@ -245,7 +253,7 @@ void SkPictureData::serialize(SkWStream* stream, const SkSerialProcs& procs,
     if (!fPictures.empty()) {
         write_tag_size(stream, SK_PICT_PICTURE_TAG, fPictures.count());
         for (const auto& pic : fPictures) {
-            pic->serialize(stream, &procs, typefaceSet);
+            pic->serialize(stream, &procs, typefaceSet,  false);
         }
     }
 
@@ -271,7 +279,7 @@ void SkPictureData::flatten(SkWriteBuffer& buffer) const {
     }
 
     
-    this->flattenToBuffer(buffer);
+    this->flattenToBuffer(buffer, false);
     buffer.write32(SK_PICT_EOF_TAG);
 }
 

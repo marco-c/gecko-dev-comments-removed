@@ -8,8 +8,8 @@
 #ifndef GrGpuBuffer_DEFINED
 #define GrGpuBuffer_DEFINED
 
-#include "GrBuffer.h"
-#include "GrGpuResource.h"
+#include "include/gpu/GrGpuResource.h"
+#include "src/gpu/GrBuffer.h"
 
 class GrGpu;
 
@@ -43,30 +43,22 @@ public:
 
 
 
-    void* map() {
-        if (!fMapPtr) {
-            this->onMap();
-        }
-        return fMapPtr;
-    }
+
+    void* map();
 
     
 
 
 
 
-    void unmap() {
-        SkASSERT(fMapPtr);
-        this->onUnmap();
-        fMapPtr = nullptr;
-    }
+    void unmap();
 
     
 
 
 
 
-    bool isMapped() const { return SkToBool(fMapPtr); }
+    bool isMapped() const;
 
     bool isCpuBuffer() const final { return false; }
 
@@ -84,11 +76,9 @@ public:
 
 
 
-    bool updateData(const void* src, size_t srcSizeInBytes) {
-        SkASSERT(!this->isMapped());
-        SkASSERT(srcSizeInBytes <= fSizeInBytes);
-        return this->onUpdateData(src, srcSizeInBytes);
-    }
+
+
+    bool updateData(const void* src, size_t srcSizeInBytes);
 
 protected:
     GrGpuBuffer(GrGpu*, size_t sizeInBytes, GrGpuBufferType, GrAccessPattern);

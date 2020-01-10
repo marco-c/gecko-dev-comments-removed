@@ -5,20 +5,10 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 #ifndef SkRegion_DEFINED
 #define SkRegion_DEFINED
 
-#include "SkRect.h"
+#include "include/core/SkRect.h"
 
 class SkPath;
 class SkRgnBuilder;
@@ -197,20 +187,6 @@ public:
 
 
 
-
-    bool setRect(int32_t left, int32_t top, int32_t right, int32_t bottom) {
-        return this->setRect({ left, top, right, bottom });
-    }
-
-    
-
-
-
-
-
-
-
-
     bool setRects(const SkIRect rects[], int count);
 
     
@@ -287,29 +263,13 @@ public:
 
 
     bool quickContains(const SkIRect& r) const {
-        return this->quickContains(r.fLeft, r.fTop, r.fRight, r.fBottom);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-    bool quickContains(int32_t left, int32_t top, int32_t right,
-                       int32_t bottom) const {
         SkASSERT(this->isEmpty() == fBounds.isEmpty()); 
 
-        return left < right && top < bottom &&
-               fRunHead == kRectRunHeadPtr &&  
-               
-               fBounds.fLeft <= left && fBounds.fTop <= top &&
-               fBounds.fRight >= right && fBounds.fBottom >= bottom;
+        return  r.fLeft < r.fRight && r.fTop < r.fBottom &&
+                fRunHead == kRectRunHeadPtr &&  
+                
+                fBounds.fLeft <= r.fLeft   && fBounds.fTop <= r.fTop &&
+                fBounds.fRight >= r.fRight && fBounds.fBottom >= r.fBottom;
     }
 
     
@@ -384,24 +344,6 @@ public:
             }
             return true;
         }
-        return this->op(*this, rect, op);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    bool op(int left, int top, int right, int bottom, Op op) {
-        SkIRect rect;
-        rect.set(left, top, right, bottom);
         return this->op(*this, rect, op);
     }
 

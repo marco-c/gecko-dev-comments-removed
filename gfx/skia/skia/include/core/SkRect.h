@@ -5,23 +5,13 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 #ifndef SkRect_DEFINED
 #define SkRect_DEFINED
 
-#include "SkPoint.h"
-#include "SkSize.h"
-#include "../private/SkSafe32.h"
-#include "../private/SkTFitsIn.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkSize.h"
+#include "include/private/SkSafe32.h"
+#include "include/private/SkTFitsIn.h"
 
 #include <utility>
 
@@ -243,24 +233,11 @@ struct SK_API SkIRect {
 
 
 
-    void set(int32_t left, int32_t top, int32_t right, int32_t bottom) {
+    void setLTRB(int32_t left, int32_t top, int32_t right, int32_t bottom) {
         fLeft   = left;
         fTop    = top;
         fRight  = right;
         fBottom = bottom;
-    }
-
-    
-
-
-
-
-
-
-
-
-    void setLTRB(int32_t left, int32_t top, int32_t right, int32_t bottom) {
-        this->set(left, top, right, bottom);
     }
 
     
@@ -278,6 +255,13 @@ struct SK_API SkIRect {
         fBottom = Sk32_sat_add(y, height);
     }
 
+    void setWH(int32_t width, int32_t height) {
+        fLeft   = 0;
+        fTop    = 0;
+        fRight  = width;
+        fBottom = height;
+    }
+
     
 
 
@@ -289,11 +273,25 @@ struct SK_API SkIRect {
 
 
 
-    SkIRect makeOffset(int32_t dx, int32_t dy) const {
+    constexpr SkIRect makeOffset(int32_t dx, int32_t dy) const {
         return {
             Sk32_sat_add(fLeft,  dx), Sk32_sat_add(fTop,    dy),
             Sk32_sat_add(fRight, dx), Sk32_sat_add(fBottom, dy),
         };
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    constexpr SkIRect makeOffset(SkIVector offset) const {
+        return this->makeOffset(offset.x(), offset.y());
     }
 
     
@@ -450,24 +448,6 @@ struct SK_API SkIRect {
 
 
 
-
-
-
-
-    bool contains(int32_t left, int32_t top, int32_t right, int32_t bottom) const {
-        return  left < right && top < bottom && !this->isEmpty() && 
-                fLeft <= left && fTop <= top &&
-                fRight >= right && fBottom >= bottom;
-    }
-
-    
-
-
-
-
-
-
-
     bool contains(const SkIRect& r) const {
         return  !r.isEmpty() && !this->isEmpty() &&     
                 fLeft <= r.fLeft && fTop <= r.fTop &&
@@ -482,30 +462,7 @@ struct SK_API SkIRect {
 
 
 
-    bool contains(const SkRect& r) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    bool containsNoEmptyCheck(int32_t left, int32_t top,
-                              int32_t right, int32_t bottom) const {
-        SkASSERT(fLeft < fRight && fTop < fBottom);
-        SkASSERT(left < right && top < bottom);
-
-        return fLeft <= left && fTop <= top &&
-               fRight >= right && fBottom >= bottom;
-    }
+    inline bool contains(const SkRect& r) const;
 
     
 
@@ -516,7 +473,9 @@ struct SK_API SkIRect {
 
 
     bool containsNoEmptyCheck(const SkIRect& r) const {
-        return containsNoEmptyCheck(r.fLeft, r.fTop, r.fRight, r.fBottom);
+        SkASSERT(fLeft < fRight && fTop < fBottom);
+        SkASSERT(r.fLeft < r.fRight && r.fTop < r.fBottom);
+        return fLeft <= r.fLeft && fTop <= r.fTop && fRight >= r.fRight && fBottom >= r.fBottom;
     }
 
     
@@ -540,54 +499,7 @@ struct SK_API SkIRect {
 
 
 
-    bool SK_WARN_UNUSED_RESULT intersectNoEmptyCheck(const SkIRect& a, const SkIRect& b) {
-        SkASSERT(!a.isEmpty64() && !b.isEmpty64());
-        SkIRect r = {
-            SkMax32(a.fLeft,   b.fLeft),
-            SkMax32(a.fTop,    b.fTop),
-            SkMin32(a.fRight,  b.fRight),
-            SkMin32(a.fBottom, b.fBottom)
-        };
-        if (r.isEmpty()) {
-            return false;
-        }
-        *this = r;
-        return true;
-    }
-
-    
-
-
-
-
-
-
-
-
-    bool SK_WARN_UNUSED_RESULT intersect(const SkIRect& a, const SkIRect& b) {
-        if (a.isEmpty64() || b.isEmpty64()) {
-            return false;
-        }
-        return this->intersectNoEmptyCheck(a, b);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    bool intersect(int32_t left, int32_t top, int32_t right, int32_t bottom) {
-        return this->intersect(*this, {left, top, right, bottom});
-    }
+    bool SK_WARN_UNUSED_RESULT intersect(const SkIRect& a, const SkIRect& b);
 
     
 
@@ -607,36 +519,7 @@ struct SK_API SkIRect {
 
 
 
-
-    static bool IntersectsNoEmptyCheck(const SkIRect& a, const SkIRect& b) {
-        SkIRect dummy;
-        return dummy.intersectNoEmptyCheck(a, b);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    void join(int32_t left, int32_t top, int32_t right, int32_t bottom);
-
-    
-
-
-
-
-
-    void join(const SkIRect& r) {
-        this->join(r.fLeft, r.fTop, r.fRight, r.fBottom);
-    }
+    void join(const SkIRect& r);
 
     
 
@@ -722,9 +605,7 @@ struct SK_API SkRect {
 
 
     static SkRect SK_WARN_UNUSED_RESULT MakeIWH(int w, int h) {
-        SkRect r;
-        r.set(0, 0, SkIntToScalar(w), SkIntToScalar(h));
-        return r;
+        return {0, 0, SkIntToScalar(w), SkIntToScalar(h)};
     }
 
     
@@ -783,12 +664,10 @@ struct SK_API SkRect {
 
 
     static SkRect SK_WARN_UNUSED_RESULT Make(const SkIRect& irect) {
-        SkRect r;
-        r.set(SkIntToScalar(irect.fLeft),
-              SkIntToScalar(irect.fTop),
-              SkIntToScalar(irect.fRight),
-              SkIntToScalar(irect.fBottom));
-        return r;
+        return {
+            SkIntToScalar(irect.fLeft), SkIntToScalar(irect.fTop),
+            SkIntToScalar(irect.fRight), SkIntToScalar(irect.fBottom)
+        };
     }
 
     
@@ -973,70 +852,11 @@ struct SK_API SkRect {
 
 
 
-    void set(SkScalar left, SkScalar top, SkScalar right, SkScalar bottom) {
+    void setLTRB(SkScalar left, SkScalar top, SkScalar right, SkScalar bottom) {
         fLeft   = left;
         fTop    = top;
         fRight  = right;
         fBottom = bottom;
-    }
-
-    
-
-
-
-
-
-
-
-
-    void setLTRB(SkScalar left, SkScalar top, SkScalar right, SkScalar bottom) {
-        this->set(left, top, right, bottom);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-    void iset(int left, int top, int right, int bottom) {
-        fLeft   = SkIntToScalar(left);
-        fTop    = SkIntToScalar(top);
-        fRight  = SkIntToScalar(right);
-        fBottom = SkIntToScalar(bottom);
-    }
-
-    
-
-
-
-
-
-
-    void isetWH(int width, int height) {
-        fLeft = fTop = 0;
-        fRight = SkIntToScalar(width);
-        fBottom = SkIntToScalar(height);
-    }
-
-    
-
-
-
-
-
-
-
-
-    void set(const SkPoint pts[], int count) {
-        
-        
-        
-        (void)this->setBoundsCheck(pts, count);
     }
 
     
@@ -1112,6 +932,9 @@ struct SK_API SkRect {
         fTop = 0;
         fRight = width;
         fBottom = height;
+    }
+    void setIWH(int32_t width, int32_t height) {
+        this->setWH(SkIntToScalar(width), SkIntToScalar(height));
     }
 
     
@@ -1251,22 +1074,6 @@ struct SK_API SkRect {
 
 
 
-
-
-
-
-
-    bool intersect(SkScalar left, SkScalar top, SkScalar right, SkScalar bottom);
-
-    
-
-
-
-
-
-
-
-
     bool SK_WARN_UNUSED_RESULT intersect(const SkRect& a, const SkRect& b);
 
 
@@ -1281,22 +1088,6 @@ private:
     }
 
 public:
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    bool intersects(SkScalar left, SkScalar top, SkScalar right, SkScalar bottom) const {
-        return Intersects(fLeft, fTop, fRight, fBottom, left, top, right, bottom);
-    }
 
     
 
@@ -1328,24 +1119,7 @@ public:
 
 
 
-
-
-
-
-
-
-    void join(SkScalar left, SkScalar top, SkScalar right, SkScalar bottom);
-
-    
-
-
-
-
-
-
-    void join(const SkRect& r) {
-        this->join(r.fLeft, r.fTop, r.fRight, r.fBottom);
-    }
+    void join(const SkRect& r);
 
     
 
@@ -1428,8 +1202,8 @@ public:
 
     void round(SkIRect* dst) const {
         SkASSERT(dst);
-        dst->set(SkScalarRoundToInt(fLeft), SkScalarRoundToInt(fTop),
-                 SkScalarRoundToInt(fRight), SkScalarRoundToInt(fBottom));
+        dst->setLTRB(SkScalarRoundToInt(fLeft),  SkScalarRoundToInt(fTop),
+                     SkScalarRoundToInt(fRight), SkScalarRoundToInt(fBottom));
     }
 
     
@@ -1441,8 +1215,8 @@ public:
 
     void roundOut(SkIRect* dst) const {
         SkASSERT(dst);
-        dst->set(SkScalarFloorToInt(fLeft), SkScalarFloorToInt(fTop),
-                 SkScalarCeilToInt(fRight), SkScalarCeilToInt(fBottom));
+        dst->setLTRB(SkScalarFloorToInt(fLeft), SkScalarFloorToInt(fTop),
+                     SkScalarCeilToInt(fRight), SkScalarCeilToInt(fBottom));
     }
 
     
@@ -1453,10 +1227,8 @@ public:
 
 
     void roundOut(SkRect* dst) const {
-        dst->set(SkScalarFloorToScalar(fLeft),
-                 SkScalarFloorToScalar(fTop),
-                 SkScalarCeilToScalar(fRight),
-                 SkScalarCeilToScalar(fBottom));
+        dst->setLTRB(SkScalarFloorToScalar(fLeft), SkScalarFloorToScalar(fTop),
+                     SkScalarCeilToScalar(fRight), SkScalarCeilToScalar(fBottom));
     }
 
     
@@ -1468,8 +1240,8 @@ public:
 
     void roundIn(SkIRect* dst) const {
         SkASSERT(dst);
-        dst->set(SkScalarCeilToInt(fLeft), SkScalarCeilToInt(fTop),
-                 SkScalarFloorToInt(fRight), SkScalarFloorToInt(fBottom));
+        dst->setLTRB(SkScalarCeilToInt(fLeft),   SkScalarCeilToInt(fTop),
+                     SkScalarFloorToInt(fRight), SkScalarFloorToInt(fBottom));
     }
 
     

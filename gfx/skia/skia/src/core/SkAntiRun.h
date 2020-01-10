@@ -8,8 +8,8 @@
 #ifndef SkAntiRun_DEFINED
 #define SkAntiRun_DEFINED
 
-#include "SkBlitter.h"
-#include "SkTo.h"
+#include "include/private/SkTo.h"
+#include "src/core/SkBlitter.h"
 
 
 

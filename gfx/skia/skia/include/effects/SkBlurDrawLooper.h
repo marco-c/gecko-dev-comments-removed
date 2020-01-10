@@ -9,7 +9,7 @@
 #ifndef SkBlurDrawLooper_DEFINED
 #define SkBlurDrawLooper_DEFINED
 
-#include "SkDrawLooper.h"
+#include "include/core/SkDrawLooper.h"
 
 
 

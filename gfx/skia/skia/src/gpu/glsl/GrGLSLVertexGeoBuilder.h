@@ -8,7 +8,7 @@
 #ifndef GrGLSLVertexGeoBuilder_DEFINED
 #define GrGLSLVertexGeoBuilder_DEFINED
 
-#include "GrGLSLShaderBuilder.h"
+#include "src/gpu/glsl/GrGLSLShaderBuilder.h"
 
 
 
@@ -52,9 +52,7 @@ public:
     enum class InputType {
         kPoints,
         kLines,
-        kLinesAdjacency,
         kTriangles,
-        kTrianglesAdjacency
     };
 
     enum class OutputType {

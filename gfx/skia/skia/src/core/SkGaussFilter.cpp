@@ -6,9 +6,9 @@
 
 
 
-#include "SkFloatingPoint.h"
-#include "SkGaussFilter.h"
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
+#include "include/private/SkFloatingPoint.h"
+#include "src/core/SkGaussFilter.h"
 #include <cmath>
 
 

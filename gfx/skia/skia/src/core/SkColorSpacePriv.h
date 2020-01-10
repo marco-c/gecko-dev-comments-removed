@@ -9,8 +9,8 @@
 
 #include <math.h>
 
-#include "SkColorSpace.h"
-#include "SkFixed.h"
+#include "include/core/SkColorSpace.h"
+#include "include/private/SkFixed.h"
 
 #define SkColorSpacePrintf(...)
 
@@ -31,54 +31,37 @@ static inline bool transfer_fn_almost_equal(float a, float b) {
     return SkTAbs(a - b) < 0.001f;
 }
 
-static inline bool is_valid_transfer_fn(const skcms_TransferFunction& coeffs) {
-    if (SkScalarIsNaN(coeffs.a) || SkScalarIsNaN(coeffs.b) ||
-        SkScalarIsNaN(coeffs.c) || SkScalarIsNaN(coeffs.d) ||
-        SkScalarIsNaN(coeffs.e) || SkScalarIsNaN(coeffs.f) ||
-        SkScalarIsNaN(coeffs.g))
-    {
-        return false;
-    }
 
-    if (coeffs.d < 0.0f) {
-        return false;
-    }
 
-    if (coeffs.d == 0.0f) {
+
+
+
+enum TFKind { Bad_TF, sRGBish_TF, PQish_TF, HLGish_TF, HLGinvish_TF };
+
+static inline TFKind classify_transfer_fn(const skcms_TransferFunction& tf) {
+    if (tf.g < 0 && (int)tf.g == tf.g) {
         
-        if (0.0f == coeffs.a || 0.0f == coeffs.g) {
-            SkColorSpacePrintf("A or G is zero, constant transfer function "
-                               "is nonsense");
-            return false;
+        switch (-(int)tf.g) {
+            case PQish_TF:     return PQish_TF;
+            case HLGish_TF:    return HLGish_TF;
+            case HLGinvish_TF: return HLGinvish_TF;
         }
+        return Bad_TF;
     }
 
-    if (coeffs.d >= 1.0f) {
-        
-        if (0.0f == coeffs.c) {
-            SkColorSpacePrintf("C is zero, constant transfer function is "
-                               "nonsense");
-            return false;
-        }
+    
+    if (sk_float_isfinite(tf.a + tf.b + tf.c + tf.d + tf.e + tf.f + tf.g)
+            
+            && tf.a >= 0
+            && tf.c >= 0
+            && tf.d >= 0
+            && tf.g >= 0
+            
+            && tf.a * tf.d + tf.b >= 0) {
+        return sRGBish_TF;
     }
 
-    if ((0.0f == coeffs.a || 0.0f == coeffs.g) && 0.0f == coeffs.c) {
-        SkColorSpacePrintf("A or G, and C are zero, constant transfer function "
-                           "is nonsense");
-        return false;
-    }
-
-    if (coeffs.c < 0.0f) {
-        SkColorSpacePrintf("Transfer function must be increasing");
-        return false;
-    }
-
-    if (coeffs.a < 0.0f || coeffs.g < 0.0f) {
-        SkColorSpacePrintf("Transfer function must be positive or increasing");
-        return false;
-    }
-
-    return true;
+    return Bad_TF;
 }
 
 static inline bool is_almost_srgb(const skcms_TransferFunction& coeffs) {
@@ -121,18 +104,5 @@ static inline bool is_almost_linear(const skcms_TransferFunction& coeffs) {
 
 SkColorSpace* sk_srgb_singleton();
 SkColorSpace* sk_srgb_linear_singleton();
-
-
-
-
-
-
-
-
-
-
-
-bool sk_can_use_legacy_blits(SkColorSpace* src, SkColorSpace* dst);
-
 
 #endif  

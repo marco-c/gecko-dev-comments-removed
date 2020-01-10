@@ -5,9 +5,9 @@
 
 
 
-#include "SkSLCPPUniformCTypes.h"
-#include "SkSLHCodeGenerator.h"
-#include "SkSLStringStream.h"
+#include "src/sksl/SkSLCPPUniformCTypes.h"
+#include "src/sksl/SkSLHCodeGenerator.h"
+#include "src/sksl/SkSLStringStream.h"
 
 #include <vector>
 
@@ -161,6 +161,11 @@ static const std::vector<UniformCTypeMapper>& get_mappers() {
         "${pdman}.set4fv(${uniform}, 1, ${var}.vec())",                            
         "{SK_FloatNaN, SK_FloatNaN, SK_FloatNaN, SK_FloatNaN}"),                   
 
+    REGISTER(Layout::CType::kSkVector4, { "half4", "float4", "double4" },
+        "${pdman}.set4fv(${uniform}, 1, ${var}.fData)",                            
+        "SkVector4(SK_MScalarNaN, SK_MScalarNaN, SK_MScalarNaN, SK_MScalarNaN)",   
+        "${oldVar} != (${newVar})"),                                               
+
     REGISTER(Layout::CType::kSkPoint, { "half2", "float2", "double2" } ,
         "${pdman}.set2f(${uniform}, ${var}.fX, ${var}.fY)",                        
         "SkPoint::Make(SK_FloatNaN, SK_FloatNaN)"),                                
@@ -176,8 +181,8 @@ static const std::vector<UniformCTypeMapper>& get_mappers() {
 
     REGISTER(Layout::CType::kSkMatrix44,  { "half4x4", "float4x4", "double4x4" },
         "${pdman}.setSkMatrix44(${uniform}, ${var})",                              
-        "SkMatrix::MakeScale(SK_FloatNaN)",                                        
-        "!${oldVar}.cheapEqualTo(${newVar})"),                                     
+        "SkMatrix44(SkMatrix44::kNaN_Constructor)",                                
+        "${oldVar} != (${newVar})"),                                               
 
     REGISTER(Layout::CType::kFloat,  { "half", "float", "double" },
         "${pdman}.set1f(${uniform}, ${var})",                                      

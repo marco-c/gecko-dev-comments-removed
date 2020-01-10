@@ -8,31 +8,15 @@
 #ifndef GrSurfaceProxyPriv_DEFINED
 #define GrSurfaceProxyPriv_DEFINED
 
-#include "GrSurfaceProxy.h"
+#include "src/gpu/GrSurfaceProxy.h"
 
-#include "GrResourceProvider.h"
+#include "src/gpu/GrResourceProvider.h"
 
 
 
 
 class GrSurfaceProxyPriv {
 public:
-    
-    
-    
-    
-    int32_t getProxyRefCnt() const { return fProxy->getProxyRefCnt(); }
-
-    
-    
-    
-    bool hasPendingIO() const { return fProxy->hasPendingIO(); }
-
-    
-    
-    
-    bool hasPendingWrite() const { return fProxy->hasPendingWrite(); }
-
     void computeScratchKey(GrScratchKey* key) const { return fProxy->computeScratchKey(key); }
 
     
@@ -44,24 +28,19 @@ public:
     
     void assign(sk_sp<GrSurface> surface) { fProxy->assign(std::move(surface)); }
 
-    bool requiresNoPendingIO() const {
-        return fProxy->fSurfaceFlags & GrInternalSurfaceFlags::kNoPendingIO;
-    }
-
     
     bool isExact() const { return SkBackingFit::kExact == fProxy->fFit; }
 
     
-    void exactify();
+    void exactify(bool allocatedCaseOnly);
+
+    void setLazySize(int width, int height) { fProxy->setLazySize(width, height); }
 
     bool doLazyInstantiation(GrResourceProvider*);
 
-    GrSurfaceProxy::LazyInstantiationType lazyInstantiationType() const {
-        return fProxy->fLazyInstantiationType;
-    }
 
     static bool SK_WARN_UNUSED_RESULT AttachStencilIfNeeded(GrResourceProvider*, GrSurface*,
-                                                            bool needsStencil);
+                                                            int minStencilSampleCount);
 
 private:
     explicit GrSurfaceProxyPriv(GrSurfaceProxy* proxy) : fProxy(proxy) {}

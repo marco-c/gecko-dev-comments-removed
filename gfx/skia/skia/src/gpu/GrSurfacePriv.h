@@ -8,7 +8,7 @@
 #ifndef GrSurfacePriv_DEFINED
 #define GrSurfacePriv_DEFINED
 
-#include "GrSurface.h"
+#include "include/gpu/GrSurface.h"
 
 
 
@@ -17,27 +17,6 @@
 
 class GrSurfacePriv {
 public:
-    
-
-
-    static bool AdjustReadPixelParams(int surfaceWidth,
-                                      int surfaceHeight,
-                                      size_t bpp,
-                                      int* left, int* top, int* width, int* height,
-                                      void** data,
-                                      size_t* rowBytes);
-    static bool AdjustWritePixelParams(int surfaceWidth,
-                                      int surfaceHeight,
-                                      size_t bpp,
-                                      int* left, int* top, int* width, int* height,
-                                      const void** data,
-                                      size_t* rowBytes);
-
-    bool hasPendingRead() const { return fSurface->hasPendingRead(); }
-    bool hasPendingWrite() const { return fSurface->hasPendingWrite(); }
-    bool hasPendingIO() const { return fSurface->hasPendingIO(); }
-    bool hasUniqueRef() const { return fSurface->internalHasUniqueRef(); }
-
     GrInternalSurfaceFlags flags() const { return fSurface->fSurfaceFlags; }
 
 private:

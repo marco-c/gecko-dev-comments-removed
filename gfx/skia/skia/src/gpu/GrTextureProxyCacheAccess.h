@@ -8,7 +8,7 @@
 #ifndef GrTextureProxyCacheAccess_DEFINED
 #define GrTextureProxyCacheAccess_DEFINED
 
-#include "GrTextureProxy.h"
+#include "src/gpu/GrTextureProxy.h"
 
 
 

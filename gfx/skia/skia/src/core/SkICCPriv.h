@@ -8,8 +8,8 @@
 #ifndef SkICCPriv_DEFINED
 #define SkICCPriv_DEFINED
 
-#include "SkColorSpace.h"
-#include "SkTypes.h"
+#include "include/core/SkColorSpace.h"
+#include "include/core/SkTypes.h"
 
 
 

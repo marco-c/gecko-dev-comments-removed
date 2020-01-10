@@ -8,9 +8,9 @@
 #ifndef GrRenderTargetContextPriv_DEFINED
 #define GrRenderTargetContextPriv_DEFINED
 
-#include "GrRenderTargetContext.h"
-#include "GrRenderTargetOpList.h"
-#include "GrPathRendering.h"
+#include "src/gpu/GrOpsTask.h"
+#include "src/gpu/GrPathRendering.h"
+#include "src/gpu/GrRenderTargetContext.h"
 
 class GrFixedClip;
 class GrHardClip;
@@ -27,20 +27,20 @@ public:
     
     void setLastClip(uint32_t clipStackGenID, const SkIRect& devClipBounds,
                      int numClipAnalyticFPs) {
-        GrRenderTargetOpList* opList = fRenderTargetContext->getRTOpList();
-        opList->fLastClipStackGenID = clipStackGenID;
-        opList->fLastDevClipBounds = devClipBounds;
-        opList->fLastClipNumAnalyticFPs = numClipAnalyticFPs;
+        GrOpsTask* opsTask = fRenderTargetContext->getOpsTask();
+        opsTask->fLastClipStackGenID = clipStackGenID;
+        opsTask->fLastDevClipBounds = devClipBounds;
+        opsTask->fLastClipNumAnalyticFPs = numClipAnalyticFPs;
     }
 
     
     
     bool mustRenderClip(uint32_t clipStackGenID, const SkIRect& devClipBounds,
                         int numClipAnalyticFPs) const {
-        GrRenderTargetOpList* opList = fRenderTargetContext->getRTOpList();
-        return opList->fLastClipStackGenID != clipStackGenID ||
-               !opList->fLastDevClipBounds.contains(devClipBounds) ||
-               opList->fLastClipNumAnalyticFPs != numClipAnalyticFPs;
+        GrOpsTask* opsTask = fRenderTargetContext->getOpsTask();
+        return opsTask->fLastClipStackGenID != clipStackGenID ||
+               !opsTask->fLastDevClipBounds.contains(devClipBounds) ||
+               opsTask->fLastClipNumAnalyticFPs != numClipAnalyticFPs;
     }
 
     using CanClearFullscreen = GrRenderTargetContext::CanClearFullscreen;
@@ -50,37 +50,22 @@ public:
     void clearStencilClip(const GrFixedClip&, bool insideStencilMask);
 
     
-
-
-
-
-
-
-
-
-
-
-    void absClear(const SkIRect* rect, const SkPMColor4f& color);
-
-    void stencilRect(const GrHardClip&,
-                     const GrUserStencilSettings* ss,
-                     GrAAType,
-                     const SkMatrix& viewMatrix,
-                     const SkRect& rect);
-
-    void stencilPath(const GrHardClip&, GrAAType, const SkMatrix& viewMatrix, const GrPath*);
-
     
+    
+    void stencilRect(
+            const GrClip& clip, const GrUserStencilSettings* ss, GrPaint&& paint,
+            GrAA doStencilMSAA, const SkMatrix& viewMatrix, const SkRect& rect,
+            const SkMatrix* localMatrix = nullptr) {
+        
+        
+        GrQuad localQuad = localMatrix ? GrQuad::MakeFromRect(rect, *localMatrix) : GrQuad(rect);
+        fRenderTargetContext->drawFilledQuad(
+                clip, std::move(paint), doStencilMSAA, GrQuadAAFlags::kNone,
+                GrQuad::MakeFromRect(rect, viewMatrix), localQuad, ss);
+    }
 
-
-
-    bool drawAndStencilRect(const GrHardClip&,
-                            const GrUserStencilSettings*,
-                            SkRegion::Op op,
-                            bool invert,
-                            GrAA,
-                            const SkMatrix& viewMatrix,
-                            const SkRect&);
+    void stencilPath(
+            const GrHardClip&, GrAA doStencilMSAA, const SkMatrix& viewMatrix, sk_sp<const GrPath>);
 
     
 
@@ -90,7 +75,7 @@ public:
                             const GrUserStencilSettings*,
                             SkRegion::Op op,
                             bool invert,
-                            GrAA,
+                            GrAA doStencilMSAA,
                             const SkMatrix& viewMatrix,
                             const SkPath&);
 
@@ -106,7 +91,7 @@ public:
         return fRenderTargetContext->fRenderTargetProxy->uniqueID();
     }
 
-    uint32_t testingOnly_getOpListID();
+    uint32_t testingOnly_getOpsTaskID();
 
     using WillAddOpFn = GrRenderTargetContext::WillAddOpFn;
     void testingOnly_addDrawOp(std::unique_ptr<GrDrawOp>);

@@ -8,11 +8,11 @@
 #ifndef GrSingleOwner_DEFINED
 #define GrSingleOwner_DEFINED
 
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
 
 #ifdef SK_DEBUG
-#include "SkMutex.h"
-#include "SkThreadID.h"
+#include "include/private/SkMutex.h"
+#include "include/private/SkThreadID.h"
 
 
 class GrSingleOwner {
@@ -28,7 +28,7 @@ public:
 
 private:
      void enter() {
-         SkAutoMutexAcquire lock(fMutex);
+         SkAutoMutexExclusive lock(fMutex);
          SkThreadID self = SkGetThreadID();
          SkASSERT(fOwner == self || fOwner == kIllegalThreadID);
          fReentranceCount++;
@@ -36,7 +36,7 @@ private:
      }
 
      void exit() {
-         SkAutoMutexAcquire lock(fMutex);
+         SkAutoMutexExclusive lock(fMutex);
          SkASSERT(fOwner == SkGetThreadID());
          fReentranceCount--;
          if (fReentranceCount == 0) {
@@ -45,8 +45,8 @@ private:
      }
 
      SkMutex fMutex;
-     SkThreadID fOwner;    
-     int fReentranceCount; 
+     SkThreadID fOwner    SK_GUARDED_BY(fMutex);
+     int fReentranceCount SK_GUARDED_BY(fMutex);
 };
 #else
 class GrSingleOwner {}; 

@@ -10,7 +10,6 @@
 
 #include <atomic>
 #include <utility>
-#include "SkTypes.h"
 
 
 

@@ -9,8 +9,8 @@
 #ifndef SkCubicClipper_DEFINED
 #define SkCubicClipper_DEFINED
 
-#include "SkPoint.h"
-#include "SkRect.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkRect.h"
 
 
 

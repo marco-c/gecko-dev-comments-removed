@@ -8,7 +8,7 @@
 #ifndef SkRecordOpts_DEFINED
 #define SkRecordOpts_DEFINED
 
-#include "SkRecord.h"
+#include "src/core/SkRecord.h"
 
 
 void SkRecordOptimize(SkRecord*);

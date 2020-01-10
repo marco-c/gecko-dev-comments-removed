@@ -8,14 +8,16 @@
 #ifndef GrCCPerFlushResources_DEFINED
 #define GrCCPerFlushResources_DEFINED
 
-#include "GrNonAtomicRef.h"
-#include "ccpr/GrCCAtlas.h"
-#include "ccpr/GrCCFiller.h"
-#include "ccpr/GrCCStroker.h"
-#include "ccpr/GrCCPathProcessor.h"
+#include "src/gpu/GrNonAtomicRef.h"
+#include "src/gpu/ccpr/GrCCAtlas.h"
+#include "src/gpu/ccpr/GrCCFiller.h"
+#include "src/gpu/ccpr/GrCCPathProcessor.h"
+#include "src/gpu/ccpr/GrCCStroker.h"
+#include "src/gpu/ccpr/GrStencilAtlasOp.h"
 
 class GrCCPathCache;
 class GrCCPathCacheEntry;
+class GrOctoBounds;
 class GrOnFlushResourceProvider;
 class GrShape;
 
@@ -65,26 +67,31 @@ struct GrCCPerFlushResourceSpecs {
 
 class GrCCPerFlushResources : public GrNonAtomicRef<GrCCPerFlushResources> {
 public:
-    GrCCPerFlushResources(GrOnFlushResourceProvider*, const GrCCPerFlushResourceSpecs&);
+    GrCCPerFlushResources(
+            GrOnFlushResourceProvider*, GrCCAtlas::CoverageType,const GrCCPerFlushResourceSpecs&);
 
     bool isMapped() const { return SkToBool(fPathInstanceData); }
+
+    GrCCAtlas::CoverageType renderedPathCoverageType() const {
+        return fRenderedAtlasStack.coverageType();
+    }
 
     
     
     void upgradeEntryToLiteralCoverageAtlas(GrCCPathCache*, GrOnFlushResourceProvider*,
-                                            GrCCPathCacheEntry*, GrCCPathProcessor::DoEvenOddFill);
+                                            GrCCPathCacheEntry*, GrFillRule);
 
     
     
     
     
     
-    GrCCAtlas* renderShapeInAtlas(const SkIRect& clipIBounds, const SkMatrix&, const GrShape&,
-                                  float strokeDevWidth, SkRect* devBounds, SkRect* devBounds45,
-                                  SkIRect* devIBounds, SkIVector* devToAtlasOffset);
-    const GrCCAtlas* renderDeviceSpacePathInAtlas(const SkIRect& clipIBounds, const SkPath& devPath,
-                                                  const SkIRect& devPathIBounds,
-                                                  SkIVector* devToAtlasOffset);
+    GrCCAtlas* renderShapeInAtlas(
+            const SkIRect& clipIBounds, const SkMatrix&, const GrShape&, float strokeDevWidth,
+            GrOctoBounds*, SkIRect* devIBounds, SkIVector* devToAtlasOffset);
+    const GrCCAtlas* renderDeviceSpacePathInAtlas(
+            const SkIRect& clipIBounds, const SkPath& devPath, const SkIRect& devPathIBounds,
+            GrFillRule fillRule, SkIVector* devToAtlasOffset);
 
     
     
@@ -100,7 +107,7 @@ public:
     }
 
     
-    bool finalize(GrOnFlushResourceProvider*, SkTArray<sk_sp<GrRenderTargetContext>>* out);
+    bool finalize(GrOnFlushResourceProvider*);
 
     
     const GrCCFiller& filler() const { SkASSERT(!this->isMapped()); return fFiller; }
@@ -117,13 +124,21 @@ public:
         SkASSERT(!this->isMapped());
         return fInstanceBuffer;
     }
+    sk_sp<const GrGpuBuffer> refStencilResolveBuffer() const {
+        SkASSERT(!this->isMapped());
+        return fStencilResolveBuffer;
+    }
 
 private:
     void recordCopyPathInstance(const GrCCPathCacheEntry&, const SkIVector& newAtlasOffset,
-                                GrCCPathProcessor::DoEvenOddFill, sk_sp<GrTextureProxy> srcProxy);
-    bool placeRenderedPathInAtlas(const SkIRect& clipIBounds, const SkIRect& pathIBounds,
-                                  GrScissorTest*, SkIRect* clippedPathIBounds,
-                                  SkIVector* devToAtlasOffset);
+                                GrFillRule, sk_sp<GrTextureProxy> srcProxy);
+    void placeRenderedPathInAtlas(
+            const SkIRect& clippedPathIBounds, GrScissorTest, SkIVector* devToAtlasOffset);
+
+    
+    
+    void recordStencilResolveInstance(
+            const SkIRect& clippedPathIBounds, const SkIVector& devToAtlasOffset, GrFillRule);
 
     const SkAutoSTArray<32, SkPoint> fLocalDevPtsBuffer;
     GrCCFiller fFiller;
@@ -139,6 +154,7 @@ private:
     int fNextCopyInstanceIdx;
     SkDEBUGCODE(int fEndCopyInstance);
     int fNextPathInstanceIdx;
+    int fBasePathInstanceIdx;
     SkDEBUGCODE(int fEndPathInstance);
 
     
@@ -161,7 +177,20 @@ private:
     
     SkSTArray<2, sk_sp<GrTexture>> fRecyclableAtlasTextures;
 
+    
+    sk_sp<GrGpuBuffer> fStencilResolveBuffer;
+    GrStencilAtlasOp::ResolveRectInstance* fStencilResolveInstanceData = nullptr;
+    int fNextStencilResolveInstanceIdx = 0;
+    SkDEBUGCODE(int fEndStencilResolveInstance);
+
 public:
+#ifdef SK_DEBUG
+    void debugOnly_didReuseRenderedPath() {
+        if (GrCCAtlas::CoverageType::kA8_Multisample == this->renderedPathCoverageType()) {
+            --fEndStencilResolveInstance;
+        }
+    }
+#endif
     const GrTexture* testingOnly_frontCopyAtlasTexture() const;
     const GrTexture* testingOnly_frontRenderedAtlasTexture() const;
 };

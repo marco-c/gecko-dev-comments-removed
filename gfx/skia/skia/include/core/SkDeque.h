@@ -10,8 +10,7 @@
 #ifndef SkDeque_DEFINED
 #define SkDeque_DEFINED
 
-#include "../private/SkNoncopyable.h"
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
 
 
 
@@ -24,7 +23,7 @@
 
 
 
-class SK_API SkDeque : SkNoncopyable {
+class SK_API SkDeque {
 public:
     
 
@@ -134,6 +133,9 @@ private:
 
 
     int  numBlocksAllocated() const;
+
+    SkDeque(const SkDeque&) = delete;
+    SkDeque& operator=(const SkDeque&) = delete;
 };
 
 #endif

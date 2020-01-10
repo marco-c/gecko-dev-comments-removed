@@ -8,7 +8,7 @@
 #ifndef SkTypefacePriv_DEFINED
 #define SkTypefacePriv_DEFINED
 
-#include "SkTypeface.h"
+#include "include/core/SkTypeface.h"
 
 
 

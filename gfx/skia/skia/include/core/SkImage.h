@@ -5,26 +5,18 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 #ifndef SkImage_DEFINED
 #define SkImage_DEFINED
 
-#include "GrTypes.h"
-#include "SkFilterQuality.h"
-#include "SkImageInfo.h"
-#include "SkImageEncoder.h"
-#include "SkRefCnt.h"
-#include "SkScalar.h"
-#include "SkShader.h"
+#include "include/core/SkFilterQuality.h"
+#include "include/core/SkImageEncoder.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkShader.h"
+#include "include/core/SkTileMode.h"
+#include "include/gpu/GrTypes.h"
+#include <functional>  
 
 #if defined(SK_BUILD_FOR_ANDROID) && __ANDROID_API__ >= 26
 #include <android/hardware_buffer.h>
@@ -174,7 +166,65 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
     static sk_sp<SkImage> MakeFromEncoded(sk_sp<SkData> encoded, const SkIRect* subset = nullptr);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkImage> DecodeToRaster(const void* encoded, size_t length,
+                                         const SkIRect* subset = nullptr);
+    static sk_sp<SkImage> DecodeToRaster(const sk_sp<SkData>& data,
+                                         const SkIRect* subset = nullptr) {
+        return DecodeToRaster(data->data(), data->size(), subset);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkImage> DecodeToTexture(GrContext* ctx, const void* encoded, size_t length,
+                                          const SkIRect* subset = nullptr);
+    static sk_sp<SkImage> DecodeToTexture(GrContext* ctx, const sk_sp<SkData>& data,
+                                          const SkIRect* subset = nullptr) {
+        return DecodeToTexture(ctx, data->data(), data->size(), subset);
+    }
 
     
     enum CompressionType {
@@ -291,37 +341,8 @@ public:
 
 
 
-    static sk_sp<SkImage> MakeCrossContextFromEncoded(GrContext* context, sk_sp<SkData> data,
-                                                      bool buildMips, SkColorSpace* dstColorSpace,
-                                                      bool limitToMaxTextureSize = false);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     static sk_sp<SkImage> MakeCrossContextFromPixmap(GrContext* context, const SkPixmap& pixmap,
-                                                     bool buildMips, SkColorSpace* dstColorSpace,
+                                                     bool buildMips,
                                                      bool limitToMaxTextureSize = false);
 
     
@@ -396,6 +417,9 @@ public:
 
 
 
+
+
+
     static sk_sp<SkImage> MakeFromYUVATexturesCopyWithExternalBackend(
             GrContext* context,
             SkYUVColorSpace yuvColorSpace,
@@ -404,7 +428,9 @@ public:
             SkISize imageSize,
             GrSurfaceOrigin imageOrigin,
             const GrBackendTexture& backendTexture,
-            sk_sp<SkColorSpace> imageColorSpace = nullptr);
+            sk_sp<SkColorSpace> imageColorSpace = nullptr,
+            TextureReleaseProc textureReleaseProc = nullptr,
+            ReleaseContext releaseContext = nullptr);
 
     
 
@@ -473,9 +499,12 @@ public:
     
 
     static sk_sp<SkImage> MakeFromYUVTexturesCopyWithExternalBackend(
-            GrContext* context, SkYUVColorSpace yuvColorSpace,
-            const GrBackendTexture yuvTextures[3], GrSurfaceOrigin imageOrigin,
-            const GrBackendTexture& backendTexture, sk_sp<SkColorSpace> imageColorSpace = nullptr);
+            GrContext* context,
+            SkYUVColorSpace yuvColorSpace,
+            const GrBackendTexture yuvTextures[3],
+            GrSurfaceOrigin imageOrigin,
+            const GrBackendTexture& backendTexture,
+            sk_sp<SkColorSpace> imageColorSpace = nullptr);
 
     
 
@@ -514,13 +543,17 @@ public:
 
 
 
+
+
     static sk_sp<SkImage> MakeFromNV12TexturesCopyWithExternalBackend(
             GrContext* context,
             SkYUVColorSpace yuvColorSpace,
             const GrBackendTexture nv12Textures[2],
             GrSurfaceOrigin imageOrigin,
             const GrBackendTexture& backendTexture,
-            sk_sp<SkColorSpace> imageColorSpace = nullptr);
+            sk_sp<SkColorSpace> imageColorSpace = nullptr,
+            TextureReleaseProc textureReleaseProc = nullptr,
+            ReleaseContext releaseContext = nullptr);
 
     enum class BitDepth {
         kU8,  
@@ -588,25 +621,32 @@ public:
 
 
 
-    int width() const { return fWidth; }
+
+    const SkImageInfo& imageInfo() const { return fInfo; }
 
     
 
 
 
-    int height() const { return fHeight; }
+    int width() const { return fInfo.width(); }
 
     
 
 
 
-    SkISize dimensions() const { return SkISize::Make(fWidth, fHeight); }
+    int height() const { return fInfo.height(); }
 
     
 
 
 
-    SkIRect bounds() const { return SkIRect::MakeWH(fWidth, fHeight); }
+    SkISize dimensions() const { return SkISize::Make(fInfo.width(), fInfo.height()); }
+
+    
+
+
+
+    SkIRect bounds() const { return SkIRect::MakeWH(fInfo.width(), fInfo.height()); }
 
     
 
@@ -681,9 +721,7 @@ public:
 
 
 
-
-
-    sk_sp<SkShader> makeShader(SkShader::TileMode tileMode1, SkShader::TileMode tileMode2,
+    sk_sp<SkShader> makeShader(SkTileMode tmx, SkTileMode tmy,
                                const SkMatrix* localMatrix = nullptr) const;
 
     
@@ -694,7 +732,7 @@ public:
 
 
     sk_sp<SkShader> makeShader(const SkMatrix* localMatrix = nullptr) const {
-        return this->makeShader(SkShader::kClamp_TileMode, SkShader::kClamp_TileMode, localMatrix);
+        return this->makeShader(SkTileMode::kClamp, SkTileMode::kClamp, localMatrix);
     }
 
     
@@ -729,6 +767,23 @@ public:
 
 
     bool isValid(GrContext* context) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    GrSemaphoresSubmitted flush(GrContext* context, const GrFlushInfo& flushInfo);
+
+    
+    void flush(GrContext*);
 
     
 
@@ -931,8 +986,7 @@ public:
 
 
 
-    sk_sp<SkImage> makeTextureImage(GrContext* context, SkColorSpace* dstColorSpace,
-                                    GrMipMapped mipMapped = GrMipMapped::kNo) const;
+    sk_sp<SkImage> makeTextureImage(GrContext* context, GrMipMapped = GrMipMapped::kNo) const;
 
     
 
@@ -1070,12 +1124,17 @@ public:
     sk_sp<SkImage> makeColorTypeAndColorSpace(SkColorType targetColorType,
                                               sk_sp<SkColorSpace> targetColorSpace) const;
 
+    
+
+
+
+    sk_sp<SkImage> reinterpretColorSpace(sk_sp<SkColorSpace> newColorSpace) const;
+
 private:
-    SkImage(int width, int height, uint32_t uniqueID);
+    SkImage(const SkImageInfo& info, uint32_t uniqueID);
     friend class SkImage_Base;
 
-    const int       fWidth;
-    const int       fHeight;
+    SkImageInfo     fInfo;
     const uint32_t  fUniqueID;
 
     typedef SkRefCnt INHERITED;

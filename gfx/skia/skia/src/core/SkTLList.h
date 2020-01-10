@@ -8,10 +8,10 @@
 #ifndef SkTLList_DEFINED
 #define SkTLList_DEFINED
 
-#include "SkMalloc.h"
-#include "SkTInternalLList.h"
-#include "SkTemplates.h"
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
+#include "include/private/SkMalloc.h"
+#include "include/private/SkTemplates.h"
+#include "src/core/SkTInternalLList.h"
 #include <new>
 #include <utility>
 
@@ -28,7 +28,7 @@
 
 
 
-template <typename T, unsigned int N> class SkTLList : SkNoncopyable {
+template <typename T, unsigned int N> class SkTLList {
 private:
     struct Block;
     struct Node {
@@ -346,6 +346,9 @@ private:
     NodeList fFreeList;
     Block    fFirstBlock;
     int fCount;
+
+    SkTLList(const SkTLList&) = delete;
+    SkTLList& operator=(const SkTLList&) = delete;
 };
 
 #endif

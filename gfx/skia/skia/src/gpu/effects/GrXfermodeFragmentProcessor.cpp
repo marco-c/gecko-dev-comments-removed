@@ -5,15 +5,15 @@
 
 
 
-#include "GrXfermodeFragmentProcessor.h"
+#include "src/gpu/effects/GrXfermodeFragmentProcessor.h"
 
-#include "GrConstColorProcessor.h"
-#include "GrFragmentProcessor.h"
-#include "glsl/GrGLSLFragmentProcessor.h"
-#include "glsl/GrGLSLBlend.h"
-#include "glsl/GrGLSLFragmentShaderBuilder.h"
-#include "SkGr.h"
-#include "SkXfermodePriv.h"
+#include "src/core/SkXfermodePriv.h"
+#include "src/gpu/GrFragmentProcessor.h"
+#include "src/gpu/SkGr.h"
+#include "src/gpu/effects/generated/GrConstColorProcessor.h"
+#include "src/gpu/glsl/GrGLSLBlend.h"
+#include "src/gpu/glsl/GrGLSLFragmentProcessor.h"
+#include "src/gpu/glsl/GrGLSLFragmentShaderBuilder.h"
 
 
 
@@ -221,10 +221,10 @@ void GLComposeTwoFragmentProcessor::emitCode(EmitArgs& args) {
 
     
     SkString srcColor("xfer_src");
-    this->emitChild(0, inputColor, &srcColor, args);
+    this->invokeChild(0, inputColor, &srcColor, args);
 
     SkString dstColor("xfer_dst");
-    this->emitChild(1, inputColor, &dstColor, args);
+    this->invokeChild(1, inputColor, &dstColor, args);
 
     
     SkBlendMode mode = cs.getMode();
@@ -326,17 +326,8 @@ private:
             case SkBlendMode::kSrcIn:
             case SkBlendMode::kDstIn:
             case SkBlendMode::kModulate:
-                if (fp->compatibleWithCoverageAsAlpha()) {
-                    if (fp->preservesOpaqueInput()) {
-                        flags = kPreservesOpaqueInput_OptimizationFlag |
-                                kCompatibleWithCoverageAsAlpha_OptimizationFlag;
-                    } else {
-                        flags = kCompatibleWithCoverageAsAlpha_OptimizationFlag;
-                    }
-                } else {
-                    flags = fp->preservesOpaqueInput() ? kPreservesOpaqueInput_OptimizationFlag
-                                                       : kNone_OptimizationFlags;
-                }
+                flags = ProcessorOptimizationFlags(fp) &
+                        ~kConstantOutputForConstantInput_OptimizationFlag;
                 break;
 
             
@@ -448,7 +439,7 @@ public:
         ComposeOneFragmentProcessor::Child child =
             args.fFp.cast<ComposeOneFragmentProcessor>().child();
         SkString childColor("child");
-        this->emitChild(0, &childColor, args);
+        this->invokeChild(0, &childColor, args);
 
         
         fragBuilder->codeAppendf("// Compose Xfer Mode: %s\n", SkBlendMode_Name(mode));

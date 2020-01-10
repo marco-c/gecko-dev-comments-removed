@@ -8,7 +8,7 @@
 #ifndef GrTextureMaker_DEFINED
 #define GrTextureMaker_DEFINED
 
-#include "GrTextureProducer.h"
+#include "src/gpu/GrTextureProducer.h"
 
 
 
@@ -26,9 +26,9 @@ public:
             const GrSamplerState::Filter* filterOrNullForBicubic) override;
 
 protected:
-    GrTextureMaker(GrRecordingContext* context, int width, int height, bool isAlphaOnly,
+    GrTextureMaker(GrRecordingContext* context, int width, int height, const GrColorInfo& info,
                    bool domainNeedsLocal)
-        : INHERITED(context, width, height, isAlphaOnly, domainNeedsLocal) {}
+            : INHERITED(context, width, height, info, domainNeedsLocal) {}
 
     
 

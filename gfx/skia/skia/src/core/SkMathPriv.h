@@ -8,7 +8,7 @@
 #ifndef SkMathPriv_DEFINED
 #define SkMathPriv_DEFINED
 
-#include "SkMath.h"
+#include "include/core/SkMath.h"
 
 
 

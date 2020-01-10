@@ -5,7 +5,9 @@
 
 
 
-#include "SkSLUtil.h"
+#include "src/sksl/SkSLUtil.h"
+
+#include "src/sksl/SkSLStringStream.h"
 
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
@@ -13,7 +15,7 @@
 
 namespace SkSL {
 
-#ifdef SKSL_STANDALONE
+#if defined(SKSL_STANDALONE) || !SK_SUPPORT_GPU
 StandaloneShaderCaps standaloneCaps;
 #endif
 
@@ -28,6 +30,47 @@ void sksl_abort() {
 
 void write_stringstream(const StringStream& s, OutputStream& out) {
     out.write(s.str().c_str(), s.str().size());
+}
+
+bool is_assignment(Token::Kind op) {
+    switch (op) {
+        case Token::EQ:           
+        case Token::PLUSEQ:       
+        case Token::MINUSEQ:      
+        case Token::STAREQ:       
+        case Token::SLASHEQ:      
+        case Token::PERCENTEQ:    
+        case Token::SHLEQ:        
+        case Token::SHREQ:        
+        case Token::BITWISEOREQ:  
+        case Token::BITWISEXOREQ: 
+        case Token::BITWISEANDEQ: 
+        case Token::LOGICALOREQ:  
+        case Token::LOGICALXOREQ: 
+        case Token::LOGICALANDEQ:
+            return true;
+        default:
+            return false;
+    }
+}
+
+Token::Kind remove_assignment(Token::Kind op) {
+    switch (op) {
+        case Token::PLUSEQ:       return Token::PLUS;
+        case Token::MINUSEQ:      return Token::MINUS;
+        case Token::STAREQ:       return Token::STAR;
+        case Token::SLASHEQ:      return Token::SLASH;
+        case Token::PERCENTEQ:    return Token::PERCENT;
+        case Token::SHLEQ:        return Token::SHL;
+        case Token::SHREQ:        return Token::SHR;
+        case Token::BITWISEOREQ:  return Token::BITWISEOR;
+        case Token::BITWISEXOREQ: return Token::BITWISEXOR;
+        case Token::BITWISEANDEQ: return Token::BITWISEAND;
+        case Token::LOGICALOREQ:  return Token::LOGICALOR;
+        case Token::LOGICALXOREQ: return Token::LOGICALXOR;
+        case Token::LOGICALANDEQ: return Token::LOGICALAND;
+        default: return op;
+    }
 }
 
 } 

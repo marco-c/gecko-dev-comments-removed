@@ -4,8 +4,8 @@
 
 
 
-#include "SkBmpBaseCodec.h"
-#include "../private/SkMalloc.h"
+#include "include/private/SkMalloc.h"
+#include "src/codec/SkBmpBaseCodec.h"
 
 SkBmpBaseCodec::~SkBmpBaseCodec() {}
 

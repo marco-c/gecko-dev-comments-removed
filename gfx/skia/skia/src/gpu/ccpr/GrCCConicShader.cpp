@@ -5,13 +5,13 @@
 
 
 
-#include "GrCCConicShader.h"
+#include "src/gpu/ccpr/GrCCConicShader.h"
 
-#include "glsl/GrGLSLFragmentShaderBuilder.h"
-#include "glsl/GrGLSLVertexGeoBuilder.h"
+#include "src/gpu/glsl/GrGLSLFragmentShaderBuilder.h"
+#include "src/gpu/glsl/GrGLSLVertexGeoBuilder.h"
 
-void GrCCConicShader::emitSetupCode(GrGLSLVertexGeoBuilder* s, const char* pts, const char* wind,
-                                    const char** outHull4) const {
+void GrCCConicShader::emitSetupCode(
+        GrGLSLVertexGeoBuilder* s, const char* pts, const char** outHull4) const {
     
     
     s->declareGlobal(fKLMMatrix);
@@ -27,8 +27,9 @@ void GrCCConicShader::emitSetupCode(GrGLSLVertexGeoBuilder* s, const char* pts, 
 
     
     
-    s->codeAppendf("float kwidth = 2*bloat * %s * (abs(%s[0].x) + abs(%s[0].y));",
-                   wind, fKLMMatrix.c_str(), fKLMMatrix.c_str());
+    
+    s->codeAppendf("float kwidth = 2*bloat * (abs(%s[0].x) + abs(%s[0].y)) * sign(%s[0].z);",
+                   fKLMMatrix.c_str(), fKLMMatrix.c_str(), fKLMMatrix.c_str());
     s->codeAppendf("%s *= 1/kwidth;", fKLMMatrix.c_str());
 
     if (outHull4) {
@@ -46,23 +47,28 @@ void GrCCConicShader::emitSetupCode(GrGLSLVertexGeoBuilder* s, const char* pts, 
     }
 }
 
-void GrCCConicShader::onEmitVaryings(GrGLSLVaryingHandler* varyingHandler,
-                                     GrGLSLVarying::Scope scope, SkString* code,
-                                     const char* position, const char* coverage,
-                                     const char* cornerCoverage) {
-    fKLM_fWind.reset(kFloat4_GrSLType, scope);
-    varyingHandler->addVarying("klm_and_wind", &fKLM_fWind);
+void GrCCConicShader::onEmitVaryings(
+        GrGLSLVaryingHandler* varyingHandler, GrGLSLVarying::Scope scope, SkString* code,
+        const char* position, const char* coverage, const char* cornerCoverage, const char* wind) {
     code->appendf("float3 klm = float3(%s - %s, 1) * %s;",
                   position, fControlPoint.c_str(), fKLMMatrix.c_str());
+    if (coverage) {
+        fKLM_fWind.reset(kFloat4_GrSLType, scope);
+        varyingHandler->addVarying("klm_and_wind", &fKLM_fWind);
+        code->appendf("%s.w = %s;", OutName(fKLM_fWind), wind);
+    } else {
+        fKLM_fWind.reset(kFloat3_GrSLType, scope);
+        varyingHandler->addVarying("klm", &fKLM_fWind);
+    }
     code->appendf("%s.xyz = klm;", OutName(fKLM_fWind));
-    code->appendf("%s.w = %s;", OutName(fKLM_fWind), coverage); 
 
     fGrad_fCorner.reset(cornerCoverage ? kFloat4_GrSLType : kFloat2_GrSLType, scope);
-    varyingHandler->addVarying(cornerCoverage ? "grad_and_corner" : "grad", &fGrad_fCorner);
+    varyingHandler->addVarying((cornerCoverage) ? "grad_and_corner" : "grad", &fGrad_fCorner);
     code->appendf("%s.xy = 2*bloat * (float3x2(%s) * float3(2*klm[0], -klm[2], -klm[1]));",
                   OutName(fGrad_fCorner), fKLMMatrix.c_str());
 
     if (cornerCoverage) {
+        SkASSERT(coverage);
         code->appendf("half hull_coverage;");
         this->calcHullCoverage(code, "klm", OutName(fGrad_fCorner), "hull_coverage");
         code->appendf("%s.zw = half2(hull_coverage, 1) * %s;",
@@ -70,14 +76,14 @@ void GrCCConicShader::onEmitVaryings(GrGLSLVaryingHandler* varyingHandler,
     }
 }
 
-void GrCCConicShader::onEmitFragmentCode(GrGLSLFPFragmentBuilder* f,
-                                         const char* outputCoverage) const {
+void GrCCConicShader::emitFragmentCoverageCode(
+        GrGLSLFPFragmentBuilder* f, const char* outputCoverage) const {
     this->calcHullCoverage(&AccessCodeString(f), fKLM_fWind.fsIn(), fGrad_fCorner.fsIn(),
                            outputCoverage);
-    f->codeAppendf("%s *= half(%s.w);", outputCoverage, fKLM_fWind.fsIn()); 
+    f->codeAppendf("%s *= half(%s.w);", outputCoverage, fKLM_fWind.fsIn());  
 
     if (kFloat4_GrSLType == fGrad_fCorner.type()) {
-        f->codeAppendf("%s = fma(half(%s.z), half(%s.w), %s);", 
+        f->codeAppendf("%s = fma(half(%s.z), half(%s.w), %s);",  
                        outputCoverage, fGrad_fCorner.fsIn(), fGrad_fCorner.fsIn(),
                        outputCoverage);
     }
@@ -93,4 +99,12 @@ void GrCCConicShader::calcHullCoverage(SkString* code, const char* klm, const ch
     code->append ("float edge_coverage = min(k - 0.5, 0);");
     
     code->appendf("%s = max(half(curve_coverage + edge_coverage), 0);", outputCoverage);
+}
+
+void GrCCConicShader::emitSampleMaskCode(GrGLSLFPFragmentBuilder* f) const {
+    f->codeAppendf("float k = %s.x, l = %s.y, m = %s.z;",
+                   fKLM_fWind.fsIn(), fKLM_fWind.fsIn(), fKLM_fWind.fsIn());
+    f->codeAppendf("float f = k*k - l*m;");
+    f->codeAppendf("float2 grad = %s;", fGrad_fCorner.fsIn());
+    f->applyFnToMultisampleMask("f", "grad", GrGLSLFPFragmentBuilder::ScopeFlags::kTopLevel);
 }

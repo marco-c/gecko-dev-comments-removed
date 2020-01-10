@@ -5,15 +5,15 @@
 
 
 
-#include "SkMaskBlurFilter.h"
+#include "src/core/SkMaskBlurFilter.h"
 
-#include "SkArenaAlloc.h"
-#include "SkColorPriv.h"
-#include "SkGaussFilter.h"
-#include "SkMalloc.h"
-#include "SkNx.h"
-#include "SkTemplates.h"
-#include "SkTo.h"
+#include "include/core/SkColorPriv.h"
+#include "include/private/SkMalloc.h"
+#include "include/private/SkNx.h"
+#include "include/private/SkTemplates.h"
+#include "include/private/SkTo.h"
+#include "src/core/SkArenaAlloc.h"
+#include "src/core/SkGaussFilter.h"
 
 #include <cmath>
 #include <climits>
@@ -248,9 +248,11 @@ public:
 
 
 
+
+
 SkMaskBlurFilter::SkMaskBlurFilter(double sigmaW, double sigmaH)
-    : fSigmaW{SkTPin(sigmaW, 0.0, 136.0)}
-    , fSigmaH{SkTPin(sigmaH, 0.0, 136.0)}
+    : fSigmaW{SkTPin(sigmaW, 0.0, 135.0)}
+    , fSigmaH{SkTPin(sigmaH, 0.0, 135.0)}
 {
     SkASSERT(sigmaW >= 0);
     SkASSERT(sigmaH >= 0);

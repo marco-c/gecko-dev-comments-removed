@@ -5,8 +5,8 @@
 
 
 
-#include "SkQuadClipper.h"
-#include "SkGeometry.h"
+#include "src/core/SkGeometry.h"
+#include "src/core/SkQuadClipper.h"
 
 #include <utility>
 

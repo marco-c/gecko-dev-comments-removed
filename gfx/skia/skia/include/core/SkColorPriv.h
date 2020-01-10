@@ -8,9 +8,9 @@
 #ifndef SkColorPriv_DEFINED
 #define SkColorPriv_DEFINED
 
-#include "../private/SkTo.h"
-#include "SkColor.h"
-#include "SkMath.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkMath.h"
+#include "include/private/SkTo.h"
 
 
 
@@ -67,7 +67,7 @@ static inline U8CPU SkUnitScalarClampToByte(SkScalar x) {
 #define SK_BGRA_A32_SHIFT   24
 
 #if defined(SK_PMCOLOR_IS_RGBA) || defined(SK_PMCOLOR_IS_BGRA)
-    #error "Configure PMCOLOR by setting SK_R32_SHIFT, etc"
+    #error "Configure PMCOLOR by setting SK_R32_SHIFT."
 #endif
 
 

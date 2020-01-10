@@ -8,9 +8,9 @@
 #ifndef GrGaussianConvolutionFragmentProcessor_DEFINED
 #define GrGaussianConvolutionFragmentProcessor_DEFINED
 
-#include "GrCoordTransform.h"
-#include "GrFragmentProcessor.h"
-#include "GrTextureDomain.h"
+#include "src/gpu/GrCoordTransform.h"
+#include "src/gpu/GrFragmentProcessor.h"
+#include "src/gpu/effects/GrTextureDomain.h"
 
 
 
@@ -23,13 +23,14 @@ public:
 
     
     static std::unique_ptr<GrFragmentProcessor> Make(sk_sp<GrTextureProxy> proxy,
+                                                     GrColorType srcColorType,
                                                      Direction dir,
                                                      int halfWidth,
                                                      float gaussianSigma,
                                                      GrTextureDomain::Mode mode,
                                                      int* bounds) {
         return std::unique_ptr<GrFragmentProcessor>(new GrGaussianConvolutionFragmentProcessor(
-                std::move(proxy), dir, halfWidth, gaussianSigma, mode, bounds));
+                std::move(proxy), srcColorType, dir, halfWidth, gaussianSigma, mode, bounds));
     }
 
     const float* kernel() const { return fKernel; }
@@ -71,8 +72,8 @@ public:
 
 private:
     
-    GrGaussianConvolutionFragmentProcessor(sk_sp<GrTextureProxy>, Direction,
-                                           int halfWidth, float gaussianSigma,
+    GrGaussianConvolutionFragmentProcessor(sk_sp<GrTextureProxy>, GrColorType srcColorType,
+                                           Direction, int halfWidth, float gaussianSigma,
                                            GrTextureDomain::Mode mode, int bounds[2]);
 
     explicit GrGaussianConvolutionFragmentProcessor(const GrGaussianConvolutionFragmentProcessor&);

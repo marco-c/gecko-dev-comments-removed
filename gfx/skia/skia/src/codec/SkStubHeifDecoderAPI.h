@@ -32,13 +32,12 @@ struct HeifStream {
 };
 
 struct HeifFrameInfo {
-    int mRotationAngle;
-    int mWidth;
-    int mHeight;
-    int mBytesPerPixel;
-
-    size_t                  mIccSize;
-    std::unique_ptr<char[]> mIccData;
+    uint32_t mWidth;
+    uint32_t mHeight;
+    int32_t  mRotationAngle;           
+    uint32_t mBytesPerPixel;           
+    int64_t mDurationUs;               
+    std::vector<uint8_t> mIccData;     
 };
 
 struct HeifDecoder {
@@ -47,7 +46,15 @@ struct HeifDecoder {
         return false;
     }
 
+    bool getSequenceInfo(HeifFrameInfo* frameInfo, size_t *frameCount) {
+        return false;
+    }
+
     bool decode(HeifFrameInfo*) {
+        return false;
+    }
+
+    bool decodeSequence(int frameIndex, HeifFrameInfo* frameInfo) {
         return false;
     }
 

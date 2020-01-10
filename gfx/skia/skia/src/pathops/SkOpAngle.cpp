@@ -4,10 +4,10 @@
 
 
 
-#include "SkOpAngle.h"
-#include "SkOpSegment.h"
-#include "SkPathOpsCurve.h"
-#include "SkTSort.h"
+#include "src/core/SkTSort.h"
+#include "src/pathops/SkOpAngle.h"
+#include "src/pathops/SkOpSegment.h"
+#include "src/pathops/SkPathOpsCurve.h"
 
 
 

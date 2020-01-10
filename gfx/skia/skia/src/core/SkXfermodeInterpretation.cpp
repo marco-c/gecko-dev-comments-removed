@@ -5,8 +5,8 @@
 
 
 
-#include "SkXfermodeInterpretation.h"
-#include "SkPaint.h"
+#include "include/core/SkPaint.h"
+#include "src/core/SkXfermodeInterpretation.h"
 
 static bool just_solid_color(const SkPaint& p) {
     return SK_AlphaOPAQUE == p.getAlpha() && !p.getColorFilter() && !p.getShader();

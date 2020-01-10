@@ -4,10 +4,10 @@
 
 
 
-#include "SkIntersections.h"
-#include "SkPathOpsConic.h"
-#include "SkPathOpsCurve.h"
-#include "SkPathOpsLine.h"
+#include "src/pathops/SkIntersections.h"
+#include "src/pathops/SkPathOpsConic.h"
+#include "src/pathops/SkPathOpsCurve.h"
+#include "src/pathops/SkPathOpsLine.h"
 
 class LineConicIntersections {
 public:

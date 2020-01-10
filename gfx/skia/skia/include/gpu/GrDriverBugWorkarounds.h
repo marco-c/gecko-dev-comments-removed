@@ -16,10 +16,10 @@
 
 
 
-#include "GrDriverBugWorkaroundsAutogen.h"
+#include "include/gpu/GrDriverBugWorkaroundsAutogen.h"
 #endif
 
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
 
 #include <stdint.h>
 #include <vector>

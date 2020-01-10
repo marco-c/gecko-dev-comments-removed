@@ -8,13 +8,13 @@
 #ifndef SkMatrixConvolutionImageFilter_DEFINED
 #define SkMatrixConvolutionImageFilter_DEFINED
 
-#include "SkFlattenable.h"
-#include "SkImageFilter.h"
-#include "SkScalar.h"
-#include "SkSize.h"
-#include "SkPoint.h"
+#include "include/core/SkImageFilter.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkSize.h"
 
 class SkBitmap;
+enum class SkTileMode;
 
 
 
@@ -22,9 +22,12 @@ class SkBitmap;
 
 
 
-class SK_API SkMatrixConvolutionImageFilter : public SkImageFilter {
+
+
+class SK_API SkMatrixConvolutionImageFilter {
 public:
     
+
     enum TileMode {
       kClamp_TileMode = 0,         
       kRepeat_TileMode,        
@@ -35,7 +38,15 @@ public:
       kMax_TileMode = kClampToBlack_TileMode
     };
 
-    ~SkMatrixConvolutionImageFilter() override;
+    static sk_sp<SkImageFilter> Make(const SkISize& kernelSize,
+                                     const SkScalar* kernel,
+                                     SkScalar gain,
+                                     SkScalar bias,
+                                     const SkIPoint& kernelOffset,
+                                     TileMode tileMode,
+                                     bool convolveAlpha,
+                                     sk_sp<SkImageFilter> input,
+                                     const SkImageFilter::CropRect* cropRect = nullptr);
 
     
 
@@ -63,65 +74,15 @@ public:
                                      SkScalar gain,
                                      SkScalar bias,
                                      const SkIPoint& kernelOffset,
-                                     TileMode tileMode,
+                                     SkTileMode tileMode,
                                      bool convolveAlpha,
                                      sk_sp<SkImageFilter> input,
-                                     const CropRect* cropRect = nullptr);
+                                     const SkImageFilter::CropRect* cropRect = nullptr);
 
-protected:
-    SkMatrixConvolutionImageFilter(const SkISize& kernelSize,
-                                   const SkScalar* kernel,
-                                   SkScalar gain,
-                                   SkScalar bias,
-                                   const SkIPoint& kernelOffset,
-                                   TileMode tileMode,
-                                   bool convolveAlpha,
-                                   sk_sp<SkImageFilter> input,
-                                   const CropRect* cropRect);
-    void flatten(SkWriteBuffer&) const override;
-
-    sk_sp<SkSpecialImage> onFilterImage(SkSpecialImage* source, const Context&,
-                                        SkIPoint* offset) const override;
-    sk_sp<SkImageFilter> onMakeColorSpace(SkColorSpaceXformer*) const override;
-    SkIRect onFilterNodeBounds(const SkIRect&, const SkMatrix& ctm,
-                               MapDirection, const SkIRect* inputRect) const override;
-    bool affectsTransparentBlack() const override;
+    static void RegisterFlattenables();
 
 private:
-    SK_FLATTENABLE_HOOKS(SkMatrixConvolutionImageFilter)
-
-    SkISize   fKernelSize;
-    SkScalar* fKernel;
-    SkScalar  fGain;
-    SkScalar  fBias;
-    SkIPoint  fKernelOffset;
-    TileMode  fTileMode;
-    bool      fConvolveAlpha;
-
-    template <class PixelFetcher, bool convolveAlpha>
-    void filterPixels(const SkBitmap& src,
-                      SkBitmap* result,
-                      SkIVector& offset,
-                      const SkIRect& rect,
-                      const SkIRect& bounds) const;
-    template <class PixelFetcher>
-    void filterPixels(const SkBitmap& src,
-                      SkBitmap* result,
-                      SkIVector& offset,
-                      const SkIRect& rect,
-                      const SkIRect& bounds) const;
-    void filterInteriorPixels(const SkBitmap& src,
-                              SkBitmap* result,
-                              SkIVector& offset,
-                              const SkIRect& rect,
-                              const SkIRect& bounds) const;
-    void filterBorderPixels(const SkBitmap& src,
-                            SkBitmap* result,
-                            SkIVector& offset,
-                            const SkIRect& rect,
-                            const SkIRect& bounds) const;
-
-    typedef SkImageFilter INHERITED;
+    SkMatrixConvolutionImageFilter() = delete;
 };
 
 #endif

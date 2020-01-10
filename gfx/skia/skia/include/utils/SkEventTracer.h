@@ -16,7 +16,7 @@
 
 
 
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
 
 class SK_API SkEventTracer {
 public:

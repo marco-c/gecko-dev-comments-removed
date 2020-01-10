@@ -8,7 +8,7 @@
 #ifndef GrBuffer_DEFINED
 #define GrBuffer_DEFINED
 
-#include "GrTypes.h"
+#include "include/gpu/GrTypes.h"
 
 
 class GrBuffer {

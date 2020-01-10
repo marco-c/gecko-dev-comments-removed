@@ -8,12 +8,12 @@
 #ifndef SkImageFilterCache_DEFINED
 #define SkImageFilterCache_DEFINED
 
-#include "SkMatrix.h"
-#include "SkRefCnt.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkRefCnt.h"
+#include "src/core/SkImageFilterTypes.h"
 
 struct SkIPoint;
 class SkImageFilter;
-class SkSpecialImage;
 
 struct SkImageFilterCacheKey {
     SkImageFilterCacheKey(const uint32_t uniqueID, const SkMatrix& matrix,
@@ -48,16 +48,25 @@ struct SkImageFilterCacheKey {
 
 
 
+
 class SkImageFilterCache : public SkRefCnt {
 public:
+    SK_USE_FLUENT_IMAGE_FILTER_TYPES_IN_CLASS
+
     enum { kDefaultTransientSize = 32 * 1024 * 1024 };
 
     virtual ~SkImageFilterCache() {}
     static SkImageFilterCache* Create(size_t maxBytes);
     static SkImageFilterCache* Get();
-    virtual sk_sp<SkSpecialImage> get(const SkImageFilterCacheKey& key, SkIPoint* offset) const = 0;
-    virtual void set(const SkImageFilterCacheKey& key, SkSpecialImage* image,
-                     const SkIPoint& offset, const SkImageFilter* filter) = 0;
+
+    
+    
+    virtual bool get(const SkImageFilterCacheKey& key,
+                     skif::FilterResult<For::kOutput>* result) const = 0;
+    
+    
+    virtual void set(const SkImageFilterCacheKey& key, const SkImageFilter* filter,
+                     const skif::FilterResult<For::kOutput>& result) = 0;
     virtual void purge() = 0;
     virtual void purgeByImageFilter(const SkImageFilter*) = 0;
     SkDEBUGCODE(virtual int count() const = 0;)

@@ -5,30 +5,22 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 #ifndef SkBitmap_DEFINED
 #define SkBitmap_DEFINED
 
-#include "SkColor.h"
-#include "SkImageInfo.h"
-#include "SkPixmap.h"
-#include "SkPoint.h"
-#include "SkRefCnt.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkPixmap.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkTileMode.h"
 
 struct SkMask;
 struct SkIRect;
 struct SkRect;
 class SkPaint;
 class SkPixelRef;
+class SkShader;
 class SkString;
 
 
@@ -447,17 +439,9 @@ public:
 
 
 
-
-
-
-
     bool SK_WARN_UNUSED_RESULT tryAllocPixelsFlags(const SkImageInfo& info, uint32_t flags);
 
     
-
-
-
-
 
 
 
@@ -1103,6 +1087,11 @@ public:
 
 
     bool peekPixels(SkPixmap* pixmap) const;
+
+    sk_sp<SkShader> makeShader(SkTileMode tmx, SkTileMode tmy,
+                               const SkMatrix* localMatrix = nullptr) const;
+    
+    sk_sp<SkShader> makeShader(const SkMatrix* localMatrix = nullptr) const;
 
     
 

@@ -5,9 +5,9 @@
 
 
 
-#include "GrVkTypesPriv.h"
+#include "include/private/GrVkTypesPriv.h"
 
-#include "GrVkImageLayout.h"
+#include "src/gpu/vk/GrVkImageLayout.h"
 
 void GrVkBackendSurfaceInfo::cleanup() {
     SkSafeUnref(fLayout);

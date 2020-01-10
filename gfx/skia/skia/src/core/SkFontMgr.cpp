@@ -5,11 +5,11 @@
 
 
 
-#include "SkFontDescriptor.h"
-#include "SkFontMgr.h"
-#include "SkOnce.h"
-#include "SkStream.h"
-#include "SkTypes.h"
+#include "include/core/SkFontMgr.h"
+#include "include/core/SkStream.h"
+#include "include/core/SkTypes.h"
+#include "include/private/SkOnce.h"
+#include "src/core/SkFontDescriptor.h"
 
 class SkFontStyle;
 class SkTypeface;
@@ -274,19 +274,23 @@ SkTypeface* SkFontStyleSet::matchStyleCSS3(const SkFontStyle& pattern) {
         
         if (pattern.weight() == current.weight()) {
             currentScore += 1000;
-        } else if (pattern.weight() <= 500) {
-            if (400 <= pattern.weight() && pattern.weight() < 450) {
-                if (450 <= current.weight() && current.weight() <= 500) {
-                    
-                    
-                    currentScore += 500;
-                }
-            }
+        
+        } else if (pattern.weight() < 400) {
             if (current.weight() <= pattern.weight()) {
                 currentScore += 1000 - pattern.weight() + current.weight();
             } else {
                 currentScore += 1000 - current.weight();
             }
+        
+        } else if (pattern.weight() <= 500) {
+            if (current.weight() >= pattern.weight() && current.weight() <= 500) {
+                currentScore += 1000 + pattern.weight() - current.weight();
+            } else if (current.weight() <= pattern.weight()) {
+                currentScore += 500 + current.weight();
+            } else {
+                currentScore += 1000 - current.weight();
+            }
+        
         } else if (pattern.weight() > 500) {
             if (current.weight() > pattern.weight()) {
                 currentScore += 1000 + pattern.weight() - current.weight();

@@ -8,8 +8,8 @@
 #ifndef GrDistanceFieldAdjustTable_DEFINED
 #define GrDistanceFieldAdjustTable_DEFINED
 
-#include "SkRefCnt.h"
-#include "SkScalar.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkScalar.h"
 
 
 

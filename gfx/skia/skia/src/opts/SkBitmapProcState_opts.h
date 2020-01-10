@@ -8,7 +8,9 @@
 #ifndef SkBitmapProcState_opts_DEFINED
 #define SkBitmapProcState_opts_DEFINED
 
-#include "SkBitmapProcState.h"
+#include "include/private/SkVx.h"
+#include "src/core/SkBitmapProcState.h"
+#include "src/core/SkMSAN.h"
 
 
 
@@ -28,71 +30,143 @@
 namespace SK_OPTS_NS {
 
 
-static void decode_packed_coordinates_and_weight(uint32_t packed, int* v0, int* v1, int* w) {
-    
-    *v0 = packed >> 18;
-
-    
-    *v1 = packed & 0x3fff;
-
-    
-    *w = (packed >> 14) & 0xf;
+template <typename U32, typename Out>
+static void decode_packed_coordinates_and_weight(U32 packed, Out* v0, Out* v1, Out* w) {
+    *v0 = (packed >> 18);       
+    *v1 = (packed & 0x3fff);    
+    *w  = (packed >> 14) & 0xf; 
 }
 
-#if 1 && SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSSE3
+#if 1 && SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_AVX2
+     inline
+    void S32_alpha_D32_filter_DX(const SkBitmapProcState& s,
+                                 const uint32_t* xy, int count, uint32_t* colors) {
+        SkASSERT(count > 0 && colors != nullptr);
+        SkASSERT(s.fFilterQuality != kNone_SkFilterQuality);
+        SkASSERT(kN32_SkColorType == s.fPixmap.colorType());
+        SkASSERT(s.fAlphaScale <= 256);
 
-    
-    static void decode_packed_coordinates_and_weight(__m128i packed,
-                                                     int v0[4], int v1[4], __m128i* w) {
-        _mm_storeu_si128((__m128i*)v0, _mm_srli_epi32(packed, 18));
-        _mm_storeu_si128((__m128i*)v1, _mm_and_si128 (packed, _mm_set1_epi32(0x3fff)));
-        *w = _mm_and_si128(_mm_srli_epi32(packed, 14), _mm_set1_epi32(0xf));
+        
+        int y0, y1, wy;
+        decode_packed_coordinates_and_weight(*xy++, &y0, &y1, &wy);
+
+        const uint32_t* row0 = s.fPixmap.addr32(0,y0);
+        const uint32_t* row1 = s.fPixmap.addr32(0,y1);
+
+        auto bilerp = [&](skvx::Vec<8,uint32_t> packed_x_coordinates) -> skvx::Vec<8,uint32_t> {
+            
+            skvx::Vec<8,uint32_t> x0,x1,wx;
+            decode_packed_coordinates_and_weight(packed_x_coordinates, &x0, &x1, &wx);
+
+            
+            wx = (wx <<  0)
+               | (wx <<  8)
+               | (wx << 16)
+               | (wx << 24);
+
+            auto gather = [](const uint32_t* ptr, skvx::Vec<8,uint32_t> ix) {
+            #if 1
+                
+                return skvx::bit_pun<skvx::Vec<8,uint32_t>>(
+                        _mm256_i32gather_epi32((const int*)ptr, skvx::bit_pun<__m256i>(ix), 4));
+            #else
+                
+                return skvx::Vec<8,uint32_t>{
+                    ptr[ix[0]], ptr[ix[1]], ptr[ix[2]], ptr[ix[3]],
+                    ptr[ix[4]], ptr[ix[5]], ptr[ix[6]], ptr[ix[7]],
+                };
+            #endif
+            };
+
+            
+            skvx::Vec<8,uint32_t> tl = gather(row0, x0), tr = gather(row0, x1),
+                                  bl = gather(row1, x0), br = gather(row1, x1);
+
+        #if 1
+            
+            auto lerp_x = [&](skvx::Vec<8,uint32_t> L, skvx::Vec<8,uint32_t> R) {
+                __m256i l = skvx::bit_pun<__m256i>(L),
+                        r = skvx::bit_pun<__m256i>(R),
+                       wr = skvx::bit_pun<__m256i>(wx),
+                       wl = _mm256_sub_epi8(_mm256_set1_epi8(16), wr);
+
+                
+                __m256i lo = _mm256_maddubs_epi16(_mm256_unpacklo_epi8( l, r),
+                                                  _mm256_unpacklo_epi8(wl,wr));
+                __m256i hi = _mm256_maddubs_epi16(_mm256_unpackhi_epi8( l, r),
+                                                  _mm256_unpackhi_epi8(wl,wr));
+
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                __m256i abcd = _mm256_permute2x128_si256(lo, hi, 0x20),
+                        efgh = _mm256_permute2x128_si256(lo, hi, 0x31);
+
+                return skvx::join(skvx::bit_pun<skvx::Vec<16,uint16_t>>(abcd),
+                                  skvx::bit_pun<skvx::Vec<16,uint16_t>>(efgh));
+            };
+
+            skvx::Vec<32, uint16_t> top = lerp_x(tl, tr),
+                                    bot = lerp_x(bl, br),
+                                    sum = 16*top + (bot-top)*wy;
+        #else
+            
+            auto to_16x4 = [](auto v) -> skvx::Vec<32, uint16_t> {
+                return skvx::cast<uint16_t>(skvx::bit_pun<skvx::Vec<32, uint8_t>>(v));
+            };
+
+            
+            
+            
+            
+            
+            
+            
+            
+            auto lerp = [](auto lo, auto hi, auto w) {
+                return 16*lo + (hi-lo)*w;
+            };
+            skvx::Vec<32, uint16_t> sum = lerp(lerp(to_16x4(tl), to_16x4(bl), wy),
+                                               lerp(to_16x4(tr), to_16x4(br), wy), to_16x4(wx));
+        #endif
+
+            
+            sum >>= 8;
+
+            
+            sum *= s.fAlphaScale;
+            sum >>= 8;
+
+            
+            return skvx::bit_pun<skvx::Vec<8,uint32_t>>(skvx::cast<uint8_t>(sum));
+        };
+
+        while (count >= 8) {
+            bilerp(skvx::Vec<8,uint32_t>::Load(xy)).store(colors);
+            xy     += 8;
+            colors += 8;
+            count  -= 8;
+        }
+        if (count > 0) {
+            __m256i active = skvx::bit_pun<__m256i>( count > skvx::Vec<8,int>{0,1,2,3, 4,5,6,7} ),
+                    coords = _mm256_maskload_epi32((const int*)xy, active),
+                    pixels;
+
+            bilerp(skvx::bit_pun<skvx::Vec<8,uint32_t>>(coords)).store(&pixels);
+            _mm256_maskstore_epi32((int*)colors, active, pixels);
+
+            sk_msan_mark_initialized(colors, colors+count,
+                                     "MSAN still doesn't understand AVX2 mask loads and stores.");
+        }
     }
 
-    
-    
-    static inline __m128i interpolate_in_x(uint32_t A0, uint32_t A1,
-                                           uint32_t B0, uint32_t B1,
-                                           const __m128i& interlaced_x_weights) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        __m128i interlaced_A = _mm_unpacklo_epi8(_mm_cvtsi32_si128(A0), _mm_cvtsi32_si128(A1)),
-                interlaced_B = _mm_unpacklo_epi8(_mm_cvtsi32_si128(B0), _mm_cvtsi32_si128(B1));
-
-        return _mm_maddubs_epi16(_mm_unpacklo_epi64(interlaced_A, interlaced_B),
-                                 interlaced_x_weights);
-    }
-
-    
-    
-    static inline __m128i interpolate_in_x_and_y(uint32_t A0, uint32_t A1,
-                                                 uint32_t A2, uint32_t A3,
-                                                 uint32_t B0, uint32_t B1,
-                                                 uint32_t B2, uint32_t B3,
-                                                 const __m128i& interlaced_x_weights,
-                                                 int wy) {
-        
-        const __m128i wy1 = _mm_set1_epi16(wy),
-                      wy0 = _mm_sub_epi16(_mm_set1_epi16(16), wy1);
-
-        
-        
-        __m128i row0 = interpolate_in_x(A0,A1, B0,B1, interlaced_x_weights),
-                row1 = interpolate_in_x(A2,A3, B2,B3, interlaced_x_weights);
-
-        
-        
-        return _mm_srli_epi16(_mm_add_epi16(_mm_mullo_epi16(row0, wy0),
-                                            _mm_mullo_epi16(row1, wy1)), 8);
-    }
+#elif 1 && SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSSE3
 
      inline
     void S32_alpha_D32_filter_DX(const SkBitmapProcState& s,
@@ -100,13 +174,59 @@ static void decode_packed_coordinates_and_weight(uint32_t packed, int* v0, int* 
         SkASSERT(count > 0 && colors != nullptr);
         SkASSERT(s.fFilterQuality != kNone_SkFilterQuality);
         SkASSERT(kN32_SkColorType == s.fPixmap.colorType());
-
-        int alpha = s.fAlphaScale;
+        SkASSERT(s.fAlphaScale <= 256);
 
         
-        auto scale_by_alpha = [alpha](const __m128i& px) {
-            return alpha == 256 ? px
-                                : _mm_srli_epi16(_mm_mullo_epi16(px, _mm_set1_epi16(alpha)), 8);
+        
+        auto interpolate_in_x = [](uint32_t A0, uint32_t A1,
+                                   uint32_t B0, uint32_t B1,
+                                   __m128i interlaced_x_weights) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+            __m128i interlaced_A = _mm_unpacklo_epi8(_mm_cvtsi32_si128(A0), _mm_cvtsi32_si128(A1)),
+                    interlaced_B = _mm_unpacklo_epi8(_mm_cvtsi32_si128(B0), _mm_cvtsi32_si128(B1));
+
+            return _mm_maddubs_epi16(_mm_unpacklo_epi64(interlaced_A, interlaced_B),
+                                     interlaced_x_weights);
+        };
+
+        
+        
+        auto interpolate_in_x_and_y = [&](uint32_t A0, uint32_t A1,
+                                          uint32_t A2, uint32_t A3,
+                                          uint32_t B0, uint32_t B1,
+                                          uint32_t B2, uint32_t B3,
+                                          __m128i interlaced_x_weights,
+                                          int wy) {
+            
+            __m128i top = interpolate_in_x(A0,A1, B0,B1, interlaced_x_weights),
+                    bot = interpolate_in_x(A2,A3, B2,B3, interlaced_x_weights);
+
+            
+            
+            __m128i px = _mm_add_epi16(_mm_slli_epi16(top, 4),
+                                       _mm_mullo_epi16(_mm_sub_epi16(bot, top),
+                                                       _mm_set1_epi16(wy)));
+
+            
+            px = _mm_srli_epi16(px, 8);
+
+            
+            if (s.fAlphaScale < 256) {
+                px = _mm_srli_epi16(_mm_mullo_epi16(px, _mm_set1_epi16(s.fAlphaScale)), 8);
+            }
+            return px;
         };
 
         
@@ -120,40 +240,44 @@ static void decode_packed_coordinates_and_weight(uint32_t packed, int* v0, int* 
 
         while (count >= 4) {
             
-            const __m128i xx = _mm_loadu_si128((const __m128i*)xy);
-
             int x0[4],
                 x1[4];
             __m128i wx;
-            decode_packed_coordinates_and_weight(xx, x0, x1, &wx);
+
+            
+            __m128i packed = _mm_loadu_si128((const __m128i*)xy);
+            _mm_storeu_si128((__m128i*)x0, _mm_srli_epi32(packed, 18));
+            _mm_storeu_si128((__m128i*)x1, _mm_and_si128 (packed, _mm_set1_epi32(0x3fff)));
+            wx = _mm_and_si128(_mm_srli_epi32(packed, 14), _mm_set1_epi32(0xf));  
 
             
             
-            __m128i wx1 = _mm_shuffle_epi8(wx, _mm_setr_epi8(0,0,0,0,4,4,4,4,8,8,8,8,12,12,12,12)),
-                    wx0 = _mm_sub_epi8(_mm_set1_epi8(16), wx1);
+            __m128i wr = _mm_shuffle_epi8(wx, _mm_setr_epi8(0,0,0,0,4,4,4,4,8,8,8,8,12,12,12,12)),
+                    wl = _mm_sub_epi8(_mm_set1_epi8(16), wr);
 
             
-            __m128i interlaced_x_weights_AB = _mm_unpacklo_epi8(wx0,wx1),
-                    interlaced_x_weights_CD = _mm_unpackhi_epi8(wx0,wx1);
+            __m128i interlaced_x_weights_AB = _mm_unpacklo_epi8(wl,wr),
+                    interlaced_x_weights_CD = _mm_unpackhi_epi8(wl,wr);
+
+            enum { A,B,C,D };
 
             
             
-            __m128i AB = interpolate_in_x_and_y(row0[x0[0]], row0[x1[0]],
-                                                row1[x0[0]], row1[x1[0]],
-                                                row0[x0[1]], row0[x1[1]],
-                                                row1[x0[1]], row1[x1[1]],
+            __m128i AB = interpolate_in_x_and_y(row0[x0[A]], row0[x1[A]],
+                                                row1[x0[A]], row1[x1[A]],
+                                                row0[x0[B]], row0[x1[B]],
+                                                row1[x0[B]], row1[x1[B]],
                                                 interlaced_x_weights_AB, wy);
 
             
-            __m128i CD = interpolate_in_x_and_y(row0[x0[2]], row0[x1[2]],
-                                                row1[x0[2]], row1[x1[2]],
-                                                row0[x0[3]], row0[x1[3]],
-                                                row1[x0[3]], row1[x1[3]],
+            __m128i CD = interpolate_in_x_and_y(row0[x0[C]], row0[x1[C]],
+                                                row1[x0[C]], row1[x1[C]],
+                                                row0[x0[D]], row0[x1[D]],
+                                                row1[x0[D]], row1[x1[D]],
                                                 interlaced_x_weights_CD, wy);
 
             
-            _mm_storeu_si128((__m128i*)colors, _mm_packus_epi16(scale_by_alpha(AB),
-                                                                scale_by_alpha(CD)));
+            _mm_storeu_si128((__m128i*)colors, _mm_packus_epi16(AB, CD));
             xy     += 4;
             colors += 4;
             count  -= 4;
@@ -165,25 +289,23 @@ static void decode_packed_coordinates_and_weight(uint32_t packed, int* v0, int* 
             decode_packed_coordinates_and_weight(*xy++, &x0, &x1, &wx);
 
             
-            __m128i wx1 = _mm_set1_epi8(wx),     
-                    wx0 = _mm_sub_epi8(_mm_set1_epi8(16), wx1);
+            __m128i wr = _mm_set1_epi8(wx),     
+                    wl = _mm_sub_epi8(_mm_set1_epi8(16), wr);
 
-            __m128i interlaced_x_weights_A = _mm_unpacklo_epi8(wx0, wx1);
+            __m128i interlaced_x_weights = _mm_unpacklo_epi8(wl, wr);
 
             __m128i A = interpolate_in_x_and_y(row0[x0], row0[x1],
                                                row1[x0], row1[x1],
                                                       0,        0,
                                                       0,        0,
-                                               interlaced_x_weights_A, wy);
+                                               interlaced_x_weights, wy);
 
-            *colors++ = _mm_cvtsi128_si32(_mm_packus_epi16(scale_by_alpha(A), _mm_setzero_si128()));
+            *colors++ = _mm_cvtsi128_si32(_mm_packus_epi16(A, _mm_setzero_si128()));
         }
     }
 
 
 #elif 1 && SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE2
-
-    
 
      inline
     void S32_alpha_D32_filter_DX(const SkBitmapProcState& s,
@@ -201,42 +323,53 @@ static void decode_packed_coordinates_and_weight(uint32_t packed, int* v0, int* 
 
         
         
-        const __m128i allY = _mm_unpacklo_epi64(_mm_set1_epi16(   wy),
-                                                _mm_set1_epi16(16-wy));
+        const __m128i allY = _mm_unpacklo_epi64(_mm_set1_epi16(   wy),   
+                                                _mm_set1_epi16(16-wy));  
 
         while (count --> 0) {
             int x0, x1, wx;
             decode_packed_coordinates_and_weight(*xy++, &x0, &x1, &wx);
 
             
-            const __m128i a00 = _mm_cvtsi32_si128(row0[x0]),
-                          a01 = _mm_cvtsi32_si128(row0[x1]),
-                          a10 = _mm_cvtsi32_si128(row1[x0]),
-                          a11 = _mm_cvtsi32_si128(row1[x1]);
+            
+            
+            const __m128i tl = _mm_cvtsi32_si128(row0[x0]), tr = _mm_cvtsi32_si128(row0[x1]),
+                          bl = _mm_cvtsi32_si128(row1[x0]), br = _mm_cvtsi32_si128(row1[x1]);
 
             
-            __m128i a00a10 = _mm_unpacklo_epi8(_mm_unpacklo_epi32(a10, a00),
-                                               _mm_setzero_si128());
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+            __m128i L = _mm_unpacklo_epi8(_mm_unpacklo_epi32(bl, tl), _mm_setzero_si128()),
+                    R = _mm_unpacklo_epi8(_mm_unpacklo_epi32(br, tr), _mm_setzero_si128());
+
+            __m128i inner = _mm_add_epi16(_mm_slli_epi16(L, 4),
+                                          _mm_mullo_epi16(_mm_sub_epi16(R,L), _mm_set1_epi16(wx)));
+
+            __m128i sum_in_x = _mm_mullo_epi16(inner, allY);
 
             
-            a00a10 = _mm_mullo_epi16(a00a10, allY);
-            a00a10 = _mm_mullo_epi16(a00a10, _mm_set1_epi16(16-wx));
-
-
-            
-            __m128i a01a11 = _mm_unpacklo_epi8(_mm_unpacklo_epi32(a11, a01),
-                                               _mm_setzero_si128());
-
-            
-            a01a11 = _mm_mullo_epi16(a01a11, allY);
-            a01a11 = _mm_mullo_epi16(a01a11, _mm_set1_epi16(wx));
-
-
-            
-            __m128i halves = _mm_add_epi16(a00a10, a01a11);
-
-            
-            __m128i sum = _mm_add_epi16(halves, _mm_srli_si128(halves, 8));
+            __m128i sum = _mm_add_epi16(sum_in_x, _mm_srli_si128(sum_in_x, 8));
 
             
             sum = _mm_srli_epi16(sum, 8);

@@ -7,12 +7,19 @@
 #ifndef SkPDFFont_DEFINED
 #define SkPDFFont_DEFINED
 
-#include "SkAdvancedTypefaceMetrics.h"
-#include "SkPDFDocument.h"
-#include "SkPDFGlyphUse.h"
-#include "SkPDFTypes.h"
-#include "SkStrikeCache.h"
-#include "SkTypeface.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkTypeface.h"
+#include "include/core/SkTypes.h"
+#include "src/core/SkAdvancedTypefaceMetrics.h"
+#include "src/core/SkStrikeCache.h"
+#include "src/pdf/SkPDFGlyphUse.h"
+#include "src/pdf/SkPDFTypes.h"
+
+#include <vector>
+
+class SkPDFDocument;
+class SkStrike;
+class SkString;
 
 
 
@@ -45,8 +52,6 @@ public:
         return type == SkAdvancedTypefaceMetrics::kType1CID_Font ||
                type == SkAdvancedTypefaceMetrics::kTrueType_Font;
     }
-
-    static SkExclusiveStrikePtr MakeVectorCache(SkTypeface*, int* sizeOut);
 
     
 
@@ -84,9 +89,8 @@ public:
 
 
     static SkPDFFont* GetFontResource(SkPDFDocument* doc,
-                                      SkStrike* cache,
-                                      SkTypeface* typeface,
-                                      SkGlyphID glyphID);
+                                      const SkGlyph* glyphs,
+                                      SkTypeface* typeface);
 
     
 
@@ -97,6 +101,11 @@ public:
 
     static const std::vector<SkUnichar>& GetUnicodeMap(const SkTypeface* typeface,
                                                        SkPDFDocument* canon);
+
+    static void PopulateCommonFontDescriptor(SkPDFDict* descriptor,
+                                             const SkAdvancedTypefaceMetrics&,
+                                             uint16_t emSize,
+                                             int16_t defaultWidth);
 
     void emitSubset(SkPDFDocument*) const;
 

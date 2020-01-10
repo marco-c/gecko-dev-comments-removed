@@ -17,6 +17,19 @@
     #include <arm_neon.h>
 #elif defined(__SSE__)
     #include <immintrin.h>
+
+    #if defined(__clang__)
+        
+        
+        
+        
+        
+        #include <smmintrin.h>
+        #include <avxintrin.h>
+        #include <avx2intrin.h>
+        #include <avx512fintrin.h>
+        #include <avx512dqintrin.h>
+    #endif
 #endif
 
 
@@ -35,6 +48,66 @@ static const union {
 } inf_ = { 0x7f800000 };
 #define INFINITY_ inf_.f
 
+#if defined(__clang__) || defined(__GNUC__)
+    #define small_memcpy __builtin_memcpy
+#else
+    #define small_memcpy memcpy
+#endif
+
+static float log2f_(float x) {
+    
+    int32_t bits;
+    small_memcpy(&bits, &x, sizeof(bits));
+
+    float e = (float)bits * (1.0f / (1<<23));
+
+    
+    int32_t m_bits = (bits & 0x007fffff) | 0x3f000000;
+    float m;
+    small_memcpy(&m, &m_bits, sizeof(m));
+
+    return (e - 124.225514990f
+              -   1.498030302f*m
+              -   1.725879990f/(0.3520887068f + m));
+}
+static float logf_(float x) {
+    const float ln2 = 0.69314718f;
+    return ln2*log2f_(x);
+}
+
+static float exp2f_(float x) {
+    float fract = x - floorf_(x);
+
+    float fbits = (1.0f * (1<<23)) * (x + 121.274057500f
+                                        -   1.490129070f*fract
+                                        +  27.728023300f/(4.84252568f - fract));
+
+    
+    
+    
+    if (fbits >= (float)INT_MAX) {
+        return INFINITY_;
+    } else if (fbits < (float)INT_MIN) {
+        return -INFINITY_;
+    }
+
+    int32_t bits = (int32_t)fbits;
+    small_memcpy(&x, &bits, sizeof(x));
+    return x;
+}
+
+
+float powf_(float x, float y) {
+    assert (x >= 0);
+    return (x == 0) || (x == 1) ? x
+                                : exp2f_(log2f_(x) * y);
+}
+
+static float expf_(float x) {
+    const float log2_e = 1.4426950408889634074f;
+    return exp2f_(log2_e * x);
+}
+
 static float fmaxf_(float x, float y) { return x > y ? x : y; }
 static float fminf_(float x, float y) { return x < y ? x : y; }
 
@@ -47,6 +120,89 @@ static float minus_1_ulp(float x) {
     memcpy(&x, &bits, sizeof(bits));
     return x;
 }
+
+
+
+
+enum TFKind { Bad, sRGBish, PQish, HLGish, HLGinvish };
+struct TF_PQish  { float A,B,C,D,E,F; };
+struct TF_HLGish { float R,G,a,b,c; };
+
+static float TFKind_marker(TFKind kind) {
+    
+    return -(float)kind;
+}
+
+static TFKind classify(const skcms_TransferFunction& tf, TF_PQish*   pq = nullptr
+                                                       , TF_HLGish* hlg = nullptr) {
+    if (tf.g < 0 && (int)tf.g == tf.g) {
+        
+        switch (-(int)tf.g) {
+            case PQish:     if (pq ) { memcpy(pq , &tf.a, sizeof(*pq )); } return PQish;
+            case HLGish:    if (hlg) { memcpy(hlg, &tf.a, sizeof(*hlg)); } return HLGish;
+            case HLGinvish: if (hlg) { memcpy(hlg, &tf.a, sizeof(*hlg)); } return HLGinvish;
+        }
+        return Bad;
+    }
+
+    
+    if (isfinitef_(tf.a + tf.b + tf.c + tf.d + tf.e + tf.f + tf.g)
+            
+            && tf.a >= 0
+            && tf.c >= 0
+            && tf.d >= 0
+            && tf.g >= 0
+            
+            && tf.a * tf.d + tf.b >= 0) {
+        return sRGBish;
+    }
+
+    return Bad;
+}
+
+bool skcms_TransferFunction_makePQish(skcms_TransferFunction* tf,
+                                      float A, float B, float C,
+                                      float D, float E, float F) {
+    *tf = { TFKind_marker(PQish), A,B,C,D,E,F };
+    assert(classify(*tf) == PQish);
+    return true;
+}
+
+bool skcms_TransferFunction_makeHLGish(skcms_TransferFunction* tf,
+                                       float R, float G,
+                                       float a, float b, float c) {
+    *tf = { TFKind_marker(HLGish), R,G, a,b,c, 0 };
+    assert(classify(*tf) == HLGish);
+    return true;
+}
+
+float skcms_TransferFunction_eval(const skcms_TransferFunction* tf, float x) {
+    float sign = x < 0 ? -1.0f : 1.0f;
+    x *= sign;
+
+    TF_PQish  pq;
+    TF_HLGish hlg;
+    switch (classify(*tf, &pq, &hlg)) {
+        case Bad:       break;
+
+        case HLGish:    return sign * (x*hlg.R <= 1 ? powf_(x*hlg.R, hlg.G)
+                                                    : expf_((x-hlg.c)*hlg.a) + hlg.b);
+
+        
+        case HLGinvish: return sign * (x <= 1 ? hlg.R * powf_(x, hlg.G)
+                                              : hlg.a * logf_(x - hlg.b) + hlg.c);
+
+
+        case sRGBish: return sign * (x < tf->d ?       tf->c * x + tf->f
+                                               : powf_(tf->a * x + tf->b, tf->g) + tf->e);
+
+        case PQish: return sign * powf_(fmaxf_(pq.A + pq.B * powf_(x, pq.C), 0)
+                                            / (pq.D + pq.E * powf_(x, pq.C)),
+                                        pq.F);
+    }
+    return 0;
+}
+
 
 static float eval_curve(const skcms_Curve* curve, float x) {
     if (curve->table_entries == 0) {
@@ -242,20 +398,6 @@ static bool read_to_XYZD50(const skcms_ICCTag* rXYZ, const skcms_ICCTag* gXYZ,
            read_tag_xyz(bXYZ, &toXYZ->vals[0][2], &toXYZ->vals[1][2], &toXYZ->vals[2][2]);
 }
 
-static bool tf_is_valid(const skcms_TransferFunction* tf) {
-    
-    if (!isfinitef_(tf->a + tf->b + tf->c + tf->d + tf->e + tf->f + tf->g)) {
-        return false;
-    }
-
-    
-    if (tf->a < 0 || tf->c < 0 || tf->d < 0 || tf->g < 0) {
-        return false;
-    }
-
-    return true;
-}
-
 typedef struct {
     uint8_t type          [4];
     uint8_t reserved_a    [4];
@@ -330,7 +472,7 @@ static bool read_curve_para(const uint8_t* buf, uint32_t size,
             curve->parametric.f = read_big_fixed(paraTag->variable + 24);
             break;
     }
-    return tf_is_valid(&curve->parametric);
+    return classify(curve->parametric) == sRGBish;
 }
 
 typedef struct {
@@ -1351,65 +1493,33 @@ skcms_Matrix3x3 skcms_Matrix3x3_concat(const skcms_Matrix3x3* A, const skcms_Mat
     return m;
 }
 
-#if defined(__clang__) || defined(__GNUC__)
-    #define small_memcpy __builtin_memcpy
-#else
-    #define small_memcpy memcpy
-#endif
-
-static float log2f_(float x) {
-    
-    int32_t bits;
-    small_memcpy(&bits, &x, sizeof(bits));
-
-    float e = (float)bits * (1.0f / (1<<23));
-
-    
-    int32_t m_bits = (bits & 0x007fffff) | 0x3f000000;
-    float m;
-    small_memcpy(&m, &m_bits, sizeof(m));
-
-    return (e - 124.225514990f
-              -   1.498030302f*m
-              -   1.725879990f/(0.3520887068f + m));
-}
-
-static float exp2f_(float x) {
-    float fract = x - floorf_(x);
-
-    float fbits = (1.0f * (1<<23)) * (x + 121.274057500f
-                                        -   1.490129070f*fract
-                                        +  27.728023300f/(4.84252568f - fract));
-    if (fbits > INT_MAX) {
-        return INFINITY_;
-    } else if (fbits < INT_MIN) {
-        return -INFINITY_;
-    }
-    int32_t bits = (int32_t)fbits;
-    small_memcpy(&x, &bits, sizeof(x));
-    return x;
-}
-
-float powf_(float x, float y) {
-    return (x == 0) || (x == 1) ? x
-                                : exp2f_(log2f_(x) * y);
-}
-
-float skcms_TransferFunction_eval(const skcms_TransferFunction* tf, float x) {
-    float sign = x < 0 ? -1.0f : 1.0f;
-    x *= sign;
-
-    return sign * (x < tf->d ? tf->c * x + tf->f
-                             : powf_(tf->a * x + tf->b, tf->g) + tf->e);
-}
-
 #if defined(__clang__)
     [[clang::no_sanitize("float-divide-by-zero")]]  
 #endif
 bool skcms_TransferFunction_invert(const skcms_TransferFunction* src, skcms_TransferFunction* dst) {
-    if (!tf_is_valid(src)) {
-        return false;
+    TF_PQish  pq;
+    TF_HLGish hlg;
+    switch (classify(*src, &pq, &hlg)) {
+        case Bad: return false;
+        case sRGBish: break;  
+
+        case PQish:
+            *dst = { TFKind_marker(PQish), -pq.A,  pq.D, 1.0f/pq.F
+                                         ,  pq.B, -pq.E, 1.0f/pq.C};
+            return true;
+
+        case HLGish:
+            *dst = { TFKind_marker(HLGinvish), 1.0f/hlg.R, 1.0f/hlg.G
+                                             , 1.0f/hlg.a, hlg.b, hlg.c, 0 };
+            return true;
+
+        case HLGinvish:
+            *dst = { TFKind_marker(HLGish), 1.0f/hlg.R, 1.0f/hlg.G
+                                          , 1.0f/hlg.a, hlg.b, hlg.c, 0 };
+            return true;
     }
+
+    assert (classify(*src) == sRGBish);
 
     
     
@@ -1458,12 +1568,43 @@ bool skcms_TransferFunction_invert(const skcms_TransferFunction* src, skcms_Tran
     
     
     
+
     
-    float s = powf_(src->a + src->b, src->g) + src->e;
-    inv.e = 1.0f - powf_(inv.a * s + inv.b, inv.g);
+    if (inv.a < 0) {
+        return false;
+    }
+    
+    if (inv.a * inv.d + inv.b < 0) {
+        inv.b = -inv.a * inv.d;
+    }
+
+    
+    
+    if (classify(inv) != sRGBish) {
+        return false;
+    }
+
+    assert (inv.a >= 0);
+    assert (inv.a * inv.d + inv.b >= 0);
+
+    
+    
+    
+    float s = skcms_TransferFunction_eval(src, 1.0f);
+    if (!isfinitef_(s)) {
+        return false;
+    }
+
+    float sign = s < 0 ? -1.0f : 1.0f;
+    s *= sign;
+    if (s < inv.d) {
+        inv.f = 1.0f - sign * inv.c * s;
+    } else {
+        inv.e = 1.0f - sign * powf_(inv.a * s + inv.b, inv.g);
+    }
 
     *dst = inv;
-    return tf_is_valid(dst);
+    return classify(*dst) == sRGBish;
 }
 
 
@@ -1520,8 +1661,8 @@ static float rg_nonlinear(float x,
     assert (D >= 0);
 
     
-    dfdP[0] = 0.69314718f*log2f_(Y)*powf_(Y, g)
-            - 0.69314718f*log2f_(D)*powf_(D, g);
+    dfdP[0] = logf_(Y)*powf_(Y, g)
+            - logf_(D)*powf_(D, g);
     dfdP[1] = y*g*powf_(Y, g-1)
             - d*g*powf_(D, g-1);
     dfdP[2] =   g*powf_(Y, g-1)
@@ -1622,7 +1763,8 @@ static bool fit_nonlinear(const skcms_Curve* curve, int L, int N, skcms_Transfer
     
     const float dx = 1.0f / (N-1);
 
-    for (int j = 0; j < 3; j++) {
+    
+    for (int j = 0; j < 2; j++) {
         
         
         if (P[1] < 0) {
@@ -1649,6 +1791,9 @@ static bool fit_nonlinear(const skcms_Curve* curve, int L, int N, skcms_Transfer
     if (P[1] * tf->d + P[2] < 0) {
         P[2] = -P[1] * tf->d;
     }
+
+    assert (P[1] >= 0 &&
+            P[1] * tf->d + P[2] >= 0);
 
     tf->g = P[0];
     tf->a = P[1];
@@ -1709,7 +1854,7 @@ bool skcms_ApproximateCurve(const skcms_Curve* curve,
             int mid = (L + N) / 2;
             float mid_x = mid / (N - 1.0f);
             float mid_y = eval_curve(curve, mid_x);
-            tf.g = log2f_(mid_y) / log2f_(mid_x);;
+            tf.g = log2f_(mid_y) / log2f_(mid_x);
             tf.a = 1;
             tf.b = 0;
             tf.e =    tf.c*tf.d + tf.f
@@ -1725,6 +1870,13 @@ bool skcms_ApproximateCurve(const skcms_Curve* curve,
             if (!skcms_TransferFunction_invert(&tf_inv, &tf)) {
                 continue;
             }
+        }
+
+        
+        
+        
+        if (sRGBish != classify(tf)) {
+            continue;
         }
 
         
@@ -1782,6 +1934,21 @@ typedef enum {
     Op_tf_b,
     Op_tf_a,
 
+    Op_pq_r,
+    Op_pq_g,
+    Op_pq_b,
+    Op_pq_a,
+
+    Op_hlg_r,
+    Op_hlg_g,
+    Op_hlg_b,
+    Op_hlg_a,
+
+    Op_hlginv_r,
+    Op_hlginv_g,
+    Op_hlginv_b,
+    Op_hlginv_a,
+
     Op_table_r,
     Op_table_g,
     Op_table_b,
@@ -1823,37 +1990,24 @@ namespace baseline {
 #if defined(SKCMS_PORTABLE) || !(defined(__clang__) || defined(__GNUC__)) \
                             || (defined(__EMSCRIPTEN_major__) && !defined(__wasm_simd128__))
     #define N 1
-    using F   = float;
-    using U64 = uint64_t;
-    using U32 = uint32_t;
-    using I32 = int32_t;
-    using U16 = uint16_t;
-    using U8  = uint8_t;
-
+    template <typename T> using V = T;
+    using Color = float;
 #elif defined(__AVX512F__)
     #define N 16
-    using   F = Vec<N,float>;
-    using I32 = Vec<N,int32_t>;
-    using U64 = Vec<N,uint64_t>;
-    using U32 = Vec<N,uint32_t>;
-    using U16 = Vec<N,uint16_t>;
-    using  U8 = Vec<N,uint8_t>;
+    template <typename T> using V = Vec<N,T>;
+    using Color = float;
 #elif defined(__AVX__)
     #define N 8
-    using   F = Vec<N,float>;
-    using I32 = Vec<N,int32_t>;
-    using U64 = Vec<N,uint64_t>;
-    using U32 = Vec<N,uint32_t>;
-    using U16 = Vec<N,uint16_t>;
-    using  U8 = Vec<N,uint8_t>;
+    template <typename T> using V = Vec<N,T>;
+    using Color = float;
+#elif defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC) && defined(SKCMS_OPT_INTO_NEON_FP16)
+    #define N 8
+    template <typename T> using V = Vec<N,T>;
+    using Color = _Float16;
 #else
     #define N 4
-    using   F = Vec<N,float>;
-    using I32 = Vec<N,int32_t>;
-    using U64 = Vec<N,uint64_t>;
-    using U32 = Vec<N,uint32_t>;
-    using U16 = Vec<N,uint16_t>;
-    using  U8 = Vec<N,uint8_t>;
+    template <typename T> using V = Vec<N,T>;
+    using Color = float;
 #endif
 
     #include "src/Transform_inl.h"
@@ -1862,89 +2016,124 @@ namespace baseline {
 
 
 #if !defined(SKCMS_PORTABLE) &&                           \
+    !defined(SKCMS_NO_RUNTIME_CPU_DETECTION) &&           \
         (( defined(__clang__) && __clang_major__ >= 5) || \
          (!defined(__clang__) && defined(__GNUC__)))      \
-     && defined(__x86_64__) && !defined(__AVX2__)
+     && defined(__x86_64__)
 
-    #if defined(__clang__)
-        #pragma clang attribute push(__attribute__((target("avx2,f16c"))), apply_to=function)
-    #elif defined(__GNUC__)
-        #pragma GCC push_options
-        #pragma GCC target("avx2,f16c")
+    #if !defined(__AVX2__)
+        #if defined(__clang__)
+            #pragma clang attribute push(__attribute__((target("avx2,f16c"))), apply_to=function)
+        #elif defined(__GNUC__)
+            #pragma GCC push_options
+            #pragma GCC target("avx2,f16c")
+        #endif
+
+        namespace hsw {
+            #define USING_AVX
+            #define USING_AVX_F16C
+            #define USING_AVX2
+            #define N 8
+            template <typename T> using V = Vec<N,T>;
+            using Color = float;
+
+            #include "src/Transform_inl.h"
+
+            
+            #undef N
+        }
+
+        #if defined(__clang__)
+            #pragma clang attribute pop
+        #elif defined(__GNUC__)
+            #pragma GCC pop_options
+        #endif
+
+        #define TEST_FOR_HSW
     #endif
 
-    namespace hsw {
-        #define USING_AVX
-        #define USING_AVX_F16C
-        #define USING_AVX2
-        #define N 8
-        using   F = Vec<N,float>;
-        using I32 = Vec<N,int32_t>;
-        using U64 = Vec<N,uint64_t>;
-        using U32 = Vec<N,uint32_t>;
-        using U16 = Vec<N,uint16_t>;
-        using  U8 = Vec<N,uint8_t>;
+    #if !defined(__AVX512F__)
+        #if defined(__clang__)
+            #pragma clang attribute push(__attribute__((target("avx512f,avx512dq,avx512cd,avx512bw,avx512vl"))), apply_to=function)
+        #elif defined(__GNUC__)
+            #pragma GCC push_options
+            #pragma GCC target("avx512f,avx512dq,avx512cd,avx512bw,avx512vl")
+        #endif
 
-        #include "src/Transform_inl.h"
+        namespace skx {
+            #define USING_AVX512F
+            #define N 16
+            template <typename T> using V = Vec<N,T>;
+            using Color = float;
 
-        
-        #undef N
-    }
+            #include "src/Transform_inl.h"
 
-    #if defined(__clang__)
-        #pragma clang attribute pop
-    #elif defined(__GNUC__)
-        #pragma GCC pop_options
+            
+            #undef N
+        }
+
+        #if defined(__clang__)
+            #pragma clang attribute pop
+        #elif defined(__GNUC__)
+            #pragma GCC pop_options
+        #endif
+
+        #define TEST_FOR_SKX
     #endif
 
-    #define TEST_FOR_HSW
+    #if defined(TEST_FOR_HSW) || defined(TEST_FOR_SKX)
+        enum class CpuType { None, HSW, SKX };
+        static CpuType cpu_type() {
+            static const CpuType type = []{
+                
 
-    static bool hsw_ok() {
-        static const bool ok = []{
-            
+                
+                uint32_t eax, ebx, ecx, edx;
+                __asm__ __volatile__("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
+                                             : "0"(1), "2"(0));
+                if ((edx & (1u<<25)) &&  
+                    (edx & (1u<<26)) &&  
+                    (ecx & (1u<< 0)) &&  
+                    (ecx & (1u<< 9)) &&  
+                    (ecx & (1u<<12)) &&  
+                    (ecx & (1u<<19)) &&  
+                    (ecx & (1u<<20)) &&  
+                    (ecx & (1u<<26)) &&  
+                    (ecx & (1u<<27)) &&  
+                    (ecx & (1u<<28)) &&  
+                    (ecx & (1u<<29))) {  
 
-            
-            uint32_t eax, ebx, ecx, edx;
-            __asm__ __volatile__("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
-                                         : "0"(1), "2"(0));
+                    
+                    __asm__ __volatile__("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
+                                                 : "0"(7), "2"(0));
+                    
+                    uint32_t xcr0, dont_need_edx;
+                    __asm__ __volatile__("xgetbv" : "=a"(xcr0), "=d"(dont_need_edx) : "c"(0));
 
-            
-            if ((edx & (1<<25)) != (1<<25)) { return false; }   
-            if ((edx & (1<<26)) != (1<<26)) { return false; }   
-            if ((ecx & (1<< 0)) != (1<< 0)) { return false; }   
-            if ((ecx & (1<< 9)) != (1<< 9)) { return false; }   
-            if ((ecx & (1<<19)) != (1<<19)) { return false; }   
-            if ((ecx & (1<<20)) != (1<<20)) { return false; }   
-
-            if ((ecx & (3<<26)) != (3<<26)) { return false; }   
-
-            {
-                uint32_t eax_xgetbv, edx_xgetbv;
-                __asm__ __volatile__("xgetbv" : "=a"(eax_xgetbv), "=d"(edx_xgetbv) : "c"(0));
-                if ((eax_xgetbv & (3<<1)) != (3<<1)) { return false; }  
-            }
-
-            if ((ecx & (1<<28)) != (1<<28)) { return false; }   
-            if ((ecx & (1<<29)) != (1<<29)) { return false; }   
-            if ((ecx & (1<<12)) != (1<<12)) { return false; }   
-
-            
-            __asm__ __volatile__("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
-                                         : "0"(7), "2"(0));
-            if ((ebx & (1<< 5)) != (1<< 5)) { return false; }   
-
-            return true;
-        }();
-
-        return ok;
-    }
+                    if ((xcr0 & (1u<<1)) &&  
+                        (xcr0 & (1u<<2)) &&  
+                        (ebx  & (1u<<5))) {  
+                        
+                        if ((xcr0 & (1u<< 5)) && 
+                            (xcr0 & (1u<< 6)) && 
+                            (xcr0 & (1u<< 7)) && 
+                            (ebx  & (1u<<16)) && 
+                            (ebx  & (1u<<17)) && 
+                            (ebx  & (1u<<28)) && 
+                            (ebx  & (1u<<30)) && 
+                            (ebx  & (1u<<31))) { 
+                            return CpuType::SKX;
+                        }
+                        return CpuType::HSW;
+                    }
+                }
+                return CpuType::None;
+            }();
+            return type;
+        }
+    #endif
 
 #endif
-
-static bool is_identity_tf(const skcms_TransferFunction* tf) {
-    return tf->g == 1 && tf->a == 1
-        && tf->b == 0 && tf->c == 0 && tf->d == 0 && tf->e == 0 && tf->f == 0;
-}
 
 typedef struct {
     Op          op;
@@ -1952,22 +2141,33 @@ typedef struct {
 } OpAndArg;
 
 static OpAndArg select_curve_op(const skcms_Curve* curve, int channel) {
-    static const struct { Op parametric, table; } ops[] = {
-        { Op_tf_r, Op_table_r },
-        { Op_tf_g, Op_table_g },
-        { Op_tf_b, Op_table_b },
-        { Op_tf_a, Op_table_a },
+    static const struct { Op sRGBish, PQish, HLGish, HLGinvish, table; } ops[] = {
+        { Op_tf_r, Op_pq_r, Op_hlg_r, Op_hlginv_r, Op_table_r },
+        { Op_tf_g, Op_pq_g, Op_hlg_g, Op_hlginv_g, Op_table_g },
+        { Op_tf_b, Op_pq_b, Op_hlg_b, Op_hlginv_b, Op_table_b },
+        { Op_tf_a, Op_pq_a, Op_hlg_a, Op_hlginv_a, Op_table_a },
     };
-
-    const OpAndArg noop = { Op_load_a8, nullptr };
+    const auto& op = ops[channel];
 
     if (curve->table_entries == 0) {
-        return is_identity_tf(&curve->parametric)
-            ? noop
-            : OpAndArg{ ops[channel].parametric, &curve->parametric };
-    }
+        const OpAndArg noop = { Op_load_a8, nullptr };
 
-    return OpAndArg{ ops[channel].table, curve };
+        const skcms_TransferFunction& tf = curve->parametric;
+
+        if (tf.g == 1 && tf.a == 1 &&
+            tf.b == 0 && tf.c == 0 && tf.d == 0 && tf.e == 0 && tf.f == 0) {
+            return noop;
+        }
+
+        switch (classify(tf)) {
+            case Bad:        return noop;
+            case sRGBish:    return OpAndArg{op.sRGBish,   &tf};
+            case PQish:      return OpAndArg{op.PQish,     &tf};
+            case HLGish:     return OpAndArg{op.HLGish,    &tf};
+            case HLGinvish:  return OpAndArg{op.HLGinvish, &tf};
+        }
+    }
+    return OpAndArg{op.table, curve};
 }
 
 static size_t bytes_per_pixel(skcms_PixelFormat fmt) {
@@ -1984,6 +2184,8 @@ static size_t bytes_per_pixel(skcms_PixelFormat fmt) {
         case skcms_PixelFormat_RGBA_16161616LE    >> 1: return  8;
         case skcms_PixelFormat_RGB_161616BE       >> 1: return  6;
         case skcms_PixelFormat_RGBA_16161616BE    >> 1: return  8;
+        case skcms_PixelFormat_RGB_hhh_Norm       >> 1: return  6;
+        case skcms_PixelFormat_RGBA_hhhh_Norm     >> 1: return  8;
         case skcms_PixelFormat_RGB_hhh            >> 1: return  6;
         case skcms_PixelFormat_RGBA_hhhh          >> 1: return  8;
         case skcms_PixelFormat_RGB_fff            >> 1: return 12;
@@ -2067,7 +2269,12 @@ bool skcms_TransformWithPalette(const void*             src,
     Op*          ops  = program;
     const void** args = arguments;
 
-    skcms_TransferFunction inv_dst_tf_r, inv_dst_tf_g, inv_dst_tf_b;
+    
+    skcms_Curve dst_curves[3];
+    dst_curves[0].table_entries =
+    dst_curves[1].table_entries =
+    dst_curves[2].table_entries = 0;
+
     skcms_Matrix3x3        from_xyz;
 
     switch (srcFmt >> 1) {
@@ -2083,6 +2290,8 @@ bool skcms_TransformWithPalette(const void*             src,
         case skcms_PixelFormat_RGBA_16161616LE >> 1: *ops++ = Op_load_16161616LE; break;
         case skcms_PixelFormat_RGB_161616BE    >> 1: *ops++ = Op_load_161616BE;   break;
         case skcms_PixelFormat_RGBA_16161616BE >> 1: *ops++ = Op_load_16161616BE; break;
+        case skcms_PixelFormat_RGB_hhh_Norm    >> 1: *ops++ = Op_load_hhh;        break;
+        case skcms_PixelFormat_RGBA_hhhh_Norm  >> 1: *ops++ = Op_load_hhhh;       break;
         case skcms_PixelFormat_RGB_hhh         >> 1: *ops++ = Op_load_hhh;        break;
         case skcms_PixelFormat_RGBA_hhhh       >> 1: *ops++ = Op_load_hhhh;       break;
         case skcms_PixelFormat_RGB_fff         >> 1: *ops++ = Op_load_fff;        break;
@@ -2091,6 +2300,10 @@ bool skcms_TransformWithPalette(const void*             src,
         case skcms_PixelFormat_RGBA_8888_Palette8 >> 1: *ops++  = Op_load_8888_palette8;
                                                         *args++ = palette;
                                                         break;
+    }
+    if (srcFmt == skcms_PixelFormat_RGB_hhh_Norm ||
+        srcFmt == skcms_PixelFormat_RGBA_hhhh_Norm) {
+        *ops++ = Op_clamp;
     }
     if (srcFmt & 1) {
         *ops++ = Op_swap_rb;
@@ -2121,7 +2334,10 @@ bool skcms_TransformWithPalette(const void*             src,
     if (dstProfile != srcProfile) {
 
         if (!prep_for_destination(dstProfile,
-                                  &from_xyz, &inv_dst_tf_r, &inv_dst_tf_b, &inv_dst_tf_g)) {
+                                  &from_xyz,
+                                  &dst_curves[0].parametric,
+                                  &dst_curves[1].parametric,
+                                  &dst_curves[2].parametric)) {
             return false;
         }
 
@@ -2208,9 +2424,17 @@ bool skcms_TransformWithPalette(const void*             src,
         }
 
         
-        if (!is_identity_tf(&inv_dst_tf_r)) { *ops++ = Op_tf_r; *args++ = &inv_dst_tf_r; }
-        if (!is_identity_tf(&inv_dst_tf_g)) { *ops++ = Op_tf_g; *args++ = &inv_dst_tf_g; }
-        if (!is_identity_tf(&inv_dst_tf_b)) { *ops++ = Op_tf_b; *args++ = &inv_dst_tf_b; }
+        for (int i = 0; i < 3; i++) {
+            OpAndArg oa = select_curve_op(dst_curves+i, i);
+            if (oa.arg) {
+                assert (oa.op != Op_table_r &&
+                        oa.op != Op_table_g &&
+                        oa.op != Op_table_b &&
+                        oa.op != Op_table_a);
+                *ops++  = oa.op;
+                *args++ = oa.arg;
+            }
+        }
     }
 
     
@@ -2242,6 +2466,8 @@ bool skcms_TransformWithPalette(const void*             src,
         case skcms_PixelFormat_RGBA_16161616LE >> 1: *ops++ = Op_store_16161616LE; break;
         case skcms_PixelFormat_RGB_161616BE    >> 1: *ops++ = Op_store_161616BE;   break;
         case skcms_PixelFormat_RGBA_16161616BE >> 1: *ops++ = Op_store_16161616BE; break;
+        case skcms_PixelFormat_RGB_hhh_Norm    >> 1: *ops++ = Op_store_hhh;        break;
+        case skcms_PixelFormat_RGBA_hhhh_Norm  >> 1: *ops++ = Op_store_hhhh;       break;
         case skcms_PixelFormat_RGB_hhh         >> 1: *ops++ = Op_store_hhh;        break;
         case skcms_PixelFormat_RGBA_hhhh       >> 1: *ops++ = Op_store_hhhh;       break;
         case skcms_PixelFormat_RGB_fff         >> 1: *ops++ = Op_store_fff;        break;
@@ -2250,7 +2476,18 @@ bool skcms_TransformWithPalette(const void*             src,
 
     auto run = baseline::run_program;
 #if defined(TEST_FOR_HSW)
-    if (hsw_ok()) { run = hsw::run_program; }
+    switch (cpu_type()) {
+        case CpuType::None:                        break;
+        case CpuType::HSW: run = hsw::run_program; break;
+        case CpuType::SKX: run = hsw::run_program; break;
+    }
+#endif
+#if defined(TEST_FOR_SKX)
+    switch (cpu_type()) {
+        case CpuType::None:                        break;
+        case CpuType::HSW:                         break;
+        case CpuType::SKX: run = skx::run_program; break;
+    }
 #endif
     run(program, arguments, (const char*)src, (char*)dst, n, src_bpp,dst_bpp);
     return true;

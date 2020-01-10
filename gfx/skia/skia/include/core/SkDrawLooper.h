@@ -10,15 +10,14 @@
 #ifndef SkDrawLooper_DEFINED
 #define SkDrawLooper_DEFINED
 
-#include "../private/SkNoncopyable.h"
-#include "SkBlurTypes.h"
-#include "SkFlattenable.h"
-#include "SkPoint.h"
-#include "SkColor.h"
+#include "include/core/SkBlurTypes.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkFlattenable.h"
+#include "include/core/SkPoint.h"
+#include <functional>  
 
 class  SkArenaAlloc;
 class  SkCanvas;
-class  SkColorSpaceXformer;
 class  SkPaint;
 struct SkRect;
 class  SkString;
@@ -39,10 +38,18 @@ public:
 
 
 
-    class SK_API Context : ::SkNoncopyable {
+    class SK_API Context {
     public:
         Context() {}
         virtual ~Context() {}
+
+        struct Info {
+            SkVector fTranslate;
+            bool     fApplyPostCTM;
+
+            void applyToCTM(SkMatrix* ctm) const;
+            void applyToCanvas(SkCanvas*) const;
+        };
 
         
 
@@ -58,14 +65,18 @@ public:
 
 
 
-        virtual bool next(SkCanvas* canvas, SkPaint* paint) = 0;
+        virtual bool next(Info*, SkPaint*) = 0;
+
+    private:
+        Context(const Context&) = delete;
+        Context& operator=(const Context&) = delete;
     };
 
     
 
 
 
-    virtual Context* makeContext(SkCanvas*, SkArenaAlloc*) const = 0;
+    virtual Context* makeContext(SkArenaAlloc*) const = 0;
 
     
 
@@ -112,17 +123,13 @@ public:
                                   kSkDrawLooper_Type, data, size, procs).release()));
     }
 
-protected:
-    sk_sp<SkDrawLooper> makeColorSpace(SkColorSpaceXformer* xformer) const {
-        return this->onMakeColorSpace(xformer);
-    }
-    virtual sk_sp<SkDrawLooper> onMakeColorSpace(SkColorSpaceXformer*) const = 0;
+    void apply(SkCanvas* canvas, const SkPaint& paint,
+               std::function<void(SkCanvas*, const SkPaint&)>);
 
+protected:
     SkDrawLooper() {}
 
 private:
-    friend class SkColorSpaceXformer;
-
     typedef SkFlattenable INHERITED;
 };
 

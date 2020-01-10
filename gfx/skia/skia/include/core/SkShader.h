@@ -8,18 +8,18 @@
 #ifndef SkShader_DEFINED
 #define SkShader_DEFINED
 
-#include "SkBlendMode.h"
-#include "SkColor.h"
-#include "SkFilterQuality.h"
-#include "SkFlattenable.h"
-#include "SkImageInfo.h"
-#include "SkMatrix.h"
+#include "include/core/SkBlendMode.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkFilterQuality.h"
+#include "include/core/SkFlattenable.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkTileMode.h"
 
 class SkArenaAlloc;
 class SkBitmap;
 class SkColorFilter;
 class SkColorSpace;
-class SkColorSpaceXformer;
 class SkImage;
 class SkPath;
 class SkPicture;
@@ -39,42 +39,6 @@ class GrFragmentProcessor;
 
 class SK_API SkShader : public SkFlattenable {
 public:
-    enum TileMode {
-        
-
-
-
-        kClamp_TileMode,
-
-        
-
-
-        kRepeat_TileMode,
-
-        
-
-
-
-        kMirror_TileMode,
-
-        
-
-
-        kDecal_TileMode,
-
-        kLast_TileMode = kDecal_TileMode,
-    };
-
-    static constexpr int kTileModeCount = kLast_TileMode + 1;
-
-    
-
-
-
-
-
-    const SkMatrix& getLocalMatrix() const;
-
     
 
 
@@ -87,10 +51,10 @@ public:
 
 
 
-    SkImage* isAImage(SkMatrix* localMatrix, TileMode xy[2]) const;
+    SkImage* isAImage(SkMatrix* localMatrix, SkTileMode xy[2]) const;
 
     bool isAImage() const {
-        return this->isAImage(nullptr, nullptr) != nullptr;
+        return this->isAImage(nullptr, (SkTileMode*)nullptr) != nullptr;
     }
 
     
@@ -141,20 +105,12 @@ public:
         SkScalar*   fColorOffsets;  
         SkPoint     fPoint[2];      
         SkScalar    fRadius[2];     
-        TileMode    fTileMode;      
+        SkTileMode  fTileMode;
         uint32_t    fGradientFlags; 
     };
 
+    
     virtual GradientType asAGradient(GradientInfo* info) const;
-
-#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
-    struct ComposeRec {
-        const SkShader*     fShaderA;
-        const SkShader*     fShaderB;
-        SkBlendMode         fBlendMode;
-    };
-    virtual bool asACompose(ComposeRec*) const { return false; }
-#endif
 
     
     
@@ -171,109 +127,28 @@ public:
 
     sk_sp<SkShader> makeWithColorFilter(sk_sp<SkColorFilter>) const;
 
-    
-    
-
-    
-
-
-    static sk_sp<SkShader> MakeEmptyShader();
-
-    
-
-
-
-    static sk_sp<SkShader> MakeColorShader(SkColor);
-
-    
-
-
-
-
-
-    static sk_sp<SkShader> MakeColorShader(const SkColor4f&, sk_sp<SkColorSpace>);
-
-    
-
-
-
-
-
-
-
-
-
-    static sk_sp<SkShader> MakeCompose(sk_sp<SkShader> dst, sk_sp<SkShader> src,
-                                       SkBlendMode mode, float lerp = 1);
-
-    
-
-
-    static sk_sp<SkShader> MakeComposeShader(sk_sp<SkShader> dst, sk_sp<SkShader> src,
-                                             SkBlendMode mode) {
-        return MakeCompose(std::move(dst), std::move(src), mode, 1);
-    }
-
-    
-
-
-
-
-
-
-
-    static sk_sp<SkShader> MakeMixer(sk_sp<SkShader> dst, sk_sp<SkShader> src, float lerp) {
-        return MakeCompose(std::move(dst), std::move(src), SkBlendMode::kSrc, lerp);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static sk_sp<SkShader> MakeBitmapShader(const SkBitmap& src, TileMode tmx, TileMode tmy,
-                                            const SkMatrix* localMatrix = nullptr);
-
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static sk_sp<SkShader> MakePictureShader(sk_sp<SkPicture> src, TileMode tmx, TileMode tmy,
-                                             const SkMatrix* localMatrix, const SkRect* tile);
-
-    
-
-
-
-    
-    virtual sk_sp<SkShader> makeAsALocalMatrixShader(SkMatrix* localMatrix) const;
-
 private:
     SkShader() = default;
     friend class SkShaderBase;
 
     typedef SkFlattenable INHERITED;
+};
+
+class SK_API SkShaders {
+public:
+    static sk_sp<SkShader> Empty();
+    static sk_sp<SkShader> Color(SkColor);
+    static sk_sp<SkShader> Color(const SkColor4f&, sk_sp<SkColorSpace>);
+    static sk_sp<SkShader> Blend(SkBlendMode mode, sk_sp<SkShader> dst, sk_sp<SkShader> src,
+                                 const SkMatrix* localMatrix = nullptr);
+    static sk_sp<SkShader> Lerp(float t, sk_sp<SkShader> dst, sk_sp<SkShader> src,
+                                const SkMatrix* localMatrix = nullptr);
+
+    static sk_sp<SkShader> Lerp(sk_sp<SkShader> red, sk_sp<SkShader> dst, sk_sp<SkShader> src,
+                                const SkMatrix* localMatrix = nullptr);
+
+private:
+    SkShaders() = delete;
 };
 
 #endif

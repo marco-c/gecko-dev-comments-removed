@@ -9,8 +9,8 @@
 #define SkGpuBlurUtils_DEFINED
 
 #if SK_SUPPORT_GPU
-#include "GrRenderTargetContext.h"
-#include "effects/GrTextureDomain.h"
+#include "src/gpu/GrRenderTargetContext.h"
+#include "src/gpu/effects/GrTextureDomain.h"
 
 class GrContext;
 class GrTexture;
@@ -35,17 +35,27 @@ namespace SkGpuBlurUtils {
 
 
 
-    sk_sp<GrRenderTargetContext> GaussianBlur(
-            GrRecordingContext* context,
-            sk_sp<GrTextureProxy> src,
-            sk_sp<SkColorSpace> colorSpace,
-            const SkIRect& dstBounds,
-            const SkIRect& srcBounds,
-            float sigmaX,
-            float sigmaY,
-            GrTextureDomain::Mode mode,
-            SkAlphaType at,
-            SkBackingFit fit = SkBackingFit::kApprox);
+
+
+
+
+
+
+
+
+
+std::unique_ptr<GrRenderTargetContext> GaussianBlur(GrRecordingContext* context,
+                                                    sk_sp<GrTextureProxy> srcProxy,
+                                                    GrColorType srcColorType,
+                                                    SkAlphaType srcAlphaType,
+                                                    const SkIPoint& proxyOffset,
+                                                    sk_sp<SkColorSpace> colorSpace,
+                                                    const SkIRect& dstBounds,
+                                                    const SkIRect& srcBounds,
+                                                    float sigmaX,
+                                                    float sigmaY,
+                                                    GrTextureDomain::Mode mode,
+                                                    SkBackingFit fit = SkBackingFit::kApprox);
 };
 
 #endif

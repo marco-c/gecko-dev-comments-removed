@@ -8,10 +8,12 @@
 #ifndef GrGLSLFragmentProcessor_DEFINED
 #define GrGLSLFragmentProcessor_DEFINED
 
-#include "GrFragmentProcessor.h"
-#include "GrShaderVar.h"
-#include "glsl/GrGLSLProgramDataManager.h"
-#include "glsl/GrGLSLUniformHandler.h"
+#include "src/gpu/GrFragmentProcessor.h"
+#include "src/gpu/GrShaderVar.h"
+#include "src/gpu/glsl/GrGLSLPrimitiveProcessor.h"
+#include "src/gpu/glsl/GrGLSLProgramDataManager.h"
+#include "src/gpu/glsl/GrGLSLUniformHandler.h"
+#include "src/sksl/SkSLString.h"
 
 class GrProcessor;
 class GrProcessorKeyBuilder;
@@ -69,8 +71,8 @@ private:
     };
 
 public:
-    using TransformedCoordVars =
-            BuilderInputProvider<GrShaderVar, &GrFragmentProcessor::numCoordTransforms>;
+    using TransformedCoordVars = BuilderInputProvider<GrGLSLPrimitiveProcessor::TransformVar,
+                                                      &GrFragmentProcessor::numCoordTransforms>;
     using TextureSamplers =
             BuilderInputProvider<SamplerHandle, &GrFragmentProcessor::numTextureSamplers>;
 
@@ -137,8 +139,9 @@ public:
     }
 
     
-    inline void emitChild(int childIndex, SkString* outputColor, EmitArgs& parentArgs) {
-        this->emitChild(childIndex, nullptr, outputColor, parentArgs);
+    inline void invokeChild(int childIndex, SkString* outputColor, EmitArgs& parentArgs,
+                            SkSL::String skslCoords = "") {
+        this->invokeChild(childIndex, nullptr, outputColor, parentArgs, skslCoords);
     }
 
     
@@ -149,18 +152,19 @@ public:
 
 
 
-    void emitChild(int childIndex, const char* inputColor, SkString* outputColor,
-                   EmitArgs& parentArgs);
+    void invokeChild(int childIndex, const char* inputColor, SkString* outputColor,
+                     EmitArgs& parentArgs, SkSL::String skslCoords = "");
 
     
     
-    inline void emitChild(int childIndex, EmitArgs& args) {
+    inline void invokeChild(int childIndex, EmitArgs& args, SkSL::String skslCoords = "") {
         
-        this->emitChild(childIndex, (const char*) nullptr, args);
+        this->invokeChild(childIndex, (const char*) nullptr, args, skslCoords);
     }
 
     
-    void emitChild(int childIndex, const char* inputColor, EmitArgs& parentArgs);
+    void invokeChild(int childIndex, const char* inputColor, EmitArgs& parentArgs,
+                     SkSL::String skslCoords = "");
 
     
 
@@ -189,7 +193,15 @@ protected:
     virtual void onSetData(const GrGLSLProgramDataManager&, const GrFragmentProcessor&) {}
 
 private:
-    void internalEmitChild(int, const char*, const char*, EmitArgs&);
+    void writeChildCall(GrGLSLFPFragmentBuilder* fragBuilder, int childIndex,
+                        TransformedCoordVars coordVars, const char* inputColor,
+                        const char* outputColor, EmitArgs& args,
+                        SkSL::String skslCoords);
+
+    void internalInvokeChild(int, const char*, const char*, EmitArgs&, SkSL::String);
+
+    
+    SkTArray<SkString> fFunctionNames;
 
     SkTArray<GrGLSLFragmentProcessor*, true> fChildProcessors;
 

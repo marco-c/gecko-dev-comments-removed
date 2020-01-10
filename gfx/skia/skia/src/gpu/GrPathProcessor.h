@@ -8,7 +8,7 @@
 #ifndef GrPathProcessor_DEFINED
 #define GrPathProcessor_DEFINED
 
-#include "GrPrimitiveProcessor.h"
+#include "src/gpu/GrPrimitiveProcessor.h"
 
 
 

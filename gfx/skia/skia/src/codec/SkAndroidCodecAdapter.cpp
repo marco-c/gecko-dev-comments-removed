@@ -5,8 +5,8 @@
 
 
 
-#include "SkAndroidCodecAdapter.h"
-#include "SkCodecPriv.h"
+#include "src/codec/SkAndroidCodecAdapter.h"
+#include "src/codec/SkCodecPriv.h"
 
 SkAndroidCodecAdapter::SkAndroidCodecAdapter(SkCodec* codec, ExifOrientationBehavior behavior)
     : INHERITED(codec, behavior)

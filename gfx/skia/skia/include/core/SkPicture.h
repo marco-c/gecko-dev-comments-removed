@@ -5,28 +5,21 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 #ifndef SkPicture_DEFINED
 #define SkPicture_DEFINED
 
-#include "SkRefCnt.h"
-#include "SkRect.h"
-#include "SkTypes.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkTileMode.h"
+#include "include/core/SkTypes.h"
 
 class SkCanvas;
 class SkData;
 struct SkDeserialProcs;
 class SkImage;
+class SkMatrix;
 struct SkSerialProcs;
+class SkShader;
 class SkStream;
 class SkWStream;
 
@@ -203,6 +196,23 @@ public:
 
     virtual size_t approximateBytesUsed() const = 0;
 
+    
+
+
+
+
+
+
+
+
+
+
+
+    sk_sp<SkShader> makeShader(SkTileMode tmx, SkTileMode tmy,
+                               const SkMatrix* localMatrix, const SkRect* tileRect) const;
+    sk_sp<SkShader> makeShader(SkTileMode tmx, SkTileMode tmy,
+                               const SkMatrix* localMatrix = nullptr) const;
+
 private:
     
     SkPicture();
@@ -211,7 +221,8 @@ private:
     friend class SkPicturePriv;
     template <typename> friend class SkMiniPicture;
 
-    void serialize(SkWStream*, const SkSerialProcs*, class SkRefCntSet* typefaces) const;
+    void serialize(SkWStream*, const SkSerialProcs*, class SkRefCntSet* typefaces,
+        bool textBlobsOnly=false) const;
     static sk_sp<SkPicture> MakeFromStream(SkStream*, const SkDeserialProcs*,
                                            class SkTypefacePlayback*);
     friend class SkPictureData;
@@ -232,47 +243,6 @@ private:
     virtual const class SkBigPicture* asSkBigPicture() const { return nullptr; }
 
     friend struct SkPathCounter;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    static const uint32_t     MIN_PICTURE_VERSION = 56;     
-    static const uint32_t CURRENT_PICTURE_VERSION = 68;
-
-    static_assert(MIN_PICTURE_VERSION <= 62, "Remove kFontAxes_bad from SkFontDescriptor.cpp");
 
     static bool IsValidPictInfo(const struct SkPictInfo& info);
     static sk_sp<SkPicture> Forwardport(const struct SkPictInfo&,

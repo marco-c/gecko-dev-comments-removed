@@ -8,15 +8,15 @@
 #ifndef SkPathRef_DEFINED
 #define SkPathRef_DEFINED
 
-#include "SkMatrix.h"
-#include "SkMutex.h"
-#include "SkPoint.h"
-#include "SkRRect.h"
-#include "SkRect.h"
-#include "SkRefCnt.h"
-#include "SkTDArray.h"
-#include "SkTemplates.h"
-#include "SkTo.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkRRect.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkRefCnt.h"
+#include "include/private/SkMutex.h"
+#include "include/private/SkTDArray.h"
+#include "include/private/SkTemplates.h"
+#include "include/private/SkTo.h"
 #include <atomic>
 #include <limits>
 
@@ -51,20 +51,14 @@ public:
         
 
 
-        SkPoint* points() { return fPathRef->getPoints(); }
+        SkPoint* writablePoints() { return fPathRef->getWritablePoints(); }
         const SkPoint* points() const { return fPathRef->points(); }
 
         
 
 
-        SkPoint* atPoint(int i) {
-            SkASSERT((unsigned) i < (unsigned) fPathRef->fPointCnt);
-            return this->points() + i;
-        }
-        const SkPoint* atPoint(int i) const {
-            SkASSERT((unsigned) i < (unsigned) fPathRef->fPointCnt);
-            return this->points() + i;
-        }
+        SkPoint* atPoint(int i) { return fPathRef->getWritablePoints() + i; }
+        const SkPoint* atPoint(int i) const { return &fPathRef->fPoints[i]; }
 
         
 
@@ -238,7 +232,7 @@ public:
                                       const SkPathRef& src,
                                       const SkMatrix& matrix);
 
-    static SkPathRef* CreateFromBuffer(SkRBuffer* buffer);
+  
 
     
 
@@ -248,24 +242,24 @@ public:
     static void Rewind(sk_sp<SkPathRef>* pathRef);
 
     ~SkPathRef();
-    int countPoints() const { return fPointCnt; }
-    int countVerbs() const { return fVerbCnt; }
+    int countPoints() const { return fPoints.count(); }
+    int countVerbs() const { return fVerbs.count(); }
     int countWeights() const { return fConicWeights.count(); }
 
     
 
 
-    const uint8_t* verbs() const { return fVerbs; }
+    const uint8_t* verbsBegin() const { return fVerbs.begin(); }
 
     
 
 
-    const uint8_t* verbsMemBegin() const { return this->verbs() - fVerbCnt; }
+    const uint8_t* verbsEnd() const { return fVerbs.end(); }
 
     
 
 
-    const SkPoint* points() const { return fPoints; }
+    const SkPoint* points() const { return fPoints.begin(); }
 
     
 
@@ -278,14 +272,8 @@ public:
     
 
 
-    uint8_t atVerb(int index) const {
-        SkASSERT((unsigned) index < (unsigned) fVerbCnt);
-        return this->verbs()[~index];
-    }
-    const SkPoint& atPoint(int index) const {
-        SkASSERT((unsigned) index < (unsigned) fPointCnt);
-        return this->points()[index];
-    }
+    uint8_t atVerb(int index) const { return fVerbs[index]; }
+    const SkPoint& atPoint(int index) const { return fPoints[index]; }
 
     bool operator== (const SkPathRef& ref) const;
 
@@ -345,11 +333,6 @@ private:
 
     SkPathRef() {
         fBoundsIsDirty = true;    
-        fPointCnt = 0;
-        fVerbCnt = 0;
-        fVerbs = nullptr;
-        fPoints = nullptr;
-        fFreeSpace = 0;
         fGenerationID = kEmptyGenID;
         fSegmentMask = 0;
         fIsOval = false;
@@ -392,8 +375,8 @@ private:
     
     void incReserve(int additionalVerbs, int additionalPoints) {
         SkDEBUGCODE(this->validate();)
-        size_t space = additionalVerbs * sizeof(uint8_t) + additionalPoints * sizeof (SkPoint);
-        this->makeSpace(space);
+        fPoints.setReserve(fPoints.count() + additionalPoints);
+        fVerbs.setReserve(fVerbs.count() + additionalVerbs);
         SkDEBUGCODE(this->validate();)
     }
 
@@ -402,6 +385,7 @@ private:
     void resetToSize(int verbCount, int pointCount, int conicCount,
                      int reserveVerbs = 0, int reservePoints = 0) {
         SkDEBUGCODE(this->validate();)
+        this->callGenIDChangeListeners();
         fBoundsIsDirty = true;      
         fGenerationID = 0;
 
@@ -409,28 +393,10 @@ private:
         fIsOval = false;
         fIsRRect = false;
 
-        size_t newSize = sizeof(uint8_t) * verbCount + sizeof(SkPoint) * pointCount;
-        size_t newReserve = sizeof(uint8_t) * reserveVerbs + sizeof(SkPoint) * reservePoints;
-        size_t minSize = newSize + newReserve;
-
-        ptrdiff_t sizeDelta = this->currSize() - minSize;
-
-        if (sizeDelta < 0 || static_cast<size_t>(sizeDelta) >= 3 * minSize) {
-            sk_free(fPoints);
-            fPoints = nullptr;
-            fVerbs = nullptr;
-            fFreeSpace = 0;
-            fVerbCnt = 0;
-            fPointCnt = 0;
-            this->makeSpace(minSize, true);
-            fVerbCnt = verbCount;
-            fPointCnt = pointCount;
-            fFreeSpace -= newSize;
-        } else {
-            fPointCnt = pointCount;
-            fVerbCnt = verbCount;
-            fFreeSpace = this->currSize() - minSize;
-        }
+        fPoints.setReserve(pointCount + reservePoints);
+        fPoints.setCount(pointCount);
+        fVerbs.setReserve(verbCount + reserveVerbs);
+        fVerbs.setCount(verbCount);
         fConicWeights.setCount(conicCount);
         SkDEBUGCODE(this->validate();)
     }
@@ -453,60 +419,7 @@ private:
     
 
 
-
-    void makeSpace(size_t size, bool exact = false) {
-        SkDEBUGCODE(this->validate();)
-        if (size <= fFreeSpace) {
-            return;
-        }
-        size_t growSize = size - fFreeSpace;
-        size_t oldSize = this->currSize();
-
-        if (!exact) {
-            
-            growSize = (growSize + 7) & ~static_cast<size_t>(7);
-            
-            if (growSize < oldSize) {
-                growSize = oldSize;
-            }
-            if (growSize < kMinSize) {
-                growSize = kMinSize;
-            }
-        }
-
-        constexpr size_t maxSize = std::numeric_limits<size_t>::max();
-        size_t newSize;
-        if (growSize <= maxSize - oldSize) {
-            newSize = oldSize + growSize;
-        } else {
-            SK_ABORT("Path too big.");
-        }
-        
-        
-        fPoints = reinterpret_cast<SkPoint*>(sk_realloc_throw(fPoints, newSize));
-        size_t oldVerbSize = fVerbCnt * sizeof(uint8_t);
-        void* newVerbsDst = SkTAddOffset<void>(fPoints, newSize - oldVerbSize);
-        void* oldVerbsSrc = SkTAddOffset<void>(fPoints, oldSize - oldVerbSize);
-        memmove(newVerbsDst, oldVerbsSrc, oldVerbSize);
-        fVerbs = SkTAddOffset<uint8_t>(fPoints, newSize);
-        fFreeSpace += growSize;
-        SkDEBUGCODE(this->validate();)
-    }
-
-    
-
-
-    uint8_t* verbsMemWritable() {
-        SkDEBUGCODE(this->validate();)
-        return fVerbs - fVerbCnt;
-    }
-
-    
-
-
-    size_t currSize() const {
-        return reinterpret_cast<intptr_t>(fVerbs) - reinterpret_cast<intptr_t>(fPoints);
-    }
+    uint8_t* verbsBeginWritable() { return fVerbs.begin(); }
 
     
 
@@ -526,16 +439,16 @@ private:
     }
 
     
-    SkPoint* getPoints() {
+    SkPoint* getWritablePoints() {
         SkDEBUGCODE(this->validate();)
         fIsOval = false;
         fIsRRect = false;
-        return fPoints;
+        return fPoints.begin();
     }
 
     const SkPoint* getPoints() const {
         SkDEBUGCODE(this->validate();)
-        return fPoints;
+        return fPoints.begin();
     }
 
     void callGenIDChangeListeners();
@@ -546,11 +459,8 @@ private:
 
     mutable SkRect   fBounds;
 
-    SkPoint*            fPoints; 
-    uint8_t*            fVerbs; 
-    int                 fVerbCnt;
-    int                 fPointCnt;
-    size_t              fFreeSpace; 
+    SkTDArray<SkPoint>  fPoints;
+    SkTDArray<uint8_t>  fVerbs;
     SkTDArray<SkScalar> fConicWeights;
 
     enum {

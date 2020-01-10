@@ -8,12 +8,16 @@
 #ifndef SkColorSpaceXformSteps_DEFINED
 #define SkColorSpaceXformSteps_DEFINED
 
-#include "SkColorSpace.h"
-#include "SkImageInfo.h"
+#include "include/core/SkColorSpace.h"
+#include "include/core/SkImageInfo.h"
 
 class SkRasterPipeline;
 
 struct SkColorSpaceXformSteps {
+    
+    
+    static bool Required(SkColorSpace* src, SkColorSpace* dst);
+
     struct Flags {
         bool unpremul         = false;
         bool linearize        = false;
@@ -37,7 +41,13 @@ struct SkColorSpaceXformSteps {
     void apply(SkRasterPipeline*, bool src_is_normalized) const;
 
     void apply(SkRasterPipeline* p, SkColorType srcCT) const {
+    #if 0
         this->apply(p, srcCT < kRGBA_F16_SkColorType);
+    #else
+        
+        
+        this->apply(p, srcCT < kRGBA_F16Norm_SkColorType);
+    #endif
     }
 
     Flags flags;

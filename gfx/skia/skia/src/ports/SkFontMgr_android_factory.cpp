@@ -4,11 +4,11 @@
 
 
 
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
 #if defined(SK_BUILD_FOR_ANDROID)
 
-#include "SkFontMgr.h"
-#include "SkFontMgr_android.h"
+#include "include/core/SkFontMgr.h"
+#include "include/ports/SkFontMgr_android.h"
 
 sk_sp<SkFontMgr> SkFontMgr::Factory() {
     return SkFontMgr_New_Android(nullptr);

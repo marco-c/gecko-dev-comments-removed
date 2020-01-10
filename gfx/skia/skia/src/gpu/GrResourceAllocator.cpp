@@ -5,17 +5,16 @@
 
 
 
-#include "GrResourceAllocator.h"
+#include "src/gpu/GrResourceAllocator.h"
 
-#include "GrGpuResourcePriv.h"
-#include "GrOpList.h"
-#include "GrRenderTargetProxy.h"
-#include "GrResourceCache.h"
-#include "GrResourceProvider.h"
-#include "GrSurfacePriv.h"
-#include "GrSurfaceProxy.h"
-#include "GrSurfaceProxyPriv.h"
-#include "GrTextureProxy.h"
+#include "src/gpu/GrGpuResourcePriv.h"
+#include "src/gpu/GrOpsTask.h"
+#include "src/gpu/GrRenderTargetProxy.h"
+#include "src/gpu/GrResourceProvider.h"
+#include "src/gpu/GrSurfacePriv.h"
+#include "src/gpu/GrSurfaceProxy.h"
+#include "src/gpu/GrSurfaceProxyPriv.h"
+#include "src/gpu/GrTextureProxy.h"
 
 #if GR_TRACK_INTERVAL_CREATION
     #include <atomic>
@@ -36,16 +35,33 @@ void GrResourceAllocator::Interval::assign(sk_sp<GrSurface> s) {
     fProxy->priv().assign(std::move(s));
 }
 
+void GrResourceAllocator::determineRecyclability() {
+    for (Interval* cur = fIntvlList.peekHead(); cur; cur = cur->next()) {
+        if (cur->proxy()->canSkipResourceAllocator()) {
+            
+            continue;
+        }
 
-void GrResourceAllocator::markEndOfOpList(int opListIndex) {
+        if (cur->uses() >= cur->proxy()->refCnt()) {
+            
+            
+            SkASSERT(cur->uses() == cur->proxy()->refCnt());
+            cur->markAsRecyclable();
+        }
+    }
+}
+
+void GrResourceAllocator::markEndOfOpsTask(int opsTaskIndex) {
     SkASSERT(!fAssigned);      
 
-    SkASSERT(fEndOfOpListOpIndices.count() == opListIndex);
-    if (!fEndOfOpListOpIndices.empty()) {
-        SkASSERT(fEndOfOpListOpIndices.back() < this->curOp());
+    SkASSERT(fEndOfOpsTaskOpIndices.count() == opsTaskIndex);
+    if (!fEndOfOpsTaskOpIndices.empty()) {
+        SkASSERT(fEndOfOpsTaskOpIndices.back() < this->curOp());
     }
 
-    fEndOfOpListOpIndices.push_back(this->curOp()); 
+    
+    fEndOfOpsTaskOpIndices.push_back(this->curOp());
+    SkASSERT(fEndOfOpsTaskOpIndices.count() <= fNumOpsTasks);
 }
 
 GrResourceAllocator::~GrResourceAllocator() {
@@ -54,61 +70,79 @@ GrResourceAllocator::~GrResourceAllocator() {
     SkASSERT(!fIntvlHash.count());
 }
 
-void GrResourceAllocator::addInterval(GrSurfaceProxy* proxy, unsigned int start, unsigned int end
+void GrResourceAllocator::addInterval(GrSurfaceProxy* proxy, unsigned int start, unsigned int end,
+                                      ActualUse actualUse
                                       SkDEBUGCODE(, bool isDirectDstRead)) {
     SkASSERT(start <= end);
-    SkASSERT(!fAssigned);      
+    SkASSERT(!fAssigned);  
+
+    if (proxy->canSkipResourceAllocator()) {
+        
+        
+        if (proxy->isInstantiated()) {
+            auto rt = proxy->asRenderTargetProxy();
+            int minStencilSampleCount = rt ? rt->numStencilSamples() : 0;
+            if (minStencilSampleCount) {
+                if (!GrSurfaceProxyPriv::AttachStencilIfNeeded(
+                        fResourceProvider, proxy->peekSurface(), minStencilSampleCount)) {
+                    SkDebugf("WARNING: failed to attach stencil buffer. "
+                             "Rendering may be incorrect.\n");
+                }
+            }
+        }
+        return;
+    }
 
     
     
     
     if (proxy->readOnly()) {
-        
-        
-        SkASSERT(proxy->isInstantiated() ||
-                 GrSurfaceProxy::LazyState::kNot != proxy->lazyInstantiationState());
-    } else {
-        if (Interval* intvl = fIntvlHash.find(proxy->uniqueID().asUInt())) {
-            
-#ifdef SK_DEBUG
-            if (0 == start && 0 == end) {
-                
-                
-                
-                SkASSERT(0 == intvl->start());
-            } else if (isDirectDstRead) {
-                
-                
-                SkASSERT(intvl->start() <= start && intvl->end() >= end);
-            } else {
-                SkASSERT(intvl->end() <= start && intvl->end() <= end);
-            }
-#endif
-            intvl->extendEnd(end);
-            return;
-        }
-        Interval* newIntvl;
-        if (fFreeIntervalList) {
-            newIntvl = fFreeIntervalList;
-            fFreeIntervalList = newIntvl->next();
-            newIntvl->setNext(nullptr);
-            newIntvl->resetTo(proxy, start, end);
+        if (proxy->isLazy() && !proxy->priv().doLazyInstantiation(fResourceProvider)) {
+            fLazyInstantiationError = true;
         } else {
-            newIntvl = fIntervalAllocator.make<Interval>(proxy, start, end);
+            
+            
+            SkASSERT(proxy->isInstantiated());
         }
-
-        fIntvlList.insertByIncreasingStart(newIntvl);
-        fIntvlHash.add(newIntvl);
+        return;
     }
-
-    
-    
-    if (proxy->readOnly() || !fResourceProvider->explicitlyAllocateGPUResources()) {
+    if (Interval* intvl = fIntvlHash.find(proxy->uniqueID().asUInt())) {
         
-        if (GrSurfaceProxy::LazyState::kNot != proxy->lazyInstantiationState()) {
-            proxy->priv().doLazyInstantiation(fResourceProvider);
+#ifdef SK_DEBUG
+        if (0 == start && 0 == end) {
+            
+            
+            
+            SkASSERT(0 == intvl->start());
+        } else if (isDirectDstRead) {
+            
+            
+            SkASSERT(intvl->start() <= start && intvl->end() >= end);
+        } else {
+            SkASSERT(intvl->end() <= start && intvl->end() <= end);
         }
+#endif
+        if (ActualUse::kYes == actualUse) {
+            intvl->addUse();
+        }
+        intvl->extendEnd(end);
+        return;
     }
+    Interval* newIntvl;
+    if (fFreeIntervalList) {
+        newIntvl = fFreeIntervalList;
+        fFreeIntervalList = newIntvl->next();
+        newIntvl->setNext(nullptr);
+        newIntvl->resetTo(proxy, start, end);
+    } else {
+        newIntvl = fIntervalAllocator.make<Interval>(proxy, start, end);
+    }
+
+    if (ActualUse::kYes == actualUse) {
+        newIntvl->addUse();
+    }
+    fIntvlList.insertByIncreasingStart(newIntvl);
+    fIntvlHash.add(newIntvl);
 }
 
 GrResourceAllocator::Interval* GrResourceAllocator::IntervalList::popHead() {
@@ -233,7 +267,7 @@ void GrResourceAllocator::recycleSurface(sk_sp<GrSurface> surface) {
 
 
 sk_sp<GrSurface> GrResourceAllocator::findSurfaceFor(const GrSurfaceProxy* proxy,
-                                                     bool needsStencil) {
+                                                     int minStencilSampleCount) {
 
     if (proxy->asTextureProxy() && proxy->asTextureProxy()->getUniqueKey().isValid()) {
         
@@ -241,7 +275,7 @@ sk_sp<GrSurface> GrResourceAllocator::findSurfaceFor(const GrSurfaceProxy* proxy
                                                         proxy->asTextureProxy()->getUniqueKey());
         if (surface) {
             if (!GrSurfaceProxyPriv::AttachStencilIfNeeded(fResourceProvider, surface.get(),
-                                                           needsStencil)) {
+                                                           minStencilSampleCount)) {
                 return nullptr;
             }
 
@@ -254,8 +288,8 @@ sk_sp<GrSurface> GrResourceAllocator::findSurfaceFor(const GrSurfaceProxy* proxy
 
     proxy->priv().computeScratchKey(&key);
 
-    auto filter = [&] (const GrSurface* s) {
-        return !proxy->priv().requiresNoPendingIO() || !s->surfacePriv().hasPendingIO();
+    auto filter = [] (const GrSurface* s) {
+        return true;
     };
     sk_sp<GrSurface> surface(fFreePool.findAndRemove(key, filter));
     if (surface) {
@@ -267,7 +301,7 @@ sk_sp<GrSurface> GrResourceAllocator::findSurfaceFor(const GrSurfaceProxy* proxy
         }
 
         if (!GrSurfaceProxyPriv::AttachStencilIfNeeded(fResourceProvider, surface.get(),
-                                                       needsStencil)) {
+                                                       minStencilSampleCount)) {
             return nullptr;
         }
         SkASSERT(!surface->getUniqueKey().isValid());
@@ -288,10 +322,7 @@ void GrResourceAllocator::expire(unsigned int curIndex) {
         if (temp->wasAssignedSurface()) {
             sk_sp<GrSurface> surface = temp->detachSurface();
 
-            
-            
-            
-            if (0 == temp->proxy()->priv().getProxyRefCnt()) {
+            if (temp->isRecyclable()) {
                 this->recycleSurface(std::move(surface));
             }
         }
@@ -303,22 +334,64 @@ void GrResourceAllocator::expire(unsigned int curIndex) {
     }
 }
 
+bool GrResourceAllocator::onOpsTaskBoundary() const {
+    if (fIntvlList.empty()) {
+        SkASSERT(fCurOpsTaskIndex+1 <= fNumOpsTasks);
+        
+        
+        return false;
+    }
+
+    const Interval* tmp = fIntvlList.peekHead();
+    return fEndOfOpsTaskOpIndices[fCurOpsTaskIndex] <= tmp->start();
+}
+
+void GrResourceAllocator::forceIntermediateFlush(int* stopIndex) {
+    *stopIndex = fCurOpsTaskIndex+1;
+
+    
+    
+    
+    
+    const Interval* tmp = fIntvlList.peekHead();
+    SkASSERT(fEndOfOpsTaskOpIndices[fCurOpsTaskIndex] <= tmp->start());
+
+    fCurOpsTaskIndex++;
+    SkASSERT(fCurOpsTaskIndex < fNumOpsTasks);
+
+    this->expire(tmp->start());
+}
+
 bool GrResourceAllocator::assign(int* startIndex, int* stopIndex, AssignError* outError) {
     SkASSERT(outError);
-    *outError = AssignError::kNoError;
+    *outError = fLazyInstantiationError ? AssignError::kFailedProxyInstantiation
+                                        : AssignError::kNoError;
+
+    SkASSERT(fNumOpsTasks == fEndOfOpsTaskOpIndices.count());
 
     fIntvlHash.reset(); 
+
+    if (fCurOpsTaskIndex >= fEndOfOpsTaskOpIndices.count()) {
+        return false; 
+    }
+
+    *startIndex = fCurOpsTaskIndex;
+    *stopIndex = fEndOfOpsTaskOpIndices.count();
+
     if (fIntvlList.empty()) {
-        return false;          
+        fCurOpsTaskIndex = fEndOfOpsTaskOpIndices.count();
+        return true;          
     }
 
-    *startIndex = fCurOpListIndex;
-    *stopIndex = fEndOfOpListOpIndices.count();
-
-    if (!fResourceProvider->explicitlyAllocateGPUResources()) {
-        fIntvlList.detachAll(); 
-        return true;
+#if GR_ALLOCATION_SPEW
+    SkDebugf("assigning opsTasks %d through %d out of %d numOpsTasks\n",
+             *startIndex, *stopIndex, fNumOpsTasks);
+    SkDebugf("EndOfOpsTaskIndices: ");
+    for (int i = 0; i < fEndOfOpsTaskOpIndices.count(); ++i) {
+        SkDebugf("%d ", fEndOfOpsTaskOpIndices[i]);
     }
+    SkDebugf("\n");
+#endif
 
     SkDEBUGCODE(fAssigned = true;)
 
@@ -326,19 +399,20 @@ bool GrResourceAllocator::assign(int* startIndex, int* stopIndex, AssignError* o
     this->dumpIntervals();
 #endif
     while (Interval* cur = fIntvlList.popHead()) {
-        if (fEndOfOpListOpIndices[fCurOpListIndex] < cur->start()) {
-            fCurOpListIndex++;
+        while (fEndOfOpsTaskOpIndices[fCurOpsTaskIndex] <= cur->start()) {
+            fCurOpsTaskIndex++;
+            SkASSERT(fCurOpsTaskIndex < fNumOpsTasks);
         }
 
         this->expire(cur->start());
 
-        bool needsStencil = cur->proxy()->asRenderTargetProxy()
-                                            ? cur->proxy()->asRenderTargetProxy()->needsStencil()
-                                            : false;
+        int minStencilSampleCount = (cur->proxy()->asRenderTargetProxy())
+                ? cur->proxy()->asRenderTargetProxy()->numStencilSamples()
+                : 0;
 
         if (cur->proxy()->isInstantiated()) {
             if (!GrSurfaceProxyPriv::AttachStencilIfNeeded(
-                        fResourceProvider, cur->proxy()->peekSurface(), needsStencil)) {
+                        fResourceProvider, cur->proxy()->peekSurface(), minStencilSampleCount)) {
                 *outError = AssignError::kFailedProxyInstantiation;
             }
 
@@ -346,19 +420,8 @@ bool GrResourceAllocator::assign(int* startIndex, int* stopIndex, AssignError* o
 
             if (fResourceProvider->overBudget()) {
                 
-                if (!fIntvlList.empty() &&
-                    fEndOfOpListOpIndices[fCurOpListIndex] < fIntvlList.peekHead()->start()) {
-                    *stopIndex = fCurOpListIndex+1;
-
-                    
-                    
-                    
-                    
-                    if (const Interval* tmp = fIntvlList.peekHead()) {
-                        this->expire(tmp->start());
-                    } else {
-                        this->expire(std::numeric_limits<unsigned int>::max());
-                    }
+                if (this->onOpsTaskBoundary()) {
+                    this->forceIntermediateFlush(stopIndex);
                     return true;
                 }
             }
@@ -366,11 +429,12 @@ bool GrResourceAllocator::assign(int* startIndex, int* stopIndex, AssignError* o
             continue;
         }
 
-        if (GrSurfaceProxy::LazyState::kNot != cur->proxy()->lazyInstantiationState()) {
+        if (cur->proxy()->isLazy()) {
             if (!cur->proxy()->priv().doLazyInstantiation(fResourceProvider)) {
                 *outError = AssignError::kFailedProxyInstantiation;
             }
-        } else if (sk_sp<GrSurface> surface = this->findSurfaceFor(cur->proxy(), needsStencil)) {
+        } else if (sk_sp<GrSurface> surface =
+                           this->findSurfaceFor(cur->proxy(), minStencilSampleCount)) {
             
             GrTextureProxy* texProxy = cur->proxy()->asTextureProxy();
 
@@ -398,19 +462,8 @@ bool GrResourceAllocator::assign(int* startIndex, int* stopIndex, AssignError* o
 
         if (fResourceProvider->overBudget()) {
             
-            if (!fIntvlList.empty() &&
-                fEndOfOpListOpIndices[fCurOpListIndex] < fIntvlList.peekHead()->start()) {
-                *stopIndex = fCurOpListIndex+1;
-
-                
-                
-                
-                
-                if (const Interval* tmp = fIntvlList.peekHead()) {
-                    this->expire(tmp->start());
-                } else {
-                    this->expire(std::numeric_limits<unsigned int>::max());
-                }
+            if (this->onOpsTaskBoundary()) {
+                this->forceIntermediateFlush(stopIndex);
                 return true;
             }
         }
@@ -423,20 +476,18 @@ bool GrResourceAllocator::assign(int* startIndex, int* stopIndex, AssignError* o
 
 #if GR_ALLOCATION_SPEW
 void GrResourceAllocator::dumpIntervals() {
-
     
-    unsigned int min = fNumOps+1;
+    SkDebugf("------------------------------------------------------------\n");
+    unsigned int min = std::numeric_limits<unsigned int>::max();
     unsigned int max = 0;
     for(const Interval* cur = fIntvlList.peekHead(); cur; cur = cur->next()) {
-        SkDebugf("{ %3d,%3d }: [%2d, %2d] - proxyRefs:%d surfaceRefs:%d R:%d W:%d\n",
+        SkDebugf("{ %3d,%3d }: [%2d, %2d] - proxyRefs:%d surfaceRefs:%d\n",
                  cur->proxy()->uniqueID().asUInt(),
                  cur->proxy()->isInstantiated() ? cur->proxy()->underlyingUniqueID().asUInt() : -1,
                  cur->start(),
                  cur->end(),
                  cur->proxy()->priv().getProxyRefCnt(),
-                 cur->proxy()->getBackingRefCnt_TestOnly(),
-                 cur->proxy()->getPendingReadCnt_TestOnly(),
-                 cur->proxy()->getPendingWriteCnt_TestOnly());
+                 cur->proxy()->testingOnly_getBackingRefCnt());
         min = SkTMin(min, cur->start());
         max = SkTMax(max, cur->end());
     }

@@ -5,8 +5,8 @@
 
 
 
-#include "SkRecord.h"
-#include "SkImage.h"
+#include "include/core/SkImage.h"
+#include "src/core/SkRecord.h"
 #include <algorithm>
 
 SkRecord::~SkRecord() {

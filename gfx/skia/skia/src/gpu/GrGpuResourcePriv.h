@@ -8,7 +8,7 @@
 #ifndef GrGpuResourcePriv_DEFINED
 #define GrGpuResourcePriv_DEFINED
 
-#include "GrGpuResource.h"
+#include "include/gpu/GrGpuResource.h"
 
 
 
@@ -16,8 +16,6 @@
 
 class GrGpuResource::ResourcePriv {
 public:
-    SkDEBUGCODE(bool hasPendingIO_debugOnly() const { return fResource->internalHasPendingIO(); })
-
     
 
 
@@ -72,7 +70,7 @@ public:
 
     bool isPurgeable() const { return fResource->isPurgeable(); }
 
-    bool hasRefOrPendingIO() const { return fResource->hasRefOrPendingIO(); }
+    bool hasRef() const { return fResource->hasRef(); }
 
 protected:
     ResourcePriv(GrGpuResource* resource) : fResource(resource) {   }

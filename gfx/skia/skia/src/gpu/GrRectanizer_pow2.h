@@ -8,10 +8,10 @@
 #ifndef GrRectanizer_pow2_DEFINED
 #define GrRectanizer_pow2_DEFINED
 
-#include "GrRectanizer.h"
-#include "SkMathPriv.h"
-#include "SkMalloc.h"
-#include "SkIPoint16.h"
+#include "include/private/SkMalloc.h"
+#include "src/core/SkIPoint16.h"
+#include "src/core/SkMathPriv.h"
+#include "src/gpu/GrRectanizer.h"
 
 
 

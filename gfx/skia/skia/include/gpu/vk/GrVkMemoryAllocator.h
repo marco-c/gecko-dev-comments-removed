@@ -8,9 +8,9 @@
 #ifndef GrVkMemoryAllocator_DEFINED
 #define GrVkMemoryAllocator_DEFINED
 
-#include "SkRefCnt.h"
-#include "GrTypes.h"
-#include "GrVkTypes.h"
+#include "include/core/SkRefCnt.h"
+#include "include/gpu/GrTypes.h"
+#include "include/gpu/vk/GrVkTypes.h"
 
 class GrVkMemoryAllocator : public SkRefCnt {
 public:
@@ -28,6 +28,8 @@ public:
         
         
         kPersistentlyMapped  = 0x4,
+        
+        kProtected  = 0x8,
     };
 
     GR_DECL_BITFIELD_CLASS_OPS_FRIENDS(AllocationPropertyFlags);

@@ -5,9 +5,9 @@
 
 
 
-#include "SkFlattenable.h"
-#include "SkPtrRecorder.h"
-#include "SkReadBuffer.h"
+#include "include/core/SkFlattenable.h"
+#include "src/core/SkPtrRecorder.h"
+#include "src/core/SkReadBuffer.h"
 
 #include <algorithm>
 

@@ -5,9 +5,9 @@
 
 
 
-#include "SkPDFResourceDict.h"
-#include "SkPDFTypes.h"
-#include "SkStream.h"
+#include "include/core/SkStream.h"
+#include "src/pdf/SkPDFResourceDict.h"
+#include "src/pdf/SkPDFTypes.h"
 
 
 
@@ -87,7 +87,7 @@ std::unique_ptr<SkPDFDict> SkPDFMakeResourceDict(
         const std::vector<SkPDFIndirectReference>& xObjectResources,
         const std::vector<SkPDFIndirectReference>& fontResources) {
     auto dict = SkPDFMakeDict();
-    dict->insertObject("ProcSets", make_proc_set());
+    dict->insertObject("ProcSet", make_proc_set());
     add_subdict(graphicStateResources, SkPDFResourceType::kExtGState, dict.get());
     add_subdict(shaderResources,       SkPDFResourceType::kPattern,   dict.get());
     add_subdict(xObjectResources,      SkPDFResourceType::kXObject,   dict.get());

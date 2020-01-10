@@ -9,11 +9,11 @@
 #define GrCoverageCountingPathRenderer_DEFINED
 
 #include <map>
-#include "GrCCPerOpListPaths.h"
-#include "GrOnFlushResourceProvider.h"
-#include "GrPathRenderer.h"
-#include "GrRenderTargetOpList.h"
-#include "ccpr/GrCCPerFlushResources.h"
+#include "src/gpu/GrOnFlushResourceProvider.h"
+#include "src/gpu/GrOpsTask.h"
+#include "src/gpu/GrPathRenderer.h"
+#include "src/gpu/ccpr/GrCCPerFlushResources.h"
+#include "src/gpu/ccpr/GrCCPerOpsTaskPaths.h"
 
 class GrCCDrawPathsOp;
 class GrCCPathCache;
@@ -27,17 +27,21 @@ class GrCCPathCache;
 
 class GrCoverageCountingPathRenderer : public GrPathRenderer, public GrOnFlushCallbackObject {
 public:
-    static bool IsSupported(const GrCaps&);
+    using CoverageType = GrCCAtlas::CoverageType;
+
+    static bool IsSupported(const GrCaps&, CoverageType* = nullptr);
 
     enum class AllowCaching : bool {
         kNo = false,
         kYes = true
     };
 
-    static sk_sp<GrCoverageCountingPathRenderer> CreateIfSupported(const GrCaps&, AllowCaching,
-                                                                   uint32_t contextUniqueID);
+    static sk_sp<GrCoverageCountingPathRenderer> CreateIfSupported(
+            const GrCaps&, AllowCaching, uint32_t contextUniqueID);
 
-    using PendingPathsMap = std::map<uint32_t, sk_sp<GrCCPerOpListPaths>>;
+    CoverageType coverageType() const { return fCoverageType; }
+
+    using PendingPathsMap = std::map<uint32_t, sk_sp<GrCCPerOpsTaskPaths>>;
 
     
     
@@ -56,15 +60,14 @@ public:
         fPendingPaths.insert(paths.begin(), paths.end());
     }
 
-    std::unique_ptr<GrFragmentProcessor> makeClipProcessor(uint32_t oplistID,
-                                                           const SkPath& deviceSpacePath,
-                                                           const SkIRect& accessRect, int rtWidth,
-                                                           int rtHeight, const GrCaps&);
+    std::unique_ptr<GrFragmentProcessor> makeClipProcessor(
+            uint32_t oplistID, const SkPath& deviceSpacePath, const SkIRect& accessRect,
+            const GrCaps&);
 
     
-    void preFlush(GrOnFlushResourceProvider*, const uint32_t* opListIDs, int numOpListIDs,
-                  SkTArray<sk_sp<GrRenderTargetContext>>* out) override;
-    void postFlush(GrDeferredUploadToken, const uint32_t* opListIDs, int numOpListIDs) override;
+    void preFlush(GrOnFlushResourceProvider*, const uint32_t* opsTaskIDs,
+                  int numOpsTaskIDs) override;
+    void postFlush(GrDeferredUploadToken, const uint32_t* opsTaskIDs, int numOpsTaskIDs) override;
 
     void purgeCacheEntriesOlderThan(GrProxyProvider*, const GrStdSteadyClock::time_point&);
 
@@ -82,7 +85,7 @@ public:
                                    float* inflationRadius = nullptr);
 
 private:
-    GrCoverageCountingPathRenderer(AllowCaching, uint32_t contextUniqueID);
+    GrCoverageCountingPathRenderer(CoverageType, AllowCaching, uint32_t contextUniqueID);
 
     
     StencilSupport onGetStencilSupport(const GrShape&) const override {
@@ -91,8 +94,10 @@ private:
     CanDrawPath onCanDrawPath(const CanDrawPathArgs&) const override;
     bool onDrawPath(const DrawPathArgs&) override;
 
-    GrCCPerOpListPaths* lookupPendingPaths(uint32_t opListID);
+    GrCCPerOpsTaskPaths* lookupPendingPaths(uint32_t opsTaskID);
     void recordOp(std::unique_ptr<GrCCDrawPathsOp>, const DrawPathArgs&);
+
+    const CoverageType fCoverageType;
 
     
     
@@ -101,7 +106,7 @@ private:
 
     
     
-    SkSTArray<4, sk_sp<GrCCPerOpListPaths>> fFlushingPaths;
+    SkSTArray<4, sk_sp<GrCCPerOpsTaskPaths>> fFlushingPaths;
 
     std::unique_ptr<GrCCPathCache> fPathCache;
 

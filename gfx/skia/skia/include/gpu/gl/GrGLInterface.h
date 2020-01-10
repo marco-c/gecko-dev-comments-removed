@@ -8,9 +8,9 @@
 #ifndef GrGLInterface_DEFINED
 #define GrGLInterface_DEFINED
 
-#include "GrGLFunctions.h"
-#include "GrGLExtensions.h"
-#include "SkRefCnt.h"
+#include "include/core/SkRefCnt.h"
+#include "include/gpu/gl/GrGLExtensions.h"
+#include "include/gpu/gl/GrGLFunctions.h"
 
 
 
@@ -33,13 +33,6 @@ struct GrGLInterface;
 SK_API sk_sp<const GrGLInterface> GrGLMakeNativeInterface();
 
 SK_API const GrGLInterface* GrGLCreateNativeInterface();
-
-
-
-
-
-
-const SK_API GrGLInterface* GrGLCreateNullInterface(bool enableNVPR = false);
 
 
 
@@ -334,8 +327,8 @@ public:
         GrGLFunction<GrGLWindowRectanglesFn> fWindowRectangles;
 
         
-        GrGLFunction<GrEGLCreateImageFn> fEGLCreateImage;
-        GrGLFunction<GrEGLDestroyImageFn> fEGLDestroyImage;
+        GrGLFunction<GrGLStartTilingFn> fStartTiling;
+        GrGLFunction<GrGLEndTilingFn> fEndTiling;
     } fFunctions;
 
 #if GR_TEST_UTILS

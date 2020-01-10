@@ -8,13 +8,12 @@
 #ifndef GrTextureContext_DEFINED
 #define GrTextureContext_DEFINED
 
-#include "GrSurfaceContext.h"
-#include "../private/GrTextureProxy.h"
+#include "src/gpu/GrSurfaceContext.h"
+#include "src/gpu/GrTextureProxy.h"
 
 class GrContext;
 class GrDrawingManager;
 class GrSurface;
-class GrTextureOpList;
 class GrTextureProxy;
 struct SkIPoint;
 struct SkIRect;
@@ -23,7 +22,7 @@ struct SkIRect;
 
 
 
-class SK_API GrTextureContext : public GrSurfaceContext {
+class GrTextureContext : public GrSurfaceContext {
 public:
     ~GrTextureContext() override;
 
@@ -39,20 +38,18 @@ public:
     sk_sp<GrRenderTargetProxy> asRenderTargetProxyRef() override;
 
 protected:
-    GrTextureContext(GrRecordingContext*, sk_sp<GrTextureProxy>, sk_sp<SkColorSpace>);
+    GrTextureContext(GrRecordingContext*,
+                     sk_sp<GrTextureProxy>,
+                     GrColorType,
+                     SkAlphaType,
+                     sk_sp<SkColorSpace>);
 
     SkDEBUGCODE(void validate() const override;)
 
 private:
     friend class GrDrawingManager; 
 
-    GrOpList* getOpList() override;
-
     sk_sp<GrTextureProxy>  fTextureProxy;
-
-    
-    
-    sk_sp<GrTextureOpList> fOpList;
 
     typedef GrSurfaceContext INHERITED;
 };

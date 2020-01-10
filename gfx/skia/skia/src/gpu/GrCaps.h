@@ -8,13 +8,14 @@
 #ifndef GrCaps_DEFINED
 #define GrCaps_DEFINED
 
-#include "../private/GrTypesPriv.h"
-#include "GrBlend.h"
-#include "GrDriverBugWorkarounds.h"
-#include "GrShaderCaps.h"
-#include "SkImageInfo.h"
-#include "SkRefCnt.h"
-#include "SkString.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkString.h"
+#include "include/gpu/GrDriverBugWorkarounds.h"
+#include "include/private/GrTypesPriv.h"
+#include "src/gpu/GrBlend.h"
+#include "src/gpu/GrShaderCaps.h"
+#include "src/gpu/GrSurfaceProxy.h"
 
 class GrBackendFormat;
 class GrBackendRenderTarget;
@@ -22,7 +23,6 @@ class GrBackendTexture;
 struct GrContextOptions;
 class GrRenderTargetProxy;
 class GrSurface;
-class GrSurfaceProxy;
 class SkJSONWriter;
 
 
@@ -41,24 +41,17 @@ public:
 
     bool mipMapSupport() const { return fMipMapSupport; }
 
-    
-
-
-
-    bool srgbSupport() const { return fSRGBSupport; }
-    
-
-
-    bool srgbWriteControl() const { return fSRGBWriteControl; }
-    bool discardRenderTargetSupport() const { return fDiscardRenderTargetSupport; }
     bool gpuTracingSupport() const { return fGpuTracingSupport; }
-    bool compressedTexSubImageSupport() const { return fCompressedTexSubImageSupport; }
     bool oversizedStencilSupport() const { return fOversizedStencilSupport; }
     bool textureBarrierSupport() const { return fTextureBarrierSupport; }
     bool sampleLocationsSupport() const { return fSampleLocationsSupport; }
     bool multisampleDisableSupport() const { return fMultisampleDisableSupport; }
     bool instanceAttribSupport() const { return fInstanceAttribSupport; }
-    bool usesMixedSamples() const { return fUsesMixedSamples; }
+    bool mixedSamplesSupport() const { return fMixedSamplesSupport; }
+    
+    
+    
+    bool msaaResolvesAutomatically() const { return fMSAAResolvesAutomatically; }
     bool halfFloatVertexAttributeSupport() const { return fHalfFloatVertexAttributeSupport; }
 
     
@@ -71,9 +64,17 @@ public:
     
     bool preferFullscreenClears() const { return fPreferFullscreenClears; }
 
+    
+    
+    bool discardStencilValuesAfterRenderPass() const {
+        
+        
+        return this->preferFullscreenClears();
+    }
+
     bool preferVRAMUseOverFlushes() const { return fPreferVRAMUseOverFlushes; }
 
-    bool blacklistCoverageCounting() const { return fBlacklistCoverageCounting; }
+    bool preferTrianglesOverSampleMask() const { return fPreferTrianglesOverSampleMask; }
 
     bool avoidStencilBuffers() const { return fAvoidStencilBuffers; }
 
@@ -114,11 +115,13 @@ public:
 
 
     enum MapFlags {
-        kNone_MapFlags   = 0x0,       
+        kNone_MapFlags      = 0x0,   
 
-        kCanMap_MapFlag  = 0x1,       
-                                      
-        kSubset_MapFlag  = 0x2,       
+        kCanMap_MapFlag     = 0x1,   
+                                     
+        kSubset_MapFlag     = 0x2,   
+        kAsyncRead_MapFlag  = 0x4,   
+                                     
     };
 
     uint32_t mapBufferFlags() const { return fMapBufferFlags; }
@@ -155,37 +158,48 @@ public:
         return this->maxWindowRectangles() > 0 && this->onIsWindowRectanglesSupportedForRT(rt);
     }
 
-    
-    
-    int maxClipAnalyticFPs() const { return fMaxClipAnalyticFPs; }
-
-    virtual bool isConfigTexturable(GrPixelConfig) const = 0;
-
-    
-    virtual bool isConfigCopyable(GrPixelConfig) const = 0;
+    virtual bool isFormatSRGB(const GrBackendFormat&) const = 0;
 
     
     
-    virtual int maxRenderTargetSampleCount(GrPixelConfig) const = 0;
+    virtual bool isFormatCompressed(const GrBackendFormat&,
+                                    SkImage::CompressionType* compressionType = nullptr) const = 0;
 
-    bool isConfigRenderable(GrPixelConfig config) const {
-        return this->maxRenderTargetSampleCount(config) > 0;
+    
+    
+    virtual bool isFormatTexturableAndUploadable(GrColorType, const GrBackendFormat&) const = 0;
+    
+    virtual bool isFormatTexturable(const GrBackendFormat&) const = 0;
+
+    
+    virtual bool isFormatCopyable(const GrBackendFormat&) const = 0;
+
+    
+    
+    
+    
+    virtual int maxRenderTargetSampleCount(const GrBackendFormat&) const = 0;
+
+    
+    
+    int internalMultisampleCount(const GrBackendFormat& format) const {
+        return SkTMin(fInternalMultisampleCount, this->maxRenderTargetSampleCount(format));
     }
 
-    
-    bool isConfigRenderable(GrPixelConfig config, bool withMSAA) const {
-        return this->maxRenderTargetSampleCount(config) > (withMSAA ? 1 : 0);
-    }
+    virtual bool isFormatAsColorTypeRenderable(GrColorType ct, const GrBackendFormat& format,
+                                               int sampleCount = 1) const = 0;
+
+    virtual bool isFormatRenderable(const GrBackendFormat& format, int sampleCount) const = 0;
 
     
     
     
     
-    virtual int getRenderTargetSampleCount(int requestedCount, GrPixelConfig) const = 0;
+    virtual int getRenderTargetSampleCount(int requestedCount, const GrBackendFormat&) const = 0;
+
     
-    int getSampleCount(int requestedCount, GrPixelConfig config) const {
-        return this->getRenderTargetSampleCount(requestedCount, config);
-    }
+    
+    virtual size_t bytesPerPixel(const GrBackendFormat&) const = 0;
 
     
 
@@ -197,28 +211,73 @@ public:
     
 
 
+    enum class SurfaceReadPixelsSupport {
+        
+        kSupported,
+        
 
 
 
-    virtual bool surfaceSupportsReadPixels(const GrSurface*) const = 0;
+
+        kCopyToTexture2D,
+        
+
+
+        kUnsupported,
+    };
+    
+
+
+
+
+    virtual SurfaceReadPixelsSupport surfaceSupportsReadPixels(const GrSurface*) const = 0;
+
+    struct SupportedWrite {
+        GrColorType fColorType;
+        
+        
+        size_t fOffsetAlignmentForTransferBuffer;
+    };
 
     
 
 
 
-    virtual GrColorType supportedWritePixelsColorType(GrPixelConfig config,
-                                                      GrColorType ) const {
-        return GrPixelConfigToColorType(config);
-    }
+    virtual SupportedWrite supportedWritePixelsColorType(GrColorType surfaceColorType,
+                                                         const GrBackendFormat& surfaceFormat,
+                                                         GrColorType srcColorType) const = 0;
+
+    struct SupportedRead {
+        GrColorType fColorType;
+        
+        
+        size_t fOffsetAlignmentForTransferBuffer;
+    };
 
     
 
 
 
-    virtual GrColorType supportedReadPixelsColorType(GrPixelConfig config,
-                                                     GrColorType ) const {
-        return GrPixelConfigToColorType(config);
-    }
+
+
+
+
+    SupportedRead supportedReadPixelsColorType(GrColorType srcColorType,
+                                               const GrBackendFormat& srcFormat,
+                                               GrColorType dstColorType) const;
+
+    
+
+
+
+    bool writePixelsRowBytesSupport() const { return fWritePixelsRowBytesSupport; }
+    
+
+
+    bool readPixelsRowBytesSupport() const { return fReadPixelsRowBytesSupport; }
+
+    
+    bool transferBufferSupport() const { return fTransferBufferSupport; }
 
     bool suppressPrints() const { return fSuppressPrints; }
 
@@ -235,11 +294,22 @@ public:
 
 
 
+    bool shouldInitializeTextures() const { return fShouldInitializeTextures; }
+
+    
+
+
+
     bool supportsAHardwareBufferImages() const { return fSupportsAHardwareBufferImages; }
 
     bool wireframeMode() const { return fWireframeMode; }
 
+    
     bool fenceSyncSupport() const { return fFenceSyncSupport; }
+
+    
+    bool semaphoreSupport() const { return fSemaphoreSupport; }
+
     bool crossContextTextureSupport() const { return fCrossContextTextureSupport; }
     
 
@@ -258,55 +328,76 @@ public:
     }
 
     
-    bool performColorClearsAsDraws() const {
-        return fPerformColorClearsAsDraws;
+    bool performColorClearsAsDraws() const { return fPerformColorClearsAsDraws; }
+
+    
+    
+    
+    bool performStencilClearsAsDraws() const { return fPerformStencilClearsAsDraws; }
+
+    
+    
+    bool allowCoverageCounting() const { return fAllowCoverageCounting; }
+
+    
+    bool driverBlacklistCCPR() const { return fDriverBlacklistCCPR; }
+    bool driverBlacklistMSAACCPR() const { return fDriverBlacklistMSAACCPR; }
+
+    
+
+
+
+
+
+
+
+
+
+
+    struct DstCopyRestrictions {
+        GrSurfaceProxy::RectsMustMatch fRectsMustMatch = GrSurfaceProxy::RectsMustMatch::kNo;
+        bool fMustCopyWholeSrc = false;
+    };
+    virtual DstCopyRestrictions getDstCopyRestrictions(const GrRenderTargetProxy* src,
+                                                       GrColorType ct) const {
+        return {};
+    }
+
+    bool validateSurfaceParams(const SkISize&, const GrBackendFormat&, GrPixelConfig,
+                               GrRenderable renderable, int renderTargetSampleCnt,
+                               GrMipMapped) const;
+
+    bool areColorTypeAndFormatCompatible(GrColorType grCT,
+                                         const GrBackendFormat& format) const {
+        if (GrColorType::kUnknown == grCT) {
+            return false;
+        }
+
+        return this->onAreColorTypeAndFormatCompatible(grCT, format);
     }
 
     
     
-    
-    bool performStencilClearsAsDraws() const {
-        return fPerformStencilClearsAsDraws;
+    GrPixelConfig getConfigFromBackendFormat(const GrBackendFormat& format,
+                                             GrColorType grCT) const {
+        if (GrColorType::kUnknown == grCT) {
+            return kUnknown_GrPixelConfig;
+        }
+
+        return this->onGetConfigFromBackendFormat(format, grCT);
     }
 
     
 
 
 
-
-
-
-
-    virtual bool initDescForDstCopy(const GrRenderTargetProxy* src, GrSurfaceDesc* desc,
-                                    GrSurfaceOrigin* origin, bool* rectsMustMatch,
-                                    bool* disallowSubrect) const = 0;
-
-    bool validateSurfaceDesc(const GrSurfaceDesc&, GrMipMapped) const;
+    virtual GrColorType getYUVAColorTypeFromBackendFormat(const GrBackendFormat&,
+                                                          bool isAlphaChannel) const = 0;
 
     
+    GrBackendFormat getDefaultBackendFormat(GrColorType, GrRenderable) const;
 
-
-
-
-    virtual GrPixelConfig validateBackendRenderTarget(const GrBackendRenderTarget&,
-                                                      SkColorType) const = 0;
-
-    
-    
-    
-    virtual GrPixelConfig getConfigFromBackendFormat(const GrBackendFormat& format,
-                                                     SkColorType ct) const = 0;
-
-    
-
-
-
-    virtual GrPixelConfig getYUVAConfigFromBackendFormat(const GrBackendFormat& format) const = 0;
-
-    
-    virtual GrBackendFormat getBackendFormatFromGrColorType(GrColorType ct,
-                                                            GrSRGBEncoded srgbEncoded) const = 0;
-    GrBackendFormat getBackendFormatFromColorType(SkColorType ct) const;
+    virtual GrBackendFormat getBackendFormatFromCompressionType(SkImage::CompressionType) const = 0;
 
     
 
@@ -314,7 +405,46 @@ public:
 
     bool clampToBorderSupport() const { return fClampToBorderSupport; }
 
+    
+
+
+
+    virtual GrSwizzle getTextureSwizzle(const GrBackendFormat&, GrColorType) const = 0;
+
+    
+
+
+
+    virtual GrSwizzle getOutputSwizzle(const GrBackendFormat&, GrColorType) const = 0;
+
     const GrDriverBugWorkarounds& workarounds() const { return fDriverBugWorkarounds; }
+
+    
+
+
+
+    GrPixelConfig makeConfigSpecific(GrPixelConfig config, const GrBackendFormat& format) const {
+        auto ct = GrPixelConfigToColorType(config);
+        auto result = this->getConfigFromBackendFormat(format, ct);
+        SkASSERT(config == result || AreConfigsCompatible(config, result));
+        return result;
+    }
+
+#ifdef SK_DEBUG
+    
+    
+    
+    static bool AreConfigsCompatible(GrPixelConfig genericConfig, GrPixelConfig specificConfig);
+#endif
+
+#if GR_TEST_UTILS
+    struct TestFormatColorTypeCombination {
+        GrColorType fColorType;
+        GrBackendFormat fFormat;
+    };
+
+    virtual std::vector<TestFormatColorTypeCombination> getTestingCombinations() const = 0;
+#endif
 
 protected:
     
@@ -326,32 +456,35 @@ protected:
 
     bool fNPOTTextureTileSupport                     : 1;
     bool fMipMapSupport                              : 1;
-    bool fSRGBSupport                                : 1;
-    bool fSRGBWriteControl                           : 1;
-    bool fDiscardRenderTargetSupport                 : 1;
     bool fReuseScratchTextures                       : 1;
     bool fReuseScratchBuffers                        : 1;
     bool fGpuTracingSupport                          : 1;
-    bool fCompressedTexSubImageSupport               : 1;
     bool fOversizedStencilSupport                    : 1;
     bool fTextureBarrierSupport                      : 1;
     bool fSampleLocationsSupport                     : 1;
     bool fMultisampleDisableSupport                  : 1;
     bool fInstanceAttribSupport                      : 1;
-    bool fUsesMixedSamples                           : 1;
+    bool fMixedSamplesSupport                        : 1;
+    bool fMSAAResolvesAutomatically                  : 1;
     bool fUsePrimitiveRestart                        : 1;
     bool fPreferClientSideDynamicBuffers             : 1;
     bool fPreferFullscreenClears                     : 1;
     bool fMustClearUploadedBufferData                : 1;
+    bool fShouldInitializeTextures                   : 1;
     bool fSupportsAHardwareBufferImages              : 1;
     bool fHalfFloatVertexAttributeSupport            : 1;
     bool fClampToBorderSupport                       : 1;
     bool fPerformPartialClearsAsDraws                : 1;
     bool fPerformColorClearsAsDraws                  : 1;
     bool fPerformStencilClearsAsDraws                : 1;
+    bool fAllowCoverageCounting                      : 1;
+    bool fTransferBufferSupport                      : 1;
+    bool fWritePixelsRowBytesSupport                 : 1;
+    bool fReadPixelsRowBytesSupport                  : 1;
 
     
-    bool fBlacklistCoverageCounting                  : 1;
+    bool fDriverBlacklistCCPR                        : 1;
+    bool fDriverBlacklistMSAACCPR                    : 1;
     bool fAvoidStencilBuffers                        : 1;
     bool fAvoidWritePixelsFastPath                   : 1;
 
@@ -359,7 +492,10 @@ protected:
     bool fPreferVRAMUseOverFlushes                   : 1;
 
     
+    bool fPreferTrianglesOverSampleMask              : 1;
+
     bool fFenceSyncSupport                           : 1;
+    bool fSemaphoreSupport                           : 1;
 
     
     bool fCrossContextTextureSupport                 : 1;
@@ -380,7 +516,7 @@ protected:
     int fMaxTextureSize;
     int fMaxTileSize;
     int fMaxWindowRectangles;
-    int fMaxClipAnalyticFPs;
+    int fInternalMultisampleCount;
 
     GrDriverBugWorkarounds fDriverBugWorkarounds;
 
@@ -390,12 +526,23 @@ private:
     virtual bool onSurfaceSupportsWritePixels(const GrSurface*) const = 0;
     virtual bool onCanCopySurface(const GrSurfaceProxy* dst, const GrSurfaceProxy* src,
                                   const SkIRect& srcRect, const SkIPoint& dstPoint) const = 0;
+    virtual GrBackendFormat onGetDefaultBackendFormat(GrColorType, GrRenderable) const = 0;
 
     
     
     virtual bool onIsWindowRectanglesSupportedForRT(const GrBackendRenderTarget&) const {
         return true;
     }
+
+    virtual GrPixelConfig onGetConfigFromBackendFormat(const GrBackendFormat& format,
+                                                       GrColorType ct) const = 0;
+
+    virtual bool onAreColorTypeAndFormatCompatible(GrColorType, const GrBackendFormat&) const = 0;
+
+    virtual SupportedRead onSupportedReadPixelsColorType(GrColorType srcColorType,
+                                                         const GrBackendFormat& srcFormat,
+                                                         GrColorType dstColorType) const = 0;
+
 
     bool fSuppressPrints : 1;
     bool fWireframeMode  : 1;

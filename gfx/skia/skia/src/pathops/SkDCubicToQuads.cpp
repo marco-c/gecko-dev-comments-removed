@@ -28,8 +28,8 @@
 
 
 
-#include "SkPathOpsCubic.h"
-#include "SkPathOpsQuad.h"
+#include "src/pathops/SkPathOpsCubic.h"
+#include "src/pathops/SkPathOpsQuad.h"
 
 
 SkDQuad SkDCubic::toQuad() const {

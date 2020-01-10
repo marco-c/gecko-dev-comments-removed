@@ -12,10 +12,10 @@
 
 
 
-#include "SkPathEffect.h"
-#include "SkRecords.h"
-#include "SkShader.h"
-#include "SkTLogic.h"
+#include "include/core/SkPathEffect.h"
+#include "include/core/SkShader.h"
+#include "include/private/SkTLogic.h"
+#include "src/core/SkRecords.h"
 
 
 struct SkPathCounter {

@@ -9,10 +9,10 @@
 #ifndef GrVkPipelineState_DEFINED
 #define GrVkPipelineState_DEFINED
 
-#include "GrVkDescriptorSetManager.h"
-#include "GrVkPipelineStateDataManager.h"
-#include "glsl/GrGLSLProgramBuilder.h"
-#include "vk/GrVkTypes.h"
+#include "include/gpu/vk/GrVkTypes.h"
+#include "src/gpu/glsl/GrGLSLProgramBuilder.h"
+#include "src/gpu/vk/GrVkDescriptorSetManager.h"
+#include "src/gpu/vk/GrVkPipelineStateDataManager.h"
 
 class GrPipeline;
 class GrStencilSettings;
@@ -23,7 +23,6 @@ class GrVkDescriptorSet;
 class GrVkGpu;
 class GrVkImageView;
 class GrVkPipeline;
-class GrVkPipelineLayout;
 class GrVkSampler;
 class GrVkTexture;
 class GrVkUniformBuffer;
@@ -42,12 +41,10 @@ public:
     GrVkPipelineState(
             GrVkGpu* gpu,
             GrVkPipeline* pipeline,
-            VkPipelineLayout layout,
             const GrVkDescriptorSetManager::Handle& samplerDSHandle,
             const GrGLSLBuiltinUniformHandles& builtinUniformHandles,
             const UniformInfoArray& uniforms,
-            uint32_t geometryUniformSize,
-            uint32_t fragmentUniformSize,
+            uint32_t uniformSize,
             const UniformInfoArray& samplers,
             std::unique_ptr<GrGLSLPrimitiveProcessor> geometryProcessor,
             std::unique_ptr<GrGLSLXferProcessor> xferProcessor,
@@ -56,8 +53,8 @@ public:
 
     ~GrVkPipelineState();
 
-    void setAndBindUniforms(GrVkGpu*, const GrRenderTarget*, GrSurfaceOrigin,
-                            const GrPrimitiveProcessor&, const GrPipeline&, GrVkCommandBuffer*);
+    void setAndBindUniforms(GrVkGpu*, const GrRenderTarget*, const GrProgramInfo&,
+                            GrVkCommandBuffer*);
     
 
 
@@ -121,10 +118,6 @@ private:
 
     
     
-    GrVkPipelineLayout* fPipelineLayout;
-
-    
-    
     
     
     
@@ -137,8 +130,7 @@ private:
 
     SkSTArray<4, const GrVkSampler*>   fImmutableSamplers;
 
-    std::unique_ptr<GrVkUniformBuffer> fGeometryUniformBuffer;
-    std::unique_ptr<GrVkUniformBuffer> fFragmentUniformBuffer;
+    std::unique_ptr<GrVkUniformBuffer> fUniformBuffer;
 
     
     RenderTargetState fRenderTargetState;

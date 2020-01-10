@@ -11,7 +11,7 @@
 #ifndef sk_maskfilter_DEFINED
 #define sk_maskfilter_DEFINED
 
-#include "sk_types.h"
+#include "include/c/sk_types.h"
 
 typedef enum {
     NORMAL_SK_BLUR_STYLE,   
@@ -26,21 +26,21 @@ SK_C_PLUS_PLUS_BEGIN_GUARD
 
 
 
-void sk_maskfilter_ref(sk_maskfilter_t*);
+SK_API void sk_maskfilter_ref(sk_maskfilter_t*);
 
 
 
 
 
 
-void sk_maskfilter_unref(sk_maskfilter_t*);
+SK_API void sk_maskfilter_unref(sk_maskfilter_t*);
 
 
 
 
 
 
-sk_maskfilter_t* sk_maskfilter_new_blur(sk_blurstyle_t, float sigma);
+SK_API sk_maskfilter_t* sk_maskfilter_new_blur(sk_blurstyle_t, float sigma);
 
 SK_C_PLUS_PLUS_END_GUARD
 

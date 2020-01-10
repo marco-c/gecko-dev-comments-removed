@@ -5,12 +5,13 @@
 
 
 
-#include "effects/GrDisableColorXP.h"
-#include "GrPipeline.h"
-#include "GrProcessor.h"
-#include "glsl/GrGLSLFragmentShaderBuilder.h"
-#include "glsl/GrGLSLProgramDataManager.h"
-#include "glsl/GrGLSLXferProcessor.h"
+#include "src/gpu/GrPipeline.h"
+#include "src/gpu/GrProcessor.h"
+#include "src/gpu/GrShaderCaps.h"
+#include "src/gpu/effects/GrDisableColorXP.h"
+#include "src/gpu/glsl/GrGLSLFragmentShaderBuilder.h"
+#include "src/gpu/glsl/GrGLSLProgramDataManager.h"
+#include "src/gpu/glsl/GrGLSLXferProcessor.h"
 
 
 
@@ -18,43 +19,39 @@
 
 class DisableColorXP : public GrXferProcessor {
 public:
-    DisableColorXP()
-    : INHERITED(kDisableColorXP_ClassID) {}
-
-    const char* name() const override { return "Disable Color"; }
-
-    GrGLSLXferProcessor* createGLSLInstance() const override;
+    DisableColorXP() : INHERITED(kDisableColorXP_ClassID) {}
 
 private:
-
-    void onGetGLSLProcessorKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const override;
-
-    void onGetBlendInfo(GrXferProcessor::BlendInfo* blendInfo) const override;
-
-    bool onIsEqual(const GrXferProcessor& xpBase) const override {
-        return true;
+    const char* name() const override { return "Disable Color"; }
+    bool onIsEqual(const GrXferProcessor& xpBase) const override { return true; }
+    void onGetGLSLProcessorKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const override {
+        return;  
     }
+    void onGetBlendInfo(GrXferProcessor::BlendInfo* blendInfo) const override {
+        blendInfo->fWriteColor = false;
+    }
+    GrGLSLXferProcessor* createGLSLInstance() const override;
 
     typedef GrXferProcessor INHERITED;
 };
 
-
-
 class GLDisableColorXP : public GrGLSLXferProcessor {
-public:
-    GLDisableColorXP(const GrProcessor&) {}
-
-    ~GLDisableColorXP() override {}
-
-    static void GenKey(const GrProcessor&, const GrShaderCaps&, GrProcessorKeyBuilder*) {}
-
 private:
     void emitOutputsForBlendState(const EmitArgs& args) override {
+        if (args.fShaderCaps->mustWriteToFragColor()) {
+            
+            
+            
+            
+            GrGLSLXPFragmentBuilder* fragBuilder = args.fXPFragBuilder;
+            fragBuilder->codeAppendf("%s = half4(0);", args.fOutputPrimary);
+        }
+    }
+
+    void emitOutputSwizzle(
+            GrGLSLXPFragmentBuilder*, const GrSwizzle&, const char*, const char*) const override {
         
-        
-        
-        GrGLSLXPFragmentBuilder* fragBuilder = args.fXPFragBuilder;
-        fragBuilder->codeAppendf("%s = half4(0);", args.fOutputPrimary);
+        return;
     }
 
     void onSetData(const GrGLSLProgramDataManager&, const GrXferProcessor&) override {}
@@ -62,25 +59,12 @@ private:
     typedef GrGLSLXferProcessor INHERITED;
 };
 
-
-
-void DisableColorXP::onGetGLSLProcessorKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {
-    GLDisableColorXP::GenKey(*this, caps, b);
+GrGLSLXferProcessor* DisableColorXP::createGLSLInstance() const {
+    return new GLDisableColorXP();
 }
 
-GrGLSLXferProcessor* DisableColorXP::createGLSLInstance() const { return new GLDisableColorXP(*this); }
-
-void DisableColorXP::onGetBlendInfo(GrXferProcessor::BlendInfo* blendInfo) const {
-    blendInfo->fWriteColor = false;
-}
-
-
-sk_sp<const GrXferProcessor> GrDisableColorXPFactory::makeXferProcessor(
-        const GrProcessorAnalysisColor&,
-        GrProcessorAnalysisCoverage,
-        bool hasMixedSamples,
-        const GrCaps& caps) const {
-    return sk_sp<const GrXferProcessor>(new DisableColorXP);
+sk_sp<const GrXferProcessor> GrDisableColorXPFactory::MakeXferProcessor() {
+    return sk_make_sp<DisableColorXP>();
 }
 
 GR_DEFINE_XP_FACTORY_TEST(GrDisableColorXPFactory);

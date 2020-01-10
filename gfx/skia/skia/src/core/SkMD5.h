@@ -8,8 +8,8 @@
 #ifndef SkMD5_DEFINED
 #define SkMD5_DEFINED
 
-#include "SkStream.h"
-#include "SkTo.h"
+#include "include/core/SkStream.h"
+#include "include/private/SkTo.h"
 
 
 class SkMD5 : public SkWStream {
@@ -31,7 +31,7 @@ public:
     };
 
     
-    void finish(Digest& digest);
+    Digest finish();
 
 private:
     uint64_t byteCount;  

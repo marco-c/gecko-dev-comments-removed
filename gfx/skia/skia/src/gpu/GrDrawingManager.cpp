@@ -5,171 +5,183 @@
 
 
 
-#include "GrDrawingManager.h"
+#include "src/gpu/GrDrawingManager.h"
 
-#include "GrBackendSemaphore.h"
-#include "GrContextPriv.h"
-#include "GrGpu.h"
-#include "GrMemoryPool.h"
-#include "GrOnFlushResourceProvider.h"
-#include "GrOpList.h"
-#include "GrRecordingContext.h"
-#include "GrRecordingContextPriv.h"
-#include "GrRenderTargetContext.h"
-#include "GrRenderTargetProxy.h"
-#include "GrResourceAllocator.h"
-#include "GrResourceProvider.h"
-#include "GrSoftwarePathRenderer.h"
-#include "GrSurfaceProxyPriv.h"
-#include "GrTexture.h"
-#include "GrTextureContext.h"
-#include "GrTextureOpList.h"
-#include "GrTexturePriv.h"
-#include "GrTextureProxy.h"
-#include "GrTextureProxyPriv.h"
-#include "GrTracing.h"
-#include "SkDeferredDisplayList.h"
-#include "SkSurface_Gpu.h"
-#include "SkTTopoSort.h"
-#include "ccpr/GrCoverageCountingPathRenderer.h"
-#include "text/GrTextContext.h"
+#include "include/gpu/GrBackendSemaphore.h"
+#include "include/gpu/GrTexture.h"
+#include "include/private/GrRecordingContext.h"
+#include "include/private/SkDeferredDisplayList.h"
+#include "src/core/SkTTopoSort.h"
+#include "src/gpu/GrAuditTrail.h"
+#include "src/gpu/GrClientMappedBufferManager.h"
+#include "src/gpu/GrContextPriv.h"
+#include "src/gpu/GrCopyRenderTask.h"
+#include "src/gpu/GrGpu.h"
+#include "src/gpu/GrMemoryPool.h"
+#include "src/gpu/GrOnFlushResourceProvider.h"
+#include "src/gpu/GrRecordingContextPriv.h"
+#include "src/gpu/GrRenderTargetContext.h"
+#include "src/gpu/GrRenderTargetProxy.h"
+#include "src/gpu/GrRenderTask.h"
+#include "src/gpu/GrResourceAllocator.h"
+#include "src/gpu/GrResourceProvider.h"
+#include "src/gpu/GrSoftwarePathRenderer.h"
+#include "src/gpu/GrSurfaceProxyPriv.h"
+#include "src/gpu/GrTextureContext.h"
+#include "src/gpu/GrTexturePriv.h"
+#include "src/gpu/GrTextureProxy.h"
+#include "src/gpu/GrTextureProxyPriv.h"
+#include "src/gpu/GrTextureResolveRenderTask.h"
+#include "src/gpu/GrTracing.h"
+#include "src/gpu/GrTransferFromRenderTask.h"
+#include "src/gpu/GrWaitRenderTask.h"
+#include "src/gpu/ccpr/GrCoverageCountingPathRenderer.h"
+#include "src/gpu/text/GrTextContext.h"
+#include "src/image/SkSurface_Gpu.h"
 
-GrDrawingManager::OpListDAG::OpListDAG(bool explicitlyAllocating,
-                                       GrContextOptions::Enable sortOpLists) {
-    if (GrContextOptions::Enable::kNo == sortOpLists) {
-        fSortOpLists = false;
-    } else if (GrContextOptions::Enable::kYes == sortOpLists) {
-        fSortOpLists = true;
-    } else {
-        
-        fSortOpLists = explicitlyAllocating;
-    }
-}
+GrDrawingManager::RenderTaskDAG::RenderTaskDAG(bool sortRenderTasks)
+        : fSortRenderTasks(sortRenderTasks) {}
 
-GrDrawingManager::OpListDAG::~OpListDAG() {}
+GrDrawingManager::RenderTaskDAG::~RenderTaskDAG() {}
 
-void GrDrawingManager::OpListDAG::gatherIDs(SkSTArray<8, uint32_t, true>* idArray) const {
-    idArray->reset(fOpLists.count());
-    for (int i = 0; i < fOpLists.count(); ++i) {
-        if (fOpLists[i]) {
-            (*idArray)[i] = fOpLists[i]->uniqueID();
+void GrDrawingManager::RenderTaskDAG::gatherIDs(SkSTArray<8, uint32_t, true>* idArray) const {
+    idArray->reset(fRenderTasks.count());
+    for (int i = 0; i < fRenderTasks.count(); ++i) {
+        if (fRenderTasks[i]) {
+            (*idArray)[i] = fRenderTasks[i]->uniqueID();
         }
     }
 }
 
-void GrDrawingManager::OpListDAG::reset() {
-    fOpLists.reset();
+void GrDrawingManager::RenderTaskDAG::reset() {
+    fRenderTasks.reset();
 }
 
-void GrDrawingManager::OpListDAG::removeOpList(int index) {
-    if (!fOpLists[index]->unique()) {
+void GrDrawingManager::RenderTaskDAG::removeRenderTask(int index) {
+    if (!fRenderTasks[index]->unique()) {
         
-        fOpLists[index]->endFlush();
+        fRenderTasks[index]->endFlush();
     }
 
-    fOpLists[index] = nullptr;
+    fRenderTasks[index] = nullptr;
 }
 
-void GrDrawingManager::OpListDAG::removeOpLists(int startIndex, int stopIndex) {
+void GrDrawingManager::RenderTaskDAG::removeRenderTasks(int startIndex, int stopIndex) {
     for (int i = startIndex; i < stopIndex; ++i) {
-        if (!fOpLists[i]) {
+        if (!fRenderTasks[i]) {
             continue;
         }
-        this->removeOpList(i);
+        this->removeRenderTask(i);
     }
 }
 
-void GrDrawingManager::OpListDAG::add(sk_sp<GrOpList> opList) {
-    fOpLists.emplace_back(std::move(opList));
+bool GrDrawingManager::RenderTaskDAG::isUsed(GrSurfaceProxy* proxy) const {
+    for (int i = 0; i < fRenderTasks.count(); ++i) {
+        if (fRenderTasks[i] && fRenderTasks[i]->isUsed(proxy)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
-void GrDrawingManager::OpListDAG::add(const SkTArray<sk_sp<GrOpList>>& opLists) {
-    fOpLists.push_back_n(opLists.count(), opLists.begin());
+GrRenderTask* GrDrawingManager::RenderTaskDAG::add(sk_sp<GrRenderTask> renderTask) {
+    if (renderTask) {
+        return fRenderTasks.emplace_back(std::move(renderTask)).get();
+    }
+    return nullptr;
 }
 
-void GrDrawingManager::OpListDAG::swap(SkTArray<sk_sp<GrOpList>>* opLists) {
-    SkASSERT(opLists->empty());
-    opLists->swap(fOpLists);
+GrRenderTask* GrDrawingManager::RenderTaskDAG::addBeforeLast(sk_sp<GrRenderTask> renderTask) {
+    SkASSERT(!fRenderTasks.empty());
+    if (renderTask) {
+        
+        
+        fRenderTasks.emplace_back(fRenderTasks.back().release());
+        return (fRenderTasks[fRenderTasks.count() - 2] = std::move(renderTask)).get();
+    }
+    return nullptr;
 }
 
-void GrDrawingManager::OpListDAG::prepForFlush() {
-    if (fSortOpLists) {
-        SkDEBUGCODE(bool result =) SkTTopoSort<GrOpList, GrOpList::TopoSortTraits>(&fOpLists);
+void GrDrawingManager::RenderTaskDAG::add(const SkTArray<sk_sp<GrRenderTask>>& renderTasks) {
+    fRenderTasks.push_back_n(renderTasks.count(), renderTasks.begin());
+}
+
+void GrDrawingManager::RenderTaskDAG::swap(SkTArray<sk_sp<GrRenderTask>>* renderTasks) {
+    SkASSERT(renderTasks->empty());
+    renderTasks->swap(fRenderTasks);
+}
+
+void GrDrawingManager::RenderTaskDAG::prepForFlush() {
+    if (fSortRenderTasks) {
+        SkDEBUGCODE(bool result =) SkTTopoSort<GrRenderTask, GrRenderTask::TopoSortTraits>(
+                &fRenderTasks);
         SkASSERT(result);
     }
 
 #ifdef SK_DEBUG
     
     
-    if (fOpLists.count()) {
-        GrRenderTargetOpList* prevOpList = fOpLists[0]->asRenderTargetOpList();
-        for (int i = 1; i < fOpLists.count(); ++i) {
-            GrRenderTargetOpList* curOpList = fOpLists[i]->asRenderTargetOpList();
+    if (fRenderTasks.count()) {
+        GrOpsTask* prevOpsTask = fRenderTasks[0]->asOpsTask();
+        for (int i = 1; i < fRenderTasks.count(); ++i) {
+            GrOpsTask* curOpsTask = fRenderTasks[i]->asOpsTask();
 
-            if (prevOpList && curOpList) {
-                SkASSERT(prevOpList->fTarget.get() != curOpList->fTarget.get());
+            if (prevOpsTask && curOpsTask) {
+                SkASSERT(prevOpsTask->fTarget.get() != curOpsTask->fTarget.get());
             }
 
-            prevOpList = curOpList;
+            prevOpsTask = curOpsTask;
         }
     }
 #endif
 }
 
-void GrDrawingManager::OpListDAG::closeAll(const GrCaps* caps) {
-    for (int i = 0; i < fOpLists.count(); ++i) {
-        if (fOpLists[i]) {
-            fOpLists[i]->makeClosed(*caps);
+void GrDrawingManager::RenderTaskDAG::closeAll(const GrCaps* caps) {
+    for (int i = 0; i < fRenderTasks.count(); ++i) {
+        if (fRenderTasks[i]) {
+            fRenderTasks[i]->makeClosed(*caps);
         }
     }
 }
 
-void GrDrawingManager::OpListDAG::cleanup(const GrCaps* caps) {
-    for (int i = 0; i < fOpLists.count(); ++i) {
-        if (!fOpLists[i]) {
+void GrDrawingManager::RenderTaskDAG::cleanup(const GrCaps* caps) {
+    for (int i = 0; i < fRenderTasks.count(); ++i) {
+        if (!fRenderTasks[i]) {
             continue;
         }
 
         
-        fOpLists[i]->makeClosed(*caps);
+        fRenderTasks[i]->makeClosed(*caps);
 
         
         
         
-        if (!fOpLists[i]->unique()) {
+        if (!fRenderTasks[i]->unique()) {
             
             
-            fOpLists[i]->endFlush();
+            fRenderTasks[i]->endFlush();
         }
     }
 
-    fOpLists.reset();
+    fRenderTasks.reset();
 }
 
 
 GrDrawingManager::GrDrawingManager(GrRecordingContext* context,
                                    const GrPathRendererChain::Options& optionsForPathRendererChain,
                                    const GrTextContext::Options& optionsForTextContext,
-                                   bool explicitlyAllocating,
-                                   GrContextOptions::Enable sortOpLists,
-                                   GrContextOptions::Enable reduceOpListSplitting)
+                                   bool sortRenderTasks,
+                                   bool reduceOpsTaskSplitting)
         : fContext(context)
         , fOptionsForPathRendererChain(optionsForPathRendererChain)
         , fOptionsForTextContext(optionsForTextContext)
-        , fDAG(explicitlyAllocating, sortOpLists)
+        , fDAG(sortRenderTasks)
         , fTextContext(nullptr)
         , fPathRendererChain(nullptr)
         , fSoftwarePathRenderer(nullptr)
-        , fFlushing(false) {
-    if (GrContextOptions::Enable::kNo == reduceOpListSplitting) {
-        fReduceOpListSplitting = false;
-    } else if (GrContextOptions::Enable::kYes == reduceOpListSplitting) {
-        fReduceOpListSplitting = true;
-    } else {
-        
-        
-        fReduceOpListSplitting = false; 
-    }
+        , fFlushing(false)
+        , fReduceOpsTaskSplitting(reduceOpsTaskSplitting) {
 }
 
 void GrDrawingManager::cleanup() {
@@ -203,27 +215,50 @@ void GrDrawingManager::freeGpuResources() {
 }
 
 
-GrSemaphoresSubmitted GrDrawingManager::flush(GrSurfaceProxy* proxy,
-                                              SkSurface::BackendSurfaceAccess access,
-                                              SkSurface::FlushFlags flags,
-                                              int numSemaphores,
-                                              GrBackendSemaphore backendSemaphores[]) {
+GrSemaphoresSubmitted GrDrawingManager::flush(GrSurfaceProxy* proxies[], int numProxies,
+        SkSurface::BackendSurfaceAccess access, const GrFlushInfo& info,
+        const GrPrepareForExternalIORequests& externalRequests) {
+    SkASSERT(numProxies >= 0);
+    SkASSERT(!numProxies || proxies);
     GR_CREATE_TRACE_MARKER_CONTEXT("GrDrawingManager", "flush", fContext);
 
     if (fFlushing || this->wasAbandoned()) {
+        if (info.fFinishedProc) {
+            info.fFinishedProc(info.fFinishedContext);
+        }
         return GrSemaphoresSubmitted::kNo;
     }
+
     SkDEBUGCODE(this->validate());
+
+    if (kNone_GrFlushFlags == info.fFlags && !info.fNumSemaphores && !info.fFinishedProc &&
+            !externalRequests.hasRequests()) {
+        bool canSkip = numProxies > 0;
+        for (int i = 0; i < numProxies && canSkip; ++i) {
+            canSkip = !fDAG.isUsed(proxies[i]) && !this->isDDLTarget(proxies[i]);
+        }
+        if (canSkip) {
+            return GrSemaphoresSubmitted::kNo;
+        }
+    }
 
     auto direct = fContext->priv().asDirectContext();
     if (!direct) {
+        if (info.fFinishedProc) {
+            info.fFinishedProc(info.fFinishedContext);
+        }
         return GrSemaphoresSubmitted::kNo; 
     }
+    direct->priv().clientMappedBufferManager()->process();
 
     GrGpu* gpu = direct->priv().getGpu();
     if (!gpu) {
+        if (info.fFinishedProc) {
+            info.fFinishedProc(info.fFinishedContext);
+        }
         return GrSemaphoresSubmitted::kNo; 
     }
+
     fFlushing = true;
 
     auto resourceProvider = direct->priv().resourceProvider();
@@ -234,7 +269,7 @@ GrSemaphoresSubmitted GrDrawingManager::flush(GrSurfaceProxy* proxy,
     
     
     fDAG.closeAll(fContext->priv().caps());
-    fActiveOpList = nullptr;
+    fActiveOpsTask = nullptr;
 
     fDAG.prepForFlush();
     if (!fCpuBufferCache) {
@@ -253,38 +288,44 @@ GrSemaphoresSubmitted GrDrawingManager::flush(GrSurfaceProxy* proxy,
 
     
     if (!fOnFlushCBObjects.empty()) {
-        fDAG.gatherIDs(&fFlushingOpListIDs);
+        fDAG.gatherIDs(&fFlushingRenderTaskIDs);
 
-        SkSTArray<4, sk_sp<GrRenderTargetContext>> renderTargetContexts;
         for (GrOnFlushCallbackObject* onFlushCBObject : fOnFlushCBObjects) {
-            onFlushCBObject->preFlush(&onFlushProvider,
-                                      fFlushingOpListIDs.begin(), fFlushingOpListIDs.count(),
-                                      &renderTargetContexts);
-            for (const sk_sp<GrRenderTargetContext>& rtc : renderTargetContexts) {
-                sk_sp<GrRenderTargetOpList> onFlushOpList = sk_ref_sp(rtc->getRTOpList());
-                if (!onFlushOpList) {
-                    continue;   
-                }
+            onFlushCBObject->preFlush(&onFlushProvider, fFlushingRenderTaskIDs.begin(),
+                                      fFlushingRenderTaskIDs.count());
+        }
+        for (const auto& onFlushRenderTask : fOnFlushRenderTasks) {
+            onFlushRenderTask->makeClosed(*fContext->priv().caps());
 #ifdef SK_DEBUG
-                
-                
-                onFlushOpList->visitProxies_debugOnly([](GrSurfaceProxy* p) {
-                    SkASSERT(!p->asTextureProxy() || !p->asTextureProxy()->texPriv().isDeferred());
-                    SkASSERT(GrSurfaceProxy::LazyState::kNot == p->lazyInstantiationState());
-                });
+            
+            
+            onFlushRenderTask->visitTargetAndSrcProxies_debugOnly(
+                    [](GrSurfaceProxy* p, GrMipMapped mipMapped) {
+                SkASSERT(!p->asTextureProxy() || !p->asTextureProxy()->texPriv().isDeferred());
+                SkASSERT(!p->isLazy());
+                if (p->requiresManualMSAAResolve()) {
+                    
+                    SkASSERT(p->asRenderTargetProxy() && !p->asRenderTargetProxy()->isMSAADirty());
+                }
+                if (GrMipMapped::kYes == mipMapped) {
+                    
+                    SkASSERT(p->asTextureProxy() && !p->asTextureProxy()->mipMapsAreDirty());
+                }
+            });
 #endif
-                onFlushOpList->makeClosed(*fContext->priv().caps());
-                onFlushOpList->prepare(&flushState);
-                fOnFlushCBOpLists.push_back(std::move(onFlushOpList));
-            }
-            renderTargetContexts.reset();
+            onFlushRenderTask->prepare(&flushState);
         }
     }
 
 #if 0
     
-    for (int i = 0; i < fOpLists.count(); ++i) {
-        SkDEBUGCODE(fOpLists[i]->dump();)
+    SkDEBUGCODE(SkDebugf("onFlush renderTasks:"));
+    for (const auto& onFlushRenderTask : fOnFlushRenderTasks) {
+        SkDEBUGCODE(onFlushRenderTask->dump();)
+    }
+    SkDEBUGCODE(SkDebugf("Normal renderTasks:"));
+    for (int i = 0; i < fRenderTasks.count(); ++i) {
+        SkDEBUGCODE(fRenderTasks[i]->dump();)
     }
 #endif
 
@@ -292,44 +333,51 @@ GrSemaphoresSubmitted GrDrawingManager::flush(GrSurfaceProxy* proxy,
     bool flushed = false;
 
     {
-        GrResourceAllocator alloc(resourceProvider);
-        for (int i = 0; i < fDAG.numOpLists(); ++i) {
-            if (fDAG.opList(i)) {
-                fDAG.opList(i)->gatherProxyIntervals(&alloc);
+        GrResourceAllocator alloc(resourceProvider SkDEBUGCODE(, fDAG.numRenderTasks()));
+        for (int i = 0; i < fDAG.numRenderTasks(); ++i) {
+            if (fDAG.renderTask(i)) {
+                fDAG.renderTask(i)->gatherProxyIntervals(&alloc);
             }
-            alloc.markEndOfOpList(i);
+            alloc.markEndOfOpsTask(i);
         }
+        alloc.determineRecyclability();
 
         GrResourceAllocator::AssignError error = GrResourceAllocator::AssignError::kNoError;
-        int numOpListsExecuted = 0;
+        int numRenderTasksExecuted = 0;
         while (alloc.assign(&startIndex, &stopIndex, &error)) {
             if (GrResourceAllocator::AssignError::kFailedProxyInstantiation == error) {
                 for (int i = startIndex; i < stopIndex; ++i) {
-                    if (fDAG.opList(i) && !fDAG.opList(i)->isFullyInstantiated()) {
+                    GrRenderTask* renderTask = fDAG.renderTask(i);
+                    if (!renderTask) {
+                        continue;
+                    }
+                    if (!renderTask->isInstantiated()) {
                         
-                        fDAG.removeOpList(i);
+                        
+                        
+                        continue;
                     }
-                    if (fDAG.opList(i)) {
-                        fDAG.opList(i)->purgeOpsWithUninstantiatedProxies();
-                    }
+                    renderTask->handleInternalAllocationFailure();
                 }
             }
 
-            if (this->executeOpLists(startIndex, stopIndex, &flushState, &numOpListsExecuted)) {
+            if (this->executeRenderTasks(
+                    startIndex, stopIndex, &flushState, &numRenderTasksExecuted)) {
                 flushed = true;
             }
         }
     }
 
 #ifdef SK_DEBUG
-    for (int i = 0; i < fDAG.numOpLists(); ++i) {
+    for (int i = 0; i < fDAG.numRenderTasks(); ++i) {
         
         
         
-        SkASSERT(!fDAG.opList(i) || fDAG.opList(i)->unique());
+        SkASSERT(!fDAG.renderTask(i) || fDAG.renderTask(i)->unique());
     }
 #endif
     fDAG.reset();
+    this->clearDDLTargets();
 
 #ifdef SK_DEBUG
     
@@ -340,69 +388,53 @@ GrSemaphoresSubmitted GrDrawingManager::flush(GrSurfaceProxy* proxy,
     opMemoryPool->isEmpty();
 #endif
 
-    GrSemaphoresSubmitted result = gpu->finishFlush(proxy, access, flags, numSemaphores,
-                                                    backendSemaphores);
+    GrSemaphoresSubmitted result = gpu->finishFlush(proxies, numProxies, access, info,
+                                                    externalRequests);
 
     
     if (flushed) {
         resourceCache->purgeAsNeeded();
+        flushed = false;
     }
     for (GrOnFlushCallbackObject* onFlushCBObject : fOnFlushCBObjects) {
-        onFlushCBObject->postFlush(fTokenTracker.nextTokenToFlush(), fFlushingOpListIDs.begin(),
-                                   fFlushingOpListIDs.count());
+        onFlushCBObject->postFlush(fTokenTracker.nextTokenToFlush(), fFlushingRenderTaskIDs.begin(),
+                                   fFlushingRenderTaskIDs.count());
+        flushed = true;
     }
-    fFlushingOpListIDs.reset();
+    if (flushed) {
+        resourceCache->purgeAsNeeded();
+    }
+    fFlushingRenderTaskIDs.reset();
     fFlushing = false;
 
     return result;
 }
 
-bool GrDrawingManager::executeOpLists(int startIndex, int stopIndex, GrOpFlushState* flushState,
-                                      int* numOpListsExecuted) {
-    SkASSERT(startIndex <= stopIndex && stopIndex <= fDAG.numOpLists());
+bool GrDrawingManager::executeRenderTasks(int startIndex, int stopIndex, GrOpFlushState* flushState,
+                                          int* numRenderTasksExecuted) {
+    SkASSERT(startIndex <= stopIndex && stopIndex <= fDAG.numRenderTasks());
 
 #if GR_FLUSH_TIME_OP_SPEW
-    SkDebugf("Flushing opLists: %d to %d out of [%d, %d]\n",
-                            startIndex, stopIndex, 0, fDAG.numOpLists());
+    SkDebugf("Flushing opsTask: %d to %d out of [%d, %d]\n",
+                            startIndex, stopIndex, 0, fDAG.numRenderTasks());
     for (int i = startIndex; i < stopIndex; ++i) {
-        if (fDAG.opList(i)) {
-            fDAG.opList(i)->dump(true);
+        if (fDAG.renderTask(i)) {
+            fDAG.renderTask(i)->dump(true);
         }
     }
 #endif
 
-    auto direct = fContext->priv().asDirectContext();
-    if (!direct) {
-        return false;
-    }
-
-    auto resourceProvider = direct->priv().resourceProvider();
-    bool anyOpListsExecuted = false;
+    bool anyRenderTasksExecuted = false;
 
     for (int i = startIndex; i < stopIndex; ++i) {
-        if (!fDAG.opList(i)) {
+        GrRenderTask* renderTask = fDAG.renderTask(i);
+        if (!renderTask || !renderTask->isInstantiated()) {
              continue;
         }
 
-        GrOpList* opList = fDAG.opList(i);
+        SkASSERT(renderTask->deferredProxiesAreInstantiated());
 
-        if (resourceProvider->explicitlyAllocateGPUResources()) {
-            if (!opList->isFullyInstantiated()) {
-                
-                fDAG.removeOpList(i);
-                continue;
-            }
-        } else {
-            if (!opList->instantiate(resourceProvider)) {
-                fDAG.removeOpList(i);
-                continue;
-            }
-        }
-
-        
-        
-        opList->instantiateDeferredProxies(resourceProvider);
-        opList->prepare(flushState);
+        renderTask->prepare(flushState);
     }
 
     
@@ -413,42 +445,43 @@ bool GrDrawingManager::executeOpLists(int startIndex, int stopIndex, GrOpFlushSt
     
     
     
-    static constexpr int kMaxOpListsBeforeFlush = 100;
+    static constexpr int kMaxRenderTasksBeforeFlush = 100;
 
     
-    for (sk_sp<GrOpList>& onFlushOpList : fOnFlushCBOpLists) {
-        if (!onFlushOpList->execute(flushState)) {
-            SkDebugf("WARNING: onFlushOpList failed to execute.\n");
+    for (sk_sp<GrRenderTask>& onFlushRenderTask : fOnFlushRenderTasks) {
+        if (!onFlushRenderTask->execute(flushState)) {
+            SkDebugf("WARNING: onFlushRenderTask failed to execute.\n");
         }
-        SkASSERT(onFlushOpList->unique());
-        onFlushOpList = nullptr;
-        (*numOpListsExecuted)++;
-        if (*numOpListsExecuted >= kMaxOpListsBeforeFlush) {
-            flushState->gpu()->finishFlush(nullptr, SkSurface::BackendSurfaceAccess::kNoAccess,
-                                           SkSurface::kNone_FlushFlags, 0, nullptr);
-            *numOpListsExecuted = 0;
+        SkASSERT(onFlushRenderTask->unique());
+        onFlushRenderTask = nullptr;
+        (*numRenderTasksExecuted)++;
+        if (*numRenderTasksExecuted >= kMaxRenderTasksBeforeFlush) {
+            flushState->gpu()->finishFlush(nullptr, 0, SkSurface::BackendSurfaceAccess::kNoAccess,
+                                           GrFlushInfo(), GrPrepareForExternalIORequests());
+            *numRenderTasksExecuted = 0;
         }
     }
-    fOnFlushCBOpLists.reset();
+    fOnFlushRenderTasks.reset();
 
     
     for (int i = startIndex; i < stopIndex; ++i) {
-        if (!fDAG.opList(i)) {
+        GrRenderTask* renderTask = fDAG.renderTask(i);
+        if (!renderTask || !renderTask->isInstantiated()) {
             continue;
         }
 
-        if (fDAG.opList(i)->execute(flushState)) {
-            anyOpListsExecuted = true;
+        if (renderTask->execute(flushState)) {
+            anyRenderTasksExecuted = true;
         }
-        (*numOpListsExecuted)++;
-        if (*numOpListsExecuted >= kMaxOpListsBeforeFlush) {
-            flushState->gpu()->finishFlush(nullptr, SkSurface::BackendSurfaceAccess::kNoAccess,
-                                           SkSurface::kNone_FlushFlags, 0, nullptr);
-            *numOpListsExecuted = 0;
+        (*numRenderTasksExecuted)++;
+        if (*numRenderTasksExecuted >= kMaxRenderTasksBeforeFlush) {
+            flushState->gpu()->finishFlush(nullptr, 0, SkSurface::BackendSurfaceAccess::kNoAccess,
+                                           GrFlushInfo(), GrPrepareForExternalIORequests());
+            *numRenderTasksExecuted = 0;
         }
     }
 
-    SkASSERT(!flushState->commandBuffer());
+    SkASSERT(!flushState->opsRenderPass());
     SkASSERT(fTokenTracker.nextDrawToken() == fTokenTracker.nextTokenToFlush());
 
     
@@ -456,19 +489,20 @@ bool GrDrawingManager::executeOpLists(int startIndex, int stopIndex, GrOpFlushSt
     
     flushState->reset();
 
-    fDAG.removeOpLists(startIndex, stopIndex);
+    fDAG.removeRenderTasks(startIndex, stopIndex);
 
-    return anyOpListsExecuted;
+    return anyRenderTasksExecuted;
 }
 
-GrSemaphoresSubmitted GrDrawingManager::prepareSurfaceForExternalIO(
-        GrSurfaceProxy* proxy, SkSurface::BackendSurfaceAccess access, SkSurface::FlushFlags flags,
-        int numSemaphores, GrBackendSemaphore backendSemaphores[]) {
+GrSemaphoresSubmitted GrDrawingManager::flushSurfaces(GrSurfaceProxy* proxies[], int numProxies,
+                                                      SkSurface::BackendSurfaceAccess access,
+                                                      const GrFlushInfo& info) {
     if (this->wasAbandoned()) {
         return GrSemaphoresSubmitted::kNo;
     }
     SkDEBUGCODE(this->validate());
-    SkASSERT(proxy);
+    SkASSERT(numProxies >= 0);
+    SkASSERT(!numProxies || proxies);
 
     auto direct = fContext->priv().asDirectContext();
     if (!direct) {
@@ -480,26 +514,40 @@ GrSemaphoresSubmitted GrDrawingManager::prepareSurfaceForExternalIO(
         return GrSemaphoresSubmitted::kNo; 
     }
 
-    auto resourceProvider = direct->priv().resourceProvider();
-
-    GrSemaphoresSubmitted result = GrSemaphoresSubmitted::kNo;
-    if (proxy->priv().hasPendingIO() || numSemaphores ||
-        SkToBool(flags & SkSurface::kSyncCpu_FlushFlag)) {
-        result = this->flush(proxy, access, flags, numSemaphores, backendSemaphores);
-    }
-
-    if (!proxy->instantiate(resourceProvider)) {
-        return result;
-    }
-
-    GrSurface* surface = proxy->peekSurface();
-    if (auto* rt = surface->asRenderTarget()) {
-        gpu->resolveRenderTarget(rt);
-    }
-    if (auto* tex = surface->asTexture()) {
-        if (tex->texturePriv().mipMapped() == GrMipMapped::kYes &&
-            tex->texturePriv().mipMapsAreDirty()) {
-            gpu->regenerateMipMapLevels(tex);
+    
+    
+    
+    GrSemaphoresSubmitted result = this->flush(proxies, numProxies, access, info,
+                                               GrPrepareForExternalIORequests());
+    for (int i = 0; i < numProxies; ++i) {
+        GrSurfaceProxy* proxy = proxies[i];
+        if (!proxy->isInstantiated()) {
+            return result;
+        }
+        
+        
+        
+        
+        if (proxy->requiresManualMSAAResolve()) {
+            auto* rtProxy = proxy->asRenderTargetProxy();
+            SkASSERT(rtProxy);
+            if (rtProxy->isMSAADirty()) {
+                SkASSERT(rtProxy->peekRenderTarget());
+                gpu->resolveRenderTarget(rtProxy->peekRenderTarget(), rtProxy->msaaDirtyRect(),
+                                         rtProxy->origin(), GrGpu::ForExternalIO::kYes);
+                rtProxy->markMSAAResolved();
+            }
+        }
+        
+        
+        
+        
+        if (auto* textureProxy = proxy->asTextureProxy()) {
+            if (textureProxy->mipMapsAreDirty()) {
+                SkASSERT(textureProxy->peekTexture());
+                gpu->regenerateMipMapLevels(textureProxy->peekTexture());
+                textureProxy->markMipMapsClean();
+            }
         }
     }
 
@@ -520,14 +568,18 @@ void GrDrawingManager::testingOnly_removeOnFlushCallbackObject(GrOnFlushCallback
 }
 #endif
 
-void GrDrawingManager::moveOpListsToDDL(SkDeferredDisplayList* ddl) {
+void GrDrawingManager::moveRenderTasksToDDL(SkDeferredDisplayList* ddl) {
     SkDEBUGCODE(this->validate());
 
     
     fDAG.closeAll(fContext->priv().caps());
-    fActiveOpList = nullptr;
+    fActiveOpsTask = nullptr;
 
-    fDAG.swap(&ddl->fOpLists);
+    fDAG.swap(&ddl->fRenderTasks);
+
+    for (auto renderTask : ddl->fRenderTasks) {
+        renderTask->prePrepare(fContext);
+    }
 
     if (fPathRendererChain) {
         if (auto ccpr = fPathRendererChain->getCoverageCountingPathRenderer()) {
@@ -538,18 +590,20 @@ void GrDrawingManager::moveOpListsToDDL(SkDeferredDisplayList* ddl) {
     SkDEBUGCODE(this->validate());
 }
 
-void GrDrawingManager::copyOpListsFromDDL(const SkDeferredDisplayList* ddl,
+void GrDrawingManager::copyRenderTasksFromDDL(const SkDeferredDisplayList* ddl,
                                           GrRenderTargetProxy* newDest) {
     SkDEBUGCODE(this->validate());
 
-    if (fActiveOpList) {
+    if (fActiveOpsTask) {
         
         
         
         
-        fActiveOpList->makeClosed(*fContext->priv().caps());
-        fActiveOpList = nullptr;
+        fActiveOpsTask->makeClosed(*fContext->priv().caps());
+        fActiveOpsTask = nullptr;
     }
+
+    this->addDDLTarget(newDest);
 
     
     
@@ -561,129 +615,224 @@ void GrDrawingManager::copyOpListsFromDDL(const SkDeferredDisplayList* ddl,
         ccpr->mergePendingPaths(ddl->fPendingPaths);
     }
 
-    fDAG.add(ddl->fOpLists);
+    fDAG.add(ddl->fRenderTasks);
 
     SkDEBUGCODE(this->validate());
 }
 
 #ifdef SK_DEBUG
 void GrDrawingManager::validate() const {
-    if (fDAG.sortingOpLists() && fReduceOpListSplitting) {
-        SkASSERT(!fActiveOpList);
+    if (fDAG.sortingRenderTasks() && fReduceOpsTaskSplitting) {
+        SkASSERT(!fActiveOpsTask);
     } else {
-        if (fActiveOpList) {
+        if (fActiveOpsTask) {
             SkASSERT(!fDAG.empty());
-            SkASSERT(!fActiveOpList->isClosed());
-            SkASSERT(fActiveOpList == fDAG.back());
+            SkASSERT(!fActiveOpsTask->isClosed());
+            SkASSERT(fActiveOpsTask == fDAG.back());
         }
 
-        for (int i = 0; i < fDAG.numOpLists(); ++i) {
-            if (fActiveOpList != fDAG.opList(i)) {
-                SkASSERT(fDAG.opList(i)->isClosed());
+        for (int i = 0; i < fDAG.numRenderTasks(); ++i) {
+            if (fActiveOpsTask != fDAG.renderTask(i)) {
+                
+                
+                bool isActiveResolveTask =
+                        fActiveOpsTask && fActiveOpsTask->fTextureResolveTask == fDAG.renderTask(i);
+                SkASSERT(isActiveResolveTask || fDAG.renderTask(i)->isClosed());
             }
         }
 
         if (!fDAG.empty() && !fDAG.back()->isClosed()) {
-            SkASSERT(fActiveOpList == fDAG.back());
+            SkASSERT(fActiveOpsTask == fDAG.back());
         }
     }
 }
 #endif
 
-sk_sp<GrRenderTargetOpList> GrDrawingManager::newRTOpList(GrRenderTargetProxy* rtp,
-                                                          bool managedOpList) {
-    SkDEBUGCODE(this->validate());
-    SkASSERT(fContext);
-
-    if (fDAG.sortingOpLists() && fReduceOpListSplitting) {
+void GrDrawingManager::closeRenderTasksForNewRenderTask(GrSurfaceProxy* target) {
+    if (target && fDAG.sortingRenderTasks() && fReduceOpsTaskSplitting) {
         
         
         
         
         
-        if (GrOpList* lastOpList = rtp->getLastOpList()) {
-            lastOpList->closeThoseWhoDependOnMe(*fContext->priv().caps());
+        if (GrRenderTask* lastRenderTask = target->getLastRenderTask()) {
+            lastRenderTask->closeThoseWhoDependOnMe(*fContext->priv().caps());
         }
-    } else if (fActiveOpList) {
+    } else if (fActiveOpsTask) {
         
         
         
         
-        fActiveOpList->makeClosed(*fContext->priv().caps());
-        fActiveOpList = nullptr;
+        fActiveOpsTask->makeClosed(*fContext->priv().caps());
+        fActiveOpsTask = nullptr;
     }
-
-    
-    
-    
-    GrResourceProvider* resourceProvider = nullptr;
-    if (fContext->priv().asDirectContext()) {
-        resourceProvider = fContext->priv().asDirectContext()->priv().resourceProvider();
-    }
-
-    sk_sp<GrRenderTargetOpList> opList(new GrRenderTargetOpList(
-                                                        resourceProvider,
-                                                        fContext->priv().refOpMemoryPool(),
-                                                        rtp,
-                                                        fContext->priv().auditTrail()));
-    SkASSERT(rtp->getLastOpList() == opList.get());
-
-    if (managedOpList) {
-        fDAG.add(opList);
-
-        if (!fDAG.sortingOpLists() || !fReduceOpListSplitting) {
-            fActiveOpList = opList.get();
-        }
-    }
-
-    SkDEBUGCODE(this->validate());
-    return opList;
 }
 
-sk_sp<GrTextureOpList> GrDrawingManager::newTextureOpList(GrTextureProxy* textureProxy) {
+sk_sp<GrOpsTask> GrDrawingManager::newOpsTask(sk_sp<GrRenderTargetProxy> rtp, bool managedOpsTask) {
     SkDEBUGCODE(this->validate());
     SkASSERT(fContext);
 
-    if (fDAG.sortingOpLists() && fReduceOpListSplitting) {
-        
-        
-        
-        
-        
-        if (GrOpList* lastOpList = textureProxy->getLastOpList()) {
-            lastOpList->closeThoseWhoDependOnMe(*fContext->priv().caps());
+    this->closeRenderTasksForNewRenderTask(rtp.get());
+
+    sk_sp<GrOpsTask> opsTask(new GrOpsTask(fContext->priv().refOpMemoryPool(), rtp,
+                                           fContext->priv().auditTrail()));
+    SkASSERT(rtp->getLastRenderTask() == opsTask.get());
+
+    if (managedOpsTask) {
+        fDAG.add(opsTask);
+
+        if (!fDAG.sortingRenderTasks() || !fReduceOpsTaskSplitting) {
+            fActiveOpsTask = opsTask.get();
         }
-    } else if (fActiveOpList) {
-        
-        
-        
-        
-        fActiveOpList->makeClosed(*fContext->priv().caps());
-        fActiveOpList = nullptr;
-    }
-
-    
-    
-    
-    GrResourceProvider* resourceProvider = nullptr;
-    if (fContext->priv().asDirectContext()) {
-        resourceProvider = fContext->priv().asDirectContext()->priv().resourceProvider();
-    }
-
-    sk_sp<GrTextureOpList> opList(new GrTextureOpList(resourceProvider,
-                                                      fContext->priv().refOpMemoryPool(),
-                                                      textureProxy,
-                                                      fContext->priv().auditTrail()));
-
-    SkASSERT(textureProxy->getLastOpList() == opList.get());
-
-    fDAG.add(opList);
-    if (!fDAG.sortingOpLists() || !fReduceOpListSplitting) {
-        fActiveOpList = opList.get();
     }
 
     SkDEBUGCODE(this->validate());
-    return opList;
+    return opsTask;
+}
+
+GrTextureResolveRenderTask* GrDrawingManager::newTextureResolveRenderTask(const GrCaps& caps) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return static_cast<GrTextureResolveRenderTask*>(fDAG.addBeforeLast(
+            sk_make_sp<GrTextureResolveRenderTask>()));
+}
+
+void GrDrawingManager::newWaitRenderTask(sk_sp<GrSurfaceProxy> proxy,
+                                         std::unique_ptr<sk_sp<GrSemaphore>[]> semaphores,
+                                         int numSemaphores) {
+    SkDEBUGCODE(this->validate());
+    SkASSERT(fContext);
+
+    const GrCaps& caps = *fContext->priv().caps();
+
+    sk_sp<GrWaitRenderTask> waitTask = sk_make_sp<GrWaitRenderTask>(proxy, std::move(semaphores),
+                                                                    numSemaphores);
+    if (fReduceOpsTaskSplitting) {
+        GrRenderTask* lastTask = proxy->getLastRenderTask();
+        if (lastTask && !lastTask->isClosed()) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+            
+            
+            waitTask->addDependenciesFromOtherTask(lastTask);
+            lastTask->addDependency(waitTask.get());
+        } else {
+            
+            
+            
+            
+            if (lastTask) {
+                waitTask->addDependency(lastTask);
+            }
+            proxy->setLastRenderTask(waitTask.get());
+        }
+        fDAG.add(waitTask);
+    } else {
+        if (fActiveOpsTask && (fActiveOpsTask->fTarget == proxy)) {
+            SkASSERT(proxy->getLastRenderTask() == fActiveOpsTask);
+            fDAG.addBeforeLast(waitTask);
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+            
+            
+            waitTask->addDependenciesFromOtherTask(fActiveOpsTask);
+            fActiveOpsTask->addDependency(waitTask.get());
+        } else {
+            
+            
+            
+            
+            
+            if (GrRenderTask* lastTask = proxy->getLastRenderTask()) {
+                waitTask->addDependency(lastTask);
+            }
+            proxy->setLastRenderTask(waitTask.get());
+            this->closeRenderTasksForNewRenderTask(proxy.get());
+            fDAG.add(waitTask);
+        }
+    }
+    waitTask->makeClosed(caps);
+
+    SkDEBUGCODE(this->validate());
+}
+
+void GrDrawingManager::newTransferFromRenderTask(sk_sp<GrSurfaceProxy> srcProxy,
+                                                 const SkIRect& srcRect,
+                                                 GrColorType surfaceColorType,
+                                                 GrColorType dstColorType,
+                                                 sk_sp<GrGpuBuffer> dstBuffer,
+                                                 size_t dstOffset) {
+    SkDEBUGCODE(this->validate());
+    SkASSERT(fContext);
+    
+    this->closeRenderTasksForNewRenderTask(nullptr);
+
+    GrRenderTask* task = fDAG.add(sk_make_sp<GrTransferFromRenderTask>(
+            srcProxy, srcRect, surfaceColorType, dstColorType, std::move(dstBuffer), dstOffset));
+
+    const GrCaps& caps = *fContext->priv().caps();
+
+    
+    
+    task->addDependency(srcProxy.get(), GrMipMapped::kNo, GrTextureResolveManager(this), caps);
+    task->makeClosed(caps);
+
+    
+    
+    SkASSERT(!fActiveOpsTask);
+    SkDEBUGCODE(this->validate());
+}
+
+bool GrDrawingManager::newCopyRenderTask(sk_sp<GrSurfaceProxy> srcProxy,
+                                         const SkIRect& srcRect,
+                                         sk_sp<GrSurfaceProxy> dstProxy,
+                                         const SkIPoint& dstPoint) {
+    SkDEBUGCODE(this->validate());
+    SkASSERT(fContext);
+
+    this->closeRenderTasksForNewRenderTask(dstProxy.get());
+    const GrCaps& caps = *fContext->priv().caps();
+
+    GrRenderTask* task =
+            fDAG.add(GrCopyRenderTask::Make(srcProxy, srcRect, dstProxy, dstPoint, &caps));
+    if (!task) {
+        return false;
+    }
+
+
+    
+    
+    task->addDependency(srcProxy.get(), GrMipMapped::kNo, GrTextureResolveManager(this), caps);
+    task->makeClosed(caps);
+
+    
+    
+    SkASSERT(!fActiveOpsTask);
+    SkDEBUGCODE(this->validate());
+    return true;
 }
 
 GrTextContext* GrDrawingManager::getTextContext() {
@@ -744,47 +893,39 @@ void GrDrawingManager::flushIfNecessary() {
 
     auto resourceCache = direct->priv().getResourceCache();
     if (resourceCache && resourceCache->requestsFlush()) {
-        this->flush(nullptr, SkSurface::BackendSurfaceAccess::kNoAccess,
-                    SkSurface::kNone_FlushFlags, 0, nullptr);
+        this->flush(nullptr, 0, SkSurface::BackendSurfaceAccess::kNoAccess, GrFlushInfo(),
+                    GrPrepareForExternalIORequests());
         resourceCache->purgeAsNeeded();
     }
 }
 
-sk_sp<GrRenderTargetContext> GrDrawingManager::makeRenderTargetContext(
-                                                            sk_sp<GrSurfaceProxy> sProxy,
-                                                            sk_sp<SkColorSpace> colorSpace,
-                                                            const SkSurfaceProps* surfaceProps,
-                                                            bool managedOpList) {
+std::unique_ptr<GrRenderTargetContext> GrDrawingManager::makeRenderTargetContext(
+        sk_sp<GrSurfaceProxy> sProxy,
+        GrColorType colorType,
+        sk_sp<SkColorSpace> colorSpace,
+        const SkSurfaceProps* surfaceProps,
+        bool managedOpsTask) {
     if (this->wasAbandoned() || !sProxy->asRenderTargetProxy()) {
-        return nullptr;
-    }
-
-    
-    
-    if (!SkSurface_Gpu::Valid(fContext->priv().caps(), sProxy->config(), colorSpace.get())) {
-        SkDEBUGFAIL("Invalid config and colorspace combination");
         return nullptr;
     }
 
     sk_sp<GrRenderTargetProxy> renderTargetProxy(sk_ref_sp(sProxy->asRenderTargetProxy()));
 
-    return sk_sp<GrRenderTargetContext>(new GrRenderTargetContext(fContext,
-                                                                  std::move(renderTargetProxy),
-                                                                  std::move(colorSpace),
-                                                                  surfaceProps,
-                                                                  managedOpList));
+    return std::unique_ptr<GrRenderTargetContext>(
+            new GrRenderTargetContext(fContext,
+                                      std::move(renderTargetProxy),
+                                      colorType,
+                                      std::move(colorSpace),
+                                      surfaceProps,
+                                      managedOpsTask));
 }
 
-sk_sp<GrTextureContext> GrDrawingManager::makeTextureContext(sk_sp<GrSurfaceProxy> sProxy,
-                                                             sk_sp<SkColorSpace> colorSpace) {
+std::unique_ptr<GrTextureContext> GrDrawingManager::makeTextureContext(
+        sk_sp<GrSurfaceProxy> sProxy,
+        GrColorType colorType,
+        SkAlphaType alphaType,
+        sk_sp<SkColorSpace> colorSpace) {
     if (this->wasAbandoned() || !sProxy->asTextureProxy()) {
-        return nullptr;
-    }
-
-    
-    
-    if (!SkSurface_Gpu::Valid(fContext->priv().caps(), sProxy->config(), colorSpace.get())) {
-        SkDEBUGFAIL("Invalid config and colorspace combination");
         return nullptr;
     }
 
@@ -793,7 +934,6 @@ sk_sp<GrTextureContext> GrDrawingManager::makeTextureContext(sk_sp<GrSurfaceProx
 
     sk_sp<GrTextureProxy> textureProxy(sk_ref_sp(sProxy->asTextureProxy()));
 
-    return sk_sp<GrTextureContext>(new GrTextureContext(fContext,
-                                                        std::move(textureProxy),
-                                                        std::move(colorSpace)));
+    return std::unique_ptr<GrTextureContext>(new GrTextureContext(
+            fContext, std::move(textureProxy), colorType, alphaType, std::move(colorSpace)));
 }

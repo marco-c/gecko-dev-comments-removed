@@ -8,19 +8,8 @@
 #ifndef SkYUVAIndex_DEFINED
 #define SkYUVAIndex_DEFINED
 
-#include "SkTypes.h"
-
-
-
-
-enum class SkColorChannel {
-    kR,  
-    kG,  
-    kB,  
-    kA,  
-
-    kLastEnum = kA,
-};
+#include "include/core/SkColor.h"
+#include "include/core/SkTypes.h"
 
 
 

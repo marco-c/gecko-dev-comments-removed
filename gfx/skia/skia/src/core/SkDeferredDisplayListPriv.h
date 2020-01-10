@@ -8,16 +8,16 @@
 #ifndef SkDeferredDisplayListPriv_DEFINED
 #define SkDeferredDisplayListPriv_DEFINED
 
-#include "SkDeferredDisplayList.h"
+#include "include/private/SkDeferredDisplayList.h"
 
 
 
 
 class SkDeferredDisplayListPriv {
 public:
-    int numOpLists() const {
+    int numRenderTasks() const {
 #if SK_SUPPORT_GPU
-        return fDDL->fOpLists.count();
+        return fDDL->fRenderTasks.count();
 #else
         return 0;
 #endif

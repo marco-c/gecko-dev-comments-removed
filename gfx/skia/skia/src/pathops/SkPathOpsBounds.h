@@ -7,8 +7,8 @@
 #ifndef SkPathOpBounds_DEFINED
 #define SkPathOpBounds_DEFINED
 
-#include "SkPathOpsRect.h"
-#include "SkRect.h"
+#include "include/core/SkRect.h"
+#include "src/pathops/SkPathOpsRect.h"
 
 
 struct SkPathOpsBounds : public SkRect {

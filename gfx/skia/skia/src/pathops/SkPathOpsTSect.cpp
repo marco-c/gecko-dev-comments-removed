@@ -5,7 +5,7 @@
 
 
 
-#include "SkPathOpsTSect.h"
+#include "src/pathops/SkPathOpsTSect.h"
 
 #define COINCIDENT_SPAN_COUNT 9
 

@@ -8,11 +8,58 @@
 #ifndef SkBlitRow_opts_DEFINED
 #define SkBlitRow_opts_DEFINED
 
-#include "Sk4px.h"
-#include "SkColorData.h"
-#include "SkMSAN.h"
+#include "include/private/SkColorData.h"
+#include "include/private/SkVx.h"
+#include "src/core/SkMSAN.h"
+#if SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_AVX2
+    #include <immintrin.h>
 
-#if SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE2
+    static inline __m256i SkPMSrcOver_AVX2(const __m256i& src, const __m256i& dst) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        
+        
+        
+        
+
+        
+        
+        
+        
+        
+
+        
+        const int _ = -1;   
+        __m256i srcA_x2 = _mm256_shuffle_epi8(src,
+                _mm256_setr_epi8(3,_,3,_, 7,_,7,_, 11,_,11,_, 15,_,15,_,
+                                 3,_,3,_, 7,_,7,_, 11,_,11,_, 15,_,15,_));
+        __m256i scale_x2 = _mm256_sub_epi16(_mm256_set1_epi16(256),
+                                            srcA_x2);
+
+        
+        __m256i rb = _mm256_and_si256(_mm256_set1_epi32(0x00ff00ff), dst);
+        rb = _mm256_mullo_epi16(rb, scale_x2);
+        rb = _mm256_srli_epi16 (rb, 8);
+
+        
+        __m256i ga = _mm256_srli_epi16(dst, 8);
+        ga = _mm256_mullo_epi16(ga, scale_x2);
+        ga = _mm256_andnot_si256(_mm256_set1_epi32(0x00ff00ff), ga);
+
+        return _mm256_add_epi32(src, _mm256_or_si256(rb, ga));
+    }
+
+#elif SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE2
     #include <immintrin.h>
 
     static inline __m128i SkPMSrcOver_SSE2(const __m128i& src, const __m128i& dst) {
@@ -42,22 +89,35 @@
 namespace SK_OPTS_NS {
 
 
+inline void blit_row_color32(SkPMColor* dst, const SkPMColor* src, int count, SkPMColor color) {
+    constexpr int N = 4;  
+    using U32 = skvx::Vec<  N, uint32_t>;
+    using U16 = skvx::Vec<4*N, uint16_t>;
+    using U8  = skvx::Vec<4*N, uint8_t>;
 
+    auto kernel = [color](U32 src) {
+        unsigned invA = 255 - SkGetPackedA32(color);
+        invA += invA >> 7;
+        SkASSERT(0 < invA && invA < 256);  
 
+        
+        
+        U8 s = skvx::bit_pun<U8>(src),
+           a = U8(invA);
+        U16 c = skvx::cast<uint16_t>(skvx::bit_pun<U8>(U32(color))),
+            d = (mull(s,a) + (c << 8) + 128)>>8;
+        return skvx::bit_pun<U32>(skvx::cast<uint8_t>(d));
+    };
 
-
-static inline
-void blit_row_color32(SkPMColor* dst, const SkPMColor* src, int count, SkPMColor color) {
-    unsigned invA = 255 - SkGetPackedA32(color);
-    invA += invA >> 7;
-    SkASSERT(invA < 256);  
-
-    Sk16h colorHighAndRound = (Sk4px::DupPMColor(color).widen() << 8) + Sk16h(128);
-    Sk16b invA_16x(invA);
-
-    Sk4px::MapSrc(count, dst, src, [&](const Sk4px& src4) -> Sk4px {
-        return (src4 * invA_16x).addNarrowHi(colorHighAndRound);
-    });
+    while (count >= N) {
+        kernel(U32::Load(src)).store(dst);
+        src   += N;
+        dst   += N;
+        count -= N;
+    }
+    while (count --> 0) {
+        *dst++ = kernel(U32{*src++})[0];
+    }
 }
 
 #if defined(SK_ARM_HAS_NEON)
@@ -104,7 +164,55 @@ void blit_row_s32a_opaque(SkPMColor* dst, const SkPMColor* src, int len, U8CPU a
     SkASSERT(alpha == 0xFF);
     sk_msan_assert_initialized(src, src+len);
 
-#if SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE41
+#if SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_AVX2
+    while (len >= 32) {
+        
+        auto s0 = _mm256_loadu_si256((const __m256i*)(src) + 0),
+             s1 = _mm256_loadu_si256((const __m256i*)(src) + 1),
+             s2 = _mm256_loadu_si256((const __m256i*)(src) + 2),
+             s3 = _mm256_loadu_si256((const __m256i*)(src) + 3);
+
+        const auto alphaMask = _mm256_set1_epi32(0xFF000000);
+
+        auto ORed = _mm256_or_si256(s3, _mm256_or_si256(s2, _mm256_or_si256(s1, s0)));
+        if (_mm256_testz_si256(ORed, alphaMask)) {
+            
+            src += 32;
+            dst += 32;
+            len -= 32;
+            continue;
+        }
+
+        auto d0 = (__m256i*)(dst) + 0,
+             d1 = (__m256i*)(dst) + 1,
+             d2 = (__m256i*)(dst) + 2,
+             d3 = (__m256i*)(dst) + 3;
+
+        auto ANDed = _mm256_and_si256(s3, _mm256_and_si256(s2, _mm256_and_si256(s1, s0)));
+        if (_mm256_testc_si256(ANDed, alphaMask)) {
+            
+            _mm256_storeu_si256(d0, s0);
+            _mm256_storeu_si256(d1, s1);
+            _mm256_storeu_si256(d2, s2);
+            _mm256_storeu_si256(d3, s3);
+            src += 32;
+            dst += 32;
+            len -= 32;
+            continue;
+        }
+
+        
+        
+        _mm256_storeu_si256(d0, SkPMSrcOver_AVX2(s0, _mm256_loadu_si256(d0)));
+        _mm256_storeu_si256(d1, SkPMSrcOver_AVX2(s1, _mm256_loadu_si256(d1)));
+        _mm256_storeu_si256(d2, SkPMSrcOver_AVX2(s2, _mm256_loadu_si256(d2)));
+        _mm256_storeu_si256(d3, SkPMSrcOver_AVX2(s3, _mm256_loadu_si256(d3)));
+        src += 32;
+        dst += 32;
+        len -= 32;
+    }
+
+#elif SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE41
     while (len >= 16) {
         
         auto s0 = _mm_loadu_si128((const __m128i*)(src) + 0),

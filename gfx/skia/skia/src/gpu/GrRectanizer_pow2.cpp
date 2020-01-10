@@ -5,7 +5,7 @@
 
 
 
-#include "GrRectanizer_pow2.h"
+#include "src/gpu/GrRectanizer_pow2.h"
 
 bool GrRectanizerPow2::addRect(int width, int height, SkIPoint16* loc) {
     if ((unsigned)width > (unsigned)this->width() ||

@@ -8,8 +8,9 @@
 #ifndef SkImagePriv_DEFINED
 #define SkImagePriv_DEFINED
 
-#include "SkImage.h"
-#include "SkSurface.h"
+#include "include/core/SkImage.h"
+#include "include/core/SkSurface.h"
+#include "include/core/SkTileMode.h"
 
 enum SkCopyPixelsMode {
     kIfMutable_SkCopyPixelsMode,  
@@ -22,8 +23,16 @@ enum {kSkBlitterContextSize = 3332};
 
 
 
-sk_sp<SkShader> SkMakeBitmapShader(const SkBitmap& src, SkShader::TileMode, SkShader::TileMode,
+sk_sp<SkShader> SkMakeBitmapShader(const SkBitmap& src, SkTileMode, SkTileMode,
                                    const SkMatrix* localMatrix, SkCopyPixelsMode);
+
+
+
+
+
+sk_sp<SkShader> SkMakeBitmapShaderForPaint(const SkPaint& paint, const SkBitmap& src,
+                                           SkTileMode, SkTileMode,
+                                           const SkMatrix* localMatrix, SkCopyPixelsMode);
 
 
 
@@ -81,12 +90,5 @@ void SkImage_unpinAsTexture(const SkImage*, GrContext*);
 
 
 SkIRect SkImage_getSubset(const SkImage*);
-
-
-
-
-
-
-sk_sp<SkImage> SkImageMakeRasterCopyAndAssignColorSpace(const SkImage*, SkColorSpace*);
 
 #endif

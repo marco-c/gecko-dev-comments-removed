@@ -5,15 +5,17 @@
 
 
 
-#include "GrTextureRenderTargetProxy.h"
+#include "src/gpu/GrTextureRenderTargetProxy.h"
 
-#include "GrCaps.h"
-#include "GrTexture.h"
-#include "GrTexturePriv.h"
-#include "GrTextureProxyPriv.h"
-#include "GrRenderTarget.h"
-#include "GrSurfacePriv.h"
-#include "GrSurfaceProxyPriv.h"
+#include "include/gpu/GrTexture.h"
+#include "src/gpu/GrCaps.h"
+#include "src/gpu/GrContextPriv.h"
+#include "src/gpu/GrRenderTarget.h"
+#include "src/gpu/GrRenderTargetProxyPriv.h"
+#include "src/gpu/GrSurfacePriv.h"
+#include "src/gpu/GrSurfaceProxyPriv.h"
+#include "src/gpu/GrTexturePriv.h"
+#include "src/gpu/GrTextureProxyPriv.h"
 
 
 
@@ -21,89 +23,129 @@
 GrTextureRenderTargetProxy::GrTextureRenderTargetProxy(const GrCaps& caps,
                                                        const GrBackendFormat& format,
                                                        const GrSurfaceDesc& desc,
+                                                       int sampleCnt,
                                                        GrSurfaceOrigin origin,
                                                        GrMipMapped mipMapped,
+                                                       GrMipMapsStatus mipMapsStatus,
+                                                       const GrSwizzle& texSwizzle,
+                                                       const GrSwizzle& outSwizzle,
                                                        SkBackingFit fit,
                                                        SkBudgeted budgeted,
-                                                       GrInternalSurfaceFlags surfaceFlags)
-        : GrSurfaceProxy(format, desc, origin, fit, budgeted, surfaceFlags)
+                                                       GrProtected isProtected,
+                                                       GrInternalSurfaceFlags surfaceFlags,
+                                                       UseAllocator useAllocator)
+        : GrSurfaceProxy(format, desc, GrRenderable::kYes, origin, texSwizzle, fit, budgeted,
+                         isProtected, surfaceFlags, useAllocator)
         
-        , GrRenderTargetProxy(caps, format, desc, origin, fit, budgeted, surfaceFlags)
-        , GrTextureProxy(format, desc, origin, mipMapped, fit, budgeted, surfaceFlags) {}
+        , GrRenderTargetProxy(caps, format, desc, sampleCnt, origin, texSwizzle, outSwizzle, fit,
+                              budgeted, isProtected, surfaceFlags, useAllocator)
+        , GrTextureProxy(format, desc, origin, mipMapped, mipMapsStatus, texSwizzle, fit, budgeted,
+                         isProtected, surfaceFlags, useAllocator) {
+    this->initSurfaceFlags(caps);
+}
 
 
-GrTextureRenderTargetProxy::GrTextureRenderTargetProxy(LazyInstantiateCallback&& callback,
-                                                       LazyInstantiationType lazyType,
+GrTextureRenderTargetProxy::GrTextureRenderTargetProxy(const GrCaps& caps,
+                                                       LazyInstantiateCallback&& callback,
                                                        const GrBackendFormat& format,
                                                        const GrSurfaceDesc& desc,
+                                                       int sampleCnt,
                                                        GrSurfaceOrigin origin,
                                                        GrMipMapped mipMapped,
+                                                       GrMipMapsStatus mipMapsStatus,
+                                                       const GrSwizzle& texSwizzle,
+                                                       const GrSwizzle& outSwizzle,
                                                        SkBackingFit fit,
                                                        SkBudgeted budgeted,
-                                                       GrInternalSurfaceFlags surfaceFlags)
-        : GrSurfaceProxy(std::move(callback), lazyType, format, desc, origin, fit, budgeted,
-                         surfaceFlags)
+                                                       GrProtected isProtected,
+                                                       GrInternalSurfaceFlags surfaceFlags,
+                                                       UseAllocator useAllocator)
+        : GrSurfaceProxy(std::move(callback), format, desc, GrRenderable::kYes, origin, texSwizzle,
+                         fit, budgeted, isProtected, surfaceFlags, useAllocator)
         
         
-        , GrRenderTargetProxy(LazyInstantiateCallback(), lazyType, format, desc, origin, fit,
-                              budgeted, surfaceFlags, WrapsVkSecondaryCB::kNo)
-        , GrTextureProxy(LazyInstantiateCallback(), lazyType, format, desc, origin, mipMapped,
-                         fit, budgeted, surfaceFlags) {}
+        , GrRenderTargetProxy(LazyInstantiateCallback(), format, desc, sampleCnt, origin,
+                              texSwizzle, outSwizzle, fit, budgeted, isProtected, surfaceFlags,
+                              useAllocator, WrapsVkSecondaryCB::kNo)
+        , GrTextureProxy(LazyInstantiateCallback(), format, desc, origin, mipMapped, mipMapsStatus,
+                         texSwizzle, fit, budgeted, isProtected, surfaceFlags, useAllocator) {
+    this->initSurfaceFlags(caps);
+}
 
 
 
 
 GrTextureRenderTargetProxy::GrTextureRenderTargetProxy(sk_sp<GrSurface> surf,
-                                                       GrSurfaceOrigin origin)
-        : GrSurfaceProxy(surf, origin, SkBackingFit::kExact)
-        , GrRenderTargetProxy(surf, origin)
-        , GrTextureProxy(surf, origin) {
+                                                       GrSurfaceOrigin origin,
+                                                       const GrSwizzle& texSwizzle,
+                                                       const GrSwizzle& outSwizzle,
+                                                       UseAllocator useAllocator)
+        : GrSurfaceProxy(surf, origin, texSwizzle, SkBackingFit::kExact, useAllocator)
+        , GrRenderTargetProxy(surf, origin, texSwizzle, outSwizzle, useAllocator)
+        , GrTextureProxy(surf, origin, texSwizzle, useAllocator) {
     SkASSERT(surf->asTexture());
     SkASSERT(surf->asRenderTarget());
+    SkASSERT(fSurfaceFlags == fTarget->surfacePriv().flags());
+    SkASSERT((this->numSamples() <= 1 ||
+              fTarget->getContext()->priv().caps()->msaaResolvesAutomatically()) !=
+             this->requiresManualMSAAResolve());
 }
 
-size_t GrTextureRenderTargetProxy::onUninstantiatedGpuMemorySize() const {
-    int colorSamplesPerPixel = this->numColorSamples();
+void GrTextureRenderTargetProxy::initSurfaceFlags(const GrCaps& caps) {
+    
+    SkASSERT(!this->rtPriv().glRTFBOIDIs0());
+    if (this->numSamples() > 1 && !caps.msaaResolvesAutomatically())  {
+        
+        
+        
+        
+        
+        
+        
+        fSurfaceFlags |= GrInternalSurfaceFlags::kRequiresManualMSAAResolve;
+    }
+}
+
+size_t GrTextureRenderTargetProxy::onUninstantiatedGpuMemorySize(const GrCaps& caps) const {
+    int colorSamplesPerPixel = this->numSamples();
     if (colorSamplesPerPixel > 1) {
         
         ++colorSamplesPerPixel;
     }
 
     
-    return GrSurface::ComputeSize(this->config(), this->width(), this->height(),
+    return GrSurface::ComputeSize(caps, this->backendFormat(), this->width(), this->height(),
                                   colorSamplesPerPixel, this->proxyMipMapped(),
                                   !this->priv().isExact());
 }
 
 bool GrTextureRenderTargetProxy::instantiate(GrResourceProvider* resourceProvider) {
-    if (LazyState::kNot != this->lazyInstantiationState()) {
+    if (this->isLazy()) {
         return false;
     }
-    static constexpr GrSurfaceDescFlags kDescFlags = kRenderTarget_GrSurfaceFlag;
 
     const GrUniqueKey& key = this->getUniqueKey();
 
-    if (!this->instantiateImpl(resourceProvider, this->numStencilSamples(), this->needsStencil(),
-                               kDescFlags, this->mipMapped(), key.isValid() ? &key : nullptr)) {
+    if (!this->instantiateImpl(resourceProvider, this->numSamples(), this->numStencilSamples(),
+                               GrRenderable::kYes, this->mipMapped(),
+                               key.isValid() ? &key : nullptr)) {
         return false;
     }
     if (key.isValid()) {
         SkASSERT(key == this->getUniqueKey());
     }
 
-    SkASSERT(fTarget->asRenderTarget());
-    SkASSERT(fTarget->asTexture());
+    SkASSERT(this->peekRenderTarget());
+    SkASSERT(this->peekTexture());
 
     return true;
 }
 
 sk_sp<GrSurface> GrTextureRenderTargetProxy::createSurface(
                                                     GrResourceProvider* resourceProvider) const {
-    static constexpr GrSurfaceDescFlags kDescFlags = kRenderTarget_GrSurfaceFlag;
-
-    sk_sp<GrSurface> surface = this->createSurfaceImpl(resourceProvider, this->numStencilSamples(),
-                                                       this->needsStencil(), kDescFlags,
-                                                       this->mipMapped());
+    sk_sp<GrSurface> surface =
+            this->createSurfaceImpl(resourceProvider, this->numSamples(), this->numStencilSamples(),
+                                    GrRenderable::kYes, this->mipMapped());
     if (!surface) {
         return nullptr;
     }
@@ -122,7 +164,7 @@ void GrTextureRenderTargetProxy::onValidateSurface(const GrSurface* surface) {
 
     
     SkASSERT(surface->asRenderTarget());
-    SkASSERT(surface->asRenderTarget()->numStencilSamples() == this->numStencilSamples());
+    SkASSERT(surface->asRenderTarget()->numSamples() == this->numSamples());
 
     SkASSERT(surface->asTexture()->texturePriv().textureType() == this->textureType());
 
@@ -133,10 +175,8 @@ void GrTextureRenderTargetProxy::onValidateSurface(const GrSurface* surface) {
     SkASSERT(!(proxyFlags & GrInternalSurfaceFlags::kReadOnly));
     SkASSERT(!(surfaceFlags & GrInternalSurfaceFlags::kReadOnly));
 
-    SkASSERT((proxyFlags & GrInternalSurfaceFlags::kRenderTargetMask) ==
-             (surfaceFlags & GrInternalSurfaceFlags::kRenderTargetMask));
-    SkASSERT((proxyFlags & GrInternalSurfaceFlags::kTextureMask) ==
-             (surfaceFlags & GrInternalSurfaceFlags::kTextureMask));
+    SkASSERT(((int)proxyFlags & kGrInternalTextureRenderTargetFlagsMask) ==
+             ((int)surfaceFlags & kGrInternalTextureRenderTargetFlagsMask));
 }
 #endif
 

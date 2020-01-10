@@ -8,7 +8,8 @@
 #ifndef SkWritePixelsRec_DEFINED
 #define SkWritePixelsRec_DEFINED
 
-#include "SkImageInfo.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkPixmap.h"
 
 
 

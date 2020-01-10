@@ -8,19 +8,20 @@
 #ifndef GrContext_DEFINED
 #define GrContext_DEFINED
 
-#include "SkMatrix.h"
-#include "SkPathEffect.h"
-#include "SkTypes.h"
-#include "../private/GrRecordingContext.h"
-#include "GrContextOptions.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkPathEffect.h"
+#include "include/core/SkTypes.h"
+#include "include/gpu/GrBackendSurface.h"
+#include "include/gpu/GrContextOptions.h"
+#include "include/private/GrRecordingContext.h"
 
 
-#include "SkUnPreMultiply.h"
+#include "include/core/SkUnPreMultiply.h"
 
 class GrAtlasManager;
-class GrBackendFormat;
 class GrBackendSemaphore;
 class GrCaps;
+class GrClientMappedBufferManager;
 class GrContextPriv;
 class GrContextThreadSafeProxy;
 class GrFragmentProcessor;
@@ -40,6 +41,7 @@ class GrTextureProxy;
 struct GrVkBackendContext;
 
 class SkImage;
+class SkSurfaceCharacterization;
 class SkSurfaceProps;
 class SkTaskGroup;
 class SkTraceMemoryDump;
@@ -67,6 +69,11 @@ public:
 
     static sk_sp<GrContext> MakeMetal(void* device, void* queue, const GrContextOptions& options);
     static sk_sp<GrContext> MakeMetal(void* device, void* queue);
+#endif
+
+#ifdef SK_DAWN
+    static sk_sp<GrContext> MakeDawn(const dawn::Device& device, const GrContextOptions& options);
+    static sk_sp<GrContext> MakeDawn(const dawn::Device& device);
 #endif
 
     static sk_sp<GrContext> MakeMock(const GrMockOptions*, const GrContextOptions&);
@@ -136,8 +143,12 @@ public:
 
 
 
-
     void getResourceCacheLimits(int* maxResources, size_t* maxResourceBytes) const;
+
+    
+
+
+    size_t getResourceCacheLimit() const;
 
     
 
@@ -162,8 +173,16 @@ public:
 
 
 
-
     void setResourceCacheLimits(int maxResources, size_t maxResourceBytes);
+
+    
+
+
+
+
+
+
+    void setResourceCacheLimit(size_t maxResourceBytes);
 
     
 
@@ -229,6 +248,16 @@ public:
 
 
     bool colorTypeSupportedAsSurface(SkColorType colorType) const {
+        if (kR8G8_unorm_SkColorType == colorType ||
+            kR16G16_unorm_SkColorType == colorType ||
+            kA16_unorm_SkColorType == colorType ||
+            kA16_float_SkColorType == colorType ||
+            kR16G16_float_SkColorType == colorType ||
+            kR16G16B16A16_unorm_SkColorType == colorType ||
+            kGray_8_SkColorType == colorType) {
+            return false;
+        }
+
         return this->maxSurfaceSampleCountForColorType(colorType) > 0;
     }
 
@@ -242,10 +271,6 @@ public:
     
     
 
-    
-
-
-    void flush();
 
     
 
@@ -254,6 +279,31 @@ public:
 
 
 
+    bool wait(int numSemaphores, const GrBackendSemaphore* waitSemaphores);
+
+    
+
+
+    void flush() {
+        this->flush(GrFlushInfo(), GrPrepareForExternalIORequests());
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    GrSemaphoresSubmitted flush(const GrFlushInfo& info) {
+        return this->flush(info, GrPrepareForExternalIORequests());
+    }
+
+    
 
 
 
@@ -266,10 +316,41 @@ public:
 
 
 
+
+
+    GrSemaphoresSubmitted flush(const GrFlushInfo&, const GrPrepareForExternalIORequests&);
+
+    
+
+
+    GrSemaphoresSubmitted flush(GrFlushFlags flags, int numSemaphores,
+                                GrBackendSemaphore signalSemaphores[],
+                                GrGpuFinishedProc finishedProc = nullptr,
+                                GrGpuFinishedContext finishedContext = nullptr) {
+        GrFlushInfo info;
+        info.fFlags = flags;
+        info.fNumSemaphores = numSemaphores;
+        info.fSignalSemaphores = signalSemaphores;
+        info.fFinishedProc = finishedProc;
+        info.fFinishedContext = finishedContext;
+        return this->flush(info);
+    }
+
+    
 
 
     GrSemaphoresSubmitted flushAndSignalSemaphores(int numSemaphores,
-                                                   GrBackendSemaphore signalSemaphores[]);
+                                                   GrBackendSemaphore signalSemaphores[]) {
+        GrFlushInfo info;
+        info.fNumSemaphores = numSemaphores;
+        info.fSignalSemaphores = signalSemaphores;
+        return this->flush(info);
+    }
+
+    
+
+
+    void checkAsyncWorkCompletion();
 
     
     GrContextPriv priv();
@@ -282,6 +363,148 @@ public:
     bool supportsDistanceFieldText() const;
 
     void storeVkPipelineCacheData();
+
+    
+    
+    static size_t ComputeImageSize(sk_sp<SkImage> image, GrMipMapped, bool useNextPow2 = false);
+
+    
+
+
+
+
+
+
+    GrBackendFormat defaultBackendFormat(SkColorType ct, GrRenderable renderable) const {
+        return INHERITED::defaultBackendFormat(ct, renderable);
+    }
+
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
+    
+    
+    GrBackendTexture createBackendTexture(int width, int height,
+                                          const GrBackendFormat&,
+                                          GrMipMapped,
+                                          GrRenderable,
+                                          GrProtected = GrProtected::kNo);
+
+    
+    
+    
+    
+    
+    
+    GrBackendTexture createBackendTexture(int width, int height,
+                                          SkColorType,
+                                          GrMipMapped,
+                                          GrRenderable,
+                                          GrProtected = GrProtected::kNo);
+
+
+    
+    
+    
+    
+    
+    GrBackendTexture createBackendTexture(const SkSurfaceCharacterization& characterization);
+
+    
+    
+    
+    
+    
+    GrBackendTexture createBackendTexture(int width, int height,
+                                          const GrBackendFormat&,
+                                          const SkColor4f& color,
+                                          GrMipMapped,
+                                          GrRenderable,
+                                          GrProtected = GrProtected::kNo);
+
+    
+    
+    
+    
+    
+    
+    
+    GrBackendTexture createBackendTexture(int width, int height,
+                                          SkColorType,
+                                          const SkColor4f& color,
+                                          GrMipMapped,
+                                          GrRenderable,
+                                          GrProtected = GrProtected::kNo);
+
+    
+    
+    
+    
+    
+    GrBackendTexture createBackendTexture(const SkSurfaceCharacterization& characterization,
+                                          const SkColor4f& color);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    GrBackendTexture createBackendTexture(const SkPixmap srcData[], int numLevels,
+                                          GrRenderable, GrProtected);
+
+    
+    GrBackendTexture createBackendTexture(const SkPixmap& srcData,
+                                          GrRenderable renderable,
+                                          GrProtected isProtected) {
+        return this->createBackendTexture(&srcData, 1, renderable, isProtected);
+    }
+
+    void deleteBackendTexture(GrBackendTexture);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool precompileShader(const SkData& key, const SkData& data);
+
+#ifdef SK_ENABLE_DUMP_GPU
+    
+    SkString dump() const;
+#endif
 
 protected:
     GrContext(GrBackendApi, const GrContextOptions&, int32_t contextID = SK_InvalidGenID);
@@ -309,22 +532,12 @@ private:
     bool                                    fPMUPMConversionsRoundTrip;
 
     GrContextOptions::PersistentCache*      fPersistentCache;
+    GrContextOptions::ShaderErrorHandler*   fShaderErrorHandler;
+
+    std::unique_ptr<GrClientMappedBufferManager> fMappedBufferManager;
 
     
     friend class GrContextPriv;
-
-    
-
-
-
-    std::unique_ptr<GrFragmentProcessor> createPMToUPMEffect(std::unique_ptr<GrFragmentProcessor>);
-    std::unique_ptr<GrFragmentProcessor> createUPMToPMEffect(std::unique_ptr<GrFragmentProcessor>);
-
-    
-
-
-
-    bool validPMUPMConversionExists();
 
     typedef GrRecordingContext INHERITED;
 };

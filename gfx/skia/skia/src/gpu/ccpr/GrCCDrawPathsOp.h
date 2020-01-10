@@ -8,16 +8,16 @@
 #ifndef GrCCDrawPathsOp_DEFINED
 #define GrCCDrawPathsOp_DEFINED
 
-#include "GrShape.h"
-#include "SkTInternalLList.h"
-#include "ccpr/GrCCSTLList.h"
-#include "ccpr/GrCCPathCache.h"
-#include "ops/GrDrawOp.h"
+#include "src/core/SkTInternalLList.h"
+#include "src/gpu/ccpr/GrCCPathCache.h"
+#include "src/gpu/ccpr/GrCCSTLList.h"
+#include "src/gpu/geometry/GrShape.h"
+#include "src/gpu/ops/GrDrawOp.h"
 
 class GrCCAtlas;
 class GrCCPerFlushResources;
 struct GrCCPerFlushResourceSpecs;
-struct GrCCPerOpListPaths;
+struct GrCCPerOpsTaskPaths;
 class GrOnFlushResourceProvider;
 class GrRecordingContext;
 
@@ -35,14 +35,18 @@ public:
 
     const char* name() const override { return "GrCCDrawPathsOp"; }
     FixedFunctionFlags fixedFunctionFlags() const override { return FixedFunctionFlags::kNone; }
-    GrProcessorSet::Analysis finalize(const GrCaps&, const GrAppliedClip*, GrFSAAType) override;
+    GrProcessorSet::Analysis finalize(const GrCaps&, const GrAppliedClip*,
+                                      bool hasMixedSampledCoverage, GrClampType) override;
     CombineResult onCombineIfPossible(GrOp*, const GrCaps&) override;
-    void visitProxies(const VisitProxyFunc& fn, VisitorType) const override {
+    void visitProxies(const VisitProxyFunc& fn) const override {
+        for (const auto& range : fInstanceRanges) {
+            fn(range.fAtlasProxy, GrMipMapped::kNo);
+        }
         fProcessors.visitProxies(fn);
     }
-    void onPrepare(GrOpFlushState*) override {}
+    void onPrepare(GrOpFlushState*) override;
 
-    void addToOwningPerOpListPaths(sk_sp<GrCCPerOpListPaths> owningPerOpListPaths);
+    void addToOwningPerOpsTaskPaths(sk_sp<GrCCPerOpsTaskPaths> owningPerOpsTaskPaths);
 
     
     
@@ -80,7 +84,8 @@ private:
                     const SkIRect& shapeConservativeIBounds, const SkIRect& maskDevIBounds,
                     const SkRect& conservativeDevBounds, GrPaint&&);
 
-    void recordInstance(GrTextureProxy* atlasProxy, int instanceIdx);
+    void recordInstance(
+            GrCCPathProcessor::CoverageMode, GrTextureProxy* atlasProxy, int instanceIdx);
 
     const SkMatrix fViewMatrixIfUsingLocalCoords;
 
@@ -92,7 +97,8 @@ private:
 
         
         GrProcessorSet::Analysis finalize(
-                const GrCaps&, const GrAppliedClip*, GrFSAAType, GrProcessorSet*);
+                const GrCaps&, const GrAppliedClip*, bool hasMixedSampledCoverage, GrClampType,
+                GrProcessorSet*);
         void accountForOwnPath(GrCCPathCache*, GrOnFlushResourceProvider*,
                                GrCCPerFlushResourceSpecs*);
         void setupResources(GrCCPathCache*, GrOnFlushResourceProvider*, GrCCPerFlushResources*,
@@ -112,6 +118,7 @@ private:
         SkIVector fCachedMaskShift;
         bool fDoCopyToA8Coverage = false;
         bool fDoCachePathMask = false;
+        SkDEBUGCODE(bool fWasCountedAsRender = false);
 
         SingleDraw* fNext = nullptr;
 
@@ -120,7 +127,7 @@ private:
 
     
     
-    sk_sp<GrCCPerOpListPaths> fOwningPerOpListPaths;
+    sk_sp<GrCCPerOpsTaskPaths> fOwningPerOpsTaskPaths;
 
     GrCCSTLList<SingleDraw> fDraws;
     SkDEBUGCODE(int fNumDraws = 1);
@@ -128,6 +135,7 @@ private:
     GrProcessorSet fProcessors;
 
     struct InstanceRange {
+        GrCCPathProcessor::CoverageMode fCoverageMode;
         GrTextureProxy* fAtlasProxy;
         int fEndInstanceIdx;
     };

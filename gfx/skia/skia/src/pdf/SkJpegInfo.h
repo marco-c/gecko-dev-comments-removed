@@ -7,9 +7,9 @@
 #ifndef SkJpegInfo_DEFINED
 #define SkJpegInfo_DEFINED
 
-#include "SkEncodedInfo.h"
-#include "SkEncodedOrigin.h"
-#include "SkSize.h"
+#include "include/codec/SkEncodedOrigin.h"
+#include "include/core/SkSize.h"
+#include "include/private/SkEncodedInfo.h"
 
 
 

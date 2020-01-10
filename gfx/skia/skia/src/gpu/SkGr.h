@@ -8,21 +8,22 @@
 #ifndef SkGr_DEFINED
 #define SkGr_DEFINED
 
-#include "GrBlend.h"
-#include "GrColor.h"
-#include "GrSamplerState.h"
-#include "GrTypes.h"
-#include "SkBlendModePriv.h"
-#include "SkCanvas.h"
-#include "SkColor.h"
-#include "SkColorData.h"
-#include "SkFilterQuality.h"
-#include "SkImageInfo.h"
-#include "SkMatrix.h"
-#include "SkVertices.h"
+#include "include/core/SkCanvas.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkFilterQuality.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkVertices.h"
+#include "include/gpu/GrTypes.h"
+#include "include/private/SkColorData.h"
+#include "src/core/SkBlendModePriv.h"
+#include "src/gpu/GrBlend.h"
+#include "src/gpu/GrCaps.h"
+#include "src/gpu/GrColor.h"
+#include "src/gpu/GrSamplerState.h"
 
 class GrCaps;
-class GrColorSpaceInfo;
+class GrColorInfo;
 class GrColorSpaceXform;
 class GrContext;
 class GrFragmentProcessor;
@@ -59,11 +60,19 @@ static inline GrColor SkColorToUnpremulGrColor(SkColor c) {
 }
 
 
-SkPMColor4f SkColorToPMColor4f(SkColor, const GrColorSpaceInfo&);
+SkPMColor4f SkColorToPMColor4f(SkColor, const GrColorInfo&);
+
+
+SkColor4f SkColor4fPrepForDst(SkColor4f, const GrColorInfo&);
 
 
 
-SkColor4f SkColor4fPrepForDst(SkColor4f, const GrColorSpaceInfo&, const GrCaps&);
+static inline bool SkPMColor4fNeedsWideColor(SkPMColor4f color, GrClampType clampType,
+                                             const GrCaps& caps) {
+    return GrClampType::kNone == clampType &&
+        caps.halfFloatVertexAttributeSupport() &&
+        !color.fitsInBytes();
+}
 
 
 
@@ -71,14 +80,14 @@ SkColor4f SkColor4fPrepForDst(SkColor4f, const GrColorSpaceInfo&, const GrCaps&)
 
 
 bool SkPaintToGrPaint(GrRecordingContext*,
-                      const GrColorSpaceInfo& dstColorSpaceInfo,
+                      const GrColorInfo& dstColorInfo,
                       const SkPaint& skPaint,
                       const SkMatrix& viewM,
                       GrPaint* grPaint);
 
 
 bool SkPaintToGrPaintNoShader(GrRecordingContext*,
-                              const GrColorSpaceInfo& dstColorSpaceInfo,
+                              const GrColorInfo& dstColorInfo,
                               const SkPaint& skPaint,
                               GrPaint* grPaint);
 
@@ -86,7 +95,7 @@ bool SkPaintToGrPaintNoShader(GrRecordingContext*,
 
 
 bool SkPaintToGrPaintReplaceShader(GrRecordingContext*,
-                                   const GrColorSpaceInfo& dstColorSpaceInfo,
+                                   const GrColorInfo& dstColorInfo,
                                    const SkPaint& skPaint,
                                    std::unique_ptr<GrFragmentProcessor> shaderFP,
                                    GrPaint* grPaint);
@@ -94,7 +103,7 @@ bool SkPaintToGrPaintReplaceShader(GrRecordingContext*,
 
 
 bool SkPaintToGrPaintWithXfermode(GrRecordingContext*,
-                                  const GrColorSpaceInfo& dstColorSpaceInfo,
+                                  const GrColorInfo& dstColorInfo,
                                   const SkPaint& skPaint,
                                   const SkMatrix& viewM,
                                   SkBlendMode primColorMode,
@@ -105,17 +114,17 @@ bool SkPaintToGrPaintWithXfermode(GrRecordingContext*,
 
 
 inline bool SkPaintToGrPaintWithPrimitiveColor(GrRecordingContext* context,
-                                               const GrColorSpaceInfo& dstColorSpaceInfo,
+                                               const GrColorInfo& dstColorInfo,
                                                const SkPaint& skPaint,
                                                GrPaint* grPaint) {
-    return SkPaintToGrPaintWithXfermode(context, dstColorSpaceInfo, skPaint, SkMatrix::I(),
+    return SkPaintToGrPaintWithXfermode(context, dstColorInfo, skPaint, SkMatrix::I(),
                                         SkBlendMode::kDst, grPaint);
 }
 
 
 
 bool SkPaintToGrPaintWithTexture(GrRecordingContext*,
-                                 const GrColorSpaceInfo& dstColorSpaceInfo,
+                                 const GrColorInfo& dstColorInfo,
                                  const SkPaint& skPaint,
                                  const SkMatrix& viewM,
                                  std::unique_ptr<GrFragmentProcessor> fp,
@@ -131,7 +140,8 @@ GrPixelConfig SkImageInfo2GrPixelConfig(const SkImageInfo& info);
 
 bool GrPixelConfigToColorType(GrPixelConfig, SkColorType*);
 
-GrSamplerState::Filter GrSkFilterQualityToGrFilterMode(SkFilterQuality paintFilterQuality,
+GrSamplerState::Filter GrSkFilterQualityToGrFilterMode(int imageWidth, int imageHeight,
+                                                       SkFilterQuality paintFilterQuality,
                                                        const SkMatrix& viewM,
                                                        const SkMatrix& localM,
                                                        bool sharpenMipmappedTextures,
@@ -149,7 +159,6 @@ static inline GrPrimitiveType SkVertexModeToGrPrimitiveType(SkVertices::VertexMo
             break;
     }
     SK_ABORT("Invalid mode");
-    return GrPrimitiveType::kPoints;
 }
 
 
@@ -184,15 +193,9 @@ sk_sp<GrTextureProxy> GrRefCachedBitmapTextureProxy(GrRecordingContext*,
 
 
 
-
-
-sk_sp<GrTextureProxy> GrUploadBitmapToTextureProxy(GrProxyProvider*, const SkBitmap&);
-
-
-
-
 sk_sp<GrTextureProxy> GrCopyBaseMipMapToTextureProxy(GrRecordingContext*,
-                                                     GrTextureProxy* baseProxy);
+                                                     GrTextureProxy* baseProxy,
+                                                     GrColorType srcColorType);
 
 
 

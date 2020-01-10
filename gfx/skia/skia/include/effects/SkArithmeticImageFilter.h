@@ -8,7 +8,7 @@
 #ifndef SkArithmeticImageFilter_DEFINED
 #define SkArithmeticImageFilter_DEFINED
 
-#include "SkImageFilter.h"
+#include "include/core/SkImageFilter.h"
 
 struct ArithmeticFPInputs {
     ArithmeticFPInputs() {
@@ -18,6 +18,7 @@ struct ArithmeticFPInputs {
     float k[4];
     bool enforcePMColor;
 };
+
 
 class SK_API SkArithmeticImageFilter {
 public:

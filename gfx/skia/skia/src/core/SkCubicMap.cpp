@@ -5,35 +5,14 @@
 
 
 
-#include "SkCubicMap.h"
-#include "SkNx.h"
+#include "include/core/SkCubicMap.h"
+#include "include/private/SkNx.h"
+#include "src/core/SkOpts.h"
 
 
 
 #ifdef CUBICMAP_TRACK_MAX_ERROR
-#include "../../src/pathops/SkPathOpsCubic.h"
-#endif
-
-static float eval_poly3(float a, float b, float c, float d, float t) {
-    return ((a * t + b) * t + c) * t + d;
-}
-
-static float eval_poly2(float a, float b, float c, float t) {
-    return (a * t + b) * t + c;
-}
-
-static float eval_poly1(float a, float b, float t) {
-    return a * t + b;
-}
-
-static float guess_nice_cubic_root(float A, float B, float C, float D) {
-    return -D;
-}
-
-#ifdef SK_DEBUG
-static bool valid(float r) {
-    return r >= 0 && r <= 1;
-}
+#include "src/pathops/SkPathOpsCubic.h"
 #endif
 
 static inline bool nearly_zero(SkScalar x) {
@@ -41,98 +20,9 @@ static inline bool nearly_zero(SkScalar x) {
     return x <= 0.0000000001f;
 }
 
-static inline bool delta_nearly_zero(float delta) {
-    return sk_float_abs(delta) <= 0.0001f;
-}
-
 #ifdef CUBICMAP_TRACK_MAX_ERROR
     static int max_iters;
 #endif
-
-
-
-
-
-static float solve_nice_cubic_halley(float A, float B, float C, float D) {
-    const int MAX_ITERS = 8;
-    const float A3 = 3 * A;
-    const float B2 = B + B;
-
-    float t = guess_nice_cubic_root(A, B, C, D);
-    int iters = 0;
-    for (; iters < MAX_ITERS; ++iters) {
-        float f = eval_poly3(A, B, C, D, t);    
-        float fp = eval_poly2(A3, B2, C, t);    
-        float fpp = eval_poly1(A3 + A3, B2, t); 
-
-        float numer = 2 * fp * f;
-        if (numer == 0) {
-            break;
-        }
-        float denom = 2 * fp * fp - f * fpp;
-        float delta = numer / denom;
-
-        if (delta_nearly_zero(delta)) {
-            break;
-        }
-        float new_t = t - delta;
-        SkASSERT(valid(new_t));
-        t = new_t;
-    }
-    SkASSERT(valid(t));
-#ifdef CUBICMAP_TRACK_MAX_ERROR
-    if (iters > max_iters) {
-        max_iters = iters;
-        SkDebugf("max_iters %d\n", max_iters);
-    }
-#endif
-    return t;
-}
-
-
-
-static float solve_nice_cubic_householder(float A, float B, float C, float D) {
-    const int MAX_ITERS = 8;
-    const float A3 = 3 * A;
-    const float B2 = B + B;
-
-    float t = guess_nice_cubic_root(A, B, C, D);
-    int iters = 0;
-    for (; iters < MAX_ITERS; ++iters) {
-        float f    = eval_poly3(A, B, C, D, t);     
-        float fp   = eval_poly2(A3, B2, C, t);      
-        float fpp  = eval_poly1(A3 + A3, B2, t);    
-        float fppp = A3 + A3;                       
-
-        float f2 = f * f;
-        float fp2 = fp * fp;
-
-
-
-
-        float numer = 6 * f * fp2 - 3 * f2 * fpp;
-        if (numer == 0) {
-            break;
-        }
-        float denom = 6 * (fp2 * fp - f * fp * fpp) + f2 * fppp;
-        float delta = numer / denom;
-        
-        if (delta_nearly_zero(delta)) {
-            break;
-        }
-        float new_t = t - delta;
-        SkASSERT(valid(new_t));
-        t = new_t;
-    }
-    SkASSERT(valid(t));
-#ifdef CUBICMAP_TRACK_MAX_ERROR
-    if (iters > max_iters) {
-        max_iters = iters;
-        SkDebugf("max_iters %d\n", max_iters);
-    }
-#endif
-    return t;
-}
 
 #ifdef CUBICMAP_TRACK_MAX_ERROR
 static float compute_slow(float A, float B, float C, float x) {
@@ -149,9 +39,8 @@ static float compute_t_from_x(float A, float B, float C, float x) {
 #ifdef CUBICMAP_TRACK_MAX_ERROR
     float answer = compute_slow(A, B, C, x);
 #endif
-    float answer2 = true ?
-                    solve_nice_cubic_halley(A, B, C, -x) :
-                    solve_nice_cubic_householder(A, B, C, -x);
+    float answer2 = SkOpts::cubic_solver(A, B, C, -x);
+
 #ifdef CUBICMAP_TRACK_MAX_ERROR
     float err = sk_float_abs(answer - answer2);
     if (err > max_err) {
@@ -181,8 +70,8 @@ float SkCubicMap::computeYFromX(float x) const {
     float b = fCoeff[1].fY;
     float c = fCoeff[2].fY;
     float y = ((a * t + b) * t + c) * t;
-    SkASSERT(y >= 0);
-    return std::min(y, 1.0f);
+
+    return y;
 }
 
 static inline bool coeff_nearly_zero(float delta) {
@@ -190,11 +79,12 @@ static inline bool coeff_nearly_zero(float delta) {
 }
 
 SkCubicMap::SkCubicMap(SkPoint p1, SkPoint p2) {
+    
+    p1.fX = SkTMin(SkTMax(p1.fX, 0.0f), 1.0f);
+    p2.fX = SkTMin(SkTMax(p2.fX, 0.0f), 1.0f);
+
     Sk2s s1 = Sk2s::Load(&p1) * 3;
     Sk2s s2 = Sk2s::Load(&p2) * 3;
-
-    s1 = Sk2s::Min(Sk2s::Max(s1, 0), 3);
-    s2 = Sk2s::Min(Sk2s::Max(s2, 0), 3);
 
     (Sk2s(1) + s1 - s2).store(&fCoeff[0]);
     (s2 - s1 - s1).store(&fCoeff[1]);

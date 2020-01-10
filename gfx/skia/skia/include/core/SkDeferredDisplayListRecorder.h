@@ -8,11 +8,11 @@
 #ifndef SkDeferredDisplayListRecorder_DEFINED
 #define SkDeferredDisplayListRecorder_DEFINED
 
-#include "../private/SkDeferredDisplayList.h"
-#include "SkImageInfo.h"
-#include "SkRefCnt.h"
-#include "SkSurfaceCharacterization.h"
-#include "SkTypes.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkSurfaceCharacterization.h"
+#include "include/core/SkTypes.h"
+#include "include/private/SkDeferredDisplayList.h"
 
 class GrBackendFormat;
 class GrBackendTexture;
@@ -58,6 +58,80 @@ public:
     using PromiseImageTextureReleaseProc = void (*)(PromiseImageTextureContext);
     using PromiseImageTextureDoneProc = void (*)(PromiseImageTextureContext);
 
+    enum class PromiseImageApiVersion { kLegacy, kNew };
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    sk_sp<SkImage> makePromiseTexture(
+            const GrBackendFormat& backendFormat,
+            int width,
+            int height,
+            GrMipMapped mipMapped,
+            GrSurfaceOrigin origin,
+            SkColorType colorType,
+            SkAlphaType alphaType,
+            sk_sp<SkColorSpace> colorSpace,
+            PromiseImageTextureFulfillProc textureFulfillProc,
+            PromiseImageTextureReleaseProc textureReleaseProc,
+            PromiseImageTextureDoneProc textureDoneProc,
+            PromiseImageTextureContext textureContext,
+            PromiseImageApiVersion version = PromiseImageApiVersion::kLegacy);
+
     
 
 
@@ -69,71 +143,20 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    sk_sp<SkImage> makePromiseTexture(const GrBackendFormat& backendFormat,
-                                      int width,
-                                      int height,
-                                      GrMipMapped mipMapped,
-                                      GrSurfaceOrigin origin,
-                                      SkColorType colorType,
-                                      SkAlphaType alphaType,
-                                      sk_sp<SkColorSpace> colorSpace,
-                                      PromiseImageTextureFulfillProc textureFulfillProc,
-                                      PromiseImageTextureReleaseProc textureReleaseProc,
-                                      PromiseImageTextureDoneProc textureDoneProc,
-                                      PromiseImageTextureContext textureContext);
-
-    
-
-
-
-
-
-
-    sk_sp<SkImage> makeYUVAPromiseTexture(SkYUVColorSpace yuvColorSpace,
-                                          const GrBackendFormat yuvaFormats[],
-                                          const SkISize yuvaSizes[],
-                                          const SkYUVAIndex yuvaIndices[4],
-                                          int imageWidth,
-                                          int imageHeight,
-                                          GrSurfaceOrigin imageOrigin,
-                                          sk_sp<SkColorSpace> imageColorSpace,
-                                          PromiseImageTextureFulfillProc textureFulfillProc,
-                                          PromiseImageTextureReleaseProc textureReleaseProc,
-                                          PromiseImageTextureDoneProc textureDoneProc,
-                                          PromiseImageTextureContext textureContexts[]);
+    sk_sp<SkImage> makeYUVAPromiseTexture(
+            SkYUVColorSpace yuvColorSpace,
+            const GrBackendFormat yuvaFormats[],
+            const SkISize yuvaSizes[],
+            const SkYUVAIndex yuvaIndices[4],
+            int imageWidth,
+            int imageHeight,
+            GrSurfaceOrigin imageOrigin,
+            sk_sp<SkColorSpace> imageColorSpace,
+            PromiseImageTextureFulfillProc textureFulfillProc,
+            PromiseImageTextureReleaseProc textureReleaseProc,
+            PromiseImageTextureDoneProc textureDoneProc,
+            PromiseImageTextureContext textureContexts[],
+            PromiseImageApiVersion version = PromiseImageApiVersion::kLegacy);
 
 private:
     bool init();

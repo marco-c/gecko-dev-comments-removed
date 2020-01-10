@@ -8,9 +8,9 @@
 #ifndef SkRTree_DEFINED
 #define SkRTree_DEFINED
 
-#include "SkBBoxHierarchy.h"
-#include "SkRect.h"
-#include "SkTDArray.h"
+#include "include/core/SkRect.h"
+#include "include/private/SkTDArray.h"
+#include "src/core/SkBBoxHierarchy.h"
 
 
 
@@ -30,14 +30,7 @@
 
 class SkRTree : public SkBBoxHierarchy {
 public:
-
-
-    
-
-
-
-
-    explicit SkRTree(SkScalar aspectRatio = 1);
+    SkRTree();
     ~SkRTree() override {}
 
     void insert(const SkRect[], int N) override;
@@ -81,13 +74,12 @@ private:
     Branch bulkLoad(SkTDArray<Branch>* branches, int level = 0);
 
     
-    static int CountNodes(int branches, SkScalar aspectRatio);
+    static int CountNodes(int branches);
 
     Node* allocateNodeAtLevel(uint16_t level);
 
     
     int fCount;
-    SkScalar fAspectRatio;
     Branch fRoot;
     SkTDArray<Node> fNodes;
 

@@ -8,11 +8,11 @@
 #ifndef GrContextOptions_DEFINED
 #define GrContextOptions_DEFINED
 
-#include "SkData.h"
-#include "SkTypes.h"
-#include "GrTypes.h"
-#include "../private/GrTypesPriv.h"
-#include "GrDriverBugWorkarounds.h"
+#include "include/core/SkData.h"
+#include "include/core/SkTypes.h"
+#include "include/gpu/GrDriverBugWorkarounds.h"
+#include "include/gpu/GrTypes.h"
+#include "include/private/GrTypesPriv.h"
 
 #include <vector>
 
@@ -31,6 +31,12 @@ struct SK_API GrContextOptions {
         kDefault
     };
 
+    enum class ShaderCacheStrategy {
+        kSkSL,
+        kBackendSource,
+        kBackendBinary,
+    };
+
     
 
 
@@ -46,6 +52,17 @@ struct SK_API GrContextOptions {
         virtual sk_sp<SkData> load(const SkData& key) = 0;
 
         virtual void store(const SkData& key, const SkData& data) = 0;
+    };
+
+    
+
+
+
+
+    class SK_API ShaderErrorHandler {
+    public:
+        virtual ~ShaderErrorHandler() {}
+        virtual void compileError(const char* shader, const char* errors) = 0;
     };
 
     GrContextOptions() {}
@@ -82,7 +99,8 @@ struct SK_API GrContextOptions {
 
 
 
-    bool fDisableCoverageCountingPaths = false;
+    
+    bool fDisableCoverageCountingPaths = true;
 
     
 
@@ -148,21 +166,7 @@ struct SK_API GrContextOptions {
 
 
 
-    Enable fExplicitlyAllocateGPUResources = Enable::kDefault;
-
-    
-
-
-
-
-    Enable fSortRenderTargets = Enable::kDefault;
-
-    
-
-
-
-
-    Enable fReduceOpListSplitting = Enable::kDefault;
+    Enable fReduceOpsTaskSplitting = Enable::kDefault;
 
     
 
@@ -181,6 +185,11 @@ struct SK_API GrContextOptions {
     
 
 
+    int fRuntimeProgramCacheSize = 256;
+
+    
+
+
     PersistentCache* fPersistentCache = nullptr;
 
     
@@ -189,7 +198,21 @@ struct SK_API GrContextOptions {
 
 
 
-     bool fDisallowGLSLBinaryCaching = false;
+    ShaderCacheStrategy fShaderCacheStrategy = ShaderCacheStrategy::kBackendBinary;
+
+    
+
+
+
+    ShaderErrorHandler* fShaderErrorHandler = nullptr;
+
+    
+
+
+
+
+
+    int  fInternalMultisampleCount = 4;
 
 #if GR_TEST_UTILS
     
@@ -210,17 +233,17 @@ struct SK_API GrContextOptions {
     
 
 
-    bool fSuppressPathRendering = false;
-
-    
-
-
     bool fSuppressGeometryShaders = false;
 
     
 
 
     bool fWireframeMode = false;
+
+    
+
+
+    bool fClearAllTextures = false;
 
     
 

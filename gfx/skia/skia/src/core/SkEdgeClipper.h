@@ -9,7 +9,7 @@
 #ifndef SkEdgeClipper_DEFINED
 #define SkEdgeClipper_DEFINED
 
-#include "SkPath.h"
+#include "include/core/SkPath.h"
 
 
 

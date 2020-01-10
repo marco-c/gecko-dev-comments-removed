@@ -5,22 +5,12 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 #ifndef SkMatrix_DEFINED
 #define SkMatrix_DEFINED
 
-#include "../private/SkMacros.h"
-#include "../private/SkTo.h"
-#include "SkRect.h"
+#include "include/core/SkRect.h"
+#include "include/private/SkMacros.h"
+#include "include/private/SkTo.h"
 
 struct SkRSXform;
 struct SkPoint3;
@@ -42,6 +32,14 @@ class SkString;
 SK_BEGIN_REQUIRE_DENSE
 class SK_API SkMatrix {
 public:
+
+    
+
+
+
+
+
+    constexpr SkMatrix() : SkMatrix(1,0,0, 0,1,0, 0,0,1, kIdentity_Mask | kRectStaysRect_Mask) {}
 
     
 
@@ -400,61 +398,62 @@ public:
 
 
 
-    void set(int index, SkScalar value) {
+    SkMatrix& set(int index, SkScalar value) {
         SkASSERT((unsigned)index < 9);
         fMat[index] = value;
         this->setTypeMask(kUnknown_Mask);
+        return *this;
     }
 
     
 
 
 
-    void setScaleX(SkScalar v) { this->set(kMScaleX, v); }
+    SkMatrix& setScaleX(SkScalar v) { return this->set(kMScaleX, v); }
 
     
 
 
 
-    void setScaleY(SkScalar v) { this->set(kMScaleY, v); }
+    SkMatrix& setScaleY(SkScalar v) { return this->set(kMScaleY, v); }
 
     
 
 
 
-    void setSkewY(SkScalar v) { this->set(kMSkewY, v); }
+    SkMatrix& setSkewY(SkScalar v) { return this->set(kMSkewY, v); }
 
     
 
 
 
-    void setSkewX(SkScalar v) { this->set(kMSkewX, v); }
+    SkMatrix& setSkewX(SkScalar v) { return this->set(kMSkewX, v); }
 
     
 
 
 
-    void setTranslateX(SkScalar v) { this->set(kMTransX, v); }
+    SkMatrix& setTranslateX(SkScalar v) { return this->set(kMTransX, v); }
 
     
 
 
 
-    void setTranslateY(SkScalar v) { this->set(kMTransY, v); }
-
-    
-
-
-
-
-    void setPerspX(SkScalar v) { this->set(kMPersp0, v); }
+    SkMatrix& setTranslateY(SkScalar v) { return this->set(kMTransY, v); }
 
     
 
 
 
 
-    void setPerspY(SkScalar v) { this->set(kMPersp1, v); }
+    SkMatrix& setPerspX(SkScalar v) { return this->set(kMPersp0, v); }
+
+    
+
+
+
+
+    SkMatrix& setPerspY(SkScalar v) { return this->set(kMPersp1, v); }
 
     
 
@@ -472,7 +471,7 @@ public:
 
 
 
-    void setAll(SkScalar scaleX, SkScalar skewX,  SkScalar transX,
+    SkMatrix& setAll(SkScalar scaleX, SkScalar skewX,  SkScalar transX,
                 SkScalar skewY,  SkScalar scaleY, SkScalar transY,
                 SkScalar persp0, SkScalar persp1, SkScalar persp2) {
         fMat[kMScaleX] = scaleX;
@@ -485,6 +484,7 @@ public:
         fMat[kMPersp1] = persp1;
         fMat[kMPersp2] = persp2;
         this->setTypeMask(kUnknown_Mask);
+        return *this;
     }
 
     
@@ -513,7 +513,7 @@ public:
 
 
 
-    void set9(const SkScalar buffer[9]);
+    SkMatrix& set9(const SkScalar buffer[9]);
 
     
 
@@ -524,7 +524,7 @@ public:
 
 
 
-    void reset();
+    SkMatrix& reset();
 
     
 
@@ -535,37 +535,20 @@ public:
 
 
 
-    void setIdentity() { this->reset(); }
+    SkMatrix& setIdentity() { return this->reset(); }
 
     
 
 
 
 
-    void setTranslate(SkScalar dx, SkScalar dy);
+    SkMatrix& setTranslate(SkScalar dx, SkScalar dy);
 
     
 
 
 
-    void setTranslate(const SkVector& v) { this->setTranslate(v.fX, v.fY); }
-
-    
-
-
-
-
-
-
-
-    void setScale(SkScalar sx, SkScalar sy, SkScalar px, SkScalar py);
-
-    
-
-
-
-
-    void setScale(SkScalar sx, SkScalar sy);
+    SkMatrix& setTranslate(const SkVector& v) { return this->setTranslate(v.fX, v.fY); }
 
     
 
@@ -575,15 +558,14 @@ public:
 
 
 
-
-    void setRotate(SkScalar degrees, SkScalar px, SkScalar py);
+    SkMatrix& setScale(SkScalar sx, SkScalar sy, SkScalar px, SkScalar py);
 
     
 
 
 
 
-    void setRotate(SkScalar degrees);
+    SkMatrix& setScale(SkScalar sx, SkScalar sy);
 
     
 
@@ -594,9 +576,27 @@ public:
 
 
 
+    SkMatrix& setRotate(SkScalar degrees, SkScalar px, SkScalar py);
+
+    
 
 
-    void setSinCos(SkScalar sinValue, SkScalar cosValue,
+
+
+    SkMatrix& setRotate(SkScalar degrees);
+
+    
+
+
+
+
+
+
+
+
+
+
+    SkMatrix& setSinCos(SkScalar sinValue, SkScalar cosValue,
                    SkScalar px, SkScalar py);
 
     
@@ -607,7 +607,7 @@ public:
 
 
 
-    void setSinCos(SkScalar sinValue, SkScalar cosValue);
+    SkMatrix& setSinCos(SkScalar sinValue, SkScalar cosValue);
 
     
 
@@ -628,33 +628,14 @@ public:
 
 
 
-    void setSkew(SkScalar kx, SkScalar ky, SkScalar px, SkScalar py);
+    SkMatrix& setSkew(SkScalar kx, SkScalar ky, SkScalar px, SkScalar py);
 
     
 
 
 
 
-    void setSkew(SkScalar kx, SkScalar ky);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void setConcat(const SkMatrix& a, const SkMatrix& b);
+    SkMatrix& setSkew(SkScalar kx, SkScalar ky);
 
     
 
@@ -673,8 +654,7 @@ public:
 
 
 
-
-    void preTranslate(SkScalar dx, SkScalar dy);
+    SkMatrix& setConcat(const SkMatrix& a, const SkMatrix& b);
 
     
 
@@ -694,36 +674,7 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-    void preScale(SkScalar sx, SkScalar sy, SkScalar px, SkScalar py);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void preScale(SkScalar sx, SkScalar sy);
+    SkMatrix& preTranslate(SkScalar dx, SkScalar dy);
 
     
 
@@ -751,10 +702,7 @@ public:
 
 
 
-
-
-
-    void preRotate(SkScalar degrees, SkScalar px, SkScalar py);
+    SkMatrix& preScale(SkScalar sx, SkScalar sy, SkScalar px, SkScalar py);
 
     
 
@@ -775,101 +723,7 @@ public:
 
 
 
-
-
-
-
-
-
-    void preRotate(SkScalar degrees);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void preSkew(SkScalar kx, SkScalar ky, SkScalar px, SkScalar py);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void preSkew(SkScalar kx, SkScalar ky);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void preConcat(const SkMatrix& other);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void postTranslate(SkScalar dx, SkScalar dy);
+    SkMatrix& preScale(SkScalar sx, SkScalar sy);
 
     
 
@@ -897,7 +751,10 @@ public:
 
 
 
-    void postScale(SkScalar sx, SkScalar sy, SkScalar px, SkScalar py);
+
+
+
+    SkMatrix& preRotate(SkScalar degrees, SkScalar px, SkScalar py);
 
     
 
@@ -918,7 +775,150 @@ public:
 
 
 
-    void postScale(SkScalar sx, SkScalar sy);
+
+
+
+
+
+
+    SkMatrix& preRotate(SkScalar degrees);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkMatrix& preSkew(SkScalar kx, SkScalar ky, SkScalar px, SkScalar py);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkMatrix& preSkew(SkScalar kx, SkScalar ky);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkMatrix& preConcat(const SkMatrix& other);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkMatrix& postTranslate(SkScalar dx, SkScalar dy);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkMatrix& postScale(SkScalar sx, SkScalar sy, SkScalar px, SkScalar py);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkMatrix& postScale(SkScalar sx, SkScalar sy);
 
     
 
@@ -977,7 +977,7 @@ public:
 
 
 
-    void postRotate(SkScalar degrees, SkScalar px, SkScalar py);
+    SkMatrix& postRotate(SkScalar degrees, SkScalar px, SkScalar py);
 
     
 
@@ -1004,7 +1004,7 @@ public:
 
 
 
-    void postRotate(SkScalar degrees);
+    SkMatrix& postRotate(SkScalar degrees);
 
     
 
@@ -1032,7 +1032,7 @@ public:
 
 
 
-    void postSkew(SkScalar kx, SkScalar ky, SkScalar px, SkScalar py);
+    SkMatrix& postSkew(SkScalar kx, SkScalar ky, SkScalar px, SkScalar py);
 
     
 
@@ -1053,7 +1053,7 @@ public:
 
 
 
-    void postSkew(SkScalar kx, SkScalar ky);
+    SkMatrix& postSkew(SkScalar kx, SkScalar ky);
 
     
 
@@ -1072,7 +1072,7 @@ public:
 
 
 
-    void postConcat(const SkMatrix& other);
+    SkMatrix& postConcat(const SkMatrix& other);
 
     
 
@@ -1197,7 +1197,7 @@ public:
 
 
 
-    void setAffine(const SkScalar affine[6]);
+    SkMatrix& setAffine(const SkScalar affine[6]);
 
     
 
@@ -1731,6 +1731,14 @@ private:
 
     SkScalar         fMat[9];
     mutable uint32_t fTypeMask;
+
+    constexpr SkMatrix(SkScalar sx, SkScalar kx, SkScalar tx,
+                       SkScalar ky, SkScalar sy, SkScalar ty,
+                       SkScalar p0, SkScalar p1, SkScalar p2, uint32_t typeMask)
+        : fMat{sx, kx, tx,
+               ky, sy, ty,
+               p0, p1, p2}
+        , fTypeMask(typeMask) {}
 
     static void ComputeInv(SkScalar dst[9], const SkScalar src[9], double invDet, bool isPersp);
 

@@ -5,28 +5,17 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 #ifndef SkPaint_DEFINED
 #define SkPaint_DEFINED
 
-#include "../private/SkTo.h"
-#include "SkBlendMode.h"
-#include "SkColor.h"
-#include "SkFilterQuality.h"
-#include "SkRefCnt.h"
+#include "include/core/SkBlendMode.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkFilterQuality.h"
+#include "include/core/SkRefCnt.h"
+#include "include/private/SkTo.h"
 
 class SkColorFilter;
 class SkColorSpace;
-class SkDrawLooper;
 struct SkRect;
 class SkImageFilter;
 class SkMaskFilter;
@@ -52,6 +41,19 @@ public:
 
 
     SkPaint();
+
+    
+
+
+
+
+
+
+
+
+
+
+    explicit SkPaint(const SkColor4f& color, SkColorSpace* colorSpace = nullptr);
 
     
 
@@ -253,7 +255,11 @@ public:
 
 
 
-    void setColor4f(const SkColor4f& color, SkColorSpace* colorSpace);
+    void setColor(const SkColor4f& color, SkColorSpace* colorSpace = nullptr);
+
+    void setColor4f(const SkColor4f& color, SkColorSpace* colorSpace = nullptr) {
+        this->setColor(color, colorSpace);
+    }
 
     
 
@@ -554,40 +560,6 @@ public:
 
 
 
-    SkDrawLooper* getDrawLooper() const { return fDrawLooper.get(); }
-
-    
-
-
-
-
-    sk_sp<SkDrawLooper> refDrawLooper() const;
-
-    
-
-
-    SkDrawLooper* getLooper() const { return fDrawLooper.get(); }
-
-    
-
-
-
-
-
-
-
-    void setDrawLooper(sk_sp<SkDrawLooper> drawLooper);
-
-    
-
-
-    void setLooper(sk_sp<SkDrawLooper> drawLooper);
-
-    
-
-
-
-
 
 
 
@@ -632,7 +604,7 @@ public:
         SkPaint::Style style = this->getStyle();
         
         if (kFill_Style == style) {
-            uintptr_t effects = reinterpret_cast<uintptr_t>(this->getLooper());
+            uintptr_t effects = 0;
             effects |= reinterpret_cast<uintptr_t>(this->getMaskFilter());
             effects |= reinterpret_cast<uintptr_t>(this->getPathEffect());
             effects |= reinterpret_cast<uintptr_t>(this->getImageFilter());
@@ -673,7 +645,6 @@ private:
     sk_sp<SkShader>       fShader;
     sk_sp<SkMaskFilter>   fMaskFilter;
     sk_sp<SkColorFilter>  fColorFilter;
-    sk_sp<SkDrawLooper>   fDrawLooper;
     sk_sp<SkImageFilter>  fImageFilter;
 
     SkColor4f       fColor4f;

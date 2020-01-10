@@ -8,7 +8,7 @@
 #ifndef SkGraphics_DEFINED
 #define SkGraphics_DEFINED
 
-#include "SkRefCnt.h"
+#include "include/core/SkRefCnt.h"
 
 class SkData;
 class SkImageGenerator;
@@ -25,12 +25,6 @@ public:
 
     
     static void Term() {}
-
-    
-
-
-
-    static void GetVersion(int32_t* major, int32_t* minor, int32_t* patch);
 
     
 

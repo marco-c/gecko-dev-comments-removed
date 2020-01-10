@@ -8,7 +8,7 @@
 #ifndef GrMatrixConvolutionEffect_DEFINED
 #define GrMatrixConvolutionEffect_DEFINED
 
-#include "GrTextureDomain.h"
+#include "src/gpu/effects/GrTextureDomain.h"
 
 
 

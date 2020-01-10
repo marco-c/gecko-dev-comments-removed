@@ -8,13 +8,13 @@
 #ifndef GrResourceAllocator_DEFINED
 #define GrResourceAllocator_DEFINED
 
-#include "GrGpuResourcePriv.h"
-#include "GrSurface.h"
-#include "GrSurfaceProxy.h"
+#include "include/gpu/GrSurface.h"
+#include "src/gpu/GrGpuResourcePriv.h"
+#include "src/gpu/GrSurfaceProxy.h"
 
-#include "SkArenaAlloc.h"
-#include "SkTDynamicHash.h"
-#include "SkTMultiMap.h"
+#include "src/core/SkArenaAlloc.h"
+#include "src/core/SkTDynamicHash.h"
+#include "src/core/SkTMultiMap.h"
 
 class GrResourceProvider;
 
@@ -39,28 +39,56 @@ class GrResourceProvider;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class GrResourceAllocator {
 public:
-    GrResourceAllocator(GrResourceProvider* resourceProvider)
-            : fResourceProvider(resourceProvider) {}
+    GrResourceAllocator(GrResourceProvider* resourceProvider SkDEBUGCODE(, int numOpsTasks))
+            : fResourceProvider(resourceProvider) SkDEBUGCODE(, fNumOpsTasks(numOpsTasks)) {}
 
     ~GrResourceAllocator();
 
     unsigned int curOp() const { return fNumOps; }
     void incOps() { fNumOps++; }
-    unsigned int numOps() const { return fNumOps; }
+
+    
+
+
+
+
+    enum class ActualUse : bool {
+        kNo  = false,
+        kYes = true
+    };
 
     
     
-    void addInterval(GrSurfaceProxy*, unsigned int start, unsigned int end
+    void addInterval(GrSurfaceProxy*, unsigned int start, unsigned int end, ActualUse actualUse
                      SkDEBUGCODE(, bool isDirectDstRead = false));
-
-    
-    
-    void addInterval(GrSurfaceProxy* proxy
-                     SkDEBUGCODE(, bool isDirectDstRead = false)) {
-        this->addInterval(proxy, fNumOps, fNumOps SkDEBUGCODE(, isDirectDstRead));
-    }
 
     enum class AssignError {
         kNoError,
@@ -75,7 +103,8 @@ public:
     
     bool assign(int* startIndex, int* stopIndex, AssignError* outError);
 
-    void markEndOfOpList(int opListIndex);
+    void determineRecyclability();
+    void markEndOfOpsTask(int opsTaskIndex);
 
 #if GR_ALLOCATION_SPEW
     void dumpIntervals();
@@ -87,9 +116,12 @@ private:
     
     void expire(unsigned int curIndex);
 
+    bool onOpsTaskBoundary() const;
+    void forceIntermediateFlush(int* stopIndex);
+
     
     void recycleSurface(sk_sp<GrSurface> surface);
-    sk_sp<GrSurface> findSurfaceFor(const GrSurfaceProxy* proxy, bool needsStencil);
+    sk_sp<GrSurface> findSurfaceFor(const GrSurfaceProxy* proxy, int minStencilSampleCount);
 
     struct FreePoolTraits {
         static const GrScratchKey& GetKey(const GrSurface& s) {
@@ -119,10 +151,12 @@ private:
 #endif
         }
 
+        
         void resetTo(GrSurfaceProxy* proxy, unsigned int start, unsigned int end) {
             SkASSERT(proxy);
-            SkASSERT(!fNext);
+            SkASSERT(!fProxy && !fNext);
 
+            fUses = 0;
             fProxy = proxy;
             fProxyID = proxy->uniqueID().asUInt();
             fStart = start;
@@ -141,12 +175,19 @@ private:
 
         const GrSurfaceProxy* proxy() const { return fProxy; }
         GrSurfaceProxy* proxy() { return fProxy; }
+
         unsigned int start() const { return fStart; }
         unsigned int end() const { return fEnd; }
+
+        void setNext(Interval* next) { fNext = next; }
         const Interval* next() const { return fNext; }
         Interval* next() { return fNext; }
 
-        void setNext(Interval* next) { fNext = next; }
+        void markAsRecyclable() { fIsRecyclable = true;}
+        bool isRecyclable() const { return fIsRecyclable; }
+
+        void addUse() { fUses++; }
+        int uses() { return fUses; }
 
         void extendEnd(unsigned int newEnd) {
             if (newEnd > fEnd) {
@@ -174,6 +215,8 @@ private:
         unsigned int     fStart;
         unsigned int     fEnd;
         Interval*        fNext;
+        unsigned int     fUses = 0;
+        bool             fIsRecyclable = false;
 
 #if GR_TRACK_INTERVAL_CREATION
         uint32_t        fUniqueID;
@@ -195,6 +238,7 @@ private:
             return !SkToBool(fHead);
         }
         const Interval* peekHead() const { return fHead; }
+        Interval* peekHead() { return fHead; }
         Interval* popHead();
         void insertByIncreasingStart(Interval*);
         void insertByIncreasingEnd(Interval*);
@@ -216,17 +260,18 @@ private:
 
     IntervalList                 fIntvlList;         
     IntervalList                 fActiveIntvls;      
-                                               
-    unsigned int                 fNumOps = 1;        
-                                               
-    SkTArray<unsigned int>       fEndOfOpListOpIndices;
-    int                          fCurOpListIndex = 0;
+                                                     
+    unsigned int                 fNumOps = 0;
+    SkTArray<unsigned int>       fEndOfOpsTaskOpIndices;
+    int                          fCurOpsTaskIndex = 0;
+    SkDEBUGCODE(const int        fNumOpsTasks = -1;)
 
     SkDEBUGCODE(bool             fAssigned = false;)
 
     char                         fStorage[kInitialArenaSize];
     SkArenaAlloc                 fIntervalAllocator{fStorage, kInitialArenaSize, kInitialArenaSize};
     Interval*                    fFreeIntervalList = nullptr;
+    bool                         fLazyInstantiationError = false;
 };
 
 #endif 

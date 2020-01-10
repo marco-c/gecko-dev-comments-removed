@@ -4,8 +4,8 @@
 
 
 
-#include "SkGeometry.h"
-#include "SkReduceOrder.h"
+#include "src/core/SkGeometry.h"
+#include "src/pathops/SkReduceOrder.h"
 
 int SkReduceOrder::reduce(const SkDLine& line) {
     fLine[0] = line[0];

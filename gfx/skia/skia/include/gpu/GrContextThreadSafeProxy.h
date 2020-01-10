@@ -8,7 +8,7 @@
 #ifndef GrContextThreadSafeProxy_DEFINED
 #define GrContextThreadSafeProxy_DEFINED
 
-#include "../private/GrContext_Base.h"
+#include "include/private/GrContext_Base.h"
 
 class GrBackendFormat;
 class GrContextThreadSafeProxyPriv;
@@ -54,6 +54,7 @@ public:
 
 
 
+
     SkSurfaceCharacterization createCharacterization(
                                   size_t cacheMaxResourceBytes,
                                   const SkImageInfo& ii, const GrBackendFormat& backendFormat,
@@ -61,7 +62,19 @@ public:
                                   const SkSurfaceProps& surfaceProps,
                                   bool isMipMapped,
                                   bool willUseGLFBO0 = false,
-                                  bool isTextureable = true);
+                                  bool isTextureable = true,
+                                  GrProtected isProtected = GrProtected::kNo);
+
+    
+
+
+
+
+
+
+    GrBackendFormat defaultBackendFormat(SkColorType ct, GrRenderable renderable) const {
+        return INHERITED::defaultBackendFormat(ct, renderable);
+    }
 
     bool operator==(const GrContextThreadSafeProxy& that) const {
         

@@ -5,11 +5,11 @@
 
 
 
-#include "SkClusterator.h"
+#include "src/pdf/SkClusterator.h"
 
-#include "SkGlyphRun.h"
-#include "SkTo.h"
-#include "SkUTF.h"
+#include "include/private/SkTo.h"
+#include "src/core/SkGlyphRun.h"
+#include "src/utils/SkUTF.h"
 
 static bool is_reversed(const uint32_t* clusters, uint32_t count) {
     

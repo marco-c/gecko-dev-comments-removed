@@ -5,7 +5,7 @@
 
 
 
-#include "gl/GrGLInterface.h"
+#include "include/gpu/gl/GrGLInterface.h"
 
 sk_sp<const GrGLInterface> GrGLMakeNativeInterface() { return nullptr; }
 

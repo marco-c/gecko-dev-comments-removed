@@ -5,9 +5,9 @@
 
 
 
-#include "GrGLSemaphore.h"
+#include "src/gpu/gl/GrGLSemaphore.h"
 
-#include "GrGLGpu.h"
+#include "src/gpu/gl/GrGLGpu.h"
 
 GrGLSemaphore::GrGLSemaphore(GrGLGpu* gpu, bool isOwned)
         : INHERITED(gpu), fSync(0), fIsOwned(isOwned) {

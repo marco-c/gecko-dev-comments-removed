@@ -5,7 +5,7 @@
 
 
 
-#include "GrTextBlobCache.h"
+#include "src/gpu/text/GrTextBlobCache.h"
 
 DECLARE_SKMESSAGEBUS_MESSAGE(GrTextBlobCache::PurgeBlobMessage)
 

@@ -8,8 +8,8 @@
 #ifndef GrGpuResourceCacheAccess_DEFINED
 #define GrGpuResourceCacheAccess_DEFINED
 
-#include "GrGpuResource.h"
-#include "GrGpuResourcePriv.h"
+#include "include/gpu/GrGpuResource.h"
+#include "src/gpu/GrGpuResourcePriv.h"
 
 namespace skiatest {
     class Reporter;
@@ -20,6 +20,9 @@ namespace skiatest {
 
 class GrGpuResource::CacheAccess {
 private:
+    
+    void ref() { fResource->addInitialRef(); }
+
     
 
 
@@ -34,7 +37,7 @@ private:
 
     void release() {
         fResource->release();
-        if (!fResource->hasRefOrPendingIO()) {
+        if (!fResource->hasRef()) {
             delete fResource;
         }
     }
@@ -44,13 +47,16 @@ private:
 
     void abandon() {
         fResource->abandon();
-        if (!fResource->hasRefOrPendingIO()) {
+        if (!fResource->hasRef()) {
             delete fResource;
         }
     }
 
     
     void setUniqueKey(const GrUniqueKey& key) { fResource->fUniqueKey = key; }
+
+    
+    bool hasRef() const { return fResource->hasRef(); }
 
     
     void removeUniqueKey() { fResource->fUniqueKey.reset(); }
@@ -78,8 +84,8 @@ private:
     CacheAccess& operator=(const CacheAccess&); 
 
     
-    const CacheAccess* operator&() const;
-    CacheAccess* operator&();
+    const CacheAccess* operator&() const = delete;
+    CacheAccess* operator&() = delete;
 
     GrGpuResource* fResource;
 

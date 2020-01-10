@@ -5,25 +5,26 @@
 
 
 
-#include "SkBlitter.h"
+#include "src/core/SkBlitter.h"
 
-#include "SkAntiRun.h"
-#include "SkArenaAlloc.h"
-#include "SkColor.h"
-#include "SkColorData.h"
-#include "SkColorFilter.h"
-#include "SkMask.h"
-#include "SkMaskFilterBase.h"
-#include "SkPaintPriv.h"
-#include "SkReadBuffer.h"
-#include "SkRegionPriv.h"
-#include "SkShaderBase.h"
-#include "SkString.h"
-#include "SkTLazy.h"
-#include "SkTo.h"
-#include "SkUtils.h"
-#include "SkWriteBuffer.h"
-#include "SkXfermodeInterpretation.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkColorFilter.h"
+#include "include/core/SkString.h"
+#include "include/private/SkColorData.h"
+#include "include/private/SkTo.h"
+#include "src/core/SkAntiRun.h"
+#include "src/core/SkArenaAlloc.h"
+#include "src/core/SkColorSpacePriv.h"
+#include "src/core/SkMask.h"
+#include "src/core/SkMaskFilterBase.h"
+#include "src/core/SkPaintPriv.h"
+#include "src/core/SkReadBuffer.h"
+#include "src/core/SkRegionPriv.h"
+#include "src/core/SkTLazy.h"
+#include "src/core/SkUtils.h"
+#include "src/core/SkWriteBuffer.h"
+#include "src/core/SkXfermodeInterpretation.h"
+#include "src/shaders/SkShaderBase.h"
 
 SkBlitter::~SkBlitter() {}
 
@@ -99,119 +100,6 @@ void SkBlitter::blitFatAntiRect(const SkRect& rect) {
         alphas[1] = ScalarToAlpha(partialB);
         alphas[bounds.width() - 1] = ScalarToAlpha(partialR * partialB);
         this->blitAntiH(bounds.fLeft, bounds.fBottom - 1, alphas, runs);
-    }
-}
-
-void SkBlitter::blitCoverageDeltas(SkCoverageDeltaList* deltas, const SkIRect& clip,
-                                   bool isEvenOdd, bool isInverse, bool isConvex) {
-    int         runSize = clip.width() + 1; 
-    void*       storage = this->allocBlitMemory(runSize * (sizeof(int16_t) + sizeof(SkAlpha)));
-    int16_t*    runs    = reinterpret_cast<int16_t*>(storage);
-    SkAlpha*    alphas  = reinterpret_cast<SkAlpha*>(runs + runSize);
-    runs[clip.width()]  = 0; 
-
-    bool canUseMask = !deltas->forceRLE() &&
-                      SkCoverageDeltaMask::CanHandle(SkIRect::MakeLTRB(0, 0, clip.width(), 1));
-    const SkAntiRect& antiRect = deltas->getAntiRect();
-
-    
-    int top = SkTMax(deltas->top(), clip.fTop);
-    int bottom = SkTMin(deltas->bottom(), clip.fBottom);
-    for(int y = top; y < bottom; ++y) {
-        
-        if (y >= antiRect.fY && y < antiRect.fY + antiRect.fHeight) {
-            
-            int leftOverClip = clip.fLeft - antiRect.fX;
-            int rightOverClip = antiRect.fX + antiRect.fWidth - clip.fRight;
-            int topOverClip = clip.fTop - antiRect.fY;
-            int botOverClip = antiRect.fY + antiRect.fHeight - clip.fBottom;
-
-            int rectX = antiRect.fX;
-            int rectY = antiRect.fY;
-            int width = antiRect.fWidth;
-            int height = antiRect.fHeight;
-            SkAlpha leftAlpha = antiRect.fLeftAlpha;
-            SkAlpha rightAlpha = antiRect.fRightAlpha;
-
-            if (leftOverClip > 0) {
-                rectX = clip.fLeft;
-                width -= leftOverClip;
-                leftAlpha = 0xFF;
-            }
-            if (rightOverClip > 0) {
-                width -= rightOverClip;
-                rightAlpha = 0xFF;
-            }
-            if (topOverClip > 0) {
-                rectY = clip.fTop;
-                height -= topOverClip;
-            }
-            if (botOverClip > 0) {
-                height -= botOverClip;
-            }
-
-            if (width >= 0) {
-                this->blitAntiRect(rectX, rectY, width, height, leftAlpha, rightAlpha);
-            }
-            y += antiRect.fHeight - 1; 
-            continue;
-        }
-
-        
-        
-        
-        if (canUseMask && !deltas->sorted(y) && deltas->count(y) << 3 >= clip.width()) {
-            
-            
-            
-            
-            SkIRect rowIR = SkIRect::MakeLTRB(SkTMin(clip.fLeft, deltas->left()), y,
-                                              SkTMax(clip.fRight, deltas->right()), y + 1);
-            SkSTArenaAlloc<SkCoverageDeltaMask::MAX_SIZE> alloc;
-            SkCoverageDeltaMask mask(&alloc, rowIR);
-            for(int i = 0; i < deltas->count(y); ++i) {
-                const SkCoverageDelta& delta = deltas->getDelta(y, i);
-                mask.addDelta(delta.fX, y, delta.fDelta);
-            }
-            mask.convertCoverageToAlpha(isEvenOdd, isInverse, isConvex);
-            this->blitMask(mask.prepareSkMask(), rowIR);
-            continue;
-        }
-
-        
-        deltas->sort(y);
-
-        int     i = 0;              
-        int     lastX = clip.fLeft; 
-        SkFixed coverage = 0;       
-
-        
-        
-        
-        
-        for(; i < deltas->count(y) && deltas->getDelta(y, i).fX < clip.fLeft; ++i) {
-            coverage += deltas->getDelta(y, i).fDelta;
-        }
-        for(; i < deltas->count(y) && deltas->getDelta(y, i).fX < clip.fRight; ++i) {
-            const SkCoverageDelta& delta = deltas->getDelta(y, i);
-            SkASSERT(delta.fX >= lastX);    
-            if (delta.fX > lastX) {         
-                SkAlpha alpha = isConvex ? ConvexCoverageToAlpha(coverage, isInverse)
-                                         : CoverageToAlpha(coverage, isEvenOdd, isInverse);
-                alphas[lastX - clip.fLeft]  = alpha;            
-                runs[lastX - clip.fLeft]    = delta.fX - lastX; 
-                lastX                       = delta.fX;         
-            }
-            coverage += delta.fDelta; 
-        }
-
-        
-        SkAlpha alpha = isConvex ? ConvexCoverageToAlpha(coverage, isInverse)
-                                 : CoverageToAlpha(coverage, isEvenOdd, isInverse);
-        alphas[lastX - clip.fLeft]  = alpha;
-        runs[lastX - clip.fLeft]    = clip.fRight - lastX;
-
-        this->blitAntiH(clip.fLeft, y, alphas, runs); 
     }
 }
 
@@ -537,7 +425,7 @@ void SkRectClipBlitter::blitV(int x, int y, int height, SkAlpha alpha) {
 void SkRectClipBlitter::blitRect(int left, int y, int width, int height) {
     SkIRect    r;
 
-    r.set(left, y, left + width, y + height);
+    r.setLTRB(left, y, left + width, y + height);
     if (r.intersect(fClipRect)) {
         fBlitter->blitRect(r.fLeft, r.fTop, r.width(), r.height());
     }
@@ -548,7 +436,7 @@ void SkRectClipBlitter::blitAntiRect(int left, int y, int width, int height,
     SkIRect    r;
 
     
-    r.set(left, y, left + width + 2, y + height);
+    r.setLTRB(left, y, left + width + 2, y + height);
     if (r.intersect(fClipRect)) {
         if (r.fLeft != left) {
             SkASSERT(r.fLeft > left);
@@ -641,7 +529,7 @@ void SkRgnClipBlitter::blitAntiH(int x, int y, const SkAlpha aa[],
 
 void SkRgnClipBlitter::blitV(int x, int y, int height, SkAlpha alpha) {
     SkIRect    bounds;
-    bounds.set(x, y, x + 1, y + height);
+    bounds.setXYWH(x, y, 1, height);
 
     SkRegion::Cliperator    iter(*fRgn, bounds);
 
@@ -656,7 +544,7 @@ void SkRgnClipBlitter::blitV(int x, int y, int height, SkAlpha alpha) {
 
 void SkRgnClipBlitter::blitRect(int x, int y, int width, int height) {
     SkIRect    bounds;
-    bounds.set(x, y, x + width, y + height);
+    bounds.setXYWH(x, y, width, height);
 
     SkRegion::Cliperator    iter(*fRgn, bounds);
 
@@ -673,7 +561,7 @@ void SkRgnClipBlitter::blitAntiRect(int x, int y, int width, int height,
                                     SkAlpha leftAlpha, SkAlpha rightAlpha) {
     
     SkIRect    bounds;
-    bounds.set(x, y, x + width + 2, y + height);
+    bounds.setXYWH(x, y, width + 2, height);
 
     SkRegion::Cliperator    iter(*fRgn, bounds);
 
@@ -748,7 +636,7 @@ SkBlitter* SkBlitterClipper::apply(SkBlitter* blitter, const SkRegion* clip,
 
 
 
-#include "SkCoreBlitters.h"
+#include "src/core/SkCoreBlitters.h"
 
 
 bool gSkForceRasterPipelineBlitter;
@@ -779,12 +667,6 @@ bool SkBlitter::UseRasterPipelineBlitter(const SkPixmap& device, const SkPaint& 
     if (!paint.getShader() && paint.getBlendMode() != SkBlendMode::kSrcOver) {
         return true;
     }
-
-#ifdef SK_SUPPORT_LEGACY_CHOOSERASTERPIPELINE
-    if (device.colorSpace()) {
-        return true;
-    }
-#endif
 
     auto cs = device.colorSpace();
     
@@ -837,6 +719,17 @@ SkBlitter* SkBlitter::Choose(const SkPixmap& device,
         p->setColor(0x00000000);
     }
 
+#ifndef SK_SUPPORT_LEGACY_COLORFILTER_NO_SHADER
+    if (paint->getColorFilter() && !paint->getShader()) {
+        
+        auto dstCS = device.colorSpace();
+        SkPaint* p = paint.writable();
+        p->setColor(p->getColorFilter()->filterColor4f(p->getColor4f(), sk_srgb_singleton(), dstCS),
+                    dstCS);
+        p->setColorFilter(nullptr);
+    }
+#endif
+
     if (drawCoverage) {
         if (device.colorType() == kAlpha_8_SkColorType) {
             SkASSERT(!paint->getShader());
@@ -849,6 +742,12 @@ SkBlitter* SkBlitter::Choose(const SkPixmap& device,
     if (paint->isDither() && !SkPaintPriv::ShouldDither(*paint, device.colorType())) {
         paint.writable()->setDither(false);
     }
+
+#if defined(SK_USE_SKVM_BLITTER)
+    if (auto blitter = SkCreateSkVMBlitter(device, *paint, matrix, alloc)) {
+        return blitter;
+    }
+#endif
 
     
     if (UseRasterPipelineBlitter(device, *paint, matrix)) {

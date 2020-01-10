@@ -5,31 +5,33 @@
 
 
 
-#include "GrCCPathProcessor.h"
+#include "src/gpu/ccpr/GrCCPathProcessor.h"
 
-#include "GrGpuCommandBuffer.h"
-#include "GrOnFlushResourceProvider.h"
-#include "GrTexture.h"
-#include "ccpr/GrCCPerFlushResources.h"
-#include "glsl/GrGLSLFragmentShaderBuilder.h"
-#include "glsl/GrGLSLGeometryProcessor.h"
-#include "glsl/GrGLSLProgramBuilder.h"
-#include "glsl/GrGLSLVarying.h"
-
-
-
+#include "include/gpu/GrTexture.h"
+#include "src/gpu/GrOnFlushResourceProvider.h"
+#include "src/gpu/GrOpsRenderPass.h"
+#include "src/gpu/GrTexturePriv.h"
+#include "src/gpu/ccpr/GrCCPerFlushResources.h"
+#include "src/gpu/glsl/GrGLSLFragmentShaderBuilder.h"
+#include "src/gpu/glsl/GrGLSLGeometryProcessor.h"
+#include "src/gpu/glsl/GrGLSLProgramBuilder.h"
+#include "src/gpu/glsl/GrGLSLVarying.h"
 
 
-static constexpr float kOctoEdgeNorms[8 * 4] = {
+
+
+
+
+static constexpr float kOctoEdgeNorms[8*4] = {
     
-    -1, 0,    -1,+1,
-    -1, 0,    -1,-1,
-     0,-1,    -1,-1,
-     0,-1,    +1,-1,
-    +1, 0,    +1,-1,
-    +1, 0,    +1,+1,
-     0,+1,    +1,+1,
-     0,+1,    -1,+1,
+    0,0,      0,0,
+    0,0,      1,0,
+    1,0,      1,0,
+    1,0,      1,1,
+    1,1,      1,1,
+    1,1,      0,1,
+    0,1,      0,1,
+    0,1,      0,0,
 };
 
 GR_DECLARE_STATIC_UNIQUE_KEY(gVertexBufferKey);
@@ -43,26 +45,26 @@ sk_sp<const GrGpuBuffer> GrCCPathProcessor::FindVertexBuffer(GrOnFlushResourcePr
 static constexpr uint16_t kRestartStrip = 0xffff;
 
 static constexpr uint16_t kOctoIndicesAsStrips[] = {
-    1, 0, 2, 4, 3, kRestartStrip, 
-    5, 4, 6, 0, 7 
+    3, 4, 2, 0, 1, kRestartStrip,  
+    7, 0, 6, 4, 5  
 };
 
 static constexpr uint16_t kOctoIndicesAsTris[] = {
     
-    1, 0, 2,
-    0, 4, 2,
-    2, 4, 3,
+    3, 4, 2,
+    4, 0, 2,
+    2, 0, 1,
 
     
-    5, 4, 6,
-    4, 0, 6,
-    6, 0, 7,
+    7, 0, 6,
+    0, 4, 6,
+    6, 4, 5,
 };
 
 GR_DECLARE_STATIC_UNIQUE_KEY(gIndexBufferKey);
 
 constexpr GrPrimitiveProcessor::Attribute GrCCPathProcessor::kInstanceAttribs[];
-constexpr GrPrimitiveProcessor::Attribute GrCCPathProcessor::kEdgeNormsAttrib;
+constexpr GrPrimitiveProcessor::Attribute GrCCPathProcessor::kCornersAttrib;
 
 sk_sp<const GrGpuBuffer> GrCCPathProcessor::FindIndexBuffer(GrOnFlushResourceProvider* onFlushRP) {
     GR_DEFINE_STATIC_UNIQUE_KEY(gIndexBufferKey);
@@ -77,18 +79,20 @@ sk_sp<const GrGpuBuffer> GrCCPathProcessor::FindIndexBuffer(GrOnFlushResourcePro
     }
 }
 
-GrCCPathProcessor::GrCCPathProcessor(const GrTextureProxy* atlas,
+GrCCPathProcessor::GrCCPathProcessor(CoverageMode coverageMode, const GrTexture* atlasTexture,
+                                     const GrSwizzle& swizzle, GrSurfaceOrigin atlasOrigin,
                                      const SkMatrix& viewMatrixIfUsingLocalCoords)
         : INHERITED(kGrCCPathProcessor_ClassID)
-        , fAtlasAccess(atlas->textureType(), atlas->config(), GrSamplerState::Filter::kNearest,
-                       GrSamplerState::WrapMode::kClamp)
-        , fAtlasSize(atlas->isize())
-        , fAtlasOrigin(atlas->origin()) {
+        , fCoverageMode(coverageMode)
+        , fAtlasAccess(atlasTexture->texturePriv().textureType(), GrSamplerState::ClampNearest(),
+                       swizzle)
+        , fAtlasSize(SkISize::Make(atlasTexture->width(), atlasTexture->height()))
+        , fAtlasOrigin(atlasOrigin) {
     
-    this->setInstanceAttributes(kInstanceAttribs, kNumInstanceAttribs);
+    this->setInstanceAttributes(kInstanceAttribs, SK_ARRAY_COUNT(kInstanceAttribs));
     SkASSERT(this->instanceStride() == sizeof(Instance));
 
-    this->setVertexAttributes(&kEdgeNormsAttrib, 1);
+    this->setVertexAttributes(&kCornersAttrib, 1);
     this->setTextureSamplerCnt(1);
 
     if (!viewMatrixIfUsingLocalCoords.invert(&fLocalMatrix)) {
@@ -96,17 +100,17 @@ GrCCPathProcessor::GrCCPathProcessor(const GrTextureProxy* atlas,
     }
 }
 
-class GLSLPathProcessor : public GrGLSLGeometryProcessor {
+class GrCCPathProcessor::Impl : public GrGLSLGeometryProcessor {
 public:
     void onEmitCode(EmitArgs& args, GrGPArgs* gpArgs) override;
 
 private:
     void setData(const GrGLSLProgramDataManager& pdman, const GrPrimitiveProcessor& primProc,
                  FPCoordTransformIter&& transformIter) override {
-        const GrCCPathProcessor& proc = primProc.cast<GrCCPathProcessor>();
-        pdman.set2f(fAtlasAdjustUniform, 1.0f / proc.atlasSize().fWidth,
-                    1.0f / proc.atlasSize().fHeight);
-        this->setTransformDataHelper(proc.localMatrix(), pdman, &transformIter);
+        const auto& proc = primProc.cast<GrCCPathProcessor>();
+        pdman.set2f(
+                fAtlasAdjustUniform, 1.0f / proc.fAtlasSize.fWidth, 1.0f / proc.fAtlasSize.fHeight);
+        this->setTransformDataHelper(proc.fLocalMatrix, pdman, &transformIter);
     }
 
     GrGLSLUniformHandler::UniformHandle fAtlasAdjustUniform;
@@ -115,7 +119,7 @@ private:
 };
 
 GrGLSLPrimitiveProcessor* GrCCPathProcessor::createGLSLInstance(const GrShaderCaps&) const {
-    return new GLSLPathProcessor();
+    return new Impl();
 }
 
 void GrCCPathProcessor::drawPaths(GrOpFlushState* flushState, const GrPipeline& pipeline,
@@ -137,30 +141,36 @@ void GrCCPathProcessor::drawPaths(GrOpFlushState* flushState, const GrPipeline& 
                              baseInstance, enablePrimitiveRestart);
     mesh.setVertexData(resources.refVertexBuffer());
 
-    flushState->rtCommandBuffer()->draw(*this, pipeline, fixedDynamicState, nullptr, &mesh, 1,
-                                        bounds);
+    GrProgramInfo programInfo(flushState->drawOpArgs().numSamples(),
+                              flushState->drawOpArgs().origin(),
+                              pipeline,
+                              *this,
+                              fixedDynamicState,
+                              nullptr, 0);
+
+    flushState->opsRenderPass()->draw(programInfo, &mesh, 1, bounds);
 }
 
-void GLSLPathProcessor::onEmitCode(EmitArgs& args, GrGPArgs* gpArgs) {
-    using InstanceAttribs = GrCCPathProcessor::InstanceAttribs;
+void GrCCPathProcessor::Impl::onEmitCode(EmitArgs& args, GrGPArgs* gpArgs) {
     using Interpolation = GrGLSLVaryingHandler::Interpolation;
 
     const GrCCPathProcessor& proc = args.fGP.cast<GrCCPathProcessor>();
     GrGLSLUniformHandler* uniHandler = args.fUniformHandler;
     GrGLSLVaryingHandler* varyingHandler = args.fVaryingHandler;
+    bool isCoverageCount = (CoverageMode::kCoverageCount == proc.fCoverageMode);
 
     const char* atlasAdjust;
     fAtlasAdjustUniform = uniHandler->addUniform(
-            kVertex_GrShaderFlag,
-            kFloat2_GrSLType, "atlas_adjust", &atlasAdjust);
+            kVertex_GrShaderFlag, kFloat2_GrSLType, "atlas_adjust", &atlasAdjust);
 
     varyingHandler->emitAttributes(proc);
 
-    GrGLSLVarying texcoord(kFloat3_GrSLType);
-    GrGLSLVarying color(kHalf4_GrSLType);
+    GrGLSLVarying texcoord((isCoverageCount) ? kFloat3_GrSLType : kFloat2_GrSLType);
     varyingHandler->addVarying("texcoord", &texcoord);
-    varyingHandler->addPassThroughAttribute(proc.getInstanceAttrib(InstanceAttribs::kColor),
-                                            args.fOutputColor, Interpolation::kCanBeFlat);
+
+    GrGLSLVarying color(kHalf4_GrSLType);
+    varyingHandler->addPassThroughAttribute(
+            kInstanceAttribs[kColorAttribIdx], args.fOutputColor, Interpolation::kCanBeFlat);
 
     
     
@@ -168,28 +178,22 @@ void GLSLPathProcessor::onEmitCode(EmitArgs& args, GrGPArgs* gpArgs) {
 
     
     
-    
-    
-    
-    v->codeAppendf("float2x2 N = float2x2(%s.xy, %s.zw);", proc.getEdgeNormsAttrib().name(),
-                   proc.getEdgeNormsAttrib().name());
+    v->codeAppendf("float wind = sign(devbounds.z - devbounds.x);");
 
     
-    
-    v->codeAppendf("float4 devbounds = %s;",
-                   proc.getInstanceAttrib(InstanceAttribs::kDevBounds).name());
-    v->codeAppend ("float2 refpt = (0 == sk_VertexID >> 2)"
-                           "? float2(min(devbounds.x, devbounds.z), devbounds.y)"
-                           ": float2(max(devbounds.x, devbounds.z), devbounds.w);");
+    v->codeAppendf("float2 refpt = mix(devbounds.xy, devbounds.zw, corners.xy);");
 
     
+    v->codeAppendf("float2 refpt45 = mix(devbounds45.xy, devbounds45.zw, corners.zw);");
     
-    v->codeAppendf("float2 refpt45 = (0 == ((sk_VertexID + 1) & (1 << 2))) ? %s.xy : %s.zw;",
-                   proc.getInstanceAttrib(InstanceAttribs::kDevBounds45).name(),
-                   proc.getInstanceAttrib(InstanceAttribs::kDevBounds45).name());
-    v->codeAppendf("refpt45 *= float2x2(.5,.5,-.5,.5);"); 
+    v->codeAppendf("refpt45 *= float2x2(+1, +1, -wind, +wind) * .5;");
 
-    v->codeAppend ("float2 K = float2(dot(N[0], refpt), dot(N[1], refpt45));");
+    
+    v->codeAppendf("float2x2 N = float2x2("
+                           "corners.z + corners.w - 1, corners.w - corners.z, "
+                           "corners.xy*2 - 1);");
+    v->codeAppendf("N = float2x2(wind, 0, 0, 1) * N;");
+    v->codeAppendf("float2 K = float2(dot(N[0], refpt), dot(N[1], refpt45));");
     v->codeAppendf("float2 octocoord = K * inverse(N);");
 
     
@@ -198,46 +202,49 @@ void GLSLPathProcessor::onEmitCode(EmitArgs& args, GrGPArgs* gpArgs) {
     
     
     
-    v->codeAppend ("half2 bloatdir = (0 != N[0].x) "
-                           "? half2(half(N[0].x), half(N[1].y))"
-                           ": half2(half(N[1].x), half(N[0].y));");
-    v->codeAppend ("octocoord = (ceil(octocoord * bloatdir - 1e-4) + 0.25) * bloatdir;");
-
-    gpArgs->fPositionVar.set(kFloat2_GrSLType, "octocoord");
+    v->codeAppendf("float2 bloatdir = (0 != N[0].x) "
+                           "? float2(N[0].x, N[1].y)"
+                           ": float2(N[1].x, N[0].y);");
+    v->codeAppendf("octocoord = (ceil(octocoord * bloatdir - 1e-4) + 0.25) * bloatdir;");
+    v->codeAppendf("float2 atlascoord = octocoord + float2(dev_to_atlas_offset);");
 
     
-    v->codeAppendf("float2 atlascoord = octocoord + float2(%s);",
-                   proc.getInstanceAttrib(InstanceAttribs::kDevToAtlasOffset).name());
-    if (kTopLeft_GrSurfaceOrigin == proc.atlasOrigin()) {
+    if (kTopLeft_GrSurfaceOrigin == proc.fAtlasOrigin) {
         v->codeAppendf("%s.xy = atlascoord * %s;", texcoord.vsOut(), atlasAdjust);
     } else {
-        SkASSERT(kBottomLeft_GrSurfaceOrigin == proc.atlasOrigin());
+        SkASSERT(kBottomLeft_GrSurfaceOrigin == proc.fAtlasOrigin);
         v->codeAppendf("%s.xy = float2(atlascoord.x * %s.x, 1 - atlascoord.y * %s.y);",
                        texcoord.vsOut(), atlasAdjust, atlasAdjust);
     }
-    
-    
-    v->codeAppendf("%s.z = sign(devbounds.z - devbounds.x) * .5;", texcoord.vsOut());
+    if (isCoverageCount) {
+        v->codeAppendf("%s.z = wind * .5;", texcoord.vsOut());
+    }
 
-    this->emitTransforms(v, varyingHandler, uniHandler, GrShaderVar("octocoord", kFloat2_GrSLType),
-                         proc.localMatrix(), args.fFPCoordTransformHandler);
+    gpArgs->fPositionVar.set(kFloat2_GrSLType, "octocoord");
+    this->emitTransforms(v, varyingHandler, uniHandler, gpArgs->fPositionVar, proc.fLocalMatrix,
+                         args.fFPCoordTransformHandler);
 
     
     GrGLSLFPFragmentBuilder* f = args.fFragBuilder;
 
     
-    f->codeAppend ("half coverage = ");
+    f->codeAppendf("half coverage = ");
     f->appendTextureLookup(args.fTexSamplers[0], SkStringPrintf("%s.xy", texcoord.fsIn()).c_str(),
                            kFloat2_GrSLType);
-    f->codeAppend (".a;");
+    f->codeAppendf(".a;");
 
-    
-    
-    f->codeAppendf("coverage = min(abs(coverage) * half(%s.z), .5);", texcoord.fsIn());
+    if (isCoverageCount) {
+        f->codeAppendf("coverage = abs(coverage);");
 
-    
-    
-    f->codeAppend ("coverage = 1 - abs(fract(coverage) * 2 - 1);");
+        
+        
+        f->codeAppendf("coverage = min(abs(coverage) * half(%s.z), .5);", texcoord.fsIn());
+
+        
+        
+        
+        f->codeAppend ("coverage = 1 - abs(fract(coverage) * 2 - 1);");
+    }
 
     f->codeAppendf("%s = half4(coverage);", args.fOutputCoverage);
 }

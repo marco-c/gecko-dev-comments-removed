@@ -5,8 +5,8 @@
 
 
 
-#include "SkCanvas.h"
-#include "SkPDFDocument.h"
+#include "include/core/SkCanvas.h"
+#include "include/docs/SkPDFDocument.h"
 
 sk_sp<SkDocument> SkPDF::MakeDocument(SkWStream*, const SkPDF::Metadata&) { return nullptr; }
 

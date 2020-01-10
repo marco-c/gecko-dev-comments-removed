@@ -7,17 +7,17 @@
 #ifndef SkPDFMakeCIDGlyphWidthsArray_DEFINED
 #define SkPDFMakeCIDGlyphWidthsArray_DEFINED
 
-#include "SkPDFTypes.h"
+#include "src/pdf/SkPDFTypes.h"
 
 class SkStrike;
 class SkPDFGlyphUse;
+class SkTypeface;
 
 
 
 
-std::unique_ptr<SkPDFArray> SkPDFMakeCIDGlyphWidthsArray(SkStrike* cache,
-                                                         const SkPDFGlyphUse* subset,
-                                                         uint16_t emSize,
-                                                         int16_t* defaultWidth);
+std::unique_ptr<SkPDFArray> SkPDFMakeCIDGlyphWidthsArray(const SkTypeface& typeface,
+                                                         const SkPDFGlyphUse& subset,
+                                                         SkScalar* defaultAdvance);
 
 #endif  

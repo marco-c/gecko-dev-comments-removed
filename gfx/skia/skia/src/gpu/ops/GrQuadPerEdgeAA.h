@@ -8,23 +8,30 @@
 #ifndef GrQuadPerEdgeAA_DEFINED
 #define GrQuadPerEdgeAA_DEFINED
 
-#include "GrColor.h"
-#include "GrGeometryProcessor.h"
-#include "GrMeshDrawOp.h"
-#include "GrQuad.h"
-#include "GrSamplerState.h"
-#include "GrTypesPriv.h"
-#include "SkPoint.h"
-#include "SkPoint3.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkPoint3.h"
+#include "include/private/GrTypesPriv.h"
+#include "src/gpu/GrColor.h"
+#include "src/gpu/GrGeometryProcessor.h"
+#include "src/gpu/GrSamplerState.h"
+#include "src/gpu/geometry/GrQuad.h"
+#include "src/gpu/ops/GrMeshDrawOp.h"
+#include "src/gpu/ops/GrTextureOp.h"
 
+class GrCaps;
 class GrColorSpaceXform;
 class GrShaderCaps;
 
 namespace GrQuadPerEdgeAA {
+    using Saturate = GrTextureOp::Saturate;
 
+    enum class CoverageMode { kNone, kWithPosition, kWithColor };
     enum class Domain : bool { kNo = false, kYes = true };
     enum class ColorType { kNone, kByte, kHalf, kLast = kHalf };
     static const int kColorTypeCount = static_cast<int>(ColorType::kLast) + 1;
+
+    
+    ColorType MinColorType(SkPMColor4f, GrClampType, const GrCaps&);
 
     
     
@@ -32,33 +39,39 @@ namespace GrQuadPerEdgeAA {
     
     struct VertexSpec {
     public:
-        VertexSpec(GrQuadType deviceQuadType, ColorType colorType, GrQuadType localQuadType,
-                   bool hasLocalCoords, Domain domain, GrAAType aa, bool alphaAsCoverage)
+        VertexSpec(GrQuad::Type deviceQuadType, ColorType colorType, GrQuad::Type localQuadType,
+                   bool hasLocalCoords, Domain domain, GrAAType aa, bool coverageAsAlpha)
                 : fDeviceQuadType(static_cast<unsigned>(deviceQuadType))
                 , fLocalQuadType(static_cast<unsigned>(localQuadType))
                 , fHasLocalCoords(hasLocalCoords)
                 , fColorType(static_cast<unsigned>(colorType))
                 , fHasDomain(static_cast<unsigned>(domain))
                 , fUsesCoverageAA(aa == GrAAType::kCoverage)
-                , fCompatibleWithAlphaAsCoverage(alphaAsCoverage) { }
+                , fCompatibleWithCoverageAsAlpha(coverageAsAlpha)
+                , fRequiresGeometryDomain(aa == GrAAType::kCoverage &&
+                                          deviceQuadType > GrQuad::Type::kRectilinear) { }
 
-        GrQuadType deviceQuadType() const { return static_cast<GrQuadType>(fDeviceQuadType); }
-        GrQuadType localQuadType() const { return static_cast<GrQuadType>(fLocalQuadType); }
+        GrQuad::Type deviceQuadType() const { return static_cast<GrQuad::Type>(fDeviceQuadType); }
+        GrQuad::Type localQuadType() const { return static_cast<GrQuad::Type>(fLocalQuadType); }
         bool hasLocalCoords() const { return fHasLocalCoords; }
         ColorType colorType() const { return static_cast<ColorType>(fColorType); }
         bool hasVertexColors() const { return ColorType::kNone != this->colorType(); }
         bool hasDomain() const { return fHasDomain; }
         bool usesCoverageAA() const { return fUsesCoverageAA; }
-        bool compatibleWithAlphaAsCoverage() const { return fCompatibleWithAlphaAsCoverage; }
-
+        bool compatibleWithCoverageAsAlpha() const { return fCompatibleWithCoverageAsAlpha; }
+        bool requiresGeometryDomain() const { return fRequiresGeometryDomain; }
         
         int deviceDimensionality() const;
         
         int localDimensionality() const;
 
         int verticesPerQuad() const { return fUsesCoverageAA ? 8 : 4; }
+
+        CoverageMode coverageMode() const;
+        size_t vertexSize() const;
+
     private:
-        static_assert(kGrQuadTypeCount <= 4, "GrQuadType doesn't fit in 2 bits");
+        static_assert(GrQuad::kTypeCount <= 4, "GrQuad::Type doesn't fit in 2 bits");
         static_assert(kColorTypeCount <= 4, "Color doesn't fit in 2 bits");
 
         unsigned fDeviceQuadType: 2;
@@ -67,15 +80,18 @@ namespace GrQuadPerEdgeAA {
         unsigned fColorType : 2;
         unsigned fHasDomain: 1;
         unsigned fUsesCoverageAA: 1;
-        unsigned fCompatibleWithAlphaAsCoverage: 1;
+        unsigned fCompatibleWithCoverageAsAlpha: 1;
+        
+        
+        unsigned fRequiresGeometryDomain: 1;
     };
 
     sk_sp<GrGeometryProcessor> MakeProcessor(const VertexSpec& spec);
 
-    sk_sp<GrGeometryProcessor> MakeTexturedProcessor(const VertexSpec& spec,
-            const GrShaderCaps& caps, GrTextureType textureType, GrPixelConfig textureConfig,
-            const GrSamplerState& samplerState, uint32_t extraSamplerKey,
-            sk_sp<GrColorSpaceXform> textureColorSpaceXform);
+    sk_sp<GrGeometryProcessor> MakeTexturedProcessor(
+            const VertexSpec& spec, const GrShaderCaps& caps, GrTextureType textureType,
+            const GrSamplerState& samplerState, const GrSwizzle& swizzle, uint32_t extraSamplerKey,
+            sk_sp<GrColorSpaceXform> textureColorSpaceXform, Saturate saturate);
 
     
     
@@ -83,8 +99,11 @@ namespace GrQuadPerEdgeAA {
     
     
     
-    void* Tessellate(void* vertices, const VertexSpec& spec, const GrPerspQuad& deviceQuad,
-                     const SkPMColor4f& color, const GrPerspQuad& localQuad, const SkRect& domain,
+    
+    
+    
+    void* Tessellate(void* vertices, const VertexSpec& spec, const GrQuad& deviceQuad,
+                     const SkPMColor4f& color, const GrQuad& localQuad, const SkRect& domain,
                      GrQuadAAFlags aa);
 
     

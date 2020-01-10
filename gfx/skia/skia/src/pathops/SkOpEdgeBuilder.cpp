@@ -4,9 +4,9 @@
 
 
 
-#include "SkGeometry.h"
-#include "SkOpEdgeBuilder.h"
-#include "SkReduceOrder.h"
+#include "src/core/SkGeometry.h"
+#include "src/pathops/SkOpEdgeBuilder.h"
+#include "src/pathops/SkReduceOrder.h"
 
 void SkOpEdgeBuilder::init() {
     fOperand = false;

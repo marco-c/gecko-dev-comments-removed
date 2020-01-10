@@ -4,11 +4,11 @@
 
 
 
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
 #if defined(SK_BUILD_FOR_WIN)
 
-#include "SkOSLibrary.h"
-#include "SkLeanWindows.h"
+#include "src/core/SkLeanWindows.h"
+#include "src/ports/SkOSLibrary.h"
 
 void* DynamicLoadLibrary(const char* libraryName) {
     return LoadLibraryA(libraryName);

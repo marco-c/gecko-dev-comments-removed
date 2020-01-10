@@ -8,9 +8,10 @@
 #ifndef GrGLSLFragmentShaderBuilder_DEFINED
 #define GrGLSLFragmentShaderBuilder_DEFINED
 
-#include "GrBlend.h"
-#include "GrGLSLShaderBuilder.h"
-#include "GrProcessor.h"
+#include "src/gpu/GrBlend.h"
+#include "src/gpu/GrProcessor.h"
+#include "src/gpu/glsl/GrGLSLFragmentProcessor.h"
+#include "src/gpu/glsl/GrGLSLShaderBuilder.h"
 
 class GrRenderTarget;
 class GrGLSLVarying;
@@ -47,9 +48,22 @@ public:
     
     GrGLSLFPFragmentBuilder() : GrGLSLFragmentBuilder(nullptr) {}
 
-    enum class Scope : bool {
-        kTopLevel,
-        kInsideLoopOrBranch
+    
+
+
+
+
+    virtual const char* sampleOffsets() = 0;
+
+    enum class ScopeFlags {
+        
+        kTopLevel = 0,
+        
+        kInsidePerPrimitiveBranch = (1 << 0),
+        
+        kInsidePerPixelBranch = (1 << 1),
+        
+        kInsideLoop = (1 << 2)
     };
 
     
@@ -61,7 +75,21 @@ public:
 
 
 
-    virtual void maskOffMultisampleCoverage(const char* mask, Scope) = 0;
+    virtual void maskOffMultisampleCoverage(const char* mask, ScopeFlags) = 0;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    virtual void applyFnToMultisampleMask(const char* fn, const char* grad, ScopeFlags) = 0;
 
     
 
@@ -70,10 +98,15 @@ public:
     virtual void onBeforeChildProcEmitCode() = 0;
     virtual void onAfterChildProcEmitCode() = 0;
 
+    virtual SkString writeProcessorFunction(GrGLSLFragmentProcessor* fp,
+                                            GrGLSLFragmentProcessor::EmitArgs& args);
+
     virtual const SkString& getMangleString() const = 0;
 
     virtual void forceHighPrecision() = 0;
 };
+
+GR_MAKE_BITFIELD_CLASS_OPS(GrGLSLFPFragmentBuilder::ScopeFlags);
 
 
 
@@ -111,7 +144,9 @@ public:
     virtual SkString ensureCoords2D(const GrShaderVar&) override;
 
     
-    void maskOffMultisampleCoverage(const char* mask, Scope) override;
+    const char* sampleOffsets() override;
+    void maskOffMultisampleCoverage(const char* mask, ScopeFlags) override;
+    void applyFnToMultisampleMask(const char* fn, const char* grad, ScopeFlags) override;
     const SkString& getMangleString() const override { return fMangleString; }
     void onBeforeChildProcEmitCode() override;
     void onAfterChildProcEmitCode() override;
@@ -124,6 +159,8 @@ public:
     void enableAdvancedBlendEquationIfNeeded(GrBlendEquation) override;
 
 private:
+    using CustomFeatures = GrProcessor::CustomFeatures;
+
     
     void enableCustomOutput();
     void enableSecondaryOutput();
@@ -134,9 +171,13 @@ private:
 #ifdef SK_DEBUG
     
     
-    bool hasReadDstColor() const { return fHasReadDstColor; }
-    void resetVerification() {
-        fHasReadDstColor = false;
+    bool fHasReadDstColorThisStage_DebugOnly = false;
+    CustomFeatures fUsedProcessorFeaturesThisStage_DebugOnly = CustomFeatures::kNone;
+    CustomFeatures fUsedProcessorFeaturesAllStages_DebugOnly = CustomFeatures::kNone;
+
+    void debugOnly_resetPerStageVerification() {
+        fHasReadDstColorThisStage_DebugOnly = false;
+        fUsedProcessorFeaturesThisStage_DebugOnly = CustomFeatures::kNone;
     }
 #endif
 
@@ -169,18 +210,12 @@ private:
 
     SkString fMangleString;
 
-    bool fSetupFragPosition;
-    bool fHasCustomColorOutput;
-    int fCustomColorOutputIndex;
-    bool fHasSecondaryOutput;
-    bool fHasInitializedSampleMask;
-    bool fForceHighPrecision;
-
-#ifdef SK_DEBUG
-    
-    
-    bool fHasReadDstColor;
-#endif
+    bool fSetupFragPosition = false;
+    bool fHasCustomColorOutput = false;
+    int fCustomColorOutputIndex = -1;
+    bool fHasSecondaryOutput = false;
+    bool fHasModifiedSampleMask = false;
+    bool fForceHighPrecision = false;
 
     friend class GrGLSLProgramBuilder;
     friend class GrGLProgramBuilder;

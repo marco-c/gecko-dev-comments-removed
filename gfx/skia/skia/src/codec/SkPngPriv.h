@@ -8,7 +8,7 @@
 #ifndef SkPngPriv_DEFINED
 #define SkPngPriv_DEFINED
 
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
 
 
 

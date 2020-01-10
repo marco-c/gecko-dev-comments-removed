@@ -5,42 +5,44 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 #ifndef SkCanvas_DEFINED
 #define SkCanvas_DEFINED
 
-#include "../private/SkMacros.h"
-#include "SkBlendMode.h"
-#include "SkClipOp.h"
-#include "SkDeque.h"
-#include "SkFontTypes.h"
-#include "SkPaint.h"
-#include "SkRasterHandleAllocator.h"
-#include "SkSurfaceProps.h"
-#include "SkVertices.h"
+#include "include/core/SkBlendMode.h"
+#include "include/core/SkClipOp.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkDeque.h"
+#include "include/core/SkFontTypes.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkPaint.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkRasterHandleAllocator.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkSize.h"
+#include "include/core/SkString.h"
+#include "include/core/SkSurfaceProps.h"
+#include "include/core/SkTypes.h"
+#include "include/core/SkVertices.h"
+#include "include/private/SkMacros.h"
+
+#include <cstring>
+#include <memory>
 
 class GrContext;
 class GrRenderTargetContext;
-class SkAndroidFrameworkUtils;
 class SkBaseDevice;
 class SkBitmap;
 class SkData;
-class SkDraw;
 class SkDrawable;
 struct SkDrawShadowRec;
 class SkFont;
 class SkGlyphRunBuilder;
 class SkImage;
 class SkImageFilter;
+class SkPaintFilterCanvas;
 class SkPath;
 class SkPicture;
 class SkPixmap;
@@ -576,7 +578,8 @@ public:
         kInitWithPrevious_SaveLayerFlag = 1 << 2, 
         kMaskAgainstCoverage_EXPERIMENTAL_DONT_USE_SaveLayerFlag =
                                           1 << 3, 
-
+        
+        kF16ColorType                   = 1 << 4,
 #ifdef SK_SUPPORT_LEGACY_CLIPTOLAYERFLAG
         kDontClipToLayer_Legacy_SaveLayerFlag =
            kDontClipToLayer_PrivateSaveLayerFlag, 
@@ -630,8 +633,6 @@ public:
         {}
 
         
-
-
 
 
 
@@ -1817,12 +1818,25 @@ public:
     };
 
     
-    struct ImageSetEntry {
+    struct SK_API ImageSetEntry {
+        ImageSetEntry(sk_sp<const SkImage> image, const SkRect& srcRect, const SkRect& dstRect,
+                      int matrixIndex, float alpha, unsigned aaFlags, bool hasClip);
+
+        ImageSetEntry(sk_sp<const SkImage> image, const SkRect& srcRect, const SkRect& dstRect,
+                      float alpha, unsigned aaFlags);
+
+        ImageSetEntry();
+        ~ImageSetEntry();
+        ImageSetEntry(const ImageSetEntry&);
+        ImageSetEntry& operator=(const ImageSetEntry&);
+
         sk_sp<const SkImage> fImage;
         SkRect fSrcRect;
         SkRect fDstRect;
-        float fAlpha;
-        unsigned fAAFlags;  
+        int fMatrixIndex = -1; 
+        float fAlpha = 1.f;
+        unsigned fAAFlags = kNone_QuadAAFlags; 
+        bool fHasClip = false; 
     };
 
     
@@ -1833,8 +1847,23 @@ public:
 
 
 
-    void experimental_DrawImageSetV1(const ImageSetEntry imageSet[], int cnt,
-                                     SkFilterQuality quality, SkBlendMode mode);
+
+
+
+
+
+
+
+
+
+
+
+    void experimental_DrawEdgeAAQuad(const SkRect& rect, const SkPoint clip[4], QuadAAFlags aaFlags,
+                                     const SkColor4f& color, SkBlendMode mode);
+    void experimental_DrawEdgeAAQuad(const SkRect& rect, const SkPoint clip[4], QuadAAFlags aaFlags,
+                                     SkColor color, SkBlendMode mode) {
+        this->experimental_DrawEdgeAAQuad(rect, clip, aaFlags, SkColor4f::FromColor(color), mode);
+    }
 
     
 
@@ -1843,8 +1872,31 @@ public:
 
 
 
-    void experimental_DrawEdgeAARectV1(const SkRect& r, QuadAAFlags edgeAA, SkColor color,
-                                       SkBlendMode mode);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void experimental_DrawEdgeAAImageSet(const ImageSetEntry imageSet[], int cnt,
+                                         const SkPoint dstClips[], const SkMatrix preViewMatrices[],
+                                         const SkPaint* paint = nullptr,
+                                         SrcRectConstraint constraint = kStrict_SrcRectConstraint);
 
     
 
@@ -1900,11 +1952,9 @@ public:
 
 
 
-
-
     void drawString(const char str[], SkScalar x, SkScalar y, const SkFont& font,
                     const SkPaint& paint) {
-        this->drawSimpleText(str, strlen(str), kUTF8_SkTextEncoding, x, y, font, paint);
+        this->drawSimpleText(str, strlen(str), SkTextEncoding::kUTF8, x, y, font, paint);
     }
 
     
@@ -1931,11 +1981,9 @@ public:
 
 
 
-
-
     void drawString(const SkString& str, SkScalar x, SkScalar y, const SkFont& font,
                     const SkPaint& paint) {
-        this->drawSimpleText(str.c_str(), str.size(), kUTF8_SkTextEncoding, x, y, font, paint);
+        this->drawSimpleText(str.c_str(), str.size(), SkTextEncoding::kUTF8, x, y, font, paint);
     }
 
     
@@ -2169,6 +2217,8 @@ public:
 
 
 
+
+
     void drawAtlas(const SkImage* atlas, const SkRSXform xform[], const SkRect tex[],
                    const SkColor colors[], int count, SkBlendMode mode, const SkRect* cullRect,
                    const SkPaint* paint);
@@ -2378,9 +2428,8 @@ protected:
     
     
     virtual void onDrawPaint(const SkPaint& paint);
+    virtual void onDrawBehind(const SkPaint& paint);
     virtual void onDrawRect(const SkRect& rect, const SkPaint& paint);
-    virtual void onDrawEdgeAARect(const SkRect& rect, QuadAAFlags edgeAA, SkColor color,
-                                  SkBlendMode mode);
     virtual void onDrawRRect(const SkRRect& rrect, const SkPaint& paint);
     virtual void onDrawDRRect(const SkRRect& outer, const SkRRect& inner, const SkPaint& paint);
     virtual void onDrawOval(const SkRect& rect, const SkPaint& paint);
@@ -2413,9 +2462,6 @@ protected:
     virtual void onDrawImageLattice(const SkImage* image, const Lattice& lattice, const SkRect& dst,
                                     const SkPaint* paint);
 
-    virtual void onDrawImageSet(const ImageSetEntry imageSet[], int count, SkFilterQuality,
-                                SkBlendMode);
-
     virtual void onDrawBitmap(const SkBitmap& bitmap, SkScalar dx, SkScalar dy,
                               const SkPaint* paint);
     virtual void onDrawBitmapRect(const SkBitmap& bitmap, const SkRect* src, const SkRect& dst,
@@ -2435,6 +2481,12 @@ protected:
     virtual void onDrawDrawable(SkDrawable* drawable, const SkMatrix* matrix);
     virtual void onDrawPicture(const SkPicture* picture, const SkMatrix* matrix,
                                const SkPaint* paint);
+
+    virtual void onDrawEdgeAAQuad(const SkRect& rect, const SkPoint clip[4], QuadAAFlags aaFlags,
+                                  const SkColor4f& color, SkBlendMode mode);
+    virtual void onDrawEdgeAAImageSet(const ImageSetEntry imageSet[], int count,
+                                      const SkPoint dstClips[], const SkMatrix preViewMatrices[],
+                                      const SkPaint* paint, SrcRectConstraint constraint);
 
     enum ClipEdgeStyle {
         kHard_ClipEdgeStyle,
@@ -2556,14 +2608,13 @@ private:
     friend class SkAndroidFrameworkUtils;
     friend class SkCanvasPriv;      
     friend class SkDrawIter;        
-    friend class AutoDrawLooper;
-    friend class SkDebugCanvas;     
+    friend class AutoLayerForImageFilter;
+    friend class DebugCanvas;       
     friend class SkSurface_Raster;  
     friend class SkNoDrawCanvas;    
     friend class SkPictureRecord;   
     friend class SkOverdrawCanvas;
     friend class SkRasterHandleAllocator;
-    friend class ClipTileRenderer;  
 protected:
     
     SkCanvas(const SkIRect& bounds);
@@ -2585,6 +2636,12 @@ private:
 
 
     int only_axis_aligned_saveBehind(const SkRect* subset);
+
+    
+
+
+
+    void drawClippedToSaveBehind(const SkPaint&);
 
     void resetForNextPicture(const SkIRect& bounds);
 
@@ -2634,6 +2691,8 @@ private:
 
 
     bool androidFramework_isClipAA() const;
+
+    virtual SkPaintFilterCanvas* internal_private_asPaintFilterCanvas() const { return nullptr; }
 
     
 

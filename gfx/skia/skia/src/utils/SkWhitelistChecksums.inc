@@ -8,7 +8,7 @@
 
 
 
-#include "SkTDArray.h"
+#include "include/private/SkTDArray.h"
 
 struct Whitelist {
     const char* fFontName;

@@ -5,8 +5,8 @@
 
 
 
-#include "SkPoint3.h"
-#include "SkRefCnt.h"
+#include "include/core/SkPoint3.h"
+#include "include/core/SkRefCnt.h"
 
 #ifndef SkAtlasTextRenderer_DEFINED
 #define SkAtlasTextRenderer_DEFINED

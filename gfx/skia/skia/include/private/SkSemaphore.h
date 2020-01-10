@@ -8,14 +8,16 @@
 #ifndef SkSemaphore_DEFINED
 #define SkSemaphore_DEFINED
 
-#include "../private/SkOnce.h"
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
+#include "include/private/SkOnce.h"
 #include <atomic>
 
-class SkBaseSemaphore {
+class SkSemaphore {
 public:
-    constexpr SkBaseSemaphore(int count = 0)
-        : fCount(count), fOSSemaphore(nullptr) {}
+    constexpr SkSemaphore(int count = 0) : fCount(count), fOSSemaphore(nullptr) {}
+
+    
+    ~SkSemaphore();
 
     
     
@@ -27,9 +29,6 @@ public:
 
     
     bool try_wait();
-
-    
-    void cleanup();
 
 private:
     
@@ -51,13 +50,7 @@ private:
     OSSemaphore*     fOSSemaphore;
 };
 
-class SkSemaphore : public SkBaseSemaphore {
-public:
-    using SkBaseSemaphore::SkBaseSemaphore;
-    ~SkSemaphore() { this->cleanup(); }
-};
-
-inline void SkBaseSemaphore::signal(int n) {
+inline void SkSemaphore::signal(int n) {
     int prev = fCount.fetch_add(n, std::memory_order_release);
 
     
@@ -75,7 +68,7 @@ inline void SkBaseSemaphore::signal(int n) {
     }
 }
 
-inline void SkBaseSemaphore::wait() {
+inline void SkSemaphore::wait() {
     
     
     if (fCount.fetch_sub(1, std::memory_order_acquire) <= 0) {

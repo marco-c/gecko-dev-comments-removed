@@ -9,7 +9,7 @@
 #ifndef SkQuadClipper_DEFINED
 #define SkQuadClipper_DEFINED
 
-#include "SkPath.h"
+#include "include/core/SkPath.h"
 
 
 

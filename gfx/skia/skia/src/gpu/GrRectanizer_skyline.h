@@ -8,8 +8,8 @@
 #ifndef GrRectanizer_skyline_DEFINED
 #define GrRectanizer_skyline_DEFINED
 
-#include "GrRectanizer.h"
-#include "SkTDArray.h"
+#include "include/private/SkTDArray.h"
+#include "src/gpu/GrRectanizer.h"
 
 
 

@@ -8,10 +8,10 @@
 #ifndef GrShaderCaps_DEFINED
 #define GrShaderCaps_DEFINED
 
-#include "GrSwizzle.h"
-#include "GrTypesPriv.h"
-#include "SkRefCnt.h"
-#include "glsl/GrGLSL.h"
+#include "include/core/SkRefCnt.h"
+#include "include/private/GrTypesPriv.h"
+#include "src/gpu/GrSwizzle.h"
+#include "src/gpu/glsl/GrGLSL.h"
 
 namespace SkSL {
 class ShaderCapsFactory;
@@ -48,7 +48,6 @@ public:
     bool dstReadInShaderSupport() const { return fDstReadInShaderSupport; }
     bool dualSourceBlendingSupport() const { return fDualSourceBlendingSupport; }
     bool integerSupport() const { return fIntegerSupport; }
-    int imageLoadStoreSupport() const { return fImageLoadStoreSupport; }
 
     
 
@@ -65,15 +64,18 @@ public:
 
     const char* fbFetchExtensionString() const { return fFBFetchExtensionString; }
 
-    bool dropsTileOnZeroDivide() const { return fDropsTileOnZeroDivide; }
-
     bool flatInterpolationSupport() const { return fFlatInterpolationSupport; }
 
     bool preferFlatInterpolation() const { return fPreferFlatInterpolation; }
 
     bool noperspectiveInterpolationSupport() const { return fNoPerspectiveInterpolationSupport; }
 
+    
     bool sampleVariablesSupport() const { return fSampleVariablesSupport; }
+
+    
+    
+    bool sampleVariablesStencilSupport() const { return fSampleVariablesStencilSupport; }
 
     bool externalTextureSupport() const { return fExternalTextureSupport; }
 
@@ -86,7 +88,7 @@ public:
 
     bool halfIs32Bits() const { return fHalfIs32Bits; }
 
-    bool unsignedSupport() const { return fUnsignedSupport; }
+    bool hasLowFragmentPrecision() const { return fHasLowFragmentPrecision; }
 
     
     bool builtinFMASupport() const { return fBuiltinFMASupport; }
@@ -154,6 +156,16 @@ public:
 
     
     
+    bool mustWriteToFragColor() const { return fMustWriteToFragColor; }
+
+    
+    
+    bool noDefaultPrecisionForExternalSamplers() const {
+        return fNoDefaultPrecisionForExternalSamplers;
+    }
+
+    
+    
     
     const char* shaderDerivativeExtensionString() const {
         SkASSERT(this->shaderDerivativeSupport());
@@ -210,30 +222,13 @@ public:
     }
 
     const char* sampleVariablesExtensionString() const {
-        SkASSERT(this->sampleVariablesSupport());
+        SkASSERT(this->sampleVariablesSupport() || this->sampleVariablesStencilSupport());
         return fSampleVariablesExtensionString;
-    }
-
-    const char* imageLoadStoreExtensionString() const {
-        SkASSERT(this->imageLoadStoreSupport());
-        return fImageLoadStoreExtensionString;
     }
 
     int maxFragmentSamplers() const { return fMaxFragmentSamplers; }
 
-    
-
-
-
-
-    const GrSwizzle& configTextureSwizzle(GrPixelConfig config) const {
-        return fConfigTextureSwizzle[config];
-    }
-
-    
-    const GrSwizzle& configOutputSwizzle(GrPixelConfig config) const {
-        return fConfigOutputSwizzle[config];
-    }
+    bool textureSwizzleAppliedInShader() const { return fTextureSwizzleAppliedInShader; }
 
     GrGLSLGeneration generation() const { return fGLSLGeneration; }
 
@@ -249,8 +244,6 @@ private:
     bool fDstReadInShaderSupport            : 1;
     bool fDualSourceBlendingSupport         : 1;
     bool fIntegerSupport                    : 1;
-    bool fImageLoadStoreSupport             : 1;
-    bool fDropsTileOnZeroDivide             : 1;
     bool fFBFetchSupport                    : 1;
     bool fFBFetchNeedsCustomOutput          : 1;
     bool fUsesPrecisionModifiers            : 1;
@@ -258,12 +251,14 @@ private:
     bool fPreferFlatInterpolation           : 1;
     bool fNoPerspectiveInterpolationSupport : 1;
     bool fSampleVariablesSupport            : 1;
+    bool fSampleVariablesStencilSupport     : 1;
     bool fExternalTextureSupport            : 1;
     bool fVertexIDSupport                   : 1;
     bool fFPManipulationSupport             : 1;
     bool fFloatIs32Bits                     : 1;
     bool fHalfIs32Bits                      : 1;
-    bool fUnsignedSupport                   : 1;
+    bool fHasLowFragmentPrecision           : 1;
+    bool fTextureSwizzleAppliedInShader     : 1;
 
     
     bool fBuiltinFMASupport : 1;
@@ -285,6 +280,8 @@ private:
     bool fEmulateAbsIntFunction                       : 1;
     bool fRewriteDoWhileLoops                         : 1;
     bool fRemovePowWithConstantExponent               : 1;
+    bool fMustWriteToFragColor                        : 1;
+    bool fNoDefaultPrecisionForExternalSamplers       : 1;
 
     const char* fVersionDeclString;
 
@@ -297,7 +294,6 @@ private:
     const char* fSecondExternalTextureExtensionString;
     const char* fNoPerspectiveInterpolationExtensionString;
     const char* fSampleVariablesExtensionString;
-    const char* fImageLoadStoreExtensionString;
 
     const char* fFBFetchColorName;
     const char* fFBFetchExtensionString;
@@ -306,10 +302,8 @@ private:
 
     AdvBlendEqInteraction fAdvBlendEqInteraction;
 
-    GrSwizzle fConfigTextureSwizzle[kGrPixelConfigCnt];
-    GrSwizzle fConfigOutputSwizzle[kGrPixelConfigCnt];
-
     friend class GrCaps;  
+    friend class GrDawnCaps;
     friend class GrGLCaps;
     friend class GrMockCaps;
     friend class GrMtlCaps;

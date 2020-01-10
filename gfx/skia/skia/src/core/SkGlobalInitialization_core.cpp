@@ -5,8 +5,8 @@
 
 
 
-#include "SkFlattenable.h"
-#include "SkOnce.h"
+#include "include/core/SkFlattenable.h"
+#include "include/private/SkOnce.h"
 
 void SkFlattenable::RegisterFlattenablesIfNeeded() {
     static SkOnce once;

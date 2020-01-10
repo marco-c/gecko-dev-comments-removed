@@ -8,11 +8,11 @@
 #ifndef SKIASL_TYPE
 #define SKIASL_TYPE
 
-#include "SkSLModifiers.h"
-#include "SkSLSymbol.h"
-#include "../SkSLPosition.h"
-#include "../SkSLUtil.h"
-#include "../spirv.h"
+#include "src/sksl/SkSLPosition.h"
+#include "src/sksl/SkSLUtil.h"
+#include "src/sksl/ir/SkSLModifiers.h"
+#include "src/sksl/ir/SkSLSymbol.h"
+#include "src/sksl/spirv.h"
 #include <climits>
 #include <vector>
 #include <memory>
@@ -49,8 +49,10 @@ public:
         kMatrix_Kind,
         kOther_Kind,
         kSampler_Kind,
+        kSeparateSampler_Kind,
         kScalar_Kind,
         kStruct_Kind,
+        kTexture_Kind,
         kVector_Kind
     };
 
@@ -116,14 +118,15 @@ public:
     }
 
     
-    Type(const char* name, NumberKind numberKind, int priority)
+    Type(const char* name, NumberKind numberKind, int priority, bool highPrecision = false)
     : INHERITED(-1, kType_Kind, StringFragment())
     , fNameString(name)
     , fTypeKind(kScalar_Kind)
     , fNumberKind(numberKind)
     , fPriority(priority)
     , fColumns(1)
-    , fRows(1) {
+    , fRows(1)
+    , fHighPrecision(highPrecision) {
         fName.fChars = fNameString.c_str();
         fName.fLength = fNameString.size();
     }
@@ -196,13 +199,31 @@ public:
          bool isSampled)
     : INHERITED(-1, kType_Kind, StringFragment())
     , fNameString(name)
-    , fTypeKind(kSampler_Kind)
+    , fTypeKind(kTexture_Kind)
     , fNumberKind(kNonnumeric_NumberKind)
     , fDimensions(dimensions)
     , fIsDepth(isDepth)
     , fIsArrayed(isArrayed)
     , fIsMultisampled(isMultisampled)
-    , fIsSampled(isSampled) {
+    , fIsSampled(isSampled)
+    {
+        fName.fChars = fNameString.c_str();
+        fName.fLength = fNameString.size();
+    }
+
+    
+    Type(const char* name, const Type& textureType)
+    : INHERITED(-1, kType_Kind, StringFragment())
+    , fNameString(name)
+    , fTypeKind(kSampler_Kind)
+    , fNumberKind(kNonnumeric_NumberKind)
+    , fDimensions(textureType.dimensions())
+    , fIsDepth(textureType.isDepth())
+    , fIsArrayed(textureType.isArrayed())
+    , fIsMultisampled(textureType.isMultisampled())
+    , fIsSampled(textureType.isSampled())
+    , fTextureType(&textureType)
+    {
         fName.fChars = fNameString.c_str();
         fName.fLength = fNameString.size();
     }
@@ -306,6 +327,15 @@ public:
     
 
 
+
+    const Type& textureType() const {
+        SkASSERT(fTextureType);
+        return *fTextureType;
+    }
+
+    
+
+
     const Type& nonnullable() const {
         if (fTypeKind == kNullable_Kind) {
             return this->componentType();
@@ -320,7 +350,7 @@ public:
 
     int columns() const {
         SkASSERT(fTypeKind == kScalar_Kind || fTypeKind == kVector_Kind ||
-               fTypeKind == kMatrix_Kind || fTypeKind == kArray_Kind);
+                 fTypeKind == kMatrix_Kind || fTypeKind == kArray_Kind);
         return fColumns;
     }
 
@@ -348,28 +378,35 @@ public:
     }
 
     SpvDim_ dimensions() const {
-        SkASSERT(kSampler_Kind == fTypeKind);
+        SkASSERT(kSampler_Kind == fTypeKind || kTexture_Kind == fTypeKind);
         return fDimensions;
     }
 
     bool isDepth() const {
-        SkASSERT(kSampler_Kind == fTypeKind);
+        SkASSERT(kSampler_Kind == fTypeKind || kTexture_Kind == fTypeKind);
         return fIsDepth;
     }
 
     bool isArrayed() const {
-        SkASSERT(kSampler_Kind == fTypeKind);
+        SkASSERT(kSampler_Kind == fTypeKind || kTexture_Kind == fTypeKind);
         return fIsArrayed;
     }
 
     bool isMultisampled() const {
-        SkASSERT(kSampler_Kind == fTypeKind);
+        SkASSERT(kSampler_Kind == fTypeKind || kTexture_Kind == fTypeKind);
         return fIsMultisampled;
     }
 
     bool isSampled() const {
-        SkASSERT(kSampler_Kind == fTypeKind);
+        SkASSERT(kSampler_Kind == fTypeKind || kTexture_Kind == fTypeKind);
         return fIsSampled;
+    }
+
+    bool highPrecision() const {
+        if (fComponentType) {
+            return fComponentType->highPrecision();
+        }
+        return fHighPrecision;
     }
 
     
@@ -396,6 +433,8 @@ private:
     bool fIsArrayed = false;
     bool fIsMultisampled = false;
     bool fIsSampled = false;
+    bool fHighPrecision = false;
+    const Type* fTextureType = nullptr;
 };
 
 } 

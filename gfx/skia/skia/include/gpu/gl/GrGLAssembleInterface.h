@@ -5,7 +5,7 @@
 
 
 
-#include "gl/GrGLInterface.h"
+#include "include/gpu/gl/GrGLInterface.h"
 
 typedef GrGLFuncPtr (*GrGLGetProc)(void* ctx, const char name[]);
 
@@ -27,6 +27,13 @@ SK_API sk_sp<const GrGLInterface> GrGLMakeAssembledGLInterface(void *ctx, GrGLGe
 
 
 SK_API sk_sp<const GrGLInterface> GrGLMakeAssembledGLESInterface(void *ctx, GrGLGetProc get);
+
+
+
+
+
+
+SK_API sk_sp<const GrGLInterface> GrGLMakeAssembledWebGLInterface(void *ctx, GrGLGetProc get);
 
 
 SK_API const GrGLInterface* GrGLAssembleInterface(void *ctx, GrGLGetProc get);

@@ -8,9 +8,13 @@
 #ifndef GrTypes_DEFINED
 #define GrTypes_DEFINED
 
-#include "SkMath.h"
-#include "SkTypes.h"
-#include "GrConfig.h"
+#include "include/core/SkMath.h"
+#include "include/core/SkTypes.h"
+#include "include/gpu/GrConfig.h"
+
+class GrBackendSemaphore;
+class SkImage;
+class SkSurface;
 
 
 
@@ -132,50 +136,42 @@ template<typename TFlags> inline TFlags& operator&=(TFlags& a, GrTFlagsMask<TFla
 
 
 
-static inline int32_t GrIDivRoundUp(int x, int y) {
+static inline constexpr int32_t GrIDivRoundUp(int x, int y) {
     SkASSERT(y > 0);
     return (x + (y-1)) / y;
 }
-static inline uint32_t GrUIDivRoundUp(uint32_t x, uint32_t y) {
+static inline constexpr uint32_t GrUIDivRoundUp(uint32_t x, uint32_t y) {
     return (x + (y-1)) / y;
 }
-static inline size_t GrSizeDivRoundUp(size_t x, size_t y) {
-    return (x + (y-1)) / y;
-}
-
-
-#define GR_CT_DIV_ROUND_UP(X, Y) (((X) + ((Y)-1)) / (Y))
+static inline constexpr size_t GrSizeDivRoundUp(size_t x, size_t y) { return (x + (y - 1)) / y; }
 
 
 
 
-static inline uint32_t GrUIAlignUp(uint32_t x, uint32_t alignment) {
+static inline constexpr uint32_t GrUIAlignUp(uint32_t x, uint32_t alignment) {
     return GrUIDivRoundUp(x, alignment) * alignment;
 }
-static inline size_t GrSizeAlignUp(size_t x, size_t alignment) {
+static inline constexpr size_t GrSizeAlignUp(size_t x, size_t alignment) {
     return GrSizeDivRoundUp(x, alignment) * alignment;
 }
 
 
-#define GR_CT_ALIGN_UP(X, A) (GR_CT_DIV_ROUND_UP((X),(A)) * (A))
 
 
-
-
-static inline uint32_t GrUIAlignUpPad(uint32_t x, uint32_t alignment) {
+static inline constexpr uint32_t GrUIAlignUpPad(uint32_t x, uint32_t alignment) {
     return (alignment - x % alignment) % alignment;
 }
-static inline size_t GrSizeAlignUpPad(size_t x, size_t alignment) {
+static inline constexpr size_t GrSizeAlignUpPad(size_t x, size_t alignment) {
     return (alignment - x % alignment) % alignment;
 }
 
 
 
 
-static inline uint32_t GrUIAlignDown(uint32_t x, uint32_t alignment) {
+static inline constexpr uint32_t GrUIAlignDown(uint32_t x, uint32_t alignment) {
     return (x / alignment) * alignment;
 }
-static inline size_t GrSizeAlignDown(size_t x, uint32_t alignment) {
+static inline constexpr size_t GrSizeAlignDown(size_t x, uint32_t alignment) {
     return (x / alignment) * alignment;
 }
 
@@ -186,6 +182,7 @@ static inline size_t GrSizeAlignDown(size_t x, uint32_t alignment) {
 
 enum class GrBackendApi : unsigned {
     kMetal,
+    kDawn,
     kOpenGL,
     kVulkan,
     
@@ -217,6 +214,22 @@ static constexpr GrBackendApi kMock_GrBackend = GrBackendApi::kMock;
 
 
 enum class GrMipMapped : bool {
+    kNo = false,
+    kYes = true
+};
+
+
+
+
+enum class GrRenderable : bool {
+    kNo = false,
+    kYes = true
+};
+
+
+
+
+enum class GrProtected : bool {
     kNo = false,
     kYes = true
 };
@@ -259,6 +272,41 @@ enum GrGLBackendState {
 
 static const uint32_t kAll_GrBackendState = 0xffffffff;
 
+enum GrFlushFlags {
+    kNone_GrFlushFlags = 0,
+    
+    kSyncCpu_GrFlushFlag = 0x1,
+};
+
+typedef void* GrGpuFinishedContext;
+typedef void (*GrGpuFinishedProc)(GrGpuFinishedContext finishedContext);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct GrFlushInfo {
+    GrFlushFlags         fFlags = kNone_GrFlushFlags;
+    int                  fNumSemaphores = 0;
+    GrBackendSemaphore*  fSignalSemaphores = nullptr;
+    GrGpuFinishedProc    fFinishedProc = nullptr;
+    GrGpuFinishedContext fFinishedContext = nullptr;
+};
+
 
 
 
@@ -266,6 +314,36 @@ static const uint32_t kAll_GrBackendState = 0xffffffff;
 enum class GrSemaphoresSubmitted : bool {
     kNo = false,
     kYes = true
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct GrPrepareForExternalIORequests {
+    int fNumImages = 0;
+    SkImage** fImages = nullptr;
+    int fNumSurfaces = 0;
+    SkSurface** fSurfaces = nullptr;
+    bool* fPrepareSurfaceForPresent = nullptr;
+
+    bool hasRequests() const { return fNumImages || fNumSurfaces; }
 };
 
 #endif

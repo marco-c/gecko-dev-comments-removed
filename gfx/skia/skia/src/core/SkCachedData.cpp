@@ -5,9 +5,9 @@
 
 
 
-#include "SkCachedData.h"
-#include "SkDiscardableMemory.h"
-#include "SkMalloc.h"
+#include "include/private/SkMalloc.h"
+#include "src/core/SkCachedData.h"
+#include "src/core/SkDiscardableMemory.h"
 
 SkCachedData::SkCachedData(void* data, size_t size)
     : fData(data)

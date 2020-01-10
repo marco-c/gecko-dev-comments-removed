@@ -8,7 +8,7 @@
 #ifndef GrSurfaceContextPriv_DEFINED
 #define GrSurfaceContextPriv_DEFINED
 
-#include "GrSurfaceContext.h"
+#include "src/gpu/GrSurfaceContext.h"
 
 
 

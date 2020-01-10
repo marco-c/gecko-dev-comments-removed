@@ -8,6 +8,10 @@
 #ifndef SkSafeRange_DEFINED
 #define SkSafeRange_DEFINED
 
+#include "include/core/SkTypes.h"
+
+#include <cstdint>
+
 
 
 

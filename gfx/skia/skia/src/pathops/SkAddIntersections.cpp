@@ -4,9 +4,9 @@
 
 
 
-#include "SkAddIntersections.h"
-#include "SkOpCoincidence.h"
-#include "SkPathOpsBounds.h"
+#include "src/pathops/SkAddIntersections.h"
+#include "src/pathops/SkOpCoincidence.h"
+#include "src/pathops/SkPathOpsBounds.h"
 
 #include <utility>
 

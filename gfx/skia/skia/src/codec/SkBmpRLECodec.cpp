@@ -5,10 +5,10 @@
 
 
 
-#include "SkBmpRLECodec.h"
-#include "SkCodecPriv.h"
-#include "SkColorData.h"
-#include "SkStream.h"
+#include "include/core/SkStream.h"
+#include "include/private/SkColorData.h"
+#include "src/codec/SkBmpRLECodec.h"
+#include "src/codec/SkCodecPriv.h"
 
 
 

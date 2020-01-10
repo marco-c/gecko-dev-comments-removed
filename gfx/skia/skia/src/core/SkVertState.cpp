@@ -5,7 +5,7 @@
 
 
 
-#include "SkVertState.h"
+#include "src/core/SkVertState.h"
 
 bool VertState::Triangles(VertState* state) {
     int index = state->fCurrIndex;

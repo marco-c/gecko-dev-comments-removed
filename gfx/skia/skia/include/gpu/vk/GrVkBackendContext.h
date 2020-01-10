@@ -8,9 +8,9 @@
 #ifndef GrVkBackendContext_DEFINED
 #define GrVkBackendContext_DEFINED
 
-#include "GrVkTypes.h"
-#include "SkRefCnt.h"
-#include "vk/GrVkMemoryAllocator.h"
+#include "include/core/SkRefCnt.h"
+#include "include/gpu/vk/GrVkMemoryAllocator.h"
+#include "include/gpu/vk/GrVkTypes.h"
 
 class GrVkExtensions;
 
@@ -43,31 +43,34 @@ struct VkPhysicalDeviceFeatures2;
 
 
 struct SK_API GrVkBackendContext {
-    VkInstance                 fInstance;
-    VkPhysicalDevice           fPhysicalDevice;
-    VkDevice                   fDevice;
-    VkQueue                    fQueue;
-    uint32_t                   fGraphicsQueueIndex;
-    uint32_t                   fMinAPIVersion; 
-    uint32_t                   fInstanceVersion = 0; 
+    VkInstance                       fInstance;
+    VkPhysicalDevice                 fPhysicalDevice;
+    VkDevice                         fDevice;
+    VkQueue                          fQueue;
+    uint32_t                         fGraphicsQueueIndex;
+    uint32_t                         fMinAPIVersion; 
+    uint32_t                         fInstanceVersion = 0; 
     
     
-    uint32_t                   fMaxAPIVersion = 0;
-    uint32_t                   fExtensions = 0; 
-    const GrVkExtensions*      fVkExtensions = nullptr;
-    uint32_t                   fFeatures; 
+    uint32_t                         fMaxAPIVersion = 0;
+    uint32_t                         fExtensions = 0; 
+    const GrVkExtensions*            fVkExtensions = nullptr;
+    uint32_t                         fFeatures; 
     
     
     
     
     
-    VkPhysicalDeviceFeatures*  fDeviceFeatures = nullptr;
-    VkPhysicalDeviceFeatures2* fDeviceFeatures2 = nullptr;
-    sk_sp<GrVkMemoryAllocator> fMemoryAllocator;
-    GrVkGetProc                fGetProc = nullptr;
+    const VkPhysicalDeviceFeatures*  fDeviceFeatures = nullptr;
+    const VkPhysicalDeviceFeatures2* fDeviceFeatures2 = nullptr;
+    sk_sp<GrVkMemoryAllocator>       fMemoryAllocator;
+    GrVkGetProc                      fGetProc = nullptr;
     
     
-    bool                       fOwnsInstanceAndDevice = false;
+    bool                             fOwnsInstanceAndDevice = false;
+    
+    
+    GrProtected                      fProtectedContext = GrProtected::kNo;
 };
 
 #endif

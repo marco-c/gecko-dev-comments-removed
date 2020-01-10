@@ -5,8 +5,8 @@
 
 
 
-#include "SkMathPriv.h"
-#include "SkPointPriv.h"
+#include "src/core/SkMathPriv.h"
+#include "src/core/SkPointPriv.h"
 
 
 

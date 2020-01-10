@@ -8,14 +8,14 @@
 #ifndef GrSmallPathRenderer_DEFINED
 #define GrSmallPathRenderer_DEFINED
 
-#include "GrDrawOpAtlas.h"
-#include "GrOnFlushResourceProvider.h"
-#include "GrPathRenderer.h"
-#include "GrRect.h"
-#include "GrShape.h"
+#include "src/gpu/GrDrawOpAtlas.h"
+#include "src/gpu/GrOnFlushResourceProvider.h"
+#include "src/gpu/GrPathRenderer.h"
+#include "src/gpu/geometry/GrRect.h"
+#include "src/gpu/geometry/GrShape.h"
 
-#include "SkOpts.h"
-#include "SkTDynamicHash.h"
+#include "src/core/SkOpts.h"
+#include "src/core/SkTDynamicHash.h"
 
 class GrRecordingContext;
 
@@ -33,10 +33,9 @@ public:
     
     
 
-    void preFlush(GrOnFlushResourceProvider* onFlushResourceProvider, const uint32_t*, int,
-                  SkTArray<sk_sp<GrRenderTargetContext>>*) override {
+    void preFlush(GrOnFlushResourceProvider* onFlushRP, const uint32_t*, int) override {
         if (fAtlas) {
-            fAtlas->instantiate(onFlushResourceProvider);
+            fAtlas->instantiate(onFlushRP);
         }
     }
 

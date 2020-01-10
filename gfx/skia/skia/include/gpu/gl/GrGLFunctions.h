@@ -10,8 +10,8 @@
 #define GrGLFunctions_DEFINED
 
 #include <cstring>
-#include "../private/SkTLogic.h"
-#include "GrGLTypes.h"
+#include "include/gpu/gl/GrGLTypes.h"
+#include "include/private/SkTLogic.h"
 
 
 extern "C" {
@@ -251,6 +251,10 @@ using GrGLObjectLabelFn = GrGLvoid GR_GL_FUNCTION_TYPE(GrGLenum identifier, GrGL
 
 
 using GrGLWindowRectanglesFn = GrGLvoid GR_GL_FUNCTION_TYPE(GrGLenum mode, GrGLsizei count, const GrGLint box[]);
+
+
+using GrGLStartTilingFn = GrGLvoid GR_GL_FUNCTION_TYPE(GrGLuint x, GrGLuint y, GrGLuint width, GrGLuint height, GrGLbitfield preserveMask);
+using GrGLEndTilingFn = GrGLvoid GR_GL_FUNCTION_TYPE(GrGLbitfield preserveMask);
 
 
 using GrEGLQueryStringFn = const char* GR_GL_FUNCTION_TYPE(GrEGLDisplay dpy, GrEGLint name);

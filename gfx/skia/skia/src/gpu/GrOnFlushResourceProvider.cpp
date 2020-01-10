@@ -5,31 +5,28 @@
 
 
 
-#include "GrOnFlushResourceProvider.h"
+#include "src/gpu/GrOnFlushResourceProvider.h"
 
-#include "GrContextPriv.h"
-#include "GrDrawingManager.h"
-#include "GrProxyProvider.h"
-#include "GrRecordingContext.h"
-#include "GrRecordingContextPriv.h"
-#include "GrRenderTargetContext.h"
-#include "GrSurfaceProxy.h"
+#include "include/private/GrRecordingContext.h"
+#include "src/gpu/GrContextPriv.h"
+#include "src/gpu/GrDrawingManager.h"
+#include "src/gpu/GrProxyProvider.h"
+#include "src/gpu/GrRecordingContextPriv.h"
+#include "src/gpu/GrRenderTargetContext.h"
+#include "src/gpu/GrSurfaceProxy.h"
+#include "src/gpu/GrTextureResolveRenderTask.h"
 
-sk_sp<GrRenderTargetContext> GrOnFlushResourceProvider::makeRenderTargetContext(
-                                                        sk_sp<GrSurfaceProxy> proxy,
-                                                        sk_sp<SkColorSpace> colorSpace,
-                                                        const SkSurfaceProps* props) {
-    
+std::unique_ptr<GrRenderTargetContext> GrOnFlushResourceProvider::makeRenderTargetContext(
+        sk_sp<GrSurfaceProxy> proxy, GrColorType colorType, sk_sp<SkColorSpace> colorSpace,
+        const SkSurfaceProps* props) {
     
     
     if (!this->instatiateProxy(proxy.get())) {
         return nullptr;
     }
 
-    sk_sp<GrRenderTargetContext> renderTargetContext(
-        fDrawingMgr->makeRenderTargetContext(std::move(proxy),
-                                             std::move(colorSpace),
-                                             props, false));
+    auto renderTargetContext = fDrawingMgr->makeRenderTargetContext(
+            std::move(proxy), colorType, std::move(colorSpace), props, false);
 
     if (!renderTargetContext) {
         return nullptr;
@@ -37,7 +34,24 @@ sk_sp<GrRenderTargetContext> GrOnFlushResourceProvider::makeRenderTargetContext(
 
     renderTargetContext->discard();
 
+    
+    fDrawingMgr->fOnFlushRenderTasks.push_back(sk_ref_sp(renderTargetContext->getOpsTask()));
+
     return renderTargetContext;
+}
+
+void GrOnFlushResourceProvider::addTextureResolveTask(sk_sp<GrTextureProxy> textureProxy,
+                                                      GrSurfaceProxy::ResolveFlags resolveFlags) {
+    
+    
+    
+    if (GrRenderTask* renderTask = textureProxy->getLastRenderTask()) {
+        renderTask->makeClosed(*this->caps());
+    }
+    auto task = static_cast<GrTextureResolveRenderTask*>(fDrawingMgr->fOnFlushRenderTasks.push_back(
+            sk_make_sp<GrTextureResolveRenderTask>()).get());
+    task->addProxy(textureProxy, resolveFlags, *this->caps());
+    task->makeClosed(*this->caps());
 }
 
 bool GrOnFlushResourceProvider::assignUniqueKeyToProxy(const GrUniqueKey& key,
@@ -58,12 +72,17 @@ void GrOnFlushResourceProvider::processInvalidUniqueKey(const GrUniqueKey& key) 
 }
 
 sk_sp<GrTextureProxy> GrOnFlushResourceProvider::findOrCreateProxyByUniqueKey(
-        const GrUniqueKey& key, GrSurfaceOrigin origin) {
+        const GrUniqueKey& key,
+        GrColorType colorType,
+        GrSurfaceOrigin origin,
+        UseAllocator useAllocator) {
     auto proxyProvider = fDrawingMgr->getContext()->priv().proxyProvider();
-    return proxyProvider->findOrCreateProxyByUniqueKey(key, origin);
+    return proxyProvider->findOrCreateProxyByUniqueKey(key, colorType, origin, useAllocator);
 }
 
 bool GrOnFlushResourceProvider::instatiateProxy(GrSurfaceProxy* proxy) {
+    SkASSERT(proxy->canSkipResourceAllocator());
+
     
     auto direct = fDrawingMgr->getContext()->priv().asDirectContext();
     if (!direct) {
@@ -72,9 +91,7 @@ bool GrOnFlushResourceProvider::instatiateProxy(GrSurfaceProxy* proxy) {
 
     auto resourceProvider = direct->priv().resourceProvider();
 
-    if (GrSurfaceProxy::LazyState::kNot != proxy->lazyInstantiationState()) {
-        
-        
+    if (proxy->isLazy()) {
         return proxy->priv().doLazyInstantiation(resourceProvider);
     }
 
@@ -105,11 +122,7 @@ sk_sp<const GrGpuBuffer> GrOnFlushResourceProvider::findOrMakeStaticBuffer(
 
     auto resourceProvider = direct->priv().resourceProvider();
 
-    sk_sp<const GrGpuBuffer> buffer =
-            resourceProvider->findOrMakeStaticBuffer(intendedType, size, data, key);
-    
-    SkASSERT(!buffer || !buffer->resourcePriv().hasPendingIO_debugOnly());
-    return buffer;
+    return resourceProvider->findOrMakeStaticBuffer(intendedType, size, data, key);
 }
 
 uint32_t GrOnFlushResourceProvider::contextID() const {

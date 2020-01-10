@@ -7,7 +7,7 @@
 #ifndef SkDistanceFieldGen_DEFINED
 #define SkDistanceFieldGen_DEFINED
 
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
 
 
 

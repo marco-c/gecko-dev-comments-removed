@@ -8,30 +8,38 @@
 #ifndef GrMtlResourceProvider_DEFINED
 #define GrMtlResourceProvider_DEFINED
 
-#include "GrMtlCopyPipelineState.h"
-#include "GrMtlPipelineStateBuilder.h"
-#include "SkLRUCache.h"
-#include "SkTArray.h"
+#include "include/private/SkSpinlock.h"
+#include "include/private/SkTArray.h"
+#include "src/core/SkLRUCache.h"
+#include "src/gpu/mtl/GrMtlDepthStencil.h"
+#include "src/gpu/mtl/GrMtlPipelineStateBuilder.h"
+#include "src/gpu/mtl/GrMtlSampler.h"
 
-#import <metal/metal.h>
+#import <Metal/Metal.h>
 
 class GrMtlGpu;
+class GrMtlCommandBuffer;
 
 class GrMtlResourceProvider {
 public:
     GrMtlResourceProvider(GrMtlGpu* gpu);
 
-    GrMtlCopyPipelineState* findOrCreateCopyPipelineState(MTLPixelFormat dstPixelFormat,
-                                                          id<MTLFunction> vertexFunction,
-                                                          id<MTLFunction> fragmentFunction,
-                                                          MTLVertexDescriptor* vertexDescriptor);
+    GrMtlPipelineState* findOrCreateCompatiblePipelineState(GrRenderTarget*,
+                                                            const GrProgramInfo&,
+                                                            GrPrimitiveType);
 
-    GrMtlPipelineState* findOrCreateCompatiblePipelineState(
-        GrRenderTarget*, GrSurfaceOrigin,
-        const GrPipeline&,
-        const GrPrimitiveProcessor&,
-        const GrTextureProxy* const primProcProxies[],
-        GrPrimitiveType);
+    
+    GrMtlDepthStencil* findOrCreateCompatibleDepthStencilState(const GrStencilSettings&,
+                                                               GrSurfaceOrigin);
+
+    
+    GrMtlSampler* findOrCreateCompatibleSampler(const GrSamplerState&);
+
+    id<MTLBuffer> getDynamicBuffer(size_t size, size_t* offset);
+    void addBufferCompletionHandler(GrMtlCommandBuffer* cmdBuffer);
+
+    
+    void destroyResources();
 
 private:
 #ifdef SK_DEBUG
@@ -43,19 +51,11 @@ private:
         PipelineStateCache(GrMtlGpu* gpu);
         ~PipelineStateCache();
 
-        GrMtlPipelineState* refPipelineState(GrRenderTarget*, GrSurfaceOrigin,
-                                             const GrPrimitiveProcessor&,
-                                             const GrTextureProxy* const primProcProxies[],
-                                             const GrPipeline&,
+        void release();
+        GrMtlPipelineState* refPipelineState(GrRenderTarget*, const GrProgramInfo&,
                                              GrPrimitiveType);
 
     private:
-        enum {
-            
-            
-            kMaxEntries = 128,
-        };
-
         struct Entry;
 
         struct DescHash {
@@ -74,12 +74,41 @@ private:
 #endif
     };
 
-    SkTArray<std::unique_ptr<GrMtlCopyPipelineState>> fCopyPipelineStateCache;
+    
+    class BufferSuballocator : public SkRefCnt {
+    public:
+        BufferSuballocator(id<MTLDevice> device, size_t size);
+        ~BufferSuballocator() {
+            fBuffer = nil;
+            fTotalSize = 0;
+        }
+
+        id<MTLBuffer> getAllocation(size_t size, size_t* offset);
+        void addCompletionHandler(GrMtlCommandBuffer* cmdBuffer);
+        size_t size() { return fTotalSize; }
+
+    private:
+        id<MTLBuffer> fBuffer;
+        size_t        fTotalSize;
+        size_t        fHead SK_GUARDED_BY(fMutex);     
+        size_t        fTail SK_GUARDED_BY(fMutex);     
+        SkSpinlock    fMutex;
+    };
+    static constexpr size_t kBufferSuballocatorStartSize = 1024*1024;
 
     GrMtlGpu* fGpu;
 
     
     std::unique_ptr<PipelineStateCache> fPipelineStateCache;
+
+    SkTDynamicHash<GrMtlSampler, GrMtlSampler::Key> fSamplers;
+    SkTDynamicHash<GrMtlDepthStencil, GrMtlDepthStencil::Key> fDepthStencilStates;
+
+    
+    
+    
+    sk_sp<BufferSuballocator> fBufferSuballocator;
+    size_t fBufferSuballocatorMaxSize;
 };
 
 #endif

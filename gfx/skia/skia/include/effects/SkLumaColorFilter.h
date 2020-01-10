@@ -8,8 +8,8 @@
 #ifndef SkLumaColorFilter_DEFINED
 #define SkLumaColorFilter_DEFINED
 
-#include "SkColorFilter.h"
-#include "SkRefCnt.h"
+#include "include/core/SkColorFilter.h"
+#include "include/core/SkRefCnt.h"
 
 class SkRasterPipeline;
 
@@ -25,15 +25,21 @@ class SkRasterPipeline;
 
 
 
- #include "SkFlattenable.h"
+
+
+
+
+
+
+ #include "include/core/SkFlattenable.h"
 
 class SK_API SkLumaColorFilter : public SkColorFilter {
 public:
     static sk_sp<SkColorFilter> Make();
 
 #if SK_SUPPORT_GPU
-    std::unique_ptr<GrFragmentProcessor> asFragmentProcessor(
-            GrRecordingContext*, const GrColorSpaceInfo&) const override;
+    std::unique_ptr<GrFragmentProcessor> asFragmentProcessor(GrRecordingContext*,
+                                                             const GrColorInfo&) const override;
 #endif
 
 protected:
@@ -43,8 +49,7 @@ private:
     SK_FLATTENABLE_HOOKS(SkLumaColorFilter)
 
     SkLumaColorFilter();
-    void onAppendStages(SkRasterPipeline*, SkColorSpace*, SkArenaAlloc*,
-                        bool shaderIsOpaque) const override;
+    bool onAppendStages(const SkStageRec& rec, bool shaderIsOpaque) const override;
 
     typedef SkColorFilter INHERITED;
 };

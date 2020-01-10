@@ -5,8 +5,10 @@
 
 
 
-#include "SkCpu.h"
-#include "SkOnce.h"
+#include "include/core/SkStream.h"
+#include "include/core/SkString.h"
+#include "include/private/SkOnce.h"
+#include "src/core/SkCpu.h"
 
 #if defined(SK_CPU_X86)
     #if defined(SK_BUILD_FOR_WIN)
@@ -81,6 +83,34 @@
         uint32_t hwcaps = getauxval(AT_HWCAP);
         if (hwcaps & kHWCAP_CRC32  ) { features |= SkCpu::CRC32; }
         if (hwcaps & kHWCAP_ASIMDHP) { features |= SkCpu::ASIMDHP; }
+
+        
+        for (int core = 0; features & SkCpu::ASIMDHP; core++) {
+            
+            
+            SkString path =
+                SkStringPrintf("/sys/devices/system/cpu/cpu%d/regs/identification/midr_el1", core);
+
+            
+            SkFILEStream midr_el1(path.c_str());
+            if (!midr_el1.isValid()) {
+                
+                
+                if (core == 0) {
+                    
+                    features &= ~(SkCpu::ASIMDHP);
+                }
+                break;
+            }
+
+            const char kMongoose3[] = "0x00000000531f0020";  
+            char buf[SK_ARRAY_COUNT(kMongoose3) - 1];  
+
+            if (SK_ARRAY_COUNT(buf) != midr_el1.read(buf, SK_ARRAY_COUNT(buf))
+                          || 0 == memcmp(kMongoose3, buf, SK_ARRAY_COUNT(buf))) {
+                features &= ~(SkCpu::ASIMDHP);
+            }
+        }
         return features;
     }
 

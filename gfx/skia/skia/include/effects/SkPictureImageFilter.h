@@ -8,11 +8,12 @@
 #ifndef SkPictureImageFilter_DEFINED
 #define SkPictureImageFilter_DEFINED
 
-#include "SkFlattenable.h"
-#include "SkImageFilter.h"
-#include "SkPicture.h"
+#include "include/core/SkImageFilter.h"
 
-class SK_API SkPictureImageFilter : public SkImageFilter {
+class SkPicture;
+
+
+class SK_API SkPictureImageFilter {
 public:
     
 
@@ -25,33 +26,10 @@ public:
 
     static sk_sp<SkImageFilter> Make(sk_sp<SkPicture> picture, const SkRect& cropRect);
 
-
-protected:
-    
-
-
-
-
-
-    void flatten(SkWriteBuffer&) const override;
-    sk_sp<SkSpecialImage> onFilterImage(SkSpecialImage* source, const Context&,
-                                        SkIPoint* offset) const override;
-    sk_sp<SkImageFilter> onMakeColorSpace(SkColorSpaceXformer*) const override;
+    static void RegisterFlattenables();
 
 private:
-    SK_FLATTENABLE_HOOKS(SkPictureImageFilter)
-
-    explicit SkPictureImageFilter(sk_sp<SkPicture> picture);
-    SkPictureImageFilter(sk_sp<SkPicture> picture, const SkRect& cropRect, sk_sp<SkColorSpace>);
-
-    sk_sp<SkPicture>    fPicture;
-    SkRect              fCropRect;
-
-    
-    
-    sk_sp<SkColorSpace>   fColorSpace;
-
-    typedef SkImageFilter INHERITED;
+    SkPictureImageFilter() = delete;
 };
 
 #endif

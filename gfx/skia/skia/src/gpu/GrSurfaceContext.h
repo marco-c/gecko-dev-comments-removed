@@ -8,13 +8,17 @@
 #ifndef GrSurfaceContext_DEFINED
 #define GrSurfaceContext_DEFINED
 
-#include "../private/GrSurfaceProxy.h"
-#include "GrColorSpaceInfo.h"
-#include "SkRefCnt.h"
+#include "include/core/SkFilterQuality.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkSurface.h"
+#include "src/gpu/GrColorInfo.h"
+#include "src/gpu/GrDataUtils.h"
+#include "src/gpu/GrSurfaceProxy.h"
 
 class GrAuditTrail;
 class GrDrawingManager;
-class GrOpList;
 class GrRecordingContext;
 class GrRenderTargetContext;
 class GrRenderTargetProxy;
@@ -29,35 +33,17 @@ struct SkIRect;
 
 
 
-class SK_API GrSurfaceContext : public SkRefCnt {
+class GrSurfaceContext {
 public:
-    ~GrSurfaceContext() override {}
+    virtual ~GrSurfaceContext() = default;
 
-    const GrColorSpaceInfo& colorSpaceInfo() const { return fColorSpaceInfo; }
+    const GrColorInfo& colorInfo() const { return fColorInfo; }
 
     
     int width() const { return this->asSurfaceProxy()->width(); }
     int height() const { return this->asSurfaceProxy()->height(); }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-    bool copy(GrSurfaceProxy* src, const SkIRect& srcRect, const SkIPoint& dstPoint);
-
-    bool copy(GrSurfaceProxy* src) {
-        return this->copy(src,
-                          SkIRect::MakeWH(src->width(), src->height()),
-                          SkIPoint::Make(0, 0));
-    }
+    const GrCaps* caps() const;
 
     
 
@@ -68,10 +54,8 @@ public:
 
 
 
-
-
-    bool readPixels(const SkImageInfo& dstInfo, void* dstBuffer, size_t dstRowBytes,
-                    int x, int y, uint32_t flags = 0);
+    bool readPixels(const GrImageInfo& dstInfo, void* dst, size_t rowBytes, SkIPoint srcPt,
+                    GrContext* direct = nullptr);
 
     
 
@@ -83,10 +67,8 @@ public:
 
 
 
-
-
-    bool writePixels(const SkImageInfo& srcInfo, const void* srcBuffer, size_t srcRowBytes,
-                     int x, int y, uint32_t flags = 0);
+    bool writePixels(const GrImageInfo& srcInfo, const void* src, size_t rowBytes, SkIPoint dstPt,
+                     GrContext* direct = nullptr);
 
     
     virtual GrSurfaceProxy* asSurfaceProxy() = 0;
@@ -108,23 +90,75 @@ public:
     GrSurfaceContextPriv surfPriv();
     const GrSurfaceContextPriv surfPriv() const;
 
+#if GR_TEST_UTILS
+    bool testCopy(GrSurfaceProxy* src, const SkIRect& srcRect, const SkIPoint& dstPoint) {
+        return this->copy(src, srcRect, dstPoint);
+    }
+
+    bool testCopy(GrSurfaceProxy* src) {
+        return this->copy(src);
+    }
+#endif
+
+
 protected:
     friend class GrSurfaceContextPriv;
 
-    GrSurfaceContext(GrRecordingContext*, GrPixelConfig, sk_sp<SkColorSpace>);
+    GrSurfaceContext(GrRecordingContext*, GrColorType, SkAlphaType, sk_sp<SkColorSpace>);
 
     GrDrawingManager* drawingManager();
     const GrDrawingManager* drawingManager() const;
 
-    virtual GrOpList* getOpList() = 0;
     SkDEBUGCODE(virtual void validate() const = 0;)
 
     SkDEBUGCODE(GrSingleOwner* singleOwner();)
 
     GrRecordingContext* fContext;
 
+    
+    std::unique_ptr<GrRenderTargetContext> rescale(const SkImageInfo& info, const SkIRect& srcRect,
+                                                   SkSurface::RescaleGamma rescaleGamma,
+                                                   SkFilterQuality rescaleQuality);
+
+    
+    
+    struct PixelTransferResult {
+        using ConversionFn = void(void* dst, const void* mappedBuffer);
+        
+        
+        sk_sp<GrGpuBuffer> fTransferBuffer;
+        
+        
+        
+        std::function<ConversionFn> fPixelConverter;
+    };
+    PixelTransferResult transferPixels(GrColorType colorType, const SkIRect& rect);
+
 private:
-    GrColorSpaceInfo    fColorSpaceInfo;
+    friend class GrSurfaceProxy; 
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool copy(GrSurfaceProxy* src, const SkIRect& srcRect, const SkIPoint& dstPoint);
+
+    bool copy(GrSurfaceProxy* src) {
+        return this->copy(src, SkIRect::MakeWH(src->width(), src->height()), SkIPoint::Make(0, 0));
+    }
+
+    GrColorInfo fColorInfo;
 
     typedef SkRefCnt INHERITED;
 };

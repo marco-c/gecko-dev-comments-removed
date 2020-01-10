@@ -8,11 +8,11 @@
 #ifndef GrResourceProvider_DEFINED
 #define GrResourceProvider_DEFINED
 
-#include "GrContextOptions.h"
-#include "GrGpuBuffer.h"
-#include "GrResourceCache.h"
-#include "SkImageInfoPriv.h"
-#include "SkScalerContext.h"
+#include "include/gpu/GrContextOptions.h"
+#include "include/private/SkImageInfoPriv.h"
+#include "src/core/SkScalerContext.h"
+#include "src/gpu/GrGpuBuffer.h"
+#include "src/gpu/GrResourceCache.h"
 
 class GrBackendRenderTarget;
 class GrBackendSemaphore;
@@ -35,26 +35,9 @@ class SkTypeface;
 
 
 
-
-
-
 class GrResourceProvider {
 public:
-    
-    enum class Flags {
-        kNone            = 0x0,
-
-        
-
-
-
-
-
-        kNoPendingIO     = 0x1,
-    };
-
-    GrResourceProvider(GrGpu*, GrResourceCache*, GrSingleOwner*,
-                       bool explicitlyAllocateGPUResources);
+    GrResourceProvider(GrGpu*, GrResourceCache*, GrSingleOwner*);
 
     
 
@@ -76,18 +59,57 @@ public:
 
 
 
-    sk_sp<GrTexture> createApproxTexture(const GrSurfaceDesc&, Flags);
+    sk_sp<GrTexture> createApproxTexture(const GrSurfaceDesc& desc,
+                                         const GrBackendFormat& format,
+                                         GrRenderable renderable,
+                                         int renderTargetSampleCnt,
+                                         GrProtected isProtected);
+
+    
+    sk_sp<GrTexture> createTexture(const GrSurfaceDesc& desc,
+                                   const GrBackendFormat& format,
+                                   GrRenderable renderable,
+                                   int renderTargetSampleCnt,
+                                   GrMipMapped mipMapped,
+                                   SkBudgeted budgeted,
+                                   GrProtected isProtected);
 
     
 
-    sk_sp<GrTexture> createTexture(const GrSurfaceDesc&, SkBudgeted, Flags = Flags::kNone);
 
-    sk_sp<GrTexture> createTexture(const GrSurfaceDesc&, SkBudgeted, const GrMipLevel texels[],
+
+
+    sk_sp<GrTexture> createTexture(const GrSurfaceDesc& desc,
+                                   const GrBackendFormat& format,
+                                   GrColorType colorType,
+                                   GrRenderable renderable,
+                                   int renderTargetSampleCnt,
+                                   SkBudgeted budgeted,
+                                   GrProtected isProtected,
+                                   const GrMipLevel texels[],
                                    int mipLevelCount);
 
     
-    sk_sp<GrTexture> createTexture(const GrSurfaceDesc&, SkBudgeted, SkBackingFit,
-                                   const GrMipLevel&, Flags);
+
+
+
+
+    sk_sp<GrTexture> createTexture(const GrSurfaceDesc& desc,
+                                   const GrBackendFormat& format,
+                                   GrColorType srcColorType,
+                                   GrRenderable renderable,
+                                   int renderTargetSampleCnt,
+                                   SkBudgeted budgeted,
+                                   SkBackingFit fit,
+                                   GrProtected isProtected,
+                                   const GrMipLevel& mipLevel);
+
+    
+
+
+
+    sk_sp<GrTexture> createCompressedTexture(int width, int height, const GrBackendFormat&,
+                                             SkImage::CompressionType, SkBudgeted, SkData* data);
 
     
     
@@ -103,7 +125,7 @@ public:
 
 
 
-    sk_sp<GrTexture> wrapBackendTexture(const GrBackendTexture& tex, GrWrapOwnership,
+    sk_sp<GrTexture> wrapBackendTexture(const GrBackendTexture& tex, GrColorType, GrWrapOwnership,
                                         GrWrapCacheable, GrIOType);
 
     
@@ -113,6 +135,7 @@ public:
 
     sk_sp<GrTexture> wrapRenderableBackendTexture(const GrBackendTexture& tex,
                                                   int sampleCnt,
+                                                  GrColorType,
                                                   GrWrapOwnership,
                                                   GrWrapCacheable);
 
@@ -125,7 +148,8 @@ public:
 
 
 
-    sk_sp<GrRenderTarget> wrapBackendRenderTarget(const GrBackendRenderTarget&);
+    sk_sp<GrRenderTarget> wrapBackendRenderTarget(const GrBackendRenderTarget&,
+                                                  GrColorType colorType);
 
     sk_sp<GrRenderTarget> wrapVulkanSecondaryCBAsRenderTarget(const SkImageInfo&,
                                                               const GrVkDrawableInfo&);
@@ -209,7 +233,7 @@ public:
 
 
 
-    bool attachStencilAttachment(GrRenderTarget* rt);
+    bool attachStencilAttachment(GrRenderTarget* rt, int numStencilSamples);
 
      
 
@@ -221,7 +245,8 @@ public:
 
 
      sk_sp<GrRenderTarget> wrapBackendTextureAsRenderTarget(const GrBackendTexture&,
-                                                            int sampleCnt);
+                                                            int sampleCnt,
+                                                            GrColorType);
 
     
 
@@ -249,25 +274,57 @@ public:
     const GrCaps* caps() const { return fCaps.get(); }
     bool overBudget() const { return fCache->overBudget(); }
 
+    static uint32_t MakeApprox(uint32_t value);
+
     inline GrResourceProviderPriv priv();
     inline const GrResourceProviderPriv priv() const;
-
-    bool explicitlyAllocateGPUResources() const { return fExplicitlyAllocateGPUResources; }
-
-    bool testingOnly_setExplicitlyAllocateGPUResources(bool newValue);
 
 private:
     sk_sp<GrGpuResource> findResourceByUniqueKey(const GrUniqueKey&);
 
     
     
-    sk_sp<GrTexture> refScratchTexture(const GrSurfaceDesc&, Flags);
+    sk_sp<GrTexture> refScratchTexture(const GrSurfaceDesc&,
+                                       const GrBackendFormat&,
+                                       GrRenderable,
+                                       int renderTargetSampleCnt,
+                                       GrMipMapped,
+                                       GrProtected);
 
     
 
 
 
-    sk_sp<GrTexture> getExactScratch(const GrSurfaceDesc&, SkBudgeted, Flags);
+    sk_sp<GrTexture> getExactScratch(const GrSurfaceDesc&,
+                                     const GrBackendFormat&,
+                                     GrRenderable,
+                                     int renderTargetSampleCnt,
+                                     SkBudgeted,
+                                     GrMipMapped,
+                                     GrProtected);
+
+    
+    
+    using TempLevels = SkAutoSTMalloc<14, GrMipLevel>;
+    using TempLevelDatas = SkAutoSTArray<14, std::unique_ptr<char[]>>;
+    GrColorType prepareLevels(const GrBackendFormat& format,
+                              GrColorType,
+                              const SkISize& baseSize,
+                              const GrMipLevel texels[],
+                              int mipLevelCount,
+                              TempLevels*,
+                              TempLevelDatas*) const;
+
+    
+    
+    
+    
+    
+    sk_sp<GrTexture> writePixels(sk_sp<GrTexture> texture,
+                                 GrColorType colorType,
+                                 const SkISize& baseSize,
+                                 const GrMipLevel texels[],
+                                 int mipLevelCount) const;
 
     GrResourceCache* cache() { return fCache; }
     const GrResourceCache* cache() const { return fCache; }
@@ -295,12 +352,9 @@ private:
     GrGpu* fGpu;
     sk_sp<const GrCaps> fCaps;
     sk_sp<const GrGpuBuffer> fQuadIndexBuffer;
-    bool fExplicitlyAllocateGPUResources;
 
     
     SkDEBUGCODE(mutable GrSingleOwner* fSingleOwner;)
 };
-
-GR_MAKE_BITFIELD_CLASS_OPS(GrResourceProvider::Flags);
 
 #endif

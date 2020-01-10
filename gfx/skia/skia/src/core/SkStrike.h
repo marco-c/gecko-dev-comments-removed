@@ -7,17 +7,17 @@
 #ifndef SkStrike_DEFINED
 #define SkStrike_DEFINED
 
-#include "SkArenaAlloc.h"
-#include "SkDescriptor.h"
-#include "SkFontMetrics.h"
-#include "SkFontTypes.h"
-#include "SkGlyph.h"
-#include "SkGlyphRunPainter.h"
-#include "SkPaint.h"
-#include "SkTHash.h"
-#include "SkScalerContext.h"
-#include "SkStrikeInterface.h"
-#include "SkTemplates.h"
+#include "include/core/SkFontMetrics.h"
+#include "include/core/SkFontTypes.h"
+#include "include/core/SkPaint.h"
+#include "include/private/SkTHash.h"
+#include "include/private/SkTemplates.h"
+#include "src/core/SkArenaAlloc.h"
+#include "src/core/SkDescriptor.h"
+#include "src/core/SkGlyph.h"
+#include "src/core/SkGlyphRunPainter.h"
+#include "src/core/SkScalerContext.h"
+#include "src/core/SkStrikeForGPU.h"
 #include <memory>
 
 
@@ -33,38 +33,37 @@
 
 
 
-class SkStrike : public SkStrikeInterface {
+class SkStrike final : public SkStrikeForGPU {
 public:
     SkStrike(const SkDescriptor& desc,
              std::unique_ptr<SkScalerContext> scaler,
              const SkFontMetrics&);
 
     
-    bool isGlyphCached(SkGlyphID glyphID, SkFixed x, SkFixed y) const;
+    
+    SkGlyph* glyph(SkPackedGlyphID packedID);
+    SkGlyph* glyph(SkGlyphID glyphID);
+    SkGlyph* glyph(SkGlyphID, SkPoint);
 
     
-    SkGlyph* getRawGlyphByID(SkPackedGlyphID);
+    SkGlyph* glyphFromPrototype(const SkGlyphPrototype& p, void* image = nullptr);
 
     
+    SkGlyph* glyphOrNull(SkPackedGlyphID id) const;
 
-
-    const SkGlyph& getGlyphIDAdvance(SkGlyphID);
-
-    
-
-
-
-
-
-    const SkGlyph& getGlyphIDMetrics(SkGlyphID);
+    const void* prepareImage(SkGlyph* glyph);
 
     
+    
+    
+    
+    SkGlyph* mergeGlyphAndImage(SkPackedGlyphID toID, const SkGlyph& from);
 
+    
+    const SkPath* preparePath(SkGlyph*);
 
-
-    const SkGlyph& getGlyphIDMetrics(uint16_t, SkFixed x, SkFixed y);
-
-    void getAdvances(SkSpan<const SkGlyphID>, SkPoint[]);
+    
+    const SkPath* preparePath(SkGlyph* glyph, const SkPath* path);
 
     
 
@@ -76,27 +75,8 @@ public:
     
 
 
-    const void* findImage(const SkGlyph&);
-
-    
-
-    void initializeImage(const volatile void* data, size_t size, SkGlyph*);
-
-    
-
-
     void findIntercepts(const SkScalar bounds[2], SkScalar scale, SkScalar xPos,
-                        bool yAxis, SkGlyph* , SkScalar* array, int* count);
-
-    
-
-
-    const SkPath* findPath(const SkGlyph&);
-
-    
-
-
-    bool initializePath(SkGlyph*, const volatile void* data, size_t size);
+                        SkGlyph* , SkScalar* array, int* count);
 
     
 
@@ -106,7 +86,6 @@ public:
 
     const SkGlyph* getCachedGlyphAnySubPix(SkGlyphID,
                                            SkPackedGlyphID vetoID = SkPackedGlyphID()) const;
-    void initializeGlyphFromFallback(SkGlyph* glyph, const SkGlyph&);
 
     
 
@@ -118,23 +97,29 @@ public:
         return fScalerContext->getMaskFormat();
     }
 
-    bool isSubpixel() const {
-        return fIsSubpixel;
+    const SkGlyphPositionRoundingSpec& roundingSpec() const override {
+        return fRoundingSpec;
     }
-
-    SkVector rounding() const override;
-
-    const SkGlyph& getGlyphMetrics(SkGlyphID glyphID, SkPoint position) override;
-
-    bool decideCouldDrawFromPath(const SkGlyph& glyph) override;
 
     const SkDescriptor& getDescriptor() const override;
 
-    SkStrikeSpec strikeSpec() const override {
-        return SkStrikeSpec{this->getDescriptor(),
-                            *this->getScalerContext()->getTypeface(),
-                            this->getScalerContext()->getEffects()};
-    }
+    SkSpan<const SkGlyph*> metrics(SkSpan<const SkGlyphID> glyphIDs,
+                                   const SkGlyph* results[]);
+
+    SkSpan<const SkGlyph*> preparePaths(SkSpan<const SkGlyphID> glyphIDs,
+                                        const SkGlyph* results[]);
+
+    SkSpan<const SkGlyph*> prepareImages(SkSpan<const SkPackedGlyphID> glyphIDs,
+                                         const SkGlyph* results[]);
+
+    void prepareForDrawingMasksCPU(SkDrawableGlyphBuffer* drawables);
+
+    void prepareForDrawingPathsCPU(SkDrawableGlyphBuffer* drawables);
+    SkSpan<const SkGlyphPos> prepareForDrawingRemoveEmpty(const SkPackedGlyphID packedGlyphIDs[],
+                                                          const SkPoint positions[],
+                                                          size_t n,
+                                                          int maxDimension,
+                                                          SkGlyphPos results[]) override;
 
     void onAboutToExitScope() override;
 
@@ -172,41 +157,6 @@ public:
     };
 
 private:
-    enum MetricsType {
-        kNothing_MetricsType,
-        kJustAdvance_MetricsType,
-        kFull_MetricsType
-    };
-
-    enum {
-        kHashBits  = 8,
-        kHashCount = 1 << kHashBits,
-        kHashMask  = kHashCount - 1
-    };
-
-    
-    
-    
-    SkGlyph* lookupByPackedGlyphID(SkPackedGlyphID packedGlyphID, MetricsType type);
-
-    static void OffsetResults(const SkGlyph::Intercept* intercept, SkScalar scale,
-                              SkScalar xPos, SkScalar* array, int* count);
-    static void AddInterval(SkScalar val, SkGlyph::Intercept* intercept);
-    static void AddPoints(const SkPoint* pts, int ptCount, const SkScalar bounds[2],
-                          bool yAxis, SkGlyph::Intercept* intercept);
-    static void AddLine(const SkPoint pts[2], SkScalar axis, bool yAxis,
-                        SkGlyph::Intercept* intercept);
-    static void AddQuad(const SkPoint pts[2], SkScalar axis, bool yAxis,
-                        SkGlyph::Intercept* intercept);
-    static void AddCubic(const SkPoint pts[3], SkScalar axis, bool yAxis,
-                         SkGlyph::Intercept* intercept);
-    static const SkGlyph::Intercept* MatchBounds(const SkGlyph* glyph,
-                                                 const SkScalar bounds[2]);
-
-    const SkAutoDescriptor fDesc;
-    const std::unique_ptr<SkScalerContext> fScalerContext;
-    SkFontMetrics          fFontMetrics;
-
     class GlyphMapHashTraits {
     public:
         static SkPackedGlyphID GetKey(const SkGlyph* glyph) {
@@ -216,6 +166,23 @@ private:
             return glyphId.hash();
         }
     };
+
+    SkGlyph* makeGlyph(SkPackedGlyphID);
+
+    enum PathDetail {
+        kMetricsOnly,
+        kMetricsAndPath
+    };
+
+    
+    SkSpan<const SkGlyph*> internalPrepare(
+            SkSpan<const SkGlyphID> glyphIDs,
+            PathDetail pathDetail,
+            const SkGlyph** results);
+
+    const SkAutoDescriptor                 fDesc;
+    const std::unique_ptr<SkScalerContext> fScalerContext;
+    SkFontMetrics                          fFontMetrics;
 
     
     
@@ -232,8 +199,7 @@ private:
     
     size_t                  fMemoryUsed;
 
-    const bool              fIsSubpixel;
-    const SkAxisAlignment   fAxisAlignment;
+    const SkGlyphPositionRoundingSpec fRoundingSpec;
 };
 
 #endif  

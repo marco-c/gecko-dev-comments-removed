@@ -11,13 +11,17 @@
 #include <vector>
 #include <memory>
 
-#include "SkSLBoolLiteral.h"
-#include "SkSLExpression.h"
-#include "SkSLFloatLiteral.h"
-#include "SkSLIntLiteral.h"
-#include "SkSLModifiers.h"
-#include "SkSLProgramElement.h"
-#include "SkSLSymbolTable.h"
+#include "src/sksl/ir/SkSLBoolLiteral.h"
+#include "src/sksl/ir/SkSLExpression.h"
+#include "src/sksl/ir/SkSLFloatLiteral.h"
+#include "src/sksl/ir/SkSLIntLiteral.h"
+#include "src/sksl/ir/SkSLModifiers.h"
+#include "src/sksl/ir/SkSLProgramElement.h"
+#include "src/sksl/ir/SkSLSymbolTable.h"
+
+#ifdef SK_VULKAN
+#include "src/gpu/vk/GrVkCaps.h"
+#endif
 
 
 #define SKSL_RTWIDTH_NAME "u_skRTWidth"
@@ -80,10 +84,13 @@ struct Program {
             int fValue;
         };
 
-#ifdef SKSL_STANDALONE
+#if defined(SKSL_STANDALONE) || !SK_SUPPORT_GPU
         const StandaloneShaderCaps* fCaps = &standaloneCaps;
 #else
         const GrShaderCaps* fCaps = nullptr;
+#ifdef SK_VULKAN
+        const GrVkCaps* fVkCaps = nullptr;
+#endif
 #endif
         
         
@@ -97,6 +104,9 @@ struct Program {
         bool fForceHighPrecision = false;
         
         bool fSharpenTextures = false;
+        
+        
+        int fRTHeightOffset = -1;
         std::unordered_map<String, Value> fArgs;
     };
 
@@ -213,7 +223,8 @@ struct Program {
         kVertex_Kind,
         kGeometry_Kind,
         kFragmentProcessor_Kind,
-        kPipelineStage_Kind
+        kPipelineStage_Kind,
+        kGeneric_Kind,
     };
 
     Program(Kind kind,

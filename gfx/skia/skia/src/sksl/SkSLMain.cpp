@@ -6,8 +6,8 @@
 
 
 #include <fstream>
-#include "SkSLCompiler.h"
-#include "SkSLFileOutputStream.h"
+#include "src/sksl/SkSLCompiler.h"
+#include "src/sksl/SkSLFileOutputStream.h"
 
 
 

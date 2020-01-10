@@ -8,10 +8,10 @@
 #ifndef GrVkVulkan_DEFINED
 #define GrVkVulkan_DEFINED
 
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
 
 #if SKIA_IMPLEMENTATION || !defined(SK_VULKAN)
-#include "../../include/third_party/vulkan/vulkan/vulkan_core.h"
+#include "include/third_party/vulkan/vulkan/vulkan_core.h"
 #else
 
 
@@ -21,7 +21,7 @@
 #ifdef SK_BUILD_FOR_ANDROID
 
 #if SKIA_IMPLEMENTATION || !defined(SK_VULKAN)
-#include "../../include/third_party/vulkan/vulkan/vulkan_android.h"
+#include "include/third_party/vulkan/vulkan/vulkan_android.h"
 #else
 
 

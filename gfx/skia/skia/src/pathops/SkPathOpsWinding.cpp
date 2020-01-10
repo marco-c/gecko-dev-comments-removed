@@ -21,9 +21,9 @@
 
 
 
-#include "SkOpContour.h"
-#include "SkOpSegment.h"
-#include "SkPathOpsCurve.h"
+#include "src/pathops/SkOpContour.h"
+#include "src/pathops/SkOpSegment.h"
+#include "src/pathops/SkPathOpsCurve.h"
 
 #include <utility>
 

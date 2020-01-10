@@ -5,12 +5,12 @@
 
 
 
-#include "SkRecordOpts.h"
+#include "src/core/SkRecordOpts.h"
 
-#include "SkCanvasPriv.h"
-#include "SkRecordPattern.h"
-#include "SkRecords.h"
-#include "SkTDArray.h"
+#include "include/private/SkTDArray.h"
+#include "src/core/SkCanvasPriv.h"
+#include "src/core/SkRecordPattern.h"
+#include "src/core/SkRecords.h"
 
 using namespace SkRecords;
 
@@ -96,9 +96,7 @@ static bool fold_opacity_layer_color_to_paint(const SkPaint* layerPaint,
     
     
     
-    
-    
-    if (!paint->isSrcOver() || paint->getLooper()) {
+    if (!paint->isSrcOver()) {
         return false;
     }
 
@@ -134,7 +132,6 @@ static bool fold_opacity_layer_color_to_paint(const SkPaint* layerPaint,
             !layerPaint->isSrcOver()     ||
             layerPaint->getMaskFilter()  ||
             layerPaint->getColorFilter() ||
-            layerPaint->getLooper()      ||
             layerPaint->getImageFilter()) {
             return false;
         }

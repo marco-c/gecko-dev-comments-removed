@@ -8,8 +8,8 @@
 #ifndef GrRenderTargetPriv_DEFINED
 #define GrRenderTargetPriv_DEFINED
 
-#include "GrRenderTarget.h"
-#include "GrGpu.h"
+#include "src/gpu/GrGpu.h"
+#include "src/gpu/GrRenderTarget.h"
 
 class GrStencilSettings;
 
@@ -33,6 +33,22 @@ public:
     void attachStencilAttachment(sk_sp<GrStencilAttachment> stencil);
 
     int numStencilBits() const;
+
+    
+
+
+
+    int getSamplePatternKey() const;
+
+    
+
+
+
+
+    const SkTArray<SkPoint>& getSampleLocations() const {
+        int samplePatternKey = this->getSamplePatternKey();
+        return fRenderTarget->getGpu()->retrieveSampleLocations(samplePatternKey);
+    }
 
 private:
     explicit GrRenderTargetPriv(GrRenderTarget* renderTarget) : fRenderTarget(renderTarget) {}

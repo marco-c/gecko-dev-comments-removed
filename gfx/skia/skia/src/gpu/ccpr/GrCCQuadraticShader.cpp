@@ -5,24 +5,19 @@
 
 
 
-#include "GrCCQuadraticShader.h"
+#include "src/gpu/ccpr/GrCCQuadraticShader.h"
 
-#include "glsl/GrGLSLFragmentShaderBuilder.h"
-#include "glsl/GrGLSLVertexGeoBuilder.h"
+#include "src/gpu/glsl/GrGLSLFragmentShaderBuilder.h"
+#include "src/gpu/glsl/GrGLSLVertexGeoBuilder.h"
 
-void GrCCQuadraticShader::emitSetupCode(GrGLSLVertexGeoBuilder* s, const char* pts,
-                                        const char* wind, const char** outHull4) const {
+void GrCCQuadraticShader::emitSetupCode(
+        GrGLSLVertexGeoBuilder* s, const char* pts, const char** outHull4) const {
     s->declareGlobal(fQCoordMatrix);
     s->codeAppendf("%s = float2x2(1, 1, .5, 0) * inverse(float2x2(%s[2] - %s[0], %s[1] - %s[0]));",
                    fQCoordMatrix.c_str(), pts, pts, pts, pts);
 
     s->declareGlobal(fQCoord0);
     s->codeAppendf("%s = %s[0];", fQCoord0.c_str(), pts);
-
-    s->declareGlobal(fEdgeDistanceEquation);
-    s->codeAppendf("float2 edgept0 = %s[%s > 0 ? 2 : 0];", pts, wind);
-    s->codeAppendf("float2 edgept1 = %s[%s > 0 ? 0 : 2];", pts, wind);
-    Shader::EmitEdgeDistanceEquation(s, "edgept0", "edgept1", fEdgeDistanceEquation.c_str());
 
     if (outHull4) {
         
@@ -37,42 +32,43 @@ void GrCCQuadraticShader::emitSetupCode(GrGLSLVertexGeoBuilder* s, const char* p
     }
 }
 
-void GrCCQuadraticShader::onEmitVaryings(GrGLSLVaryingHandler* varyingHandler,
-                                         GrGLSLVarying::Scope scope, SkString* code,
-                                         const char* position, const char* coverage,
-                                         const char* cornerCoverage) {
+void GrCCQuadraticShader::onEmitVaryings(
+        GrGLSLVaryingHandler* varyingHandler, GrGLSLVarying::Scope scope, SkString* code,
+        const char* position, const char* coverage, const char* cornerCoverage, const char* wind) {
     fCoord_fGrad.reset(kFloat4_GrSLType, scope);
     varyingHandler->addVarying("coord_and_grad", &fCoord_fGrad);
-    code->appendf("%s.xy = %s * (%s - %s);", 
+    code->appendf("%s.xy = %s * (%s - %s);",  
                   OutName(fCoord_fGrad), fQCoordMatrix.c_str(), position, fQCoord0.c_str());
-    code->appendf("%s.zw = 2*bloat * float2(2 * %s.x, -1) * %s;", 
+    code->appendf("%s.zw = 2*bloat * float2(2 * %s.x, -1) * %s;",  
                   OutName(fCoord_fGrad), OutName(fCoord_fGrad), fQCoordMatrix.c_str());
 
-    
-    fEdge_fWind_fCorner.reset(cornerCoverage ? kFloat4_GrSLType : kFloat2_GrSLType, scope);
-    varyingHandler->addVarying("edge_and_wind_and_corner", &fEdge_fWind_fCorner);
-    code->appendf("float edge = dot(%s, float3(%s, 1));", 
-                  fEdgeDistanceEquation.c_str(), position);
-    code->appendf("%s.x = edge;", OutName(fEdge_fWind_fCorner));
-    code->appendf("%s.y = %s;", OutName(fEdge_fWind_fCorner), coverage); 
+    if (coverage) {
+        
+        fEdge_fWind_fCorner.reset((cornerCoverage) ? kFloat4_GrSLType : kFloat2_GrSLType, scope);
+        varyingHandler->addVarying((cornerCoverage) ? "edge_and_wind_and_corner" : "edge_and_wind",
+                                   &fEdge_fWind_fCorner);
+        code->appendf("%s.x = %s;", OutName(fEdge_fWind_fCorner), coverage);
+        code->appendf("%s.y = %s;", OutName(fEdge_fWind_fCorner), wind);
+    }
 
     if (cornerCoverage) {
+        SkASSERT(coverage);
         code->appendf("half hull_coverage;");
-        this->calcHullCoverage(code, OutName(fCoord_fGrad), "edge", "hull_coverage");
+        this->calcHullCoverage(code, OutName(fCoord_fGrad), coverage, "hull_coverage");
         code->appendf("%s.zw = half2(hull_coverage, 1) * %s;",
                       OutName(fEdge_fWind_fCorner), cornerCoverage);
     }
 }
 
-void GrCCQuadraticShader::onEmitFragmentCode(GrGLSLFPFragmentBuilder* f,
-                                             const char* outputCoverage) const {
+void GrCCQuadraticShader::emitFragmentCoverageCode(
+        GrGLSLFPFragmentBuilder* f, const char* outputCoverage) const {
     this->calcHullCoverage(&AccessCodeString(f), fCoord_fGrad.fsIn(),
                            SkStringPrintf("%s.x", fEdge_fWind_fCorner.fsIn()).c_str(),
                            outputCoverage);
-    f->codeAppendf("%s *= half(%s.y);", outputCoverage, fEdge_fWind_fCorner.fsIn()); 
+    f->codeAppendf("%s *= half(%s.y);", outputCoverage, fEdge_fWind_fCorner.fsIn());  
 
     if (kFloat4_GrSLType == fEdge_fWind_fCorner.type()) {
-        f->codeAppendf("%s = half(%s.z * %s.w) + %s;",
+        f->codeAppendf("%s = half(%s.z * %s.w) + %s;",  
                        outputCoverage, fEdge_fWind_fCorner.fsIn(), fEdge_fWind_fCorner.fsIn(),
                        outputCoverage);
     }
@@ -89,4 +85,11 @@ void GrCCQuadraticShader::calcHullCoverage(SkString* code, const char* coordAndG
     code->appendf("float edge_coverage = min(%s, 0);", edge);
     
     code->appendf("%s = max(half(curve_coverage + edge_coverage), 0);", outputCoverage);
+}
+
+void GrCCQuadraticShader::emitSampleMaskCode(GrGLSLFPFragmentBuilder* f) const {
+    f->codeAppendf("float x = %s.x, y = %s.y;", fCoord_fGrad.fsIn(), fCoord_fGrad.fsIn());
+    f->codeAppendf("float f = x*x - y;");
+    f->codeAppendf("float2 grad = %s.zw;", fCoord_fGrad.fsIn());
+    f->applyFnToMultisampleMask("f", "grad", GrGLSLFPFragmentBuilder::ScopeFlags::kTopLevel);
 }

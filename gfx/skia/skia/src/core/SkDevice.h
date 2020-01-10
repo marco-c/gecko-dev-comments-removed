@@ -8,11 +8,12 @@
 #ifndef SkDevice_DEFINED
 #define SkDevice_DEFINED
 
-#include "SkRefCnt.h"
-#include "SkCanvas.h"
-#include "SkColor.h"
-#include "SkRegion.h"
-#include "SkSurfaceProps.h"
+#include "include/core/SkCanvas.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkRegion.h"
+#include "include/core/SkSurfaceProps.h"
+#include "include/private/SkNoncopyable.h"
 
 class SkBitmap;
 struct SkDrawShadowRec;
@@ -145,10 +146,10 @@ protected:
     virtual void onSetDeviceClipRestriction(SkIRect* mutableClipRestriction) {}
     virtual bool onClipIsAA() const = 0;
     virtual void onAsRgnClip(SkRegion*) const = 0;
-    enum ClipType {
-        kEmpty_ClipType,
-        kRect_ClipType,
-        kComplex_ClipType
+    enum class ClipType {
+        kEmpty,
+        kRect,
+        kComplex
     };
     virtual ClipType onGetClipType() const = 0;
 
@@ -174,11 +175,6 @@ protected:
     
     virtual void drawDRRect(const SkRRect& outer,
                             const SkRRect& inner, const SkPaint&);
-
-    
-    
-    virtual void drawEdgeAARect(const SkRect& r, SkCanvas::QuadAAFlags aa, SkColor color,
-                                SkBlendMode mode);
 
     
 
@@ -212,9 +208,6 @@ protected:
     virtual void drawImageLattice(const SkImage*, const SkCanvas::Lattice&,
                                   const SkRect& dst, const SkPaint&);
 
-    virtual void drawImageSet(const SkCanvas::ImageSetEntry[], int count, SkFilterQuality,
-                              SkBlendMode);
-
     virtual void drawVertices(const SkVertices*, const SkVertices::Bone bones[], int boneCount,
                               SkBlendMode, const SkPaint&) = 0;
     virtual void drawShadow(const SkPath&, const SkDrawShadowRec&);
@@ -231,6 +224,18 @@ protected:
     virtual void drawAnnotation(const SkRect&, const char[], SkData*) {}
 
     
+    
+    
+    virtual void drawEdgeAAQuad(const SkRect& rect, const SkPoint clip[4],
+                                SkCanvas::QuadAAFlags aaFlags, const SkColor4f& color,
+                                SkBlendMode mode);
+    
+    
+    virtual void drawEdgeAAImageSet(const SkCanvas::ImageSetEntry[], int count,
+                                    const SkPoint dstClips[], const SkMatrix preViewMatrices[],
+                                    const SkPaint& paint, SkCanvas::SrcRectConstraint);
+
+    
 
 
     virtual void drawDevice(SkBaseDevice*, int x, int y, const SkPaint&) = 0;
@@ -244,12 +249,17 @@ protected:
                              SkImage* clipImage, const SkMatrix& clipMatrix);
     virtual sk_sp<SkSpecialImage> makeSpecial(const SkBitmap&);
     virtual sk_sp<SkSpecialImage> makeSpecial(const SkImage*);
-    virtual sk_sp<SkSpecialImage> snapSpecial();
+    
+    sk_sp<SkSpecialImage> snapSpecial();
+    
+    
+    
+    
+    virtual sk_sp<SkSpecialImage> snapSpecial(const SkIRect& subset, bool forceCopy = false);
+
     virtual void setImmutable() {}
 
     bool readPixels(const SkPixmap&, int x, int y);
-
-    virtual sk_sp<SkSpecialImage> snapBackImage(const SkIRect&);    
 
     
 
@@ -277,27 +287,17 @@ protected:
     virtual bool onAccessPixels(SkPixmap*) { return false; }
 
     struct CreateInfo {
-        static SkPixelGeometry AdjustGeometry(const SkImageInfo&, TileUsage, SkPixelGeometry,
-                                              bool preserveLCDText);
+        static SkPixelGeometry AdjustGeometry(TileUsage, SkPixelGeometry);
 
         
         CreateInfo(const SkImageInfo& info,
                    TileUsage tileUsage,
-                   SkPixelGeometry geo)
-            : fInfo(info)
-            , fTileUsage(tileUsage)
-            , fPixelGeometry(AdjustGeometry(info, tileUsage, geo, false))
-        {}
-
-        CreateInfo(const SkImageInfo& info,
-                   TileUsage tileUsage,
                    SkPixelGeometry geo,
-                   bool preserveLCDText,
                    bool trackCoverage,
                    SkRasterHandleAllocator* allocator)
             : fInfo(info)
             , fTileUsage(tileUsage)
-            , fPixelGeometry(AdjustGeometry(info, tileUsage, geo, preserveLCDText))
+            , fPixelGeometry(AdjustGeometry(tileUsage, geo))
             , fTrackCoverage(trackCoverage)
             , fAllocator(allocator)
         {}
@@ -341,8 +341,6 @@ private:
     friend class SkGlyphRunList;
     friend class SkGlyphRunBuilder;
 
-    friend class ClipTileRenderer;  
-
     
     
     
@@ -383,16 +381,19 @@ class SkNoPixelsDevice : public SkBaseDevice {
 public:
     SkNoPixelsDevice(const SkIRect& bounds, const SkSurfaceProps& props,
                      sk_sp<SkColorSpace> colorSpace = nullptr)
-    : SkBaseDevice(SkImageInfo::Make(bounds.width(), bounds.height(), kUnknown_SkColorType,
-                                     kUnknown_SkAlphaType, std::move(colorSpace)), props)
-    {
+            : SkBaseDevice(SkImageInfo::Make(bounds.size(), kUnknown_SkColorType,
+                                             kUnknown_SkAlphaType, std::move(colorSpace)),
+                           props) {
         
         
+
+        this->setOrigin(SkMatrix::I(), bounds.left(), bounds.top());
     }
 
     void resetForNextPicture(const SkIRect& bounds) {
         
         this->privateResize(bounds.width(), bounds.height());
+        this->setOrigin(SkMatrix::I(), bounds.left(), bounds.top());
     }
 
 protected:
@@ -410,7 +411,7 @@ protected:
         rgn->setRect(SkIRect::MakeWH(this->width(), this->height()));
     }
     ClipType onGetClipType() const override {
-        return kRect_ClipType;
+        return ClipType::kRect;
     }
 
     void drawPaint(const SkPaint& paint) override {}

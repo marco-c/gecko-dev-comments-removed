@@ -5,13 +5,13 @@
 
 
 
-#include "SkFloatToDecimal.h"
+#include "src/utils/SkFloatToDecimal.h"
 
 #include <cfloat>
 #include <climits>
 #include <cmath>
 
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
 
 
 static double pow_by_squaring(double value, double base, int e) {
@@ -67,7 +67,7 @@ static double pow10(int e) {
 
 
 
-unsigned SkFloatToDecimal(float value, char result[kMaximumSkFloatToDecimalLength]) {
+unsigned SkFloatToDecimal(float value, char output[kMaximumSkFloatToDecimalLength]) {
     
 
 
@@ -87,8 +87,8 @@ unsigned SkFloatToDecimal(float value, char result[kMaximumSkFloatToDecimalLengt
 
 
 
-    char* output = &result[0];
-    const char* const end = &result[kMaximumSkFloatToDecimalLength - 1];
+    char* output_ptr = &output[0];
+    const char* const end = &output[kMaximumSkFloatToDecimalLength - 1];
     
 
     
@@ -104,12 +104,12 @@ unsigned SkFloatToDecimal(float value, char result[kMaximumSkFloatToDecimalLengt
     if (!std::isfinite(value) || value == 0.0f) {
         
         
-        *output++ = '0';
-        *output = '\0';
-        return static_cast<unsigned>(output - result);
+        *output_ptr++ = '0';
+        *output_ptr = '\0';
+        return static_cast<unsigned>(output_ptr - output);
     }
     if (value < 0.0) {
-        *output++ = '-';
+        *output_ptr++ = '-';
         value = -value;
     }
     SkASSERT(value >= 0.0f);
@@ -148,37 +148,37 @@ unsigned SkFloatToDecimal(float value, char result[kMaximumSkFloatToDecimalLengt
     if (decimalShift >= 0) {
         do {
             --bufferIndex;
-            *output++ = '0' + buffer[bufferIndex];
+            *output_ptr++ = '0' + buffer[bufferIndex];
         } while (bufferIndex);
         for (int i = 0; i < decimalShift; ++i) {
-            *output++ = '0';
+            *output_ptr++ = '0';
         }
     } else {
         int placesBeforeDecimal = bufferIndex + decimalShift;
         if (placesBeforeDecimal > 0) {
             while (placesBeforeDecimal-- > 0) {
                 --bufferIndex;
-                *output++ = '0' + buffer[bufferIndex];
+                *output_ptr++ = '0' + buffer[bufferIndex];
             }
-            *output++ = '.';
+            *output_ptr++ = '.';
         } else {
-            *output++ = '.';
+            *output_ptr++ = '.';
             int placesAfterDecimal = -placesBeforeDecimal;
             while (placesAfterDecimal-- > 0) {
-                *output++ = '0';
+                *output_ptr++ = '0';
             }
         }
         while (bufferIndex > 0) {
             --bufferIndex;
-            *output++ = '0' + buffer[bufferIndex];
-            if (output == end) {
+            *output_ptr++ = '0' + buffer[bufferIndex];
+            if (output_ptr == end) {
                 break;  
                 
                 
             }
         }
     }
-    SkASSERT(output <= end);
-    *output = '\0';
-    return static_cast<unsigned>(output - result);
+    SkASSERT(output_ptr <= end);
+    *output_ptr = '\0';
+    return static_cast<unsigned>(output_ptr - output);
 }

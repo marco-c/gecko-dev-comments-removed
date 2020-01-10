@@ -4,13 +4,15 @@
 
 
 
+#ifndef GrTextureOp_DEFINED
+#define GrTextureOp_DEFINED
 
-#include "GrColor.h"
-#include "GrRenderTargetContext.h"
-#include "GrSamplerState.h"
-#include "GrTypesPriv.h"
-#include "SkCanvas.h"
-#include "SkRefCnt.h"
+#include "include/core/SkCanvas.h"
+#include "include/core/SkRefCnt.h"
+#include "include/private/GrTypesPriv.h"
+#include "src/gpu/GrColor.h"
+#include "src/gpu/GrRenderTargetContext.h"
+#include "src/gpu/GrSamplerState.h"
 
 class GrColorSpaceXform;
 class GrDrawOp;
@@ -24,48 +26,43 @@ namespace GrTextureOp {
 
 
 
+enum class Saturate : bool { kNo = false, kYes = true };
+
+
+
+
+
+
+
+
+
 
 
 
 std::unique_ptr<GrDrawOp> Make(GrRecordingContext*,
                                sk_sp<GrTextureProxy>,
+                               GrColorType srcColorType,
+                               sk_sp<GrColorSpaceXform>,
                                GrSamplerState::Filter,
                                const SkPMColor4f&,
-                               const SkRect& srcRect,
-                               const SkRect& dstRect,
+                               Saturate,
+                               SkBlendMode,
                                GrAAType,
                                GrQuadAAFlags,
-                               SkCanvas::SrcRectConstraint,
-                               const SkMatrix& viewMatrix,
-                               sk_sp<GrColorSpaceXform> textureXform);
+                               const GrQuad& deviceQuad,
+                               const GrQuad& localQuad,
+                               const SkRect* domain = nullptr);
 
-
-
-
-std::unique_ptr<GrDrawOp> MakeQuad(GrRecordingContext* context,
-                                  sk_sp<GrTextureProxy>,
-                                  GrSamplerState::Filter,
-                                  const SkPMColor4f&,
-                                  const SkPoint srcQuad[4],
-                                  const SkPoint dstQuad[4],
-                                  GrAAType,
-                                  GrQuadAAFlags,
-                                  const SkRect* domain,
-                                  const SkMatrix& viewMatrix,
-                                  sk_sp<GrColorSpaceXform> textureXform);
 
 std::unique_ptr<GrDrawOp> MakeSet(GrRecordingContext*,
                                   const GrRenderTargetContext::TextureSetEntry[],
                                   int cnt,
                                   GrSamplerState::Filter,
+                                  Saturate,
                                   GrAAType,
+                                  SkCanvas::SrcRectConstraint,
                                   const SkMatrix& viewMatrix,
                                   sk_sp<GrColorSpaceXform> textureXform);
 
-
-
-
-
-bool GetFilterHasEffect(const SkMatrix& viewMatrix, const SkRect& srcRect, const SkRect& dstRect);
-
 }
+#endif  

@@ -8,7 +8,7 @@
 #ifndef GrResourceHandle_DEFINED
 #define GrResourceHandle_DEFINED
 
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
 
 
 

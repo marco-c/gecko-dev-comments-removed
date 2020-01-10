@@ -4,10 +4,10 @@
 
 
 
-#include "SkIntersections.h"
-#include "SkPathOpsCurve.h"
-#include "SkPathOpsLine.h"
-#include "SkPathOpsQuad.h"
+#include "src/pathops/SkIntersections.h"
+#include "src/pathops/SkPathOpsCurve.h"
+#include "src/pathops/SkPathOpsLine.h"
+#include "src/pathops/SkPathOpsQuad.h"
 
 
 

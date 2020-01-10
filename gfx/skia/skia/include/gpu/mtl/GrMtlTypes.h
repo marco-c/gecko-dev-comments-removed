@@ -8,25 +8,32 @@
 #ifndef GrMtlTypes_DEFINED
 #define GrMtlTypes_DEFINED
 
-#include "GrTypes.h"
+#include "include/gpu/GrTypes.h"
+#include "include/ports/SkCFObject.h"
 
 
 
 
 typedef unsigned int GrMTLPixelFormat;
+typedef const void*  GrMTLHandle;
 
 
+
+#ifdef SK_METAL
 
 
 
 
 struct GrMtlTextureInfo {
 public:
-    const void* fTexture; 
+    GrMtlTextureInfo() {}
+
+    sk_cf_obj<const void*> fTexture;
 
     bool operator==(const GrMtlTextureInfo& that) const {
         return fTexture == that.fTexture;
     }
 };
+#endif
 
 #endif

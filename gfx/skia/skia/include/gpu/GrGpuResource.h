@@ -8,9 +8,9 @@
 #ifndef GrGpuResource_DEFINED
 #define GrGpuResource_DEFINED
 
-#include "../private/GrResourceKey.h"
-#include "../private/GrTypesPriv.h"
-#include "../private/SkNoncopyable.h"
+#include "include/private/GrResourceKey.h"
+#include "include/private/GrTypesPriv.h"
+#include "include/private/SkNoncopyable.h"
 
 class GrContext;
 class GrGpu;
@@ -27,126 +27,59 @@ class SkTraceMemoryDump;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 template <typename DERIVED> class GrIORef : public SkNoncopyable {
 public:
-    
-    
-    
-    
+    bool unique() const { return fRefCnt == 1; }
+
     void ref() const {
-        this->validate();
-        ++fRefCnt;
+        
+        SkASSERT(this->getRefCnt() > 0);
+        
+        (void)fRefCnt.fetch_add(+1, std::memory_order_relaxed);
     }
 
     void unref() const {
-        this->validate();
-
-        if (fRefCnt == 1) {
-            if (!this->internalHasPendingIO()) {
-                static_cast<const DERIVED*>(this)->notifyAllCntsWillBeZero();
+        SkASSERT(this->getRefCnt() > 0);
+        if (1 == fRefCnt.fetch_add(-1, std::memory_order_acq_rel)) {
+            
+            
+            fRefCnt.fetch_add(+1, std::memory_order_relaxed);
+            static_cast<const DERIVED*>(this)->notifyRefCntWillBeZero();
+            
+            
+            
+            
+            
+            if (1 == fRefCnt.fetch_add(-1, std::memory_order_acq_rel)) {
+                static_cast<const DERIVED*>(this)->notifyRefCntIsZero();
             }
-            SkASSERT(fRefCnt > 0);
         }
-        if (--fRefCnt == 0) {
-            if (!static_cast<const DERIVED*>(this)->notifyRefCountIsZero()) {
-                return;
-            }
-        }
-
-        this->didRemoveRefOrPendingIO(kRef_CntType);
     }
 
-    void validate() const {
-#ifdef SK_DEBUG
-        SkASSERT(fRefCnt >= 0);
-        SkASSERT(fPendingReads >= 0);
-        SkASSERT(fPendingWrites >= 0);
-        SkASSERT(fRefCnt + fPendingReads + fPendingWrites >= 0);
+#if GR_TEST_UTILS
+    int32_t testingOnly_getRefCnt() const { return this->getRefCnt(); }
 #endif
-    }
 
 protected:
-    GrIORef() : fRefCnt(1), fPendingReads(0), fPendingWrites(0) { }
-
-    enum CntType {
-        kRef_CntType,
-        kPendingRead_CntType,
-        kPendingWrite_CntType,
-    };
-
-    bool internalHasPendingRead() const { return SkToBool(fPendingReads); }
-    bool internalHasPendingWrite() const { return SkToBool(fPendingWrites); }
-    bool internalHasPendingIO() const { return SkToBool(fPendingWrites | fPendingReads); }
-
-    bool internalHasRef() const { return SkToBool(fRefCnt); }
-    bool internalHasUniqueRef() const { return fRefCnt == 1; }
-
-private:
-    
-    template <typename T>
-    friend void testingOnly_getIORefCnts(const T*, int* refCnt, int* readCnt, int* writeCnt);
-
-    void addPendingRead() const {
-        this->validate();
-        ++fPendingReads;
-    }
-
-    void completedRead() const {
-        this->validate();
-        if (fPendingReads == 1 && !fPendingWrites && !fRefCnt) {
-            static_cast<const DERIVED*>(this)->notifyAllCntsWillBeZero();
-        }
-        --fPendingReads;
-        this->didRemoveRefOrPendingIO(kPendingRead_CntType);
-    }
-
-    void addPendingWrite() const {
-        this->validate();
-        ++fPendingWrites;
-    }
-
-    void completedWrite() const {
-        this->validate();
-        if (fPendingWrites == 1 && !fPendingReads && !fRefCnt) {
-            static_cast<const DERIVED*>(this)->notifyAllCntsWillBeZero();
-        }
-        --fPendingWrites;
-        this->didRemoveRefOrPendingIO(kPendingWrite_CntType);
-    }
-
-    void didRemoveRefOrPendingIO(CntType cntTypeRemoved) const {
-        if (0 == fPendingReads && 0 == fPendingWrites && 0 == fRefCnt) {
-            static_cast<const DERIVED*>(this)->notifyAllCntsAreZero(cntTypeRemoved);
-        }
-    }
-
-    mutable int32_t fRefCnt;
-    mutable int32_t fPendingReads;
-    mutable int32_t fPendingWrites;
-
-    friend class GrIORefProxy;    
     friend class GrResourceCache; 
 
-    template <typename, GrIOType> friend class GrPendingIOResource;
+    GrIORef() : fRefCnt(1) {}
+
+    bool internalHasRef() const { return SkToBool(this->getRefCnt()); }
+
+    
+    void addInitialRef() const {
+        SkASSERT(fRefCnt >= 0);
+        
+        (void)fRefCnt.fetch_add(+1, std::memory_order_relaxed);
+    }
+
+private:
+    int32_t getRefCnt() const { return fRefCnt.load(std::memory_order_relaxed); }
+
+    mutable std::atomic<int32_t> fRefCnt;
+
+    typedef SkNoncopyable INHERITED;
 };
 
 
@@ -229,6 +162,12 @@ public:
     
 
 
+    class ProxyAccess;
+    inline ProxyAccess proxyAccess();
+
+    
+
+
     class ResourcePriv;
     inline ResourcePriv resourcePriv();
     inline const ResourcePriv resourcePriv() const;
@@ -294,7 +233,7 @@ protected:
 
 private:
     bool isPurgeable() const;
-    bool hasRefOrPendingIO() const;
+    bool hasRef() const;
 
     
 
@@ -320,14 +259,13 @@ private:
     
 
 
-    virtual void willRemoveLastRefOrPendingIO() {}
+    virtual void willRemoveLastRef() {}
 
     
     void setUniqueKey(const GrUniqueKey&);
     void removeUniqueKey();
-    void notifyAllCntsWillBeZero() const;
-    void notifyAllCntsAreZero(CntType) const;
-    bool notifyRefCountIsZero() const;
+    void notifyRefCntWillBeZero() const;
+    void notifyRefCntIsZero() const;
     void removeScratchKey();
     void makeBudgeted();
     void makeUnbudgeted();
@@ -360,5 +298,24 @@ private:
     typedef GrIORef<GrGpuResource> INHERITED;
     friend class GrIORef<GrGpuResource>; 
 };
+
+class GrGpuResource::ProxyAccess {
+private:
+    ProxyAccess(GrGpuResource* resource) : fResource(resource) {}
+
+    
+    void ref(GrResourceCache* cache);
+
+    
+    const CacheAccess* operator&() const = delete;
+    CacheAccess* operator&() = delete;
+
+    GrGpuResource* fResource;
+
+    friend class GrGpuResource;
+    friend class GrSurfaceProxy;
+};
+
+inline GrGpuResource::ProxyAccess GrGpuResource::proxyAccess() { return ProxyAccess(this); }
 
 #endif

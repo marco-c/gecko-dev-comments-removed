@@ -8,19 +8,20 @@
 #ifndef SkPDFDevice_DEFINED
 #define SkPDFDevice_DEFINED
 
-#include "SkBitmap.h"
-#include "SkCanvas.h"
-#include "SkClipStack.h"
-#include "SkClipStackDevice.h"
-#include "SkData.h"
-#include "SkKeyedImage.h"
-#include "SkPDFTypes.h"
-#include "SkPaint.h"
-#include "SkRect.h"
-#include "SkRefCnt.h"
-#include "SkStream.h"
-#include "SkTHash.h"
-#include "SkTextBlobPriv.h"
+#include "include/core/SkBitmap.h"
+#include "include/core/SkCanvas.h"
+#include "include/core/SkData.h"
+#include "include/core/SkPaint.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkStream.h"
+#include "include/private/SkTHash.h"
+#include "src/core/SkClipStack.h"
+#include "src/core/SkClipStackDevice.h"
+#include "src/core/SkTextBlobPriv.h"
+#include "src/pdf/SkKeyedImage.h"
+#include "src/pdf/SkPDFGraphicStackState.h"
+#include "src/pdf/SkPDFTypes.h"
 
 #include <vector>
 
@@ -98,34 +99,15 @@ public:
     std::unique_ptr<SkPDFDict> makeResourceDict();
 
     
-    std::unique_ptr<SkPDFArray> getAnnotations();
-
-    
-
-
-
-    void appendDestinations(SkPDFDict* dict, SkPDFIndirectReference page) const;
-
-    
 
     std::unique_ptr<SkStreamAsset> content();
 
     SkISize size() const { return this->imageInfo().dimensions(); }
     SkIRect bounds() const { return this->imageInfo().bounds(); }
 
-    
-    
-    struct GraphicStateEntry {
-        SkMatrix fMatrix = SkMatrix::I();
-        uint32_t fClipStackGenID = SkClipStack::kWideOpenGenID;
-        SkColor4f fColor = {0, 0, 0, 1};
-        SkScalar fTextScaleX = 1;  
-        SkPaint::Style fTextFill = SkPaint::kFill_Style;  
-        int fShaderIndex = -1;
-        int fGraphicStateIndex = -1;
-    };
-
     void DrawGlyphRunAsPath(SkPDFDevice* dev, const SkGlyphRun& glyphRun, SkPoint offset);
+
+    const SkMatrix& initialTransform() const { return fInitialTransform; }
 
 protected:
     sk_sp<SkSurface> makeSurface(const SkImageInfo&, const SkSurfaceProps&) override;
@@ -136,29 +118,14 @@ protected:
                      SkImage*, const SkMatrix&) override;
     sk_sp<SkSpecialImage> makeSpecial(const SkBitmap&) override;
     sk_sp<SkSpecialImage> makeSpecial(const SkImage*) override;
-    sk_sp<SkSpecialImage> snapSpecial() override;
     SkImageFilterCache* getImageFilterCache() override;
 
 private:
-    struct RectWithData {
-        SkRect rect;
-        sk_sp<SkData> data;
-    };
-
-    struct NamedDestination {
-        sk_sp<SkData> nameData;
-        SkPoint point;
-    };
-
     
     
     friend class ScopedContentEntry;
 
     SkMatrix fInitialTransform;
-
-    std::vector<RectWithData> fLinkToURLs;
-    std::vector<RectWithData> fLinkToDestinations;
-    std::vector<NamedDestination> fNamedDestinations;
 
     SkTHashSet<SkPDFIndirectReference> fGraphicStateResources;
     SkTHashSet<SkPDFIndirectReference> fXObjectResources;
@@ -169,22 +136,7 @@ private:
     SkDynamicMemoryWStream fContent;
     SkDynamicMemoryWStream fContentBuffer;
     bool fNeedsExtraSave = false;
-    struct GraphicStackState {
-        GraphicStackState(SkDynamicMemoryWStream* s = nullptr);
-        void updateClip(const SkClipStack* clipStack, const SkIRect& bounds);
-        void updateMatrix(const SkMatrix& matrix);
-        void updateDrawingState(const SkPDFDevice::GraphicStateEntry& state);
-        void push();
-        void pop();
-        void drainStack();
-        SkPDFDevice::GraphicStateEntry* currentEntry() { return &fEntries[fStackDepth]; }
-        
-        static constexpr int kMaxStackDepth = 2;
-        SkPDFDevice::GraphicStateEntry fEntries[kMaxStackDepth + 1];
-        int fStackDepth = 0;
-        SkDynamicMemoryWStream* fContentStream;
-    };
-    GraphicStackState fActiveStackState;
+    SkPDFGraphicStackState fActiveStackState;
     SkPDFDocument* fDocument;
 
     
@@ -193,6 +145,7 @@ private:
 
     
     SkPDFIndirectReference makeFormXObjectFromDevice(bool alpha = false);
+    SkPDFIndirectReference makeFormXObjectFromDevice(SkIRect bbox, bool alpha = false);
 
     void drawFormXObjectWithMask(SkPDFIndirectReference xObject,
                                  SkPDFIndirectReference sMask,
@@ -233,7 +186,6 @@ private:
 
     bool handleInversePath(const SkPath& origPath, const SkPaint& paint, bool pathIsMutable);
 
-    void addSMaskGraphicState(sk_sp<SkPDFDevice> maskDevice, SkDynamicMemoryWStream*);
     void clearMaskOnGraphicState(SkDynamicMemoryWStream*);
     void setGraphicState(SkPDFIndirectReference gs, SkDynamicMemoryWStream*);
     void drawFormXObject(SkPDFIndirectReference xObject, SkDynamicMemoryWStream*);

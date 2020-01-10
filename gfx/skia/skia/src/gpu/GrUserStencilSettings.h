@@ -9,7 +9,7 @@
 #ifndef GrUserStencilSettings_DEFINED
 #define GrUserStencilSettings_DEFINED
 
-#include "GrTypes.h"
+#include "include/gpu/GrTypes.h"
 
 
 

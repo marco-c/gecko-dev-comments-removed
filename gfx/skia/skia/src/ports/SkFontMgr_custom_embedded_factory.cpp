@@ -5,7 +5,7 @@
 
 
 
-#include "SkFontMgr.h"
+#include "include/core/SkFontMgr.h"
 
 struct SkEmbeddedResource { const uint8_t* data; size_t size; };
 struct SkEmbeddedResourceHeader { const SkEmbeddedResource* entries; int count; };

@@ -8,7 +8,7 @@
 #ifndef GrSoftwarePathRenderer_DEFINED
 #define GrSoftwarePathRenderer_DEFINED
 
-#include "GrPathRenderer.h"
+#include "src/gpu/GrPathRenderer.h"
 
 class GrProxyProvider;
 class GrTextureProxy;
@@ -52,6 +52,7 @@ private:
     
     
     static void DrawToTargetWithShapeMask(sk_sp<GrTextureProxy> proxy,
+                                          GrColorType srcColorType,
                                           GrRenderTargetContext* renderTargetContext,
                                           GrPaint&& paint,
                                           const GrUserStencilSettings& userStencilSettings,

@@ -8,16 +8,15 @@
 #ifndef GrProgramDesc_DEFINED
 #define GrProgramDesc_DEFINED
 
-#include "GrColor.h"
-#include "GrTypesPriv.h"
-#include "SkOpts.h"
-#include "SkTArray.h"
-#include "SkTo.h"
-#include "glsl/GrGLSLFragmentShaderBuilder.h"
+#include "include/private/GrTypesPriv.h"
+#include "include/private/SkTArray.h"
+#include "include/private/SkTo.h"
+#include "src/core/SkOpts.h"
+#include "src/gpu/GrColor.h"
+#include "src/gpu/glsl/GrGLSLFragmentShaderBuilder.h"
 
+class GrProgramInfo;
 class GrShaderCaps;
-class GrPipeline;
-class GrPrimitiveProcessor;
 
 
 class GrProgramDesc {
@@ -35,16 +34,19 @@ public:
 
 
 
+    static bool Build(GrProgramDesc*, const GrRenderTarget*, const GrProgramInfo&,
+                      GrPrimitiveType, GrGpu*);
 
-
-
-
-    static bool Build(GrProgramDesc*,
-                      GrPixelConfig,
-                      const GrPrimitiveProcessor&,
-                      bool hasPointSize,
-                      const GrPipeline&,
-                      GrGpu*);
+    
+    
+    static bool BuildFromData(GrProgramDesc* desc, const void* keyData, size_t keyLength) {
+        if (!SkTFitsIn<int>(keyLength)) {
+            return false;
+        }
+        desc->fKey.reset(SkToInt(keyLength));
+        memcpy(desc->fKey.begin(), keyData, keyLength);
+        return true;
+    }
 
     
     const uint32_t* asKey() const {
@@ -85,11 +87,10 @@ public:
         return !(*this == other);
     }
 
-    void setSurfaceOriginKey(int key) {
-        KeyHeader* header = this->atOffset<KeyHeader, kHeaderOffset>();
-        header->fSurfaceOriginKey = key;
-    }
+    
+    bool hasPointSize() const { return this->header().fHasPointSize; }
 
+protected:
     struct KeyHeader {
         
         uint16_t fOutputSwizzle;
@@ -97,16 +98,15 @@ public:
         uint8_t fCoverageFragmentProcessorCnt;
         
         uint8_t fSurfaceOriginKey : 2;
+        uint8_t fProcessorFeatures : 1;
         bool fSnapVerticesToPixelCenters : 1;
         bool fHasPointSize : 1;
-        uint8_t fPad : 4;
+        uint8_t fPad : 3;
     };
     GR_STATIC_ASSERT(sizeof(KeyHeader) == 6);
 
-    
     const KeyHeader& header() const { return *this->atOffset<KeyHeader, kHeaderOffset>(); }
 
-protected:
     template<typename T, size_t OFFSET> T* atOffset() {
         return reinterpret_cast<T*>(reinterpret_cast<intptr_t>(fKey.begin()) + OFFSET);
     }

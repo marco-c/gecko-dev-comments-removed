@@ -8,14 +8,15 @@
 #ifndef SkSpinlock_DEFINED
 #define SkSpinlock_DEFINED
 
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
+#include "include/private/SkThreadAnnotations.h"
 #include <atomic>
 
-class SkSpinlock {
+class SK_CAPABILITY("mutex") SkSpinlock {
 public:
     constexpr SkSpinlock() = default;
 
-    void acquire() {
+    void acquire() SK_ACQUIRE() {
         
         if (fLocked.exchange(true, std::memory_order_acquire)) {
             
@@ -24,7 +25,7 @@ public:
     }
 
     
-    bool tryAcquire() {
+    bool tryAcquire() SK_TRY_ACQUIRE(true) {
         
         if (fLocked.exchange(true, std::memory_order_acquire)) {
             
@@ -33,7 +34,7 @@ public:
         return true;
     }
 
-    void release() {
+    void release() SK_RELEASE_CAPABILITY() {
         
         fLocked.store(false, std::memory_order_release);
     }
@@ -42,6 +43,15 @@ private:
     SK_API void contendedAcquire();
 
     std::atomic<bool> fLocked{false};
+};
+
+class SK_SCOPED_CAPABILITY SkAutoSpinlock {
+public:
+    SkAutoSpinlock(SkSpinlock& mutex) SK_ACQUIRE(mutex) : fSpinlock(mutex) { fSpinlock.acquire(); }
+    ~SkAutoSpinlock() SK_RELEASE_CAPABILITY() { fSpinlock.release(); }
+
+private:
+    SkSpinlock& fSpinlock;
 };
 
 #endif

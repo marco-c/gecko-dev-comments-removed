@@ -5,11 +5,11 @@
 
 
 
-#include "SkRRectPriv.h"
-#include "SkBuffer.h"
-#include "SkMalloc.h"
-#include "SkMatrix.h"
-#include "SkScaleToSides.h"
+#include "include/core/SkMatrix.h"
+#include "include/private/SkMalloc.h"
+#include "src/core/SkBuffer.h"
+#include "src/core/SkRRectPriv.h"
+#include "src/core/SkScaleToSides.h"
 
 #include <cmath>
 #include <utility>
@@ -389,9 +389,7 @@ bool SkRRect::transform(const SkMatrix& matrix, SkRRect* dst) const {
         return true;
     }
 
-    
-    
-    if (!matrix.isScaleTranslate()) {
+    if (!matrix.preservesAxisAlignment()) {
         return false;
     }
 
@@ -430,11 +428,37 @@ bool SkRRect::transform(const SkMatrix& matrix, SkRRect* dst) const {
 
     
     SkScalar xScale = matrix.getScaleX();
+    SkScalar yScale = matrix.getScaleY();
+
+    
+    
+    
+    if (!matrix.isScaleTranslate()) {
+        const bool isClockwise = matrix.getSkewX() < 0;
+
+        
+        xScale = matrix.getSkewY() * (isClockwise ? 1 : -1);
+        yScale = matrix.getSkewX() * (isClockwise ? -1 : 1);
+
+        const int dir = isClockwise ? 3 : 1;
+        for (int i = 0; i < 4; ++i) {
+            const int src = (i + dir) >= 4 ? (i + dir) % 4 : (i + dir);
+            
+            dst->fRadii[i].fX = fRadii[src].fY;
+            dst->fRadii[i].fY = fRadii[src].fX;
+        }
+    } else {
+        for (int i = 0; i < 4; ++i) {
+            dst->fRadii[i].fX = fRadii[i].fX;
+            dst->fRadii[i].fY = fRadii[i].fY;
+        }
+    }
+
     const bool flipX = xScale < 0;
     if (flipX) {
         xScale = -xScale;
     }
-    SkScalar yScale = matrix.getScaleY();
+
     const bool flipY = yScale < 0;
     if (flipY) {
         yScale = -yScale;
@@ -442,8 +466,8 @@ bool SkRRect::transform(const SkMatrix& matrix, SkRRect* dst) const {
 
     
     for (int i = 0; i < 4; ++i) {
-        dst->fRadii[i].fX = fRadii[i].fX * xScale;
-        dst->fRadii[i].fY = fRadii[i].fY * yScale;
+        dst->fRadii[i].fX *= xScale;
+        dst->fRadii[i].fY *= yScale;
     }
 
     
@@ -544,8 +568,8 @@ bool SkRRectPriv::ReadFromBuffer(SkRBuffer* buffer, SkRRect* rr) {
            (rr->readFromMemory(&storage, SkRRect::kSizeInMemory) == SkRRect::kSizeInMemory);
 }
 
-#include "SkString.h"
-#include "SkStringUtils.h"
+#include "include/core/SkString.h"
+#include "src/core/SkStringUtils.h"
 
 void SkRRect::dump(bool asHex) const {
     SkScalarAsStringType asType = asHex ? kHex_SkScalarAsStringType : kDec_SkScalarAsStringType;

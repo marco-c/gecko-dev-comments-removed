@@ -8,7 +8,7 @@
 #ifndef SkEmptyShader_DEFINED
 #define SkEmptyShader_DEFINED
 
-#include "SkShaderBase.h"
+#include "src/shaders/SkShaderBase.h"
 
 
 
@@ -33,7 +33,7 @@ protected:
         
     }
 
-    bool onAppendStages(const StageRec&) const override {
+    bool onAppendStages(const SkStageRec&) const override {
         return false;
     }
 

@@ -8,10 +8,10 @@
 #ifndef SkSurface_Base_DEFINED
 #define SkSurface_Base_DEFINED
 
-#include "SkCanvas.h"
-#include "SkImagePriv.h"
-#include "SkSurface.h"
-#include "SkSurfacePriv.h"
+#include "include/core/SkCanvas.h"
+#include "include/core/SkSurface.h"
+#include "src/core/SkImagePriv.h"
+#include "src/core/SkSurfacePriv.h"
 
 class SkSurface_Base : public SkSurface {
 public:
@@ -21,7 +21,10 @@ public:
 
     virtual GrBackendTexture onGetBackendTexture(BackendHandleAccess);
     virtual GrBackendRenderTarget onGetBackendRenderTarget(BackendHandleAccess);
-
+    virtual bool onReplaceBackendTexture(const GrBackendTexture&,
+                                         GrSurfaceOrigin,
+                                         TextureReleaseProc,
+                                         ReleaseContext);
     
 
 
@@ -44,6 +47,27 @@ public:
     virtual sk_sp<SkImage> onNewImageSnapshot(const SkIRect* subset = nullptr) { return nullptr; }
 
     virtual void onWritePixels(const SkPixmap&, int x, int y) = 0;
+
+    
+
+
+    virtual void onAsyncRescaleAndReadPixels(const SkImageInfo&,
+                                             const SkIRect& srcRect,
+                                             RescaleGamma,
+                                             SkFilterQuality,
+                                             ReadPixelsCallback,
+                                             ReadPixelsContext);
+    
+
+
+    virtual void onAsyncRescaleAndReadPixelsYUV420(SkYUVColorSpace,
+                                                   sk_sp<SkColorSpace> dstColorSpace,
+                                                   const SkIRect& srcRect,
+                                                   const SkISize& dstSize,
+                                                   RescaleGamma,
+                                                   SkFilterQuality,
+                                                   ReadPixelsCallback,
+                                                   ReadPixelsContext);
 
     
 
@@ -80,9 +104,7 @@ public:
 
 
 
-    virtual GrSemaphoresSubmitted onFlush(BackendSurfaceAccess access, FlushFlags flags,
-                                          int numSemaphores,
-                                          GrBackendSemaphore signalSemaphores[]) {
+    virtual GrSemaphoresSubmitted onFlush(BackendSurfaceAccess access, const GrFlushInfo&) {
         return GrSemaphoresSubmitted::kNo;
     }
 
@@ -96,6 +118,7 @@ public:
     }
 
     virtual bool onCharacterize(SkSurfaceCharacterization*) const { return false; }
+    virtual bool onIsCompatible(const SkSurfaceCharacterization&) const { return false; }
     virtual bool onDraw(const SkDeferredDisplayList*) { return false; }
 
     inline SkCanvas* getCachedCanvas();

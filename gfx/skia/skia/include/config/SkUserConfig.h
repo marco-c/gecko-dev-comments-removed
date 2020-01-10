@@ -94,38 +94,7 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#define MOZ_SKIA
 
 
 #define SK_A32_SHIFT 24
@@ -137,9 +106,9 @@
 
 #define SK_RASTERIZE_EVEN_ROUNDING
 
-#define SK_DISABLE_SLOW_DEBUG_VALIDATION 1
-
 #define SK_SUPPORT_DEPRECATED_CLIPOPS
+
+#define SK_USE_FREETYPE_EMBOLDEN
 
 #define SK_SUPPORT_GPU 0
 
@@ -151,12 +120,10 @@
 #  endif
 #endif
 
-#define MOZ_SKIA
+#define SK_DISABLE_SLOW_DEBUG_VALIDATION 1
 
 #define SK_IGNORE_MAC_BLENDING_MATCH_FIX
 
 #define I_ACKNOWLEDGE_SKIA_DOES_NOT_SUPPORT_BIG_ENDIAN
-
-#define SK_USE_FREETYPE_EMBOLDEN
 
 #endif

@@ -5,7 +5,7 @@
 
 
 
-#include "SkMalloc.h"
+#include "include/private/SkMalloc.h"
 
 #include <cstdlib>
 

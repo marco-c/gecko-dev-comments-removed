@@ -5,9 +5,9 @@
 
 
 
-#include "SkFontMgr.h"
-#include "SkFontMgr_fontconfig.h"
-#include "SkTypes.h"
+#include "include/core/SkFontMgr.h"
+#include "include/core/SkTypes.h"
+#include "include/ports/SkFontMgr_fontconfig.h"
 
 sk_sp<SkFontMgr> SkFontMgr::Factory() {
     return SkFontMgr_New_FontConfig(nullptr);

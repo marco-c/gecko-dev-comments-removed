@@ -8,9 +8,9 @@
 #ifndef SkFont_DEFINED
 #define SkFont_DEFINED
 
-#include "SkFontTypes.h"
-#include "SkScalar.h"
-#include "SkTypeface.h"
+#include "include/core/SkFontTypes.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkTypeface.h"
 
 class SkMatrix;
 class SkPaint;
@@ -118,6 +118,13 @@ public:
 
 
 
+    bool isBaselineSnap() const { return SkToBool(fFlags & kBaselineSnap_PrivFlag); }
+
+    
+
+
+
+
 
 
     void setForceAutoHinting(bool forceAutoHinting);
@@ -139,6 +146,8 @@ public:
 
 
 
+
+
     void setLinearMetrics(bool linearMetrics);
 
     
@@ -146,6 +155,13 @@ public:
 
 
     void setEmbolden(bool embolden);
+
+    
+
+
+
+
+    void setBaselineSnap(bool baselineSnap);
 
     
 
@@ -302,6 +318,8 @@ public:
 
     SkGlyphID unicharToGlyph(SkUnichar uni) const;
 
+    void unicharsToGlyphs(const SkUnichar uni[], int count, SkGlyphID glyphs[]) const;
+
     
 
 
@@ -361,12 +379,12 @@ public:
 
 
 
-    void getWidths(const uint16_t glyphs[], int count, SkScalar widths[], SkRect bounds[]) const {
+    void getWidths(const SkGlyphID glyphs[], int count, SkScalar widths[], SkRect bounds[]) const {
         this->getWidthsBounds(glyphs, count, widths, bounds, nullptr);
     }
 
     
-    void getWidths(const uint16_t glyphs[], int count, SkScalar widths[], std::nullptr_t) const {
+    void getWidths(const SkGlyphID glyphs[], int count, SkScalar widths[], std::nullptr_t) const {
         this->getWidths(glyphs, count, widths);
     }
 
@@ -379,7 +397,7 @@ public:
 
 
 
-    void getWidths(const uint16_t glyphs[], int count, SkScalar widths[]) const {
+    void getWidths(const SkGlyphID glyphs[], int count, SkScalar widths[]) const {
         this->getWidthsBounds(glyphs, count, widths, nullptr, nullptr);
     }
 
@@ -394,7 +412,7 @@ public:
 
 
 
-    void getWidthsBounds(const uint16_t glyphs[], int count, SkScalar widths[], SkRect bounds[],
+    void getWidthsBounds(const SkGlyphID glyphs[], int count, SkScalar widths[], SkRect bounds[],
                          const SkPaint* paint) const;
 
 
@@ -407,7 +425,7 @@ public:
 
 
 
-    void getBounds(const uint16_t glyphs[], int count, SkRect bounds[],
+    void getBounds(const SkGlyphID glyphs[], int count, SkRect bounds[],
                    const SkPaint* paint) const {
         this->getWidthsBounds(glyphs, count, nullptr, bounds, paint);
     }
@@ -420,7 +438,7 @@ public:
 
 
 
-    void getPos(const uint16_t glyphs[], int count, SkPoint pos[], SkPoint origin = {0, 0}) const;
+    void getPos(const SkGlyphID glyphs[], int count, SkPoint pos[], SkPoint origin = {0, 0}) const;
 
     
 
@@ -430,7 +448,7 @@ public:
 
 
 
-    void getXPos(const uint16_t glyphs[], int count, SkScalar xpos[], SkScalar origin = 0) const;
+    void getXPos(const SkGlyphID glyphs[], int count, SkScalar xpos[], SkScalar origin = 0) const;
 
     
 
@@ -441,7 +459,7 @@ public:
 
 
 
-    bool getPath(uint16_t glyphID, SkPath* path) const;
+    bool getPath(SkGlyphID glyphID, SkPath* path) const;
 
     
 
@@ -450,7 +468,7 @@ public:
 
 
 
-    void getPaths(const uint16_t glyphIDs[], int count,
+    void getPaths(const SkGlyphID glyphIDs[], int count,
                   void (*glyphPathProc)(const SkPath* pathOrNull, const SkMatrix& mx, void* ctx),
                   void* ctx) const;
 
@@ -480,7 +498,6 @@ public:
     
 
 
-
     void dump() const;
 
 private:
@@ -490,9 +507,15 @@ private:
         kSubpixel_PrivFlag              = 1 << 2,
         kLinearMetrics_PrivFlag         = 1 << 3,
         kEmbolden_PrivFlag              = 1 << 4,
+        kBaselineSnap_PrivFlag          = 1 << 5,
     };
 
-    static constexpr unsigned kAllFlags = 0x1F;
+    static constexpr unsigned kAllFlags = kForceAutoHinting_PrivFlag
+                                        | kEmbeddedBitmaps_PrivFlag
+                                        | kSubpixel_PrivFlag
+                                        | kLinearMetrics_PrivFlag
+                                        | kEmbolden_PrivFlag
+                                        | kBaselineSnap_PrivFlag;
 
     sk_sp<SkTypeface> fTypeface;
     SkScalar    fSize;
@@ -505,14 +528,11 @@ private:
     SkScalar setupForAsPaths(SkPaint*);
     bool hasSomeAntiAliasing() const;
 
-    void glyphsToUnichars(const SkGlyphID glyphs[], int count, SkUnichar text[]) const;
-
     friend class GrTextBlob;
-    friend class SkCanonicalizeFont;
     friend class SkFontPriv;
     friend class SkGlyphRunListPainter;
     friend class SkTextBlobCacheDiffCanvas;
-    friend class SVGTextBuilder;
+    friend class SkStrikeSpec;
 };
 
 #endif

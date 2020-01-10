@@ -8,9 +8,10 @@
 #ifndef GrContext_Base_DEFINED
 #define GrContext_Base_DEFINED
 
-#include "SkRefCnt.h"
-#include "GrContextOptions.h"
-#include "GrTypes.h"
+#include "include/core/SkRefCnt.h"
+#include "include/gpu/GrBackendSurface.h"
+#include "include/gpu/GrContextOptions.h"
+#include "include/gpu/GrTypes.h"
 
 class GrBaseContextPriv;
 class GrCaps;
@@ -19,14 +20,23 @@ class GrImageContext;
 class GrRecordingContext;
 class GrSkSLFPFactoryCache;
 
-class SK_API GrContext_Base : public SkRefCnt {
+class GrContext_Base : public SkRefCnt {
 public:
     virtual ~GrContext_Base();
 
     
 
 
-    GrBackendApi backend() const { return fBackend; }
+    SK_API GrBackendApi backend() const { return fBackend; }
+
+    
+
+
+
+
+
+
+    SK_API GrBackendFormat defaultBackendFormat(SkColorType, GrRenderable) const;
 
     
     GrBaseContextPriv priv();
@@ -56,8 +66,6 @@ protected:
 
 
     const GrContextOptions& options() const { return fOptions; }
-
-    bool explicitlyAllocateGPUResources() const;
 
     const GrCaps* caps() const;
     sk_sp<const GrCaps> refCaps() const;

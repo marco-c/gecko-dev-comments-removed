@@ -9,17 +9,16 @@
 #define GrOpFlushState_DEFINED
 
 #include <utility>
-#include "GrAppliedClip.h"
-#include "GrBufferAllocPool.h"
-#include "GrDeferredUpload.h"
-#include "GrRenderTargetProxy.h"
-#include "SkArenaAlloc.h"
-#include "SkArenaAllocList.h"
-#include "ops/GrMeshDrawOp.h"
+#include "src/core/SkArenaAlloc.h"
+#include "src/core/SkArenaAllocList.h"
+#include "src/gpu/GrAppliedClip.h"
+#include "src/gpu/GrBufferAllocPool.h"
+#include "src/gpu/GrDeferredUpload.h"
+#include "src/gpu/GrRenderTargetProxy.h"
+#include "src/gpu/ops/GrMeshDrawOp.h"
 
 class GrGpu;
-class GrGpuCommandBuffer;
-class GrGpuRTCommandBuffer;
+class GrOpsRenderPass;
 class GrResourceProvider;
 
 
@@ -37,17 +36,20 @@ public:
 
     void preExecuteDraws();
 
-    void doUpload(GrDeferredTextureUploadFn&);
+    
+
+
+
+    void doUpload(GrDeferredTextureUploadFn&, bool shouldPrepareSurfaceForSampling = false);
 
     
     void executeDrawsAndUploadsForMeshDrawOp(
-            const GrOp* op, const SkRect& chainBounds, GrProcessorSet&&, uint32_t pipelineFlags = 0,
+            const GrOp* op, const SkRect& chainBounds, GrProcessorSet&&,
+            GrPipeline::InputFlags = GrPipeline::InputFlags::kNone,
             const GrUserStencilSettings* = &GrUserStencilSettings::kUnused);
 
-    GrGpuCommandBuffer* commandBuffer() { return fCommandBuffer; }
-    
-    GrGpuRTCommandBuffer* rtCommandBuffer();
-    void setCommandBuffer(GrGpuCommandBuffer* buffer) { fCommandBuffer = buffer; }
+    GrOpsRenderPass* opsRenderPass() { return fOpsRenderPass; }
+    void setOpsRenderPass(GrOpsRenderPass* renderPass) { fOpsRenderPass = renderPass; }
 
     GrGpu* gpu() { return fGpu; }
 
@@ -55,22 +57,53 @@ public:
 
     
     struct OpArgs {
-        GrSurfaceOrigin origin() const { return fProxy->origin(); }
-        GrRenderTarget* renderTarget() const { return fProxy->peekRenderTarget(); }
+        explicit OpArgs(GrOp* op, GrRenderTargetProxy* proxy, GrAppliedClip* appliedClip,
+                        const GrXferProcessor::DstProxy& dstProxy)
+            : fOp(op)
+            , fProxy(proxy)
+            , fAppliedClip(appliedClip)
+            , fDstProxy(dstProxy) {
+        }
 
-        GrOp* fOp;
-        
-        GrRenderTargetProxy* fProxy;
-        GrAppliedClip* fAppliedClip;
-        GrXferProcessor::DstProxy fDstProxy;
+        int numSamples() const { return fProxy->numSamples(); }
+        GrSurfaceOrigin origin() const { return fProxy->origin(); }
+        GrSwizzle outputSwizzle() const { return fProxy->outputSwizzle(); }
+
+        GrOp* op() { return fOp; }
+        GrRenderTargetProxy* proxy() const { return fProxy; }
+        GrRenderTarget* renderTarget() const { return fProxy->peekRenderTarget(); }
+        GrAppliedClip* appliedClip() { return fAppliedClip; }
+        const GrAppliedClip* appliedClip() const { return fAppliedClip; }
+        const GrXferProcessor::DstProxy& dstProxy() const { return fDstProxy; }
+
+#ifdef SK_DEBUG
+        void validate() const {
+            SkASSERT(fOp);
+            SkASSERT(fProxy);
+        }
+#endif
+
+    private:
+        GrOp*                     fOp;
+        GrRenderTargetProxy*      fProxy;
+        GrAppliedClip*            fAppliedClip;
+        GrXferProcessor::DstProxy fDstProxy;     
     };
 
     void setOpArgs(OpArgs* opArgs) { fOpArgs = opArgs; }
 
     const OpArgs& drawOpArgs() const {
         SkASSERT(fOpArgs);
-        SkASSERT(fOpArgs->fOp);
+        SkDEBUGCODE(fOpArgs->validate());
         return *fOpArgs;
+    }
+
+    void setSampledProxyArray(SkTArray<GrTextureProxy*, true>* sampledProxies) {
+        fSampledProxies = sampledProxies;
+    }
+
+    SkTArray<GrTextureProxy*, true>* sampledProxyArray() override {
+        return fSampledProxies;
     }
 
     
@@ -80,9 +113,9 @@ public:
     GrDeferredUploadToken addASAPUpload(GrDeferredTextureUploadFn&&) final;
 
     
-    void recordDraw(
-            sk_sp<const GrGeometryProcessor>, const GrMesh[], int meshCnt,
-            const GrPipeline::FixedDynamicState*, const GrPipeline::DynamicStateArrays*) final;
+    void recordDraw(sk_sp<const GrGeometryProcessor>, const GrMesh[], int meshCnt,
+                    const GrPipeline::FixedDynamicState*,
+                    const GrPipeline::DynamicStateArrays*) final;
     void* makeVertexSpace(size_t vertexSize, int vertexCount, sk_sp<const GrBuffer>*,
                           int* startVertex) final;
     uint16_t* makeIndexSpace(int indexCount, sk_sp<const GrBuffer>*, int* startIndex) final;
@@ -94,10 +127,10 @@ public:
                                     int* actualIndexCount) final;
     void putBackIndices(int indexCount) final;
     void putBackVertices(int vertices, size_t vertexStride) final;
-    GrRenderTargetProxy* proxy() const final { return fOpArgs->fProxy; }
-    const GrAppliedClip* appliedClip() final { return fOpArgs->fAppliedClip; }
+    GrRenderTargetProxy* proxy() const final { return fOpArgs->proxy(); }
+    const GrAppliedClip* appliedClip() final { return fOpArgs->appliedClip(); }
     GrAppliedClip detachAppliedClip() final;
-    const GrXferProcessor::DstProxy& dstProxy() const final { return fOpArgs->fDstProxy; }
+    const GrXferProcessor::DstProxy& dstProxy() const final { return fOpArgs->dstProxy(); }
     GrDeferredUploadTarget* deferredUploadTarget() final { return this; }
     const GrCaps& caps() const final;
     GrResourceProvider* resourceProvider() const final { return fResourceProvider; }
@@ -108,10 +141,10 @@ public:
     
     GrAtlasManager* atlasManager() const final;
 
-private:
     
     SkArenaAlloc* allocator() override { return &fArena; }
 
+private:
     struct InlineUpload {
         InlineUpload(GrDeferredTextureUploadFn&& upload, GrDeferredUploadToken token)
                 : fUpload(std::move(upload)), fUploadBeforeToken(token) {}
@@ -153,10 +186,14 @@ private:
     
     OpArgs* fOpArgs = nullptr;
 
+    
+    
+    SkTArray<GrTextureProxy*, true>* fSampledProxies;
+
     GrGpu* fGpu;
     GrResourceProvider* fResourceProvider;
     GrTokenTracker* fTokenTracker;
-    GrGpuCommandBuffer* fCommandBuffer = nullptr;
+    GrOpsRenderPass* fOpsRenderPass = nullptr;
 
     
     SkArenaAllocList<Draw>::Iter fCurrDraw;

@@ -8,12 +8,12 @@
 #ifndef GrStrikeCache_DEFINED
 #define GrStrikeCache_DEFINED
 
-#include "GrDrawOpAtlas.h"
-#include "GrGlyph.h"
-#include "SkArenaAlloc.h"
-#include "SkMasks.h"
-#include "SkStrike.h"
-#include "SkTDynamicHash.h"
+#include "src/codec/SkMasks.h"
+#include "src/core/SkArenaAlloc.h"
+#include "src/core/SkStrike.h"
+#include "src/core/SkTDynamicHash.h"
+#include "src/gpu/GrDrawOpAtlas.h"
+#include "src/gpu/GrGlyph.h"
 
 class GrAtlasManager;
 class GrGpu;
@@ -31,28 +31,28 @@ public:
     GrTextStrike(const SkDescriptor& fontScalerKey);
 
     GrGlyph* getGlyph(const SkGlyph& skGlyph) {
-        GrGlyph* glyph = fCache.find(skGlyph.getPackedID());
-        if (!glyph) {
-            glyph = this->generateGlyph(skGlyph);
+        GrGlyph* grGlyph = fCache.find(skGlyph.getPackedID());
+        if (grGlyph == nullptr) {
+            grGlyph = fAlloc.make<GrGlyph>(skGlyph);
+            fCache.add(grGlyph);
         }
-        return glyph;
+        return grGlyph;
     }
 
     
     
     
     
-    GrGlyph* getGlyph(SkPackedGlyphID packed,
-                      SkStrike* cache) {
-        GrGlyph* glyph = fCache.find(packed);
-        if (!glyph) {
+    GrGlyph* getGlyph(SkPackedGlyphID packed, SkStrike* skStrike) {
+        GrGlyph* grGlyph = fCache.find(packed);
+        if (grGlyph == nullptr) {
             
             
             
-            const SkGlyph& skGlyph = GrToSkGlyph(cache, packed);
-            glyph = this->generateGlyph(skGlyph);
+            grGlyph = fAlloc.make<GrGlyph>(*skStrike->glyph(packed));
+            fCache.add(grGlyph);
         }
-        return glyph;
+        return grGlyph;
     }
 
     
@@ -87,12 +87,6 @@ private:
 
     int fAtlasedGlyphs{0};
     bool fIsAbandoned{false};
-
-    static const SkGlyph& GrToSkGlyph(SkStrike* cache, SkPackedGlyphID id) {
-        return cache->getGlyphIDMetrics(id.code(), id.getSubXFixed(), id.getSubYFixed());
-    }
-
-    GrGlyph* generateGlyph(const SkGlyph&);
 
     friend class GrStrikeCache;
 };

@@ -5,8 +5,8 @@
 
 
 
-#include "SkStrokeRec.h"
-#include "SkPaintDefaults.h"
+#include "include/core/SkStrokeRec.h"
+#include "src/core/SkPaintDefaults.h"
 
 
 #define kStrokeRec_FillStyleWidth     (-SK_Scalar1)
@@ -94,7 +94,7 @@ void SkStrokeRec::setStrokeStyle(SkScalar width, bool strokeAndFill) {
     }
 }
 
-#include "SkStroke.h"
+#include "src/core/SkStroke.h"
 
 #ifdef SK_DEBUG
     

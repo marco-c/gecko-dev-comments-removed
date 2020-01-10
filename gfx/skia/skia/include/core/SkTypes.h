@@ -9,21 +9,18 @@
 #define SkTypes_DEFINED
 
 
-#include "SkPreConfig.h"
-#include "SkUserConfig.h"
-#include "SkPostConfig.h"
+#include "include/core/SkPreConfig.h"
+#if defined (SK_USER_CONFIG_HEADER)
+    #include SK_USER_CONFIG_HEADER
+#else
+    #include "include/config/SkUserConfig.h"
+#endif
+#include "include/core/SkPostConfig.h"
 #include <stddef.h>
 #include <stdint.h>
 
 
 
-
-
-
-
-#define SKIA_VERSION_MAJOR  1
-#define SKIA_VERSION_MINOR  0
-#define SKIA_VERSION_PATCH  0
 
 
 

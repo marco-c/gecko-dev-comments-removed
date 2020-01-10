@@ -5,10 +5,10 @@
 
 
 
-#include "SkDashPathPriv.h"
-#include "SkPathMeasure.h"
-#include "SkPointPriv.h"
-#include "SkStrokeRec.h"
+#include "include/core/SkPathMeasure.h"
+#include "include/core/SkStrokeRec.h"
+#include "src/core/SkPointPriv.h"
+#include "src/utils/SkDashPathPriv.h"
 
 #include <utility>
 
@@ -151,76 +151,68 @@ static bool clip_line(SkPoint pts[2], const SkRect& bounds, SkScalar intervalLen
     return true;
 }
 
-static bool contains_inclusive(const SkRect& rect, const SkPoint& pt) {
-    return rect.fLeft <= pt.fX && pt.fX <= rect.fRight &&
-            rect.fTop <= pt.fY && pt.fY <= rect.fBottom;
-}
-
-
-
-
-
-
-
-static bool between(SkScalar a, SkScalar b, SkScalar c) {
-    SkASSERT(((a <= b && b <= c) || (a >= b && b >= c)) == ((a - b) * (c - b) <= 0)
-            || (SkScalarNearlyZero(a) && SkScalarNearlyZero(b) && SkScalarNearlyZero(c)));
-    return (a - b) * (c - b) <= 0;
-}
 
 
 
 static bool cull_path(const SkPath& srcPath, const SkStrokeRec& rec,
-                      const SkRect* cullRect, SkScalar intervalLength,
-                      SkPath* dstPath) {
-    SkPoint pts[4];
-    if (nullptr == cullRect) {
+                      const SkRect* cullRect, SkScalar intervalLength, SkPath* dstPath) {
+    if (!cullRect) {
+        SkPoint pts[2];
         if (srcPath.isLine(pts) && pts[0] == pts[1]) {
             adjust_zero_length_line(pts);
-        } else {
-            return false;
+            dstPath->moveTo(pts[0]);
+            dstPath->lineTo(pts[1]);
+            return true;
         }
-    } else {
-        SkRect bounds;
-        bool isLine = srcPath.isLine(pts);
-        bool isRect = !isLine && srcPath.isRect(nullptr);
-        if (!isLine && !isRect) {
-            return false;
-        }
-        bounds = *cullRect;
-        outset_for_stroke(&bounds, rec);
-        if (isRect) {
-            
-            SkPath::Iter iter(srcPath, false);
-            SkAssertResult(SkPath::kMove_Verb == iter.next(pts));
-            SkScalar priorLength = 0;
-            while (SkPath::kLine_Verb == iter.next(pts)) {
-                SkVector v = pts[1] - pts[0];
-                
-                if (v.fX ? between(bounds.fTop, pts[0].fY, bounds.fBottom) :
-                        between(bounds.fLeft, pts[0].fX, bounds.fRight)) {
-                    bool skipMoveTo = contains_inclusive(bounds, pts[0]);
-                    if (clip_line(pts, bounds, intervalLength,
-                                  SkScalarMod(priorLength, intervalLength))) {
-                        if (0 == priorLength || !skipMoveTo) {
-                            dstPath->moveTo(pts[0]);
-                        }
-                        dstPath->lineTo(pts[1]);
-                    }
-                }
-                
-                priorLength += SkScalarAbs(v.fX ? v.fX : v.fY);
+        return false;
+    }
+
+    SkRect bounds;
+    bounds = *cullRect;
+    outset_for_stroke(&bounds, rec);
+
+    {
+        SkPoint pts[2];
+        if (srcPath.isLine(pts)) {
+            if (clip_line(pts, bounds, intervalLength, 0)) {
+                dstPath->moveTo(pts[0]);
+                dstPath->lineTo(pts[1]);
+                return true;
             }
-            return !dstPath->isEmpty();
-        }
-        SkASSERT(isLine);
-        if (!clip_line(pts, bounds, intervalLength, 0)) {
             return false;
         }
     }
-    dstPath->moveTo(pts[0]);
-    dstPath->lineTo(pts[1]);
-    return true;
+
+    if (srcPath.isRect(nullptr)) {
+        
+        SkPath::Iter iter(srcPath, false);
+
+        SkPoint pts[4];  
+        SkAssertResult(SkPath::kMove_Verb == iter.next(pts));
+
+        SkScalar accum = 0;  
+        while (iter.next(pts) == SkPath::kLine_Verb) {
+            
+            SkVector v = pts[1] - pts[0];
+
+            if (clip_line(pts, bounds, intervalLength, SkScalarMod(accum, intervalLength))) {
+                
+                
+                SkPoint last;
+                if (!dstPath->getLastPt(&last) || last != pts[0]) {
+                    dstPath->moveTo(pts[0]);
+                }
+                dstPath->lineTo(pts[1]);
+            }
+
+            
+            SkASSERT(v.fX == 0 || v.fY == 0);
+            accum += SkScalarAbs(v.fX + v.fY);
+        }
+        return !dstPath->isEmpty();
+    }
+
+    return false;
 }
 
 class SpecialLineRec {

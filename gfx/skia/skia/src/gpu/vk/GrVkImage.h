@@ -8,13 +8,13 @@
 #ifndef GrVkImage_DEFINED
 #define GrVkImage_DEFINED
 
-#include "GrBackendSurface.h"
-#include "GrTexture.h"
-#include "GrTypesPriv.h"
-#include "GrVkImageLayout.h"
-#include "GrVkResource.h"
-#include "SkTypes.h"
-#include "vk/GrVkTypes.h"
+#include "include/core/SkTypes.h"
+#include "include/gpu/GrBackendSurface.h"
+#include "include/gpu/GrTexture.h"
+#include "include/gpu/vk/GrVkTypes.h"
+#include "include/private/GrTypesPriv.h"
+#include "src/gpu/vk/GrVkImageLayout.h"
+#include "src/gpu/vk/GrVkResource.h"
 
 class GrVkGpu;
 class GrVkTexture;
@@ -36,6 +36,7 @@ public:
         } else if (fIsBorrowed) {
             fResource = new BorrowedResource(info.fImage, info.fAlloc, info.fImageTiling);
         } else {
+            SkASSERT(VK_NULL_HANDLE != info.fAlloc.fMemory);
             fResource = new Resource(info.fImage, info.fAlloc, info.fImageTiling);
         }
     }
@@ -56,7 +57,7 @@ public:
     VkFormat imageFormat() const { return fInfo.fFormat; }
     GrBackendFormat getBackendFormat() const {
         if (fResource && this->ycbcrConversionInfo().isValid()) {
-            SkASSERT(this->imageFormat() == VK_FORMAT_UNDEFINED);
+            SkASSERT(this->imageFormat() == this->ycbcrConversionInfo().fFormat);
             return GrBackendFormat::MakeVk(this->ycbcrConversionInfo());
         }
         SkASSERT(this->imageFormat() != VK_FORMAT_UNDEFINED);
@@ -99,6 +100,9 @@ public:
     void prepareForPresent(GrVkGpu* gpu);
 
     
+    void prepareForExternal(GrVkGpu* gpu);
+
+    
     
     
     void updateImageLayout(VkImageLayout newLayout) {
@@ -118,17 +122,19 @@ public:
         VkImageTiling       fImageTiling;
         VkImageUsageFlags   fUsageFlags;
         VkFlags             fMemProps;
+        GrProtected         fIsProtected;
 
         ImageDesc()
-            : fImageType(VK_IMAGE_TYPE_2D)
-            , fFormat(VK_FORMAT_UNDEFINED)
-            , fWidth(0)
-            , fHeight(0)
-            , fLevels(1)
-            , fSamples(1)
-            , fImageTiling(VK_IMAGE_TILING_OPTIMAL)
-            , fUsageFlags(0)
-            , fMemProps(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {}
+                : fImageType(VK_IMAGE_TYPE_2D)
+                , fFormat(VK_FORMAT_UNDEFINED)
+                , fWidth(0)
+                , fHeight(0)
+                , fLevels(1)
+                , fSamples(1)
+                , fImageTiling(VK_IMAGE_TILING_OPTIMAL)
+                , fUsageFlags(0)
+                , fMemProps(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+                , fIsProtected(GrProtected::kNo) {}
     };
 
     static bool InitImageInfo(const GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo*);

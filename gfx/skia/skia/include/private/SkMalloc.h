@@ -11,7 +11,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
 
 
 
@@ -120,6 +120,15 @@ static inline void* sk_careful_memcpy(void* dst, const void* src, size_t len) {
     
     if (len) {
         memcpy(dst,src,len);
+    }
+    return dst;
+}
+
+static inline void* sk_careful_memmove(void* dst, const void* src, size_t len) {
+    
+    
+    if (len) {
+        memmove(dst,src,len);
     }
     return dst;
 }

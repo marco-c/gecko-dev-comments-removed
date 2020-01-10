@@ -8,19 +8,18 @@
 #ifndef SkColorFilter_DEFINED
 #define SkColorFilter_DEFINED
 
-#include "SkBlendMode.h"
-#include "SkColor.h"
-#include "SkFlattenable.h"
-#include "SkRefCnt.h"
+#include "include/core/SkBlendMode.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkFlattenable.h"
+#include "include/core/SkRefCnt.h"
 
-class GrColorSpaceInfo;
+class GrColorInfo;
 class GrFragmentProcessor;
 class GrRecordingContext;
-class SkArenaAlloc;
 class SkBitmap;
+class SkColorMatrix;
 class SkColorSpace;
-class SkColorSpaceXformer;
-class SkRasterPipeline;
+struct SkStageRec;
 class SkString;
 
 
@@ -35,37 +34,27 @@ class SK_API SkColorFilter : public SkFlattenable {
 public:
     
 
-
-
-
-    virtual bool asColorMode(SkColor* color, SkBlendMode* bmode) const;
-
-    
-
-
-
-
-    virtual bool asColorMatrix(SkScalar matrix[20]) const;
+    bool asColorMode(SkColor* color, SkBlendMode* mode) const {
+        return this->onAsAColorMode(color, mode);
+    }
 
     
 
 
 
+    bool asAColorMode(SkColor* color, SkBlendMode* mode) const {
+        return this->onAsAColorMode(color, mode);
+    }
+
+    
 
 
 
+    bool asAColorMatrix(float matrix[20]) const {
+        return this->onAsAColorMatrix(matrix);
+    }
 
-
-
-
-
-
-
-
-
-    virtual bool asComponentTable(SkBitmap* table) const;
-
-    void appendStages(SkRasterPipeline*, SkColorSpace*, SkArenaAlloc*, bool shaderIsOpaque) const;
+    bool appendStages(const SkStageRec& rec, bool shaderIsOpaque) const;
 
     enum Flags {
         
@@ -78,18 +67,13 @@ public:
     virtual uint32_t getFlags() const { return 0; }
 
     SkColor filterColor(SkColor) const;
-    SkColor4f filterColor4f(const SkColor4f&, SkColorSpace*) const;
 
     
 
 
 
-
-
-
-
-
-    static sk_sp<SkColorFilter> MakeModeFilter(SkColor c, SkBlendMode mode);
+    SkColor4f filterColor4f(const SkColor4f& srcColor, SkColorSpace* srcCS,
+                            SkColorSpace* dstCS) const;
 
     
 
@@ -100,36 +84,6 @@ public:
 
 
     sk_sp<SkColorFilter> makeComposed(sk_sp<SkColorFilter> inner) const;
-
-    
-    static sk_sp<SkColorFilter> MakeComposeFilter(sk_sp<SkColorFilter> outer,
-                                                  sk_sp<SkColorFilter> inner) {
-        return outer ? outer->makeComposed(inner) : inner;
-    }
-
-    
-
-
-    static sk_sp<SkColorFilter> MakeMatrixFilterRowMajor255(const SkScalar array[20]);
-
-    
-    static sk_sp<SkColorFilter> MakeLinearToSRGBGamma();
-
-    
-
-
-    static sk_sp<SkColorFilter> MakeSRGBToLinearGamma();
-
-    
-
-
-
-
-
-
-
-    static sk_sp<SkColorFilter> MakeMixer(sk_sp<SkColorFilter> cf0, sk_sp<SkColorFilter> cf1,
-                                          float weight);
 
 #if SK_SUPPORT_GPU
     
@@ -142,7 +96,7 @@ public:
 
 
     virtual std::unique_ptr<GrFragmentProcessor> asFragmentProcessor(
-            GrRecordingContext*, const GrColorSpaceInfo& dstColorSpaceInfo) const;
+            GrRecordingContext*, const GrColorInfo& dstColorInfo) const;
 #endif
 
     bool affectsTransparentBlack() const {
@@ -169,21 +123,8 @@ public:
 protected:
     SkColorFilter() {}
 
-    sk_sp<SkColorFilter> makeColorSpace(SkColorSpaceXformer* xformer) const {
-        return this->onMakeColorSpace(xformer);
-    }
-    virtual sk_sp<SkColorFilter> onMakeColorSpace(SkColorSpaceXformer*) const {
-        return sk_ref_sp(const_cast<SkColorFilter*>(this));
-    }
-
-    
-
-
-
-
-
-
-    virtual sk_sp<SkColorFilter> onMakeComposed(sk_sp<SkColorFilter>) const { return nullptr; }
+    virtual bool onAsAColorMatrix(float[20]) const;
+    virtual bool onAsAColorMode(SkColor* color, SkBlendMode* bmode) const;
 
 private:
     
@@ -195,13 +136,32 @@ private:
 
     virtual int privateComposedFilterCount() const { return 1; }
 
-    virtual void onAppendStages(SkRasterPipeline*, SkColorSpace*, SkArenaAlloc*,
-                                bool shaderIsOpaque) const = 0;
+    virtual bool onAppendStages(const SkStageRec& rec, bool shaderIsOpaque) const = 0;
 
-    friend class SkColorSpaceXformer;
     friend class SkComposeColorFilter;
 
     typedef SkFlattenable INHERITED;
+};
+
+class SK_API SkColorFilters {
+public:
+    static sk_sp<SkColorFilter> Compose(sk_sp<SkColorFilter> outer, sk_sp<SkColorFilter> inner) {
+        return outer ? outer->makeComposed(inner) : inner;
+    }
+    static sk_sp<SkColorFilter> Blend(SkColor c, SkBlendMode mode);
+    static sk_sp<SkColorFilter> Matrix(const SkColorMatrix&);
+    static sk_sp<SkColorFilter> Matrix(const float rowMajor[20]);
+
+    
+    
+    static sk_sp<SkColorFilter> HSLAMatrix(const float rowMajor[20]);
+
+    static sk_sp<SkColorFilter> LinearToSRGBGamma();
+    static sk_sp<SkColorFilter> SRGBToLinearGamma();
+    static sk_sp<SkColorFilter> Lerp(float t, sk_sp<SkColorFilter> dst, sk_sp<SkColorFilter> src);
+
+private:
+    SkColorFilters() = delete;
 };
 
 #endif

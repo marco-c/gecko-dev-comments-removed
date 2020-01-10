@@ -8,31 +8,34 @@
 #ifndef SkDeferredDisplayList_DEFINED
 #define SkDeferredDisplayList_DEFINED
 
-#include "SkSurfaceCharacterization.h"
-
-#if SK_SUPPORT_GPU
-#include "GrCCPerOpListPaths.h"
-#include "GrOpList.h"
-
-#include <map>
-#endif
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkSurfaceCharacterization.h"
+#include "include/core/SkTypes.h"
 
 class SkDeferredDisplayListPriv;
-class SkSurface;
+
+#if SK_SUPPORT_GPU
+#include "include/private/SkTArray.h"
+#include <map>
+class GrRenderTask;
+class GrRenderTargetProxy;
+struct GrCCPerOpsTaskPaths;
+#endif
 
 
 
 
 
 
-class SK_API SkDeferredDisplayList {
+
+class SkDeferredDisplayList {
 public:
 
 #if SK_SUPPORT_GPU
     
     
     
-    class LazyProxyData : public SkRefCnt {
+    class SK_API LazyProxyData : public SkRefCnt {
     public:
         
         
@@ -40,14 +43,14 @@ public:
         GrRenderTargetProxy*     fReplayDest = nullptr;
     };
 #else
-    class LazyProxyData : public SkRefCnt {};
+    class SK_API LazyProxyData : public SkRefCnt {};
 #endif
 
-    SkDeferredDisplayList(const SkSurfaceCharacterization& characterization,
-                          sk_sp<LazyProxyData>);
-    ~SkDeferredDisplayList();
+    SK_API SkDeferredDisplayList(const SkSurfaceCharacterization& characterization,
+                                 sk_sp<LazyProxyData>);
+    SK_API ~SkDeferredDisplayList();
 
-    const SkSurfaceCharacterization& characterization() const {
+    SK_API const SkSurfaceCharacterization& characterization() const {
         return fCharacterization;
     }
 
@@ -64,12 +67,12 @@ private:
 
 #if SK_SUPPORT_GPU
     
-    using PendingPathsMap = std::map<uint32_t, sk_sp<GrCCPerOpListPaths>>;
+    using PendingPathsMap = std::map<uint32_t, sk_sp<GrCCPerOpsTaskPaths>>;
 
-    SkTArray<sk_sp<GrOpList>>    fOpLists;
-    PendingPathsMap              fPendingPaths;  
+    SkTArray<sk_sp<GrRenderTask>>   fRenderTasks;
+    PendingPathsMap                 fPendingPaths;  
 #endif
-    sk_sp<LazyProxyData>         fLazyProxyData;
+    sk_sp<LazyProxyData>            fLazyProxyData;
 };
 
 #endif

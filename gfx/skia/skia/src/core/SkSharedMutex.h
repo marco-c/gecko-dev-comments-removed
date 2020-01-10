@@ -8,13 +8,14 @@
 #ifndef SkSharedLock_DEFINED
 #define SkSharedLock_DEFINED
 
-#include "SkMacros.h"
-#include "SkSemaphore.h"
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
+#include "include/private/SkMacros.h"
+#include "include/private/SkSemaphore.h"
+#include "include/private/SkThreadAnnotations.h"
 #include <atomic>
 
 #ifdef SK_DEBUG
-    #include "SkMutex.h"
+    #include "include/private/SkMutex.h"
     #include <memory>
 #endif  
 
@@ -26,27 +27,27 @@
 
 
 
-class SkSharedMutex {
+class SK_CAPABILITY("mutex") SkSharedMutex {
 public:
     SkSharedMutex();
     ~SkSharedMutex();
     
-    void acquire();
+    void acquire() SK_ACQUIRE();
 
     
-    void release();
+    void release() SK_RELEASE_CAPABILITY();
 
     
-    void assertHeld() const;
+    void assertHeld() const SK_ASSERT_CAPABILITY(this);
 
     
-    void acquireShared();
+    void acquireShared() SK_ACQUIRE_SHARED();
 
     
-    void releaseShared();
+    void releaseShared() SK_RELEASE_SHARED_CAPABILITY();
 
     
-    void assertHeldShared() const;
+    void assertHeldShared() const SK_ASSERT_SHARED_CAPABILITY(this);
 
 private:
 #ifdef SK_DEBUG
@@ -70,10 +71,32 @@ inline void SkSharedMutex::assertHeld() const {};
 inline void SkSharedMutex::assertHeldShared() const {};
 #endif  
 
-class SkAutoSharedMutexShared {
+class SK_SCOPED_CAPABILITY SkAutoSharedMutexExclusive {
 public:
-    SkAutoSharedMutexShared(SkSharedMutex& lock) : fLock(lock) { lock.acquireShared(); }
-    ~SkAutoSharedMutexShared() { fLock.releaseShared(); }
+    explicit SkAutoSharedMutexExclusive(SkSharedMutex& lock) SK_ACQUIRE(lock)
+            : fLock(lock) {
+        lock.acquire();
+    }
+    ~SkAutoSharedMutexExclusive() SK_RELEASE_CAPABILITY() { fLock.release(); }
+
+private:
+    SkSharedMutex& fLock;
+};
+
+#define SkAutoSharedMutexExclusive(...) SK_REQUIRE_LOCAL_VAR(SkAutoSharedMutexExclusive)
+
+class SK_SCOPED_CAPABILITY SkAutoSharedMutexShared {
+public:
+    explicit SkAutoSharedMutexShared(SkSharedMutex& lock) SK_ACQUIRE_SHARED(lock)
+            : fLock(lock)  {
+        lock.acquireShared();
+    }
+
+    
+    
+    
+    ~SkAutoSharedMutexShared() SK_RELEASE_CAPABILITY() { fLock.releaseShared(); }
+
 private:
     SkSharedMutex& fLock;
 };

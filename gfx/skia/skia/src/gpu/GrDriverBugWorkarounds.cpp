@@ -5,9 +5,9 @@
 
 
 
-#include "GrDriverBugWorkarounds.h"
+#include "include/gpu/GrDriverBugWorkarounds.h"
 
-#include "SkTypes.h"
+#include "include/core/SkTypes.h"
 
 GrDriverBugWorkarounds::GrDriverBugWorkarounds() = default;
 

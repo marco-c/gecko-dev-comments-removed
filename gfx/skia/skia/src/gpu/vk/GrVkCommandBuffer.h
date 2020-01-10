@@ -8,11 +8,11 @@
 #ifndef GrVkCommandBuffer_DEFINED
 #define GrVkCommandBuffer_DEFINED
 
-#include "GrVkGpu.h"
-#include "GrVkResource.h"
-#include "GrVkSemaphore.h"
-#include "GrVkUtil.h"
-#include "vk/GrVkTypes.h"
+#include "include/gpu/vk/GrVkTypes.h"
+#include "src/gpu/vk/GrVkGpu.h"
+#include "src/gpu/vk/GrVkResource.h"
+#include "src/gpu/vk/GrVkSemaphore.h"
+#include "src/gpu/vk/GrVkUtil.h"
 
 class GrVkBuffer;
 class GrVkFramebuffer;
@@ -25,15 +25,16 @@ class GrVkRenderTarget;
 class GrVkTransferBuffer;
 class GrVkVertexBuffer;
 
-class GrVkCommandBuffer : public GrVkResource {
+class GrVkCommandBuffer {
 public:
+    virtual ~GrVkCommandBuffer() {}
+
     void invalidateState();
 
     
     
     
     enum BarrierType {
-        kMemory_BarrierType,
         kBufferMemory_BarrierType,
         kImageMemory_BarrierType
     };
@@ -54,17 +55,7 @@ public:
 
     void bindDescriptorSets(const GrVkGpu* gpu,
                             GrVkPipelineState*,
-                            GrVkPipelineLayout* layout,
-                            uint32_t firstSet,
-                            uint32_t setCount,
-                            const VkDescriptorSet* descriptorSets,
-                            uint32_t dynamicOffsetCount,
-                            const uint32_t* dynamicOffsets);
-
-    void bindDescriptorSets(const GrVkGpu* gpu,
-                            const SkTArray<const GrVkRecycledResource*>&,
-                            const SkTArray<const GrVkResource*>&,
-                            GrVkPipelineLayout* layout,
+                            VkPipelineLayout layout,
                             uint32_t firstSet,
                             uint32_t setCount,
                             const VkDescriptorSet* descriptorSets,
@@ -90,20 +81,20 @@ public:
                           int numAttachments,
                           const VkClearAttachment* attachments,
                           int numRects,
-                          const VkClearRect* clearRects) const;
+                          const VkClearRect* clearRects);
 
     void drawIndexed(const GrVkGpu* gpu,
                      uint32_t indexCount,
                      uint32_t instanceCount,
                      uint32_t firstIndex,
                      int32_t vertexOffset,
-                     uint32_t firstInstance) const;
+                     uint32_t firstInstance);
 
     void draw(const GrVkGpu* gpu,
               uint32_t vertexCount,
               uint32_t instanceCount,
               uint32_t firstVertex,
-              uint32_t firstInstance) const;
+              uint32_t firstInstance);
 
     
     
@@ -121,62 +112,57 @@ public:
         fTrackedRecycledResources.append(1, &resource);
     }
 
-    
-    
-    void addRecordingResource(const GrVkResource* resource) {
-        resource->ref();
-        resource->notifyAddedToCommandBuffer();
-        fTrackedRecordingResources.append(1, &resource);
-    }
-
     void releaseResources(GrVkGpu* gpu);
 
+    void freeGPUData(GrVkGpu* gpu) const;
+    void abandonGPUData() const;
+
+    bool hasWork() const { return fHasWork; }
+
 protected:
-        GrVkCommandBuffer(VkCommandBuffer cmdBuffer, GrVkCommandPool* cmdPool,
-                          const GrVkRenderPass* rp = nullptr)
+    GrVkCommandBuffer(VkCommandBuffer cmdBuffer, GrVkCommandPool* cmdPool,
+                      const GrVkRenderPass* rp = nullptr)
             : fIsActive(false)
             , fActiveRenderPass(rp)
             , fCmdBuffer(cmdBuffer)
             , fCmdPool(cmdPool)
             , fNumResets(0) {
-            fTrackedResources.setReserve(kInitialTrackedResourcesCount);
-            fTrackedRecycledResources.setReserve(kInitialTrackedResourcesCount);
-            fTrackedRecordingResources.setReserve(kInitialTrackedResourcesCount);
-            this->invalidateState();
-        }
+        fTrackedResources.setReserve(kInitialTrackedResourcesCount);
+        fTrackedRecycledResources.setReserve(kInitialTrackedResourcesCount);
+        this->invalidateState();
+    }
 
-        bool isWrapped() const {
-            return fCmdPool == nullptr;
-        }
+    bool isWrapped() const { return fCmdPool == nullptr; }
 
-        SkTDArray<const GrVkResource*>          fTrackedResources;
-        SkTDArray<const GrVkRecycledResource*>  fTrackedRecycledResources;
-        SkTDArray<const GrVkResource*>          fTrackedRecordingResources;
+    void addingWork(const GrVkGpu* gpu);
 
-        
-        
-        bool fIsActive;
+    void submitPipelineBarriers(const GrVkGpu* gpu);
 
-        
-        
-        
-        const GrVkRenderPass*     fActiveRenderPass;
+    SkTDArray<const GrVkResource*>          fTrackedResources;
+    SkTDArray<const GrVkRecycledResource*>  fTrackedRecycledResources;
 
-        VkCommandBuffer           fCmdBuffer;
+    
+    
+    bool                      fIsActive;
+    bool                      fHasWork = false;
 
-        
-        
-        GrVkCommandPool*          fCmdPool;
+    
+    
+    
+    const GrVkRenderPass*     fActiveRenderPass;
+
+    VkCommandBuffer           fCmdBuffer;
+
+    
+    
+    GrVkCommandPool*          fCmdPool;
 
 private:
     static const int kInitialTrackedResourcesCount = 32;
 
-    void freeGPUData(GrVkGpu* gpu) const final override;
-    virtual void onFreeGPUData(GrVkGpu* gpu) const = 0;
-    void abandonGPUData() const final override;
-    virtual void onAbandonGPUData() const = 0;
-
     virtual void onReleaseResources(GrVkGpu* gpu) {}
+    virtual void onFreeGPUData(GrVkGpu* gpu) const = 0;
+    virtual void onAbandonGPUData() const = 0;
 
     static constexpr uint32_t kMaxInputBuffers = 2;
 
@@ -198,6 +184,12 @@ private:
 #ifdef SK_DEBUG
     mutable bool fResourcesReleased = false;
 #endif
+    
+    SkSTArray<4, VkBufferMemoryBarrier> fBufferBarriers;
+    SkSTArray<1, VkImageMemoryBarrier> fImageBarriers;
+    bool fBarriersByRegion = false;
+    VkPipelineStageFlags fSrcStageMask = 0;
+    VkPipelineStageFlags fDstStageMask = 0;
 };
 
 class GrVkSecondaryCommandBuffer;
@@ -225,7 +217,7 @@ public:
     
     
     void executeCommands(const GrVkGpu* gpu,
-                         GrVkSecondaryCommandBuffer* secondaryBuffer);
+                         std::unique_ptr<GrVkSecondaryCommandBuffer> secondaryBuffer);
 
     
     void clearColorImage(const GrVkGpu* gpu,
@@ -301,15 +293,11 @@ public:
     void submitToQueue(const GrVkGpu* gpu, VkQueue queue, GrVkGpu::SyncQueue sync,
                        SkTArray<GrVkSemaphore::Resource*>& signalSemaphores,
                        SkTArray<GrVkSemaphore::Resource*>& waitSemaphores);
-    bool finished(const GrVkGpu* gpu) const;
+    bool finished(const GrVkGpu* gpu);
 
-    void recycleSecondaryCommandBuffers();
+    void addFinishedProc(sk_sp<GrRefCntedCallback> finishedProc);
 
-#ifdef SK_TRACE_VK_RESOURCES
-    void dumpInfo() const override {
-        SkDebugf("GrVkPrimaryCommandBuffer: %d (%d refs)\n", fCmdBuffer, this->getRefCnt());
-    }
-#endif
+    void recycleSecondaryCommandBuffers(GrVkGpu* gpu);
 
 private:
     explicit GrVkPrimaryCommandBuffer(VkCommandBuffer cmdBuffer, GrVkCommandPool* cmdPool)
@@ -322,8 +310,9 @@ private:
 
     void onReleaseResources(GrVkGpu* gpu) override;
 
-    SkTArray<GrVkSecondaryCommandBuffer*, true> fSecondaryCommandBuffers;
-    VkFence                                     fSubmitFence;
+    SkTArray<std::unique_ptr<GrVkSecondaryCommandBuffer>, true> fSecondaryCommandBuffers;
+    VkFence                                                     fSubmitFence;
+    SkTArray<sk_sp<GrRefCntedCallback>>                         fFinishedProcs;
 
     typedef GrVkCommandBuffer INHERITED;
 };
@@ -338,13 +327,9 @@ public:
                const GrVkRenderPass* compatibleRenderPass);
     void end(GrVkGpu* gpu);
 
-    VkCommandBuffer vkCommandBuffer() { return fCmdBuffer; }
+    void recycle(GrVkGpu* gpu);
 
-#ifdef SK_TRACE_VK_RESOURCES
-    void dumpInfo() const override {
-        SkDebugf("GrVkSecondaryCommandBuffer: %d (%d refs)\n", fCmdBuffer, this->getRefCnt());
-    }
-#endif
+    VkCommandBuffer vkCommandBuffer() { return fCmdBuffer; }
 
 private:
     explicit GrVkSecondaryCommandBuffer(VkCommandBuffer cmdBuffer, GrVkCommandPool* cmdPool)

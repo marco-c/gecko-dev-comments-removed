@@ -8,10 +8,10 @@
 #ifndef GrReducedClip_DEFINED
 #define GrReducedClip_DEFINED
 
-#include "GrFragmentProcessor.h"
-#include "GrWindowRectangles.h"
-#include "SkClipStack.h"
-#include "SkTLList.h"
+#include "src/core/SkClipStack.h"
+#include "src/core/SkTLList.h"
+#include "src/gpu/GrFragmentProcessor.h"
+#include "src/gpu/GrWindowRectangles.h"
 
 class GrCoverageCountingPathRenderer;
 class GrRecordingContext;
@@ -21,7 +21,7 @@ class GrRenderTargetContext;
 
 
 
-class SK_API GrReducedClip {
+class GrReducedClip {
 public:
     using Element = SkClipStack::Element;
     using ElementList = SkTLList<SkClipStack::Element, 16>;
@@ -96,9 +96,8 @@ public:
 
 
 
-    std::unique_ptr<GrFragmentProcessor> finishAndDetachAnalyticFPs(GrCoverageCountingPathRenderer*,
-                                                                    uint32_t opListID, int rtWidth,
-                                                                    int rtHeight);
+    std::unique_ptr<GrFragmentProcessor> finishAndDetachAnalyticFPs(
+            GrCoverageCountingPathRenderer*, uint32_t opsTaskID);
 
 private:
     void walkStack(const SkClipStack&, const SkRect& queryBounds);

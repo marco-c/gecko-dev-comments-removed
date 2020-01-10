@@ -5,9 +5,9 @@
 
 
 
-#include "SkBmpMaskCodec.h"
-#include "SkCodecPriv.h"
-#include "SkColorData.h"
+#include "include/private/SkColorData.h"
+#include "src/codec/SkBmpMaskCodec.h"
+#include "src/codec/SkCodecPriv.h"
 
 
 

@@ -4,9 +4,9 @@
 
 
 
-#include "SkOpCoincidence.h"
-#include "SkOpSegment.h"
-#include "SkPathOpsTSect.h"
+#include "src/pathops/SkOpCoincidence.h"
+#include "src/pathops/SkOpSegment.h"
+#include "src/pathops/SkPathOpsTSect.h"
 
 #include <utility>
 
