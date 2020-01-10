@@ -1,0 +1,14 @@
+
+
+
+
+"use strict";
+
+const manifestTypes = require("./manifest");
+
+module.exports = Object.assign(
+  {},
+  {
+    ...manifestTypes,
+  }
+);

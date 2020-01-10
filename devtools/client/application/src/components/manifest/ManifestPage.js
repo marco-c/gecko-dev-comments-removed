@@ -15,20 +15,19 @@ const {
 
 const { connect } = require("devtools/client/shared/vendor/react-redux");
 
-const ManifestLoader = createFactory(require("../manifest/ManifestLoader"));
+const Types = require("../../types/index");
 
+const ManifestLoader = createFactory(require("../manifest/ManifestLoader"));
 const Manifest = createFactory(require("./Manifest"));
 const ManifestEmpty = createFactory(require("./ManifestEmpty"));
 
 class ManifestPage extends PureComponent {
-  
-  
   static get propTypes() {
     return {
       
       hasLoadingFailed: PropTypes.bool.isRequired,
       isManifestLoading: PropTypes.bool.isRequired,
-      manifest: PropTypes.object,
+      manifest: PropTypes.shape(Types.manifest),
     };
   }
 

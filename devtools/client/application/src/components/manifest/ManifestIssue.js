@@ -19,6 +19,7 @@ const FluentReact = require("devtools/client/shared/vendor/fluent-react");
 const Localized = createFactory(FluentReact.Localized);
 
 const { MANIFEST_ISSUE_LEVELS } = require("../../constants");
+const Types = require("../../types/index");
 
 
 
@@ -27,10 +28,7 @@ class ManifestIssue extends PureComponent {
   static get propTypes() {
     return {
       className: PropTypes.string,
-      level: PropTypes.oneOf(Object.values(MANIFEST_ISSUE_LEVELS)).isRequired,
-      message: PropTypes.string.isRequired,
-      
-      
+      ...Types.manifestIssue, 
     };
   }
 
