@@ -119,7 +119,7 @@ class RemoteAgentClass {
       try {
         
         
-        this.targets.clear();
+        this.targets.destructor();
 
         await this.server.stop();
 

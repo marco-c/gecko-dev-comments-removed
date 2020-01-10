@@ -53,12 +53,16 @@ class Targets {
     const target = this._targets.get(browser.browsingContext.id);
     if (target) {
       this.emit("disconnect", target);
-      target.disconnect();
+      target.destructor();
       this._targets.delete(target.id);
     }
   }
 
-  clear() {
+  
+
+
+
+  destructor() {
     for (const target of this) {
       
       
@@ -68,7 +72,7 @@ class Targets {
     }
     this._targets.clear();
     if (this.mainProcessTarget) {
-      this.mainProcessTarget.disconnect();
+      this.mainProcessTarget.destructor();
       this.mainProcessTarget = null;
     }
   }

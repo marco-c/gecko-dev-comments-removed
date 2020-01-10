@@ -33,7 +33,7 @@ class Target {
   
 
 
-  disconnect() {
+  destructor() {
     for (const [conn] of this.sessions) {
       conn.close();
     }
