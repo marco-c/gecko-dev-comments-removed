@@ -10,6 +10,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/layers/LayersTypes.h"
+#include "Units.h"  
 
 namespace mozilla {
 namespace layers {
@@ -19,18 +20,30 @@ class MatrixMessage {
   MatrixMessage() {}
 
   MatrixMessage(const Maybe<LayerToScreenMatrix4x4>& aMatrix,
+                const ScreenRect& aRemoteDocumentRect,
                 const LayersId& aLayersId)
-      : mMatrix(ToUnknownMatrix(aMatrix)), mLayersId(aLayersId) {}
+      : mMatrix(ToUnknownMatrix(aMatrix)),
+        mRemoteDocumentRect(aRemoteDocumentRect),
+        mLayersId(aLayersId) {}
 
   inline Maybe<LayerToScreenMatrix4x4> GetMatrix() const {
     return LayerToScreenMatrix4x4::FromUnknownMatrix(mMatrix);
+  }
+
+  inline ScreenRect GetRemoteDocumentRect() const {
+    return mRemoteDocumentRect;
   }
 
   inline const LayersId& GetLayersId() const { return mLayersId; }
 
   
   
+  
   Maybe<gfx::Matrix4x4> mMatrix;  
+  
+  
+  
+  ScreenRect mRemoteDocumentRect;
   LayersId mLayersId;
 };
 };  

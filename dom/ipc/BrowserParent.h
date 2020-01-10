@@ -657,7 +657,8 @@ class BrowserParent final : public PBrowserParent,
   LayoutDeviceToLayoutDeviceMatrix4x4 GetChildToParentConversionMatrix();
 
   void SetChildToParentConversionMatrix(
-      const Maybe<LayoutDeviceToLayoutDeviceMatrix4x4>& aMatrix);
+      const Maybe<LayoutDeviceToLayoutDeviceMatrix4x4>& aMatrix,
+      const ScreenRect& aRemoteDocumentRect);
 
   
   

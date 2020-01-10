@@ -284,7 +284,8 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   mozilla::ipc::IPCResult RecvSizeModeChanged(const nsSizeMode& aSizeMode);
 
   mozilla::ipc::IPCResult RecvChildToParentMatrix(
-      const mozilla::Maybe<mozilla::gfx::Matrix4x4>& aMatrix);
+      const mozilla::Maybe<mozilla::gfx::Matrix4x4>& aMatrix,
+      const mozilla::ScreenRect& aRemoteDocumentRect);
 
   mozilla::ipc::IPCResult RecvActivate();
 
@@ -628,6 +629,8 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   mozilla::LayoutDeviceToLayoutDeviceMatrix4x4
   GetChildToParentConversionMatrix() const;
 
+  mozilla::ScreenRect GetRemoteDocumentRect() const;
+
   
   
   
@@ -904,6 +907,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   WindowsHandle mWidgetNativeData;
 
   Maybe<LayoutDeviceToLayoutDeviceMatrix4x4> mChildToParentConversionMatrix;
+  ScreenRect mRemoteDocumentRect;
 
   
   

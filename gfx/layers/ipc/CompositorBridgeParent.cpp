@@ -1775,7 +1775,7 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvAdoptChild(
 
       
       nsTArray<MatrixMessage> clear;
-      clear.AppendElement(MatrixMessage(Nothing(), child));
+      clear.AppendElement(MatrixMessage(Nothing(), ScreenRect(), child));
       oldRootController->NotifyLayerTransforms(clear);
     }
   }

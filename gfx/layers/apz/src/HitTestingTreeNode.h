@@ -146,6 +146,11 @@ class HitTestingTreeNode {
   LayerToScreenMatrix4x4 GetTransformToGecko() const;
   const LayerIntRegion& GetVisibleRegion() const;
 
+  
+
+
+  ScreenRect GetRemoteDocumentScreenRect() const;
+
   bool IsAsyncZoomContainer() const;
 
   
