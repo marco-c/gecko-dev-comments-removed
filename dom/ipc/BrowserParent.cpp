@@ -683,7 +683,7 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
 
     
     if (why == AbnormalShutdown) {
-      frameLoader->MaybeNotifyCrashed(GetIPCChannel());
+      frameLoader->MaybeNotifyCrashed(mBrowsingContext, GetIPCChannel());
     }
   }
 
