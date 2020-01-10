@@ -630,21 +630,6 @@ EngineManager.prototype = {
 
 
 
-  declineDisabled() {
-    for (let e of this.getAll()) {
-      if (!e.enabled) {
-        this._log.debug("Declining disabled engine " + e.name);
-        this._declined.add(e.name);
-      }
-    }
-    this.persistDeclined();
-  },
-
-  
-
-
-
-
 
 
 
