@@ -222,6 +222,9 @@ const gCachedGridPattern = new Map();
 
 
 
+
+
+
 class CssGridHighlighter extends AutoRefreshHighlighter {
   constructor(highlighterEnv) {
     super(highlighterEnv);
@@ -1792,6 +1795,9 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
 
   _update() {
     setIgnoreLayoutChanges(true);
+
+    
+    this.markup.content.setStyle("z-index", this.options.zIndex);
 
     const root = this.getElement("root");
     const cells = this.getElement("cells");
