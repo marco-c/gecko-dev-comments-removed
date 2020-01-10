@@ -75,6 +75,9 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:std::sync::mutex::Mutex\n"
 
+         
+         "race:sync..Arc\n"
+
       
       ;  
 }
