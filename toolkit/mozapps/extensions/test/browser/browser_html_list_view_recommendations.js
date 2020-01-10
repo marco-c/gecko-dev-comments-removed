@@ -41,6 +41,7 @@ add_task(async function setup() {
     set: [
       
       ["browser.discovery.enabled", false],
+      ["extensions.htmlaboutaddons.enabled", true],
       ["extensions.getAddons.discovery.api_url", `data:;base64,${results}`],
       [
         "extensions.recommendations.themeRecommendationUrl",

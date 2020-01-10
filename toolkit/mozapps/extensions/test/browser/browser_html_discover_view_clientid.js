@@ -48,6 +48,7 @@ add_task(async function setup() {
       ["extensions.getAddons.discovery.api_url", `${serverBaseUrl}discoapi`],
       ["app.support.baseURL", `${serverBaseUrl}sumo/`],
       ["extensions.htmlaboutaddons.discover.enabled", true],
+      ["extensions.htmlaboutaddons.enabled", true],
       
       
       

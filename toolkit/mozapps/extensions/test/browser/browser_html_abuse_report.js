@@ -270,6 +270,7 @@ add_task(async function setup() {
   
   await SpecialPowers.pushPrefEnv({
     set: [
+      ["extensions.htmlaboutaddons.enabled", true],
       ["extensions.abuseReport.enabled", true],
       ["extensions.abuseReport.url", "http://test.addons.org/api/report/"],
     ],
