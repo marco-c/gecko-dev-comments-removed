@@ -1054,6 +1054,8 @@ def disk_io_counters():
         
         
         
+        
+        
         fields = line.split()
         fields_len = len(fields)
         if fields_len == 15:
@@ -1062,7 +1064,7 @@ def disk_io_counters():
             reads = int(fields[2])
             (reads_merged, rbytes, rtime, writes, writes_merged,
                 wbytes, wtime, _, busy_time, _) = map(int, fields[4:14])
-        elif fields_len == 14:
+        elif fields_len == 14 or fields_len == 18:
             
             name = fields[2]
             (reads, reads_merged, rbytes, rtime, writes, writes_merged,
