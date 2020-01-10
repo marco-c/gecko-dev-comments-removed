@@ -21,7 +21,11 @@ from six import string_types
 PORT = 8888
 
 PATH_MAPPINGS = {
-    '/js-input/webkit/PerformanceTests': 'third_party/webkit/PerformanceTests',
+    '/webkit/PerformanceTests': 'third_party/webkit/PerformanceTests',
+    
+    
+    
+    '/talos': 'testing/talos/talos',
 }
 
 
