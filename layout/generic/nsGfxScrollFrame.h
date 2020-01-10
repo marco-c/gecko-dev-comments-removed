@@ -430,6 +430,8 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
   bool UsesContainerScrolling() const;
 
+  bool UsesOverlayScrollbars() const;
+
   
   
   
