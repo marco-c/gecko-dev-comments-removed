@@ -250,14 +250,12 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   BrowsingContext* FindWithName(const nsAString& aName,
                                 BrowsingContext& aRequestingContext);
 
-
   
   
   
   
   BrowsingContext* FindChildWithName(const nsAString& aName,
                                      BrowsingContext& aRequestingContext);
-
 
   nsISupports* GetParentObject() const;
   JSObject* WrapObject(JSContext* aCx,
@@ -289,12 +287,20 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   const Children& GetChildren() { return mChildren; }
 
   
-  template <typename Func>
-  void PreOrderWalk(Func&& aCallback) {
+  void PreOrderWalk(const std::function<void(BrowsingContext*)>& aCallback) {
     aCallback(this);
     for (auto& child : GetChildren()) {
       child->PreOrderWalk(aCallback);
     }
+  }
+
+  
+  void PostOrderWalk(const std::function<void(BrowsingContext*)>& aCallback) {
+    for (auto& child : GetChildren()) {
+      child->PostOrderWalk(aCallback);
+    }
+
+    aCallback(this);
   }
 
   
