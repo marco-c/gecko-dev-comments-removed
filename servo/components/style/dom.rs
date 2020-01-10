@@ -347,6 +347,14 @@ pub trait TShadowRoot: Sized + Copy + Clone + PartialEq {
         Self: 'a;
 
     
+    fn parts<'a>(&self) -> &[<Self::ConcreteNode as TNode>::ConcreteElement]
+    where
+        Self: 'a
+    {
+        &[]
+    }
+
+    
     
     
     

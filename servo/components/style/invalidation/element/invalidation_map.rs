@@ -66,6 +66,8 @@ pub enum DependencyInvalidationKind {
     Siblings,
     
     SlottedElements,
+    
+    Parts,
 }
 
 impl Dependency {
@@ -98,7 +100,7 @@ impl Dependency {
             
             Some(Combinator::PseudoElement) => DependencyInvalidationKind::ElementAndDescendants,
             Some(Combinator::SlotAssignment) => DependencyInvalidationKind::SlottedElements,
-            Some(Combinator::Part) => unimplemented!("Need to add invalidation for shadow parts"),
+            Some(Combinator::Part) => DependencyInvalidationKind::Parts,
         }
     }
 }
