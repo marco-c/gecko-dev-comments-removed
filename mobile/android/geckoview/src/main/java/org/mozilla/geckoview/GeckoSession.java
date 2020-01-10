@@ -12,12 +12,16 @@ import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.AbstractSequentialList;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.UUID;
 
 import org.json.JSONException;
@@ -881,23 +885,12 @@ public class GeckoSession implements Parcelable {
                                       final GeckoBundle message,
                                       final EventCallback callback) {
                 if ("GeckoView:ShowSelectionAction".equals(event)) {
+                    final @SelectionActionDelegateAction HashSet<String> actionsSet =
+                            new HashSet<>(Arrays.asList(message.getStringArray("actions")));
                     final SelectionActionDelegate.Selection selection =
-                            new SelectionActionDelegate.Selection(message);
+                            new SelectionActionDelegate.Selection(message, actionsSet, callback);
 
-                    final @SelectionActionDelegateAction String[] actions = message.getStringArray("actions");
-                    final int seqNo = message.getInt("seqNo");
-                    final GeckoResponse<String> response = new GeckoResponse<String>() {
-                        @Override
-                        public void respond(final String action) {
-                            final GeckoBundle response = new GeckoBundle(2);
-                            response.putString("id", action);
-                            response.putInt("seqNo", seqNo);
-                            callback.sendSuccess(response);
-                        }
-                    };
-
-                    delegate.onShowActionRequest(GeckoSession.this, selection,
-                                                 actions, response);
+                    delegate.onShowActionRequest(GeckoSession.this, selection);
 
                 } else if ("GeckoView:HideSelectionAction".equals(event)) {
                     final String reasonString = message.getString("reason");
@@ -3274,7 +3267,18 @@ public class GeckoSession implements Parcelable {
 
             public final @Nullable RectF clientRect;
 
-             Selection(final GeckoBundle bundle) {
+            
+
+
+            public final @NonNull @SelectionActionDelegateAction Collection<String> availableActions;
+
+            private final int mSeqNo;
+
+            private final EventCallback mEventCallback;
+
+             Selection(final GeckoBundle bundle,
+                                    final @NonNull @SelectionActionDelegateAction Set<String> actions,
+                                    final EventCallback callback) {
                 flags = (bundle.getBoolean("collapsed") ?
                          SelectionActionDelegate.FLAG_IS_COLLAPSED : 0) |
                         (bundle.getBoolean("editable") ?
@@ -3292,6 +3296,10 @@ public class GeckoSession implements Parcelable {
                                            (float) rectBundle.getDouble("right"),
                                            (float) rectBundle.getDouble("bottom"));
                 }
+
+                availableActions = actions;
+                mSeqNo = bundle.getInt("seqNo");
+                mEventCallback = callback;
             }
 
             
@@ -3301,6 +3309,126 @@ public class GeckoSession implements Parcelable {
                 flags = 0;
                 text = "";
                 clientRect = null;
+                availableActions = new HashSet<>();
+                mSeqNo = 0;
+                mEventCallback = null;
+            }
+
+            
+
+
+
+
+            @AnyThread
+            public boolean isActionAvailable(@NonNull @SelectionActionDelegateAction final String action) {
+                return availableActions.contains(action);
+            }
+
+            
+
+
+
+
+
+            @AnyThread
+            public void execute(@NonNull @SelectionActionDelegateAction final String action) {
+                if (!isActionAvailable(action)) {
+                    throw new IllegalStateException("Action not available");
+                }
+                final GeckoBundle response = new GeckoBundle(2);
+                response.putString("id", action);
+                response.putInt("seqNo", mSeqNo);
+                mEventCallback.sendSuccess(response);
+            }
+
+            
+
+
+
+
+            @AnyThread
+            public void hide() {
+                execute(ACTION_HIDE);
+            }
+
+            
+
+
+
+
+            @AnyThread
+            public void cut() {
+                execute(ACTION_CUT);
+            }
+
+            
+
+
+
+
+            @AnyThread
+            public void copy() {
+                execute(ACTION_COPY);
+            }
+
+            
+
+
+
+
+            @AnyThread
+            public void delete() {
+                execute(ACTION_DELETE);
+            }
+
+            
+
+
+
+
+            @AnyThread
+            public void paste() {
+                execute(ACTION_PASTE);
+            }
+
+            
+
+
+
+
+            @AnyThread
+            public void selectAll() {
+                execute(ACTION_SELECT_ALL);
+            }
+
+            
+
+
+
+
+            @AnyThread
+            public void unselect() {
+                execute(ACTION_UNSELECT);
+            }
+
+            
+
+
+
+
+            @AnyThread
+            public void collapseToStart() {
+                execute(ACTION_COLLAPSE_TO_START);
+            }
+
+            
+
+
+
+
+            @AnyThread
+            public void collapseToEnd() {
+                execute(ACTION_COLLAPSE_TO_END);
             }
         }
 
@@ -3323,14 +3451,9 @@ public class GeckoSession implements Parcelable {
 
 
 
-
-
-
-
         @UiThread
-        default void onShowActionRequest(@NonNull GeckoSession session, @NonNull Selection selection,
-                                         @NonNull @SelectionActionDelegateAction String[] actions,
-                                         @NonNull GeckoResponse<String> response) {}
+        default void onShowActionRequest(@NonNull GeckoSession session,
+                                         @NonNull Selection selection) {}
 
         
 
