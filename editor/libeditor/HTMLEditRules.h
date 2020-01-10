@@ -483,20 +483,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE EditActionResult ReturnInParagraph(Element& aParentDivOrP);
-
-  
-
-
-
-
-
-
-
-
-
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult ReturnInListItem(Element& aListItem, nsINode& aNode,
                                          int32_t aOffset);

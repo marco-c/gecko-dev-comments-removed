@@ -1798,6 +1798,20 @@ class HTMLEditor final : public TextEditor,
       Element& aParentDivOrP,
       const EditorDOMPointBase<PT, CT>& aStartOfRightNode, nsIContent* aBRNode);
 
+  
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  HandleInsertParagraphInParagraph(Element& aParentDivOrP);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
