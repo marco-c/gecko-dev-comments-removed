@@ -500,7 +500,7 @@ pref("browser.tabs.remote.useHTTPResponseProcessSelection", false);
 
 
 
-pref("browser.tabs.unloadOnLowMemory", true);
+pref("browser.tabs.unloadOnLowMemory", false);
 
 pref("browser.ctrlTab.recentlyUsedOrder", true);
 
