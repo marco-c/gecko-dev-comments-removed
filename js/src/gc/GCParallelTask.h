@@ -15,6 +15,7 @@
 namespace js {
 
 class AutoLockHelperThreadState;
+struct HelperThread;
 
 
 
@@ -32,7 +33,27 @@ class GCParallelTask : public RunnableTask {
   TaskFunc func_;
 
   
-  enum class State { NotStarted, Dispatched, Finishing, Finished };
+  enum class State {
+    
+    
+    Idle,
+
+    
+    
+    Dispatched,
+
+    
+    Running,
+
+    
+    
+    Finishing,
+
+    
+    
+    Finished
+  };
+
   UnprotectedData<State> state_;
 
   
@@ -50,7 +71,7 @@ class GCParallelTask : public RunnableTask {
   explicit GCParallelTask(gc::GCRuntime* gc, TaskFunc func)
       : gc(gc),
         func_(func),
-        state_(State::NotStarted),
+        state_(State::Idle),
         duration_(nullptr),
         cancel_(false) {}
   GCParallelTask(GCParallelTask&& other)
@@ -91,59 +112,73 @@ class GCParallelTask : public RunnableTask {
   }
 
   
-  bool isRunningWithLockHeld(const AutoLockHelperThreadState& lock) const {
-    return isDispatched(lock);
+  
+  bool isIdle() const;
+  bool isIdle(const AutoLockHelperThreadState& lock) const {
+    return state_ == State::Idle;
   }
-  bool isRunning() const;
 
-  void runTask() override { func_(this); }
+  
+  
+  
+  bool wasStarted() const;
+  bool wasStarted(const AutoLockHelperThreadState& lock) const {
+    return isDispatched(lock) || isRunning(lock);
+  }
 
   ThreadType threadType() override {
     return ThreadType::THREAD_TYPE_GCPARALLEL;
-  }
-
-  bool isNotStarted(const AutoLockHelperThreadState& lock) const {
-    return state_ == State::NotStarted;
-  }
-
- private:
-  void assertNotStarted() const {
-    
-    
-    MOZ_ASSERT(state_ == State::NotStarted);
-  }
-  bool isDispatched(const AutoLockHelperThreadState& lock) const {
-    return state_ == State::Dispatched;
-  }
-  bool isFinished(const AutoLockHelperThreadState& lock) const {
-    return state_ == State::Finished;
-  }
-  void setDispatched(const AutoLockHelperThreadState& lock) {
-    MOZ_ASSERT(state_ == State::NotStarted);
-    state_ = State::Dispatched;
-  }
-  void setFinished(const AutoLockHelperThreadState& lock) {
-    MOZ_ASSERT(state_ == State::Dispatched || state_ == State::Finishing);
-    state_ = State::Finished;
-  }
-  void setNotStarted(const AutoLockHelperThreadState& lock) {
-    MOZ_ASSERT(state_ == State::Finished);
-    state_ = State::NotStarted;
   }
 
  protected:
   
   
   void setFinishing(const AutoLockHelperThreadState& lock) {
-    MOZ_ASSERT(state_ == State::NotStarted || state_ == State::Dispatched);
-    if (state_ == State::Dispatched) {
+    MOZ_ASSERT(isIdle(lock) || isRunning(lock));
+    if (isRunning(lock)) {
       state_ = State::Finishing;
     }
   }
 
-  
-  
- public:
+ private:
+  void assertIdle() const {
+    
+    
+    MOZ_ASSERT(state_ == State::Idle);
+  }
+  bool isDispatched(const AutoLockHelperThreadState& lock) const {
+    return state_ == State::Dispatched;
+  }
+  bool isRunning(const AutoLockHelperThreadState& lock) const {
+    return state_ == State::Running;
+  }
+  bool isFinishing(const AutoLockHelperThreadState& lock) const {
+    return state_ == State::Finishing;
+  }
+  bool isFinished(const AutoLockHelperThreadState& lock) const {
+    return state_ == State::Finished;
+  }
+
+  void setDispatched(const AutoLockHelperThreadState& lock) {
+    MOZ_ASSERT(isIdle(lock));
+    state_ = State::Dispatched;
+  }
+  void setRunning(const AutoLockHelperThreadState& lock) {
+    MOZ_ASSERT(isDispatched(lock));
+    state_ = State::Running;
+  }
+  void setFinished(const AutoLockHelperThreadState& lock) {
+    MOZ_ASSERT(isRunning(lock) || isFinishing(lock));
+    state_ = State::Finished;
+  }
+  void setIdle(const AutoLockHelperThreadState& lock) {
+    MOZ_ASSERT(isFinished(lock));
+    state_ = State::Idle;
+  }
+
+  void runTask() override;
+
+  friend struct HelperThread;
   void runFromHelperThread(AutoLockHelperThreadState& locked);
 };
 

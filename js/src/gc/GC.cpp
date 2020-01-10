@@ -3147,7 +3147,7 @@ void GCRuntime::decommitFreeArenasWithoutUnlocking(const AutoLockGC& lock) {
 void GCRuntime::startDecommit() {
   gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::DECOMMIT);
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
-  MOZ_ASSERT(!decommitTask.isRunning());
+  MOZ_ASSERT(decommitTask.isIdle());
 
   
   
@@ -3192,7 +3192,7 @@ void GCRuntime::startDecommit() {
 
 void js::gc::BackgroundDecommitTask::setChunksToScan(ChunkVector& chunks) {
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(gc->rt));
-  MOZ_ASSERT(!isRunning());
+  MOZ_ASSERT(isIdle());
   MOZ_ASSERT(toDecommit.ref().empty());
   Swap(toDecommit.ref(), chunks);
 }
@@ -3362,7 +3362,7 @@ void GCRuntime::queueBuffersForFreeAfterMinorGC(Nursery::BufferSet& buffers) {
   if (!buffersToFreeAfterMinorGC.ref().empty()) {
     
     
-    MOZ_ASSERT(freeTask.isRunningWithLockHeld(lock));
+    MOZ_ASSERT(!freeTask.isIdle(lock));
     freeTask.joinWithLockHeld(lock);
   }
 
@@ -5202,14 +5202,14 @@ void GCRuntime::startTask(GCParallelTask& task, gcstats::PhaseKind phase,
 }
 
 void GCRuntime::joinTask(GCParallelTask& task, gcstats::PhaseKind phase,
-                         AutoLockHelperThreadState& locked) {
-  if (task.isNotStarted(locked)) {
+                         AutoLockHelperThreadState& lock) {
+  if (task.isIdle(lock)) {
     return;
   }
 
   {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::JOIN_PARALLEL_TASKS);
-    task.joinWithLockHeld(locked);
+    task.joinWithLockHeld(lock);
   }
   stats().recordParallelPhase(phase, task.duration());
 }
@@ -6247,7 +6247,7 @@ IncrementalProgress GCRuntime::performSweepActions(SliceBudget& budget) {
   MOZ_ASSERT(!sweepMarkTaskStarted);
   if (initialState == State::Sweep && !marker.isDrained()) {
     AutoLockHelperThreadState lock;
-    MOZ_ASSERT(!sweepMarkTask.isRunningWithLockHeld(lock));
+    MOZ_ASSERT(sweepMarkTask.isIdle(lock));
     sweepMarkTask.setBudget(budget);
     sweepMarkTask.startOrRunIfIdle(lock);
     sweepMarkTaskStarted = true;
@@ -6848,7 +6848,7 @@ void GCRuntime::incrementalSlice(SliceBudget& budget,
                             gcstats::PhaseKind::WAIT_BACKGROUND_THREAD);
 
       
-      if (!budget.isUnlimited() && decommitTask.isRunning()) {
+      if (!budget.isUnlimited() && decommitTask.wasStarted()) {
         break;
       }
 
@@ -6879,7 +6879,7 @@ bool GCRuntime::hasForegroundWork() const {
       return !isBackgroundSweeping();
     case State::Decommit:
       
-      return !decommitTask.isRunning();
+      return !decommitTask.wasStarted();
     default:
       
       return true;
@@ -7168,7 +7168,7 @@ MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
     
     if (!isIncrementalGCInProgress()) {
       assertBackgroundSweepingFinished();
-      MOZ_ASSERT(!decommitTask.isRunning());
+      MOZ_ASSERT(decommitTask.isIdle());
     }
 
     
