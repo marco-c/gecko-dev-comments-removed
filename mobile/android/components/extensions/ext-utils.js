@@ -38,7 +38,9 @@ const BrowserStatusFilter = Components.Constructor(
   "addProgressListener"
 );
 
-const WINDOW_TYPE = "navigator:geckoview";
+const WINDOW_TYPE = Services.androidBridge.isFennec
+  ? "navigator:browser"
+  : "navigator:geckoview";
 
 let tabTracker;
 let windowTracker;
@@ -100,7 +102,7 @@ class BrowserProgressListener {
 const PROGRESS_LISTENER_FLAGS =
   Ci.nsIWebProgress.NOTIFY_STATE_ALL | Ci.nsIWebProgress.NOTIFY_LOCATION;
 
-class ProgressListenerWrapper {
+class GeckoViewProgressListenerWrapper {
   constructor(window, listener) {
     this.listener = new BrowserProgressListener(
       window.BrowserApp.selectedBrowser,
@@ -113,6 +115,92 @@ class ProgressListenerWrapper {
     this.listener.destroy();
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+class FennecProgressListenerWrapper {
+  constructor(window, listener) {
+    this.window = window;
+    this.listener = listener;
+    this.listeners = new WeakMap();
+
+    for (let nativeTab of this.window.BrowserApp.tabs) {
+      this.addBrowserProgressListener(nativeTab.browser);
+    }
+
+    this.window.BrowserApp.deck.addEventListener("TabOpen", this);
+  }
+
+  
+
+
+  destroy() {
+    this.window.BrowserApp.deck.removeEventListener("TabOpen", this);
+
+    for (let nativeTab of this.window.BrowserApp.tabs) {
+      this.removeProgressListener(nativeTab.browser);
+    }
+  }
+
+  
+
+
+
+
+
+
+  addBrowserProgressListener(browser) {
+    this.removeProgressListener(browser);
+
+    let listener = new BrowserProgressListener(
+      browser,
+      this.listener,
+      this.flags
+    );
+    this.listeners.set(browser, listener);
+  }
+
+  
+
+
+
+
+
+
+  removeProgressListener(browser) {
+    let listener = this.listeners.get(browser);
+    if (listener) {
+      listener.destroy();
+      this.listeners.delete(browser);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  handleEvent(event) {
+    if (event.type === "TabOpen") {
+      this.addBrowserProgressListener(event.originalTarget);
+    }
+  }
+}
+
+const ProgressListenerWrapper = Services.androidBridge.isFennec
+  ? FennecProgressListenerWrapper
+  : GeckoViewProgressListenerWrapper;
 
 class WindowTracker extends WindowTrackerBase {
   constructor(...args) {
@@ -195,7 +283,7 @@ global.makeGlobalEvent = function makeGlobalEvent(
   }).api();
 };
 
-class TabTracker extends TabTrackerBase {
+class GeckoViewTabTracker extends TabTrackerBase {
   init() {
     if (this.initialized) {
       return;
@@ -268,8 +356,242 @@ class TabTracker extends TabTrackerBase {
   }
 }
 
+class FennecTabTracker extends TabTrackerBase {
+  constructor() {
+    super();
+
+    
+    this._extensionPopupTabWeak = null;
+    
+    this._selectedTabId = null;
+  }
+
+  init() {
+    if (this.initialized) {
+      return;
+    }
+    this.initialized = true;
+
+    windowTracker.addListener("TabClose", this);
+    windowTracker.addListener("TabOpen", this);
+
+    
+    
+    
+    GlobalEventDispatcher.registerListener(this, ["Tab:Selected"]);
+  }
+
+  
+
+
+  get extensionPopupTab() {
+    if (this._extensionPopupTabWeak) {
+      const tab = this._extensionPopupTabWeak.get();
+
+      
+      if (tab.browser) {
+        return tab;
+      }
+
+      
+      this._extensionPopupTabWeak = null;
+    }
+
+    return undefined;
+  }
+
+  
+
+
+
+
+
+
+
+
+  openExtensionPopupTab(popup) {
+    let win = windowTracker.topWindow;
+    if (!win) {
+      throw new ExtensionError(
+        `Unable to open a popup without an active window`
+      );
+    }
+
+    if (this.extensionPopupTab) {
+      win.BrowserApp.closeTab(this.extensionPopupTab);
+    }
+
+    this.init();
+
+    let { browser, id } = win.BrowserApp.selectedTab;
+    let isPrivate = PrivateBrowsingUtils.isBrowserPrivate(browser);
+    this._extensionPopupTabWeak = Cu.getWeakReference(
+      win.BrowserApp.addTab(popup, {
+        selected: true,
+        parentId: id,
+        isPrivate,
+      })
+    );
+  }
+
+  getId(nativeTab) {
+    return nativeTab.id;
+  }
+
+  getTab(id, default_ = undefined) {
+    let win = windowTracker.topWindow;
+    if (win) {
+      let nativeTab = win.BrowserApp.getTabForId(id);
+      if (nativeTab) {
+        return nativeTab;
+      }
+    }
+    if (default_ !== undefined) {
+      return default_;
+    }
+    throw new ExtensionError(`Invalid tab ID: ${id}`);
+  }
+
+  
+
+
+
+
+
+
+
+  handleEvent(event) {
+    const { BrowserApp } = event.target.ownerGlobal;
+    const nativeTab = BrowserApp.getTabForBrowser(event.target);
+
+    switch (event.type) {
+      case "TabOpen":
+        this.emitCreated(nativeTab);
+        break;
+
+      case "TabClose":
+        this.emitRemoved(nativeTab, false);
+        break;
+    }
+  }
+
+  
+
+
+
+
+
+  onEvent(event, data) {
+    const { BrowserApp } = windowTracker.topWindow;
+
+    switch (event) {
+      case "Tab:Selected": {
+        this._selectedTabId = data.id;
+
+        
+        
+        const nativeTab = BrowserApp.getTabForId(data.id);
+
+        const popupTab = tabTracker.extensionPopupTab;
+        if (popupTab && popupTab !== nativeTab) {
+          BrowserApp.closeTab(popupTab);
+        }
+
+        break;
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+  emitCreated(nativeTab) {
+    this.emit("tab-created", { nativeTab });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  emitRemoved(nativeTab, isWindowClosing) {
+    let windowId = windowTracker.getId(nativeTab.browser.ownerGlobal);
+    let tabId = this.getId(nativeTab);
+
+    if (this.extensionPopupTab && this.extensionPopupTab === nativeTab) {
+      this._extensionPopupTabWeak = null;
+
+      
+      
+      if (this._selectedTabId !== tabId) {
+        return;
+      }
+
+      
+      const { BrowserApp } = windowTracker.topWindow;
+      const popupParentTab = BrowserApp.getTabForId(nativeTab.parentId);
+      if (popupParentTab) {
+        BrowserApp.selectTab(popupParentTab);
+      }
+    }
+
+    Services.tm.dispatchToMainThread(() => {
+      this.emit("tab-removed", { nativeTab, tabId, windowId, isWindowClosing });
+    });
+  }
+
+  getBrowserData(browser) {
+    let result = {
+      tabId: -1,
+      windowId: -1,
+    };
+
+    let { BrowserApp } = browser.ownerGlobal;
+    if (BrowserApp) {
+      result.windowId = windowTracker.getId(browser.ownerGlobal);
+
+      let nativeTab = BrowserApp.getTabForBrowser(browser);
+      if (nativeTab) {
+        result.tabId = this.getId(nativeTab);
+      }
+    }
+
+    return result;
+  }
+
+  get activeTab() {
+    let win = windowTracker.topWindow;
+    if (win && win.BrowserApp) {
+      const selectedTab = win.BrowserApp.selectedTab;
+
+      
+      
+      if (selectedTab === this.extensionPopupTab) {
+        return win.BrowserApp.getTabForId(selectedTab.parentId);
+      }
+
+      return selectedTab;
+    }
+
+    return null;
+  }
+}
+
 windowTracker = new WindowTracker();
-tabTracker = new TabTracker();
+if (Services.androidBridge.isFennec) {
+  tabTracker = new FennecTabTracker();
+} else {
+  tabTracker = new GeckoViewTabTracker();
+}
 
 Object.assign(global, { tabTracker, windowTracker });
 
@@ -404,35 +726,13 @@ class TabContext extends EventEmitter {
   constructor(getDefaultPrototype) {
     super();
 
-    windowTracker.addListener("progress", this);
-
     this.getDefaultPrototype = getDefaultPrototype;
     this.tabData = new Map();
-  }
 
-  onLocationChange(browser, webProgress, request, locationURI, flags) {
-    if (!webProgress.isTopLevel) {
-      
-      
-      
-      return;
-    }
-    const gBrowser = browser.ownerGlobal.gBrowser;
-    const tab = gBrowser.getTabForBrowser(browser);
-    
-    const fromBrowse = !(
-      flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT
-    );
-    this.emit(
-      "location-change",
-      {
-        id: tab.id,
-        linkedBrowser: browser,
-        
-        selected: true,
-      },
-      fromBrowse
-    );
+    GlobalEventDispatcher.registerListener(this, [
+      "Tab:Selected",
+      "Tab:Closed",
+    ]);
   }
 
   get(tabId) {
@@ -448,8 +748,28 @@ class TabContext extends EventEmitter {
     this.tabData.delete(tabId);
   }
 
+  
+
+
+
+
+
+  onEvent(event, data) {
+    switch (event) {
+      case "Tab:Selected":
+        this.emit("tab-selected", data.id);
+        break;
+      case "Tab:Closed":
+        this.emit("tab-closed", data.tabId);
+        break;
+    }
+  }
+
   shutdown() {
-    windowTracker.removeListener("progress", this);
+    GlobalEventDispatcher.unregisterListener(this, [
+      "Tab:Selected",
+      "Tab:Closed",
+    ]);
   }
 }
 
