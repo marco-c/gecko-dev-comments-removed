@@ -61,6 +61,21 @@ function getSubresourceOrigin(originType) {
 
 function MixedContentTestCase(scenario, description, sanityChecker) {
   sanityChecker.checkScenario(scenario, subresourceMap);
+
+  let sourceContextList = [];
+  let subresourceType = scenario.subresource;
+  if (subresourceType === 'classic-data-worker-fetch') {
+    
+    
+    
+    
+    
+    
+    
+    subresourceType = 'fetch-request';
+    sourceContextList = [{sourceContextType: 'classic-data-worker'}];
+  }
+
   const originTypeConversion = {
     "same-host-https": "same-https",
     "same-host-http": "same-http",
@@ -71,7 +86,8 @@ function MixedContentTestCase(scenario, description, sanityChecker) {
     "cross-origin-wss": "cross-wss",
     "cross-origin-ws": "cross-ws",
   };
-  const urls = getRequestURLs(scenario.subresource,
+
+  const urls = getRequestURLs(subresourceType,
                               originTypeConversion[scenario.origin],
                               scenario.redirection);
   const checkResult = _ => {
@@ -88,7 +104,7 @@ function MixedContentTestCase(scenario, description, sanityChecker) {
   function runTest() {
     
     const subresource = {
-      subresourceType: scenario.subresource,
+      subresourceType: subresourceType,
       url: urls.testUrl,
       policyDeliveries: []
     };
@@ -97,7 +113,7 @@ function MixedContentTestCase(scenario, description, sanityChecker) {
       return xhrRequest(urls.announceUrl)
         
         
-        .then(_ => invokeRequest(subresource, []))
+        .then(_ => invokeRequest(subresource, sourceContextList))
         
         
         .then(checkResult, checkResult);
