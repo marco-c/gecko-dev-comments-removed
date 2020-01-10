@@ -40,7 +40,6 @@ function createNodeInTree(
 
 
 
-
 function findOrCreateNode(
   parts: string[],
   subTree: TreeDirectory,
@@ -69,7 +68,7 @@ function findOrCreateNode(
   const childIsFile = !nodeHasChildren(child);
 
   
-  if (child.type === "source" || (!childIsFile && addedPartIsFile)) {
+  if (childIsFile != addedPartIsFile) {
     
     const { index: insertIndex } = findNodeInContents(
       subTree,
@@ -79,7 +78,7 @@ function findOrCreateNode(
   }
 
   
-  return child;
+  return (child: any);
 }
 
 
@@ -132,7 +131,7 @@ function addSourceToNode(
 ): Source | TreeNode[] {
   const isFile = !isPathDirectory(url.path);
 
-  if (node.type == "source") {
+  if (node.type == "source" && !isFile) {
     throw new Error(`Unexpected type "source" at: ${node.name}`);
   }
 
