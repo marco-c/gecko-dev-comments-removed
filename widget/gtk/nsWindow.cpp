@@ -6577,17 +6577,10 @@ void nsWindow::SetDrawsInTitlebar(bool aState) {
 
 gint nsWindow::GdkScaleFactor() {
   
-  
-  
-  GdkWindow* scaledGdkWindow = mGdkWindow;
-  if (mToplevelParentWindow) {
-    scaledGdkWindow = gtk_widget_get_window(GTK_WIDGET(mToplevelParentWindow));
-  }
-  
   static auto sGdkWindowGetScaleFactorPtr =
       (gint(*)(GdkWindow*))dlsym(RTLD_DEFAULT, "gdk_window_get_scale_factor");
-  if (sGdkWindowGetScaleFactorPtr && scaledGdkWindow)
-    return (*sGdkWindowGetScaleFactorPtr)(scaledGdkWindow);
+  if (sGdkWindowGetScaleFactorPtr && mGdkWindow)
+    return (*sGdkWindowGetScaleFactorPtr)(mGdkWindow);
   return ScreenHelperGTK::GetGTKMonitorScaleFactor();
 }
 
