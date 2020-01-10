@@ -1,0 +1,14 @@
+
+
+
+
+
+namespace mozilla {
+
+bool SoftRealTimeLimitReached() { return false; }
+
+void InstallSoftRealTimeLimitHandler() {}
+
+void DemoteThreadFromRealTime() {}
+
+}  
