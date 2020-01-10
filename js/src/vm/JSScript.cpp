@@ -2564,7 +2564,7 @@ struct SourceDecoder {
 namespace js {
 
 template <>
-XDRResult ScriptSource::xdrUncompressedSource<XDR_DECODE>(
+XDRResult ScriptSource::xdrUnretrievableUncompressedSource<XDR_DECODE>(
     XDRState<XDR_DECODE>* xdr, uint8_t sourceCharSize,
     uint32_t uncompressedLength) {
   MOZ_ASSERT(sourceCharSize == 1 || sourceCharSize == 2);
@@ -2600,7 +2600,7 @@ struct SourceEncoder {
 namespace js {
 
 template <>
-XDRResult ScriptSource::xdrUncompressedSource<XDR_ENCODE>(
+XDRResult ScriptSource::xdrUnretrievableUncompressedSource<XDR_ENCODE>(
     XDRState<XDR_ENCODE>* xdr, uint8_t sourceCharSize,
     uint32_t uncompressedLength) {
   MOZ_ASSERT(sourceCharSize == 1 || sourceCharSize == 2);
@@ -2648,7 +2648,8 @@ XDRResult ScriptSource::codeUncompressedData(XDRState<mode>* const xdr,
   }
   MOZ_TRY(xdr->codeUint32(&uncompressedLength));
 
-  return ss->xdrUncompressedSource(xdr, sizeof(Unit), uncompressedLength);
+  return ss->xdrUnretrievableUncompressedSource(xdr, sizeof(Unit),
+                                                uncompressedLength);
 }
 
 template <typename Unit, XDRMode mode>
@@ -4730,40 +4731,6 @@ DebugScript* JSScript::getOrCreateDebugScript(JSContext* cx) {
   }
 
   return borrowed;
-}
-
-bool JSScript::incrementGeneratorObserverCount(JSContext* cx) {
-  cx->check(this);
-  MOZ_ASSERT(cx->realm()->isDebuggee());
-
-  AutoRealm ar(cx, this);
-
-  DebugScript* debug = getOrCreateDebugScript(cx);
-  if (!debug) {
-    return false;
-  }
-
-  debug->generatorObserverCount++;
-
-  
-  
-  
-  
-  MOZ_ASSERT_IF(hasBaselineScript(), baseline->hasDebugInstrumentation());
-
-  return true;
-}
-
-void JSScript::decrementGeneratorObserverCount(js::FreeOp* fop) {
-  DebugScript* debug = debugScript();
-  MOZ_ASSERT(debug);
-  MOZ_ASSERT(debug->generatorObserverCount > 0);
-
-  debug->generatorObserverCount--;
-
-  if (!debug->needed()) {
-    fop->free_(releaseDebugScript());
-  }
 }
 
 bool JSScript::incrementStepperCount(JSContext* cx) {
