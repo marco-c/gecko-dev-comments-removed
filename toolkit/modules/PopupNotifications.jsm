@@ -519,6 +519,9 @@ PopupNotifications.prototype = {
 
 
 
+
+
+
   show: function PopupNotifications_show(
     browser,
     id,
@@ -904,13 +907,21 @@ PopupNotifications.prototype = {
 
   _formatDescriptionMessage(n) {
     let text = {};
-    let array = n.message.split("<>");
+    let array = n.message.split(/<>|{}/);
     text.start = array[0] || "";
     text.name = n.options.name || "";
     text.end = array[1] || "";
     if (array.length == 3) {
       text.secondName = n.options.secondName || "";
       text.secondEnd = array[2] || "";
+
+      
+      
+      if (n.message.indexOf("{}") < n.message.indexOf("<>")) {
+        let tmp = text.name;
+        text.name = text.secondName;
+        text.secondName = tmp;
+      }
     } else if (array.length > 3) {
       Cu.reportError(
         "Unexpected array length encountered in " +
