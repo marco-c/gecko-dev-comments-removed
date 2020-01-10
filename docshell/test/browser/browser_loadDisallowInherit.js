@@ -5,12 +5,9 @@ function test() {
   waitForExplicitFinish();
 
   
-  Services.prefs.setBoolPref("security.data_uri.unique_opaque_origin", false);
-  
   
   Services.prefs.setBoolPref("security.data_uri.block_toplevel_data_uri_navigations", false);
   registerCleanupFunction(function() {
-    Services.prefs.clearUserPref("security.data_uri.unique_opaque_origin");
     Services.prefs.clearUserPref("security.data_uri.block_toplevel_data_uri_navigations");
   });
 
@@ -40,7 +37,7 @@ function startTest() {
 
       
       loadURL(url, 0, artificialPrincipal, function() {
-        ok(browser.contentPrincipal.equals(pagePrincipal), url + " should inherit principal");
+        ok(!browser.contentPrincipal.equals(pagePrincipal), url + " should not inherit principal");
 
         
         let webNav = Ci.nsIWebNavigation;
