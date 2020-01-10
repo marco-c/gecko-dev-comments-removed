@@ -158,10 +158,12 @@ class LSRequestChild final : public PBackgroundLSRequestChild {
 
  private:
   
-  explicit LSRequestChild(LSRequestChildCallback* aCallback);
+  LSRequestChild();
 
   
   ~LSRequestChild();
+
+  void SetCallback(LSRequestChildCallback* aCallback);
 
   
   void ActorDestroy(ActorDestroyReason aWhy) override;
@@ -205,7 +207,9 @@ class LSSimpleRequestChild final : public PBackgroundLSSimpleRequestChild {
 
  private:
   
-  explicit LSSimpleRequestChild(LSSimpleRequestChildCallback* aCallback);
+  LSSimpleRequestChild();
+
+  void SetCallback(LSSimpleRequestChildCallback* aCallback);
 
   
   ~LSSimpleRequestChild();

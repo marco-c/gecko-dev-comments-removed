@@ -358,11 +358,16 @@ LSRequestChild* LocalStorageManager2::StartRequest(
     return nullptr;
   }
 
-  auto actor = new LSRequestChild(aCallback);
+  auto actor = new LSRequestChild();
 
   if (!backgroundActor->SendPBackgroundLSRequestConstructor(actor, aParams)) {
     return nullptr;
   }
+
+  
+  
+  
+  actor->SetCallback(aCallback);
 
   return actor;
 }
@@ -378,14 +383,19 @@ nsresult LocalStorageManager2::StartSimpleRequest(
     return NS_ERROR_FAILURE;
   }
 
-  RefPtr<SimpleRequestResolver> resolver = new SimpleRequestResolver(aPromise);
-
-  auto actor = new LSSimpleRequestChild(resolver);
+  auto actor = new LSSimpleRequestChild();
 
   if (!backgroundActor->SendPBackgroundLSSimpleRequestConstructor(actor,
                                                                   aParams)) {
     return NS_ERROR_FAILURE;
   }
+
+  RefPtr<SimpleRequestResolver> resolver = new SimpleRequestResolver(aPromise);
+
+  
+  
+  
+  actor->SetCallback(resolver);
 
   return NS_OK;
 }
