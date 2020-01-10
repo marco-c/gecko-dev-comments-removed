@@ -30,9 +30,7 @@ async function setupToolboxTest(extensionId) {
     }
   }
 
-  const console = await toolbox.selectTool("webconsole");
-  const { hud } = console;
-  const { jsterm } = hud;
+  const consoleFront = await toolbox.target.getFront("console");
 
   const netmonitor = await toolbox.selectTool("netmonitor");
 
@@ -40,7 +38,7 @@ async function setupToolboxTest(extensionId) {
 
   
   
-  await jsterm.execute(`doFetchHTTPRequest("${expectedURL}");`);
+  await consoleFront.evaluateJSAsync(`doFetchHTTPRequest("${expectedURL}");`);
 
   await waitFor(() => {
     return !netmonitor.panelWin.document.querySelector(
@@ -70,7 +68,7 @@ async function setupToolboxTest(extensionId) {
 
   
   
-  await jsterm.execute(
+  await consoleFront.evaluateJSAsync(
     `testNetworkRequestReceived(${JSON.stringify(requests)});`
   );
 
