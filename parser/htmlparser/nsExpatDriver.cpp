@@ -190,10 +190,10 @@ static const nsCatalogData* LookupCatalogData(const char16_t* aPublicID) {
 
 
 
+
+
 static void GetLocalDTDURI(const nsCatalogData* aCatalogData, nsIURI* aDTD,
                            nsIURI** aResult) {
-  NS_ASSERTION(aDTD, "Null parameter.");
-
   nsAutoCString fileName;
   if (aCatalogData) {
     
@@ -207,6 +207,8 @@ static void GetLocalDTDURI(const nsCatalogData* aCatalogData, nsIURI* aDTD,
     
     nsCOMPtr<nsIURL> dtdURL = do_QueryInterface(aDTD);
     if (!dtdURL) {
+      
+      
       return;
     }
 
@@ -599,13 +601,21 @@ nsresult nsExpatDriver::OpenInputStreamFromExternalDTD(const char16_t* aFPIStr,
   nsCOMPtr<nsIURI> uri;
   rv = NS_NewURI(getter_AddRefs(uri), NS_ConvertUTF16toUTF8(aURLStr), nullptr,
                  baseURI);
-  NS_ENSURE_SUCCESS(rv, rv);
+  
+  
+  
+  
+  if (NS_WARN_IF(NS_FAILED(rv) && rv != NS_ERROR_MALFORMED_URI)) {
+    return rv;
+  }
 
   
   bool isUIResource = false;
-  rv = NS_URIChainHasFlags(uri, nsIProtocolHandler::URI_IS_UI_RESOURCE,
-                           &isUIResource);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (uri) {
+    rv = NS_URIChainHasFlags(uri, nsIProtocolHandler::URI_IS_UI_RESOURCE,
+                             &isUIResource);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   nsCOMPtr<nsIURI> localURI;
   if (!isUIResource) {
