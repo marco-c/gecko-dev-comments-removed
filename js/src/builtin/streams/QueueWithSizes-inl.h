@@ -65,6 +65,13 @@ inline MOZ_MUST_USE bool QueueAppendValueAndSize(
 
 }  
 
+
+
+
+inline JS::Value PeekQueueValue(ListObject* queue) {
+  return detail::QueueFirstValue(queue);
+}
+
 }  
 
 #endif  

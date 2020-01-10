@@ -20,6 +20,7 @@
 #include "builtin/streams/WritableStreamDefaultController.h"  
 #include "builtin/streams/WritableStreamOperations.h"  
 #include "js/CallArgs.h"    
+#include "js/Promise.h"     
 #include "js/RootingAPI.h"  
 #include "js/Value.h"  
 #include "vm/Compartment.h"  
@@ -30,6 +31,7 @@
 
 #include "builtin/streams/HandlerFunction-inl.h"  
 #include "builtin/streams/MiscellaneousOperations-inl.h"  
+#include "builtin/streams/QueueWithSizes-inl.h"           
 #include "vm/Compartment-inl.h"                   
 #include "vm/JSContext-inl.h"                     
 #include "vm/JSObject-inl.h"  
@@ -46,9 +48,16 @@ using JS::UndefinedHandleValue;
 using JS::Value;
 
 using js::ListObject;
+using js::NewHandler;
+using js::PeekQueueValue;
+using js::TargetFromHandler;
 using js::WritableStream;
+using js::WritableStreamCloseQueuedOrInFlight;
 using js::WritableStreamDefaultController;
 using js::WritableStreamFinishErroring;
+using js::WritableStreamMarkCloseRequestInFlight;
+using js::WritableStreamMarkFirstWriteRequestInFlight;
+using js::WritableStreamUpdateBackpressure;
 
 
 
@@ -520,6 +529,10 @@ double js::WritableStreamDefaultControllerGetDesiredSize(
   return controller->strategyHWM() - controller->queueTotalSize();
 }
 
+static MOZ_MUST_USE bool WritableStreamDefaultControllerProcessIfNeeded(
+    JSContext* cx,
+    Handle<WritableStreamDefaultController*> unwrappedController);
+
 
 
 
@@ -552,21 +565,14 @@ MOZ_MUST_USE bool WritableStreamDefaultControllerAdvanceQueueIfNeeded(
   }
 
   
-  Rooted<ListObject*> unwrappedQueue(cx, unwrappedController->queue());
-  MOZ_ASSERT((unwrappedQueue->length() % 2) == 0);
-  if (unwrappedQueue->isEmpty()) {
-    return true;
-  }
-
   
   
   
   
   
   
-  
-  JS_ReportErrorASCII(cx, "nope");
-  return false;
+  return WritableStreamDefaultControllerProcessIfNeeded(cx,
+                                                        unwrappedController);
 }
 
 
@@ -587,6 +593,239 @@ bool js::WritableStreamDefaultControllerErrorIfNeeded(
   }
 
   return true;
+}
+
+static MOZ_MUST_USE JSObject* PerformCloseAlgorithm(
+    JSContext* cx,
+    Handle<WritableStreamDefaultController*> unwrappedController) {
+  
+  JS_ReportErrorASCII(cx, "boo");
+  return nullptr;
+}
+
+static MOZ_MUST_USE JSObject* PerformWriteAlgorithm(
+    JSContext* cx, Handle<WritableStreamDefaultController*> unwrappedController,
+    Handle<Value> chunk) {
+  cx->check(chunk);
+
+  
+  JS_ReportErrorASCII(cx, "boo");
+  return nullptr;
+}
+
+
+
+
+
+static MOZ_MUST_USE bool WritableStreamCloseHandler(JSContext* cx,
+                                                    unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  Rooted<WritableStream*> unwrappedStream(
+      cx, TargetFromHandler<WritableStream>(args));
+
+  
+  if (!WritableStreamFinishInFlightClose(cx, unwrappedStream)) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+
+
+
+
+static MOZ_MUST_USE bool WritableStreamCloseFailedHandler(JSContext* cx,
+                                                          unsigned argc,
+                                                          Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  Rooted<WritableStream*> unwrappedStream(
+      cx, TargetFromHandler<WritableStream>(args));
+
+  
+  
+  if (!WritableStreamFinishInFlightCloseWithError(cx, unwrappedStream,
+                                                  args.get(0))) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+
+
+
+
+static MOZ_MUST_USE bool WritableStreamWriteHandler(JSContext* cx,
+                                                    unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  Rooted<WritableStream*> unwrappedStream(
+      cx, TargetFromHandler<WritableStream>(args));
+
+  
+  if (!WritableStreamFinishInFlightWrite(cx, unwrappedStream)) {
+    return false;
+  }
+
+  
+  
+  MOZ_ASSERT(unwrappedStream->writable() ^ unwrappedStream->erroring());
+
+  
+  DequeueValue(unwrappedStream->controller(), cx);
+
+  
+  
+  if (!WritableStreamCloseQueuedOrInFlight(unwrappedStream) &&
+      unwrappedStream->writable()) {
+    
+    
+    
+    bool backpressure = WritableStreamDefaultControllerGetBackpressure(
+        unwrappedStream->controller());
+
+    
+    
+    if (!WritableStreamUpdateBackpressure(cx, unwrappedStream, backpressure)) {
+      return false;
+    }
+  }
+
+  
+  
+  
+  Rooted<WritableStreamDefaultController*> unwrappedController(
+      cx, unwrappedStream->controller());
+  if (!WritableStreamDefaultControllerAdvanceQueueIfNeeded(
+          cx, unwrappedController)) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+
+
+
+
+static MOZ_MUST_USE bool WritableStreamWriteFailedHandler(JSContext* cx,
+                                                          unsigned argc,
+                                                          Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  Rooted<WritableStream*> unwrappedStream(
+      cx, TargetFromHandler<WritableStream>(args));
+
+  
+  
+  if (unwrappedStream->writable()) {
+    WritableStreamDefaultControllerClearAlgorithms(
+        unwrappedStream->controller());
+  }
+
+  
+  
+  if (!WritableStreamFinishInFlightWriteWithError(cx, unwrappedStream,
+                                                  args.get(0))) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+
+
+
+
+
+
+
+
+bool WritableStreamDefaultControllerProcessIfNeeded(
+    JSContext* cx,
+    Handle<WritableStreamDefaultController*> unwrappedController) {
+  
+  ListObject* unwrappedQueue = unwrappedController->queue();
+  if (QueueIsEmpty(unwrappedQueue)) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  Rooted<JSObject*> sinkWriteOrClosePromise(cx);
+  JSNative onFulfilledFunc, onRejectedFunc;
+  if (PeekQueueValue(unwrappedQueue).isMagic(JS_WRITABLESTREAM_CLOSE_RECORD)) {
+    MOZ_ASSERT(unwrappedQueue->length() == 2);
+
+    onFulfilledFunc = WritableStreamCloseHandler;
+    onRejectedFunc = WritableStreamCloseFailedHandler;
+
+    
+    
+    WritableStreamMarkCloseRequestInFlight(unwrappedController->stream());
+
+    
+    DequeueValue(unwrappedController, cx);
+
+    
+    MOZ_ASSERT(unwrappedQueue->isEmpty());
+
+    
+    
+    sinkWriteOrClosePromise = PerformCloseAlgorithm(cx, unwrappedController);
+  } else {
+    onFulfilledFunc = WritableStreamWriteHandler;
+    onRejectedFunc = WritableStreamWriteFailedHandler;
+
+    Rooted<Value> chunk(cx, PeekQueueValue(unwrappedQueue));
+    if (!cx->compartment()->wrap(cx, &chunk)) {
+      return false;
+    }
+
+    
+    
+    
+    WritableStreamMarkFirstWriteRequestInFlight(unwrappedController->stream());
+
+    
+    
+    sinkWriteOrClosePromise =
+        PerformWriteAlgorithm(cx, unwrappedController, chunk);
+  }
+  if (!sinkWriteOrClosePromise) {
+    return false;
+  }
+
+  Rooted<JSObject*> stream(cx, unwrappedController->stream());
+  if (!cx->compartment()->wrap(cx, &stream)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  Rooted<JSObject*> onFulfilled(cx, NewHandler(cx, onFulfilledFunc, stream));
+  if (!onFulfilled) {
+    return false;
+  }
+  Rooted<JSObject*> onRejected(cx, NewHandler(cx, onRejectedFunc, stream));
+  if (!onRejected) {
+    return false;
+  }
+  return JS::AddPromiseReactions(cx, sinkWriteOrClosePromise, onFulfilled,
+                                 onRejected);
 }
 
 
