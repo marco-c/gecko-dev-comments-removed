@@ -212,8 +212,8 @@ TEST_F(APZHitTestingTester, HitTesting1) {
 
 TEST_F(APZHitTestingTester, HitTesting2) {
   SCOPED_GFX_VAR(UseWebRender, bool, false);
-  SCOPED_GFX_PREF(APZVelocityBias, float,
-                  0.0);  
+  
+  SCOPED_GFX_PREF_FLOAT("apz.velocity_bias", 0.0);
 
   CreateHitTesting2LayerTree();
   ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
@@ -455,7 +455,7 @@ TEST_F(APZHitTestingTester, ComplexMultiLayerTree) {
 }
 
 TEST_F(APZHitTestingTester, TestRepaintFlushOnNewInputBlock) {
-  SCOPED_GFX_PREF(layout_css_touch_action_enabled, bool, false);
+  SCOPED_GFX_PREF_BOOL("layout.css.touch_action.enabled", false);
 
   
   

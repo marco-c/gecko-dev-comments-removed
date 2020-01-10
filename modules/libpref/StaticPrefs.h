@@ -87,7 +87,6 @@ class StaticPrefs {
   
   
   
-  
 
  public:
   
@@ -115,7 +114,6 @@ class StaticPrefs {
     MaybeInitOncePrefs();                                       \
     return sVarCache_##id;                                      \
   }                                                             \
-  static void Set##id(StripAtomic<cpp_type> aValue);            \
   static const char* Get##id##PrefName() { return str; }        \
   static StripAtomic<cpp_type> Get##id##PrefDefault() { return default_value; }
 

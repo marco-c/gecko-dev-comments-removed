@@ -162,7 +162,7 @@ TEST_F(APZCBasicTester, ComplexTransform) {
 }
 
 TEST_F(APZCBasicTester, Fling) {
-  SCOPED_GFX_PREF(APZFlingMinVelocityThreshold, float, 0.0f);
+  SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
   int touchStart = 50;
   int touchEnd = 10;
   ParentLayerPoint pointOut;
@@ -181,8 +181,8 @@ TEST_F(APZCBasicTester, Fling) {
 
 TEST_F(APZCBasicTester, FlingIntoOverscroll) {
   
-  SCOPED_GFX_PREF(APZOverscrollEnabled, bool, true);
-  SCOPED_GFX_PREF(APZFlingMinVelocityThreshold, float, 0.0f);
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
+  SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
 
   
   Pan(apzc, 50, 25, PanOptions::NoFling);
@@ -208,7 +208,7 @@ TEST_F(APZCBasicTester, FlingIntoOverscroll) {
 }
 
 TEST_F(APZCBasicTester, PanningTransformNotifications) {
-  SCOPED_GFX_PREF(APZOverscrollEnabled, bool, true);
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
 
   
   
@@ -294,7 +294,7 @@ void APZCBasicTester::TestOverscroll() {
 }
 
 TEST_F(APZCBasicTester, OverScrollPanning) {
-  SCOPED_GFX_PREF(APZOverscrollEnabled, bool, true);
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
 
   TestOverscroll();
 }
@@ -302,7 +302,7 @@ TEST_F(APZCBasicTester, OverScrollPanning) {
 
 
 TEST_F(APZCBasicTester, OverScroll_Bug1152051a) {
-  SCOPED_GFX_PREF(APZOverscrollEnabled, bool, true);
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
 
   
 
@@ -310,12 +310,12 @@ TEST_F(APZCBasicTester, OverScroll_Bug1152051a) {
   
   
   
-  SCOPED_GFX_PREF(APZFlingFriction, float, 0);
+  SCOPED_GFX_PREF_FLOAT("apz.fling_friction", 0);
 
   
   
   
-  SCOPED_GFX_PREF(APZOverscrollSpringStiffness, float, 0.01225f);
+  SCOPED_GFX_PREF_FLOAT("apz.overscroll.spring_stiffness", 0.01225f);
 
   TestOverscroll();
 }
@@ -323,9 +323,8 @@ TEST_F(APZCBasicTester, OverScroll_Bug1152051a) {
 
 
 TEST_F(APZCBasicTester, OverScroll_Bug1152051b) {
-  SCOPED_GFX_PREF(APZOverscrollEnabled, bool, true);
-
-  SCOPED_GFX_PREF(APZOverscrollStopDistanceThreshold, float, 0.1f);
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
+  SCOPED_GFX_PREF_FLOAT("apz.overscroll.stop_distance_threshold", 0.1f);
 
   
   PanIntoOverscroll();
@@ -364,7 +363,7 @@ TEST_F(APZCBasicTester, OverScroll_Bug1152051b) {
 
 
 TEST_F(APZCBasicTester, OverScrollAfterLowVelocityPan_Bug1343775) {
-  SCOPED_GFX_PREF(APZOverscrollEnabled, bool, true);
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
 
   
   
@@ -379,7 +378,7 @@ TEST_F(APZCBasicTester, OverScrollAfterLowVelocityPan_Bug1343775) {
 }
 
 TEST_F(APZCBasicTester, OverScrollAbort) {
-  SCOPED_GFX_PREF(APZOverscrollEnabled, bool, true);
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
 
   
   int touchStart = 500;
@@ -404,7 +403,7 @@ TEST_F(APZCBasicTester, OverScrollAbort) {
 }
 
 TEST_F(APZCBasicTester, OverScrollPanningAbort) {
-  SCOPED_GFX_PREF(APZOverscrollEnabled, bool, true);
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
 
   
   
