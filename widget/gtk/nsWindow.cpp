@@ -406,7 +406,7 @@ nsWindow::nsWindow() {
   mHandleTouchEvent = false;
 #endif
   mIsDragPopup = false;
-  mIsX11Display = gfxPlatformGtk::GetPlatform()->IsX11Display();
+  mIsX11Display = GDK_IS_X11_DISPLAY(gdk_display_get_default());
 
   mContainer = nullptr;
   mGdkWindow = nullptr;
@@ -778,7 +778,8 @@ double nsWindow::GetDefaultScaleInternal() {
 
 DesktopToLayoutDeviceScale nsWindow::GetDesktopToDeviceScale() {
 #ifdef MOZ_WAYLAND
-  if (!mIsX11Display) {
+  GdkDisplay* gdkDisplay = gdk_display_get_default();
+  if (!GDK_IS_X11_DISPLAY(gdkDisplay)) {
     return DesktopToLayoutDeviceScale(GdkScaleFactor());
   }
 #endif
@@ -789,13 +790,14 @@ DesktopToLayoutDeviceScale nsWindow::GetDesktopToDeviceScale() {
 
 DesktopToLayoutDeviceScale nsWindow::GetDesktopToDeviceScaleByScreen() {
 #ifdef MOZ_WAYLAND
+  GdkDisplay* gdkDisplay = gdk_display_get_default();
   
   
   
   
   
   
-  if (!mIsX11Display) {
+  if (!GDK_IS_X11_DISPLAY(gdkDisplay)) {
     nsView* view = nsView::GetViewFor(this);
     if (view) {
       nsView* parentView = view->GetParent();
@@ -1509,7 +1511,7 @@ static void SetUserTimeAndStartupIDForActivatedWindow(GtkWidget* aWindow) {
 
 #if defined(MOZ_ENABLE_STARTUP_NOTIFICATION)
   
-  if (gfxPlatformGtk::GetPlatform()->IsX11Display()) {
+  if (GDK_IS_X11_DISPLAY(gdk_display_get_default())) {
     GdkWindow* gdkWindow = gtk_widget_get_window(aWindow);
 
     GdkScreen* screen = gdk_window_get_screen(gdkWindow);
@@ -1855,7 +1857,7 @@ void* nsWindow::GetNativeData(uint32_t aDataType) {
     case NS_NATIVE_DISPLAY: {
 #ifdef MOZ_X11
       GdkDisplay* gdkDisplay = gdk_display_get_default();
-      if (gdkDisplay && GDK_IS_X11_DISPLAY(gdkDisplay)) {
+      if (GDK_IS_X11_DISPLAY(gdkDisplay)) {
         return GDK_DISPLAY_XDISPLAY(gdkDisplay);
       }
 #endif 
@@ -7059,7 +7061,7 @@ nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel() {
   }
 
   
-  if (gfxPlatformGtk::GetPlatform()->IsWaylandDisplay()) {
+  if (!GDK_IS_X11_DISPLAY(gdk_display_get_default())) {
     sCSDSupportLevel = CSD_SUPPORT_CLIENT;
     return sCSDSupportLevel;
   }
