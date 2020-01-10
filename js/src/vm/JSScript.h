@@ -1544,23 +1544,30 @@ class BaseScript : public gc::TenuredCell {
     HadOverflowBailout = 1 << 18,
 
     
-    Uninlineable = 1 << 19,
+    
+    
+    
+    BaselineDisabled = 1 << 19,
+    IonDisabled = 1 << 20,
 
     
-    InvalidatedIdempotentCache = 1 << 20,
+    Uninlineable = 1 << 21,
 
     
-    FailedLexicalCheck = 1 << 21,
+    InvalidatedIdempotentCache = 1 << 22,
 
     
-    NeedsArgsAnalysis = 1 << 22,
-    NeedsArgsObj = 1 << 23,
+    FailedLexicalCheck = 1 << 23,
 
     
-    HideScriptFromDebugger = 1 << 24,
+    NeedsArgsAnalysis = 1 << 24,
+    NeedsArgsObj = 1 << 25,
 
     
-    SpewEnabled = 1 << 25,
+    HideScriptFromDebugger = 1 << 26,
+
+    
+    SpewEnabled = 1 << 27,
   };
 
   uint8_t* jitCodeRaw() const { return jitCodeRaw_; }
@@ -2627,8 +2634,15 @@ class JSScript : public js::BaseScript {
   }
 
   
-  bool canIonCompile() const { return ion != ION_DISABLED_SCRIPT; }
-  void disableIon(JSRuntime* rt) { setIonScriptImpl(rt, ION_DISABLED_SCRIPT); }
+  bool canIonCompile() const {
+    bool disabled = hasFlag(MutableFlags::IonDisabled);
+    MOZ_ASSERT_IF(disabled, ion == ION_DISABLED_SCRIPT);
+    return !disabled;
+  }
+  void disableIon(JSRuntime* rt) {
+    setFlag(MutableFlags::IonDisabled);
+    setIonScriptImpl(rt, ION_DISABLED_SCRIPT);
+  }
 
   
   bool isIonCompilingOffThread() const { return ion == ION_COMPILING_SCRIPT; }
@@ -2673,10 +2687,13 @@ class JSScript : public js::BaseScript {
 
   
   bool canBaselineCompile() const {
-    return baseline != BASELINE_DISABLED_SCRIPT;
+    bool disabled = hasFlag(MutableFlags::BaselineDisabled);
+    MOZ_ASSERT_IF(disabled, baseline == BASELINE_DISABLED_SCRIPT);
+    return !disabled;
   }
   void disableBaselineCompile(JSRuntime* rt) {
     MOZ_ASSERT(!hasBaselineScript());
+    setFlag(MutableFlags::BaselineDisabled);
     setBaselineScriptImpl(rt, BASELINE_DISABLED_SCRIPT);
   }
 
