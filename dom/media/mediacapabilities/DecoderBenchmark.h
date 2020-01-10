@@ -58,7 +58,7 @@ class DecoderBenchmark final {
   
   
   
-  uint64_t mLastParsedFrames = 0;
+  uint64_t mLastTotalFrames = 0;
   uint64_t mLastDroppedFrames = 0;
 };
 
