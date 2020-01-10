@@ -398,6 +398,8 @@ bool ExtensionProtocolHandler::ResolveSpecialCases(const nsACString& aHost,
                                                    const nsACString& aPath,
                                                    const nsACString& aPathname,
                                                    nsACString& aResult) {
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread(),
+                        "The ExtensionPolicyService is not thread safe");
   
   
   

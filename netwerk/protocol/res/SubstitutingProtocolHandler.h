@@ -78,6 +78,12 @@ class SubstitutingProtocolHandler {
 
   
   
+  virtual MOZ_MUST_USE bool MustResolveJAR(const nsACString& aRoot) {
+    return false;
+  }
+
+  
+  
   virtual MOZ_MUST_USE nsresult SubstituteChannel(nsIURI* uri,
                                                   nsILoadInfo* aLoadInfo,
                                                   nsIChannel** result) {

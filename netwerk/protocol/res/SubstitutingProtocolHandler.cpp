@@ -355,7 +355,7 @@ nsresult SubstitutingProtocolHandler::NewURI(const nsACString& aSpec,
 
   
   
-  if (host.EqualsLiteral("android")) {
+  if (MustResolveJAR(host)) {
     return ResolveJARURI(uri, aResult);
   }
 
