@@ -7881,7 +7881,7 @@ class _Search extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponent
       
       
 
-      window.gContentSearchController = new ContentSearchUIController(input, input.parentNode, healthReportKey, searchSource, this.props.permanentPrivateBrowsing);
+      window.gContentSearchController = new ContentSearchUIController(input, input.parentNode, healthReportKey, searchSource);
       addEventListener("ContentSearchClient", this);
     } else {
       window.gContentSearchController = null;
@@ -7953,12 +7953,7 @@ class _Search extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponent
   }
 
 }
-
-const getState = state => ({
-  permanentPrivateBrowsing: state.App.permanentPrivateBrowsing
-});
-
-const Search = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect"])(getState)(_Search);
+const Search = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect"])()(_Search);
 
  }),
 
@@ -13737,8 +13732,6 @@ const INITIAL_STATE = {
   App: {
     
     initialized: false,
-    
-    permanentPrivateBrowsing: false
   },
   ASRouter: {
     initialized: false

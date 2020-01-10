@@ -37,21 +37,18 @@ this.ContentSearchUIController = (function() {
 
 
 
-
-
   function ContentSearchUIController(
     inputElement,
     tableParent,
     healthReportKey,
     searchPurpose,
-    isPrivateWindow,
     idPrefix = ""
   ) {
     this.input = inputElement;
     this._idPrefix = idPrefix;
     this._healthReportKey = healthReportKey;
     this._searchPurpose = searchPurpose;
-    this._isPrivateWindow = isPrivateWindow;
+    this._isPrivateWindow = false;
 
     let tableID = idPrefix + "searchSuggestionTable";
     this.input.autocomplete = "off";
@@ -632,6 +629,11 @@ this.ContentSearchUIController = (function() {
     },
 
     _onMsgState(state) {
+      
+      if ("isPrivateWindow" in state) {
+        this._isPrivateWindow = state.isPrivateWindow;
+      }
+
       this.engines = state.engines;
 
       let currentEngine = state.currentEngine;

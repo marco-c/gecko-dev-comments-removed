@@ -19,8 +19,6 @@ const INITIAL_STATE = {
   App: {
     
     initialized: false,
-    
-    permanentPrivateBrowsing: false,
   },
   ASRouter: { initialized: false },
   Snippets: { initialized: false },
