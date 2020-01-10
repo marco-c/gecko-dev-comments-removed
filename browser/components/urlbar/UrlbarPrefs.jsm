@@ -109,9 +109,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["openViewOnFocus", false],
 
   
-  ["quantumbar", false],
-
-  
   ["speculativeConnect.enabled", true],
 
   
