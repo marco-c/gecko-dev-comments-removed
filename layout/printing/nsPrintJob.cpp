@@ -1438,7 +1438,10 @@ void nsPrintJob::GetDisplayTitleAndURL(const UniquePtr<nsPrintObject>& aPO,
 
 
 nsresult nsPrintJob::DocumentReadyForPrinting() {
-  if (mPrt->mPrintFrameType == nsIPrintSettings::kEachFrameSep) {
+  int16_t printRangeType = nsIPrintSettings::kRangeAllPages;
+  mPrt->mPrintSettings->GetPrintRange(&printRangeType);
+  if (mPrt->mPrintFrameType == nsIPrintSettings::kEachFrameSep &&
+      printRangeType != nsIPrintSettings::kRangeSelection) {
     
     
     RefPtr<nsPrintData> printData = mPrt;
@@ -1995,9 +1998,13 @@ void nsPrintJob::UpdateZoomRatio(nsPrintObject* aPO, bool aSetPixelScale) {
   
   
   if (aSetPixelScale && aPO->mFrameType != eIFrame) {
+    int16_t printRangeType = nsIPrintSettings::kRangeAllPages;
+    mPrt->mPrintSettings->GetPrintRange(&printRangeType);
+
     float ratio;
-    if (mPrt->mPrintFrameType == nsIPrintSettings::kFramesAsIs ||
-        mPrt->mPrintFrameType == nsIPrintSettings::kNoFrames) {
+    if ((mPrt->mPrintFrameType == nsIPrintSettings::kFramesAsIs ||
+         mPrt->mPrintFrameType == nsIPrintSettings::kNoFrames) &&
+        printRangeType != nsIPrintSettings::kRangeSelection) {
       ratio = mPrt->mShrinkRatio - 0.005f;  
     } else {
       ratio = aPO->mShrinkRatio - 0.005f;  
@@ -2679,7 +2686,10 @@ bool nsPrintJob::PrintPage(nsPrintObject* aPO, bool& aInRange) {
 
   
   
-  if (printData->mPrintFrameType == nsIPrintSettings::kEachFrameSep) {
+  int16_t printRangeType = nsIPrintSettings::kRangeAllPages;
+  printData->mPrintSettings->GetPrintRange(&printRangeType);
+  if (printData->mPrintFrameType == nsIPrintSettings::kEachFrameSep &&
+      printRangeType != nsIPrintSettings::kRangeSelection) {
     endPage = printData->mNumPrintablePages;
   }
 
@@ -2905,7 +2915,6 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
   
   
   if (printRangeType == nsIPrintSettings::kRangeSelection) {
-    printData->mPrintFrameType = nsIPrintSettings::kSelectedFrame;
     printHowEnable = nsIPrintSettings::kFrameEnableNone;
   }
 
@@ -3029,7 +3038,8 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
   }
 
   
-  if (printData->mPrintFrameType == nsIPrintSettings::kFramesAsIs) {
+  if (printData->mPrintFrameType == nsIPrintSettings::kFramesAsIs &&
+      printRangeType != nsIPrintSettings::kRangeSelection) {
     SetPrintAsIs(printData->mPrintObject.get());
     SetPrintPO(printData->mPrintObject.get(), true);
     return NS_OK;
@@ -3038,7 +3048,8 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
   
   
   
-  if (printData->mPrintFrameType == nsIPrintSettings::kSelectedFrame) {
+  if (printData->mPrintFrameType == nsIPrintSettings::kSelectedFrame ||
+      printRangeType == nsIPrintSettings::kRangeSelection) {
     if ((printData->mIsParentAFrameSet && printData->mCurrentFocusWin) ||
         printData->mIsIFrameSelected) {
       nsPrintObject* po = FindPrintObjectByDOMWin(printData->mPrintObject.get(),
@@ -3061,7 +3072,8 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
 
   
   
-  if (printData->mPrintFrameType == nsIPrintSettings::kEachFrameSep) {
+  if (printData->mPrintFrameType == nsIPrintSettings::kEachFrameSep &&
+      printRangeType != nsIPrintSettings::kRangeSelection) {
     SetPrintPO(printData->mPrintObject.get(), true);
     int32_t cnt = printData->mPrintDocList.Length();
     for (int32_t i = 0; i < cnt; i++) {
