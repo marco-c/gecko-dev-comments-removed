@@ -379,7 +379,7 @@ struct MeasureUnit {
 
 
 
-const MeasureUnit simpleMeasureUnits[] = {
+static constexpr MeasureUnit simpleMeasureUnits[] = {
     
     {"area", "acre"},
     {"digital", "bit"},
