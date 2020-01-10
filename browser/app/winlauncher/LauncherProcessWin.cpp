@@ -139,6 +139,10 @@ static bool DoLauncherProcessChecks(int& argc, wchar_t** argv) {
   bool result = false;
 
 #if defined(MOZ_LAUNCHER_PROCESS)
+  
+  
+  
+  
   mozilla::LauncherResult<bool> isSame = mozilla::IsSameBinaryAsParentProcess();
   if (isSame.isOk()) {
     result = !isSame.unwrap();
