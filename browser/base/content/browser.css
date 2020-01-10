@@ -1013,7 +1013,6 @@ toolbarpaletteitem[place="palette"] > #downloads-button[indicator] > .toolbarbut
 
 #BMB_bookmarksPopup {
   -moz-appearance: none;
-  -moz-binding: none;
   background: transparent;
   border: none;
   

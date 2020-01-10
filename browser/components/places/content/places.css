@@ -19,10 +19,6 @@ tree[is="places-tree"] > treechildren::-moz-tree-cell {
   z-index: 1;
 }
 
-menupopup[placespopup="true"] {
-  -moz-binding: none;
-}
-
 
 @media (resolution: 2dppx) {
   #bookmarksChildren,

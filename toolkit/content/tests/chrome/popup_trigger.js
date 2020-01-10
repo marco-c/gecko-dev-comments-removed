@@ -60,7 +60,7 @@ var popupTests = [
       gExpectedTriggerNode = gIsMenu ? "notset" : gTrigger;
       synthesizeMouse(gTrigger, 4, 4, {});
     },
-    result(testname) {
+    async result(testname) {
       gExpectedTriggerNode = null;
       
       is(
@@ -89,6 +89,13 @@ var popupTests = [
           testname + " opener.document.popupNode"
         );
       }
+
+      
+      
+      
+      await new Promise(r =>
+        requestAnimationFrame(() => requestAnimationFrame(r))
+      );
 
       
       var popuprect = gMenuPopup.getBoundingClientRect();
