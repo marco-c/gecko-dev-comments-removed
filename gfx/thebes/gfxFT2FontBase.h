@@ -37,7 +37,7 @@ class gfxFT2FontBase : public gfxFont {
 
   static void SetupVarCoords(FT_MM_Var* aMMVar,
                              const nsTArray<gfxFontVariation>& aVariations,
-                             nsTArray<FT_Fixed>* aCoords);
+                             FT_Face aFTFace);
 
  private:
   uint32_t GetCharExtents(char aChar, cairo_text_extents_t* aExtents);
@@ -65,6 +65,37 @@ class gfxFT2FontBase : public gfxFont {
   nsTArray<FT_Fixed> mCoords;
 
   mozilla::UniquePtr<nsDataHashtable<nsUint32HashKey, int32_t>> mGlyphWidths;
+};
+
+
+
+
+
+
+
+
+class FTUserFontData final
+    : public mozilla::gfx::SharedFTFaceRefCountedData<FTUserFontData> {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FTUserFontData)
+
+  FTUserFontData(const uint8_t* aData, uint32_t aLength)
+      : mFontData(aData), mLength(aLength) {}
+
+  const uint8_t* FontData() const { return mFontData; }
+
+  already_AddRefed<mozilla::gfx::SharedFTFace> CloneFace(
+      int aFaceIndex = 0) override;
+
+ private:
+  ~FTUserFontData() {
+    if (mFontData) {
+      free((void*)mFontData);
+    }
+  }
+
+  const uint8_t* mFontData;
+  uint32_t mLength;
 };
 
 #endif 
