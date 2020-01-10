@@ -19,8 +19,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ExtensionParent: "resource://gre/modules/ExtensionParent.jsm",
   getVerificationHash: "resource://gre/modules/SearchEngine.jsm",
   OS: "resource://gre/modules/osfile.jsm",
-  RemoteSettings: "resource://services-settings/remote-settings.js",
-  RemoteSettingsClient: "resource://services-settings/RemoteSettingsClient.jsm",
+  IgnoreLists: "resource://gre/modules/IgnoreLists.jsm",
   SearchEngine: "resource://gre/modules/SearchEngine.jsm",
   SearchStaticData: "resource://gre/modules/SearchStaticData.jsm",
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
@@ -749,56 +748,11 @@ SearchService.prototype = {
 
 
 
-
-
-
-
-
-
-
-
-
-  async _getRemoteSettings(ignoreListSettings, firstTime = true) {
-    try {
-      return ignoreListSettings.get({ verifySignature: true });
-    } catch (ex) {
-      if (
-        ex instanceof RemoteSettingsClient.InvalidSignatureError &&
-        firstTime
-      ) {
-        
-        const collection = await ignoreListSettings.openCollection();
-        await collection.clear();
-        await collection.db.close();
-        
-        return this._getRemoteSettings(ignoreListSettings, false);
-      }
-      
-      
-      Cu.reportError(ex);
-      return [];
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
   async _setupRemoteSettings() {
-    const ignoreListSettings = RemoteSettings(
-      SearchUtils.SETTINGS_IGNORELIST_KEY
-    );
-    
-    const current = await this._getRemoteSettings(ignoreListSettings);
-
     
     this._ignoreListListener = this._handleIgnoreListUpdated.bind(this);
-    ignoreListSettings.on("sync", this._ignoreListListener);
+
+    const current = await IgnoreLists.getAndSubscribe(this._ignoreListListener);
 
     await this._handleIgnoreListUpdated({ data: { current } });
     Services.obs.notifyObservers(
@@ -3096,10 +3050,7 @@ SearchService.prototype = {
 
   _removeObservers() {
     if (this._ignoreListListener) {
-      RemoteSettings(SearchUtils.SETTINGS_IGNORELIST_KEY).off(
-        "sync",
-        this._ignoreListListener
-      );
+      IgnoreLists.unsubscribe(this._ignoreListListener);
       delete this._ignoreListListener;
     }
 
