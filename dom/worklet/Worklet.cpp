@@ -389,7 +389,6 @@ void ExecutionRunnable::RunOnWorkletThread() {
   
   
   JS::ModuleEvaluate(cx, module);
-  JS::Rooted<JS::Value> unused(cx);
 
   
   mResult = NS_OK;
