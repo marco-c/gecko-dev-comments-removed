@@ -1026,7 +1026,7 @@ BrowserGlue.prototype = {
         
         
         
-        PdfJs.init();
+        PdfJs.init(true);
         break;
       case "shield-init-complete":
         this._shieldInitComplete = true;
