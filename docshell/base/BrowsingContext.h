@@ -146,6 +146,9 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   void Detach(bool aFromIPC = false);
 
   
+  void PrepareForProcessChange();
+
+  
   
   void CacheChildren(bool aFromIPC = false);
 
