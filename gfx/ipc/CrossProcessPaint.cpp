@@ -206,6 +206,16 @@ CrossProcessPaint::CrossProcessPaint(dom::Promise* aPromise, float aScale,
 
 CrossProcessPaint::~CrossProcessPaint() {}
 
+static dom::TabId GetTabId(dom::WindowGlobalParent* aWGP) {
+  
+  
+  
+  
+  
+  RefPtr<dom::BrowserParent> browserParent = aWGP->GetBrowserParent();
+  return browserParent ? browserParent->GetTabId() : dom::TabId(0);
+}
+
 void CrossProcessPaint::ReceiveFragment(dom::WindowGlobalParent* aWGP,
                                         PaintFragment&& aFragment) {
   if (IsCleared()) {
@@ -213,20 +223,22 @@ void CrossProcessPaint::ReceiveFragment(dom::WindowGlobalParent* aWGP,
     return;
   }
 
+  dom::TabId surfaceId = GetTabId(aWGP);
+
   MOZ_ASSERT(mPendingFragments > 0);
-  MOZ_ASSERT(!mReceivedFragments.GetValue(aWGP));
+  MOZ_ASSERT(!mReceivedFragments.GetValue(surfaceId));
   MOZ_ASSERT(!aFragment.IsEmpty());
 
   
   
-  if (mPendingFragments == 0 || mReceivedFragments.GetValue(aWGP) ||
+  if (mPendingFragments == 0 || mReceivedFragments.GetValue(surfaceId) ||
       aFragment.IsEmpty()) {
     CPP_LOG("Dropping invalid fragment from %p.\n", aWGP);
     LostFragment(aWGP);
     return;
   }
 
-  CPP_LOG("Receiving fragment from %p.\n", aWGP);
+  CPP_LOG("Receiving fragment from %p(%llu).\n", aWGP, (uint64_t)surfaceId);
 
   
   for (auto iter = aFragment.mDependencies.Iter(); !iter.Done(); iter.Next()) {
@@ -252,7 +264,7 @@ void CrossProcessPaint::ReceiveFragment(dom::WindowGlobalParent* aWGP,
     QueuePaint(wgp, Nothing());
   }
 
-  mReceivedFragments.Put(aWGP, std::move(aFragment));
+  mReceivedFragments.Put(surfaceId, std::move(aFragment));
   mPendingFragments -= 1;
 
   
@@ -265,14 +277,14 @@ void CrossProcessPaint::LostFragment(dom::WindowGlobalParent* aWGP) {
     return;
   }
 
-  mPromise->MaybeReject(NS_ERROR_FAILURE);
+  mPromise->MaybeReject(NS_ERROR_LOSS_OF_SIGNIFICANT_DATA);
   Clear();
 }
 
 void CrossProcessPaint::QueuePaint(dom::WindowGlobalParent* aWGP,
                                    const Maybe<IntRect>& aRect,
                                    nscolor aBackgroundColor) {
-  MOZ_ASSERT(!mReceivedFragments.GetValue(aWGP));
+  MOZ_ASSERT(!mReceivedFragments.GetValue(GetTabId(aWGP)));
 
   CPP_LOG("Queueing paint for %p.\n", aWGP);
 
@@ -289,16 +301,6 @@ void CrossProcessPaint::Clear() {
 
 bool CrossProcessPaint::IsCleared() const { return !mPromise; }
 
-static dom::TabId GetTabId(dom::WindowGlobalParent* aWGP) {
-  
-  
-  
-  
-  
-  RefPtr<dom::BrowserParent> browserParent = aWGP->GetBrowserParent();
-  return browserParent ? browserParent->GetTabId() : dom::TabId(0);
-}
-
 void CrossProcessPaint::MaybeResolve() {
   
   
@@ -312,12 +314,15 @@ void CrossProcessPaint::MaybeResolve() {
 
   
   ResolvedSurfaceMap resolved;
-  if (!ResolveInternal(mRoot, &resolved)) {
-    CPP_LOG("Couldn't resolve.\n");
+  {
+    nsresult rv = ResolveInternal(GetTabId(mRoot), &resolved);
+    if (NS_FAILED(rv)) {
+      CPP_LOG("Couldn't resolve.\n");
 
-    mPromise->MaybeReject(NS_ERROR_FAILURE);
-    Clear();
-    return;
+      mPromise->MaybeReject(rv);
+      Clear();
+      return;
+    }
   }
 
   
@@ -338,32 +343,25 @@ void CrossProcessPaint::MaybeResolve() {
   Clear();
 }
 
-bool CrossProcessPaint::ResolveInternal(dom::WindowGlobalParent* aWGP,
-                                        ResolvedSurfaceMap* aResolved) {
+nsresult CrossProcessPaint::ResolveInternal(dom::TabId aTabId,
+                                            ResolvedSurfaceMap* aResolved) {
   
-  dom::TabId surfaceId = GetTabId(aWGP);
+  MOZ_ASSERT(!aResolved->GetWeak(aTabId));
 
-  
-  MOZ_ASSERT(!aResolved->GetWeak(surfaceId));
+  CPP_LOG("Resolving fragment %llu.\n", (uint64_t)aTabId);
 
-  CPP_LOG("Resolving fragment %p.\n", aWGP);
-
-  Maybe<PaintFragment> fragment = mReceivedFragments.GetAndRemove(aWGP);
+  Maybe<PaintFragment> fragment = mReceivedFragments.GetAndRemove(aTabId);
+  if (!fragment) {
+    return NS_ERROR_LOSS_OF_SIGNIFICANT_DATA;
+  }
 
   
   for (auto iter = fragment->mDependencies.Iter(); !iter.Done(); iter.Next()) {
     auto dependency = dom::TabId(iter.Get()->GetKey());
 
-    dom::ContentProcessManager* cpm =
-        dom::ContentProcessManager::GetSingleton();
-    dom::ContentParentId cpId = cpm->GetTabProcessId(dependency);
-    RefPtr<dom::BrowserParent> tab =
-        cpm->GetBrowserParentByProcessAndTabId(cpId, dependency);
-    RefPtr<dom::WindowGlobalParent> wgp =
-        tab->GetBrowsingContext()->GetCurrentWindowGlobal();
-
-    if (!ResolveInternal(wgp, aResolved)) {
-      return false;
+    nsresult rv = ResolveInternal(dependency, aResolved);
+    if (NS_FAILED(rv)) {
+      return rv;
     }
   }
 
@@ -372,9 +370,9 @@ bool CrossProcessPaint::ResolveInternal(dom::WindowGlobalParent* aWGP,
       gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
           fragment->mSize, SurfaceFormat::B8G8R8A8);
   if (!drawTarget || !drawTarget->IsValid()) {
-    CPP_LOG("Couldn't create (%d x %d) surface for fragment %p.\n",
-            fragment->mSize.width, fragment->mSize.height, aWGP);
-    return false;
+    CPP_LOG("Couldn't create (%d x %d) surface for fragment %llu.\n",
+            fragment->mSize.width, fragment->mSize.height, (uint64_t)aTabId);
+    return NS_ERROR_FAILURE;
   }
 
   
@@ -383,15 +381,16 @@ bool CrossProcessPaint::ResolveInternal(dom::WindowGlobalParent* aWGP,
     translator.SetExternalSurfaces(aResolved);
     if (!translator.TranslateRecording((char*)fragment->mRecording.mData,
                                        fragment->mRecording.mLen)) {
-      CPP_LOG("Couldn't translate recording for fragment %p.\n", aWGP);
-      return false;
+      CPP_LOG("Couldn't translate recording for fragment %llu.\n",
+              (uint64_t)aTabId);
+      return NS_ERROR_FAILURE;
     }
   }
 
   RefPtr<SourceSurface> snapshot = drawTarget->Snapshot();
   if (!snapshot) {
-    CPP_LOG("Couldn't get snapshot for fragment %p.\n", aWGP);
-    return false;
+    CPP_LOG("Couldn't get snapshot for fragment %llu.\n", (uint64_t)aTabId);
+    return NS_ERROR_FAILURE;
   }
 
   
@@ -401,8 +400,8 @@ bool CrossProcessPaint::ResolveInternal(dom::WindowGlobalParent* aWGP,
     aResolved->Remove(dependency);
   }
 
-  aResolved->Put(surfaceId, snapshot);
-  return true;
+  aResolved->Put(aTabId, snapshot);
+  return NS_OK;
 }
 
 }  
