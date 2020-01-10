@@ -105,30 +105,54 @@ static void AddMesaSysfsPaths(SandboxBroker::Policy* aPolicy) {
   }
 }
 
+static void JoinPathIfRelative(const nsACString& aCwd, const nsACString& inPath,
+                               nsACString& outPath) {
+  if (inPath.Length() < 1) {
+    outPath.Assign(aCwd);
+    SANDBOX_LOG_ERROR("Unjoinable path: %s", PromiseFlatCString(aCwd).get());
+    return;
+  }
+  const char* startChar = inPath.BeginReading();
+  if (*startChar != '/') {
+    
+    outPath.Assign(aCwd);
+    outPath.Append("/");
+    outPath.Append(inPath);
+  } else {
+    
+    outPath.Assign(inPath);
+  }
+}
+
 static void AddPathsFromFile(SandboxBroker::Policy* aPolicy,
-                             nsACString& aPath) {
+                             const nsACString& aPath);
+
+static void AddPathsFromFileInternal(SandboxBroker::Policy* aPolicy,
+                                     const nsACString& aCwd,
+                                     const nsACString& aPath) {
   nsresult rv;
   nsCOMPtr<nsIFile> ldconfig(do_CreateInstance(NS_LOCAL_FILE_CONTRACTID, &rv));
   if (NS_FAILED(rv)) {
     return;
   }
   rv = ldconfig->InitWithNativePath(aPath);
-  if (NS_FAILED(rv)) {
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }
   nsCOMPtr<nsIFileInputStream> fileStream(
       do_CreateInstance(NS_LOCALFILEINPUTSTREAM_CONTRACTID, &rv));
-  if (NS_FAILED(rv)) {
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }
   rv = fileStream->Init(ldconfig, -1, -1, 0);
-  if (NS_FAILED(rv)) {
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }
   nsCOMPtr<nsILineInputStream> lineStream(do_QueryInterface(fileStream, &rv));
-  if (NS_FAILED(rv)) {
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }
+
   nsAutoCString line;
   bool more = true;
   do {
@@ -158,8 +182,11 @@ static void AddPathsFromFile(SandboxBroker::Policy* aPolicy,
     if (FindInReadable(NS_LITERAL_CSTRING("include "), start, token_end)) {
       nsAutoCString includes(Substring(token_end, end));
       for (const nsACString& includeGlob : includes.Split(' ')) {
+        
+        nsAutoCString includeFile;
+        JoinPathIfRelative(aCwd, includeGlob, includeFile);
         glob_t globbuf;
-        if (!glob(PromiseFlatCString(includeGlob).get(), GLOB_NOSORT, nullptr,
+        if (!glob(PromiseFlatCString(includeFile).get(), GLOB_NOSORT, nullptr,
                   &globbuf)) {
           for (size_t fileIdx = 0; fileIdx < globbuf.gl_pathc; fileIdx++) {
             nsAutoCString filePath(globbuf.gl_pathv[fileIdx]);
@@ -169,10 +196,7 @@ static void AddPathsFromFile(SandboxBroker::Policy* aPolicy,
         }
       }
     }
-    
-    if (line.First() != '/') {
-      continue;
-    }
+
     
     int32_t equals = line.FindChar('=');
     if (equals >= 0) {
@@ -186,9 +210,45 @@ static void AddPathsFromFile(SandboxBroker::Policy* aPolicy,
   } while (more);
 }
 
+static void AddPathsFromFile(SandboxBroker::Policy* aPolicy,
+                             const nsACString& aPath) {
+  
+  nsresult rv;
+  nsCOMPtr<nsIFile> includeFile(
+      do_CreateInstance(NS_LOCAL_FILE_CONTRACTID, &rv));
+  if (NS_FAILED(rv)) {
+    return;
+  }
+  rv = includeFile->InitWithNativePath(aPath);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+  if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
+    SANDBOX_LOG_ERROR("Adding paths from %s to policy.",
+                      PromiseFlatCString(aPath).get());
+  }
+
+  
+  nsCOMPtr<nsIFile> parentDir;
+  rv = includeFile->GetParent(getter_AddRefs(parentDir));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+  nsAutoCString parentPath;
+  rv = parentDir->GetNativePath(parentPath);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+  if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
+    SANDBOX_LOG_ERROR("Parent path is %s",
+                      PromiseFlatCString(parentPath).get());
+  }
+  AddPathsFromFileInternal(aPolicy, parentPath, aPath);
+}
+
 static void AddLdconfigPaths(SandboxBroker::Policy* aPolicy) {
-  nsAutoCString ldconfigPath(NS_LITERAL_CSTRING("/etc/ld.so.conf"));
-  AddPathsFromFile(aPolicy, ldconfigPath);
+  nsAutoCString ldConfig(NS_LITERAL_CSTRING("/etc/ld.so.conf"));
+  AddPathsFromFile(aPolicy, ldConfig);
 }
 
 static void AddSharedMemoryPaths(SandboxBroker::Policy* aPolicy, pid_t aPid) {
