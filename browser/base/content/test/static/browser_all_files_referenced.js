@@ -172,7 +172,6 @@ var whitelist = [
   
   { file: "chrome://global/skin/icons/error-16.png" },
   
-  { file: "chrome://marionette/content/test_anonymous_content.xul" },
   { file: "chrome://marionette/content/test_dialog.properties" },
   { file: "chrome://marionette/content/test_dialog.xul" },
   
