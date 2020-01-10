@@ -34,17 +34,6 @@ class MozFramebuffer;
 
 namespace layers {
 
-class IOSurfaceRegistry {
- public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(IOSurfaceRegistry)
-
-  virtual void RegisterSurface(CFTypeRefPtr<IOSurfaceRef> aSurface) = 0;
-  virtual void UnregisterSurface(CFTypeRefPtr<IOSurfaceRef> aSurface) = 0;
-
- protected:
-  virtual ~IOSurfaceRegistry() {}
-};
-
 
 
 
@@ -91,13 +80,6 @@ class NativeLayerRootCA : public NativeLayerRoot {
 
 
 
-
-
-
-
-
-
-
 class NativeLayerCA : public NativeLayer {
  public:
   virtual NativeLayerCA* AsNativeLayerCA() override { return this; }
@@ -121,24 +103,6 @@ class NativeLayerCA : public NativeLayer {
   Maybe<gfx::IntRect> ClipRect() override;
   void SetSurfaceIsFlipped(bool aIsFlipped) override;
   bool SurfaceIsFlipped() override;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void SetSurfaceRegistry(RefPtr<IOSurfaceRegistry> aSurfaceRegistry);
-  RefPtr<IOSurfaceRegistry> GetSurfaceRegistry();
 
  protected:
   friend class NativeLayerRootCA;
@@ -180,8 +144,6 @@ class NativeLayerCA : public NativeLayer {
 
   
   Mutex mMutex;
-
-  RefPtr<IOSurfaceRegistry> mSurfaceRegistry;  
 
   
   
