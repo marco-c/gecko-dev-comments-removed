@@ -37,6 +37,11 @@ async function testDebuggingSW(enableMultiE10sFn, disableMultiE10sFn) {
 
   const { document, tab, window } =
     await openAboutDebugging({ enableWorkerUpdates: true });
+
+  
+  
+  await wait(1000);
+
   await selectThisFirefoxPage(document, window.AboutDebugging.store);
 
   
